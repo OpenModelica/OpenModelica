@@ -88,34 +88,104 @@ Connection::~Connection()
 	//      delete socket;
 }
 
+const char* Connection::getProcessError(QProcess::ProcessError e)
+{
+  switch (e)
+  {
+  case QProcess::FailedToStart:
+    return "The process failed to start. Either the invoked program is missing, or you may have insufficient permissions to invoke the program";
+  case QProcess::Crashed:
+    return "The process crashed some time after starting successfully" ;
+  case QProcess::Timedout:
+    return "The last waitFor...() function timed out. The state of QProcess is unchanged, and you can try calling waitFor...() again";
+  case QProcess::WriteError:
+    return "An error occurred when attempting to write to the process. For example, the process may not be running, or it may have closed its input channel";
+  case QProcess::ReadError:
+    return "An error occurred when attempting to read from the process. For example, the process may not be running";
+  case QProcess::UnknownError:
+  default:
+    return "An unknown error occurred";
+  }
+}
+
+bool Connection::startExternalViewer()
+{
+  char* omdir = getenv("OPENMODELICAHOME");
+  QString path(omdir);
+  if(path.endsWith("/") || path.endsWith("\\"))
+    path += "bin/ext";
+  else
+    path += "/bin/ext";
+#ifdef WIN32
+  path += ".exe";
+#elif defined(__APPLE_CC__)
+  path += ".app";
+#endif
+  if(QFile::exists(path))
+  {
+    QProcess *plotViewerProcess = new QProcess();
+
+    // 2006-03-14 AF, start omc
+    plotViewerProcess->start( path );
+    /*
+    {
+      cerr << "simulation runtime: unable to start plot viewer: " << path.toStdString().c_str();
+      cerr << "\n\t error: " << getProcessError(plotViewerProcess->error()) << "!" << endl;
+      return false;
+    }
+    */
+
+    // give the viewer time to start up ...
+    int ticks = 0;
+    while (plotViewerProcess->state() != QProcess::Running)
+    {
+      ticks++; // try for 200 times
+      cerr << ".";
+      if( plotViewerProcess->waitForStarted(-1) )  break;
+      if (ticks > 5000) break;
+    }
+    if (plotViewerProcess->state() == QProcess::Running)
+      return true;
+    else if (plotViewerProcess->state() == QProcess::NotRunning)
+    {
+      cerr << "\nsimulation runtime: the plot viewer: " << path.toStdString().c_str();
+      cerr << " doesn't want to start" << "\n\t error: " << getProcessError(plotViewerProcess->error()) << "!" << endl;
+      return false;
+    }
+    if( plotViewerProcess->waitForStarted(2000) )
+      return true;
+    else
+    {
+      cerr << "simulation runtime: the plot viewer: " << path.toStdString().c_str();
+      cerr << " doesn't want to start" << " \n\t error: " << getProcessError(plotViewerProcess->error()) << "!" << endl;
+      return false;
+    }
+  }
+  else
+  {
+    cerr << "simulation runtime: the plot viewer: " << \
+    path.toStdString().c_str() << " doesn't exist!" << endl;
+    return false;
+  }
+}
+
 QTcpSocket* Connection::newConnection(bool graphics)
 {
-	char* omdir = getenv("OPENMODELICAHOME");
-	QString path(omdir);
-	if(path.endsWith("/") || path.endsWith("\\"))
-		path += "bin/ext.exe";
-	else
-		path += "/bin/ext.exe";
 
 	socket = new QTcpSocket;
 	socket->connectToHost(QHostAddress::LocalHost, Static::port1);
-	if(socket->waitForConnected(100))
-		return socket;
-	else if(QFile::exists(path))
+	if(socket->waitForConnected(5000))
 	{
-
-		//		QProcess* p = new QProcess;
-
-		QProcess::startDetached(path);
-		//		p->waitForStarted(5000);
-
+		return socket;
+	}
+	else if (startExternalViewer())
+	{
 		socket->connectToHost(QHostAddress::LocalHost, graphics?7779:7778);
-
-		if(socket->waitForConnected(2000))
+		if(socket->waitForConnected(50000))
 			return socket;
 
 		socket->connectToHost(QHostAddress::LocalHost, graphics?7779:7778);
-		if(socket->waitForConnected(2000))
+		if(socket->waitForConnected(50000))
 			return socket;
 
 		socket->abort();
@@ -130,87 +200,66 @@ QTcpSocket* Connection::newConnection(bool graphics)
 
 bool Static::connect(bool graphics)
 {
-//	ofstream ofs("uu3u.txt", ios::app);
-
-//	ofs << 1 << endl;
-
-	char* omdir = getenv("OPENMODELICAHOME");
-	QString path(omdir);
-	if(path.endsWith("/") || path.endsWith("\\"))
-		path += "bin/ext.exe";
-	else
-		path += "/bin/ext.exe";
+  //	ofstream ofs("uu3u.txt", ios::app);
+  //	ofs << 1 << endl;
 
 	if(graphics)
 	{
-//	ofs << 2 << endl;
-
+    //	ofs << 2 << endl;
 		if(socket2.state() != QAbstractSocket::UnconnectedState)
 		{
-//		ofs << 3 << endl;
-
+      //		ofs << 3 << endl;
 			return true;
-//			socket2.disconnectFromHost();
-//			socket2.waitForDisconnected(1000);
+      //			socket2.disconnectFromHost();
+      //			socket2.waitForDisconnected(1000);
 		}
 
 		socket2.connectToHost(QHostAddress::LocalHost, Static::port2);
-//	ofs << 4 << endl;
+    //	ofs << 4 << endl;
 
-		if(socket2.waitForConnected(500))
+		if(socket2.waitForConnected(5000))
 			return true;
 
-
-		if(QFile::exists(path))
+		if (c->startExternalViewer())
 		{
-			QProcess::startDetached(path);
 			socket2.connectToHost(QHostAddress::LocalHost, Static::port2);
-			if(socket2.waitForConnected(2500))
+			if(socket2.waitForConnected(50000))
 				return true;
 
 			socket2.connectToHost(QHostAddress::LocalHost, Static::port2);
-			if(socket2.waitForConnected(3500))
+			if(socket2.waitForConnected(50000))
 				return true;
 		}
-//	ofs << 5 << endl;
-
+    //	ofs << 5 << endl;
 		return false;
-//	ofs << 1 << endl;
-
-
+    //	ofs << 1 << endl;
 	}
 	else
 	{
-//	ofs << 6 << endl;
-
+    //	ofs << 6 << endl;
 		if(socket1.state() != QAbstractSocket::UnconnectedState)
 		{
 			return true;
-//			socket1.disconnectFromHost();
-//			socket1.waitForDisconnected(1000);
+      //			socket1.disconnectFromHost();
+      //			socket1.waitForDisconnected(1000);
 		}
 
 		socket1.connectToHost(QHostAddress::LocalHost, Static::port1);
-		if(socket1.waitForConnected(500))
+		if(socket1.waitForConnected(5000))
 			return true;
 
-		if(QFile::exists(path))
+		if (c->startExternalViewer())
 		{
-			QProcess::startDetached(path);
 			socket1.connectToHost(QHostAddress::LocalHost, Static::port1);
-			if(socket1.waitForConnected(2500))
+			if(socket1.waitForConnected(50000))
 				return true;
 
 			socket1.connectToHost(QHostAddress::LocalHost, Static::port1);
-			if(socket1.waitForConnected(3500))
+			if(socket1.waitForConnected(50000))
 				return true;
 		}
-
 		return false;
-
-
 	}
-
 }
 
 QColor* stringToColor(const char* str_)
@@ -1001,17 +1050,31 @@ bool Static::enabled()
 	return enabled_;
 }
 
+QString getModelResultsFileName(const char* model)
+{
+  QDir dirCurrentDir = QDir::current();
+  QDir dirOpenModelica(QString(getenv("OPENMODELICAHOME")));
+  QString file1 = dirOpenModelica.path() + "/tmp/" + model;
+  QString file2 = dirCurrentDir.path() + "/" + model;
+  QString f;
+  if (QFile::exists(file2)) // try first in the current directory!
+  {
+    f = file2;
+  }
+  else if (QFile::exists(file1)) // try then in $OPENMODELICA/tmp/
+  {
+    f = file1;
+  }
+  return f;
+}
+
 
 int getVariableListSize(const char* model)
 {
-	QDir dir(QString(getenv("OPENMODELICAHOME")));
-
-	QString file = dir.path() + "/tmp/" + model;
-
-	if(!QFile::exists(file))
-		return 0;
-
-	QFile f(file);
+  QString fileName = getModelResultsFileName(model);
+  if (fileName.isEmpty())
+    return 0;
+  QFile f(fileName);
 	f.open(QIODevice::ReadOnly);
 	QTextStream ts(&f);
 	QString str;
@@ -1022,8 +1085,6 @@ int getVariableListSize(const char* model)
 		str = ts.readLine();
 		if(str.startsWith("DataSet: "))
 			N += str.size() - 8; //reserve space for a separator
-
-
 	}
 
 	f.close();
@@ -1033,14 +1094,10 @@ int getVariableListSize(const char* model)
 
 bool getVariableList(const char* model, char* lst)
 {
-	QDir dir(QString(getenv("OPENMODELICAHOME")));
-
-	QString file = dir.path() + "/tmp/" + model;
-
-	if(!QFile::exists(file))
-		return false;
-
-	QFile f(file);
+  QString fileName = getModelResultsFileName(model);
+  if (fileName.isEmpty())
+    return 0;
+  QFile f(fileName);
 	f.open(QIODevice::ReadOnly);
 	QTextStream ts(&f);
 	QString str;

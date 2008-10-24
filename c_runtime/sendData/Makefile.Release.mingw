@@ -7,41 +7,41 @@
 
 ####### Compiler, tools and options
 
-CC            = gcc
-CXX           = g++
-DEFINES       = -DUNICODE -DQT_LARGEFILE_SUPPORT -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_NETWORK_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT
-CFLAGS        = -O2 -Wall $(DEFINES)
-CXXFLAGS      = -O2 -frtti -fexceptions -mthreads -Wall $(DEFINES)
-INCPATH       = -I'include/QtCore' -I'include/QtNetwork' -I'include/QtGui' -I'include' -I'.' -I'include/ActiveQt' -I'release'
-LIB        =        ar -ru
-QMAKE         = 
-IDC           = 
-IDL           = midl
-ZIP           = zip -r -9
-DEF_FILE      = 
-RES_FILE      = 
-COPY          = cp
-COPY_FILE     = $(COPY)
-COPY_DIR      = xcopy /s /q /y /i
-DEL_FILE      = rm
-DEL_DIR       = rmdir
-MOVE          = mv
+CC              = gcc
+CXX             = g++
+DEFINES         = -DUNICODE -DQT_LARGEFILE_SUPPORT -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_NETWORK_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT
+CFLAGS          = -O2 -Wall $(DEFINES)
+CXXFLAGS        = -O2 -frtti -fexceptions -mthreads -Wall $(DEFINES)
+INCPATH         = -I'include/QtCore' -I'include/QtNetwork' -I'include/QtGui' -I'include' -I'.' -I'include/ActiveQt' -I'release'
+LIB             = ar -ru
+QMAKE           = 
+IDC             = 
+IDL             = midl
+ZIP             = zip -r -9
+DEF_FILE        = 
+RES_FILE        = 
+COPY            = cp
+COPY_FILE       = $(COPY)
+COPY_DIR        = xcopy /s /q /y /i
+DEL_FILE        = rm
+DEL_DIR         = rmdir
+MOVE            = mv
 CHK_DIR_EXISTS= test -d
-MKDIR         = mkdir
+MKDIR           = mkdir
 INSTALL_FILE    = $(COPY_FILE)
 INSTALL_PROGRAM = $(COPY_FILE)
 INSTALL_DIR     = $(COPY_DIR)
 
 ####### Output directory
 
-OBJECTS_DIR   = release/
+OBJECTS_DIR    = release/
 
 ####### Files
 
-SOURCES       = sendData.cpp 
-OBJECTS       = release/sendData.o
-DIST          = 
-QMAKE_TARGET  = sendData
+SOURCES        = sendData.cpp 
+OBJECTS        = release/sendData.o
+DIST           = 
+QMAKE_TARGET   = sendData
 DESTDIR        = release/ #avoid trailing-slash linebreak
 TARGET         = libsendData.a
 DESTDIR_TARGET = release/libsendData.a
