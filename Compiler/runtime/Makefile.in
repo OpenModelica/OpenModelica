@@ -30,7 +30,7 @@ endif
 SHELL	= /bin/sh
 CC	= gcc
 IDL	= idl 
-CFLAGS	+= -I$(RMLINCLUDE) -I$(top_builddir)/c_runtime -I$(srcdir) -I. $(CORBAINCL) -I./ 
+CFLAGS	+= -O3 -I$(RMLINCLUDE) -I$(top_builddir)/c_runtime -I$(srcdir) -I. $(CORBAINCL) -I./ 
 CXXFLAGS = $(CFLAGS)
 SRC	= rtopts.c socketimpl.c printimpl.c systemimpl.c settingsimpl.c
 CPPSRC  = ptolemyio.cpp daeext.cpp ErrorMessage.cpp errorext.cpp $(CORBASRC)

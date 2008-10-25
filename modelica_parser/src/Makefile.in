@@ -14,7 +14,7 @@ INCLUDES=-I@antlrinc@
 
 LIBP=-L@antlrlib@
 
-CFLAGS =-g -Wall $(INCLUDES) -D DEBUG
+CFLAGS =-O3 -Wall $(INCLUDES) -D DEBUG
 CXXFLAGS = $(CFLAGS)
 
 ANTLRFLAGS=
