@@ -32,13 +32,6 @@
  *
  */
 
-#if defined(_MSC_VER) || defined(__MINGW32__)
- #define _CRT_SECURE_NO_WARNINGS
- #define sleep Sleep
-#else
- #include <unistd.h>
-#endif
-
 //Qt headeers
 //#include <QCoreApplication>
 #include <QtNetwork/QTcpSocket>
@@ -68,6 +61,15 @@
 //IAEX headers
 #include "sendData.h"
 #include <sstream>
+
+#if defined(_MSC_VER) || defined(__MINGW32__)
+ #define _CRT_SECURE_NO_WARNINGS
+ #include <windows.h>
+ #define sleep Sleep
+#else
+ #include <unistd.h>
+#endif
+
 
 using namespace std;
 
@@ -120,7 +122,7 @@ bool Connection::startExternalViewer()
     plotViewerProcess->setStandardErrorFile(tempFile, QIODevice::Truncate);
     plotViewerProcess->setStandardOutputFile(tempFile, QIODevice::Append);
     plotViewerProcess->setProcessChannelMode(QProcess::MergedChannels);
-    
+
 
     // 2006-03-14 AF, start viewer
     plotViewerProcess->start( path );
@@ -130,8 +132,8 @@ bool Connection::startExternalViewer()
     while (1)
     {
       ticks++;
-      if( plotViewerProcess->waitForStarted(-1) ) break; 
-      else 
+      if( plotViewerProcess->waitForStarted(-1) ) break;
+      else
 	{
 	  cerr << "simulation runtime: the plot viewer could not start: " << path.toStdString().c_str();
 	  cerr << "\n\t error: " << plotViewerProcess->errorString().toStdString() << "!" << endl;
@@ -173,7 +175,7 @@ QTcpSocket* Connection::newConnection(bool graphics)
 
   socket = new QTcpSocket;
   socket->connectToHost(QHostAddress::LocalHost, Static::port1);
-  if(socket->waitForConnected(-1))
+  if(socket->waitForConnected(5000))
   {
     return socket;
   }
@@ -185,7 +187,7 @@ QTcpSocket* Connection::newConnection(bool graphics)
       ticks++;
       socket->connectToHost(QHostAddress::LocalHost, graphics?7779:7778);
       if (socket->state() != QAbstractSocket::ConnectedState)
-	if(socket->waitForConnected(50000))
+	if(socket->waitForConnected(5000))
 	{
 	  return socket;
 	}
@@ -222,13 +224,13 @@ bool Static::connect(bool graphics)
       //			socket2.disconnectFromHost();
       //			socket2.waitForDisconnected(1000);
     }
-    
+
     socket2.connectToHost(QHostAddress::LocalHost, Static::port2);
     //	ofs << 4 << endl;
-    
-    if(socket2.waitForConnected(-1))
+
+    if(socket2.waitForConnected(5000))
       return true;
-	  
+
     if (c->startExternalViewer())
     {
       int ticks = 0;
@@ -237,7 +239,7 @@ bool Static::connect(bool graphics)
 	ticks++;
 	socket2.connectToHost(QHostAddress::LocalHost, Static::port2);
 	if (socket2.state() != QAbstractSocket::ConnectedState)
-	  if(socket2.waitForConnected(-1))
+	  if(socket2.waitForConnected(5000))
 	    return true;
 	if (ticks > 100)
 	  break;
@@ -256,11 +258,11 @@ bool Static::connect(bool graphics)
       //			socket1.disconnectFromHost();
       //			socket1.waitForDisconnected(1000);
     }
-    
+
     socket1.connectToHost(QHostAddress::LocalHost, Static::port1);
-    if(socket1.waitForConnected(-1))
+    if(socket1.waitForConnected(5000))
       return true;
-    
+
     if (c->startExternalViewer())
     {
       int ticks = 0;
@@ -269,7 +271,7 @@ bool Static::connect(bool graphics)
 	ticks++;
 	socket1.connectToHost(QHostAddress::LocalHost, Static::port1);
 	if (socket1.state() != QAbstractSocket::ConnectedState)
-	  if(socket1.waitForConnected(-1))
+	  if(socket1.waitForConnected(5000))
 	    return true;
 	if (ticks > 100)
 	  break;
@@ -680,7 +682,7 @@ void initSendData(int variableCount1, int variableCount2, char** statesNames, ch
     setVariableFilter(filter);
   else
     setVariableFilter("");
-  
+
   if(Static::socket)
   {
     delete Static::socket;
@@ -689,7 +691,7 @@ void initSendData(int variableCount1, int variableCount2, char** statesNames, ch
   Static::block = new QByteArray;
   Static::out = new QDataStream(Static::block, QIODevice::WriteOnly);
   Static::out->setVersion(QDataStream::Qt_4_2);
-  
+
   Static::c = new Connection;
   Static::socket = Static::c->newConnection();
   if (!Static::socket)
@@ -709,12 +711,12 @@ void initSendData(int variableCount1, int variableCount2, char** statesNames, ch
   *Static::out << QString("simulationDataStream-1.2");
   Static::out->device()->seek(0);
   *Static::out << (quint32)(Static::block->size() - sizeof(quint32));
-  
+
   Static::socket->write(*Static::block);
   Static::socket->flush();
-  
+
   Static::socket->waitForBytesWritten(-1);
-  
+
   Static::block->clear();
 
   /*
@@ -747,7 +749,7 @@ void initSendData(int variableCount1, int variableCount2, char** statesNames, ch
   quint32 N = 1;
 
   *Static::out << QString("time");
-  
+
   for(int i = 0; i < variableCount1; ++i)
   {
     if(!Static::filterVariables->empty() && !Static::filterVariables->contains(QString(statesNames[i])))
@@ -780,14 +782,14 @@ void initSendData(int variableCount1, int variableCount2, char** statesNames, ch
   Static::out->device()->seek(0);
   *Static::out << (quint32)(Static::block->size() - sizeof(quint32));
   *Static::out << (quint32)N;
-  
+
   Static::socket->write(*Static::block);
   Static::socket->flush();
-  
+
   Static::socket->waitForBytesWritten(-1);
-  
+
   Static::block->clear();
-  
+
   //*************
  }
 
@@ -814,7 +816,7 @@ void sendPacket(const char* data)
 
   Static::out->device()->seek(0);
   *Static::out << (quint32)(Static::block->size() - sizeof(quint32));
-  
+
   Static::socket->write(*Static::block);
   Static::socket->waitForBytesWritten(-1);
   Static::block->clear();
@@ -823,7 +825,7 @@ void sendPacket(const char* data)
 void closeSendData()
 {
   //	cout << "closeSendData" << endl;
-  
+
   Static::socket->flush();
   Static::socket->waitForBytesWritten(-1);
   Static::socket->disconnectFromHost();
@@ -842,42 +844,42 @@ void closeSendData()
 void emulateStreamData(const char* data, const char* title, const char* xLabel, const char* yLabel, const char* interpolation5, int legend, int grid, int logX, int logY, int drawPoints, const char* range)
 {
   Connection c;
-  
+
   QTcpSocket* socket = c.newConnection();
-  
+
   if(!socket)
   {
     cerr << "simulation runtime: error, could not connect to Plot Viewer socket!" << endl;
     cerr << "simulation runtime: please try to run the Plot Viewer manually: " << c.getExternalViewerFileName() << endl;
     return;
   }
-  
+
   QString data_(data);
   QTextStream ts(&data_);
   QString tmp;
-  
+
   vector<vector<double>*> variableValues;
   vector<QString> variableNames;
-  
+
   variableValues.push_back(new vector<double>);
   variableNames.push_back(QString("time"));
-  
+
   bool timeFinished = false;
-  
+
   while(!ts.atEnd())
   {
     do
     {
       if(ts.atEnd())
 	break;
-      
+
       tmp = ts.readLine().trimmed();
     }
     while(tmp.size() == 0);
-    
+
     if(tmp.trimmed().size() == 0)
       break;
-    
+
     if(tmp.startsWith("#"))
       continue;
     else if(tmp.startsWith("TitleText"))
@@ -886,7 +888,7 @@ void emulateStreamData(const char* data, const char* title, const char* xLabel, 
      {
        if(variableValues[0]->size())
 	 timeFinished = true;
-       
+
        variableValues.push_back(new vector<double>);
        variableNames.push_back(tmp.section(": ", -1));
      }
@@ -894,7 +896,7 @@ void emulateStreamData(const char* data, const char* title, const char* xLabel, 
     {
       if(!timeFinished)
 	variableValues[0]->push_back(tmp.section(',', 0, 0).toDouble());
-      
+
       variableValues[variableNames.size()-1]->push_back(tmp.section(',',-1).toDouble());
     }
   }
@@ -902,19 +904,19 @@ void emulateStreamData(const char* data, const char* title, const char* xLabel, 
   QByteArray block;
   QDataStream out(&block, QIODevice::WriteOnly);
   out.setVersion(QDataStream::Qt_4_2);
-  
+
   out << (quint32)0;
   out << QString("ptolemyDataStream-1.2");
   out.device()->seek(0);
   out << (quint32)(block.size() - sizeof(quint32));
-  
+
   socket->write(block);
   socket->flush();
   socket->waitForBytesWritten(-1);
-  
-  
+
+
   block.clear();
-  
+
   out.device()->seek(0);
   out << (quint32)0;
   out << QString(title);
@@ -929,29 +931,29 @@ void emulateStreamData(const char* data, const char* title, const char* xLabel, 
   out << (int)drawPoints;
   out << QString(range);
   out << (quint32)variableNames.size();
-  
+
   for(unsigned int i = 0; i < variableNames.size(); ++i)
   {
     out << variableNames[i];
     out << QColor(Qt::color0);
   }
-  
+
   out.device()->seek(0);
   out << (quint32)(block.size() - sizeof(quint32));
-  
+
   socket->write(block);
   socket->flush();
   socket->waitForBytesWritten(-1);
-  
+
   block.clear();
-  
-  
+
+
   for(quint32 i = 0; i < variableValues[0]->size(); ++i)
   {
     out.device()->seek(0);
     out << (quint32)0;
     out << (quint32)variableNames.size();
-    
+
     for(quint32 j = 0; j < variableNames.size(); ++j)
     {
       out << variableNames[j];
@@ -959,22 +961,22 @@ void emulateStreamData(const char* data, const char* title, const char* xLabel, 
     }
     out.device()->seek(0);
     out << (quint32)(block.size() - sizeof(quint32));
-    
+
     socket->write(block);
     socket->flush();
     socket->waitForBytesWritten(-1);
-    
+
     block.clear();
-    
+
     if(!(i%100))
       socket->flush();
   }
 
   socket->flush();
-  
+
   for(quint32 i = 0; i < variableValues.size(); ++i)
     delete variableValues[i];
-  
+
   socket->waitForBytesWritten(-1);
   socket->disconnectFromHost();
   if(socket->state() == QAbstractSocket::ConnectedState)
@@ -989,7 +991,7 @@ bool plt(const char* var, const char* model, const char* title, const char* xLab
 {
   QDir dir(QString(getenv("OPENMODELICAHOME")));
   dir.cd("tmp");
-  
+
   QString filename;
 
   if(QString(model).isEmpty())
@@ -1002,20 +1004,20 @@ bool plt(const char* var, const char* model, const char* title, const char* xLab
     filename = QString(model);
 
   filename += "_res.plt";
-  
+
   QFile file(dir.path() + "/" + filename);
   file.open(QIODevice::ReadOnly);
-  
+
   QString res;
-  
+
   res += "#Ptolemy Plot generated by OpenModelica\n";
   res += "TitleText: Plot by OpenModelica\n";
   res += "DataSet: " + QString(var[0]) +QString("\n");
 
   QVector<double> time, values;
-  
+
   QString currentVar;
-  
+
   QString tmp;
   while(!file.atEnd())
   {
@@ -1023,11 +1025,11 @@ bool plt(const char* var, const char* model, const char* title, const char* xLab
     {
       if(file.atEnd())
 	break;
-      
+
       tmp = file.readLine().trimmed();
     }
     while(tmp.size() == 0);
-    
+
     if(tmp.trimmed().size() == 0)
       break;
 
@@ -1049,13 +1051,13 @@ bool plt(const char* var, const char* model, const char* title, const char* xLab
       values << tmp.section(',', 1, 1).toDouble();
     }
   }
-  
+
   for(long i = 0; i < time.size(); ++i)
     res += QVariant(time[i]).toString() +"," +QVariant(values[i]).toString() +"\n";
-  
+
   file.close();
-  
-  emulateStreamData(res.toStdString().c_str(), title, xLabel, yLabel, interpolation, (int)legend, 
+
+  emulateStreamData(res.toStdString().c_str(), title, xLabel, yLabel, interpolation, (int)legend,
 		    (int)grid, (int)logX, (int)logY, (int)drawPoints, range);
   return true;
 }
@@ -1093,7 +1095,7 @@ int getVariableListSize(const char* model)
   f.open(QIODevice::ReadOnly);
   QTextStream ts(&f);
   QString str;
-  
+
   int N = 0;
   while(!ts.atEnd())
   {
@@ -1101,7 +1103,7 @@ int getVariableListSize(const char* model)
     if(str.startsWith("DataSet: "))
       N += str.size() - 8; //reserve space for a separator
   }
-  
+
   f.close();
   return N;
 }
@@ -1115,7 +1117,7 @@ bool getVariableList(const char* model, char* lst)
   f.open(QIODevice::ReadOnly);
   QTextStream ts(&f);
   QString str;
-  
+
   QString L;
   while(!ts.atEnd())
   {
@@ -1123,7 +1125,7 @@ bool getVariableList(const char* model, char* lst)
     if(str.startsWith("DataSet: "))
       L += str.right(str.size() - 8);
   }
-  
+
   f.close();
   strcpy(lst, L.trimmed().toStdString().c_str());;
   return true;
@@ -1134,7 +1136,7 @@ void emulateStreamData2(const char *info, const char* data, int port)
 {
   Connection c;
   QTcpSocket* socket = c.newConnection();
-  
+
   QString info_str(info);
   QString data_(data);
   QTextStream ts(&data_);
@@ -1144,7 +1146,7 @@ void emulateStreamData2(const char *info, const char* data, int port)
 
   variableValues.push_back(new vector<double>);
   variableNames.push_back(QString("time"));
-  
+
   bool timeFinished = false;
 
   while(!ts.atEnd())
@@ -1153,14 +1155,14 @@ void emulateStreamData2(const char *info, const char* data, int port)
      {
        if(ts.atEnd())
 	 break;
-       
+
        tmp = ts.readLine().trimmed();
      }
      while(tmp.size() == 0);
-     
+
      if(tmp.trimmed().size() == 0)
        break;
-     
+
      if(tmp.startsWith("#"))
        continue;
      else if(tmp.startsWith("TitleText"))
@@ -1169,7 +1171,7 @@ void emulateStreamData2(const char *info, const char* data, int port)
      {
        if(variableValues[0]->size())
 	 timeFinished = true;
-       
+
        variableValues.push_back(new vector<double>);
        variableNames.push_back(tmp.section(": ", -1));
        // cerr << "added " << tmp.section(": ", -1).toStdString() << endl;
@@ -1178,7 +1180,7 @@ void emulateStreamData2(const char *info, const char* data, int port)
       {
 	if(!timeFinished)
 	  variableValues[0]->push_back(tmp.section(',', 0, 0).toDouble());
-	
+
 	variableValues[variableNames.size()-1]->push_back(tmp.section(',',-1).toDouble());
       }
    }
@@ -1186,12 +1188,12 @@ void emulateStreamData2(const char *info, const char* data, int port)
   QByteArray block;
   QDataStream out(&block, QIODevice::WriteOnly);
   out.setVersion(QDataStream::Qt_4_2);
-  
+
   out << (quint32)0;
   out << QString("ptolemyDataStream");
   out.device()->seek(0);
   out << (quint32)(block.size() - sizeof(quint32));
-  
+
   socket->write(block);
   socket->flush();
   socket->waitForBytesWritten(-1);
@@ -1211,11 +1213,11 @@ void emulateStreamData2(const char *info, const char* data, int port)
 
   out.device()->seek(0);
   out << (quint32)(block.size() - sizeof(quint32));
-  
+
   socket->write(block);
   socket->flush();
   socket->waitForBytesWritten(-1);
-  
+
   block.clear();
 
   //	cout << "varvals[0]->size = " << variableValues[0]->size() << endl;
@@ -1225,7 +1227,7 @@ void emulateStreamData2(const char *info, const char* data, int port)
     out.device()->seek(0);
     out << (quint32)0;
     out << (quint32)variableNames.size();
-    
+
     for(quint32 j = 0; j < variableNames.size(); ++j)
     {
       out << variableNames[j];
@@ -1244,7 +1246,7 @@ void emulateStreamData2(const char *info, const char* data, int port)
 		//_sleep(500);
     if(!(i%100))
       socket->flush();
-    
+
   }
 
   socket->flush();
@@ -1253,7 +1255,7 @@ void emulateStreamData2(const char *info, const char* data, int port)
   out << QString("graphicsStream");
   out.device()->seek(0);
   out << (quint32)(block.size() - sizeof(quint32));
-  
+
   socket->write(block);
   socket->flush();
   socket->waitForBytesWritten(-1);
@@ -1267,15 +1269,15 @@ void emulateStreamData2(const char *info, const char* data, int port)
     socket->waitForDisconnected(-1);
   if(socket)
     delete socket;
-  
-  /*	
+
+  /*
   for(quint32 i = 0; i < variableValues[0]->size(); ++i)
   {
   out.device()->seek(0);
   out << (quint32)0;
   out << (quint32)variableNames.size();
   cout << "i = " << i;
-  
+
   for(quint32 j = 0; j < variableNames.size(); ++j)
   {
   //			cout << variableNames[j].toStdString() << ": " << (*variableValues[j])[i] << endl;
@@ -1287,7 +1289,7 @@ void emulateStreamData2(const char *info, const char* data, int port)
   out.device()->seek(0);
   out << (quint32)(block.size() - sizeof(quint32));
   cout << (quint32)(block.size() - sizeof(quint32));
-  
+
   socket->write(block);
   block.clear();
   cout << "!" << endl;
@@ -1295,17 +1297,17 @@ void emulateStreamData2(const char *info, const char* data, int port)
   socket->waitForBytesWritten(-1);
   _sleep(100);
   }
-  
+
   socket->flush();
-  
+
   for(quint32 i = 0; i < variableValues.size(); ++i)
   delete variableValues[i];
-  
+
   socket->disconnectFromHost();
   if(socket->state() == QAbstractSocket::ConnectedState)
   socket->waitForDisconnected(-1);
   if(socket)
   delete socket;
-  
+
   */
 }
