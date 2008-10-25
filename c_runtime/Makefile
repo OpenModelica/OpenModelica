@@ -32,7 +32,7 @@ HFILES = blaswrap.h f2c.h integer_array.h memory_pool.h modelica_string.h \
     index_spec.h matrix.h \
 	modelica.h read_write.h simulation_runtime.h simulation_events.h utility.h \
 	simulation_init.h simulation_input.h solver_dasrt.h solver_euler.h simulation_result.h \
-	meta_modelica.h
+	meta_modelica.h sendData/sendData.h sendData/humbug.h
 
 LIBS = libc_runtime.a libsim.a 
 

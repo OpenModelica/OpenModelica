@@ -53,13 +53,13 @@ class QStringList;
 class Connection
 {
 public:
-	Connection();
-	~Connection();
+  Connection();
+  ~Connection();
+  
+  QTcpSocket* newConnection(bool graphics = false);
 
-	QTcpSocket* newConnection(bool graphics = false);
-
+  const char* getExternalViewerFileName();
   bool startExternalViewer();
-  const char* getProcessError(int e);
 
 private:
 	QTcpSocket* socket;

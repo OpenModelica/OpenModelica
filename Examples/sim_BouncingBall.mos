@@ -1,3 +1,6 @@
 loadFile("BouncingBall.mo");
 simulate(BouncingBall, stopTime=3.0);
 plot({h,flying});
+plot(v);
+
+

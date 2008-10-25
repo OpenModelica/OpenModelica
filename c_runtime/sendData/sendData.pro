@@ -9,7 +9,7 @@ INCLUDEPATH += .
 #CONFIG += dll
 CONFIG += staticlib
 
-QT += network
+QT += network core gui
 
 # Input
 HEADERS += sendData.h
