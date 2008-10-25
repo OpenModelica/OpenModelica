@@ -65,33 +65,34 @@ using namespace std;
 
 GraphWindow::GraphWindow(QWidget* parent): QMainWindow(parent)
 {
-	setupUi(this);
+  setupUi(this);
 
-	compoundWidget =graphicsView;
-	QObject::connect(actionOpen, SIGNAL(activated()), this, SLOT(openFile()));
+  compoundWidget = graphicsView;
+  // starting listening servers
+  connect(graphicsView->gwMain, SIGNAL(serverState(bool)), actionActive, SLOT(setChecked(bool)));
+  connect(actionActive, SIGNAL(toggled(bool)), graphicsView->gwMain, SLOT(enableServers(bool)));
 
-	connect(graphicsView->gwMain, SIGNAL(newMessage(QString)), this, SLOT(showMessage(QString)));
-    QObject::connect(actionGrid, SIGNAL(toggled(bool)), graphicsView->gwMain, SLOT(showGrid(bool)));
+  // QObject::connect(actionOpen, SIGNAL(activated()), this, SLOT(openFile()));
+  
+  connect(graphicsView->gwMain, SIGNAL(newMessage(QString)), this, SLOT(showMessage(QString)));
+  QObject::connect(actionGrid, SIGNAL(toggled(bool)), graphicsView->gwMain, SLOT(showGrid(bool)));
 
-    QObject::connect(actionPan, SIGNAL(toggled(bool)), graphicsView->gwMain, SLOT(setPan(bool)));
-	QObject::connect(actionSelect, SIGNAL(toggled(bool)), graphicsView->gwMain, SLOT(setSelect(bool)));
-	QObject::connect(actionZoom, SIGNAL(toggled(bool)), graphicsView->gwMain, SLOT(setZoom(bool)));
+  QObject::connect(actionPan, SIGNAL(toggled(bool)), graphicsView->gwMain, SLOT(setPan(bool)));
+  QObject::connect(actionSelect, SIGNAL(toggled(bool)), graphicsView->gwMain, SLOT(setSelect(bool)));
+  QObject::connect(actionZoom, SIGNAL(toggled(bool)), graphicsView->gwMain, SLOT(setZoom(bool)));
 
-	connect(actionPreferences, SIGNAL(triggered()), compoundWidget, SLOT(showPreferences()));
-	connect(actionSimulationData, SIGNAL(triggered()), this, SLOT(showSimulationData()));
-
-	connect(actionActive, SIGNAL(toggled(bool)), graphicsView->gwMain, SLOT(enableServers(bool)));
-	connect(graphicsView->gwMain, SIGNAL(serverState(bool)), actionActive, SLOT(setChecked(bool)));
-
-	connect(actionImage, SIGNAL(activated()), this, SLOT(saveImage()));
-
-	QActionGroup* ag = new QActionGroup(this);
-	ag->addAction(actionPan);
-	ag->addAction(actionSelect);
-	ag->addAction(actionZoom);
-	ag->setExclusive(true);
-	
-	connect(actionAboutQt, SIGNAL(triggered()), qApp, SLOT(aboutQt()));
+  connect(actionPreferences, SIGNAL(triggered()), compoundWidget, SLOT(showPreferences()));
+  connect(actionSimulationData, SIGNAL(triggered()), this, SLOT(showSimulationData()));
+  
+  connect(actionImage, SIGNAL(activated()), this, SLOT(saveImage()));
+  
+  QActionGroup* ag = new QActionGroup(this);
+  ag->addAction(actionPan);
+  ag->addAction(actionSelect);
+  ag->addAction(actionZoom);
+  ag->setExclusive(true);
+  
+  connect(actionAboutQt, SIGNAL(triggered()), qApp, SLOT(aboutQt()));
 }
 
 GraphWindow::~GraphWindow()

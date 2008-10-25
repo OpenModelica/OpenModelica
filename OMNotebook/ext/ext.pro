@@ -8,6 +8,14 @@ DEPENDPATH += .
 INCLUDEPATH += . \
                ../Pltpkg2
 
+unix:LIBS += `coin-config --ldflags` \
+             `coin-config --libs` \
+             `soqt-config --ldflags` \
+             `soqt-config --libs`
+
+INCLUDEPATH += /home/openmodelica/dev/coin3d/include \
+               /usr/include/qt4/
+
 QT += network xml
 CONFIG += warn_off
 
@@ -27,8 +35,10 @@ HEADERS += ../Pltpkg2/legendLabel.h \
 	   ../Pltpkg2/preferenceWindow.h \
 	   ../Pltpkg2/variableData.h \
 	   ../Pltpkg2/verticalLabel.h \
-       ../Pltpkg2/variablewindow.h \
-        ../3Dpkg/VisualizationWidget.h
+           ../Pltpkg2/variablewindow.h \
+           ../3Dpkg/VisualizationWidget.h \
+           ../3Dpkg/SimulationData.h
+
 
 
 SOURCES += e.cpp \
@@ -44,7 +54,8 @@ SOURCES += e.cpp \
 	   ../Pltpkg2/preferenceWindow.cpp \
 	   ../Pltpkg2/variableData.cpp \
            ../Pltpkg2/variablewindow.cpp \
-           ../3Dpkg/VisualizationWidget.cpp
+           ../3Dpkg/VisualizationWidget.cpp \
+           ../3Dpkg/SimulationData.cpp
 
 FORMS += ../Pltpkg2/compoundWidget.ui\
          ../Pltpkg2/dataSelect.ui\
