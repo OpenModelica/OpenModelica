@@ -88,7 +88,7 @@ Connection::~Connection()
 	//      delete socket;
 }
 
-const char* Connection::getProcessError(QProcess::ProcessError e)
+const char* Connection::getProcessError(int e)
 {
   switch (e)
   {
@@ -501,7 +501,7 @@ bool pltWait(unsigned long msecs)
 bool pltTable(double* table, size_t r, size_t c) //, const char* legend, int size)
 {
 
-	char* legend[] = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10"};
+	const char* legend[] = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10"};
 //	size_t size = 3;
 	size_t size = c;
 

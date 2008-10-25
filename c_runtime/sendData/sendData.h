@@ -59,7 +59,7 @@ public:
 	QTcpSocket* newConnection(bool graphics = false);
 
   bool startExternalViewer();
-  const char* Connection::getProcessError(QProcess::ProcessError e);
+  const char* getProcessError(int e);
 
 private:
 	QTcpSocket* socket;
