@@ -1,0 +1,9 @@
+loadModel(Modelica.SimpleVisual);
+getErrorString();
+loadFile("visualize_3D_BouncingBall.mo");
+getErrorString();
+simulate(BouncingBall3D, stopTime=10);
+getErrorString();
+visualize(BouncingBall3D);
+getErrorString();
+system("rm -f BouncingBall3D*");
