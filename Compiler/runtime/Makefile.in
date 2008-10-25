@@ -17,15 +17,7 @@ USE_CORBA = @USE_CORBA@
 CORBAHOME = @CORBAHOME@
 
 RMLINCLUDE = @rmlinc@
-OSTYP = $(OSTYPE)
-OS_MSYS=msys
-ifeq ($(OSTYP),$(OS_MSYS))
-	CFLAGS = @DEFS@ $(USE_CORBA) -DBUILD_MICO_DLL
-else
-	CFLAGS = @DEFS@ $(USE_CORBA) -DCYGWIN
-endif
-
-
+CFLAGS = @DEFS@ $(USE_CORBA)
 
 ifdef USE_CORBA
   CORBASRC = omc_communication.cc omc_communication_impl.cpp corbaimpl.cpp

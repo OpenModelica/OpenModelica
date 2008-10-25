@@ -1,7 +1,7 @@
 #
 # Makefile for omc
 #
-# David Kï¿½gedal <x97davka@ida.liu.se>
+# David Kågedal <x97davka@ida.liu.se>
 #
 # $Id$
 #
@@ -10,8 +10,6 @@ ANTLR_HOME = @antlrhome@
 
 ANTLR_INCP = -I@antlrinc@
 ANTLR_LIBP = -L@antlrlib@
-OSTYP=$(OSTYPE)
-OS_MSYS=msys
 LIBSOCKET = @LIBSOCKET@
 
 SHELL	= /bin/sh
@@ -36,12 +34,7 @@ builddir_doc=$(top_builddir)/build/doc
 
 include $(srcdir)/Makefile.common
 
-ifeq ($(OSTYP),$(OS_MSYS))
-	LIBSOCKET=
-	CORBALIB=-L$(CORBAHOME)/lib -lmico -lwsock32
-else
-	CORBALIB=`mico-config --libs`
-endif
+CORBALIB=`mico-config --libs`
 
 ifdef USE_CORBA
  CORBALIBS=$(CORBALIB)
@@ -52,7 +45,7 @@ endif
 LDFLAGS = -lm -L$(RMLHOME)/lib/plain -lrml_g $(ANTLR_LIBP) -lantlr $(LIBSOCKET) $(CORBALIBS) -ldl
 
 ifdef QTHOME
-PLTPKGFLAGS = -L../../build/lib -lsendData -L$(QTHOME)/lib -lqtmain -lQtNetwork4 -lQtCore4 -lQtGui4
+PLTPKGFLAGS = -L../../build/lib -lsendData -L$(QTHOME)/lib -lQtNetwork -lQtCore -lQtGui
 else
 PLTPKGFLAGS = -L../../build/lib -lsendData
 endif
@@ -60,6 +53,7 @@ endif
 PROG = omcd
 RMLC	= @rmlc_bin@ -g -Wc,-O3 #-Wr,-East,-Ecps,-Efol
 RML	= $(RMLHOME)/bin/rml
+RMLCFLAGS = -Wr,-ftrace
 
 SUBDIRS	= $(srcdir)/runtime $(srcdir)/absyn_builder $(srcdir)/modpar
 
@@ -76,16 +70,16 @@ $(ALLMO): %.mo : $(srcdir)/%.mo
 	cp $< $@
 
 $(SRCO): %.o : %.c %.h
-	$(RMLC) -c $< 
+	$(RMLC) $(RMLCFLAGS) -c $< 
 
 $(SRCC): %.c : %.mo
-	$(RMLC) +C $<
+	$(RMLC) $(RMLCFLAGS) +C $<
 
 $(SRCHSRCDIR) : $(srcdir)/%.h : %.h
 	cp $< $@
 
 $(SRCH): %.h : %.mo
-	$(RMLC) -c $<
+	$(RMLC) $(RMLCFLAGS) -c $<
 
 $(SRCSIG): %.sig : %.mo
 	$(srcdir)/rml2sig/rmldep-new.sh $<

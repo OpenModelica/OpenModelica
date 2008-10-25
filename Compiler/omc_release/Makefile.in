@@ -10,8 +10,6 @@ ANTLR_HOME = @antlrhome@
 
 ANTLR_INCP = -I@antlrinc@
 ANTLR_LIBP = -L@antlrlib@
-OSTYP=$(OSTYPE)
-OS_MSYS=msys
 LIBSOCKET = @LIBSOCKET@
 
 USE_CORBA = @USE_CORBA@
@@ -33,13 +31,7 @@ builddir_inc=$(top_builddir)/build/include
 builddir_doc=$(top_builddir)/build/doc
 include $(srcdir)/Makefile.common
 
-
-ifeq ($(OSTYP),$(OS_MSYS))
-	LIBSOCKET=
-	CORBALIB=-L$(CORBAHOME)/lib -lmico -lwsock32
-else
-	CORBALIB=`mico-config --libs`
-endif
+CORBALIB=`mico-config --libs`
 
 ifdef USE_CORBA
  CORBALIBS=$(CORBALIB)
@@ -50,7 +42,7 @@ endif
 LDFLAGS = -lm -L$(RMLHOME)/lib/plain -lrml $(ANTLR_LIBP) -lantlr $(LIBSOCKET) $(CORBALIBS) -ldl
 
 ifdef QTHOME
-PLTPKGFLAGS = -L../../build/lib -lsendData -L$(QTHOME)/lib -lqtmain -lQtNetwork4 -lQtCore4 -lQtGui4
+PLTPKGFLAGS = -L../../build/lib -lsendData -L$(QTHOME)/lib -lQtNetwork -lQtCore -lQtGui
 else
 PLTPKGFLAGS = -L../../build/lib -lsendData
 endif
@@ -58,6 +50,7 @@ endif
 PROG = omc
 RMLC	= @rmlc_bin@ 
 RML	= $(RMLHOME)/bin/rml
+RMLCFLAGS = -Wr,-ftrace
 
 
 
@@ -77,16 +70,16 @@ $(ALLMO): %.mo : $(srcdir)/%.mo
 	cp $< $@
 
 $(SRCO): %.o : %.c %.h
-	$(RMLC) -c $<
+	$(RMLC) $(RMLCFLAGS) -c $<
 
 $(SRCC): %.c : %.mo
-	$(RMLC) +C $<
+	$(RMLC) $(RMLCFLAGS) +C $<
 
 $(SRCHSRCDIR) : $(srcdir)/%.h : %.h
 	cp $< $@
 
 $(SRCH): %.h : %.mo
-	$(RMLC) -c $<
+	$(RMLC) $(RMLCFLAGS) -c $<
 
 $(SRCSIG): %.sig : %.mo
 	$(srcdir)/rml2sig/rmldep-new.sh $<
@@ -98,7 +91,7 @@ absyn_subdir:
 	(cd $(srcdir)/absyn_builder && $(MAKE) vctarget)
 
 $(PROG): $(SRCO) $(AST) $(RTOBJ)
-	g++ -o $(PROG)$(EXEEXT) $(SRCO) $(AST) $(RTOBJ) $(LDFLAGS) $(PLTPKGFLAGS)
+	g++ -O3 -o $(PROG)$(EXEEXT) $(SRCO) $(AST) $(RTOBJ) $(LDFLAGS) $(PLTPKGFLAGS)
 
 subdirs: $(SRCHSRCDIR) $(SUBDIRS)
 
