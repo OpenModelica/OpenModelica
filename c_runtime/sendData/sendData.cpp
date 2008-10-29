@@ -1251,6 +1251,7 @@ void emulateStreamData2(const char *info, const char* data, int port)
 
   socket->flush();
 
+  /*
   out << (quint32)0;
   out << QString("graphicsStream");
   out.device()->seek(0);
@@ -1259,6 +1260,7 @@ void emulateStreamData2(const char *info, const char* data, int port)
   socket->write(block);
   socket->flush();
   socket->waitForBytesWritten(-1);
+  */
 
   for(quint32 i = 0; i < variableValues.size(); ++i)
     delete variableValues[i];
