@@ -9,10 +9,11 @@ INCLUDEPATH += . \
                /usr/local/include
 #OBJECTS += 
 
-unix:LIBS += -L${ANTLRHOME}/src -lantlr \
-             `${MICOHOME}/bin/mico-config --libs` \
-             `coin-config --ldflags --libs` \
-             `soqt-config --ldflags --libs`
+MICO_LIBS = $$system(mico-config --libs)
+COIN_LIBS = $$system(coin-config --ldflags --libs)
+SOQT_LIBS = $$system(soqt-config --ldflags --libs)
+unix:LIBS += -L${ANTLRHOME}/src -lantlr $${MICO_LIBS} $${COIN_LIBS} $${SOQT_LIBS}
+
 
 TARGET = OMNotebook
 
@@ -25,16 +26,18 @@ QMAKE_LFLAGS+=
 #correctly. If omc not is installed on the system. Comment out
 #theese three lines below.
 DEFINES += OMC
-INCLUDEPATH += /home/openmodelica/dev/OpenModelica/Compiler/runtime\
+MICOHOME = $$system(mico-config --prefix)
+COIN_INCLUDE = $$system(coin-config --includedir)
+SOQT_INCLUDE = $$system(soqt-config --includedir)
+INCLUDEPATH += $${MICOHOME}/include \
+               $${COIN_INCLUDE} \
+               $${SOQT_INCLUDE} \
+               /usr/include/qt4/ \
                ${ANTLRHOME} \
-               ${MICOHOME}/include \
                ../NotebookParser \
                ../Pltpkg2 \
-               ../3Dpkg \
-               /home/openmodelica/dev/coin3d/include \
-               /usr/include/qt4/
+               ../3Dpkg 
 
-OBJECTS += /home/openmodelica/dev/OpenModelica/Compiler/runtime/omc_communication.o
 unix:LIBS += 
 QT += network xml core gui opengl
 
@@ -43,6 +46,7 @@ HEADERS += ../NotebookParser/AntlrNotebookLexer.hpp\
            ../NotebookParser/AntlrNotebookParser.hpp\
            ../NotebookParser/AntlrNotebookTreeParser.hpp\
            omc_communicator.hpp \
+           omc_communication.h \
            application.h \
            command.h \
            notebookparser.h \
@@ -125,6 +129,7 @@ SOURCES += ../NotebookParser/AntlrNotebookLexer.cpp\
            cellapplication.cpp \
            cellparserfactory.cpp \    
            omc_communicator.cpp \
+           omc_communication.cc \
            stylesheet.cpp \
            cellcommandcenter.cpp \
            chaptercountervisitor.cpp \

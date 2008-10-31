@@ -8,10 +8,15 @@ DEPENDPATH += .
 INCLUDEPATH += . \
                ../Pltpkg2
 
-unix:LIBS += `coin-config --ldflags --libs` \
-             `soqt-config --ldflags --libs` 
-INCLUDEPATH += /home/openmodelica/dev/coin3d/include \
-               /usr/include/qt4/
+MICO_LIBS = $$system(mico-config --libs)
+COIN_LIBS = $$system(coin-config --ldflags --libs)
+SOQT_LIBS = $$system(soqt-config --ldflags --libs)
+unix:LIBS += $${MICO_LIBS} $${COIN_LIBS} $${SOQT_LIBS}
+
+MICOHOME = $$system(mico-config --prefix)
+COIN_INCLUDE = $$system(coin-config --includedir)
+SOQT_INCLUDE = $$system(soqt-config --includedir)
+INCLUDEPATH += $${COIN_INCLUDE} $${SOQT_INCLUDE} 
 
 QT += network xml
 CONFIG += warn_off
