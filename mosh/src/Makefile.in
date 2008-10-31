@@ -29,7 +29,7 @@ ifdef USE_CORBA
   CORBAIMPL = -I$(top_builddir)/Compiler/runtime
   CORBAOBJS = $(top_builddir)/Compiler/runtime/omc_communication.o \
 	$(top_builddir)/Compiler/runtime/omc_communication_impl.o
-  CORBALIB = -L$(CORBAHOME)/lib -lmico -lssl -lcrypto
+  CORBALIB = `mico-config --libs`
   CORBAINC = -I$(CORBAHOME)/include
 else
   CORBAIMPL =
@@ -49,7 +49,7 @@ LIBS = -lantlr -lmodelica_parser -lreadline -ltermcap  $(CORBALIB) -lm -lpthread
 
 OBJS += mosh.o options.o
 
-PROG = OMShell
+PROG = OMShell-terminal
 
 all: release
 

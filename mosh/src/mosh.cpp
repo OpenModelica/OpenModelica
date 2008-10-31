@@ -129,7 +129,7 @@ int main(int argc, char* argv[])
      // Starting background server using corba
       char systemstr[1024];
       sprintf(systemstr,"%s/bin/omc +d=interactive > /tmp/error.log 2>&1 &",
-	      omhome, omhome);
+	      omhome);
       int res = system(systemstr);
       if (!scriptname)
 	cout << "Started server using:"<< systemstr << "\n res = " << res << endl;
