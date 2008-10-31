@@ -19,8 +19,7 @@ INSTALL_INCLUDEDIR = ${includedir}
 INSTALL_DATADIR    = ${datadir}
 INSTALL_DOCDIR     = ${INSTALL_DATADIR}/omc/doc
 
-#all : debug
-all : mkbuilddirs release 
+all : mkbuilddirs release qtclients mosh
 
 mkbuilddirs: 
 	mkdir -p $(builddir_bin)
@@ -50,13 +49,20 @@ omc:
 
 test:
 	(cd testsuite; time $(MAKE) -f Makefile)
-	
+
 testmos:
 	(cd testsuite/mosfiles; time $(MAKE) -f Makefile)
 
 mosh:
 	(cd mosh/src; $(MAKE) -f Makefile)
 
+qtclients:
+	echo "environment variable QTHOME should be defined"
+	echo "Coin3D (www.coin3d.org) and SoQt should be installed and in the path!"
+	echo "using ${OTHOME}"
+	(cd OMShell && qmake && make && cp -p OMShell ../$(builddir_bin)/.)
+	(cd OMNotebook/ext && qmake && make && cp -p ext ../../$(builddir_bin)/.)
+	(cd OMNotebook/OMNotebookQT4 && qmake && make && cp -p OMNotebook *.xml ../../$(builddir_bin)/.)
 
 clean:
 	(cd c_runtime && $(MAKE) -f Makefile clean)
@@ -69,6 +75,13 @@ clean:
 	(cd flat_modelica_parser/src && $(MAKE) -f Makefile clean)
 	(rm -f $(builddir_doc)/*.pdf)
 	(rm -f $(builddir_doc)/testmodels/*.*)
+	(cd OMShell && qmake && make clean)
+	(cd OMNotebook/ext && qmake && make clean)
+	(cd OMNotebook/OMNotebookQT4 && qmake && make clean)
+	(rm -f $(builddir_bin)/OMShell)
+	(rm -f $(builddir_bin)/OMNotebook)
+	(rm -f $(builddir_bin)/ext)
+	(rm -f $(builddir_bin)/*.xml)
 
 ${INSTALL_BINDIR}:
 	mkdir -p ${INSTALL_BINDIR}
