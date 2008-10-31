@@ -312,7 +312,7 @@ void System_5finit(void)
 //	if(qthome && strlen(qthome))
     if (1) {
 //		char senddatalibs[] = "SENDDATALIBS= -lsendData -lQtNetwork -lQtCore -lQtGui -luuid -lole32 -lws2_32";
-		_putenv("SENDDATALIBS=-lsendData -lQtNetwork -lQtCore -lQtGui -luuid -lole32 -lws2_32");
+		_putenv("SENDDATALIBS=-lsendData -lQtNetwork-mingw -lQtCore-mingw -lQtGui-mingw -luuid -lole32 -lws2_32");
 //		_putenv(senddatalibs);
 	}
 }
@@ -1610,7 +1610,7 @@ void System_5finit(void)
 
 	qthome = getenv("QTHOME");
 	if (qthome && strlen(qthome)) {
-#ifdef __APPLE_CC__	
+#ifdef __APPLE_CC__
 		putenv("SENDDATALIBS=-lsendData -lQtNetwork -lQtCore -lQtGui -lz -framework Carbon");
 #else
 		putenv("SENDDATALIBS=-lsendData -lQtNetwork -lQtCore -lQtGui");
