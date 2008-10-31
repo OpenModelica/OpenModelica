@@ -11,10 +11,8 @@ INCLUDEPATH += . \
 
 unix:LIBS += -L${ANTLRHOME}/src -lantlr \
              `${MICOHOME}/bin/mico-config --libs` \
-             `coin-config --ldflags` \
-             `coin-config --libs` \
-             `soqt-config --ldflags` \
-             `soqt-config --libs`
+             `coin-config --ldflags --libs` \
+             `soqt-config --ldflags --libs`
 
 TARGET = OMNotebook
 

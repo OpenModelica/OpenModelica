@@ -69,6 +69,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #include "notebookcommands.h"
 #include "notebooksocket.h"
 
+#include <cstdlib>
 
 namespace IAEX
 {

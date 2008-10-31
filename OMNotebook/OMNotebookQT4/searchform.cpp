@@ -63,6 +63,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #include "searchform.h"
 #include "replaceallvisitor.h"
 
+#include <typeinfo>
 
 namespace IAEX
 {

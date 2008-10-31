@@ -64,6 +64,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 
 #include <exception>
 #include <stdexcept>
+#include <typeinfo>
 
 //IAEX Headers
 #include "textcursorcommands.h"

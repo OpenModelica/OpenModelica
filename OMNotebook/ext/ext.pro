@@ -8,11 +8,8 @@ DEPENDPATH += .
 INCLUDEPATH += . \
                ../Pltpkg2
 
-unix:LIBS += `coin-config --ldflags` \
-             `coin-config --libs` \
-             `soqt-config --ldflags` \
-             `soqt-config --libs`
-
+unix:LIBS += `coin-config --ldflags --libs` \
+             `soqt-config --ldflags --libs` 
 INCLUDEPATH += /home/openmodelica/dev/coin3d/include \
                /usr/include/qt4/
 

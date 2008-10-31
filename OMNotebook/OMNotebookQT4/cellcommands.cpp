@@ -59,6 +59,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 //STD Headers
 #include <exception>
 #include <stdexcept>
+#include <typeinfo>
 
 //IAEX Headers
 #include "cellcommands.h"

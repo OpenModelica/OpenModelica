@@ -57,6 +57,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #include <iostream>
 #include <stdexcept>
 #include <exception>
+#include <typeinfo>
 
 //QT Headers
 #include <QtCore/QFile>
