@@ -1,6 +1,6 @@
 <ui version="4.0" >
  <class>graphWindow</class>
- <widget class="QMainWindow" name="graphWindow" >
+ <widget class="QMainWindow" name="Plot Window" >
   <property name="geometry" >
    <rect>
     <x>0</x>

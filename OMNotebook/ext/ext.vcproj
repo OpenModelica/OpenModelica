@@ -198,6 +198,8 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
+				Description="Copy ext.exe and xml files to build/bin"
+				CommandLine="copy $(TargetPath) $(InputDir)\..\..\build\bin\&#x0D;&#x0A;copy $(ProjectDir)\..\OMNotebookQT4\*.xml $(InputDir)\..\..\build\bin\"
 			/>
 		</Configuration>
 	</Configurations>
@@ -338,6 +340,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\resource.h"
+				>
+			</File>
+			<File
 				RelativePath="..\Pltpkg2\ui_compoundWidget.h"
 				>
 			</File>
@@ -420,6 +426,14 @@
 				</FileConfiguration>
 			</File>
 		</Filter>
+		<File
+			RelativePath=".\ext.rc"
+			>
+		</File>
+		<File
+			RelativePath="..\OMNotebookQT4\omnotebook_png.png"
+			>
+		</File>
 	</Files>
 	<Globals>
 	</Globals>
