@@ -1,8 +1,10 @@
 TEMPLATE = app
 
 DEPENDPATH += .
-INCLUDEPATH += /home/openmodelica/dev/mico/include
-LIBS+= `mico-config --libs`
+MICOHOME = $$system(mico-config --prefix)
+INCLUDEPATH += $${MICOHOME}/include
+MICO_LIBS = $$system(mico-config --libs)
+LIBS+= $${MICO_LIBS}
 CONFIG += warn_on
 QT += network xml 
 
