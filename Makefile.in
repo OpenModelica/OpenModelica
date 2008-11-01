@@ -34,7 +34,7 @@ release: omc
 
 omcd:	
 	(cd c_runtime && $(MAKE) -f Makefile)
-	(cd Compiler/rml2sig && $(MAKE) -f Makefile)
+	#(cd Compiler/rml2sig && $(MAKE) -f Makefile)
 	(cd Compiler && $(MAKE) -f Makefile debug)
 	(cp -p doc/*.pdf $(builddir_doc)/)
 	(cp -p Examples/*.* $(builddir_doc)/testmodels/)
@@ -42,7 +42,7 @@ omcd:
 
 omc:	
 	(cd c_runtime && $(MAKE) -f Makefile)
-	(cd Compiler/rml2sig && $(MAKE) -f Makefile)
+	#(cd Compiler/rml2sig && $(MAKE) -f Makefile)
 	(cd Compiler && $(MAKE) -f Makefile release)
 	(cp doc/*.pdf $(builddir_doc)/)
 	(cp -p Examples/*.* $(builddir_doc)/testmodels/)
