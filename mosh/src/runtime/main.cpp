@@ -37,23 +37,23 @@ int main(int argc,char* argv[])
 
   real_array arr3(std::vector<int>(2,2),std::vector<double>(4,1.1));
   real_array arr4(std::vector<int>(1,3),std::vector<double>(3,2));
-  
+
   cout << "Printing arr4 " << arr4 << endl;
   std::vector<int> dims;
   dims.push_back(1);
   dims.push_back(1);
   dims.push_back(1);
-  
+
   real_array arr5(dims);
   arr5.print_dims();
   arr5.set_element(std::vector<int>(3,0),3.0);
-  
+
   cout << arr5.scalar() << endl;
 
   cout << "Testing sum" << endl;
   real_array a(std::vector<int>(2,2),std::vector<double>(4,2.0));
   real_array b(std::vector<int>(2,2),std::vector<double>(4,1.0));
-  
+
   cout << "a+b" << endl;
   real_array c = a + b;
   c.print_data();

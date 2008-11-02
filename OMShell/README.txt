@@ -21,7 +21,7 @@ Environment variables that need to be set
 > QNBHOME	: Should point at the folder containing the tre sub projects,
                   for example "C:\Projects\OMNotebook",
                   > used like "$(QNBHOME)\NotebookParser".
-> QTHOME	: Should point at the home folder for Qt, 
+> QTHOME	: Should point at the home folder for Qt,
 		  for example "C:\Qt\qt-win-opensource-src-4.4.2"
 
 Open OMS.sln in Visual Studio 2008 and compile.
@@ -32,10 +32,10 @@ Linux
 You will need to have mico-2.x.x compiled
 - go to trunk/OMShell
 - edit OMShell.pro according to your installation
-  + run 'mico-config' 
-  + replace LIBS in OMShell.pro with the output 
+  + run 'mico-config'
+  + replace LIBS in OMShell.pro with the output
     you got from 'mico-config'
-  + edit the INCLUDEPATH and give the mico include 
+  + edit the INCLUDEPATH and give the mico include
     path there.
 - run qmake OMShell.pro
 - run make

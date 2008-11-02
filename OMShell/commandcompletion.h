@@ -47,7 +47,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 
 // FILE/CLASS ADDED 2005-12-12 /AF
 
-/*! 
+/*!
 * \file commandcompetion.h
 * \author Anders Fernström
 * \date 2005-12-12
@@ -79,7 +79,7 @@ namespace IAEX
 		bool nextCommand( QTextCursor &cursor );
 		QString helpCommand();
 		bool nextField( QTextCursor &cursor );
-		
+
 
 	private:
 		void initializeCommands();

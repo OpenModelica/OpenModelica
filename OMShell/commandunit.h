@@ -18,7 +18,7 @@ are permitted provided that the following conditions are met:
 
     * Redistributions of source code must retain the above copyright notice,
       this list of conditions and the following disclaimer.
-    
+
 	* Redistributions in binary form must reproduce the above copyright notice,
       this list of conditions and the following disclaimer in the documentation
       and/or other materials provided with the distribution.
@@ -47,7 +47,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 
 // FILE/CLASS ADDED 2005-12-12 /AF
 
-/*! 
+/*!
  * \file commandunit.h
  * \author Anders Fernström
  */
@@ -62,11 +62,11 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 
 namespace IAEX
 {
-	/*! 
+	/*!
 	 * \class CommandUnit
 	 * \author Anders Fernström
 	 * \date 2005-12-12
-	 * 
+	 *
 	 * \brief A class that store an omc command
 	 */
 	class CommandUnit
@@ -92,7 +92,7 @@ namespace IAEX
 
 		int numbersField(){ return datafields_.size(); }
 		QString datafield( QString fieldID )
-		{ 
+		{
 			if( datafields_.contains( fieldID ))
 				return datafields_[fieldID];
 			else

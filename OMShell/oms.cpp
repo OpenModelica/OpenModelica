@@ -18,7 +18,7 @@ are permitted provided that the following conditions are met:
 
     * Redistributions of source code must retain the above copyright notice,
       this list of conditions and the following disclaimer.
-    
+
 	* Redistributions in binary form must reproduce the above copyright notice,
       this list of conditions and the following disclaimer in the documentation
       and/or other materials provided with the distribution.
@@ -46,7 +46,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 */
 
 
-/*! 
+/*!
  * \file otherdlg.h
  * \author Anders Fernström
  * \date 2005-11-10 (created)
@@ -79,7 +79,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #include <QtGui/QStatusBar>
 #include <QtGui/QVBoxLayout>
 
-//OMS Headers 
+//OMS Headers
 #include "oms.h"
 
 //IAEX Headers
@@ -169,7 +169,7 @@ void MyTextEdit::keyPressEvent(QKeyEvent *event)
 			QTextEdit::keyPressEvent( event );
 			sameTab_ = false;
 			break;
-		}		
+		}
 	}
 }
 
@@ -184,7 +184,7 @@ bool MyTextEdit::insideCommandSign()
 		if( blockStartPos <= cursorPos && cursorPos < (blockStartPos+3) && signPos == 0)
 		{
 			cerr << "Inside Command Sign" << endl;
-			cerr << "BlockStart: " << blockStartPos << 
+			cerr << "BlockStart: " << blockStartPos <<
 				", Cursor: " << cursorPos << endl << endl;
 
 			return true;
@@ -308,7 +308,7 @@ OMS::OMS( QWidget* parent )
 		msg += "\nCould not create command completion class!";
 		QMessageBox::warning( 0, "Error", msg, "OK" );
 	}
-	
+
 	// add function names for code completion
 	/*currentFunction_ = -1;
 	currentFunctionName_ = "";
@@ -401,15 +401,15 @@ void OMS::createMoshEdit()
 
 	textFormat_ = moshEdit_->currentCharFormat();
 
-	connect( moshEdit_, SIGNAL( returnPressed() ), 
+	connect( moshEdit_, SIGNAL( returnPressed() ),
 		this, SLOT( returnPressed() ));
-	connect( moshEdit_, SIGNAL( insertNewline() ), 
+	connect( moshEdit_, SIGNAL( insertNewline() ),
 		this, SLOT( insertNewline() ));
-	connect( moshEdit_, SIGNAL( prevCommand() ), 
+	connect( moshEdit_, SIGNAL( prevCommand() ),
 		this, SLOT( prevCommand() ));
-	connect( moshEdit_, SIGNAL( nextCommand() ), 
+	connect( moshEdit_, SIGNAL( nextCommand() ),
 		this, SLOT( nextCommand() ));
-	connect( moshEdit_, SIGNAL( goHome(bool) ), 
+	connect( moshEdit_, SIGNAL( goHome(bool) ),
 		this, SLOT( goHome(bool) ));
 	connect( moshEdit_, SIGNAL( codeCompletion(bool) ),
 		this, SLOT( codeCompletion(bool) ));
@@ -552,7 +552,7 @@ void OMS::createMenu()
 	editMenu_ = menuBar()->addMenu( tr("&Edit") );
 	viewMenu_ = menuBar()->addMenu( tr("&View") );
 	helpMenu_ = menuBar()->addMenu( tr("&Help") );
-	
+
 
 	// add actions to menus
 	fileMenu_->addAction( loadModel_ );
@@ -621,7 +621,7 @@ void OMS::addCommandLine()
 
 void OMS::returnPressed()
 {
-	// find the last command sign 
+	// find the last command sign
 	cursor_.movePosition( QTextCursor::End, QTextCursor::MoveAnchor );
 	QTextBlock block = moshEdit_->document()->findBlock( cursor_.position() );
 	QString commandText;
@@ -682,7 +682,7 @@ eval:
 
 		// get result
 		QString res = delegate_->getResult();
-			
+
 		if( res.isEmpty() )
 			cursor_.insertText( "\n", textFormat_ );
 		else
@@ -719,7 +719,7 @@ eval:
 		}
 		else
 			cursor_.insertText("[ERROR] No OMC serer started - unable to restart OMC\n" );
-		
+
 
 		/*
 		QTextCursor cursor = moshError_->textCursor();
@@ -752,7 +752,7 @@ void OMS::exceptionInEval(exception &e)
 		// unable to reconnect, ask if user want to restart omc.
 		QString msg = QString( e.what() ) + "\n\nUnable to reconnect with OMC. Do you want to restart OMC?";
 		int result = QMessageBox::critical( 0, tr("Communication Error with OMC"),
-			msg, 
+			msg,
 			QMessageBox::Yes | QMessageBox::Default,
 			QMessageBox::No );
 
@@ -761,7 +761,7 @@ void OMS::exceptionInEval(exception &e)
 			delegate_->closeConnection();
 			if( delegate_->startDelegate() )
 			{
-				// 2006-03-14 AF, wait before trying to reconnect, 
+				// 2006-03-14 AF, wait before trying to reconnect,
 				// give OMC time to start up
 				SleeperThread::msleep( 1000 );
 
@@ -894,7 +894,7 @@ void OMS::codeCompletion( bool same )
 		currentFunction_ = 0;
 	}
 
-		
+
 	QStringList list = getFunctionNames( currentFunctionName_ );
 	if( list.isEmpty() )
 	{
@@ -917,7 +917,7 @@ void OMS::codeCompletion( bool same )
 		moshEdit_->setTextCursor( cursor_ );
 	}
 */
-	
+
 }
 
 void OMS::codeNextField()
@@ -1005,15 +1005,15 @@ void OMS::loadModelicaLibrary()
 void OMS::exit()
 {
 	// check if omc is running, if so: ask if it is ok that omc also closes.
-	try 
+	try
 	{
 		if( delegate_ )
 		{
 			delegate_->closeConnection();
 			delegate_->reconnect();
-			
+
 			int result = QMessageBox::question( 0, tr("Close OMC"),
-				"OK to quit running OpenModelica Compiler process at exit?\n(Answer No if other OMShell/OMNotebook/Graphic editor is still running)", 
+				"OK to quit running OpenModelica Compiler process at exit?\n(Answer No if other OMShell/OMNotebook/Graphic editor is still running)",
 				QMessageBox::Yes | QMessageBox::Default,
 				QMessageBox::No );
 
@@ -1023,9 +1023,9 @@ void OMS::exit()
 			}
 		}
 	}
-	catch(exception e) 
+	catch(exception e)
 	{}
-	
+
 
 
 	emit emitQuit();
@@ -1110,7 +1110,7 @@ void OMS::viewStatusbar()
 void OMS::aboutOMS()
 {
 	QMessageBox::about(this, "About OMShell",
-		QString("OMShell v1.1 (for OpenModelica ") + omc_version_ + 
+		QString("OMShell v1.1 (for OpenModelica ") + omc_version_ +
 		QString(")\n") + QString("Copyright (c) OSMC 2002-2008") );
 }
 
@@ -1149,7 +1149,7 @@ bool OMS::startServer()
 			}
 			else
 			{
-				// 2006-03-14 AF, wait before trying to reconnect, 
+				// 2006-03-14 AF, wait before trying to reconnect,
 				// give OMC time to start up
 				SleeperThread::msleep( 1000 );
 
@@ -1172,7 +1172,7 @@ void OMS::stopServer()
 {
 	if( delegate_ )
 	{
-	  QString quit = "quit()"; 
+	  QString quit = "quit()";
 	  delegate_->evalExpression( quit );
 	}
 }
@@ -1196,7 +1196,7 @@ void OMS::clear()
 
 	/*
 	moshError_->clear();
-	
+
 	// set backgroundcolor
 	QPalette palette;
 	palette.setColor( QPalette::Base, QColor(200,200,200) );

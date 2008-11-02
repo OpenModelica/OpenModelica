@@ -18,7 +18,7 @@ are permitted provided that the following conditions are met:
 
     * Redistributions of source code must retain the above copyright notice,
       this list of conditions and the following disclaimer.
-    
+
 	* Redistributions in binary form must reproduce the above copyright notice,
       this list of conditions and the following disclaimer in the documentation
       and/or other materials provided with the distribution.
@@ -60,7 +60,7 @@ namespace IAEX
 {
 	/*! \class OmcInteractiveEnvironment
 	 *
-	 * \brief Implements evaluation for modelica code. 
+	 * \brief Implements evaluation for modelica code.
 	 */
 	OmcInteractiveEnvironment::OmcInteractiveEnvironment()
 		: comm_(OmcCommunicator::getInstance()),result_("")
@@ -74,14 +74,14 @@ namespace IAEX
 			}
 		}
 	}
-   
-   OmcInteractiveEnvironment::~OmcInteractiveEnvironment(){}   
+
+   OmcInteractiveEnvironment::~OmcInteractiveEnvironment(){}
 
    QString OmcInteractiveEnvironment::getResult()
    {
       return result_;
    }
-   
+
    void OmcInteractiveEnvironment::evalExpression(QString& expr)
    {
 		// 2006-02-02 AF, Added try-catch
@@ -91,7 +91,7 @@ namespace IAEX
 		}
 		catch( exception &e )
 		{
-			throw e;	
+			throw e;
 		}
 	}
 
@@ -114,7 +114,7 @@ namespace IAEX
 
 	bool OmcInteractiveEnvironment::startDelegate()
 	{
-		// if not connected and can not establish connection, 
+		// if not connected and can not establish connection,
 		// try to start OMC
 		if( !comm_.isConnected() && !comm_.establishConnection() )
 		{
@@ -169,7 +169,7 @@ namespace IAEX
 
 				throw std::runtime_error( msg.c_str() );
 			}
-#endif 
+#endif
 
 			// 2006-03-14 AF, set omc loaction and parameters
 			QString omc;
@@ -178,13 +178,13 @@ namespace IAEX
 #else /* unix */
 				omc = QString( OMCPath.c_str() ) + "omc";
 #endif
-			
+
 			QStringList parameters;
 			parameters << "+d=interactiveCorba";
 
 			// 2006-03-14 AF, create qt process
 			QProcess *omcProcess = new QProcess();
-		
+
 			// 2006-03-14 AF, start omc
 			omcProcess->start( omc, parameters );
 
@@ -193,7 +193,7 @@ namespace IAEX
 			else
 				flag = false;
 
-			
+
 		}
 		catch( exception &e )
 		{

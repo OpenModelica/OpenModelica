@@ -1,31 +1,31 @@
-/* 
+/*
  * This file is part of OpenModelica.
- * 
+ *
  * Copyright (c) 1998-2008, Linkopings University,
- * Department of Computer and Information Science, 
- * SE-58183 Linkoping, Sweden. 
- * 
+ * Department of Computer and Information Science,
+ * SE-58183 Linkoping, Sweden.
+ *
  * All rights reserved.
- * 
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC 
- * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF 
- * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC 
- * PUBLIC LICENSE. 
- * 
- * The OpenModelica software and the Open Source Modelica 
- * Consortium (OSMC) Public License (OSMC-PL) are obtained 
- * from Linkopings University, either from the above address, 
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC
+ * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF
+ * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC
+ * PUBLIC LICENSE.
+ *
+ * The OpenModelica software and the Open Source Modelica
+ * Consortium (OSMC) Public License (OSMC-PL) are obtained
+ * from Linkopings University, either from the above address,
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
- * 
- * This program is distributed  WITHOUT ANY WARRANTY; without 
- * even the implied warranty of  MERCHANTABILITY or FITNESS 
- * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH 
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS 
- * OF OSMC-PL. 
- * 
+ *
+ * This program is distributed  WITHOUT ANY WARRANTY; without
+ * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
+ * OF OSMC-PL.
+ *
  * See the full OSMC Public License conditions for more details.
- * 
+ *
  */
 
 header "post_include_hpp" {
@@ -76,7 +76,7 @@ stored_definition
 			}
 			;
 
-within_clause 
+within_clause
 			{
 				// Initialization
 			}
@@ -87,36 +87,36 @@ within_clause
 			}
 			;
 
-class_definition 
+class_definition
 		{
 			// Initialization
 		}
 		:
-		#(CLASS_DEFINITION 
-			(ENCAPSULATED)? 
+		#(CLASS_DEFINITION
+			(ENCAPSULATED)?
 			(PARTIAL)?
 			class_type
 			IDENT
 			class_specifier)
-		{ 
+		{
 			// Actions
 		}
 		;
 
-class_type 
+class_type
 		{
 			// Initialization
 		}
 		:
-		( CLASS | MODEL | RECORD | BLOCK | CONNECTOR | TYPE | PACKAGE 
-			| FUNCTION 
+		( CLASS | MODEL | RECORD | BLOCK | CONNECTOR | TYPE | PACKAGE
+			| FUNCTION
 		)
 		{
 			// Actions
 		}
 		;
 
-class_specifier 
+class_specifier
 		{
 			// Initialization
 		}
@@ -129,7 +129,7 @@ class_specifier
 		}
 		;
 
-composition 
+composition
 		{
 			// Initialization
 		}
@@ -140,7 +140,7 @@ composition
 		|	equation_clause
 		|	algorithm_clause
 		)*
-		( EXTERNAL	( language_specification )? 
+		( EXTERNAL	( language_specification )?
 			( external_function_call )?
 			( annotation )?
 		)?
@@ -149,7 +149,7 @@ composition
 		}
 		;
 
-public_element_list 
+public_element_list
 		{
 			// Initialization
 		}
@@ -171,7 +171,7 @@ protected_element_list
 		}
 		;
 
-language_specification 
+language_specification
 		{
 			// Initialization
 		}
@@ -182,13 +182,13 @@ language_specification
 		}
 		;
 
-external_function_call 
+external_function_call
 		{
 			std::vector<value> exp_list; // This is just to nuke a compiler warning.
             value val;
 		}
 		:
-		#(EXTERNAL_FUNCTION_CALL 
+		#(EXTERNAL_FUNCTION_CALL
 			(
 				(IDENT (exp_list = expression_list)?)
 				|#(EQUALS val = component_reference IDENT (exp_list = expression_list)?)
@@ -199,7 +199,7 @@ external_function_call
 		}
 		;
 
-element_list 
+element_list
 		{
 			// Initialization
 		}
@@ -213,19 +213,19 @@ element_list
 		}
 		;
 
-element_list_annotation 
+element_list_annotation
 		{
 			// Initialization
 		}
 		:
 		annotation
-		{ 
+		{
 			// Actions
 		}
 		;
 
 
-element 
+element
 		{
 			// Initialization:
 		}
@@ -233,7 +233,7 @@ element
 		import_clause
 		|extends_clause
 		|
-		#(DECLARATION 
+		#(DECLARATION
 			( (FINAL)? (INNER | OUTER)?
 			( component_clause
 				| REPLACEABLE component_clause (constraining_clause)?
@@ -249,12 +249,12 @@ element
 			)
 			)
 		)
-		{ 
+		{
 			// Actions
 		}
 		;
 
-import_clause 
+import_clause
 		{
 			// Initialization
 		}
@@ -289,20 +289,20 @@ implicit_import_name
 		;
 
 
-// Note that this is a minor modification of the standard by 
+// Note that this is a minor modification of the standard by
 // allowing the comment.
 extends_clause
 		{
 			// Initialization
 		}
-		: 
+		:
 		#(EXTENDS name_path ( class_modification )? comment)
 		{
 			// Actions
 		}
 		;
 
-constraining_clause 
+constraining_clause
 		{
 			// Initialization
 		}
@@ -313,7 +313,7 @@ constraining_clause
 		}
 		;
 
-component_clause 
+component_clause
 		{
 			// Initialization
 		}
@@ -324,7 +324,7 @@ component_clause
 		}
 		;
 
-type_prefix 
+type_prefix
 		{
 			// Initialization
 		}
@@ -337,13 +337,13 @@ type_prefix
 		(INPUT
 		|OUTPUT
 		)?
-		
+
 		{
 			// Actions
 		}
 		;
 
-type_specifier 
+type_specifier
 		{
 			// Initialization
 		}
@@ -365,7 +365,7 @@ component_list
 		}
 		;
 
-component_declaration 
+component_declaration
 		{
 			// Initialization
 		}
@@ -379,7 +379,7 @@ component_declaration
 declaration
 		{
 			// Initialization
-		} 
+		}
 		:
 		#(IDENT (array_subscripts)? (modification)?)
 		{
@@ -387,7 +387,7 @@ declaration
 		}
 		;
 
-modification 
+modification
 		{
 			value val;
 		}
@@ -418,7 +418,7 @@ argument_list
 		}
 		:
 		#(ARGUMENT_LIST argument (argument)*)
-		{	
+		{
 			// Actions
 		}
 		;
@@ -429,17 +429,17 @@ argument
 		}
 		:
 		#(ELEMENT_MODIFICATION element_modification)
-		{ 
+		{
 			// Actions
 		}
 		|
-		#(ELEMENT_REDECLARATION element_redeclaration) 
-		{ 
+		#(ELEMENT_REDECLARATION element_redeclaration)
+		{
 			// Actions
 		}
 		;
 
-element_modification 
+element_modification
 		{
 			value val;
 		}
@@ -450,7 +450,7 @@ element_modification
 		}
 		;
 
-element_redeclaration 
+element_redeclaration
 		{
 			// Initialization
 		}
@@ -467,7 +467,7 @@ element_redeclaration
 			// Actions
 		};
 
-component_clause1 
+component_clause1
 		{
 			// Initialization
 		}
@@ -478,7 +478,7 @@ component_clause1
 		}
 		;
 
-equation_clause 
+equation_clause
 		{
 			// Initialization
 		}
@@ -489,7 +489,7 @@ equation_clause
 		}
 		;
 
-algorithm_clause 
+algorithm_clause
 		{
 			// Initializatioon
 		}
@@ -500,7 +500,7 @@ algorithm_clause
 		}
 		;
 
-equation 
+equation
 		{
 			// Initialization
 		}
@@ -536,12 +536,12 @@ algorithm returns [value val]
             value* lhs;
 		}
 		:
-        #(ALGORITHM_STATEMENT 
+        #(ALGORITHM_STATEMENT
             (#(ASSIGN (
-                        (lhs = ref:component_reference_assign 
+                        (lhs = ref:component_reference_assign
                          val = expression)
                         {
-                            
+
                             if (!lhs)
                             {
                                 //cout << "Inserting new symbol : " << ref->getText()<< endl;
@@ -569,7 +569,7 @@ algorithm returns [value val]
 		}
 		;
 
-equality_equation 
+equality_equation
 		{
 			//Initialization
 		}
@@ -594,7 +594,7 @@ conditional_equation_e
 		}
 		;
 
-conditional_equation_a 
+conditional_equation_a
 		{
 			// Initialization
 		}
@@ -608,7 +608,7 @@ conditional_equation_a
 		}
 		;
 
-for_clause_e 
+for_clause_e
 		{
 			value val;
 		}
@@ -619,7 +619,7 @@ for_clause_e
 		}
 		;
 
-for_clause_a 
+for_clause_a
 		{
 			// Initialization
 		}
@@ -630,7 +630,7 @@ for_clause_a
 		}
 		;
 
-while_clause 
+while_clause
 		{
 			// Initialization
 		}
@@ -652,7 +652,7 @@ when_clause_e
 		}
 		;
 
-when_clause_a 
+when_clause_a
 		{
 			// Initialization
 		}
@@ -674,7 +674,7 @@ else_when_a
 		}
 		;
 
-equation_elseif 
+equation_elseif
 		{
 			value val;
 		}
@@ -696,7 +696,7 @@ algorithm_elseif
 		}
 		;
 
-equation_list 
+equation_list
 		{
 			// Initialization
 		}
@@ -707,7 +707,7 @@ equation_list
 		}
 		;
 
-algorithm_list 
+algorithm_list
 		{
 			// Initialization
 		}
@@ -718,7 +718,7 @@ algorithm_list
 		}
 		;
 
-connect_clause 
+connect_clause
 		{
 			// Initialization
 		}
@@ -741,7 +741,7 @@ connector_ref
 		}
 		;
 
-connector_ref_2 
+connector_ref_2
 		{
 			// Initialization
 		}
@@ -752,7 +752,7 @@ connector_ref_2
 		}
 		;
 
-assert_clause 
+assert_clause
 		{
 			// Initialization
 		}
@@ -774,10 +774,10 @@ start_expression[symboltable* symtab] returns [value val]
 
 expression returns [value val]
 		{
-		
+
 		}
 		:
-		(	val = simple_expression 
+		(	val = simple_expression
 		|	val = if_expression //{print(val);}
 		)
 		{
@@ -785,7 +785,7 @@ expression returns [value val]
 		}
 		;
 
-if_expression returns [value val] 
+if_expression returns [value val]
 		{
 			value expr1,expr2,expr3;
 		}
@@ -796,7 +796,7 @@ if_expression returns [value val]
 		}
 		;
 
-simple_expression returns [value val] 
+simple_expression returns [value val]
 		{
 			value log_expr1,log_expr2,log_expr3;
 		}
@@ -811,12 +811,12 @@ simple_expression returns [value val]
 		}
 		|val = logical_expression
 		{
-			
+
             // Actions
 		}
 		;
 
-logical_expression returns [value val] 
+logical_expression returns [value val]
 		{
 			value val_expr, val_term;
 		}
@@ -841,7 +841,7 @@ logical_term returns [value val]
 		}
 		;
 
-logical_factor returns [value val] 
+logical_factor returns [value val]
 		{
 			// Initialization
 		}
@@ -859,14 +859,14 @@ relation returns [value val]
 		}
 		:
 		val = arithmetic_expression //( rel_op arithmetic_expression )?
-		|#(LESS arith_val1 = arithmetic_expression arith_val2 = arithmetic_expression) 
-			{ 
+		|#(LESS arith_val1 = arithmetic_expression arith_val2 = arithmetic_expression)
+			{
 				//val = less(arith_val1,arith_val2);
 			}
 		|#(LESSEQ arith_val1 = arithmetic_expression arith_val2 = arithmetic_expression)
 			{
 				val = lesseq(arith_val1,arith_val2);
-			}	
+			}
 		|#(GREATER arith_val1 = arithmetic_expression arith_val2 = arithmetic_expression)
 			{
 				//val = greater(arith_val1,arith_val2);
@@ -885,7 +885,7 @@ relation returns [value val]
 			}
 		;
 
-rel_op 
+rel_op
 		{
 			// Initialization
 		}
@@ -902,7 +902,7 @@ arithmetic_expression returns [value val]
 		}
 		:
 		val = unary_arithmetic_expression
-		|#(PLUS val_arith = arithmetic_expression val_term = term) 
+		|#(PLUS val_arith = arithmetic_expression val_term = term)
 			{
 	  			val = val_arith + val_term;
             }
@@ -912,11 +912,11 @@ arithmetic_expression returns [value val]
 		}
 		;
 
-unary_arithmetic_expression returns [value val]  
+unary_arithmetic_expression returns [value val]
 		:
 		#(UNARY_PLUS val = term )
 		|#(UNARY_MINUS val = term ) {val = -val;}
-		|val = term 
+		|val = term
 		;
 
 term returns [value val]
@@ -925,7 +925,7 @@ term returns [value val]
 		}
 		:
 		val = factor
-		|#(STAR val_term = term val_factor = factor) 
+		|#(STAR val_term = term val_factor = factor)
 			{
 	  			val = val_term * val_factor;
   			}
@@ -940,8 +940,8 @@ factor returns [value val]
   			value prim1,prim2;
 		}
 		:
-		val = primary 
-		|#(POWER prim1 = primary prim2 = primary) 
+		val = primary
+		|#(POWER prim1 = primary prim2 = primary)
 			{
 	  			val = power(prim1,prim2);
 			}
@@ -954,7 +954,7 @@ primary	returns [value val]
             std::vector<value> exp_list;
 		}
 		:
-		( ui:UNSIGNED_INTEGER   		
+		( ui:UNSIGNED_INTEGER
 			{
 				val.set_value((long)atoi(ui->getText().c_str()));
 	  		}
@@ -986,7 +986,7 @@ primary	returns [value val]
                     val = exp_list;
                 }
             }
-		| #(LBRACK exp_list = expression_list 
+		| #(LBRACK exp_list = expression_list
 			//{val = create_array(expr_val);}
             (exp_list = expression_list )*)
 		| #(LBRACE val = expression_list_array )
@@ -1003,7 +1003,7 @@ component_reference__function_call returns [value val]
             value func_val;
 		}
 		:
-		#(FUNCTION_CALL component_val = component_reference_function_call 
+		#(FUNCTION_CALL component_val = component_reference_function_call
             (func_val = fc:function_call)?
             {
                 if (#fc)
@@ -1021,7 +1021,7 @@ component_reference__function_call returns [value val]
 		}
 		;
 
-name_path 
+name_path
 		{
 			// Initialization
 		}
@@ -1033,12 +1033,12 @@ name_path
 		}
 		;
 
-component_reference returns [value val] 
+component_reference returns [value val]
 		{
-		
+
 		}
 		:
-		#(i:IDENT (array_subscripts )? 
+		#(i:IDENT (array_subscripts )?
             {
                 value* tmp = m_symboltable->lookup(i->getText());
                 if (!tmp)
@@ -1052,25 +1052,25 @@ component_reference returns [value val]
                     val = value(*tmp);
                 }
 //                val = value(*tmp);
-                
+
             }
-            ) 
+            )
 		|#(DOT #(IDENT (array_subscripts)?) component_reference)
 		{
 			// Actions
 		}
 		;
 
-component_reference_assign returns [value* val] 
+component_reference_assign returns [value* val]
 		{
-		
+
 		}
 		:
-		#(i:IDENT (array_subscripts )? 
+		#(i:IDENT (array_subscripts )?
             {
                 val = m_symboltable->lookup(i->getText());
                 //value* tmp = m_symboltable->lookup(i->getText());
-                
+
 //                 if (!tmp)
 //                 {
 // //                    std::string error = i->getText()+" undefined symbol";
@@ -1082,21 +1082,21 @@ component_reference_assign returns [value* val]
 //                     val = value(*tmp);
 //                 }
 // //                val = value(*tmp);
-                
+
             }
-            ) 
+            )
 		|#(DOT #(IDENT (array_subscripts)?) component_reference)
 		{
 			// Actions
 		}
 		;
 
-component_reference_function_call returns [value val] 
+component_reference_function_call returns [value val]
 		{
             value val2;
 		}
 		:
-		#(i:IDENT (array_subscripts )? 
+		#(i:IDENT (array_subscripts )?
             {
                 value* tmp = m_symboltable->lookup_function(i->getText());
                 if (!tmp)
@@ -1109,9 +1109,9 @@ component_reference_function_call returns [value val]
                     val = value(*tmp);
                 }
 //                val = value(*tmp);
-                
+
             }
-            ) 
+            )
 		|#(DOT #(IDENT (array_subscripts)?) val2 = component_reference)
 		{
 			// Actions
@@ -1126,7 +1126,7 @@ function_call returns [value val]
 		#(FUNCTION_ARGUMENTS /*val =*/ function_arguments[args])
 		{
             val.set_value(args);
-            
+
 //			cout << "Visited function_call" << endl;
 		}
 		;
@@ -1144,7 +1144,7 @@ function_arguments[function_argument* args] //returns [value val]
 		}
 		;
 
-named_arguments[function_argument* args] 
+named_arguments[function_argument* args]
 		{
 			// Initialization
 		}
@@ -1155,7 +1155,7 @@ named_arguments[function_argument* args]
 		}
 		;
 
-named_argument[function_argument* args] 
+named_argument[function_argument* args]
 		{
 			value expr_val;
 		}
@@ -1171,18 +1171,18 @@ expression_list returns [std::vector<value> exp_list]
                 value expr_val;
 		}
 		:
-		#(EXPRESSION_LIST expr_val = expression 
+		#(EXPRESSION_LIST expr_val = expression
             {
                 exp_list.push_back(expr_val);
             }
-			(expr_val = expression 
+			(expr_val = expression
                 {
                     exp_list.push_back(expr_val);
                 }
             )*
         )
 		{
-			
+
 		}
 		;
 
@@ -1192,11 +1192,11 @@ expression_list_array returns [value val]
             std::vector<value> exp_list;
 		}
 		:
-		#(EXPRESSION_LIST expr_val = expression 
+		#(EXPRESSION_LIST expr_val = expression
             {
                 exp_list.push_back(expr_val);
             }
-			(expr_val = expression 
+			(expr_val = expression
                 {
                     exp_list.push_back(expr_val);
                 }
@@ -1212,18 +1212,18 @@ expression_list_fn_args[function_argument* args] //returns [value val]
 			value expr_val;
 		}
 		:
-		#(EXPRESSION_LIST (expr_val = expression 
+		#(EXPRESSION_LIST (expr_val = expression
             {
                 args->push_back(expr_val);
 
             } )*
         )
 		{
-			
+
 		}
 		;
 
-array_subscripts 
+array_subscripts
 		{
 			// Initialization
 		}
@@ -1234,7 +1234,7 @@ array_subscripts
 		}
 		;
 
-subscript 
+subscript
 		{
 			value val;
 		}
@@ -1245,7 +1245,7 @@ subscript
 		}
 		;
 
-comment 
+comment
 		{
 			// Initialization
 		}
@@ -1256,7 +1256,7 @@ comment
 		}
 		;
 
-string_comment 
+string_comment
 		{
 			// Initialization
 		}
@@ -1279,7 +1279,7 @@ string_concatenation
         }
         ;
 
-annotation 
+annotation
 		{
 			// Initialization
 		}

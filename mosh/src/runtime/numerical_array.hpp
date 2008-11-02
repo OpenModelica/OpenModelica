@@ -30,7 +30,7 @@ class numerical_array : public modelica_array<Tp>
 {
 public:
   virtual ~numerical_array() {};
-  
+
   // **** Reduction functions ******
   /// Returns the largest element.
   Tp max() const;
@@ -44,7 +44,7 @@ public:
   /// Returns the sum of the elements.
   Tp sum() const;
 
-  
+
 
   /// Returns a square matrix with the elements of v on the diagonal and all other elements set to zero.
   friend numerical_array<Tp> diagonal<Tp>(const numerical_array<Tp>& arr);
@@ -59,7 +59,7 @@ public:
   numerical_array<Tp> operator- () const;
 
   numerical_array<Tp>& operator*= (const numerical_array<Tp>& arr);
-  
+
   numerical_array<Tp> operator* (const numerical_array<Tp>& arr) const;
   numerical_array<Tp>& operator*= (const Tp& s);
   numerical_array<Tp> operator* (const Tp& s);
@@ -76,7 +76,7 @@ public:
   numerical_array(std::vector<int> dims,std::vector<Tp> scalars) : modelica_array<Tp>(dims,scalars) {};
   numerical_array(modelica_array<Tp> const& arr) : modelica_array<Tp>(arr) {};
 protected:
-  
+
 };
 
 template <class Tp>
@@ -110,7 +110,7 @@ numerical_array<Tp> diagonal(const numerical_array<Tp>& arr)
 
   int n = arr.m_data.size();
   numerical_array<Tp> result(std::vector<int>(2,n));
- 
+
   for (int i = 0; i < n; ++i)
     {
       for (int j = 0; j < n; ++j)
@@ -138,7 +138,7 @@ template<typename Tp>
 numerical_array<Tp> numerical_array<Tp>::operator+(const numerical_array<Tp>& arr) const
 {
   numerical_array tmp(*this);
-  
+
   tmp += arr;
   return tmp;
 }
@@ -160,7 +160,7 @@ template<typename Tp>
 numerical_array<Tp> numerical_array<Tp>::operator-(const numerical_array<Tp>& arr) const
 {
   numerical_array tmp(*this);
-  
+
   tmp -= arr;
   return tmp;
 }
@@ -226,7 +226,7 @@ numerical_array<Tp> mul_vector_matrix(const numerical_array<Tp>& v1, const numer
 
   int i_size = v2.m_dim_size[1];
   int j_size = v2.m_dim_size[0];
-  
+
   numerical_array<Tp> result(std::vector<int>(1,v2.m_dim_size[1]));
 
   for (int i = 0; i < i_size; ++i)
@@ -251,7 +251,7 @@ numerical_array<Tp> mul_matrix_vector(const numerical_array<Tp>& v1, const numer
 
   int i_size = v1.m_dim_size[0];
   int j_size = v1.m_dim_size[1];
-  
+
   numerical_array<Tp> result(std::vector<int>(1,v1.m_dim_size[0]));
 
   for (int i = 0; i < i_size; ++i)
@@ -303,7 +303,7 @@ template<typename Tp>
 numerical_array<Tp> numerical_array<Tp>::operator * (const Tp& s)
 {
   numerical_array tmp(*this);
-  
+
   tmp *= s;
   return tmp;
 }
@@ -332,7 +332,7 @@ class real_array : public numerical_array<double>
 public:
   /// Constructs an empty array.
   real_array() : numerical_array<double>() {};
-  
+
   /// Constructs an empty array with specified dimensions dims.
   real_array(std::vector<int> dims) : numerical_array<double>(dims) {};
 
@@ -340,8 +340,8 @@ public:
   real_array(std::vector<int> dims,std::vector<double> scalars) : numerical_array<double>(dims,scalars) {};
 
   real_array(modelica_array<double> const& arr) : numerical_array<double>(arr) {};
- 
-  real_array(modelica_array<int> const& arr) 
+
+  real_array(modelica_array<int> const& arr)
   {
     m_dim_size = arr.size();
     m_ndims = m_dim_size.size();
@@ -360,7 +360,7 @@ class integer_array : public numerical_array<int>
 public:
   /// Constructs an empty array.
   integer_array() : numerical_array<int>() {};
-  
+
   /// Constructs an empty array with specified dimensions dims.
   integer_array(std::vector<int> dims) : numerical_array<int>(dims) {};
 
@@ -383,14 +383,14 @@ public:
 
 //   /// Returns an array filled with ones with dimensions given by dim.
 //   friend integer_array ones(std::vector<int> dims);
-  
+
 };
 
 
 // integer_array identity_matrix(int n)
 // {
 //   assert (n >= 1);
-  
+
 //   integer_array result(std::vector<int>(2,n));
 
 //   for (int i = 0; i < n; ++i)

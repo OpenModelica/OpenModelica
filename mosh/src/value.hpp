@@ -1,31 +1,31 @@
-/* 
+/*
  * This file is part of OpenModelica.
- * 
+ *
  * Copyright (c) 1998-2008, Linköpings University,
- * Department of Computer and Information Science, 
- * SE-58183 Linköping, Sweden. 
- * 
+ * Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
  * All rights reserved.
- * 
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC 
- * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF 
- * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC 
- * PUBLIC LICENSE. 
- * 
- * The OpenModelica software and the Open Source Modelica 
- * Consortium (OSMC) Public License (OSMC-PL) are obtained 
- * from Linköpings University, either from the above address, 
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC
+ * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF
+ * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC
+ * PUBLIC LICENSE.
+ *
+ * The OpenModelica software and the Open Source Modelica
+ * Consortium (OSMC) Public License (OSMC-PL) are obtained
+ * from Linköpings University, either from the above address,
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
- * 
- * This program is distributed  WITHOUT ANY WARRANTY; without 
- * even the implied warranty of  MERCHANTABILITY or FITNESS 
- * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH 
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS 
- * OF OSMC-PL. 
- * 
+ *
+ * This program is distributed  WITHOUT ANY WARRANTY; without
+ * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
+ * OF OSMC-PL.
+ *
  * See the full OSMC Public License conditions for more details.
- * 
+ *
  */
 
 #ifndef VALUE_HPP_
@@ -68,7 +68,7 @@ public:
   virtual ~value();
 
   value(const value& val);
-  
+
   void set_value(double val);
   void set_value(bool val);
   void set_value(std::string val);
@@ -119,7 +119,7 @@ public:
   bool is_integer() const;
   bool is_boolean() const;
   bool is_string() const;
- 
+
   bool is_array() const;
   bool is_real_array() const;
   bool is_integer_array() const;
@@ -139,15 +139,15 @@ public:
 
   const value& operator*= (const value& val);
     value operator*(const value& val) const;
-    
+
   const value& operator/= (const value& val);
   value operator/(const value& val) const;
-  
+
   value operator- () const;
 
 public:
   friend ostream& operator<< (ostream& o, const value& v);
-  
+
   friend const value power(const value& x, const value& y);
   friend const value not_bool(const value& x);
   friend const value and_bool(const value& x, const value& y);
@@ -184,7 +184,7 @@ protected:
   friend value multiply_real_array(const real_array& a, const real_array& b);
   friend value multiply_integer_array(const integer_array& a, const integer_array& b);
 
-  modelica_type m_basic_type; 
+  modelica_type m_basic_type;
 };
 
 

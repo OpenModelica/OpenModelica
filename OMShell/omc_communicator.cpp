@@ -50,7 +50,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 // STD includes
 #include <cmath>
 #include <iostream>
-#include <stdlib.h> //This should be cstdlib, if it even should be used!! 
+#include <stdlib.h> //This should be cstdlib, if it even should be used!!
 #include <fstream>
 #include <sstream>
 #include <exception>
@@ -70,7 +70,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 using namespace std;
 
 /**
-* \brief 
+* \brief
 * Creates and initializes the Omc communicator.
 */
 OmcCommunicator::OmcCommunicator()
@@ -80,7 +80,7 @@ omc_(0)
 }
 
 /**
-* \brief 
+* \brief
 * Destroys the Omc communicator.
 */
 OmcCommunicator::~OmcCommunicator()
@@ -88,7 +88,7 @@ OmcCommunicator::~OmcCommunicator()
 }
 
 /**
-* \brief 
+* \brief
 * Returns a reference to the Omc communicator.
 */
 OmcCommunicator& OmcCommunicator::getInstance()
@@ -98,7 +98,7 @@ OmcCommunicator& OmcCommunicator::getInstance()
 }
 
 /**
-* \brief 
+* \brief
 * Attempts to establish a connection to Omc.
 *
 * \return true if a connection was established successfully or if a connection already exists,
@@ -106,7 +106,7 @@ OmcCommunicator& OmcCommunicator::getInstance()
 */
 bool OmcCommunicator::establishConnection()
 {
-	if (omc_) 
+	if (omc_)
 	{
 		return true;
 	}
@@ -132,7 +132,7 @@ bool OmcCommunicator::establishConnection()
 
 #endif
 
-	if (!objectRefFile.exists()) 
+	if (!objectRefFile.exists())
 		return false;
 
 	objectRefFile.open(QIODevice::ReadOnly);
@@ -159,7 +159,7 @@ bool OmcCommunicator::establishConnection()
 }
 
 /**
-* \brief 
+* \brief
 * Returns true if a connection has been established to Omc, false otherwise.
 */
 bool OmcCommunicator::isConnected() const
@@ -201,7 +201,7 @@ QString OmcCommunicator::callOmc(const QString& fnCall)
 			returnString = omc_->sendExpression( fnCall.toLatin1() );
 			break;
 		}
-		catch (CORBA::Exception&) 
+		catch (CORBA::Exception&)
 		{
 			if( fnCall != "quit()" && fnCall != "quit();" )
 			{
@@ -223,7 +223,7 @@ QString OmcCommunicator::callOmc(const QString& fnCall)
 	}
 
 	if (returnString == "-1") {
-		string tmp = "[Internal Error] OmcCommunicator::callOmc():\nOmc call \"" 
+		string tmp = "[Internal Error] OmcCommunicator::callOmc():\nOmc call \""
 			+ fnCall.toStdString() + "\" failed!\n\n";
 
 		qWarning( tmp.c_str() );

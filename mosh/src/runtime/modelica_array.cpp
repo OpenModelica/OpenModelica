@@ -20,7 +20,7 @@
 // modelica_real_array::modelica_real_array(std::vector<int> dimensions,
 // 					 std::vector<double> scalars)
 // {
-//   assert(std::accumulate(m_dimensions.begin(),dimensions.end(),1,std::multiplies<int>() 
+//   assert(std::accumulate(m_dimensions.begin(),dimensions.end(),1,std::multiplies<int>()
 // 			 == scalars.size()));
 //   m_dim_size = dimensions;
 //   m_data = scalars;
@@ -54,7 +54,7 @@
 
 // modelica_real_array modelica_real_array::slice(const index& idx)
 // {
-  
+
 // }
 
 // int modelica_real_array::compute_data_index(const index& idx) const
@@ -67,7 +67,7 @@
 //       stride = idx[i] + m_dim_size[i]*stride;
 //     }
 //   return stride;
-  
+
 // }
 
 // double modelica_real_array::operator() (const index& idx) const
@@ -92,7 +92,7 @@
 // modelica_real_array modelica_real_array::operator+(const modelica_real_array& arr) const
 // {
 //   modelica_real_array tmp(*this);
-  
+
 //   tmp += arr;
 //   return tmp;
 // }
@@ -111,7 +111,7 @@
 // modelica_real_array modelica_real_array::operator-(const modelica_real_array& arr) const
 // {
 //   modelica_real_array tmp(*this);
-  
+
 //   tmp -= arr;
 //   return tmp;
 // }
@@ -123,7 +123,7 @@
 
 // // const modelica_real_array& operator *= (const modelica_real_array& arr)
 // // {
-  
+
 // // }
 // double modelica_real_array::max() const
 // {
@@ -177,9 +177,9 @@
 // //     {
 // //       return *this;
 // //     }
-  
-  
-  
+
+
+
 // // }
 
 // modelica_real_array modelica_real_array::skew() const
@@ -189,14 +189,14 @@
 
 //   modelica_real_array result(index(2,3));
 
-//   result.m_data[0] = 0; 
-//   result.m_data[1] = -m_data[2]; 
-//   result.m_data[2] = m_data[2]; 
-//   result.m_data[3] = m_data[2]; 
-//   result.m_data[4] = 0; 
-//   result.m_data[5] = -m_data[0]; 
-//   result.m_data[6] = m_data[1]; 
-//   result.m_data[7] = m_data[0]; 
+//   result.m_data[0] = 0;
+//   result.m_data[1] = -m_data[2];
+//   result.m_data[2] = m_data[2];
+//   result.m_data[3] = m_data[2];
+//   result.m_data[4] = 0;
+//   result.m_data[5] = -m_data[0];
+//   result.m_data[6] = m_data[1];
+//   result.m_data[7] = m_data[0];
 //   result.m_data[8] = 0;
 
 //   return result;

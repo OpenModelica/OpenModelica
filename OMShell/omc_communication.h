@@ -27,7 +27,7 @@ typedef ObjOut< OmcCommunication > OmcCommunication_out;
  * Base class and common definitions for interface OmcCommunication
  */
 
-class OmcCommunication : 
+class OmcCommunication :
   virtual public CORBA::Object
 {
   public:

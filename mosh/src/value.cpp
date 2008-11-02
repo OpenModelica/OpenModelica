@@ -1,31 +1,31 @@
-/* 
+/*
  * This file is part of OpenModelica.
- * 
+ *
  * Copyright (c) 1998-2008, Linköpings University,
- * Department of Computer and Information Science, 
- * SE-58183 Linköping, Sweden. 
- * 
+ * Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
  * All rights reserved.
- * 
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC 
- * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF 
- * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC 
- * PUBLIC LICENSE. 
- * 
- * The OpenModelica software and the Open Source Modelica 
- * Consortium (OSMC) Public License (OSMC-PL) are obtained 
- * from Linköpings University, either from the above address, 
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC
+ * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF
+ * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC
+ * PUBLIC LICENSE.
+ *
+ * The OpenModelica software and the Open Source Modelica
+ * Consortium (OSMC) Public License (OSMC-PL) are obtained
+ * from Linköpings University, either from the above address,
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
- * 
- * This program is distributed  WITHOUT ANY WARRANTY; without 
- * even the implied warranty of  MERCHANTABILITY or FITNESS 
- * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH 
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS 
- * OF OSMC-PL. 
- * 
+ *
+ * This program is distributed  WITHOUT ANY WARRANTY; without
+ * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
+ * OF OSMC-PL.
+ *
  * See the full OSMC Public License conditions for more details.
- * 
+ *
  */
 
 #include "value.hpp"
@@ -116,7 +116,7 @@ value::~value()
 value::value(const value& val)
 {
   m_basic_type = val.m_basic_type;
-  
+
   if (m_basic_type.is_real())
     {
       m_real = val.m_real;
@@ -254,7 +254,7 @@ void value::make_array(std::vector<value> const& exp_list)
 {
   std::vector<double> tmp_real;
   std::vector<int> tmp_integer;
- 
+
   bool is_real = true;
   bool is_integer = true;
   bool is_bool = true;
@@ -262,7 +262,7 @@ void value::make_array(std::vector<value> const& exp_list)
 
   for (unsigned int i = 0; i < exp_list.size(); ++i)
     {
-      is_real    = is_real && (exp_list[i].is_real() 
+      is_real    = is_real && (exp_list[i].is_real()
 			       || exp_list[i].is_integer());
       is_integer = is_integer && exp_list[i].is_integer();
       is_bool    = is_bool && exp_list[i].is_boolean();
@@ -360,7 +360,7 @@ void value::make_array(std::vector<value> const& exp_list)
 	      dims_match = dims_match && (dims == fdims);
 	    }
 
-	  is_real_array=is_real_array && (exp_list[i].is_real_array() 
+	  is_real_array=is_real_array && (exp_list[i].is_real_array()
 					  || exp_list[i].is_integer_array());
 	  is_integer_array =is_integer_array && exp_list[i].is_integer_array();
 	  is_bool_array    = is_bool_array && exp_list[i].is_boolean_array();
@@ -371,7 +371,7 @@ void value::make_array(std::vector<value> const& exp_list)
 	{
 	  dims.insert(dims.begin(),(int)exp_list.size());
 	  std::vector<modelica_array<int> > arrs(exp_list.size(),integer_array());
-	  
+
 	  for (int i = 0; i < (int)exp_list.size(); ++i)
 	    {
 	      arrs[i] = exp_list[i].get_integer_array();
@@ -383,7 +383,7 @@ void value::make_array(std::vector<value> const& exp_list)
 	{
 	  dims.insert(dims.begin(),(int)exp_list.size());
 	  std::vector<modelica_array<double> > arrs(exp_list.size(),real_array());
-	  
+
 	  for (int i = 0; i < (int)exp_list.size(); ++i)
 	    {
 	      if (exp_list[i].is_integer_array())
@@ -413,7 +413,7 @@ void value::make_array(std::vector<value> const& exp_list)
     }
 
 }
-	      
+
 std::string value::get_string() const
 {
   return m_string;
@@ -547,8 +547,8 @@ bool value::is_function_argument() const
 
 ostream& operator<< (ostream& o, const value& v)
 {
-  
-  if (v.is_integer()) 
+
+  if (v.is_integer())
     {
       o << "Integer:\n";
       o << v.m_integer;
@@ -559,7 +559,7 @@ ostream& operator<< (ostream& o, const value& v)
       o << "Boolean:\n";
       o << v.m_boolean;
     }
-  
+
   if (v.is_real())
     {
       o << "Real:\n";
@@ -586,7 +586,7 @@ ostream& operator<< (ostream& o, const value& v)
 	{
 	  if (i > 0) o << ", ";
 	  o << arr.size(i);
-	  
+
 	}
       o << "]:\n";
       o << arr;
@@ -600,12 +600,12 @@ ostream& operator<< (ostream& o, const value& v)
 	{
 	  if (i > 0) o << ", ";
 	  o << arr.size(i);
-	  
+
 	}
       o << "]:\n";
       o << arr;
     }
-  
+
   if (v.is_string_array())
     {
       o << v.get_string_array();
@@ -876,7 +876,7 @@ value multiply_real_array(const real_array& a, const real_array& b)
 
   std::vector<int> size1 = a.size();
   std::vector<int> size2 = b.size();
-     
+
   if ((a.ndims() == 1) && (b.ndims() == 1))
     {
       // vector x vector
@@ -937,7 +937,7 @@ value multiply_integer_array(const integer_array& a, const integer_array& b)
 
   std::vector<int> size1 = a.size();
   std::vector<int> size2 = b.size();
-     
+
   if ((a.ndims() == 1) && (b.ndims() == 1))
     {
       // vector x vector
@@ -1061,7 +1061,7 @@ double value::to_double() const
       throw modelica_runtime_error("to_double on non-numerical value\n");
     }
 
-  if (is_integer()) 
+  if (is_integer())
     {
       return static_cast<double>(m_integer);
     }
@@ -1100,9 +1100,9 @@ value value::operator-() const
        {
 	 throw modelica_runtime_error("Internal error in value +=");
        }
-        
-     return tmp; 
-//     if (is_integer()) 
+
+     return tmp;
+//     if (is_integer())
 // 	{
 // 	    tmp.m_integer = - m_integer;
 // 	}
@@ -1120,7 +1120,7 @@ const value power(const value& x,const value& y)
     {
       throw modelica_runtime_error("Power non-numerical value\n");
     }
-  
+
   return value(pow(x.to_double(),y.to_double()));
 }
 
@@ -1130,18 +1130,18 @@ const value not_bool(const value& x)
     {
       throw modelica_runtime_error("Not of a non-boolean value\n");
     }
-  
+
   return value(!(x.m_boolean));
 }
 
 const value and_bool(const value& x,const value& y)
 {
-  
+
   if (!x.is_boolean())
     {
       throw modelica_runtime_error("And of a non-boolean value\n");
     }
-  
+
   return value(x.m_boolean && y.m_boolean);
 }
 
@@ -1151,7 +1151,7 @@ const value or_bool(const value& x,const value& y)
     {
       throw modelica_runtime_error("Or of a non-boolean value\n");
     }
-  
+
   return value(x.m_boolean || y.m_boolean);
 }
 
@@ -1161,7 +1161,7 @@ const value modelica_if(const value& x, const value& y, const value& z)
     {
       throw modelica_runtime_error("If of a non-boolean value\n");
     }
-  
+
   if (x.get_boolean())
     return y;
   else
@@ -1174,7 +1174,7 @@ const value modelica_if(const value& x, const value& y, const value& z)
 	{
 	    throw modelica_runtime_error("less of a non-numerical value\n");
 	}
-    
+
     return value(x.to_double() < y.to_double());
 }*/
 
@@ -1195,7 +1195,7 @@ const value lesseq(const value& x, const value& y)
 	{
 	    throw modelica_runtime_error("less of a non-numerical value\n");
 	}
-    
+
     return value(x.to_double() > y.to_double());
 }*/
 
@@ -1205,7 +1205,7 @@ const value greatereq(const value& x, const value& y)
 	{
 	    throw modelica_runtime_error("less of a non-numerical value\n");
 	}
-    
+
     return value(x.to_double() >= y.to_double());
 }
 
@@ -1215,7 +1215,7 @@ const value eqeq(const value& x, const value& y)
 	{
 	    throw modelica_runtime_error("less of a non-numerical value\n");
 	}
-    
+
     return value(x.to_double() == y.to_double());
 }
 
@@ -1225,7 +1225,7 @@ const value lessgt(const value& x, const value& y)
 	{
 	    throw modelica_runtime_error("less of a non-numerical value\n");
 	}
-    
+
     return value(x.to_double() != y.to_double());
 }
 
@@ -1233,9 +1233,9 @@ const value create_array(const value& x)
 {
   value tmp;
   // tmp.set_type(value::real_array_t);
-  
+
   //  tmp.append_to_array(x);
-  
+
   return tmp;
 }
 
@@ -1245,10 +1245,10 @@ const value create_range_array(const value& x, const value& y, const value& z)
 	{
 	    throw modelica_runtime_error("Non-numeric value in range expression\n");
 	}
-  
+
   value tmp;
   //tmp.set_type(value::real_array_t);
-  
+
 
   if (x.is_integer() && y.is_integer() && z.is_integer())
     {
@@ -1276,7 +1276,7 @@ const value create_range_array(const value& x, const value& y, const value& z)
       if (size < 0) size = 0;
 
       real_array arr(std::vector<int>(1,size));
- 
+
       double v = lower;
       for (real_array::data_iterator it = arr.data_begin();
 	   it != arr.data_end(); ++it)
@@ -1287,7 +1287,7 @@ const value create_range_array(const value& x, const value& y, const value& z)
       tmp.set_value(arr);
     }
   return tmp;
-    
+
 }
 
 // const value create_array(const value& x, const value& y)
@@ -1335,7 +1335,7 @@ int read_type_description(FILE* file, type_description* desc)
 {
   int c;
   int i;
-  do 
+  do
     {
       if ((c = fgetc(file)) == EOF) return 1;
       if (c != '#') return 1;
@@ -1351,7 +1351,7 @@ int read_type_description(FILE* file, type_description* desc)
 	  desc->type = c;
 	  break;
 	default:
-	  return 1;	  
+	  return 1;
 	}
       if ((c = fgetc(file)) == EOF) return 1;
       if (c == '!') /* scalar */
@@ -1379,10 +1379,10 @@ int read_type_description(FILE* file, type_description* desc)
 	    {
 	      free(desc->dim_size);
 	      return 1;
-	    }	  
+	    }
 	}
       break;
-      
+
     } while (0);
 
   read_to_eol(file);
@@ -1414,10 +1414,10 @@ value read_result_file(const char* filename)
 	  if (desc.type == 'r')
 	    {
 	      float f;
-	      if (fscanf(fp,"%e",&f) != 1) 
-		{ 
+	      if (fscanf(fp,"%e",&f) != 1)
+		{
 		  cleanup_description(&desc);
-		  break; 
+		  break;
 		}
 	      read_to_eol(fp);
 	      vals.push_back(value((double)f));
@@ -1425,21 +1425,21 @@ value read_result_file(const char* filename)
 	  else if (desc.type == 'i')
 	    {
 	      int i;
-	      if (fscanf(fp,"%d",&i) != 1) 
-		{ 
+	      if (fscanf(fp,"%d",&i) != 1)
+		{
 		  cleanup_description(&desc);
-		  break; 
+		  break;
 		}
 	      read_to_eol(fp);
 	      vals.push_back(value((long)i));
 	    }
-	  else 
+	  else
 	    {
 	      cout << "Unknow result type\n";
 	      break;
 	    }
 	}
-      else 
+      else
 	{
 	  std::vector<int> dims(desc.dim_size,desc.dim_size+desc.ndims);
 	  if (desc.type == 'r')
@@ -1450,11 +1450,11 @@ value read_result_file(const char* filename)
 	      for (it = arr.data_begin(); it != arr.data_end(); ++it)
 		{
 		  float f;
-		  if (fscanf(fp,"%e",&f) != 1) 
-		    { 
+		  if (fscanf(fp,"%e",&f) != 1)
+		    {
 		      cleanup_description(&desc);
 		      error = true;
-		      break; 
+		      break;
 		    }
 		  *it = f;
 		}
@@ -1470,11 +1470,11 @@ value read_result_file(const char* filename)
 	      for (it = arr.data_begin(); it != arr.data_end(); ++it)
 		{
 		  int i;
-		  if (fscanf(fp,"%d",&i) != 1) 
-		    { 
+		  if (fscanf(fp,"%d",&i) != 1)
+		    {
 		      cleanup_description(&desc);
 		      error = true;
-		      break; 
+		      break;
 		    }
 		  *it = i;
 		}
@@ -1482,7 +1482,7 @@ value read_result_file(const char* filename)
 	      read_to_eol(fp);
 	      vals.push_back(value(arr));
 	    }
-	  else 
+	  else
 	    {
 	      cout << "Unknow result type\n";
 	      break;
@@ -1498,7 +1498,7 @@ value read_result_file(const char* filename)
       ret = vals[0];
     }
   else
-    {      
+    {
       ret.set_value(vals);
     }
 
@@ -1513,7 +1513,7 @@ int write_input_file(value const& val, FILE* fp)
   if (val.is_function_argument())
     {
       function_argument* params = val.get_function_argument();
-      function_argument::parameter_iterator it = params->begin();  
+      function_argument::parameter_iterator it = params->begin();
       for (; it != params->end();++it)
 	{
 	  write_input_file(it->first,fp);

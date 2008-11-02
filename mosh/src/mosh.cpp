@@ -1,31 +1,31 @@
-/* 
+/*
  * This file is part of OpenModelica.
- * 
+ *
  * Copyright (c) 1998-2008, Linköpings University,
- * Department of Computer and Information Science, 
- * SE-58183 Linköping, Sweden. 
- * 
+ * Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
  * All rights reserved.
- * 
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC 
- * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF 
- * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC 
- * PUBLIC LICENSE. 
- * 
- * The OpenModelica software and the Open Source Modelica 
- * Consortium (OSMC) Public License (OSMC-PL) are obtained 
- * from Linköpings University, either from the above address, 
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC
+ * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF
+ * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC
+ * PUBLIC LICENSE.
+ *
+ * The OpenModelica software and the Open Source Modelica
+ * Consortium (OSMC) Public License (OSMC-PL) are obtained
+ * from Linköpings University, either from the above address,
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
- * 
- * This program is distributed  WITHOUT ANY WARRANTY; without 
- * even the implied warranty of  MERCHANTABILITY or FITNESS 
- * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH 
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS 
- * OF OSMC-PL. 
- * 
+ *
+ * This program is distributed  WITHOUT ANY WARRANTY; without
+ * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
+ * OF OSMC-PL.
+ *
  * See the full OSMC Public License conditions for more details.
- * 
+ *
  */
 
 #include <cstdlib>
@@ -89,13 +89,13 @@ pthread_cond_t corba_waitformsg;
 pthread_mutex_t corba_waitlock;
 bool corba_waiting=false;
 
-/* Main function, handles options: -noserv -corba 
+/* Main function, handles options: -noserv -corba
    and calls appropriate function. */
 int main(int argc, char* argv[])
 {
   bool corba_comm=false;
   bool noserv=false;
-  
+
 
   char * omhome=check_omhome();
 
@@ -107,7 +107,7 @@ int main(int argc, char* argv[])
   if ((corba_comm=flagSet("corba",argc,argv))&& !scriptname) {
 
     cout << "Using corba communication" << endl;
-  }  
+  }
   if(!scriptname) {
     cout << "Open Source Modelica Terminal Shell" << endl
 	 << "Copyright 1997-2007, PELAB, Linkoping University" << endl << endl
@@ -145,7 +145,7 @@ int main(int argc, char* argv[])
 #ifdef USE_CORBA
 void doCorbaCommunication(int argc, char **argv, const string *scriptname)
 {
- CORBA::ORB_var orb = CORBA::ORB_init(argc,argv);  
+ CORBA::ORB_var orb = CORBA::ORB_init(argc,argv);
   char uri[300];
   char *user = getenv("USER");
   if (user == NULL) { user = "nobody"; }
@@ -162,7 +162,7 @@ void doCorbaCommunication(int argc, char **argv, const string *scriptname)
   char* res = client->sendExpression(cd_cmd);
   CORBA::string_free(res);
 
-  if (scriptname) { // Execute script and output return value 
+  if (scriptname) { // Execute script and output return value
     const char * str=("runScript(\""+*scriptname+"\")").c_str();
     char *res=client->sendExpression(str);
     CORBA::string_free(res);
@@ -180,14 +180,14 @@ void doCorbaCommunication(int argc, char **argv, const string *scriptname)
   // Read the history file
   read_history(historyfile);
 
-  bool done=false;	
+  bool done=false;
   while (!done) {
     char* line = readline(">>> ");
     if ( line == 0 || strcmp(line,"quit()") == 0 ) {
       done =true;
       if (line == 0)  { line = strdup("quit()"); }
     }
-    if (strcmp(line,"\n")!=0 && strcmp(line,"") != 0) { 
+    if (strcmp(line,"\n")!=0 && strcmp(line,"") != 0) {
       add_history(line);
       char *res =client->sendExpression(line);
       if (strcmp(line,"quit()") == 0) {
@@ -212,9 +212,9 @@ void doCorbaCommunication(int argc, char **argv, const string *scriptname)
 
 void doSocketCommunication(const string * scriptname)
 {
-  int port=29500; 
+  int port=29500;
   char buf[40000];
-  
+
   char* hostname ="localhost";
   // TODO: add port nr. and host as command line option
 
@@ -239,7 +239,7 @@ void doSocketCommunication(const string * scriptname)
     {
       tryconnect++;
       if(connected % 3 == 0) {sleep(1); } // Sleep a second every third try...
-      
+
     } else {
       connected=true;
     }
@@ -271,14 +271,14 @@ void doSocketCommunication(const string * scriptname)
   read_history(historyfile);
 
 
-  bool done=false;	
+  bool done=false;
   while (!done) {
     char* line = readline(">>> ");
     if ( line == 0 || strcmp(line,"quit()") == 0 ) {
       done =true;
       if (line == 0)  { line = strdup("quit()"); }
     }
-    if (strcmp(line,"\n")!=0 && strcmp(line,"") != 0) { 
+    if (strcmp(line,"\n")!=0 && strcmp(line,"") != 0) {
       add_history(line);
       int nbytes = write(sock,line,strlen(line)+1);
       if (nbytes == 0) {
@@ -307,7 +307,7 @@ void doSocketCommunication(const string * scriptname)
 char * check_omhome(void)
 {
   char *str;
-  
+
   str=getenv("OPENMODELICAHOME");
   if (str == NULL) {
     printf("Error, OPENMODELICAHOME not set. Set OPENMODELICAHOME to the root directory of the OpenModlica installation\n");

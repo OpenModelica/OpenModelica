@@ -1,31 +1,31 @@
-/* 
+/*
  * This file is part of OpenModelica.
- * 
+ *
  * Copyright (c) 1998-2008, Linköpings University,
- * Department of Computer and Information Science, 
- * SE-58183 Linköping, Sweden. 
- * 
+ * Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
  * All rights reserved.
- * 
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC 
- * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF 
- * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC 
- * PUBLIC LICENSE. 
- * 
- * The OpenModelica software and the Open Source Modelica 
- * Consortium (OSMC) Public License (OSMC-PL) are obtained 
- * from Linköpings University, either from the above address, 
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC
+ * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF
+ * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC
+ * PUBLIC LICENSE.
+ *
+ * The OpenModelica software and the Open Source Modelica
+ * Consortium (OSMC) Public License (OSMC-PL) are obtained
+ * from Linköpings University, either from the above address,
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
- * 
- * This program is distributed  WITHOUT ANY WARRANTY; without 
- * even the implied warranty of  MERCHANTABILITY or FITNESS 
- * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH 
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS 
- * OF OSMC-PL. 
- * 
+ *
+ * This program is distributed  WITHOUT ANY WARRANTY; without
+ * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
+ * OF OSMC-PL.
+ *
  * See the full OSMC Public License conditions for more details.
- * 
+ *
  */
 
 #include "builtin_function.hpp"
@@ -55,18 +55,18 @@ builtin_function::~builtin_function()
 bool builtin_function::match_formal_parameters(value args)
 {
 //   function_argument* params = args.get_function_arguments();
-  
+
 //   if ( !(params->size() == m_formal_parameters.size()) )
 //      {
-       
+
 //        // This functionality should probably be moved to modelica_function
 //        cout << "Wrong number of arguments" << endl;
 //        return false;
 //      }
-  
+
 //   builtin_function::formal_parameter_iterator formal_it = m_formal_parameters.begin();
 //   function_argument::parameter_iterator actual_it = params->begin();
-  
+
 //   for (; formal_it != m_formal_parameters.end(); ++formal_it,++actual_it)
 //     {
 //       if (formal_it->find(actual_it->first.type()) == formal_it->end())
@@ -134,7 +134,7 @@ value cd_t::do_apply(value args)
 		  std::string path = val.get_string();
 		  if(chdir(path.c_str()))
 		    {
-		      std::cout << "Unable to change directory to \"" 
+		      std::cout << "Unable to change directory to \""
 				<< path.c_str() << "\"\n";
 		    }
 		  char buf[1024];
@@ -236,7 +236,7 @@ value read_t::do_apply(value args)
 	      if (val.is_string())
 		{
 		  std::string path = val.get_string();
-		  
+
 		  ret = read_result_file(path.c_str());
 
 		}
@@ -285,7 +285,7 @@ value write_t::do_apply(value args)
 	      if (file.is_string())
 		{
 		  std::string path = file.get_string();
-		  
+
 		  ret = (long) write_input_file(val,path.c_str());
 
 		}
@@ -329,7 +329,7 @@ value gethrtime_t::do_apply(value args)
     std::cout << "calling gethrtime\n";
     ret.set_value((long)0);
   }
-  
+
   return ret;
 }
 
@@ -381,7 +381,7 @@ value rem_t::do_apply(value args)
 
 sqrt_t::sqrt_t()
 {
-  
+
 }
 
 sqrt_t::~sqrt_t()
@@ -419,7 +419,7 @@ ceil_t::ceil_t()
 
 ceil_t::~ceil_t()
 {
-  
+
 }
 
 value ceil_t::do_apply(value args)

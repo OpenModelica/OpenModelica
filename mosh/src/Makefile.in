@@ -38,13 +38,13 @@ else
 endif
 
 INCP = $(ANTLR_INCP) $(PARSE_INCP) $(READLINE_INCP) $(CORBAIMPL) $(CORBAINC)
-LIBP = $(ANTLR_LIBP) $(PARSE_LIBP) $(READLINE_LIBP) 
+LIBP = $(ANTLR_LIBP) $(PARSE_LIBP) $(READLINE_LIBP)
 
 CFLAGS = $(INCP) -g -Wall -DDEBUG $(USE_CORBA)
 CXXFLAGS = $(CFLAGS)
-LINKFLAGS = $(LIBP) 
+LINKFLAGS = $(LIBP)
 
-LIBS = -lantlr -lmodelica_parser -lreadline -ltermcap  $(CORBALIB) -lm -lpthread 
+LIBS = -lantlr -lmodelica_parser -lreadline -ltermcap  $(CORBALIB) -lm -lpthread
 
 
 OBJS += mosh.o options.o
@@ -54,9 +54,9 @@ PROG = OMShell-terminal
 all: release
 
 
-release: $(PROG)$(EXEEXT) 
+release: $(PROG)$(EXEEXT)
 
-$(PROG)$(EXEEXT) : $(OBJS) 
+$(PROG)$(EXEEXT) : $(OBJS)
 	$(CXX) -o $(PROG)$(EXEEXT) $(OBJS) $(CORBAOBJS) $(LINKFLAGS) $(LIBS)
 	cp $(PROG)$(EXEEXT) $(builddir_bin)/
 
@@ -68,7 +68,7 @@ clean:
 	-rm -f *.o *~ core *.core $(PROG)$(EXEEXT) $(builddir_bin)/$(PROG)$(EXEEXT)
 
 
-mosh.o : mosh.cpp 
+mosh.o : mosh.cpp
 options.o: options.cpp
 
 

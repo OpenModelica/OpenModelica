@@ -18,7 +18,7 @@ are permitted provided that the following conditions are met:
 
     * Redistributions of source code must retain the above copyright notice,
       this list of conditions and the following disclaimer.
-    
+
 	* Redistributions in binary form must reproduce the above copyright notice,
       this list of conditions and the following disclaimer in the documentation
       and/or other materials provided with the distribution.
@@ -68,12 +68,12 @@ class OmcCommunicator : public QObject
 public:
   ~OmcCommunicator();
    static OmcCommunicator& getInstance();
-   
+
    bool establishConnection();
    void closeConnection();
    bool isConnected() const;
-  
-   QString callOmc(const QString& fnCall); 
+
+   QString callOmc(const QString& fnCall);
 
 private:
    // Enforce the singleon's uniqueness.

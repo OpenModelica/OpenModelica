@@ -1,31 +1,31 @@
-/* 
+/*
  * This file is part of OpenModelica.
- * 
+ *
  * Copyright (c) 1998-2008, Linköpings University,
- * Department of Computer and Information Science, 
- * SE-58183 Linköping, Sweden. 
- * 
+ * Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
  * All rights reserved.
- * 
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC 
- * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF 
- * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC 
- * PUBLIC LICENSE. 
- * 
- * The OpenModelica software and the Open Source Modelica 
- * Consortium (OSMC) Public License (OSMC-PL) are obtained 
- * from Linköpings University, either from the above address, 
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC
+ * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF
+ * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC
+ * PUBLIC LICENSE.
+ *
+ * The OpenModelica software and the Open Source Modelica
+ * Consortium (OSMC) Public License (OSMC-PL) are obtained
+ * from Linköpings University, either from the above address,
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
- * 
- * This program is distributed  WITHOUT ANY WARRANTY; without 
- * even the implied warranty of  MERCHANTABILITY or FITNESS 
- * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH 
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS 
- * OF OSMC-PL. 
- * 
+ *
+ * This program is distributed  WITHOUT ANY WARRANTY; without
+ * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
+ * OF OSMC-PL.
+ *
  * See the full OSMC Public License conditions for more details.
- * 
+ *
  */
 
 #include "compiled_function.hpp"
@@ -44,7 +44,7 @@
 
 compiled_function::compiled_function()
 {
-  
+
 }
 
 compiled_function::compiled_function(std::string filename)
@@ -77,7 +77,7 @@ value compiled_function::do_apply(value args)
     + "\"";
 
   std::string clean_command = std::string("sh -c \"")
-    +   "make -f $MOSHHOME/build/Makefile.single TARGET=" + m_filename 
+    +   "make -f $MOSHHOME/build/Makefile.single TARGET=" + m_filename
     +     " clean 1> cmdoutput.tmp 2>&1"
     + "\"";
 
@@ -106,21 +106,21 @@ value compiled_function::do_apply(value args)
     }
 
   write_input_file(args,"mosh_in.dat");
-  std::string execute_command = "rm -f result.dat;./" 
+  std::string execute_command = "rm -f result.dat;./"
     + m_filename+" mosh_in.dat"+" result.dat";
-  
+
   if (system(execute_command.c_str())==-1)
     {
       cout << "Failed to execute file" << endl;
        system("rm -f result.dat mosh_in.dat");
       return ret_val;
     }
-  
+
   // Read output file
   ret_val = read_result_file("result.dat");
 
    system("rm -f result.dat mosh_in.dat");
-  
+
   // Return value
   return ret_val;
 }

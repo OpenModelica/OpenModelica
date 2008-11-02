@@ -25,12 +25,12 @@ OBJS = $(MOFILES:%.mo=$(ODIR)/%.main.o)
 GENC = $(MOFILES:%.mo=$(CDIR)/%.c)
 
 
-all : $(CDIR) $(ODIR) $(BDIR) $(TARGETS) 
+all : $(CDIR) $(ODIR) $(BDIR) $(TARGETS)
 
 
 $(TARGETS) : $(BDIR)/% : $(ODIR)/%.main.o
 	rm -f $@
-	gcc -g -o $@ $(LDFLAGS) $< 
+	gcc -g -o $@ $(LDFLAGS) $<
 
 $(OBJS) : $(ODIR)/%.main.o : $(CDIR)/%.c $(MOSHHOME)/build/main.c
 	rm -f $(TARGETS)
@@ -40,7 +40,7 @@ $(OBJS) : $(ODIR)/%.main.o : $(CDIR)/%.c $(MOSHHOME)/build/main.c
 	 -DCFUNCTION_TO_CALL="$(subst $(ODIR)/,,$(subst .main.o,,$@))_read_call_write"\
 	 -c -o $@ $(MOSHHOME)/build/main.c
 
-$(GENC) : $(CDIR)/%.c : %.mo 
+$(GENC) : $(CDIR)/%.c : %.mo
 	@$(OMC) $< +d=codegen > $@
 
 $(CDIR) $(ODIR) $(BDIR) : % :

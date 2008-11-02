@@ -39,17 +39,17 @@ public:
   // ------- Array dimension and size functions -------
   /// Returns the number of dimensions.
   int ndims() const;
-  
+
   /// Returns a vector of lenght ndims() containing the dimensions.
   std::vector<int> size() const;
-  
+
   /// Returns the size of dimension i of the array where 1<=i<=ndims().
   int size(int dim) const;
 
 //   // --------- Dimensionality conversion functions ---------
 //   /// Converts a to a scalar
   Tp scalar() const;
-  
+
 //   /// Converts a to a vector.
 //   modelica_real_array vector();
 
@@ -61,7 +61,7 @@ public:
 
   friend modelica_array<Tp> create_array<Tp>(std::vector<Tp> data);
   friend modelica_array<Tp> create_array2<Tp>(std::vector<modelica_array<Tp> > const& arrays);
-  
+
   void print_dims();
   void print_data() const;
 //  void print();
@@ -70,8 +70,8 @@ public:
 
   friend ostream& operator<< <Tp>(ostream&, const modelica_array<Tp>& arr);
 
-  typedef vector<Tp>::iterator data_iterator; 
-  typedef vector<Tp>::const_iterator const_data_iterator; 
+  typedef vector<Tp>::iterator data_iterator;
+  typedef vector<Tp>::const_iterator const_data_iterator;
 
   const_data_iterator data_begin() const { return m_data.begin(); }
   const_data_iterator data_end() const { return m_data.end(); }
@@ -87,11 +87,11 @@ protected:
   int nr_of_elements() const;
   int compute_data_index(const std::vector<int>& idx) const;
 
-  
+
 
 
   vector<Tp> m_data;
-  
+
   int m_ndims;
   typedef std::vector<int>::iterator dim_size_iterator;
   std::vector<int> m_dim_size;
@@ -108,7 +108,7 @@ modelica_array<Tp>::modelica_array(std::vector<int> dims)
 template <class Tp>
 modelica_array<Tp>::modelica_array(std::vector<int> dims,std::vector<Tp> scalars)
 {
-  assert(size_t(std::accumulate(dims.begin(),dims.end(),1,std::multiplies<size_t>()) 
+  assert(size_t(std::accumulate(dims.begin(),dims.end(),1,std::multiplies<size_t>())
   			) == scalars.size());
   m_dim_size = dims;
   m_data = scalars;
@@ -202,7 +202,7 @@ void modelica_array<Tp>::set_element(std::vector<int> const& idx,Tp elem)
 template <typename Tp>
 ostream& operator<< (ostream& o, const modelica_array<Tp>& arr)
 {
-  
+
 
   int ndims = arr.m_dim_size.size();
   std::vector<int> idx(ndims,0);
@@ -210,7 +210,7 @@ ostream& operator<< (ostream& o, const modelica_array<Tp>& arr)
   for (int i = 0; i < ndims; ++i)
     o << "{";
 
-  
+
   modelica_array<Tp>::const_data_iterator it = arr.data_begin();
   while (it != arr.data_end())
     {
@@ -229,17 +229,17 @@ ostream& operator<< (ostream& o, const modelica_array<Tp>& arr)
 	  o << ", ";
 	  for (int i = 0; i < ndims - d - 1; ++i) o << "{";
 	}
-  
+
     }
   for (int i = 0; i < ndims-1; ++i)
-    o << "}"; 
+    o << "}";
 
   if (ndims == 1) o << "}";
   return o;
  }
 
 template <class Tp>
-void modelica_array<Tp>::print_dims() 
+void modelica_array<Tp>::print_dims()
 {
   for (int i = 0; i < m_dim_size.size();++i)
     {
@@ -248,10 +248,10 @@ void modelica_array<Tp>::print_dims()
 }
 
 template <class Tp>
-modelica_array<Tp>  modelica_array<Tp>::slice(std::vector<int> idx) 
+modelica_array<Tp>  modelica_array<Tp>::slice(std::vector<int> idx)
 {
   // Determine number of dimensions
-  
+
   // Determine size of output
 
   // Copy data
@@ -286,11 +286,11 @@ void modelica_array<Tp>::print_data() const
     }
 }
 // template <class Tp>
-// void modelica_array<Tp>::print() 
+// void modelica_array<Tp>::print()
 // {
 //   for (int i = 0; i < m_dim_size.size();++i)
 //     {
-      
+
 //     }
 // }
 
@@ -311,10 +311,10 @@ void modelica_array<Tp>::print_data() const
 //   modelica_real_array(std::vector<double> dimensions,std::vector<double> scalars);
 //   /// Destructor
 //   virtual ~modelica_real_array();
-  
-  
 
-  
+
+
+
 //   //  friend ostream& operator<< (ostream& o, const value& v);
 
 //   modelica_real_array slice(const index& idx) const;
@@ -322,7 +322,7 @@ void modelica_array<Tp>::print_data() const
 //   double operator() (const index& idx) const;
 
 //   // Specialized constructor functions
-  
+
 //   /// Returns an array with all elements equal to one. The dimensions are given by dim.
 //   friend modelica_real_array ones(std::vector<int> dim);
 
@@ -371,20 +371,20 @@ void modelica_array<Tp>::print_data() const
 //   // modelica_real_array identity() const;
 //   //  modelica_real_array cross() const;
 //   //  modelica_real_array pow(const int n) const;
-  
+
 // protected:
 //   /// Returns the number of elements in the matrix.
 //   int nr_of_elements() const;
 //   /// Help function to map index to array index (m_data).
 //   int compute_data_index(const index& idx) const;
-  
-//   typedef vector<double>::iterator data_iterator; 
+
+//   typedef vector<double>::iterator data_iterator;
 //   vector<double> m_data;
-  
+
 //   int m_ndims;
 //   typedef std::vector<int>::iterator dim_size_iterator;
 //   std::vector<int> m_dim_size;
-  
+
 
 // };
 
