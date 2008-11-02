@@ -24,7 +24,7 @@ void token_names::read_token_names(std::istream& is)
 	    //std::cerr << "ignoring line: " << lineno << std::endl;
 	}
     }
-  
+
 }
 
 int token_names::extract_id(const std::string& str) const

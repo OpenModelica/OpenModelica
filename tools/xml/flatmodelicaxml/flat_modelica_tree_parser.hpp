@@ -4,13 +4,13 @@
 #line 2 "walker.g"
 
 // adrpo disabling warnings
-#pragma warning( disable : 4267)  // Disable warning messages C4267 
+#pragma warning( disable : 4267)  // Disable warning messages C4267
 // disable: 'initializing' : conversion from 'size_t' to 'int', possible loss of data
 
-#pragma warning( disable : 4231)  // Disable warning messages C4231 
+#pragma warning( disable : 4231)  // Disable warning messages C4231
 // disable: nonstandard extension used : 'extern' before template explicit instantiation
 
-#pragma warning( disable : 4101)  // Disable warning messages C4101 
+#pragma warning( disable : 4101)  // Disable warning messages C4101
 // disable: warning C4101: 'pe' : unreferenced local variable
 
 #line 17 "flat_modelica_tree_parser.hpp"
@@ -23,19 +23,19 @@
 
 /************************************************************************
 File: walker.g
-Created By: Adrian Pop adrpo@ida.liu.se 
+Created By: Adrian Pop adrpo@ida.liu.se
 Date:      2004-05-26
-Revised on 
+Revised on
 Comments: we walk on the flat modelica tree, buil a XML DOM tree and serialize
 ************************************************************************/
 
   #define null 0
 
-  extern "C" 
+  extern "C"
   {
     #include <stdio.h>
   }
-    
+
   #include <cstdlib>
   #include <iostream>
   #include <stack>
@@ -67,7 +67,7 @@ class CUSTOM_API flat_modelica_tree_parser : public ANTLR_USE_NAMESPACE(antlr)Tr
     typedef std::stack<DOMElement*> l_stack;
     typedef std::string mstring;
 	enum anno {UNSPECIFIED, INSIDE_EXTERNAL, INSIDE_ELEMENT, INSIDE_EQUATION, INSIDE_ALGORITHM, INSIDE_COMMENT};
-    
+
     const XMLCh* str2xml(RefMyAST node)
     {
 		return XMLString::transcode(node->getText().c_str());
@@ -76,14 +76,14 @@ class CUSTOM_API flat_modelica_tree_parser : public ANTLR_USE_NAMESPACE(antlr)Tr
 
     DOMElement* stack2DOMNode(l_stack& s, mstring name)
     {
-		// @HACK,@FIXME reverse the stack (better use a fifo) 
+		// @HACK,@FIXME reverse the stack (better use a fifo)
 		DOMElement *pHoldingNode = pFlatModelicaXMLDoc->createElement(X(name.c_str()));
 		l_stack s_reverse;
 		//std::cout << "\nstack [" ;
         while (!s.empty())
-        {            
+        {
 			DOMElement*z = s.top();
-			//std::cout << XMLString::transcode((XMLCh*)(((DOMElement*)z)->getTagName())) << ", ";			
+			//std::cout << XMLString::transcode((XMLCh*)(((DOMElement*)z)->getTagName())) << ", ";
 			s_reverse.push(z);
 			s.pop();
         }
@@ -100,46 +100,46 @@ class CUSTOM_API flat_modelica_tree_parser : public ANTLR_USE_NAMESPACE(antlr)Tr
         return pHoldingNode;
     }
 
-    
+
     DOMElement* appendKids(l_stack& s, DOMElement* pParentNode)
     {
-		// @HACK,@FIXME reverse the stack (better use a fifo) 
+		// @HACK,@FIXME reverse the stack (better use a fifo)
 		l_stack s_reverse;
 		//std::cout << "\n" << XMLString::transcode((XMLCh*)(((DOMElement*)pParentNode)->getTagName())) << "/kids [" ;
         while (!s.empty())
-        {            
+        {
 			DOMElement*z = s.top();
-			//std::cout << XMLString::transcode((XMLCh*)(((DOMElement*)z)->getTagName())) << ",";			
+			//std::cout << XMLString::transcode((XMLCh*)(((DOMElement*)z)->getTagName())) << ",";
 			s_reverse.push(z);
 			s.pop();
-        }   
+        }
 		//std::cout << "]" << std::endl;
         while (!s_reverse.empty())
         {
 			pParentNode->appendChild((DOMElement*)s_reverse.top());
             s_reverse.pop();
-        }   
+        }
         return pParentNode;
     }
 
     DOMElement* appendKidsFromStack(l_stack* s, DOMElement* pParentNode)
     {
-		// @HACK,@FIXME reverse the stack (better use a fifo) 
+		// @HACK,@FIXME reverse the stack (better use a fifo)
 		l_stack s_reverse;
 		//std::cout << "\n" << XMLString::transcode((XMLCh*)(((DOMElement*)pParentNode)->getTagName())) << "/kids [" ;
         while (!s->empty())
-        {            
+        {
 			DOMElement*z = s->top();
-			//std::cout << XMLString::transcode((XMLCh*)(((DOMElement*)z)->getTagName())) << ",";			
+			//std::cout << XMLString::transcode((XMLCh*)(((DOMElement*)z)->getTagName())) << ",";
 			s_reverse.push(z);
 			s->pop();
-        }   
+        }
 		//std::cout << "]" << std::endl;
         while (!s_reverse.empty())
         {
 			pParentNode->appendChild((DOMElement*)s_reverse.top());
             s_reverse.pop();
-        }   
+        }
         return pParentNode;
     }
 
@@ -152,7 +152,7 @@ class CUSTOM_API flat_modelica_tree_parser : public ANTLR_USE_NAMESPACE(antlr)Tr
 			pNodeTo->setAttribute(z->getName(), z->getValue());
 		}
 	}
-    
+
     struct type_prefix_t
     {
         type_prefix_t():flow(0), variability(0),direction(0){}
@@ -181,7 +181,7 @@ class CUSTOM_API flat_modelica_tree_parser : public ANTLR_USE_NAMESPACE(antlr)Tr
 	{
 		if (iSwitch == 1) pNode->setAttribute(X("visibility"), X("public"));
 		else if (iSwitch == 2) pNode->setAttribute(X("visibility"), X("protected"));
-		else { /* error, shouldn't happen */ } 
+		else { /* error, shouldn't happen */ }
 	}
 #line 58 "flat_modelica_tree_parser.hpp"
 public:
@@ -201,8 +201,8 @@ public:
 		return flat_modelica_tree_parser::tokenNames;
 	}
 	public: DOMElement * stored_definition(RefMyAST _t,
-		mstring xmlFilename, 
-	 mstring mofFilename, 
+		mstring xmlFilename,
+	 mstring mofFilename,
 	 mstring docType
 	);
 	public: DOMElement*  within_clause(RefMyAST _t,
@@ -351,7 +351,7 @@ public:
 	{
 		return ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST);
 	}
-	
+
 protected:
 	RefMyAST returnAST;
 	RefMyAST _retTree;
@@ -364,7 +364,7 @@ private:
 		NUM_TOKENS = 159
 	};
 #endif
-	
+
 	static const unsigned long _tokenSet_0_data_[];
 	static const ANTLR_USE_NAMESPACE(antlr)BitSet _tokenSet_0;
 	static const unsigned long _tokenSet_1_data_[];

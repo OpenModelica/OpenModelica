@@ -1,41 +1,41 @@
-/* 
+/*
  * This file is part of OpenModelica.
- * 
+ *
  * Copyright (c) 1998-2008, Linköpings University,
- * Department of Computer and Information Science, 
- * SE-58183 Linköping, Sweden. 
- * 
+ * Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
  * All rights reserved.
- * 
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC 
- * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF 
- * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC 
- * PUBLIC LICENSE. 
- * 
- * The OpenModelica software and the Open Source Modelica 
- * Consortium (OSMC) Public License (OSMC-PL) are obtained 
- * from Linköpings University, either from the above address, 
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC
+ * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF
+ * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC
+ * PUBLIC LICENSE.
+ *
+ * The OpenModelica software and the Open Source Modelica
+ * Consortium (OSMC) Public License (OSMC-PL) are obtained
+ * from Linköpings University, either from the above address,
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
- * 
- * This program is distributed  WITHOUT ANY WARRANTY; without 
- * even the implied warranty of  MERCHANTABILITY or FITNESS 
- * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH 
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS 
- * OF OSMC-PL. 
- * 
+ *
+ * This program is distributed  WITHOUT ANY WARRANTY; without
+ * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
+ * OF OSMC-PL.
+ *
  * See the full OSMC Public License conditions for more details.
- * 
+ *
  */
 
-package System 
+package System
 " file:	       System.mo
   package:     System
   description: This file contains runtime system specific function, which are implemented in C.
- 
+
   RCS: $Id$
- 
-  This module contain a set of system calls, for e.g. compiling and 
+
+  This module contain a set of system calls, for e.g. compiling and
   executing stuff, reading and writing files and so on."
 
 public import Values;
@@ -121,7 +121,7 @@ end setCCompiler;
 
 public function getCCompiler
   output String outString;
-  
+
   external "C" ;
 end getCCompiler;
 
@@ -133,62 +133,62 @@ end setCFlags;
 
 public function getCFlags
   output String outString;
-  
+
   external "C" ;
 end getCFlags;
 
 public function setCXXCompiler
   input String inString;
-  
+
   external "C" ;
 end setCXXCompiler;
 
 public function getCXXCompiler
   output String outString;
-  
+
   external "C" ;
 end getCXXCompiler;
 
 public function setLinker
   input String inString;
-  
+
   external "C" ;
 end setLinker;
 
 public function getLinker
   output String outString;
-  
+
   external "C" ;
 end getLinker;
 
 public function setLDFlags
   input String inString;
-  
+
   external "C" ;
 end setLDFlags;
 
 public function getLDFlags
   output String outString;
-  
+
   external "C" ;
 end getLDFlags;
 
 public function getExeExt
   output String outString;
-  
+
   external "C" ;
 end getExeExt;
 
 public function getDllExt
   output String outString;
-  
+
   external "C" ;
 end getDllExt;
 
 public function loadLibrary
   input String inLib;
   output Integer outLibHandle;
-  
+
   external "C" ;
 end loadLibrary;
 
@@ -196,19 +196,19 @@ public function lookupFunction
   input Integer inLibHandle;
   input String inFunc;
   output Integer outFuncHandle;
-  
+
   external "C" ;
 end lookupFunction;
 
 public function freeFunction
   input Integer inFuncHandle;
-  
+
   external "C" ;
 end freeFunction;
 
 public function freeLibrary
   input Integer inLibHandle;
-  
+
   external "C" ;
 end freeLibrary;
 
@@ -249,7 +249,7 @@ public function setVariableFilter
   input String variables;
   output Boolean b;
   external "C";
-  
+
 end setVariableFilter;
 
 public function sendData2
@@ -293,7 +293,7 @@ end readPtolemyplotDataset;
 public function getVariableNames
   input String modelname;
   output String variables;
-  
+
   external "C";
 end getVariableNames;
 
@@ -480,18 +480,18 @@ end setClassnamesForSimulation;
 public function getVariableValue
   input Real timeStamp;
   input list<Real> timeValues;
-  input list<Real> varValues; 
+  input list<Real> varValues;
   output Real outValue;
 
   external "C" ;
 end getVariableValue;
 
-public function getFileModificationTime 
+public function getFileModificationTime
 "@author adrpo
- this system function returns the modification time of a file as a 
- SOME(Real) which represents the time elapsed since the 
+ this system function returns the modification time of a file as a
+ SOME(Real) which represents the time elapsed since the
  Epoch (00:00:00 UTC, January 1, 1970).
- If the file does not exist or if there is an error the returned value 
+ If the file does not exist or if there is an error the returned value
  will be NONE.
 "
   input  String       fileName;
@@ -500,9 +500,9 @@ public function getFileModificationTime
   external "C" ;
 end getFileModificationTime;
 
-public function getCurrentTime 
+public function getCurrentTime
 "@author adrpo
- this system function returns current time elapsed 
+ this system function returns current time elapsed
  since the Epoch (00:00:00 UTC, January 1, 1970)."
   output Real outValue;
 

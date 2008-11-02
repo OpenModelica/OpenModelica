@@ -12,8 +12,8 @@
 
 #include "f2c.h"
 
-/* Subroutine */ int update_(integer *n, integer *npt, doublereal *bmat, 
-	doublereal *zmat, integer *idz, integer *ndim, doublereal *vlag, 
+/* Subroutine */ int update_(integer *n, integer *npt, doublereal *bmat,
+	doublereal *zmat, integer *idz, integer *ndim, doublereal *vlag,
 	doublereal *beta, integer *knew, doublereal *w)
 {
     /* System generated locals */
@@ -72,9 +72,9 @@
 	    tempb = zmat[*knew + j * zmat_dim1] / temp;
 	    i__2 = *npt;
 	    for (i__ = 1; i__ <= i__2; ++i__) {
-		temp = tempa * zmat[i__ + jl * zmat_dim1] + tempb * zmat[i__ 
+		temp = tempa * zmat[i__ + jl * zmat_dim1] + tempb * zmat[i__
 			+ j * zmat_dim1];
-		zmat[i__ + j * zmat_dim1] = tempa * zmat[i__ + j * zmat_dim1] 
+		zmat[i__ + j * zmat_dim1] = tempa * zmat[i__ + j * zmat_dim1]
 			- tempb * zmat[i__ + jl * zmat_dim1];
 /* L10: */
 		zmat[i__ + jl * zmat_dim1] = temp;
@@ -120,7 +120,7 @@
 	i__1 = *npt;
 	for (i__ = 1; i__ <= i__1; ++i__) {
 /* L40: */
-	    zmat[i__ + zmat_dim1] = tempa * zmat[i__ + zmat_dim1] - tempb * 
+	    zmat[i__ + zmat_dim1] = tempa * zmat[i__ + zmat_dim1] - tempb *
 		    vlag[i__];
 	}
 	if (*idz == 1 && temp < zero) {
@@ -146,10 +146,10 @@
 	scalb = scala * sqrt((abs(denom)));
 	i__1 = *npt;
 	for (i__ = 1; i__ <= i__1; ++i__) {
-	    zmat[i__ + ja * zmat_dim1] = scala * (tau * zmat[i__ + ja * 
+	    zmat[i__ + ja * zmat_dim1] = scala * (tau * zmat[i__ + ja *
 		    zmat_dim1] - temp * vlag[i__]);
 /* L50: */
-	    zmat[i__ + jb * zmat_dim1] = scalb * (zmat[i__ + jb * zmat_dim1] 
+	    zmat[i__ + jb * zmat_dim1] = scalb * (zmat[i__ + jb * zmat_dim1]
 		    - tempa * w[i__] - tempb * vlag[i__]);
 	}
 	if (denom <= zero) {
@@ -186,10 +186,10 @@
 	tempb = (-(*beta) * w[jp] - tau * vlag[jp]) / denom;
 	i__2 = jp;
 	for (i__ = 1; i__ <= i__2; ++i__) {
-	    bmat[i__ + j * bmat_dim1] = bmat[i__ + j * bmat_dim1] + tempa * 
+	    bmat[i__ + j * bmat_dim1] = bmat[i__ + j * bmat_dim1] + tempa *
 		    vlag[i__] + tempb * w[i__];
 	    if (i__ > *npt) {
-		bmat[jp + (i__ - *npt) * bmat_dim1] = bmat[i__ + j * 
+		bmat[jp + (i__ - *npt) * bmat_dim1] = bmat[i__ + j *
 			bmat_dim1];
 	    }
 /* L70: */

@@ -26,7 +26,7 @@ void indentation::pop()
 void indentation::indent_next(bool f)
 {
   m_indent_next = f;
-}  
+}
 
 bool indentation::indent_next()
 {

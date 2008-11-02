@@ -1,43 +1,43 @@
-/* 
+/*
  * This file is part of OpenModelica.
- * 
+ *
  * Copyright (c) 1998-2008, Linköpings University,
- * Department of Computer and Information Science, 
- * SE-58183 Linköping, Sweden. 
- * 
+ * Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
  * All rights reserved.
- * 
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC 
- * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF 
- * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC 
- * PUBLIC LICENSE. 
- * 
- * The OpenModelica software and the Open Source Modelica 
- * Consortium (OSMC) Public License (OSMC-PL) are obtained 
- * from Linköpings University, either from the above address, 
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC
+ * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF
+ * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC
+ * PUBLIC LICENSE.
+ *
+ * The OpenModelica software and the Open Source Modelica
+ * Consortium (OSMC) Public License (OSMC-PL) are obtained
+ * from Linköpings University, either from the above address,
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
- * 
- * This program is distributed  WITHOUT ANY WARRANTY; without 
- * even the implied warranty of  MERCHANTABILITY or FITNESS 
- * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH 
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS 
- * OF OSMC-PL. 
- * 
+ *
+ * This program is distributed  WITHOUT ANY WARRANTY; without
+ * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
+ * OF OSMC-PL.
+ *
  * See the full OSMC Public License conditions for more details.
- * 
+ *
  */
 
-package Patternm  
+package Patternm
 " file:	       Patternm.mo
   package:     Patternm
   description: Patternmatching
- 
+
   RCS: $Id$
-  
+
   This module contains the patternmatch algorithm for the MetaModelica
   matchcontinue expression."
-  
+
 public import Absyn;
 public import DFA;
 public import Env;
@@ -50,32 +50,32 @@ protected import Util;
 //Some type simplifications
 type RenamedPat = DFA.RenamedPat;
 type RenamedPatVec = DFA.RenamedPatVec;
-type RenamedPatList = list<DFA.RenamedPat>; 
-type RenamedPatMatrix = DFA.RenamedPatMatrix;  
-type RenamedPatMatrix2 = DFA.RenamedPatMatrix2;  
+type RenamedPatList = list<DFA.RenamedPat>;
+type RenamedPatMatrix = DFA.RenamedPatMatrix;
+type RenamedPatMatrix2 = DFA.RenamedPatMatrix2;
 type RightHandVector = DFA.RightHandVector;
-type RightHandList = DFA.RightHandList;  
+type RightHandList = DFA.RightHandList;
 type RightHandSide = DFA.RightHandSide;
-type IndexVector = DFA.IndexVector;  
+type IndexVector = DFA.IndexVector;
 type AsList = list<Absyn.AlgorithmItem>;
-type AsArray = AsList[:];  
+type AsArray = AsList[:];
 type ArcName = Absyn.Ident;
 
 protected function ASTtoMatrixForm "function: ASTtoMatrixForm
-	author: KS	
+	author: KS
  	Transforms the Abstract Syntax Tree of a matchcontinue expression into matrix form.
  	The patterns in each case-branch ends up in a matrix and all the right-hand sides
- 	ends up in a list/vector. The match algorithm uses these data structures when 
+ 	ends up in a list/vector. The match algorithm uses these data structures when
  	generating the DFA. A right-hand side is simply the code occuring after
 	the case keyword: local Integer i; ... equation ... then 3*3;
 "
   input Absyn.Exp matchCont; // The matchcontinue expression
-  input Env.Cache cache; // The renameMain function will need these two 
+  input Env.Cache cache; // The renameMain function will need these two
   input Env.Env env; // when transforming named arguments in a function call into positional once
-  output Env.Cache outCache; 
-  output list<Absyn.Exp> outVarList; // The input variables (in exp form), matchcontinue (var1,var2,var3,...) 
+  output Env.Cache outCache;
+  output list<Absyn.Exp> outVarList; // The input variables (in exp form), matchcontinue (var1,var2,var3,...)
   output list<Absyn.ElementItem> outDeclList; // The local declarations, matchcontinue (...) local Integer i; Real r; ... case() ...
-  output RightHandList rhVec; // The righthand side vector  
+  output RightHandList rhVec; // The righthand side vector
   output RightHandList rhLight; // This one is used in the pattern matching. It is a simplified version of rhVec.
   output RenamedPatMatrix pMat; // The matrix with renamed patterns (renaming means adding a path variable to each pattern)
   output Option<RightHandSide> outElseRhSide; // An optional else case
@@ -90,42 +90,42 @@ algorithm
         Absyn.Exp varList2; // The input variables to the matchcontinue expression
         RenamedPatMatrix patMat;
         list<Absyn.ElementItem> declList; // The local variable declarations at the begining of the matchc. exp
-        Integer varListLength; 
+        Integer varListLength;
         Option<RightHandSide> elseRhSide; // Used to store the optional else-case of the match. exp
         AsArray asBindings; // Array used for the as constructs, case (var as 3,...)
         list<Absyn.Case> localCases;
         Env.Cache localCache;
         Env.Env localEnv;
       equation
-        // Extract from matchcontinue Abstract Syntax Tree       
+        // Extract from matchcontinue Abstract Syntax Tree
         (localCache,rhsList,rhsListLight,patList,elseRhSide) = extractFromMatchAST(localCases,{},{},{},1,localCache,localEnv);
         varList = extractListFromTuple(varList2,0);
         varListLength = listLength(varList);
-        
+
         false = (varListLength == 0); // If there are no input variables, the function will fail
-        
+
         // Create pattern matrix. The as-bindings (  ... case (var1 as 3) ...)
-        // are first collected in the fillMatrix function and then 
+        // are first collected in the fillMatrix function and then
         // assignments of these variables are added to the RightHandSide list
         patMat = fill({},varListLength);
-        asBindings = fill({},listLength(rhsList));   
-        (localCache,patMat,asBindings,_) = 
-        fillMatrix(1,asBindings,varList,patList,patMat,localCache,localEnv,(1,{})); 
-        rhsList = addAsBindings(rhsList,arrayList(asBindings));	 // Add the as-bindings (assignments) 
+        asBindings = fill({},listLength(rhsList));
+        (localCache,patMat,asBindings,_) =
+        fillMatrix(1,asBindings,varList,patList,patMat,localCache,localEnv,(1,{}));
+        rhsList = addAsBindings(rhsList,arrayList(asBindings));	 // Add the as-bindings (assignments)
                                                                  // to the right hand-sides.
-        
+
       then (localCache,varList,declList,rhsList,rhsListLight,patMat,elseRhSide);
-    case (exp,_,_) local Absyn.Exp exp;  
-      equation 
+    case (exp,_,_) local Absyn.Exp exp;
+      equation
         // Debug.fprint("failtrace", "- ASTtoMatrixForm failed, non-matching patterns in matchcase or zero input variables\n");
-       // Debug.fcall("failtrace", Dump.printExp, exp);  
+       // Debug.fcall("failtrace", Dump.printExp, exp);
       then fail();
-  end matchcontinue; 
+  end matchcontinue;
 end ASTtoMatrixForm;
 
 
 protected function extractListFromTuple "function: extractListFromTuple
-	author: KS	
+	author: KS
  Given an Absyn.Exp, this function will extract the list of expressions if the
  expression is a tuple, otherwise a list of length one is created"
   input Absyn.Exp inExp;
@@ -135,20 +135,20 @@ algorithm
   outList :=
   matchcontinue (inExp,numOfExps)
     case(Absyn.TUPLE(l),1)
-      local 
+      local
         list<Absyn.Exp> l;
-      equation 
-      then {Absyn.TUPLE(l)};  
+      equation
+      then {Absyn.TUPLE(l)};
     case(Absyn.TUPLE(l),_)
-      local 
+      local
         list<Absyn.Exp> l;
-      equation 
-      then l;    
+      equation
+      then l;
     case(exp,_)
-      local 
+      local
         Absyn.Exp exp;
       equation
-      then {exp};    
+      then {exp};
   end matchcontinue;
 end extractListFromTuple;
 
@@ -163,7 +163,7 @@ protected function addAsBindings "function: addAsBindings
   	   case (v2 as 4) local Integer v2; equation ... then 2;
   	   ...
 	end matchcontinue;
-	A new assignment, v2 = pathVariable, will be added to the equation 
+	A new assignment, v2 = pathVariable, will be added to the equation
 	section. Note that each pattern has a corresponding path variable.
 "
   input RightHandList rhList;
@@ -173,19 +173,19 @@ algorithm
   outRhs :=
   matchcontinue (rhList,asBinds)
     case ({},{}) equation then {};
-    case (first1 :: rest1,first2 :: rest2) 
+    case (first1 :: rest1,first2 :: rest2)
       local
         RightHandSide first1;
         RightHandList rest1,rhsList;
         AsList first2;
         list<AsList> rest2;
-      equation	
+      equation
         first1 = addAsBindingsHelper(first1,first2);
         rhsList = addAsBindings(rest1,rest2);
         rhsList = listAppend({first1},rhsList);
       then rhsList;
   end matchcontinue;
-end addAsBindings; 
+end addAsBindings;
 
 protected function addAsBindingsHelper "function: addAsBindingsHelper
 	author: KS
@@ -198,34 +198,34 @@ algorithm
   matchcontinue (rhSide,asList)
     case (localRhSide,{})
       local
-        RightHandSide localRhSide;    
-      equation 
-      then localRhSide;  
+        RightHandSide localRhSide;
+      equation
+      then localRhSide;
     case (DFA.RIGHTHANDSIDE(localDecls,algs,result,cNumber),localAsList)
       local
         list<Absyn.ElementItem> localDecls;
         list<Absyn.AlgorithmItem> algs;
         Absyn.Exp result;
         RightHandSide rhS;
-        AsList localAsList; 
+        AsList localAsList;
         Integer cNumber;
-      equation 
-        algs = listAppend(localAsList,algs);  
-        rhS = DFA.RIGHTHANDSIDE(localDecls,algs,result,cNumber);  
-      then rhS;        
+      equation
+        algs = listAppend(localAsList,algs);
+        rhS = DFA.RIGHTHANDSIDE(localDecls,algs,result,cNumber);
+      then rhS;
   end matchcontinue;
 end addAsBindingsHelper;
 
 
 protected function extractFromMatchAST "function: extractFromMatchAST
-	author: KS	
+	author: KS
 	Extract righthand sides, patterns and optional else-case from matchcontinue
 	AST.
 "
   input list<Absyn.Case> matchCases;
   input RightHandList rhListIn;
   input RightHandList rhListLightIn;
-  input list<Absyn.Exp> patListIn; // All the patterns are collected in a list. 
+  input list<Absyn.Exp> patListIn; // All the patterns are collected in a list.
   input Integer caseNumber;  // This variable keeps track of which case-clause we are working with
   input Env.Cache cache;
   input Env.Env env;
@@ -233,7 +233,7 @@ protected function extractFromMatchAST "function: extractFromMatchAST
   output RightHandList rhListOut;
   output RightHandList rhListLightOut;
   output list<Absyn.Exp> patListOut; // All the patterns are collected in a list.
-  output Option<RightHandSide> elseRhSide; // A matchcontinue expression may contain an else-case  
+  output Option<RightHandSide> elseRhSide; // A matchcontinue expression may contain an else-case
 algorithm
   (outCache,rhListOut,rhListLightOut,patListOut,elseRhSide) :=
   matchcontinue (matchCases,rhListIn,rhListLightIn,patListIn,caseNumber,cache,env)
@@ -245,11 +245,11 @@ algorithm
       list<Absyn.AlgorithmItem> localAlg;
       Env.Cache localCache,var1;
       Env.Env localEnv;
-      
+
       // var1,var2,var3,var4,var5 are temp variables
       list<Absyn.Exp> localPatListIn,var4;
       RightHandList localRhListIn,localRhLightList,var2,var3;
-      Option<RightHandSide> var5;        
+      Option<RightHandSide> var5;
       Integer localCaseNum;
     case ({},localRhListIn,localRhLightList,localPatListIn,_,localCache,_) equation then (localCache,localRhListIn,localRhLightList,localPatListIn,NONE());
     case (Absyn.CASE(localPat,localDecl,localEq,localRes,_) :: rest,
@@ -257,7 +257,7 @@ algorithm
       equation
         (localCache,localAlg) = fromEquationsToAlgAssignments(localEq,{},localCache,localEnv);
         localPatListIn = listAppend(localPatListIn,{localPat});
-        localRhListIn = listAppend(localRhListIn,{DFA.RIGHTHANDSIDE(localDecl,localAlg,localRes,localCaseNum)});   
+        localRhListIn = listAppend(localRhListIn,{DFA.RIGHTHANDSIDE(localDecl,localAlg,localRes,localCaseNum)});
         localRhLightList = listAppend(localRhLightList,{DFA.RIGHTHANDLIGHT(localCaseNum)});
         localCaseNum = localCaseNum + 1;
         (var1,var2,var3,var4,var5) = extractFromMatchAST(rest,localRhListIn,localRhLightList,localPatListIn,localCaseNum,localCache,localEnv);
@@ -265,7 +265,7 @@ algorithm
     case (Absyn.ELSE(localDecl,localEq,localRes,_) :: {},localRhListIn,localRhLightList,localPatListIn,_,localCache,localEnv)
       equation
         (localCache,localAlg) = fromEquationsToAlgAssignments(localEq,{},localCache,localEnv);
-      then (localCache,localRhListIn,localRhLightList,localPatListIn,SOME(DFA.RIGHTHANDSIDE(localDecl,localAlg,localRes,0)));      	        
+      then (localCache,localRhListIn,localRhLightList,localPatListIn,SOME(DFA.RIGHTHANDSIDE(localDecl,localAlg,localRes,0)));
   end matchcontinue;
 end extractFromMatchAST;
 
@@ -281,14 +281,14 @@ protected function fillMatrix "function: fillMatrix
   input list<Absyn.Exp> patList; // The unrenamed patterns, no path variable added yet
   input RenamedPatMatrix patMat; // The matrix containg the renamed patterns
   input Env.Cache cache;
-  input Env.Env env; 
+  input Env.Env env;
   input tuple<Integer,list<Absyn.Ident,Integer>> inConstTagEnv;
   output Env.Cache outCache;
-  output RenamedPatMatrix outPatMat; 
-  output AsArray outAsBindings; 
+  output RenamedPatMatrix outPatMat;
+  output AsArray outAsBindings;
   output tuple<Integer,list<Absyn.Ident,Integer>> outConstTagEnv;
 algorithm
-  (outCache,outPatMat,outAsBindings,outConstTagEnv) := 
+  (outCache,outPatMat,outAsBindings,outConstTagEnv) :=
   matchcontinue (rowNum,inAsBindings,varList,patList,patMat,cache,env,inConstTagEnv)
     local
       RenamedPatMatrix localPatMat;
@@ -297,11 +297,11 @@ algorithm
       AsArray localAsBindings;
       Integer localRowNum;
       tuple<Integer,list<Absyn.Ident,Integer>> localConstTagEnv;
-    case (_,localAsBindings,_,{},localPatMat,localCache,_,localConstTagEnv)  
-      local  
-        Env.Cache localCache; 
-      equation 
-      then (localCache,localPatMat,localAsBindings,localConstTagEnv);    
+    case (_,localAsBindings,_,{},localPatMat,localCache,_,localConstTagEnv)
+      local
+        Env.Cache localCache;
+      equation
+      then (localCache,localPatMat,localAsBindings,localConstTagEnv);
     case (localRowNum,localAsBindings,localVarList,first2 :: rest,
         localPatMat,localCache,localEnv,localConstTagEnv)
       local
@@ -310,40 +310,40 @@ algorithm
         //Temp variables
         RenamedPatMatrix temp2;
         AsArray temp4;
-        
+
         Env.Env localEnv;
         Env.Cache localCache;
         Integer i;
-      equation  
+      equation
         i = listLength(localVarList);
         first = extractListFromTuple(first2,i);
-        
+
         // Add a row to the matrix, rename each pattern as well
-        (localCache,localPatMat,asBinds,localConstTagEnv) = addRow({},localVarList,1,first, 
+        (localCache,localPatMat,asBinds,localConstTagEnv) = addRow({},localVarList,1,first,
           localPatMat,localCache,localEnv,localConstTagEnv);
-        
-        len1 = listLength(first);  
+
+        len1 = listLength(first);
         len2 = listLength(localVarList);
         true = (len1 == len2); // The number of input variables, matchcontinue (var1,var2,...), must be
                                // the same as the number of patterns in each case
-        
+
         // Store As-construct bindings for this row
         localAsBindings = arrayUpdate(localAsBindings, localRowNum, asBinds);
-        
-        // Add the rest of the rows to the matrix	  
+
+        // Add the rest of the rows to the matrix
         (localCache,temp2,temp4,localConstTagEnv) =
         fillMatrix(localRowNum+1,localAsBindings,localVarList,rest,localPatMat,
-          localCache,localEnv,localConstTagEnv);   	
-      then (localCache,temp2,temp4,localConstTagEnv);  
-    case (_,_,_,e :: _,_,_,_,_)  local Absyn.Exp e; 
+          localCache,localEnv,localConstTagEnv);
+      then (localCache,temp2,temp4,localConstTagEnv);
+    case (_,_,_,e :: _,_,_,_,_)  local Absyn.Exp e;
       equation
        // Debug.fprint("failtrace", "- fillMatrix failed, wrong number of patterns in case?\n");
-      //  Debug.fcall("failtrace", Dump.printExp, e);  
+      //  Debug.fcall("failtrace", Dump.printExp, e);
       then fail();
   end matchcontinue;
 end fillMatrix;
 
-protected function addRow "function: addRow 
+protected function addRow "function: addRow
 	author: KS
  	Adds a row to the matrix.
  	This is done by adding one element at a time to the matrix row
@@ -354,10 +354,10 @@ protected function addRow "function: addRow
   input list<Absyn.Exp> pats; // The patterns to be stored in the row
   input RenamedPatMatrix patMat;
   input Env.Cache cache;
-  input Env.Env env;  
+  input Env.Env env;
   input tuple<Integer,list<Absyn.Ident,Integer>> inConstTagEnv;
   output Env.Cache outCache;
-  output RenamedPatMatrix outPatMat; 
+  output RenamedPatMatrix outPatMat;
   output AsList outAsBinds;
   output tuple<Integer,list<Absyn.Ident,Integer>> outConstTagEnv;
 algorithm
@@ -373,60 +373,60 @@ algorithm
       Integer localRowNum;
       AsList localAsBindings;
       Env.Cache localCache;
-      Env.Env localEnv; 
+      Env.Env localEnv;
       tuple<Integer,list<Absyn.Ident,Integer>> localConstTagEnv;
-    case (localAsBindings,_,_,{},localPatMat,localCache,_,localConstTagEnv) 
-      equation 
+    case (localAsBindings,_,_,{},localPatMat,localCache,_,localConstTagEnv)
+      equation
       then (localCache,localPatMat,localAsBindings,localConstTagEnv);
     case(localAsBindings,Absyn.CREF(cRef) :: restVar,localPivot,firstPat :: restPat,
-        localPatMat,localCache,localEnv,localConstTagEnv)     
+        localPatMat,localCache,localEnv,localConstTagEnv)
       local
         RenamedPat pat;
         list<Absyn.Ident> localPathVars2;
         AsList asBinds;
         String str;
         Absyn.ComponentRef cRef;
-        
+
         //Temp variables
         RenamedPatMatrix temp2;
         AsList temp4;
         RenamedPatList temp5;
-      equation 
+      equation
         str = "";
         firstVar = Absyn.pathString(Absyn.crefToPath(cRef));
-        
+
         //Rename a pattern, that is, transform it into path=pattern form
-        (localCache,pat,asBinds,localConstTagEnv) = 
-        renameMain(firstPat,stringAppend(str,firstVar),{},localCache,localEnv,localConstTagEnv);  	
-        localAsBindings = listAppend(localAsBindings,asBinds);       
-         
+        (localCache,pat,asBinds,localConstTagEnv) =
+        renameMain(firstPat,stringAppend(str,firstVar),{},localCache,localEnv,localConstTagEnv);
+        localAsBindings = listAppend(localAsBindings,asBinds);
+
          // Store the new element in matrix
-        temp5 = listAppend(localPatMat[localPivot],{pat});        
+        temp5 = listAppend(localPatMat[localPivot],{pat});
         localPatMat = arrayUpdate(localPatMat, localPivot, temp5);
-        
+
         //Add the rest of the elements for this row
         (localCache,temp2,temp4,localConstTagEnv) = addRow(localAsBindings,restVar,localPivot+1,restPat,
-        localPatMat,localCache,localEnv,localConstTagEnv); 					         
-      then (localCache,temp2,temp4,localConstTagEnv);   
-  end matchcontinue;  
+        localPatMat,localCache,localEnv,localConstTagEnv);
+      then (localCache,temp2,temp4,localConstTagEnv);
+  end matchcontinue;
 end addRow;
 
 
 protected function renameMain "function: renameMain
  	author: KS
- 	Input is an Absyn.Exp (corresponding to a pattern) and a root variable. 
- 	The function transforms the pattern into path=pattern form (DFA.RenamedPat). 
+ 	Input is an Absyn.Exp (corresponding to a pattern) and a root variable.
+ 	The function transforms the pattern into path=pattern form (DFA.RenamedPat).
  	As a side effect we also collect the As-bindings.
 "
   input Absyn.Exp pat;
   input Absyn.Ident rootVar;
   input AsList inAsBinds;
   input Env.Cache cache;
-  input Env.Env env;  
+  input Env.Env env;
   input tuple<Integer,list<Absyn.Ident,Integer>> inConstTagEnv;
   output Env.Cache outCache;
   output RenamedPat renamedPat;
-  output AsList outAsBinds; // New as-bindings are added in the as-pattern case 
+  output AsList outAsBinds; // New as-bindings are added in the as-pattern case
   output tuple<Integer,list<Absyn.Ident,Integer>> outConstTagEnv;
 algorithm
   (outCache,renamedPat,outAsBinds,outConstTagEnv) :=
@@ -437,13 +437,13 @@ algorithm
       list<Absyn.Ident,Absyn.Ident> localVars;
       AsList localAsBinds,localAsBinds2;
       Env.Cache localCache;
-      Env.Env localEnv; 
+      Env.Env localEnv;
       tuple<Integer,list<Absyn.Ident,Integer>> localConstTagEnv;
-      // INTEGER EXPRESSION  
-    case (Absyn.INTEGER(val),localVar,localAsBinds,localCache,_,localConstTagEnv)  
-      local 
+      // INTEGER EXPRESSION
+    case (Absyn.INTEGER(val),localVar,localAsBinds,localCache,_,localConstTagEnv)
+      local
         Integer val;
-        RenamedPat tempPat;   
+        RenamedPat tempPat;
       equation
         tempPat = DFA.RP_INTEGER(localVar,val);
       then (localCache,tempPat,localAsBinds,localConstTagEnv);
@@ -451,176 +451,176 @@ algorithm
     case (Absyn.REAL(val),localVar,localAsBinds,localCache,_,localConstTagEnv)
       local
         Real val;
-        RenamedPat tempPat;   
+        RenamedPat tempPat;
       equation
-        tempPat = DFA.RP_REAL(localVar,val); 
+        tempPat = DFA.RP_REAL(localVar,val);
       then (localCache,tempPat,localAsBinds,localConstTagEnv);
         // BOOLEAN EXPRESSION
     case (Absyn.BOOL(val),localVar,localAsBinds,localCache,_,localConstTagEnv)
-      local 
+      local
         Boolean val;
-        RenamedPat tempPat;   
+        RenamedPat tempPat;
       equation
-        tempPat = DFA.RP_BOOL(localVar,val); 
+        tempPat = DFA.RP_BOOL(localVar,val);
       then (localCache,tempPat,localAsBinds,localConstTagEnv);
         // WILDCARD EXPRESSION
     case (Absyn.CREF(Absyn.WILD()),localVar,localAsBinds,localCache,_,localConstTagEnv)
-      local 
-        RenamedPat tempPat;   
+      local
+        RenamedPat tempPat;
       equation
-        tempPat = DFA.RP_WILDCARD(localVar); 
+        tempPat = DFA.RP_WILDCARD(localVar);
       then (localCache,tempPat,localAsBinds,localConstTagEnv);
-        // STRING EXPRESSION    
+        // STRING EXPRESSION
     case (Absyn.STRING(val),localVar,localAsBinds,localCache,_,localConstTagEnv)
-      local 
+      local
         String val;
-        RenamedPat pat;   
+        RenamedPat pat;
       equation
         pat = DFA.RP_STRING(localVar,val);
       then (localCache,pat,localAsBinds,localConstTagEnv);
-        // AS BINDINGS        
+        // AS BINDINGS
         // An as-binding is collected as an equation assignment. This assigment will later be
         // added to the correspond righthand side.
     case (Absyn.AS(var,expr),localVar,localAsBinds,localCache,localEnv,localConstTagEnv)
       local
         Absyn.Exp expr;
         Absyn.Ident var;
-        
+
         // Temp variables
         RenamedPat temp1;
         AsList temp3;
-      equation     
+      equation
         localAsBinds2 = {Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(Absyn.CREF(Absyn.CREF_IDENT(var,{})),
           Absyn.CREF(Absyn.CREF_IDENT(localVar,{}))),NONE())};
         localAsBinds = listAppend(localAsBinds,localAsBinds2);
-        
-        (localCache,temp1,temp3,localConstTagEnv) = renameMain(expr,localVar,localAsBinds,localCache,localEnv,localConstTagEnv);        	    
-      then (localCache,temp1,temp3,localConstTagEnv);        
-        
-        // NONE EXPRESSION	
+
+        (localCache,temp1,temp3,localConstTagEnv) = renameMain(expr,localVar,localAsBinds,localCache,localEnv,localConstTagEnv);
+      then (localCache,temp1,temp3,localConstTagEnv);
+
+        // NONE EXPRESSION
     case (Absyn.CREF(Absyn.CREF_IDENT("NONE",_)),localVar,localAsBinds,localCache,localEnv,localConstTagEnv)
     then (localCache,DFA.RP_NONE(localVar),localAsBinds,localConstTagEnv);
-        
+
         // COMPONENT REFERENCE EXPRESSION
         // Will be interpretated as: case (var AS _)
         // This expression is transformed into a wildcard but we store the variable
         // reference as well as an AS-binding.
     case (Absyn.CREF(cr),localVar,localAsBinds,localCache,_,localConstTagEnv)
-      local 
-        Absyn.Ident var;   
+      local
+        Absyn.Ident var;
         RenamedPat pat;
         Absyn.ComponentRef cr;
       equation
         localAsBinds2 = {Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(Absyn.CREF(cr),
           Absyn.CREF(Absyn.CREF_IDENT(localVar,{}))),NONE())};
         localAsBinds = listAppend(localAsBinds,localAsBinds2);
-          
+
         pat = DFA.RP_WILDCARD(localVar);
       then (localCache,pat,localAsBinds,localConstTagEnv);
-        
+
         // TUPLE EXPRESSION
-        // This is a builtin functioncall, all the function arguments are renamed       
+        // This is a builtin functioncall, all the function arguments are renamed
     case (Absyn.TUPLE(funcArgs),localVar,localAsBinds,localCache,localEnv,localConstTagEnv)
       local
-        list<Absyn.Exp> funcArgs;	  
-        RenamedPatList renamedPatList; 
+        list<Absyn.Exp> funcArgs;
+        RenamedPatList renamedPatList;
         RenamedPat pat,first2,second2;
-        AsList localAsBinds2; 
+        AsList localAsBinds2;
         Integer constTag;
       equation
         (constTag,localConstTagEnv) = getUniqueConstTag(Absyn.IDENT("TUPLE"),localConstTagEnv);
-        localVar2 = stringAppend(localVar,"_"); 
-        localVar2 = stringAppend(localVar2,intString(constTag));  
-        
+        localVar2 = stringAppend(localVar,"_");
+        localVar2 = stringAppend(localVar2,intString(constTag));
+
         (localCache,renamedPatList,localAsBinds2,localConstTagEnv) = renamePatList(funcArgs
           ,localVar2,1,{},{},localCache,localEnv,localConstTagEnv);
-        
+
         pat = DFA.RP_TUPLE(localVar,renamedPatList);
-        
+
       then (localCache,pat,listAppend(localAsBinds,localAsBinds2),localConstTagEnv);
-        
+
         // CONS EXPRESSION
         // This is a builtin functioncall, all the function arguments are renamed
     case (Absyn.CONS(first,second),localVar,localAsBinds,localCache,localEnv,localConstTagEnv)
       local
-        Absyn.Exp first,second;	  
+        Absyn.Exp first,second;
         RenamedPatList renamedPatList;
         RenamedPat pat,first2,second2;
-        AsList localAsBinds2; 
+        AsList localAsBinds2;
         Integer constTag;
       equation
         (constTag,localConstTagEnv) = getUniqueConstTag(Absyn.IDENT("CONS"),localConstTagEnv);
-        localVar2 = stringAppend(localVar,"_"); 
-        localVar2 = stringAppend(localVar2,intString(constTag));  
-        
+        localVar2 = stringAppend(localVar,"_");
+        localVar2 = stringAppend(localVar2,intString(constTag));
+
         (localCache,renamedPatList,localAsBinds2,localConstTagEnv) = renamePatList({first,second}
           ,localVar2,1,{},{},localCache,localEnv,localConstTagEnv);
         first2 = Util.listFirst(renamedPatList);
         second2 = Util.listFirst(Util.listRest(renamedPatList));
-        
+
         pat = DFA.RP_CONS(localVar,first2,second2);
-        
-      then (localCache,pat,listAppend(localAsBinds,localAsBinds2),localConstTagEnv);  
-        
+
+      then (localCache,pat,listAppend(localAsBinds,localAsBinds2),localConstTagEnv);
+
         // NONE EXPRESSION
-    case (Absyn.CALL(Absyn.CREF_IDENT("NONE",_),Absyn.FUNCTIONARGS({},{})),localVar,  
+    case (Absyn.CALL(Absyn.CREF_IDENT("NONE",_),Absyn.FUNCTIONARGS({},{})),localVar,
         localAsBinds,localCache,localEnv,localConstTagEnv)
          then (localCache,DFA.RP_NONE(localVar),localAsBinds,localConstTagEnv);
-           
-      // SOME EXPRESSION    
-    case (Absyn.CALL(Absyn.CREF_IDENT("SOME",_),Absyn.FUNCTIONARGS(first :: _,{})),localVar,  
+
+      // SOME EXPRESSION
+    case (Absyn.CALL(Absyn.CREF_IDENT("SOME",_),Absyn.FUNCTIONARGS(first :: _,{})),localVar,
         localAsBinds,localCache,localEnv,localConstTagEnv)
       local
         Absyn.Exp first;
         RenamedPatList renamedPatList;
         RenamedPat pat,first2;
-        AsList localAsBinds2; 
+        AsList localAsBinds2;
         Integer constTag;
       equation
         (constTag,localConstTagEnv) = getUniqueConstTag(Absyn.IDENT("SOME"),localConstTagEnv);
-        localVar2 = stringAppend(localVar,"_"); 
-        localVar2 = stringAppend(localVar2,intString(constTag));  
-        
+        localVar2 = stringAppend(localVar,"_");
+        localVar2 = stringAppend(localVar2,intString(constTag));
+
         (localCache,renamedPatList,localAsBinds2,localConstTagEnv) = renamePatList({first}
           ,localVar2,1,{},{},localCache,localEnv,localConstTagEnv);
         first2 = Util.listFirst(renamedPatList);
-        
+
         pat = DFA.RP_SOME(localVar,first2);
-        
-      then (localCache,pat,listAppend(localAsBinds,localAsBinds2),localConstTagEnv);  
-           
+
+      then (localCache,pat,listAppend(localAsBinds,localAsBinds2),localConstTagEnv);
+
         // CALL EXPRESSION
         // This is a builtin functioncall, all the function arguments are renamed
-        // We also must transform named function arguments into positional function 
+        // We also must transform named function arguments into positional function
         // arguments.
-    case (Absyn.CALL(compRef,Absyn.FUNCTIONARGS(funcArgs,{})),localVar,  
+    case (Absyn.CALL(compRef,Absyn.FUNCTIONARGS(funcArgs,{})),localVar,
         localAsBinds,localCache,localEnv,localConstTagEnv)
       local
-        Absyn.ComponentRef compRef; 
+        Absyn.ComponentRef compRef;
         Absyn.Path recName;
-        list<Absyn.Exp> funcArgs;	  
-        RenamedPatList renamedPatList; 
+        list<Absyn.Exp> funcArgs;
+        RenamedPatList renamedPatList;
         RenamedPat pat;
-        AsList localAsBinds2;  
+        AsList localAsBinds2;
         Integer constTag;
       equation
         recName = Absyn.crefToPath(compRef);
-        
+
         (constTag,localConstTagEnv) = getUniqueConstTag(recName,localConstTagEnv);
-        localVar2 = stringAppend(localVar,"_"); 
-        localVar2 = stringAppend(localVar2,intString(constTag));  
-        
+        localVar2 = stringAppend(localVar,"_");
+        localVar2 = stringAppend(localVar2,intString(constTag));
+
         (localCache,renamedPatList,localAsBinds2,localConstTagEnv) = renamePatList(funcArgs
           ,localVar2,1,{},{},localCache,localEnv,localConstTagEnv);
         pat = DFA.RP_CALL(localVar,compRef,renamedPatList);
-        
+
       then (localCache,pat,listAppend(localAsBinds,localAsBinds2),localConstTagEnv);
         // CALL EXPRESSION
-    case (Absyn.CALL(compRef,Absyn.FUNCTIONARGS({},namedArgList)),  
+    case (Absyn.CALL(compRef,Absyn.FUNCTIONARGS({},namedArgList)),
         localVar,localAsBinds,localCache,localEnv,localConstTagEnv)
       local
         Absyn.ComponentRef compRef;
-        list<Absyn.NamedArg> namedArgList;	  
+        list<Absyn.NamedArg> namedArgList;
         RenamedPatList renamedPatList;
         RenamedPat pat;
         AsList localAsBinds2;
@@ -628,53 +628,53 @@ algorithm
         SCode.Class sClass;
         Absyn.Path pathName;
         list<Absyn.Ident> fieldNameList;
-        list<Absyn.Exp> funcArgs; 
+        list<Absyn.Exp> funcArgs;
         Integer constTag;
       equation
         recName = Absyn.crefToPath(compRef);
-        
+
         (constTag,localConstTagEnv) = getUniqueConstTag(recName,localConstTagEnv);
-        localVar2 = stringAppend(localVar,"_"); 
-        localVar2 = stringAppend(localVar2,intString(constTag));  
-          
+        localVar2 = stringAppend(localVar,"_");
+        localVar2 = stringAppend(localVar2,intString(constTag));
+
         // Fetch the names of the fields
         (localCache,sClass,_) = Lookup.lookupClass(localCache,localEnv,recName,true);
         (fieldNameList,_) = DFA.extractFieldNamesAndTypes(sClass);
-        
+
         //Sorting of named arguments
         funcArgs = generatePositionalArgs(fieldNameList,namedArgList,{});
-        
+
         (localCache,renamedPatList,localAsBinds2,localConstTagEnv) = renamePatList(funcArgs
           ,localVar2,1,{},{},localCache,localEnv,localConstTagEnv);
         pat = DFA.RP_CALL(localVar,compRef,renamedPatList);
-        
+
       then (localCache,pat,listAppend(localAsBinds,localAsBinds2),localConstTagEnv);
-        // EMPTY LIST EXPRESSION    
+        // EMPTY LIST EXPRESSION
     case (Absyn.ARRAY({}),localVar,localAsBinds,localCache,_,localConstTagEnv)
-      local  
+      local
         RenamedPat pat;
       equation
         pat = DFA.RP_EMPTYLIST(localVar);
-      then (localCache,pat,localAsBinds,localConstTagEnv);    
+      then (localCache,pat,localAsBinds,localConstTagEnv);
     case (Absyn.ARRAY(expList),localVar,localAsBinds,localCache,localEnv,localConstTagEnv)
-      local 
+      local
         list<Absyn.Exp> expList;
         RenamedPat pat;
         Absyn.Exp exp;
       equation
         exp = createConsFromList(expList);
-        (localCache,pat,localAsBinds,localConstTagEnv) = 
+        (localCache,pat,localAsBinds,localConstTagEnv) =
         renameMain(exp,localVar,localAsBinds,localCache,localEnv,localConstTagEnv);
       then (localCache,pat,localAsBinds,localConstTagEnv);
-    case (e,_,_,_,_,_)  local Absyn.Exp e; 
+    case (e,_,_,_,_,_)  local Absyn.Exp e;
       equation
       //  Debug.fprint("failtrace", "- renameMain failed, invalid pattern\n");
-      //  Debug.fcall("failtrace", Dump.printExp, e);  
-      then fail();   
-  end matchcontinue;	     
+      //  Debug.fcall("failtrace", Dump.printExp, e);
+      then fail();
+  end matchcontinue;
 end renameMain;
 
-protected function createConsFromList "function: 
+protected function createConsFromList "function:
 A function that takes a list of expressions and creates nested cons-cells
 "
   input list<Absyn.Exp> inList;
@@ -682,18 +682,18 @@ A function that takes a list of expressions and creates nested cons-cells
 algorithm
   outExp :=
   matchcontinue (inList)
-    local 
+    local
       Absyn.Exp firstElem;
       list<Absyn.Exp> restElem;
-    case (firstElem :: {}) 
+    case (firstElem :: {})
     then Absyn.CONS(firstElem,Absyn.ARRAY({}));
     case (firstElem :: restElem)
       local
-        Absyn.Exp localExp;       
+        Absyn.Exp localExp;
       equation
         localExp = createConsFromList(restElem);
-        localExp = Absyn.CONS(firstElem,localExp);     
-      then localExp;  
+        localExp = Absyn.CONS(firstElem,localExp);
+      then localExp;
   end matchcontinue;
 end createConsFromList;
 
@@ -710,11 +710,11 @@ protected function renamePatList "function: renamePatList
   input list<RenamedPat> accRenamedPatList;
   input AsList asBindings;
   input Env.Cache cache;
-  input Env.Env env; 
+  input Env.Env env;
   input tuple<Integer,list<Absyn.Ident,Integer>> inConstTagEnv;
   output Env.Cache outCache;
   output list<RenamedPat> renamedPatList;
-  output AsList outAsBindings; 
+  output AsList outAsBindings;
   output tuple<Integer,list<Absyn.Ident,Integer>> outConstTagEnv;
 algorithm
   (outCache,renamedPatList,outAsBindings,outConstTagEnv) :=
@@ -725,7 +725,7 @@ algorithm
       Env.Cache localCache;
       Env.Env localEnv;
       tuple<Integer,list<Absyn.Ident,Integer>> localConstTagEnv;
-    case ({},_,_,localAccRenamedPatList,localAsBindings,localCache,_,localConstTagEnv) 
+    case ({},_,_,localAccRenamedPatList,localAsBindings,localCache,_,localConstTagEnv)
       equation then (localCache,localAccRenamedPatList,localAsBindings,localConstTagEnv);
     case (first :: rest,localVar,localPivot,localAccRenamedPatList,localAsBindings,
       localCache,localEnv,localConstTagEnv)
@@ -742,11 +742,11 @@ algorithm
         Absyn.Ident str;
         String tempStr;
       equation
-        tempStr = stringAppend("__",intString(localPivot));     
+        tempStr = stringAppend("__",intString(localPivot));
         //Rename first pattern
-        (localCache,localRenamedPat,localAsBindings2,localConstTagEnv) = 
+        (localCache,localRenamedPat,localAsBindings2,localConstTagEnv) =
         renameMain(first,stringAppend(localVar,tempStr),{},localCache,localEnv,localConstTagEnv);
-        
+
       	str = stringAppend(localVar,tempStr);
 
       	localAccRenamedPatList = listAppend(localAccRenamedPatList,localRenamedPat :: {});
@@ -768,13 +768,13 @@ public function matchMain "function: matchMain
   input Absyn.Exp matchCont;
   input list<Absyn.Exp> resultVarList; // This is a list of lhs component refs, (var1,var2,...) = matchcontinue (...) ...
   input Env.Cache cache;
-  input Env.Env env; 
+  input Env.Env env;
   output Env.Cache outCache;
   output Absyn.Exp outExpr; // The final valueblock with nested if-else-elseif statements
 algorithm
-  (outCache,outExpr) := 
+  (outCache,outExpr) :=
   matchcontinue (matchCont,resultVarList,cache,env)
-    case (localMatchCont,localResultVarList,localCache,localEnv)  
+    case (localMatchCont,localResultVarList,localCache,localEnv)
       local
         RightHandList rhList,rhList2; // Light version and normal version
         RenamedPatMatrix patMat;
@@ -787,19 +787,19 @@ algorithm
         Absyn.Exp localMatchCont,expr;
         RenamedPatMatrix2 patMat2;
         Env.Cache localCache;
-        Env.Env localEnv; 
-        Integer nCases; 
+        Env.Env localEnv;
+        Integer nCases;
         Boolean lightVs;
-      equation	
+      equation
         // Get the pattern matrix, etc.
-        (localCache,inputVarList,declList,rhList2,rhList,patMat,elseRhSide) = 
+        (localCache,inputVarList,declList,rhList2,rhList,patMat,elseRhSide) =
         ASTtoMatrixForm(localMatchCont,localCache,localEnv);
         patMat2 = arrayList(patMat);
-        
+
         // A small fix.
-        patMat2 = DFA.matrixFix(patMat2);      
-       
-        // ------------------- 
+        patMat2 = DFA.matrixFix(patMat2);
+
+        // -------------------
         // ---Type Checking---
         // -------------------
         // Two sorts of type checkings are performed:
@@ -813,15 +813,15 @@ algorithm
         //typeCheck1(localCache,localEnv,patMat2,inputVarList);
         //typeCheck2(localCache,localEnv,rhList2,localResultVarList);
         // -------------
-        
+
         // Start the pattern matching
         // The rhList version is a "light" version of the rightHandSides so that
         // we do not have to carry around a lot of extra code in the pattern match algorithm
         (dfaState,stampTemp,_) = matchFuncHelper(patMat2,rhList,DFA.STATE(1,0,{},NONE()),1,{});
-        //print("Done with the matching"); 
+        //print("Done with the matching");
         nCases = listLength(rhList);
         dfaRec = DFA.DFArec(declList,{},NONE(),dfaState,stampTemp,nCases);
-        
+
         // Light version or not ---------------------
         // In a light version state labels will not be generated.
         // Light versions are generated when there is only one case-clause
@@ -829,58 +829,58 @@ algorithm
         // such as (_,var1,5) = func(...);
         lightVs = Util.if_((nCases == 1),true,false);
         //-------------------------------------------
-        
+
         // Transform the DFA into a valueblock with nested if-elseif-else statements.
-        (localCache,expr) = 
+        (localCache,expr) =
         DFA.fromDFAtoIfNodes(dfaRec,inputVarList,localResultVarList,localCache,localEnv,rhList2,lightVs);
-      then (localCache,expr); 
-    case (exp,_,_,_)   
-      local  
-        Absyn.Exp exp;   
+      then (localCache,expr);
+    case (exp,_,_,_)
+      local
+        Absyn.Exp exp;
       equation
       //  Debug.fprint("failtrace", "- matchMain failed\n");
-      //  Debug.fcall("failtrace", Dump.printExp, exp);     
+      //  Debug.fcall("failtrace", Dump.printExp, exp);
       then fail();
-  end matchcontinue;	      
+  end matchcontinue;
 end matchMain;
 
 /*
  The match algorithm:
  We can have tree types of patterns: wildcards, constructors and constants (may also sometimes be viewed
  as constructors with zero arguments).
- 
+
  Case 1:
  All of the top-most patterns consists of wildcards. The leftmost wildcard is used to create an arc.
  Match is invoked on a new state with what is left of the upper row. An else arc is created, Match
  is invoked on a new state with the rest of the matrix with the upper-row removed.
- 
+
  Case 2:
  The top-most column consists of wildcards and constants. Select the left-most column with a constant
- at the uppermost position. 
+ at the uppermost position.
  If this is the only column in the matrix do the following:
  		Create a new arc with the constant and a new final state. Create an else branch and a new state and
  		invoke match on this new state with what is left of the column. We have to do it this way because we
- 		do not won't to loose any right-hand sides (since fail-continue may be implemented). 
+ 		do not won't to loose any right-hand sides (since fail-continue may be implemented).
  Otherwise: Create an arc and state for each constant and constructor in the same way as case 3. For all
  		the wildcards we create a new arc and state.
- 
+
  Case 3:
  There exists a column whose top-most pattern is a constructor. Select the left-most column containing
  a constructor. We will create a new arc for each constructor c in this column. So for each constructor c:
  Select the rows that match c (wildcards included). Extract the subpatterns, create a new
  arc and state and invoke match on what is left on the matrix appended with the extracted subpatterns.
- 
+
  If this is the only column in the matrix do the following:
  		Create an else arc and a new arc. Invoke match on the matrix consisting of the wildcards and constants.
- 		
+
  Otherwise: create an arc and state for each constant as well, in the same way as for the constructors.
- 		Create a new arc and state for all the wildcards. 
+ 		Create a new arc and state for all the wildcards.
 */
 
 
 protected function matchFuncHelper "function: matchFuncHelper
 	author: KS
- 	This function is called recursively. It picks out a column and starts the pattern matching. 
+ 	This function is called recursively. It picks out a column and starts the pattern matching.
  	See above.
 "
   input RenamedPatMatrix2 patMat;
@@ -888,21 +888,21 @@ protected function matchFuncHelper "function: matchFuncHelper
   input DFA.State currentState;
   input Integer stampCounter; // Each state will be given a stamp
   input list<DFA.SimpleState> savedStates; // For optimization
-  output DFA.State outState; 
-  output Integer outStampCounter; 
+  output DFA.State outState;
+  output Integer outStampCounter;
   output list<DFA.SimpleState> outSavedStates;
-algorithm   
+algorithm
   (outState,outStampCounter,outSavedStates) :=
-  matchcontinue (patMat,rhList,currentState,stampCounter,savedStates) 
+  matchcontinue (patMat,rhList,currentState,stampCounter,savedStates)
     local
-      list<DFA.SimpleState> localSavedStates,oldSavedStates;     
-      list<Integer> cNumbers; 
+      list<DFA.SimpleState> localSavedStates,oldSavedStates;
+      list<Integer> cNumbers;
     case ({},{},_,localCnt,localSavedStates) // Empty pattern matrix
       local
         Integer localCnt;
       equation
         //print("MatchFuncHelper: Two empty lists\n");
-      then (DFA.DUMMIESTATE(),localCnt-1,localSavedStates); // The dummie states will simply be discarded 
+      then (DFA.DUMMIESTATE(),localCnt-1,localSavedStates); // The dummie states will simply be discarded
                                            // when if-statements are created.
     case ({{}},{},_,localCnt,localSavedStates) // Empty pattern matrix
       local
@@ -910,30 +910,30 @@ algorithm
       equation
         //print("MatchFuncHelper: Two empty lists\n");
       then (DFA.DUMMIESTATE(),localCnt-1,localSavedStates);
-        
-        // FINAL STATE	        
-    case ({},localRhList,_,localCnt,localSavedStates) // Empty pattern matrix but one 
+
+        // FINAL STATE
+    case ({},localRhList,_,localCnt,localSavedStates) // Empty pattern matrix but one
       // element in the righthand side list.
       // This means that we should create a final state.
-      local 
+      local
         RightHandSide rhSide;
         Integer localCnt;
-        RightHandList localRhList; 
-        Integer n; 
+        RightHandList localRhList;
+        Integer n;
         DFA.SimpleState simpleState;
-      equation 
-        rhSide = Util.listFirst(localRhList);     
-        
+      equation
+        rhSide = Util.listFirst(localRhList);
+
         //--Optimization
         n = Util.listFirst(DFA.getRightHandSideNumbers({rhSide},{}));
         simpleState = DFA.SIMPLESTATE(localCnt,{},n,NONE());
         localSavedStates = DFA.addNewSimpleState(localSavedStates,localCnt,simpleState);
         //----------
-          
+
       then (DFA.STATE(localCnt,0,{},SOME(rhSide)),localCnt,localSavedStates);
-        
+
         // CASE 1 - ALL WILDCARDS at the top-most matrix row -----------------------
-    case (localPatMat,localRhList,localState,localCnt,localSavedStates) 
+    case (localPatMat,localRhList,localState,localCnt,localSavedStates)
       local
         RenamedPatMatrix2 localPatMat,tempMat;
         RightHandList localRhList;
@@ -945,67 +945,67 @@ algorithm
         Absyn.Ident arcName;
       equation
         firstPatRow = DFA.firstRow(localPatMat,{});
-        true = allWildcards(firstPatRow); // Check to see if all are wildcards, note that variables are 
-                                          // classified as wildcards as well 
+        true = allWildcards(firstPatRow); // Check to see if all are wildcards, note that variables are
+                                          // classified as wildcards as well
         //---Optimization, save these values in case we need to discard the state we are working with.
         oldCnt = localCnt;
         oldSavedStates = localSavedStates;
-        //---------------------                                     
-       
-        localCnt = localCnt + 1;                                       
+        //---------------------
+
+        localCnt = localCnt + 1;
         newState = DFA.STATE(localCnt,0,{},NONE());
-        
+
         // Start with first column (and the first row). But since the row only contains wildcards,
         // we can go straight to the final state (thus we send in an empty matrix).
         v1 = Util.listCreate(Util.listFirst(localRhList));
         (newState,localCnt,localSavedStates) = matchFuncHelper({},v1,newState,localCnt,localSavedStates);
-        
-        //Add a wildcard arc    
+
+        //Add a wildcard arc
         pat = Util.listFirst(firstPatRow);
         arcName = "Wildcard";
         cNumbers = DFA.getRightHandSideNumbers(v1,{});
         localState = DFA.addNewArc(localState,arcName,newState,SOME(pat),cNumbers);
-        
-        tempMat = DFA.removeFirstRow(localPatMat,{});        
-        
+
+        tempMat = DFA.removeFirstRow(localPatMat,{});
+
         localCnt = localCnt + 1;
         newState = DFA.STATE(localCnt,0,{},NONE());
-        
+
         // Match the rest of the matrix with first row removed
         v2 = Util.listRest(localRhList);
         (newState,localCnt,localSavedStates) = matchFuncHelper(tempMat
           ,v2,newState,localCnt,localSavedStates);
-                        
+
         // Add an else arc for the result of the matching of the
         // rest of the matrix with the first row removed
         arcName = "else";
         //cNumbers = DFA.getRightHandSideNumbers(v2,{});
         localState = DFA.addNewArc(localState,arcName,newState,NONE(),{});
-        
+
         //---Optimization
         (localState,localCnt,localSavedStates) = doOptimization(oldSavedStates,localSavedStates,localState,oldCnt,localCnt);
         //---------------------------
-        
-      then (localState,localCnt,localSavedStates);		 	
-        //CASE 3 --- THERE EXIST AT LEAST ONE CONSTRUCTOR at the top-most row of the matrix --------------      	
+
+      then (localState,localCnt,localSavedStates);
+        //CASE 3 --- THERE EXIST AT LEAST ONE CONSTRUCTOR at the top-most row of the matrix --------------
     case (localPatMat,localRhList,localState,localCnt,localSavedStates)
       local
         RenamedPatMatrix2 localPatMat;
         RightHandList localRhList;
         DFA.State localState;
-        Integer localCnt,oldCnt,i; 
+        Integer localCnt,oldCnt,i;
       equation
         // check to see if there exist a constructor
-        true = existConstructor(DFA.firstRow(localPatMat,{})); 
-        
+        true = existConstructor(DFA.firstRow(localPatMat,{}));
+
         // Dispatch to a separate function
         (localState,localCnt,localSavedStates) = matchCase3(localPatMat,localRhList,localState,localCnt,localSavedStates);
         //i = listLength(localSavedStates);
         //i = DFA.printDFASimple(listArray(localSavedStates),i);
-      then (localState,localCnt,localSavedStates);	  
-        
-        // CASE 2 - NO CONSTRUCTORS BUT NOT ALL WILDCARDS	at the top-most row of the matrix    		    
-    case (localPatMat,localRhList,localState,localCnt,localSavedStates) 
+      then (localState,localCnt,localSavedStates);
+
+        // CASE 2 - NO CONSTRUCTORS BUT NOT ALL WILDCARDS	at the top-most row of the matrix
+    case (localPatMat,localRhList,localState,localCnt,localSavedStates)
       local
         RenamedPatList tempPatL;
         RenamedPatMatrix2 localPatMat;
@@ -1015,77 +1015,77 @@ algorithm
         RenamedPat pat;
         ArcName arcName;
         list<RightHandSide> v1,v2;
-      equation 
+      equation
         true = (listLength(localPatMat) == 1); //ONLY ONE COLUMN IN THE MATRIX
         // THE TOP ELEMENT MUST BE A CONSTANT
-        
+
         //---Optimization, save these values in case we need to discard the state we are working with
         oldCnt = localCnt;
         oldSavedStates = localSavedStates;
-        //--------------------- 
-        
-        // Match first element 
+        //---------------------
+
+        // Match first element
         localCnt = localCnt + 1;
         newState = DFA.STATE(localCnt,0,{},NONE());
         v1 = Util.listCreate(Util.listFirst(localRhList));
         (newState,localCnt,localSavedStates) = matchFuncHelper({},v1
           ,newState,localCnt,localSavedStates);
-          
+
         pat = Util.listFirst(Util.listFirst(localPatMat));
         // Add new arc with first element
         arcName = getConstantName(pat);
         cNumbers = DFA.getRightHandSideNumbers(v1,{});
         localState = DFA.addNewArc(localState,arcName
-          ,newState,SOME(pat),cNumbers);	    	 	  
-        
+          ,newState,SOME(pat),cNumbers);
+
         // Match the rest of the column
-        tempPatL = Util.listFirst(localPatMat);	    	 	
+        tempPatL = Util.listFirst(localPatMat);
         localCnt = localCnt + 1;
-        newState = DFA.STATE(localCnt,0,{},NONE()); 
+        newState = DFA.STATE(localCnt,0,{},NONE());
         v2 = Util.listRest(localRhList);
         (newState,localCnt,localSavedStates) = matchFuncHelper(Util.listCreate(Util.listRest(tempPatL)),
-          v2,newState,localCnt,localSavedStates);  
-        
+          v2,newState,localCnt,localSavedStates);
+
         // Add a new arc with rest of column
         arcName= "else";
         //cNumbers = DFA.getRightHandSideNumbers(v2,{});
-        localState = DFA.addNewArc(localState,arcName,newState,NONE(),{}); 
-        
+        localState = DFA.addNewArc(localState,arcName,newState,NONE(),{});
+
          //---Optimization
         (localState,localCnt,localSavedStates) = doOptimization(oldSavedStates,localSavedStates,localState,oldCnt,localCnt);
         //---------------------------
-        
+
       then (localState,localCnt,localSavedStates);
-        
-        // CASE 2 - NO CONSTRUCTORS BUT NOT ALL WILDCARDS	at the top-most row of the matrix	     		  
-    case (localPatMat,localRhList,localState,localCnt,localSavedStates) 
+
+        // CASE 2 - NO CONSTRUCTORS BUT NOT ALL WILDCARDS	at the top-most row of the matrix
+    case (localPatMat,localRhList,localState,localCnt,localSavedStates)
       local
-        Integer ind,localCnt,oldCnt; 
+        Integer ind,localCnt,oldCnt;
         RenamedPatList firstR;
         RenamedPatMatrix2 localPatMat;
         RightHandList localRhList;
         DFA.State localState;
-        RenamedPat pat; 
+        RenamedPat pat;
       equation
         //---Optimization, save these values in case we need to discard the state we are working with
         oldCnt = localCnt;
         oldSavedStates = localSavedStates;
-        //--------------------- 
-        
+        //---------------------
+
         firstR = DFA.firstRow(localPatMat,{});
         ind = findFirstConstant(firstR,1); // Find the left-most column containing a constant
         // Add an arc for each constant
         (localState,localCnt,localSavedStates) = addNewArcForEachC(localState,
           ind,localPatMat,localRhList,localCnt,localSavedStates);
-        
+
         // Add one arc for all the wildcards
         (localState,localCnt,localSavedStates) = addNewArcForWildcards(localState,
-          ind,localPatMat,localRhList,localCnt,localSavedStates);  
-        
+          ind,localPatMat,localRhList,localCnt,localSavedStates);
+
         //---Optimization
         (localState,localCnt,localSavedStates) = doOptimization(oldSavedStates,localSavedStates,localState,oldCnt,localCnt);
         //---------------------------
-        
+
       then (localState,localCnt,localSavedStates);
   end matchcontinue;
 end matchFuncHelper;
@@ -1099,104 +1099,104 @@ protected function matchCase3 "function: matchCase3
   input RenamedPatMatrix2 patMat;
   input RightHandList rhList;
   input DFA.State currentState;
-  input Integer stampCounter; 
-  input list<DFA.SimpleState> savedStates; 
+  input Integer stampCounter;
+  input list<DFA.SimpleState> savedStates;
   output DFA.State finalState;
-  output Integer outStamp; 
+  output Integer outStamp;
   output list<DFA.SimpleState> outSavedStates;
 algorithm
   (finalState,outStamp,outSavedStates) :=
-  matchcontinue (patMat,rhList,currentState,stampCounter,savedStates) 
+  matchcontinue (patMat,rhList,currentState,stampCounter,savedStates)
     local
-      list<DFA.SimpleState> localSavedStates,oldSavedStates; 
+      list<DFA.SimpleState> localSavedStates,oldSavedStates;
     case (localPatMat,localRhList,localState,localCnt,localSavedStates)
       local
         RenamedPatMatrix2 localPatMat;
         RightHandList localRhList;
-        DFA.State localState,newState;    
-        Integer localCnt,ind,oldCnt,oldCnt2; 
+        DFA.State localState,newState;
+        Integer localCnt,ind,oldCnt,oldCnt2;
         list<Absyn.Ident,Boolean> listOfConstructors;
         IndexVector indVec;
         RenamedPatList tempList;
         RenamedPat pat;
-        ArcName arcName; 
+        ArcName arcName;
         list<DFA.SimpleState> oldSavedStates2;
       equation
         true = (listLength(localPatMat) == 1); // One column in the matrix
-        // Get the names of the constructors in the column  
+        // Get the names of the constructors in the column
         //---Optimization, save these values in case we need to discard the state we are working with
         oldCnt = localCnt;
         oldSavedStates = localSavedStates;
-        //--------------------- 
-        
+        //---------------------
+
         tempList = Util.listFirst(localPatMat);
         listOfConstructors = findConstructors(tempList,{});
-        
+
         // Get the indices of the consts and wildcards
         indVec = findConstAndWildcards(tempList,{},1);
-        
+
         // Add a new arc for each constructor
         (localState,localCnt,localSavedStates) = addNewArcForEachCHelper(listOfConstructors,localState,
           1,localPatMat,localRhList,localCnt,localSavedStates);
-        
+
         //---Optimization2, save these values in case we need to discard the state we are working with
         oldCnt2 = localCnt + 1;
         oldSavedStates2 = localSavedStates;
-        //--------------------- 
+        //---------------------
         localCnt = localCnt + 1;
         newState = DFA.STATE(localCnt,0,{},NONE());
-        
-        // Add a new arc for the constants and wildcards 	    	
+
+        // Add a new arc for the constants and wildcards
         (newState,localCnt,localSavedStates) = createUnionState(indVec,tempList,
-          localRhList,localCnt,newState,true,localSavedStates); 
-        
+          localRhList,localCnt,newState,true,localSavedStates);
+
         //---Optimization
         (newState,localCnt,localSavedStates) = doOptimization(oldSavedStates2,localSavedStates,newState,oldCnt2,localCnt);
         //---------------------------
-        
+
         arcName= "else";
         localState = DFA.addNewArc(localState,arcName,newState,NONE(),{});
-        
+
         //---Optimization
         (localState,localCnt,localSavedStates) = doOptimization(oldSavedStates,localSavedStates,localState,oldCnt,localCnt);
         //---------------------------
-        
+
       then (localState,localCnt,localSavedStates);
         // MORE THAN ONE COLUMN IN THE MATRIX
     case (localPatMat,localRhList,localState,localCnt,localSavedStates)
-      local 
+      local
         RenamedPatMatrix2 localPatMat;
         RightHandList localRhList;
-        DFA.State localState;    
+        DFA.State localState;
         Integer localCnt,ind,oldCnt;
         RenamedPat pat;
         RenamedPatList patList;
-      equation 
+      equation
         //---Optimization, save these values in case we need to discard the state we are working with
         oldCnt = localCnt;
         oldSavedStates = localSavedStates;
-        //--------------------- 
-        
+        //---------------------
+
         patList = DFA.firstRow(localPatMat,{});
-        
+
         // Find the left-most column containing a constructor
         ind = findFirstConstructor(patList,1);
-        
+
         // Add a new arc for each constant and constructor
         (localState,localCnt,localSavedStates) = addNewArcForEachC(localState,ind,localPatMat,localRhList,localCnt,localSavedStates);
-        
+
         // Add a new arc for all the wildcards (combined)
-        (localState,localCnt,localSavedStates) = addNewArcForWildcards(localState,ind,localPatMat,localRhList,localCnt,localSavedStates); 
-        
+        (localState,localCnt,localSavedStates) = addNewArcForWildcards(localState,ind,localPatMat,localRhList,localCnt,localSavedStates);
+
         //---Optimization
         (localState,localCnt,localSavedStates) = doOptimization(oldSavedStates,localSavedStates,localState,oldCnt,localCnt);
         //---------------------------
-      then (localState,localCnt,localSavedStates);    
+      then (localState,localCnt,localSavedStates);
   end matchcontinue;
 end matchCase3;
 
 protected function findConstAndWildcards "function: findConstAndWildcards
-	author: KS	
+	author: KS
 	Get the indices of all the const and wildcards from a pattern list.
 "
   input RenamedPatList inList;
@@ -1218,16 +1218,16 @@ algorithm
         Integer localPivot;
       equation
         true = (wildcardOrNot(first) or constantOrNot(first));
-        localAccList = listAppend(localAccList,{localPivot});  
+        localAccList = listAppend(localAccList,{localPivot});
       then findConstAndWildcards(rest,localAccList,localPivot+1);
     case (_ :: rest,localAccList,localPivot)
       local
         RenamedPatList rest;
         IndexVector localAcclist;
-        Integer localPivot;       
-      equation 
-      then findConstAndWildcards(rest,localAccList,localPivot+1);             
-  end matchcontinue;    
+        Integer localPivot;
+      equation
+      then findConstAndWildcards(rest,localAccList,localPivot+1);
+  end matchcontinue;
 end findConstAndWildcards;
 
 protected function findFirstConstant "function: findFirstConstant
@@ -1248,7 +1248,7 @@ algorithm
       equation
         true = constantOrNot(first);
       then localInd;
-    case (_ :: rest,localInd) equation then findFirstConstant(rest,localInd+1); 
+    case (_ :: rest,localInd) equation then findFirstConstant(rest,localInd+1);
   end matchcontinue;
 end findFirstConstant;
 
@@ -1271,15 +1271,15 @@ algorithm
       equation
         true = constructorOrNot(first);
       then localInd;
-    case (_ :: rest,localInd) equation then findFirstConstructor(rest,localInd+1); 
+    case (_ :: rest,localInd) equation then findFirstConstructor(rest,localInd+1);
   end matchcontinue;
-end findFirstConstructor; 
+end findFirstConstructor;
 
 
 protected function createUnionState "function: createUnionState
-	author: KS	
-	This functions takes a list of patterns, an index vector with indices 
-	to wildcard and constant patterns in the list of patterns and 
+	author: KS
+	This functions takes a list of patterns, an index vector with indices
+	to wildcard and constant patterns in the list of patterns and
 	then creates a new state with arcs for these patterns. This function
 	is used in for instance the following case:
 	v := matchcontinue(x)
@@ -1298,54 +1298,29 @@ protected function createUnionState "function: createUnionState
   input RightHandList rhList;
   input Integer stampCnt;
   input DFA.State state;
-  input Boolean firstTime; 
+  input Boolean firstTime;
   input list<DFA.SimpleState> inSavedStates;
   output DFA.State outState;
   output Integer outStamp;
   output list<DFA.SimpleState> outSavedStates;
 algorithm
-  (outstate,outStamp,outSavedStates) := 
+  (outstate,outStamp,outSavedStates) :=
   matchcontinue (indVec,patList,rhList,stampCnt,state,firstTime,inSavedStates)
     local
       list<DFA.SimpleState> localSavedStates;
-    case ({},_,_,localCnt,_,true,localSavedStates) 
-      local
-        Integer localCnt;	    
-      equation 
-      then (DFA.DUMMIESTATE(),localCnt-1,localSavedStates);
-    case ({},_,_,localCnt,localState,_,localSavedStates) 
+    case ({},_,_,localCnt,_,true,localSavedStates)
       local
         Integer localCnt;
-        DFA.State localState;	    
-      equation 
-      then (localState,localCnt,localSavedStates);
-        
-        // Wildcard	       
-    case (first :: rest,localPatList,localRhList,localCnt,localState,_,localSavedStates)
-      local
-        RenamedPat pat;
-        RightHandSide rhSide;
-        Integer first,localCnt;
-        IndexVector rest;
-        RenamedPatList localPatList;
-        RightHandList localRhList;
-        DFA.State localState,newState; 
-        list<Integer> cNumbers;
       equation
-        pat = arrayGet(listArray(localPatList),first);
-        true = wildcardOrNot(pat);
-        rhSide = arrayGet(listArray(localRhList),first);
-        localCnt = localCnt + 1;
-        newState = DFA.STATE(localCnt,0,{},NONE());
-        (newState,localCnt,localSavedStates) = matchFuncHelper({},{rhSide},newState,localCnt,localSavedStates);
-          
-        cNumbers = DFA.getRightHandSideNumbers({rhSide},{});
-        localState = DFA.addNewArc(localState,"Wildcard",newState,SOME(pat),cNumbers);
-        (localState,localCnt,localSavedStates) = 
-        createUnionState(rest,localPatList,localRhList,localCnt,localState,false,localSavedStates);
-      then (localState,localCnt,localSavedStates);     
-        
-        // Constant	
+      then (DFA.DUMMIESTATE(),localCnt-1,localSavedStates);
+    case ({},_,_,localCnt,localState,_,localSavedStates)
+      local
+        Integer localCnt;
+        DFA.State localState;
+      equation
+      then (localState,localCnt,localSavedStates);
+
+        // Wildcard
     case (first :: rest,localPatList,localRhList,localCnt,localState,_,localSavedStates)
       local
         RenamedPat pat;
@@ -1355,7 +1330,32 @@ algorithm
         RenamedPatList localPatList;
         RightHandList localRhList;
         DFA.State localState,newState;
-        ArcName arcName;  
+        list<Integer> cNumbers;
+      equation
+        pat = arrayGet(listArray(localPatList),first);
+        true = wildcardOrNot(pat);
+        rhSide = arrayGet(listArray(localRhList),first);
+        localCnt = localCnt + 1;
+        newState = DFA.STATE(localCnt,0,{},NONE());
+        (newState,localCnt,localSavedStates) = matchFuncHelper({},{rhSide},newState,localCnt,localSavedStates);
+
+        cNumbers = DFA.getRightHandSideNumbers({rhSide},{});
+        localState = DFA.addNewArc(localState,"Wildcard",newState,SOME(pat),cNumbers);
+        (localState,localCnt,localSavedStates) =
+        createUnionState(rest,localPatList,localRhList,localCnt,localState,false,localSavedStates);
+      then (localState,localCnt,localSavedStates);
+
+        // Constant
+    case (first :: rest,localPatList,localRhList,localCnt,localState,_,localSavedStates)
+      local
+        RenamedPat pat;
+        RightHandSide rhSide;
+        Integer first,localCnt;
+        IndexVector rest;
+        RenamedPatList localPatList;
+        RightHandList localRhList;
+        DFA.State localState,newState;
+        ArcName arcName;
         list<Integer> cNumbers;
       equation
         pat = arrayGet(listArray(localPatList),first);
@@ -1363,20 +1363,20 @@ algorithm
         localCnt = localCnt + 1;
         newState = DFA.STATE(localCnt,0,{},NONE());
         (newState,localCnt,localSavedStates) = matchFuncHelper({},{rhSide},newState,localCnt,localSavedStates);
-        
+
         arcName = getConstantName(pat);
         cNumbers = DFA.getRightHandSideNumbers({rhSide},{});
         localState = DFA.addNewArc(localState,arcName,newState,SOME(pat),cNumbers);
-        (localState,localCnt,localSavedStates) = 
+        (localState,localCnt,localSavedStates) =
         createUnionState(rest,localPatList,localRhList,localCnt,localState,false,localSavedStates);
       then (localState,localCnt,localSavedStates);
-  end matchcontinue;      
-end createUnionState; 
+  end matchcontinue;
+end createUnionState;
 
 
 protected function findConstructors "function: findConstructors
-	author: KS	
-	This function finds the constructors in a renamed pattern list. 
+	author: KS
+	This function finds the constructors in a renamed pattern list.
 	The boolean tells wheter it is a constructor (true) or constant (false).
 	The functions addNewArcForEachC and addNewArcForEachCHelper makes use of
 	this boolean.
@@ -1401,63 +1401,63 @@ algorithm
         constructorName = getConstructorName(first);
         temp = {(constructorName,true)};
         false = listMember(Util.listFirst(temp),localAccList);
-      then findConstructors(rest,listAppend(localAccList,temp));  
+      then findConstructors(rest,listAppend(localAccList,temp));
     case (_ :: rest,localAccList)
       local
         RenamedPatList rest;
-      equation  
+      equation
       then findConstructors(rest,localAccList);
   end matchcontinue;
 end findConstructors;
 
-protected function getConstructorName "function: getConstrucorName	
+protected function getConstructorName "function: getConstrucorName
 	author: KS
 "
   input RenamedPat constPat;
-  output Absyn.Ident name; 
+  output Absyn.Ident name;
 algorithm
   name :=
   matchcontinue (constPat)
     case DFA.RP_CONS(_,_,_) equation then "CONS";
-    case DFA.RP_TUPLE(_,_) equation then "TUPLE";  
-    case DFA.RP_SOME(_,_) equation then "SOME";  
-    case DFA.RP_CALL(_,cref,_) 
-    local 
+    case DFA.RP_TUPLE(_,_) equation then "TUPLE";
+    case DFA.RP_SOME(_,_) equation then "SOME";
+    case DFA.RP_CALL(_,cref,_)
+    local
       Absyn.Ident val;
       Absyn.ComponentRef cref;
-      equation 
-       val = Absyn.pathString(Absyn.crefToPath(cref)); 
-      then val;  
-  end matchcontinue;     	
+      equation
+       val = Absyn.pathString(Absyn.crefToPath(cref));
+      then val;
+  end matchcontinue;
 end getConstructorName;
 
 protected function getConstantName "function: getConstantName
 	author: KS
 "
   input RenamedPat constPat;
-  output Absyn.Ident name; 
+  output Absyn.Ident name;
 algorithm
   name :=
   matchcontinue (constPat)
     case DFA.RP_INTEGER(_,val)
-    local Integer val; 
+    local Integer val;
       equation then intString(val);
     case DFA.RP_REAL(_,val)
-    local Real val; 
-      equation then realString(val); 
+    local Real val;
+      equation then realString(val);
     case DFA.RP_BOOL(_,val)
-    local Boolean val; 
+    local Boolean val;
       String str;
-      equation 
+      equation
         str = DFA.boolString(val);
-      then str;              	        
-    case DFA.RP_STRING(_,val) 
-    local 
+      then str;
+    case DFA.RP_STRING(_,val)
+    local
       String val;
-      equation then val;   
+      equation then val;
     case DFA.RP_EMPTYLIST(_) then "EmptyList";
-    case DFA.RP_NONE(_) then "NONE";      
-  end matchcontinue;     	
+    case DFA.RP_NONE(_) then "NONE";
+  end matchcontinue;
 end getConstantName;
 
 
@@ -1477,17 +1477,17 @@ protected function addNewArcForWildcards "function: addNewArcForWildcards
   input Integer ind;
   input RenamedPatMatrix2 patMat;
   input RightHandList rhList;
-  input Integer stampCnt; 
-  input list<DFA.SimpleState> savedStates; 
+  input Integer stampCnt;
+  input list<DFA.SimpleState> savedStates;
   output DFA.State finalState;
-  output Integer outCnt; 
+  output Integer outCnt;
   output list<DFA.SimpleState> outSavedStates;
 algorithm
-  (finalState,outCnt,outSavedStates) := 
-  matchcontinue (state,ind,patMat,rhList,stampCnt,savedStates) 
-    local 
-      list<DFA.SimpleState> localSavedStates;  
-    case (localState,localInd,localPatMat,localRhList,localCnt,localSavedStates)    
+  (finalState,outCnt,outSavedStates) :=
+  matchcontinue (state,ind,patMat,rhList,stampCnt,savedStates)
+    local
+      list<DFA.SimpleState> localSavedStates;
+    case (localState,localInd,localPatMat,localRhList,localCnt,localSavedStates)
       local
         IndexVector indVec;
         DFA.State localState,newState;
@@ -1500,27 +1500,27 @@ algorithm
       equation
         listTemp = arrayGet(listArray(localPatMat),localInd);
         indVec = findMatches("Wildcard",listTemp,{},1);
-        
+
         //NO WILDCARDS
         false = (listLength(indVec) == 0);
-        
+
         localCnt = localCnt + 1;
         newState = DFA.STATE(localCnt,0,{},NONE());
         matTemp = arrayList(DFA.patternsFromOtherCol(listArray(localPatMat),indVec,localInd));
-        
+
         (newState,localCnt,localSavedStates) = matchFuncHelper(matTemp,
           selectRightHandSides(indVec,listArray(localRhList),{}),newState,localCnt,localSavedStates);
-            
-        var = DFA.extractPathVar(arrayGet(listArray(listTemp),Util.listFirst(indVec)));   
-        arcName = "Wildcard"; 
+
+        var = DFA.extractPathVar(arrayGet(listArray(listTemp),Util.listFirst(indVec)));
+        arcName = "Wildcard";
         localState = DFA.addNewArc(localState,arcName,newState,SOME(DFA.RP_WILDCARD(var)),{});
       then (localState,localCnt,localSavedStates);
-    case (localState,_,_,_,localCnt,localSavedStates) 
+    case (localState,_,_,_,localCnt,localSavedStates)
       local
         DFA.State localState;
         Integer localCnt;
       equation
-      then (localState,localCnt,localSavedStates);  		  
+      then (localState,localCnt,localSavedStates);
   end matchcontinue;
 end addNewArcForWildcards;
 
@@ -1534,10 +1534,10 @@ protected function addNewArcForEachC "function: addNewArcForEachC
   input Integer ind;
   input RenamedPatMatrix2 patMat;
   input RightHandList rhList;
-  input Integer cnt; 
-  input list<DFA.SimpleState> savedStates; 
+  input Integer cnt;
+  input list<DFA.SimpleState> savedStates;
   output DFA.State finalState;
-  output Integer outCnt; 
+  output Integer outCnt;
   output list<DFA.SimpleState> outSavedStates;
 algorithm
   (finalState,outCnt,outSavedStates) :=
@@ -1549,12 +1549,12 @@ algorithm
         RenamedPatMatrix2 localPatMat;
         RightHandList localRhList;
         list<Absyn.Ident,Boolean> listOfC; // The boolean tells wether it is a constant or constructor
-        RenamedPatList listTemp; 
+        RenamedPatList listTemp;
         list<DFA.SimpleState> localSavedStates;
       equation
         listTemp = arrayGet(listArray(localPatMat),localInd);
         listOfC = getNamesOfCs(listTemp,{});
-        
+
         (localState,localCnt,localSavedStates) = addNewArcForEachCHelper(listOfC,localState,localInd,
           localPatMat,localRhList,localCnt,localSavedStates);
       then (localState,localCnt,localSavedStates);
@@ -1576,7 +1576,7 @@ algorithm
     local
       list<Absyn.Ident,Boolean> localAccList;
     case ({},localAccList) equation then localAccList;
-    case (first :: rest,localAccList) 
+    case (first :: rest,localAccList)
       local
         RenamedPat first;
         RenamedPatList rest;
@@ -1585,9 +1585,9 @@ algorithm
         true = constructorOrNot(first);
         temp = Util.listCreate((getConstructorName(first),true));
         false = listMember(Util.listFirst(temp),localAccList);
-      then getNamesOfCs(rest,listAppend(localAccList,temp));  
-    case (first :: rest,localAccList) 
-      local  
+      then getNamesOfCs(rest,listAppend(localAccList,temp));
+    case (first :: rest,localAccList)
+      local
         RenamedPat first;
         RenamedPatList rest;
         list<Absyn.Ident,Boolean> temp;
@@ -1607,30 +1607,30 @@ end getNamesOfCs;
 protected function addNewArcForEachCHelper "function: addNewArcForEachCHelper
 	author: KS
 	Add a new arc for each constructor or constant given a list with names of these.
-	Example: 
-	matchcontinue (var) 
-		case ({}) 
+	Example:
+	matchcontinue (var)
+		case ({})
 		case (2 :: {})
 		case (3 :: {})
 		case (_)
   The first pattern is a constant (empty list) and then we have two constructors (cons).
-	The input listOfC should have length 2: {EMPTYLIST,CONS}. 
+	The input listOfC should have length 2: {EMPTYLIST,CONS}.
 	We start with the EMPTYLIST identifer and then search the column (given by input variable ind)
 	for all the patterns containing an empty list (case 1 and case 4). Then we
 	do the same with the CONS identifer (case 2,3 and 4 matches).
 	For a constant we create a new arc and then call matchFucnHelper on extracted
 	patterns from all other columns in the matrix.
-	For a constructor we have to extract subpatterns from the constructor call as well. 
+	For a constructor we have to extract subpatterns from the constructor call as well.
 "
   input list<Absyn.Ident,Boolean> listOfC;
   input DFA.State state;
   input Integer ind;
   input RenamedPatMatrix2 patMat;
   input RightHandList rhList;
-  input Integer stampCnt; 
-  input list<DFA.SimpleState> savedStates; 
+  input Integer stampCnt;
+  input list<DFA.SimpleState> savedStates;
   output DFA.State finalState;
-  output Integer outCnt; 
+  output Integer outCnt;
   output list<DFA.SimpleState> outSavedStates;
 algorithm
   (finalState,outCnt,outSavedStates) :=
@@ -1640,13 +1640,13 @@ algorithm
       DFA.State localState,newState;
       Integer localInd,localCnt;
       RenamedPatMatrix2 localPatMat;
-      RightHandList localRhList; 
+      RightHandList localRhList;
       list<DFA.SimpleState> localSavedStates;
-    case ({},localState,_,_,_,localCnt,localSavedStates) 
+    case ({},localState,_,_,_,localCnt,localSavedStates)
       equation then (localState,localCnt,localSavedStates);
-      
-      // CONSTANT      
-    case ((first,false) :: rest,localState,localInd,localPatMat,localRhList,localCnt,localSavedStates) //Constant 
+
+      // CONSTANT
+    case ((first,false) :: rest,localState,localInd,localPatMat,localRhList,localCnt,localSavedStates) //Constant
       local
         Absyn.Ident first;
         Boolean second;
@@ -1656,39 +1656,39 @@ algorithm
         DFA.State newState;
         RenamedPat pat;
         Integer ind;
-        ArcName arcName; 
-        RightHandList tempRhList; 
+        ArcName arcName;
+        RightHandList tempRhList;
         list<Integer> cNumbers;
-      equation    
+      equation
         tempList = arrayGet(listArray(localPatMat),localInd);
-        
+
         indVec = findMatches(first,tempList,{},1); // Find all the matching patterns
-        
+
         localCnt = localCnt + 1;
         newState = DFA.STATE(localCnt,0,{},NONE());
-        
+
         tempMat = arrayList(DFA.patternsFromOtherCol(listArray(localPatMat),indVec,localInd));
-        
+
         // Match the rest of the matrix
         tempRhList = selectRightHandSides(indVec,listArray(localRhList),{});
-        (newState,localCnt,localSavedStates) = 
+        (newState,localCnt,localSavedStates) =
         matchFuncHelper(tempMat,tempRhList,newState,localCnt,localSavedStates);
-        
-        // Add a new arc for the constant 
+
+        // Add a new arc for the constant
         pat = getPatternFromPatList(tempList,indVec);
         arcName = first;
-        cNumbers = DFA.getRightHandSideNumbers(tempRhList,{}); 
+        cNumbers = DFA.getRightHandSideNumbers(tempRhList,{});
         //print("ArcName, "); print(arcName); print(", pat name:"); print(getConstantName(pat));
         //print("\n");
         localState = DFA.addNewArc(localState,arcName,newState,SOME(pat),cNumbers);
-        
+
         // Add more arcs for the other constants/constructors in the column
         (localState,localCnt,localSavedStates) = addNewArcForEachCHelper(rest,
-          localState,localInd,localPatMat,localRhList,localCnt,localSavedStates);  
+          localState,localInd,localPatMat,localRhList,localCnt,localSavedStates);
       then (localState,localCnt,localSavedStates);
-        
+
         // CONSTRUCTOR
-    case ((first,second) :: rest,localState,localInd,localPatMat,localRhList,localCnt,localSavedStates) 
+    case ((first,second) :: rest,localState,localInd,localPatMat,localRhList,localCnt,localSavedStates)
       local
         Absyn.Ident first;
         Boolean second;
@@ -1702,42 +1702,42 @@ algorithm
         list<Absyn.Ident,Boolean> rest;
         RightHandList newRhL;
         RenamedPat pat;
-        ArcName arcName; 
+        ArcName arcName;
         list<Integer> cNumbers;
       equation
         patList = arrayGet(listArray(localPatMat),localInd);
         constructorName = first;
         indVec = findMatches(constructorName,patList,{},1);
-        
-        varList = extractPathVariables(indVec,listArray(patList));  		 
-        
+
+        varList = extractPathVariables(indVec,listArray(patList));
+
         //Extract the new matrix from the constructor calls
         extractedPats2 = fill({},listLength(varList));
         extractedPats = arrayList(extractSubpatterns(varList,indVec,patList,extractedPats2));
-        
+
         mat = arrayList(DFA.patternsFromOtherCol(listArray(localPatMat),
           indVec,localInd));
-        
+
         mat = DFA.appendMatrices(mat,extractedPats);
-        
+
         newRhL = selectRightHandSides(indVec,listArray(localRhList),{});
         localCnt = localCnt + 1;
         newState = DFA.STATE(localCnt,0,{},NONE());
-        
-        // Match the matrix with the subpatterns (from the constructor call) 
+
+        // Match the matrix with the subpatterns (from the constructor call)
         // appended to the rest of the matrix
         (newState,localCnt,localSavedStates) = matchFuncHelper(mat,newRhL,newState,localCnt,localSavedStates);
-        
+
         pat = getPatternFromPatList(patList,indVec);
         pat = simplifyPattern(pat,varList);
         arcName = constructorName;
-        cNumbers = DFA.getRightHandSideNumbers(newRhL,{}); 
+        cNumbers = DFA.getRightHandSideNumbers(newRhL,{});
         //print("ArcName, "); print(arcName); print(", pat name:"); print(getConstructorName(pat));
         //print("\n");
-        localState = DFA.addNewArc(localState,arcName,newState,SOME(pat),cNumbers); 
+        localState = DFA.addNewArc(localState,arcName,newState,SOME(pat),cNumbers);
         (localState,localCnt,localSavedStates) = addNewArcForEachCHelper(rest,localState,localInd,
-          localPatMat,localRhList,localCnt,localSavedStates);  			
-      then (localState,localCnt,localSavedStates); 
+          localPatMat,localRhList,localCnt,localSavedStates);
+      then (localState,localCnt,localSavedStates);
   end matchcontinue;
 end addNewArcForEachCHelper;
 
@@ -1760,9 +1760,9 @@ algorithm
       local
         RenamedPat consPat,first,second;
         Absyn.Ident pathVar;
-        RenamedPatList wcList;  
+        RenamedPatList wcList;
       equation
-        wcList = generateWildcardList(localVarList,{});  
+        wcList = generateWildcardList(localVarList,{});
         second = Util.listFirst(Util.listRest(wcList));
         first = Util.listFirst(wcList);
         consPat = DFA.RP_CONS(pathVar,first,second);
@@ -1773,7 +1773,7 @@ algorithm
         Absyn.Ident pathVar;
         RenamedPatList wcList;
       equation
-        wcList = generateWildcardList(localVarList,{}); 
+        wcList = generateWildcardList(localVarList,{});
         tuplePat = DFA.RP_TUPLE(pathVar,wcList);
       then tuplePat;
     case (DFA.RP_SOME(pathVar,_),localVarList)
@@ -1783,18 +1783,18 @@ algorithm
         RenamedPatList wcList;
         RenamedPat wc;
       equation
-        wcList = generateWildcardList(localVarList,{}); 
+        wcList = generateWildcardList(localVarList,{});
         wc = Util.listFirst(wcList);
         somePat = DFA.RP_SOME(pathVar,wc);
-      then somePat; 
-    case (DFA.RP_CALL(pathVar,callName,_),localVarList)      
+      then somePat;
+    case (DFA.RP_CALL(pathVar,callName,_),localVarList)
       local
         Absyn.Ident pathVar;
         Absyn.ComponentRef callName;
         RenamedPat callPat;
         RenamedPatList wcList;
       equation
-        wcList = generateWildcardList(localVarList,{});  
+        wcList = generateWildcardList(localVarList,{});
         callPat = DFA.RP_CALL(pathVar,callName,wcList);
       then callPat;
   end matchcontinue;
@@ -1811,7 +1811,7 @@ algorithm
   outPatList :=
   matchcontinue (varList,patList)
     local
-      RenamedPatList localPatList;    
+      RenamedPatList localPatList;
     case ({},localPatList) equation then localPatList;
     case (first :: rest,localPatList)
       local
@@ -1838,18 +1838,18 @@ algorithm
       Integer first;
       IndexVector rest;
       RenamedPatVec localRenamedPatVec;
-    case ({},_) equation then {};  
-    case (first :: rest,localRenamedPatVec) 
+    case ({},_) equation then {};
+    case (first :: rest,localRenamedPatVec)
       equation
         true = wildcardOrNot(arrayGet(localRenamedPatVec,first));
-      then extractPathVariables(rest,localRenamedPatVec);			
-    case (first :: _,localRenamedPatVec) 
+      then extractPathVariables(rest,localRenamedPatVec);
+    case (first :: _,localRenamedPatVec)
       local
         list<Absyn.Ident> varList;
       equation
         varList = getPathVarsFromConstruct(arrayGet(localRenamedPatVec,first));
       then varList;
-  end matchcontinue;    
+  end matchcontinue;
 end extractPathVariables;
 
 
@@ -1868,7 +1868,7 @@ algorithm
       list<Absyn.Ident> tempList;
       DFA.RenamedPatList l;
       equation
-        tempList = getPathVarsFromConstructHelper(l,{}); 
+        tempList = getPathVarsFromConstructHelper(l,{});
       then tempList;
     case (DFA.RP_SOME(pathVar,rp))
     local
@@ -1876,17 +1876,17 @@ algorithm
       list<Absyn.Ident> tempList;
       DFA.RenamedPat rp;
       equation
-        tempList = getPathVarsFromConstructHelper({rp},{}); 
-      then tempList;            
+        tempList = getPathVarsFromConstructHelper({rp},{});
+      then tempList;
     case (DFA.RP_CONS(pathVar,p1,p2))
     local
       Absyn.Ident pathVar;
-      list<Absyn.Ident> tempList; 
-      DFA.RenamedPatList l; 
+      list<Absyn.Ident> tempList;
+      DFA.RenamedPatList l;
       DFA.RenamedPat p1,p2;
       equation
         l = listAppend({p1},{p2});
-        tempList = getPathVarsFromConstructHelper(l,{});  
+        tempList = getPathVarsFromConstructHelper(l,{});
       then tempList;
     case (DFA.RP_CALL(pathVar,_,l))
     local
@@ -1894,40 +1894,40 @@ algorithm
       list<Absyn.Ident> tempList;
       DFA.RenamedPatList l;
       equation
-        tempList = getPathVarsFromConstructHelper(l,{}); 
-      then tempList;          
+        tempList = getPathVarsFromConstructHelper(l,{});
+      then tempList;
   end matchcontinue;
 end getPathVarsFromConstruct;
 
 protected function getPathVarsFromConstructHelper "function: getPathVarsFromConstructHelper"
-  input DFA.RenamedPatList inList; 
-  input list<Absyn.Ident> accList;   
-  output list<Absyn.Ident> outList;  
-algorithm  
-  outList := 
-  matchcontinue (inList,accList)  
-    local 
+  input DFA.RenamedPatList inList;
+  input list<Absyn.Ident> accList;
+  output list<Absyn.Ident> outList;
+algorithm
+  outList :=
+  matchcontinue (inList,accList)
+    local
       list<Absyn.Ident> localAccList;
       DFA.RenamedPatList restPats;
       Absyn.Ident v;
-    case ({},localAccList) then localAccList; 
-    case (p :: restPats,localAccList)   
-      local  
-        DFA.RenamedPat p; 
-      equation 
+    case ({},localAccList) then localAccList;
+    case (p :: restPats,localAccList)
+      local
+        DFA.RenamedPat p;
+      equation
         v = DFA.extractPathVar(p);
-        localAccList = listAppend(localAccList,{v});  
+        localAccList = listAppend(localAccList,{v});
         localAccList = getPathVarsFromConstructHelper(restPats,localAccList);
-      then localAccList;     
+      then localAccList;
   end matchcontinue;
-end getPathVarsFromConstructHelper;   
+end getPathVarsFromConstructHelper;
 
 protected function extractSubpatterns "function: extractSubpatterns
 	author: KS
  	Extract all the subpatterns from a constructor or a wildcard.
- 	For a wildcard, n wildcards are produced (where n is the number of arguments to the constructor). 
+ 	For a wildcard, n wildcards are produced (where n is the number of arguments to the constructor).
   All the extracted subpatterns ends up in a matrix.
-  Example: 
+  Example:
   The following column (pattern list), (path) variable list {x__1,x__2}
   and an index vector {1,2,3} ...
   	 (pathVar1 = _)
@@ -1936,7 +1936,7 @@ protected function extractSubpatterns "function: extractSubpatterns
   ... will result in the following matrix:
   [RP_WILDCARD(x__1)  RP_WILDCARD(x__2)                                        ]
   [RP_INTEGER(x__1,2) RP_EMPTYLIST(x__2)                                       ]
-  [RP_INTEGER(x__1,4) RP_CONS(x__2,RP_INTEGER(x__2__1,3),RP_EMPTYLIST(x__2__2) ] 
+  [RP_INTEGER(x__1,4) RP_CONS(x__2,RP_INTEGER(x__2__1,3),RP_EMPTYLIST(x__2__2) ]
 "
   input list<Absyn.Ident> varList;
   input DFA.IndexVector indVec;
@@ -1951,33 +1951,33 @@ algorithm
       DFA.RenamedPatMatrix localAccMat;
     case (_,{},localPatList,localAccMat) equation then localAccMat;
     case (localVarList,first :: rest,localPatList,localAccMat)
-      local	      
+      local
         list<Absyn.Ident> localVarList;
         Integer first;
         IndexVector rest;
-        RenamedPatList tempPatList;  
+        RenamedPatList tempPatList;
         RenamedPat pat;
       equation
         pat = arrayGet(listArray(localPatList),first);
         true = wildcardOrNot(pat);
         tempPatList = generateWildcards(localVarList);
         localAccMat = addNewPatRow(localAccMat,tempPatList,1);
-        
-        localAccMat = extractSubpatterns(localVarList,rest,localPatList,localAccMat);  
+
+        localAccMat = extractSubpatterns(localVarList,rest,localPatList,localAccMat);
       then localAccMat;
     case (localVarList,first :: rest,localPatList,localAccMat)
       local
         list<Absyn.Ident> localVarList;
         Integer first;
         IndexVector rest;
-        RenamedPatList tempPatList;  
-        RenamedPatList tempPatList;  
+        RenamedPatList tempPatList;
+        RenamedPatList tempPatList;
       equation
         tempPatList = extractFuncArgs(arrayGet(listArray(localPatList),first));
         localAccMat = addNewPatRow(localAccMat,tempPatList,1);
-        localAccMat = extractSubpatterns(localVarList,rest,localPatList,localAccMat);  
-      then localAccMat;   
-  end matchcontinue;    
+        localAccMat = extractSubpatterns(localVarList,rest,localPatList,localAccMat);
+      then localAccMat;
+  end matchcontinue;
 end extractSubpatterns;
 
 protected function generateWildcards "function: generateWildcards
@@ -1998,10 +1998,10 @@ algorithm
         RenamedPat pat;
         RenamedPatList l;
       equation
-        pat = DFA.RP_WILDCARD(first); 
+        pat = DFA.RP_WILDCARD(first);
         l = generateWildcards(rest);
       then pat :: l;
-  end matchcontinue;        
+  end matchcontinue;
 end generateWildcards;
 
 protected function extractFuncArgs "function: extractFuncArgs
@@ -2013,31 +2013,31 @@ protected function extractFuncArgs "function: extractFuncArgs
 algorithm
   outList :=
   matchcontinue (inPat)
-    case (DFA.RP_CALL(_,_,l)) 
-      local 
-        RenamedPatList l;  
+    case (DFA.RP_CALL(_,_,l))
+      local
+        RenamedPatList l;
       equation
       then l;
-    case (DFA.RP_TUPLE(_,l)) 
-      local 
+    case (DFA.RP_TUPLE(_,l))
+      local
         RenamedPatList l;
-      equation 
+      equation
       then l;
-    case (DFA.RP_SOME(_,first)) 
+    case (DFA.RP_SOME(_,first))
       local
         RenamedPat first;
         RenamedPatList l;
       equation
-        l = {first};    
+        l = {first};
       then l;
-    case (DFA.RP_CONS(_,first,second)) 
+    case (DFA.RP_CONS(_,first,second))
       local
         RenamedPat first,second;
         RenamedPatList l;
       equation
-        l = {first,second};    
+        l = {first,second};
       then l;
-  end matchcontinue;             
+  end matchcontinue;
 end extractFuncArgs;
 
 
@@ -2053,7 +2053,7 @@ algorithm
   outPatMat :=
   matchcontinue (patMat,patList,pivot)
     local
-      RenamedPatMatrix localPatMat;  
+      RenamedPatMatrix localPatMat;
     case (localPatMat,{},_) equation then localPatMat;
     case (localPatMat,first :: rest,localPivot)
       local
@@ -2062,11 +2062,11 @@ algorithm
         RenamedPatList rest,tempList;
       equation
         tempList = localPatMat[localPivot];
-        tempList = listAppend(tempList,{first});               
+        tempList = listAppend(tempList,{first});
         localPatMat = arrayUpdate(localPatMat, localPivot, tempList);
       then addNewPatRow(localPatMat,rest,localPivot+1);
   end matchcontinue;
-end addNewPatRow; 
+end addNewPatRow;
 
 protected function findMatches "function: findMatches
 	author: KS
@@ -2096,15 +2096,15 @@ algorithm
       equation
         true = constantOrNot(first);
         constName = getConstantName(first);
-        true = stringEqual(constName,localMatchObj);  
+        true = stringEqual(constName,localMatchObj);
       then findMatches(localMatchObj,rest,listAppend(localAccIndList,{localPivot}),localPivot+1);
     case (localMatchObj,first :: rest,localAccIndList,localPivot)
       local
         Absyn.Ident constructorName;
-      equation   
+      equation
         true = constructorOrNot(first);
         constructorName = getConstructorName(first);
-        true = stringEqual(constructorName,localMatchObj); 
+        true = stringEqual(constructorName,localMatchObj);
       then findMatches(localMatchObj,rest,listAppend(localAccIndList,{localPivot}),localPivot+1);
     case (localMatchObj,_ :: rest,localAccIndList,localPivot)
     then findMatches(localMatchObj,rest,localAccIndList,localPivot+1);
@@ -2118,7 +2118,7 @@ protected function generatePositionalArgs "function: generatePositionalArgs
 	v := matchcontinue (x)
   	  case REC(a=1,b=2)
    	 ...
-	The named arguments a=1 and b=2 must be sorted and transformed into 
+	The named arguments a=1 and b=2 must be sorted and transformed into
 	positional arguments (a,b is not necessarely the correct order).
 "
   input list<Absyn.Ident> fieldNameList;
@@ -2129,7 +2129,7 @@ algorithm
   outList :=
   matchcontinue (fieldNameList,namedArgList,accList)
     local
-      list<Absyn.Exp> localAccList;  
+      list<Absyn.Exp> localAccList;
     case ({},_,localAccList) then localAccList;
     case (firstFieldName :: restFieldNames,localNamedArgList,localAccList)
       local
@@ -2139,11 +2139,11 @@ algorithm
         list<Absyn.NamedArg> localNamedArgList;
       equation
         expL = Util.listCreate(findFieldExpInList(firstFieldName,localNamedArgList));
-        localAccList = listAppend(localAccList,expL);    
-        localAccList = generatePositionalArgs(restFieldNames,localNamedArgList,localAccList);  
-      then localAccList;  
-  end matchcontinue;  
-end generatePositionalArgs;  
+        localAccList = listAppend(localAccList,expL);
+        localAccList = generatePositionalArgs(restFieldNames,localNamedArgList,localAccList);
+      then localAccList;
+  end matchcontinue;
+end generatePositionalArgs;
 
 protected function findFieldExpInList "function: findFieldExpInList
 	author: KS
@@ -2158,8 +2158,8 @@ algorithm
     local
       Absyn.Exp e;
       Absyn.Ident localFieldName,aName;
-      list<Absyn.NamedArg> restNamedArgList;  
-    case (_,{}) then Absyn.CREF(Absyn.WILD());  
+      list<Absyn.NamedArg> restNamedArgList;
+    case (_,{}) then Absyn.CREF(Absyn.WILD());
     case (localFieldName,Absyn.NAMEDARG(aName,e) :: _)
       equation
         true = stringEqual(localFieldName,aName);
@@ -2167,7 +2167,7 @@ algorithm
     case (localFieldName,_ :: restNamedArgList)
       equation
         e = findFieldExpInList(localFieldName,restNamedArgList);
-      then e;  
+      then e;
   end matchcontinue;
 end findFieldExpInList;
 
@@ -2221,7 +2221,7 @@ algorithm
     case (_)
       equation
       then false;
-  end matchcontinue;    
+  end matchcontinue;
 end wildcardOrNot;
 
 
@@ -2245,16 +2245,16 @@ algorithm
       then true;
     case (DFA.RP_REAL(_,_))
       equation
-      then true;      
-    case (DFA.RP_EMPTYLIST(_)) then true;  
-    case (DFA.RP_NONE(_)) then true;       
+      then true;
+    case (DFA.RP_EMPTYLIST(_)) then true;
+    case (DFA.RP_NONE(_)) then true;
     case (DFA.RP_CREF(_,_))
       equation
       then true;
     case (_)
       equation
       then false;
-  end matchcontinue;    
+  end matchcontinue;
 end constantOrNot;
 
 
@@ -2269,10 +2269,10 @@ algorithm
   matchcontinue (pat)
     case (DFA.RP_CONS(_,_,_)) then true;
     case (DFA.RP_TUPLE(_,_)) then true;
-    case (DFA.RP_SOME(_,_)) then true;   
+    case (DFA.RP_SOME(_,_)) then true;
     case (DFA.RP_CALL(_,_,_)) then true;
     case (_) then false;
-  end matchcontinue;    
+  end matchcontinue;
 end constructorOrNot;
 
 protected function printList "function: printList
@@ -2283,7 +2283,7 @@ algorithm
   _ :=
   matchcontinue (boolList)
     case ({}) equation then ();
-    case (first :: rest) 
+    case (first :: rest)
       local
         Boolean first;
         list<Boolean> rest;
@@ -2292,7 +2292,7 @@ algorithm
         print("true");
         printList(rest);
       then ();
-    case (first :: rest) 
+    case (first :: rest)
       local
         Boolean first;
         list<Boolean> rest;
@@ -2300,7 +2300,7 @@ algorithm
         print("false");
         printList(rest);
       then ();
-  end matchcontinue;   
+  end matchcontinue;
 end printList;
 
 
@@ -2315,44 +2315,44 @@ algorithm
     case ((first,_) :: rest)
       local
         Absyn.Ident first;
-        list<Absyn.Ident,Boolean> rest; 
-      equation  
+        list<Absyn.Ident,Boolean> rest;
+      equation
         print(first);
         printCList(rest);
       then ();
-  end matchcontinue;            
-end printCList; 
+  end matchcontinue;
+end printCList;
 
 protected function getPatternFromPatList "function: getPatternFromPatList"
-  input RenamedPatList inList; 
-  input IndexVector inInd; 
-  output DFA.RenamedPat outPat; 
-algorithm 
-  outPat := 
-  matchcontinue (inList,inInd) 
-    case (_,{}) then DFA.RP_WILDCARD("error"); 
-    case (localList,localInd :: restInd) 
-      local 
-        RenamedPatList localList; 
-        Integer localInd; 
-        IndexVector restInd;  
-        RenamedPatVec tempVec;   
-        DFA.RenamedPat pat;  
-      equation 
-        tempVec = listArray(localList); 
-        pat = tempVec[localInd]; 
+  input RenamedPatList inList;
+  input IndexVector inInd;
+  output DFA.RenamedPat outPat;
+algorithm
+  outPat :=
+  matchcontinue (inList,inInd)
+    case (_,{}) then DFA.RP_WILDCARD("error");
+    case (localList,localInd :: restInd)
+      local
+        RenamedPatList localList;
+        Integer localInd;
+        IndexVector restInd;
+        RenamedPatVec tempVec;
+        DFA.RenamedPat pat;
+      equation
+        tempVec = listArray(localList);
+        pat = tempVec[localInd];
         false = wildcardOrNot(pat);
-      then pat;  
-    case (localList,_ :: restInd) 
-      local 
-        IndexVector restInd;  
-        RenamedPatList localList;   
-        DFA.RenamedPat pat;  
-      equation  
+      then pat;
+    case (localList,_ :: restInd)
+      local
+        IndexVector restInd;
+        RenamedPatList localList;
+        DFA.RenamedPat pat;
+      equation
         pat = getPatternFromPatList(localList,restInd);
-      then pat;       
-  end matchcontinue;  
-end getPatternFromPatList;  
+      then pat;
+  end matchcontinue;
+end getPatternFromPatList;
 
 
 protected function selectRightHandSides "function: selectRightHandSides
@@ -2374,266 +2374,266 @@ algorithm
         Integer first;
         IndexVector rest;
         RightHandVector localRhVec;
-        RightHandList tempRhSideL; 
+        RightHandList tempRhSideL;
         RightHandSide tempRhs;
       equation
         tempRhs = arrayGet(localRhVec,first);
         tempRhSideL = {tempRhs};
         localAccRhList = listAppend(localAccRhList,tempRhSideL);
-      then selectRightHandSides(rest,localRhVec,localAccRhList);    
+      then selectRightHandSides(rest,localRhVec,localAccRhList);
   end matchcontinue;
 end selectRightHandSides;
 
 
-// The following two functions are used to assign a unique tag 
-// to a Constructor name. The tags of constructors that have already 
-// been assigned are kept in an environment. 
+// The following two functions are used to assign a unique tag
+// to a Constructor name. The tags of constructors that have already
+// been assigned are kept in an environment.
 protected function findConstTag "function: findConstTag"
-  input String constName; 
-  input list<Absyn.Ident,Integer> inList; 
-  output Integer outTag;  
-algorithm 
-  outTag := 
-  matchcontinue (constName,inList) 
+  input String constName;
+  input list<Absyn.Ident,Integer> inList;
+  output Integer outTag;
+algorithm
+  outTag :=
+  matchcontinue (constName,inList)
     local
-      String id; 
+      String id;
       list<Absyn.Ident,Integer> restList;
-    case (_,{}) then 0; 
-    case (id,(firstName,firstNum) :: restList) 
-      local 
-        Absyn.Ident firstName;   
+    case (_,{}) then 0;
+    case (id,(firstName,firstNum) :: restList)
+      local
+        Absyn.Ident firstName;
         Integer firstNum;
-      equation  
+      equation
         true = stringEqual(id,firstName);
       then firstNum;
-    case (id,_ :: restList) 
-      local 
+    case (id,_ :: restList)
+      local
         Integer tag;
       equation
         tag = findConstTag(id,restList);
-      then tag; 
+      then tag;
     end matchcontinue;
-end findConstTag; 
+end findConstTag;
 
 protected function getUniqueConstTag "function: getUniqueConstTag"
-  input Absyn.Path constName;  
-  input tuple<Integer,list<Absyn.Ident,Integer>> inEnv; 
-  output Integer outTag; 
-  output tuple<Integer,list<Absyn.Ident,Integer>> outEnv; 
+  input Absyn.Path constName;
+  input tuple<Integer,list<Absyn.Ident,Integer>> inEnv;
+  output Integer outTag;
+  output tuple<Integer,list<Absyn.Ident,Integer>> outEnv;
 algorithm
-  (outTag,outEnv) := 
-  matchcontinue (constName,inEnv) 
+  (outTag,outEnv) :=
+  matchcontinue (constName,inEnv)
     local
-      Absyn.Path localName; 
-      Integer i; 
+      Absyn.Path localName;
+      Integer i;
       list<Absyn.Ident,Integer> tagList;
       String s;
-    case (localName,env as (i,tagList)) 
+    case (localName,env as (i,tagList))
       local
-        tuple<Integer,list<Absyn.Ident,Integer>> env; 
+        tuple<Integer,list<Absyn.Ident,Integer>> env;
         Integer tagNum;
       equation
         s = Absyn.pathString(localName);
         // Returns 0 if not found
         tagNum = findConstTag(s,tagList);
-        false = (tagNum == 0);  
+        false = (tagNum == 0);
       then (tagNum,env);
         // Constructor not found
-    case (localName,(i,tagList)) 
-      local 
+    case (localName,(i,tagList))
+      local
         tuple<Integer,list<Absyn.Ident,Integer>> newEnv;
       equation
         s = Absyn.pathString(localName);
-        tagList = listAppend(tagList,{(s,i)}); 
-        newEnv = (i+1,tagList);      
-      then (i,newEnv);      
-  end matchcontinue;   
+        tagList = listAppend(tagList,{(s,i)});
+        newEnv = (i+1,tagList);
+      then (i,newEnv);
+  end matchcontinue;
 end getUniqueConstTag;
 
 protected function doOptimization "function: doOptimization"
-  input list<DFA.SimpleState> oldSavedStates; 
-  input list<DFA.SimpleState> newSavedStates; 
-  input DFA.State state; 
-  input Integer oldCnt; 
-  input Integer newCnt; 
-  output DFA.State outState; 
+  input list<DFA.SimpleState> oldSavedStates;
+  input list<DFA.SimpleState> newSavedStates;
+  input DFA.State state;
+  input Integer oldCnt;
+  input Integer newCnt;
+  output DFA.State outState;
   output Integer outCnt;
-  output list<DFA.SimpleState> outSavedStates; 
-algorithm 
-  (outState,outCnt,outSavedStates) := 
-  matchcontinue (oldSavedStates,newSavedStates,state,oldCnt,newCnt) 
-      
-     // If an equal state already exists, goto to that state  
-   case (localOldSavedStates,_,localState,localOldCnt,_) 
-      local 
-        Integer stateNumber,localOldCnt;
-        list<DFA.SimpleState> localOldSavedStates; 
-        DFA.State localState; 
-      equation 
-        stateNumber = findEqualState(listArray(localOldSavedStates),localState,1); 
-        false = (stateNumber == 0); 
-        
-        // We discard localState as well as localNewSavedStates	  	
-        localState = DFA.GOTOSTATE(localOldCnt,stateNumber); 
+  output list<DFA.SimpleState> outSavedStates;
+algorithm
+  (outState,outCnt,outSavedStates) :=
+  matchcontinue (oldSavedStates,newSavedStates,state,oldCnt,newCnt)
 
-      then (localState,localOldCnt,localOldSavedStates);  
-    
-    case (_,localNewSavedStates,localState,localOldCnt,localNewCnt) 
-      local 
-        DFA.SimpleState simpleState; 
+     // If an equal state already exists, goto to that state
+   case (localOldSavedStates,_,localState,localOldCnt,_)
+      local
+        Integer stateNumber,localOldCnt;
+        list<DFA.SimpleState> localOldSavedStates;
+        DFA.State localState;
+      equation
+        stateNumber = findEqualState(listArray(localOldSavedStates),localState,1);
+        false = (stateNumber == 0);
+
+        // We discard localState as well as localNewSavedStates
+        localState = DFA.GOTOSTATE(localOldCnt,stateNumber);
+
+      then (localState,localOldCnt,localOldSavedStates);
+
+    case (_,localNewSavedStates,localState,localOldCnt,localNewCnt)
+      local
+        DFA.SimpleState simpleState;
         list<DFA.SimpleState> localNewSavedStates;
-        Integer localNewCnt,localOldCnt; 
-        DFA.State localState; 
-      equation   
-        simpleState = DFA.simplifyState(localState); 
-        localNewSavedStates = DFA.addNewSimpleState(localNewSavedStates,localOldCnt,simpleState);             
-      then (localState,localNewCnt,localNewSavedStates);        
-  end matchcontinue;   
-end doOptimization;   
+        Integer localNewCnt,localOldCnt;
+        DFA.State localState;
+      equation
+        simpleState = DFA.simplifyState(localState);
+        localNewSavedStates = DFA.addNewSimpleState(localNewSavedStates,localOldCnt,simpleState);
+      then (localState,localNewCnt,localNewSavedStates);
+  end matchcontinue;
+end doOptimization;
 
 
 
 // Go through all the old states and see if any-one matches the one
 // created.
 protected function findEqualState "function: findEqualState"
-  input DFA.SimpleStateArray savedStates; // All states  
-  input DFA.State state; 
+  input DFA.SimpleStateArray savedStates; // All states
+  input DFA.State state;
   input Integer statePivot;
-  output Integer outStampNr; 
+  output Integer outStampNr;
 algorithm
-  outStampNr := 
+  outStampNr :=
   matchcontinue (savedStates,state,statePivot)
     local
-      DFA.SimpleStateArray localSavedStates; 
+      DFA.SimpleStateArray localSavedStates;
       Integer localPivot;
-    case (localSavedStates,_,localPivot) 
-      local  
-      equation 
-        true = (arrayLength(localSavedStates) < localPivot); 
-      then 0; // No match 
-    case (localSavedStates,localState,localPivot) 
-      local 
-        DFA.SimpleState simpleState; 
-        DFA.State localState; 
+    case (localSavedStates,_,localPivot)
+      local
+      equation
+        true = (arrayLength(localSavedStates) < localPivot);
+      then 0; // No match
+    case (localSavedStates,localState,localPivot)
+      local
+        DFA.SimpleState simpleState;
+        DFA.State localState;
         Integer n;
-      equation   
+      equation
         simpleState = localSavedStates[localPivot];
         n = matchStates(localSavedStates,localState,simpleState);
-        false = (n == 0); 
-      then localPivot;  
+        false = (n == 0);
+      then localPivot;
     case (localSavedStates,localState,localPivot)
-      local  
-        DFA.State localState; 
+      local
+        DFA.State localState;
         Integer n;
-      equation 
+      equation
         localPivot = localPivot + 1;
         n = findEqualState(localSavedStates,localState,localPivot);
-      then n;       
+      then n;
   end matchcontinue;
 end findEqualState;
 
 protected function matchStates "function: matchStates
-Two states are equal if they test the same input arg 
+Two states are equal if they test the same input arg
 and all the arcs are equal (see below).
 "
-  input DFA.SimpleStateArray savedStates; 
-  input DFA.State normalState; 
-  input DFA.SimpleState simpleState;  
-  output Integer stampNr; 
+  input DFA.SimpleStateArray savedStates;
+  input DFA.State normalState;
+  input DFA.SimpleState simpleState;
+  output Integer stampNr;
 algorithm
-  stampNr := 
-  matchcontinue (savedStates,normalState,simpleState)   
+  stampNr :=
+  matchcontinue (savedStates,normalState,simpleState)
     local
       DFA.SimpleStateArray localSavedStates;
-      
+
       // Dummie State
-    case (_,_,DFA.SIMPLEDUMMIE()) then 0; 
-  
-      // Final state	
-    case (localSavedStates,DFA.STATE(_,_,_,SOME(DFA.RIGHTHANDLIGHT(cNum1))), 
-        DFA.SIMPLESTATE(_,_,cNum2,_)) 
-      local 
-        Integer cNum1,cNum2;
-      equation  
-        true = (cNum1 == cNum2);
-      then 1;     
-              
-    case (localSavedStates,DFA.STATE(_,_,arcs1 as (DFA.ARC(_,_,SOME(p),_) :: _),_), 
-        DFA.SIMPLESTATE(_,arcs2,_,SOME(stateVar))) 
+    case (_,_,DFA.SIMPLEDUMMIE()) then 0;
+
+      // Final state
+    case (localSavedStates,DFA.STATE(_,_,_,SOME(DFA.RIGHTHANDLIGHT(cNum1))),
+        DFA.SIMPLESTATE(_,_,cNum2,_))
       local
-        DFA.RenamedPat p; 
+        Integer cNum1,cNum2;
+      equation
+        true = (cNum1 == cNum2);
+      then 1;
+
+    case (localSavedStates,DFA.STATE(_,_,arcs1 as (DFA.ARC(_,_,SOME(p),_) :: _),_),
+        DFA.SIMPLESTATE(_,arcs2,_,SOME(stateVar)))
+      local
+        DFA.RenamedPat p;
         Absyn.Ident stateVar,stateVar2;
-        list<DFA.Arc> arcs1; 
-        list<DFA.ArcName,DFA.Stamp> arcs2; 
+        list<DFA.Arc> arcs1;
+        list<DFA.ArcName,DFA.Stamp> arcs2;
         Integer n;
       equation
         stateVar2 = DFA.extractPathVar(p);
         true = stringEqual(stateVar,stateVar2);
         n = matchArcs(localSavedStates,arcs1,arcs2);
-      then n;  
+      then n;
 
-    case (_,_,_) 
+    case (_,_,_)
     then 0;
     end matchcontinue;
-end matchStates;    
+end matchStates;
 
 protected function matchArcs "function: matchArcs
 Two arcs are equal if they have same pattern and they go to equal
 states.
-" 
-  input DFA.SimpleStateArray savedStates; // All saved states  
-  input list<DFA.Arc> arcs1;  
-  input list<DFA.ArcName,DFA.Stamp> arcs2; 
-  output Integer outStamp; 
-algorithm 
-  outStamp := 
-  matchcontinue (savedStates,arcs1,arcs2)   
-    case (_,DFA.ARC(DFA.DUMMIESTATE(),_,_,_) :: _,{}) then 1; 
-    case (_,{},{}) then 1; 
-    case (_,{},_) then 0; 
-    case (_,_,{}) then 0;     
+"
+  input DFA.SimpleStateArray savedStates; // All saved states
+  input list<DFA.Arc> arcs1;
+  input list<DFA.ArcName,DFA.Stamp> arcs2;
+  output Integer outStamp;
+algorithm
+  outStamp :=
+  matchcontinue (savedStates,arcs1,arcs2)
+    case (_,DFA.ARC(DFA.DUMMIESTATE(),_,_,_) :: _,{}) then 1;
+    case (_,{},{}) then 1;
+    case (_,{},_) then 0;
+    case (_,_,{}) then 0;
     case (localSavedStates,DFA.ARC(DFA.GOTOSTATE(_,nextState1),patName1,_,_) :: rest1,
       (patName2,nextState2) :: rest2)
       local
-        DFA.SimpleStateArray localSavedStates; 
-        DFA.Stamp nextState1,nextState2; 
-        DFA.ArcName patName1,patName2; 
+        DFA.SimpleStateArray localSavedStates;
+        DFA.Stamp nextState1,nextState2;
+        DFA.ArcName patName1,patName2;
         list<DFA.Arc> rest1;
-        list<DFA.ArcName,DFA.Stamp> rest2; 
+        list<DFA.ArcName,DFA.Stamp> rest2;
         Integer n;
       equation
         true = stringEqual(patName1,patName2);
-        true = (nextState1 == nextState2);        
+        true = (nextState1 == nextState2);
         n = matchArcs(localSavedStates,rest1,rest2);
-      then n;        
+      then n;
     case (localSavedStates,DFA.ARC(state1,patName1,_,_) :: rest1,
       (patName2,nextState) :: rest2)
       local
-        DFA.State state1; 
-        DFA.SimpleState state2; 
-        DFA.ArcName patName1,patName2; 
+        DFA.State state1;
+        DFA.SimpleState state2;
+        DFA.ArcName patName1,patName2;
         list<DFA.Arc> rest1;
-        list<DFA.ArcName,DFA.Stamp> rest2;  
-        DFA.SimpleStateArray localSavedStates;  
-        DFA.Stamp nextState; 
+        list<DFA.ArcName,DFA.Stamp> rest2;
+        DFA.SimpleStateArray localSavedStates;
+        DFA.Stamp nextState;
         Integer n;
       equation
         true = stringEqual(patName1,patName2);
-        state2 = localSavedStates[nextState]; 
+        state2 = localSavedStates[nextState];
         n = matchStates(localSavedStates,state1,state2);
         false = (n == 0);
         n = matchArcs(localSavedStates,rest1,rest2);
       then n;
-    case (_,_,_) then 0;    
+    case (_,_,_) then 0;
   end matchcontinue;
-end matchArcs;  
+end matchArcs;
 //----------------
 
 protected function fromEquationsToAlgAssignments "function: fromEquationsToAlgAssignments
- Converts equations to algorithm assignments. 
- Matchcontinue expressions may contain statements that you won't find 
+ Converts equations to algorithm assignments.
+ Matchcontinue expressions may contain statements that you won't find
  in a normal equation section. For instance:
- 
+
  case(...)
  local
  equation
@@ -2651,78 +2651,78 @@ algorithm
   (outCache,algOut) :=
   matchcontinue (eqsIn,accList,cache,env)
     local
-      list<Absyn.AlgorithmItem> localAccList;  
-      Env.Cache localCache; 
+      list<Absyn.AlgorithmItem> localAccList;
+      Env.Cache localCache;
       Env.Env localEnv;
     case ({},localAccList,localCache,localEnv) equation then (localCache,localAccList);
-    case (Absyn.EQUATIONITEM(first,_) :: rest,localAccList,localCache,localEnv)      
+    case (Absyn.EQUATIONITEM(first,_) :: rest,localAccList,localCache,localEnv)
       local
         Absyn.Equation first;
         list<Absyn.EquationItem> rest;
         list<Absyn.AlgorithmItem> firstAlg,restAlgs;
-      equation    
+      equation
         (localCache,firstAlg) = fromEquationToAlgAssignment(first,localCache,localEnv);
         localAccList = listAppend(localAccList,firstAlg);
-        (localCache,restAlgs) = fromEquationsToAlgAssignments(rest,localAccList,localCache,localEnv);    
-      then (localCache,restAlgs);  
+        (localCache,restAlgs) = fromEquationsToAlgAssignments(rest,localAccList,localCache,localEnv);
+      then (localCache,restAlgs);
   end matchcontinue;
 end fromEquationsToAlgAssignments;
 
 protected function fromEquationToAlgAssignment "function: fromEquationToAlgAssignment"
   input Absyn.Equation eq;
-  input Env.Cache cache; 
+  input Env.Cache cache;
   input Env.Env env;
   output Env.Cache outCache;
   output list<Absyn.AlgorithmItem> algStatement;
 algorithm
   (outCache,algStatement) :=
   matchcontinue (eq,cache,env)
-    local 
-      Env.Cache localCache; 
+    local
+      Env.Cache localCache;
       Env.Env localEnv;
-      
-    case (Absyn.EQ_EQUALS(Absyn.BOOL(true),right),localCache,_)    
+
+    case (Absyn.EQ_EQUALS(Absyn.BOOL(true),right),localCache,_)
       local
         Absyn.Exp left,right;
         list<Absyn.AlgorithmItem> algItem1,algItem2;
       equation
-        /* 
+        /*
         An equation such as ...
-        
+
         true = exp;
-        
+
         ... is transformed into ...
-        
+
         if (exp != true)
         	throw();
-        	*/      	
+        	*/
         algItem1 = {Absyn.ALGORITHMITEM(Absyn.ALG_THROW(),NONE())};
-        algItem2 = {Absyn.ALGORITHMITEM(Absyn.ALG_IF(Absyn.LUNARY(Absyn.NOT(),right),algItem1,{},{}),NONE())}; 	
+        algItem2 = {Absyn.ALGORITHMITEM(Absyn.ALG_IF(Absyn.LUNARY(Absyn.NOT(),right),algItem1,{},{}),NONE())};
       then (localCache,algItem2);
 
-    case (Absyn.EQ_EQUALS(Absyn.BOOL(false),right),localCache,_)    
+    case (Absyn.EQ_EQUALS(Absyn.BOOL(false),right),localCache,_)
       local
         Absyn.Exp left,right;
         list<Absyn.AlgorithmItem> algItem1,algItem2;
       equation
         algItem1 = {Absyn.ALGORITHMITEM(Absyn.ALG_THROW(),NONE())};
-        algItem2 = {Absyn.ALGORITHMITEM(Absyn.ALG_IF(right,algItem1,{},{}),NONE())}; 	
+        algItem2 = {Absyn.ALGORITHMITEM(Absyn.ALG_IF(right,algItem1,{},{}),NONE())};
       then (localCache,algItem2);
-        
-    case (Absyn.EQ_NORETCALL(Absyn.CREF_IDENT("fail",_),_),localCache,_)    
+
+    case (Absyn.EQ_NORETCALL(Absyn.CREF_IDENT("fail",_),_),localCache,_)
       local
         list<Absyn.AlgorithmItem> algItem;
       equation
-        algItem = {Absyn.ALGORITHMITEM(Absyn.ALG_THROW(),NONE())};  	
-      then (localCache,algItem);  
-      
+        algItem = {Absyn.ALGORITHMITEM(Absyn.ALG_THROW(),NONE())};
+      then (localCache,algItem);
+
       /*
       If we have an equation of the form (exp1,exp2,...,expN) = func(...),
       we may have to transform it into a matchcontinue statement,
-      since the expressions should be "matched" against the return 
+      since the expressions should be "matched" against the return
       values of the function */
-      
-    case (Absyn.EQ_EQUALS(e,funcCall as Absyn.CALL(cRef,_)),localCache,localEnv)    
+
+    case (Absyn.EQ_EQUALS(e,funcCall as Absyn.CALL(cRef,_)),localCache,localEnv)
       local
         list<Absyn.Exp> expL,varList;
         Absyn.Exp funcCall,matchExp,e;
@@ -2740,48 +2740,48 @@ algorithm
         // is not the same as (a,b) = func(...);
         expL = extractListFromTuple(e,0);
         false = onlyCrefExpressions(expL);
-        
+
       /*
-      _ := 
+      _ :=
       valueblock(
       var1,...,varN;
-      
+
       (var1,...,varN) := func(...);
       _ :=
       valueblock(
-      
-      
-      ) 
-      
+
+
+      )
+
       */
-      
+
         p = Absyn.crefToPath(cRef);
         (localCache,SCode.CLASS(parts=SCode.PARTS(elementLst = elemList)),localEnv)
          = Lookup.lookupClass(localCache,localEnv, p, true);
-        (elemList2,varList) = extractOutputVars(elemList,1,{},{}); 
-              
-        matchExp = 
+        (elemList2,varList) = extractOutputVars(elemList,1,{},{});
+
+        matchExp =
         Absyn.MATCHEXP(Absyn.MATCHCONTINUE(),Absyn.TUPLE(varList),{},
           Absyn.CASE(Absyn.TUPLE(expL),{},{},Absyn.BOOL(true),NONE()) :: {},NONE());
-        
+
         lhsExp = createLhsExp(varList);
-        
+
         algItem2 = {Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(lhsExp,funcCall),NONE()),
           Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(Absyn.CREF(Absyn.CREF_IDENT("DUMMIE__",{})),
             matchExp),NONE())};
-            
+
         algItem = {Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(Absyn.CREF(Absyn.CREF_IDENT("DUMMIE__",{})),
-        Absyn.VALUEBLOCK(elemList2,Absyn.VALUEBLOCKALGORITHMS(algItem2),Absyn.BOOL(true))),NONE())};  
-             
-      then (localCache,algItem); 
+        Absyn.VALUEBLOCK(elemList2,Absyn.VALUEBLOCKALGORITHMS(algItem2),Absyn.BOOL(true))),NONE())};
+
+      then (localCache,algItem);
       /*---------------------------------------*/
-      
-    case (Absyn.EQ_EQUALS(left,right),localCache,_)    
+
+    case (Absyn.EQ_EQUALS(left,right),localCache,_)
       local
         Absyn.Exp left,right;
         list<Absyn.AlgorithmItem> algItem;
       equation
-        algItem = {Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(left,right),NONE())};  	
+        algItem = {Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(left,right),NONE())};
       then (localCache,algItem);
   end matchcontinue;
 end fromEquationToAlgAssignment;
@@ -2795,7 +2795,7 @@ algorithm
   matchcontinue (inList)
     case (firstExp :: {}) local Absyn.Exp firstExp; equation then firstExp;
     case (lst) local list<Absyn.Exp> lst; equation then Absyn.TUPLE(lst);
-  end matchcontinue; 
+  end matchcontinue;
 end createLhsExp;
 
 protected function extractOutputVars "function: extractOutputVars"
@@ -2813,16 +2813,16 @@ algorithm
       list<SCode.Element> rest;
       list<Absyn.Exp> localAccList2;
       Integer localCnt;
-    case ({},localCnt,localAccList1,localAccList2) 
+    case ({},localCnt,localAccList1,localAccList2)
     then (localAccList1,localAccList2);
     case (SCode.COMPONENT(attributes = SCode.ATTR(input_ = Absyn.OUTPUT()),typeSpec = tSpec) :: rest,
-      localCnt,localAccList1,localAccList2)    
-      local 
+      localCnt,localAccList1,localAccList2)
+      local
         Absyn.TypeSpec tSpec;
-        Absyn.Ident n1,n2; 
+        Absyn.Ident n1,n2;
         Absyn.ElementItem elem1;
         Absyn.Exp elem2;
-      equation       
+      equation
         n1 = "var";
         n2 = stringAppend(n1,intString(localCnt));
         elem1 = Absyn.ELEMENTITEM(Absyn.ELEMENT(
@@ -2832,80 +2832,80 @@ algorithm
             Absyn.INFO("f",false,0,0,0,0),NONE()));
         elem2 = Absyn.CREF(Absyn.CREF_IDENT(n2,{}));
         localAccList1 = listAppend(localAccList1,{elem1});
-        localAccList2 = listAppend(localAccList2,{elem2});  
+        localAccList2 = listAppend(localAccList2,{elem2});
         (localAccList1,localAccList2) = extractOutputVars(rest,localCnt+1,localAccList1,localAccList2);
-      then (localAccList1,localAccList2);   
+      then (localAccList1,localAccList2);
     case (_ :: rest,localCnt,localAccList1,localAccList2)
       equation
         (localAccList1,localAccList2) = extractOutputVars(rest,localCnt,localAccList1,localAccList2);
-      then (localAccList1,localAccList2);     
+      then (localAccList1,localAccList2);
   end matchcontinue;
 end extractOutputVars;
 
 protected function onlyCrefExpressions "function: onlyCrefExpressions"
-  input list<Absyn.Exp> expList; 
+  input list<Absyn.Exp> expList;
   output Boolean boolVal;
 algorithm
   boolVal :=
-  matchcontinue (expList) 
-    case ({}) 
+  matchcontinue (expList)
+    case ({})
       then true;
-    case (Absyn.CREF(Absyn.WILD()) :: _) then false;    
+    case (Absyn.CREF(Absyn.WILD()) :: _) then false;
     case (Absyn.CREF(_) :: restList)
-      local 
-        list<Absyn.Exp> restList; 
+      local
+        list<Absyn.Exp> restList;
         Boolean b;
       equation
         b = onlyCrefExpressions(restList);
-      then b;  
-    case (_) then false;      
+      then b;
+    case (_) then false;
   end matchcontinue;
-end onlyCrefExpressions; 
+end onlyCrefExpressions;
 
 //--------------------//
 // Some Type Checking //
 //--------------------//
 
-/*protected function typeCheck1 "function: typeCheck1" 
+/*protected function typeCheck1 "function: typeCheck1"
   input Env.Cache cache;
   input Env.Env env;
   input RenamedPatMatrix2 patMat;
   input list<Absyn.Exp> expList;
   output Boolean bool;
-algorithm  
-  bool := 
-  matchcontinue (cache,env,patMat,expList) 
+algorithm
+  bool :=
+  matchcontinue (cache,env,patMat,expList)
     case (localCache,localEnv,localPatMat,localExpList)
-      local 
-        RenamedPatList patList; 
+      local
+        RenamedPatList patList;
         RenamedPatMatrix2 localPatMat;
         Env.Cache localCache;
-        Env.Env localEnv; 
+        Env.Env localEnv;
         list<Absyn.Exp> localExpList; Boolean b;
-      equation 
+      equation
         patList = getVarTypes(localExpList,{});
         b = patternCheck(localPatMat,patList);
-      then b;    
-  end matchcontinue;      
+      then b;
+  end matchcontinue;
 end typeCheck1;
-    
+
 protected function getVarTypes "function: getVarTypes"
   input Env.Cache cache;
   input Env.Env env;
-  input list<Absyn.Exp> expList;  
+  input list<Absyn.Exp> expList;
   input RenamedPatList inList;
   output Env.Cache outCache;
   output RenamedPatList outList;
 algorithm
   (outCache,outList) :=
   matchcontinue (cache,env,expList,inList)
-    local 
+    local
       RenamedPatList localAccList;
     case (localCache,_,{},localAccList) then (localCache,localAccList);
     case (localCache,localEnv,Absyn.CREF(Absyn.CREF_IDENT(id,{})) :: restExp,localAccList)
-      local 
-        Absyn.Ident id; list<Absyn.Exp> restExp; 
-        Types.Type t; RenamedPat rp; 
+      local
+        Absyn.Ident id; list<Absyn.Exp> restExp;
+        Types.Type t; RenamedPat rp;
         Env.Cache localCache; Env.Env localEnv;
       equation
         (_,t,_)=
@@ -2925,88 +2925,88 @@ algorithm
   matchcontinue (t)
     case ((Types.T_INTEGER(_),_))
     then DFA.RP_INTEGER("a",1);
-    
+
     case ((Types.T_STRING(_),_))
     then DFA.RP_STRING("a","a");
-   
-    case ((Types.T_BOOL(_),_)) 
+
+    case ((Types.T_BOOL(_),_))
     then DFA.RP_BOOL("a",true);
-   
-    case ((Types.T_LIST(_),_)) 
-    then DFA.RP_CONS("a",DFA.RP_WILDCARD("a"),DFA.RP_WILDCARD("a")); 
+
+    case ((Types.T_LIST(_),_))
+    then DFA.RP_CONS("a",DFA.RP_WILDCARD("a"),DFA.RP_WILDCARD("a"));
   end matchcontinue;
-end fromTypeToRenamedPat;  
+end fromTypeToRenamedPat;
 
 public function patternCheck "function: patternCheck"
   input RenamedPatMatrix2 mat;
-  input RenamedPatList lst;  
+  input RenamedPatList lst;
   output Boolean b;
 algorithm
-  b := 
-  matchcontinue (mat,lst)    
-    case ({},l) then true; 
-    case ({{}},l) then true;  
-    case (firstRow :: restRows,l) 
-      local 
+  b :=
+  matchcontinue (mat,lst)
+    case ({},l) then true;
+    case ({{}},l) then true;
+    case (firstRow :: restRows,l)
+      local
         RenamedPatMatrix2 restRows;
         RenamedPatList firstRow;
-        RenamedPat pat; 
-        Boolean b2; 
-      equation  
+        RenamedPat pat;
+        Boolean b2;
+      equation
         pat = Util.listFirst(firstRow);
-        b2 = patternCheck2(pat,firstRow); 
-        true = b2; 
+        b2 = patternCheck2(pat,firstRow);
+        true = b2;
         b2 = patternCheck(restRows);
       then b2;
-    case (_,_) then fail(); 
-  end matchcontinue;
-end patternCheck; 
-
-public function patternCheck2 "function: patterCheck2"
-  input RenamedPat pat;  
-  input RenamedPatList pList; 
-  output Boolean outB;
-algorithm 
-  outB := 
-  matchcontinue (pat,pList)
-    case (_,{}) then true;  
-    case (p,firstP :: restP) 
-      local  
-      equation  
-        true = twoPatternMatch(p,firstP); 
-        b = patternCheck2(firstP,restP);
-      then b; 
     case (_,_) then fail();
   end matchcontinue;
-end patternCheck2;  
+end patternCheck;
+
+public function patternCheck2 "function: patterCheck2"
+  input RenamedPat pat;
+  input RenamedPatList pList;
+  output Boolean outB;
+algorithm
+  outB :=
+  matchcontinue (pat,pList)
+    case (_,{}) then true;
+    case (p,firstP :: restP)
+      local
+      equation
+        true = twoPatternMatch(p,firstP);
+        b = patternCheck2(firstP,restP);
+      then b;
+    case (_,_) then fail();
+  end matchcontinue;
+end patternCheck2;
 
 public function twoPatternMatch "function: twoPatternMatch"
-  input RenamedPat pat1; 
+  input RenamedPat pat1;
   input RenamedPat pat2;
-  output Boolean outB; 
-algorithm  
-  outB := 
-  matchcontinue (pat1,pat2) 
-    case (DFA.RP_WILDCARD(_),_) then true;      
+  output Boolean outB;
+algorithm
+  outB :=
+  matchcontinue (pat1,pat2)
+    case (DFA.RP_WILDCARD(_),_) then true;
     case (_,DFA.RP_WILDCARD(_)) then true;
-    case (DFA.RP_EMPTYLIST(_),DFA.RP_EMPTYLIST(_)) then true;    
-    case (DFA.RP_INTEGER(_),DFA.RP_INTEGER(_)) then true;    
-    case (DFA.RP_REAL(_),DFA.RP_REAL(_)) then true;    
-    case (DFA.RP_BOOL(_),DFA.RP_BOOL(_)) then true;    
+    case (DFA.RP_EMPTYLIST(_),DFA.RP_EMPTYLIST(_)) then true;
+    case (DFA.RP_INTEGER(_),DFA.RP_INTEGER(_)) then true;
+    case (DFA.RP_REAL(_),DFA.RP_REAL(_)) then true;
+    case (DFA.RP_BOOL(_),DFA.RP_BOOL(_)) then true;
     case (DFA.RP_STRING(_),DFA.RP_STRING(_)) then true;
-    case (DFA.RP_CALL(_,_,_),DFA.RP_CALL(_,_,_)) then true;  
-    case (DFA.RP_CREF(_,_),DFA.RP_CREF(_,_)) then true;  
-    case (DFA.RP_TUPLE(_,_),DFA.RP_TUPLE(_,_)) then true;  
-    case (DFA.RP_CONS(_,_,_),DFA.RP_CONS(_,_,_)) then true;  
+    case (DFA.RP_CALL(_,_,_),DFA.RP_CALL(_,_,_)) then true;
+    case (DFA.RP_CREF(_,_),DFA.RP_CREF(_,_)) then true;
+    case (DFA.RP_TUPLE(_,_),DFA.RP_TUPLE(_,_)) then true;
+    case (DFA.RP_CONS(_,_,_),DFA.RP_CONS(_,_,_)) then true;
     case (p1,p2)
       local  RenamedPat p1; RenamedPat p2;
       equation
-        Debug.fprint("failtrace", "- twoPatternMatch failed, non-matching patterns\n"); 
+        Debug.fprint("failtrace", "- twoPatternMatch failed, non-matching patterns\n");
         print("Non matching patterns");
         DFA.printPattern(p1); print(",");
-        DFA.printPattern(p2); print("\n");  
-      then fail();  
-  end matchcontinue; 
+        DFA.printPattern(p2); print("\n");
+      then fail();
+  end matchcontinue;
 end twoPatternMatch; */
 //------------------
 

@@ -46,12 +46,12 @@ walkergen= modelica_tree_parser.cpp modelica_tree_parser.hpp \
 walkersrcs=$(filter %.cpp,$(walkergen))
 walkerobjs=$(walkersrcs:.cpp=.o)
 
-exprparsegen = modelica_expression_parser.cpp modelica_expression_parser.hpp 
+exprparsegen = modelica_expression_parser.cpp modelica_expression_parser.hpp
 
 exprparsesrcs=$(filter %.cpp,$(exprparsegen))
 exprparseobjs=$(exprparsesrcs:.cpp=.o)
 
-OBJS += $(walkerobjs) $(exprparseobjs) $(PARSER_OBJS) parse.o 
+OBJS += $(walkerobjs) $(exprparseobjs) $(PARSER_OBJS) parse.o
 
 ANTLR = java -cp $(ANTLR_HOME) antlr.Tool
 
@@ -72,8 +72,8 @@ flat_parser:
 absyn_builder.a : $(OBJS)
 	ar -r $@ $(OBJS)
 
-#walker : $(OBJS) 
-#	$(CXX) -o $@ $(OBJS) $(LINKFLAGS) $(LIBS) 
+#walker : $(OBJS)
+#	$(CXX) -o $@ $(OBJS) $(LINKFLAGS) $(LIBS)
 
 $(walkergen): walker.g modelica_parserTokenTypes.txt
 	java antlr.Tool $(ANTLRFLAGS) $<

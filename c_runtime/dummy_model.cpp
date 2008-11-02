@@ -81,12 +81,12 @@ char* getName( double* ptr)
 
   return "";
 }
-static char init_fixed[NX+NX+NY+NP]={1/*$dummy*/, 1/*h*/, 1/*v*/, 1/*default*/, 
-1/*default*/, 1/*default*/, 0/*flying*/, 
-0/*impact*/, 0/*v_new*/, 0/*foo*/, 
+static char init_fixed[NX+NX+NY+NP]={1/*$dummy*/, 1/*h*/, 1/*v*/, 1/*default*/,
+1/*default*/, 1/*default*/, 0/*flying*/,
+0/*impact*/, 0/*v_new*/, 0/*foo*/,
 1/*e*/, 1/*g*/};
-char var_attr[NX+NY+NP]={/*$dummy:*/1+0, /*h:*/1+0, /*v:*/1+0, /*flying:*/8+16, 
-/*impact:*/8+16, /*v_new:*/1+16, /*foo:*/4+16, 
+char var_attr[NX+NY+NP]={/*$dummy:*/1+0, /*h:*/1+0, /*v:*/1+0, /*flying:*/8+16,
+/*impact:*/8+16, /*v_new:*/1+16, /*foo:*/4+16,
 /*e:*/1+0, /*g:*/1+0};
 #define DIVISION(a,b,c) ((b != 0) ? a / b : a / division_error(b,c))
 
@@ -151,7 +151,7 @@ DATA* initializeDataStruc(DATA_FLAGS flags)
     memset(returnData->oldStates,0,sizeof(double)*returnData->nStates);
 
     memset(returnData->oldStates2,0,sizeof(double)*returnData->nStates);
-    
+
   }else{
 
     returnData->states = 0;
@@ -175,7 +175,7 @@ DATA* initializeDataStruc(DATA_FLAGS flags)
     memset(returnData->oldStatesDerivatives,0,sizeof(double)*returnData->nStates);
 
     memset(returnData->oldStatesDerivatives2,0,sizeof(double)*returnData->nStates);
-    
+
   }else{
 
     returnData->statesDerivatives = 0;
@@ -203,7 +203,7 @@ DATA* initializeDataStruc(DATA_FLAGS flags)
     returnData->oldAlgebraics = (double*) malloc(sizeof(double)*returnData->nAlgebraic);
 
     returnData->oldAlgebraics2 = (double*) malloc(sizeof(double)*returnData->nAlgebraic);
-        
+
      assert(returnData->algebraics&&returnData->oldAlgebraics&&returnData->oldAlgebraics2);
     memset(returnData->algebraics,0,sizeof(double)*returnData->nAlgebraic);
 
@@ -218,7 +218,7 @@ DATA* initializeDataStruc(DATA_FLAGS flags)
     returnData->oldAlgebraics = 0;
 
     returnData->oldAlgebraics2 = 0;
-    
+
     returnData->stringVariables.algebraics = 0;
   }
 if (flags & ALGEBRAICS && returnData->stringVariables.nAlgebraic) {
@@ -422,7 +422,7 @@ if (flags & EXTERNALVARS) {
 
   returnData->extObjs = (void**)malloc(sizeof(void*)*NEXT);
 
-  if (!returnData->extObjs) { 
+  if (!returnData->extObjs) {
 
      printf("error allocating external objects\n");
 
@@ -552,14 +552,14 @@ int functionDAE_res(double *t, double *x, double *xd, double *delta, long int *i
   timeBackup = localData->timeValue;
   localData->states = x;
   for (i=0; i<localData->nStates; i++) temp_xd[i]=localData->statesDerivatives[i];
-  
+
   localData->statesDerivatives = temp_xd;
   localData->timeValue = *t;
-  
+
   functionODE();
   /* get the difference between the temp_xd(=localData->statesDerivatives) and xd(=statesDerivativesBackup)*/
    for (i=0; i < localData->nStates; i++) delta[i]=localData->statesDerivatives[i]-statesDerivativesBackup[i];
-  
+
   localData->states = statesBackup;
   localData->statesDerivatives = statesDerivativesBackup;
   localData->timeValue = timeBackup;
@@ -689,7 +689,7 @@ int function_when(int i)
     }
     $v_new = ((tmp1)?((-$e) * tmp2):0.0);
 
-    
+
     break;
      case 1: //when {$h <= 0.0 AND $v <= 0.0,$impact}
 
@@ -698,7 +698,7 @@ int function_when(int i)
     RELATIONGREATER(tmp3,$v_new,0.0);
     $flying = tmp3;
 
-    
+
     break;
      case 2: //when {$h <= 0.0 AND $v <= 0.0,$impact}
 
@@ -787,8 +787,8 @@ int checkForDiscreteVarChanges()
   if (edge(localData->helpVars[4])) AddEvent(2 + localData->nZeroCrossing);
   if (edge(localData->helpVars[5])) AddEvent(2 + localData->nZeroCrossing);
   if (change($foo)) { needToIterate=1; }
-  
-  
+
+
   if (change($flying)) { needToIterate=1; }
   for (long i = 0; i < localData->nHelpVars; i++) {
     if (change(localData->helpVars[i])) { needToIterate=1; }

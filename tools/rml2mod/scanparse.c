@@ -1,9 +1,9 @@
 /* Glue to call parser (and thus scanner) from RML */
- 
+
 #include <stdio.h>
 #include <errno.h>
 #include "rml.h"
- 
+
 
 extern void rmlLexerInit(void);
 
@@ -15,19 +15,19 @@ yyerror(char *s)
   extern int yylineno;
   fprintf(stderr,"Error: bad syntax\n%s:%d Error:%s\n", yyThisFileName, yylineno, s);
 }
- 
+
 /* The yacc parser will deposit the syntax tree here */
- 
+
 void *absyntree;
- 
+
 /* No init for this module */
 
 extern int aarmldbdebug;
- 
-void ScanParse_5finit(void) 
+
+void ScanParse_5finit(void)
 {
-   /* un-comment this if you want to debug the program database parser 
-      loading of the .rdb files 
+   /* un-comment this if you want to debug the program database parser
+      loading of the .rdb files
    */
    /* aarmldbdebug = 1; */
 }
@@ -49,7 +49,7 @@ RML_BEGIN_LABEL(ScanParse__debug_5foff)
 RML_END_LABEL
 
 
-/* The glue function */ 
+/* The glue function */
 RML_BEGIN_LABEL(ScanParse__scanparse)
 {
     void *a0 = rmlA0;
@@ -59,7 +59,7 @@ RML_BEGIN_LABEL(ScanParse__scanparse)
     strcpy(yyThisFileName, fileStr);
 	/* printf("Parsing: %s\n", fileStr); */
 
-    if( !freopen(fileStr, "r", stdin) ) 
+    if( !freopen(fileStr, "r", stdin) )
 	{
 		fprintf(stderr, "freopen %s failed: %s\n",
 		RML_STRINGDATA(a0), strerror(errno));
@@ -69,7 +69,7 @@ RML_BEGIN_LABEL(ScanParse__scanparse)
 	/* reinit the damn lexer */
 	rmlLexerInit();
 	/* parse the damn stuff */
-    if( yyparse() != 0 )  
+    if( yyparse() != 0 )
 	{
 		fprintf(stderr,"Fatal: parsing failed!\n");
 		RML_TAILCALLK(rmlFC);

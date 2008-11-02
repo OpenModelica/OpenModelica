@@ -11,24 +11,24 @@
  **
  ** This file defines the abstract syntax for Modelica in RML.  It mainly
  ** contains datatypes for constructing the abstract syntax tree
- ** (AST), relations for building and altering RML datatypes and a few relations 
+ ** (AST), relations for building and altering RML datatypes and a few relations
  ** for printing the AST.
- **  
- ** absyn.rml's constructors are primarily used by the walker 
+ **
+ ** absyn.rml's constructors are primarily used by the walker
  ** (modeq/absyn_builder/walker.g) which takes an ANTLR internal syntax tree and
  ** converts it into an RML abstract syntax tree.
  **
  ** When the AST has been built, it is normaly used by explode.rml in order to
- ** build the scode (See explode.rml). It is also possile to send the AST do 
+ ** build the scode (See explode.rml). It is also possile to send the AST do
  ** the dumper (dump.rml) in order to print it.
- ** 
- ** For details regarding the abstract syntax tree, check out the grammar in 
+ **
+ ** For details regarding the abstract syntax tree, check out the grammar in
  ** the Modelica language specification.
- **  
+ **
  **)
 
 module Absyn:
-							  
+
   datatype Info = INFO of string * (* file *)
 			  int *    (* startline *)
 			  int *    (* startcolumn *)
@@ -41,7 +41,7 @@ module Absyn:
   (** - Programs, the top level construct *)
   (** A program is simply a list of class definitions declared at top
    ** level in the source file, combined with a within statement that
-   ** indicates the hieractical position of the program. 
+   ** indicates the hieractical position of the program.
    **)
   datatype Program = PROGRAM of Class list (* List of classes *)
 				* Within (* Within statement *)
@@ -51,10 +51,10 @@ module Absyn:
 				* bool (* Encapsulated *)
    		   | END_DEFINITION of Ident (* For split definitions *)
 		   | COMP_DEFINITION of ElementSpec (* For split definitions*)
-					* Path option (* insert into. 
+					* Path option (* insert into.
 						       Default, NONE *)
 		   | IMPORT_DEFINITION of ElementSpec(* For split definitions*)
-					* Path option (* insert into. 
+					* Path option (* insert into.
 						       Default, NONE *)
 		   | RML_FILE of RMLIdent * RMLInterface list * RMLDefs list * string list
 
@@ -73,7 +73,7 @@ module Absyn:
 			  * Restriction	             (* Restricion *)
 			  * ClassDef		     (* Body *)
 
- 
+
   (** The `ClassDef' type contains the definition part of a class *)
   (** declaration.  The definition is either explicit, with a list of *)
   (** parts (`public', `protected', `equationc' and `algorithm'), or it *)
@@ -82,25 +82,25 @@ module Absyn:
   (** array dimension and a list of modifications. An enumeration type contains a list of *)
   datatype ClassDef = PARTS of ClassPart list
 			       			 * string option	   (* string comment *)
-					| DERIVED of TypeSpec          (* Type *) 
+					| DERIVED of TypeSpec          (* Type *)
 						* ElementAttributes     (* ElementAttributes *)
 						* ElementArg list
 						* Comment option	     (* comment *)
-					| ENUMERATION of EnumLiteral list   
-						* Comment option     (* comment*)		
+					| ENUMERATION of EnumLiteral list
+						* Comment option     (* comment*)
 					| OVERLOAD of Path list (* function names *)
 						* Comment option
 
-  (* 
+  (*
 		type X = option<Type>            -> option type
 		type O = list<Type>              -> list type
 		type Y = record<Type,Type,Type>  -> tuple type
 		type Z = Tree<Type>              -> uniontype with replaceable type variables
 		type K = TypeSpec[:]             -> Array<TypeSpec>
-  *)   
+  *)
   (* arrays: TypeSpec[:] are represented as Array<TypeSpec> *)
-  datatype TypeSpec = TPATH of Path  
-					| TCOMPLEX of Path * TypeSpec list 
+  datatype TypeSpec = TPATH of Path
+					| TCOMPLEX of Path * TypeSpec list
 
   (** EnumLiteral, which is a name in an enumeration and an optional
    Comment.*)
@@ -117,28 +117,28 @@ module Absyn:
   datatype ClassPart = PUBLIC of ElementItem list
 		     | PROTECTED of ElementItem list
 		     | EQUATIONS of EquationItem list
-		     | INITIALEQUATIONS of EquationItem list	
+		     | INITIALEQUATIONS of EquationItem list
 		     | ALGORITHMS of AlgorithmItem list
 		     | INITIALALGORITHMS of AlgorithmItem list
 		     | EXTERNAL of ExternalDecl * Annotation option
 
   (** An element item is either an element or an annotation *)
-  datatype ElementItem = ELEMENTITEM of Element 
-		       | ANNOTATIONITEM of Annotation 
+  datatype ElementItem = ELEMENTITEM of Element
+		       | ANNOTATIONITEM of Annotation
   (** An element item is either an element or an annotation *)
 
   (** - Elements *)
   (* The basic element type in Modelica *)
   datatype Element = ELEMENT of bool		      (* final *)
 			      * bool		      (* replaceable *)
-			      * InnerOuter	      (* inner/outer *)	     
+			      * InnerOuter	      (* inner/outer *)
 			      * Ident                 (* Element name *)
 			      * ElementSpec           (* Actual element specification*)
 			      * string                (* Source code file *)
 			      * int                   (* Line number *)
 			      * ConstrainClass option (* only valid for classdef and component*)
 
-  
+
   (* Constraining type, must be extendes *)
   type ConstrainClass = ElementSpec
 
@@ -147,7 +147,7 @@ module Absyn:
    ** `ElementSpec' type for each possible element type.  There are
    ** class definitions (`CLASSDEF'), `extends' clauses (`EXTENDS')
    ** and component declarations (`COMPONENTS').
-   ** 
+   **
    ** As an example, if the element `extends TwoPin;' appears
    ** in the source, it is represented in the AST as
    ** `EXTENDS(IDENT("TwoPin"),[])'.
@@ -160,10 +160,10 @@ module Absyn:
 		             * TypeSpec (* Type *)
 				     * ComponentItem list
   (** One of the keyword inner and outer CAN be given to reference an inner or
-      outer component. Thus there are three disjoint possibilities. **)		     
+      outer component. Thus there are three disjoint possibilities. **)
   datatype InnerOuter = INNER | OUTER | UNSPECIFIED
 
-  (* Import statements, different kinds  *) 				     
+  (* Import statements, different kinds  *)
   datatype Import = NAMED_IMPORT of Ident * Path
 		  | QUAL_IMPORT of Path
 		  | UNQUAL_IMPORT of Path
@@ -174,23 +174,23 @@ module Absyn:
 
   (* Some kind of Modelica entity (object or variable) *)
   datatype Component = COMPONENT of Ident 	     (* component name *)
-				  * ArrayDim         (* Array dimensions, if any *) 
-				  * Modification option (* Optional modification *) 
+				  * ArrayDim         (* Array dimensions, if any *)
+				  * Modification option (* Optional modification *)
 
   (** Several component declarations can be grouped together in one *)
   (** `ElementSpec' by writing them on the same line in the source. *)
   (** This type contains the information specific to one component. *)
   datatype EquationItem = EQUATIONITEM of Equation * Comment option
-			| EQUATIONITEMANN of Annotation 
+			| EQUATIONITEMANN of Annotation
 
   (** Info specific for an algorithm item. *)
   datatype AlgorithmItem = ALGORITHMITEM  of Algorithm * Comment option
-			 |  ALGORITHMITEMANN of Annotation 
+			 |  ALGORITHMITEMANN of Annotation
 
   (* Information on one (kind) of equation, different constructors for different
      kinds of equations *)
   datatype Equation = EQ_IF of Exp                     (* Conditional expression *)
-			     * EquationItem list	     (* true branch *)  
+			     * EquationItem list	     (* true branch *)
 			     * (Exp * EquationItem list) list (* elseif branches *)
 			     * EquationItem list	     (* else branch *)
 		    | EQ_EQUALS of Exp * Exp           (* Standard 2-side eqn*)
@@ -212,17 +212,17 @@ module Absyn:
   (** algorithm section.  It does not describe a whole algorithm.  The *)
   (** reason this type is named like this is that the name of the *)
   (** grammar rule for algorithm statements is `algorithm'. *)
-  datatype Algorithm = ALG_ASSIGN of ComponentRef * Exp 
-		     | ALG_TUPLE_ASSIGN of Exp 		(*tuple*)  
-					* Exp 		(* value*) 	
+  datatype Algorithm = ALG_ASSIGN of ComponentRef * Exp
+		     | ALG_TUPLE_ASSIGN of Exp 		(*tuple*)
+					* Exp 		(* value*)
 		     | ALG_IF of Exp
-			       * AlgorithmItem list	     (* true branch *)  
+			       * AlgorithmItem list	     (* true branch *)
 			       * (Exp * AlgorithmItem list) list (* elseif *)
 			       * AlgorithmItem list	     (* else branch *)
 		     | ALG_FOR of Ident * Exp * AlgorithmItem list
 		     | ALG_WHILE of Exp * AlgorithmItem list
-		     | ALG_WHEN_A of Exp 
-					* AlgorithmItem list 
+		     | ALG_WHEN_A of Exp
+					* AlgorithmItem list
 					* (Exp * AlgorithmItem list) list (* elsewhen *)
 		     | ALG_NORETCALL of ComponentRef * FunctionArgs	   (* general fcalls without return value *)
 	             | ALG_MATCH of ComponentRef list * (* option result := match ... end match *)
@@ -231,7 +231,7 @@ module Absyn:
                                     Case list (* case list + else in the end with pat = [] *)
                      | ALG_SIMPLEMATCH of EquationItem list
 
-  datatype Case = CASE of Pattern list * (* patterns to be matched *) 
+  datatype Case = CASE of Pattern list * (* patterns to be matched *)
 					 ElementItem list * (* local decls *)
 					 ClassPart * (* equations [] for no equations: axioms /change to Equations*)
 					 Exp *(* to result *)
@@ -244,7 +244,7 @@ module Absyn:
 			| MCONpat of Path  (* from RMLLONGID of Ident * Ident *)
 			| MSTRUCTpat of Path option * Pattern list (* from RMLPAT_STRUCT of RMLIdent option * RMLPattern list *)
 			| MBINDpat of Ident * Pattern (* from RMLPAT_AS of Ident * RMLPattern *)
-			| MIDENTpat of Ident * Pattern  (* from RMLPAT_IDENT Ident *) 
+			| MIDENTpat of Ident * Pattern  (* from RMLPAT_IDENT Ident *)
 			| MNAMEDpat of Ident * Pattern  (* for named arguments in patterns *)
 
 
@@ -268,8 +268,8 @@ module Absyn:
   datatype ElementAttributes = ATTR of bool	(* flow *)
 						     	     * Variability (* parameter, constant etc. *)
 						     	     * Direction
-     
-  (* Dete *) 
+
+  (* Dete *)
   datatype Variability = VAR | DISCRETE | PARAM | CONST
 
 
@@ -314,12 +314,12 @@ module Absyn:
                | MSTRUCTURAL of Path option * Exp list (* returned from match exps *)
   (** The `Exp' datatype is the container of a Modelica expression. *)
 
-  datatype Code = C_TYPENAME of Path 
-		| C_VARIABLENAME of ComponentRef 
-		| C_EQUATIONSECTION of bool * EquationItem list 
-		| C_ALGORITHMSECTION of bool * AlgorithmItem list 
-		| C_ELEMENT of Element 
-		| C_EXPRESSION of Exp 
+  datatype Code = C_TYPENAME of Path
+		| C_VARIABLENAME of ComponentRef
+		| C_EQUATIONSECTION of bool * EquationItem list
+		| C_ALGORITHMSECTION of bool * AlgorithmItem list
+		| C_ELEMENT of Element
+		| C_EXPRESSION of Exp
 		| C_MODIFICATION of Modification
   (** The 'Code' datatype is used for Meta-programming. It orgiginates from the Code quotation. *)
 
@@ -327,20 +327,20 @@ module Absyn:
 			| FOR_ITER_FARG of Exp * Ident * Exp
   (** The `FunctionArgs' datatype consists of a list of positional arguments *)
   (** followed by a list of named arguments (Modelica v2.0) *)
-							  
+
   datatype NamedArg = NAMEDARG of Ident * Exp
   (** The `NamedArg' datatype consist of an Identifier for the argument and an expression *)
   (** giving the value of the argument *)
 
   datatype Operator = ADD   | SUB    | MUL     | DIV       | POW
 		    | UPLUS | UMINUS
-                    | RADD   | RSUB    | RMUL     | RDIV   
+                    | RADD   | RSUB    | RMUL     | RDIV
 		    | RUPLUS | RUMINUS
 		    | AND   | OR
 		    | NOT
 		    | LESS  | LESSEQ | GREATER | GREATEREQ | EQUAL | NEQUAL
 		    | RLESS  | RLESSEQ | RGREATER | RGREATEREQ | REQUAL | RNEQUAL
-  
+
   (** - Subscripts *)
   datatype Subscript = NOSUB
 		     | SUBSCRIPT of Exp
@@ -362,7 +362,7 @@ module Absyn:
   (** identifier--subscript pairs.  The type `Path', on the other hand, *)
   (** is used to store references to class names, or names inside *)
   (** class definitions. *)
-	      	
+
   (** - Restrictions *)
   datatype Restriction = R_CLASS
 		       | R_MODEL
@@ -372,7 +372,7 @@ module Absyn:
 		       | R_TYPE
 		       | R_PACKAGE
 		       | R_FUNCTION
-		       | R_ENUMERATION	
+		       | R_ENUMERATION
                | R_UNIONTYPE
 			   | R_TYPE_GENERATED
 
@@ -388,16 +388,16 @@ module Absyn:
   datatype Annotation = ANNOTATION of ElementArg list
   (** An Annotation is a class_modification. *)
 
-  (** Comment *)	
-  datatype Comment = COMMENT of Annotation option 	
+  (** Comment *)
+  datatype Comment = COMMENT of Annotation option
 				* string option
 
   (* ExternalDecl *)
-  datatype ExternalDecl = EXTERNALDECL of 
+  datatype ExternalDecl = EXTERNALDECL of
 				  Ident option  * (* The name of the external function *)
 				  string option * (* Lanugage of the external function *)
 				  ComponentRef option * (* ouput parameter as return value*)
-				  Exp list (* only positional arguments, i.e. expression list*)						     
+				  Exp list (* only positional arguments, i.e. expression list*)
 
 
   (* RML Stuff - work in progress *)
@@ -417,35 +417,35 @@ module Absyn:
   type RMLInterface = RMLDecl
   type RMLDefs      = RMLDecl
 
-  datatype RMLSignature = CALLSIGN of RMLType list * RMLType list 
+  datatype RMLSignature = CALLSIGN of RMLType list * RMLType list
 
-  datatype RMLType = RMLTYPE_INT 
-                   | RMLTYPE_STRING 
-                   | RMLTYPE_REAL  
-                   | RMLTYPE_TYCONS of RMLType list * RMLIdent 
+  datatype RMLType = RMLTYPE_INT
+                   | RMLTYPE_STRING
+                   | RMLTYPE_REAL
+                   | RMLTYPE_TYCONS of RMLType list * RMLIdent
                    | RMLTYPE_SIGNATURE of RMLSignature
-                   | RMLTYPE_TUPLE of RMLType list 
-                   | RMLTYPE_TYVAR of RMLIdent 
-                   | RMLTYPE_USERDEFINED of RMLIdent 
+                   | RMLTYPE_TUPLE of RMLType list
+                   | RMLTYPE_TYVAR of RMLIdent
+                   | RMLTYPE_USERDEFINED of RMLIdent
 
   datatype RMLRule = RMLRULE of RMLIdent *
-                                RMLPattern * 
+                                RMLPattern *
                                 RMLGoal option*
                                 RMLResult *
                                 string list *
 								string list
 
   datatype RMLResult = RMLNoResult of string list
-                     | RMLResultExp of Exp list * string list 
+                     | RMLResultExp of Exp list * string list
                      | RMLResultFail of string list
 
-  datatype RMLGoal = RMLGOAL_NOT of RMLGoal 
-				   | RMLGOAL_AND of RMLGoal * RMLGoal 
-                   | RMLGOAL_PAT of RMLPattern 
+  datatype RMLGoal = RMLGOAL_NOT of RMLGoal
+				   | RMLGOAL_AND of RMLGoal * RMLGoal
+                   | RMLGOAL_PAT of RMLPattern
 				   | RMLGOAL_LET of RMLPattern * Exp * string list
-                   | RMLGOAL_EQUAL of RMLIdent * Exp * string list 
-                   | RMLGOAL_RELATION of RMLIdent * Exp list * RMLPattern option * string list 
-          
+                   | RMLGOAL_EQUAL of RMLIdent * Exp * string list
+                   | RMLGOAL_RELATION of RMLIdent * Exp list * RMLPattern option * string list
+
   datatype RMLPattern = RMLPAT_WILDCARD
                       | RMLPAT_LITERAL of RMLLiteral
                       | RMLPAT_IDENT of RMLIdent
@@ -485,7 +485,7 @@ module Absyn:
                         | RMLDB_CTOR of string * (* filename *)
                                         RMLIdent *   (* constructor name *)
                                         RMLDbRange * (* position *)
-                                        RMLType    (* type *) 
+                                        RMLType    (* type *)
 
   datatype RMLDb = RMLDB of RMLDbElement list
 
@@ -493,9 +493,9 @@ module Absyn:
                                         Program  (* the ast  *)
 
   (* relations *)
-  relation path_string: Path => string 
-  relation path_string2: (Path, string) => string 
-  relation getWithDefinitions: Program => string list 
+  relation path_string: Path => string
+  relation path_string2: (Path, string) => string
+  relation getWithDefinitions: Program => string list
 end
 
 
@@ -509,7 +509,7 @@ end
 relation path_string2: (Path, string) => string =
 
   axiom	path_string2(IDENT(s),_) => s
-  
+
   rule	path_string2(n,str) => ns &
 		string_append(s,str) => s1 &
 		string_append(s1,ns) => ss
@@ -524,21 +524,21 @@ relation getWithStr: RMLDecl list => string list =
        --------------------------------------
 	   getWithStr(WITH(str, _)::rest) => strlist
 
-  rule getWithStr(rest) => strlst 
+  rule getWithStr(rest) => strlst
        -----------------------------
 	   getWithStr(_::rest) => strlst
 
   axiom getWithStr([]) => []
 
-end 
+end
 
 relation getWithDefinitions: Program => string list =
-   
+
    rule getWithStr(interfacelist) => interfaceWiths &
 		getWithStr(deflist) => defWiths &
 		list_append(interfaceWiths, defWiths) => withList
 		-----------------------------------------------------------------------------------
-		getWithDefinitions(RML_FILE(moduleid, interfacelist, deflist, strlist)) => withList 
+		getWithDefinitions(RML_FILE(moduleid, interfacelist, deflist, strlist)) => withList
 
    axiom getWithDefinitions(_) => []
 end

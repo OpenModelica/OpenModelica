@@ -4,13 +4,13 @@
 #line 2 "walker.g"
 
 // adrpo disabling warnings
-#pragma warning( disable : 4267)  // Disable warning messages C4267 
+#pragma warning( disable : 4267)  // Disable warning messages C4267
 // disable: 'initializing' : conversion from 'size_t' to 'int', possible loss of data
 
-#pragma warning( disable : 4231)  // Disable warning messages C4231 
+#pragma warning( disable : 4231)  // Disable warning messages C4231
 // disable: nonstandard extension used : 'extern' before template explicit instantiation
 
-#pragma warning( disable : 4101)  // Disable warning messages C4101 
+#pragma warning( disable : 4101)  // Disable warning messages C4101
 // disable: warning C4101: 'pe' : unreferenced local variable
 
 #line 17 "modelica_tree_parser.hpp"
@@ -23,7 +23,7 @@
 
 /************************************************************************
 File: walker.g
-Created By: Adrian Pop adrpo@ida.liu.se 
+Created By: Adrian Pop adrpo@ida.liu.se
 Date:       2003-06-10
 Revised on 2003-10-26 17:58:42 (write the definition even if has no childs)
 Comments: we walk on the modelica tree, buil a XML DOM tree and serialize
@@ -31,11 +31,11 @@ Comments: we walk on the modelica tree, buil a XML DOM tree and serialize
 
   #define null 0
 
-  extern "C" 
+  extern "C"
   {
     #include <stdio.h>
   }
-    
+
   #include <cstdlib>
   #include <iostream>
   #include <deque>
@@ -64,7 +64,7 @@ class CUSTOM_API modelica_tree_parser : public ANTLR_USE_NAMESPACE(antlr)TreePar
 
     char* itoa( int value, char* buffer, int radix )
     {
-      /* 
+      /*
       char* x = (char*)malloc(sizeof(char)*21);
       */
       sprintf(buffer, "%d", value);
@@ -74,7 +74,7 @@ class CUSTOM_API modelica_tree_parser : public ANTLR_USE_NAMESPACE(antlr)TreePar
     typedef std::deque<DOMElement*> l_stack;
     typedef std::string mstring;
 	enum anno {UNSPECIFIED, INSIDE_EXTERNAL, INSIDE_ELEMENT, INSIDE_EQUATION, INSIDE_ALGORITHM, INSIDE_COMMENT};
-    
+
     const XMLCh* str2xml(RefMyAST node)
     {
 		return XMLString::transcode(node->getText().c_str());
@@ -87,17 +87,17 @@ class CUSTOM_API modelica_tree_parser : public ANTLR_USE_NAMESPACE(antlr)TreePar
 		for (itList=s.rbegin(); itList!=s.rend(); ++itList)
 		{
 			pHoldingNode->appendChild((DOMElement*)*itList);
-		}		
+		}
         return pHoldingNode;
     }
-    
+
     DOMElement* appendKids(l_stack& s, DOMElement* pParentNode)
     {
 		std::deque<DOMElement*>::reverse_iterator itList;
 		for (itList=s.rbegin(); itList!=s.rend(); ++itList)
 		{
 		  pParentNode->appendChild((DOMElement*)*itList);
-		}		
+		}
         return pParentNode;
     }
 
@@ -107,7 +107,7 @@ class CUSTOM_API modelica_tree_parser : public ANTLR_USE_NAMESPACE(antlr)TreePar
 		for (itList=s->rbegin(); itList!=s->rend(); ++itList)
 		{
 		  pParentNode->appendChild((DOMElement*)*itList);
-		}		
+		}
 		delete s;
         return pParentNode;
     }
@@ -121,7 +121,7 @@ class CUSTOM_API modelica_tree_parser : public ANTLR_USE_NAMESPACE(antlr)TreePar
 			pNodeTo->setAttribute(z->getName(), z->getValue());
 		}
 	}
-    
+
     struct type_prefix_t
     {
         type_prefix_t():flow(0), variability(0),direction(0){}
@@ -152,7 +152,7 @@ class CUSTOM_API modelica_tree_parser : public ANTLR_USE_NAMESPACE(antlr)TreePar
 	{
 		if (iSwitch == 1) pNode->setAttribute(X("visibility"), X("public"));
 		else if (iSwitch == 2) pNode->setAttribute(X("visibility"), X("protected"));
-		else { /* error, shouldn't happen */ } 
+		else { /* error, shouldn't happen */ }
 	}
 #line 58 "modelica_tree_parser.hpp"
 public:
@@ -324,7 +324,7 @@ public:
 	{
 		return ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST);
 	}
-	
+
 protected:
 	RefMyAST returnAST;
 	RefMyAST _retTree;
@@ -337,7 +337,7 @@ private:
 		NUM_TOKENS = 151
 	};
 #endif
-	
+
 	static const unsigned long _tokenSet_0_data_[];
 	static const ANTLR_USE_NAMESPACE(antlr)BitSet _tokenSet_0;
 	static const unsigned long _tokenSet_1_data_[];

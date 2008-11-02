@@ -62,26 +62,26 @@ VertexColorMap::type VertexColorProperty(TaskGraph *tg)
   return pmap;
 }
 
-EdgeCommCostMap::type EdgeCommCostProperty(TaskGraph* tg) 
-{ 
+EdgeCommCostMap::type EdgeCommCostProperty(TaskGraph* tg)
+{
   boost::edge_weight_t pname;
   EdgeCommCostMap::type pmap= get(pname, *tg);
-  return pmap; 
-};  
+  return pmap;
+};
 
-EdgeResultSetMap::type EdgeResultSetProperty(TaskGraph* tg) 
-{ 
+EdgeResultSetMap::type EdgeResultSetProperty(TaskGraph* tg)
+{
   edge_result_set_t pname;
   EdgeResultSetMap::type pmap = get(pname, *tg);
-  return pmap; 
-};  
+  return pmap;
+};
 
-EdgePriorityMap::type EdgePriorityProperty(TaskGraph* tg) 
-{ 
+EdgePriorityMap::type EdgePriorityProperty(TaskGraph* tg)
+{
   edge_priority_t pname;
   EdgePriorityMap::type pmap = get(pname, *tg);
-  return pmap; 
-};  
+  return pmap;
+};
 
 
 void setPriority(EdgeID edge, int p, TaskGraph *tg)
@@ -114,7 +114,7 @@ TaskType getTaskType(VertexID task, TaskGraph *tg)
   return get(VertexTaskTypeProperty(tg),task);
 }
 
-boost::default_color_type getVertexColor(VertexID v, TaskGraph *tg) 
+boost::default_color_type getVertexColor(VertexID v, TaskGraph *tg)
 {
   return get(VertexColorProperty(tg),v);
 }
@@ -131,7 +131,7 @@ int getCommCost(EdgeID edge,TaskGraph * tg)
 
 
 void setCommCost(EdgeID edge, int weight,TaskGraph * tg)
-{  
+{
   put(EdgeCommCostProperty(tg),edge, weight);
 }
 
@@ -144,26 +144,26 @@ double getExecCost(VertexID v, const TaskGraph * tg)
 {
   return get(VertexExecCostProperty((TaskGraph*)tg),v);
 }
- 
+
 
 void setExecCost(VertexID v, double weight,TaskGraph * tg)
 {
   put(VertexExecCostProperty(tg),v,weight);
 }
 
-void nameVertex(VertexID task,TaskGraph *tg, const string *s) 
-{ 
+void nameVertex(VertexID task,TaskGraph *tg, const string *s)
+{
   put(VertexNameProperty(tg),
       task,
-      *s); 
+      *s);
 }
 
-void nameVertex(VertexID task, TaskGraph *tg,const char *s) 
-{ 
+void nameVertex(VertexID task, TaskGraph *tg,const char *s)
+{
  put(VertexNameProperty(tg),
      task,
-     s); 
-} 
+     s);
+}
 
 string & getVertexName(VertexID task,TaskGraph *tg)
 {
@@ -171,32 +171,32 @@ string & getVertexName(VertexID task,TaskGraph *tg)
 }
 
 void setResultName(VertexID task, string &s, TaskGraph *tg)
-{ 
+{
  put(VertexResultNameProperty(tg),
      task,
-     s); 
-} 
+     s);
+}
 string & getResultName(VertexID task, TaskGraph *tg)
 {
   return get(VertexResultNameProperty(tg),task);
-}  
+}
 
 void setOrigName(VertexID task, string &s, TaskGraph *tg)
-{ 
+{
  put(VertexOrigNameProperty(tg),
      task,
-     s); 
-} 
+     s);
+}
 string & getOrigName(VertexID task, TaskGraph *tg)
 {
   return get(VertexOrigNameProperty(tg),task);
-}  
+}
 
 
 string * genTemp()
 {
   ostringstream str;
-  
+
   str << "tmp" << tempNo++;
   return new string(str.str());
 }
@@ -207,7 +207,7 @@ string & insert_strings(string &s, vector<string> &v)
   for(i=0; i<v.size(); i++) {
     string::size_type pos=s.find("%s");
     if (pos == s.npos) {
-      // If replicated node is generated code for, the string insertion 
+      // If replicated node is generated code for, the string insertion
       // has already taken place. just return.
       // Not nice because can't perform check of format string against vector.
       // Redesign requires unique tasks replicated in rewrite rules.
@@ -219,9 +219,9 @@ string & insert_strings(string &s, vector<string> &v)
 }
 
 
-std::pair<ChildrenIterator, ChildrenIterator> 
+std::pair<ChildrenIterator, ChildrenIterator>
 children(VertexID v, const TaskGraph &tg)
-{ 
+{
   boost::graph_traits<TaskGraph>::out_edge_iterator e,e_end;
   // OutEdgeIterator e,e_end;
   tie(e,e_end) = out_edges(v,tg);
@@ -231,7 +231,7 @@ children(VertexID v, const TaskGraph &tg)
 
  std::pair<ParentsIterator, ParentsIterator>
  parents(VertexID v, const TaskGraph &tg)
-{ 
+{
   InEdgeIterator e,e_end;
   tie(e,e_end) = in_edges(v,tg);
   ParentsIterator c(e,&tg),c_end(e_end,&tg);
@@ -244,7 +244,7 @@ std::list<VertexID>*
 siblings( VertexID, const TaskGraph &tg)
 {
   std::list<VertexID> *res=new std::list<VertexID>();
-  
+
   return res;
 }
 
@@ -304,7 +304,7 @@ ResultSet& make_resultset(string *firstelt, int prio)
     cerr << "Error, ResultSet allocator reached maximum no :" << maxNo << endl;
     exit(-1);
   }
-  if (firstelt) { 
+  if (firstelt) {
     set.insert(pair<string,int>(*firstelt,prio));
     //cerr << "Creating resultset with elt: " << *firstelt << endl;
   }
@@ -335,7 +335,7 @@ ResultSet& copy_resultset(ResultSet &s)
 // TODO: Fix this lousy performace problem. Not ok to traverse all tasks!!!
 VertexID find_task(int taskID, TaskGraph *tg)
 {
-  
+
   VertexIterator v,v_end;
   //cerr << "Warning, calling slow find_task function." << endl;
   for (tie(v,v_end) = vertices(*tg);v != v_end; v++) {
@@ -352,7 +352,7 @@ void initialize_index(TaskGraph *tg)
 {
   VertexIterator v,v_end;
   int i;
-  
+
   for ( i=0,tie(v,v_end) = vertices(*tg); v != v_end; v++,i++) {
     put(VertexIndexProperty(tg),*v,i);
   }

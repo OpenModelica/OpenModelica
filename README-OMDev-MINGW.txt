@@ -29,7 +29,7 @@ Adrian Pop, adrpo@ida.liu.se, 2006-04-06
    http://www.ida.liu.se/~pelab/modelica/OpenModelica/MDT/
    to install MDT. Eclipse will restart at the end.
    Start Eclipse, change workspace to your installation:
-   - note here that your workspace must point one directory 
+   - note here that your workspace must point one directory
      up the OpenModelica svn directory (for me named OpenModelica)
      Example: if you downloaded OpenModelica in a directory like this:
      c:\some_paths\dev\OpenModelica then your workspace must point to:
@@ -45,11 +45,11 @@ Adrian Pop, adrpo@ida.liu.se, 2006-04-06
 
 8. Editing the OMDev-MINGW-OpenModelicaBuilder
    - Project->Project Properties->Builders->OMDev-MINGW-OpenModelicaBuilder->Edit
-   - NOTE: In tab Main you have to change the Working Directory from "OpenModelica" to 
+   - NOTE: In tab Main you have to change the Working Directory from "OpenModelica" to
            your directory name
-   - Go to Environment tab and change the name of the OMDEV variable from there 
+   - Go to Environment tab and change the name of the OMDEV variable from there
      to point to your OMDev installation:
-     c/path/to/your/omdev 
+     c/path/to/your/omdev
 
 9. Running the OMDev-MINGW-OpenModelica builder:
    To run the OMDev-MINGW-OpenModelicaBuilder press Ctrl+B.
@@ -59,7 +59,7 @@ Adrian Pop, adrpo@ida.liu.se, 2006-04-06
 
 10. Available options for OMDev-MINGW-OpenModelicaBuilder
     In the Environment tab of the OMDev-MINGW-OpenModelicaBuilder
-    you have several variables. 
+    you have several variables.
     - OMC_BUILD_STATIC which is not present in Environment tab
       when set to "/static/" (without quotes) will compile a
       independent (static) omc.exe.
@@ -67,8 +67,8 @@ Adrian Pop, adrpo@ida.liu.se, 2006-04-06
 11. To run the OpenModelica testsuite you have to:
     Copy OMDev/tools/mingw to OpenModelica/build/MinGW
     If you don't have an OpenModelicaX.Y.Z release installed
-     then create a directory called OpenModelica/build/ModelicaLibrary 
-    in which you unpack the Modelica Standard Library you 
+     then create a directory called OpenModelica/build/ModelicaLibrary
+    in which you unpack the Modelica Standard Library you
     can take from: OpenModelica/Compiler/VC7/Setup/zips/ModelicaLib.tar.gz
     To run the testsuite from Eclipse:
     - Ctrl+B and type: test
@@ -77,7 +77,7 @@ Adrian Pop, adrpo@ida.liu.se, 2006-04-06
       >export OPENMODELICAHOME="c:\\path\\to\\your\\OpenModelica\\build"
       >export OPENMODELICALIBRARY="c:\\path\\to\\your\\OpenModelica\\build\ModelicaLibrary"
       >cd testsuite
-      testsuite> make 
+      testsuite> make
 
 
 ***NOTES*** ON PROBLEMS WITH THE ECLIPSE PROJECT/OMDev BUILDER:
@@ -112,8 +112,8 @@ there. If you don't, then:
 
 
 For problems with OMDev package, contact:
-Adrian Pop, 
+Adrian Pop,
 adrpo@ida.liu.se
-           
+
 Last Update:2007-03-09
 

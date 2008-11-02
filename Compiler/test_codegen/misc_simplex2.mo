@@ -10,9 +10,9 @@ function pivot2
 protected
   Real row[size(a,2)];
   Real col[size(a,1)];
-  
+
 algorithm
-  
+
   row := b[p,:];
   col := b[:,q] * (1 / b[p,q]);
 
@@ -34,7 +34,7 @@ function misc_simplex2
   output Real x[size(matr,2)-1];
   output Real z;
 
-  
+
 
   Real a[size(matr,1),size(matr,2)];
   Integer M;
@@ -61,8 +61,8 @@ algorithm
     while not (p == N or a[p,q] > 0) loop
       p:=p+1;
     end while;
-    
-    
+
+
     for i in p+1:N loop
       if a[i,q] > 0 then
 	if (a[i,M]/a[i,q]) < (a[p,M]/a[p,q]) then
@@ -71,7 +71,7 @@ algorithm
       end if;
     end for;
 
-    
+
     if (q < M) and (p < N) then
       a := pivot2(a,p,q);
 
@@ -85,12 +85,12 @@ algorithm
       if (x[i] < 0) and ((a[j,i] >= 1.0) and (a[j,i] <= 1.0)) then
 	x[i] := a[j,M];
       elseif ((a[j,i] < 0) or (a[j,i] > 0)) then
-	x[i] := 0;	
+	x[i] := 0;
       end if;
     end for;
   end for;
 
-  
+
   z := a[1,M];
 
 end misc_simplex2;

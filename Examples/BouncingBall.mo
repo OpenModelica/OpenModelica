@@ -1,4 +1,4 @@
-model BouncingBall 
+model BouncingBall
   parameter Real e=0.7 "coefficient of restitution";
   parameter Real g=9.81 "gravity acceleration";
   Real h(start=1) "height of ball";
@@ -7,8 +7,8 @@ model BouncingBall
   Boolean impact;
   Real v_new;
   Integer foo;
-  
-equation   
+
+equation
   impact = h <= 0.0;
   foo = if impact then 1 else 2;
   der(v) = if flying then -g else 0;

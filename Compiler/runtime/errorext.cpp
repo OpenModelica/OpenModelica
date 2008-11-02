@@ -1,31 +1,31 @@
-/* 
+/*
  * This file is part of OpenModelica.
- * 
+ *
  * Copyright (c) 1998-2008, Linköpings University,
- * Department of Computer and Information Science, 
- * SE-58183 Linköping, Sweden. 
- * 
+ * Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
  * All rights reserved.
- * 
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC 
- * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF 
- * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC 
- * PUBLIC LICENSE. 
- * 
- * The OpenModelica software and the Open Source Modelica 
- * Consortium (OSMC) Public License (OSMC-PL) are obtained 
- * from Linköpings University, either from the above address, 
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC
+ * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF
+ * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC
+ * PUBLIC LICENSE.
+ *
+ * The OpenModelica software and the Open Source Modelica
+ * Consortium (OSMC) Public License (OSMC-PL) are obtained
+ * from Linköpings University, either from the above address,
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
- * 
- * This program is distributed  WITHOUT ANY WARRANTY; without 
- * even the implied warranty of  MERCHANTABILITY or FITNESS 
- * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH 
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS 
- * OF OSMC-PL. 
- * 
+ *
+ * This program is distributed  WITHOUT ANY WARRANTY; without
+ * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
+ * OF OSMC-PL.
+ *
  * See the full OSMC Public License conditions for more details.
- * 
+ *
  */
 
 #include <iostream>
@@ -51,7 +51,7 @@ extern "C" {
   {
     std::list<std::string> tokens;
     for (int i=nTokens-1; i>=0; i--) {
-      tokens.push_back(std::string(ctokens[i]));    
+      tokens.push_back(std::string(ctokens[i]));
     }
     add_message(errorID,type,severity,message,tokens);
   }
@@ -68,19 +68,19 @@ bool error_on=true;
 		   char* type,
 		   char* severity,
 		   char* message,
-		   std::list<std::string> tokens) 
+		   std::list<std::string> tokens)
   {
     ErrorMessage msg((long)errorID,
 		     std::string(type ),
-		     std::string(severity), 
+		     std::string(severity),
 		     std::string(message),
 		     tokens);
-    if (errorMessageQueue.empty() || 
+    if (errorMessageQueue.empty() ||
 	(!errorMessageQueue.empty() && errorMessageQueue.front().getFullMessage() != msg.getFullMessage())) {
       //std::cerr << "inserting error message "<< msg.getFullMessage() << std::endl;
       errorMessageQueue.push(msg);
     }
-  }    
+  }
 
   /* Adds a message with file information */
   void add_source_message(int errorID,
@@ -106,7 +106,7 @@ bool error_on=true;
 		     (long)endCol,
 		     isReadOnly,
 		     std::string(filename));
-    if (errorMessageQueue.empty() || 
+    if (errorMessageQueue.empty() ||
 	(!errorMessageQueue.empty() && errorMessageQueue.front().getFullMessage() != msg.getFullMessage())) {
       //std::cerr << "inserting error message "<< msg.getFullMessage() << std::endl;
       errorMessageQueue.push(msg);
@@ -119,7 +119,7 @@ extern "C"
 
 #include <assert.h>
 #include "rml.h"
-  
+
 
   void ErrorExt_5finit(void)
   {
@@ -156,7 +156,7 @@ extern "C"
       add_message(errorID,tp,severity,message,tokens);
     }
     RML_TAILCALLK(rmlSC);
-  } 
+  }
   RML_END_LABEL
 
   RML_BEGIN_LABEL(ErrorExt__addSourceMessage)
@@ -168,22 +168,22 @@ extern "C"
     int scol = RML_UNTAGFIXNUM(rmlA4);
     int eline = RML_UNTAGFIXNUM(rmlA5);
     int ecol = RML_UNTAGFIXNUM(rmlA6);
-    bool isReadOnly = RML_UNTAGFIXNUM(rmlA7)?true:false;    
+    bool isReadOnly = RML_UNTAGFIXNUM(rmlA7)?true:false;
     char* filename = RML_STRINGDATA(rmlA8);
     char* message = RML_STRINGDATA(rmlA9);
     void* tokenlst = rmlA10;
     std::list<std::string> tokens;
-    
+
     if (error_on) {
       while(RML_GETHDR(tokenlst) != RML_NILHDR) {
 	tokens.push_back(string(RML_STRINGDATA(RML_CAR(tokenlst))));
 	tokenlst=RML_CDR(tokenlst);
       }
-      
+
       add_source_message(errorID,tp,severity,message,tokens,sline,scol,eline,ecol,isReadOnly,filename);
     }
-    RML_TAILCALLK(rmlSC); 
-  } 
+    RML_TAILCALLK(rmlSC);
+  }
   RML_END_LABEL
 
   RML_BEGIN_LABEL(ErrorExt__printMessagesStr)
@@ -195,7 +195,7 @@ extern "C"
     }
     rmlA0 = mk_scon((char*)res.c_str());
     RML_TAILCALLK(rmlSC);
-  } 
+  }
   RML_END_LABEL
 
   RML_BEGIN_LABEL(ErrorExt__getMessagesStr)
@@ -208,7 +208,7 @@ extern "C"
     res+=string("}");
     rmlA0 = mk_scon((char*)res.c_str());
     RML_TAILCALLK(rmlSC);
-  } 
+  }
   RML_END_LABEL
 
 

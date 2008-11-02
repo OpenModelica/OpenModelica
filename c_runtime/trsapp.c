@@ -12,9 +12,9 @@
 
 #include "f2c.h"
 
-/* Subroutine */ int trsapp_(integer *n, integer *npt, doublereal *xopt, 
-	doublereal *xpt, doublereal *gq, doublereal *hq, doublereal *pq, 
-	doublereal *delta, doublereal *step, doublereal *d__, doublereal *g, 
+/* Subroutine */ int trsapp_(integer *n, integer *npt, doublereal *xopt,
+	doublereal *xpt, doublereal *gq, doublereal *hq, doublereal *pq,
+	doublereal *delta, doublereal *step, doublereal *d__, doublereal *g,
 	doublereal *hd, doublereal *hs, doublereal *crvmin)
 {
     /* System generated locals */
@@ -31,7 +31,7 @@
     static integer ih;
     static doublereal ds, sg;
     static integer iu;
-    static doublereal ss, dhd, dhs, cth, sgk, shs, sth, qadd, half, qbeg, 
+    static doublereal ss, dhd, dhs, cth, sgk, shs, sth, qadd, half, qbeg,
 	    qred, qmin, temp, qsav, qnew, zero, ggbeg, alpha, angle, reduc;
     static integer iterc;
     static doublereal ggsav, delsq, tempa, tempb;

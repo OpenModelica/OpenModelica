@@ -2,7 +2,7 @@ CC=gcc
 CXX=g++
 
 ANTLR_HOME = /home/adrpo/dev/antlr-2.7.7
-CLASSPATH  = "c:\bin\cygwin\home\adrpo\dev\antlr-2.7.7\antlr.jar" 
+CLASSPATH  = "c:\bin\cygwin\home\adrpo\dev\antlr-2.7.7\antlr.jar"
 
 ANTLR_INCP = -I${ANTLR_HOME}/lib/cpp
 ANTLR_LIBP = -L${ANTLR_HOME}/lib/cpp/src
@@ -48,11 +48,11 @@ $(walkergen): walker.g modelica_parserTokenTypes.txt
 
 dirwalk.o: dirwalk.cpp dirwalk.h
 
-main: $(OBJS) 
+main: $(OBJS)
 	$(CXX) ModelicaXML.cpp -o modelicaxml $(OBJS) $(LINKFLAGS) $(LIBS) ${INCP}
 
 clean:
-	rm -f modelicaxml modelicaxml.exe *.o *.obj *~ core *.core 
+	rm -f modelicaxml modelicaxml.exe *.o *.obj *~ core *.core
 
 reallyclean: clean
 	rm -f $(walkergen) modelica_parserTokenTypes.txt

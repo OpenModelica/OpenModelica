@@ -1,4 +1,4 @@
-#include "TaskMerging.hpp" 
+#include "TaskMerging.hpp"
 #include "ParallelOptions.hpp"
 #include "SingleChildMerge.hpp"
 #include "DuplicateParentMerge.hpp"
@@ -14,8 +14,8 @@ extern VertexID merged_stop_task;
 double get_tlevel(VertexID u, const TaskGraph &g,map<VertexID,double>*level) {
   map<VertexID,double>::iterator elt;
   elt = level->find(u);
-  if (elt == level->end()) { 
-    cerr << "Error finding level value for node " 
+  if (elt == level->end()) {
+    cerr << "Error finding level value for node "
 	 << getTaskID(u,&g) << endl;
     exit(-1);
   }
@@ -23,8 +23,8 @@ double get_tlevel(VertexID u, const TaskGraph &g,map<VertexID,double>*level) {
 };
 
 
-TaskMerging::TaskMerging() : m_latency(0.001), 
-			     m_bandwidth(500.0), 
+TaskMerging::TaskMerging() : m_latency(0.001),
+			     m_bandwidth(500.0),
 			     m_change(true),
 			     m_taskgraph(0),
 			     m_containTasks(0),
@@ -48,7 +48,7 @@ void TaskMerging::initializeRules()
     (*m_containTasks)[*v] = s;
     m_taskRemoved[*v]=false;
   }
-    
+
   m_rules[0] = (MergeRule*)new SingleChildMerge(m_taskgraph,m_orig_taskgraph,
 						m_containTasks,m_invartask,
 						m_outvartask,m_latency,
@@ -70,7 +70,7 @@ void TaskMerging::initializeRules()
 					     m_outvartask,m_latency,
 					     m_bandwidth,m_nproc,
 					     &m_taskRemoved);
-  
+
   // Add more rules here and change number of rules in constructor.
 }
 
@@ -85,7 +85,7 @@ void TaskMerging::merge(TaskGraph *taskgraph, TaskGraph* orig_tg,
 			ContainSetMap *cmap)
 {
   if (!options) { cerr << "No paralleloptions set." << endl; exit(-1); }
-  if (!taskgraph) { cerr << "No taskgraph built, merging impossible." 
+  if (!taskgraph) { cerr << "No taskgraph built, merging impossible."
 			 << endl; exit(-1); }
 
   m_latency=options->get_latency();
@@ -96,7 +96,7 @@ void TaskMerging::merge(TaskGraph *taskgraph, TaskGraph* orig_tg,
   m_containTasks = cmap;
   m_invartask = invartask;
   m_outvartask = outvartask;
-  
+
   int new_size,orig_size=num_vertices(*m_taskgraph);
   initializeRules();
 
@@ -116,9 +116,9 @@ void TaskMerging::printTaskInfo()
   VertexIterator v,v_end;
   cout << "bandwidth = " << m_bandwidth << endl;
   cout << "latency = " << m_latency << endl;
-  
+
   for(tie(v,v_end) = vertices(*m_taskgraph); v!=v_end; ++v) {
-    cout << "task: " <<(int) *v << " tlevel = " << m_rules[0]->tlevel(*v) 
+    cout << "task: " <<(int) *v << " tlevel = " << m_rules[0]->tlevel(*v)
 	 << " execcost= " << m_rules[0]->getExecCost(*v) << endl;
   }
 }
@@ -127,28 +127,28 @@ void TaskMerging::printTaskInfo()
 // Reinsert the source and sink nodes after merging has been preformed.
 void::TaskMerging::reinsertSourceAndSink()
 {
-  
-  
+
+
   list<EdgeInfo>::iterator e;
-  
+
   m_taskRemoved[m_invartask]=false;
   m_taskRemoved[m_outvartask]=false;
-  
+
   m_invartask = boost::add_vertex(*m_taskgraph);
   m_outvartask = boost::add_vertex(*m_taskgraph);
-  
+
   (*m_containTasks)[m_invartask] = new ContainSet();
   (*m_containTasks)[m_outvartask] = new ContainSet();
   nameVertex(m_invartask,m_taskgraph,"invar");
-  nameVertex(m_invartask,m_taskgraph,"outvar"); 
+  nameVertex(m_invartask,m_taskgraph,"outvar");
   setExecCost(m_invartask,1.0,m_taskgraph);
   setExecCost(m_outvartask,1.0,m_taskgraph);
   put(VertexUniqueIDProperty(m_taskgraph),
       m_invartask,
-      m_invarID); 
+      m_invarID);
   put(VertexUniqueIDProperty(m_taskgraph),
       m_outvartask,
-      m_outvarID); 
+      m_outvarID);
   // Set global vars for start and end task
   merged_start_task=m_invartask;
   merged_stop_task=m_outvartask;
@@ -175,7 +175,7 @@ void TaskMerging::add_edge_containing(const EdgeInfo &info)
   } else if (info.target == m_outvarID) {
     VertexIterator v,v_end;
     // This is really expensive, fortunately there are no longer so many tasks
-    for (tie(v,v_end) = vertices(*m_taskgraph); v != v_end; v++) { 
+    for (tie(v,v_end) = vertices(*m_taskgraph); v != v_end; v++) {
       if (*v != m_invartask && *v != m_outvartask) {
 	ContainSet *cset = m_containTasks->find(*v)->second;
 	if (cset && cset->find(info.source) != cset->end()) {
@@ -183,12 +183,12 @@ void TaskMerging::add_edge_containing(const EdgeInfo &info)
 	}
       }
     }
-  }  
+  }
 }
 
 
 // Remove source and sink nodes to speedup and simplify task merging
-// ExecCost(src)= ExecCost(sink) = 0  
+// ExecCost(src)= ExecCost(sink) = 0
 void TaskMerging::removeSourceAndSink()
 {
   ChildrenIterator c,c_end;
@@ -213,7 +213,7 @@ void TaskMerging::removeSourceAndSink()
 					   m_outvarID,
 					   copy_resultset(getResultSet(e,m_taskgraph))));
   }
-  
+
   clear_vertex(m_invartask,*m_taskgraph);
   clear_vertex(m_outvartask,*m_taskgraph);
   remove_vertex(m_invartask,*m_taskgraph);
@@ -221,7 +221,7 @@ void TaskMerging::removeSourceAndSink()
   m_taskRemoved[m_invartask]=true;
   m_taskRemoved[m_outvartask]=true;
 
-  
+
   m_containTasks->erase(m_containTasks->find(m_invartask));
   m_containTasks->erase(m_containTasks->find(m_outvartask));
 
@@ -236,13 +236,13 @@ void TaskMerging::removeSourceAndSink()
 
 void TaskMerging::mergeRules()
 {
-  
+
   //call each rule in order
-  
+
   bool change=true;
 
   removeSourceAndSink();
-  
+
   // calculate tlevel for each node
   map<VertexID,double> tlevel;
   VertexIterator v,v_end;
@@ -252,7 +252,7 @@ void TaskMerging::mergeRules()
 
   // a queue sorted on tlevel.
   TQueue *queue= new TQueue(TLevelCmp(m_taskgraph,&tlevel));
-  
+
   clock_t t1,t2,t3;
   t1=clock();
   for(tie(v,v_end) = vertices(*m_taskgraph); v != v_end; v++) {
@@ -270,7 +270,7 @@ void TaskMerging::mergeRules()
       if (change) break;
     }
   }
-  
+
   while(m_rules[3]->apply(NULL));
 
   ofstream file("merged_nosourcesink.viz");
@@ -285,7 +285,7 @@ void TaskMerging::mergeRules()
   // put back source and sink nodes.
   reinsertSourceAndSink();
   //  cerr << "Updating execution costs" << endl;
-  updateExecCosts(); // When finished mergin, execcost should be calculated for each task 
+  updateExecCosts(); // When finished mergin, execcost should be calculated for each task
 		     // from containSet.
   //  cerr << "Leaving task merging.." << endl;
 }
@@ -295,7 +295,7 @@ void TaskMerging::updateExecCosts()
 {
 
   VertexIterator v,v_end;
-  
+
   for(tie(v,v_end) = vertices(*m_taskgraph); v != v_end; v++) {
     double cost = m_rules[0]->getExecCost(*v);
     put(VertexExecCostProperty(m_taskgraph),*v,cost);

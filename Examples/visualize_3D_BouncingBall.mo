@@ -8,7 +8,7 @@ model BouncingBall3D
   Boolean impact;
   Real v_new;
   SimpleVisual.PositionSize obj "color=blue;shape=sphere;";
-equation 
+equation
   impact= h < 0.0;
   der(v)=if flying then -g else 0;
   der(h)=v;

@@ -40,7 +40,7 @@ tokens {
 	CODE_INITIALALGORITHM;
 	COMMENT;
     COMPONENT_DEFINITION;
-	DECLARATION	; 
+	DECLARATION	;
 	DEFINITION ;
     END_DEFINITION;
 	ENUMERATION_LITERAL;
@@ -79,12 +79,12 @@ tokens {
 
 
 stored_definition :
-// To handle split models into several evaluations, "package A", 
+// To handle split models into several evaluations, "package A",
 // "model test end test", "end A;" as in MathModelica
-        ( (ENCAPSULATED)? 
+        ( (ENCAPSULATED)?
  		(PARTIAL)?
  		class_type
- 		IDENT EOF ) => ( (ENCAPSULATED)? 
+ 		IDENT EOF ) => ( (ENCAPSULATED)?
  		(PARTIAL)?
  		class_type
  		IDENT EOF!)
@@ -96,15 +96,15 @@ stored_definition :
             END! IDENT SEMICOLON! EOF! {
                 #stored_definition = #([END_DEFINITION,"END_DEFINITION"],
                                      #stored_definition);
-        } 
+        }
         |
-        (component_clause) => component_clause SEMICOLON! EOF! 
+        (component_clause) => component_clause SEMICOLON! EOF!
         {
                 #stored_definition = #([COMPONENT_DEFINITION,"COMPONENT_DEFINITION"],
                                      #stored_definition);
         }
         |
-        import_clause SEMICOLON! EOF! 
+        import_clause SEMICOLON! EOF!
         {
             #stored_definition = #([IMPORT_DEFINITION,"IMPORT_DEFINITION"],
                                      #stored_definition);
@@ -115,17 +115,17 @@ stored_definition :
 			((FINAL)? cd:class_definition s:SEMICOLON!
 			{
 			  /* adrpo, fix the end of this AST node */
-			  if(#cd != NULL) 
+			  if(#cd != NULL)
 			  {
             		  	/*
-            		  	std::cout << (#cd)->toString() << std::endl;				
+            		  	std::cout << (#cd)->toString() << std::endl;
             		  	std::cout << s->getLine() << ":" << s->getColumn() << std::endl;
-            		  	*/				
+            		  	*/
 				RefMyAST(#cd)->setEndLine(s->getLine());
 				RefMyAST(#cd)->setEndColumn(s->getColumn());
-			   }							
+			   }
 			}
-			)* 
+			)*
 			EOF!
 			{
 				#stored_definition = #([STORED_DEFINITION,"STORED_DEFINITION"],
@@ -143,26 +143,26 @@ within_clause :
  */
 
 class_definition :
-		(ENCAPSULATED)? 
+		(ENCAPSULATED)?
 		(PARTIAL)?
-		class_type     
+		class_type
         class_specifier
-		{ 
-			#class_definition = #([CLASS_DEFINITION, "CLASS_DEFINITION"], 
-				class_definition); 
+		{
+			#class_definition = #([CLASS_DEFINITION, "CLASS_DEFINITION"],
+				class_definition);
 		}
 		;
 
 class_type :
-		( CLASS | MODEL | RECORD | BLOCK | ( EXPANDABLE )? CONNECTOR | TYPE 
-        | PACKAGE | FUNCTION 
+		( CLASS | MODEL | RECORD | BLOCK | ( EXPANDABLE )? CONNECTOR | TYPE
+        | PACKAGE | FUNCTION
 		)
 		;
 
-class_specifier: 	
-        IDENT class_specifier2 
+class_specifier:
+        IDENT class_specifier2
     |   EXTENDS! IDENT (class_modification)? string_comment composition
-            END! IDENT! 
+            END! IDENT!
         {
             #class_specifier = #([CLASS_EXTENDS,"CLASS_EXTENDS"],#class_specifier);
         }
@@ -172,21 +172,21 @@ class_specifier2 :
 		( string_comment composition END! IDENT!
 		| EQUALS^  base_prefix name_path ( array_subscripts )? ( class_modification )? comment
 		| EQUALS^ enumeration
-        | EQUALS^ pder    
+        | EQUALS^ pder
 		| EQUALS^ overloading
 		)
 		;
 
 pder:   DER^ LPAR! name_path COMMA! ident_list RPAR! comment ;
 
-ident_list : 
-        IDENT 
+ident_list :
+        IDENT
     | IDENT COMMA! ident_list
         {
             #ident_list=#([IDENT_LIST,"IDENT_LIST"],#ident_list);
         }
     ;
-        
+
 
 overloading:
 		OVERLOAD^ LPAR! name_list RPAR! comment
@@ -201,7 +201,7 @@ name_list:
 		;
 
 enumeration :
-		ENUMERATION^ LPAR! (enum_list | COLON ) RPAR! comment 
+		ENUMERATION^ LPAR! (enum_list | COLON ) RPAR! comment
 		;
 enum_list :
 		enumeration_literal ( COMMA! enumeration_literal)*
@@ -212,15 +212,15 @@ enumeration_literal :
 		{
 			#enumeration_literal=#([ENUMERATION_LITERAL,
 					"ENUMERATION_LITERAL"],#enumeration_literal);
-		}		
+		}
 		;
 
 composition :
 		element_list
 		(	public_element_list
 		|	protected_element_list
-		| 	initial_equation_clause	
-		| 	initial_algorithm_clause	
+		| 	initial_equation_clause
+		| 	initial_algorithm_clause
 		|	equation_clause
 		|	algorithm_clause
 		)*
@@ -228,18 +228,18 @@ composition :
 		;
 
 external_clause :
-        EXTERNAL^	
-        ( language_specification )? 
+        EXTERNAL^
+        ( language_specification )?
         ( external_function_call )?
         ( annotation )? SEMICOLON!
         ( external_annotation )?
         ;
 
 external_annotation:
-		annotation SEMICOLON! 
-        { 
+		annotation SEMICOLON!
+        {
             #external_annotation=#([EXTERNAL_ANNOTATION,
-					"EXTERNAL_ANNOTATION"],#external_annotation); 
+					"EXTERNAL_ANNOTATION"],#external_annotation);
         }
     ;
 
@@ -266,27 +266,27 @@ external_function_call :
 
 element_list :
 		((e:element | a:annotation ) s:SEMICOLON!
-		{		
+		{
 		   /* adrpo, fix the end of this AST node */
 		   if (#e)
 		   {
     		  	/*
-    		  	std::cout << (#e)->toString() << std::endl;				
+    		  	std::cout << (#e)->toString() << std::endl;
     		  	std::cout << s->getLine() << ":" << s->getColumn() << std::endl;
     		  	*/
 			RefMyAST(#e)->setEndLine(s->getLine());
-			RefMyAST(#e)->setEndColumn(s->getColumn());		   	
+			RefMyAST(#e)->setEndColumn(s->getColumn());
 		   	if (#e->getFirstChild())
 		   	{
 		   	   /*
-    		  	   std::cout << (#e->getFirstChild())->toString() << std::endl;				
+    		  	   std::cout << (#e->getFirstChild())->toString() << std::endl;
     		  	   std::cout << s->getLine() << ":" << s->getColumn() << std::endl;
     		  	   */
 			   RefMyAST(#e->getFirstChild())->setEndLine(s->getLine());
-			   RefMyAST(#e->getFirstChild())->setEndColumn(s->getColumn());		   	
-		        }		   
+			   RefMyAST(#e->getFirstChild())->setEndColumn(s->getColumn());
+		        }
 		   }
-		   
+
 		}
 		)*
 		;
@@ -312,24 +312,24 @@ element_list :
 
 element :
 			ic:import_clause
-		|	ec:extends_clause			 
+		|	ec:extends_clause
 		|	(REDECLARE)?
-        (FINAL)?	 
-        (INNER)? 
+        (FINAL)?
+        (INNER)?
         (OUTER)?
 		(	(class_definition | cc:component_clause)
 			|(REPLACEABLE ( class_definition | cc2:component_clause )
 				(constraining_clause comment)?
 			 )
 		)
-		{ 
-			if(#cc != null || #cc2 != null) 
-			{ 
-				#element = #([DECLARATION,"DECLARATION"], #element); 
+		{
+			if(#cc != null || #cc2 != null)
+			{
+				#element = #([DECLARATION,"DECLARATION"], #element);
 			}
-			else	
-			{ 
-				#element = #([DEFINITION,"DEFINITION"], #element); 
+			else
+			{
+				#element = #([DEFINITION,"DEFINITION"], #element);
 			}
 		}
 		;
@@ -353,7 +353,7 @@ element :
         }
         */
 
-import_clause : 
+import_clause :
 		IMPORT^ (explicit_import_name | implicit_import_name) comment
 		;
 
@@ -381,9 +381,9 @@ implicit_import_name!
  * 2.2.3 Extends
  */
 
-// Note that this is a minor modification of the standard by 
+// Note that this is a minor modification of the standard by
 // allowing the comment.
-extends_clause : 
+extends_clause :
 		EXTENDS^ name_path ( class_modification )?
 		;
 
@@ -442,7 +442,7 @@ modification :
 		;
 
 class_modification :
-		LPAR! ( argument_list )? RPAR! 
+		LPAR! ( argument_list )? RPAR!
 		{
 			#class_modification=#([CLASS_MODIFICATION,"CLASS_MODIFICATION"],
 				#class_modification);
@@ -458,16 +458,16 @@ argument_list :
 
 argument ! :
 		(em:element_modification_or_replaceable
-		{ 
-			#argument = #([ELEMENT_MODIFICATION,"ELEMENT_MODIFICATION"], #em); 
+		{
+			#argument = #([ELEMENT_MODIFICATION,"ELEMENT_MODIFICATION"], #em);
 		}
-		| er:element_redeclaration 
-		{ 
+		| er:element_redeclaration
+		{
 			#argument = #([ELEMENT_REDECLARATION,"ELEMENT_REDECLARATION"], #er); 		}
 		)
 		;
 
-element_modification_or_replaceable: 
+element_modification_or_replaceable:
         (EACH)? (FINAL)? (element_modification | element_replaceable)
     ;
 
@@ -480,7 +480,7 @@ element_redeclaration :
 		(	(class_definition | component_clause1) | element_replaceable )
 		;
 
-element_replaceable: 
+element_replaceable:
         REPLACEABLE^ ( class_definition | component_clause1 )
 				(constraining_clause comment)?
     ;
@@ -491,7 +491,7 @@ component_clause1 :
 component_declaration1 :
         declaration comment
     ;
-        
+
 
 /*
  * 2.2.6 Equations
@@ -502,21 +502,21 @@ initial_equation_clause :
 		INITIAL! ec:equation_clause
         {
             #initial_equation_clause = #([INITIAL_EQUATION,"INTIAL_EQUATION"], ec);
-        } 
+        }
 
 		;
 
 equation_clause :
-		EQUATION^  
+		EQUATION^
 		    equation_annotation_list
   		;
 
 equation_annotation_list :
-		{ LA(1) == END || LA(1) == EQUATION || LA(1) == ALGORITHM || LA(1)==INITIAL 
+		{ LA(1) == END || LA(1) == EQUATION || LA(1) == ALGORITHM || LA(1)==INITIAL
 		 || LA(1) == PROTECTED || LA(1) == PUBLIC }?
 		|
 		( equation SEMICOLON! | annotation SEMICOLON!) equation_annotation_list
-		; 
+		;
 		/*
         exception
         catch [ANTLR_USE_NAMESPACE(antlr)RecognitionException &e]
@@ -668,7 +668,7 @@ multi_assign_clause_a :
         LPAR! expression_list RPAR! ASSIGN^ component_reference function_call;
 
 equality_equation :
-		simple_expression EQUALS^ expression 
+		simple_expression EQUALS^ expression
 		;
 
 conditional_equation_e :
@@ -710,8 +710,8 @@ when_clause_e :
 		END! WHEN!
 		;
 
-else_when_e :	
-		ELSEWHEN^ expression THEN! 
+else_when_e :
+		ELSEWHEN^ expression THEN!
 		equation_list
 		;
 
@@ -764,7 +764,7 @@ connector_ref_2 :
  */
 
 expression :
-		( if_expression 
+		( if_expression
         | simple_expression
 		| code_expression
 		)
@@ -774,7 +774,7 @@ if_expression :
 		IF^ expression THEN! expression (elseif_expression)* ELSE! expression
     ;
 
-elseif_expression : 
+elseif_expression :
 		ELSEIF^ expression THEN! expression
 		;
 
@@ -783,7 +783,7 @@ for_indices :
     ;
 for_indices2 :
 	{LA(2) != IN}?
-		| 
+		|
 		(COMMA! for_index) for_indices2
 		;
 
@@ -793,23 +793,23 @@ for_index:
 
 
 simple_expression ! :
-		l1:logical_expression 
-		( COLON l2:logical_expression 
-			( COLON l3:logical_expression 
-			)? 
+		l1:logical_expression
+		( COLON l2:logical_expression
+			( COLON l3:logical_expression
+			)?
 		)?
-		{ 
-			if (#l3 != null) 
-			{ 
-				#simple_expression = #([RANGE3,"RANGE3"], l1, l2, l3); 
+		{
+			if (#l3 != null)
+			{
+				#simple_expression = #([RANGE3,"RANGE3"], l1, l2, l3);
 			}
-			else if (#l2 != null) 
-			{ 
-				#simple_expression = #([RANGE2,"RANGE2"], l1, l2); 
+			else if (#l2 != null)
+			{
+				#simple_expression = #([RANGE2,"RANGE2"], l1, l2);
 			}
-			else 
-			{ 
-				#simple_expression = #l1; 
+			else
+			{
+				#simple_expression = #l1;
 			}
 		}
 		;
@@ -818,7 +818,7 @@ code_expression ! :
 		CODE LPAR ((expression RPAR)=> e:expression | m:modification | el:element (SEMICOLON!)?
 		| eq:code_equation_clause | ieq:code_initial_equation_clause
 		| alg:code_algorithm_clause | ialg:code_initial_algorithm_clause
-		)  RPAR 
+		)  RPAR
  		{
  			if (#e) {
  				#code_expression = #([CODE_EXPRESSION, "CODE_EXPRESSION"],#e);
@@ -828,11 +828,11 @@ code_expression ! :
  				#code_expression = #([CODE_ELEMENT, "CODE_ELEMENT"],#el);
  			} else if (#eq) {
 				#code_expression = #([CODE_EQUATION, "CODE_EQUATION"],#eq);
- 			} else if (#ieq) {				
+ 			} else if (#ieq) {
  				#code_expression = #([CODE_INITIALEQUATION, "CODE_EQUATION"],#ieq);
  			} else if (#alg) {
 				#code_expression = #([CODE_ALGORITHM, "CODE_ALGORITHM"],#alg);
-  			} else if (#ialg) {				
+  			} else if (#ialg) {
  				#code_expression = #([CODE_INITIALALGORITHM, "CODE_ALGORITHM"],#ialg);
 			}
 		}
@@ -847,7 +847,7 @@ code_initial_equation_clause :
  		INITIAL! ec:code_equation_clause
          {
              #code_initial_equation_clause = #([INITIAL_EQUATION,"INTIAL_EQUATION"], ec);
-         } 
+         }
  		;
 
 code_algorithm_clause :
@@ -892,17 +892,17 @@ arithmetic_expression :
 		;
 
 unary_arithmetic_expression ! :
-		( PLUS t1:term 
-		{ 
-			#unary_arithmetic_expression = #([UNARY_PLUS,"PLUS"], #t1); 
+		( PLUS t1:term
+		{
+			#unary_arithmetic_expression = #([UNARY_PLUS,"PLUS"], #t1);
 		}
-		| MINUS t2:term 
-		{ 
-			#unary_arithmetic_expression = #([UNARY_MINUS,"MINUS"], #t2); 
+		| MINUS t2:term
+		{
+			#unary_arithmetic_expression = #([UNARY_MINUS,"MINUS"], #t2);
 		}
-		| t3:term 
-		{ 
-			#unary_arithmetic_expression = #t3; 
+		| t3:term
+		{
+			#unary_arithmetic_expression = #t3;
 		}
 		)
 		;
@@ -931,16 +931,16 @@ primary :
     ;
 
 component_reference__function_call ! :
-		cr:component_reference ( fc:function_call )? 
-		{ 
-			if (#fc != null) 
-			{ 
+		cr:component_reference ( fc:function_call )?
+		{
+			if (#fc != null)
+			{
 				#component_reference__function_call = #([FUNCTION_CALL,"FUNCTION_CALL"], #cr, #fc);
-			} 
-			else 
-			{ 
+			}
+			else
+			{
 				#component_reference__function_call = #cr;
-			} 
+			}
 		}
 	| i:INITIAL LPAR! RPAR! {
 			#component_reference__function_call = #([INITIAL_FUNCTION_CALL,"INITIAL_FUNCTION_CALL"],i);
@@ -953,7 +953,7 @@ name_path :
 		;
 
 name_path_star returns [bool val=false]
-		: 
+		:
 		{ LA(2)!=DOT }? IDENT { val=false;}|
 		{ LA(2)!=DOT }? STAR! { val=true;}|
 		i:IDENT DOT^ val = np:name_path_star
@@ -970,10 +970,10 @@ component_reference :
 		;
 
 function_call :
-		LPAR! (function_arguments) RPAR! 
+		LPAR! (function_arguments) RPAR!
 		{
 			#function_call = #([FUNCTION_ARGUMENTS,"FUNCTION_ARGUMENTS"],#function_call);
-		}	
+		}
 		;
 
 function_arguments :
@@ -981,24 +981,24 @@ function_arguments :
 			(named_arguments) ?
 		;
 
-for_or_expression_list 
+for_or_expression_list
     :
 		(
 			{LA(1)==IDENT && LA(2) == EQUALS|| LA(1) == RPAR}?
 		|
 			(
 				e:expression
-				( COMMA! explist:for_or_expression_list2                     
+				( COMMA! explist:for_or_expression_list2
 				| FOR^ forind:for_indices
 				)?
 			)
             {
                 if (#forind != null) {
-                    #for_or_expression_list = 
+                    #for_or_expression_list =
                         #([FOR_ITERATOR,"FOR_ITERATOR"], #for_or_expression_list);
                 }
                 else {
-                    #for_or_expression_list = 
+                    #for_or_expression_list =
                         #([EXPRESSION_LIST,"EXPRESSION_LIST"], #for_or_expression_list);
                 }
             }
@@ -1007,10 +1007,10 @@ for_or_expression_list
 
 for_or_expression_list2 :
 		{LA(2) == EQUALS}?
-		| 
+		|
 		expression (COMMA! for_or_expression_list2)?
 		;
-	
+
 named_arguments :
 		named_arguments2
 		{
@@ -1026,7 +1026,7 @@ named_argument :
 		IDENT EQUALS^ expression
 		;
 
-expression_list : 
+expression_list :
 		expression_list2
 		{
 			#expression_list=#([EXPRESSION_LIST,"EXPRESSION_LIST"],#expression_list);
@@ -1036,7 +1036,7 @@ expression_list2 :
 		expression (COMMA! expression_list2)?
 	    ;
 
-array_subscripts : 
+array_subscripts :
 		LBRACK^ subscript ( COMMA! subscript )* RBRACK!
 	;
 

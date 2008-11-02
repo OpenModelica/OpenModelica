@@ -15,7 +15,7 @@ LINKFLAGS = /nologo $(LIBP)
 
 LIBS = antlr.lib modelica_parser.lib
 
-OBJS = test_lexer.obj 
+OBJS = test_lexer.obj
 
 ANTLR = java -cp "$(ANTLR_HOME)" antlr.Tool
 
@@ -28,7 +28,7 @@ parser:
 	@cd ..\test\lexer
 
 
-test_lexer.exe : $(OBJS) 
+test_lexer.exe : $(OBJS)
 	link /out:$@ $(LINKFLAGS) $(LIBS) $(OBJS)
 
 

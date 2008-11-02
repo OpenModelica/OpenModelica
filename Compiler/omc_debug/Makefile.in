@@ -39,7 +39,7 @@ CORBALIB=`mico-config --libs`
 ifdef USE_CORBA
  CORBALIBS=$(CORBALIB)
 else
- CORBALIBS= 
+ CORBALIBS=
 endif
 
 LDFLAGS = -lm -L$(RMLHOME)/lib/plain -lrml_g $(ANTLR_LIBP) -lantlr $(LIBSOCKET) $(CORBALIBS) -ldl
@@ -70,7 +70,7 @@ $(ALLMO): %.mo : $(srcdir)/%.mo
 	cp $< $@
 
 $(SRCO): %.o : %.c %.h
-	$(RMLC) $(RMLCFLAGS) -c $< 
+	$(RMLC) $(RMLCFLAGS) -c $<
 
 $(SRCC): %.c : %.mo
 	$(RMLC) $(RMLCFLAGS) +C $<

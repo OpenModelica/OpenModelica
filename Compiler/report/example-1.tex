@@ -3,34 +3,34 @@
 type Voltage = Real(unit="V");
 type Current = Real(unit="A");
 
-connector Pin 
+connector Pin
   Voltage      v;
   flow Current i;
 end Pin;
 
-partial model TwoPin "Superclass of elements with two electrical pins" 
+partial model TwoPin "Superclass of elements with two electrical pins"
   Pin p, n;
   Voltage v;
   Current i;
 equation
   v = p.v - n.v;
-  0 = p.i + n.i; 
+  0 = p.i + n.i;
   i = p.i;
 end TwoPin;
 
-model Capacitor "Ideal electrical capacitor" 
+model Capacitor "Ideal electrical capacitor"
   extends TwoPin;
   parameter Real C(unit="F") "Capacitance";
-equation 
+equation
   C*der(v) = i;
 end Capacitor;
 
-model VsourceAC "Sin-wave voltage source" 
+model VsourceAC "Sin-wave voltage source"
   extends TwoPin;
   parameter Voltage VA = 220 "Amplitude";
   parameter Real f(unit="Hz") = 50  "Frequency";
-  constant  Real PI=3.141592653589793;  
-equation 
+  constant  Real PI=3.141592653589793;
+equation
   v = VA*sin(2*PI*f*time);
 end VsourceAC;
 

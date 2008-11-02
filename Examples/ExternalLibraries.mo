@@ -1,7 +1,7 @@
 function ExternalFunc1
   input Real x;
   output Real y;
-  external y=ExternalFunc1_ext(x) annotation(Library="libExternalFunc1_ext.o",Include="#include \"ExternalFunc1_ext.h\""); 
+  external y=ExternalFunc1_ext(x) annotation(Library="libExternalFunc1_ext.o",Include="#include \"ExternalFunc1_ext.h\"");
 end ExternalFunc1;
 
 function ExternalFunc2

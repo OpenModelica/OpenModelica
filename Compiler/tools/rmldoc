@@ -165,7 +165,7 @@ void convert(string f)
       }
       else if (state != "code2")
 	state = "code1";
-      
+
       if(state == "code2")
 	if(empty)
 	  buf += "\n";

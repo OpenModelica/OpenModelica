@@ -6,7 +6,7 @@ options {
   language = "Cpp";
 }
 
-class flat_modelica_lexer extends Lexer; 
+class flat_modelica_lexer extends Lexer;
 
 options {
     k=2;
@@ -71,7 +71,7 @@ tokens {
 	WHEN		= "when"	;
 	WHILE		= "while"	;
 	WITHIN		= "within" 	;
-    
+
 //    SUM = "sum" ;
 //    ARRAY = "array";
 
@@ -94,7 +94,7 @@ tokens {
         WITHTYPE        = "withtype";
 }
 {
-    std::string & replaceAll(std::string & str, const char *src, const char* dst) 
+    std::string & replaceAll(std::string & str, const char *src, const char* dst)
     {
         size_t pos;
         while((pos = str.find(".")) < str.size()-1) {
@@ -152,25 +152,25 @@ ML_COMMENT :
 		"*/" { $setType(antlr::Token::SKIP); } ;
 
 protected
-ML_COMMENT_CHAR :	
-		("\r\n" | '\n') { newline(); }	
-		| ~('*'|'\n'|'\r') 
+ML_COMMENT_CHAR :
+		("\r\n" | '\n') { newline(); }
+		| ~('*'|'\n'|'\r')
 		;
-		
+
 SL_COMMENT :
 		"//" (~('\n' | '\r') )*
 		{  $setType(antlr::Token::SKIP); }
   	;
 
 IDENT options { testLiterals = true; paraphrase = "an identifier";} :
-		NONDIGIT (NONDIGIT | DIGIT | DOT )* 
+		NONDIGIT (NONDIGIT | DIGIT | DOT )*
         {
             std::string tmp=$getText;
             $setText(replaceAll(tmp,
                 ".",
                 "_"));
         }
-            
+
 		;
 
 TYVARIDENT options { testLiterals = true; paraphrase = "a type identifier";} :
@@ -180,7 +180,7 @@ TYVARIDENT options { testLiterals = true; paraphrase = "a type identifier";} :
 protected
 NONDIGIT : 	('_' | 'a'..'z' | 'A'..'Z');
 
-protected 
+protected
 DIGIT :
 	'0'..'9'
 	;
@@ -192,9 +192,9 @@ EXPONENT :
 
 
 UNSIGNED_INTEGER :
-	(( (DIGIT)+ '.' ) => (DIGIT)+ ( '.' (DIGIT)* ) 
-			{ 
-				$setType(UNSIGNED_REAL); 
+	(( (DIGIT)+ '.' ) => (DIGIT)+ ( '.' (DIGIT)* )
+			{
+				$setType(UNSIGNED_REAL);
 			}
 	| 	(DIGIT)+
 	)
@@ -203,8 +203,8 @@ UNSIGNED_INTEGER :
 
 STRING : '"'! (SCHAR | SESCAPE)* '"'!;
 
-		
-protected 
+
+protected
 SCHAR :	(options { generateAmbigWarnings=false; } : ('\n' | "\r\n"))	{ newline(); }
 	| '\t'
 	| ~('\n' | '\t' | '\r' | '\\' | '"');

@@ -1,52 +1,52 @@
-/* 
+/*
  * This file is part of OpenModelica.
- * 
+ *
  * Copyright (c) 1998-2008, Linköpings University,
- * Department of Computer and Information Science, 
- * SE-58183 Linköping, Sweden. 
- * 
+ * Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
  * All rights reserved.
- * 
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC 
- * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF 
- * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC 
- * PUBLIC LICENSE. 
- * 
- * The OpenModelica software and the Open Source Modelica 
- * Consortium (OSMC) Public License (OSMC-PL) are obtained 
- * from Linköpings University, either from the above address, 
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC
+ * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF
+ * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC
+ * PUBLIC LICENSE.
+ *
+ * The OpenModelica software and the Open Source Modelica
+ * Consortium (OSMC) Public License (OSMC-PL) are obtained
+ * from Linköpings University, either from the above address,
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
- * 
- * This program is distributed  WITHOUT ANY WARRANTY; without 
- * even the implied warranty of  MERCHANTABILITY or FITNESS 
- * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH 
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS 
- * OF OSMC-PL. 
- * 
+ *
+ * This program is distributed  WITHOUT ANY WARRANTY; without
+ * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
+ * OF OSMC-PL.
+ *
  * See the full OSMC Public License conditions for more details.
- * 
+ *
  */
 
-package Values 
+package Values
 " file:        Values.mo
   package:     Values
   description: Evaluated expression values
- 
+
   RCS: $Id$
-  
+
   The package Values contains data structures for representing
   constant Modelica values.  These include integer, real, string and
   boolean values, and also arrays of any dimensionality and type.
   Multidimensional arrays are represented as arrays of arrays.
- 
+
   The code is excluded from the report, since they convey no
   semantic information."
 
 public import Exp;
 public import Absyn;
 
-public 
+public
 uniontype Value
   record INTEGER
     Integer integer;
@@ -71,7 +71,7 @@ uniontype Value
   record ARRAY
     list<Value> valueLst;
   end ARRAY;
-  
+
   record LIST "MetaModelica list"
     list<Value> valueLst;
   end LIST;
@@ -99,14 +99,14 @@ protected import Dump;
 protected import Error;
 
 public function typeConvert "function: typeConvert
- 
+
   Apply type conversion on a list of Values
 "
   input Exp.Type inType1;
   input Exp.Type inType2;
   input list<Value> inValueLst3;
   output list<Value> outValueLst;
-algorithm 
+algorithm
   outValueLst:=
   matchcontinue (inType1,inType2,inValueLst3)
     local
@@ -114,21 +114,21 @@ algorithm
       Real rval,r;
       Exp.Type from,to;
       Integer i,ival;
-    case (_,_,{}) then {}; 
+    case (_,_,{}) then {};
     case ((from as Exp.INT()),(to as Exp.REAL()),(INTEGER(integer = i) :: vrest))
-      equation 
+      equation
         vallst = typeConvert(from, to, vrest);
         rval = intReal(i);
       then
         (REAL(rval) :: vallst);
     case ((from as Exp.REAL()),(to as Exp.INT()),(REAL(real = r) :: vrest))
-      equation 
+      equation
         vallst = typeConvert(from, to, vrest);
         ival = realInt(r);
       then
         (INTEGER(ival) :: vallst);
     case (from,to,(ARRAY(valueLst = vals) :: vrest))
-      equation 
+      equation
         vallst = typeConvert(from, to, vals);
         vallst2 = typeConvert(from, to, vrest);
       then
@@ -154,33 +154,33 @@ end isZero;
 
 
 public function isArray "function: isArray
- 
+
   Return true if Value is an array.
 "
   input Value inValue;
   output Boolean outBoolean;
-algorithm 
+algorithm
   outBoolean:=
   matchcontinue (inValue)
-    case (INTEGER(integer = _)) then false; 
-    case (REAL(real = _)) then false; 
-    case (STRING(string = _)) then false; 
-    case (BOOL(boolean = _)) then false; 
-    case (TUPLE(valueLst = _)) then false;   
-    case (ARRAY(valueLst = _)) then true; 
-    case (LIST(_)) then false; //MetaModelica list  
+    case (INTEGER(integer = _)) then false;
+    case (REAL(real = _)) then false;
+    case (STRING(string = _)) then false;
+    case (BOOL(boolean = _)) then false;
+    case (TUPLE(valueLst = _)) then false;
+    case (ARRAY(valueLst = _)) then true;
+    case (LIST(_)) then false; //MetaModelica list
   end matchcontinue;
 end isArray;
 
 public function nthArrayelt "function: nthArrayelt
   author: PA
- 
+
   Return the nth value of an array, indexed from 1..n
 "
   input Value inValue;
   input Integer inInteger;
   output Value outValue;
-algorithm 
+algorithm
   outValue:=
   matchcontinue (inValue,inInteger)
     local
@@ -188,7 +188,7 @@ algorithm
       Value res;
       list<Value> vlst;
     case (ARRAY(valueLst = vlst),n)
-      equation 
+      equation
         n_1 = n - 1;
         res = listNth(vlst, n_1);
       then
@@ -196,12 +196,12 @@ algorithm
   end matchcontinue;
 end nthArrayelt;
 
-public function unparseValues 
-"function: unparseValues 
+public function unparseValues
+"function: unparseValues
   Prints a list of Value to a string."
   input list<Value> inValueLst;
   output String outString;
-algorithm 
+algorithm
   outString:=
   matchcontinue (inValueLst)
     local
@@ -209,25 +209,25 @@ algorithm
       Value v;
       list<Value> vallst;
     case ((v :: vallst))
-      equation 
+      equation
         s1 = unparseDescription({v});
         s2 = unparseValueNumbers({v});
         s3 = unparseValues(vallst);
         str = Util.stringAppendList({s1, s2, " ", s3});
       then
         str;
-    case ({}) then ""; 
+    case ({}) then "";
   end matchcontinue;
 end unparseValues;
 
 protected function unparseValueNumbers "function: unparseValueNumbers
- 
-  Helper function to unparse_values. 
+
+  Helper function to unparse_values.
   Prints all the numbers of the values.
 "
   input list<Value> inValueLst;
   output String outString;
-algorithm 
+algorithm
   outString:=
   matchcontinue (inValueLst)
     local
@@ -235,21 +235,21 @@ algorithm
       list<Value> lst,xs;
       Integer i;
     case ((TUPLE(valueLst = lst) :: xs))
-      equation 
+      equation
         s1 = unparseValueNumbers(lst);
         s2 = unparseValueNumbers(xs);
         res = stringAppend(s1, s2);
       then
         res;
     case ((ARRAY(valueLst = lst) :: xs))
-      equation 
+      equation
         s1 = unparseValueNumbers(lst);
         s2 = unparseValueNumbers(xs);
         res = stringAppend(s1, s2);
       then
         res;
     case ((INTEGER(integer = i) :: xs))
-      equation 
+      equation
         s1 = unparseValueNumbers(xs);
         istr = intString(i);
         s2 = stringAppend(istr, " ");
@@ -258,7 +258,7 @@ algorithm
         res;
     case ((REAL(real = i) :: xs))
       local Real i;
-      equation 
+      equation
         s1 = unparseValueNumbers(xs);
         istr = realString(i);
         s2 = stringAppend(istr, " ");
@@ -266,13 +266,13 @@ algorithm
       then
         res;
     case ((STRING(string = sval) :: xs))
-      equation 
+      equation
         s1 = unparseValueNumbers(xs);
         s2 = stringAppend(sval, " ");
         res = stringAppend(s2, s1);
       then
         res;
-    case ({}) then ""; 
+    case ({}) then "";
   end matchcontinue;
 end unparseValueNumbers;
 
@@ -285,14 +285,14 @@ public uniontype IntRealOp
   record POWOP end POWOP;
   record LESSEQOP end LESSEQOP;
 end IntRealOp;
- 
-public function safeIntRealOp 
-	"Performs mul, div, sub, add and pow on integers and reals. 
+
+public function safeIntRealOp
+	"Performs mul, div, sub, add and pow on integers and reals.
 	 If for example an integer multiplication does not fit in a
 	 integer, a real is returned instead. The is not the ideal way of
 	 handling this, since the types are decided in run-time. Currently,
 	 this is the simplest and best alternative for the moment though.
-	 
+
 	 In the future, we should introduce BIG-INTS, or maybe throw exceptions
 	 (when exceptions are available in the language).
 	"
@@ -300,7 +300,7 @@ public function safeIntRealOp
 	input Value val2;
 	input IntRealOp op;
 	output Value outv;
-algorithm	
+algorithm
   outv :=
   	matchcontinue(val1, val2, op)
   		local
@@ -312,140 +312,140 @@ algorithm
   		    equation
   		      e = Exp.safeIntOp(iv1,iv2,Exp.MULOP);
   		      outv = expValue(e);
-  		  then 
-  		    	outv;  		  
+  		  then
+  		    	outv;
   		  case (REAL(rv1),INTEGER(iv2), MULOP)
   		    equation
   		      rv2 = intReal(iv2);
   		      rv3 = rv1 *. rv2;
-  		  then 
-  		    	REAL(rv3);  
+  		  then
+  		    	REAL(rv3);
   		  case (INTEGER(iv1), REAL(rv2), MULOP)
   		    equation
   		      rv1 = intReal(iv1);
   		      rv3 = rv1 *. rv2;
-  		  then 
-  		    	REAL(rv3);  
+  		  then
+  		    	REAL(rv3);
   		  case (REAL(rv1), REAL(rv2), MULOP)
   		    equation
   		      rv3 = rv1 *. rv2;
-  		  then 
-  		    	REAL(rv3);    		    			  
-  		  //DIV 
+  		  then
+  		    	REAL(rv3);
+  		  //DIV
   		  case (INTEGER(iv1),INTEGER(iv2), DIVOP)
   		    equation
   		      e = Exp.safeIntOp(iv1,iv2,Exp.DIVOP);
   		      outv = expValue(e);
-  		  then 
-  		    	outv;  		  
+  		  then
+  		    	outv;
   		  case (REAL(rv1),INTEGER(iv2), DIVOP)
   		    equation
   		      rv2 = intReal(iv2);
   		      rv3 = rv1 /. rv2;
-  		  then 
-  		    	REAL(rv3);  
+  		  then
+  		    	REAL(rv3);
   		  case (INTEGER(iv1), REAL(rv2), DIVOP)
   		    equation
   		      rv1 = intReal(iv1);
   		      rv3 = rv1 /. rv2;
-  		  then 
-  		    	REAL(rv3);  
+  		  then
+  		    	REAL(rv3);
   		  case (REAL(rv1), REAL(rv2), DIVOP)
   		    equation
   		      rv3 = rv1 /. rv2;
-  		  then 
-  		    	REAL(rv3);    		    			  
+  		  then
+  		    	REAL(rv3);
   		  //POW
   		  case (INTEGER(iv1),INTEGER(iv2), POWOP)
   		    equation
   		      e = Exp.safeIntOp(iv1,iv2,Exp.POWOP);
   		      outv = expValue(e);
-  		  then 
-  		    	outv;  		  
+  		  then
+  		    	outv;
   		  case (REAL(rv1),INTEGER(iv2), POWOP)
   		    equation
   		      rv2 = intReal(iv2);
   		      rv3 = realPow(rv1, rv2);
-  		  then 
-  		    	REAL(rv3);  
+  		  then
+  		    	REAL(rv3);
   		  case (INTEGER(iv1), REAL(rv2), POWOP)
   		    equation
   		      iv2 = realInt(rv2);
   		      e = Exp.safeIntOp(iv1,iv2,Exp.POWOP);
   		      outv = expValue(e);
-  		  then 
-						outv;   
+  		  then
+						outv;
   		  case (INTEGER(iv1), REAL(rv2), POWOP)
   		    equation
   		      rv1 = intReal(iv1);
   		      rv3 = realPow(rv1, rv2);
-  		  then 
-  		    	REAL(rv3);  
+  		  then
+  		    	REAL(rv3);
   		  case (REAL(rv1), REAL(rv2), POWOP)
   		    equation
   		      rv3 = realPow(rv1, rv2);
-  		  then 
-  		    	REAL(rv3);    		    			  
+  		  then
+  		    	REAL(rv3);
   		  //ADD
   		  case (INTEGER(iv1),INTEGER(iv2), ADDOP)
   		    equation
   		      e = Exp.safeIntOp(iv1,iv2,Exp.ADDOP);
   		      outv = expValue(e);
-  		  then 
-  		    	outv;  		  
+  		  then
+  		    	outv;
   		  case (REAL(rv1),INTEGER(iv2), ADDOP)
   		    equation
   		      rv2 = intReal(iv2);
   		      rv3 = rv1 +. rv2;
-  		  then 
-  		    	REAL(rv3);  
+  		  then
+  		    	REAL(rv3);
   		  case (INTEGER(iv1), REAL(rv2), ADDOP)
   		    equation
   		      rv1 = intReal(iv1);
   		      rv3 = rv1 +. rv2;
-  		  then 
-  		    	REAL(rv3);  
+  		  then
+  		    	REAL(rv3);
   		  case (REAL(rv1), REAL(rv2), ADDOP)
   		    equation
   		      rv3 = rv1 +. rv2;
-  		  then 
-  		    	REAL(rv3);    		    			  
+  		  then
+  		    	REAL(rv3);
   		  //SUB
   		  case (INTEGER(iv1),INTEGER(iv2), SUBOP)
   		    equation
   		      e = Exp.safeIntOp(iv1,iv2,Exp.SUBOP);
   		      outv = expValue(e);
-  		  then 
-  		    	outv;  		  
+  		  then
+  		    	outv;
   		  case (REAL(rv1),INTEGER(iv2), SUBOP)
   		    equation
   		      rv2 = intReal(iv2);
   		      rv3 = rv1 -. rv2;
-  		  then 
-  		    	REAL(rv3);  
+  		  then
+  		    	REAL(rv3);
   		  case (INTEGER(iv1), REAL(rv2), SUBOP)
   		    equation
   		      rv1 = intReal(iv1);
   		      rv3 = rv1 -. rv2;
-  		  then 
-  		    	REAL(rv3);  
+  		  then
+  		    	REAL(rv3);
   		  case (REAL(rv1), REAL(rv2), SUBOP)
   		    equation
   		      rv3 = rv1 -. rv2;
-  		  then 
-  		    	REAL(rv3);    		    			  
+  		  then
+  		    	REAL(rv3);
 		end matchcontinue;
 end safeIntRealOp;
 
 
-public function safeLessEq 
+public function safeLessEq
 	"Checks if val1 is less or equal to val2. Val1 or val2 can
 	 be integers or reals.
 	"
 	input Value val1;
 	input Value val2;
 	output Boolean outv;
-algorithm	
+algorithm
   outv :=
   	matchcontinue(val1, val2)
   		local
@@ -454,36 +454,36 @@ algorithm
   		  case (INTEGER(iv1),INTEGER(iv2))
   		    equation
   		      outv = (iv1 <= iv2);
-  		  then 
-  		    	outv;  		  
+  		  then
+  		    	outv;
   		  case (REAL(rv1),INTEGER(iv2))
   		    equation
   		      rv2 = intReal(iv2);
   		      outv = (rv1 <=. rv2);
-  		  then 
-  		    	outv;  
+  		  then
+  		    	outv;
   		  case (INTEGER(iv1), REAL(rv2))
   		    equation
   		      rv1 = intReal(iv1);
   		      outv = (rv1 <=. rv2);
-  		  then 
-  		    	outv;  
+  		  then
+  		    	outv;
   		  case (REAL(rv1), REAL(rv2))
   		    equation
   		      outv = (rv1 <=. rv2);
-  		  then 
-  		    	outv;  
+  		  then
+  		    	outv;
 		end matchcontinue;
 end safeLessEq;
 
 protected function unparseDescription "function: unparseDescription
- 
+
   Helper function to unparse_values. Creates a description string
   for the type of the value.
 "
   input list<Value> inValueLst;
   output String outString;
-algorithm 
+algorithm
   outString:=
   matchcontinue (inValueLst)
     local
@@ -491,19 +491,19 @@ algorithm
       list<Value> xs,vallst;
       Integer slen;
     case ((INTEGER(integer = _) :: xs))
-      equation 
+      equation
         s1 = unparseDescription(xs);
         str = stringAppend("# i!\n", s1);
       then
         str;
     case ((REAL(real = _) :: xs))
-      equation 
+      equation
         s1 = unparseDescription(xs);
         str = stringAppend("# r!\n", s1);
       then
         str;
     case ((STRING(string = sval) :: xs))
-      equation 
+      equation
         s1 = unparseDescription(xs);
         slen = stringLength(sval);
         slenstr = intString(slen);
@@ -511,26 +511,26 @@ algorithm
       then
         str;
     case ((ARRAY(valueLst = vallst) :: xs))
-      equation 
+      equation
         s1 = unparseDescription(xs);
         s2 = unparseArrayDescription(vallst);
         s4 = stringAppend(s2, s1);
         str = stringAppend(s4, " \n");
       then
         str;
-    case ({}) then ""; 
+    case ({}) then "";
   end matchcontinue;
 end unparseDescription;
 
 protected function unparseArrayDescription "function: unparseArrayDescription
- 
+
   Helper function to unparse_description.
 "
   input list<Value> lst;
   output String str;
   String pt,s1,s2,s3,s4,s5,s6;
   Integer i1;
-algorithm 
+algorithm
   pt := unparsePrimType(lst);
   s1 := stringAppend("# ", pt);
   s2 := stringAppend(s1, "[");
@@ -543,59 +543,59 @@ algorithm
 end unparseArrayDescription;
 
 protected function unparsePrimType "function: unparsePrimType
- 
+
   Helper function to unparse_array_description.
 "
   input list<Value> inValueLst;
   output String outString;
-algorithm 
+algorithm
   outString:=
   matchcontinue (inValueLst)
     local
       String res;
       list<Value> elts;
     case ((ARRAY(valueLst = elts) :: _))
-      equation 
+      equation
         res = unparsePrimType(elts);
       then
         res;
-    case ((INTEGER(integer = _) :: _)) then "i"; 
-    case ((REAL(real = _) :: _)) then "r"; 
-    case ((STRING(string = _) :: _)) then "s"; 
-    case ((BOOL(boolean = _) :: _)) then "b"; 
+    case ((INTEGER(integer = _) :: _)) then "i";
+    case ((REAL(real = _) :: _)) then "r";
+    case ((STRING(string = _) :: _)) then "s";
+    case ((BOOL(boolean = _) :: _)) then "b";
     case ({}) then "{}";
-    case (_) then "error"; 
+    case (_) then "error";
   end matchcontinue;
 end unparsePrimType;
 
 protected function unparseNumDims "function: unparseNumDims
- 
+
   Helper function to unparse_array_description.
 "
   input list<Value> inValueLst;
   output Integer outInteger;
-algorithm 
+algorithm
   outInteger:=
   matchcontinue (inValueLst)
     local
       Integer i1;
       list<Value> vals;
     case ((ARRAY(valueLst = vals) :: _))
-      equation 
+      equation
         i1 = unparseNumDims(vals);
       then
         i1 + 1;
-    case (_) then 1; 
+    case (_) then 1;
   end matchcontinue;
 end unparseNumDims;
 
 protected function unparseDimSizes "function: unparseDimSizes
- 
+
   Helper function to unparse_array_description.
 "
   input list<Value> inValueLst;
   output String outString;
-algorithm 
+algorithm
   outString:=
   matchcontinue (inValueLst)
     local
@@ -603,7 +603,7 @@ algorithm
       String s1,s2,s3,res;
       list<Value> lst,vals;
     case ((lst as (ARRAY(valueLst = vals) :: _)))
-      equation 
+      equation
         i1 = listLength(lst);
         s1 = intString(i1);
         s2 = stringAppend(s1, " ");
@@ -612,7 +612,7 @@ algorithm
       then
         res;
     case (lst)
-      equation 
+      equation
         len = listLength(lst);
         res = intString(len);
       then
@@ -621,95 +621,95 @@ algorithm
 end unparseDimSizes;
 
 public function addElementwiseArrayelt "function: addElementwiseArrayelt
- 
+
   Perform elementwise addition of two arrays.
 "
   input list<Value> inValueLst1;
   input list<Value> inValueLst2;
   output list<Value> outValueLst;
-algorithm 
+algorithm
   outValueLst:=
   matchcontinue (inValueLst1,inValueLst2)
     local
       list<Value> reslst,res2,v1lst,rest1,v2lst,rest2;
       Integer res,v1,v2;
     case ((ARRAY(valueLst = v1lst) :: rest1),(ARRAY(valueLst = v2lst) :: rest2))
-      equation 
+      equation
         reslst = addElementwiseArrayelt(v1lst, v2lst);
         res2 = addElementwiseArrayelt(rest1, rest2);
       then
         (ARRAY(reslst) :: res2);
     case ((INTEGER(integer = v1) :: rest1),(INTEGER(integer = v2) :: rest2))
-      equation 
+      equation
         res = v1 + v2;
         res2 = addElementwiseArrayelt(rest1, rest2);
       then
         (INTEGER(res) :: res2);
     case ((REAL(real = v1) :: rest1),(REAL(real = v2) :: rest2))
       local Real res,v1,v2;
-      equation 
+      equation
         res = v1 +. v2;
         res2 = addElementwiseArrayelt(rest1, rest2);
       then
         (REAL(res) :: res2);
     case ((STRING(string = v1) :: rest1),(STRING(string = v2) :: rest2))
       local String res,v1,v2;
-      equation 
+      equation
         res = stringAppend(v1, v2);
         res2 = addElementwiseArrayelt(rest1, rest2) "Addition of strings is string concatenation" ;
       then
         (STRING(res) :: res2);
-    case ({},{}) then {}; 
+    case ({},{}) then {};
   end matchcontinue;
 end addElementwiseArrayelt;
 
 public function subElementwiseArrayelt "function: subElementwiseArrayelt
- 
+
   Perform element subtraction of two arrays of values
 "
   input list<Value> inValueLst1;
   input list<Value> inValueLst2;
   output list<Value> outValueLst;
-algorithm 
+algorithm
   outValueLst:=
   matchcontinue (inValueLst1,inValueLst2)
     local
       list<Value> reslst,res2,v1lst,rest1,v2lst,rest2;
       Integer res,v1,v2;
     case ((ARRAY(valueLst = v1lst) :: rest1),(ARRAY(valueLst = v2lst) :: rest2))
-      equation 
+      equation
         reslst = subElementwiseArrayelt(v1lst, v2lst);
         res2 = subElementwiseArrayelt(rest1, rest2);
       then
         (ARRAY(reslst) :: res2);
     case ((INTEGER(integer = v1) :: rest1),(INTEGER(integer = v2) :: rest2))
-      equation 
+      equation
         res = v1 - v2;
         res2 = subElementwiseArrayelt(rest1, rest2);
       then
         (INTEGER(res) :: res2);
     case ((REAL(real = v1) :: rest1),(REAL(real = v2) :: rest2))
       local Real res,v1,v2;
-      equation 
+      equation
         res = v1 -. v2;
         res2 = subElementwiseArrayelt(rest1, rest2);
       then
         (REAL(res) :: res2);
-    case ({},{}) then {}; 
+    case ({},{}) then {};
   end matchcontinue;
 end subElementwiseArrayelt;
 
 public function expValue "function: expValue
- 
+
   Returns the value of constant expressions in Exp.Exp
 "
   input Exp.Exp inExp;
   output Value outValue;
-algorithm 
+algorithm
   outValue:=
   matchcontinue (inExp)
     local Integer i;
-    case Exp.ICONST(integer = i) then INTEGER(i); 
+    case Exp.ICONST(integer = i) then INTEGER(i);
     case Exp.RCONST(real = i)
       local Real i;
       then
@@ -727,21 +727,21 @@ end expValue;
 
 
 public function valueReal "function: valueReal
- 
+
   Return the real value of a Value. If the value is an integer,
   it is cast to a real.
 "
   input Value inValue;
   output Real outReal;
-algorithm 
+algorithm
   outReal:=
   matchcontinue (inValue)
     local
       Real r;
       Integer i;
-    case (REAL(real = r)) then r; 
+    case (REAL(real = r)) then r;
     case (INTEGER(integer = i))
-      equation 
+      equation
         r = intReal(i);
       then
         r;
@@ -749,13 +749,13 @@ algorithm
 end valueReal;
 
 public function valueReals "function: valueReals
- 
+
   Return the real value of a Value. If the value is an integer,
   it is cast to a real.
 "
   input list<Value> inValue;
   output list<Real> outReal;
-algorithm 
+algorithm
   outReal:=
   matchcontinue (inValue)
     local
@@ -764,19 +764,19 @@ algorithm
       list<Real> res;
       Integer i;
     case ({}) then {};
-    case (REAL(real = r)::rest) 
+    case (REAL(real = r)::rest)
       equation
-        res = valueReals(rest); 
+        res = valueReals(rest);
        then
          r::res;
     case (INTEGER(integer = i)::rest)
-      equation 
+      equation
         r = intReal(i);
         res = valueReals(rest);
       then
         r::res;
-    case (_::rest)         
-      equation 
+    case (_::rest)
+      equation
         res = valueReals(rest);
       then
         res;
@@ -785,12 +785,12 @@ end valueReals;
 
 public function valueNeg "function: valueNeg
   author: PA
- 
+
   Negates a Value
 "
   input Value inValue;
   output Value outValue;
-algorithm 
+algorithm
   outValue:=
   matchcontinue (inValue)
     local
@@ -798,17 +798,17 @@ algorithm
       Integer i_1,i;
       list<Value> vlst_1,vlst;
     case (REAL(real = r))
-      equation 
+      equation
         r_1 = -.r;
       then
         REAL(r_1);
     case (INTEGER(integer = i))
-      equation 
+      equation
         i_1 = -i;
       then
         INTEGER(i_1);
     case ARRAY(valueLst = vlst)
-      equation 
+      equation
         vlst_1 = Util.listMap(vlst, valueNeg);
       then
         ARRAY(vlst);
@@ -816,18 +816,18 @@ algorithm
 end valueNeg;
 
 public function sumArrayelt "function: sumArrayelt
- 
+
   Calculate the sum of a list of Values.
 "
   input list<Value> inValueLst;
   output Value outValue;
-algorithm 
+algorithm
   outValue:=
   matchcontinue (inValueLst)
     local
       Integer v1,v3,v2;
       list<Value> xs,arr;
-    case ({INTEGER(integer = v1)}) then INTEGER(v1); 
+    case ({INTEGER(integer = v1)}) then INTEGER(v1);
     case ({REAL(real = v1)})
       local Real v1;
       then
@@ -837,21 +837,21 @@ algorithm
       then
         ARRAY(v1);
     case ((INTEGER(integer = v2) :: xs))
-      equation 
+      equation
         INTEGER(v1) = sumArrayelt(xs);
         v3 = v1 + v2;
       then
         INTEGER(v3);
     case ((REAL(real = v2) :: xs))
       local Real v1,v3,v2;
-      equation 
+      equation
         REAL(v1) = sumArrayelt(xs);
         v3 = v1 +. v2;
       then
         REAL(v3);
     case ((arr as (ARRAY(valueLst = v2) :: _)))
       local list<Value> v1,v3,v2;
-      equation 
+      equation
         ARRAY(v1) = sumArrayelt(arr);
         v3 = addElementwiseArrayelt(v1, v2);
       then
@@ -860,13 +860,13 @@ algorithm
 end sumArrayelt;
 
 public function multScalarArrayelt "function: multScalarArrayelt
- 
+
   Multiply a scalar with an list of Values, i.e. array.
 "
   input Value inValue;
   input list<Value> inValueLst;
   output list<Value> outValueLst;
-algorithm 
+algorithm
   outValueLst:=
   matchcontinue (inValue,inValueLst)
     local
@@ -875,21 +875,21 @@ algorithm
       Integer v1,v2;
       Real v2_1,v1_1;
     case (sval,(ARRAY(valueLst = vals) :: rest))
-      equation 
+      equation
         r1 = multScalarArrayelt(sval, vals);
         r2 = multScalarArrayelt(sval, rest);
       then
         (ARRAY(r1) :: r2);
     case ((sval as INTEGER(integer = v1)),(INTEGER(integer = v2) :: rest))
       local Integer r1;
-      equation 
+      equation
         r1 = v1*v2;
         r2 = multScalarArrayelt(sval, rest);
       then
         (INTEGER(r1) :: r2);
     case ((sval as REAL(real = v1)),(INTEGER(integer = v2) :: rest))
       local Real r1,v1;
-      equation 
+      equation
         v2_1 = intReal(v2);
         r1 = v1*.v2_1;
         r2 = multScalarArrayelt(sval, rest);
@@ -897,7 +897,7 @@ algorithm
         (REAL(r1) :: r2);
     case ((sval as INTEGER(integer = v1)),(REAL(real = v2) :: rest))
       local Real r1,v2;
-      equation 
+      equation
         v1_1 = intReal(v1);
         r1 = v1_1*.v2;
         r2 = multScalarArrayelt(sval, rest);
@@ -905,23 +905,23 @@ algorithm
         (REAL(r1) :: r2);
     case ((sval as REAL(real = v1)),(REAL(real = v2) :: rest))
       local Real r1,v1,v2;
-      equation 
+      equation
         r1 = v1*.v2;
         r2 = multScalarArrayelt(sval, rest);
       then
         (REAL(r1) :: r2);
-    case (_,{}) then {}; 
+    case (_,{}) then {};
   end matchcontinue;
 end multScalarArrayelt;
 
 public function multScalarProduct "function: multScalarProduct
- 
+
   Calculate the scalar product of two vectors / arrays.
 "
   input list<Value> inValueLst1;
   input list<Value> inValueLst2;
   output Value outValue;
-algorithm 
+algorithm
   outValue:=
   matchcontinue (inValueLst1,inValueLst2)
     local
@@ -930,20 +930,20 @@ algorithm
       Value sres,v;
       String lenstr,len2str;
     case ((INTEGER(integer = v1) :: (v1lst as (_ :: _))),(INTEGER(integer = v2) :: (v2lst as (_ :: _))))
-      equation 
+      equation
         r1 = v1*v2;
         INTEGER(r2) = multScalarProduct(v1lst, v2lst);
         res = r1 + r2;
       then
         INTEGER(res);
     case ({INTEGER(integer = v1)},{INTEGER(integer = v2)})
-      equation 
+      equation
         res = v1*v2;
       then
         INTEGER(res);
     case ((REAL(real = v1) :: (v1lst as (_ :: _))),(REAL(real = v2) :: (v2lst as (_ :: _))))
       local Real r1,r2,res,v1,v2;
-      equation 
+      equation
         r1 = v1*.v2;
         REAL(r2) = multScalarProduct(v1lst, v2lst);
         res = r1 +. r2;
@@ -951,26 +951,26 @@ algorithm
         REAL(res);
     case ({REAL(real = v1)},{REAL(real = v2)})
       local Real res,v1,v2;
-      equation 
+      equation
         res = v1*.v2;
       then
         REAL(res);
     case ((ARRAY(valueLst = v2lst) :: rest),(vlst as (INTEGER(integer = _) :: _)))
-      equation 
+      equation
         sres = multScalarProduct(v2lst, vlst);
         ARRAY(vres) = multScalarProduct(rest, vlst);
       then
         ARRAY((sres :: vres));
-    case ({},(INTEGER(integer = _) :: _)) then ARRAY({}); 
+    case ({},(INTEGER(integer = _) :: _)) then ARRAY({});
     case ((ARRAY(valueLst = v2lst) :: rest),(vlst as (REAL(real = _) :: _)))
-      equation 
+      equation
         sres = multScalarProduct(v2lst, vlst);
         ARRAY(vres) = multScalarProduct(rest, vlst);
       then
         ARRAY((sres :: vres));
-    case ({},(REAL(real = _) :: _)) then ARRAY({}); 
+    case ({},(REAL(real = _) :: _)) then ARRAY({});
     case ((vlst as (INTEGER(integer = _) :: _)),(mat as (ARRAY(valueLst = (_ :: (_ :: _))) :: _)))
-      equation 
+      equation
         (ARRAY(col),mat_1) = matrixStripFirstColumn(mat);
         v = multScalarProduct(vlst, col);
         ARRAY(vals) = multScalarProduct(vlst, mat_1);
@@ -978,13 +978,13 @@ algorithm
         ARRAY((v :: vals));
     case ((vlst as (INTEGER(integer = _) :: _)),(mat as (ARRAY(valueLst = {_}) :: _)))
       local Integer v;
-      equation 
+      equation
         (ARRAY(col),mat_1) = matrixStripFirstColumn(mat);
         INTEGER(v) = multScalarProduct(vlst, col);
       then
         ARRAY({INTEGER(v)});
     case ((vlst as (REAL(real = _) :: _)),(mat as (ARRAY(valueLst = (_ :: (_ :: _))) :: _)))
-      equation 
+      equation
         (ARRAY(col),mat_1) = matrixStripFirstColumn(mat);
         v = multScalarProduct(vlst, col);
         ARRAY(vals) = multScalarProduct(vlst, mat_1);
@@ -992,13 +992,13 @@ algorithm
         ARRAY((v :: vals));
     case ((vlst as (REAL(real = _) :: _)),(mat as (ARRAY(valueLst = {_}) :: _)))
       local Real v;
-      equation 
+      equation
         (ARRAY(col),mat_1) = matrixStripFirstColumn(mat);
         REAL(v) = multScalarProduct(vlst, col);
       then
         ARRAY({REAL(v)});
     case (lst1,lst2)
-      equation 
+      equation
         Print.printBuf("mult_scalar_product failed\n lst1 len:");
         len = listLength(lst1);
         lenstr = intString(len);
@@ -1014,36 +1014,36 @@ algorithm
 end multScalarProduct;
 
 public function multMatrix "function: multMatrix
- 
-  Calculate a matrix multiplication of two matrices, i.e. two dimensional 
+
+  Calculate a matrix multiplication of two matrices, i.e. two dimensional
   arrays.
 "
   input list<Value> inValueLst1;
   input list<Value> inValueLst2;
   output list<Value> outValueLst;
-algorithm 
+algorithm
   outValueLst:=
   matchcontinue (inValueLst1,inValueLst2)
     local
       Value res1;
       list<Value> res2,m1,v1lst,rest1,m2;
     case ((m1 as (ARRAY(valueLst = v1lst) :: rest1)),(m2 as (ARRAY(valueLst = _) :: _)))
-      equation 
+      equation
         res1 = multScalarProduct(v1lst, m2);
         res2 = multMatrix(rest1, m2);
       then
         (res1 :: res2);
-    case ({},_) then {}; 
+    case ({},_) then {};
   end matchcontinue;
 end multMatrix;
 
-public function divArrayeltScalar 
-"function: divArrayeltScalar 
+public function divArrayeltScalar
+"function: divArrayeltScalar
   Divide each array element with a scalar."
   input Value inValue;
   input list<Value> inValueLst;
   output list<Value> outValueLst;
-algorithm 
+algorithm
   outValueLst:=
   matchcontinue (inValue,inValueLst)
     local
@@ -1053,7 +1053,7 @@ algorithm
       list<Value> vlst,r1,r2,vals,rest;
       Integer v2;
     case ((sval as REAL(real = v1)),vlst)
-      equation 
+      equation
         equality(v1 = 0.0);
         s2 = unparseValues(vlst);
         Error.addMessage(Error.DIVISION_BY_ZERO, {"0.0",s2});
@@ -1061,28 +1061,28 @@ algorithm
         fail();
     case ((sval as INTEGER(integer = v1)),vlst)
       local Integer v1;
-      equation 
+      equation
         equality(v1 = 0);
         s2 = unparseValues(vlst);
         Error.addMessage(Error.DIVISION_BY_ZERO, {"0",s2});
       then
         fail();
     case (sval,(ARRAY(valueLst = vals) :: rest))
-      equation 
+      equation
         r1 = divArrayeltScalar(sval, vals);
         r2 = divArrayeltScalar(sval, rest);
       then
         (ARRAY(r1) :: r2);
     case ((sval as INTEGER(integer = v1)),(INTEGER(integer = v2) :: rest))
       local Integer r1,v1;
-      equation 
+      equation
         r1 = v2/v1;
         r2 = divArrayeltScalar(sval, rest);
       then
         (INTEGER(r1) :: r2);
     case ((sval as REAL(real = v1)),(INTEGER(integer = v2) :: rest))
       local Real r1;
-      equation 
+      equation
         v2_1 = intReal(v2);
         r1 = v2_1/.v1;
         r2 = divArrayeltScalar(sval, rest);
@@ -1092,7 +1092,7 @@ algorithm
       local
         Real r1,v2;
         Integer v1;
-      equation 
+      equation
         v1_1 = intReal(v1);
         r1 = v2/.v1_1;
         r2 = divArrayeltScalar(sval, rest);
@@ -1100,56 +1100,56 @@ algorithm
         (REAL(r1) :: r2);
     case ((sval as REAL(real = v1)),(REAL(real = v2) :: rest))
       local Real r1,v2;
-      equation 
+      equation
         r1 = v2/.v1;
         r2 = divArrayeltScalar(sval, rest);
       then
         (REAL(r1) :: r2);
-    case (_,{}) then {}; 
+    case (_,{}) then {};
   end matchcontinue;
 end divArrayeltScalar;
 
 protected function matrixStripFirstColumn "function: matrixStripFirstColumn
- 
-  This function takes a Value list representing a matrix and strips the 
-  first column of the matrix, i.e. for each sub list it removes the first 
+
+  This function takes a Value list representing a matrix and strips the
+  first column of the matrix, i.e. for each sub list it removes the first
   element. Returning both the stripped column and the resulting matrix.
 "
   input list<Value> inValueLst;
   output Value outValue;
   output list<Value> outValueLst;
-algorithm 
+algorithm
   (outValue,outValueLst):=
   matchcontinue (inValueLst)
     local
       list<Value> resl,resl2,vrest,rest;
       Value v1;
     case ((ARRAY(valueLst = (v1 :: vrest)) :: rest))
-      equation 
+      equation
         (ARRAY(resl),resl2) = matrixStripFirstColumn(rest);
       then
         (ARRAY((v1 :: resl)),(ARRAY(vrest) :: resl2));
-    case ({}) then (ARRAY({}),{}); 
+    case ({}) then (ARRAY({}),{});
   end matchcontinue;
 end matrixStripFirstColumn;
 
 public function intlistToValue "function: intlistToValue
- 
+
   Takes a list of integers and builds a Value from it, i.e. an
   array of integers.
 "
   input list<Integer> inIntegerLst;
   output Value outValue;
-algorithm 
+algorithm
   outValue:=
   matchcontinue (inIntegerLst)
     local
       list<Value> res;
       Integer i;
       list<Integer> lst;
-    case ({}) then ARRAY({}); 
+    case ({}) then ARRAY({});
     case ((i :: lst))
-      equation 
+      equation
         ARRAY(res) = intlistToValue(lst);
       then
         ARRAY((INTEGER(i) :: res));
@@ -1157,40 +1157,40 @@ algorithm
 end intlistToValue;
 
 public function arrayValues "function: arrayValues
-  
+
   Return the values of an array.
 "
   input Value inValue;
   output list<Value> outValueLst;
-algorithm 
+algorithm
   outValueLst:=
   matchcontinue (inValue)
     local list<Value> v_lst;
-    case (ARRAY(valueLst = v_lst)) then v_lst; 
+    case (ARRAY(valueLst = v_lst)) then v_lst;
   end matchcontinue;
 end arrayValues;
 
 public function makeArray "function: makeArray
- 
+
   Construct an array of a list of Values.
 "
   input list<Value> inValueLst;
   output Value outValue;
-algorithm 
+algorithm
   outValue:=
   matchcontinue (inValueLst)
     local list<Value> vlst;
-    case (vlst) then ARRAY(vlst); 
+    case (vlst) then ARRAY(vlst);
   end matchcontinue;
 end makeArray;
 
 public function valString "function: valString
- 
+
   This function returns a textual representation of a value.
 "
   input Value inValue;
   output String outString;
-algorithm 
+algorithm
   outString:=
   matchcontinue (inValue)
     local
@@ -1201,60 +1201,60 @@ algorithm
       Value r;
       Absyn.CodeNode c;
     case INTEGER(integer = n)
-      equation 
+      equation
         s = intString(n);
       then
         s;
     case REAL(real = x)
-      equation 
+      equation
         s = realString(x);
       then
         s;
     case STRING(string = s)
-      equation 
+      equation
         s_1 = Util.stringAppendList({"\"",s,"\""});
       then
         s_1;
-    case BOOL(boolean = false) then "false"; 
-    case BOOL(boolean = true) then "true"; 
+    case BOOL(boolean = false) then "false";
+    case BOOL(boolean = true) then "true";
     case ARRAY(valueLst = vs)
-      equation 
+      equation
         s = valListString(vs);
         s_1 = stringAppend("{", s);
         s_2 = stringAppend(s_1, "}");
       then
         s_2;
     case TUPLE(valueLst = vs)
-      equation 
+      equation
         s = valListString(vs);
         s_1 = stringAppend("(", s);
         s_2 = stringAppend(s_1, ")");
       then
         s_2;
     case ((r as RECORD(record_ = _)))
-      equation 
+      equation
         s = valRecordString(r);
         res = Util.stringAppendList({"record\n",s,"end record"});
       then
         res;
     case (CODE(A = c))
-      equation 
+      equation
         res = Dump.printCodeStr(c);
         res_1 = Util.stringAppendList({"Code(",res,")"});
       then
-        res_1; 
+        res_1;
 
-        // MetaModelica list	        
+        // MetaModelica list
     case LIST(valueLst = vs)
-      equation 
+      equation
         s = valListString(vs);
         s_1 = stringAppend("{", s);
         s_2 = stringAppend(s_1, "}");
       then
-        s_2;    
-        
+        s_2;
+
     case _
-      equation 
+      equation
         Print.printBuf("- val_string failed\n");
       then
         fail();
@@ -1264,13 +1264,13 @@ end valString;
 
 
 protected function valRecordString "function: valRecordString
- 
+
   This function returns a textual representation of a record,
  separating each value with a comma.
 "
   input Value inValue;
   output String outString;
-algorithm 
+algorithm
   outString:=
   matchcontinue (inValue)
     local
@@ -1279,16 +1279,16 @@ algorithm
       Value x;
       list<Value> xs;
       list<String> ids;
-    case (RECORD(record_ = cname,orderd = {},comp = {})) then ""; 
+    case (RECORD(record_ = cname,orderd = {},comp = {})) then "";
     case (RECORD(record_ = cname,orderd = (x :: (xs as (_ :: _))),comp = (id :: (ids as (_ :: _)))))
-      equation 
+      equation
         s1 = valString(x);
         s2 = valRecordString(RECORD(cname,xs,ids));
         res = Util.stringAppendList({id," = ",s1,",\n",s2});
       then
         res;
     case (RECORD(record_ = cname,orderd = (x :: xs),comp = (id :: ids)))
-      equation 
+      equation
         s1 = valString(x);
         s2 = valRecordString(RECORD(cname,xs,ids));
         res = Util.stringAppendList({"    ",id," = ",s1,"\n",s2});
@@ -1298,27 +1298,27 @@ algorithm
 end valRecordString;
 
 protected function valListString "function: valListString
- 
+
   This function returns a textual representation of a list of
   values, separating each value with a comman.
 "
   input list<Value> inValueLst;
   output String outString;
-algorithm 
+algorithm
   outString:=
   matchcontinue (inValueLst)
     local
       String s,s_1,s_2,s_3;
       Value v;
       list<Value> vs;
-    case {} then ""; 
+    case {} then "";
     case {v}
-      equation 
+      equation
         s = valString(v);
       then
         s;
     case (v :: vs)
-      equation 
+      equation
         s = valString(v);
         s_1 = valListString(vs);
         s_2 = stringAppend(s, ",");
@@ -1326,7 +1326,7 @@ algorithm
       then
         s_3;
     case _
-      equation 
+      equation
         Print.printBuf("- val_list_string failed\n");
       then
         fail();
@@ -1334,7 +1334,7 @@ algorithm
 end valListString;
 
 public function writePtolemyplotDataset "function: writePtolemyplotDataset
- 
+
   This function writes a data set in the pltolemy plot format to a file.
   The first column of the dataset matrix should be the time variable.
   The message string will be displayed in the plot window of ptplot.
@@ -1344,7 +1344,7 @@ public function writePtolemyplotDataset "function: writePtolemyplotDataset
   input list<String> inStringLst3;
   input String inString4;
   output Integer outInteger;
-algorithm 
+algorithm
   outInteger:=
   matchcontinue (inString1,inValue2,inStringLst3,inString4)
     local
@@ -1352,8 +1352,8 @@ algorithm
       Value time;
       list<Value> rest;
       list<String> varnames;
-    case (filename,ARRAY(valueLst = (time :: rest)),(timevar :: varnames),message) /* filename values Variable names message string */ 
-      equation 
+    case (filename,ARRAY(valueLst = (time :: rest)),(timevar :: varnames),message) /* filename values Variable names message string */
+      equation
         datasets = unparsePtolemyValues(time, rest, varnames);
         str = Util.stringAppendList(
           {"#Ptolemy Plot generated by OpenModelica\n","TitleText: ",
@@ -1365,7 +1365,7 @@ algorithm
 end writePtolemyplotDataset;
 
 public function sendPtolemyplotDataset "function: sendPtolemyplotDataset
- 
+
   This function writes a data set in the pltolemy plot format to a file.
   The first column of the dataset matrix should be the time variable.
   The message string will be displayed in the plot window of ptplot.
@@ -1385,24 +1385,24 @@ public function sendPtolemyplotDataset "function: sendPtolemyplotDataset
   input String xRange;
   input String yRange;
   output Integer outInteger;
-algorithm 
+algorithm
   outInteger:=
-  matchcontinue (inValue2,inStringLst3,inString4, interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, xRange, yRange) 
+  matchcontinue (inValue2,inStringLst3,inString4, interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, xRange, yRange)
     local
       String datasets,str,filename,timevar,message, interpolation2, title2, xLabel2, yLabel2, xRange2, yRange2;
       Boolean legend2, logX2, logY2, grid2, points2;
       Value time;
       list<Value> rest;
       list<String> varnames;
-    case (ARRAY(valueLst = (time :: rest)),(timevar :: varnames),message, interpolation2, title2, legend2, grid2, logX2, logY2, xLabel2, yLabel2, points2, xRange2, yRange2) /* filename values Variable names message string */ 
-      equation 
+    case (ARRAY(valueLst = (time :: rest)),(timevar :: varnames),message, interpolation2, title2, legend2, grid2, logX2, logY2, xLabel2, yLabel2, points2, xRange2, yRange2) /* filename values Variable names message string */
+      equation
         datasets = unparsePtolemyValues(time, rest, varnames);
         str = Util.stringAppendList(
           {"#Ptolemy Plot generated by OpenModelica\n","TitleText: ",
           message,"\n",datasets});
-          
+
         System.sendData(str, interpolation2, title2, legend2, grid2, logX2, logY2, xLabel2, yLabel2, points2, xRange2 +& " " +& yRange2);
-      then 
+      then
         0;
   end matchcontinue;
 end sendPtolemyplotDataset;
@@ -1410,14 +1410,14 @@ end sendPtolemyplotDataset;
 
 
 protected function unparsePtolemyValues "function: unparsePtolemyValues
- 
+
   Helper function to write_ptolemyplot_dataset.
 "
   input Value inValue;
   input list<Value> inValueLst;
   input list<String> inStringLst;
   output String outString;
-algorithm 
+algorithm
   outString:=
   matchcontinue (inValue,inValueLst,inStringLst)
     local
@@ -1425,9 +1425,9 @@ algorithm
       Value time,s1;
       list<Value> xs;
       list<String> vs;
-    case (_,{},_) then ""; 
+    case (_,{},_) then "";
     case (time,(s1 :: xs),(v1 :: vs))
-      equation 
+      equation
         str = unparsePtolemySet(time, s1, v1);
         str2 = unparsePtolemyValues(time, xs, vs);
         res = stringAppend(str, str2);
@@ -1437,7 +1437,7 @@ algorithm
 end unparsePtolemyValues;
 
 protected function unparsePtolemySet "function: unparsePtolemySet
- 
+
   Helper function to unparse_ptolemy_values.
 "
   input Value v1;
@@ -1445,28 +1445,28 @@ protected function unparsePtolemySet "function: unparsePtolemySet
   input String varname;
   output String res;
   String str;
-algorithm 
+algorithm
   str := unparsePtolemySet2(v1, v2);
   res := Util.stringAppendList({"DataSet: ",varname,"\n",str});
 end unparsePtolemySet;
 
 protected function unparsePtolemySet2 "function: unparsePtolemySet2
-  
+
   Helper function to unparse_ptolemy_set
 "
   input Value inValue1;
   input Value inValue2;
   output String outString;
-algorithm 
+algorithm
   outString:=
   matchcontinue (inValue1,inValue2)
     local
       String s1,s2,res,res_1;
       Value v1,v2;
       list<Value> v1s,v2s;
-    case (ARRAY(valueLst = {}),ARRAY(valueLst = {})) then ""; 
+    case (ARRAY(valueLst = {}),ARRAY(valueLst = {})) then "";
     case (ARRAY(valueLst = (v1 :: v1s)),ARRAY(valueLst = (v2 :: v2s)))
-      equation 
+      equation
         s1 = valString(v1);
         s2 = valString(v2);
         res = unparsePtolemySet2(ARRAY(v1s), ARRAY(v2s));
@@ -1477,41 +1477,41 @@ algorithm
 end unparsePtolemySet2;
 
 public function reverseMatrix "function: reverseMatrix
-  
+
   Reverses each line and each row of a matrix.
   Implementation reverses all dimensions...
 "
   input Value inValue;
   output Value outValue;
-algorithm 
+algorithm
   outValue:=
   matchcontinue (inValue)
     local
       list<Value> lst_1,lst_2,lst;
       Value value;
     case (ARRAY(valueLst = lst))
-      equation 
+      equation
         lst_1 = Util.listMap(lst, reverseMatrix);
         lst_2 = listReverse(lst_1);
       then
         ARRAY(lst_2);
-    case (value) then value; 
+    case (value) then value;
   end matchcontinue;
 end reverseMatrix;
 
 public function printVal "function: printVal
- 
+
   This function prints a value.
 "
   input Value v;
   String s;
-algorithm 
+algorithm
   s := valString(v);
   Print.printBuf(s);
 end printVal;
 
 public function sendPtolemyplotDataset2 "function: sendPtolemyplotDataset2
- 
+
   This function writes a data set in the pltolemy plot format to a file.
   The first column of the dataset matrix should be the time variable.
   The message string will be displayed in the plot window of ptplot.
@@ -1521,32 +1521,32 @@ public function sendPtolemyplotDataset2 "function: sendPtolemyplotDataset2
   input String visInfo;
   input String inString4;
   output Integer outInteger;
-algorithm 
+algorithm
   outInteger:=
-  matchcontinue (inValue2,inStringLst3,visInfo,inString4) 
+  matchcontinue (inValue2,inStringLst3,visInfo,inString4)
     local
       String datasets,str,filename,timevar,info,message;
       Value time;
       list<Value> rest;
       list<String> varnames;
-    case (ARRAY(valueLst = (time :: rest)),(timevar :: varnames),info,message) /* filename values Variable names message string */ 
-      equation 
+    case (ARRAY(valueLst = (time :: rest)),(timevar :: varnames),info,message) /* filename values Variable names message string */
+      equation
 //        print("+++\n");
 //  		  print(Util.stringAppendList(varnames));
-//  			print("+++\n");        
+//  			print("+++\n");
         datasets = unparsePtolemyValues(time, rest, varnames);
 //        print("+++\n");
 //  		  print(Util.stringAppendList(varnames));
 //  			print("+++\n");
-        
+
         str = Util.stringAppendList(
           {"#Ptolemy Plot generated by OpenModelica\n","TitleText: ",
           message,"\n",datasets});
-          
+
 				//print("till send:\n" +& str +& "\n");
-					  
+
         System.sendData2(info, str);
-      then 
+      then
         0;
   end matchcontinue;
 end sendPtolemyplotDataset2;

@@ -1,43 +1,43 @@
-/* 
+/*
  * This file is part of OpenModelica.
- * 
+ *
  * Copyright (c) 1998-2008, Linköpings University,
- * Department of Computer and Information Science, 
- * SE-58183 Linköping, Sweden. 
- * 
+ * Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
  * All rights reserved.
- * 
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC 
- * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF 
- * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC 
- * PUBLIC LICENSE. 
- * 
- * The OpenModelica software and the Open Source Modelica 
- * Consortium (OSMC) Public License (OSMC-PL) are obtained 
- * from Linköpings University, either from the above address, 
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC
+ * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF
+ * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC
+ * PUBLIC LICENSE.
+ *
+ * The OpenModelica software and the Open Source Modelica
+ * Consortium (OSMC) Public License (OSMC-PL) are obtained
+ * from Linköpings University, either from the above address,
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
- * 
- * This program is distributed  WITHOUT ANY WARRANTY; without 
- * even the implied warranty of  MERCHANTABILITY or FITNESS 
- * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH 
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS 
- * OF OSMC-PL. 
- * 
+ *
+ * This program is distributed  WITHOUT ANY WARRANTY; without
+ * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
+ * OF OSMC-PL.
+ *
  * See the full OSMC Public License conditions for more details.
- * 
+ *
  */
- 
-package RTOpts 
+
+package RTOpts
 " file:	       RTOpts.mo
   package:     RTOpts
   description: Runtime options
- 
+
   RCS: $Id$
- 
-  This module takes care of command line options. It is possible to 
+
+  This module takes care of command line options. It is possible to
   ask it what flags are set, what arguments were given etc.
-   
+
   This module is used pretty much everywhere where debug calls are made."
 
 public function args
@@ -131,11 +131,11 @@ end silent;
 
 public function versionRequest
   output Boolean outBoolean;
-  
+
   external "C";
 end versionRequest;
 
-/* 
+/*
  * adrpo 2007-06-11
  * returns true if MetaModelica grammar is accepted
  * returns false if only Modelica grammar is accepted
@@ -145,7 +145,7 @@ public function acceptMetaModelicaGrammar
  returns: true if MetaModelica grammar is accepted or false otherwise
  usage: omc [+g=Modelica|MetaModelica], default to 'Modelica'."
   output Boolean outBoolean;
-  
+
   external "C";
 end acceptMetaModelicaGrammar;
 

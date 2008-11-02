@@ -1,13 +1,13 @@
 
 In order to compile ModelicaXML on Linux or Cygwin you will need:
 
-Antlr v2: 
+Antlr v2:
 http://www.antlr2.org/download/antlr-2.7.7.tar.gz
 
-Xerces-c: 
+Xerces-c:
 http://xml.apache.org/xerces-c/
-Check your system, it might be that you already have it. 
-In Cygwin is in: 
+Check your system, it might be that you already have it.
+In Cygwin is in:
 /usr/include/xercesc
 /usr/lib/xerces-c25.dll.a
 
@@ -20,7 +20,7 @@ to point to the tools you installed above.
 Also change the linker libraries i.e.: -lxerces-cVERSION
 
 Build ModelicaXML:
-Linux:  make 
+Linux:  make
 Cygwin: make -f Makefile.cygwin
 
 

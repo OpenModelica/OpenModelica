@@ -47,11 +47,11 @@ $(walkergen): walker.g modelica_parserTokenTypes.txt
 
 dirwalk.o: dirwalk.cpp dirwalk.h
 
-main: $(OBJS) 
+main: $(OBJS)
 	$(CXX) ModelicaXML.cpp -o modelicaxml $(OBJS) $(LINKFLAGS) $(LIBS) ${INCP}
 
 clean:
-	rm -f modelicaxml modelicaxml.exe *.o *.obj *~ core *.core 
+	rm -f modelicaxml modelicaxml.exe *.o *.obj *~ core *.core
 
 reallyclean: clean
 	rm -f $(walkergen) modelica_parserTokenTypes.txt

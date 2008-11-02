@@ -16,11 +16,11 @@
 
 static integer c__1 = 1;
 
-/* Subroutine */ int newuob_(integer *n, integer *npt, doublereal *x, 
+/* Subroutine */ int newuob_(integer *n, integer *npt, doublereal *x,
 	doublereal *rhobeg, doublereal *rhoend, integer *iprint, integer *
-	maxfun, doublereal *xbase, doublereal *xopt, doublereal *xnew, 
-	doublereal *xpt, doublereal *fval, doublereal *gq, doublereal *hq, 
-	doublereal *pq, doublereal *bmat, doublereal *zmat, integer *ndim, 
+	maxfun, doublereal *xbase, doublereal *xopt, doublereal *xnew,
+	doublereal *xpt, doublereal *fval, doublereal *gq, doublereal *hq,
+	doublereal *pq, doublereal *bmat, doublereal *zmat, integer *ndim,
 	doublereal *d__, doublereal *vlag, doublereal *w, S_fp calfun)
 {
     /* Format strings */
@@ -39,7 +39,7 @@ static integer c__1 = 1;
 	    "umber of function values =\002,i6)";
 
     /* System generated locals */
-    integer xpt_dim1, xpt_offset, bmat_dim1, bmat_offset, zmat_dim1, 
+    integer xpt_dim1, xpt_offset, bmat_dim1, bmat_offset, zmat_dim1,
 	    zmat_offset, i__1, i__2, i__3;
     doublereal d__1, d__2, d__3;
 
@@ -62,7 +62,7 @@ static integer c__1 = 1;
     static integer knew;
     static doublereal temp, suma, sumb, fopt, bsum, gqsq;
     static integer kopt, nptm;
-    static doublereal zero, xipt, xjpt, sumz, diffa, diffb, diffc, hdiag, 
+    static doublereal zero, xipt, xjpt, sumz, diffa, diffb, diffc, hdiag,
 	    alpha, delta, recip, reciq, fsave;
     static integer ksave, nfsav, itemp;
     static doublereal dnorm, ratio, dstep, tenth, vquad;
@@ -70,22 +70,22 @@ static integer c__1 = 1;
     static doublereal tempq;
     static integer itest;
     static doublereal rhosq;
-    extern /* Subroutine */ int biglag_(integer *, integer *, doublereal *, 
-	    doublereal *, doublereal *, doublereal *, integer *, integer *, 
+    extern /* Subroutine */ int biglag_(integer *, integer *, doublereal *,
+	    doublereal *, doublereal *, doublereal *, integer *, integer *,
 	    integer *, doublereal *, doublereal *, doublereal *, doublereal *,
 	     doublereal *, doublereal *, doublereal *, doublereal *), bigden_(
-	    integer *, integer *, doublereal *, doublereal *, doublereal *, 
-	    doublereal *, integer *, integer *, integer *, integer *, 
-	    doublereal *, doublereal *, doublereal *, doublereal *, 
-	    doublereal *, doublereal *, doublereal *), update_(integer *, 
-	    integer *, doublereal *, doublereal *, integer *, integer *, 
+	    integer *, integer *, doublereal *, doublereal *, doublereal *,
+	    doublereal *, integer *, integer *, integer *, integer *,
+	    doublereal *, doublereal *, doublereal *, doublereal *,
+	    doublereal *, doublereal *, doublereal *), update_(integer *,
+	    integer *, doublereal *, doublereal *, integer *, integer *,
 	    doublereal *, doublereal *, integer *, doublereal *);
     static doublereal detrat, crvmin;
     static integer nftest;
     static doublereal distsq;
-    extern /* Subroutine */ int trsapp_(integer *, integer *, doublereal *, 
-	    doublereal *, doublereal *, doublereal *, doublereal *, 
-	    doublereal *, doublereal *, doublereal *, doublereal *, 
+    extern /* Subroutine */ int trsapp_(integer *, integer *, doublereal *,
+	    doublereal *, doublereal *, doublereal *, doublereal *,
+	    doublereal *, doublereal *, doublereal *, doublereal *,
 	    doublereal *, doublereal *, doublereal *);
     static doublereal xoptsq;
 
@@ -380,7 +380,7 @@ L120:
 		i__3 = i__;
 		for (j = 1; j <= i__3; ++j) {
 /* L140: */
-		    bmat[ip + j * bmat_dim1] = bmat[ip + j * bmat_dim1] + 
+		    bmat[ip + j * bmat_dim1] = bmat[ip + j * bmat_dim1] +
 			    vlag[i__] * w[j] + w[i__] * vlag[j];
 		}
 	    }
@@ -412,7 +412,7 @@ L120:
 		i__1 = *npt;
 		for (i__ = 1; i__ <= i__1; ++i__) {
 /* L170: */
-		    bmat[i__ + j * bmat_dim1] += sum * zmat[i__ + k * 
+		    bmat[i__ + j * bmat_dim1] += sum * zmat[i__ + k *
 			    zmat_dim1];
 		}
 	    }
@@ -453,7 +453,7 @@ L120:
 		gq[i__] += hq[ih] * xopt[j];
 		hq[ih] = hq[ih] + w[i__] * xopt[j] + xopt[i__] * w[j];
 /* L200: */
-		bmat[*npt + i__ + j * bmat_dim1] = bmat[*npt + j + i__ * 
+		bmat[*npt + i__ + j * bmat_dim1] = bmat[*npt + j + i__ *
 			bmat_dim1];
 	    }
 	}
@@ -552,7 +552,7 @@ L120:
 	if (abs(temp) <= .8) {
 	    bigden_(n, npt, &xopt[1], &xpt[xpt_offset], &bmat[bmat_offset], &
 		    zmat[zmat_offset], &idz, ndim, &kopt, &knew, &d__[1], &w[
-		    1], &vlag[1], &beta, &xnew[1], &w[*ndim + 1], &w[*ndim * 
+		    1], &vlag[1], &beta, &xnew[1], &w[*ndim + 1], &w[*ndim *
 		    6 + 1]);
 	}
     }

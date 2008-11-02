@@ -1,31 +1,31 @@
-/* 
+/*
  * This file is part of OpenModelica.
- * 
+ *
  * Copyright (c) 1998-2008, Linköpings University,
- * Department of Computer and Information Science, 
- * SE-58183 Linköping, Sweden. 
- * 
+ * Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
  * All rights reserved.
- * 
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC 
- * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF 
- * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC 
- * PUBLIC LICENSE. 
- * 
- * The OpenModelica software and the Open Source Modelica 
- * Consortium (OSMC) Public License (OSMC-PL) are obtained 
- * from Linköpings University, either from the above address, 
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC
+ * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF
+ * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC
+ * PUBLIC LICENSE.
+ *
+ * The OpenModelica software and the Open Source Modelica
+ * Consortium (OSMC) Public License (OSMC-PL) are obtained
+ * from Linköpings University, either from the above address,
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
- * 
- * This program is distributed  WITHOUT ANY WARRANTY; without 
- * even the implied warranty of  MERCHANTABILITY or FITNESS 
- * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH 
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS 
- * OF OSMC-PL. 
- * 
+ *
+ * This program is distributed  WITHOUT ANY WARRANTY; without
+ * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
+ * OF OSMC-PL.
+ *
  * See the full OSMC Public License conditions for more details.
- * 
+ *
  */
 
 
@@ -56,7 +56,7 @@ char* _replace(char* source_str,char* search_str,char* replace_str); //Defined i
 void Settings_5finit(void)
 {
 
-// On windows, set Temp directory path to Temp directory as returned by GetTempPath, 
+// On windows, set Temp directory path to Temp directory as returned by GetTempPath,
 // which is usually TMP or TEMP or windows catalogue.
 #ifdef WIN32
 	int numChars;
@@ -67,7 +67,7 @@ void Settings_5finit(void)
 	if (numChars == 1024 || numChars == 0) {
 		printf("Error setting temppath in Kernel\n");
 	} else {
-	if (tempDirectoryPath) { 
+	if (tempDirectoryPath) {
 		free(tempDirectoryPath);
 		tempDirectoryPath=0;
 	}
@@ -78,7 +78,7 @@ void Settings_5finit(void)
 	}
 #endif
 
-// TODO: for other operating systems probably look at $Temp  
+// TODO: for other operating systems probably look at $Temp
 }
 
 
@@ -154,7 +154,7 @@ RML_BEGIN_LABEL(Settings__setInstallationDirectoryPath)
     RML_TAILCALLK(rmlFC);
   }
   memcpy(installationDirectoryPath,command,strlen(command)+1);
-  
+
   /* create a str of the form: OPENMODELICAHOME=<PATH>*/
   omhome = (char*)malloc(strlen(command)+1+18);
   if (omhome == NULL) {
@@ -177,7 +177,7 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(Settings__getInstallationDirectoryPath)
 {
- 
+
     char *path = getenv("OPENMODELICAHOME");
     if (path == NULL) {
       rmlA0 = (void*) mk_scon("");
@@ -185,7 +185,7 @@ RML_BEGIN_LABEL(Settings__getInstallationDirectoryPath)
     }
     else
       rmlA0 = (void*) mk_scon(path);
-  
+
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
@@ -250,7 +250,7 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(Settings__getModelicaPath)
 {
-	 
+
 	 char *path = getenv("OPENMODELICALIBRARY");
 	 if (path == NULL) {
 	    rmlA0 = (void*) mk_scon("");
@@ -282,14 +282,14 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(Settings__dumpSettings)
 {
-  if(compileCommand) 
+  if(compileCommand)
     printf("compile command: %s\n",compileCommand);
 
- 
-  if(tempDirectoryPath) 
+
+  if(tempDirectoryPath)
     printf("temp directory path: %s\n",tempDirectoryPath);
- 
-  if(plotCommand) 
+
+  if(plotCommand)
     printf("plot command: %s\n",plotCommand);
 
 

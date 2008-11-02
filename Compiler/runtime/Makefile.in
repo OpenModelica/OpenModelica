@@ -21,16 +21,16 @@ CFLAGS = @DEFS@ $(USE_CORBA)
 
 ifdef USE_CORBA
   CORBASRC = omc_communication.cc omc_communication_impl.cpp corbaimpl.cpp
-  CORBAINCL = -I$(CORBAHOME)/include 
+  CORBAINCL = -I$(CORBAHOME)/include
 else
   CORBASRC = corbaimpl_stub.cpp
-  CORBAINCL =  
+  CORBAINCL =
 endif
 
 SHELL	= /bin/sh
 CC	= gcc
-IDL	= idl 
-CFLAGS	+= -O3 -I$(RMLINCLUDE) -I$(top_builddir)/c_runtime -I$(srcdir) -I. $(CORBAINCL) -I./ 
+IDL	= idl
+CFLAGS	+= -O3 -I$(RMLINCLUDE) -I$(top_builddir)/c_runtime -I$(srcdir) -I. $(CORBAINCL) -I./
 CXXFLAGS = $(CFLAGS)
 SRC	= rtopts.c socketimpl.c printimpl.c systemimpl.c settingsimpl.c
 CPPSRC  = ptolemyio.cpp daeext.cpp ErrorMessage.cpp errorext.cpp $(CORBASRC)
@@ -44,4 +44,4 @@ omc_communication.cc omc_communication.h : omc_communication.idl
 omc_communication.h: omc_communication_impl.cpp corbaimpl.cpp
 
 clean:
-	$(RM) -rf *.o 
+	$(RM) -rf *.o

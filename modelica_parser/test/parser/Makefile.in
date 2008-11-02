@@ -32,9 +32,9 @@ ANTLR = java -cp $(ANTLR_HOME) antlr.Tool
 all : parser test_parser dot_parser
 
 parser:
-	cd $(top_builddir)/src; $(MAKE) -f Makefile 
+	cd $(top_builddir)/src; $(MAKE) -f Makefile
 
-test_parser : $(OBJS) 
+test_parser : $(OBJS)
 	$(CXX) -o $@  $(OBJS) $(LINKFLAGS) $(LIBS)
 
 dot_parser : test_parser

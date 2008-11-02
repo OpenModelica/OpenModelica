@@ -1,46 +1,46 @@
-/* 
+/*
  * This file is a  part of OpenModelica.
- * 
+ *
  * Copyright (c) 1998-2008, Linköpings University,
- * Department of Computer and Information Science, 
- * SE-58183 Linköping, Sweden. 
- * 
- * This program is distributed  WITHOUT ANY WARRANTY; without 
- * even the implied warranty of  MERCHANTABILITY or FITNESS 
- * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH 
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS 
- * OF OSMC-PL. 
- *  
+ * Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
+ * This program is distributed  WITHOUT ANY WARRANTY; without
+ * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
+ * OF OSMC-PL.
+ *
  * All rights reserved.
- * 
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC 
- * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF 
- * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC 
- * PUBLIC LICENSE. 
- * 
- * The OpenModelica software and the Open Source Modelica 
- * Consortium (OSMC) Public License (OSMC-PL) are obtained 
- * from Linköpings University, either from the above address, 
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC
+ * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF
+ * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC
+ * PUBLIC LICENSE.
+ *
+ * The OpenModelica software and the Open Source Modelica
+ * Consortium (OSMC) Public License (OSMC-PL) are obtained
+ * from Linköpings University, either from the above address,
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
- * 
- * This program is distributed  WITHOUT ANY WARRANTY; without 
- * even the implied warranty of  MERCHANTABILITY or FITNESS 
- * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH 
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS 
- * OF OSMC-PL. 
- * 
+ *
+ * This program is distributed  WITHOUT ANY WARRANTY; without
+ * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
+ * OF OSMC-PL.
+ *
  * See the full OSMC Public License conditions for more details.
  *
- * For any request about the implementation of this package, 
- * please contact Filippo Donida (donida@elet.polimi.it). 
+ * For any request about the implementation of this package,
+ * please contact Filippo Donida (donida@elet.polimi.it).
  *
  */
 
 
 /////////////////////////////////////////////////////////////////
 // Important discrete states are not recognised as states. //////
-// The varKind shoud be varVariability and another method  ////// 
+// The varKind shoud be varVariability and another method  //////
 // and also the relative structure for the variable should //////
 // be implemented to output the information like: state,   //////
 // dummy der, dummy state,...                              //////
@@ -53,8 +53,8 @@
 // the bindValue Optional value of the DAELow.VAR   ///
 // record is everytime empty.  Why?                 ///
 ///////////////////////////////////////////////////////
-  
- 
+
+
 ////////////////////////////////////////////////////////////////////
 // In order to compile the XMLDump module (XMLDump.mo package)   ///
 // XMLDump.mo text in the Compiler/Makefile.common file (SRCMO   ///
@@ -78,9 +78,9 @@ package XMLDump
 " file:	       XMLDump.mo
   package:     XMLDump
   description: Dumping of DAE as XML
- 
+
   RCS: $Id: XMLDump.mo 3643 2008-09-16 05:34:14Z donida $"
-    
+
   public import Absyn;
   public import Algorithm;
   public import DAE;
@@ -92,9 +92,9 @@ package XMLDump
   public import Static;
   public import Util;
   public import Values;
-  
 
-  
+
+
   protected constant String HEADER        = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
   protected constant String DAE_OPEN      = "dae xmlns:p1=\"http://www.w3.org/1998/Math/MathML\"
 	                                              xmlns:xlink=\"http://www.w3.org/1999/xlink\"
@@ -127,30 +127,30 @@ package XMLDump
   protected constant String ELEMENT  = "element";
   protected constant String ELEMENT_ = "Element";
 
-  
+
   protected constant String INDEX = "index";
-    
+
   protected constant String LIST_ = "List";
-    
-  //Is the Dimension attribute of a list element. 
+
+  //Is the Dimension attribute of a list element.
   protected constant String DIMENSION              = "dimension";
   //Is the reference attribute for an element.
   protected constant String ID                     = "id";
   protected constant String ID_                    = "Id";
-  
+
   //This is the String attribute for the textual representation of the expressions.
   protected constant String EXP_STRING               = "string";
-  
+
   //This constant is used when is necessary to bind equations, variables, whenequations,..
   protected constant String INVOLVED = "involved";
 
   protected constant String ADDITIONAL_INFO = "additionalInfo";
-  
+
   //This is the name that identifies the Variables' block. It's also used to compose the other
   //Variables' names, such as KnownVariables, OrderedVariables, and so on.
   protected constant String VARIABLES  = "variables";
   protected constant String VARIABLES_ = "Variables";
-  
+
   protected constant String ORDERED  = "ordered";
   protected constant String KNOWN    = "known";
   protected constant String EXTERNAL = "external";
@@ -160,37 +160,37 @@ package XMLDump
   protected constant String CLASS   = "class";
   protected constant String CLASS_  = "Class";
   protected constant String NAMES_  = "Names";
-  
+
   //This is used all the time a variable is referenced.
   protected constant String VARIABLE = "variable";
-  
+
   protected constant String VAR_ID       = ID;
   protected constant String VAR_NAME     = "name";
   protected constant String VAR_INDEX    = INDEX;
   protected constant String VAR_ORIGNAME = "origName";
-    
+
   protected constant String STATE_SELECT_NEVER   = "Never";
   protected constant String STATE_SELECT_AVOID   = "Avoid";
   protected constant String STATE_SELECT_DEFAULT = "Default";
   protected constant String STATE_SELECT_PREFER  = "Prefer";
   protected constant String STATE_SELECT_ALWAYS  = "Always";
-  
+
   protected constant String VAR_FLOW              = "flow";
   protected constant String VAR_FLOW_FLOW         = "Flow";
   protected constant String VAR_FLOW_NONFLOW      = "NonFlow";
-  protected constant String VAR_FLOW_NONCONNECTOR = "NonConnector";  
-  
+  protected constant String VAR_FLOW_NONCONNECTOR = "NonConnector";
+
   ///  TO CORRECT WITHIN THE OMC!!!  ///
-  // The variability is related to the 
+  // The variability is related to the
   // possible values a variable can assume
   // In this case also information for the
   // variable are stored. For example it would be useful
   // to print the information about state, dummyState, dummyDer separately.
-  
+
   //In addition to this there's a problem with the discrete states,
   //since they aren't recognised as states.
   protected constant String VAR_VARIABILITY = "variability";
-  
+
   protected constant String VARIABILITY_CONTINUOUS            = "continuous";
   protected constant String VARIABILITY_CONTINUOUS_STATE      = "continuousState";
   protected constant String VARIABILITY_CONTINUOUS_DUMMYDER   = "continuousDummyDer";
@@ -199,7 +199,7 @@ package XMLDump
   protected constant String VARIABILITY_PARAMETER             = "parameter";
   protected constant String VARIABILITY_CONSTANT              = "constant";
   protected constant String VARIABILITY_EXTERNALOBJECT        = "externalObject";
-  
+
   protected constant String VAR_TYPE                    = "type";
   protected constant String VARTYPE_INTEGER             = "Integer";
   protected constant String VARTYPE_REAL                = "Real";
@@ -208,15 +208,15 @@ package XMLDump
   protected constant String VARTYPE_ENUM                = "Enum";
   protected constant String VARTYPE_ENUMERATION         = "enumeration";
   protected constant String VARTYPE_EXTERNALOBJECT      = "ExternalObject";
-  
+
   protected constant String VAR_DIRECTION         = "direction";
   protected constant String VARDIR_INPUT          = "input";
   protected constant String VARDIR_OUTPUT         = "output";
   protected constant String VARDIR_NONE           = "none";
-  
+
   protected constant String VAR_FIXED             = "fixed";
-  protected constant String VAR_COMMENT           = "comment";  
-  
+  protected constant String VAR_COMMENT           = "comment";
+
   protected constant String VAR_ATTRIBUTES_VALUES = "attributesValues";
   protected constant String VAR_ATTR_QUANTITY     = "quantity";
   protected constant String VAR_ATTR_UNIT         = "unit";
@@ -227,20 +227,20 @@ package XMLDump
   protected constant String VAR_ATTR_NOMINAL      = "nominal";
   protected constant String VAR_ATTR_INITIALVALUE = "initialValue";
   protected constant String VAR_ATTR_FIXED        = "fixed";
-  
+
   //Name of the element containing the binding information
   //for the variables (both expression (BindExpression) and value (BindValue).
   //For example consider:
   //parameter Real a = 3*2+e; //With Real constant e = 3;
-  //BindExpression 3*2+e  
+  //BindExpression 3*2+e
   //BindValue = 9
   protected constant String BIND_VALUE_EXPRESSION   = "bindValueExpression";
   protected constant String BIND_EXPRESSION         = "bindExpression";
   protected constant String BIND_VALUE              = "bindValue";
-  
+
   //Name of the element representing the subscript, for example the array's index.
   protected constant String SUBSCRIPT               = "subScript";
-  
+
   //Additional info for variables.
   protected constant String HASH_TB_CREFS_LIST          = "hashTb";
   protected constant String HASH_TB_STRING_LIST_OLDVARS = "hashTbOldVars";
@@ -252,7 +252,7 @@ package XMLDump
   protected constant String INITIAL            = "initial";
   protected constant String ZERO_CROSSING      = "zeroCrossing";
   protected constant String ARRAY_OF_EQUATIONS = "arrayOfEquations";//This is used also in the dumpEquation method.
-  
+
   protected constant String EQUATION  = "equation";
   protected constant String EQUATION_ = "Equation";
   protected constant String SOLVED    = "solved";
@@ -280,19 +280,19 @@ package XMLDump
   corresponding algorithm.
   */
   protected constant String ALGORITHM_REF          = "algorithm_ref";
-  
+
   /*
-  This String constant represents the single equation of an array of 
+  This String constant represents the single equation of an array of
   equations and it is used in:
     1 - dumpArrayEqns to print the list of equations
     2 - dumpEquation to print the list of equations corresponding to
         the array
   */
   protected constant String ARRAY_EQUATION         = "arrayEquation";
-  
+
   protected constant String ALGORITHMS              = "algorithms";
 
-  
+
   protected constant String MATH                   = "math";
   protected constant String MathML                 = "MathML";
   protected constant String MathMLApply            = "apply";
@@ -303,44 +303,44 @@ package XMLDump
   protected constant String MathMLVariable         = "ci";
   protected constant String MathMLConstant         = "constant";
   protected constant String MathMLInteger          = "integer";
-  protected constant String MathMLReal             = "real"; 
-  protected constant String MathMLVector           = "vector"; 
-  protected constant String MathMLMatrixrow        = "matrixrow"; 
-  protected constant String MathMLMatrix           = "matrix"; 
+  protected constant String MathMLReal             = "real";
+  protected constant String MathMLVector           = "vector";
+  protected constant String MathMLMatrixrow        = "matrixrow";
+  protected constant String MathMLMatrix           = "matrix";
   protected constant String MathMLTrue             = "true";
   protected constant String MathMLFalse            = "false";
   protected constant String MathMLAnd              = "and";
   protected constant String MathMLOr               = "or";
   protected constant String MathMLNot              = "not";
-  protected constant String MathMLEqual            = "eq";   
+  protected constant String MathMLEqual            = "eq";
   protected constant String MathMLLessThan         = "lt";
   protected constant String MathMLLessEqualThan    = "leq";
   protected constant String MathMLGreaterThan      = "gt";
   protected constant String MathMLGreaterEqualThan = "geq";
-  protected constant String MathMLEquivalent       = "equivalent";   
-  protected constant String MathMLNotEqual         = "neq";   
+  protected constant String MathMLEquivalent       = "equivalent";
+  protected constant String MathMLNotEqual         = "neq";
   protected constant String MathMLPlus             = "plus";
   protected constant String MathMLMinus            = "minus";
   protected constant String MathMLTimes            = "times";
   protected constant String MathMLDivide           = "divide";
   protected constant String MathMLPower            = "power";
-  protected constant String MathMLTranspose        = "transpose"; 
+  protected constant String MathMLTranspose        = "transpose";
   protected constant String MathMLScalarproduct    = "scalarproduct";
   protected constant String MathMLVectorproduct    = "vectorproduct";
   protected constant String MathMLInterval         = "interval";
   protected constant String MathMLSelector         = "selector";
-  
+
   protected constant String MathMLIfClause         = "piecewise";
   protected constant String MathMLIfBranch         = "piece";
   protected constant String MathMLElseBranch       = "otherwise";
-  
+
   protected constant String MathMLOperator         = "mo";
   protected constant String MathMLArccos           = "arccos";
   protected constant String MathMLArcsin           = "arcsin";
   protected constant String MathMLArctan           = "arctan";
-  protected constant String MathMLLn               = "ln"; 
-  protected constant String MathMLLog              = "log";  
-  
+  protected constant String MathMLLn               = "ln";
+  protected constant String MathMLLog              = "log";
+
 
 public function binopSymbol "
 function: binopSymbol
@@ -349,14 +349,14 @@ function: binopSymbol
 "
   input Exp.Operator inOperator;
   output String outString;
-algorithm 
+algorithm
   outString:=
   matchcontinue (inOperator)
     local
       Exp.Ident s;
       Exp.Operator op;
     case op
-      equation 
+      equation
         s = binopSymbol2(op);
       then
         s;
@@ -369,21 +369,21 @@ Helper function to binopSymbol
 "
   input Exp.Operator inOperator;
   output String outString;
-algorithm 
+algorithm
   outString:=
   matchcontinue (inOperator)
-    case (Exp.ADD(ty = _)) then MathMLPlus; 
-    case (Exp.SUB(ty = _)) then MathMLMinus;       
-    case (Exp.MUL(ty = _)) then MathMLTimes; 
-    case (Exp.DIV(ty = _)) then MathMLDivide; 
-    case (Exp.POW(ty = _)) then MathMLPower; 
-    case (Exp.ADD_ARR(ty = _)) then MathMLPlus; 
-    case (Exp.SUB_ARR(ty = _)) then MathMLMinus; 
-    case (Exp.MUL_SCALAR_ARRAY(ty = _)) then MathMLTimes; 
-    case (Exp.MUL_ARRAY_SCALAR(ty = _)) then MathMLTimes; 
-    case (Exp.MUL_SCALAR_PRODUCT(ty = _)) then MathMLScalarproduct; 
-    case (Exp.MUL_MATRIX_PRODUCT(ty = _)) then MathMLVectorproduct; 
-    case (Exp.DIV_ARRAY_SCALAR(ty = _)) then MathMLDivide; 
+    case (Exp.ADD(ty = _)) then MathMLPlus;
+    case (Exp.SUB(ty = _)) then MathMLMinus;
+    case (Exp.MUL(ty = _)) then MathMLTimes;
+    case (Exp.DIV(ty = _)) then MathMLDivide;
+    case (Exp.POW(ty = _)) then MathMLPower;
+    case (Exp.ADD_ARR(ty = _)) then MathMLPlus;
+    case (Exp.SUB_ARR(ty = _)) then MathMLMinus;
+    case (Exp.MUL_SCALAR_ARRAY(ty = _)) then MathMLTimes;
+    case (Exp.MUL_ARRAY_SCALAR(ty = _)) then MathMLTimes;
+    case (Exp.MUL_SCALAR_PRODUCT(ty = _)) then MathMLScalarproduct;
+    case (Exp.MUL_MATRIX_PRODUCT(ty = _)) then MathMLVectorproduct;
+    case (Exp.DIV_ARRAY_SCALAR(ty = _)) then MathMLDivide;
   end matchcontinue;
 end binopSymbol2;
 
@@ -427,12 +427,12 @@ This is an helper function to the dunmAbsynPathList
 method.
 "
   input list<Absyn.Path> absynPathLst;
-algorithm 
-  _:= matchcontinue (absynPathLst) 
+algorithm
+  _:= matchcontinue (absynPathLst)
         local
           list<Absyn.Path> apLst;
           Absyn.Path ap;
-          String str;      
+          String str;
       case {} then ();
       case (ap :: apLst)
       equation
@@ -456,13 +456,13 @@ is present the output is:
 algorithm
   _:= matchcontinue(algs)
     case {} then ();
-    case algs 
+    case algs
       local Integer len;
       equation
         len = listLength(algs);
         len >= 1 = false;
     then();
-    case algs 
+    case algs
       local Integer len;
       equation
         len = listLength(algs);
@@ -531,7 +531,7 @@ algorithm
       then();
     case (inMultiDimEquationLst,inContent)
       local Integer len;
-      equation 
+      equation
         len = listLength(inMultiDimEquationLst);
         len >= 1 = true;
         dumpStrOpenTagAttr(inContent, DIMENSION, intString(len));
@@ -544,7 +544,7 @@ end dumpArrayEqns;
 
 protected function dumpArrayEqns2 "
 This is the help function of the dumpArrayEquns function.
-It takes the list of MultiDimEquation and print out the 
+It takes the list of MultiDimEquation and print out the
 list in a XML format.
 The output, if the list is not empty is something like this:
 <ARRAY_EQUATION String=Exp.printExpStr(firstEquation)>
@@ -553,7 +553,7 @@ The output, if the list is not empty is something like this:
       ...
     </MATH>
   </MathML>
-</ARRAY_EQUATION> 
+</ARRAY_EQUATION>
 ...
 <ARRAY_EQUATION String=Exp.printExpStr(lastEquation)>
   <MathML>
@@ -564,16 +564,16 @@ The output, if the list is not empty is something like this:
 </ARRAY_EQUATION>
 "
   input list<DAELow.MultiDimEquation> inMultiDimEquationLst;
-algorithm 
+algorithm
   _:=
   matchcontinue (inMultiDimEquationLst)
     local
       String s1,s2,s;
       Exp.Exp e1,e2;
       list<DAELow.MultiDimEquation> es;
-    case ({}) then (); 
+    case ({}) then ();
     case ((DAELow.MULTIDIM_EQUATION(left = e1,right = e2) :: es))
-      equation 
+      equation
         s1 = Exp.printExpStr(e1);
         s2 = Exp.printExpStr(e2);
         s = Util.stringAppendList({s1," = ",s2,"\n"});
@@ -598,12 +598,12 @@ public function dumpBindValueExpression "
 This function is necessary for printing the
 BindValue and BindExpression of a variable,
 if present. If there are not Exp.Exp nor
-Values.Value passed as input nothing is 
+Values.Value passed as input nothing is
 printed.
 "
   input Option<Exp.Exp> inOptExpExp;
   input Option<Values.Value> inOptValuesValue;
-  
+
   algorithm
     _:=
   matchcontinue (inOptExpExp,inOptValuesValue)
@@ -611,20 +611,20 @@ printed.
         Exp.Exp e;
         Values.Value b;
   case(NONE,NONE)
-    equation       
+    equation
     then();
   case(SOME(e),NONE)
-    equation       
+    equation
       dumpStrOpenTag(BIND_VALUE_EXPRESSION);
       dumpOptExp(inOptExpExp,BIND_EXPRESSION);
-      dumpStrCloseTag(BIND_VALUE_EXPRESSION);         
+      dumpStrCloseTag(BIND_VALUE_EXPRESSION);
     then();
   case(NONE,SOME(b))
     equation
       dumpStrOpenTag(BIND_VALUE_EXPRESSION);
       dumpOptValue(inOptValuesValue,BIND_VALUE);
       dumpStrCloseTag(BIND_VALUE_EXPRESSION);
-    then();      
+    then();
   case(SOME(e),SOME(b))
     equation
       dumpStrOpenTag(BIND_VALUE_EXPRESSION);
@@ -655,7 +655,7 @@ a XML format. See dumpCrefIdxLst for details.
   input list<DAELow.CrefIndex>[:] crefIdxLstArr;
   input String Content;
   input Integer inInteger;
-algorithm 
+algorithm
   _:=
   matchcontinue (crefIdxLstArr,Content,inInteger)
     local
@@ -665,7 +665,7 @@ algorithm
         dumpCrefIdxLst(crefIdxLstArr[inInteger],Content);
       then ();
     case (crefIdxLstArr,Content,inInteger)
-      equation 
+      equation
         listLength(crefIdxLstArr[inInteger]) >= 1  = false;
       then ();
   end matchcontinue;
@@ -738,7 +738,7 @@ end dumpCrefIdxLst2;
 public function dumpDAEInstDims "
 This function prints a DAE.InstDims (a list of Exp.Subscript)
 using an XML format. The input variables are the list of
-Exp.Subscript and a String that store information about the 
+Exp.Subscript and a String that store information about the
 content of the list. The output could be something like:
 <Content>
   ...//List of Subscript XML elements
@@ -746,7 +746,7 @@ content of the list. The output could be something like:
 "
   input DAE.InstDims arry_Dim;
   input String Content;
-algorithm   
+algorithm
     _ := matchcontinue (arry_Dim,Content)
    local Integer len;
     case (arry_Dim,Content)
@@ -776,7 +776,7 @@ The output is something like:
 See dump Subscript for details.
 "
   input DAE.InstDims arry_Dim;
-algorithm 
+algorithm
   _:= matchcontinue (arry_Dim)
     local
       list<Exp.Subscript> lSub;
@@ -794,10 +794,10 @@ end dumpDAEInstDims2;
 
 
 public function dumpDAELow "
- 
+
   This function dumps the DAELow representaton to stdout as XML format.
   The output is like:
-  
+
 <?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\" ?><!DOCTYPE DAE SYSTEM \"http://home.dei.polimi.it/Projects/AutoEdit/DAE.xsd\">
 <DAE>
   <VARIABLES DIMENSION=..>
@@ -832,18 +832,18 @@ public function dumpDAELow "
 </DAE>
 
 The XML output could change depending on the content of the DAELow structure, in
-particular all the elements are optional, it means that if no element is present 
+particular all the elements are optional, it means that if no element is present
 the relative tag is not printed.
 "
   input DAELow.DAELow inDAELow;
-algorithm 
+algorithm
   _:=
   matchcontinue (inDAELow)
     local
       list<DAELow.Var> vars,knvars,extvars;
 
       //Ordered Variables: state & algebraic variables.
-      DAELow.Variables vars_orderedVars;      
+      DAELow.Variables vars_orderedVars;
       //VARIABLES record for vars.
       list<DAELow.CrefIndex>[:] crefIdxLstArr_orderedVars;
       list<DAELow.StringIndex>[:] strIdxLstArr_orderedVars;
@@ -852,7 +852,7 @@ algorithm
       Integer numberOfVars_orderedVars;
 
       //Known Variables: constant & parameter variables.
-      DAELow.Variables vars_knownVars;      
+      DAELow.Variables vars_knownVars;
       //VARIABLES record for vars.
       list<DAELow.CrefIndex>[:] crefIdxLstArr_knownVars;
       list<DAELow.StringIndex>[:] strIdxLstArr_knownVars;
@@ -861,7 +861,7 @@ algorithm
       Integer numberOfVars_knownVars;
 
       //External Object: external variables.
-      DAELow.Variables vars_externalObject;      
+      DAELow.Variables vars_externalObject;
       //VARIABLES record for vars.
       list<DAELow.CrefIndex>[:] crefIdxLstArr_externalObject;
       list<DAELow.StringIndex>[:] strIdxLstArr_externalObject;
@@ -887,15 +887,15 @@ algorithm
                  vars_knownVars as DAELow.VARIABLES(crefIdxLstArr=crefIdxLstArr_knownVars,strIdxLstArr=strIdxLstArr_knownVars,varArr=varArr_knownVars,bucketSize=bucketSize_knownVars,numberOfVars=numberOfVars_knownVars),
                  vars_externalObject as DAELow.VARIABLES(crefIdxLstArr=crefIdxLstArr_externalObject,strIdxLstArr=strIdxLstArr_externalObject,varArr=varArr_externalObject,bucketSize=bucketSize_externalObject,numberOfVars=numberOfVars_externalObject),
                  eqns,reqns,ieqns,ae,algs,DAELow.EVENT_INFO(zeroCrossingLst = zc),extObjCls))
-      equation 
-        
+      equation
+
         vars    = DAELow.varList(vars_orderedVars);
         knvars  = DAELow.varList(vars_knownVars);
         extvars = DAELow.varList(vars_externalObject);
-        
+
         Print.printBuf(HEADER);
         dumpStrOpenTag(DAE_OPEN);
-        
+
         dumpStrOpenTagAttr(VARIABLES, DIMENSION, intString(listLength(vars)+listLength(knvars)+listLength(extvars)));
 
         //Bucket size info is no longer present.
@@ -903,7 +903,7 @@ algorithm
         dumpVars(knvars,crefIdxLstArr_knownVars,strIdxLstArr_knownVars,stringAppend(KNOWN,VARIABLES_));
         dumpVars(extvars,crefIdxLstArr_externalObject,strIdxLstArr_externalObject,stringAppend(EXTERNAL,VARIABLES_));
         dumpExtObjCls(extObjCls,stringAppend(EXTERNAL,CLASSES_));
-        
+
         dumpStrCloseTag(VARIABLES);
 
         eqnsl  = DAELow.equationList(eqns);
@@ -916,7 +916,7 @@ algorithm
         ae_lst = arrayList(ae);
         dumpArrayEqns(ae_lst,ARRAY_OF_EQUATIONS);
         dumpAlgorithms(arrayList(algs));
-				
+
 				dumpStrCloseTag(DAE_CLOSE);
       then ();
   end matchcontinue;
@@ -942,7 +942,7 @@ sudh as:
    ...
   </MathML>
  </Quantity>
- ... 
+ ...
 </Content>
 "
   input Option<DAE.VariableAttributes> dae_var_attr;
@@ -985,7 +985,7 @@ sudh as:
         dumpStrCloseTag(Content);
       then();
     case (SOME(DAE.VAR_ATTR_BOOL(quant,Initial,fixed)),Content)
-      equation      
+      equation
         dumpStrOpenTag(Content);
         dumpOptExp(quant,VAR_ATTR_QUANTITY);
         dumpOptExp(Initial,VAR_ATTR_INITIALVALUE);
@@ -993,7 +993,7 @@ sudh as:
         dumpStrCloseTag(Content);
       then();
     case (SOME(DAE.VAR_ATTR_STRING(quant,Initial)),Content)
-      equation        
+      equation
         dumpStrOpenTag(Content);
         dumpOptExp(quant,VAR_ATTR_QUANTITY);
         dumpOptExp(Initial,VAR_ATTR_INITIALVALUE);
@@ -1008,9 +1008,9 @@ sudh as:
         dumpOptExp(Initial,VAR_ATTR_INITIALVALUE);
         dumpOptExp(fixed,VAR_ATTR_FIXED);
         dumpStrCloseTag(Content);
-        then();              
+        then();
     case (NONE(),_) then ();
-    case (_,_) 
+    case (_,_)
       equation
         dumpComment("unknown VariableAttributes");
       then ();
@@ -1023,16 +1023,16 @@ public function dumpDirectionStr "
 This function dumps the varDirection of a variable:
  it could be:
  - input
- - output 
+ - output
 "
   input DAE.VarDirection inVarDirection;
   output String outString;
-algorithm 
+algorithm
   outString:=
   matchcontinue (inVarDirection)
-    case DAE.INPUT()  then VARDIR_INPUT; 
-    case DAE.OUTPUT() then VARDIR_OUTPUT; 
-    case DAE.BIDIR()  then VARDIR_NONE; 
+    case DAE.INPUT()  then VARDIR_INPUT;
+    case DAE.OUTPUT() then VARDIR_OUTPUT;
+    case DAE.BIDIR()  then VARDIR_NONE;
   end matchcontinue;
 end dumpDirectionStr;
 
@@ -1075,7 +1075,7 @@ protected function dumpEqns2 "
 "
   input list<DAELow.Equation> inEquationLst;
   input Integer inInteger;
-algorithm 
+algorithm
   _:=
   matchcontinue (inEquationLst,inInteger)
     local
@@ -1083,9 +1083,9 @@ algorithm
       DAELow.Value index;
       DAELow.Equation eqn;
       list<DAELow.Equation> eqns;
-    case ({},_) then (); 
+    case ({},_) then ();
     case ((eqn :: eqns),index)
-      equation 
+      equation
         dumpEquation(eqn, intString(index));
         dumpEqns2(eqns, index+1);
       then ();
@@ -1103,8 +1103,8 @@ between:
  - solved equations
  - when equations
  - residual equations
- - algorithm references 
-This function prints the content using XML representation. The 
+ - algorithm references
+This function prints the content using XML representation. The
 output changes according to the content of the equation.
 For example, if the element is an Array of Equations:
 <ArrayOfEquations ID=..>
@@ -1125,7 +1125,7 @@ For example, if the element is an Array of Equations:
 "
   input DAELow.Equation inEquation;
   input String inIndexNumber;
-algorithm 
+algorithm
   _:=
   matchcontinue (inEquation,inIndexNumber)
     local
@@ -1134,12 +1134,12 @@ algorithm
       DAELow.Value indx,i;
       list<Exp.Exp> expl;
       Exp.ComponentRef cr;
-      
+
     case (DAELow.EQUATION(exp = e1,scalar = e2),indexS)
-      equation 
+      equation
         s1 = Exp.printExpStr(e1);
         s2 = Exp.printExpStr(e2);
-        res = Util.stringAppendList({s1," = ",s2});        
+        res = Util.stringAppendList({s1," = ",s2});
         dumpStrOpenTagAttr(EQUATION,ID,indexS);
         Print.printBuf(res);
         dumpStrOpenTag(MathML);
@@ -1151,10 +1151,10 @@ algorithm
         dumpStrCloseTag(MathMLApply);
         dumpStrCloseTag(MATH);
         dumpStrCloseTag(MathML);
-        dumpStrCloseTag(EQUATION);        
+        dumpStrCloseTag(EQUATION);
       then ();
-    case (DAELow.ARRAY_EQUATION(index = indx,crefOrDerCref = expl),indexS) 
-      equation 
+    case (DAELow.ARRAY_EQUATION(index = indx,crefOrDerCref = expl),indexS)
+      equation
         dumpStrOpenTagAttr(ARRAY_OF_EQUATIONS,ID,indexS);
         dumpLstExp(expl,ARRAY_EQUATION);
         dumpStrOpenTagAttr(ADDITIONAL_INFO, stringAppend(ARRAY_OF_EQUATIONS,ID_), intString(indx));
@@ -1167,7 +1167,7 @@ algorithm
         dumpStrCloseTag(ARRAY_OF_EQUATIONS);
       then ();
     case (DAELow.SOLVED_EQUATION(componentRef = cr,exp = e2),indexS)
-      equation 
+      equation
         s1 = Exp.printComponentRefStr(cr);
         s2 = Exp.printExpStr(e2);
         res = Util.stringAppendList({s1," := ",s2});
@@ -1182,10 +1182,10 @@ algorithm
         dumpStrCloseTag(MathMLApply);
         dumpStrCloseTag(MATH);
         dumpStrCloseTag(MathML);
-        dumpStrCloseTag(stringAppend(SOLVED,EQUATION_));    
+        dumpStrCloseTag(stringAppend(SOLVED,EQUATION_));
       then ();
     case (DAELow.WHEN_EQUATION(whenEquation = DAELow.WHEN_EQ(index = i,left = cr,right = e2)),indexS)
-      equation 
+      equation
         s1 = Exp.printComponentRefStr(cr);
         s2 = Exp.printExpStr(e2);
         is = intString(i);
@@ -1202,10 +1202,10 @@ algorithm
         dumpStrCloseTag(MATH);
         dumpStrCloseTag(MathML);
         dumpStrTagContent(stringAppend(stringAppend(WHEN,EQUATION_),ID_),is);
-        dumpStrCloseTag(stringAppend(WHEN,EQUATION_));    
+        dumpStrCloseTag(stringAppend(WHEN,EQUATION_));
       then ();
     case (DAELow.RESIDUAL_EQUATION(exp = e),indexS)
-      equation 
+      equation
         s1 = Exp.printExpStr(e);
         res = Util.stringAppendList({s1,"= 0"});
         dumpStrOpenTagAttr(stringAppend(RESIDUAL,EQUATION_),ID,indexS);
@@ -1215,14 +1215,14 @@ algorithm
         dumpStrOpenTag(MathMLApply);
         dumpStrVoidTag(MathMLEquivalent);
         dumpExp2(e);
-        dumpStrMathMLNumber("0");        
+        dumpStrMathMLNumber("0");
         dumpStrCloseTag(MathMLApply);
         dumpStrCloseTag(MATH);
         dumpStrCloseTag(MathML);
         dumpStrCloseTag(stringAppend(RESIDUAL,EQUATION_));
       then ();
     case (DAELow.ALGORITHM(index = i),indexS)
-      equation 
+      equation
         is = intString(i);
         dumpStrOpenTagAttr(ALGORITHM,ID,indexS);
         dumpStrTagContent(stringAppend(ALGORITHM,ID),is);
@@ -1245,8 +1245,8 @@ public function dumpExp
   </MathML>"
   input Exp.Exp e;
   //output String s;
-algorithm 
-  dumpStrOpenTag(MathML); 
+algorithm
+  dumpStrOpenTag(MathML);
   dumpStrOpenTagAttr(MATH, MathMLXmlns, MathMLWeb);
   dumpExp2(e);
   dumpStrCloseTag(MATH);
@@ -1254,13 +1254,13 @@ algorithm
 end dumpExp;
 
 
-public function dumpExp2 
-"function: dumpExp2 
+public function dumpExp2
+"function: dumpExp2
   Helper function to dumpExp. It can also
   be used if it's not necessary to print the headers
   (MathML and MATH tags)."
   input Exp.Exp inExp;
-algorithm 
+algorithm
   _:=
   matchcontinue (inExp)
     local
@@ -1274,24 +1274,24 @@ algorithm
       Exp.Operator op;
       Absyn.Path fcn;
       list<Exp.Exp> args,es;
-    case (Exp.END()) 
+    case (Exp.END())
     ////////////////////////////////////////////////
     //////    TO DO: ADD SUPPORT TO END     ////////
     ////////////////////////////////////////////////
       equation
         Print.printBuf("end");
-      then (); 
+      then ();
     case (Exp.ICONST(integer = x))
-      equation 
+      equation
         dumpStrMathMLNumberAttr(intString(x),MathMLType,MathMLInteger);
       then ();
     case (Exp.RCONST(real = x))
       local Real x;
-      equation 
+      equation
         dumpStrMathMLNumberAttr(realString(x),MathMLType,MathMLReal);
       then ();
     case (Exp.SCONST(string = s))
-      equation 
+      equation
         dumpStrMathMLNumberAttr(s,MathMLType,MathMLConstant);
       then ();
     case (Exp.BCONST(bool = false))
@@ -1299,20 +1299,20 @@ algorithm
         dumpStrOpenTag(MathMLApply);
         dumpStrVoidTag(MathMLFalse);
         dumpStrCloseTag(MathMLApply);
-      then (); 
+      then ();
     case (Exp.BCONST(bool = true))
       equation
         dumpStrOpenTag(MathMLApply);
         dumpStrVoidTag(MathMLTrue);
         dumpStrCloseTag(MathMLApply);
-      then (); 
+      then ();
     case (Exp.CREF(componentRef = c,ty = t))
-      equation 
+      equation
         s = Exp.printComponentRefStr(c);
         dumpStrMathMLVariable(s);
       then ();
     case (e as Exp.BINARY(e1,op,e2))
-      equation 
+      equation
         sym = binopSymbol(op);
         dumpStrOpenTag(MathMLApply);
         dumpStrVoidTag(sym);
@@ -1321,15 +1321,15 @@ algorithm
         dumpStrCloseTag(MathMLApply);
       then ();
      case ((e as Exp.UNARY(op,e1)))
-      equation 
+      equation
         sym = unaryopSymbol(op);
         dumpStrOpenTag(MathMLApply);
         dumpStrVoidTag(sym);
         dumpExp2(e1);
-        dumpStrCloseTag(MathMLApply);      
+        dumpStrCloseTag(MathMLApply);
       then ();
    case ((e as Exp.LBINARY(e1,op,e2)))
-      equation 
+      equation
         sym = lbinopSymbol(op);
         dumpStrOpenTag(MathMLApply);
         dumpStrVoidTag(sym);
@@ -1338,7 +1338,7 @@ algorithm
         dumpStrCloseTag(MathMLApply);
       then ();
    case ((e as Exp.LUNARY(op,e1)))
-      equation 
+      equation
         sym = lunaryopSymbol(op);
         dumpStrOpenTag(MathMLApply);
         dumpStrVoidTag(sym);
@@ -1346,7 +1346,7 @@ algorithm
         dumpStrCloseTag(MathMLApply);
       then();
    case ((e as Exp.RELATION(e1,op,e2)))
-      equation 
+      equation
         sym = relopSymbol(op);
         dumpStrOpenTag(MathMLApply);
         dumpStrVoidTag(sym);
@@ -1355,7 +1355,7 @@ algorithm
         dumpStrCloseTag(MathMLApply);
       then ();
     case ((e as Exp.IFEXP(cond,tb,fb)))
-      equation 
+      equation
         dumpStrOpenTag(MathMLApply);
         dumpStrOpenTag(MathMLIfClause);
         dumpStrOpenTag(MathMLIfBranch);
@@ -1372,28 +1372,28 @@ algorithm
         dumpStrOpenTag(MathMLApply);
         dumpStrVoidTag("diff");
         dumpList(args,dumpExp2);
-        dumpStrCloseTag(MathMLApply);      
+        dumpStrCloseTag(MathMLApply);
       then ();
     case (Exp.CALL(path = Absyn.IDENT(name = "acos"),expLst = args))
       equation
         dumpStrOpenTag(MathMLApply);
         dumpStrVoidTag(MathMLArccos);
         dumpList(args,dumpExp2);
-        dumpStrCloseTag(MathMLApply);      
+        dumpStrCloseTag(MathMLApply);
       then ();
     case (Exp.CALL(path = Absyn.IDENT(name = "asin"),expLst = args))
       equation
         dumpStrOpenTag(MathMLApply);
         dumpStrVoidTag(MathMLArcsin);
         dumpList(args,dumpExp2);
-        dumpStrCloseTag(MathMLApply);      
+        dumpStrCloseTag(MathMLApply);
       then ();
     case (Exp.CALL(path = Absyn.IDENT(name = "atan"),expLst = args))
       equation
         dumpStrOpenTag(MathMLApply);
         dumpStrVoidTag(MathMLArctan);
         dumpList(args,dumpExp2);
-        dumpStrCloseTag(MathMLApply);      
+        dumpStrCloseTag(MathMLApply);
       then ();
     case (Exp.CALL(path = Absyn.IDENT(name = "atan2"),expLst = args))
       equation
@@ -1409,22 +1409,22 @@ algorithm
         dumpStrOpenTag(MathMLOperator);
         Print.printBuf(")");
         dumpStrCloseTag(MathMLOperator);
-        dumpStrCloseTag(MathMLApply);      
+        dumpStrCloseTag(MathMLApply);
       then ();
     case (Exp.CALL(path = Absyn.IDENT(name = "log"),expLst = args))
       equation
         dumpStrOpenTag(MathMLApply);
         dumpStrVoidTag(MathMLLn);
         dumpList(args,dumpExp2);
-        dumpStrCloseTag(MathMLApply);      
+        dumpStrCloseTag(MathMLApply);
       then ();
     case (Exp.CALL(path = Absyn.IDENT(name = "log10"),expLst = args))
       equation
         dumpStrOpenTag(MathMLApply);
         dumpStrVoidTag(MathMLLog);
         dumpList(args,dumpExp2);
-        dumpStrCloseTag(MathMLApply);      
-      then ();        
+        dumpStrCloseTag(MathMLApply);
+      then ();
 /*
     case (Exp.CALL(path = Absyn.IDENT(name = "pre"),expLst = args))
       equation
@@ -1433,11 +1433,11 @@ algorithm
         dumpStrVoidTag("selector");          ----THIS IS FOR ALGORITHM----
         dumpList(args,dumpExp2);
         dumpStrMathMLVariable("t-1");
-        dumpStrCloseTag("apMathMLApply;      
+        dumpStrCloseTag("apMathMLApply;
       then ();
 */
     case (Exp.CALL(path = fcn,expLst = args))
-      equation 
+      equation
         // Add the ref to path
         fs = Absyn.pathString(fcn);
         dumpStrOpenTag(MathMLApply);
@@ -1446,8 +1446,8 @@ algorithm
         dumpStrCloseTag(MathMLApply);
       then ();
     case (Exp.ARRAY(array = es,ty=tp))//Array are dumped as vector
-      local Exp.Type tp; String s3; 
-      equation 
+      local Exp.Type tp; String s3;
+      equation
         dumpStrOpenTag(MathMLApply);
         dumpStrVoidTag(MathMLTranspose);
         dumpStrOpenTag(MathMLApply);
@@ -1455,10 +1455,10 @@ algorithm
         dumpList(es,dumpExp);
         dumpStrCloseTag(MathMLVector);
         dumpStrCloseTag(MathMLApply);
-        dumpStrCloseTag(MathMLApply);        
+        dumpStrCloseTag(MathMLApply);
       then ();
     case (Exp.TUPLE(PR = es))//Tuple are dumped as vector
-      equation 
+      equation
         dumpStrOpenTag(MathMLApply);
         dumpStrVoidTag(MathMLTranspose);
         dumpStrOpenTag(MathMLApply);
@@ -1470,18 +1470,18 @@ algorithm
       then ();
     case (Exp.MATRIX(scalar = es,ty=tp))
       local list<list<tuple<Exp.Exp, Boolean>>> es;
-        Exp.Type tp; String s3;        
+        Exp.Type tp; String s3;
       equation
         dumpStrOpenTag(MathMLApply);
         dumpStrOpenTag(MathMLMatrix);
         dumpStrOpenTag(MathMLMatrixrow);
         dumpListSeparator(es, dumpRow, Util.stringAppendList({"\n</",MathMLMatrixrow,">/n<",MathMLMatrixrow,">"}));
-        dumpStrCloseTag(MathMLMatrixrow);        
+        dumpStrCloseTag(MathMLMatrixrow);
         dumpStrCloseTag(MathMLMatrix);
         dumpStrCloseTag(MathMLApply);
       then ();
     case (e as Exp.RANGE(_,start,NONE,stop))
-      equation 
+      equation
         dumpStrOpenTag(MathMLApply);
         dumpStrOpenTag(MathMLInterval);
         dumpExp2(start);
@@ -1490,12 +1490,12 @@ algorithm
         dumpStrCloseTag(MathMLApply);
       then ();
     case ((e as Exp.RANGE(_,start,SOME(step),stop)))
-      equation 
+      equation
         dumpStrOpenTag(MathMLApply);
         dumpStrOpenTag(MathMLOperator);
         Print.printBuf("{");
         dumpStrCloseTag(MathMLOperator);
-        dumpExp2(start);        
+        dumpExp2(start);
         dumpStrOpenTag(MathMLOperator);
         Print.printBuf(":");
         dumpStrCloseTag(MathMLOperator);
@@ -1508,17 +1508,17 @@ algorithm
         dumpStrOpenTag(MathMLOperator);
         Print.printBuf("}");
         dumpStrCloseTag(MathMLOperator);
-        dumpStrCloseTag(MathMLApply);      
+        dumpStrCloseTag(MathMLApply);
       then ();
     case (Exp.CAST(ty = Exp.REAL(),exp = Exp.ICONST(integer = ival)))
-      equation 
+      equation
         false = RTOpts.modelicaOutput();
         rval = intReal(ival);
         res = realString(rval);
         dumpStrMathMLNumberAttr(res,MathMLType,MathMLReal);
       then ();
     case (Exp.CAST(ty = Exp.REAL(),exp = Exp.UNARY(operator = Exp.UMINUS(ty = _),exp = Exp.ICONST(integer = ival))))
-      equation 
+      equation
         false = RTOpts.modelicaOutput();
         rval = intReal(ival);
         res = realString(rval);
@@ -1528,7 +1528,7 @@ algorithm
         dumpStrCloseTag(MathMLApply);
       then ();
     case (Exp.CAST(ty = Exp.REAL(),exp = e))
-      equation 
+      equation
         false = RTOpts.modelicaOutput();
         dumpStrOpenTag(MathMLApply);
         dumpStrVoidTag(MathMLReal);
@@ -1536,12 +1536,12 @@ algorithm
         dumpStrCloseTag(MathMLApply);
       then ();
     case (Exp.CAST(ty = Exp.REAL(),exp = e))
-      equation 
+      equation
         true = RTOpts.modelicaOutput();
         dumpExp2(e);
       then ();
     case (Exp.CAST(ty = tp,exp = e))
-      equation 
+      equation
         str = Exp.typeString(tp);
         dumpStrOpenTag(MathMLApply);
         dumpStrOpenTag(MathMLOperator);
@@ -1558,7 +1558,7 @@ algorithm
         dumpStrCloseTag(MathMLApply);
       then ();
     case (e as Exp.ASUB(exp = e1,sub = i))
-      equation 
+      equation
         dumpStrOpenTag(MathMLApply);
         dumpStrVoidTag(MathMLSelector);
         dumpExp2(e1);
@@ -1566,37 +1566,37 @@ algorithm
         dumpStrCloseTag(MathMLApply);
       then ();
     case (Exp.SIZE(exp = cr,sz = SOME(dim)))
-      equation 
+      equation
         // NOT PART OF THE MODELICA LANGUAGE
       then ();
     case (Exp.SIZE(exp = cr,sz = NONE))
-      equation 
+      equation
         // NOT PART OF THE MODELICA LANGUAGE
       then ();
     case (Exp.REDUCTION(path = fcn,expr = exp,ident = id,range = iterexp))
-      equation 
+      equation
         // NOT PART OF THE MODELICA LANGUAGE
-      then  ();    
-      // MetaModelica list  
+      then  ();
+      // MetaModelica list
     case (Exp.LIST(_,es))
       local list<Exp.Exp> es;
-      equation 
+      equation
         // NOT PART OF THE MODELICA LANGUAGE
       then ();
-        // MetaModelica list cons 
+        // MetaModelica list cons
     case (Exp.CONS(_,e1,e2))
       equation
         // NOT PART OF THE MODELICA LANGUAGE
-      then ();      
+      then ();
     case (_)
       equation
-        dumpComment("UNKNOWN EXPRESSION");  
-      then (); 
+        dumpComment("UNKNOWN EXPRESSION");
+      then ();
   end matchcontinue;
 end dumpExp2;
 
 
-public function dumpExtObjCls " 
+public function dumpExtObjCls "
 
 Dump classes of external objects within the 'classes' attribute
 of the '<stringAppend(stringAppend(EXTERNAL,CLASSES_),LIST_)/>' element.
@@ -1611,7 +1611,7 @@ algorithm
      Integer len;
      DAELow.ExternalObjectClasses xs;
     case ({},_) then ();
-    case (xs,Content) 
+    case (xs,Content)
       equation
         len = listLength(xs);
         len >= 1 = false;
@@ -1622,13 +1622,13 @@ algorithm
         len >= 1 = true;
         dumpStrOpenTagAttr(stringAppend(stringAppend(EXTERNAL,CLASSES_),LIST_),DIMENSION,intString(len));
         dumpExtObjCls2(xs,stringAppend(EXTERNAL,CLASS_));
-        dumpStrCloseTag(stringAppend(stringAppend(EXTERNAL,CLASSES_),LIST_));          
+        dumpStrCloseTag(stringAppend(stringAppend(EXTERNAL,CLASSES_),LIST_));
       then ();
   end matchcontinue;
 end dumpExtObjCls;
 
 
-protected function dumpExtObjCls2 " 
+protected function dumpExtObjCls2 "
 
 Help function to dumpExtObjClsXML. It prints
 all the class element of the list in the
@@ -1649,7 +1649,7 @@ algorithm
      Absyn.Path path;
      String c;
     case ({},_) then ();
-    case (DAELow.EXTOBJCLASS(path,constr,destr)::xs,c) 
+    case (DAELow.EXTOBJCLASS(path,constr,destr)::xs,c)
       equation
         dumpStrOpenTag(c);
         Print.printBuf("class ");Print.printBuf(Absyn.pathString(path));Print.printBuf("\n  extends ExternalObject");
@@ -1657,14 +1657,14 @@ algorithm
         Print.printBuf(DAE.dumpFunctionStr(destr));
         Print.printBuf("end");Print.printBuf(Absyn.pathString(path));
         dumpStrCloseTag(c);
-        dumpExtObjCls2(xs,c);                    
+        dumpExtObjCls2(xs,c);
       then ();
   end matchcontinue;
 end dumpExtObjCls2;
 
 
 public function dumpFlowStr "
-This function returns a string with 
+This function returns a string with
 the content of the flow type of a variable.
 It could be:
  - Flow
@@ -1673,12 +1673,12 @@ It could be:
 "
   input DAE.Flow inVarFlow;
   output String outString;
-algorithm 
+algorithm
   outString:=
   matchcontinue (inVarFlow)
-    case DAE.FLOW()          then VAR_FLOW_FLOW; 
-    case DAE.NON_FLOW()      then VAR_FLOW_NONFLOW; 
-    case DAE.NON_CONNECTOR() then VAR_FLOW_NONCONNECTOR; 
+    case DAE.FLOW()          then VAR_FLOW_FLOW;
+    case DAE.NON_FLOW()      then VAR_FLOW_NONFLOW;
+    case DAE.NON_CONNECTOR() then VAR_FLOW_NONCONNECTOR;
   end matchcontinue;
 end dumpFlowStr;
 
@@ -1697,7 +1697,7 @@ the kind of a variable, that could be:
 "
   input DAELow.VarKind inVarKind;
   output String outString;
-algorithm 
+algorithm
   outString :=
   matchcontinue (inVarKind)
     case DAELow.VARIABLE()     then (VARIABILITY_CONTINUOUS);
@@ -1707,16 +1707,16 @@ algorithm
     case DAELow.DISCRETE()     then (VARIABILITY_DISCRETE);
     case DAELow.PARAM()        then (VARIABILITY_PARAMETER);
     case DAELow.CONST()        then (VARIABILITY_CONSTANT);
-    case DAELow.EXTOBJ(path) 
+    case DAELow.EXTOBJ(path)
       local Absyn.Path path;
       then (stringAppend(VARIABILITY_EXTERNALOBJECT,stringAppend(":",Absyn.pathString(path))));
   end matchcontinue;
 end dumpKind;
 
- 
-public function dumpList 
-"function: printList 
-  Print a list of values given a print 
+
+public function dumpList
+"function: printList
+  Print a list of values given a print
   function."
   input list<Type_a> inTypeALst;
   input FuncTypeType_aTo inFuncTypeTypeATo;
@@ -1724,7 +1724,7 @@ public function dumpList
   partial function FuncTypeType_aTo
     input Type_a inTypeA;
   end FuncTypeType_aTo;
-algorithm 
+algorithm
   _:=
   matchcontinue (inTypeALst,inFuncTypeTypeATo)
     local
@@ -1732,20 +1732,20 @@ algorithm
       FuncTypeType_aTo r;
       list<Type_a> t;
       Exp.Ident sep;
-    case ({},_)  then (); 
+    case ({},_)  then ();
     case ({h},r) equation  r(h);  then  ();
     case ((h :: t),r)
-      equation 
+      equation
         r(h);
         dumpList(t, r);
       then ();
   end matchcontinue;
-end dumpList; 
+end dumpList;
 
 
 public function dumpListSeparator
-"function: dumpListSeparator 
-  Print a list of values given a print 
+"function: dumpListSeparator
+  Print a list of values given a print
   function and a separator string."
   input list<Type_a> inTypeALst;
   input FuncTypeType_aTo inFuncTypeTypeATo;
@@ -1754,7 +1754,7 @@ public function dumpListSeparator
   partial function FuncTypeType_aTo
     input Type_a inTypeA;
   end FuncTypeType_aTo;
-algorithm 
+algorithm
   _:=
   matchcontinue (inTypeALst,inFuncTypeTypeATo,inString)
     local
@@ -1762,10 +1762,10 @@ algorithm
       FuncTypeType_aTo r;
       list<Type_a> t;
       Exp.Ident sep;
-    case ({},_,_)  then (); 
+    case ({},_,_)  then ();
     case ({h},r,_) equation  r(h);  then  ();
     case ((h :: t),r,sep)
-      equation 
+      equation
         r(h);
         Print.printBuf(sep);
         dumpListSeparator(t, r, sep);
@@ -1803,7 +1803,7 @@ algorithm
       local
         Integer len;
         String Lst;
-      equation 
+      equation
         len = listLength(inLstExp);
         len >= 1 = true;
         Lst = stringAppend(inContent,LIST_);
@@ -1817,7 +1817,7 @@ end dumpLstExp;
 
 protected function dumpLstExp2 "
 This is the help function of the dumpLstExp function.
-It takes the list of Exp.Exp and print out the 
+It takes the list of Exp.Exp and print out the
 list in a XML format.
 The output, if the list is not empty is something like this:
 <ARRAY_EQUATION String=Exp.printExpStr(firstEquation)>
@@ -1826,7 +1826,7 @@ The output, if the list is not empty is something like this:
       ...
     </MATH>
   </MathML>
-</ARRAY_EQUATION> 
+</ARRAY_EQUATION>
 ...
 <ARRAY_EQUATION String=Exp.printExpStr(lastEquation)>
   <MathML>
@@ -1834,20 +1834,20 @@ The output, if the list is not empty is something like this:
       ...
     </MATH>
   </MathML>
-</ARRAY_EQUATION> 
+</ARRAY_EQUATION>
 "
   input list<Exp.Exp> inLstExp;
   input String Content;
-algorithm 
+algorithm
   _:=
   matchcontinue (inLstExp,Content)
     local
       String s1,s2,s,inContent;
       Exp.Exp e;
       list<Exp.Exp> es;
-    case ({},_) then (); 
+    case ({},_) then ();
     case ((e :: es),inContent)
-      equation 
+      equation
         s = Exp.printExpStr(e);
         dumpStrOpenTagAttr(inContent, EXP_STRING, s);
         dumpExp(e);
@@ -1885,7 +1885,7 @@ algorithm
         dumpStrTagContent(inElementName,intString(h));
     then  ();
     case ((h :: t),inElementName)
-      equation 
+      equation
         dumpStrTagContent(inElementName,intString(h));
         dumpLstInt(t,inElementName);
     then();
@@ -1940,7 +1940,7 @@ algorithm
         dumpStrTagContent(ELEMENT,h);
     then  ();
     case (h :: t)
-      equation 
+      equation
         dumpStrTagContent(ELEMENT,h);
         dumpLstStr(t);
     then();
@@ -1958,14 +1958,14 @@ See dumpExp function for more details.
 "
   input Option<Exp.Exp> inExpExpOption;
   input String Content;
-algorithm 
+algorithm
   _:=
   matchcontinue (inExpExpOption,Content)
     local
       Exp.Exp e;
-    case (NONE(),_) then (); 
-    case (SOME(e),_) 
-      equation 
+    case (NONE(),_) then ();
+    case (SOME(e),_)
+      equation
         dumpStrOpenTagAttr(Content,EXP_STRING,printExpStr(e));
         dumpExp(e);
         dumpStrCloseTag(Content);
@@ -1978,7 +1978,7 @@ public function dumpOptionDAEStateSelect "
 This function is used to print in a new line
 an element corresponding to the StateSelection
 choice of a variable. Depending from the String
-input, that defines the element's name, the 
+input, that defines the element's name, the
 element is something like:
 <Content=StateSelection/>,
 "
@@ -1990,7 +1990,7 @@ algorithm
 	  case (NONE(),_)
 	    equation
 	      Print.printBuf("");
-	    then (); 
+	    then ();
 	  case (SOME(DAE.NEVER()),_)
 	    equation dumpStrTagContent(Content, STATE_SELECT_NEVER);   then ();
 	  case (SOME(DAE.AVOID()),_)
@@ -2001,7 +2001,7 @@ algorithm
 	    equation dumpStrTagContent(Content, STATE_SELECT_PREFER);  then ();
 	  case (SOME(DAE.ALWAYS()),_)
 	    equation dumpStrTagContent(Content, STATE_SELECT_ALWAYS);  then ();
-	end matchcontinue;	  	
+	end matchcontinue;
 end dumpOptionDAEStateSelect;
 
 
@@ -2009,13 +2009,13 @@ public function dumpOptValue "
  This function print an Optional Values.Value variable
 as one attribute of a within a specific XML element.
 It takes the optional Values.Value and element name
-as input an prints on a new line a string to the 
+as input an prints on a new line a string to the
 standard output like:
 <Content = \"Exp.printExpStr(Static.valueExp(Optional<Values.Value>)/>
 "
   input Option<Values.Value> inValueValueOption;
   input String Content;
-algorithm  
+algorithm
   _ :=
   matchcontinue (inValueValueOption,Content)
     local
@@ -2032,11 +2032,11 @@ end dumpOptValue;
 
 
 public function dumpRow
-"function: printRow 
+"function: printRow
   Prints a list of expressions to a string."
   input list<tuple<Exp.Exp, Boolean>> es;
   list<Exp.Exp> es_1;
-algorithm 
+algorithm
   es_1 := Util.listMap(es, Util.tuple21);
   dumpList(es_1, dumpExp2);
 end dumpRow;
@@ -2051,7 +2051,7 @@ public function dumpStrCloseTag "
   "
   input String inContent;
 algorithm
-  _:= 
+  _:=
   matchcontinue (inContent)
       local String inString;
   case ("")
@@ -2073,16 +2073,16 @@ a XML format. See dumpStringIdxLst for details.
   input list<DAELow.StringIndex>[:] stringIdxLstArr;
   input String Content;
   input Integer inInteger;
-algorithm 
+algorithm
   _:=
   matchcontinue (stringIdxLstArr,Content,inInteger)
     case (stringIdxLstArr,Content,inInteger)
-      equation 
+      equation
         listLength(stringIdxLstArr[inInteger]) >= 1  = true;
         dumpStringIdxLst(stringIdxLstArr[inInteger],Content);
       then ();
     case (stringIdxLstArr,Content,inInteger)
-      equation 
+      equation
         listLength(stringIdxLstArr[inInteger]) >= 1  = false;
       then ();
   end matchcontinue;
@@ -2148,7 +2148,7 @@ algorithm
   end matchcontinue;
 end dumpStringIdxLst2;
 
- 
+
 public function dumpStrMathMLNumber "
 This function prints a new MathML element
 containing a number, like:
@@ -2161,12 +2161,12 @@ algorithm
   dumpStrCloseTag(MathMLNumber);
 end dumpStrMathMLNumber;
 
- 
+
 public function dumpStrMathMLNumberAttr "
 This function prints a new MathML element
 containing a number and one of its attributes,
 like:
-<cn inAttribute=\"inAttributeValue\"> inNumber 
+<cn inAttribute=\"inAttributeValue\"> inNumber
 </cn>
 "
   input String inNumber;
@@ -2177,14 +2177,14 @@ algorithm
   Print.printBuf(" ");Print.printBuf(inNumber);Print.printBuf(" ");
   dumpStrCloseTag(MathMLNumber);
 end dumpStrMathMLNumberAttr;
-                
+
 
 public function dumpStrMathMLVariable"
 This function prints a new MathML element
 containing a variable (identifier), like:
 <ci> inVariable </ci>
 "
-  input String inVariable; 
+  input String inVariable;
 algorithm
   dumpStrOpenTag(MathMLVariable);
   Print.printBuf(" ");Print.printBuf(inVariable);Print.printBuf(" ");
@@ -2201,7 +2201,7 @@ public function dumpStrOpenTag "
   "
   input String inContent;
 algorithm
-  _:= 
+  _:=
   matchcontinue (inContent)
       local String inString;
   case ("")
@@ -2218,7 +2218,7 @@ end dumpStrOpenTag;
 
 public function dumpStrOpenTagAttr "
   Function necessary to print the begin of a new
-  XML element containing an attribute. The XML 
+  XML element containing an attribute. The XML
   element's name, the name and the content of the
   element's attribute are passed as String inputs.
   The result is to print on a new line
@@ -2229,12 +2229,12 @@ public function dumpStrOpenTagAttr "
   input String Attribute;
   input String AttributeContent;
 algorithm
-  _:= 
+  _:=
   matchcontinue (inContent,Attribute,AttributeContent)
       local String inString,inAttribute,inAttributeContent;
   case ("",_,_)  equation  Print.printBuf("");  then();
   case (_,"",_)  equation  Print.printBuf("");  then();
-  case (_,_,"")  equation  Print.printBuf("");  then();    
+  case (_,_,"")  equation  Print.printBuf("");  then();
   case (inString,"",_)  equation dumpStrOpenTag(inString);  then ();
   case (inString,_,"")  equation dumpStrOpenTag(inString);  then ();
   case (inString,inAttribute,inAttributeContent)
@@ -2251,12 +2251,12 @@ public function dumpStrTagContent "
   and the content are passed as String inputs.
   The result is to print on a new line
   a string like:
-  <inElementName>inContent</inElementName>  
+  <inElementName>inContent</inElementName>
   "
   input String inElementName;
   input String inContent;
 algorithm
-  _:= 
+  _:=
   matchcontinue (inElementName,inContent)
       local String inTagString,inTagContent;
   case ("",_)  then ();
@@ -2271,7 +2271,7 @@ algorithm
 end dumpStrTagContent;
 
 
-public function dumpStrVoidTag  
+public function dumpStrVoidTag
 "
 This function takes as input the name
 of the void element to print and then
@@ -2296,12 +2296,12 @@ This function print an Exp.Subscript eventually
 using the Exp.printExpStr function.
 "
   input Exp.Subscript inSubscript;
-algorithm 
+algorithm
   _:=
   matchcontinue (inSubscript)
     local Exp.Exp e1;
     case (Exp.WHOLEDIM())
-      equation 
+      equation
         Print.printBuf(":");
       then
         ();
@@ -2311,7 +2311,7 @@ algorithm
       then
         ();
     case (Exp.SLICE(exp = e1))
-      equation 
+      equation
         Print.printBuf(Exp.printExpStr(e1));
       then
         ();
@@ -2329,17 +2329,17 @@ This function output the Type of a variable, it could be:
  "
   input DAE.Type inType;
   output String outString;
-algorithm 
+algorithm
   outString:=
   matchcontinue (inType)
     local
       DAE.Ident s1,s2,str;
       list<DAE.Ident> l;
-    case DAE.INT()    then VARTYPE_INTEGER; 
-    case DAE.REAL()   then VARTYPE_REAL; 
-    case DAE.BOOL()   then VARTYPE_BOOLEAN; 
-    case DAE.STRING() then VARTYPE_STRING; 
-    case DAE.ENUM()   then VARTYPE_ENUMERATION; 
+    case DAE.INT()    then VARTYPE_INTEGER;
+    case DAE.REAL()   then VARTYPE_REAL;
+    case DAE.BOOL()   then VARTYPE_BOOLEAN;
+    case DAE.STRING() then VARTYPE_STRING;
+    case DAE.ENUM()   then VARTYPE_ENUMERATION;
 /*
     case RECORD(name = s1)
       equation
@@ -2348,19 +2348,19 @@ algorithm
         s2;
 */
     case DAE.ENUMERATION(stringLst = l)
-      equation 
+      equation
         s1 = Util.stringDelimitList(l, ", ");
         s2 = stringAppend(VARTYPE_ENUMERATION,stringAppend("(", s1));
         str = stringAppend(s2, ")");
       then
         str;
-    case DAE.EXT_OBJECT(_) then VARTYPE_EXTERNALOBJECT;    
+    case DAE.EXT_OBJECT(_) then VARTYPE_EXTERNALOBJECT;
   end matchcontinue;
 end dumpTypeStr;
 
 
 public function dumpVariable "
-This function print to the standard output the 
+This function print to the standard output the
 content of a variable. In particular it takes:
 * varno: the variable number
 * cr: the var name
@@ -2423,7 +2423,7 @@ end dumpVariable;
 
 
 public function dumpVarsAdditionalInfo "
-This function dumps the additional info that a 
+This function dumps the additional info that a
 variable could contain in a XML format.
 The output is very simple and is like:
 <ADDITIONAL_INFO>
@@ -2470,8 +2470,8 @@ is:
   input list<DAELow.Var> vars;
   input list<DAELow.CrefIndex>[:] crefIdxLstArr;
   input list<DAELow.StringIndex>[:] strIdxLstArr;
-  input String Content; 
-algorithm   
+  input String Content;
+algorithm
     _ := matchcontinue (vars,crefIdxLstArr,strIdxLstArr,Content)
    local Integer len;
     case ({},_,_,_)
@@ -2513,7 +2513,7 @@ end dumpVars;
 
 
 protected function dumpVars2 "
-This function is one of the two help function to the 
+This function is one of the two help function to the
 dumpVar method. The two help functions differ from
 the number of the output. This function is used for
 printing the content of a variable with no AdditionalInfo.
@@ -2546,11 +2546,11 @@ algorithm
     case (((v as DAELow.VAR(varName = cr,varKind = kind,varDirection = dir,varType = var_type,bindExp = e, bindValue = b,
                      arryDim = arry_Dim,index = indx,origVarName = old_name,className = paths,
                      values = dae_var_attr,comment = comment,flow_ = flow_)) :: xs),varno)
-      equation 
+      equation
         dumpVariable(intString(varno),Exp.crefStr(cr),dumpKind(kind),dumpDirectionStr(dir),dumpTypeStr(var_type),intString(indx),
                         Exp.crefStr(old_name),Util.boolString(DAELow.varFixed(v)),dumpFlowStr(flow_),unparseCommentOptionNoAnnotation(comment));
         dumpBindValueExpression(e,b);
-        //The command below adds information to the XML about the dimension of the 
+        //The command below adds information to the XML about the dimension of the
         //containing vector, in the casse the variable is an element of a vector.
         //dumpDAEInstDims(arry_Dim,"ArrayDims");
         dumpAbsynPathLst(paths,stringAppend(CLASSES,NAMES_));
@@ -2564,7 +2564,7 @@ end dumpVars2;
 
 
 protected function dumpVarsAdds2 "
-This function is one of the two help function to the 
+This function is one of the two help function to the
 dumpVar method. The two help functions differ from
 the number of the output. This function is used for
 printing the content of a variable with AdditionalInfo.
@@ -2574,7 +2574,7 @@ See dumpVariable for more details on the XML output.
   input list<DAELow.CrefIndex>[:] crefIdxLstArr;
   input list<DAELow.StringIndex>[:] strIdxLstArr;
   input Integer inInteger;
-algorithm 
+algorithm
   _:=
   matchcontinue (inVarLst,crefIdxLstArr,strIdxLstArr,inInteger)
     local
@@ -2595,15 +2595,15 @@ algorithm
       DAE.InstDims arry_Dim;
       Option<Values.Value> b;
       Integer var_1;
-    case ({},_,_,_) then (); 
+    case ({},_,_,_) then ();
     case (((v as DAELow.VAR(varName = cr,varKind = kind,varDirection = dir,varType = var_type,bindExp = e, bindValue = b,
                      arryDim = arry_Dim,index = indx,origVarName = old_name,className = paths,
                      values = dae_var_attr,comment = comment,flow_ = flow_)) :: xs),crefIdxLstArr,strIdxLstArr,varno)
-      equation 
+      equation
         dumpVariable(intString(varno),Exp.crefStr(cr),dumpKind(kind),dumpDirectionStr(dir),dumpTypeStr(var_type),intString(indx),
                         Exp.crefStr(old_name),Util.boolString(DAELow.varFixed(v)),dumpFlowStr(flow_),Dump.unparseCommentOption(comment));
         dumpBindValueExpression(e,b);
-        //The command below adds information to the XML about the dimension of the 
+        //The command below adds information to the XML about the dimension of the
         //containing vector, in the casse the variable is an element of a vector.
         //dumpDAEInstDims(arry_Dim,"ArrayDims");
         dumpAbsynPathLst(paths,stringAppend(CLASSES,NAMES_));
@@ -2640,7 +2640,7 @@ algorithm
       then();
     case (zeroCross,inContent)
       local Integer len;
-      equation 
+      equation
         len = listLength(zeroCross);
         len >= 1 = true;
         dumpStrOpenTagAttr(inContent, DIMENSION, intString(len));
@@ -2674,7 +2674,7 @@ of the zero crossing elements in XML format. The output is:
 </stringAppend(ZERO_CROSSING,ELEMENT_)>
  "
   input list<DAELow.ZeroCrossing> inZeroCrossingLst;
-algorithm 
+algorithm
   _:=
   matchcontinue (inZeroCrossingLst)
     local
@@ -2682,8 +2682,8 @@ algorithm
       list<DAELow.Value> eq,wc;
       list<DAELow.ZeroCrossing> zcLst;
     case {} then ();
-    case (DAELow.ZERO_CROSSING(relation_ = e,occurEquLst = eq,occurWhenLst = wc) :: zcLst) 
-      equation 
+    case (DAELow.ZERO_CROSSING(relation_ = e,occurEquLst = eq,occurWhenLst = wc) :: zcLst)
+      equation
         dumpStrOpenTagAttr(stringAppend(ZERO_CROSSING,ELEMENT_),EXP_STRING,Exp.printExpStr(e));
         dumpExp(e);
         dumpLstIntAttr(eq,stringAppend(INVOLVED,EQUATIONS_),stringAppend(EQUATION,ID_));
@@ -2696,30 +2696,30 @@ end dumpZcLst;
 
 
 public function lbinopSymbol "
-function: lbinopSymbol 
+function: lbinopSymbol
   Return string representation of logical binary operator.
 "
   input Exp.Operator inOperator;
   output String outString;
-algorithm 
+algorithm
   outString:=
   matchcontinue (inOperator)
-    case (Exp.AND()) then MathMLAnd; 
-    case (Exp.OR()) then MathMLOr; 
+    case (Exp.AND()) then MathMLAnd;
+    case (Exp.OR()) then MathMLOr;
   end matchcontinue;
 end lbinopSymbol;
 
 public function lunaryopSymbol "
-function: lunaryopSymbol 
+function: lunaryopSymbol
   Return string representation of logical unary operator
   corresponding to the MathML encode.
 "
   input Exp.Operator inOperator;
   output String outString;
-algorithm 
+algorithm
   outString:=
   matchcontinue (inOperator)
-    case (Exp.NOT()) then MathMLNot; 
+    case (Exp.NOT()) then MathMLNot;
   end matchcontinue;
 end lunaryopSymbol;
 
@@ -2733,17 +2733,17 @@ function: printExpStr
 "
   input Exp.Exp e;
   output String s;
-algorithm 
+algorithm
   s := printExp2Str(e);
 end printExpStr;
 
 
-protected function printExp2Str 
-"function: printExp2Str 
+protected function printExp2Str
+"function: printExp2Str
   Helper function to printExpStr."
   input Exp.Exp inExp;
   output String outString;
-algorithm 
+algorithm
   outString:=
   matchcontinue (inExp)
     local
@@ -2757,33 +2757,33 @@ algorithm
       Exp.Operator op;
       Absyn.Path fcn;
       list<Exp.Exp> args,es;
-    case (Exp.END()) then "end"; 
+    case (Exp.END()) then "end";
     case (Exp.ICONST(integer = x))
-      equation 
+      equation
         s = intString(x);
       then
         s;
     case (Exp.RCONST(real = x))
       local Real x;
-      equation 
+      equation
         s = realString(x);
       then
         s;
     case (Exp.SCONST(string = s))
-      equation 
+      equation
         //s_1 = stringAppend("\"", s);
         s_2 = s;//stringAppend(s_1, "\"");
       then
         s_2;
-    case (Exp.BCONST(bool = false)) then "false"; 
-    case (Exp.BCONST(bool = true)) then "true"; 
+    case (Exp.BCONST(bool = false)) then "false";
+    case (Exp.BCONST(bool = true)) then "true";
     case (Exp.CREF(componentRef = c,ty = t))
-      equation 
+      equation
         s = Exp.printComponentRefStr(c);
       then
         s;
     case (e as Exp.BINARY(e1,op,e2))
-      equation 
+      equation
         sym = Exp.binopSymbol(op);
         s1 = printExpStr(e1);
         s2 = printExpStr(e2);
@@ -2797,7 +2797,7 @@ algorithm
       then
         s_1;
      case ((e as Exp.UNARY(op,e1)))
-      equation 
+      equation
         sym = Exp.unaryopSymbol(op);
         s = printExpStr(e1);
         p = Exp.expPriority(e);
@@ -2807,7 +2807,7 @@ algorithm
       then
         s_2;
    case ((e as Exp.LBINARY(e1,op,e2)))
-      equation 
+      equation
         sym = Exp.lbinopSymbol(op);
         s1 = printExpStr(e1);
         s2 = printExpStr(e2);
@@ -2821,7 +2821,7 @@ algorithm
       then
         s_1;
    case ((e as Exp.LUNARY(op,e1)))
-      equation 
+      equation
         sym = Exp.lunaryopSymbol(op);
         s = printExpStr(e1);
         p = Exp.expPriority(e);
@@ -2831,7 +2831,7 @@ algorithm
       then
         s_2;
    case ((e as Exp.RELATION(e1,op,e2)))
-      equation 
+      equation
         sym = Exp.relopSymbol(op);
         s1 = printExpStr(e1);
         s2 = printExpStr(e2);
@@ -2845,7 +2845,7 @@ algorithm
       then
         s_1;
     case ((e as Exp.IFEXP(cond,tb,fb)))
-      equation 
+      equation
         cs = printExpStr(cond);
         ts = printExpStr(tb);
         fs = printExpStr(fb);
@@ -2860,7 +2860,7 @@ algorithm
       then
         str;
     case (Exp.CALL(path = fcn,expLst = args))
-      equation 
+      equation
         fs = Absyn.pathString(fcn);
         argstr = Exp.printListStr(args, printExpStr, ",");
         s = stringAppend(fs, "(");
@@ -2869,15 +2869,15 @@ algorithm
       then
         s_2;
     case (Exp.ARRAY(array = es,ty=tp))
-      local Exp.Type tp; String s3; 
-      equation 
+      local Exp.Type tp; String s3;
+      equation
         s3 = Exp.typeString(tp);
         s = Exp.printListStr(es, printExpStr, ",");
         s_2 = Util.stringAppendList({"{",s,"}"});
       then
         s_2;
     case (Exp.TUPLE(PR = es))
-      equation 
+      equation
         s = Exp.printListStr(es, printExpStr, ",");
         s_1 = stringAppend("(", s);
         s_2 = stringAppend(s_1, ")");
@@ -2885,15 +2885,15 @@ algorithm
         s_2;
     case (Exp.MATRIX(scalar = es,ty=tp))
       local list<list<tuple<Exp.Exp, Boolean>>> es;
-        Exp.Type tp; String s3;        
-      equation 
+        Exp.Type tp; String s3;
+      equation
         s3 = Exp.typeString(tp);
         s = Exp.printListStr(es, Exp.printRowStr, "},{");
-        s_2 = Util.stringAppendList({"{{",s,"}}"}); 
+        s_2 = Util.stringAppendList({"{{",s,"}}"});
       then
         s_2;
     case (e as Exp.RANGE(_,start,NONE,stop))
-      equation 
+      equation
         s1 = printExpStr(start);
         s3 = printExpStr(stop);
         p = Exp.expPriority(e);
@@ -2905,7 +2905,7 @@ algorithm
       then
         s;
     case ((e as Exp.RANGE(_,start,SOME(step),stop)))
-      equation 
+      equation
         s1 = printExpStr(start);
         s2 = printExpStr(step);
         s3 = printExpStr(stop);
@@ -2920,14 +2920,14 @@ algorithm
       then
         s;
     case (Exp.CAST(ty = Exp.REAL(),exp = Exp.ICONST(integer = ival)))
-      equation 
+      equation
         false = RTOpts.modelicaOutput();
         rval = intReal(ival);
         res = realString(rval);
       then
         res;
     case (Exp.CAST(ty = Exp.REAL(),exp = Exp.UNARY(operator = Exp.UMINUS(ty = _),exp = Exp.ICONST(integer = ival))))
-      equation 
+      equation
         false = RTOpts.modelicaOutput();
         rval = intReal(ival);
         res = realString(rval);
@@ -2935,27 +2935,27 @@ algorithm
       then
         res2;
     case (Exp.CAST(ty = Exp.REAL(),exp = e))
-      equation 
+      equation
         false = RTOpts.modelicaOutput();
         s = printExpStr(e);
         s_2 = Util.stringAppendList({"Real(",s,")"});
       then
         s_2;
     case (Exp.CAST(ty = Exp.REAL(),exp = e))
-      equation 
+      equation
         true = RTOpts.modelicaOutput();
         s = printExpStr(e);
       then
         s;
     case (Exp.CAST(ty = tp,exp = e))
-      equation 
+      equation
         str = Exp.typeString(tp);
         s = printExpStr(e);
         res = Util.stringAppendList({"CAST(",str,", ",s,")"});
       then
         res;
     case (e as Exp.ASUB(exp = e1,sub = i))
-      equation 
+      equation
         p = Exp.expPriority(e);
         pe1 = Exp.expPriority(e1);
         s1 = printExp2Str(e1);
@@ -2965,106 +2965,106 @@ algorithm
       then
         s_4;
     case (Exp.SIZE(exp = cr,sz = SOME(dim)))
-      equation 
+      equation
         crstr = printExpStr(cr);
         dimstr = printExpStr(dim);
         str = Util.stringAppendList({"size(",crstr,",",dimstr,")"});
       then
         str;
     case (Exp.SIZE(exp = cr,sz = NONE))
-      equation 
+      equation
         crstr = printExpStr(cr);
         str = Util.stringAppendList({"size(",crstr,")"});
       then
         str;
     case (Exp.REDUCTION(path = fcn,expr = exp,ident = id,range = iterexp))
-      equation 
+      equation
         fs = Absyn.pathString(fcn);
         expstr = printExpStr(exp);
         iterstr = printExpStr(iterexp);
         str = Util.stringAppendList({"<reduction>",fs,"(",expstr," for ",id," in ",iterstr,")"});
       then
-        str;    
-      
-      // MetaModelica list  
+        str;
+
+      // MetaModelica list
     case (Exp.LIST(_,es))
       local list<Exp.Exp> es;
-      equation 
+      equation
         s = Exp.printListStr(es, printExpStr, ",");
         s_1 = stringAppend("list(", s);
         s_2 = stringAppend(s_1, ")");
       then
         s_2;
-        
-        // MetaModelica list cons 
+
+        // MetaModelica list cons
     case (Exp.CONS(_,e1,e2))
-      equation   
+      equation
         s1 = printExpStr(e1);
         s2 = printExpStr(e2);
         s_2 = Util.stringAppendList({"cons(",s1,",",s2,")"});
       then
-        s_2;      
-        
-    case (_) then "#UNKNOWN EXPRESSION# ----eee "; 
+        s_2;
+
+    case (_) then "#UNKNOWN EXPRESSION# ----eee ";
   end matchcontinue;
 end printExp2Str;
 
 
 public function relopSymbol  "
-function: relopSymbol 
+function: relopSymbol
   Return string representation of function operator.
 "
   input Exp.Operator inOperator;
   output String outString;
-algorithm 
+algorithm
   outString:=
   matchcontinue (inOperator)
-    case (Exp.LESS(ty = _)) then MathMLLessThan; 
-    case (Exp.LESSEQ(ty = _)) then MathMLLessEqualThan; 
-    case (Exp.GREATER(ty = _)) then MathMLGreaterThan; 
-    case (Exp.GREATEREQ(ty = _)) then MathMLGreaterEqualThan; 
-    case (Exp.EQUAL(ty = _)) then MathMLEquivalent; 
-    case (Exp.NEQUAL(ty = _)) then MathMLNotEqual; 
+    case (Exp.LESS(ty = _)) then MathMLLessThan;
+    case (Exp.LESSEQ(ty = _)) then MathMLLessEqualThan;
+    case (Exp.GREATER(ty = _)) then MathMLGreaterThan;
+    case (Exp.GREATEREQ(ty = _)) then MathMLGreaterEqualThan;
+    case (Exp.EQUAL(ty = _)) then MathMLEquivalent;
+    case (Exp.NEQUAL(ty = _)) then MathMLNotEqual;
   end matchcontinue;
 end relopSymbol;
 
 
 public function unaryopSymbol "
-function: unaryopSymbol 
+function: unaryopSymbol
   Return string representation of unary operators
   corresponding to the MathML encode.
 "
   input Exp.Operator inOperator;
   output String outString;
-algorithm 
+algorithm
   outString:=
   matchcontinue (inOperator)
-    case (Exp.UMINUS(ty = _)) then MathMLMinus; 
-    case (Exp.UPLUS(ty = _)) then "";//Not necessay 
-    case (Exp.UMINUS_ARR(ty = _)) then MathMLMinus; 
-    case (Exp.UPLUS_ARR(ty = _)) then "";//Not necessary 
+    case (Exp.UMINUS(ty = _)) then MathMLMinus;
+    case (Exp.UPLUS(ty = _)) then "";//Not necessay
+    case (Exp.UMINUS_ARR(ty = _)) then MathMLMinus;
+    case (Exp.UPLUS_ARR(ty = _)) then "";//Not necessary
   end matchcontinue;
 end unaryopSymbol;
 
 
 public function unparseCommentOptionNoAnnotation "
 function: unparseCommentOptionNoAnnotation
- 
+
   Prettyprints a Comment without printing the annotation part.
 "
   input Option<Absyn.Comment> inAbsynCommentOption;
   output String outString;
-algorithm 
+algorithm
   outString:=
   matchcontinue (inAbsynCommentOption)
     local Dump.Ident str,cmt;
     case (SOME(Absyn.COMMENT(_,SOME(cmt))))
-      equation 
+      equation
         //str = Util.stringAppendList({" \"",cmt,"\""});
         str = cmt;
       then
         str;
-    case (_) then ""; 
+    case (_) then "";
   end matchcontinue;
 end unparseCommentOptionNoAnnotation;
 

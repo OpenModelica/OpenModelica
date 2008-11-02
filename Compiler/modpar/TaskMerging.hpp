@@ -12,12 +12,12 @@ using namespace std;
 double get_tlevel(VertexID u, const TaskGraph &g,map<VertexID,double>*level);
 
 // Class for sorting vertices according to tlevel
-class TLevelCmp 
+class TLevelCmp
 {
 public:
   TLevelCmp(TaskGraph*tg, map<VertexID,double>*tlevel) : m_tlevel(tlevel),
 						       m_taskgraph(tg) {};
-  bool operator()(VertexID &v1,VertexID &v2)  
+  bool operator()(VertexID &v1,VertexID &v2)
   {
     return get_tlevel(v1,*m_taskgraph,m_tlevel) > get_tlevel(v2,*m_taskgraph,m_tlevel);
   };
@@ -36,7 +36,7 @@ public:
   ResultSet &result;
 };
 
-class TaskMerging 
+class TaskMerging
 {
 public:
   // Methods
@@ -57,9 +57,9 @@ private:
 
   // Helper functions for singleChildMerge
   void mergeTasks(VertexID n1, VertexID n2);
-  
-  std::pair<VertexID,VertexID> determineParent(VertexID n1, VertexID n2);  
-  
+
+  std::pair<VertexID,VertexID> determineParent(VertexID n1, VertexID n2);
+
   // Helper functions for duplicateParentMerge
   vector<bool> * newTlevelLower(pair<ChildrenIterator ,ChildrenIterator> pair,
 				VertexID parent,
@@ -75,7 +75,7 @@ private:
 			    TaskGraph *tg);
 
   int numberOfTrues(vector<bool> *v);
-  
+
   void printTaskInfo();
   void removeSourceAndSink();
 
@@ -87,17 +87,17 @@ private:
   double m_bandwidth;
   int m_nproc;
   bool m_change; // True when task graph changed because of rewrite rule.
-  TaskGraph *m_taskgraph; 
+  TaskGraph *m_taskgraph;
   TaskGraph *m_orig_taskgraph;
   ContainSetMap *m_containTasks;
   VertexID m_invartask;
   VertexID m_outvartask;
 
   map<VertexID,bool> m_taskRemoved;
-  
+
   MergeRule **m_rules;
   const int m_num_rules;
-  
+
   list<EdgeInfo> m_source_sink_edges;
   int m_invarID;
   int m_outvarID;

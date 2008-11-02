@@ -1,31 +1,31 @@
-/* 
+/*
  * This file is part of OpenModelica.
- * 
+ *
  * Copyright (c) 1998-2008, Linköpings University,
- * Department of Computer and Information Science, 
- * SE-58183 Linköping, Sweden. 
- * 
+ * Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
  * All rights reserved.
- * 
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC 
- * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF 
- * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC 
- * PUBLIC LICENSE. 
- * 
- * The OpenModelica software and the Open Source Modelica 
- * Consortium (OSMC) Public License (OSMC-PL) are obtained 
- * from Linköpings University, either from the above address, 
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC
+ * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF
+ * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC
+ * PUBLIC LICENSE.
+ *
+ * The OpenModelica software and the Open Source Modelica
+ * Consortium (OSMC) Public License (OSMC-PL) are obtained
+ * from Linköpings University, either from the above address,
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
- * 
- * This program is distributed  WITHOUT ANY WARRANTY; without 
- * even the implied warranty of  MERCHANTABILITY or FITNESS 
- * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH 
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS 
- * OF OSMC-PL. 
- * 
+ *
+ * This program is distributed  WITHOUT ANY WARRANTY; without
+ * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
+ * OF OSMC-PL.
+ *
  * See the full OSMC Public License conditions for more details.
- * 
+ *
  */
 
 
@@ -36,10 +36,10 @@
 #include <assert.h>
 #include "rml.h"
 
-int 
+int
 make_socket (unsigned short int port)
 {
-  
+
   return 0;
 }
 
@@ -98,14 +98,14 @@ RML_END_LABEL
 
 #include "rml.h"
 
-int 
+int
 make_socket (unsigned short int port)
 {
   int sock;
   struct sockaddr_in name;
   socklen_t optlen;
   int one=1;
-  
+
   /* Create the socket. */
   sock = socket (PF_INET, SOCK_STREAM, 0);
   if (sock < 0)
@@ -113,7 +113,7 @@ make_socket (unsigned short int port)
       printf("Error creating socket\n");
       return 0;
     }
-  
+
   /* Give the socket a name. */
   name.sin_family = PF_INET;
   name.sin_port = htons (port);
@@ -127,7 +127,7 @@ make_socket (unsigned short int port)
       printf("Error binding socket\n");
       return 0;
     }
-  
+
   return sock;
 }
 
@@ -147,13 +147,13 @@ RML_BEGIN_LABEL(Socket__waitforconnect)
 {
   int port=(int) RML_UNTAGFIXNUM(rmlA0);
   int ns;
- 
+
   serversocket = make_socket(port);
-  if (serversocket==0) { 
+  if (serversocket==0) {
     RML_TAILCALLK(rmlFC);
   }
-  
-  if (listen(serversocket,5)==-1) { /* Listen, pending client list length = 1 */ 
+
+  if (listen(serversocket,5)==-1) { /* Listen, pending client list length = 1 */
     perror("listen:");
     exit(1);
   }
@@ -164,7 +164,7 @@ RML_BEGIN_LABEL(Socket__waitforconnect)
     perror("accept:");
     exit(1);
   }
-  
+
 
   rmlA0=(void*)mk_icon(ns);
   RML_TAILCALLK(rmlSC);
@@ -187,7 +187,7 @@ RML_BEGIN_LABEL(Socket__handlerequest)
   }
   len = recv(sock,buf,bufSize,0);
   FD_ZERO(&sockSet);
-  FD_SET(sock,&sockSet); // create fd set of 
+  FD_SET(sock,&sockSet); // create fd set of
   if (len == bufSize) { // If we filled the buffer, check for more
     while ( select(sock+1,&sockSet,NULL,NULL,&timeout) > 0) {
       tmpBufSize*=(int)(bufSize*1.4);
@@ -196,11 +196,11 @@ RML_BEGIN_LABEL(Socket__handlerequest)
       if (tmpBuf == NULL) {
 	RML_TAILCALLK(rmlFC);
       }
-    
+
       memcpy(tmpBuf,buf,bufSize);
       free(buf);
       len +=recv(sock,tmpBuf+bufSize,nAdditionalElts,0);
-      buf=tmpBuf; bufSize=tmpBufSize;    
+      buf=tmpBuf; bufSize=tmpBufSize;
     }
   }
   buf[len]=0;
@@ -228,7 +228,7 @@ RML_BEGIN_LABEL(Socket__sendreply)
 {
   int sock = (int) RML_UNTAGFIXNUM(rmlA0);
   char *string = RML_STRINGDATA(rmlA1);
-  
+
   if(send(sock,string,strlen(string)+1,0)<0) {
     perror("sendreply:");
     exit(1);
@@ -243,7 +243,7 @@ RML_BEGIN_LABEL(Socket__cleanup)
   int clerr;
   if ((clerr=close(serversocket))< 0 ) {
     perror("close:");
-  }  
+  }
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL

@@ -20,8 +20,8 @@ static logical c_false = FALSE_;
 /* Subroutine */ int hybrj_(S_fp fcn, integer *n, doublereal *x, doublereal *
 	fvec, doublereal *fjac, integer *ldfjac, doublereal *xtol, integer *
 	maxfev, doublereal *diag, integer *mode, doublereal *factor, integer *
-	nprint, integer *info, integer *nfev, integer *njev, doublereal *r__, 
-	integer *lr, doublereal *qtf, doublereal *wa1, doublereal *wa2, 
+	nprint, integer *info, integer *nfev, integer *njev, doublereal *r__,
+	integer *lr, doublereal *qtf, doublereal *wa1, doublereal *wa2,
 	doublereal *wa3, doublereal *wa4)
 {
     /* Initialized data */
@@ -45,25 +45,25 @@ static logical c_false = FALSE_;
     static doublereal temp;
     static integer iflag;
     static doublereal delta;
-    extern /* Subroutine */ int qrfac_(integer *, integer *, doublereal *, 
-	    integer *, logical *, integer *, integer *, doublereal *, 
+    extern /* Subroutine */ int qrfac_(integer *, integer *, doublereal *,
+	    integer *, logical *, integer *, integer *, doublereal *,
 	    doublereal *, doublereal *);
     static logical jeval;
     static integer ncsuc;
     static doublereal ratio;
     extern doublereal enorm_(integer *, doublereal *);
     static doublereal fnorm;
-    extern /* Subroutine */ int qform_(integer *, integer *, doublereal *, 
+    extern /* Subroutine */ int qform_(integer *, integer *, doublereal *,
 	    integer *, doublereal *);
     static doublereal pnorm, xnorm, fnorm1;
-    extern /* Subroutine */ int r1updt_(integer *, integer *, doublereal *, 
+    extern /* Subroutine */ int r1updt_(integer *, integer *, doublereal *,
 	    integer *, doublereal *, doublereal *, doublereal *, logical *);
     static integer nslow1, nslow2;
-    extern /* Subroutine */ int r1mpyq_(integer *, integer *, doublereal *, 
+    extern /* Subroutine */ int r1mpyq_(integer *, integer *, doublereal *,
 	    integer *, doublereal *, doublereal *);
     static integer ncfail;
-    extern /* Subroutine */ int dogleg_(integer *, doublereal *, integer *, 
-	    doublereal *, doublereal *, doublereal *, doublereal *, 
+    extern /* Subroutine */ int dogleg_(integer *, doublereal *, integer *,
+	    doublereal *, doublereal *, doublereal *, doublereal *,
 	    doublereal *, doublereal *);
     static doublereal actred, epsmch, prered;
     extern doublereal dpmpar_(integer *);
@@ -238,7 +238,7 @@ static logical c_false = FALSE_;
 
 /*     check the input parameters for errors. */
 
-    if (*n <= 0 || *ldfjac < *n || *xtol < zero || *maxfev <= 0 || *factor <= 
+    if (*n <= 0 || *ldfjac < *n || *xtol < zero || *maxfev <= 0 || *factor <=
 	    zero || *lr < *n * (*n + 1) / 2) {
 	goto L300;
     }

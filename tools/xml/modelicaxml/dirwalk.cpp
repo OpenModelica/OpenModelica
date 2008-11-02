@@ -31,7 +31,7 @@ int getDirectoryStructure(char *_current, l_list &dirList, int _dlevel)
 	HANDLE          Hnd;
 	WIN32_FIND_DATA WFD;
 
-	if (!_dlevel) 
+	if (!_dlevel)
 	{
 		GetCurrentDirectory( MAX_PATH, CurrDirName );
 		//std::cout << "Get:" << CurrDirName << std::endl;
@@ -100,7 +100,7 @@ int getDirectoryStructure(char *_current, l_list &dirList, int _dlevel)
 
 	// End the search to this call
 	(void) FindClose( Hnd );
-	if (!_dlevel) 
+	if (!_dlevel)
 	{
 		SetCurrentDirectory( CurrDirName );
 		//std::cout << "Set:" << CurrDirName << " + " << _dlevel << std::endl;
@@ -125,26 +125,26 @@ int getFileList(char *currentDir, l_list &fileList, char* fileFilter)
 	//  Starts the search
 	Hnd = FindFirstFile( fileFilter, &WFD );
 
-	if (Hnd == INVALID_HANDLE_VALUE) 
+	if (Hnd == INVALID_HANDLE_VALUE)
 	{
 		SetCurrentDirectory( CurrDirName );
 		return 0;
 	}
 
 	//  loop to get all inside the current directory
-	do 
+	do
 	{
 		//    If it is a real file
 		if (
-			(( WFD.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY ) 
+			(( WFD.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY )
 			!= FILE_ATTRIBUTE_DIRECTORY) &&
 			( strcmp(WFD.cFileName, "..") && strcmp(WFD.cFileName, ".") )
 			)
 		{
 			// add filename to fileList
 		  char *tmpFile = new char[sizeof(char)*
-					   (strlen(WFD.cFileName) + 
-					    strlen(PATH_SEPARATOR) + 
+					   (strlen(WFD.cFileName) +
+					    strlen(PATH_SEPARATOR) +
 					    strlen(currentDir))+1];
 		  tmpFile[0] = '\0';
 		  strcat(tmpFile, currentDir);
@@ -194,36 +194,36 @@ bool endsWith ( std::string str, std::string suffix )
 }
 
 void CheckErrNo ( const char * path )
-{   
+{
   switch ( errno )     //  errno is a system global value
     {
     case  EFAULT  :   std::cout << "Path points outside your addr. space:  " << path << std::endl;
       break;
-      
+
     case  EACCES  :   std::cout << "Access denied:  " << path << std::endl;
-      break;                       
-      
-    case  EPERM   :   std::cout << "Permanent Entry:  " << path << std::endl; 
       break;
-      
+
+    case  EPERM   :   std::cout << "Permanent Entry:  " << path << std::endl;
+      break;
+
     case  ENOENT  :   std::cout << path << " does not exist." << std::endl;
       break;
-      
+
     case  EISDIR  :   std::cout << path << " refers to a directory." << std::endl;
       break;
-      
+
     case  ENOMEM  :   std::cout << path << ".  Insufficient kernel memory. "
 			   << "Exiting..." << std::endl;
       exit ( ENOMEM );
-      break;                       
-      
+      break;
+
     case  EROFS   :   std::cout << path << " is read only." << std::endl;
       break;
-      
+
     case ENOTDIR  :   std::cout << path << ".  Component in path not a directory."
-			   << std::endl;                       
+			   << std::endl;
       break;
-    }                            
+    }
 }
 
 //------------------------------------------------
@@ -235,29 +235,29 @@ int push_dir(const char *fpath, const struct stat *sb, int tflag, struct FTW *ft
       {
       case FTW_F:       /* do nothing on file now. */
 	break;
-                        
+
       case FTW_D:
       case FTW_DP:
 	dirListGlobal.push_front ( strdup(fpath) );
 	break;
-      case FTW_DNR:     
+      case FTW_DNR:
 	std::cout << "Directory cannot be read:  "
 	     << fpath << std::endl;
 	CheckErrNo ( fpath );
 	break;
 
-                                               
-      case FTW_NS:      
+
+      case FTW_NS:
 	std::cout << "Stat failure on:  "
 	     << fpath << std::endl;
 	CheckErrNo ( fpath );
 	break;
-	
-      default:
-	std::cout << "Weird flag for file  " << fpath << std::endl;	
 
-      }                          
-   return result;  
+      default:
+	std::cout << "Weird flag for file  " << fpath << std::endl;
+
+      }
+   return result;
 }
 
 //------------------------------------------------
@@ -273,7 +273,7 @@ int getDirectoryStructure(char *_current, l_list &dirList, int _dlevel)
   {
       CheckErrNo ( _current );
   }
-  dirList = dirListGlobal; 
+  dirList = dirListGlobal;
 
   return 1;
 }
@@ -307,19 +307,19 @@ int getFileList(char *currentDir, l_list &fileList, char* fileFilter)
   n = scandir(currentDir, &namelist, file_select_mo, NULL);
   if (n < 0)
     perror("scandir");
-  else 
+  else
   {
-    for(int i = 0; i <n; i++) 
+    for(int i = 0; i <n; i++)
     {
       char *tmpFile = new char[sizeof(char)*
-			       (strlen(namelist[i]->d_name) + 
-				strlen(PATH_SEPARATOR) + 
+			       (strlen(namelist[i]->d_name) +
+				strlen(PATH_SEPARATOR) +
 				strlen(currentDir))+1];
       tmpFile[0] = '\0';
       strcat(tmpFile, currentDir);
       strcat(tmpFile, PATH_SEPARATOR);
       strcat(tmpFile, namelist[i]->d_name);
-      fileList.push_back(tmpFile);      
+      fileList.push_back(tmpFile);
     }
     free(namelist);
   }

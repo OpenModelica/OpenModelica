@@ -72,7 +72,7 @@ public:
 	protected: void mSCHAR(bool _createToken);
 	protected: void mESC(bool _createToken);
 private:
-	
+
 	static const unsigned long _tokenSet_0_data_[];
 	static const ANTLR_USE_NAMESPACE(antlr)BitSet _tokenSet_0;
 	static const unsigned long _tokenSet_1_data_[];

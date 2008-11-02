@@ -18,12 +18,12 @@ private:
     static int indentSize;
 
     std::ostream &out;
-  
+
 public:
     parse_tree_dumper(std::ostream& os) : out(os){
 	fIndent = 0;
     }
-  
+
     void flush()
     {
 	out.flush();
@@ -79,9 +79,9 @@ public:
     {
 	out << "digraph G {\n";
 	dump_dot_recursive(ast);
-	out << "}\n";	
+	out << "}\n";
     }
-    
+
     void dump_dot_recursive(RefMyAST ast)
     {
 	if (ast == 0)
@@ -92,17 +92,17 @@ public:
 	{
 	    out << "\"" << ast.get() << "\" [label=\"" << ast->toString() << "\" shape=\"box\"];\n";
 	    RefMyAST current_ast = RefMyAST(ast->getFirstChild());
-	    
+
 	    while (current_ast != 0)
 	    {
-		dump_dot_recursive(current_ast);		
+		dump_dot_recursive(current_ast);
 		out << "\t\"" <<  ast.get() << "\" -> \"" << current_ast.get() << "\";\n";
 
-		current_ast = current_ast->getNextSibling();		
+		current_ast = current_ast->getNextSibling();
 	    }
 	}
     }
 
 };
 
-#endif 
+#endif

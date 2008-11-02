@@ -28,15 +28,15 @@ class Circuit
   Real i;
 equation
   C1.v = C1.p.v - C1.n.v;
-  0 = C1.p.i + C1.n.i; 
+  0 = C1.p.i + C1.n.i;
   C1.i = C1.p.i;
   C1.C*der(v) = C1.i;
   C2.v = C2.p.v - C2.n.v;
-  0 = C2.p.i + C2.n.i; 
+  0 = C2.p.i + C2.n.i;
   C2.i = C2.p.i;
   C2.C*der(v) = C2.i;
   AC.v = AC.p.v - AC.n.v;
-  0 = AC.p.i + AC.n.i; 
+  0 = AC.p.i + AC.n.i;
   AC.i = AC.p.i;
   AC.v = AC.VA*sin(2*AC.PI*AC.f*time);
   AC.p.v = C1.p.v;

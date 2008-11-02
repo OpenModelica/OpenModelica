@@ -11,7 +11,7 @@
 #line 1 "flat_modelica_lexer.g"
 
     #ifdef WIN32
-	#pragma warning( disable : 4267)  // Disable warning messages C4267 
+	#pragma warning( disable : 4267)  // Disable warning messages C4267
     #endif
 	//disable: 'initializing' : conversion from 'size_t' to 'int', possible loss of data
 
@@ -69,7 +69,7 @@ public:
 	protected: void mSESCAPE(bool _createToken);
 	protected: void mESC(bool _createToken);
 private:
-	
+
 	static const unsigned long _tokenSet_0_data_[];
 	static const ANTLR_USE_NAMESPACE(antlr)BitSet _tokenSet_0;
 	static const unsigned long _tokenSet_1_data_[];

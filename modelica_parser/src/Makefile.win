@@ -38,10 +38,10 @@ $(parsergen) : Modelica.g ModelicaLexer.g
 	$(ANTLR) $(ANTLRFLAGS) Modelica.g
 
 clean:
-	-rm -f *.o *.obj *~ core *.core 
+	-rm -f *.o *.obj *~ core *.core
 
 reallyclean: clean
-	-rm -f $(lexergen) $(parsergen) 
+	-rm -f $(lexergen) $(parsergen)
 
 $(lexerobjs) : $(lexergen)
 $(parserobjs) : $(parsergen)

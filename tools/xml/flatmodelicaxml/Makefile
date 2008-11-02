@@ -1,7 +1,7 @@
 CXX=g++
 JAVA=java
 
-ANTLRFLAGS = 
+ANTLRFLAGS =
 ANTLR_HOME = /home/pelab/pub/pkg/antlr-2.7.1
 ANTLR_CP= $(ANTLR_HOME)/classes/jdk13
 
@@ -20,11 +20,11 @@ CXXFLAGS = $(CFLAGS)
 
 LIBS = -lantlr
 
-ANTLR = $(JAVA) -cp $(ANTLR_CP) antlr.Tool 
+ANTLR = $(JAVA) -cp $(ANTLR_CP) antlr.Tool
 
 all : cpp modSimPackTest
 
-tmp : walker modSimPackTest 
+tmp : walker modSimPackTest
 
 test : modSimPackTest
 
@@ -32,7 +32,7 @@ modSimPackTest : flat_modelica_lexer.o flat_modelica_parser.o \
 	flat_modelica_tree_parser.o parse_tree_dumper.o
 	$(CXX) $(CXXFLAGS) -o modSimPackTest modSimPackTest.cc $(LIBP) \
 	flat_modelica_lexer.o flat_modelica_parser.o flat_modelica_tree_parser.o \
-	parse_tree_dumper.o $(LIBS) 
+	parse_tree_dumper.o $(LIBS)
 
 cpp : lexer parser walker
 
@@ -46,7 +46,7 @@ walker: walker.g
 	$(ANTLR) walker.g $(ANTLRFLAGS)
 
 
-flat_modelica_parserTokenTypes.txt: 
+flat_modelica_parserTokenTypes.txt:
 
 flat_modelica_lexer.o : flat_modelica_lexer.cpp flat_modelica_lexer.hpp
 	$(CXX) $(CXXFLAGS) -c flat_modelica_lexer.cpp

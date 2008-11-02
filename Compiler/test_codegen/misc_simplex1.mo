@@ -9,9 +9,9 @@ function pivot1
 protected
   Integer M;
   Integer N;
-  
+
 algorithm
-  
+
   a := b;
   N := size(a,1)-1;
   M := size(a,2)-1;
@@ -29,7 +29,7 @@ algorithm
       a[j+1,q+1] := 0;
     end if;
   end for;
-  
+
   for k in 0:M loop
     if k<>q then
       a[p+1,k+1]:=a[p+1,k+1]/a[p+1,q+1];
@@ -49,7 +49,7 @@ function misc_simplex1
   output Real x[size(matr,2)-1];
   output Real z;
 
-  
+
 protected
   Real a[size(matr,1),size(matr,2)];
   Integer M;
@@ -76,8 +76,8 @@ algorithm
     while not (p == (N+1) or a[p+1,q+1]>0) loop
       p:=p+1;
     end while;
-    
-    
+
+
     for i in p+1:N loop
       if a[i+1,q+1] > 0 then
 	if (a[i+1,M+1]/a[i+1,q+1]) < (a[p+1,M+1]/a[p+1,q+1]) then
@@ -86,7 +86,7 @@ algorithm
       end if;
     end for;
 
-    
+
     if (q < M+1) and (p < N+1) then
       a := pivot1(a,p,q);
     end if;
@@ -99,7 +99,7 @@ algorithm
       if (x[i] < 0) and ((a[j,i] >= 1.0) and (a[j,i] <= 1.0)) then
 	x[i] := a[j,M+1];
       elseif ((a[j,i] < 0) or (a[j,i] > 0)) then
-	x[i] := 0;	
+	x[i] := 0;
       end if;
     end for;
   end for;

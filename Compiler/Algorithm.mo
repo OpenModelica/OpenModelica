@@ -1,60 +1,60 @@
-/* 
+/*
  * This file is part of OpenModelica.
- * 
+ *
  * Copyright (c) 1998-2008, Linköpings University,
- * Department of Computer and Information Science, 
- * SE-58183 Linköping, Sweden. 
- * 
+ * Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
  * All rights reserved.
- * 
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC 
- * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF 
- * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC 
- * PUBLIC LICENSE. 
- * 
- * The OpenModelica software and the Open Source Modelica 
- * Consortium (OSMC) Public License (OSMC-PL) are obtained 
- * from Linköpings University, either from the above address, 
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC
+ * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF
+ * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC
+ * PUBLIC LICENSE.
+ *
+ * The OpenModelica software and the Open Source Modelica
+ * Consortium (OSMC) Public License (OSMC-PL) are obtained
+ * from Linköpings University, either from the above address,
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
- * 
- * This program is distributed  WITHOUT ANY WARRANTY; without 
- * even the implied warranty of  MERCHANTABILITY or FITNESS 
- * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH 
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS 
- * OF OSMC-PL. 
- * 
+ *
+ * This program is distributed  WITHOUT ANY WARRANTY; without
+ * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
+ * OF OSMC-PL.
+ *
  * See the full OSMC Public License conditions for more details.
- * 
+ *
  */
 
-package Algorithm 
+package Algorithm
 "
   file:	       Algorithm.mo
   package:     Algorithm
   description: Algorithm datatypes
- 
+
   RCS: $Id$
- 
+
   This file contains data types and functions for managing
   algorithm sections. The algorithms in the AST are analyzed by the `Inst\'
   module (Inst.mo) which uses this module to represent the algorithms. No
-  processing of any kind, except for building the datastructure is 
+  processing of any kind, except for building the datastructure is
   done in this module.
-  
+
   It is used primarily by Inst.mo which both provides its input data
   and uses its \"output\" data.
-  
+
 "
 
 public import Exp;
 public import Types;
 public import SCode;
 
-public 
+public
 type Ident = String;
 
-public 
+public
 uniontype Algorithm "The `Algorithm\' type corresponds to a whole algorithm section.
   It is simple a list of algorithm statements."
   record ALGORITHM
@@ -63,7 +63,7 @@ uniontype Algorithm "The `Algorithm\' type corresponds to a whole algorithm sect
 
 end Algorithm;
 
-public 
+public
 uniontype Statement "There are four kinds of statements.  Assignments (`a := b;\'),
     if statements (`if A then B; elseif C; else D;\'), for loops
     (`for i in 1:10 loop ...; end for;\') and when statements
@@ -116,46 +116,46 @@ uniontype Statement "There are four kinds of statements.  Assignments (`a := b;\
     Exp.Exp cond;
     Exp.Exp msg;
   end ASSERT;
-  
+
   record TERMINATE "terminate(msg)"
     Exp.Exp msg;
   end TERMINATE;
 
   record REINIT
-    Exp.Exp var "Variable"; 
-    Exp.Exp value "Value "; 
+    Exp.Exp var "Variable";
+    Exp.Exp value "Value ";
   end REINIT;
-  
+
   record RETURN
   end RETURN;
-  
+
   record BREAK
   end BREAK;
-  
+
   // MetaModelica extension. KS
-  record TRY  
+  record TRY
     list<Statement> tryBody;
   end TRY;
-  
-  record CATCH 
-    list<Statement> catchBody;    
-  end CATCH; 
-  
-  record THROW 
-  end THROW; 
-  
-  record GOTO 
-    String labelName; 
-  end GOTO; 
-  
-  record LABEL 
+
+  record CATCH
+    list<Statement> catchBody;
+  end CATCH;
+
+  record THROW
+  end THROW;
+
+  record GOTO
+    String labelName;
+  end GOTO;
+
+  record LABEL
     String labelName;
   end LABEL;
   //-----
-  
+
 end Statement;
 
-public 
+public
 uniontype Else "An if statements can one or more `elseif\' branches and an
     optional `else\' branch."
   record NOELSE end NOELSE;
@@ -192,7 +192,7 @@ public function makeAssignment "function: makeAssignment
   input Types.Properties inProperties4;
   input SCode.Accessibility inAccessibility5;
   output Statement outStatement;
-algorithm 
+algorithm
   outStatement:=
   matchcontinue (inExp1,inProperties2,inExp3,inProperties4,inAccessibility5)
     local
@@ -203,7 +203,7 @@ algorithm
       Exp.ComponentRef c;
       tuple<Types.TType, Option<Absyn.Path>> lt,rt;
     case (lhs,lprop,rhs,rprop,_)
-      equation 
+      equation
         Types.C_CONST() = Types.propAnyConst(lprop);
         lhs_str = Exp.printExpStr(lhs);
         rhs_str = Exp.printExpStr(rhs);
@@ -211,7 +211,7 @@ algorithm
       then
         fail();
     case (lhs,lprop,rhs,rprop,_)
-      equation 
+      equation
         Types.C_PARAM() = Types.propAnyConst(lprop);
         lhs_str = Exp.printExpStr(lhs);
         rhs_str = Exp.printExpStr(rhs);
@@ -219,14 +219,14 @@ algorithm
       then
         fail();
     case (lhs,_,rhs,_,SCode.RO())
-      equation 
+      equation
         lhs_str = Exp.printExpStr(lhs);
         rhs_str = Exp.printExpStr(rhs);
         Error.addMessage(Error.ASSIGN_READONLY_ERROR, {lhs_str,rhs_str});
       then
         fail();
     case (Exp.CREF(componentRef = c,ty = crt),lhprop,rhs,rhprop,_)
-      equation 
+      equation
         Types.C_VAR() = Types.propAnyConst(lhprop);
         (rhs_1,_) = Types.matchProp(rhs, rhprop, lhprop);
         false = Types.isPropArray(lhprop);
@@ -234,7 +234,7 @@ algorithm
       then
         ASSIGN(t,c,rhs_1);
     case (Exp.CREF(componentRef = c,ty = crt),lhprop,rhs,rhprop,_)
-      equation 
+      equation
         Types.C_VAR() = Types.propAnyConst(lhprop);
         (rhs_1,_) = Types.matchProp(rhs, rhprop, lhprop);
         true = Types.isPropArray(lhprop);
@@ -242,7 +242,7 @@ algorithm
       then
         ASSIGN_ARR(t,c,rhs_1);
     case (lhs,lprop,rhs,rprop,_)
-      equation 
+      equation
         lt = Types.getPropType(lprop);
         rt = Types.getPropType(rprop);
         false = Types.equivtypes(lt, rt);
@@ -250,12 +250,12 @@ algorithm
         rhs_str = Exp.printExpStr(rhs);
         lt_str = Types.unparseType(lt);
         rt_str = Types.unparseType(rt);
-        Error.addMessage(Error.ASSIGN_TYPE_MISMATCH_ERROR, 
+        Error.addMessage(Error.ASSIGN_TYPE_MISMATCH_ERROR,
           {lhs_str,rhs_str,lt_str,rt_str});
       then
         fail();
     case (lhs,lprop,rhs,rprop,_)
-      equation 
+      equation
         Print.printErrorBuf("- Algorithm.makeAssignment failed\n");
         Print.printErrorBuf("    ");
         Print.printErrorBuf(Exp.printExpStr(lhs));
@@ -267,7 +267,7 @@ algorithm
   end matchcontinue;
 end makeAssignment;
 
-public function makeTupleAssignment "function: makeTupleAssignment 
+public function makeTupleAssignment "function: makeTupleAssignment
   This function creates an `TUPLE_ASSIGN\' construct, and checks that the
   assignment is semantically valid, which means that the component
   being assigned is not constant, and that the types match."
@@ -276,7 +276,7 @@ public function makeTupleAssignment "function: makeTupleAssignment
   input Exp.Exp inExp;
   input Types.Properties inProperties;
   output Statement outStatement;
-algorithm 
+algorithm
   outStatement:=
   matchcontinue (inExpExpLst,inTypesPropertiesLst,inExp,inProperties)
     local
@@ -290,7 +290,7 @@ algorithm
       list<tuple<Types.TType, Option<Absyn.Path>>> lhrtypes,tpl;
       list<Types.TupleConst> clist;
     case (lhs,lprop,rhs,rprop)
-      equation 
+      equation
         bvals = Util.listMap(lprop, Types.propAnyConst);
         Types.C_CONST() = Util.listReduce(bvals, Types.constOr);
         sl = Util.listMap(lhs, Exp.printExpStr);
@@ -301,7 +301,7 @@ algorithm
       then
         fail();
     case (lhs,lprop,rhs,rprop)
-      equation 
+      equation
         bvals = Util.listMap(lprop, Types.propAnyConst);
         Types.C_PARAM() = Util.listReduce(bvals, Types.constOr);
         sl = Util.listMap(lhs, Exp.printExpStr);
@@ -312,17 +312,17 @@ algorithm
       then
         fail();
     case (expl,lhprops,rhs,Types.PROP_TUPLE(type_ = (Types.T_TUPLE(tupleType = tpl),_),tupleConst = Types.TUPLE_CONST(tupleConstLst = clist)))
-      equation 
+      equation
         bvals = Util.listMap(lhprops, Types.propAnyConst);
         Types.C_VAR() = Util.listReduce(bvals, Types.constOr);
         lhrtypes = Util.listMap(lhprops, Types.getPropType);
         (rhs_1,_) = Types.matchTypeList(rhs, tpl, lhrtypes);
          /* Don\'t use the new rhs\', since type conversions of several output args
-	 are not clearly defined. */ 
+	 are not clearly defined. */
       then
         TUPLE_ASSIGN(Exp.OTHER(),expl,rhs);
     case (lhs,lprop,rhs,rprop)
-      equation 
+      equation
         Debug.fprint("failtrace", "- Algorithm.makeTupleAssignment failed\n");
       then
         fail();
@@ -335,7 +335,7 @@ protected function getPropExpType "function: getPropExpType
   input Types.Properties p;
   output Exp.Type t;
   tuple<Types.TType, Option<Absyn.Path>> ty;
-algorithm 
+algorithm
   ty := Types.getPropType(p);
   t := getTypeExpType(ty);
 end getPropExpType;
@@ -345,16 +345,16 @@ protected function getTypeExpType "function: getTypeExpType
   getPropExpType."
   input Types.Type inType;
   output Exp.Type outType;
-algorithm 
+algorithm
   outType:=
   matchcontinue (inType)
     local tuple<Types.TType, Option<Absyn.Path>> t;
-    case ((Types.T_INTEGER(varLstInt = _),_)) then Exp.INT(); 
-    case ((Types.T_REAL(varLstReal = _),_)) then Exp.REAL(); 
-    case ((Types.T_STRING(varLstString = _),_)) then Exp.STRING(); 
-    case ((Types.T_BOOL(varLstBool = _),_)) then Exp.BOOL(); 
+    case ((Types.T_INTEGER(varLstInt = _),_)) then Exp.INT();
+    case ((Types.T_REAL(varLstReal = _),_)) then Exp.REAL();
+    case ((Types.T_STRING(varLstString = _),_)) then Exp.STRING();
+    case ((Types.T_BOOL(varLstBool = _),_)) then Exp.BOOL();
     case ((Types.T_ARRAY(arrayType = t),_)) then getTypeExpType(t);
-    case ((_,_)) then Exp.OTHER();  /* was fail but records must be handled somehow */ 
+    case ((_,_)) then Exp.OTHER();  /* was fail but records must be handled somehow */
   end matchcontinue;
 end getTypeExpType;
 
@@ -368,7 +368,7 @@ public function makeIf "function: makeIf
   input list<tuple<Exp.Exp, Types.Properties, list<Statement>>> inTplExpExpTypesPropertiesStatementLstLst4;
   input list<Statement> inStatementLst5;
   output Statement outStatement;
-algorithm 
+algorithm
   outStatement:=
   matchcontinue (inExp1,inProperties2,inStatementLst3,inTplExpExpTypesPropertiesStatementLstLst4,inStatementLst5)
     local
@@ -379,12 +379,12 @@ algorithm
       Ident e_str,t_str;
       tuple<Types.TType, Option<Absyn.Path>> t;
     case (e,Types.PROP(type_ = (Types.T_BOOL(varLstBool = _),_)),tb,eib,fb)
-      equation 
+      equation
         else_ = makeElse(eib, fb);
       then
         IF(e,tb,else_);
     case (e,Types.PROP(type_ = t),_,_,_)
-      equation 
+      equation
         e_str = Exp.printExpStr(e);
         t_str = Types.unparseType(t);
         Error.addMessage(Error.IF_CONDITION_TYPE_ERROR, {e_str,t_str});
@@ -398,7 +398,7 @@ protected function makeElse "function: makeElse
   input list<tuple<Exp.Exp, Types.Properties, list<Statement>>> inTplExpExpTypesPropertiesStatementLstLst;
   input list<Statement> inStatementLst;
   output Else outElse;
-algorithm 
+algorithm
   outElse:=
   matchcontinue (inTplExpExpTypesPropertiesStatementLstLst,inStatementLst)
     local
@@ -408,15 +408,15 @@ algorithm
       list<tuple<Exp.Exp, Types.Properties, list<Statement>>> xs;
       Ident e_str,t_str;
       tuple<Types.TType, Option<Absyn.Path>> t;
-    case ({},{}) then NOELSE();  /* This removes empty else branches */ 
-    case ({},fb) then ELSE(fb); 
+    case ({},{}) then NOELSE();  /* This removes empty else branches */
+    case ({},fb) then ELSE(fb);
     case (((e,Types.PROP(type_ = (Types.T_BOOL(varLstBool = _),_)),b) :: xs),fb)
-      equation 
+      equation
         else_ = makeElse(xs, fb);
       then
         ELSEIF(e,b,else_);
     case (((e,Types.PROP(type_ = t),_) :: _),_)
-      equation 
+      equation
         e_str = Exp.printExpStr(e);
         t_str = Types.unparseType(t);
         Error.addMessage(Error.IF_CONDITION_TYPE_ERROR, {e_str,t_str});
@@ -426,14 +426,14 @@ algorithm
 end makeElse;
 
 public function makeFor "function: makeFor
-  This function creates a FOR construct, checking 
+  This function creates a FOR construct, checking
   that the types of the parts are correct."
   input Ident inIdent;
   input Exp.Exp inExp;
   input Types.Properties inProperties;
   input list<Statement> inStatementLst;
   output Statement outStatement;
-algorithm 
+algorithm
   outStatement:=
   matchcontinue (inIdent,inExp,inProperties,inStatementLst)
     local
@@ -444,13 +444,13 @@ algorithm
       tuple<Types.TType, Option<Absyn.Path>> t;
       list<Statement> stmts;
     case (i,e,Types.PROP(type_ = (Types.T_ARRAY(arrayType = t),_)),stmts)
-      equation 
+      equation
         array = Types.isArray(t);
         et = Types.elabType(t);
       then
         FOR(et,array,i,e,stmts);
     case (_,e,Types.PROP(type_ = t),_)
-      equation 
+      equation
         e_str = Exp.printExpStr(e);
         t_str = Types.unparseType(t);
         Error.addMessage(Error.FOR_EXPRESSION_TYPE_ERROR, {e_str,t_str});
@@ -459,14 +459,14 @@ algorithm
   end matchcontinue;
 end makeFor;
 
-public function makeWhile "function: makeWhile 
+public function makeWhile "function: makeWhile
   This function creates a WHILE construct, checking that the types
   of the parts are correct."
   input Exp.Exp inExp;
   input Types.Properties inProperties;
   input list<Statement> inStatementLst;
   output Statement outStatement;
-algorithm 
+algorithm
   outStatement:=
   matchcontinue (inExp,inProperties,inStatementLst)
     local
@@ -474,9 +474,9 @@ algorithm
       list<Statement> stmts;
       Ident e_str,t_str;
       tuple<Types.TType, Option<Absyn.Path>> t;
-    case (e,Types.PROP(type_ = (Types.T_BOOL(varLstBool = _),_)),stmts) then WHILE(e,stmts); 
+    case (e,Types.PROP(type_ = (Types.T_BOOL(varLstBool = _),_)),stmts) then WHILE(e,stmts);
     case (e,Types.PROP(type_ = t),_)
-      equation 
+      equation
         e_str = Exp.printExpStr(e);
         t_str = Types.unparseType(t);
         Error.addMessage(Error.WHILE_CONDITION_TYPE_ERROR, {e_str,t_str});
@@ -486,14 +486,14 @@ algorithm
 end makeWhile;
 
 public function makeWhenA "function: makeWhenA
-  This function creates a WHEN algorithm construct, 
+  This function creates a WHEN algorithm construct,
   checking that the types of the parts are correct."
   input Exp.Exp inExp;
   input Types.Properties inProperties;
   input list<Statement> inStatementLst;
   input Option<Statement> elseWhenStmt;
   output Statement outStatement;
-algorithm 
+algorithm
   outStatement:=
   matchcontinue (inExp,inProperties,inStatementLst,elseWhenStmt)
     local
@@ -502,10 +502,10 @@ algorithm
       Option<Statement> elsew;
       Ident e_str,t_str;
       tuple<Types.TType, Option<Absyn.Path>> t;
-    case (e,Types.PROP(type_ = (Types.T_BOOL(varLstBool = _),_)),stmts,elsew) then WHEN(e,stmts,elsew,{}); 
-    case (e,Types.PROP(type_ = (Types.T_ARRAY(arrayType = (Types.T_BOOL(varLstBool = _),_)),_)),stmts,elsew) then WHEN(e,stmts,elsew,{}); 
+    case (e,Types.PROP(type_ = (Types.T_BOOL(varLstBool = _),_)),stmts,elsew) then WHEN(e,stmts,elsew,{});
+    case (e,Types.PROP(type_ = (Types.T_ARRAY(arrayType = (Types.T_BOOL(varLstBool = _),_)),_)),stmts,elsew) then WHEN(e,stmts,elsew,{});
     case (e,Types.PROP(type_ = t),_,_)
-      equation 
+      equation
         e_str = Exp.printExpStr(e);
         t_str = Types.unparseType(t);
         Error.addMessage(Error.WHEN_CONDITION_TYPE_ERROR, {e_str,t_str});
@@ -515,7 +515,7 @@ algorithm
 end makeWhenA;
 
 public function makeReinit "function: makeReinit
- creates a reinit statement in an algorithm 
+ creates a reinit statement in an algorithm
  statement, only valid in when algorithm sections."
   input Exp.Exp inExp1;
   input Exp.Exp inExp2;
@@ -530,67 +530,67 @@ algorithm
     case (var as Exp.CREF(_,_),val,Types.PROP(tp1,_),Types.PROP(tp2,_))  equation
      (val_1,_) = Types.matchType(val,tp2,(Types.T_REAL({}),NONE()));
       (var_1,_) = Types.matchType(var,tp1,(Types.T_REAL({}),NONE()));
-    then REINIT(var_1,val_1);  
-  
+    then REINIT(var_1,val_1);
+
    case (_,_,prop1,prop2)  equation
 			Error.addMessage(Error.INTERNAL_ERROR(),{"reinit called with wrong args"});
     then fail();
-      
+
   	// TODO: Add checks for reinit here. 1. First argument must be variable. 2. Expressions must be real.
-  end matchcontinue;      
+  end matchcontinue;
 end makeReinit;
 
 public function makeAssert "function: makeAssert
   Creates an assert statement from two expressions.
-  inputs: Exp.Exp condition 
-		      Exp.Exp message 
-		      Types.Properties 
-		      Types.Properties 
+  inputs: Exp.Exp condition
+		      Exp.Exp message
+		      Types.Properties
+		      Types.Properties
   outputs: Statement"
   input Exp.Exp inExp1;
   input Exp.Exp inExp2;
   input Types.Properties inProperties3;
   input Types.Properties inProperties4;
   output Statement outStatement;
-algorithm 
+algorithm
   outStatement:=
   matchcontinue (inExp1,inExp2,inProperties3,inProperties4)
     local Exp.Exp cond,msg;
-    case (cond,msg,Types.PROP(type_ = (Types.T_BOOL(varLstBool = _),_)),Types.PROP(type_ = (Types.T_STRING(varLstString = _),_))) then ASSERT(cond,msg);  
+    case (cond,msg,Types.PROP(type_ = (Types.T_BOOL(varLstBool = _),_)),Types.PROP(type_ = (Types.T_STRING(varLstString = _),_))) then ASSERT(cond,msg);
   end matchcontinue;
 end makeAssert;
 
 public function makeTerminate "
   Creates a terminate statement from message expression.
-  inputs: Exp.Exp message 
-		      Types.Properties 
+  inputs: Exp.Exp message
+		      Types.Properties
   outputs: Statement"
   input Exp.Exp inExp1;
   input Types.Properties inProperties3;
   output Statement outStatement;
-algorithm 
+algorithm
   outStatement:=
   matchcontinue (inExp1,inProperties3)
     local Exp.Exp cond,msg;
-    case (msg,Types.PROP(type_ = (Types.T_STRING(varLstString = _),_))) then TERMINATE(msg);  
+    case (msg,Types.PROP(type_ = (Types.T_STRING(varLstString = _),_))) then TERMINATE(msg);
   end matchcontinue;
 end makeTerminate;
 
 public function getAllExps "function: getAllExps
-  
+
   This function goes through the Algorithm structure and finds all the
   expressions and returns them in a list
 "
   input Algorithm inAlgorithm;
   output list<Exp.Exp> outExpExpLst;
-algorithm 
+algorithm
   outExpExpLst:=
   matchcontinue (inAlgorithm)
     local
       list<Exp.Exp> exps;
       list<Statement> stmts;
     case ALGORITHM(statementLst = stmts)
-      equation 
+      equation
         exps = getAllExpsStmts(stmts);
       then
         exps;
@@ -598,14 +598,14 @@ algorithm
 end getAllExps;
 
 public function getAllExpsStmts "function: getAllExpsStmts
-  
+
   This function takes a list of statements and returns all expressions
   in all statements.
 "
   input list<Statement> stmts;
   output list<Exp.Exp> exps;
   list<list<Exp.Exp>> expslist;
-algorithm 
+algorithm
   expslist := Util.listMap(stmts, getAllExpsStmt);
   exps := Util.listFlatten(expslist);
 end getAllExpsStmts;
@@ -614,7 +614,7 @@ protected function getAllExpsStmt "function: getAllExpsStmt
   Returns all expressions in a statement."
   input Statement inStatement;
   output list<Exp.Exp> outExpExpLst;
-algorithm 
+algorithm
   outExpExpLst:=
   matchcontinue (inStatement)
     local
@@ -628,53 +628,53 @@ algorithm
       Ident id;
       Statement elsew;
     case ASSIGN(type_ = expty,componentRef = cr,exp = exp)
-      equation 
+      equation
         crexp = crefToExp(cr);
       then
         {crexp,exp};
     case TUPLE_ASSIGN(type_ = expty,expExpLst = explist,exp = exp)
-      equation 
+      equation
         exps = listAppend(explist, {exp});
       then
         exps;
     case ASSIGN_ARR(type_ = expty,componentRef = cr,exp = exp)
-      equation 
+      equation
         crexp = crefToExp(cr);
       then
         {crexp,exp};
     case IF(exp = exp,statementLst = stmts,else_ = else_)
-      equation 
+      equation
         exps1 = getAllExpsStmts(stmts);
         elseexps = getAllExpsElse(else_);
         exps = listAppend(exps1, elseexps);
       then
         (exp :: exps);
     case FOR(type_ = expty,boolean = flag,ident = id,exp = exp,statementLst = stmts)
-      equation 
+      equation
         exps = getAllExpsStmts(stmts);
       then
         (exp :: exps);
     case WHILE(exp = exp,statementLst = stmts)
-      equation 
+      equation
         exps = getAllExpsStmts(stmts);
       then
         (exp :: exps);
     case WHEN(exp = exp,statementLst = stmts, elseWhen=SOME(elsew))
-      equation 
+      equation
 				exps1 = getAllExpsStmt(elsew);
         exps = list_append(getAllExpsStmts(stmts),exps1);
       then
         (exp :: exps);
     case WHEN(exp = exp,statementLst = stmts)
-      equation 
+      equation
         exps = getAllExpsStmts(stmts);
       then
         (exp :: exps);
-    case ASSERT(cond = e1,msg= e2) then {e1,e2}; 
-    case BREAK() then {}; 
-    case RETURN() then {}; 
+    case ASSERT(cond = e1,msg= e2) then {e1,e2};
+    case BREAK() then {};
+    case RETURN() then {};
     case _
-      equation 
+      equation
         Debug.fprintln("failtrace", "- Algorithm.getAllExpsStmt failed");
       then
         fail();
@@ -685,7 +685,7 @@ protected function getAllExpsElse "function: getAllExpsElse
   Helper function to getAllExpsStmt."
   input Else inElse;
   output list<Exp.Exp> outExpExpLst;
-algorithm 
+algorithm
   outExpExpLst:=
   matchcontinue (inElse)
     local
@@ -693,16 +693,16 @@ algorithm
       Exp.Exp exp;
       list<Statement> stmts;
       Else else_;
-    case NOELSE() then {}; 
+    case NOELSE() then {};
     case ELSEIF(exp = exp,statementLst = stmts,else_ = else_)
-      equation 
+      equation
         exps1 = getAllExpsStmts(stmts);
         elseexps = getAllExpsElse(else_);
         exps = listAppend(exps1, elseexps);
       then
         (exp :: exps);
     case ELSE(statementLst = stmts)
-      equation 
+      equation
         exps = getAllExpsStmts(stmts);
       then
         exps;
@@ -714,11 +714,11 @@ protected function crefToExp "function: crefToExp
   The type of the expression will become Exp.OTHER."
   input Exp.ComponentRef inComponentRef;
   output Exp.Exp outExp;
-algorithm 
+algorithm
   outExp:=
   matchcontinue (inComponentRef)
     local Exp.ComponentRef cref;
-    case cref then Exp.CREF(cref,Exp.OTHER()); 
+    case cref then Exp.CREF(cref,Exp.OTHER());
   end matchcontinue;
 end crefToExp;
 

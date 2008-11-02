@@ -16,9 +16,9 @@
 
 static integer c__1 = 1;
 
-/* Subroutine */ int nelmead_(doublereal *p, doublereal *step, integer *nop, 
+/* Subroutine */ int nelmead_(doublereal *p, doublereal *step, integer *nop,
 	doublereal *func, integer *max__, integer *iprint, doublereal *stopcr,
-	 integer *nloop, integer *iquad, doublereal *simp, doublereal *var, 
+	 integer *nloop, integer *iquad, doublereal *simp, doublereal *var,
 	S_fp functn, integer *ifault)
 {
     /* Initialized data */
@@ -404,7 +404,7 @@ L180:
     i__1 = *nop;
     for (i__ = 1; i__ <= i__1; ++i__) {
 /* L190: */
-	pstst[i__ - 1] = c__ * (pstar[i__ - 1] - pbar[i__ - 1]) + pbar[i__ - 
+	pstst[i__ - 1] = c__ * (pstar[i__ - 1] - pbar[i__ - 1]) + pbar[i__ -
 		1];
     }
     (*functn)(nop, pstst, &hstst);
@@ -481,7 +481,7 @@ L260:
     i__1 = *nop;
     for (i__ = 1; i__ <= i__1; ++i__) {
 /* L270: */
-	pstst[i__ - 1] = b * g[imax + i__ * 21 - 22] + (1.f - b) * pbar[i__ - 
+	pstst[i__ - 1] = b * g[imax + i__ * 21 - 22] + (1.f - b) * pbar[i__ -
 		1];
     }
     (*functn)(nop, pstst, &hstst);
@@ -531,7 +531,7 @@ L300:
 	i__2 = *nop;
 	for (j = 1; j <= i__2; ++j) {
 	    if (step[j] != 0.) {
-		g[i__ + j * 21 - 22] = (g[i__ + j * 21 - 22] + g[imin + j * 
+		g[i__ + j * 21 - 22] = (g[i__ + j * 21 - 22] + g[imin + j *
 			21 - 22]) * .5f;
 	    }
 /* L310: */
@@ -757,7 +757,7 @@ L470:
 	i__2 = *nop;
 	for (j = 1; j <= i__2; ++j) {
 	    if (step[j] != 0.) {
-		g[i__ + j * 21 - 22] = g[i__ + j * 21 - 22] - p[j] + g[i__ + 
+		g[i__ + j * 21 - 22] = g[i__ + j * 21 - 22] - p[j] + g[i__ +
 			j * 21 - 22];
 	    }
 /* L480: */
@@ -820,7 +820,7 @@ L490:
 	    i__3 = *nop;
 	    for (k = 1; k <= i__3; ++k) {
 /* L520: */
-		pstst[k - 1] = (g[i2 + k * 21 - 22] + g[j1 + k * 21 - 22]) * 
+		pstst[k - 1] = (g[i2 + k * 21 - 22] + g[j1 + k * 21 - 22]) *
 			.5f;
 	    }
 	    (*functn)(nop, pstst, &hstst);
@@ -1131,7 +1131,7 @@ L910:
     goto L890;
 } /* nelmead_ */
 
-/* Subroutine */ int syminv_(doublereal *a, integer *n, doublereal *c__, 
+/* Subroutine */ int syminv_(doublereal *a, integer *n, doublereal *c__,
 	doublereal *w, integer *nullty, integer *ifault, doublereal *rmax)
 {
     /* System generated locals */
@@ -1141,7 +1141,7 @@ L910:
     static integer i__, j, k, l;
     static doublereal x;
     static integer nn, icol, jcol, irow, nrow, mdiag, ndiag;
-    extern /* Subroutine */ int chola_(doublereal *, integer *, doublereal *, 
+    extern /* Subroutine */ int chola_(doublereal *, integer *, doublereal *,
 	    integer *, integer *, doublereal *, doublereal *);
 
 
@@ -1254,7 +1254,7 @@ L100:
     return 0;
 } /* syminv_ */
 
-/* Subroutine */ int chola_(doublereal *a, integer *n, doublereal *u, integer 
+/* Subroutine */ int chola_(doublereal *a, integer *n, doublereal *u, integer
 	*nullty, integer *ifault, doublereal *rmax, doublereal *r__)
 {
     /* System generated locals */

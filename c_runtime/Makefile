@@ -34,7 +34,7 @@ HFILES = blaswrap.h f2c.h integer_array.h memory_pool.h modelica_string.h \
 	simulation_init.h simulation_input.h solver_dasrt.h solver_euler.h simulation_result.h \
 	meta_modelica.h sendData/sendData.h sendData/humbug.h
 
-LIBS = libc_runtime.a libsim.a 
+LIBS = libc_runtime.a libsim.a
 
 ifdef QTHOME
 PLTPKGCMD =	cd ./sendData && \
@@ -71,10 +71,10 @@ libsendData.a : sendData/sendData.cpp sendData/sendData.h sendData/sendData.pro 
 #	cd ./sendData && \
 #	$(QTHOME)/bin/qmake && \
 #	sed -e's/QtNetwork /QtNetwork4 /' -e's/QtGui /QtGui4 /' -e's/QtCore /QtCore4 /' Makefile.Release > Makefile && \
-#	$(MAKE) -f Makefile 
+#	$(MAKE) -f Makefile
 	$(PLTPKGCMD)
 
-clean : 
+clean :
 	cd ./libf2c && $(MAKE) -f makefile.u clean
 	rm -f libc_runtime.a
 	rm -f libsim.a
@@ -84,6 +84,6 @@ clean :
 	rm -f $(builddir_lib)/libsim.a
 	rm -f $(builddir_lib)/libf2c.*
 	cd $(builddir_inc)/ && rm -f $(HFILES)
-	cd sendData && rm -fr release debug *sendData*.o *sendData*.a	
+	cd sendData && rm -fr release debug *sendData*.o *sendData*.a
 	rm -rf sendData/release sendData/debug
 	rm -f sendData.o sendData.a sendData/releasesendData.o

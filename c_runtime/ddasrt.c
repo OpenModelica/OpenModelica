@@ -97,10 +97,10 @@ static integer c__801 = 801;
 static integer c__802 = 802;
 static doublereal c_b588 = 1.;
 
-/* Subroutine */ int ddasrt_(U_fp res, integer *neq, doublereal *t, 
-	doublereal *y, doublereal *yprime, doublereal *tout, integer *info, 
-	doublereal *rtol, doublereal *atol, integer *idid, doublereal *rwork, 
-	integer *lrw, integer *iwork, integer *liw, doublereal *rpar, integer 
+/* Subroutine */ int ddasrt_(U_fp res, integer *neq, doublereal *t,
+	doublereal *y, doublereal *yprime, doublereal *tout, integer *info,
+	doublereal *rtol, doublereal *atol, integer *idid, doublereal *rwork,
+	integer *lrw, integer *iwork, integer *liw, doublereal *rpar, integer
 	*ipar, U_fp jac, U_fp g, integer *ng, integer *jroot)
 {
     /* System generated locals */
@@ -127,39 +127,39 @@ static doublereal c_b588 = 1.;
     static integer mband, lenpd;
     static doublereal atoli;
     static integer msave, leniw, itemp, nzflg;
-    extern /* Subroutine */ int dcopy_(integer *, doublereal *, integer *, 
+    extern /* Subroutine */ int dcopy_(integer *, doublereal *, integer *,
 	    doublereal *, integer *);
     static integer ntemp, lenrw;
     static doublereal tdist;
     static integer mxord;
     static doublereal rtoli, tnext, tstop;
     extern doublereal dlamch_(char *, ftnlen);
-    extern /* Subroutine */ int ddaini_(doublereal *, doublereal *, 
-	    doublereal *, integer *, U_fp, U_fp, doublereal *, doublereal *, 
-	    integer *, doublereal *, integer *, doublereal *, doublereal *, 
+    extern /* Subroutine */ int ddaini_(doublereal *, doublereal *,
+	    doublereal *, integer *, U_fp, U_fp, doublereal *, doublereal *,
+	    integer *, doublereal *, integer *, doublereal *, doublereal *,
 	    doublereal *, doublereal *, integer *, doublereal *, doublereal *,
-	     integer *, integer *), drchek_(integer *, U_fp, integer *, 
+	     integer *, integer *), drchek_(integer *, U_fp, integer *,
 	    integer *, doublereal *, doublereal *, doublereal *, doublereal *,
 	     doublereal *, doublereal *, integer *, doublereal *, doublereal *
-	    , doublereal *, integer *, integer *, doublereal *, integer *, 
+	    , doublereal *, integer *, integer *, doublereal *, integer *,
 	    doublereal *, integer *, doublereal *, integer *);
-    extern doublereal ddanrm_(integer *, doublereal *, doublereal *, 
+    extern doublereal ddanrm_(integer *, doublereal *, doublereal *,
 	    doublereal *, integer *);
-    extern /* Subroutine */ int ddatrp_(doublereal *, doublereal *, 
-	    doublereal *, doublereal *, integer *, integer *, doublereal *, 
-	    doublereal *), ddastp_(doublereal *, doublereal *, doublereal *, 
-	    integer *, U_fp, U_fp, doublereal *, doublereal *, integer *, 
-	    integer *, doublereal *, integer *, doublereal *, doublereal *, 
+    extern /* Subroutine */ int ddatrp_(doublereal *, doublereal *,
+	    doublereal *, doublereal *, integer *, integer *, doublereal *,
+	    doublereal *), ddastp_(doublereal *, doublereal *, doublereal *,
+	    integer *, U_fp, U_fp, doublereal *, doublereal *, integer *,
+	    integer *, doublereal *, integer *, doublereal *, doublereal *,
 	    doublereal *, doublereal *, integer *, doublereal *, doublereal *,
-	     doublereal *, doublereal *, doublereal *, doublereal *, 
-	    doublereal *, doublereal *, doublereal *, doublereal *, 
-	    doublereal *, integer *, integer *, integer *, integer *, integer 
-	    *, integer *, integer *), ddawts_(integer *, integer *, 
-	    doublereal *, doublereal *, doublereal *, doublereal *, 
+	     doublereal *, doublereal *, doublereal *, doublereal *,
+	    doublereal *, doublereal *, doublereal *, doublereal *,
+	    doublereal *, integer *, integer *, integer *, integer *, integer
+	    *, integer *, integer *), ddawts_(integer *, integer *,
+	    doublereal *, doublereal *, doublereal *, doublereal *,
 	    doublereal *, integer *);
     static doublereal uround, ypnorm;
-    extern /* Subroutine */ int xerrwv_(char *, integer *, integer *, integer 
-	    *, integer *, integer *, integer *, integer *, doublereal *, 
+    extern /* Subroutine */ int xerrwv_(char *, integer *, integer *, integer
+	    *, integer *, integer *, integer *, integer *, doublereal *,
 	    doublereal *, ftnlen);
 
 /* ***MODIF */
@@ -1360,8 +1360,8 @@ L350:
 	goto L390;
     }
     drchek_(&c__1, (U_fp)g, ng, neq, t, tout, &y[1], &rwork[le], &rwork[lphi],
-	     &rwork[29], &iwork[8], &rwork[lg0], &rwork[lg1], &rwork[lgx], 
-	    jroot, &irt, &rwork[9], &info[3], &rwork[1], &iwork[1], &rpar[1], 
+	     &rwork[29], &iwork[8], &rwork[lg0], &rwork[lg1], &rwork[lgx],
+	    jroot, &irt, &rwork[9], &info[3], &rwork[1], &iwork[1], &rpar[1],
 	    &ipar[1]);
     if (ierode_1.iero > 0) {
 	return 0;
@@ -2027,7 +2027,7 @@ L708:
 L709:
     s_copy(msg, "DASSL--  INFO(4) = 1 AND TSTOP (=R1) BEHIND TOUT (=R2)", (
 	    ftnlen)80, (ftnlen)54);
-    xerrwv_(msg, &c__54, &c__9, &c__0, &c__0, &c__0, &c__0, &c__2, &tstop, 
+    xerrwv_(msg, &c__54, &c__9, &c__0, &c__0, &c__0, &c__0, &c__2, &tstop,
 	    tout, (ftnlen)80);
     goto L750;
 L710:
@@ -2103,7 +2103,7 @@ L750:
     *idid = -33;
     return 0;
 L760:
-    s_copy(msg, "DASSL--  REPEATED OCCURRENCES OF ILLEGAL INPUT", (ftnlen)80, 
+    s_copy(msg, "DASSL--  REPEATED OCCURRENCES OF ILLEGAL INPUT", (ftnlen)80,
 	    (ftnlen)46);
     xerrwv_(msg, &c__46, &c__801, &c__0, &c__0, &c__0, &c__0, &c__0, &c_b30, &
 	    c_b30, (ftnlen)80);
@@ -2116,10 +2116,10 @@ L760:
 /* -----------END OF SUBROUTINE DDASRT------------------------------------ */
 } /* ddasrt_ */
 
-/* Subroutine */ int drchek_(integer *job, S_fp g, integer *ng, integer *neq, 
-	doublereal *tn, doublereal *tout, doublereal *y, doublereal *yp, 
-	doublereal *phi, doublereal *psi, integer *kold, doublereal *g0, 
-	doublereal *g1, doublereal *gx, integer *jroot, integer *irt, 
+/* Subroutine */ int drchek_(integer *job, S_fp g, integer *ng, integer *neq,
+	doublereal *tn, doublereal *tout, doublereal *y, doublereal *yp,
+	doublereal *phi, doublereal *psi, integer *kold, doublereal *g0,
+	doublereal *g1, doublereal *gx, integer *jroot, integer *irt,
 	doublereal *uround, integer *info3, doublereal *rwork, integer *iwork,
 	 doublereal *rpar, integer *ipar)
 {
@@ -2136,14 +2136,14 @@ L760:
     static doublereal x, t1, temp1, temp2;
     static integer jflag;
     static doublereal hming;
-    extern /* Subroutine */ int dcopy_(integer *, doublereal *, integer *, 
+    extern /* Subroutine */ int dcopy_(integer *, doublereal *, integer *,
 	    doublereal *, integer *);
     static logical zroot;
-    extern /* Subroutine */ int ddatrp_(doublereal *, doublereal *, 
-	    doublereal *, doublereal *, integer *, integer *, doublereal *, 
-	    doublereal *), droots_(integer *, doublereal *, integer *, 
-	    doublereal *, doublereal *, doublereal *, doublereal *, 
-	    doublereal *, doublereal *, integer *, integer *, integer *, 
+    extern /* Subroutine */ int ddatrp_(doublereal *, doublereal *,
+	    doublereal *, doublereal *, integer *, integer *, doublereal *,
+	    doublereal *), droots_(integer *, doublereal *, integer *,
+	    doublereal *, doublereal *, doublereal *, doublereal *,
+	    doublereal *, doublereal *, integer *, integer *, integer *,
 	    doublereal *, doublereal *);
 
 
@@ -2425,9 +2425,9 @@ L390:
 /* ---------------------- END OF SUBROUTINE DRCHEK ----------------------- */
 } /* drchek_ */
 
-/* Subroutine */ int droots_(integer *ng, doublereal *hmin, integer *jflag, 
-	doublereal *x0, doublereal *x1, doublereal *g0, doublereal *g1, 
-	doublereal *gx, doublereal *x, integer *jroot, integer *imax, integer 
+/* Subroutine */ int droots_(integer *ng, doublereal *hmin, integer *jflag,
+	doublereal *x0, doublereal *x1, doublereal *g0, doublereal *g1,
+	doublereal *gx, doublereal *x, integer *jroot, integer *imax, integer
 	*last, doublereal *alpha, doublereal *x2)
 {
     /* Initialized data */
@@ -2444,7 +2444,7 @@ L390:
     /* Local variables */
     static integer i__;
     static doublereal t2, tmax;
-    extern /* Subroutine */ int dcopy_(integer *, doublereal *, integer *, 
+    extern /* Subroutine */ int dcopy_(integer *, doublereal *, integer *,
 	    doublereal *, integer *);
     static logical xroot, zroot, sgnchg;
     static integer imxold, nxlast;

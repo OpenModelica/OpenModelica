@@ -1,31 +1,31 @@
-/* 
+/*
  * This file is part of OpenModelica.
- * 
+ *
  * Copyright (c) 1998-2008, Linköpings University,
- * Department of Computer and Information Science, 
- * SE-58183 Linköping, Sweden. 
- * 
+ * Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
  * All rights reserved.
- * 
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC 
- * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF 
- * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC 
- * PUBLIC LICENSE. 
- * 
- * The OpenModelica software and the Open Source Modelica 
- * Consortium (OSMC) Public License (OSMC-PL) are obtained 
- * from Linköpings University, either from the above address, 
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC
+ * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF
+ * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC
+ * PUBLIC LICENSE.
+ *
+ * The OpenModelica software and the Open Source Modelica
+ * Consortium (OSMC) Public License (OSMC-PL) are obtained
+ * from Linköpings University, either from the above address,
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
- * 
- * This program is distributed  WITHOUT ANY WARRANTY; without 
- * even the implied warranty of  MERCHANTABILITY or FITNESS 
- * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH 
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS 
- * OF OSMC-PL. 
- * 
+ *
+ * This program is distributed  WITHOUT ANY WARRANTY; without
+ * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
+ * OF OSMC-PL.
+ *
  * See the full OSMC Public License conditions for more details.
- * 
+ *
  */
 
 #ifndef __MY_AST_H__
@@ -47,8 +47,8 @@ public:
    // copy constructor
    MyAST( const MyAST& other )
 	: CommonAST(other)
-	, line(other.line), column(other.column), 
-	  endline(other.endline), 
+	, line(other.line), column(other.column),
+	  endline(other.endline),
 	  endcolumn(other.endcolumn)
 	{
 	}
@@ -92,7 +92,7 @@ public:
    {
       column = c;
    }
-   
+
    /* Adrian Pop, 2006-02-13 added endline, endcolumn */
 
    virtual int getEndLine( void ) const
@@ -100,7 +100,7 @@ public:
       // most of the time the line number is not set if the node is a
       // imaginary one. Usually this means it has a child. Refer to the
       // child line number. Of course this could be extended a bit.
-      if ( endline != 0 ) return endline; 
+      if ( endline != 0 ) return endline;
       if( getNextSibling() )
       {
       	return ( RefMyAST(getNextSibling())->getLine() );
@@ -121,7 +121,7 @@ public:
       // most of the time the line number is not set if the node is a
       // imaginary one. Usually this means it has a child. Refer to the
       // child line number. Of course this could be extended a bit.
-      if ( endcolumn != 0 ) return endcolumn;       
+      if ( endcolumn != 0 ) return endcolumn;
       if( getNextSibling() )
       {
       	return ( RefMyAST(getNextSibling())->getColumn() );

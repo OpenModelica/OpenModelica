@@ -1,11 +1,11 @@
 // Circle model
 
-model Circle 
+model Circle
   Real x_out;
   Real y_out;
   Real x(start=0.1);
   Real y(start=0.1);
-equation 
+equation
   der(x) = y;
   der(y) = x;
   x_out = x;

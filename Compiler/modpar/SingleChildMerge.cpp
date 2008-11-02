@@ -1,10 +1,10 @@
 #include "SingleChildMerge.hpp"
 
 SingleChildMerge::SingleChildMerge(TaskGraph *tg,TaskGraph * orig_tg,
-				   ContainSetMap *cmap, 
-				   VertexID inv, VertexID outb, 
-				   double l, double B,int nproc,map<VertexID,bool> *removed) 
-  : MergeRule(tg,orig_tg,cmap,inv,outb,l,B,nproc,removed) 
+				   ContainSetMap *cmap,
+				   VertexID inv, VertexID outb,
+				   double l, double B,int nproc,map<VertexID,bool> *removed)
+  : MergeRule(tg,orig_tg,cmap,inv,outb,l,B,nproc,removed)
 {
 
 }
@@ -21,10 +21,10 @@ bool SingleChildMerge::apply(VertexID v)
       //   << " child: " << getTaskID(*c,m_taskgraph) << endl;
       mergeTasks(v,*c);
       //cerr << "parent now contains: " ;
-      //printContainTasks(v,cerr); 
-      //cerr << endl; 
+      //printContainTasks(v,cerr);
+      //cerr << endl;
       change=true;
-    } 
+    }
   }
   return change;
 }
@@ -45,7 +45,7 @@ void SingleChildMerge::mergeTasks(VertexID n1, VertexID n2)
   }
   for (tie(oute,oute_end)= out_edges(c,*m_taskgraph); oute != oute_end; ++oute) {
     assert(c != target(*oute,*m_taskgraph));
-    children.insert(target(*oute,*m_taskgraph)); 
+    children.insert(target(*oute,*m_taskgraph));
   }
   // Add edges from newtask = p to children and update costs.
   for(child = children.begin(); child != children.end(); ++child) {
@@ -66,12 +66,12 @@ void SingleChildMerge::mergeTasks(VertexID n1, VertexID n2)
   // Remove task and edges to the task
   (*m_taskRemoved)[c]=true;
   clear_vertex(c,*m_taskgraph);
-  
+
 
   remove_vertex(c,*m_taskgraph);
 }
 
-pair<VertexID,VertexID> 
+pair<VertexID,VertexID>
 SingleChildMerge::determineParent(VertexID n1, VertexID n2)
 {
   EdgeID e;
@@ -79,7 +79,7 @@ SingleChildMerge::determineParent(VertexID n1, VertexID n2)
   tie(e,found) = edge(n1,n2,*m_taskgraph);
 
   if (found) return pair<VertexID,VertexID>(n1,n2);
-  
+
   tie(e,found) = edge(n2,n1,*m_taskgraph);
   assert(found);
   return pair<VertexID,VertexID>(n2,n1);

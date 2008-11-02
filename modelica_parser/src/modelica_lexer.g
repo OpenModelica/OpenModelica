@@ -1,33 +1,33 @@
-/* 
+/*
  * This file is part of OpenModelica.
- * 
+ *
  * Copyright (c) 1998-2008, Linkopings University,
- * Department of Computer and Information Science, 
- * SE-58183 Linkoping, Sweden. 
- * 
+ * Department of Computer and Information Science,
+ * SE-58183 Linkoping, Sweden.
+ *
  * All rights reserved.
- * 
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC 
- * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF 
- * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC 
- * PUBLIC LICENSE. 
- * 
- * The OpenModelica software and the Open Source Modelica 
- * Consortium (OSMC) Public License (OSMC-PL) are obtained 
- * from Linkopings University, either from the above address, 
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC
+ * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF
+ * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC
+ * PUBLIC LICENSE.
+ *
+ * The OpenModelica software and the Open Source Modelica
+ * Consortium (OSMC) Public License (OSMC-PL) are obtained
+ * from Linkopings University, either from the above address,
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
- * 
- * This program is distributed  WITHOUT ANY WARRANTY; without 
- * even the implied warranty of  MERCHANTABILITY or FITNESS 
- * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH 
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS 
- * OF OSMC-PL. 
- * 
+ *
+ * This program is distributed  WITHOUT ANY WARRANTY; without
+ * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
+ * OF OSMC-PL.
+ *
  * See the full OSMC Public License conditions for more details.
- * 
+ *
  */
- 
+
 header {
 
 }
@@ -36,7 +36,7 @@ options {
   language = "Cpp";
 }
 
-class modelica_lexer extends Lexer; 
+class modelica_lexer extends Lexer;
 
 options {
     k=2;
@@ -108,14 +108,14 @@ tokens {
 	WITHIN		= "within" 	;
 	RETURN		= "return"  ;
 	BREAK		= "break"	;
-	/* MetaModelica keywords. I guess not all are needed here. */	
+	/* MetaModelica keywords. I guess not all are needed here. */
 	AS		= "as"	;
 	CASE		= "case"	;
 	EQUALITY	= "equality";
 	FAILURE		= "failure";
 	LOCAL		= "local"	;
 	MATCH		= "match"	;
-	MATCHCONTINUE	= "matchcontinue"	;	
+	MATCHCONTINUE	= "matchcontinue"	;
 	UNIONTYPE	= "uniontype"		;
 	WILD		= "_"			;
 	SUBTYPEOF   = "subtypeof"  ;
@@ -147,13 +147,13 @@ MINUS		: '-'|"-." ;
 STAR		: '*'|"*." ;
 SLASH		: '/'|"/." ;
 COMMA		: ',';
-LESS		: '<' 
-			(  ('='   { $setType(LESSEQ); }) 
+LESS		: '<'
+			(  ('='   { $setType(LESSEQ); })
 			 | ('.'   { $setType(RLESS); })
 			 | ("=."  { $setType(LESSEQ); })
 			 | ('>'   { $setType(LESSGT); })
-			 | (">."  { $setType(LESSGT); }) 
-			)?        
+			 | (">."  { $setType(LESSGT); })
+			)?
 			;
 LESSGT		: ("!=")('.')?;
 GREATER		: '>' ;
@@ -184,30 +184,30 @@ ML_COMMENT :
 		"*/" { $setType(antlr::Token::SKIP); } ;
 
 protected
-ML_COMMENT_CHAR :	
-		("\r\n" | '\n') { newline(); }	
-		| ~('*'|'\n'|'\r') 
+ML_COMMENT_CHAR :
+		("\r\n" | '\n') { newline(); }
+		| ~('*'|'\n'|'\r')
 		;
-		
+
 SL_COMMENT :
 		"//" (~('\n' | '\r') )*
 		{  $setType(antlr::Token::SKIP); }
   	;
 
 IDENT options { testLiterals = true; paraphrase = "an identifier";} :
-		   ('_' {  $setType(WILD); } | NONDIGIT { $setType(IDENT); }) 
+		   ('_' {  $setType(WILD); } | NONDIGIT { $setType(IDENT); })
 		   (('_' | NONDIGIT | DIGIT) { $setType(IDENT); })*
 		| (QIDENT { $setType(IDENT); })
 		;
 
-protected 
-QIDENT options { testLiterals = true; paraphrase = "an identifier";} : 
+protected
+QIDENT options { testLiterals = true; paraphrase = "an identifier";} :
          '\'' (QCHAR | SESCAPE) (QCHAR | SESCAPE)* '\'' ;
 
 protected
 NONDIGIT : 	('a'..'z' | 'A'..'Z');
 
-protected 
+protected
 DIGIT :
 	'0'..'9'
 	;
@@ -219,24 +219,24 @@ EXPONENT :
 
 
 UNSIGNED_INTEGER :
-        (DIGIT)+ ('.' (DIGIT)* { $setType(UNSIGNED_REAL);} )? 
+        (DIGIT)+ ('.' (DIGIT)* { $setType(UNSIGNED_REAL);} )?
         (EXPONENT { $setType(UNSIGNED_REAL); } )?
     |
-        ('.' DIGIT) => ('.' (DIGIT)+ { $setType(UNSIGNED_REAL);})         
+        ('.' DIGIT) => ('.' (DIGIT)+ { $setType(UNSIGNED_REAL);})
         (EXPONENT { $setType(UNSIGNED_REAL); } )?
-    | 
+    |
       '.' { $setType(DOT); }
 	;
 
 STRING : '"'! (SCHAR | SESCAPE)* '"'!;
 
-		
-protected 
+
+protected
 SCHAR :	(options { generateAmbigWarnings=false; } : ('\n' | "\r\n"))	{ newline(); }
 	| '\t'
 	| ~('\n' | '\t' | '\r' | '\\' | '"');
 
-protected 
+protected
 QCHAR :	(options { generateAmbigWarnings=false; } : ('\n' | "\r\n"))	{ newline(); }
 	| '\t'
 	| ~('\n' | '\t' | '\r' | '\\' | '\'');

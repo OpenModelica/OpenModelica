@@ -50,7 +50,7 @@ void euler ( double *x, double *xd, double *y, double *p, double *res,
       }
       res[j++] = sim_time; //store time last.
       //      cerr << "storing result for time " << sim_time << " indx :" << j << endl;
-    } 
+    }
     f(x,xd,y,p,nx,ny,np,&sim_time); // calculate equations
     for(int i=0; i < nx; i++) {
       x[i]=x[i]+xd[i]*step; // Based on that, calculate state variables.
@@ -74,9 +74,9 @@ void read_input(int argc, char **argv,
   if (filename == NULL) { filename = new string("indata.txt"); }
 
   ifstream file(filename->c_str());
-  if (!file) { 
-    cerr << "Error, can not read file " << filename 
-	 << " as indata to simulation." << endl; 
+  if (!file) {
+    cerr << "Error, can not read file " << filename
+	 << " as indata to simulation." << endl;
     exit(-1);
   }
   //  cerr << "opened file" << endl;
@@ -112,21 +112,21 @@ void read_input(int argc, char **argv,
 
 inline void read_commented_value( ifstream &f, double *res)
 {
-  f >> *res;   
+  f >> *res;
   char c[160];
   f.getline(c,160);
 }
 
 inline void read_commented_value( ifstream &f, int *res)
 {
-  f >> *res; 
+  f >> *res;
   char c[160];
   f.getline(c,160);
 }
 
 
 /* Write the result of a simulation to a text file on a format suitable for reading into Mathematica.
-   The data is stored as 
+   The data is stored as
    { v1,v2,v3,...,vn} where each v is a vector.
 */
 
@@ -136,7 +136,7 @@ void write_result_txt(char *filename, int nx, int ny, int numpts,double *data)
   ofstream file(filename);
   file.setf(ios_base::fixed,ios_base::floatfield);
   file.precision(16);
-  if (!file) { 
+  if (!file) {
     cerr << "Error, can not write to file " << filename << endl;
     exit(-1);
   }
@@ -148,8 +148,8 @@ void write_result_txt(char *filename, int nx, int ny, int numpts,double *data)
       file << data[numvars*t+i];
       if (t != numpts-1) file << ", ";
     }
-    if (i != nx*2+ny) { 
-      file  << "}," << endl; 
+    if (i != nx*2+ny) {
+      file  << "}," << endl;
     } else {
       file << "}" << endl;
     }

@@ -35,7 +35,7 @@ INCFLAGS =-I$(RMLINCLUDE) -I$(BOOST_HOME) -I$(top_builddir)/mosh/src
 
 CFLAGS = $(INCFLAGS) -g -Wall -DUNIX=1
 CXXFLAGS = $(CFLAGS)
-LIBS = 
+LIBS =
 
 
 TaskGraphExt.o: TaskGraphExt.cpp
@@ -46,7 +46,7 @@ MergeRule.o: MergeRule.cpp MergeRule.hpp
 SingleChildMerge.o: SingleChildMerge.cpp SingleChildMerge.hpp MergeRule.hpp
 DuplicateParentMerge.o: DuplicateParentMerge.cpp DuplicateParentMerge.hpp MergeRule.hpp
 MergeAllParents.o: MergeAllParents.cpp MergeAllParents.hpp MergeRule.hpp
-Schedule.o: Schedule.cpp Schedule.hpp 
+Schedule.o: Schedule.cpp Schedule.hpp
 
 clean:
 	rm -rf $(OBJECTS)

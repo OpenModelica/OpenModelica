@@ -1,31 +1,31 @@
-/* 
+/*
  * This file is part of OpenModelica.
- * 
+ *
  * Copyright (c) 1998-2008, Linköpings University,
- * Department of Computer and Information Science, 
- * SE-58183 Linköping, Sweden. 
- * 
+ * Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
  * All rights reserved.
- * 
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC 
- * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF 
- * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC 
- * PUBLIC LICENSE. 
- * 
- * The OpenModelica software and the Open Source Modelica 
- * Consortium (OSMC) Public License (OSMC-PL) are obtained 
- * from Linköpings University, either from the above address, 
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC
+ * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF
+ * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC
+ * PUBLIC LICENSE.
+ *
+ * The OpenModelica software and the Open Source Modelica
+ * Consortium (OSMC) Public License (OSMC-PL) are obtained
+ * from Linköpings University, either from the above address,
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
- * 
- * This program is distributed  WITHOUT ANY WARRANTY; without 
- * even the implied warranty of  MERCHANTABILITY or FITNESS 
- * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH 
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS 
- * OF OSMC-PL. 
- * 
+ *
+ * This program is distributed  WITHOUT ANY WARRANTY; without
+ * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
+ * OF OSMC-PL.
+ *
  * See the full OSMC Public License conditions for more details.
- * 
+ *
  */
 
 #ifndef __MATRIX_H
@@ -42,23 +42,23 @@ extern "C" {
 
 
 
-int dgesv_(integer *n, integer *nrhs, doublereal *a, integer 
+int dgesv_(integer *n, integer *nrhs, doublereal *a, integer
 	   *lda, integer *ipiv, doublereal *b, integer *ldb, integer *info);
 
 void hybrd_(void (*) (int*, double *, double*, int*),
 	    int* n, double* x,double* fvec,double* xtol,
 	    int* maxfev, int* ml,int* mu,double* epsfcn,
-	    double* diag,int* mode, double* factor, 
+	    double* diag,int* mode, double* factor,
 	    int* nprint,int* info,int* nfev,double* fjac,
 	    int* ldfjac,double* r, int* lr, double* qtf,
 	    double* wa1,double* wa2,double* wa3,double* wa4);
-	    
+
 void * hybrj_(void(*) (int *,double*,double*,double *,int*, int*),
 	    int *n,double*x,double*fvec,double*fjac,int *ldfjac,double*xtol,int* maxfev,
 	    double* diag,int *mode,double*factor,int *nprint,int*info,int*nfev,int*njev,
 	    double* r,int *lr,double*qtf,double*wa1,double*wa2,
         double* wa3,double* wa4);
-  
+
 #if defined(__cplusplus)
 }
 #endif
@@ -125,7 +125,7 @@ void * hybrj_(void(*) (int *,double*,double*,double *,int*, int*),
     	    } \
     	} \
 	 }\
-} while(0) /* (no trailing ;)*/ 
+} while(0) /* (no trailing ;)*/
 
 #define solve_nonlinear_system(residual,no) do { \
 	 int giveUp=0; \
@@ -167,7 +167,7 @@ void * hybrj_(void(*) (int *,double*,double*,double *,int*, int*),
     	    } \
     	} \
 	 }\
-} while(0) /* (no trailing ;)*/ 
+} while(0) /* (no trailing ;)*/
 
 #define solve_nonlinear_system_analytic_jac(residual,no) do { \
 	 int giveUp=0; \
@@ -197,7 +197,7 @@ void * hybrj_(void(*) (int *,double*,double*,double *,int*, int*),
     	    printf("error solving nonlinear system nr. %d at time %f\n",no,time); \
     	} \
 	 }\
-} while(0) /* (no trailing ;)*/ 
+} while(0) /* (no trailing ;)*/
 
 #define declare_matrix(A,nrows,ncols) double *A = real_alloc(nrows*ncols); \
 assert(A!=0); \
@@ -230,7 +230,7 @@ dgesv_(&n,&nrhs,&A[0],&lda,ipiv,&b[0],&ldb,&info); \
    printf("Error sovling linear system of equations (no. %d) at time %f, system is singular.\n",id,localData->timeValue); \
  } \
 delete [] ipiv; \
-} while (0) /* (no trailing ; ) */ 
+} while (0) /* (no trailing ; ) */
 
 #define solve_linear_equation_system_mixed(A,b,size,id) do { long int n=size; \
 long int nrhs=1; /* number of righthand sides*/\
@@ -247,7 +247,7 @@ dgesv_(&n,&nrhs,&A[0],&lda,ipiv,&b[0],&ldb,&info); \
      found_solution=-1; \
  } \
  delete [] ipiv;\
-} while (0) /* (no trailing ; ) */ 
+} while (0) /* (no trailing ; ) */
 
 #define start_nonlinear_system(size) { double nls_x[size]; \
 double nls_xold[size]; \
@@ -294,7 +294,7 @@ int info,nfev,njev; \
 double factor=100.0; \
 int nprint = 0; \
 int lr = (size*(size+1))/2; \
-int ldfjac = size; 
+int ldfjac = size;
 #define end_nonlinear_system() } do {} while(0)
 
 #define extraPolate(v) (localData->oldTime == localData->oldTime2 ) ? v: \

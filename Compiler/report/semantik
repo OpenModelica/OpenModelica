@@ -324,13 +324,13 @@ From the report:
 
       transpose(a) * [1; x; x^2; ... x^n]
 
-if we could form the vector of increasing powers of x. A recursive formulation is possible. 
+if we could form the vector of increasing powers of x. A recursive formulation is possible.
 
       xpowers[1] = 1;
       xpowers[2:n+1] = xpowers[1:n]*x;
       y = transpose(a) * xpowers;
 
-The recursive formulation would be expanded to 
+The recursive formulation would be expanded to
 
       xpowers[1] = 1;
       xpowers[2] = xpowers[1]*x;

@@ -1,31 +1,31 @@
-/* 
+/*
  * This file is part of OpenModelica.
- * 
+ *
  * Copyright (c) 1998-2008, Linköpings University,
- * Department of Computer and Information Science, 
- * SE-58183 Linköping, Sweden. 
- * 
+ * Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
  * All rights reserved.
- * 
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC 
- * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF 
- * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC 
- * PUBLIC LICENSE. 
- * 
- * The OpenModelica software and the Open Source Modelica 
- * Consortium (OSMC) Public License (OSMC-PL) are obtained 
- * from Linköpings University, either from the above address, 
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC
+ * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF
+ * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC
+ * PUBLIC LICENSE.
+ *
+ * The OpenModelica software and the Open Source Modelica
+ * Consortium (OSMC) Public License (OSMC-PL) are obtained
+ * from Linköpings University, either from the above address,
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
- * 
- * This program is distributed  WITHOUT ANY WARRANTY; without 
- * even the implied warranty of  MERCHANTABILITY or FITNESS 
- * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH 
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS 
- * OF OSMC-PL. 
- * 
+ *
+ * This program is distributed  WITHOUT ANY WARRANTY; without
+ * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
+ * OF OSMC-PL.
+ *
  * See the full OSMC Public License conditions for more details.
- * 
+ *
  */
 
 #include "simulation_events.h"
@@ -47,17 +47,17 @@ long* zeroCrossingEnabled = 0;
 long inUpdate = 0;
 long inSample = 0;
 
-static list<long> EventQueue; 
+static list<long> EventQueue;
 
 /* \brief allocate global data structures for event handling
- * 
+ *
  * \return zero if successful.
  */
 int initializeEventData()
 {
 	 // load default initial values.
   gout = new double[globalData->nZeroCrossing];
-  h_saved = new double[globalData->nHelpVars];  
+  h_saved = new double[globalData->nHelpVars];
   x_saved = new double[globalData->nStates];
   xd_saved = new double[globalData->nStates];
   y_saved = new double[globalData->nAlgebraic];
@@ -77,7 +77,7 @@ int initializeEventData()
 }
 
 /* \brief deallocate global data for event handling.
- * 
+ *
  */
 void deinitializeEventData()
 {
@@ -90,15 +90,15 @@ void deinitializeEventData()
 }
 
 /* \brief
- * 
+ *
  * Checks for events during initialization.
- * 
+ *
  * Some solvers(e.g. DASSRT )can not handle events at exaclty the start time.
  * For instance der(x)=1, b = x>0 simulated from 0 .. x will miss the event.
  * The zeroCrossingEnabled vector is used to prevent DASSRT from checking the event above since it occur
  * at start time for the solver.
- * 
- * This function checks such initial events and calls the event handling for this. The function is called after the first 
+ *
+ * This function checks such initial events and calls the event handling for this. The function is called after the first
  * step is taken by DASSRT (a small tiny step just to check these events)
  * */
 void checkForInitialZeroCrossings(long*jroot)
@@ -117,7 +117,7 @@ void checkForInitialZeroCrossings(long*jroot)
 	}
 	function_zeroCrossing(&globalData->nStates,&globalData->timeValue,
                         globalData->states,&globalData->nZeroCrossing,gout,0,0);
-		
+
 	for(i=0;i<globalData->nZeroCrossing;i++) {
     if (zeroCrossingEnabled[i] && gout[i]) {
       handleZeroCrossing(i);
@@ -129,7 +129,7 @@ void checkForInitialZeroCrossings(long*jroot)
     CheckForNewEvents(&globalData->timeValue);
     StartEventIteration(&globalData->timeValue);
 
-    saveall();		
+    saveall();
     calcEnabledZeroCrossings();
     if (sim_verbose) {
     	cout << "checkForIntialZeroCrossings done." << endl;
@@ -138,18 +138,18 @@ void checkForInitialZeroCrossings(long*jroot)
 
 
 /* This function is similar to CheckForNewEvents except that is called during initialization.
- * 
+ *
  */
 
 void CheckForInitialEvents(double *t)
 {
   // Check for changes in discrete variables
   globalData->timeValue = *t;
-  if (sim_verbose) { 
+  if (sim_verbose) {
   	cout << "Check for initial events." << endl;
   }
   // if discrete variable not in when equation has changed, saveall and  solve equations again.
-  while(checkForDiscreteVarChanges()) { 
+  while(checkForDiscreteVarChanges()) {
   	saveall();
   	function_updateDependents(); }
   function_zeroCrossing(&globalData->nStates,
@@ -163,7 +163,7 @@ void CheckForInitialEvents(double *t)
     		cout << "adding event " << i << " at initialization" << endl;
     		}
        AddEvent(i);
-    } 
+    }
   }
 }
 
@@ -175,19 +175,19 @@ void CheckForNewEvents(double *t)
   globalData->timeValue = *t;
   // if discrete variable not in when equation has changed, saveall and solve equations again.
 /*
-  while(checkForDiscreteVarChanges()) { 
+  while(checkForDiscreteVarChanges()) {
   	discVarChange=1;
   	saveall();
-  	function_updateDependents(); 
+  	function_updateDependents();
   }
 
-	if(!discVarChange) function_updateDependents();	
+	if(!discVarChange) function_updateDependents();
 */
 
   if (checkForDiscreteVarChanges()) {
   	AddEvent(-1);
   }
-  
+
   function_zeroCrossing(&globalData->nStates,
                         &globalData->timeValue,
                         globalData->states,
@@ -209,7 +209,7 @@ void AddEvent(long index)
   EventQueue.push_back(index);
     //cout << "Adding Event:" << index << " queue length:" << EventQueue.size() << endl;
 }
- 
+
 bool
 ExecuteNextEvent(double *t)
 {
@@ -223,7 +223,7 @@ ExecuteNextEvent(double *t)
   }
   if (EventQueue.begin() != EventQueue.end()) {
     long nextEvent = EventQueue.front();
-    if (sim_verbose) { 
+    if (sim_verbose) {
 		printf("Executing event id:%ld\n",nextEvent);
     }
 	if (nextEvent >= globalData->nZeroCrossing) {
@@ -264,13 +264,13 @@ StartEventIteration(double *t)
   //  cout << "EventIteration done" << endl;
 }
 
-void StateEventHandler(long* jroot, double *t) 
+void StateEventHandler(long* jroot, double *t)
 {
-  inSample = 1;	
+  inSample = 1;
   for(int i=0;i<globalData->nZeroCrossing;i++) {
     if (jroot[i] ) {
       handleZeroCrossing(i);
-      function_updateDependents();      
+      function_updateDependents();
       functionDAE_output();
     }
   }
@@ -278,12 +278,12 @@ void StateEventHandler(long* jroot, double *t)
 }
 
 #if defined(__GNUC__) // for GNUC
-// adrpo - 2006-12-05 
+// adrpo - 2006-12-05
 // for GNUC the inline is a bit more involved
 // read here:
 // http://gcc.gnu.org/onlinedocs/gcc-3.2.3/gcc/Inline.html
 #else /* for other compilers */
-inline 
+inline
 #endif
 void calcEnabledZeroCrossings()
 {
@@ -300,29 +300,29 @@ void calcEnabledZeroCrossings()
       zeroCrossingEnabled[i] = -1;
     else
       zeroCrossingEnabled[i] = 0;
- // cout << "e[" << i << "]=" << zeroCrossingEnabled[i] << " gout[" << i << "]="<< gout[i] 
+ // cout << "e[" << i << "]=" << zeroCrossingEnabled[i] << " gout[" << i << "]="<< gout[i]
    //  << " init =" << globalData->init << endl;
   }
 }
 
 
 // relation functions used in zero crossing detection
-double Less(double a, double b) 
+double Less(double a, double b)
 {
     return a-b;
 }
 
-double LessEq(double a, double b) 
+double LessEq(double a, double b)
 {
     return a-b;
 }
 
-double Greater(double a, double b) 
+double Greater(double a, double b)
 {
     return b-a;
 }
 
-double GreaterEq(double a, double b) 
+double GreaterEq(double a, double b)
 {
     return b-a;
 }
@@ -335,10 +335,10 @@ double Sample(double t, double start, double interval)
 }
 
 /*
- * Returns true and triggers time events at time instants 
- * start + i*interval (i=0,1,...). 
- * During continuous integration the operator returns always false. 
- * The starting time start and the sample interval interval need to 
+ * Returns true and triggers time events at time instants
+ * start + i*interval (i=0,1,...).
+ * During continuous integration the operator returns always false.
+ * The starting time start and the sample interval interval need to
  * be parameter expressions and need to be a subtype of Real or Integer.
  */
 double sample(double start, double interval)
@@ -347,23 +347,23 @@ double sample(double start, double interval)
   if (inSample == 0) return 0;
   double tmp = ((globalData->timeValue - start)/interval);
   tmp-= floor(tmp);
-  /* adrpo - 2008-01-15 
+  /* adrpo - 2008-01-15
    * comparison was tmp >= 0 fails sometimes on x86 due to extended precision in registers
-   * TODO - fix the simulation runtime so that the sample event is generated at EXACTLY that time. 
+   * TODO - fix the simulation runtime so that the sample event is generated at EXACTLY that time.
    * below should be: if (tmp >= -0.0001 && tmp < 0.0001) but needs more testing as some models from
    * testsuite fail.
-   */  
+   */
   if (tmp >= -0.0001 && tmp < 0.0001)
   {
-    if (sim_verbose) 
-      cout << "Calling sample(" << start << ", " << interval << ")\n" 
-           << "+generating an event at time:" << globalData->timeValue << " tmp: " << tmp << endl; 
+    if (sim_verbose)
+      cout << "Calling sample(" << start << ", " << interval << ")\n"
+           << "+generating an event at time:" << globalData->timeValue << " tmp: " << tmp << endl;
   	return 1;
   }
   else
   {
-    if (sim_verbose)    
-      cout << "Calling sample(" << start << ", " << interval << ")\n" 
+    if (sim_verbose)
+      cout << "Calling sample(" << start << ", " << interval << ")\n"
            << "-NO an event at time:" << globalData->timeValue << " tmp: " << tmp << endl;
     return 0;
   }
@@ -387,11 +387,11 @@ void saveall()
 
 
 
-/* save(v) saves the previous value of a discrete variable v, which can be accessed 
+/* save(v) saves the previous value of a discrete variable v, which can be accessed
  * using pre(v) in Modelica.
  */
 
-void save(double & var) 
+void save(double & var)
 {
   double* pvar = &var;
   long ind;
@@ -408,7 +408,7 @@ void save(double & var)
     return;
   }
   ind = long(pvar - globalData->statesDerivatives);
-  if (ind >= 0 && ind < globalData->nStates) {   
+  if (ind >= 0 && ind < globalData->nStates) {
     xd_saved[ind] = var;
     return;
   }
@@ -420,7 +420,7 @@ void save(double & var)
   return;
 }
 
-double pre(double & var) 
+double pre(double & var)
 {
   double* pvar = &var;
   long ind;
@@ -430,7 +430,7 @@ double pre(double & var)
     return x_saved[ind];
   }
   ind = long(pvar - globalData->statesDerivatives);
-  if (ind >= 0 && ind < globalData->nStates) {    
+  if (ind >= 0 && ind < globalData->nStates) {
     return xd_saved[ind];
   }
   ind = long(pvar - globalData->algebraics);
@@ -443,7 +443,7 @@ double pre(double & var)
   }
   return var;
 }
-bool edge(double& var) 
+bool edge(double& var)
 {
   return var && ! pre(var);
 }

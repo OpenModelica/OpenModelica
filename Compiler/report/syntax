@@ -81,7 +81,7 @@ included here):
           class_modification
         | "=" expression
 
-        
+
        class_modification :
           "(" { argument_list } ")"
 
@@ -107,11 +107,11 @@ prefixed with "final", but that is not described by the grammar.
 Suggestion: Change the production rule for class_definition.
 
       class_definition :
-            [ partial | final ] 
+            [ partial | final ]
          ( class | model | record | block | connector | type |
-           package | function ) 
+           package | function )
          IDENT comment
-         ( composition end IDENT | 
+         ( composition end IDENT |
            "=" IDENT [ array_dimensions ] [ class_modification ] )
 
 Status: fixed
@@ -126,7 +126,7 @@ component_reference, as the can only be one dot in them (ref. Dag).
 
   equation :
         ( "connect" "(" component_reference "," component_reference ")"
-	  | simple_expression [ ( "=" | ":=" ) expression ] 
+	  | simple_expression [ ( "=" | ":=" ) expression ]
           | conditional_equation
           | for_clause
           | while_clause )

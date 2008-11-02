@@ -1,41 +1,41 @@
-/* 
+/*
  * This file is part of OpenModelica.
- * 
+ *
  * Copyright (c) 1998-2008, Linköpings University,
- * Department of Computer and Information Science, 
- * SE-58183 Linköping, Sweden. 
- * 
+ * Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
  * All rights reserved.
- * 
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC 
- * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF 
- * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC 
- * PUBLIC LICENSE. 
- * 
- * The OpenModelica software and the Open Source Modelica 
- * Consortium (OSMC) Public License (OSMC-PL) are obtained 
- * from Linköpings University, either from the above address, 
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC
+ * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF
+ * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC
+ * PUBLIC LICENSE.
+ *
+ * The OpenModelica software and the Open Source Modelica
+ * Consortium (OSMC) Public License (OSMC-PL) are obtained
+ * from Linköpings University, either from the above address,
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
- * 
- * This program is distributed  WITHOUT ANY WARRANTY; without 
- * even the implied warranty of  MERCHANTABILITY or FITNESS 
- * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH 
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS 
- * OF OSMC-PL. 
- * 
+ *
+ * This program is distributed  WITHOUT ANY WARRANTY; without
+ * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
+ * OF OSMC-PL.
+ *
  * See the full OSMC Public License conditions for more details.
- * 
+ *
  */
 
-package Main 
+package Main
 " file:        Main.mo
   package:     Main
   description: Modelica main program
- 
+
   RCS: $Id$
- 
-  This is the main program in the Modelica specification. 
+
+  This is the main program in the Modelica specification.
   It either translates a file given as a command line argument
   or starts a server loop communicating through CORBA or sockets
   (The Win32 implementation only implements CORBA)"
@@ -66,14 +66,14 @@ protected import Env;
 protected import Settings;
 
 
-protected function serverLoop 
-"function: serverLoop 
-  This function is the main loop of the server listening 
+protected function serverLoop
+"function: serverLoop
+  This function is the main loop of the server listening
   to a port which recieves modelica expressions."
   input Integer inInteger;
   input Interactive.InteractiveSymbolTable inInteractiveSymbolTable;
   output Interactive.InteractiveSymbolTable outInteractiveSymbolTable;
-algorithm 
+algorithm
   outInteractiveSymbolTable:=
   matchcontinue (inInteger,inInteractiveSymbolTable)
     local
@@ -81,7 +81,7 @@ algorithm
       Interactive.InteractiveSymbolTable newsymb,ressymb,isymb;
       Integer shandle;
     case (shandle,isymb)
-      equation 
+      equation
         str = Socket.handlerequest(shandle);
         Debug.fprint("interactivedump", "------- Recieved Data from client -----\n");
         Debug.fprint("interactivedump", str);
@@ -93,7 +93,7 @@ algorithm
       then
         ressymb;
     case (shandle,isymb)
-      equation 
+      equation
         str = Socket.handlerequest(shandle) "2004-11-27 - adrpo added this part to make the loop deterministic" ;
         Debug.fprint("interactivedump", "------- Recieved Data from client -----\n");
         Debug.fprint("interactivedump", str);
@@ -112,7 +112,7 @@ end serverLoop;
 protected function checkClassdef
   input String inString;
   output Boolean outBoolean;
-algorithm 
+algorithm
   outBoolean:=
   matchcontinue (inString)
     local
@@ -120,8 +120,8 @@ algorithm
       String str_1,str;
       Boolean res;
     case (str) /* Need to check for a whitespace after as well to get the keyword,
-	e.g typeOf function would be taken as a type definition otherwise */ 
-      equation 
+	e.g typeOf function would be taken as a type definition otherwise */
+      equation
         true = Util.strncmp(" ", str, 1);
         clst = string_list_string_char(str);
         clst_1 = listDelete(clst, 0);
@@ -130,8 +130,8 @@ algorithm
       then
         res;
     case str /* Need to check for a whitespace after as well to get the keyword,
-	e.g typeOf function would be taken as a type definition otherwise */ 
-      equation 
+	e.g typeOf function would be taken as a type definition otherwise */
+      equation
         false = Util.strncmp("end ", str, 4);
         false = Util.strncmp("type ", str, 5);
         false = Util.strncmp("class ", str, 6);
@@ -146,7 +146,7 @@ algorithm
         false = Util.strncmp("encapsulated ", str, 12);
       then
         false;
-    case _ then true; 
+    case _ then true;
   end matchcontinue;
 end checkClassdef;
 
@@ -156,7 +156,7 @@ protected function makeDebugResult
   output String res_1;
   String debugstr,res_with_debug,res_1;
   Boolean dumpflag;
-algorithm 
+algorithm
   debugstr := Print.getString();
   res_with_debug := Util.stringAppendList(
           {res,"\n---DEBUG(",flagstr,")---\n",debugstr,"\n---/DEBUG(",
@@ -165,17 +165,17 @@ algorithm
   res_1 := Util.if_(dumpflag, res_with_debug, res);
 end makeDebugResult;
 
-protected function handleCommand 
-"function handleCommand 
+protected function handleCommand
+"function handleCommand
   This function handles the commands in form of strings send to the server
-  If the command is quit, the function returns false, otherwise it sends 
+  If the command is quit, the function returns false, otherwise it sends
   the string to the parse function and returns true."
   input String inString;
   input Interactive.InteractiveSymbolTable inInteractiveSymbolTable;
   output Boolean outBoolean;
   output String outString;
   output Interactive.InteractiveSymbolTable outInteractiveSymbolTable;
-algorithm 
+algorithm
   (outBoolean,outString,outInteractiveSymbolTable):=
   matchcontinue (inString,inInteractiveSymbolTable)
     local
@@ -189,19 +189,19 @@ algorithm
       Interactive.InteractiveStmts exp;
       list<Interactive.LoadedFile> lf;
     case (str,isymb)
-      equation 
+      equation
         true = Util.strncmp("quit()", str, 6);
       then
         (false,"Ok\n",isymb);
     /* Add a class or function to the interactive symbol table.
-	   * If it is a function, type check it. 
-	   */        
+	   * If it is a function, type check it.
+	   */
     case (str,
     (isymb as Interactive.SYMBOLTABLE(
       ast = iprog,explodedAst = a,instClsLst = b,
       lstVarVal = vars,compiledFunctions = cf,
-      loadedFiles = lf)))  
-      equation 
+      loadedFiles = lf)))
+      equation
         //debug_print("Command: typeCheck", str);
         Debug.fcall0("dump", Print.clearBuf);
         Debug.fcall0("dumpgraphviz", Print.clearBuf);
@@ -213,7 +213,7 @@ algorithm
         vars_1 = Interactive.updateScope(p, vars);
         (newprog, cf_1) = Interactive.updateProgram(p_1, iprog, cf);
         cf_2 = Interactive.removeCompiledFunctions(p, cf_1);
-        Debug.fprint("dump", 
+        Debug.fprint("dump",
           "\n--------------- Parsed program ---------------\n");
         Debug.fcall("dumpgraphviz", DumpGraphviz.dump, newprog);
         Debug.fcall("dump", Dump.dump, newprog);
@@ -221,12 +221,12 @@ algorithm
         res = makeDebugResult("dumpgraphviz", res_1);
       then
         (true,res,Interactive.SYMBOLTABLE(newprog,a,b,vars_1,cf_2,lf));
-    case (str,isymb) /* Interactively evaluate an algorithm statement or expression */ 
-      equation 
-        //debug_print("Command: don't typeCheck", str);      
+    case (str,isymb) /* Interactively evaluate an algorithm statement or expression */
+      equation
+        //debug_print("Command: don't typeCheck", str);
         Debug.fcall0("dump", Print.clearBuf);
         Debug.fcall0("dumpgraphviz", Print.clearBuf);
-        Debug.fprint("dump", 
+        Debug.fprint("dump",
           "\nNot a class definition, trying expresion parser\n");
         (exp,msg) = Parser.parsestringexp(str);
         equality(msg = "Ok") "always succeeds, check msg for errors" ;
@@ -239,14 +239,14 @@ algorithm
         (true,res,newisymb);
     case (str,isymb)
       local Interactive.InteractiveStmts p;
-      equation 
-        //debug_print("Command: fail", str);      
+      equation
+        //debug_print("Command: fail", str);
         Debug.fcall0("failtrace", Print.clearBuf);
         (p,msg) = Parser.parsestring(str);
         (p,expmsg) = Parser.parsestringexp(str);
         failure(equality(msg = "Ok"));
         failure(equality(expmsg = "Ok"));
-        Debug.fprint("failtrace", 
+        Debug.fprint("failtrace",
           "\nBoth parser and expression parser failed: \n");
         Debug.fprintl("failtrace", {"parser: \n",msg,"\n"});
         Debug.fprintl("failtrace", {"expparser: \n",expmsg,"\n"});
@@ -254,7 +254,7 @@ algorithm
       then
         (true,res,isymb);
     case (_,isymb)
-      equation 
+      equation
         Print.printBuf("Error occured building AST\n");
         debugstr = Print.getString();
         str = stringAppend(debugstr, "Syntax Error\n");
@@ -263,25 +263,25 @@ algorithm
   end matchcontinue;
 end handleCommand;
 
-protected function isModelicaFile 
-"function: isModelicaFile 
+protected function isModelicaFile
+"function: isModelicaFile
   Succeeds if filename ends with .mo or .mof"
   input String inString;
-algorithm 
+algorithm
   _:=
   matchcontinue (inString)
     local
       list<String> lst;
       String last,filename;
     case (filename)
-      equation 
+      equation
         lst = System.strtok(filename, ".");
         (last :: _) = listReverse(lst);
         equality(last = "mo");
       then
         ();
     case (filename)
-      equation 
+      equation
         lst = System.strtok(filename, ".");
         (last :: _) = listReverse(lst);
         equality(last = "mof");
@@ -290,25 +290,25 @@ algorithm
   end matchcontinue;
 end isModelicaFile;
 
-protected function isFlatModelicaFile 
-"function: isFlatModelicaFile 
+protected function isFlatModelicaFile
+"function: isFlatModelicaFile
   Succeeds if filename ends with .mof"
   input String filename;
   list<String> lst;
   String last;
-algorithm 
+algorithm
   lst := System.strtok(filename, ".");
   (last :: _) := listReverse(lst);
   equality(last := "mof");
 end isFlatModelicaFile;
 
-protected function isModelicaScriptFile 
-"function: isModelicaScriptFile 
+protected function isModelicaScriptFile
+"function: isModelicaScriptFile
   Succeeds if filname end with .mos"
   input String filename;
   list<String> lst;
   String last;
-algorithm 
+algorithm
   lst := System.strtok(filename, ".");
   (last :: _) := listReverse(lst);
   equality(last := "mos");
@@ -316,7 +316,7 @@ end isModelicaScriptFile;
 
 protected function versionRequest
 algorithm
-  _:= matchcontinue() 
+  _:= matchcontinue()
     case () equation
       true = RTOpts.versionRequest();
     then ();
@@ -325,32 +325,32 @@ end versionRequest;
 
 protected function showErrors
   input String errorString;
-  input String errorMessages;  
+  input String errorMessages;
 algorithm
   _ := matchcontinue(errorString, errorMessages)
     case("", "") then ();
     case(errorString, "")
       equation
-        print(errorString); print("\n"); 
-      then ();  
+        print(errorString); print("\n");
+      then ();
     case("", errorMessages)
       equation
-        print(errorMessages); print("\n"); 
-      then ();  
+        print(errorMessages); print("\n");
+      then ();
     case(errorString, errorMessages)
       equation
-        print(errorString); print("\n"); 
-        print(errorMessages); print("\n"); 
-      then ();  
- end matchcontinue;     
-end showErrors;  
+        print(errorString); print("\n");
+        print(errorMessages); print("\n");
+      then ();
+ end matchcontinue;
+end showErrors;
 
-protected function translateFile 
+protected function translateFile
 "function: translateFile
   This function invokes the translator on a source file.  The
   argument should be a list with a single file name."
   input list<String> inStringLst;
-algorithm 
+algorithm
   _:=
   matchcontinue (inStringLst)
     local
@@ -369,21 +369,21 @@ algorithm
         versionRequest();
         print(Settings.getVersionNr());
       then ();
-       
-    case {f} /* A Modelica file .mo */ 
+
+    case {f} /* A Modelica file .mo */
       local String s;
-      equation 
+      equation
         isModelicaFile(f);
         p = Parser.parse(f);
         // show parse errors if there are any
-        showErrors(Print.getErrorString(), ErrorExt.printMessagesStr());  
-                
+        showErrors(Print.getErrorString(), ErrorExt.printMessagesStr());
+
         Debug.fprint("dump", "\n--------------- Parsed program ---------------\n");
         Debug.fcall("dumpgraphviz", DumpGraphviz.dump, p);
         Debug.fcall("dump", Dump.dump, p);
         s = Print.getString();
         Debug.fcall("dump",print,s);
-        p = transformFlatProgram(p,f);  
+        p = transformFlatProgram(p,f);
         Debug.fprint("info", "\n------------------------------------------------------------ \n");
         Debug.fprint("info", "---elaborating\n");
         p_1 = SCode.elaborate(p);
@@ -409,47 +409,47 @@ algorithm
         silent = RTOpts.silent();
         notsilent = boolNot(silent);
         Debug.bcall(notsilent, print, str);
-        optimizeDae(p_1, p, d, d, cname);        
+        optimizeDae(p_1, p, d, d, cname);
       then
         ();
-    case {f} /* Modelica script file .mos */ 
-      equation 
+    case {f} /* Modelica script file .mos */
+      equation
         isModelicaScriptFile(f);
         stmts = Parser.parseexp(f);
         // are there any errors?
         // show errors if there are any
-        showErrors(Print.getErrorString(), ErrorExt.printMessagesStr());  
+        showErrors(Print.getErrorString(), ErrorExt.printMessagesStr());
         (res,newst) = Interactive.evaluate(stmts, Interactive.emptySymboltable, true);
         print(res);
       then
         ();
     case {f}
-      local Integer r;  
+      local Integer r;
       equation
         r = System.regularFileExists(f);
         (r > 0) = true;  //could not found file
-        print("File does not exist: "); print(f); print("\n"); 
+        print("File does not exist: "); print(f); print("\n");
         // show errors if there are any
-        showErrors(Print.getErrorString(), ErrorExt.printMessagesStr());  
+        showErrors(Print.getErrorString(), ErrorExt.printMessagesStr());
       then
         fail();
-    case {f}  
-      local Integer r;  
+    case {f}
+      local Integer r;
       equation
         r = System.regularFileExists(f);
         (r == 0) = true;  //found file but could not process
-        print("Error processing file: "); print(f); print("\n"); 
+        print("Error processing file: "); print(f); print("\n");
         // show errors if there are any
-        showErrors(Print.getErrorString(), ErrorExt.printMessagesStr());  
+        showErrors(Print.getErrorString(), ErrorExt.printMessagesStr());
       then
         fail();
     case (_ :: (_ :: _))
-      equation 
+      equation
         Print.printErrorBuf("# Too many arguments\n");
       then
         fail();
     case {}
-      equation 
+      equation
         Print.printBuf("Usage: omc <options> filename \n");
         Print.printBuf("omc accepts .mo (Modelica files) \n");
         Print.printBuf("            .mof (Flat Modelica files) \n");
@@ -467,8 +467,8 @@ algorithm
   end matchcontinue;
 end translateFile;
 
-protected function transformFlatProgram 
-"Transforms the variables in equations to have the same format as for variables, 
+protected function transformFlatProgram
+"Transforms the variables in equations to have the same format as for variables,
 i.e. a.b[3].c[2] becomes CREF_IDENT(\"a.b[3].c\",[INDEX(ICONST(2))])"
   input Absyn.Program p;
   input String filename;
@@ -483,15 +483,15 @@ algorithm
   end matchcontinue;
 end transformFlatProgram;
 
-protected function runBackendQ 
-"function: runBackendQ 
+protected function runBackendQ
+"function: runBackendQ
   Determine if backend, i.e. BLT etc. should be run.
-  It should be run if either \"blt\" flag is set or if 
+  It should be run if either \"blt\" flag is set or if
   parallelization is enabled by giving flag -n=<no proc.>"
   output Boolean res_1;
   Boolean bltflag,sim_cg,par,res,res_1;
   Integer n;
-algorithm 
+algorithm
   bltflag := RTOpts.debugFlag("blt");
   sim_cg := RTOpts.simulationCg();
   n := RTOpts.noProc();
@@ -500,15 +500,15 @@ algorithm
   res_1 := boolOr(res, sim_cg);
 end runBackendQ;
 
-protected function optimizeDae 
-"function: optimizeDae  
+protected function optimizeDae
+"function: optimizeDae
   Run the backend. Used for both parallization and for normal execution."
   input SCode.Program inProgram1;
   input Absyn.Program inProgram2;
   input DAE.DAElist inDAElist3;
   input DAE.DAElist inDAElist4;
   input Absyn.Path inPath5;
-algorithm 
+algorithm
   _:=
   matchcontinue (inProgram1,inProgram2,inDAElist3,inDAElist4,inPath5)
     local
@@ -522,7 +522,7 @@ algorithm
       Absyn.Path classname;
     case (p,ap,dae,daeimpl,classname)
       local String str;
-      equation 
+      equation
         true = runBackendQ();
         dlow = DAELow.lower(dae, true, true) "add dummy state" ;
         Debug.fcall("dumpdaelow", DAELow.dump, dlow);
@@ -530,7 +530,7 @@ algorithm
         mT = DAELow.transposeMatrix(m);
         Debug.fcall("bltdump", DAELow.dumpIncidenceMatrix, m);
         Debug.fcall("bltdump", DAELow.dumpIncidenceMatrixT, mT);
-        (v1,v2,dlow_1,m,mT) = DAELow.matchingAlgorithm(dlow, m, mT, 
+        (v1,v2,dlow_1,m,mT) = DAELow.matchingAlgorithm(dlow, m, mT,
           (DAELow.INDEX_REDUCTION(),DAELow.EXACT(),
           DAELow.REMOVE_SIMPLE_EQN()));
         Debug.fcall("bltdump", DAELow.dumpIncidenceMatrix, m);
@@ -546,26 +546,26 @@ algorithm
       then
         ();
     case (_,_,_,_,_)
-      equation 
+      equation
         true = runBackendQ() "so main can print error messages" ;
       then
         fail();
-    case (_,_,_,_,_) /* If not running backend. */ 
-      equation 
+    case (_,_,_,_,_) /* If not running backend. */
+      equation
         false = runBackendQ();
       then
         ();
   end matchcontinue;
 end optimizeDae;
 
-protected function modpar 
-"function: modpar 
+protected function modpar
+"function: modpar
   The automatic paralellzation module."
   input DAELow.DAELow inDAELow1;
   input Integer[:] inIntegerArray2;
   input Integer[:] inIntegerArray3;
   input list<list<Integer>> inIntegerLstLst4;
-algorithm 
+algorithm
   _:=
   matchcontinue (inDAELow1,inIntegerArray2,inIntegerArray3,inIntegerLstLst4)
     local
@@ -576,13 +576,13 @@ algorithm
       Integer[:] ass1,ass2;
       list<list<Integer>> comps;
     case (_,_,_,_)
-      equation 
+      equation
         n = RTOpts.noProc() "If modpar not enabled, nproc = 0, return" ;
         (n == 0) = true;
       then
         ();
     case (dae,ass1,ass2,comps)
-      equation 
+      equation
         print("translating dae.\n") "Otherwise, build task graph print \"old dae:\" & DAELow.dump dae &" ;
         indexed_dae = DAELow.translateDae(dae);
         indexed_dae_1 = DAELow.calculateValues(indexed_dae);
@@ -612,15 +612,15 @@ algorithm
       then
         ();
     case (_,_,_,_)
-      equation 
+      equation
         Debug.fprint("failtrace", "-modpar failed\n");
       then
         fail();
   end matchcontinue;
 end modpar;
 
-protected function simcodegen 
-"function simcodegen 
+protected function simcodegen
+"function simcodegen
   Genereates simulation code using the SimCodegen module"
   input Absyn.Path inPath1;
   input SCode.Program inProgram2;
@@ -632,7 +632,7 @@ protected function simcodegen
   input DAELow.IncidenceMatrix inIncidenceMatrix8;
   input DAELow.IncidenceMatrixT inIncidenceMatrixT9;
   input list<list<Integer>> inIntegerLstLst10;
-algorithm 
+algorithm
   _:=
   matchcontinue (inPath1,inProgram2,inProgram3,inDAElist4,inDAELow5,inIntegerArray6,inIntegerArray7,inIncidenceMatrix8,inIncidenceMatrixT9,inIntegerLstLst10)
     local
@@ -647,8 +647,8 @@ algorithm
       Integer[:] ass1,ass2;
       list<Integer>[:] m,mt;
       list<list<Integer>> comps;
-    case (classname,p,ap,dae,dlow,ass1,ass2,m,mt,comps) /* classname ass1 ass2 blocks */ 
-      equation 
+    case (classname,p,ap,dae,dlow,ass1,ass2,m,mt,comps) /* classname ass1 ass2 blocks */
+      equation
         true = RTOpts.simulationCg();
         Print.clearErrorBuf();
         Print.clearBuf();
@@ -663,74 +663,74 @@ algorithm
         a_cref = Absyn.pathToCref(classname);
         file_dir = Ceval.getFileDir(a_cref, ap);
         libs = SimCodegen.generateFunctions(p, dae, indexed_dlow_1, classname, funcfilename);
-        SimCodegen.generateSimulationCode(dae, indexed_dlow_1, ass1, ass2, m, mt, comps, classname, 
+        SimCodegen.generateSimulationCode(dae, indexed_dlow_1, ass1, ass2, m, mt, comps, classname,
           filename, funcfilename,file_dir);
-        SimCodegen.generateInitData(indexed_dlow_1, classname, cname_str, init_filename, 0.0, 
+        SimCodegen.generateInitData(indexed_dlow_1, classname, cname_str, init_filename, 0.0,
           1.0, 500.0, 1e-6, "dassl");
         SimCodegen.generateMakefile(makefilename, cname_str, libs, file_dir);
       then
         ();
-    case (_,_,_,_,_,_,_,_,_,_) /* If something above failed. fail so Main can print errors */ 
-      equation 
+    case (_,_,_,_,_,_,_,_,_,_) /* If something above failed. fail so Main can print errors */
+      equation
         true = RTOpts.simulationCg();
       then
         fail();
-    case (_,_,_,_,_,_,_,_,_,_) /* If not generating simulation code */ 
-      equation 
+    case (_,_,_,_,_,_,_,_,_,_) /* If not generating simulation code */
+      equation
         false = RTOpts.simulationCg();
       then
         ();
   end matchcontinue;
 end simcodegen;
 
-protected function runModparQ 
-"function: runModparQ 
+protected function runModparQ
+"function: runModparQ
   Returns true if parallelization should be run."
   output Boolean res;
   Integer n;
-algorithm 
+algorithm
   n := RTOpts.noProc();
   res := (n > 0);
 end runModparQ;
 
-protected function fixModelicaOutput 
-"function: fixModelicaOutput 
-  Transform the dae, replacing dots with underscore in variables and 
+protected function fixModelicaOutput
+"function: fixModelicaOutput
+  Transform the dae, replacing dots with underscore in variables and
   equations."
   input DAE.DAElist inDAElist;
   output DAE.DAElist outDAElist;
-algorithm 
+algorithm
   outDAElist:=
   matchcontinue (inDAElist)
     local
       list<DAE.Element> dae_1,dae;
       DAE.DAElist d;
     case DAE.DAE(elementLst = dae)
-      equation 
+      equation
         true = RTOpts.modelicaOutput();
         dae_1 = Inst.initVarsModelicaOutput(dae);
       then
         DAE.DAE(dae_1);
     case ((d as DAE.DAE(elementLst = dae)))
-      equation 
+      equation
         false = RTOpts.modelicaOutput();
       then
         d;
   end matchcontinue;
 end fixModelicaOutput;
 
-protected function interactivemode 
-"function: interactivemode 
+protected function interactivemode
+"function: interactivemode
   Initiate the interactive mode using socket communication."
   input list<String> inStringLst;
   input Interactive.InteractiveSymbolTable inInteractiveSymbolTable;
-algorithm 
+algorithm
   _:=
   matchcontinue (inStringLst,inInteractiveSymbolTable)
     local Integer shandle;
      Interactive.InteractiveSymbolTable symbolTable;
     case (_,symbolTable)
-      equation 
+      equation
         shandle = Socket.waitforconnect(29500);
         _ = serverLoop(shandle, symbolTable/*Interactive.emptySymboltable*/);
       then
@@ -738,46 +738,46 @@ algorithm
   end matchcontinue;
 end interactivemode;
 
-protected function interactivemodeCorba 
-"function: interactivemodeCorba 
+protected function interactivemodeCorba
+"function: interactivemodeCorba
   Initiate the interactive mode using corba communication."
   input list<String> inStringLst;
   input Interactive.InteractiveSymbolTable inInteractiveSymbolTable;
-algorithm 
+algorithm
   _:=
   matchcontinue (inStringLst,inInteractiveSymbolTable)
-   local 
+   local
      Interactive.InteractiveSymbolTable symbolTable;
     case (_,symbolTable)
-      equation 
+      equation
         Corba.initialize();
         _ = serverLoopCorba(symbolTable/*Interactive.emptySymboltable*/);
       then
         ();
     case (_,symbolTable)
-      equation 
+      equation
         failure(Corba.initialize());
         Print.printBuf("Failed to initialize Corba! Is another OMC already running?\n");
-        Print.printBuf("Exiting!\n");        
+        Print.printBuf("Exiting!\n");
       then
         ();
   end matchcontinue;
 end interactivemodeCorba;
 
 
-protected function serverLoopCorba 
-"function: serverLoopCorba 
+protected function serverLoopCorba
+"function: serverLoopCorba
   This function is the main loop of the server for a CORBA impl."
   input Interactive.InteractiveSymbolTable inInteractiveSymbolTable;
   output Interactive.InteractiveSymbolTable outInteractiveSymbolTable;
-algorithm 
+algorithm
   outInteractiveSymbolTable:=
   matchcontinue (inInteractiveSymbolTable)
     local
       String str,replystr;
       Interactive.InteractiveSymbolTable newsymb,ressymb,isymb;
     case (isymb)
-      equation 
+      equation
         str = Corba.waitForCommand();
         Print.clearBuf();
         (true,replystr,newsymb) = handleCommand(str, isymb);
@@ -786,7 +786,7 @@ algorithm
       then
         ressymb;
     case (isymb)
-      equation 
+      equation
         str = Corba.waitForCommand() "start - 2005-06-12 - adrpo added this part to make the loop deterministic" ;
         Print.clearBuf();
         (false,replystr,newsymb) = handleCommand(str, isymb);
@@ -799,11 +799,11 @@ algorithm
 end serverLoopCorba;
 
 
-protected function readSettings 
+protected function readSettings
 "function: readSettings
  author: x02lucpo
  Checks if 'settings.mos' exist and uses handleCommand with runScript(...) to execute it.
- Checks if '-s <file>.mos' has been 
+ Checks if '-s <file>.mos' has been
  returns Interactive.InteractiveSymbolTable which is used in the rest of the loop"
   input list<String> inStringLst;
   output Interactive.InteractiveSymbolTable outInteractiveSymbolTable;
@@ -872,10 +872,10 @@ algorithm
   print("OpenModelica Compiler version: "); print(Settings.getVersionNr()); print("\n");
   print("http://www.ida.liu.se/labs/pelab/modelica/OpenModelica.html\n");
   print("Please check the System Guide for full information about flags.\n");
-  print("Usage: omc [-runtimeOptions +omcOptions] Model.mo|Model.mof|Script.mos\n");        
+  print("Usage: omc [-runtimeOptions +omcOptions] Model.mo|Model.mof|Script.mos\n");
   print("* runtimeOptions: call omc -help for seeing runtime options\n");
   print("* omcOptions:\n");
-  print("\t++v                  will print the version and exit\n");  
+  print("\t++v                  will print the version and exit\n");
   print("\t+s Model.mo          will generate code for Model:\n");
   print("\t                     Model.cpp           the model C++ code\n");
   print("\t                     Model_functions.cpp the model functions C++ code\n");
@@ -883,21 +883,21 @@ algorithm
   print("\t                     Model_init.txt      the initial values for parameters\n");
   print("\t+d=interactive       will start omc as a server listening on the socket interface\n");
   print("\t+d=interactiveCorba  will start omc as a server listening on the Corba interface\n");
-  print("\t+c=corbaName         works togheter with +d=interactiveCorba;\n"); 
+  print("\t+c=corbaName         works togheter with +d=interactiveCorba;\n");
   print("\t                     will start omc with a different Corba session name; \n");
   print("\t                     this way multiple omc compilers can be started\n");
   print("* Examples:\n");
   print("\tomc Model.mo         will produce flattened Model on standard output\n");
   print("\tomc Model.mof        will produce flattened Model on standard output\n");
   print("\tomc Script.mos       will run the commands from Script.mos\n");
-end printUsage;    
+end printUsage;
 
-public function main 
+public function main
 " function: main
   This is the main function that the MetaModelica Compiler (MMC) runtime system calls to
   start the translation."
   input list<String> inStringLst;
-algorithm 
+algorithm
   _:=
   matchcontinue (inStringLst)
     local
@@ -911,8 +911,8 @@ algorithm
         printUsage();
       then ();
     case args
-      equation 
-        args_1 = RTOpts.args(args);        
+      equation
+        args_1 = RTOpts.args(args);
         // debug_show_depth(6);
         symbolTable = readSettings(args);
         ismode = RTOpts.debugFlag("interactive");
@@ -928,7 +928,7 @@ algorithm
       then
         ();
     case _
-      equation 
+      equation
         print("# Error encountered! Exiting...\n");
         print("# Please check the error message and the flags.\n");
         errstr = Print.getErrorString();

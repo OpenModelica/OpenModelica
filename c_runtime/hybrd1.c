@@ -28,10 +28,10 @@
     static integer j, ml, lr, mu, mode, nfev;
     static doublereal xtol;
     static integer index;
-    extern /* Subroutine */ int hybrd_(U_fp, integer *, doublereal *, 
-	    doublereal *, doublereal *, integer *, integer *, integer *, 
-	    doublereal *, doublereal *, integer *, doublereal *, integer *, 
-	    integer *, integer *, doublereal *, integer *, doublereal *, 
+    extern /* Subroutine */ int hybrd_(U_fp, integer *, doublereal *,
+	    doublereal *, doublereal *, integer *, integer *, integer *,
+	    doublereal *, doublereal *, integer *, doublereal *, integer *,
+	    integer *, integer *, doublereal *, integer *, doublereal *,
 	    integer *, doublereal *, doublereal *, doublereal *, doublereal *,
 	     doublereal *);
     static doublereal epsfcn;
@@ -153,7 +153,7 @@
     index = *n * 6 + lr;
     hybrd_((U_fp)fcn, n, &x[1], &fvec[1], &xtol, &maxfev, &ml, &mu, &epsfcn, &
 	    wa[1], &mode, &factor, &nprint, info, &nfev, &wa[index + 1], n, &
-	    wa[*n * 6 + 1], &lr, &wa[*n + 1], &wa[(*n << 1) + 1], &wa[*n * 3 
+	    wa[*n * 6 + 1], &lr, &wa[*n + 1], &wa[(*n << 1) + 1], &wa[*n * 3
 	    + 1], &wa[(*n << 2) + 1], &wa[*n * 5 + 1]);
     if (*info == 5) {
 	*info = 4;

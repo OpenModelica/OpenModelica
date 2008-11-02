@@ -15,7 +15,7 @@ int main(int argc, char** argv)
       return 1;
     }
 
-  
+
   CFUNCTION_TO_CALL(argv[1],argv[2]);
 
   return 0;

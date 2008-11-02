@@ -26,8 +26,8 @@ static integer c__1 = 1;
     static integer j, k, l;
     static doublereal t;
     static integer kp1, nm1;
-    extern /* Subroutine */ int dscal_(integer *, doublereal *, doublereal *, 
-	    integer *), daxpy_(integer *, doublereal *, doublereal *, integer 
+    extern /* Subroutine */ int dscal_(integer *, doublereal *, doublereal *,
+	    integer *), daxpy_(integer *, doublereal *, doublereal *, integer
 	    *, doublereal *, integer *);
     extern integer idamax_(integer *, doublereal *, integer *);
 
@@ -137,7 +137,7 @@ L10:
 	    a[k + j * a_dim1] = t;
 L20:
 	    i__3 = *n - k;
-	    daxpy_(&i__3, &t, &a[k + 1 + k * a_dim1], &c__1, &a[k + 1 + j * 
+	    daxpy_(&i__3, &t, &a[k + 1 + k * a_dim1], &c__1, &a[k + 1 + j *
 		    a_dim1], &c__1);
 /* L30: */
 	}
@@ -166,9 +166,9 @@ L70:
     static integer k, l;
     static doublereal t;
     static integer kb, nm1;
-    extern doublereal ddot_(integer *, doublereal *, integer *, doublereal *, 
+    extern doublereal ddot_(integer *, doublereal *, integer *, doublereal *,
 	    integer *);
-    extern /* Subroutine */ int daxpy_(integer *, doublereal *, doublereal *, 
+    extern /* Subroutine */ int daxpy_(integer *, doublereal *, doublereal *,
 	    integer *, doublereal *, integer *);
 
 
@@ -315,7 +315,7 @@ L100:
     return 0;
 } /* dgesl_ */
 
-/* Subroutine */ int dgbfa_(doublereal *abd, integer *lda, integer *n, 
+/* Subroutine */ int dgbfa_(doublereal *abd, integer *lda, integer *n,
 	integer *ml, integer *mu, integer *ipvt, integer *info)
 {
     /* System generated locals */
@@ -325,8 +325,8 @@ L100:
     static integer i__, j, k, l, m;
     static doublereal t;
     static integer i0, j0, j1, lm, mm, ju, jz, kp1, nm1;
-    extern /* Subroutine */ int dscal_(integer *, doublereal *, doublereal *, 
-	    integer *), daxpy_(integer *, doublereal *, doublereal *, integer 
+    extern /* Subroutine */ int dscal_(integer *, doublereal *, doublereal *,
+	    integer *), daxpy_(integer *, doublereal *, doublereal *, integer
 	    *, doublereal *, integer *);
     extern integer idamax_(integer *, doublereal *, integer *);
 
@@ -524,7 +524,7 @@ L60:
 	    abd[l + j * abd_dim1] = abd[mm + j * abd_dim1];
 	    abd[mm + j * abd_dim1] = t;
 L70:
-	    daxpy_(&lm, &t, &abd[m + 1 + k * abd_dim1], &c__1, &abd[mm + 1 + 
+	    daxpy_(&lm, &t, &abd[m + 1 + k * abd_dim1], &c__1, &abd[mm + 1 +
 		    j * abd_dim1], &c__1);
 /* L80: */
 	}
@@ -544,7 +544,7 @@ L130:
     return 0;
 } /* dgbfa_ */
 
-/* Subroutine */ int dgbsl_(doublereal *abd, integer *lda, integer *n, 
+/* Subroutine */ int dgbsl_(doublereal *abd, integer *lda, integer *n,
 	integer *ml, integer *mu, integer *ipvt, doublereal *b, integer *job)
 {
     /* System generated locals */
@@ -554,9 +554,9 @@ L130:
     static integer k, l, m;
     static doublereal t;
     static integer kb, la, lb, lm, nm1;
-    extern doublereal ddot_(integer *, doublereal *, integer *, doublereal *, 
+    extern doublereal ddot_(integer *, doublereal *, integer *, doublereal *,
 	    integer *);
-    extern /* Subroutine */ int daxpy_(integer *, doublereal *, doublereal *, 
+    extern /* Subroutine */ int daxpy_(integer *, doublereal *, doublereal *,
 	    integer *, doublereal *, integer *);
 
 
@@ -726,7 +726,7 @@ L100:
     return 0;
 } /* dgbsl_ */
 
-/* Subroutine */ int daxpy_(integer *n, doublereal *da, doublereal *dx, 
+/* Subroutine */ int daxpy_(integer *n, doublereal *da, doublereal *dx,
 	integer *incx, doublereal *dy, integer *incy)
 {
     /* System generated locals */
@@ -807,7 +807,7 @@ L40:
     return 0;
 } /* daxpy_ */
 
-/* Subroutine */ int dcopy_(integer *n, doublereal *sx, integer *incx, 
+/* Subroutine */ int dcopy_(integer *n, doublereal *sx, integer *incx,
 	doublereal *sy, integer *incy)
 {
     /* System generated locals */
@@ -888,7 +888,7 @@ L40:
     return 0;
 } /* dcopy_ */
 
-/* Subroutine */ int dscal_(integer *n, doublereal *da, doublereal *dx, 
+/* Subroutine */ int dscal_(integer *n, doublereal *da, doublereal *dx,
 	integer *incx)
 {
     /* System generated locals */
@@ -957,7 +957,7 @@ L40:
     return 0;
 } /* dscal_ */
 
-doublereal ddot_(integer *n, doublereal *dx, integer *incx, doublereal *dy, 
+doublereal ddot_(integer *n, doublereal *dx, integer *incx, doublereal *dy,
 	integer *incy)
 {
     /* System generated locals */
@@ -1032,7 +1032,7 @@ L40:
     i__1 = *n;
     for (i__ = mp1; i__ <= i__1; i__ += 5) {
 	dtemp = dtemp + dx[i__] * dy[i__] + dx[i__ + 1] * dy[i__ + 1] + dx[
-		i__ + 2] * dy[i__ + 2] + dx[i__ + 3] * dy[i__ + 3] + dx[i__ + 
+		i__ + 2] * dy[i__ + 2] + dx[i__ + 3] * dy[i__ + 3] + dx[i__ +
 		4] * dy[i__ + 4];
 /* L50: */
     }

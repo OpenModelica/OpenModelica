@@ -38,7 +38,7 @@ tokens {
 	CODE_INITIALALGORITHM;
 	COMMENT;
     COMPONENT_DEFINITION;
-	DECLARATION	; 
+	DECLARATION	;
 	DEFINITION ;
     END_DEFINITION;
 	ENUMERATION_LITERAL;
@@ -75,12 +75,12 @@ tokens {
 
 
 stored_definition :
-        class_definition 
+        class_definition
         {
           #stored_definition = #([STORED_DEFINITION,"STORED_DEFINITION"],
           #stored_definition);
         }
-        
+
     ;
 
 /*
@@ -91,14 +91,14 @@ class_definition :
         class_type
 		IDENT
 		class_specifier
-		{ 
-			#class_definition = #([CLASS_DEFINITION, "CLASS_DEFINITION"], 
-				class_definition); 
+		{
+			#class_definition = #([CLASS_DEFINITION, "CLASS_DEFINITION"],
+				class_definition);
 		}
 		;
 
 class_type :
-		MODEL 
+		MODEL
 		;
 
 class_specifier :
@@ -117,7 +117,7 @@ name_list:
 		;
 
 enumeration :
-		ENUMERATION^ LPAR! enum_list RPAR! comment 
+		ENUMERATION^ LPAR! enum_list RPAR! comment
 		;
 enum_list :
 		enumeration_literal ( COMMA! enumeration_literal)*
@@ -128,15 +128,15 @@ enumeration_literal :
 		{
 			#enumeration_literal=#([ENUMERATION_LITERAL,
 					"ENUMERATION_LITERAL"],#enumeration_literal);
-		}		
+		}
 		;
 
 composition :
 		element_list
 		(	public_element_list
 		|	protected_element_list
-		| 	initial_equation_clause	
-		| 	initial_algorithm_clause	
+		| 	initial_equation_clause
+		| 	initial_algorithm_clause
 		|	equation_clause
 		|	algorithm_clause
 		)*
@@ -144,14 +144,14 @@ composition :
 		;
 
 external_clause :
-        EXTERNAL^	
-            ( language_specification )? 
+        EXTERNAL^
+            ( language_specification )?
             ( external_function_call )?
-			(SEMICOLON!) ?  
-			/* Relaxed from Modelica 2.0. This code will be correct in 2.1 */ 
+			(SEMICOLON!) ?
+			/* Relaxed from Modelica 2.0. This code will be correct in 2.1 */
 			( annotation SEMICOLON! )?
         ;
-		
+
 public_element_list :
 		PUBLIC^ element_list
 		;
@@ -178,17 +178,17 @@ element_list :
 		;
 
 element :
-		(FINAL)?	 
+		(FINAL)?
         (INNER | OUTER)?
 		(class_definition | cc:component_clause)
-		{ 
-			if(#cc != null ) 
-			{ 
-				#element = #([DECLARATION,"DECLARATION"], #element); 
+		{
+			if(#cc != null )
+			{
+				#element = #([DECLARATION,"DECLARATION"], #element);
 			}
-			else	
-			{ 
-				#element = #([DEFINITION,"DEFINITION"], #element); 
+			else
+			{
+				#element = #([DEFINITION,"DEFINITION"], #element);
 			}
 		}
 		;
@@ -240,7 +240,7 @@ modification :
 		;
 
 class_modification :
-		LPAR! ( argument_list )? RPAR! 
+		LPAR! ( argument_list )? RPAR!
 		{
 			#class_modification=#([CLASS_MODIFICATION,"CLASS_MODIFICATION"],
 				#class_modification);
@@ -255,9 +255,9 @@ argument_list :
 		;
 
 argument ! :
-		em:element_modification 
-		{ 
-			#argument = #([ELEMENT_MODIFICATION,"ELEMENT_MODIFICATION"], #em); 
+		em:element_modification
+		{
+			#argument = #([ELEMENT_MODIFICATION,"ELEMENT_MODIFICATION"], #em);
 		}
 		;
 
@@ -280,21 +280,21 @@ initial_equation_clause :
 		INITIAL! ec:equation_clause
         {
             #initial_equation_clause = #([INITIAL_EQUATION,"INTIAL_EQUATION"], ec);
-        } 
+        }
 
 		;
 
 equation_clause :
-		EQUATION^  
+		EQUATION^
 		    equation_annotation_list
   		;
 
 equation_annotation_list :
-		{ LA(1) == END || LA(1) == EQUATION || LA(1) == ALGORITHM || LA(1)==INITIAL 
+		{ LA(1) == END || LA(1) == EQUATION || LA(1) == ALGORITHM || LA(1)==INITIAL
 		 || LA(1) == PROTECTED || LA(1) == PUBLIC }?
 		|
 		( equation SEMICOLON! | annotation SEMICOLON!) equation_annotation_list
-		; 
+		;
 
 algorithm_clause :
 		ALGORITHM^
@@ -388,8 +388,8 @@ when_clause_e :
 		END! WHEN!
 		;
 
-else_when_e :	
-		ELSEWHEN^ expression THEN! 
+else_when_e :
+		ELSEWHEN^ expression THEN!
 		equation_list
 		;
 
@@ -431,7 +431,7 @@ algorithm_list :
  */
 
 expression :
-		( if_expression 
+		( if_expression
         | simple_expression
 		)
 		;
@@ -440,7 +440,7 @@ if_expression :
 		IF^ expression THEN! expression (elseif_expression)* ELSE! expression
     ;
 
-elseif_expression : 
+elseif_expression :
 		ELSEIF^ expression THEN! expression
 		;
 
@@ -449,7 +449,7 @@ for_indices :
     ;
 for_indices2 :
 	{LA(2) != IN}?
-		| 
+		|
 		(COMMA! for_index) for_indices2
 		;
 
@@ -459,23 +459,23 @@ for_index:
 
 
 simple_expression ! :
-		l1:logical_expression 
-		( COLON l2:logical_expression 
-			( COLON l3:logical_expression 
-			)? 
+		l1:logical_expression
+		( COLON l2:logical_expression
+			( COLON l3:logical_expression
+			)?
 		)?
-		{ 
-			if (#l3 != null) 
-			{ 
-				#simple_expression = #([RANGE3,"RANGE3"], l1, l2, l3); 
+		{
+			if (#l3 != null)
+			{
+				#simple_expression = #([RANGE3,"RANGE3"], l1, l2, l3);
 			}
-			else if (#l2 != null) 
-			{ 
-				#simple_expression = #([RANGE2,"RANGE2"], l1, l2); 
+			else if (#l2 != null)
+			{
+				#simple_expression = #([RANGE2,"RANGE2"], l1, l2);
 			}
-			else 
-			{ 
-				#simple_expression = #l1; 
+			else
+			{
+				#simple_expression = #l1;
 			}
 		}
 		;
@@ -507,17 +507,17 @@ arithmetic_expression :
 		;
 
 unary_arithmetic_expression ! :
-		( PLUS t1:term 
-		{ 
-			#unary_arithmetic_expression = #([UNARY_PLUS,"PLUS"], #t1); 
+		( PLUS t1:term
+		{
+			#unary_arithmetic_expression = #([UNARY_PLUS,"PLUS"], #t1);
 		}
-		| MINUS t2:term 
-		{ 
-			#unary_arithmetic_expression = #([UNARY_MINUS,"MINUS"], #t2); 
+		| MINUS t2:term
+		{
+			#unary_arithmetic_expression = #([UNARY_MINUS,"MINUS"], #t2);
 		}
-		| t3:term 
-		{ 
-			#unary_arithmetic_expression = #t3; 
+		| t3:term
+		{
+			#unary_arithmetic_expression = #t3;
 		}
 		)
 		;
@@ -545,16 +545,16 @@ primary :
     ;
 
 component_reference__function_call ! :
-		cr:component_reference ( fc:function_call )? 
-		{ 
-			if (#fc != null) 
-			{ 
+		cr:component_reference ( fc:function_call )?
+		{
+			if (#fc != null)
+			{
 				#component_reference__function_call = #([FUNCTION_CALL,"FUNCTION_CALL"], #cr, #fc);
-			} 
-			else 
-			{ 
+			}
+			else
+			{
 				#component_reference__function_call = #cr;
-			} 
+			}
 		}
 	| i:INITIAL LPAR! RPAR! {
 			#component_reference__function_call = #([INITIAL_FUNCTION_CALL,"INITIAL_FUNCTION_CALL"],i);
@@ -567,7 +567,7 @@ name_path :
 		;
 
 name_path_star returns [bool val]
-		: 
+		:
 		{ LA(2)!=DOT }? IDENT { val=false;}|
 		{ LA(2)!=DOT }? STAR! { val=true;}|
 		i:IDENT DOT^ val = np:name_path_star
@@ -584,10 +584,10 @@ component_reference :
 		;
 
 function_call :
-		LPAR! (function_arguments) RPAR! 
+		LPAR! (function_arguments) RPAR!
 		{
 			#function_call = #([FUNCTION_ARGUMENTS,"FUNCTION_ARGUMENTS"],#function_call);
-		}	
+		}
 		;
 
 function_arguments :
@@ -595,24 +595,24 @@ function_arguments :
 			(named_arguments) ?
 		;
 
-for_or_expression_list 
+for_or_expression_list
     :
 		(
 			{LA(1)==IDENT && LA(2) == EQUALS|| LA(1) == RPAR}?
 		|
 			(
 				e:expression
-				( COMMA! explist:for_or_expression_list2                     
+				( COMMA! explist:for_or_expression_list2
 				| FOR^ forind:for_indices
 				)?
 			)
             {
                 if (#forind != null) {
-                    #for_or_expression_list = 
+                    #for_or_expression_list =
                         #([FOR_ITERATOR,"FOR_ITERATOR"], #for_or_expression_list);
                 }
                 else {
-                    #for_or_expression_list = 
+                    #for_or_expression_list =
                         #([EXPRESSION_LIST,"EXPRESSION_LIST"], #for_or_expression_list);
                 }
             }
@@ -621,10 +621,10 @@ for_or_expression_list
 
 for_or_expression_list2 :
 		{LA(2) == EQUALS}?
-		| 
+		|
 		expression (COMMA! for_or_expression_list2)?
 		;
-	
+
 named_arguments :
 		named_arguments2
 		{
@@ -640,7 +640,7 @@ named_argument :
 		IDENT EQUALS^ expression
 		;
 
-expression_list : 
+expression_list :
 		expression_list2
 		{
 			#expression_list=#([EXPRESSION_LIST,"EXPRESSION_LIST"],#expression_list);
@@ -650,7 +650,7 @@ expression_list2 :
 		expression (COMMA! expression_list2)?
 	    ;
 
-array_subscripts : 
+array_subscripts :
 		LBRACK^ subscript ( COMMA! subscript )* RBRACK!
 	;
 

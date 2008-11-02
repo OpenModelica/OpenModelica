@@ -70,22 +70,22 @@ extern int nproc;
   void TaskGraphExt_5finit(void)
   {
   }
-  
+
   RML_BEGIN_LABEL(TaskGraphExt__newTask)
   {
-    char *str = RML_STRINGDATA(rmlA0); 
+    char *str = RML_STRINGDATA(rmlA0);
     static int nextID=0; // Give unique id to each task.
-    VertexID newID=boost::add_vertex(taskgraph); 
+    VertexID newID=boost::add_vertex(taskgraph);
     nameVertex(newID,&taskgraph,str);
     put(VertexUniqueIDProperty(&taskgraph),
 	newID,
-	nextID); 
+	nextID);
     setTaskType(newID,TempVar,&taskgraph);
     id_map[nextID]=newID;
     setExecCost(newID,1.0,&taskgraph);
     rmlA0 = (void*)mk_icon(nextID++);
     RML_TAILCALLK(rmlSC);
-  } 
+  }
   RML_END_LABEL
 
   RML_BEGIN_LABEL(TaskGraphExt__addEdge)
@@ -98,7 +98,7 @@ extern int nproc;
     i = id_map.find(parent);
     if (i == id_map.end()) { RML_TAILCALLK(rmlFC);};
     p = i->second;
-    
+
     i = id_map.find(child);
     if (i == id_map.end()) { RML_TAILCALLK(rmlFC);};
     c = i->second;
@@ -109,35 +109,35 @@ extern int nproc;
     } else {
       add_edge(p,c,&taskgraph,new string(resVar),prio);
     }
-    
+
     EdgeID edgeID; bool tmp;
     tie(edgeID,tmp) = edge(p,c,taskgraph);
 
     setPriority(edgeID,prio,&taskgraph);
 
     RML_TAILCALLK(rmlSC);
-  } 
+  }
   RML_END_LABEL
 
   RML_BEGIN_LABEL(TaskGraphExt__getTask)
   {
-    char *str = strdup(RML_STRINGDATA(rmlA0)); 
-    
+    char *str = strdup(RML_STRINGDATA(rmlA0));
+
     map<string,int>::iterator i;
     i = symboltable.find(string(str));
-    
+
     if (i == symboltable.end()) {
       RML_TAILCALLK(rmlFC);
     } else {
       rmlA0 = (void*)mk_icon(i->second);
       RML_TAILCALLK(rmlSC);
     }
-  } 
+  }
   RML_END_LABEL
 
   RML_BEGIN_LABEL(TaskGraphExt__storeResult)
   {
-    char *str = strdup(RML_STRINGDATA(rmlA0)); 
+    char *str = strdup(RML_STRINGDATA(rmlA0));
     int task = RML_UNTAGFIXNUM(rmlA1);
     int send_to_end = (rml_sint_t)(rmlA2);
     char *orig_name = strdup(RML_STRINGDATA(rmlA3));
@@ -154,18 +154,18 @@ extern int nproc;
 
     setResultName(taskID,str2,&taskgraph);
     setOrigName(taskID,str3,&taskgraph);
- 
+
     if (send_to_end) {
       add_edge(taskID,stop_task,&taskgraph,new string(str),0);
     }
 
     RML_TAILCALLK(rmlSC);
-  } 
+  }
   RML_END_LABEL
 
   RML_BEGIN_LABEL(TaskGraphExt__dumpGraph)
   {
-    char *filename = RML_STRINGDATA(rmlA0); 
+    char *filename = RML_STRINGDATA(rmlA0);
     ofstream file(filename);
     my_write_graphviz(file,taskgraph,
 		      make_label_writer(VertexUniqueIDProperty(&taskgraph)),
@@ -173,12 +173,12 @@ extern int nproc;
 		      );
     file.close();
     RML_TAILCALLK(rmlSC);
-  } 
+  }
   RML_END_LABEL
 
   RML_BEGIN_LABEL(TaskGraphExt__dumpMergedGraph)
   {
-    char *filename = RML_STRINGDATA(rmlA0); 
+    char *filename = RML_STRINGDATA(rmlA0);
     ofstream file(filename);
     my_write_graphviz(file,merged_taskgraph,
 		      make_label_writer(VertexUniqueIDProperty(&merged_taskgraph)),
@@ -186,7 +186,7 @@ extern int nproc;
 		      );
     file.close();
     RML_TAILCALLK(rmlSC);
-  } 
+  }
   RML_END_LABEL
 
   RML_BEGIN_LABEL(TaskGraphExt__registerStartStop)
@@ -204,53 +204,53 @@ extern int nproc;
     stop_task = i->second;
 
     RML_TAILCALLK(rmlSC);
-  } 
+  }
   RML_END_LABEL
 
   RML_BEGIN_LABEL(TaskGraphExt__getStartTask)
   {
     rmlA0 = (void*)mk_icon(getTaskID(start_task,&taskgraph));
     RML_TAILCALLK(rmlSC);
-  } 
+  }
   RML_END_LABEL
 
   RML_BEGIN_LABEL(TaskGraphExt__getStopTask)
   {
     rmlA0 = (void*)mk_icon(getTaskID(stop_task,&taskgraph));
     RML_TAILCALLK(rmlSC);
-  } 
+  }
   RML_END_LABEL
 
 
   RML_BEGIN_LABEL(TaskGraphExt__mergeTasks)
   {
-    double l = rml_prim_get_real(rmlA0); 
-    double b = rml_prim_get_real(rmlA1); 
-    
-    //cerr << "latency =" << l 
+    double l = rml_prim_get_real(rmlA0);
+    double b = rml_prim_get_real(rmlA1);
+
+    //cerr << "latency =" << l
     //	 << " bandwidth ="  << b << endl;
-      
-    
+
+
     ParallelOptions options(nproc,l,b);
     merged_taskgraph = taskgraph;
     taskmerging.merge(&merged_taskgraph,&taskgraph,&options,
 		      find_task(getTaskID(start_task,&taskgraph),&merged_taskgraph),
 		      find_task(getTaskID(stop_task,&taskgraph),&merged_taskgraph),
 		      &contain_set);
-      
+
     RML_TAILCALLK(rmlSC);
-  } 
+  }
   RML_END_LABEL
 
   RML_BEGIN_LABEL(TaskGraphExt__setExecCost)
   {
     int taskID = RML_UNTAGFIXNUM(rmlA0);
-    double cost = rml_prim_get_real(rmlA1); 
+    double cost = rml_prim_get_real(rmlA1);
     VertexID task = find_task(taskID,&taskgraph);
-    setExecCost(task,cost,&taskgraph);      
+    setExecCost(task,cost,&taskgraph);
     RML_TAILCALLK(rmlSC);
-  } 
-  RML_END_LABEL  
+  }
+  RML_END_LABEL
 
   RML_BEGIN_LABEL(TaskGraphExt__setCommCost)
   {
@@ -260,16 +260,16 @@ extern int nproc;
     int cost = RML_UNTAGFIXNUM(rmlA2);
     EdgeID e; bool tmp;
     parent = find_task(p,&taskgraph);
-    child = find_task(c,&taskgraph);    
+    child = find_task(c,&taskgraph);
     tie(e,tmp) = edge(parent,child,taskgraph);
     if (!tmp) {
       cerr << "edge (" << p << ", " << c << " does not exist\n" << endl;
       RML_TAILCALLK(rmlFC);
     }
-    setCommCost(e,cost,&taskgraph);      
+    setCommCost(e,cost,&taskgraph);
     RML_TAILCALLK(rmlSC);
-  } 
-  RML_END_LABEL  
+  }
+  RML_END_LABEL
 
   RML_BEGIN_LABEL(TaskGraphExt__schedule)
   {
@@ -281,11 +281,11 @@ extern int nproc;
 			    taskmerging.get_endtask(),
 			    n);
 
-    schedule->printSchedule(cerr);    
-    
+    schedule->printSchedule(cerr);
+
     RML_TAILCALLK(rmlSC);
-  } 
-  RML_END_LABEL  
+  }
+  RML_END_LABEL
 
   RML_BEGIN_LABEL(TaskGraphExt__generateCode)
   {
@@ -293,43 +293,43 @@ extern int nproc;
     int ny = RML_UNTAGFIXNUM(rmlA1);
     int np = RML_UNTAGFIXNUM(rmlA2);
     codegen = new Codegen("model.cpp","model.hpp","modelinit.txt");
-    
+
     codegen->initialize(&taskgraph,&merged_taskgraph,schedule,&contain_set,nproc,nx,ny,np,
 			merged_start_task,merged_stop_task,initvars,initstates,initparams,
 			varnames,statenames,paramnames);
 
     codegen->generateCode();
-    			  
+
     RML_TAILCALLK(rmlSC);
-  } 
-  RML_END_LABEL  
+  }
+  RML_END_LABEL
 
 
   RML_BEGIN_LABEL(TaskGraphExt__addInitVar)
   {
     int indx = RML_UNTAGFIXNUM(rmlA0);
-    char *value = RML_STRINGDATA(rmlA1); 
+    char *value = RML_STRINGDATA(rmlA1);
     char *origname = RML_STRINGDATA(rmlA2);
     double val = atof(value);
     //    cerr << "initvars[" << indx << "] =" << val << endl;
     initvars.insert(initvars.begin()+indx,val);
     varnames.insert(varnames.begin()+indx,string(origname));
     RML_TAILCALLK(rmlSC);
-  } 
-  RML_END_LABEL  
+  }
+  RML_END_LABEL
 
   RML_BEGIN_LABEL(TaskGraphExt__addInitState)
   {
     int indx = RML_UNTAGFIXNUM(rmlA0);
-    char *value = RML_STRINGDATA(rmlA1); 
+    char *value = RML_STRINGDATA(rmlA1);
     char *origname = RML_STRINGDATA(rmlA2);
     double val = atof(value);
     //    cerr << "initstates[" << indx << "] =" << val << endl;
     initstates.insert(initstates.begin()+indx,val);
     statenames.insert(statenames.begin()+indx,string(origname));
     RML_TAILCALLK(rmlSC);
-  } 
-  RML_END_LABEL  
+  }
+  RML_END_LABEL
 
   RML_BEGIN_LABEL(TaskGraphExt__addInitParam)
   {
@@ -341,18 +341,18 @@ extern int nproc;
     initparams.insert(initparams.begin()+indx,val);
     paramnames.insert(paramnames.begin()+indx,string(origname));
     RML_TAILCALLK(rmlSC);
-  } 
-  RML_END_LABEL  
+  }
+  RML_END_LABEL
 
   RML_BEGIN_LABEL(TaskGraphExt__setTaskType)
   {
     int taskID = RML_UNTAGFIXNUM(rmlA0);
-    int type = RML_UNTAGFIXNUM(rmlA1); 
+    int type = RML_UNTAGFIXNUM(rmlA1);
     VertexID task = find_task(taskID,&taskgraph);
-    setTaskType(task,(TaskType)type,&taskgraph);      
+    setTaskType(task,(TaskType)type,&taskgraph);
     RML_TAILCALLK(rmlSC);
-  } 
-  RML_END_LABEL  
+  }
+  RML_END_LABEL
 
 
 } // extern "C"

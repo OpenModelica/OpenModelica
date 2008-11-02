@@ -15,14 +15,14 @@ end
 (* Evaluation semantics  of Exp1 *)
 
 relation eval: Exp => real  =
-  
+
   rule  print "\n"
 	---------------------------
 	eval( RCONST(ival) ) => ival   (* eval of an integer node *)
                                          (* is the integer itself *)
 
   (* Evaluation of an addition node PLUSop is v3, if v3 is the result of
-   * adding the evaluated results of its children e1 and e2 
+   * adding the evaluated results of its children e1 and e2
    * Subtraction, multiplication, division operators have similar specs.
    *)
 

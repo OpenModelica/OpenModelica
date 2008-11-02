@@ -18,20 +18,20 @@ static char *file_name;
 	      for ( ; ; ) {
 		while ( (c = input()) != '*' && c != EOF )
 		  ;    /* eat up text of comment */
-		
+
 		if ( c == '*' ) {
 		  while ( (c = input()) == '*' )
 		    ;
 		  if ( c == ')' )
 		    break;    /* found the end */
-		}		
+		}
 		if ( c == EOF ) {
 		  printf( "EOF in comment\n" );
 		  exit(1);
 		}
 	      }
             }
-                          
+
 
 [ \t\n]+"module"[ \t\n]+	ECHO; BEGIN (sig);
 \n		/* ignore */
@@ -44,13 +44,13 @@ static char *file_name;
 	      for ( ; ; ) {
 		while ( (c = input()) != '*' && c != EOF )
 		  ;    /* eat up text of comment */
-		
+
 		if ( c == '*' ) {
 		  while ( (c = input()) == '*' )
 		    ;
 		  if ( c == ')' )
 		    break;    /* found the end */
-		}		
+		}
 		if ( c == EOF ) {
 		  printf( "EOF in comment\n" );
 		  exit(1);

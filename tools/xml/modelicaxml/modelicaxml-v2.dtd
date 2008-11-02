@@ -2,7 +2,7 @@
 <!--Adrian Pop 2003-07-01 adrpo@ida.liu.se-->
 <!--modelica.dtd version 0.1 conform with Modelica Language Specification 2.0/2.1 -->
 <!--   Copyright PELAB, Linkoping University
-   
+
    This file is part of Open Source Modelica (OSM).
 
     OSM is free software; you can redistribute it and/or modify
@@ -22,22 +22,22 @@
 <!--http://www.ida.liu.se/~adrpo/modelica/xml-->
 <!-- we use location to make the mapping between xml elements and the location of the elements in the source representation -->
 <!ENTITY % location "
-            sline CDATA #IMPLIED 
-            scolumn CDATA #IMPLIED 
-            eline CDATA #IMPLIED 
-            ecolumn CDATA #IMPLIED             
+            sline CDATA #IMPLIED
+            scolumn CDATA #IMPLIED
+            eline CDATA #IMPLIED
+            ecolumn CDATA #IMPLIED
 	     info CDATA #IMPLIED">
 <!-- elements inside composition are import, extends, definitions, components, component, constrain -->
 <!ENTITY % elements " (import | extends | ( (definition | component), constrain?) )">
-<!-- composition defines parts of the class (elements, annotations,  algorithm, equation) 
-      for elements we have visibility attribute to decide public/protected, same for annotation 
+<!-- composition defines parts of the class (elements, annotations,  algorithm, equation)
+      for elements we have visibility attribute to decide public/protected, same for annotation
       for an equation/algorithm element we have initial attribute to know if is initial -->
 <!ENTITY % composition "( ( ( %elements; )* | annotation* | equation* | algorithm* )* , external? )">
 <!-- a class can be either a composition, can be derived (using =) or can be an enumeration -->
 <!ENTITY % class_specifier "( (%composition;) | (derived, constrain?) | enumeration )">
 <!-- type prefix can be flow, variability, direction -->
-<!ENTITY % type_prefix "flow (true) #IMPLIED 
-                                        variability (discrete | parameter | constant) #IMPLIED 
+<!ENTITY % type_prefix "flow (true) #IMPLIED
+                                        variability (discrete | parameter | constant) #IMPLIED
                                         direction (input | output | bidirectional) #IMPLIED">
 <!-- enumeration_list is used in the class definitions -->
 <!ENTITY % enum_list "(enumeration_literal+)">
@@ -52,7 +52,7 @@
 <!ENTITY % named_arguments "(named_argument)+">
 <!ENTITY % subscript "(colon | %exp;)">
 <!--
-  - modelica 
+  - modelica
     - modelicaxml (stored_definition*)
       + a model model is a set of definitions togheter with a within statement
     - intermediate
@@ -65,8 +65,8 @@
 <!ELEMENT modelicaxml (definition*)>
 <!ATTLIST modelicaxml
 	within CDATA #IMPLIED
-	file CDATA #IMPLIED	
-	%location; 
+	file CDATA #IMPLIED
+	%location;
 >
 
 <!ELEMENT flatmodelicaxml EMPTY>
@@ -76,35 +76,35 @@
 <!ELEMENT comment ((string_comment?, annotation?))>
 <!-- a string comment set as an attribute -->
 <!ATTLIST comment
-	%location; 
+	%location;
 >
 
 <!ELEMENT string_comment (add_string|string_literal)?>
 <!ATTLIST string_comment
-	%location; 
+	%location;
 >
 
 <!ELEMENT add_string ((add_string|string_literal), string_literal)>
-<!ATTLIST add_string	
-	%location; 
+<!ATTLIST add_string
+	%location;
 >
 
 <!-- annotation are class modifications (a list of arguments that can be either redeclarations or modifications)-->
 <!ELEMENT annotation (%class_modification;)>
-<!-- annotation can appear inside ellement_list, equation_clause, algorithm_clause, comment 
+<!-- annotation can appear inside ellement_list, equation_clause, algorithm_clause, comment
       we model this as attributes -->
 <!ATTLIST annotation
 	visibility (public | protected) #IMPLIED
 	initial (true) #IMPLIED
 	inside (element | equation | algorithm | comment) #IMPLIED
-	%location; 
+	%location;
 >
 <!-- class definition is formed from class_specifier entity-->
 <!ELEMENT definition ((%class_specifier;), string_comment?)>
 <!-- for a definition we have attributes:
       ident: the name
       final, partial, encapsulated:  these attributes are set to true or does not exist
-      restriction: say what kind of class this is 
+      restriction: say what kind of class this is
        -->
 <!ATTLIST definition
 	ident CDATA #REQUIRED
@@ -117,10 +117,10 @@
 	replaceable (true) #IMPLIED
 	visibility (public | protected) #IMPLIED
 	string_comment CDATA #IMPLIED
-	%location; 
+	%location;
 >
-<!-- derived element states the definitions of the form class CapacitorMicroCircuit = GenMicroCircuit(%class_modification;); 
-      the type attribute here is GenMicroCircuit 
+<!-- derived element states the definitions of the form class CapacitorMicroCircuit = GenMicroCircuit(%class_modification;);
+      the type attribute here is GenMicroCircuit
       example:
 	<definition ident="CapacitorMicroCircuit" restriction="class">
 		<derived type="GenMicroCircuit">
@@ -130,19 +130,19 @@
 				</definition>
 			</element_redeclaration>
 		</derived>
-	</definition>      
+	</definition>
       -->
 <!ELEMENT derived (array_subscripts?, (%class_modification;)?, comment?)>
 <!ATTLIST derived
 	type CDATA #REQUIRED
-	%type_prefix; 
-	%location; 
+	%type_prefix;
+	%location;
 >
 <!ELEMENT enumeration (((%enum_list;)? | colon), comment?)>
 <!ELEMENT enumeration_literal (comment?)>
 <!ATTLIST enumeration_literal
 	ident CDATA #REQUIRED
-	%location; 
+	%location;
 >
 <!--
   (* ExternalDecl *)
@@ -152,11 +152,11 @@
 <!ATTLIST external
 	ident CDATA #IMPLIED
 	language_specification CDATA #IMPLIED
-	%location; 
+	%location;
 >
 <!ELEMENT external_equal (component_reference)>
 <!ATTLIST external_equal
-	%location; 
+	%location;
 >
 <!-- elements are:
 	imports (public/protected)
@@ -166,26 +166,26 @@
 <!ELEMENT import ((named_import|qualified_import|unqualified_import), comment?)>
 <!ATTLIST import
 	visibility (public | protected) #IMPLIED
-	%location; 
+	%location;
 >
 
 <!ELEMENT named_import EMPTY>
 <!ATTLIST named_import
 	ident CDATA #IMPLIED
 	name CDATA #REQUIRED
-	%location; 
+	%location;
 >
-	
+
 <!ELEMENT qualified_import EMPTY>
 <!ATTLIST qualified_import
 	name CDATA #REQUIRED
-	%location; 
+	%location;
 >
 
 <!ELEMENT unqualified_import EMPTY>
 <!ATTLIST unqualified_import
 	name CDATA #REQUIRED
-	%location; 
+	%location;
 >
 
 
@@ -193,32 +193,32 @@
 <!ATTLIST extends
 	type CDATA #REQUIRED
 	visibility (public | protected) #IMPLIED
-	%location; 
+	%location;
 >
 <!ELEMENT constrain (extends, comment?)?>
 <!ATTLIST constrain
-	%location; 
+	%location;
 >
 <!--
-  (** - Components *)   
+  (** - Components *)
 nformation specific to one component. *)
 -->
 <!ELEMENT component (type_array_subscripts?, array_subscripts?, (%modification;)?, conditional?, comment?)>
 <!ATTLIST component
 	ident CDATA #REQUIRED
 	type CDATA #REQUIRED
-	%type_prefix; 
+	%type_prefix;
 	final (true) #IMPLIED
 	inside (element | redeclaration) #IMPLIED
 	innerouter (inner | outer | innerouter) #IMPLIED
 	replaceable (true) #IMPLIED
 	visibility (public | protected) #IMPLIED
 	list (start | end | continue) #IMPLIED
-	%location; 
+	%location;
 >
 <!ELEMENT conditional (%exp;)>
 <!ATTLIST conditional
-	%location; 
+	%location;
 >
 <!--
 equation_list
@@ -226,57 +226,57 @@ equation_list
 <!ELEMENT equation ((equ_equal | equ_if | equ_connect | equ_for | equ_when | equ_call), comment?)>
 <!ATTLIST equation
 	initial (true) #IMPLIED
-	%location; 
+	%location;
 >
 <!ELEMENT for_indices (for_index+)>
 <!ATTLIST for_indices
-	%location; 
+	%location;
 >
 <!ELEMENT for_index (%exp;)>
 <!ATTLIST for_index
 	ident CDATA #REQUIRED
-	%location; 
+	%location;
 >
 <!ELEMENT equ_for (for_indices, %equation_list;)>
 <!ATTLIST equ_for
-	%location; 
+	%location;
 >
 <!ELEMENT equ_if (%exp;, equ_then, equ_elseif*, equ_else?)>
 <!ATTLIST equ_if
-	%location; 
+	%location;
 >
 <!ELEMENT equ_then (%equation_list;)>
 <!ATTLIST equ_then
-	%location; 
+	%location;
 >
 <!ELEMENT equ_elseif (%exp;, equ_then)>
 <!ATTLIST equ_elseif
-	%location; 
+	%location;
 >
 <!ELEMENT equ_else (%equation_list;)>
 <!ATTLIST equ_else
-	%location; 
+	%location;
 >
 <!ELEMENT equ_equal (%exp;, %exp;)>
 <!ATTLIST equ_equal
-	%location; 
+	%location;
 >
 <!ELEMENT equ_when (%exp;, equ_then, equ_elsewhen*)>
 <!ATTLIST equ_when
-	%location; 
+	%location;
 >
 <!ELEMENT equ_elsewhen (%exp;, equ_then)>
 <!ATTLIST equ_elsewhen
-	%location; 
+	%location;
 >
 <!ELEMENT equ_call (function_arguments)>
 <!ATTLIST equ_call
 	ident CDATA #REQUIRED
-	%location; 
+	%location;
 >
 <!ELEMENT equ_connect (component_reference, component_reference)>
 <!ATTLIST equ_connect
-	%location; 
+	%location;
 >
 <!--
 Algorithm
@@ -284,91 +284,91 @@ Algorithm
 <!ELEMENT algorithm ((alg_assign | alg_call | alg_if | alg_for | alg_while | alg_when | alg_break | alg_return), comment?)>
 <!ATTLIST algorithm
 	initial (true) #IMPLIED
-	%location; 
+	%location;
 >
 <!ELEMENT alg_assign ((component_reference, %exp;) | (output_expression_list, call))>
 <!ATTLIST alg_assign
-	%location; 
+	%location;
 >
 <!ELEMENT alg_call (component_reference, function_arguments)>
 <!ATTLIST alg_call
-	%location; 
+	%location;
 >
 <!ELEMENT alg_if (%exp;, alg_then, alg_elseif*, alg_else?)>
 <!ATTLIST alg_if
-	%location; 
+	%location;
 >
 <!ELEMENT alg_then (%algorithm_list;)>
 <!ATTLIST alg_then
-	%location; 
+	%location;
 >
 <!ELEMENT alg_elseif (%exp;, alg_then)>
 <!ATTLIST alg_elseif
-	%location; 
+	%location;
 >
 <!ELEMENT alg_else (%algorithm_list;)>
 <!ATTLIST alg_else
-	%location; 
+	%location;
 >
 <!ELEMENT alg_for (for_indices, %algorithm_list;)>
 <!ATTLIST alg_for
-	%location; 
+	%location;
 >
 <!ELEMENT alg_while (%exp;, %algorithm_list;)>
 <!ATTLIST alg_while
-	%location; 
+	%location;
 >
 <!ELEMENT alg_when (%exp;, alg_then, alg_elsewhen*)>
 <!ATTLIST alg_when
-	%location; 
+	%location;
 >
 <!ELEMENT alg_elsewhen (%exp;, alg_then)>
 <!ATTLIST alg_elsewhen
-	%location; 
+	%location;
 >
 <!ELEMENT alg_break EMPTY>
 <!ATTLIST alg_break
-	%location; 
+	%location;
 >
 <!ELEMENT alg_return EMPTY>
 <!ATTLIST alg_return
-	%location; 
+	%location;
 >
 <!--
    (** - Modifications *)
 -->
 <!ELEMENT modification_arguments (%class_modification;, modification_equals?)>
 <!ATTLIST modification_arguments
-	%location; 
+	%location;
 >
 <!ELEMENT modification_equals (%exp;)>
 <!ATTLIST modification_equals
-	%location; 
+	%location;
 >
 <!ELEMENT modification_assign (%exp;)>
 <!ATTLIST modification_assign
-	%location; 
+	%location;
 >
 <!ELEMENT element_modification (component_reference, (%modification;)?, string_comment?)>
 <!ATTLIST element_modification
 	string_comment CDATA #IMPLIED
 	final (true) #IMPLIED
 	each (true) #IMPLIED
-	%location; 
+	%location;
 >
 <!ELEMENT element_redeclaration ((definition | component), constrain?)>
 <!ATTLIST element_redeclaration
 	final (true) #IMPLIED
 	each (true) #IMPLIED
 	replaceable (true) #IMPLIED
-	%location; 
+	%location;
 >
 <!--
   (** - Array dimensions *)
 -->
 <!ELEMENT array_subscripts ((%subscript;)+)>
 <!ATTLIST array_subscripts
-	%location; 
+	%location;
 >
 <!--
   (** type_array_subscripts are used in a component to specify if the array subscripts comes with the type,
@@ -376,7 +376,7 @@ Algorithm
 -->
 <!ELEMENT type_array_subscripts ((%subscript;)+)>
 <!ATTLIST type_array_subscripts
-	%location; 
+	%location;
 >
 <!--
   (** - expression_list *)
@@ -385,154 +385,154 @@ Algorithm
 <!ELEMENT integer_literal EMPTY>
 <!ATTLIST integer_literal
 	value CDATA #REQUIRED
-	%location; 
+	%location;
 >
 <!ELEMENT real_literal EMPTY>
 <!ATTLIST real_literal
 	value CDATA #REQUIRED
-	%location; 
+	%location;
 >
 <!ELEMENT string_literal EMPTY>
 <!ATTLIST string_literal
 	value CDATA #REQUIRED
-	%location; 
+	%location;
 >
 <!ELEMENT bool_literal EMPTY>
 <!ATTLIST bool_literal
 	value (true | false) #REQUIRED
-	%location; 
+	%location;
 >
 <!ELEMENT or (%exp;, %exp;)>
 <!ATTLIST or
-	%location; 
+	%location;
 >
 <!ELEMENT and (%exp;, %exp;)>
 <!ATTLIST and
-	%location; 
+	%location;
 >
 <!ELEMENT not (%exp;)>
 <!ATTLIST not
-	%location; 
+	%location;
 >
 <!ELEMENT lt (%exp;, %exp;)>
 <!ATTLIST lt
-	%location; 
+	%location;
 >
 <!ELEMENT lte (%exp;, %exp;)>
 <!ATTLIST lte
-	%location; 
+	%location;
 >
 <!ELEMENT eq (%exp;, %exp;)>
 <!ATTLIST eq
-	%location; 
+	%location;
 >
 <!ELEMENT gt (%exp;, %exp;)>
 <!ATTLIST gt
-	%location; 
+	%location;
 >
 <!ELEMENT gte (%exp;, %exp;)>
 <!ATTLIST gte
-	%location; 
+	%location;
 >
 <!ELEMENT ne (%exp;, %exp;)>
 <!ATTLIST ne
-	%location; 
+	%location;
 >
 <!ELEMENT add (%exp;, (%exp;)?)>
 <!ATTLIST add
 	operation (binary | unary) #IMPLIED
-	%location; 
+	%location;
 >
 <!ELEMENT sub (%exp;, (%exp;)?)>
 <!ATTLIST sub
 	operation (binary | unary) #IMPLIED
-	%location; 
+	%location;
 >
 <!ELEMENT mul (%exp;, %exp;)>
 <!ATTLIST mul
-	%location; 
+	%location;
 >
 <!ELEMENT div (%exp;, %exp;)>
 <!ATTLIST div
-	%location; 
+	%location;
 >
 <!ELEMENT pow (%exp;, %exp;)>
 <!ATTLIST pow
-	%location; 
+	%location;
 >
 <!ELEMENT array (expression_list|function_arguments)>
 <!ATTLIST array
-	%location; 
+	%location;
 >
 <!ELEMENT concat (expression_list, expression_list*)>
 <!ATTLIST concat
-	%location; 
+	%location;
 >
 
 <!ELEMENT semicolon EMPTY>
 <!ATTLIST semicolon
-	%location; 
+	%location;
 >
 
 <!ELEMENT if ((%exp;), then, elseif*, else)>
 <!ATTLIST if
-	%location; 
+	%location;
 >
 
 <!ELEMENT then (%exp;)>
 <!ATTLIST then
-	%location; 
+	%location;
 >
 <!ELEMENT elseif (%exp;, then)>
 <!ATTLIST elseif
-	%location; 
+	%location;
 >
 <!ELEMENT else (%exp;)>
 <!ATTLIST else
-	%location; 
+	%location;
 >
 <!ELEMENT call (component_reference, function_arguments?)>
 <!ATTLIST call
-	%location; 
+	%location;
 >
 <!ELEMENT range ((%exp;), (%exp;, (%exp;)?)?)>
 <!ATTLIST range
-	%location; 
+	%location;
 >
 
 <!ELEMENT output_expression_list ((%exp;)?, (comma, (%exp;)?)*)>
 <!ATTLIST output_expression_list
-	%location; 
+	%location;
 >
 
 <!ELEMENT expression_list ((%exp;), (comma, (%exp;)?)*)>
 <!ATTLIST expression_list
-	%location; 
+	%location;
 >
 
 <!ELEMENT comma EMPTY>
 <!ATTLIST comma
-	%location; 
+	%location;
 >
 <!ELEMENT end EMPTY>
 <!ATTLIST end
-	%location; 
+	%location;
 >
 <!ELEMENT function_arguments ((%exp;, (%exp; | for_indices)*) | %named_arguments;)>
 <!ATTLIST function_arguments
-	%location; 
+	%location;
 >
 <!ELEMENT named_argument (%exp;)>
 <!ATTLIST named_argument
 	ident CDATA #REQUIRED
-	%location; 
+	%location;
 >
 <!ELEMENT colon EMPTY>
 <!ATTLIST colon
-	%location; 
+	%location;
 >
 <!ELEMENT component_reference (array_subscripts?, component_reference?)>
 <!ATTLIST component_reference
 	ident CDATA #REQUIRED
-	%location; 
+	%location;
 >

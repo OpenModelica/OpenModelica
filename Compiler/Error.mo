@@ -1,41 +1,41 @@
-/* 
+/*
  * This file is part of OpenModelica.
- * 
+ *
  * Copyright (c) 1998-2008, Linköpings University,
- * Department of Computer and Information Science, 
- * SE-58183 Linköping, Sweden. 
- * 
+ * Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
  * All rights reserved.
- * 
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC 
- * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF 
- * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC 
- * PUBLIC LICENSE. 
- * 
- * The OpenModelica software and the Open Source Modelica 
- * Consortium (OSMC) Public License (OSMC-PL) are obtained 
- * from Linköpings University, either from the above address, 
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC
+ * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF
+ * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC
+ * PUBLIC LICENSE.
+ *
+ * The OpenModelica software and the Open Source Modelica
+ * Consortium (OSMC) Public License (OSMC-PL) are obtained
+ * from Linköpings University, either from the above address,
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
- * 
- * This program is distributed  WITHOUT ANY WARRANTY; without 
- * even the implied warranty of  MERCHANTABILITY or FITNESS 
- * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH 
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS 
- * OF OSMC-PL. 
- * 
+ *
+ * This program is distributed  WITHOUT ANY WARRANTY; without
+ * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
+ * OF OSMC-PL.
+ *
  * See the full OSMC Public License conditions for more details.
- * 
+ *
  */
 
-package Error 
+package Error
 "
   file:	       Error.mo
   package:     Error
   description: Error handling
- 
+
   RCS: $Id$
- 
+
   This file contains the Error handling for the Compiler."
 
 public
@@ -49,8 +49,8 @@ uniontype Severity "severity of message"
 
 end Severity;
 
-public 
-uniontype MessageType "runtime scripting /interpretation error" 
+public
+uniontype MessageType "runtime scripting /interpretation error"
   record SYNTAX "syntax errors" end SYNTAX;
 
   record GRAMMAR "grammar errors" end GRAMMAR;
@@ -67,21 +67,21 @@ uniontype MessageType "runtime scripting /interpretation error"
 
 end MessageType;
 
-public 
-type ErrorID = Integer "Unique error id. Used to 
+public
+type ErrorID = Integer "Unique error id. Used to
 			  look up message string and type and severity";
 
-public 
-type MessageTokens = list<String>   "\"Tokens\" to insert into message at 
-				    positions identified by 
-				    - %s for string 
+public
+type MessageTokens = list<String>   "\"Tokens\" to insert into message at
+				    positions identified by
+				    - %s for string
 				    - %l for line no.
 				    - %c for col. no." ;
 
 public import Absyn;
 
 /*
-"Errors WARNINGS Notifications" 
+"Errors WARNINGS Notifications"
 */
 
 public constant ErrorID SYNTAX_ERROR=1 "module" ;
@@ -175,7 +175,7 @@ public constant ErrorID MODIFIER_TYPE_MISMATCH_ERROR=88;
 public constant ErrorID ERROR_FLATTENING=89;
 public constant ErrorID DUPLICATE_ELEMENTS_NOT_IDENTICAL=90;
 public constant ErrorID PACKAGE_VARIABLE_NOT_CONSTANT=91;
-public constant ErrorID RECURSIVE_DEFINITION=92; 
+public constant ErrorID RECURSIVE_DEFINITION=92;
 public constant ErrorID NOT_ARRAY_TYPE_IN_FOR_STATEMENT= 93;
 public constant ErrorID BREAK_OUT_OF_LOOP= 94;
 public constant ErrorID DIFFERENT_VARIABLES_SOLVED_IN_ELSEWHEN= 95;
@@ -364,9 +364,9 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (ERROR_FLATTENING,TRANSLATION(),ERROR(),
           "Error occured while flattening model %s"),
 		      (NOT_ARRAY_TYPE_IN_FOR_STATEMENT, TRANSLATION(), ERROR(),
-		      "Expression %s in for-statement must be an array type"),  
+		      "Expression %s in for-statement must be an array type"),
 		      (BREAK_OUT_OF_LOOP, GRAMMAR(), WARNING(),
-		      "A break statement not inside a loop"),  
+		      "A break statement not inside a loop"),
           (DUPLICATE_ELEMENTS_NOT_IDENTICAL,TRANSLATION(),ERROR(),
           "Error duplicate elements (due to inherited elements) not identical, first element is: %s, second element is: %s"),
           (PACKAGE_VARIABLE_NOT_CONSTANT, TRANSLATION(),ERROR(),"Variable %s in package %s is not constant"),
@@ -376,7 +376,7 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (BUILTIN_FUNCTION_SUM_HAS_SCALAR_PARAMETER,TRANSLATION(),WARNING(),
           "Warning, function \"sum\" has scalar as argument in sum(%s)"),
           (BUILTIN_FUNCTION_PRODUCT_HAS_SCALAR_PARAMETER,TRANSLATION(),WARNING(),
-          "Warning, function \"product\" has scalar as argument in sum(%s)"),       
+          "Warning, function \"product\" has scalar as argument in sum(%s)"),
           (INDEX_REDUCTION_NOTIFICATION,SYMBOLIC(),NOTIFICATION(),
           "Notification, differentiated equation %s to %s for index reduction"),
           (DIFFERENT_VARIABLES_SOLVED_IN_ELSEWHEN,SYMBOLIC(),ERROR(),
@@ -387,7 +387,7 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           "Warning, no variable has fixed=false but model contains initial equations. Setting fixed=false to the following variables: %s"),
           (GENERIC_TRANSLATION_ERROR,TRANSLATION(),ERROR(),
           "Error, %s")
-  
+
           };
 
 protected import ErrorExt;
@@ -396,13 +396,13 @@ protected import Print;
 
 public function addMessage "Implementation of Relations
   function: addMessage
- 
+
   Adds a message given ID and tokens. The rest of the info
   is looked up in the message table.
 "
   input ErrorID inErrorID;
   input MessageTokens inMessageTokens;
-algorithm 
+algorithm
   _:=
   matchcontinue (inErrorID,inMessageTokens)
     local
@@ -412,7 +412,7 @@ algorithm
       ErrorID error_id;
       MessageTokens tokens;
     case (error_id,tokens)
-      equation 
+      equation
         (msg_type,severity,msg) = lookupMessage(error_id);
         msg_type_str = messageTypeStr(msg_type);
         severity_string = severityStr(severity);
@@ -420,7 +420,7 @@ algorithm
       then
         ();
     case (error_id,tokens)
-      equation 
+      equation
         failure((_,_,_) = lookupMessage(error_id));
         Print.printErrorBuf("#Internal error, error message with id ");
         id_str = intString(error_id);
@@ -432,14 +432,14 @@ algorithm
 end addMessage;
 
 public function addSourceMessage "function: addSourceMessage
- 
+
   Adds a message given ID, tokens and source file info.
   The rest of the info is looked up in the message table.
 "
   input ErrorID inErrorID;
   input MessageTokens inMessageTokens;
   input Absyn.Info inInfo;
-algorithm 
+algorithm
   _:=
   matchcontinue (inErrorID,inMessageTokens,inInfo)
     local
@@ -451,16 +451,16 @@ algorithm
       Boolean isReadOnly;
       Absyn.Info sinfo;
     case (error_id,tokens,Absyn.INFO(fileName = file,isReadOnly = isReadOnly,lineNumberStart = sline,columnNumberStart = scol,lineNumberEnd = eline,columnNumberEnd = ecol))
-      equation 
+      equation
         (msg_type,severity,msg) = lookupMessage(error_id);
         msg_type_str = messageTypeStr(msg_type);
         severity_string = severityStr(severity);
-        ErrorExt.addSourceMessage(error_id, msg_type_str, severity_string, sline, scol, 
+        ErrorExt.addSourceMessage(error_id, msg_type_str, severity_string, sline, scol,
           eline, ecol, isReadOnly, file, msg, tokens);
       then
         ();
     case (error_id,tokens,sinfo)
-      equation 
+      equation
         failure((_,_,_) = lookupMessage(error_id));
         Print.printErrorBuf("#Internal error, error message with id ");
         id_str = intString(error_id);
@@ -473,107 +473,107 @@ end addSourceMessage;
 
 public function printMessagesStr "Relations for pretty printing.
   function: printMessagesStr
- 
+
   Prints messages to a string.
 "
   output String res;
-algorithm 
+algorithm
   res := ErrorExt.printMessagesStr();
 end printMessagesStr;
 
 public function printMessagesStrLst "function: print_messages_str
- 
+
   Returns all messages as a list of strings, one for each message.
 "
   output list<String> outStringLst;
-algorithm 
+algorithm
   outStringLst:=
   matchcontinue ()
-    case () then {"Not impl. yet"}; 
+    case () then {"Not impl. yet"};
   end matchcontinue;
 end printMessagesStrLst;
 
 public function printMessagesStrLstType "function: printMessagesStrLstType
- 
+
    Returns all messages as a list of strings, one for each message.
    Filters out messages of certain type.
 "
   input MessageType inMessageType;
   output list<String> outStringLst;
-algorithm 
+algorithm
   outStringLst:=
   matchcontinue (inMessageType)
-    case (_) then {"Not impl. yet"}; 
+    case (_) then {"Not impl. yet"};
   end matchcontinue;
 end printMessagesStrLstType;
 
 public function printMessagesStrLstSeverity "function: printMessagesStrLstSeverity
-  
+
    Returns all messages as a list of strings, one for each message.
   Filters out messages of certain severity
 "
   input Severity inSeverity;
   output list<String> outStringLst;
-algorithm 
+algorithm
   outStringLst:=
   matchcontinue (inSeverity)
-    case (_) then {"Not impl. yet"}; 
+    case (_) then {"Not impl. yet"};
   end matchcontinue;
 end printMessagesStrLstSeverity;
 
-public function getMessagesStr "Relations for interactive comm. These returns the messages as an array 
+public function getMessagesStr "Relations for interactive comm. These returns the messages as an array
   of strings, suitable for sending to clients like model editor, MDT, etc.
 
   function getMessagesStr
- 
-  Return all messages in a matrix format, vector of strings for each 
+
+  Return all messages in a matrix format, vector of strings for each
   message, written out as a string.
 "
   output String res;
-algorithm 
+algorithm
   res := ErrorExt.getMessagesStr();
 end getMessagesStr;
 
 public function getMessagesStrType "function getMessagesStrType
- 
-  Return all messages in a matrix format, vector of strings for each 
+
+  Return all messages in a matrix format, vector of strings for each
   message, written out as a string.
   Filtered by a specific MessageType.
 "
   input MessageType inMessageType;
   output String outString;
-algorithm 
+algorithm
   outString:=
   matchcontinue (inMessageType)
-    case (_) then "not impl yet."; 
+    case (_) then "not impl yet.";
   end matchcontinue;
 end getMessagesStrType;
 
 public function getMessagesStrSeverity "function getMessagesStrSeverity
- 
-  Return all messages in a matrix format, vector of strings for each 
+
+  Return all messages in a matrix format, vector of strings for each
   message, written out as a string.
   Filtered by a specific MessageType.
 "
   input Severity inSeverity;
   output String outString;
-algorithm 
+algorithm
   outString:=
   matchcontinue (inSeverity)
-    case (_) then "not impl yet."; 
+    case (_) then "not impl yet.";
   end matchcontinue;
 end getMessagesStrSeverity;
 
 protected function lookupMessage "Private Relations
   function: lookupMessage
- 
+
   Finds a message given ErrorID by looking in the message list.
 "
   input ErrorID inErrorID;
   output MessageType outMessageType;
   output Severity outSeverity;
   output String outString;
-algorithm 
+algorithm
   (outMessageType,outSeverity,outString):=
   matchcontinue (inErrorID)
     local
@@ -582,7 +582,7 @@ algorithm
       String msg;
       ErrorID error_id;
     case (error_id)
-      equation 
+      equation
         (msg_tp,severity,msg) = lookupMessage2(errorTable, error_id);
       then
         (msg_tp,severity,msg);
@@ -595,7 +595,7 @@ protected function lookupMessage2
   output MessageType outMessageType;
   output Severity outSeverity;
   output String outString;
-algorithm 
+algorithm
   (outMessageType,outSeverity,outString):=
   matchcontinue (inTplErrorIDMessageTypeSeverityStringLst,inErrorID)
     local
@@ -605,12 +605,12 @@ algorithm
       String msg;
       list<tuple<ErrorID, MessageType, Severity, String>> rest;
     case (((id1,msg_type,severity,msg) :: _),id2)
-      equation 
+      equation
         equality(id1 = id2);
       then
         (msg_type,severity,msg);
     case ((_ :: rest),id)
-      equation 
+      equation
         (msg_type,severity,msg) = lookupMessage2(rest, id);
       then
         (msg_type,severity,msg);
@@ -618,35 +618,35 @@ algorithm
 end lookupMessage2;
 
 protected function messageTypeStr "function: messageTypeStr
- 
+
   Converts a MessageType to a string.
 "
   input MessageType inMessageType;
   output String outString;
-algorithm 
+algorithm
   outString:=
   matchcontinue (inMessageType)
-    case (SYNTAX()) then "SYNTAX"; 
-    case (GRAMMAR()) then "GRAMMAR"; 
-    case (TRANSLATION()) then "TRANSLATION"; 
-    case (SYMBOLIC()) then "SYMBOLIC"; 
-    case (SIMULATION()) then "SIMULATION"; 
-    case (SCRIPTING()) then "SCRIPTING"; 
+    case (SYNTAX()) then "SYNTAX";
+    case (GRAMMAR()) then "GRAMMAR";
+    case (TRANSLATION()) then "TRANSLATION";
+    case (SYMBOLIC()) then "SYMBOLIC";
+    case (SIMULATION()) then "SIMULATION";
+    case (SCRIPTING()) then "SCRIPTING";
   end matchcontinue;
 end messageTypeStr;
 
 protected function severityStr "function: severityStr
- 
+
   Converts a Severity to a string.
 "
   input Severity inSeverity;
   output String outString;
-algorithm 
+algorithm
   outString:=
   matchcontinue (inSeverity)
-    case (ERROR()) then "ERROR"; 
-    case (WARNING()) then "WARNING"; 
-    case (NOTIFICATION()) then "NOTIFICATION"; 
+    case (ERROR()) then "ERROR";
+    case (WARNING()) then "WARNING";
+    case (NOTIFICATION()) then "NOTIFICATION";
   end matchcontinue;
 end severityStr;
 
@@ -658,24 +658,24 @@ protected function selectString "function selectString
   input String inString2;
   input String inString3;
   output String outString;
-algorithm 
+algorithm
   outString:=
   matchcontinue (inBoolean1,inString2,inString3)
     local String s1,s2;
-    case (true,s1,_) then s1; 
-    case (false,_,s2) then s2; 
+    case (true,s1,_) then s1;
+    case (false,_,s2) then s2;
   end matchcontinue;
 end selectString;
 
 protected function infoStr "function: infoStr
- 
+
   Converts a Absyn.Info to a string.
   adrpo changed 2006-02-05 to match the new Absyn.INFO specification
-  
+
 "
   input Absyn.Info inInfo;
   output String outString;
-algorithm 
+algorithm
   outString:=
   matchcontinue (inInfo)
     local
@@ -683,7 +683,7 @@ algorithm
       Boolean isReadOnly;
       ErrorID sline,scol,eline,ecol;
     case (Absyn.INFO(fileName = filename,isReadOnly = isReadOnly,lineNumberStart = sline,columnNumberStart = scol,lineNumberEnd = eline,columnNumberEnd = ecol))
-      equation 
+      equation
         s1 = selectString(isReadOnly, "readonly", "writable");
         sline_str = intString(sline);
         scol_str = intString(scol);

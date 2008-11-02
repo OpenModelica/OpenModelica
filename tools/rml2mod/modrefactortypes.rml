@@ -1,5 +1,5 @@
 (*
-   Copyright 2006, Adrian Pop, adrpo@ida.liu.se 
+   Copyright 2006, Adrian Pop, adrpo@ida.liu.se
 *)
 
 (**
@@ -12,21 +12,21 @@
  **)
 
 module ModRefactorTypes:
-  
+
   with "absyn.rml"
   with "dictionary.rml"
   with "lookup.rml"
   with "external.rml"
   with "modrefactor.rml"
 
-  datatype carry = C of Absyn.Transformed list * 
-  						string list * 
+  datatype carry = C of Absyn.Transformed list *
+  						string list *
   						Lookup.pkg Dictionary.dict * (* global dictionary *)
   						string *                     (* current package   *)
   						string *					 (* current function  *)
   						Lookup.data Dictionary.dict  (* local dictionary used in functions *)
-  
-  relation transformFiles: 
+
+  relation transformFiles:
   	(Absyn.Transformed list, ModRefactor.carry) => Absyn.Transformed list
 
 end
@@ -35,7 +35,7 @@ with "util.rml"
 with "moddump.rml"
 (* Relations *)
 
-relation transformFiles = 
+relation transformFiles =
 
 	axiom transformFiles([], _) => []
 
@@ -44,20 +44,20 @@ relation transformFiles =
 		 list_append([Absyn.TRANSFORMED(file, transProgram)], transformedFiles) => res
 		 -----------------------------------------------------------------------------
 		 transformFiles(
-		 	Absyn.TRANSFORMED(file, program)::rest, 
+		 	Absyn.TRANSFORMED(file, program)::rest,
 		 	ModRefactor.C(x,y,dict,n,z)) => res
 
 end
 
-relation transformProgram = 
+relation transformProgram =
 
 	axiom transformProgram(Absyn.PROGRAM([],x), junk) => Absyn.PROGRAM([],x)
-	
-	rule transformPackage(pkg, junk) => trPkg 
+
+	rule transformPackage(pkg, junk) => trPkg
 		 -------------------------------------------------------------------------------
 		 transformProgram(Absyn.PROGRAM([pkg],w), junk) => Absyn.PROGRAM([trPkg], w)
 
-	rule print "MetaModelica accepts only a top package that includes everything!\n" 
+	rule print "MetaModelica accepts only a top package that includes everything!\n"
 		 ---------------------------------------------------------------------------
 		 transformProgram(_, _) => fail
 end
@@ -72,35 +72,35 @@ relation filter: Absyn.Restriction => bool =
   axiom filter (R_PACKAGE)   		=> true
   axiom filter (R_FUNCTION)  		=> true
   axiom filter (R_UNIONTYPE)  		=> true
-  axiom filter (R_RECORD)	  		=> true  
+  axiom filter (R_RECORD)	  		=> true
   axiom filter (_) 					=> false
 end
 
 relation transformPackage =
 
-rule	(* print "Transforming the package\n" & *) 
-		Util.list_map1(transformPart, parts, C(x,y,dict,n,z,local)) => trParts		
+rule	(* print "Transforming the package\n" & *)
+		Util.list_map1(transformPart, parts, C(x,y,dict,n,z,local)) => trParts
 		----------------------------------------------------------------------------------
 		transformPackage(
-		Absyn.CLASS(n,p,f,e,r as Absyn.R_PACKAGE,Absyn.PARTS(parts,optcmt)), 
-		C(x,y,dict,_,z,local)) => 
+		Absyn.CLASS(n,p,f,e,r as Absyn.R_PACKAGE,Absyn.PARTS(parts,optcmt)),
+		C(x,y,dict,_,z,local)) =>
 		Absyn.CLASS(n,p,f,e,r,Absyn.PARTS(trParts, optcmt))
 
   axiom transformPackage(x, junk) => x
 
-end 
+end
 
 relation transformClass =
 
-rule	filter(r) => true & 
+rule	filter(r) => true &
         (* print "Transforming parts\n" & *)
 		Util.list_map1(transformPart, parts, C(x,y,d,z,n,local)) => trParts
 		----------------------------------------------------------------------------------
-		transformClass(Absyn.CLASS(n,p,f,e,r,Absyn.PARTS(parts,optcmt)), C(x,y,d,z,w,local)) => 
+		transformClass(Absyn.CLASS(n,p,f,e,r,Absyn.PARTS(parts,optcmt)), C(x,y,d,z,w,local)) =>
 		[Absyn.CLASS(n,p,f,e,r,Absyn.PARTS(trParts, optcmt))]
 
 
-  rule	
+  rule
   		Dictionary.search(pkgDict,  currentPkg) => SOME(Lookup.D(dataDict)) &
 		Lookup.fixType(dataDict,x) => newCDef &
 		(*
@@ -110,26 +110,26 @@ rule	filter(r) => true &
 		transformClass(
 			Absyn.CLASS(n,p,f,e,
 				r as Absyn.R_TYPE_GENERATED,
-				x as Absyn.DERIVED(typeSpec,_,_,_)), 
+				x as Absyn.DERIVED(typeSpec,_,_,_)),
 				C(_,_,pkgDict,currentPkg,_,_)) => [] (* [Absyn.CLASS(n,p,f,e,r,newCDef)] *)
-			
+
   rule	Dictionary.search(pkgDict,  currentPkg) => SOME(Lookup.D(dataDict)) &
 		Lookup.fixType(dataDict,x) => newCDef &
 		(*
 		print "\nModRefactorTypes-R_TYPE:" & print n &
-		*) 		
+		*)
 		----------------------------------------------------------------------------------
 		transformClass(
 			Absyn.CLASS(n,p,f,e,
 				r as Absyn.R_TYPE,
-				x as Absyn.DERIVED(typeSpec,_,_,_)), 
-				C(_,_,pkgDict,currentPkg,_,_)) => 
+				x as Absyn.DERIVED(typeSpec,_,_,_)),
+				C(_,_,pkgDict,currentPkg,_,_)) =>
 			[Absyn.CLASS(n,p,f,e,r,newCDef)]
-		
-  axiom transformClass(x, junk) => [x]    
 
-end 
-				
+  axiom transformClass(x, junk) => [x]
+
+end
+
 relation transformPart =
 
   rule  transformElementItemLst(els, junk) =>  trEls
@@ -147,7 +147,7 @@ relation transformPart =
   rule	Util.list_map1(transformEquationItem, eqs, junk) => trEqs
 		----------------------------------------------------------------------------------
 		transformPart(Absyn.INITIALEQUATIONS(eqs), junk) => Absyn.INITIALEQUATIONS(trEqs)
-	
+
   rule	Util.list_map1(transformAlgorithmItem, algs, junk) => trAlgs
 		-----------------------------------------------------------------------
 		transformPart(Absyn.ALGORITHMS(algs), junk) => Absyn.ALGORITHMS(trAlgs)
@@ -163,17 +163,17 @@ end
 relation transformElementItemLst =
 
   axiom transformElementItemLst([], _) => []
-  
+
   rule	transformElementItem(x, junk) => [el] &
-  		transformElementItemLst(rest, junk) => elList 
+  		transformElementItemLst(rest, junk) => elList
 		-----------------------------------------------------------------------------------
 		transformElementItemLst(x::rest, junk) => el::elList
 
   rule	transformElementItem(x, junk) => [] &
-  		transformElementItemLst(rest, junk) => elList 
+  		transformElementItemLst(rest, junk) => elList
 		-----------------------------------------------------------------------------------
 		transformElementItemLst(x::rest, junk) => elList
-	
+
 end
 
 relation transformElementItem =
@@ -187,7 +187,7 @@ relation transformElementItem =
 		transformElementItem(Absyn.ELEMENTITEM(e), junk) => [Absyn.ELEMENTITEM(newElement)]
 
   axiom transformElementItem(x, _) => [x]
-	
+
 end
 
 
@@ -196,10 +196,10 @@ relation transformElement =
   rule	transformClass(cls, junk) => []
         ----------------------------------------------------------------------------------------
 		transformElement(Absyn.ELEMENT(a,false,c,d,Absyn.CLASSDEF(e, cls), f, g, h), junk) => []
-		
+
   rule	transformClass(cls, junk) => [newClass]
         ----------------------------------------------------------------------------------------
-		transformElement(Absyn.ELEMENT(a,b as false,c,d,Absyn.CLASSDEF(e, cls), f, g, h), junk) => 
+		transformElement(Absyn.ELEMENT(a,b as false,c,d,Absyn.CLASSDEF(e, cls), f, g, h), junk) =>
 		[Absyn.ELEMENT(a,b,c,d,Absyn.CLASSDEF(e, newClass), f, g, h)]
 
   rule	Dictionary.search(pkgDict,  currentPkg) => SOME(Lookup.D(dataDict)) &
@@ -207,17 +207,17 @@ relation transformElement =
 		(* print "Lookup type:" & ModDump.print_type_spec(typeSpec) & print "\n" & *)
 		Lookup.fixTypeSpec(typeSpec,dataDict) => newTypeSpec &
 		Lookup.fixTypeSpec(newTypeSpec,dataDict) => newTypeSpec	&
-		(* print "Changed type:" & ModDump.print_type_spec(newTypeSpec) & print "\n" & *)		
+		(* print "Changed type:" & ModDump.print_type_spec(newTypeSpec) & print "\n" & *)
         ----------------------------------------------------------------------------------------
-		transformElement(Absyn.ELEMENT(a,b,c,d,Absyn.COMPONENTS(x, typeSpec, clst), f, g, h), 
-		C(_,_,pkgDict,currentPkg,_,local)) => 
+		transformElement(Absyn.ELEMENT(a,b,c,d,Absyn.COMPONENTS(x, typeSpec, clst), f, g, h),
+		C(_,_,pkgDict,currentPkg,_,local)) =>
 		[Absyn.ELEMENT(a,b,c,d,Absyn.COMPONENTS(x, newTypeSpec, clst), f, g, h)]
 
   axiom transformElement(x, junk) => [x]
 
 end
 
-(* Equations & Algorithms *)	
+(* Equations & Algorithms *)
 
 relation transformEquationItem =
 
@@ -231,28 +231,28 @@ relation transformAlgorithmItem =
         transformAlgorithm(alg, junk) => algTr
 		------------------------------------------------------------------------------------------
 		transformAlgorithmItem(Absyn.ALGORITHMITEM(alg, c), junk) => Absyn.ALGORITHMITEM(algTr, c)
-	
+
   axiom transformAlgorithmItem(x, junk) => x
 
 end
 
 relation transformEquation =
 
-  axiom transformEquation(x, junk) => x 
+  axiom transformEquation(x, junk) => x
 
 end
 
 (* Algorithm clauses *)
 relation transformAlgorithm =
- 
+
   rule	transformElementItemLst(eilist, junk) =>  trEls &
-        transformCases(clist, junk) => newCases 
+        transformCases(clist, junk) => newCases
 		----------------------------------------------------------------
-		transformAlgorithm(Absyn.ALG_MATCH(x,exp,eilist,clist), junk) => 
+		transformAlgorithm(Absyn.ALG_MATCH(x,exp,eilist,clist), junk) =>
 		Absyn.ALG_MATCH(x,exp,trEls,newCases)
 
   axiom transformAlgorithm(x, junk) => x
-  
+
 end
 
 relation transformCase =
@@ -260,7 +260,7 @@ relation transformCase =
   rule	transformElementItemLst(el, junk) =>  trEls
 		---------------------------------------------------------
 		transformCase(Absyn.CASE(pl,el,cp,exp,com,endcom),
-			junk as C(_,_,d,pkg,currentScopeName,_)) => 
+			junk as C(_,_,d,pkg,currentScopeName,_)) =>
 		Absyn.CASE(pl,trEls,cp,exp,com,endcom)
 
 end

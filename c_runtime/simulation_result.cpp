@@ -1,41 +1,41 @@
-/* 
+/*
  * This file is part of OpenModelica.
- * 
+ *
  * Copyright (c) 1998-2008, Linköpings University,
- * Department of Computer and Information Science, 
- * SE-58183 Linköping, Sweden. 
- * 
+ * Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
  * All rights reserved.
- * 
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC 
- * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF 
- * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC 
- * PUBLIC LICENSE. 
- * 
- * The OpenModelica software and the Open Source Modelica 
- * Consortium (OSMC) Public License (OSMC-PL) are obtained 
- * from Linköpings University, either from the above address, 
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC
+ * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF
+ * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC
+ * PUBLIC LICENSE.
+ *
+ * The OpenModelica software and the Open Source Modelica
+ * Consortium (OSMC) Public License (OSMC-PL) are obtained
+ * from Linköpings University, either from the above address,
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
- * 
- * This program is distributed  WITHOUT ANY WARRANTY; without 
- * even the implied warranty of  MERCHANTABILITY or FITNESS 
- * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH 
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS 
- * OF OSMC-PL. 
- * 
+ *
+ * This program is distributed  WITHOUT ANY WARRANTY; without
+ * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
+ * OF OSMC-PL.
+ *
  * See the full OSMC Public License conditions for more details.
- * 
+ *
  */
 
-/* 
+/*
  * This file contains functions for storing the result of a simulation to a file.
- * 
+ *
  * The solver should call three functions in this file.
  * 1. Call initializeResult before starting simulation, telling maximum number of data points.
  * 2. Call emit() to store data points at given time (taken from globalData structure)
  * 3. Call deinitializeResult with actual number of points produced to store data to file.
- * 
+ *
  */
 
  #include <stdio.h>
@@ -46,23 +46,23 @@
  #include "simulation_runtime.h"
  #include "sendData/sendData.h"
  #include <sstream>
- 
- double* simulationResultData=0; 
+
+ double* simulationResultData=0;
  long currentPos=0;
  long actualPoints=0; // the number of actual points saved
  long maxPoints;
  long dataSize = 0;
- 
+
  void add_result(double *data, long *actualPoints);
- 
+
 /* \brief
- * 
+ *
  * Emits data to result.
- * 
+ *
  * \return zero on sucess, non-zero otherwise
- */ 
+ */
 int emit()
-{	
+{
   storeExtrapolationData();
   if (actualPoints < maxPoints) {
     add_result(simulationResultData,&actualPoints);
@@ -80,14 +80,14 @@ int emit()
           return -1;
     }
     add_result(simulationResultData,&actualPoints);
-    return 0;    
-    /* adrpo - realloc the result array instead of fixed size! 
+    return 0;
+    /* adrpo - realloc the result array instead of fixed size!
      * cout << "Too many points: " << actualPoints << " max points: " << maxPoints << endl;
      * return -1;
      */
   }
 }
- 
+
  /* \brief
  * add the values of one step for all variables to the data
  * array to be able to later store this on file.
@@ -117,7 +117,7 @@ void add_result(double *data, long *actualPoints)
   	ss << globalData->algebraicsNames[i] << endl;
     ss << (data[currentPos] = globalData->algebraics[i]) << endl;
   }
-  
+
   sendPacket(ss.str().c_str());
   }
   else
@@ -136,15 +136,15 @@ void add_result(double *data, long *actualPoints)
   for (int i = 0; i < globalData->nAlgebraic; i++, currentPos++) {
     (data[currentPos] = globalData->algebraics[i]);
   }
-  	
+
   }
-  
+
   //cerr << "  ... done" << endl;
   (*actualPoints)++;
 }
 
 /* \brief initialize result data structures
- * 
+ *
  * \param numpoints, maximum number of points that can be stored.
  * \param nx number of states
  * \param ny number of variables
@@ -155,12 +155,12 @@ int initializeResult(long numpoints,long nx, long ny, long np)
 
 {
   maxPoints = numpoints;
-  
+
   if (numpoints < 0 ) { // Automatic number of output steps
   	cerr << "Warning automatic output steps not supported in OpenModelica yet." << endl;
   	cerr << "Attempt to solve this by allocating large amount of result data." << endl;
 	numpoints = abs(numpoints);
-	maxPoints = abs(numpoints);   	
+	maxPoints = abs(numpoints);
   }
   dataSize = (nx*2+ny+1);
   simulationResultData = (double*)malloc(numpoints * dataSize * sizeof(double));
@@ -176,7 +176,7 @@ int initializeResult(long numpoints,long nx, long ny, long np)
   }
   if(Static::enabled())
   	initSendData(globalData->nStates, globalData->nAlgebraic, globalData->statesNames, globalData->stateDerivativesNames, globalData->algebraicsNames);
-  
+
   return 0;
 }
 
@@ -203,7 +203,7 @@ int deinitializeResult(const char * filename)
   f << "XLabel: t" << endl << endl;
 
   int num_vars = 1+globalData->nStates*2+globalData->nAlgebraic;
-  
+
   // time variable.
   f << "DataSet: time"  << endl;
   for(int i = 0; i < actualPoints; ++i)
@@ -217,7 +217,7 @@ int deinitializeResult(const char * filename)
       f << simulationResultData[i*num_vars] << ", " << simulationResultData[i*num_vars + 1+var] << endl;
     f << endl;
   }
-  
+
   for(int var = 0; var < globalData->nStates; ++var)
   {
     f << "DataSet: " << globalData->stateDerivativesNames[var]  << endl;
@@ -225,7 +225,7 @@ int deinitializeResult(const char * filename)
       f << simulationResultData[i*num_vars] << ", " << simulationResultData[i*num_vars + 1+globalData->nStates+var] << endl;
     f << endl;
   }
-  
+
   for(int var = 0; var < globalData->nAlgebraic; ++var)
   {
     f << "DataSet: " << globalData->algebraicsNames[var] << endl;
@@ -240,7 +240,7 @@ int deinitializeResult(const char * filename)
     cerr << "Error, couldn't write to output file " << filename << endl;
     return -1;
   }
-  
+
   if(Static::enabled())
   	closeSendData();
   return 0;

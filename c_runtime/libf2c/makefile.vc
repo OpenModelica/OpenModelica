@@ -195,6 +195,6 @@ arith.h: arithchk.c
 	del arithchk.exe
 	del arithchk.obj
 clean:
-        del /Q /F $(w) vcf2c.lib ..\vcf2c.lib 
+        del /Q /F $(w) vcf2c.lib ..\vcf2c.lib
 
 rebuild: clean all

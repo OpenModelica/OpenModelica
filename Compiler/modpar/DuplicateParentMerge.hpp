@@ -13,10 +13,10 @@ public:
   DuplicateParentMerge(TaskGraph *,TaskGraph *,ContainSetMap *, VertexID, VertexID,
 		       double,double,int,map<VertexID,bool>*);
   bool apply(VertexID);
-  
+
 
 private:
-  bool containTask(VertexID task, 
+  bool containTask(VertexID task,
 		   std::pair<ChildrenIterator, ChildrenIterator> pair);
   void printVertexList(const list<VertexID> &lst, ostream &);
   list<VertexID>*
@@ -35,7 +35,7 @@ private:
   vector<bool> *
   siblingCondition(pair<ChildrenIterator,ChildrenIterator> pair,
 		   VertexID parent);
-  bool 
+  bool
   allSiblingsCondition(std::pair<ParentsIterator,ParentsIterator> pair,
 		       VertexID child,
 		       VertexID parent);

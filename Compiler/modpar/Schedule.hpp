@@ -13,7 +13,7 @@ using namespace boost;
 
 
 
-// Return the favourite predecessor of a task 
+// Return the favourite predecessor of a task
 VertexID get_fpred(VertexID u, const TaskGraph &g,map<VertexID,VertexID>*fpred);
 // Return earliest start value of a task
 double get_est(VertexID u, const TaskGraph &g,map<VertexID,double>* est);
@@ -22,7 +22,7 @@ double get_ect(VertexID u, const TaskGraph &g,map<VertexID,double>*ect);
 //Return the level of a task, stored in a map
 double get_level(VertexID u, const TaskGraph &g,map<VertexID,double>*level);
 double get_lst(VertexID u, const TaskGraph &g,map<VertexID,double> *lst);
-//Return lct 
+//Return lct
 double get_lct(VertexID u, const TaskGraph &g, map<VertexID,double>*lct);
 // Class for visiting each node in bfs manner, used for pass1 of tds algorithm
 
@@ -62,7 +62,7 @@ public:
       (*m_est)[u] = minVal;
     }
   };
-    
+
   void calc_fpred(VertexID u, const TaskGraph &g) {
     double maxVal=-1;
     ParentsIterator p,p_end;
@@ -76,13 +76,13 @@ public:
   map<VertexID,double> *m_ect;
   map<VertexID,double> *m_est;
   map<VertexID,VertexID> *m_fpred;
- 
+
 };
 
 class level_visitor: public default_dfs_visitor {
 public:
   level_visitor(map<VertexID,double>*level) : m_level(level) { }
-  void finish_vertex(VertexID u, const TaskGraph & g) 
+  void finish_vertex(VertexID u, const TaskGraph & g)
   {
     calc_level(u,g);
   };
@@ -98,7 +98,7 @@ public:
     //cerr << "level for task "<< u << " = " << maxVal<< endl;
   };
 protected:
-  
+
   map<VertexID,double> *m_level;
 };
 
@@ -113,13 +113,13 @@ public:
 						m_ect(ect),
 						m_level(level),
 						m_fpred(fpred) { };
-  void finish_vertex(VertexID u, const TaskGraph & g) 
+  void finish_vertex(VertexID u, const TaskGraph & g)
   {
     calc_lct(u,g);
     calc_lst(u,g);
     calc_level(u,g);
   };
-  
+
   void calc_lst(VertexID u, const TaskGraph & g)
   {
     (*m_lst)[u] = get_lct(u,g,m_lct) - getExecCost(u,&g);
@@ -154,7 +154,7 @@ public:
     //    cerr << "level for task "<< u << " = " << maxVal<< endl;
   };
 protected:
-  
+
   map<VertexID,double>*m_lst;
   map<VertexID,double>*m_lct;
   map<VertexID,double>*m_ect;
@@ -164,12 +164,12 @@ protected:
 
 
 // Comparison class for sorting vertices in levelorder.
-class LevelCmp 
+class LevelCmp
 {
 public:
   LevelCmp(TaskGraph*tg, map<VertexID,double>*level) : m_level(level),
 						       m_taskgraph(tg) {};
-  bool operator()(VertexID &v1,VertexID &v2)  
+  bool operator()(VertexID &v1,VertexID &v2)
   {
     return get_level(v1,*m_taskgraph,m_level) > get_level(v2,*m_taskgraph,m_level);
   };
@@ -179,12 +179,12 @@ private:
 };
 
 // The inverse order for level comparisons
-class InvLevelCmp 
+class InvLevelCmp
 {
 public:
   InvLevelCmp(TaskGraph*tg, map<VertexID,double>*level) : m_level(level),
 						       m_taskgraph(tg) {};
-  bool operator()(VertexID &v1,VertexID &v2)  
+  bool operator()(VertexID &v1,VertexID &v2)
   {
     return get_level(v1,*m_taskgraph,m_level) < get_level(v2,*m_taskgraph,m_level);
   };
@@ -197,10 +197,10 @@ typedef priority_queue<VertexID,vector<VertexID>,LevelCmp> Queue;
 typedef priority_queue<VertexID,vector<VertexID>,InvLevelCmp> InvQueue;
 typedef InvQueue TaskList; //Resuse inv levelsorted queue as tasklist
 
-class Schedule 
+class Schedule
 {
 public:
-  Schedule(TaskGraph*,VertexID start, VertexID end,int nproc);  
+  Schedule(TaskGraph*,VertexID start, VertexID end,int nproc);
   TaskList * get_tasklist(int proc);
     map<VertexID,double>& levelMap() { return m_level; };
   void printSchedule(ostream &os);
@@ -231,20 +231,20 @@ private:
 
   double calcTaskListCost(TaskList *t);
 
-  
+
   // Data
   map<int,TaskList*> m_proclists;
 
   bool m_allmerged;
-  
+
   int m_nproc;
   TaskGraph *m_taskgraph;
-  
+
   VertexID m_start;
   VertexID m_end;
   map<VertexID, int> m_latest_assigned;
   map<VertexID, set<int>* > m_assigned;
-  
+
   // TDS attributes
   map<VertexID, double> m_ect;
   map<VertexID, double> m_est;
@@ -252,8 +252,8 @@ private:
   map<VertexID, double> m_level;
   map<VertexID, double> m_lst;
   map<VertexID, double> m_lct;
-  
-  
+
+
   Queue* m_queue; // Priority queue for vertices (levelorder)
 };
 

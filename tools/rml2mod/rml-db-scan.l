@@ -23,7 +23,7 @@ extern int yyrmldbdebug;
 %option prefix = "yyrmldb"
 %option noyywrap
 
-LETTER  [A-Za-z_] 
+LETTER  [A-Za-z_]
 DIGIT	[0-9]
 ident   {LETTER}({LETTER}|{DIGIT}|"'"|"-")*
 tyvar   "'"{LETTER}({LETTER}|{DIGIT}|"-"|"'")*
@@ -81,7 +81,7 @@ file    ({LETTER}|{DIGIT}|"."|"\\"|"/"|"-")*
 "=>" {
  return T_FATARROW;
  }
- 
+
 "." {
 return T_DOT;
 }
@@ -93,23 +93,23 @@ return T_COLON;
 "|" {
 return T_MORE;
 }
- 
-{DIGIT}+ { 
+
+{DIGIT}+ {
 	yyrmldblval = (rml_t) mk_icon(atoi(yyrmldbtext));
-	if (yyrmldbdebug) fprintf(stderr, "FLEX:[NUMBER:%s at line %d]", yyrmldbtext, yyrmldb_lineno); 
-	return T_number; 
+	if (yyrmldbdebug) fprintf(stderr, "FLEX:[NUMBER:%s at line %d]", yyrmldbtext, yyrmldb_lineno);
+	return T_number;
 }
 
-{ident} { 
-	if (yyrmldbdebug) fprintf(stderr, "FLEX:[ID:%s at line %d]", yyrmldbtext, yyrmldb_lineno); 
-	yyrmldblval = (rml_t) mk_scon(yyrmldbtext); 
-	return T_id; 
-}
-
-{tyvar} { 
-	if (yyrmldbdebug) fprintf(stderr, "FLEX:[TYVAR:%s at line %d]", yyrmldbtext, yyrmldb_lineno); 
+{ident} {
+	if (yyrmldbdebug) fprintf(stderr, "FLEX:[ID:%s at line %d]", yyrmldbtext, yyrmldb_lineno);
 	yyrmldblval = (rml_t) mk_scon(yyrmldbtext);
-	return T_tyvar; 
+	return T_id;
+}
+
+{tyvar} {
+	if (yyrmldbdebug) fprintf(stderr, "FLEX:[TYVAR:%s at line %d]", yyrmldbtext, yyrmldb_lineno);
+	yyrmldblval = (rml_t) mk_scon(yyrmldbtext);
+	return T_tyvar;
 }
 
 "<"{file}">" {
@@ -118,7 +118,7 @@ return T_MORE;
         x = strdup(yyrmldbtext+1);
         x[strlen(x)-1]='\0';
 	yyrmldblval = (rml_t) mk_scon(x);
-	return T_file; 
+	return T_file;
 }
 
 "/\*"           {

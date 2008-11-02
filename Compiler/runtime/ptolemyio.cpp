@@ -1,31 +1,31 @@
-/* 
+/*
  * This file is part of OpenModelica.
- * 
+ *
  * Copyright (c) 1998-2008, Linköpings University,
- * Department of Computer and Information Science, 
- * SE-58183 Linköping, Sweden. 
- * 
+ * Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
  * All rights reserved.
- * 
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC 
- * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF 
- * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC 
- * PUBLIC LICENSE. 
- * 
- * The OpenModelica software and the Open Source Modelica 
- * Consortium (OSMC) Public License (OSMC-PL) are obtained 
- * from Linköpings University, either from the above address, 
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC
+ * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF
+ * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC
+ * PUBLIC LICENSE.
+ *
+ * The OpenModelica software and the Open Source Modelica
+ * Consortium (OSMC) Public License (OSMC-PL) are obtained
+ * from Linköpings University, either from the above address,
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
- * 
- * This program is distributed  WITHOUT ANY WARRANTY; without 
- * even the implied warranty of  MERCHANTABILITY or FITNESS 
- * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH 
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS 
- * OF OSMC-PL. 
- * 
+ *
+ * This program is distributed  WITHOUT ANY WARRANTY; without
+ * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
+ * OF OSMC-PL.
+ *
  * See the full OSMC Public License conditions for more details.
- * 
+ *
  */
 
 
@@ -43,7 +43,7 @@ using namespace std;
 
 extern "C"
 {
-#include "rml.h"  
+#include "rml.h"
 #include "../Values.h"
 #include <stdio.h>
 void print_error_buf_impl(char*str);
@@ -57,7 +57,7 @@ void print_error_buf_impl(char*str);
     void *lst;
     void *olst;
     ifstream stream(filename);
-    
+
     if (!stream) {
       cerr << "Error opening file" << endl;
       return NULL;
@@ -70,7 +70,7 @@ void print_error_buf_impl(char*str);
     int equalPos=intervalText.find("=");
     int readIntervalSize = atoi(intervalText.substr(equalPos+1).c_str());
     // exit if intervals not compatible...
-    if (datasize == 0) { 
+    if (datasize == 0) {
       datasize = readIntervalSize;
     } else {
       if( readIntervalSize == 0) {
@@ -89,7 +89,7 @@ void print_error_buf_impl(char*str);
       string readstr;
       double val; char ch;
       string var(string("DataSet: ")+vars[i]);
-      
+
 
       stream.seekg(0); //Reset stream
       // Search to the correct position.
@@ -117,7 +117,7 @@ void print_error_buf_impl(char*str);
 	string values(buf);
 	int commapos=values.find(",");
 	val = atof(values.substr(commapos+1).c_str()); // Second value after comma
-	
+
 	lst = (void*)mk_cons(Values__REAL(mk_rcon(val)),lst);
 	j++;
       }
@@ -132,7 +132,7 @@ void print_error_buf_impl(char*str);
   {
     char buf[255];
     ifstream stream(filename);
-    
+
 
     if (!stream) {
       cerr << "Error opening file" << endl;
@@ -214,7 +214,7 @@ void print_error_buf_impl(char*str);
 			  int i = 0; //visvarstring.find(",");
 			 bool finished = false;
 			 while (!finished) {
-			 	string visvar; 	
+			 	string visvar;
 				  //cout << "i: " << i << endl;
 				  i = visvarstring.find("\n");
 				  if (i == visvarstring.npos) {
@@ -225,7 +225,7 @@ void print_error_buf_impl(char*str);
 				  	visvarstring = visvarstring.substr(i+1);
 				  }
 				  int pos = visvar.find(":");
-				  string typevar = visvar.substr(pos+1); 
+				  string typevar = visvar.substr(pos+1);
 				  pos = visvar.find(",");
 				  visvar = visvar.substr(0,pos);
 				  visvar += ".";
@@ -236,11 +236,11 @@ void print_error_buf_impl(char*str);
 					  use = true;
 					  break;
 				  }
-			  } 
+			  }
 			  if (use) {
 				int size = sizeof(char)*(varname.length()+1);
 				char *varcstr = (char*)malloc(size);
-			  
+
 				strncpy(varcstr, varname.c_str(), varname.length()+1); //+1 for null termination
 				//cerr << "varcstr = " << varcstr << endl;
 

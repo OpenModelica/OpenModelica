@@ -1,41 +1,41 @@
-/* 
+/*
  * This file is part of OpenModelica.
- * 
+ *
  * Copyright (c) 1998-2008, Linköpings University,
- * Department of Computer and Information Science, 
- * SE-58183 Linköping, Sweden. 
- * 
+ * Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
  * All rights reserved.
- * 
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC 
- * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF 
- * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC 
- * PUBLIC LICENSE. 
- * 
- * The OpenModelica software and the Open Source Modelica 
- * Consortium (OSMC) Public License (OSMC-PL) are obtained 
- * from Linköpings University, either from the above address, 
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC
+ * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF
+ * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC
+ * PUBLIC LICENSE.
+ *
+ * The OpenModelica software and the Open Source Modelica
+ * Consortium (OSMC) Public License (OSMC-PL) are obtained
+ * from Linköpings University, either from the above address,
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
- * 
- * This program is distributed  WITHOUT ANY WARRANTY; without 
- * even the implied warranty of  MERCHANTABILITY or FITNESS 
- * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH 
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS 
- * OF OSMC-PL. 
- * 
+ *
+ * This program is distributed  WITHOUT ANY WARRANTY; without
+ * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
+ * OF OSMC-PL.
+ *
  * See the full OSMC Public License conditions for more details.
- * 
+ *
  */
 
-package Convert 
+package Convert
 " file:	 Convert.mo
   package:      Convert
   description: This file is part of a work-around implemented for the
   valueblock construct in order to avoid ciruclar file dependencies.
   It converts uniontypes located in Exp to similiar uniontypes located in DAE
   and vise versa.
-  
+
   RCS: $Id$"
 
 public import Exp;
@@ -49,7 +49,7 @@ public import SCode;
 public import ClassInf;
 type Ident = String;
 
-//--------------------------------------------------------- 
+//---------------------------------------------------------
 // Convert DAE.Element => Exp.DAEElement
 //---------------------------------------------------------
 public function fromDAEElemsToExpElems "function: fromDAEElemsToExpElems
@@ -61,19 +61,19 @@ algorithm
   outList :=
   matchcontinue (daeElems,accList)
     local
-	 		list<Exp.DAEElement> localAccList;      
+	 		list<Exp.DAEElement> localAccList;
     case ({},localAccList) equation then localAccList;
-    case (first :: rest,localAccList)    
+    case (first :: rest,localAccList)
   	local
   	  list<DAE.Element> rest;
   	  list<Exp.DAEElement> lst;
     	DAE.Element first;
   		Exp.DAEElement first2;
-  	equation  
+  	equation
   	  first2 = fromDAEElemToExpElem(first);
-  	  localAccList = listAppend(localAccList,Util.listCreate(first2));  
+  	  localAccList = listAppend(localAccList,Util.listCreate(first2));
      	lst = fromDAEElemsToExpElems(rest,localAccList);
-    	then lst;	
+    	then lst;
   end matchcontinue;
 end fromDAEElemsToExpElems;
 
@@ -96,7 +96,7 @@ algorithm
     		Option<Exp.Exp> o "one of the builtin types" ;
     		DAE.InstDims bind "Binding expression e.g. for parameters" ;
     		DAE.Flow val "value of start attribute" ;
-    		list<Absyn.Path> f "Flow of connector variable. Needed for 
+    		list<Absyn.Path> f "Flow of connector variable. Needed for
 						unconnected flow variables" ;
     		Option<DAE.VariableAttributes> varAttr;
     		Option<Absyn.Comment> absynComment;
@@ -121,7 +121,7 @@ algorithm
   	   elem = Exp.VAR(compRef,var2,vardirection2,varProt2,
   	   inp2,o,bind,
   	   val2,f,varAttr2,absynComment,innerOut,fType2);
-     then elem; 
+     then elem;
     case (DAE.DEFINE(c,e))
       local
         Exp.ComponentRef c;
@@ -135,7 +135,7 @@ algorithm
         Exp.ComponentRef c;
         Exp.Exp e;
         Exp.DAEElement elem;
-      equation 
+      equation
         elem = Exp.INITIALDEFINE(c,e);
       then elem;
     case (DAE.EQUATION(e1,e2))
@@ -143,8 +143,8 @@ algorithm
         Exp.Exp e1,e2;
         Exp.DAEElement elem;
       equation
-        elem = Exp.EQUATION(e1,e2);        
-      then elem;    
+        elem = Exp.EQUATION(e1,e2);
+      then elem;
     case (DAE.ARRAY_EQUATION(intList,e1,e2))
       local
         list<Integer> intList "dimension sizes" ;
@@ -153,8 +153,8 @@ algorithm
         Exp.DAEElement elem;
       equation
         elem = Exp.ARRAY_EQUATION(intList,e1,e2);
-      then elem;   
-        
+      then elem;
+
     case (DAE.WHEN_EQUATION(e,elemList,NONE()))
       local
         Exp.Exp e;
@@ -164,7 +164,7 @@ algorithm
       equation
         elemList2 = fromDAEElemsToExpElems(elemList,{});
         elem = Exp.WHEN_EQUATION(e,elemList2,NONE());
-      then elem;  
+      then elem;
 
     case (DAE.WHEN_EQUATION(e,elemList,SOME(elsewhen_)))
       local
@@ -177,8 +177,8 @@ algorithm
         elemList2 = fromDAEElemsToExpElems(elemList,{});
         elsewhen2 = fromDAEElemToExpElem(elsewhen_);
         elem = Exp.WHEN_EQUATION(e,elemList2,SOME(elsewhen2));
-      then elem;  
-        
+      then elem;
+
     case (DAE.IF_EQUATION(e,elemList1,elemList2))
       local
         Exp.Exp e;
@@ -189,8 +189,8 @@ algorithm
         elems1 = fromDAEElemsToExpElems(elemList1,{});
         elems2 = fromDAEElemsToExpElems(elemList2,{});
         elem = Exp.IF_EQUATION(e,elems1,elems2);
-      then elem; 
-        
+      then elem;
+
     case (DAE.INITIAL_IF_EQUATION(e,elemList1,elemList2))
       local
         Exp.Exp e;
@@ -201,7 +201,7 @@ algorithm
         elems1 = fromDAEElemsToExpElems(elemList1,{});
         elems2 = fromDAEElemsToExpElems(elemList2,{});
         elem = Exp.INITIAL_IF_EQUATION(e,elems1,elems2);
-      then elem; 
+      then elem;
 
     case (DAE.INITIALEQUATION(e1,e2))
       local
@@ -210,7 +210,7 @@ algorithm
         Exp.DAEElement elem;
       equation
         elem = Exp.INITIALEQUATION(e1,e2);
-      then elem;  
+      then elem;
 
     case (DAE.ALGORITHM(Algorithm.ALGORITHM(alg)))
     local
@@ -231,7 +231,7 @@ algorithm
         elem3 = fromDAEElemToExpElem(elem1);
         elem4 = fromDAEElemToExpElem(elem2);
         elem = Exp.EXTOBJECTCLASS(p,elem3,elem4);
-        then elem;       
+        then elem;
     case (DAE.ASSERT(e1,e2))
       local
         Exp.Exp e1,e2;
@@ -239,7 +239,7 @@ algorithm
       equation
         elem = Exp.ASSERT(e1,e2);
       then elem;
-    case (DAE.REINIT(c,e))  
+    case (DAE.REINIT(c,e))
       local
         Exp.ComponentRef c;
         Exp.Exp e;
@@ -259,7 +259,7 @@ algorithm
   matchcontinue (inVar)
     case (DAE.PUBLIC()) then Exp.PUBLIC();
     case (DAE.PROTECTED()) then Exp.PROTECTED();
-  end matchcontinue;    
+  end matchcontinue;
 end varProtConvert;
 
 public function varKindConvert "function: varKindConvert
@@ -297,16 +297,16 @@ algorithm
   t2 :=
   matchcontinue (t)
     local
-      Absyn.Path p;  
+      Absyn.Path p;
     case (DAE.REAL()) equation then Exp.REALEXP();
  		case (DAE.INT()) equation then Exp.INTEXP();
     case (DAE.BOOL()) equation then Exp.BOOLEXP();
     case (DAE.STRING()) equation then Exp.STRINGEXP();
     case (DAE.ENUM()) equation then Exp.ENUMEXP();
     case (DAE.LIST()) equation then Exp.LISTEXP();
-    case (DAE.METATUPLE()) equation then Exp.METATUPLEEXP();  
-    case (DAE.METAOPTION()) equation then Exp.METAOPTIONEXP();  
-    case (DAE.EXT_OBJECT(p)) equation then Exp.EXT_OBJECTEXP(p);  
+    case (DAE.METATUPLE()) equation then Exp.METATUPLEEXP();
+    case (DAE.METAOPTION()) equation then Exp.METAOPTIONEXP();
+    case (DAE.EXT_OBJECT(p)) equation then Exp.EXT_OBJECTEXP(p);
   end matchcontinue;
 end typeConvert;
 
@@ -319,7 +319,7 @@ algorithm
   matchcontinue (val)
     case (DAE.FLOW()) equation then Exp.FLOW();
     case (DAE.NON_FLOW()) equation then Exp.NON_FLOW();
-    case (DAE.NON_CONNECTOR()) equation then Exp.NON_CONNECTOR();  
+    case (DAE.NON_CONNECTOR()) equation then Exp.NON_CONNECTOR();
   end matchcontinue;
 end flowConvert;
 
@@ -331,9 +331,9 @@ algorithm
   outVarAttr :=
   matchcontinue (varAttr)
     local
-     	Option<Exp.VariableAttributes> elem; 
+     	Option<Exp.VariableAttributes> elem;
     case (NONE()) equation then NONE();
-    case (SOME(DAE.VAR_ATTR_REAL(quant,u,dUnit,min,init,f,nom,sSelectOption))) 
+    case (SOME(DAE.VAR_ATTR_REAL(quant,u,dUnit,min,init,f,nom,sSelectOption)))
     local
       Option<Exp.Exp> quant "quantity" ;
     	Option<Exp.Exp> u "unit" ;
@@ -344,19 +344,19 @@ algorithm
     	Option<Exp.Exp> nom "nominal" ;
     	Option<DAE.StateSelect> sSelectOption;
     	Option<Exp.StateSelect> sSelectOption2;
-    equation 
+    equation
       sSelectOption2 = convertStateSelect(sSelectOption);
       elem = SOME(Exp.VAR_ATTR_REAL(quant,u,dUnit,min,init,f,nom,sSelectOption2));
-    then elem; 
+    then elem;
 		case (SOME(DAE.VAR_ATTR_INT(quan,min,init,fixed)))
-		local	
+		local
 			Option<Exp.Exp> quan "quantity" ;
     	tuple<Option<Exp.Exp>, Option<Exp.Exp>> min "min , max" ;
     	Option<Exp.Exp> init "Initial value" ;
     	Option<Exp.Exp> fixed;
     equation
       elem = SOME(Exp.VAR_ATTR_INT(quan,min,init,fixed));
-    then elem;		  
+    then elem;
 	  case (SOME(DAE.VAR_ATTR_BOOL(quan,init,f)))
 	  local
 	    Option<Exp.Exp> quan "quantity" ;
@@ -366,7 +366,7 @@ algorithm
       elem = SOME(Exp.VAR_ATTR_BOOL(quan,init,f));
       then elem;
     case (SOME(DAE.VAR_ATTR_STRING(quan,init)))
-    local  
+    local
       Option<Exp.Exp> quan "quantity" ;
     	Option<Exp.Exp> init "Initial value" ;
    	equation
@@ -382,13 +382,13 @@ public function convertStateSelect "function: convertStateSelect
 algorithm
 	outSs :=
 	matchcontinue (ss)
-	  case (NONE()) equation then NONE(); 
+	  case (NONE()) equation then NONE();
 	  case (SOME(DAE.NEVER())) equation then SOME(Exp.NEVER());
 	  case (SOME(DAE.AVOID())) equation then SOME(Exp.AVOID());
 	  case (SOME(DAE.DEFAULT())) equation then SOME(Exp.DEFAULT());
-	  case (SOME(DAE.PREFER())) equation then SOME(Exp.PREFER());	    
-	  case (SOME(DAE.ALWAYS())) equation then SOME(Exp.ALWAYS());   
-	end matchcontinue;	  	
+	  case (SOME(DAE.PREFER())) equation then SOME(Exp.PREFER());
+	  case (SOME(DAE.ALWAYS())) equation then SOME(Exp.ALWAYS());
+	end matchcontinue;
 end convertStateSelect;
 
 public function fromAlgStatesToExpStates "function: fromAlgStatesToExpStates
@@ -400,19 +400,19 @@ algorithm
   outList :=
   matchcontinue (algStates,accList)
     local
-	 		list<Exp.Statement> localAccList;      
+	 		list<Exp.Statement> localAccList;
     case ({},localAccList) equation then localAccList;
-    case (first :: rest,localAccList)    
+    case (first :: rest,localAccList)
   	local
   	  list<Algorithm.Statement> rest;
     	Algorithm.Statement first;
   	  Exp.Statement first2;
     	list<Exp.Statement> lst;
-  	equation  
+  	equation
     	first2 = fromAlgStateToExpState(first);
-    	localAccList = listAppend(localAccList,Util.listCreate(first2));  
+    	localAccList = listAppend(localAccList,Util.listCreate(first2));
      	lst = fromAlgStatesToExpStates(rest,localAccList);
-    	then lst;		  
+    	then lst;
   end matchcontinue;
 end fromAlgStatesToExpStates;
 
@@ -421,7 +421,7 @@ public function fromAlgStateToExpState "function: fromAlgStateToExpState
 	input Algorithm.Statement algState;
 	output Exp.Statement outState;
 algorithm
-  outState := 
+  outState :=
   matchcontinue (algState)
     case (Algorithm.ASSIGN(t,cRef,e))
       local
@@ -429,11 +429,11 @@ algorithm
     		Exp.ComponentRef cRef;
     		Exp.Exp e;
     		Exp.Statement elem;
-      equation  
+      equation
         elem = Exp.ASSIGN(t,cRef,e);
       then elem;
     case (Algorithm.TUPLE_ASSIGN(t,expLst,e))
-    	local	
+    	local
     		Exp.Type t;
     		list<Exp.Exp> expLst;
     		Exp.Exp e;
@@ -449,7 +449,7 @@ algorithm
          Exp.Statement elem;
        equation
          elem = Exp.ASSIGN_ARR(t,compRef,e);
-         then elem;  
+         then elem;
     case (Algorithm.IF(e,sLst,else_))
       	local
       	  Exp.Exp e;
@@ -476,7 +476,7 @@ algorithm
     		  sLst2 = fromAlgStatesToExpStates(sLst,{});
     		  elem = Exp.FOR(t,bool,i,e,sLst2);
     		then elem;
-    case (Algorithm.WHILE(e,sLst)) 
+    case (Algorithm.WHILE(e,sLst))
     		local
     			Exp.Exp e;
     			list<Algorithm.Statement> sLst;
@@ -499,7 +499,7 @@ algorithm
     		  sLst2 = fromAlgStatesToExpStates(sLst,{});
     		  eWhen2 = fromAlgStateToExpState(eWhen);
     		  elem = Exp.WHEN(e,sLst2,SOME(eWhen2),helpVar);
-    		then elem;  
+    		then elem;
    case (Algorithm.WHEN(e,sLst,NONE(),helpVar))
     		local
     			Exp.Exp e;
@@ -507,11 +507,11 @@ algorithm
     			Option<Algorithm.Statement> eWhen;
     			list<Integer> helpVar;
     			Exp.Statement elem;
-    			list<Exp.Statement> sLst2; 
+    			list<Exp.Statement> sLst2;
     		equation
     		  sLst2 = fromAlgStatesToExpStates(sLst,{});
     		  elem = Exp.WHEN(e,sLst2,NONE(),helpVar);
-    		then elem; 		      		  
+    		then elem;
     case (Algorithm.ASSERT(e1,e2))
       local
 		    Exp.Exp e1;
@@ -522,34 +522,34 @@ algorithm
 			  then elem;
     case (Algorithm.REINIT(var,value))
       local
-        Exp.Exp var "Variable"; 
+        Exp.Exp var "Variable";
     		Exp.Exp value "Value ";
-        Exp.Statement elem; 
+        Exp.Statement elem;
       equation
         elem = Exp.REINITSTMT(var,value);
-        then elem;  
+        then elem;
     case (Algorithm.RETURN())
     local
       Exp.Statement elem;
     equation
       elem = Exp.RETURN();
-      then elem;                 
+      then elem;
 	  case (Algorithm.BREAK())
     local
       Exp.Statement elem;
     equation
       elem = Exp.BREAK();
-    then elem; 
-	// Part of MetaModelica extension	
+    then elem;
+	// Part of MetaModelica extension
 	  case (Algorithm.TRY(b))
-		  local       		  
+		  local
     		list<Algorithm.Statement> b;
     		Exp.Statement elem;
     		list<Exp.Statement> b2;
     	equation
     	  b2 = fromAlgStatesToExpStates(b,{});
     		elem = Exp.TRY(b2);
-    	then elem;          
+    	then elem;
 		case (Algorithm.CATCH(b))
     	local
 	    	list<Algorithm.Statement> b;
@@ -558,27 +558,27 @@ algorithm
 	    equation
 	      b2 = fromAlgStatesToExpStates(b,{});
 	      elem = Exp.CATCH(b2);
-	      then elem;               
-		case (Algorithm.THROW())               
+	      then elem;
+		case (Algorithm.THROW())
 		  local
       Exp.Statement elem;
     equation
       elem = Exp.THROW();
-    then elem; 
-		case (Algorithm.GOTO(s))               
+    then elem;
+		case (Algorithm.GOTO(s))
 		  local
-		    Exp.Statement elem; 
+		    Exp.Statement elem;
 		    String s;
 		  equation
 		    elem = Exp.GOTO(s);
-		  then elem; 
-		case (Algorithm.LABEL(s))               
+		  then elem;
+		case (Algorithm.LABEL(s))
 		  local
-		    Exp.Statement elem; 
+		    Exp.Statement elem;
 		    String s;
 		  equation
 		    elem = Exp.LABEL(s);
-		  then elem; 
+		  then elem;
   end matchcontinue;
 end fromAlgStateToExpState;
 
@@ -589,7 +589,7 @@ public function fromAlgElseToExpElse "function: fromAlgElseToExpElse
 algorithm
 	elseOut :=
 	matchcontinue (elseIn)
-	  case (Algorithm.NOELSE()) 
+	  case (Algorithm.NOELSE())
 	    equation then Exp.NOELSE();
 	  case (Algorithm.ELSEIF(e,sLst,else_))
 	   local
@@ -603,7 +603,7 @@ algorithm
       sLst2 = fromAlgStatesToExpStates(sLst,{});
       else_2 = fromAlgElseToExpElse(else_);
       elem = Exp.ELSEIF(e,sLst2,else_2);
-	  then elem;         	  
+	  then elem;
 	  case (Algorithm.ELSE(sLst))
 	   local
 	     list<Algorithm.Statement> sLst;
@@ -612,8 +612,8 @@ algorithm
     equation
       sLst2 = fromAlgStatesToExpStates(sLst,{});
       elem = Exp.ELSE(sLst2);
-	  then elem;         
-	end matchcontinue;    
+	  then elem;
+	end matchcontinue;
 end fromAlgElseToExpElse;
 
 
@@ -630,19 +630,19 @@ algorithm
   outList :=
   matchcontinue (daeElems,accList)
     local
-	 		list<DAE.Element> localAccList;      
+	 		list<DAE.Element> localAccList;
     case ({},localAccList) equation then localAccList;
-    case (first :: rest,localAccList)    
+    case (first :: rest,localAccList)
   	local
   	  list<Exp.DAEElement> rest;
     	Exp.DAEElement first;
   	  DAE.Element first2;
   	  list<DAE.Element> lst;
-  	equation  
+  	equation
     	first2 = fromExpElemToDAEElem(first);
-  	  localAccList = listAppend(localAccList,Util.listCreate(first2));  
+  	  localAccList = listAppend(localAccList,Util.listCreate(first2));
     	lst = fromExpElemsToDAEElems(rest,localAccList);
-    	then lst;		  	
+    	then lst;
   end matchcontinue;
 end fromExpElemsToDAEElems;
 
@@ -652,7 +652,7 @@ public function fromExpElemToDAEElem "function: fromExpElemToDAEElem
 	output DAE.Element outElem;
 algorithm
   outElem :=
-  matchcontinue (daeElem) 
+  matchcontinue (daeElem)
     case (Exp.VAR(compRef,var,vardirection,varProt,inp,o,bind,val,f,varAttr,absynComment,innerOut,fType))
       local
         Exp.ComponentRef compRef " The variable name";
@@ -663,7 +663,7 @@ algorithm
     		Option<Exp.Exp> o "one of the builtin types" ;
     		Exp.InstDims bind "Binding expression e.g. for parameters" ;
     		Exp.Flow val "value of start attribute" ;
-    		list<Absyn.Path> f "Flow of connector variable. Needed for 
+    		list<Absyn.Path> f "Flow of connector variable. Needed for
 						unconnected flow variables" ;
     		Option<Exp.VariableAttributes> varAttr;
     		Option<Absyn.Comment> absynComment;
@@ -687,8 +687,8 @@ algorithm
        val2 = flowConvert2(val);
   	   elem = DAE.VAR(compRef,var2,vardirection2,varProt2,inp2,o,bind,
   	   val2,f,varAttr2,absynComment,innerOut,fType2);
-     then elem; 
-       
+     then elem;
+
     case (Exp.DEFINE(c,e))
       local
         Exp.ComponentRef c;
@@ -702,18 +702,18 @@ algorithm
         Exp.ComponentRef c;
         Exp.Exp e;
         DAE.Element elem;
-      equation 
+      equation
         elem = DAE.INITIALDEFINE(c,e);
       then elem;
-       
+
     case (Exp.EQUATION(e1,e2))
       local
         Exp.Exp e1,e2;
         DAE.Element elem;
       equation
-        elem = DAE.EQUATION(e1,e2);  
+        elem = DAE.EQUATION(e1,e2);
       then elem;
-        
+
     case (Exp.ARRAY_EQUATION(intList,e1,e2))
       local
         list<Integer> intList "dimension sizes" ;
@@ -722,8 +722,8 @@ algorithm
         DAE.Element elem;
       equation
         elem = DAE.ARRAY_EQUATION(intList,e1,e2);
-      then elem;   
-    
+      then elem;
+
     case (Exp.WHEN_EQUATION(e,elemList,NONE()))
       local
         Exp.Exp e;
@@ -733,8 +733,8 @@ algorithm
       equation
         elemList2 = fromExpElemsToDAEElems(elemList,{});
         elem = DAE.WHEN_EQUATION(e,elemList2,NONE());
-      then elem;     
-        
+      then elem;
+
     case (Exp.WHEN_EQUATION(e,elemList,SOME(elsewhen_)))
       local
         Exp.Exp e;
@@ -746,8 +746,8 @@ algorithm
         elemList2 = fromExpElemsToDAEElems(elemList,{});
         elsewhen2 = fromExpElemToDAEElem(elsewhen_);
         elem = DAE.WHEN_EQUATION(e,elemList2,SOME(elsewhen2));
-      then elem;  
-        
+      then elem;
+
     case (Exp.IF_EQUATION(e,elemList1,elemList2))
       local
         Exp.Exp e;
@@ -758,8 +758,8 @@ algorithm
         elems1 = fromExpElemsToDAEElems(elemList1,{});
         elems2 = fromExpElemsToDAEElems(elemList2,{});
         elem = DAE.IF_EQUATION(e,elems1,elems2);
-      then elem; 
-        
+      then elem;
+
     case (Exp.INITIAL_IF_EQUATION(e,elemList1,elemList2))
       local
         Exp.Exp e;
@@ -770,7 +770,7 @@ algorithm
         elems1 = fromExpElemsToDAEElems(elemList1,{});
         elems2 = fromExpElemsToDAEElems(elemList2,{});
         elem = DAE.INITIAL_IF_EQUATION(e,elems1,elems2);
-      then elem; 
+      then elem;
 
     case (Exp.INITIALEQUATION(e1,e2))
       local
@@ -779,20 +779,20 @@ algorithm
         DAE.Element elem;
       equation
         elem = DAE.INITIALEQUATION(e1,e2);
-      then elem;  
-        
+      then elem;
+
     case (Exp.ALGORITHM(Exp.ALGORITHM2(alg)))
     local
       list<Exp.Statement> alg;
       DAE.Element elem;
-      list<Algorithm.Statement> alg2; 
+      list<Algorithm.Statement> alg2;
     equation
       alg2 = fromExpStatesToAlgStates(alg,{});
       elem = DAE.ALGORITHM(Algorithm.ALGORITHM(alg2));
     then elem;
 
       // MISSING record COMP, record FUNCTION, record EXTFUNCTION
-    
+
     case (Exp.EXTOBJECTCLASS(p,elem1,elem2))
       local
         Absyn.Path p;
@@ -802,15 +802,15 @@ algorithm
         elem3 = fromExpElemToDAEElem(elem1);
         elem4 = fromExpElemToDAEElem(elem2);
         elem = DAE.EXTOBJECTCLASS(p,elem3,elem4);
-        then elem;       
+        then elem;
     case (Exp.ASSERT(e1,e2))
       local
         Exp.Exp e1,e2;
         DAE.Element elem;
       equation
         elem = DAE.ASSERT(e1,e2);
-      then elem; 
-    case (Exp.REINIT(c,e))  
+      then elem;
+    case (Exp.REINIT(c,e))
       local
         Exp.ComponentRef c;
         Exp.Exp e;
@@ -830,7 +830,7 @@ algorithm
   matchcontinue (inVar)
     case (Exp.PUBLIC()) then DAE.PUBLIC();
     case (Exp.PROTECTED()) then DAE.PROTECTED();
-  end matchcontinue;    
+  end matchcontinue;
 end varProtConvert2;
 
 public function varKindConvert2 "function: varKindConvert2
@@ -873,12 +873,12 @@ algorithm
  		case (Exp.INTEXP()) equation then DAE.INT();
     case (Exp.BOOLEXP()) equation then DAE.BOOL();
     case (Exp.STRINGEXP()) equation then DAE.STRING();
-    case (Exp.LISTEXP()) equation then DAE.LIST();  
-    case (Exp.METATUPLEEXP()) equation then DAE.METATUPLE(); 
-    case (Exp.METAOPTIONEXP()) equation then DAE.METAOPTION();     
-    case (Exp.EXT_OBJECTEXP(p)) equation then DAE.EXT_OBJECT(p);   
+    case (Exp.LISTEXP()) equation then DAE.LIST();
+    case (Exp.METATUPLEEXP()) equation then DAE.METATUPLE();
+    case (Exp.METAOPTIONEXP()) equation then DAE.METAOPTION();
+    case (Exp.EXT_OBJECTEXP(p)) equation then DAE.EXT_OBJECT(p);
   end matchcontinue;
-end typeConvert2; 
+end typeConvert2;
 
 public function flowConvert2 "function: flowConvert2
   Exp.Flow => DAE.Flow"
@@ -889,7 +889,7 @@ algorithm
   matchcontinue (val)
     case (Exp.FLOW()) equation then DAE.FLOW();
     case (Exp.NON_FLOW()) equation then DAE.NON_FLOW();
-    case (Exp.NON_CONNECTOR()) equation then DAE.NON_CONNECTOR();  
+    case (Exp.NON_CONNECTOR()) equation then DAE.NON_CONNECTOR();
   end matchcontinue;
 end flowConvert2;
 
@@ -902,9 +902,9 @@ algorithm
   matchcontinue (varAttr)
     local
       Option<DAE.VariableAttributes> elem;
-     	DAE.VariableAttributes temp; 
+     	DAE.VariableAttributes temp;
     case (NONE()) equation then NONE();
-    case (SOME(Exp.VAR_ATTR_REAL(q,u,d,m,i,f,n,s))) 
+    case (SOME(Exp.VAR_ATTR_REAL(q,u,d,m,i,f,n,s)))
     local
       Option<Exp.Exp> q "quantity" ;
     	Option<Exp.Exp> u "unit" ;
@@ -915,19 +915,19 @@ algorithm
     	Option<Exp.Exp> n "nominal" ;
     	Option<Exp.StateSelect> s;
     	Option<DAE.StateSelect> sSelectOption2;
-    equation 
+    equation
       sSelectOption2 = convertStateSelect2(s);
-      elem = SOME(DAE.VAR_ATTR_REAL(q,u,d,m,i,f,n,sSelectOption2)); 
-    then elem; 
+      elem = SOME(DAE.VAR_ATTR_REAL(q,u,d,m,i,f,n,sSelectOption2));
+    then elem;
    case (SOME(Exp.VAR_ATTR_INT(q,m,i,f)))
-		local	
+		local
 			Option<Exp.Exp> q "quantity" ;
     	tuple<Option<Exp.Exp>, Option<Exp.Exp>> m "min , max" ;
     	Option<Exp.Exp> i "Initial value" ;
     	Option<Exp.Exp> f;
     equation
       elem = SOME(DAE.VAR_ATTR_INT(q,m,i,f));
-    then elem;		  
+    then elem;
 	  case (SOME(Exp.VAR_ATTR_BOOL(q,i,f)))
 	  local
 	    Option<Exp.Exp> q "quantity" ;
@@ -937,23 +937,23 @@ algorithm
       elem = SOME(DAE.VAR_ATTR_BOOL(q,i,f));
       then elem;
     case (SOME(Exp.VAR_ATTR_STRING(q,i)))
-    local  
+    local
       Option<Exp.Exp> q "quantity" ;
     	Option<Exp.Exp> i "Initial value" ;
    	equation
    	  elem = SOME(DAE.VAR_ATTR_STRING(q,i));
    	then elem;
   case (SOME(Exp.VAR_ATTR_ENUMERATION(q,m,st,f)))
-    local  
+    local
     Option<Exp.Exp> q "quantity" ;
     tuple<Option<Exp.Exp>, Option<Exp.Exp>> m "min , max" ;
     Option<Exp.Exp> st "start" ;
     Option<Exp.Exp> f "fixed - true: default for parameter/constant, false - default for other variables" ;
     equation
-       elem = SOME(DAE.VAR_ATTR_ENUMERATION(q,m,st,f));     
-   	then elem;  
-  end matchcontinue; 
-end varAttrConvert2; 
+       elem = SOME(DAE.VAR_ATTR_ENUMERATION(q,m,st,f));
+   	then elem;
+  end matchcontinue;
+end varAttrConvert2;
 
 public function convertStateSelect2 "function: convertStateSelect2
   Exp.StateSelect 'option => DAE.StateSelect 'option"
@@ -966,9 +966,9 @@ algorithm
 	  case (SOME(Exp.NEVER())) equation then SOME(DAE.NEVER());
 	  case (SOME(Exp.AVOID())) equation then SOME(DAE.AVOID());
 	  case (SOME(Exp.DEFAULT())) equation then SOME(DAE.DEFAULT());
-	  case (SOME(Exp.PREFER())) equation then SOME(DAE.PREFER());	    
-	  case (SOME(Exp.ALWAYS())) equation then SOME(DAE.ALWAYS());   
-	end matchcontinue;	  	
+	  case (SOME(Exp.PREFER())) equation then SOME(DAE.PREFER());
+	  case (SOME(Exp.ALWAYS())) equation then SOME(DAE.ALWAYS());
+	end matchcontinue;
 end convertStateSelect2;
 
 public function fromExpStatesToAlgStates "function: fromExpStatesToAlgStates
@@ -980,19 +980,19 @@ algorithm
   outList :=
   matchcontinue (algStates,accList)
     local
-	 		list<Algorithm.Statement> localAccList;      
+	 		list<Algorithm.Statement> localAccList;
     case ({},localAccList) equation then localAccList;
-    case (first  :: rest,localAccList)    
+    case (first  :: rest,localAccList)
   	local
   	  list<Exp.Statement> rest;
     	Exp.Statement first;
   	  Algorithm.Statement first2;
     	list<Algorithm.Statement> lst;
-  	equation  
+  	equation
     	first2 = fromExpStateToAlgState(first);
-  	  localAccList = listAppend(localAccList,Util.listCreate(first2));  
+  	  localAccList = listAppend(localAccList,Util.listCreate(first2));
     	lst = fromExpStatesToAlgStates(rest,localAccList);
-    	then lst;		  
+    	then lst;
   end matchcontinue;
 end fromExpStatesToAlgStates;
 
@@ -1001,7 +1001,7 @@ public function fromExpStateToAlgState "function: fromExpStateToAlgState
 	input Exp.Statement algState;
 	output Algorithm.Statement outState;
 algorithm
-  outState := 
+  outState :=
   matchcontinue (algState)
     case (Exp.ASSIGN(t,cRef,e))
       local
@@ -1009,11 +1009,11 @@ algorithm
     		Exp.ComponentRef cRef;
     		Exp.Exp e;
     		Algorithm.Statement elem;
-      equation  
+      equation
         elem = Algorithm.ASSIGN(t,cRef,e);
       then elem;
     case (Exp.TUPLE_ASSIGN(t,expLst,e))
-    	local	
+    	local
     		Exp.Type t;
     		list<Exp.Exp> expLst;
     		Exp.Exp e;
@@ -1029,7 +1029,7 @@ algorithm
          Algorithm.Statement elem;
        equation
          elem = Algorithm.ASSIGN_ARR(t,compRef,e);
-         then elem;  
+         then elem;
     case (Exp.IF(e,sLst,else_))
       	local
       	  Exp.Exp e;
@@ -1056,7 +1056,7 @@ algorithm
     		  sLst2 = fromExpStatesToAlgStates(sLst,{});
     		  elem = Algorithm.FOR(t,bool,i,e,sLst2);
     		then elem;
-    case (Exp.WHILE(e,sLst)) 
+    case (Exp.WHILE(e,sLst))
     		local
     			Exp.Exp e;
     			list<Exp.Statement> sLst;
@@ -1077,7 +1077,7 @@ algorithm
     		equation
     		  sLst2 = fromExpStatesToAlgStates(sLst,{});
     		  elem = Algorithm.WHEN(e,sLst2,NONE(),helpVar);
-    		then elem;  
+    		then elem;
     case (Exp.WHEN(e,sLst,SOME(eWhen),helpVar))
     		local
     			Exp.Exp e;
@@ -1091,7 +1091,7 @@ algorithm
     		  sLst2 = fromExpStatesToAlgStates(sLst,{});
     		  eWhen2 = fromExpStateToAlgState(eWhen);
     		  elem = Algorithm.WHEN(e,sLst2,SOME(eWhen2),helpVar);
-    		then elem; 
+    		then elem;
     case (Exp.ASSERTSTMT(e1,e2))
       local
 		    Exp.Exp e1;
@@ -1102,63 +1102,63 @@ algorithm
 			  then elem;
     case (Exp.REINITSTMT(var,value))
       local
-        Exp.Exp var "Variable"; 
+        Exp.Exp var "Variable";
     		Exp.Exp value "Value ";
-        Algorithm.Statement elem; 
+        Algorithm.Statement elem;
       equation
         elem = Algorithm.REINIT(var,value);
-        then elem;  
+        then elem;
     case (Exp.RETURN())
     local
       Algorithm.Statement elem;
     equation
       elem = Algorithm.RETURN();
-      then elem;                 
+      then elem;
 	  case (Exp.BREAK())
     local
       Algorithm.Statement elem;
     equation
       elem = Algorithm.BREAK();
-    then elem; 
-	// Part of MetaModelica extension	
+    then elem;
+	// Part of MetaModelica extension
 	  case (Exp.TRY(b))
-		  local       		  
+		  local
     		list<Exp.Statement> b;
     		Algorithm.Statement elem;
     		list<Algorithm.Statement> b2;
     	equation
     	  b2 = fromExpStatesToAlgStates(b,{});
     		elem = Algorithm.TRY(b2);
-    	then elem;          
+    	then elem;
 		case (Exp.CATCH(b))
     	local
 	    	list<Exp.Statement> b;
-	    	Algorithm.Statement elem;	    	
+	    	Algorithm.Statement elem;
     		list<Algorithm.Statement> b2;
 	    equation
 	      b2 = fromExpStatesToAlgStates(b,{});
 	      elem = Algorithm.CATCH(b2);
-	      then elem;               
-		case (Exp.THROW())               
+	      then elem;
+		case (Exp.THROW())
 		  local
 		    Algorithm.Statement elem;
 		  equation
 		    elem = Algorithm.THROW();
-		  then elem; 
-		case (Exp.GOTO(s))               
+		  then elem;
+		case (Exp.GOTO(s))
 		  local
-		    Algorithm.Statement elem; 
+		    Algorithm.Statement elem;
 		    String s;
 		  equation
 		    elem = Algorithm.GOTO(s);
-		  then elem; 
-		case (Exp.LABEL(s))               
+		  then elem;
+		case (Exp.LABEL(s))
 		  local
 		    String s;
 		    Algorithm.Statement elem;
 		  equation
 		    elem = Algorithm.LABEL(s);
-		  then elem; 
+		  then elem;
   end matchcontinue;
 end fromExpStateToAlgState;
 
@@ -1170,7 +1170,7 @@ public function fromExpElseToAlgElse "function: fromExpElseToAlgElse
 algorithm
 	elseOut :=
 	matchcontinue (elseIn)
-	  case (Exp.NOELSE()) 
+	  case (Exp.NOELSE())
 	    equation then Algorithm.NOELSE();
 	  case (Exp.ELSEIF(e,sLst,else_))
 	   local
@@ -1184,7 +1184,7 @@ algorithm
       sLst2 = fromExpStatesToAlgStates(sLst,{});
       else_2 = fromExpElseToAlgElse(else_);
       elem = Algorithm.ELSEIF(e,sLst2,else_2);
-	  then elem;         	  
+	  then elem;
 	  case (Exp.ELSE(sLst))
 	   local
 	     list<Exp.Statement> sLst;
@@ -1193,8 +1193,8 @@ algorithm
     equation
       sLst2 = fromExpStatesToAlgStates(sLst,{});
       elem = Algorithm.ELSE(sLst2);
-	  then elem;         
-	end matchcontinue;    
+	  then elem;
+	end matchcontinue;
 end fromExpElseToAlgElse;
 
 //---------------------------------------------------------
@@ -1212,7 +1212,7 @@ algorithm
 	matchcontinue (inType)
 	  local
 	    Option<Absyn.Path> p;
-	    Types.Type ret;  
+	    Types.Type ret;
 	  case ((Exp.T_INTEGERTYPES(lst),p))
 	  local
     	list<Exp.VarTypes> lst "varLstInt" ;
@@ -1221,7 +1221,7 @@ algorithm
       lst2 = fromVarTypesListToVarList(lst,{});
     	ret = ((Types.T_INTEGER(lst2),p));
     then ret;
-      
+
    case ((Exp.T_REALTYPES(lst),p))
 	  local
     	list<Exp.VarTypes> lst "varLstInt" ;
@@ -1230,7 +1230,7 @@ algorithm
       lst2 = fromVarTypesListToVarList(lst,{});
     	ret = ((Types.T_REAL(lst2),p));
     then ret;
-      
+
     case ((Exp.T_STRINGTYPES(lst),p))
 	  local
     	list<Exp.VarTypes> lst "varLstInt" ;
@@ -1239,7 +1239,7 @@ algorithm
       lst2 = fromVarTypesListToVarList(lst,{});
     	ret = ((Types.T_STRING(lst2),p));
     then ret;
-      
+
    	case ((Exp.T_BOOLTYPES(lst),p))
 	  local
     	list<Exp.VarTypes> lst "varLstInt" ;
@@ -1247,8 +1247,8 @@ algorithm
     equation
       lst2 = fromVarTypesListToVarList(lst,{});
     	ret = ((Types.T_BOOL(lst2),p));
-    then ret;        
-      
+    then ret;
+
    	case ((Exp.T_LISTTYPES(lType),p))
 	  local
     	Exp.TypeTypes lType;
@@ -1256,8 +1256,8 @@ algorithm
     equation
       lType2 = fromTypeTypesToType(lType);
     	ret = ((Types.T_LIST(lType2),p));
-    then ret;  
-      
+    then ret;
+
    	case ((Exp.T_METAOPTIONTYPES(lType),p))
 	  local
     	Exp.TypeTypes lType;
@@ -1265,7 +1265,7 @@ algorithm
     equation
       lType2 = fromTypeTypesToType(lType);
     	ret = ((Types.T_METAOPTION(lType2),p));
-    then ret;  
+    then ret;
 
    	case ((Exp.T_METATUPLETYPES(lType),p))
 	  local
@@ -1275,12 +1275,12 @@ algorithm
       lType2 = Util.listMap(lType,fromTypeTypesToType);
     	ret = ((Types.T_METATUPLE(lType2),p));
     then ret;
-      
+
 	  case ((Exp.T_ENUMTYPES(),p))
     equation
       ret = ((Types.T_ENUM(),p));
-    then ret;  
-    
+    then ret;
+
 	  case ((Exp.T_ENUMERATIONTYPES(lst1,lst2),p))
 	  local
 	    list<String> lst1 "names" ;
@@ -1290,19 +1290,19 @@ algorithm
       lst3 = fromVarTypesListToVarList(lst2,{});
       ret = ((Types.T_ENUMERATION(lst1,lst3),p));
     then ret;
-        
+
 	  case ((Exp.T_ARRAYTYPES(arrDim,arrType),p))
 	  local
 	    Exp.ArrayDimTypes arrDim "arrayDim" ;
       Exp.TypeTypes arrType "arrayType" ;
       Types.ArrayDim arrDim2;
-      Types.Type arrType2; 
+      Types.Type arrType2;
 	  equation
 	    arrDim2 =fromArrayDimTypesToArrayDim(arrDim);
 	    arrType2 = fromTypeTypesToType(arrType);
 	    ret = ((Types.T_ARRAY(arrDim2,arrType2),p));
 	  then ret;
-	      
+
 	  case ((Exp.T_COMPLEXTYPES(s,lst,SOME(cType)),p))
 	  local
 		  ClassInf.State s;
@@ -1315,7 +1315,7 @@ algorithm
       cType2 = fromTypeTypesToType(cType);
       ret = ((Types.T_COMPLEX(s,lst2,SOME(cType2)),p));
     then ret;
- 
+
  	  case ((Exp.T_COMPLEXTYPES(s,lst,NONE()),p))
 	  local
 		  ClassInf.State s;
@@ -1325,9 +1325,9 @@ algorithm
 		  lst2 = fromVarTypesListToVarList(lst,{});
 		  ret = ((Types.T_COMPLEX(s,lst2,NONE()),p));
 		then ret;
-	    
+
 	  case ((Exp.T_FUNCTIONTYPES(lst,fType),p))
-	  local  	  
+	  local
       list<Exp.FuncArgTypes> lst;
       Exp.TypeTypes fType;
       list<Types.FuncArg> lst2;
@@ -1337,18 +1337,18 @@ algorithm
 	    fType2 = fromTypeTypesToType(fType);
 	    ret = ((Types.T_FUNCTION(lst2,fType2),p));
 	  then ret;
-	       
+
 	  case ((Exp.T_NOTYPETYPES(),p))
 	  equation
 	    ret = ((Types.T_NOTYPE(),p));
-	  then ret;	  
-	      
+	  then ret;
+
 	  case ((Exp.T_ANYTYPETYPES(s),p))
-	  local	  
+	  local
 	    Option<ClassInf.State> s;
 	  equation
 	  	ret = ((Types.T_ANYTYPE(s),p));
-	  then ret;      	    
+	  then ret;
 	end matchcontinue;
 end fromTypeTypesToType;
 
@@ -1373,8 +1373,8 @@ algorithm
       first2 = Util.listCreate(fromVarTypesToVar(first));
     	localAccList = listAppend(localAccList,first2);
      	lst = fromVarTypesListToVarList(rest,localAccList);
-    	then lst;		
-  end matchcontinue;    
+    	then lst;
+  end matchcontinue;
 end fromVarTypesListToVarList;
 
 public function fromVarTypesToVar "function: fromVarTypesToVar
@@ -1391,7 +1391,7 @@ algorithm
       Exp.TypeTypes tt;
       Types.Var ret;
     case (Exp.VARTYPES(n,attType,pro,tt,Exp.UNBOUND()))
-      local   
+      local
         Types.Attributes attType2;
         Types.Type tt2;
       equation
@@ -1400,7 +1400,7 @@ algorithm
         ret = Types.VAR(n,attType2,pro,
         			tt2,Types.UNBOUND());
       then ret;
-        
+
    case (Exp.VARTYPES(n,attType,pro,tt,Exp.EQBOUND(e,NONE(),Exp.C_CONST())))
   	  local
         Exp.Exp e;
@@ -1410,10 +1410,10 @@ algorithm
         attType2 =fromAttributesTypesToAttributes(attType);
         tt2 = fromTypeTypesToType(tt);
        ret = Types.VAR(n,attType2,pro,
-             tt2,Types.EQBOUND(e,NONE(),Types.C_CONST()));       
-      then ret;    
-        
-        
+             tt2,Types.EQBOUND(e,NONE(),Types.C_CONST()));
+      then ret;
+
+
   	case (Exp.VARTYPES(n,attType,pro,tt,Exp.EQBOUND(e,SOME(val),Exp.C_CONST())))
   	  local
         Exp.Value val;
@@ -1426,9 +1426,9 @@ algorithm
         tt2 = fromTypeTypesToType(tt);
         val2 = fromValueTypesToValue(val);
        ret = Types.VAR(n,attType2,pro,
-             tt2,Types.EQBOUND(e,SOME(val2),Types.C_CONST()));       
+             tt2,Types.EQBOUND(e,SOME(val2),Types.C_CONST()));
       then ret;
-    
+
   case (Exp.VARTYPES(n,attType,pro,tt,Exp.EQBOUND(e,NONE(),Exp.C_PARAM())))
   	  local
         Exp.Exp e;
@@ -1438,9 +1438,9 @@ algorithm
         attType2 =fromAttributesTypesToAttributes(attType);
         tt2 = fromTypeTypesToType(tt);
         ret = Types.VAR(n,attType2,pro,
-        tt2,Types.EQBOUND(e,NONE(),Types.C_PARAM()));  
+        tt2,Types.EQBOUND(e,NONE(),Types.C_PARAM()));
       then ret;
-        
+
   	case (Exp.VARTYPES(n,attType,pro,tt,Exp.EQBOUND(e,SOME(val),Exp.C_PARAM())))
   	  local
         Exp.Value val;
@@ -1453,9 +1453,9 @@ algorithm
         tt2 = fromTypeTypesToType(tt);
         val2 = fromValueTypesToValue(val);
         ret = Types.VAR(n,attType2,pro,
-        tt2,Types.EQBOUND(e,SOME(val2),Types.C_PARAM()));  
+        tt2,Types.EQBOUND(e,SOME(val2),Types.C_PARAM()));
       then ret;
-        
+
     case (Exp.VARTYPES(n,attType,pro,tt,Exp.EQBOUND(e,NONE(),Exp.C_VAR())))
       local
         Exp.Exp e;
@@ -1465,9 +1465,9 @@ algorithm
         attType2 = fromAttributesTypesToAttributes(attType);
         tt2 = fromTypeTypesToType(tt);
       ret = Types.VAR(n,attType2,pro,
-           tt2,Types.EQBOUND(e,NONE(),Types.C_VAR()));  
-      then ret;        
-         
+           tt2,Types.EQBOUND(e,NONE(),Types.C_VAR()));
+      then ret;
+
     case (Exp.VARTYPES(n,attType,pro,tt,Exp.EQBOUND(e,SOME(val),Exp.C_VAR())))
       local
         Exp.Value val;
@@ -1480,21 +1480,21 @@ algorithm
         tt2 = fromTypeTypesToType(tt);
         val2 = fromValueTypesToValue(val);
       ret = Types.VAR(n,attType2,pro,
-           tt2,Types.EQBOUND(e,SOME(val2),Types.C_VAR()));  
+           tt2,Types.EQBOUND(e,SOME(val2),Types.C_VAR()));
       then ret;
-        
+
     case (Exp.VARTYPES(n,attType,pro,tt,Exp.VALBOUND(val)))
       local
         Exp.Value val;
         Types.Attributes attType2;
         Types.Type tt2;
         Values.Value val2;
-      equation  
+      equation
         attType2 =fromAttributesTypesToAttributes(attType);
         tt2 = fromTypeTypesToType(tt);
         val2 = fromValueTypesToValue(val);
      	ret = Types.VAR(n,attType2,pro,
-           tt2,Types.VALBOUND(val2));  
+           tt2,Types.VALBOUND(val2));
       then ret;
   end matchcontinue;
 end fromVarTypesToVar;
@@ -1512,56 +1512,56 @@ algorithm
 	  local
 	    Integer i;
 	  equation
-	  	ret = Values.INTEGER(i);  
+	  	ret = Values.INTEGER(i);
 	  then ret;
 	  case (Exp.REALVAL(r))
 	    local
 	      Real r;
 	    equation
-	      ret = Values.REAL(r);  
-	    then ret;  
+	      ret = Values.REAL(r);
+	    then ret;
 	  case (Exp.STRINGVAL(s))
 	    local
 	      String s;
 	    equation
-	      ret = Values.STRING(s);  
-	    then ret;  
+	      ret = Values.STRING(s);
+	    then ret;
 	  case (Exp.BOOLVAL(b))
 	    local
 	      Boolean b;
 	    equation
-	      ret = Values.BOOL(b);  
-	    then ret;  
+	      ret = Values.BOOL(b);
+	    then ret;
 	  case (Exp.LISTVAL(vLst))
 	    local
 	      list<Exp.Value> vLst;
 	      list<Values.Value> vLst2;
 	    equation
 	      vLst2 = fromValueTypesLstToValueLst(vLst,{});
-	      ret = Values.LIST(vLst2);  
-	    then ret;      	      
+	      ret = Values.LIST(vLst2);
+	    then ret;
 	  case (Exp.ENUMVAL(s))
 	    local
 	      String s;
 	    equation
-	      ret = Values.ENUM(s);  
-	    then ret;  
+	      ret = Values.ENUM(s);
+	    then ret;
 	  case (Exp.ARRAYVAL(vLst))
 	    local
 	      list<Exp.Value> vLst;
 	      list<Values.Value> vLst2;
 	    equation
 	      vLst2 = fromValueTypesLstToValueLst(vLst,{});
-	      ret = Values.ARRAY(vLst2);  
-	    then ret;  
+	      ret = Values.ARRAY(vLst2);
+	    then ret;
 	  case (Exp.TUPLEVAL(vLst))
 	    local
 	      list<Exp.Value> vLst;
 	      list<Values.Value> vLst2;
 	    equation
 	      vLst2 = fromValueTypesLstToValueLst(vLst,{});
-	      ret = Values.TUPLE(vLst2); 
-	    then ret;  
+	      ret = Values.TUPLE(vLst2);
+	    then ret;
 	  case (Exp.RECORDVAL(p,vLst,lIdent))
 	    local
 	      Absyn.Path p;
@@ -1570,14 +1570,14 @@ algorithm
 	      list<Values.Value> vLst2;
 	    equation
 	      vLst2 = fromValueTypesLstToValueLst(vLst,{});
-	      ret = Values.RECORD(p,vLst2,lIdent);  
-	    then ret;  
+	      ret = Values.RECORD(p,vLst2,lIdent);
+	    then ret;
 	  case (Exp.CODEVAL(c))
 	    local
 	      Absyn.CodeNode c;
 	    equation
-	      ret = Values.CODE(c);  
-	    then ret;                
+	      ret = Values.CODE(c);
+	    then ret;
 	end matchcontinue;
 end fromValueTypesToValue;
 
@@ -1602,7 +1602,7 @@ algorithm
       first2 = Util.listCreate(fromValueTypesToValue(first));
     	localAccList = listAppend(localAccList,first2);
      	lst = fromValueTypesLstToValueLst(rest,localAccList);
-    	then lst;		
+    	then lst;
  end matchcontinue;
 end fromValueTypesLstToValueLst;
 
@@ -1622,8 +1622,8 @@ algorithm
     	Absyn.Direction d;
     	Types.Attributes ret;
     equation
-      ret = Types.ATTR(f,acc,par,d);  
-    then ret;    
+      ret = Types.ATTR(f,acc,par,d);
+    then ret;
   end matchcontinue;
 end fromAttributesTypesToAttributes;
 
@@ -1665,7 +1665,7 @@ algorithm
       first2 = Util.listCreate(fromFuncArgTypesToFuncArg(first));
     	localAccList = listAppend(localAccList,first2);
      	lst = fromFuncArgTypesListToFuncArgList(rest,localAccList);
-    	then lst;		
+    	then lst;
   end matchcontinue;
 end fromFuncArgTypesListToFuncArgList;
 
@@ -1685,7 +1685,7 @@ algorithm
     equation
       tt2 = fromTypeTypesToType(tt);
     	ret = ((n,tt2));
-    then ret;  
+    then ret;
   end matchcontinue;
 end fromFuncArgTypesToFuncArg;
 
@@ -1703,7 +1703,7 @@ algorithm
 	matchcontinue (inType)
 	  local
 	    Option<Absyn.Path> p;
-	    Exp.TypeTypes ret;  
+	    Exp.TypeTypes ret;
 	  case ((Types.T_INTEGER(lst),p))
 	  local
     	list<Types.Var> lst "varLstInt" ;
@@ -1718,10 +1718,10 @@ algorithm
     	list<Types.Var> lst "varLstInt" ;
     	list<Exp.VarTypes> temp;
     equation
-      temp = fromVarListToVarTypesList(lst,{}); 
+      temp = fromVarListToVarTypesList(lst,{});
     	ret = ((Exp.T_REALTYPES(temp),p));
     then ret;
-      
+
     case ((Types.T_STRING(lst),p))
 	  local
     	list<Types.Var> lst "varLstInt" ;
@@ -1730,7 +1730,7 @@ algorithm
       temp = fromVarListToVarTypesList(lst,{});
     	ret = ((Exp.T_STRINGTYPES(temp),p));
     then ret;
-      
+
     case ((Types.T_BOOL(lst),p))
 	  local
     	list<Types.Var> lst "varLstInt" ;
@@ -1738,8 +1738,8 @@ algorithm
     equation
       temp = fromVarListToVarTypesList(lst,{});
     	ret = ((Exp.T_BOOLTYPES(temp),p));
-    then ret;    
-      
+    then ret;
+
     case ((Types.T_LIST(lType),p))
 	  local
     	Exp.TypeTypes lType2;
@@ -1747,8 +1747,8 @@ algorithm
     equation
       lType2 = fromTypeToTypeTypes(lType);
     	ret = ((Exp.T_LISTTYPES(lType2),p));
-    then ret; 
-      
+    then ret;
+
     case ((Types.T_METAOPTION(lType),p))
 	  local
     	Exp.TypeTypes lType2;
@@ -1756,8 +1756,8 @@ algorithm
     equation
       lType2 = fromTypeToTypeTypes(lType);
     	ret = ((Exp.T_METAOPTIONTYPES(lType2),p));
-    then ret;   
-      
+    then ret;
+
     case ((Types.T_METATUPLE(lType),p))
 	  local
     	list<Exp.TypeTypes> lType2;
@@ -1765,14 +1765,14 @@ algorithm
     equation
       lType2 = Util.listMap(lType,fromTypeToTypeTypes);
     	ret = ((Exp.T_METATUPLETYPES(lType2),p));
-    then ret; 
-      
+    then ret;
+
 	  case ((Types.T_ENUM(),p))
 	  local
     equation
       ret = ((Exp.T_ENUMTYPES(),p));
-    then ret;  
-    
+    then ret;
+
 	  case ((Types.T_ENUMERATION(lst1,lst2),p))
 	  local
 	    list<String> lst1 "names" ;
@@ -1782,7 +1782,7 @@ algorithm
       temp = fromVarListToVarTypesList(lst2,{});
       ret = ((Exp.T_ENUMERATIONTYPES(lst1,temp),p));
     then ret;
-        
+
 	  case ((Types.T_ARRAY(arrDim,arrType),p))
 	  local
 	    Types.ArrayDim arrDim "arrayDim" ;
@@ -1794,20 +1794,20 @@ algorithm
       arrType2 = fromTypeToTypeTypes(arrType);
 	    ret = ((Exp.T_ARRAYTYPES(arrDim2,arrType2),p));
 	  then ret;
-	      
+
 	  case ((Types.T_COMPLEX(s,lst,SOME(cType)),p))
 	  local
 		  ClassInf.State s;
       list<Types.Var> lst;
       Types.Type cType;
       list<Exp.VarTypes> temp;
-      Exp.TypeTypes cType2; 
+      Exp.TypeTypes cType2;
     equation
       temp = fromVarListToVarTypesList(lst,{});
       cType2 = fromTypeToTypeTypes(cType);
       ret = ((Exp.T_COMPLEXTYPES(s,temp,SOME(cType2)),p));
     then ret;
- 
+
  	  case ((Types.T_COMPLEX(s,lst,NONE()),p))
 	  local
 		  ClassInf.State s;
@@ -1817,30 +1817,30 @@ algorithm
 		  temp = fromVarListToVarTypesList(lst,{});
 		  ret = ((Exp.T_COMPLEXTYPES(s,temp,NONE()),p));
 		then ret;
-	    
+
 	  case ((Types.T_FUNCTION(lst,fType),p))
-	  local  	  
+	  local
       list<Types.FuncArg> lst;
       Types.Type fType;
       list<Exp.FuncArgTypes> lst2;
-      Exp.TypeTypes fType2; 
+      Exp.TypeTypes fType2;
 	  equation
 	    lst2 = fromFuncArgListToFuncArgTypesList(lst,{});
 	    fType2 = fromTypeToTypeTypes(fType);
 	    ret = ((Exp.T_FUNCTIONTYPES(lst2,fType2),p));
 	  then ret;
-	       
+
 	  case ((Types.T_NOTYPE(),p))
 	  equation
 	    ret = ((Exp.T_NOTYPETYPES(),p));
-	  then ret;	  
-	      
+	  then ret;
+
 	  case ((Types.T_ANYTYPE(s),p))
-	  local	  
+	  local
 	    Option<ClassInf.State> s;
 	  equation
 	  	ret = ((Exp.T_ANYTYPETYPES(s),p));
-	  then ret;      	    
+	  then ret;
 	end matchcontinue;
 end fromTypeToTypeTypes;
 
@@ -1864,7 +1864,7 @@ algorithm
       first2 = Util.listCreate(fromVarToVarTypes(first));
     	localAccList = listAppend(localAccList,first2);
      	lst = fromVarListToVarTypesList(rest,localAccList);
-    	then lst;		
+    	then lst;
  end matchcontinue;
 end fromVarListToVarTypesList;
 
@@ -1882,7 +1882,7 @@ algorithm
       Types.Type tt;
       Exp.VarTypes ret;
     case (Types.VAR(n,attType,pro,tt,Types.UNBOUND()))
-      local   
+      local
         Exp.AttributesTypes attType2;
         Exp.TypeTypes tt2;
       equation
@@ -1901,9 +1901,9 @@ algorithm
         attType2 = fromAttributesToAttributesTypes(attType);
         tt2 = fromTypeToTypeTypes(tt);
        ret = Exp.VARTYPES(n,attType2,pro,
-             tt2,Exp.EQBOUND(e,NONE(),Exp.C_CONST()));       
+             tt2,Exp.EQBOUND(e,NONE(),Exp.C_CONST()));
       then ret;
-            
+
   	case (Types.VAR(n,attType,pro,tt,Types.EQBOUND(e,SOME(val),Types.C_CONST())))
   	  local
         Values.Value val;
@@ -1916,7 +1916,7 @@ algorithm
         tt2 = fromTypeToTypeTypes(tt);
         val2 = fromValueToValueTypes(val);
        ret = Exp.VARTYPES(n,attType2,pro,
-             tt2,Exp.EQBOUND(e,SOME(val2),Exp.C_CONST()));       
+             tt2,Exp.EQBOUND(e,SOME(val2),Exp.C_CONST()));
       then ret;
 
   	case (Types.VAR(n,attType,pro,tt,Types.EQBOUND(e,NONE(),Types.C_PARAM())))
@@ -1929,7 +1929,7 @@ algorithm
         attType2 = fromAttributesToAttributesTypes(attType);
         tt2 = fromTypeToTypeTypes(tt);
         ret = Exp.VARTYPES(n,attType2,pro,
-        tt2,Exp.EQBOUND(e,NONE(),Exp.C_PARAM()));  
+        tt2,Exp.EQBOUND(e,NONE(),Exp.C_PARAM()));
       then ret;
 
   	case (Types.VAR(n,attType,pro,tt,Types.EQBOUND(e,SOME(val),Types.C_PARAM())))
@@ -1944,9 +1944,9 @@ algorithm
         tt2 = fromTypeToTypeTypes(tt);
         val2 = fromValueToValueTypes(val);
         ret = Exp.VARTYPES(n,attType2,pro,
-        tt2,Exp.EQBOUND(e,SOME(val2),Exp.C_PARAM()));  
+        tt2,Exp.EQBOUND(e,SOME(val2),Exp.C_PARAM()));
       then ret;
-      
+
    case (Types.VAR(n,attType,pro,tt,Types.EQBOUND(e,NONE(),Types.C_VAR())))
       local
         Exp.Exp e;
@@ -1956,9 +1956,9 @@ algorithm
         attType2 =fromAttributesToAttributesTypes(attType);
         tt2 = fromTypeToTypeTypes(tt);
       ret = Exp.VARTYPES(n,attType2,pro,
-           tt2,Exp.EQBOUND(e,NONE(),Exp.C_VAR()));  
-      then ret;  
-        
+           tt2,Exp.EQBOUND(e,NONE(),Exp.C_VAR()));
+      then ret;
+
     case (Types.VAR(n,attType,pro,tt,Types.EQBOUND(e,SOME(val),Types.C_VAR())))
       local
         Values.Value val;
@@ -1971,21 +1971,21 @@ algorithm
         tt2 = fromTypeToTypeTypes(tt);
         val2 = fromValueToValueTypes(val);
       ret = Exp.VARTYPES(n,attType2,pro,
-           tt2,Exp.EQBOUND(e,SOME(val2),Exp.C_VAR()));  
+           tt2,Exp.EQBOUND(e,SOME(val2),Exp.C_VAR()));
       then ret;
-        
+
     case (Types.VAR(n,attType,pro,tt,Types.VALBOUND(val)))
       local
         Values.Value val;
         Exp.AttributesTypes attType2;
         Exp.TypeTypes tt2;
         Exp.Value val2;
-      equation  
+      equation
         attType2 = fromAttributesToAttributesTypes(attType);
-        tt2 = fromTypeToTypeTypes(tt); 
+        tt2 = fromTypeToTypeTypes(tt);
         val2 = fromValueToValueTypes(val);
      		ret = Exp.VARTYPES(n,attType2,pro,
-        	   tt2,Exp.VALBOUND(val2));  
+        	   tt2,Exp.VALBOUND(val2));
       then ret;
   end matchcontinue;
 end fromVarToVarTypes;
@@ -2004,56 +2004,56 @@ algorithm
 	  local
 		Integer i;
 	  equation
-	  	ret = Exp.INTEGERVAL(i);  
+	  	ret = Exp.INTEGERVAL(i);
 	  then ret;
 	  case (Values.REAL(r))
 	  local
 		Real r;
 	  equation
-	  	ret = Exp.REALVAL(r);  
-	  then ret;  
+	  	ret = Exp.REALVAL(r);
+	  then ret;
 	  case (Values.STRING(s))
 	  local
 		String s;
 	  equation
-	  ret = Exp.STRINGVAL(s);  
-	  then ret;  
+	  ret = Exp.STRINGVAL(s);
+	  then ret;
 	  case (Values.BOOL(b))
 	  local
 		Boolean b;
 	  equation
-	  ret = Exp.BOOLVAL(b);  
-	  then ret;    
+	  ret = Exp.BOOLVAL(b);
+	  then ret;
 	  case (Values.LIST(vLst))
 	  local
 	    list<Values.Value> vLst;
 	    list<Exp.Value> vLst2;
 	  equation
 	    vLst2 = fromValueLstToValueTypesLst(vLst,{});
-	    ret = Exp.LISTVAL(vLst2);  
-	  then ret;    
+	    ret = Exp.LISTVAL(vLst2);
+	  then ret;
 	  case (Values.ENUM(s))
 	 	local
 			String s;
 	  equation
-	  	ret = Exp.ENUMVAL(s);  
-	  then ret;  
+	  	ret = Exp.ENUMVAL(s);
+	  then ret;
 	  case (Values.ARRAY(vLst))
 	  local
  		list<Values.Value> vLst;
  		list<Exp.Value> vLst2;
 	  equation
 	    vLst2 = fromValueLstToValueTypesLst(vLst,{});
-	  ret = Exp.ARRAYVAL(vLst2);  
-	  then ret;  
+	  ret = Exp.ARRAYVAL(vLst2);
+	  then ret;
 	  case (Values.TUPLE(vLst))
 	  local
  		list<Values.Value> vLst;
  		list<Exp.Value> vLst2;
 	  equation
 	    vLst2 = fromValueLstToValueTypesLst(vLst,{});
-	  ret = Exp.TUPLEVAL(vLst2); 
-	  then ret;  
+	  ret = Exp.TUPLEVAL(vLst2);
+	  then ret;
 	  case (Values.RECORD(p,vLst,lIdent))
 	  local
     Absyn.Path p;
@@ -2062,14 +2062,14 @@ algorithm
     list<Exp.Value> vLst2;
 	  equation
 	    vLst2 = fromValueLstToValueTypesLst(vLst,{});
-	  ret = Exp.RECORDVAL(p,vLst2,lIdent);  
-	  then ret;  
+	  ret = Exp.RECORDVAL(p,vLst2,lIdent);
+	  then ret;
 	  case (Values.CODE(c))
 	  local
 		Absyn.CodeNode c;
 	  equation
-	  ret = Exp.CODEVAL(c);  
-	  then ret;                
+	  ret = Exp.CODEVAL(c);
+	  then ret;
   end matchcontinue;
 end fromValueToValueTypes;
 
@@ -2093,7 +2093,7 @@ algorithm
       first2 = Util.listCreate(fromValueToValueTypes(first));
     	localAccList = listAppend(localAccList,first2);
      	lst = fromValueLstToValueTypesLst(rest,localAccList);
-    	then lst;		
+    	then lst;
  end matchcontinue;
 end fromValueLstToValueTypesLst;
 
@@ -2112,8 +2112,8 @@ algorithm
     	Absyn.Direction d;
     	Exp.AttributesTypes ret;
     equation
-      ret = Exp.ATTRTYPES(f,acc,par,d);  
-    then ret;    
+      ret = Exp.ATTRTYPES(f,acc,par,d);
+    then ret;
   end matchcontinue;
 end fromAttributesToAttributesTypes;
 
@@ -2154,7 +2154,7 @@ algorithm
       first2 = Util.listCreate(fromFuncArgToFuncArgTypes(first));
     	localAccList = listAppend(localAccList,first2);
      	lst = fromFuncArgListToFuncArgTypesList(rest,localAccList);
-    	then lst;		
+    	then lst;
  end matchcontinue;
 end fromFuncArgListToFuncArgTypesList;
 
@@ -2174,7 +2174,7 @@ algorithm
     equation
       tt2 = fromTypeToTypeTypes(tt);
     	ret = ((n,tt2));
-    then ret;  
+    then ret;
   end matchcontinue;
 end fromFuncArgToFuncArgTypes;
 
@@ -2201,16 +2201,16 @@ algorithm
         right = fromExpExpToAbsynExp(exp2);
         stmt = {Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(left,right),NONE())};
         localAccList1 = listAppend(localAccList1,stmt);
-        (localAccList1,localAccList2) = fromDAEeqsToAbsynAlg(restLd,localAccList1,localAccList2); 
+        (localAccList1,localAccList2) = fromDAEeqsToAbsynAlg(restLd,localAccList1,localAccList2);
       then (localAccList1,localAccList2);
     case (firstLd :: restLd,localAccList1,localAccList2)
       local
         DAE.Element firstLd;
       equation
         localAccList2 = listAppend(localAccList2,{firstLd});
-        (localAccList1,localAccList2) = fromDAEeqsToAbsynAlg(restLd,localAccList1,localAccList2);     
+        (localAccList1,localAccList2) = fromDAEeqsToAbsynAlg(restLd,localAccList1,localAccList2);
       then (localAccList1,localAccList2);
-  end matchcontinue;  
+  end matchcontinue;
 end fromDAEeqsToAbsynAlg;
 
 // More expressions have to be added?
@@ -2218,21 +2218,21 @@ public function fromExpExpToAbsynExp "function: fromExpExpToAbsynExp"
   input Exp.Exp exp1;
   output Absyn.Exp expOut;
 algorithm
-  expOut := 
+  expOut :=
   matchcontinue (exp1)
     case (Exp.ICONST(i)) local Integer i; equation then Absyn.INTEGER(i);
     case (Exp.RCONST(r)) local Real r; equation then Absyn.REAL(r);
     case (Exp.SCONST(s)) local String s; equation then Absyn.STRING(s);
-    case (Exp.BCONST(b)) local Boolean b; equation then Absyn.BOOL(b);   
-    case (Exp.CREF(cr,_)) 
-      local 
-        Exp.ComponentRef cr; 
+    case (Exp.BCONST(b)) local Boolean b; equation then Absyn.BOOL(b);
+    case (Exp.CREF(cr,_))
+      local
+        Exp.ComponentRef cr;
         Absyn.ComponentRef c;
-      equation 
+      equation
         c = fromExpCrefToAbsynCref(cr);
-      then Absyn.CREF(c);    
+      then Absyn.CREF(c);
   end matchcontinue;
-end fromExpExpToAbsynExp; 
+end fromExpExpToAbsynExp;
 
 public function fromExpCrefToAbsynCref
   input Exp.ComponentRef cIn;
@@ -2241,53 +2241,53 @@ algorithm
   cOut :=
   matchcontinue (cIn)
     case (Exp.CREF_QUAL(id,subScriptList,cRef))
-      local 
-        Exp.Ident id; 
-        list<Exp.Subscript> subScriptList; 
-        list<Absyn.Subscript> subScriptList2;  
-        Exp.ComponentRef cRef; 
-        Absyn.ComponentRef elem,cRef2; 
-      equation 
+      local
+        Exp.Ident id;
+        list<Exp.Subscript> subScriptList;
+        list<Absyn.Subscript> subScriptList2;
+        Exp.ComponentRef cRef;
+        Absyn.ComponentRef elem,cRef2;
+      equation
         cRef2 = fromExpCrefToAbsynCref(cRef);
         subScriptList2 = fromExpSubsToAbsynSubs(subScriptList,{});
-        elem = Absyn.CREF_QUAL(id,subScriptList2,cRef2); 
+        elem = Absyn.CREF_QUAL(id,subScriptList2,cRef2);
       then elem;
-    case (Exp.CREF_IDENT(id,subScriptList))     
-      local 
-        Exp.Ident id; 
-        list<Exp.Subscript> subScriptList; 
-        list<Absyn.Subscript> subScriptList2;  
-        Absyn.ComponentRef elem; 
-      equation 
+    case (Exp.CREF_IDENT(id,subScriptList))
+      local
+        Exp.Ident id;
+        list<Exp.Subscript> subScriptList;
+        list<Absyn.Subscript> subScriptList2;
+        Absyn.ComponentRef elem;
+      equation
         subScriptList2 = fromExpSubsToAbsynSubs(subScriptList,{});
-        elem = Absyn.CREF_IDENT(id,subScriptList2); 
-      then elem; 
+        elem = Absyn.CREF_IDENT(id,subScriptList2);
+      then elem;
   end matchcontinue;
-  end fromExpCrefToAbsynCref;  
+  end fromExpCrefToAbsynCref;
 
 public function fromExpSubsToAbsynSubs
-  input list<Exp.Subscript> inList; 
-  input list<Absyn.Subscript> accList; 
+  input list<Exp.Subscript> inList;
+  input list<Absyn.Subscript> accList;
   output list<Absyn.Subscript> outList;
-algorithm  
-  outList := 
-  matchcontinue (inList,accList)  
-    local 
+algorithm
+  outList :=
+  matchcontinue (inList,accList)
+    local
       list<Absyn.Subscript> localAccList;
-    case ({},localAccList) then localAccList;  
-    case (Exp.INDEX(e) :: restList,localAccList) 
+    case ({},localAccList) then localAccList;
+    case (Exp.INDEX(e) :: restList,localAccList)
       local
         Exp.Exp e;
         Absyn.Exp e2;
         Absyn.Subscript elem;
         list<Exp.Subscript> restList;
-      equation  
+      equation
         e2 = fromExpExpToAbsynExp(e);
-        elem = Absyn.SUBSCRIPT(e2);      
+        elem = Absyn.SUBSCRIPT(e2);
         localAccList = listAppend(localAccList,{elem});
-        localAccList = fromExpSubsToAbsynSubs(restList,localAccList); 
+        localAccList = fromExpSubsToAbsynSubs(restList,localAccList);
       then localAccList;
-  end matchcontinue;    
+  end matchcontinue;
 end fromExpSubsToAbsynSubs;
 
 end Convert;

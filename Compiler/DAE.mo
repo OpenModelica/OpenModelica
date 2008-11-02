@@ -1,45 +1,45 @@
-/* 
+/*
  * This file is part of OpenModelica.
- * 
+ *
  * Copyright (c) 1998-2008, Linköpings University,
- * Department of Computer and Information Science, 
- * SE-58183 Linköping, Sweden. 
- * 
+ * Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
  * All rights reserved.
- * 
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC 
- * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF 
- * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC 
- * PUBLIC LICENSE. 
- * 
- * The OpenModelica software and the Open Source Modelica 
- * Consortium (OSMC) Public License (OSMC-PL) are obtained 
- * from Linköpings University, either from the above address, 
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC
+ * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF
+ * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC
+ * PUBLIC LICENSE.
+ *
+ * The OpenModelica software and the Open Source Modelica
+ * Consortium (OSMC) Public License (OSMC-PL) are obtained
+ * from Linköpings University, either from the above address,
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
- * 
- * This program is distributed  WITHOUT ANY WARRANTY; without 
- * even the implied warranty of  MERCHANTABILITY or FITNESS 
- * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH 
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS 
- * OF OSMC-PL. 
- * 
+ *
+ * This program is distributed  WITHOUT ANY WARRANTY; without
+ * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
+ * OF OSMC-PL.
+ *
  * See the full OSMC Public License conditions for more details.
- * 
+ *
  */
 
-package DAE 
+package DAE
 " file:	 DAE.mo
   package:      DAE
   description: DAE management and output
- 
+
   RCS: $Id$
-  
-  This module defines data structures for DAE equations and 
+
+  This module defines data structures for DAE equations and
   declarations of variables and functions. It also exports some help
   functions for other modules. The DAE data structure is the result of
   flattening, containing only flat modelica, i.e. equations, algorithms,
-  variables and functions. 
+  variables and functions.
    - Module header"
 
 public import Absyn;
@@ -49,16 +49,16 @@ public import Types;
 public import Values;
 public import ClassInf;
 
-public 
+public
 type Ident = String;
 
-public 
+public
 type InstDims = list<Exp.Subscript>;
 
-public 
+public
 type StartValue = Option<Exp.Exp>;
 
-public 
+public
 uniontype VarKind
   record VARIABLE end VARIABLE;
 
@@ -70,7 +70,7 @@ uniontype VarKind
 
 end VarKind;
 
-public 
+public
 uniontype Type
   record REAL end REAL;
 
@@ -81,28 +81,28 @@ uniontype Type
   record STRING end STRING;
 
   record ENUM end ENUM;
-  
+
   record LIST end LIST; // MetaModelica list. KS
 
   record RECORD
     String name;
   end RECORD;
-  
+
   record METATUPLE end METATUPLE;  // MetaModelica tuple. KS
-    
+
   record METAOPTION end METAOPTION;  // MetaModelica option. KS
-  
+
   record ENUMERATION
     list<String> stringLst;
   end ENUMERATION;
-  
+
   record EXT_OBJECT
     Absyn.Path fullClassName;
-  end EXT_OBJECT;  
+  end EXT_OBJECT;
 
 end Type;
 
-public 
+public
 uniontype Flow "The Flow of a variable indicates if it is a Flow variable or not, or if
    it is not a connector variable at all."
   record FLOW end FLOW;
@@ -113,7 +113,7 @@ uniontype Flow "The Flow of a variable indicates if it is a Flow variable or not
 
 end Flow;
 
-public 
+public
 uniontype VarDirection
   record INPUT end INPUT;
 
@@ -124,11 +124,11 @@ uniontype VarDirection
 end VarDirection;
 
 uniontype VarProtection
-  record PUBLIC "public variables" end PUBLIC; 
+  record PUBLIC "public variables" end PUBLIC;
   record PROTECTED "protected variables" end PROTECTED;
 end VarProtection;
 
-public 
+public
 uniontype Element
   record VAR
     Exp.ComponentRef componentRef " The variable name";
@@ -139,7 +139,7 @@ uniontype Element
     Option<Exp.Exp> one "one of the builtin types" ;
     InstDims binding "Binding expression e.g. for parameters" ;
     Flow value "value of start attribute" ;
-    list<Absyn.Path> flow_ "Flow of connector variable. Needed for 
+    list<Absyn.Path> flow_ "Flow of connector variable. Needed for
 						unconnected flow variables" ;
     Option<VariableAttributes> variableAttributesOption;
     Option<Absyn.Comment> absynCommentOption;
@@ -201,8 +201,8 @@ uniontype Element
 
   record COMP
     Ident ident;
-    DAElist dAElist "a component with 
-						    subelements, normally 
+    DAElist dAElist "a component with
+						    subelements, normally
 						    only used at top level." ;
   end COMP;
 
@@ -218,13 +218,13 @@ uniontype Element
     Types.Type type_;
     ExternalDecl externalDecl;
   end EXTFUNCTION;
-  
+
   record EXTOBJECTCLASS "The 'class' of an external object"
     Absyn.Path path "className of external object";
     Element constructor "constructor is an EXTFUNCTION";
     Element destructor "destructor is an EXTFUNCTION";
   end EXTOBJECTCLASS;
-  
+
   record ASSERT " The Modelica builtin assert"
     Exp.Exp condition;
     Exp.Exp message;
@@ -241,7 +241,7 @@ uniontype Element
 
 end Element;
 
-public 
+public
 uniontype VariableAttributes
   record VAR_ATTR_REAL
     Option<Exp.Exp> quantity "quantity" ;
@@ -281,7 +281,7 @@ uniontype VariableAttributes
 
 end VariableAttributes;
 
-public 
+public
 uniontype StateSelect
   record NEVER end NEVER;
 
@@ -295,7 +295,7 @@ uniontype StateSelect
 
 end StateSelect;
 
-public 
+public
 uniontype ExtArg
   record EXTARG
     Exp.ComponentRef componentRef;
@@ -319,7 +319,7 @@ uniontype ExtArg
 
 end ExtArg;
 
-public 
+public
 uniontype ExternalDecl
   record EXTERNALDECL
     Ident ident;
@@ -331,8 +331,8 @@ uniontype ExternalDecl
 
 end ExternalDecl;
 
-public 
-uniontype DAElist "A DAElist is a list of Elements. Variables, equations, functions, 
+public
+uniontype DAElist "A DAElist is a list of Elements. Variables, equations, functions,
   algorithms, etc. are all found in this list.
 "
   record DAE
@@ -362,7 +362,7 @@ algorithm
 	      list<Element> elts,elts2,elts22,elts1,elts11;
 	      Ident  id;
 	  case({}) then  {};
-	    
+
 	  case((v as VAR(componentRef=_))::elts) equation
 	    elts2=removeEquations(elts);
 	    then v::elts2;
@@ -373,11 +373,11 @@ algorithm
 	  case(EQUATION(_,_)::elts2) then removeEquations(elts2);
 	  case(INITIALEQUATION(_,_)::elts2) then removeEquations(elts2);
 	  case(ARRAY_EQUATION(_,_,_)::elts2) then removeEquations(elts2);
-	  case(INITIALDEFINE(_,_)::elts2) then removeEquations(elts2);	    
-	  case(DEFINE(_,_)::elts2) then removeEquations(elts2);	    	    
-	  case(WHEN_EQUATION(_,_,_)::elts2) then removeEquations(elts2);	    	    
-	  case(IF_EQUATION(_,_,_)::elts2) then removeEquations(elts2);	    	    	    
-	  case(INITIAL_IF_EQUATION(_,_,_)::elts2) then removeEquations(elts2);	    	    	    	    
+	  case(INITIALDEFINE(_,_)::elts2) then removeEquations(elts2);
+	  case(DEFINE(_,_)::elts2) then removeEquations(elts2);
+	  case(WHEN_EQUATION(_,_,_)::elts2) then removeEquations(elts2);
+	  case(IF_EQUATION(_,_,_)::elts2) then removeEquations(elts2);
+	  case(INITIAL_IF_EQUATION(_,_,_)::elts2) then removeEquations(elts2);
 	  case(ALGORITHM(_)::elts2) then removeEquations(elts2);
 	  case(INITIALALGORITHM(_)::elts2) then removeEquations(elts2);
 	  case((e as FUNCTION(path=_))::elts2) equation
@@ -385,14 +385,14 @@ algorithm
     then e::elts22;
 	  case((e as EXTFUNCTION(path=_))::elts2) equation
 	    elts22 = removeEquations(elts2);
-    then e::elts22;	      
+    then e::elts22;
 	  case((e as EXTOBJECTCLASS(path=_))::elts2) equation
 	    elts22 = removeEquations(elts2);
-    then e::elts22;	            
+    then e::elts22;
 	  case(ASSERT(_,_)::elts2) then removeEquations(elts2);
-	  case(REINIT(_,_)::elts2) then removeEquations(elts2);	    
-	end matchcontinue;  
-  
+	  case(REINIT(_,_)::elts2) then removeEquations(elts2);
+	end matchcontinue;
+
 end removeEquations;
 
 public function removeVariables "Remove the variables in the list from the DAE"
@@ -423,7 +423,7 @@ algorithm
      then COMP(id,DAE(elist2))::dae;
      case(var,e::dae) equation
          dae = removeVariable(var,dae);
-      then e::dae;        
+      then e::dae;
    end matchcontinue;
 end removeVariable;
 
@@ -469,7 +469,7 @@ algorithm
      then COMP(id,DAE(elist2))::dae;
      case(var,e::dae) equation
          dae = removeInnerAttr(var,dae);
-      then e::dae;        
+      then e::dae;
    end matchcontinue;
 end removeInnerAttr;
 
@@ -494,39 +494,39 @@ algorithm
 end varCref;
 
 public function printDAE "function: printDAE
- 
+
   This function prints out a list of elements (i.e. a DAE)
   to the stdout. Useful for example when called from Inst.instClass"
   input DAElist inDAElist;
-algorithm  
+algorithm
   _:=
   matchcontinue (inDAElist)
     local
     	DAElist dae;
     	String str;
-    case dae 
+    case dae
       equation
         Print.clearBuf();
         dump2(dae);
         str = Print.getString();
         print(str);
-      then 
+      then
         ();
   end matchcontinue;
-end printDAE;        
+end printDAE;
 
 
 public function dump "function: dump
- 
+
   This function prints the DAE in the standard output format.
 "
   input DAElist inDAElist;
-algorithm 
+algorithm
   _:=
   matchcontinue (inDAElist)
     local list<Element> daelist;
     case DAE(elementLst = daelist)
-      equation 
+      equation
         Util.listMap0(daelist, dumpFunction);
         Util.listMap0(daelist, dumpExtObjectClass);
         Util.listMap0(daelist, dumpCompElement);
@@ -536,11 +536,11 @@ algorithm
 end dump;
 
 public function dump2 "function: dump2
- 
+
   Helper function to dump. Prints the DAE using module Print.
 "
   input DAElist inDAElist;
-algorithm 
+algorithm
   _:=
   matchcontinue (inDAElist)
     local
@@ -556,7 +556,7 @@ algorithm
       tuple<Types.TType, Option<Absyn.Path>> tp;
       ExternalDecl extdecl;
     case DAE(elementLst = (VAR(componentRef = cr,one = SOME(e),binding = dims,variableAttributesOption = dae_var_attr,absynCommentOption = comment) :: xs))
-      equation 
+      equation
         Print.printBuf("VAR(");
         Exp.printComponentRef(cr);
         Print.printBuf("=");
@@ -573,7 +573,7 @@ algorithm
       then
         ();
     case DAE(elementLst = (VAR(componentRef = cr,one = NONE,variableAttributesOption = dae_var_attr,absynCommentOption = comment) :: xs))
-      equation 
+      equation
         Print.printBuf("VAR(");
         Exp.printComponentRef(cr);
         comment_str = Dump.unparseCommentOption(comment) "	dump_start_value start &" ;
@@ -586,7 +586,7 @@ algorithm
       then
         ();
     case DAE(elementLst = (DEFINE(componentRef = cr) :: xs))
-      equation 
+      equation
         Print.printBuf("DEFINE(");
         Exp.printComponentRef(cr);
         Print.printBuf(")\n");
@@ -594,7 +594,7 @@ algorithm
       then
         ();
     case DAE(elementLst = (INITIALDEFINE(componentRef = cr) :: xs))
-      equation 
+      equation
         Print.printBuf("INITIALDEFINE(");
         Exp.printComponentRef(cr);
         Print.printBuf(")\n");
@@ -602,7 +602,7 @@ algorithm
       then
         ();
     case DAE(elementLst = (EQUATION(exp = e1,scalar = e2) :: xs))
-      equation 
+      equation
         Print.printBuf("EQUATION(");
         Exp.printExp(e1);
         Print.printBuf(" = ");
@@ -612,7 +612,7 @@ algorithm
       then
         ();
     case DAE(elementLst = (INITIALEQUATION(exp1 = e1,exp2 = e2) :: xs))
-      equation 
+      equation
         Print.printBuf("INITIALEQUATION(");
         Exp.printExp(e1);
         Print.printBuf(" = ");
@@ -622,19 +622,19 @@ algorithm
       then
         ();
     case (DAE(elementLst = (ALGORITHM(algorithm_ = _) :: xs)))
-      equation 
+      equation
         Print.printBuf("ALGORITHM(...)");
         dump2(DAE(xs));
       then
         ();
     case (DAE(elementLst = (INITIALALGORITHM(algorithm_ = _) :: xs)))
-      equation 
+      equation
         Print.printBuf("INITIALALGORITHM(...)");
         dump2(DAE(xs));
       then
         ();
     case (DAE(elementLst = (COMP(ident = ident,dAElist = lst) :: xs)))
-      equation 
+      equation
         Print.printBuf("COMP(");
         Print.printBuf(ident);
         dump2(lst);
@@ -643,13 +643,13 @@ algorithm
       then
         ();
     case (DAE(elementLst = (FUNCTION(path = _) :: xs)))
-      equation 
+      equation
         Print.printBuf("FUNCTION(...)\n");
         dump2(DAE(xs));
       then
         ();
     case (DAE(elementLst = (EXTFUNCTION(path = path,dAElist = dae,type_ = tp,externalDecl = extdecl) :: xs)))
-      equation 
+      equation
         Print.printBuf("EXTFUNCTION(\n");
         str = Absyn.pathString(path);
         Print.printBuf(str);
@@ -665,7 +665,7 @@ algorithm
       then
         ();
     case (DAE(elementLst = (ASSERT(condition=e1,message=e2) :: xs)))
-      equation 
+      equation
         Print.printBuf("ASSERT(\n");
         Exp.printExp(e1);
         Print.printBuf(",");
@@ -674,9 +674,9 @@ algorithm
         dump2(DAE(xs));
       then
         ();
-    case (DAE(elementLst = {})) then (); 
+    case (DAE(elementLst = {})) then ();
     case (_)
-      equation 
+      equation
         Print.printBuf("dump2 failed\n");
       then
         ();
@@ -684,54 +684,54 @@ algorithm
 end dump2;
 
 protected function dumpStartValue "function: dumpStartValue
- 
+
   Dumps the StartValue for a variable.
 "
   input StartValue inStartValue;
-algorithm 
+algorithm
   _:=
   matchcontinue (inStartValue)
     local Exp.Exp e;
     case (SOME(e))
-      equation 
+      equation
         Print.printBuf("(start=");
         Exp.printExp(e);
         Print.printBuf(")");
       then
         ();
-    case (_) then (); 
+    case (_) then ();
   end matchcontinue;
 end dumpStartValue;
 
 public function dumpStartValueStr "function: dumpStartValueStr
- 
+
   Dumps the start value for a variable to a string.
 "
   input StartValue inStartValue;
   output String outString;
-algorithm 
+algorithm
   outString:=
   matchcontinue (inStartValue)
     local
       Ident s,res;
       Exp.Exp e;
     case (SOME(e))
-      equation 
+      equation
         s = Exp.printExpStr(e);
         res = Util.stringAppendList({"(peterstart=",s,")"});
       then
         res;
-    case (_) then ""; 
+    case (_) then "";
   end matchcontinue;
 end dumpStartValueStr;
 
 public function dumpExtDeclStr "function: dumpExtDeclStr
- 
+
   Dumps the external declaration to a string.
 "
   input ExternalDecl inExternalDecl;
   output String outString;
-algorithm 
+algorithm
   outString:=
   matchcontinue (inExternalDecl)
     local
@@ -740,7 +740,7 @@ algorithm
       ExtArg retty;
       Option<Absyn.Annotation> ann;
     case EXTERNALDECL(ident = id,external_ = extargs,parameters = retty,returnType = lang,language = ann)
-      equation 
+      equation
         extargsstr = Dump.getStringList(extargs, dumpExtArgStr, ",");
         rettystr = dumpExtArgStr(retty);
         str = Util.stringAppendList(
@@ -752,12 +752,12 @@ algorithm
 end dumpExtDeclStr;
 
 public function dumpExtArgStr "function: dumpExtArgStr
- 
+
   Helper function to dump_ext_decl_str
 "
   input ExtArg inExtArg;
   output String outString;
-algorithm 
+algorithm
   outString:=
   matchcontinue (inExtArg)
     local
@@ -770,9 +770,9 @@ algorithm
       tuple<Types.TType, Option<Absyn.Path>> ty;
       Exp.Exp exp,dim;
       Types.Attributes attr;
-    case NOEXTARG() then "void"; 
+    case NOEXTARG() then "void";
     case EXTARG(componentRef = cr,attributes = Types.ATTR(flow_ = fl,accessibility = acc,parameter_ = var,direction = dir),type_ = ty)
-      equation 
+      equation
         crstr = Exp.printComponentRefStr(cr);
         dirstr = Dump.directionSymbol(dir);
         tystr = Types.getTypeName(ty);
@@ -780,14 +780,14 @@ algorithm
       then
         str;
     case EXTARGEXP(exp = exp,type_ = ty)
-      equation 
+      equation
         crstr = Exp.printExpStr(exp);
         tystr = Types.getTypeName(ty);
         str = Util.stringAppendList({"(",tystr,") ",crstr});
       then
         str;
     case EXTARGSIZE(componentRef = cr,attributes = attr,type_ = ty,exp = dim)
-      equation 
+      equation
         crstr = Exp.printComponentRefStr(cr);
         dimstr = Exp.printExpStr(dim);
         str = Util.stringAppendList({"size(",crstr,",",dimstr,")"});
@@ -797,12 +797,12 @@ algorithm
 end dumpExtArgStr;
 
 public function dumpStr "function: dumpStr
-  
+
   This function prints the DAE to a string.
 "
   input DAElist inDAElist;
   output String outString;
-algorithm 
+algorithm
   outString:=
   matchcontinue (inDAElist)
     local
@@ -810,7 +810,7 @@ algorithm
       Ident str;
       list<Element> daelist;
     case DAE(elementLst = daelist)
-      equation 
+      equation
         flist = Util.listMap(daelist, dumpFunctionStr);
         extlist = Util.listMap(daelist, dumpExtObjClassStr);
         clist = Util.listMap(daelist, dumpCompElementStr);
@@ -822,18 +822,18 @@ algorithm
 end dumpStr;
 
 protected function dumpCompElement "function: dumpCompElement
- 
+
   Dumps Component elements.
 "
   input Element inElement;
-algorithm 
+algorithm
   _:=
   matchcontinue (inElement)
     local
       Ident n;
       list<Element> l;
     case COMP(ident = n,dAElist = DAE(elementLst = l))
-      equation 
+      equation
         false = RTOpts.modelicaOutput();
         Print.printBuf("fclass ");
         Print.printBuf(n);
@@ -845,7 +845,7 @@ algorithm
       then
         ();
     case COMP(ident = n,dAElist = DAE(elementLst = l))
-      equation 
+      equation
         true = RTOpts.modelicaOutput();
         Print.printBuf("class ");
         Print.printBuf(n);
@@ -856,24 +856,24 @@ algorithm
         Print.printBuf(";\n");
       then
         ();
-    case _ then ();  /* LS: for non-COMPS, which are only FUNCTIONS at the moment */ 
+    case _ then ();  /* LS: for non-COMPS, which are only FUNCTIONS at the moment */
   end matchcontinue;
 end dumpCompElement;
 
 protected function dumpCompElementStr "function: dumpCompElementStr
- 
+
   Dumps components to a string.
 "
   input Element inElement;
   output String outString;
-algorithm 
+algorithm
   outString:=
   matchcontinue (inElement)
     local
       Ident s1,s2,s3,s4,s5,s6,str,n;
       list<Element> l;
     case COMP(ident = n,dAElist = DAE(elementLst = l))
-      equation 
+      equation
         false = RTOpts.modelicaOutput();
         s1 = stringAppend("fclass ", n);
         s2 = stringAppend(s1, "\n");
@@ -885,7 +885,7 @@ algorithm
       then
         str;
     case COMP(ident = n,dAElist = DAE(elementLst = l))
-      equation 
+      equation
         true = RTOpts.modelicaOutput();
         s1 = stringAppend("class ", n);
         s2 = stringAppend(s1, "\n");
@@ -896,16 +896,16 @@ algorithm
         str = stringAppend(s6, ";\n");
       then
         str;
-    case _ then "";  /* LS: for non-COMPS, which are only FUNCTIONS at the moment */ 
+    case _ then "";  /* LS: for non-COMPS, which are only FUNCTIONS at the moment */
   end matchcontinue;
 end dumpCompElementStr;
 
 public function dumpElements "function: dumpElements
- 
-  Dump elements. 
+
+  Dump elements.
 "
   input list<Element> l;
-algorithm 
+algorithm
   dumpVars(l);
   Util.listMap0(l, dumpExtObjectClass);
   Print.printBuf("initial equation\n");
@@ -915,18 +915,18 @@ algorithm
   Util.listMap0(l, dumpInitialalgorithm);
   Util.listMap0(l, dumpAlgorithm);
   Util.listMap0(l, dumpCompElement);
-  
+
 end dumpElements;
 
 public function dumpElementsStr "function: dumpElementsStr
- 
+
   Dump elements to a string
 "
   input list<Element> l;
   output String str;
   Ident s0,s1,s2,s3,s4,s5,initeqstr,initalgstr,eqstr,algstr;
   Boolean noiniteq,noinitalg,noeq,noalg;
-algorithm 
+algorithm
   s1 := dumpVarsStr(l);
   s2 := dumpInitialequationsStr(l);
   s3 := dumpEquationsStr(l);
@@ -945,12 +945,12 @@ algorithm
 end dumpElementsStr;
 
 public function dumpAlgorithmsStr "function: dumpAlgorithmsStr
- 
+
   Dump algorithms to a string.
 "
   input list<Element> inElementLst;
   output String outString;
-algorithm 
+algorithm
   outString:=
   matchcontinue (inElementLst)
     local
@@ -958,7 +958,7 @@ algorithm
       list<Algorithm.Statement> stmts;
       list<Element> xs;
     case ((ALGORITHM(algorithm_ = Algorithm.ALGORITHM(statementLst = stmts)) :: xs))
-      equation 
+      equation
         s1 = Dump.getStringList(stmts, ppStatementStr, "");
         s2 = stringAppend("algorithm\n", s1);
         s3 = dumpAlgorithmsStr(xs);
@@ -966,21 +966,21 @@ algorithm
       then
         str;
     case ((_ :: xs))
-      equation 
+      equation
         str = dumpAlgorithmsStr(xs);
       then
         str;
-    case ({}) then ""; 
+    case ({}) then "";
   end matchcontinue;
 end dumpAlgorithmsStr;
 
 protected function dumpInitialalgorithmsStr "function: dumpInitialalgorithmsStr
- 
+
   Dump initialalgorithms to a string.
 "
   input list<Element> inElementLst;
   output String outString;
-algorithm 
+algorithm
   outString:=
   matchcontinue (inElementLst)
     local
@@ -988,7 +988,7 @@ algorithm
       list<Algorithm.Statement> stmts;
       list<Element> xs;
     case ((INITIALALGORITHM(algorithm_ = Algorithm.ALGORITHM(statementLst = stmts)) :: xs))
-      equation 
+      equation
         s1 = Dump.getStringList(stmts, ppStatementStr, "");
         s2 = stringAppend("algorithm\n", s1);
         s3 = dumpInitialalgorithmsStr(xs);
@@ -996,21 +996,21 @@ algorithm
       then
         str;
     case ((_ :: xs))
-      equation 
+      equation
         str = dumpInitialalgorithmsStr(xs);
       then
         str;
-    case ({}) then ""; 
+    case ({}) then "";
   end matchcontinue;
 end dumpInitialalgorithmsStr;
 
 protected function dumpEquationsStr "function: dumpEquationsStr
- 
+
   Dump equations to a string.
 "
   input list<Element> inElementLst;
   output String outString;
-algorithm 
+algorithm
   outString:=
   matchcontinue (inElementLst)
     local
@@ -1019,7 +1019,7 @@ algorithm
       list<Element> xs,xs1,xs2;
       Exp.ComponentRef c,cr;
     case ((EQUATION(exp = e1,scalar = e2) :: xs))
-      equation 
+      equation
         s1 = Exp.printExpStr(e1);
         s2 = stringAppend("  ", s1);
         s3 = stringAppend(s2, " = ");
@@ -1031,7 +1031,7 @@ algorithm
       then
         str;
     case ((ARRAY_EQUATION(exp = e1,array = e2) :: xs))
-      equation 
+      equation
         s1 = Exp.printExpStr(e1);
         s2 = stringAppend("  ", s1);
         s3 = stringAppend(s2, " = ");
@@ -1043,7 +1043,7 @@ algorithm
       then
         str;
     case ((DEFINE(componentRef = c,exp = e) :: xs))
-      equation 
+      equation
         s1 = Exp.printComponentRefStr(c);
         s2 = stringAppend("  ", s1);
         s3 = stringAppend(s2, " = ");
@@ -1055,7 +1055,7 @@ algorithm
       then
         str;
     case ((ASSERT(condition=e1,message = e2) :: xs))
-      equation 
+      equation
         s1 = Exp.printExpStr(e1);
         s2 = Exp.printExpStr(e2);
         s3 = dumpEquationsStr(xs);
@@ -1064,7 +1064,7 @@ algorithm
         str;
     case ((IF_EQUATION(condition1 = c,equations2 = xs1,equations3 = xs2) :: xs))
       local Exp.Exp c;
-      equation 
+      equation
         s = Exp.printExpStr(c);
         s1 = dumpEquationsStr(xs1);
         s2 = dumpEquationsStr(xs2);
@@ -1076,7 +1076,7 @@ algorithm
       local
         Exp.Exp c;
         Element xs2;
-      equation 
+      equation
         s = Exp.printExpStr(c);
         s1 = dumpEquationsStr(xs1);
         s2 = dumpEquationsStr((xs2 :: xs));
@@ -1085,7 +1085,7 @@ algorithm
         str;
     case ((WHEN_EQUATION(condition = c,equations = xs1,elsewhen_ = NONE) :: xs))
       local Exp.Exp c;
-      equation 
+      equation
         s = Exp.printExpStr(c);
         s1 = dumpEquationsStr(xs1);
         s3 = dumpEquationsStr(xs);
@@ -1093,7 +1093,7 @@ algorithm
       then
         str;
     case ((REINIT(componentRef = cr,exp = e) :: xs))
-      equation 
+      equation
         s = Exp.printComponentRefStr(cr);
         s1 = Exp.printExpStr(e);
         s2 = dumpEquationsStr(xs);
@@ -1101,21 +1101,21 @@ algorithm
       then
         str;
     case ((_ :: xs))
-      equation 
+      equation
         str = dumpEquationsStr(xs);
       then
         str;
-    case ({}) then ""; 
+    case ({}) then "";
   end matchcontinue;
 end dumpEquationsStr;
 
 protected function dumpInitialequationsStr "function: dumpInitialequationsStr
- 
+
   Dump initial equations to a string.
 "
   input list<Element> inElementLst;
   output String outString;
-algorithm 
+algorithm
   outString:=
   matchcontinue (inElementLst)
     local
@@ -1124,7 +1124,7 @@ algorithm
       list<Element> xs,xs1,xs2;
       Exp.ComponentRef c;
     case ((INITIALEQUATION(exp1 = e1,exp2 = e2) :: xs))
-      equation 
+      equation
         s1 = Exp.printExpStr(e1);
         s2 = stringAppend("  ", s1);
         s3 = stringAppend(s2, " = ");
@@ -1136,7 +1136,7 @@ algorithm
       then
         str;
     case ((INITIALDEFINE(componentRef = c,exp = e) :: xs))
-      equation 
+      equation
         s1 = Exp.printComponentRefStr(c);
         s2 = stringAppend("  ", s1);
         s3 = stringAppend(s2, " := ");
@@ -1149,7 +1149,7 @@ algorithm
         str;
     case ((INITIAL_IF_EQUATION(condition1 = c,equations2 = xs1,equations3 = xs2) :: xs))
       local Exp.Exp c;
-      equation 
+      equation
         s = Exp.printExpStr(c);
         s1 = dumpInitialequationsStr(xs1);
         s2 = dumpInitialequationsStr(xs2);
@@ -1158,41 +1158,41 @@ algorithm
       then
         str;
     case ((_ :: xs))
-      equation 
+      equation
         str = dumpInitialequationsStr(xs);
       then
         str;
-    case ({}) then ""; 
+    case ({}) then "";
   end matchcontinue;
 end dumpInitialequationsStr;
 
 protected function dumpVars "function: dumpVars
- 
+
   Dump variables to Print buffer.
 "
   input list<Element> lst;
   Ident str;
-algorithm 
+algorithm
   str := dumpVarsStr(lst);
   Print.printBuf(str);
 end dumpVars;
 
 protected function dumpVarsStr "function: dumpVarsStr
- 
+
   Dump variables to a string.
 "
   input list<Element> inElementLst;
   output String outString;
-algorithm 
+algorithm
   outString:=
   matchcontinue (inElementLst)
     local
       Ident s1,s2,str;
       Element first;
       list<Element> rest;
-    case {} then ""; 
+    case {} then "";
     case (first :: rest)
-      equation 
+      equation
         s1 = dumpVarStr(first);
         s2 = dumpVarsStr(rest);
         str = stringAppend(s1, s2);
@@ -1202,72 +1202,72 @@ algorithm
 end dumpVarsStr;
 
 protected function dumpKind "function: dumpKind
- 
+
   Dump VarKind.
 "
   input VarKind inVarKind;
-algorithm 
+algorithm
   _:=
   matchcontinue (inVarKind)
     case CONST()
-      equation 
+      equation
         Print.printBuf(" constant  ");
       then
         ();
     case PARAM()
-      equation 
+      equation
         Print.printBuf(" parameter ");
       then
         ();
     case DISCRETE()
-      equation 
+      equation
         Print.printBuf(" discrete  ");
       then
         ();
     case VARIABLE()
-      equation 
+      equation
         Print.printBuf("           ");
       then
         ();
   end matchcontinue;
 end dumpKind;
 
-protected function dumpKindStr "function: dumpKindStr 
- 
+protected function dumpKindStr "function: dumpKindStr
+
   Dump VarKind to a string.
 "
   input VarKind inVarKind;
   output String outString;
-algorithm 
+algorithm
   outString:=
   matchcontinue (inVarKind)
-    case CONST() then "constant "; 
-    case PARAM() then "parameter "; 
-    case DISCRETE() then "discrete "; 
-    case VARIABLE() then ""; 
+    case CONST() then "constant ";
+    case PARAM() then "parameter ";
+    case DISCRETE() then "discrete ";
+    case VARIABLE() then "";
   end matchcontinue;
 end dumpKindStr;
 
 protected function dumpDirection "function: dumpDirection
- 
+
   Dump VarDirection.
 "
   input VarDirection inVarDirection;
-algorithm 
+algorithm
   _:=
   matchcontinue (inVarDirection)
     case INPUT()
-      equation 
+      equation
         Print.printBuf(" input  ");
       then
         ();
     case OUTPUT()
-      equation 
+      equation
         Print.printBuf(" output ");
       then
         ();
     case BIDIR()
-      equation 
+      equation
         Print.printBuf("        ");
       then
         ();
@@ -1275,54 +1275,54 @@ algorithm
 end dumpDirection;
 
 public function dumpDirectionStr "function: dumpDirectionStr
- 
+
   Dump VarDirection to a string
 "
   input VarDirection inVarDirection;
   output String outString;
-algorithm 
+algorithm
   outString:=
   matchcontinue (inVarDirection)
-    case INPUT() then "input "; 
-    case OUTPUT() then "output "; 
-    case BIDIR() then ""; 
+    case INPUT() then "input ";
+    case OUTPUT() then "output ";
+    case BIDIR() then "";
   end matchcontinue;
 end dumpDirectionStr;
 
 protected function dumpStateSelectStr "function dumpStateSelectStr
- 
+
   Dump StateSelect to a string.
 "
   input StateSelect inStateSelect;
   output String outString;
-algorithm 
+algorithm
   outString:=
   matchcontinue (inStateSelect)
-    case (NEVER()) then "StateSelect.never"; 
-    case (AVOID()) then "StateSelect.avoid"; 
-    case (PREFER()) then "StateSelect.prefer"; 
-    case (ALWAYS()) then "StateSelect.always"; 
-    case (DEFAULT()) then "StateSelect.default"; 
+    case (NEVER()) then "StateSelect.never";
+    case (AVOID()) then "StateSelect.avoid";
+    case (PREFER()) then "StateSelect.prefer";
+    case (ALWAYS()) then "StateSelect.always";
+    case (DEFAULT()) then "StateSelect.default";
   end matchcontinue;
 end dumpStateSelectStr;
 
-public function dumpVariableAttributes "function: dumpVariableAttributes 
- 
+public function dumpVariableAttributes "function: dumpVariableAttributes
+
   Dump VariableAttributes option.
 "
   input Option<VariableAttributes> attr;
   Ident res;
-algorithm 
+algorithm
   res := dumpVariableAttributesStr(attr);
   Print.printBuf(res);
 end dumpVariableAttributes;
 
-public function getStartAttr " 
+public function getStartAttr "
   Return the start attribute.
 "
   input Option<VariableAttributes> inVariableAttributesOption;
   output Exp.Exp start;
-algorithm 
+algorithm
   start:=
   matchcontinue (inVariableAttributesOption)
     local
@@ -1331,16 +1331,16 @@ algorithm
     case (SOME(VAR_ATTR_INT(_,_,SOME(r),_))) then r;
     case (SOME(VAR_ATTR_BOOL(initial_=SOME(r)))) then r;
     case (SOME(VAR_ATTR_STRING(initial_=SOME(r)))) then r;
-    case (_) then Exp.RCONST(0.0); 
+    case (_) then Exp.RCONST(0.0);
   end matchcontinue;
 end getStartAttr;
 
-public function hasStartAttr " 
+public function hasStartAttr "
   Returns true if variable attributes defines a start value.
 "
   input Option<VariableAttributes> inVariableAttributesOption;
   output Boolean hasStart;
-algorithm 
+algorithm
   hasStart:=
   matchcontinue (inVariableAttributesOption)
     local
@@ -1349,55 +1349,55 @@ algorithm
     case (SOME(VAR_ATTR_INT(_,_,SOME(r),_))) then true;
     case (SOME(VAR_ATTR_BOOL(initial_=SOME(r)))) then true;
     case (SOME(VAR_ATTR_STRING(initial_=SOME(r)))) then true;
-    case (_) then false; 
+    case (_) then false;
   end matchcontinue;
 end hasStartAttr;
 
 public function getStartAttrString "function: getStartAttrString
- 
+
   Return the start attribute as a string.
 "
   input Option<VariableAttributes> inVariableAttributesOption;
   output String outString;
-algorithm 
+algorithm
   outString:=
   matchcontinue (inVariableAttributesOption)
     local
       Ident s;
       Exp.Exp r;
-    case (NONE) then ""; 
+    case (NONE) then "";
     case (SOME(VAR_ATTR_REAL(_,_,_,_,SOME(r),_,_,_)))
-      equation 
+      equation
         s = Exp.printExpStr(r);
       then
         s;
     case (SOME(VAR_ATTR_INT(_,_,SOME(r),_)))
-      equation 
-        s = Exp.printExpStr(r);        
+      equation
+        s = Exp.printExpStr(r);
       then
         s;
-    case (_) then ""; 
+    case (_) then "";
   end matchcontinue;
 end getStartAttrString;
 
 protected function stringToString "function: stringToString
- 
+
   Convert a string to a Modelica string, enclosed in citation marks.
 "
   input String str;
   output String str_1;
   Ident str_1;
-algorithm 
+algorithm
   str_1 := Util.stringAppendList({"\"",str,"\""});
 end stringToString;
 
 public function dumpVariableAttributesStr "function: dumpVariableAttributesStr
- 
+
   Dump VariableAttributes option to a string.
 "
   input Option<VariableAttributes> inVariableAttributesOption;
   output String outString;
-algorithm 
+algorithm
   outString:=
   matchcontinue (inVariableAttributesOption)
     local
@@ -1408,7 +1408,7 @@ algorithm
       Option<Exp.Exp> fixed;
       Option<StateSelect> stateSel;
     case (SOME(VAR_ATTR_REAL(quant,unit,displayUnit,(min,max),Initial,fixed,nominal,stateSel)))
-      equation 
+      equation
         quantity = Dump.getOptionWithConcatStr(quant, Exp.printExpStr, "quantity = ");
         unit_str = Dump.getOptionWithConcatStr(unit, Exp.printExpStr, "unit = ");
         displayUnit_str = Dump.getOptionWithConcatStr(displayUnit, Exp.printExpStr, "displayUnit = ");
@@ -1428,7 +1428,7 @@ algorithm
         res;
     case (SOME(VAR_ATTR_INT(quant,(min,max),Initial,fixed)))
       local Option<Exp.Exp> min,max,Initial;
-      equation 
+      equation
         quantity = Dump.getOptionWithConcatStr(quant, Exp.printExpStr, "quantity = ");
         min_str = Dump.getOptionWithConcatStr(min, Exp.printExpStr, "min = ");
         max_str = Dump.getOptionWithConcatStr(max, Exp.printExpStr, "max = ");
@@ -1442,7 +1442,7 @@ algorithm
         res;
     case (SOME(VAR_ATTR_BOOL(quant,Initial,fixed)))
       local Option<Exp.Exp> Initial;
-      equation 
+      equation
         quantity = Dump.getOptionWithConcatStr(quant, Exp.printExpStr, "quantity = ");
         Initial_str = Dump.getOptionWithConcatStr(Initial, Exp.printExpStr, "start = ");
         fixed_str = Dump.getOptionWithConcatStr(fixed, Exp.printExpStr, "fixed = ");
@@ -1454,7 +1454,7 @@ algorithm
         res;
     case (SOME(VAR_ATTR_STRING(quant,Initial)))
       local Option<Exp.Exp> Initial;
-      equation 
+      equation
         quantity = Dump.getOptionWithConcatStr(quant, Exp.printExpStr, "quantity = ");
         Initial_str = Dump.getOptionWithConcatStr(Initial, Exp.printExpStr, "start = ");
         res_1 = Util.stringDelimitListNonEmptyElts({quantity,Initial_str}, ", ");
@@ -1465,7 +1465,7 @@ algorithm
         res;
     case (SOME(VAR_ATTR_ENUMERATION(quant,(min,max),Initial,fixed)))
       local Option<Exp.Exp> min,max,Initial;
-      equation 
+      equation
         quantity = Dump.getOptionWithConcatStr(quant, Exp.printExpStr, "quantity = ");
         min_str = Dump.getOptionWithConcatStr(min, Exp.printExpStr, "min = ");
         max_str = Dump.getOptionWithConcatStr(max, Exp.printExpStr, "max = ");
@@ -1477,38 +1477,38 @@ algorithm
         res = Util.if_(is_empty, "", res1);
       then
         res;
-    case (NONE) then ""; 
-    case (_) then "unknown VariableAttributes"; 
+    case (NONE) then "";
+    case (_) then "unknown VariableAttributes";
   end matchcontinue;
 end dumpVariableAttributesStr;
 
 public function dumpType "function: dumpType
- 
+
   Dump Type.
 "
   input Type inType;
-algorithm 
+algorithm
   _:=
   matchcontinue (inType)
     local list<Ident> l;
           Ident i;
     case INT()
-      equation 
+      equation
         Print.printBuf("Integer ");
       then
         ();
     case REAL()
-      equation 
+      equation
         Print.printBuf("Real    ");
       then
         ();
     case BOOL()
-      equation 
+      equation
         Print.printBuf("Boolean ");
       then
         ();
     case STRING()
-      equation 
+      equation
         Print.printBuf("String  ");
       then
         ();
@@ -1521,19 +1521,19 @@ algorithm
         ();
 */
     case ENUM()
-      equation 
+      equation
         Print.printBuf("Enum ");
       then
         ();
     case ENUMERATION(stringLst = l)
-      equation 
+      equation
         Print.printBuf("Enumeration(");
         Dump.printList(l, print, ",");
         Print.printBuf(") ");
       then
         ();
      case EXT_OBJECT(_)
-      equation 
+      equation
         Print.printBuf("ExternalObject   ");
       then
         ();
@@ -1541,22 +1541,22 @@ algorithm
 end dumpType;
 
 public function dumpTypeStr "function: dumpTypeStr
- 
+
   Dump Type to a string.
 "
   input Type inType;
   output String outString;
-algorithm 
+algorithm
   outString:=
   matchcontinue (inType)
     local
       Ident s1,s2,str;
       list<Ident> l;
-    case INT() then "Integer "; 
-    case REAL() then "Real "; 
-    case BOOL() then "Boolean "; 
-    case STRING() then "String "; 
-    case ENUM() then "Enum "; 
+    case INT() then "Integer ";
+    case REAL() then "Real ";
+    case BOOL() then "Boolean ";
+    case STRING() then "String ";
+    case ENUM() then "Enum ";
 /*
     case RECORD(name = s1)
       equation
@@ -1565,22 +1565,22 @@ algorithm
         s2;
 */
     case ENUMERATION(stringLst = l)
-      equation 
+      equation
         s1 = Util.stringDelimitList(l, ", ");
         s2 = stringAppend("enumeration(", s1);
         str = stringAppend(s2, ")");
       then
         str;
-    case EXT_OBJECT(_) then "ExternalObject ";    
+    case EXT_OBJECT(_) then "ExternalObject ";
   end matchcontinue;
 end dumpTypeStr;
 
 protected function dumpVar "function: dumpVar
- 
+
   Dump Var.
 "
   input Element inElement;
-algorithm 
+algorithm
   _:=
   matchcontinue (inElement)
     local
@@ -1594,14 +1594,14 @@ algorithm
       Option<Absyn.Comment> comment;
       Exp.Exp e;
     case VAR(componentRef = id,varible = kind,variable = dir,input_ = typ,one = NONE,value = flow_,flow_ = classlst,variableAttributesOption = dae_var_attr,absynCommentOption = comment)
-      equation 
+      equation
         dumpKind(kind);
         dumpDirection(dir);
         dumpType(typ);
         Exp.printComponentRef(id);
         dumpCommentOption(comment) "	dump_start_value start &" ;
         dumpVariableAttributes(dae_var_attr);
-        Print.printBuf(";\n") "	Util.list_map(classlst,Absyn.path_string) => classstrlst & 
+        Print.printBuf(";\n") "	Util.list_map(classlst,Absyn.path_string) => classstrlst &
 	Util.string_delimit_list(classstrlst, \", \") => classstr &
 	Print.printBuf \" \"{\" &
 	Print.printBuf classstr &
@@ -1609,7 +1609,7 @@ algorithm
       then
         ();
     case VAR(componentRef = id,varible = kind,variable = dir,input_ = typ,one = SOME(e),value = flow_,flow_ = class_,variableAttributesOption = dae_var_attr,absynCommentOption = comment)
-      equation 
+      equation
         dumpKind(kind);
         dumpDirection(dir);
         dumpType(typ);
@@ -1620,17 +1620,17 @@ algorithm
         Print.printBuf(";\n");
       then
         ();
-    case (_) then (); 
+    case (_) then ();
   end matchcontinue;
 end dumpVar;
 
 protected function dumpVarStr "function: dumpVarStr
- 
+
   Dump var to a string.
 "
   input Element inElement;
   output String outString;
-algorithm 
+algorithm
   outString:=
   matchcontinue (inElement)
     local
@@ -1646,7 +1646,7 @@ algorithm
       Exp.Exp e;
       VarProtection prot;
     case VAR(componentRef = id,varible = kind,variable = dir,protection=prot,input_ = typ,one = NONE,value = flow_,flow_ = classlst,variableAttributesOption = dae_var_attr,absynCommentOption = comment)
-      equation 
+      equation
         s1 = dumpKindStr(kind);
         s2 = dumpDirectionStr(dir);
         s3 = dumpTypeStr(typ);
@@ -1654,12 +1654,12 @@ algorithm
         s7 = dumpVarProtectionStr(prot);
         comment_str = dumpCommentOptionStr(comment) "	dump_start_value_str start => s5 &" ;
         s5 = dumpVariableAttributesStr(dae_var_attr);
-        str = Util.stringAppendList({s7,s1,s2,s3,s4,s5,comment_str,";\n"}) "	Util.list_map(classlst,Absyn.path_string) => classstrlst & 
+        str = Util.stringAppendList({s7,s1,s2,s3,s4,s5,comment_str,";\n"}) "	Util.list_map(classlst,Absyn.path_string) => classstrlst &
 	Util.string_delimit_list(classstrlst, \", \") => classstr &" ;
       then
         str;
     case VAR(componentRef = id,varible = kind,variable = dir,protection=prot,input_ = typ,one = SOME(e),value = flow_,flow_ = classlst,variableAttributesOption = dae_var_attr,absynCommentOption = comment)
-      equation 
+      equation
         s1 = dumpKindStr(kind);
         s2 = dumpDirectionStr(dir);
         s3 = dumpTypeStr(typ);
@@ -1668,11 +1668,11 @@ algorithm
         comment_str = dumpCommentOptionStr(comment) "	dump_start_value_str start => s6 &" ;
         s6 = dumpVariableAttributesStr(dae_var_attr);
         s7 = dumpVarProtectionStr(prot);
-        str = Util.stringAppendList({s7,s1,s2,s3,s4,s6," = ",s5,comment_str,";\n"}) "	Util.list_map(classlst,Absyn.path_string) => classstrlst & 
+        str = Util.stringAppendList({s7,s1,s2,s3,s4,s6," = ",s5,comment_str,";\n"}) "	Util.list_map(classlst,Absyn.path_string) => classstrlst &
 	Util.string_delimit_list(classstrlst, \", \") => classstr &" ;
       then
         str;
-    case (_) then ""; 
+    case (_) then "";
   end matchcontinue;
 end dumpVarStr;
 
@@ -1682,56 +1682,56 @@ protected function dumpVarProtectionStr "Prints 'protected' to a string for prot
 algorithm
   str := matchcontinue(prot)
     case(PUBLIC()) then "";
-    case(PROTECTED()) then "protected ";  
+    case(PROTECTED()) then "protected ";
   end matchcontinue;
 end dumpVarProtectionStr;
 
 protected function dumpCommentOptionStr "function: dumpCommentOptionStr
- 
+
   Dump Comment option to a string.
 "
   input Option<Absyn.Comment> inAbsynCommentOption;
   output String outString;
-algorithm 
+algorithm
   outString:=
   matchcontinue (inAbsynCommentOption)
     local
       Ident str,cmt;
       Option<Absyn.Annotation> annopt;
-    case (NONE) then ""; 
+    case (NONE) then "";
     case (SOME(Absyn.COMMENT(annopt,SOME(cmt))))
-      equation 
+      equation
         str = Util.stringAppendList({" \"",cmt,"\""});
       then
         str;
-    case (SOME(Absyn.COMMENT(annopt,NONE))) then ""; 
+    case (SOME(Absyn.COMMENT(annopt,NONE))) then "";
   end matchcontinue;
 end dumpCommentOptionStr;
 
 protected function dumpCommentOption "function: dumpCommentOption_str
- 
+
   Dump Comment option.
 "
   input Option<Absyn.Comment> comment;
   Ident str;
-algorithm 
+algorithm
   str := dumpCommentOptionStr(comment);
   Print.printBuf(str);
 end dumpCommentOption;
 
 protected function dumpEquation "function: dumpEquation
- 
+
   Dump equation.
 "
   input Element inElement;
-algorithm 
+algorithm
   _:=
   matchcontinue (inElement)
     local
       Exp.Exp e1,e2,e;
       Exp.ComponentRef c;
     case (EQUATION(exp = e1,scalar = e2))
-      equation 
+      equation
         Print.printBuf("  ");
         Exp.printExp(e1);
         Print.printBuf(" = ");
@@ -1740,7 +1740,7 @@ algorithm
       then
         ();
     case (DEFINE(componentRef = c,exp = e))
-      equation 
+      equation
         Print.printBuf("  ");
         Exp.printComponentRef(c);
         Print.printBuf(" ::= ");
@@ -1749,7 +1749,7 @@ algorithm
       then
         ();
     case (ASSERT(condition=e1,message=e2))
-      equation 
+      equation
         Print.printBuf("assert(");
         Exp.printExp(e1);
         Print.printBuf(",");
@@ -1757,23 +1757,23 @@ algorithm
         Print.printBuf(");\n");
       then
         ();
-    case _ then (); 
+    case _ then ();
   end matchcontinue;
 end dumpEquation;
 
 protected function dumpInitialequation "function: dumpInitialequation
- 
+
   Dump initial equation.
 "
   input Element inElement;
-algorithm 
+algorithm
   _:=
   matchcontinue (inElement)
     local
       Exp.Exp e1,e2,e;
       Exp.ComponentRef c;
     case (INITIALEQUATION(exp1 = e1,exp2 = e2))
-      equation 
+      equation
         Print.printBuf("  ");
         Exp.printExp(e1);
         Print.printBuf(" = ");
@@ -1782,7 +1782,7 @@ algorithm
       then
         ();
     case (INITIALDEFINE(componentRef = c,exp = e))
-      equation 
+      equation
         Print.printBuf("  ");
         Exp.printComponentRef(c);
         Print.printBuf(" ::= ");
@@ -1790,17 +1790,17 @@ algorithm
         Print.printBuf(";\n");
       then
         ();
-    case _ then (); 
+    case _ then ();
   end matchcontinue;
 end dumpInitialequation;
 
 protected function dumpEquationStr "function: dumpEquationStr
- 
+
   Dump equation to a string.
 "
   input Element inElement;
   output String outString;
-algorithm 
+algorithm
   outString:=
   matchcontinue (inElement)
     local
@@ -1808,7 +1808,7 @@ algorithm
       Exp.Exp e1,e2,e;
       Exp.ComponentRef c;
     case (EQUATION(exp = e1,scalar = e2))
-      equation 
+      equation
         s1 = Exp.printExpStr(e1);
         s2 = stringAppend("  ", s1);
         s3 = stringAppend(s2, " = ");
@@ -1818,7 +1818,7 @@ algorithm
       then
         str;
     case (DEFINE(componentRef = c,exp = e))
-      equation 
+      equation
         s1 = Exp.printComponentRefStr(c);
         s2 = stringAppend("  ", s1);
         s3 = stringAppend(" ::= ", s2);
@@ -1828,104 +1828,104 @@ algorithm
       then
         str;
     case (ASSERT(condition=e1,message = e2))
-      equation 
+      equation
         s1 = Exp.printExpStr(e1);
         s2 = Exp.printExpStr(e2);
         str = Util.stringAppendList({"assert(",s1, ",",s2,");\n"});
       then
         str;
-    case _ then ""; 
+    case _ then "";
   end matchcontinue;
 end dumpEquationStr;
 
 public function dumpAlgorithm "function: dumpAlgorithm
- 
+
   Dump algorithm.
 "
   input Element inElement;
-algorithm 
+algorithm
   _:=
   matchcontinue (inElement)
     local list<Algorithm.Statement> stmts;
     case ALGORITHM(algorithm_ = Algorithm.ALGORITHM(statementLst = stmts))
-      equation 
+      equation
         Print.printBuf("algorithm\n");
         Dump.printList(stmts, ppStatement, "");
       then
         ();
-    case _ then (); 
+    case _ then ();
   end matchcontinue;
 end dumpAlgorithm;
 
 protected function dumpInitialalgorithm "function: dump_algorithm
- 
+
   Dump initial algorithm.
 "
   input Element inElement;
-algorithm 
+algorithm
   _:=
   matchcontinue (inElement)
     local list<Algorithm.Statement> stmts;
     case INITIALALGORITHM(algorithm_ = Algorithm.ALGORITHM(statementLst = stmts))
-      equation 
+      equation
         Print.printBuf("initial algorithm\n");
         Dump.printList(stmts, ppStatement, "");
       then
         ();
-    case _ then (); 
+    case _ then ();
   end matchcontinue;
 end dumpInitialalgorithm;
 
 public function dumpAlgorithmStr "function: dumpAlgorithmStr
- 
+
   Dump algorithm to a string
 "
   input Element inElement;
   output String outString;
-algorithm 
+algorithm
   outString:=
   matchcontinue (inElement)
     local
       Ident s1,str;
       list<Algorithm.Statement> stmts;
     case ALGORITHM(algorithm_ = Algorithm.ALGORITHM(statementLst = stmts))
-      equation 
+      equation
         s1 = Dump.getStringList(stmts, ppStatementStr, "");
         str = stringAppend("algorithm\n", s1);
       then
         str;
-    case _ then ""; 
+    case _ then "";
   end matchcontinue;
 end dumpAlgorithmStr;
 
 protected function dumpInitialalgorithmStr "function: dump_algorithm_str
- 
+
   Dump initial algorithm to a string
 "
   input Element inElement;
   output String outString;
-algorithm 
+algorithm
   outString:=
   matchcontinue (inElement)
     local
       Ident s1,str;
       list<Algorithm.Statement> stmts;
     case INITIALALGORITHM(algorithm_ = Algorithm.ALGORITHM(statementLst = stmts))
-      equation 
+      equation
         s1 = Dump.getStringList(stmts, ppStatementStr, "");
         str = stringAppend("initial algorithm\n", s1);
       then
         str;
-    case _ then ""; 
+    case _ then "";
   end matchcontinue;
 end dumpInitialalgorithmStr;
 
 protected function dumpExtObjectClass "function: dumpExtObjectClass
- 
+
   Dump External Object class
 "
   input Element inElement;
-algorithm 
+algorithm
   _:=
   matchcontinue (inElement)
     local
@@ -1935,7 +1935,7 @@ algorithm
       list<Element> dae;
       tuple<Types.TType, Option<Absyn.Path>> t;
     case EXTOBJECTCLASS(path = fpath,constructor=constr,destructor=destr)
-      equation 
+      equation
         Print.printBuf("class ");
         fstr = Absyn.pathString(fpath);
         Print.printBuf(fstr);
@@ -1947,16 +1947,16 @@ algorithm
         Print.printBuf(";\n");
       then
         ();
-    case _ then (); 
+    case _ then ();
   end matchcontinue;
 end dumpExtObjectClass;
 
 protected function dumpFunction "function: dumpFunction
- 
+
   Dump function
 "
   input Element inElement;
-algorithm 
+algorithm
   _:=
   matchcontinue (inElement)
     local
@@ -1965,7 +1965,7 @@ algorithm
       list<Element> dae;
       tuple<Types.TType, Option<Absyn.Path>> t;
     case FUNCTION(path = fpath,dAElist = DAE(elementLst = dae),type_ = t)
-      equation 
+      equation
         Print.printBuf("function ");
         fstr = Absyn.pathString(fpath);
         Print.printBuf(fstr);
@@ -1978,24 +1978,24 @@ algorithm
         ();
      case EXTFUNCTION(path = fpath,dAElist = DAE(elementLst = dae),type_ = t)
        local String fstr,daestr,str;
-      equation 
+      equation
         fstr = Absyn.pathString(fpath);
         daestr = dumpElementsStr(dae);
         str = Util.stringAppendList({"function ",fstr,"\n",daestr,"\nexternal \"C\";\nend ",fstr,";\n\n"});
         Print.printBuf(str);
       then
         ();
-    case _ then (); 
+    case _ then ();
   end matchcontinue;
 end dumpFunction;
 
 public function dumpFunctionStr "function: dumpFunctionStr
- 
+
   Dump function to a string.
 "
   input Element inElement;
   output String outString;
-algorithm 
+algorithm
   outString:=
   matchcontinue (inElement)
     local
@@ -2004,30 +2004,30 @@ algorithm
       list<Element> dae;
       tuple<Types.TType, Option<Absyn.Path>> t;
     case FUNCTION(path = fpath,dAElist = DAE(elementLst = dae),type_ = t)
-      equation 
+      equation
         fstr = Absyn.pathString(fpath);
         daestr = dumpElementsStr(dae);
         str = Util.stringAppendList({"function ",fstr,"\n",daestr,"end ",fstr,";\n\n"});
       then
         str;
     case EXTFUNCTION(path = fpath,dAElist = DAE(elementLst = dae),type_ = t)
-      equation 
+      equation
         fstr = Absyn.pathString(fpath);
         daestr = dumpElementsStr(dae);
         str = Util.stringAppendList({"function ",fstr,"\n",daestr,"\nexternal \"C\";\nend ",fstr,";\n\n"});
       then
         str;
-    case _ then ""; 
+    case _ then "";
   end matchcontinue;
 end dumpFunctionStr;
 
 protected function dumpExtObjClassStr "function: dumpExtObjStr
- 
+
   Dump external object class to a string.
 "
   input Element inElement;
   output String outString;
-algorithm 
+algorithm
   outString:=
   matchcontinue (inElement)
     local
@@ -2037,7 +2037,7 @@ algorithm
       Element constr,destr;
       tuple<Types.TType, Option<Absyn.Path>> t;
     case EXTOBJECTCLASS(path = fpath,constructor = constr, destructor = destr)
-      equation 
+      equation
         fstr = Absyn.pathString(fpath);
         c_str = dumpFunctionStr(constr);
         d_str = dumpFunctionStr(destr);
@@ -2045,36 +2045,36 @@ algorithm
           d_str,"end ",fstr,";\n"});
       then
         str;
-    case _ then ""; 
+    case _ then "";
   end matchcontinue;
 end dumpExtObjClassStr;
 
 protected function ppStatement "function: ppStatement
- 
+
   Prettyprint an algorithm statement
 "
   input Algorithm.Statement alg;
-algorithm 
+algorithm
   ppStmt(alg, 2);
 end ppStatement;
 
 protected function ppStatementStr "function: ppStatementStr
- 
+
   Prettyprint an algorithm statement to a string.
 "
   input Algorithm.Statement alg;
   output String str;
-algorithm 
+algorithm
   str := ppStmtStr(alg, 2);
 end ppStatementStr;
 
 protected function ppStmt "function: ppStmt
- 
+
   Helper function to pp_statement.
 "
   input Algorithm.Statement inStatement;
   input Integer inInteger;
-algorithm 
+algorithm
   _:=
   matchcontinue (inStatement,inInteger)
     local
@@ -2088,7 +2088,7 @@ algorithm
       Algorithm.Statement stmt;
       Algorithm.Else else_;
     case (Algorithm.ASSIGN(componentRef = c,exp = e),i)
-      equation 
+      equation
         indent(i);
         Exp.printComponentRef(c);
         Print.printBuf(" := ");
@@ -2097,7 +2097,7 @@ algorithm
       then
         ();
     case (Algorithm.ASSIGN_ARR(componentRef = c,exp = e),i)
-      equation 
+      equation
         indent(i);
         Exp.printComponentRef(c);
         Print.printBuf(" := ");
@@ -2106,7 +2106,7 @@ algorithm
       then
         ();
     case (Algorithm.TUPLE_ASSIGN(expExpLst = expl,exp = e),i)
-      equation 
+      equation
         s1 = indentStr(i);
         s2 = Exp.printExpStr(e);
         es = Util.listMap(expl, Exp.printExpStr);
@@ -2116,7 +2116,7 @@ algorithm
       then
         ();
     case (Algorithm.IF(exp = e,statementLst = then_,else_ = else_),i)
-      equation 
+      equation
         indent(i);
         Print.printBuf("if ");
         Exp.printExp(e);
@@ -2129,7 +2129,7 @@ algorithm
       then
         ();
     case (Algorithm.FOR(ident = id,exp = e,statementLst = stmts),i)
-      equation 
+      equation
         indent(i);
         Print.printBuf("for ");
         Print.printBuf(id);
@@ -2143,7 +2143,7 @@ algorithm
       then
         ();
     case (Algorithm.WHILE(exp = e,statementLst = stmts),i)
-      equation 
+      equation
         indent(i);
         Print.printBuf("while ");
         Exp.printExp(e);
@@ -2155,13 +2155,13 @@ algorithm
       then
         ();
     case (stmt as Algorithm.WHEN(exp = _),i)
-      equation 
+      equation
         indent(i);
         Print.printBuf(ppWhenStmtStr(stmt,1));
       then
         ();
     case (Algorithm.ASSERT(cond = cond,msg = msg),i)
-      equation 
+      equation
         indent(i);
         Print.printBuf("assert( ");
         Exp.printExp(cond);
@@ -2171,24 +2171,24 @@ algorithm
       then
         ();
     case (Algorithm.BREAK(),i)
-      equation 
+      equation
         indent(i);
         Print.printBuf("break;\n");
       then
         ();
     case (Algorithm.REINIT(e1,e2),i)
            local Exp.Exp e1,e2;
-      equation 
+      equation
         indent(i);
         Print.printBuf("reinit(");
-        Exp.printExp(e1); 
+        Exp.printExp(e1);
         Print.printBuf(",");
         Exp.printExp(e2);
-        Print.printBuf(");\n");         
+        Print.printBuf(");\n");
       then
         ();
     case (_,i)
-      equation 
+      equation
         indent(i);
         Print.printBuf("**ALGORITHM**;\n");
       then
@@ -2201,7 +2201,7 @@ protected function ppWhenStmtStr
   input Algorithm.Statement inStatement;
   input Integer inInteger;
   output String outString;
-algorithm 
+algorithm
   outString:=
   matchcontinue (inStatement,inInteger)
     local
@@ -2215,7 +2215,7 @@ algorithm
       Algorithm.Statement stmt;
       Algorithm.Else else_;
     case (Algorithm.WHEN(exp = e,statementLst = stmts, elseWhen=NONE),i)
-      equation 
+      equation
         s3 = stringAppend("when ",Exp.printExpStr(e));
         s5 = stringAppend(s3, " then\n");
         i_1 = i + 2;
@@ -2227,7 +2227,7 @@ algorithm
       then
         str;
     case (Algorithm.WHEN(exp = e,statementLst = stmts, elseWhen=SOME(stmt)),i)
-      equation 
+      equation
         s3 = Exp.printExpStr(e);
         s4 = stringAppend("when ", s3);
         s5 = stringAppend(s4, " then\n");
@@ -2244,13 +2244,13 @@ algorithm
 end ppWhenStmtStr;
 
 protected function ppStmtStr "function: ppStmtStr
- 
+
   Helper function to pp_statement_str
 "
   input Algorithm.Statement inStatement;
   input Integer inInteger;
   output String outString;
-algorithm 
+algorithm
   outString:=
   matchcontinue (inStatement,inInteger)
     local
@@ -2264,7 +2264,7 @@ algorithm
       Algorithm.Statement stmt;
       Algorithm.Else else_;
     case (Algorithm.ASSIGN(componentRef = c,exp = e),i)
-      equation 
+      equation
         s1 = indentStr(i);
         s2 = Exp.printComponentRefStr(c);
         s3 = stringAppend(s1, s2);
@@ -2275,7 +2275,7 @@ algorithm
       then
         str;
     case (Algorithm.ASSIGN_ARR(componentRef = c,exp = e),i)
-      equation 
+      equation
         s1 = indentStr(i);
         s2 = Exp.printComponentRefStr(c);
         s3 = stringAppend(s1, s2);
@@ -2286,7 +2286,7 @@ algorithm
       then
         str;
     case (Algorithm.TUPLE_ASSIGN(expExpLst = expl,exp = e),i)
-      equation 
+      equation
         s1 = indentStr(i);
         s2 = Exp.printExpStr(e);
         es = Util.listMap(expl, Exp.printExpStr);
@@ -2295,7 +2295,7 @@ algorithm
       then
         str;
     case (Algorithm.IF(exp = e,statementLst = then_,else_ = else_),i)
-      equation 
+      equation
         s1 = indentStr(i);
         s2 = stringAppend(s1, "if ");
         s3 = Exp.printExpStr(e);
@@ -2312,7 +2312,7 @@ algorithm
       then
         str;
     case (Algorithm.FOR(ident = id,exp = e,statementLst = stmts),i)
-      equation 
+      equation
         s1 = indentStr(i);
         s2 = stringAppend(s1, "for ");
         s3 = stringAppend(s2, id);
@@ -2329,7 +2329,7 @@ algorithm
       then
         str;
     case (Algorithm.WHILE(exp = e,statementLst = stmts),i)
-      equation 
+      equation
         s1 = indentStr(i);
         s2 = stringAppend(s1, "while ");
         s3 = Exp.printExpStr(e);
@@ -2344,14 +2344,14 @@ algorithm
       then
         str;
     case (stmt as Algorithm.WHEN(exp = _),i)
-      equation 
+      equation
         s1 = indentStr(i);
         s2 = ppWhenStmtStr(stmt,i);
         str = stringAppend(s1,s2);
       then
         str;
     case (Algorithm.ASSERT(cond = cond,msg = msg),i)
-      equation 
+      equation
         s1 = indentStr(i);
         cond_str = Exp.printExpStr(cond);
         msg_str = Exp.printExpStr(msg);
@@ -2359,7 +2359,7 @@ algorithm
       then
         str;
     case (Algorithm.BREAK(),i)
-      equation 
+      equation
         s1 = indentStr(i);
         str = stringAppend(s1, "break;\n");
       then
@@ -2373,7 +2373,7 @@ algorithm
           str = Util.stringAppendList({s1,"reinit(",e1_str,", ",e2_str,");\n"});
         then str;
     case (_,i)
-      equation 
+      equation
         s1 = indentStr(i);
         str = stringAppend(s1, "**ALGORITHM**;\n");
       then
@@ -2382,21 +2382,21 @@ algorithm
 end ppStmtStr;
 
 protected function ppStmtList "function: ppStmtList
- 
+
   Helper function to pp_stmt
 "
   input list<Algorithm.Statement> inAlgorithmStatementLst;
   input Integer inInteger;
-algorithm 
+algorithm
   _:=
   matchcontinue (inAlgorithmStatementLst,inInteger)
     local
       Algorithm.Statement stmt;
       list<Algorithm.Statement> stmts;
       Integer i;
-    case ({},_) then (); 
+    case ({},_) then ();
     case ((stmt :: stmts),i)
-      equation 
+      equation
         ppStmt(stmt, i);
         ppStmtList(stmts, i);
       then
@@ -2405,13 +2405,13 @@ algorithm
 end ppStmtList;
 
 protected function ppStmtListStr "function: ppStmtListStr
- 
+
   Helper function to pp_stmt_str
 "
   input list<Algorithm.Statement> inAlgorithmStatementLst;
   input Integer inInteger;
   output String outString;
-algorithm 
+algorithm
   outString:=
   matchcontinue (inAlgorithmStatementLst,inInteger)
     local
@@ -2419,9 +2419,9 @@ algorithm
       Algorithm.Statement stmt;
       list<Algorithm.Statement> stmts;
       Integer i;
-    case ({},_) then ""; 
+    case ({},_) then "";
     case ((stmt :: stmts),i)
-      equation 
+      equation
         s1 = ppStmtStr(stmt, i);
         s2 = ppStmtListStr(stmts, i);
         str = stringAppend(s1, s2);
@@ -2431,12 +2431,12 @@ algorithm
 end ppStmtListStr;
 
 protected function ppElse "function: ppElse
- 
+
   Helper function to pp_stmt
 "
   input Algorithm.Else inElse;
   input Integer inInteger;
-algorithm 
+algorithm
   _:=
   matchcontinue (inElse,inInteger)
     local
@@ -2444,9 +2444,9 @@ algorithm
       Exp.Exp e;
       list<Algorithm.Statement> then_,stmts;
       Algorithm.Else else_;
-    case (Algorithm.NOELSE(),_) then (); 
+    case (Algorithm.NOELSE(),_) then ();
     case (Algorithm.ELSEIF(exp = e,statementLst = then_,else_ = else_),i)
-      equation 
+      equation
         indent(i);
         Print.printBuf("elseif ");
         Exp.printExp(e);
@@ -2457,7 +2457,7 @@ algorithm
       then
         ();
     case (Algorithm.ELSE(statementLst = stmts),i)
-      equation 
+      equation
         indent(i);
         Print.printBuf("else\n");
         i_1 = i + 2;
@@ -2468,13 +2468,13 @@ algorithm
 end ppElse;
 
 protected function ppElseStr "function: pp_else
- 
+
   Helper function to ppElseStr
 "
   input Algorithm.Else inElse;
   input Integer inInteger;
   output String outString;
-algorithm 
+algorithm
   outString:=
   matchcontinue (inElse,inInteger)
     local
@@ -2483,9 +2483,9 @@ algorithm
       Exp.Exp e;
       list<Algorithm.Statement> then_,stmts;
       Algorithm.Else else_;
-    case (Algorithm.NOELSE(),_) then ""; 
+    case (Algorithm.NOELSE(),_) then "";
     case (Algorithm.ELSEIF(exp = e,statementLst = then_,else_ = else_),i)
-      equation 
+      equation
         s1 = indentStr(i);
         s2 = stringAppend(s1, "elseif ");
         s3 = Exp.printExpStr(e);
@@ -2499,7 +2499,7 @@ algorithm
       then
         str;
     case (Algorithm.ELSE(statementLst = stmts),i)
-      equation 
+      equation
         s1 = indentStr(i);
         s2 = stringAppend(s1, "else\n");
         i_1 = i + 2;
@@ -2511,17 +2511,17 @@ algorithm
 end ppElseStr;
 
 protected function indent "function: indent
- 
+
   Print an indentation, given an indent level.
 "
   input Integer inInteger;
-algorithm 
+algorithm
   _:=
   matchcontinue (inInteger)
     local Integer i_1,i;
-    case 0 then (); 
+    case 0 then ();
     case i
-      equation 
+      equation
         Print.printBuf(" ");
         i_1 = i - 1;
         indent(i_1);
@@ -2531,20 +2531,20 @@ algorithm
 end indent;
 
 protected function indentStr "function: indentStr
- 
+
   Print an indentation to a string, given an indent level.
 "
   input Integer inInteger;
   output String outString;
-algorithm 
+algorithm
   outString:=
   matchcontinue (inInteger)
     local
       Integer i_1,i;
       Ident s1,str;
-    case 0 then ""; 
+    case 0 then "";
     case i
-      equation 
+      equation
         i_1 = i - 1;
         s1 = indentStr(i_1);
         str = stringAppend(" ", s1);
@@ -2554,8 +2554,8 @@ algorithm
 end indentStr;
 
 public function getMatchingElements "function getMatchingElements
-  author:  LS 
- 
+  author:  LS
+
   Retrive the elements for which the function given as second argument
   succeeds.
 "
@@ -2565,13 +2565,13 @@ public function getMatchingElements "function getMatchingElements
   partial function FuncTypeElementTo
     input Element inElement;
   end FuncTypeElementTo;
-algorithm 
+algorithm
   elist := Util.listFilter(elist, cond);
 end getMatchingElements;
 
 public function getAllMatchingElements "function getAllMatchingElements
-  author:  PA 
- 
+  author:  PA
+
   Similar to getMatchingElements but traverses down in COMP elements also.
 "
   input list<Element> elist;
@@ -2580,8 +2580,8 @@ public function getAllMatchingElements "function getAllMatchingElements
   partial function FuncTypeElementTo
     input Element inElement;
   end FuncTypeElementTo;
-algorithm 
-  
+algorithm
+
   elist := matchcontinue(elist,cond)
   local list<Element> elist2; Element e;
     case({},_) then {};
@@ -2603,134 +2603,134 @@ end getAllMatchingElements;
 
 
 public function isParameter "function isParameter
-  author: LS 
- 
+  author: LS
+
   Succeeds if element is parameter.
 "
   input Element inElement;
-algorithm 
+algorithm
   _:=
   matchcontinue (inElement)
-    case VAR(varible = PARAM()) then (); 
+    case VAR(varible = PARAM()) then ();
   end matchcontinue;
 end isParameter;
 
 public function isInnerVar "function isInnerVar
-  author: PA 
- 
+  author: PA
+
   Succeeds if element is a variable with prefix inner.
 "
   input Element inElement;
-algorithm 
+algorithm
   _:=
   matchcontinue (inElement)
-    case VAR(innerOuter = Absyn.INNER()) then (); 
-    case VAR(innerOuter = Absyn.INNEROUTER()) then ();       
+    case VAR(innerOuter = Absyn.INNER()) then ();
+    case VAR(innerOuter = Absyn.INNEROUTER()) then ();
   end matchcontinue;
 end isInnerVar;
 
 public function isOuterVar "function isOuterVar
-  author: PA 
- 
+  author: PA
+
   Succeeds if element is a variable with prefix outer.
 "
   input Element inElement;
-algorithm 
+algorithm
   _:=
   matchcontinue (inElement)
-    case VAR(innerOuter = Absyn.OUTER()) then (); 
-    case VAR(innerOuter = Absyn.INNEROUTER()) then ();       
+    case VAR(innerOuter = Absyn.OUTER()) then ();
+    case VAR(innerOuter = Absyn.INNEROUTER()) then ();
   end matchcontinue;
 end isOuterVar;
 
 public function isComp "function isComp
-  author: LS 
- 
+  author: LS
+
   Succeeds if element is component, COMP.
 "
   input Element inElement;
-algorithm 
+algorithm
   _:=
   matchcontinue (inElement)
-    case COMP(ident = _) then (); 
+    case COMP(ident = _) then ();
   end matchcontinue;
 end isComp;
 
 public function getOutputVars "function getOutputVars
-  author: LS 
- 
+  author: LS
+
   Retrieve all output variables from an Element list.
 "
   input list<Element> vl;
   output list<Element> vl_1;
   list<Element> vl_1;
-algorithm 
+algorithm
   vl_1 := getMatchingElements(vl, isOutputVar);
 end getOutputVars;
 
 public function getProtectedVars "
   author: PA
- 
+
   Retrieve all protected variables from an Element list.
 "
   input list<Element> vl;
   output list<Element> vl_1;
   list<Element> vl_1;
-algorithm 
+algorithm
   vl_1 := getMatchingElements(vl, isProtectedVar);
 end getProtectedVars;
 
 public function getBidirVars "function get_output_vars
-  author: LS 
- 
+  author: LS
+
   Retrieve all bidirectional variables from an Element list.
 "
   input list<Element> vl;
   output list<Element> vl_1;
   list<Element> vl_1;
-algorithm 
+algorithm
   vl_1 := getMatchingElements(vl, isBidirVar);
 end getBidirVars;
 
 public function getInputVars "function getInputVars
-  author: HJ 
- 
+  author: HJ
+
   Retrieve all input variables from an Element list.
 "
   input list<Element> vl;
   output list<Element> vl_1;
   list<Element> vl_1;
-algorithm 
+algorithm
   vl_1 := getMatchingElements(vl, isInputVar);
 end getInputVars;
 
 public function generateDaeType "function generateDaeType
- 
+
   Generate a Types.Type from a DAE.Type
   Is needed when investigating the DAE and want to e.g. evaluate expressions.
 "
   input Type inType;
   output Types.Type outType;
-algorithm 
+algorithm
   outType:=
   matchcontinue (inType)
-    case (REAL()) then ((Types.T_REAL({}),NONE)); 
-    case (INT()) then ((Types.T_INTEGER({}),NONE)); 
-    case (BOOL()) then ((Types.T_BOOL({}),NONE)); 
-    case (STRING()) then ((Types.T_STRING({}),NONE)); 
+    case (REAL()) then ((Types.T_REAL({}),NONE));
+    case (INT()) then ((Types.T_INTEGER({}),NONE));
+    case (BOOL()) then ((Types.T_BOOL({}),NONE));
+    case (STRING()) then ((Types.T_STRING({}),NONE));
   end matchcontinue;
 end generateDaeType;
 
 public function setComponentType "function: setComponentType
-  
-  This function takes a dae element list and a type name and 
+
+  This function takes a dae element list and a type name and
   inserts the type name into each Var (variable) of the dae.
   This type name is the origin of the variable.
 "
   input list<Element> inElementLst;
   input Absyn.Path inPath;
   output list<Element> outElementLst;
-algorithm 
+algorithm
   outElementLst:=
   matchcontinue (inElementLst,inPath)
     local
@@ -2750,164 +2750,164 @@ algorithm
 			Absyn.InnerOuter io;
 			Types.Type ftp;
 			VarProtection prot;
-    case ({},_) then {}; 
+    case ({},_) then {};
     case ((VAR(componentRef = cr,varible = kind,variable = dir, protection=prot,input_ = tp,one = bind,binding = dim,value = flow_,flow_ = lst,variableAttributesOption = dae_var_attr,absynCommentOption = comment,innerOuter=io,fullType=ftp) :: xs),newtype)
-      equation 
+      equation
         xs_1 = setComponentType(xs, newtype);
       then
         (VAR(cr,kind,dir,prot,tp,bind,dim,flow_,(newtype :: lst),
           dae_var_attr,comment,io,ftp) :: xs_1);
     case ((x :: xs),newtype)
-      equation 
+      equation
         xs_1 = setComponentType(xs, newtype);
       then
         (x :: xs_1);
   end matchcontinue;
 end setComponentType;
 
-public function isOutputVar "function: isOutputVar 
-  author: LS 
- 
+public function isOutputVar "function: isOutputVar
+  author: LS
+
   Succeeds if Element is an output variable.
 "
   input Element inElement;
-algorithm 
+algorithm
   _:=
   matchcontinue (inElement)
     local
       Exp.ComponentRef n;
       Type ty;
-    case VAR(componentRef = n,varible = VARIABLE(),variable = OUTPUT(),input_ = ty) then (); 
+    case VAR(componentRef = n,varible = VARIABLE(),variable = OUTPUT(),input_ = ty) then ();
   end matchcontinue;
 end isOutputVar;
 
 public function isProtectedVar "
-  author: PA 
- 
+  author: PA
+
   Succeeds if Element is a protected variable.
 "
   input Element inElement;
-algorithm 
+algorithm
   _:=
   matchcontinue (inElement)
     local
       Exp.ComponentRef n;
       Type ty;
-    case VAR(protection=PROTECTED()) then (); 
+    case VAR(protection=PROTECTED()) then ();
   end matchcontinue;
 end isProtectedVar;
 
 public function isPublicVar "
-  author: PA 
- 
+  author: PA
+
   Succeeds if Element is a public variable.
 "
   input Element inElement;
-algorithm 
+algorithm
   _:=
   matchcontinue (inElement)
     local
       Exp.ComponentRef n;
       Type ty;
-    case VAR(protection=PUBLIC()) then (); 
+    case VAR(protection=PUBLIC()) then ();
   end matchcontinue;
 end isPublicVar;
 
-public function isBidirVar "function: isBidirVar 
-  author: LS 
- 
+public function isBidirVar "function: isBidirVar
+  author: LS
+
   Succeeds if Element is a bidirectional variable.
 "
   input Element inElement;
-algorithm 
+algorithm
   _:=
   matchcontinue (inElement)
     local
       Exp.ComponentRef n;
       Type ty;
-    case VAR(componentRef = n,varible = VARIABLE(),variable = BIDIR(),input_ = ty) then (); 
+    case VAR(componentRef = n,varible = VARIABLE(),variable = BIDIR(),input_ = ty) then ();
   end matchcontinue;
 end isBidirVar;
 
-public function isInputVar "function: isInputVar 
+public function isInputVar "function: isInputVar
   author: HJ
- 
+
   Succeeds if Element is an input variable.
 "
   input Element inElement;
-algorithm 
+algorithm
   _:=
   matchcontinue (inElement)
     local
       Exp.ComponentRef n;
       Type ty;
-    case VAR(componentRef = n,varible = VARIABLE(),variable = INPUT(),input_ = ty) then (); 
+    case VAR(componentRef = n,varible = VARIABLE(),variable = INPUT(),input_ = ty) then ();
   end matchcontinue;
 end isInputVar;
 
-protected function isNotVar "function: isNotVar 
+protected function isNotVar "function: isNotVar
   author: LS
- 
+
   Succeeds if Element is not a variable.
 "
   input Element e;
-algorithm 
+algorithm
   failure(isVar(e));
 end isNotVar;
 
-public function isVar "function: isVar 
+public function isVar "function: isVar
   author: LS
- 
+
   Succeeds if Element is a variable.
 "
   input Element inElement;
-algorithm 
+algorithm
   _:=
   matchcontinue (inElement)
-    case VAR(componentRef = _) then (); 
+    case VAR(componentRef = _) then ();
   end matchcontinue;
 end isVar;
 
 public function isAlgorithm "function: isAlgorithm
   author: LS
- 
+
   Succeeds if Element is an algorithm.
 "
   input Element inElement;
-algorithm 
+algorithm
   _:=
   matchcontinue (inElement)
-    case ALGORITHM(algorithm_ = _) then (); 
+    case ALGORITHM(algorithm_ = _) then ();
   end matchcontinue;
 end isAlgorithm;
 
 public function isFunction "function: isFunction
   author: LS
- 
+
   Succeeds if Element is not a function.
 "
   input Element inElement;
-algorithm 
+algorithm
   _:=
   matchcontinue (inElement)
-    case FUNCTION(path = _) then (); 
-    case EXTFUNCTION(path = _) then (); 
+    case FUNCTION(path = _) then ();
+    case EXTFUNCTION(path = _) then ();
   end matchcontinue;
 end isFunction;
 
 public function dumpDebug "
 
- Dump the data structures in a 
+ Dump the data structures in a
  paranthesised way
 
 "
   input DAElist inDAElist;
-algorithm 
+algorithm
   _:=
   matchcontinue (inDAElist)
     local list<Element> elist;
     case DAE(elementLst = elist)
-      equation 
+      equation
         Print.printBuf("DAE(");
         dumpDebugElist(elist);
         Print.printBuf(")");
@@ -2917,19 +2917,19 @@ algorithm
 end dumpDebug;
 
 protected function dumpDebugElist "function: dumpDebugElist
- 
+
   Helper function to dump_debug.
 "
   input list<Element> inElementLst;
-algorithm 
+algorithm
   _:=
   matchcontinue (inElementLst)
     local
       Element first;
       list<Element> rest;
-    case {} then (); 
+    case {} then ();
     case (first :: rest)
-      equation 
+      equation
         dumpDebugElement(first);
         Print.printBuf("\n");
         dumpDebugElist(rest);
@@ -2939,11 +2939,11 @@ algorithm
 end dumpDebugElist;
 
 public function dumpDebugElement "function: dumpDebugElement
- 
+
   Dump element using parenthesis.
 "
   input Element inElement;
-algorithm 
+algorithm
   _:=
   matchcontinue (inElement)
     local
@@ -2959,7 +2959,7 @@ algorithm
       Absyn.Path fpath;
       tuple<Types.TType, Option<Absyn.Path>> t;
     case VAR(componentRef = cr,varible = vk,variable = vd,input_ = ty,one = NONE,variableAttributesOption = dae_var_attr,absynCommentOption = comment)
-      equation 
+      equation
         Print.printBuf("VAR(");
         Exp.printComponentRef(cr);
         Print.printBuf(", ");
@@ -2973,7 +2973,7 @@ algorithm
       then
         ();
     case VAR(componentRef = cr,varible = vk,variable = vd,input_ = ty,one = SOME(e),variableAttributesOption = dae_var_attr,absynCommentOption = comment)
-      equation 
+      equation
         Print.printBuf("VAR(");
         Exp.printComponentRef(cr);
         Print.printBuf(", ");
@@ -2989,7 +2989,7 @@ algorithm
       then
         ();
     case DEFINE(componentRef = cr,exp = exp)
-      equation 
+      equation
         Print.printBuf("DEFINE(");
         Exp.printComponentRef(cr);
         Print.printBuf(", ");
@@ -2998,7 +2998,7 @@ algorithm
       then
         ();
     case INITIALDEFINE(componentRef = cr,exp = exp)
-      equation 
+      equation
         Print.printBuf("INITIALDEFINE(");
         Exp.printComponentRef(cr);
         Print.printBuf(", ");
@@ -3007,7 +3007,7 @@ algorithm
       then
         ();
     case EQUATION(exp = e1,scalar = e2)
-      equation 
+      equation
         Print.printBuf("EQUATION(");
         Exp.printExp(e1);
         Print.printBuf(",");
@@ -3016,7 +3016,7 @@ algorithm
       then
         ();
     case INITIALEQUATION(exp1 = e1,exp2 = e2)
-      equation 
+      equation
         Print.printBuf("INITIALEQUATION(");
         Exp.printExp(e1);
         Print.printBuf(",");
@@ -3025,17 +3025,17 @@ algorithm
       then
         ();
     case ALGORITHM(algorithm_ = _)
-      equation 
+      equation
         Print.printBuf("ALGORITHM()");
       then
         ();
     case INITIALALGORITHM(algorithm_ = _)
-      equation 
+      equation
         Print.printBuf("INITIALALGORITHM()");
       then
         ();
     case COMP(ident = n,dAElist = l)
-      equation 
+      equation
         Print.printBuf("COMP(");
         Print.printBuf(n);
         Print.printBuf(",");
@@ -3044,7 +3044,7 @@ algorithm
       then
         ();
     case FUNCTION(path = fpath,dAElist = l,type_ = t)
-      equation 
+      equation
         Print.printBuf("FUNCTION(");
         fstr = Absyn.pathString(fpath);
         Print.printBuf(fstr);
@@ -3056,7 +3056,7 @@ algorithm
       then
         ();
     case _
-      equation 
+      equation
         Print.printBuf("UNKNOWN ");
       then
         ();
@@ -3064,8 +3064,8 @@ algorithm
 end dumpDebugElement;
 
 public function findElement "function: findElement
- 
-  Search for an element for which the function passed as second 
+
+  Search for an element for which the function passed as second
   argument succeds. If no element is found return NONE.
 "
   input list<Element> inElementLst;
@@ -3074,7 +3074,7 @@ public function findElement "function: findElement
   partial function FuncTypeElementTo
     input Element inElement;
   end FuncTypeElementTo;
-algorithm 
+algorithm
   outElementOption:=
   matchcontinue (inElementLst,inFuncTypeElementTo)
     local
@@ -3082,14 +3082,14 @@ algorithm
       list<Element> rest;
       FuncTypeElementTo f;
       Option<Element> e_1;
-    case ({},_) then NONE; 
+    case ({},_) then NONE;
     case ((e :: rest),f)
-      equation 
+      equation
         f(e);
       then
         SOME(e);
     case ((e :: rest),f)
-      equation 
+      equation
         failure(f(e));
         e_1 = findElement(rest, f);
       then
@@ -3098,30 +3098,30 @@ algorithm
 end findElement;
 
 public function dumpGraphviz "
- Graphviz functions to visualize 
+ Graphviz functions to visualize
  the dae
 "
   input DAElist dae;
   Graphviz.Node r;
-algorithm 
+algorithm
   r := buildGraphviz(dae);
   Graphviz.dump(r);
 end dumpGraphviz;
 
 protected function buildGraphviz "function: buildGraphviz
- 
+
   Builds the graphviz node from a dae list.
 "
   input DAElist inDAElist;
   output Graphviz.Node outNode;
-algorithm 
+algorithm
   outNode:=
   matchcontinue (inDAElist)
     local
       list<Element> vars,nonvars,els;
       list<Graphviz.Node> nonvarnodes,varnodes,nodelist;
     case DAE(elementLst = els)
-      equation 
+      equation
         vars = getMatchingElements(els, isVar);
         nonvars = getMatchingElements(els, isNotVar);
         nonvarnodes = buildGrList(nonvars);
@@ -3133,12 +3133,12 @@ algorithm
 end buildGraphviz;
 
 protected function buildGrList "function buildGrList
- 
+
   Helper function to build_graphviz.
 "
   input list<Element> inElementLst;
   output list<Graphviz.Node> outGraphvizNodeLst;
-algorithm 
+algorithm
   outGraphvizNodeLst:=
   matchcontinue (inElementLst)
     local
@@ -3146,9 +3146,9 @@ algorithm
       list<Graphviz.Node> nodelist;
       Element el;
       list<Element> rest;
-    case {} then {}; 
+    case {} then {};
     case (el :: rest)
-      equation 
+      equation
         node = buildGrElement(el);
         nodelist = buildGrList(rest);
       then
@@ -3157,20 +3157,20 @@ algorithm
 end buildGrList;
 
 protected function buildGrVars "function buildGrVars
- 
+
   Helper function to build_graphviz.
 "
   input list<Element> inElementLst;
   output list<Graphviz.Node> outGraphvizNodeLst;
-algorithm 
+algorithm
   outGraphvizNodeLst:=
   matchcontinue (inElementLst)
     local
       list<Ident> strlist;
       list<Element> vars;
-    case {} then {}; 
+    case {} then {};
     case vars
-      equation 
+      equation
         (strlist,_) = buildGrStrlist(vars, buildGrVarStr, 10);
       then
         {Graphviz.LNODE("VARS",strlist,{Graphviz.box},{})};
@@ -3178,7 +3178,7 @@ algorithm
 end buildGrVars;
 
 public function buildGrStrlist "function buildGrStrlist
- 
+
   Helper function to build_graphviz.
 "
   input list<Type_a> inTypeALst;
@@ -3191,7 +3191,7 @@ public function buildGrStrlist "function buildGrStrlist
     input Type_a inTypeA;
     output String outString;
   end FuncTypeType_aToString;
-algorithm 
+algorithm
   (outStringLst,outTypeALst):=
   matchcontinue (inTypeALst,inFuncTypeTypeAToString,inInteger)
     local
@@ -3201,14 +3201,14 @@ algorithm
       list<Ident> strlist;
       Ident str;
       Type_a var;
-    case ({},_,_) then ({},{}); 
+    case ({},_,_) then ({},{});
     case (ignored,printer,count)
-      equation 
+      equation
         (count <= 0) = true;
       then
         ({"..."},ignored);
     case ((var :: rest),printer,count)
-      equation 
+      equation
         (count > 0) = true;
         count_1 = count - 1;
         (strlist,ignored) = buildGrStrlist(rest, printer, count_1);
@@ -3219,12 +3219,12 @@ algorithm
 end buildGrStrlist;
 
 protected function buildGrVarStr "function buildGrVarStr
- 
+
   Helper function to build_graphviz.
 "
   input Element inElement;
   output String outString;
-algorithm 
+algorithm
   outString:=
   matchcontinue (inElement)
     local
@@ -3232,12 +3232,12 @@ algorithm
       Exp.ComponentRef cr;
       Exp.Exp exp;
     case VAR(componentRef = cr,one = NONE)
-      equation 
+      equation
         str = Exp.printComponentRefStr(cr);
       then
         str;
     case VAR(componentRef = cr,one = SOME(exp))
-      equation 
+      equation
         str = Exp.printComponentRefStr(cr);
         expstr = printExpStrSpecial(exp);
         str_1 = stringAppend(str, " = ");
@@ -3248,25 +3248,25 @@ algorithm
 end buildGrVarStr;
 
 protected function printExpStrSpecial "function: printExpStrSpecial
- 
+
   Prints an expression to a string suitable for graphviz.
 "
   input Exp.Exp inExp;
   output String outString;
-algorithm 
+algorithm
   outString:=
   matchcontinue (inExp)
     local
       Ident s_1,s_2,s,str;
       Exp.Exp exp;
     case Exp.SCONST(string = s)
-      equation 
+      equation
         s_1 = stringAppend("\\\"", s);
         s_2 = stringAppend(s_1, "\\\"");
       then
         s_2;
     case exp
-      equation 
+      equation
         str = Exp.printExpStr(exp);
       then
         str;
@@ -3274,12 +3274,12 @@ algorithm
 end printExpStrSpecial;
 
 protected function buildGrElement "function: buildGrElement
- 
+
   Builds a Graphviz.Node from an element.
 "
   input Element inElement;
   output Graphviz.Node outNode;
-algorithm 
+algorithm
   outNode:=
   matchcontinue (inElement)
     local
@@ -3293,13 +3293,13 @@ algorithm
       DAElist dae;
       Absyn.Path fpath;
     case VAR(componentRef = cr,varible = vk,variable = vd,input_ = ty,one = NONE)
-      equation 
+      equation
         crstr = Exp.printComponentRefStr(cr);
         vkstr = dumpKindStr(vk);
       then
         Graphviz.LNODE("VAR",{crstr,vkstr},{},{});
     case VAR(componentRef = cr,varible = vk,variable = vd,input_ = ty,one = SOME(exp))
-      equation 
+      equation
         crstr = Exp.printComponentRefStr(cr);
         vkstr = dumpKindStr(vk);
         expstr = printExpStrSpecial(exp);
@@ -3307,41 +3307,41 @@ algorithm
       then
         Graphviz.LNODE("VAR",{crstr,vkstr,expstr_1},{},{});
     case DEFINE(componentRef = cr,exp = exp)
-      equation 
+      equation
         crstr = Exp.printComponentRefStr(cr);
         expstr = printExpStrSpecial(exp);
         expstr_1 = stringAppend("= ", expstr);
       then
         Graphviz.LNODE("DEFINE",{crstr,expstr_1},{},{});
     case EQUATION(exp = e1,scalar = e2)
-      equation 
+      equation
         e1str = printExpStrSpecial(e1);
         e2str = printExpStrSpecial(e2);
       then
         Graphviz.LNODE("EQUATION",{e1str,"=",e2str},{},{});
-    case ALGORITHM(algorithm_ = _) then Graphviz.NODE("ALGORITHM",{},{}); 
+    case ALGORITHM(algorithm_ = _) then Graphviz.NODE("ALGORITHM",{},{});
     case INITIALDEFINE(componentRef = cr,exp = exp)
-      equation 
+      equation
         crstr = Exp.printComponentRefStr(cr);
         expstr = printExpStrSpecial(exp);
         expstr_1 = stringAppend("= ", expstr);
       then
         Graphviz.LNODE("INITIALDEFINE",{crstr,expstr_1},{},{});
     case INITIALEQUATION(exp1 = e1,exp2 = e2)
-      equation 
+      equation
         e1str = printExpStrSpecial(e1);
         e2str = printExpStrSpecial(e2);
       then
         Graphviz.LNODE("INITIALEQUATION",{e1str,"=",e2str},{},{});
-    case INITIALALGORITHM(algorithm_ = _) then Graphviz.NODE("INITIALALGORITHM",{},{}); 
+    case INITIALALGORITHM(algorithm_ = _) then Graphviz.NODE("INITIALALGORITHM",{},{});
     case COMP(ident = n,dAElist = dae)
-      equation 
+      equation
         node = buildGraphviz(dae);
       then
         Graphviz.LNODE("COMP",{n},{},{node});
     case FUNCTION(path = fpath,dAElist = dae,type_ = ty)
       local tuple<Types.TType, Option<Absyn.Path>> ty;
-      equation 
+      equation
         node = buildGraphviz(dae);
         fstr = Absyn.pathString(fpath);
       then
@@ -3350,33 +3350,33 @@ algorithm
 end buildGrElement;
 
 public function getVariableBindingsStr "function: getVariableBindingsStr
- 
-  This function takes a `DAE.Element\' list and returns a comma separated 
+
+  This function takes a `DAE.Element\' list and returns a comma separated
   string of variable bindings.
   E.g. model A Real x=1; Real y=2; end A; => \"1,2\"
 "
   input list<Element> elts;
   output String str;
   list<Element> varlst;
-algorithm 
+algorithm
   varlst := getVariableList(elts);
   str := getBindingsStr(varlst);
 end getVariableBindingsStr;
 
 protected function getVariableList "function: getVariableList
- 
+
   Return all variables from an Element list.
 "
   input list<Element> inElementLst;
   output list<Element> outElementLst;
-algorithm 
+algorithm
   outElementLst:=
   matchcontinue (inElementLst)
     local
       list<Element> res,lst;
       Exp.ComponentRef a;
       VarKind b;
-      Element x;    
+      Element x;
       VarDirection c;
       VarProtection prot;
       Type d;
@@ -3389,26 +3389,26 @@ algorithm
       Absyn.InnerOuter io;
       Types.Type tp;
     case ((x as VAR(_,_,_,_,_,_,_,_,_,_,_,_,_)) :: lst)
-      equation 
+      equation
         res = getVariableList(lst);
       then
         (x :: res);
     case (_ :: lst)
-      equation 
+      equation
         res = getVariableList(lst);
       then
         res;
-    case {} then {}; 
+    case {} then {};
   end matchcontinue;
 end getVariableList;
 
 protected function getBindingsStr "function: getBindingsStr
- 
+
   Retrive the bindings from a list of Elements and output to a string.
 "
   input list<Element> inElementLst;
   output String outString;
-algorithm 
+algorithm
   outString:=
   matchcontinue (inElementLst)
     local
@@ -3418,7 +3418,7 @@ algorithm
       Exp.Exp e;
       list<Element> lst;
     case (((v as VAR(componentRef = cr,one = SOME(e))) :: (lst as (_ :: _))))
-      equation 
+      equation
         expstr = Exp.printExpStr(e);
         s3 = stringAppend(expstr, ",");
         s4 = getBindingsStr(lst);
@@ -3426,44 +3426,44 @@ algorithm
       then
         str;
     case (((v as VAR(componentRef = cr,one = NONE)) :: (lst as (_ :: _))))
-      equation 
+      equation
         s1 = " ,";
         s2 = getBindingsStr(lst);
         str = stringAppend(s1, s2);
       then
         str;
     case ({(v as VAR(componentRef = cr,one = SOME(e)))})
-      equation 
+      equation
         str = Exp.printExpStr(e);
       then
         str;
-    case ({(v as VAR(componentRef = cr,one = NONE))}) then ""; 
+    case ({(v as VAR(componentRef = cr,one = NONE))}) then "";
   end matchcontinue;
 end getBindingsStr;
 
 public function toFlow "function: toFlow
- 
+
   Create a Flow, given a ClassInf.State and a boolean flow value.
 "
   input Boolean inBoolean;
   input ClassInf.State inState;
   output Flow outFlow;
-algorithm 
+algorithm
   outFlow:=
   matchcontinue (inBoolean,inState)
-    case (true,_) then FLOW(); 
-    case (_,ClassInf.CONNECTOR(string = _)) then NON_FLOW(); 
-    case (_,_) then NON_CONNECTOR(); 
+    case (true,_) then FLOW();
+    case (_,ClassInf.CONNECTOR(string = _)) then NON_FLOW();
+    case (_,_) then NON_CONNECTOR();
   end matchcontinue;
 end toFlow;
 
 public function getFlowVariables "function: getFlowVariables
- 
+
   Retrive the flow variables of an Element list.
 "
   input list<Element> inElementLst;
   output list<Exp.ComponentRef> outExpComponentRefLst;
-algorithm 
+algorithm
   outExpComponentRefLst:=
   matchcontinue (inElementLst)
     local
@@ -3471,14 +3471,14 @@ algorithm
       Exp.ComponentRef cr;
       list<Element> xs,lst;
       Ident id;
-    case ({}) then {}; 
+    case ({}) then {};
     case ((VAR(componentRef = cr,value = FLOW()) :: xs))
-      equation 
+      equation
         res = getFlowVariables(xs);
       then
         (cr :: res);
     case ((COMP(ident = id,dAElist = DAE(elementLst = lst)) :: xs))
-      equation 
+      equation
         res1 = getFlowVariables(lst);
         res1_1 = getFlowVariables2(res1, id);
         res2 = getFlowVariables(xs);
@@ -3486,7 +3486,7 @@ algorithm
       then
         res;
     case ((_ :: xs))
-      equation 
+      equation
         res = getFlowVariables(xs);
       then
         res;
@@ -3494,22 +3494,22 @@ algorithm
 end getFlowVariables;
 
 protected function getFlowVariables2 "function: getFlowVariables2
- 
+
   Helper function to get_flow_variables.
 "
   input list<Exp.ComponentRef> inExpComponentRefLst;
   input Ident inIdent;
   output list<Exp.ComponentRef> outExpComponentRefLst;
-algorithm 
+algorithm
   outExpComponentRefLst:=
   matchcontinue (inExpComponentRefLst,inIdent)
     local
       Ident id;
       list<Exp.ComponentRef> res,xs;
       Exp.ComponentRef cr_1,cr;
-    case ({},id) then {}; 
+    case ({},id) then {};
     case ((cr :: xs),id)
-      equation 
+      equation
         res = getFlowVariables2(xs, id);
         cr_1 = Exp.joinCrefs(Exp.CREF_IDENT(id,{}), cr);
       then
@@ -3519,7 +3519,7 @@ end getFlowVariables2;
 
 public function daeToRecordValue "function: daeToRecordValue
   Transforms a list of elements into a record value.
-  TODO: This does not work for records inside records. 
+  TODO: This does not work for records inside records.
   For a general approach we need to build an environment from the DAE and then
   instead investigate the variables and lookup their values from the created environment.
 "
@@ -3527,7 +3527,7 @@ public function daeToRecordValue "function: daeToRecordValue
   input list<Element> inElementLst;
   input Boolean inBoolean;
   output Values.Value outValue;
-algorithm 
+algorithm
   outValue:=
   matchcontinue (inPath,inElementLst,inBoolean)
     local
@@ -3540,21 +3540,21 @@ algorithm
       Exp.Exp rhs;
       list<Element> rest;
       Boolean impl;
-    case (cname,{},_) then Values.RECORD(cname,{},{});  /* impl */ 
+    case (cname,{},_) then Values.RECORD(cname,{},{});  /* impl */
     case (cname,(EQUATION(exp = Exp.CREF(componentRef = cr),scalar = rhs) :: rest),impl)
-      equation 
+      equation
         (_,value,_) = Ceval.ceval(Env.emptyCache,{}, rhs, impl, NONE, NONE, Ceval.MSG());
         Values.RECORD(cname,vals,names) = daeToRecordValue(cname, rest, impl);
         cr_str = Exp.printComponentRefStr(cr);
       then
         Values.RECORD(cname,(value :: vals),(cr_str :: names));
     case (cname,(_ :: rest),impl)
-      equation 
+      equation
         res = daeToRecordValue(cname, rest, impl);
       then
         res;
     case (_,_,_)
-      equation 
+      equation
         Debug.fprint("failtrace", "-dae_to_record_value failed\n");
       then
         fail();
@@ -3562,17 +3562,17 @@ algorithm
 end daeToRecordValue;
 
 public function toModelicaForm "function toModelicaForm.
- 
+
   Transforms all variables from a.b.c to a_b_c, etc
 "
   input DAElist inDAElist;
   output DAElist outDAElist;
-algorithm 
+algorithm
   outDAElist:=
   matchcontinue (inDAElist)
     local list<Element> elts_1,elts;
     case (DAE(elementLst = elts))
-      equation 
+      equation
         elts_1 = toModelicaFormElts(elts);
       then
         DAE(elts_1);
@@ -3580,12 +3580,12 @@ algorithm
 end toModelicaForm;
 
 protected function toModelicaFormElts "function: toModelicaFormElts
- 
+
   Helper function to to_modelica_form.
 "
   input list<Element> inElementLst;
   output list<Element> outElementLst;
-algorithm 
+algorithm
   outElementLst:=
   matchcontinue (inElementLst)
     local
@@ -3609,9 +3609,9 @@ algorithm
       Types.Type tp;
       Absyn.InnerOuter io;
       VarProtection prot;
-    case ({}) then {}; 
+    case ({}) then {};
     case ((VAR(componentRef = cr,varible = a,variable = b,protection=prot,input_ = c,one = d,binding = e,value = g,flow_ = h,variableAttributesOption = dae_var_attr,absynCommentOption = comment,innerOuter=io,fullType=tp) :: elts))
-      equation 
+      equation
         str = Exp.printComponentRefStr(cr);
         str_1 = Util.stringReplaceChar(str, ".", "_");
         elts_1 = toModelicaFormElts(elts);
@@ -3621,7 +3621,7 @@ algorithm
           comment,io,tp) :: elts_1);
     case ((DEFINE(componentRef = cr,exp = e) :: elts))
       local Exp.Exp e;
-      equation 
+      equation
         e_1 = toModelicaFormExp(e);
         cr_1 = toModelicaFormCref(cr);
         elts_1 = toModelicaFormElts(elts);
@@ -3629,21 +3629,21 @@ algorithm
         (DEFINE(cr_1,e_1) :: elts_1);
     case ((INITIALDEFINE(componentRef = cr,exp = e) :: elts))
       local Exp.Exp e;
-      equation 
+      equation
         e_1 = toModelicaFormExp(e);
         cr_1 = toModelicaFormCref(cr);
         elts_1 = toModelicaFormElts(elts);
       then
         (INITIALDEFINE(cr_1,e_1) :: elts_1);
     case ((EQUATION(exp = e1,scalar = e2) :: elts))
-      equation 
+      equation
         e1_1 = toModelicaFormExp(e1);
         e2_1 = toModelicaFormExp(e2);
         elts_1 = toModelicaFormElts(elts);
       then
         (EQUATION(e1_1,e2_1) :: elts_1);
     case ((WHEN_EQUATION(condition = e1,equations = welts,elsewhen_ = SOME(elt)) :: elts))
-      equation 
+      equation
         e1_1 = toModelicaFormExp(e1);
         welts_1 = toModelicaFormElts(welts);
         {elt_1} = toModelicaFormElts({elt});
@@ -3651,14 +3651,14 @@ algorithm
       then
         (WHEN_EQUATION(e1_1,welts_1,SOME(elt_1)) :: elts_1);
     case ((WHEN_EQUATION(condition = e1,equations = welts,elsewhen_ = NONE) :: elts))
-      equation 
+      equation
         e1_1 = toModelicaFormExp(e1);
         welts_1 = toModelicaFormElts(welts);
         elts_1 = toModelicaFormElts(elts);
       then
         (WHEN_EQUATION(e1_1,welts_1,NONE) :: elts_1);
     case ((IF_EQUATION(condition1 = e1,equations2 = telts,equations3 = eelts) :: elts))
-      equation 
+      equation
         e1_1 = toModelicaFormExp(e1);
         telts_1 = toModelicaFormElts(telts);
         eelts_1 = toModelicaFormElts(eelts);
@@ -3666,7 +3666,7 @@ algorithm
       then
         (IF_EQUATION(e1_1,telts_1,eelts_1) :: elts_1);
     case ((INITIAL_IF_EQUATION(condition1 = e1,equations2 = telts,equations3 = eelts) :: elts))
-      equation 
+      equation
         e1_1 = toModelicaFormExp(e1);
         telts_1 = toModelicaFormElts(telts);
         eelts_1 = toModelicaFormElts(eelts);
@@ -3674,7 +3674,7 @@ algorithm
       then
         (INITIAL_IF_EQUATION(e1_1,telts_1,eelts_1) :: elts_1);
     case ((INITIALEQUATION(exp1 = e1,exp2 = e2) :: elts))
-      equation 
+      equation
         e1_1 = toModelicaFormExp(e1);
         e2_1 = toModelicaFormExp(e2);
         elts_1 = toModelicaFormElts(elts);
@@ -3682,40 +3682,40 @@ algorithm
         (INITIALEQUATION(e1_1,e2_1) :: elts_1);
     case ((ALGORITHM(algorithm_ = a) :: elts))
       local Algorithm.Algorithm a;
-      equation 
+      equation
         print("to_modelica_form_elts(ALGORITHM) not impl. yet\n");
         elts_1 = toModelicaFormElts(elts);
       then
         (ALGORITHM(a) :: elts_1);
     case ((INITIALALGORITHM(algorithm_ = a) :: elts))
       local Algorithm.Algorithm a;
-      equation 
+      equation
         print("to_modelica_form_elts(INITIALALGORITHM) not impl. yet\n");
         elts_1 = toModelicaFormElts(elts);
       then
         (INITIALALGORITHM(a) :: elts_1);
     case ((COMP(ident = id,dAElist = dae) :: elts))
-      equation 
+      equation
         dae_1 = toModelicaForm(dae);
         elts_1 = toModelicaFormElts(elts);
       then
         (COMP(id,dae_1) :: elts_1);
     case ((FUNCTION(path = p,dAElist = dae,type_ = t) :: elts))
-      equation 
+      equation
         dae_1 = toModelicaForm(dae);
         elts_1 = toModelicaFormElts(elts);
       then
         (FUNCTION(p,dae_1,t) :: elts_1);
     case ((EXTFUNCTION(path = p,dAElist = dae,type_ = t,externalDecl = d) :: elts))
       local ExternalDecl d;
-      equation 
+      equation
         elts_1 = toModelicaFormElts(elts);
         dae_1 = toModelicaForm(dae);
       then
         (EXTFUNCTION(p,dae,t,d) :: elts_1);
     case ((ASSERT(condition = e1,message=e2) :: elts))
       local Exp.Exp e1,e2,e_1,e_2;
-      equation 
+      equation
         elts_1 = toModelicaFormElts(elts);
         e_1 = toModelicaFormExp(e1);
         e_2 = toModelicaFormExp(e2);
@@ -3725,44 +3725,44 @@ algorithm
 end toModelicaFormElts;
 
 protected function toModelicaFormExpOpt "function: toModelicaFormExpOpt
- 
+
   Helper function to to_mdelica_form_elts.
 "
   input Option<Exp.Exp> inExpExpOption;
   output Option<Exp.Exp> outExpExpOption;
-algorithm 
+algorithm
   outExpExpOption:=
   matchcontinue (inExpExpOption)
     local Exp.Exp e_1,e;
     case (SOME(e))
-      equation 
+      equation
         e_1 = toModelicaFormExp(e);
       then
         SOME(e_1);
-    case (NONE) then NONE; 
+    case (NONE) then NONE;
   end matchcontinue;
 end toModelicaFormExpOpt;
 
 protected function toModelicaFormCref "function: toModelicaFormCref
- 
+
   Helper function to to_modelica_form_elts.
 "
   input Exp.ComponentRef cr;
   output Exp.ComponentRef outComponentRef;
   Ident str,str_1;
-algorithm 
+algorithm
   str := Exp.printComponentRefStr(cr);
   str_1 := Util.stringReplaceChar(str, ".", "_");
   outComponentRef := Exp.CREF_IDENT(str_1,{});
 end toModelicaFormCref;
 
 protected function toModelicaFormExp "function: toModelicaFormExp
- 
+
   Helper function to to_modelica_form_elts.
 "
   input Exp.Exp inExp;
   output Exp.Exp outExp;
-algorithm 
+algorithm
   outExp:=
   matchcontinue (inExp)
     local
@@ -3776,40 +3776,40 @@ algorithm
       Integer i;
       Option<Exp.Exp> eopt_1,eopt;
     case (Exp.CREF(componentRef = cr,ty = t))
-      equation 
+      equation
         cr_1 = toModelicaFormCref(cr);
       then
         Exp.CREF(cr_1,t);
     case (Exp.BINARY(exp1 = e1,operator = op,exp2 = e2))
-      equation 
+      equation
         e1_1 = toModelicaFormExp(e1);
         e2_1 = toModelicaFormExp(e2);
       then
         Exp.BINARY(e1_1,op,e2_1);
     case (Exp.LBINARY(exp1 = e1,operator = op,exp2 = e2))
-      equation 
+      equation
         e1_1 = toModelicaFormExp(e1);
         e2_1 = toModelicaFormExp(e2);
       then
         Exp.LBINARY(e1_1,op,e2_1);
     case (Exp.UNARY(operator = op,exp = e))
-      equation 
+      equation
         e_1 = toModelicaFormExp(e);
       then
         Exp.UNARY(op,e_1);
     case (Exp.LUNARY(operator = op,exp = e))
-      equation 
+      equation
         e_1 = toModelicaFormExp(e);
       then
         Exp.LUNARY(op,e_1);
     case (Exp.RELATION(exp1 = e1,operator = op,exp2 = e2))
-      equation 
+      equation
         e1_1 = toModelicaFormExp(e1);
         e2_1 = toModelicaFormExp(e2);
       then
         Exp.RELATION(e1_1,op,e2_1);
     case (Exp.IFEXP(expCond = e1,expThen = e2,expElse = e3))
-      equation 
+      equation
         e1_1 = toModelicaFormExp(e1);
         e2_1 = toModelicaFormExp(e2);
         e3_1 = toModelicaFormExp(e3);
@@ -3817,42 +3817,42 @@ algorithm
         Exp.IFEXP(e1_1,e2_1,e3_1);
     case (Exp.CALL(path = f,expLst = expl,tuple_ = t,builtin = b,ty=tp))
       local Boolean t; Exp.Type tp;
-      equation 
+      equation
         expl_1 = Util.listMap(expl, toModelicaFormExp);
       then
         Exp.CALL(f,expl_1,t,b,tp);
     case (Exp.ARRAY(ty = t,scalar = b,array = expl))
-      equation 
+      equation
         expl_1 = Util.listMap(expl, toModelicaFormExp);
       then
         Exp.ARRAY(t,b,expl_1);
     case (Exp.TUPLE(PR = expl))
-      equation 
+      equation
         expl_1 = Util.listMap(expl, toModelicaFormExp);
       then
         Exp.TUPLE(expl_1);
     case (Exp.CAST(ty = t,exp = e))
-      equation 
+      equation
         e_1 = toModelicaFormExp(e);
       then
         Exp.CAST(t,e_1);
     case (Exp.ASUB(exp = e,sub = i))
-      equation 
+      equation
         e_1 = toModelicaFormExp(e);
       then
         Exp.ASUB(e_1,i);
     case (Exp.SIZE(exp = e,sz = eopt))
-      equation 
+      equation
         e_1 = toModelicaFormExp(e);
         eopt_1 = toModelicaFormExpOpt(eopt);
       then
         Exp.SIZE(e_1,eopt_1);
-    case (e) then e; 
+    case (e) then e;
   end matchcontinue;
 end toModelicaFormExp;
 
 public function getNamedFunction "function: getNamedFunction
- 
+
   return the FUNCTION with the given name. Returns empty list if not found
   TODO: Only top level functions are checked. Add recursing into the DAE
   and path name checking.
@@ -3861,31 +3861,31 @@ public function getNamedFunction "function: getNamedFunction
   input Absyn.Path inPath;
   input list<Element> inElementLst;
   output list<Element> outElementLst;
-algorithm 
+algorithm
   outElementLst:=
   matchcontinue (inPath,inElementLst)
     local
       Absyn.Path path,elpath;
       Element el;
       list<Element> rest,res;
-    case (_,{}) then {}; 
+    case (_,{}) then {};
     case (path,((el as FUNCTION(path = elpath)) :: rest))
-      equation 
+      equation
         true = ModUtil.pathEqual(path, elpath);
       then
         {el};
     case (path,((el as EXTFUNCTION(path = elpath)) :: rest))
-      equation 
+      equation
         true = ModUtil.pathEqual(path, elpath);
       then
         {el};
     case (path,(el :: rest))
-      equation 
+      equation
         res = getNamedFunction(path, rest);
       then
         res;
     case (_,_)
-      equation 
+      equation
         Debug.fprintln("failtrace", "-- get_named_function failed");
       then
         fail();
@@ -3893,40 +3893,40 @@ algorithm
 end getNamedFunction;
 
 public function getAllExps "function: getAllExps
-  
+
   This function goes through the DAE structure and finds all the
   expressions and returns them in a list
 "
   input list<Element> elements;
   output list<Exp.Exp> exps;
   list<list<Exp.Exp>> expslist;
-algorithm 
+algorithm
   expslist := Util.listMap(elements, getAllExpsElement);
   exps := Util.listFlatten(expslist);
 end getAllExps;
 
 protected function crefToExp "function: crefToExp
- 
+
   Makes an expression from a ComponentRef.
 "
   input Exp.ComponentRef inComponentRef;
   output Exp.Exp outExp;
-algorithm 
+algorithm
   outExp:=
   matchcontinue (inComponentRef)
     local Exp.ComponentRef cref;
-    case cref then Exp.CREF(cref,Exp.OTHER()); 
+    case cref then Exp.CREF(cref,Exp.OTHER());
   end matchcontinue;
 end crefToExp;
 
 protected function getAllExpsElement "function: getAllExpsElement
-  
+
   Helper to get_all_exps. Implements get_all_exps for different kinds of
-  elements 
+  elements
 "
   input Element inElement;
   output list<Exp.Exp> outExpExpLst;
-algorithm 
+algorithm
   outExpExpLst:=
   matchcontinue (inElement)
     local
@@ -3951,8 +3951,8 @@ algorithm
       list<ExtArg> args;
       ExtArg retarg;
       Option<Absyn.Annotation> ann;
-    case VAR(componentRef = cref,varible = vk,variable = vd,input_ = ty,one = bndexp,binding = instdims,value = flow_,flow_ = pathlist,variableAttributesOption = dae_var_attr,absynCommentOption = comment) /* VAR */ 
-      equation 
+    case VAR(componentRef = cref,varible = vk,variable = vd,input_ = ty,one = bndexp,binding = instdims,value = flow_,flow_ = pathlist,variableAttributesOption = dae_var_attr,absynCommentOption = comment) /* VAR */
+      equation
         e1 = Util.optionToList(bndexp);
         e3 = Util.listMap(instdims, getAllExpsSubscript);
         e3 = Util.listFlatten(e3);
@@ -3961,12 +3961,12 @@ algorithm
       then
         exps;
     case DEFINE(componentRef = cref,exp = exp)
-      equation 
+      equation
         crefexp = crefToExp(cref);
       then
         {crefexp,exp};
     case INITIALDEFINE(componentRef = cref,exp = exp)
-      equation 
+      equation
         crefexp = crefToExp(cref);
       then
         {crefexp,exp};
@@ -3975,21 +3975,21 @@ algorithm
       then
         {e1,e2};
     case WHEN_EQUATION(condition = cond,equations = eqs,elsewhen_ = elsewhenopt)
-      equation 
+      equation
         ellist = Util.optionToList(elsewhenopt);
         elements = listAppend(eqs, ellist);
         exps = getAllExps(elements);
       then
         (cond :: exps);
     case IF_EQUATION(condition1 = cond,equations2 = eqstrueb,equations3 = eqsfalseb)
-      equation 
+      equation
         explist1 = getAllExps(eqstrueb);
         explist2 = getAllExps(eqsfalseb);
         exps = Util.listFlatten({{cond},explist1,explist2});
       then
         exps;
     case INITIAL_IF_EQUATION(condition1 = cond,equations2 = eqstrueb,equations3 = eqsfalseb)
-      equation 
+      equation
         explist1 = getAllExps(eqstrueb);
         explist2 = getAllExps(eqsfalseb);
         exps = Util.listFlatten({{cond},explist1,explist2});
@@ -4000,23 +4000,23 @@ algorithm
       then
         {e1,e2};
     case ALGORITHM(algorithm_ = alg)
-      equation 
+      equation
         exps = Algorithm.getAllExps(alg);
       then
         exps;
     case INITIALALGORITHM(algorithm_ = alg)
-      equation 
+      equation
         exps = Algorithm.getAllExps(alg);
       then
         exps;
     case COMP(ident = id,dAElist = DAE(elementLst = elements))
-      equation 
+      equation
         exps = getAllExps(elements);
       then
         exps;
     case FUNCTION(path = path,dAElist = DAE(elementLst = elements),type_ = ty)
       local tuple<Types.TType, Option<Absyn.Path>> ty;
-      equation 
+      equation
         exps1 = getAllExps(elements);
         exps2 = Types.getAllExps(ty);
         exps = listAppend(exps1, exps2);
@@ -4024,7 +4024,7 @@ algorithm
         exps;
     case EXTFUNCTION(path = path,dAElist = DAE(elementLst = elements),type_ = ty,externalDecl = EXTERNALDECL(ident = fname,external_ = args,parameters = retarg,returnType = lang,language = ann))
       local tuple<Types.TType, Option<Absyn.Path>> ty;
-      equation 
+      equation
         exps1 = getAllExps(elements);
         exps2 = Types.getAllExps(ty);
         exps3 = getAllExpsExtarg(retarg);
@@ -4033,9 +4033,9 @@ algorithm
         exps = Util.listFlatten(expslist);
       then
         exps;
-    case ASSERT(condition=e1,message=e2) local Exp.Exp e1,e2; then {e1,e2}; 
+    case ASSERT(condition=e1,message=e2) local Exp.Exp e1,e2; then {e1,e2};
     case _
-      equation 
+      equation
         Debug.fprintln("failtrace", "-- get_all_exps_element failed");
       then
         fail();
@@ -4043,20 +4043,20 @@ algorithm
 end getAllExpsElement;
 
 protected function getAllExpsSubscript "function: getAllExpsSubscript
-  
-  Get all exps from a Subscript 
+
+  Get all exps from a Subscript
 "
   input Exp.Subscript inSubscript;
   output list<Exp.Exp> outExpExpLst;
-algorithm 
+algorithm
   outExpExpLst:=
   matchcontinue (inSubscript)
     local Exp.Exp e;
-    case Exp.WHOLEDIM() then {}; 
-    case Exp.SLICE(exp = e) then {e}; 
-    case Exp.INDEX(exp = e) then {e}; 
+    case Exp.WHOLEDIM() then {};
+    case Exp.SLICE(exp = e) then {e};
+    case Exp.INDEX(exp = e) then {e};
     case _
-      equation 
+      equation
         Debug.fprintln("failtrace", "-- get_all_exps_subscript failed");
       then
         fail();
@@ -4064,12 +4064,12 @@ algorithm
 end getAllExpsSubscript;
 
 protected function getAllExpsExtarg "function: getAllExpsExtarg
-  
-  Get all exps from an ExtArg 
+
+  Get all exps from an ExtArg
 "
   input ExtArg inExtArg;
   output list<Exp.Exp> outExpExpLst;
-algorithm 
+algorithm
   outExpExpLst:=
   matchcontinue (inExtArg)
     local
@@ -4079,28 +4079,28 @@ algorithm
       Types.Attributes attr;
       tuple<Types.TType, Option<Absyn.Path>> ty;
     case EXTARG(componentRef = cref,attributes = attr,type_ = ty)
-      equation 
+      equation
         exp1 = crefToExp(cref);
         explist = Types.getAllExps(ty);
         exps = listAppend({exp1}, explist);
       then
         exps;
     case EXTARGEXP(exp = exp1,type_ = ty)
-      equation 
+      equation
         explist = Types.getAllExps(ty);
         exps = listAppend({exp1}, explist);
       then
         exps;
     case EXTARGSIZE(componentRef = cref,attributes = attr,type_ = ty,exp = exp)
-      equation 
+      equation
         crefexp = crefToExp(cref);
         tyexps = Types.getAllExps(ty);
         exps = Util.listFlatten({{crefexp},tyexps,{exp}});
       then
         exps;
-    case NOEXTARG() then {}; 
+    case NOEXTARG() then {};
     case _
-      equation 
+      equation
         Debug.fprintln("failtrace", "-- get_all_exps_extarg failed");
       then
         fail();
@@ -4112,7 +4112,7 @@ public function transformIfEqToExpr "function: transformIfEqToExpr
 "
   input DAElist inDAElist;
   output DAElist outDAElist;
-algorithm 
+algorithm
   outDAElist:=
   matchcontinue (inDAElist)
     local
@@ -4120,9 +4120,9 @@ algorithm
       list<Element> rest_result,rest,res2,res1,res;
       Element subresult,el;
       Ident name;
-    case (DAE(elementLst = {})) then DAE({}); 
+    case (DAE(elementLst = {})) then DAE({});
     case (DAE(elementLst = (COMP(ident = name,dAElist = sublist) :: rest)))
-      equation 
+      equation
         sublist_result = transformIfEqToExpr(sublist);
         DAE(rest_result) = transformIfEqToExpr(DAE(rest));
         subresult = COMP(name,sublist_result);
@@ -4130,21 +4130,21 @@ algorithm
       then
         result;
     case (DAE(elementLst = (el :: rest)))
-      equation 
+      equation
         subresult = ifEqInWhenToExpr(el);
         DAE(res2) = transformIfEqToExpr(DAE(rest));
         res = subresult::res2;
       then
-        DAE(res);        
+        DAE(res);
     case (DAE(elementLst = (el :: rest)))
-      equation 
+      equation
         DAE(res2) = transformIfEqToExpr(DAE(rest));
         res1 = ifEqToExprCommonLHS(el);
         res = listAppend(res1, res2);
       then
         DAE(res);
     case (DAE(elementLst = (el :: rest)))
-      equation 
+      equation
         DAE(res) = transformIfEqToExpr(DAE(rest));
       then
         DAE((el :: res));
@@ -4162,12 +4162,12 @@ algorithm
       list<Element> equations2,res;
       Element elseElement,elseElementRes;
     case (WHEN_EQUATION(condition = cond, equations = equations2,elsewhen_ = NONE))
-      equation 
+      equation
         DAE(res) = transformIfEqToExpr(DAE(equations2));
       then
         WHEN_EQUATION(cond,res,NONE);
     case (WHEN_EQUATION(condition = cond, equations = equations2,elsewhen_ = SOME(elseElement)))
-      equation 
+      equation
         DAE(res) = transformIfEqToExpr(DAE(equations2));
         elseElementRes = ifEqInWhenToExpr(elseElement);
       then
@@ -4204,13 +4204,13 @@ algorithm
       then
         (res1,res2);
   end matchcontinue;
-end matchCommonLHS;  
+end matchCommonLHS;
 
 protected function sameLHS
   input Element inElement1;
   input Element inElement2;
   output Boolean outBool;
-algorithm 
+algorithm
   outBool := matchcontinue (inElement1,inElement2)
     local
       Exp.Exp exp1,exp2;
@@ -4234,7 +4234,7 @@ algorithm
       Exp.Exp cond;
       list<Element> true_branch,false_branch,true_branch2,false_branch2,true_branch3,false_branch3,equations;
     case ((elt as IF_EQUATION(condition1 = cond,equations2 = true_branch,equations3 = false_branch)))
-      equation 
+      equation
         DAE(true_branch2) = transformIfEqToExpr(DAE(true_branch));
         DAE(false_branch2) = transformIfEqToExpr(DAE(false_branch));
         true_eq = listLength(true_branch2);
@@ -4245,7 +4245,7 @@ algorithm
       then
         {};
     case (IF_EQUATION(condition1 = cond,equations2 = true_branch,equations3 = false_branch))
-      equation 
+      equation
         DAE(true_branch2) = transformIfEqToExpr(DAE(true_branch));
         DAE(false_branch2) = transformIfEqToExpr(DAE(false_branch));
         true_eq = listLength(true_branch2);
@@ -4256,7 +4256,7 @@ algorithm
       then
         equations;
     case (IF_EQUATION(condition1 = cond,equations2 = true_branch,equations3 = false_branch))
-      equation 
+      equation
         DAE(true_branch2) = transformIfEqToExpr(DAE(true_branch));
         DAE(false_branch2) = transformIfEqToExpr(DAE(false_branch));
         true_eq = listLength(true_branch2);
@@ -4266,7 +4266,7 @@ algorithm
         equations = makeEquationsFromIf(cond, true_branch3, false_branch3);
       then
         equations;
-    case (_) then fail(); 
+    case (_) then fail();
   end matchcontinue;
 end ifEqToExprCommonLHS;
 
@@ -4276,7 +4276,7 @@ protected function ifEqToExpr "function: ifEqToExpr
 "
   input Element inElement;
   output list<Element> outElementLst;
-algorithm 
+algorithm
   outElementLst:=
   matchcontinue (inElement)
     local
@@ -4286,7 +4286,7 @@ algorithm
       Exp.Exp cond;
       list<Element> true_branch,false_branch,true_branch2,false_branch2,true_branch3,false_branch3,equations;
     case ((elt as IF_EQUATION(condition1 = cond,equations2 = true_branch,equations3 = false_branch)))
-      equation 
+      equation
         DAE(true_branch2) = transformIfEqToExpr(DAE(true_branch));
         DAE(false_branch2) = transformIfEqToExpr(DAE(false_branch));
         true_eq = listLength(true_branch2);
@@ -4297,7 +4297,7 @@ algorithm
       then
         {};
     case (IF_EQUATION(condition1 = cond,equations2 = true_branch,equations3 = false_branch))
-      equation 
+      equation
         DAE(true_branch2) = transformIfEqToExpr(DAE(true_branch));
         DAE(false_branch2) = transformIfEqToExpr(DAE(false_branch));
         true_eq = listLength(true_branch2);
@@ -4307,7 +4307,7 @@ algorithm
         equations = makeEquationsFromIf(cond, true_branch3, false_branch3);
       then
         equations;
-    case (_) then fail(); 
+    case (_) then fail();
   end matchcontinue;
 end ifEqToExpr;
 
@@ -4316,16 +4316,16 @@ protected function makeEquationsFromIf
   input list<Element> inElementLst2;
   input list<Element> inElementLst3;
   output list<Element> outElementLst;
-algorithm 
+algorithm
   outElementLst:=
   matchcontinue (inExp1,inElementLst2,inElementLst3)
     local
       list<Element> rest_res,rest1,rest2;
       Exp.Exp tb,fb,cond,exp1,exp2,exp3,exp4;
       Element eq;
-    case (_,{},{}) then {}; 
+    case (_,{},{}) then {};
     case (cond,(EQUATION(exp = exp1,scalar = exp2) :: rest1),(EQUATION(exp = exp3,scalar = exp4) :: rest2))
-      equation 
+      equation
         rest_res = makeEquationsFromIfCommonLHS(cond, rest1, rest2);
         tb = Exp.BINARY(exp1,Exp.SUB(Exp.REAL()),exp2);
         fb = Exp.BINARY(exp3,Exp.SUB(Exp.REAL()),exp4);
@@ -4333,7 +4333,7 @@ algorithm
       then
         (eq :: rest_res);
     case (cond,(EQUATION(exp = exp1,scalar = exp2) :: rest1),(EQUATION(exp = exp3,scalar = exp4) :: rest2))
-      equation 
+      equation
         rest_res = makeEquationsFromIf(cond, rest1, rest2);
         tb = Exp.BINARY(exp1,Exp.SUB(Exp.REAL()),exp2);
         fb = Exp.BINARY(exp3,Exp.SUB(Exp.REAL()),exp4);
@@ -4348,19 +4348,19 @@ protected function makeEquationsFromIfCommonLHS
   input list<Element> inElementLst2;
   input list<Element> inElementLst3;
   output list<Element> outElementLst;
-algorithm 
-  
+algorithm
+
   // TODO: sort on lhs componentref
-  
+
   outElementLst:=
   matchcontinue (inExp1,inElementLst2,inElementLst3)
     local
       list<Element> rest_res,rest1,rest2;
       Exp.Exp tb,fb,cond,exp1,exp2,exp3,exp4;
       Element eq;
-    case (_,{},{}) then {}; 
+    case (_,{},{}) then {};
     case (cond,(EQUATION(exp = exp1,scalar = exp2) :: rest1),(EQUATION(exp = exp3,scalar = exp4) :: rest2))
-      equation 
+      equation
         rest_res = makeEquationsFromIfCommonLHS(cond, rest1, rest2);
         true = Exp.expEqual(exp1,exp3);
         eq = EQUATION(exp1,Exp.IFEXP(cond,exp2,exp4));

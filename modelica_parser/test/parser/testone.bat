@@ -9,7 +9,7 @@ echo testing %testin%
 
 test_parser %testin% > tmp
 if not exist %testout% goto notestout
-diff tmp %testout% > tmp2 
+diff tmp %testout% > tmp2
 if errorlevel 1 echo %testin% failed && type tmp2 > %testdiff%
 
 del tmp

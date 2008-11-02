@@ -12,14 +12,14 @@
 
 #include "f2c.h"
 
-/* Subroutine */ int biglag_(integer *n, integer *npt, doublereal *xopt, 
-	doublereal *xpt, doublereal *bmat, doublereal *zmat, integer *idz, 
-	integer *ndim, integer *knew, doublereal *delta, doublereal *d__, 
-	doublereal *alpha, doublereal *hcol, doublereal *gc, doublereal *gd, 
+/* Subroutine */ int biglag_(integer *n, integer *npt, doublereal *xopt,
+	doublereal *xpt, doublereal *bmat, doublereal *zmat, integer *idz,
+	integer *ndim, integer *knew, doublereal *delta, doublereal *d__,
+	doublereal *alpha, doublereal *hcol, doublereal *gc, doublereal *gd,
 	doublereal *s, doublereal *w)
 {
     /* System generated locals */
-    integer xpt_dim1, xpt_offset, bmat_dim1, bmat_offset, zmat_dim1, 
+    integer xpt_dim1, xpt_offset, bmat_dim1, bmat_offset, zmat_dim1,
 	    zmat_offset, i__1, i__2;
     doublereal d__1;
 
@@ -31,7 +31,7 @@
     static integer i__, j, k;
     static doublereal dd, gg;
     static integer iu;
-    static doublereal sp, ss, cf1, cf2, cf3, cf4, cf5, dhd, cth, one, tau, 
+    static doublereal sp, ss, cf1, cf2, cf3, cf4, cf5, dhd, cth, one, tau,
 	    sth, sum, half, temp, step;
     static integer nptm;
     static doublereal zero, angle, scale, denom;

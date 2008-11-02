@@ -10,8 +10,8 @@
  **
  ** RCS: $Id: print.rml,v 1.5 2004/09/28 09:49:24 levsa Exp $
  **
- ** This module contains a buffered print relation to be used instead of 
- ** the built in print relation, when the output should be redirected to 
+ ** This module contains a buffered print relation to be used instead of
+ ** the built in print relation, when the output should be redirected to
  ** some other place. It also contains print relations for error messages, to be
  ** used in interactive mode.
  **

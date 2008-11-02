@@ -17,7 +17,7 @@ class CUSTOM_API flat_modelica_lexer : public ANTLR_USE_NAMESPACE(antlr)CharScan
 {
 #line 96 "flat_modelica_lexer.g"
 
-    std::string & replaceAll(std::string & str, const char *src, const char* dst) 
+    std::string & replaceAll(std::string & str, const char *src, const char* dst)
     {
         size_t pos;
         while((pos = str.find(".")) < str.size()-1) {
@@ -81,7 +81,7 @@ public:
 	protected: void mSESCAPE(bool _createToken);
 	protected: void mESC(bool _createToken);
 private:
-	
+
 	static const unsigned long _tokenSet_0_data_[];
 	static const ANTLR_USE_NAMESPACE(antlr)BitSet _tokenSet_0;
 	static const unsigned long _tokenSet_1_data_[];

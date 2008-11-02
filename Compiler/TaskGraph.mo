@@ -1,40 +1,40 @@
-/* 
+/*
  * This file is part of OpenModelica.
- * 
+ *
  * Copyright (c) 1998-2008, Linköpings University,
- * Department of Computer and Information Science, 
- * SE-58183 Linköping, Sweden. 
- * 
+ * Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
  * All rights reserved.
- * 
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC 
- * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF 
- * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC 
- * PUBLIC LICENSE. 
- * 
- * The OpenModelica software and the Open Source Modelica 
- * Consortium (OSMC) Public License (OSMC-PL) are obtained 
- * from Linköpings University, either from the above address, 
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC
+ * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF
+ * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC
+ * PUBLIC LICENSE.
+ *
+ * The OpenModelica software and the Open Source Modelica
+ * Consortium (OSMC) Public License (OSMC-PL) are obtained
+ * from Linköpings University, either from the above address,
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
- * 
- * This program is distributed  WITHOUT ANY WARRANTY; without 
- * even the implied warranty of  MERCHANTABILITY or FITNESS 
- * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH 
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS 
- * OF OSMC-PL. 
- * 
+ *
+ * This program is distributed  WITHOUT ANY WARRANTY; without
+ * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
+ * OF OSMC-PL.
+ *
  * See the full OSMC Public License conditions for more details.
- * 
+ *
  */
- 
-package TaskGraph 
+
+package TaskGraph
 " file:	       TaskGraph.mo
   package:     TaskGraph
   description: Building of task graphs from expressions, and equation systems.
- 
+
   RCS: $Id$
-  
+
   This module is used in the modpar part of OpenModelica for bulding task graphs
   from the BLT decomposition for automatic parallelization.
   The exported function buildTaskgraph takes the lowered form of the DAE defined in
@@ -60,7 +60,7 @@ public function buildTaskgraph ""
   input Integer[:] inIntegerArray2;
   input Integer[:] inIntegerArray3;
   input list<list<Integer>> inIntegerLstLst4;
-algorithm 
+algorithm
   _:=
   matchcontinue (inDAELow1,inIntegerArray2,inIntegerArray3,inIntegerLstLst4)
     local
@@ -71,7 +71,7 @@ algorithm
       Integer[:] ass1,ass2;
       list<list<Integer>> blocks;
     case ((dae as DAELow.DAELOW(orderedVars = DAELow.VARIABLES(varArr = vararr),knownVars = DAELow.VARIABLES(varArr = knvararr))),ass1,ass2,blocks)
-      equation 
+      equation
         print("starting buildtaskgraph\n");
         starttask = TaskGraphExt.newTask("start");
         endtask = TaskGraphExt.newTask("end");
@@ -94,7 +94,7 @@ algorithm
       then
         ();
     case (_,_,_,_)
-      equation 
+      equation
         print("-build_taskgraph failed\n");
       then
         fail();
@@ -102,19 +102,19 @@ algorithm
 end buildTaskgraph;
 
 protected function buildInits "function: buildInits
-  This function traverses the DAE and calls external functions to build 
+  This function traverses the DAE and calls external functions to build
   the initialization values for the DAE
   This is implemented in C++ as a set of vectors
 "
   input DAELow.DAELow inDAELow;
-algorithm 
+algorithm
   _:=
   matchcontinue (inDAELow)
     local
       list<DAELow.Var> vars,kvars;
       DAELow.VariableArray vararr,kvararr;
     case (DAELow.DAELOW(orderedVars = DAELow.VARIABLES(varArr = vararr),knownVars = DAELow.VARIABLES(varArr = kvararr)))
-      equation 
+      equation
         vars = DAELow.vararrayList(vararr);
         kvars = DAELow.vararrayList(kvararr);
         buildInits2(vars);
@@ -126,7 +126,7 @@ end buildInits;
 
 protected function buildInits2
   input list<DAELow.Var> inDAELowVarLst;
-algorithm 
+algorithm
   _:=
   matchcontinue (inDAELowVarLst)
     local
@@ -139,9 +139,9 @@ algorithm
       DAE.Flow flow_;
       list<DAELow.Var> rest;
       Exp.Exp e;
-    case ({}) then (); 
+    case ({}) then ();
     case ((DAELow.VAR(varKind = DAELow.VARIABLE(),index = indx,origVarName = origname,values = dae_var_attr,comment = comment,flow_ = flow_) :: rest))
-      equation 
+      equation
         e = DAE.getStartAttr(dae_var_attr);
         v = Exp.printExpStr(e);
         origname_str = Exp.printComponentRefStr(origname);
@@ -150,14 +150,14 @@ algorithm
       then
         ();
     case ((DAELow.VAR(varKind = DAELow.VARIABLE(),index = indx,origVarName = origname,values = dae_var_attr,comment = comment,flow_ = flow_) :: rest))
-      equation 
+      equation
         origname_str = Exp.printComponentRefStr(origname);
         TaskGraphExt.addInitVar(indx, "0.0", origname_str);
         buildInits2(rest);
       then
         ();
     case ((DAELow.VAR(varKind = DAELow.STATE(),index = indx,origVarName = origname,values = dae_var_attr,comment = comment,flow_ = flow_) :: rest))
-      equation 
+      equation
         e = DAE.getStartAttr(dae_var_attr);
         v = Exp.printExpStr(e);
         origname_str = Exp.printComponentRefStr(origname);
@@ -166,14 +166,14 @@ algorithm
       then
         ();
     case ((DAELow.VAR(varKind = DAELow.STATE(),index = indx,origVarName = origname,values = dae_var_attr,comment = comment,flow_ = flow_) :: rest))
-      equation 
+      equation
         origname_str = Exp.printComponentRefStr(origname);
         TaskGraphExt.addInitState(indx, "0.0", origname_str);
         buildInits2(rest);
       then
         ();
     case ((DAELow.VAR(varKind = DAELow.DUMMY_DER(),index = indx,origVarName = origname,values = dae_var_attr,comment = comment,flow_ = flow_) :: rest))
-      equation 
+      equation
         e = DAE.getStartAttr(dae_var_attr);
         v = Exp.printExpStr(e);
         origname_str = Exp.printComponentRefStr(origname);
@@ -182,14 +182,14 @@ algorithm
       then
         ();
     case ((DAELow.VAR(varKind = DAELow.DUMMY_DER(),index = indx,origVarName = origname,values = dae_var_attr,comment = comment,flow_ = flow_) :: rest))
-      equation 
+      equation
         origname_str = Exp.printComponentRefStr(origname);
         TaskGraphExt.addInitVar(indx, "0.0", origname_str);
         buildInits2(rest);
       then
         ();
     case ((DAELow.VAR(varKind = DAELow.DUMMY_STATE(),index = indx,origVarName = origname,values = dae_var_attr,comment = comment,flow_ = flow_) :: rest))
-      equation 
+      equation
          e = DAE.getStartAttr(dae_var_attr);
         v = Exp.printExpStr(e);
         origname_str = Exp.printComponentRefStr(origname);
@@ -198,7 +198,7 @@ algorithm
       then
         ();
     case ((DAELow.VAR(varKind = DAELow.DUMMY_STATE(),index = indx,origVarName = origname,values = dae_var_attr,comment = comment,flow_ = flow_) :: rest))
-      equation 
+      equation
         origname_str = Exp.printComponentRefStr(origname);
         TaskGraphExt.addInitVar(indx, "0.0", origname_str);
         buildInits2(rest);
@@ -206,7 +206,7 @@ algorithm
         ();
     case ((DAELow.VAR(varKind = DAELow.PARAM(),bindValue = SOME(value),index = indx,origVarName = origname,values = dae_var_attr,comment = comment,flow_ = flow_) :: rest))
       local Values.Value value;
-      equation 
+      equation
         v = Values.valString(value);
         origname_str = Exp.printComponentRefStr(origname);
         TaskGraphExt.addInitParam(indx, v, origname_str);
@@ -214,7 +214,7 @@ algorithm
       then
         ();
     case ((DAELow.VAR(varKind = DAELow.PARAM(),bindValue = NONE,index = indx,origVarName = origname,values = dae_var_attr,comment = comment,flow_ = flow_) :: rest))
-      equation 
+      equation
         origname_str = Exp.printComponentRefStr(origname);
         TaskGraphExt.addInitParam(indx, "0.0", origname_str);
         buildInits2(rest);
@@ -222,7 +222,7 @@ algorithm
         ();
     case ((DAELow.VAR(varKind = DAELow.CONST(),bindValue = SOME(value),index = indx,origVarName = origname,values = dae_var_attr,comment = comment,flow_ = flow_) :: rest))
       local Values.Value value;
-      equation 
+      equation
         v = Values.valString(value);
         origname_str = Exp.printComponentRefStr(origname);
         TaskGraphExt.addInitParam(indx, v, origname_str);
@@ -230,7 +230,7 @@ algorithm
       then
         ();
     case ((DAELow.VAR(varKind = DAELow.CONST(),bindValue = NONE,index = indx,origVarName = origname,values = dae_var_attr,comment = comment,flow_ = flow_) :: rest))
-      equation 
+      equation
         origname_str = Exp.printComponentRefStr(origname);
         TaskGraphExt.addInitParam(indx, "0.0", origname_str);
         buildInits2(rest);
@@ -242,16 +242,16 @@ end buildInits2;
 protected function addVariables
   input list<DAELow.Var> inDAELowVarLst;
   input Integer inInteger;
-algorithm 
+algorithm
   _:=
   matchcontinue (inDAELowVarLst,inInteger)
     local
       Integer start;
       DAELow.Var v;
       list<DAELow.Var> vs;
-    case ({},start) then (); 
+    case ({},start) then ();
     case ((v :: vs),start)
-      equation 
+      equation
         addVariable(v, start);
         addVariables(vs, start);
       then
@@ -264,7 +264,7 @@ protected function buildBlocks
   input Integer[:] inIntegerArray2;
   input Integer[:] inIntegerArray3;
   input list<list<Integer>> inIntegerLstLst4;
-algorithm 
+algorithm
   _:=
   matchcontinue (inDAELow1,inIntegerArray2,inIntegerArray3,inIntegerLstLst4)
     local
@@ -273,21 +273,21 @@ algorithm
       list<Integer> block_;
       list<list<Integer>> blocks;
       Integer eqn;
-    case (_,_,_,{}) then (); 
+    case (_,_,_,{}) then ();
     case (dae,ass1,ass2,((block_ as (_ :: (_ :: _))) :: blocks))
-      equation 
+      equation
         buildSystem(dae, ass1, ass2, block_) "For system of equations" ;
         buildBlocks(dae, ass1, ass2, blocks);
       then
         ();
     case (dae,ass1,ass2,((block_ as {eqn}) :: blocks))
-      equation 
+      equation
         buildEquation(dae, ass1, ass2, eqn) "for single equations" ;
         buildBlocks(dae, ass1, ass2, blocks);
       then
         ();
     case (_,_,_,_)
-      equation 
+      equation
         print("-build_blocks failed\n");
       then
         fail();
@@ -296,12 +296,12 @@ end buildBlocks;
 
 protected function isNonState
   input DAELow.VarKind inVarKind;
-algorithm 
+algorithm
   _:=
   matchcontinue (inVarKind)
-    case (DAELow.VARIABLE()) then (); 
-    case (DAELow.DUMMY_DER()) then (); 
-    case (DAELow.DUMMY_STATE()) then (); 
+    case (DAELow.VARIABLE()) then ();
+    case (DAELow.DUMMY_DER()) then ();
+    case (DAELow.DUMMY_STATE()) then ();
   end matchcontinue;
 end isNonState;
 
@@ -310,7 +310,7 @@ protected function buildEquation "Build task graph for a single equation."
   input Integer[:] inIntegerArray2;
   input Integer[:] inIntegerArray3;
   input Integer inInteger4;
-algorithm 
+algorithm
   _:=
   matchcontinue (inDAELow1,inIntegerArray2,inIntegerArray3,inInteger4)
     local
@@ -328,7 +328,7 @@ algorithm
       DAELow.EquationArray eqns;
       Integer[:] ass1,ass2;
     case (DAELow.DAELOW(orderedVars = vars,orderedEqs = eqns),ass1,ass2,e)
-      equation 
+      equation
         e_1 = e - 1 "Solving for non-states" ;
         DAELow.EQUATION(e1,e2) = DAELow.equationNth(eqns, e_1);
         v = ass2[e_1 + 1];
@@ -349,7 +349,7 @@ algorithm
         ();
     case (DAELow.DAELOW(orderedVars = vars,orderedEqs = eqns),ass1,ass2,e)
       local Integer v;
-      equation 
+      equation
         e_1 = e - 1 "Solving the state s means solving for der(s)" ;
         DAELow.EQUATION(e1,e2) = DAELow.equationNth(eqns, e_1);
         v = ass2[e_1 + 1];
@@ -376,15 +376,15 @@ algorithm
 	DAELow.equation_nth(eqns,e\') => DAELow.EQUATION(e1,e2) &
 	vector_nth(ass2,e\') => v & ( v==variable no solved in this equation ))
 	int_sub(v,1) => v\' &
-	DAELow.vararray_nth(vararr,v\') => DAELow.VAR(cr,_,_,_,_,_,_,_,_,origname,_,dae_var_attr,comment,flow) &  
+	DAELow.vararray_nth(vararr,v\') => DAELow.VAR(cr,_,_,_,_,_,_,_,_,origname,_,dae_var_attr,comment,flow) &
 	let varexp = Exp.CREF(cr,Exp.REAL) &
 	not Exp.solve(e1,e2,varexp) => _ &
-	print \"nonlinear equation not implemented yet\\n\" 
+	print \"nonlinear equation not implemented yet\\n\"
 	--------------------------------
 	build_equation(DAELow.DAELOW(DAELow.VARIABLES(_,_,vararr,_,_),_,eqns,_,_,_,_,_),ass1,ass2,e) => fail
- */ 
+ */
       local Integer v;
-      equation 
+      equation
         e_1 = e - 1 "state nonlinear" ;
         DAELow.EQUATION(e1,e2) = DAELow.equationNth(eqns, e_1);
         v = ass2[e_1 + 1];
@@ -402,7 +402,7 @@ algorithm
       then
         ();
     case (DAELow.DAELOW(orderedVars = vars,orderedEqs = eqns),ass1,ass2,e)
-      equation 
+      equation
         e_1 = e - 1 "Solving nonlinear for non-states" ;
         DAELow.EQUATION(e1,e2) = DAELow.equationNth(eqns, e_1);
         v = ass2[e_1 + 1];
@@ -416,7 +416,7 @@ algorithm
       then
         ();
     case (_,_,_,_)
-      equation 
+      equation
         print("-build_equation failed\n");
       then
         fail();
@@ -428,7 +428,7 @@ protected function buildNonlinearEquations "function: buildNonlinearEquations
 "
   input list<Exp.Exp> inExpExpLst1;
   input list<Exp.Exp> inExpExpLst2;
-algorithm 
+algorithm
   _:=
   matchcontinue (inExpExpLst1,inExpExpLst2)
     local
@@ -436,8 +436,8 @@ algorithm
       String size_str,taskname;
       list<String> varnames;
       list<Exp.Exp> vars,residuals;
-    case (vars,residuals) /* variables residuals */ 
-      equation 
+    case (vars,residuals) /* variables residuals */
+      equation
         size = listLength(vars);
         size_str = intString(size);
         taskname = buildResidualCode(vars, residuals);
@@ -449,7 +449,7 @@ algorithm
       then
         ();
     case (vars,residuals)
-      equation 
+      equation
         print("build_nonlinear_equatins failed\n");
       then
         fail();
@@ -457,27 +457,27 @@ algorithm
 end buildNonlinearEquations;
 
 protected function buildResidualCode "function: buildResidualCode
-  This function takes a list of expressions and builds code for 
+  This function takes a list of expressions and builds code for
   calculating the residuals as a string. Used for e.g. solving non-linear equations.
 "
   input list<Exp.Exp> inExpExpLst1;
   input list<Exp.Exp> inExpExpLst2;
   output String outString;
-algorithm 
+algorithm
   outString:=
   matchcontinue (inExpExpLst1,inExpExpLst2)
     local
       VarTransform.VariableReplacements repl;
       String res;
       list<Exp.Exp> vars,es;
-    case (vars,es) /* vars residuals */ 
-      equation 
+    case (vars,es) /* vars residuals */
+      equation
         repl = makeResidualReplacements(vars);
         res = buildResidualCode2(es, 0, repl);
       then
         res;
     case (_,_)
-      equation 
+      equation
         print("build_residual_code failed\n");
       then
         fail();
@@ -485,14 +485,14 @@ algorithm
 end buildResidualCode;
 
 protected function makeResidualReplacements "function: makeResidualReplacements
-  This function makes replacement rules for variables occuring in a 
+  This function makes replacement rules for variables occuring in a
   nonlinear equation system. They should be replaced by x{index}, i.e.
   an unique index in the x vector.
 "
   input list<Exp.Exp> expl;
   output VarTransform.VariableReplacements repl_1;
   VarTransform.VariableReplacements repl,repl_1;
-algorithm 
+algorithm
   repl := VarTransform.emptyReplacements();
   repl_1 := makeResidualReplacements2(repl, expl, 0);
 end makeResidualReplacements;
@@ -502,7 +502,7 @@ protected function makeResidualReplacements2
   input list<Exp.Exp> inExpExpLst;
   input Integer inInteger;
   output VarTransform.VariableReplacements outVariableReplacements;
-algorithm 
+algorithm
   outVariableReplacements:=
   matchcontinue (inVariableReplacements,inExpExpLst,inInteger)
     local
@@ -511,9 +511,9 @@ algorithm
       Integer pos_1,pos;
       Exp.ComponentRef cr;
       list<Exp.Exp> es;
-    case (repl,{},_) then repl; 
+    case (repl,{},_) then repl;
     case (repl,(Exp.CREF(componentRef = cr) :: es),pos)
-      equation 
+      equation
         pstr = intString(pos);
         str = Util.stringAppendList({"xloc[",pstr,"]"});
         repl_1 = VarTransform.addReplacement(repl, cr, Exp.CREF(Exp.CREF_IDENT(str,{}),Exp.REAL()));
@@ -529,7 +529,7 @@ protected function buildResidualCode2
   input Integer inInteger;
   input VarTransform.VariableReplacements inVariableReplacements;
   output String outString;
-algorithm 
+algorithm
   outString:=
   matchcontinue (inExpExpLst,inInteger,inVariableReplacements)
     local
@@ -538,9 +538,9 @@ algorithm
       Integer pos_1,pos;
       list<Exp.Exp> es;
       VarTransform.VariableReplacements repl;
-    case ({},_,_) then ""; 
+    case ({},_,_) then "";
     case ((e :: es),pos,repl)
-      equation 
+      equation
         e_1 = VarTransform.replaceExp(e, repl, NONE);
         s1 = SimCodegen.printExpCppStr(e_1);
         pos_1 = pos + 1;
@@ -550,7 +550,7 @@ algorithm
       then
         res;
     case (_,_,_)
-      equation 
+      equation
         print("build_residual_code2 failed\n");
       then
         fail();
@@ -564,21 +564,21 @@ protected function storeMultipleResults "function storeMultipleResults
 "
   input list<String> inStringLst;
   input Integer inInteger;
-algorithm 
+algorithm
   _:=
   matchcontinue (inStringLst,inInteger)
     local
       String result_str;
       list<String> varnames;
       Integer tid;
-    case (varnames,tid) /* var names task id */ 
-      equation 
+    case (varnames,tid) /* var names task id */
+      equation
         result_str = Util.stringDelimitList(varnames, ";");
         TaskGraphExt.storeResult(result_str, tid, true, result_str);
       then
         ();
     case (_,_)
-      equation 
+      equation
         print("store_multiple_results failed\n");
       then
         fail();
@@ -589,7 +589,7 @@ protected function buildNonlinearEquations2
   input Integer inInteger1;
   input list<Exp.Exp> inExpExpLst2;
   input list<Exp.Exp> inExpExpLst3;
-algorithm 
+algorithm
   _:=
   matchcontinue (inInteger1,inExpExpLst2,inExpExpLst3)
     local
@@ -599,9 +599,9 @@ algorithm
       Exp.Exp res,e;
       list<Exp.Exp> residuals;
       String es;
-    case (tid,_,{}) then ();  /* task id vars residuals */ 
+    case (tid,_,{}) then ();  /* task id vars residuals */
     case (tid,vars,(res :: residuals))
-      equation 
+      equation
         vars1 = Exp.getCrefFromExp(res) "Collect all variables and construct
 	 a string for the residual, that can be directly used in codegen." ;
         vars_1 = Util.listMap(vars, Exp.getCrefFromExp);
@@ -612,7 +612,7 @@ algorithm
       then
         ();
     case (_,_,(e :: _))
-      equation 
+      equation
         print("build_nonlinear_equations2 failed\n");
         es = Exp.printExpStr(e);
         print("first residual :");
@@ -630,7 +630,7 @@ protected function addEdgesFromVars "function: addEdgesFromVars
   input list<Exp.ComponentRef> inExpComponentRefLst1;
   input Integer inInteger2;
   input Integer inInteger3;
-algorithm 
+algorithm
   _:=
   matchcontinue (inExpComponentRefLst1,inInteger2,inInteger3)
     local
@@ -638,9 +638,9 @@ algorithm
       Integer predt,prio_1,tid,prio;
       Exp.ComponentRef v;
       list<Exp.ComponentRef> vs;
-    case ({},_,_) then ();  /* task priority */ 
+    case ({},_,_) then ();  /* task priority */
     case ((v :: vs),tid,prio)
-      equation 
+      equation
         v_str = Exp.crefStr(v);
         predt = TaskGraphExt.getTask(v_str);
         TaskGraphExt.addEdge(predt, tid, v_str, prio);
@@ -649,7 +649,7 @@ algorithm
       then
         ();
     case ((v :: vs),_,_)
-      equation 
+      equation
         v_str = Exp.crefStr(v);
         failure(_ = TaskGraphExt.getTask(v_str));
         print("task ");
@@ -658,7 +658,7 @@ algorithm
       then
         fail();
     case (_,_,_)
-      equation 
+      equation
         print("add_edges_from_vars failed\n");
       then
         fail();
@@ -670,7 +670,7 @@ protected function buildSystem "Build task graph for a system of equations"
   input Integer[:] inIntegerArray2;
   input Integer[:] inIntegerArray3;
   input list<Integer> inIntegerLst4;
-algorithm 
+algorithm
   _:=
   matchcontinue (inDAELow1,inIntegerArray2,inIntegerArray3,inIntegerLst4)
     local
@@ -680,7 +680,7 @@ algorithm
       DAELow.DAELow dae;
       Integer[:] ass1,ass2;
     case (dae,ass1,ass2,system)
-      equation 
+      equation
         print("build system\n");
         tid = TaskGraphExt.newTask("equation system");
         predtasks = buildSystem2(dae, ass1, ass2, system, tid);
@@ -689,7 +689,7 @@ algorithm
       then
         ();
     case (_,_,_,_)
-      equation 
+      equation
         print("build_system failed\n");
       then
         fail();
@@ -703,7 +703,7 @@ protected function buildSystem2
   input list<Integer> inIntegerLst4;
   input Integer inInteger5;
   output list<String> outStringLst;
-algorithm 
+algorithm
   outStringLst:=
   matchcontinue (inDAELow1,inIntegerArray2,inIntegerArray3,inIntegerLst4,inInteger5)
     local
@@ -722,9 +722,9 @@ algorithm
       DAELow.VariableArray vararr;
       DAELow.EquationArray eqns;
       list<Integer> rest;
-    case (dae,ass1,ass2,{},tid) then {}; 
+    case (dae,ass1,ass2,{},tid) then {};
     case ((dae as DAELow.DAELOW(orderedVars = DAELow.VARIABLES(varArr = vararr),orderedEqs = eqns)),ass1,ass2,(e :: rest),tid)
-      equation 
+      equation
         e_1 = e - 1;
         DAELow.EQUATION(e1,e2) = DAELow.equationNth(eqns, e_1);
         v = ass2[e_1 + 1];
@@ -743,7 +743,7 @@ algorithm
       then
         res;
     case (_,_,_,_,_)
-      equation 
+      equation
         print("build_system2 failed\n");
       then
         fail();
@@ -753,7 +753,7 @@ end buildSystem2;
 protected function addVariable
   input DAELow.Var inVar;
   input Integer inInteger;
-algorithm 
+algorithm
   _:=
   matchcontinue (inVar,inInteger)
     local
@@ -764,7 +764,7 @@ algorithm
       DAE.Flow flow_;
       Integer start;
     case (DAELow.VAR(varName = cf,origVarName = name,values = dae_var_attr,comment = comment,flow_ = flow_),start)
-      equation 
+      equation
         cfs = Exp.crefStr(cf);
         name_str = Exp.printComponentRefStr(name) "print \"adding variable \" & print cfs & print \"\\n\" &" ;
         TaskGraphExt.storeResult(cfs, start, false, name_str);
@@ -777,7 +777,7 @@ protected function buildAssignment
   input Exp.ComponentRef inComponentRef;
   input Exp.Exp inExp;
   input String inString;
-algorithm 
+algorithm
   _:=
   matchcontinue (inComponentRef,inExp,inString)
     local
@@ -786,8 +786,8 @@ algorithm
       Exp.ComponentRef cr,cr2;
       Exp.Exp exp;
       Exp.Type tp;
-    case (cr,(exp as Exp.CREF(componentRef = cr2,ty = tp)),origname) /* varname expression orig. name */ 
-      equation 
+    case (cr,(exp as Exp.CREF(componentRef = cr2,ty = tp)),origname) /* varname expression orig. name */
+      equation
         (task,str) = buildExpression(exp) "special rule for equation a:=b" ;
         tid = TaskGraphExt.newTask("copy");
         cr2s = Exp.crefStr(cr2);
@@ -798,14 +798,14 @@ algorithm
       then
         ();
     case (cr,exp,origname)
-      equation 
+      equation
         (task,str) = buildExpression(exp);
         crs = Exp.crefStr(cr);
         TaskGraphExt.storeResult(crs, task, true, origname);
       then
         ();
     case (cr,exp,origname)
-      equation 
+      equation
         print("-build_assignment failed\n");
       then
         fail();
@@ -817,7 +817,7 @@ protected function buildExpression "Builds the task graph for the expression and
   input Exp.Exp inExp;
   output Integer outInteger;
   output String outString;
-algorithm 
+algorithm
   (outInteger,outString):=
   matchcontinue (inExp)
     local
@@ -832,7 +832,7 @@ algorithm
       Absyn.Path func;
       list<Exp.Exp> expl;
     case (Exp.ICONST(integer = i))
-      equation 
+      equation
         is = intString(i);
         tid = TaskGraphExt.newTask(is) "&
 	TaskGraphExt.getStartTask() => st &
@@ -841,7 +841,7 @@ algorithm
       then
         (tid,"");
     case (Exp.RCONST(real = r))
-      equation 
+      equation
         rs = realString(r);
         tid = TaskGraphExt.newTask(rs) "&
 	TaskGraphExt.getStartTask() => st &
@@ -850,24 +850,24 @@ algorithm
       then
         (tid,"");
     case (Exp.CREF(componentRef = cr))
-      equation 
+      equation
         crs = Exp.crefStr(cr) "for state variables and alg. variables" ;
         tid = TaskGraphExt.getTask(crs);
       then
         (tid,crs);
     case (Exp.CREF(componentRef = Exp.CREF_IDENT(ident = "time")))
-      equation 
+      equation
         tid = TaskGraphExt.getTask("sim_time") "for state variables and alg. variables" ;
       then
         (tid,"sim_time");
     case (Exp.CREF(componentRef = cr))
-      equation 
+      equation
         crs = Exp.crefStr(cr) "for constants and parameters, no data to send from proc0" ;
         tid = TaskGraphExt.newTask(crs);
       then
         (tid,crs);
     case (Exp.BINARY(exp1 = e1,operator = Exp.POW(ty = _),exp2 = Exp.RCONST(real = rval)))
-      equation 
+      equation
         (t1,s1) = buildExpression(e1) "special case for pow" ;
         ival = realInt(rval);
         istr = intString(ival);
@@ -877,7 +877,7 @@ algorithm
       then
         (t,"");
     case (Exp.BINARY(exp1 = e1,operator = op,exp2 = e2))
-      equation 
+      equation
         (t1,s1) = buildExpression(e1);
         (t2,s2) = buildExpression(e2);
         ops = Exp.binopSymbol1(op);
@@ -888,7 +888,7 @@ algorithm
       then
         (t,"");
     case (Exp.LBINARY(exp1 = e1,operator = op,exp2 = e2))
-      equation 
+      equation
         (t1,s1) = buildExpression(e1);
         (t2,s2) = buildExpression(e2);
         ops = Exp.binopSymbol1(op);
@@ -899,7 +899,7 @@ algorithm
       then
         (t,"");
     case (Exp.UNARY(operator = op,exp = e1))
-      equation 
+      equation
         (t1,s1) = buildExpression(e1);
         ops = Exp.unaryopSymbol(op);
         ts = Util.stringAppendList({ops,"%s"});
@@ -908,7 +908,7 @@ algorithm
       then
         (t,"");
     case (Exp.LUNARY(operator = op,exp = e1))
-      equation 
+      equation
         (t1,s1) = buildExpression(e1);
         ops = Exp.lunaryopSymbol(op);
         ts = Util.stringAppendList({ops,"%s"});
@@ -917,7 +917,7 @@ algorithm
       then
         (t,"");
     case (Exp.RELATION(exp1 = e1,operator = relop,exp2 = e2))
-      equation 
+      equation
         (t1,s1) = buildExpression(e1);
         (t2,s2) = buildExpression(e2);
         ops = Exp.relopSymbol(relop);
@@ -928,7 +928,7 @@ algorithm
       then
         (t,"");
     case (Exp.IFEXP(expCond = e1,expThen = e2,expElse = e3))
-      equation 
+      equation
         (t1,s1) = buildExpression(e1);
         (t2,s2) = buildExpression(e2);
         (t3,s3) = buildExpression(e3);
@@ -940,7 +940,7 @@ algorithm
       then
         (t,"");
     case (Exp.CALL(path = func,expLst = expl))
-      equation 
+      equation
         funcstr = Absyn.pathString(func);
         numargs = listLength(expl);
         ts = buildCallStr(funcstr, numargs);
@@ -950,57 +950,57 @@ algorithm
       then
         (t,"");
     case (Exp.ARRAY(ty = _))
-      equation 
+      equation
         print("build_expression(ARRAY) not impl. yet\n");
       then
         fail();
     case (Exp.ARRAY(ty = _))
-      equation 
+      equation
         print("build_expression(MATRIX) not impl. yet\n");
       then
         fail();
     case (Exp.RANGE(ty = _))
-      equation 
+      equation
         print("build_expression(RANGE) not impl. yet\n");
       then
         fail();
     case (Exp.TUPLE(PR = _))
-      equation 
+      equation
         print("build_expression(TUPLE) not impl. yet\n");
       then
         fail();
     case (Exp.CAST(ty = t,exp = e))
-      equation 
+      equation
         (t,s) = buildExpression(e);
       then
         (t,s);
     case (Exp.ASUB(exp = _))
-      equation 
+      equation
         print("build_expression(ASUB) not impl. yet\n");
       then
         fail();
     case (Exp.SIZE(exp = _))
-      equation 
+      equation
         print("build_expression(SIZE) not impl. yet\n");
       then
         fail();
     case (Exp.CODE(code = _))
-      equation 
+      equation
         print("build_expression(CODE) not impl. yet\n");
       then
         fail();
     case (Exp.REDUCTION(path = _))
-      equation 
+      equation
         print("build_expression(REDUCTION) not impl. yet\n");
       then
         fail();
     case (Exp.END())
-      equation 
+      equation
         print("build_expression(END) not impl. yet\n");
       then
         fail();
     case (e)
-      equation 
+      equation
         print("-build_expression failed\n Exp = ");
         es = Exp.printExpStr(e);
         print(es);
@@ -1016,7 +1016,7 @@ protected function buildCallStr
   output String res;
   list<String> ns;
   String ns_1;
-algorithm 
+algorithm
   ns := Util.listFill("%s", n);
   ns_1 := Util.stringDelimitList(ns, ", ");
   res := Util.stringAppendList({str,"(",ns_1,")"});
@@ -1027,7 +1027,7 @@ protected function addPredecessors
   input list<Integer> inIntegerLst2;
   input list<String> inStringLst3;
   input Integer inInteger4;
-algorithm 
+algorithm
   _:=
   matchcontinue (inInteger1,inIntegerLst2,inStringLst3,inInteger4)
     local
@@ -1035,9 +1035,9 @@ algorithm
       list<Integer> ts;
       String s;
       list<String> strs;
-    case (_,{},{},_) then ();  /* task list of precessors prio */ 
+    case (_,{},{},_) then ();  /* task list of precessors prio */
     case (t,(t1 :: ts),(s :: strs),prio)
-      equation 
+      equation
         TaskGraphExt.addEdge(t1, t, s, prio);
         prio_1 = prio + 1;
         addPredecessors(t, ts, strs, prio_1);

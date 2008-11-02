@@ -187,7 +187,7 @@ static int esc_char(int in_char_literal)
 		return '\t';
 	default:
 		if (c >= '0' && c <= '7')
-		{ 
+		{
 			for(v = i = 0; i < 3 && c >= '0' && c <= '7'; c = get())
 				v = v*8 + c-'0';
 			unget();
@@ -219,15 +219,15 @@ static int yylex0()
 	static char string[LEXER_STRING_MAXLENGTH];
 
 
-	if(creg >= MAX_COMMENTINFO-1) 
+	if(creg >= MAX_COMMENTINFO-1)
 		yyerror("!commentinfo-buffer overflow");
 
-	if (tmp != yylineno) 
+	if (tmp != yylineno)
 	{
 		tmp = yylineno;
 		//printf("Curren row:%d \n",yylineno);
 	}
-	if(creg == 0) 
+	if(creg == 0)
 	{ //initial bound
 		struct CommentInfo cib;
 		cib.bound = 1;
@@ -235,7 +235,7 @@ static int yylex0()
 		cib.lastcol = 1;
 		commentInfo[creg++] = cib;
 	}
-	else if(yylineno == specboundline + 2 && columnno == 0) 
+	else if(yylineno == specboundline + 2 && columnno == 0)
 	{ //bound after result
 		spreg = creg;
 		createBound(1);
@@ -271,12 +271,12 @@ static int yylex0()
 		if (d == '>')
 		{ token = YIELDS; break; }
 		if (d == '=')
-		{ 
+		{
 			e = get();
 			if (e == '.') { token = EQEQ_REAL; break; }
 			unget();
-			token = EQEQ_INT; break; 
-		}  
+			token = EQEQ_INT; break;
+		}
 		unget();
 		token = EQUALS;
 		break;
@@ -285,19 +285,19 @@ static int yylex0()
 		d = get();
 		if (d == '.') { token = LT_REAL; break; }
 		if (d == '=')
-		{ 
+		{
 			e = get();
 			if (e = '.') { token = LE_REAL; break; }
 			unget();
-			token = LE_INT; break; 
-		} 
+			token = LE_INT; break;
+		}
 		if (d == '>')
-		{ 
+		{
 			e = get();
 			if (e = '.') { token = NE_REAL; break; }
 			unget();
-			token = NE_INT; break; 
-		} 
+			token = NE_INT; break;
+		}
 		unget();
 		token = LT_INT;
 		break;
@@ -306,12 +306,12 @@ static int yylex0()
 		d = get();
 		if (d == '.') { token = GT_REAL; break; }
 		if (d == '=')
-		{ 
+		{
 			e = get();
 			if (e = '.') { token = GE_REAL; break; }
 			unget();
-			token = GE_INT; break; 
-		} 
+			token = GE_INT; break;
+		}
 		unget();
 		token = GT_INT;
 		break;
@@ -319,12 +319,12 @@ static int yylex0()
 	case '!': /* != or !=. */
 		d = get();
 		if (d == '=')
-		{ 
+		{
 			e = get();
 			if (e = '.') { token = NE_REAL; break; }
 			unget();
-			token = NE_INT; break; 
-		} 
+			token = NE_INT; break;
+		}
 		yyerror("invalid comparison operator!");
 		break;
 
@@ -358,7 +358,7 @@ static int yylex0()
 					continue;
 				}
 				if (d == '(')
-				{	    
+				{
 					d = get();
 					if (d == '*')
 					{
@@ -366,34 +366,34 @@ static int yylex0()
 							ci.buffer[yyCommentLength++] = '(';
 						if (yyCommentLength < LEXER_COMMENT_MAXLENGTH)
 							ci.buffer[yyCommentLength++] = '*';
-						innercomments++;	      
+						innercomments++;
 					}
-					else 
-					{   
+					else
+					{
 						if (yyCommentLength < LEXER_COMMENT_MAXLENGTH)
 							ci.buffer[yyCommentLength++] = '(';
 					}
 					unget();
 				    continue;
-				} 
+				}
 				if (d == '*')
 				{
 					d = get();
 					if (d == ')')
-					{   
+					{
 						if (yyCommentLength < LEXER_COMMENT_MAXLENGTH)
 							ci.buffer[yyCommentLength++] = '*';
 						if (yyCommentLength < LEXER_COMMENT_MAXLENGTH)
 							ci.buffer[yyCommentLength++] = ')';
-						innercomments--;	      
-						if (innercomments == 0) 
+						innercomments--;
+						if (innercomments == 0)
 						{
 							yyCommentLength--; /* don't put the last ')' */
 							break;
 						}
-					} 
-					else 
-					{   
+					}
+					else
+					{
 						if (yyCommentLength < LEXER_COMMENT_MAXLENGTH)
 							ci.buffer[yyCommentLength++] = '*';
 					}
@@ -463,40 +463,40 @@ static int yylex0()
 		token = CCON;
 		break;
 
-	case ')': 
+	case ')':
 		iinner = 0;
 		token = RPAR;
 		break;
 	case '.':
 		token = DOT;
-		break;      
-	case ',': 
+		break;
+	case ',':
 		token = COMMA;
 		break;
-	case '/': 
+	case '/':
 		token = DIV;
 		break;
-	case '+': 
+	case '+':
 		token = PLUS;
 		break;
-	case '*': 
+	case '*':
 		specboundline = yylineno; //can be problem if an expression...
 		if(!iinner)
 			createBound(3);
-		token = STAR; 
+		token = STAR;
 		break;
 
-	case '|': 
+	case '|':
 		token = BAR;
 		createBound(1);
 		specboundline = yylineno;
 		break;
 
-	case '&': 
+	case '&':
 		token = AMPERSAND;
 		createBound(1);
 		break;
-	case '[': 
+	case '[':
 		token = LBRACK;
 		break;
 	case ']':
@@ -627,7 +627,7 @@ int yylex()
 	int i;
 
 #ifdef LEXER_SAVE_TOKENCODE
-	((struct Token *)yylval)->code = token; 
+	((struct Token *)yylval)->code = token;
 #endif
 
 	yyCommentBuffer[yyCommentLength] = 0; /* ensure NUL termination */
@@ -653,7 +653,7 @@ int yylex()
 		{
 			fprintf(stderr, "['%c']", token);
 			return token;
-		}       
+		}
 		for(i = 0; keywords[i].name; ++i)
 			if (keywords[i].code == token)
 			{

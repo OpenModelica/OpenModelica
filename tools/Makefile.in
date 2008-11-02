@@ -20,20 +20,20 @@ INSTALL_DATADIR    = ${datadir}
 INSTALL_DOCDIR     = ${INSTALL_DATADIR}/omc/doc
 
 #all : debug
-all : mkbuilddirs release 
+all : mkbuilddirs release
 
-mkbuilddirs: 
+mkbuilddirs:
 	mkdir -p $(builddir_bin)
 	mkdir -p $(builddir_lib)
 	mkdir -p $(builddir_inc)
 	mkdir -p $(builddir_doc)
 	mkdir -p $(builddir_doc)/testmodels
 
-debug: omcd 
+debug: omcd
 
 release: omc
 
-omcd:	
+omcd:
 	(cd c_runtime; $(MAKE) -f Makefile)
 	(cd Compiler/rml2sig; $(MAKE) -f Makefile)
 	(cd Compiler; $(MAKE) -f Makefile debug)
@@ -41,7 +41,7 @@ omcd:
 	(cp -p Examples/*.* $(builddir_doc)/testmodels/)
 
 
-omc:	
+omc:
 	(cd c_runtime; $(MAKE) -f Makefile)
 	(cd Compiler/rml2sig; $(MAKE) -f Makefile)
 	(cd Compiler; $(MAKE) -f Makefile release)

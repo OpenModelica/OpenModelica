@@ -10,7 +10,7 @@ class MergeAllParents : MergeRule
 public:
   MergeAllParents(TaskGraph *,TaskGraph*,ContainSetMap *, VertexID, VertexID,
 		  double,double,int,map<VertexID,bool>*);
-  
+
   bool apply(VertexID);
 private:
   int calculateAB(std::pair<ParentsIterator, ParentsIterator> pair,

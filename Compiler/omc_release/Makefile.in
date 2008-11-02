@@ -36,7 +36,7 @@ CORBALIB=`mico-config --libs`
 ifdef USE_CORBA
  CORBALIBS=$(CORBALIB)
 else
- CORBALIBS= 
+ CORBALIBS=
 endif
 
 LDFLAGS = -lm -L$(RMLHOME)/lib/plain -lrml $(ANTLR_LIBP) -lantlr $(LIBSOCKET) $(CORBALIBS) -ldl
@@ -48,7 +48,7 @@ PLTPKGFLAGS = -L../../build/lib -lsendData
 endif
 
 PROG = omc
-RMLC	= @rmlc_bin@ 
+RMLC	= @rmlc_bin@
 RML	= $(RMLHOME)/bin/rml
 RMLCFLAGS = -Wr,-ftrace
 

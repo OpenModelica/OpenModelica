@@ -1,6 +1,6 @@
-/* Adrian Pop, http://www.ida.liu.se/~adrpo, adrpo@ida.liu.se, 
- * read the LICENSE.txt file. 
- * Portions of this file are from ApacheMonitor 
+/* Adrian Pop, http://www.ida.liu.se/~adrpo, adrpo@ida.liu.se,
+ * read the LICENSE.txt file.
+ * Portions of this file are from ApacheMonitor
  * which belongs to Apache Software Foundation.
  */
 
@@ -1674,10 +1674,10 @@ TCHAR* getProcessName( DWORD processID )
         HMODULE hMod;
         DWORD cbNeeded;
 
-        if ( EnumProcessModules( hProcess, &hMod, sizeof(hMod), 
+        if ( EnumProcessModules( hProcess, &hMod, sizeof(hMod),
              &cbNeeded) )
         {
-            GetModuleBaseName( hProcess, hMod, szProcessName, 
+            GetModuleBaseName( hProcess, hMod, szProcessName,
                                sizeof(szProcessName)/sizeof(TCHAR) );
         }
     }

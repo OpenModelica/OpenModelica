@@ -2,7 +2,7 @@
 
 
 DuplicateParentMerge::DuplicateParentMerge(TaskGraph *tg,TaskGraph * orig_tg,
-					   ContainSetMap *cmap, 
+					   ContainSetMap *cmap,
 					   VertexID inv, VertexID outv,
 					   double l,double B,int nproc,map<VertexID,bool>* removed)
  : MergeRule(tg,orig_tg,cmap,inv,outv,l,B,nproc,removed)
@@ -10,11 +10,11 @@ DuplicateParentMerge::DuplicateParentMerge(TaskGraph *tg,TaskGraph * orig_tg,
 }
 
 bool DuplicateParentMerge::apply(VertexID v)
-{ 
+{
   bool change = true;
   vector<bool>* cond1,*cond2;
   change = false;
-    
+
   if (v != m_invartask && v != m_outvartask &&
       out_degree(v,*m_taskgraph) > 1 &&
       /*!containTask(m_outvartask,children(v,*m_taskgraph)) &&*/
@@ -40,7 +40,7 @@ bool DuplicateParentMerge::apply(VertexID v)
   return change;
 }
 
-bool DuplicateParentMerge::containTask(VertexID task, 
+bool DuplicateParentMerge::containTask(VertexID task,
 				  std::pair<ChildrenIterator, ChildrenIterator> pair)
 {
   ChildrenIterator c,c_end;
@@ -88,7 +88,7 @@ DuplicateParentMerge::duplicateParentSelectNotFulfill(pair<ChildrenIterator,Chil
   return lst;
 }
 
-// For use in duplicateParentMerge. True means that parent can be merged into 
+// For use in duplicateParentMerge. True means that parent can be merged into
 // child without affecting overall cost.
 vector<bool> *
 DuplicateParentMerge::newTlevelLower(pair<ChildrenIterator ,ChildrenIterator> pair,
@@ -97,24 +97,24 @@ DuplicateParentMerge::newTlevelLower(pair<ChildrenIterator ,ChildrenIterator> pa
   ChildrenIterator v,v_end;
   tie(v,v_end) = pair;
   vector<bool> *res=new vector<bool>(out_degree(parent,*m_taskgraph));
-  
+
   for (int i=0; v != v_end; v++,i++) {
     EdgeID e; bool tmp;
     tie(e,tmp)=edge(parent,*v,*m_taskgraph);
     assert(tmp);
-    
-    if (getExecCost(*v) <= m_latency 
+
+    if (getExecCost(*v) <= m_latency
 	+ getCommCost(e)/m_bandwidth) {
       (*res)[i]=true;
     } else {
       (*res)[i]=false;
     }
-  } 
+  }
   return res;
 }
 
 // For use in duplicateParentMerge. True indicates that a sibling to the
-// parent node will not be affected by merging in a duplicated parent into the 
+// parent node will not be affected by merging in a duplicated parent into the
 // child.
 vector<bool> *
 DuplicateParentMerge::siblingCondition(pair<ChildrenIterator,ChildrenIterator> pair,
@@ -123,19 +123,19 @@ DuplicateParentMerge::siblingCondition(pair<ChildrenIterator,ChildrenIterator> p
   ChildrenIterator c,c_end;
   tie(c,c_end) = pair;
   int i;
-  vector<bool> *res=new vector<bool>(out_degree(parent,*m_taskgraph)); 
-  
+  vector<bool> *res=new vector<bool>(out_degree(parent,*m_taskgraph));
+
   for (i=0; c != c_end; c++,i++) {
     if ( allSiblingsCondition(parents(*c,*m_taskgraph),*c,parent)) {
       (*res)[i]=true;
     } else {
       (*res)[i]=false;
     }
-  } 
+  }
   return res;
 }
 
-bool 
+bool
 DuplicateParentMerge::allSiblingsCondition(std::pair<ParentsIterator,ParentsIterator> pair,
 					   VertexID child,
 					   VertexID parent)
@@ -148,9 +148,9 @@ DuplicateParentMerge::allSiblingsCondition(std::pair<ParentsIterator,ParentsIter
     if (*sibl != parent) {
       tie(e,tmp) = edge(*sibl,child,*m_taskgraph);
       assert(tmp); // Edge must exist
-      
-      res = res && 
-	tlevel(child) >= tlevel(*sibl) + m_latency 
+
+      res = res &&
+	tlevel(child) >= tlevel(*sibl) + m_latency
 	+ getCommCost(e)/m_bandwidth;
     }
   }
@@ -158,7 +158,7 @@ DuplicateParentMerge::allSiblingsCondition(std::pair<ParentsIterator,ParentsIter
 }
 
 // Deletes the vector when finished.
-int DuplicateParentMerge::numberOfTrues(vector<bool> *v) 
+int DuplicateParentMerge::numberOfTrues(vector<bool> *v)
 {
   int res=0;
   vector<bool>::iterator it;
@@ -172,8 +172,8 @@ void DuplicateParentMerge::printVertexList(const list<VertexID> &lst,ostream &os
 {
   list<VertexID>::const_iterator e;
   for (e = lst.begin(); e != lst.end(); ) {
-    os  << getTaskID(*e,m_taskgraph); 
-    e++; 
+    os  << getTaskID(*e,m_taskgraph);
+    e++;
     if (e != lst.end()) os << ", ";
   }
 }
@@ -187,14 +187,14 @@ void DuplicateParentMerge::duplicateParent(VertexID parent,
   ParentsIterator p2,p2_end;
   list<VertexID>::iterator child;
 
-  //cerr << "DuplicateParent. parent: " << getTaskID(parent,m_taskgraph) 
-  //     << " mergeChildren: "; 
+  //cerr << "DuplicateParent. parent: " << getTaskID(parent,m_taskgraph)
+  //     << " mergeChildren: ";
   //printVertexList(*mergeChildren,cerr);
   //cerr << " nonMergeChildren: ";
   //printVertexList(*nonmergeChildren,cerr);
   //cerr << endl;
-    
-    
+
+
   if (nonmergeChildren->size() == 0)
     {// When parent merged into -all- children
       // delete parent.
@@ -206,19 +206,19 @@ void DuplicateParentMerge::duplicateParent(VertexID parent,
 	  ResultSet &newSet = getResultSet(edge(*p2,*child,*m_taskgraph).first,
 					   m_taskgraph);
 	  newSet.make_union(&s);
-	  
+
 	}
 	addContainsTask(*child,parent);
       }
       (*m_taskRemoved)[parent]=true;
       clear_vertex(parent,*m_taskgraph);
       remove_vertex(parent,*m_taskgraph);
-      
+
     } else {
       for (tie(p2,p2_end) = parents(parent,*m_taskgraph); p2 != p2_end ;p2++) {
 	remove_edge(*p2,parent,*m_taskgraph);
       }
-    
+
       for(child=mergeChildren->begin(); child != mergeChildren->end(); child++) {
 	for (tie(p2,p2_end) = parents(parent,*m_taskgraph); p2 != p2_end ;p2++) {
 	  add_edge(*p2,*child,m_taskgraph);

@@ -1,31 +1,31 @@
-/* 
+/*
  * This file is part of OpenModelica.
- * 
+ *
  * Copyright (c) 1998-2008, Linköpings University,
- * Department of Computer and Information Science, 
- * SE-58183 Linköping, Sweden. 
- * 
+ * Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
  * All rights reserved.
- * 
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC 
- * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF 
- * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC 
- * PUBLIC LICENSE. 
- * 
- * The OpenModelica software and the Open Source Modelica 
- * Consortium (OSMC) Public License (OSMC-PL) are obtained 
- * from Linköpings University, either from the above address, 
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC
+ * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF
+ * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC
+ * PUBLIC LICENSE.
+ *
+ * The OpenModelica software and the Open Source Modelica
+ * Consortium (OSMC) Public License (OSMC-PL) are obtained
+ * from Linköpings University, either from the above address,
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
- * 
- * This program is distributed  WITHOUT ANY WARRANTY; without 
- * even the implied warranty of  MERCHANTABILITY or FITNESS 
- * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH 
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS 
- * OF OSMC-PL. 
- * 
+ *
+ * This program is distributed  WITHOUT ANY WARRANTY; without
+ * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
+ * OF OSMC-PL.
+ *
  * See the full OSMC Public License conditions for more details.
- * 
+ *
  */
 
 #include <vector>
@@ -42,10 +42,10 @@ using namespace std;
 vector<InterpolationTable*> interpolationTables;
 
 /* Initialize table.
- * timeIn - time 
+ * timeIn - time
  * startTime - time-Offset for the signal.
- * ipoType - type of interpolation. 
- *   0 = linear interpolation, 
+ * ipoType - type of interpolation.
+ *   0 = linear interpolation,
  * 	 1 = smooth interpolation with akima splines s.t der(y) is continuous
  * expoType - extrapolation type
  *   0 = hold first/last value outside the range
@@ -55,38 +55,38 @@ vector<InterpolationTable*> interpolationTables;
  * table - matrix with table data
  * tableDim1 - number of rows of table
  * tableDim2 - number of columns of table.
- * colWise - 0 = column major order 
+ * colWise - 0 = column major order
  *           1 = row major order
  */
 
 extern "C"
 int omcTableTimeIni(double timeIn, double startTime,int ipoType,int expoType,
 	char *tableName,char* fileName, double *table,int tableDim1,int tableDim2,int colWise)
-{	
+{
 	// might be called several times, only initialize once.
 	int i=0;
 	for (vector<InterpolationTable*>::iterator it = interpolationTables.begin(); it != interpolationTables.end(); it++,i++)
 		{
 			/* A table is identified by its fileName, columnName and memory location ptr*/
-			if (string((*it)->getTableName()) == string(tableName) && 
+			if (string((*it)->getTableName()) == string(tableName) &&
 				string((*it)->getFileName()) == string(fileName) &&
 				(*it)->getData() == table) {
 					return i;
-			}	
+			}
 		}
 	interpolationTables.push_back(
 			new InterpolationTable(timeIn,startTime,ipoType,expoType,
 			  tableName,fileName,table,tableDim1,tableDim2,colWise)
-	);		
+	);
 		// use position in vector (0..n-1) as tableID
-	return interpolationTables.size()-1; 
+	return interpolationTables.size()-1;
 }
 
 extern "C"
 double omcTableTimeIpo(int tableID,int icol,double timeIn)
-{ 	
+{
     if ((int)interpolationTables.size() != 0 && tableID >= 0 && tableID < (int)interpolationTables.size()) {
-    	return interpolationTables[tableID]->Interpolate(timeIn,icol-1);	
+    	return interpolationTables[tableID]->Interpolate(timeIn,icol-1);
     } else { // error, unvalid tableID
     	if (acceptedStep) {
     		cerr << "in omcTableTimeIpo, tableID " << tableID << " is not a valid table ID." << endl;
@@ -106,9 +106,9 @@ double omcTableTimeTmax(int tableID)
     	if (acceptedStep) {
     		cerr << "in omcTableTimeTmax, tableID " << tableID << " is not a valid table ID." << endl;
 	    	cerr << " There are currently " << interpolationTables.size() << " tables allocated" << endl;
-    	}    	
+    	}
     	return 0.0;
-    }	
+    }
 }
 
 extern "C"
@@ -132,7 +132,7 @@ double omcTableTimeTmin(int tableID)
 
 InterpolationTable::InterpolationTable(double time,double startTime, int ipoType, int expoType,
 			char* tableName, char* fileName, double *table, int tableDim1, int tableDim2, int colWise)
-			: fileName_(fileName),tableName_(tableName), 
+			: fileName_(fileName),tableName_(tableName),
 			time_(time), startTime_(startTime),
 			ipoType_(ipoType), expoType_(expoType),
 			colWise_(colWise),
@@ -145,41 +145,41 @@ InterpolationTable::InterpolationTable(double time,double startTime, int ipoType
 			fileStr = string(model_dir)+string("/")+fileStr;
 			readMatFile(fileStr,tableStr);
 		} else if ( fileStr.length()> 4 && fileStr.substr(fileStr.length()-4,4) == string(".txt")) {
-			fileStr = string(model_dir)+string("/")+fileStr;			
+			fileStr = string(model_dir)+string("/")+fileStr;
 			readTextFile(fileStr,tableStr);
 		} else if (fileStr.length()> 4 && fileStr.substr(fileStr.length()-4,4) == string(".csv")) {
 			fileStr = string(model_dir)+string("/")+fileStr;
 			readCSVFile(fileStr,tableStr);
 		} else {
-			cerr << "Error, unsupported file extension. Filename must end with .mat, .txt or .csv, filename is " 
+			cerr << "Error, unsupported file extension. Filename must end with .mat, .txt or .csv, filename is "
 			<< fileName << endl;
-		}		
+		}
 	}
-}	
+}
 
-InterpolationTable::InterpolationTable() 
+InterpolationTable::InterpolationTable()
  : time_(0.0), startTime_(0.0),
 			ipoType_(0), expoType_(0),
-			data_(0),nRows_(0), nCols_(0) 
+			data_(0),nRows_(0), nCols_(0)
 {
 }
 
-InterpolationTable::~InterpolationTable() 
+InterpolationTable::~InterpolationTable()
 {
 }
 /** \brief Returns the maximum time value in the first data column
  */
 double InterpolationTable::MaxTime()
 {
-	if (data_ == 0) return 0.0; 
+	if (data_ == 0) return 0.0;
 	else return getElt(nRows_-1,0);
 }
 
 /** \brief Returns the minimum time value in the first data column
- */ 
+ */
 double InterpolationTable::MinTime()
 {
-	if (data_ == 0) return 0.0; 
+	if (data_ == 0) return 0.0;
 	else return getElt(0,0);
 }
 
@@ -189,9 +189,9 @@ double InterpolationTable::Interpolate(double time, int col)
 {   int i=0;
 	double y=0,y1,y2,t1,t2;
 	if (time < startTime_ || data_ == 0) return 0.0;
-	
+
 	time -= startTime_;
-	
+
 	while(i < nRows_ && getElt(i,0) <= time) i++;
 	if (i == nRows_ || i == 0 ) { // time before or after end of data
 		y = extrapolate(time,col,i == 0);
@@ -200,9 +200,9 @@ double InterpolationTable::Interpolate(double time, int col)
 	  	t2 = getElt(i,0);
 	  	y1 = getElt(i-1,col);
 	  	y2 = getElt(i,col);
-	  	y =  y1 + (y2 - y1)*(time - t1)/(t2 - t1);	  	
+	  	y =  y1 + (y2 - y1)*(time - t1)/(t2 - t1);
 	}
-	return y; 
+	return y;
 }
 
 /* \brief Performs extrapolation of data outside the interpolated data region.
@@ -225,10 +225,10 @@ double InterpolationTable::extrapolate(double time, int col,bool beforeData)
 	  	y1 = getElt(nRows_-2,col);
 	  	y2 = getElt(nRows_-1,col);
 	  	y =  y1 + (y2 - y1)*(time - t1)/(t2 - t1);
-		}	
+		}
 	} else if ( expoType_ == 2) { // periodically repeat signal
 		double endPeriodTime = MaxTime();
-		while (time >= endPeriodTime) time -= endPeriodTime;		
+		while (time >= endPeriodTime) time -= endPeriodTime;
 		y = Interpolate(time+startTime_,col);
 	}
 	return y;
@@ -254,19 +254,19 @@ double InterpolationTable::getElt(int row, int col)
 	}
 	return data_[index];
 }
-/** \brief Read data from matlab file 
- * 
+/** \brief Read data from matlab file
+ *
  **/
 void InterpolationTable::readMatFile(string& fileName, string& columnName)
 {
-	cerr << "Reading data from matlab file not impl. yet" << endl;	
+	cerr << "Reading data from matlab file not impl. yet" << endl;
 }
 
 
 /** \brief Read data from text file.
- * 
- * Text file format: 
- *  #1  
+ *
+ * Text file format:
+ *  #1
  * double A(2,2) # comment here
  *   1 0
  *   0 1
@@ -274,34 +274,34 @@ void InterpolationTable::readMatFile(string& fileName, string& columnName)
  *   1 2 3
  *   3 4 5
  *   1 1 1
- */ 
+ */
 
 void InterpolationTable::readTextFile(string& fileName, string& columnName)
 {
 	ifstream file(fileName.c_str());
-	
+
 	if (!file) {
 		cerr << "Error opening file " << fileName << endl;
 	}
 	char buf[400];
 	while(file.getline(buf,400) && !isTableHeaderNamed(string(buf),columnName));
-	
+
 	if (file.eof()) {
 		cerr << "Error, table " << columnName << " not found in file " << fileName << endl;
 		return;
-	}	
+	}
 	if (readTableHeader(string(buf))) {
 		data_ = new double[nRows_*nCols_];
 		for (int r = 0,i=0; r < nRows_; r++) {
 			for (int c = 0; c < nCols_; c++) {
 				file >> data_[i++];
 			}
-		}	 
+		}
 	} else { // Error reading data.
 		cerr << "Error reading data from file " << fileName << endl;
 	nRows_=0;
 	nCols_=0;
-	data_=0;	
+	data_=0;
 	}
 }
 
@@ -317,7 +317,7 @@ bool InterpolationTable::readTableHeader(string line)
 	str >> nRows_;
 	char ch;
 	if ((ch = str.get()) != ',') {
-		cerr << "error reading column and row size from header: " << line 
+		cerr << "error reading column and row size from header: " << line
 		<< " column and row size should be separated by ',', got " << ch <<  endl;
 		return false;
 	}
@@ -333,12 +333,12 @@ bool InterpolationTable::isTableHeaderNamed(string line, string& columnName)
 		string::size_type pos = line.find_first_not_of(string(" "),7);
 		if (pos == string::npos) {
 			cerr << "error in table header: " <<  line << endl;
-			return false;	
+			return false;
 		}
 		string subStr = line.substr(pos);
 		if(subStr.compare(0,columnName.length(),columnName)==0) {
 			return true;
-		}			
+		}
 	}
 	return false;
 }

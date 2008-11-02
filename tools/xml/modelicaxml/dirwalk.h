@@ -9,13 +9,13 @@
 #define PATH_SEPARATOR "\\"
 #else /* Linux */
 #define PATH_SEPARATOR "/"
-#endif 
+#endif
 
 
 typedef std::list <char *> l_list;
 
 extern int getDirectoryStructure(char *, l_list &dirList, int _dlevel=0);
 extern int getFileList(char *currentDir, l_list &fileList, char* fileFilter="*.*");
-extern bool endsWith( std::string str, std::string suffix ); 
+extern bool endsWith( std::string str, std::string suffix );
 
 #endif

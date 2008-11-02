@@ -26,7 +26,7 @@ int main(int argc, char* argv[])
 	std::cerr << "Incorrect number of arguments\n";
 	return 1;
     }
-    
+
     file.open(argv[1]);
 
     if (!file)
@@ -34,13 +34,13 @@ int main(int argc, char* argv[])
 	std::cerr << "Could not open file: " << argv[1] << "\n";
 	return 2;
     }
-    
-    try 
+
+    try
     {
     ANTLR_USE_NAMESPACE(antlr)ASTFactory my_factory( "MyAST", MyAST::factory );
 	modelica_lexer lexer(file);
 	lexer.setFilename(argv[1]);
-	
+
 	modelica_parser parser(lexer);
 	parser.initializeASTFactory(my_factory);
 	parser.setASTFactory (&my_factory);
@@ -63,13 +63,13 @@ int main(int argc, char* argv[])
 	file.close();
 	return EXIT_FAILURE;
       }
-    catch(std::exception& e) 
+    catch(std::exception& e)
     {
 	std::cerr << "Exception: " << e.what() << std::endl;
 	file.close();
 	return EXIT_FAILURE;
     }
-  
+
     file.close();
     return EXIT_SUCCESS;
 }

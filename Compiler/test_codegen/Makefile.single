@@ -22,7 +22,7 @@ OBJS = $(MOFILES:%.mo=$(ODIR)/%.main.o)
 GENC = $(MOFILES:%.mo=$(CDIR)/%.c)
 
 
-all : $(CDIR) $(ODIR) $(BDIR) $(TARGETS) 
+all : $(CDIR) $(ODIR) $(BDIR) $(TARGETS)
 
 
 $(TARGETS) : $(BDIR)/% : $(ODIR)/%.main.o
@@ -35,7 +35,7 @@ $(OBJS) : $(ODIR)/%.main.o : $(CDIR)/%.c main.c
 	 -DCFUNCTION_TO_CALL="$(subst $(ODIR)/,,$(subst .main.o,,$@))_read_call_write"\
 	 -c -o $@ main.c
 
-$(GENC) : $(CDIR)/%.c : %.mo 
+$(GENC) : $(CDIR)/%.c : %.mo
 	@$(OMC) $< +d=codegen > $@
 
 $(CDIR) $(ODIR) $(BDIR) : % :

@@ -1,6 +1,6 @@
 
 (*
-   Copyright 2005-2006, Adrian Pop, adrpo@ida.liu.se 
+   Copyright 2005-2006, Adrian Pop, adrpo@ida.liu.se
 *)
 
 (**
@@ -9,7 +9,7 @@
  ** description: Very fast and very memory eater unique string key dictionary
  **              using multidimentional vectors of size Dictionary.range.
  **              Starts with a Dictionary.range size vector and enters with the
- **              first char from the key in it getting back another vector of 
+ **              first char from the key in it getting back another vector of
  **              Dictionary.range size. Then takes the next char from key
  **              and uses as an index in this new vector and so on, until the
  **              end of the key is reached. Then retrieves or inserts or updates
@@ -18,13 +18,13 @@
  **)
 
 module Dictionary:
-  
+
   type 'a value = 'a option
 
   datatype 'a dictEntry = ENTRY of 'a dictEntry vector * 'a value
 					    | EMPTY
-  datatype 'a dict = DICT of 'a dictEntry 
-                
+  datatype 'a dict = DICT of 'a dictEntry
+
 
   val emptyDict: 'a dict
   val range: int (* useful ascii range *)
@@ -40,13 +40,13 @@ end
 
 val emptyDict = DICT(EMPTY)
 
-(* useful ascii range, 
- * actually it could be only from 
- * 32 to 127 but then some mapping 
+(* useful ascii range,
+ * actually it could be only from
+ * 32 to 127 but then some mapping
  * should be done *)
-val range = 127 
+val range = 127
 
-relation insert: ('a dict, string, 'a ) => 'a dict = 
+relation insert: ('a dict, string, 'a ) => 'a dict =
 
 	rule insertDict(dictionary, s, SOME(d)) => newDict
 		 ---------------------------------------------
@@ -54,7 +54,7 @@ relation insert: ('a dict, string, 'a ) => 'a dict =
 
 end
 
-relation insertDict: ('a dict, string, 'a value) => 'a dict = 
+relation insertDict: ('a dict, string, 'a value) => 'a dict =
 
     (* empty dictionary, make a new one *)
 	rule (* if dictionary is empty create the first entry *)
@@ -76,7 +76,7 @@ relation insertDict: ('a dict, string, 'a value) => 'a dict =
 
 end
 
-relation insertEntry: ('a dictEntry, string, 'a value, int) => 'a dictEntry = 
+relation insertEntry: ('a dictEntry, string, 'a value, int) => 'a dictEntry =
 
 	rule string_length(s) => len &
 		 int_lt(ind, len) => true & (* if the index in the string is less than the string *)
@@ -86,7 +86,7 @@ relation insertEntry: ('a dictEntry, string, 'a value, int) => 'a dictEntry =
 		 vector_create(range, EMPTY) => newEmptyVect &
 		 ind + 1 => newind &
          insertEntry(ENTRY(newEmptyVect, NONE), s, v, newind) => newEntry &
-		 vector_setnth(dictEntryVect, i, newEntry) => newEntryVect 
+		 vector_setnth(dictEntryVect, i, newEntry) => newEntryVect
 		 -----------------------------------------------------------------------------
 		 insertEntry(ENTRY(dictEntryVect, var), s, v, ind) => ENTRY(newEntryVect, var)
 
@@ -97,25 +97,25 @@ relation insertEntry: ('a dictEntry, string, 'a value, int) => 'a dictEntry =
 		 vector_nth(dictEntryVect, i) => entry & (* already there *)
 		 ind + 1 => newind &
          insertEntry(entry, s, v, newind) => newEntry &
-		 vector_setnth(dictEntryVect, i, newEntry) => newEntryVect 
+		 vector_setnth(dictEntryVect, i, newEntry) => newEntryVect
 		 -----------------------------------------------------------------------------
 		 insertEntry(ENTRY(dictEntryVect, var), s, v, ind) => ENTRY(newEntryVect, var)
 
 	rule string_length(s) => len &
 		 int_eq(ind, len) => true
-		 (* if the index in the string is exactly  
+		 (* if the index in the string is exactly
 		    the string lenght we have found it, update the entry *)
 		 ----------------------------------------------------------
 		 insertEntry(ENTRY(x, NONE), s, v, ind) => ENTRY(x, v)
 
 	rule string_length(s) => len &
 		 int_eq(ind, len) => true &
-		 (* if the index in the string is exactly  
+		 (* if the index in the string is exactly
 		    the string lenght we have found it, update the entry *)
-		 print "DICT: Updating key:" & print s & print "\n" 
+		 print "DICT: Updating key:" & print s & print "\n"
 		 (*
 		 print "Already existing value. UPDATING!\n" &
-		 print "Use Dictionary.update(dict, key, updatedvalue instead)!\n" 
+		 print "Use Dictionary.update(dict, key, updatedvalue instead)!\n"
 		 *)
 		 (* &
 		 debug_print("exi value", var) &
@@ -126,14 +126,14 @@ relation insertEntry: ('a dictEntry, string, 'a value, int) => 'a dictEntry =
 
 	rule print "How did we came here? key=" & print s & print " index=" &
 	     int_string(ind) => ind_str & print ind_str & print "\n" &
-		 debug_print("entry", x) 
+		 debug_print("entry", x)
 		 -----------------------------------------------------------
 		 insertEntry(x, s, v, ind) => fail
 
 end
 
 (* this one updates the existing value without complaining *)
-relation update: ('a dict, string, 'a ) => 'a dict = 
+relation update: ('a dict, string, 'a ) => 'a dict =
 
 	rule updateDict(dictionary, s, SOME(d)) => newDict
 		 ---------------------------------------------
@@ -141,7 +141,7 @@ relation update: ('a dict, string, 'a ) => 'a dict =
 
 end
 
-relation updateDict: ('a dict, string, 'a value) => 'a dict = 
+relation updateDict: ('a dict, string, 'a value) => 'a dict =
 
     (* empty dictionary, make a new one *)
 	rule (* if dictionary is empty create the first entry *)
@@ -163,7 +163,7 @@ relation updateDict: ('a dict, string, 'a value) => 'a dict =
 
 end
 
-relation updateEntry: ('a dictEntry, string, 'a value, int) => 'a dictEntry = 
+relation updateEntry: ('a dictEntry, string, 'a value, int) => 'a dictEntry =
 
 	rule string_length(s) => len &
 		 int_lt(ind, len) => true & (* if the index in the string is less than the string *)
@@ -173,7 +173,7 @@ relation updateEntry: ('a dictEntry, string, 'a value, int) => 'a dictEntry =
 		 vector_create(range, EMPTY) => newEmptyVect &
 		 ind + 1 => newind &
          updateEntry(ENTRY(newEmptyVect, NONE), s, v, newind) => newEntry &
-		 vector_setnth(dictEntryVect, i, newEntry) => newEntryVect 
+		 vector_setnth(dictEntryVect, i, newEntry) => newEntryVect
 		 -----------------------------------------------------------------------------
 		 updateEntry(ENTRY(dictEntryVect, var), s, v, ind) => ENTRY(newEntryVect, var)
 
@@ -184,36 +184,36 @@ relation updateEntry: ('a dictEntry, string, 'a value, int) => 'a dictEntry =
 		 vector_nth(dictEntryVect, i) => entry & (* already there *)
 		 ind + 1 => newind &
          updateEntry(entry, s, v, newind) => newEntry &
-		 vector_setnth(dictEntryVect, i, newEntry) => newEntryVect 
+		 vector_setnth(dictEntryVect, i, newEntry) => newEntryVect
 		 -----------------------------------------------------------------------------
 		 updateEntry(ENTRY(dictEntryVect, var), s, v, ind) => ENTRY(newEntryVect, var)
 
 	rule string_length(s) => len &
 		 int_eq(ind, len) => true
-		 (* if the index in the string is exactly  
+		 (* if the index in the string is exactly
 		    the string lenght we have found it, update the entry *)
 		 ----------------------------------------------------------
 		 updateEntry(ENTRY(x, NONE), s, v, ind) => ENTRY(x, v)
 
 	rule string_length(s) => len &
-		 int_eq(ind, len) => true 
-		 (* if the index in the string is exactly  
+		 int_eq(ind, len) => true
+		 (* if the index in the string is exactly
 		    the string lenght we have found it, update the entry *)
 		 ---------------------------------------------------------------
 		 updateEntry(ENTRY(x, var as SOME(d)), s, v, ind) => ENTRY(x, v)
 
 	rule print "How did we came here? key=" & print s & print " index=" &
 	     int_string(ind) => ind_str & print ind_str & print "\n" &
-		 debug_print("entry", x) 
+		 debug_print("entry", x)
 		 -----------------------------------------------------------
 		 updateEntry(x, s, v, ind) => fail
 
 end
 
-(* 
- * returns NONE if not found or the SOME(data) if found 
+(*
+ * returns NONE if not found or the SOME(data) if found
  *)
-relation search: ('a dict, string) => 'a value = 
+relation search: ('a dict, string) => 'a value =
 
 	rule searchDict(dictionary, s) => v
 		 ------------------------------
@@ -221,10 +221,10 @@ relation search: ('a dict, string) => 'a value =
 
 end
 
-(* 
- * returns NONE if not found or the SOME(data) if found 
+(*
+ * returns NONE if not found or the SOME(data) if found
  *)
-relation searchDict: ('a dict, string) => 'a value = 
+relation searchDict: ('a dict, string) => 'a value =
 
     axiom searchDict(DICT(EMPTY), _) => NONE
 
@@ -234,12 +234,12 @@ relation searchDict: ('a dict, string) => 'a value =
 
 end
 
-(* 
- * returns NONE if not found or the SOME(data) if found 
+(*
+ * returns NONE if not found or the SOME(data) if found
  *)
-relation searchEntry: ('a dictEntry, string, int) => 'a value = 
+relation searchEntry: ('a dictEntry, string, int) => 'a value =
 
-	rule (* 
+	rule (*
 	     print "\nentry=" & showEntry(x,0) & debug_print("\ns", s) & debug_print("ind", ind) &
 		 *)
 	     string_length(s) => len &
@@ -256,8 +256,8 @@ relation searchEntry: ('a dictEntry, string, int) => 'a value =
 	     print "\nentry=" & showEntry(x,0) & debug_print("\ns", s) & debug_print("ind", ind) &
 		 *)
 		 string_length(s) => len &
-		 int_eq(ind, len) => true   
-		 (* if the index in the string is exactly  
+		 int_eq(ind, len) => true
+		 (* if the index in the string is exactly
 		    the string lenght we have found it *)
 		 ------------------------------------------
 		 searchEntry(x as ENTRY(_, v), s, ind) => v
@@ -267,7 +267,7 @@ relation searchEntry: ('a dictEntry, string, int) => 'a value =
 		 *)
 		 ------------------------------
 		 searchEntry(x, s, ind) => NONE
-	
+
 end
 
 relation index: string => int =
@@ -289,7 +289,7 @@ relation showEntryVec: ('a dictEntry vector, int) => () =
 		 showEntryVec(v, newI) &
 		 showEntry(entry, 0)
 	     -------------------------
-		 showEntryVec(v, i) 
+		 showEntryVec(v, i)
 
 	rule vector_length(v) => len &
 	     int_lt(i, len) => true &
@@ -298,12 +298,12 @@ relation showEntryVec: ('a dictEntry vector, int) => () =
 		 i + 1 => newI &
 		 showEntryVec(v, newI)
 	     -------------------------
-		 showEntryVec(v, i) 
+		 showEntryVec(v, i)
 
 	rule vector_length(v) => len &
-	     int_lt(i, len) => false 
+	     int_lt(i, len) => false
 	     -------------------------
-		 showEntryVec(v, i) 
+		 showEntryVec(v, i)
 
     rule debug_print("i",i) & debug_print("v", v)
 	     ----------------------------------------
@@ -317,11 +317,11 @@ relation showEntry: ('a dictEntry, int) => () =
 	     ---------------------
 		 showEntry(EMPTY, ind)
 
-	rule showEntryVec(entryVec, ind) & print "->" & debug_print("S", v) 
+	rule showEntryVec(entryVec, ind) & print "->" & debug_print("S", v)
 	     -----------------------------
 		 showEntry(ENTRY(entryVec, SOME(v)), ind)
 
-	rule showEntryVec(entryVec, ind)  
+	rule showEntryVec(entryVec, ind)
 	     -----------------------------
 		 showEntry(ENTRY(entryVec, NONE), ind)
 end
@@ -348,7 +348,7 @@ relation entryToListVec =
 		 vector_nth(v, i) => (entry as ENTRY(_, _)) &
 		 i + 1 => newI &
 		 list_append(keyLst, [s]) => newKeyLst &
-		 entryToList(entry, 0, newKeyLst, dictLst) => newDictLst1 &	 
+		 entryToList(entry, 0, newKeyLst, dictLst) => newDictLst1 &
 		 entryToListVec(v, newI, keyLst, dictLst) => newDictLst2 &
 		 list_append(newDictLst1, newDictLst2) => newDictLst
 	     -----------------------------------------------------------
@@ -364,9 +364,9 @@ relation entryToListVec =
 		 entryToListVec(v, i, keyLst, dictLst) => newDictLst
 
 	rule vector_length(v) => len &
-	     int_lt(i, len) => false 
+	     int_lt(i, len) => false
 	     ------------------------------------------------
-		 entryToListVec(v, i, keyLst, dictLst) => dictLst 
+		 entryToListVec(v, i, keyLst, dictLst) => dictLst
 
     rule debug_print("i",i) & debug_print("v", v)
 	     ------------------------------------------------
@@ -376,7 +376,7 @@ end
 
 relation entryToList =
 
-	axiom entryToList(EMPTY, ind, keyLst, dictLst) => dictLst	
+	axiom entryToList(EMPTY, ind, keyLst, dictLst) => dictLst
 
 	rule entryToListVec(entryVec, ind, keyLst, dictLst) => newDictLst &
 		 list_string(keyLst) => key &
@@ -384,7 +384,7 @@ relation entryToList =
 	     -------------------------------------------------------------------------
 		 entryToList(ENTRY(entryVec, SOME(v)), ind, keyLst, dictLst) => newDictLst
 
-	rule entryToListVec(entryVec, ind, keyLst, dictLst) => newDictLst  
+	rule entryToListVec(entryVec, ind, keyLst, dictLst) => newDictLst
 	     ----------------------------------------------------------------------
 		 entryToList(ENTRY(entryVec, NONE), ind, keyLst, dictLst) => newDictLst
 end
@@ -393,7 +393,7 @@ relation toList: 'a dict => ((string * 'a value) list) =
 
 	axiom toList(DICT(EMPTY)) => []
 
-	rule entryToList(entry, 0, [], []) => dictLst 
+	rule entryToList(entry, 0, [], []) => dictLst
 	     ----------------------------------------
 		 toList(DICT(entry)) => dictLst
 
@@ -424,8 +424,8 @@ relation test: () => () =
 		search(dict, "Absyn.func") => v &
 		debug_print("\nAbsyn.func", v) &
 		search(dict, "Bla") => v &
-		debug_print("\nBla", v) 
+		debug_print("\nBla", v)
 		--------------------------------------------------------------
-		test 
+		test
 
 end

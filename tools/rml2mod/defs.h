@@ -39,11 +39,11 @@ struct Token
     char   *ident;
     char   *string;
   } u;
-  #ifdef LEXER_TOKEN_POSITION 
+  #ifdef LEXER_TOKEN_POSITION
   char  *file;
   int   firstline, firstcol; /* start position of this token */
   int   lastline, lastcol;   /* end position of this token */
-  #endif 
+  #endif
 };
 
 #endif

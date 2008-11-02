@@ -1,6 +1,6 @@
 #include <iostream>
 #include <sstream>
-#include <fstream> 
+#include <fstream>
 
 #include "flat_modelica_parser.hpp"
 #include "flat_modelica_lexer.hpp"
@@ -19,12 +19,12 @@ using namespace std;
 
 int main(int argc, char **argv) {
     char* filename = argv[1];
-    string filestring(filename); 
+    string filestring(filename);
     bool debug = false;
     bool parsedump = true;
-    /* 2004-10-05 adrpo moved this declaration here to 
-     * have the ast initialized before getting 
-     * into the code. This way, if this relation fails at least the 
+    /* 2004-10-05 adrpo moved this declaration here to
+     * have the ast initialized before getting
+     * into the code. This way, if this relation fails at least the
      * ast is initialized */
    void* ast= null;
 
@@ -35,7 +35,7 @@ int main(int argc, char **argv) {
     }
 
     std::ifstream stream(filename);
-    if (!stream) {    
+    if (!stream) {
       cerr << "File \"" << filename << "\" not found." << endl;
       exit(1);
     }
@@ -46,7 +46,7 @@ int main(int argc, char **argv) {
     flat_lex = new flat_modelica_lexer(stream);
     flat_lex->setFilename(filename);
 
-    if (!stream) 
+    if (!stream)
       {
 	std::cerr << "Error opening file" << std::endl;
       }
@@ -54,7 +54,7 @@ int main(int argc, char **argv) {
     if (parseFlatModelica){
       //We are parsing flat modelica and not modelica
       flat_parse = new flat_modelica_parser(*flat_lex);
-      flat_parse->setFilename(filename); 
+      flat_parse->setFilename(filename);
 
       // make factory with customized type of MyAST
       flat_parse->initializeASTFactory(my_factory);
@@ -65,49 +65,49 @@ int main(int argc, char **argv) {
 	flat_parse->stored_definition();
 	cout << "done" << endl;
 	t = RefMyAST(flat_parse->getAST());
-      } 
-      catch (ANTLR_USE_NAMESPACE(antlr)CharStreamException &e) 
+      }
+      catch (ANTLR_USE_NAMESPACE(antlr)CharStreamException &e)
 	{
-	  std::cerr << "Lexical error. CharStreamException. "  << std::endl;    
+	  std::cerr << "Lexical error. CharStreamException. "  << std::endl;
 	}
-      catch (ANTLR_USE_NAMESPACE(antlr)TokenStreamRecognitionException &e) 
+      catch (ANTLR_USE_NAMESPACE(antlr)TokenStreamRecognitionException &e)
 	{
 	  std::cerr << "Parsing error. TokenStreamRecognitionException on line "
-		    << flat_lex->getLine() << "near :"<< flat_lex->getText() << std::endl;    
+		    << flat_lex->getLine() << "near :"<< flat_lex->getText() << std::endl;
 	}
-      catch (ANTLR_USE_NAMESPACE(antlr)RecognitionException &e) 
+      catch (ANTLR_USE_NAMESPACE(antlr)RecognitionException &e)
 	{
-	  std::cerr << "[" << filestring << ":" << e.getLine() << ":" << e.getColumn() 
+	  std::cerr << "[" << filestring << ":" << e.getLine() << ":" << e.getColumn()
 		    << "]: error: " << e.getMessage() << std::endl;
 	}
-      catch (ANTLR_USE_NAMESPACE(antlr)TokenStreamException &e) 
+      catch (ANTLR_USE_NAMESPACE(antlr)TokenStreamException &e)
 	{
-	  std::cerr << "[" << filestring << ":" << flat_lex->getLine() << ":" << flat_lex->getColumn() 
+	  std::cerr << "[" << filestring << ":" << flat_lex->getLine() << ":" << flat_lex->getColumn()
 		    << "]: error: illegal token" << std::endl;
 	}
-      catch (ANTLR_USE_NAMESPACE(antlr)ANTLRException &e) 
+      catch (ANTLR_USE_NAMESPACE(antlr)ANTLRException &e)
 	{
 	  std::cerr << "ANTLRException: " << e.getMessage() << std::endl;
 	}
-      catch (std::exception &e) 
+      catch (std::exception &e)
 	{
 	  std::cerr << "Error while parsing:\n" << e.what() << "\n";
 	}
-      catch (...) 
+      catch (...)
 	{
 	  std::cerr << "Error while parsing\n";
 	}
 
     }
 
-    if (parsedump) 
+    if (parsedump)
       {
 	parse_tree_dumper dumper(std::cout);
 	//dumper.initializeASTFactory(factory);
 	//dumper.setASTFactory(&factory);
 	dumper.dump(t);
       }
-	
+
 
     if (flat_parse) delete flat_parse;
     if (flat_lex) delete flat_lex;

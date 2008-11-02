@@ -17,8 +17,8 @@ public:
    // copy constructor
    MyAST( const MyAST& other )
 	: CommonAST(other)
-	, line(other.line), column(other.column), 
-	  endline(other.endline), 
+	, line(other.line), column(other.column),
+	  endline(other.endline),
 	  endcolumn(other.endcolumn)
 	{
 	}
@@ -62,7 +62,7 @@ public:
    {
       column = c;
    }
-   
+
    /* Adrian Pop, 2006-02-13 added endline, endcolumn */
 
    virtual int getEndLine( void ) const
@@ -70,7 +70,7 @@ public:
       // most of the time the line number is not set if the node is a
       // imaginary one. Usually this means it has a child. Refer to the
       // child line number. Of course this could be extended a bit.
-      if ( endline != 0 ) return endline; 
+      if ( endline != 0 ) return endline;
       if( getNextSibling() )
       {
       	return ( RefMyAST(getNextSibling())->getLine() );
@@ -91,7 +91,7 @@ public:
       // most of the time the line number is not set if the node is a
       // imaginary one. Usually this means it has a child. Refer to the
       // child line number. Of course this could be extended a bit.
-      if ( endcolumn != 0 ) return endcolumn;       
+      if ( endcolumn != 0 ) return endcolumn;
       if( getNextSibling() )
       {
       	return ( RefMyAST(getNextSibling())->getColumn() );

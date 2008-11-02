@@ -16,8 +16,8 @@
 
 static integer c__1 = 1;
 
-/* Subroutine */ int dogleg_(integer *n, doublereal *r__, integer *lr, 
-	doublereal *diag, doublereal *qtb, doublereal *delta, doublereal *x, 
+/* Subroutine */ int dogleg_(integer *n, doublereal *r__, integer *lr,
+	doublereal *diag, doublereal *qtb, doublereal *delta, doublereal *x,
 	doublereal *wa1, doublereal *wa2)
 {
     /* Initialized data */
@@ -238,7 +238,7 @@ L40:
     d__3 = *delta / qnorm;
 /* Computing 2nd power */
     d__4 = sgnorm / *delta;
-    temp = temp - *delta / qnorm * (d__1 * d__1) + sqrt(d__2 * d__2 + (one - 
+    temp = temp - *delta / qnorm * (d__1 * d__1) + sqrt(d__2 * d__2 + (one -
 	    d__3 * d__3) * (one - d__4 * d__4));
 /* Computing 2nd power */
     d__1 = sgnorm / *delta;

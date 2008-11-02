@@ -18,7 +18,7 @@ INCLUDES=-I@antlrinc@ -I$(MODELICA_PARSER)
 
 LIBP=-L@antlrlib@
 
-CFLAGS =-O3 -Wall $(INCLUDES) 
+CFLAGS =-O3 -Wall $(INCLUDES)
 CXXFLAGS = $(CFLAGS)
 
 ANTLRFLAGS=
@@ -39,7 +39,7 @@ parserobjs=$(parsersrcs:.cpp=.o)
 
 helperobjs =  parse_tree_dumper.o token_names.o
 
-OBJS += $(lexerobjs) $(parserobjs) 
+OBJS += $(lexerobjs) $(parserobjs)
 #$(helperobjs)
 
 all: libflat_modelica_parser.a
@@ -76,7 +76,7 @@ reallyclean: clean
 flat_modelica_lexer.o:flat_modelica_lexer.cpp flat_modelica_lexer.hpp
 flat_modelica_parser.o:flat_modelica_parser.cpp flat_modelica_parser.hpp
 #token_names.o:token_names.cpp
-parse_tree_dumper.o: 
+parse_tree_dumper.o:
 	cd $(MODELICA_PARSER) && make && cd $(top_builddir)/flat_modelica_parser/src
 
 

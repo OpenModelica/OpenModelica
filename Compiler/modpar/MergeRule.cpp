@@ -2,17 +2,17 @@
 #include "TaskGraph.hpp"
 
 MergeRule::MergeRule(TaskGraph *tg, TaskGraph *orig_tg,
-		     ContainSetMap *cmap, VertexID invar, 
+		     ContainSetMap *cmap, VertexID invar,
 		     VertexID outvar, double l, double B,
 		     int nproc,
-		     map<VertexID,bool>*removed) 
+		     map<VertexID,bool>*removed)
   : m_latency(l), m_bandwidth(B),m_nproc(nproc),
     m_taskgraph(tg), m_orig_taskgraph(orig_tg),
-    m_containTasks(cmap), m_invartask(invar), 
+    m_containTasks(cmap), m_invartask(invar),
     m_outvartask(outvar), m_taskRemoved(removed)
 {
   VertexIterator v,v_end;
-  
+
   //Maps for fast access to unique ID given VertexID
   for (tie(v,v_end) = vertices(*tg);v != v_end; v++) {
     int id =getTaskID(*v,tg);
@@ -32,7 +32,7 @@ int MergeRule::getCommCost(EdgeID e)
 
 // Return the execution cost in the merged task graph.
 // VertexID should belong to the merged task graph. (m_taskgraph)
-double MergeRule::getExecCost(VertexID v) 
+double MergeRule::getExecCost(VertexID v)
 {
   double cost =0.0;
   map<int,double>::iterator c;
@@ -44,9 +44,9 @@ double MergeRule::getExecCost(VertexID v)
 			   m_orig_taskgraph);
     }
     return cost;
-  } 
+  }
   return ::getExecCost(find_task(getTaskID(v,m_taskgraph),m_orig_taskgraph),
-		       m_orig_taskgraph);  
+		       m_orig_taskgraph);
 }
 
 VertexID MergeRule::find_task(int taskID, TaskGraph *tg)
@@ -67,7 +67,7 @@ void MergeRule::addContainsTask(VertexID mainTask, VertexID subTask)
   ContainSetMap::iterator set1,set2;
   set1=m_containTasks->find(mainTask);
   set2=m_containTasks->find(subTask);
-  
+
   if (set1 == m_containTasks->end()) { // new set needed
     ContainSet *s = new ContainSet();
     (*m_containTasks)[mainTask] = s;
@@ -75,7 +75,7 @@ void MergeRule::addContainsTask(VertexID mainTask, VertexID subTask)
   if (set2 == m_containTasks->end()) { // new set needed
     ContainSet *s = new ContainSet();
     (*m_containTasks)[subTask] = s;
-  } 
+  }
 
   set1->second->make_union(set2->second);
 }
@@ -102,7 +102,7 @@ void MergeRule::printVertexSet(set<VertexID> list, ostream &os)
 double MergeRule::tlevel(VertexID node)
 {
   int i;
-  if (in_degree(node,*m_taskgraph) == 0) 
+  if (in_degree(node,*m_taskgraph) == 0)
     return 0.0;
   else {
     vector<double> tlevels(in_degree(node,*m_taskgraph));
@@ -118,8 +118,8 @@ double MergeRule::tlevel(VertexID node)
 	execsum+=getExecCost(find_task(*it,m_taskgraph));
       }
       tlevels[i] = tlevel(p)+ execsum + m_latency
-	+ getCommCost(*e)/m_bandwidth;    
-    } 
+	+ getCommCost(*e)/m_bandwidth;
+    }
     return max(tlevels);
   }
 }

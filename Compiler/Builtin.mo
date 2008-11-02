@@ -1,47 +1,47 @@
-/* 
+/*
  * This file is part of OpenModelica.
- * 
+ *
  * Copyright (c) 1998-2008, Linköpings University,
- * Department of Computer and Information Science, 
- * SE-58183 Linköping, Sweden. 
- * 
+ * Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
  * All rights reserved.
- * 
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC 
- * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF 
- * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC 
- * PUBLIC LICENSE. 
- * 
- * The OpenModelica software and the Open Source Modelica 
- * Consortium (OSMC) Public License (OSMC-PL) are obtained 
- * from Linköpings University, either from the above address, 
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC
+ * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF
+ * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC
+ * PUBLIC LICENSE.
+ *
+ * The OpenModelica software and the Open Source Modelica
+ * Consortium (OSMC) Public License (OSMC-PL) are obtained
+ * from Linköpings University, either from the above address,
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
- * 
- * This program is distributed  WITHOUT ANY WARRANTY; without 
- * even the implied warranty of  MERCHANTABILITY or FITNESS 
- * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH 
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS 
- * OF OSMC-PL. 
- * 
+ *
+ * This program is distributed  WITHOUT ANY WARRANTY; without
+ * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
+ * OF OSMC-PL.
+ *
  * See the full OSMC Public License conditions for more details.
- * 
- */ 
+ *
+ */
 
-package Builtin 
+package Builtin
 " file:	 Builtin.mo
   package:      Builtin
   description: Builting tyepes and variables
- 
+
   RCS: $Id$
- 
+
   This module defines the builtin types, variables and functions in
   Modelica.  The only exported functions are `initial_env\' and
   simple_initial_env.
-  
+
   There are several builtin attributes defined in the builtin types, such as
-  unit, start, etc. 
-  
+  unit, start, etc.
+
 "
 
 public import Absyn;
@@ -53,9 +53,9 @@ protected import Types;
 protected import ClassInf;
 
 /*
-- The primitive types 
+- The primitive types
   These are the primitive types that are used to build the types
-  `Real\', `Integer\' etc. 
+  `Real\', `Integer\' etc.
 */
 public constant SCode.Class rlType=SCode.CLASS("RealType",false,false,SCode.R_PREDEFINED_REAL(),
           SCode.PARTS({},{},{},{},{},NONE)) " real type ";
@@ -160,7 +160,7 @@ protected constant SCode.Class booleanType=SCode.CLASS("Boolean",false,false,SCo
 protected constant Types.Var timeVar=Types.VAR("time",
           Types.ATTR(false,SCode.RO(),SCode.VAR(),Absyn.BIDIR()),false,(Types.T_REAL({}),NONE),Types.UNBOUND()) "- The `time\' variable" ;
 
-protected 
+protected
 replaceable type Type_a subtypeof Any;
 constant tuple<Types.TType, Option<Type_a>> nil2real=(Types.T_FUNCTION({},(Types.T_REAL({}),NONE)),NONE) "- Some assorted function types" ;
 
@@ -175,10 +175,10 @@ protected constant tuple<Types.TType, Option<Type_a>> real2string=(
 
 protected constant tuple<Types.TType, Option<Type_a>> int2string =(
           Types.T_FUNCTION({("x",(Types.T_INTEGER({}),NONE))},(Types.T_STRING({}),NONE)),NONE);
-          
+
 protected constant tuple<Types.TType, Option<Type_a>> bool2string =(
-          Types.T_FUNCTION({("x",(Types.T_BOOL({}),NONE))},(Types.T_STRING({}),NONE)),NONE);          
-          
+          Types.T_FUNCTION({("x",(Types.T_BOOL({}),NONE))},(Types.T_STRING({}),NONE)),NONE);
+
 protected constant tuple<Types.TType, Option<Type_a>> real2real=(
           Types.T_FUNCTION({("x",(Types.T_REAL({}),NONE))},(Types.T_REAL({}),NONE)),NONE);
 
@@ -2469,7 +2469,7 @@ protected constant tuple<Types.TType, Option<Type_a>> array9dimbool2array1dimint
           (Types.T_ARRAY(Types.DIM(SOME(9)),(Types.T_BOOL({}),NONE)),
           NONE))},
           (
-              Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);  
+              Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
 
 // MetaModelica extension. KS
 protected constant tuple<Types.TType, Option<Type_a>> list2list=(
@@ -2492,22 +2492,22 @@ val array_array2array=
 val int2array= (Types.T_FUNCTION(\"x\",(Types.T_ARRAY(1,_)),NONE)
   Specifierar en vector, array of dimension one
   zeroes, ones, fill?
-  
+
 val real_real_int2array
 val array2real
 val array_array2int
 
   - Initial environment
   function: simpleInitialEnv
-  
+
   The initial environment where instantiation takes place is built
   up using this function.  It creates an empty environment and adds
   all the built-in types to it.
- 
+
   This only creates a minimal environment, useful for debugging purposes.
 "
   output list<Env.Frame> env;
-algorithm 
+algorithm
   env := Env.openScope(Env.emptyEnv, false, NONE) "Debug.fprint (\"insttr\",\"Creating initial env.\\n\") &" ;
   env := Env.extendFrameC(env, rlType);
   env := Env.extendFrameC(env, intType);
@@ -2523,7 +2523,7 @@ algorithm
 end simpleInitialEnv;
 
 public function initialEnv "function: initialEnv
-  
+
   The initial environment where instantiation takes place is built
   up using this function.  It creates an empty environment and adds
   all the built-in definitions to it.
@@ -2532,7 +2532,7 @@ public function initialEnv "function: initialEnv
     the type system, since they e.g. have arbitrary arguments, etc.
 	- fill
 	- cat
-    These operators are catched in the elabBuiltinHandler, along with all 
+    These operators are catched in the elabBuiltinHandler, along with all
     others.
 "
   input Env.Cache inCache;
@@ -2540,9 +2540,9 @@ public function initialEnv "function: initialEnv
   output list<Env.Frame> env;
   list<Env.Frame> envb;
   Env.Cache cache;
-algorithm 
-  env := matchcontinue(cache) 
-  	
+algorithm
+  env := matchcontinue(cache)
+
   	// First look for cached version
     case (cache) equation
       env = Env.getCachedInitialEnv(cache);
@@ -2563,15 +2563,15 @@ algorithm
       env = Env.extendFrameC(env, booleanType);
       env = Env.extendFrameC(env, stateSelectType);
       env = Env.extendFrameV(env, timeVar, NONE, Env.VAR_UNTYPED(), {});
-      
+
       // MetaModelica extension
-      env = Env.extendFrameT(env, "listCar", list2list); // Should be list2any; easier this way. See also rule in Types.subType. 
-      env = Env.extendFrameT(env, "listCdr", list2list);   
-      env = Env.extendFrameT(env, "emptyListTest", list2boolean);   
+      env = Env.extendFrameT(env, "listCar", list2list); // Should be list2any; easier this way. See also rule in Types.subType.
+      env = Env.extendFrameT(env, "listCdr", list2list);
+      env = Env.extendFrameT(env, "emptyListTest", list2boolean);
       env = Env.extendFrameT(env, "emptyOptionTest", option2boolean);
       env = Env.extendFrameT(env, "metaMGetField", anyInteger2any);
       //----
-         
+
       env = Env.extendFrameT(env, "initial", nil2real) "non-functions" ;
       env = Env.extendFrameT(env, "terminal", nil2real);
       env = Env.extendFrameT(env, "event", bool2bool);
@@ -2591,9 +2591,9 @@ algorithm
       env = Env.extendFrameT(env, "sin", real2real) "Not in the report" ;
       env = Env.extendFrameT(env, "cos", real2real);
       env = Env.extendFrameT(env, "tan", real2real);
-      env = Env.extendFrameT(env, "tanh", real2real);      
+      env = Env.extendFrameT(env, "tanh", real2real);
       env = Env.extendFrameT(env, "sinh", real2real);
-      env = Env.extendFrameT(env, "cosh", real2real);      
+      env = Env.extendFrameT(env, "cosh", real2real);
       env = Env.extendFrameT(env, "arcsin", real2real);
       env = Env.extendFrameT(env, "arccos", real2real);
       env = Env.extendFrameT(env, "arctan", real2real);
@@ -2868,7 +2868,7 @@ algorithm
       env = Env.extendFrameT(env, "diagonal", array1dimreal2matrixreal);
       env = Env.extendFrameT(env, "diagonal", array1dimbool2matrixbool);
       env = Env.extendFrameT(env, "diagonal", array1dimstring2matrixstring);
-      env = Env.extendFrameT(env, "zeros", n1int2arrayint) "There is a problem to represents these functions where you do not 
+      env = Env.extendFrameT(env, "zeros", n1int2arrayint) "There is a problem to represents these functions where you do not
  know how many arguments they will take. In this implementation up to 8 arguments are supported." ;
       env = Env.extendFrameT(env, "zeros", n2int2arrayint);
       env = Env.extendFrameT(env, "zeros", n3int2arrayint);
@@ -3015,8 +3015,8 @@ algorithm
       env = Env.extendFrameT(env, "sqrt", real2real);
       env = Env.extendFrameT(env, "semiLinear", realRealReal2real);
       env = Env.extendFrameT(env, "delay", realReal2real);
-      env = Env.extendFrameT(env, "delay", realRealReal2real); 
-      // "Debug.	Print.printBuf \"\\n Just AFTER the built in array functions part.\"" ;      
+      env = Env.extendFrameT(env, "delay", realRealReal2real);
+      // "Debug.	Print.printBuf \"\\n Just AFTER the built in array functions part.\"" ;
       cache = Env.setCachedInitialEnv(cache,env);
     then (cache,env);
   end matchcontinue;

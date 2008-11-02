@@ -14,12 +14,12 @@ CFLAGS          = -O2 -Wall $(DEFINES)
 CXXFLAGS        = -O2 -frtti -fexceptions -mthreads -Wall $(DEFINES)
 INCPATH         = -I'include/QtCore' -I'include/QtNetwork' -I'include/QtGui' -I'include' -I'.' -I'include/ActiveQt' -I'release'
 LIB             = ar -ru
-QMAKE           = 
-IDC             = 
+QMAKE           =
+IDC             =
 IDL             = midl
 ZIP             = zip -r -9
-DEF_FILE        = 
-RES_FILE        = 
+DEF_FILE        =
+RES_FILE        =
 COPY            = cp
 COPY_FILE       = $(COPY)
 COPY_DIR        = xcopy /s /q /y /i
@@ -38,9 +38,9 @@ OBJECTS_DIR    = release/
 
 ####### Files
 
-SOURCES        = sendData.cpp 
+SOURCES        = sendData.cpp
 OBJECTS        = release/sendData.o
-DIST           = 
+DIST           =
 QMAKE_TARGET   = sendData
 DESTDIR        = release/ #avoid trailing-slash linebreak
 TARGET         = libsendData.a
@@ -67,15 +67,15 @@ DESTDIR_TARGET = release/libsendData.a
 first: all
 all: Makefile.Release.mingw  $(DESTDIR_TARGET)
 
-$(DESTDIR_TARGET):  $(OBJECTS) 
-	$(LIB) "$(DESTDIR_TARGET)" $(OBJECTS) 
+$(DESTDIR_TARGET):  $(OBJECTS)
+	$(LIB) "$(DESTDIR_TARGET)" $(OBJECTS)
 
 
 qmake:  FORCE
 	@$(QMAKE) -win32 -o Makefile.Release sendData.pro
 
 
-clean: compiler_clean 
+clean: compiler_clean
 	-$(DEL_FILE) release/sendData.o
 
 distclean: clean
@@ -103,7 +103,7 @@ compiler_yacc_impl_make_all:
 compiler_yacc_impl_clean:
 compiler_lex_make_all:
 compiler_lex_clean:
-compiler_clean: 
+compiler_clean:
 
 
 

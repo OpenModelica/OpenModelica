@@ -9,7 +9,7 @@ algorithm
   y := 0;
 
   while (x < 6) loop
-    
+
     y := y + x;
     x := x + 0.4;
 

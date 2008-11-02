@@ -21,6 +21,6 @@ goto end
 :nodiff
 echo No difference
 del /Q %~n1.tmp
- 
+
 :end
 

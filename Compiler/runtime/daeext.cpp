@@ -1,31 +1,31 @@
-/* 
+/*
  * This file is part of OpenModelica.
- * 
+ *
  * Copyright (c) 1998-2008, Linköpings University,
- * Department of Computer and Information Science, 
- * SE-58183 Linköping, Sweden. 
- * 
+ * Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
  * All rights reserved.
- * 
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC 
- * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF 
- * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC 
- * PUBLIC LICENSE. 
- * 
- * The OpenModelica software and the Open Source Modelica 
- * Consortium (OSMC) Public License (OSMC-PL) are obtained 
- * from Linköpings University, either from the above address, 
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC
+ * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF
+ * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC
+ * PUBLIC LICENSE.
+ *
+ * The OpenModelica software and the Open Source Modelica
+ * Consortium (OSMC) Public License (OSMC-PL) are obtained
+ * from Linköpings University, either from the above address,
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
- * 
- * This program is distributed  WITHOUT ANY WARRANTY; without 
- * even the implied warranty of  MERCHANTABILITY or FITNESS 
- * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH 
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS 
- * OF OSMC-PL. 
- * 
+ *
+ * This program is distributed  WITHOUT ANY WARRANTY; without
+ * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
+ * OF OSMC-PL.
+ *
  * See the full OSMC Public License conditions for more details.
- * 
+ *
  */
 
 #include <iostream>
@@ -56,7 +56,7 @@ extern "C"
   void DAEEXT_5finit(void)
   {
   }
-  
+
   RML_BEGIN_LABEL(DAEEXT__initMarks)
   {
 
@@ -66,9 +66,9 @@ extern "C"
     v_mark.clear();
     e_mark.clear();
     RML_TAILCALLK(rmlSC);
-  } 
+  }
   RML_END_LABEL
-  
+
   RML_BEGIN_LABEL(DAEEXT__eMark)
   {
     int i = RML_UNTAGFIXNUM(rmlA0);
@@ -76,7 +76,7 @@ extern "C"
     RML_TAILCALLK(rmlSC);
   }
   RML_END_LABEL
-  
+
   RML_BEGIN_LABEL(DAEEXT__vMark)
   {
     int i = RML_UNTAGFIXNUM(rmlA0);
@@ -156,18 +156,18 @@ extern "C"
     int nvars = RML_UNTAGFIXNUM(rmlA0);
     //cout << "init lowlink n= " << nvars << endl;
     lowlink.reserve(nvars);
-    
+
     while (lowlink.size() < (unsigned int)nvars)
     {
     	lowlink.push_back(0);
     }
 
-    for (int i =0; i < nvars; i++) 
+    for (int i =0; i < nvars; i++)
     {
       lowlink[i]=0;
     }
     RML_TAILCALLK(rmlSC);
-  } 
+  }
   RML_END_LABEL
 
   RML_BEGIN_LABEL(DAEEXT__initNumber)
@@ -175,20 +175,20 @@ extern "C"
     int nvars = RML_UNTAGFIXNUM(rmlA0);
     //cout << "init number n= " << nvars << endl;
     number.reserve(nvars);
-    
+
     while (number.size() < (unsigned int)nvars)
     {
     	number.push_back(0);
-    }    
+    }
 
-    for (int i =0; i < nvars; i++) 
+    for (int i =0; i < nvars; i++)
     {
       number[i]=0;
     }
     RML_TAILCALLK(rmlSC);
-  } 
+  }
   RML_END_LABEL
-  
+
   RML_BEGIN_LABEL(DAEEXT__setLowLink)
   {
     int i = RML_UNTAGFIXNUM(rmlA0);
@@ -197,7 +197,7 @@ extern "C"
     RML_TAILCALLK(rmlSC);
   }
   RML_END_LABEL
-  
+
   RML_BEGIN_LABEL(DAEEXT__setNumber)
   {
     int i = RML_UNTAGFIXNUM(rmlA0);

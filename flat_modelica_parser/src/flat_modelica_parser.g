@@ -1,33 +1,33 @@
-/* 
+/*
  * This file is part of OpenModelica.
- * 
+ *
  * Copyright (c) 1998-2008, Linkopings University,
- * Department of Computer and Information Science, 
- * SE-58183 Linkoping, Sweden. 
- * 
+ * Department of Computer and Information Science,
+ * SE-58183 Linkoping, Sweden.
+ *
  * All rights reserved.
- * 
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC 
- * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF 
- * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC 
- * PUBLIC LICENSE. 
- * 
- * The OpenModelica software and the Open Source Modelica 
- * Consortium (OSMC) Public License (OSMC-PL) are obtained 
- * from Linkopings University, either from the above address, 
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC
+ * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF
+ * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC
+ * PUBLIC LICENSE.
+ *
+ * The OpenModelica software and the Open Source Modelica
+ * Consortium (OSMC) Public License (OSMC-PL) are obtained
+ * from Linkopings University, either from the above address,
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
- * 
- * This program is distributed  WITHOUT ANY WARRANTY; without 
- * even the implied warranty of  MERCHANTABILITY or FITNESS 
- * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH 
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS 
- * OF OSMC-PL. 
- * 
+ *
+ * This program is distributed  WITHOUT ANY WARRANTY; without
+ * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
+ * OF OSMC-PL.
+ *
  * See the full OSMC Public License conditions for more details.
- * 
+ *
  */
- 
+
 header "post_include_hpp" {
 #define null 0
 #include "MyAST.h"
@@ -72,7 +72,7 @@ tokens {
 	CODE_INITIALALGORITHM;
 	COMMENT;
     COMPONENT_DEFINITION;
-	DECLARATION	; 
+	DECLARATION	;
 	DEFINITION ;
 	ENUMERATION_LITERAL;
 	ELEMENT		;
@@ -117,18 +117,18 @@ stored_definition :
 			((FINAL)? cd:class_definition s:SEMICOLON!
 			{
 			  /* adrpo, fix the end of this AST node */
-			  if(#cd != NULL) 
+			  if(#cd != NULL)
 			  {
             		  	/*
-            		  	std::cout << (#cd)->toString() << std::endl;				
+            		  	std::cout << (#cd)->toString() << std::endl;
             		  	std::cout << s->getLine() << ":" << s->getColumn() << std::endl;
-            		  	*/				
+            		  	*/
 				RefMyAST(#cd)->setEndLine(s->getLine());
 				RefMyAST(#cd)->setEndColumn(s->getColumn());
-			   }							
+			   }
 			}
-			)*  
-			/*EOF!   By not checking for EOF we allow some crap (debug text,etc) to be at the end 
+			)*
+			/*EOF!   By not checking for EOF we allow some crap (debug text,etc) to be at the end
 				of the file, which can be produced by some Modelica tools.*/
 			{
 				#stored_definition = #([STORED_DEFINITION,"STORED_DEFINITION"],
@@ -146,34 +146,34 @@ within_clause :
  */
 
 class_definition :
-		(ENCAPSULATED)? 
+		(ENCAPSULATED)?
 		(PARTIAL)?
-		class_type     
+		class_type
         class_specifier
-		{ 
-			#class_definition = #([CLASS_DEFINITION, "CLASS_DEFINITION"], 
-				class_definition); 
+		{
+			#class_definition = #([CLASS_DEFINITION, "CLASS_DEFINITION"],
+				class_definition);
 		}
 		;
 
 class_type :
-		( CLASS | MODEL | RECORD | BLOCK | ( EXPANDABLE )? CONNECTOR | TYPE 
+		( CLASS | MODEL | RECORD | BLOCK | ( EXPANDABLE )? CONNECTOR | TYPE
         | PACKAGE | FUNCTION | UNIONTYPE
 		)
 		;
 
-class_specifier: 	
+class_specifier:
         n1:name_path /*was IDENT in modelica_parser*/ class_specifier2[#n1]
     |   EXTENDS! i1:IDENT (class_modification)? string_comment composition
-            END! i2:IDENT! 
+            END! i2:IDENT!
         {
         	// check if the identifiers at the start and end are the same!
         	if (i1->getText() != i2->getText())
         	{
-        		throw 
+        		throw
         		ANTLR_USE_NAMESPACE(antlr)
         		RecognitionException(
-        		"The identifier at start and end are different", 
+        		"The identifier at start and end are different",
         		modelicafilename, i2->getLine(), i2->getColumn());
         	}
             #class_specifier = #([CLASS_EXTENDS,"CLASS_EXTENDS"],#class_specifier);
@@ -183,34 +183,34 @@ class_specifier:
 class_specifier2 [RefMyAST name_path1]:
 		( string_comment composition e:END! /* was IDENT! */ n2:name_path!
 		  {
-		    // check if the identifiers at the start and end are the same!	
+		    // check if the identifiers at the start and end are the same!
 		    if (RefMyAST(name_path1)->getText() != RefMyAST(#n2)->getText())
 		  	{
-        		throw 
+        		throw
         		ANTLR_USE_NAMESPACE(antlr)
         		RecognitionException(
-        		"The identifier at start and end are different", 
-        		modelicafilename, e->getLine(), e->getColumn());		  		
+        		"The identifier at start and end are different",
+        		modelicafilename, e->getLine(), e->getColumn());
 		  	}
 		  }
 		| EQUALS^ base_prefix type_specifier ( class_modification )? comment
 		| EQUALS^ enumeration
-        | EQUALS^ pder    
+        | EQUALS^ pder
 		| EQUALS^ overloading
-		| SUBTYPEOF^ type_specifier 		
-		) 
+		| SUBTYPEOF^ type_specifier
+		)
 		;
 
 pder:   DER^ LPAR! name_path COMMA! ident_list RPAR! comment ;
 
-ident_list : 
-        IDENT 
+ident_list :
+        IDENT
     | IDENT COMMA! ident_list
         {
             #ident_list=#([IDENT_LIST,"IDENT_LIST"],#ident_list);
         }
     ;
-        
+
 
 overloading:
 		OVERLOAD^ LPAR! name_list RPAR! comment
@@ -225,7 +225,7 @@ name_list:
 		;
 
 enumeration :
-		ENUMERATION^ LPAR! (enum_list | COLON ) RPAR! comment 
+		ENUMERATION^ LPAR! (enum_list | COLON ) RPAR! comment
 		;
 enum_list :
 		enumeration_literal ( COMMA! enumeration_literal)*
@@ -236,15 +236,15 @@ enumeration_literal :
 		{
 			#enumeration_literal=#([ENUMERATION_LITERAL,
 					"ENUMERATION_LITERAL"],#enumeration_literal);
-		}		
+		}
 		;
 
 composition :
 		element_list
 		(	public_element_list
 		|	protected_element_list
-		| 	initial_equation_clause	
-		| 	initial_algorithm_clause	
+		| 	initial_equation_clause
+		| 	initial_algorithm_clause
 		|	equation_clause
 		|	algorithm_clause
 		)*
@@ -252,18 +252,18 @@ composition :
 		;
 
 external_clause :
-        EXTERNAL^	
-        ( language_specification )? 
+        EXTERNAL^
+        ( language_specification )?
         ( external_function_call )?
         ( annotation )? SEMICOLON!
         ( external_annotation )?
         ;
 
 external_annotation:
-		annotation SEMICOLON! 
-        { 
+		annotation SEMICOLON!
+        {
             #external_annotation=#([EXTERNAL_ANNOTATION,
-					"EXTERNAL_ANNOTATION"],#external_annotation); 
+					"EXTERNAL_ANNOTATION"],#external_annotation);
         }
     ;
 
@@ -290,27 +290,27 @@ external_function_call :
 
 element_list :
 		((e:element | a:annotation ) s:SEMICOLON!
-		{		
+		{
 		   /* adrpo, fix the end of this AST node */
 		   if (#e)
 		   {
     		  	/*
-    		  	std::cout << (#e)->toString() << std::endl;				
+    		  	std::cout << (#e)->toString() << std::endl;
     		  	std::cout << s->getLine() << ":" << s->getColumn() << std::endl;
     		  	*/
 			RefMyAST(#e)->setEndLine(s->getLine());
-			RefMyAST(#e)->setEndColumn(s->getColumn());		   	
+			RefMyAST(#e)->setEndColumn(s->getColumn());
 		   	if (#e->getFirstChild())
 		   	{
 		   	   /*
-    		  	   std::cout << (#e->getFirstChild())->toString() << std::endl;				
+    		  	   std::cout << (#e->getFirstChild())->toString() << std::endl;
     		  	   std::cout << s->getLine() << ":" << s->getColumn() << std::endl;
     		  	   */
 			   RefMyAST(#e->getFirstChild())->setEndLine(s->getLine());
-			   RefMyAST(#e->getFirstChild())->setEndColumn(s->getColumn());		   	
-		        }		   
+			   RefMyAST(#e->getFirstChild())->setEndColumn(s->getColumn());
+		        }
 		   }
-		   
+
 		}
 		)*
 		;
@@ -334,24 +334,24 @@ element_list :
 
 element :
 			ic:import_clause
-		|	ec:extends_clause			 
+		|	ec:extends_clause
 		|	(REDECLARE)?
-        (FINAL)?	 
-        (INNER)? 
+        (FINAL)?
+        (INNER)?
         (OUTER)?
 		(	(class_definition | cc:component_clause)
 			|(REPLACEABLE ( class_definition | cc2:component_clause )
 				(constraining_clause comment)?
 			 )
 		)
-		{ 
-			if(#cc != null || #cc2 != null) 
-			{ 
-				#element = #([DECLARATION,"DECLARATION"], #element); 
+		{
+			if(#cc != null || #cc2 != null)
+			{
+				#element = #([DECLARATION,"DECLARATION"], #element);
 			}
-			else	
-			{ 
-				#element = #([DEFINITION,"DEFINITION"], #element); 
+			else
+			{
+				#element = #([DEFINITION,"DEFINITION"], #element);
 			}
 		}
 		;
@@ -373,7 +373,7 @@ element :
           AFTER_SYNC;
         }
 
-import_clause : 
+import_clause :
 		IMPORT^ (explicit_import_name | implicit_import_name) comment
 		;
 
@@ -401,9 +401,9 @@ implicit_import_name!
  * 2.2.3 Extends
  */
 
-// Note that this is a minor modification of the standard by 
+// Note that this is a minor modification of the standard by
 // allowing the comment.
-extends_clause : 
+extends_clause :
 		EXTENDS^ name_path ( class_modification )?
 		;
 
@@ -442,7 +442,7 @@ type_specifier_list:
 			#type_specifier_list = #([TYPE_LIST, "TYPE_LIST"], #type_specifier_list);
 		}
 	;
-	
+
 component_list :
 		component_declaration (COMMA! component_declaration)*
 		;
@@ -457,9 +457,9 @@ conditional_attribute:
 
 declaration !
 		:
-		comp:component_reference /* was: IDENT^  (array_subscripts)?*/ (mod:modification)? 
+		comp:component_reference /* was: IDENT^  (array_subscripts)?*/ (mod:modification)?
 		{
-			if (#mod) {	
+			if (#mod) {
 				#declaration = #([FLAT_IDENT,"FLAT_IDENT"],#comp,#mod);
 			} else {
 			   #declaration = #comp;
@@ -479,7 +479,7 @@ modification :
 		;
 
 class_modification :
-		LPAR! ( argument_list )? RPAR! 
+		LPAR! ( argument_list )? RPAR!
 		{
 			#class_modification=#([CLASS_MODIFICATION,"CLASS_MODIFICATION"],
 				#class_modification);
@@ -495,16 +495,16 @@ argument_list :
 
 argument ! :
 		(em:element_modification_or_replaceable
-		{ 
-			#argument = #([ELEMENT_MODIFICATION,"ELEMENT_MODIFICATION"], #em); 
+		{
+			#argument = #([ELEMENT_MODIFICATION,"ELEMENT_MODIFICATION"], #em);
 		}
-		| er:element_redeclaration 
-		{ 
+		| er:element_redeclaration
+		{
 			#argument = #([ELEMENT_REDECLARATION,"ELEMENT_REDECLARATION"], #er); 		}
 		)
 		;
 
-element_modification_or_replaceable: 
+element_modification_or_replaceable:
         (EACH)? (FINAL)? (element_modification | element_replaceable)
     ;
 
@@ -517,7 +517,7 @@ element_redeclaration :
 		(	(class_definition | component_clause1) | element_replaceable )
 		;
 
-element_replaceable: 
+element_replaceable:
         REPLACEABLE^ ( class_definition | component_clause1 )
 				(constraining_clause comment)?
     ;
@@ -528,7 +528,7 @@ component_clause1 :
 component_declaration1 :
         declaration comment
     ;
-        
+
 
 /*
  * 2.2.6 Equations
@@ -539,21 +539,21 @@ initial_equation_clause :
 		INITIAL! ec:equation_clause
         {
             #initial_equation_clause = #([INITIAL_EQUATION,"INTIAL_EQUATION"], ec);
-        } 
+        }
 
 		;
 
 equation_clause :
-		EQUATION^  
+		EQUATION^
 		    equation_annotation_list
   		;
 
 equation_annotation_list :
-		{ LA(1) == END || LA(1) == EQUATION || LA(1) == ALGORITHM || LA(1)==INITIAL 
+		{ LA(1) == END || LA(1) == EQUATION || LA(1) == ALGORITHM || LA(1)==INITIAL
 		 || LA(1) == PROTECTED || LA(1) == PUBLIC }?
 		|
 		( equation SEMICOLON! | annotation SEMICOLON!) equation_annotation_list
-		; 
+		;
         exception
         catch [ANTLR_USE_NAMESPACE(antlr)RecognitionException &e]
         {
@@ -574,24 +574,24 @@ equation_annotation_list :
         }
 
 algorithm_clause :
-		ALGORITHM^ 
+		ALGORITHM^
 		    algorithm_annotation_list
 		;
 
 initial_algorithm_clause :
-		{ LA(2)==ALGORITHM }? 
+		{ LA(2)==ALGORITHM }?
 		INITIAL! ac: algorithm_clause
         {
             #initial_algorithm_clause = #([INITIAL_ALGORITHM,"INTIAL_ALGORITHM"], ac);
-        } 
+        }
 		;
-        
+
 algorithm_annotation_list :
-		{ LA(1) == END || LA(1) == EQUATION || LA(1) == ALGORITHM || LA(1)==INITIAL 
+		{ LA(1) == END || LA(1) == EQUATION || LA(1) == ALGORITHM || LA(1)==INITIAL
 		 || LA(1) == PROTECTED || LA(1) == PUBLIC }?
 		|
 		( algorithm SEMICOLON! | annotation SEMICOLON!) algorithm_annotation_list
-		; 
+		;
         exception
         catch [ANTLR_USE_NAMESPACE(antlr)RecognitionException &e]
         {
@@ -617,9 +617,9 @@ equation :
 		|	for_clause_e
 		|	connect_clause
 		|	when_clause_e
-		|   component_reference function_call // function call	
+		|   component_reference function_call // function call
 		|   FAILURE^ LPAR! equation RPAR!
-		|   EQUALITY^ LPAR! equation RPAR!		
+		|   EQUALITY^ LPAR! equation RPAR!
 		)
         {
             #equation = #([EQUATION_STATEMENT,"EQUATION_STATEMENT"], #equation);
@@ -646,15 +646,15 @@ equation :
 
 algorithm :
 		(	(simple_expression ASSIGN) => assign_clause_a
-		|	component_reference function_call		
+		|	component_reference function_call
 		|	conditional_equation_a
 		|	for_clause_a
 		|	while_clause
 		|	when_clause_a
 		|   BREAK
-		|   RETURN		
+		|   RETURN
 		|   FAILURE^ LPAR! algorithm RPAR!
-		|   EQUALITY^ LPAR! algorithm RPAR!		
+		|   EQUALITY^ LPAR! algorithm RPAR!
 		)
 		comment
         {
@@ -679,12 +679,12 @@ algorithm :
           AFTER_SYNC;
         }
 
-assign_clause_a : 
+assign_clause_a :
 		   simple_expression ASSIGN^ expression
 		;
 
 equality_equation :
-		simple_expression EQUALS^ expression 
+		simple_expression EQUALS^ expression
 		;
 
 conditional_equation_e :
@@ -726,8 +726,8 @@ when_clause_e :
 		END! WHEN!
 		;
 
-else_when_e :	
-		ELSEWHEN^ expression THEN! 
+else_when_e :
+		ELSEWHEN^ expression THEN!
 		equation_list
 		;
 
@@ -789,43 +789,43 @@ connector_ref_2 :
 
 expression :
 		( if_expression
-		| simple_expression 
+		| simple_expression
 		| code_expression
 		| (MATCHCONTINUE^ expression_or_empty
 		   local_clause
 		   cases
 		   END! MATCHCONTINUE!
- 	       )		
+ 	       )
 		| (MATCH^ expression_or_empty
 		   local_clause
 		   cases
 		   END! MATCH!
- 	       )		
+ 	       )
 		)
 		;
 
 expression_or_empty !:
-	e:expression 
+	e:expression
 	{
 		#expression_or_empty = #e;
 	}
 	| LPAR! RPAR!
 	{
-		#expression_or_empty = #([EMPTY,"EMPTY"], #expression_or_empty); 
-	} 
+		#expression_or_empty = #([EMPTY,"EMPTY"], #expression_or_empty);
+	}
 	;
 
 local_clause:
-	(LOCAL^ element_list)? 
+	(LOCAL^ element_list)?
 	;
 
 cases:
-	(onecase)+ (ELSE^ string_comment local_clause (EQUATION! equation_list_then)? 
+	(onecase)+ (ELSE^ string_comment local_clause (EQUATION! equation_list_then)?
 	THEN! expression_or_empty SEMICOLON!)?
 	;
 
 onecase:
-	(CASE^ pattern string_comment local_clause (EQUATION! equation_list_then)? 
+	(CASE^ pattern string_comment local_clause (EQUATION! equation_list_then)?
 	THEN! expression_or_empty SEMICOLON!)
 	;
 
@@ -837,7 +837,7 @@ if_expression :
 		IF^ expression THEN! expression (elseif_expression)* ELSE! expression
     ;
 
-elseif_expression : 
+elseif_expression :
 		ELSEIF^ expression THEN! expression
 		;
 
@@ -855,33 +855,33 @@ simple_expression :
 		;
 
 simple_expr !:
-		l1:logical_expression 
-		( COLON l2:logical_expression 
-		    ( COLON l3:logical_expression 
-		    )? 
+		l1:logical_expression
+		( COLON l2:logical_expression
+		    ( COLON l3:logical_expression
+		    )?
 		)?
-		{ 
+		{
 			if (#l3 != null)
-			{ 
-				#simple_expr = #([RANGE3,"RANGE3"], l1, l2, l3); 
+			{
+				#simple_expr = #([RANGE3,"RANGE3"], l1, l2, l3);
 			}
-			else if (#l2 != null) 
-			{ 
-				#simple_expr = #([RANGE2,"RANGE2"], l1, l2); 
+			else if (#l2 != null)
+			{
+				#simple_expr = #([RANGE2,"RANGE2"], l1, l2);
 			}
 			else
 			{
-				#simple_expr = #l1; 
+				#simple_expr = #l1;
 			}
 		}
 		;
-		
+
 /* Code quotation mechanism */
 code_expression ! :
 		CODE LPAR ((expression RPAR)=> e:expression | m:modification | el:element (SEMICOLON!)?
 		| eq:code_equation_clause | ieq:code_initial_equation_clause
 		| alg:code_algorithm_clause | ialg:code_initial_algorithm_clause
-		)  RPAR 
+		)  RPAR
  		{
  			if (#e) {
  				#code_expression = #([CODE_EXPRESSION, "CODE_EXPRESSION"],#e);
@@ -891,11 +891,11 @@ code_expression ! :
  				#code_expression = #([CODE_ELEMENT, "CODE_ELEMENT"],#el);
  			} else if (#eq) {
 				#code_expression = #([CODE_EQUATION, "CODE_EQUATION"],#eq);
- 			} else if (#ieq) {				
+ 			} else if (#ieq) {
  				#code_expression = #([CODE_INITIALEQUATION, "CODE_EQUATION"],#ieq);
  			} else if (#alg) {
 				#code_expression = #([CODE_ALGORITHM, "CODE_ALGORITHM"],#alg);
-  			} else if (#ialg) {				
+  			} else if (#ialg) {
  				#code_expression = #([CODE_INITIALALGORITHM, "CODE_ALGORITHM"],#ialg);
 			}
 		}
@@ -910,7 +910,7 @@ code_initial_equation_clause :
  		INITIAL! ec:code_equation_clause
          {
              #code_initial_equation_clause = #([INITIAL_EQUATION,"INTIAL_EQUATION"], ec);
-         } 
+         }
  		;
 
 code_algorithm_clause :
@@ -955,17 +955,17 @@ arithmetic_expression :
 		;
 
 unary_arithmetic_expression ! :
-		( PLUS t1:term 
-		{ 
-			#unary_arithmetic_expression = #([UNARY_PLUS,"PLUS"], #t1); 
+		( PLUS t1:term
+		{
+			#unary_arithmetic_expression = #([UNARY_PLUS,"PLUS"], #t1);
 		}
-		| MINUS t2:term 
-		{ 
-			#unary_arithmetic_expression = #([UNARY_MINUS,"MINUS"], #t2); 
+		| MINUS t2:term
+		{
+			#unary_arithmetic_expression = #([UNARY_MINUS,"MINUS"], #t2);
 		}
-		| t3:term 
-		{ 
-			#unary_arithmetic_expression = #t3; 
+		| t3:term
+		{
+			#unary_arithmetic_expression = #t3;
 		}
 		)
 		;
@@ -994,16 +994,16 @@ primary :
     ;
 
 component_reference__function_call ! :
-		cr:component_reference ( fc:function_call )? 
-		{ 
-			if (#fc != null) 
-			{ 
+		cr:component_reference ( fc:function_call )?
+		{
+			if (#fc != null)
+			{
 				#component_reference__function_call = #([FUNCTION_CALL,"FUNCTION_CALL"], #cr, #fc);
-			} 
-			else 
-			{ 
+			}
+			else
+			{
 				#component_reference__function_call = #cr;
-			} 
+			}
 		}
 	| i:INITIAL LPAR! RPAR! {
 			#component_reference__function_call = #([INITIAL_FUNCTION_CALL,"INITIAL_FUNCTION_CALL"],i);
@@ -1016,7 +1016,7 @@ name_path :
 		;
 
 name_path_star returns [bool val=false]
-		: 
+		:
 		{ LA(2)!=DOT }? IDENT { val=false;}|
 		{ LA(2)!=DOT }? STAR! { val=true;}|
 		i:IDENT DOT^ val = np:name_path_star
@@ -1034,10 +1034,10 @@ component_reference :
 		;
 
 function_call :
-		LPAR! (function_arguments) RPAR! 
+		LPAR! (function_arguments) RPAR!
 		{
 			#function_call = #([FUNCTION_ARGUMENTS,"FUNCTION_ARGUMENTS"],#function_call);
-		}	
+		}
 		;
 
 function_arguments :
@@ -1045,24 +1045,24 @@ function_arguments :
 			(named_arguments) ?
 		;
 
-for_or_expression_list 
+for_or_expression_list
     :
 		(
 			{LA(1)==IDENT && LA(2) == EQUALS || LA(1) == RPAR || LA(1) == RBRACE}?
 		|
 			(
 				e:expression
-				( COMMA! explist:for_or_expression_list2                     
+				( COMMA! explist:for_or_expression_list2
 				| FOR^ forind:for_indices
 				)?
 			)
             {
                 if (#forind != null) {
-                    #for_or_expression_list = 
+                    #for_or_expression_list =
                         #([FOR_ITERATOR,"FOR_ITERATOR"], #for_or_expression_list);
                 }
                 else {
-                    #for_or_expression_list = 
+                    #for_or_expression_list =
                         #([EXPRESSION_LIST,"EXPRESSION_LIST"], #for_or_expression_list);
                 }
             }
@@ -1071,10 +1071,10 @@ for_or_expression_list
 
 for_or_expression_list2 :
 		{LA(2) == EQUALS}?
-		| 
+		|
 		expression (COMMA! for_or_expression_list2)?
 		;
-	
+
 named_arguments :
 		named_arguments2
 		{
@@ -1090,7 +1090,7 @@ named_argument :
 		IDENT EQUALS^ expression
 		;
 
-expression_list : 
+expression_list :
 		expression_list2
 		{
 			#expression_list=#([EXPRESSION_LIST,"EXPRESSION_LIST"],#expression_list);
@@ -1100,7 +1100,7 @@ expression_list2 :
 		expression (COMMA! expression_list2)?
 	    ;
 
-array_subscripts : 
+array_subscripts :
 		LBRACK^ subscript ( COMMA! subscript )* RBRACK!
 	;
 

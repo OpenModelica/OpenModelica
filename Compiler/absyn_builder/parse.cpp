@@ -1,31 +1,31 @@
-/* 
+/*
  * This file is part of OpenModelica.
- * 
+ *
  * Copyright (c) 1998-2008, Linköpings University,
- * Department of Computer and Information Science, 
- * SE-58183 Linköping, Sweden. 
- * 
+ * Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
  * All rights reserved.
- * 
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC 
- * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF 
- * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC 
- * PUBLIC LICENSE. 
- * 
- * The OpenModelica software and the Open Source Modelica 
- * Consortium (OSMC) Public License (OSMC-PL) are obtained 
- * from Linköpings University, either from the above address, 
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC
+ * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF
+ * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC
+ * PUBLIC LICENSE.
+ *
+ * The OpenModelica software and the Open Source Modelica
+ * Consortium (OSMC) Public License (OSMC-PL) are obtained
+ * from Linköpings University, either from the above address,
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
- * 
- * This program is distributed  WITHOUT ANY WARRANTY; without 
- * even the implied warranty of  MERCHANTABILITY or FITNESS 
- * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH 
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS 
- * OF OSMC-PL. 
- * 
+ *
+ * This program is distributed  WITHOUT ANY WARRANTY; without
+ * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
+ * OF OSMC-PL.
+ *
  * See the full OSMC Public License conditions for more details.
- * 
+ *
  */
 
 #include <iostream>
@@ -34,7 +34,7 @@
 #include <string>
 
 
-#include <fstream> 
+#include <fstream>
 
 #include "modelica_lexer.hpp"
 #include "modelica_parser.hpp"
@@ -81,12 +81,12 @@ extern "C"
 		debug      = check_debug_flag("parsedebug");
 		parsedump  = check_debug_flag("parsedump");
 		parseonly  = check_debug_flag("parseonly");
-		/* 2004-10-05 adrpo moved this declaration here to 
-		* have the ast initialized before getting 
-		* into the code. This way, if this relation fails at least the 
+		/* 2004-10-05 adrpo moved this declaration here to
+		* have the ast initialized before getting
+		* into the code. This way, if this relation fails at least the
 		* ast is initialized */
 		void* ast = mk_nil();
-		
+
 		if (debug) { std::cerr << "Starting parsing of file:" << filename << std::endl; }
 
 		// Set global filename, used to populate elements with
@@ -98,14 +98,14 @@ extern "C"
 		if (filestring.size()-4 == filestring.rfind(".mof"))
 		{
 			parseFlatModelica=true;
-			if (debug) { std::cerr << "File:" << filename << " is a flat Modelica file." << std::endl; }			
+			if (debug) { std::cerr << "File:" << filename << " is a flat Modelica file." << std::endl; }
 		}
 		std::ifstream checkROfile(filename,ios::out); // open file in write mode to check if readonly
 		modelicafileReadOnly = !checkROfile;
-		if (debug && modelicafileReadOnly) { std::cerr << "File:" << filename << " is read-only." << std::endl; }	
-		
+		if (debug && modelicafileReadOnly) { std::cerr << "File:" << filename << " is read-only." << std::endl; }
+
 		std::ifstream stream(filename);
-		if (!stream) 
+		if (!stream)
 		{
 		  std::list<std::string> tokens;
 		  tokens.push_back(std::string(filename));
@@ -132,7 +132,7 @@ extern "C"
 				flat_lex->setFilename(filename);
 
 				flat_parse = new flat_modelica_parser(*flat_lex);
-				//flat_parse->setFilename(filename); 
+				//flat_parse->setFilename(filename);
 
 				// make factory with customized type of MyAST
 				flat_parse->initializeASTFactory(my_factory);
@@ -147,7 +147,7 @@ extern "C"
 				lex->setFilename(filename);
 
 				parse = new modelica_parser(*lex);
-				//parse->setFilename(filename); 
+				//parse->setFilename(filename);
 
 				// make factory with customized type of MyAST
 				parse->initializeASTFactory(my_factory);
@@ -157,16 +157,16 @@ extern "C"
 
 				t = RefMyAST(parse->getAST());
 			}
-		} 
-		catch (ANTLR_USE_NAMESPACE(antlr)CharStreamException &e) 
+		}
+		catch (ANTLR_USE_NAMESPACE(antlr)CharStreamException &e)
 		{
 			std::cerr << "Lexical error. CharStreamException. "  << std::endl;
 			ast = mk_nil();
 		}
-		catch (ANTLR_USE_NAMESPACE(antlr)TokenStreamRecognitionException &e) 
+		catch (ANTLR_USE_NAMESPACE(antlr)TokenStreamRecognitionException &e)
 		{
 		  modelica_lexer *currentLex=0;
-		  
+
 		  if (parseFlatModelica) {
 		    currentLex = (modelica_lexer*)flat_lex;
 		  }
@@ -188,7 +188,7 @@ extern "C"
 				     filename);
 		  ast = mk_nil();
 		}
-		catch (ANTLR_USE_NAMESPACE(antlr)RecognitionException &e) 
+		catch (ANTLR_USE_NAMESPACE(antlr)RecognitionException &e)
 		{
 		  std::list<std::string> tokens;
 		  tokens.push_back(std::string(e.getMessage()));
@@ -205,7 +205,7 @@ extern "C"
 				     filename);
 		  ast = mk_nil();
 		}
-		catch (ANTLR_USE_NAMESPACE(antlr)TokenStreamException &e) 
+		catch (ANTLR_USE_NAMESPACE(antlr)TokenStreamException &e)
 		{
 		  std::list<std::string> tokens;
 		  tokens.push_back(std::string(e.getMessage()));
@@ -222,7 +222,7 @@ extern "C"
 				     filename);
 		  ast = mk_nil();
 		}
-		catch (ANTLR_USE_NAMESPACE(antlr)ANTLRException &e) 
+		catch (ANTLR_USE_NAMESPACE(antlr)ANTLRException &e)
 		{
 		  std::list<std::string> tokens;
 		  tokens.push_back(std::string("while parsing:")+
@@ -240,7 +240,7 @@ extern "C"
 				     filename);
 		  ast = mk_nil();
 		}
-		catch (std::exception &e) 
+		catch (std::exception &e)
 		{
 		  std::list<std::string> tokens;
 		  tokens.push_back(std::string("while parsing:"));
@@ -257,7 +257,7 @@ extern "C"
 				     filename);
 		  ast = mk_nil();
 		}
-		catch (...) 
+		catch (...)
 		  {
 		    std::list<std::string> tokens;
 		    tokens.push_back(std::string("while parsing:"));
@@ -274,63 +274,63 @@ extern "C"
 				       filename);
 		    ast = mk_nil();
 		}
-				
+
 		//Parsing complete
-		if (debug) 
+		if (debug)
 		{
 			std::cerr << "Parsing of: [" << filename << "] complete. Starting to traverse ast." << std::endl;
 		}
-				
+
 		if (t) //Did we get at AST?
-		{ 
-			if (parsedump) 
+		{
+			if (parsedump)
 			{
 				parse_tree_dumper dumper(std::cout);
 				//dumper.initializeASTFactory(factory);
 				//dumper.setASTFactory(&factory);
 				dumper.dump(t);
 			}
-			
-			if (parseonly) /* only do the parsing, do not build the AST and return a null ast! */ 
+
+			if (parseonly) /* only do the parsing, do not build the AST and return a null ast! */
 			{
 				rmlA0 = Absyn__PROGRAM(mk_nil(), Absyn__TOP);
 				RML_TAILCALLK(rmlSC);
-			}		
-			
-			
-			modelica_tree_parser build;      
-			try 
+			}
+
+
+			modelica_tree_parser build;
+			try
 			{
 				build.initializeASTFactory(my_factory);
 				build.setASTFactory(&my_factory);
 				ast = build.stored_definition(t);
 			}
-			catch (ANTLR_USE_NAMESPACE(antlr)NoViableAltException &e) 
+			catch (ANTLR_USE_NAMESPACE(antlr)NoViableAltException &e)
 			{
-				std::cerr << "1 Error walking AST while building RML data: " 
+				std::cerr << "1 Error walking AST while building RML data: "
 					<< e.getMessage() << " AST:" << std::endl;
 				parse_tree_dumper dumper(std::cerr);
-				dumper.dump(RefMyAST(e.node));	 
+				dumper.dump(RefMyAST(e.node));
 				ast = mk_nil();
 				modelicafilename=string("");
 				RML_TAILCALLK(rmlFC);
 			}
-			catch (ANTLR_USE_NAMESPACE(antlr)MismatchedTokenException &e) 
-			{				
-				if (e.node) 
+			catch (ANTLR_USE_NAMESPACE(antlr)MismatchedTokenException &e)
+			{
+				if (e.node)
 				{
-					std::cerr << "2 Error walking AST while  building RML data: " 
+					std::cerr << "2 Error walking AST while  building RML data: "
 						<< e.getMessage() << " AST:" << std::endl;
 					parse_tree_dumper dumper(std::cerr);
-					dumper.dump(RefMyAST(e.node));	      
-				} 
-				else 
+					dumper.dump(RefMyAST(e.node));
+				}
+				else
 				{
-					std::cerr << "3 Error walking AST while  building RML data: " 
+					std::cerr << "3 Error walking AST while  building RML data: "
 						<< e.getMessage() << " AST: == NULL" << std::endl;
 				}
 
-				// adrpo added 2004-10-27 
+				// adrpo added 2004-10-27
 				if (parse) delete parse;
 				if (flat_parse) delete parse;
 				if (lex) delete lex;
@@ -338,26 +338,26 @@ extern "C"
 				RML_TAILCALLK(rmlFC); // rmlFC
 			}
 			modelicafilename=string("");
-			if (debug) 
+			if (debug)
 			{
 				std::cout << "Build done\n";
-			} 
+			}
 
-			
+
 			rmlA0 = ast;
 
-			// adrpo added 2004-10-27 
+			// adrpo added 2004-10-27
 			if (flat_parse) delete parse;
 			if (parse) delete parse;
 			if (lex) delete lex;
 			if (flat_lex) delete flat_lex;
 
 			if (!ast) { RML_TAILCALLK(rmlFC);	}
-			RML_TAILCALLK(rmlSC); 
-		}    
-		else 
+			RML_TAILCALLK(rmlSC);
+		}
+		else
 		{
-			// adrpo added 2004-10-27 
+			// adrpo added 2004-10-27
 			if (flat_parse) delete flat_parse;
 			if (parse) delete parse;
 			if (lex) delete lex;
@@ -372,12 +372,12 @@ extern "C"
 
 
 
-	char *get_string(std::ostringstream& s) 
+	char *get_string(std::ostringstream& s)
 	{
 		char *buf=0;
 		unsigned int size=0;
 		string str = s.str();
-		if (str.length() >= size) 
+		if (str.length() >= size)
 		{
 			size = (unsigned int)2*str.length();
 			if (buf)
@@ -402,18 +402,18 @@ extern "C"
 		modelica_lexer lex(stream);
 		modelica_parser parse(lex);
 
-		/* 2004-10-05 adrpo moved this declaration here to 
-		* have the ast initialized before getting 
-		* into the code. This way, if this relation fails at least the 
+		/* 2004-10-05 adrpo moved this declaration here to
+		* have the ast initialized before getting
+		* into the code. This way, if this relation fails at least the
 		* ast is initialized */
 		void* ast = mk_nil();
 
-		/* adrpo added 2004-10-27 
+		/* adrpo added 2004-10-27
 		* I use this to delete [] the temp allocation of get_string(...)
 		*/
 		char* getStringHolder = NULL;
 
-		try 
+		try
 		{
 			ANTLR_USE_NAMESPACE(antlr)ASTFactory my_factory( "MyAST", MyAST::factory );
 
@@ -425,9 +425,9 @@ extern "C"
 			RefMyAST t = RefMyAST(parse.getAST());
 
 
-			if (t) 
+			if (t)
 			{
-				if (debug) 
+				if (debug)
 				{
 					parse_tree_dumper dumper(std::cerr);
 					//dumper.initializeASTFactory(factory);
@@ -445,73 +445,73 @@ extern "C"
 				rmlA0 = ast ? ast : mk_nil(); a0set=true;
 				rmlA1 = mk_scon("Ok"); a1set=true;
 
-				RML_TAILCALLK(rmlSC); 
+				RML_TAILCALLK(rmlSC);
 			}
-			else 
+			else
 			{
 				rmlA0 = mk_nil(); a0set=true;
 				rmlA1 = mk_scon("Internal error: parse tree null"); a1set=true;
-				RML_TAILCALLK(rmlSC); 
+				RML_TAILCALLK(rmlSC);
 			}
 		}
-		catch (ANTLR_USE_NAMESPACE(antlr)RecognitionException &e) 
+		catch (ANTLR_USE_NAMESPACE(antlr)RecognitionException &e)
 		{
-			stringStream << "[" << 
-			e.getLine() << ":" << e.getColumn() << "]: error: " 
+			stringStream << "[" <<
+			e.getLine() << ":" << e.getColumn() << "]: error: "
 			<< e.getMessage() << std::endl;
 			//		std::cerr << stringStream.str().c_str();
 			rmlA0 = mk_nil(); a0set=true;
 			rmlA1 = mk_scon((getStringHolder = get_string(stringStream))); a1set=true;
 		}
-		catch (ANTLR_USE_NAMESPACE(antlr)CharStreamException &e) 
+		catch (ANTLR_USE_NAMESPACE(antlr)CharStreamException &e)
 		{
-			//		std::cerr << "Lexical error (CharStreamException). "  << std::endl;    
+			//		std::cerr << "Lexical error (CharStreamException). "  << std::endl;
 			rmlA0 = mk_nil(); a0set=true;
 			rmlA1 = mk_scon("[-,-]: internal error: lexical error"); a1set=true;
 		}
-		catch (ANTLR_USE_NAMESPACE(antlr)TokenStreamException &e) 
+		catch (ANTLR_USE_NAMESPACE(antlr)TokenStreamException &e)
 		{
-			stringStream << "[" << lex.getLine() << ":" << lex.getColumn() 
+			stringStream << "[" << lex.getLine() << ":" << lex.getColumn()
 				<< "]: error: illegal token" << std::endl;
 			//		std::cerr << stringStream.str().c_str();
 			rmlA0 = mk_nil(); a0set=true;
 			rmlA1 = mk_scon((getStringHolder = get_string(stringStream))); a1set=true;
 		}
-		catch (ANTLR_USE_NAMESPACE(antlr)ANTLRException &e) 
+		catch (ANTLR_USE_NAMESPACE(antlr)ANTLRException &e)
 		{
 			//		std::cerr << "ANTLRException: " << e.getMessage() << std::endl;
 			stringStream << "[-,-]: internal error: " << e.getMessage() << std::endl;
 			rmlA0 = mk_nil(); a0set=true;
 			rmlA1 = mk_scon((getStringHolder = get_string(stringStream))); a1set=true;
 		}
-		catch (std::exception &e) 
+		catch (std::exception &e)
 		{
 			//		std::cerr << "Error while parsing: " << e.what() << "\n";
 			stringStream << "[-,-]: internal error: " << e.what() << std::endl;
 			rmlA0 = mk_nil(); a0set=true;
 			rmlA1 = mk_scon((getStringHolder = get_string(stringStream))); a1set=true;
 		}
-		catch (...) 
+		catch (...)
 		{
 			//		std::cerr << "Error while parsing\n";
 			rmlA0 = mk_nil(); a0set=true;
 			rmlA1 = mk_scon("[-,-]: internal error"); a1set=true;
 		}
 
-		/* adrpo added 2004-10-27 
+		/* adrpo added 2004-10-27
 		* no need for getStringHolder temp value allocated from get_string
 		*/
-		if (getStringHolder) delete [] getStringHolder; 
+		if (getStringHolder) delete [] getStringHolder;
 
-		if (! a0set) 
+		if (! a0set)
 		{
 			rmlA0 = mk_nil(); a0set=true;
 		}
-		if (! a1set) 
+		if (! a1set)
 		{
 			rmlA1 = mk_scon("internal error"); a1set=true;
 		}
-		RML_TAILCALLK(rmlSC); 
+		RML_TAILCALLK(rmlSC);
 	}
 	RML_END_LABEL
 
@@ -521,20 +521,20 @@ extern "C"
 		char* str = RML_STRINGDATA(rmlA0);
 		std::ostringstream stringStream;
 		bool debug = check_debug_flag("parsedump");
-		/* 2004-10-05 adrpo moved this declaration here to 
-		* have the ast initialized before getting 
-		* into the code. This way, if this relation fails at least the 
+		/* 2004-10-05 adrpo moved this declaration here to
+		* have the ast initialized before getting
+		* into the code. This way, if this relation fails at least the
 		* ast is initialized */
 		void* ast = mk_nil();
 
 
-		/* adrpo added 2004-10-27 
+		/* adrpo added 2004-10-27
 		* I use this to delete [] the temp allocation of get_string(...)
 		*/
 		char* getStringHolder = NULL;
 
 
-		try 
+		try
 		{
 			std::istringstream stream(str);
 			modelicafileReadOnly = false;
@@ -546,9 +546,9 @@ extern "C"
 			parse.interactiveStmts();
 			RefMyAST t = RefMyAST(parse.getAST());
 
-			if (t) 
+			if (t)
 			{
-				if (debug) 
+				if (debug)
 				{
 					std::cerr << "parsedump not implemented for interactiveStmt yet"<<endl;
 					//parse_tree_dumper dumper(std::cerr);
@@ -560,7 +560,7 @@ extern "C"
 				build.setASTFactory(&factory);
 				ast = build.interactive_stmt(t);
 
-				if (debug) 
+				if (debug)
 				{
 					std::cerr << "Build done\n";
 				}
@@ -568,29 +568,29 @@ extern "C"
 				rmlA0 = ast ? ast : mk_nil();
 				rmlA1 = mk_scon("Ok");
 
-				RML_TAILCALLK(rmlSC); 
+				RML_TAILCALLK(rmlSC);
 			}
-			else 
+			else
 			{
 				rmlA0 = mk_nil();
 				rmlA1 = mk_scon("parse tree null");
 			}
-		} 
-		catch (ANTLR_USE_NAMESPACE(antlr)ANTLRException &e) 
+		}
+		catch (ANTLR_USE_NAMESPACE(antlr)ANTLRException &e)
 		{
 			//std::cerr << "Error while parsing expression:\n" << e.getMessage() << "\n";
 			stringStream << "[-,-]: internal error: " << e.getMessage() << std::endl;
 			rmlA0 = mk_nil();
 			rmlA1 = mk_scon((getStringHolder = get_string(stringStream)));
 		}
-		catch (std::exception &e) 
+		catch (std::exception &e)
 		{
 			//std::cerr << "Error while parsing expression:\n" << e.what() << "\n";
 			stringStream << "[-,-]: internal error: " << e.what() << std::endl;
 			rmlA0 = mk_nil();
 			rmlA1 = mk_scon((getStringHolder = get_string(stringStream)));
 		}
-		catch (...) 
+		catch (...)
 		  {
 			//std::cerr << "Error while parsing expression\n";
 			stringStream << "Error while parsing expression. Unknown exception in parse.cpp." << std::endl;
@@ -598,10 +598,10 @@ extern "C"
 			rmlA1 = mk_scon((getStringHolder = get_string(stringStream)));
 		}
 
-		/* adrpo added 2004-10-27 
+		/* adrpo added 2004-10-27
 		* no need for getStringHolder temp value allocated from get_string
 		*/
-		if (getStringHolder) delete [] getStringHolder; 
+		if (getStringHolder) delete [] getStringHolder;
 
 		RML_TAILCALLK(rmlSC);
 	}
@@ -613,14 +613,14 @@ extern "C"
 		char * filename = RML_STRINGDATA(rmlA0);
 		bool debug = check_debug_flag("parsedump");
     string filestring(filename);
-		/* 2004-10-05 adrpo moved this declaration here to 
-		* have the ast initialized before getting 
-		* into the code. This way, if this relation fails at least the 
+		/* 2004-10-05 adrpo moved this declaration here to
+		* have the ast initialized before getting
+		* into the code. This way, if this relation fails at least the
 		* ast is initialized */
 		void* ast = mk_nil();
-    modelicafileReadOnly = false;     
+    modelicafileReadOnly = false;
     std::ifstream stream(filename);
-    if (!stream) 
+    if (!stream)
     {
       std::list<std::string> tokens;
       tokens.push_back(std::string(filename));
@@ -630,7 +630,7 @@ extern "C"
             "Error opening file %s",
             tokens);
       RML_TAILCALLK(rmlFC);
-    }    
+    }
     // Set global filename, used to populate elements with
     // corresponding file name.
     modelicafilename = filestring;
@@ -639,7 +639,7 @@ extern "C"
     lex.setFilename(filename);
     modelica_expression_parser parse(lex);
 
-		try 
+		try
 		{
 			ANTLR_USE_NAMESPACE(antlr)ASTFactory factory;
 			parse.initializeASTFactory(factory);
@@ -647,9 +647,9 @@ extern "C"
 			parse.interactiveStmts();
 			RefMyAST t = RefMyAST(parse.getAST());
 
-			if (t) 
+			if (t)
 			{
-				if (debug) 
+				if (debug)
 				{
 					parse_tree_dumper dumper(std::cerr);
 					dumper.dump(t);
@@ -660,21 +660,21 @@ extern "C"
 				build.setASTFactory(&factory);
 				ast = build.interactive_stmt(t);
 
-				if (debug) 
+				if (debug)
 				{
 					std::cerr << "Build done\n";
 				}
 
 				rmlA0 = ast ? ast : mk_nil();
 
-				RML_TAILCALLK(rmlSC); 
-			}    
-		} 
-    catch (ANTLR_USE_NAMESPACE(antlr)CharStreamException &e) 
+				RML_TAILCALLK(rmlSC);
+			}
+		}
+    catch (ANTLR_USE_NAMESPACE(antlr)CharStreamException &e)
     {
       std::cerr << "Lexical error. CharStreamException. "  << std::endl;
     }
-    catch (ANTLR_USE_NAMESPACE(antlr)TokenStreamRecognitionException &e) 
+    catch (ANTLR_USE_NAMESPACE(antlr)TokenStreamRecognitionException &e)
     {
       std::list<std::string> tokens;
       tokens.push_back(std::string(lex.getText()));
@@ -685,7 +685,7 @@ extern "C"
              lex.getLine(),lex.getColumn(),
              false, filename);
     }
-    catch (ANTLR_USE_NAMESPACE(antlr)RecognitionException &e) 
+    catch (ANTLR_USE_NAMESPACE(antlr)RecognitionException &e)
     {
       std::list<std::string> tokens;
       tokens.push_back(std::string(e.getMessage()));
@@ -696,7 +696,7 @@ extern "C"
              e.getLine(), e.getColumn(),
              false, filename);
     }
-    catch (ANTLR_USE_NAMESPACE(antlr)TokenStreamException &e) 
+    catch (ANTLR_USE_NAMESPACE(antlr)TokenStreamException &e)
     {
       std::list<std::string> tokens;
       tokens.push_back(std::string(e.getMessage()));
@@ -707,7 +707,7 @@ extern "C"
              0, 0,
              false, filename);
     }
-    catch (ANTLR_USE_NAMESPACE(antlr)ANTLRException &e) 
+    catch (ANTLR_USE_NAMESPACE(antlr)ANTLRException &e)
     {
       std::list<std::string> tokens;
       tokens.push_back(std::string("while parsing:")+
@@ -719,7 +719,7 @@ extern "C"
              0, 0,
              false, filename);
     }
-    catch (std::exception &e) 
+    catch (std::exception &e)
     {
       std::list<std::string> tokens;
       tokens.push_back(std::string("while parsing:"));
@@ -730,7 +730,7 @@ extern "C"
              0, 0,
              false, filename);
     }
-    catch (...) 
+    catch (...)
     {
       std::list<std::string> tokens;
       tokens.push_back(std::string("while parsing expression in file:"));

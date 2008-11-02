@@ -342,7 +342,7 @@ void FlatModelicaLexer::mLPAR(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
 	_ttype = LPAR;
 	int _saveIndex;
-	
+
 	match('(');
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
@@ -356,7 +356,7 @@ void FlatModelicaLexer::mRPAR(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
 	_ttype = RPAR;
 	int _saveIndex;
-	
+
 	match(')');
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
@@ -370,7 +370,7 @@ void FlatModelicaLexer::mLBRACK(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
 	_ttype = LBRACK;
 	int _saveIndex;
-	
+
 	match('[');
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
@@ -384,7 +384,7 @@ void FlatModelicaLexer::mRBRACK(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
 	_ttype = RBRACK;
 	int _saveIndex;
-	
+
 	match(']');
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
@@ -398,7 +398,7 @@ void FlatModelicaLexer::mLBRACE(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
 	_ttype = LBRACE;
 	int _saveIndex;
-	
+
 	match('{');
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
@@ -412,7 +412,7 @@ void FlatModelicaLexer::mRBRACE(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
 	_ttype = RBRACE;
 	int _saveIndex;
-	
+
 	match('}');
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
@@ -426,7 +426,7 @@ void FlatModelicaLexer::mEQUALS(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
 	_ttype = EQUALS;
 	int _saveIndex;
-	
+
 	match('=');
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
@@ -440,7 +440,7 @@ void FlatModelicaLexer::mASSIGN(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
 	_ttype = ASSIGN;
 	int _saveIndex;
-	
+
 	match(":=");
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
@@ -454,7 +454,7 @@ void FlatModelicaLexer::mPLUS(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
 	_ttype = PLUS;
 	int _saveIndex;
-	
+
 	match('+');
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
@@ -468,7 +468,7 @@ void FlatModelicaLexer::mMINUS(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
 	_ttype = MINUS;
 	int _saveIndex;
-	
+
 	match('-');
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
@@ -482,7 +482,7 @@ void FlatModelicaLexer::mSTAR(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
 	_ttype = STAR;
 	int _saveIndex;
-	
+
 	match('*');
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
@@ -496,7 +496,7 @@ void FlatModelicaLexer::mSLASH(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
 	_ttype = SLASH;
 	int _saveIndex;
-	
+
 	match('/');
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
@@ -510,7 +510,7 @@ void FlatModelicaLexer::mDOT(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
 	_ttype = DOT;
 	int _saveIndex;
-	
+
 	match('.');
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
@@ -524,7 +524,7 @@ void FlatModelicaLexer::mCOMMA(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
 	_ttype = COMMA;
 	int _saveIndex;
-	
+
 	match(',');
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
@@ -538,7 +538,7 @@ void FlatModelicaLexer::mLESS(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
 	_ttype = LESS;
 	int _saveIndex;
-	
+
 	match('<');
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
@@ -552,7 +552,7 @@ void FlatModelicaLexer::mLESSEQ(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
 	_ttype = LESSEQ;
 	int _saveIndex;
-	
+
 	match("<=");
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
@@ -566,7 +566,7 @@ void FlatModelicaLexer::mGREATER(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
 	_ttype = GREATER;
 	int _saveIndex;
-	
+
 	match('>');
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
@@ -580,7 +580,7 @@ void FlatModelicaLexer::mGREATEREQ(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
 	_ttype = GREATEREQ;
 	int _saveIndex;
-	
+
 	match(">=");
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
@@ -594,7 +594,7 @@ void FlatModelicaLexer::mEQEQ(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
 	_ttype = EQEQ;
 	int _saveIndex;
-	
+
 	match("==");
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
@@ -608,7 +608,7 @@ void FlatModelicaLexer::mLESSGT(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
 	_ttype = LESSGT;
 	int _saveIndex;
-	
+
 	match("<>");
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
@@ -622,7 +622,7 @@ void FlatModelicaLexer::mCOLON(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
 	_ttype = COLON;
 	int _saveIndex;
-	
+
 	match(':');
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
@@ -636,7 +636,7 @@ void FlatModelicaLexer::mSEMICOLON(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
 	_ttype = SEMICOLON;
 	int _saveIndex;
-	
+
 	match(';');
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
@@ -650,7 +650,7 @@ void FlatModelicaLexer::mPOWER(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
 	_ttype = POWER;
 	int _saveIndex;
-	
+
 	match('^');
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
@@ -664,7 +664,7 @@ void FlatModelicaLexer::mWS(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
 	_ttype = WS;
 	int _saveIndex;
-	
+
 	{
 	switch ( LA(1)) {
 	case 0x20 /* ' ' */ :
@@ -693,7 +693,7 @@ void FlatModelicaLexer::mWS(bool _createToken) {
 		else {
 			throw ANTLR_USE_NAMESPACE(antlr)NoViableAltForCharException(LA(1), getFilename(), getLine(), getColumn());
 		}
-		
+
 		}
 		if ( inputState->guessing==0 ) {
 #line 118 "flat_modelica_lexer.g"
@@ -725,7 +725,7 @@ void FlatModelicaLexer::mML_COMMENT(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
 	_ttype = ML_COMMENT;
 	int _saveIndex;
-	
+
 	match("/*");
 	{ // ( ... )*
 	for (;;) {
@@ -738,7 +738,7 @@ void FlatModelicaLexer::mML_COMMENT(bool _createToken) {
 		else {
 			goto _loop29;
 		}
-		
+
 	}
 	_loop29:;
 	} // ( ... )*
@@ -760,7 +760,7 @@ void FlatModelicaLexer::mML_COMMENT_CHAR(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
 	_ttype = ML_COMMENT_CHAR;
 	int _saveIndex;
-	
+
 	if ((LA(1) == 0xa /* '\n' */  || LA(1) == 0xd /* '\r' */ )) {
 		{
 		switch ( LA(1)) {
@@ -794,7 +794,7 @@ void FlatModelicaLexer::mML_COMMENT_CHAR(bool _createToken) {
 	else {
 		throw ANTLR_USE_NAMESPACE(antlr)NoViableAltForCharException(LA(1), getFilename(), getLine(), getColumn());
 	}
-	
+
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
 	   _token->setText(text.substr(_begin, text.length()-_begin));
@@ -807,7 +807,7 @@ void FlatModelicaLexer::mSL_COMMENT(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
 	_ttype = SL_COMMENT;
 	int _saveIndex;
-	
+
 	match("//");
 	{ // ( ... )*
 	for (;;) {
@@ -819,7 +819,7 @@ void FlatModelicaLexer::mSL_COMMENT(bool _createToken) {
 		else {
 			goto _loop36;
 		}
-		
+
 	}
 	_loop36:;
 	} // ( ... )*
@@ -840,7 +840,7 @@ void FlatModelicaLexer::mIDENT(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
 	_ttype = IDENT;
 	int _saveIndex;
-	
+
 	mNONDIGIT(false);
 	{ // ( ... )*
 	for (;;) {
@@ -942,7 +942,7 @@ void FlatModelicaLexer::mNONDIGIT(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
 	_ttype = NONDIGIT;
 	int _saveIndex;
-	
+
 	{
 	switch ( LA(1)) {
 	case 0x5f /* '_' */ :
@@ -1028,7 +1028,7 @@ void FlatModelicaLexer::mDIGIT(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
 	_ttype = DIGIT;
 	int _saveIndex;
-	
+
 	matchRange('0','9');
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
@@ -1042,7 +1042,7 @@ void FlatModelicaLexer::mEXPONENT(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
 	_ttype = EXPONENT;
 	int _saveIndex;
-	
+
 	{
 	switch ( LA(1)) {
 	case 0x65 /* 'e' */ :
@@ -1101,7 +1101,7 @@ void FlatModelicaLexer::mEXPONENT(bool _createToken) {
 		else {
 			if ( _cnt47>=1 ) { goto _loop47; } else {throw ANTLR_USE_NAMESPACE(antlr)NoViableAltForCharException(LA(1), getFilename(), getLine(), getColumn());}
 		}
-		
+
 		_cnt47++;
 	}
 	_loop47:;
@@ -1118,7 +1118,7 @@ void FlatModelicaLexer::mUNSIGNED_INTEGER(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
 	_ttype = UNSIGNED_INTEGER;
 	int _saveIndex;
-	
+
 	{
 	bool synPredMatched53 = false;
 	if ((((LA(1) >= 0x30 /* '0' */  && LA(1) <= 0x39 /* '9' */ )) && (_tokenSet_3.member(LA(2))))) {
@@ -1136,7 +1136,7 @@ void FlatModelicaLexer::mUNSIGNED_INTEGER(bool _createToken) {
 				else {
 					if ( _cnt52>=1 ) { goto _loop52; } else {throw ANTLR_USE_NAMESPACE(antlr)NoViableAltForCharException(LA(1), getFilename(), getLine(), getColumn());}
 				}
-				
+
 				_cnt52++;
 			}
 			_loop52:;
@@ -1160,7 +1160,7 @@ void FlatModelicaLexer::mUNSIGNED_INTEGER(bool _createToken) {
 			else {
 				if ( _cnt55>=1 ) { goto _loop55; } else {throw ANTLR_USE_NAMESPACE(antlr)NoViableAltForCharException(LA(1), getFilename(), getLine(), getColumn());}
 			}
-			
+
 			_cnt55++;
 		}
 		_loop55:;
@@ -1176,7 +1176,7 @@ void FlatModelicaLexer::mUNSIGNED_INTEGER(bool _createToken) {
 			else {
 				if ( _cnt58>=1 ) { goto _loop58; } else {throw ANTLR_USE_NAMESPACE(antlr)NoViableAltForCharException(LA(1), getFilename(), getLine(), getColumn());}
 			}
-			
+
 			_cnt58++;
 		}
 		_loop58:;
@@ -1184,9 +1184,9 @@ void FlatModelicaLexer::mUNSIGNED_INTEGER(bool _createToken) {
 		}
 		if ( inputState->guessing==0 ) {
 #line 159 "flat_modelica_lexer.g"
-			
-							_ttype = UNSIGNED_REAL; 
-						
+
+							_ttype = UNSIGNED_REAL;
+
 #line 1191 "FlatModelicaLexer.cpp"
 		}
 	}
@@ -1200,7 +1200,7 @@ void FlatModelicaLexer::mUNSIGNED_INTEGER(bool _createToken) {
 			else {
 				if ( _cnt60>=1 ) { goto _loop60; } else {throw ANTLR_USE_NAMESPACE(antlr)NoViableAltForCharException(LA(1), getFilename(), getLine(), getColumn());}
 			}
-			
+
 			_cnt60++;
 		}
 		_loop60:;
@@ -1209,7 +1209,7 @@ void FlatModelicaLexer::mUNSIGNED_INTEGER(bool _createToken) {
 	else {
 		throw ANTLR_USE_NAMESPACE(antlr)NoViableAltForCharException(LA(1), getFilename(), getLine(), getColumn());
 	}
-	
+
 	}
 	{
 	if ((LA(1) == 0x45 /* 'E' */  || LA(1) == 0x65 /* 'e' */ )) {
@@ -1222,7 +1222,7 @@ void FlatModelicaLexer::mUNSIGNED_INTEGER(bool _createToken) {
 	}
 	else {
 	}
-	
+
 	}
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
@@ -1236,7 +1236,7 @@ void FlatModelicaLexer::mSTRING(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
 	_ttype = STRING;
 	int _saveIndex;
-	
+
 	_saveIndex = text.length();
 	match('"');
 	text.erase(_saveIndex);
@@ -1251,7 +1251,7 @@ void FlatModelicaLexer::mSTRING(bool _createToken) {
 		else {
 			goto _loop64;
 		}
-		
+
 	}
 	_loop64:;
 	} // ( ... )*
@@ -1270,7 +1270,7 @@ void FlatModelicaLexer::mSCHAR(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
 	_ttype = SCHAR;
 	int _saveIndex;
-	
+
 	switch ( LA(1)) {
 	case 0xa /* '\n' */ :
 	case 0xd /* '\r' */ :
@@ -1329,7 +1329,7 @@ void FlatModelicaLexer::mSESCAPE(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
 	_ttype = SESCAPE;
 	int _saveIndex;
-	
+
 	match('\\');
 	{
 	switch ( LA(1)) {
@@ -1406,7 +1406,7 @@ void FlatModelicaLexer::mESC(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
 	_ttype = ESC;
 	int _saveIndex;
-	
+
 	match('\\');
 	{
 	switch ( LA(1)) {
@@ -1436,72 +1436,72 @@ void FlatModelicaLexer::mESC(bool _createToken) {
 
 
 const unsigned long FlatModelicaLexer::_tokenSet_0_data_[] = { 4294967288UL, 4294966271UL, 4294967295UL, 4294967295UL, 4294967295UL, 4294967295UL, 4294967295UL, 4294967295UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL };
-// NULL_TREE_LOOKAHEAD "algorithm" "and" "annotation" "block" "boundary" 
-// "class" "connect" "connector" "constant" "discrete" "each" "else" "elseif" 
-// "elsewhen" "end" "enumeration" "equation" "encapsulated" "extends" "external" 
-// "false" "final" "flow" "for" "function" "if" "import" "in" "initial" 
-// "inner" "input" "loop" "model" "not" "outer" "or" "output" "package" 
-// "partial" "protected" "public" "record" "redeclare" "replaceable" "results" 
-// "then" "true" "type" "unsigned_real" "when" "while" "within" LPAR RPAR 
-// LBRACK RBRACK LBRACE RBRACE EQUALS ASSIGN PLUS MINUS STAR SLASH DOT 
-// COMMA LESS LESSEQ GREATER GREATEREQ EQEQ LESSGT COLON SEMICOLON POWER 
-// WS ML_COMMENT ML_COMMENT_CHAR SL_COMMENT IDENT NONDIGIT DIGIT EXPONENT 
-// UNSIGNED_INTEGER STRING SCHAR SESCAPE ESC 
+// NULL_TREE_LOOKAHEAD "algorithm" "and" "annotation" "block" "boundary"
+// "class" "connect" "connector" "constant" "discrete" "each" "else" "elseif"
+// "elsewhen" "end" "enumeration" "equation" "encapsulated" "extends" "external"
+// "false" "final" "flow" "for" "function" "if" "import" "in" "initial"
+// "inner" "input" "loop" "model" "not" "outer" "or" "output" "package"
+// "partial" "protected" "public" "record" "redeclare" "replaceable" "results"
+// "then" "true" "type" "unsigned_real" "when" "while" "within" LPAR RPAR
+// LBRACK RBRACK LBRACE RBRACE EQUALS ASSIGN PLUS MINUS STAR SLASH DOT
+// COMMA LESS LESSEQ GREATER GREATEREQ EQEQ LESSGT COLON SEMICOLON POWER
+// WS ML_COMMENT ML_COMMENT_CHAR SL_COMMENT IDENT NONDIGIT DIGIT EXPONENT
+// UNSIGNED_INTEGER STRING SCHAR SESCAPE ESC
 const ANTLR_USE_NAMESPACE(antlr)BitSet FlatModelicaLexer::_tokenSet_0(_tokenSet_0_data_,16);
 const unsigned long FlatModelicaLexer::_tokenSet_1_data_[] = { 4294958072UL, 4294966271UL, 4294967295UL, 4294967295UL, 4294967295UL, 4294967295UL, 4294967295UL, 4294967295UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL };
-// NULL_TREE_LOOKAHEAD "algorithm" "and" "annotation" "block" "boundary" 
-// "class" "connector" "constant" "each" "else" "elseif" "elsewhen" "end" 
-// "enumeration" "equation" "encapsulated" "extends" "external" "false" 
-// "final" "flow" "for" "function" "if" "import" "in" "initial" "inner" 
-// "input" "loop" "model" "not" "outer" "or" "output" "package" "partial" 
-// "protected" "public" "record" "redeclare" "replaceable" "results" "then" 
-// "true" "type" "unsigned_real" "when" "while" "within" LPAR RPAR LBRACK 
-// RBRACK LBRACE RBRACE EQUALS ASSIGN PLUS MINUS STAR SLASH DOT COMMA LESS 
-// LESSEQ GREATER GREATEREQ EQEQ LESSGT COLON SEMICOLON POWER WS ML_COMMENT 
-// ML_COMMENT_CHAR SL_COMMENT IDENT NONDIGIT DIGIT EXPONENT UNSIGNED_INTEGER 
-// STRING SCHAR SESCAPE ESC 
+// NULL_TREE_LOOKAHEAD "algorithm" "and" "annotation" "block" "boundary"
+// "class" "connector" "constant" "each" "else" "elseif" "elsewhen" "end"
+// "enumeration" "equation" "encapsulated" "extends" "external" "false"
+// "final" "flow" "for" "function" "if" "import" "in" "initial" "inner"
+// "input" "loop" "model" "not" "outer" "or" "output" "package" "partial"
+// "protected" "public" "record" "redeclare" "replaceable" "results" "then"
+// "true" "type" "unsigned_real" "when" "while" "within" LPAR RPAR LBRACK
+// RBRACK LBRACE RBRACE EQUALS ASSIGN PLUS MINUS STAR SLASH DOT COMMA LESS
+// LESSEQ GREATER GREATEREQ EQEQ LESSGT COLON SEMICOLON POWER WS ML_COMMENT
+// ML_COMMENT_CHAR SL_COMMENT IDENT NONDIGIT DIGIT EXPONENT UNSIGNED_INTEGER
+// STRING SCHAR SESCAPE ESC
 const ANTLR_USE_NAMESPACE(antlr)BitSet FlatModelicaLexer::_tokenSet_1(_tokenSet_1_data_,16);
 const unsigned long FlatModelicaLexer::_tokenSet_2_data_[] = { 4294958072UL, 4294967295UL, 4294967295UL, 4294967295UL, 4294967295UL, 4294967295UL, 4294967295UL, 4294967295UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL };
-// NULL_TREE_LOOKAHEAD "algorithm" "and" "annotation" "block" "boundary" 
-// "class" "connector" "constant" "each" "else" "elseif" "elsewhen" "end" 
-// "enumeration" "equation" "encapsulated" "extends" "external" "false" 
-// "final" "flow" "for" "function" "if" "import" "in" "initial" "inner" 
-// "input" "loop" "model" "not" "outer" "or" "output" "package" "parameter" 
-// "partial" "protected" "public" "record" "redeclare" "replaceable" "results" 
-// "then" "true" "type" "unsigned_real" "when" "while" "within" LPAR RPAR 
-// LBRACK RBRACK LBRACE RBRACE EQUALS ASSIGN PLUS MINUS STAR SLASH DOT 
-// COMMA LESS LESSEQ GREATER GREATEREQ EQEQ LESSGT COLON SEMICOLON POWER 
-// WS ML_COMMENT ML_COMMENT_CHAR SL_COMMENT IDENT NONDIGIT DIGIT EXPONENT 
-// UNSIGNED_INTEGER STRING SCHAR SESCAPE ESC 
+// NULL_TREE_LOOKAHEAD "algorithm" "and" "annotation" "block" "boundary"
+// "class" "connector" "constant" "each" "else" "elseif" "elsewhen" "end"
+// "enumeration" "equation" "encapsulated" "extends" "external" "false"
+// "final" "flow" "for" "function" "if" "import" "in" "initial" "inner"
+// "input" "loop" "model" "not" "outer" "or" "output" "package" "parameter"
+// "partial" "protected" "public" "record" "redeclare" "replaceable" "results"
+// "then" "true" "type" "unsigned_real" "when" "while" "within" LPAR RPAR
+// LBRACK RBRACK LBRACE RBRACE EQUALS ASSIGN PLUS MINUS STAR SLASH DOT
+// COMMA LESS LESSEQ GREATER GREATEREQ EQEQ LESSGT COLON SEMICOLON POWER
+// WS ML_COMMENT ML_COMMENT_CHAR SL_COMMENT IDENT NONDIGIT DIGIT EXPONENT
+// UNSIGNED_INTEGER STRING SCHAR SESCAPE ESC
 const ANTLR_USE_NAMESPACE(antlr)BitSet FlatModelicaLexer::_tokenSet_2(_tokenSet_2_data_,16);
 const unsigned long FlatModelicaLexer::_tokenSet_3_data_[] = { 0UL, 67059712UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL };
-// "record" "replaceable" "results" "then" "true" "type" "unsigned_real" 
-// "when" "while" "within" LPAR 
+// "record" "replaceable" "results" "then" "true" "type" "unsigned_real"
+// "when" "while" "within" LPAR
 const ANTLR_USE_NAMESPACE(antlr)BitSet FlatModelicaLexer::_tokenSet_3(_tokenSet_3_data_,10);
 const unsigned long FlatModelicaLexer::_tokenSet_4_data_[] = { 4294967288UL, 4294967291UL, 4026531839UL, 4294967295UL, 4294967295UL, 4294967295UL, 4294967295UL, 4294967295UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL };
-// NULL_TREE_LOOKAHEAD "algorithm" "and" "annotation" "block" "boundary" 
-// "class" "connect" "connector" "constant" "discrete" "each" "else" "elseif" 
-// "elsewhen" "end" "enumeration" "equation" "encapsulated" "extends" "external" 
-// "false" "final" "flow" "for" "function" "if" "import" "in" "initial" 
-// "inner" "loop" "model" "not" "outer" "or" "output" "package" "parameter" 
-// "partial" "protected" "public" "record" "redeclare" "replaceable" "results" 
-// "then" "true" "type" "unsigned_real" "when" "while" "within" LPAR RPAR 
-// LBRACK RBRACK LBRACE RBRACE EQUALS ASSIGN PLUS MINUS STAR SLASH DOT 
-// COMMA LESS LESSEQ GREATER GREATEREQ EQEQ LESSGT COLON SEMICOLON POWER 
-// WS ML_COMMENT ML_COMMENT_CHAR SL_COMMENT IDENT NONDIGIT DIGIT EXPONENT 
-// UNSIGNED_INTEGER STRING SCHAR SESCAPE 
+// NULL_TREE_LOOKAHEAD "algorithm" "and" "annotation" "block" "boundary"
+// "class" "connect" "connector" "constant" "discrete" "each" "else" "elseif"
+// "elsewhen" "end" "enumeration" "equation" "encapsulated" "extends" "external"
+// "false" "final" "flow" "for" "function" "if" "import" "in" "initial"
+// "inner" "loop" "model" "not" "outer" "or" "output" "package" "parameter"
+// "partial" "protected" "public" "record" "redeclare" "replaceable" "results"
+// "then" "true" "type" "unsigned_real" "when" "while" "within" LPAR RPAR
+// LBRACK RBRACK LBRACE RBRACE EQUALS ASSIGN PLUS MINUS STAR SLASH DOT
+// COMMA LESS LESSEQ GREATER GREATEREQ EQEQ LESSGT COLON SEMICOLON POWER
+// WS ML_COMMENT ML_COMMENT_CHAR SL_COMMENT IDENT NONDIGIT DIGIT EXPONENT
+// UNSIGNED_INTEGER STRING SCHAR SESCAPE
 const ANTLR_USE_NAMESPACE(antlr)BitSet FlatModelicaLexer::_tokenSet_4(_tokenSet_4_data_,16);
 const unsigned long FlatModelicaLexer::_tokenSet_5_data_[] = { 4294957560UL, 4294967291UL, 4026531839UL, 4294967295UL, 4294967295UL, 4294967295UL, 4294967295UL, 4294967295UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL };
-// NULL_TREE_LOOKAHEAD "algorithm" "and" "annotation" "block" "boundary" 
-// "connector" "constant" "each" "else" "elseif" "elsewhen" "end" "enumeration" 
-// "equation" "encapsulated" "extends" "external" "false" "final" "flow" 
-// "for" "function" "if" "import" "in" "initial" "inner" "loop" "model" 
-// "not" "outer" "or" "output" "package" "parameter" "partial" "protected" 
-// "public" "record" "redeclare" "replaceable" "results" "then" "true" 
-// "type" "unsigned_real" "when" "while" "within" LPAR RPAR LBRACK RBRACK 
-// LBRACE RBRACE EQUALS ASSIGN PLUS MINUS STAR SLASH DOT COMMA LESS LESSEQ 
-// GREATER GREATEREQ EQEQ LESSGT COLON SEMICOLON POWER WS ML_COMMENT ML_COMMENT_CHAR 
-// SL_COMMENT IDENT NONDIGIT DIGIT EXPONENT UNSIGNED_INTEGER STRING SCHAR 
-// SESCAPE 
+// NULL_TREE_LOOKAHEAD "algorithm" "and" "annotation" "block" "boundary"
+// "connector" "constant" "each" "else" "elseif" "elsewhen" "end" "enumeration"
+// "equation" "encapsulated" "extends" "external" "false" "final" "flow"
+// "for" "function" "if" "import" "in" "initial" "inner" "loop" "model"
+// "not" "outer" "or" "output" "package" "parameter" "partial" "protected"
+// "public" "record" "redeclare" "replaceable" "results" "then" "true"
+// "type" "unsigned_real" "when" "while" "within" LPAR RPAR LBRACK RBRACK
+// LBRACE RBRACE EQUALS ASSIGN PLUS MINUS STAR SLASH DOT COMMA LESS LESSEQ
+// GREATER GREATEREQ EQEQ LESSGT COLON SEMICOLON POWER WS ML_COMMENT ML_COMMENT_CHAR
+// SL_COMMENT IDENT NONDIGIT DIGIT EXPONENT UNSIGNED_INTEGER STRING SCHAR
+// SESCAPE
 const ANTLR_USE_NAMESPACE(antlr)BitSet FlatModelicaLexer::_tokenSet_5(_tokenSet_5_data_,16);
 

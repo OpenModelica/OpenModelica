@@ -11,7 +11,7 @@ class indentation
 {
 public:
   indentation();
- 
+
   void push(int element);
   int top();
   void pop();

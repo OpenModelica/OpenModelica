@@ -16,8 +16,8 @@ module External:
   relation strtok: (string, string) => string
   (*
      sst = string separated tokens
-     this one gets a str1 and str2 calls strtok and returns the tokens in a string 
-     separated by str3 
+     this one gets a str1 and str2 calls strtok and returns the tokens in a string
+     separated by str3
   *)
   relation sst: (string, string, string) => string
   (* trims at start and end of str1 any occurence of str2 *)
@@ -32,7 +32,7 @@ module External:
 end
 
 (* testing of external *)
-(* 
+(*
 		External.endsWith("/pah/to/file.rml","file.rml") => true &
 		External.endsWith("/pah/to/file.rml","file2.rml") => false &
         External.trimstring("*   hai baaa   ***", "*") => s &
@@ -53,7 +53,7 @@ end
 		External.strrplall("bla shit bla", "b", "") => str &
 		print str & print "\n" &
 		External.strrplall("bla shit bla", "b", "c") => str &
-		print str 
+		print str
 *)
 
 (*

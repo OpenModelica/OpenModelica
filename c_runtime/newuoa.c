@@ -12,7 +12,7 @@
 
 #include "f2c.h"
 
-/* Subroutine */ int newuoa_(integer *n, integer *npt, doublereal *x, 
+/* Subroutine */ int newuoa_(integer *n, integer *npt, doublereal *x,
 	doublereal *rhobeg, doublereal *rhoend, integer *iprint, integer *
 	maxfun, doublereal *w, doublereal *calfun)
 {
@@ -24,12 +24,12 @@
     integer s_wsfe(cilist *), e_wsfe(void);
 
     /* Local variables */
-    static integer id, np, iw, igq, ihq, ixb, ifv, ipq, ivl, ixn, ixo, ixp, 
+    static integer id, np, iw, igq, ihq, ixb, ifv, ipq, ivl, ixn, ixo, ixp,
 	    ndim, nptm, ibmat, izmat;
-    extern /* Subroutine */ int newuob_(integer *, integer *, doublereal *, 
-	    doublereal *, doublereal *, integer *, integer *, doublereal *, 
-	    doublereal *, doublereal *, doublereal *, doublereal *, 
-	    doublereal *, doublereal *, doublereal *, doublereal *, 
+    extern /* Subroutine */ int newuob_(integer *, integer *, doublereal *,
+	    doublereal *, doublereal *, integer *, integer *, doublereal *,
+	    doublereal *, doublereal *, doublereal *, doublereal *,
+	    doublereal *, doublereal *, doublereal *, doublereal *,
 	    doublereal *, integer *, doublereal *, doublereal *, doublereal *,
 	     doublereal *);
 

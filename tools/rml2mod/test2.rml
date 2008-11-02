@@ -5,7 +5,7 @@ module exp1:
 end
 
 relation eval: Exp => real  =
-  
-  axiom eval( RCONST(ival) ) => ival   
 
-end 
+  axiom eval( RCONST(ival) ) => ival
+
+end

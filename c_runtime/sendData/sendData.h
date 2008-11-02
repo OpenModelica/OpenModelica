@@ -55,7 +55,7 @@ class Connection
 public:
   Connection();
   ~Connection();
-  
+
   QTcpSocket* newConnection(bool graphics = false);
 
   const char* getExternalViewerFileName();

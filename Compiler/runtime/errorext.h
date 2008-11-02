@@ -60,7 +60,7 @@ extern "C" {
 		   char* severity,
 		   char* message,
 		   std::list<std::string> tokens);
-		   
+
   void add_source_message(int errorID,
 			  char* type,
 			  char* severity,

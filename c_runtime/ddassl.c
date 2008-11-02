@@ -46,10 +46,10 @@ static integer c__0 = 0;
 static integer c_n1 = -1;
 static integer c__72 = 72;
 
-/* Subroutine */ int ddassl_(U_fp res, integer *neq, doublereal *t, 
-	doublereal *y, doublereal *yprime, doublereal *tout, integer *info, 
-	doublereal *rtol, doublereal *atol, integer *idid, doublereal *rwork, 
-	integer *lrw, integer *iwork, integer *liw, doublereal *rpar, integer 
+/* Subroutine */ int ddassl_(U_fp res, integer *neq, doublereal *t,
+	doublereal *y, doublereal *yprime, doublereal *tout, integer *info,
+	doublereal *rtol, doublereal *atol, integer *idid, doublereal *rwork,
+	integer *lrw, integer *iwork, integer *liw, doublereal *rpar, integer
 	*ipar, U_fp jac)
 {
     /* System generated locals */
@@ -57,8 +57,8 @@ static integer c__72 = 72;
     integer i__1, i__2[4], i__3[5], i__4[6], i__5[3], i__6[2];
     doublereal d__1, d__2;
     char ch__1[118], ch__2[81], ch__3[128], ch__4[62], ch__5[110], ch__6[121],
-	     ch__7[90], ch__8[132], ch__9[126], ch__10[85], ch__11[98], 
-	    ch__12[21], ch__13[30], ch__14[61], ch__15[71], ch__16[32], 
+	     ch__7[90], ch__8[132], ch__9[126], ch__10[85], ch__11[98],
+	    ch__12[21], ch__13[30], ch__14[61], ch__15[71], ch__16[32],
 	    ch__17[51], ch__18[78], ch__19[66], ch__20[49], ch__21[27];
 
     /* Builtin functions */
@@ -86,25 +86,25 @@ static integer c__72 = 72;
     static doublereal rtoli;
     extern doublereal d1mach_(integer *);
     static doublereal tnext, tstop;
-    extern /* Subroutine */ int ddaini_(doublereal *, doublereal *, 
-	    doublereal *, integer *, U_fp, U_fp, doublereal *, doublereal *, 
-	    integer *, doublereal *, integer *, doublereal *, doublereal *, 
+    extern /* Subroutine */ int ddaini_(doublereal *, doublereal *,
+	    doublereal *, integer *, U_fp, U_fp, doublereal *, doublereal *,
+	    integer *, doublereal *, integer *, doublereal *, doublereal *,
 	    doublereal *, doublereal *, integer *, doublereal *, doublereal *,
 	     integer *, integer *);
-    extern doublereal ddanrm_(integer *, doublereal *, doublereal *, 
+    extern doublereal ddanrm_(integer *, doublereal *, doublereal *,
 	    doublereal *, integer *);
-    extern /* Subroutine */ int ddatrp_(doublereal *, doublereal *, 
-	    doublereal *, doublereal *, integer *, integer *, doublereal *, 
-	    doublereal *), ddastp_(doublereal *, doublereal *, doublereal *, 
-	    integer *, U_fp, U_fp, doublereal *, doublereal *, integer *, 
-	    integer *, doublereal *, integer *, doublereal *, doublereal *, 
+    extern /* Subroutine */ int ddatrp_(doublereal *, doublereal *,
+	    doublereal *, doublereal *, integer *, integer *, doublereal *,
+	    doublereal *), ddastp_(doublereal *, doublereal *, doublereal *,
+	    integer *, U_fp, U_fp, doublereal *, doublereal *, integer *,
+	    integer *, doublereal *, integer *, doublereal *, doublereal *,
 	    doublereal *, doublereal *, integer *, doublereal *, doublereal *,
-	     doublereal *, doublereal *, doublereal *, doublereal *, 
-	    doublereal *, doublereal *, doublereal *, doublereal *, 
-	    doublereal *, integer *, integer *, integer *, integer *, integer 
-	    *, integer *, integer *), ddawts_(integer *, integer *, 
-	    doublereal *, doublereal *, doublereal *, doublereal *, 
-	    doublereal *, integer *), xermsg_(char *, char *, char *, integer 
+	     doublereal *, doublereal *, doublereal *, doublereal *,
+	    doublereal *, doublereal *, doublereal *, doublereal *,
+	    doublereal *, integer *, integer *, integer *, integer *, integer
+	    *, integer *, integer *), ddawts_(integer *, integer *,
+	    doublereal *, doublereal *, doublereal *, doublereal *,
+	    doublereal *, integer *), xermsg_(char *, char *, char *, integer
 	    *, integer *, ftnlen, ftnlen, ftnlen);
     static doublereal uround, ypnorm;
 
@@ -2166,8 +2166,8 @@ L750:
 /* -----------END OF SUBROUTINE DDASSL------------------------------------ */
 } /* ddassl_ */
 
-/* Subroutine */ int ddawts_(integer *neq, integer *iwt, doublereal *rtol, 
-	doublereal *atol, doublereal *y, doublereal *wt, doublereal *rpar, 
+/* Subroutine */ int ddawts_(integer *neq, integer *iwt, doublereal *rtol,
+	doublereal *atol, doublereal *y, doublereal *wt, doublereal *rpar,
 	integer *ipar)
 {
     /* System generated locals */
@@ -2304,9 +2304,9 @@ L30:
 } /* ddanrm_ */
 
 /* Subroutine */ int ddaini_(doublereal *x, doublereal *y, doublereal *yprime,
-	 integer *neq, S_fp res, U_fp jac, doublereal *h__, doublereal *wt, 
-	integer *idid, doublereal *rpar, integer *ipar, doublereal *phi, 
-	doublereal *delta, doublereal *e, doublereal *wm, integer *iwm, 
+	 integer *neq, S_fp res, U_fp jac, doublereal *h__, doublereal *wt,
+	integer *idid, doublereal *rpar, integer *ipar, doublereal *phi,
+	doublereal *delta, doublereal *e, doublereal *wm, integer *iwm,
 	doublereal *hmin, doublereal *uround, integer *nonneg, integer *ntemp)
 {
     /* Initialized data */
@@ -2333,10 +2333,10 @@ L30:
     static doublereal ynorm;
     extern /* Subroutine */ int ddajac_(integer *, doublereal *, doublereal *,
 	     doublereal *, doublereal *, doublereal *, doublereal *, integer *
-	    , doublereal *, doublereal *, doublereal *, integer *, S_fp, 
+	    , doublereal *, doublereal *, doublereal *, integer *, S_fp,
 	    integer *, doublereal *, U_fp, doublereal *, integer *, integer *)
 	    ;
-    extern doublereal ddanrm_(integer *, doublereal *, doublereal *, 
+    extern doublereal ddanrm_(integer *, doublereal *, doublereal *,
 	    doublereal *, integer *);
     extern /* Subroutine */ int ddaslv_(integer *, doublereal *, doublereal *,
 	     integer *);
@@ -2769,13 +2769,13 @@ L690:
 } /* ddatrp_ */
 
 /* Subroutine */ int ddastp_(doublereal *x, doublereal *y, doublereal *yprime,
-	 integer *neq, S_fp res, U_fp jac, doublereal *h__, doublereal *wt, 
-	integer *jstart, integer *idid, doublereal *rpar, integer *ipar, 
-	doublereal *phi, doublereal *delta, doublereal *e, doublereal *wm, 
-	integer *iwm, doublereal *alpha, doublereal *beta, doublereal *gamma, 
+	 integer *neq, S_fp res, U_fp jac, doublereal *h__, doublereal *wt,
+	integer *jstart, integer *idid, doublereal *rpar, integer *ipar,
+	doublereal *phi, doublereal *delta, doublereal *e, doublereal *wm,
+	integer *iwm, doublereal *alpha, doublereal *beta, doublereal *gamma,
 	doublereal *psi, doublereal *sigma, doublereal *cj, doublereal *cjold,
 	 doublereal *hold, doublereal *s, doublereal *hmin, doublereal *
-	uround, integer *iphase, integer *jcalc, integer *k, integer *kold, 
+	uround, integer *iphase, integer *jcalc, integer *k, integer *kold,
 	integer *ns, integer *nonneg, integer *ntemp)
 {
     /* Initialized data */
@@ -2807,15 +2807,15 @@ L690:
     static doublereal enorm, pnorm, alpha0, terkm1, terkm2;
     extern /* Subroutine */ int ddajac_(integer *, doublereal *, doublereal *,
 	     doublereal *, doublereal *, doublereal *, doublereal *, integer *
-	    , doublereal *, doublereal *, doublereal *, integer *, S_fp, 
+	    , doublereal *, doublereal *, doublereal *, integer *, S_fp,
 	    integer *, doublereal *, U_fp, doublereal *, integer *, integer *)
 	    ;
     static doublereal terkp1;
-    extern doublereal ddanrm_(integer *, doublereal *, doublereal *, 
+    extern doublereal ddanrm_(integer *, doublereal *, doublereal *,
 	    doublereal *, integer *);
     static doublereal alphas;
     extern /* Subroutine */ int ddaslv_(integer *, doublereal *, doublereal *,
-	     integer *), ddatrp_(doublereal *, doublereal *, doublereal *, 
+	     integer *), ddatrp_(doublereal *, doublereal *, doublereal *,
 	    doublereal *, integer *, integer *, doublereal *, doublereal *);
     static doublereal cjlast, delnrm;
     static logical convgd;
@@ -3122,7 +3122,7 @@ L300:
     ++iwm[13];
     *jcalc = 0;
     ddajac_(neq, x, &y[1], &yprime[1], &delta[1], cj, h__, &ier, &wt[1], &e[1]
-	    , &wm[1], &iwm[1], (S_fp)res, &ires, uround, (U_fp)jac, &rpar[1], 
+	    , &wm[1], &iwm[1], (S_fp)res, &ires, uround, (U_fp)jac, &rpar[1],
 	    &ipar[1], ntemp);
     *cjold = *cj;
     *s = 100.;
@@ -3621,10 +3621,10 @@ L690:
 /* ------END OF SUBROUTINE DDASTP------ */
 } /* ddastp_ */
 
-/* Subroutine */ int ddajac_(integer *neq, doublereal *x, doublereal *y, 
+/* Subroutine */ int ddajac_(integer *neq, doublereal *x, doublereal *y,
 	doublereal *yprime, doublereal *delta, doublereal *cj, doublereal *
-	h__, integer *ier, doublereal *wt, doublereal *e, doublereal *wm, 
-	integer *iwm, S_fp res, integer *ires, doublereal *uround, S_fp jac, 
+	h__, integer *ier, doublereal *wt, doublereal *e, doublereal *wm,
+	integer *iwm, S_fp res, integer *ires, doublereal *uround, S_fp jac,
 	doublereal *rpar, integer *ipar, integer *ntemp)
 {
     /* System generated locals */
@@ -3640,8 +3640,8 @@ L690:
     static integer meb1, nrow;
     static doublereal squr;
     static integer npdm1;
-    extern /* Subroutine */ int dgbfa_(doublereal *, integer *, integer *, 
-	    integer *, integer *, integer *, integer *), dgefa_(doublereal *, 
+    extern /* Subroutine */ int dgbfa_(doublereal *, integer *, integer *,
+	    integer *, integer *, integer *, integer *), dgefa_(doublereal *,
 	    integer *, integer *, integer *, integer *);
     static integer mband, lenpd, isave, msave;
     static doublereal ysave;
@@ -3753,8 +3753,8 @@ L200:
     i__1 = *neq;
     for (i__ = 1; i__ <= i__1; ++i__) {
 /* Computing MAX */
-	d__4 = (d__1 = y[i__], abs(d__1)), d__5 = (d__2 = *h__ * yprime[i__], 
-		abs(d__2)), d__4 = max(d__4,d__5), d__5 = (d__3 = wt[i__], 
+	d__4 = (d__1 = y[i__], abs(d__1)), d__5 = (d__2 = *h__ * yprime[i__],
+		abs(d__2)), d__4 = max(d__4,d__5), d__5 = (d__3 = wt[i__],
 		abs(d__3));
 	del = squr * max(d__4,d__5);
 	d__1 = *h__ * yprime[i__];
@@ -3825,8 +3825,8 @@ L500:
 	    wm[isave + k] = y[n];
 	    wm[ipsave + k] = yprime[n];
 /* Computing MAX */
-	    d__4 = (d__1 = y[n], abs(d__1)), d__5 = (d__2 = *h__ * yprime[n], 
-		    abs(d__2)), d__4 = max(d__4,d__5), d__5 = (d__3 = wt[n], 
+	    d__4 = (d__1 = y[n], abs(d__1)), d__5 = (d__2 = *h__ * yprime[n],
+		    abs(d__2)), d__4 = max(d__4,d__5), d__5 = (d__3 = wt[n],
 		    abs(d__3));
 	    del = squr * max(d__4,d__5);
 	    d__1 = *h__ * yprime[n];
@@ -3847,8 +3847,8 @@ L500:
 	    y[n] = wm[isave + k];
 	    yprime[n] = wm[ipsave + k];
 /* Computing MAX */
-	    d__4 = (d__1 = y[n], abs(d__1)), d__5 = (d__2 = *h__ * yprime[n], 
-		    abs(d__2)), d__4 = max(d__4,d__5), d__5 = (d__3 = wt[n], 
+	    d__4 = (d__1 = y[n], abs(d__1)), d__5 = (d__2 = *h__ * yprime[n],
+		    abs(d__2)), d__4 = max(d__4,d__5), d__5 = (d__3 = wt[n],
 		    abs(d__3));
 	    del = squr * max(d__4,d__5);
 	    d__1 = *h__ * yprime[n];
@@ -3880,12 +3880,12 @@ L550:
 /* ------END OF SUBROUTINE DDAJAC------ */
 } /* ddajac_ */
 
-/* Subroutine */ int ddaslv_(integer *neq, doublereal *delta, doublereal *wm, 
+/* Subroutine */ int ddaslv_(integer *neq, doublereal *delta, doublereal *wm,
 	integer *iwm)
 {
-    extern /* Subroutine */ int dgbsl_(doublereal *, integer *, integer *, 
+    extern /* Subroutine */ int dgbsl_(doublereal *, integer *, integer *,
 	    integer *, integer *, integer *, doublereal *, integer *), dgesl_(
-	    doublereal *, integer *, integer *, integer *, doublereal *, 
+	    doublereal *, integer *, integer *, integer *, doublereal *,
 	    integer *);
     static integer mtype, meband;
 
@@ -3955,8 +3955,8 @@ L400:
 } /* ddaslv_ */
 
 /* *DECK XERMSG */
-/* Subroutine */ int xermsg_(char *librar, char *subrou, char *messg, integer 
-	*nerr, integer *level, ftnlen librar_len, ftnlen subrou_len, ftnlen 
+/* Subroutine */ int xermsg_(char *librar, char *subrou, char *messg, integer
+	*nerr, integer *level, ftnlen librar_len, ftnlen subrou_len, ftnlen
 	messg_len)
 {
     /* System generated locals */
@@ -3976,7 +3976,7 @@ L400:
     static integer ltemp;
     extern /* Subroutine */ int xerhlt_(char *, ftnlen);
     static integer lkntrl, mkntrl;
-    extern /* Subroutine */ int xerprn_(char *, integer *, char *, integer *, 
+    extern /* Subroutine */ int xerprn_(char *, integer *, char *, integer *,
 	    ftnlen, ftnlen);
 
     /* Fortran I/O blocks */
@@ -4358,7 +4358,7 @@ L20:
 } /* xerhlt_ */
 
 /* *DECK XERPRN */
-/* Subroutine */ int xerprn_(char *prefix, integer *npref, char *messg, 
+/* Subroutine */ int xerprn_(char *prefix, integer *npref, char *messg,
 	integer *nwrap, ftnlen prefix_len, ftnlen messg_len)
 {
     /* System generated locals */
@@ -4368,7 +4368,7 @@ L20:
     integer i_len(char *, ftnlen);
     /* Subroutine */ int s_copy(char *, char *, ftnlen, ftnlen);
     integer s_wsfe(cilist *), do_fio(integer *, char *, ftnlen), e_wsfe(void),
-	     i_indx(char *, char *, ftnlen, ftnlen), s_cmp(char *, char *, 
+	     i_indx(char *, char *, ftnlen, ftnlen), s_cmp(char *, char *,
 	    ftnlen, ftnlen);
 
     /* Local variables */
@@ -4585,7 +4585,7 @@ L50:
 	}
 L54:
 	i__1 = lpref;
-	s_copy(cbuff + i__1, messg + (nextc - 1), lpref + lpiece - i__1, 
+	s_copy(cbuff + i__1, messg + (nextc - 1), lpref + lpiece - i__1,
 		nextc + lpiece - 1 - (nextc - 1));
 	nextc = nextc + lpiece + idelta;
     } else if (lpiece == 1) {
@@ -4613,7 +4613,7 @@ L54:
 	}
 L58:
 	i__1 = lpref;
-	s_copy(cbuff + i__1, messg + (nextc - 1), lpref + lpiece - i__1, 
+	s_copy(cbuff + i__1, messg + (nextc - 1), lpref + lpiece - i__1,
 		nextc + lpiece - 1 - (nextc - 1));
 	nextc = nextc + lpiece + idelta;
     } else {
@@ -4623,7 +4623,7 @@ L58:
 
 	--lpiece;
 	i__1 = lpref;
-	s_copy(cbuff + i__1, messg + (nextc - 1), lpref + lpiece - i__1, 
+	s_copy(cbuff + i__1, messg + (nextc - 1), lpref + lpiece - i__1,
 		nextc + lpiece - 1 - (nextc - 1));
 	nextc = nextc + lpiece + 2;
     }
@@ -4737,7 +4737,7 @@ L58:
     /* Local variables */
     static integer i__;
     static char xern1[8];
-    extern /* Subroutine */ int xermsg_(char *, char *, char *, integer *, 
+    extern /* Subroutine */ int xermsg_(char *, char *, char *, integer *,
 	    integer *, ftnlen, ftnlen, ftnlen);
 
     /* Fortran I/O blocks */

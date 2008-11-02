@@ -161,7 +161,7 @@ public:
 	{
 		return ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST);
 	}
-	
+
 protected:
 	RefMyAST returnAST;
 private:
@@ -173,7 +173,7 @@ private:
 		NUM_TOKENS = 147
 	};
 #endif
-	
+
 	static const unsigned long _tokenSet_0_data_[];
 	static const ANTLR_USE_NAMESPACE(antlr)BitSet _tokenSet_0;
 	static const unsigned long _tokenSet_1_data_[];

@@ -35,8 +35,8 @@ all : parser test_lexer modelicaTokenTypes.txt
 parser:
 	cd $(top_builddir)/src; $(MAKE) -f Makefile
 
-test_lexer : $(OBJS) 
-	$(CXX) -o $@ $(OBJS) $(LINKFLAGS) $(LIBS) 
+test_lexer : $(OBJS)
+	$(CXX) -o $@ $(OBJS) $(LINKFLAGS) $(LIBS)
 
 
 

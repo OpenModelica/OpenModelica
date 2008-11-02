@@ -3,7 +3,7 @@ OpenModelica runtime libraries
 
 This directory contains files for the Modelica runtime
 environment. The runtime consists of two libraries, libc_runtime.a and
-libsim.a. 
+libsim.a.
 
 libc_runtime.a
 ==============
@@ -28,7 +28,7 @@ main function for the simulation. The following files are included:
 
 simulation_runtime.* 	- Includes the main function and calls to solvers.
 tables.*                - implementation for tables omcTableTimeIni, etc
-solver_dasrt.*          - wrapper for 
+solver_dasrt.*          - wrapper for
 daux.f 			- auxilary Fortran functions
 ddasrt.f		- DDASRT solver
 ddassl.f		- DASSL solver
@@ -39,16 +39,16 @@ lsame.f			- LAPACK axuiliary routine LSAME.
 (non-linear solver)
 hybrd1.f		- non-linear solver with approximate jacobian
 hybrj.f			- non-linear solver with analythical jacobian.
-r1updt.f		- helper routines 
-r1mpyq.f		- helper routines 
-qrfac.f			- helper routines 
-qform.f			- helper routines 
+r1updt.f		- helper routines
+r1mpyq.f		- helper routines
+qrfac.f			- helper routines
+qform.f			- helper routines
 hybrd.f			- alternative for non-linear solver..
-fdjac1.f		- helper routines 
-enorm.f			- helper routines 
-dpmpar.f		- helper routines 
-dogleg.f		- helper routines 
-nelmead.f		- least square solver for initialization 
+fdjac1.f		- helper routines
+enorm.f			- helper routines
+dpmpar.f		- helper routines
+dogleg.f		- helper routines
+nelmead.f		- least square solver for initialization
 newuoa.f		- least square solver for initialization
 newuob.f 		- least square solver for initialization
 bigden.f		- helper routines (used in newoub.f)

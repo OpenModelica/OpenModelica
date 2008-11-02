@@ -72,17 +72,17 @@ fi
 
 AC_MSG_CHECKING([for antlr header files])
 antlrinc=`find $ANTLRHOME /usr/local/include -type f -name TreeParser.hpp -print | head -1 | awk -F/ '{ total="";for (i = 1 ; i < NF-1; i++) total= total $i "/"; print total}'`
-if test -z "$antlrinc" ; then 
+if test -z "$antlrinc" ; then
   AC_MSG_ERROR([Could not find antlr include files])
-else 
+else
   AC_MSG_RESULT([yes])
 fi
 
 AC_MSG_CHECKING([for antlr libs])
 antlrlib=`find $ANTLRHOME /usr/local/lib -type f -name libantlr.a -print | head -1 | awk -F/ '{ total="";for (i = 1 ; i < NF; i++) total= total $i "/"; print total}'`
-if test -z "$antlrlib" ; then 
+if test -z "$antlrlib" ; then
   AC_MSG_ERROR([Could not find antlr lib file])
-else 
+else
   AC_MSG_RESULT([yes])
 fi
 
@@ -141,26 +141,26 @@ dnl Check if scandir is available
 AC_MSG_CHECKING([for scandir])
 
 AC_TRY_LINK([
-#include <dirent.h>      
+#include <dirent.h>
 ], [
-int file_select_directories(const struct dirent *entry) {	      
- return 0;						      
-}							      
-							      
-int main() {					      
-char dir[]=".";					      
-int count;						      
-struct dirent **files;				      
-scandir(dir, &files, file_select_directories, 0);      
-return 0;						      
-}							      
+int file_select_directories(const struct dirent *entry) {
+ return 0;
+}
+
+int main() {
+char dir[]=".";
+int count;
+struct dirent **files;
+scandir(dir, &files, file_select_directories, 0);
+return 0;
+}
 ], [AC_MSG_RESULT([yes]); AC_DEFINE([HAVE_SCANDIR])],
-      [AC_MSG_RESULT([no])])                              
+      [AC_MSG_RESULT([no])])
 
 
 dnl check for socket
 
-AC_CHECK_FUNC(socket, 
+AC_CHECK_FUNC(socket,
  [AC_MSG_RESULT([yes]); LIBSOCKET=""],
  [AC_MSG_RESULT([no]);
   AC_MSG_CHECKING([for libsocket]);
@@ -169,7 +169,7 @@ AC_CHECK_FUNC(socket,
 
 dnl check for gethostbyname
 
-AC_CHECK_FUNC(gethostbyname, 
+AC_CHECK_FUNC(gethostbyname,
  [AC_MSG_RESULT([yes]); LIBNSL=""],
  [AC_MSG_RESULT([no]);
   AC_MSG_CHECKING([for libnsl]);
@@ -180,18 +180,18 @@ dnl should we use corba?
 
 AC_ARG_WITH(CORBA, [  --with-CORBA=DIR        use corba installed in DIR [/usr/local]],
 [
-if test "x$withval" = "xno" ; then 
-	AC_MSG_RESULT([disabling CORBA]); 
-	USE_CORBA=""; 
+if test "x$withval" = "xno" ; then
+	AC_MSG_RESULT([disabling CORBA]);
+	USE_CORBA="";
 	CORBAHOME="";
-else 
+else
   if test "x$withval" = "xyes"; then
-    AC_MSG_RESULT([enabling CORBA... CORBAHOME="/usr/local"]); 
-    USE_CORBA="-DUSE_CORBA"; 
+    AC_MSG_RESULT([enabling CORBA... CORBAHOME="/usr/local"]);
+    USE_CORBA="-DUSE_CORBA";
     CORBAHOME="/usr/local";
   else
-    AC_MSG_RESULT([enabling CORBA... CORBAHOME="$withval"]); 
-    USE_CORBA="-DUSE_CORBA"; 
+    AC_MSG_RESULT([enabling CORBA... CORBAHOME="$withval"]);
+    USE_CORBA="-DUSE_CORBA";
     CORBAHOME="$withval";
   fi
 fi
@@ -210,15 +210,15 @@ AC_MSG_RESULT([Not compiling ModPar]); USE_MODPAR=""; BOOSTHOME=""
 
 AC_ARG_WITH(BOOST, [  --with-BOOST=DIR        With BOOST library in DIR],
 [
-if test "x$withval" = "xno" ; then 
-	AC_MSG_RESULT([disabling BOOST]); 
+if test "x$withval" = "xno" ; then
+	AC_MSG_RESULT([disabling BOOST]);
 	if test "$USE_MODPAR" = "-DUSE_MODPAR" ; then
-			AC_MSG_RESULT([ Warning, MODPAR requires BOOST, disabling MODPAR ] ) 
+			AC_MSG_RESULT([ Warning, MODPAR requires BOOST, disabling MODPAR ] )
 	fi
-	USE_MODPAR=""; 
+	USE_MODPAR="";
 	BOOSTHOME="";
-else 
-	AC_MSG_RESULT([enabling BOOST... BOOSTHOME="$withval"]); 
+else
+	AC_MSG_RESULT([enabling BOOST... BOOSTHOME="$withval"]);
 	BOOSTHOME="$withval";
 fi
 ], [

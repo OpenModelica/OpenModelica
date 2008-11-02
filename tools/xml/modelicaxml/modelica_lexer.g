@@ -6,7 +6,7 @@ options {
   language = "Cpp";
 }
 
-class modelica_lexer extends Lexer; 
+class modelica_lexer extends Lexer;
 
 options {
     k=2;
@@ -126,11 +126,11 @@ ML_COMMENT :
 		"*/" { $setType(antlr::Token::SKIP); } ;
 
 protected
-ML_COMMENT_CHAR :	
-		("\r\n" | '\n') { newline(); }	
-		| ~('*'|'\n'|'\r') 
+ML_COMMENT_CHAR :
+		("\r\n" | '\n') { newline(); }
+		| ~('*'|'\n'|'\r')
 		;
-		
+
 SL_COMMENT :
 		"//" (~('\n' | '\r') )*
 		{  $setType(antlr::Token::SKIP); }
@@ -140,14 +140,14 @@ IDENT options { testLiterals = true; paraphrase = "an identifier";} :
 		NONDIGIT (NONDIGIT | DIGIT)* | QIDENT
 		;
 
-protected 
-QIDENT options { testLiterals = true; paraphrase = "an identifier";} : 
+protected
+QIDENT options { testLiterals = true; paraphrase = "an identifier";} :
          '\'' (QCHAR | SESCAPE) (QCHAR | SESCAPE)* '\'' ;
 
 protected
 NONDIGIT : 	('_' | 'a'..'z' | 'A'..'Z');
 
-protected 
+protected
 DIGIT :
 	'0'..'9'
 	;
@@ -159,24 +159,24 @@ EXPONENT :
 
 
 UNSIGNED_INTEGER :
-        (DIGIT)+ ('.' (DIGIT)* { $setType(UNSIGNED_REAL);} )? 
+        (DIGIT)+ ('.' (DIGIT)* { $setType(UNSIGNED_REAL);} )?
         (EXPONENT { $setType(UNSIGNED_REAL); } )?
     |
-        ('.' DIGIT) => ('.' (DIGIT)+ { $setType(UNSIGNED_REAL);})         
+        ('.' DIGIT) => ('.' (DIGIT)+ { $setType(UNSIGNED_REAL);})
         (EXPONENT { $setType(UNSIGNED_REAL); } )?
-    | 
+    |
       '.' { $setType(DOT); }
 	;
 
 STRING : '"'! (SCHAR | SESCAPE)* '"'!;
 
-		
-protected 
+
+protected
 SCHAR :	(options { generateAmbigWarnings=false; } : ('\n' | "\r\n"))	{ newline(); }
 	| '\t'
 	| ~('\n' | '\t' | '\r' | '\\' | '"');
 
-protected 
+protected
 QCHAR :	(options { generateAmbigWarnings=false; } : ('\n' | "\r\n"))	{ newline(); }
 	| '\t'
 	| ~('\n' | '\t' | '\r' | '\\' | '\'');

@@ -17,7 +17,7 @@ int main(int argc, char* argv[])
 	std::cerr << "Incorrect number of arguments\n";
 	return 1;
     }
-    
+
     file.open(argv[1]);
 
     if (!file)
@@ -25,7 +25,7 @@ int main(int argc, char* argv[])
 	std::cerr << "Could not open file: " << argv[1] << "\n";
 	return 2;
     }
-    
+
     std::ifstream token_file("modelicaTokenTypes.txt");
     if (!token_file)
     {
@@ -34,7 +34,7 @@ int main(int argc, char* argv[])
     }
 
 
-    try 
+    try
     {
 	token_names names(token_file);
 
@@ -61,24 +61,24 @@ int main(int argc, char* argv[])
 			break;
 		    default:
 			std::cerr << "\n** UNKNOWN_ERROR **\n";
-			break;			
+			break;
 		}
 		break;
 	    }
-	    
+
 	    std::cout << names.name(tok->getType())
 		      << " (" << tok->getLine() << ", " << tok->getColumn() << ")"
 		      << " | " << tok->getText() << "\n";
 	}
-	    
+
     }
-    catch(std::exception& e) 
+    catch(std::exception& e)
     {
 	std::cerr << "Exception: " << e.what() << std::endl;
 	file.close();
 	return EXIT_FAILURE;
     }
-  
+
     file.close();
     return EXIT_SUCCESS;
 }

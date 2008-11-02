@@ -4,13 +4,13 @@
 #include <ctype.h>
 #include <stdlib.h>
 #include "rml.h"
- 
+
 /* No init for this module */
-void External_5finit(void) 
+void External_5finit(void)
 {
 
 }
- 
+
 RML_BEGIN_LABEL(External__write_5ffile)
 {
   char* filename = RML_STRINGDATA(rmlA0);
@@ -44,11 +44,11 @@ RML_BEGIN_LABEL(External__toJavaName)
 	int j = 1;
 	rml_uint_t len = RML_HDRSTRLEN(RML_GETHDR(rmlA0)); /* string lenght */
 	if (len < 1) RML_TAILCALLK(rmlSC);
-    /* check if are all caps or "_" 
+    /* check if are all caps or "_"
 	 * if they are, do nothing!
 	 */
 	for (; i < len;)
-    if (str[i] != '_' && str[i] != toupper(str[i])) 
+    if (str[i] != '_' && str[i] != toupper(str[i]))
 		break;
 	else i++;
 	if (i==len) RML_TAILCALLK(rmlSC); /* all caps or "_"; return the same */
@@ -57,13 +57,13 @@ RML_BEGIN_LABEL(External__toJavaName)
 	newstr[0] = tolower(str[0]); /* make the first one lowercase */
 	char *freeme = newstr;
 	for (; i < len;)
-	if (str[i] != '_') 
+	if (str[i] != '_')
 	{
 		newstr[j++] = str[i];
 		i++;
 	}
 	else /* is equal */
-	{ 
+	{
        if (i+1 < len)
 	   {
 		    newstr[j++]=toupper(str[i+1]);
@@ -82,7 +82,7 @@ RML_BEGIN_LABEL(External__toJavaName)
 	unsigned char *snew = (unsigned char*)strnew->data;
 	for(; len > 0; --len)
 		*snew++ = *newstr++;
-	*snew = '\0';	
+	*snew = '\0';
 	rmlA0 = RML_TAGPTR(strnew);
 	free(freeme);
 	RML_TAILCALLK(rmlSC);
@@ -97,7 +97,7 @@ RML_BEGIN_LABEL(External__startsWith)
 	rml_uint_t len1 = RML_HDRSTRLEN(RML_GETHDR(rmlA0)); /* string lenght1 */
 	rml_uint_t len2 = RML_HDRSTRLEN(RML_GETHDR(rmlA1)); /* string lenght1 */
 	/* if the second one is longer than the first we return false */
-	if (len2 > len1) 
+	if (len2 > len1)
 	{
 		rmlA0 = RML_FALSE;
 		RML_TAILCALLK(rmlSC);
@@ -123,7 +123,7 @@ RML_BEGIN_LABEL(External__endsWith)
 	rml_uint_t len1 = RML_HDRSTRLEN(RML_GETHDR(rmlA0)); /* string lenght1 */
 	rml_uint_t len2 = RML_HDRSTRLEN(RML_GETHDR(rmlA1)); /* string lenght1 */
 	/* if the second one is longer than the first we return false */
-	if (len2 > len1) 
+	if (len2 > len1)
 	{
 		rmlA0 = RML_FALSE;
 		RML_TAILCALLK(rmlSC);
@@ -151,12 +151,12 @@ RML_BEGIN_LABEL(External__substring)
 	int i = 0;
 	if (index2 < 0) index2 = len-1;
 	if (index1 < 0) index1 = 0;
-	if (index1 > index2) 
+	if (index1 > index2)
 	{
 		index1 = RML_UNTAGFIXNUM(rmlA2);
 		index2 = RML_UNTAGFIXNUM(rmlA1);
 	}
-	if (index2 >= len) index2 = len-1; 
+	if (index2 >= len) index2 = len-1;
 	newlen = index2-index1 + 1;
 	/* alloc the new string */
 	struct rml_string *strnew = rml_prim_mkstring(newlen, 3);
@@ -194,7 +194,7 @@ RML_BEGIN_LABEL(External__strstr)
 		RML_TAILCALLK(rmlSC);
 	}
 	result = strstr(str1, str2);
-	if (result) rmlA0 = RML_TRUE; 
+	if (result) rmlA0 = RML_TRUE;
 	else rmlA0 = RML_FALSE;
 	RML_TAILCALLK(rmlSC);
 }
@@ -216,7 +216,7 @@ RML_BEGIN_LABEL(External__trim)
 		/* alloc the new string */
 		struct rml_string *strnew = rml_prim_mkstring(0, 1);
 		unsigned char *snew = (unsigned char*)strnew->data;
-		snew[0] = '\0';	
+		snew[0] = '\0';
 		rmlA0 = RML_TAGPTR(strnew);
 		RML_TAILCALLK(rmlSC);
 	}
@@ -226,7 +226,7 @@ RML_BEGIN_LABEL(External__trim)
     str = RML_STRINGDATA(rmlA0);
 	for(l=i; l <= j; l++)
 		*snew++ = str[l];
-	*snew = '\0';	
+	*snew = '\0';
 	rmlA0 = RML_TAGPTR(strnew);
 	/*
 	printf("sss:%s|\nstr:%s|\nact:",str, RML_STRINGDATA(rmlA0));
@@ -247,7 +247,7 @@ RML_BEGIN_LABEL(External__strrpl)
 	char *str2 = RML_STRINGDATA(rmlA1);
 	char *str3 = RML_STRINGDATA(rmlA2);
 	char *strpos;
-	if (len1 == 0 || len2==0) 
+	if (len1 == 0 || len2==0)
 	{
 		rmlA0 = rmlA0; /* return the first string unchanged */
 		RML_TAILCALLK(rmlSC);
@@ -303,7 +303,7 @@ RML_BEGIN_LABEL(External__strrplall)
 	char *str2 = RML_STRINGDATA(rmlA1);
 	char *str3 = RML_STRINGDATA(rmlA2);
 	char *strpos;
-	if (len1 == 0 || len2==0) 
+	if (len1 == 0 || len2==0)
 	{
 		rmlA0 = rmlA0; /* return the first string unchanged */
 		RML_TAILCALLK(rmlSC);
@@ -322,12 +322,12 @@ RML_BEGIN_LABEL(External__strrplall)
 		rml_uint_t count = 1; /* we already find it once above */
 		/* how many times the string is there? */
 		strpos += len2; /* advance the position */
-		/* 
+		/*
 		printf ("str1 [%s], str2[%s], str3[%s]\n", str1, str2, str3);
 		printf ("strpos:%s\n", strpos);
 		*/
 		/* how many times the string is there? */
-		while ((strpos = strstr(strpos, str2)) != NULL) 
+		while ((strpos = strstr(strpos, str2)) != NULL)
 		{
 			count++;
 			/* printf ("strpos:%s\n", strpos); */
@@ -335,7 +335,7 @@ RML_BEGIN_LABEL(External__strrplall)
 		}
 		/* calculate the lenght of the new string */
 		len = len1+(len3-len2)*count;
-		/* print len 
+		/* print len
 		printf("len:%d, len1:%d, len2:%d, len3:%d, count:%d\n", len, len1, len2, len3, count);
 		*/
 		/* now alloc the new string */
@@ -348,9 +348,9 @@ RML_BEGIN_LABEL(External__strrplall)
 		unsigned char *snew = (unsigned char*)strnew->data;
 		/* until pos, use the first string */
 		/* go to first */
-		strpos = strstr(str1, str2); 
+		strpos = strstr(str1, str2);
 		pos = (int)(strpos - str1);
-		do 
+		do
 		{
 			/* until pos, use the first string */
 			/* printf("pos1:%d\n", pos); */
@@ -364,8 +364,8 @@ RML_BEGIN_LABEL(External__strrplall)
 			}
 			/* move the str1 pointer after str2 */
 			str1 += (pos+len2);
-			strpos = strstr(str1, str2); 
-			if (!strpos) 
+			strpos = strstr(str1, str2);
+			if (!strpos)
 			{
 				/* copy stuff left from str1 */
 				for(i=0; i < strlen(str1); i++)
@@ -377,7 +377,7 @@ RML_BEGIN_LABEL(External__strrplall)
 			pos = (int)(strpos - str1);
 			/* printf("pos2:%d and str1:%s\n", pos, str1); */
 		}
-		while (1);			
+		while (1);
 		*snew = '\0';
 		rmlA0 = RML_TAGPTR(strnew);
 		RML_TAILCALLK(rmlSC);
@@ -393,23 +393,23 @@ RML_BEGIN_LABEL(External__strtok)
 
   void * res = (void*)mk_nil();
   s=strtok(str,delimit);
-  if (s == NULL) 
+  if (s == NULL)
   {
           /* adrpo added 2004-10-27 */
-          free(str);      
-          rmlA0=res; RML_TAILCALLK(rmlFC); 
+          free(str);
+          rmlA0=res; RML_TAILCALLK(rmlFC);
   }
   res = (void*)mk_cons(mk_scon(s),res);
-  while (s=strtok(NULL,delimit)) 
+  while (s=strtok(NULL,delimit))
   {
     res = (void*)mk_cons(mk_scon(s),res);
   }
   rmlA0=res;
 
   /* adrpo added 2004-10-27 */
-  free(str);      
+  free(str);
 
-  /* adrpo changed 2004-10-29 
+  /* adrpo changed 2004-10-29
   rml_prim_once(RML__list_5freverse);
   RML_TAILCALLK(rmlSC);
   */
@@ -434,14 +434,14 @@ RML_BEGIN_LABEL(External__sst)
 
 	void * res = (void*)mk_nil();
 	s=strtok(str,delimit);
-	if (s == NULL) 
+	if (s == NULL)
 	{
 			/* adrpo added 2004-10-27 */
-			free(str);      
-			rmlA0=res; RML_TAILCALLK(rmlFC); 
+			free(str);
+			rmlA0=res; RML_TAILCALLK(rmlFC);
 	}
 	strTmp1 = strdup(s); /* first token */
-	while (s=strtok(NULL,delimit)) 
+	while (s=strtok(NULL,delimit))
 	{
 		len1 = strlen(strTmp1);
 		len2 = strlen(s);
@@ -489,7 +489,7 @@ RML_BEGIN_LABEL(External__trimstring)
 		/* alloc the new string */
 		struct rml_string *strnew = rml_prim_mkstring(0, 2);
 		unsigned char *snew = (unsigned char*)strnew->data;
-		snew[0] = '\0';	
+		snew[0] = '\0';
 		rmlA0 = RML_TAGPTR(strnew);
 		RML_TAILCALLK(rmlSC);
 	}
@@ -499,7 +499,7 @@ RML_BEGIN_LABEL(External__trimstring)
     str = RML_STRINGDATA(rmlA0);
 	for(l=i; l < j; l++)
 		*snew++ = str[l];
-	*snew = '\0';	
+	*snew = '\0';
 	rmlA0 = RML_TAGPTR(strnew);
 	/*
 	printf("sss:%s|\nstr:%s|\ndlm:%s|\nact:",str, RML_STRINGDATA(rmlA0), RML_STRINGDATA(rmlA1));
@@ -518,8 +518,8 @@ RML_BEGIN_LABEL(External__getFirstIdent)
 	int index = 1, i=0;
 	char *str = RML_STRINGDATA(rmlA0);
 	if (!isalpha(str[0])) RML_TAILCALLK(rmlFC); /* fail if we don't start with alpha */
-	while((isalpha(str[index]) || 
-		  (str[index] >= '0' && str[index] <= '9')) && 
+	while((isalpha(str[index]) ||
+		  (str[index] >= '0' && str[index] <= '9')) &&
 		  index < len) index++;
 	/* alloc the new string */
 	struct rml_string *strnew = rml_prim_mkstring(index, 3);
@@ -565,13 +565,13 @@ RML_BEGIN_LABEL(External__stringEscape)
 			switch (c)
 			{
 			case 'f':
-				strnew[lennew] = '\f'; 
+				strnew[lennew] = '\f';
 				break;
 			case 'b':
-				strnew[lennew] = '\b'; 
+				strnew[lennew] = '\b';
 				break;
 			case 'e':
-				strnew[lennew] = 033; 
+				strnew[lennew] = 033;
 				break;
 			case 'v':
 				strnew[lennew] = '\v';
@@ -594,9 +594,9 @@ RML_BEGIN_LABEL(External__stringEscape)
 			case '"':
 				strnew[lennew] = '\"';
 				break;
-			default: 
-				strnew[lennew] = '\\'; lennew++; 
-				strnew[lennew] = c; 
+			default:
+				strnew[lennew] = '\\'; lennew++;
+				strnew[lennew] = c;
 			}
 			lennew++;
 		}
@@ -643,7 +643,7 @@ RML_BEGIN_LABEL(External__commentEscape)
 		{
 			strnew[lennew] = c; lennew++; i++;
 			if (i >= len) break;
-			c = str[i]; 
+			c = str[i];
 			switch (c)
 			{
 			/*
@@ -657,15 +657,15 @@ RML_BEGIN_LABEL(External__commentEscape)
 				strnew[lennew] = '\r';
 				break;
 			*/
-			case '\\': 
+			case '\\':
 				strnew[lennew] = '\\';
 				break;
-			case '"': 
+			case '"':
 				/* already escaped */
 				strnew[lennew] = '"';
 				break;
 			default: /* don't know the escape sequence, escape the \ */
-				strnew[lennew] = '\\'; 
+				strnew[lennew] = '\\';
 				lennew++;
 				strnew[lennew] = c;
 			}
@@ -676,7 +676,7 @@ RML_BEGIN_LABEL(External__commentEscape)
 			strnew[lennew++] = '\\';
 			strnew[lennew++] = c;
 		}
-		else 
+		else
 		{
 			strnew[lennew++] = c;
 		}

@@ -3,7 +3,7 @@
 
 #include "MergeRule.hpp"
 
-class SingleChildMerge : MergeRule 
+class SingleChildMerge : MergeRule
 {
 
 public:
@@ -13,7 +13,7 @@ public:
 
 private:
   void mergeTasks(VertexID n1, VertexID n2);
-  
+
   pair<VertexID,VertexID> determineParent(VertexID n1, VertexID n2);
 };
 

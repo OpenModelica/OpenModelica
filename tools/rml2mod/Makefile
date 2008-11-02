@@ -1,4 +1,4 @@
-## RMLHOME=/home/x05emica/utils/rml/rml-2.2/x86-linux-gcc/ 
+## RMLHOME=/home/x05emica/utils/rml/rml-2.2/x86-linux-gcc/
 SHELL =/bin/sh
 RMLHOME=/c/OMDEV/tools/rml/
 #RMLHOME=/c/bin/cygwin/home/adrpo/rml-2.3.0/x86-mingw32-gcc
@@ -7,8 +7,8 @@ RMLHOME=/c/OMDEV/tools/rml/
 CC = gcc #-g
 LD = gcc #-g
 RML=${RMLHOME}/bin/rmlc #-Wr,-ftrace #-Wc,-g
-CCFLAGS=-I${RMLHOME}/include/plain/ 
-LDFLAGS=-L${RMLHOME}/lib/plain/ -lrml 
+CCFLAGS=-I${RMLHOME}/include/plain/
+LDFLAGS=-L${RMLHOME}/lib/plain/ -lrml
 
 all: rml2mod
 
@@ -46,43 +46,43 @@ rmltomod.o: rmltomod.c  absyn.h
 modrefactor.h modrefactor.c:modrefactor.rml absyn.h
 	$(RML)  -c modrefactor.rml
 
-modrefactor.o: modrefactor.c absyn.h 
+modrefactor.o: modrefactor.c absyn.h
 	$(RML) -c modrefactor.c
-	
+
 modrefactortypes.h modrefactortypes.c:modrefactortypes.rml absyn.h
 	$(RML)  -c modrefactortypes.rml
 
-modrefactortypes.o: modrefactortypes.c absyn.h 
+modrefactortypes.o: modrefactortypes.c absyn.h
 	$(RML) -c modrefactortypes.c
 
 moddump.h moddump.c:moddump.rml absyn.h
 	$(RML)  -c moddump.rml
 
-moddump.o: moddump.c absyn.h 
+moddump.o: moddump.c absyn.h
 	$(RML) -c moddump.c
 
 lookup.h lookup.c:lookup.rml absyn.h
 	$(RML)  -c lookup.rml
 
-lookup.o: lookup.c absyn.h 
+lookup.o: lookup.c absyn.h
 	$(RML) -c lookup.c
 
 dictionary.h dictionary.c:dictionary.rml absyn.h
 	$(RML)  -c dictionary.rml
 
-dictionary.o: dictionary.c absyn.h 
+dictionary.o: dictionary.c absyn.h
 	$(RML) -c dictionary.c
 
-util.h util.c:util.rml 
+util.h util.c:util.rml
 	$(RML)  -c util.rml
 
-util.o: util.c  
+util.o: util.c
 	$(RML) -c util.c
 
-#print.h print.c:print.rml 
+#print.h print.c:print.rml
 #	$(RML) -g -c print.rml
 
-#print.o: print.c print.h 
+#print.o: print.c print.h
 #	$(RML) -c print.o
 
 absyn.h absyn.c: absyn.rml
@@ -109,7 +109,7 @@ rml-db-parse.o: rml-db-parse.c rml-db-scan.o
 loadprogramdb.o: loadprogramdb.c absyn.h rml-db-parse.h
 	$(RML) -c loadprogramdb.c
 
-external.o: external.c 
+external.o: external.c
 	$(RML) -c external.c
 
 main.c main.h: main.rml scanparse.o loadprogramdb.o rml-db-parse.o
@@ -123,7 +123,7 @@ main.o: main.c main.h scanparse.o rmldump.h rmldump.o rmlrefactor.h rmlrefactor.
 	$(RML) -c main.c `ls *.o`
 
 rml2mod: main.o
-	$(RML) -o rml2mod `ls *.o` 
+	$(RML) -o rml2mod `ls *.o`
 
 clean:
 	rm -f *~ *.o *.rdb scanparse.h main.h main.c ptpest parser.h \

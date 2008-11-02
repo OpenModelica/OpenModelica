@@ -1,38 +1,38 @@
-/* 
+/*
  * This file is part of OpenModelica.
- * 
+ *
  * Copyright (c) 1998-2008, Linköpings University,
- * Department of Computer and Information Science, 
- * SE-58183 Linköping, Sweden. 
- * 
+ * Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
  * All rights reserved.
- * 
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC 
- * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF 
- * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC 
- * PUBLIC LICENSE. 
- * 
- * The OpenModelica software and the Open Source Modelica 
- * Consortium (OSMC) Public License (OSMC-PL) are obtained 
- * from Linköpings University, either from the above address, 
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC
+ * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF
+ * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC
+ * PUBLIC LICENSE.
+ *
+ * The OpenModelica software and the Open Source Modelica
+ * Consortium (OSMC) Public License (OSMC-PL) are obtained
+ * from Linköpings University, either from the above address,
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
- * 
- * This program is distributed  WITHOUT ANY WARRANTY; without 
- * even the implied warranty of  MERCHANTABILITY or FITNESS 
- * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH 
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS 
- * OF OSMC-PL. 
- * 
+ *
+ * This program is distributed  WITHOUT ANY WARRANTY; without
+ * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
+ * OF OSMC-PL.
+ *
  * See the full OSMC Public License conditions for more details.
- * 
+ *
  */
 
 #include "simulation_init.h"
 #include "simulation_runtime.h"
 #include <math.h>
 
-/* 
+/*
  * This function calculates the residual value as the sum of squared residual equations.
  */
 
@@ -53,16 +53,16 @@ void leastSquare(long *nz, double *z, double *funcValue)
 /*  for (ind=0,indy=0,indAct=2*globalData->nStates; ind<globalData->nAlgebraic; ind++)
     if (globalData->initFixed[indAct++]==1)
       globalData->algebraics [ind] = static_y[indy++];
-      
-      Comment from Bernhard: Even though algebraic variables are "fixed", they are calculated from 
-      the states, so they should be allowed to change when states vary, 
+
+      Comment from Bernhard: Even though algebraic variables are "fixed", they are calculated from
+      the states, so they should be allowed to change when states vary,
       and NOT be replaced by their initial values as above.
 */
-  initial_residual();  
+  initial_residual();
 
   for (ind=0, *funcValue=0; ind<globalData->nInitialResiduals; ind++)
-    *funcValue += globalData->initialResiduals[ind]*globalData->initialResiduals[ind];	
-    
+    *funcValue += globalData->initialResiduals[ind]*globalData->initialResiduals[ind];
+
   if (sim_verbose) {
   	cout << "initial residual: " << *funcValue << endl;
   }
@@ -90,8 +90,8 @@ int reportResidualValue(double funcValue)
 }
 
 /** function: newuoa_initialization
- ** 
- ** This function performs initialization using the newuoa function, which is 
+ **
+ ** This function performs initialization using the newuoa function, which is
  ** a trust region method that forms quadratic models by interpolation.
  **/
 
@@ -101,7 +101,7 @@ int newuoa_initialization(long& nz,double *z)
   long MAXFUN=50000;
   double RHOEND=1.0e-6;
   double RHOBEG=10; // This should be about one tenth of the greatest
-		    // expected value of a variable. Perhaps the nominal 
+		    // expected value of a variable. Perhaps the nominal
 		    // value can be used for this.
   long NPT = 2*nz+1;
   double *W = new double[(NPT+13)*(NPT+nz)+3*nz*(nz+3)/2];
@@ -130,34 +130,34 @@ int simplex_initialization(long& nz,double *z)
   /* Start with stepping .5 in each direction. */
   for (ind=0;ind<nz;ind++)
     STEP[ind]=.5;
-    
+
    double STOPCR,SIMP;
    long IPRINT, NLOOP,IQUAD,IFAULT,MAXF;
 //C  Set max. no. of function evaluations = 5000, print every 100.
- 
+
       MAXF = 50000;
       IPRINT = sim_verbose? 100 : -1;
- 
+
 //C  Set value for stopping criterion.   Stopping occurs when the
 //C  standard deviation of the values of the objective function at
 //C  the points of the current simplex < stopcr.
- 
+
       STOPCR = 1.e-3;
       NLOOP = 6000;//2*nz;
- 
+
 //C  Fit a quadratic surface to be sure a minimum has been found.
- 
+
       IQUAD = 0;
- 
+
 //C  As function value is being evaluated in DOUBLE PRECISION, it
 //C  should be accurate to about 15 decimals.   If we set simp = 1.d-6,
 //C  we should get about 9 dec. digits accuracy in fitting the surface.
- 
+
       SIMP = 1.e-6;
 //C  Now call NELMEAD to do the work.
   NELMEAD(z,STEP,&nz,&funcValue,&MAXF,&IPRINT,&STOPCR,
            &NLOOP,&IQUAD,&SIMP,VAR,leastSquare,&IFAULT);
-  if (IFAULT == 1) { 
+  if (IFAULT == 1) {
     printf("Error in initialization. Solver iterated %d times without finding a solution\n",(int)MAXF);
     return -1;
   } else if(IFAULT == 2 ) {
@@ -177,7 +177,7 @@ int simplex_initialization(long& nz,double *z)
  *
  * Perform initialization of the problem. It reads the global variable
  * globalData->initFixed to find out which variables are fixed.
- * It uses the generated function initial_residual, which calcualtes the 
+ * It uses the generated function initial_residual, which calcualtes the
  * residual of all equations (both continuous time eqns and initial eqns).
  */
 
@@ -187,7 +187,7 @@ int initialize(const std::string*method)
   int ind, indAct, indz;
   std::string init_method;
 
-  if (method == NULL) { 
+  if (method == NULL) {
    // init_method = std::string("newuoa");
     init_method = std::string("simplex");
   } else {
@@ -198,20 +198,20 @@ int initialize(const std::string*method)
     if (globalData->initFixed[ind]==0)
       nz++;
   }
-  for (ind=2*globalData->nStates+globalData->nAlgebraic; 
+  for (ind=2*globalData->nStates+globalData->nAlgebraic;
        ind<2*globalData->nStates+globalData->nAlgebraic+globalData->nParameters; ind++){
     if (globalData->initFixed[ind]==0)
       nz++;
   }
-	
+
 	if (sim_verbose) {
 		cout << "Initialization by method: " << init_method << endl;
 		cout << "fixed attribute for states:" << endl;
 		for(int i=0;i<globalData->nStates; i++) {
 			cout <<	getName(&globalData->states[i]) << "(fixed=" << (globalData->initFixed[i]?"true":"false") << ")"
-			<< endl; 
+			<< endl;
 		}
-		cout << "number of non-fixed variables: " << nz << endl;		
+		cout << "number of non-fixed variables: " << nz << endl;
 	}
 
   // No initial values to calculate.
@@ -220,7 +220,7 @@ int initialize(const std::string*method)
   		cout << "No initial values to calculate" << endl;
   	}
     return 0;
-  } 
+  }
 
   double *z= new double[nz];
   if(z == NULL) {return -1;}
@@ -236,7 +236,7 @@ int initialize(const std::string*method)
     if (globalData->initFixed[indAct++]==0)
       z[indz++] =  globalData->parameters[ind];
   }
-  
+
   int retVal=0;
   if (init_method == std::string("simplex")) {
     retVal = simplex_initialization(nz,z);

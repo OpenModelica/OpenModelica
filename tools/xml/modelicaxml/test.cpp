@@ -16,7 +16,7 @@ int main(int argc, char **argv) {
   }
 
   ifstream is(argv[1]);
-  if (!is) {    
+  if (!is) {
     cerr << "File \"" << argv[1] << "\" not found." << endl;
     exit(1);
   }

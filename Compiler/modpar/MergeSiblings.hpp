@@ -8,11 +8,11 @@
       (S)
       / \
  (c1)/   \ (c2)
-    /     \ 
-  (a1)   (a2) 
+    /     \
+  (a1)   (a2)
     \     /
 (c1')\   / (c2')
-      \ / 
+      \ /
       (T)
 
   Condition: tau(a1)+ tau(a2) < 2*l + max(tau(a1),tau(a2)
@@ -21,7 +21,7 @@
 class TauCmp
 {
 public:
-  TauCmp(MergeRule *rule) 
+  TauCmp(MergeRule *rule)
     : m_rule(rule) {};
   bool operator()(VertexID &v1,VertexID &v2)
   {
@@ -38,7 +38,7 @@ class MergeSiblings : MergeRule
 {
 public:
   MergeSiblings(TaskGraph *, TaskGraph*, ContainSetMap*, VertexID, VertexID,
-		double, double,int,map<VertexID,bool>*); 
+		double, double,int,map<VertexID,bool>*);
   bool apply(VertexID);
 private:
   bool exist_edge(VertexID parent, VertexID child, TaskGraph *tg);

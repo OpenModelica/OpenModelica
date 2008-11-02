@@ -2,7 +2,7 @@
 #include <time.h>
 
 MergeAllParents::MergeAllParents(TaskGraph *tg,TaskGraph *orig_tg,
-				 ContainSetMap *cmap, 
+				 ContainSetMap *cmap,
 				 VertexID inv, VertexID outv,
 				 double l,double B, int nproc,map<VertexID,bool>* removed)
  : MergeRule(tg,orig_tg,cmap,inv,outv,l,B,nproc,removed)
@@ -12,12 +12,12 @@ MergeAllParents::MergeAllParents(TaskGraph *tg,TaskGraph *orig_tg,
 bool MergeAllParents::apply(VertexID v)
 {
   bool change = false;
-  if (v != m_invartask && v != m_outvartask) { 
+  if (v != m_invartask && v != m_outvartask) {
     set<VertexID> A, B;
-    if (in_degree(v,*m_taskgraph) > 1 && 
+    if (in_degree(v,*m_taskgraph) > 1 &&
 
-	    tlevel(v) > maxTlevel(parents(v,*m_taskgraph))  
-				       + totalExecCost(parents(v,*m_taskgraph),v) 
+	    tlevel(v) > maxTlevel(parents(v,*m_taskgraph))
+				       + totalExecCost(parents(v,*m_taskgraph),v)
 	    /* &&
 	       calculateAB(parents(v,*m_taskgraph),v,A,B) > 0  */
 	    ) {
@@ -27,7 +27,7 @@ bool MergeAllParents::apply(VertexID v)
 	  //printContainTasks(v,cerr);
 	  //cerr << ")" << endl;
 	  //cerr << "parents :" ;
-	  //ParentsIterator p,p_end;	    
+	  //ParentsIterator p,p_end;
 	  //for (tie(p,p_end)=parents(v,*m_taskgraph); p != p_end; p++) {
 	  // cerr << getTaskID(*p,m_taskgraph) << "(" ;
 	  // printContainTasks(*p,cerr);
@@ -42,7 +42,7 @@ bool MergeAllParents::apply(VertexID v)
 
 	  mergeAll(parents(v,*m_taskgraph),v,A,B);
 	  //cerr << "parent now contains: " ;
-	  //printContainTasks(v,cerr); 
+	  //printContainTasks(v,cerr);
 	  //cerr << endl;
 	  change=true;
 	}
@@ -73,7 +73,7 @@ int MergeAllParents::calculateAB(std::pair<ParentsIterator, ParentsIterator> pai
 	  EdgeID e; bool tmp;
 	  tie(e,tmp) = edge(*p,*c,*m_taskgraph);
 	  assert(tmp);
-	  if (tlevel(*p) > tlevel_newc + 
+	  if (tlevel(*p) > tlevel_newc +
 	      getCommCost(e)/m_bandwidth + m_latency ) {
 	  A.insert(*c); // A - set of siblings not affecting merge.
 	  size++;
@@ -91,7 +91,7 @@ int MergeAllParents::calculateAB(std::pair<ParentsIterator, ParentsIterator> pai
 }
 
 
-bool MergeAllParents::containTask(VertexID task, 
+bool MergeAllParents::containTask(VertexID task,
 				  std::pair<ParentsIterator, ParentsIterator> pair)
 {
   ParentsIterator p,p_end;
@@ -110,10 +110,10 @@ void MergeAllParents::mergeAll(std::pair<ParentsIterator,ParentsIterator> pair,
 {
   set<VertexID> parents2;
   set<VertexID> parents1;
-  set<VertexID>::iterator pit,Aelt,Belt;	
+  set<VertexID>::iterator pit,Aelt,Belt;
   ParentsIterator p,p_end,p2,p2_end;
   InEdgeIterator e,e_end;
-  
+
   for (tie(p,p_end) = pair; p != p_end; p++) {
     if (*p != m_invartask) {
       parents1.insert(*p);
@@ -122,7 +122,7 @@ void MergeAllParents::mergeAll(std::pair<ParentsIterator,ParentsIterator> pair,
 
   for (pit=parents1.begin(); pit != parents1.end(); pit++) {
     addContainsTask(child,*pit);
-    
+
     for (tie(p2,p2_end) = parents(*pit,*m_taskgraph); p2 != p2_end; p2++) {
       if (parents1.find(*pit) == parents1.end() && *p2 != m_invartask)
 	parents2.insert(*p2);
@@ -141,11 +141,11 @@ void MergeAllParents::mergeAll(std::pair<ParentsIterator,ParentsIterator> pair,
 
   // Add edge from new node to all in A
   for (Aelt=A.begin(); Aelt != A.end(); Aelt++) {
-    add_edge(child,*Aelt,m_taskgraph);    
+    add_edge(child,*Aelt,m_taskgraph);
   }
 
-  // Can not iterate through pair since add_edge above invalidates that 
-  // iterator.	
+  // Can not iterate through pair since add_edge above invalidates that
+  // iterator.
   for (pit=parents1.begin(); pit != parents1.end(); pit++) {
     if (B.find(*pit) == B.end() && *pit != m_invartask) {
       (*m_taskRemoved)[*pit] = true;
@@ -153,7 +153,7 @@ void MergeAllParents::mergeAll(std::pair<ParentsIterator,ParentsIterator> pair,
       remove_vertex(*pit,*m_taskgraph);
     }
   }
-  
+
   // Remove edges from elts in B to child, the elts are already dupl. into child.
   for (Belt = B.begin(); Belt != B.end(); Belt++) {
     remove_edge(*Belt,child,*m_taskgraph);
@@ -192,7 +192,7 @@ double MergeAllParents::totalExecCost(std::pair<ParentsIterator,ParentsIterator>
   double cost=0.0;
   ContainSet allNodes;
   ParentsIterator p,p_end;
-  
+
   for(tie(p,p_end) = pair; p != p_end; p++) {
     ContainSetMap::iterator set;
     if (*p != m_invartask && *p != m_outvartask) {
@@ -200,10 +200,10 @@ double MergeAllParents::totalExecCost(std::pair<ParentsIterator,ParentsIterator>
       if (set != m_containTasks->end()) {
 	allNodes.make_union((*set).second);
       }
-      allNodes.insert(getTaskID(*p,m_taskgraph));    
+      allNodes.insert(getTaskID(*p,m_taskgraph));
     }
   }
-  
+
   ContainSet::iterator it;
   for (it = allNodes.begin(); it !=allNodes.end(); it++) {
     cost +=getExecCost(find_task(*it,(TaskGraph*)m_taskgraph));

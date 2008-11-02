@@ -28,7 +28,7 @@ parser:
 	@cd ..\test\parser
 
 
-test_parser.exe : $(OBJS) 
+test_parser.exe : $(OBJS)
 	link /out:$@ $(LINKFLAGS) $(LIBS) $(OBJS)
 
 dot_parser.exe : test_parser.exe

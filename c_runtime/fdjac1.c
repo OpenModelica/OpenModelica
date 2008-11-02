@@ -17,7 +17,7 @@
 static integer c__1 = 1;
 
 /* Subroutine */ int fdjac1_(S_fp fcn, integer *n, doublereal *x, doublereal *
-	fvec, doublereal *fjac, integer *ldfjac, integer *iflag, integer *ml, 
+	fvec, doublereal *fjac, integer *ldfjac, integer *iflag, integer *ml,
 	integer *mu, doublereal *epsfcn, doublereal *wa1, doublereal *wa2)
 {
     /* Initialized data */

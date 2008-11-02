@@ -41,9 +41,9 @@
 	|   NE_REAL      (* !=.  or <>. *)
 */
 /* relational int operators */
-%token EQEQ_INT GE_INT GT_INT LE_INT LT_INT NE_INT MOD_INT 
+%token EQEQ_INT GE_INT GT_INT LE_INT LT_INT NE_INT MOD_INT
 /* relational real operators */
-%token EQEQ_REAL GE_REAL GT_REAL LE_REAL LT_REAL NE_REAL 
+%token EQEQ_REAL GE_REAL GT_REAL LE_REAL LT_REAL NE_REAL
 
 %token SLASH POWER UNSIGNED_INTEGER UNSIGNED_REAL
 
@@ -51,10 +51,10 @@
 %token CCON ICON RCON SCON
 
 %{
-#include <stdio.h> 
-#include "yacclib.h" 
-#include "rml.h" 
-#include "absyn.h" 
+#include <stdio.h>
+#include "yacclib.h"
+#include "rml.h"
+#include "absyn.h"
 #include "defs.h"
 #define MAXCOMMENT 2000
 extern int yylineno;
@@ -77,7 +77,7 @@ void* getTupleComments(int start,int first);
    {
 #ifdef COLLECTCOMMENTS
      reg = 0;
- 
+
      int nr = 0;
      int max = sizeof(commentInfo) / sizeof(struct CommentInfo);
      int i;
@@ -100,32 +100,32 @@ void* getTupleComments(int start,int first);
 	   line = clastline;
 	   col = clastcol;
 	 }
-	 break;	 
+	 break;
        }
-       if (clastline == 0) break; 
- 
-     }     
+       if (clastline == 0) break;
+
+     }
      //printf("\nour line %d, our col %d\n\n",line,col);
 
      int blastline = commentInfo[start].lastline;
      int cl = 0;
 
      for(i = start+1;i < max;i++){
-       
+
        int cbound = commentInfo[i].bound;
        int clastline = commentInfo[i].lastline;
        int clastcol = commentInfo[i].lastcol;
 
        //printf("\niter %d  cbound:%d , clastline:%d , clastcol: %d \n\n",i,cbound,clastline,clastcol);
-       
+
        if((!cbound || cbound ==2) && clastline <= line && clastline != 0){
-	 //printf("inside\n\n");	   	 
+	 //printf("inside\n\n");
 	 if(cbound == 2) {
 	   if(reg == 0) reg = i;
 	   //printf("FOUND OLD BOUND\n");
 	   nr++;
 	 }
-	 else if(line != clastline || clastcol < col || dist == 0 || cbound == 2){	   
+	 else if(line != clastline || clastcol < col || dist == 0 || cbound == 2){
 	   if(clastline == commentInfo[i].firstline)
 	     cl = cl + clastcol - commentInfo[i].firstcol;
 	   //printf("\nthe size: %d\n",cl);
@@ -141,7 +141,7 @@ void* getTupleComments(int start,int first);
        else
 	   break;
      }
-          
+
      if (nr > 0 && reg > 0) {
        //printf("\n\ntrying... antal:%d \n",nr);
        return getComments(0,nr);
@@ -150,11 +150,11 @@ void* getTupleComments(int start,int first);
      return mk_nil();
    }
 
-  void* collectTupleComments(int line,int col) 
+  void* collectTupleComments(int line,int col)
    {
      int i;
      int start;
-     
+
      //printf("\nbefore our line %d, our col %d\n\n",line,col);
 
      int max = sizeof(commentInfo) / sizeof(struct CommentInfo);
@@ -164,27 +164,27 @@ void* getTupleComments(int start,int first);
        int clastline = commentInfo[i].lastline;
        int clastcol = commentInfo[i].lastcol;
        //printf("\niter %d  cbound:%d , clastline:%d , clastcol: %d \n",i,cbound,clastline,clastcol);
-       if ((cbound==1 || cbound==3) && clastline < line) 
+       if ((cbound==1 || cbound==3) && clastline < line)
 	 start = i;
        else if((cbound==1 || cbound==3) && clastline == line && clastcol < col)
 	 start = i;
        else if(cbound==1 || cbound==3)
 	 break;
        if (clastline == 0) break;
-     }    
+     }
      reg = 0;
 
      return getTupleComments(start,0);
    }
 
 
-  
+
   void* getTupleComments(int start,int first)
    {
      //printf("\n\n***getTupleComments***\n");
      int i = start +1;
      int max = sizeof(commentInfo) / sizeof(struct CommentInfo);
-    
+
      //printf("\nstart on:%d\n",start+1);
      for(i=start+1;i<max;i++)
        if(commentInfo[i].bound == 1 || commentInfo[i].bound == 3)
@@ -201,7 +201,7 @@ void* getTupleComments(int start,int first);
      //printf("\nnk nil\n");
      return mk_nil();
    }
- 	      
+
 
  void* getComments(int nr,int max)
    {
@@ -214,7 +214,7 @@ void* getTupleComments(int start,int first);
      }
      //printf("%d - mk_cons\n",nr);
      return mk_cons(mk_scon(commentInfo[reg+nr].buffer),getComments(nr+1,max));
-     
+
    }
 
 extern rml_t absyntree;
@@ -224,7 +224,7 @@ extern rml_t absyntree;
 %%
 start:
         stored_definition
-{ 
+{
           absyntree = $1;
 }
 
@@ -269,12 +269,12 @@ stored_definition:
 
 rml_file:
 	KW_MODULE rml_ident COLON rml_interface rml_definitions
-                { 
+                {
 
 		  $$ = Absyn__RML_5fFILE($2, $4, $5,getFrontComment(((struct Token*)$3)->lastline-1,
 								    ((struct Token*)$3)->lastcol,
 								    -2));
-		  
+
 		}
 	|
 	KW_INTERFACE rml_ident COLON rml_interface
@@ -316,7 +316,7 @@ rml_interface_item:
 		{ $$ = Absyn__DATATYPEDECL($2,getFrontComment(((struct Token*)$1)->firstline,
 							     ((struct Token*)$1)->firstcol,
 							     -3)); /* FIXME: support withbind */ }
-	|	
+	|
 	KW_VAL rml_ident COLON ty
                 { $$ = Absyn__VALINTERFACE($2, $4,getFrontComment(((struct Token*)$1)->firstline,
 								   ((struct Token*)$1)->firstcol,
@@ -370,9 +370,9 @@ opt_type:
 		{ $$ = mk_none(); }
 	;
 
-relbind: 
-	KW_RELATION rml_ident opt_type EQUALS clause_plus default_opt KW_END 
-    { 
+relbind:
+	KW_RELATION rml_ident opt_type EQUALS clause_plus default_opt KW_END
+    {
 	  $$ = Absyn__RELATION_5fDEFINITION($2, $3, $5, getFrontComment(((struct Token*)$1)->firstline,
 								                                    ((struct Token*)$1)->firstcol,
 								        2));
@@ -395,7 +395,7 @@ typbind_plus:
 	;
 
 typbind:
-	tyvarseq rml_ident EQUALS ty 
+	tyvarseq rml_ident EQUALS ty
 		{ $$ = Absyn__TYPE($2,$4,getFrontComment(((struct Token*)$3)->firstline,
 							 0,
 							 -3)); /* FIXME: $1 */ }
@@ -404,9 +404,9 @@ typbind:
 datbind_plus:
 	/*datbind KW_AND datbind_plus
 		{ $$ = mk_cons($1, $3); }
-		|*/ //Chaanged temporarly to handle and 
+		|*/ //Chaanged temporarly to handle and
 	datbind
-                { $$ = $1; } 
+                { $$ = $1; }
 	;
 
 datbind:
@@ -428,11 +428,11 @@ conbind:
 								  speccol,
 								  0),mk_nil())); }
 	|
-	rml_ident KW_OF tuple_ty 
-                { 
+	rml_ident KW_OF tuple_ty
+                {
 		$$ = Absyn__DTCONS($1, $3,
 				   collectTupleComments(((struct Token*)$2)->firstline,
-							((struct Token*)$2)->firstcol)); 
+							((struct Token*)$2)->firstcol));
 		}
 	;
 
@@ -453,8 +453,8 @@ clause_plus:
 
 clause:
 	KW_RULE conjunctive_goal_opt DASHES rml_ident seq_pat result
-		{ 
-		
+		{
+
 		  $$ = Absyn__RMLRULE($4, $5, $2, $6,getFrontComment(((struct Token*)$1)->lastline,
 		   						     ((struct Token*)$1)->lastcol,
 								     -1),
@@ -470,7 +470,7 @@ clause:
 
 result:
 	/* empty */
-                { 
+                {
 		  $$ = Absyn__RMLNoResult(getFrontComment(specline,
 							  speccol,
 							  0));; }
@@ -496,18 +496,18 @@ conjunctive_goal_opt:
 
 conjunctive_goal:
 	atomic_goal AMPERSAND conjunctive_goal
-                { 
-		  $$ = Absyn__RMLGOAL_5fAND($1, $3); 
+                {
+		  $$ = Absyn__RMLGOAL_5fAND($1, $3);
 		}
         | atomic_goal
-		{ 
-		  $$ = $1; 
+		{
+		  $$ = $1;
 		}
 	;
 
 
 
-atomic_goal:	
+atomic_goal:
         /* adrpo added arithmetic relational operations  */
         /* int ones */
 	| rml_primary  EQEQ_INT rml_primary  res_pat
@@ -624,7 +624,7 @@ atomic_goal:
 								 speccol,
 								 0));
                 }
-        |        
+        |
         MINUS DOT longorshortid res_pat
                 {
 		  $$ = Absyn__RMLGOAL_5fRELATION(Absyn__RMLSHORTID(mk_scon("real_neg"),
@@ -648,7 +648,7 @@ atomic_goal:
 		{ $$ = $1; }
         |
 	longorshortid
-		{ 
+		{
 		  $$ =  Absyn__RMLGOAL_5fRELATION($1, mk_nil(), mk_none(),
 						  getFrontComment(specline,
 								  speccol,
@@ -656,7 +656,7 @@ atomic_goal:
 		}
         |
 	longorshortid seq_exp res_pat
-		{ 
+		{
 		  $$ =  Absyn__RMLGOAL_5fRELATION($1, $2, $3,
 						  getFrontComment(specline,
 								  speccol,
@@ -680,7 +680,7 @@ atomic_goal:
 	|
 	LPAR conjunctive_goal RPAR
 		{ $$ = $2; }
-	
+
 
 	;
 
@@ -737,7 +737,7 @@ rml_exp_c:
 
 rml_addsub:
 	rml_muldiv PLUS DOT rml_addsub res_pat
-                { $$ = Absyn__RMLGOAL_5fRELATION(Absyn__RMLSHORTID(mk_scon("real_add"), 
+                { $$ = Absyn__RMLGOAL_5fRELATION(Absyn__RMLSHORTID(mk_scon("real_add"),
 								 mk_nil()),
 						 mk_cons($1,mk_cons($4,mk_nil())), $5,
 						 getFrontComment(specline,
@@ -755,7 +755,7 @@ rml_addsub:
                 }
 	|
 	rml_muldiv PLUS rml_addsub res_pat
-                { $$ = Absyn__RMLGOAL_5fRELATION(Absyn__RMLSHORTID(mk_scon("int_add"), 
+                { $$ = Absyn__RMLGOAL_5fRELATION(Absyn__RMLSHORTID(mk_scon("int_add"),
 								 mk_nil()),
 						 mk_cons($1,mk_cons($3,mk_nil())), $4,
 						 getFrontComment(specline,
@@ -817,7 +817,7 @@ rml_muldiv:
 								 speccol,
 								 0));
                 }
-	| rml_unary 
+	| rml_unary
 		{ $$ = $1; }
 	;
 
@@ -954,7 +954,7 @@ pat_e:
 		{ $$ = Absyn__RMLPAT_5fLIST($2); }
 	;
 
-res_pat: 
+res_pat:
 	/* empty */
 		{ $$ = mk_none(); }
 	|
@@ -964,13 +964,13 @@ res_pat:
 
 seq_pat:
 	/* empty */
-                { $$ = Absyn__RMLPAT_5fSTRUCT(mk_none(),mk_nil()); } 
+                { $$ = Absyn__RMLPAT_5fSTRUCT(mk_none(),mk_nil()); }
 	|
 	pat_c
 		{ $$ = $1; }
 	|
-	pat_star                
-                { $$ = Absyn__RMLPAT_5fSTRUCT(mk_none(),$1); } 
+	pat_star
+                { $$ = Absyn__RMLPAT_5fSTRUCT(mk_none(),$1); }
                 //changed..
 	;
 
@@ -1003,25 +1003,25 @@ rml_literal:
 	|
 
 	ICON
-		{ 
+		{
 		  $$ = Absyn__RMLLIT_5fINTEGER(mk_icon(((struct Token*)$1)->u.number));
 		}
 	|
 	RCON
-		{ 
+		{
 		  $$ = Absyn__RMLLIT_5fREAL(mk_rcon(((struct Token*)$1)->u.realnumber));
 		}
-        | 
+        |
 	MINUS ICON
-		{ 
+		{
 		  $$ = Absyn__RMLLIT_5fINTEGER(mk_icon(-((struct Token*)$2)->u.number));
 		}
 	|
 	MINUS RCON
-		{ 
+		{
 		  $$ = Absyn__RMLLIT_5fREAL(mk_rcon(-((struct Token*)$2)->u.realnumber));
 		}
-	
+
 	|
 	SCON
 		{ $$ = Absyn__RMLLIT_5fSTRING(mk_scon(((struct Token*)$1)->u.string)); }
@@ -1059,7 +1059,7 @@ ty_sans_star:
 	|
 */
 	LPAR ty RPAR
-                { $$ = $2; } 
+                { $$ = $2; }
 	|
 	tyvar
 		{ $$ = $1; }
@@ -1069,7 +1069,7 @@ ty_sans_star:
 	;
 
 ty_comma_seq2:
-	ty COMMA ty_comma_seq2 
+	ty COMMA ty_comma_seq2
 		{ $$ = mk_cons($1, $3); }
 	|
 	ty COMMA ty
@@ -1115,10 +1115,10 @@ tyvarseq:
 
 longid:
 	ident DOT ident
-    { 
+    {
 	  specline = ((struct Token*)$1)->firstline;
-	  speccol = ((struct Token*)$1)->firstcol;      
-      $$ = Absyn__RMLLONGID(mkIDENT($1), mkIDENT($3)) 
+	  speccol = ((struct Token*)$1)->firstcol;
+      $$ = Absyn__RMLLONGID(mkIDENT($1), mkIDENT($3))
     }
 
 
@@ -1127,14 +1127,14 @@ longid:
 longorshortid:
 	longid
 		{ $$ = $1; }
-		| 
+		|
 	rml_ident
           { $$ = $1;}
 	;
 
 ident:
 	IDENT
-	{ 
+	{
 	  $$ = $1;
 	}
 	;
@@ -1144,14 +1144,14 @@ rml_ident:
          {
 	   specline = ((struct Token*)$1)->firstline;
 	   speccol = ((struct Token*)$1)->firstcol;
-	     
+
 	   $$ = Absyn__RMLSHORTID(mkIDENT($1),
 				  Absyn__INFO(mk_scon(((struct Token*)$1)->file),
 					      mk_icon(((struct Token*)$1)->firstline),
 					      mk_icon(((struct Token*)$1)->firstcol),
 					      mk_icon(((struct Token*)$1)->lastline),
-					      mk_icon(((struct Token*)$1)->lastcol))); 
-					      
+					      mk_icon(((struct Token*)$1)->lastcol)));
+
          }
          ;
 tyvar:
@@ -1163,8 +1163,8 @@ tyvar:
 								    mk_icon(((struct Token*)$1)->firstline),
 								    mk_icon(((struct Token*)$1)->firstcol),
 								    mk_icon(((struct Token*)$1)->lastline),
-								    mk_icon(((struct Token*)$1)->lastcol)))); 
-	    
+								    mk_icon(((struct Token*)$1)->lastcol))));
+
     }
 	;
 

@@ -32,7 +32,7 @@ USE_CORBA = @USE_CORBA@
 CORBAHOME = @CORBAHOME@
 
 #LDFLAGS = -L$(RMLHOME)/lib/plain $(ANTLR_LIBP) -lrml_g -lm -lantlr $(LIBSOCKET) $(CORBALIB) -lm -lpthread -lreadline
-#LDFLAGS = -L$(RMLHOME)/lib/plain $(ANTLR_LIBP) -lrml -lm -lantlr $(LIBSOCKET) $(CORBALIB) -lm -lpthread 
+#LDFLAGS = -L$(RMLHOME)/lib/plain $(ANTLR_LIBP) -lrml -lm -lantlr $(LIBSOCKET) $(CORBALIB) -lm -lpthread
 
 include Makefile.common
 
@@ -49,7 +49,7 @@ SUBDIRS	= runtime absyn_builder modpar
 .SUFFIXES: .o .mo .h
 .PHONY: all subdirs report vctarget debug release depend clean dclean test reallyclean omc_release omc_debug
 
-#all : debug 
+#all : debug
 all : release
 
 debug:	depend $(PROGD) dinstall
@@ -69,7 +69,7 @@ install_doc:
 		echo Copying $$x into $(builddir_doc); \
 		cp doc/$$x $(builddir_doc)/; \
 	done
-	
+
 install_scripts:
 	for x in $(SCRIPT_FILES); do \
 		echo Copying $$x into $(builddir_bin); \
@@ -100,7 +100,7 @@ omc_debug:
 #vctarget:
 #	@(cd omc_debug ; $(MAKE) vctarget)
 
-vctarget: 
+vctarget:
 	@(cd omc_release ; $(MAKE) vctarget)
 
 
@@ -124,7 +124,7 @@ clean:
 	-$(RM) -f $(SRCH)
 	-$(RM) -f $(builddir_bin)/$(PROG)$(EXEEXT)
 	-cd $(builddir_bin) && rm -f $(SCRIPT_FILES) && rm -f $(DOC_FILES)
-	-cd $(builddir_doc) && rm -f $(DOC_FILES)	
+	-cd $(builddir_doc) && rm -f $(DOC_FILES)
 
 dclean:
 	@for d in $(SUBDIRS); do \
@@ -144,7 +144,7 @@ reallyclean:
 	-$(RM) -f $(SRCH)
 	-$(RM) -f $(builddir)/$(PROG)$(EXEEXT)
 
-dreallyclean: 
+dreallyclean:
 	@for d in $(SUBDIRS); do \
 		(cd $$d ; $(MAKE) reallyclean) \
 	done
@@ -155,7 +155,7 @@ dreallyclean:
 report:
 	@(cd report ; $(MAKE))
 
-depend:	
+depend:
 	-$(RM) .depend
 	time $(RML) -fdump-depends $(SRCMO) > .depend
 

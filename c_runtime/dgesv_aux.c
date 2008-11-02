@@ -1,83 +1,83 @@
 #include "blaswrap.h"
 #include "f2c.h"
 
-/* This file contains all routines used by dgesv for solving linear systems 
+/* This file contains all routines used by dgesv for solving linear systems
    of equations. It includes both lapack routines and blas routines.
    Peter Aronsson, MathCore Engineering 2005-06-16.
 */
 
 
-/* Subroutine */ int dgesv_(integer *n, integer *nrhs, doublereal *a, integer 
+/* Subroutine */ int dgesv_(integer *n, integer *nrhs, doublereal *a, integer
 	*lda, integer *ipiv, doublereal *b, integer *ldb, integer *info)
 {
-/*  -- LAPACK driver routine (version 3.0) --   
-       Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd.,   
-       Courant Institute, Argonne National Lab, and Rice University   
-       March 31, 1993   
+/*  -- LAPACK driver routine (version 3.0) --
+       Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd.,
+       Courant Institute, Argonne National Lab, and Rice University
+       March 31, 1993
 
 
-    Purpose   
-    =======   
+    Purpose
+    =======
 
-    DGESV computes the solution to a real system of linear equations   
-       A * X = B,   
-    where A is an N-by-N matrix and X and B are N-by-NRHS matrices.   
+    DGESV computes the solution to a real system of linear equations
+       A * X = B,
+    where A is an N-by-N matrix and X and B are N-by-NRHS matrices.
 
-    The LU decomposition with partial pivoting and row interchanges is   
-    used to factor A as   
-       A = P * L * U,   
-    where P is a permutation matrix, L is unit lower triangular, and U is   
-    upper triangular.  The factored form of A is then used to solve the   
-    system of equations A * X = B.   
+    The LU decomposition with partial pivoting and row interchanges is
+    used to factor A as
+       A = P * L * U,
+    where P is a permutation matrix, L is unit lower triangular, and U is
+    upper triangular.  The factored form of A is then used to solve the
+    system of equations A * X = B.
 
-    Arguments   
-    =========   
+    Arguments
+    =========
 
-    N       (input) INTEGER   
-            The number of linear equations, i.e., the order of the   
-            matrix A.  N >= 0.   
+    N       (input) INTEGER
+            The number of linear equations, i.e., the order of the
+            matrix A.  N >= 0.
 
-    NRHS    (input) INTEGER   
-            The number of right hand sides, i.e., the number of columns   
-            of the matrix B.  NRHS >= 0.   
+    NRHS    (input) INTEGER
+            The number of right hand sides, i.e., the number of columns
+            of the matrix B.  NRHS >= 0.
 
-    A       (input/output) DOUBLE PRECISION array, dimension (LDA,N)   
-            On entry, the N-by-N coefficient matrix A.   
-            On exit, the factors L and U from the factorization   
-            A = P*L*U; the unit diagonal elements of L are not stored.   
+    A       (input/output) DOUBLE PRECISION array, dimension (LDA,N)
+            On entry, the N-by-N coefficient matrix A.
+            On exit, the factors L and U from the factorization
+            A = P*L*U; the unit diagonal elements of L are not stored.
 
-    LDA     (input) INTEGER   
-            The leading dimension of the array A.  LDA >= max(1,N).   
+    LDA     (input) INTEGER
+            The leading dimension of the array A.  LDA >= max(1,N).
 
-    IPIV    (output) INTEGER array, dimension (N)   
-            The pivot indices that define the permutation matrix P;   
-            row i of the matrix was interchanged with row IPIV(i).   
+    IPIV    (output) INTEGER array, dimension (N)
+            The pivot indices that define the permutation matrix P;
+            row i of the matrix was interchanged with row IPIV(i).
 
-    B       (input/output) DOUBLE PRECISION array, dimension (LDB,NRHS)   
-            On entry, the N-by-NRHS matrix of right hand side matrix B.   
-            On exit, if INFO = 0, the N-by-NRHS solution matrix X.   
+    B       (input/output) DOUBLE PRECISION array, dimension (LDB,NRHS)
+            On entry, the N-by-NRHS matrix of right hand side matrix B.
+            On exit, if INFO = 0, the N-by-NRHS solution matrix X.
 
-    LDB     (input) INTEGER   
-            The leading dimension of the array B.  LDB >= max(1,N).   
+    LDB     (input) INTEGER
+            The leading dimension of the array B.  LDB >= max(1,N).
 
-    INFO    (output) INTEGER   
-            = 0:  successful exit   
-            < 0:  if INFO = -i, the i-th argument had an illegal value   
-            > 0:  if INFO = i, U(i,i) is exactly zero.  The factorization   
-                  has been completed, but the factor U is exactly   
-                  singular, so the solution could not be computed.   
+    INFO    (output) INTEGER
+            = 0:  successful exit
+            < 0:  if INFO = -i, the i-th argument had an illegal value
+            > 0:  if INFO = i, U(i,i) is exactly zero.  The factorization
+                  has been completed, but the factor U is exactly
+                  singular, so the solution could not be computed.
 
-    =====================================================================   
+    =====================================================================
 
 
-       Test the input parameters.   
+       Test the input parameters.
 
        Parameter adjustments */
     /* System generated locals */
     integer a_dim1, a_offset, b_dim1, b_offset, i__1;
     /* Local variables */
-    extern /* Subroutine */ int dgetrf_(integer *, integer *, doublereal *, 
-	    integer *, integer *, integer *), xerbla_(char *, integer *), dgetrs_(char *, integer *, integer *, doublereal *, 
+    extern /* Subroutine */ int dgetrf_(integer *, integer *, doublereal *,
+	    integer *, integer *, integer *), xerbla_(char *, integer *), dgetrs_(char *, integer *, integer *, doublereal *,
 	    integer *, integer *, doublereal *, integer *, integer *);
 
     a_dim1 = *lda;
@@ -122,81 +122,81 @@
 } /* dgesv_ */
 
 
-/* Subroutine */ int dgetrs_(char *trans, integer *n, integer *nrhs, 
+/* Subroutine */ int dgetrs_(char *trans, integer *n, integer *nrhs,
 	doublereal *a, integer *lda, integer *ipiv, doublereal *b, integer *
 	ldb, integer *info)
 {
-/*  -- LAPACK routine (version 3.0) --   
-       Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd.,   
-       Courant Institute, Argonne National Lab, and Rice University   
-       March 31, 1993   
+/*  -- LAPACK routine (version 3.0) --
+       Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd.,
+       Courant Institute, Argonne National Lab, and Rice University
+       March 31, 1993
 
 
-    Purpose   
-    =======   
+    Purpose
+    =======
 
-    DGETRS solves a system of linear equations   
-       A * X = B  or  A' * X = B   
-    with a general N-by-N matrix A using the LU factorization computed   
-    by DGETRF.   
+    DGETRS solves a system of linear equations
+       A * X = B  or  A' * X = B
+    with a general N-by-N matrix A using the LU factorization computed
+    by DGETRF.
 
-    Arguments   
-    =========   
+    Arguments
+    =========
 
-    TRANS   (input) CHARACTER*1   
-            Specifies the form of the system of equations:   
-            = 'N':  A * X = B  (No transpose)   
-            = 'T':  A'* X = B  (Transpose)   
-            = 'C':  A'* X = B  (Conjugate transpose = Transpose)   
+    TRANS   (input) CHARACTER*1
+            Specifies the form of the system of equations:
+            = 'N':  A * X = B  (No transpose)
+            = 'T':  A'* X = B  (Transpose)
+            = 'C':  A'* X = B  (Conjugate transpose = Transpose)
 
-    N       (input) INTEGER   
-            The order of the matrix A.  N >= 0.   
+    N       (input) INTEGER
+            The order of the matrix A.  N >= 0.
 
-    NRHS    (input) INTEGER   
-            The number of right hand sides, i.e., the number of columns   
-            of the matrix B.  NRHS >= 0.   
+    NRHS    (input) INTEGER
+            The number of right hand sides, i.e., the number of columns
+            of the matrix B.  NRHS >= 0.
 
-    A       (input) DOUBLE PRECISION array, dimension (LDA,N)   
-            The factors L and U from the factorization A = P*L*U   
-            as computed by DGETRF.   
+    A       (input) DOUBLE PRECISION array, dimension (LDA,N)
+            The factors L and U from the factorization A = P*L*U
+            as computed by DGETRF.
 
-    LDA     (input) INTEGER   
-            The leading dimension of the array A.  LDA >= max(1,N).   
+    LDA     (input) INTEGER
+            The leading dimension of the array A.  LDA >= max(1,N).
 
-    IPIV    (input) INTEGER array, dimension (N)   
-            The pivot indices from DGETRF; for 1<=i<=N, row i of the   
-            matrix was interchanged with row IPIV(i).   
+    IPIV    (input) INTEGER array, dimension (N)
+            The pivot indices from DGETRF; for 1<=i<=N, row i of the
+            matrix was interchanged with row IPIV(i).
 
-    B       (input/output) DOUBLE PRECISION array, dimension (LDB,NRHS)   
-            On entry, the right hand side matrix B.   
-            On exit, the solution matrix X.   
+    B       (input/output) DOUBLE PRECISION array, dimension (LDB,NRHS)
+            On entry, the right hand side matrix B.
+            On exit, the solution matrix X.
 
-    LDB     (input) INTEGER   
-            The leading dimension of the array B.  LDB >= max(1,N).   
+    LDB     (input) INTEGER
+            The leading dimension of the array B.  LDB >= max(1,N).
 
-    INFO    (output) INTEGER   
-            = 0:  successful exit   
-            < 0:  if INFO = -i, the i-th argument had an illegal value   
+    INFO    (output) INTEGER
+            = 0:  successful exit
+            < 0:  if INFO = -i, the i-th argument had an illegal value
 
-    =====================================================================   
+    =====================================================================
 
 
-       Test the input parameters.   
+       Test the input parameters.
 
        Parameter adjustments */
     /* Table of constant values */
     static integer c__1 = 1;
     static doublereal c_b12 = 1.;
     static integer c_n1 = -1;
-    
+
     /* System generated locals */
     integer a_dim1, a_offset, b_dim1, b_offset, i__1;
     /* Local variables */
     extern logical lsame_(char *, char *);
-    extern /* Subroutine */ int dtrsm_(char *, char *, char *, char *, 
-	    integer *, integer *, doublereal *, doublereal *, integer *, 
+    extern /* Subroutine */ int dtrsm_(char *, char *, char *, char *,
+	    integer *, integer *, doublereal *, doublereal *, integer *,
 	    doublereal *, integer *), xerbla_(
-	    char *, integer *), dlaswp_(integer *, doublereal *, 
+	    char *, integer *), dlaswp_(integer *, doublereal *,
 	    integer *, integer *, integer *, integer *, integer *);
     static logical notran;
 
@@ -238,7 +238,7 @@
 
     if (notran) {
 
-/*        Solve A * X = B.   
+/*        Solve A * X = B.
 
           Apply row interchanges to the right hand sides. */
 
@@ -255,7 +255,7 @@
 		a[a_offset], lda, &b[b_offset], ldb);
     } else {
 
-/*        Solve A' * X = B.   
+/*        Solve A' * X = B.
 
           Solve U'*X = B, overwriting B with X. */
 
@@ -278,7 +278,7 @@
 
 } /* dgetrs_ */
 
-/* Subroutine */ int dtrsm_(char *side, char *uplo, char *transa, char *diag, 
+/* Subroutine */ int dtrsm_(char *side, char *uplo, char *transa, char *diag,
 	integer *m, integer *n, doublereal *alpha, doublereal *a, integer *
 	lda, doublereal *b, integer *ldb)
 {
@@ -296,90 +296,90 @@
     static logical nounit;
 #define a_ref(a_1,a_2) a[(a_2)*a_dim1 + a_1]
 #define b_ref(a_1,a_2) b[(a_2)*b_dim1 + a_1]
-/*  Purpose   
-    =======   
-    DTRSM  solves one of the matrix equations   
-       op( A )*X = alpha*B,   or   X*op( A ) = alpha*B,   
-    where alpha is a scalar, X and B are m by n matrices, A is a unit, or   
-    non-unit,  upper or lower triangular matrix  and  op( A )  is one  of   
-       op( A ) = A   or   op( A ) = A'.   
-    The matrix X is overwritten on B.   
-    Parameters   
-    ==========   
-    SIDE   - CHARACTER*1.   
-             On entry, SIDE specifies whether op( A ) appears on the left   
-             or right of X as follows:   
-                SIDE = 'L' or 'l'   op( A )*X = alpha*B.   
-                SIDE = 'R' or 'r'   X*op( A ) = alpha*B.   
-             Unchanged on exit.   
-    UPLO   - CHARACTER*1.   
-             On entry, UPLO specifies whether the matrix A is an upper or   
-             lower triangular matrix as follows:   
-                UPLO = 'U' or 'u'   A is an upper triangular matrix.   
-                UPLO = 'L' or 'l'   A is a lower triangular matrix.   
-             Unchanged on exit.   
-    TRANSA - CHARACTER*1.   
-             On entry, TRANSA specifies the form of op( A ) to be used in   
-             the matrix multiplication as follows:   
-                TRANSA = 'N' or 'n'   op( A ) = A.   
-                TRANSA = 'T' or 't'   op( A ) = A'.   
-                TRANSA = 'C' or 'c'   op( A ) = A'.   
-             Unchanged on exit.   
-    DIAG   - CHARACTER*1.   
-             On entry, DIAG specifies whether or not A is unit triangular   
-             as follows:   
-                DIAG = 'U' or 'u'   A is assumed to be unit triangular.   
-                DIAG = 'N' or 'n'   A is not assumed to be unit   
-                                    triangular.   
-             Unchanged on exit.   
-    M      - INTEGER.   
-             On entry, M specifies the number of rows of B. M must be at   
-             least zero.   
-             Unchanged on exit.   
-    N      - INTEGER.   
-             On entry, N specifies the number of columns of B.  N must be   
-             at least zero.   
-             Unchanged on exit.   
-    ALPHA  - DOUBLE PRECISION.   
-             On entry,  ALPHA specifies the scalar  alpha. When  alpha is   
-             zero then  A is not referenced and  B need not be set before   
-             entry.   
-             Unchanged on exit.   
-    A      - DOUBLE PRECISION array of DIMENSION ( LDA, k ), where k is m   
-             when  SIDE = 'L' or 'l'  and is  n  when  SIDE = 'R' or 'r'.   
-             Before entry  with  UPLO = 'U' or 'u',  the  leading  k by k   
-             upper triangular part of the array  A must contain the upper   
-             triangular matrix  and the strictly lower triangular part of   
-             A is not referenced.   
-             Before entry  with  UPLO = 'L' or 'l',  the  leading  k by k   
-             lower triangular part of the array  A must contain the lower   
-             triangular matrix  and the strictly upper triangular part of   
-             A is not referenced.   
-             Note that when  DIAG = 'U' or 'u',  the diagonal elements of   
-             A  are not referenced either,  but are assumed to be  unity.   
-             Unchanged on exit.   
-    LDA    - INTEGER.   
-             On entry, LDA specifies the first dimension of A as declared   
-             in the calling (sub) program.  When  SIDE = 'L' or 'l'  then   
-             LDA  must be at least  max( 1, m ),  when  SIDE = 'R' or 'r'   
-             then LDA must be at least max( 1, n ).   
-             Unchanged on exit.   
-    B      - DOUBLE PRECISION array of DIMENSION ( LDB, n ).   
-             Before entry,  the leading  m by n part of the array  B must   
-             contain  the  right-hand  side  matrix  B,  and  on exit  is   
-             overwritten by the solution matrix  X.   
-    LDB    - INTEGER.   
-             On entry, LDB specifies the first dimension of B as declared   
-             in  the  calling  (sub)  program.   LDB  must  be  at  least   
-             max( 1, m ).   
-             Unchanged on exit.   
-    Level 3 Blas routine.   
-    -- Written on 8-February-1989.   
-       Jack Dongarra, Argonne National Laboratory.   
-       Iain Duff, AERE Harwell.   
-       Jeremy Du Croz, Numerical Algorithms Group Ltd.   
-       Sven Hammarling, Numerical Algorithms Group Ltd.   
-       Test the input parameters.   
+/*  Purpose
+    =======
+    DTRSM  solves one of the matrix equations
+       op( A )*X = alpha*B,   or   X*op( A ) = alpha*B,
+    where alpha is a scalar, X and B are m by n matrices, A is a unit, or
+    non-unit,  upper or lower triangular matrix  and  op( A )  is one  of
+       op( A ) = A   or   op( A ) = A'.
+    The matrix X is overwritten on B.
+    Parameters
+    ==========
+    SIDE   - CHARACTER*1.
+             On entry, SIDE specifies whether op( A ) appears on the left
+             or right of X as follows:
+                SIDE = 'L' or 'l'   op( A )*X = alpha*B.
+                SIDE = 'R' or 'r'   X*op( A ) = alpha*B.
+             Unchanged on exit.
+    UPLO   - CHARACTER*1.
+             On entry, UPLO specifies whether the matrix A is an upper or
+             lower triangular matrix as follows:
+                UPLO = 'U' or 'u'   A is an upper triangular matrix.
+                UPLO = 'L' or 'l'   A is a lower triangular matrix.
+             Unchanged on exit.
+    TRANSA - CHARACTER*1.
+             On entry, TRANSA specifies the form of op( A ) to be used in
+             the matrix multiplication as follows:
+                TRANSA = 'N' or 'n'   op( A ) = A.
+                TRANSA = 'T' or 't'   op( A ) = A'.
+                TRANSA = 'C' or 'c'   op( A ) = A'.
+             Unchanged on exit.
+    DIAG   - CHARACTER*1.
+             On entry, DIAG specifies whether or not A is unit triangular
+             as follows:
+                DIAG = 'U' or 'u'   A is assumed to be unit triangular.
+                DIAG = 'N' or 'n'   A is not assumed to be unit
+                                    triangular.
+             Unchanged on exit.
+    M      - INTEGER.
+             On entry, M specifies the number of rows of B. M must be at
+             least zero.
+             Unchanged on exit.
+    N      - INTEGER.
+             On entry, N specifies the number of columns of B.  N must be
+             at least zero.
+             Unchanged on exit.
+    ALPHA  - DOUBLE PRECISION.
+             On entry,  ALPHA specifies the scalar  alpha. When  alpha is
+             zero then  A is not referenced and  B need not be set before
+             entry.
+             Unchanged on exit.
+    A      - DOUBLE PRECISION array of DIMENSION ( LDA, k ), where k is m
+             when  SIDE = 'L' or 'l'  and is  n  when  SIDE = 'R' or 'r'.
+             Before entry  with  UPLO = 'U' or 'u',  the  leading  k by k
+             upper triangular part of the array  A must contain the upper
+             triangular matrix  and the strictly lower triangular part of
+             A is not referenced.
+             Before entry  with  UPLO = 'L' or 'l',  the  leading  k by k
+             lower triangular part of the array  A must contain the lower
+             triangular matrix  and the strictly upper triangular part of
+             A is not referenced.
+             Note that when  DIAG = 'U' or 'u',  the diagonal elements of
+             A  are not referenced either,  but are assumed to be  unity.
+             Unchanged on exit.
+    LDA    - INTEGER.
+             On entry, LDA specifies the first dimension of A as declared
+             in the calling (sub) program.  When  SIDE = 'L' or 'l'  then
+             LDA  must be at least  max( 1, m ),  when  SIDE = 'R' or 'r'
+             then LDA must be at least max( 1, n ).
+             Unchanged on exit.
+    B      - DOUBLE PRECISION array of DIMENSION ( LDB, n ).
+             Before entry,  the leading  m by n part of the array  B must
+             contain  the  right-hand  side  matrix  B,  and  on exit  is
+             overwritten by the solution matrix  X.
+    LDB    - INTEGER.
+             On entry, LDB specifies the first dimension of B as declared
+             in  the  calling  (sub)  program.   LDB  must  be  at  least
+             max( 1, m ).
+             Unchanged on exit.
+    Level 3 Blas routine.
+    -- Written on 8-February-1989.
+       Jack Dongarra, Argonne National Laboratory.
+       Iain Duff, AERE Harwell.
+       Jeremy Du Croz, Numerical Algorithms Group Ltd.
+       Sven Hammarling, Numerical Algorithms Group Ltd.
+       Test the input parameters.
        Parameter adjustments */
     a_dim1 = *lda;
     a_offset = 1 + a_dim1 * 1;
@@ -404,7 +404,7 @@
     } else if (! lsame_(transa, "N") && ! lsame_(transa,
 	     "T") && ! lsame_(transa, "C")) {
 	info = 3;
-    } else if (! lsame_(diag, "U") && ! lsame_(diag, 
+    } else if (! lsame_(diag, "U") && ! lsame_(diag,
 	    "N")) {
 	info = 4;
     } else if (*m < 0) {
@@ -458,7 +458,7 @@
 			    }
 			    i__2 = k - 1;
 			    for (i__ = 1; i__ <= i__2; ++i__) {
-				b_ref(i__, j) = b_ref(i__, j) - b_ref(k, j) * 
+				b_ref(i__, j) = b_ref(i__, j) - b_ref(k, j) *
 					a_ref(i__, k);
 /* L40: */
 			    }
@@ -485,7 +485,7 @@
 			    }
 			    i__3 = *m;
 			    for (i__ = k + 1; i__ <= i__3; ++i__) {
-				b_ref(i__, j) = b_ref(i__, j) - b_ref(k, j) * 
+				b_ref(i__, j) = b_ref(i__, j) - b_ref(k, j) *
 					a_ref(i__, k);
 /* L80: */
 			    }
@@ -554,7 +554,7 @@
 			if (a_ref(k, j) != 0.) {
 			    i__3 = *m;
 			    for (i__ = 1; i__ <= i__3; ++i__) {
-				b_ref(i__, j) = b_ref(i__, j) - a_ref(k, j) * 
+				b_ref(i__, j) = b_ref(i__, j) - a_ref(k, j) *
 					b_ref(i__, k);
 /* L180: */
 			    }
@@ -585,7 +585,7 @@
 			if (a_ref(k, j) != 0.) {
 			    i__2 = *m;
 			    for (i__ = 1; i__ <= i__2; ++i__) {
-				b_ref(i__, j) = b_ref(i__, j) - a_ref(k, j) * 
+				b_ref(i__, j) = b_ref(i__, j) - a_ref(k, j) *
 					b_ref(i__, k);
 /* L230: */
 			    }
@@ -684,59 +684,59 @@
 /* Subroutine */ int dgetrf_(integer *m, integer *n, doublereal *a, integer *
 	lda, integer *ipiv, integer *info)
 {
-/*  -- LAPACK routine (version 3.0) --   
-       Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd.,   
-       Courant Institute, Argonne National Lab, and Rice University   
-       March 31, 1993   
+/*  -- LAPACK routine (version 3.0) --
+       Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd.,
+       Courant Institute, Argonne National Lab, and Rice University
+       March 31, 1993
 
 
-    Purpose   
-    =======   
+    Purpose
+    =======
 
-    DGETRF computes an LU factorization of a general M-by-N matrix A   
-    using partial pivoting with row interchanges.   
+    DGETRF computes an LU factorization of a general M-by-N matrix A
+    using partial pivoting with row interchanges.
 
-    The factorization has the form   
-       A = P * L * U   
-    where P is a permutation matrix, L is lower triangular with unit   
-    diagonal elements (lower trapezoidal if m > n), and U is upper   
-    triangular (upper trapezoidal if m < n).   
+    The factorization has the form
+       A = P * L * U
+    where P is a permutation matrix, L is lower triangular with unit
+    diagonal elements (lower trapezoidal if m > n), and U is upper
+    triangular (upper trapezoidal if m < n).
 
-    This is the right-looking Level 3 BLAS version of the algorithm.   
+    This is the right-looking Level 3 BLAS version of the algorithm.
 
-    Arguments   
-    =========   
+    Arguments
+    =========
 
-    M       (input) INTEGER   
-            The number of rows of the matrix A.  M >= 0.   
+    M       (input) INTEGER
+            The number of rows of the matrix A.  M >= 0.
 
-    N       (input) INTEGER   
-            The number of columns of the matrix A.  N >= 0.   
+    N       (input) INTEGER
+            The number of columns of the matrix A.  N >= 0.
 
-    A       (input/output) DOUBLE PRECISION array, dimension (LDA,N)   
-            On entry, the M-by-N matrix to be factored.   
-            On exit, the factors L and U from the factorization   
-            A = P*L*U; the unit diagonal elements of L are not stored.   
+    A       (input/output) DOUBLE PRECISION array, dimension (LDA,N)
+            On entry, the M-by-N matrix to be factored.
+            On exit, the factors L and U from the factorization
+            A = P*L*U; the unit diagonal elements of L are not stored.
 
-    LDA     (input) INTEGER   
-            The leading dimension of the array A.  LDA >= max(1,M).   
+    LDA     (input) INTEGER
+            The leading dimension of the array A.  LDA >= max(1,M).
 
-    IPIV    (output) INTEGER array, dimension (min(M,N))   
-            The pivot indices; for 1 <= i <= min(M,N), row i of the   
-            matrix was interchanged with row IPIV(i).   
+    IPIV    (output) INTEGER array, dimension (min(M,N))
+            The pivot indices; for 1 <= i <= min(M,N), row i of the
+            matrix was interchanged with row IPIV(i).
 
-    INFO    (output) INTEGER   
-            = 0:  successful exit   
-            < 0:  if INFO = -i, the i-th argument had an illegal value   
-            > 0:  if INFO = i, U(i,i) is exactly zero. The factorization   
-                  has been completed, but the factor U is exactly   
-                  singular, and division by zero will occur if it is used   
-                  to solve a system of equations.   
+    INFO    (output) INTEGER
+            = 0:  successful exit
+            < 0:  if INFO = -i, the i-th argument had an illegal value
+            > 0:  if INFO = i, U(i,i) is exactly zero. The factorization
+                  has been completed, but the factor U is exactly
+                  singular, and division by zero will occur if it is used
+                  to solve a system of equations.
 
-    =====================================================================   
+    =====================================================================
 
 
-       Test the input parameters.   
+       Test the input parameters.
 
        Parameter adjustments */
     /* Table of constant values */
@@ -744,25 +744,25 @@
     static integer c_n1 = -1;
     static doublereal c_b16 = 1.;
     static doublereal c_b19 = -1.;
-    
+
     /* System generated locals */
     integer a_dim1, a_offset, i__1, i__2, i__3, i__4, i__5;
     /* Local variables */
     static integer i__, j;
-    extern /* Subroutine */ int dgemm_(char *, char *, integer *, integer *, 
-	    integer *, doublereal *, doublereal *, integer *, doublereal *, 
+    extern /* Subroutine */ int dgemm_(char *, char *, integer *, integer *,
+	    integer *, doublereal *, doublereal *, integer *, doublereal *,
 	    integer *, doublereal *, doublereal *, integer *);
     static integer iinfo;
-    extern /* Subroutine */ int dtrsm_(char *, char *, char *, char *, 
-	    integer *, integer *, doublereal *, doublereal *, integer *, 
+    extern /* Subroutine */ int dtrsm_(char *, char *, char *, char *,
+	    integer *, integer *, doublereal *, doublereal *, integer *,
 	    doublereal *, integer *), dgetf2_(
-	    integer *, integer *, doublereal *, integer *, integer *, integer 
+	    integer *, integer *, doublereal *, integer *, integer *, integer
 	    *);
     static integer jb, nb;
     extern /* Subroutine */ int xerbla_(char *, integer *);
-    extern integer ilaenv_(integer *, char *, char *, integer *, integer *, 
+    extern integer ilaenv_(integer *, char *, char *, integer *, integer *,
 	    integer *, integer *, ftnlen, ftnlen);
-    extern /* Subroutine */ int dlaswp_(integer *, doublereal *, integer *, 
+    extern /* Subroutine */ int dlaswp_(integer *, doublereal *, integer *,
 	    integer *, integer *, integer *, integer *);
 #define a_ref(a_1,a_2) a[(a_2)*a_dim1 + a_1]
 
@@ -813,7 +813,7 @@
 	    i__3 = min(*m,*n) - j + 1;
 	    jb = min(i__3,nb);
 
-/*           Factor diagonal and subdiagonal blocks and test for exact   
+/*           Factor diagonal and subdiagonal blocks and test for exact
              singularity. */
 
 	    i__3 = *m - j + 1;
@@ -858,7 +858,7 @@
 
 		    i__3 = *m - j - jb + 1;
 		    i__4 = *n - j - jb + 1;
-		    dgemm_("No transpose", "No transpose", &i__3, &i__4, &jb, 
+		    dgemm_("No transpose", "No transpose", &i__3, &i__4, &jb,
 			    &c_b19, &a_ref(j + jb, j), lda, &a_ref(j, j + jb),
 			     lda, &c_b16, &a_ref(j + jb, j + jb), lda);
 		}
@@ -876,34 +876,34 @@
 
 /* Subroutine */ int xerbla_(char *srname, integer *info)
 {
-/*  -- LAPACK auxiliary routine (preliminary version) --   
-       Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd.,   
-       Courant Institute, Argonne National Lab, and Rice University   
-       February 29, 1992   
+/*  -- LAPACK auxiliary routine (preliminary version) --
+       Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd.,
+       Courant Institute, Argonne National Lab, and Rice University
+       February 29, 1992
 
 
-    Purpose   
-    =======   
+    Purpose
+    =======
 
-    XERBLA  is an error handler for the LAPACK routines.   
-    It is called by an LAPACK routine if an input parameter has an   
-    invalid value.  A message is printed and execution stops.   
+    XERBLA  is an error handler for the LAPACK routines.
+    It is called by an LAPACK routine if an input parameter has an
+    invalid value.  A message is printed and execution stops.
 
-    Installers may consider modifying the STOP statement in order to   
-    call system-specific exception-handling facilities.   
+    Installers may consider modifying the STOP statement in order to
+    call system-specific exception-handling facilities.
 
-    Arguments   
-    =========   
+    Arguments
+    =========
 
-    SRNAME  (input) CHARACTER*6   
-            The name of the routine which called XERBLA.   
+    SRNAME  (input) CHARACTER*6
+            The name of the routine which called XERBLA.
 
-    INFO    (input) INTEGER   
-            The position of the invalid parameter in the parameter list   
+    INFO    (input) INTEGER
+            The position of the invalid parameter in the parameter list
             of the calling routine. */
     /* Table of constant values */
     static integer c__1 = 1;
-    
+
     /* Format strings */
     static char fmt_9999[] = "(\002 ** On entry to \002,a6,\002 parameter nu"
 	    "mber \002,i2,\002 had \002,\002an illegal value\002)";
@@ -930,12 +930,12 @@
 } /* xerbla_ */
 
 /* Subroutine */ int dgemm_(char *transa, char *transb, integer *m, integer *
-	n, integer *k, doublereal *alpha, doublereal *a, integer *lda, 
-	doublereal *b, integer *ldb, doublereal *beta, doublereal *c__, 
+	n, integer *k, doublereal *alpha, doublereal *a, integer *lda,
+	doublereal *b, integer *ldb, doublereal *beta, doublereal *c__,
 	integer *ldc)
 {
     /* System generated locals */
-    integer a_dim1, a_offset, b_dim1, b_offset, c_dim1, c_offset, i__1, i__2, 
+    integer a_dim1, a_offset, b_dim1, b_offset, c_dim1, c_offset, i__1, i__2,
 	    i__3;
     /* Local variables */
     static integer info;
@@ -948,97 +948,97 @@
 #define a_ref(a_1,a_2) a[(a_2)*a_dim1 + a_1]
 #define b_ref(a_1,a_2) b[(a_2)*b_dim1 + a_1]
 #define c___ref(a_1,a_2) c__[(a_2)*c_dim1 + a_1]
-/*  Purpose   
-    =======   
-    DGEMM  performs one of the matrix-matrix operations   
-       C := alpha*op( A )*op( B ) + beta*C,   
-    where  op( X ) is one of   
-       op( X ) = X   or   op( X ) = X',   
-    alpha and beta are scalars, and A, B and C are matrices, with op( A )   
-    an m by k matrix,  op( B )  a  k by n matrix and  C an m by n matrix.   
-    Parameters   
-    ==========   
-    TRANSA - CHARACTER*1.   
-             On entry, TRANSA specifies the form of op( A ) to be used in   
-             the matrix multiplication as follows:   
-                TRANSA = 'N' or 'n',  op( A ) = A.   
-                TRANSA = 'T' or 't',  op( A ) = A'.   
-                TRANSA = 'C' or 'c',  op( A ) = A'.   
-             Unchanged on exit.   
-    TRANSB - CHARACTER*1.   
-             On entry, TRANSB specifies the form of op( B ) to be used in   
-             the matrix multiplication as follows:   
-                TRANSB = 'N' or 'n',  op( B ) = B.   
-                TRANSB = 'T' or 't',  op( B ) = B'.   
-                TRANSB = 'C' or 'c',  op( B ) = B'.   
-             Unchanged on exit.   
-    M      - INTEGER.   
-             On entry,  M  specifies  the number  of rows  of the  matrix   
-             op( A )  and of the  matrix  C.  M  must  be at least  zero.   
-             Unchanged on exit.   
-    N      - INTEGER.   
-             On entry,  N  specifies the number  of columns of the matrix   
-             op( B ) and the number of columns of the matrix C. N must be   
-             at least zero.   
-             Unchanged on exit.   
-    K      - INTEGER.   
-             On entry,  K  specifies  the number of columns of the matrix   
-             op( A ) and the number of rows of the matrix op( B ). K must   
-             be at least  zero.   
-             Unchanged on exit.   
-    ALPHA  - DOUBLE PRECISION.   
-             On entry, ALPHA specifies the scalar alpha.   
-             Unchanged on exit.   
-    A      - DOUBLE PRECISION array of DIMENSION ( LDA, ka ), where ka is   
-             k  when  TRANSA = 'N' or 'n',  and is  m  otherwise.   
-             Before entry with  TRANSA = 'N' or 'n',  the leading  m by k   
-             part of the array  A  must contain the matrix  A,  otherwise   
-             the leading  k by m  part of the array  A  must contain  the   
-             matrix A.   
-             Unchanged on exit.   
-    LDA    - INTEGER.   
-             On entry, LDA specifies the first dimension of A as declared   
-             in the calling (sub) program. When  TRANSA = 'N' or 'n' then   
-             LDA must be at least  max( 1, m ), otherwise  LDA must be at   
-             least  max( 1, k ).   
-             Unchanged on exit.   
-    B      - DOUBLE PRECISION array of DIMENSION ( LDB, kb ), where kb is   
-             n  when  TRANSB = 'N' or 'n',  and is  k  otherwise.   
-             Before entry with  TRANSB = 'N' or 'n',  the leading  k by n   
-             part of the array  B  must contain the matrix  B,  otherwise   
-             the leading  n by k  part of the array  B  must contain  the   
-             matrix B.   
-             Unchanged on exit.   
-    LDB    - INTEGER.   
-             On entry, LDB specifies the first dimension of B as declared   
-             in the calling (sub) program. When  TRANSB = 'N' or 'n' then   
-             LDB must be at least  max( 1, k ), otherwise  LDB must be at   
-             least  max( 1, n ).   
-             Unchanged on exit.   
-    BETA   - DOUBLE PRECISION.   
-             On entry,  BETA  specifies the scalar  beta.  When  BETA  is   
-             supplied as zero then C need not be set on input.   
-             Unchanged on exit.   
-    C      - DOUBLE PRECISION array of DIMENSION ( LDC, n ).   
-             Before entry, the leading  m by n  part of the array  C must   
-             contain the matrix  C,  except when  beta  is zero, in which   
-             case C need not be set on entry.   
-             On exit, the array  C  is overwritten by the  m by n  matrix   
-             ( alpha*op( A )*op( B ) + beta*C ).   
-    LDC    - INTEGER.   
-             On entry, LDC specifies the first dimension of C as declared   
-             in  the  calling  (sub)  program.   LDC  must  be  at  least   
-             max( 1, m ).   
-             Unchanged on exit.   
-    Level 3 Blas routine.   
-    -- Written on 8-February-1989.   
-       Jack Dongarra, Argonne National Laboratory.   
-       Iain Duff, AERE Harwell.   
-       Jeremy Du Croz, Numerical Algorithms Group Ltd.   
-       Sven Hammarling, Numerical Algorithms Group Ltd.   
-       Set  NOTA  and  NOTB  as  true if  A  and  B  respectively are not   
-       transposed and set  NROWA, NCOLA and  NROWB  as the number of rows   
-       and  columns of  A  and the  number of  rows  of  B  respectively.   
+/*  Purpose
+    =======
+    DGEMM  performs one of the matrix-matrix operations
+       C := alpha*op( A )*op( B ) + beta*C,
+    where  op( X ) is one of
+       op( X ) = X   or   op( X ) = X',
+    alpha and beta are scalars, and A, B and C are matrices, with op( A )
+    an m by k matrix,  op( B )  a  k by n matrix and  C an m by n matrix.
+    Parameters
+    ==========
+    TRANSA - CHARACTER*1.
+             On entry, TRANSA specifies the form of op( A ) to be used in
+             the matrix multiplication as follows:
+                TRANSA = 'N' or 'n',  op( A ) = A.
+                TRANSA = 'T' or 't',  op( A ) = A'.
+                TRANSA = 'C' or 'c',  op( A ) = A'.
+             Unchanged on exit.
+    TRANSB - CHARACTER*1.
+             On entry, TRANSB specifies the form of op( B ) to be used in
+             the matrix multiplication as follows:
+                TRANSB = 'N' or 'n',  op( B ) = B.
+                TRANSB = 'T' or 't',  op( B ) = B'.
+                TRANSB = 'C' or 'c',  op( B ) = B'.
+             Unchanged on exit.
+    M      - INTEGER.
+             On entry,  M  specifies  the number  of rows  of the  matrix
+             op( A )  and of the  matrix  C.  M  must  be at least  zero.
+             Unchanged on exit.
+    N      - INTEGER.
+             On entry,  N  specifies the number  of columns of the matrix
+             op( B ) and the number of columns of the matrix C. N must be
+             at least zero.
+             Unchanged on exit.
+    K      - INTEGER.
+             On entry,  K  specifies  the number of columns of the matrix
+             op( A ) and the number of rows of the matrix op( B ). K must
+             be at least  zero.
+             Unchanged on exit.
+    ALPHA  - DOUBLE PRECISION.
+             On entry, ALPHA specifies the scalar alpha.
+             Unchanged on exit.
+    A      - DOUBLE PRECISION array of DIMENSION ( LDA, ka ), where ka is
+             k  when  TRANSA = 'N' or 'n',  and is  m  otherwise.
+             Before entry with  TRANSA = 'N' or 'n',  the leading  m by k
+             part of the array  A  must contain the matrix  A,  otherwise
+             the leading  k by m  part of the array  A  must contain  the
+             matrix A.
+             Unchanged on exit.
+    LDA    - INTEGER.
+             On entry, LDA specifies the first dimension of A as declared
+             in the calling (sub) program. When  TRANSA = 'N' or 'n' then
+             LDA must be at least  max( 1, m ), otherwise  LDA must be at
+             least  max( 1, k ).
+             Unchanged on exit.
+    B      - DOUBLE PRECISION array of DIMENSION ( LDB, kb ), where kb is
+             n  when  TRANSB = 'N' or 'n',  and is  k  otherwise.
+             Before entry with  TRANSB = 'N' or 'n',  the leading  k by n
+             part of the array  B  must contain the matrix  B,  otherwise
+             the leading  n by k  part of the array  B  must contain  the
+             matrix B.
+             Unchanged on exit.
+    LDB    - INTEGER.
+             On entry, LDB specifies the first dimension of B as declared
+             in the calling (sub) program. When  TRANSB = 'N' or 'n' then
+             LDB must be at least  max( 1, k ), otherwise  LDB must be at
+             least  max( 1, n ).
+             Unchanged on exit.
+    BETA   - DOUBLE PRECISION.
+             On entry,  BETA  specifies the scalar  beta.  When  BETA  is
+             supplied as zero then C need not be set on input.
+             Unchanged on exit.
+    C      - DOUBLE PRECISION array of DIMENSION ( LDC, n ).
+             Before entry, the leading  m by n  part of the array  C must
+             contain the matrix  C,  except when  beta  is zero, in which
+             case C need not be set on entry.
+             On exit, the array  C  is overwritten by the  m by n  matrix
+             ( alpha*op( A )*op( B ) + beta*C ).
+    LDC    - INTEGER.
+             On entry, LDC specifies the first dimension of C as declared
+             in  the  calling  (sub)  program.   LDC  must  be  at  least
+             max( 1, m ).
+             Unchanged on exit.
+    Level 3 Blas routine.
+    -- Written on 8-February-1989.
+       Jack Dongarra, Argonne National Laboratory.
+       Iain Duff, AERE Harwell.
+       Jeremy Du Croz, Numerical Algorithms Group Ltd.
+       Sven Hammarling, Numerical Algorithms Group Ltd.
+       Set  NOTA  and  NOTB  as  true if  A  and  B  respectively are not
+       transposed and set  NROWA, NCOLA and  NROWB  as the number of rows
+       and  columns of  A  and the  number of  rows  of  B  respectively.
        Parameter adjustments */
     a_dim1 = *lda;
     a_offset = 1 + a_dim1 * 1;
@@ -1069,7 +1069,7 @@
     if (! nota && ! lsame_(transa, "C") && ! lsame_(
 	    transa, "T")) {
 	info = 1;
-    } else if (! notb && ! lsame_(transb, "C") && ! 
+    } else if (! notb && ! lsame_(transb, "C") && !
 	    lsame_(transb, "T")) {
 	info = 2;
     } else if (*m < 0) {
@@ -1239,62 +1239,62 @@
 #undef b_ref
 #undef a_ref
 
-/* Subroutine */ int dlaswp_(integer *n, doublereal *a, integer *lda, integer 
+/* Subroutine */ int dlaswp_(integer *n, doublereal *a, integer *lda, integer
 	*k1, integer *k2, integer *ipiv, integer *incx)
 {
-/*  -- LAPACK auxiliary routine (version 3.0) --   
-       Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd.,   
-       Courant Institute, Argonne National Lab, and Rice University   
-       June 30, 1999   
+/*  -- LAPACK auxiliary routine (version 3.0) --
+       Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd.,
+       Courant Institute, Argonne National Lab, and Rice University
+       June 30, 1999
 
 
-    Purpose   
-    =======   
+    Purpose
+    =======
 
-    DLASWP performs a series of row interchanges on the matrix A.   
-    One row interchange is initiated for each of rows K1 through K2 of A.   
+    DLASWP performs a series of row interchanges on the matrix A.
+    One row interchange is initiated for each of rows K1 through K2 of A.
 
-    Arguments   
-    =========   
+    Arguments
+    =========
 
-    N       (input) INTEGER   
-            The number of columns of the matrix A.   
+    N       (input) INTEGER
+            The number of columns of the matrix A.
 
-    A       (input/output) DOUBLE PRECISION array, dimension (LDA,N)   
-            On entry, the matrix of column dimension N to which the row   
-            interchanges will be applied.   
-            On exit, the permuted matrix.   
+    A       (input/output) DOUBLE PRECISION array, dimension (LDA,N)
+            On entry, the matrix of column dimension N to which the row
+            interchanges will be applied.
+            On exit, the permuted matrix.
 
-    LDA     (input) INTEGER   
-            The leading dimension of the array A.   
+    LDA     (input) INTEGER
+            The leading dimension of the array A.
 
-    K1      (input) INTEGER   
-            The first element of IPIV for which a row interchange will   
-            be done.   
+    K1      (input) INTEGER
+            The first element of IPIV for which a row interchange will
+            be done.
 
-    K2      (input) INTEGER   
-            The last element of IPIV for which a row interchange will   
-            be done.   
+    K2      (input) INTEGER
+            The last element of IPIV for which a row interchange will
+            be done.
 
-    IPIV    (input) INTEGER array, dimension (M*abs(INCX))   
-            The vector of pivot indices.  Only the elements in positions   
-            K1 through K2 of IPIV are accessed.   
-            IPIV(K) = L implies rows K and L are to be interchanged.   
+    IPIV    (input) INTEGER array, dimension (M*abs(INCX))
+            The vector of pivot indices.  Only the elements in positions
+            K1 through K2 of IPIV are accessed.
+            IPIV(K) = L implies rows K and L are to be interchanged.
 
-    INCX    (input) INTEGER   
-            The increment between successive values of IPIV.  If IPIV   
-            is negative, the pivots are applied in reverse order.   
+    INCX    (input) INTEGER
+            The increment between successive values of IPIV.  If IPIV
+            is negative, the pivots are applied in reverse order.
 
-    Further Details   
-    ===============   
+    Further Details
+    ===============
 
-    Modified by   
-     R. C. Whaley, Computer Science Dept., Univ. of Tenn., Knoxville, USA   
+    Modified by
+     R. C. Whaley, Computer Science Dept., Univ. of Tenn., Knoxville, USA
 
-   =====================================================================   
+   =====================================================================
 
 
-       Interchange row I with row IPIV(I) for each of rows K1 through K2.   
+       Interchange row I with row IPIV(I) for each of rows K1 through K2.
 
        Parameter adjustments */
     /* System generated locals */
@@ -1331,7 +1331,7 @@
 	    ix = ix0;
 	    i__2 = i2;
 	    i__3 = inc;
-	    for (i__ = i1; i__3 < 0 ? i__ >= i__2 : i__ <= i__2; i__ += i__3) 
+	    for (i__ = i1; i__3 < 0 ? i__ >= i__2 : i__ <= i__2; i__ += i__3)
 		    {
 		ip = ipiv[ix];
 		if (ip != i__) {
@@ -1381,27 +1381,27 @@
 
 logical lsame_(char *ca, char *cb)
 {
-/*  -- LAPACK auxiliary routine (version 3.0) --   
-       Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd.,   
-       Courant Institute, Argonne National Lab, and Rice University   
-       September 30, 1994   
+/*  -- LAPACK auxiliary routine (version 3.0) --
+       Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd.,
+       Courant Institute, Argonne National Lab, and Rice University
+       September 30, 1994
 
 
-    Purpose   
-    =======   
+    Purpose
+    =======
 
-    LSAME returns .TRUE. if CA is the same letter as CB regardless of   
-    case.   
+    LSAME returns .TRUE. if CA is the same letter as CB regardless of
+    case.
 
-    Arguments   
-    =========   
+    Arguments
+    =========
 
-    CA      (input) CHARACTER*1   
-    CB      (input) CHARACTER*1   
-            CA and CB specify the single characters to be compared.   
+    CA      (input) CHARACTER*1
+    CB      (input) CHARACTER*1
+            CA and CB specify the single characters to be compared.
 
-   ===================================================================== 
-  
+   =====================================================================
+
 
 
        Test if the characters are equal */
@@ -1420,9 +1420,9 @@ logical lsame_(char *ca, char *cb)
 
     zcode = 'Z';
 
-/*     Use 'Z' rather than 'A' so that ASCII can be detected on Prime   
-       machines, on which ICHAR returns a value with bit 8 set.   
-       ICHAR('A') on Prime machines returns 193 which is the same as   
+/*     Use 'Z' rather than 'A' so that ASCII can be detected on Prime
+       machines, on which ICHAR returns a value with bit 8 set.
+       ICHAR('A') on Prime machines returns 193 which is the same as
        ICHAR('A') on an EBCDIC machine. */
 
     inta = *(unsigned char *)ca;
@@ -1431,7 +1431,7 @@ logical lsame_(char *ca, char *cb)
     if (zcode == 90 || zcode == 122) {
 
 /*        ASCII is assumed - ZCODE is the ASCII code of either lower o
-r   
+r
           upper case 'Z'. */
 
 	if (inta >= 97 && inta <= 122) {
@@ -1444,14 +1444,14 @@ r
     } else if (zcode == 233 || zcode == 169) {
 
 /*        EBCDIC is assumed - ZCODE is the EBCDIC code of either lower
- or   
+ or
           upper case 'Z'. */
 
-	if ((inta >= 129 && inta <= 137) || (inta >= 145 && inta <= 153) || (inta 
+	if ((inta >= 129 && inta <= 137) || (inta >= 145 && inta <= 153) || (inta
 		>= 162 && inta <= 169)) {
 	    inta += 64;
 	}
-	if ((intb >= 129 && intb <= 137) || (intb >= 145 && intb <= 153) || (intb 
+	if ((intb >= 129 && intb <= 137) || (intb >= 145 && intb <= 153) || (intb
 		>= 162 && intb <= 169)) {
 	    intb += 64;
 	}
@@ -1459,7 +1459,7 @@ r
     } else if (zcode == 218 || zcode == 250) {
 
 /*        ASCII is assumed, on Prime machines - ZCODE is the ASCII cod
-e   
+e
           plus 128 of either lower or upper case 'Z'. */
 
 	if (inta >= 225 && inta <= 250) {
@@ -1471,110 +1471,110 @@ e
     }
     ret_val = inta == intb;
 
-/*     RETURN   
+/*     RETURN
 
        End of LSAME */
 
     return ret_val;
 } /* lsame_ */
 
-integer ilaenv_(integer *ispec, char *name__, char *opts, integer *n1, 
-	integer *n2, integer *n3, integer *n4, ftnlen name_len, ftnlen 
+integer ilaenv_(integer *ispec, char *name__, char *opts, integer *n1,
+	integer *n2, integer *n3, integer *n4, ftnlen name_len, ftnlen
 	opts_len)
 {
-/*  -- LAPACK auxiliary routine (version 3.0) --   
-       Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd.,   
-       Courant Institute, Argonne National Lab, and Rice University   
-       June 30, 1999   
+/*  -- LAPACK auxiliary routine (version 3.0) --
+       Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd.,
+       Courant Institute, Argonne National Lab, and Rice University
+       June 30, 1999
 
 
-    Purpose   
-    =======   
+    Purpose
+    =======
 
-    ILAENV is called from the LAPACK routines to choose problem-dependent   
-    parameters for the local environment.  See ISPEC for a description of   
-    the parameters.   
+    ILAENV is called from the LAPACK routines to choose problem-dependent
+    parameters for the local environment.  See ISPEC for a description of
+    the parameters.
 
-    This version provides a set of parameters which should give good,   
-    but not optimal, performance on many of the currently available   
-    computers.  Users are encouraged to modify this subroutine to set   
-    the tuning parameters for their particular machine using the option   
-    and problem size information in the arguments.   
+    This version provides a set of parameters which should give good,
+    but not optimal, performance on many of the currently available
+    computers.  Users are encouraged to modify this subroutine to set
+    the tuning parameters for their particular machine using the option
+    and problem size information in the arguments.
 
-    This routine will not function correctly if it is converted to all   
-    lower case.  Converting it to all upper case is allowed.   
+    This routine will not function correctly if it is converted to all
+    lower case.  Converting it to all upper case is allowed.
 
-    Arguments   
-    =========   
+    Arguments
+    =========
 
-    ISPEC   (input) INTEGER   
-            Specifies the parameter to be returned as the value of   
-            ILAENV.   
-            = 1: the optimal blocksize; if this value is 1, an unblocked   
-                 algorithm will give the best performance.   
-            = 2: the minimum block size for which the block routine   
-                 should be used; if the usable block size is less than   
-                 this value, an unblocked routine should be used.   
-            = 3: the crossover point (in a block routine, for N less   
-                 than this value, an unblocked routine should be used)   
-            = 4: the number of shifts, used in the nonsymmetric   
-                 eigenvalue routines   
-            = 5: the minimum column dimension for blocking to be used;   
-                 rectangular blocks must have dimension at least k by m,   
-                 where k is given by ILAENV(2,...) and m by ILAENV(5,...)   
-            = 6: the crossover point for the SVD (when reducing an m by n   
-                 matrix to bidiagonal form, if max(m,n)/min(m,n) exceeds   
-                 this value, a QR factorization is used first to reduce   
-                 the matrix to a triangular form.)   
-            = 7: the number of processors   
-            = 8: the crossover point for the multishift QR and QZ methods   
-                 for nonsymmetric eigenvalue problems.   
-            = 9: maximum size of the subproblems at the bottom of the   
-                 computation tree in the divide-and-conquer algorithm   
-                 (used by xGELSD and xGESDD)   
-            =10: ieee NaN arithmetic can be trusted not to trap   
-            =11: infinity arithmetic can be trusted not to trap   
+    ISPEC   (input) INTEGER
+            Specifies the parameter to be returned as the value of
+            ILAENV.
+            = 1: the optimal blocksize; if this value is 1, an unblocked
+                 algorithm will give the best performance.
+            = 2: the minimum block size for which the block routine
+                 should be used; if the usable block size is less than
+                 this value, an unblocked routine should be used.
+            = 3: the crossover point (in a block routine, for N less
+                 than this value, an unblocked routine should be used)
+            = 4: the number of shifts, used in the nonsymmetric
+                 eigenvalue routines
+            = 5: the minimum column dimension for blocking to be used;
+                 rectangular blocks must have dimension at least k by m,
+                 where k is given by ILAENV(2,...) and m by ILAENV(5,...)
+            = 6: the crossover point for the SVD (when reducing an m by n
+                 matrix to bidiagonal form, if max(m,n)/min(m,n) exceeds
+                 this value, a QR factorization is used first to reduce
+                 the matrix to a triangular form.)
+            = 7: the number of processors
+            = 8: the crossover point for the multishift QR and QZ methods
+                 for nonsymmetric eigenvalue problems.
+            = 9: maximum size of the subproblems at the bottom of the
+                 computation tree in the divide-and-conquer algorithm
+                 (used by xGELSD and xGESDD)
+            =10: ieee NaN arithmetic can be trusted not to trap
+            =11: infinity arithmetic can be trusted not to trap
 
-    NAME    (input) CHARACTER*(*)   
-            The name of the calling subroutine, in either upper case or   
-            lower case.   
+    NAME    (input) CHARACTER*(*)
+            The name of the calling subroutine, in either upper case or
+            lower case.
 
-    OPTS    (input) CHARACTER*(*)   
-            The character options to the subroutine NAME, concatenated   
-            into a single character string.  For example, UPLO = 'U',   
-            TRANS = 'T', and DIAG = 'N' for a triangular routine would   
-            be specified as OPTS = 'UTN'.   
+    OPTS    (input) CHARACTER*(*)
+            The character options to the subroutine NAME, concatenated
+            into a single character string.  For example, UPLO = 'U',
+            TRANS = 'T', and DIAG = 'N' for a triangular routine would
+            be specified as OPTS = 'UTN'.
 
-    N1      (input) INTEGER   
-    N2      (input) INTEGER   
-    N3      (input) INTEGER   
-    N4      (input) INTEGER   
-            Problem dimensions for the subroutine NAME; these may not all   
-            be required.   
+    N1      (input) INTEGER
+    N2      (input) INTEGER
+    N3      (input) INTEGER
+    N4      (input) INTEGER
+            Problem dimensions for the subroutine NAME; these may not all
+            be required.
 
-   (ILAENV) (output) INTEGER   
-            >= 0: the value of the parameter specified by ISPEC   
-            < 0:  if ILAENV = -k, the k-th argument had an illegal value.   
+   (ILAENV) (output) INTEGER
+            >= 0: the value of the parameter specified by ISPEC
+            < 0:  if ILAENV = -k, the k-th argument had an illegal value.
 
-    Further Details   
-    ===============   
+    Further Details
+    ===============
 
-    The following conventions have been used when calling ILAENV from the   
-    LAPACK routines:   
-    1)  OPTS is a concatenation of all of the character options to   
-        subroutine NAME, in the same order that they appear in the   
-        argument list for NAME, even if they are not used in determining   
-        the value of the parameter specified by ISPEC.   
-    2)  The problem dimensions N1, N2, N3, N4 are specified in the order   
-        that they appear in the argument list for NAME.  N1 is used   
-        first, N2 second, and so on, and unused problem dimensions are   
-        passed a value of -1.   
-    3)  The parameter value returned by ILAENV is checked for validity in   
-        the calling subroutine.  For example, ILAENV is used to retrieve   
-        the optimal blocksize for STRTRI as follows:   
+    The following conventions have been used when calling ILAENV from the
+    LAPACK routines:
+    1)  OPTS is a concatenation of all of the character options to
+        subroutine NAME, in the same order that they appear in the
+        argument list for NAME, even if they are not used in determining
+        the value of the parameter specified by ISPEC.
+    2)  The problem dimensions N1, N2, N3, N4 are specified in the order
+        that they appear in the argument list for NAME.  N1 is used
+        first, N2 second, and so on, and unused problem dimensions are
+        passed a value of -1.
+    3)  The parameter value returned by ILAENV is checked for validity in
+        the calling subroutine.  For example, ILAENV is used to retrieve
+        the optimal blocksize for STRTRI as follows:
 
-        NB = ILAENV( 1, 'STRTRI', UPLO // DIAG, N, -1, -1, -1 )   
-        IF( NB.LE.1 ) NB = MAX( 1, N )   
+        NB = ILAENV( 1, 'STRTRI', UPLO // DIAG, N, -1, -1, -1 )
+        IF( NB.LE.1 ) NB = MAX( 1, N )
 
     ===================================================================== */
     /* Table of constant values */
@@ -1582,10 +1582,10 @@ integer ilaenv_(integer *ispec, char *name__, char *opts, integer *n1,
     static real c_b162 = 0.f;
     static real c_b163 = 1.f;
     static integer c__1 = 1;
-    
+
     /* System generated locals */
     integer ret_val;
-    /* Builtin functions   
+    /* Builtin functions
        Subroutine */ int s_copy(char *, char *, ftnlen, ftnlen);
     integer s_cmp(char *, char *, ftnlen, ftnlen);
     /* Local variables */
@@ -1647,12 +1647,12 @@ L100:
 
 /*        EBCDIC character set */
 
-	if ((ic >= 129 && ic <= 137) || (ic >= 145 && ic <= 153) || (ic >= 162 && 
+	if ((ic >= 129 && ic <= 137) || (ic >= 145 && ic <= 153) || (ic >= 162 &&
 		ic <= 169)) {
 	    *(unsigned char *)subnam = (char) (ic + 64);
 	    for (i__ = 2; i__ <= 6; ++i__) {
 		ic = *(unsigned char *)&subnam[i__ - 1];
-		if ((ic >= 129 && ic <= 137) || (ic >= 145 && ic <= 153) || (ic >= 
+		if ((ic >= 129 && ic <= 137) || (ic >= 145 && ic <= 153) || (ic >=
 			162 && ic <= 169)) {
 		    *(unsigned char *)&subnam[i__ - 1] = (char) (ic + 64);
 		}
@@ -1694,10 +1694,10 @@ L100:
 
 L110:
 
-/*     ISPEC = 1:  block size   
+/*     ISPEC = 1:  block size
 
-       In these examples, separate code is provided for setting NB for   
-       real and complex.  We assume that NB will take the same value in   
+       In these examples, separate code is provided for setting NB for
+       real and complex.  We assume that NB will take the same value in
        single or double precision. */
 
     nb = 1;
@@ -1709,9 +1709,9 @@ L110:
 	    } else {
 		nb = 64;
 	    }
-	} else if (s_cmp(c3, "QRF", (ftnlen)3, (ftnlen)3) == 0 || s_cmp(c3, 
+	} else if (s_cmp(c3, "QRF", (ftnlen)3, (ftnlen)3) == 0 || s_cmp(c3,
 		"RQF", (ftnlen)3, (ftnlen)3) == 0 || s_cmp(c3, "LQF", (ftnlen)
-		3, (ftnlen)3) == 0 || s_cmp(c3, "QLF", (ftnlen)3, (ftnlen)3) 
+		3, (ftnlen)3) == 0 || s_cmp(c3, "QLF", (ftnlen)3, (ftnlen)3)
 		== 0) {
 	    if (sname) {
 		nb = 32;
@@ -1767,7 +1767,7 @@ L110:
 	}
     } else if (sname && s_cmp(c2, "OR", (ftnlen)2, (ftnlen)2) == 0) {
 	if (*(unsigned char *)c3 == 'G') {
-	    if (s_cmp(c4, "QR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "RQ", 
+	    if (s_cmp(c4, "QR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "RQ",
 		    (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "LQ", (ftnlen)2, (
 		    ftnlen)2) == 0 || s_cmp(c4, "QL", (ftnlen)2, (ftnlen)2) ==
 		     0 || s_cmp(c4, "HR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(
@@ -1776,7 +1776,7 @@ L110:
 		nb = 32;
 	    }
 	} else if (*(unsigned char *)c3 == 'M') {
-	    if (s_cmp(c4, "QR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "RQ", 
+	    if (s_cmp(c4, "QR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "RQ",
 		    (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "LQ", (ftnlen)2, (
 		    ftnlen)2) == 0 || s_cmp(c4, "QL", (ftnlen)2, (ftnlen)2) ==
 		     0 || s_cmp(c4, "HR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(
@@ -1787,7 +1787,7 @@ L110:
 	}
     } else if (cname && s_cmp(c2, "UN", (ftnlen)2, (ftnlen)2) == 0) {
 	if (*(unsigned char *)c3 == 'G') {
-	    if (s_cmp(c4, "QR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "RQ", 
+	    if (s_cmp(c4, "QR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "RQ",
 		    (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "LQ", (ftnlen)2, (
 		    ftnlen)2) == 0 || s_cmp(c4, "QL", (ftnlen)2, (ftnlen)2) ==
 		     0 || s_cmp(c4, "HR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(
@@ -1796,7 +1796,7 @@ L110:
 		nb = 32;
 	    }
 	} else if (*(unsigned char *)c3 == 'M') {
-	    if (s_cmp(c4, "QR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "RQ", 
+	    if (s_cmp(c4, "QR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "RQ",
 		    (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "LQ", (ftnlen)2, (
 		    ftnlen)2) == 0 || s_cmp(c4, "QL", (ftnlen)2, (ftnlen)2) ==
 		     0 || s_cmp(c4, "HR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(
@@ -1911,7 +1911,7 @@ L200:
 	}
     } else if (sname && s_cmp(c2, "OR", (ftnlen)2, (ftnlen)2) == 0) {
 	if (*(unsigned char *)c3 == 'G') {
-	    if (s_cmp(c4, "QR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "RQ", 
+	    if (s_cmp(c4, "QR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "RQ",
 		    (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "LQ", (ftnlen)2, (
 		    ftnlen)2) == 0 || s_cmp(c4, "QL", (ftnlen)2, (ftnlen)2) ==
 		     0 || s_cmp(c4, "HR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(
@@ -1920,7 +1920,7 @@ L200:
 		nbmin = 2;
 	    }
 	} else if (*(unsigned char *)c3 == 'M') {
-	    if (s_cmp(c4, "QR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "RQ", 
+	    if (s_cmp(c4, "QR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "RQ",
 		    (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "LQ", (ftnlen)2, (
 		    ftnlen)2) == 0 || s_cmp(c4, "QL", (ftnlen)2, (ftnlen)2) ==
 		     0 || s_cmp(c4, "HR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(
@@ -1931,7 +1931,7 @@ L200:
 	}
     } else if (cname && s_cmp(c2, "UN", (ftnlen)2, (ftnlen)2) == 0) {
 	if (*(unsigned char *)c3 == 'G') {
-	    if (s_cmp(c4, "QR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "RQ", 
+	    if (s_cmp(c4, "QR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "RQ",
 		    (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "LQ", (ftnlen)2, (
 		    ftnlen)2) == 0 || s_cmp(c4, "QL", (ftnlen)2, (ftnlen)2) ==
 		     0 || s_cmp(c4, "HR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(
@@ -1940,7 +1940,7 @@ L200:
 		nbmin = 2;
 	    }
 	} else if (*(unsigned char *)c3 == 'M') {
-	    if (s_cmp(c4, "QR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "RQ", 
+	    if (s_cmp(c4, "QR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "RQ",
 		    (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "LQ", (ftnlen)2, (
 		    ftnlen)2) == 0 || s_cmp(c4, "QL", (ftnlen)2, (ftnlen)2) ==
 		     0 || s_cmp(c4, "HR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(
@@ -1991,7 +1991,7 @@ L300:
 	}
     } else if (sname && s_cmp(c2, "OR", (ftnlen)2, (ftnlen)2) == 0) {
 	if (*(unsigned char *)c3 == 'G') {
-	    if (s_cmp(c4, "QR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "RQ", 
+	    if (s_cmp(c4, "QR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "RQ",
 		    (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "LQ", (ftnlen)2, (
 		    ftnlen)2) == 0 || s_cmp(c4, "QL", (ftnlen)2, (ftnlen)2) ==
 		     0 || s_cmp(c4, "HR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(
@@ -2002,7 +2002,7 @@ L300:
 	}
     } else if (cname && s_cmp(c2, "UN", (ftnlen)2, (ftnlen)2) == 0) {
 	if (*(unsigned char *)c3 == 'G') {
-	    if (s_cmp(c4, "QR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "RQ", 
+	    if (s_cmp(c4, "QR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "RQ",
 		    (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "LQ", (ftnlen)2, (
 		    ftnlen)2) == 0 || s_cmp(c4, "QL", (ftnlen)2, (ftnlen)2) ==
 		     0 || s_cmp(c4, "HR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(
@@ -2052,8 +2052,8 @@ L800:
 
 L900:
 
-/*     ISPEC = 9:  maximum size of the subproblems at the bottom of the   
-                   computation tree in the divide-and-conquer algorithm   
+/*     ISPEC = 9:  maximum size of the subproblems at the bottom of the
+                   computation tree in the divide-and-conquer algorithm
                    (used by xGELSD and xGESDD) */
 
     ret_val = 25;
@@ -2061,7 +2061,7 @@ L900:
 
 L1000:
 
-/*     ISPEC = 10: ieee NaN arithmetic can be trusted not to trap   
+/*     ISPEC = 10: ieee NaN arithmetic can be trusted not to trap
 
        ILAENV = 0 */
     ret_val = 1;
@@ -2072,7 +2072,7 @@ L1000:
 
 L1100:
 
-/*     ISPEC = 11: infinity arithmetic can be trusted not to trap   
+/*     ISPEC = 11: infinity arithmetic can be trusted not to trap
 
        ILAENV = 0 */
     ret_val = 1;
@@ -2087,44 +2087,44 @@ L1100:
 
 integer ieeeck_(integer *ispec, real *zero, real *one)
 {
-/*  -- LAPACK auxiliary routine (version 3.0) --   
-       Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd.,   
-       Courant Institute, Argonne National Lab, and Rice University   
-       June 30, 1998   
+/*  -- LAPACK auxiliary routine (version 3.0) --
+       Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd.,
+       Courant Institute, Argonne National Lab, and Rice University
+       June 30, 1998
 
 
-    Purpose   
-    =======   
+    Purpose
+    =======
 
-    IEEECK is called from the ILAENV to verify that Infinity and   
-    possibly NaN arithmetic is safe (i.e. will not trap).   
+    IEEECK is called from the ILAENV to verify that Infinity and
+    possibly NaN arithmetic is safe (i.e. will not trap).
 
-    Arguments   
-    =========   
+    Arguments
+    =========
 
-    ISPEC   (input) INTEGER   
-            Specifies whether to test just for inifinity arithmetic   
-            or whether to test for infinity and NaN arithmetic.   
-            = 0: Verify infinity arithmetic only.   
-            = 1: Verify infinity and NaN arithmetic.   
+    ISPEC   (input) INTEGER
+            Specifies whether to test just for inifinity arithmetic
+            or whether to test for infinity and NaN arithmetic.
+            = 0: Verify infinity arithmetic only.
+            = 1: Verify infinity and NaN arithmetic.
 
-    ZERO    (input) REAL   
-            Must contain the value 0.0   
-            This is passed to prevent the compiler from optimizing   
-            away this code.   
+    ZERO    (input) REAL
+            Must contain the value 0.0
+            This is passed to prevent the compiler from optimizing
+            away this code.
 
-    ONE     (input) REAL   
-            Must contain the value 1.0   
-            This is passed to prevent the compiler from optimizing   
-            away this code.   
+    ONE     (input) REAL
+            Must contain the value 1.0
+            This is passed to prevent the compiler from optimizing
+            away this code.
 
-    RETURN VALUE:  INTEGER   
-            = 0:  Arithmetic failed to produce the correct answers   
+    RETURN VALUE:  INTEGER
+            = 0:  Arithmetic failed to produce the correct answers
             = 1:  Arithmetic produced the correct answers */
     /* System generated locals */
     integer ret_val;
     /* Local variables */
-    static real neginf, posinf, negzro, newzro, nan1, nan2, nan3, nan4, nan5, 
+    static real neginf, posinf, negzro, newzro, nan1, nan2, nan3, nan4, nan5,
 	    nan6;
 
 
@@ -2235,75 +2235,75 @@ integer ieeeck_(integer *ispec, real *zero, real *one)
 /* Subroutine */ int dgetf2_(integer *m, integer *n, doublereal *a, integer *
 	lda, integer *ipiv, integer *info)
 {
-/*  -- LAPACK routine (version 3.0) --   
-       Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd.,   
-       Courant Institute, Argonne National Lab, and Rice University   
-       June 30, 1992   
+/*  -- LAPACK routine (version 3.0) --
+       Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd.,
+       Courant Institute, Argonne National Lab, and Rice University
+       June 30, 1992
 
 
-    Purpose   
-    =======   
+    Purpose
+    =======
 
-    DGETF2 computes an LU factorization of a general m-by-n matrix A   
-    using partial pivoting with row interchanges.   
+    DGETF2 computes an LU factorization of a general m-by-n matrix A
+    using partial pivoting with row interchanges.
 
-    The factorization has the form   
-       A = P * L * U   
-    where P is a permutation matrix, L is lower triangular with unit   
-    diagonal elements (lower trapezoidal if m > n), and U is upper   
-    triangular (upper trapezoidal if m < n).   
+    The factorization has the form
+       A = P * L * U
+    where P is a permutation matrix, L is lower triangular with unit
+    diagonal elements (lower trapezoidal if m > n), and U is upper
+    triangular (upper trapezoidal if m < n).
 
-    This is the right-looking Level 2 BLAS version of the algorithm.   
+    This is the right-looking Level 2 BLAS version of the algorithm.
 
-    Arguments   
-    =========   
+    Arguments
+    =========
 
-    M       (input) INTEGER   
-            The number of rows of the matrix A.  M >= 0.   
+    M       (input) INTEGER
+            The number of rows of the matrix A.  M >= 0.
 
-    N       (input) INTEGER   
-            The number of columns of the matrix A.  N >= 0.   
+    N       (input) INTEGER
+            The number of columns of the matrix A.  N >= 0.
 
-    A       (input/output) DOUBLE PRECISION array, dimension (LDA,N)   
-            On entry, the m by n matrix to be factored.   
-            On exit, the factors L and U from the factorization   
-            A = P*L*U; the unit diagonal elements of L are not stored.   
+    A       (input/output) DOUBLE PRECISION array, dimension (LDA,N)
+            On entry, the m by n matrix to be factored.
+            On exit, the factors L and U from the factorization
+            A = P*L*U; the unit diagonal elements of L are not stored.
 
-    LDA     (input) INTEGER   
-            The leading dimension of the array A.  LDA >= max(1,M).   
+    LDA     (input) INTEGER
+            The leading dimension of the array A.  LDA >= max(1,M).
 
-    IPIV    (output) INTEGER array, dimension (min(M,N))   
-            The pivot indices; for 1 <= i <= min(M,N), row i of the   
-            matrix was interchanged with row IPIV(i).   
+    IPIV    (output) INTEGER array, dimension (min(M,N))
+            The pivot indices; for 1 <= i <= min(M,N), row i of the
+            matrix was interchanged with row IPIV(i).
 
-    INFO    (output) INTEGER   
-            = 0: successful exit   
-            < 0: if INFO = -k, the k-th argument had an illegal value   
-            > 0: if INFO = k, U(k,k) is exactly zero. The factorization   
-                 has been completed, but the factor U is exactly   
-                 singular, and division by zero will occur if it is used   
-                 to solve a system of equations.   
+    INFO    (output) INTEGER
+            = 0: successful exit
+            < 0: if INFO = -k, the k-th argument had an illegal value
+            > 0: if INFO = k, U(k,k) is exactly zero. The factorization
+                 has been completed, but the factor U is exactly
+                 singular, and division by zero will occur if it is used
+                 to solve a system of equations.
 
-    =====================================================================   
+    =====================================================================
 
 
-       Test the input parameters.   
+       Test the input parameters.
 
        Parameter adjustments */
     /* Table of constant values */
     static integer c__1 = 1;
     static doublereal c_b6 = -1.;
-    
+
     /* System generated locals */
     integer a_dim1, a_offset, i__1, i__2, i__3;
     doublereal d__1;
     /* Local variables */
-    extern /* Subroutine */ int dger_(integer *, integer *, doublereal *, 
-	    doublereal *, integer *, doublereal *, integer *, doublereal *, 
+    extern /* Subroutine */ int dger_(integer *, integer *, doublereal *,
+	    doublereal *, integer *, doublereal *, integer *, doublereal *,
 	    integer *);
     static integer j;
-    extern /* Subroutine */ int dscal_(integer *, doublereal *, doublereal *, 
-	    integer *), dswap_(integer *, doublereal *, integer *, doublereal 
+    extern /* Subroutine */ int dscal_(integer *, doublereal *, doublereal *,
+	    integer *), dswap_(integer *, doublereal *, integer *, doublereal
 	    *, integer *);
     static integer jp;
     extern integer idamax_(integer *, doublereal *, integer *);
@@ -2372,7 +2372,7 @@ integer ieeeck_(integer *ispec, real *zero, real *one)
 
 	    i__2 = *m - j;
 	    i__3 = *n - j;
-	    dger_(&i__2, &i__3, &c_b6, &a_ref(j + 1, j), &c__1, &a_ref(j, j + 
+	    dger_(&i__2, &i__3, &c_b6, &a_ref(j + 1, j), &c__1, &a_ref(j, j +
 		    1), lda, &a_ref(j + 1, j + 1), lda);
 	}
 /* L10: */
@@ -2386,8 +2386,8 @@ integer ieeeck_(integer *ispec, real *zero, real *one)
 #undef a_ref
 
 
-/* Subroutine */ int dger_(integer *m, integer *n, doublereal *alpha, 
-	doublereal *x, integer *incx, doublereal *y, integer *incy, 
+/* Subroutine */ int dger_(integer *m, integer *n, doublereal *alpha,
+	doublereal *x, integer *incx, doublereal *y, integer *incy,
 	doublereal *a, integer *lda)
 {
     /* System generated locals */
@@ -2398,59 +2398,59 @@ integer ieeeck_(integer *ispec, real *zero, real *one)
     static integer i__, j, ix, jy, kx;
     extern /* Subroutine */ int xerbla_(char *, integer *);
 #define a_ref(a_1,a_2) a[(a_2)*a_dim1 + a_1]
-/*  Purpose   
-    =======   
-    DGER   performs the rank 1 operation   
-       A := alpha*x*y' + A,   
-    where alpha is a scalar, x is an m element vector, y is an n element   
-    vector and A is an m by n matrix.   
-    Parameters   
-    ==========   
-    M      - INTEGER.   
-             On entry, M specifies the number of rows of the matrix A.   
-             M must be at least zero.   
-             Unchanged on exit.   
-    N      - INTEGER.   
-             On entry, N specifies the number of columns of the matrix A.   
-             N must be at least zero.   
-             Unchanged on exit.   
-    ALPHA  - DOUBLE PRECISION.   
-             On entry, ALPHA specifies the scalar alpha.   
-             Unchanged on exit.   
-    X      - DOUBLE PRECISION array of dimension at least   
-             ( 1 + ( m - 1 )*abs( INCX ) ).   
-             Before entry, the incremented array X must contain the m   
-             element vector x.   
-             Unchanged on exit.   
-    INCX   - INTEGER.   
-             On entry, INCX specifies the increment for the elements of   
-             X. INCX must not be zero.   
-             Unchanged on exit.   
-    Y      - DOUBLE PRECISION array of dimension at least   
-             ( 1 + ( n - 1 )*abs( INCY ) ).   
-             Before entry, the incremented array Y must contain the n   
-             element vector y.   
-             Unchanged on exit.   
-    INCY   - INTEGER.   
-             On entry, INCY specifies the increment for the elements of   
-             Y. INCY must not be zero.   
-             Unchanged on exit.   
-    A      - DOUBLE PRECISION array of DIMENSION ( LDA, n ).   
-             Before entry, the leading m by n part of the array A must   
-             contain the matrix of coefficients. On exit, A is   
-             overwritten by the updated matrix.   
-    LDA    - INTEGER.   
-             On entry, LDA specifies the first dimension of A as declared   
-             in the calling (sub) program. LDA must be at least   
-             max( 1, m ).   
-             Unchanged on exit.   
-    Level 2 Blas routine.   
-    -- Written on 22-October-1986.   
-       Jack Dongarra, Argonne National Lab.   
-       Jeremy Du Croz, Nag Central Office.   
-       Sven Hammarling, Nag Central Office.   
-       Richard Hanson, Sandia National Labs.   
-       Test the input parameters.   
+/*  Purpose
+    =======
+    DGER   performs the rank 1 operation
+       A := alpha*x*y' + A,
+    where alpha is a scalar, x is an m element vector, y is an n element
+    vector and A is an m by n matrix.
+    Parameters
+    ==========
+    M      - INTEGER.
+             On entry, M specifies the number of rows of the matrix A.
+             M must be at least zero.
+             Unchanged on exit.
+    N      - INTEGER.
+             On entry, N specifies the number of columns of the matrix A.
+             N must be at least zero.
+             Unchanged on exit.
+    ALPHA  - DOUBLE PRECISION.
+             On entry, ALPHA specifies the scalar alpha.
+             Unchanged on exit.
+    X      - DOUBLE PRECISION array of dimension at least
+             ( 1 + ( m - 1 )*abs( INCX ) ).
+             Before entry, the incremented array X must contain the m
+             element vector x.
+             Unchanged on exit.
+    INCX   - INTEGER.
+             On entry, INCX specifies the increment for the elements of
+             X. INCX must not be zero.
+             Unchanged on exit.
+    Y      - DOUBLE PRECISION array of dimension at least
+             ( 1 + ( n - 1 )*abs( INCY ) ).
+             Before entry, the incremented array Y must contain the n
+             element vector y.
+             Unchanged on exit.
+    INCY   - INTEGER.
+             On entry, INCY specifies the increment for the elements of
+             Y. INCY must not be zero.
+             Unchanged on exit.
+    A      - DOUBLE PRECISION array of DIMENSION ( LDA, n ).
+             Before entry, the leading m by n part of the array A must
+             contain the matrix of coefficients. On exit, A is
+             overwritten by the updated matrix.
+    LDA    - INTEGER.
+             On entry, LDA specifies the first dimension of A as declared
+             in the calling (sub) program. LDA must be at least
+             max( 1, m ).
+             Unchanged on exit.
+    Level 2 Blas routine.
+    -- Written on 22-October-1986.
+       Jack Dongarra, Argonne National Lab.
+       Jeremy Du Croz, Nag Central Office.
+       Sven Hammarling, Nag Central Office.
+       Richard Hanson, Sandia National Labs.
+       Test the input parameters.
        Parameter adjustments */
     --x;
     --y;
@@ -2478,7 +2478,7 @@ integer ieeeck_(integer *ispec, real *zero, real *one)
     if (*m == 0 || *n == 0 || *alpha == 0.) {
 	return 0;
     }
-/*     Start the operations. In this version the elements of A are   
+/*     Start the operations. In this version the elements of A are
        accessed sequentially with one pass through A. */
     if (*incy > 0) {
 	jy = 1;
@@ -2526,18 +2526,18 @@ integer ieeeck_(integer *ispec, real *zero, real *one)
 } /* dger_ */
 #undef a_ref
 
-/* Subroutine */ int dscal_(integer *n, doublereal *da, doublereal *dx, 
+/* Subroutine */ int dscal_(integer *n, doublereal *da, doublereal *dx,
 	integer *incx)
 {
     /* System generated locals */
     integer i__1, i__2;
     /* Local variables */
     static integer i__, m, nincx, mp1;
-/*     scales a vector by a constant.   
-       uses unrolled loops for increment equal to one.   
-       jack dongarra, linpack, 3/11/78.   
-       modified 3/93 to return if incx .le. 0.   
-       modified 12/3/93, array(1) declarations changed to array(*)   
+/*     scales a vector by a constant.
+       uses unrolled loops for increment equal to one.
+       jack dongarra, linpack, 3/11/78.
+       modified 3/93 to return if incx .le. 0.
+       modified 12/3/93, array(1) declarations changed to array(*)
        Parameter adjustments */
     --dx;
     /* Function Body */
@@ -2556,7 +2556,7 @@ integer ieeeck_(integer *ispec, real *zero, real *one)
 /* L10: */
     }
     return 0;
-/*        code for increment equal to 1   
+/*        code for increment equal to 1
           clean-up loop */
 L20:
     m = *n % 5;
@@ -2586,7 +2586,7 @@ L40:
 } /* dscal_ */
 
 
-/* Subroutine */ int dswap_(integer *n, doublereal *dx, integer *incx, 
+/* Subroutine */ int dswap_(integer *n, doublereal *dx, integer *incx,
 	doublereal *dy, integer *incy)
 {
     /* System generated locals */
@@ -2595,10 +2595,10 @@ L40:
     static integer i__, m;
     static doublereal dtemp;
     static integer ix, iy, mp1;
-/*     interchanges two vectors.   
-       uses unrolled loops for increments equal one.   
-       jack dongarra, linpack, 3/11/78.   
-       modified 12/3/93, array(1) declarations changed to array(*)   
+/*     interchanges two vectors.
+       uses unrolled loops for increments equal one.
+       jack dongarra, linpack, 3/11/78.
+       modified 12/3/93, array(1) declarations changed to array(*)
        Parameter adjustments */
     --dy;
     --dx;
@@ -2609,7 +2609,7 @@ L40:
     if (*incx == 1 && *incy == 1) {
 	goto L20;
     }
-/*       code for unequal increments or equal increments not equal   
+/*       code for unequal increments or equal increments not equal
            to 1 */
     ix = 1;
     iy = 1;
@@ -2629,7 +2629,7 @@ L40:
 /* L10: */
     }
     return 0;
-/*       code for both increments equal to 1   
+/*       code for both increments equal to 1
          clean-up loop */
 L20:
     m = *n % 3;
@@ -2673,10 +2673,10 @@ integer idamax_(integer *n, doublereal *dx, integer *incx)
     /* Local variables */
     static doublereal dmax__;
     static integer i__, ix;
-/*     finds the index of element having max. absolute value.   
-       jack dongarra, linpack, 3/11/78.   
-       modified 3/93 to return if incx .le. 0.   
-       modified 12/3/93, array(1) declarations changed to array(*)   
+/*     finds the index of element having max. absolute value.
+       jack dongarra, linpack, 3/11/78.
+       modified 3/93 to return if incx .le. 0.
+       modified 12/3/93, array(1) declarations changed to array(*)
        Parameter adjustments */
     --dx;
     /* Function Body */

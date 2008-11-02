@@ -4,7 +4,7 @@ function expression_index1
   output Real[size(x,2)] y;
 
 algorithm
-  
+
   y := x[:,1];
 
 end expression_index1;

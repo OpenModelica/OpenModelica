@@ -12,14 +12,14 @@
 
 #include "f2c.h"
 
-/* Subroutine */ int bigden_(integer *n, integer *npt, doublereal *xopt, 
-	doublereal *xpt, doublereal *bmat, doublereal *zmat, integer *idz, 
-	integer *ndim, integer *kopt, integer *knew, doublereal *d__, 
-	doublereal *w, doublereal *vlag, doublereal *beta, doublereal *s, 
+/* Subroutine */ int bigden_(integer *n, integer *npt, doublereal *xopt,
+	doublereal *xpt, doublereal *bmat, doublereal *zmat, integer *idz,
+	integer *ndim, integer *kopt, integer *knew, doublereal *d__,
+	doublereal *w, doublereal *vlag, doublereal *beta, doublereal *s,
 	doublereal *wvec, doublereal *prod)
 {
     /* System generated locals */
-    integer xpt_dim1, xpt_offset, bmat_dim1, bmat_offset, zmat_dim1, 
+    integer xpt_dim1, xpt_offset, bmat_dim1, bmat_offset, zmat_dim1,
 	    zmat_offset, wvec_dim1, wvec_offset, prod_dim1, prod_offset, i__1,
 	     i__2;
     doublereal d__1;
@@ -34,7 +34,7 @@
     static integer jc;
     static doublereal ds;
     static integer ip, iu, nw;
-    static doublereal ss, den[9], one, par[9], tau, sum, two, diff, half, 
+    static doublereal ss, den[9], one, par[9], tau, sum, two, diff, half,
 	    temp;
     static integer ksav;
     static doublereal step;
@@ -43,7 +43,7 @@
     static integer iterc;
     static doublereal tempa, tempb, tempc;
     static integer isave;
-    static doublereal ssden, dtest, quart, xoptd, twopi, xopts, denold, 
+    static doublereal ssden, dtest, quart, xoptd, twopi, xopts, denold,
 	    denmax, densav, dstemp, sumold, sstemp, xoptsq;
 
 
@@ -281,7 +281,7 @@ L70:
 		i__2 = *n;
 		for (j = 1; j <= i__2; ++j) {
 /* L160: */
-		    sum += bmat[k + j * bmat_dim1] * wvec[*npt + j + jc * 
+		    sum += bmat[k + j * bmat_dim1] * wvec[*npt + j + jc *
 			    wvec_dim1];
 		}
 /* L170: */
@@ -307,7 +307,7 @@ L70:
     for (k = 1; k <= i__1; ++k) {
 	sum = zero;
 	for (i__ = 1; i__ <= 5; ++i__) {
-	    par[i__ - 1] = half * prod[k + i__ * prod_dim1] * wvec[k + i__ * 
+	    par[i__ - 1] = half * prod[k + i__ * prod_dim1] * wvec[k + i__ *
 		    wvec_dim1];
 /* L200: */
 	    sum += par[i__ - 1];
@@ -315,30 +315,30 @@ L70:
 	den[0] = den[0] - par[0] - sum;
 	tempa = prod[k + prod_dim1] * wvec[k + (wvec_dim1 << 1)] + prod[k + (
 		prod_dim1 << 1)] * wvec[k + wvec_dim1];
-	tempb = prod[k + (prod_dim1 << 1)] * wvec[k + (wvec_dim1 << 2)] + 
+	tempb = prod[k + (prod_dim1 << 1)] * wvec[k + (wvec_dim1 << 2)] +
 		prod[k + (prod_dim1 << 2)] * wvec[k + (wvec_dim1 << 1)];
-	tempc = prod[k + prod_dim1 * 3] * wvec[k + wvec_dim1 * 5] + prod[k + 
+	tempc = prod[k + prod_dim1 * 3] * wvec[k + wvec_dim1 * 5] + prod[k +
 		prod_dim1 * 5] * wvec[k + wvec_dim1 * 3];
 	den[1] = den[1] - tempa - half * (tempb + tempc);
 	den[5] -= half * (tempb - tempc);
-	tempa = prod[k + prod_dim1] * wvec[k + wvec_dim1 * 3] + prod[k + 
+	tempa = prod[k + prod_dim1] * wvec[k + wvec_dim1 * 3] + prod[k +
 		prod_dim1 * 3] * wvec[k + wvec_dim1];
-	tempb = prod[k + (prod_dim1 << 1)] * wvec[k + wvec_dim1 * 5] + prod[k 
+	tempb = prod[k + (prod_dim1 << 1)] * wvec[k + wvec_dim1 * 5] + prod[k
 		+ prod_dim1 * 5] * wvec[k + (wvec_dim1 << 1)];
-	tempc = prod[k + prod_dim1 * 3] * wvec[k + (wvec_dim1 << 2)] + prod[k 
+	tempc = prod[k + prod_dim1 * 3] * wvec[k + (wvec_dim1 << 2)] + prod[k
 		+ (prod_dim1 << 2)] * wvec[k + wvec_dim1 * 3];
 	den[2] = den[2] - tempa - half * (tempb - tempc);
 	den[6] -= half * (tempb + tempc);
 	tempa = prod[k + prod_dim1] * wvec[k + (wvec_dim1 << 2)] + prod[k + (
 		prod_dim1 << 2)] * wvec[k + wvec_dim1];
 	den[3] = den[3] - tempa - par[1] + par[2];
-	tempa = prod[k + prod_dim1] * wvec[k + wvec_dim1 * 5] + prod[k + 
+	tempa = prod[k + prod_dim1] * wvec[k + wvec_dim1 * 5] + prod[k +
 		prod_dim1 * 5] * wvec[k + wvec_dim1];
-	tempb = prod[k + (prod_dim1 << 1)] * wvec[k + wvec_dim1 * 3] + prod[k 
+	tempb = prod[k + (prod_dim1 << 1)] * wvec[k + wvec_dim1 * 3] + prod[k
 		+ prod_dim1 * 3] * wvec[k + (wvec_dim1 << 1)];
 	den[4] = den[4] - tempa - half * tempb;
 	den[7] = den[7] - par[3] + par[4];
-	tempa = prod[k + (prod_dim1 << 2)] * wvec[k + wvec_dim1 * 5] + prod[k 
+	tempa = prod[k + (prod_dim1 << 2)] * wvec[k + wvec_dim1 * 5] + prod[k
 		+ prod_dim1 * 5] * wvec[k + (wvec_dim1 << 2)];
 /* L210: */
 	den[8] -= half * tempa;
@@ -371,7 +371,7 @@ L70:
     denex[4] = alpha * den[4] + tempa + prod[*knew + (prod_dim1 << 1)] * prod[
 	    *knew + prod_dim1 * 3];
     denex[7] = alpha * den[7] + par[3] - par[4];
-    denex[8] = alpha * den[8] + prod[*knew + (prod_dim1 << 2)] * prod[*knew + 
+    denex[8] = alpha * den[8] + prod[*knew + (prod_dim1 << 2)] * prod[*knew +
 	    prod_dim1 * 5];
 
 /*     Seek the value of the angle that maximizes the modulus of DENOM. */
