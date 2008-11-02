@@ -18,7 +18,7 @@ are permitted provided that the following conditions are met:
 
     * Redistributions of source code must retain the above copyright notice,
       this list of conditions and the following disclaimer.
-    
+
 	* Redistributions in binary form must reproduce the above copyright notice,
       this list of conditions and the following disclaimer in the documentation
       and/or other materials provided with the distribution.
@@ -45,7 +45,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 ------------------------------------------------------------------------------------
 */
 
-/*! 
+/*!
  * \file cellcommands.h
  * \author Ingemar Axelsson and Anders Fernström
  *
@@ -72,7 +72,7 @@ typedef vector<Rule *> rules_t;
 
 namespace IAEX
 {
-   /*! 
+   /*!
     * \class AddCellCommand
 	* \author Ingemar Axelsson and Anders Fernström
     *
@@ -94,7 +94,7 @@ namespace IAEX
 			else
 				style = *cursor->currentCell()->style();
 
-			
+
 			//This does not work.
 			if(cursor->currentCell()->isClosed())
 			{
@@ -112,14 +112,14 @@ namespace IAEX
 
 			// 2005-11-21 AF, Added check if the current cell is a
 			// inputcell, set style to 'text' insted.
-			// 2006-02-03 AF, added check if the current cell is a 
+			// 2006-02-03 AF, added check if the current cell is a
 			// groupcell
 			if( style.name() == "input" || style.name() == "Input" || style.name() == "ModelicaInput" ||
 				style.name() == "cellgroup" )
 				cursor->addBefore(fac->createCell( "Text" ));
 			else
 				cursor->addBefore(fac->createCell(style.name()));
-	
+
 			if(cursor->currentCell()->isClosed())
 			{
 				if(cursor->currentCell()->hasChilds())
@@ -135,7 +135,7 @@ namespace IAEX
 			}
 
 			//2006-01-18 AF, set docuement changed
-			document()->setChanged( true );			
+			document()->setChanged( true );
 		}
 		catch(exception &e)
 		{
@@ -144,8 +144,8 @@ namespace IAEX
 			throw runtime_error( str.c_str() );
 		}
 	}
-   
-   /*! 
+
+   /*!
     * \class CreateNewCellCommand
 	* \author Ingemar Axelsson
     *
@@ -156,9 +156,9 @@ namespace IAEX
       try
       {
 	 CellCursor *cursor = document()->getCursor();
-	 
+
 	 Factory *fac = document()->cellFactory();
-	 
+
 	 //This does not work.
 	 if(cursor->currentCell()->isClosed())
 	 {
@@ -173,9 +173,9 @@ namespace IAEX
 	    cursor->currentCell()->setReadOnly(true);
 	    cursor->currentCell()->setFocus(false);
 	 }
-	 
+
 	 cursor->addBefore(fac->createCell(style_));
-	 
+
 	 if(cursor->currentCell()->isClosed())
 	 {
 	    if(cursor->currentCell()->hasChilds())
@@ -202,11 +202,11 @@ namespace IAEX
    }
 
 
-   /*! 
-    * \class CopySelectedCellsCommand 
+   /*!
+    * \class CopySelectedCellsCommand
 	* \author Ingemar Axelsson
 	*
-    * \brief copy a cell. Adds a copy of the cell on the pasteboard. 
+    * \brief copy a cell. Adds a copy of the cell on the pasteboard.
     *
 	*
     * \todo Implement some kind of internal state or copy constructors
@@ -220,25 +220,25 @@ namespace IAEX
    {
       CellCursor *c = document()->getCursor();
       vector<Cell *> cells = document()->getSelection();
-      
+
       if(cells.empty())
       {
 		  return;
-		//Empty pasteboard. 
+		//Empty pasteboard.
 		//application()->clearPasteboard();
 		//application()->addToPasteboard(c->currentCell());
       }
       else
-      {		 
+      {
 		document()->clearSelection(); //Notice
 		application()->clearPasteboard();
-		 
+
 		vector<Cell *>::iterator i = cells.begin();
 		for(;i != cells.end();++i)
 		{
 			application()->addToPasteboard((*i));
 		}
-      }   
+      }
    }
 
    /*! What happens if a Groupcell is removed?
@@ -249,35 +249,35 @@ namespace IAEX
       {
 	 CellCursor *c = document()->getCursor();
 	 vector<Cell *> cells = document()->getSelection();
-	 
+
 	 if(cells.empty())
 	 {
 		 return;
-	    //Empty pasteboard. 
+	    //Empty pasteboard.
 	    //application()->clearPasteboard();
 	    //application()->addToPasteboard(c->currentCell());
-	    
+
 	    //c->removeCurrentCell();
 	 }
 	 else
 	 {
-	    
+
 	    document()->clearSelection(); //Notice
 	    application()->clearPasteboard();
-	    
+
 	    vector<Cell *>::iterator i = cells.begin();
 	    for(;i != cells.end();++i)
 	    {
 	       c->moveAfter((*i));
-	       
+
 	       //1. Copy cell to pasteboard.
 	       application()->addToPasteboard(c->currentCell());
-	       
+
 	       //2. Delete Cell.
 	       c->removeCurrentCell();
 	    }
 	 }
-	
+
 	 //2006-01-18 AF, set docuement changed
 			document()->setChanged( true );
       }
@@ -288,7 +288,7 @@ namespace IAEX
 		throw runtime_error( str.c_str() );
       }
    }
-   
+
    //Det borde vara möjligt att titta på stylen för att avgöra om en
    //cell är en grupp cell. Då borde det gå att kopiera in underceller
    //också.
@@ -334,7 +334,7 @@ namespace IAEX
 			throw runtime_error( str.c_str() );
 		}
 	}
-	
+
 	// 2006-01-16 AF, move this code to a seperated function
 	// 2006-09-04 AF, redid entire function, so groupcells are created, have there
 	// children added and THEN add to the documnet
@@ -360,7 +360,7 @@ namespace IAEX
 			cursor->currentCell()->setFocus(false);
 		}
 
-		// create the new cell, if there exists a groupcell add the new cell to 
+		// create the new cell, if there exists a groupcell add the new cell to
 		// that groupcell.
 		Cell* newCell = factory->createCell( style.name() );
 //		if( groupcell )
@@ -369,7 +369,7 @@ namespace IAEX
 
 		// set content of cell
 		// *************************************************************************
-		
+
 		// COPY - EVERY CELL TYPE
 		// ----------------------
 		newCell->setCellTag( cell->cellTag() );
@@ -456,20 +456,20 @@ namespace IAEX
 			cursor->currentCell()->setFocus(true);
 		}
 	}
-   
-   /*! 
-    * \class DeleteSelectedCellsCommand 
+
+   /*!
+    * \class DeleteSelectedCellsCommand
 	* \author Ingemar Axelsson
     *
     * Deletes all selected cells. If no cell is selected the cell that
     * is before the cursor is deleted.
-    * 
+    *
     * What happens when all cells in a cellgroup is empty? Should the
     * cellgroup be deleted? Or what to do with it?
     *
     * Notice that the selection must be cleared.
     *
-    * 
+    *
     * \bug When all cells within a cellgroup is deleted. The cellgroup
     * should also be deleted then. What if all but one cell is deleted?
     */
@@ -485,7 +485,7 @@ namespace IAEX
 	 else
 	 {
 	    document()->clearSelection(); //Notice
-			
+
 	    vector<Cell *>::iterator i = cells.begin();
 	    for(;i != cells.end();++i)
 	    {
@@ -507,7 +507,7 @@ namespace IAEX
 
 
 
-   	/*! 
+   	/*!
 	 * \class ChangeStyleOnSelectedCellsCommand
 	 * \author Ingemar Axelsson and Anders Fernström
 	 * \date 2005-10-28 (update)
@@ -571,22 +571,22 @@ namespace IAEX
 		  string str = string("ChangeStyleOnCurrentCellCommand(), Exception: \n") + e.what();
 		throw runtime_error( str.c_str() );
       }
-   }   
+   }
 
-   
+
    void MakeGroupCellCommand::execute()
    {
       try
       {
 	 Factory *fac = document()->cellFactory();
-	 CellCursor *cursor = document()->getCursor();	    
-	 
-	 Cell *prev = cursor->currentCell();	    
+	 CellCursor *cursor = document()->getCursor();
+
+	 Cell *prev = cursor->currentCell();
 	 cursor->currentCell()->parentCell()->removeChild(prev);
-	   
+
 	 Cell *group = fac->createCell("cellgroup", cursor->parentCell());
-	 
-	 group->addChild(prev);	    
+
+	 group->addChild(prev);
 	 cursor->addBefore(group);
 	 cursor->moveToLastChild(group);
 
@@ -598,12 +598,12 @@ namespace IAEX
 		  // 2006-01-30 AF, add exception
 		  string str = string("MakeGroupCellCommand(), Exception: \n") + e.what();
 		throw runtime_error( str.c_str() );
-		  
+
       }
    }
 
-   /*! 
-    * \class UngroupCellCommand 
+   /*!
+    * \class UngroupCellCommand
     * \author Anders Fernström
     * \date 2006-04-26
     *
@@ -695,8 +695,8 @@ namespace IAEX
 		}
 	}
 
- /*! 
-    * \class SplitCellCommand 
+ /*!
+    * \class SplitCellCommand
     * \author Anders Fernström
     * \date 2006-04-26
     *

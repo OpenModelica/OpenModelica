@@ -3,7 +3,7 @@
 ######################################################################
 
 TEMPLATE = app
-TARGET = 
+TARGET =
 DEPENDPATH += .
 INCLUDEPATH += . \
                ../Pltpkg2
@@ -16,7 +16,7 @@ unix:LIBS += $${MICO_LIBS} $${COIN_LIBS} $${SOQT_LIBS}
 MICOHOME = $$system(mico-config --prefix)
 COIN_INCLUDE = $$system(coin-config --includedir)
 SOQT_INCLUDE = $$system(soqt-config --includedir)
-INCLUDEPATH += $${COIN_INCLUDE} $${SOQT_INCLUDE} 
+INCLUDEPATH += $${COIN_INCLUDE} $${SOQT_INCLUDE}
 
 QT += network xml
 CONFIG += warn_off
@@ -27,7 +27,7 @@ HEADERS += ../Pltpkg2/legendLabel.h \
 	   ../Pltpkg2/dataSelect.h \
            ../Pltpkg2/graphWindow.h \
            ../Pltpkg2/curve.h \
-	   ../Pltpkg2/point.h \ 
+	   ../Pltpkg2/point.h \
 	   ../Pltpkg2/label.h \
 	   ../Pltpkg2/focusRect.h \
 	   ../Pltpkg2/graphScene.h \

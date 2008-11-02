@@ -18,7 +18,7 @@ are permitted provided that the following conditions are met:
 
     * Redistributions of source code must retain the above copyright notice,
       this list of conditions and the following disclaimer.
-    
+
 	* Redistributions in binary form must reproduce the above copyright notice,
       this list of conditions and the following disclaimer in the documentation
       and/or other materials provided with the distribution.
@@ -57,7 +57,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 
 namespace IAEX
 {
-   
+
    /*!\inteface Command
     * \brief Interface for creating cell commands.
     *
@@ -78,18 +78,18 @@ namespace IAEX
     */
    class Command
    {
-   public: 
+   public:
       virtual void execute() = 0;
-      
+
       virtual QString commandName(){ return QString("NoCommandNameSet");}
-      
+
       void setDocument(Document *document){document_ = document;}
       void setApplication(Application *app){application_ = app;}
 
    protected:
       Document *document(){ return document_;}
       Application *application(){return application_;}
-      
+
    private:
       Document *document_;
       Application *application_;
@@ -102,13 +102,13 @@ namespace IAEX
     *
     * This is not fully implemented. It is just a template for the
     * composite command.
-    * 
+    *
     * One command could execute a lot of things. Notice that commands
     * are executed in the order that they are added (or see STL
     * vector). This command could be used to make some kind of macro
     * of other commands. It seems to be very powerful.
     *
-    * Use this class with caution. 
+    * Use this class with caution.
     */
    class CompositeCommand : public Command
    {
@@ -116,7 +116,7 @@ namespace IAEX
       CompositeCommand(){}
       virtual ~CompositeCommand(){}
       void add(Command *c){commands_.push_back(c);}
-      
+
       virtual void execute()
       {
 	 vector<Command*>::iterator i = commands_.begin();

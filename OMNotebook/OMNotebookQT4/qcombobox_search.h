@@ -45,7 +45,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 ------------------------------------------------------------------------------------
 */
 
-/*! 
+/*!
  * \file qcombobox_search.h
  * \author Anders Fernström
  * \date 2006-08-24

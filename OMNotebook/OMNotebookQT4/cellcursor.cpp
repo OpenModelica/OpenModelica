@@ -46,8 +46,8 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 ------------------------------------------------------------------------------------
 */
 
-/*! 
- * \file cellcursor.h 
+/*!
+ * \file cellcursor.h
  * \author Ingemar Axelsson (and Anders Fenström)
  *
  * \brief Implementation of a marker made as an Cell.
@@ -70,8 +70,8 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 namespace IAEX
 {
 
-	/*! 
-	 * \class CellCursor 
+	/*!
+	 * \class CellCursor
 	 *
 	 * \brief Implements a special type of cell that
 	 * is used as a cursor within the document.
@@ -82,15 +82,15 @@ namespace IAEX
 	 *
 	 * This class should be inherited with a lot of precaution. It has
 	 * a lot of responsibility and dependency within the
-	 * application. So change it with caution. 
+	 * application. So change it with caution.
 	 *
 	 * To change the cursors look reimplement the CursorWidget to have
 	 * the desired look.
-	 * 
+	 *
 	 */
 
 
-	/*! 
+	/*!
 	 * \author Ingemar Axelsson
 	 *
 	 * \brief The class constructor
@@ -114,23 +114,23 @@ namespace IAEX
 		setCursor( mousecursor );
 	}
 
-	/*! 
+	/*!
 	 * \author Ingemar Axelsson
 	 *
 	 * \brief The class destructor
-	 */   
+	 */
 	CellCursor::~CellCursor()
 	{
 
-	}   
+	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-10-28
 	 *
-	 * \brief Function for telling if the user is allowed to change 
+	 * \brief Function for telling if the user is allowed to change
 	 * the text settings for the text inside the cell. User isn't
-	 * allowed to change the text settings for cellcursor so this 
+	 * allowed to change the text settings for cellcursor so this
 	 * function always return false.
 	 *
 	 * \return False
@@ -140,7 +140,7 @@ namespace IAEX
 		return false;
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2006-04-27
 	 *
@@ -151,7 +151,7 @@ namespace IAEX
 		return clickedOn_;
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2006-04-27
 	 *
@@ -162,7 +162,7 @@ namespace IAEX
 		clickedOn_ = true;
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2006-04-27
 	 *
@@ -186,7 +186,7 @@ namespace IAEX
 	{
 		//Does not have any childs!
 		v.visitCellCursorNodeBefore(this);
-		v.visitCellCursorNodeAfter(this);  
+		v.visitCellCursorNodeAfter(this);
 
 		if(hasNext())
 			next()->accept(v);
@@ -216,12 +216,12 @@ namespace IAEX
 		}
 
 		parentCell()->addCellWidget(newCell);
-				
+
 		// TMP EMIT
 		emit changedPosition();
 	}
 
-	/*! \brief Replaces current cell with a new cell. 
+	/*! \brief Replaces current cell with a new cell.
 	*
 	* \todo create a cellcopy operation.
 	* \todo test!
@@ -264,7 +264,7 @@ namespace IAEX
 
 		//Insert all widgets again.
 		par->addCellWidgets();
-	} 
+	}
 
 	/*!
 	* Removes a cell and all its subcells from the tree.
@@ -317,7 +317,7 @@ namespace IAEX
 			//removeCurrentCell();
 
 			//OLD CODE
-			//Remove currentCell. 
+			//Remove currentCell.
 			Cell *current = previous(); //Save a pointer to the cell being deleted.
 
 			removeCurrentCell();
@@ -337,7 +337,7 @@ namespace IAEX
 			// 	 current->setLast(0);
 
 			//Segfault on delete.
-			delete current;	 
+			delete current;
 
 			//parentCell()->addCellWidgets();
 		}
@@ -345,11 +345,11 @@ namespace IAEX
 		emit changedPosition();
 	}
 
-	/*! Returns current cell. 
+	/*! Returns current cell.
 	*/
 	Cell *CellCursor::currentCell()
 	{
-		if(!hasPrevious()) //First in group. 
+		if(!hasPrevious()) //First in group.
 			return parentCell(); //Will always work.
 		else
 			return previous();
@@ -360,7 +360,7 @@ namespace IAEX
 	bool CellCursor::moveUp()
 	{
 		// 2006-08-24 AF,
-        bool moved( false );		
+        bool moved( false );
 
 		// 2006-04-27 AF,
 		cursorIsMoved();
@@ -373,7 +373,7 @@ namespace IAEX
 				moved = true;
 			}
 		}
-		else 
+		else
 		{
 			//previous() exists.
 			if(previous()->hasChilds())
@@ -390,24 +390,24 @@ namespace IAEX
 				}
 			}
 			else
-			{  
+			{
 				moveBefore(previous());
 				moved = true;
 			}
 		}
 		emit positionChanged(x(), y(), 5,5);
-		
+
 		// TMP EMIT
 		emit changedPosition();
 		return moved;
 	}
 
 	/*!
-	* \bug Segmentationfault when last cell.  
-	* 
+	* \bug Segmentationfault when last cell.
+	*
 	* \todo It is better that Commands take care of how to change
 	* state of cells.(Ingemar Axelsson)
-	* 
+	*
 	* 2006-08-24 AF, changed so the function returns a boolean value, true if
 	* the cursor is moved.
 	*/
@@ -430,7 +430,7 @@ namespace IAEX
 		else //Has next.
 		{
 			if(next()->hasChilds())
-			{  
+			{
 				if(!next()->isClosed())
 				{
 					moveToFirstChild(next());
@@ -469,7 +469,7 @@ namespace IAEX
 			moveBefore(parent->child());
 			parent->addCellWidgets();
 		}
-		else //No child. 
+		else //No child.
 		{
 			//Become first child.
 			parent->removeCellWidgets();
@@ -494,7 +494,7 @@ namespace IAEX
 		{
 			parent->removeCellWidgets();
 			moveAfter(parent->last());
-			parent->addCellWidgets();      
+			parent->addCellWidgets();
 		}
 		else
 		{
@@ -535,7 +535,7 @@ namespace IAEX
 			setPrevious(current);
 
 			//insert widgets to parents layout.
-			parentCell()->addCellWidgets();      
+			parentCell()->addCellWidgets();
 		}
 		else
 		{
@@ -544,7 +544,7 @@ namespace IAEX
 			//tree. It should not be possible to move after the root of
 			//the tree. Do nothing!
 		}
-		
+
 		// TMP EMIT
 		emit changedPosition();
 		//      emit positionChanged(x(), y(), 5,5);
@@ -573,7 +573,7 @@ namespace IAEX
 			else
 				current->previous()->setNext(this);
 
-		} 
+		}
 		else
 			throw runtime_error("Could not insert before root");
 
@@ -583,14 +583,14 @@ namespace IAEX
 
 		//Insert widgets to parents layout.
 		parentCell()->addCellWidgets();
-		
+
 		// TMP EMIT
 		emit changedPosition();
 		//      emit positionChanged(x(), y(), 5, 5);
 	}
 
 
-	/*! \class CursorWidget 
+	/*! \class CursorWidget
 	*
 	* \brief CursorWidget describes how the cursor should be painted.
 	*/

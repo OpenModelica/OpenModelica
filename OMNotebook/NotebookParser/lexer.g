@@ -2,12 +2,12 @@
 * \author Ingemar Axelsson
 *
 * Lexer that recognizes all tokens in a notebookfile. The lexer has a
-* lookahead of 3. This is mostly because of the comments. But it is 
-* fast enough. Note that everything inside a notebookfile that is 
-* between (* and *) are comments. Even the cache is comments. Therefore 
+* lookahead of 3. This is mostly because of the comments. But it is
+* fast enough. Note that everything inside a notebookfile that is
+* between (* and *) are comments. Even the cache is comments. Therefore
 * most of the notebookfile does not need to be read.
 *
-* 
+*
 * Entering characters in Mathematica
 *
 * -directly (All ASCII 7 Characters)
@@ -71,10 +71,10 @@ tokens
     LIST            = "List";
     LIST_SMALL      = "list";
     NOTEBOOK        = "Notebook";
-    CELL            = "Cell"; 
+    CELL            = "Cell";
     TEXTDATA        = "TextData";
     CELLGROUPDATA   = "CellGroupData";
-        
+
     RULE            = "Rule";
     RULE_SMALL      = "rule";
     RULEDELAYED     = "RuleDelayed";
@@ -82,19 +82,19 @@ tokens
     GRAYLEVEL       = "GrayLevel";
     RGBCOLOR        = "RGBColor";
     FILENAME        = "FileName";
-    
+
     STYLEBOX        = "StyleBox";
     STYLEDATA       = "StyleData";
     BOXDATA         = "BoxData";
     BUTTONBOX       = "ButtonBox";
-    FORMBOX         = "FormBox"; 
+    FORMBOX         = "FormBox";
     ROWBOX          = "RowBox";
     GRIDBOX         = "GridBox";
     TAGBOX          = "TagBox";
     COUNTERBOX      = "CounterBox";
     ADJUSTMENTBOX   = "AdjustmentBox";
     SUPERSCRBOX     = "SuperscriptBox";
-    SUBSCRBOX       = "SubscriptBox";    
+    SUBSCRBOX       = "SubscriptBox";
     SUBSUPERSCRIPTBOX = "SubsuperscriptBox";
     UNDERSCRIPTBOX  = "UnderscriptBox";
     OVERSCRIPTBOX   = "OverscriptBox";
@@ -202,7 +202,7 @@ tokens
     PRINTINGCOPIES     = "PrintingCopies";
     PRINTINGPAGERANGE  = "PrintingPageRange";
     PRIVATEFONTOPTIONS = "PrivateFontOptions";
-  
+
 //ANNAT
     CELLGROUPOPEN   = "Open";
     CELLGROUPCLOSED = "Closed";
@@ -236,7 +236,7 @@ tokens
     CELLAUTOOVRT    = "CellAutoOverwrite";
     MAGNIFICATION   = "Magnification";
     PARENTDIRECTORY = "ParentDirectory";
-    
+
 
     //Old tokens? Needed.
 //     LISTBODY;
@@ -278,13 +278,13 @@ ID  : ('a'..'z'|'A'..'Z')+
     ;
 
 protected
-EXP 
+EXP
     :    ('e'|'E') NUMBER
     |    (THICK (THICK)? (NUMBER)?)
     ;
 
 protected
-DIGIT    
+DIGIT
     : '0'..'9'
     | '`'
     | '*'
@@ -292,7 +292,7 @@ DIGIT
     ;
 
 /*
- * Strings can not be implemented in the lexer. Some part of them must 
+ * Strings can not be implemented in the lexer. Some part of them must
  * be in the parser
  * Character strings
  * - "characters"
@@ -301,27 +301,27 @@ DIGIT
  * - \< ... \> - a substring in which newlines are interpreted literally
  * - \!\( ... \) - a substring representing two-dimensional boxes
  */
-QSTRING 
-    :   '"' 
+QSTRING
+    :   '"'
         ({LA(2) != '"'}? '\\'
-        | ('\r'|'\n'){ newline();} 
+        | ('\r'|'\n'){ newline();}
         | '\\' '"'
         | ~('"'|'\r'|'\n'|'\\')
         )*
         '"'
     ;
 
-WHITESPACE 
+WHITESPACE
     :   (' '
         |'\t'
-        |('\r'|'\n'|"\r\n") {newline();} 
+        |('\r'|'\n'|"\r\n") {newline();}
         )
         { $setType(ANTLR_USE_NAMESPACE(antlr)Token::SKIP);}
     ;
 
 COMMENT    : COMMENTSTART //'(' '*'
            ({LA(2) != ')'}? '*'
-           | ('\r'|'\n'){ newline();} 
+           | ('\r'|'\n'){ newline();}
            | ~('*'|'\r'|'\n')
            )*
            COMMENTEND //'*'')'

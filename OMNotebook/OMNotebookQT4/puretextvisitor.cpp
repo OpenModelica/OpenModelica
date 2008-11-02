@@ -45,7 +45,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 ------------------------------------------------------------------------------------
 */
 
-/*! 
+/*!
  * \file puretextvisitor.cpp
  * \author Anders Fernström
  */
@@ -66,7 +66,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 
 namespace IAEX
 {
-	/*! 
+	/*!
 	 * \class PureTextVisitor
 	 * \date 2005-11-21
 	 *
@@ -76,7 +76,7 @@ namespace IAEX
 	 * and inputcells to a file, as pure/plain text.
 	 */
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 *
 	 * \brief The class constructor
@@ -86,7 +86,7 @@ namespace IAEX
 		ts_ = new QTextStream( file );
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 *
 	 * \brief The class deconstructor
@@ -194,8 +194,8 @@ namespace IAEX
 
 	//CELLCURSOR
 	void PureTextVisitor::visitCellCursorNodeBefore(CellCursor *)
-	{}      
+	{}
 
 	void PureTextVisitor::visitCellCursorNodeAfter(CellCursor *)
 	{}
-} 
+}

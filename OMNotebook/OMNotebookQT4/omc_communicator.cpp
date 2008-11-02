@@ -51,7 +51,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 // STD includes
 #include <cmath>
 #include <iostream>
-#include <stdlib.h> //This should be cstdlib, if it even should be used!! 
+#include <stdlib.h> //This should be cstdlib, if it even should be used!!
 #include <fstream>
 #include <sstream>
 #include <exception>
@@ -123,14 +123,14 @@ OmcCommunicator& OmcCommunicator::getInstance()
 */
 bool OmcCommunicator::establishConnection()
 {
-  if (omc_) 
+  if (omc_)
   {
     return true;
   }
 
   try {
     // ORB initialization.
-    int argc = 4; 
+    int argc = 4;
     char* argv[] = { "OMNotebook", "-ORBNoResolve", "-ORBIIOPAddr", "inet:127.0.0.1:0" /*,  "-ORBDebugLevel", "10", "-ORBIIOPBlocking" */ };
     CORBA::ORB_var orb = CORBA::ORB_init(argc, argv);
 
@@ -145,7 +145,7 @@ bool OmcCommunicator::establishConnection()
     //   if ((dynamic_cast<Application*>(qApp))->inCygwinMode()) {
     //      char *user(getenv("USERNAME"));
     //      if (!user) { user = "nobody"; }
-    //      
+    //
     //      char *cygwinPath(getenv("CYGWINHOME"));
     //      if (!cygwinPath) { cygwinPath = "c:/cygwin"; }
 
@@ -180,7 +180,7 @@ bool OmcCommunicator::establishConnection()
 
     fprintf(stderr, "trying to read the corba IOR file %s\n", objectRefFile.fileName().toStdString().c_str());
 
-    if (!objectRefFile.exists()) 
+    if (!objectRefFile.exists())
       return false;
 
     objectRefFile.open(QIODevice::ReadOnly);
@@ -242,7 +242,7 @@ void OmcCommunicator::closeConnection()
 */
 QString OmcCommunicator::callOmc(const QString& fnCall)
 {
-  if (!omc_) 
+  if (!omc_)
   {
     //throw OmcError(fnCall);
 
@@ -255,15 +255,15 @@ QString OmcCommunicator::callOmc(const QString& fnCall)
   //qDebug(QString(fnCall).replace("%"," "));
 
   QString returnString;
-  while (true) 
+  while (true)
   {
-    try 
+    try
     {
       returnString = omc_->sendExpression( fnCall.toLatin1() );
       cerr << "sendExpression(" << fnCall.toStdString() << ") => " << returnString.toStdString() << endl;
       break;
     }
-    catch (CORBA::Exception& e) 
+    catch (CORBA::Exception& e)
     {
       e._print_stack_trace(cerr);
       // 2005-11-24 AF, added otherwise it crashes when command quit() is called.
@@ -289,7 +289,7 @@ QString OmcCommunicator::callOmc(const QString& fnCall)
   //}
 
   //if (returnString == "-1") {
-  //  string tmp = "[Internal Error] OmcCommunicator::callOmc():\nOmc call \"" 
+  //  string tmp = "[Internal Error] OmcCommunicator::callOmc():\nOmc call \""
   //    + fnCall.toStdString() + "\" failed!\n\n";
 
   //  qWarning( tmp.c_str() );
@@ -360,7 +360,7 @@ QString OmcCommunicator::callOmc(const QString& fnCall)
 */
 // void ModeqCommunicator::createConnector(const QString& ref,
 // 																				const QStringList& baseClassRefs,
-// 																				const QString& comment, 
+// 																				const QString& comment,
 // 																				bool encapsulated,
 // 																				bool partial)
 // {
@@ -388,7 +388,7 @@ QString OmcCommunicator::callOmc(const QString& fnCall)
 */
 // void ModeqCommunicator::createModel(const QString& ref,
 // 																		const QStringList& baseClassRefs,
-// 																		const QString& comment, 
+// 																		const QString& comment,
 // 																		bool encapsulated,
 // 																		bool partial)
 // {
@@ -416,7 +416,7 @@ QString OmcCommunicator::callOmc(const QString& fnCall)
 */
 // void ModeqCommunicator::createBlock(const QString& ref,
 // 																		const QStringList& baseClassRefs,
-// 																		const QString& comment, 
+// 																		const QString& comment,
 // 																		bool encapsulated,
 // 																		bool partial)
 // {
@@ -445,7 +445,7 @@ QString OmcCommunicator::callOmc(const QString& fnCall)
 */
 // void ModeqCommunicator::createRecord(const QString& ref,
 // 																		const QStringList& baseClassRefs,
-// 																		const QString& comment, 
+// 																		const QString& comment,
 // 																		bool encapsulated,
 // 																		bool partial)
 // {
@@ -474,7 +474,7 @@ QString OmcCommunicator::callOmc(const QString& fnCall)
 */
 // void ModeqCommunicator::createFunction(const QString& ref,
 // 																		const QStringList& baseClassRefs,
-// 																		const QString& comment, 
+// 																		const QString& comment,
 // 																		bool encapsulated,
 // 																		bool partial)
 // {
@@ -503,7 +503,7 @@ QString OmcCommunicator::callOmc(const QString& fnCall)
 */
 // void ModeqCommunicator::createPackage(const QString& ref,
 // 																			const QStringList& baseClassRefs,
-// 																			const QString& comment, 
+// 																			const QString& comment,
 // 																			bool encapsulated,
 // 																			bool partial)
 // {
@@ -1080,7 +1080,7 @@ QString OmcCommunicator::callOmc(const QString& fnCall)
 // 		} else {
 // 			int i(annotationList.find('}'));
 // 			QString annotation(annotationList.mid(0, i + 1));
-// 			annotationList = annotationList.remove(0, i + 2);	
+// 			annotationList = annotationList.remove(0, i + 2);
 // 			try {
 // 				componentAnnotations.push_back(compiler_->compilePlacementAnnotation(annotation.latin1()));
 // 			} catch (SyntaxError&) {
@@ -1145,10 +1145,10 @@ QString OmcCommunicator::callOmc(const QString& fnCall)
 // 		return new Modification(name, returnString, modifiers);
 // 	} else {
 // 		if( modificationString.startsWith("(") && modificationString.endsWith(")") )
-// 		{		
+// 		{
 // 			// Remove surrounding ()
 // 			modificationString = modificationString.mid(1, modificationString.length() - 2);
-// 		}		
+// 		}
 
 // 	}
 

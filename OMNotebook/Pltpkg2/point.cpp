@@ -18,7 +18,7 @@ are permitted provided that the following conditions are met:
 
     * Redistributions of source code must retain the above copyright notice,
       this list of conditions and the following disclaimer.
-    
+
 	* Redistributions in binary form must reproduce the above copyright notice,
       this list of conditions and the following disclaimer in the documentation
       and/or other materials provided with the distribution.
@@ -59,11 +59,11 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 
 using namespace std;
 
-Point::Point(qreal x1, qreal y1,qreal h, qreal w, QColor color_, const GraphWidget* graphwidget_, 
-	     QGraphicsItem* parent, QGraphicsScene* scene, const QString& label): 
+Point::Point(qreal x1, qreal y1,qreal h, qreal w, QColor color_, const GraphWidget* graphwidget_,
+	     QGraphicsItem* parent, QGraphicsScene* scene, const QString& label):
   QGraphicsEllipseItem(x1, y1, h, w, parent, scene), graphwidget(graphwidget_)
 {
-  
+
   color = color_;
   graphwidget = graphwidget_;
   xPos = x1;
@@ -71,22 +71,22 @@ Point::Point(qreal x1, qreal y1,qreal h, qreal w, QColor color_, const GraphWidg
   hgt = h;
   wdt = w;
   dx = dy = 0;
-  
+
   setAcceptsHoverEvents(true);
   QPen qp;
   qp.setColor(color);
   setPen(qp);
-  
+
   if(label.size())
     setToolTip(label);
   else
-    setToolTip(graphwidget->currentXVar + QString(": ") + QVariant(x1).toString() + QString("\n") + 
+    setToolTip(graphwidget->currentXVar + QString(": ") + QVariant(x1).toString() + QString("\n") +
 	       graphwidget->currentYVar +QString(": ") + QVariant(y1).toString());
-  
-  
-  
+
+
+
   //	setFlag(QGraphicsItem::ItemIgnoresTransformations);
-	
+
 }
 
 Point::~Point()
@@ -100,7 +100,7 @@ void Point::updateSize()
 
 	double xScale = graphwidget->matrix().m11()/125;
 	double yScale = graphwidget->matrix().m22()/195;
-	
+
 	double width=150 / xScale;
 	double height = -200 / yScale;
 
@@ -119,7 +119,7 @@ void Point::hoverEnterEvent ( QGraphicsSceneHoverEvent * event )
 {
 	QPen qp;
 
-#if QT_VERSION >= 0x400300	
+#if QT_VERSION >= 0x400300
 	QBrush b(color.darker());
 #else
 	QBrush b(color);

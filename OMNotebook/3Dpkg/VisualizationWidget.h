@@ -34,7 +34,7 @@ namespace IAEX {
 		public QWidget
 	{
 		Q_OBJECT
-			
+
 	public:
 		VisualizationWidget(QWidget *parent);
 		~VisualizationWidget(void);

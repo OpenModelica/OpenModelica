@@ -18,7 +18,7 @@ are permitted provided that the following conditions are met:
 
     * Redistributions of source code must retain the above copyright notice,
       this list of conditions and the following disclaimer.
-    
+
 	* Redistributions in binary form must reproduce the above copyright notice,
       this list of conditions and the following disclaimer in the documentation
       and/or other materials provided with the distribution.
@@ -47,7 +47,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 
 // FILE/CLASS ADDED 2005-11-09 /AF
 
-/*! 
+/*!
  * \file stripstring.h
  * \author Anders Fernström
  */
@@ -69,12 +69,12 @@ typedef vector<rule_t> rules_t;
 using namespace std;
 
 
-/*! 
+/*!
 	* \class CellStyle
 	* \author Anders Fernström
 	* \date 2005-11-09
-	* 
-	* \brief A class that remove/add some stuff in the content strings taken 
+	*
+	* \brief A class that remove/add some stuff in the content strings taken
 	* from mathematica notebooks.
 	*/
 class StripString
@@ -100,7 +100,7 @@ public:
 				break;
 			case 'r':
 				// remove '\r' from the text
-				str.erase( pos, 2 );	
+				str.erase( pos, 2 );
 				break;
             case '"':
             case '[':
@@ -160,7 +160,7 @@ public:
 		return str;
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-12-06
 	 * \date 2005-12-08 (update)
@@ -168,7 +168,7 @@ public:
 	 * \brief Apply rules to a text
 	 *
 	 * 2005-12-08 AF, Implemented large part of the function
-	 */ 
+	 */
 	static string applyRulesToText( string str, rules_t rules )
 	{
 		// loop through all rules and apply them
@@ -263,13 +263,13 @@ public:
 						if( tmp.length() == 1 )
 							tmp = "0" + tmp;
 						color += tmp;
-						
+
 						// blue
 						tmp = QString::number( (int)blue, 16 );
 						if( tmp.length() == 1 )
 							tmp = "0" + tmp;
 						color += tmp;
-						
+
 						// set the color
 						color = "color:#" + color + "; ";
 						string::size_type index = getSpanIndex( str );
@@ -294,13 +294,13 @@ public:
 		return str;
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-12-08
 	 *
-	 * \brief Apply a html <span style=""> tag to the text, and 
+	 * \brief Apply a html <span style=""> tag to the text, and
 	 * return the index of the correct position inside the style
-	 */ 
+	 */
 	static string::size_type getSpanIndex( string &str )
 	{
 		if( str.find( "<span style=\"", 0) == string::npos )
@@ -309,12 +309,12 @@ public:
 			string tmp = "<span style=\" \">" + str + "</span>";
 			str = tmp;
 		}
-	
+
 		// go to the end of the style="" part
 		return str.find( "\">", 0 );
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2006-02-10
 	 *
@@ -323,7 +323,7 @@ public:
 	 * HTML link look like: Dir/filename.html#ChaperSeven
      * The notebook parser returns: Dir/filename.htmlChapterSeven
      * have to insert # symbol
-	 */ 
+	 */
 	static string fixFilename( string filename )
 	{
 		string::size_type index = filename.find( ".nb" );

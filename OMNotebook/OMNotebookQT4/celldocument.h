@@ -44,7 +44,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 ------------------------------------------------------------------------------------
 */
 
-/*! 
+/*!
 * \file celldocument.h
 * \author Ingemar Axelsson and Anders Fernström
 *
@@ -75,14 +75,14 @@ class QUrl;
 
 namespace IAEX
 {
-	
+
 	class CellDocument : public Document
 	{
 		Q_OBJECT
 
 	public:
 		typedef vector<DocumentView*> observers_t;
-	
+
 		CellDocument(Application *a, const QString filenamem, int readmode = READMODE_NORMAL);
 		virtual ~CellDocument();
 
@@ -191,7 +191,7 @@ namespace IAEX
 		void contentChanged();				// Added 2005-11-29 AF
 		void hoverOverFile( QString );		// Added 2006-02-10 AF
 		void forwardAction( int );			// Added 2006-04-27 AF
-		
+
 
 	protected:
 		void setWorkspace(Cell *newWorkspace);
@@ -210,7 +210,7 @@ namespace IAEX
 		Application *app_;
 		QString filename_;
 
-		Cell *workspace_;				//This should alwas be a cellgroup. 
+		Cell *workspace_;				//This should alwas be a cellgroup.
 		Cell *lastClickedCell_;			// Added 2006-04-25 AF
 		QFrame *mainFrame_;
 

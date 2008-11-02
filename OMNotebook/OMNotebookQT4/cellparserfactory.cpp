@@ -18,7 +18,7 @@ are permitted provided that the following conditions are met:
 
     * Redistributions of source code must retain the above copyright notice,
       this list of conditions and the following disclaimer.
-    
+
 	* Redistributions in binary form must reproduce the above copyright notice,
       this list of conditions and the following disclaimer in the documentation
       and/or other materials provided with the distribution.
@@ -55,7 +55,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 
 namespace IAEX
 {
-   
+
    /*! \class CellParserFactory
     * \brief Nows how to open xml and nb files.
     *
@@ -71,17 +71,17 @@ namespace IAEX
     */
    CellParserFactory::CellParserFactory(){}
    CellParserFactory::~CellParserFactory(){}
-   
+
    NBParser *CellParserFactory::createParser(QString filename, Factory *f, Document *document, int readmode)
    {
       // PORT >>filename = filename.stripWhiteSpace();
 	  filename = filename.trimmed();
 
-	  
+
 	  if( filename.endsWith(".onb", Qt::CaseInsensitive) ||
 		  filename.endsWith(".xml", Qt::CaseInsensitive) ||
 		  filename.endsWith(".onbz", Qt::CaseInsensitive))
-      { 
+      {
 		 return new XMLParser(filename, f, document, readmode);//openXMLFile(filename);
       }
       else if(filename.endsWith(".nb", Qt::CaseInsensitive))

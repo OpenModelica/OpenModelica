@@ -45,7 +45,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 ------------------------------------------------------------------------------------
 */
 
-/*! 
+/*!
  * \file cellcommands.h
  * \author Ingemar Axelsson and Anders Fernström
  *
@@ -100,7 +100,7 @@ namespace IAEX
 		virtual ~DeleteCurrentCellCommand(){}
 		void execute();
 		virtual QString commandName(){ return QString("DeleteCurrentCellCommand");}
-	}; 
+	};
 
 
 	class PasteCellsCommand : public Command
@@ -133,7 +133,7 @@ namespace IAEX
 		virtual ~DeleteSelectedCellsCommand(){}
 		void execute();
 		virtual QString commandName(){ return QString("DeleteSelectedCellsCommand");}
-	}; 
+	};
 
 
 	// Made changes to this class, see cellcommands.cpp /AF
@@ -163,7 +163,7 @@ namespace IAEX
 	*
 	* \todo Create a command for converting selected cells into a
 	* groupcell.(Ingemar Axelsson)
-	* 
+	*
 	* \todo Create commands for moving a cell.(Ingemar Axelsson)
 	*
 	* \todo Implement DRAG and DROP with cells.(Ingemar Axelsson)

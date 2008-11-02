@@ -45,7 +45,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 ------------------------------------------------------------------------------------
 */
 
-/*! 
+/*!
  * \file cellcommands.h
  * \author Anders Fernström
  * \date 2005-11-03
@@ -75,7 +75,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 
 namespace IAEX
 {
-	/*! 
+	/*!
      * \class TextCursorCutText
 	 * \author Anders Fernström
 	 * \date 2006-02-07
@@ -90,7 +90,7 @@ namespace IAEX
 			if( typeid(InputCell) == typeid(*cell) )
 			{
 				InputCell *inputcell = dynamic_cast<InputCell*>(cell);
-				if( inputcell->textEditOutput()->hasFocus() && 
+				if( inputcell->textEditOutput()->hasFocus() &&
 					inputcell->isEvaluated() )
 				{
 					inputcell->textEditOutput()->copy();
@@ -101,7 +101,7 @@ namespace IAEX
 			else if( typeid(GraphCell) == typeid(*cell) )
 			{
 				GraphCell *graphcell = dynamic_cast<GraphCell*>(cell);
-				if( graphcell->textEditOutput()->hasFocus() && 
+				if( graphcell->textEditOutput()->hasFocus() &&
 					graphcell->isEvaluated() )
 				{
 					graphcell->textEditOutput()->copy();
@@ -123,7 +123,7 @@ namespace IAEX
 	}
 
 
-	/*! 
+	/*!
      * \class TextCursorCopyText
 	 * \author Anders Fernström
 	 * \date 2006-02-07
@@ -138,7 +138,7 @@ namespace IAEX
 			if( typeid(InputCell) == typeid(*cell) )
 			{
 				InputCell *inputcell = dynamic_cast<InputCell*>(cell);
-				if( inputcell->textEditOutput()->hasFocus() && 
+				if( inputcell->textEditOutput()->hasFocus() &&
 					inputcell->isEvaluated() )
 				{
 					inputcell->textEditOutput()->copy();
@@ -149,7 +149,7 @@ namespace IAEX
 			else if( typeid(GraphCell) == typeid(*cell) )
 			{
 				GraphCell *graphcell = dynamic_cast<GraphCell*>(cell);
-				if( graphcell->textEditOutput()->hasFocus() && 
+				if( graphcell->textEditOutput()->hasFocus() &&
 					graphcell->isEvaluated() )
 				{
 					graphcell->textEditOutput()->copy();
@@ -169,7 +169,7 @@ namespace IAEX
 	}
 
 
-	/*! 
+	/*!
      * \class TextCursorCopyText
 	 * \author Anders Fernström
 	 * \date 2006-02-07
@@ -186,7 +186,7 @@ namespace IAEX
 	}
 
 
-	/*! 
+	/*!
      * \class TextCursorChangeFontFamily
 	 * \author Anders Fernström
 	 * \date 2005-11-03
@@ -202,7 +202,7 @@ namespace IAEX
 	}
 
 
-	/*! 
+	/*!
      * \class TextCursorChangeFontFace
 	 * \author Anders Fernström
 	 * \date 2005-11-03
@@ -210,7 +210,7 @@ namespace IAEX
      *
      * \brief Command for changing font face
 	 *
-	 * 2005-11-07 AF, Added function (case 4) in switch to change 
+	 * 2005-11-07 AF, Added function (case 4) in switch to change
 	 * strikckout settings
 	 * 2005-11-15 AF, added trick to get correct style on links
 	 * 2006-01-13 AF, remove trick to get correct style on links because
@@ -270,7 +270,7 @@ namespace IAEX
 				int start = editor->textCursor().selectionStart();
 				int end = editor->textCursor().selectionEnd();
 				editor->setHtml( editor->toHtml() );
-				
+
 				QTextCursor cursor( editor->textCursor() );
 				cursor.setPosition( start );
 				cursor.setPosition( end, QTextCursor::KeepAnchor );
@@ -280,7 +280,7 @@ namespace IAEX
 	}
 
 
-	/*! 
+	/*!
      * \class TextCursorChangeFontSize
 	 * \author Anders Fernström
 	 * \date 2005-11-03
@@ -300,7 +300,7 @@ namespace IAEX
 	}
 
 
-	/*! 
+	/*!
      * \class TextCursorChangeFontStretch
 	 * \author Anders Fernström
 	 * \date 2005-11-03
@@ -317,7 +317,7 @@ namespace IAEX
 		{
 			QTextCharFormat format = cursor.charFormat();
 			QFont font = format.font();
-			
+
 			int oldStretch = font.stretch();
 			if( oldStretch != stretch_ )
 			{
@@ -338,7 +338,7 @@ namespace IAEX
 	}
 
 
-	/*! 
+	/*!
      * \class TextCursorChangeFontColor
 	 * \author Anders Fernström
 	 * \date 2005-11-03
@@ -358,8 +358,8 @@ namespace IAEX
 		if( editor )
 		{
 			editor->setTextColor( color_ );
-			
-			
+
+
 			// ugly trick to make the sure that the links haven't change
 			// color
 			/*
@@ -368,7 +368,7 @@ namespace IAEX
 				int start = editor->textCursor().selectionStart();
 				int end = editor->textCursor().selectionEnd();
 				editor->setHtml( editor->toHtml() );
-				
+
 				QTextCursor cursor( editor->textCursor() );
 				cursor.setPosition( start );
 				cursor.setPosition( end, QTextCursor::KeepAnchor );
@@ -379,7 +379,7 @@ namespace IAEX
 	}
 
 
-	/*! 
+	/*!
      * \class TextCursorChangeTextAlignment
 	 * \author Anders Fernström
 	 * \date 2005-11-03
@@ -407,7 +407,7 @@ namespace IAEX
 				rule = new Rule( "TextAlignment", "Center" );
 			else if( (Qt::Alignment)alignment_ == Qt::AlignJustify )
 				rule = new Rule( "TextAlignment", "Justify" );
-				
+
 			document()->getCursor()->currentCell()->addRule( rule );
 
 			// update the cells style
@@ -416,7 +416,7 @@ namespace IAEX
 	}
 
 
-	/*! 
+	/*!
      * \class TextCursorChangeVerticalAlignment
 	 * \author Anders Fernström
 	 * \date 2005-11-03
@@ -434,13 +434,13 @@ namespace IAEX
 
 			QTextCharFormat format = cursor.charFormat();
 			format.setVerticalAlignment( (QTextCharFormat::VerticalAlignment)alignment_ );
-			
+
 			cursor.mergeCharFormat ( format );
 		}
 	}
 
 
-	/*! 
+	/*!
      * \class TextCursorChangeMargin
 	 * \author Anders Fernström
 	 * \date 2005-11-03
@@ -472,7 +472,7 @@ namespace IAEX
 	}
 
 
-	/*! 
+	/*!
      * \class TextCursorChangePadding
 	 * \author Anders Fernström
 	 * \date 2005-11-03
@@ -504,7 +504,7 @@ namespace IAEX
 	}
 
 
-	/*! 
+	/*!
      * \class TextCursorChangeBorder
 	 * \author Anders Fernström
 	 * \date 2005-11-03
@@ -536,7 +536,7 @@ namespace IAEX
 	}
 
 
-	/*! 
+	/*!
      * \class TextCursorInsertImage
 	 * \author Anders Fernström
 	 * \date 2005-11-18
@@ -552,7 +552,7 @@ namespace IAEX
 			if( !image->isNull() )
 			{
 				QString imagename = document()->addImage( image );
-				
+
 				QTextCursor cursor( document()->getCursor()->currentCell()->textCursor() );
 				if( !cursor.isNull() )
 				{
@@ -563,7 +563,7 @@ namespace IAEX
 						QTextCharFormat format = cursor.charFormat();
 						if( editor->toPlainText().isEmpty() )
 							format = *document()->getCursor()->currentCell()->style()->textCharFormat();
-												
+
 						QTextImageFormat imageformat;
 						imageformat.merge( format );
 						imageformat.setHeight( height_ );
@@ -583,7 +583,7 @@ namespace IAEX
 	}
 
 
-	/*! 
+	/*!
      * \class TextCursorInsertLink
 	 * \author Anders Fernström
 	 * \date 2005-12-05
@@ -612,7 +612,7 @@ namespace IAEX
 
 				// create html code for the link and insert it to the document'
 				QString text = cursor.selection().toHtml();
-				int fragmentStart = text.indexOf( "<!--StartFragment-->", 
+				int fragmentStart = text.indexOf( "<!--StartFragment-->",
 					0, Qt::CaseInsensitive ) + 20;
 				int fragmentEnd = text.indexOf( "<!--EndFragment-->",
 					fragmentStart, Qt::CaseInsensitive );

@@ -47,7 +47,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 ------------------------------------------------------------------------------------
 */
 
-/*! 
+/*!
  * \file celldocument.h
  * \author Ingemar Axelsson and Anders Fernström
  *
@@ -88,7 +88,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 
 namespace IAEX
 {
-	/*! 
+	/*!
 	 * \class CellDocument
 	 * \author Ingemar Axelsson and Anders Fernström
 	 *
@@ -96,11 +96,11 @@ namespace IAEX
 	 *
 	 * This class represents the mainwidget for the application. It has
 	 * functionality to open files and create cells from them. It also
-	 *  knows which cells that are selected. 
+	 *  knows which cells that are selected.
 	 *
 	 * CellDocument acts like a mediator between the application and all
 	 * cells. It knows how to do stuff with cells.
-	 * 
+	 *
 	 * The CellDocument does not have any menu. So to use menus for
 	 * doing stuff with the application look at the slots that exists in
 	 * this class.
@@ -121,41 +121,41 @@ namespace IAEX
 	 *
 	 *
 	 * \bug When opening a second file, some connections is missing.
-	 *  
+	 *
 	 * \bug Closing a document does not work correctly.
 	 */
 
 
-	/*! 
+	/*!
 	 * \author Ingemar Axelsson (and Anders Fernström)
 	 * \date 2005-11-28 (update)
 	 *
 	 * \brief Constructor, initialize a CellGroup as maincontent.
 	 *
-	 * 2005-11-28 AF, added connection between 'cursorChanged()' 
+	 * 2005-11-28 AF, added connection between 'cursorChanged()'
 	 * and 'updateScrollArea()'
 	 *
 	 * \todo Remove the dependency of QFrame from document.(Ingemar Axelsson)
 	 */
-	CellDocument::CellDocument( Application *a, const QString filename, 
+	CellDocument::CellDocument( Application *a, const QString filename,
 		int readmode )
 		: changed_(false),
-		open_(false), 
-		saved_(false), 
-		app_(a), 		
+		open_(false),
+		saved_(false),
+		app_(a),
 		currentImageNo_(0),
 		lastClickedCell_(0)
 	{
     filename_ = filename;
 		mainFrame_ = new QFrame();
 
-		mainFrame_->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, 
+		mainFrame_->setSizePolicy(QSizePolicy(QSizePolicy::Expanding,
 			QSizePolicy::Expanding));
 
 		mainLayout_ = new QGridLayout(mainFrame_);
 		mainLayout_->setMargin(0);
 		mainLayout_->setSpacing(0);
-		
+
 		//Initialize SoQT
 		SoQt::init(mainFrame_);
 
@@ -164,7 +164,7 @@ namespace IAEX
 		setWorkspace(factory_->createCell("cellgroup"));
 
 		// 2005-11-28 AF
-		connect( this, SIGNAL( cursorChanged() ), 
+		connect( this, SIGNAL( cursorChanged() ),
 			this, SLOT( updateScrollArea() ));
 
 		// 2005-12-01 AF, Added try-catch
@@ -182,7 +182,7 @@ namespace IAEX
 //		open_ = true; // 2005-09-26 AF, not sure if this should be here //070903 HE, probably not
 	}
 
-	/*! 
+	/*!
 	 * \author Ingemar Axelsson
 	 *
 	 * \brief The class destructor
@@ -202,7 +202,7 @@ namespace IAEX
 		{
 			// add temporary images to removelist
 			application()->removeTempFiles( i_iter.key() );
-			
+
 			// delete image
 			delete i_iter.value();
 			++i_iter;
@@ -211,7 +211,7 @@ namespace IAEX
 
 
 
-	/*! 
+	/*!
 	 * \author Ingemar Axelsson and Anders Fernström
 	 * \date 2005-12-01 (update)
 	 *
@@ -222,7 +222,7 @@ namespace IAEX
 	 * 2005-12-01 AF, Added try-catch
 	 */
 	void CellDocument::open( const QString &filename, int readmode )
-	{      
+	{
 		filename_ = filename;
 
 		ParserFactory *parserFactory = new CellParserFactory();
@@ -240,9 +240,9 @@ namespace IAEX
 			delete parser;
 			throw e;
 		}
-		
 
-		//Delete the parser after it is used. 
+
+		//Delete the parser after it is used.
 		delete parserFactory;
 		delete parser;
 
@@ -256,14 +256,14 @@ namespace IAEX
 			saved_ = false;
 	}
 
-	/*! 
+	/*!
 	 * \author Ingemar Axelsson and Anders Fernström
 	 * \date 2005-10-28 (update)
 	 *
 	 * \brief Change the style of the selected cell/cells
 	 */
 	void CellDocument::cursorChangeStyle(CellStyle style)
-	{  
+	{
 		//Invoke style changes to all selected cells.
 		executeCommand(new ChangeStyleOnSelectedCellsCommand(style));
 	}
@@ -272,16 +272,16 @@ namespace IAEX
 	 * \author Ingemar Axelsson and Anders Fernström
 	 * \date 2005-11-01 (update)
 	 *
-	 * \brief Attach a CellGroup to be the main workspace for cells. 
+	 * \brief Attach a CellGroup to be the main workspace for cells.
 	 *
 	 * Connects a cellgroup to the scrollview. Does some reparent stuff
 	 * also so all subcells will be drawn. This must be done every time
 	 * this member is changed.
 	 *
 	 * 2005-11-01 AF, replaced the old Q3ScrollView with the new
-	 * QScrollArea and needed to change/update some thing in this 
+	 * QScrollArea and needed to change/update some thing in this
 	 * function;
-	 * 
+	 *
 	 * \param newWorkspace A pointer to the CellGroup that will be seen as
 	 * the main cellworkspace in the application.
 	 *
@@ -294,9 +294,9 @@ namespace IAEX
 		scroll_->setWidgetResizable( true );
 		scroll_->setHorizontalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
 		scroll_->setVerticalScrollBarPolicy( Qt::ScrollBarAsNeeded );
-		
+
 		mainLayout_->addWidget(scroll_, 1, 1);
-		
+
 		workspace_ = newWorkspace;
 
 		// PORT >> workspace_->reparent(scroll_->viewport(), QPoint(0,0), true);
@@ -309,12 +309,12 @@ namespace IAEX
 		//?? Should this be done by the factory?
 		current_ = dynamic_cast<CellCursor*>(factory_->createCell("cursor", workspace_));
 
-		
+
 		//Make the cursor visible at all time.
 		//QObject::connect(current_, SIGNAL(positionChanged(int, int, int, int)),
 		//	vp_, SLOT(ensureVisible(int, int, int, int)));
 
-		workspace_->addChild( current_ ); 
+		workspace_->addChild( current_ );
 
 		//To hide the outhermost treeview.
 		workspace_->hideTreeView( true );
@@ -323,7 +323,7 @@ namespace IAEX
 
 	/*!
 	 * \author Ingemar Axelsson
-	 */	
+	 */
 	void CellDocument::cursorStepUp()
 	{
 		executeCommand(new CursorMoveUpCommand());
@@ -332,9 +332,9 @@ namespace IAEX
 
 	/*!
 	 * \author Ingemar Axelsson
-	 */	
+	 */
 	void CellDocument::cursorStepDown()
-	{      
+	{
 		executeCommand(new CursorMoveDownCommand());
 		emit cursorChanged();
 	}
@@ -348,7 +348,7 @@ namespace IAEX
 	void CellDocument::cursorAddCell()
 	{
 		try
-		{	
+		{
 			executeCommand(new AddCellCommand());
 			open_ = true;
 			emit cursorChanged();
@@ -359,7 +359,7 @@ namespace IAEX
 		}
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2006-04-26
 	 *
@@ -368,7 +368,7 @@ namespace IAEX
 	void CellDocument::cursorUngroupCell()
 	{
 		try
-		{	
+		{
 			executeCommand( new UngroupCellCommand() );
 			emit cursorChanged();
 		}
@@ -378,7 +378,7 @@ namespace IAEX
 		}
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2006-04-26
 	 *
@@ -387,7 +387,7 @@ namespace IAEX
 	void CellDocument::cursorSplitCell()
 	{
 		try
-		{	
+		{
 			executeCommand( new SplitCellCommand() );
 			emit cursorChanged();
 		}
@@ -417,12 +417,12 @@ namespace IAEX
 	 */
 	void CellDocument::cursorCutCell()
 	{
-		executeCommand(new DeleteCurrentCellCommand());      
+		executeCommand(new DeleteCurrentCellCommand());
 	}
 
 	/*!
 	 * \author Ingemar Axelsson
-	 */ 
+	 */
 	void CellDocument::cursorCopyCell()
 	{
 		executeCommand(new CopySelectedCellsCommand());
@@ -431,7 +431,7 @@ namespace IAEX
 	/*!
 	 * \author Ingemar Axelsson
 	 */
-	void CellDocument::cursorPasteCell()   
+	void CellDocument::cursorPasteCell()
 	{
 		executeCommand(new PasteCellsCommand());
 	}
@@ -454,7 +454,7 @@ namespace IAEX
 		emit cursorChanged();
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2006-02-07
 	 *
@@ -465,7 +465,7 @@ namespace IAEX
 		executeCommand( new TextCursorCutText() );
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2006-02-07
 	 *
@@ -476,7 +476,7 @@ namespace IAEX
 		executeCommand( new TextCursorCopyText() );
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2006-02-07
 	 *
@@ -487,7 +487,7 @@ namespace IAEX
 		executeCommand( new TextCursorPasteText() );
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-11-03
 	 *
@@ -501,7 +501,7 @@ namespace IAEX
 		executeCommand( new TextCursorChangeFontFamily(family) );
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-11-03
 	 *
@@ -515,7 +515,7 @@ namespace IAEX
 		executeCommand( new TextCursorChangeFontFace(face) );
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-11-03
 	 *
@@ -529,7 +529,7 @@ namespace IAEX
 		executeCommand( new TextCursorChangeFontSize(size) );
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-11-03
 	 *
@@ -543,7 +543,7 @@ namespace IAEX
 		executeCommand( new TextCursorChangeFontStretch(stretch) );
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-11-03
 	 *
@@ -556,8 +556,8 @@ namespace IAEX
 	{
 		executeCommand( new TextCursorChangeFontColor(color) );
 	}
-	
-	/*! 
+
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-11-03
 	 *
@@ -570,7 +570,7 @@ namespace IAEX
 		executeCommand( new TextCursorChangeTextAlignment(alignment) );
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-11-03
 	 *
@@ -584,7 +584,7 @@ namespace IAEX
 		executeCommand( new TextCursorChangeVerticalAlignment(alignment) );
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-11-03
 	 *
@@ -597,7 +597,7 @@ namespace IAEX
 		executeCommand( new TextCursorChangeMargin(margin) );
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-11-03
 	 *
@@ -610,7 +610,7 @@ namespace IAEX
 		executeCommand( new TextCursorChangePadding(padding) );
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-11-03
 	 *
@@ -623,7 +623,7 @@ namespace IAEX
 		executeCommand( new TextCursorChangeBorder(border) );
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-11-18
 	 *
@@ -636,7 +636,7 @@ namespace IAEX
 		executeCommand( new TextCursorInsertImage(filepath, size) );
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-11-18
 	 * \date 2006-02-13 (update)
@@ -648,7 +648,7 @@ namespace IAEX
 	 * the name of the file.
 	 *
 	 * 2005-12-12 AF, Added 'file:///(path)/' to very image name
-	 * 2006-02-13 AF, All images are added in the sub dir 
+	 * 2006-02-13 AF, All images are added in the sub dir
 	 * 'OMNotebook_tempfiles'.
 	 *
 	 * \param image A pointer to the images that should be added
@@ -679,7 +679,7 @@ namespace IAEX
 		writer.setDescription( "Temporary OMNotebook image" );
 		writer.setQuality( 100 );
 		writer.write( *image );
-		
+
 		images_[ name ] = image;
 
 		// 2005-12-12 AF, Add file:/// to filename
@@ -689,7 +689,7 @@ namespace IAEX
 		return name;
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-11-20
 	 * \date 2005-12-12 (update)
@@ -718,7 +718,7 @@ namespace IAEX
 		return image;
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-12-05
 	 *
@@ -731,7 +731,7 @@ namespace IAEX
 		executeCommand( new TextCursorInsertLink( filepath, cursor ));
 	}
 
-	/*! 
+	/*!
 	 * \author Ingemar Axelsson and Anders Fernström
 	 */
 	bool CellDocument::hasChanged() const
@@ -739,7 +739,7 @@ namespace IAEX
 		return changed_;
 	}
 
-	/*! 
+	/*!
 	 * \author Ingemar Axelsson
 	 */
 	bool CellDocument::isOpen() const
@@ -747,7 +747,7 @@ namespace IAEX
 		return open_;
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 */
 	bool CellDocument::isSaved() const
@@ -755,7 +755,7 @@ namespace IAEX
 		return saved_;
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2006-08-24
 	 *
@@ -787,7 +787,7 @@ namespace IAEX
 		return empty;
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-11-29
 	 * \date 2006-03-03 (update)
@@ -798,7 +798,7 @@ namespace IAEX
 	 * some large bugs. Didn't calculate cells position correct, becuase
 	 * qt:s layout system reset position to 0 in every groupcell and
 	 * layout are probobly not set correctly.
-	 * 2006-03-03 AF, ignore move if the cursor it at the end of the 
+	 * 2006-03-03 AF, ignore move if the cursor it at the end of the
 	 * document
 	 */
 	void CellDocument::updateScrollArea()
@@ -831,9 +831,9 @@ namespace IAEX
 					cout << "SCROLL BOTTOM: " << scrollBottom << endl;
 					cout << "CELL CURSOR: " << pos << endl;
 					cout << "CELL HEIGHT: " << height << endl;
-#endif					
-					
-					
+#endif
+
+
 
 					// TO BIG
 					if( height > (scrollBottom-scrollTop) )
@@ -855,7 +855,7 @@ namespace IAEX
 					// UP
 					else if( (pos - height) < scrollTop )
 					{
-						// cursor have moved above the viewarea of the 
+						// cursor have moved above the viewarea of the
 						// scrollbar, move up the scrollbar
 
 						// remove cell height + a little extra
@@ -870,7 +870,7 @@ namespace IAEX
 					// DOWN
 					else if( pos > (scrollBottom - 10) )
 					{
-						// cursor have moved below the viewarea of the 
+						// cursor have moved below the viewarea of the
 						// scrollbar, move down the scrollbar
 
 						// add cell height + a little extra to scrollbar
@@ -879,7 +879,7 @@ namespace IAEX
 						// add differens between cell cursor position och scroll bottom
 						// to the scroll value
 						pos = scroll_->verticalScrollBar()->value() + (pos - (scrollBottom - 10));
-						
+
 						if( pos >= scroll_->verticalScrollBar()->maximum() )
 						{
 #ifndef QT_NO_DEBUG_OUTPUT
@@ -887,7 +887,7 @@ namespace IAEX
 #endif
 							scroll_->verticalScrollBar()->triggerAction( QAbstractSlider::SliderToMaximum );
 							//pos = scroll_->verticalScrollBar()->maximum();
-						
+
 							// a little extra to the max value of the scrollbar
 							//scroll_->verticalScrollBar()->setMaximum( 5 +
 							//	scroll_->verticalScrollBar()->maximum() );
@@ -906,7 +906,7 @@ namespace IAEX
 		}
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2006-01-17
 	 *
@@ -918,7 +918,7 @@ namespace IAEX
 		emit contentChanged();
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2006-02-10
 	 */
@@ -937,20 +937,20 @@ namespace IAEX
 				filelink.replace( "\\", "/" );
 
 				QDir dir;
-				filelink = dir.absolutePath() + "/" + filelink; 	
+				filelink = dir.absolutePath() + "/" + filelink;
 			}
 			else
 			{
 				// replace '\' with '/' in the link path
 				filelink.replace( "\\", "/" );
-				filelink = QFileInfo(filename_).absolutePath() + "/" + filelink; 	
+				filelink = QFileInfo(filename_).absolutePath() + "/" + filelink;
 			}
 		}
-		
+
         emit hoverOverFile( filelink );
 	}
 
-	/*! 
+	/*!
 	 * \author Ingemar Axelsson
 	 */
 	void CellDocument::mouseClickedOnCell(Cell *clickedCell)
@@ -992,7 +992,7 @@ namespace IAEX
 		emit cursorChanged();
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2006-02-03
 	 *
@@ -1045,18 +1045,18 @@ namespace IAEX
 		emit cursorChanged();
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström and Ingemar Axelsson
 	 * \date 2006-02-10 (update)
 	 *
 	 * \brief open a new document
 	 *
-	 * 2005-12-05 AF, check if filename exists, otherwise use work dir 
+	 * 2005-12-05 AF, check if filename exists, otherwise use work dir
 	 * 2006-02-10 AF, check if link path and fragment exists
 	 */
 	void CellDocument::linkClicked(const QUrl *link)
 //	void CellDocument::anchorClicked(const QUrl *link)
-	{ 
+	{
 		// 2006-02-10 AF, check if path is empty
     fprintf(stderr, "receive link: %s\n", link->toString().toStdString().c_str());
     fflush(stderr); fflush(stdout);
@@ -1070,7 +1070,7 @@ namespace IAEX
 				linkpath.replace( "\\", "/" );
 
 				QDir dir;
-				executeCommand(new OpenFileCommand( dir.absolutePath() + "/" + linkpath )); 	
+				executeCommand(new OpenFileCommand( dir.absolutePath() + "/" + linkpath ));
 			}
 			else
 			{
@@ -1078,7 +1078,7 @@ namespace IAEX
 				QString linkpath = link->path();
 				linkpath.replace( "\\", "/" );
 
-				executeCommand(new OpenFileCommand( QFileInfo(filename_).absolutePath() + "/" + linkpath )); 	
+				executeCommand(new OpenFileCommand( QFileInfo(filename_).absolutePath() + "/" + linkpath ));
 			}
 		}
 
@@ -1100,7 +1100,7 @@ namespace IAEX
 
 
 
-	
+
 
 	/*!
 	* Problem with the eventfilter. Should be listening to the
@@ -1111,7 +1111,7 @@ namespace IAEX
 		if(o == workspace_)
 		{
 			if(e->type() == QEvent::MouseButtonPress)
-			{	    
+			{
 				qDebug("Clicked");
 			}
 		}
@@ -1147,7 +1147,7 @@ namespace IAEX
 		return factory_;
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2006-08-24
 	 *
@@ -1173,7 +1173,7 @@ namespace IAEX
 		saved_ = saved;
 	}
 
-	
+
 
 	/*! Hmmm check this later.
 	*/
@@ -1189,7 +1189,7 @@ namespace IAEX
 	}
 
 	/*! \brief Toggles the main workspace treeview.
-	* 
+	*
 	* Shows or hides the outermost treeview. This is just used for
 	* testing. Should not be used by anyone else.
 	*
@@ -1198,7 +1198,7 @@ namespace IAEX
 	void CellDocument::toggleMainTreeView()
 	{
 		workspace_->hideTreeView(!workspace_->isTreeViewVisible());
-	}   
+	}
 
 
 	//Ever used?
@@ -1218,7 +1218,7 @@ namespace IAEX
 		}
 	}
 
-	/*! \brief Runs a visitor on the cellstructure. 
+	/*! \brief Runs a visitor on the cellstructure.
 	*
 	* Traverses the tree in preorder. For more usage information \see visitor.
 	*
@@ -1232,7 +1232,7 @@ namespace IAEX
 
 	////SELECTION HANDLING/////////////////////////
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2006-04-18
 	 *
@@ -1247,7 +1247,7 @@ namespace IAEX
 		}
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2006-04-18
 	 *
@@ -1269,12 +1269,12 @@ namespace IAEX
 	}
 
 	void CellDocument::clearSelection()
-	{      
+	{
 		vector<Cell*>::iterator i = selectedCells_.begin();
 
 		for(;i!= selectedCells_.end();++i)
 			(*i)->setSelected(false);
-		
+
 		selectedCells_.clear();
 	}
 
@@ -1285,7 +1285,7 @@ namespace IAEX
 		if( selected )
 		{
 			// if SHIFT is pressed, select all cells from last cell
-			if( state == Qt::ShiftModifier && 
+			if( state == Qt::ShiftModifier &&
 				selected->isSelected() &&
 				selectedCells_.size() > 0 )
 			{
@@ -1422,14 +1422,14 @@ namespace IAEX
 		}
 	}
 
-	///////CURSOR METHODS///////////////////////////////   
+	///////CURSOR METHODS///////////////////////////////
 
 	QFrame *CellDocument::getState()
 	{
 		return mainFrame_;
 	}
 
-	
+
 
 	void CellDocument::showHTML(bool b)
 	{

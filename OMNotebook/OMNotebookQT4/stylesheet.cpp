@@ -47,13 +47,13 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 
 // REMADE LARGE PART OF THIS CLASS 2005-10-26 /AF
 
-/*! 
+/*!
 * \file stylesheet.cpp
 * \author Anders Fernström (and Ingemar Axelsson)
 * \date 2005-10-26
 *
-* \brief Had to remake the class to be compatible with the richtext 
-* system that is used in QT4. The old file have been renamed to 
+* \brief Had to remake the class to be compatible with the richtext
+* system that is used in QT4. The old file have been renamed to
 * 'stylesheet.cpp.old' /AF
 */
 
@@ -77,24 +77,24 @@ using namespace std;
 
 namespace IAEX
 {
-	/*! 
-	 * \class Stylesheet 
+	/*!
+	 * \class Stylesheet
 	 * \author Anders Fernström (and Ingemar Axelsson)
 	 * \date 2005-10-26
-	 * 
+	 *
 	 * \brief Reads a stylesheet file and creates CellStyle object
 	 * for all styles in the stylesheet file.
 	 */
 
-	/*! 
-	 * \brief Reads a given file and tries to construct a DOM tree 
+	/*!
+	 * \brief Reads a given file and tries to construct a DOM tree
  	 * from that file. If the file is corrupt a exception will be throwed.
 	 * \author Ingemar Axelsson (large part of this function is untouched)
 	 *
 	 * \param filename The file that will be read.
 	 */
 	Stylesheet::Stylesheet(const QString &filename)
-	{		
+	{
 		//read a stylesheet file.
 		doc_ = new QDomDocument("StyleDoc");
 
@@ -106,14 +106,14 @@ namespace IAEX
 			throw runtime_error( tmp.c_str() );
 		}
 
-		//Här kan det bli feeeeel!    
+		//Här kan det bli feeeeel!
 		if(!doc_->setContent(&file))
 		{
 			file.close();
-			
+
 			// 2005-10-26 AF, thorw exception insted of exit
-			string tmp = "Could not read content from file: " + 
-				filename.toStdString() + 
+			string tmp = "Could not read content from file: " +
+				filename.toStdString() +
 				" Probably some syntax error in the xml file";
 			throw runtime_error( tmp.c_str() );
 		}
@@ -138,7 +138,7 @@ namespace IAEX
 	 */
 	Stylesheet *Stylesheet::instance(const QString &filename)
 	{
-		if(!instance_)	 
+		if(!instance_)
 			instance_ = new Stylesheet(filename);
 
 		return instance_;
@@ -151,7 +151,7 @@ namespace IAEX
 	 * \brief Returns the CellStyle that correspondence with the
 	 * style name. The function retuns a CellStyle with the name
 	 * null if no CellStyle is found with the style name.
-	 * 
+	 *
 	 * \param style The name of the style you looking for
 	 * \return A CellStyle
 	 */
@@ -191,10 +191,10 @@ namespace IAEX
 		return styleNames_;
 	}
 
-	/*! 
+	/*!
 	 * \example stylesheet.xml
 	 *
-	 * There are a lot of different attribute values that can be used. 
+	 * There are a lot of different attribute values that can be used.
 	 * Here is a list of all values that can be used for different
 	 * attributes:
 	 *	- style
@@ -305,11 +305,11 @@ namespace IAEX
 	 *
 	 * \brief Parse the BORDER tag
 	 */
-	void Stylesheet::parseBorderTag( QDomElement element, 
+	void Stylesheet::parseBorderTag( QDomElement element,
 		CellStyle *item ) const
 	{
 		bool ok;
-		
+
 		// VALUE
 		int value = element.attribute( "value", "" ).toInt(&ok);
 		if(ok)
@@ -332,7 +332,7 @@ namespace IAEX
 	 *
 	 * \brief Parse the ALIGNMENT tag
 	 */
-	void Stylesheet::parseAlignmentTag( QDomElement element,	
+	void Stylesheet::parseAlignmentTag( QDomElement element,
 		CellStyle *item ) const
 	{
 		// ALIGNMENT
@@ -367,7 +367,7 @@ namespace IAEX
 	 *
 	 * \brief Parse the FONT tag
 	 */
-	void Stylesheet::parseFontTag( QDomElement element, 
+	void Stylesheet::parseFontTag( QDomElement element,
 		CellStyle *item ) const
 	{
 		QDomNode fontNode = element.firstChild();
@@ -386,7 +386,7 @@ namespace IAEX
 				{
 					bool ok;
 					int size = fontElement.text().toInt(&ok);
-					
+
 					if(ok)
 						item->textCharFormat()->setFontPointSize( size );
 					else
@@ -411,7 +411,7 @@ namespace IAEX
 					{
 						bool ok;
 						int size = weight.toInt(&ok);
-						
+
 						if(ok)
 							item->textCharFormat()->setFontWeight( size );
 						else
@@ -493,7 +493,7 @@ namespace IAEX
 				}
 				else
 				{
-					cout << "font tag not specified: " << 
+					cout << "font tag not specified: " <<
 						fontElement.tagName().toStdString();
 				}
 			}
@@ -508,11 +508,11 @@ namespace IAEX
 	 *
 	 * \brief Parse the CHAPTERLEVEL tag
 	 */
-	void Stylesheet::parseChapterLevelTag(QDomElement element, 
+	void Stylesheet::parseChapterLevelTag(QDomElement element,
 		CellStyle *item) const
 	{
 		bool ok;
-		
+
 		// Level
 		int level = element.text().toInt(&ok);
 		if(ok)

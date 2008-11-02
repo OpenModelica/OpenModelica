@@ -47,13 +47,13 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 
 // REMADE LARGE PART OF THIS CLASS 2005-10-26 /AF
 
-/*! 
+/*!
 * \file stylesheet.h
 * \author Anders Fernström (and Ingemar Axelsson)
 * \date 2005-10-26
 *
-* \brief Had to remake the class to be compatible with the richtext 
-* system that is used in QT4. The old file have been renamed to 
+* \brief Had to remake the class to be compatible with the richtext
+* system that is used in QT4. The old file have been renamed to
 * 'stylesheet.h.old' /AF
 */
 

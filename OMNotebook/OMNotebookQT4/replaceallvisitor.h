@@ -45,7 +45,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 ------------------------------------------------------------------------------------
 */
 
-/*! 
+/*!
  * \file replaceallvisitor.h
  * \author Anders Fernström
  * \date 2006-08-24
@@ -182,7 +182,7 @@ namespace IAEX
 		// Visitor function - CURSORCELL
 		void visitCellCursorNodeBefore( CellCursor *cursor ){}
 		void visitCellCursorNodeAfter( CellCursor *cursor ){}
-		
+
 
 	private:
 		QString findText_;

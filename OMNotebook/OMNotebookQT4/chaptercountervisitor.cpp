@@ -45,7 +45,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 ------------------------------------------------------------------------------------
 */
 
-/*! 
+/*!
  * \file chaptercountervisitor.cpp
  * \author Anders Fernström
  */
@@ -64,14 +64,14 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 
 namespace IAEX
 {
-	/*! 
+	/*!
 	 * \class ChapterCounterVisitor
 	 * \date 2006-03-02
 	 *
 	 * \brief Update the chapter counters in the document
 	 */
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 *
 	 * \brief The class constructor
@@ -82,7 +82,7 @@ namespace IAEX
 			counters_[i] = 0;
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 *
 	 * \brief The class deconstructor
@@ -218,8 +218,8 @@ namespace IAEX
 	{}
 	//CELLCURSOR
 	void ChapterCounterVisitor::visitCellCursorNodeBefore(CellCursor *)
-	{}      
+	{}
 
 	void ChapterCounterVisitor::visitCellCursorNodeAfter(CellCursor *)
 	{}
-} 
+}

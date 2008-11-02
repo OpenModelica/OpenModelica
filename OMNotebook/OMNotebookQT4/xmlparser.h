@@ -47,13 +47,13 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 
 // REMADE LARGE PART OF THIS CLASS 2005-11-30 /AF
 
-/*! 
+/*!
  * \file xmlparser.h
  * \author Anders Fernström (and Ingemar Axelsson)
  * \date 2005-11-30
  *
  * \brief Remake this class to work with the specified xml format that
- * document are to be saved in. The old file have been renamed to 
+ * document are to be saved in. The old file have been renamed to
  * 'xmlparser.h.old' /AF
  */
 
@@ -61,7 +61,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #define XMLPARSER_H
 
 
-//QT Headers 
+//QT Headers
 #include <QtCore/QString>
 
 //IAEX Headers

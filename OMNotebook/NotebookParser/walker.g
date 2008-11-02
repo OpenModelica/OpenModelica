@@ -1,12 +1,12 @@
-/*! \file walker.g 
+/*! \file walker.g
  * \author Ingemar Axelsson
- * 
- * \brief TreeParser that creates the widgetstructure.
- * 
- * Traverses the ast and builds a widgettree using Textcells, 
- * groupcells and inputcells. 
  *
- * \todo Look for memory leaks in this code. There is probably a 
+ * \brief TreeParser that creates the widgetstructure.
+ *
+ * Traverses the ast and builds a widgettree using Textcells,
+ * groupcells and inputcells.
+ *
+ * \todo Look for memory leaks in this code. There is probably a
  * lot of them here.(Ingemar Axelsson)
  */
 
@@ -31,7 +31,7 @@ header {
 
 using namespace std;
 using namespace IAEX;
-        
+
 typedef pair<string,string> rule_t;
 
 typedef vector<rule_t> rules_t;
@@ -47,7 +47,7 @@ public:
    result_t(ostringstream &f):first(f){}
    result_t(ostringstream &f, vector<rule_t> &s)
    :first(f), second(s){}
-   
+
    ostringstream& first;
    vector<rule_t> second;
 };
@@ -77,8 +77,8 @@ options
     Factory *factory;
     Cell *workspace;
     ostringstream output;
-    //This is not very nice.   
-    
+    //This is not very nice.
+
     // AF
     bool imagePartOfText;
     bool convertingToONB;
@@ -89,18 +89,18 @@ document[Cell *ws, Factory *f, int readmode]
     //This is in NotebookTreeParser.cpp
     factory = f;
     workspace = ws;
-    
-    
+
+
     // AF
     imagePartOfText = false;
     readmode_ = readmode;
-    
+
     if( readmode_ == READMODE_CONVERTING_ONB )
 		convertingToONB = true;
 	else
 		convertingToONB = false;
-    
-    
+
+
     result_t result(output);// = new result_t; //??
 }
     : expr[result]
@@ -145,32 +145,32 @@ exprheader [result_t &result]
 			//2005-11-09 AF, Added a function for adding/removeing some
 			//chars/symbols from the text
             string str = StripString::stripNBString( list.first.str() );
-        
+
 			result.first << str << endl;
         }
     |   #(LISTBODY expr[result])
         {
         }
-    |   {  
+    |   {
     	    ostringstream contentoutput;
             result_t content(contentoutput);
         }
         #(CELL expr[content] (style:QSTRING)? (rule[rules])*)
-        {               
+        {
 			//2005-11-09 AF, Added a function for adding/removeing some
 			//chars/symbols from the text
             string cnt = StripString::stripNBString( content.first.str() );
-                        
+
             if(style)
             {
 				QString qcnt(cnt.c_str());
-	            	
+
 				string s1 = style->getText();
 				s1.assign(s1, 1, s1.length()-2);
 
 				QString cellstyle(s1.c_str());
-				
-				// 2005-11-09 AF,	
+
+				// 2005-11-09 AF,
 				// if the cellstyle is "Graphics" a new cell shouldn't always be added, sometimes
 				// a image should be added in the existing cell
 				if( cellstyle == "Graphics" )
@@ -186,15 +186,15 @@ exprheader [result_t &result]
 						Cell *text = factory->createCell("Text", workspace);
 						text->setText("IMAGE CELL");
 						text->setStyle("Text");
-						
+
 						workspace->addChild(text);
 					}
 					*/
 				}
 				else
-				{	
+				{
 					Cell *text = factory->createCell(cellstyle, workspace);
-	                
+
 					//RULES
 					//Rules from content.
 					for(rules_t::iterator i=content.second.begin();i!=content.second.end();++i)
@@ -202,26 +202,26 @@ exprheader [result_t &result]
 						//AF text->setStyle(QString((*i).first.c_str()), QString((*i).second.c_str()));
 						//text->addRule(new Rule(QString((*i).first.c_str()), QString((*i).second.c_str())));
 					}
-	                
+
 					//Rules from tag.
 					for(rules_t::iterator j = rules.begin(); j != rules.end(); j++)
 					{
 						//AF text->setStyle(QString((*j).first.c_str()), QString((*j).second.c_str()));
 						text->addRule(new Rule(QString((*j).first.c_str()), QString((*j).second.c_str())));
 					}
-	                
+
 					//STYLE
 					// 2005-11-08 AF, ändrat ordningen så att setText görs före setStyle
 					text->setText( qcnt );
 					//text->setStyle( cellstyle );
-	                
+
 					workspace->addChild(text);
 				}
             }
             else
-            {   //This is really ugly, but it works most of the time. 
-                //This is only happening when a Cell does not have a style. It seems 
-                //to happen only with cells inside textdata-expressions. 
+            {   //This is really ugly, but it works most of the time.
+                //This is only happening when a Cell does not have a style. It seems
+                //to happen only with cells inside textdata-expressions.
                 result.first << cnt;
             }
         }
@@ -231,15 +231,15 @@ exprheader [result_t &result]
             Cell *group = factory->createCell("cellgroup", workspace);
             Cell *parent = workspace;
             workspace = group;
-        }   
+        }
         #(CELLGROUPDATA expr[result] (opengroup:CELLGROUPOPEN|closegroup:CELLGROUPCLOSED))
         {
         	if( opengroup )
 				group->setClosed( false );
 			else if( closegroup )
 				group->setClosed( true );
-		
-					
+
+
             workspace = parent;
             workspace->addChild(group);
         }
@@ -255,7 +255,7 @@ exprheader [result_t &result]
                 //What happends if a style is added here?
             }
             else
-            {   
+            {
                 rules_t::iterator i = stylerules.begin();
                 for(; i != stylerules.end();++i)
                 {
@@ -263,17 +263,17 @@ exprheader [result_t &result]
                     result.second.push_back(*i);
                 }
             }
-            
+
             //2005-11-09 AF, Added a function for adding/removeing some
 			//chars/symbols from the text
             string str = StripString::stripNBString( sbcontent.first.str() );
-            
+
             // 2005-12-06 AF, Apply the rules to the text
             str = StripString::applyRulesToText( str, stylerules );
-            
+
             result.first << str; //sbcontent.first.str();
         }
-    | 
+    |
         {
 			imagePartOfText = true;
         }
@@ -281,7 +281,7 @@ exprheader [result_t &result]
         {
             imagePartOfText = false;
         }
-    | 
+    |
         {
             ostringstream baseoutput;
             ostringstream expoutput;
@@ -291,16 +291,16 @@ exprheader [result_t &result]
         #(SUPERSCRBOX   expr[base] expr[exp])
         {
             result.first << base.first.str() << "<sup>" << exp.first.str() << "</sup>";
-                        
+
             rules_t::iterator i = base.second.begin();
             for(; i != base.second.end(); ++i)
             {
-                result.second.push_back((*i));               
+                result.second.push_back((*i));
             }
             rules_t::iterator j = exp.second.begin();
             for(; j != exp.second.end(); ++j)
             {
-                result.second.push_back((*j));               
+                result.second.push_back((*j));
             }
         }
     |
@@ -313,19 +313,19 @@ exprheader [result_t &result]
         #(SUBSCRBOX   expr[baseSub] expr[expSub])
         {
 			result.first << baseSub.first.str() << "<sub>" << expSub.first.str() << "</sub>";
-                        
+
             rules_t::iterator i = baseSub.second.begin();
             for(; i != baseSub.second.end(); ++i)
             {
-                result.second.push_back((*i));               
+                result.second.push_back((*i));
             }
             rules_t::iterator j = expSub.second.begin();
             for(; j != expSub.second.end(); ++j)
             {
-                result.second.push_back((*j));               
+                result.second.push_back((*j));
             }
         }
-    |   
+    |
         {
             //Translates all buttons into hyperlinks.
             ostringstream btoutput;
@@ -333,7 +333,7 @@ exprheader [result_t &result]
             rules_t buttonRules;
         }
         #(BUTTONBOX   expr[buttonTitle] (expr[result])* (rule[buttonRules])*)
-        {         
+        {
             string filename;
             //Check rules. Look for ButtonData ->Filename and ButtonStyle=Hyperlink
             rules_t::iterator i = buttonRules.begin();
@@ -341,22 +341,22 @@ exprheader [result_t &result]
             {
                 if((*i).first == "ButtonData")
                 {
-                    //cout << "BUTTONBOX RULES: " << (*i).first << "->" 
+                    //cout << "BUTTONBOX RULES: " << (*i).first << "->"
                     //     << (*i).second << endl;
                     filename = (*i).second;
                 }
                 //result.second.push_back(*i);
             }
-            
-            
+
+
             // 2006-02-10 AF, Add '#' to filename. Links should have '#'
-            // for specifing internel references. For example internal 
+            // for specifing internel references. For example internal
             // referenses for a link;
             // HTML link: Dir/filename.html#ChaperSeven
             // filename looks like: Dir/filename.htmlChapterSeven
             // have to insert # symbol
             filename = StripString::fixFilename( filename );
-            
+
             // 2006-03-21 AF, if convertion to ONB - replace .nb with .onb
             if( convertingToONB )
             {
@@ -366,24 +366,24 @@ exprheader [result_t &result]
 					filename.replace( index, 3, ".onb" );
 				}
             }
-            
 
-            result.first << "<a href=\"" << filename << "\">" 
+
+            result.first << "<a href=\"" << filename << "\">"
                          << buttonTitle.first.str() << "</a>";
         }
-    |   
+    |
         {
             // InpterpretationBox contains hidden information in Mathematica
             ostringstream boxesoutput;
             result_t boxes(boxesoutput);
-            
+
             ostringstream interpretationdataoutput;
             result_t interpretationdata(interpretationdataoutput);
         }
         #(INTERPRETATIONBOX  expr[boxes] expr[interpretationdata])
         {
         }
-    |   
+    |
         {
     	    ostringstream diroutput;
     	    ostringstream filenameoutput;
@@ -396,16 +396,16 @@ exprheader [result_t &result]
             //Delete strange newline in directory string.
             string d = dir.first.str();
             d.assign(d, 0, d.length()-1);
-           
+
             result.first << d << "/" << filename.first.str();
         }
-    |   
+    |
         {
 		}
 		#(GRAPHICSDATA  type:QSTRING data:QSTRING)
 		{
 		}
-	|	
+	|
 	    {
 	    }
 	    #(DIREXTEDINFINITY infinitytype:NUMBER)
@@ -456,7 +456,7 @@ exprheader [result_t &result]
     ;
 
 listelement[result_t &list]
-{ 
+{
     ostringstream resoutput;
     result_t result(resoutput);
 }
@@ -475,10 +475,10 @@ rule [rules_t &rules]
     result_t value(valoutput);
 }
     :   {
-            
+
         }
         #(RULE expr[attribute] expr[value])
-        {   
+        {
             //rules.push_back(Rule(attribute.first.str(), value.first.str()));
             rules.push_back(rule_t(attribute.first.str(), value.first.str()));
         }
@@ -497,18 +497,18 @@ value returns [string value]
     : str:QSTRING
         {
             //Move this to TextCell.
-            
+
             //Delete quotes
             value = str->getText();
-            value.assign(value, 1, value.length()-2);            
+            value.assign(value, 1, value.length()-2);
         }
     | num:NUMBER
         {
-            value = string(num->getText());   
+            value = string(num->getText());
         }
     | tr:TRUE_
         {
-            value = string(tr->getText()); 
+            value = string(tr->getText());
         }
     | fl:FALSE_
         {
@@ -516,11 +516,11 @@ value returns [string value]
         }
     | rightval:VALUERIGHT //Right / Left
         {
-            value = string(rightval->getText()); 
+            value = string(rightval->getText());
         }
     | leftval:VALUELEFT //Right / Left
         {
-            value = string(leftval->getText()); 
+            value = string(leftval->getText());
         }
     | centerval:VALUECENTER
         {
@@ -544,19 +544,19 @@ value returns [string value]
 	    }
     | tradform:TRADITIONALFORM
         {
-            //value = string(tradform->getText()); 
+            //value = string(tradform->getText());
         }
     | stdform:STANDARDFORM
         {
-            //value = string(stdform->getText()); 
+            //value = string(stdform->getText());
         }
     | inputform:INPUTFORM
         {
-            //value = string(inputform->getText()); 
+            //value = string(inputform->getText());
         }
     | outputform:OUTPUTFORM
         {
-            //value = string(outputform->getText()); 
+            //value = string(outputform->getText());
         }
     | defaultinputformattype:DEFAULTINPUTFORMATTYPE
         {
@@ -564,11 +564,11 @@ value returns [string value]
         }
     | automatic:AUTOMATIC
         {
-            //value = string(automatic->getText()); 
+            //value = string(automatic->getText());
         }
     | none:NONESYM
         {
-            //value = string(none->getText()); 
+            //value = string(none->getText());
         }
     | nullsym:NULLSYM
         {
@@ -581,31 +581,31 @@ value returns [string value]
     ;
 
 attribute returns [string value]
-    : fontslant:FONTSLANT       
+    : fontslant:FONTSLANT
         {
             value = string(fontslant->getText());
         }
-    | fontsize:FONTSIZE        
+    | fontsize:FONTSIZE
         {
             value = string(fontsize->getText());
         }
-    | fontcolor:FONTCOLOR       
+    | fontcolor:FONTCOLOR
         {
             value = string(fontcolor->getText());
         }
-    | fontweight:FONTWEIGHT      
+    | fontweight:FONTWEIGHT
         {
             value = string(fontweight->getText());
         }
-    | fontfamily:FONTFAMILY      
+    | fontfamily:FONTFAMILY
         {
             value = string(fontfamily->getText());
         }
-    | fontvariations:FONTVARIATIONS  
+    | fontvariations:FONTVARIATIONS
         {
             value = string(fontvariations->getText());
         }
-    | textalignment:TEXTALIGNMENT   
+    | textalignment:TEXTALIGNMENT
         {
             value = string(textalignment->getText());
         }
@@ -681,7 +681,7 @@ attribute returns [string value]
         {
             value = string(buttonfunction->getText());
         }
-    | buttondata:BUTTONDATA      
+    | buttondata:BUTTONDATA
         {
             value = string(buttondata->getText());
         }
@@ -689,7 +689,7 @@ attribute returns [string value]
         {
             value = string(buttonevaluator->getText());
         }
-    | buttonstyle:BUTTONSTYLE     
+    | buttonstyle:BUTTONSTYLE
         {
             value = string(buttonstyle->getText());
         }
@@ -833,11 +833,11 @@ attribute returns [string value]
         {
             value = string(cellbracketoptions->getText());
         }
-    | editable:EDITABLE     
+    | editable:EDITABLE
         {
             value = string(editable->getText());
         }
-    | background:BACKGROUND   
+    | background:BACKGROUND
         {
             value = string(background->getText());
         }
@@ -845,35 +845,35 @@ attribute returns [string value]
         {
             value = string(cellgroupingrules->getText());
         }
-    | windowsize:WINDOWSIZE     
+    | windowsize:WINDOWSIZE
         {
             value = string(windowsize->getText());
         }
-    | windowmargins:WINDOWMARGINS  
+    | windowmargins:WINDOWMARGINS
         {
             value = string(windowmargins->getText());
         }
-    | windowframe:WINDOWFRAME    
+    | windowframe:WINDOWFRAME
         {
             value = string(windowframe->getText());
         }
-    | windowelements:WINDOWELEMENTS 
+    | windowelements:WINDOWELEMENTS
         {
             //value = string(attr->getText());
         }
-    | windowtitle:WINDOWTITLE    
+    | windowtitle:WINDOWTITLE
         {
             //value = string(attr->getText());
         }
-    | windowtoolbars:WINDOWTOOLBARS 
+    | windowtoolbars:WINDOWTOOLBARS
         {
             //value = string(attr->getText());
         }
-    | windowmoveable:WINDOWMOVEABLE 
+    | windowmoveable:WINDOWMOVEABLE
         {
             //value = string(attr->getText());
         }
-    | windowfloating:WINDOWFLOATING 
+    | windowfloating:WINDOWFLOATING
         {
             //value = string(attr->getText());
         }
@@ -885,7 +885,7 @@ attribute returns [string value]
         {
             value = string(styledefinitions->getText());
         }
-    | frontendversion:FRONTENDVERSION 
+    | frontendversion:FRONTENDVERSION
         {
             value = string(frontendversion->getText());
         }
@@ -913,7 +913,7 @@ attribute returns [string value]
         {
             value = string(privatefontoption->getText());
         }
-    | magnification:MAGNIFICATION 
+    | magnification:MAGNIFICATION
         {
             value = string(magnification->getText());
         }
@@ -921,7 +921,7 @@ attribute returns [string value]
         {
             value = string(generatedCell->getText());
         }
-    | cellautoovrt:CELLAUTOOVRT 
+    | cellautoovrt:CELLAUTOOVRT
         {
             value = string(cellautoovrt->getText());
         }
@@ -929,19 +929,19 @@ attribute returns [string value]
         {
             value = string(imagesize->getText());
         }
-    | imagemargins:IMAGEMARGINS     
+    | imagemargins:IMAGEMARGINS
         {
             value = string(imagemargins->getText());
         }
-    | imageregion:IMAGEREGION      
-        {   
+    | imageregion:IMAGEREGION
+        {
             value = string(imageregion->getText());
         }
     | imagerangecache:IMAGERANGECACHE
         {
             value = string(imagerangecache->getText());
         }
-    | imagecache:IMAGECACHE      
+    | imagecache:IMAGECACHE
         {
             value = string(imagecache->getText());
         }

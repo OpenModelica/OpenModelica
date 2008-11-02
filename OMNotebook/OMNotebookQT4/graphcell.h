@@ -45,7 +45,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 ------------------------------------------------------------------------------------
 */
 
-/*! 
+/*!
  * \file GraphCell.h
  * \author Ingemar Axelsson and Anders Fernström
  * \date 2005-10-27 (update)
@@ -79,7 +79,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 class IndentationState;
 
 namespace IAEX
-{   
+{
 	enum graphCellStates {FINISHED, EVAL, ERROR, MODIFIED};
 
 	class MyTextEdit2;
@@ -98,7 +98,7 @@ namespace IAEX
 		virtual QTextCursor textCursor();		// Added 2005-10-27 AF
 		virtual QTextEdit* textEdit();			// Added 2006-01-05 AF
 		virtual QTextEdit* textEditOutput();	// Added 2006-02-03 AF
-		virtual void viewExpression(const bool){} 
+		virtual void viewExpression(const bool){}
 
 		virtual void addCellWidgets();
 		virtual void removeCellWidgets();
@@ -111,7 +111,7 @@ namespace IAEX
 		virtual bool isEvaluated();							// Added 2005-11-23 AF
 		virtual bool isPlot(QString text = QString::null);	// Added 2005-11-23 AF
 		virtual bool isPlot2(QString text = QString::null);
-		virtual bool isVisualize(QString text = QString::null);			
+		virtual bool isVisualize(QString text = QString::null);
 
 
 	signals:
@@ -149,11 +149,11 @@ namespace IAEX
 		virtual void setFocusOutput(const bool focus);	// Added 2006-02-03 AF
 		void setExpr(QString);
 		void showVariableButton(bool);
-		
+
 		void delegateFinished();
 		void setState(int state);
 		void showGraphics();
-		
+
 
 	protected:
 		void resizeEvent(QResizeEvent *event);		//AF

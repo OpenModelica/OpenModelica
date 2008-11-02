@@ -45,7 +45,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 ------------------------------------------------------------------------------------
 */
 
-/*! 
+/*!
  * \file document.h
  * \author Ingemar Axelsson and Anders Fernström
  *
@@ -86,22 +86,22 @@ namespace IAEX
 	class Factory;
 	class Visitor;
 
-	/*! 
+	/*!
 	 *\interface Document
 	 *
 	 * \brief Describes all operations that is needed by a document.
 	 *
 	 * The Document interface describes all methods that must be
-	 * implemented by a concrete document class. 
+	 * implemented by a concrete document class.
 	 */
-	class Document : public QObject 
+	class Document : public QObject
 	{
 		Q_OBJECT
 
-	public: 
+	public:
 		//Application
 		virtual Application *application() = 0;
-		
+
 		//State
 		virtual bool hasChanged() const = 0;
 		virtual bool isOpen() const = 0;
@@ -146,7 +146,7 @@ namespace IAEX
 		virtual void textcursorChangeMargin( int margin ) = 0;
 		virtual void textcursorChangePadding( int padding ) = 0;
 		virtual void textcursorChangeBorder( int border ) = 0;
-		
+
 		// Added 2005-11-17 AF, Image operations
 		virtual void textcursorInsertImage( QString filepath, QSize size ) = 0;
 		virtual QString addImage( QImage *image ) = 0;
@@ -188,7 +188,7 @@ signals:
 		virtual void newState(QString) = 0;
 		virtual void setStatusMenu(QList<QAction*>) = 0;
 
-		
+
 	};
 }
 #endif

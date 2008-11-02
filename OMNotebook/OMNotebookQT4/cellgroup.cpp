@@ -45,7 +45,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 ------------------------------------------------------------------------------------
 */
 
-/*! 
+/*!
  * \file cellgroup.h
  * \author Ingemar Axelsson and Anders Fernström
  *
@@ -66,10 +66,10 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 
 namespace IAEX{
 
-	/*! 
-	 * \class CellGroup 
+	/*!
+	 * \class CellGroup
 	 * \author Ingemar Axelsson and Anders Fernström
-	 * 
+	 *
 	 *  \brief CellGroup implements the functionality to
 	 *  be a Cell and contain a lot of subcells.
 	 *
@@ -77,15 +77,15 @@ namespace IAEX{
 	 * \todo Reimplement as a composite instead. That is much much
 	 * cleaner. Also look at CellWorkspace and rename CellContainer to
 	 * CellDocument. CellWorkspace should dissappear.(Ingemar Axelsson)
-	 * 
+	 *
 	 * \todo Analyse class and find out what is different from the
 	 * Cell class. Is it possible that cell and cellgroup should be
-	 * integrated as one class? 
+	 * integrated as one class?
 	 * It should be easy to convert from a cell to a cellgroup. (Ingemar Axelsson)
 	 */
 
 
-	/*! 
+	/*!
 	 * \author Ingemar Axelsson
 	 *
 	 * \brief The class constructor
@@ -96,7 +96,7 @@ namespace IAEX{
 		newIndex_(0)
 	{
 		main_ = new QWidget(this);
-		
+
 		layout_ = new QGridLayout(main_);
 		layout_->setMargin(0);
 		layout_->setSpacing(0);
@@ -107,11 +107,11 @@ namespace IAEX{
 		setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
 
 		style_.setName( "cellgroup" );
-	
-		
+
+
 	}
 
-	/*! 
+	/*!
 	 * \author Ingemar Axelsson
 	 *
 	 * \brief The class destructor
@@ -120,7 +120,7 @@ namespace IAEX{
 	{
 	}
 
-	/*! 
+	/*!
 	 * \author Ingemar Axelsson and Anders Fernström
 	 * \date 2005-10-28 (update)
 	 *
@@ -137,7 +137,7 @@ namespace IAEX{
 			child()->setStyle(style);
 	}
 
-	/*! 
+	/*!
 	 * \author Ingemar Axelsson and Anders Fernström
 	 * \date 2005-10-28 (update)
 	 *
@@ -160,12 +160,12 @@ namespace IAEX{
 		}
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-11-30
 	 *
-	 * \brief hide() or show() the child cells of the groupcell, 
-	 * depending on the state of the groupcell (opened or closed). 
+	 * \brief hide() or show() the child cells of the groupcell,
+	 * depending on the state of the groupcell (opened or closed).
 	 * This must be done because otherwise qt layout will compress
 	 * all child and display them in the smaller height set went the
 	 * groupcell is closed.
@@ -200,7 +200,7 @@ namespace IAEX{
 		}
 	}
 
-	/*! 
+	/*!
 	 * \author Ingemar Axelsson
 	 */
 	bool CellGroup::isClosed() const
@@ -208,13 +208,13 @@ namespace IAEX{
 		return closed_;
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-10-28
 	 *
-	 * \brief Function for telling if the user is allowed to change 
+	 * \brief Function for telling if the user is allowed to change
 	 * the text settings for the text inside the cell. User isn't
-	 * allowed to change the text settings for cellgroups so this 
+	 * allowed to change the text settings for cellgroups so this
 	 * function always return false.
 	 *
 	 * \return False
@@ -224,7 +224,7 @@ namespace IAEX{
 		return false;
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-08-24
 	 *
@@ -244,7 +244,7 @@ namespace IAEX{
 	/*!
 	 * \author Ingemar Axelsson
 	 *
-	 * \brief This function hides/shows the content of a groupcell. 
+	 * \brief This function hides/shows the content of a groupcell.
 	 *
 	 * This member hides/shows the content of a cellgroup. The height of
 	 * the cellgroup is calculated depending on wich case it is.
@@ -262,7 +262,7 @@ namespace IAEX{
 	 * special cases. Try to find them.
 	 */
 	void CellGroup::setClosed(const bool closed, bool update)
-	{   
+	{
 		closed_ = closed;
 
 		if( hasChilds() )
@@ -271,8 +271,8 @@ namespace IAEX{
 		treeView()->setClosed( closed );
 		setHeight( height() ); //Sends a signal
 
-		
-		
+
+
 		if( update )
 			emit cellOpened(this, closed_);
 	}
@@ -284,7 +284,7 @@ namespace IAEX{
 	 *
 	 * Calculates the height of the cellgroup. The calculated height
 	 * depends on the state of the group. Is the group closed then the
-	 * height is just the first cell otherwise the height is a sum of 
+	 * height is just the first cell otherwise the height is a sum of
 	 * the height of all cells.
 	 *
 	 * \returns height of cellgroup.
@@ -298,7 +298,7 @@ namespace IAEX{
 	{
 		int height = 0;
 
-		if( closed_ )  
+		if( closed_ )
 		{
 			//Height of the first cell.
 			height = child()->height();
@@ -319,11 +319,11 @@ namespace IAEX{
 		return height;
 	}
 
-	/*! 
+	/*!
 	 * \author Ingemar Axelsson (and Anders Fernström)
 	 * \date 2005-11-30 (update)
 	 *
-	 * \brief open and close the groupcell when double click on the 
+	 * \brief open and close the groupcell when double click on the
 	 * treeview
 	 *
 	 * 2005-11-30 AF, added the call to 'closeChildCells()'
@@ -334,19 +334,19 @@ namespace IAEX{
 	{
 		// PORT >>if(treeView()->hasMouse())
 		if( treeView()->testAttribute(Qt::WA_UnderMouse) )
-		{	
+		{
 			closed_ = !closed_;
-			setClosed(closed_); 
+			setClosed(closed_);
 			setSelected(false);
 			closeChildCells();
-		}	
-		else			
+		}
+		else
 		{
 			//Do nothing.
 		}
 	}
 
-	/*! 
+	/*!
 	 * \author Ingemar Axelsson
 	 */
 	void CellGroup::adjustHeight()
@@ -363,7 +363,7 @@ namespace IAEX{
 
 
 
-	
+
 
 
 
@@ -373,10 +373,10 @@ namespace IAEX{
 			child()->setFocus(focus);
 	}
 
-	/*! \brief Decides if a visitor is allowed to visit the object. 
+	/*! \brief Decides if a visitor is allowed to visit the object.
 	*
 	* Traverses the structure in preorder.
-	* 
+	*
 	* \todo Could the traversing order be decided in the visitor instead
 	* without to much dirt added to the code class? This is definitly not
 	* important.(Ingemar Axelsson)
@@ -386,11 +386,11 @@ namespace IAEX{
 	*
 	*/
 	void CellGroup::accept(Visitor &v)
-	{  
+	{
 		v.visitCellGroupNodeBefore(this);
 
 		if(hasChilds())
-			child()->accept(v);      
+			child()->accept(v);
 
 		v.visitCellGroupNodeAfter(this);
 
@@ -406,7 +406,7 @@ namespace IAEX{
 	dependency should only be in the cursor then.(Ingemar Axelsson)
 	*/
 	void CellGroup::addChild(Cell *newCell)
-	{      
+	{
 		newCell->setParentCell(this);
 
 		if(hasChilds())
@@ -476,12 +476,12 @@ namespace IAEX{
 			this, SLOT(adjustHeight()));
 
 		removeCellWidgets();
-		addCellWidgets();   
+		addCellWidgets();
 	}
 
 	void CellGroup::removeCellWidgets()
 	{
-		Cell *current = child(); 
+		Cell *current = child();
 
 		while(current != 0)
 		{
@@ -493,7 +493,7 @@ namespace IAEX{
 	}
 
 	void CellGroup::addCellWidgets()
-	{  
+	{
 		Cell *current = child();
 		int i = 0;
 

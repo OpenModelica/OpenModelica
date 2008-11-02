@@ -45,7 +45,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 ------------------------------------------------------------------------------------
 */
 
-/*! 
+/*!
 * \file cellfactory.cpp
 * \author Ingemar Axelsson (and Anders Fernström)
 * \date 2005-10-28 (update)
@@ -76,17 +76,17 @@ using namespace std;
 
 namespace IAEX
 {
-  /*! 
+  /*!
   * \author Ingemar Axelsson
   *
   * \brief The class constructor
   */
-  CellFactory::CellFactory(Document *doc) 
+  CellFactory::CellFactory(Document *doc)
     : doc_(doc)
   {
   }
 
-  /*! 
+  /*!
   * \author Ingemar Axelsson
   *
   * \brief The class destructor
@@ -321,7 +321,7 @@ namespace IAEX
       QObject::connect(text->text_, SIGNAL(undoAvailable(bool)), d3->undoAction, SLOT(setEnabled(bool)));
       QObject::connect(text->text_, SIGNAL(redoAvailable(bool)), d3->redoAction, SLOT(setEnabled(bool)));
       */
-      return text; 
+      return text;
     }
   }
 }

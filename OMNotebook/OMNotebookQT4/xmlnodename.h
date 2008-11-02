@@ -45,7 +45,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 ------------------------------------------------------------------------------------
 */
 
-/*! 
+/*!
 * \file xmlnodename.h
 * \author Anders Fernström
 * \date 2005-11-30

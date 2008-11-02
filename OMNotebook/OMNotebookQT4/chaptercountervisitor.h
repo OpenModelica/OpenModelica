@@ -45,7 +45,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 ------------------------------------------------------------------------------------
 */
 
-/*! 
+/*!
  * \file chaptercountervisitor.h
  * \author Anders Fernström
  */
@@ -62,7 +62,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 
 namespace IAEX
 {
-	class ChapterCounterVisitor : public Visitor 
+	class ChapterCounterVisitor : public Visitor
 	{
 
 	public:
@@ -84,11 +84,11 @@ namespace IAEX
 		virtual void visitGraphCellNodeBefore(GraphCell *node);
 		virtual void visitGraphCellNodeAfter(GraphCell *node);
 
-		virtual void visitCellCursorNodeBefore(CellCursor *cursor);      
+		virtual void visitCellCursorNodeBefore(CellCursor *cursor);
 		virtual void visitCellCursorNodeAfter(CellCursor *cursor);
 
 	private:
-		int counters_[COUNTERS];		
+		int counters_[COUNTERS];
 	};
 }
 #endif

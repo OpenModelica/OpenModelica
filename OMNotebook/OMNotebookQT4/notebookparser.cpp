@@ -18,7 +18,7 @@ are permitted provided that the following conditions are met:
 
     * Redistributions of source code must retain the above copyright notice,
       this list of conditions and the following disclaimer.
-    
+
 	* Redistributions in binary form must reproduce the above copyright notice,
       this list of conditions and the following disclaimer in the documentation
       and/or other materials provided with the distribution.
@@ -55,7 +55,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 
 //ANTLR Headers
 #include "AntlrNotebookLexer.hpp"
-#include "AntlrNotebookParser.hpp" 
+#include "AntlrNotebookParser.hpp"
 #include "AntlrNotebookTreeParser.hpp"
 
 //IAEX Headers
@@ -66,9 +66,9 @@ using namespace std;
 namespace IAEX
 {
 
-   /*! \class NotebookParser 
+   /*! \class NotebookParser
     *
-    * \brief Used to open a notebookfile. 
+    * \brief Used to open a notebookfile.
     *
     * Opens a notebookfile. Note that the parser used to parse
     * Mathematica notebooks is not completley correct. There are a lot
@@ -92,13 +92,13 @@ namespace IAEX
     * \li SuperscriptBox[].
     * \li rule[].
     * \li Some cellstyles, Text, Title, Section, Input, Author.
-    * 
+    *
     * Rules implemented:
     * \li FontSlant
     * \li FontWeight
     * \li TextAlignment
     * \li FontSize
-    * 
+    *
     * Below is some tags and rules that is not implemented. Note that
     * this is just a subset of all tags not implemented. It is far
     * from complete.
@@ -126,7 +126,7 @@ namespace IAEX
     * \li TextJustification
     *
     *
-    * \param filename is the name of the file to be opened. 
+    * \param filename is the name of the file to be opened.
     *
     * \throws runtime_error if the notebook can not be opened.
     */
@@ -134,7 +134,7 @@ namespace IAEX
       : filename_(filename), factory_(f), readmode_(readmode) {}
 
    NotebookParser::~NotebookParser(){}
-   
+
    /*!
     * This method just calls the antlr generated parser. To change the
     * parser look at lexer.g, parser.g and walker.g instead.
@@ -148,23 +148,23 @@ namespace IAEX
 	 anotebook.close();
 	 throw runtime_error("Could not open " + filename_.toStdString());
       }
-      
+
       Cell *workspace = factory_->createCell("cellgroup", 0);
-      
+
       antlr::ASTFactory myFactory;
       AntlrNotebookLexer lexer(anotebook);
       AntlrNotebookParser parser(lexer);
-      
+
       parser.initializeASTFactory(myFactory);
       parser.setASTFactory(&myFactory);
       parser.document();
       antlr::RefAST t = parser.getAST();
-      
+
       AntlrNotebookTreeParser *walker = new AntlrNotebookTreeParser();
-            
+
       walker->document(t, workspace, factory_, readmode_);
       anotebook.close();
-      
+
       return workspace;
    }
 }

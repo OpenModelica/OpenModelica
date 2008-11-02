@@ -45,7 +45,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 ------------------------------------------------------------------------------------
 */
 
-/*! 
+/*!
  * \file searchform.cpp
  * \author Anders Fernström
  * \date 2006-08-24
@@ -68,7 +68,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 namespace IAEX
 {
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2006-08-24
 	 *
@@ -101,7 +101,7 @@ namespace IAEX
 		showOrHideReplace();
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2006-08-24
 	 *
@@ -112,7 +112,7 @@ namespace IAEX
 
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2006-08-24
 	 *
@@ -127,7 +127,7 @@ namespace IAEX
 	// PRIVATE SLOTS / MAIN CORE FUNCTION
 	// ------------------------------------------------------------------
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2006-08-24
 	 *
@@ -140,7 +140,7 @@ namespace IAEX
 			QMessageBox::information( this, "Information", "This window don't contain a document." );
 			return;
 		}
-		
+
 		// check if document is empty
 		if( document_->isEmpty() )
 		{
@@ -170,7 +170,7 @@ namespace IAEX
 			options = QTextDocument::FindCaseSensitively;
 		else if( matchWord_ )
 			options = QTextDocument::FindWholeWords;
-		
+
 		// get options (inside group & search direction) and current cell
 		bool insideClosedCell = ui.insideGroupCellBox_->isChecked();
 		bool searchDown = ui.downRadioButton_->isChecked();
@@ -179,7 +179,7 @@ namespace IAEX
 		// if no currentCell, use first cell in document
 		if( !currentCell )
 			currentCell =	document_->getMainCell();
-	
+
 		if( !currentCell )
 		{
 			QMessageBox::information( this, "Information", "No cell is selected. Please select a cell and try again." );
@@ -345,7 +345,7 @@ namespace IAEX
 								{
 									QTextCursor cursor = editor->textCursor();
 									cursor.movePosition( QTextCursor::Start );
-									editor->setTextCursor( cursor );	
+									editor->setTextCursor( cursor );
 								}
 							}
 						}
@@ -393,7 +393,7 @@ namespace IAEX
 					currentCell = document_->getCursor()->currentCell();
 					if( currentCell )
 					{
-						// if the new currentCell have a text editor, 
+						// if the new currentCell have a text editor,
 						// move the text cursor to pos 'end'
 						editor = currentCell->textEdit();
 						if( editor )
@@ -414,7 +414,7 @@ namespace IAEX
 								{
 									QTextCursor cursor = editor->textCursor();
 									cursor.movePosition( QTextCursor::End );
-									editor->setTextCursor( cursor );	
+									editor->setTextCursor( cursor );
 								}
 							}
 						}
@@ -448,7 +448,7 @@ namespace IAEX
 		}
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2006-08-24
 	 *
@@ -479,7 +479,7 @@ namespace IAEX
 						cs = Qt::CaseSensitive;
 					else
 						cs = Qt::CaseInsensitive;
-					
+
 					if( text.startsWith( searchText_, ( Qt::CaseSensitivity)cs ) &&
 						text.endsWith( searchText_, ( Qt::CaseSensitivity)cs ))
 					{
@@ -501,11 +501,11 @@ namespace IAEX
 		}
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2006-08-24
 	 *
-	 * \brief Function for replaceing all word that match the specified 
+	 * \brief Function for replaceing all word that match the specified
 	 * word.
 	 */
 	void SearchForm::replaceAll()
@@ -544,19 +544,19 @@ namespace IAEX
 
 		// start making a composite command in the commandcenter
 		// create and run the replace all visitor
-		ReplaceAllVisitor visitor( findText, replaceText, ui.matchCaseBox_->isChecked(), 
+		ReplaceAllVisitor visitor( findText, replaceText, ui.matchCaseBox_->isChecked(),
 			ui.matchWord_->isChecked(), &count );
 		document_->runVisitor( visitor );
 
 		// done, show message box with status info
 		QString msg;
 		msg.setNum( count );
-		msg += QString( " instances of the text '" ) + findText + 
+		msg += QString( " instances of the text '" ) + findText +
 			QString( "' was replaced with the text '" ) + replaceText + QString( "'." );
 		QMessageBox::information( this, "Done", msg );
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2006-08-24
 	 *
@@ -568,7 +568,7 @@ namespace IAEX
 		showOrHideReplace();
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2006-08-24
 	 *
@@ -596,7 +596,7 @@ namespace IAEX
 	// HELP FUNCTIONS
 	// ------------------------------------------------------------------
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2006-08-24
 	 *

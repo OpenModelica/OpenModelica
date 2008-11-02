@@ -18,7 +18,7 @@ are permitted provided that the following conditions are met:
 
     * Redistributions of source code must retain the above copyright notice,
       this list of conditions and the following disclaimer.
-    
+
 	* Redistributions in binary form must reproduce the above copyright notice,
       this list of conditions and the following disclaimer in the documentation
       and/or other materials provided with the distribution.
@@ -55,26 +55,26 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #include <QMessageBox>
 namespace IAEX
 {
-   
+
    /*! \brief Construct a TreeView object and initialize it.
     * \author Ingemar Axelsson
     *
     * For parameter information, see the Qt manual.
     */
    TreeView::TreeView(QWidget *parent)
-      :QWidget(parent), 
-       selected_(false), 
+      :QWidget(parent),
+       selected_(false),
        closed_(false),
        //selectedColor_(QColor(0,0,255))
 	   selectedColor_(QColor(160,160,160))
    {
       setFixedWidth(10);
       setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Expanding));
-      
+
 	  // PORT >> setBackgroundMode(Qt::PaletteBase);
 	  setBackgroundRole( QPalette::Base );
    }
-   
+
    /*! \brief Set the background color of the treeview.
     * \author Ingemar Axelsson
     *
@@ -90,21 +90,21 @@ namespace IAEX
    {
       backgroundColor_ = col;
    }
-   
+
    void TreeView::setSelected(const bool sel)
    {
       selected_ = sel;
       repaint();
    }
-   
-   /*! 
+
+   /*!
     * \deprecated
     */
    const bool TreeView::selected() const
    {
       return selected_;
    }
-      
+
    void TreeView::setClosed(const bool closed)
    {
       closed_ = closed;
@@ -115,7 +115,7 @@ namespace IAEX
    {
       return closed_;
    }
-   
+
    QColor TreeView::selectedColor() const
    {
       return selectedColor_;
@@ -130,9 +130,9 @@ namespace IAEX
 	 *
 	 * \bug Some cells are closed even if they cant be closed. This must
 	 * be fixed in some way.
-	 */	
+	 */
 	void TreeView::paintEvent(QPaintEvent *event)
-	{      
+	{
 		QPainter painter(this);
 
 		if(selected_)
@@ -161,7 +161,7 @@ namespace IAEX
 			points[3] = QPoint(1, height()-8);
 		}
 		else
-		{    
+		{
 			points[0] = QPoint(1,2);
 			points[1] = QPoint(5,2);
 			points[2] = QPoint(5,height()-2);
@@ -183,7 +183,7 @@ namespace IAEX
    InputTreeView::InputTreeView(QWidget *parent)
       : TreeView(parent)
    {}
-   
+
 	void InputTreeView::paintEvent(QPaintEvent *event)
 	{
 		QPainter painter(this);
@@ -204,12 +204,12 @@ namespace IAEX
 		{
 			painter.setPen( QPen( QBrush( backgroundColor() ), 10 ));
 
-			
 
 
-			painter.drawRect( this->rect() );			
 
-//			painter.setPen(QPen(Qt::black,1, Qt::SolidLine)); 
+			painter.drawRect( this->rect() );
+
+//			painter.setPen(QPen(Qt::black,1, Qt::SolidLine));
 //			painter.drawRect(this->rect().x()-1, this->rect().y(), this->rect().width()-1, this->rect().height()-2);
 			painter.setPen(QPen(Qt::black,1, Qt::SolidLine));
 		}

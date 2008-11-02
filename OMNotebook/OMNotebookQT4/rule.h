@@ -18,7 +18,7 @@ are permitted provided that the following conditions are met:
 
     * Redistributions of source code must retain the above copyright notice,
       this list of conditions and the following disclaimer.
-    
+
 	* Redistributions in binary form must reproduce the above copyright notice,
       this list of conditions and the following disclaimer in the documentation
       and/or other materials provided with the distribution.
@@ -47,8 +47,8 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 
 /*! \file rule.h
  * \author Ingemar Axelsson
- * 
- * \brief Describes a cell rule. 
+ *
+ * \brief Describes a cell rule.
  */
 
 #ifndef _RULE_H
@@ -62,7 +62,7 @@ using namespace std;
 namespace IAEX
 {
    /*! \class Rule
-    * 
+    *
     * \brief Record describing a formatrule.
     *
     * Rule is used to store formatting information for some cells. Also see Stylesheet
@@ -75,12 +75,12 @@ namespace IAEX
    public:
       Rule(attribute_t a, value_t v) : attribute_(a), value_(v){}
       virtual ~Rule(){}
-      
+
       attribute_t attribute() const
       {
 	 return attribute_;
       }
-      
+
       value_t value() const
       {
 	 return value_;
@@ -90,7 +90,7 @@ namespace IAEX
 	  {
 		value_ = val;
 	  }
-      
+
    private:
       attribute_t attribute_;
       attribute_t value_;

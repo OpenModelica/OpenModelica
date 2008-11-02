@@ -25,7 +25,7 @@
 <stylesheet>
 	<style name="Title">
 		<border value="0" margin="10" padding="0"/>
-		<alignment value="left" vertical="baseline"/>		
+		<alignment value="left" vertical="baseline"/>
 		<font>
 			<family>Arial</family>
 			<size>38</size>
@@ -47,7 +47,7 @@
 			<family>Arial</family>
 			<size>24</size>
 			<italic/>
-		</font>		
+		</font>
 	</style>
 	<style name="Subsubtitle">
 		<border value="0" margin="5" padding="0"/>
@@ -97,7 +97,7 @@
 			<size>14</size>
 			<weight>bold</weight>
 		</font>
-	</style>	
+	</style>
 	<style name="Subsubsection">
 		<border margin="5"/>
 		<font>
@@ -114,7 +114,7 @@
 			<size>12</size>
 			<weight>bold</weight>
 		</font>
-	</style>	
+	</style>
 	<style name="Text">
 		<border value="0" margin="5" padding="0"/>
 		<alignment value="left"/>
@@ -150,5 +150,5 @@
 			<size>11</size>
 			<weight>normal</weight>
 		</font>
-	</style>	
+	</style>
 </stylesheet>

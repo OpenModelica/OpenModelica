@@ -45,7 +45,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 ------------------------------------------------------------------------------------
 */
 
-/*! 
+/*!
  * \file updategroupcellvisitor.cpp
  * \author Anders Fernström
  */
@@ -60,14 +60,14 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 
 namespace IAEX
 {
-	/*! 
+	/*!
 	 * \class UpdateGroupcellVisitor
 	 * \date 2005-11-30
 	 *
 	 * \brief call funciton 'closeChildCells()' in every GroupCell
 	 */
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 *
 	 * \brief The class constructor
@@ -75,7 +75,7 @@ namespace IAEX
 	UpdateGroupcellVisitor::UpdateGroupcellVisitor()
 	{}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 *
 	 * \brief The class deconstructor
@@ -125,8 +125,8 @@ namespace IAEX
 
 	//CELLCURSOR
 	void UpdateGroupcellVisitor::visitCellCursorNodeBefore(CellCursor *)
-	{}      
+	{}
 
 	void UpdateGroupcellVisitor::visitCellCursorNodeAfter(CellCursor *)
 	{}
-} 
+}

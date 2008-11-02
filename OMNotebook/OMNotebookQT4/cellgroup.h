@@ -45,7 +45,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 ------------------------------------------------------------------------------------
 */
 
-/*! 
+/*!
  * \file cellgroup.h
  * \author Ingemar Axelsson and Anders Fernström
  *
@@ -75,14 +75,14 @@ using namespace IAEX;
 namespace IAEX{
 
 	class CellGroup : public Cell
-	{	
+	{
 		Q_OBJECT
 
-	public: 
+	public:
 		CellGroup(QWidget *parent=0);
 		virtual ~CellGroup();
 
-		virtual void viewExpression(const bool){}; 
+		virtual void viewExpression(const bool){};
 
 		//Traversals implementation
 		virtual void accept(Visitor &v);
@@ -108,7 +108,7 @@ namespace IAEX{
 		QTextEdit* textEdit();							// Added 2006-08-24 AF
 
 
-	public slots:	
+	public slots:
 		virtual void setStyle( CellStyle style );		// Changed 2005-10-28 AF
 		void setClosed(const bool closed, bool update = true);
 		virtual void setFocus(const bool focus);

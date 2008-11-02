@@ -47,13 +47,13 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 
 // REMADE LARGE PART OF THIS CLASS 2005-11-30 /AF
 
-/*! 
+/*!
 * \file serializingvisitor.cpp
 * \author Anders Fernström (and Ingemar Axelsson)
 * \date 2005-11-30
 *
 * \brief Remake this class to work with the specified xml format that
-* document are to be saved in. The old file have been renamed to 
+* document are to be saved in. The old file have been renamed to
 * 'serializingvisitor.cpp.old' /AF
 */
 
@@ -82,35 +82,35 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 
 namespace IAEX
 {
-	/*! 
+	/*!
 	 * \class SerializingVisitor
 	 * \date 2005-11-30 (update)
 	 *
 	 * \brief Saves a celltree to an xml file, by converting cell
 	 * structure to XML.
 	 *
-	 * Traverses the cellstructure and creates a serialized 
+	 * Traverses the cellstructure and creates a serialized
 	 * stream of the internal representation of the document.
 	 *
-	 * 2005-11-30 AF, This class was remade when another xml format 
+	 * 2005-11-30 AF, This class was remade when another xml format
 	 * was used to save the cell structure.
 	 */
 
-	/*! 
+	/*!
 	 * \author Anders Fernström and Ingemar Axelsson
 	 * \date 2005-11-30 (update)
 	 *
 	 * \brief The class constructor
 	 */
 	SerializingVisitor::SerializingVisitor( QDomDocument &domdoc, Document* doc)
-		: domdoc_(domdoc), 
+		: domdoc_(domdoc),
 		doc_(doc)
 	{
 		currentElement_ = domdoc_.createElement( XML_NOTEBOOK );
 		domdoc_.appendChild( currentElement_ );
 	}
 
-	/*! 
+	/*!
 	 * \author Ingemar Axelsson
 	 *
 	 * \brief The class deconstructor
@@ -220,7 +220,7 @@ namespace IAEX
 
 		// Create an text element (for output) and append it to the element
 		QDomElement outputelement = domdoc_.createElement( XML_OUTPUTPART );
-		
+
 		QDomText outputnode;
 		if( node->isPlot() )
 			outputnode = domdoc_.createTextNode( node->textOutputHtml() );
@@ -248,7 +248,7 @@ namespace IAEX
 		// to the the the inputcell element
 		QString xoyz = node->textOutputHtml();
 		saveImages( inputcell, xoyz );
-	
+
 		// Add inputcell element to current element
 		currentElement_.appendChild( inputcell );
 	}
@@ -318,7 +318,7 @@ for(int i = 0; i < node->compoundwidget->gwMain->variableData.size(); ++i)
 		ds << *(node->compoundwidget->gwMain->variableData[i]);
 		b.close();
 
-	
+
 		QDomText dnode = domdoc_.createTextNode(b.buffer().toBase64());
 		data.appendChild(dnode);
 		graphcell.appendChild(data);
@@ -338,7 +338,7 @@ for(int i = 0; i < node->compoundwidget->gwMain->curves.size(); ++i)
 			graph.setAttribute(XML_GRAPHCELL_POINTS, XML_FALSE);
 
 		graph.setAttribute(XML_GRAPHCELL_COLOR, QVariant(node->compoundwidget->gwMain->curves[i]->color_).toString());
-		
+
 		if(node->compoundwidget->gwMain->curves[i]->interpolation = INTERPOLATION_NONE)
 			graph.setAttribute(XML_GRAPHCELL_INTERPOLATION, XML_GRAPHCELL_NONE);
 		else if(node->compoundwidget->gwMain->curves[i]->interpolation = INTERPOLATION_LINEAR)
@@ -366,22 +366,22 @@ for(int i = 0; i < l.size(); ++i)
 
 	if(QGraphicsRectItem* r =dynamic_cast<QGraphicsRectItem*>(l[i]))
 	{
-		type = XML_GRAPHCELL_RECT;		
+		type = XML_GRAPHCELL_RECT;
 		ds << r->rect() << r->pen() << r->brush();
 	}
 	else if(QGraphicsEllipseItem* r =dynamic_cast<QGraphicsEllipseItem*>(l[i]))
 	{
-		type = XML_GRAPHCELL_ELLIPSE;		
+		type = XML_GRAPHCELL_ELLIPSE;
 		ds << r->rect() << r->pen() << r->brush();
 
 	}
 	else if(QGraphicsLineItem* r =dynamic_cast<QGraphicsLineItem*>(l[i]))
 	{
-		type = XML_GRAPHCELL_LINE;		
+		type = XML_GRAPHCELL_LINE;
 		ds << r->line() << r->pen();
 	}
 
-	shape.setAttribute(XML_GRAPHCELL_SHAPETYPE, type);		
+	shape.setAttribute(XML_GRAPHCELL_SHAPETYPE, type);
 
 	b.close();
 	shape.setAttribute( XML_GRAPHCELL_SHAPEDATA, QString(b.data().toBase64().data()));
@@ -398,7 +398,7 @@ for(int i = 0; i < l.size(); ++i)
 
 		// Create an text element (for output) and append it to the element
 		QDomElement outputelement = domdoc_.createElement( XML_OUTPUTPART );
-		
+
 		QDomText outputnode;
 		if( node->isPlot() )
 			outputnode = domdoc_.createTextNode( node->textOutputHtml() );
@@ -410,7 +410,7 @@ for(int i = 0; i < l.size(); ++i)
 /*
 		// Create an text element (for output) and append it to the element
 		QDomElement outputelement = domdoc_.createElement( XML_OUTPUTPART );
-		
+
 		QDomText outputnode;
 		outputnode = domdoc_.createTextNode( node->textOutput() );
 
@@ -446,13 +446,13 @@ for(int i = 0; i < l.size(); ++i)
 	//CELLCURSOR
 	// ******************************************************************
 	void SerializingVisitor::visitCellCursorNodeBefore(CellCursor *)
-	{}     
+	{}
 
 	void SerializingVisitor::visitCellCursorNodeAfter(CellCursor *)
 	{}
 
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-11-30
 	 * \date 2005-12-12 (update)
@@ -470,7 +470,7 @@ for(int i = 0; i < l.size(); ++i)
 		{
 			int start = text.indexOf( "<img src=", pos, Qt::CaseInsensitive );
 			if( 0 <= start )
-			{ 
+			{
 				// found an image
 				start += 10; // pos of first letter in imagename
 				int end = text.indexOf( "\"", start );
@@ -484,7 +484,7 @@ for(int i = 0; i < l.size(); ++i)
 				// 2005-12-12 AF, Added support of pasting images from clipboard
 				if( image->isNull() )
 				{
-					// found image that isn't part of the document, 
+					// found image that isn't part of the document,
 					// probably images that have been pasted into the text or
 					// from copied cell
 					QString tmpImagename = imagename;
@@ -503,8 +503,8 @@ for(int i = 0; i < l.size(); ++i)
 					QDataStream out( &buffer );
 					out << *image;
 					buffer.close();
-					
-					QDomText imagedata = domdoc_.createTextNode( buffer.buffer().toBase64() ); 
+
+					QDomText imagedata = domdoc_.createTextNode( buffer.buffer().toBase64() );
 					imageelement.appendChild( imagedata );
 
 					current.appendChild( imageelement );
@@ -516,4 +516,4 @@ for(int i = 0; i < l.size(); ++i)
 				break;
 		}
 	}
-} 
+}

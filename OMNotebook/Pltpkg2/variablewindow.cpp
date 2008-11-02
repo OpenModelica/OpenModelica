@@ -18,7 +18,7 @@ are permitted provided that the following conditions are met:
 
     * Redistributions of source code must retain the above copyright notice,
       this list of conditions and the following disclaimer.
-    
+
 	* Redistributions in binary form must reproduce the above copyright notice,
       this list of conditions and the following disclaimer in the documentation
       and/or other materials provided with the distribution.
@@ -60,7 +60,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #include "legendLabel.h"
 using namespace std;
 
-VariableWindow::VariableWindow(GraphWidget* gw, QWidget *parent): QDialog(parent) 
+VariableWindow::VariableWindow(GraphWidget* gw, QWidget *parent): QDialog(parent)
 {
 	graphWidget =gw;
 
@@ -95,7 +95,7 @@ void VariableWindow::updateViews()
 		cby->addItem(i->first);
 		twVariables->insertTopLevelItem(0,item);
 	}
-	
+
 	twPlotted->clear();
 	for(QList<Curve*>::iterator i = graphWidget->curves.begin(); i != graphWidget->curves.end(); ++i)
 	{
@@ -103,7 +103,7 @@ void VariableWindow::updateViews()
 		if(!(*i))
 			continue;
 		item = new QTreeWidgetItem();
-		
+
 		item->setText(0, (*i)->x->variableName());
 		item->setText(1, (*i)->y->variableName());
 		twPlotted->insertTopLevelItem(0, item);
@@ -132,9 +132,9 @@ void VariableWindow::createCurve()
 	l->graphWidget = graphWidget;
 
 
-	Curve* c = new Curve(graphWidget->variables[cbx->currentText()],graphWidget->variables[cby->currentText()],color, l); 
+	Curve* c = new Curve(graphWidget->variables[cbx->currentText()],graphWidget->variables[cby->currentText()],color, l);
 	l->setCurve(c);
-	
+
 	if(rbLinear->isChecked())
 		c->interpolation = INTERPOLATION_LINEAR;
 	else if(rbConstant->isChecked())

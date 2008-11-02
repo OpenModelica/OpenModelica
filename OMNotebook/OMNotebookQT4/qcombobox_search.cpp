@@ -45,7 +45,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 ------------------------------------------------------------------------------------
 */
 
-/*! 
+/*!
  * \file qcombobox_search.cpp
  * \author Anders Fernström
  * \date 2006-08-24
@@ -73,8 +73,8 @@ namespace IAEX
 		: QComboBox( parent )
 	{
 	}
-	
-	/*! 
+
+	/*!
 	 * \author Anders Fernström
 	 * \date 2006-08-24
 	 *
@@ -88,7 +88,7 @@ namespace IAEX
 	// REIMPLEMENTED FUNCTIONS
 	// ------------------------------------------------------------------
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2006-08-24
 	 *
@@ -103,5 +103,5 @@ namespace IAEX
 		else
 			QComboBox::keyPressEvent( event );
 	}
-	
+
 }

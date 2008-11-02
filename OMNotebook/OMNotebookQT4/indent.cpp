@@ -8,7 +8,7 @@ using namespace std;
 
 IndentationState::~IndentationState()
 {
-	
+
 }
 Indent::ISM::ISM()
 {
@@ -176,7 +176,7 @@ void Indent::ISM::newToken(QString s, QString s2)
 			//		skipNext = true;
 			state = 0;
 			--level;
-			
+
 			//			nextMod = -1;
 			//			lMod = true;
 
@@ -392,7 +392,7 @@ QString Indent::indentedText(QMap<int, IndentationState*>* states)
 		//		if(next.left(2) == "//")
 		//			comment = true;
 
-//		qDebug() << current << ", " << next << endl;		
+//		qDebug() << current << ", " << next << endl;
 
 		ism.newToken(current, next);
 //		qDebug() << ism.state << ", " << ism.level << ", " << ism.lMod << endl;
@@ -426,7 +426,7 @@ QString Indent::indentedText(QMap<int, IndentationState*>* states)
 			tmp = "";
 			ism.level += ism.nextMod;
 			ism.nextMod = 0;
-			
+
 			lmod = ism.lMod;
 			ism.lMod = false;
 //			qDebug() << "nu" << endl;

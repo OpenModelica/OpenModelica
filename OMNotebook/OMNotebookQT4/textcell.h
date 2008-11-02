@@ -45,7 +45,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 ------------------------------------------------------------------------------------
 */
 
-/*! 
+/*!
  * \file textcell.h
  * \author Ingemar Axelsson and Anders Fernström
  * \date 2005-02-08
@@ -72,7 +72,7 @@ class QWidget;
 
 
 namespace IAEX
-{      
+{
 	class TextCell : public Cell
 	{
 		Q_OBJECT
@@ -87,7 +87,7 @@ namespace IAEX
 		QTextCursor textCursor();			// Added 2005-10-28 AF
 		QTextEdit* textEdit();				// Added 2005-10-28 AF
 
-		void clear();      
+		void clear();
 		virtual void accept(Visitor &v);
 		virtual bool isEditable();
 		virtual void viewExpression(const bool expr);

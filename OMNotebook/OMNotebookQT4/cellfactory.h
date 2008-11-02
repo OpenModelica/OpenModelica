@@ -45,7 +45,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 ------------------------------------------------------------------------------------
 */
 
-/*! 
+/*!
  * \file cellfactory.cpp
  * \author Ingemar Axelsson (and Anders Fernström)
  * \date 2005-10-28 (update)
@@ -66,7 +66,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 
 namespace IAEX
 {
-	/*! 
+	/*!
 	 * \breif Interface for all cellfactories.
 	 */
 	class CellFactory : public Factory

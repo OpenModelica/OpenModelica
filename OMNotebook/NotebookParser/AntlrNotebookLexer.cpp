@@ -356,7 +356,7 @@ void AntlrNotebookLexer::mRBRACK(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; ANTLR_USE_NAMESPACE(std)string::size_type _begin = text.length();
 	_ttype = RBRACK;
 	ANTLR_USE_NAMESPACE(std)string::size_type _saveIndex;
-	
+
 	try {      // for error handling
 		match(']' /* charlit */ );
 	}
@@ -376,7 +376,7 @@ void AntlrNotebookLexer::mLBRACK(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; ANTLR_USE_NAMESPACE(std)string::size_type _begin = text.length();
 	_ttype = LBRACK;
 	ANTLR_USE_NAMESPACE(std)string::size_type _saveIndex;
-	
+
 	try {      // for error handling
 		match('[' /* charlit */ );
 	}
@@ -396,7 +396,7 @@ void AntlrNotebookLexer::mRCURLY(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; ANTLR_USE_NAMESPACE(std)string::size_type _begin = text.length();
 	_ttype = RCURLY;
 	ANTLR_USE_NAMESPACE(std)string::size_type _saveIndex;
-	
+
 	try {      // for error handling
 		match('}' /* charlit */ );
 	}
@@ -416,7 +416,7 @@ void AntlrNotebookLexer::mLCURLY(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; ANTLR_USE_NAMESPACE(std)string::size_type _begin = text.length();
 	_ttype = LCURLY;
 	ANTLR_USE_NAMESPACE(std)string::size_type _saveIndex;
-	
+
 	try {      // for error handling
 		match('{' /* charlit */ );
 	}
@@ -436,7 +436,7 @@ void AntlrNotebookLexer::mCOMMA(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; ANTLR_USE_NAMESPACE(std)string::size_type _begin = text.length();
 	_ttype = COMMA;
 	ANTLR_USE_NAMESPACE(std)string::size_type _saveIndex;
-	
+
 	try {      // for error handling
 		match(',' /* charlit */ );
 	}
@@ -456,7 +456,7 @@ void AntlrNotebookLexer::mTHICK(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; ANTLR_USE_NAMESPACE(std)string::size_type _begin = text.length();
 	_ttype = THICK;
 	ANTLR_USE_NAMESPACE(std)string::size_type _saveIndex;
-	
+
 	try {      // for error handling
 		match('`' /* charlit */ );
 	}
@@ -476,7 +476,7 @@ void AntlrNotebookLexer::mCOMMENTSTART(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; ANTLR_USE_NAMESPACE(std)string::size_type _begin = text.length();
 	_ttype = COMMENTSTART;
 	ANTLR_USE_NAMESPACE(std)string::size_type _saveIndex;
-	
+
 	try {      // for error handling
 		match("(*");
 	}
@@ -496,7 +496,7 @@ void AntlrNotebookLexer::mCOMMENTEND(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; ANTLR_USE_NAMESPACE(std)string::size_type _begin = text.length();
 	_ttype = COMMENTEND;
 	ANTLR_USE_NAMESPACE(std)string::size_type _saveIndex;
-	
+
 	try {      // for error handling
 		match("*)");
 	}
@@ -516,7 +516,7 @@ void AntlrNotebookLexer::mNUMBER(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; ANTLR_USE_NAMESPACE(std)string::size_type _begin = text.length();
 	_ttype = NUMBER;
 	ANTLR_USE_NAMESPACE(std)string::size_type _saveIndex;
-	
+
 	try {      // for error handling
 		{
 		switch ( LA(1)) {
@@ -556,7 +556,7 @@ void AntlrNotebookLexer::mNUMBER(bool _createToken) {
 			else {
 				if ( _cnt12>=1 ) { goto _loop12; } else {throw ANTLR_USE_NAMESPACE(antlr)NoViableAltForCharException(LA(1), getFilename(), getLine(), getColumn());}
 			}
-			
+
 			_cnt12++;
 		}
 		_loop12:;
@@ -573,7 +573,7 @@ void AntlrNotebookLexer::mNUMBER(bool _createToken) {
 				else {
 					if ( _cnt15>=1 ) { goto _loop15; } else {throw ANTLR_USE_NAMESPACE(antlr)NoViableAltForCharException(LA(1), getFilename(), getLine(), getColumn());}
 				}
-				
+
 				_cnt15++;
 			}
 			_loop15:;
@@ -581,7 +581,7 @@ void AntlrNotebookLexer::mNUMBER(bool _createToken) {
 		}
 		else {
 		}
-		
+
 		}
 		{
 		if ((LA(1) == 0x45 /* 'E' */  || LA(1) == 0x60 /* '`' */  || LA(1) == 0x65 /* 'e' */ )) {
@@ -589,7 +589,7 @@ void AntlrNotebookLexer::mNUMBER(bool _createToken) {
 		}
 		else {
 		}
-		
+
 		}
 	}
 	catch (ANTLR_USE_NAMESPACE(antlr)RecognitionException& ex) {
@@ -608,7 +608,7 @@ void AntlrNotebookLexer::mDIGIT(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; ANTLR_USE_NAMESPACE(std)string::size_type _begin = text.length();
 	_ttype = DIGIT;
 	ANTLR_USE_NAMESPACE(std)string::size_type _saveIndex;
-	
+
 	try {      // for error handling
 		switch ( LA(1)) {
 		case 0x30 /* '0' */ :
@@ -662,7 +662,7 @@ void AntlrNotebookLexer::mEXP(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; ANTLR_USE_NAMESPACE(std)string::size_type _begin = text.length();
 	_ttype = EXP;
 	ANTLR_USE_NAMESPACE(std)string::size_type _saveIndex;
-	
+
 	try {      // for error handling
 		switch ( LA(1)) {
 		case 0x45 /* 'E' */ :
@@ -699,7 +699,7 @@ void AntlrNotebookLexer::mEXP(bool _createToken) {
 			}
 			else {
 			}
-			
+
 			}
 			{
 			if ((_tokenSet_0.member(LA(1)))) {
@@ -707,7 +707,7 @@ void AntlrNotebookLexer::mEXP(bool _createToken) {
 			}
 			else {
 			}
-			
+
 			}
 			}
 			break;
@@ -734,7 +734,7 @@ void AntlrNotebookLexer::mID(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; ANTLR_USE_NAMESPACE(std)string::size_type _begin = text.length();
 	_ttype = ID;
 	ANTLR_USE_NAMESPACE(std)string::size_type _saveIndex;
-	
+
 	try {      // for error handling
 		{ // ( ... )+
 		int _cnt19=0;
@@ -826,7 +826,7 @@ void AntlrNotebookLexer::mQSTRING(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; ANTLR_USE_NAMESPACE(std)string::size_type _begin = text.length();
 	_ttype = QSTRING;
 	ANTLR_USE_NAMESPACE(std)string::size_type _saveIndex;
-	
+
 	try {      // for error handling
 		match('\"' /* charlit */ );
 		{ // ( ... )*
@@ -1019,7 +1019,7 @@ void AntlrNotebookLexer::mWHITESPACE(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; ANTLR_USE_NAMESPACE(std)string::size_type _begin = text.length();
 	_ttype = WHITESPACE;
 	ANTLR_USE_NAMESPACE(std)string::size_type _saveIndex;
-	
+
 	try {      // for error handling
 		{
 		switch ( LA(1)) {
@@ -1049,7 +1049,7 @@ void AntlrNotebookLexer::mWHITESPACE(bool _createToken) {
 			else {
 				throw ANTLR_USE_NAMESPACE(antlr)NoViableAltForCharException(LA(1), getFilename(), getLine(), getColumn());
 			}
-			
+
 			}
 			newline();
 			break;
@@ -1078,7 +1078,7 @@ void AntlrNotebookLexer::mCOMMENT(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; ANTLR_USE_NAMESPACE(std)string::size_type _begin = text.length();
 	_ttype = COMMENT;
 	ANTLR_USE_NAMESPACE(std)string::size_type _saveIndex;
-	
+
 	try {      // for error handling
 		mCOMMENTSTART(false);
 		{ // ( ... )*
@@ -1267,35 +1267,35 @@ void AntlrNotebookLexer::mCOMMENT(bool _createToken) {
 
 
 const unsigned long AntlrNotebookLexer::_tokenSet_0_data_[] = { 0UL, 67052544UL, 1073741824UL, 1UL, 0UL, 0UL, 0UL, 0UL };
-// * - 0 1 2 3 4 5 6 7 8 9 ^ ` 
+// * - 0 1 2 3 4 5 6 7 8 9 ^ `
 const ANTLR_USE_NAMESPACE(antlr)BitSet AntlrNotebookLexer::_tokenSet_0(_tokenSet_0_data_,8);
 const unsigned long AntlrNotebookLexer::_tokenSet_1_data_[] = { 0UL, 0UL, 0UL, 0UL, 0UL, 0UL };
 const ANTLR_USE_NAMESPACE(antlr)BitSet AntlrNotebookLexer::_tokenSet_1(_tokenSet_1_data_,6);
 const unsigned long AntlrNotebookLexer::_tokenSet_2_data_[] = { 4294967295UL, 4294967295UL, 4294967295UL, 4294967295UL, 0UL, 0UL, 0UL, 0UL };
-// 0x0 0x1 0x2 0x3 0x4 0x5 0x6 0x7 0x8 0x9 0xa 0xb 0xc 0xd 0xe 0xf 0x10 
-// 0x11 0x12 0x13 0x14 0x15 0x16 0x17 0x18 0x19 0x1a 0x1b 0x1c 0x1d 0x1e 
-// 0x1f   ! \" # $ % & \' ( ) * + , - . / 0 1 2 3 4 5 6 7 8 9 : ; < = > 
-// ? @ A B C D E F G H I J K L M N O P Q R S T U V W X Y Z [ 0x5c ] ^ _ 
-// ` a b c d e f g h i j k l m n o p q r s t u v w x y z { | } ~ 0x7f 
+// 0x0 0x1 0x2 0x3 0x4 0x5 0x6 0x7 0x8 0x9 0xa 0xb 0xc 0xd 0xe 0xf 0x10
+// 0x11 0x12 0x13 0x14 0x15 0x16 0x17 0x18 0x19 0x1a 0x1b 0x1c 0x1d 0x1e
+// 0x1f   ! \" # $ % & \' ( ) * + , - . / 0 1 2 3 4 5 6 7 8 9 : ; < = >
+// ? @ A B C D E F G H I J K L M N O P Q R S T U V W X Y Z [ 0x5c ] ^ _
+// ` a b c d e f g h i j k l m n o p q r s t u v w x y z { | } ~ 0x7f
 const ANTLR_USE_NAMESPACE(antlr)BitSet AntlrNotebookLexer::_tokenSet_2(_tokenSet_2_data_,8);
 const unsigned long AntlrNotebookLexer::_tokenSet_3_data_[] = { 0UL, 67044352UL, 1073741824UL, 1UL, 0UL, 0UL, 0UL, 0UL };
-// * 0 1 2 3 4 5 6 7 8 9 ^ ` 
+// * 0 1 2 3 4 5 6 7 8 9 ^ `
 const ANTLR_USE_NAMESPACE(antlr)BitSet AntlrNotebookLexer::_tokenSet_3(_tokenSet_3_data_,8);
 const unsigned long AntlrNotebookLexer::_tokenSet_4_data_[] = { 0UL, 67060736UL, 1073741856UL, 33UL, 0UL, 0UL, 0UL, 0UL };
-// * . 0 1 2 3 4 5 6 7 8 9 E ^ ` e 
+// * . 0 1 2 3 4 5 6 7 8 9 E ^ ` e
 const ANTLR_USE_NAMESPACE(antlr)BitSet AntlrNotebookLexer::_tokenSet_4(_tokenSet_4_data_,8);
 const unsigned long AntlrNotebookLexer::_tokenSet_5_data_[] = { 4294958079UL, 4294967291UL, 4026531839UL, 4294967295UL, 0UL, 0UL, 0UL, 0UL };
-// 0x0 0x1 0x2 0x3 0x4 0x5 0x6 0x7 0x8 0x9 0xb 0xc 0xe 0xf 0x10 0x11 0x12 
-// 0x13 0x14 0x15 0x16 0x17 0x18 0x19 0x1a 0x1b 0x1c 0x1d 0x1e 0x1f   ! 
-// # $ % & \' ( ) * + , - . / 0 1 2 3 4 5 6 7 8 9 : ; < = > ? @ A B C D 
-// E F G H I J K L M N O P Q R S T U V W X Y Z [ ] ^ _ ` a b c d e f g 
-// h i j k l m n o p q r s t u v w x y z { | } ~ 0x7f 
+// 0x0 0x1 0x2 0x3 0x4 0x5 0x6 0x7 0x8 0x9 0xb 0xc 0xe 0xf 0x10 0x11 0x12
+// 0x13 0x14 0x15 0x16 0x17 0x18 0x19 0x1a 0x1b 0x1c 0x1d 0x1e 0x1f   !
+// # $ % & \' ( ) * + , - . / 0 1 2 3 4 5 6 7 8 9 : ; < = > ? @ A B C D
+// E F G H I J K L M N O P Q R S T U V W X Y Z [ ] ^ _ ` a b c d e f g
+// h i j k l m n o p q r s t u v w x y z { | } ~ 0x7f
 const ANTLR_USE_NAMESPACE(antlr)BitSet AntlrNotebookLexer::_tokenSet_5(_tokenSet_5_data_,8);
 const unsigned long AntlrNotebookLexer::_tokenSet_6_data_[] = { 4294958079UL, 4294966271UL, 4294967295UL, 4294967295UL, 0UL, 0UL, 0UL, 0UL };
-// 0x0 0x1 0x2 0x3 0x4 0x5 0x6 0x7 0x8 0x9 0xb 0xc 0xe 0xf 0x10 0x11 0x12 
-// 0x13 0x14 0x15 0x16 0x17 0x18 0x19 0x1a 0x1b 0x1c 0x1d 0x1e 0x1f   ! 
-// \" # $ % & \' ( ) + , - . / 0 1 2 3 4 5 6 7 8 9 : ; < = > ? @ A B C 
-// D E F G H I J K L M N O P Q R S T U V W X Y Z [ 0x5c ] ^ _ ` a b c d 
-// e f g h i j k l m n o p q r s t u v w x y z { | } ~ 0x7f 
+// 0x0 0x1 0x2 0x3 0x4 0x5 0x6 0x7 0x8 0x9 0xb 0xc 0xe 0xf 0x10 0x11 0x12
+// 0x13 0x14 0x15 0x16 0x17 0x18 0x19 0x1a 0x1b 0x1c 0x1d 0x1e 0x1f   !
+// \" # $ % & \' ( ) + , - . / 0 1 2 3 4 5 6 7 8 9 : ; < = > ? @ A B C
+// D E F G H I J K L M N O P Q R S T U V W X Y Z [ 0x5c ] ^ _ ` a b c d
+// e f g h i j k l m n o p q r s t u v w x y z { | } ~ 0x7f
 const ANTLR_USE_NAMESPACE(antlr)BitSet AntlrNotebookLexer::_tokenSet_6(_tokenSet_6_data_,8);
 

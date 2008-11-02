@@ -27,19 +27,19 @@ public:
 		setBrush(b);
 	}
 
-	void hoverLeaveEvent ( QGraphicsSceneHoverEvent * event ) 
+	void hoverLeaveEvent ( QGraphicsSceneHoverEvent * event )
 	{
 		QColor c(255, 0, 0, 50);
 		QBrush b(c);
 		setBrush(b);
 	}
 
-	void mousePressEvent ( QGraphicsSceneMouseEvent * event ) 
+	void mousePressEvent ( QGraphicsSceneMouseEvent * event )
 	{
 
 
 		widget->zoomIn(rect());
-		widget->updatePointSizes(QRect(-1,0,0,0));		
+		widget->updatePointSizes(QRect(-1,0,0,0));
 	}
 
 	 GraphWidget* widget;

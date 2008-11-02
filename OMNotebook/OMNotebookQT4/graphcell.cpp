@@ -45,7 +45,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 ------------------------------------------------------------------------------------
 */
 
-/*! 
+/*!
 * \file GraphCell.cpp
 * \author Ingemar Axelsson and Anders Fernström
 * \date 2005-10-27 (update)
@@ -95,7 +95,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 
 namespace IAEX
 {
-  /*! 
+  /*!
   * \class SleeperThread
   * \author Anders Ferström
   *
@@ -113,7 +113,7 @@ namespace IAEX
 
 
 
-  /*! 
+  /*!
   * \class MyTextEdit2
   * \author Anders Ferström
   * \date 2005-11-01
@@ -142,7 +142,7 @@ namespace IAEX
     return stopHighlighter;
   }
 
-  /*! 
+  /*!
   * \author Anders Fernström
   * \date 2005-11-01
   * \date 2005-12-15 (update)
@@ -150,7 +150,7 @@ namespace IAEX
   * Needed a signal to be emited when the user click on the cell.
   *
   * 2005-12-15 AF, set inCommand to false when clicking on the cell,
-  * otherwise the commandcompletion class want be reseted when 
+  * otherwise the commandcompletion class want be reseted when
   * changing GraphCells by clicking.
   */
   void MyTextEdit2::mousePressEvent(QMouseEvent *event)
@@ -173,7 +173,7 @@ namespace IAEX
 
   }
 
-  /*! 
+  /*!
   * \author Anders Fernström
   * \date 2005-11-28
   *
@@ -194,12 +194,12 @@ namespace IAEX
     setModified();
     QTextBrowser::focusInEvent(event);
   }
-  /*! 
+  /*!
   * \author Anders Fernström
   * \date 2005-12-15
   * \date 2006-01-30 (update)
   *
-  * \brief Handles key event, check if command completion or eval, 
+  * \brief Handles key event, check if command completion or eval,
   * otherwise send them to the textbrowser
   *
   * 2006-01-30 AF, added ignore to 'Alt+Enter'
@@ -208,7 +208,7 @@ namespace IAEX
   {
     emit showVariableButton(false);
     // EVAL, key: SHIFT + RETURN || SHIFT + ENTER
-    if( event->modifiers() == Qt::ShiftModifier && 
+    if( event->modifiers() == Qt::ShiftModifier &&
       (event->key() == Qt::Key_Return || event->key() == Qt::Key_Enter) )
     {
       inCommand = false;
@@ -218,7 +218,7 @@ namespace IAEX
       emit eval();
     }
     // COMMAND COMPLETION, key: SHIFT + TAB (= BACKTAB) || CTRL + SPACE
-    else if( (event->modifiers() == Qt::ShiftModifier && event->key() == Qt::Key_Backtab ) || 
+    else if( (event->modifiers() == Qt::ShiftModifier && event->key() == Qt::Key_Backtab ) ||
       (event->modifiers() == Qt::ControlModifier && event->key() == Qt::Key_Space) )
     {
       stopHighlighter = false;
@@ -381,7 +381,7 @@ namespace IAEX
         int i = currentLine.lastIndexOf("\n");
         int i2 = currentLine.lastIndexOf("\n", i-1);
         prevLine = currentLine.mid(i2+1, i-i2-1);
-        currentLine = currentLine.right(currentLine.size() - i -1); 
+        currentLine = currentLine.right(currentLine.size() - i -1);
 
         int currentLevel = currentLine.indexOf(QRegExp("\\S|$"));
         int prevLevel = prevLine.indexOf(QRegExp("\\S|$"));
@@ -506,7 +506,7 @@ namespace IAEX
         QTextBrowser::keyPressEvent(event);
         t.insertText(QString(2*i.level(), ' '));
 
-      }		
+      }
       else
         QTextBrowser::keyPressEvent(event);
 
@@ -544,7 +544,7 @@ namespace IAEX
     emit updatePos(row, col);
   }
 
-  /*! 
+  /*!
   * \author Anders Fernström
   * \date 2006-01-23
   *
@@ -612,7 +612,7 @@ namespace IAEX
 
   //	};
 
-  /*! 
+  /*!
   * \class GraphCell
   * \author Ingemar Axelsson and Anders Fernström
   *
@@ -621,7 +621,7 @@ namespace IAEX
   * Input cells is places where the user can do input. To evaluate
   * the content of an GraphCell just press shift+enter. It will
   * throw an exception if it cant find OMC. Start OMC with
-  * following commandline: 
+  * following commandline:
   *
   * # omc +d=interactiveCorba
   *
@@ -631,21 +631,21 @@ namespace IAEX
 
   int GraphCell::numEvals_ = 1;
 
-  /*! 
+  /*!
   * \author Ingemar Axelsson and Anders Fernström
   * \date 2005-11-23 (update)
   *
   * \brief The class constructor
   *
-  * 2005-10-27 AF, updated the method due to porting from Q3Support 
+  * 2005-10-27 AF, updated the method due to porting from Q3Support
   * to pure QT4 classes.
-  * 2005-11-23 AF, added document to the constructor, because need 
+  * 2005-11-23 AF, added document to the constructor, because need
   * the document to insert images to the output part if ploting.
   */
   GraphCell::GraphCell(Document *doc, QWidget *parent)
-    : Cell(parent), 
-    evaluated_(false), 
-    closed_(true), 
+    : Cell(parent),
+    evaluated_(false),
+    closed_(true),
     delegate_(0),
     oldHeight_( 0 ),
     document_(doc),
@@ -666,7 +666,7 @@ namespace IAEX
 
     createGraphCell();
     createOutputCell();
-    createCompoundWidget();		
+    createCompoundWidget();
 
     connect(compoundwidget->gwMain, SIGNAL(showVariableButton(bool)), this, SLOT(showVariableButton(bool)));
     connect(input_, SIGNAL(showVariableButton(bool)), this, SLOT(showVariableButton(bool)));
@@ -683,7 +683,7 @@ namespace IAEX
     imageFile=0;
   }
 
-  /*! 
+  /*!
   * \author Ingemar Axelsson and Anders Fernström
   *
   * \brief The class destructor
@@ -719,14 +719,14 @@ namespace IAEX
     //delete syntaxHighlighter_;
   }
 
-  /*! 
+  /*!
   * \author Anders Fernström and Ingemar Axelsson
   * \date 2006-03-02 (update)
   *
-  * \brief Creates the QTextEdit for the input part of the 
+  * \brief Creates the QTextEdit for the input part of the
   * GraphCell
   *
-  * 2005-10-27 AF, Large part of this function was changes due to 
+  * 2005-10-27 AF, Large part of this function was changes due to
   * porting to QT4 (changes from Q3TextEdit to QTextEdit).
   * 2005-12-15 AF, Added more connections to the editor, mostly for
   * commandcompletion, but also for eval. invoking eval have moved
@@ -817,11 +817,11 @@ namespace IAEX
       variableButton->hide();
   }
 
-  /*! 
+  /*!
   * \author Anders Fernström and Ingemar Axelsson
   * \date 2005-10-28 (update)
   *
-  * \brief Creates the QTextEdit for the output part of the 
+  * \brief Creates the QTextEdit for the output part of the
   * GraphCell
   *
   * Large part of this function was changes due to porting
@@ -842,7 +842,7 @@ namespace IAEX
 
     output_->setHorizontalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
     output_->setVerticalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
-    //		output_->setContextMenuPolicy( Qt::NoContextMenu ); 
+    //		output_->setContextMenuPolicy( Qt::NoContextMenu );
 
     connect( output_, SIGNAL( textChanged() ),
       this, SLOT(contentChanged()));
@@ -871,7 +871,7 @@ namespace IAEX
     layout_->addWidget( compoundwidget, 3, 1 );
 
     compoundwidget->gwMain->setServerState(false);
-    compoundwidget->visWidget->setServerState(false);		
+    compoundwidget->visWidget->setServerState(false);
     compoundwidget->hide();
 
 
@@ -984,17 +984,17 @@ namespace IAEX
     ////			if(tmp.left(2) != QString("//"))
     //				level = level + tmp.count(e1) - tmp.count(e2) - tmp.count(e1b) -tmp.count(e1c);
     ////				if(tmp.indexOf(newLineEnd) >= 0)
-    ////					++level ; 
+    ////					++level ;
     //
     //			res += tmp;
     //		}
-    //		
+    //
     //		QTextCursor t(textCursor());
     ////		t.setPosition(0);
     ////		t.select(QTextCursor::SelectionType::Document);
-    //		
+    //
     //		setText(res.trimmed());
-    //		
+    //
 
     //		t.insertText(res);
     emit textChanged();
@@ -1003,7 +1003,7 @@ namespace IAEX
     //		stopHighlighter = false;
 
   }
-  /*! 
+  /*!
   * \author Anders Fernström
   * \date 2006-04-21
   *
@@ -1035,7 +1035,7 @@ namespace IAEX
     output_->setTextCursor( cursor );
   }
 
-  /*! 
+  /*!
   * \author Anders Fernström
   * \date 2006-03-02
   *
@@ -1059,7 +1059,7 @@ namespace IAEX
     addChapterCounter( chaptercounter_ );
   }
 
-  /*! 
+  /*!
   * \author Anders Fernström
   * \date 2005-10-27
   *
@@ -1072,7 +1072,7 @@ namespace IAEX
     return input_->toPlainText();
   }
 
-  /*! 
+  /*!
   * \author Anders Fernström
   * \date 2005-10-27
   *
@@ -1085,7 +1085,7 @@ namespace IAEX
     return input_->toHtml();
   }
 
-  /*! 
+  /*!
   * \author Anders Fernström
   * \date 2005-11-23
   *
@@ -1099,7 +1099,7 @@ namespace IAEX
     return output_->toPlainText();
   }
 
-  /*! 
+  /*!
   * \author Anders Fernström
   * \date 2005-11-23
   *
@@ -1113,7 +1113,7 @@ namespace IAEX
     return output_->toHtml();
   }
 
-  /*! 
+  /*!
   * \author Anders Fernström
   * \date 2005-10-27
   *
@@ -1127,7 +1127,7 @@ namespace IAEX
     return input_->textCursor();
   }
 
-  /*! 
+  /*!
   * \author Anders Fernström
   * \date 2006-01-05
   *
@@ -1140,7 +1140,7 @@ namespace IAEX
     return input_;
   }
 
-  /*! 
+  /*!
   * \author Anders Fernström
   * \date 2006-02-03
   *
@@ -1153,7 +1153,7 @@ namespace IAEX
     return output_;
   }
 
-  /*! 
+  /*!
   * \author Ingemar Axelsson and Anders Fernström
   * \date 2005-12-16 (update)
   *
@@ -1163,9 +1163,9 @@ namespace IAEX
   *
   * 2005-10-04 AF, added some code for removing/replacing some text
   * 2005-10-27 AF, updated the function due to porting from qt3 to qt4
-  * 2005-12-08 AF, added code that removed any <span style tags added 
+  * 2005-12-08 AF, added code that removed any <span style tags added
   * in the parser.
-  * 2005-12-16 AF, block signlas so syntax highligher isn't done more 
+  * 2005-12-16 AF, block signlas so syntax highligher isn't done more
   * than once.
   */
   void GraphCell::setText(QString text)
@@ -1222,17 +1222,17 @@ namespace IAEX
     contentChanged();
   }
 
-  /*! 
+  /*!
   * \author Anders Fernström
   * \date 2005-11-01
   *
   * \brief Sets the visible text using html code.
   *
-  * Sets the text that should be visible using html code. Can change 
+  * Sets the text that should be visible using html code. Can change
   * the cellheight if the text is very long.
   *
   * \param html Html code that should be visible as normal text inside the cell mainarea.
-  */ 
+  */
   void GraphCell::setTextHtml(QString html)
   {
     input_->setHtml( html );
@@ -1241,7 +1241,7 @@ namespace IAEX
     contentChanged();
   }
 
-  /*! 
+  /*!
   * \author Anders Fernström
   * \date 2005-11-23
   *
@@ -1261,18 +1261,18 @@ namespace IAEX
     }
   }
 
-  /*! 
+  /*!
   * \author Anders Fernström
   * \date 2005-11-23
   *
   * \brief Sets the output text using html code.
   *
   * Sets the text that should be visible in the output part of the
-  * cell using html code. Can change the cellheight if the text is 
+  * cell using html code. Can change the cellheight if the text is
   * very long.
   *
   * \param html Html code that should be visible as normal text inside the cell mainarea.
-  */ 
+  */
   void GraphCell::setTextOutputHtml(QString html)
   {
     if( !html.isNull() && !html.isEmpty() )
@@ -1284,13 +1284,13 @@ namespace IAEX
     }
   }
 
-  /*! 
+  /*!
   * \author Anders Fernström
   * \date 2005-10-28
   *
   * \brief Set cell style
   *
-  * IMPORTANT: User shouldn't be able to change style on GraphCells 
+  * IMPORTANT: User shouldn't be able to change style on GraphCells
   * so this function always use "Input" as style.
   *
   * \param stylename The style name of the style that is to be applyed to the cell
@@ -1300,14 +1300,14 @@ namespace IAEX
     Cell::setStyle( "Graph" );
   }
 
-  /*! 
+  /*!
   * \author Anders Fernström
   * \date 2005-10-27
   * \date 2006-03-02 (update)
   *
   * \brief Set cell style
   *
-  * IMPORTANT: User shouldn't be able to change style on GraphCells 
+  * IMPORTANT: User shouldn't be able to change style on GraphCells
   * so this function always use "Input" as style.
   *
   * 2005-11-03 AF, updated so the text is selected when the style
@@ -1341,8 +1341,8 @@ namespace IAEX
       chaptercounter_->mergeCurrentCharFormat( (*style_.textCharFormat()) );
 
       QTextFrameFormat format = chaptercounter_->document()->rootFrame()->frameFormat();
-      format.setMargin( style_.textFrameFormat()->margin() + 
-        style_.textFrameFormat()->border() + 
+      format.setMargin( style_.textFrameFormat()->margin() +
+        style_.textFrameFormat()->border() +
         style_.textFrameFormat()->padding()	);
       chaptercounter_->document()->rootFrame()->setFrameFormat( format );
 
@@ -1358,7 +1358,7 @@ namespace IAEX
     }
   }
 
-  /*! 
+  /*!
   * \author Anders Fernström
   * \date 2006-03-02
   *
@@ -1370,17 +1370,17 @@ namespace IAEX
     chaptercounter_->setPlainText( number );
     chaptercounter_->setAlignment( (Qt::AlignmentFlag)Qt::AlignRight );
     QTextFrameFormat format = chaptercounter_->document()->rootFrame()->frameFormat();
-    format.setMargin( style_.textFrameFormat()->margin() + 
-      style_.textFrameFormat()->border() + 
+    format.setMargin( style_.textFrameFormat()->margin() +
+      style_.textFrameFormat()->border() +
       style_.textFrameFormat()->padding()	);
     chaptercounter_->document()->rootFrame()->setFrameFormat( format );
   }
 
-  /*! 
+  /*!
   * \author Anders Fernström
   * \date 2006-03-02
   *
-  * \brief return the value of the chapter counter, as plain text. 
+  * \brief return the value of the chapter counter, as plain text.
   * Returns null if the counter is empty
   */
   QString GraphCell::ChapterCounter()
@@ -1391,11 +1391,11 @@ namespace IAEX
     return chaptercounter_->toPlainText();
   }
 
-  /*! 
+  /*!
   * \author Anders Fernström
   * \date 2006-03-03
   *
-  * \brief return the value of the chapter counter, as html code. 
+  * \brief return the value of the chapter counter, as html code.
   * Returns null if the counter is empty
   */
   QString GraphCell::ChapterCounterHtml()
@@ -1462,12 +1462,12 @@ namespace IAEX
   * \author Ingemar Axelsson (and Anders Fernström)
   * \date 2005-11-01 (update)
   *
-  * \breif Set if the output part of the cell shoud be 
+  * \breif Set if the output part of the cell shoud be
   * closed(hidden) or not.
   *
-  * 2005-11-01 AF, Made some small changes to how the function 
-  * calculate the new height, to reflect the changes made when 
-  * porting from Q3TextEdit to QTextEdit. 
+  * 2005-11-01 AF, Made some small changes to how the function
+  * calculate the new height, to reflect the changes made when
+  * porting from Q3TextEdit to QTextEdit.
   */
   void GraphCell::setClosed(const bool closed, bool update)
   {
@@ -1530,9 +1530,9 @@ namespace IAEX
   * \author Anders Fernström and Ingemar Axelsson
   * \date 2006-04-10 (update)
   *
-  * \breif Recalculates height. 
+  * \breif Recalculates height.
   *
-  * 2005-10-31 AF, Large part of this function was changes due to 
+  * 2005-10-31 AF, Large part of this function was changes due to
   * porting to QT4 (changes from Q3TextBrowser to QTextBrowser).
   * 2006-04-10 AF, emits heightChanged if the height changes
   */
@@ -1547,7 +1547,7 @@ namespace IAEX
     input_->setMinimumHeight( height + 3 );
 
     if( evaluated_ && !closed_ )
-    {	
+    {
       int outHeight = output_->document()->documentLayout()->documentSize().toSize().height();
 
       if( outHeight < 0 )
@@ -1579,7 +1579,7 @@ namespace IAEX
     oldHeight_ = height + 3;
   }
 
-  /*! 
+  /*!
   * \author Anders Fernström
   * \date 2006-01-17
   *
@@ -1593,13 +1593,13 @@ namespace IAEX
     return closed_;
   }
 
-  /*! 
+  /*!
   * \author Anders Fernström
   * \date 2005-10-27
   *
-  * \brief Function for telling if the user is allowed to change 
+  * \brief Function for telling if the user is allowed to change
   * the text settings for the text inside the cell. User isn't
-  * allowed to change the text settings for GraphCell so this 
+  * allowed to change the text settings for GraphCell so this
   * function always return false.
   *
   * \return False
@@ -1609,7 +1609,7 @@ namespace IAEX
     return false;
   }
 
-  /*! 
+  /*!
   * \author Anders Fernström
   * \date 2005-11-23
   *
@@ -1620,18 +1620,18 @@ namespace IAEX
   */
   bool GraphCell::isEvaluated()
   {
-    return evaluated_;	
+    return evaluated_;
   }
 
-  /*! 
+  /*!
   * \author Anders Fernström
   * \date 2005-11-23
   *
-  * \brief Returns true if the expression in the text is a plot 
-  * command, returns false otherwise. If no text is sent to the 
+  * \brief Returns true if the expression in the text is a plot
+  * command, returns false otherwise. If no text is sent to the
   * method it will test the text in the input part of the cell.
   *
-  * \param text The text that should be tested, if no text the 
+  * \param text The text that should be tested, if no text the
   * inputpart of the cell will be tested.
   * \return If plot command or not
   */
@@ -1718,12 +1718,12 @@ namespace IAEX
     }
   }
 
-  /*! 
+  /*!
   * \author Ingemar Axelsson and Anders Fernström
   * \date 2006-04-18 (update)
   *
-  *\brief Sends the content of the GraphCell to the evaluator. 
-  * Displays the result in a outputcell. 
+  *\brief Sends the content of the GraphCell to the evaluator.
+  * Displays the result in a outputcell.
   *
   * 2005-11-01 AF, updated so the text that is sent to be evaled isn't
   * in html code.
@@ -1736,7 +1736,7 @@ namespace IAEX
   * the content to the delegate object for evaluation. The result is
   * printed in a output cell. No indentation and syntax
   * highlightning is used in the output cell.
-  * 
+  *
   */
   void GraphCell::eval()
   {
@@ -1778,7 +1778,7 @@ namespace IAEX
       filename2 += imagename;
 
 
-      // 2006-02-17 AF, 
+      // 2006-02-17 AF,
       evaluated_ = true;
       setClosed(false);
 
@@ -1796,7 +1796,7 @@ namespace IAEX
       // old plot.
       bool oldPlot = isPlot(input_->toPlainText());
       bool newPlot = isPlot2(input_->toPlainText());
-      bool visualize = isVisualize(input_->toPlainText());			
+      bool visualize = isVisualize(input_->toPlainText());
 
       if( oldPlot )
       {
@@ -1818,7 +1818,7 @@ namespace IAEX
         //		if(!compoundwidget->gwMain->getServerState())
         compoundwidget->gwMain->setServerState(true);
 
-        compoundwidget->hideVis();			
+        compoundwidget->hideVis();
 
         /*
         if(!compoundwidget->gwMain->getServerState())
@@ -1842,7 +1842,7 @@ namespace IAEX
         setHeight(height() +400);
         compoundwidget->show();
         compoundwidget->setMinimumHeight(400);
-        }*/			
+        }*/
 
         // 2006-02-02 AF, Added try-catch
         QString res, error;
@@ -1949,7 +1949,7 @@ namespace IAEX
         return;
         }
 
-        }*/			
+        }*/
         else
         {
           try
@@ -1972,7 +1972,7 @@ namespace IAEX
         if(oldPlot)
         {
           if(error.isEmpty() )
-          {	
+          {
 
             output_->selectAll();
             output_->textCursor().insertText( "{creating plot}" );
@@ -2022,7 +2022,7 @@ namespace IAEX
                   else
                   {
                     output_->selectAll();
-                    output_->textCursor().insertText( "[Error] Unable to read plot image \"" + 
+                    output_->textCursor().insertText( "[Error] Unable to read plot image \"" +
                       filename1 + "or " + filename2 + "\". Please retry." );
                     setState(ERROR);
                     break;
@@ -2033,7 +2033,7 @@ namespace IAEX
               if( sleepTime > 25 )
               {
                 output_->selectAll();
-                output_->textCursor().insertText( "[Error] Unable to find plot image \"" + 
+                output_->textCursor().insertText( "[Error] Unable to find plot image \"" +
                   filename1 + " or " + filename2  + "\"" );
                 setState(ERROR);
                 break;
@@ -2049,7 +2049,7 @@ namespace IAEX
             // check if resualt is empty
             if( res.isEmpty() && error.isEmpty() )
             {
-              setState(FINISHED);					
+              setState(FINISHED);
               res = "[done]";
             }
             if( !error.isEmpty() )
@@ -2060,7 +2060,7 @@ namespace IAEX
             }
             else
               setState(FINISHED);
-            //						palette.setColor(input_->backgroundRole(), QColor(200,200,255));					
+            //						palette.setColor(input_->backgroundRole(), QColor(200,200,255));
 
             //		QPalette palette;
 
@@ -2117,13 +2117,13 @@ namespace IAEX
     }
     */
     // if the expression is a plot command and the is no errors
-    // in the result, find the image and insert it into the 
+    // in the result, find the image and insert it into the
     // output part of the cell.
 
 
     /*
     if( isPlot() && error.isEmpty() )
-    {	
+    {
     output_->selectAll();
     output_->textCursor().insertText( "{creating plot}" );
     //output_->setPlainText( "{creating plot}" );
@@ -2188,7 +2188,7 @@ namespace IAEX
     }
     else
     {
-    */			
+    */
     // check if resualt is empty
     /*
     if( res.isEmpty() && error.isEmpty() )
@@ -2276,7 +2276,7 @@ namespace IAEX
     filename += imagename;
 
     if( isPlot() && error.isEmpty() )
-    {	
+    {
     output_->selectAll();
     output_->textCursor().insertText( "{creating plot}" );
     //output_->setPlainText( "{creating plot}" );
@@ -2361,7 +2361,7 @@ namespace IAEX
 
 
 
-    QRegExp e("([\\d]+:[\\d]+-[\\d]+:[\\d]+)|([\\d]+:[\\d]+)");		
+    QRegExp e("([\\d]+:[\\d]+-[\\d]+:[\\d]+)|([\\d]+:[\\d]+)");
 
     bool b;
     int p=0;
@@ -2417,7 +2417,7 @@ namespace IAEX
         MyAction* a = new MyAction(e.cap(2), 0);
         connect(a, SIGNAL(triggered()), a, SLOT(triggered2()));
         connect(a, SIGNAL(urlClicked(const QUrl&)), output_, SIGNAL(anchorClicked(const QUrl&)));
-        actions.push_back(a);				
+        actions.push_back(a);
 
         /*
 
@@ -2461,7 +2461,7 @@ namespace IAEX
     //Emit that the text have changed
     emit textChanged(true);
   }
-  /*! 
+  /*!
   * \author Anders Fernström
   * \date 2006-02-02
   * \date 2006-02-09 (update)
@@ -2507,7 +2507,7 @@ namespace IAEX
       // unable to reconnect, ask if user want to restart omc.
       QString msg = QString( e.what() ) + "\n\nUnable to reconnect with OMC. Do you want to restart OMC?";
       int result = QMessageBox::critical( 0, tr("Communication Error with OMC"),
-        msg, 
+        msg,
         QMessageBox::Yes | QMessageBox::Default,
         QMessageBox::No );
 
@@ -2516,7 +2516,7 @@ namespace IAEX
         delegate_->closeConnection();
         if( delegate_->startDelegate() )
         {
-          // 2006-03-14 AF, wait before trying to reconnect, 
+          // 2006-03-14 AF, wait before trying to reconnect,
           // give OMC time to start up
           SleeperThread::msleep( 1000 );
 
@@ -2536,11 +2536,11 @@ namespace IAEX
     }
   }
 
-  /*! 
+  /*!
   * \author Anders Fernström
   * \date 2005-12-15
   *
-  *\brief Get/Insert the command that match the last word in the 
+  *\brief Get/Insert the command that match the last word in the
   * input editor.
   */
   void GraphCell::command()
@@ -2552,11 +2552,11 @@ namespace IAEX
       input_->setTextCursor( cursor );
   }
 
-  /*! 
+  /*!
   * \author Anders Fernström
   * \date 2005-12-15
   *
-  *\brief Get/Insert the next command that match the last word in 
+  *\brief Get/Insert the next command that match the last word in
   * the input editor.
   */
   void GraphCell::nextCommand()
@@ -2569,7 +2569,7 @@ namespace IAEX
       input_->setTextCursor( cursor );
   }
 
-  /*! 
+  /*!
   * \author Anders Fernström
   * \date 2005-12-15
   *
@@ -2602,7 +2602,7 @@ namespace IAEX
     if( input_->toPlainText().isEmpty() )
       return;
 
-    // 2006-01-16 AF, Don't add the text editor if MyTextEdit2 
+    // 2006-01-16 AF, Don't add the text editor if MyTextEdit2
     // don't allow it. MyTextEdit2 says no if the user removes
     // text (backspace or delete).
     if( dynamic_cast<MyTextEdit2 *>(input_)->isStopingHighlighter() )
@@ -2678,7 +2678,7 @@ namespace IAEX
   */
   void GraphCell::addCellWidgets()
   {
-    layout_->addWidget(input_,0,0);	 
+    layout_->addWidget(input_,0,0);
 
     if(evaluated_)
       layout_->addWidget(output_,1,0);
@@ -2725,7 +2725,7 @@ namespace IAEX
   */
   void GraphCell::resizeEvent(QResizeEvent *event)
   {
-    contentChanged(); 
+    contentChanged();
     Cell::resizeEvent(event);
   }
 

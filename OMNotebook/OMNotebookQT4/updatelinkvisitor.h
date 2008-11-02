@@ -45,7 +45,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 ------------------------------------------------------------------------------------
 */
 
-/*! 
+/*!
  * \file updatelinkvisitor.h
  * \author Anders Fernström
  */
@@ -64,7 +64,7 @@ using namespace std;
 
 namespace IAEX
 {
-	class UpdateLinkVisitor : public Visitor 
+	class UpdateLinkVisitor : public Visitor
 	{
 
 	public:
@@ -86,7 +86,7 @@ namespace IAEX
 		virtual void visitGraphCellNodeBefore(GraphCell *node);
 		virtual void visitGraphCellNodeAfter(GraphCell *node);
 
-		virtual void visitCellCursorNodeBefore(CellCursor *cursor);      
+		virtual void visitCellCursorNodeBefore(CellCursor *cursor);
 		virtual void visitCellCursorNodeAfter(CellCursor *cursor);
 
 	private:

@@ -18,7 +18,7 @@ are permitted provided that the following conditions are met:
 
     * Redistributions of source code must retain the above copyright notice,
       this list of conditions and the following disclaimer.
-    
+
 	* Redistributions in binary form must reproduce the above copyright notice,
       this list of conditions and the following disclaimer in the documentation
       and/or other materials provided with the distribution.
@@ -63,7 +63,7 @@ class DataSelect: public QDialog, private Ui::dataSelect
    public:
       DataSelect(QWidget* parent = 0);
       ~DataSelect();
-      
+
       bool getVariables(const QStringList&, QString&, QString&);
 
 };

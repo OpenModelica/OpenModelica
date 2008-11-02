@@ -45,7 +45,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 ------------------------------------------------------------------------------------
 */
 
-/*! 
+/*!
  * \file highlighterthread.h
  * \author Anders Fernström
  * \date 2005-12-16
@@ -68,7 +68,7 @@ class QTextEdit;
 
 using namespace std;
 namespace IAEX
-{   
+{
 	class HighlighterThread : public QThread
 	{
 	public:

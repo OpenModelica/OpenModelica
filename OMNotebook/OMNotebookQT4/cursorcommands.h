@@ -113,7 +113,7 @@ namespace IAEX
 				throw runtime_error( str.c_str() );
 			}
 		}
-	}; 
+	};
 
 	/*! \class CursorMoveDownCommand
 	*
@@ -144,7 +144,7 @@ namespace IAEX
 					cursor->currentCell()->setFocus(false);
 				}
 
-				cursor->moveDown();	    
+				cursor->moveDown();
 
 				if(cursor->currentCell()->isClosed())
 				{
@@ -167,7 +167,7 @@ namespace IAEX
 				throw runtime_error( str.c_str() );
 			}
 		}
-	}; 
+	};
 
 	/*! \class CursorMoveAfterCommand
 	*
@@ -224,6 +224,6 @@ namespace IAEX
 		}
 	private:
 		Cell *cell_;
-	}; 
+	};
 };
 #endif

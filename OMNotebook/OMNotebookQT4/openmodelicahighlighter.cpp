@@ -19,7 +19,7 @@ are permitted provided that the following conditions are met:
 
     * Redistributions of source code must retain the above copyright notice,
       this list of conditions and the following disclaimer.
-    
+
 	* Redistributions in binary form must reproduce the above copyright notice,
       this list of conditions and the following disclaimer in the documentation
       and/or other materials provided with the distribution.
@@ -46,7 +46,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 ------------------------------------------------------------------------------------
 */
 
-/*! 
+/*!
 * \file openmodelicahighlighter.h
 * \author Anders Fernström
 * \date 2005-12-17
@@ -81,14 +81,14 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 using namespace std;
 namespace IAEX
 {
-	/*! 
+	/*!
 	 * \class OpenModelicaHighlighter
 	 * \author Anders Fernström
 	 * \date 2005-12-17
 	 *
-	 * \brief Implements syntaxhighlightning for Modelica code. 
-	 * Implements syntaxhighlightning for Modelica code. To change 
-	 * colors edit the modelicacolors.xml 
+	 * \brief Implements syntaxhighlightning for Modelica code.
+	 * Implements syntaxhighlightning for Modelica code. To change
+	 * colors edit the modelicacolors.xml
 	 */
 
 	/*!
@@ -105,7 +105,7 @@ namespace IAEX
 		initializeMapping();
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-12-17
 	 *
@@ -116,7 +116,7 @@ namespace IAEX
 	}
 
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-12-17
 	 * \date 2005-12-29 (update)
@@ -147,13 +147,13 @@ namespace IAEX
 			block = block.next();
 		}
 
-		
+
 
 		//2005-12-29 AF, add block signal
 		doc->blockSignals( false );
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-12-17
 	 *
@@ -176,12 +176,12 @@ namespace IAEX
 
 			if( insideString_ )
 			{
-			
+
 				int end = text.indexOf( stringEnd_, startPos );
 
 				if( end >= 0 )
 				{ // found end in this block
-			
+
 					startPos = end + stringEnd_.matchedLength();
 					insideString_ = false;
 
@@ -194,7 +194,7 @@ namespace IAEX
 				else
 				{ // found no end, syntax highlight whole block
 					wholeBlock = true;
-			
+
 
 					QTextLayout::FormatRange range;
 					range.start = 0;
@@ -205,13 +205,13 @@ namespace IAEX
 			}
 			else if( insideComment_ )
 			{
-				
+
 
 				int end = text.indexOf( commentEnd_, startPos );
 
 				if( end >= 0 )
 				{ // found end in this block
-			
+
 
 					startPos = end + commentEnd_.matchedLength();
 					insideComment_ = false;
@@ -225,7 +225,7 @@ namespace IAEX
 				else
 				{ // found no end, syntax highlight whole block
 					wholeBlock = true;
-				
+
 
 					QTextLayout::FormatRange range;
 					range.start = 0;
@@ -238,13 +238,13 @@ namespace IAEX
 
 			if( !wholeBlock )
 			{
-			
-				foreach( QString pattern, mappings_.keys() ) 
+
+				foreach( QString pattern, mappings_.keys() )
 				{
 					QRegExp expression( pattern );
 					int i = text.indexOf( expression, startPos );
 
-					while( i >= 0 ) 
+					while( i >= 0 )
 					{
 						QTextLayout::FormatRange range;
 						range.start = i;
@@ -272,11 +272,11 @@ namespace IAEX
 						firstCommentLine = text.indexOf( commentLine_, startPos );
 
 
-					if( firstString >= 0 && 
-						( (firstString < firstComment) || (firstComment < 0) ) && 
+					if( firstString >= 0 &&
+						( (firstString < firstComment) || (firstComment < 0) ) &&
 						( (firstString < firstCommentLine) || (firstCommentLine < 0) ))
 					{
-						int end = text.indexOf( stringEnd_, 
+						int end = text.indexOf( stringEnd_,
 							firstString + stringStart_.matchedLength() );
 						if( end >= 0 )
 						{
@@ -299,11 +299,11 @@ namespace IAEX
 							break;
 						}
 					}
-					else if( firstComment >= 0 && 
+					else if( firstComment >= 0 &&
 						( (firstComment < firstString) || (firstString < 0) ) &&
 						( (firstComment < firstCommentLine) || (firstCommentLine < 0) ))
 					{
-						int end = text.indexOf( commentEnd_, 
+						int end = text.indexOf( commentEnd_,
 							firstComment + commentStart_.matchedLength() );
 						if( end >= 0 )
 						{
@@ -326,7 +326,7 @@ namespace IAEX
 							break;
 						}
 					}
-					else if( firstCommentLine >= 0 && 
+					else if( firstCommentLine >= 0 &&
 						( (firstCommentLine < firstString) || (firstString < 0) ) &&
 						( (firstCommentLine < firstComment) || (firstComment < 0) ))
 					{
@@ -396,7 +396,7 @@ namespace IAEX
 		variableNameFormat_.merge( standardTextFormat_ );
 		stringFormat_.merge( standardTextFormat_ );
 		commentFormat_.merge( standardTextFormat_ );
-		
+
 
 		while( !node.isNull() )
 		{
@@ -423,7 +423,7 @@ namespace IAEX
 					parseSettings( element, &commentFormat_ );
 				else
 				{
-					cout << "settings tag not specified: " << 
+					cout << "settings tag not specified: " <<
 						element.tagName().toStdString();
 				}
 			}
@@ -443,58 +443,58 @@ namespace IAEX
 	{
 		// TYPE
 		mappings_.insert( QString("\\b(block|c(lass|on(nector|stant))|discrete|e(n(capsulated|d)") +
-			"|xternal)|f(inal|low|unction)|in(ner|put)|model|out(er|put)|pa(ckage|r(tial|ameter))" + 
-			"|re(cord|declare|placeable)|type)\\b", 
+			"|xternal)|f(inal|low|unction)|in(ner|put)|model|out(er|put)|pa(ckage|r(tial|ameter))" +
+			"|re(cord|declare|placeable)|type)\\b",
 			typeFormat_ );
-		
+
 		// KEYWORD
 		// 2006-03-14 AF, added: expandable, enumeration
 		mappings_.insert( QString("\\b(a(lgorithm|nd)|for|i(f|mport|n)|loop|not|or") +
 			"|e(lse(if|when)?|quation|numeration|x(tends|pandable))|then" +
-			"|p(rotected|ublic)|w(h(en|ile)|ithin))\\b", 
+			"|p(rotected|ublic)|w(h(en|ile)|ithin))\\b",
 			keywordFormat_ );
-		
+
 		// FUNCTION NAME
 		// 2006-01-14 AF, added: der
 		// 2006-03-01 AF, removed sign, added sin
 		// 2006-03-14 AF, change function name totaly
-		mappings_.insert( QString("\\b(der|pre|initial|reinit)\\b"), 
+		mappings_.insert( QString("\\b(der|pre|initial|reinit)\\b"),
 			functionNameFormat_ );
 
 		/*
-		mappings_.insert( QString("\\b(a(bs|nalysisType)|c(ardinality|hange|eil|ross)|d(e(lay|r)") + 
+		mappings_.insert( QString("\\b(a(bs|nalysisType)|c(ardinality|hange|eil|ross)|d(e(lay|r)") +
 			"|i(v|agonal))|edge|f(ill|loor)|i(dentity|n(itial|teger))|linspace|ma(trix|x)|min|mod|n(dims" +
 			"|oEvent)|o(nes|uterProduct)|pr(e|o(duct|mote))|re(init|m)|s(amle|calar|i(n|ze)|kew" +
-            "|qrt|um|ymmetric)|t(erminal|ranspose)|vector|zeros)\\b", 
+            "|qrt|um|ymmetric)|t(erminal|ranspose)|vector|zeros)\\b",
 			functionNameFormat_ );
 			*/
 
 		// CONSTANT
-		mappings_.insert( "\\b(false|true)\\b", 
+		mappings_.insert( "\\b(false|true)\\b",
 			constantFormat_ );
 
 		// WARNING
-		mappings_.insert( "\\b(assert|terminate)\\b", 
+		mappings_.insert( "\\b(assert|terminate)\\b",
 			warningFormat_ );
 
 		// BUILT IN
-		mappings_.insert( "\\b(annotation|connect)\\b", 
+		mappings_.insert( "\\b(annotation|connect)\\b",
 			builtInFormat_ );
 
 		// VARIABLE NAME
-		mappings_.insert( "\\b(time)\\b", 
+		mappings_.insert( "\\b(time)\\b",
 			variableNameFormat_ );
 
 		// STRING
 		// A little diffrent because strings can span over several blocks
 		stringStart_.setPattern( "\"" );
 		stringEnd_.setPattern( "\"" );
-		
+
 		// COMMENT
 		// A little diffrent because comments can span over several blocks
 		commentStart_.setPattern( "/\\*" );
 		commentEnd_.setPattern( "\\*/" );
-		commentLine_.setPattern( "//.*" );		
+		commentLine_.setPattern( "//.*" );
 	}
 
 	/*!
@@ -503,7 +503,7 @@ namespace IAEX
 	 *
 	 * \brief Parse "type" settings tags
 	 */
-	void OpenModelicaHighlighter::parseSettings( QDomElement e, 
+	void OpenModelicaHighlighter::parseSettings( QDomElement e,
 		QTextCharFormat *format )
 	{
 		QDomNode node = e.firstChild();
@@ -560,7 +560,7 @@ namespace IAEX
 				}
 				else
 				{
-					cout << "type settings tag not specified: " << 
+					cout << "type settings tag not specified: " <<
 						element.tagName().toStdString();
 				}
 			}

@@ -47,13 +47,13 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 
 // REMADE LARGE PART OF THIS CLASS 2005-11-30 /AF
 
-/*! 
+/*!
 * \file serializingvisitor.h
 * \author Anders Fernström (and Ingemar Axelsson)
 * \date 2005-11-30
 *
 * \brief Remake this class to work with the specified xml format that
-* document are to be saved in. The old file have been renamed to 
+* document are to be saved in. The old file have been renamed to
 * 'serializingvisitor.h.old' /AF
 */
 
@@ -76,7 +76,7 @@ using namespace std;
 
 namespace IAEX
 {
-	class SerializingVisitor : public Visitor 
+	class SerializingVisitor : public Visitor
 	{
 
 	public:
@@ -98,7 +98,7 @@ namespace IAEX
 		virtual void visitGraphCellNodeBefore(GraphCell *node);
 		virtual void visitGraphCellNodeAfter(GraphCell *node);
 
-		virtual void visitCellCursorNodeBefore(CellCursor *cursor);      
+		virtual void visitCellCursorNodeBefore(CellCursor *cursor);
 		virtual void visitCellCursorNodeAfter(CellCursor *cursor);
 
 	private:

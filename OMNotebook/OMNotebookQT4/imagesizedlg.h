@@ -18,7 +18,7 @@ are permitted provided that the following conditions are met:
 
     * Redistributions of source code must retain the above copyright notice,
       this list of conditions and the following disclaimer.
-    
+
 	* Redistributions in binary form must reproduce the above copyright notice,
       this list of conditions and the following disclaimer in the documentation
       and/or other materials provided with the distribution.
@@ -47,7 +47,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 
 // FILE/CLASS ADDED 2005-11-20 /AF
 
-/*! 
+/*!
  * \file imagesizedlg.h
  * \author Anders Fernström
  */
@@ -60,22 +60,22 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 
 
 namespace IAEX
-{	
-	/*! 
+{
+	/*!
 	 * \class ImageSizeDlg
 	 * \author Anders Fernström
 	 * \date 2005-11-20
-	 * 
+	 *
 	 * \breif Class of opening a dialog window for selecting image size...
 	 */
 	class ImageSizeDlg : public QDialog
 	{
 	public:
 		ImageSizeDlg( QWidget *parent, QImage *image)
-			: QDialog(parent), image_(image) 
-		{ 
+			: QDialog(parent), image_(image)
+		{
 			ui.setupUi(this);
-			
+
 			QString width;
 			width.setNum( image->size().width() );
 			ui.widthEdit->setText( width );
@@ -85,7 +85,7 @@ namespace IAEX
 			ui.heightEdit->setText( height );
 
 			//set fixed size
-			
+
 			setMinimumHeight( this->height() );
 			setMaximumHeight( this->height() );
 			setMinimumWidth( this->width() );
@@ -112,10 +112,10 @@ namespace IAEX
 				size.setHeight( -1 );
 				size.setWidth( -1 );
 			}
-			
+
 			return size;
 		}
-		
+
 
 	private:
 		Ui::ImageDialog ui;

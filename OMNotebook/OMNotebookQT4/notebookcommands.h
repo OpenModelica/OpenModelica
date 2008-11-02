@@ -45,7 +45,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 ------------------------------------------------------------------------------------
 */
 
-/*! 
+/*!
  * \file notebookcommands.h
  * \author Ingemar Axelsson and Anders Fernström
  */
@@ -86,7 +86,7 @@ using namespace std;
 
 namespace IAEX
 {
-	/*! 
+	/*!
 	 * \class SleeperThread
 	 * \author Anders Ferström
 	 *
@@ -102,7 +102,7 @@ namespace IAEX
 		}
 	};
 
-	/*! 
+	/*!
 	 * \class SaveDocumentCommand
 	 * \author Ingemar Axelsson and Anders Fernström
 	 * \date 2005-12-05 (update)
@@ -130,10 +130,10 @@ namespace IAEX
 			{
 				try
 				{
-					// 2005-11-30 AF, Changed DomDocument name from 
+					// 2005-11-30 AF, Changed DomDocument name from
 					// 'qtNotebook' to 'OMNotebook'.
 					QDomDocument doc( "OMNotebook" );
-					
+
 
 					QFile file( filename_ );
 
@@ -153,7 +153,7 @@ namespace IAEX
 							}
 							else
 								oldFilepath = QFileInfo(oldFilepath).absolutePath();
-							
+
 							// use visitor if the new path is different from the old
 							if( oldFilepath != newFilepath )
 							{
@@ -170,7 +170,7 @@ namespace IAEX
 						SerializingVisitor visitor(doc, doc_);
 						doc_->runVisitor( visitor );
 
-						// 2005-09-28 AF, Hade to change from 'doc.toString()' 
+						// 2005-09-28 AF, Hade to change from 'doc.toString()'
 						// to 'doc.toCString()', so the xml file was saved in
 						// UTF-8, otherwise swedish letters didn't work.
 						// 2005-10-07 AF, Porting, changed from 'toCString()'
@@ -181,7 +181,7 @@ namespace IAEX
 						if(doc.toByteArray().size() && file.open(QIODevice::WriteOnly))
 						{
 
-							if(filename_.endsWith("onbz", Qt::CaseInsensitive)) 
+							if(filename_.endsWith("onbz", Qt::CaseInsensitive))
 								//							filestream << qCompress(doc.toByteArray());
 								file.write(qCompress(doc.toByteArray(), 9));
 							else
@@ -189,7 +189,7 @@ namespace IAEX
 								file.write(doc.toByteArray());
 
 							file.close();
-						
+
 
 						// AF, Added this
 						doc_->setFilename( filename_ );
@@ -215,10 +215,10 @@ namespace IAEX
 	};
 
 
-	/*! 
+	/*!
 	 * \class OpenFileCommand
 	 * \author Ingemar Axelsson
-	 * 
+	 *
 	 * Opens the specified filename.
 	 */
 	class OpenFileCommand : public Command
@@ -235,7 +235,7 @@ namespace IAEX
 			catch(exception &e)
 			{
 				string msg = string("OpenFileCommand(), Exception:\r\n") + e.what();
-				throw runtime_error( msg.c_str() );				
+				throw runtime_error( msg.c_str() );
 			}
 		}
 	private:
@@ -243,11 +243,11 @@ namespace IAEX
 	};
 
 
-	/*! 
+	/*!
 	 * \class OpenOldFileCommand
 	 * \author Anders Fernström
 	 * \date 2005-12-01
-	 * 
+	 *
 	 * \breif Opens an old file, using the specified filename.
 	 *
 	 * \param filename The file that should be open
@@ -256,7 +256,7 @@ namespace IAEX
 	class OpenOldFileCommand : public Command
 	{
 	public:
-		OpenOldFileCommand( const QString &filename, int readmode ) 
+		OpenOldFileCommand( const QString &filename, int readmode )
 			: filename_( filename ), readmode_( readmode ){}
 		virtual ~OpenOldFileCommand(){}
 		void execute()
@@ -268,7 +268,7 @@ namespace IAEX
 			catch(exception &e)
 			{
 				string msg = string("OpenOldFileCommand(), Exception:\r\n") + e.what();
-				throw runtime_error( msg.c_str() );				
+				throw runtime_error( msg.c_str() );
 			}
 		}
 	private:
@@ -277,11 +277,11 @@ namespace IAEX
 	};
 
 
-	/*! 
+	/*!
 	 * \class PrintDocumentCommand
 	 * \author Anders Fernström
 	 * \date 2005-12-19
-	 * 
+	 *
 	 * \breif print a document
 	 *
 	 * \param filename The file that should be open
@@ -290,7 +290,7 @@ namespace IAEX
 	class PrintDocumentCommand : public Command
 	{
 	public:
-		PrintDocumentCommand( Document *doc, QPrinter *printer ) 
+		PrintDocumentCommand( Document *doc, QPrinter *printer )
 			: doc_( doc ), printer_( printer ){}
 		virtual ~PrintDocumentCommand(){}
 		void execute()
@@ -303,7 +303,7 @@ namespace IAEX
 				opt.setWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
 				printDocument->setDefaultTextOption(opt);
 				printDocument->setTextWidth(700);
-			
+
 				PrinterVisitor visitor( printDocument, printer_ );
 				doc_->runVisitor( visitor );
 				printDocument->setTextWidth(700);
@@ -317,7 +317,7 @@ namespace IAEX
 			catch(exception &e)
 			{
 				string msg = string("PrintDocumentCommand(), Exception:\r\n") + e.what();
-				throw runtime_error( msg.c_str() );				
+				throw runtime_error( msg.c_str() );
 			}
 		}
 	private:
@@ -326,11 +326,11 @@ namespace IAEX
 	};
 
 
-	/*! 
+	/*!
 	 * \class CloseFileCommand
 	 * \author Ingemar Axelsson
 	 *
-	 * Closes the current document. 
+	 * Closes the current document.
 	 */
 	class CloseFileCommand : public Command
 	{
@@ -354,7 +354,7 @@ namespace IAEX
 	};
 
 
-	/*! 
+	/*!
 	 * \class NewFileCommand
 	 * \author Ingemar Axelsson
 	 *
@@ -384,7 +384,7 @@ namespace IAEX
 	};
 
 
-	/*! 
+	/*!
 	 * \class ExportToPureText
 	 * \author Anders Fernström
 	 *
@@ -420,7 +420,7 @@ namespace IAEX
 				// 2006-01-30 AF, add exception
 				string str = string("ExportToPureText(), Exception: ") + e.what();
 				throw runtime_error( str.c_str() );
-			}			
+			}
 		}
 
 	private:
@@ -429,7 +429,7 @@ namespace IAEX
 	};
 
 
-	/*! 
+	/*!
 	 * \class EvalSelectedCells
 	 * \author Anders Fernström
 	 * \date 2006-02-14
@@ -447,7 +447,7 @@ namespace IAEX
 			try
 			{
 				vector<Cell *> cells = doc_->getSelection();
-			
+
 				vector<Cell *>::iterator c_iter = cells.begin();
 				while( c_iter != cells.end() )
 				{
@@ -461,7 +461,7 @@ namespace IAEX
 			{
 				string str = string("EvalSelectedCells(), Exception: ") + e.what();
 				throw runtime_error( str.c_str() );
-			}			
+			}
 		}
 
 	private:
@@ -489,7 +489,7 @@ namespace IAEX
 		Document *doc_;
 	};
 
-	/*! 
+	/*!
 	 * \class UpdateChapterCounters
 	 * \author Anders Fernström
 	 * \date 2006-03-02
@@ -513,7 +513,7 @@ namespace IAEX
 			{
 				string str = string("UpdateChapterCounters(), Exception: ") + e.what();
 				throw runtime_error( str.c_str() );
-			}			
+			}
 		}
 
 	private:

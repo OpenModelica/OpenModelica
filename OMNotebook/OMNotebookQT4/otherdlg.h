@@ -18,7 +18,7 @@ are permitted provided that the following conditions are met:
 
     * Redistributions of source code must retain the above copyright notice,
       this list of conditions and the following disclaimer.
-    
+
 	* Redistributions in binary form must reproduce the above copyright notice,
       this list of conditions and the following disclaimer in the documentation
       and/or other materials provided with the distribution.
@@ -47,7 +47,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 
 // FILE/CLASS ADDED 2005-11-04 /AF
 
-/*! 
+/*!
  * \file otherdlg.h
  * \author Anders Fernström
  */
@@ -60,28 +60,28 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 
 
 namespace IAEX
-{	
-	/*! 
+{
+	/*!
 	 * \class OtherDlg
 	 * \author Anders Fernström
 	 * \date 2005-11-04
-	 * 
+	 *
 	 * \breif Class of opening a dialog window for entering av value...
 	 */
 	class OtherDlg : public QDialog
 	{
 	public:
 		OtherDlg( QWidget *parent, int min, int max)
-			: QDialog(parent), min_(min), max_(max) 
-		{ 
+			: QDialog(parent), min_(min), max_(max)
+		{
 			ui.setupUi(this);
-			
+
 			QString minW;
 			QString maxW;
 			minW.setNum( min_ );
 			maxW.setNum( max_ );
 
-			QString text = QString("Enter value (") + minW + 
+			QString text = QString("Enter value (") + minW +
 				QString("-") + maxW + QString(")");
 
 			ui.label->setText( text );
@@ -101,7 +101,7 @@ namespace IAEX
 			if(ok)
 				if( min_ <= value && value <= max_ )
 					return value;
-			
+
 			return -1;
 		}
 

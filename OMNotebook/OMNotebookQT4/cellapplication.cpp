@@ -73,7 +73,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 
 namespace IAEX
 {
-	/*! 
+	/*!
 	 * \class CellApplication
 	 * \author Ingemar Axelsson and Anders Fernström
 	 * \date 2006-04-10 (update)
@@ -86,11 +86,11 @@ namespace IAEX
 	 * commandCenter object where they are executed and stored (they
 	 * should be stored).
 	 *
-	 * 2005-10-25 AF, Added a check to see if OMC is running, if not - 
+	 * 2005-10-25 AF, Added a check to see if OMC is running, if not -
 	 * try to start OMC.
-	 * 2005-12-16 AF, Added code that create an instance of 
+	 * 2005-12-16 AF, Added code that create an instance of
 	 * CommandCompletion, so all commands are loaded from the beginning.
-	 * 2005-12-17 AF, Added code that create instance of stylesheet, so 
+	 * 2005-12-17 AF, Added code that create instance of stylesheet, so
 	 * the styles are loaded from the beginning.
 	 * 2006-01-09 AF, added a new highlight thread with the
 	 * 'openmodelicahighlighter' as the highlighter that should be used.
@@ -105,13 +105,13 @@ namespace IAEX
 	 */
 	CellApplication::CellApplication( int &argc, char *argv[] )
 		: QObject()
-	{  
+	{
 		app_ = new QApplication(argc, argv);
 		QDir dir;
 
 		// 2006-05-03 AF, Notebook socket...
 		notebooksocket_ = new NotebookSocket( this );
-		
+
 		try
 		{
 			if( notebooksocket_->connectToNotebook() )
@@ -134,8 +134,8 @@ namespace IAEX
 					}
 					else
 						cout << "SOCKET: Specified filename do not exist" << endl;
-									
-					
+
+
 				}
 				else
 					cout << "SOCKET: No filename specified" << endl;
@@ -178,13 +178,13 @@ namespace IAEX
 
 		// 2006-04-10 AF, use environment variable to find xml files
 		QString openmodelica( getenv( "OPENMODELICAHOME" ) );
-		
+
 //		if( openmodelica.isEmpty() )
 		QDir d(openmodelica);
 		if(!d.exists(openmodelica))
 		{
 			QMessageBox::critical( 0, "OpenModelica Error", "The environment variable OPENMODELICAHOME is missing or invalid" );
-			
+
 			//			open(QString::null);
 //			return;
 			exit(1);
@@ -193,7 +193,7 @@ namespace IAEX
 		// 2006-02-13 AF, create temp dir
 		if( !dir.exists( "OMNoteboook_tempfiles" ) )
 			dir.mkdir( "OMNoteboook_tempfiles" );
-		
+
 		// 2005-12-17 AF, Create instance (load styles) of stylesheet
 		// 2006-04-10 AF, use environment variable to find stylesheet.xml
 		Stylesheet *sheet;
@@ -258,7 +258,7 @@ namespace IAEX
 				else
 					modelicacolorsfile = openmodelica + "/bin/modelicacolors.xml";
 
-				OpenModelicaHighlighter *highlighter = 
+				OpenModelicaHighlighter *highlighter =
 					new OpenModelicaHighlighter( modelicacolorsfile, *style.textCharFormat() );
 				HighlighterThread *thread = HighlighterThread::instance( highlighter );
 				//thread->start( QThread::LowPriority );
@@ -332,7 +332,7 @@ namespace IAEX
 		}
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström and Ingemar Axelsson
 	 * \date 2006-05-03 (update)
 	 *
@@ -341,7 +341,7 @@ namespace IAEX
 	 * 2005-11-24 AF, Added code that quited OMC, if it was still running.
 	 * 2005-12-19 AF, Added code that stopped the highlighter thread,
 	 * if it is running
-	 * 2006-01-16 AF, Go Through remove list and remove all temporary 
+	 * 2006-01-16 AF, Go Through remove list and remove all temporary
 	 * files.
 	 * 2006-02-09 AF, moved code for quiting omc to notebook windows
 	 * closeEvent handler
@@ -375,7 +375,7 @@ namespace IAEX
 		dir.rmdir( "OMNoteboook_tempfiles" );
 	}
 
-	/*! 
+	/*!
 	 * \author Ingemar Axelsson
 	 */
 	CommandCenter *CellApplication::commandCenter()
@@ -383,7 +383,7 @@ namespace IAEX
 		return cmdCenter_;
 	}
 
-	/*! 
+	/*!
 	 * \author Ingemar Axelsson
 	 */
 	void CellApplication::setCommandCenter(CommandCenter *c)
@@ -497,7 +497,7 @@ namespace IAEX
 		return pasteboard_;
 	}
 
-	/*! 
+	/*!
 	 * \author Ingemar Axelsson
 	 */
 	int CellApplication::exec()
@@ -505,7 +505,7 @@ namespace IAEX
 		return app_->exec();
 	}
 
-	/*! 
+	/*!
 	 * \author Ingemar Axelsson
 	 */
 	void CellApplication::add(Document *d)
@@ -513,7 +513,7 @@ namespace IAEX
 		documents_.push_back(d);
 	}
 
-	/*! 
+	/*!
 	 * \author Ingemar Axelsson
 	 */
 	void CellApplication::add(DocumentView *d)
@@ -521,19 +521,19 @@ namespace IAEX
 		views_.push_back(d);
 	}
 
-	/*! 
+	/*!
 	 * \author Ingemar Axelsson and Anders Fernström
 	 * \date 2006-05-03 (update)
 	 *
 	 * \brief Open an file, and display the content of hte file
 	 *
 	 * 2005-09-22 AF, added the filename to the NotebookWindow() call
-	 * 2005-10-11 AF, Porting, added resize call, so all cells get the 
+	 * 2005-10-11 AF, Porting, added resize call, so all cells get the
 	 * correct size. Ugly way!
-	 * 2005-11-30 AF, added code to launch the visitor that applies 
+	 * 2005-11-30 AF, added code to launch the visitor that applies
 	 * hide() and show() to groupcells.
 	 * 2005-12-01 AF, added a try-catch statment around the function
-	 * 2006-01-17 AF, added code that set the change variable in a 
+	 * 2006-01-17 AF, added code that set the change variable in a
 	 * document to false.
 	 * 2006-01-31 AF, open windows minimized, then show normal when
 	 * all operations are done on the window.
@@ -560,7 +560,7 @@ namespace IAEX
 			// 2006-01-31 AF, Open window minimized insted of normal
 			v->showMinimized();
 
-			// 2005-10-11 AF, Porting, added resize so all cells get the 
+			// 2005-10-11 AF, Porting, added resize so all cells get the
 			// correct size. Ugly way!
 
 //			v->resize( 810, 610 ); //not working with Qt 4.3
@@ -574,7 +574,7 @@ namespace IAEX
 
 			v->resize( 801, 600 ); //fjass
 
-			// 2005-11-30 AF, apply hide() and show() to closed groupcells 
+			// 2005-11-30 AF, apply hide() and show() to closed groupcells
 			// childs in the documentview
 			UpdateGroupcellVisitor visitor;
 			v->document()->runVisitor( visitor );
@@ -588,8 +588,8 @@ namespace IAEX
 			throw e;
 		}
 	}
-	
-	/*! 
+
+	/*!
 	* \author Anders Fernström
 	* \date 2006-01-16
 	*
@@ -601,7 +601,7 @@ namespace IAEX
 		removeList_.append( filename );
 	}
 
-	/*! 
+	/*!
 	* \author Anders Fernström
 	* \date 2006-01-27
 	*
@@ -612,7 +612,7 @@ namespace IAEX
 		return views_;
 	}
 
-	/*! 
+	/*!
 	* \author Anders Fernström
 	* \date 2006-01-27
 	*
@@ -632,7 +632,7 @@ namespace IAEX
 			else
 				++d_iter;
 		}
-		
+
 		vector<DocumentView *>::iterator dv_iter = views_.begin();
 		while( dv_iter != views_.end() )
 		{
@@ -646,12 +646,12 @@ namespace IAEX
 		}
 	}
 
-	/*! 
+	/*!
 	* \author Anders Fernström
 	* \date 2006-03-21
 	*
 	* \brief convert DrModelica documentation into OMNotebook format
-	* (.onb). 
+	* (.onb).
 	*
 	* NO A WORKING FUNCTION
 	* -Temporary function
@@ -691,8 +691,8 @@ namespace IAEX
 				{
 					cout << "Loading: " << fileDir.absolutePath().toStdString() +
 						string( "/" ) + fileList.at(j).toStdString() << endl;
-					
-					Document *d = new CellDocument( this, fileDir.absolutePath() + 
+
+					Document *d = new CellDocument( this, fileDir.absolutePath() +
 						QString( "/" ) + fileList.at(j), READMODE_CONVERTING_ONB );
 
 					// save file
@@ -702,11 +702,11 @@ namespace IAEX
 					cout << "Saving: " << dir.absolutePath().toStdString() +
 						string( "/" ) + dirList.at(i).toStdString() + string( "/" ) +
 						filename.toStdString() << endl;
-					
+
 					SaveDocumentCommand command( d, dir.absolutePath() +
 						QString( "/" ) + dirList.at(i) + QString( "/" ) + filename );
 					this->commandCenter()->executeCommand( &command );
-					
+
 					cout << "DONE!" << endl << endl;
 
 					// delete file

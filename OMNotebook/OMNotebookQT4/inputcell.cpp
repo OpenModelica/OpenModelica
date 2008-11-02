@@ -46,7 +46,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 ------------------------------------------------------------------------------------
 */
 
-/*! 
+/*!
  * \file inputcell.cpp
  * \author Ingemar Axelsson and Anders Fernström
  * \date 2005-10-27 (update)
@@ -86,7 +86,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 
 namespace IAEX
 {
-	/*! 
+	/*!
 	 * \class SleeperThread
 	 * \author Anders Ferström
 	 *
@@ -104,7 +104,7 @@ namespace IAEX
 
 
 
-	/*! 
+	/*!
 	 * \class MyTextEdit
 	 * \author Anders Ferström
 	 * \date 2005-11-01
@@ -128,7 +128,7 @@ namespace IAEX
 		return stopHighlighter;
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-11-01
 	 * \date 2005-12-15 (update)
@@ -136,7 +136,7 @@ namespace IAEX
 	 * Needed a signal to be emited when the user click on the cell.
 	 *
 	 * 2005-12-15 AF, set inCommand to false when clicking on the cell,
-	 * otherwise the commandcompletion class want be reseted when 
+	 * otherwise the commandcompletion class want be reseted when
 	 * changing inputcells by clicking.
 	 */
 	void MyTextEdit::mousePressEvent(QMouseEvent *event)
@@ -154,7 +154,7 @@ namespace IAEX
 		emit clickOnCell();
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-11-28
 	 *
@@ -168,12 +168,12 @@ namespace IAEX
 		emit wheelMove( event );
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-12-15
 	 * \date 2006-01-30 (update)
 	 *
-	 * \brief Handles key event, check if command completion or eval, 
+	 * \brief Handles key event, check if command completion or eval,
 	 * otherwise send them to the textbrowser
 	 *
 	 * 2006-01-30 AF, added ignore to 'Alt+Enter'
@@ -182,7 +182,7 @@ namespace IAEX
 	{
 
 		// EVAL, key: SHIFT + RETURN || SHIFT + ENTER
-		if( event->modifiers() == Qt::ShiftModifier && 
+		if( event->modifiers() == Qt::ShiftModifier &&
 
 			(event->key() == Qt::Key_Return || event->key() == Qt::Key_Enter) )
 		{
@@ -193,7 +193,7 @@ namespace IAEX
 			emit eval();
 		}
 		// COMMAND COMPLETION, key: SHIFT + TAB (= BACKTAB) || CTRL + SPACE
-		else if( (event->modifiers() == Qt::ShiftModifier && event->key() == Qt::Key_Backtab ) || 
+		else if( (event->modifiers() == Qt::ShiftModifier && event->key() == Qt::Key_Backtab ) ||
 			(event->modifiers() == Qt::ControlModifier && event->key() == Qt::Key_Space) )
 		{
 			stopHighlighter = false;
@@ -225,7 +225,7 @@ namespace IAEX
 		{
 			inCommand = false;
 			stopHighlighter = true;
-			
+
 			QTextBrowser::keyPressEvent( event );
 		}
 		// ALT+ENTER (ignore)
@@ -301,7 +301,7 @@ namespace IAEX
 		}
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2006-01-23
 	 *
@@ -322,7 +322,7 @@ namespace IAEX
 			QTextBrowser::insertFromMimeData( source );
 	}
 
-	/*! 
+	/*!
 	* \class InputCell
 	* \author Ingemar Axelsson and Anders Fernström
 	*
@@ -331,7 +331,7 @@ namespace IAEX
 	* Input cells is places where the user can do input. To evaluate
 	* the content of an inputcell just press shift+enter. It will
 	* throw an exception if it cant find OMC. Start OMC with
-	* following commandline: 
+	* following commandline:
 	*
 	* # omc +d=interactiveCorba
 	*
@@ -341,28 +341,28 @@ namespace IAEX
 
 	int InputCell::numEvals_ = 1;
 
-	/*! 
+	/*!
 	 * \author Ingemar Axelsson and Anders Fernström
 	 * \date 2005-11-23 (update)
 	 *
 	 * \brief The class constructor
 	 *
-	 * 2005-10-27 AF, updated the method due to porting from Q3Support 
+	 * 2005-10-27 AF, updated the method due to porting from Q3Support
 	 * to pure QT4 classes.
-	 * 2005-11-23 AF, added document to the constructor, because need 
+	 * 2005-11-23 AF, added document to the constructor, because need
 	 * the document to insert images to the output part if ploting.
 	 */
 	InputCell::InputCell(Document *doc, QWidget *parent)
-		: Cell(parent), 
-		evaluated_(false), 
-		closed_(true), 
+		: Cell(parent),
+		evaluated_(false),
+		closed_(true),
 		delegate_(0),
 		oldHeight_( 0 ),
 		document_(doc)
 	{
 		QWidget *main = new QWidget(this);
 		setMainWidget(main);
-		
+
 		layout_ = new QGridLayout(mainWidget());
 		layout_->setMargin(0);
 		layout_->setSpacing(0);
@@ -376,10 +376,10 @@ namespace IAEX
 		createInputCell();
 		createOutputCell();
 
-		//setBackgroundColor(QColor(200,200,255));  
+		//setBackgroundColor(QColor(200,200,255));
 	}
 
-	/*! 
+	/*!
 	 * \author Ingemar Axelsson and Anders Fernström
 	 *
 	 * \brief The class destructor
@@ -412,14 +412,14 @@ namespace IAEX
 		//delete syntaxHighlighter_;
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström and Ingemar Axelsson
 	 * \date 2006-03-02 (update)
 	 *
-	 * \brief Creates the QTextEdit for the input part of the 
+	 * \brief Creates the QTextEdit for the input part of the
 	 * inputcell
 	 *
-	 * 2005-10-27 AF, Large part of this function was changes due to 
+	 * 2005-10-27 AF, Large part of this function was changes due to
 	 * porting to QT4 (changes from Q3TextEdit to QTextEdit).
 	 * 2005-12-15 AF, Added more connections to the editor, mostly for
 	 * commandcompletion, but also for eval. invoking eval have moved
@@ -452,7 +452,7 @@ namespace IAEX
 
 		// is this needed, don't know /AF
 		input_->installEventFilter(this);
-		
+
 
 		connect( input_, SIGNAL( textChanged() ),
 			this, SLOT( contentChanged() ));
@@ -483,11 +483,11 @@ namespace IAEX
 		contentChanged();
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström and Ingemar Axelsson
 	 * \date 2005-10-28 (update)
 	 *
-	 * \brief Creates the QTextEdit for the output part of the 
+	 * \brief Creates the QTextEdit for the output part of the
 	 * inputcell
 	 *
 	 * Large part of this function was changes due to porting
@@ -517,12 +517,12 @@ namespace IAEX
 		connect(output_, SIGNAL(forwardAction(int)), this, SIGNAL(forwardAction(int)));
 
 		setOutputStyle();
-		
+
 
 		output_->hide();
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2006-04-21
 	 *
@@ -554,7 +554,7 @@ namespace IAEX
 		output_->setTextCursor( cursor );
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2006-03-02
 	 *
@@ -578,7 +578,7 @@ namespace IAEX
 		addChapterCounter( chaptercounter_ );
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-10-27
 	 *
@@ -591,7 +591,7 @@ namespace IAEX
 		return input_->toPlainText();
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-10-27
 	 *
@@ -604,7 +604,7 @@ namespace IAEX
 		return input_->toHtml();
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-11-23
 	 *
@@ -618,7 +618,7 @@ namespace IAEX
 		return output_->toPlainText();
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-11-23
 	 *
@@ -632,7 +632,7 @@ namespace IAEX
 		return output_->toHtml();
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-10-27
 	 *
@@ -646,7 +646,7 @@ namespace IAEX
 		return input_->textCursor();
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2006-01-05
 	 *
@@ -659,7 +659,7 @@ namespace IAEX
 		return input_;
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2006-02-03
 	 *
@@ -672,7 +672,7 @@ namespace IAEX
 		return output_;
 	}
 
-	/*! 
+	/*!
 	 * \author Ingemar Axelsson and Anders Fernström
 	 * \date 2005-12-16 (update)
 	 *
@@ -682,16 +682,16 @@ namespace IAEX
 	 *
 	 * 2005-10-04 AF, added some code for removing/replacing some text
 	 * 2005-10-27 AF, updated the function due to porting from qt3 to qt4
-	 * 2005-12-08 AF, added code that removed any <span style tags added 
+	 * 2005-12-08 AF, added code that removed any <span style tags added
 	 * in the parser.
-	 * 2005-12-16 AF, block signlas so syntax highligher isn't done more 
+	 * 2005-12-16 AF, block signlas so syntax highligher isn't done more
 	 * than once.
 	 */
 	void InputCell::setText(QString text)
 	{
 		// 2005-12-16 AF, block signals
 		input_->document()->blockSignals(true);
-	
+
 		// 2005-10-04 AF, added some code to replace/remove
 		QString tmp = text.replace("<br>", "\n");
 		tmp.replace( "&nbsp;&nbsp;&nbsp;&nbsp;", "  " );
@@ -716,9 +716,9 @@ namespace IAEX
 			}
 			else
 				break;
-			
+
 			pos = startpos;
-			
+
 		}
 
 		// set the text
@@ -726,24 +726,24 @@ namespace IAEX
 
 		// 2005-12-16 AF, unblock signals and tell highlighter to highlight
 		input_->document()->blockSignals(false);
-//      input_->document()->setHtml( input_->toHtml() ); 
+//      input_->document()->setHtml( input_->toHtml() );
 //	    input_->document()->setPlainText( input_->toPlainText() );   // This causes a crash with Qt >= 4.2
 		input_->document()->rootFrame()->setFrameFormat( (*style_.textFrameFormat()) );
 
 		contentChanged();
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-11-01
 	 *
 	 * \brief Sets the visible text using html code.
 	 *
-	 * Sets the text that should be visible using html code. Can change 
+	 * Sets the text that should be visible using html code. Can change
 	 * the cellheight if the text is very long.
 	 *
 	 * \param html Html code that should be visible as normal text inside the cell mainarea.
-	 */ 
+	 */
 	void InputCell::setTextHtml(QString html)
 	{
 		input_->setHtml( html );
@@ -752,7 +752,7 @@ namespace IAEX
 		contentChanged();
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-11-23
 	 *
@@ -772,18 +772,18 @@ namespace IAEX
 		}
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-11-23
 	 *
 	 * \brief Sets the output text using html code.
 	 *
 	 * Sets the text that should be visible in the output part of the
-	 * cell using html code. Can change the cellheight if the text is 
+	 * cell using html code. Can change the cellheight if the text is
 	 * very long.
 	 *
 	 * \param html Html code that should be visible as normal text inside the cell mainarea.
-	 */ 
+	 */
 	void InputCell::setTextOutputHtml(QString html)
 	{
 		if( !html.isNull() && !html.isEmpty() )
@@ -796,13 +796,13 @@ namespace IAEX
 		}
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-10-28
 	 *
 	 * \brief Set cell style
 	 *
-	 * IMPORTANT: User shouldn't be able to change style on inputcells 
+	 * IMPORTANT: User shouldn't be able to change style on inputcells
 	 * so this function always use "Input" as style.
 	 *
 	 * \param stylename The style name of the style that is to be applyed to the cell
@@ -812,14 +812,14 @@ namespace IAEX
 		Cell::setStyle( "Input" );
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-10-27
 	 * \date 2006-03-02 (update)
 	 *
 	 * \brief Set cell style
 	 *
-	 * IMPORTANT: User shouldn't be able to change style on inputcells 
+	 * IMPORTANT: User shouldn't be able to change style on inputcells
 	 * so this function always use "Input" as style.
 	 *
 	 * 2005-11-03 AF, updated so the text is selected when the style
@@ -836,7 +836,7 @@ namespace IAEX
 
 			// select all the text
 			input_->selectAll();
-		
+
 			// set the new style settings
 			input_->setAlignment( (Qt::AlignmentFlag)style_.alignment() );
 			input_->mergeCurrentCharFormat( (*style_.textCharFormat()) );
@@ -852,8 +852,8 @@ namespace IAEX
 			chaptercounter_->mergeCurrentCharFormat( (*style_.textCharFormat()) );
 
 			QTextFrameFormat format = chaptercounter_->document()->rootFrame()->frameFormat();
-			format.setMargin( style_.textFrameFormat()->margin() + 
-			style_.textFrameFormat()->border() + 
+			format.setMargin( style_.textFrameFormat()->margin() +
+			style_.textFrameFormat()->border() +
 			style_.textFrameFormat()->padding()	);
 			chaptercounter_->document()->rootFrame()->setFrameFormat( format );
 
@@ -869,7 +869,7 @@ namespace IAEX
 		}
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2006-03-02
 	 *
@@ -881,17 +881,17 @@ namespace IAEX
 		chaptercounter_->setPlainText( number );
 		chaptercounter_->setAlignment( (Qt::AlignmentFlag)Qt::AlignRight );
 		QTextFrameFormat format = chaptercounter_->document()->rootFrame()->frameFormat();
-		format.setMargin( style_.textFrameFormat()->margin() + 
-			style_.textFrameFormat()->border() + 
+		format.setMargin( style_.textFrameFormat()->margin() +
+			style_.textFrameFormat()->border() +
 			style_.textFrameFormat()->padding()	);
 		chaptercounter_->document()->rootFrame()->setFrameFormat( format );
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2006-03-02
 	 *
-	 * \brief return the value of the chapter counter, as plain text. 
+	 * \brief return the value of the chapter counter, as plain text.
 	 * Returns null if the counter is empty
 	 */
 	QString InputCell::ChapterCounter()
@@ -902,11 +902,11 @@ namespace IAEX
 		return chaptercounter_->toPlainText();
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2006-03-03
 	 *
-	 * \brief return the value of the chapter counter, as html code. 
+	 * \brief return the value of the chapter counter, as html code.
 	 * Returns null if the counter is empty
 	 */
 	QString InputCell::ChapterCounterHtml()
@@ -966,12 +966,12 @@ namespace IAEX
 	 * \author Ingemar Axelsson (and Anders Fernström)
 	 * \date 2005-11-01 (update)
 	 *
-	 * \breif Set if the output part of the cell shoud be 
+	 * \breif Set if the output part of the cell shoud be
 	 * closed(hidden) or not.
 	 *
-	 * 2005-11-01 AF, Made some small changes to how the function 
-	 * calculate the new height, to reflect the changes made when 
-	 * porting from Q3TextEdit to QTextEdit. 
+	 * 2005-11-01 AF, Made some small changes to how the function
+	 * calculate the new height, to reflect the changes made when
+	 * porting from Q3TextEdit to QTextEdit.
 	 */
 	void InputCell::setClosed(const bool closed, bool update)
 	{
@@ -995,7 +995,7 @@ namespace IAEX
 		if(focus)
 			input_->setFocus();
 	}
-	
+
 	/*!
 	 * \author Anders Fernström
 	 */
@@ -1026,9 +1026,9 @@ namespace IAEX
 	 * \author Anders Fernström and Ingemar Axelsson
 	 * \date 2006-04-10 (update)
 	 *
-	 * \breif Recalculates height. 
+	 * \breif Recalculates height.
 	 *
-	 * 2005-10-31 AF, Large part of this function was changes due to 
+	 * 2005-10-31 AF, Large part of this function was changes due to
 	 * porting to QT4 (changes from Q3TextBrowser to QTextBrowser).
 	 * 2006-04-10 AF, emits heightChanged if the height changes
 	 */
@@ -1043,7 +1043,7 @@ namespace IAEX
 		input_->setMinimumHeight( height + 3 );
 
 		if( evaluated_ && !closed_ )
-		{	
+		{
 			int outHeight = output_->document()->documentLayout()->documentSize().toSize().height();
 
 			if( outHeight < 0 )
@@ -1064,7 +1064,7 @@ namespace IAEX
 		oldHeight_ = height + 3;
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2006-01-17
 	 *
@@ -1078,13 +1078,13 @@ namespace IAEX
 		return closed_;
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-10-27
 	 *
-	 * \brief Function for telling if the user is allowed to change 
+	 * \brief Function for telling if the user is allowed to change
 	 * the text settings for the text inside the cell. User isn't
-	 * allowed to change the text settings for inputcell so this 
+	 * allowed to change the text settings for inputcell so this
 	 * function always return false.
 	 *
 	 * \return False
@@ -1094,7 +1094,7 @@ namespace IAEX
 		return false;
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-11-23
 	 *
@@ -1105,18 +1105,18 @@ namespace IAEX
 	 */
 	bool InputCell::isEvaluated()
 	{
-		return evaluated_;	
+		return evaluated_;
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-11-23
 	 *
-	 * \brief Returns true if the expression in the text is a plot 
-	 * command, returns false otherwise. If no text is sent to the 
+	 * \brief Returns true if the expression in the text is a plot
+	 * command, returns false otherwise. If no text is sent to the
 	 * method it will test the text in the input part of the cell.
 	 *
-	 * \param text The text that should be tested, if no text the 
+	 * \param text The text that should be tested, if no text the
 	 * inputpart of the cell will be tested.
 	 * \return If plot command or not
 	 */
@@ -1138,17 +1138,17 @@ namespace IAEX
 				return true;
 			else
 				return false;
-		
+
 		}
 	}
 
 
-	/*! 
+	/*!
 	 * \author Ingemar Axelsson and Anders Fernström
 	 * \date 2006-04-18 (update)
 	 *
-	 *\brief Sends the content of the inputcell to the evaluator. 
-	 * Displays the result in a outputcell. 
+	 *\brief Sends the content of the inputcell to the evaluator.
+	 * Displays the result in a outputcell.
 	 *
 	 * 2005-11-01 AF, updated so the text that is sent to be evaled isn't
 	 * in html code.
@@ -1161,7 +1161,7 @@ namespace IAEX
 	 * the content to the delegate object for evaluation. The result is
 	 * printed in a output cell. No indentation and syntax
 	 * highlightning is used in the output cell.
-	 * 
+	 *
 	 */
 	void InputCell::eval()
 	{
@@ -1178,7 +1178,7 @@ namespace IAEX
 			QString openmodelica( getenv( "OPENMODELICAHOME" ) );
 			if( openmodelica.isEmpty() )
 				QMessageBox::critical( 0, "OpenModelica Error", "Could not find environment variable OPENMODELICAHOME; OMNotebook will therefore not work correctly" );
-	
+
 			if( openmodelica.endsWith("/") || openmodelica.endsWith( "\\") )
 				openmodelica += "tmp/";
 			else
@@ -1196,7 +1196,7 @@ namespace IAEX
 			if( !filename2.endsWith( "/" ) ) filename2 += "/";
 			filename2 += imagename;
 
-			// 2006-02-17 AF, 
+			// 2006-02-17 AF,
 			evaluated_ = true;
 			setClosed(false);
 
@@ -1245,7 +1245,7 @@ namespace IAEX
 			// get the result
 			QString res = delegate()->getResult();
 			QString error;
-			
+
 			// 2006-02-02 AF, Added try-catch
 			try
 			{
@@ -1261,10 +1261,10 @@ namespace IAEX
 
 
 			// if the expression is a plot command and the is no errors
-			// in the result, find the image and insert it into the 
+			// in the result, find the image and insert it into the
 			// output part of the cell.
 			if( isPlot(input_->toPlainText()) && error.isEmpty() )
-			{	
+			{
 
 				output_->selectAll();
 				output_->textCursor().insertText( "{creating plot}" );
@@ -1289,7 +1289,7 @@ namespace IAEX
 						{
 							QString newname = document_->addImage( image );
 							QTextCharFormat format = output_->currentCharFormat();
-																				
+
 							QTextImageFormat imageformat;
 							imageformat.merge( format );
 							imageformat.setHeight( image->height() );
@@ -1314,7 +1314,7 @@ namespace IAEX
 							else
 							{
 								output_->selectAll();
-								output_->textCursor().insertText( "[Error] Unable to read plot image \"" + 
+								output_->textCursor().insertText( "[Error] Unable to read plot image \"" +
 												  filename1 + " or " + filename2 + "\". Please retry." );
 								break;
 							}
@@ -1324,11 +1324,11 @@ namespace IAEX
 					if( sleepTime > 25 )
 					{
 						output_->selectAll();
-						output_->textCursor().insertText( "[Error] Unable to find plot image \"" + 
+						output_->textCursor().insertText( "[Error] Unable to find plot image \"" +
 										  filename1 + " or " + filename2 + "\"" );
 						break;
 					}
-					
+
 					SleeperThread::msleep( 1000 );
 					sleepTime++;
 				}
@@ -1342,7 +1342,7 @@ namespace IAEX
 
 				if( !error.isEmpty() )
 					res += QString("\n") + error;
-			
+
 				output_->selectAll();
 				output_->textCursor().insertText( res );
 				//output_->setPlainText( res );
@@ -1367,7 +1367,7 @@ namespace IAEX
 		output_->blockSignals(false);
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2006-02-02
 	 * \date 2006-02-09 (update)
@@ -1388,7 +1388,7 @@ namespace IAEX
 			// unable to reconnect, ask if user want to restart omc.
 			QString msg = QString( e.what() ) + "\n\nUnable to reconnect with OMC. Do you want to restart OMC?";
 			int result = QMessageBox::critical( 0, tr("Communication Error with OMC"),
-				msg, 
+				msg,
 				QMessageBox::Yes | QMessageBox::Default,
 				QMessageBox::No );
 
@@ -1397,10 +1397,10 @@ namespace IAEX
 				delegate_->closeConnection();
 				if( delegate_->startDelegate() )
 				{
-					// 2006-03-14 AF, wait before trying to reconnect, 
+					// 2006-03-14 AF, wait before trying to reconnect,
 					// give OMC time to start up
 					SleeperThread::msleep( 1000 );
- 
+
 					//delegate_->closeConnection();
 					try
 					{
@@ -1417,27 +1417,27 @@ namespace IAEX
 		}
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-12-15
 	 *
-	 *\brief Get/Insert the command that match the last word in the 
+	 *\brief Get/Insert the command that match the last word in the
 	 * input editor.
 	 */
 	void InputCell::command()
 	{
 		CommandCompletion *commandcompletion = CommandCompletion::instance( "commands.xml" );
 		QTextCursor cursor = input_->textCursor();
-		
+
 		if( commandcompletion->insertCommand( cursor ))
 			input_->setTextCursor( cursor );
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-12-15
 	 *
-	 *\brief Get/Insert the next command that match the last word in 
+	 *\brief Get/Insert the next command that match the last word in
 	 * the input editor.
 	 */
 	void InputCell::nextCommand()
@@ -1445,12 +1445,12 @@ namespace IAEX
 		qDebug("Next Command");
 		CommandCompletion *commandcompletion = CommandCompletion::instance( "commands.xml" );
 		QTextCursor cursor = input_->textCursor();
-		
+
 		if( commandcompletion->nextCommand( cursor ))
 			input_->setTextCursor( cursor );
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-12-15
 	 *
@@ -1461,7 +1461,7 @@ namespace IAEX
 		qDebug("Next Field");
 		CommandCompletion *commandcompletion = CommandCompletion::instance( "commands.xml" );
 		QTextCursor cursor = input_->textCursor();
-		
+
 		if( commandcompletion->nextField( cursor ))
 			input_->setTextCursor( cursor );
 	}
@@ -1483,12 +1483,12 @@ namespace IAEX
 		if( input_->toPlainText().isEmpty() )
 			return;
 
-		// 2006-01-16 AF, Don't add the text editor if mytextedit 
+		// 2006-01-16 AF, Don't add the text editor if mytextedit
 		// don't allow it. mytextedit says no if the user removes
 		// text (backspace or delete).
 		if( dynamic_cast<MyTextEdit *>(input_)->isStopingHighlighter() )
 			return;
-		
+
 		HighlighterThread *thread = HighlighterThread::instance();
 		thread->addEditor( input_ );
 	}
@@ -1549,7 +1549,7 @@ namespace IAEX
 
 
 
-	
+
 
 	/*! \brief Do not use this member.
 	*
@@ -1557,7 +1557,7 @@ namespace IAEX
 	*/
 	void InputCell::addCellWidgets()
 	{
-		layout_->addWidget(input_,0,0);	 
+		layout_->addWidget(input_,0,0);
 
 		if(evaluated_)
 			layout_->addWidget(output_,1,0);
@@ -1604,14 +1604,14 @@ namespace IAEX
 	*/
 	void InputCell::resizeEvent(QResizeEvent *event)
 	{
-		contentChanged(); 
+		contentChanged();
 		Cell::resizeEvent(event);
 	}
 
 
 
 
-	
+
 
 
 	void InputCell::mouseDoubleClickEvent(QMouseEvent *)

@@ -27,7 +27,7 @@
 
 using namespace std;
 using namespace IAEX;
-        
+
 typedef pair<string,string> rule_t;
 
 typedef vector<rule_t> rules_t;
@@ -43,7 +43,7 @@ public:
    result_t(ostringstream &f):first(f){}
    result_t(ostringstream &f, vector<rule_t> &s)
    :first(f), second(s){}
-   
+
    ostringstream& first;
    vector<rule_t> second;
 };
@@ -56,8 +56,8 @@ class CUSTOM_API AntlrNotebookTreeParser : public ANTLR_USE_NAMESPACE(antlr)Tree
     Factory *factory;
     Cell *workspace;
     ostringstream output;
-    //This is not very nice.   
-    
+    //This is not very nice.
+
     // AF
     bool imagePartOfText;
     bool convertingToONB;
@@ -100,7 +100,7 @@ public:
 	{
 		return returnAST;
 	}
-	
+
 protected:
 	ANTLR_USE_NAMESPACE(antlr)RefAST returnAST;
 	ANTLR_USE_NAMESPACE(antlr)RefAST _retTree;
@@ -113,7 +113,7 @@ private:
 		NUM_TOKENS = 179
 	};
 #endif
-	
+
 	static const unsigned long _tokenSet_0_data_[];
 	static const ANTLR_USE_NAMESPACE(antlr)BitSet _tokenSet_0;
 };

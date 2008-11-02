@@ -18,7 +18,7 @@ are permitted provided that the following conditions are met:
 
     * Redistributions of source code must retain the above copyright notice,
       this list of conditions and the following disclaimer.
-    
+
 	* Redistributions in binary form must reproduce the above copyright notice,
       this list of conditions and the following disclaimer in the documentation
       and/or other materials provided with the distribution.
@@ -47,13 +47,13 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 
 // REMADE THIS CLASS 2005-12-17 /AF
 
-/*! 
+/*!
 * \file syntaxhighlighter.h
 * \author Anders Fernström
 * \date 2005-12-17
 *
-* \brief Had to remake the class to be compatible with the richtext 
-* system that is used in QT4. The old file have been renamed to 
+* \brief Had to remake the class to be compatible with the richtext
+* system that is used in QT4. The old file have been renamed to
 * 'syntaxhighlighter.h.old' /AF
 */
 
@@ -67,11 +67,11 @@ class QTextDocument;
 
 namespace IAEX
 {
-	/*! 
+	/*!
 	* \interface SyntaxHighlighter
 	* \brief Interface that syntaxhighlighters needs to obey to.
 	*
-	* updated file 2006-01-09 to represent the new highlighter that have 
+	* updated file 2006-01-09 to represent the new highlighter that have
 	* been made to run in an new thread.
 	*/
 	class SyntaxHighlighter

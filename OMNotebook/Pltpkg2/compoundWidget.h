@@ -65,10 +65,10 @@ class CompoundWidget: public QWidget, public Ui::CompoundWidget
 	Q_OBJECT
 
 public:
-	CompoundWidget(QWidget* parent = 0); 
-	~CompoundWidget(); 
+	CompoundWidget(QWidget* parent = 0);
+	~CompoundWidget();
 	void showVis();
-	void hideVis();	
+	void hideVis();
 
 public slots:
 	void resizeY(quint32 w);
@@ -77,7 +77,7 @@ public slots:
 public:
 	QVBoxLayout* layout;
 	IAEX::VisualizationWidget* visWidget;
-	QWidget* plotWidget;	
+	QWidget* plotWidget;
 };
 
 

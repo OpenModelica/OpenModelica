@@ -47,7 +47,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 
 // FILE/CLASS ADDED 2005-12-12 /AF
 
-/*! 
+/*!
 * \file commandcompetion.h
 * \author Anders Fernström
 * \date 2005-12-12
@@ -71,16 +71,16 @@ using namespace std;
 
 namespace IAEX
 {
-	/*! 
-	 * \class CommandCompletion 
+	/*!
+	 * \class CommandCompletion
 	 * \author Anders Fernström
 	 * \date 2005-12-12
-	 * 
+	 *
 	 * \brief Reads a command file and creates omc command object for
 	 * commandcompetion in inputcells
 	 */
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-12-12
 	 *
@@ -97,7 +97,7 @@ namespace IAEX
 		currentList_( 0 ),
 		commandStartPos_( 0 ),
 		commandEndPos_( 0 )
-	{		
+	{
 		//read a command file.
 		doc_ = new QDomDocument( "OMCCommand" );
 
@@ -107,12 +107,12 @@ namespace IAEX
 			string tmp = "Could not open file: " + filename.toStdString();
 			throw runtime_error( tmp.c_str() );
 		}
- 
+
 		if( !doc_->setContent(&file) )
 		{
 			file.close();
-			string tmp = "Could not read content from file: " + 
-				filename.toStdString() + 
+			string tmp = "Could not read content from file: " +
+				filename.toStdString() +
 				" Probably some syntax error in the xml file";
 			throw runtime_error( tmp.c_str() );
 		}
@@ -135,7 +135,7 @@ namespace IAEX
 	 */
 	CommandCompletion *CommandCompletion::instance( const QString &filename )
 	{
-		if( !instance_ )	 
+		if( !instance_ )
 			instance_ = new CommandCompletion( filename );
 
 		return instance_;
@@ -179,7 +179,7 @@ namespace IAEX
 				// check if any comman match the current word in the text
 				currentList_ = new QStringList();
 				for( int i = 0; i < commandList_.size(); ++i )
-				{ 
+				{
 					if( 0 == commandList_.at(i).indexOf( command, 0, Qt::CaseInsensitive ))
 						currentList_->append( commandList_.at(i) );
 				}
@@ -209,7 +209,7 @@ namespace IAEX
 				}
 			}
 		}
-		
+
 		return false;
 	}
 
@@ -217,7 +217,7 @@ namespace IAEX
 	 * \author Anders Fernström
 	 * \date 2005-12-12
 	 *
-	 * \brief Insert the next possible command into the text, that match 
+	 * \brief Insert the next possible command into the text, that match
 	 * a command
 	 *
 	 * \param cursor The text cursor to the text where the command should
@@ -235,7 +235,7 @@ namespace IAEX
 				// if no more commands existes, restart
 				if( currentCommand_ >= (currentList_->size()-1) )
 					currentCommand_ = -1;
-				
+
 				// reset currentField_
 				currentField_ = -1;
 
@@ -285,7 +285,7 @@ namespace IAEX
 	 * \date 2005-12-15 (update)
 	 *
 	 * \brief Select next (if any) field in current command
-	 * 
+	 *
 	 * 2005-12-15 AF, implemented function
 	 *
 	 * \return TURE if a field is selected
@@ -304,7 +304,7 @@ namespace IAEX
 					if( currentField_ < (commands_[command]->numbersField() - 1) )
 					{
 						//next field
-						currentField_++;				
+						currentField_++;
 						QString fieldID;
 						fieldID.setNum( currentField_ );
 						fieldID = "$" + fieldID;
@@ -334,7 +334,7 @@ namespace IAEX
 		return false;
 	}
 
-	/*! 
+	/*!
 	 * \example from commands.xml
 	 *
 	 * <command name="simulate($1|, startTime=$2|, stopTime=$3|, numberOfIntervals=$4|)">

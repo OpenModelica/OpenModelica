@@ -7,7 +7,7 @@
 TEMPLATE = app
 INCLUDEPATH += . \
                /usr/local/include
-#OBJECTS += 
+#OBJECTS +=
 
 MICO_LIBS = $$system(mico-config --libs)
 COIN_LIBS = $$system(coin-config --ldflags --libs)
@@ -36,9 +36,9 @@ INCLUDEPATH += $${MICOHOME}/include \
                ${ANTLRHOME} \
                ../NotebookParser \
                ../Pltpkg2 \
-               ../3Dpkg 
+               ../3Dpkg
 
-unix:LIBS += 
+unix:LIBS +=
 QT += network xml core gui opengl
 
 # Input
@@ -91,7 +91,7 @@ HEADERS += ../NotebookParser/AntlrNotebookLexer.hpp\
            inputcell.h \
            replaceallvisitor.h \
            xmlnodename.h \
-           chaptercountervisitor.h \ 
+           chaptercountervisitor.h \
            nbparser.h \
            resource1.h \
            xmlparser.h \
@@ -109,7 +109,7 @@ HEADERS += ../NotebookParser/AntlrNotebookLexer.hpp\
 	   ../Pltpkg2/dataSelect.h \
            ../Pltpkg2/graphWindow.h \
            ../Pltpkg2/curve.h \
-	   ../Pltpkg2/point.h \ 
+	   ../Pltpkg2/point.h \
 	   ../Pltpkg2/label.h \
 	   ../Pltpkg2/focusRect.h \
 	   ../Pltpkg2/graphScene.h \
@@ -122,12 +122,12 @@ HEADERS += ../NotebookParser/AntlrNotebookLexer.hpp\
            ../Pltpkg2/variablewindow.h \
            ../3Dpkg/SimulationData.h \
            ../3Dpkg/VisualizationWidget.h
-           
+
 SOURCES += ../NotebookParser/AntlrNotebookLexer.cpp\
            ../NotebookParser/AntlrNotebookParser.cpp\
            ../NotebookParser/AntlrNotebookTreeParser.cpp\
            cellapplication.cpp \
-           cellparserfactory.cpp \    
+           cellparserfactory.cpp \
            omc_communicator.cpp \
            omc_communication.cc \
            stylesheet.cpp \

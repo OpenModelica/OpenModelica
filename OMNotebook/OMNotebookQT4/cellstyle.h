@@ -18,7 +18,7 @@ are permitted provided that the following conditions are met:
 
     * Redistributions of source code must retain the above copyright notice,
       this list of conditions and the following disclaimer.
-    
+
 	* Redistributions in binary form must reproduce the above copyright notice,
       this list of conditions and the following disclaimer in the documentation
       and/or other materials provided with the distribution.
@@ -47,7 +47,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 
 // FILE/CLASS ADDED 2005-10-26 /AF
 
-/*! 
+/*!
  * \file cellstyle.h
  * \author Anders Fernström
  */
@@ -62,21 +62,21 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 
 
 namespace IAEX
-{	
-	/*! 
+{
+	/*!
 	 * \class CellStyle
 	 * \author Anders Fernström
 	 * \date 2005-10-26
 	 * \date 2006-03-02 (update)
-	 * 
-	 * \brief A class that store the different styleoptions that 
+	 *
+	 * \brief A class that store the different styleoptions that
 	 * can be changed in a cell.
 	 *
 	 * 2005-11-10 AF, Added some default values in the constructor
 	 * 2005-11-15 AF, Added some more default values
 	 * 2006-03-02 AF, Added a variable and functions that allows the
 	 * style to be hidden from the style menu
-	 * 2006-03-02 AF, Added a variable and functions that holds the 
+	 * 2006-03-02 AF, Added a variable and functions that holds the
 	 * styles chapter level, if any
 	 */
 	class CellStyle
@@ -93,7 +93,7 @@ namespace IAEX
 			textFormat_.setFontPointSize( 12 );
 
 			textFormat_.setForeground( QBrush( QColor(0,0,0) ));
-	
+
 			// 2006-03-02 AF, defalut visibliity
 			visible_ = true;
 

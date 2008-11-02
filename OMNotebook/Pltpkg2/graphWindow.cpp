@@ -18,7 +18,7 @@ are permitted provided that the following conditions are met:
 
     * Redistributions of source code must retain the above copyright notice,
       this list of conditions and the following disclaimer.
-    
+
 	* Redistributions in binary form must reproduce the above copyright notice,
       this list of conditions and the following disclaimer in the documentation
       and/or other materials provided with the distribution.
@@ -73,7 +73,7 @@ GraphWindow::GraphWindow(QWidget* parent): QMainWindow(parent)
   connect(actionActive, SIGNAL(toggled(bool)), graphicsView->gwMain, SLOT(enableServers(bool)));
 
   // QObject::connect(actionOpen, SIGNAL(activated()), this, SLOT(openFile()));
-  
+
   connect(graphicsView->gwMain, SIGNAL(newMessage(QString)), this, SLOT(showMessage(QString)));
   QObject::connect(actionGrid, SIGNAL(toggled(bool)), graphicsView->gwMain, SLOT(showGrid(bool)));
 
@@ -83,15 +83,15 @@ GraphWindow::GraphWindow(QWidget* parent): QMainWindow(parent)
 
   connect(actionPreferences, SIGNAL(triggered()), compoundWidget, SLOT(showPreferences()));
   connect(actionSimulationData, SIGNAL(triggered()), this, SLOT(showSimulationData()));
-  
+
   connect(actionImage, SIGNAL(activated()), this, SLOT(saveImage()));
-  
+
   QActionGroup* ag = new QActionGroup(this);
   ag->addAction(actionPan);
   ag->addAction(actionSelect);
   ag->addAction(actionZoom);
   ag->setExclusive(true);
-  
+
   connect(actionAboutQt, SIGNAL(triggered()), qApp, SLOT(aboutQt()));
 }
 
@@ -128,7 +128,7 @@ void GraphWindow::sceneDestroyed()
 void GraphWindow::saveImage()
 {
 
-	QString filename = QFileDialog::getSaveFileName(this, "Export image", "untitled", "Portable Network Graphics (*.png);;Windows Bitmap (*.bmp);;Joint Photographic Experts Group (*.jpg)");  
+	QString filename = QFileDialog::getSaveFileName(this, "Export image", "untitled", "Portable Network Graphics (*.png);;Windows Bitmap (*.bmp);;Joint Photographic Experts Group (*.jpg)");
 
 	if(!filename.size())
 		return;

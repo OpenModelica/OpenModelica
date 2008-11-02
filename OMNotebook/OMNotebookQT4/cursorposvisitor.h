@@ -45,7 +45,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 ------------------------------------------------------------------------------------
 */
 
-/*! 
+/*!
  * \file cursorposvisitor.h
  * \author Anders Fernström
  */
@@ -66,7 +66,7 @@ using namespace std;
 
 namespace IAEX
 {
-	class CursorPosVisitor : public Visitor 
+	class CursorPosVisitor : public Visitor
 	{
 
 	public:
@@ -105,28 +105,28 @@ namespace IAEX
 		virtual void visitTextCellNodeAfter(TextCell *node)
 		{
 			if( count_ && !closed_ )
-				position_ += node->height(); 
+				position_ += node->height();
 		}
 
 		virtual void visitGraphCellNodeBefore(GraphCell *node) {}
 		virtual void visitGraphCellNodeAfter(GraphCell *node)
 		{
 			if( count_ && !closed_ )
-				position_ += node->height(); 
+				position_ += node->height();
 		}
 
 		virtual void visitInputCellNodeBefore(InputCell *node){}
 		virtual void visitInputCellNodeAfter(InputCell *node)
 		{
 			if( count_ && !closed_ )
-				position_ += node->height(); 
+				position_ += node->height();
 		}
 
-		virtual void visitCellCursorNodeBefore(CellCursor *cursor){}      
+		virtual void visitCellCursorNodeBefore(CellCursor *cursor){}
 		virtual void visitCellCursorNodeAfter(CellCursor *cursor)
 		{
 			if( count_ && !closed_ )
-				position_ += cursor->height(); 
+				position_ += cursor->height();
 
 			count_ = false;
 		}

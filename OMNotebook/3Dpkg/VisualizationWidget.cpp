@@ -4,7 +4,7 @@ namespace IAEX {
 
 	VisualizationWidget::VisualizationWidget(QWidget *parent) : QWidget(parent)
 	{
-#ifndef __APPLE_CC__	
+#ifndef __APPLE_CC__
 		this->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
 		this->setMinimumHeight(300);
 		this->setMinimumWidth(500);
@@ -84,7 +84,7 @@ namespace IAEX {
 		num.setNum(currentTime_/1000.0);
 		label_->setText(num);
 		simdata_->setFrame(currentTime_/1000.0);
-#endif		
+#endif
 	}
 
 	void VisualizationWidget::nextFrame() {
@@ -152,7 +152,7 @@ namespace IAEX {
 
 	bool VisualizationWidget::getServerState()
 	{
-#ifndef __APPLE_CC__	
+#ifndef __APPLE_CC__
 		return server->isListening();
 #else
         return 0;
@@ -161,7 +161,7 @@ namespace IAEX {
 
 	void VisualizationWidget::acceptConnection()
 	{
-#ifndef __APPLE_CC__	
+#ifndef __APPLE_CC__
 		while(server && server->hasPendingConnections())
 		{
 			if( (activeSocket && (activeSocket->state() == QAbstractSocket::UnconnectedState) || !activeSocket))
@@ -180,7 +180,7 @@ namespace IAEX {
 
 			qApp->processEvents();
 		}
-#endif		
+#endif
 	}
 
 	void VisualizationWidget::getData()	{
@@ -253,7 +253,7 @@ namespace IAEX {
 			}
 
 			uint a = ds.device()->bytesAvailable();
-			if(a < packetSize) {				
+			if(a < packetSize) {
 				return;
 			}
 
@@ -261,7 +261,7 @@ namespace IAEX {
 			if(variableCount == 0)
 			{
 //				variables.clear();
-				QString info; 
+				QString info;
 				ds >> info;
 				std::cout << "info: " << info.toStdString() << std::endl;
 				QString tmp = info.trimmed();
@@ -290,8 +290,8 @@ namespace IAEX {
 						params = compound.mid(i+2,(j-i)-3);
 						objtype = compound.mid(j+1);
 
-						std::cout << "name: " << objname.toStdString() 
-							<< " & type: " << objtype.toStdString() 
+						std::cout << "name: " << objname.toStdString()
+							<< " & type: " << objtype.toStdString()
 							<< " & params: " << params.toStdString() << std::endl;
 						simdata_->addObject(objtype, objname, params);
 					}
@@ -327,7 +327,7 @@ namespace IAEX {
 					point->addVar(tmp, d);
 				}
 //				std::cout << "var: " << tmp.toStdString() << " = " << d << std::endl;
-				//variables[tmp]->push_back(d); 
+				//variables[tmp]->push_back(d);
 			}
 			simdata_->addKeypoint(point);
 
@@ -339,7 +339,7 @@ namespace IAEX {
 		if(activeSocket->state() != QAbstractSocket::ConnectedState)
 			ptolemyDataStreamClosed();
 #endif
-	}	
+	}
 
 	void VisualizationWidget::ptolemyDataStreamClosed()	{
 #ifndef __APPLE_CC__
@@ -347,7 +347,7 @@ namespace IAEX {
 		slider_->setValue(0);
 		//for(map<QString, VariableData*>::iterator i = variables.begin(); i != variables.end(); ++i)
 		//	variableData.append(i->second);
-		//variables.clear();	
+		//variables.clear();
 		setServerState(false);
 
 		SoCamera *cam = eviewer_->getCamera();

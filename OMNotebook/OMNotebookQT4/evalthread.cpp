@@ -10,7 +10,7 @@ using namespace std;
 
 EvalThread::EvalThread(InputCellDelegate* delegate_, QString expr_, QObject* parent): QThread(parent), delegate(delegate_), expr(expr_)
 {
-	
+
 
 
 }
@@ -34,7 +34,7 @@ void EvalThread::exceptionInEval(exception &e)
 		// unable to reconnect, ask if user want to restart omc.
 		QString msg = QString( e.what() ) + "\n\nUnable to reconnect with OMC. Do you want to restart OMC?";
 		int result = QMessageBox::critical( 0, tr("Communication Error with OMC"),
-			msg, 
+			msg,
 			QMessageBox::Yes | QMessageBox::Default,
 			QMessageBox::No );
 
@@ -43,7 +43,7 @@ void EvalThread::exceptionInEval(exception &e)
 			delegate->closeConnection();
 			if( delegate->startDelegate() )
 			{
-				// 2006-03-14 AF, wait before trying to reconnect, 
+				// 2006-03-14 AF, wait before trying to reconnect,
 				// give OMC time to start up
 				sleep(1000);
 //				SleeperThread::msleep( 1000 );

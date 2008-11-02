@@ -1,4 +1,4 @@
-/*! 
+/*!
  * \file notebooksocket.h
  * \author Anders Fernström
  * \date 2006-05-03
@@ -47,7 +47,7 @@ namespace IAEX
 		// help function
 		bool tryToConnect();
 		bool startServer();
-	
+
 	private:
 		Application* application_;
 

@@ -62,7 +62,7 @@ CompoundWidget::CompoundWidget(QWidget* parent):  QWidget(parent)
 
 	QFont f("Arial",10);
 	f.setBold(true);
-	plotTitle->setFont(f); 
+	plotTitle->setFont(f);
 	gwMain->gvBottom = gvBottom;
 	gwMain->gvLeft = gvLeft;
 
@@ -73,7 +73,7 @@ CompoundWidget::CompoundWidget(QWidget* parent):  QWidget(parent)
 	gvBottom->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 	gvBottom->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 	gvLeft->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-	gvLeft->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);	
+	gvLeft->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
 	connect(gwMain, SIGNAL(resizeY(quint32)), this, SLOT(resizeY(quint32)));
 	connect(gwMain, SIGNAL(showPreferences2()), this, SLOT(showPreferences()));
@@ -89,12 +89,12 @@ CompoundWidget::CompoundWidget(QWidget* parent):  QWidget(parent)
 	gwMain->compoundwidget = this;
 
   //Initialize SoQT
-#ifndef __APPLE_CC__  
+#ifndef __APPLE_CC__
 	SoQt::init(this);
 #endif
 	visWidget = new IAEX::VisualizationWidget(this);
 	visWidget->hide();
-	
+
 }
 
 CompoundWidget::~CompoundWidget()

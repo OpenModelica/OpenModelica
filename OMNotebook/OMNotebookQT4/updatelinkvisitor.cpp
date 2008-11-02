@@ -45,7 +45,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 ------------------------------------------------------------------------------------
 */
 
-/*! 
+/*!
  * \file updatelinkvisitor.cpp
  * \author Anders Fernström
  */
@@ -67,15 +67,15 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 
 namespace IAEX
 {
-	/*! 
+	/*!
 	 * \class UpdateLinkVisitor
 	 * \date 2005-12-05
 	 *
-	 * \brief update any links in textcells to reflect any change in 
+	 * \brief update any links in textcells to reflect any change in
 	 * folder when saving.
 	 */
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 *
 	 * \brief The class constructor
@@ -92,7 +92,7 @@ namespace IAEX
 		}
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 *
 	 * \brief The class deconstructor
@@ -177,8 +177,8 @@ namespace IAEX
 
 	//CELLCURSOR
 	void UpdateLinkVisitor::visitCellCursorNodeBefore(CellCursor *)
-	{}      
+	{}
 
 	void UpdateLinkVisitor::visitCellCursorNodeAfter(CellCursor *)
 	{}
-} 
+}

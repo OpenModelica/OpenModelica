@@ -45,7 +45,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 ------------------------------------------------------------------------------------
 */
 
-/*! 
+/*!
  * \file removehighlightervisitor.h
  * \author Anders Fernström
  */
@@ -66,7 +66,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 using namespace std;
 namespace IAEX
 {
-	class RemoveHighlighterVisitor : public Visitor 
+	class RemoveHighlighterVisitor : public Visitor
 	{
 
 	public:
@@ -97,7 +97,7 @@ namespace IAEX
 		virtual void visitGraphCellNodeAfter(GraphCell *node){}
 
 
-		virtual void visitCellCursorNodeBefore(CellCursor *cursor){}      
+		virtual void visitCellCursorNodeBefore(CellCursor *cursor){}
 		virtual void visitCellCursorNodeAfter(CellCursor *cursor){}
 	};
 }

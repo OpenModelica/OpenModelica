@@ -46,7 +46,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 ------------------------------------------------------------------------------------
 */
 
-/*! 
+/*!
  * \file textcell.h
  * \author Ingemar Axelsson and Anders Fernström
  * \date 2005-02-08
@@ -81,7 +81,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 
 namespace IAEX
 {
-	/*! 
+	/*!
 	 * \class MyTextBrowser
 	 * \author Ingemar Axelsson and Anders Fernström
 	 *
@@ -99,7 +99,7 @@ namespace IAEX
 	{
 	}
 
-	/*! 
+	/*!
 	 * \author Ingemar Axelsson and Anders Fernström
 	 * date 2005-11-03
 	 *
@@ -112,18 +112,18 @@ namespace IAEX
 		emit openLink( &name );
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-11-01
 	 *
-	 * \brief Needed a signal to be emited when the user click on 
+	 * \brief Needed a signal to be emited when the user click on
 	 * the cell.
 	 */
 	void MyTextBrowser::mousePressEvent(QMouseEvent *event)
 	{
 		QTextBrowser::mousePressEvent(event);
 
-		
+
 		if( event->modifiers() == Qt::ShiftModifier || textCursor().hasSelection() )
 		{
 			return; //fjass3
@@ -132,7 +132,7 @@ namespace IAEX
 		emit clickOnCell();
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-11-28
 	 *
@@ -146,7 +146,7 @@ namespace IAEX
 		emit wheelMove( event );
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2006-01-23
 	 *
@@ -168,7 +168,7 @@ namespace IAEX
 			QTextBrowser::insertFromMimeData( source );
 	}
 
-/*! 
+/*!
 	 * \author Anders Fernström
 	 * \date 2006-01-30
 	 *
@@ -223,7 +223,7 @@ namespace IAEX
 
 
 
-	/*! 
+	/*!
 	 * \class TextCell
 	 * \author Ingemar Axelsson and Anders Fernström
 	 *
@@ -242,7 +242,7 @@ namespace IAEX
 	 * \bug Set so tab focuses on next cell.
 	 */
 
-	/*! 
+	/*!
 	 * \author Ingemar Axelsson (and Anders Fernström)
 	 * \date 2005-10-31 (update)
 	 *
@@ -264,7 +264,7 @@ namespace IAEX
 		setStyle(*t.style());
 	}
 
-	/*! 
+	/*!
 	 * \author Ingemar Axelsson
 	 *
 	 * \brief The class destructor
@@ -275,11 +275,11 @@ namespace IAEX
 		delete text_;
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström and Ingemar Axelsson
 	 * \date 2006-03-02 (update)
 	 *
-	 * \brief Creates the QTextBrowser for the text inside the 
+	 * \brief Creates the QTextBrowser for the text inside the
 	 * cell
 	 *
 	 * Large part of this function was changes due to porting
@@ -306,7 +306,7 @@ namespace IAEX
 		text_->setVerticalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
 //		text_->setContextMenuPolicy( Qt::NoContextMenu ); //fjass
 
-		
+
 
 		connect( text_, SIGNAL( textChanged() ),
 			this, SLOT( contentChanged() ));
@@ -329,13 +329,13 @@ namespace IAEX
 		// 2006-04-27 AF,
 		connect( text_, SIGNAL( forwardAction(int) ),
 			this, SIGNAL( forwardAction(int) ));
-		
+
 
 //		connect(text_, SIGNAL(anchorClicked(const QUrl&)), this, SLOT(openLinkIternal(const QUrl&)));
 		contentChanged();
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2006-03-02
 	 *
@@ -349,7 +349,7 @@ namespace IAEX
 		chaptercounter_->setHorizontalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
 		chaptercounter_->setVerticalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
 		chaptercounter_->setContextMenuPolicy( Qt::NoContextMenu );
-		
+
 		chaptercounter_->setFixedWidth(50);
 		chaptercounter_->setReadOnly( true );
 
@@ -359,7 +359,7 @@ namespace IAEX
 		addChapterCounter( chaptercounter_ );
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-10-28
 	 *
@@ -372,7 +372,7 @@ namespace IAEX
 		return text_->toPlainText();
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-10-28
 	 *
@@ -385,7 +385,7 @@ namespace IAEX
 		return text_->toHtml();
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-10-28
 	 *
@@ -399,7 +399,7 @@ namespace IAEX
 		return text_->textCursor();
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-10-28
 	 *
@@ -412,13 +412,13 @@ namespace IAEX
 		return text_;
 	}
 
-	/*! 
+	/*!
 	 * \author Ingemar Axelsson and Anders Fernström
 	 * \date 2005-11-03 (update)
 	 *
 	 * \brief Sets the visible text.
 	 *
-	 * Sets the text that should be visible. Can change the 
+	 * Sets the text that should be visible. Can change the
 	 * cellheight if the text is very long.
 	 *
 	 * 2005-11-02 AF, Ported the project to QT4, so I needed to add
@@ -426,12 +426,12 @@ namespace IAEX
 	 * correkt set function in QTextEdit.
 	 * 2005-11-03 AF, Updated the html check
 	 *
-	 * \param text Text that should be visible inside the cell 
+	 * \param text Text that should be visible inside the cell
 	 * mainarea.
-	 */ 
+	 */
 	void TextCell::setText( QString text )
 	{
-		// check if the text contains html code, if so - set the 
+		// check if the text contains html code, if so - set the
 		// text with correct function.
 		QRegExp expression( "&nbsp;|<b>|<B>|</b>|</B>|<br>|<BR>|</a>|</A>|<sup>|<SUP>|</sup>|</SUP>|<sub>|<SUP>|</sub>|</SUB>|<span|<SPAN|</span>|</SPAN>" );
 		QRegExp expressionTag( "<.*" );
@@ -447,7 +447,7 @@ namespace IAEX
 			text_->setHtml( html );
 			text_->setAlignment( (Qt::AlignmentFlag)style_.alignment() );
 			text_->document()->rootFrame()->setFrameFormat( (*style_.textFrameFormat()) );
-			
+
 			//setTextHtml( text );
 		}
 		else if( 0 <= text.indexOf( expressionTag ))
@@ -471,38 +471,38 @@ namespace IAEX
 		text_->setUndoRedoEnabled( true );
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-10-28
 	 *
 	 * \brief Sets the visible text, given an specific text format.
 	 *
-	 * Sets the text that should be visible and uses the text format 
-	 * that's sent to the function. Can change the cellheight if the 
+	 * Sets the text that should be visible and uses the text format
+	 * that's sent to the function. Can change the cellheight if the
 	 * text is very long.
 	 *
 	 * \param text Text that should be visible inside the cell mainarea.
 	 * \param format Text format that should be used on the text
-	 */ 
+	 */
 	void TextCell::setText( QString text, QTextCharFormat format )
 	{
 		text_->setCurrentCharFormat( format );
-		text_->setPlainText( text );    
+		text_->setPlainText( text );
 		contentChanged();
 		text_->setUndoRedoEnabled( true );
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-10-28
 	 *
 	 * \brief Sets the visible text using html code.
 	 *
-	 * Sets the text that should be visible using html code. Can change 
+	 * Sets the text that should be visible using html code. Can change
 	 * the cellheight if the text is very long.
 	 *
 	 * \param html Html code that should be visible as normal text inside the cell mainarea.
-	 */ 
+	 */
 	void TextCell::setTextHtml(QString html)
 	{
 		text_->setHtml( html );
@@ -526,7 +526,7 @@ namespace IAEX
 		Cell::setStyle( stylename );
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-10-28
 	 * \date 2006-03-02 (update)
@@ -544,7 +544,7 @@ namespace IAEX
 	 * 2006-03-02 AF, set chapter style
 	 *
 	 * \todo right now all the text inside the cell is changed, when
-	 * changing style. Text that have been changed from the cells 
+	 * changing style. Text that have been changed from the cells
 	 * style (for example words made bold) should be uneffected by
 	 * the change in cellstyle. Right now this function is used when
 	 * the user sets text to change the hole text to the cellstyle. /AF
@@ -554,8 +554,8 @@ namespace IAEX
 		Cell::setStyle( style );
 
 // select all the text,
-		// don't do it if the text contains an image, qt krasches if a 
-		// cell contains starts with a image and the entier cell is 
+		// don't do it if the text contains an image, qt krasches if a
+		// cell contains starts with a image and the entier cell is
 		// selected.
 		// ignore this in version 4.1. of QT
 		//if( text_->toHtml().indexOf( "file:///", 0) < 0 )
@@ -567,7 +567,7 @@ namespace IAEX
 		text_->mergeCurrentCharFormat( (*style_.textCharFormat()) );
 		text_->document()->rootFrame()->setFrameFormat( (*style_.textFrameFormat()) );
 		text_->setAlignment( (Qt::AlignmentFlag)style_.alignment() );
-		
+
 		// unselect the text, reset cursor position
 		QTextCursor cursor(	text_->textCursor() );
 		cursor.clearSelection();
@@ -587,7 +587,7 @@ namespace IAEX
 		if(chaptercounter_->document()->isEmpty())
 			chaptercounter_->document()->setPlainText(" "); //070606 This seems to eliminate the style bug..
 
-	
+
 		chaptercounter_->selectAll();
 		chaptercounter_->mergeCurrentCharFormat( (*style_.textCharFormat()) );
 
@@ -595,8 +595,8 @@ namespace IAEX
 
 		QTextFrameFormat format = chaptercounter_->document()->rootFrame()->frameFormat();
 
-		format.setMargin( style_.textFrameFormat()->margin() + 
-			style_.textFrameFormat()->border() + 
+		format.setMargin( style_.textFrameFormat()->margin() +
+			style_.textFrameFormat()->border() +
 			style_.textFrameFormat()->padding()	);
 		chaptercounter_->document()->rootFrame()->setFrameFormat( format );
 
@@ -613,7 +613,7 @@ namespace IAEX
 
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2006-03-02
 	 *
@@ -625,17 +625,17 @@ namespace IAEX
 		chaptercounter_->setPlainText( number );
 		chaptercounter_->setAlignment( (Qt::AlignmentFlag)Qt::AlignRight );
 		QTextFrameFormat format = chaptercounter_->document()->rootFrame()->frameFormat();
-		format.setMargin( style_.textFrameFormat()->margin() + 
-			style_.textFrameFormat()->border() + 
+		format.setMargin( style_.textFrameFormat()->margin() +
+			style_.textFrameFormat()->border() +
 			style_.textFrameFormat()->padding()	);
 		chaptercounter_->document()->rootFrame()->setFrameFormat( format );
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2006-03-02
 	 *
-	 * \brief return the value of the chapter counter, as plain text. 
+	 * \brief return the value of the chapter counter, as plain text.
 	 * Returns null if the counter is empty
 	 */
 	QString TextCell::ChapterCounter()
@@ -646,11 +646,11 @@ namespace IAEX
 		return chaptercounter_->toPlainText();
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2006-03-03
 	 *
-	 * \brief return the value of the chapter counter, as html code. 
+	 * \brief return the value of the chapter counter, as html code.
 	 * Returns null if the counter is empty
 	 */
 	QString TextCell::ChapterCounterHtml()
@@ -687,13 +687,13 @@ namespace IAEX
 			chaptercounter_->setTextCursor( cursor );
 		}
 
-		text_->setReadOnly(readonly); 
+		text_->setReadOnly(readonly);
 		text_->setTextInteractionFlags(text_->textInteractionFlags() | 	Qt::LinksAccessibleByMouse | Qt::LinksAccessibleByKeyboard);
 		/* Removed /AF
 		if(readonly)
 			text_->setFrameStyle(QFrame::NoFrame);
 		else
-			text_->setFrameStyle(QFrame::Panel|QFrame::Sunken);	 
+			text_->setFrameStyle(QFrame::Panel|QFrame::Sunken);
 		*/
 	}
 
@@ -723,7 +723,7 @@ namespace IAEX
 		emit clicked(this);
 //	{
 //		QUrl u(c.charFormat().anchorHref());
-		
+
 //		setReadOnly(true);
 
 //		if
@@ -735,9 +735,9 @@ namespace IAEX
 	 * \author Anders Fernström and Ingemar Axelsson
 	 * \date 2006-04-10 (update)
 	 *
-	 * \breif Recalculates height. 
+	 * \breif Recalculates height.
 	 *
-	 * 2005-10-31 AF, Large part of this function was changes due to 
+	 * 2005-10-31 AF, Large part of this function was changes due to
 	 * porting to QT4 (changes from Q3TextBrowser to QTextBrowser).
 	 * 2006-04-10 AF, emits heightChanged if the height changes
 	 */
@@ -751,10 +751,10 @@ namespace IAEX
 			height = 30;
 
 		text_->setMinimumHeight( height );
-		
+
 		// add a little extra, just in case, emit 'heightChanged()' if height
 		// have chagned /AF
-		setHeight( height + 5 );		
+		setHeight( height + 5 );
 		emit textChanged();
 
 		if( oldHeight_ != (height + 5) )
@@ -776,7 +776,7 @@ namespace IAEX
 		}
 	}
 
-	/*! 
+	/*!
 	 * \author Ingemar Axelsson
 	 *
 	 * \bug The link is removed if the sourcefile does not
@@ -793,7 +793,7 @@ namespace IAEX
 	}
 
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 */
 	void TextCell::textChangedInternal()
@@ -823,13 +823,13 @@ namespace IAEX
 	}
 
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-10-28
 	 *
-	 * \brief Function for telling if the user is allowed to change 
+	 * \brief Function for telling if the user is allowed to change
 	 * the text settings for the text inside the cell. User is
-	 * allowed to change the text settings for textcell so this 
+	 * allowed to change the text settings for textcell so this
 	 * function always return true.
 	 *
 	 * \return True
@@ -839,11 +839,11 @@ namespace IAEX
 		return true;
 	}
 
-	/*! 
+	/*!
 	 * \author Ingemar Axelsson and Anders Fernström
 	 * \date 2005-11-01 (update)
 	 *
-	 * \breif toggle between showing the html code in the cell and 
+	 * \breif toggle between showing the html code in the cell and
 	 * normal plain text.
 	 *
 	 * 2005-11-01 AF, Remade the function to reflect the new
@@ -862,7 +862,7 @@ namespace IAEX
 				text_->setPlainText( text_->toHtml() );
 
 				QPalette palette;
-				palette.setColor( text_->backgroundRole(), 
+				palette.setColor( text_->backgroundRole(),
 					QColor( 180, 180, 180 ) );
 				text_->setPalette(palette);
 			}
@@ -873,7 +873,7 @@ namespace IAEX
 				text_->document()->rootFrame()->setFrameFormat( (*style_.textFrameFormat()) );
 
 				QPalette palette;
-				palette.setColor( text_->backgroundRole(), 
+				palette.setColor( text_->backgroundRole(),
 					backgroundColor() );
 				text_->setPalette(palette);
 			}
@@ -887,11 +887,11 @@ namespace IAEX
 	// ***************************************************************
 
 
-    
 
 
 
-	
+
+
 
 	void TextCell::accept(Visitor &v)
 	{
@@ -901,11 +901,11 @@ namespace IAEX
 		{
 			child()->accept(v);
 		}
-		v.visitTextCellNodeAfter(this);    
+		v.visitTextCellNodeAfter(this);
 
 		//Move along.
 		if(hasNext())
-			next()->accept(v);    
+			next()->accept(v);
 	}
 
 	/*!
@@ -914,7 +914,7 @@ namespace IAEX
 	*/
 	void TextCell::resizeEvent(QResizeEvent *event)
 	{
-		contentChanged(); 
+		contentChanged();
 		Cell::resizeEvent(event);
 	}
 

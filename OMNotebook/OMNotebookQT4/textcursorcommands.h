@@ -45,7 +45,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 ------------------------------------------------------------------------------------
 */
 
-/*! 
+/*!
  * \file cellcommands.h
  * \author Anders Fernström
  * \date 2005-11-03
@@ -193,7 +193,7 @@ namespace IAEX
 		int alignment_;
 	};
 
-	
+
 	class TextCursorChangeMargin : public Command
 	{
 	public:
@@ -207,7 +207,7 @@ namespace IAEX
 		int margin_;
 	};
 
-	
+
 	class TextCursorChangePadding : public Command
 	{
 	public:
@@ -221,7 +221,7 @@ namespace IAEX
 		int padding_;
 	};
 
-	
+
 	class TextCursorChangeBorder : public Command
 	{
 	public:

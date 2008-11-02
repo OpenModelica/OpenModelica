@@ -68,12 +68,12 @@ using namespace std;
 
 namespace IAEX
 {
-	/*! 
+	/*!
 	 * \class Cell
 	 * \author Ingemar Axelsson and Anders Ferström
 	 *
 	 * \brief Cellinterface contains all functionality required to be a cell.
-	 *	
+	 *
 	 * It implements the cells core functionality. Objects of this
 	 * class should never be created. Instead tailored objects from
 	 * subclasses such as TextCell, InputCell, CellGroup or ImageCell
@@ -87,14 +87,14 @@ namespace IAEX
 	 * Cells contains of two parts, a mainwidget containing the cells
 	 * data, and the treewidget containing the treeview at the right side
 	 * of the cell.
-	 * 
+	 *
 	 *
 	 * \todo Implement a widgetstack for the treeview. This to make it
 	 * possible to implement other treeview structures. (Ingemar Axelsson)
 	 */
 
 
-	/*! 
+	/*!
 	 * \author Ingemar Axelsson
 	 *
 	 * \brief The class constructor
@@ -154,7 +154,7 @@ namespace IAEX
 		setPalette(palette);
 	}
 
-	/*! 
+	/*!
 	 * \author Ingemar Axelsson
 	 *
 	 * \brief The class destructor
@@ -172,7 +172,7 @@ namespace IAEX
 		}
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-10-28
 	 *
@@ -246,12 +246,12 @@ namespace IAEX
 		return celltag_;
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-11-02
 	 *
-	 * \brief Function for telling if the function viewExpression is 
-	 * activated or not. 
+	 * \brief Function for telling if the function viewExpression is
+	 * activated or not.
 	 *
 	 * \return boolean, that tells if the cell is set to view expression
 	 */
@@ -260,14 +260,14 @@ namespace IAEX
 		return viewexpression_;
 	}
 
-	/*! 
+	/*!
 	 * \author Ingemar Axelsson and Anders Fernström
 	 * \date 2006-02-09 (update)
 	 *
-	 * \brief Adds a rule to the cell 
+	 * \brief Adds a rule to the cell
 	 *
 	 *
-	 * 2006-02-03 AF, check and see if rule already existes, if it dose 
+	 * 2006-02-03 AF, check and see if rule already existes, if it dose
 	 * only replace the value
 	 * 2006-02-09 AF, ignore some types of rules
 	 *
@@ -288,7 +288,7 @@ namespace IAEX
 			cout << "[NEW] Rule <" << r->attribute().toStdString() << "> <" << r->value().toStdString() << ">" << endl;
 		}
 		else
-		{	
+		{
 			if( r->attribute() == "FontSlant" )
 			{
 				QRegExp fontslant( "Italic" );
@@ -314,8 +314,8 @@ namespace IAEX
 					cout << "[NEW] Rule Value <FontWeight>, VALUE: " << r->value().toStdString() << endl;
 			}
 		}
-		
-		
+
+
 
 
 
@@ -385,7 +385,7 @@ namespace IAEX
 			{
 				bool ok;
 				int size = (*current)->value().toInt(&ok);
-					
+
 				if(ok)
 				{
 					if( size > 0 )
@@ -414,7 +414,7 @@ namespace IAEX
 			{
 				bool ok;
 				int value = (*current)->value().toInt(&ok);
-					
+
 				if(ok)
 				{
 					if( value > 0 )
@@ -425,7 +425,7 @@ namespace IAEX
 			{
 				bool ok;
 				int value = (*current)->value().toInt(&ok);
-					
+
 				if(ok)
 				{
 					if( value > 0 )
@@ -436,7 +436,7 @@ namespace IAEX
 			{
 				bool ok;
 				int value = (*current)->value().toInt(&ok);
-					
+
 				if(ok)
 				{
 					if( value > 0 )
@@ -463,7 +463,7 @@ namespace IAEX
 		QTextCursor cursor;
 		return cursor;
 	}
-	
+
 	void Cell::wheelEvent(QWheelEvent * event)
 	{
 		// ignore event and send it up in the event hierarchy
@@ -518,15 +518,15 @@ namespace IAEX
 	* \param newWidget A pointer to the cells new mainwidget.
 	*/
 	void Cell::setMainWidget(QWidget *newWidget)
-	{  
+	{
 		if(newWidget != 0)
 		{
 			mainWidget_ = newWidget;
 			mainlayout_->addWidget(newWidget,1,1);
 
-			mainWidget_->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, 
+			mainWidget_->setSizePolicy(QSizePolicy(QSizePolicy::Expanding,
 				QSizePolicy::Expanding));
-			
+
 			QPalette palette;
 			palette.setColor(mainWidget_->backgroundRole(), backgroundColor());
 			mainWidget_->setPalette(palette);
@@ -536,9 +536,9 @@ namespace IAEX
 	}
 
 	/*!
-	* \author Ingemar Axelsson 
+	* \author Ingemar Axelsson
 	* \return A pointer to the mainwidget for the cell.
-	*/  
+	*/
 	QWidget *Cell::mainWidget()
 	{
 		if(!mainWidget_)
@@ -593,7 +593,7 @@ namespace IAEX
 	* should be resized.(Ingemar Axelsson)
 	*
 	*\todo test if repaint is needed here. (Ingemar Axelsson)
-	*/    
+	*/
 	void Cell::hideTreeView(const bool hidden)
 	{
 		if(hidden)
@@ -614,18 +614,18 @@ namespace IAEX
 	const bool Cell::isTreeViewVisible() const
 	{
 		return treeviewVisible_;
-	}   
+	}
 
 	/*! \brief Sets the height of the cell.
 	* \author Ingemar Axelsson
 	*
-	* \param height New height for cell. 
+	* \param height New height for cell.
 	*/
 	void Cell::setHeight(const int height)
 	{
 		int h = height;
 
-		//! \bug Implement Cell::setHeight() in a correct way. Does not work for 
+		//! \bug Implement Cell::setHeight() in a correct way. Does not work for
 		//! widgets larger than 32767. (qt limitation)
 		/*if(height > 32000)
 		{
@@ -646,12 +646,12 @@ namespace IAEX
 	/*! \brief Describes what will happen if a mousebutton is released
 	*  when the mouse is over the treeview widget.
 	* \author Ingemar Axelsson
-	* 
+	*
 	* \bug Should be done in the TreeView instead. Then a
 	* signal could be emitted.
-	*/	
+	*/
 	void Cell::mouseReleaseEvent(QMouseEvent *event)
-	{ 
+	{
 		// PORT >> if(treeView_->hasMouse())
 		if(treeView_->testAttribute(Qt::WA_UnderMouse))
 		{
@@ -669,7 +669,7 @@ namespace IAEX
 	*
 	* This method must be implemented when adding support for drag and
 	* drop. Also look at the QT manual for more information about drag
-	* and drop. 
+	* and drop.
 	*
 	* \param event QMouseEvent sent from widgets parent.
 	*
@@ -685,7 +685,7 @@ namespace IAEX
 		{
 			if(event->pos().y() < 0)
 			{
-				//if(hasPrevious())	       
+				//if(hasPrevious())
 				//	    doc()->executeCommand(new CursorMoveAfterCommand(previous()))
 				//	    doc()->executeCommand(new CursorMoveAfterCommand(this));
 				// else
@@ -709,7 +709,7 @@ namespace IAEX
 			//  	    doc()->executeCommand(new CursorMoveAfterCommand(this));
 			//  	 }
 		}
-	}   
+	}
 
 	void Cell::resizeEvent(QResizeEvent *event)
 	{
@@ -717,7 +717,7 @@ namespace IAEX
 		QWidget::resizeEvent(event);
 	}
 
-	/*! 
+	/*!
 	* \return true if cell is selected, false otherwise.
 	*/
 	const bool Cell::isSelected() const
@@ -770,13 +770,13 @@ namespace IAEX
 		return backgroundColor_;
 	}
 
-	
+
 	Cell::rules_t Cell::rules() const
 	{
 		return rules_;
 	}
 
-	/////VIRTUALS ////////////////////////////////   
+	/////VIRTUALS ////////////////////////////////
 
 
 	/*! \brief Implements visitor acceptability.
@@ -924,4 +924,4 @@ namespace IAEX
 	//    {
 	//       references_ -= 1;
 	//    }
-} 
+}

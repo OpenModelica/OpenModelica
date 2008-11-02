@@ -7,13 +7,13 @@
 #include <QtCore/QHash>
 
 #include <Inventor/nodes/SoSeparator.h>
-#include <Inventor/nodes/SoTranslation.h> 
-#include <Inventor/nodes/SoRotation.h> 
-#include <Inventor/nodes/SoScale.h> 
-#include <Inventor/nodes/SoPerspectiveCamera.h> 
-#include <Inventor/nodes/SoDrawStyle.h> 
-#include <Inventor/nodes/SoLightModel.h> 
-#include <Inventor/fields/SoSFVec3f.h> 
+#include <Inventor/nodes/SoTranslation.h>
+#include <Inventor/nodes/SoRotation.h>
+#include <Inventor/nodes/SoScale.h>
+#include <Inventor/nodes/SoPerspectiveCamera.h>
+#include <Inventor/nodes/SoDrawStyle.h>
+#include <Inventor/nodes/SoLightModel.h>
+#include <Inventor/fields/SoSFVec3f.h>
 #include <Inventor/nodes/SoCube.h>
 #include <Inventor/nodes/SoCone.h>
 #include <Inventor/nodes/SoCylinder.h>
@@ -25,7 +25,7 @@
 #include <Inventor/nodes/SoBaseColor.h>
 
 namespace IAEX
-{   
+{
 	class SimulationKeypoint {
 	public:
 		SimulationKeypoint(double time);

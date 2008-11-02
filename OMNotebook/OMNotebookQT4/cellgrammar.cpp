@@ -18,7 +18,7 @@ are permitted provided that the following conditions are met:
 
     * Redistributions of source code must retain the above copyright notice,
       this list of conditions and the following disclaimer.
-    
+
 	* Redistributions in binary form must reproduce the above copyright notice,
       this list of conditions and the following disclaimer in the documentation
       and/or other materials provided with the distribution.
@@ -47,17 +47,17 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 
 //#include <antlr/CommonAST.h>
 #include "NotebookLexer.hpp"
-#include "NotebookParser.hpp" 
+#include "NotebookParser.hpp"
 #include "NotebookTreeParser.hpp"
-#include <iostream>  
+#include <iostream>
 #include <fstream>
 #include <exception>
 
 
 
-using namespace antlr; 
+using namespace antlr;
 
-int main(int argc, char **argv) 
+int main(int argc, char **argv)
 {
     char *filename = 0;
 
@@ -77,23 +77,23 @@ int main(int argc, char **argv)
 	    std::cerr << "ERROR: Could not open file: " << filename;
 	    return 1;
 	}
-    
+
     try{
 	ASTFactory myFactory;
 	NotebookLexer lexer(mynb);
 	NotebookParser parser(lexer);
-	
+
 	parser.initializeASTFactory(myFactory);
 	parser.setASTFactory(&myFactory);
-	
+
 	parser.document();
-	
+
 	antlr::RefAST t = parser.getAST();
 
 	//std::cout << t->toStringList() << std::endl;
 
 	NotebookTreeParser *walker = new NotebookTreeParser();
-	
+
 	walker->document(t);
 
     }

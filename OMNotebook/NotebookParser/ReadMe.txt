@@ -2,13 +2,13 @@
     STATIC LIBRARY : NotebookParser Project Overview
 ========================================================================
 
-AppWizard has created this NotebookParser library project for you. 
+AppWizard has created this NotebookParser library project for you.
 No source files were created as part of your project.
 
 
 NotebookParser.vcproj
-    This is the main project file for VC++ projects generated using an Application Wizard. 
-    It contains information about the version of Visual C++ that generated the file, and 
+    This is the main project file for VC++ projects generated using an Application Wizard.
+    It contains information about the version of Visual C++ that generated the file, and
     information about the platforms, configurations, and project features selected with the
     Application Wizard.
 

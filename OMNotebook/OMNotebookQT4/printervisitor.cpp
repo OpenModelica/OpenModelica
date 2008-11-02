@@ -45,7 +45,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 ------------------------------------------------------------------------------------
 */
 
-/*! 
+/*!
  * \file printervisitor.cpp
  * \author Anders Fernström
  */
@@ -78,7 +78,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #include "../Pltpkg2/legendLabel.h"
 namespace IAEX
 {
-	/*! 
+	/*!
 	 * \class PrinterVisitor
 	 * \date 2005-12-19
 	 *
@@ -86,7 +86,7 @@ namespace IAEX
 	 * enthier text
 	 */
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-12-19
 	 *
@@ -119,10 +119,10 @@ namespace IAEX
 		// insert the table
 		QTextCursor cursor = printEditor_->textCursor();
 		table_ = cursor.insertTable(1, 2, tableFormat);
-		
+
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 *
 	 * \brief The class deconstructor
@@ -167,7 +167,7 @@ namespace IAEX
 		{
 			++currentTableRow_;
 			table_->insertRows( currentTableRow_, 1 );
-			
+
 			// first column
 			QTextTableCell tableCell( table_->cellAt( currentTableRow_, 0 ) );
 			if( tableCell.isValid() )
@@ -177,7 +177,7 @@ namespace IAEX
 					QTextCursor cursor( tableCell.firstCursorPosition() );
 					cursor.insertFragment( QTextDocumentFragment::fromHtml(
 						node->ChapterCounterHtml() ));
-		
+
 				}
 			}
 
@@ -200,7 +200,7 @@ namespace IAEX
 					QVector<QTextLength> constraints;
 					constraints << QTextLength(QTextLength::PercentageLength, 100);
 					tableFormatExpression.setColumnWidthConstraints(constraints);
-					
+
 					cursor.insertTable( 1, 1, tableFormatExpression );
 	QMessageBox::information(0,"uu2", node->text());
 
@@ -235,7 +235,7 @@ namespace IAEX
 		{
 			++currentTableRow_;
 			table_->insertRows( currentTableRow_, 1 );
-			
+
 			// first column
 			QTextTableCell tableCell( table_->cellAt( currentTableRow_, 0 ) );
 			if( tableCell.isValid() )
@@ -266,7 +266,7 @@ namespace IAEX
 				constraints << QTextLength(QTextLength::PercentageLength, 100);
                 tableFormatInput.setColumnWidthConstraints(constraints);
 				cursor.insertTable( 1, 1, tableFormatInput );
-			
+
 				QString html = node->textHtml();
 	QMessageBox::information(0, "uu1", node->text());
 				html += "<br>";
@@ -288,7 +288,7 @@ namespace IAEX
 
 					cursor = tableCell.lastCursorPosition();
 					cursor.insertTable( 1, 1, tableFormatOutput );
-					
+
 					QString outputHtml( node->textOutputHtml() );
 					outputHtml += "<br><br>";
 
@@ -318,10 +318,10 @@ namespace IAEX
 	{
 		if( !ignore_ || firstChild_ )
 		{
-			
+
 			++currentTableRow_;
 			table_->insertRows( currentTableRow_, 1 );
-			
+
 			// first column
 			QTextTableCell tableCell( table_->cellAt( currentTableRow_, 0 ) );
 			if( tableCell.isValid() )
@@ -351,13 +351,13 @@ namespace IAEX
 				constraints << QTextLength(QTextLength::PercentageLength, 100);
                 tableFormatInput.setColumnWidthConstraints(constraints);
 				cursor.insertTable( 1, 1, tableFormatInput );
-			
+
 				QString html = node->textHtml();
 				html += "<br>";
 				if( !node->isEvaluated() || node->isClosed() )
 					html += "<br>";
 				cursor.insertFragment( QTextDocumentFragment::fromHtml( html ));
-				
+
 
 				// output table
 				if( node->isEvaluated() && !node->isClosed() )
@@ -373,7 +373,7 @@ namespace IAEX
 
 					cursor = tableCell.lastCursorPosition();
 					cursor.insertTable( 1, 1, tableFormatOutput );
-					
+
 
 					QRect r2 = node->compoundwidget->gwMain->rect();
 					r2.setWidth(r2.width()-1);
@@ -386,7 +386,7 @@ namespace IAEX
 					qp.begin(&qi);
 
 
-					//For some reason render() uses another background color for negative coordinates. A workaround is to add a white QGraphicsRectItem behind the other objects..			
+					//For some reason render() uses another background color for negative coordinates. A workaround is to add a white QGraphicsRectItem behind the other objects..
 					QRectF rect = node->compoundwidget->gwMain->mapToScene(node->compoundwidget->gwMain->rect()).boundingRect();
 					rect.setWidth( rect.width() *2);
 					rect.setLeft(rect.left() - rect.width()/2);
@@ -405,15 +405,15 @@ namespace IAEX
 
 					qp.end();
 
-					
-					qi.save(QString("u77.bmp"),"BMP");					
+
+					qi.save(QString("u77.bmp"),"BMP");
 */
 
 //
 //					QMessageBox::information(0, "uu", QVariant(node->compoundwidget->rect().width()).toString());
 //					QMessageBox::information(0, "uu2", QVariant(printer_->pageRect().width()).toString());
 //					QMessageBox::information(0, "uu2", QVariant(printer_->pageRect().height()).toString());
-					
+
 					QImage i3(node->compoundwidget->rect().size(),  QImage::Format_RGB32);
 					i3.fill(QColor(Qt::white).rgb());
 					QPainter p(&i3);
@@ -466,8 +466,8 @@ namespace IAEX
 
 	//CELLCURSOR
 	void PrinterVisitor::visitCellCursorNodeBefore(CellCursor *)
-	{}      
+	{}
 
 	void PrinterVisitor::visitCellCursorNodeAfter(CellCursor *)
 	{}
-} 
+}

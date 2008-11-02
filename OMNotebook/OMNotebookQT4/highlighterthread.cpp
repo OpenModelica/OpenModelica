@@ -18,7 +18,7 @@ are permitted provided that the following conditions are met:
 
     * Redistributions of source code must retain the above copyright notice,
       this list of conditions and the following disclaimer.
-    
+
 	* Redistributions in binary form must reproduce the above copyright notice,
       this list of conditions and the following disclaimer in the documentation
       and/or other materials provided with the distribution.
@@ -45,7 +45,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 ------------------------------------------------------------------------------------
 */
 
-/*! 
+/*!
 * \file highlighterthread.cpp
 * \author Anders Fernström
 * \date 2005-12-17
@@ -68,16 +68,16 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 using namespace std;
 namespace IAEX
 {
-	/*! 
+	/*!
 	 * \class NullHighlighter
 	 * \author Ingemar Axelsson and Anders Ferström
 	 * \date 2006-01-09 (update)
 	 *
-	 * \brief This class is used if no SyntaxHighlighter is set. 
+	 * \brief This class is used if no SyntaxHighlighter is set.
 	 *
-	 * 2005-10-27 AF, Change this class to reflect the changes made 
+	 * 2005-10-27 AF, Change this class to reflect the changes made
 	 * to the SyntaxHighlighter interface.
-	 * 2006-01-09 AF, Change this class to reflect the changes made 
+	 * 2006-01-09 AF, Change this class to reflect the changes made
 	 * to the SyntaxHighlighter interface (again).
 	 */
 	class NullHighlighter : public SyntaxHighlighter
@@ -86,7 +86,7 @@ namespace IAEX
 		virtual void highlight(QTextDocument *){}
 	};
 
-	/*! 
+	/*!
 	 * \class HighlighterThread
 	 * \author Anders Fernström
 	 * \date 2005-12-17
@@ -101,7 +101,7 @@ namespace IAEX
 	 * \brief The class constructor
 	 */
 	HighlighterThread::HighlighterThread( SyntaxHighlighter *highlighter, QObject *parent )
-		: QThread( parent ), 
+		: QThread( parent ),
 		highlighter_( highlighter ),
 		stopHighlighting_( true )
 	{
@@ -128,7 +128,7 @@ namespace IAEX
 			else
 				instance_ = new HighlighterThread( new NullHighlighter(), parent );
 		}
-		
+
 		return instance_;
 	}
 
@@ -193,7 +193,7 @@ namespace IAEX
 				//this->exit();
 				break;
 			}
-		
+
 		}
 
 		//cout << "Highlight-3" << endl;

@@ -46,7 +46,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 ------------------------------------------------------------------------------------
 */
 
-/*! 
+/*!
  * \file notebook.h
  * \author Ingemar Axelsson and Anders Fernström
  * \date 2005-02-07
@@ -102,24 +102,24 @@ using namespace std;
 
 namespace IAEX
 {
-	/*! 
-	 * \class NotebookWindow 
+	/*!
+	 * \class NotebookWindow
 	 * \author Ingemar Axelsson and Anders Fernström
 	 *
 	 * \brief This class describes a mainwindow using the CellDocument
-	 * 
+	 *
 	 * This is the main applicationwindow. It contains of a menu, a
 	 * toolbar, a statusbar and a workspace. The workspace will contain a
 	 * celldocument view.
-	 * 
 	 *
-	 * \todo implement a timer that saves a document every 5 minutes 
+	 *
+	 * \todo implement a timer that saves a document every 5 minutes
 	 * or so.
 	 *
-	 * \todo Implement section numbering. Could be done with some kind 
+	 * \todo Implement section numbering. Could be done with some kind
 	 * of vistors.
 	 *
-	 * 
+	 *
 	 * \bug Segmentation fault when quit. Only sometimes.
 	 */
 
@@ -131,7 +131,7 @@ namespace IAEX
 	QString NotebookWindow::linkDir_ = QString::null;
 
 
-	/*! 
+	/*!
 	 * \author Ingemar Axelsson and Anders Fernström
 	 * \date 2006-01-17 (update)
 	 *
@@ -140,7 +140,7 @@ namespace IAEX
 	 * 2006-01-16 AF, Added an icon to the window
 	 * Also made som other updates /AF
 	 */
-	NotebookWindow::NotebookWindow(Document *subject, 
+	NotebookWindow::NotebookWindow(Document *subject,
 		const QString &filename, QWidget *parent)
 		: DocumentView(parent),
 		subject_(subject),
@@ -156,13 +156,13 @@ namespace IAEX
 //		setMinimumSize( 150, 220 );		//AF
 
 		toolBar = new QToolBar("Show toolbar", this);
-	
+
 
 		posIndicator = new QLabel("");
 		posIndicator->setMinimumWidth(75);
 		stateIndicator = new QLabel("");
 		stateIndicator->setMinimumWidth(60);
-		
+
 		statusBar()->insertPermanentWidget(0,posIndicator);
 		statusBar()->insertPermanentWidget(0,stateIndicator);
 		createFileMenu();
@@ -176,7 +176,7 @@ namespace IAEX
 		toolBar->addSeparator();
 		toolBar->addAction(quitWindowAction);
 		addToolBar(toolBar); //Add icons, update the edit menu etc.
-		
+
 		subject_->attach(this);
 		setMinimumSize( 150, 220 );		//AF
 
@@ -209,7 +209,7 @@ namespace IAEX
 		update();
 	}
 
-	/*! 
+	/*!
 	 * \author Ingemar Axelsson and Anders Fernström
 	 * \date 2006-08-24 (update)
 	 *
@@ -302,7 +302,7 @@ namespace IAEX
 		delete deleteCellAction;
 		delete nextCellAction;
 		delete previousCellAction;
-		
+
 		delete groupAction;
 		delete inputAction;
 		delete graphAction;
@@ -385,7 +385,7 @@ namespace IAEX
 		delete stateIndicator;
 	}
 
-	/*! 
+	/*!
 	 * \author Ingemar Axelsson
 	 */
 
@@ -404,17 +404,17 @@ namespace IAEX
 	void NotebookWindow::update()
 	{
 		QFrame *mainWidget = subject_->getState();
-		
+
 		mainWidget->setParent(this);
 		mainWidget->move( QPoint(0,0) );
-	
+
 
 		setCentralWidget(mainWidget);
 //		mainWidget->setMaximumHeight(250);
 		mainWidget->show();
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-11-30
 	 *
@@ -425,7 +425,7 @@ namespace IAEX
 		return subject_;
 	}
 
-	/*! 
+	/*!
 	 * \author Ingemar Axelsson
 	 */
 	Application *NotebookWindow::application()
@@ -433,7 +433,7 @@ namespace IAEX
 		return subject_->application();
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-12-01 (update)
 	 *
@@ -451,8 +451,8 @@ namespace IAEX
 		newAction->setStatusTip( tr("Create a new document") );
 		connect(newAction, SIGNAL(triggered()), this, SLOT(newFile()));
 		newAction->setIcon(QIcon(":/Resources/toolbarIcons/filenew.png"));
- 
-		toolBar->addAction(newAction);	
+
+		toolBar->addAction(newAction);
 
 
 		recentMenu = new QMenu("Recent &Files", this);
@@ -468,7 +468,7 @@ namespace IAEX
 		b->setDefaultAction(openFileAction);
 		b->setMenu(recentMenu);
 		b->setPopupMode(QToolButton::MenuButtonPopup);
-//		toolBar->addAction(openFileAction);	
+//		toolBar->addAction(openFileAction);
 		toolBar->addWidget(b);
 
 		// SAVE AS
@@ -483,7 +483,7 @@ namespace IAEX
 		saveAction->setStatusTip( tr("Save the document") );
 		connect(saveAction, SIGNAL(triggered()), this, SLOT(save()));
 		saveAction->setIcon(QIcon(":/Resources/toolbarIcons/filesave.png"));
-		toolBar->addAction(saveAction);	
+		toolBar->addAction(saveAction);
 
 		toolBar->addSeparator();
 
@@ -491,7 +491,7 @@ namespace IAEX
 		closeFileAction = new QAction( tr("&Close"), this );
 		closeFileAction->setShortcut( tr("Ctrl+F4") );
 		closeFileAction->setStatusTip( tr("Close the window") );
-		connect(closeFileAction, SIGNAL(triggered()), this, SLOT(closeFile())); 
+		connect(closeFileAction, SIGNAL(triggered()), this, SLOT(closeFile()));
 
 		// PRINT
 		printAction = new QAction( tr("&Print"), this );
@@ -499,7 +499,7 @@ namespace IAEX
 		printAction->setStatusTip( tr("Print the document") );
 		connect(printAction, SIGNAL(triggered()), this, SLOT(print()));
 		printAction->setIcon(QIcon(":/Resources/toolbarIcons/fileprint.png"));
-		toolBar->addAction(printAction);	
+		toolBar->addAction(printAction);
 
 		toolBar->addSeparator();
 
@@ -511,7 +511,7 @@ namespace IAEX
 		quitWindowAction->setStatusTip( tr("Quit OMNotebook") );
 		quitWindowAction->setIcon(QIcon(":/Resources/toolbarIcons/exit.png"));
 
-		connect(quitWindowAction, SIGNAL(triggered()), this, SLOT(quitOMNotebook())); 
+		connect(quitWindowAction, SIGNAL(triggered()), this, SLOT(quitOMNotebook()));
 
 		// CREATE MENU
 		fileMenu = menuBar()->addMenu( tr("&File") );
@@ -525,7 +525,7 @@ namespace IAEX
 		fileMenu->addSeparator();
 
 		// RECENT FILES
-//		recentMenu = fileMenu->addMenu("Recent &Files"); 
+//		recentMenu = fileMenu->addMenu("Recent &Files");
 		fileMenu->addMenu(recentMenu);
 
 		QSettings s("PELAB", "OMNotebook");
@@ -562,13 +562,13 @@ namespace IAEX
 		// Added 2005-11-21
 		exportPureText = new QAction( tr("&Pure text"), this );
 		exportPureText->setStatusTip( tr("Export the document content to pure text") );
-		connect( exportPureText, SIGNAL( triggered() ), 
+		connect( exportPureText, SIGNAL( triggered() ),
 			this, SLOT( pureText() ));
 
 		exportMenu->addAction( exportPureText );
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2006-08-24 (update)
 	 *
@@ -590,7 +590,7 @@ namespace IAEX
 
 		undoAction->setEnabled(false);
 		undoAction->setIcon(QIcon(":/Resources/toolbarIcons/undo.png"));
-		toolBar->addAction(undoAction);	
+		toolBar->addAction(undoAction);
 
 
 		// 2005-10-07 AF, Porting, replaced this
@@ -603,7 +603,7 @@ namespace IAEX
 
 		redoAction->setEnabled(false);
 		redoAction->setIcon(QIcon(":/Resources/toolbarIcons/redo.png"));
-		toolBar->addAction(redoAction);	
+		toolBar->addAction(redoAction);
 
 		toolBar->addSeparator();
 
@@ -616,7 +616,7 @@ namespace IAEX
 
 		cutAction->setEnabled(false);
 		cutAction->setIcon(QIcon(":/Resources/toolbarIcons/editcut.png"));
-		toolBar->addAction(cutAction);	
+		toolBar->addAction(cutAction);
 
 		// COPY
 		copyAction = new QAction( tr("&Copy"), this);
@@ -627,7 +627,7 @@ namespace IAEX
 
 		copyAction->setEnabled(false);
 		copyAction->setIcon(QIcon(":/Resources/toolbarIcons/editcopy.png"));
-		toolBar->addAction(copyAction);	
+		toolBar->addAction(copyAction);
 
 
 		// PASTE
@@ -636,10 +636,10 @@ namespace IAEX
 		pasteAction->setStatusTip( tr("Paste text from clipboard") );
 		connect( pasteAction, SIGNAL( triggered() ),
 			this, SLOT( pasteEdit() ));
-		
+
 
 		pasteAction->setIcon(QIcon(":/Resources/toolbarIcons/editpaste.png"));
-		toolBar->addAction(pasteAction);	
+		toolBar->addAction(pasteAction);
 
 		toolBar->addSeparator();
 
@@ -652,7 +652,7 @@ namespace IAEX
 			this, SLOT( findEdit() ));
 
 		findAction->setIcon(QIcon(":/Resources/toolbarIcons/find.png"));
-		toolBar->addAction(findAction);	
+		toolBar->addAction(findAction);
 		toolBar->addSeparator();
 
 		// REPLACE, added 2006-08-24 AF
@@ -661,7 +661,7 @@ namespace IAEX
 		replaceAction->setStatusTip( tr("Search through the document and replace") );
 		connect( replaceAction, SIGNAL( triggered() ),
 			this, SLOT( replaceEdit() ));
-		
+
 
 		// 2005-10-07 AF, Porting, replaced this
 		//QAction *showExprAction = new QAction("View Expression", "&View Expression",0, this, "viewexpr");
@@ -673,7 +673,7 @@ namespace IAEX
 		connect(showExprAction, SIGNAL(toggled(bool)), subject_, SLOT(showHTML(bool)));
 
 		// 2005-10-07 AF, Porting, new code for creating menu
-		// 2006-02-03 AF, removed SEARCH from menu, 
+		// 2006-02-03 AF, removed SEARCH from menu,
 		// because they havn't been implemented yet.
 		editMenu = menuBar()->addMenu( tr("&Edit") );
 		editMenu->addAction( undoAction );
@@ -695,23 +695,23 @@ namespace IAEX
 		undoAction->addTo(editMenu);
 		redoAction->addTo(editMenu);
 		editMenu->insertSeparator(3);
-		searchAction->addTo(editMenu);      
+		searchAction->addTo(editMenu);
 		showExprAction->addTo(editMenu);
 		*/
 
-		
+
 //		QObject::connect(editMenu, SIGNAL(aboutToShow()),  //HE 071119
 //			this, SLOT(updateEditMenu()));		           // -''-
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2006-04-27 (update)
 	 *
 	 * \brief Method for creating cell nemu.
 	 *
 	 * Remade the function when porting to QT4.
-	 * 
+	 *
 	 * 2006-04-26 AF, Added UNGROUP and SPLIT CELL
 	 * 2006-04-27 AF, remove cut,copy,paste cell from menu
 	 */
@@ -753,7 +753,7 @@ namespace IAEX
 
 		// 2005-10-07 AF, Porting, replaced this
 		//QAction *inputAction = new QAction("Inputcell", "&Input cell", CTRL+SHIFT+Key_I, this, "inputcells");
-		//QObject::connect(inputAction, SIGNAL(activated()), this, SLOT(inputCellsAction()));  
+		//QObject::connect(inputAction, SIGNAL(activated()), this, SLOT(inputCellsAction()));
 		inputAction = new QAction( tr("Add &Inputcell"), this);
 		inputAction->setShortcut( tr("Ctrl+Shift+I") );
 		inputAction->setStatusTip( tr("Add an input cell") );
@@ -778,21 +778,21 @@ namespace IAEX
 		groupAction = new QAction( tr("&Groupcell"), this);
 		groupAction->setShortcut( tr("Ctrl+Shift+G") );
 		groupAction->setStatusTip( tr("Groupcell") );
-		connect( groupAction, SIGNAL( triggered() ), 
+		connect( groupAction, SIGNAL( triggered() ),
 			this, SLOT( groupCellsAction() ));
 
 		// 2006-04-26 AF, UNGROUP
 		ungroupCellAction = new QAction( tr("&Ungroup groupcell"), this);
 		ungroupCellAction->setShortcut( tr("Ctrl+Shift+U") );
 		ungroupCellAction->setStatusTip( tr("Ungroup the selected groupcell in the tree view") );
-		connect( ungroupCellAction, SIGNAL( triggered() ), 
+		connect( ungroupCellAction, SIGNAL( triggered() ),
 			this, SLOT( ungroupCell() ));
 
 		// 2006-04-26 AF, SPLIT CELL
 		splitCellAction = new QAction( tr("&Split cell"), this);
 		splitCellAction->setShortcut( tr("Ctrl+Shift+P") );
 		splitCellAction->setStatusTip( tr("Split selected cell") );
-		connect( splitCellAction, SIGNAL( triggered() ), 
+		connect( splitCellAction, SIGNAL( triggered() ),
 			this, SLOT( splitCell() ));
 
 		// 2005-10-07 AF, Porting, replaced this
@@ -857,7 +857,7 @@ namespace IAEX
 		*/
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-10-07
 	 * \date 2005-11-03 (update)
@@ -874,14 +874,14 @@ namespace IAEX
 		// 2005-10-07 AF, Portin, Removed
 		//Create style menus.
 		//Q3ActionGroup *stylesgroup = new Q3ActionGroup(this, 0, true);
-		
+
 		// 2005-10-07 AF, Portin, Removed
 		//formatMenu = new Q3PopupMenu(this);
 
 
 		// 2005-10-03 AF, get the stylesheet instance
 		Stylesheet *sheet = Stylesheet::instance("stylesheet.xml");
-	
+
 		// Create the style actions //AF
 		stylesgroup = new QActionGroup( this );
 		formatMenu = menuBar()->addMenu( tr("&Format") );
@@ -896,7 +896,7 @@ namespace IAEX
 			styleMenu->addAction( tmp );
 			stylesgroup->addAction( tmp );
 			styles_[(*i)] = tmp;
-		
+
 			/* old action/menu code
 			QAction *tmp = new QAction((*i),(*i),0, this, (*i));
 			tmp->setToggleAction(true);
@@ -923,7 +923,7 @@ namespace IAEX
 		formatMenu->addSeparator();
 		fontsgroup = new QActionGroup( this );
 		fontMenu = formatMenu->addMenu( tr("&Font") );
-		
+
 		QFontDatabase fontDatabase;
 		QStringList fonts = fontDatabase.families( QFontDatabase::Latin );
 		for( int index = 0; index < fonts.count(); ++index )
@@ -935,11 +935,11 @@ namespace IAEX
 			fonts_.insert( fonts[index], tmp );
 		}
 
-		connect( fontMenu, SIGNAL( triggered(QAction*) ), 
+		connect( fontMenu, SIGNAL( triggered(QAction*) ),
 			this, SLOT( changeFont(QAction*) ));
 		connect( fontMenu, SIGNAL( aboutToShow() ),
 			this, SLOT( updateFontMenu() ));
-		
+
 		// -----------------------------------------------------
 		// END: FONT
 
@@ -967,7 +967,7 @@ namespace IAEX
 		faceUnderline->setShortcut( tr("Ctrl+U") );
 		faceUnderline->setCheckable( true );
 		faceUnderline->setStatusTip( tr("Set font face to Underline") );
-		
+
 
 		connect( faceMenu, SIGNAL( aboutToShow() ),
 			this, SLOT( updateFontFaceMenu() ));
@@ -1060,7 +1060,7 @@ namespace IAEX
 		sizeOther->setCheckable( true );
 		sizeOther->setStatusTip( tr("Select font size") );
 
-		
+
 		connect( sizeMenu, SIGNAL( aboutToShow() ),
 			this, SLOT( updateFontSizeMenu() ));
 		connect( sizeMenu, SIGNAL( triggered(QAction*) ),
@@ -1101,7 +1101,7 @@ namespace IAEX
 		stretchUltraCondensed->setStatusTip( tr("Set font stretech to Ultra Condensed") );
 		stretchs_.insert( QFont::UltraCondensed, stretchUltraCondensed );
 		stretchsgroup->addAction( stretchUltraCondensed );
-	
+
 		stretchExtraCondensed = new QAction( tr("E&xtra Condensed"), this);
 		stretchExtraCondensed->setCheckable( true );
 		stretchExtraCondensed->setStatusTip( tr("Set font stretech to Extra Condensed") );
@@ -1190,7 +1190,7 @@ namespace IAEX
 		colorWhite->setStatusTip( tr("Set font color to White") );
 		colors_.insert( colorWhite, new QColor(255,255,255) );
 		colorsgroup->addAction( colorWhite );
-		
+
 		color10Gray = new QAction( tr("&10% Gray"), this);
 		color10Gray->setCheckable( true );
 		color10Gray->setStatusTip( tr("Set font color to 10% Gray") );
@@ -1283,12 +1283,12 @@ namespace IAEX
 		colorMenu->addAction( colorYellow );
 		colorMenu->addSeparator();
 		colorMenu->addAction( colorOther );
-	
+
 		// -----------------------------------------------------
 		// END: Color
 
 
-		// Extra meny for choosing font from a dialog, because all fonts 
+		// Extra meny for choosing font from a dialog, because all fonts
 		// can't be displayed in the font menu
 		chooseFont = new QAction( tr("C&hoose Font..."), this);
 		chooseFont->setCheckable( false );
@@ -1377,7 +1377,7 @@ namespace IAEX
 		formatMenu->addSeparator();
 		borderMenu = formatMenu->addMenu( tr("&Border") );
 		bordersgroup = new QActionGroup( this );
-		
+
 		int borderSizes[] = { 0,1,2,3,4,5,6,7,8,9,10 };
 		for( int i = 0; i < sizeof(borderSizes)/sizeof(int); i++ )
 		{
@@ -1497,7 +1497,7 @@ namespace IAEX
 
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-11-18
 	 *
@@ -1553,7 +1553,7 @@ namespace IAEX
 		b->setMenu(indentMenu);
 		b->setPopupMode(QToolButton::MenuButtonPopup);
 		toolBar->addWidget(b);
-		
+
 
 		//EVAL
 
@@ -1572,7 +1572,7 @@ namespace IAEX
 			this, SLOT( updateMenus() ));
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2006-01-27
 	 *
@@ -1588,7 +1588,7 @@ namespace IAEX
 			this, SLOT( updateWindowMenu() ));
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2006-02-03 (update)
 	 *
@@ -1622,7 +1622,7 @@ namespace IAEX
 
 		// 2005-10-07 AF, Porting, new code for creating menu
 		aboutMenu = menuBar()->addMenu( tr("&Help") );
-		aboutMenu->addAction( aboutAction );	
+		aboutMenu->addAction( aboutAction );
 		aboutMenu->addAction( aboutQtAction );
 		aboutMenu->addSeparator();
 		aboutMenu->addAction( helpAction );
@@ -1634,7 +1634,7 @@ namespace IAEX
 		*/
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-11-11
 	 *
@@ -1645,7 +1645,7 @@ namespace IAEX
 		return subject_->getCursor()->currentCell()->isEditable();
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2006-02-14
 	 *
@@ -1657,13 +1657,13 @@ namespace IAEX
 			new EvalSelectedCells( subject_ ));
 	}
 
-	/*! 
+	/*!
 	 * \author Ingemar Axelsson
 	 */
 	void NotebookWindow::createSavingTimer()
 	{
 		//start a saving timer.
-		savingTimer_ = new QTimer();	    
+		savingTimer_ = new QTimer();
 		savingTimer_->start(30000);
 
 		connect(savingTimer_, SIGNAL(timeout()),
@@ -1673,7 +1673,7 @@ namespace IAEX
 
 
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-11-07
 	 * \date 2005-11-15 (update)
@@ -1688,7 +1688,7 @@ namespace IAEX
 		bool editable = false;
 
 
-		if( cellEditable() || 
+		if( cellEditable() ||
 			(subject_->getCursor()->currentCell()->hasChilds() &&
 			subject_->getCursor()->currentCell()->isClosed() &&
 			subject_->getCursor()->currentCell()->child()->isEditable()) )
@@ -1713,7 +1713,7 @@ namespace IAEX
 		insertLinkAction->setEnabled( editable );
 	}
 
-	/*! 
+	/*!
 	 * \author Ingemar Axelsson and Anders Fernström
 	 * \date 2005-11-02 (update)
 	 *
@@ -1724,7 +1724,7 @@ namespace IAEX
 	 */
 	void NotebookWindow::updateStyleMenu()
 	{
-		CellStyle style = *subject_->getCursor()->currentCell()->style();      
+		CellStyle style = *subject_->getCursor()->currentCell()->style();
 		map<QString, QAction*>::iterator cs = styles_.find(style.name());
 
 		if(cs != styles_.end())
@@ -1742,7 +1742,7 @@ namespace IAEX
 		}
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-11-02
 	 * \date 2006-04-27 (update)
@@ -1778,7 +1778,7 @@ namespace IAEX
 				if( typeid(InputCell) == typeid(*cell) )
 				{
 					InputCell *inputcell = dynamic_cast<InputCell*>(cell);
-					if( inputcell->textEditOutput()->hasFocus() && 
+					if( inputcell->textEditOutput()->hasFocus() &&
 						inputcell->isEvaluated() )
 					{
 
@@ -1792,7 +1792,7 @@ namespace IAEX
 				else if( typeid(GraphCell) == typeid(*cell) ) //fjass
 				{
 					GraphCell *graphcell = dynamic_cast<GraphCell*>(cell);
-					if( graphcell->textEditOutput()->hasFocus() && 
+					if( graphcell->textEditOutput()->hasFocus() &&
 						graphcell->isEvaluated() )
 					{
 
@@ -1801,7 +1801,7 @@ namespace IAEX
 					else
 					{
 						in_cursor = graphcell->textEdit()->textCursor();
-						
+
 
 					}
 				}
@@ -1811,7 +1811,7 @@ namespace IAEX
 					in_cursor = editor->textCursor();
 				}
 
-				if( in_cursor.hasSelection() || 
+				if( in_cursor.hasSelection() ||
 					subject_->getSelection().size() > 0 )
 				{
 					cutAction->setEnabled( true );
@@ -1848,7 +1848,7 @@ namespace IAEX
 		showExprAction->setChecked( subject_->getCursor()->currentCell()->isViewExpression() );
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2006-02-03
 	 * \date 2006-04-26 (update)
@@ -1902,7 +1902,7 @@ namespace IAEX
 			splitCellAction->setEnabled( false );
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-11-03
 	 *
@@ -1931,7 +1931,7 @@ namespace IAEX
 		}
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-11-03
 	 *
@@ -1959,7 +1959,7 @@ namespace IAEX
 		}
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-11-04
 	 *
@@ -1997,7 +1997,7 @@ namespace IAEX
 		}
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-11-04
 	 *
@@ -2024,7 +2024,7 @@ namespace IAEX
 		}
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-11-07
 	 *
@@ -2058,7 +2058,7 @@ namespace IAEX
 		}
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-11-07
 	 *
@@ -2086,7 +2086,7 @@ namespace IAEX
 		}
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-11-07
 	 *
@@ -2113,7 +2113,7 @@ namespace IAEX
 		}
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-11-07
 	 *
@@ -2146,7 +2146,7 @@ namespace IAEX
 		}
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-11-07
 	 *
@@ -2179,7 +2179,7 @@ namespace IAEX
 		}
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-11-07
 	 *
@@ -2212,7 +2212,7 @@ namespace IAEX
 		}
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2006-01-27
 	 *
@@ -2239,7 +2239,7 @@ namespace IAEX
 		}
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2006-01-17
 	 *
@@ -2255,16 +2255,16 @@ namespace IAEX
 		// if no name, set name to '(untitled)'
 		if( title.isEmpty() )
 			title = "(untitled)";
-		
+
 		title = QString( "OMNotebook: " ) + title;
-		
+
 		if( subject_->hasChanged() )
 			title.append( "*" );
 
 		setWindowTitle( title );
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2006-03-02
 	 *
@@ -2276,7 +2276,7 @@ namespace IAEX
 			new UpdateChapterCounters( subject_ ));
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2006-02-10
 	 *
@@ -2317,7 +2317,7 @@ namespace IAEX
 		}
 
 	}
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2006-04-27
 	 *
@@ -2351,7 +2351,7 @@ namespace IAEX
 		// 2006-01-30 AF, check if 'Alt+Enter'
 		if( event->modifiers() == Qt::AltModifier )
 		{
-			if( event->key() == Qt::Key_Enter || 
+			if( event->key() == Qt::Key_Enter ||
 				event->key() == Qt::Key_Return )
 			{
 				createNewCell();
@@ -2367,11 +2367,11 @@ namespace IAEX
 		}
 	}
 
-	/*! 
+	/*!
 	 * \author Ingemar Axelsson and Anders Fernström
 	 * \date 2005-11-22 (update)
 	 *
-	 * \brief Method for catching some keyevent, and given them 
+	 * \brief Method for catching some keyevent, and given them
 	 * new functionality
 	 *
 	 * 2005-11-22 AF, Added support for deleting cells with 'DEL'
@@ -2454,7 +2454,7 @@ namespace IAEX
 				int res = QMessageBox::question(this, QString("Save document?"), QString("The document has been modified. Do you want to save the changes?"),	QMessageBox::Yes | QMessageBox::Default, QMessageBox::No,  QMessageBox::Cancel);
 				if(res == QMessageBox::Yes)
 				{
-		
+
 					save();
 					if(subject_->getFilename().isNull())
 						return;
@@ -2479,7 +2479,7 @@ namespace IAEX
 		QStringList tmpLst;
 		QString tmp;
 		for(int i = 0; i < 4; ++i)
-		{	
+		{
 			if((tmp = s.value(QString("Recent") + QString(i), QString()).toString()) != QString())
 				tmpLst.push_back(tmp);
 			else
@@ -2496,18 +2496,18 @@ namespace IAEX
 
 	}
 
-	/*! 
+	/*!
 	 * \author Ingemar Axelsson and Anders Fernström
 	 *
 	 * \brief Open a file. Shows a file dialog.
 	 */
 	void NotebookWindow::openFile(const QString &filename)
-	{      
+	{
 		try
 		{
 			//Open a new document
 			if(filename.isEmpty())
-			{    
+			{
 				//Show a dialog for choosing a file.
 				filename_ = QFileDialog::getOpenFileName(
 					this,
@@ -2555,14 +2555,14 @@ namespace IAEX
 
 	/*!
 	 * \author Ingemar Axelsson and Anders Fernström
-	 * 
+	 *
 	 */
 	void NotebookWindow::closeFile()
 	{
-		// TODO: the function isn't used correctly, this funciton 
+		// TODO: the function isn't used correctly, this funciton
 		// should also close the window, if it isn't the last window
 		//subject_->executeCommand(new CloseFileCommand());
-		
+
 		close();
 
 		//application()->
@@ -2579,7 +2579,7 @@ namespace IAEX
 	 * \author Anders Fernström
 	 * \date 2006-01-19
 	 *
-	 * \brief Reimplemented closeEvent so all close event are handled 
+	 * \brief Reimplemented closeEvent so all close event are handled
 	 * correctly. If the document is unsaved, the applicaiton will ask
 	 * the user if he/she wants to save before closing the document.
 	 */
@@ -2601,9 +2601,9 @@ namespace IAEX
 
 /*
 			int res = QMessageBox::question( this, "Document is unsaved",
-				QString( "The document \"") + filename + 
+				QString( "The document \"") + filename +
 					QString( "\" is unsaved, do you want to save the document" ),
-				QMessageBox::Yes | QMessageBox::Default, 
+				QMessageBox::Yes | QMessageBox::Default,
 				QMessageBox::No, QMessageBox::NoButton );
 */
 			if( res == QMessageBox::No )
@@ -2626,7 +2626,7 @@ namespace IAEX
 				OmcInteractiveEnvironment *omc = new OmcInteractiveEnvironment();
 
 				int result = QMessageBox::question( 0, tr("Close OMC"),
-					"OK to quit running OpenModelica Compiler process at exit?\n(Answer No if other OMShell/OMNotebook/Graphic editor is still running)", 
+					"OK to quit running OpenModelica Compiler process at exit?\n(Answer No if other OMShell/OMNotebook/Graphic editor is still running)",
 					QMessageBox::Yes | QMessageBox::Default,
 					QMessageBox::No, QMessageBox::Cancel );
 
@@ -2642,12 +2642,12 @@ namespace IAEX
 				}
 			}
 			catch( exception &e )
-			{ 
+			{
 			}
 		}
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström and Ingemar Axelsson
 	 *
 	 * \brief display an ABOUT message box with information about
@@ -2656,14 +2656,14 @@ namespace IAEX
 	void NotebookWindow::aboutQTNotebook()
 	{
 		QString version = OmcInteractiveEnvironment::OMCVersion();
-		QString abouttext = QString("OMNotebook version 3.0 (for OpenModelica ") + version + 
-			QString(")\r\n") + QString("Copyright 2004-2007, PELAB, Link" + QString(QChar(246, 0)) +"ping University\r\n\r\n") + 
+		QString abouttext = QString("OMNotebook version 3.0 (for OpenModelica ") + version +
+			QString(")\r\n") + QString("Copyright 2004-2007, PELAB, Link" + QString(QChar(246, 0)) +"ping University\r\n\r\n") +
 			QString("Created by Ingemar Axelsson (2004-2005), Anders Fernstr" + QString(QChar(246, 0)) +"m (2005-2006) and Henrik Eriksson (2006-2007) as part of their final theses.");
 
 		QMessageBox::about( this, "OMNotebook", abouttext );
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 *
 	 * \brief display an ABOUT message box with information about
@@ -2674,7 +2674,7 @@ namespace IAEX
 		QMessageBox::aboutQt( this );
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2006-02-03
 	 *
@@ -2714,10 +2714,10 @@ namespace IAEX
 		}
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström and Ingemar Axelsson
 	 * \date 2005-09-30 (update)
-	 * 
+	 *
 	 * \breif Save As function
 	 *
 	 * 2005-09-22 AF, added code for updating window title
@@ -2782,7 +2782,7 @@ namespace IAEX
 	/*!
 	 * \author Anders Fernström and Ingemar Axelsson
 	 *
-	 * Added a check that controlls if the user have saved before, 
+	 * Added a check that controlls if the user have saved before,
 	 * if not the function saveas should be used insted. //AF
 	 */
 	void NotebookWindow::save()
@@ -2829,7 +2829,7 @@ namespace IAEX
 		QPrinter printer( QPrinter::HighResolution );
 	    //printer.setFullPage( true );
 
-//		printer.setColorMode( QPrinter::GrayScale ); 
+//		printer.setColorMode( QPrinter::GrayScale );
 
 
 		QPrintDialog *dlg = new QPrintDialog(&printer, this);
@@ -2871,8 +2871,8 @@ namespace IAEX
 
 	    bool ok;
 		QFont font = QFontDialog::getFont(&ok, QFont("Times New Roman", 12), this);
-		
-		if( ok ) 
+
+		if( ok )
 		{
 			subject_->textcursorChangeFontFamily( font.family() );
 			subject_->textcursorChangeFontSize( font.pointSize() );
@@ -2891,15 +2891,15 @@ namespace IAEX
 
 			if( font.strikeOut() )
 				subject_->textcursorChangeFontFace( 4 );
-		} 
+		}
 	}
 
-	/*! 
+	/*!
 	 * \author Ingemar Axelsson
 	 */
 	void NotebookWindow::changeStyle(QAction *action)
 	{
-		// 2005-10-28 changed here because style changed from QString 
+		// 2005-10-28 changed here because style changed from QString
 		// to CellStyle /AF
 		//subject_->cursorChangeStyle(action->text());
 
@@ -2912,18 +2912,18 @@ namespace IAEX
 		{
 			// 2006-01-30 AF, add message box
 			QString msg = "Not a valid style name: " + action->text();
-			QMessageBox::warning( 0, "Warning", msg, "OK" );			
+			QMessageBox::warning( 0, "Warning", msg, "OK" );
 		}
 
 		updateChapterCounters();
 	}
 
-	/*! 
+	/*!
 	 * \author Ingemar Axelsson (and Anders Fernström)
 	 */
 	void NotebookWindow::changeStyle()
-	{ 
-		// 2005-10-28 changed in the funtion here because style changed 
+	{
+		// 2005-10-28 changed in the funtion here because style changed
 		// from QString  to CellStyle /AF
 		map<QString, QAction*>::iterator cs = styles_.begin();
 		Stylesheet *sheet = Stylesheet::instance( "stylesheet.xml" ); //AF
@@ -2935,14 +2935,14 @@ namespace IAEX
 				CellStyle style = sheet->getStyle( (*cs).first );
 				if( style.name() != "null" )
 					subject_->cursorChangeStyle( style );
-				
+
 			}
 		}
 
 		updateChapterCounters();
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-11-03
 	 *
@@ -2956,7 +2956,7 @@ namespace IAEX
 		subject_->textcursorChangeFontFamily( action->text() );
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-11-03
 	 *
@@ -2977,7 +2977,7 @@ namespace IAEX
 			subject_->textcursorChangeFontFace( 3 );
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-11-04
 	 *
@@ -3006,7 +3006,7 @@ namespace IAEX
 			if( !cursor.isNull() )
 			{
 				int size = cursor.charFormat().fontPointSize();
-				subject_->textcursorChangeFontSize( size + 1 ); 
+				subject_->textcursorChangeFontSize( size + 1 );
 			}
 
 		}
@@ -3042,7 +3042,7 @@ namespace IAEX
 		}
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-11-04
 	 *
@@ -3070,10 +3070,10 @@ namespace IAEX
 		else if( action->text() == "Ex&tra Expanded" )
 			subject_->textcursorChangeFontStretch( QFont::ExtraExpanded );
 		else if( action->text() == "Ult&ra Expanded" )
-			subject_->textcursorChangeFontStretch( QFont::UltraExpanded );	
+			subject_->textcursorChangeFontStretch( QFont::UltraExpanded );
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-11-07
 	 *
@@ -3103,7 +3103,7 @@ namespace IAEX
 		}
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-11-07
 	 *
@@ -3134,7 +3134,7 @@ namespace IAEX
 		}
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-11-07
 	 *
@@ -3165,7 +3165,7 @@ namespace IAEX
 		}
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-11-07
 	 *
@@ -3208,7 +3208,7 @@ namespace IAEX
 		}
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-11-07
 	 *
@@ -3251,7 +3251,7 @@ namespace IAEX
 		}
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-11-07
 	 *
@@ -3294,7 +3294,7 @@ namespace IAEX
 		}
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2006-01-27
 	 *
@@ -3309,7 +3309,7 @@ namespace IAEX
 		}
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2006-02-03
 	 *
@@ -3323,8 +3323,8 @@ namespace IAEX
 			editor->document()->undo();
 		}
 	}
-	
-	/*! 
+
+	/*!
 	 * \author Anders Fernström
 	 * \date 2006-02-03
 	 *
@@ -3339,7 +3339,7 @@ namespace IAEX
 		}
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2006-02-03
 	 * \date 2006-04-27 (update)
@@ -3360,7 +3360,7 @@ namespace IAEX
 		}
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2006-02-03
 	 * \date 2006-04-27 (update)
@@ -3381,7 +3381,7 @@ namespace IAEX
 		}
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2006-02-03
 	 * \date 2006-04-27 (update)
@@ -3402,7 +3402,7 @@ namespace IAEX
 		}
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2006-08-24
 	 *
@@ -3424,7 +3424,7 @@ namespace IAEX
 		}
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2006-08-24
 	 *
@@ -3446,7 +3446,7 @@ namespace IAEX
 		}
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-11-18
 	 *
@@ -3488,7 +3488,7 @@ namespace IAEX
 		}
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-12-05
 	 *
@@ -3519,8 +3519,8 @@ namespace IAEX
 			}
 			else
 			{
-				QMessageBox::warning( this, "- No text is selected -", 
-					"A text that should make up the link, must be selected", 
+				QMessageBox::warning( this, "- No text is selected -",
+					"A text that should make up the link, must be selected",
 					"OK" );
 			}
 		}
@@ -3536,7 +3536,7 @@ namespace IAEX
 
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-12-01
 	 *
@@ -3569,7 +3569,7 @@ namespace IAEX
 		}
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-11-21
 	 * \date 2006-03-24 (update)
@@ -3605,7 +3605,7 @@ namespace IAEX
 			application()->commandCenter()->executeCommand(
 				new ExportToPureText(subject_, filename) );
 
-			// 2006-03-24 AF, added message box - so user know when 
+			// 2006-03-24 AF, added message box - so user know when
 			// export is done
 			QString title = QFileInfo( subject_->getFilename() ).fileName();
 			title.remove( "\n" );
@@ -3619,7 +3619,7 @@ namespace IAEX
 		}
 	}
 
-	/*! 
+	/*!
 	 * \author Ingemar Axelsson
 	 */
 	void NotebookWindow::createNewCell()
@@ -3628,7 +3628,7 @@ namespace IAEX
 		updateChapterCounters();
 	}
 
-	/*! 
+	/*!
 	 * \author Ingemar Axelsson
 	 */
 	void NotebookWindow::deleteCurrentCell()
@@ -3637,7 +3637,7 @@ namespace IAEX
 		updateChapterCounters();
 	}
 
-	/*! 
+	/*!
 	 * \author Ingemar Axelsson
 	 */
 	void NotebookWindow::cutCell()
@@ -3646,7 +3646,7 @@ namespace IAEX
 		updateChapterCounters();
 	}
 
-	/*! 
+	/*!
 	 * \author Ingemar Axelsson
 	 */
 	void NotebookWindow::copyCell()
@@ -3654,7 +3654,7 @@ namespace IAEX
 		subject_->cursorCopyCell();
 	}
 
-	/*! 
+	/*!
 	 * \author Ingemar Axelsson
 	 */
 	void NotebookWindow::pasteCell()
@@ -3663,7 +3663,7 @@ namespace IAEX
 		updateChapterCounters();
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2006-04-26
 	 *
@@ -3677,7 +3677,7 @@ namespace IAEX
 			QMessageBox::information( this, "Information", "Ungroup can only be done on one cell at the time. Please select only one cell" );
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2006-04-26
 	 *
@@ -3688,7 +3688,7 @@ namespace IAEX
 		subject_->cursorSplitCell();
 	}
 
-	/*! 
+	/*!
 	 * \author Ingemar Axelsson
 	 */
 	void NotebookWindow::moveCursorDown()
@@ -3696,7 +3696,7 @@ namespace IAEX
 		subject_->cursorStepDown();
 	}
 
-	/*! 
+	/*!
 	 * \author Ingemar Axelsson
 	 */
 	void NotebookWindow::moveCursorUp()

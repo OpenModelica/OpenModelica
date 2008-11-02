@@ -42,14 +42,14 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 
 // REMADE LARGE PART OF THIS CLASS 2005-11-30 /AF
 
-/*! 
+/*!
 * \file xmlparser
 .cpp
 * \author Anders Fernstrom (and Ingemar Axelsson)
 * \date 2005-11-30
 *
 * \brief Remake this class to work with the specified xml format that
-* document are to be saved in. The old file have been renamed to 
+* document are to be saved in. The old file have been renamed to
 * 'xmlparser.cpp.old' /AF
 */
 
@@ -90,30 +90,30 @@ namespace IAEX
   * \brief Open an XML file and read the content. The xmlparser support
   * two different read modes:
   * READMODE_NORMAL	: Read the xml file normaly
-  * READMODE_OLD		: Read the xml file accordantly to the old xml 
+  * READMODE_OLD		: Read the xml file accordantly to the old xml
   *					  format used by OMNotebook.
   */
 
 
-  /*! 
+  /*!
   * \author Anders Fernstrom (and Ingemar Axelsson)
   * \date 2005-11-30 (update)
   *
   * \brief The class constructor
   *
-  * 2005-11-30 AF, This class was remade when another xml format 
+  * 2005-11-30 AF, This class was remade when another xml format
   * was used to save the cell structure.
   */
-  XMLParser::XMLParser( const QString filename, Factory *factory, 
+  XMLParser::XMLParser( const QString filename, Factory *factory,
     Document *document, int readmode )
-    : filename_( filename ), 
-    factory_( factory ), 
+    : filename_( filename ),
+    factory_( factory ),
     doc_( document ),
     readmode_( readmode )
   {
   }
 
-  /*! 
+  /*!
   * \author Ingemar Axelsson
   *
   * \brief The class destructor
@@ -121,7 +121,7 @@ namespace IAEX
   XMLParser::~XMLParser()
   {}
 
-  /*! 
+  /*!
   * \author Anders Fernstrom
   *
   * \brief Open the xml file and check what readmode to use
@@ -151,7 +151,7 @@ namespace IAEX
       }
     }
 
-    /* -- no freaking conversion 	      
+    /* -- no freaking conversion
     if(ba.indexOf("<InputCell") != -1)
     {
     QSettings s("PELAB", "OMNotebook");
@@ -208,14 +208,14 @@ namespace IAEX
     }
   }
 
-  /*! 
+  /*!
   * \author Anders Fernstrom
   * \date 2005-11-30
   *
   * \brief Parse the xml file using NORMAL readmode
   *
   * \param domdoc The QDomDocument that should be parsed.
-  */	
+  */
   Cell *XMLParser::parseNormal( QDomDocument &domdoc )
   {
     // Create a root element
@@ -262,14 +262,14 @@ namespace IAEX
     return rootcell;
   }
 
-  /*! 
+  /*!
   * \author Anders Fernstrom
   * \date 2005-11-30
   *
   * \brief Parse the xml file using OLD readmode
   *
   * \param domdoc The QDomDocument that should be parsed.
-  */	
+  */
   Cell *XMLParser::parseOld( QDomDocument &domdoc )
   {
     // Create a root element
@@ -303,7 +303,7 @@ namespace IAEX
   // READMODE_NORMAL
   // ***************************************************************
 
-  /*! 
+  /*!
   * \author Anders Fernstrom
   * \date 2005-11-30
   * \date 2005-12-01 (update)
@@ -316,7 +316,7 @@ namespace IAEX
   *
   * \param parent The parent cell
   * \param element The current QDomElement being parsed
-  */	
+  */
   void XMLParser::traverseCells( Cell *parent, QDomNode &node )
   {
     try
@@ -350,7 +350,7 @@ namespace IAEX
     }
   }
 
-  /*! 
+  /*!
   * \author Anders Fernstrom
   * \date 2005-11-30
   * \date 2005-12-01 (update)
@@ -361,7 +361,7 @@ namespace IAEX
   *
   * \param parent The parent cell to the group cell
   * \param element The current QDomElement being parsed
-  */	
+  */
   void XMLParser::traverseGroupCell( Cell *parent, QDomElement &element )
   {
     Cell *groupcell = factory_->createCell( "cellgroup", parent );
@@ -385,7 +385,7 @@ namespace IAEX
     parent->addChild( groupcell );
   }
 
-  /*! 
+  /*!
   * \author Anders Fernstrom
   * \date 2005-11-30
   * \date 2005-12-01 (update)
@@ -396,7 +396,7 @@ namespace IAEX
   *
   * \param parent The parent cell to the text cell
   * \param element The current QDomElement being parsed
-  */	
+  */
   void XMLParser::traverseTextCell( Cell *parent, QDomElement &element )
   {
     // Get the style value
@@ -445,7 +445,7 @@ namespace IAEX
         }
         else if( e.tagName() == XML_RULE )
         {
-          textcell->addRule( 
+          textcell->addRule(
             new Rule( e.attribute( XML_NAME, "" ), e.text() ));
         }
         else if( e.tagName() == XML_IMAGE )
@@ -470,7 +470,7 @@ namespace IAEX
     parent->addChild( textcell );
   }
 
-  /*! 
+  /*!
   * \author Anders Fernstrom
   * \date 2005-11-30
   * \date 2006-01-17 (update)
@@ -482,7 +482,7 @@ namespace IAEX
   *
   * \param parent The parent cell to the input cell
   * \param element The current QDomElement being parsed
-  */	
+  */
   void XMLParser::traverseInputCell( Cell *parent, QDomElement &element )
   {
     // Get the style value
@@ -515,7 +515,7 @@ namespace IAEX
         }
         else if( e.tagName() == XML_RULE )
         {
-          inputcell->addRule( 
+          inputcell->addRule(
             new Rule( e.attribute( XML_NAME, "" ), e.text() ));
         }
         else if( e.tagName() == XML_IMAGE )
@@ -600,7 +600,7 @@ namespace IAEX
         }
         else if( e.tagName() == XML_RULE )
         {
-          graphcell->addRule( 
+          graphcell->addRule(
             new Rule( e.attribute( XML_NAME, "" ), e.text() ));
         }
         else if( e.tagName() == XML_GRAPHCELL_DATA )
@@ -646,7 +646,7 @@ namespace IAEX
             interpolation_= INTERPOLATION_LINEAR;
           }
           else if(interpolation == QString(XML_GRAPHCELL_CONSTANT))
-          {					
+          {
             interpolation_ = INTERPOLATION_CONSTANT;
           }
           else
@@ -669,7 +669,7 @@ namespace IAEX
 
           gCell->compoundwidget->gwMain->curves.push_back(curve);
 
-        }				
+        }
         else if( e.tagName() == XML_GRAPHCELL_SHAPE )
         {
           GraphCell *gCell = dynamic_cast<GraphCell*>(graphcell);
@@ -800,10 +800,10 @@ namespace IAEX
     else if( closed == XML_FALSE )
     {
       /*
-      gCell->setHeight(gCell->height() +200); 
+      gCell->setHeight(gCell->height() +200);
       gCell->compoundwidget->show();
       gCell->compoundwidget->setMinimumHeight(200);
-      gCell->setEvaluated(true);		
+      gCell->setEvaluated(true);
       */
       gCell->setClosed( false,true );
     }
@@ -832,12 +832,12 @@ namespace IAEX
     if(!gCell->isPlot2())
       gCell->compoundwidget->hide();
 
-    //		gCell->compoundwidget->gwMain->graphicsScene->addItem(gCell->compoundwidget->gwMain->graphicsItems);		
+    //		gCell->compoundwidget->gwMain->graphicsScene->addItem(gCell->compoundwidget->gwMain->graphicsItems);
 
     parent->addChild( graphcell );
   }
 
-  /*! 
+  /*!
   * \author Anders Fernstrom
   * \date 2005-11-30
   * \date 2005-12-01 (update)
@@ -848,7 +848,7 @@ namespace IAEX
   *
   * \param parent The cell that the image should be added to
   * \param element The current QDomElement containing the image
-  */	
+  */
   void XMLParser::addImage( Cell *parent, QDomElement &element )
   {
     // Create a new image
@@ -906,7 +906,7 @@ namespace IAEX
       }
     }
     else
-    {	
+    {
       string msg = "Error creating image: <"+ imagename.toStdString() +">";
       throw runtime_error( msg.c_str() );
     }
@@ -916,7 +916,7 @@ namespace IAEX
   // READMODE_OLD
   // ***************************************************************
 
-  /*! 
+  /*!
   * \author Ingemar Axelsson and Anders Fernstrom
   * \date 2005-12-01 (update)
   *
@@ -933,7 +933,7 @@ namespace IAEX
       if(!e.isNull())
       {
         if(e.tagName() == "CellGroupData")
-        {	       
+        {
           Cell *aGroup = factory_->createCell("cellgroup", parent);
 
           QDomNode p = e.firstChild();

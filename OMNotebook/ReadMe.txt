@@ -32,7 +32,7 @@ This environment variables are needed:
 > QNBHOME	: Should point at the folder containing the tre sub projects,
                   for example "C:\Projects\OMNotebook",
                   > used like "$(QNBHOME)\NotebookParser".
-> QTHOME	: Should point at the home folder for Qt, 
+> QTHOME	: Should point at the home folder for Qt,
 		  for example "C:\Qt\qt-win-opensource-src-4.4.2".
 > COINDIR       : Should point at the home folder for COIN3D
                   i.e. "c:\path\to\coin3d"

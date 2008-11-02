@@ -1,4 +1,4 @@
-/*! 
+/*!
  * \file notebooksocket.cpp
  * \author Anders Fernström
  * \date 2006-05-03
@@ -32,7 +32,7 @@ namespace IAEX
 	 * \author Anders Fernström
 	 * \date 2006-05-03
 	 *
-     * \brief Handles communication with other instances (processes) 
+     * \brief Handles communication with other instances (processes)
 	 * of the application using tcp sockets.
 	 */
 	NotebookSocket::NotebookSocket( Application* application )
@@ -46,8 +46,8 @@ namespace IAEX
 		connect( socket_, SIGNAL( readyRead() ),
 			this, SLOT( receiveNewSocketMsg() ));
 	}
-	
-	/*! 
+
+	/*!
 	 * \author Anders Fernström
 	 * \date 2006-05-03
 	 *
@@ -63,15 +63,15 @@ namespace IAEX
 	// NOTEBOOK SOCKET CORE FUNCTIONS
 	// ------------------------------------------------------------------
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2006-05-03
 	 *
-	 * \brief Try to connect with other notebook instance, if 
-	 * succesfull the function will return true. If unable to 
-	 * connect the function trys to start a server (that waits 
-	 * for incomming communiction). Returns false if successful 
-	 * in setting up the loop. If both attemps fails the function 
+	 * \brief Try to connect with other notebook instance, if
+	 * succesfull the function will return true. If unable to
+	 * connect the function trys to start a server (that waits
+	 * for incomming communiction). Returns false if successful
+	 * in setting up the loop. If both attemps fails the function
 	 * throws an exception.
 	 */
 	bool NotebookSocket::connectToNotebook()
@@ -88,7 +88,7 @@ namespace IAEX
 		throw runtime_error( "Unable to connect OR start server" );
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2006-05-03
 	 *
@@ -102,7 +102,7 @@ namespace IAEX
 			if( socket_->state() == QAbstractSocket::ConnectedState )
 			{
 				socket_->disconnectFromHost();
-				
+
 				if( socket_->state() == QAbstractSocket::ConnectedState )
 					if( !socket_->waitForDisconnected( 5000 ))
 						throw runtime_error( "Unable to disconnect socket from host" );
@@ -111,7 +111,7 @@ namespace IAEX
 			delete socket_;
 			socket_ = 0;
 		}
-		
+
 		// server
 		if( server_ )
 		{
@@ -125,7 +125,7 @@ namespace IAEX
 		return true;
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2006-05-03
 	 *
@@ -142,7 +142,7 @@ namespace IAEX
 			QString file = "FILE: " + filename;
 			if( socket_->write( file.toStdString().c_str(), file.size() ) == -1 )
 			{
-				cout << "[Socket Error] Socket->sendFilename(): " << 
+				cout << "[Socket Error] Socket->sendFilename(): " <<
 					socket_->errorString().toStdString() << endl;
 				return false;
 			}
@@ -161,7 +161,7 @@ namespace IAEX
 	// PRIVATE SLOTS
 	// ------------------------------------------------------------------
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2006-05-03
 	 *
@@ -173,15 +173,15 @@ namespace IAEX
 		{
 			cout << "NotebookSocket: {new Connection}" << endl;
 			QTcpSocket* socket = server_->nextPendingConnection();
-			
+
 			// write, ask if OMNNotebook
 			if( socket->write( "Hello! OMNNotebook?", 25 ) == -1 )
 			{
-				cout << "[Socket Error] Server->receiveNewConnection(): " << 
+				cout << "[Socket Error] Server->receiveNewConnection(): " <<
 					socket->errorString().toStdString() << endl;
 				return;
 			}
-			
+
 			// wait and see if receive filepath from socket, if not
 			// asume that it isn't correct notebook.
 			socket->waitForBytesWritten( 5000 );
@@ -202,11 +202,11 @@ namespace IAEX
 					application_->open( filename );
 				}
 				else
-					cout << "[Socket Error] Server->receiveNewConnection(): " << 
+					cout << "[Socket Error] Server->receiveNewConnection(): " <<
 					"Received wrong message." << endl;
 			}
 			else
-				cout << "[Socket Error] Server->receiveNewConnection(): " << 
+				cout << "[Socket Error] Server->receiveNewConnection(): " <<
 					"Didn't receive any message." << endl;
 
 			// close socket
@@ -215,7 +215,7 @@ namespace IAEX
 		}
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2006-05-03
 	 *
@@ -239,13 +239,13 @@ namespace IAEX
 
 	// HELP FUNCTIONS
 	// ------------------------------------------------------------------
-	
-	/*! 
+
+	/*!
 	 * \author Anders Fernström
 	 * \date 2006-05-03
 	 *
 	 * \brief Trys to connect with another notebook process and recive a
-	 * message from that process, returns true if successful - otherwise 
+	 * message from that process, returns true if successful - otherwise
 	 * false.
 	 */
 	bool NotebookSocket::tryToConnect()
@@ -269,11 +269,11 @@ namespace IAEX
 		return false;
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2006-05-03
 	 *
-	 * \brief Trys to setup a server, returns true if successful - 
+	 * \brief Trys to setup a server, returns true if successful -
 	 * otherwise false.
 	 */
 	bool NotebookSocket::startServer()

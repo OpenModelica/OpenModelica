@@ -74,7 +74,7 @@ namespace IAEX
 
 	/*! \class OmcInteractiveEnvironment
 	*
-	* \brief Implements evaluation for modelica code. 
+	* \brief Implements evaluation for modelica code.
 	*/
 	OmcInteractiveEnvironment::OmcInteractiveEnvironment():comm_(OmcCommunicator::getInstance()),result_(""),error_("")
 	{
@@ -88,25 +88,25 @@ namespace IAEX
 		}
 	}
 
-	OmcInteractiveEnvironment::~OmcInteractiveEnvironment(){}   
+	OmcInteractiveEnvironment::~OmcInteractiveEnvironment(){}
 
 	QString OmcInteractiveEnvironment::getResult()
 	{
 		return result_;
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2006-02-02
 	 *
 	 *\brief Method for get error message from OMC
 	 */
 	QString OmcInteractiveEnvironment::getError()
-	{		
+	{
     return error_;
 	}
 
-	/*! 
+	/*!
 	 * \author Ingemar Axelsson and Anders Fernström
 	 * \date 2006-02-02 (update)
 	 *
@@ -123,8 +123,8 @@ namespace IAEX
       // call OMC with expression
 			result_ = comm_.callOmc(expr);
       // see if there are any errors
-			error_ = comm_.callOmc( "getErrorString()" );	
-      cerr << "result:" << result_.toStdString() << " error:" << error_.toStdString() << endl; 
+			error_ = comm_.callOmc( "getErrorString()" );
+      cerr << "result:" << result_.toStdString() << " error:" << error_.toStdString() << endl;
 		  if( error_.size() > 2 )
 		  {
 			  error_ = QString( "OMC-ERROR: \n" ) + error_;
@@ -134,11 +134,11 @@ namespace IAEX
 		}
 		catch( exception &e )
 		{
-			throw e;	
+			throw e;
 		}
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2006-02-02
 	 *
@@ -149,7 +149,7 @@ namespace IAEX
 		comm_.closeConnection();
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2006-02-02
 	 *
@@ -167,7 +167,7 @@ namespace IAEX
 		}
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2006-02-09
 	 *
@@ -175,7 +175,7 @@ namespace IAEX
 	 */
 	bool OmcInteractiveEnvironment::startDelegate()
 	{
-		// if not connected and can not establish connection, 
+		// if not connected and can not establish connection,
 		// try to start OMC
 		if( !comm_.isConnected() && !comm_.establishConnection() )
 		{
@@ -185,7 +185,7 @@ namespace IAEX
 			return false;
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2006-02-09
 	 * \date 2006-03-14 (update)
@@ -244,7 +244,7 @@ namespace IAEX
 				throw std::runtime_error( msg.toStdString().c_str() );
 			}
 #endif
-			
+
 
 			// 2006-03-14 AF, set omc loaction and parameters
 			QString omc;
@@ -253,13 +253,13 @@ namespace IAEX
 			#else
 				omc = OMCPath + "omc";
 			#endif
-			
+
 			QStringList parameters;
 			parameters << "+d=interactiveCorba";
 
 			// 2006-03-14 AF, create qt process
 			QProcess *omcProcess = new QProcess();
-		
+
 			// 2006-03-14 AF, start omc
 			omcProcess->start( omc, parameters );
 
@@ -298,12 +298,12 @@ namespace IAEX
 		{
 			QString msg = e.what();
 			QMessageBox::warning( 0, "Error", msg, "OK" );
-		}	
+		}
 
 		return flag;
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2006-08-17
 	 *

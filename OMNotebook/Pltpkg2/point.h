@@ -60,7 +60,7 @@ using namespace std;
 class Point: public QGraphicsEllipseItem
 {
  public:
-  Point(qreal x1, qreal y1, qreal h, qreal w, QColor color_, const GraphWidget* graphwidget_=0, 
+  Point(qreal x1, qreal y1, qreal h, qreal w, QColor color_, const GraphWidget* graphwidget_=0,
 	QGraphicsItem* parent=0, QGraphicsScene* scene=0, const QString& label = "");
   ~Point();
   double xFactor, yFactor;
@@ -71,14 +71,14 @@ class Point: public QGraphicsEllipseItem
  protected:
   virtual void hoverEnterEvent ( QGraphicsSceneHoverEvent * event );
   virtual void hoverLeaveEvent ( QGraphicsSceneHoverEvent * event );
-  virtual void mousePressEvent ( QGraphicsSceneMouseEvent * event );      
-  
+  virtual void mousePressEvent ( QGraphicsSceneMouseEvent * event );
+
  public:
   QColor color;
  private:
   const GraphWidget* graphwidget;
   double dx, dy;
-  
+
 };
 
 #endif

@@ -98,9 +98,9 @@ namespace IAEX {
 			return 0;
 		}
 	}
-	
+
 	void SimulationData::setFrame(float time) {
-//		cout << "setFrame(" << time << ")" << endl;	
+//		cout << "setFrame(" << time << ")" << endl;
 		if (keyPoints_->size() < 2) {
 			// not enough!
 			return;
@@ -188,7 +188,7 @@ namespace IAEX {
 
 				(*i).setRotationDir(rot);
 			}
-			
+
 			if ((*i).hasSize) {
 				SbVec3f s1;
 				s1[0] = k1->vars.value(name + ".size[1]");
@@ -233,7 +233,7 @@ namespace IAEX {
 				//cout << r[0] << " " << r[1] << " " << r[2] << endl;
 
 				(*i).setRotationDir(r);
-			}*/			
+			}*/
 		}
 		//cout << endl;
 	}
@@ -311,7 +311,7 @@ namespace IAEX {
 			} else if (p == "shape") {
 				this->shape = v;
 			}
-		
+
 			rest = rest.mid(pos+1);
 		}
 
@@ -394,14 +394,14 @@ namespace IAEX {
 		//	SoSphere *sphere = new SoSphere();
 		//	sphere->radius = 1;
 		//	objectGroup->addChild(new SoSphere());
-		//} else 
+		//} else
 		//	objectGroup->addChild(new SoSphere());
 
 		parent->addChild(objectGroup);
 	}
 
 	SbColor* SimulationObject::parseColor(QString coldef) {
-		if (coldef == "red") 
+		if (coldef == "red")
 			return new SbColor(1.0f, 0.0f, 0.0f);
 		else if (coldef == "green")
 			return new SbColor(0.0f, 1.0f, 0.0f);
@@ -444,7 +444,7 @@ namespace IAEX {
 		offset->translation.setValue(pos);
 	}
 
-	void SimulationObject::setRotationDir(SbRotation dir) { 
+	void SimulationObject::setRotationDir(SbRotation dir) {
 		//if (dir.length() > 0.01)
 		rotation->rotation.setValue(dir);//SbRotation(SbVec3f(0,1,0), dir - translation->translation.getValue()));
 	}
@@ -501,7 +501,7 @@ namespace IAEX {
 
 	//	//		while(!n.isNull()) {
 	//	if (!n.isNull()) {
-	//		QDomElement e = n.toElement(); 
+	//		QDomElement e = n.toElement();
 	//		if(!e.isNull()) {
 	//			//cout << e.tagName().toStdString() << " "
 	//			//	<< e.attribute("name").toStdString() << endl;
@@ -510,7 +510,7 @@ namespace IAEX {
 	//			//	SoSeparator *tmp = new SoSeparator();
 	//			//	parent->addChild(tmp);
 	//			//	traverse(&n, tmp);
-	//			//} else 
+	//			//} else
 	//			if (e.tagName() == "object") {
 	//				SoSeparator *group = new SoSeparator();
 	//				QDomNode obj = n.firstChild();
@@ -616,7 +616,7 @@ namespace IAEX {
 	//				} else if (style == "sphere") {
 	//					SoSphere *sphere = new SoSphere();
 	//					group->addChild(sphere);
-	//				} 
+	//				}
 
 	//				parent->addChild(group);
 	//			}

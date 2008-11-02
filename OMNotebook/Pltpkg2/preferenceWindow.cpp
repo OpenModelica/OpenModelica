@@ -18,7 +18,7 @@ are permitted provided that the following conditions are met:
 
     * Redistributions of source code must retain the above copyright notice,
       this list of conditions and the following disclaimer.
-    
+
 	* Redistributions in binary form must reproduce the above copyright notice,
       this list of conditions and the following disclaimer in the documentation
       and/or other materials provided with the distribution.
@@ -54,7 +54,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #include "preferenceWindow.h"
 #include "compoundWidget.h"
 
-PreferenceWindow::PreferenceWindow(CompoundWidget* cw, QWidget *parent): QDialog(parent) 
+PreferenceWindow::PreferenceWindow(CompoundWidget* cw, QWidget *parent): QDialog(parent)
 {
 	compoundWidget =cw;
 
@@ -106,7 +106,7 @@ void PreferenceWindow::apply()
 
 	if(vMin->isEnabled())
 	{
-		
+
 		top = QVariant(vMin->text()).toDouble();
 		bottom = QVariant(vMax->text()).toDouble();
 	}

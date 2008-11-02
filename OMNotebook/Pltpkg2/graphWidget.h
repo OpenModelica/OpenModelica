@@ -112,9 +112,9 @@ public slots:
 
 	void setExpr(QString);
 
-	void setPan(bool b) 
-	{ 
-		pan = b; 
+	void setPan(bool b)
+	{
+		pan = b;
 		if(b)
 		{
 			zoom = false;
@@ -123,7 +123,7 @@ public slots:
 		}
 	}
 
-	void setSelect(bool b) 
+	void setSelect(bool b)
 	{
 		select = b;
 		if(b)
@@ -135,7 +135,7 @@ public slots:
 		}
 	}
 
-	void setZoom(bool b) 
+	void setZoom(bool b)
 	{
 		zoom = b;
 		if(b)
@@ -186,7 +186,7 @@ public:
 
 protected:
 	void resizeEvent ( QResizeEvent * event );
-	void mouseReleaseEvent ( QMouseEvent * event );  
+	void mouseReleaseEvent ( QMouseEvent * event );
 	void mousePressEvent ( QMouseEvent * event );
 
 	void paintEvent(QPaintEvent* pe);
@@ -235,7 +235,7 @@ private:
 
 	}
 
-	
+
 	void rescale()
 	{
 

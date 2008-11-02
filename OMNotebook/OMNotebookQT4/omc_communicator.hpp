@@ -18,7 +18,7 @@ are permitted provided that the following conditions are met:
 
     * Redistributions of source code must retain the above copyright notice,
       this list of conditions and the following disclaimer.
-    
+
 	* Redistributions in binary form must reproduce the above copyright notice,
       this list of conditions and the following disclaimer in the documentation
       and/or other materials provided with the distribution.
@@ -81,12 +81,12 @@ class Modification;
   struct ComponentDeclaration
   {
   ComponentDeclaration(QString type, QString name, QString comment) : type_(type), name_(name), comment_(comment) {};
-  
+
   QString type_;
   QString name_;
   QString comment_;
   };
-*/  
+*/
 //------------------------------------------------------------------------------------
 
 /**
@@ -103,12 +103,12 @@ class OmcCommunicator : public QObject
 public:
   ~OmcCommunicator();
    static OmcCommunicator& getInstance();
-   
+
    bool establishConnection();
    void closeConnection();
    bool isConnected() const;
-  
-   QString callOmc(const QString& fnCall); 
+
+   QString callOmc(const QString& fnCall);
 
 /*
   void loadFile(const QString& file);
@@ -127,7 +127,7 @@ public:
   const QString& comment, bool encapsulated, bool partial);
   void createFunction(const QString& ref, const QStringList& baseClassRefs,
   const QString& comment, bool encapsulated, bool partial);
-  
+
   bool deleteClass(const QString& ref);
 
   bool existsClass(const QString& ref);
@@ -154,28 +154,28 @@ public:
   std::vector<ComponentDeclaration> getComponents(const QString& ref);
   Modification* getNthComponentModification(const QString& ref, int index, const QString& name);
   std::vector<PlacementAnnotation*> getComponentAnnotations(const QString& ref);
-  
+
   void addComponent(const QString& name, const QString& type, const QString& ref,
   const QString& annotation);
   void updateComponent(const QString& name, const QString& type, const QString& ref,
   const QString& comment, const QString& annotation = "");
   void deleteComponent(const QString& name, const QString& ref);
   bool isProtected(const QString& name, const QString& ref);
-  
+
   int getConnectionCount(const QString& ref);
   QString getNthConnection(const QString& ref, int index);
   Line* getNthConnectionAnnotation(const QString& ref, int index);
-  
+
   void addConnection(const QString& sourceConnectorRef, const QString& destinationConnectorRef,
   const QString& ref, const QString& annotation = "");
   void updateConnection(const QString& sourceConnectorRef,
   const QString& destinationConnectorRef, const QString& ref, const QString& annotation);
   void deleteConnection(const QString& sourceConnectorRef,
   const QString& destinationConnectorRef, const QString& ref);
-  
+
   QString list(const QString& ref);
   void quit();
-  
+
   void updateClassDefinition(const QString& ref, const QString& definition);
 
 
@@ -188,7 +188,7 @@ private:
    OmcCommunicator();
    OmcCommunicator(const OmcCommunicator&);
    OmcCommunicator& operator=(const OmcCommunicator&);
-   
+
 //   QString callOmc(const QString& fnCall);
 
 private:

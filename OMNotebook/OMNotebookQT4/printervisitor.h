@@ -45,7 +45,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 ------------------------------------------------------------------------------------
 */
 
-/*! 
+/*!
  * \file printervisitor.h
  * \author Anders Fernström
  */
@@ -66,7 +66,7 @@ class QPrinter;
 using namespace std;
 namespace IAEX
 {
-	class PrinterVisitor : public Visitor 
+	class PrinterVisitor : public Visitor
 	{
 
 	public:
@@ -88,7 +88,7 @@ namespace IAEX
 		virtual void visitGraphCellNodeBefore(GraphCell *node);
 		virtual void visitGraphCellNodeAfter(GraphCell *node);
 
-		virtual void visitCellCursorNodeBefore(CellCursor *cursor);      
+		virtual void visitCellCursorNodeBefore(CellCursor *cursor);
 		virtual void visitCellCursorNodeAfter(CellCursor *cursor);
 
 	private:

@@ -45,7 +45,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 ------------------------------------------------------------------------------------
 */
 
-/*! 
+/*!
  * \file notebook.h
  * \author Ingemar Axelsson and Anders Fernström
  * \date 2005-02-07
@@ -157,7 +157,7 @@ namespace IAEX
 		void pasteEdit();				// Added 2006-02-03 AF
 		void findEdit();				// Added 2006-08-24 AF
 		void replaceEdit();				// Added 2006-08-24 AF
-		
+
 		void insertImage();				// Added 2005-11-18 AF
 		void insertLink();				// Added 2005-12-05 AF
 		void openOldFile();				// Added 2005-12-01 AF
@@ -267,7 +267,7 @@ private:
 		QAction *deleteCellAction;
 		QAction *nextCellAction;
 		QAction *previousCellAction;
-		
+
 		QAction *groupAction;
 		QAction *inputAction;
 		QAction *graphAction;
@@ -361,7 +361,7 @@ private:
 		QString filename_;
 
 		QTimer *savingTimer_;
-		map<QString, QAction*> styles_;   
+		map<QString, QAction*> styles_;
 
 		SearchForm* findForm_;		// added 2006-08-24 AF
 		bool closing_;				// Added 2006-02-09 AF

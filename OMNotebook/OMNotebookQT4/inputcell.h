@@ -45,7 +45,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 ------------------------------------------------------------------------------------
 */
 
-/*! 
+/*!
  * \file inputcell.h
  * \author Ingemar Axelsson and Anders Fernström
  * \date 2005-10-27 (update)
@@ -75,7 +75,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 
 
 namespace IAEX
-{   
+{
 	class InputCell : public Cell
 	{
 		Q_OBJECT
@@ -91,7 +91,7 @@ namespace IAEX
 		virtual QTextCursor textCursor();		// Added 2005-10-27 AF
 		virtual QTextEdit* textEdit();			// Added 2006-01-05 AF
 		virtual QTextEdit* textEditOutput();	// Added 2006-02-03 AF
-		virtual void viewExpression(const bool){} 
+		virtual void viewExpression(const bool){}
 
 		virtual void addCellWidgets();
 		virtual void removeCellWidgets();
@@ -133,8 +133,8 @@ namespace IAEX
 		void setClosed(const bool closed, bool update = true); //Changed 2006-08-24
 		virtual void setFocus(const bool focus);
 		virtual void setFocusOutput(const bool focus);	// Added 2006-02-03 AF
-		
-		
+
+
 
 	protected:
 		void resizeEvent(QResizeEvent *event);		//AF

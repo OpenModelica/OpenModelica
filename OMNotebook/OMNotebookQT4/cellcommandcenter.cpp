@@ -18,7 +18,7 @@ are permitted provided that the following conditions are met:
 
     * Redistributions of source code must retain the above copyright notice,
       this list of conditions and the following disclaimer.
-    
+
 	* Redistributions in binary form must reproduce the above copyright notice,
       this list of conditions and the following disclaimer in the documentation
       and/or other materials provided with the distribution.
@@ -74,12 +74,12 @@ namespace IAEX
       : app_(a)
    {
    }
-   
+
    CellCommandCenter::~CellCommandCenter()
    {
       storeCommands();
    }
-   
+
 	void CellCommandCenter::executeCommand(Command *cmd)
 	{
 		cmd->setApplication(application());
@@ -95,11 +95,11 @@ namespace IAEX
 		catch( exception &e )
 		{
 			QString msg = e.what();
-			
+
 			if( 0 <= msg.indexOf( "OpenFileCommand()", 0, Qt::CaseInsensitive ))
 			{
-				msg += QString("\r\n\r\nIf you are trying to open an old ") + 
-					QString("OMNotebook file, use menu 'File->Import->") + 
+				msg += QString("\r\n\r\nIf you are trying to open an old ") +
+					QString("OMNotebook file, use menu 'File->Import->") +
 					QString("Old OMNotebook file' instead.");
 			}
 
@@ -107,23 +107,23 @@ namespace IAEX
 			QMessageBox::warning( 0, "Warning", msg, "OK" );
 		}
 	}
-   
+
    Application *CellCommandCenter::application()
    {
       return app_;
    }
-   
+
    void CellCommandCenter::setApplication(Application *app)
    {
       app_ = app;
    }
-   
+
    void CellCommandCenter::storeCommands()
    {
       ofstream diskstorage("lastcommands.txt");
-      
+
       vector<Command *>::iterator i = storage_.begin();
-      
+
       for(;i!= storage_.end();++i)
       {
 		  diskstorage << (*i)->commandName().toStdString() << endl;

@@ -45,7 +45,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 ------------------------------------------------------------------------------------
 */
 
-/*! 
+/*!
  * \file puretextvisitor.h
  * \author Anders Fernström
  */
@@ -65,7 +65,7 @@ using namespace std;
 
 namespace IAEX
 {
-	class PureTextVisitor : public Visitor 
+	class PureTextVisitor : public Visitor
 	{
 
 	public:
@@ -88,7 +88,7 @@ namespace IAEX
 		virtual void visitGraphCellNodeAfter(GraphCell *node);
 
 
-		virtual void visitCellCursorNodeBefore(CellCursor *cursor);      
+		virtual void visitCellCursorNodeBefore(CellCursor *cursor);
 		virtual void visitCellCursorNodeAfter(CellCursor *cursor);
 
 	private:

@@ -45,7 +45,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 ------------------------------------------------------------------------------------
 */
 
-/*! 
+/*!
  * \file cell.h
  * \author Ingemar Axelsson and Anders Fernström
  * \brief Definition of the cellinterface.
@@ -84,7 +84,7 @@ using namespace Qt;
 namespace IAEX
 {
 	class Cell : public QWidget
-	{ 
+	{
 		Q_OBJECT
 
 	public:
@@ -147,7 +147,7 @@ namespace IAEX
 		const bool isViewExpression() const;		// Added 2005-11-02 AF
 
 		//Properties
-		const QColor backgroundColor() const;       
+		const QColor backgroundColor() const;
 		virtual CellStyle *style();					// Changed 2005-10-27 AF
 		QString cellTag();							// Added 2006-01-16 AF
 		virtual rules_t rules() const;
@@ -155,8 +155,8 @@ namespace IAEX
 		TreeView *treeView();
 		QLabel *label();
 
-		
-		
+
+
 	public slots:
 		virtual void addRule(Rule *r);
 		virtual void setText(QString text){}
@@ -188,7 +188,7 @@ namespace IAEX
 		void changedWidth(const int);
 		void selected(const bool);
 
-		// 2005-10-06 AF, bytt från Qt::ButtonState till 
+		// 2005-10-06 AF, bytt från Qt::ButtonState till
 		// Qt::KeyboardModifiers p.g.a. portning
 		void cellselected(Cell *, Qt::KeyboardModifiers);
 
@@ -196,7 +196,7 @@ namespace IAEX
 		void openLink(const QUrl *link);
 		void cellOpened(Cell *, const bool);
 
-	protected:      
+	protected:
 		//Events
 		void resizeEvent(QResizeEvent *event);
 		void mouseReleaseEvent(QMouseEvent *event);

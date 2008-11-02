@@ -85,10 +85,10 @@ LegendLabel::LegendLabel(QColor color_, QString s, QWidget* parent, bool showlin
 
 
 	setMaximumHeight(maxHeight);
-	
+
 	setMinimumWidth((fontMetrics().width(text())+height()+4));
-	
-	
+
+
 
 
 }
@@ -125,9 +125,9 @@ void LegendLabel::selectColor()
 void LegendLabel::setLineVisible(bool b)
 {
 	curve->showLine(b);
-	
 
-	curve->dataPoints[0]->scene()->update();				
+
+	curve->dataPoints[0]->scene()->update();
 	emit showLine(b);
 }
 
@@ -139,7 +139,7 @@ void LegendLabel::setPointsVisible(bool b)
 	if(b)
 		graphWidget->updatePointSizes();
 
-	curve->dataPoints[0]->scene()->update();				
+	curve->dataPoints[0]->scene()->update();
 	emit showPoints(b);
 }
 /*
@@ -147,7 +147,7 @@ void LegendLabel::showEvent(QShowEvent* event)
 {
 
 	QLabel::showEvent(event);
-	
+
 	graphWidget->originalZoom();
 }
 */
