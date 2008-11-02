@@ -10,7 +10,7 @@
 ">&lt;span style=" text-decoration: underline; color:#0000ff;">connect equations&lt;/span>&lt;/a> to establish connections between components via connectors. The two arguments of a connect equation must be references to connectors, each of which either has to be declared directly within the same class where the connect equation occurs, or has to be a member of one of the declared variables in that class. The &lt;span style=" font-family:Courier New;">ResistorCircuit&lt;/span> fulfills the locality constraint mentioned above.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
    </TextCell>
    <InputCell style="Input" closed="false" >
-    <Input>model ResistorCircuit          
+    <Input>model ResistorCircuit
   Modelica.Electrical.Analog.Basic.Resistor R1(R = 100);
   Modelica.Electrical.Analog.Basic.Resistor R2(R = 200);
   Modelica.Electrical.Analog.Basic.Resistor R3(R = 300);
@@ -65,7 +65,7 @@ end Test;</Input>
      <Output>record
     resultFile = "Test_res.plt"
 end record
-OMC-ERROR: 
+OMC-ERROR:
 "Variable V not found in scope Modelica.Electrical.Analog.Interfaces.VoltageSource
 Illegal to instantiate partial class SignalSource
 "</Output>

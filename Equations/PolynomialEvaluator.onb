@@ -13,8 +13,8 @@
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;span style=" font-family:Courier New;">PolynomialEvaluator&lt;/span> is a restricted class of block kind since both public variables have specified causality input or output.&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
     <InputCell style="Input" closed="false" >
-     <Input>block PolynomialEvaluator 
-  parameter Real c[:];     
+     <Input>block PolynomialEvaluator
+  parameter Real c[:];
   input Real x;
   output Real y;
 protected
@@ -24,7 +24,7 @@ equation
   xpowers[1] = 1;
   for i in 1:n loop
     xpowers[i + 1] = xpowers[i]*x;
-  end for;  
+  end for;
   y = c[1] * xpowers[n + 1];
 end PolynomialEvaluator;</Input>
      <Output>Ok</Output>
@@ -37,7 +37,7 @@ end PolynomialEvaluator;</Input>
   Real p;
   PolynomialEvaluator polyeval(c = {1, 2, 3, 4});
 equation
-  polyeval.x = time;  
+  polyeval.x = time;
   p = polyeval.y;              // p gets the result
 end PolyEvaluate1;</Input>
      <Output>Ok</Output>

@@ -17,7 +17,7 @@
   Real x(start = 2);         // Modification equation
   constant Integer one = 1;  // Declaration equation
 equation
-  x = 3*one;                 // Normal equation 
+  x = 3*one;                 // Normal equation
 end Equations;</Input>
      <Output>Ok</Output>
     </InputCell>

@@ -54,26 +54,26 @@ end Rocket;  </Input>
     </TextCell>
     <InputCell style="Input" closed="false" >
      <Input>class MoonLanding
-  parameter Real force1 = 36350;          
+  parameter Real force1 = 36350;
   parameter Real force2 = 1308;
-protected                      
+protected
   parameter Real thrustEndTime = 210;
   parameter Real thrustDecreaseTime = 43.2;
-public            
+public
   Rocket apollo(name = "Apollo13");
   CelestialBody moon(name = "moon", mass = 7.382e22, radius = 1.738e6);
-  
+
 equation
   apollo.thrust = if (time &lt; thrustDecreaseTime) then force1
             else if (time &lt; thrustEndTime) then force2
             else 0;
   apollo.gravity = moon.g*moon.mass/(apollo.altitude + moon.radius) ^2;
-  
+
 algorithm
   when apollo.altitude &lt; 0 then    // Termination condition
     terminate("The moon lander touches the ground of the moon");
-  end when;  
-end MoonLanding;  
+  end when;
+end MoonLanding;
 </Input>
      <Output>Ok</Output>
     </InputCell>

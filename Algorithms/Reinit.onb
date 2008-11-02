@@ -26,8 +26,8 @@
 equation
   der(height) = velocity;
   der(velocity) = -g;
-algorithm  
-  when height &lt;= 0 then 
+algorithm
+  when height &lt;= 0 then
     reinit(velocity, -c*velocity);
   end when;
 end BouncingBall;
@@ -67,8 +67,8 @@ end BouncingBall;
 equation
   der(height) = velocity;
   der(velocity) = -g;
-algorithm  
-  when height &lt;= 0 then 
+algorithm
+  when height &lt;= 0 then
     velocity := -c*velocity;
   end when;
 end BouncingBallError;
@@ -102,15 +102,15 @@ end BouncingBallError;
   input  Real u = 1;
   output Real y;
 protected
-  Real x;    
+  Real x;
 equation
   der(x) = (u - x)/T;
   y = k*x;
 algorithm
-  when initial() then 
-    reinit(x, u);        // if x is u since der(x) = (u - x)/T          
+  when initial() then
+    reinit(x, u);        // if x is u since der(x) = (u - x)/T
   end when;
-end FilterBlock1;    
+end FilterBlock1;
 </Input>
      <Output></Output>
     </InputCell>

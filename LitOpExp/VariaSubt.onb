@@ -75,12 +75,12 @@ end record</Output>
     </TextCell>
     <InputCell style="Input" closed="false" >
      <Input>model TestEquations
-  Constants c1(p1 = 3);          
+  Constants c1(p1 = 3);
   Constants c2(p2 = 7);   // Fine, declaration equation can be modified.
   Boolean b;
   Real x;
 equation
-  b = noEvent(x > 1);          
+  b = noEvent(x > 1);
 end TestEquations;</Input>
      <Output>Ok</Output>
     </InputCell>

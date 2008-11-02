@@ -28,9 +28,9 @@ end Resistor;                // From Modelica.Electrical.Analog.Basic </Input>
     </TextCell>
     <InputCell style="Input" closed="false" >
      <Input>model ReplResistor
-replaceable model MyResistor = Resistor 
+replaceable model MyResistor = Resistor
   annotation(choices(
-                   choice(redeclare model MyResistor = lib2.Resistor(a={2})),  
+                   choice(redeclare model MyResistor = lib2.Resistor(a={2})),
                   choice(redeclare model MyResistor = lib2.Resistor)
                 )
          );
@@ -121,7 +121,7 @@ end TwoPin;          </Input>
     </TextCell>
     <InputCell style="Input" closed="false" >
      <Input>model R
-replaceable Resistor Load(R=2) 
+replaceable Resistor Load(R=2)
   extends TwoPin;
   annotation(choices(
           choice(redeclare lib2.Resistor Load(a = {2}) ),
@@ -145,7 +145,7 @@ end Friction;</Input>
     </TextCell>
     <InputCell style="Input" closed="false" >
      <Input>model FF
-replaceable FrictionFunction a(func = exp) 
+replaceable FrictionFunction a(func = exp)
   extends Friction;
   annotation(choices(
           choice(redeclare ConstantFriction a(c = 1) ),

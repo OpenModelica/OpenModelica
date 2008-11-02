@@ -44,10 +44,10 @@ algorithm
   place := 1;
   for i in 2:size(A, 1) loop
     if A[i] &lt; smallest then
-      smallest := A[i];     
-      place := i;  
-    end if;   
-  end for;    
+      smallest := A[i];
+      place := i;
+    end if;
+  end for;
 end FindSmallest;</Input>
        <Output>Ok</Output>
       </InputCell>

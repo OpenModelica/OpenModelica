@@ -22,7 +22,7 @@
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
     <InputCell style="Input" closed="false" >
-     <Input>class AngleInst          
+     <Input>class AngleInst
   parameter Angle a1(unit = "deg");  // Error, since unit declared as final
   parameter Angle a2(displayUnit = "rad"); // Fine
 end AngleInst;  </Input>
@@ -81,7 +81,7 @@ end PI;</Input>
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
     <InputCell style="Input" closed="false" >
-     <Input>model Test 
+     <Input>model Test
   PI c1(k = 2, T = 3);              // Fine
   PI c2(tf.b = {1});              // Error: b is declared as final
 end Test;  </Input>
@@ -91,7 +91,7 @@ end Test;  </Input>
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
     <InputCell style="Input" closed="false" >
-     <Input>model Test2 
+     <Input>model Test2
   PI c1(k = 2, T = 3);              // Fine
 end Test2;  </Input>
      <Output>Ok</Output>
@@ -117,7 +117,7 @@ end record</Output>
     resultFile = "Simulation failed.
 Different dimension sizes in arguments to cat(1, zeros(na - nb), b)
 Class cat (its type)  not found in scope TransferBlock.
-No matching function found for cat, candidates are 
+No matching function found for cat, candidates are
 Class cat not found in scope TransferBlock.
 Error occured while flattening model PI
 "
@@ -132,7 +132,7 @@ end record</Output>
     resultFile = "Simulation failed.
 Different dimension sizes in arguments to cat(1, zeros(na - nb), b)
 Class cat (its type)  not found in scope TransferBlock.
-No matching function found for cat, candidates are 
+No matching function found for cat, candidates are
 Class cat not found in scope TransferBlock.
 Error occured while flattening model Test2
 "
@@ -150,7 +150,7 @@ end record</Output>
     resultFile = "Simulation failed.
 Different dimension sizes in arguments to cat(1, zeros(na - nb), b)
 Class cat (its type)  not found in scope TransferBlock.
-No matching function found for cat, candidates are 
+No matching function found for cat, candidates are
 Class cat not found in scope TransferBlock.
 Error occured while flattening model Test
 "

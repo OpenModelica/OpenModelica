@@ -17,9 +17,9 @@
     </TextCell>
     <InputCell style="Input" closed="false" >
      <Input>class AddSub
-  Real Add1 = {1, 2, 3} + 1;          // Not allowed! 
+  Real Add1 = {1, 2, 3} + 1;          // Not allowed!
   Real Add2 = {1, 2, 3} + {1, 2};     // Not allowed, different array sizes!
-  Real Add3[2, 2] = {{1, 1}, {2, 2}} + {{1, 2}, {3, 4}};  
+  Real Add3[2, 2] = {{1, 1}, {2, 2}} + {{1, 2}, {3, 4}};
                                       // Result: {{2, 3}, {5, 6}}
   Real Sub1[3] = {1, 2, 3} - {1, 2, 0};    // Result: {0, 0, 3}
 end AddSub;  </Input>
@@ -27,7 +27,7 @@ end AddSub;  </Input>
     </InputCell>
     <InputCell style="Input" closed="false" >
      <Input>class AddSub2
-  Real Add3[2, 2] = {{1, 1}, {2, 2}} + {{1, 2}, {3, 4}};  
+  Real Add3[2, 2] = {{1, 1}, {2, 2}} + {{1, 2}, {3, 4}};
                                       // Result: {{2, 3}, {5, 6}}
   Real Sub1[3] = {1, 2, 3} - {1, 2, 0};    // Result: {0, 0, 3}
 end AddSub2;  </Input>
@@ -139,7 +139,7 @@ end record</Output>
     </TextCell>
     <InputCell style="Input" closed="false" >
      <Input>class Multiplication
-  Real m1[3] = {1, 2, 3} * 2;       // Elementwise mult: {2, 4, 6}; 
+  Real m1[3] = {1, 2, 3} * 2;       // Elementwise mult: {2, 4, 6};
   Real m2[3] = 3 * {1, 2, 3};       // Elementwise mult: {3, 6, 9};
   Real m3 = {1, 2, 3} * {1, 2, 2};     // Scalar product:    11;
   Real m4[2] = {{1, 2}, {3, 4}} * {1, 2};   // Matrix mult:    {5, 11};

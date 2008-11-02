@@ -14,7 +14,7 @@
   parameter Real highlimit;
   Real x = 5;
 algorithm
-  assert(x >= lowlimit and x &lt;= highlimit, "Variable x out of limit");  
+  assert(x >= lowlimit and x &lt;= highlimit, "Variable x out of limit");
 end AssertTest;</Input>
     <Output>Ok</Output>
    </InputCell>

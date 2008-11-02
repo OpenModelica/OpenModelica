@@ -153,7 +153,7 @@ end MyPoints2Inst2;
      <Input>class Arrays
   Real A3[2,2];                  // Array variable
   Real A4[2,2](start = {{1,0}, {0,1}}); // Array with explicit start value
-  Real A5[2,2](start[2,1] = 2.3); // Array with single element modification 
+  Real A5[2,2](start[2,1] = 2.3); // Array with single element modification
 end Arrays;</Input>
      <Output></Output>
     </InputCell>

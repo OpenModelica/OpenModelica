@@ -19,14 +19,14 @@ end ColorData;</Input>
    <InputCell style="Input" closed="false" >
     <Input>class Color
   extends ColorData;
-equation 
+equation
   red + blue + green=1;
 end Color;</Input>
     <Output>Ok</Output>
    </InputCell>
    <InputCell style="Input" closed="false" >
     <Input>class Point
-  public Real x; 
+  public Real x;
   Real y, z;
 end Point;</Input>
     <Output>Ok</Output>
@@ -67,7 +67,7 @@ end ColoredPoint;
     </TextCell>
     <InputCell style="Input" closed="false" >
      <Input>class Point2
-  parameter Real x = 2; 
+  parameter Real x = 2;
   parameter Real y = 3;
 end Point;</Input>
      <Output>Ok</Output>

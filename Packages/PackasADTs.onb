@@ -140,7 +140,7 @@ end ComplexUser2;
         z.re:=x;
         z.im:=y;
       end MakeComplex;
-    
+
     end Complex;
 
 end ComplexNumbersA;</Input>

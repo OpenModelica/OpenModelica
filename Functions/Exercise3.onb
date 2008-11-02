@@ -48,7 +48,7 @@
   input Integer V2[size(V1,1)];
   output Integer scalarProduct;
 algorithm
-  scalarProduct := V1*V2;  
+  scalarProduct := V1*V2;
 end scalarProduct;</Input>
        <Output>Ok</Output>
       </InputCell>
@@ -74,7 +74,7 @@ algorithm
   scalarProduct1 := scalarProduct(V1, V2);
   if scalarProduct1 == 0 then
     orthogonal := true;
-  end if;  
+  end if;
 end Orthogonal;</Input>
        <Output>Ok</Output>
       </InputCell>

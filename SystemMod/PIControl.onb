@@ -75,7 +75,7 @@ end Tank;</Input>
   output Real pLim;
  algorithm
   pLim := if p>pMax then pMax
-          else if p&lt;pMin then pMin 
+          else if p&lt;pMin then pMin
           else p;
 end limitValue;</Input>
       <Output>Ok</Output>
@@ -124,7 +124,7 @@ end LiquidFlow;</Input>
       <Input>model LiquidSource
   LiquidFlow qOut;
   parameter Real flowLevel = 0.02;
-equation    
+equation
   qOut.lflow = if time > 150 then 3*flowLevel else flowLevel;
 end LiquidSource;</Input>
       <Output>Ok</Output>
@@ -167,7 +167,7 @@ end PIcontinuousController;</Input>
   Real outCtr              "Output control signal";
 equation
   error = ref - cIn.val;
-  cOut.act = outCtr;  
+  cOut.act = outCtr;
 end BaseController;</Input>
       <Output>Ok</Output>
      </InputCell>

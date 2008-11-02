@@ -66,7 +66,7 @@ end ConnectedPins;</Input>
      <Input>class ConnectedFlanges
   Modelica.Mechanics.Translational.Interfaces.Flange_a flange1,flange2;
 equation
-  connect (flange1, flange2); 
+  connect (flange1, flange2);
 end ConnectedFlanges;</Input>
      <Output>Ok</Output>
     </InputCell>

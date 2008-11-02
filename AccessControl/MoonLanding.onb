@@ -69,7 +69,7 @@ end Rocket;  </Input>
      <Input>class MoonLanding
   parameter Real force1 = 36350; // These variables are by default public
   parameter Real force2 = 1308;
-protected                      // These variables are protected 
+protected                      // These variables are protected
   parameter Real thrustEndTime = 210;
   parameter Real thrustDecreaseTime = 43.2;
 public                        // These variables are public

@@ -25,9 +25,9 @@ equation
   elseif cardinality(p) == 0 then
     p.i = 0;
   elseif cardinality(n) == 0 then
-    n.i = 0; 
+    n.i = 0;
   end if;
-  
+
   // Resistor equation
   v = R * i;
 end CardinalityResistor;</Input>
@@ -58,7 +58,7 @@ end circuit;</Input>
      <Output>record
     resultFile = "circuit_res.plt"
 end record
-OMC-ERROR: 
+OMC-ERROR:
 "Variable V not found in scope Modelica.Electrical.Analog.Interfaces.VoltageSource
 Illegal to instantiate partial class SignalSource
 "</Output>

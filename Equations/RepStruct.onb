@@ -18,7 +18,7 @@
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">FiveEquations&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
     <InputCell style="Input" closed="false" >
-     <Input>class FiveEquations 
+     <Input>class FiveEquations
   Real[5] x;
 equation
   for i in 1:5 loop
@@ -59,8 +59,8 @@ equation
   x[1] = 2;
   x[2] = 3;
   x[3] = 4;
-  x[4] = 5; 
-  x[5] = 6;       
+  x[4] = 5;
+  x[5] = 6;
 end FiveEquations;      </Input>
      <Output>Ok</Output>
     </InputCell>
@@ -91,10 +91,10 @@ end FiveEquations;      </Input>
      <Input>class HideVariable
   constant Integer k = 4;
   Real     x[k + 1];
-equation 
+equation
   for k in 1:k+1 loop  // The iteration variable k gets values 1, 2, 3, 4, 5
     x[k] = k;          // Uses of the iteration variable k
-  end for;    
+  end for;
 end HideVariable;</Input>
      <Output>Ok</Output>
     </InputCell>

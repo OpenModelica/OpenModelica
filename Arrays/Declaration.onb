@@ -56,11 +56,11 @@ end record</Output>
     <InputCell style="Input" closed="false" >
      <Input>class ArrayDim2
   parameter Integer n = 1, m = 4, k = 5;
-  Real      positionvector[3]   = {1, 2, 3};          
-  Real      identitymatrix[3,3] = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}};    
-  Integer    arr3d[n,m,k] = fill(1,n,m,k);                          
-  Boolean    truthvalues[2]     = {false, true};              
-  Voltage    voltvector[10] = fill(10, 10);                      
+  Real      positionvector[3]   = {1, 2, 3};
+  Real      identitymatrix[3,3] = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
+  Integer    arr3d[n,m,k] = fill(1,n,m,k);
+  Boolean    truthvalues[2]     = {false, true};
+  Voltage    voltvector[10] = fill(10, 10);
 end ArrayDim2;</Input>
      <Output>Ok</Output>
     </InputCell>

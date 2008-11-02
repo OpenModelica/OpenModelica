@@ -82,7 +82,7 @@ end Pin;  </Input>
   input Real x;
   input Real y(start=0);
   output Real result;
-equation 
+equation
   result = x*y;
 end Multiply;  </Input>
      <Output></Output>
@@ -178,7 +178,7 @@ end MultCall2;  </Input>
       <Output>record
     resultFile = "Simulation failed.
 Class multiply (its type)  not found in scope MultCall2.
-No matching function found for multiply, candidates are 
+No matching function found for multiply, candidates are
 Class multiply not found in scope MultCall2.
 Error occured while flattening model MultCall2
 "
@@ -190,9 +190,9 @@ end record</Output>
      <InputCell style="Input" closed="false" >
       <Input>multiply(x=5.0)  //?? Calling functions interactively with named arguments not yet implemented</Input>
       <Output>
-OMC-ERROR: 
+OMC-ERROR:
 "Class multiply (its type)  not found in scope &lt;global scope>.
-No matching function found for multiply, candidates are 
+No matching function found for multiply, candidates are
 Class multiply not found in scope &lt;global scope>.
 "</Output>
      </InputCell>
@@ -217,11 +217,11 @@ Class multiply not found in scope &lt;global scope>.
       <Input>package SmallPack
 
   constant Real mypi = 3.14159;
-  
+
   connector Pin
     Voltage v;
     flow Current i;
-  end Pin;  
+  end Pin;
 
   function multiply
     input Real x;
@@ -229,8 +229,8 @@ Class multiply not found in scope &lt;global scope>.
     output Real result;
   algorithm
     result := x*y;
-  end multiply;    
-  
+  end multiply;
+
 end SmallPack;
 </Input>
       <Output></Output>

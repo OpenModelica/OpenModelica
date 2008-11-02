@@ -14,7 +14,7 @@
   Real a = 1;
   parameter Real event_time = time.start + 20;
 algorithm
-  when time >= event_time then 
+  when time >= event_time then
     a := 2;
   end when;
 end TimeEventTest;</Input>

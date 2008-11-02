@@ -17,12 +17,12 @@
   class Lpin              // Local class
     Real p;
   end Lpin;
-  
+
   class Voltage = Real(unit="kV");    // Local class
-  
+
   Voltage v1 = 5, v2 = 1;
   Lpin pn(p = 2);
-end C1;  
+end C1;
 </Input>
      <Output>Ok</Output>
     </InputCell>
@@ -53,22 +53,22 @@ end record</Output>
     <InputCell style="Input" closed="false" >
      <Input>class Main
   constant Real x = 3.14;   // constant variable (class field) x
-  
+
   class LocalClass1         // Local class
     Integer x;
   equation
     x = 2;                  // Refers to local x inside LocalClass1
   end LocalClass1;
-  
+
   class LocalClass2         // Local class
     Real y;
   equation
     x = y;                  // Refers to x in Main
   end LocalClass2;
-  
+
   LocalClass1 L1x;          // field L1x, instance of LocalClass1
   LocalClass2 L2x;          // field L2x, instance of LocalClass2
- 
+
 end Main;</Input>
      <Output>Ok</Output>
     </InputCell>
@@ -118,9 +118,9 @@ end Main_LocalClass2;</Input>
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
     <InputCell style="Input" closed="false" >
-     <Input>class Main2  // Hypothetical Main referrring to 
+     <Input>class Main2  // Hypothetical Main referrring to
              // outside LocalClass1 and LocalClass2
-  Real x;                // class field x  
+  Real x;                // class field x
   Main_LocalClass1 L1x;  // field L1x, instance of Main_LocalClass1
   Main_LocalClass2 L2x;  // field L2x, instance of Main_LocalClass2
 equation

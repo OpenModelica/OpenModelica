@@ -17,8 +17,8 @@
     </TextCell>
     <InputCell style="Input" closed="false" >
      <Input>partial function OneArgBaseFunction
-  input  Real x;                
-  output Real result;    
+  input  Real x;
+  output Real result;
 end OneArgBaseFunction;  </Input>
      <Output>Ok</Output>
     </InputCell>
@@ -32,9 +32,9 @@ end OneArgBaseFunction;  </Input>
     </TextCell>
     <InputCell style="Input" closed="false" >
      <Input>function myTan
-  extends OneArgBaseFunction;          
-algorithm                    
-  result := sin(x)/cos(x);            
+  extends OneArgBaseFunction;
+algorithm
+  result := sin(x)/cos(x);
 end myTan;  </Input>
      <Output>Ok</Output>
     </InputCell>
@@ -44,9 +44,9 @@ end myTan;  </Input>
     <InputCell style="Input" closed="false" >
      <Input>myTan(1.0)  //??Error - not yet implemented</Input>
      <Output>
-OMC-ERROR: 
+OMC-ERROR:
 "Base class OneArgBaseFunction not found in scope myTan
-No matching function found for myTan, candidates are 
+No matching function found for myTan, candidates are
 "</Output>
     </InputCell>
     <TextCell style="Text" >
@@ -66,9 +66,9 @@ end addTen;  </Input>
     <InputCell style="Input" closed="false" >
      <Input> addTen(5.0) //??Error - not yet implemented</Input>
      <Output>
-OMC-ERROR: 
+OMC-ERROR:
 "Base class OneArgBaseFunction not found in scope addTen
-No matching function found for addTen, candidates are 
+No matching function found for addTen, candidates are
 "</Output>
     </InputCell>
    </GroupCell>
@@ -80,7 +80,7 @@ No matching function found for addTen, candidates are
      <Input>class myTanCall
   Real t;
 equation
-  t = myTan(1.0);  
+  t = myTan(1.0);
 end myTanCall;</Input>
      <Output></Output>
     </InputCell>
@@ -109,7 +109,7 @@ end myTanCall;</Input>
      <Input>class addTenCall
    Real sum;
 equation
-  sum = addTen(5.0);  
+  sum = addTen(5.0);
 end addTenCall;</Input>
      <Output></Output>
     </InputCell>

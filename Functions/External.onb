@@ -21,7 +21,7 @@
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">In the function &lt;span style=" font-family:Courier New;">log&lt;/span>, the default mapping rules apply.&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
     <InputCell style="Input" closed="true" >
-     <Input>function log 
+     <Input>function log
   input Real x;
   output Real y;
 external;
@@ -40,11 +40,11 @@ end log;</Input>
      <Input>function leastSquares    "Solves a linear least squares problem"
   input Real A[:,:];
   input Real B[:,:];
-  
-  output Real Ares[size(A,1),size(A,2)] := A; 
+
+  output Real Ares[size(A,1),size(A,2)] := A;
                       // Factorization is returned in Ares for later use
   output Real x[size(A,2), size(B,2)];
-  
+
 protected
   integer lwork =   min(size(A,1), size(A,2)) +
                   max(max(size(A,1), size(A,2)), size(B,2))*32;
@@ -52,7 +52,7 @@ protected
   Integer info;
   String transposed = "NNNN"; // Workaround for passing character data to Fortran routine
   external "FORTRAN 77"
-    dgels(  transposed, 100, size(A,1), size(A,2), size(B,2), 
+    dgels(  transposed, 100, size(A,1), size(A,2), size(B,2),
         Ares, size(A,1), B, size(B,1), work, lwork, info
         );
 end leastSquares;</Input>
@@ -67,19 +67,19 @@ end leastSquares;</Input>
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">The external function interface supports a number of advanced features such as in-out parameters and declaration of temporary work variables, which are illustrated by the following rather complicated example.&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
     <InputCell style="Input" closed="true" >
-     <Input>function BilinearSampling            
+     <Input>function BilinearSampling
 "Function for Discrete-time &lt;--> continuous-time systems conversion by a bilinear transformation"
   input  Real alpha := 1, beta := 1;
   input  Real A[:, size(A, 1)], B[size(A, 1), :], C[:, size(A, 1)],
               D[size(c, 1), size(B, 2)];
   input  Boolean inContinuous := true;
-  output Real   Ares[size(A, 1), size(A, 2)] := A,  // Ares is in-out to the Fortran function 
+  output Real   Ares[size(A, 1), size(A, 2)] := A,  // Ares is in-out to the Fortran function
           Bres[size(B, 1), size(B, 2)] := B,
           Cres[size(C, 1), size(C, 2)] := C,
           Dres[size(D, 1), size(D, 2)] := D;
   output Integer info;
 protected
-  Integer iwork[size(A, 1)];    // Work arrays  
+  Integer iwork[size(A, 1)];    // Work arrays
   Real    dwork[size(A, 1)];
   String  c2dstring := if isContinuous then "C" else "D";
 external "FORTRAN 77" abo4md(cd2string, size(a,1), size(B,2), size(C,1),
@@ -104,7 +104,7 @@ end BilinearSampling;</Input>
       Dres [size(D, 1), size(D, 2)];
   Integer info;
 equation
-  (Ares, Bres, Cres, Dres, info) = BilinearSampling(alpha, beta, A, B, C, D, true);          
+  (Ares, Bres, Cres, Dres, info) = BilinearSampling(alpha, beta, A, B, C, D, true);
 end BilinearSamplingTest;</Input>
      <Output></Output>
     </InputCell>

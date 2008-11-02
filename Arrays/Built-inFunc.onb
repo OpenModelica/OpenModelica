@@ -18,7 +18,7 @@
   parameter Real dim = ndims(x);           // Returns 3
   parameter Real dimsize = size(x, 1);     // Returns 4
   parameter Real specsize[3] = size(x);    // Returns the vector {4, 1, 6}
-equation  
+equation
  // size(2*x + x) = size(x);                // This equation holds
 end DimSize;  </Input>
      <Output>Ok</Output>
@@ -54,13 +54,13 @@ end record</Output>
     </TextCell>
     <InputCell style="Input" closed="false" >
      <Input>class DimConvert
-  Real[3]      v1 = {1.0, 2.0, 3.0};  
+  Real[3]      v1 = {1.0, 2.0, 3.0};
   Real[3,1]    m1 = matrix(v1);     // m1 contains {{1.0}, {2.0}, {3.0}}
   Real[3]      v2 = vector(m1);     // v2 contains {1.0, 2.0, 3.0}
-  
+
   Real[1,1,1]  m2 = {{{4}}};
   Real         s1 = scalar(m2);     // s1 contains 4.0
-  Real[2,2,1]  m3 = {{{1.0}, {2.0}}, {{3.0}, {4.0}}};  
+  Real[2,2,1]  m3 = {{{1.0}, {2.0}}, {{3.0}, {4.0}}};
   Real[2,2]    m4 = matrix(m3);     // m4 contains {{1.0, 2.0}, {3.0, 4.0}}
 end DimConvert;</Input>
      <Output>Ok</Output>
@@ -176,11 +176,11 @@ end record</Output>
     </TextCell>
     <InputCell style="Input" closed="false" >
      <Input>class AlgebraFunc
-  Real transp1[2,2]  = transpose([1, 2; 3, 4]);   // Gives [1, 2; 3, 4] of type Integer[2, 2]  
-  Real transp2[2,2,1] = transpose({{{1},{2}},{{3},{4}}}); 
+  Real transp1[2,2]  = transpose([1, 2; 3, 4]);   // Gives [1, 2; 3, 4] of type Integer[2, 2]
+  Real transp2[2,2,1] = transpose({{{1},{2}},{{3},{4}}});
                                // Gives {{{1},{2}},{{3},{4}}} of type Integer[2, 2, 1]
-  Real out[2, 2]   = outerProduct({2,1}, {3,2});   // Gives {{6, 4}, {3, 2}} 
-  Real symm[2, 2]  = symmetric({{1, 2}, {3, 1}});  // Gives {{1, 2}, {2, 1}} 
+  Real out[2, 2]   = outerProduct({2,1}, {3,2});   // Gives {{6, 4}, {3, 2}}
+  Real symm[2, 2]  = symmetric({{1, 2}, {3, 1}});  // Gives {{1, 2}, {2, 1}}
   Real c[3]       = cross({1, 0, 0}, {0, 1, 0});       // Gives {0, 0, 1}
   Real s[3, 3]    = skew({1, 2, 3});           // Gives {{0, -3, 2}, {3, 0, -1}, {-2, 1, 0}};
 end AlgebraFunc;</Input>

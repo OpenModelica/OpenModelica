@@ -25,7 +25,7 @@
     <InputCell style="Input" closed="false" >
      <Input>record ColorData                // Superclass of Color
   parameter Real red;
-  parameter Real blue;        
+  parameter Real blue;
   Real green;
 end ColorData;</Input>
      <Output>Ok</Output>
@@ -35,7 +35,7 @@ end ColorData;</Input>
     </TextCell>
     <InputCell style="Input" closed="false" >
      <Input>class Color                    // Subclass of ColorData
-  extends ColorData;           // Inherits from ColorData 
+  extends ColorData;           // Inherits from ColorData
 equation
   red + blue + green = 1;
 end Color;</Input>
@@ -79,7 +79,7 @@ equation
   red + blue + green = 1.0;
 end Color;
 "
-OMC-ERROR: 
+OMC-ERROR:
 "Warning, parameter red has no value
 Warning, parameter blue has no value
 "</Output>

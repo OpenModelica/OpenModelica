@@ -63,10 +63,10 @@ end WhenPriorityX;
       <Input>class MultipleWhen
   discrete Real x;
 algorithm
-  when time >= 2 then   
-    x := pre(x) + 0.75;    // multiple assignments within the same 
+  when time >= 2 then
+    x := pre(x) + 0.75;    // multiple assignments within the same
     x := x + 0.75;         // when-statement or algorithm section is allowed
-  elsewhen time >= 1 then  
+  elsewhen time >= 1 then
     x := pre(x) + 1;
   end when;
 end MultipleWhen;

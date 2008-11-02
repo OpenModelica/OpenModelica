@@ -18,7 +18,7 @@
     </TextCell>
     <InputCell style="Input" closed="false" >
      <Input>partial model Compliant      "Compliant coupling of 2 translational 1D flanges"
-  Modelica.Mechanics.Translational.Interfaces.Flange_a flange_a      "Driving flange";    
+  Modelica.Mechanics.Translational.Interfaces.Flange_a flange_a      "Driving flange";
   Modelica.Mechanics.Translational.Interfaces.Flange_b flange_b      "Driven flange";
   Modelica.SIunits.Distance s_rel   "Relative distance between flange_a and flange_b";
   flow Modelica.SIunits.Force f     "Force between flanges, positive in direction of N";
@@ -54,7 +54,7 @@ end Spring;    </Input>
   Real        a           "Absolute acceleration of component";
 equation
   v = der(s);
-  a = der(v);  
+  a = der(v);
   flange_b.f = m*a - m*g;
 end Mass;  </Input>
      <Output>Ok</Output>
@@ -72,7 +72,7 @@ end Mass;  </Input>
   Modelica.Mechanics.Translational.Interfaces.Flange_b flange_b;
 equation
   flange_a.s = s - L/2;
-  flange_b.s = s + L/2;                  
+  flange_b.s = s + L/2;
 end Rigid;    // From Modelica.Mechanics.Translational.Interfaces</Input>
      <Output>Ok</Output>
     </InputCell>
@@ -81,7 +81,7 @@ end Rigid;    // From Modelica.Mechanics.Translational.Interfaces</Input>
     </TextCell>
     <InputCell style="Input" closed="false" >
      <Input>model Fixed   "Fixed flange at a housing"
-  parameter Real s0 = 0    "Fixed offset position of housing"; 
+  parameter Real s0 = 0    "Fixed offset position of housing";
   Modelica.Mechanics.Translational.Interfaces.Flange_b flange_b;
 equation
   flange_b.s = s0;

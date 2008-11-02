@@ -60,35 +60,35 @@ end MO;                  // From Modelica.Blocks.Interfaces</Input>
     <InputCell style="Input" closed="false" >
      <Input>block Step                   "Generate step signals of type Real"
   parameter Real   height[:] = {1}      "Heights of steps";
-  parameter Real   offset[:] = {0}      "Offset of output signals"; 
+  parameter Real   offset[:] = {0}      "Offset of output signals";
   parameter Time startTime[:] = {0}     "Output = offset for time &lt; startTime";
-  
-  extends MO(final nout =   max([size(height, 1); 
-                size(offset, 1); 
+
+  extends MO(final nout =   max([size(height, 1);
+                size(offset, 1);
                 size(startTime, 1)]) );
 protected
-  parameter Real p_height[nout] = 
-          (if size(height, 1) == 1 then 
-            ones(nout)*height[1] 
-          else 
+  parameter Real p_height[nout] =
+          (if size(height, 1) == 1 then
+            ones(nout)*height[1]
+          else
             height);
-  parameter Real p_offset[nout] = 
-          (if size(offset, 1) == 1 then 
+  parameter Real p_offset[nout] =
+          (if size(offset, 1) == 1 then
             ones(nout)*offset[1]
-          else 
-            offset);            
-  parameter Time p_startTime[nout] = 
-          (if size(startTime, 1) == 1 then 
+          else
+            offset);
+  parameter Time p_startTime[nout] =
+          (if size(startTime, 1) == 1 then
             ones(nout)*startTime[1]
-          else 
+          else
             startTime);
-            
+
 equation
   for i in 1:nout loop                  // A regular equation structure
-    outPort.signal[i] = p_offset[i] + 
+    outPort.signal[i] = p_offset[i] +
               (if time &lt; p_startTime[i] then 0 else p_height[i]);
-  end for;    
-end Step;                        // From Modelica.Blocks.Sources  
+  end for;
+end Step;                        // From Modelica.Blocks.Sources
 </Input>
      <Output>Ok</Output>
     </InputCell>

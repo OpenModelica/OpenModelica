@@ -29,7 +29,7 @@ end Concat;</Input>
     resultFile = "Simulation failed.
 Different dimension sizes in arguments to cat(1, {1,2}, {10,12,13})
 Class cat (its type)  not found in scope Concat.
-No matching function found for cat, candidates are 
+No matching function found for cat, candidates are
 Class cat not found in scope Concat.
 Error occured while flattening model Concat
 "
@@ -67,7 +67,7 @@ end Concat2;</Input>
     resultFile = "Simulation failed.
 Different dimension sizes in arguments to cat(2, [1,2;3,4], [10;11])
 Class cat (its type)  not found in scope Concat2.
-No matching function found for cat, candidates are 
+No matching function found for cat, candidates are
 Class cat not found in scope Concat2.
 Error occured while flattening model Concat2
 "
@@ -140,7 +140,7 @@ end Concat4;</Input>
     resultFile = "Simulation failed.
 Different dimension sizes in arguments to cat(3, A, B, C)
 Class cat (its type)  not found in scope Concat4.
-No matching function found for cat, candidates are 
+No matching function found for cat, candidates are
 Class cat not found in scope Concat4.
 Error occured while flattening model Concat4
 "

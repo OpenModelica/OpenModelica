@@ -14,7 +14,7 @@
     </TextCell>
     <InputCell style="Input" closed="true" >
      <Input>class ArrayIndexing
-  
+
 end ArrayIndexing;</Input>
      <Output></Output>
     </InputCell>
@@ -38,7 +38,7 @@ algorithm
   array1 := fill(1, 2, 3);
   array2 := fill(1, 2, 3);
   array1[1,1] := 10;
-  array1[2,1] := 23;  
+  array1[2,1] := 23;
   array2[2,1] := 100;
   array2[2,2] := 100;
   array2[2,3] := 100;
@@ -89,7 +89,7 @@ end record</Output>
     </TextCell>
     <InputCell style="Input" closed="true" >
      <Input>class ArrayIndexing2
-  
+
 end ArrayIndexing2;</Input>
      <Output></Output>
     </InputCell>
@@ -101,10 +101,10 @@ end ArrayIndexing2;</Input>
       <Input>class ArrayIndexing2
   Real array1[2, 2] = fill(9, 2, 2);
   Real array2[2, 4] = fill(7, 2, 4);
-  
+
   Real v1[2] = {2, 20};
   Real v2[4] = {6, 7, 8, 9};
-  
+
   Real array1[2] = v1;
 end ArrayIndexing2;</Input>
       <Output>Ok</Output>
@@ -162,12 +162,12 @@ end record</Output>
   Real v1[3] = V[:, 1];
   Real v2[3] = V[3, :];
   Real v3[1] = V[3, {2}];
-  Real v4[3] = W[:, 2];  
-  
+  Real v4[3] = W[:, 2];
+
   Real v5[2] = Y[{1, 2}];
   Real v6[2] = W[3, {1, 2}];
   Real v7[2] = V[3, 1:2];
- 
+
   Real v8[2] = Y[3:4];
   Real v9[3] = Y[1:2:5];
 end Slice;</Input>

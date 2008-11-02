@@ -38,9 +38,9 @@ end RotFlange_a;</Input>
   output SIunits.Position     r0[3]    "Frame origin in inertial system";
   Real                S[3, 3]    "Transformation matrix";
   SIunits.Velocity         v[3]    "Absolute velocity of frame origin";
-  SIunits.AngularVelocity     w[3]    "Absolute angular velocity of frame a";  
+  SIunits.AngularVelocity     w[3]    "Absolute angular velocity of frame a";
   SIunits.Acceleration        a[3]    "Absolute acceleration of frame origin";
-  SIunits.AngularAcceleration   z[3]    "Absolute angular acceleration";  
+  SIunits.AngularAcceleration   z[3]    "Absolute angular acceleration";
   flow SIunits.Force       f[3];
   flow SIunits.Torque       t[3];
 end Frame_b;                  // From ModelicaAdditions.MultiBody.Intefaces</Input>

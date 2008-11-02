@@ -43,7 +43,7 @@
        <Input>class MoreRed
   parameter Real v1[3];
   parameter Real v2[:];
-  Integer x = 2; 
+  Integer x = 2;
 end MoreRed;</Input>
        <Output>Ok</Output>
       </InputCell>
@@ -56,8 +56,8 @@ end MoreRed;</Input>
        <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">Notice that you don't need the keyword &lt;span style=" font-style:italic;">replaceable&lt;/span> for v1 and v2.&lt;/p>&lt;/body>&lt;/html></Text>
       </TextCell>
       <InputCell style="Input" closed="false" >
-       <Input>class MoreRed2 = MoreRed(redeclare parameter Integer x, 
-             redeclare parameter Real v1[5], 
+       <Input>class MoreRed2 = MoreRed(redeclare parameter Integer x,
+             redeclare parameter Real v1[5],
              redeclare parameter Real v2[12]);</Input>
        <Output>Ok</Output>
       </InputCell>

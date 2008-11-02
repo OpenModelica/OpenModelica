@@ -9,8 +9,8 @@
     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">A number of mathematical functions like &lt;span style=" font-family:Courier New;">abs, sqrt, mod&lt;/span>, etc. are predefined in the Modelica language whereas others such as &lt;span style=" font-family:Courier New;">sin, cos, exp&lt;/span>, etc. are available both in the language and in the Modelica standard math library &lt;span style=" font-family:Courier New;">Modelica.Math&lt;/span>. The arithmetic operators +, -,*, / can be regarded as functions that are used through a convenient operator syntax. The body of a Modelica function is an algorithm section that contains procedural algorithmic code to be executed when the function is called. Formal parameters are specified using the &lt;span style=" font-family:Courier New;">input&lt;/span> keyword, whereas results are denoted using the &lt;span style=" font-family:Courier New;">output&lt;/span> keyword. This makes the syntax of function definitions quite close to Modelica block class definitions. &lt;br />&lt;br />Modelica functions are mathematical functions (without global side-effects and with no memory). A Modelica function always returns the same results given the same arguments. Below we show the algorithmic code for polynomial evaluation in a function named &lt;span style=" font-family:Courier New;">polynomialEvaluator&lt;/span>.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
    </TextCell>
    <InputCell style="Input" closed="false" >
-    <Input>function polynomialEvaluator 
-  input Real a[:];               // Array size defined at function call time    
+    <Input>function polynomialEvaluator
+  input Real a[:];               // Array size defined at function call time
   input Real x = 1.0;            // Default value 1.0 for x
   output Real y;
 protected
@@ -21,7 +21,7 @@ algorithm
   for i in 1:size(a, 1) loop
     y := y + a[i]*xpower;
     xpower := xpower*x;
-  end for;  
+  end for;
 end polynomialEvaluator;</Input>
     <Output>Ok</Output>
    </InputCell>

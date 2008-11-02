@@ -30,7 +30,7 @@
   Joints.Revolute      revolute3;
   Parts.CylinderBody   cylinderBody4(r = {0, 1, 0});
   CutJoints.Revolute2Dloop revolute2Dloop1;
-equation 
+equation
   connect(InertialSystem1.frame_b, cylinderBody1.frame_a);
   connect(cylinderBody1.frame_b,   revolute1.frame_a);
   connect(revolute1.frame_b,       cylinderBody2.frame_a);

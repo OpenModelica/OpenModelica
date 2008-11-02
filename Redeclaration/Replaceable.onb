@@ -19,7 +19,7 @@
     </TextCell>
     <InputCell style="Input" closed="false" >
      <Input>class MicroCircuit
-  replaceable Resistor comp1;  
+  replaceable Resistor comp1;
 end MicroCircuit;</Input>
      <Output>Ok</Output>
     </InputCell>
@@ -122,7 +122,7 @@ end GenMicroCircuit2;  </Input>
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />The &lt;span style=" font-family:Courier New;">CapacitorMicroCircuit&lt;/span> has no replaceable &lt;span style=" font-family:Courier New;">CompType&lt;/span> declaration left since the original replaceable declaration was replaced. Therefore we need to perform a redeclaration with &lt;span style=" font-family:Courier New;">redeclare replaceable&lt;/span> to be able to perform further modifications. &lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
     <InputCell style="Input" closed="false" >
-     <Input>class GenCapacitorMicroCircuit = 
+     <Input>class GenCapacitorMicroCircuit =
           GenMicroCircuit2(redeclare replaceable type CompType = TempCapacitor);</Input>
      <Output>Ok</Output>
     </InputCell>
@@ -172,7 +172,7 @@ end MicroCircuit4;</Input>
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
     <InputCell style="Input" closed="false" >
-     <Input>class MicroCircuit5expanded  
+     <Input>class MicroCircuit5expanded
   replaceable TempResistor2 R1(R = 30) extends Restistor2(R=30);
 end MicroCircuit5expanded;</Input>
      <Output>Ok</Output>

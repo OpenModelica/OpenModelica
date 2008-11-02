@@ -92,7 +92,7 @@ end Mult2;</Input>
   Real M2[3, 2] = [5, 6; 3, 2; 1, 7];
   Real prod[2, 2];
 equation
-  prod = M1*M2;  
+  prod = M1*M2;
 end MatrixMultiplication;</Input>
       <Output>Ok</Output>
      </InputCell>

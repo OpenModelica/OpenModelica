@@ -29,9 +29,9 @@ end Concatenate;</Input>
   Real[1, 2]     A = [50, 32];
   Real[2, 1]     B = [3; 7];
   Real[5]       a = {4, 9, 7, 5, 2};
-  
+
   Real[1, 3] V1 = [A, 60];
-  Real[1, 4] V2 = [V1, 50]; 
+  Real[1, 4] V2 = [V1, 50];
   Real[1, 3] V3 = cat(2, A, {{20}});
   Real[3, 1] V4 = [B; 60];
   Real[3, 1] V5 = cat(1, B, {{20}});

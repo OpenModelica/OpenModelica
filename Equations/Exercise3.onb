@@ -56,10 +56,10 @@
   extends Modelica.Electrical.Analog.Interfaces.TwoPin;
   Real s;
   Boolean off;
-equation 
+equation
   off = s &lt; 0;
   if off then                   // conditional if-equation
-    v = s; 
+    v = s;
   else
     v = 0;
     end if;

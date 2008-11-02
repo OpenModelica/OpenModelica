@@ -15,10 +15,10 @@
     extends Electrical.Interfaces.ResistorModel;
       // declarations and equations
   end MyResistorModel;
-  
+
   encapsulated package MyComponents =
       Electrical.Components(redeclare model ResistorModel = MyResistorModel);
-  
+
   MyComponents.Transformer tr1;
   MyComponents.Transducer td2;
 

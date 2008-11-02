@@ -40,10 +40,10 @@
   constant Real e = 0.000001;
   Real sum(start = 0);
   Real next(start = 1.0);
-  Integer k(start = 1);        
+  Integer k(start = 1);
   Integer posneg(start = 1); // if the sign in front of the term is + or -
 algorithm
-  while noEvent(abs(next)) >= e loop  
+  while noEvent(abs(next)) >= e loop
     sum := sum + next;     // Add the sum to the next term
     k := k + 1;            // calculate a new next
     posneg := - posneg;

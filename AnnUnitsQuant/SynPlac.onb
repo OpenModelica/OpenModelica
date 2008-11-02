@@ -62,11 +62,11 @@ end Pin;              //From Modelica.Electrical.Analog.Interfaces</Input>
 equation
   R*p.i = p.v - n.v;
   n.i = p.i;
-public 
+public
   annotation(Icon(
     Rectangle(extent = [-70, -30, 70, 30], style(fillPattern = 1))
     ));
-end Resistor2;        
+end Resistor2;
 </Input>
       <Output></Output>
      </InputCell>
@@ -74,7 +74,7 @@ end Resistor2;
       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />Class annotations for classes defined by short class definitions are placed at the end of the declaration. For example, the &lt;span style=" font-family:Courier New;">Icon&lt;/span> annotation is placed at the end of the &lt;span style=" font-family:Courier New;">Velocity&lt;/span> declaration below, after the optional string comment:&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
      </TextCell>
      <InputCell style="Input" closed="true" >
-      <Input>type Velocity = Real[3](unit="m/s") "a comment"  
+      <Input>type Velocity = Real[3](unit="m/s") "a comment"
   annotation(Icon(
     Rectangle(extent = [-70, -30, 70, 30], style(fillPattern = 1))));
 </Input>

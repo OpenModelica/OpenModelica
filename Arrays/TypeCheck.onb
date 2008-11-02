@@ -69,9 +69,9 @@ end ColorPixelInst;</Input>
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;span style=" font-family:Courier New;">Pin&lt;/span> is defined through the declaration of a connector. The type of &lt;span style=" font-family:Courier New;">v&lt;/span> and &lt;span style=" font-family:Courier New;">i&lt;/span> is &lt;span style=" font-family:Courier New;">Voltage&lt;/span> and the expanded type of &lt;span style=" font-family:Courier New;">v&lt;/span> and &lt;span style=" font-family:Courier New;">i&lt;/span> is &lt;span style=" font-family:Courier New;">Real&lt;/span>.&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
     <InputCell style="Input" closed="true" >
-     <Input>connector Pin 
-  Voltage v;              
-  flow Current i;    
+     <Input>connector Pin
+  Voltage v;
+  flow Current i;
 end Pin;</Input>
      <Output></Output>
     </InputCell>
@@ -90,7 +90,7 @@ end Pin;</Input>
     </TextCell>
     <InputCell style="Input" closed="true" >
      <Input>class MPInst
-  MultiPin[4] p;      
+  MultiPin[4] p;
 end MPInst;</Input>
      <Output></Output>
     </InputCell>
@@ -114,7 +114,7 @@ end MPInst;</Input>
   Point[10]     p1 = fill(8, 10, 3);
   Real[10, 3]     p2 = fill(16, 10, 3);
   Real r[3] = p1[2, :];              // Equivalent to r[3] = p1[2]
-//equation  
+//equation
   //p2[5, :] = p1[2, :] + p1[4, :];   // Equivalent to p2[5] = p1[2] + p2[4]
 end PointInst;  </Input>
      <Output>Ok</Output>
@@ -123,10 +123,10 @@ end PointInst;  </Input>
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
     <InputCell style="Input" closed="false" >
-     <Input>class PointSum  
+     <Input>class PointSum
   extends PointInst(p2[5, :] = p1[2, :] + p1[4, :]);
   Real r[3] = p1[2, :];          // Equivalent to r[3] = p1[2]
-//equation  
+//equation
   //p2[5] = p1[2] + p2[4];        // Equivalent to p2[5, :] = p1[2, :] + p2[4, :]
 end PointSum;</Input>
      <Output>Ok</Output>

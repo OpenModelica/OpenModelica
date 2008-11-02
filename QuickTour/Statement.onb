@@ -15,9 +15,9 @@
     <InputCell style="Input" closed="false" >
      <Input>class Summation
   Real sum(start = 0);
-  Integer n(start = size(a, 1));  
+  Integer n(start = size(a, 1));
   Real a[5] = {1, 3, 6, 9, 12};
-algorithm  
+algorithm
   while n > 0 loop
     if a[n] > 0 then
       sum := sum + a[n];
@@ -61,11 +61,11 @@ end Summation;</Input>
   Real xpowers[n];
   parameter Integer i=1;
   parameter Integer n = 5;
-equation  
+equation
   xpowers[1]=1;
   for i in 1:n-1 loop
     xpowers[i + 1] = xpowers[i]*x;
-  end for;  
+  end for;
 end Xpowers;  </Input>
      <Output>Ok</Output>
     </InputCell>

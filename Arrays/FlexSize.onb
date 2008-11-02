@@ -26,9 +26,9 @@ end Unspecified;
     </TextCell>
     <InputCell style="Input" closed="false" >
      <Input>class Specify
-  Unspecified unspec(y = fill(1, 3, 5), 
-                     y2 = fill(1, 5, 3), 
-                     M = fill(1, 2, 2)); 
+  Unspecified unspec(y = fill(1, 3, 5),
+                     y2 = fill(1, 5, 3),
+                     M = fill(1, 2, 2));
 end Specify;</Input>
      <Output>Ok</Output>
     </InputCell>
@@ -69,7 +69,7 @@ end UnspecArr;</Input>
     </TextCell>
     <InputCell style="Input" closed="false" >
      <Input>class UnspecArr2
-  Real[:]      v1; 
+  Real[:]      v1;
   Real[:]      v2;
 end UnspecArr2;</Input>
      <Output>Ok</Output>
@@ -79,8 +79,8 @@ end UnspecArr2;</Input>
     </TextCell>
     <InputCell style="Input" closed="false" >
      <Input>class Specify2
-  UnspecArr unspecarr(v1 = {3, 7, 12}, 
-                v2 = {2, 92}); 
+  UnspecArr unspecarr(v1 = {3, 7, 12},
+                v2 = {2, 92});
 end Specify;</Input>
      <Output>Ok</Output>
     </InputCell>

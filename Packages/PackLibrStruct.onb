@@ -26,7 +26,7 @@
   encapsulated package Mechanics    // Modelica.Mechanics
 
     encapsulated package Rotational    // Modelica.Mechanics.Rotational
-      
+
       model Inertia            // Modelica.Mechanics.Rotational.Inertia
       end Inertia;
 
@@ -62,8 +62,8 @@ end InertiaUser;</Input>
       <Input>encapsulated model TorqueUserExample1
   import Modelica.Mechanics.Rotational;  // Import package Rotational
   Rotational.Torque t2;                  // Use Torque OK!
-  
-  Modelica.Mechanics.Rotational.Inertia w2;        
+
+  Modelica.Mechanics.Rotational.Inertia w2;
   // Error! No direct reference to outside an encapsulated class
   // ...
 end TorqueUserExample1;</Input>

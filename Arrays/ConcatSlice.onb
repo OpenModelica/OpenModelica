@@ -20,20 +20,20 @@
   Real[1, 3]    PA = [1, 2, 3];        // A row matrix value
   Real[3, 1]    PB = [1; 2; 3];        // A column matrix value
   Real[3]       q  = {1, 2, 3};        // A vector value
-  
+
   Real[1, 4]    XA1, XA2, XA3, XA4;    // Row matrix variables
   Real[4, 1]    XB1, XB2;              // Column matrix variables
   Real[4]       y;                     // Vector variable
-  
+
 equation
   XA1 = [PA, 4];              // Append OK, since 4 is promoted to {{4}}
   XA2 = cat(2, PA, {{4}});    // Append OK, same as above but not promoted
 
   XB1 = [PB; 4];                // Append OK, result is {{1}, {2}, {3}, {4}}
   XB2 = cat(1, PB, {{2}});      // Append OK, same result
-  
+
   y   = cat(1, q, {4});        // Vector append OK, result is {1, 2, 3, 4}
-  
+
   XA3 = [-1, zeros(1, 2), 1];    // Append OK, result is {{-1, 0, 0, 1}}
   XA4 = cat(2, {{-1}}, zeros(1, 2), {{1}} );  // Append OK, result is {{-1, 0, 0, 1}}
 
@@ -50,7 +50,7 @@ end AppendElement;</Input>
     resultFile = "Simulation failed.
 Different dimension sizes in arguments to cat(2, PA, {{4}})
 Class cat (its type)  not found in scope AppendElement.
-No matching function found for cat, candidates are 
+No matching function found for cat, candidates are
 Class cat not found in scope AppendElement.
 Error occured while flattening model AppendElement
 "
@@ -80,11 +80,11 @@ end record</Output>
      </TextCell>
      <InputCell style="Input" closed="false" >
       <Input>class BlockMatrix
-  Real[3,3]  P = [1, 2, 3; 
-                  4, 5, 6; 
+  Real[3,3]  P = [1, 2, 3;
+                  4, 5, 6;
                   7, 8, 9];     // A 3x3 matrix value
   Real[6, 6]  Q;      // Q consists of four 3x3 matrix blocks to be defined
-                      // by P apart from sign                    
+                      // by P apart from sign
 equation
   Q[1:3, 1:3] = P;                // Upper left block
   Q[1:3, 4:6] = [Q[1:3, 1:2], -Q[1:3, {3}]];  // Upper right block
@@ -100,10 +100,10 @@ end BlockMatrix;</Input>
      </TextCell>
      <InputCell style="Input" closed="false" >
       <Input>class BlockMatrix2
-  Real[3, 3]  P = [1, 2, 3; 
-                   4, 5, 6; 
-                   7, 8, 9];        
-  Real[6, 6]  Q;                
+  Real[3, 3]  P = [1, 2, 3;
+                   4, 5, 6;
+                   7, 8, 9];
+  Real[6, 6]  Q;
 equation
   Q[1:3, 1:3] = P;                // Upper left block
   Q[1:3, 4:6] = [Q[1:3, 1:2], -Q[1:3, 3:3]];  // Upper right block
@@ -119,10 +119,10 @@ end BlockMatrix2;</Input>
      </TextCell>
      <InputCell style="Input" closed="false" >
       <Input>class BlockMatrix3
-  Real[3, 3]  P = [1, 2, 3; 
-                   4, 5, 6; 
-                   7, 8, 9];        
-  Real[6, 6]  Q;                  
+  Real[3, 3]  P = [1, 2, 3;
+                   4, 5, 6;
+                   7, 8, 9];
+  Real[6, 6]  Q;
 equation
   Q[1:3, 1:3] = P;                // OK!
   Q[1:3, 4:6] = [Q[1:3, 1:2], -Q[1:3, 3]];    // OK, correct promotion
@@ -144,19 +144,19 @@ end BlockMatrix3;</Input>
      <Input>class CyclicPerm
   Real[1, 3] WO = [1, 2, 3];          // Row matrix
   Real[2, 3] XO = [1, 2, 3; 4, 5, 6];      // Matrix with two rows
-  
+
   Real[1, 3] W;                  // Permuted row matrix
   Real[2, 3] X;                  // Permuted matrix with two rows
-  
+
   Integer[3] p = {2, 3, 1};            // Permutation vector
-  
+
 algorithm
   W := [[2, 3], 1];                // OK, result: [2, 3, 1] = {{2, 3, 1}}
   W := [{{2, 3}}, {{1}}];            // OK, same result: {{2, 3, 1}}
-  
+
   W := [WO[{1}, 2:3], WO[{1}, {1}]];      // OK, result: {{2, 3, 1}}
   W := [WO[1:1, 2:3], WO[1:1, 1:1]];      // OK, same result: {{2, 3, 1}}
-  
+
   W := WO[:, p];                // OK, same result: {{2, 3, 1}}
 
   W := cat(2, WO[1:1, 2:3], WO[1:1, 1:1]); // OK, same result: {{2, 3, 1}}
@@ -164,7 +164,7 @@ algorithm
 
   X := [XO[:, 2:3], XO[:, {1}]];   // OK, X becomes [2, 3, 1; 5, 6, 4]
   X := XO[:, p];                   // OK, X becomes [2, 3, 1; 5, 6, 4]
-  
+
   X[{1},:] := [XO[{1}, 2:3], XO[{1}, {1}]];  // OK, X becomes [2,3,1; 5,6,4]
   X[1, :] := [XO[1, 2:3], XO[1, 1]];      // ERROR, incompatible dimensions
 end CyclicPerm;</Input>

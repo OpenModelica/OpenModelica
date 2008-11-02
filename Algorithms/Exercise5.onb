@@ -47,8 +47,8 @@ equation
 algorithm
   when position1 >= position2 then
     reinit(velocity1, -c*velocity1);
-    reinit(velocity2, -c*velocity2);    
-  end when;  
+    reinit(velocity2, -c*velocity2);
+  end when;
 end BilliardBalls;</Input>
        <Output></Output>
       </InputCell>

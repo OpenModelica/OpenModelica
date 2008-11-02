@@ -47,7 +47,7 @@
   input Real b;
   output Real result;
 algorithm
-  result := (a + b) / 2;  
+  result := (a + b) / 2;
 end average;</Input>
       <Output>Ok</Output>
      </InputCell>
@@ -58,7 +58,7 @@ end average;</Input>
       <Input>class AverageTest
   Real res;
 equation
-  res = average(4, 6);        
+  res = average(4, 6);
 end AverageTest;  </Input>
       <Output>Ok</Output>
      </InputCell>

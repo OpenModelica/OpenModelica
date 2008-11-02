@@ -26,7 +26,7 @@
 equation
   der(height) = velocity;
   der(velocity) = -g;
-  when height &lt;= radius then 
+  when height &lt;= radius then
     reinit(velocity, -c*pre(velocity));
   end when;
 end BouncingBall;</Input>

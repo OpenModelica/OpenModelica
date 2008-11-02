@@ -16,21 +16,21 @@
      <Input>class ArrayDim
   Real n = 1, m = 4, k = 5;
   Real Voltage;
-  
+
    // 3-dimensional position vector
-  Real[3] positionvector = {1, 2, 3};              
-  
+  Real[3] positionvector = {1, 2, 3};
+
   // transformation matrix
-  Real[3,3] identitymatrix = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}};  
- 
+  Real[3,3] identitymatrix = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
+
   // A 3-dimensional array
-  Integer[n,m,k] arr3d;                          
+  Integer[n,m,k] arr3d;
 
   // A boolean vector
-  Boolean[2] truthvalues = {false, true};            
-  
+  Boolean[2] truthvalues = {false, true};
+
   // A vector of voltage values
-  Voltage[10] voltagevector;                      
+  Voltage[10] voltagevector;
 end ArrayDim;</Input>
      <Output>Ok</Output>
     </InputCell>
@@ -41,11 +41,11 @@ end ArrayDim;</Input>
      <Input>class ArrayDim
   Real n = 1, m = 4, k = 5;
   Real    Voltage;
-  Real    positionvector[3]   = {1, 2, 3};          
-  Real    identitymatrix[3,3] = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}};    
-  Integer arr3d[n,m,k];                          
-  Boolean truthvalues[2]     = {false, true};              
-  Voltage voltagevector[10];                      
+  Real    positionvector[3]   = {1, 2, 3};
+  Real    identitymatrix[3,3] = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
+  Integer arr3d[n,m,k];
+  Boolean truthvalues[2]     = {false, true};
+  Voltage voltagevector[10];
 end ArrayDim;</Input>
      <Output>Ok</Output>
     </InputCell>
@@ -62,7 +62,7 @@ end ArrayDim;</Input>
    input  Real[3] positionvector;
    output Real[3] result;
  algorithm
-   result := positionvector*2;  
+   result := positionvector*2;
 end ElementWiseMultiplication;  //??Error in implementation</Input>
      <Output>{result[1],result[2],result[3]}{2.0 * positionvector[1],2.0 * positionvector[2],2.0 * positionvector[3]}Error occured building AST
 Syntax Error</Output>

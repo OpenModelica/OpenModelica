@@ -45,7 +45,7 @@
 algorithm
    for i in 1:size(x,1) loop
     sum := sum + x[i];
-  end for; 
+  end for;
 end mySum;</Input>
        <Output>Ok</Output>
       </InputCell>
@@ -61,7 +61,7 @@ end mySum;</Input>
       <InputCell style="Input" closed="false" >
        <Input>function average
   input Real[:] x;
-  output Real average;  
+  output Real average;
 algorithm
   average := mySum(x) / size(x,1);
 end average;</Input>
@@ -70,11 +70,11 @@ end average;</Input>
       <InputCell style="Input" closed="false" >
        <Input>average({2.0,3.0,4.0})  // ??Works, even though it gives an error message</Input>
        <Output>3.0
-OMC-ERROR: 
+OMC-ERROR:
 "Class mySum (its type)  not found in scope average.
-No matching function found for mySum, candidates are 
+No matching function found for mySum, candidates are
 Class mySum not found in scope average.
-No matching function found for mySum, candidates are 
+No matching function found for mySum, candidates are
 Class mySum not found in scope average.
 Class mySum not found in scope global scope.
 "</Output>
@@ -111,13 +111,13 @@ end LargestAverage; </Input>
        <Output>record
     resultFile = "Simulation failed.
 Class mySum (its type)  not found in scope average.
-No matching function found for mySum, candidates are 
+No matching function found for mySum, candidates are
 Class mySum not found in scope average.
-No matching function found for mySum, candidates are 
+No matching function found for mySum, candidates are
 Class mySum not found in scope average.
-No matching function found for mySum, candidates are 
+No matching function found for mySum, candidates are
 Class mySum not found in scope average.
-No matching function found for mySum, candidates are 
+No matching function found for mySum, candidates are
 Class mySum not found in scope average.
 "
 end record</Output>

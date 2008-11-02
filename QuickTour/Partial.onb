@@ -29,7 +29,7 @@ end TwoPin;</Input>
     </TextCell>
     <InputCell style="Input" closed="false" >
      <Input>class Resistor               "Ideal linear electrical Resistor"
-  extends TwoPin;          
+  extends TwoPin;
   parameter Real R(unit = "Ohm")     "Resistance";
 equation
   R*i = v;

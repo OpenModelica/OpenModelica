@@ -60,7 +60,7 @@
   parameter Real b;
   Real result;
 algorithm
-  result := (a + b) / 2;  
+  result := (a + b) / 2;
 end Average;</Input>
        <Output></Output>
       </InputCell>

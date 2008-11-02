@@ -17,7 +17,7 @@
   input Real A[:];          // Array, size defined at function call time
   input Real x := 1.0;        // Default value 1.0 for x
   output Real sum;
-protected 
+protected
   Real xpower;
 algorithm
   sum := 0;
@@ -38,7 +38,7 @@ end PolynomialEvaluator;</Input>
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">Function calls with &lt;span style=" font-style:italic;">positional association&lt;/span> of actual arguments to formal parameters is the most common form of function call. The actual arguments are associated with the formal parameters according to their position in the argument list. &lt;br />&lt;br />Using positional association {1, 2, 3, 4} becomes the value of the coefficient vector &lt;span style=" font-family:Courier New;">A&lt;/span> and 21 becomes the value of the formal parameter &lt;span style=" font-family:Courier New;">x&lt;/span>.&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
     <InputCell style="Input" closed="false" >
-     <Input>class PositionalCall                        
+     <Input>class PositionalCall
   Real p;
 equation
   p = PolynomialEvaluator({1, 2, 3, 4}, 21);

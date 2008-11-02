@@ -46,7 +46,7 @@
   input Real x;
   output Real result;
 algorithm
-  result := x + 10;  
+  result := x + 10;
 end AddTen;</Input>
       <Output>Ok</Output>
      </InputCell>
@@ -57,7 +57,7 @@ end AddTen;</Input>
       <Input>class AddTenCall
   Real res;
 equation
-  res = AddTen(3.5);        
+  res = AddTen(3.5);
 end AddTenCall;  </Input>
       <Output>Ok</Output>
      </InputCell>

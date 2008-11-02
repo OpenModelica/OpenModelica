@@ -66,7 +66,7 @@ algorithm
     break := zz &lt;= (- Math.log(u2));
   end while;
   x := mu + z*sigma;
-  so := s1; 
+  so := s1;
 end normalvariate;
 
 connector discreteConnector
@@ -96,17 +96,17 @@ end Random;</Input>
   Random.discreteConnector dOutput;
   parameter Real mean = 0;
   parameter Real stDeviation = 1;
-  
+
   discrete Real normalDelta;
   discrete Real nextCustomerArrivalTime(start=0);
   discrete Random.Seed randomSeed(start={23,87,187});
-  
+
 equation
   when pre(nextCustomerArrivalTime)&lt;=time then
     (normalDelta,randomSeed)=Random.normalvariate(mean,stDeviation,pre(randomSeed));
      nextCustomerArrivalTime = pre(nextCustomerArrivalTime) + abs(normalDelta);
    end when;
-   
+
    dOutput.dcon=if nextCustomerArrivalTime&lt;>pre(nextCustomerArrivalTime) then true
    else  false;
 end CustomerGeneration;</Input>
@@ -150,35 +150,35 @@ end CustomerGeneration;</Input>
       <Input>model ServerWithQueue
   Random.discreteConnector dInput;
   parameter Real serveTime=0.1;
-  
+
   discrete Real nrOfArrivedCustomers;
   discrete Real nrOfServedCustomers;
   discrete Real nrOfCustomersInQueue(start=0);
-  
+
   discrete Boolean readyCustomer(start=false);
   discrete Boolean serveCustomer(start=false);
-  
+
   Real resetTime;
-  
+
 equation
   when dInput.dcon then
     nrOfArrivedCustomers=pre(nrOfArrivedCustomers)+1;
   end when;
-  
+
   when readyCustomer then
      nrOfServedCustomers=pre(nrOfServedCustomers)+1;
   end when;
-  
+
   when (pre(nrOfCustomersInQueue)==0 and dInput.dcon) or (pre(nrOfCustomersInQueue)>=1 and pre(readyCustomer))then
     serveCustomer=true;
     resetTime=time;
   end when;
-  
+
   readyCustomer=if (serveCustomer and (serveTime&lt;time-resetTime)) then true else false;
-  
-    
+
+
  nrOfCustomersInQueue=nrOfArrivedCustomers-nrOfServedCustomers;
-    
+
 end ServerWithQueue;</Input>
       <Output></Output>
      </InputCell>

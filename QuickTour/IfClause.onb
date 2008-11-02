@@ -67,11 +67,11 @@ end TwoPin;</Input>
   Boolean off;
 equation
   off = s &lt; 0;
-  if off then 
+  if off then
     v = s;
-  else 
-    v = 0;            // Conditional equations     
-  end if;  
+  else
+    v = 0;            // Conditional equations
+  end if;
   i = if off then 0 else s;    // Conditional expression
 end Diode;</Input>
      <Output>Ok</Output>

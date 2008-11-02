@@ -79,7 +79,7 @@ end Today;</Input>
             month = "October",
             year = 2002);
   LunchAppointment lunchApp(lunchTime = 12,
-                            lunchDate = "Steven"); 
+                            lunchDate = "Steven");
 end Tomorrow;</Input>
       <Output>Ok</Output>
      </InputCell>

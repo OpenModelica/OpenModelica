@@ -96,7 +96,7 @@ end Place;</Input>
      <Input>class Transition
   ConditionPort condition( start = true )     "Optional condition";
   parameter Integer nIn  = 1;
-  parameter Integer nOut = 1; 
+  parameter Integer nOut = 1;
   PTPortIn  inPlaces[nIn]             "Vector of input place connectors";
   TPPortOut outPlaces[nOut]           "Vector of output place connectors";
   Boolean   fire;
@@ -166,7 +166,7 @@ end allTrue;</Input>
     <InputCell style="Input" closed="true" >
      <Input>model JobShopSystem
   import ModelicaAdditions.PetriNets.*;
-  
+
   Transition arrival(nIn = 0, nOut = 1);         // E1
   Place      inwait(nIn = 1, nOut = 1);            // C2
   Transition synchronize(nIn = 2, nOut = 1);     // E2

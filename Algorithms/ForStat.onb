@@ -21,8 +21,8 @@ algorithm
   sum := 0;
   for i in 1:n loop
     sum := sum + z[i];
-  end for;    
-end SumZ;  
+  end for;
+end SumZ;
 </Input>
      <Output></Output>
     </InputCell>
@@ -53,8 +53,8 @@ end SumZ;
 algorithm
   for k in 1:k+1 loop  // The iteration variable k gets values 1, 2, 3, 4, 5
     z[k] := k;
-  end for;  
-end HideVariable;  
+  end for;
+end HideVariable;
 </Input>
      <Output></Output>
     </InputCell>

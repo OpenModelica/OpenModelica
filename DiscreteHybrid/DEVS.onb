@@ -57,7 +57,7 @@ algorithm
     break := zz &lt;= (- Math.log(u2));
   end while;
   x := mu + z*sigma;
-  so := s1; 
+  so := s1;
 end normalvariate;
 
 connector discreteConnector
@@ -129,8 +129,8 @@ end BasicDEVSTwoPort;
      </TextCell>
      <InputCell style="Input" closed="true" >
       <Input>model testDEVSServer
-  GenerateJobEvents  generateJobEvents(period=1.5,startTime=3);  
-  SimpleDEVSServer   simpleDEVSServer;   
+  GenerateJobEvents  generateJobEvents(period=1.5,startTime=3);
+  SimpleDEVSServer   simpleDEVSServer;
   SignalView         viewSignal1;   // Not shown, just for plotting
   SignalView         viewSignal2;   // Not shown, just for plotting
  equation
@@ -174,25 +174,25 @@ end GenerateJobEvents;</Input>
   parameter Real  stdev = 0.5;
   discrete  Real  servTime;  // time needed to service current job
  discrete  Random.Seed randomSeed(start={23,87,187});
- 
+
 equation
   internalEvent = pre(tNextEvent)&lt;=time;
   externalEvent = inp.signal;
-  //outp.signal   = internalEvent; 
+  //outp.signal   = internalEvent;
   when {externalEvent,internalEvent} then
     (servTime,randomSeed) = Random.normalvariate(mean,stdev, pre(randomSeed));
-    if edge(externalEvent) and not pre(DEVSactive) then          
+    if edge(externalEvent) and not pre(DEVSactive) then
       DEVSactive = true;
-      tNextEvent  = time + abs(servTime); 
+      tNextEvent  = time + abs(servTime);
     elseif edge(externalEvent) and pre(DEVSactive) then
       DEVSactive = true;
-      tNextEvent  = pre(tNextEvent); 
+      tNextEvent  = pre(tNextEvent);
     else
       DEVSactive = false;
-      tNextEvent = pre(tNextEvent); 
+      tNextEvent = pre(tNextEvent);
     end if;
   end when;
-  
+
   outp.signal = if pre(DEVSactive) and edge(internalEvent) then true else false;
 end SimpleDEVSServer;</Input>
       <Output></Output>

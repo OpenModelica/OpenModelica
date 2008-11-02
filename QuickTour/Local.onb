@@ -13,9 +13,9 @@
   class Lpin              // Local class
     Real p;
   end Lpin;
-  
+
   class Voltage = Real(unit="kV");    // Local class
-  
+
   Voltage v1 = 5, v2 = 1;
   Lpin pn(p = 2);
 end C1;  </Input>

@@ -74,16 +74,16 @@ end record</Output>
   Real[2, 2] B     = {{1, 2}, {4, 5}};
   Real[2]    v     = {10, 11};
   Real[4, 2] M;
-  
+
   Real B_Ret1 = B[1, 2];      // Retrieves the value 2
   //Real B_Ret2[2] = B[2];      // Retrieves B[2] giving {4, 5}
-  
+
   Real v_Ret1  = v[2];        // Retrieves the value 11
   // Real v_Ret2  = v[4];      // Error, index out of range!
-  
+
 algorithm
   M[4] := fill(5, 4, 2);
-  M[4] := v;            // Updates M to become 
+  M[4] := v;            // Updates M to become
                     // {{5, 5}, {5, 5}, {5, 5}, {10, 11}}
 end ScalarIndex;
 </Input>
@@ -105,18 +105,18 @@ end ScalarIndex;
   Real x4[2] = X[2, 1:2];      // Same as above, i.e. {3, 4}
   Real x5[2] = X[2, {1, 2}];    // Same as above, i.e. {3, 4}
   Real x6[1] = X[2, {2}];      // Half of the above vector, i.e. {4}
-  Real x7[3, 1] = X[:, 1:1];    // Gets the first column of X as 
+  Real x7[3, 1] = X[:, 1:1];    // Gets the first column of X as
                     // column matrix {{1}, {3}, {8}}
   Real x8[1, 2] = X[{2}, :];    // Gets the second row of X as the row matrix {{3, 4}}
   Real x9[2, 2] = X[{2, 3}, {1, 2}];  // Extract submatrix given {{3, 4}, {8, 9}}
-  
+
   Real w1[3] = w[2:4];  // Get the 2:nd through 4:th elements as {16,17,18}
   Real w2[2] = w[{1, 3}];      // Get the 1:st and 3:rd elements as {15, 17}
   Real w3[2] = w[1:2:4];  // Get the 1:st to 4:th step 2 elements as {15,17}
-  
+
   Real X[3, 2] = {{1, 2}, {3, 4}, {8, 9}};
   Real w[4]    = {15, 16, 17, 18};
-  Real[4] y = fill(1, 4);  
+  Real[4] y = fill(1, 4);
 algorithm
    w[3:4] := {1, 2};     // Assignment causing w to become {15, 16, 1, 2}
 end ArraySlice;</Input>
@@ -190,11 +190,11 @@ end PersonList;</Input>
   String name[3];
   Integer age[3];
   String[3, 2] children;
-equation  
+equation
   name     = pList.persons.name;      // Returns: {"John", "Karin", "Lisa"}
   age     = pList.persons.age;        // Returns: {35, 40, 37}
-  children   = pList.persons.children;  // Returns: {{"Carl", "Eva"}, 
-                                            //       {"Anders", "Dan"}, 
+  children   = pList.persons.children;  // Returns: {{"Carl", "Eva"},
+                                            //       {"Anders", "Dan"},
                                             //       {"John", "Daniel"}}
 end getPerson;  </Input>
       <Output></Output>

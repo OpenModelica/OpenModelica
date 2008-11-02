@@ -17,11 +17,11 @@
       end InPort;
     end Interfaces;
   end Blocks;
-    
+
   encapsulated package Mechanics
     encapsulated package Rotational
       import Modelica.Blocks.Interfaces;    // Import
-      
+
       model Torque
         Interfaces.InPort inPort;        // Use
       end Torque;
@@ -43,7 +43,7 @@ end Modelica;</Input>
       end InPort;
     end Interfaces;
   end Blocks;
-    
+
   encapsulated package Mechanics
     encapsulated package Rotational
       import YourModelica.Blocks.Interfaces;  // Import

@@ -18,14 +18,14 @@
     public
       package Interfaces
       end Interfaces;
-      
+
       package Continuous
         MySecret x;
       end Continuous;
-      
+
       package Examples
       end Examples;
-    
+
     end Blocks;
 
 end Modelica;</Input>

@@ -14,7 +14,7 @@
     </TextCell>
     <InputCell style="Input" closed="false" >
      <Input>class Point
-  parameter Real x; 
+  parameter Real x;
   parameter Real y;
   parameter Real z;
 end Point;</Input>

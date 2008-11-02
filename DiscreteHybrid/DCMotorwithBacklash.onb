@@ -29,7 +29,7 @@
   Modelica.Electrical.Analog.Basic.EMF             emf1;
   Modelica.Blocks.Sources.Step                     step1;
   Modelica.Electrical.Analog.Sources.SignalVoltage signalVoltage1;
-equation 
+equation
   connect(step1.y, signalVoltage1.v);
   connect(signalVoltage1.n, resistor1.p);
   connect(resistor1.n, inductor1.p);
@@ -93,20 +93,20 @@ end DCMotorCircuit;</Input>
   Modelica.Electrical.Analog.Sources.SignalVoltage   signalVoltage1;
   Modelica.Mechanics.Rotational.ElastoBacklash    elastoBacklash( b=3, c=10, d=0.8 );
 
-equation 
+equation
   connect(step1.y, signalVoltage1.v);
   connect(signalVoltage1.n, resistor1.p);
   connect(resistor1.n, inductor1.p);
   connect(signalVoltage1.p, ground1.p);
   connect(ground1.p, emf1.n);
   connect(inductor1.n, emf1.p);
-  
+
   //connect(emf1.flange_b, inertia1.flange_a);
-  
+
   connect(emf1.flange_b,inertia1.flange_a);
   connect(inertia1.flange_b, elastoBacklash.flange_a);
   connect(elastoBacklash.flange_b,inertia2.flange_a);
-  
+
 end DCMotorCircuitBacklash;</Input>
       <Output>Ok</Output>
      </InputCell>
@@ -213,8 +213,8 @@ end SimpleElastoBacklash;</Input>
       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
      </TextCell>
      <InputCell style="Input" closed="true" >
-      <Input>model ElastoBacklash 
-  "Backlash connected in series to linear spring and damper 
+      <Input>model ElastoBacklash
+  "Backlash connected in series to linear spring and damper
    (backlash is modeled with elasticity)"
   extends Modelica.Mechanics.Rotational.Interfaces.Compliant;
   parameter SIunits.Angle  b = 0          "Backlash size parameter";
@@ -224,10 +224,10 @@ end SimpleElastoBacklash;</Input>
   SIunits.Angle            phi_dev        "Angle deviation from zero pos";
   SIunits.AngularVelocity  w_rel          "Relative rotation speed
                                            between flange_b and flange_a";
- protected 
+ protected
   SIunits.Angle            b2 = b/2       "Half backlash";
   constant SIunits.Angle   b_min = 1.e-10   "minimum backlash";
-equation 
+equation
   w_rel = der(phi_rel);
   phi_dev   = phi_rel - phi_rel0;
   tau = if b2 > b_min               // Slack behavior enabled
@@ -236,8 +236,8 @@ equation
       else (if phi_dev &lt; -b2              // Backward angle gives
         then c*(phi_dev + b2)+ d*w_rel    //   negative torque
         else 0)                           // Slack gives zero torque
-      ) 
-    else 
+      )
+    else
       c*phi_dev + d*w_rel;       // Slack behavior disabled if b/2 &lt;= b_min
 end ElastoBacklash;</Input>
       <Output></Output>

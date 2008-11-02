@@ -44,12 +44,12 @@
   Boolean on;
 algorithm
   when sample(5, 5) then
-    if rem(time, 5) == 0 then 
+    if rem(time, 5) == 0 then
       on := true;
     else
-      on := false;  
+      on := false;
     end if;
-  end when;      
+  end when;
 end LightSwitch;</Input>
        <Output></Output>
       </InputCell>
@@ -85,12 +85,12 @@ algorithm
   when time &lt; 5 or time >= 25 then
     on := false;
   elsewhen sample(5, 1) then
-    if rem(time, 5) == 0 then 
+    if rem(time, 5) == 0 then
       on := true;
     else
-      on := false;  
-    end if;    
-  end when;      
+      on := false;
+    end if;
+  end when;
 end LightSwitchExtended;</Input>
        <Output></Output>
       </InputCell>

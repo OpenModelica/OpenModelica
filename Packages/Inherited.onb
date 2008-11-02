@@ -68,7 +68,7 @@ end GeneralStack;</Input>
     output Stack so;
   algorithm
     so.size := si.size+1;
-    for i in 1:si.size loop  
+    for i in 1:si.size loop
       so.vec[i+1] := si.vec[i];
     end for;
     so.vec[1] := e;
@@ -79,7 +79,7 @@ end GeneralStack;</Input>
     output Stack so;
   algorithm
     so.size := si.size-1;
-    for i in 1:so.size loop  
+    for i in 1:so.size loop
       so.vec[i] := si.vec[i+1];
     end for;
   end RemoveBottom;

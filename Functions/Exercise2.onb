@@ -57,14 +57,14 @@ algorithm
     end if;
     i := i + 1;
   end while;
-  assert(index&lt;>-1, "findName: Failed");         
+  assert(index&lt;>-1, "findName: Failed");
 end findName;</Input>
        <Output>Ok</Output>
       </InputCell>
       <InputCell style="Input" closed="false" >
        <Input>findName({"C++", "Lisp", "Java", "Ada", "Modelica"},"Lisp")  //??Error - not yet implemented</Input>
        <Output>
-OMC-ERROR: 
+OMC-ERROR:
 "Internal error code  generation of expression nameArray[i] == name failed
 "</Output>
       </InputCell>
@@ -96,7 +96,7 @@ end testFindName;</Input>
        <Output>record
     resultFile = "Simulation failed.
 Internal error code  generation of expression nameArray[i] == name failed
-Internal error Code generation of Modelica functions failed. 
+Internal error Code generation of Modelica functions failed.
 "
 end record</Output>
       </InputCell>
@@ -106,7 +106,7 @@ end record</Output>
       <InputCell style="Input" closed="false" >
        <Input></Input>
        <Output>
-OMC-ERROR: 
+OMC-ERROR:
 "Variable findLisp[0] not found in scope &lt;global scope>
 "</Output>
       </InputCell>
@@ -138,7 +138,7 @@ end testFindName2;</Input>
        <Output>record
     resultFile = "Simulation failed.
 Internal error code  generation of expression nameArray[i] == name failed
-Internal error Code generation of Modelica functions failed. 
+Internal error Code generation of Modelica functions failed.
 "
 end record</Output>
       </InputCell>

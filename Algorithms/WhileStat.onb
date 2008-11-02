@@ -22,7 +22,7 @@ algorithm
     i := i + 1;
     delta := exp(-0.01 * i);
   end while;
-end SumSeries;    
+end SumSeries;
 </Input>
     <Output></Output>
    </InputCell>

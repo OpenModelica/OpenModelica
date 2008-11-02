@@ -66,10 +66,10 @@ equation
   rep[1] = 15;
   rep[2] = 15;
   rep[3] = 15;
-  rep[4] = 15; 
+  rep[4] = 15;
   rep[5] = 15;
-  rep[6] = 15; 
-  rep[7] = 15;    
+  rep[6] = 15;
+  rep[7] = 15;
 end RepetitiveWithoutFor;</Input>
       <Output>Ok</Output>
      </InputCell>

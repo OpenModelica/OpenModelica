@@ -18,7 +18,7 @@
 algorithm
   r1 := x + y;
   r2 := x * y;
-  r3 := x - y;  
+  r3 := x - y;
 end multipleResultsFunction;</Input>
     <Output>Ok</Output>
    </InputCell>
@@ -105,11 +105,11 @@ algorithm
 end pointOnCircle2;</Input>
      <Output>Error occured building AST
 Syntax Error
-OMC-ERROR: 
+OMC-ERROR:
 "Class Modelica.Math.sin (its type)  not found in scope PointOnCircle.
-No matching function found for Modelica.Math.sin, candidates are 
+No matching function found for Modelica.Math.sin, candidates are
 Class Modelica.Math.sin not found in scope PointOnCircle.
-No matching function found for Modelica.Math.sin, candidates are 
+No matching function found for Modelica.Math.sin, candidates are
 Class Modelica.Math.sin not found in scope PointOnCircle.
 "</Output>
     </InputCell>
@@ -147,7 +147,7 @@ end pointOnCircle2;</Input>
      <Input>class PointOnCircleCall
   Real px, py;
 equation
-  (px, py) = pointOnCircle(1.2, 2);    
+  (px, py) = pointOnCircle(1.2, 2);
 end PointOnCircleCall;</Input>
      <Output>Ok</Output>
     </InputCell>
@@ -184,7 +184,7 @@ end record</Output>
      <Input>class StatementCall
   Real px, py;
 algorithm
-  (px, py) := PointOnCircle(1.2, 2);  
+  (px, py) := PointOnCircle(1.2, 2);
 end StatementCall;</Input>
      <Output>Ok</Output>
     </InputCell>

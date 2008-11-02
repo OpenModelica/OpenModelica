@@ -97,7 +97,7 @@ end record</Output>
       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
      </TextCell>
      <InputCell style="Input" closed="true" >
-      <Input>PlotSimulation[slidingMass1.s[t], {t, 0, 4}, 
+      <Input>PlotSimulation[slidingMass1.s[t], {t, 0, 4},
 	SimulationResult -> res, Legend -> False]</Input>
       <Output></Output>
      </InputCell>
@@ -144,7 +144,7 @@ end record</Output>
       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">We define a Mathematica function, &lt;span style=" font-family:Courier New;">f[a_]&lt;/span>, doing the same thing as above, but for different values of the spring-damper design parameter &lt;span style=" font-family:Courier New;">d&lt;/span>. The function contains two variables &lt;span style=" font-family:Courier New;">res&lt;/span> and &lt;span style=" font-family:Courier New;">t&lt;/span>. The expression &lt;span style=" font-family:Courier New;">(y[t]/.resReference)&lt;/span> retrieves the interpolating function representing the variable &lt;span style=" font-family:Courier New;">y[t]&lt;/span>, i.e. the reference response.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
      </TextCell>
      <InputCell style="Input" closed="true" >
-      <Input>f[a_] := Module[{res, t}, 
+      <Input>f[a_] := Module[{res, t},
  res=Simulate[LinearActuator, {t, 0, 4},ParameterValues ->{springDamper1.d == a}];
   NIntegrate[First[(y[t]/.resReference)-slidingMass1.s[t]]2,{t,0,4}]];</Input>
       <Output></Output>
@@ -187,7 +187,7 @@ end record</Output>
       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">A simulation with the optimal parameter value:&lt;/p>&lt;/body>&lt;/html></Text>
      </TextCell>
      <InputCell style="Input" closed="true" >
-      <Input>Simulate[LinearActuator, {t, 0, 4}, 
+      <Input>Simulate[LinearActuator, {t, 0, 4},
 	ParameterValues -> {springDamper1.d == 5.28642}];</Input>
       <Output></Output>
      </InputCell>
@@ -195,8 +195,8 @@ end record</Output>
       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />A plot comparing the [OpenCurlyDoubleQuote]reference[CloseCurlyDoubleQuote] first order system and linear actuator system responses together with a plot of the squared deviation amplified by a factor 100.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
      </TextCell>
      <InputCell style="Input" closed="true" >
-      <Input>PlotSimulation[{slidingMass1.s[t], 
-	y[t] /. resReference, 
+      <Input>PlotSimulation[{slidingMass1.s[t],
+	y[t] /. resReference,
 	100*(slidingMass1.s[t] - (y[t] /. resReference))^2},
 	{t, 0, 4}, Legend -> False];</Input>
       <Output></Output>

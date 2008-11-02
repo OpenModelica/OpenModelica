@@ -76,7 +76,7 @@ end record</Output>
      </TextCell>
      <InputCell style="Input" closed="false" >
       <Input>class IllegalTypeAsField
-  Voltage Voltage;   // Error! 
+  Voltage Voltage;   // Error!
   Voltage voltage;   // Legal, Voltage and voltage are two different names
 end IllegalTypeAsField;</Input>
       <Output>Ok</Output>
@@ -93,7 +93,7 @@ end IllegalTypeAsField;</Input>
     <InputCell style="Input" closed="false" >
      <Input>instantiateModel( IllegalTypeAsField );</Input>
      <Output>
-OMC-ERROR: 
+OMC-ERROR:
 "Found a component with same name when looking for type Voltage
 Class Voltage not found in scope IllegalTypeAsField while instantiating Voltage.
 Error occured while flattening model IllegalTypeAsField
@@ -110,7 +110,7 @@ Error occured while flattening model IllegalTypeAsField
      </TextCell>
      <InputCell style="Input" closed="false" >
       <Input>class LegalVoltage
-  Voltage voltage1;  // Legal! 
+  Voltage voltage1;  // Legal!
   Voltage voltage;   // Legal, Voltage and voltage are two different names
 end LegalVoltag;</Input>
       <Output>Ok</Output>

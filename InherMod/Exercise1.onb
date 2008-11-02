@@ -88,20 +88,20 @@ end ModArray;</Input>
      <InputCell style="Input" closed="false" >
       <Input>class ModArray
 
-  Integer A1[5](fixed = true);          
+  Integer A1[5](fixed = true);
   // Modifies the fixed value for the whole array
-  
+
   Boolean truthvalues[2](start = {false, false});
   // Modifies the start value for the whole array
-  
 
-  Real A2[2,2](unit[1,2] = "kV");  
+
+  Real A2[2,2](unit[1,2] = "kV");
   // Modifies the start value for a certain place in the matrix
-              
+
   Integer A3[2,3](start = {{1, 0, 5}, {0,0,0}} );
   // Modifies the start value for the first row in the matrix
 
-  String A4[2,2](start = {{"Pippi", "Pippi"}, 
+  String A4[2,2](start = {{"Pippi", "Pippi"},
                           {"Pippi", "Pippi"}} );
 
 end ModArray;</Input>

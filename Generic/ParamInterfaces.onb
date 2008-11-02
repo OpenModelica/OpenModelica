@@ -66,13 +66,13 @@ end Tank;</Input>
      <Input>model HeatTank
   extends Tank(redeclare connector TankStream = HeatStream);
   Real level(start=2);
-  Real temp; 
+  Real temp;
 equation
   inlet.temp = 25;
 
   // Energy balance for temperature effects
-  area*level*der(temp) = 
-       inlet.volumeFlowRate*inlet.temp + 
+  area*level*der(temp) =
+       inlet.volumeFlowRate*inlet.temp +
          outlet.volumeFlowRate*outlet.temp;
 
   outlet.temp = temp;
@@ -107,7 +107,7 @@ variable outlet.volumeFlowRate  not found in simulation result.
 variable outlet.volumeFlowRate  not found in simulation result.
 variable outlet.volumeFlowRate  not found in simulation result.
 "
-OMC-ERROR: 
+OMC-ERROR:
 "Variable inlet.temp not found in scope HeatTank
 Error occured while flattening model HeatTank
 Error occured while flattening model HeatTank
@@ -144,7 +144,7 @@ end record</Output>
   parameter Real Area=1;          // and some inlet and outlet equations
   TankStream inlet, outlet;
   Real level(start=2);
-  Real temp; 
+  Real temp;
 
   connector TankStream
     Real pressure;
@@ -154,7 +154,7 @@ end record</Output>
 
 equation
   inlet.volumeFlowRate = 1;
-  inlet.pressure = 1; 
+  inlet.pressure = 1;
   inlet.temp = 25;
  // Mass balance:
   Area*der(level) = inlet.volumeFlowRate + outlet.volumeFlowRate;

@@ -17,11 +17,11 @@ equation
   x = y*2;
   z = w;
 algorithm
-  x1 := z  + x;  
+  x1 := z  + x;
   x2 := y  - 5;
   x3 := x2 + y;
 equation
-  u = x1 + x2;  
+  u = x1 + x2;
 end AlgorithmSection;
 </Input>
     <Output></Output>

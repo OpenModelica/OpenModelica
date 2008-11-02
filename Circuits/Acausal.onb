@@ -30,7 +30,7 @@
   Modelica.Electrical.Analog.Basic.Resistor Resistor2;
   Modelica.Electrical.Analog.Basic.Capacitor Capacitor1;
   Modelica.Electrical.Analog.Sources.SineVoltage SineVoltage1;
-  
+
 equation
   connect(SineVoltage1.p, Resistor2.p);
   connect(Resistor1.n, Inductor1.p);
@@ -38,7 +38,7 @@ equation
   connect(Inductor1.n, Ground1.p);
   connect(Capacitor1.n, Ground1.p);
   connect(Resistor1.p, Resistor2.p);
-  connect(SineVoltage1.n, Ground1.p); 
+  connect(SineVoltage1.n, Ground1.p);
 end SimpleCircuit;  </Input>
     <Output>Ok</Output>
    </InputCell>

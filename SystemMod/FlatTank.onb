@@ -31,7 +31,7 @@
   Real           h(start = 0, unit = "m")     "Tank level";
   Real           qInflow(unit = "m3/s")       "Flow through input valve";
   Real           qOutflow(unit = "m3/s")      "Flow through output valve";
-  
+
  // Controller related variables and parameters
   parameter Real K = 2                     "Gain";
   parameter Real T(unit = "s")  = 10       "Time constant";
@@ -40,11 +40,11 @@
   Real           error                     "Deviation from reference level";
   Real           outCtr                    "Control signal without limiter";
   Real           x                         "State variable for controller";
-  
+
 equation
   assert(minV>=0, "minV must be greater or equal to zero");
   der(h)   = (qInflow - qOutflow)/area;           // Mass balance equation
-  qInflow    = if time > 150 then 3*flowLevel else flowLevel; 
+  qInflow    = if time > 150 then 3*flowLevel else flowLevel;
   qOutflow   = limitValue(minV, maxV, -flowGain*outCtr);
   error    = ref - h;
   der(x)   = error/T;
@@ -68,7 +68,7 @@ end FlatTank;</Input>
   output Real pLim;
  algorithm
   pLim := if p>pMax then pMax
-          else if p&lt;pMin then pMin 
+          else if p&lt;pMin then pMin
           else p;
 end limitValue;</Input>
      <Output>Ok</Output>

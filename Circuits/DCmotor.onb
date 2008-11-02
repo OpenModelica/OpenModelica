@@ -27,7 +27,7 @@
    Modelica.Mechanics.Rotational.Inertia Inertia1;
    Modelica.Electrical.Analog.Basic.Ground Ground1;
    Modelica.Electrical.Analog.Sources.ConstantVoltage ConstantVoltage1;
-   
+
 equation
    connect(Resistor1.n, Inductor1.p);
    connect(Inductor1.n, EMF1.p);

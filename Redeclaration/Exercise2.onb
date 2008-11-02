@@ -81,7 +81,7 @@ end Asub;  </Input>
       </TextCell>
       <InputCell style="Input" closed="false" >
        <Input>class AInst
-  replaceable A a(salt = 100);          
+  replaceable A a(salt = 100);
 end AInst;</Input>
        <Output>Ok</Output>
       </InputCell>
@@ -92,7 +92,7 @@ end AInst;</Input>
       </TextCell>
       <InputCell style="Input" closed="false" >
        <Input>class AIred
-  extends AInst(redeclare Asub a(pepper = 200));  // The result after redeclaration is                                     // Asub a(salt = 1, pepper = 200) 
+  extends AInst(redeclare Asub a(pepper = 200));  // The result after redeclaration is                                     // Asub a(salt = 1, pepper = 200)
 end AIred;</Input>
        <Output>Ok</Output>
       </InputCell>

@@ -71,8 +71,8 @@ end DCMotorCircuit;</Input>
   AngularAcceleration a          "Absolute angular acceleration of component";
 equation
   w = der(phi);
-  a = der(w); 
-  J*a = rotFlange_a.tau + rotFlange_b.tau;  
+  a = der(w);
+  J*a = rotFlange_a.tau + rotFlange_b.tau;
 end Inertia;              //From Modelica.Mechanics.Rotational</Input>
       <Output>Ok</Output>
      </InputCell>
@@ -82,7 +82,7 @@ end Inertia;              //From Modelica.Mechanics.Rotational</Input>
      <InputCell style="Input" closed="false" >
       <Input>partial model Rigid           // Rotational class Rigid
            "Base class for the rigid connection of two rotational 1D flanges"
-  Angle phi               "Absolute rotation angle of component";              
+  Angle phi               "Absolute rotation angle of component";
   RotFlange_a rotFlange_a  "(left) driving flange (axis directed into plane)";
   RotFlange_b rotFlange_b  "(right) driven flange (axis directed out of plane)";
 equation
@@ -101,7 +101,7 @@ end Rigid;                // From Modelica.Mechanics.Rotational.Interfaces</Inpu
      </TextCell>
      <InputCell style="Input" closed="false" >
       <Input>model EMF                 "Electromotoric force (electric/mechanic transformer)"
-  extends TwoPin;  
+  extends TwoPin;
   parameter Real   k(unit = "N.m/A") = 1  "Transformation coefficient";
   AngularVelocity    w          "Angular velocity of rotFlange_b";
   RotFlange_b    rotFlange_b;    // Rotational Flange_b

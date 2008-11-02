@@ -33,8 +33,8 @@ algorithm
     y3 := 2*x + pre(y1) + y2;
   end when;
 equation
-  der(x) = 2*x;  
-end WhenStat;    
+  der(x) = 2*x;
+end WhenStat;
 </Input>
      <Output></Output>
     </InputCell>
@@ -86,8 +86,8 @@ algorithm
     y3 := 2*x + y1 + y2;
   end when;
 equation
-  der(x) = 2*x; 
-end WhenStat2;    
+  der(x) = 2*x;
+end WhenStat2;
 </Input>
      <Output></Output>
     </InputCell>
@@ -133,24 +133,24 @@ end WhenStat2;
   Real y1;
   Real y2;
   Real y3;
-  
+
 algorithm
   when x > 2 then
     y1 := sin(x);
   end when;
-  
-equation 
+
+equation
   y2 = sin(y1);
-  
+
 algorithm
   when x > 2 then
-    y3 := 2*x + pre(y1) + y2;  
-  end when;  
-  
+    y3 := 2*x + pre(y1) + y2;
+  end when;
+
 equation
-  der(x) = 2*x; 
-  
-end WhenStat3;    
+  der(x) = 2*x;
+
+end WhenStat3;
 </Input>
      <Output></Output>
     </InputCell>
@@ -219,11 +219,11 @@ algorithm
     close := true;
   end when;
 
-algorithm  
+algorithm
   when x &lt;= 5 then
     close := false;
   end when;
-end DoubleWhenConflict;      
+end DoubleWhenConflict;
 </Input>
      <Output></Output>
     </InputCell>
@@ -238,7 +238,7 @@ end DoubleWhenConflict;
       <Input>model DoubleWhenSequential
   Boolean close;         // Possible conflicting definitions resolved by
                          // sequential assignments in an algorithm section
-algorithm              
+algorithm
   when time &lt;= 2 then
     close := true;
   end when;
@@ -272,7 +272,7 @@ end DoubleWhenSequential;      </Input>
      </TextCell>
      <InputCell style="Input" closed="true" >
       <Input>model WhenPriority
-  Boolean close;    
+  Boolean close;
   parameter Real x = 5;
 algorithm
   when x >= 5 then
@@ -280,7 +280,7 @@ algorithm
   elsewhen x &lt;= 5 then
     close := false;
   end when;
-end WhenPriority;      
+end WhenPriority;
 </Input>
       <Output></Output>
      </InputCell>

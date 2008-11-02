@@ -9,7 +9,7 @@
     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />In almost all previous examples we only connected two connectors. In fact, there is in general no limitation to the number of connections that can be made to a single connector, apart from connector classes that very specifically limits the cardinality of the connections. In the class &lt;span style=" font-family:Courier New;">ResistorCircuit&lt;/span> three resistors are connected at one node.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
    </TextCell>
    <InputCell style="Input" closed="true" >
-    <Input>model ResistorCircuit          
+    <Input>model ResistorCircuit
   Modelica.Electrical.Analog.Basic.Resistor R1(R = 100);
   Modelica.Electrical.Analog.Basic.Resistor R2(R = 200);
   Modelica.Electrical.Analog.Basic.Resistor R3(R = 300);
@@ -34,7 +34,7 @@ end ResistorCircuit;</Input>
   Modelica.Mechanics.Rotational.Spring spring2(c = 1, s_rel0 = 0.1);
   Modelica.Mechanics.Rotational.Spring spring3(c = 1, s_rel0 = 0.1);
 equation
-  connect(spring1.flange_a, spring2.flange_a);  
+  connect(spring1.flange_a, spring2.flange_a);
   connect(spring1.flange_a, spring3.flange_a);
 end TripleSprings;  </Input>
     <Output></Output>

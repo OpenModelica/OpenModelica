@@ -29,7 +29,7 @@
   Parts.CylinderBody    cylinderBody1(r = {1, 0, 0});
   Forces.ExtForce       extForce1;
   Sources.Constant      constant1(k = {0, 1190, 0});
-equation 
+equation
   connect(inertialSystem1.frame_b, revolute1.frame_a);
   connect(revolute1.frame_b,       cylinderBody1.frame_a);
   connect(cylinderBody1.frame_b,   extForce1.frame_b);
@@ -47,11 +47,11 @@ end ExtForcePendulum;</Input>
   import ModelicaAdditions.MultiBody.Forces;
   import Modelica.Blocks.Sources;
   Parts.InertialSystem  inertialSystem1;
-  Joints.Revolute       revolute1; 
+  Joints.Revolute       revolute1;
   Parts.CylinderBody    cylinderBody1(r = {1, 0, 0});
   Forces.ExtForce       extForce1;
   Sources.Constant      constant1(k = {5000, 5000, 0});
-equation 
+equation
   connect(inertialSystem1.frame_b, revolute1.frame_a);
   connect(revolute1.frame_b,       cylinderBody1.frame_a);
   connect(cylinderBody1.frame_b,   extForce1.frame_b);
@@ -69,7 +69,7 @@ end ExtGlobalForcePendulum;
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">The &lt;span style=" font-family:Courier New;">Rotational&lt;/span> library describes varius elements for one-dimensional rotational motion. These elements can be attached to the Revolute joint from &lt;span style=" font-family:Courier New;">MultiBody&lt;/span> library. A torque, spring, damper or any other component can be attached to the flanges of the revolute joint. The example below illustrates a one-dimensional spring and damper (from &lt;span style=" font-family:Courier New;">Rotational&lt;/span> library) attached to the revolute joint of a simple pendulum.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
     <InputCell style="Input" closed="true" >
-     <Input>class PendulumWithDamper 
+     <Input>class PendulumWithDamper
   import ModelicaAdditions.MultiBody.Parts;
   import ModelicaAdditions.MultiBody.Joints;
   import ModelicaAdditions.MultiBody.Forces;
@@ -79,7 +79,7 @@ end ExtGlobalForcePendulum;
   Parts.CylinderBody       cylinderBody1(r = {1, 0, 0});
   Joints.Revolute          revolute1;
   Rotational.SpringDamper  springDamper1(c = 500, phi_rel0 = 1, d = 500);
-equation 
+equation
   connect(inertialSystem1.frame_b, revolute1.frame_a);
   connect(springDamper1.flange_a,  revolute1.bearing);
   connect(springDamper1.flange_b,  revolute1.axis);
@@ -91,7 +91,7 @@ end PendulumWithDamper;</Input>
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />Often it is necessary to move the joint to the desired position. This can be done by &lt;span style=" font-family:Courier New;">Rotational.Position&lt;/span> component. The angle is given by a signal that come from a &lt;span style=" font-family:Courier New;">Block&lt;/span> library element.The example below illustrates a &lt;span style=" font-family:Courier New;">Step&lt;/span> block attached to such component.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
     <InputCell style="Input" closed="true" >
-     <Input>class PendulumWithPosition 
+     <Input>class PendulumWithPosition
   import ModelicaAdditions.MultiBody.Parts;
   import ModelicaAdditions.MultiBody.Joints;
   import Modelica.Blocks.Sources;
@@ -114,8 +114,8 @@ end PendulumWithPosition;
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />In class Position the reference angle is filtered and the second derivative of the filtered curve is used to compute the reference acceleration of the flange. Angular position of the joint is computed from this acceleration. For filtering, a second order Bessel filter is used. The critical frequency (also called cut-off frequency) of the filter is defined via parameter &lt;span style=" font-family:Courier New;">f_crit&lt;/span> in [Hz]. This value should be selected in such a way that it is higher as the essential low frequencies in the signal.&lt;br />&lt;br />Another way to steer a joint is to set up a &lt;span style=" font-style:italic;">Proportional Derivative (PD) controller&lt;/span>. Instead of computing angular position, the PD controller creates an active torque, which acts on the joint. It behaves like a motor; parameters &lt;span style=" font-family:Courier New;">k&lt;/span> and &lt;span style=" font-family:Courier New;">d&lt;/span> can be tuned in order to adjust the reaction speed and power.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
     <InputCell style="Input" closed="true" >
-     <Input>class SimpleRotationalController 
-  "Input signal acting as reference value for angle, 
+     <Input>class SimpleRotationalController
+  "Input signal acting as reference value for angle,
    gives external torque on a flange"
   import Modelica.Blocks;
   import Modelica.Mechanics.Rotational;
@@ -123,8 +123,8 @@ end PendulumWithPosition;
   parameter Real             d = 1;
   Blocks.Interfaces.InPort        inPort(final n = 1);
   Rotational.Interfaces.Flange_b  flange_b;
-equation 
-  flange_b.tau = k * (flange_b.phi - inPort.signal[1]) + 
+equation
+  flange_b.tau = k * (flange_b.phi - inPort.signal[1]) +
                  d * der(flange_b.phi);
 end SimpleRotationalController;</Input>
      <Output></Output>
@@ -133,7 +133,7 @@ end SimpleRotationalController;</Input>
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
     <InputCell style="Input" closed="true" >
-     <Input>class PendulumWithSteering 
+     <Input>class PendulumWithSteering
   import ModelicaAdditions.MultiBody.Parts;
   import ModelicaAdditions.MultiBody.Joints;
   import Modelica.Blocks.Sources;
@@ -142,7 +142,7 @@ end SimpleRotationalController;</Input>
   Joints.Revolute            revolute1;
   Sources.Step               step1(startTime = {0.5});
   SimpleRotationalController ctrl(k = 5000, d = 500);
-equation 
+equation
   connect(revolute1.frame_b,       cylinderBody1.frame_a);
   connect(step1.outPort,           ctrl.inPort);
   connect(ctrl.flange_b,           revolute1.axis);
@@ -168,7 +168,7 @@ end PendulumWithSteering;</Input>
   Parts.CylinderBody     cylinderBody2;
   Translational.Position position1;
   Sources.Step           step1(startTime = {0.5});
-equation 
+equation
   connect(prismatic1.frame_b,       cylinderBody1.frame_a);
   connect(prismatic1.frame_a,       inertialSystem1.frame_b);
   connect(springDamperPar1.frame_a, cylinderBody1.frame_b);

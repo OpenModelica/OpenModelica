@@ -32,12 +32,12 @@
      <Input>class ArrayConcatenation
   Real[2, 3] array1 = cat(2, [22, 34; 66, 78], [15; 52]);
   Real[2, 3] array2 = cat(2, {{22, 34}, {66, 78}}, {{15}, {52}});
-  
+
   Real[2, 2] array3 = cat(1, {{11, 12}}, {{13, 14}});
   Real[3, 2] array4 = cat(1, {{7, 2}, {5, 42}}, {{24, 74}});
   Real[3, 2] array5 = cat(1, [7, 2; 5, 42], [24, 74]);
 
-  Real[4, 2] array6 = cat(1, {{1, 2}, {11, 12}}, {{13, 14}, {3, 4}});  
+  Real[4, 2] array6 = cat(1, {{1, 2}, {11, 12}}, {{13, 14}, {3, 4}});
   Real[2,4] array7 = cat(2, {{1, 2}, {72, 51}}, {{35, 73}, {12, 23}});
 end ArrayConcatenation;</Input>
      <Output></Output>
@@ -125,7 +125,7 @@ end ArrayConcatenation;</Input>
     </TextCell>
     <InputCell style="Input" closed="true" >
      <Input>class MyArrayConcat
-  
+
 end MyArrayConcat;</Input>
      <Output></Output>
     </InputCell>
@@ -140,7 +140,7 @@ end MyArrayConcat;</Input>
       <Input>class MyArrayConcat
   Real[2, 2] myArray1 = cat(1, {{1, 2}}, {{11, 12}});
   Real[1, 4] myArray2 = cat(2, {{1, 2}}, {{11, 12}});
-  
+
   Real[2, 4] myArray3 = cat(2, [21, 32, 43; 66, 77, 55], [12; 24]);
   Real[4, 2] myArray4 = cat(1, [10, 40; 55, 78], [20, 50; 31, 22]);
 end MyArrayConcat;</Input>
@@ -201,7 +201,7 @@ end MyArrayConcat;</Input>
     </TextCell>
     <InputCell style="Input" closed="true" >
      <Input>class MoreConcat
-  
+
 end MoreConcat;</Input>
      <Output></Output>
     </InputCell>

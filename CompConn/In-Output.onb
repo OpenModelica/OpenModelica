@@ -46,7 +46,7 @@ end C;</Input>
   C C1, C2, C3, C4;            // Instances of C
 equation
   connect(C1.outPort, C2.inPort);
-  connect(C2.outPort, C3.inPort);  
+  connect(C2.outPort, C3.inPort);
   connect(C3.outPort, C4.inPort);
 end CInst;</Input>
      <Output></Output>
@@ -78,9 +78,9 @@ end SOutPort;</Input>
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">The following example illustrates the lower circuit above.&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
     <InputCell style="Input" closed="true" >
-     <Input>class M                  "Structured class M"  
+     <Input>class M                  "Structured class M"
   SInPort inport;            // Outside input connector
-  SOutPort outport;            // Outside output connector  
+  SOutPort outport;            // Outside output connector
   C C2;
   C C3;
 end M;</Input>
@@ -91,13 +91,13 @@ end M;</Input>
     </TextCell>
     <InputCell style="Input" closed="true" >
      <Input>class MInst
-  M M1;                  // Instance of M  
+  M M1;                  // Instance of M
 equation
   connect(C1.outPort, M1.inPort);  // Normal connection of outPort to inPort
   connect(M1.inPort, C2.inPort);   // Outside inPort connected to inside inPort
   connect(C2.outPort, C3.inPort);  // Inside outPort connected to inside inPort
   connect(C3.outPort, M1.outPort); // Inside outPort connected to outside outPort
-  connect(M1.outPort, C4.inPort);  // Normal connection of outPort to inPort  
+  connect(M1.outPort, C4.inPort);  // Normal connection of outPort to inPort
 end MInst;
 </Input>
      <Output></Output>

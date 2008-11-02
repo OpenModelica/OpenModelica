@@ -52,7 +52,7 @@
      </TextCell>
      <InputCell style="Input" closed="false" >
       <Input>package MyPackage
-  
+
   function division
     input Real a;
     input Real b;
@@ -60,9 +60,9 @@
   algorithm
     result := a / b;
   end division;
-  
+
   constant Integer k = 5;
-  
+
 end MyPackage;</Input>
       <Output>Ok</Output>
      </InputCell>

@@ -21,12 +21,12 @@
   discrete Real y1;
   parameter Real y2 = 3;
   discrete Real y3;
-equation  
+equation
   x = time - y2;
   when x > 2 then
-    y1 = sin(x);      
-    y3 = 2*x + y1 + y2; 
-  end when;  
+    y1 = sin(x);
+    y3 = 2*x + y1 + y2;
+  end when;
 end WhenEquation;</Input>
      <Output>Ok</Output>
     </InputCell>
@@ -75,7 +75,7 @@ end record</Output>
   parameter Real y2 = 3;
   discrete Real y1;
   discrete Real y3;
-equation  
+equation
   x = time - y2;
   when {x > 2, sample(0, 2), x &lt; 5} then
     y1 = sin(x);
@@ -125,8 +125,8 @@ end record</Output>
 equation
   when initial() then
     y = x + 3;              // Equations to be activated at the beginning
-  end when;    
-  
+  end when;
+
   when terminal() then
     z = x - 2;              // Equations to be activated at the end of the simulation
   end when;
@@ -174,9 +174,9 @@ end;
   Real x, y;
 equation
   x + y = 5;
-  when sample(0, 2) then 
-    2*x + y = 7;                // Error: not valid Modelica code 
-  end when;   
+  when sample(0, 2) then
+    2*x + y = 7;                // Error: not valid Modelica code
+  end when;
 end WhenNotValid;</Input>
       <Output></Output>
      </InputCell>
@@ -203,9 +203,9 @@ end WhenNotValid;</Input>
   Real y;
 equation
   x + y = 5;                  // Equation to be used to compute x
-  when sample(0, 2) then 
+  when sample(0, 2) then
     y = 7; // - 2*x;              // Correct, y is a result variable from the when
-  end when;   
+  end when;
 end WhenValidResult;</Input>
       <Output>Ok</Output>
      </InputCell>
@@ -239,7 +239,7 @@ end record</Output>
   Real x, y1, y2;
 equation
   when x > 2 then
-    when x > 3 then         // Error: when-clauses cannot be nested  
+    when x > 3 then         // Error: when-clauses cannot be nested
       y2 = sin(x);
     end when;
   end when;
@@ -276,11 +276,11 @@ end ErrorNestedWhen;    </Input>
   Real x;
   Boolean close;       // Erroneous model: close defined by two equations!
 equation
-  
+
   when x > 2 then
     close = true;
   end when;
-  
+
   when x > 3 then
     close = false;
   end when;

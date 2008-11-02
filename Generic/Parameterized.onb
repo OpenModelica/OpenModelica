@@ -75,7 +75,7 @@ end GenericResistorCircuit;
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />Now we add a temperature variable &lt;span style=" font-family:Courier New;">Temp.&lt;/span>&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
     <InputCell style="Input" closed="false" >
-     <Input>model TemperatureDependentResistorCircuit 
+     <Input>model TemperatureDependentResistorCircuit
   Real Temp;
   extends GenericResistorCircuit(
   redeclare TempResistor R1(RT = 0.1, Temp = Temp),
@@ -87,7 +87,7 @@ end TemperatureDependentResistorCircuit;</Input>
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />&lt;span style=" font-family:Courier New;">TemperatureDependentResistorCircuit&lt;/span> is equivalent to the class below. The prefix replaceable has been lost for  &lt;span style=" font-family:Courier New;">R2&lt;/span> and &lt;span style=" font-family:Courier New;">R3&lt;/span>, since we did not use &lt;span style=" font-family:Courier New;">redeclare&lt;/span> &lt;span style=" font-family:Courier New;">replaceable&lt;/span>.&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
     <InputCell style="Input" closed="false" >
-     <Input>model TempDepResistorCircuitInherited 
+     <Input>model TempDepResistorCircuitInherited
   Real Temp;
   replaceable Resistor R1(R = 100);
   TempResistor R2(R = 200, RT = 0.1, Temp = Temp);
@@ -153,7 +153,7 @@ end TwoPin;</Input>
       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:14pt; font-weight:600; color:#000000;">GeneralSimpleCircuit&lt;/p>&lt;/body>&lt;/html></Text>
      </TextCell>
      <InputCell style="Input" closed="false" >
-      <Input>model GeneralSimpleCircuit 
+      <Input>model GeneralSimpleCircuit
   replaceable Resistor comp1(R = 100) extends TwoPin;
   replaceable Resistor comp2(R = 200) extends TwoPin;
   TempResistor R3(R = 300);
@@ -186,9 +186,9 @@ end RefinedSimpleCircuit;</Input>
     <InputCell style="Input" closed="false" >
      <Input>model GenericResistorCircuit2
   replaceable model ResistorModel = Resistor;
-  replaceable Resistor R1(R = 100);    
-  replaceable Resistor R2(R = 200);    
-  replaceable Resistor R3(R = 300);    
+  replaceable Resistor R1(R = 100);
+  replaceable Resistor R2(R = 200);
+  replaceable Resistor R3(R = 300);
 equation
   connect(R1.p, R2.p);
   connect(R1.p, R3.p);
@@ -209,9 +209,9 @@ end GenericResistorCircuit2;</Input>
     <InputCell style="Input" closed="false" >
      <Input>model RefinedSimpleCircuit2expanded
   model ResistorModel = TempResistor;
-  replaceable Resistor R1(R = 100);    
-  replaceable Resistor R2(R = 200);    
-  replaceable Resistor R3(R = 300);    
+  replaceable Resistor R1(R = 100);
+  replaceable Resistor R2(R = 200);
+  replaceable Resistor R3(R = 300);
 equation
   connect(R1.p, R2.p);
   connect(R1.p, R3.p);

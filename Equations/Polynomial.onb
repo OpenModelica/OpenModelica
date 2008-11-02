@@ -18,7 +18,7 @@
   Real a = 1;
   parameter Integer n = 5;
   Real xpowers[n];
-  Real y; 
+  Real y;
 equation
   xpowers[1] = 1;
   xpowers[2] = xpowers[1]*x;
@@ -69,11 +69,11 @@ end record</Output>
   Real xpowers[n];
   parameter Integer i=1;
   parameter Integer n = 5;
-equation  
+equation
   xpowers[1]=1;
   for i in 1:n-1 loop
     xpowers[i + 1] = xpowers[i]*x;
-  end for;  
+  end for;
 end Xpowers2;  </Input>
      <Output>Ok</Output>
     </InputCell>

@@ -187,7 +187,7 @@ end DVSSTest;</Input>
       <Output>record
     resultFile = "DVSSTest_res.plt"
 end record
-OMC-ERROR: 
+OMC-ERROR:
 "Operand of pre must be builtin-type in {x[1],x[2],x[3],x[4],x[5]}
 Wrong type or wrong number of arguments to pre(x)
 Wrong type or wrong number of arguments to pre(x)
@@ -211,21 +211,21 @@ No constant binding for variable time in scope DVSSTest.
   discrete Real x,y;
   Boolean fastSample;
   Boolean slowSample;
-  Integer cyCounter(start=0);          // Cyclic count 0,1,2,3,4, 0,1,2,3,4,... 
- equation 
+  Integer cyCounter(start=0);          // Cyclic count 0,1,2,3,4, 0,1,2,3,4,...
+ equation
   fastSample = sample(0,1);          // Define the fast clock
-  when fastSample then   
+  when fastSample then
     cyCounter  = if pre(cyCounter) &lt; 5 then pre(cyCounter)+1 else 0;
     slowSample = pre(cyCounter) == 0;       // Define the slow clock
 
   end when;
  equation
   when fastSample then              // fast sampling
-    x = sin(time);               
+    x = sin(time);
   end when;
  equation
   when slowSample then                // slow sampling (5-times slower)
-    y = log(time);               
+    y = log(time);
   end when;
 end TwoRateSampler;</Input>
      <Output>Ok</Output>

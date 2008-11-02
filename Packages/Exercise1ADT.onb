@@ -82,7 +82,7 @@
     input Distance H;
     output Distance area;
   algorithm
-    area := B*H;  
+    area := B*H;
   end RectangleArea;
 
 
@@ -90,19 +90,19 @@
     input Distance B;
     input Distance H;
     output Distance area;
-  algorithm 
-    area := RectangleArea(B, H)/2;  
+  algorithm
+    area := RectangleArea(B, H)/2;
   end TriangleArea;
-  
-  
+
+
   function CirclePerimeter
     input Distance radius;
     output Distance perimeter;
   algorithm
-    perimeter := 2*PI*radius;  
+    perimeter := 2*PI*radius;
   end CirclePerimeter;
-  
-  
+
+
   function CircleArea
     input Distance radius;
     output Distance area;
@@ -134,8 +134,8 @@ end record</Output>
       </TextCell>
       <InputCell style="Input" closed="false" >
        <Input>class GeometryUser
-  Geometry.Distance rectangleArea   = Geometry.RectangleArea(4, 5); 
-  Geometry.Distance triangleArea    = Geometry.TriangleArea(4, 5);  
+  Geometry.Distance rectangleArea   = Geometry.RectangleArea(4, 5);
+  Geometry.Distance triangleArea    = Geometry.TriangleArea(4, 5);
   Geometry.Distance circlePerimeter = Geometry.CirclePerimeter(3.5);
   Geometry.Distance circleArea      = Geometry.CircleArea(3.5);
 end GeometryUser;</Input>
@@ -151,7 +151,7 @@ end GeometryUser;</Input>
        <Output>record
     resultFile = "GeometryUser_res.plt"
 end record
-OMC-ERROR: 
+OMC-ERROR:
 "Class Geometry.RectangleArea not found in scope global scope.
 Variable PI not found in scope Geometry.CirclePerimeter
 Variable PI not found in scope Geometry.CirclePerimeter

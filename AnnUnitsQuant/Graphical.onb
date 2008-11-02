@@ -46,14 +46,14 @@ end Pin;  //From Modelica.Electrical.Analog.Interfaces</Input>
 equation
   R*p.i = p.v - n.v;
   n.i = p.i;
-public 
+public
   annotation(Icon(
     Rectangle(extent = [-70, -30, 70, 30], style(fillPattern = 1)),
     Text(extent =[-100, 55; 100, 110], string = "%name = %R"),
     Line(points = [-90, 0; -70, 0]),
     Line(points = [70, 0; 90, 0])
     ));
-end Resistor;        
+end Resistor;
 </Input>
       <Output></Output>
      </InputCell>
@@ -92,7 +92,7 @@ end Resistor;
   Integer color[3], fillColor[3];            // RGB
   Integer pattern, fillPattern, thickness, gradient,  // ??Explanations
         smooth, arrow, textStyle;
-  String font;      
+  String font;
 end Style;</Input>
       <Output></Output>
      </InputCell>
@@ -253,7 +253,7 @@ end AInst;</Input>
 equation
   R*p.i = p.v - n.v;
   n.i = p.i;
-public 
+public
   annotation(Icon(
     Rectangle(extent = [-70, -30, 70, 30], style(fillPattern = 1)),
     Text(extent =[-100, 55; 100, 110], string = "%name = %R"),
@@ -274,7 +274,7 @@ replaceable model MyResistor = Resistor
   annotation(choices(
       choice(redeclare model MyResistor = lib2.Resistor "Resistor 1"),
       choice(redeclare model MyResistor = lib2.Resistor2 "Resistor 2")));
-end ResistorAnnotation;      
+end ResistorAnnotation;
 </Input>
       <Output></Output>
      </InputCell>
@@ -293,15 +293,15 @@ end ResistorAnnotation;
     extends Electrical.Interfaces.ResistorModel;
       // declarations and equations
   end MyResistorModel;
-  
+
   encapsulated package MyComponents =
       Electrical.Components (redeclare model ResistorModel = MyResistorModel);
-  
+
   MyComponents.Transformer tr1;
   MyComponents.Transducer td2;
-  
+
   // ...
-  
+
 end MyCircuit;</Input>
       <Output></Output>
      </InputCell>
@@ -324,12 +324,12 @@ end MyCircuitInst;</Input>
      </TextCell>
      <InputCell style="Input" closed="true" >
       <Input>class NewResistor
-replaceable Resistor Load(R=2) 
+replaceable Resistor Load(R=2)
   extends TwoPin;
   annotation(choices(
           choice(redeclare lib2.Resistor Load(a={2}) "Resistor"),
-          choice(redeclare Capacitor Load(L=3)       "Capacitor"))); 
-end NewResistor;    
+          choice(redeclare Capacitor Load(L=3)       "Capacitor")));
+end NewResistor;
 </Input>
       <Output></Output>
      </InputCell>
@@ -342,9 +342,9 @@ end NewResistor;
   extends TwoPin;
   annotation(choices(
       choice(redeclare ConstantFriction a(c = 1)    "Friction Constant"),
-      choice(redeclare TableFriction a(table = "...")  "Friction-table"),  
-      choice(redeclare FunctionFriction a(func = exp)  "Friction-exp") 
-     ));    
+      choice(redeclare TableFriction a(table = "...")  "Friction-table"),
+      choice(redeclare FunctionFriction a(func = exp)  "Friction-exp")
+     ));
 end NewFrictionFunction;
 </Input>
       <Output></Output>

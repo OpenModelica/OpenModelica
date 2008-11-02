@@ -39,7 +39,7 @@ end Pin;        </Input>
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Components&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
     <InputCell style="Input" closed="false" >
-     <Input>partial model TwoPin  
+     <Input>partial model TwoPin
      // Same as OnePort in Modelica.Electrical.Analog.Interfaces
  "For Component with two electrical pins p and n and current i from p to n"
   Voltage v      "Voltage drop between the two pins (= p.v - n.v)";
@@ -109,7 +109,7 @@ end BaseResistor;</Input>
     <InputCell style="Input" closed="false" >
      <Input>model Resistor2   "Electrical resistor"
   extends BaseResistor;
-equation 
+equation
 v = R*i;
 end Resistor2;</Input>
      <Output>Ok</Output>
@@ -145,14 +145,14 @@ end TempResistor;</Input>
   Voltage v;
   Current i;
   parameter Real R(unit = "Ohm")   "Resistance";
-  
+
   replaceable class ResistorEquation
     equation
       v = i*R;
   end ResistorEquation;
-  
+
   extends ResistorEquation;
-  
+
 end Resistor3;</Input>
      <Output>Ok</Output>
     </InputCell>
@@ -163,14 +163,14 @@ end Resistor3;</Input>
      <Input>model TempResistor3 "Temperature dependent electrical resistor"
   extends Resistor3(
     redeclare class ResistorEquation
-      equation 
+      equation
         v = i*(R + RT*(Temp - Tref));
     end ResistorEquation);
-  
+
   parameter Real RT(unit = "Ohm/degC") = 0   "Temp. dependent Resistance.";
   parameter Real Tref(unit = "degC") = 20    "Reference temperature";
   Real    Temp = 20            "Actual temperature";
-  
+
 end TempResistor3;</Input>
      <Output>Ok</Output>
     </InputCell>

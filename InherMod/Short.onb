@@ -39,7 +39,7 @@
      <Input>model LowPassFilter1
   constant   Real ystart = 1;
   parameter Real T     = 1;
-  parameter Real u     = 5;         
+  parameter Real u     = 5;
   Real        y(start = ystart);
 equation
   T*der(y) + y = u;
@@ -60,7 +60,7 @@ end LowPassFilter1;</Input>
      <Input>model LowPassFilter20B
   constant   Real ystart =  0;
   parameter Real T     = 20;
-  parameter Real u    =  5; 
+  parameter Real u    =  5;
   Real        y(start = ystart);
 equation
   T*der(y) + y = u;

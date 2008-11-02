@@ -26,11 +26,11 @@
   parameter Real uMin;
   Real y;
 equation
-  if u > uMax then 
+  if u > uMax then
     y = uMax;
-  elseif u &lt; uMin then 
+  elseif u &lt; uMin then
     y = uMin;
-  else 
+  else
     y = u;
   end if;
 end IfEquation;</Input>

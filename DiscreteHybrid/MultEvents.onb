@@ -16,7 +16,7 @@
      <Input>model MultipleEvents
   discrete Integer x(start = 1);
   Boolean          signal(start = false);
-algorithm 
+algorithm
   when x == 2 then      // Event handler A
     x := pre(x)+1;           // x becomes 2 + 1 = 3
   end when;

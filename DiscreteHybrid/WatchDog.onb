@@ -69,15 +69,15 @@ end WatchDogSystem1;</Input>
   eventPort dAlarm;
   discrete Boolean watchdogActive(start=false);  // Initially turned off
 algorithm
-  when change(dOn.signal) then                 // Event watchdog on 
+  when change(dOn.signal) then                 // Event watchdog on
     watchdogActive := true;
   end when;
-  
+
   when change(dOff.signal) then                // Event watchdog off
     watchdogActive := false;
     dAlarm.signal  := false;
   end when;
-  
+
   when (change(dDeadline.signal) and watchdogActive) then   // Event Alarm!
     dAlarm.signal := true;
   end when;
@@ -121,18 +121,18 @@ end record</Output>
    eventPort dOff;
    eventPort dDeadline;
    eventPort dAlarm;
-  
+
    Real internalTime1, internalTime2;
-   
+
 equation
    when change(dOn.signal)then
      internalTime1 = time;
    end when;
-   
+
    when change(dOff.signal)then
      internalTime2 = time;
    end when;
-   
+
    when change(dDeadline.signal) and time>internalTime1 and internalTime1>internalTime2 then
      dAlarm.signal=true;
    end when;

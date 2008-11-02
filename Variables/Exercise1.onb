@@ -73,7 +73,7 @@
   parameter Real m1[2,3];  // A matrix with two rows and three columns
   parameter Real m2[5];    // An array with 5 elements
   Real m3[1,6]; // Matrix with one row and six columns (six-element array)
-  constant Real[2,1] m4 = {{4}, {7}}; // Matrix with two rows and one column    
+  constant Real[2,1] m4 = {{4}, {7}}; // Matrix with two rows and one column
 end Matrices;</Input>
       <Output>Ok</Output>
      </InputCell>

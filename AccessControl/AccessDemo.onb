@@ -25,12 +25,12 @@
     parameter Real w, u;
     Real u2;
   public   Real u3;
-equation  
+equation
   x  = 2;          // Legal, since code inside the class
   z  = 5;          // Legal, since code inside the class
   u2 = 5;          // Legal, since code inside the class
   u3 = 8;          // Legal, since code inside the class
-end AccessDemo;              
+end AccessDemo;
 </Input>
      <Output>Ok</Output>
     </InputCell>

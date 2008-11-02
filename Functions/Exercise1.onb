@@ -42,10 +42,10 @@
        <Input>function NFaculty
   input Integer n;
   output Integer fak = 1;
-algorithm  
+algorithm
   for i in 2:n loop
     fak := i*fak;
-  end for;  
+  end for;
 end NFaculty;</Input>
        <Output>Ok</Output>
       </InputCell>

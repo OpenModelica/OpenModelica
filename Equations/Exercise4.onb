@@ -46,7 +46,7 @@ end MatrixAddition;</Input>
      </TextCell>
      <InputCell style="Input" closed="false" >
       <Input>class MatrixAdditionCall
-  Real[2, 2] MA = MatrixAddition([1, 2; 3, 4], [1, 2; 3, 4]);   
+  Real[2, 2] MA = MatrixAddition([1, 2; 3, 4], [1, 2; 3, 4]);
 end MatrixAdditionCall;</Input>
       <Output>Ok</Output>
      </InputCell>

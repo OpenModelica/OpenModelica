@@ -71,10 +71,10 @@ equation
             else if (time &lt; thrustEndTime) then force2
             else 0;
   apollo.gravity = moon.g*moon.mass/(apollo.altitude + moon.radius) ^2;
-  
+
   when apollo.altitude &lt; 0 then                    // Termination condition
     terminate("The moon lander touches the ground of moon");
-  end when;  
+  end when;
 end MoonLanding;  </Input>
      <Output>Ok</Output>
     </InputCell>

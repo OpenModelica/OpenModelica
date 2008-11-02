@@ -34,7 +34,7 @@
   Boolean init = initial();
 equation
  when {init, sample(0.1,0.1)} then
-   if edge(init) then 
+   if edge(init) then
       lifeHistory = firstGeneration(pre(lifeHistory), initialAlive);
    else
      lifeHistory = nextGeneration(pre(lifeHistory));
@@ -50,7 +50,7 @@ end GameOfLife;</Input>
      <Input>function firstGeneration
   input Integer M[:,:];
   input Integer I[:,2];
-  output Integer G[size(M,1), size(M,1)] := M; 
+  output Integer G[size(M,1), size(M,1)] := M;
 algorithm
  for i in 1:size(I,1) loop
       G[I[i,1], I[i,2]] := 1;
@@ -64,16 +64,16 @@ end firstGeneration;</Input>
     <InputCell style="Input" closed="false" >
      <Input>function nextGeneration
   input Integer M[:,:];
-  output Integer G[size(M,1), size(M,1)]; 
+  output Integer G[size(M,1), size(M,1)];
   protected
   Integer iW, iE, jN, jS, borderSum;
   parameter Integer n = size(M,1);
 algorithm
   for i in 1:n loop
     for j in 1:n loop
-      iW := mod(i-2+n, n) + 1; 
+      iW := mod(i-2+n, n) + 1;
       iE := mod(i+n, n) + 1;
-      jN := mod(j+n, n) + 1; 
+      jN := mod(j+n, n) + 1;
       jS := mod(j-2+n, n) + 1;
       borderSum := M[iW,j] + M[iE,j] + M[iW,jS] + M[i,jS] + M[iE,jS] + M[iW,jN] + M[i,jN] + M[iE,jN];
       if borderSum == 3 then
@@ -87,11 +87,11 @@ algorithm
 end nextGeneration;</Input>
      <Output>Error occured building AST
 Syntax Error
-OMC-ERROR: 
+OMC-ERROR:
 "Class mod (its type)  not found in scope nextGeneration.$for loop scope$.$for loop scope$.
-No matching function found for mod, candidates are 
+No matching function found for mod, candidates are
 Class mod not found in scope nextGeneration.$for loop scope$.$for loop scope$.
-No matching function found for mod, candidates are 
+No matching function found for mod, candidates are
 Class mod not found in scope nextGeneration.$for loop scope$.$for loop scope$.
 "</Output>
     </InputCell>

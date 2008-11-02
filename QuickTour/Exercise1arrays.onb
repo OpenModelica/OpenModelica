@@ -24,7 +24,7 @@
       <Input>record Test
   Boolean[2] truthvalues = {false, true};
   Integer[5] ints = {13, 2, 5, 4, 87};
-  String[3, 4] strings = {{"blue", "Martin", "yellow", "cake"}, {"Anna", "sun", "star", "heaven"}, 
+  String[3, 4] strings = {{"blue", "Martin", "yellow", "cake"}, {"Anna", "sun", "star", "heaven"},
                            {"candy", "Sofia", "sweet", "Balthasar"}};
   Real[1, 5] reals = {{4.3, 7.132, 6.5, 4.0, 2.1}};
 end Test;</Input>

@@ -42,10 +42,10 @@ algorithm
     elseif v[i] > -1 then
       sum := sum + v[i] - 1;
     else
-      sum := sum - v[i];      
+      sum := sum - v[i];
     end if;
   end for;
-end SumVector;      
+end SumVector;
 </Input>
      <Output></Output>
     </InputCell>
@@ -90,13 +90,13 @@ end SumVector;
   Real y(start = 45);
   parameter Real z := 0;
 algorithm
-  if x > 5 then 
-    x := 400;      
-  end if;  
-  if z > 10 then 
-    y := 500;    
-  end if;  
-end CondAssign;  
+  if x > 5 then
+    x := 400;
+  end if;
+  if z > 10 then
+    y := 500;
+  end if;
+end CondAssign;
 </Input>
       <Output></Output>
      </InputCell>
@@ -132,7 +132,7 @@ algorithm
   if z > 10 then
     y := 500;
   end if;
-end CondAssignFunc;          
+end CondAssignFunc;
 </Input>
       <Output>Ok</Output>
      </InputCell>

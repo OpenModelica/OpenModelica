@@ -45,7 +45,7 @@ end Mod;</Input>
      <Input>class Arr
   Real A3[2,2];                           // Array variable
   Real A4[2,2](start = {{1, 0}, {0, 1}}); // Modifies the start value for the whole array
-  Real A5[2,2](unit = {{"Voltage", "Voltage"}, 
+  Real A5[2,2](unit = {{"Voltage", "Voltage"},
                        {"Voltage", "Voltage"}} );
   Real A6[2,2](start[2, 1] = 2.3); // Array with single element modification
 end Arr;</Input>
@@ -104,7 +104,7 @@ end D1;
      <Input>instantiateModel( D2 )</Input>
      <Output>"variable z  not found in simulation result.
 "
-OMC-ERROR: 
+OMC-ERROR:
 "Trying to modify protected element b
 Error occured while flattening model D2
 Error occured while flattening model D2
@@ -149,7 +149,7 @@ end C1;</Input>
      <Input>instantiateModel( C2 )</Input>
      <Output>"variable z  not found in simulation result.
 "
-OMC-ERROR: 
+OMC-ERROR:
 "Error occured while flattening model C2
 "</Output>
     </InputCell>

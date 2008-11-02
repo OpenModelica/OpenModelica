@@ -17,7 +17,7 @@
   output Real pLim;
 algorithm
   pLim := if p>pMax then pMax
-          else if p&lt;pMin then pMin 
+          else if p&lt;pMin then pMin
           else p;
 end LimitValue;</Input>
      <Output>Ok</Output>
@@ -28,14 +28,14 @@ end LimitValue;</Input>
     <InputCell style="Input" closed="false" >
      <Input>model FlatTank
   //tank related variables and parameters
-  Real  act;  // Connector, actuator controlling input flow  
+  Real  act;  // Connector, actuator controlling input flow
   parameter Real flowVout =0.02; //[m3/s]
   parameter Real area =0.5;      //[m2]
   parameter Real flowGain =10;   //[m2/s]
   Real h(start=0);    //tank level [m]
   Real qIn;  // flow through input valve[m3/s]
   Real qOut; // flow through output valve[m3/s]
-  
+
   //controler related variables and parameters
   parameter Real Ts=0.1;//sampling time[s]
   parameter Real K=2;//gain
@@ -47,14 +47,14 @@ end LimitValue;</Input>
 
 equation
   der(h)=(qIn-qOut)/area; //mass balance equation
-  qOut=if time>100 then flowVout else 0; 
+  qOut=if time>100 then flowVout else 0;
   qIn = flowGain*act;
-  
+
   error = ref-h;
   act = LimitValue(minV,maxV,outCtr);
   der(x) = error/T;
   outCtr = K*(x+error);
-  
+
 end FlatTank;</Input>
      <Output>Ok</Output>
     </InputCell>
@@ -92,7 +92,7 @@ end FlatTank;</Input>
   output Real pLim;
 algorithm
   pLim := if p>pMax then pMax
-          else if p&lt;pMin then pMin 
+          else if p&lt;pMin then pMin
           else p;
 end LimitValue;</Input>
      <Output>Ok</Output>
@@ -109,7 +109,7 @@ end LimitValue;</Input>
   Real h(start=0);    //tank level [m]
   Real qIn;  // flow through input valve[m3/s]
   Real qOut; // flow through output valve[m3/s]
-  
+
   //controler related variables and parameters
   parameter Real Ts=0.1;//sampling time[s]
   parameter Real K=2;//gain
@@ -121,13 +121,13 @@ end LimitValue;</Input>
 
 equation
   der(h)=(qIn-qOut)/area; //mass balance equation
-  qIn=if time>150 then 3*flowVin else flowVin; 
+  qIn=if time>150 then 3*flowVin else flowVin;
   qOut=LimitValue(0,10,-flowGain*outCtr);
-  
+
   error = ref-h;
   der(x) = error/T;
   outCtr = K*(x+error);
-  
+
 end FlatTank;</Input>
      <Output>Ok</Output>
     </InputCell>
@@ -196,7 +196,7 @@ end FlowIn;</Input>
   output Real pLim;
 algorithm
   pLim := if p>pMax then pMax
-          else if p&lt;pMin then pMin 
+          else if p&lt;pMin then pMin
           else p;
 end LimitValue;</Input>
       <Output>Ok</Output>
@@ -307,7 +307,7 @@ end PIDcontinuousController;</Input>
   Real qOut; // flow through output valve[m3/s]
 equation
   der(h)=(qIn-qOut)/area; //mass balance equation
-  qOut=if time>100 then flowVout else 0; // interface between discrete and 
+  qOut=if time>100 then flowVout else 0; // interface between discrete and
                                          // continuous part
   qIn = flowGain*tInp.act;
   tOut.val = h;
@@ -323,13 +323,13 @@ end Tank;</Input>
   ActSignal  tInp;  // Connector, actuator controlling input flow
   LiquidFlow qIn;  // flow through input valve[m3/s]
   LiquidFlow qOut; // flow through output valve[m3/s]
-  
-  
+
+
   parameter Real flowVout =0.01; //[m3/s]
   parameter Real area =0.5;      //[m2]
   parameter Real flowGain=10;   //[m2/s]
   Real h(start=0);    //tank level [m]
-  
+
 equation
   der(h)=(qIn.lflow-qOut.lflow)/area; //mass balance equation
   qIn.lflow = flowGain*tInp.act;
@@ -575,7 +575,7 @@ equation
   qIn=if time>150 then 3*flowVin else flowVin ;
   qOut=LimitValue(0,10,-flowGain*tInp.act);
   //qOut=0;
-  
+
   tOut.val = h;
 end TankModified;</Input>
      <Output>Ok</Output>
@@ -666,7 +666,7 @@ end FlowIn;</Input>
   output Real pLim;
 algorithm
   pLim := if p>pMax then pMax
-          else if p&lt;pMin then pMin 
+          else if p&lt;pMin then pMin
           else p;
 end LimitValue;</Input>
       <Output>Ok</Output>
@@ -828,11 +828,11 @@ equation
   connect(tank1.tInp,piContinuous1.cOut);
   connect(tank1.tOut,piContinuous1.cInp);
   piContinuous1.ref=0.25;
-  
+
   connect(tank2.tInp,piContinuous2.cOut);
   connect(tank2.tOut,piContinuous2.cInp);
   piContinuous2.ref=0.4;
-  
+
   tank1.qIn.lflow=0.02;
   connect(tank1.qOut,tank2.qIn);
 end TanksConnected;</Input>

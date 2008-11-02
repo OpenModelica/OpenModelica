@@ -22,7 +22,7 @@
     <InputCell style="Input" closed="false" >
      <Input>record ColorData           // Superclass of Color
   parameter Real red = 4;
-  parameter MyReal blue = 3;        
+  parameter MyReal blue = 3;
   Real green;
 end ColorData;</Input>
      <Output>Ok</Output>
@@ -32,7 +32,7 @@ end ColorData;</Input>
     </TextCell>
     <InputCell style="Input" closed="false" >
      <Input>class Color                // Subclass of ColorData
-  extends ColorData;              // Inherits from ColorData 
+  extends ColorData;              // Inherits from ColorData
 equation
   red + blue + green = 1;
 end Color;</Input>
@@ -52,7 +52,7 @@ end Color;</Input>
   Real blue;      // Legal, since identical to the inherited field blue
   Integer red;    // Illegal, since same name but different type
 equation
-  red + blue + green = 1;  
+  red + blue + green = 1;
 end ErrorColor;  </Input>
      <Output>Ok</Output>
     </InputCell>
@@ -64,7 +64,7 @@ end ErrorColor;  </Input>
   extends ColorData(red = 2);
   parameter Real blue = 3; // Legal, since identical to the inherited field blue
 equation
-  red + blue + green = 1;  
+  red + blue + green = 1;
 end CorrectColor;  </Input>
      <Output>Ok</Output>
     </InputCell>
@@ -133,7 +133,7 @@ end record</Output>
     </TextCell>
     <InputCell style="Input" closed="false" >
      <Input>class Color2
-  extends Color;      
+  extends Color;
 equation
   red + blue + green = 1;
 end Color;</Input>
@@ -148,8 +148,8 @@ end Color;</Input>
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">Equations that are mathematically equivalent, but not syntactically equivalent are not discarded. Since this is the case in class &lt;span style=" font-family:Courier New;">Color3&lt;/span>,  both equations are kept. This leads to an overdeterminated system of equation.&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
     <InputCell style="Input" closed="false" >
-     <Input>class Color3            
-  extends Color;   
+     <Input>class Color3
+  extends Color;
 equation
   red + blue + green = 1.0;
 end Color;</Input>
