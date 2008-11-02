@@ -34,7 +34,7 @@ What follows is a list of the OMC APIs with their syntax and examples.
 
  	\begin{modelicaExamples}
 	% 	Standard API
-		\api{getClassNames()}{Returns the names of all class definitions in the global scope.\\ \examples{} 
+		\api{getClassNames()}{Returns the names of all class definitions in the global scope.\\ \examples{}
 			\begin{mocode}
 				package test\\
 			    \tab package test2\\
@@ -43,10 +43,10 @@ What follows is a list of the OMC APIs with their syntax and examples.
 				\tab end test2;\\
 				\tab package test3\\
 				\tab end test3;\\
-				end test;\\ 
-			\end{mocode} 
+				end test;\\
+			\end{mocode}
 
-			\functionex{getClassNames()} 
+			\functionex{getClassNames()}
 			{\{test\}}
 
 		}
@@ -60,13 +60,13 @@ What follows is a list of the OMC APIs with their syntax and examples.
 				\tab package test3\\
 				\tab end test3;\\
 				end test;\\
-			\end{mocode} 
+			\end{mocode}
 
 			\functionex{getClassNames(test)}
 			{\{test2,test3\}}
 
 		}
-		
+
 		\api{getClassRestriction(A1<cref>)}{Returns the kind of restricted class of \textit{A1}, e.g. "model","connector", "function", "package", etc.\\ \examples
 			\begin{mocode}
 				package test\\
@@ -76,15 +76,15 @@ What follows is a list of the OMC APIs with their syntax and examples.
 				\tab end test2;\\
 				\tab package test3\\
 				\tab end test3;\\
-				end test;\\ 
-			\end{mocode} 
+				end test;\\
+			\end{mocode}
 			\functionex{getClassRestriction(test)}
 			{"package"}
 			\functionex{getClassRestriction(test.test2.mymodel)}
 			{"model"}
 		}
 		\api{getErrorString()}{Fetches the error string from OMC. This should be called after an "Error" is received}
-		
+
 		\api{is*(A1<cref>)}{Returns "true" if A1 is a Modelica class of type *, otherwise "false". The API of this family are: \textit{isModel}, \textit{isPackage}, \textit{isPrimitive}, \textit{isConnector}, \textit{isRecord}, \textit{isBlock}, \textit{isType}, \textit{isFunction}, \textit{isClass}, \textit{isParameter}, \textit{isConstant}, \textit{isProtected}. \\ \examples
 			\begin{mocode}
 				package test\\
@@ -94,22 +94,22 @@ What follows is a list of the OMC APIs with their syntax and examples.
 				\tab end test2;\\
 				\tab package test3\\
 				\tab end test3;\\
-				end test;\\ 
-			\end{mocode} 
+				end test;\\
+			\end{mocode}
 			\functionex{isPackage(test)}
 			{true}
 			\functionex{isPackage(test.test2.mymodel)}
 			{false}
 		}
-		
-		\api{getElementsInfo(A1<cref>)}{Retrieves the Info attribute of all elements within the given class (A1). 
+
+		\api{getElementsInfo(A1<cref>)}{Retrieves the Info attribute of all elements within the given class (A1).
 This contains information of the element type, filename, isReadOnly, line information, name etc., in the form of a
  vector containing element de\-scrip\-tors on re\-cord.\\
  \examples \\
 		In this example a model of Modelica library is used (supposing that the Standard library is already loaded
  in OMC).
 		\functionex{getElementsInfo(Modelica.Electrical.Analog.Example.ChuaCir\-cuit)}
-		{ 
+		{
 \begin{scriptsize} \{ \{ rec(elementvisibility=public, elementfile = "MODELICALIBRARY/Modelica/Electric\
 -al/Analog/Examples/ChuaCircuit.mo", elementreadonly="writable", elementStartLine=2, elementStartColumn=4,
  elementEndLine= 2, element~End~Column= 43, final=false, replaceable= false, inout= "no\-ne", element~type= import,
@@ -118,51 +118,51 @@ This contains information of the element type, filename, isReadOnly, line inform
  elementStartLine=3, elementStartColumn=4, elementEndLine = 3, elementEndColumn=56, final=false, replaceable= false,
  inout= "none", elementtype= import, kind= qualified, path= Modelica. Electrical. Analog. Examples. Utilities)\}
 ,\{rec (element~visibility= public, elementfile=
- "MODELICALIBRARY/Mo\-delica/Electrical/Analog/Examples/ChuaCircuit.mo", elementreadonly= "writable", 
-elementStartLine=4, elementStartColumn= 4, element~End~Line=4, elementEndColumn=25, final= false, replaceable= 
-false, inout="none", elementtype= import, kind= qualified, path= Modelica.Icons)\}, \{rec (e\-le\-ment\-vi\-si\-bi\-li\-ty= 
+ "MODELICALIBRARY/Mo\-delica/Electrical/Analog/Examples/ChuaCircuit.mo", elementreadonly= "writable",
+elementStartLine=4, elementStartColumn= 4, element~End~Line=4, elementEndColumn=25, final= false, replaceable=
+false, inout="none", elementtype= import, kind= qualified, path= Modelica.Icons)\}, \{rec (e\-le\-ment\-vi\-si\-bi\-li\-ty=
 public, elementfile = "MO\-DE\-LI\-CA\-LI\-BRA\-RY/Mo\-de\-li\-ca/E\-lectrical/A\-nalog/\-Examples/\-Chua\-Circuit.mo",  element\-read\-only=
  "wri\-ta\-ble",  e\-le\-ment\-Start\-Li\-ne= 5, e\-le\-me\-nt\-Start\-Co\-lumn= 4, e\-le\-me\-nt\-End\-Line=41, e\-le\-ment\-End\-Co\-lumn= 5, fi\-nal= fal\-se,
  replaceable= false, inout= "none", elementtype= extends, path= Icons.Example) \},\{rec (element\-visibility= public,
  element\-type= annotation) \}, \{rec(elementvisibility= public, elementfile =
  "MODELICALIBRARY/M\-odelica/E\-lectrical/A\-nalog/\-Examples/\-ChuaCircuit.mo", element\-read\-only= "wri\-ta\-ble",
  elementStartLine=42, elementStartColumn=9, elementEndLine=42, elementEndColumn=190, final= false,replaceable=
- fal\-se, inout= "none", elementtype= component, typename= Basic.Inductor, names= \{L,""\}, flow=false, variability= 
+ fal\-se, inout= "none", elementtype= component, typename= Basic.Inductor, names= \{L,""\}, flow=false, variability=
 "unspecified", direction= "unspecified") \},\dots
 		\end{scriptsize} }
 This is not the complete answer but only a part of it because of its length.}
-		
+
 		\api{getClassInformation(A1<cref>)}{Returns a list of information about the class \textit{A1}. The list is composed by: \textit{\{"restriction", "comment", "filename.mo", \{boolean1, boolean2\}, \{"readonly| writable", integer1, integer2, integer3, integer4\}\}}.
 		\\  \textit{Restriction}, \textit{comment} and \textit{filename} represent the restriction, the comment and the file name of the class \textit{A1}. The boolean values tell if \textit{A1} is partial, if it is a final or it is encapsulated. The third element is \textit{"readonly"} if the class can be read or \textit{"writable"} if it can be modified; the four integer values represent the start line, start column, end line and end column of \textit{A1} in \textit{filename.mo}.
 		}
-		
+
 		\api{getIconAnnotation(A1<className>)}{Returns the Icon Annotation of the class named \textit{A1}. The result is the flattened code of the actual annotation of the class. Since the Diagram annotations can be found in base classes, a partial code instantiation is performed that flattens the inheritance hierarchy in order to find all annotations. Because of the partial flattening, the format returned is not according the Modelica standard for Diagram annotations.\\
 		\examples
-		
+
 		\functionex{getIconAnnotation(Modelica.Electrical.Analog.Basic.Resistor)}
 		{\begin{scriptsize}\{-100.0, -100.0, 100.0, 100.0, \{Rectangle (true, \{0,0,255\}, \{255,255,255\}, LinePattern.Solid, FillPattern.Solid, 0.25, BorderPattern.None, \{\{-70.0, 30.0\}, \{70.0, -30.0\}\}, 0.0), Line (true, \{\{-90.0, 0.0\}, \{-70.0, 0.0\}\}, \{0,0,255\}, LinePattern.Solid,0.25,
- \{Arrow.None,Arrow.None\}, 3.0,false), Line(true, \{\{70.0,0.0\}, \{90.0,0.0\}\}, 
- \{0,0,255\}, LinePattern.Solid,0.25, \{Arrow.None, Arrow.None\}, 3.0, false), Text(true, \{0,0,0\}, 
-\{0,0,0\}, LinePattern.Solid, FillPattern.None, 0.25, \{\{-144.0, -60.0\}, 
-\{144.0,-100.0\}\}, "R=\%R", 0.0, ""), Text (true, 
-\{0,0,0\}, \{0,0,255\}, LinePattern.Solid, FillPattern.None, 0.25, \{\{-144.0, 40.0\}, 
+ \{Arrow.None,Arrow.None\}, 3.0,false), Line(true, \{\{70.0,0.0\}, \{90.0,0.0\}\},
+ \{0,0,255\}, LinePattern.Solid,0.25, \{Arrow.None, Arrow.None\}, 3.0, false), Text(true, \{0,0,0\},
+\{0,0,0\}, LinePattern.Solid, FillPattern.None, 0.25, \{\{-144.0, -60.0\},
+\{144.0,-100.0\}\}, "R=\%R", 0.0, ""), Text (true,
+\{0,0,0\}, \{0,0,255\}, LinePattern.Solid, FillPattern.None, 0.25, \{\{-144.0, 40.0\},
 \{144.0,100.0\}\} ,"\%name", 0.0, "")\}\}
 		\end{scriptsize}}
 		}
-		
+
 		\api{getDiagramAnnotation(A1<className>)}{Returns the Diagram Annotation of the class named \textit{A1}. The result is the flattened code of the actual annotation of the class. Since the Diagram annotations can be found in base classes a partial code instantiation is performed that flattens the inheritance hierarchy in order to find all annotations. Because of the partial flattening, the format returned is not according the Modelica standard for Diagram annotations.\\
 		\examples
-		
+
 		\functionex{getDiagramAnnotation(Modelica.Electrical.Analog.Basic.Re\-si\-stor)}
 		{\begin{scriptsize}\{-100.0, -100.0, 100.0, 100.0, \{Rectangle (true, \{0, 0, 255\},
-\{0,0,0\}, LinePattern.Solid, FillPattern.None, 0.25, BorderPattern.None, \{\{-70.0,30.0\}, 
-\{70.0,-30.0\}\}, 0.0), Line (true, \{\{-96.0,0.0\}, \{-70.0, 0.0\}\}, \{0,0,255\}, LinePattern.Solid, 0.25, 
-\{Arrow.None,Arrow.None\}, 3.0, false), Line(true, \{\{70.0,0.0\}, \{96.0,0.0\}\}, 
-\{0,0,255\}, LinePattern.Solid,0.25, 
+\{0,0,0\}, LinePattern.Solid, FillPattern.None, 0.25, BorderPattern.None, \{\{-70.0,30.0\},
+\{70.0,-30.0\}\}, 0.0), Line (true, \{\{-96.0,0.0\}, \{-70.0, 0.0\}\}, \{0,0,255\}, LinePattern.Solid, 0.25,
+\{Arrow.None,Arrow.None\}, 3.0, false), Line(true, \{\{70.0,0.0\}, \{96.0,0.0\}\},
+\{0,0,255\}, LinePattern.Solid,0.25,
 \{Arrow.None,Arrow.None\}, 3.0, false)\}\}
 		\end{scriptsize}}
 		}
-		
+
 		\api{getDocumentationAnnotation(A1<cref>)}{Returs the Documentation Annotation of the class named \textit{A1}.\\
 		\examples
 		\functionex{getDocumentationAnnotation( Modelica.Electrical.Analog.Ba\-sic.Re\-sistor )}
@@ -175,37 +175,37 @@ This is not the complete answer but only a part of it because of its length.}
 		</HTML>\\
 		''\}}
 		}
-		
+
 		\api{loadFile(A1<string>)}{Loads all models in the file \textit{A1}.\\
 		\examples
 		\functionex{loadFile("/home/user/Desktop/model.mo")}
 		{true}
 		}
-		
+
 		\api{loadModel(A1<cref>)}{Loads the model \textit{A1} by looking up the correct file to load in                   \$OPENMODELICALIBRARY. Loads all models in that file into the symbol table.\\
 		\examples
 		\functionex{loadModel(Modelica)}
 		{true}
 		}
-		
+
 		\api{createModel(A1<cref>)}{Creates a new empty model named \textit{A1} in global scope.
 		This method doesn't write any file but creates the model in OMC local memory, thus invoking \textit{save(A1)} will return false. In order to save the new model the user has to link the new model to a file by \textit{setSourceFile(A1<string>,A2<string>)}.\\
 		\examples
 		\functionex{getClassNames()}
 		{\{\}}
-		
+
 		\functionex{createModel(myModel)}
 		{true}
-		
+
 		\functionex{getClassNames()}
 		{\{myModel\}}
-		
+
 		\functionex{save(myModel)}
 		{false}
-		
+
 		\functionex{setSourceFile(myModel, "/home/user/filename.mo")}
 		{Ok}
-		
+
 		\functionex{save(myModel)}
 		{true}
 		Here is the content of the \textit{filename.mo}
@@ -213,30 +213,30 @@ This is not the complete answer but only a part of it because of its length.}
 			model myModel \\
 			end myModel; \\
 		\end{mocode}
-		
+
 		}
-		
+
 		\api{newModel(A1<cref>, A2<cref>)}{Creates a new empty model named \textit{A1} in class \textit{A2}.
 		This method doesn't write any file but creates the model in OMC local memory, thus invoking \textit{save(A1)} will return false. In order to save the new model the user has to link the new model to a file by \textit{setSourceFile(A1<string>,A2<string>)}.\\
 		\examples
 		\functionex{package test end test;}
 		{Ok}
-		
+
 		\functionex{newModel(newModel, test)}
 		{true}
-		
+
 		\functionex{getClassNames(test)}
 		{\{newModel\}}
-		
+
 		\functionex{save(test.myModel)}
 		{false}
-		
+
 		\functionex{setSourceFile(test.myModel, "/home/user/filename.mo")}
 		{Ok}
-		
+
 		\functionex{setSourceFile(test, "/home/user/filename.mo")}
 		{Ok}
-		
+
 		\functionex{save(test)}
 		{true}
 		Here is the content of the \textit{filename.mo}
@@ -247,54 +247,54 @@ This is not the complete answer but only a part of it because of its length.}
 			end test;\\
 		\end{mocode}
 		}
-		
+
 		\api{save(A1<cref>)}{Saves the model \textit{A1} into the file it was previously linked to.\\
 		\examples
 		\functionex{save(test.myModel)}
 		{true}
 		}
-		
+
 		\api{deleteClass(A1<cref>)}{Deletes the class from the symbol table.\\
 		\examples
 		\functionex{package test package test2 end test2; end test;}
 		{Ok}
-		
+
 		\functionex{deleteClass(test)}
 		{true}
-		
+
 		\functionex{getClassNames()}
 		{\{\}}
 		}
-		
+
 		\api{renameClass(A1<cref>, A2<cref>)}{Renames an already existing class with name \textit{A1} to name \textit{A2}. The rename is performed recursively in all already loaded models which reference the class \textit{A1}.
 		While \textit{A1} can be in a dotted annotation form in order to refer to nested classes, \textit{A2} can't since it represent the new identifier and not the path of the class.\\
 		\examples
 		\functionex{package test package test2 end test2; package test3 end test3; end test;}
 		{Ok}
-		
+
 		\functionex{getClassNames()}
 		{\{test\}}
-		
+
 		\functionex{getClassNames(test)}
 		{\{test2,test3\}}
-	
+
 		\functionex{renameClass(test, newTest)}
 		{\{newTest\}}
-		
+
 		\functionex{getClassNames()}
 		{\{newTest\}}
-		
+
 		\functionex{renameClass(newTest.test2, newTest.test3.test6)}
 		{error}
-		
+
 		\functionex{renameClass(newTest.test2, test6)}
 		{\{newTest.test6\}}
-		
+
 		\functionex{getClassNames(newTest)}
 		{\{test6,test3\}}
-		
+
 		}
-		
+
 		\api{setClassComment(A1<cref>,A2<string>)}{Sets the class \textit{A1} string comment \textit{A2}.
 		Notice that \textit{A2} must be include into quotes.\\
 		\examples
@@ -306,7 +306,7 @@ This is not the complete answer but only a part of it because of its length.}
 		\end{mocode}
 		\functionex{setClassComment(test.myModel, comment)  /*malformed command*/}
 		{}
-		
+
 		\functionex{setClassComment(test.myModel, ``this is a comment'') /*notice the quotes*/}
 		{Ok}
 		\begin{mocode}
@@ -315,10 +315,10 @@ This is not the complete answer but only a part of it because of its length.}
 		\tab end myModel; \\
 		end test; \\
 		\end{mocode}
-		
+
 		}
-		
-		
+
+
 
 		\api{addClassAnnotation(A1<cref>, annotate=<expr>)}{Adds annotation given by \textit{<expr>} (the second parameter must be in the form annotate=classmod(...)) to the model definition referenced by \textit{A1}. It should be used to add Icon Diagram and Documentation annotations.\\
 		\examples
@@ -328,63 +328,63 @@ This is not the complete answer but only a part of it because of its length.}
 		\end{mocode}
 		\functionex{addClassAnnotation(mymodel, annotate= Icon(coordinateSys\-tem= CoordinateSystem (extent= \{\{-100, -100\}, \{100, 100\}\}), graphics=\{\}))}
 		{true}
-		
+
 		\functionex{save(mymodel)}
 		{true}
-		
+
 		\begin{mocode}
 		model mymodel annotation(Icon(coordinateSystem\\
 \tab (extent=\{\{-100,-100\},\{100,100\}\}), graphics=\{\}));\\
 		end mymodel;
 		\end{mocode}
-		
+
 		\functionex{addClassAnnotation(mymodel, annotate= Icon(coordinateSys\-tem= CoordinateSystem (extent= \{\{-100, -100\}, \{100, 100\}\}), graphics= \{Line (color= \{127,127,127\}, arrow= \{Arrow.none, Arrow.sta\-rt\}, points= \{\{-50, -50\}, \{50,50\}, \{100, 0\}, \{0, 100\}\} ) \}))}
 		{true}
-		
+
 		\begin{mocode}
-		model mymodel annotation(Icon (coordinateSystem (extent= \{\{-100, -100\}, \{100, 100\}\}),\\ 
+		model mymodel annotation(Icon (coordinateSystem (extent= \{\{-100, -100\}, \{100, 100\}\}),\\
 \tab graphics= \{Line(color= \{127, 127, 127\}, arrow= \{Arrow.none, Arrow.st\-art\}, points= \{\{-50, -50\},\{50, 50\},\{100, 0\},\{0, 100\}\})\}));\\
 		end mymodel;
 		\end{mocode}
-		
+
 		\functionex{addClassAnnotation(mymodel, annotate= Diagram (coordinateSystem= CoordinateSystem (extent= \{\{-200, -150\}, \{10, 105\}\}), graphics= \{Rectangle (lineColor= \{127, 127, 127\}, extent=\{\{-20, -20\}, \{10, 15\}\}, pattern= LinePattern.DashDotDot), Text(extent= \{\{-5, 5\},\{50, 55\}\}, textString= "hello") \}))}
 		{true}
-		
+
 		\begin{mocode}
 		model mymodel
   		annotation (Icon (coordinateSystem (extent= \{\{-100, -100\},\{100, 100\}\}), graphics= \{Line(color=\{127,127,127\}, arrow=\{Arrow.none, Arrow.sta\-rt\}, points=\{\{-50, -50\},\{50, 50\},\{100, 0\}, \{0, 100\}\})\}), Diagram (coordinateSys\-tem (extent= \{\{-200, -150\},\{10, 105\}\}), graphics=\{Rectangle (lineColor= \{127, 127, 127\}, extent=\{\{-20,-20\},\{10,15\}\}, pattern= LinePattern.Dash\-DotDot), Text(extent= \{\{-5, 5\}, \{50, 55\}\}, textString= "hello")\}));\\
 		end mymodel;
 		\end{mocode}
-		
+
 		\begin{mocode}
 		 model mymodel\\
 		end mymodel;\\
 		\end{mocode}
 		\functionex{addClassAnnotation(mymodel, annotate=Diagram())}
 		{true}
-		
+
 		\begin{mocode}
 		model mymodel annotation(Documentation(info=``<HTML>Hello</HTML>''));\\
 		end mymodel;\\
 		\end{mocode}
 		}
-		
+
 		\api{getPackages()}{Returns the names of all package definitions in the global scope.\\
-		\examples 
+		\examples
 			\begin{mocode}
 				package test\\
 				\tab package test\_1\\
 				\tab end test\_1;\\
 				\tab package test\_2\\
 				\tab end test\_2;\\
-				
+
 				\tab model model\_1\\
 				\tab end model\_1;\\
 			end test;\\
 			package test2\\
 			end test2;\\
-			\end{mocode} 
-			\functionex{getPackages()} 
+			\end{mocode}
+			\functionex{getPackages()}
 			{\{test2,test\}}
 		}
 		\api{getPackages(A1<cref>)}{Returns the names of all Packages in a class/package named by \textit{A1} as a list. \examples
@@ -399,12 +399,12 @@ This is not the complete answer but only a part of it because of its length.}
 			end test;\\
 			package test2\\
 			end test2;\\
-			\end{mocode} 
-			\functionex{getPackages(test)} 
+			\end{mocode}
+			\functionex{getPackages(test)}
 			{\{test\_1,test\_2\}}
 		}
-		
-		
+
+
 		\api{getClassAttributes(A1<cref>)}{Returns all the possible information of class \textit{A1} in the following form:\\ \textit{rec(attr1 = value1, attr2 = value2 ... )}.\\
 		\examples
 			\begin{mocode}
@@ -417,10 +417,10 @@ This is not the complete answer but only a part of it because of its length.}
 			\tab end mymodel;\\
 			end test;\\
 			\end{mocode}
-			\functionex{getClassAttributes(test.mymodel)} 
+			\functionex{getClassAttributes(test.mymodel)}
 			{\{ rec(name=``mymodel'', partial=false, final=false, encapsulated=fal\-se, restriction=MODEL, comment="", file="/home/ilcava/Desktop/modello .mo", readonly="writable", startLine= 2, startColumn= 25, endLine= 7, endColumn= 36) \}}
 		}
-		
+
 		\api{existClass(A1<cref>)}{Returns \textit{"true"} if class \textit{A1} exists in symbolTable, \textit{"false"} otherwise.\\
 		\examples
 		\begin{mocode}
@@ -432,7 +432,7 @@ This is not the complete answer but only a part of it because of its length.}
 		\functionex{existClass(test.mymodel)}
 		{true}
 		}
-		
+
 		\api{existPackage(A1<cref>)}{Returns \textit{"true"} if package \textit{A1} exists in symbolTable, \textit{"false"} otherwise.\\
 		\examples
 		\begin{mocode}
@@ -444,7 +444,7 @@ This is not the complete answer but only a part of it because of its length.}
 		\functionex{existPackage(test)}
 		{true}
 		}
-		
+
 		\api{existModel(A1<cref>)}{Returns \textit{"true"} if model \textit{A1} exists in symbolTable, \textit{"false"} otherwise.\\
 		\examples
 		\begin{mocode}
@@ -456,7 +456,7 @@ This is not the complete answer but only a part of it because of its length.}
 		\functionex{existModel(test.mymodel)}
 		{true}
 		}
-		
+
 		\api{getComponents(A1<cref>)}{Returns a list of component declarations within class \textit{A1}:  "\{\{Atype, varidA, "commentA"\}, \{Btype, varidB, "commentB"\},  \{...\}\}" and so on.\\
 		\examples
 		\functionex{getComponents(Modelica.Electrical.Analog.Examples.Chua\-Cir\-cuit)}
@@ -469,8 +469,8 @@ This is not the complete answer but only a part of it because of its length.}
 \tab \{Modelica.Electrical.Analog.Basic.Ground, Gnd, "", "public", fal\-se, fal\-se, fal\-se, "unspecified", "none", "unspecified"\}\}\}
 		}
 		}
-		
-		
+
+
 		\api{setComponentProperties(A1 <cref>, A2 <cref>, A3 <Bo\-o\-le\-an>, A4 <Bo\-o\-le\-an>, A5 <Bo\-o\-le\-an>, A6 <Bo\-o\-le\-an>, A7 <String>, A8 <\{Bo\-o\-le\-an, Bo\-o\-le\-an\}>, A9 <String>)}{Sets properties of component \textit{A2} in a class \textit{A1}. The properties are:
 \begin{itemize}
 	\item\textit{A3} final (true/false)
@@ -490,7 +490,7 @@ This is not the complete answer but only a part of it because of its length.}
 
 		\functionex{setComponentProperties(test.mymodel, r1, \{true, true, true, false\}, \{"discrete"\}, \{true, false\}, \{"input"\})}
 		{OK}
-		
+
 		\begin{mocode}
 		package test\\
 		\tab model mymodel\\
@@ -499,7 +499,7 @@ This is not the complete answer but only a part of it because of its length.}
 		\tab end mymodel;\\
 		end test;\\
 \end{mocode}
-		
+
 }
 		\api{setComponentComment(A1<cref>, A2<cref>, A3<string>)}{
 		\examples
@@ -512,7 +512,7 @@ This is not the complete answer but only a part of it because of its length.}
 		\end{mocode}
 		\functionex{setComponentComment(test.mymodel, r1, "comment")}
 		{Ok}
-		
+
 		\begin{mocode}
 		package test\\
 		\tab model mymodel\\
@@ -521,7 +521,7 @@ This is not the complete answer but only a part of it because of its length.}
 		end test;
 		\end{mocode}
 		}
-		
+
 		\api{getComponentAnnotations(A1<cref>)}{  Returns a list of all annotations of all components in class \textit{A1}, in the same order as the components, one annotation per component.\\
 		\examples
 		\functionex{getComponentAnnotations(Mo\-de\-li\-ca.E\-lec\-tri\-cal.Analog.Ex\-ampl\-es.Chu\-a\-Ci\-rcuit)}
@@ -534,7 +534,7 @@ This is not the complete answer but only a part of it because of its length.}
 		\{true,75.0,15.0,0.25,1.0,false,false,-90.0,75.0,15.0,0.25,1.0,false,false, -90.0\},\\
 		\{true,0.0,-75.0,0.25,1.0,false,false,0.0,0.0,-75.0,0.25,1.0,false,false, 0.0\}\}}
 		}
-		
+
 		\api{addComponent(A1<ident>,A2<cref>,A3<cref>,annotate=<expr>)}{Adds a component with name \textit{A1}, type \textit{A2}, and class \textit{A3} as arguments. Optional annotations are given with the named argument annotate.}{\\
 \examples
 		\begin{mocode}
@@ -546,7 +546,7 @@ This is not the complete answer but only a part of it because of its length.}
 		\end{mocode}
 		\functionex{addComponent(c1, Modelica.Electrical.Analog.Basic.Capacitor, test.mymodel, annotate=Code(()))}
 		{true}
-		
+
 		\begin{mocode}
 		package test\\
 		\tab model mymodel\\
@@ -557,7 +557,7 @@ This is not the complete answer but only a part of it because of its length.}
 		\end{mocode}
 		\functionex{addComponent(c2, Modelica.Electrical.Analog.Basic.Capacitor, test.mymodel, annotate=Placement(transformation=transformation(x=10, flipVertical=true), iconTransformation=transformation(y=5, scale=0.1, aspectRatio=1.2, rotation=-90, flipHorizontal=true)))}
 		{true}
-		
+
 		\begin{mocode}
 		package test\\
 		\tab model mymodel\\
@@ -568,7 +568,7 @@ This is not the complete answer but only a part of it because of its length.}
 		end test;
 		\end{mocode}
 		}
-		
+
 		\api{deleteComponent(A1<ident>,A2<cref>)}{Deletes a component \textit{A1} within a class \textit{A2}.\\
 		\examples
 		\begin{mocode}
@@ -583,7 +583,7 @@ annotation (Placement (trans\-for\-ma\-tion (x=10, flip\-Ver\-ti\-cal= true), i\
 		\end{mocode}
 		\functionex{deleteComponent(c2, test.mymodel)}
 		{true}
-		
+
 		\begin{mocode}
 		package test\\
 		\tab model mymodel\\
@@ -593,7 +593,7 @@ annotation (Placement (trans\-for\-ma\-tion (x=10, flip\-Ver\-ti\-cal= true), i\
 		end test;\\
 		\end{mocode}
 		}
-		
+
 		\api{updateComponent(A1<ident>,A2<cref>,A3<cref>,annotate=<expr>)}{Updates an already existing component with name \textit{A1}, type \textit{A2}, and class \textit{A3} as arguments. Optional annotations are given with the named argument annotate.\\
 		\examples
 		\begin{mocode}
@@ -606,7 +606,7 @@ annotation (Placement (trans\-for\-ma\-tion (x=10, flip\-Ver\-ti\-cal= true), i\
 		\end{mocode}
 		\functionex{updateComponent(c1, Modelica.Electrical.Analog.Basic.Capacitor, test.mymodel, annotate=Placement (transformation=transformation (x=25, scale=0.1, aspectRatio=1.2, rotation=-90),  iconTransformation=transformation (y=5, flipVertical=true, flipHorizontal=true)))}
 		{true}
-		
+
 		\begin{mocode}
 		package test\\
 		\tab model mymodel\\
@@ -616,7 +616,7 @@ annotation (Placement (trans\-for\-ma\-tion (x=10, flip\-Ver\-ti\-cal= true), i\
 		end test;\\
 		\end{mocode}
 		}
-		
+
 		\api{renameComponent(A1<cref>,A2<ident>,A3<ident>)}{Renames an already existing component with name \textit{A2} defined in a class with name \textit{A1}, to the new name \textit{A3}. The rename is performed recursively in all already loaded models which reference the component declared in class \textit{A2}.\\
 		\examples
 		\begin{mocode}
@@ -628,7 +628,7 @@ annotation (Placement (trans\-for\-ma\-tion (x=10, flip\-Ver\-ti\-cal= true), i\
 		\end{mocode}
 		\functionex{renameComponent(test.mymodel, r1, newName)}
 		{\{test.mymodel\}}
-		
+
 		\begin{mocode}
 		package test\\
 		\tab model mymodel\\
@@ -637,7 +637,7 @@ annotation (Placement (trans\-for\-ma\-tion (x=10, flip\-Ver\-ti\-cal= true), i\
 		end test;\\
 		\end{mocode}
 		}
-		
+
 		\api{getNthComponentAnnotation(A1<cref>,A2<int>)}{Returns the flattened annotation record of the nth component \textit{A2} (the first is has no 1) within class/component \textit{A1}. It consists of a comma separated string of 15 values.\\
 		\examples
 		\begin{mocode}
@@ -650,21 +650,21 @@ annotation (Placement (trans\-for\-ma\-tion (x=10, flip\-Ver\-ti\-cal= true), i\
 		\end{mocode}
 		\functionex{getNthComponentAnnotation(test.mymodel, 1)}
 		{\{\{true, 100.0, 100.0, 0.1, 1.0, false, false, -90.0, 10.0, 50.0, 0.1, 1.0, false, true,9 0.0\}\}}
-		
+
 		\functionex{getNthComponentAnnotation(test.mymodel, 2)}
 		{\{\{true, 25.0, 0.0, 0.1, 1.2, false, false, -90.0, 0.0, 5.0, 1.0, 1.0, true, true, 0.0\}\}}
-		
+
 		}
-		
+
 		%modifier
        %\section*{Modifiers}
 		%\api{modifiers}{
 			\api{getNthComponentModification(A1<cref>,A2<int>)}{Returns the modification of the nth component (of index \textit{A2}) of class/component \textit{A1}. The fist component has index 1.}
-			
+
 			\api{getComponentModifierValue(A1<cref>, A2<cref)}{Returns the value of a component (e.g. variable, parameter, constant, etc.) \textit{A2} in a class \textup{A1}.}
-			
+
 			\api{setComponentModifierValue(A1<cref>,A2<cref>,A3<exp>)}{Sets the modifier value of a component (e.g. variable, parameter, constant, etc.) \textit{A2} in a class \textit{A1} to an expression (unevaluated) in \textit{A3}.}
-			
+
 			\api{getComponentModifierNames(A1<cref>, A2<cref>)}{Retrieves the names of all components in the class.}\\
 			\examples
 			\begin{mocode}
@@ -677,10 +677,10 @@ annotation (Placement (trans\-for\-ma\-tion (x=10, flip\-Ver\-ti\-cal= true), i\
 			\end{mocode}
 			\functionex{getNthComponentModification(test.mymodel, 1)}
 			{\{Code()\}}
-			
+
 			\functionex{setComponentModifierValue(test.mymodel, r1, Code(=2))}
 			{Ok}
-			
+
 			\begin{mocode}
 			\dots \\
 			Modelica.Electrical.Analog.Basic.Resistor r1=2;\\
@@ -688,10 +688,10 @@ annotation (Placement (trans\-for\-ma\-tion (x=10, flip\-Ver\-ti\-cal= true), i\
 			\end{mocode}
 			\functionex{getNthComponentModification(test.mymodel, 1)}
 			{\{Code(=2)\}}
-			
+
 			\functionex{setComponentModifierValue(test.mymodel, r1.start, Code(=2))}
 			{Ok}
-			
+
 			\begin{mocode}
 			\dots \\
 			Modelica.Electrical.Analog.Basic.Resistor r1(start=2)=2;\\
@@ -699,7 +699,7 @@ annotation (Placement (trans\-for\-ma\-tion (x=10, flip\-Ver\-ti\-cal= true), i\
 			\end{mocode}
 			\functionex{setComponentModifierValue(test.mymodel, r1, Code(=Resistor(R=2)))}
 			{Ok}
-			
+
 			\begin{mocode}
 			\dots \\
 			Modelica.Electrical.Analog.Basic.Resistor r1(start=2)=Resistor(R=2);\\
@@ -707,10 +707,10 @@ annotation (Placement (trans\-for\-ma\-tion (x=10, flip\-Ver\-ti\-cal= true), i\
 			\end{mocode}
 			\functionex{getNthComponentModification(test.mymodel, 1)}
 			{\{Code((start=2)=Resistor(R=2))\}}
-			
+
 			\functionex{setComponentModifierValue(test.mymodel, r1.min, Code(=10))}
 			{Ok}
-			
+
 			\begin{mocode}
 			\dots \\
 			Modelica.Electrical.Analog.Basic.Resistor r1(start=2, min=10)=Resistor(R=2);\\
@@ -718,22 +718,22 @@ annotation (Placement (trans\-for\-ma\-tion (x=10, flip\-Ver\-ti\-cal= true), i\
 			\end{mocode}
 			\functionex{getComponentModifierNames(test.mymodel, r1)}
 			{\{start, min\}}
-			
+
 			\functionex{getNthComponentModification(test.mymodel, 1)}
 			{\{Code((start=2, min=10)=Resistor(R=2))\}}
-			
+
 			\functionex{getComponentModifierValue(test.mymodel, r1)}
 			{Resistor(R=2)}
-			
+
 			\functionex{getComponentModifierValue(test.mymodel, r1.start)}
 			{=2}
-			
+
 			\functionex{getComponentModifierValue(test.mymodel, r1.min)}
 			{=10}
-			
+
 			\functionex{setComponentModifierValue(test.mymodel, r1.min, Code(()))}
 			{Ok}
-			
+
 			\begin{mocode}
 			\dots \\
 			Modelica.Electrical.Analog.Basic.Resistor r1(start=2)=Resistor(R=2);\\
@@ -741,7 +741,7 @@ annotation (Placement (trans\-for\-ma\-tion (x=10, flip\-Ver\-ti\-cal= true), i\
 			\end{mocode}
 			\functionex{setComponentModifierValue(test.mymodel, r1, Code(()))}
 			{Ok}
-			
+
 			\begin{mocode}
 			\dots \\
 			Modelica.Electrical.Analog.Basic.Resistor r1(start=2);\\
@@ -749,33 +749,33 @@ annotation (Placement (trans\-for\-ma\-tion (x=10, flip\-Ver\-ti\-cal= true), i\
 			\end{mocode}
 			\functionex{setComponentModifierValue(test.mymodel, r1.start, Code(()))}
 			{Ok}
-			
+
 			\begin{mocode}
 			\dots \\
 			Modelica.Electrical.Analog.Basic.Resistor r1;\\
 			\dots \\
 			\end{mocode}
 			%}
-			
+
 		\api{getInheritanceCount(A1<cref>)}{Returns the number (as a string) of inherited classes of a class \textit{A1}.\\
 		\examples
 		\functionex{getInheritanceCount(Modelica.Electrical.Analog.Basic.Resistor)}
 		{1}
 		}
-		
+
 		\api{getNthInheritedClass(A1<cref>,A2<int>)}{Returns the name of the nth inherited class of a class \textit{A1}. The first class has number 1.\\
 		\examples
 		\functionex{getNthInheritedClass(Modelica.Electrical.Analog.Basic.Resistor, 1)}
 		{Modelica.Electrical.Analog.Interfaces.OnePort}
 		}
-		
+
 		%Modifier delle estensioni
 		\api{getConnectionCount(A1<cref>)}{Returns the number (as a string) of connections in the model \textit{A1}.\\
 		\examples
 		\functionex{getConnectionCount(Modelica.Electrical.Analog.Examples.Chua\-Circuit)}
 		{9}
 		}
-		
+
 		\api{setConnectionComment(A1<cref>, A2<cref>, A3<cref>, A4<string>}{
 		\examples
 		\begin{mocode}
@@ -790,14 +790,14 @@ annotation (Placement (trans\-for\-ma\-tion (x=10, flip\-Ver\-ti\-cal= true), i\
 		\end{mocode}
 		\functionex{setConnectionComment(test.mymodel, r1.p, c1.n, "comment")}
 		{Ok}
-		
+
 		\begin{mocode}
 		\dots \\
 		connect(r1.p,c1.n) "comment";\\
 		\dots \\
 		\end{mocode}
 		}
-		
+
 		\api{getNthConnection(A1<cref>,A2<int>)}{Returns the nth connection declared in model \textit{A1}, as a comma separated pair of connectors. The first has number 1.\\
 		\examples
 		\functionex{getNthConnection(Modelica.Electrical.Analog.Examples.ChuaCircuit, 2)}
@@ -807,9 +807,9 @@ annotation (Placement (trans\-for\-ma\-tion (x=10, flip\-Ver\-ti\-cal= true), i\
 		\examples
 		\functionex{getNthConnectionAnnotation(Modelica.Electrical.Analog.Examples. ChuaCircuit, 2)}
 		{\{Line (true, \{\{25.0, 75.0\},\{75.0, 75.0\}, \{75.0, 40.0\}\}, \{0, 0, 255\}, LinePattern.Solid, 0.25,\{Arrow.None, Arrow.None\}, 3.0, false)\}}
-		
+
 		}
-		
+
 		\api{addConnection(A1<cref>,A2<cref>A3<cref>, annotate=<expr>)}{Adds connection \textit{connect(A1,A2)} to model \textit{A3}, with annotation given by the named argument annotate.\\
 		\examples
 		\begin{mocode}
@@ -824,7 +824,7 @@ annotation (Placement (trans\-for\-ma\-tion (x=10, flip\-Ver\-ti\-cal= true), i\
 		\end{mocode}
 		\functionex{addConnection(r1.p, c1.n, test.mymodel, annotate= Li\-ne (co\-lor= \{127, 127, 127\}, points=\{\{10, 50\},\{50, 50\},\{50, 100\}\} ))}
 		{Ok}
-		
+
 		\begin{mocode}
 		\dots \\
 		connect(r1.p,c1.n) annotation(Line (color= \{127, 127, 127\}, po\-ints= \{\{10, 50\}, \{50, 50\},\{50,100\}\}));\\
@@ -839,7 +839,7 @@ annotation (Placement (trans\-for\-ma\-tion (x=10, flip\-Ver\-ti\-cal= true), i\
 		\dots \\
 		\end{mocode}
 		}
-		
+
 		\api{deleteConnection(A1<cref>,A2<cref>,A3<cref>)}{Deletes the connection \textit{connect(A1,A2)} in class \textit{A3}.\\
 		\examples
 		\begin{mocode}
@@ -855,7 +855,7 @@ annotation (Placement (trans\-for\-ma\-tion (x=10, flip\-Ver\-ti\-cal= true), i\
 		\end{mocode}
 		\functionex{deleteConnection(r1.n, c1.n, test.mymodel)}
 		{Ok}
-		
+
 		\begin{mocode}
 		package test\\
 		\tab model mymodel\\
@@ -867,7 +867,7 @@ annotation (Placement (trans\-for\-ma\-tion (x=10, flip\-Ver\-ti\-cal= true), i\
 		end test;\\
 		\end{mocode}
 		}
-		
+
 		\api{updateConnection(A1<cref>,A2<cref>,A3<cref>,annotate=<expr>)}{Updates an already existing connection.\\
 		\examples
 		\begin{mocode}
@@ -882,41 +882,41 @@ annotation (Placement (trans\-for\-ma\-tion (x=10, flip\-Ver\-ti\-cal= true), i\
 		\end{mocode}
 		\functionex{updateConnection(r1.p, c1.n, test.mymodel, annotate=Line (co\-lor=\{30,25,225\}, points=\{\{20, 10\},\{20, 150\}\}, pattern=LinePattern.Dot))}
 		{Ok}
-		
+
 		\begin{mocode}
 		\dots \\
 		connect(r1.p,c1.n) annotation(Line (color= \{30, 25, 225\}, po\-ints=\{\{20, 10\},\{20, 150\}\},\\ pattern=LinePattern.Dot));\\
 		\dots
 		\end{mocode}
-		
+
 		}
-		
+
 		\api{cd()}{Returns current working directory.\\
 		\examples
 		\functionex{cd()}
 		{"/home/user/OpenModelica/share/openmodelica-1.4-dev"}
 		}
-		
+
 		\api{cd(A1<string>)}{Changes directory.
 		\examples
 		\functionex{cd("/home/user/work")}
 		{"/home/user/work"}
 		}
-		
+
 		\api{checkModel(A1<cref>)}{Instantiates model, optimizes equations, and reports errors.
 		\examples
 		\functionex{checkModel(Modelica.Electrical.Analog.Examples.ChuaCircuit)}
 		{"Check of Modelica.Electrical.Analog.Examples.ChuaCircuit successful.
-		
+
 		model Modelica.Electrical.Analog.Examples.ChuaCircuit has 38 equation(s) and 38 variable(s). 23 of these are trivial equation(s)."}
 		}
-		
+
 		\api{clear()}{Clears everything: symbol table and variables.\\
 		\examples
 		\functionex{clear()}
 		{true}
 		}
-		
+
 		\api{list(A1<cref>)}{Prints class definition of class \textit{A1}.\\
 		\examples
 		\functionex{list(Modelica.Electrical.Analog.Examples.ChuaCircuit)}
@@ -928,13 +928,13 @@ annotation (Placement (trans\-for\-ma\-tion (x=10, flip\-Ver\-ti\-cal= true), i\
 			annotation (Diagram( coordinateSystem (extent=\{\{-100.0, -100.0\}, \{100.0, 100.0\}\})),\\ Icon (coordinateSystem (extent= \{\{-100.0, -100.0\}, \{100.0, 100.0\}\})), Documentation (info=''<html>\dots</HTML>``));\\
 			Basic.Inductor L(L=18) annota\-ti\-on (Placement (transformation (x= -75.0, y= 50.0, scale= 0.25, aspectRatio=1.0, rotation=-90), iconTransformation(x= -75.0, y= 50.0, scale= 0.25, aspectRatio=1.0, rotation= -90)));
 			\dots
-	
+
 			equation\\
 			\tab connect(L.p,G.p) annotation(Line(points=\{\{-75.0,75.0\},\{-25.0,75.0\}\}, color= \{0, 0, 255\}));
 			\dots
 			}
 		}
-		
+
 		\api{getParameterNames(A1<cref>)}{Gets the names all parameters of  class \textit{A1}.\\
 		\examples
 		\begin{mocode}
@@ -949,7 +949,7 @@ annotation (Placement (trans\-for\-ma\-tion (x=10, flip\-Ver\-ti\-cal= true), i\
 		\functionex{getParameterNames(test.mymodel)}
 		{\{p1, p2\}}
 		}
-		
+
 		\api{setParameterValue (A1<cref>, A2<cref>, A3<cref>)}{Sets the value of parameter \textit{A2} in class \textit{A1} to value \textit{A3}.\\
 		\examples
 		\begin{mocode}
@@ -962,14 +962,14 @@ annotation (Placement (trans\-for\-ma\-tion (x=10, flip\-Ver\-ti\-cal= true), i\
 		\end{mocode}
 		\functionex{setParameterValue(test.mymodel, p1, 2)}
 		{Ok}
-		
+
 		\begin{mocode}
 		\dots \\
 		parameter Real p1=2;\\
 		\dots \\
 		\end{mocode}
 		}
-		
+
 		\api{getParameterValue(A1<cref>, A2<cref>)}{Gets the value of parameter \textit{A2} in class \textit{A1}.\\
 		\examples
 		\begin{mocode}
@@ -982,9 +982,9 @@ annotation (Placement (trans\-for\-ma\-tion (x=10, flip\-Ver\-ti\-cal= true), i\
 		\end{mocode}
 		\functionex{getParameterValue(test.mymodel, p1)}
 		{2}
-		
+
 		}
-			
+
 	\end{modelicaExamples}
 
 \end{document}
