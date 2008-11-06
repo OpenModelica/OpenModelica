@@ -37,9 +37,7 @@ HFILES = blaswrap.h f2c.h integer_array.h memory_pool.h modelica_string.h \
 LIBS = libc_runtime.a libsim.a
 
 ifdef QTHOME
-PLTPKGCMD =	cd ./sendData && \
-	$(QTHOME)/bin/qmake && \
-	$(MAKE) -f Makefile
+PLTPKGCMD = cd ./sendData && $(QTHOME)/bin/qmake && $(MAKE) -f Makefile
 else
 PLTPKGCMD = mkdir -p sendData/release && \
 g++ -c -o sendData/libsendData.o sendData/humbug.cpp && \

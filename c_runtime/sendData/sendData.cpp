@@ -117,8 +117,10 @@ bool Connection::startExternalViewer()
   if(QFile::exists(path))
   {
     QProcess *plotViewerProcess = new QProcess();
-    const char* tempFile = QString(QDir::tempPath() + "/OpenModelica-PlotViewer.log").toStdString().c_str();
-    plotViewerProcess->setWorkingDirectory(QDir::tempPath());
+    QString tempPath(QDir::tempPath());
+    QString tempFile = tempPath + "/OpenModelica-PlotViewer.log";
+    plotViewerProcess->setWorkingDirectory(tempPath);
+    // cerr << "simulation runtime: redirecting the output to: " << tempFile.toStdString() << endl;
     plotViewerProcess->setStandardErrorFile(tempFile, QIODevice::Truncate);
     plotViewerProcess->setStandardOutputFile(tempFile, QIODevice::Append);
     plotViewerProcess->setProcessChannelMode(QProcess::MergedChannels);
@@ -187,14 +189,16 @@ QTcpSocket* Connection::newConnection(bool graphics)
       ticks++;
       socket->connectToHost(QHostAddress::LocalHost, graphics?7779:7778);
       if (socket->state() != QAbstractSocket::ConnectedState)
+      {
 	if(socket->waitForConnected(5000))
 	{
-	  return socket;
+	    return socket;
 	}
         else
 	{
-	  cerr << "Could not connect to socket because: " << socket->error() << endl;
+	    cerr << "Could not connect to socket because: " << socket->errorString().toStdString() << endl;
 	}
+      }
       if (ticks > 100)
 	break;
     }
@@ -910,9 +914,22 @@ void emulateStreamData(const char* data, const char* title, const char* xLabel, 
   out.device()->seek(0);
   out << (quint32)(block.size() - sizeof(quint32));
 
-  socket->write(block);
-  socket->flush();
-  socket->waitForBytesWritten(-1);
+  if (!socket->isValid())
+  {
+      cerr << "simulation runtime: Socket doesn't appear to be valid: " << 
+	  socket->errorString().toStdString() << "!" << endl;
+  }
+
+  if (socket->write(block) < 0)
+  {
+      cerr << "simulation runtime: error writing to socket 1: " << 
+	  socket->errorString().toStdString() << "!" << endl;
+  }
+  if (!socket->waitForBytesWritten(-1))
+  {
+      cerr << "simulation runtime: error writing to socket 2: " << 
+	  socket->errorString().toStdString() << "!" << endl;
+  }
 
 
   block.clear();
@@ -941,9 +958,16 @@ void emulateStreamData(const char* data, const char* title, const char* xLabel, 
   out.device()->seek(0);
   out << (quint32)(block.size() - sizeof(quint32));
 
-  socket->write(block);
-  socket->flush();
-  socket->waitForBytesWritten(-1);
+  if (socket->write(block) < 0)
+  {
+      cerr << "simulation runtime: error writing to socket 3: " << 
+	  socket->errorString().toStdString() << "!" << endl;
+  }
+  if (!socket->waitForBytesWritten(-1))
+  {
+      cerr << "simulation runtime: error writing to socket 4: " << 
+	  socket->errorString().toStdString() << "!" << endl;
+  }
 
   block.clear();
 
@@ -962,22 +986,24 @@ void emulateStreamData(const char* data, const char* title, const char* xLabel, 
     out.device()->seek(0);
     out << (quint32)(block.size() - sizeof(quint32));
 
-    socket->write(block);
-    socket->flush();
-    socket->waitForBytesWritten(-1);
+    if (socket->write(block) < 0)
+    {
+	cerr << "simulation runtime: error writing to socket 5: " << 
+	    socket->errorString().toStdString() << "!" << endl;
+    }
+    if (!socket->waitForBytesWritten(-1))
+    {
+	cerr << "simulation runtime: error writing to socket 6: " << 
+	    socket->errorString().toStdString() << "!" << endl;
+    }
 
     block.clear();
 
-    if(!(i%100))
-      socket->flush();
   }
-
-  socket->flush();
 
   for(quint32 i = 0; i < variableValues.size(); ++i)
     delete variableValues[i];
 
-  socket->waitForBytesWritten(-1);
   socket->disconnectFromHost();
   if(socket->state() == QAbstractSocket::ConnectedState)
     socket->waitForDisconnected(-1);
