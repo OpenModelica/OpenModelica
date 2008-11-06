@@ -28,11 +28,6 @@
  *
  */
 
-#ifndef NOMICO
-#include "omc_communication.h"
-#include "omc_communication_impl.h"
-#endif //NOMICO
-
 // includes for both linux and windows
 extern "C" {
 #include "rml.h"
@@ -43,6 +38,12 @@ extern "C" {
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <cstring>
+
+#ifndef NOMICO
+#include "omc_communication.h"
+#include "omc_communication_impl.h"
+#endif //NOMICO
 
 /*
  * @author adrpo

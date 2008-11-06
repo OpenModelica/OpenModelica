@@ -28,10 +28,12 @@
  *
  */
 
-#include "omc_communication_impl.h"
 extern "C" {
+  #include <string.h>
   #include "rml.h"
 }
+
+#include "omc_communication_impl.h"
 
 // windows and mingw32
 #if defined(__MINGW32__) || defined(_MSC_VER)
