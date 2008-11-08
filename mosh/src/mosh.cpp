@@ -110,7 +110,7 @@ int main(int argc, char* argv[])
   }
   if(!scriptname) {
     cout << "Open Source Modelica Terminal Shell" << endl
-	 << "Copyright 1997-2007, PELAB, Linkoping University" << endl << endl
+	 << "Copyright 1997-2008, PELAB, Linkoping University" << endl << endl
 	 << "To get help on using Mosh and OpenModelica, type \"help()\" and press enter" << endl;
   }
   if (corba_comm) {
