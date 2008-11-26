@@ -44,7 +44,7 @@ CFLAGS = $(INCP) -g -Wall -DDEBUG $(USE_CORBA)
 CXXFLAGS = $(CFLAGS)
 LINKFLAGS = $(LIBP)
 
-LIBS = -lantlr -lmodelica_parser -lreadline -ltermcap  $(CORBALIB) -lm -lpthread
+LIBS = -lantlr -lmodelica_parser -lreadline  $(CORBALIB) -lm -lpthread
 
 
 OBJS += mosh.o options.o
