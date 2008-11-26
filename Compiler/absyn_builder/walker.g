@@ -209,8 +209,9 @@ tokens {
 
     struct type_prefix_t
     {
-        type_prefix_t():flow(0), variability(0),direction(0){}
+        type_prefix_t():flow(0), stream(0), variability(0), direction(0){}
         void* flow;
+        void* stream;
         void* variability;
         void* direction;
     };
@@ -461,6 +462,7 @@ derived_class returns [void *ast]
 				if (!cmod) { cmod = mk_nil(); }
 				attr = Absyn__ATTR(
 				pfx.flow,
+				pfx.stream,
 				pfx.variability,
 				pfx.direction,
  				mk_nil());
@@ -925,6 +927,7 @@ component_clause returns [void* ast]
 
 			attr = Absyn__ATTR(
 				pfx.flow,
+				pfx.stream,
 				pfx.variability,
 				pfx.direction,
  				arr);
@@ -935,7 +938,8 @@ component_clause returns [void* ast]
 
 type_prefix [type_prefix_t& prefix]
 	:
-		(f:FLOW)?
+		(f:FLOW
+		|s:STREAM)?
 		(d:DISCRETE
 		|p:PARAMETER
 		|c:CONSTANT
@@ -946,6 +950,8 @@ type_prefix [type_prefix_t& prefix]
 		{
 			if (f != NULL) { prefix.flow = RML_PRIM_MKBOOL(1); }
 			else { prefix.flow = RML_PRIM_MKBOOL(0); }
+			if (s != NULL) { prefix.stream = RML_PRIM_MKBOOL(1); }
+			else { prefix.stream = RML_PRIM_MKBOOL(0); }
 
 			if (d != NULL) { prefix.variability = Absyn__DISCRETE; }
 			else if (p != NULL) { prefix.variability = Absyn__PARAM; }
@@ -1282,6 +1288,7 @@ component_clause1 returns [void* ast]
 			comp_list = mk_cons(comp_decl,mk_nil());
 			attr = Absyn__ATTR(
 				pfx.flow,
+				pfx.stream,
 				pfx.variability,
 				pfx.direction,
 				arr);

@@ -90,7 +90,8 @@ uniontype Var "- Variables"
     list<Absyn.Path> className "className ; classname variable belongs to" ;
     Option<DAE.VariableAttributes> values "values ; values on builtin attributes" ;
     Option<Absyn.Comment> comment "comment ; this contains the comment and annotation from Absyn" ;
-    DAE.Flow flow_ "flow ; if the var is a flow" ;
+    DAE.Flow flow_ "flow ; if the variable is a flow" ;
+    DAE.Stream stream_ "stream ; if the variable is a stream variable. Modelica 3.1 specs" ;
   end VAR;
 
 end Var;
@@ -397,12 +398,6 @@ protected constant BinTree emptyBintree=TREENODE(NONE,NONE,NONE) " Empty binary 
 
 public constant String derivativeNamePrefix="$derivative";
 
-
-
-
-
-
-
 public function dumpDAELowEqnList
 
   input list<Equation> inDAELowEqnList;
@@ -510,8 +505,21 @@ algorithm
   end matchcontinue;
 end dumpDAELowEqnList2;
 
-public function lower "function: lower
+protected function hasNoStates
+"@author: adrpo
+ this function tells if there are NO states in the binary tree"
+  input BinTree states;
+  output Boolean out;
+algorithm
+  out := matchcontinue (states)
+    // if the tree is empty then there are no states
+    case (TREENODE(NONE,NONE,NONE)) then true; 
+    case (_) then false;
+  end matchcontinue;
+end hasNoStates;   
 
+public function lower 
+"function: lower
   This function translates a DAE, which is the result from instantiating a
   class, into a more precise form, called DAELow defined in this module.
   The DAELow representation splits the DAE into equations and variables
@@ -521,15 +529,14 @@ public function lower "function: lower
   O(1) for finding a variable. The equations are put in an expandable
   array. Where adding a new equation can be done in O(1) time if space
   is available.
-  inputs:  daeList: DAE.DAElist, add_dummy_state: bool)
-  outputs: DAELow
-"
+  inputs:  daeList: DAE.DAElist, simplify: bool)
+  outputs: DAELow"
   input DAE.DAElist lst;
-  input Boolean add_dummy;
+  input Boolean addDummyDerivativeIfNeeded;
   input Boolean simplify;
   output DAELow outDAELow;
 algorithm
-  outDAELow := matchcontinue(lst, add_dummy, simplify)
+  outDAELow := matchcontinue(lst, addDummyDerivativeIfNeeded, simplify)
     local
       BinTree s;
       Variables vars,knvars,vars_1,extVars;
@@ -542,11 +549,19 @@ algorithm
       MultiDimEquation[:] arr_md_eqns;
       Algorithm.Algorithm[:] algarr;
       ExternalObjectClasses extObjCls;
-    case(lst, add_dummy, true) // simplify by default
+      Boolean daeContainsNoStates, shouldAddDummyDerivative;
+      
+    case(lst, addDummyDerivativeIfNeeded, true) // simplify by default
       equation
-        s = states(lst, emptyBintree);
+        s = states(lst, emptyBintree);        
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,algs,whenclauses,extObjCls) = lower2(lst, s, {});
-        (vars,eqns) = addDummyState(vars, eqns, add_dummy);
+        
+        daeContainsNoStates = hasNoStates(s); // check if the DAE has states
+        // adrpo: add the dummy derivative state ONLY IF the DAE contains 
+        //        no states AND ONLY if addDummyDerivative is set to true!
+        shouldAddDummyDerivative =  boolAnd(addDummyDerivativeIfNeeded, daeContainsNoStates);
+        (vars,eqns) = addDummyState(vars, eqns, shouldAddDummyDerivative);
+        
         whenclauses_1 = listReverse(whenclauses);
         algeqns = lowerAlgorithms(vars, algs);
         multidimeqns = lowerMultidimeqns(vars, aeqns);
@@ -562,13 +577,19 @@ algorithm
         ieqnarr = listEquation(ieqns);
         arr_md_eqns = listArray(aeqns1);
         algarr = listArray(algs);
-      then DAELOW(vars_1,knvars,extVars,eqnarr,reqnarr,ieqnarr,arr_md_eqns,algarr,
-        EVENT_INFO(whenclauses_1,zero_crossings),extObjCls);
-    case(lst, add_dummy, false) // do not simplify
+      then DAELOW(vars_1,knvars,extVars,eqnarr,reqnarr,ieqnarr,arr_md_eqns,algarr,EVENT_INFO(whenclauses_1,zero_crossings),extObjCls);
+        
+    case(lst, addDummyDerivativeIfNeeded, false) // do not simplify
       equation
         s = states(lst, emptyBintree);
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,algs,whenclauses,extObjCls) = lower2(lst, s, {});
-        // no simplify (vars,eqns) = addDummyState(vars, eqns, add_dummy);
+        
+        daeContainsNoStates = hasNoStates(s); // check if the DAE has states
+        // adrpo: add the dummy derivative state ONLY IF the DAE contains 
+        //        no states AND ONLY if addDummyDerivative is set to true!  
+        shouldAddDummyDerivative =  boolAnd(addDummyDerivativeIfNeeded, daeContainsNoStates);
+        (vars,eqns) = addDummyState(vars, eqns, shouldAddDummyDerivative);
+
         whenclauses_1 = listReverse(whenclauses);
         algeqns = lowerAlgorithms(vars, algs);
         multidimeqns = lowerMultidimeqns(vars, aeqns);
@@ -584,14 +605,15 @@ algorithm
         ieqnarr = listEquation(ieqns);
         arr_md_eqns = listArray(aeqns);
         algarr = listArray(algs);
-      then DAELOW(vars_1,knvars,extVars,eqnarr,reqnarr,ieqnarr,arr_md_eqns,algarr,
-        EVENT_INFO(whenclauses_1,zero_crossings),extObjCls);
+      then DAELOW(vars_1,knvars,extVars,eqnarr,reqnarr,ieqnarr,arr_md_eqns,algarr,EVENT_INFO(whenclauses_1,zero_crossings),extObjCls);
   end matchcontinue;
 end lower;
 
-protected function expandDerOperator "expands der(expr) using Derive.differentiteExpTime.
-This can not be done in Static, since we need all time-dependent variables, which is only available
-in DAELow."
+protected function expandDerOperator 
+"function expandDerOperator
+  expands der(expr) using Derive.differentiteExpTime.
+  This can not be done in Static, since we need all time-
+  dependent variables, which is only available in DAELow."
   input Variables vars;
   input list<Equation> eqns;
   input list<Equation> ieqns;
@@ -615,7 +637,8 @@ algorithm
   end matchcontinue;
 end expandDerOperator;
 
-protected function expandDerOperatorEqns "Help function to expandDerOperator"
+protected function expandDerOperatorEqns 
+"Help function to expandDerOperator"
   input list<Equation> eqns;
   input Variables vars;
   output list<Equation> outEqns;
@@ -629,12 +652,13 @@ algorithm
       (eqns,vars)  = expandDerOperatorEqns(eqns,vars);
     then (e::eqns,vars);
     case(_,_) equation
-      Debug.fprint("failtrace", "-expandDerOperatorEqns failed\n");
+      Debug.fprint("failtrace", "-DAELow.expandDerOperatorEqns failed\n");
       then fail();
     end matchcontinue;
 end expandDerOperatorEqns;
 
-protected function expandDerOperatorEqn "Help function to expandDerOperator, handles Equations"
+protected function expandDerOperatorEqn 
+"Help function to expandDerOperator, handles Equations"
   input Equation eqn;
   input Variables vars;
   output Equation outEqn;
@@ -659,14 +683,15 @@ algorithm
 
     then (WHEN_EQUATION(wheneq),vars);
     case (eqn ,vars) equation
-      Debug.fprint("failtrace", "-expandDerOperatorEqn, eqn =");
+      Debug.fprint("failtrace", "-DAELow.expandDerOperatorEqn, eqn =");
       Debug.fprint("failtrace", equationStr(eqn));
       Debug.fprint("failtrace", " failed\n");
     then fail();
   end matchcontinue;
 end expandDerOperatorEqn;
 
-protected function expandDerOperatorWhenEqn "Helper function to expandDerOperatorWhenEqn"
+protected function expandDerOperatorWhenEqn 
+"Helper function to expandDerOperatorWhenEqn"
   input WhenEquation wheneq;
   input Variables vars;
   output WhenEquation outWheneq;
@@ -688,7 +713,8 @@ algorithm
   end matchcontinue;
 end expandDerOperatorWhenEqn;
 
-protected function expandDerOperatorAlgs "Help function to expandDerOperator"
+protected function expandDerOperatorAlgs 
+"Help function to expandDerOperator"
   input list<Algorithm.Algorithm> algs;
   input Variables vars;
   output list<Algorithm.Algorithm> outAlgs;
@@ -703,13 +729,14 @@ algorithm
     then (a::algs,vars);
 
     case(_,_) equation
-      Debug.fprint("failtrace", "-expandDerOperatorAlgs failed\n");
+      Debug.fprint("failtrace", "-DAELow.expandDerOperatorAlgs failed\n");
       then fail();
 
   end matchcontinue;
 end expandDerOperatorAlgs;
 
-protected function expandDerOperatorAlg "Help function to to expandDerOperator, handles Algorithms"
+protected function expandDerOperatorAlg 
+"Help function to to expandDerOperator, handles Algorithms"
   input Algorithm.Algorithm alg;
   input Variables vars;
   output Algorithm.Algorithm outAlg;
@@ -723,7 +750,8 @@ algorithm
   end matchcontinue;
 end expandDerOperatorAlg;
 
-protected function expandDerOperatorStmts "Help function to expandDerOperatorAlg"
+protected function expandDerOperatorStmts 
+"Help function to expandDerOperatorAlg"
   input list<Algorithm.Statement> stmts;
   input Variables vars;
   output list<Algorithm.Statement> outStmts;
@@ -739,7 +767,8 @@ algorithm
   end matchcontinue;
 end expandDerOperatorStmts;
 
-protected function expandDerOperatorStmt "Help function to expandDerOperatorAlg."
+protected function expandDerOperatorStmt 
+"Help function to expandDerOperatorAlg."
   input Algorithm.Statement stmt;
   input Variables vars;
   output Algorithm.Statement outStmt;
@@ -814,7 +843,8 @@ algorithm
   end matchcontinue;
 end  expandDerOperatorStmt;
 
-protected function expandDerOperatorElseBranch "Help function to expandDerOperatorStmt, for else branches in if statements"
+protected function expandDerOperatorElseBranch 
+"Help function to expandDerOperatorStmt, for else branches in if statements"
   input Algorithm.Else elseB;
   input Variables vars;
   output Algorithm.Else outElseB;
@@ -835,7 +865,8 @@ algorithm
   end matchcontinue;
 end expandDerOperatorElseBranch;
 
-protected function expandDerOperatorArrEqns "Help function to expandDerOperator"
+protected function expandDerOperatorArrEqns 
+"Help function to expandDerOperator"
   input list<MultiDimEquation> eqns;
   input Variables vars;
   output list<MultiDimEquation> outEqns;
@@ -850,12 +881,13 @@ algorithm
     then (e::eqns,vars);
 
     case(_,_) equation
-      Debug.fprint("failtrace", "-expandDerOperatorArrEqns failed\n");
+      Debug.fprint("failtrace", "-DAELow.expandDerOperatorArrEqns failed\n");
     then fail();
   end matchcontinue;
 end expandDerOperatorArrEqns;
 
-protected function expandDerOperatorArrEqn "Help function to to expandDerOperator, handles Array equations"
+protected function expandDerOperatorArrEqn 
+"Help function to to expandDerOperator, handles Array equations"
   input MultiDimEquation arrEqn;
   input Variables vars;
   output MultiDimEquation outArrEqn;
@@ -870,7 +902,8 @@ algorithm
   end matchcontinue;
 end expandDerOperatorArrEqn;
 
-protected function expandDerExps "Help function to e.g. expandDerOperatorEqn"
+protected function expandDerExps 
+"Help function to e.g. expandDerOperatorEqn"
   input list<Exp.Exp> expl;
   input Variables vars;
   output list<Exp.Exp> outExpl;
@@ -886,7 +919,8 @@ algorithm
   end matchcontinue;
 end expandDerExps;
 
-protected function expandDerExp "Help function to e.g. expandDerOperatorEqn"
+protected function expandDerExp 
+"Help function to e.g. expandDerOperatorEqn"
   input tuple<Exp.Exp,Variables> tpl;
   output tuple<Exp.Exp,Variables> outTpl;
 algorithm
@@ -905,7 +939,8 @@ algorithm
   end matchcontinue;
 end expandDerExp;
 
-protected function updateStatesVars "Help function to expandDerExp"
+protected function updateStatesVars 
+"Help function to expandDerExp"
   input Variables vars;
   input list<Exp.ComponentRef> newStates;
   output Variables outVars;
@@ -924,31 +959,31 @@ algorithm
       Option<DAE.VariableAttributes> attr;
       Option<Absyn.Comment> comment;
       DAE.Flow flow_;
+      DAE.Stream stream_;
       Exp.ComponentRef cr;
 
     case(vars,{}) then vars;
-    case(vars,cr::newStates) equation
-     ((VAR(cr1,kind,dir,vartype,bind,value,dims,ind,orig,clname,attr,comment,flow_) :: _),_) = getVar(cr, vars);
-     vars = addVar(
-          VAR(cr1,STATE(),dir,vartype,bind,value,dims,ind,orig,
-            clname,attr,comment,flow_), vars);
-      vars = updateStatesVars(vars,newStates);
-    then vars;
-    case(vars,cr::newStates) equation
-     print("Internal error, variable ");print(Exp.printComponentRefStr(cr));print("not found in variables.\n");
-      vars = updateStatesVars(vars,newStates);
-    then vars;
+    case(vars,cr::newStates) 
+      equation
+        ((VAR(cr1,kind,dir,vartype,bind,value,dims,ind,orig,clname,attr,comment,flow_,stream_) :: _),_) = getVar(cr, vars);
+        vars = addVar(VAR(cr1,STATE(),dir,vartype,bind,value,dims,ind,orig,clname,attr,comment,flow_,stream_), vars);
+        vars = updateStatesVars(vars,newStates);
+      then vars;
+    case(vars,cr::newStates) 
+      equation
+        print("Internal error, variable ");print(Exp.printComponentRefStr(cr));print("not found in variables.\n");
+        vars = updateStatesVars(vars,newStates);
+      then vars;
   end matchcontinue;
 end updateStatesVars;
 
-protected function addDummyState "function: addDummyState
-
+protected function addDummyState 
+"function: addDummyState
   In order for the solver to work correctly at least one state variable
   must exist in the equation system. This function therefore adds a
   dummy state variable and an equation for that variable.
   inputs:  (vars: Variables, eqns: Equation list, bool)
-  outputs: (Variables, Equation list)
-"
+  outputs: (Variables, Equation list)"
   input Variables inVariables;
   input list<Equation> inEquationLst;
   input Boolean inBoolean;
@@ -963,29 +998,34 @@ algorithm
     case (v,e,false) then (v,e);
     case (vars,eqns,true) /* TODO::The dummy variable must be fixed */
       equation
-        vars_1 = addVar(
-          VAR(Exp.CREF_IDENT("$dummy",{}),STATE(),DAE.BIDIR(),DAE.REAL(),
-          NONE,NONE,{},-1,Exp.CREF_IDENT("$dummy",{}),{},
-          SOME(
-          DAE.VAR_ATTR_REAL(NONE,NONE,NONE,(NONE,NONE),NONE,SOME(Exp.BCONST(true)),NONE,NONE)),NONE,DAE.NON_CONNECTOR()), vars);
+        vars_1 = addVar(VAR(Exp.CREF_IDENT("$dummy",{}), STATE(),DAE.BIDIR(),DAE.REAL(),NONE,NONE,{},-1,Exp.CREF_IDENT("$dummy",{}),{},
+                            SOME(DAE.VAR_ATTR_REAL(NONE,NONE,NONE,(NONE,NONE),NONE,SOME(Exp.BCONST(true)),NONE,NONE)),
+                            NONE,DAE.NON_CONNECTOR(),DAE.NON_STREAM()), vars);
       then
-        /* Add equation der(dummy) = sin(time*6628.318530717). This so the solver has something to solve
-        if the model does not contain states. To prevent the solver from taking larger and larger steps
-        (which would happen if der(dymmy) = 0) when using automatic, we have a osciallating derivative.
-        */
+        /* 
+         * Add equation der(dummy) = sin(time*6628.318530717). This so the solver has something to solve
+         * if the model does not contain states. To prevent the solver from taking larger and larger steps
+         * (which would happen if der(dymmy) = 0) when using automatic, we have a osciallating derivative.
         (vars_1,(EQUATION(
           Exp.CALL(Absyn.IDENT("der"),
           {Exp.CREF(Exp.CREF_IDENT("$dummy",{}),Exp.REAL())},false,true,Exp.REAL()),
           Exp.CALL(Absyn.IDENT("sin"),{Exp.BINARY(
           	Exp.CREF(Exp.CREF_IDENT("time",{}),Exp.REAL()),
           	Exp.MUL(Exp.REAL()),
-          	Exp.RCONST(628.318530717))},false,true,Exp.REAL()))  :: eqns));
+          	Exp.RCONST(628.318530717))},false,true,Exp.REAL()))  :: eqns)); */          	
+        /*
+         *          
+         * adrpo: after a bit of talk with Francesco Casella & Peter Aronsson we will add der($dummy) = 0; 
+         */
+        (vars_1,(EQUATION(Exp.CALL(Absyn.IDENT("der"),{Exp.CREF(Exp.CREF_IDENT("$dummy",{}),Exp.REAL())},false,true,Exp.REAL()),
+                          Exp.RCONST(0.0))  :: eqns));
 
   end matchcontinue;
 end addDummyState;
 
-public function zeroCrossingsEquations "Returns a list of all equations (by their index) that contain a zero crossing
-Used e.g. to find out which discrete equations are not part of a zero crossing"
+public function zeroCrossingsEquations 
+"Returns a list of all equations (by their index) that contain a zero crossing
+ Used e.g. to find out which discrete equations are not part of a zero crossing"
   input DAELow dae;
   output list<Integer> eqns;
 algorithm
@@ -1014,7 +1054,8 @@ algorithm
    end matchcontinue;
 end whenEquationsIndices;
 
-protected function whenEquationsIndices2 "Help function"
+protected function whenEquationsIndices2 
+"Help function"
   input Integer i;
   input Integer size;
   input EquationArray eqns;
@@ -1036,7 +1077,8 @@ algorithm
   end matchcontinue;
 end whenEquationsIndices2;
 
-protected function zeroCrossingEquations "Returns the list of equations (indices) from a ZeroCrossing"
+protected function zeroCrossingEquations 
+"Returns the list of equations (indices) from a ZeroCrossing"
   input ZeroCrossing zc;
   output list<Integer> lst;
 algorithm
@@ -1045,10 +1087,9 @@ algorithm
   end matchcontinue;
 end zeroCrossingEquations;
 
-protected function dumpZcStr "function: dumpZcStr
-
-  Dumps a zerocrossing into a string, for debugging purposes.
-"
+protected function dumpZcStr 
+"function: dumpZcStr
+  Dumps a zerocrossing into a string, for debugging purposes."
   input ZeroCrossing inZeroCrossing;
   output String outString;
 algorithm
@@ -1066,20 +1107,17 @@ algorithm
         wc_s_list = Util.listMap(wc, int_string);
         wc_s = Util.stringDelimitList(wc_s_list, ",");
         str = Exp.printExpStr(e);
-        str2 = Util.stringAppendList(
-          {str," in equations [",eq_s,"] and when conditions [",wc_s,
-          "]\n"});
+        str2 = Util.stringAppendList({str," in equations [",eq_s,"] and when conditions [",wc_s,"]\n"});
       then
         str2;
   end matchcontinue;
 end dumpZcStr;
 
-protected function mergeZeroCrossings "function: mergeZeroCrossings
-
+protected function mergeZeroCrossings 
+"function: mergeZeroCrossings
   Takes a list of zero crossings and if more than one have identical
   function expressions they are merged into one zerocrossing.
-  In the resulting list all zerocrossing have uniq function expressions.
-"
+  In the resulting list all zerocrossing have uniq function expressions."
   input list<ZeroCrossing> inZeroCrossingLst;
   output list<ZeroCrossing> outZeroCrossingLst;
 algorithm
@@ -1362,6 +1400,7 @@ algorithm
       Option<DAE.VariableAttributes> attr;
       Option<Absyn.Comment> comment;
       DAE.Flow flow_;
+      DAE.Stream stream_;
       Boolean res,b1,b2,b3;
       Exp.Exp e1,e2,e,e3;
       Exp.Operator op;
@@ -1375,7 +1414,7 @@ algorithm
     case (Exp.BCONST(bool = _),vars,knvars) then true;
     case (Exp.CREF(componentRef = cr),vars,knvars)
       equation
-        ((VAR(cr,kind,dir,vartype,bind,value,dims,ind,orig,clname,attr,comment,flow_) :: _),_) = getVar(cr, vars);
+        ((VAR(cr,kind,dir,vartype,bind,value,dims,ind,orig,clname,attr,comment,flow_,stream_) :: _),_) = getVar(cr, vars);
         res = isKindDiscrete(kind);
       then
         res;
@@ -1397,7 +1436,7 @@ algorithm
     case (Exp.CREF(componentRef = cr),vars,knvars)
       equation
         failure((_,_) = getVar(cr, vars));
-        ((VAR(cr,kind,dir,vartype,bind,value,dims,ind,orig,clname,attr,comment,flow_) :: _),_) = getVar(cr, knvars);
+        ((VAR(cr,kind,dir,vartype,bind,value,dims,ind,orig,clname,attr,comment,flow_,stream_) :: _),_) = getVar(cr, knvars);
         res = isKindDiscrete(kind);
       then
         res;
@@ -1634,14 +1673,13 @@ algorithm
       Option<DAE.VariableAttributes> attr;
       Option<Absyn.Comment> comment;
       DAE.Flow flow_;
+      DAE.Stream stream_;
       list<Equation> xs;
     case (v,{}) then v;
     case (v,(WHEN_EQUATION(whenEquation = WHEN_EQ(left = cr)) :: xs))
       equation
-        ((VAR(cr,_,dir,vartype,bind,value,dims,ind,orig,clname,attr,comment,flow_) :: _),_) = getVar(cr, v);
-        v_1 = addVar(
-          VAR(cr,DISCRETE(),dir,vartype,bind,value,dims,ind,orig,
-          clname,attr,comment,flow_), v);
+        ((VAR(cr,_,dir,vartype,bind,value,dims,ind,orig,clname,attr,comment,flow_,stream_) :: _),_) = getVar(cr, v);
+        v_1 = addVar(VAR(cr,DISCRETE(),dir,vartype,bind,value,dims,ind,orig,clname,attr,comment,flow_,stream_), v);
         v_2 = detectImplicitDiscrete(v_1, xs);
       then
         v_2;
@@ -1654,12 +1692,10 @@ algorithm
   end matchcontinue;
 end detectImplicitDiscrete;
 
-protected function sortEqn "function: sortEqn
-
+protected function sortEqn 
+"function: sortEqn
   This function sorts the equation. It puts first the algebraic eqns
-  and last the differentiated eqns
-
-"
+  and last the differentiated eqns"
   input list<Equation> inEquationLst;
   output list<Equation> outEquationLst;
 algorithm
@@ -1905,13 +1941,12 @@ algorithm
   end matchcontinue;
 end markStateEquations;
 
-protected function markStateEquation "function: markStateEquation
-
+protected function markStateEquation 
+"function: markStateEquation
   This function is a helper function to mark_state_equations
   It performs marking for one equation and its transitive closure by
   following edges in backward direction.
-  inputs and outputs are tuples so we can use Util.list_fold
-"
+  inputs and outputs are tuples so we can use Util.list_fold"
   input Var inVar;
   input tuple<DAELow, Integer[:], IncidenceMatrix, IncidenceMatrixT, Integer[:], Integer[:]> inTplDAELowIntegerArrayIncidenceMatrixIncidenceMatrixTIntegerArrayIntegerArray;
   output tuple<DAELow, Integer[:], IncidenceMatrix, IncidenceMatrixT, Integer[:], Integer[:]> outTplDAELowIntegerArrayIncidenceMatrixIncidenceMatrixTIntegerArrayIntegerArray;
@@ -1924,12 +1959,11 @@ algorithm
       list<Value>[:] m,mt;
       Value[:] a1,a2;
       Exp.ComponentRef cr;
-      DAE.Flow flow_;
       DAELow dae;
       Variables vars;
       String s,str;
       Value v_indx,v_indx_1;
-    case (VAR(varName = cr,flow_ = flow_),((dae as DAELOW(orderedVars = vars)),arr,m,mt,a1,a2))
+    case (VAR(varName = cr),((dae as DAELOW(orderedVars = vars)),arr,m,mt,a1,a2))
       equation
         (_,v_indxs) = getVar(cr, vars);
         v_indxs_1 = Util.listMap1(v_indxs, int_sub, 1);
@@ -1937,7 +1971,7 @@ algorithm
         ((arr_1,m,mt,a1,a2)) = markStateEquation2(eqns, (arr,m,mt,a1,a2));
       then
         ((dae,arr_1,m,mt,a1,a2));
-    case (VAR(varName = cr,flow_ = flow_),((dae as DAELOW(orderedVars = vars)),arr,m,mt,a1,a2))
+    case (VAR(varName = cr),((dae as DAELOW(orderedVars = vars)),arr,m,mt,a1,a2))
       equation
         failure((_,_) = getVar(cr, vars));
         print("mark_state_equation var ");
@@ -1946,7 +1980,7 @@ algorithm
         print("not found\n");
       then
         fail();
-    case (VAR(varName = cr,flow_ = flow_),((dae as DAELOW(orderedVars = vars)),arr,m,mt,a1,a2))
+    case (VAR(varName = cr),((dae as DAELOW(orderedVars = vars)),arr,m,mt,a1,a2))
       equation
         (_,{v_indx}) = getVar(cr, vars);
         v_indx_1 = v_indx - 1;
@@ -1960,15 +1994,14 @@ algorithm
   end matchcontinue;
 end markStateEquation;
 
-protected function markStateEquation2 "function: markStateEquation2
-
+protected function markStateEquation2 
+"function: markStateEquation2
   Helper function to mark_state_equation
   Does the job by looking at variable indexes and incidencematrices.
   inputs: (eqns: int list,
              marks: (int array  IncidenceMatrix  IncidenceMatrixT  int vector  int vector))
   outputs: ((marks: int array  IncidenceMatrix  IncidenceMatrixT
-	      int vector  int vector))
-"
+	      int vector  int vector))"
   input list<Integer> inIntegerLst;
   input tuple<Integer[:], IncidenceMatrix, IncidenceMatrixT, Integer[:], Integer[:]> inTplIntegerArrayIncidenceMatrixIncidenceMatrixTIntegerArrayIntegerArray;
   output tuple<Integer[:], IncidenceMatrix, IncidenceMatrixT, Integer[:], Integer[:]> outTplIntegerArrayIncidenceMatrixIncidenceMatrixTIntegerArrayIntegerArray;
@@ -2096,41 +2129,37 @@ algorithm
   end matchcontinue;
 end invReachableNodes2;
 
-public function isStateVar "function: isStateVar
-
-  Returns true for state variables, false otherwise.
-"
+public function isStateVar 
+"function: isStateVar
+  Returns true for state variables, false otherwise."
   input Var inVar;
   output Boolean outBoolean;
 algorithm
   outBoolean:=
   matchcontinue (inVar)
     local DAE.Flow flow_;
-    case (VAR(varKind = STATE(),flow_ = flow_)) then true;
+    case (VAR(varKind = STATE())) then true;
     case (_) then false;
   end matchcontinue;
 end isStateVar;
 
-public function isDummyStateVar "
-
-  Returns true for dummy state variables, false otherwise.
-"
+public function isDummyStateVar 
+"function isDummyStateVar 
+  Returns true for dummy state variables, false otherwise."
   input Var inVar;
   output Boolean outBoolean;
 algorithm
   outBoolean:=
   matchcontinue (inVar)
-    local DAE.Flow flow_;
-    case (VAR(varKind = DUMMY_STATE(),flow_ = flow_)) then true;
+    case (VAR(varKind = DUMMY_STATE())) then true;
     case (_) then false;
   end matchcontinue;
 end isDummyStateVar;
 
-public function isNonState "function: isNonState
-
+public function isNonState 
+"function: isNonState
   this equation checks if the the varkind is state of variable
-  used both in build_equation and generate_compute_state
-"
+  used both in build_equation and generate_compute_state"
   input VarKind inVarKind;
   output Boolean outBoolean;
 algorithm
@@ -2145,11 +2174,10 @@ algorithm
   end matchcontinue;
 end isNonState;
 
-public function isDiscrete "function: isDiscrete
-
+public function isDiscrete 
+"function: isDiscrete
   This equation checks if the the varkind is discrete,
-  used both in build_equation and generate_compute_state
-"
+  used both in build_equation and generate_compute_state"
   input VarKind inVarKind;
 algorithm
   _:=
@@ -2158,10 +2186,9 @@ algorithm
   end matchcontinue;
 end isDiscrete;
 
-public function dump "function: dump
-
-  This function dumps the DAELow representaton to stdout.
-"
+public function dump 
+"function: dump
+  This function dumps the DAELow representaton to stdout."
   input DAELow inDAELow;
 algorithm
   _:=
@@ -2465,16 +2492,14 @@ algorithm
   matchcontinue (inVar)
     local
       Real nominal;
-      DAE.Flow flow_;
-    case (VAR(values = SOME(DAE.VAR_ATTR_REAL(_,_,_,_,_,_,SOME(Exp.RCONST(nominal)),_)),flow_ = flow_)) then nominal;
+    case (VAR(values = SOME(DAE.VAR_ATTR_REAL(_,_,_,_,_,_,SOME(Exp.RCONST(nominal)),_)))) then nominal;
   end matchcontinue;
 end varNominal;
 
-public function setVarFixed "function: setVarFixed
+public function setVarFixed 
+"function: setVarFixed
   author: PA
-
-  Sets the fixed attribute of a variable.
-"
+  Sets the fixed attribute of a variable."
   input Var inVar;
   input Boolean inBoolean;
   output Var outVar;
@@ -2497,37 +2522,101 @@ algorithm
       Option<DAE.StateSelect> r;
       Option<Absyn.Comment> s;
       DAE.Flow t;
+      DAE.Stream stream_;
       Boolean fixed;
-    case (VAR(varName = a,varKind = b,varDirection = c,varType = d,bindExp = e,bindValue = f,arryDim = g,index = i,origVarName = j,className = k,values = SOME(DAE.VAR_ATTR_REAL(l,m,n,o,p,_,q,r)),comment = s,flow_ = t),fixed)
-    then VAR(a,b,c,d,e,f,g,i,j,k,
-          SOME(DAE.VAR_ATTR_REAL(l,m,n,o,p,SOME(Exp.BCONST(fixed)),q,r)),s,t);
-    case (VAR(varName = a,varKind = b,varDirection = c,varType = d,bindExp = e,bindValue = f,arryDim = g,index = i,origVarName = j,className = k,values = SOME(DAE.VAR_ATTR_INT(l,m,n,_)),comment = o,flow_ = p),fixed)
+      
+    case (VAR(varName = a,
+              varKind = b,
+              varDirection = c,
+              varType = d,
+              bindExp = e,
+              bindValue = f,
+              arryDim = g,
+              index = i,
+              origVarName = j,
+              className = k,
+              values = SOME(DAE.VAR_ATTR_REAL(l,m,n,o,p,_,q,r)),
+              comment = s,
+              flow_ = t,
+              stream_ = stream_),fixed)
+    then VAR(a,b,c,d,e,f,g,i,j,k,SOME(DAE.VAR_ATTR_REAL(l,m,n,o,p,SOME(Exp.BCONST(fixed)),q,r)),s,t,stream_);
+      
+    case (VAR(varName = a,
+              varKind = b,
+              varDirection = c,
+              varType = d,
+              bindExp = e,
+              bindValue = f,
+              arryDim = g,
+              index = i,
+              origVarName = j,
+              className = k,
+              values = SOME(DAE.VAR_ATTR_INT(l,m,n,_)),
+              comment = o,
+              flow_ = t,
+              stream_ = stream_),fixed)
       local
         tuple<Option<Exp.Exp>, Option<Exp.Exp>> m;
         Option<Exp.Exp> n;
         Option<Absyn.Comment> o;
-        DAE.Flow p;
       then
-        VAR(a,b,c,d,e,f,g,i,j,k,
-          SOME(DAE.VAR_ATTR_INT(l,m,n,SOME(Exp.BCONST(fixed)))),o,p);
-    case (VAR(varName = a,varKind = b,varDirection = c,varType = d,bindExp = e,bindValue = f,arryDim = g,index = i,origVarName = j,className = k,values = SOME(DAE.VAR_ATTR_BOOL(l,m,_)),comment = n,flow_ = o),fixed)
+        VAR(a,b,c,d,e,f,g,i,j,k,SOME(DAE.VAR_ATTR_INT(l,m,n,SOME(Exp.BCONST(fixed)))),o,t,stream_);
+        
+    case (VAR(varName = a,
+              varKind = b,
+              varDirection = c,
+              varType = d,
+              bindExp = e,
+              bindValue = f,
+              arryDim = g,
+              index = i,
+              origVarName = j,
+              className = k,
+              values = SOME(DAE.VAR_ATTR_BOOL(l,m,_)),
+              comment = n,
+              flow_ = t,
+              stream_ = stream_),fixed)
       local
         Option<Exp.Exp> m;
         Option<Absyn.Comment> n;
-        DAE.Flow o;
       then
-        VAR(a,b,c,d,e,f,g,i,j,k,
-          SOME(DAE.VAR_ATTR_BOOL(l,m,SOME(Exp.BCONST(fixed)))),n,o);
-    case (VAR(varName = a,varKind = b,varDirection = c,varType = d,bindExp = e,bindValue = f,arryDim = g,index = i,origVarName = j,className = k,values = SOME(DAE.VAR_ATTR_ENUMERATION(l,m,n,_)),comment = o,flow_ = p),fixed)
+        VAR(a,b,c,d,e,f,g,i,j,k,SOME(DAE.VAR_ATTR_BOOL(l,m,SOME(Exp.BCONST(fixed)))),n,t,stream_);
+        
+    case (VAR(varName = a,
+              varKind = b,
+              varDirection = c,
+              varType = d,
+              bindExp = e,
+              bindValue = f,
+              arryDim = g,
+              index = i,
+              origVarName = j,
+              className = k,
+              values = SOME(DAE.VAR_ATTR_ENUMERATION(l,m,n,_)),
+              comment = o,
+              flow_ = t,
+              stream_ = stream_),fixed)
       local
         tuple<Option<Exp.Exp>, Option<Exp.Exp>> m;
         Option<Exp.Exp> n;
         Option<Absyn.Comment> o;
-        DAE.Flow p;
       then
-        VAR(a,b,c,d,e,f,g,i,j,k,
-          SOME(DAE.VAR_ATTR_ENUMERATION(l,m,n,SOME(Exp.BCONST(fixed)))),o,p);
-    case (VAR(varName = a,varKind = b,varDirection = c,varType = DAE.REAL(),bindExp = f,bindValue = g,arryDim = h,index = j,origVarName = k,className = l,values = NONE,comment = m,flow_ = n),fixed)
+        VAR(a,b,c,d,e,f,g,i,j,k,SOME(DAE.VAR_ATTR_ENUMERATION(l,m,n,SOME(Exp.BCONST(fixed)))),o,t,stream_);
+        
+    case (VAR(varName = a,
+              varKind = b,
+              varDirection = c,
+              varType = DAE.REAL(),
+              bindExp = f,
+              bindValue = g,
+              arryDim = h,
+              index = j,
+              origVarName = k,
+              className = l,
+              values = NONE,
+              comment = m,
+              flow_ = t,
+              stream_ = stream_),fixed)
       local
         Option<Exp.Exp> f,i;
         Option<Values.Value> g;
@@ -2536,12 +2625,23 @@ algorithm
         Exp.ComponentRef k;
         list<Absyn.Path> l;
         Option<Absyn.Comment> m;
-        DAE.Flow n;
       then
-        VAR(a,b,c,DAE.REAL(),f,g,h,j,k,l,
-          SOME(
-          DAE.VAR_ATTR_REAL(NONE,NONE,NONE,(NONE,NONE),NONE,SOME(Exp.BCONST(fixed)),NONE,NONE)),m,n);
-    case (VAR(varName = a,varKind = b,varDirection = c,varType = DAE.INT(),bindExp = f,bindValue = g,arryDim = h,index = j,origVarName = k,className = l,values = NONE,comment = m,flow_ = n),fixed)
+        VAR(a,b,c,DAE.REAL(),f,g,h,j,k,l,SOME(DAE.VAR_ATTR_REAL(NONE,NONE,NONE,(NONE,NONE),NONE,SOME(Exp.BCONST(fixed)),NONE,NONE)),m,t,stream_);
+        
+    case (VAR(varName = a,
+              varKind = b,
+              varDirection = c,
+              varType = DAE.INT(),
+              bindExp = f,
+              bindValue = g,
+              arryDim = h,
+              index = j,
+              origVarName = k,
+              className = l,
+              values = NONE,
+              comment = m,
+              flow_ = t,
+              stream_ = stream_),fixed)
       local
         Option<Exp.Exp> f,i;
         Option<Values.Value> g;
@@ -2550,11 +2650,23 @@ algorithm
         Exp.ComponentRef k;
         list<Absyn.Path> l;
         Option<Absyn.Comment> m;
-        DAE.Flow n;
       then
-        VAR(a,b,c,DAE.REAL(),f,g,h,j,k,l,
-          SOME(DAE.VAR_ATTR_INT(NONE,(NONE,NONE),NONE,SOME(Exp.BCONST(fixed)))),m,n);
-    case (VAR(varName = a,varKind = b,varDirection = c,varType = DAE.BOOL(),bindExp = f,bindValue = g,arryDim = h,index = j,origVarName = k,className = l,values = NONE,comment = m,flow_ = n),fixed)
+        VAR(a,b,c,DAE.REAL(),f,g,h,j,k,l,SOME(DAE.VAR_ATTR_INT(NONE,(NONE,NONE),NONE,SOME(Exp.BCONST(fixed)))),m,t,stream_);
+        
+    case (VAR(varName = a,
+              varKind = b,
+              varDirection = c,
+              varType = DAE.BOOL(),
+              bindExp = f,
+              bindValue = g,
+              arryDim = h,
+              index = j,
+              origVarName = k,
+              className = l,
+              values = NONE,
+              comment = m,
+              flow_ = t,
+              stream_ = stream_),fixed)
       local
         Option<Exp.Exp> f,i;
         Option<Values.Value> g;
@@ -2563,11 +2675,23 @@ algorithm
         Exp.ComponentRef k;
         list<Absyn.Path> l;
         Option<Absyn.Comment> m;
-        DAE.Flow n;
       then
-        VAR(a,b,c,DAE.REAL(),f,g,h,j,k,l,
-          SOME(DAE.VAR_ATTR_BOOL(NONE,NONE,SOME(Exp.BCONST(fixed)))),m,n);
-    case (VAR(varName = a,varKind = b,varDirection = c,varType = DAE.ENUM(),bindExp = f,bindValue = g,arryDim = h,index = j,origVarName = k,className = l,values = NONE,comment = m,flow_ = n),fixed)
+        VAR(a,b,c,DAE.REAL(),f,g,h,j,k,l,SOME(DAE.VAR_ATTR_BOOL(NONE,NONE,SOME(Exp.BCONST(fixed)))),m,t,stream_);
+        
+    case (VAR(varName = a,
+              varKind = b,
+              varDirection = c,
+              varType = DAE.ENUM(),
+              bindExp = f,
+              bindValue = g,
+              arryDim = h,
+              index = j,
+              origVarName = k,
+              className = l,
+              values = NONE,
+              comment = m,
+              flow_ = t,
+              stream_ = stream_),fixed)
       local
         Option<Exp.Exp> f,i;
         Option<Values.Value> g;
@@ -2576,20 +2700,17 @@ algorithm
         Exp.ComponentRef k;
         list<Absyn.Path> l;
         Option<Absyn.Comment> m;
-        DAE.Flow n;
       then
-        VAR(a,b,c,DAE.REAL(),f,g,h,j,k,l,
-          SOME(DAE.VAR_ATTR_ENUMERATION(NONE,(NONE,NONE),NONE,SOME(Exp.BCONST(fixed)))),m,n);
+        VAR(a,b,c,DAE.REAL(),f,g,h,j,k,l,SOME(DAE.VAR_ATTR_ENUMERATION(NONE,(NONE,NONE),NONE,SOME(Exp.BCONST(fixed)))),m,t,stream_);
   end matchcontinue;
 end setVarFixed;
 
-public function varFixed "function: varFixed
+public function varFixed 
+"function: varFixed
   author: PA
-
   Extacts the fixed attribute of a variable.
   The default fixed value is used if not found. Default is true for parameters
-  (and constants) and false for variables.
-"
+  (and constants) and false for variables."
   input Var inVar;
   output Boolean outBoolean;
 algorithm
@@ -2616,11 +2737,10 @@ algorithm
   end matchcontinue;
 end varFixed;
 
-public function varStartValue "
+public function varStartValue 
+"function varStartValue
   author: PA
-
-  Returns the DAE.StartValue of a variable.
-  "
+  Returns the DAE.StartValue of a variable."
   input Var v;
   output Exp.Exp sv;
 algorithm
@@ -2632,13 +2752,11 @@ algorithm
    end matchcontinue;
 end varStartValue;
 
-public function varStateSelect "
+public function varStateSelect 
+"function varStateSelect
   author: PA
-
   Extacts the state select attribute of a variable. If no stateselect explicilty set, return
-  StateSelect.default
-
-"
+  StateSelect.default"
   input Var inVar;
   output DAE.StateSelect outStateSelect;
 algorithm
@@ -2647,16 +2765,14 @@ algorithm
     local
       DAE.StateSelect stateselect;
       Var v;
-    case (VAR(values = SOME(DAE.VAR_ATTR_REAL(_,_,_,_,_,_,_,SOME(stateselect)))))
-    then stateselect;
-      case (_) then DAE.DEFAULT();
+    case (VAR(values = SOME(DAE.VAR_ATTR_REAL(_,_,_,_,_,_,_,SOME(stateselect))))) then stateselect;
+    case (_) then DAE.DEFAULT();
   end matchcontinue;
 end varStateSelect;
 
-public function vararrayList "function: vararrayList
-
-  Transforms a VariableArray to a Var list
-"
+public function vararrayList 
+"function: vararrayList
+  Transforms a VariableArray to a Var list"
   input VariableArray inVariableArray;
   output list<Var> outVarLst;
 algorithm
@@ -2682,10 +2798,9 @@ algorithm
   end matchcontinue;
 end vararrayList;
 
-protected function vararrayList2 "function: vararrayList2
-
-  Helper function to vararray_list
-"
+protected function vararrayList2 
+"function: vararrayList2
+  Helper function to vararrayList"
   input Option<Var>[:] inVarOptionArray1;
   input Integer inInteger2;
   input Integer inInteger3;
@@ -2714,11 +2829,10 @@ algorithm
   end matchcontinue;
 end vararrayList2;
 
-public function dumpJacobianStr "function: dumpJacobianStr
-
+public function dumpJacobianStr 
+"function: dumpJacobianStr
   Dumps the sparse jacobian.
-  Uses the variables to determine size of Jacobian matrix.
-"
+  Uses the variables to determine size of Jacobian matrix."
   input Option<list<tuple<Integer, Integer, Equation>>> inTplIntegerIntegerEquationLstOption;
   output String outString;
 algorithm
@@ -2738,10 +2852,9 @@ algorithm
   end matchcontinue;
 end dumpJacobianStr;
 
-protected function dumpJacobianStr2 "function: dumpJacobianStr2
-
-  Helper function to dump_jacobian_str
-"
+protected function dumpJacobianStr2 
+"function: dumpJacobianStr2
+  Helper function to dumpJacobianStr"
   input list<tuple<Integer, Integer, Equation>> inTplIntegerIntegerEquationLst;
   output list<String> outStringLst;
 algorithm
@@ -2766,10 +2879,9 @@ algorithm
   end matchcontinue;
 end dumpJacobianStr2;
 
-protected function dumpArrayEqns "function: dumpArrayEqns
-
-  helper function to dump
-"
+protected function dumpArrayEqns 
+"function: dumpArrayEqns
+  helper function to dump"
   input list<MultiDimEquation> inMultiDimEquationLst;
 algorithm
   _:=
@@ -3364,9 +3476,10 @@ algorithm
   end matchcontinue;
 end simpleEquation;
 
-protected function isTopLevelInputOrOutput "function isTopLevelInputOrOutput
+protected function isTopLevelInputOrOutput 
+"function isTopLevelInputOrOutput
   author: LP
-
+  
   This function checks if the provided cr is from a var that is on top model
   and is an input or an output, and returns true for such variables.
   It also returns true for input/output connector variables, i.e. variables
@@ -3378,8 +3491,7 @@ protected function isTopLevelInputOrOutput "function isTopLevelInputOrOutput
   inputs:  (cref: Exp.ComponentRef,
               vars: Variables, /* Variables */
               knownVars: Variables /* Known Variables */)
-  outputs: bool
-"
+  outputs: bool"
   input Exp.ComponentRef inComponentRef1;
   input Variables inVariables2;
   input Variables inVariables3;
@@ -3391,28 +3503,28 @@ algorithm
       Exp.ComponentRef cr;
       VarKind kind;
       DAE.Flow flow_;
+      DAE.Stream stream_;
       Variables vars,knvars;
     case (cr,vars,_)
       equation
-        ((VAR(cr,kind,DAE.OUTPUT(),_,_,_,_,_,Exp.CREF_IDENT(_,_),_,_,_,flow_) :: _),_) = getVar(cr, vars);
+        ((VAR(cr,kind,DAE.OUTPUT(),_,_,_,_,_,Exp.CREF_IDENT(_,_),_,_,_,flow_,stream_) :: _),_) = getVar(cr, vars);
       then
         true;
     case (cr,vars,knvars)
       equation
-        ((VAR(cr,kind,DAE.INPUT(),_,_,_,_,_,_,_,_,_,flow_) :: _),_) = getVar(cr, knvars) "input variables stored in known variables are input on top level" ;
+        ((VAR(cr,kind,DAE.INPUT(),_,_,_,_,_,_,_,_,_,flow_,stream_) :: _),_) = getVar(cr, knvars) "input variables stored in known variables are input on top level" ;
       then
         true;
     case (_,_,_) then false;
   end matchcontinue;
 end isTopLevelInputOrOutput;
 
-public function isVarOnTopLevelAndOutput "function isVarOnTopLevelAndOutput
-
+public function isVarOnTopLevelAndOutput 
+"function isVarOnTopLevelAndOutput
   this function checks if the provided cr is from a var that is on top model
   and has the DAE.VarDirection = OUTPUT
   The check for top-model is done by spliting the old name at \'.\' and
-  check if the list-lenght is 1
-"
+  check if the list-lenght is 1"
   input Var inVar;
   output Boolean outBoolean;
 algorithm
@@ -3423,22 +3535,24 @@ algorithm
       VarKind kind;
       DAE.VarDirection dir;
       DAE.Flow flow_;
-    case (VAR(varName = cr,varKind = kind,varDirection = dir,origVarName = old_name,flow_ = flow_))
+      DAE.Stream stream_;
+      
+    case (VAR(varName = cr,varKind = kind,varDirection = dir,origVarName = old_name,flow_ = flow_,stream_ = stream_))
       equation
         topLevelOutput(cr, dir, flow_);
       then
         true;
+        
     case (_) then false;
   end matchcontinue;
 end isVarOnTopLevelAndOutput;
 
-public function isVarOnTopLevelAndInput "function isVarOnTopLevelAndInput
-
+public function isVarOnTopLevelAndInput 
+"function isVarOnTopLevelAndInput
   this function checks if the provided cr is from a var that is on top model
   and has the DAE.VarDirection = INPUT
   The check for top-model is done by spliting the old name at \'.\' and
-  check if the list-lenght is 1
-"
+  check if the list-lenght is 1"
   input Var inVar;
   output Boolean outBoolean;
 algorithm
@@ -3565,7 +3679,8 @@ algorithm
   end matchcontinue;
 end moveVariables2;
 
-protected function isVariable "function: isVariable
+protected function isVariable 
+"function: isVariable
 
   This function takes a Exp.ComponentRef and two Variables. It searches
   the two sets of variables and succeed if the variable is STATE or
@@ -3575,8 +3690,7 @@ protected function isVariable "function: isVariable
   inputs:  (Exp.ComponentRef,
               Variables, /* vars */
               Variables) /* known vars */
-  outputs: ()
-"
+  outputs: ()"
   input Exp.ComponentRef inComponentRef1;
   input Variables inVariables2;
   input Variables inVariables3;
@@ -3589,47 +3703,46 @@ algorithm
       Variables vars,knvars;
     case (cr,vars,_)
       equation
-        ((VAR(_,VARIABLE(),_,_,_,_,_,_,_,_,_,_,flow_) :: _),_) = getVar(cr, vars);
+        ((VAR(_,VARIABLE(),_,_,_,_,_,_,_,_,_,_,flow_,_) :: _),_) = getVar(cr, vars);
       then
         ();
     case (cr,vars,_)
       equation
-        ((VAR(_,STATE(),_,_,_,_,_,_,_,_,_,_,flow_) :: _),_) = getVar(cr, vars);
+        ((VAR(_,STATE(),_,_,_,_,_,_,_,_,_,_,flow_,_) :: _),_) = getVar(cr, vars);
       then
         ();
     case (cr,vars,_)
       equation
-        ((VAR(_,DUMMY_STATE(),_,_,_,_,_,_,_,_,_,_,flow_) :: _),_) = getVar(cr, vars);
+        ((VAR(_,DUMMY_STATE(),_,_,_,_,_,_,_,_,_,_,flow_,_) :: _),_) = getVar(cr, vars);
       then
         ();
     case (cr,vars,_)
       equation
-        ((VAR(_,DUMMY_DER(),_,_,_,_,_,_,_,_,_,_,flow_) :: _),_) = getVar(cr, vars);
+        ((VAR(_,DUMMY_DER(),_,_,_,_,_,_,_,_,_,_,flow_,_) :: _),_) = getVar(cr, vars);
       then
         ();
     case (cr,_,knvars)
       equation
-        ((VAR(_,VARIABLE(),_,_,_,_,_,_,_,_,_,_,flow_) :: _),_) = getVar(cr, knvars);
+        ((VAR(_,VARIABLE(),_,_,_,_,_,_,_,_,_,_,flow_,_) :: _),_) = getVar(cr, knvars);
       then
         ();
     case (cr,_,knvars)
       equation
-        ((VAR(_,DUMMY_STATE(),_,_,_,_,_,_,_,_,_,_,flow_) :: _),_) = getVar(cr, knvars);
+        ((VAR(_,DUMMY_STATE(),_,_,_,_,_,_,_,_,_,_,flow_,_) :: _),_) = getVar(cr, knvars);
       then
         ();
     case (cr,_,knvars)
       equation
-        ((VAR(_,DUMMY_DER(),_,_,_,_,_,_,_,_,_,_,flow_) :: _),_) = getVar(cr, knvars);
+        ((VAR(_,DUMMY_DER(),_,_,_,_,_,_,_,_,_,_,flow_,_) :: _),_) = getVar(cr, knvars);
       then
         ();
   end matchcontinue;
 end isVariable;
 
-protected function removeVariableNamed "function: removeVariableNamed
-
-  Removes a varaible from the \'Variables\' set given a ComponentRef name.
-  The removed variable is returned, such that is can be used elsewhere.
-"
+protected function removeVariableNamed 
+"function: removeVariableNamed
+  Removes a varaible from the Variables set given a ComponentRef name.
+  The removed variable is returned, such that is can be used elsewhere."
   input Variables inVariables;
   input Exp.ComponentRef inComponentRef;
   output Variables outVariables;
@@ -3669,8 +3782,8 @@ algorithm
   end matchcontinue;
 end removeVariableNamed;
 
-protected function dumpExtObjCls " dump classes of external objects"
-input ExternalObjectClasses cls;
+protected function dumpExtObjCls "dump classes of external objects"
+  input ExternalObjectClasses cls;
 algorithm
   _ := matchcontinue(cls)
     case {} then ();
@@ -3700,10 +3813,9 @@ algorithm
   dumpVars2(vars, 1);
 end dumpVars;
 
-protected function dumpVars2 "function: dumpVars2
-
-  Helper function to dump_vars.
-"
+protected function dumpVars2 
+"function: dumpVars2
+  Helper function to dumpVars."
   input list<Var> inVarLst;
   input Integer inInteger;
 algorithm
@@ -3722,10 +3834,24 @@ algorithm
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<Absyn.Comment> comment;
       DAE.Flow flow_;
+      DAE.Stream stream_;
       list<Var> xs;
       DAE.Type var_type;
+      
     case ({},_) then ();
-    case (((v as VAR(varName = cr,varKind = kind,varDirection = dir,varType = var_type,bindExp = SOME(e),index = indx,origVarName = old_name,className = paths,values = dae_var_attr,comment = comment,flow_ = flow_)) :: xs),varno)
+      
+    case (((v as VAR(varName = cr,
+                     varKind = kind,
+                     varDirection = dir,
+                     varType = var_type,
+                     bindExp = SOME(e),
+                     index = indx,
+                     origVarName = old_name,
+                     className = paths,
+                     values = dae_var_attr,
+                     comment = comment,
+                     flow_ = flow_,
+                     stream_ = stream_)) :: xs),varno)
       equation
         varnostr = intString(varno);
         print(varnostr);
@@ -3749,7 +3875,7 @@ algorithm
 
         print \" former: \" & print old_name &" ;
 
-           str = DAE.dumpTypeStr(var_type);print( " type: "); print(str);
+        str = DAE.dumpTypeStr(var_type);print( " type: "); print(str);
 
         print(" indx = ");
         print(indx_str);
@@ -3759,7 +3885,19 @@ algorithm
         dumpVars2(xs, varno_1) "DAE.dump_variable_attributes(dae_var_attr) &" ;
       then
         ();
-    case (((v as VAR(varName = cr,varKind = kind,varDirection = dir,varType = var_type,bindExp = NONE,index = indx,origVarName = old_name,className = paths,values = dae_var_attr,comment = comment,flow_ = flow_)) :: xs),varno)
+        
+    case (((v as VAR(varName = cr,
+                     varKind = kind,
+                     varDirection = dir,
+                     varType = var_type,
+                     bindExp = NONE,
+                     index = indx,
+                     origVarName = old_name,
+                     className = paths,
+                     values = dae_var_attr,
+                     comment = comment,
+                     flow_ = flow_,
+                     stream_ = stream_)) :: xs),varno)
       equation
         varnostr = intString(varno);
         print(varnostr);
@@ -3778,9 +3916,7 @@ algorithm
         print(path_str);
         indx_str = intString(indx) "print \" former: \" & print old_name &" ;
 
-
         str = DAE.dumpTypeStr(var_type);print( " type: "); print(str);
-
 
         print(" indx = ");
         print(indx_str);
@@ -3790,66 +3926,33 @@ algorithm
         dumpVars2(xs, varno_1);
       then
         ();
+        
   end matchcontinue;
 end dumpVars2;
 
-protected function dumpKind "function: dumpKind
-
-  Helper function to dump.
-"
+protected function dumpKind 
+"function: dumpKind
+  Helper function to dump."
   input VarKind inVarKind;
 algorithm
   _:=
   matchcontinue (inVarKind)
-    case VARIABLE()
-      equation
-        print("VARIABLE");
-      then
-        ();
-    case STATE()
-      equation
-        print("STATE");
-      then
-        ();
-    case DUMMY_DER()
-      equation
-        print("DUMMY_DER");
-      then
-        ();
-    case DUMMY_STATE()
-      equation
-        print("DUMMY_STATE");
-      then
-        ();
-    case DISCRETE()
-      equation
-        print("DISCRETE");
-      then
-        ();
-    case PARAM()
-      equation
-        print("PARAM");
-      then
-        ();
-    case CONST()
-      equation
-        print("CONST");
-      then
-        ();
-    case EXTOBJ(path)
-      local Absyn.Path path;
-      equation
-        print("EXTOBJ: ");print(Absyn.pathString(path));
-      then ();
-
+    local Absyn.Path path;
+    case VARIABLE()    equation print("VARIABLE");    then ();
+    case STATE()       equation print("STATE");       then ();
+    case DUMMY_DER()   equation print("DUMMY_DER");   then ();
+    case DUMMY_STATE() equation print("DUMMY_STATE"); then ();
+    case DISCRETE()    equation print("DISCRETE");    then ();
+    case PARAM()       equation print("PARAM");       then ();
+    case CONST()       equation print("CONST");       then ();
+    case EXTOBJ(path)  equation print("EXTOBJ: ");print(Absyn.pathString(path)); then ();
   end matchcontinue;
 end dumpKind;
 
-public function states "function: states
-
+public function states 
+"function: states
   Returns a BinTree of all states in the DAE.
-  This function is used by the lower function.
-"
+  This function is used by the lower function."
   input DAE.DAElist inDAElist;
   input BinTree inBinTree;
   output BinTree outBinTree;
@@ -3861,7 +3964,9 @@ algorithm
       Exp.Exp e1,e2;
       list<DAE.Element> xs;
       DAE.DAElist dae;
+      
     case (DAE.DAE(elementLst = {}),bt) then bt;
+      
     case (DAE.DAE(elementLst = (DAE.EQUATION(exp = e1,scalar = e2) :: xs)),bt)
       equation
         bt = states(DAE.DAE(xs), bt);
@@ -3869,6 +3974,7 @@ algorithm
         bt = statesExp(e2, bt);
       then
         bt;
+        
     case (DAE.DAE(elementLst = (DAE.INITIALEQUATION(e1,e2) :: xs)),bt)
       equation
         bt = states(DAE.DAE(xs), bt);
@@ -3883,12 +3989,14 @@ algorithm
         bt = statesExp(e2, bt);
       then
         bt;
+        
     case (DAE.DAE(elementLst = (DAE.INITIALDEFINE(_,e2) :: xs)),bt)
       equation
         bt = states(DAE.DAE(xs), bt);
         bt = statesExp(e2, bt);
       then
         bt;
+        
     case (DAE.DAE(elementLst = (DAE.ARRAY_EQUATION(exp = e1,array = e2) :: xs)),bt)
       equation
         bt = states(DAE.DAE(xs), bt);
@@ -3896,12 +4004,14 @@ algorithm
         bt = statesExp(e2, bt);
       then
         bt;
+        
     case (DAE.DAE(elementLst = (DAE.COMP(dAElist = dae) :: xs)),bt)
       equation
         bt = states(dae, bt);
         bt = states(DAE.DAE(xs), bt);
       then
         bt;
+        
     case (DAE.DAE(elementLst = (_ :: xs)),bt)
       equation
         bt = states(DAE.DAE(xs), bt);
@@ -3910,12 +4020,11 @@ algorithm
   end matchcontinue;
 end states;
 
-protected function statesDaelow "function: statesDaelow
+protected function statesDaelow 
+"function: statesDaelow
   author: PA
-
   Returns a BinTree of all states in the DAELow
-  This function is used in matching algorithm.
-"
+  This function is used in matching algorithm."
   input DAELow inDAELow;
   output BinTree outBinTree;
 algorithm
@@ -3938,11 +4047,10 @@ algorithm
   end matchcontinue;
 end statesDaelow;
 
-protected function statesDaelow2 "function: statesDaelow2
+protected function statesDaelow2 
+"function: statesDaelow2
   author: PA
-
-  Helper function to states_daelow.
-"
+  Helper function to statesDaelow."
   input list<Var> inVarLst;
   input BinTree inBinTree;
   output BinTree outBinTree;
@@ -3955,6 +4063,7 @@ algorithm
       Var v;
       list<Var> vs;
     case ({},bt) then bt;
+      
     case ((v :: vs),bt)
       equation
         STATE() = varKind(v);
@@ -3963,6 +4072,7 @@ algorithm
         bt = statesDaelow2(vs, bt);
       then
         bt;
+        
     case ((v :: vs),bt)
       equation
         DUMMY_STATE() = varKind(v);
@@ -3971,6 +4081,7 @@ algorithm
         bt = statesDaelow2(vs, bt);
       then
         bt;
+        
     case ((v :: vs),bt)
       equation
         bt = statesDaelow2(vs, bt);
@@ -3979,10 +4090,9 @@ algorithm
   end matchcontinue;
 end statesDaelow2;
 
-protected function statesExp "function: statesExp
-
-  Helper function to states.
-"
+protected function statesExp 
+"function: statesExp
+  Helper function to states."
   input Exp.Exp inExp;
   input BinTree inBinTree;
   output BinTree outBinTree;
@@ -4076,11 +4186,10 @@ algorithm
   end matchcontinue;
 end statesExp;
 
-protected function statesExpMatrix "function: statesExpMatrix
+protected function statesExpMatrix 
+"function: statesExpMatrix
   author: PA
-
-  Helper function to states_exp. Deals with matrix exp list.
-"
+  Helper function to statesExp. Deals with matrix exp list."
   input list<list<tuple<Exp.Exp, Boolean>>> inTplExpExpBooleanLstLst;
   input BinTree inBinTree;
   output BinTree outBinTree;
@@ -4107,14 +4216,14 @@ algorithm
   end matchcontinue;
 end statesExpMatrix;
 
-protected function lowerWhenEqn "
+protected function lowerWhenEqn 
+"function lowerWhenEqn
   This function lowers a when clause. The condition expresion is put in the
   WhenClause list and the equations inside are put in the equation list.
   For each equation in the clause a new entry in the WhenClause list is generated
   and one extra for all the reinit statements.
   inputs:  (DAE.Element, int /* when-clause index */, WhenClause list)
-  outputs: (Equation list, Variables, int /* when-clause index */, WhenClause list)
-"
+  outputs: (Equation list, Variables, int /* when-clause index */, WhenClause list)"
   input DAE.Element inElement;
   input Integer inWhenClauseIndex;
   input list<WhenClause> inWhenClauseLst;
@@ -4178,11 +4287,11 @@ algorithm
   end matchcontinue;
 end lowerWhenEqn;
 
-protected function mergeClauses "
-merges the true part end the elsewhen part of a set of when equations.
-For each equation in trueEqnList, find an equation in elseEqnList solving the same variable
-and put it in the else elseWhenPart of the first equation.
-"
+protected function mergeClauses 
+"function mergeClauses
+   merges the true part end the elsewhen part of a set of when equations.
+   For each equation in trueEqnList, find an equation in elseEqnList solving 
+   the same variable and put it in the else elseWhenPart of the first equation."
   input list<Equation> trueEqnList "List of equations in the true part of the when clause.";
   input list<Equation> elseEqnList "List of equations in the elsewhen part of the when clause.";
   input list<WhenClause> trueClauses "List of when clauses from the true part.";
@@ -4209,15 +4318,16 @@ algorithm
       list<WhenClause> outClauseList;
       WhenEquation foundEquation;
       list<Equation> elseEqnsRest;
+      
     case (WHEN_EQUATION(WHEN_EQ(index = ind,left = cr,right=rightSide))::trueEqns, elseEqns,trueCls,elseCls,nextInd)
       equation
         (foundEquation, elseEqnsRest) = getWhenEquationFromVariable(cr,elseEqns);
         res = WHEN_EQUATION(WHEN_EQ(ind,cr,rightSide,SOME(foundEquation)));
         (resRest, outNextIndex, outClauseList) = mergeClauses(trueEqns,elseEqnsRest,trueCls, elseCls,nextInd);
       then (res::resRest, outNextIndex, outClauseList);
-    case ({},{},trueCls,elseCls,nextInd)
-    then ({},nextInd,listAppend(trueCls,elseCls));
-
+        
+    case ({},{},trueCls,elseCls,nextInd) then ({},nextInd,listAppend(trueCls,elseCls));
+      
   end matchcontinue;
 end mergeClauses;
 
@@ -4246,20 +4356,19 @@ algorithm
       then (eq, eq2::rest2);
     case (_,{})
       equation
-        Error.addMessage(Error.DIFFERENT_VARIABLES_SOLVED_IN_ELSEWHEN,
-          {});
+        Error.addMessage(Error.DIFFERENT_VARIABLES_SOLVED_IN_ELSEWHEN, {});
       then
         fail();
 
   end matchcontinue;
 end getWhenEquationFromVariable;
 
-protected function makeWhenClauses "function: makeWhenClauses
+protected function makeWhenClauses 
+"function: makeWhenClauses
   Constructs a list of identical WhenClause elements
   Arg1: Number of elements to construct
   Arg2: condition expression of the when clause
-  outputs: (WhenClause list)
-"
+  outputs: (WhenClause list)"
   input Integer n           "Number of copies to make.";
   input Exp.Exp inCondition "the condition expression";
   input list<ReinitStatement> inReinitStatementLst;
@@ -4272,6 +4381,7 @@ algorithm
       list<WhenClause> res;
       Exp.Exp cond;
       list<ReinitStatement> reinit;
+      
     case (0,_,_) then {};
     case (i,cond,reinit)
       equation
@@ -4282,9 +4392,9 @@ algorithm
   end matchcontinue;
 end makeWhenClauses;
 
-protected function lowerWhenEqn2 "
-  Helper function to lower_when_eqn. Lowers the equations inside a when clause
-"
+protected function lowerWhenEqn2 
+"function lowerWhenEqn2
+  Helper function to lowerWhenEqn. Lowers the equations inside a when clause"
   input list<DAE.Element> inDAEElementLst "The List of equations inside a when clause";
   input Integer inWhenClauseIndex;
   output list<Equation> outEquationLst;
@@ -4317,8 +4427,8 @@ algorithm
   end matchcontinue;
 end lowerWhenEqn2;
 
-protected function lower2 "function: lower2
-
+protected function lower2 
+"function: lower2
   Helper function to lower.
   inputs:  (DAE.DAElist,
               BinTree /* states */,
@@ -4330,8 +4440,7 @@ protected function lower2 "function: lower2
               Equation list,
               MultiDimEquation list,
               Algorithm.Algorithm list,
-              WhenClause list)
-"
+              WhenClause list)"
   input DAE.DAElist inDAElist;
   input BinTree inBinTree;
   input list<WhenClause> inWhenClauseLst;
@@ -4373,7 +4482,7 @@ algorithm
       then
         (v1,v2,v3,{},{},{},{},{},whenclauses,{});
 
-        // External object variables
+    // External object variables
     case (DAE.DAE(elementLst = ((v as DAE.VAR(componentRef = _)) :: xs)),states,whenclauses)
       equation
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,algs,whenclauses_1,extObjCls)
@@ -4383,7 +4492,7 @@ algorithm
       then
         (vars,knvars,extVars2,eqns,reqns,ieqns,aeqns,algs,whenclauses_1,extObjCls);
 
-        // class for External object
+    // class for External object
     case (DAE.DAE(elementLst = ((v as DAE.EXTOBJECTCLASS(path,constr,destr)) :: xs)),states,whenclauses)
       local
         Absyn.Path path;
@@ -4395,7 +4504,7 @@ algorithm
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,algs,whenclauses_1,
         EXTOBJCLASS(path,constr,destr)::extObjCls);
 
-        // variables: states and algebraic variables.
+    // variables: states and algebraic variables.
     case (DAE.DAE(elementLst = ((v as DAE.VAR(componentRef = _)) :: xs)),states,whenclauses)
       equation
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,algs,whenclauses_1,extObjCls)
@@ -4405,7 +4514,7 @@ algorithm
       then
         (vars_1,knvars,extVars,eqns,reqns,ieqns,aeqns,algs,whenclauses_1,extObjCls);
 
-        // Known variables: parameters and constants
+    // Known variables: parameters and constants
     case (DAE.DAE(elementLst = ((v as DAE.VAR(componentRef = _)) :: xs)),states,whenclauses)
       equation
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,algs,whenclauses_1,extObjCls)
@@ -4415,7 +4524,7 @@ algorithm
       then
         (vars,knvars_1,extVars,eqns,reqns,ieqns,aeqns,algs,whenclauses_1,extObjCls);
 
-      /* tuple equations are rewritten to algorihm tuple assign. */
+    /* tuple equations are rewritten to algorihm tuple assign. */
     case (DAE.DAE(elementLst = ((e as DAE.EQUATION(exp = e1,scalar = e2)) :: xs)),states,whenclauses)
       equation
         a = lowerTupleEquation(e);
@@ -4424,7 +4533,7 @@ algorithm
       then
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,a::algs,whenclauses_1,extObjCls);
 
-        /* scalar equations */
+    /* scalar equations */
     case (DAE.DAE(elementLst = ((e as DAE.EQUATION(exp = e1,scalar = e2)) :: xs)),states,whenclauses)
       equation
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,algs,whenclauses_1,extObjCls)
@@ -4433,7 +4542,7 @@ algorithm
       then
         (vars,knvars,extVars,(e_1 :: eqns),reqns,ieqns,aeqns,algs,whenclauses_1,extObjCls);
 
-        /* array equations */
+    /* array equations */
     case (DAE.DAE(elementLst = ((e as DAE.ARRAY_EQUATION(dimension = ds,exp = e1,array = e2)) :: xs)),states,whenclauses)
       local MultiDimEquation e_1;
       equation
@@ -4443,7 +4552,7 @@ algorithm
       then
         (vars,knvars,extVars,eqns,reqns,ieqns,(e_1 :: aeqns),algs,whenclauses_1,extObjCls);
 
-        /* When equations */
+    /* When equations */
     case (DAE.DAE(elementLst = ((e as DAE.WHEN_EQUATION(condition = c,equations = eqns,elsewhen_ = NONE)) :: xs)),states,whenclauses)
       equation
         (vars1,knvars,extVars,eqns1,reqns,ieqns,aeqns,algs,whenclauses_1,extObjCls)
@@ -4455,7 +4564,7 @@ algorithm
       then
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,algs,whenclauses_2,extObjCls);
 
-        /* initial equations*/
+    /* initial equations*/
     case (DAE.DAE(elementLst = ((e as DAE.INITIALEQUATION(exp1 = e1,exp2 = e2)) :: xs)),states,whenclauses)
       equation
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,algs,whenclauses_1,extObjCls)
@@ -4464,7 +4573,7 @@ algorithm
       then
         (vars,knvars,extVars,eqns,reqns,(e_1 :: ieqns),aeqns,algs,whenclauses_1,extObjCls);
 
-        /* Algorithm */
+    /* Algorithm */
     case (DAE.DAE(elementLst = (DAE.ALGORITHM(algorithm_ = a) :: xs)),states,whenclauses)
       equation
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,algs,whenclauses_1,extObjCls)
@@ -4472,7 +4581,7 @@ algorithm
       then
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,(a :: algs),whenclauses_1,extObjCls);
 
-        /* flat class / COMP */
+    /* flat class / COMP */
     case (DAE.DAE(elementLst = (DAE.COMP(dAElist = dae) :: xs)),states,whenclauses)
       equation
         (vars1,knvars1,extVars1,eqns1,reqns1,ieqns1,aeqns1,algs1,whenclauses_1,extObjCls1) = lower2(dae, states, whenclauses);
@@ -4489,14 +4598,15 @@ algorithm
       then
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,algs,whenclauses_2,extObjCls);
 
-        /* If equation */
+    /* If equation */
     case (DAE.DAE(elementLst = (DAE.IF_EQUATION(condition1 = _) :: xs)),states,whenclauses)
       equation
         Error.addMessage(Error.UNSUPPORTED_LANGUAGE_FEATURE,
           {"if-equations","rewrite equations using if-expressions"});
       then
         fail();
-        /* Initial if equation */
+        
+    /* Initial if equation */
     case (DAE.DAE(elementLst = (DAE.INITIAL_IF_EQUATION(condition1 = _) :: xs)),states,whenclauses)
       equation
         Error.addMessage(Error.UNSUPPORTED_LANGUAGE_FEATURE,
@@ -4504,7 +4614,7 @@ algorithm
       then
         fail();
 
-        /* assert in equation section is converted to ALGORITHM */
+    /* assert in equation section is converted to ALGORITHM */
     case (DAE.DAE(elementLst = (DAE.ASSERT(cond,msg) :: xs)),states,whenclauses)
       local
         Variables v;
@@ -4517,13 +4627,12 @@ algorithm
       then
         (v,kv,extVars,e,re,ie,ae,Algorithm.ALGORITHM({Algorithm.ASSERT(cond,msg)})::al,whenclauses_1,extObjCls);
 
-       /* terminate in equation section is converted to ALGORITHM */
+    /* terminate in equation section is converted to ALGORITHM */
     case (DAE.DAE(elementLst = (DAE.TERMINATE(msg) :: xs)),states,whenclauses)
       local
         Variables v;
         list<Equation> e;
         Exp.Exp cond,msg;
-
       equation
         (v,kv,extVars,e,re,ie,ae,al,whenclauses_1,extObjCls) = lower2(DAE.DAE(xs), states, whenclauses) ;
       then
@@ -4534,15 +4643,14 @@ algorithm
         Variables v;
         list<Equation> e;
       equation
-        Error.addMessage(Error.UNSUPPORTED_LANGUAGE_FEATURE,
-          {"initial algorithm","rewrite initial algorithms to initial equations"});
+        Error.addMessage(Error.UNSUPPORTED_LANGUAGE_FEATURE,{"initial algorithm","rewrite initial algorithms to initial equations"});
         (v,kv,extVars,e,re,ie,ae,al,whenclauses_1,extObjCls) = lower2(DAE.DAE(xs), states, whenclauses);
       then
         (v,kv,extVars,e,re,ie,ae,al,whenclauses_1,extObjCls);
 
     case (_,_,_)
       equation
-        print("-lower2 failed\n");
+        print("-DAELow.lower2 failed\n");
       then
         fail();
   end matchcontinue;
@@ -5034,7 +5142,7 @@ algorithm
         res;
     case ((e as Exp.CALL(path = Absyn.IDENT(name = "der"),expLst = {Exp.CREF(componentRef = cr)})),vars)
       equation
-        ((VAR(_,STATE(),_,_,_,_,_,_,_,_,_,_,flow_) :: _),_) = getVar(cr, vars);
+        ((VAR(_,STATE(),_,_,_,_,_,_,_,_,_,_,flow_,_) :: _),_) = getVar(cr, vars);
       then
         {e};
     case (Exp.CALL(path = Absyn.IDENT(name = "der"),expLst = {Exp.CREF(componentRef = cr)}),vars)
@@ -5192,24 +5300,31 @@ algorithm
       DAE.VarDirection dir;
       DAE.Type tp;
       DAE.Flow flow_;
+      DAE.Stream stream_;
       list<Absyn.Path> class_;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<Absyn.Comment> comment;
       BinTree states;
-    case (DAE.VAR(componentRef = name,varible = kind,variable = dir,input_ = tp,one = bind,
-      binding = dims,value = flow_,flow_ = class_,
-      variableAttributesOption = dae_var_attr,absynCommentOption = comment),states)
+    case (DAE.VAR(componentRef = name,
+                  kind = kind,
+                  direction = dir,
+                  ty = tp,
+                  binding = bind,
+                  dims = dims,
+                  flow_ = flow_,
+                  stream_ = stream_,
+                  pathLst = class_,
+                  variableAttributesOption = dae_var_attr,
+                  absynCommentOption = comment),states)
       equation
         subs = Exp.crefLastSubs(name);
         name_1 = Exp.crefStripLastSubs(name);
         origname = Exp.printComponentRefStr(name_1);
         newname = Exp.CREF_IDENT(origname,subs);
-        kind_1 = lowerVarkind(kind, tp, newname, dir, flow_, states,dae_var_attr);
+        kind_1 = lowerVarkind(kind, tp, newname, dir, flow_, stream_, states, dae_var_attr);
         bind_1 = lowerBinding(bind);
-
       then
-        VAR(newname,kind_1,dir,tp,bind_1,NONE,dims,-1,name,
-          class_,dae_var_attr,comment,flow_);
+        VAR(newname,kind_1,dir,tp,bind_1,NONE,dims,-1,name,class_,dae_var_attr,comment,flow_,stream_);
   end matchcontinue;
 end lowerVar;
 
@@ -5251,10 +5366,22 @@ algorithm
       DAE.VarDirection dir;
       DAE.Type tp;
       DAE.Flow flow_;
+      DAE.Stream stream_;
       list<Absyn.Path> class_;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<Absyn.Comment> comment;
-    case (DAE.VAR(componentRef = name,varible = kind,variable = dir,input_ = tp,one = bind,binding = dims,value = flow_,flow_ = class_,variableAttributesOption = dae_var_attr,absynCommentOption = comment))
+      
+    case (DAE.VAR(componentRef = name,
+                  kind = kind,
+                  direction = dir,
+                  ty = tp,
+                  binding = bind,
+                  dims = dims,
+                  flow_ = flow_,
+                  stream_ = stream_,
+                  pathLst = class_,
+                  variableAttributesOption = dae_var_attr,
+                  absynCommentOption = comment))
       equation
         subs = Exp.crefLastSubs(name);
         name_1 = Exp.crefStripLastSubs(name);
@@ -5263,21 +5390,19 @@ algorithm
         kind_1 = lowerKnownVarkind(kind, name, dir, flow_);
         bind_1 = lowerBinding(bind);
       then
-        VAR(newname,kind_1,dir,tp,bind_1,NONE,dims,-1,name,
-          class_,dae_var_attr,comment,flow_);
+        VAR(newname,kind_1,dir,tp,bind_1,NONE,dims,-1,name,class_,dae_var_attr,comment,flow_,stream_);
+        
     case (_)
       equation
-        print("-lower_known_var failed\n");
+        print("-DAELow.lowerKnownVar failed\n");
       then
         fail();
   end matchcontinue;
 end lowerKnownVar;
 
-protected function lowerExtObjVar " Helper function to lower2
-
-Fails for all variables except external object instances.
-
-"
+protected function lowerExtObjVar 
+" Helper function to lower2
+  Fails for all variables except external object instances."
   input DAE.Element inElement;
   output Var outVar;
 algorithm
@@ -5293,10 +5418,21 @@ algorithm
       DAE.VarDirection dir;
       DAE.Type tp;
       DAE.Flow flow_;
+      DAE.Stream stream_;
       list<Absyn.Path> class_;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<Absyn.Comment> comment;
-    case (DAE.VAR(componentRef = name,varible = kind,variable = dir,input_ = tp,one = bind,binding = dims,value = flow_,flow_ = class_,variableAttributesOption = dae_var_attr,absynCommentOption = comment))
+    case (DAE.VAR(componentRef = name,
+                  kind = kind,
+                  direction = dir,
+                  ty = tp,
+                  binding = bind,
+                  dims = dims,
+                  flow_ = flow_,
+                  stream_ = stream_,
+                  pathLst = class_,
+                  variableAttributesOption = dae_var_attr,
+                  absynCommentOption = comment))
       equation
         subs = Exp.crefLastSubs(name);
         name_1 = Exp.crefStripLastSubs(name);
@@ -5305,76 +5441,81 @@ algorithm
         kind_1 = lowerExtObjVarkind(tp);
         bind_1 = lowerBinding(bind);
       then
-        VAR(newname,kind_1,dir,tp,bind_1,NONE,dims,-1,name,
-          class_,dae_var_attr,comment,flow_);
+        VAR(newname,kind_1,dir,tp,bind_1,NONE,dims,-1,name,class_,dae_var_attr,comment,flow_,stream_);
   end matchcontinue;
 end lowerExtObjVar;
 
-protected function lowerVarkind "function: lowerVarkind
-
-  Helper function to lower_var.
+protected function lowerVarkind 
+"function: lowerVarkind
+  Helper function to lowerVar.
   inputs: (DAE.VarKind,
-             DAE.Type,
-             Exp.ComponentRef,
-             DAE.VarDirection, /* input/output/bidir */
-             DAE.Flow,
-             BinTree /* states */)
-  outputs VarKind
-  NOTE: Fails for not states that are not algebraic variables, e.g.
-          parameters and constants
-"
+           DAE.Type,
+           Exp.ComponentRef,
+           DAE.VarDirection, /* input/output/bidir */
+           DAE.Flow,
+           DAE.Stream,
+           BinTree /* states */)
+  outputs  VarKind
+  NOTE: Fails for not states that are not algebraic 
+        variables, e.g. parameters and constants"
   input DAE.VarKind inVarKind;
   input DAE.Type inType;
   input Exp.ComponentRef inComponentRef;
   input DAE.VarDirection inVarDirection;
   input DAE.Flow inFlow;
+  input DAE.Stream inStream;  
   input BinTree inBinTree;
   input option<DAE.VariableAttributes> daeAttr;
   output VarKind outVarKind;
 algorithm
   outVarKind:=
-  matchcontinue (inVarKind,inType,inComponentRef,inVarDirection,inFlow,inBinTree,daeAttr)
+  matchcontinue (inVarKind,inType,inComponentRef,inVarDirection,inFlow,inStream,inBinTree,daeAttr)
     local
       Exp.ComponentRef v,cr;
       BinTree states;
       DAE.VarDirection dir;
       DAE.Flow flow_;
-      // States appear differentiated among equations
-    case (DAE.VARIABLE(),_,v,_,_,states,daeAttr)
+    // States appear differentiated among equations
+    case (DAE.VARIABLE(),_,v,_,_,_,states,daeAttr)
       equation
         _ = treeGet(states, v);
       then
         STATE();
-       // Or states have StateSelect.always
-    case (DAE.VARIABLE(),_,v,_,_,states,SOME(DAE.VAR_ATTR_REAL(_,_,_,_,_,_,_,SOME(DAE.ALWAYS()))))
+    // Or states have StateSelect.always
+    case (DAE.VARIABLE(),_,v,_,_,_,states,SOME(DAE.VAR_ATTR_REAL(_,_,_,_,_,_,_,SOME(DAE.ALWAYS()))))
     then STATE();
 
-    case (DAE.VARIABLE(),DAE.BOOL(),cr,dir,flow_,_,_)
+    case (DAE.VARIABLE(),DAE.BOOL(),cr,dir,flow_,_,_,_)
       equation
         failure(topLevelInput(cr, dir, flow_));
       then
         DISCRETE();
-    case (DAE.DISCRETE(),DAE.BOOL(),cr,dir,flow_,_,_)
+    
+    case (DAE.DISCRETE(),DAE.BOOL(),cr,dir,flow_,_,_,_)
       equation
         failure(topLevelInput(cr, dir, flow_));
       then
         DISCRETE();
-    case (DAE.VARIABLE(),DAE.INT(),cr,dir,flow_,_,_)
+    
+    case (DAE.VARIABLE(),DAE.INT(),cr,dir,flow_,_,_,_)
       equation
         failure(topLevelInput(cr, dir, flow_));
       then
         DISCRETE();
-    case (DAE.DISCRETE(),DAE.INT(),cr,dir,flow_,_,_)
+    
+    case (DAE.DISCRETE(),DAE.INT(),cr,dir,flow_,_,_,_)
       equation
         failure(topLevelInput(cr, dir, flow_));
       then
         DISCRETE();
-    case (DAE.VARIABLE(),_,cr,dir,flow_,_,_)
+    
+    case (DAE.VARIABLE(),_,cr,dir,flow_,_,_,_)
       equation
         failure(topLevelInput(cr, dir, flow_));
       then
         VARIABLE();
-    case (DAE.DISCRETE(),_,cr,dir,flow_,_,_)
+    
+    case (DAE.DISCRETE(),_,cr,dir,flow_,_,_,_)
       equation
         failure(topLevelInput(cr, dir, flow_));
       then
@@ -5382,12 +5523,11 @@ algorithm
   end matchcontinue;
 end lowerVarkind;
 
-protected function topLevelInput "function: topLevelInput
+protected function topLevelInput 
+"function: topLevelInput
   author: PA
-
   Succeds if variable is input declared at the top level of the model,
-  or if it is an input in a connector instance at top level.
-"
+  or if it is an input in a connector instance at top level."
   input Exp.ComponentRef inComponentRef;
   input DAE.VarDirection inVarDirection;
   input DAE.Flow inFlow;
@@ -5749,32 +5889,34 @@ algorithm
       Exp.Exp e1,e2,e,e3;
       list<list<Value>> lst;
       list<Exp.Exp> expl;
+      
     case (Exp.CREF(componentRef = cr),vars)
       equation
-        ((VAR(_,STATE(),_,_,_,_,_,_,_,_,_,_,flow_) :: _),p) = getVar(cr, vars) "If variable x is a state, der(x) is a variable in incidence matrix,
-	 x is inserted as negative value, since it is needed by debugging and index
-	 reduction using dummy derivatives" ;
+        ((VAR(_,STATE(),_,_,_,_,_,_,_,_,_,_,flow_,_) :: _),p) = getVar(cr, vars) 
+        "If variable x is a state, der(x) is a variable in incidence matrix,
+	       x is inserted as negative value, since it is needed by debugging and 
+	       index reduction using dummy derivatives" ;
         p_1 = Util.listMap1r(p, int_sub, 0);
       then
-        p_1;
+        p_1;        
     case (Exp.CREF(componentRef = cr),vars)
       equation
-        ((VAR(_,VARIABLE(),_,_,_,_,_,_,_,_,_,_,flow_) :: _),p) = getVar(cr, vars);
+        ((VAR(_,VARIABLE(),_,_,_,_,_,_,_,_,_,_,flow_,_) :: _),p) = getVar(cr, vars);
       then
         p;
     case (Exp.CREF(componentRef = cr),vars)
       equation
-        ((VAR(_,DISCRETE(),_,_,_,_,_,_,_,_,_,_,flow_) :: _),p) = getVar(cr, vars);
+        ((VAR(_,DISCRETE(),_,_,_,_,_,_,_,_,_,_,flow_,_) :: _),p) = getVar(cr, vars);
       then
         p;
     case (Exp.CREF(componentRef = cr),vars)
       equation
-        ((VAR(_,DUMMY_DER(),_,_,_,_,_,_,_,_,_,_,flow_) :: _),p) = getVar(cr, vars);
+        ((VAR(_,DUMMY_DER(),_,_,_,_,_,_,_,_,_,_,flow_,_) :: _),p) = getVar(cr, vars);
       then
         p;
     case (Exp.CREF(componentRef = cr),vars)
       equation
-        ((VAR(_,DUMMY_STATE(),_,_,_,_,_,_,_,_,_,_,flow_) :: _),p) = getVar(cr, vars);
+        ((VAR(_,DUMMY_STATE(),_,_,_,_,_,_,_,_,_,_,flow_,_) :: _),p) = getVar(cr, vars);
       then
         p;
     case (Exp.BINARY(exp1 = e1,exp2 = e2),vars)
@@ -5818,7 +5960,7 @@ algorithm
         res;
     case (Exp.CALL(path = Absyn.IDENT(name = "der"),expLst = {Exp.CREF(componentRef = cr)}),vars)
       equation
-        ((VAR(_,STATE(),_,_,_,_,_,_,_,_,_,_,flow_) :: _),p) = getVar(cr, vars);
+        ((VAR(_,STATE(),_,_,_,_,_,_,_,_,_,_,flow_,_) :: _),p) = getVar(cr, vars);
       then
         p;
     case (Exp.CALL(path = Absyn.IDENT(name = "der"),expLst = {Exp.CREF(componentRef = cr)}),vars)
@@ -5871,11 +6013,10 @@ algorithm
   end matchcontinue;
 end incidenceRowExp;
 
-protected function incidenceRowMatrixExp "function: incidenceRowMatrixExp
+protected function incidenceRowMatrixExp 
+"function: incidenceRowMatrixExp
   author: PA
-
-  Traverses matrix expressions for building incidence matrix.
-"
+  Traverses matrix expressions for building incidence matrix."
   input list<list<tuple<Exp.Exp, Boolean>>> inTplExpExpBooleanLstLst;
   input Variables inVariables;
   output list<Integer> outIntegerLst;
@@ -6240,17 +6381,16 @@ algorithm
   end matchcontinue;
 end getVarAt;
 
-public function getVar "function: getVar
+public function getVar 
+"function: getVar
   author: PA
-
   Return a variable(s) and its index(es) in the vector.
   The indexes is enumerated from 1..n
   Normally a variable has only one index, but in case of an array variable
   it may have several indexes and several scalar variables,
   therefore a list of variables and a list of  indexes is returned.
   inputs:  (Exp.ComponentRef, Variables)
-  outputs: (Var list, int list /* indexes */)
-"
+  outputs: (Var list, int list /* indexes */)"
   input Exp.ComponentRef inComponentRef;
   input Variables inVariables;
   output list<Var> outVarLst;
@@ -6278,11 +6418,10 @@ algorithm
   end matchcontinue;
 end getVar;
 
-protected function getVar2 "function: getVar2
+protected function getVar2 
+"function: getVar2
   author: PA
-
-  Helper function to get_var, checks one scalar variable
-"
+  Helper function to getVar, checks one scalar variable"
   input Exp.ComponentRef inComponentRef;
   input Variables inVariables;
   output Var outVar;
@@ -6306,7 +6445,7 @@ algorithm
         hashindx = intMod(hval, bsize);
         indexes = hashvec[hashindx + 1];
         indx = getVar3(cr, indexes);
-        ((v as VAR(cr2,_,_,_,_,_,_,_,_,_,_,_,flow_))) = vararrayNth(varr, indx);
+        ((v as VAR(cr2,_,_,_,_,_,_,_,_,_,_,_,flow_,_))) = vararrayNth(varr, indx);
         true = Exp.crefEqual(cr, cr2);
         indx_1 = indx + 1;
       then
@@ -6314,13 +6453,12 @@ algorithm
   end matchcontinue;
 end getVar2;
 
-protected function getArrayVar "function: getArrayVar
+protected function getArrayVar 
+"function: getArrayVar
   author: PA
-
   Helper function to get_var, checks one array variable.
   I.e. get_array_var(v,<vars>) will for an array v{3} return
-  { v{1},v{2},v{3} }
-"
+  { v{1},v{2},v{3} }"
   input Exp.ComponentRef inComponentRef;
   input Variables inVariables;
   output list<Var> outVarLst;
@@ -6348,7 +6486,7 @@ algorithm
         hashindx = intMod(hval, bsize);
         indexes = hashvec[hashindx + 1];
         indx = getVar3(cr_1, indexes);
-        ((v as VAR(cr2,_,_,_,_,_,instdims,_,_,_,_,_,flow_))) = vararrayNth(varr, indx);
+        ((v as VAR(cr2,_,_,_,_,_,instdims,_,_,_,_,_,flow_,_))) = vararrayNth(varr, indx);
         true = Exp.crefEqual(cr_1, cr2);
         (vs,indxs) = getArrayVar2(instdims, cr, vars);
       then
@@ -6360,7 +6498,7 @@ algorithm
         hashindx = intMod(hval, bsize);
         indexes = hashvec[hashindx + 1];
         indx = getVar3(cr_1, indexes);
-        ((v as VAR(cr2,_,_,_,_,_,instdims,_,_,_,_,_,flow_))) = vararrayNth(varr, indx);
+        ((v as VAR(cr2,_,_,_,_,_,instdims,_,_,_,_,_,flow_,_))) = vararrayNth(varr, indx);
         true = Exp.crefEqual(cr_1, cr2);
         (vs,indxs) = getArrayVar2(instdims, cr, vars);
       then
@@ -6368,17 +6506,16 @@ algorithm
   end matchcontinue;
 end getArrayVar;
 
-protected function getArrayVar2 "function: getArrayVar2
+protected function getArrayVar2 
+"function: getArrayVar2
   author: PA
-
-  Helper function to get_array_var.
+  Helper function to getArrayVar.
   Note: Only implemented for arrays of dimension 1 and 2.
   inputs:  (DAE.InstDims, /* array_inst_dims */
               Exp.ComponentRef, /* array_var_name */
               Variables)
   outputs: (Var list /* arrays scalar vars */,
-              int list /* arrays scalar indxs */)
-"
+              int list /* arrays scalar indxs */)"
   input DAE.InstDims inInstDims;
   input Exp.ComponentRef inComponentRef;
   input Variables inVariables;
@@ -6426,8 +6563,8 @@ algorithm
   end matchcontinue;
 end getArrayVar2;
 
-protected function subscript2dCombinations "function: susbscript_2d_combinations
-
+protected function subscript2dCombinations 
+"function: susbscript_2d_combinations
   This function takes two lists of list of subscripts and combines them in
   all possible combinations. This is used when finding all indexes of a 2d
   array.
@@ -6435,8 +6572,7 @@ protected function subscript2dCombinations "function: susbscript_2d_combinations
   => {{a,x},{a,y},{a,z},{b,x},{b,y},{b,z},{c,x},{c,y},{c,z}}
   inputs:  (Exp.Subscript list list /* dim1 subs */,
               Exp.Subscript list list /* dim2 subs */)
-  outputs: (Exp.Subscript list list)
-"
+  outputs: (Exp.Subscript list list)"
   input list<list<Exp.Subscript>> inExpSubscriptLstLst1;
   input list<list<Exp.Subscript>> inExpSubscriptLstLst2;
   output list<list<Exp.Subscript>> outExpSubscriptLstLst;
@@ -6477,11 +6613,10 @@ algorithm
   end matchcontinue;
 end subscript2dCombinations2;
 
-public function existsVar "function: existsVar
+public function existsVar 
+"function: existsVar
   author: PA
-
-  Return true if a variable exists in th vector
-"
+  Return true if a variable exists in the vector"
   input Exp.ComponentRef inComponentRef;
   input Variables inVariables;
   output Boolean outBoolean;
@@ -6504,7 +6639,7 @@ algorithm
         hashindx = intMod(hval, bsize);
         indexes = hashvec[hashindx + 1];
         indx = getVar3(cr, indexes);
-        ((v as VAR(cr2,_,_,_,_,_,_,_,_,_,_,_,flow_))) = vararrayNth(varr, indx);
+        ((v as VAR(cr2,_,_,_,_,_,_,_,_,_,_,_,flow_,_))) = vararrayNth(varr, indx);
         true = Exp.crefEqual(cr, cr2);
       then
         true;
@@ -6525,12 +6660,11 @@ algorithm
   end matchcontinue;
 end existsVar;
 
-public function getVarUsingName "function: getVarUsingName
+public function getVarUsingName 
+"function: getVarUsingName
   author: lucian
-
   Return a variable and its index in the vector.
-  The index is enumerated from 1..n
-"
+  The index is enumerated from 1..n"
   input String inString;
   input Variables inVariables;
   output Var outVar;
@@ -6554,7 +6688,7 @@ algorithm
         hashindx = intMod(hval, bsize);
         indexes = oldhashvec[hashindx + 1];
         indx = getVarUsingName2(cr, indexes);
-        ((v as VAR(cr2,_,_,_,_,_,_,_,name,_,_,_,flow_))) = vararrayNth(varr, indx);
+        ((v as VAR(cr2,_,_,_,_,_,_,_,name,_,_,_,flow_,_))) = vararrayNth(varr, indx);
         name_str = Exp.printComponentRefStr(name);
         equality(name_str = cr);
         indx_1 = indx + 1;
@@ -6563,11 +6697,10 @@ algorithm
   end matchcontinue;
 end getVarUsingName;
 
-public function setVarKind "function setVarKind
+public function setVarKind 
+"function setVarKind
   author: PA
-
-  Sets the VarKind of a variable
-"
+  Sets the VarKind of a variable"
   input Var inVar;
   input VarKind inVarKind;
   output Var outVar;
@@ -6587,16 +6720,30 @@ algorithm
       Option<DAE.VariableAttributes> attr;
       Option<Absyn.Comment> comment;
       DAE.Flow flow_;
-    case (VAR(varName = cr,varKind = kind,varDirection = dir,varType = tp,bindExp = bind,bindValue = v,arryDim = dim,index = i,origVarName = origname,className = classes,values = attr,comment = comment,flow_ = flow_),new_kind)
-    then VAR(cr,new_kind,dir,tp,bind,v,dim,i,origname,classes,attr,comment,flow_);
+      DAE.Stream stream_;
+      
+    case (VAR(varName = cr,
+              varKind = kind,
+              varDirection = dir,
+              varType = tp,
+              bindExp = bind,
+              bindValue = v,
+              arryDim = dim,
+              index = i,
+              origVarName = origname,
+              className = classes,
+              values = attr,
+              comment = comment,
+              flow_ = flow_,
+              stream_ = stream_),new_kind)
+    then VAR(cr,new_kind,dir,tp,bind,v,dim,i,origname,classes,attr,comment,flow_,stream_);
   end matchcontinue;
 end setVarKind;
 
-protected function getVar3 "function: getVar3
+protected function getVar3 
+"function: getVar3
   author: PA
-
-  Helper function to get_var
-"
+  Helper function to getVar"
   input Exp.ComponentRef inComponentRef;
   input list<CrefIndex> inCrefIndexLst;
   output Integer outInteger;
@@ -6626,11 +6773,10 @@ algorithm
   end matchcontinue;
 end getVar3;
 
-protected function getVarUsingName2 "function: getVarUsingName2
+protected function getVarUsingName2 
+"function: getVarUsingName2
   author: PA
-
-  Helper function to get_var_using_name
-"
+  Helper function to getVarUsingName"
   input String inString;
   input list<StringIndex> inStringIndexLst;
   output Integer outInteger;
@@ -6655,13 +6801,12 @@ algorithm
   end matchcontinue;
 end getVarUsingName2;
 
-protected function deleteVar "function: deleteVar
+protected function deleteVar 
+"function: deleteVar
   author: PA
-
-  Deletes a variable from \'Variables\'. This is an expensive operation
+  Deletes a variable from Variables. This is an expensive operation
   since we need to create a new binary tree with new indexes as well
-  as a new compacted vector of variables.
-"
+  as a new compacted vector of variables."
   input Exp.ComponentRef inComponentRef;
   input Variables inVariables;
   output Variables outVariables;
@@ -6687,12 +6832,11 @@ algorithm
   end matchcontinue;
 end deleteVar;
 
-protected function deleteVar2 "function: deleteVar2
+protected function deleteVar2 
+"function: deleteVar2
   author: PA
-
-  Helper function to delete_var.
-  Deletes the var named \'Exp.ComponentRef\' from the \'Var\' list.
-"
+  Helper function to deleteVar.
+  Deletes the var named Exp.ComponentRef from the Variables list."
   input Exp.ComponentRef inComponentRef;
   input list<Var> inVarLst;
   output list<Var> outVarLst;
@@ -6701,11 +6845,10 @@ algorithm
   matchcontinue (inComponentRef,inVarLst)
     local
       Exp.ComponentRef cr1,cr2;
-      DAE.Flow flow_;
       list<Var> vs,vs_1;
       Var v;
     case (_,{}) then {};
-    case (cr1,(VAR(varName = cr2,flow_ = flow_) :: vs))
+    case (cr1,(VAR(varName = cr2) :: vs))
       equation
         true = Exp.crefEqual(cr1, cr2);
       then
@@ -6718,12 +6861,11 @@ algorithm
   end matchcontinue;
 end deleteVar2;
 
-public function transposeMatrix "function: transposeMatrix
+public function transposeMatrix 
+"function: transposeMatrix
   author: PA
-
-  Calculates the transpose of the incidence matrix, i.e. which equations
-  each variable is present in.
-"
+  Calculates the transpose of the incidence matrix, 
+  i.e. which equations each variable is present in."
   input IncidenceMatrix m;
   output IncidenceMatrixT mt;
   list<list<Value>> mlst,mtlst;
@@ -6733,11 +6875,10 @@ algorithm
   mt := listArray(mtlst);
 end transposeMatrix;
 
-protected function transposeMatrix2 "function: transposeMatrix2
+protected function transposeMatrix2 
+"function: transposeMatrix2
   author: PA
-
-  Helper function to transpose_matrix
-"
+  Helper function to transposeMatrix"
   input list<list<Integer>> inIntegerLstLst;
   output list<list<Integer>> outIntegerLstLst;
 algorithm
@@ -6760,11 +6901,10 @@ algorithm
   end matchcontinue;
 end transposeMatrix2;
 
-protected function transposeMatrix3 "function: transposeMatrix3
+protected function transposeMatrix3 
+"function: transposeMatrix3
   author: PA
-
-  Helper function to transpose_matrix2
-"
+  Helper function to transposeMatrix2"
   input list<list<Integer>> inIntegerLstLst1;
   input Integer inInteger2;
   input Integer inInteger3;
@@ -6789,12 +6929,11 @@ algorithm
   end matchcontinue;
 end transposeMatrix3;
 
-public function absIncidenceMatrix "function absIncidenceMatrix
+public function absIncidenceMatrix 
+"function absIncidenceMatrix
   author: PA
-
   Applies absolute value to all entries in the incidence matrix.
-  This can be used when e.g. der(x) and x are considered the same variable.
-"
+  This can be used when e.g. der(x) and x are considered the same variable."
   input IncidenceMatrix m;
   output IncidenceMatrix res;
   list<list<Value>> lst,lst_1;
@@ -6804,11 +6943,11 @@ algorithm
   res := listArray(lst_1);
 end absIncidenceMatrix;
 
-public function varsIncidenceMatrix "function: varsIncidenceMatrix
+public function varsIncidenceMatrix 
+"function: varsIncidenceMatrix
   author: PA
-  Return all variable indices in the incidence matrix, i.e.
-  all elements of the matrix.
-"
+  Return all variable indices in the incidence 
+  matrix, i.e. all elements of the matrix."
   input IncidenceMatrix m;
   output list<Integer> res;
   list<list<Value>> mlst;
@@ -6817,17 +6956,15 @@ algorithm
   res := Util.listFlatten(mlst);
 end varsIncidenceMatrix;
 
-protected function transposeRow "function: transposeRow
+protected function transposeRow 
+"function: transposeRow
   author: PA
-
-  Helper function to transpose_matrix2.
+  Helper function to transposeMatrix2.
   Input: IncidenceMatrix (eqn => var)
   Input: row number (variable)
   Input: iterator (start with one)
-
   inputs:  (int list list, int /* row */,int /* iter */)
-  outputs:  int list
-"
+  outputs:  int list"
   input list<list<Integer>> inIntegerLstLst1;
   input Integer inInteger2;
   input Integer inInteger3;
@@ -6870,11 +7007,10 @@ algorithm
   end matchcontinue;
 end transposeRow;
 
-public function dumpIncidenceMatrix "function: dumpIncidenceMatrix
+public function dumpIncidenceMatrix 
+"function: dumpIncidenceMatrix
   author: PA
-
-  Prints the incidence matrix on stdout.
-"
+  Prints the incidence matrix on stdout."
   input IncidenceMatrix m;
   Value mlen;
   String mlen_str;
@@ -6891,11 +7027,10 @@ algorithm
   dumpIncidenceMatrix2(m_1,1);
 end dumpIncidenceMatrix;
 
-public function dumpIncidenceMatrixT "function: dumpIncidenceMatrixT
+public function dumpIncidenceMatrixT 
+"function: dumpIncidenceMatrixT
   author: PA
-
-  Prints the transposed incidence matrix on stdout.
-"
+  Prints the transposed incidence matrix on stdout."
   input IncidenceMatrix m;
   Value mlen;
   String mlen_str;
@@ -6912,11 +7047,10 @@ algorithm
   dumpIncidenceMatrix2(m_1,1);
 end dumpIncidenceMatrixT;
 
-protected function dumpIncidenceMatrix2 "function: dumpIncidenceMatrix2
+protected function dumpIncidenceMatrix2 
+"function: dumpIncidenceMatrix2
   author: PA
-
-  Helper function to dump_incidence_matrix (+_t).
-"
+  Helper function to dumpIncidenceMatrix (+T)."
   input list<list<Integer>> inIntegerLstLst;
   input Integer rowIndex;
 algorithm
@@ -6936,11 +7070,10 @@ algorithm
   end matchcontinue;
 end dumpIncidenceMatrix2;
 
-protected function dumpIncidenceRow "function: dumpIncidenceRow
+protected function dumpIncidenceRow 
+"function: dumpIncidenceRow
   author: PA
-
-  Helper function to dump_incidence_matrix2.
-"
+  Helper function to dumpIncidenceMatrix2."
   input list<Integer> inIntegerLst;
 algorithm
   _:=
@@ -6965,11 +7098,10 @@ algorithm
   end matchcontinue;
 end dumpIncidenceRow;
 
-public function dumpMatching "function: dumpMatching
+public function dumpMatching 
+"function: dumpMatching
   author: PA
-
-  prints the matching information on stdout.
-"
+  prints the matching information on stdout."
   input Integer[:] v;
   Value len;
   String len_str;
@@ -6983,11 +7115,10 @@ algorithm
   dumpMatching2(v, 0);
 end dumpMatching;
 
-protected function dumpMatching2 "function: dumpMatching2
+protected function dumpMatching2 
+"function: dumpMatching2
   author: PA
-
-  Helper function to dump_matching.
-"
+  Helper function to dumpMatching."
   input Integer[:] inIntegerArray;
   input Integer inInteger;
 algorithm
@@ -7031,9 +7162,9 @@ algorithm
   end matchcontinue;
 end dumpMatching2;
 
-public function matchingAlgorithm "function: matchingAlgorithm
+public function matchingAlgorithm 
+"function: matchingAlgorithm
   author: PA
-
   This function performs the matching algorithm, which is the first
   part of sorting the equations into BLT (Block Lower Triangular) form.
   The matching algorithm finds a variable that is solved in each equation.
@@ -7053,8 +7184,7 @@ public function matchingAlgorithm "function: matchingAlgorithm
   inputs:  (DAELow,IncidenceMatrix, IncidenceMatrixT, MatchingOptions)
   outputs: (int vector /* vector of equation indices */ ,
               int vector /* vector of variable indices */,
-              DAELow,IncidenceMatrix, IncidenceMatrixT)
-"
+              DAELow,IncidenceMatrix, IncidenceMatrixT)"
   input DAELow inDAELow;
   input IncidenceMatrix inIncidenceMatrix;
   input IncidenceMatrixT inIncidenceMatrixT;
@@ -7084,6 +7214,7 @@ algorithm
       Value[:] vec1,vec2;
       MatchingOptions match_opts;
       ExternalObjectClasses eoc;
+      
     case ((dae as DAELOW(orderedVars = vars,orderedEqs = eqns)),m,mt,(match_opts as (_,_,REMOVE_SIMPLE_EQN())))
       equation
         DAEEXT.clearDifferentiated();
@@ -7094,29 +7225,28 @@ algorithm
         ne = intString(neqns);
         (nvars > 0) = true;
         (neqns > 0) = true;
-        memsize = nvars + nvars "Worst case, all eqns are differentiated once.
-	  Create nvars2 assignment elements" ;
+        memsize = nvars + nvars "Worst case, all eqns are differentiated once. Create nvars2 assignment elements" ;
         assign1 = assignmentsCreate(nvars, memsize, 0);
         assign2 = assignmentsCreate(nvars, memsize, 0);
         (ass1,ass2,(dae as DAELOW(v,kv,exv,e,re,ie,ae,al,ev,eoc)),m,mt) = matchingAlgorithm2(dae, m, mt, nvars, neqns, 1, assign1, assign2, match_opts);
 				/* NOTE: Here it could be possible to run removeSimpleEquations again, since algebraic equations
 				could potentially be removed after a index reduction has been done. However, removing equations here
 				also require that e.g. zero crossings, array equations, etc. must be recalculated. */
-        m_1 = incidenceMatrix(dae) "Rerun matching to get updated assignments and incidence matrices TODO: instead of rerunning: find out which equations are removed
-	  and remove those from assignments and incidence matrix.
-	" ;
+        m_1 = incidenceMatrix(dae) "Rerun matching to get updated assignments and incidence matrices 
+                                    TODO: instead of rerunning: find out which equations are removed
+	                                  and remove those from assignments and incidence matrix." ;
         mt_1 = transposeMatrix(m_1);
         nvars = arrayLength(m_1);
         neqns = arrayLength(mt_1);
         memsize = nvars + nvars;
         assign1 = assignmentsCreate(nvars, memsize, 0);
         assign2 = assignmentsCreate(nvars, memsize, 0);
-        (ass1,ass2,dae_2,m,mt) = matchingAlgorithm2(dae, m_1, mt_1, nvars, neqns, 1, assign1, assign2,
-          match_opts);
+        (ass1,ass2,dae_2,m,mt) = matchingAlgorithm2(dae, m_1, mt_1, nvars, neqns, 1, assign1, assign2, match_opts);
         vec1 = assignmentsVector(ass1);
         vec2 = assignmentsVector(ass2);
       then
         (vec1,vec2,dae_2,m,mt);
+        
     case ((dae as DAELOW(orderedVars = vars,orderedEqs = eqns)),m,mt,(match_opts as (_,_,KEEP_SIMPLE_EQN())))
       equation
         checkMatching(dae, match_opts);
@@ -7126,8 +7256,7 @@ algorithm
         ne = intString(neqns);
         (nvars > 0) = true;
         (neqns > 0) = true;
-        memsize = nvars + nvars "Worst case, all eqns are differentiated once.
-	  Create nvars2 assignment elements" ;
+        memsize = nvars + nvars "Worst case, all eqns are differentiated once. Create nvars2 assignment elements" ;
         assign1 = assignmentsCreate(nvars, memsize, 0);
         assign2 = assignmentsCreate(nvars, memsize, 0);
         (ass1,ass2,dae,m,mt) = matchingAlgorithm2(dae, m, mt, nvars, neqns, 1, assign1, assign2, match_opts);
@@ -7138,15 +7267,15 @@ algorithm
   end matchcontinue;
 end matchingAlgorithm;
 
-protected function checkMatching "function: checkMatching
+protected function checkMatching 
+"function: checkMatching
   author: PA
 
   Checks that the matching is correct, i.e. that the number of variables
   is the same as the number of equations. If not, the function fails and
   prints an error message.
   If matching options indicate that underconstrained systems are ok, no
-  check is performed.
-"
+  check is performed."
   input DAELow inDAELow;
   input MatchingOptions inMatchingOptions;
 algorithm
@@ -7193,11 +7322,10 @@ algorithm
   end matchcontinue;
 end checkMatching;
 
-protected function assignmentsVector "function: assignmentsVector
+protected function assignmentsVector 
+"function: assignmentsVector
   author: PA
-
-  Converts Assignments to vector of int elements
-"
+  Converts Assignments to vector of int elements"
   input Assignments inAssignments;
   output Integer[:] outIntegerArray;
 algorithm
@@ -7222,14 +7350,12 @@ algorithm
   end matchcontinue;
 end assignmentsVector;
 
-protected function assignmentsCreate "function: assignmentsCreate
+protected function assignmentsCreate 
+"function: assignmentsCreate
   author: PA
-
   Creates an assignment array of n elements, filled with value v
-
   inputs:  (int /* size */, int /* memsize */, int)
-  outputs: => Assignments
-"
+  outputs: => Assignments"
   input Integer n;
   input Integer memsize;
   input Integer v;
@@ -7238,19 +7364,16 @@ protected function assignmentsCreate "function: assignmentsCreate
   Value[:] arr;
 algorithm
   lst := Util.listFill(0, memsize);
-  arr := listArray(lst) "	array_create(memsize,v) => arr &
-	" ;
+  arr := listArray(lst) "	array_create(memsize,v) => arr &" ;
   outAssignments := ASSIGNMENTS(n,memsize,arr);
 end assignmentsCreate;
 
-protected function assignmentsSetnth "function: assignmentsSetnth
+protected function assignmentsSetnth 
+"function: assignmentsSetnth
   author: PA
-
-  Sets the n:nt assignment value to \'value\'.
-
+  Sets the n:nt assignment Value.
   inputs:  (Assignments, int /* n */, int /* value */)
-  outputs:  Assignments
-"
+  outputs:  Assignments"
   input Assignments inAssignments1;
   input Integer inInteger2;
   input Integer inInteger3;
@@ -7274,14 +7397,12 @@ algorithm
   end matchcontinue;
 end assignmentsSetnth;
 
-protected function assignmentsExpand "function: assignmentsExpand
+protected function assignmentsExpand 
+"function: assignmentsExpand
   author: PA
-
   Expands the assignments array with n values, initialized with zero.
-
   inputs:  (Assignments, int /* n */)
-  outputs:  Assignments
-"
+  outputs:  Assignments"
   input Assignments inAssignments;
   input Integer inInteger;
   output Assignments outAssignments;
@@ -7302,17 +7423,15 @@ algorithm
   end matchcontinue;
 end assignmentsExpand;
 
-protected function assignmentsAdd "function: assignmentsAdd
+protected function assignmentsAdd 
+"function: assignmentsAdd
   author: PA
-
   Adds a value to the end of the assignments array. If memsize = actual size
   this means copying the whole array, expanding it size to fit the value
   Expansion is made by a factor 1.4. Otherwise, the element is inserted taking O(1) in
   insertion cost.
-
   inputs:  (Assignments, int /* value */)
-  outputs:  Assignments
-"
+  outputs:  Assignments"
   input Assignments inAssignments;
   input Integer inInteger;
   output Assignments outAssignments;
@@ -7323,6 +7442,7 @@ algorithm
       Real msr,msr_1;
       Value ms_1,s_1,ms_2,s,ms,v;
       Value[:] arr_1,arr_2,arr;
+      
     case (ASSIGNMENTS(actualSize = s,allocatedSize = ms,arrOfIndices = arr),v)
       equation
         (s == ms) = true "Out of bounds, increase and copy." ;
@@ -7335,26 +7455,28 @@ algorithm
         arr_2 = arrayUpdate(arr_1, s + 1, v);
       then
         ASSIGNMENTS(s_1,ms_2,arr_2);
+        
     case (ASSIGNMENTS(actualSize = s,allocatedSize = ms,arrOfIndices = arr),v)
       equation
         arr_1 = arrayUpdate(arr, s + 1, v) "space available, increase size and insert element." ;
         s_1 = s + 1;
       then
         ASSIGNMENTS(s_1,ms,arr_1);
+        
     case (ASSIGNMENTS(actualSize = s,allocatedSize = ms,arrOfIndices = arr),v)
       equation
         print("-assignments_add failed\n");
       then
         fail();
+        
   end matchcontinue;
 end assignmentsAdd;
 
-protected function matchingAlgorithm2 "function: matchingAlgorithm2
+protected function matchingAlgorithm2 
+"function: matchingAlgorithm2
   author: PA
-
   This is the outer loop of the matching algorithm
   The find_path algorithm is called for each equation/variable.
-
   inputs:  (DAELow,IncidenceMatrix, IncidenceMatrixT
              ,int /* number of vars */
              ,int /* number of eqns */
@@ -7364,8 +7486,7 @@ protected function matchingAlgorithm2 "function: matchingAlgorithm2
              ,MatchingOptions) /* options for matching alg. */
   outputs: (Assignments, /* assignments, array of equation indices */
               Assignments, /* assignments, list of variable indices */
-              DAELow, IncidenceMatrix, IncidenceMatrixT)
-"
+              DAELow, IncidenceMatrix, IncidenceMatrixT)"
   input DAELow inDAELow1;
   input IncidenceMatrix inIncidenceMatrix2;
   input IncidenceMatrixT inIncidenceMatrixT3;
@@ -7394,14 +7515,15 @@ algorithm
       EquationReduction r_simple;
       list<Value> eqn_lst,var_lst;
       String eqn_str,var_str;
+      
     case (dae,m,mt,nv,nf,i,ass1,ass2,_)
       equation
         (nv == i) = true;
         DAEEXT.initMarks(nv, nf);
-        (ass1_1,ass2_1) = pathFound(m, mt, i, ass1, ass2) "eMark(i)=vMark(i)=false" ;
-         /* eMark(i)=vMark(i)=false exit loop */
+        (ass1_1,ass2_1) = pathFound(m, mt, i, ass1, ass2) "eMark(i)=vMark(i)=false; eMark(i)=vMark(i)=false exit loop";
       then
         (ass1_1,ass2_1,dae,m,mt);
+        
     case (dae,m,mt,nv,nf,i,ass1,ass2,match_opts)
       equation
         i_1 = i + 1;
@@ -7410,40 +7532,39 @@ algorithm
         (ass1_2,ass2_2,dae,m,mt) = matchingAlgorithm2(dae, m, mt, nv, nf, i_1, ass1_1, ass2_1, match_opts);
       then
         (ass1_2,ass2_2,dae,m,mt);
+        
     case (dae,m,mt,nv,nf,i,ass1,ass2,(INDEX_REDUCTION(),eq_cons,r_simple))
       equation
-        ((dae as DAELOW(VARIABLES(_,_,_,_,nv_1),VARIABLES(_,_,_,_,nkv),_,eqns,_,_,_,_,_,_)),m,mt) = reduceIndexDummyDer(dae, m, mt, nv, nf, i) "path_found failed, Try index reduction using dummy derivatives.
-	 When a constraint exist between states and index reduction is needed
-	 the dummy derivative will select one of the states as a dummy state
-	 (and the derivative of that state as a dummy derivative).
-	 For instance, u1=u2 is a constraint between states. Choose u1 as dummy state
-	 and der(u1) as dummy derivative, named der_u1. The differentiated function
-	 then becomes: der_u1 = der(u2).
-	 In the dummy derivative method this equation is added and the original equation
-	 u1=u2 is kept. This is not the case for the original pantilides algorithm, where
-	 the original equation is removed from the system.
-	" ;
+        ((dae as DAELOW(VARIABLES(_,_,_,_,nv_1),VARIABLES(_,_,_,_,nkv),_,eqns,_,_,_,_,_,_)),m,mt) = reduceIndexDummyDer(dae, m, mt, nv, nf, i) 
+        "path_found failed, Try index reduction using dummy derivatives.
+	       When a constraint exist between states and index reduction is needed
+	       the dummy derivative will select one of the states as a dummy state
+	       (and the derivative of that state as a dummy derivative).
+	       For instance, u1=u2 is a constraint between states. Choose u1 as dummy state
+	       and der(u1) as dummy derivative, named der_u1. The differentiated function
+	       then becomes: der_u1 = der(u2).
+	       In the dummy derivative method this equation is added and the original equation
+	       u1=u2 is kept. This is not the case for the original pantilides algorithm, where
+	       the original equation is removed from the system." ;
         nf_1 = equationSize(eqns) "and try again, restarting. This could be optimized later. It should not
-	   be necessary to restart the matching, according to Bernard Bachmann. Instead one
-	   could continue the matching as usual. This was tested (2004-11-22) and it does not
-	   work to continue without restarting.
-	   For instance the Influenca model \"../testsuite/mofiles/Influenca.mo\" does not work if
-	   not restarting.
-	   2004-12-29 PA. This was a bug, assignment lists needed to be expanded with the size
-	   of the system in order to work. SO: Matching is not needed to be restarted from
-	   scratch.
-	" ;
+	                                 be necessary to restart the matching, according to Bernard Bachmann. Instead one
+	                                 could continue the matching as usual. This was tested (2004-11-22) and it does not
+	                                 work to continue without restarting.
+	                                 For instance the Influenca model \"../testsuite/mofiles/Influenca.mo\" does not work if
+	                                 not restarting.
+	                                 2004-12-29 PA. This was a bug, assignment lists needed to be expanded with the size
+	                                 of the system in order to work. SO: Matching is not needed to be restarted from
+	                                 scratch." ;
         nvd = nv_1 - nv;
         ass1_1 = assignmentsExpand(ass1, nvd);
         ass2_1 = assignmentsExpand(ass2, nvd);
-        (ass1_2,ass2_2,dae,m,mt) = matchingAlgorithm2(dae, m, mt, nv_1, nf_1, i, ass1_1, ass2_1,
-          (INDEX_REDUCTION(),eq_cons,r_simple));
+        (ass1_2,ass2_2,dae,m,mt) = matchingAlgorithm2(dae, m, mt, nv_1, nf_1, i, ass1_1, ass2_1, (INDEX_REDUCTION(),eq_cons,r_simple));
       then
         (ass1_2,ass2_2,dae,m,mt);
+        
     case (dae,m,mt,nv,nf,i,ass1,ass2,_)
       equation
-        eqn_lst = DAEEXT.getMarkedEqns() "When index reduction also fails, the model is structurally
-	 singular." ;
+        eqn_lst = DAEEXT.getMarkedEqns() "When index reduction also fails, the model is structurally singular." ;
         var_lst = DAEEXT.getMarkedVariables();
         eqn_str = dumpMarkedEqns(dae, eqn_lst);
         var_str = dumpMarkedVars(dae, var_lst);
@@ -7454,14 +7575,14 @@ algorithm
         //dump(dae);
       then
         fail();
+        
   end matchcontinue;
 end matchingAlgorithm2;
 
-protected function dumpMarkedEqns "function: dumpMarkedEqns
+protected function dumpMarkedEqns 
+"function: dumpMarkedEqns
   author: PA
-
-  Dumps only the equations given as list of indexes to a string.
-"
+  Dumps only the equations given as list of indexes to a string."
   input DAELow inDAELow;
   input list<Integer> inIntegerLst;
   output String outString;
@@ -7488,11 +7609,10 @@ algorithm
   end matchcontinue;
 end dumpMarkedEqns;
 
-protected function dumpMarkedVars "function: dumpMarkedVars
+protected function dumpMarkedVars 
+"function: dumpMarkedVars
   author: PA
-
-  Dumps only the variable names given as list of indexes to a string.
-"
+  Dumps only the variable names given as list of indexes to a string."
   input DAELow inDAELow;
   input list<Integer> inIntegerLst;
   output String outString;
@@ -7510,7 +7630,7 @@ algorithm
     case ((dae as DAELOW(orderedVars = vars)),(v :: vs))
       equation
         s1 = dumpMarkedVars(dae, vs);
-        VAR(cr,_,_,_,_,_,_,_,_,_,_,_,_) = getVarAt(vars, v);
+        VAR(cr,_,_,_,_,_,_,_,_,_,_,_,_,_) = getVarAt(vars, v);
         s2 = Exp.printComponentRefStr(cr);
         s3 = intString(v);
         res = Util.stringAppendList({s2,"(",s3,"), ",s1});
@@ -7519,19 +7639,18 @@ algorithm
   end matchcontinue;
 end dumpMarkedVars;
 
-protected function reduceIndexDummyDer "function: reduceIndexDummyDer
+protected function reduceIndexDummyDer 
+"function: reduceIndexDummyDer
   author: PA
-
   When matching fails, this function is called to try to
   reduce the index by differentiating the marked equations and
   replacing one of the variable with a dummy derivative, i.e. making
   it algebraic.
   The new DAELow is returned along with an updated incidence matrix.
-
+  
   inputs: (DAELow, IncidenceMatrix, IncidenceMatrixT,
              int /* number of vars */, int /* number of eqns */, int /* i */)
-  outputs: (DAELow, IncidenceMatrix, IncidenceMatrixT)
-"
+  outputs: (DAELow, IncidenceMatrix, IncidenceMatrixT)"
   input DAELow inDAELow1;
   input IncidenceMatrix inIncidenceMatrix2;
   input IncidenceMatrixT inIncidenceMatrixT3;
@@ -7553,6 +7672,7 @@ algorithm
       Exp.ComponentRef state,dummy_der;
       list<String> es;
       String es_1;
+      
     case (dae,m,mt,nv,nf,i)
       equation
         eqns = DAEEXT.getMarkedEqns();
@@ -7575,8 +7695,8 @@ algorithm
         //print("Chosen dummy: ");print(Exp.printComponentRefStr(dummy_der));print("\n");
         reqns = eqnsForVarWithStates(mt, stateno);
         changedeqns = Util.listUnionOnTrue(deqns, reqns, int_eq);
-        (dae,m,mt) = replaceDummyDer(state, dummy_der, dae, m, mt, changedeqns) "We need to change variables in the differentiated equations and in the
-	  equations having the dummy derivative" ;
+        (dae,m,mt) = replaceDummyDer(state, dummy_der, dae, m, mt, changedeqns) 
+        "We need to change variables in the differentiated equations and in the equations having the dummy derivative" ;
         dae = makeAlgebraic(dae, state);
         (m,mt) = updateIncidenceMatrix(dae, m, mt, changedeqns);
         //print("new DAE:");
@@ -7585,6 +7705,7 @@ algorithm
         //dumpIncidenceMatrix(m);
       then
         (dae,m,mt);
+        
     case (dae,m,mt,nv,nf,i)
       equation
         eqns = DAEEXT.getMarkedEqns();
@@ -7600,20 +7721,21 @@ algorithm
         printEquations(diff_eqns,dae);
         print("Variables :");print(Util.stringDelimitList(Util.listMap(DAEEXT.getMarkedVariables(),intString),", "));
         print("\n");
-
       then
         fail();
+        
     case (_,_,_,_,_,_)
       equation
         print("-reduce_index_dummy_der failed\n");
       then
         fail();
+        
   end matchcontinue;
 end reduceIndexDummyDer;
 
-protected function propagateDummyFixedAttribute "function: propagateDummyFixedAttribute
+protected function propagateDummyFixedAttribute 
+"function: propagateDummyFixedAttribute
   author: PA
-
   This function takes a list of equations that are differentiated
   and the chosen dummy state.
   The fixed attribute of the selected dummy state is propagated to
@@ -7626,8 +7748,7 @@ protected function propagateDummyFixedAttribute "function: propagateDummyFixedAt
   if s2 is selected as dummy derivative and s2 has an initial equation
   i.e. fixed should be false for the state s2 (which is set by the user),
   this fixed value has to be propagated to s1 when s2 becomes a dummy
-  state.
-"
+  state."
   input DAELow inDAELow;
   input list<Integer> inIntegerLst;
   input Exp.ComponentRef inComponentRef;
@@ -7651,6 +7772,7 @@ algorithm
       Algorithm.Algorithm[:] al;
       EventInfo ei;
       ExternalObjectClasses eoc;
+      
    /* eqns dummy state */
     case ((dae as DAELOW(vars,kv,ev,e,se,ie,ae,al,ei,eoc)),eqns,dummy,dummy_no)
       equation
@@ -7666,8 +7788,9 @@ algorithm
         vars_1 = addVar(v_2, vars);
       then
         DAELOW(vars_1,kv,ev,e,se,ie,ae,al,ei,eoc);
-      // Never propagate fixed=true
-      case ((dae as DAELOW(vars,kv,ev,e,se,ie,ae,al,ei,eoc)),eqns,dummy,dummy_no)
+        
+    // Never propagate fixed=true
+    case ((dae as DAELOW(vars,kv,ev,e,se,ie,ae,al,ei,eoc)),eqns,dummy,dummy_no)
       equation
         eqns_1 = Util.listMap1(eqns, int_sub, 1);
         eqns_lst = Util.listMap1r(eqns_1, equationNth, e);
@@ -7677,19 +7800,20 @@ algorithm
         ({v},{indx}) = getVar(dummy, vars);
        true = varFixed(v);
       then dae;
+        
     case (dae,_,_,_)
       equation
         Debug.fprint("failtrace", "propagate_dummy_initial_equations failed\n");
       then
         dae;
+        
   end matchcontinue;
 end propagateDummyFixedAttribute;
 
-protected function findState "function: findState
+protected function findState 
+"function: findState
   author: PA
-
-  Returns the first state from a list of component references.
-"
+  Returns the first state from a list of component references."
   input Variables inVariables;
   input list<Exp.ComponentRef> inExpComponentRefLst;
   output Exp.ComponentRef outComponentRef;
@@ -7701,26 +7825,28 @@ algorithm
       Variables vars;
       Exp.ComponentRef cr;
       list<Key> crs;
+      
     case (vars,(cr :: crs))
       equation
         ((v :: _),_) = getVar(cr, vars);
         STATE() = varKind(v);
       then
         cr;
+        
     case (vars,(cr :: crs))
       equation
         cr = findState(vars, crs);
       then
         cr;
+        
   end matchcontinue;
 end findState;
 
-public function equationsCrefs "function: equationsCrefs
+public function equationsCrefs 
+"function: equationsCrefs
   author: PA
-
-  From a list of equations return all occuring variables/component
-  references.
-"
+  From a list of equations return all 
+  occuring variables/component references."
   input list<Equation> inEquationLst;
   output list<Exp.ComponentRef> outExpComponentRefLst;
 algorithm
@@ -7734,7 +7860,9 @@ algorithm
       Value indx;
       list<Exp.Exp> expl,expl1,expl2;
       WhenEquation weq;
+      
     case ({}) then {};
+      
     case ((EQUATION(exp = e1,scalar = e2) :: es))
       equation
         crs1 = equationsCrefs(es);
@@ -7743,6 +7871,7 @@ algorithm
         crs = Util.listFlatten({crs1,crs2,crs3});
       then
         crs;
+        
     case ((RESIDUAL_EQUATION(exp = e1) :: es))
       equation
         crs1 = equationsCrefs(es);
@@ -7750,6 +7879,7 @@ algorithm
         crs = listAppend(crs1, crs2);
       then
         crs;
+        
     case ((SOLVED_EQUATION(componentRef = cr,exp = e1) :: es))
       equation
         crs1 = equationsCrefs(es);
@@ -7757,6 +7887,7 @@ algorithm
         crs = listAppend(crs1, crs2);
       then
         (cr :: crs);
+        
     case ((ARRAY_EQUATION(index = indx,crefOrDerCref = expl) :: es))
       local list<list<Exp.ComponentRef>> crs2;
       equation
@@ -7766,6 +7897,7 @@ algorithm
         crs = listAppend(crs1, crs2_1);
       then
         crs;
+        
     case ((ALGORITHM(index = indx,in_ = expl1,out = expl2) :: es))
       local list<list<Exp.ComponentRef>> crs2,crs3;
       equation
@@ -7777,6 +7909,7 @@ algorithm
         crs = Util.listFlatten({crs1,crs2_1,crs3_1});
       then
         crs;
+        
     case ((WHEN_EQUATION(whenEquation = WHEN_EQ(index = indx,left = cr,right = e,elsewhenPart=SOME(weq))) :: es))
       equation
         crs1 = equationsCrefs(es);
@@ -7785,26 +7918,25 @@ algorithm
         crs = listAppend(crs1, listAppend(crs2, crs3));
       then
         (cr :: crs);
+        
   end matchcontinue;
 end equationsCrefs;
 
-protected function updateIncidenceMatrix "function: updateIncidenceMatrix
+protected function updateIncidenceMatrix 
+"function: updateIncidenceMatrix
   author: PA
-
-  Takes a daelow and the incidence matrix and its transposed represenation
-  and a list of  equation indexes that needs to be updated.
+  Takes a daelow and the incidence matrix and its transposed 
+  represenation and a list of  equation indexes that needs to be updated.
   First the IncidenceMatrix is updated, i.e. the mapping from equations
   to variables. Then, by collecting all variables in the list of equations
   to update, a list of changed variables are retrieved. This is used to
   update the IncidenceMatrixT (transpose) mapping from variables to
   equations. The function returns an updated incidence matrix.
-
   inputs:  (DAELow,
-              IncidenceMatrix,
-              IncidenceMatrixT,
-              int list /* list of equations to update */)
-  outputs: (IncidenceMatrix, IncidenceMatrixT)
-"
+            IncidenceMatrix,
+            IncidenceMatrixT,
+            int list /* list of equations to update */)
+  outputs: (IncidenceMatrix, IncidenceMatrixT)"
   input DAELow inDAELow;
   input IncidenceMatrix inIncidenceMatrix;
   input IncidenceMatrixT inIncidenceMatrixT;
@@ -7819,6 +7951,7 @@ algorithm
       list<list<Value>> changedvars;
       list<Value> changedvars_1,eqns;
       DAELow dae;
+      
     case (dae,m,mt,eqns)
       equation
         (m_1,changedvars) = updateIncidenceMatrix2(dae, m, eqns);
@@ -7826,24 +7959,24 @@ algorithm
         mt_1 = updateTransposedMatrix(changedvars_1, m_1, mt);
       then
         (m_1,mt_1);
+        
     case (dae,m,mt,eqns)
       equation
-        print("update_incidence_matrix failed\n");
+        print("DAELow.updateIncidenceMatrix failed\n");
       then
         fail();
+        
   end matchcontinue;
 end updateIncidenceMatrix;
 
-protected function updateIncidenceMatrix2 "function: updateIncidenceMatrix2
+protected function updateIncidenceMatrix2 
+"function: updateIncidenceMatrix2
   author: PA
-
-  Helper function to update_incidence_matrix
-
+  Helper function to updateIncidenceMatrix
   inputs:  (DAELow,
-              IncidenceMatrix,
-              int list /* list of equations to update */)
-  outputs: (IncidenceMatrix, int list list /* changed vars */)
-"
+            IncidenceMatrix,
+            int list /* list of equations to update */)
+  outputs: (IncidenceMatrix, int list list /* changed vars */)"
   input DAELow inDAELow;
   input IncidenceMatrix inIncidenceMatrix;
   input list<Integer> inIntegerLst;
@@ -7861,7 +7994,9 @@ algorithm
       list<list<Value>> changedvars2;
       Variables vars,knvars;
       EquationArray daeeqns,daeseqns;
+      
     case (dae,m,{}) then (m,{{}});
+      
     case ((dae as DAELOW(orderedVars = vars,knownVars = knvars,orderedEqs = daeeqns,removedEqs = daeseqns)),m,(e :: eqns))
       equation
         e_1 = e - 1;
@@ -7872,25 +8007,25 @@ algorithm
         (m_2,changedvars2) = updateIncidenceMatrix2(dae, m_1, eqns);
       then
         (m_2,(changedvars1 :: changedvars2));
+        
     case (_,_,_)
       equation
         print("-update_incididence_matrix2 failed\n");
       then
         fail();
+        
   end matchcontinue;
 end updateIncidenceMatrix2;
 
-protected function updateTransposedMatrix "function: updateTransposedMatrix
+protected function updateTransposedMatrix 
+"function: updateTransposedMatrix
   author: PA
-
-  Takes a list of variables and the transposed IncidenceMatrix, and
-  updates the variable rows.
-
+  Takes a list of variables and the transposed 
+  IncidenceMatrix, and updates the variable rows.
   inputs:  (int list /* var list */,
               IncidenceMatrix,
               IncidenceMatrixT)
-  outputs:  IncidenceMatrixT
-"
+  outputs:  IncidenceMatrixT"
   input list<Integer> inIntegerLst;
   input IncidenceMatrix inIncidenceMatrix;
   input IncidenceMatrixT inIncidenceMatrixT;
@@ -7915,19 +8050,18 @@ algorithm
         mt_2;
     case (_,_,_)
       equation
-        print("-update_transposed_matrix failed\n");
+        print("DAELow.updateTransposedMatrix failed\n");
       then
         fail();
   end matchcontinue;
 end updateTransposedMatrix;
 
-public function makeAllStatesAlgebraic "function: makeAllStatesAlgebraic
+public function makeAllStatesAlgebraic 
+"function: makeAllStatesAlgebraic
   author: PA
-
   This function makes all states of a DAELow algebraic.
-  Is used when solving an initial value problem, since states are just
-  an algebraic variable in that case.
-"
+  Is used when solving an initial value problem, since 
+  states are just an algebraic variable in that case."
   input DAELow inDAELow;
   output DAELow outDAELow;
 algorithm
@@ -7951,11 +8085,10 @@ algorithm
   end matchcontinue;
 end makeAllStatesAlgebraic;
 
-protected function makeAllStatesAlgebraic2 "function: makeAllStatesAlgebraic2
+protected function makeAllStatesAlgebraic2 
+"function: makeAllStatesAlgebraic2
   author: PA
-
-  Helper function to make_all_states_algebraic
-"
+  Helper function to makeAllStatesAlgebraic"
   input list<Var> inVarLst;
   output list<Var> outVarLst;
 algorithm
@@ -7974,14 +8107,30 @@ algorithm
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<Absyn.Comment> comment;
       DAE.Flow flow_;
+      DAE.Stream stream_;
       Var v;
+      
     case ({}) then {};
-    case ((VAR(varName = cr,varKind = STATE(),varDirection = d,varType = t,bindExp = b,bindValue = value,arryDim = dim,index = idx,origVarName = name,className = class_,values = dae_var_attr,comment = comment,flow_ = flow_) :: vs))
+      
+    case ((VAR(varName = cr,
+               varKind = STATE(),
+               varDirection = d,
+               varType = t,
+               bindExp = b,
+               bindValue = value,
+               arryDim = dim,
+               index = idx,
+               origVarName = name,
+               className = class_,
+               values = dae_var_attr,
+               comment = comment,
+               flow_ = flow_,
+               stream_ = stream_) :: vs))
       equation
         vs_1 = makeAllStatesAlgebraic2(vs);
       then
-        (VAR(cr,VARIABLE(),d,t,b,value,dim,idx,name,class_,
-          dae_var_attr,comment,flow_) :: vs_1);
+        (VAR(cr,VARIABLE(),d,t,b,value,dim,idx,name,class_,dae_var_attr,comment,flow_,stream_) :: vs_1);
+        
     case ((v :: vs))
       equation
         vs_1 = makeAllStatesAlgebraic2(vs);
@@ -7990,15 +8139,13 @@ algorithm
   end matchcontinue;
 end makeAllStatesAlgebraic2;
 
-protected function makeAlgebraic "function: makeAlgebraic
+protected function makeAlgebraic 
+"function: makeAlgebraic
   author: PA
-  Make the variable a dummy derivative, i.e. change varkind from STATE
-  to DUMMY_STATE.
-
+  Make the variable a dummy derivative, i.e. 
+  change varkind from STATE to DUMMY_STATE.
   inputs:  (DAELow, Exp.ComponentRef /* state */)
-  outputs: (DAELow) =
-
-"
+  outputs: (DAELow) = "
   input DAELow inDAELow;
   input Exp.ComponentRef inComponentRef;
   output DAELow outDAELow;
@@ -8018,6 +8165,7 @@ algorithm
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<Absyn.Comment> comment;
       DAE.Flow flow_;
+      DAE.Stream stream_;
       list<Value> indx;
       Variables vars_1,vars,kv,ev;
       EquationArray e,se,ie;
@@ -8025,39 +8173,37 @@ algorithm
       Algorithm.Algorithm[:] al;
       EventInfo wc;
       ExternalObjectClasses eoc;
+      
     case (DAELOW(vars,kv,ev,e,se,ie,ae,al,wc,eoc),cr)
       equation
-        ((VAR(cr,kind,d,t,b,value,dim,idx,name,class_,dae_var_attr,comment,flow_) :: _),indx) = getVar(cr, vars);
-        vars_1 = addVar(
-          VAR(cr,DUMMY_STATE(),d,t,b,value,dim,idx,name,class_,
-          dae_var_attr,comment,flow_), vars);
+        ((VAR(cr,kind,d,t,b,value,dim,idx,name,class_,dae_var_attr,comment,flow_,stream_) :: _),indx) = getVar(cr, vars);
+        vars_1 = addVar(VAR(cr,DUMMY_STATE(),d,t,b,value,dim,idx,name,class_,dae_var_attr,comment,flow_,stream_), vars);
       then
         DAELOW(vars_1,kv,ev,e,se,ie,ae,al,wc,eoc);
+        
     case (_,_)
       equation
-        print("-make_algebraic failed\n");
+        print("DAELow.makeAlgebraic failed\n");
       then
         fail();
+        
   end matchcontinue;
 end makeAlgebraic;
 
-protected function replaceDummyDer "function: replaceDummyDer
+protected function replaceDummyDer 
+"function: replaceDummyDer
   author: PA
-
-  Helper function to reduce_index_dummy_der
+  Helper function to reduceIndexDummyDer
   replaces der(state) with the variable dummy der.
-
   inputs:   (Exp.ComponentRef, /* state */
-               Exp.ComponentRef, /* dummy der name */
-               DAELow,
-               IncidenceMatrix,
-               IncidenceMatrixT,
-               int list /* equations */)
+             Exp.ComponentRef, /* dummy der name */
+             DAELow,
+             IncidenceMatrix,
+             IncidenceMatrixT,
+             int list /* equations */)
   outputs:  (DAELow,
-               IncidenceMatrix,
-               IncidenceMatrixT)
-
-"
+             IncidenceMatrix,
+             IncidenceMatrixT)"
   input Exp.ComponentRef inComponentRef1;
   input Exp.ComponentRef inComponentRef2;
   input DAELow inDAELow3;
@@ -8084,7 +8230,9 @@ algorithm
       list<Value> rest;
       ExternalObjectClasses eoc;
       list<Equation> ieLst1,ieLst;
+      
     case (state,dummy,dae,m,mt,{}) then (dae,m,mt);
+      
     case (state,dummyder,DAELOW(v,kv,ev,eqns,seqns,ie,ae,al,wc,eoc),m,mt,(e :: rest))
       equation
         e_1 = e - 1;
@@ -8094,27 +8242,28 @@ algorithm
         ieLst1 = replaceDummyDerEqns(ieLst,state,dummyder);
         ie1 = listEquation(ieLst1);
         (eqn_1,v_1) = replaceDummyDerOthers(eqn_1, v);
-        eqns_1 = equationSetnth(eqns, e_1, eqn_1) "incidence_row(v\'\',eqn\') => row\' &
-	 Util.list_replaceat(row\',e\',m) => m\' &
-	 transpose_matrix(m\') => mt\' &" ;
-        (dae,m,mt) = replaceDummyDer(state, dummyder, DAELOW(v_1,kv,ev,eqns_1,seqns,ie1,ae,al,wc,eoc),
-          m, mt, rest);
+        eqns_1 = equationSetnth(eqns, e_1, eqn_1) 
+         "incidence_row(v\'\',eqn\') => row\' &
+	        Util.list_replaceat(row\',e\',m) => m\' &
+	        transpose_matrix(m\') => mt\' &" ;
+        (dae,m,mt) = replaceDummyDer(state, dummyder, DAELOW(v_1,kv,ev,eqns_1,seqns,ie1,ae,al,wc,eoc), m, mt, rest);
       then
         (dae,m,mt);
+        
     case (_,_,_,_,_,_)
       equation
         print("-replace_dummy_der failed\n");
       then
         fail();
+        
   end matchcontinue;
 end replaceDummyDer;
 
-protected function replaceDummyDer2 "function: replaceDummyDer2
+protected function replaceDummyDer2 
+"function: replaceDummyDer2
   author: PA
-
-  Helper function to reduce_index_dummy_der
-  replaces der(state) with dummy_der variable in equation
-"
+  Helper function to reduceIndexDummyDer
+  replaces der(state) with dummyDer variable in equation"
   input Exp.ComponentRef inComponentRef1;
   input Exp.ComponentRef inComponentRef2;
   input Equation inEquation3;
@@ -8162,12 +8311,11 @@ algorithm
   end matchcontinue;
 end replaceDummyDer2;
 
-protected function replaceDummyDerEqns "
+protected function replaceDummyDerEqns 
+"function replaceDummyDerEqns
   author: PA
-
   Helper function to reduceIndexDummy<der
-  replaces der(state) with dummy_der variable in list of equations.
-"
+  replaces der(state) with dummy_der variable in list of equations."
   input list<Equation> eqns;
   input Exp.ComponentRef st;
   input Exp.ComponentRef dummyder;
@@ -8189,18 +8337,17 @@ algorithm
   end matchcontinue;
 end replaceDummyDerEqns;
 
-protected function replaceDummyDerOthers "function: replaceDummyDerOthers
+protected function replaceDummyDerOthers 
+"function: replaceDummyDerOthers
   author: PA
-
-  Helper function to reduce_index_dummy_der.
+  Helper function to reduceIndexDummyDer.
   This function replaces
   1. der(der_s)  with der2_s (Where der_s is a dummy state)
   2. der(der(v)) with der2_v (where v is a state)
   3. der(v)  for alg. var v with der_v
-  in the \'Equation\' given as arguments. To do this it needs the \'Variables\'
+  in the Equation given as arguments. To do this it needs the Variables
   also passed as argument to the function to e.g. determine if a variable
-  is a dummy variable, etc.
-"
+  is a dummy variable, etc."
   input Equation inEquation;
   input Variables inVariables;
   output Equation outEquation;
@@ -8242,11 +8389,10 @@ algorithm
   end matchcontinue;
 end replaceDummyDerOthers;
 
-protected function replaceDummyDerOthersExp "function: replaceDummyDerOthersExp
+protected function replaceDummyDerOthersExp 
+"function: replaceDummyDerOthersExp
   author: PA
-
-  Helper function for replace_dummy_der_others
-"
+  Helper function for replaceDummyDer_others"
   input Exp.Exp inExp;
   input Variables inVariables;
   output Exp.Exp outExp;
@@ -8268,39 +8414,51 @@ algorithm
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<Absyn.Comment> comment;
       DAE.Flow flow_;
+      DAE.Stream stream_;
+      
     case ((e as Exp.ICONST(integer = _)),vars) then (e,vars);
+      
     case ((e as Exp.RCONST(real = _)),vars) then (e,vars);
+      
     case ((e as Exp.SCONST(string = _)),vars) then (e,vars);
+      
     case ((e as Exp.BCONST(bool = _)),vars) then (e,vars);
+      
     case ((e as Exp.CREF(componentRef = _)),vars) then (e,vars);
+      
     case (Exp.BINARY(exp1 = e1,operator = op,exp2 = e2),vars)
       equation
         (e1_1,vars1) = replaceDummyDerOthersExp(e1, vars);
         (e2_1,vars2) = replaceDummyDerOthersExp(e2, vars1);
       then
         (Exp.BINARY(e1_1,op,e2_1),vars2);
+        
     case (Exp.LBINARY(exp1 = e1,operator = op,exp2 = e2),vars)
       equation
         (e1_1,vars1) = replaceDummyDerOthersExp(e1, vars);
         (e2_1,vars2) = replaceDummyDerOthersExp(e2, vars1);
       then
         (Exp.LBINARY(e1_1,op,e2_1),vars2);
+        
     case (Exp.UNARY(operator = op,exp = e1),vars)
       equation
         (e1_1,vars1) = replaceDummyDerOthersExp(e1, vars);
       then
         (Exp.UNARY(op,e1_1),vars1);
+        
     case (Exp.LUNARY(operator = op,exp = e1),vars)
       equation
         (e1_1,vars1) = replaceDummyDerOthersExp(e1, vars);
       then
         (Exp.LUNARY(op,e1_1),vars1);
+        
     case (Exp.RELATION(exp1 = e1,operator = op,exp2 = e2),vars)
       equation
         (e1_1,vars1) = replaceDummyDerOthersExp(e1, vars);
         (e2_1,vars2) = replaceDummyDerOthersExp(e2, vars1);
       then
         (Exp.RELATION(e1_1,op,e2_1),vars2);
+        
     case (Exp.IFEXP(expCond = e1,expThen = e2,expElse = e3),vars)
       equation
         (e1_1,vars1) = replaceDummyDerOthersExp(e1, vars);
@@ -8308,46 +8466,44 @@ algorithm
         (e3_1,vars3) = replaceDummyDerOthersExp(e3, vars2);
       then
         (Exp.IFEXP(e1_1,e2_1,e3_1),vars3);
+        
     case (Exp.CALL(path = Absyn.IDENT(name = "der"),expLst = {Exp.CALL(path = Absyn.IDENT(name = "der"),expLst = {Exp.CREF(componentRef = cr)})}),vars)
       local list<Exp.Subscript> e;
       equation
-        ((VAR(_,STATE(),a,b,c,d,e,g,h,i,dae_var_attr,comment,flow_) :: _),_) = getVar(cr, vars) "der(der(s)) s is state => der_der_s" ;
+        ((VAR(_,STATE(),a,b,c,d,e,g,h,i,dae_var_attr,comment,flow_,stream_) :: _),_) = getVar(cr, vars) "der(der(s)) s is state => der_der_s" ;
         dummyder = createDummyVar(cr);
         dummyder_1 = createDummyVar(dummyder);
-        vars_1 = addVar(
-          VAR(dummyder_1,DUMMY_DER(),a,b,NONE,NONE,e,0,dummyder_1,i,
-          dae_var_attr,comment,flow_), vars);
+        vars_1 = addVar(VAR(dummyder_1,DUMMY_DER(),a,b,NONE,NONE,e,0,dummyder_1,i,dae_var_attr,comment,flow_,stream_), vars);
       then
         (Exp.CREF(dummyder_1,Exp.REAL()),vars_1);
+        
     case (Exp.CALL(path = Absyn.IDENT(name = "der"),expLst = {Exp.CREF(componentRef = cr)}),vars)
       local list<Exp.Subscript> e;
       equation
-        ((VAR(_,DUMMY_DER(),a,b,c,d,e,g,h,i,dae_var_attr,comment,flow_) :: _),_) = getVar(cr, vars) "der(der_s)) der_s is dummy var => der_der_s" ;
+        ((VAR(_,DUMMY_DER(),a,b,c,d,e,g,h,i,dae_var_attr,comment,flow_,stream_) :: _),_) = getVar(cr, vars) "der(der_s)) der_s is dummy var => der_der_s" ;
         dummyder = createDummyVar(cr);
-        vars_1 = addVar(
-          VAR(dummyder,DUMMY_DER(),a,b,NONE,NONE,e,0,dummyder,i,
-          dae_var_attr,comment,flow_), vars);
+        vars_1 = addVar(VAR(dummyder,DUMMY_DER(),a,b,NONE,NONE,e,0,dummyder,i,dae_var_attr,comment,flow_,stream_), vars);
       then
         (Exp.CREF(dummyder,Exp.REAL()),vars_1);
+        
     case (Exp.CALL(path = Absyn.IDENT(name = "der"),expLst = {Exp.CREF(componentRef = cr)}),vars)
       local list<Exp.Subscript> e;
       equation
-        ((VAR(_,VARIABLE(),a,b,c,d,e,g,h,i,dae_var_attr,comment,flow_) :: _),_) = getVar(cr, vars) "der(v) v is alg var => der_v" ;
+        ((VAR(_,VARIABLE(),a,b,c,d,e,g,h,i,dae_var_attr,comment,flow_,stream_) :: _),_) = getVar(cr, vars) "der(v) v is alg var => der_v" ;
         dummyder = createDummyVar(cr);
-        vars_1 = addVar(
-          VAR(dummyder,DUMMY_DER(),a,b,NONE,NONE,e,0,dummyder,i,
-          dae_var_attr,comment,flow_), vars);
+        vars_1 = addVar(VAR(dummyder,DUMMY_DER(),a,b,NONE,NONE,e,0,dummyder,i,dae_var_attr,comment,flow_,stream_), vars);
       then
         (Exp.CREF(dummyder,Exp.REAL()),vars_1);
+        
     case (e,vars) then (e,vars);
+      
   end matchcontinue;
 end replaceDummyDerOthersExp;
 
-public function varEqual "function: varEqual
+public function varEqual 
+"function: varEqual
   author: PA
-
-  Returns true if two Var\'s are equal.
-"
+  Returns true if two Vars are equal."
   input Var inVar1;
   input Var inVar2;
   output Boolean outBoolean;
@@ -8357,8 +8513,7 @@ algorithm
     local
       Boolean res;
       Exp.ComponentRef cr1,cr2;
-      DAE.Flow flow1,flow2;
-    case (VAR(varName = cr1,flow_ = flow1),VAR(varName = cr2,flow_ = flow2))
+    case (VAR(varName = cr1),VAR(varName = cr2))
       equation
         res = Exp.crefEqual(cr1, cr2) "A Var is identified by its component reference" ;
       then
@@ -8376,34 +8531,45 @@ algorithm
       Exp.Exp e11,e12,e21,e22,exp1,exp2;
       Integer i1,i2;
       Exp.ComponentRef cr1,cr2;
-    case (EQUATION(e11,e12),EQUATION(e21,e22)) equation
-      res = boolAnd(Exp.expEqual(e11,e21),Exp.expEqual(e12,e22));
-    then res;
-    case(ARRAY_EQUATION(i1,_),ARRAY_EQUATION(i2,_)) equation
-      res = intEq(i1,i2);
-    then res;
-    case(SOLVED_EQUATION(cr1,exp1),SOLVED_EQUATION(cr2,exp2)) equation
-      res = boolAnd(Exp.crefEqual(cr1,cr2),Exp.expEqual(exp1,exp2));
-    then res;
-    case(RESIDUAL_EQUATION(exp1),RESIDUAL_EQUATION(exp2)) equation
-      res = Exp.expEqual(exp1,exp2);
-    then res;
-    case(ALGORITHM(i1,_,_),ALGORITHM(i2,_,_)) equation
-      res = intEq(i1,i2);
-    then res;
-    case (WHEN_EQUATION(WHEN_EQ(i1,_,_,_)),WHEN_EQUATION(WHEN_EQ(i2,_,_,_))) equation
-      res = intEq(i1,i2);
-    then res;
+    case (EQUATION(e11,e12),EQUATION(e21,e22)) 
+      equation
+        res = boolAnd(Exp.expEqual(e11,e21),Exp.expEqual(e12,e22));
+      then res;
+        
+    case(ARRAY_EQUATION(i1,_),ARRAY_EQUATION(i2,_)) 
+      equation
+        res = intEq(i1,i2);
+      then res;
+        
+    case(SOLVED_EQUATION(cr1,exp1),SOLVED_EQUATION(cr2,exp2)) 
+      equation
+        res = boolAnd(Exp.crefEqual(cr1,cr2),Exp.expEqual(exp1,exp2));
+      then res;
+        
+    case(RESIDUAL_EQUATION(exp1),RESIDUAL_EQUATION(exp2)) 
+      equation
+        res = Exp.expEqual(exp1,exp2);
+      then res;
+        
+    case(ALGORITHM(i1,_,_),ALGORITHM(i2,_,_)) 
+      equation
+        res = intEq(i1,i2);
+      then res;
+        
+    case (WHEN_EQUATION(WHEN_EQ(i1,_,_,_)),WHEN_EQUATION(WHEN_EQ(i2,_,_,_))) 
+      equation
+        res = intEq(i1,i2);
+      then res;
     case(_,_) then false;
+      
   end matchcontinue;
 end equationEqual;
 
-protected function newDummyVar "function: newDummyVar
+protected function newDummyVar 
+"function: newDummyVar
   author: PA
-
-  This function creates a new variable named \"der_\"+<varname> and
-  adds it to the dae.
-"
+  This function creates a new variable named 
+  der+<varname> and adds it to the dae."
   input Exp.ComponentRef inComponentRef;
   input DAELow inDAELow;
   output Exp.ComponentRef outComponentRef;
@@ -8424,6 +8590,7 @@ algorithm
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<Absyn.Comment> comment;
       DAE.Flow flow_;
+      DAE.Stream stream_;
       Variables vars_1,vars,kv,ev;
       EquationArray eqns,seqns,ie;
       MultiDimEquation[:] ae;
@@ -8431,31 +8598,31 @@ algorithm
       EventInfo wc;
       ExternalObjectClasses eoc;
       Var dummyvar;
+      
     case (var,DAELOW(vars, kv, ev, eqns, seqns, ie, ae, al, wc,eoc))
       equation
-        ((VAR(_,kind,dir,tp,bind,value,dim,idx,name,class_,dae_var_attr,comment,flow_) :: _),_) = getVar(var, vars);
+        ((VAR(_,kind,dir,tp,bind,value,dim,idx,name,class_,dae_var_attr,comment,flow_,stream_) :: _),_) = getVar(var, vars);
         dummyvar_cr = createDummyVar(var);
-        dummyvar = VAR(dummyvar_cr,DUMMY_DER(),dir,tp,NONE,NONE,dim,0,dummyvar_cr,
-          class_,dae_var_attr,comment,flow_);
-            /* Dummy variables are algebraic variables, hence fixed = false */
+        dummyvar = VAR(dummyvar_cr,DUMMY_DER(),dir,tp,NONE,NONE,dim,0,dummyvar_cr,class_,dae_var_attr,comment,flow_,stream_);
+        /* Dummy variables are algebraic variables, hence fixed = false */
         dummyvar = setVarFixed(dummyvar,false);
         vars_1 = addVar(dummyvar, vars);
       then
         (dummyvar_cr,DAELOW(vars_1,kv,ev,eqns,seqns,ie,ae,al,wc,eoc));
+        
     case (_,_)
       equation
-        print("-new_dummy_var failed\n");
+        print("-DAELow.newDummyVar failed!\n");
       then
         fail();
   end matchcontinue;
 end newDummyVar;
 
-protected function createDummyVar "function: createDummyVar
+protected function createDummyVar 
+"function: createDummyVar
   author: PA
-
-  Creates a new variable name by adding \"der()\" around the last ident.
-  Helper function to new_dummy_var.
-"
+  Creates a new variable name by adding der() around the last ident.
+  Helper function to newDummyVar."
   input Exp.ComponentRef inComponentRef;
   output Exp.ComponentRef outComponentRef;
 algorithm
@@ -8465,15 +8632,18 @@ algorithm
       String ret_str,origname,id;
       list<Exp.Subscript> subs;
       Exp.ComponentRef cr_1,cr;
-    case (cr) equation
+      
+    case (cr) 
+      equation
         ret_str = SimCodegen.changeNameForDerivative(Exp.printComponentRefStr(cr));
-    then Exp.CREF_IDENT(ret_str,{});
+      then Exp.CREF_IDENT(ret_str,{});
 
     case (Exp.CREF_IDENT(ident = origname,subscriptLst = subs))
       equation
         ret_str = SimCodegen.changeNameForDerivative(origname);
       then
         Exp.CREF_IDENT(ret_str,subs);
+        
     case (Exp.CREF_QUAL(ident = id,subscriptLst = subs,componentRef = cr))
       equation
         cr_1 = createDummyVar(cr);
@@ -8482,20 +8652,18 @@ algorithm
   end matchcontinue;
 end createDummyVar;
 
-protected function selectDummyState "function: selectDummyState
+protected function selectDummyState 
+"function: selectDummyState
   author: PA
-
   This function is the heuristic to select among the states which one
   will be transformed into  an algebraic variable, a so called dummy state
  (dummy derivative). It should in the future consider initial values, etc.
-
   inputs:  (Exp.ComponentRef list, /* variable names */
-              int list, /* variable numbers */
-              DAELow,
-              IncidenceMatrix,
-              IncidenceMatrixT)
-  outputs: (Exp.ComponentRef, int)
-"
+            int list, /* variable numbers */
+            DAELow,
+            IncidenceMatrix,
+            IncidenceMatrixT)
+  outputs: (Exp.ComponentRef, int)"
   input list<Exp.ComponentRef> varCrefs;
   input list<Integer> varIndices;
   input DAELow inDAELow;
@@ -8514,11 +8682,14 @@ algorithm
       IncidenceMatrixT mt;
       EquationArray eqns;
       list<tuple<Exp.ComponentRef,Integer,Real>> prioTuples;
-    case (varCrefs,varIndices,DAELOW(orderedVars=vars,orderedEqs = eqns),m,mt) equation
- 		  prioTuples = calculateVarPriorities(varCrefs,varIndices,vars,eqns,m,mt);
- 		  //print("priorities:");print(Util.stringDelimitList(Util.listMap(prioTuples,printPrioTuplesStr),","));print("\n");
- 		  (s,sn) = selectMinPrio(prioTuples);
-   	then (s,sn);
+      
+    case (varCrefs,varIndices,DAELOW(orderedVars=vars,orderedEqs = eqns),m,mt) 
+      equation
+        prioTuples = calculateVarPriorities(varCrefs,varIndices,vars,eqns,m,mt);
+        //print("priorities:");print(Util.stringDelimitList(Util.listMap(prioTuples,printPrioTuplesStr),","));print("\n");
+        (s,sn) = selectMinPrio(prioTuples);
+      then (s,sn);
+        
     case ({},_,dae,_,_)
       local DAELow dae;
       equation
@@ -8526,17 +8697,18 @@ algorithm
         //dump(dae);
       then
         fail();
+        
   end matchcontinue;
 end selectDummyState;
 
-protected function printPrioTuplesStr "Debug function for printing the priorities of state selection to a string"
+protected function printPrioTuplesStr 
+"Debug function for printing the priorities of state selection to a string"
   input tuple<Exp.ComponentRef,Integer,Real> prioTuples;
   output String str;
-  algorithm
-    str := matchcontinue(prioTuples)
+algorithm
+  str := matchcontinue(prioTuples)
     case((cr,_,prio))
-        local Exp.ComponentRef cr;
-          Real prio; String s1,s2;
+      local Exp.ComponentRef cr; Real prio; String s1,s2;
       equation
         s1 = Exp.printComponentRefStr(cr);
         s2 = realString(prio);
@@ -8545,19 +8717,22 @@ protected function printPrioTuplesStr "Debug function for printing the prioritie
   end matchcontinue;
 end printPrioTuplesStr;
 
-protected function selectMinPrio "Selects the state with lowest priority. This will become a dummy state"
+protected function selectMinPrio 
+"Selects the state with lowest priority. This will become a dummy state"
   input list<tuple<Exp.ComponentRef,Integer,Real>> tuples;
   output Exp.ComponentRef s;
   output Integer sn;
 algorithm
   (s,sn) := matchcontinue(tuples)
-    case(tuples) equation
-      ((s,sn,_)) = Util.listReduce(tuples,ssPrioTupleMin);
+    case(tuples) 
+      equation
+        ((s,sn,_)) = Util.listReduce(tuples,ssPrioTupleMin);
       then (s,sn);
   end matchcontinue;
 end selectMinPrio;
 
-protected function ssPrioTupleMin "Select the minimum tuple of two tuples"
+protected function ssPrioTupleMin 
+"Select the minimum tuple of two tuples"
   input tuple<Exp.ComponentRef,Integer,Real> tuple1;
   input tuple<Exp.ComponentRef,Integer,Real> tuple2;
   output tuple<Exp.ComponentRef,Integer,Real> tuple3;
@@ -8566,20 +8741,24 @@ algorithm
     local Exp.ComponentRef cr1,cr2;
       Integer ns1,ns2;
       Real rs1,rs2;
-    case((cr1,ns1,rs1),(cr2,ns2,rs2)) equation
-      true = (rs1 <. rs2);
-    then ((cr1,ns1,rs1));
+    case((cr1,ns1,rs1),(cr2,ns2,rs2)) 
+      equation
+        true = (rs1 <. rs2);
+      then ((cr1,ns1,rs1));
 
-    case ((cr1,ns1,rs1),(cr2,ns2,rs2)) equation
-      true = (rs2 <. rs1);
-    then ((cr2,ns2,rs2));
-      //exactly equal, choose first one.
-
+    case ((cr1,ns1,rs1),(cr2,ns2,rs2)) 
+      equation
+        true = (rs2 <. rs1);
+      then ((cr2,ns2,rs2));
+        
+    //exactly equal, choose first one.
     case ((cr1,ns1,rs1),(cr2,ns2,rs2)) then ((cr1,ns1,rs1));
+      
   end matchcontinue;
 end ssPrioTupleMin;
 
-protected function calculateVarPriorities "Calculates state selection priorities"
+protected function calculateVarPriorities 
+"Calculates state selection priorities"
 	input list<Exp.ComponentRef> varCrefs;
   input list<Integer> varIndices;
   input Variables vars;
@@ -8605,23 +8784,22 @@ algorithm
   end matchcontinue;
 end calculateVarPriorities;
 
-protected function varStateSelectHeuristicPrio "A heuristic for selecting states when no stateSelect information is available.
-author: PA
+protected function varStateSelectHeuristicPrio 
+"function varStateSelectHeuristicPrio
+  author: PA
+  A heuristic for selecting states when no stateSelect information is available.
+  This heuristic is based on.
+  1. If a state variable s has an equation on the form s = expr(s1,s2,...,sn) where s1..sn are states
+     it should be a candiate for dummy state. Like for instance phi_rel = J1.phi-J2.phi will make phi_rel
+     a candidate for dummy state whereas J1.phi and J2.phi would be candidates for states.
 
-This heuristic is based on.
-1. If a state variable s has an equation on the form s = expr(s1,s2,...,sn) where s1..sn are states
-   it should be a candiate for dummy state. Like for instance phi_rel = J1.phi-J2.phi will make phi_rel
-   a candidate for dummy state whereas J1.phi and J2.phi would be candidates for states.
+  2. If a state variable komponent_x.s has been selected as a dummy state then komponent_x.s2 could also
+     be a dummy_state. Rationale: This will increase probability that all states belong to the same component
+     which is more likely what a user expects.
 
-2. If a state variable komponent_x.s has been selected as a dummy state then komponent_x.s2 could also
-   be a dummy_state. Rationale: This will increase probability that all states belong to the same component
-   which is more likely what a user expects.
-
-3. A priority based on the number of selectable states with the same name.
-For example
-  if the state candidates are: m1.s, m1.v, m2.s, m2.v sd.s_rel (Two translational masses and a springdamper)
-  then sd.s_rel should have lower priority than the others.
-"
+  3. A priority based on the number of selectable states with the same name.
+     For example if the state candidates are: m1.s, m1.v, m2.s, m2.v sd.s_rel (Two translational masses and a springdamper)
+     then sd.s_rel should have lower priority than the others."
   input Var v;
   input Variables vars;
   input EquationArray eqns;
@@ -8631,7 +8809,6 @@ For example
 protected
   list<Integer> vEqns;
   Exp.ComponentRef vCr,origVCr;
-
   Integer vindx;
   Real prio1,prio2,prio3;
 algorithm
@@ -8645,49 +8822,52 @@ algorithm
   prio:= prio1 +. prio2 +. prio3;
 end varStateSelectHeuristicPrio;
 
-protected function varStateSelectHeuristicPrio3 "Helper function to varStateSelectHeuristicPrio
-author: PA
-"
+protected function varStateSelectHeuristicPrio3 
+"function varStateSelectHeuristicPrio3
+  author: PA
+  Helper function to varStateSelectHeuristicPrio"
   input Exp.ComponentRef cr;
   input Variables vars;
   output Real prio;
 algorithm
 	prio := matchcontinue(cr,vars)
-	     local list<Var> varLst,sameIdentVarLst; Real c,prio;
-	  case(cr,vars) equation
-	    varLst = varList(vars);
-      sameIdentVarLst = Util.listSelect1(varLst,cr,varHasSameLastIdent);
-	    c = intReal(listLength(sameIdentVarLst));
-	    prio = c *. 0.01;
+	  local list<Var> varLst,sameIdentVarLst; Real c,prio;
+	  case(cr,vars) 
+	    equation
+	      varLst = varList(vars);
+	      sameIdentVarLst = Util.listSelect1(varLst,cr,varHasSameLastIdent);
+	      c = intReal(listLength(sameIdentVarLst));
+	      prio = c *. 0.01;
 	    then prio;
-	  end matchcontinue;
+  end matchcontinue;
 end varStateSelectHeuristicPrio3;
 
-protected function varHasSameLastIdent " Helper funciton to varStateSelectHeuristicPrio3.
-
-Returns true if the variable has the same name (the last identifier)
-as the variable name given as second argument.
-"
+protected function varHasSameLastIdent 
+"function varHasSameLastIdent
+  Helper funciton to varStateSelectHeuristicPrio3.
+  Returns true if the variable has the same name (the last identifier)
+  as the variable name given as second argument."
 input Var v;
 input Exp.ComponentRef cr;
 output Boolean b;
 algorithm
   b := matchcontinue(v,cr)
-  local Exp.ComponentRef cr2;
-    Exp.Ident id1,id2;
-    case(VAR(origVarName=cr2 ),cr ) equation
-      id1 = Exp.crefLastIdent(cr);
-      id2 = Exp.crefLastIdent(cr2);
-			equality(id1 = id2);
-	    then true;
+    local Exp.ComponentRef cr2; Exp.Ident id1,id2;
+    case(VAR(origVarName=cr2 ),cr ) 
+      equation
+        id1 = Exp.crefLastIdent(cr);
+        id2 = Exp.crefLastIdent(cr2);
+        equality(id1 = id2);
+      then true;
     case(_,_) then false;
   end matchcontinue;
 end varHasSameLastIdent;
 
 
-protected function varStateSelectHeuristicPrio2 "Helper function to varStateSelectHeuristicPrio
-author: PA
-"
+protected function varStateSelectHeuristicPrio2 
+"function varStateSelectHeuristicPrio2
+  author: PA
+  Helper function to varStateSelectHeuristicPrio"
   input Exp.ComponentRef cr;
   input Variables vars;
   output Real prio;
@@ -8695,99 +8875,104 @@ algorithm
   prio := matchcontinue(cr,vars)
     local
       list<Var> varLst,sameCompVarLst;
-    case(cr,vars) equation
-      varLst = varList(vars);
-      sameCompVarLst = Util.listSelect1(varLst,cr,varInSameComponent);
-      _::_ = Util.listSelect(sameCompVarLst,isDummyStateVar);
+    case(cr,vars) 
+      equation
+        varLst = varList(vars);
+        sameCompVarLst = Util.listSelect1(varLst,cr,varInSameComponent);
+        _::_ = Util.listSelect(sameCompVarLst,isDummyStateVar);
       then -1.0;
     case(cr,vars) then 0.0;
   end matchcontinue;
 end varStateSelectHeuristicPrio2;
 
-protected function varInSameComponent " Helper funciton to varStateSelectHeuristicPrio2.
-
-Returns true if the variable is defined in the same sub component
-as the variable name given as second argument.
-"
-input Var v;
-input Exp.ComponentRef cr;
-output Boolean b;
+protected function varInSameComponent 
+"function varInSameComponent
+  Helper funciton to varStateSelectHeuristicPrio2.
+  Returns true if the variable is defined in the same sub 
+  component as the variable name given as second argument."
+  input Var v;
+  input Exp.ComponentRef cr;
+  output Boolean b;
 algorithm
   b := matchcontinue(v,cr)
-  local Exp.ComponentRef cr2;
-    Exp.Ident id1,id2;
-    case(VAR(origVarName=cr2 ),cr ) equation
-			true = Exp.crefEqual(Exp.crefStripLastIdent(cr2),Exp.crefStripLastIdent(cr));
-	    then true;
+    local Exp.ComponentRef cr2; Exp.Ident id1,id2;
+    case(VAR(origVarName=cr2 ),cr ) 
+      equation
+        true = Exp.crefEqual(Exp.crefStripLastIdent(cr2),Exp.crefStripLastIdent(cr));
+      then true;
     case(_,_) then false;
   end matchcontinue;
 end varInSameComponent;
 
-protected function varStateSelectHeuristicPrio1 "Helper function to varStateSelectHeuristicPrio
-author:  PA
-
-"
-input Exp.ComponentRef cr;
-input list<Integer> eqnLst;
-input Variables vars;
-input EquationArray eqns;
-output Real prio;
+protected function varStateSelectHeuristicPrio1 
+"function varStateSelectHeuristicPrio1
+  author:  PA
+  Helper function to varStateSelectHeuristicPrio"
+  input Exp.ComponentRef cr;
+  input list<Integer> eqnLst;
+  input Variables vars;
+  input EquationArray eqns;
+  output Real prio;
 algorithm
- prio := matchcontinue(cr,eqnLst,vars,eqns)
- local Integer e; Equation eqn;
-   case(cr,{},_,_) then 0.0;
-   case(cr,e::eqnLst,vars,eqns) equation
-     eqn = equationNth(eqns,e-1);
-     true = isStateConstraintEquation(cr,eqn,vars);
-     then -1.0;
-   case(cr,_::eqnLst,vars,eqns) then varStateSelectHeuristicPrio1(cr,eqnLst,vars,eqns);
+  prio := matchcontinue(cr,eqnLst,vars,eqns)
+    local Integer e; Equation eqn;
+    case(cr,{},_,_) then 0.0;
+    case(cr,e::eqnLst,vars,eqns) 
+      equation
+        eqn = equationNth(eqns,e-1);
+        true = isStateConstraintEquation(cr,eqn,vars);
+      then -1.0;
+    case(cr,_::eqnLst,vars,eqns) then varStateSelectHeuristicPrio1(cr,eqnLst,vars,eqns);
  end matchcontinue;
 end varStateSelectHeuristicPrio1;
 
-protected function isStateConstraintEquation "Help function to varStateSelectHeuristicPrio2
-author: PA
-
-Returns true if an equation is on the form cr = expr(s1,s2...sn) for states cr, s1,s2..,sn
-"
+protected function isStateConstraintEquation 
+"function isStateConstraintEquation
+  author: PA
+  Help function to varStateSelectHeuristicPrio2
+  Returns true if an equation is on the form cr = expr(s1,s2...sn) for states cr, s1,s2..,sn"
   input Exp.ComponentRef cr;
   input	Equation eqn;
   input Variables vars;
   output Boolean res;
 algorithm
   res := matchcontinue(cr,eqn,vars)
-  local Exp.ComponentRef cr2;
-    list<Exp.ComponentRef> crs;
-    list<list<Var>> crVars;
-    list<Boolean> blst;
-    Exp.Exp e2;
+    local 
+      Exp.ComponentRef cr2;
+      list<Exp.ComponentRef> crs;
+      list<list<Var>> crVars;
+      list<Boolean> blst;
+      Exp.Exp e2;
+      
+    // s = expr(s1,..,sn)  where s1 .. sn are states
+    case(cr,EQUATION(Exp.CREF(cr2,_),e2),vars) 
+      equation
+        true = Exp.crefEqual(cr,cr2);
+        _::_::_ = Exp.terms(e2);
+        crs = Exp.getCrefFromExp(e2);
+        (crVars,_) = Util.listMap12(crs,getVar,vars);
+        blst = Util.listMap(Util.listFlatten(crVars),isStateVar);
+        res = Util.boolAndList(blst);
+      then res;
 
-			// s = expr(s1,..,sn)  where s1 .. sn are states
-    case(cr,EQUATION(Exp.CREF(cr2,_),e2),vars) equation
-      true = Exp.crefEqual(cr,cr2);
-      _::_::_ = Exp.terms(e2);
-      crs = Exp.getCrefFromExp(e2);
-      (crVars,_) = Util.listMap12(crs,getVar,vars);
-      blst = Util.listMap(Util.listFlatten(crVars),isStateVar);
-      res = Util.boolAndList(blst);
-     then res;
-
-    case(cr,EQUATION(e2,Exp.CREF(cr2,_)),vars) equation
-      true = Exp.crefEqual(cr,cr2);
-      _::_::_ = Exp.terms(e2);
-      crs = Exp.getCrefFromExp(e2);
-      (crVars,_) = Util.listMap12(crs,getVar,vars);
-      blst = Util.listMap(Util.listFlatten(crVars),isStateVar);
-      res = Util.boolAndList(blst);
-     then res;
-
-
+    case(cr,EQUATION(e2,Exp.CREF(cr2,_)),vars) 
+      equation
+        true = Exp.crefEqual(cr,cr2);
+        _::_::_ = Exp.terms(e2);
+        crs = Exp.getCrefFromExp(e2);
+        (crVars,_) = Util.listMap12(crs,getVar,vars);
+        blst = Util.listMap(Util.listFlatten(crVars),isStateVar);
+        res = Util.boolAndList(blst);
+      then res;
+        
     case(cr,eqn,vars) then false;
   end matchcontinue;
 end isStateConstraintEquation;
 
-protected function varStateSelectPrio "helper function to calculateVarPriorities.
-Calculates a priority contribution bases on the stateSelect attribute.
-"
+protected function varStateSelectPrio 
+"function varStateSelectPrio 
+  Helper function to calculateVarPriorities.
+  Calculates a priority contribution bases on the stateSelect attribute."
 	input Var v;
 	output Real prio;
 	protected
@@ -8797,7 +8982,8 @@ algorithm
   prio := varStateSelectPrio2(ss);
 end varStateSelectPrio;
 
-protected function varStateSelectPrio2 "helper function to varStateSelectPrio"
+protected function varStateSelectPrio2 
+"helper function to varStateSelectPrio"
 	input DAE.StateSelect ss;
 	output Real prio;
 algorithm
@@ -8810,20 +8996,14 @@ algorithm
 	end matchcontinue;
 end varStateSelectPrio2;
 
-
-
-protected function calculateDummyStatePriorities "function: calculate_dummy_state_priority
-
+protected function calculateDummyStatePriorities 
+"function: calculateDummyStatePriority
   Calculates a priority for dummy state candidates.
-  The state with lowest priority number is selected as a dummy
-  variable.
-
+  The state with lowest priority number is selected as a dummy variable.
   Heuristic parameters:
-  1. States that has an initial condition is given pentalty 10.
-  2. Equation s1= p  s2 with states s1 and s2 gives penalty 1 for state s1.
-
-  The heuristic parameters are summed to get the priority number.
-"
+   1. States that has an initial condition is given pentalty 10.
+   2. Equation s1= p  s2 with states s1 and s2 gives penalty 1 for state s1.
+  The heuristic parameters are summed to get the priority number."
   input list<Exp.ComponentRef> inExpComponentRefLst;
   input list<Integer> inIntegerLst;
   input DAELow inDAELow;
@@ -8872,19 +9052,17 @@ algorithm
   end matchcontinue;
 end calculateDummyStatePriority;
 
-protected function statesInEqns "function: statesInEqns
+protected function statesInEqns 
+"function: statesInEqns
   author: PA
-
   Helper function to reduce_index_dummy_der.
   Returns all states in the equations given as equation index list.
-
   inputs:  (int list /* eqns */,
               DAELow,
               IncidenceMatrix,
               IncidenceMatrixT)
   outputs: (Exp.ComponentRef list, /* name for each state */
-              int list)  /* number for each state */
-"
+              int list)  /* number for each state */"
   input list<Integer> inIntegerLst;
   input DAELow inDAELow;
   input IncidenceMatrix inIncidenceMatrix;
@@ -8922,7 +9100,7 @@ algorithm
         (res1_1,res2_1);
     case (_,_,_,_)
       equation
-        print("-states_in_eqns failed\n");
+        print("-DAELow.statesInEqns failed\n");
       then
         fail();
   end matchcontinue;
@@ -8955,7 +9133,7 @@ algorithm
     case (vars,(v :: rest))
       equation
         v_1 = v - 1;
-        VAR(cr,_,_,_,_,_,_,_,_,_,_,_,flow_) = listNth(vars, v_1);
+        VAR(cr,_,_,_,_,_,_,_,_,_,_,_,flow_,_) = listNth(vars, v_1);
         (res1,res2) = statesInVars(vars, rest);
       then
         ((cr :: res1),(v :: res2));
@@ -8967,9 +9145,9 @@ algorithm
   end matchcontinue;
 end statesInVars;
 
-protected function differentiateEqns "function: differentiateEqns
+protected function differentiateEqns 
+"function: differentiateEqns
   author: PA
-
   This function takes a dae, its incidence matrices and the number of
   equations an variables and a list of equation indices to
   differentiate. This is used in the index reduction algorithm
@@ -8977,20 +9155,18 @@ protected function differentiateEqns "function: differentiateEqns
   The function updates the dae, the incidence matrix and returns
   a list of indices of the differentiated equations, they are added last in
   the dae.
-
   inputs:  (DAELow,
-              IncidenceMatrix,
-              IncidenceMatrixT,
-              int, /* number of vars */
-              int, /* number of eqns */
-              int list) /* equations */
+            IncidenceMatrix,
+            IncidenceMatrixT,
+            int, /* number of vars */
+            int, /* number of eqns */
+            int list) /* equations */
   outputs: (DAELow,
-              IncidenceMatrix,
-              IncidenceMatrixT,
-              int, /* number of vars */
-	      int, /* number of eqns */
-	      int list /* differentiated equations */)
-"
+            IncidenceMatrix,
+            IncidenceMatrixT,
+            int, /* number of vars */
+	          int, /* number of eqns */
+	          int list /* differentiated equations */)"
   input DAELow inDAELow1;
   input IncidenceMatrix inIncidenceMatrix2;
   input IncidenceMatrixT inIncidenceMatrixT3;
@@ -9465,17 +9641,45 @@ algorithm
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<Absyn.Comment> comment;
       DAE.Flow flow_;
+      DAE.Stream stream_;
     case {} then {};
-    case ((VAR(varName = cr,varKind = STATE(),varDirection = a,varType = b,bindExp = c,bindValue = d,arryDim = e,index = g,origVarName = h,className = i,values = dae_var_attr,comment = comment,flow_ = flow_) :: vs))
+    case ((VAR(varName = cr,
+               varKind = STATE(),
+               varDirection = a,
+               varType = b,
+               bindExp = c,
+               bindValue = d,
+               arryDim = e,
+               index = g,
+               origVarName = h,
+               className = i,
+               values = dae_var_attr,
+               comment = comment,
+               flow_ = flow_,
+               stream_ = stream_) :: vs))
       equation
         res = statesAsAlgebraicVars2(vs) "states treated as algebraic variables" ;
       then
-        (VAR(cr,VARIABLE(),a,b,c,d,e,g,h,i,dae_var_attr,comment,flow_) :: res);
-    case ((VAR(varName = cr,varDirection = a,varType = b,bindExp = c,bindValue = d,arryDim = e,index = g,origVarName = h,className = i,values = dae_var_attr,comment = comment,flow_ = flow_) :: vs))
+        (VAR(cr,VARIABLE(),a,b,c,d,e,g,h,i,dae_var_attr,comment,flow_,stream_) :: res);
+        
+    case ((VAR(varName = cr,
+               varDirection = a,
+               varType = b,
+               bindExp = c,
+               bindValue = d,
+               arryDim = e,
+               index = g,
+               origVarName = h,
+               className = i,
+               values = dae_var_attr,
+               comment = comment,
+               flow_ = flow_,
+               stream_ = stream_) :: vs))
       equation
         res = statesAsAlgebraicVars2(vs) "other variables treated as known" ;
       then
-        (VAR(cr,CONST(),a,b,c,d,e,g,h,i,dae_var_attr,comment,flow_) :: res);
+        (VAR(cr,CONST(),a,b,c,d,e,g,h,i,dae_var_attr,comment,flow_,stream_) :: res);
+        
     case ((_ :: vs))
       equation
         res = statesAsAlgebraicVars2(vs);
@@ -9484,18 +9688,15 @@ algorithm
   end matchcontinue;
 end statesAsAlgebraicVars2;
 
-
-public function varsInEqn "function: varsInEqn
+public function varsInEqn 
+"function: varsInEqn
   author: PA
-
-  This function returns all variable indices as a list for a given
-  equation, given as an equation index. (1...n)
+  This function returns all variable indices as a list for 
+  a given equation, given as an equation index. (1...n)
   Negative indexes are removed.
-
   See also: eqnsForVar and eqnsForVarWithStates
   inputs:  (IncidenceMatrix, int /* equation */)
-  outputs:  int list /* variables */
-"
+  outputs:  int list /* variables */"
   input IncidenceMatrix inIncidenceMatrix;
   input Integer inInteger;
   output list<Integer> outIntegerLst;
@@ -9525,11 +9726,10 @@ algorithm
   end matchcontinue;
 end varsInEqn;
 
-protected function removeNegative "function: removeNegative
+protected function removeNegative 
+"function: removeNegative
   author: PA
-
-  Removes all negative integers.
-"
+  Removes all negative integers."
   input list<Integer> lst;
   output list<Integer> lst_1;
   list<Value> lst_1;
@@ -9537,16 +9737,14 @@ algorithm
   lst_1 := Util.listSelect(lst, Util.intPositive);
 end removeNegative;
 
-protected function eqnsForVar "function: eqnsForVar
+protected function eqnsForVar 
+"function: eqnsForVar
   author: PA
-
-  This function returns all equations as a list of equation indices
-  given a variable as a variable index.
+  This function returns all equations as a list of 
+  equation indices given a variable as a variable index.
   See also: eqnsForVarWithStates and varsInEqn
-
   inputs:  (IncidenceMatrixT, int /* variable */)
-  outputs:  int list /* equations */
-"
+  outputs:  int list /* equations */"
   input IncidenceMatrixT inIncidenceMatrixT;
   input Integer inInteger;
   output list<Integer> outIntegerLst;
@@ -9576,9 +9774,9 @@ algorithm
   end matchcontinue;
 end eqnsForVar;
 
-protected function eqnsForVarWithStates "function: eqnsForVarWithStates
+protected function eqnsForVarWithStates 
+"function: eqnsForVarWithStates
   author: PA
-
   This function returns all equations as a list of equation indices
   given a variable as a variable index, including the equations containing
   the state variable but not its derivative. This must be used to update
@@ -9586,10 +9784,8 @@ protected function eqnsForVarWithStates "function: eqnsForVarWithStates
   using dummy derivatives.
   These equation indices are represented with negative index, thus all
   indices are mapped trough int_abs (absolute value).
-
   inputs:  (IncidenceMatrixT, int /* variable */)
-  outputs:  int list /* equations */
-"
+  outputs:  int list /* equations */"
   input IncidenceMatrixT inIncidenceMatrixT;
   input Integer inInteger;
   output list<Integer> outIntegerLst;
@@ -9619,19 +9815,17 @@ algorithm
   end matchcontinue;
 end eqnsForVarWithStates;
 
-protected function assignFirstUnassigned "function: assignFirstUnassigned
+protected function assignFirstUnassigned 
+"function: assignFirstUnassigned
   author: PA
-
   This function assigns the first unassign variable to the equation
   given as first argument. It is part of the matching algorithm.
-
   inputs:  (int /* equation */,
-              int list /* variables */,
-              Assignments /* ass1 */,
-              Assignments /* ass2 */)
+            int list /* variables */,
+            Assignments /* ass1 */,
+            Assignments /* ass2 */)
   outputs: (Assignments,  /* ass1 */
-              Assignments)  /* ass2 */
-"
+            Assignments)  /* ass2 */"
   input Integer inInteger1;
   input list<Integer> inIntegerLst2;
   input Assignments inAssignments3;
@@ -9659,16 +9853,14 @@ algorithm
   end matchcontinue;
 end assignFirstUnassigned;
 
-protected function getAssigned "function: getAssigned
+protected function getAssigned 
+"function: getAssigned
   author: PA
-
   returns the assigned equation for a variable.
-
   inputs:  (int		/* variable */,
-              Assignments,	/* ass1 */
-              Assignments)	/* ass2 */
-  outputs:  int /* equation */
-"
+            Assignments,	/* ass1 */
+            Assignments)	/* ass2 */
+  outputs:  int /* equation */"
   input Integer inInteger1;
   input Assignments inAssignments2;
   input Assignments inAssignments3;
@@ -9687,18 +9879,16 @@ algorithm
   end matchcontinue;
 end getAssigned;
 
-protected function assign "function: assign
+protected function assign 
+"function: assign
   author: PA
-
   Assign a variable to an equation, updating both assignment lists.
-
   inputs: (int, /* variable */
-             int, /* equation */
-             Assignments, /* ass1 */
-             Assignments) /* ass2 */
+           int, /* equation */
+           Assignments, /* ass1 */
+           Assignments) /* ass2 */
   outputs: (Assignments,	/* updated ass1 */
-              Assignments)	/* updated ass2 */
-"
+            Assignments)	/* updated ass2 */"
   input Integer inInteger1;
   input Integer inInteger2;
   input Assignments inAssignments3;
@@ -9713,9 +9903,7 @@ algorithm
       Assignments ass1_1,ass2_1,ass1,ass2;
     case (v,e,ass1,ass2)
       equation
-        v_1 = v - 1 "print \"assign \" & int_string v => vs &
-	int_string e => es & print vs & print \" to eqn \" &
-	print es & print \"\\n\" &" ;
+        v_1 = v - 1 "print \"assign \" & int_string v => vs & int_string e => es & print vs & print \" to eqn \" & print es & print \"\\n\" &" ;
         e_1 = e - 1;
         ass1_1 = assignmentsSetnth(ass1, v_1, e);
         ass2_1 = assignmentsSetnth(ass2, e_1, v);
@@ -9724,19 +9912,17 @@ algorithm
   end matchcontinue;
 end assign;
 
-protected function forallUnmarkedVarsInEqn "function: forallUnmarkedVarsInEqn
+protected function forallUnmarkedVarsInEqn 
+"function: forallUnmarkedVarsInEqn
   author: PA
-
-  This function is part of the matching algorithm. It loops over all umarked
-  variables in an equation.
-
+  This function is part of the matching algorithm. 
+  It loops over all umarked variables in an equation.
   inputs:  (IncidenceMatrix,
-              IncidenceMatrixT,
-              int,
-              Assignments /* ass1 */,
-              Assignments /* ass2 */)
-  outputs: (Assignments, Assignments)
-"
+            IncidenceMatrixT,
+            int,
+            Assignments /* ass1 */,
+            Assignments /* ass2 */)
+  outputs: (Assignments, Assignments)"
   input IncidenceMatrix inIncidenceMatrix1;
   input IncidenceMatrixT inIncidenceMatrixT2;
   input Integer inInteger3;
@@ -9762,29 +9948,26 @@ algorithm
   end matchcontinue;
 end forallUnmarkedVarsInEqn;
 
-protected function isNotVMarked "function: isNotVMarked
+protected function isNotVMarked 
+"function: isNotVMarked
   author: PA
-
-  This function succeds for variables that are not marked.
-"
+  This function succeds for variables that are not marked."
   input Integer i;
 algorithm
   false := DAEEXT.getVMark(i);
 end isNotVMarked;
 
-protected function forallUnmarkedVarsInEqnBody "function: forallUnmarkedVarsInEqnBody
+protected function forallUnmarkedVarsInEqnBody 
+"function: forallUnmarkedVarsInEqnBody
   author: PA
-
   This function is part of the matching algorithm.
   It is the body of the loop over all unmarked variables.
-
   inputs:  (IncidenceMatrix, IncidenceMatrixT,
-              int,
-              int list /* var list */
-              Assignments
-              Assignments)
-  outputs: (Assignments, Assignments)
-"
+            int,
+            int list /* var list */
+            Assignments
+            Assignments)
+  outputs: (Assignments, Assignments)"
   input IncidenceMatrix inIncidenceMatrix1;
   input IncidenceMatrixT inIncidenceMatrixT2;
   input Integer inInteger3;
@@ -9818,8 +10001,9 @@ algorithm
   end matchcontinue;
 end forallUnmarkedVarsInEqnBody;
 
-public function dumpComponentsGraphStr " Dumps the assignment graph used to determine strong components to
-format suitable for Mathematica"
+public function dumpComponentsGraphStr 
+"Dumps the assignment graph used to determine strong 
+ components to format suitable for Mathematica"
   input Integer n;
   input IncidenceMatrix m;
   input IncidenceMatrixT mT;
@@ -11994,7 +12178,7 @@ algorithm
         t_1 = DAE.generateDaeType(t) "Some of the attributes added to env here does not matter, defaults are used" ;
         env_1 = Env.extendFrameV(env,
           Types.VAR(crn,
-          Types.ATTR(false,SCode.RW(),SCode.CONST(),Absyn.BIDIR()),false,t_1,Types.EQBOUND(e,NONE,Types.C_CONST())), NONE, Env.VAR_UNTYPED(), {});
+          Types.ATTR(false,false,SCode.RW(),SCode.CONST(),Absyn.BIDIR()),false,t_1,Types.EQBOUND(e,NONE,Types.C_CONST())), NONE, Env.VAR_UNTYPED(), {});
         env_2 = addVariablesToEnv(rest, env_1);
       then
         env_2;
@@ -12003,7 +12187,7 @@ algorithm
         t_1 = DAE.generateDaeType(t) "Some of the attributes added to env here does not matter, defaults are used" ;
         env_1 = Env.extendFrameV(env,
           Types.VAR(crn,
-          Types.ATTR(false,SCode.RW(),SCode.CONST(),Absyn.BIDIR()),false,t_1,Types.UNBOUND()), NONE, Env.VAR_UNTYPED(), {});
+          Types.ATTR(false,false,SCode.RW(),SCode.CONST(),Absyn.BIDIR()),false,t_1,Types.UNBOUND()), NONE, Env.VAR_UNTYPED(), {});
         env_2 = addVariablesToEnv(rest, env_1);
       then
         env_2;
@@ -12049,16 +12233,43 @@ algorithm
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<Absyn.Comment> comment;
       DAE.Flow flow_;
+      DAE.Stream stream_;
       list<Env.Frame> env;
+      
     case ({},_) then {};
-    case ((VAR(varName = cr,varKind = a,varDirection = b,varType = c,bindExp = SOME(e),arryDim = d,index = g,origVarName = h,className = i,values = dae_var_attr,comment = comment,flow_ = flow_) :: rest),env)
+    case ((VAR(varName = cr,
+               varKind = a,
+               varDirection = b,
+               varType = c,
+               bindExp = SOME(e),
+               arryDim = d,
+               index = g,
+               origVarName = h,
+               className = i,
+               values = dae_var_attr,
+               comment = comment,
+               flow_ = flow_,
+               stream_ = stream_) :: rest),env)
       equation
         rest_1 = updateVariables(rest, env);
         (_,v,_) = Ceval.ceval(Env.emptyCache,env, e, false, NONE, NONE, Ceval.MSG());
       then
-        (VAR(cr,a,b,c,SOME(e),SOME(v),d,g,h,i,dae_var_attr,comment,
-          flow_) :: rest_1);
-    case ((VAR(varName = cr,varKind = a,varDirection = b,varType = c,bindExp = SOME(e),bindValue = v,arryDim = d,index = g,origVarName = h,className = i,values = dae_var_attr,comment = comment,flow_ = flow_) :: rest),env)
+        (VAR(cr,a,b,c,SOME(e),SOME(v),d,g,h,i,dae_var_attr,comment,flow_,stream_) :: rest_1);
+        
+    case ((VAR(varName = cr,
+               varKind = a,
+               varDirection = b,
+               varType = c,
+               bindExp = SOME(e),
+               bindValue = v,
+               arryDim = d,
+               index = g,
+               origVarName = h,
+               className = i,
+               values = dae_var_attr,
+               comment = comment,
+               flow_ = flow_,
+               stream_ = stream_) :: rest),env)
       local Option<Values.Value> v;
       equation
         rest_1 = updateVariables(rest, env);
@@ -12067,25 +12278,39 @@ algorithm
         Exp.printComponentRef(cr);
         Print.printBuf("\n");
       then
-        (VAR(cr,a,b,c,SOME(e),v,d,g,h,i,dae_var_attr,comment,flow_) :: rest_1);
-    case ((VAR(varName = cr,varKind = a,varDirection = b,varType = c,bindExp = NONE,bindValue = v,arryDim = d,index = g,origVarName = h,className = i,values = dae_var_attr,comment = comment,flow_ = flow_) :: rest),env)
+        (VAR(cr,a,b,c,SOME(e),v,d,g,h,i,dae_var_attr,comment,flow_,stream_) :: rest_1);
+        
+    case ((VAR(varName = cr,
+               varKind = a,
+               varDirection = b,
+               varType = c,
+               bindExp = NONE,
+               bindValue = v,
+               arryDim = d,
+               index = g,
+               origVarName = h,
+               className = i,
+               values = dae_var_attr,
+               comment = comment,
+               flow_ = flow_,
+               stream_ = stream_) :: rest),env)
       local Option<Values.Value> v;
       equation
         rest_1 = updateVariables(rest, env);
       then
-        (VAR(cr,a,b,c,NONE,v,d,g,h,i,dae_var_attr,comment,flow_) :: rest_1);
+        (VAR(cr,a,b,c,NONE,v,d,g,h,i,dae_var_attr,comment,flow_,stream_) :: rest_1);
+        
   end matchcontinue;
 end updateVariables;
 
-protected function variableReplacements "function: variableReplacements
+protected function variableReplacements 
+"function: variableReplacements
   author: PA
-
   Returns a two list of replacement expressions for variable transformations.
   For instance, replacing state s with %x[3] and der(s) with %xd[3],
   NOTE: The derivative expressions must be first, so they are replaced first
-  i.e der(s) is replaced before s is replaced which gives a wrong
-  variable like der(%x[5])
-"
+        i.e der(s) is replaced before s is replaced which gives a wrong
+        variable like der(%x[5])"
   input list<Var> inVarLst;
   input list<Equation> inEquationLst;
   output list<Exp.Exp> outExpExpLst1;
@@ -12120,13 +12345,12 @@ algorithm
   end matchcontinue;
 end variableReplacements;
 
-protected function variableReplacementsNoDollar "function: variableReplacementsNoDollar
+protected function variableReplacementsNoDollar 
+"function: variableReplacementsNoDollar
   author: PA
-
   When all variables have been replaced to a indexed variable starting
   with a dollar sig, \'%\', it can again be translated to remove the sign.
-  This function builds replacement rules for removing the sign.
-"
+  This function builds replacement rules for removing the sign."
   input list<Var> inVarLst1;
   input list<Var> inVarLst2;
   input list<Var> inVarLst3;
@@ -12503,9 +12727,24 @@ algorithm
       Option<DAE.VariableAttributes> dae_var_attr,dae_var_attr2;
       Option<Absyn.Comment> comment;
       DAE.Flow flow_;
+      DAE.Stream stream_;
       list<Exp.Exp> s,t;
+      
     case ({},_,_,_) then {};  /* varible prefix, \"%\" or \"\" */
-    case ((VAR(varName = cr,varKind = kind,varDirection = a,varType = b,bindExp = SOME(e),bindValue = c,arryDim = d,index = i,className = j,values = dae_var_attr,comment = comment,flow_ = flow_) :: vs),s,t,(var_prefix as "%")) /* When percent sign, save original name */
+      
+    case ((VAR(varName = cr,
+               varKind = kind,
+               varDirection = a,
+               varType = b,
+               bindExp = SOME(e),
+               bindValue = c,
+               arryDim = d,
+               index = i,
+               className = j,
+               values = dae_var_attr,
+               comment = comment,
+               flow_ = flow_,
+               stream_ = stream_) :: vs),s,t,(var_prefix as "%")) /* When percent sign, save original name */
       equation
         vs_1 = transformVariables(vs, s, t, var_prefix);
         cr_str = Exp.printComponentRefStr(cr);
@@ -12513,9 +12752,22 @@ algorithm
         (e_1,_) = Exp.replaceExpList(e, s, t);
         dae_var_attr2 = transformVariableAttr(dae_var_attr,s,t);
       then
-        (VAR(cr_1,kind,a,b,SOME(e_1),c,d,i,cr,j,dae_var_attr2,
-          comment,flow_) :: vs_1);
-    case ((VAR(varName = cr,varKind = kind,varDirection = a,varType = b,bindExp = SOME(e),bindValue = c,arryDim = d,index = i,origVarName = name,className = j,values = dae_var_attr,comment = comment,flow_ = flow_) :: vs),s,t,(var_prefix as "")) /* when empty prefix, use old original name When dollar sign, save original name */
+        (VAR(cr_1,kind,a,b,SOME(e_1),c,d,i,cr,j,dae_var_attr2,comment,flow_,stream_) :: vs_1);
+        
+    case ((VAR(varName = cr,
+               varKind = kind,
+               varDirection = a,
+               varType = b,
+               bindExp = SOME(e),
+               bindValue = c,
+               arryDim = d,
+               index = i,
+               origVarName = name,
+               className = j,
+               values = dae_var_attr,
+               comment = comment,
+               flow_ = flow_,
+               stream_ = stream_) :: vs),s,t,(var_prefix as "")) /* when empty prefix, use old original name When dollar sign, save original name */
       equation
         vs_1 = transformVariables(vs, s, t, var_prefix);
         name_str = Exp.printComponentRefStr(name);
@@ -12523,26 +12775,50 @@ algorithm
         (e_1,_) = Exp.replaceExpList(e, s, t);
         dae_var_attr2 = transformVariableAttr(dae_var_attr,s,t);
       then
-        (VAR(cr_1,kind,a,b,SOME(e_1),c,d,i,name,j,dae_var_attr2,
-          comment,flow_) :: vs_1);
-    case ((VAR(varName = cr,varKind = kind,varDirection = a,varType = b,bindExp = NONE,bindValue = c,arryDim = d,index = i,className = j,values = dae_var_attr,comment = comment,flow_ = flow_) :: vs),s,t,(var_prefix as "%")) /* When dollar sign, save original name */
+        (VAR(cr_1,kind,a,b,SOME(e_1),c,d,i,name,j,dae_var_attr2,comment,flow_,stream_) :: vs_1);
+        
+    case ((VAR(varName = cr,
+               varKind = kind,
+               varDirection = a,
+               varType = b,
+               bindExp = NONE,
+               bindValue = c,
+               arryDim = d,
+               index = i,
+               className = j,
+               values = dae_var_attr,
+               comment = comment,
+               flow_ = flow_,
+               stream_ = stream_) :: vs),s,t,(var_prefix as "%")) /* When dollar sign, save original name */
       equation
         vs_1 = transformVariables(vs, s, t, var_prefix);
         cr_str = Exp.printComponentRefStr(cr);
         cr_1 = transformVariable(cr_str, i, kind, var_prefix);
         dae_var_attr2 = transformVariableAttr(dae_var_attr,s,t);
       then
-        (VAR(cr_1,kind,a,b,NONE,c,d,i,cr,j,dae_var_attr2,comment,
-          flow_) :: vs_1);
-    case ((VAR(varName = cr,varKind = kind,varDirection = a,varType = b,bindExp = NONE,bindValue = c,arryDim = d,index = i,origVarName = name,className = j,values = dae_var_attr,comment = comment,flow_ = flow_) :: vs),s,t,(var_prefix as "")) /* when empty prefix, use old original name */
+        (VAR(cr_1,kind,a,b,NONE,c,d,i,cr,j,dae_var_attr2,comment,flow_,stream_) :: vs_1);
+        
+    case ((VAR(varName = cr,
+               varKind = kind,
+               varDirection = a,
+               varType = b,
+               bindExp = NONE,
+               bindValue = c,
+               arryDim = d,
+               index = i,
+               origVarName = name,
+               className = j,
+               values = dae_var_attr,
+               comment = comment,
+               flow_ = flow_,
+               stream_ = stream_) :: vs),s,t,(var_prefix as "")) /* when empty prefix, use old original name */
       equation
         vs_1 = transformVariables(vs, s, t, var_prefix);
         name_str = Exp.printComponentRefStr(name);
         cr_1 = transformVariable(name_str, i, kind, var_prefix);
         dae_var_attr2 = transformVariableAttr(dae_var_attr,s,t);
       then
-        (VAR(cr_1,kind,a,b,NONE,c,d,i,name,j,dae_var_attr2,
-          comment,flow_) :: vs_1);
+        (VAR(cr_1,kind,a,b,NONE,c,d,i,name,j,dae_var_attr2,comment,flow_,stream_) :: vs_1);
   end matchcontinue;
 end transformVariables;
 
@@ -12552,54 +12828,60 @@ protected function transformVariableAttr "Helper function to transformVariables"
   input list<Exp.Exp> t;
   output Option<DAE.VariableAttributes> varAttrOut;
 algorithm
-
   varAttrOut := matchcontinue(varAttr,s,t)
     local Option<Exp.Exp> quantity,unit,displayUnit,min,max,initial_,fixed,nominal;
       Option<DAE.StateSelect> stateSelect;
-    case(SOME(DAE.VAR_ATTR_REAL(quantity,unit,displayUnit,(min,max),initial_,fixed,nominal,stateSelect)),s,t) equation
-      (quantity,_) = Exp.replaceExpListOpt(quantity,s,t);
-      (unit,_) = Exp.replaceExpListOpt(unit,s,t);
-      (displayUnit,_) = Exp.replaceExpListOpt(displayUnit,s,t);
-      (min,_) = Exp.replaceExpListOpt(min,s,t);
-      (max,_) = Exp.replaceExpListOpt(max,s,t);
-      (initial_,_) = Exp.replaceExpListOpt(initial_,s,t);
-      (fixed,_) = Exp.replaceExpListOpt(fixed,s,t);
-      (nominal,_) = Exp.replaceExpListOpt(nominal,s,t);
+      
+    case(SOME(DAE.VAR_ATTR_REAL(quantity,unit,displayUnit,(min,max),initial_,fixed,nominal,stateSelect)),s,t) 
+      equation
+        (quantity,_) = Exp.replaceExpListOpt(quantity,s,t);
+        (unit,_) = Exp.replaceExpListOpt(unit,s,t);
+        (displayUnit,_) = Exp.replaceExpListOpt(displayUnit,s,t);
+        (min,_) = Exp.replaceExpListOpt(min,s,t);
+        (max,_) = Exp.replaceExpListOpt(max,s,t);
+        (initial_,_) = Exp.replaceExpListOpt(initial_,s,t);
+        (fixed,_) = Exp.replaceExpListOpt(fixed,s,t);
+        (nominal,_) = Exp.replaceExpListOpt(nominal,s,t);
       then SOME(DAE.VAR_ATTR_REAL(quantity,unit,displayUnit,(min,max),initial_,fixed,nominal,stateSelect));
 
-    case(SOME(DAE.VAR_ATTR_INT(quantity,(min,max),initial_,fixed)),s,t) equation
-      (quantity,_) = Exp.replaceExpListOpt(quantity,s,t);
-      (min,_) = Exp.replaceExpListOpt(min,s,t);
-      (max,_) = Exp.replaceExpListOpt(max,s,t);
-      (initial_,_) = Exp.replaceExpListOpt(initial_,s,t);
-      (fixed,_) = Exp.replaceExpListOpt(fixed,s,t);
-      then SOME(DAE.VAR_ATTR_INT(quantity,(min,max),initial_,fixed));
+    case(SOME(DAE.VAR_ATTR_INT(quantity,(min,max),initial_,fixed)),s,t) 
+      equation
+        (quantity,_) = Exp.replaceExpListOpt(quantity,s,t);
+        (min,_) = Exp.replaceExpListOpt(min,s,t);
+        (max,_) = Exp.replaceExpListOpt(max,s,t);
+        (initial_,_) = Exp.replaceExpListOpt(initial_,s,t);
+        (fixed,_) = Exp.replaceExpListOpt(fixed,s,t);
+      then 
+        SOME(DAE.VAR_ATTR_INT(quantity,(min,max),initial_,fixed));
 
-      case(SOME(DAE.VAR_ATTR_BOOL(quantity,initial_,fixed)),s,t) equation
-      (quantity,_) = Exp.replaceExpListOpt(quantity,s,t);
-      (initial_,_) = Exp.replaceExpListOpt(initial_,s,t);
-      (fixed,_) = Exp.replaceExpListOpt(fixed,s,t);
-      then SOME(DAE.VAR_ATTR_BOOL(quantity,initial_,fixed));
+      case(SOME(DAE.VAR_ATTR_BOOL(quantity,initial_,fixed)),s,t) 
+        equation
+          (quantity,_) = Exp.replaceExpListOpt(quantity,s,t);
+          (initial_,_) = Exp.replaceExpListOpt(initial_,s,t);
+          (fixed,_) = Exp.replaceExpListOpt(fixed,s,t);
+        then 
+          SOME(DAE.VAR_ATTR_BOOL(quantity,initial_,fixed));
 
-      case(SOME(DAE.VAR_ATTR_STRING(quantity,initial_)),s,t) equation
-      (quantity,_) = Exp.replaceExpListOpt(quantity,s,t);
-      (initial_,_) = Exp.replaceExpListOpt(initial_,s,t);
-      then SOME(DAE.VAR_ATTR_STRING(quantity,initial_));
+      case(SOME(DAE.VAR_ATTR_STRING(quantity,initial_)),s,t) 
+        equation
+          (quantity,_) = Exp.replaceExpListOpt(quantity,s,t);
+          (initial_,_) = Exp.replaceExpListOpt(initial_,s,t);
+        then 
+          SOME(DAE.VAR_ATTR_STRING(quantity,initial_));
 
       case (NONE(),s,t) then NONE();
+        
   end matchcontinue;
 end  transformVariableAttr;
 
-protected function transformVariable "function: transformVariable
+protected function transformVariable 
+"function: transformVariable
   author: PA
-
-  Helper function to transform_variables
-
+  Helper function to transformVariables
   inputs:  (int,
-              VarKind,
-              string /* varible prefix, \"$\" or \"\" */)
-  outputs: Exp.ComponentRef
-"
+            VarKind,
+            string /* varible prefix, \"$\" or \"\" */)
+  outputs: Exp.ComponentRef"
   input String inString1;
   input Integer inInteger2;
   input VarKind inVarKind3;
@@ -12620,11 +12902,10 @@ algorithm
   end matchcontinue;
 end transformVariable;
 
-protected function calculateIndexes2 "function: calculateIndexes2
+protected function calculateIndexes2 
+"function: calculateIndexes2
   author: PA
-
-  Helper function to calculate_indexes
-"
+  Helper function to calculateIndexes"
   input list<Var> inVarLst1;
   input Integer inInteger2; //X
   input Integer inInteger3; //xd
@@ -12638,7 +12919,6 @@ protected function calculateIndexes2 "function: calculateIndexes2
   input Integer inInteger10; //y_str
   input Integer inInteger11; //p_str
   input Integer inInteger12; //dummy_str
-
 
   output list<Var> outVarLst1;
   output Integer outInteger2;
@@ -12670,118 +12950,306 @@ algorithm
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<Absyn.Comment> comment;
       DAE.Flow flow_;
+      DAE.Stream stream_;
+      
     case ({},x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType)
       then ({},x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
 
-    case ((VAR(varName = cr,varKind = VARIABLE(),varDirection = d,varType = DAE.STRING(),bindExp = b,bindValue = value,arryDim = dim,origVarName = name,className = cl,values = dae_var_attr,comment = comment,flow_ = flow_) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType)
+    case ((VAR(varName = cr,
+               varKind = VARIABLE(),
+               varDirection = d,
+               varType = DAE.STRING(),
+               bindExp = b,
+               bindValue = value,
+               arryDim = dim,
+               origVarName = name,
+               className = cl,
+               values = dae_var_attr,
+               comment = comment,
+               flow_ = flow_,
+               stream_ = stream_) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType)
       equation
         y_1_strType = y_strType + 1;
-        (vars_1,x1,xd1,y1,p1,dummy1,ext,x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1) = calculateIndexes2(vs, x, xd, y, p, dummy,ext,x_strType,xd_strType,y_1_strType,p_strType,dummy_strType);
-
+        (vars_1,x1,xd1,y1,p1,dummy1,ext,x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1) = 
+           calculateIndexes2(vs, x, xd, y, p, dummy,ext,x_strType,xd_strType,y_1_strType,p_strType,dummy_strType);
       then
-        ((VAR(cr,VARIABLE(),d,DAE.STRING(),b,value,dim,y_strType,name,cl,
-          dae_var_attr,comment,flow_) :: vars_1),x1,xd1,y1,p1,dummy1,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
-    case ((VAR(varName = cr,varKind = VARIABLE(),varDirection = d,varType = tp,bindExp = b,bindValue = value,arryDim = dim,origVarName = name,className = cl,values = dae_var_attr,comment = comment,flow_ = flow_) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType)
+        ((VAR(cr,VARIABLE(),d,DAE.STRING(),b,value,dim,y_strType,name,cl,dae_var_attr,comment,flow_,stream_) :: vars_1),
+          x1,xd1,y1,p1,dummy1,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
+          
+    case ((VAR(varName = cr,
+               varKind = VARIABLE(),
+               varDirection = d,
+               varType = tp,
+               bindExp = b,
+               bindValue = value,
+               arryDim = dim,
+               origVarName = name,
+               className = cl,
+               values = dae_var_attr,
+               comment = comment,
+               flow_ = flow_,
+               stream_ = stream_) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType)
       equation
         y_1 = y + 1;
-        (vars_1,x1,xd1,y1,p1,dummy1,ext,x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1) = calculateIndexes2(vs, x, xd, y_1, p, dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
+        (vars_1,x1,xd1,y1,p1,dummy1,ext,x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1) = 
+           calculateIndexes2(vs, x, xd, y_1, p, dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
       then
-        ((VAR(cr,VARIABLE(),d,tp,b,value,dim,y,name,cl,
-          dae_var_attr,comment,flow_) :: vars_1),x1,xd1,y1,p1,dummy1,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
+        ((VAR(cr,VARIABLE(),d,tp,b,value,dim,y,name,cl,dae_var_attr,comment,flow_,stream_) :: vars_1),
+          x1,xd1,y1,p1,dummy1,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
 
-    case ((VAR(varName = cr,varKind = STATE(),varDirection = d,varType = DAE.STRING(),bindExp = b,bindValue = value,arryDim = dim,origVarName = name,className = cl,values = dae_var_attr,comment = comment,flow_ = flow_) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType)
+    case ((VAR(varName = cr,
+               varKind = STATE(),
+               varDirection = d,
+               varType = DAE.STRING(),
+               bindExp = b,
+               bindValue = value,
+               arryDim = dim,
+               origVarName = name,
+               className = cl,
+               values = dae_var_attr,
+               comment = comment,
+               flow_ = flow_,
+               stream_ = stream_) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType)
       equation
         x_1_strType = x_strType + 1;
-        (vars_1,x1,xd1,y1,p1,dummy1,ext,x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1) = calculateIndexes2(vs, x, xd, y, p, dummy,ext,x_1_strType,xd_strType,y_strType,p_strType,dummy_strType);
+        (vars_1,x1,xd1,y1,p1,dummy1,ext,x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1) = 
+           calculateIndexes2(vs, x, xd, y, p, dummy,ext,x_1_strType,xd_strType,y_strType,p_strType,dummy_strType);
       then
-        ((VAR(cr,STATE(),d,DAE.STRING(),b,value,dim,x_strType,name,cl,dae_var_attr,
-          comment,flow_) :: vars_1),x1,xd1,y1,p1,dummy1,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
-    case ((VAR(varName = cr,varKind = STATE(),varDirection = d,varType = tp,bindExp = b,bindValue = value,arryDim = dim,origVarName = name,className = cl,values = dae_var_attr,comment = comment,flow_ = flow_) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType)
+        ((VAR(cr,STATE(),d,DAE.STRING(),b,value,dim,x_strType,name,cl,dae_var_attr,comment,flow_,stream_) :: vars_1),
+          x1,xd1,y1,p1,dummy1,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
+        
+    case ((VAR(varName = cr,
+               varKind = STATE(),
+               varDirection = d,
+               varType = tp,
+               bindExp = b,
+               bindValue = value,
+               arryDim = dim,
+               origVarName = name,
+               className = cl,
+               values = dae_var_attr,
+               comment = comment,
+               flow_ = flow_,
+               stream_ = stream_) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType)
       equation
         x_1 = x + 1;
-        (vars_1,x1,xd1,y1,p1,dummy1,ext,x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1) = calculateIndexes2(vs, x_1, xd, y, p, dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
+        (vars_1,x1,xd1,y1,p1,dummy1,ext,x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1) = 
+           calculateIndexes2(vs, x_1, xd, y, p, dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
       then
-        ((VAR(cr,STATE(),d,tp,b,value,dim,x,name,cl,dae_var_attr,
-          comment,flow_) :: vars_1),x1,xd1,y1,p1,dummy1,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
+        ((VAR(cr,STATE(),d,tp,b,value,dim,x,name,cl,dae_var_attr,comment,flow_,stream_) :: vars_1),
+          x1,xd1,y1,p1,dummy1,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
 
-    case ((VAR(varName = cr,varKind = DUMMY_DER(),varDirection = d,varType = DAE.STRING(),bindExp = b,bindValue = value,arryDim = dim,origVarName = name,className = cl,values = dae_var_attr,comment = comment,flow_ = flow_) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType)
+    case ((VAR(varName = cr,
+               varKind = DUMMY_DER(),
+               varDirection = d,
+               varType = DAE.STRING(),
+               bindExp = b,
+               bindValue = value,
+               arryDim = dim,
+               origVarName = name,
+               className = cl,
+               values = dae_var_attr,
+               comment = comment,
+               flow_ = flow_,
+               stream_ = stream_) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType)
       equation
         y_1_strType = y_strType + 1 "Dummy derivatives become algebraic variables" ;
-        (vars_1,x1,xd1,y1,p1,dummy1,ext,x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1) = calculateIndexes2(vs, x, xd, y, p, dummy,ext,x_strType,xd_strType,y_1_strType,p_strType,dummy_strType);
+        (vars_1,x1,xd1,y1,p1,dummy1,ext,x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1) = 
+           calculateIndexes2(vs, x, xd, y, p, dummy,ext,x_strType,xd_strType,y_1_strType,p_strType,dummy_strType);
       then
-        ((VAR(cr,DUMMY_DER(),d,DAE.STRING(),b,value,dim,y_strType,name,cl,
-          dae_var_attr,comment,flow_) :: vars_1),x1,xd1,y1,p1,dummy1,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
-    case ((VAR(varName = cr,varKind = DUMMY_DER(),varDirection = d,varType = tp,bindExp = b,bindValue = value,arryDim = dim,origVarName = name,className = cl,values = dae_var_attr,comment = comment,flow_ = flow_) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType)
+        ((VAR(cr,DUMMY_DER(),d,DAE.STRING(),b,value,dim,y_strType,name,cl,dae_var_attr,comment,flow_,stream_) :: vars_1),
+          x1,xd1,y1,p1,dummy1,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
+          
+    case ((VAR(varName = cr,
+               varKind = DUMMY_DER(),
+               varDirection = d,
+               varType = tp,
+               bindExp = b,
+               bindValue = value,
+               arryDim = dim,
+               origVarName = name,
+               className = cl,
+               values = dae_var_attr,
+               comment = comment,
+               flow_ = flow_,
+               stream_ = stream_) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType)
       equation
         y_1 = y + 1 "Dummy derivatives become algebraic variables" ;
-        (vars_1,x1,xd1,y1,p1,dummy1,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType) = calculateIndexes2(vs, x, xd, y_1, p, dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
+        (vars_1,x1,xd1,y1,p1,dummy1,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType) = 
+           calculateIndexes2(vs, x, xd, y_1, p, dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
       then
-        ((VAR(cr,DUMMY_DER(),d,tp,b,value,dim,y,name,cl,
-          dae_var_attr,comment,flow_) :: vars_1),x1,xd1,y1,p1,dummy1,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
+        ((VAR(cr,DUMMY_DER(),d,tp,b,value,dim,y,name,cl,dae_var_attr,comment,flow_,stream_) :: vars_1),
+          x1,xd1,y1,p1,dummy1,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
 
-    case ((VAR(varName = cr,varKind = DUMMY_STATE(),varDirection = d,varType = DAE.STRING(),bindExp = b,bindValue = value,arryDim = dim,origVarName = name,className = cl,values = dae_var_attr,comment = comment,flow_ = flow_) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType)
+    case ((VAR(varName = cr,
+               varKind = DUMMY_STATE(),
+               varDirection = d,
+               varType = DAE.STRING(),
+               bindExp = b,
+               bindValue = value,
+               arryDim = dim,
+               origVarName = name,
+               className = cl,
+               values = dae_var_attr,
+               comment = comment,
+               flow_ = flow_,
+               stream_ = stream_) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType)
       equation
         y_1_strType = y_strType + 1 "Dummy state become algebraic variables" ;
-        (vars_1,x1,xd1,y1,p1,dummy1,ext,x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1) = calculateIndexes2(vs, x, xd, y, p, dummy,ext,x_strType,xd_strType,y_1_strType,p_strType,dummy_strType);
+        (vars_1,x1,xd1,y1,p1,dummy1,ext,x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1) = 
+           calculateIndexes2(vs, x, xd, y, p, dummy,ext,x_strType,xd_strType,y_1_strType,p_strType,dummy_strType);
       then
-        ((VAR(cr,DUMMY_STATE(),d,DAE.STRING(),b,value,dim,y_strType,name,cl,
-          dae_var_attr,comment,flow_) :: vars_1),x1,xd1,y1,p1,dummy1,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
-    case ((VAR(varName = cr,varKind = DUMMY_STATE(),varDirection = d,varType = tp,bindExp = b,bindValue = value,arryDim = dim,origVarName = name,className = cl,values = dae_var_attr,comment = comment,flow_ = flow_) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType)
+        ((VAR(cr,DUMMY_STATE(),d,DAE.STRING(),b,value,dim,y_strType,name,cl,dae_var_attr,comment,flow_,stream_) :: vars_1),
+          x1,xd1,y1,p1,dummy1,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
+          
+    case ((VAR(varName = cr,
+               varKind = DUMMY_STATE(),
+               varDirection = d,
+               varType = tp,
+               bindExp = b,
+               bindValue = value,
+               arryDim = dim,
+               origVarName = name,
+               className = cl,
+               values = dae_var_attr,
+               comment = comment,
+               flow_ = flow_,
+               stream_ = stream_) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType)
       equation
         y_1 = y + 1 "Dummy state become algebraic variables" ;
-        (vars_1,x1,xd1,y1,p1,dummy1,ext,x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1) = calculateIndexes2(vs, x, xd, y_1, p, dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
+        (vars_1,x1,xd1,y1,p1,dummy1,ext,x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1) = 
+           calculateIndexes2(vs, x, xd, y_1, p, dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
       then
-        ((VAR(cr,DUMMY_STATE(),d,tp,b,value,dim,y,name,cl,
-          dae_var_attr,comment,flow_) :: vars_1),x1,xd1,y1,p1,dummy1,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
+        ((VAR(cr,DUMMY_STATE(),d,tp,b,value,dim,y,name,cl,dae_var_attr,comment,flow_,stream_) :: vars_1),
+          x1,xd1,y1,p1,dummy1,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
 
-    case ((VAR(varName = cr,varKind = DISCRETE(),varDirection = d,varType = DAE.STRING(),bindExp = b,bindValue = value,arryDim = dim,origVarName = name,className = cl,values = dae_var_attr,comment = comment,flow_ = flow_) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType)
+    case ((VAR(varName = cr,
+               varKind = DISCRETE(),
+               varDirection = d,
+               varType = DAE.STRING(),
+               bindExp = b,
+               bindValue = value,
+               arryDim = dim,
+               origVarName = name,
+               className = cl,
+               values = dae_var_attr,
+               comment = comment,
+               flow_ = flow_,
+               stream_ = stream_) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType)
       equation
         y_1_strType = y_strType + 1;
-        (vars_1,x1,xd1,y1,p1,dummy1,ext,x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1) = calculateIndexes2(vs, x, xd, y, p, dummy,ext,x_strType,xd_strType,y_1_strType,p_strType,dummy_strType);
+        (vars_1,x1,xd1,y1,p1,dummy1,ext,x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1) = 
+           calculateIndexes2(vs, x, xd, y, p, dummy,ext,x_strType,xd_strType,y_1_strType,p_strType,dummy_strType);
       then
-        ((VAR(cr,DISCRETE(),d,DAE.STRING(),b,value,dim,y_strType,name,cl,
-          dae_var_attr,comment,flow_) :: vars_1),x1,xd1,y1,p1,dummy1,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
-    case ((VAR(varName = cr,varKind = DISCRETE(),varDirection = d,varType = tp,bindExp = b,bindValue = value,arryDim = dim,origVarName = name,className = cl,values = dae_var_attr,comment = comment,flow_ = flow_) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType)
+        ((VAR(cr,DISCRETE(),d,DAE.STRING(),b,value,dim,y_strType,name,cl,dae_var_attr,comment,flow_,stream_) :: vars_1),
+          x1,xd1,y1,p1,dummy1,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
+          
+    case ((VAR(varName = cr,
+               varKind = DISCRETE(),
+               varDirection = d,
+               varType = tp,
+               bindExp = b,
+               bindValue = value,
+               arryDim = dim,
+               origVarName = name,
+               className = cl,
+               values = dae_var_attr,
+               comment = comment,
+               flow_ = flow_,
+               stream_ = stream_) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType)
       equation
         y_1 = y + 1;
-        (vars_1,x1,xd1,y1,p1,dummy1,ext,x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1) = calculateIndexes2(vs, x, xd, y_1, p, dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
+        (vars_1,x1,xd1,y1,p1,dummy1,ext,x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1) = 
+           calculateIndexes2(vs, x, xd, y_1, p, dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
       then
-        ((VAR(cr,DISCRETE(),d,tp,b,value,dim,y,name,cl,
-          dae_var_attr,comment,flow_) :: vars_1),x1,xd1,y1,p1,dummy1,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
+        ((VAR(cr,DISCRETE(),d,tp,b,value,dim,y,name,cl,dae_var_attr,comment,flow_,stream_) :: vars_1),
+          x1,xd1,y1,p1,dummy1,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
 
-    case ((VAR(varName = cr,varKind = PARAM(),varDirection = d,varType = DAE.STRING(),bindExp = b,bindValue = value,arryDim = dim,origVarName = name,className = cl,values = dae_var_attr,comment = comment,flow_ = flow_) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType)
+    case ((VAR(varName = cr,
+               varKind = PARAM(),
+               varDirection = d,
+               varType = DAE.STRING(),
+               bindExp = b,
+               bindValue = value,
+               arryDim = dim,
+               origVarName = name,
+               className = cl,
+               values = dae_var_attr,
+               comment = comment,
+               flow_ = flow_,
+               stream_ = stream_) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType)
       equation
         p_1_strType = p_strType + 1;
-        (vars_1,x1,xd1,y1,p1,dummy1,ext,x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1) = calculateIndexes2(vs, x, xd, y, p, dummy,ext,x_strType,xd_strType,y_strType,p_1_strType,dummy_strType);
+        (vars_1,x1,xd1,y1,p1,dummy1,ext,x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1) = 
+           calculateIndexes2(vs, x, xd, y, p, dummy,ext,x_strType,xd_strType,y_strType,p_1_strType,dummy_strType);
       then
-        ((VAR(cr,PARAM(),d,DAE.STRING(),b,value,dim,p_strType,name,cl,dae_var_attr,
-          comment,flow_) :: vars_1),x1,xd1,y1,p1,dummy1,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
-    case ((VAR(varName = cr,varKind = PARAM(),varDirection = d,varType = tp,bindExp = b,bindValue = value,arryDim = dim,origVarName = name,className = cl,values = dae_var_attr,comment = comment,flow_ = flow_) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType)
+        ((VAR(cr,PARAM(),d,DAE.STRING(),b,value,dim,p_strType,name,cl,dae_var_attr,comment,flow_,stream_) :: vars_1),
+          x1,xd1,y1,p1,dummy1,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
+          
+    case ((VAR(varName = cr,
+               varKind = PARAM(),
+               varDirection = d,
+               varType = tp,
+               bindExp = b,
+               bindValue = value,
+               arryDim = dim,
+               origVarName = name,
+               className = cl,
+               values = dae_var_attr,
+               comment = comment,
+               flow_ = flow_,
+               stream_ = stream_) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType)
       equation
         p_1 = p + 1;
-        (vars_1,x1,xd1,y1,p1,dummy1,ext,x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1) = calculateIndexes2(vs, x, xd, y, p_1, dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
+        (vars_1,x1,xd1,y1,p1,dummy1,ext,x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1) = 
+           calculateIndexes2(vs, x, xd, y, p_1, dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
       then
-        ((VAR(cr,PARAM(),d,tp,b,value,dim,p,name,cl,dae_var_attr,
-          comment,flow_) :: vars_1),x1,xd1,y1,p1,dummy1,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
+        ((VAR(cr,PARAM(),d,tp,b,value,dim,p,name,cl,dae_var_attr,comment,flow_,stream_) :: vars_1),
+          x1,xd1,y1,p1,dummy1,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
 
-    case ((VAR(varName = cr,varKind = CONST(),varDirection = d,varType = tp,bindExp = b,bindValue = value,arryDim = dim,origVarName = name,className = cl,values = dae_var_attr,comment = comment,flow_ = flow_) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType)
+    case ((VAR(varName = cr,
+               varKind = CONST(),
+               varDirection = d,
+               varType = tp,
+               bindExp = b,
+               bindValue = value,
+               arryDim = dim,
+               origVarName = name,
+               className = cl,
+               values = dae_var_attr,
+               comment = comment,
+               flow_ = flow_,
+               stream_ = stream_) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType)
       equation
-
          //IS THIS A BUG??
          // THE INDEX FOR const IS SET TO p (=last parameter index)
-        (vars_1,x1,xd1,y1,p1,dummy1,ext,x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1) = calculateIndexes2(vs, x, xd, y, p, dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
+        (vars_1,x1,xd1,y1,p1,dummy1,ext,x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1) = 
+           calculateIndexes2(vs, x, xd, y, p, dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
       then
-        ((VAR(cr,CONST(),d,tp,b,value,dim,p,name,cl,dae_var_attr,
-          comment,flow_) :: vars_1),x1,xd1,y1,p1,dummy1,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
+        ((VAR(cr,CONST(),d,tp,b,value,dim,p,name,cl,dae_var_attr,comment,flow_,stream_) :: vars_1),
+          x1,xd1,y1,p1,dummy1,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
 
-    case ((VAR(varName = cr,varKind = EXTOBJ(path),varDirection = d,varType = tp,bindExp = b,bindValue = value,arryDim = dim,origVarName = name,className = cl,values = dae_var_attr,comment = comment,flow_ = flow_) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType)
+    case ((VAR(varName = cr,
+               varKind = EXTOBJ(path),
+               varDirection = d,
+               varType = tp,
+               bindExp = b,
+               bindValue = value,
+               arryDim = dim,
+               origVarName = name,
+               className = cl,
+               values = dae_var_attr,
+               comment = comment,
+               flow_ = flow_,
+               stream_ = stream_) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType)
       local Absyn.Path path;
       equation
-	ext_1 = ext+1;
-        (vars_1,x1,xd1,y1,p1,dummy,ext_1,x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1) = calculateIndexes2(vs, x, xd, y, p, dummy,ext_1,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
+        ext_1 = ext+1;
+        (vars_1,x1,xd1,y1,p1,dummy,ext_1,x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1) = 
+           calculateIndexes2(vs, x, xd, y, p, dummy,ext_1,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
       then
-        ((VAR(cr,EXTOBJ(path),d,tp,b,value,dim,p,name,cl,dae_var_attr,
-          comment,flow_) :: vars_1),x1,xd1,y1,p1,dummy,ext_1,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
+        ((VAR(cr,EXTOBJ(path),d,tp,b,value,dim,p,name,cl,dae_var_attr,comment,flow_,stream_) :: vars_1),
+          x1,xd1,y1,p1,dummy,ext_1,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
   end matchcontinue;
 end calculateIndexes2;
 
@@ -13430,15 +13898,16 @@ algorithm
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<Absyn.Comment> comment;
       DAE.Flow flow_;
+      DAE.Stream stream_;
       list<Var> rest;
       Boolean res;
     case ({},var_name) then false;
-    case (((variable as VAR(varName = cr,index = indx,origVarName = origname,values = dae_var_attr,comment = comment,flow_ = flow_)) :: rest),var_name)
+    case (((variable as VAR(varName = cr,index = indx,origVarName = origname,values = dae_var_attr,comment = comment,flow_ = flow_,stream_ = stream_)) :: rest),var_name)
       equation
         true = Exp.crefEqual(cr, var_name);
       then
         true;
-    case (((variable as VAR(varName = cr,index = indx,origVarName = origname,values = dae_var_attr,comment = comment,flow_ = flow_)) :: rest),var_name)
+    case (((variable as VAR(varName = cr,index = indx,origVarName = origname,values = dae_var_attr,comment = comment,flow_ = flow_,stream_ = stream_)) :: rest),var_name)
       equation
         res = isVarKnown(rest, var_name);
       then
@@ -13565,7 +14034,21 @@ algorithm
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<Absyn.Comment> comment;
       DAE.Flow flow_;
-    case VAR(varName = cref,varKind = vk,varDirection = vd,varType = ty,bindExp = bndexp,bindValue = bndval,arryDim = instdims,index = ind,origVarName = orgname,className = clsnames,values = dae_var_attr,comment = comment,flow_ = flow_)
+      DAE.Stream stream_;
+    case VAR(varName = cref,
+             varKind = vk,
+             varDirection = vd,
+             varType = ty,
+             bindExp = bndexp,
+             bindValue = bndval,
+             arryDim = instdims,
+             index = ind,
+             origVarName = orgname,
+             className = clsnames,
+             values = dae_var_attr,
+             comment = comment,
+             flow_ = flow_,
+             stream_ = stream_)
       equation
         e1 = Util.optionToList(bndexp);
         e3 = Util.listMap(instdims, getAllExpsSubscript);
@@ -13663,119 +14146,104 @@ algorithm
   end matchcontinue;
 end getAllExpsEqn;
 
-public function isParam "function: isParam
-
-  Return true if variable is a parameter.
-"
+public function isParam 
+"function: isParam
+  Return true if variable is a parameter."
   input Var inVar;
   output Boolean outBoolean;
 algorithm
   outBoolean:=
   matchcontinue (inVar)
-    local DAE.Flow flow_;
-    case (VAR(varKind = PARAM(),flow_ = flow_)) then true;
+    case VAR(varKind = PARAM()) then true;
     case (_) then false;
   end matchcontinue;
 end isParam;
 
-public function isStringParam "function: isStringParam
-
-  Return true if variable is a parameter.
-"
+public function isStringParam 
+"function: isStringParam
+  Return true if variable is a parameter."
   input Var inVar;
   output Boolean outBoolean;
 algorithm
   outBoolean:=
   matchcontinue (inVar)
-    local DAE.Flow flow_;
-    case (VAR(varKind = PARAM(),flow_ = flow_,varType = DAE.STRING())) then true;
+    case (VAR(varKind = PARAM(),varType = DAE.STRING())) then true;
     case (_) then false;
   end matchcontinue;
 end isStringParam;
 
-public function isExtObj "function: isExtObj
-
-  Return true if variable is an external object.
-"
+public function isExtObj 
+"function: isExtObj
+  Return true if variable is an external object."
   input Var inVar;
   output Boolean outBoolean;
 algorithm
   outBoolean:=
   matchcontinue (inVar)
-    local DAE.Flow flow_;
-    case (VAR(varKind = EXTOBJ(_),flow_ = flow_)) then true;
+    case (VAR(varKind = EXTOBJ(_))) then true;
     case (_) then false;
   end matchcontinue;
 end isExtObj;
 
-public function isRealParam "function: isParam
-
-  Return true if variable is a parameter of real-type
-"
+public function isRealParam 
+"function: isParam
+  Return true if variable is a parameter of real-type"
   input Var inVar;
   output Boolean outBoolean;
 algorithm
   outBoolean:=
   matchcontinue (inVar)
-    local DAE.Flow flow_;
-    case (VAR(varKind = PARAM(),flow_ = flow_,varType = DAE.REAL())) then true;
+    case (VAR(varKind = PARAM(),varType = DAE.REAL())) then true;
     case (_) then false;
   end matchcontinue;
 end isRealParam;
 
-public function isNonRealParam "function: isParam
-
-  Return true if variable is a parameter of real-type
-"
+public function isNonRealParam 
+"function: isNonRealParam
+  Return true if variable is NOT a parameter of real-type"
   input Var inVar;
   output Boolean outBoolean;
 algorithm
   outBoolean:=
   matchcontinue (inVar)
-    local DAE.Flow flow_;
-    case (VAR(varKind = PARAM(),flow_ = flow_,varType = DAE.REAL())) then false;
-    case (VAR(varKind = PARAM(),flow_ = flow_)) then true;
+    case (VAR(varKind = PARAM(),varType = DAE.REAL())) then false;
+    case (VAR(varKind = PARAM())) then true;
     case (_) then false;
   end matchcontinue;
 end isNonRealParam;
 
-public function isOutput "function: isOutput
-
+public function isOutput 
+"function: isOutput
   Return true if variable is declared as output. Note that the output
   attribute sticks with a variable even if it is originating from a sub
-  component, which is not the case for Dymola.
-"
+  component, which is not the case for Dymola."
   input Var inVar;
   output Boolean outBoolean;
 algorithm
   outBoolean:=
   matchcontinue (inVar)
-    local DAE.Flow flow_;
-    case (VAR(varDirection = DAE.OUTPUT(),flow_ = flow_)) then true;
+    case (VAR(varDirection = DAE.OUTPUT())) then true;
     case (_) then false;
   end matchcontinue;
 end isOutput;
 
-public function isInput "function: isInput
-
+public function isInput 
+"function: isInput
   Returns true if variable is declared as input.
-  See also is_ouput above
-"
+  See also is_ouput above"
   input Var inVar;
   output Boolean outBoolean;
 algorithm
   outBoolean:=
   matchcontinue (inVar)
-    local DAE.Flow flow_;
-    case (VAR(varDirection = DAE.INPUT(),flow_ = flow_)) then true;
+    case (VAR(varDirection = DAE.INPUT())) then true;
     case (_) then false;
   end matchcontinue;
 end isInput;
 
-public function getWhenEquationExpr "function: getWhenEquationExpr
-
-  Get the left and right hand parts from an equation appearing in a when clause
-"
+public function getWhenEquationExpr 
+"function: getWhenEquationExpr
+  Get the left and right hand parts from an equation appearing in a when clause"
   input WhenEquation inWhenEquation;
   output Exp.ComponentRef outComponentRef;
   output Exp.Exp outExp;

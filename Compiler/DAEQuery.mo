@@ -381,11 +381,23 @@ algorithm
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<Absyn.Comment> comment;
       DAE.Flow flow_;
+      DAE.Stream stream_;
       list<DAELow.Var> xs;
       DAE.Type var_type;
+      
     case ({},_) then "";
-    case (((v as DAELow.VAR(varName = cr,varKind = kind,varDirection = dir,varType = var_type,bindExp = e,
-      index = indx,origVarName = old_name,className = paths,values = dae_var_attr,comment = comment,flow_ = flow_)) :: {}),varno)
+    case (((v as DAELow.VAR(varName = cr,
+                            varKind = kind,
+                            varDirection = dir,
+                            varType = var_type,
+                            bindExp = e,
+                            index = indx,
+                            origVarName = old_name,
+                            className = paths,
+                            values = dae_var_attr,
+                            comment = comment,
+                            flow_ = flow_,
+                            stream_ = stream_)) :: {}),varno)
       equation
         varnostr = intString(varno);
         dirstr = DAE.dumpDirectionStr(dir);
@@ -411,8 +423,19 @@ algorithm
         str = Util.stringAppendList({"'", str1, "'"});
       then
         str;
-      case (((v as DAELow.VAR(varName = cr,varKind = kind,varDirection = dir,varType = var_type,bindExp = e,
-      index = indx,origVarName = old_name,className = paths,values = dae_var_attr,comment = comment,flow_ = flow_)) :: xs),varno)
+        
+      case (((v as DAELow.VAR(varName = cr,
+                              varKind = kind,
+                              varDirection = dir,
+                              varType = var_type,
+                              bindExp = e,
+                              index = indx,
+                              origVarName = old_name,
+                              className = paths,
+                              values = dae_var_attr,
+                              comment = comment,
+                              flow_ = flow_,
+                              stream_ = stream_)) :: xs),varno)
       equation
         varnostr = intString(varno);
         dirstr = DAE.dumpDirectionStr(dir);
@@ -443,12 +466,11 @@ algorithm
   end matchcontinue;
 end dumpVars2;
 
-public function incidenceMatrix "function: incidenceMatrix
+public function incidenceMatrix 
+"function: incidenceMatrix
   author: PA
-
-  Calculates the incidence matrix, i.e. which variables are present
-  in each equation.
-"
+  Calculates the incidence matrix, i.e. which 
+  variables are present in each equation."
   input DAELow.DAELow inDAELow;
   output list<String>[:] outIncidenceMatrix;
 algorithm
@@ -469,7 +491,7 @@ algorithm
         arr;
     case (_)
       equation
-        print("incidence_matrix failed\n");
+        print("DAEQuery.incidenceMatrix failed\n");
       then
         fail();
   end matchcontinue;
@@ -682,6 +704,7 @@ algorithm
   matchcontinue (inExp,inVariables)
     local
       DAE.Flow flow_;
+      DAE.Stream stream_;
       list<DAELow.Value> p,p_1;
       list<String> pStr,s1,s2,res,s3,lst_1;
       String s;
@@ -692,34 +715,35 @@ algorithm
       list<Exp.Exp> expl;
     case (Exp.CREF(componentRef = cr),vars)
       equation
-        ((DAELow.VAR(_,DAELow.STATE(),_,_,_,_,_,_,_,_,_,_,flow_) :: _),p) = DAELow.getVar(cr, vars) "If variable x is a state, der(x) is a variable in incidence matrix,
-	 x is inserted as negative value, since it is needed by debugging and index
-	 reduction using dummy derivatives" ;
+        ((DAELow.VAR(_,DAELow.STATE(),_,_,_,_,_,_,_,_,_,_,flow_,stream_) :: _),p) = 
+        DAELow.getVar(cr, vars) "If variable x is a state, der(x) is a variable in incidence matrix,
+	                               x is inserted as negative value, since it is needed by debugging and index
+	                               reduction using dummy derivatives" ;
         p_1 = Util.listMap1r(p, int_sub, 0);
         pStr = Util.listMap(p_1, intString);
       then
         pStr;
     case (Exp.CREF(componentRef = cr),vars)
       equation
-        ((DAELow.VAR(_,DAELow.VARIABLE(),_,_,_,_,_,_,_,_,_,_,flow_) :: _),p) = DAELow.getVar(cr, vars);
+        ((DAELow.VAR(_,DAELow.VARIABLE(),_,_,_,_,_,_,_,_,_,_,flow_,stream_) :: _),p) = DAELow.getVar(cr, vars);
         pStr = Util.listMap(p, intString);
       then
         pStr;
     case (Exp.CREF(componentRef = cr),vars)
       equation
-        ((DAELow.VAR(_,DAELow.DISCRETE(),_,_,_,_,_,_,_,_,_,_,flow_) :: _),p) = DAELow.getVar(cr, vars);
+        ((DAELow.VAR(_,DAELow.DISCRETE(),_,_,_,_,_,_,_,_,_,_,flow_,stream_) :: _),p) = DAELow.getVar(cr, vars);
         pStr = Util.listMap(p, intString);
       then
         pStr;
     case (Exp.CREF(componentRef = cr),vars)
       equation
-        ((DAELow.VAR(_,DAELow.DUMMY_DER(),_,_,_,_,_,_,_,_,_,_,flow_) :: _),p) = DAELow.getVar(cr, vars);
+        ((DAELow.VAR(_,DAELow.DUMMY_DER(),_,_,_,_,_,_,_,_,_,_,flow_,stream_) :: _),p) = DAELow.getVar(cr, vars);
         pStr = Util.listMap(p, intString);
       then
         pStr;
     case (Exp.CREF(componentRef = cr),vars)
       equation
-        ((DAELow.VAR(_,DAELow.DUMMY_STATE(),_,_,_,_,_,_,_,_,_,_,flow_) :: _),p) = DAELow.getVar(cr, vars);
+        ((DAELow.VAR(_,DAELow.DUMMY_STATE(),_,_,_,_,_,_,_,_,_,_,flow_,stream_) :: _),p) = DAELow.getVar(cr, vars);
         pStr = Util.listMap(p, intString);
       then
         pStr;
@@ -791,7 +815,7 @@ algorithm
         pStr;
 */
 
-        // If expression with logic sentence.
+    // If expression with logic sentence.
     case (Exp.IFEXP(expCond = e1 as Exp.LBINARY(exp1 = ee1, operator = op1, exp2 =ee2),expThen = e2,expElse = e3),vars) /* if expressions. */
       local String ss, ss1, ss2, ss3, opStr, sb;
         Exp.Exp ee1,ee2;
@@ -851,7 +875,7 @@ algorithm
         pStr;
     case (Exp.CALL(path = Absyn.IDENT(name = "der"),expLst = {Exp.CREF(componentRef = cr)}),vars)
       equation
-        ((DAELow.VAR(_,DAELow.STATE(),_,_,_,_,_,_,_,_,_,_,flow_) :: _),p) = DAELow.getVar(cr, vars);
+        ((DAELow.VAR(_,DAELow.STATE(),_,_,_,_,_,_,_,_,_,_,flow_,stream_) :: _),p) = DAELow.getVar(cr, vars);
         pStr = Util.listMap(p, intString);
       then
         pStr;

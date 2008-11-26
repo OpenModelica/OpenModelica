@@ -2827,7 +2827,7 @@ algorithm
         n2 = stringAppend(n1,intString(localCnt));
         elem1 = Absyn.ELEMENTITEM(Absyn.ELEMENT(
           false,NONE(),Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
             tSpec,{Absyn.COMPONENTITEM(Absyn.COMPONENT(n2,{},NONE()),NONE(),NONE())}),
             Absyn.INFO("f",false,0,0,0,0),NONE()));
         elem2 = Absyn.CREF(Absyn.CREF_IDENT(n2,{}));

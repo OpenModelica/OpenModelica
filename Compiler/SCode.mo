@@ -311,6 +311,7 @@ uniontype Attributes "- Attributes"
   record ATTR
     Absyn.ArrayDim arrayDim;
     Boolean flow_ "flow" ;
+    Boolean stream_ "stream" ;
     Accessibility RW "RW, RO, WO" ;
     Variability parameter_ "parameter" ;
     Absyn.Direction input_ "input, output or bidirectional" ;
@@ -923,7 +924,7 @@ algorithm
     local
       ClassDef de_1;
       Restriction re_1;
-      Boolean final_,prot,rp,pa,fi,e,repl_1,fl;
+      Boolean final_,prot,rp,pa,fi,e,repl_1,fl,st;
       Option<Absyn.RedeclareKeywords> repl;
       Absyn.Class cl;
       String n,ns;
@@ -957,7 +958,9 @@ algorithm
       then
         {EXTENDS(n,mod)};
     case (_,_,_,_,Absyn.COMPONENTS(components = {})) then {};
-    case (final_,io,repl,prot,Absyn.COMPONENTS(attributes = (attr as Absyn.ATTR(flow_ = fl,variability = pa,direction = di,arrayDim = ad)),typeSpec = t,components = (Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = n,arrayDim = d,modification = m),comment = comment) :: xs)))
+    case (final_,io,repl,prot,Absyn.COMPONENTS(attributes = 
+      (attr as Absyn.ATTR(flow_ = fl,stream_=st,variability = pa,direction = di,arrayDim = ad)),typeSpec = t,
+      components = (Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = n,arrayDim = d,modification = m),comment = comment) :: xs)))
       local Absyn.Variability pa;
       equation
         xs_1 = elabElementspec(final_, io, repl, prot, Absyn.COMPONENTS(attr,t,xs));
@@ -967,7 +970,7 @@ algorithm
         tot_dim = listAppend(d, ad);
         repl_1 = elabRedeclarekeywords(repl);
       then
-        (COMPONENT(n,io,final_,repl_1,prot,ATTR(tot_dim,fl,RW(),pa_1,di),t,mod,
+        (COMPONENT(n,io,final_,repl_1,prot,ATTR(tot_dim,fl,st,RW(),pa_1,di),t,mod,
           NONE,comment) :: xs_1);
     case (final_,_,repl,prot,Absyn.IMPORT(import_ = imp)) then {IMPORT(imp)};
   end matchcontinue;
@@ -1695,7 +1698,8 @@ algorithm
         res = Util.stringAppendList({"CLASSDEF(",n,", from basclass: ",str,")"});
       then
         res;
-    case COMPONENT(component = n,innerOuter=io,final_ = final_,replaceable_ = repl,protected_ = prot,attributes = ATTR(parameter_ = var),typeSpec = tySpec,mod = mod,baseclass = SOME(path),this = comment)
+    case COMPONENT(component = n,innerOuter=io,final_ = final_,replaceable_ = repl,protected_ = prot,
+      attributes = ATTR(parameter_ = var),typeSpec = tySpec,mod = mod,baseclass = SOME(path),this = comment)
       equation
         mod_str = printModStr(mod);
         s = Dump.unparseTypeSpec(tySpec);
@@ -2473,10 +2477,10 @@ end subscriptsEqual;
    output Boolean equal;
 algorithm
   equal:= matchcontinue(attr1,attr2)
-    case(ATTR(ad1,fl1,acc1,var1,dir1),ATTR(ad2,fl2,acc2,var2,dir2))
+    case(ATTR(ad1,fl1,st1,acc1,var1,dir1),ATTR(ad2,fl2,st2,acc2,var2,dir2))
       local Accessibility acc1,acc2;
         Variability var1,var2;
-        Boolean fl1,fl2,b1,b2,b3,b4,b5;
+        Boolean fl1,fl2,st1,st2,b1,b2,b3,b4,b5,b6;
         Absyn.ArrayDim ad1,ad2;
         Absyn.Direction dir1,dir2;
       equation
@@ -2485,7 +2489,8 @@ algorithm
         	b3 = accessibilityEqual(acc1,acc2);
         	b4 = variabilityEqual(var1,var2);
         	b5 = directionEqual(dir1,dir2);
-        	equal = Util.boolAndList({b1,b2,b3,b4,b5});
+        	b6 = Util.boolEqual(st1,st2); // added Modelica 3.1 stream connectors 
+        	equal = Util.boolAndList({b1,b2,b3,b4,b5,b6});
         then equal;
   end matchcontinue;
 end attributesEqual;

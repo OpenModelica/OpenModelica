@@ -53,6 +53,9 @@ test:
 testmos:
 	(cd testsuite/mosfiles; time $(MAKE) -f Makefile)
 
+testSummary:
+	(cd testsuite; time $(MAKE) -f Makefile | grep "==")
+
 mosh:
 	(cd mosh/src; $(MAKE) -f Makefile)
 

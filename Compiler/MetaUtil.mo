@@ -577,7 +577,7 @@ algorithm
 
         varList = Util.listCreate(Absyn.ELEMENTITEM(Absyn.ELEMENT(
           false,NONE(),Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
             t2,
             {Absyn.COMPONENTITEM(Absyn.COMPONENT(varName,{},NONE()),NONE(),NONE())}),
             Absyn.INFO("f",false,0,0,0,0),NONE())));

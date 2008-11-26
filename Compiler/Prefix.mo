@@ -534,21 +534,18 @@ algorithm
       Env.Cache localCache;
       Env.Env localEnv;
     case (localCache,_,{},localAccList,_) then (localCache,localAccList);
-    case (localCache,localEnv,Exp.VAR(cRef,v1,v2,prot,inp,one,bind,
-      											val,f,vAttr,com,inOut,fType)
-       :: rest,localAccList,pre)
+    case (localCache,localEnv,Exp.VAR(cRef,kind,direction,prot,ty,binding,dims,flow_,stream_,pathLst,vAttr,com,inOut,fType):: rest,localAccList,pre)
     local
       Exp.ComponentRef cRef;
-    	Exp.VarKind v1 "varible kind" ;
-    	Exp.VarDirection v2 "variable, constant, parameter, etc." ;
+    	Exp.VarKind kind "varible kind: variable, constant, parameter, etc." ;
+    	Exp.VarDirection direction "input, output or bidir" ;
     	Exp.VarProtection prot "if protected or public";
-    	Exp.TypeExp inp "input, output or bidir" ;
-    	Option<Exp.Exp> one "one of the builtin types" ;
-    	Exp.InstDims bind "Binding expression e.g. for parameters" ;
-    	//Exp.StartValue dim "dimension of original component" ;
-    	Exp.Flow val "value of start attribute" ;
-    	list<Absyn.Path> f "Flow of connector variable. Needed for
-						unconnected flow variables" ;
+    	Exp.TypeExp ty "one of the builtin types" ;
+    	Option<Exp.Exp> binding "Binding expression e.g. for parameters, value of start attribute" ;
+    	Exp.InstDims dims "dimension of original component" ;
+    	Exp.Flow flow_ "Flow of connector variable. Needed for unconnected flow variables" ;
+    	Exp.Stream stream_ "Stream connector variables. " ;
+    	list<Absyn.Path> pathLst "class name" ;
     	Option<Exp.VariableAttributes> vAttr;
     	Option<Absyn.Comment> com;
     	Absyn.InnerOuter inOut "inner/outer required to 'change' outer references";
@@ -557,7 +554,7 @@ algorithm
     	Exp.DAEElement elem;
     equation
       cRef = prefixCref(pre,cRef);
-      elem = Exp.VAR(cRef,v1,v2,prot,inp,one,bind,val,f,vAttr,com,inOut,fType);
+      elem = Exp.VAR(cRef,kind,direction,prot,ty,binding,dims,flow_,stream_,pathLst,vAttr,com,inOut,fType);
       localAccList = listAppend(localAccList,Util.listCreate(elem));
       (localCache,temp) = prefixDecls(localCache,localEnv,rest,localAccList,pre);
     then (localCache,temp);

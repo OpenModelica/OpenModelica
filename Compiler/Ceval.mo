@@ -1701,12 +1701,27 @@ algorithm
           instClsLst = ic,
           lstVarVal = iv,
           compiledFunctions = cf)),msg)
-           equation
-        (cache,ret_val,st_1) = checkModel(cache,env, className, st, msg);
-      then
-        (cache,ret_val,st_1);
+        equation
+          (cache,ret_val,st_1) = checkModel(cache,env, className, st, msg);
+        then
+          (cache,ret_val,st_1);
 
-         case (cache,env,
+      case (cache,env,
+        Exp.CALL(
+          path = Absyn.IDENT(name = "checkAllModelsRecursive"),
+          expLst = {Exp.CODE(Absyn.C_TYPENAME(className),Exp.OTHER())}),
+        (st as Interactive.SYMBOLTABLE(
+          ast = p,
+          explodedAst = sp,
+          instClsLst = ic,
+          lstVarVal = iv,
+          compiledFunctions = cf)),msg)
+        equation
+          (cache,ret_val,st_1) = checkAllModelsRecursive(cache, env, className, st, msg);
+        then
+          (cache,ret_val,st_1);
+
+      case (cache,env,
         Exp.CALL(
           path = Absyn.IDENT(name = "translateGraphics"),
           expLst = {Exp.CODE(Absyn.C_TYPENAME(className),Exp.OTHER())}),
@@ -1913,21 +1928,22 @@ algorithm
         compiledFunctions = cf)),msg)
       equation
         (cache,executable,method_str,st,_) = buildModel(cache,env, exp, st_1, msg) "Build and simulate model" ;
-
         cit = winCitation();
+        pwd = System.pwd();
         pd = System.pathDelimiter();
         executableSuffixedExe = stringAppend(executable, System.getExeExt());
-        sim_call = Util.stringAppendList(
-          {cit,executableSuffixedExe,cit," > output.log 2>&1"});
+        sim_call = Util.stringAppendList({cit,pwd,pd,executableSuffixedExe,cit," > output.log 2>&1"});
         0 = System.systemCall(sim_call);
         result_file = Util.stringAppendList({executable,"_res.plt"});
         simValue = Values.RECORD(Absyn.IDENT("SimulationResult"),
-          {Values.STRING(result_file)},{"resultFile"});
-        simType = (
-          Types.T_COMPLEX(ClassInf.RECORD("SimulationResult"),
-          {
-          Types.VAR("resultFile",
-          Types.ATTR(false,SCode.RO(),SCode.VAR(),Absyn.BIDIR()),false,(Types.T_STRING({}),NONE),Types.UNBOUND())},NONE),NONE);
+                                 {Values.STRING(result_file)},
+                                 {"resultFile"});
+        simType = (Types.T_COMPLEX(ClassInf.RECORD("SimulationResult"),
+                                   {Types.VAR("resultFile",
+                                    Types.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR()),
+                                    false,(Types.T_STRING({}),NONE),
+                                    Types.UNBOUND())},
+                                   NONE),NONE);
         newst = Interactive.addVarToSymboltable("currentSimulationResult", simValue, simType, st);
       then
         (cache,simValue,newst);
@@ -1951,13 +1967,15 @@ algorithm
         instClsLst = ic,
         lstVarVal = iv,
         compiledFunctions = cf)),msg)
-      local String errorStr;
+      local String errorStr, error;
       equation
         omhome = Settings.getInstallationDirectoryPath() "simulation fail for some other reason than OPENMODELICAHOME not being set." ;
         errorStr = Error.printMessagesStr();
-        res = Util.stringAppendList({"Simulation failed.\n",errorStr});
-        simValue = Values.RECORD(Absyn.IDENT("SimulationResult"),{Values.STRING(res)},
-          {"resultFile"});
+        error = Print.getErrorString();
+        res = Util.stringAppendList({"Simulation failed.\n", errorStr});
+        simValue = Values.RECORD(Absyn.IDENT("SimulationResult"),
+                                 {Values.STRING(res)},
+                                 {"resultFile"});
       then
         (cache,simValue,st);
 
@@ -1966,9 +1984,8 @@ algorithm
       (st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       equation
         simValue = Values.RECORD(Absyn.IDENT("SimulationResult"),
-          {
-          Values.STRING(
-          "Simulation Failed. Environment variable OPENMODELICAHOME not set.")},{"resultFile"});
+                                 {Values.STRING("Simulation Failed. Environment variable OPENMODELICAHOME not set.")},
+                                 {"resultFile"});
       then
         (cache,simValue,st);
 
@@ -3578,19 +3595,21 @@ algorithm
       Msg msg;
       Exp.Exp fileprefix;
       Env.Cache cache;
+      String classNameStr;
     case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       local Integer eqnSize,varSize,simpleEqnSize;
-        String eqnSizeStr,varSizeStr,retStr,classNameStr,simpleEqnSizeStr;
+        String eqnSizeStr,varSizeStr,retStr,simpleEqnSizeStr;
         DAELow.EquationArray eqns;
         Integer elimLevel;
       equation
         _ = Error.getMessagesStr() "Clear messages";
+        Print.clearErrorBuf() "Clear error buffer";
         p_1 = SCode.elaborate(p);
         (cache,dae_1,env) = Inst.instantiateClass(cache,p_1, className);
         ((dae as DAE.DAE(dael))) = DAE.transformIfEqToExpr(dae_1);
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(className,dael,env));
         elimLevel = RTOpts.eliminationLevel();
-        RTOpts.setEliminationLevel(0); // No variable eliminiation
+        RTOpts.setEliminationLevel(0); // No variable elimination
         (dlow as DAELow.DAELOW(orderedVars = DAELow.VARIABLES(numberOfVars = varSize),orderedEqs = eqns))
         	= DAELow.lower(dae, false/* no dummy variable*/, true);
         RTOpts.setEliminationLevel(elimLevel); // reset elimination level.
@@ -3601,18 +3620,21 @@ algorithm
 				simpleEqnSizeStr = intString(simpleEqnSize);
 
 				classNameStr = Absyn.pathString(className);
-				retStr=Util.stringAppendList({"Check of ",classNameStr," successful.\n\n","model ",classNameStr," has ",eqnSizeStr," equation(s) and ",
-				varSizeStr," variable(s).\n",simpleEqnSizeStr," of these are trivial equation(s).\n"});
+				retStr=Util.stringAppendList({
+				"Check of ", classNameStr, " successful. ", 
+				"Model ", classNameStr, " has ", eqnSizeStr, " equation(s) and ", varSizeStr, " variable(s)."});
       then
         (cache,Values.STRING(retStr),st);
-    case (cache,_,_,st,_) local
+        
+    case (cache,_,className,st,_) local
       String errorMsg; Boolean strEmpty;
       equation
-      errorMsg = Error.printMessagesStr();
-      strEmpty = (System.strcmp("",errorMsg)==0);
-      errorMsg = Util.if_(strEmpty,"Internal error, check of model failed with no error message.",errorMsg);
-    then (cache,Values.STRING(errorMsg),st);
-
+        classNameStr = Absyn.pathString(className);
+        errorMsg = Error.printMessagesStr();
+        errorMsg = "Internal error, check of model: " +& classNameStr +& 
+        " failed with:\n" +& errorMsg +& "\n Error Buffer: \n" +& Print.getErrorString() +& "\n";
+      then 
+        (cache,Values.STRING(errorMsg),st);
   end matchcontinue;
 end checkModel;
 
@@ -7064,4 +7086,223 @@ algorithm
   end matchcontinue;
 end dumpXMLDAE;
 
+protected function getClassnamesInClassList
+  input Absyn.Path inPath;
+  input Absyn.Program inProgram;
+  input Absyn.Class inClass;
+  output list<String> outStrings;
+algorithm
+  outStrings :=
+  matchcontinue (inPath,inProgram,inClass)
+    local
+      list<String> strlist;
+      list<String> res;
+      list<Absyn.ClassPart> parts;
+      Absyn.Class cdef;
+      Absyn.Path newpath,inmodel,path;
+      Absyn.Program p;
+      String name;
+    case (_,_,Absyn.CLASS(body = Absyn.PARTS(classParts = parts)))
+      equation
+        strlist = Interactive.getClassnamesInParts(parts);
+      then
+        strlist;
+
+    case (inmodel,p,Absyn.CLASS(body = Absyn.DERIVED(typeSpec=Absyn.TPATH(path = path))))
+      equation
+      then
+        {};
+
+    case (inmodel,p,Absyn.CLASS(body = Absyn.OVERLOAD(_, _)))
+      equation        
+      then {};
+
+    case (inmodel,p,Absyn.CLASS(body = Absyn.ENUMERATION(_, _)))
+      equation        
+      then {};
+
+    case (inmodel,p,Absyn.CLASS(body = Absyn.CLASS_EXTENDS(name, _, _, parts)))
+      equation
+        strlist = Interactive.getClassnamesInParts(parts);        
+      then strlist;
+
+    case (inmodel,p,Absyn.CLASS(body = Absyn.PDER(_,_)))
+      equation        
+      then {};
+        
+  end matchcontinue;
+end getClassnamesInClassList;
+
+protected function joinPaths
+  input String child;
+  input Absyn.Path parent;
+  output Absyn.Path outPath;
+algorithm
+  outPath :=
+  matchcontinue (child, parent)
+    local
+      Absyn.Path r, res;
+      String c;
+    case (c, r)
+      equation
+        res = Absyn.joinPaths(r, Absyn.IDENT(c));
+      then res;
+  end matchcontinue;
+end joinPaths;
+
+protected function getAllClassPathsRecursive 
+"@author adrpo
+ Returns all paths of the classes recursively defined in a given class with the specified path."
+  input Absyn.Path inPath "the given class path"; 
+  input Absyn.Program inProgram "the program";
+  output list<Absyn.Path> outPaths;
+algorithm
+  outPaths :=
+  matchcontinue (inPath,inProgram)
+    local
+      Absyn.Class cdef;
+      String parent_string, s;
+      list<String> strlst;  
+      Absyn.Program p;
+      list<Absyn.Path> result_path_lst, result; 
+    case (inPath, p)
+      equation
+        cdef = Interactive.getPathedClassInProgram(inPath, p);
+        strlst = getClassnamesInClassList(inPath, p, cdef);
+        result_path_lst = Util.listMap1(strlst, joinPaths, inPath);
+        result = Util.listFlatten(Util.listMap1(result_path_lst, getAllClassPathsRecursive, p));
+      then
+        inPath::result;
+    case (inPath, _) 
+      equation
+        parent_string = Absyn.pathString(inPath);
+        s = Error.printMessagesStr();
+        s = Util.stringAppendList({parent_string,"->","PROBLEM GETTING CLASS PATHS: ", s});
+        print(s);
+      then {};
+  end matchcontinue;
+end getAllClassPathsRecursive;
+
+public function checkAllModelsRecursive 
+"@author adrpo 
+ checks all models and returns number of variables and equations"
+	input Env.Cache inCache;
+	input Env.Env inEnv;
+  input Absyn.Path className;
+  input Interactive.InteractiveSymbolTable inInteractiveSymbolTable;
+  input Msg inMsg;
+  output Env.Cache outCache;
+  output Values.Value outValue;
+  output Interactive.InteractiveSymbolTable outInteractiveSymbolTable;
+algorithm
+  (outCache,outValue,outInteractiveSymbolTable):=
+  matchcontinue (inCache,inEnv,className,inInteractiveSymbolTable,inMsg)
+    local
+      list<Absyn.Path> allClassPaths;
+      Absyn.Path className;
+      list<SCode.Class> sp;
+      list<Interactive.InstantiatedClass> ic;
+      Interactive.InteractiveSymbolTable st;
+      Absyn.Program p;
+      list<Interactive.InteractiveVariable> iv;
+      list<Interactive.CompiledCFunction> cf;
+      Msg msg;
+      Env.Cache cache;
+      String ret;
+      list<Env.Frame> env;
+    case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
+      equation          
+        allClassPaths = getAllClassPathsRecursive(className, p);
+        // print ("All paths: \n" +& Util.stringDelimitList(Util.listMap(allClassPaths, Absyn.pathString), "\n") +& "\n");
+        ret = checkAll(cache, env, allClassPaths, st, msg);
+      then
+        (cache,Values.STRING(ret),st);
+    case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
+      equation 
+        ret = stringAppend("Error checking: ", Absyn.pathString(className));
+    then
+      (cache,Values.STRING(ret),st);
+  end matchcontinue;
+end checkAllModelsRecursive;
+
+function failOrSuccess
+"@author adrpo"
+  input String inStr;
+  output String outStr;
+algorithm
+  outStr := matchcontinue(inStr)
+    local Integer res;
+    case (inStr)
+      equation
+        res = System.stringFind(inStr, "Internal");
+        true = (res >= 0);
+      then "FAILED!";
+        
+    case (_) then "OK";
+  end matchcontinue;
+end failOrSuccess;    
+
+function checkAll
+"@author adrpo 
+ checks all models and returns number of variables and equations"
+	input Env.Cache inCache;
+	input Env.Env inEnv;
+  input list<Absyn.Path> allClasses;
+  input Interactive.InteractiveSymbolTable inInteractiveSymbolTable;
+  input Msg inMsg;
+  output String outValue;
+algorithm
+  (outCache,outValue,outInteractiveSymbolTable):=
+  matchcontinue (inCache,inEnv,allClasses,inInteractiveSymbolTable,inMsg)
+    local
+      list<Absyn.Path> rest;
+      Absyn.Path className;
+      list<SCode.Class> sp;
+      list<Interactive.InstantiatedClass> ic;
+      Interactive.InteractiveSymbolTable st;
+      Absyn.Program p;
+      list<Interactive.InteractiveVariable> iv;
+      list<Interactive.CompiledCFunction> cf;
+      Msg msg;
+      Env.Cache cache;
+      String ret, str, s;
+      list<Env.Frame> env;
+      Real t1, t2, elapsedTime;
+      Absyn.ComponentRef cr;
+      Absyn.Class c;
+    case (cache,env,{},_,_) 
+      then "";      
+    case (cache,env,className::rest,(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)      
+      equation
+        c = Interactive.getPathedClassInProgram(className, p);
+        // filter out partial classes
+        Absyn.CLASS(partial_ = false) = c; 
+        cr = Absyn.pathToCref(className); 
+        // filter out packages 
+        false = Interactive.isPackage(cr, p);
+        // filter out functions 
+        false = Interactive.isFunction(cr, p);        
+        // filter out types 
+        false = Interactive.isType(cr, p);        
+        print("Checking: " +& Dump.unparseClassAttributesStr(c) +& " " +& Absyn.pathString(className) +& "... ");
+        t1 = clock();
+        (cache,Values.STRING(str),_) = checkModel(cache, env, className, st, msg);        
+        t2 = clock(); elapsedTime = t2 -. t1; s = realString(elapsedTime);        
+        print (s +& " seconds -> " +& failOrSuccess(str) +& "\n");                
+        ret = checkAll(cache, env, rest, st, msg);        
+        ret = str +& "\tTook: " +& s +& " seconds\n" +& ret;
+      then
+        ret;
+    case (cache,env,className::rest,(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
+      equation
+        c = Interactive.getPathedClassInProgram(className, p);                  
+        print("Skipping: " +& Dump.unparseClassAttributesStr(c) +& " " +& Absyn.pathString(className) +& "... \n");        
+        str = stringAppend("Skipping: ", Dump.unparseClassAttributesStr(c) +& " " +& Absyn.pathString(className));
+        ret = checkAll(cache, env, rest, st, msg);
+        ret = str +& "\n" +& ret;
+      then
+        ret;
+  end matchcontinue;     
+end checkAll;
+          
 end Ceval;

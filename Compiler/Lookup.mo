@@ -833,16 +833,19 @@ algorithm
       Env.Cache cache;
     case (cache,env,cref) /* try the old lookup_var */
       equation
+        Debug.fprint("lookup", "Lookup.lookupVar - case 1: " +& Exp.crefStr(cref) +& "\n");
         (cache,attr,ty,binding) = lookupVarInternal(cache,env, cref);
       then
         (cache,attr,ty,binding);
-    case (cache,env,cref) /* then look in classes (implicitly instantiated packages) */
+    case (cache,env,cref) /* then look in classes (implicitly instantiated packages) */      
       equation
+        Debug.fprint("lookup", "Lookup.lookupVar - case 2: " +& Exp.crefStr(cref) +& "\n");
         (cache,p_env,attr,ty,binding) = lookupVarInPackages(cache,env, cref);
         checkPackageVariableConstant(p_env,attr,ty,cref);
       then
         (cache,attr,ty,binding);
     case (_,env,cref) equation
+      Debug.fprint("failtrace", "Lookup.lookupVar - case 3: " +& Exp.crefStr(cref) +& "\n");
       /* Debug.fprint(\"failtrace\",  \"- lookup_var failed\\n\") */  then fail();
   end matchcontinue;
 end lookupVar;
@@ -1609,7 +1612,7 @@ algorithm
       list<SCode.Element> res,rest;
       SCode.Element comp;
       String id;
-      Boolean fl,repl,prot,f;
+      Boolean fl,repl,prot,f,s;
       Absyn.InnerOuter io;
       list<Absyn.Subscript> d;
       SCode.Accessibility ac;
@@ -1620,11 +1623,13 @@ algorithm
       Option<Absyn.Path> bc;
       Option<Absyn.Comment> comment;
       list<Env.Frame> env;
-    case (((comp as SCode.COMPONENT(component = id,innerOuter=io,final_ = fl,replaceable_ = repl,protected_ = prot,attributes = SCode.ATTR(arrayDim = d,flow_ = f,RW = ac,parameter_ = var,input_ = dir),typeSpec = tp,mod = mod,baseclass = bc,this = comment)) :: rest),env)
+    case (((comp as SCode.COMPONENT(component = id,innerOuter=io,final_ = fl,replaceable_ = repl,protected_ = prot,
+      attributes = SCode.ATTR(arrayDim = d,flow_ = f,stream_=s,RW = ac,parameter_ = var,input_ = dir),
+      typeSpec = tp, mod = mod,baseclass = bc,this = comment)) :: rest),env)
       equation
         res = buildRecordConstructorElts(rest, env);
       then
-        (SCode.COMPONENT(id,io,fl,repl,prot,SCode.ATTR(d,f,ac,var,Absyn.INPUT()),tp,
+        (SCode.COMPONENT(id,io,fl,repl,prot,SCode.ATTR(d,f,s,ac,var,Absyn.INPUT()),tp,
           mod,bc,comment) :: res);
     case ({},_) then {};
   end matchcontinue;
@@ -1644,7 +1649,7 @@ protected function buildRecordConstructorResultElt "function: buildRecordConstru
 algorithm
   submodlst := buildRecordConstructorResultMod(elts);
   outElement := SCode.COMPONENT("result",Absyn.UNSPECIFIED(),false,false,false,
-          SCode.ATTR({},false,SCode.RW(),SCode.VAR(),Absyn.OUTPUT()),Absyn.TPATH(Absyn.IDENT(id),NONE),SCode.MOD(false,Absyn.NON_EACH(),submodlst,NONE),
+          SCode.ATTR({},false,false,SCode.RW(),SCode.VAR(),Absyn.OUTPUT()),Absyn.TPATH(Absyn.IDENT(id),NONE),SCode.MOD(false,Absyn.NON_EACH(),submodlst,NONE),
           NONE,NONE);
 end buildRecordConstructorResultElt;
 
@@ -1709,7 +1714,7 @@ algorithm
           {}, true, Inst.TOP_CALL()) "FIXME: impl" ;
       then
         (cache,Types.VAR("result",
-          Types.ATTR(false,SCode.RW(),SCode.VAR(),Absyn.OUTPUT()),false,ty,Types.UNBOUND()) :: inputvarlst);
+          Types.ATTR(false,false,SCode.RW(),SCode.VAR(),Absyn.OUTPUT()),false,ty,Types.UNBOUND()) :: inputvarlst);
     case (_,_,_)
       equation
         Debug.fprint("failtrace", "build_record_constructor_varlst failed\n");
@@ -2064,7 +2069,7 @@ algorithm
   matchcontinue (inCache,inBinTree,inComponentRef)
     local
       String n,id;
-      Boolean f;
+      Boolean f,s;
       SCode.Accessibility acc;
       SCode.Variability vt;
       Absyn.Direction di;
@@ -2078,13 +2083,13 @@ algorithm
       Env.Cache cache;
     case (cache,ht,Exp.CREF_IDENT(ident = id,subscriptLst = ss))
       equation
-        (cache,Types.VAR(n,Types.ATTR(f,acc,vt,di),_,ty,bind),_,_,_) = lookupVar2(cache,ht, id);
+        (cache,Types.VAR(n,Types.ATTR(f,s,acc,vt,di),_,ty,bind),_,_,_) = lookupVar2(cache,ht, id);
         ty_1 = checkSubscripts(ty, ss);
       then
-        (cache,Types.ATTR(f,acc,vt,di),ty_1,bind);
+        (cache,Types.ATTR(f,s,acc,vt,di),ty_1,bind);
     case (cache,ht,Exp.CREF_QUAL(ident = id,subscriptLst = ss,componentRef = ids)) /* Qualified variables looked up through component environment. */
       equation
-        (cache,Types.VAR(n,Types.ATTR(f,acc,vt,di),_,ty,bind),_,_,compenv) = lookupVar2(cache,ht, id);
+        (cache,Types.VAR(n,Types.ATTR(f,s,acc,vt,di),_,ty,bind),_,_,compenv) = lookupVar2(cache,ht, id);
         (cache,attr,ty,binding) = lookupVar(cache,compenv, ids);
       then
         (cache,attr,ty,binding);

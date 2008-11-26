@@ -114,6 +114,18 @@ uniontype Flow "The Flow of a variable indicates if it is a Flow variable or not
 end Flow;
 
 public
+uniontype Stream "The Stream of a variable indicates if it is a Stream variable or not, or if
+   it is not a connector variable at all."
+  record STREAM end STREAM;
+
+  record NON_STREAM end NON_STREAM;
+
+  record NON_STREAM_CONNECTOR end NON_STREAM_CONNECTOR;
+    
+end Stream;
+
+
+public
 uniontype VarDirection
   record INPUT end INPUT;
 
@@ -132,17 +144,17 @@ public
 uniontype Element
   record VAR
     Exp.ComponentRef componentRef " The variable name";
-    VarKind varible "varible kind" ;
-    VarDirection variable "variable, constant, parameter, etc." ;
+    VarKind kind "varible kind: variable, constant, parameter, etc." ;
+    VarDirection direction "input, output or bidir" ;
     VarProtection protection "if protected or public";
-    Type input_ "input, output or bidir" ;
-    Option<Exp.Exp> one "one of the builtin types" ;
-    InstDims binding "Binding expression e.g. for parameters" ;
-    Flow value "value of start attribute" ;
-    list<Absyn.Path> flow_ "Flow of connector variable. Needed for
-						unconnected flow variables" ;
-    Option<VariableAttributes> variableAttributesOption;
-    Option<Absyn.Comment> absynCommentOption;
+    Type ty "one of the builtin types" ;
+    Option<Exp.Exp> binding "Binding expression e.g. for parameters ; value of start attribute" ; 
+    InstDims  dims "dimensions";
+    Flow flow_ "Flow of connector variable. Needed for unconnected flow variables" ;
+    Stream stream_ "Stream variables in connectors" ;    
+    list<Absyn.Path> pathLst " " ;
+    Option<VariableAttributes> variableAttributesOption ;
+    Option<Absyn.Comment> absynCommentOption ;
     Absyn.InnerOuter innerOuter "inner/outer required to 'change' outer references";
     Types.Type fullType "Full type information required to analyze inner/outer elements";
   end VAR;
@@ -452,6 +464,7 @@ algorithm
    			  Option<Exp.Exp> bind;
    			  InstDims dim;
     			Flow flow_;
+    			Stream stream_;
    			  list<Absyn.Path> cls;
     			Option<VariableAttributes> attr;
    			  Option<Absyn.Comment> cmt;
@@ -459,10 +472,11 @@ algorithm
    			  Types.Type ftp;
    			  VarProtection prot;
      case(var,{}) then {};
-     case(var,VAR(cr,kind,dir,prot,tp,bind,dim,flow_,cls,attr,cmt,io,ftp)::dae) equation
+     case(var,VAR(cr,kind,dir,prot,tp,bind,dim,flow_,stream_,cls,attr,cmt,io,ftp)::dae) equation
        true = Exp.crefEqual(var,cr);
        io2 = removeInnerAttribute(io);
-     then VAR(cr,kind,dir,prot,tp,bind,dim,flow_,cls,attr,cmt,io2,ftp)::dae;
+     then VAR(cr,kind,dir,prot,tp,bind,dim,flow_,stream_,cls,attr,cmt,io2,ftp)::dae;
+       
      case(var,COMP(id,DAE(elist))::dae) equation
        elist2=removeInnerAttr(var,elist);
        dae = removeInnerAttr(var,dae);
@@ -555,7 +569,11 @@ algorithm
       Absyn.Path path;
       tuple<Types.TType, Option<Absyn.Path>> tp;
       ExternalDecl extdecl;
-    case DAE(elementLst = (VAR(componentRef = cr,one = SOME(e),binding = dims,variableAttributesOption = dae_var_attr,absynCommentOption = comment) :: xs))
+    case DAE(elementLst = (VAR(componentRef = cr,
+                               binding = SOME(e),
+                               dims = dims,
+                               variableAttributesOption = dae_var_attr,
+                               absynCommentOption = comment) :: xs))
       equation
         Print.printBuf("VAR(");
         Exp.printComponentRef(cr);
@@ -572,7 +590,7 @@ algorithm
         dump2(DAE(xs));
       then
         ();
-    case DAE(elementLst = (VAR(componentRef = cr,one = NONE,variableAttributesOption = dae_var_attr,absynCommentOption = comment) :: xs))
+    case DAE(elementLst = (VAR(componentRef = cr,binding = NONE,variableAttributesOption = dae_var_attr,absynCommentOption = comment) :: xs))
       equation
         Print.printBuf("VAR(");
         Exp.printComponentRef(cr);
@@ -763,7 +781,7 @@ algorithm
     local
       Ident crstr,dirstr,tystr,str,dimstr;
       Exp.ComponentRef cr;
-      Boolean fl;
+      Boolean fl,st;      
       SCode.Accessibility acc;
       SCode.Variability var;
       Absyn.Direction dir;
@@ -771,7 +789,7 @@ algorithm
       Exp.Exp exp,dim;
       Types.Attributes attr;
     case NOEXTARG() then "void";
-    case EXTARG(componentRef = cr,attributes = Types.ATTR(flow_ = fl,accessibility = acc,parameter_ = var,direction = dir),type_ = ty)
+    case EXTARG(componentRef = cr,attributes = Types.ATTR(flow_ = fl,stream_=st,accessibility = acc,parameter_ = var,direction = dir),type_ = ty)
       equation
         crstr = Exp.printComponentRefStr(cr);
         dirstr = Dump.directionSymbol(dir);
@@ -1589,11 +1607,21 @@ algorithm
       VarDirection dir;
       Type typ;
       Flow flow_;
+      Stream stream_;
       list<Absyn.Path> classlst,class_;
       Option<VariableAttributes> dae_var_attr;
       Option<Absyn.Comment> comment;
       Exp.Exp e;
-    case VAR(componentRef = id,varible = kind,variable = dir,input_ = typ,one = NONE,value = flow_,flow_ = classlst,variableAttributesOption = dae_var_attr,absynCommentOption = comment)
+    case VAR(componentRef = id,
+             kind = kind,
+             direction = dir,
+             ty = typ,
+             binding = NONE,
+             flow_ = flow_,
+             stream_ = stream_,
+             pathLst = classlst,
+             variableAttributesOption = dae_var_attr,
+             absynCommentOption = comment)
       equation
         dumpKind(kind);
         dumpDirection(dir);
@@ -1608,7 +1636,16 @@ algorithm
 	Print.printBuf \"}\" \" &" ;
       then
         ();
-    case VAR(componentRef = id,varible = kind,variable = dir,input_ = typ,one = SOME(e),value = flow_,flow_ = class_,variableAttributesOption = dae_var_attr,absynCommentOption = comment)
+    case VAR(componentRef = id,
+             kind = kind,
+             direction = dir,
+             ty = typ,
+             binding = SOME(e),
+             flow_ = flow_,
+             stream_ = stream_,
+             pathLst = class_,
+             variableAttributesOption = dae_var_attr,
+             absynCommentOption = comment)
       equation
         dumpKind(kind);
         dumpDirection(dir);
@@ -1640,12 +1677,23 @@ algorithm
       VarDirection dir;
       Type typ;
       Flow flow_;
+      Stream stream_;
       list<Absyn.Path> classlst;
       Option<VariableAttributes> dae_var_attr;
       Option<Absyn.Comment> comment;
       Exp.Exp e;
       VarProtection prot;
-    case VAR(componentRef = id,varible = kind,variable = dir,protection=prot,input_ = typ,one = NONE,value = flow_,flow_ = classlst,variableAttributesOption = dae_var_attr,absynCommentOption = comment)
+    case VAR(componentRef = id,
+             kind = kind,
+             direction = dir,
+             protection=prot,
+             ty = typ,
+             binding = NONE,
+             flow_ = flow_,
+             stream_ =  stream_,
+             pathLst = classlst,
+             variableAttributesOption = dae_var_attr,
+             absynCommentOption = comment)
       equation
         s1 = dumpKindStr(kind);
         s2 = dumpDirectionStr(dir);
@@ -1658,7 +1706,17 @@ algorithm
 	Util.string_delimit_list(classstrlst, \", \") => classstr &" ;
       then
         str;
-    case VAR(componentRef = id,varible = kind,variable = dir,protection=prot,input_ = typ,one = SOME(e),value = flow_,flow_ = classlst,variableAttributesOption = dae_var_attr,absynCommentOption = comment)
+    case VAR(componentRef = id,
+             kind = kind,
+             direction = dir,
+             protection=prot,
+             ty = typ,
+             binding = SOME(e),
+             flow_ = flow_,
+             stream_ = stream_,
+             pathLst = classlst,
+             variableAttributesOption = dae_var_attr,
+             absynCommentOption = comment)
       equation
         s1 = dumpKindStr(kind);
         s2 = dumpDirectionStr(dir);
@@ -2611,7 +2669,7 @@ public function isParameter "function isParameter
 algorithm
   _:=
   matchcontinue (inElement)
-    case VAR(varible = PARAM()) then ();
+    case VAR(kind = PARAM()) then ();
   end matchcontinue;
 end isParameter;
 
@@ -2742,6 +2800,7 @@ algorithm
       Option<Exp.Exp> bind;
       InstDims dim;
       Flow flow_;
+      Stream stream_;
       list<Absyn.Path> lst;
       Option<VariableAttributes> dae_var_attr;
       Option<Absyn.Comment> comment;
@@ -2751,12 +2810,24 @@ algorithm
 			Types.Type ftp;
 			VarProtection prot;
     case ({},_) then {};
-    case ((VAR(componentRef = cr,varible = kind,variable = dir, protection=prot,input_ = tp,one = bind,binding = dim,value = flow_,flow_ = lst,variableAttributesOption = dae_var_attr,absynCommentOption = comment,innerOuter=io,fullType=ftp) :: xs),newtype)
+    case ((VAR(componentRef = cr,
+               kind = kind,
+               direction = dir, 
+               protection=prot,
+               ty = tp,
+               binding = bind,
+               dims = dim,
+               flow_ = flow_,
+               stream_=stream_,
+               pathLst = lst,
+               variableAttributesOption = dae_var_attr,
+               absynCommentOption = comment,
+               innerOuter=io,
+               fullType=ftp) :: xs),newtype)
       equation
         xs_1 = setComponentType(xs, newtype);
       then
-        (VAR(cr,kind,dir,prot,tp,bind,dim,flow_,(newtype :: lst),
-          dae_var_attr,comment,io,ftp) :: xs_1);
+        (VAR(cr,kind,dir,prot,tp,bind,dim,flow_,stream_,(newtype :: lst),dae_var_attr,comment,io,ftp) :: xs_1);
     case ((x :: xs),newtype)
       equation
         xs_1 = setComponentType(xs, newtype);
@@ -2777,7 +2848,7 @@ algorithm
     local
       Exp.ComponentRef n;
       Type ty;
-    case VAR(componentRef = n,varible = VARIABLE(),variable = OUTPUT(),input_ = ty) then ();
+    case VAR(componentRef = n,kind = VARIABLE(),direction = OUTPUT(),ty = ty) then ();
   end matchcontinue;
 end isOutputVar;
 
@@ -2825,7 +2896,7 @@ algorithm
     local
       Exp.ComponentRef n;
       Type ty;
-    case VAR(componentRef = n,varible = VARIABLE(),variable = BIDIR(),input_ = ty) then ();
+    case VAR(componentRef = n,kind = VARIABLE(),direction = BIDIR(),ty = ty) then ();
   end matchcontinue;
 end isBidirVar;
 
@@ -2841,7 +2912,7 @@ algorithm
     local
       Exp.ComponentRef n;
       Type ty;
-    case VAR(componentRef = n,varible = VARIABLE(),variable = INPUT(),input_ = ty) then ();
+    case VAR(componentRef = n,kind = VARIABLE(),direction = INPUT(),ty = ty) then ();
   end matchcontinue;
 end isInputVar;
 
@@ -2958,7 +3029,13 @@ algorithm
       DAElist l;
       Absyn.Path fpath;
       tuple<Types.TType, Option<Absyn.Path>> t;
-    case VAR(componentRef = cr,varible = vk,variable = vd,input_ = ty,one = NONE,variableAttributesOption = dae_var_attr,absynCommentOption = comment)
+    case VAR(componentRef = cr,
+             kind = vk,
+             direction = vd,
+             ty = ty,
+             binding = NONE,
+             variableAttributesOption = dae_var_attr,
+             absynCommentOption = comment)
       equation
         Print.printBuf("VAR(");
         Exp.printComponentRef(cr);
@@ -2972,7 +3049,13 @@ algorithm
         Print.printBuf(")");
       then
         ();
-    case VAR(componentRef = cr,varible = vk,variable = vd,input_ = ty,one = SOME(e),variableAttributesOption = dae_var_attr,absynCommentOption = comment)
+    case VAR(componentRef = cr,
+             kind = vk,
+             direction = vd,
+             ty = ty,
+             binding = SOME(e),
+             variableAttributesOption = dae_var_attr,
+             absynCommentOption = comment)
       equation
         Print.printBuf("VAR(");
         Exp.printComponentRef(cr);
@@ -3231,12 +3314,12 @@ algorithm
       Ident str,expstr,str_1,str_2;
       Exp.ComponentRef cr;
       Exp.Exp exp;
-    case VAR(componentRef = cr,one = NONE)
+    case VAR(componentRef = cr,binding = NONE)
       equation
         str = Exp.printComponentRefStr(cr);
       then
         str;
-    case VAR(componentRef = cr,one = SOME(exp))
+    case VAR(componentRef = cr,binding = SOME(exp))
       equation
         str = Exp.printComponentRefStr(cr);
         expstr = printExpStrSpecial(exp);
@@ -3292,13 +3375,13 @@ algorithm
       Graphviz.Node node;
       DAElist dae;
       Absyn.Path fpath;
-    case VAR(componentRef = cr,varible = vk,variable = vd,input_ = ty,one = NONE)
+    case VAR(componentRef = cr,kind = vk,direction = vd,ty = ty,binding = NONE)
       equation
         crstr = Exp.printComponentRefStr(cr);
         vkstr = dumpKindStr(vk);
       then
         Graphviz.LNODE("VAR",{crstr,vkstr},{},{});
-    case VAR(componentRef = cr,varible = vk,variable = vd,input_ = ty,one = SOME(exp))
+    case VAR(componentRef = cr,kind = vk,direction = vd,ty = ty,binding = SOME(exp))
       equation
         crstr = Exp.printComponentRefStr(cr);
         vkstr = dumpKindStr(vk);
@@ -3388,7 +3471,7 @@ algorithm
       Option<Absyn.Comment> comment;
       Absyn.InnerOuter io;
       Types.Type tp;
-    case ((x as VAR(_,_,_,_,_,_,_,_,_,_,_,_,_)) :: lst)
+    case ((x as VAR(_,_,_,_,_,_,_,_,_,_,_,_,_,_)) :: lst)
       equation
         res = getVariableList(lst);
       then
@@ -3417,7 +3500,7 @@ algorithm
       Exp.ComponentRef cr;
       Exp.Exp e;
       list<Element> lst;
-    case (((v as VAR(componentRef = cr,one = SOME(e))) :: (lst as (_ :: _))))
+    case (((v as VAR(componentRef = cr,binding = SOME(e))) :: (lst as (_ :: _))))
       equation
         expstr = Exp.printExpStr(e);
         s3 = stringAppend(expstr, ",");
@@ -3425,19 +3508,19 @@ algorithm
         str = stringAppend(s3, s4);
       then
         str;
-    case (((v as VAR(componentRef = cr,one = NONE)) :: (lst as (_ :: _))))
+    case (((v as VAR(componentRef = cr,binding = NONE)) :: (lst as (_ :: _))))
       equation
         s1 = " ,";
         s2 = getBindingsStr(lst);
         str = stringAppend(s1, s2);
       then
         str;
-    case ({(v as VAR(componentRef = cr,one = SOME(e)))})
+    case ({(v as VAR(componentRef = cr,binding = SOME(e)))})
       equation
         str = Exp.printExpStr(e);
       then
         str;
-    case ({(v as VAR(componentRef = cr,one = NONE))}) then "";
+    case ({(v as VAR(componentRef = cr,binding = NONE))}) then "";
   end matchcontinue;
 end getBindingsStr;
 
@@ -3457,10 +3540,22 @@ algorithm
   end matchcontinue;
 end toFlow;
 
-public function getFlowVariables "function: getFlowVariables
+public function toStream "function: toStram
+  Create a Stream, given a ClassInf.State and a boolean stream value."
+  input Boolean inBoolean;
+  input ClassInf.State inState;
+  output Stream outStream;
+algorithm
+  outFlow:=
+  matchcontinue (inBoolean,inState)
+    case (true,_) then STREAM();
+    case (_,ClassInf.CONNECTOR(string = _)) then NON_STREAM();
+    case (_,_) then NON_STREAM_CONNECTOR();
+  end matchcontinue;
+end toStream;
 
-  Retrive the flow variables of an Element list.
-"
+public function getFlowVariables "function: getFlowVariables
+  Retrive the flow variables of an Element list."
   input list<Element> inElementLst;
   output list<Exp.ComponentRef> outExpComponentRefLst;
 algorithm
@@ -3472,7 +3567,7 @@ algorithm
       list<Element> xs,lst;
       Ident id;
     case ({}) then {};
-    case ((VAR(componentRef = cr,value = FLOW()) :: xs))
+    case ((VAR(componentRef = cr,flow_ = FLOW()) :: xs))
       equation
         res = getFlowVariables(xs);
       then
@@ -3516,6 +3611,65 @@ algorithm
         (cr_1 :: res);
   end matchcontinue;
 end getFlowVariables2;
+
+public function getStreamVariables "function: getStreamVariables
+  Retrive the stream variables of an Element list."
+  input list<Element> inElementLst;
+  output list<Exp.ComponentRef> outExpComponentRefLst;
+algorithm
+  outExpComponentRefLst:=
+  matchcontinue (inElementLst)
+    local
+      list<Exp.ComponentRef> res,res1,res1_1,res2;
+      Exp.ComponentRef cr;
+      list<Element> xs,lst;
+      Ident id;
+    case ({}) then {};
+    case ((VAR(componentRef = cr,stream_ = STREAM()) :: xs))
+      equation
+        res = getStreamVariables(xs);
+      then
+        (cr :: res);
+    case ((COMP(ident = id,dAElist = DAE(elementLst = lst)) :: xs))
+      equation
+        res1 = getStreamVariables(lst);
+        res1_1 = getStreamVariables2(res1, id);
+        res2 = getStreamVariables(xs);
+        res = listAppend(res1_1, res2);
+      then
+        res;
+    case ((_ :: xs))
+      equation
+        res = getStreamVariables(xs);
+      then
+        res;
+  end matchcontinue;
+end getStreamVariables;
+
+protected function getStreamVariables2 "function: getStreamVariables2
+
+  Helper function to get_flow_variables.
+"
+  input list<Exp.ComponentRef> inExpComponentRefLst;
+  input Ident inIdent;
+  output list<Exp.ComponentRef> outExpComponentRefLst;
+algorithm
+  outExpComponentRefLst:=
+  matchcontinue (inExpComponentRefLst,inIdent)
+    local
+      Ident id;
+      list<Exp.ComponentRef> res,xs;
+      Exp.ComponentRef cr_1,cr;
+    case ({},id) then {};
+    case ((cr :: xs),id)
+      equation
+        res = getStreamVariables2(xs, id);
+        cr_1 = Exp.joinCrefs(Exp.CREF_IDENT(id,{}), cr);
+      then
+        (cr_1 :: res);
+  end matchcontinue;
+end getStreamVariables2;
+
 
 public function daeToRecordValue "function: daeToRecordValue
   Transforms a list of elements into a record value.
@@ -3598,6 +3752,7 @@ algorithm
       Type c;
       InstDims e;
       Flow g;
+      Stream s;
       list<Absyn.Path> h;
       Option<VariableAttributes> dae_var_attr;
       Option<Absyn.Comment> comment;
@@ -3610,15 +3765,27 @@ algorithm
       Absyn.InnerOuter io;
       VarProtection prot;
     case ({}) then {};
-    case ((VAR(componentRef = cr,varible = a,variable = b,protection=prot,input_ = c,one = d,binding = e,value = g,flow_ = h,variableAttributesOption = dae_var_attr,absynCommentOption = comment,innerOuter=io,fullType=tp) :: elts))
+    case ((VAR(componentRef = cr,
+               kind = a,
+               direction = b,
+               protection=prot,
+               ty = c,
+               binding = d,
+               dims = e,
+               flow_ = g,
+               stream_ = s,
+               pathLst = h,
+               variableAttributesOption = dae_var_attr,
+               absynCommentOption = comment,
+               innerOuter=io,
+               fullType=tp) :: elts))
       equation
         str = Exp.printComponentRefStr(cr);
         str_1 = Util.stringReplaceChar(str, ".", "_");
         elts_1 = toModelicaFormElts(elts);
         d_1 = toModelicaFormExpOpt(d);
       then
-        (VAR(Exp.CREF_IDENT(str_1,{}),a,b,prot,c,d_1,e,g,h,dae_var_attr,
-          comment,io,tp) :: elts_1);
+        (VAR(Exp.CREF_IDENT(str_1,{}),a,b,prot,c,d_1,e,g,s,h,dae_var_attr,comment,io,tp) :: elts_1);
     case ((DEFINE(componentRef = cr,exp = e) :: elts))
       local Exp.Exp e;
       equation
@@ -3939,6 +4106,7 @@ algorithm
       Option<Exp.Exp> bndexp,startvalexp;
       InstDims instdims;
       Flow flow_;
+      Stream stream_;
       list<Absyn.Path> pathlist;
       Option<VariableAttributes> dae_var_attr;
       Option<Absyn.Comment> comment;
@@ -3951,7 +4119,17 @@ algorithm
       list<ExtArg> args;
       ExtArg retarg;
       Option<Absyn.Annotation> ann;
-    case VAR(componentRef = cref,varible = vk,variable = vd,input_ = ty,one = bndexp,binding = instdims,value = flow_,flow_ = pathlist,variableAttributesOption = dae_var_attr,absynCommentOption = comment) /* VAR */
+    case VAR(componentRef = cref,
+             kind = vk,
+             direction = vd,
+             ty = ty,
+             binding = bndexp,
+             dims = instdims,
+             flow_ = flow_,
+             stream_ = stream_,
+             pathLst = pathlist,
+             variableAttributesOption = dae_var_attr,
+             absynCommentOption = comment) /* VAR */
       equation
         e1 = Util.optionToList(bndexp);
         e3 = Util.listMap(instdims, getAllExpsSubscript);

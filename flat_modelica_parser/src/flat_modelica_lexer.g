@@ -108,6 +108,7 @@ tokens {
 	WITHIN		= "within" 	;
 	RETURN		= "return"  ;
 	BREAK		= "break"	;
+	STREAM		= "stream"	; /* for Modelica 3.1 stream connectors */
 	/* MetaModelica keywords. I guess not all are needed here. */
 	AS		= "as"	;
 	CASE		= "case"	;

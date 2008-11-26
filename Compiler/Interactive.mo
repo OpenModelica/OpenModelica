@@ -447,6 +447,7 @@ algorithm
 			list<Absyn.AlgorithmItem> algItemList;
       Values.Value startv, stepv, stopv;
       Absyn.Exp starte, stepe, stope;
+      
     case (Absyn.ALGORITHMITEM(
       		algorithm_ = Absyn.ALG_NORETCALL(functionCall = Absyn.CREF_IDENT(name = "assert"),
       		functionArgs = Absyn.FUNCTIONARGS(args = {cond,msg}))),
@@ -457,6 +458,7 @@ algorithm
         (_,Values.BOOL(true),SOME(st_2)) = Ceval.ceval(Env.emptyCache,env, econd, true, SOME(st_1), NONE, Ceval.MSG());
       then
         ("",st_2);
+        
     case
       (Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_NORETCALL(functionCall = Absyn.CREF_IDENT(name = "assert"),
       functionArgs = Absyn.FUNCTIONARGS(args = {cond,msg}))),
@@ -468,6 +470,7 @@ algorithm
         Ceval.ceval(Env.emptyCache,env, msg_1, true, SOME(st_1), NONE, Ceval.MSG());
       then
         (str,st_2);
+        
     case
       (Absyn.ALGORITHMITEM(algorithm_ =
         Absyn.ALG_ASSIGN(assignComponent =
@@ -481,6 +484,7 @@ algorithm
         newst = addVarToSymboltable(ident, value, t, st_2);
       then
         (str,newst);
+        
     case
       (Absyn.ALGORITHMITEM(algorithm_ =
         Absyn.ALG_ASSIGN(assignComponent =
@@ -495,6 +499,7 @@ algorithm
         newst = addVarsToSymboltable(idents, values, types, st_2);
       then
         ("",newst);
+        
     case
       (Absyn.ALGORITHMITEM(algorithm_ =
         Absyn.ALG_IF(
@@ -509,6 +514,7 @@ algorithm
         st_1 = evaluateIfStatementLst(cond3, st);
       then
         ("",st_1);
+        
 		 /* while-statement */
     case (Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_WHILE(whileStmt = exp,whileBody = algitemlist)),st)
       equation
@@ -550,6 +556,7 @@ algorithm
         st_2 = evaluateForStmt(iter, valList, algItemList, st_1);
       then
         ("",st_2);
+        
     /* for-statement - not an array type */
     case (Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_FOR(iterators = {(_, SOME(exp))})),st)
       local
@@ -1182,7 +1189,7 @@ algorithm
       equation
         (_,_,_,_) = Lookup.lookupVar(Env.emptyCache,env, Exp.CREF_IDENT(id,{}));
         env_1 = Env.updateFrameV(env,
-          Types.VAR(id,Types.ATTR(false,SCode.RW(),SCode.VAR(),Absyn.BIDIR()),
+          Types.VAR(id,Types.ATTR(false,false,SCode.RW(),SCode.VAR(),Absyn.BIDIR()),
           false,tp,Types.VALBOUND(v)), Env.VAR_TYPED(), {});
         env_2 = addVarsToEnv(rest, env_1);
       then
@@ -1191,7 +1198,7 @@ algorithm
       equation
         failure((_,_,_,_) = Lookup.lookupVar(Env.emptyCache,env, Exp.CREF_IDENT(id,{})));
         env_1 = Env.extendFrameV(env,
-          Types.VAR(id,Types.ATTR(false,SCode.RW(),SCode.VAR(),Absyn.BIDIR()),
+          Types.VAR(id,Types.ATTR(false,false,SCode.RW(),SCode.VAR(),Absyn.BIDIR()),
           false,tp,Types.VALBOUND(v)), NONE, Env.VAR_UNTYPED(), {});
         env_2 = addVarsToEnv(rest, env_1);
       then
@@ -1224,7 +1231,7 @@ algorithm
       list<InteractiveVariable> iv;
       list<CompiledCFunction> cf;
       Absyn.Path p_class;
-      Boolean final_,flow_,protected_,repl,dref1,dref2;
+      Boolean final_,flow_,stream_,protected_,repl,dref1,dref2;
       Integer rest;
       list<LoadedFile> lf;
 
@@ -1314,23 +1321,53 @@ algorithm
         (resstr,newp) = setComponentComment(class_, comp_ref, cmt, p);
       then
         (resstr,SYMBOLTABLE(newp,s,ic,iv,cf,lf));
+        
     case (ISTMTS(interactiveStmtLst =
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "setComponentProperties"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = class_),
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "setComponentProperties"),
+       functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = class_),
         Absyn.CREF(componentReg = comp_ref),Absyn.ARRAY(arrayExp =
-        {Absyn.BOOL(value = final_),Absyn.BOOL(value = flow_),Absyn.BOOL(value = protected_),
-        Absyn.BOOL(value = repl)}),Absyn.ARRAY(arrayExp = {Absyn.STRING(value = variability)}),
-        Absyn.ARRAY(arrayExp = {Absyn.BOOL(value = dref1),Absyn.BOOL(value = dref2)}),
-        Absyn.ARRAY(arrayExp = {Absyn.STRING(value = causality)})},argNames = {})))}),
+        {Absyn.BOOL(value = final_),
+         Absyn.BOOL(value = flow_),
+         Absyn.BOOL(value = stream_),
+         Absyn.BOOL(value = protected_),
+         Absyn.BOOL(value = repl)}),
+         Absyn.ARRAY(arrayExp = {Absyn.STRING(value = variability)}),
+         Absyn.ARRAY(arrayExp = {Absyn.BOOL(value = dref1),Absyn.BOOL(value = dref2)}),
+         Absyn.ARRAY(arrayExp = {Absyn.STRING(value = causality)})},
+         argNames = {})))}),
       (st as SYMBOLTABLE(
         ast = p,explodedAst = s,instClsLst = ic,
         lstVarVal = iv,compiledFunctions = cf,
         loadedFiles = lf)))
       equation
         p_class = Absyn.crefToPath(class_);
-        (resstr,p_1) = setComponentProperties(p_class, comp_ref, final_, flow_, protected_, repl,
-          variability, {dref1,dref2}, causality, p);
+        (resstr,p_1) = setComponentProperties(p_class, comp_ref, final_, flow_, stream_, protected_, repl, variability, {dref1,dref2}, causality, p);
       then
         (resstr,SYMBOLTABLE(p_1,s,ic,iv,cf,lf));
+
+    /* old version of setComponentProperties, without stream */
+    case (ISTMTS(interactiveStmtLst =
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "setComponentProperties"),
+       functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = class_),
+        Absyn.CREF(componentReg = comp_ref),Absyn.ARRAY(arrayExp =
+        {Absyn.BOOL(value = final_),
+         Absyn.BOOL(value = flow_),
+         Absyn.BOOL(value = protected_),
+         Absyn.BOOL(value = repl)}),
+         Absyn.ARRAY(arrayExp = {Absyn.STRING(value = variability)}),
+         Absyn.ARRAY(arrayExp = {Absyn.BOOL(value = dref1),Absyn.BOOL(value = dref2)}),
+         Absyn.ARRAY(arrayExp = {Absyn.STRING(value = causality)})},
+         argNames = {})))}),
+      (st as SYMBOLTABLE(
+        ast = p,explodedAst = s,instClsLst = ic,
+        lstVarVal = iv,compiledFunctions = cf,
+        loadedFiles = lf)))
+      equation
+        p_class = Absyn.crefToPath(class_);
+        (resstr,p_1) = setComponentProperties(p_class, comp_ref, final_, flow_, false, protected_, repl, variability, {dref1,dref2}, causality, p);
+      then
+        (resstr,SYMBOLTABLE(p_1,s,ic,iv,cf,lf));
+                
     case (ISTMTS(interactiveStmtLst =
       {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getElementsInfo"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr)})))}),
       (st as SYMBOLTABLE(
@@ -1364,6 +1401,7 @@ algorithm
         resstr = System.readEnv(name);
       then
         (resstr,st);
+        
     case (ISTMTS(interactiveStmtLst =
       {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getEnvironmentVar"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.STRING(value = name)},argNames = {})))}),
       (st as SYMBOLTABLE(
@@ -1374,6 +1412,7 @@ algorithm
         failure(resstr = System.readEnv(name));
       then
         ("error",st);
+        
     case (ISTMTS(interactiveStmtLst =
       {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "setEnvironmentVar"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.STRING(value = name),Absyn.STRING(value = value)},argNames = {})))}),
       (st as SYMBOLTABLE(
@@ -1384,6 +1423,7 @@ algorithm
         0 = System.setEnv(name, value, 1) "overwrite" ;
       then
         ("Ok",st);
+        
     case (ISTMTS(interactiveStmtLst =
       {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "setEnvironmentVar"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.STRING(value = name),
         Absyn.STRING(value = value)},argNames = {})))}),
@@ -1396,6 +1436,7 @@ algorithm
         (rest == 0) = false;
       then
         ("error",st);
+        
     case (ISTMTS(interactiveStmtLst =
       {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "loadFileInteractiveQualified"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.STRING(value = name)},argNames = {})))}),
       st) /* adrpo added 2005-12-16 */
@@ -1403,6 +1444,7 @@ algorithm
         (top_names_str, newst) = loadFileInteractiveQualified(name, st);
       then
         (top_names_str,newst);
+        
     /* adrpo added 2006-10-16
      * - i think this function is needed here!
      */
@@ -1945,7 +1987,8 @@ algorithm
       then
         (resstr,st);
 /***********************zxzc****************************************************/
-/*      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getClassNamesRecursive"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr)})))}),
+    case (ISTMTS(interactiveStmtLst =
+     {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getClassNamesRecursive"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr)})))}),
       (st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
       local
         String fulString;
@@ -1953,9 +1996,10 @@ algorithm
         equation
             path = Absyn.crefToPath(cr);
         		resstr = getClassNamesRecursive(path, p, "  ");
+        		Print.clearErrorBuf();
     then
          (resstr,st);
-*/
+
     case (ISTMTS(interactiveStmtLst =
       {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "refactorClass"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr)})))}),
       (st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf,loadedFiles = lf)))
@@ -4482,9 +4526,7 @@ algorithm
         path_str = Absyn.pathString(path);
         cr_pa = Absyn.crefToPath(cr);
         cr_str = Absyn.pathString(cr_pa);
-        res_str = Util.stringAppendList(
-          {s1,"cl: ",pa_str,"\t type: ",path_str,"\t\t name: ",cr_str,
-          "\n"});
+        res_str = Util.stringAppendList({s1,"cl: ",pa_str,"\t type: ",path_str,"\t\t name: ",cr_str,"\n"});
       then
         res_str;
     case ((comps as COMPONENTS(componentLst = (EXTENDSITEM(the1 = pa,the2 = path) :: res))))
@@ -4569,13 +4611,14 @@ public function getClassEnv
   ClassInf.State ci_state;
 algorithm
   env_2 := matchcontinue (p,p_class)
-   case (p,p_class) // Special case for derived classes. When instantiating a derived class, the environment
+    case (p,p_class) // Special case for derived classes. When instantiating a derived class, the environment
    									// of the derived class is returned, which can be a totally different scope.
-     local Absyn.Path tp;
+      local Absyn.Path tp;
       equation
         p_1 = SCode.elaborate(p);
         (_,env) = Inst.makeEnvFromProgram(Env.emptyCache,p_1, Absyn.IDENT(""));
-        (_,(cl as SCode.CLASS(id,_,encflag,restr,SCode.DERIVED(typeSpec=Absyn.TPATH(tp,_)))),env_1) = Lookup.lookupClass(Env.emptyCache,env, p_class, false);
+        (_,(cl as SCode.CLASS(id,_,encflag,restr,SCode.DERIVED(typeSpec=Absyn.TPATH(tp,_)))),env_1) = 
+        Lookup.lookupClass(Env.emptyCache,env, p_class, false);
       then env_1;
 
     case (p,p_class)
@@ -4585,8 +4628,7 @@ algorithm
         (_,(cl as SCode.CLASS(id,_,encflag,restr,_)),env_1) = Lookup.lookupClass(Env.emptyCache,env, p_class, false);
         env2 = Env.openScope(env_1, encflag, SOME(id));
         ci_state = ClassInf.start(restr, id);
-        (_,env_2,_) = Inst.partialInstClassIn(Env.emptyCache,env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
-          ci_state, cl, false, {});
+        (_,env_2,_) = Inst.partialInstClassIn(Env.emptyCache,env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, ci_state, cl, false, {});
       then env_2;
     case (p,p_class) then {};
   end matchcontinue;
@@ -4612,10 +4654,8 @@ algorithm
   (_,(cl as SCode.CLASS(id,_,encflag,restr,_)),env_1) := Lookup.lookupClass(Env.emptyCache,env, p_class, false);
   env2 := Env.openScope(env_1, encflag, SOME(id));
   ci_state := ClassInf.start(restr, id);
-  /* Use partial instantiation. Env is only used to retrieve class names not lookup variables
-    therefore OK. */
-  (_,env_2,_) := Inst.partialInstClassIn(Env.emptyCache,env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
-          ci_state, cl, false, {});
+  /* Use partial instantiation. Env is only used to retrieve class names not lookup variables therefore OK. */
+  (_,env_2,_) := Inst.partialInstClassIn(Env.emptyCache,env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, ci_state, cl, false, {});
 end getClassEnvNoElaboration;
 
 protected function setComponentProperties
@@ -4623,6 +4663,7 @@ protected function setComponentProperties
   Sets the following \"properties\" of a component.
   - final
   - flow
+  - stream
   - protected(true) or public(false)
   - replaceable
   - variablity: \"constant\" or \"discrete\" or \"parameter\" or \"\"
@@ -4630,22 +4671,24 @@ protected function setComponentProperties
   - causality: \"input\" or \"output\" or \"\"
 
   inputs:  (Absyn.Path, /* class */
-              Absyn.ComponentRef, /* component_ref */
-              bool, /* final = true */
-              bool, /* flow = true */
-              bool, /* protected = true, public=false */
-              bool,  /* replaceable = true */
-              string, /* variability */
-              bool list, /* dynamic_ref, two booleans */
-              string, /* causality */
-              Absyn.Program)
+            Absyn.ComponentRef, /* component_ref */
+            bool, /* final = true */
+            bool, /* flow = true */
+            bool, /* stream = true */
+            bool, /* protected = true, public=false */
+            bool,  /* replaceable = true */
+            string, /* variability */
+            bool list, /* dynamic_ref, two booleans */
+            string, /* causality */
+            Absyn.Program)
   outputs: (string, Absyn.Program)"
   input Absyn.Path inPath1;
   input Absyn.ComponentRef inComponentRef2;
-  input Boolean inBoolean3;
-  input Boolean inBoolean4;
-  input Boolean inBoolean5;
-  input Boolean inBoolean6;
+  input Boolean inFinal;
+  input Boolean inFlow;
+  input Boolean inStream;
+  input Boolean inProtected;
+  input Boolean inReplaceable;
   input String inString7;
   input list<Boolean> inBooleanLst8;
   input String inString9;
@@ -4654,25 +4697,24 @@ protected function setComponentProperties
   output Absyn.Program outProgram;
 algorithm
   (outString,outProgram):=
-  matchcontinue (inPath1,inComponentRef2,inBoolean3,inBoolean4,inBoolean5,inBoolean6,inString7,inBooleanLst8,inString9,inProgram10)
+  matchcontinue (inPath1,inComponentRef2,inFinal,inFlow,inStream,inProtected,inReplaceable,inString7,inBooleanLst8,inString9,inProgram10)
     local
       Absyn.Within within_;
       Absyn.Class cdef,cdef_1;
       Absyn.Program newp,p;
       Absyn.Path p_class;
       String varname,variability,causality;
-      Boolean final_,flow_,prot,repl;
+      Boolean final_,flow_,stream_,prot,repl;
       list<Boolean> dyn_ref;
-    case (p_class,Absyn.CREF_IDENT(name = varname),final_,flow_,prot,repl,variability,dyn_ref,causality,p)
+    case (p_class,Absyn.CREF_IDENT(name = varname),final_,flow_,stream_,prot,repl,variability,dyn_ref,causality,p)
       equation
         within_ = buildWithin(p_class);
         cdef = getPathedClassInProgram(p_class, p);
-        cdef_1 = setComponentPropertiesInClass(cdef, varname, final_, flow_, prot, repl, variability,
-          dyn_ref, causality);
+        cdef_1 = setComponentPropertiesInClass(cdef, varname, final_, flow_, stream_, prot, repl, variability, dyn_ref, causality);
         (newp,_) = updateProgram(Absyn.PROGRAM({cdef_1},within_), p, {});
       then
         ("Ok",newp);
-    case (_,_,_,_,_,_,_,_,_,p) then ("Error",p);
+    case (_,_,_,_,_,_,_,_,_,_,p) then ("Error",p);
   end matchcontinue;
 end setComponentProperties;
 
@@ -4683,6 +4725,7 @@ protected function setComponentPropertiesInClass
               string, /* comp_name */
               bool, /* final */
               bool, /* flow */
+              bool, /* stream */
               bool, /* prot */
               bool, /* repl */
               string, /* variability */
@@ -4691,29 +4734,36 @@ protected function setComponentPropertiesInClass
   outputs: Absyn.Class "
   input Absyn.Class inClass1;
   input String inString2;
-  input Boolean inBoolean3;
-  input Boolean inBoolean4;
-  input Boolean inBoolean5;
-  input Boolean inBoolean6;
+  input Boolean inFinal;
+  input Boolean inFlow;
+  input Boolean inStream;
+  input Boolean inProtected;
+  input Boolean inReplaceable;
   input String inString7;
   input list<Boolean> inBooleanLst8;
   input String inString9;
   output Absyn.Class outClass;
 algorithm
   outClass:=
-  matchcontinue (inClass1,inString2,inBoolean3,inBoolean4,inBoolean5,inBoolean6,inString7,inBooleanLst8,inString9)
+  matchcontinue (inClass1,inString2,inFinal,inFlow,inStream,inProtected,inReplaceable,inString7,inBooleanLst8,inString9)
     local
       list<Absyn.ClassPart> parts_1,parts;
       String id,varname,variability,causality;
-      Boolean p,f,e,final_,flow_,prot,repl;
+      Boolean p,f,e,final_,flow_,stream_,prot,repl;
       Absyn.Restriction r;
       Option<String> cmt;
       Absyn.Info file_info;
       list<Boolean> dyn_ref;
-    case (Absyn.CLASS(name = id,partial_ = p,final_ = f,encapsulated_ = e,restriction = r,body = Absyn.PARTS(classParts = parts,comment = cmt),info = file_info),varname,final_,flow_,prot,repl,variability,dyn_ref,causality)
+      
+    case (Absyn.CLASS(name = id,
+                      partial_ = p,
+                      final_ = f,
+                      encapsulated_ = e,
+                      restriction = r,
+                      body = Absyn.PARTS(classParts = parts,comment = cmt),
+                      info = file_info),varname,final_,flow_,stream_, prot,repl,variability,dyn_ref,causality)
       equation
-        parts_1 = setComponentPropertiesInClassparts(parts, varname, final_, flow_, prot, repl, variability,
-          dyn_ref, causality);
+        parts_1 = setComponentPropertiesInClassparts(parts, varname, final_, flow_, stream_, prot, repl, variability, dyn_ref, causality);
       then
         Absyn.CLASS(id,p,f,e,r,Absyn.PARTS(parts_1,cmt),file_info);
   end matchcontinue;
@@ -4726,6 +4776,7 @@ protected function setComponentPropertiesInClassparts
               Absyn.Ident, /* comp_name */
               bool, /* final */
               bool, /* flow */
+              bool, /* stream */
               bool, /* prot */
               bool, /* repl */
               string, /* variability */
@@ -4734,32 +4785,33 @@ protected function setComponentPropertiesInClassparts
    outputs: Absyn.ClassPart list"
   input list<Absyn.ClassPart> inAbsynClassPartLst1;
   input Absyn.Ident inIdent2;
-  input Boolean inBoolean3;
-  input Boolean inBoolean4;
-  input Boolean inBoolean5;
-  input Boolean inBoolean6;
+  input Boolean inFinal;
+  input Boolean inFlow;
+  input Boolean inStream;  
+  input Boolean inProtected;
+  input Boolean inReplaceable;
   input String inString7;
   input list<Boolean> inBooleanLst8;
   input String inString9;
   output list<Absyn.ClassPart> outAbsynClassPartLst;
 algorithm
   outAbsynClassPartLst:=
-  matchcontinue (inAbsynClassPartLst1,inIdent2,inBoolean3,inBoolean4,inBoolean5,inBoolean6,inString7,inBooleanLst8,inString9)
+  matchcontinue (inAbsynClassPartLst1,inIdent2,inFinal,inFlow,inStream,inProtected,inReplaceable,inString7,inBooleanLst8,inString9)
     local
       list<Absyn.ElementItem> publst,publst_1,protlst,protlst_1,elts_1,elts;
       Absyn.Element elt,elt_1;
       list<Absyn.ClassPart> parts_1,parts_2,parts,rest,rest_1;
       String cr,variability,causality;
-      Boolean final_,flow_,repl,prot;
+      Boolean final_,flow_,stream_,repl,prot;
       list<Boolean> dyn_ref;
       Absyn.ClassPart part;
-    case ({},_,_,_,_,_,_,_,_) then {};
-    case (parts,cr,final_,flow_,true,repl,variability,dyn_ref,causality) /* public moved to protected protected moved to public */
+      
+    case ({},_,_,_,_,_,_,_,_,_) then {};
+    case (parts,cr,final_,flow_,stream_,true,repl,variability,dyn_ref,causality) /* public moved to protected protected moved to public */
       equation
         publst = getPublicList(parts);
         Absyn.ELEMENTITEM(elt) = getElementitemContainsName(Absyn.CREF_IDENT(cr,{}), publst);
-        elt_1 = setComponentPropertiesInElement(elt, cr, final_, flow_, repl, variability, dyn_ref,
-          causality);
+        elt_1 = setComponentPropertiesInElement(elt, cr, final_, flow_, stream_, repl, variability, dyn_ref, causality);
         publst_1 = deleteComponentFromElementitems(cr, publst);
         protlst = getProtectedList(parts);
         protlst_1 = listAppend(protlst, {Absyn.ELEMENTITEM(elt_1)});
@@ -4767,12 +4819,12 @@ algorithm
         parts_2 = replacePublicList(parts_1, publst_1);
       then
         parts_2;
-    case (parts,cr,final_,flow_,false,repl,variability,dyn_ref,causality) /* protected moved to public protected attr not changed. */
+        
+    case (parts,cr,final_,flow_,stream_,false,repl,variability,dyn_ref,causality) /* protected moved to public protected attr not changed. */
       equation
         protlst = getProtectedList(parts);
         Absyn.ELEMENTITEM(elt) = getElementitemContainsName(Absyn.CREF_IDENT(cr,{}), protlst);
-        elt_1 = setComponentPropertiesInElement(elt, cr, final_, flow_, repl, variability, dyn_ref,
-          causality);
+        elt_1 = setComponentPropertiesInElement(elt, cr, final_, flow_, stream_, repl, variability, dyn_ref, causality);
         protlst_1 = deleteComponentFromElementitems(cr, protlst);
         publst = getPublicList(parts);
         publst_1 = listAppend(publst, {Absyn.ELEMENTITEM(elt_1)});
@@ -4780,28 +4832,27 @@ algorithm
         parts_2 = replaceProtectedList(parts_1, protlst_1);
       then
         parts_2;
-    case ((Absyn.PUBLIC(contents = elts) :: rest),cr,final_,flow_,prot,repl,variability,dyn_ref,causality) /* protected attr not changed. protected attr not changed, 2. */
+        
+    case ((Absyn.PUBLIC(contents = elts) :: rest),cr,final_,flow_,stream_,prot,repl,variability,dyn_ref,causality) /* protected attr not changed. protected attr not changed, 2. */
       equation
-        rest = setComponentPropertiesInClassparts(rest, cr, final_, flow_, prot, repl, variability, dyn_ref,
-          causality);
-        elts_1 = setComponentPropertiesInElementitems(elts, cr, final_, flow_, repl, variability, dyn_ref,
-          causality);
+        rest = setComponentPropertiesInClassparts(rest, cr, final_, flow_, stream_, prot, repl, variability, dyn_ref, causality);
+        elts_1 = setComponentPropertiesInElementitems(elts, cr, final_, flow_, stream_, repl, variability, dyn_ref, causality);
       then
         (Absyn.PUBLIC(elts_1) :: rest);
-    case ((Absyn.PROTECTED(contents = elts) :: rest),cr,final_,flow_,prot,repl,variability,dyn_ref,causality) /* protected attr not changed, 2. */
+        
+    case ((Absyn.PROTECTED(contents = elts) :: rest),cr,final_,flow_,stream_, prot,repl,variability,dyn_ref,causality) /* protected attr not changed, 2. */
       equation
-        rest = setComponentPropertiesInClassparts(rest, cr, final_, flow_, prot, repl, variability, dyn_ref,
-          causality);
-        elts_1 = setComponentPropertiesInElementitems(elts, cr, final_, flow_, repl, variability, dyn_ref,
-          causality);
+        rest = setComponentPropertiesInClassparts(rest, cr, final_, flow_, stream_, prot, repl, variability, dyn_ref, causality);
+        elts_1 = setComponentPropertiesInElementitems(elts, cr, final_, flow_, stream_, repl, variability, dyn_ref, causality);
       then
         (Absyn.PROTECTED(elts_1) :: rest);
-    case ((part :: rest),cr,final_,flow_,prot,repl,variability,dyn_ref,causality) /* protected attr not changed, 3. */
+        
+    case ((part :: rest),cr,final_,flow_,stream_, prot,repl,variability,dyn_ref,causality) /* protected attr not changed, 3. */
       equation
-        rest_1 = setComponentPropertiesInClassparts(rest, cr, final_, flow_, prot, repl, variability, dyn_ref,
-          causality);
+        rest_1 = setComponentPropertiesInClassparts(rest, cr, final_, flow_, stream_, prot, repl, variability, dyn_ref, causality);
       then
         (part :: rest_1);
+        
   end matchcontinue;
 end setComponentPropertiesInClassparts;
 
@@ -4812,6 +4863,7 @@ protected function setComponentPropertiesInElementitems
               Absyn.Ident, /* comp_name */
               bool, /* final */
               bool, /* flow */
+              bool, /* stream */
               bool, /* repl */
               string, /* variability */
               bool list, /* dynamic_ref, two booleans */
@@ -4819,33 +4871,36 @@ protected function setComponentPropertiesInElementitems
   outputs:  Absyn.ElementItem list"
   input list<Absyn.ElementItem> inAbsynElementItemLst1;
   input Absyn.Ident inIdent2;
-  input Boolean inBoolean3;
-  input Boolean inBoolean4;
-  input Boolean inBoolean5;
+  input Boolean inFinal;
+  input Boolean inFlow;
+  input Boolean inStream;
+  input Boolean inReplaceable;
   input String inString6;
   input list<Boolean> inBooleanLst7;
   input String inString8;
   output list<Absyn.ElementItem> outAbsynElementItemLst;
 algorithm
   outAbsynElementItemLst:=
-  matchcontinue (inAbsynElementItemLst1,inIdent2,inBoolean3,inBoolean4,inBoolean5,inString6,inBooleanLst7,inString8)
+  matchcontinue (inAbsynElementItemLst1,inIdent2,inFinal,inFlow,inStream,inReplaceable,inString6,inBooleanLst7,inString8)
     local
       list<Absyn.ElementItem> res,rest;
       Absyn.Element elt_1,elt;
       String cr,va,cau;
-      Boolean final_,flow_,repl;
+      Boolean final_,flow_,stream_,repl;
       list<Boolean> dr;
-    case ({},_,_,_,_,_,_,_) then {};
-    case ((Absyn.ELEMENTITEM(element = elt) :: rest),cr,final_,flow_,repl,va,dr,cau)
+      
+    case ({},_,_,_,_,_,_,_,_) then {};
+    case ((Absyn.ELEMENTITEM(element = elt) :: rest),cr,final_,flow_,stream_, repl,va,dr,cau)
       equation
-        res = setComponentPropertiesInElementitems(rest, cr, final_, flow_, repl, va, dr, cau);
-        elt_1 = setComponentPropertiesInElement(elt, cr, final_, flow_, repl, va, dr, cau);
+        res = setComponentPropertiesInElementitems(rest, cr, final_, flow_, stream_, repl, va, dr, cau);
+        elt_1 = setComponentPropertiesInElement(elt, cr, final_, flow_, stream_, repl, va, dr, cau);
       then
         (Absyn.ELEMENTITEM(elt_1) :: res);
-    case ((elt :: rest),cr,final_,flow_,repl,va,dr,cau)
+        
+    case ((elt :: rest),cr,final_,flow_,stream_,repl,va,dr,cau)
       local Absyn.ElementItem elt;
       equation
-        res = setComponentPropertiesInElementitems(rest, cr, final_, flow_, repl, va, dr, cau);
+        res = setComponentPropertiesInElementitems(rest, cr, final_, flow_, stream_, repl, va, dr, cau);
       then
         (elt :: res);
   end matchcontinue;
@@ -4858,6 +4913,7 @@ protected function setComponentPropertiesInElement
               Absyn.Ident,
               bool, /* final */
               bool, /* flow */
+              bool, /* stream */
               bool, /* repl */
               string, /* variability */
               bool list, /* dynamic_ref, two booleans */
@@ -4865,16 +4921,17 @@ protected function setComponentPropertiesInElement
   outputs: Absyn.Element"
   input Absyn.Element inElement1;
   input Absyn.Ident inIdent2;
-  input Boolean inBoolean3;
-  input Boolean inBoolean4;
-  input Boolean inBoolean5;
+  input Boolean inFinal;
+  input Boolean inFlow;
+  input Boolean inStream;
+  input Boolean inReplaceable;
   input String inString6;
   input list<Boolean> inBooleanLst7;
   input String inString8;
   output Absyn.Element outElement;
 algorithm
   outElement:=
-  matchcontinue (inElement1,inIdent2,inBoolean3,inBoolean4,inBoolean5,inString6,inBooleanLst7,inString8)
+  matchcontinue (inElement1,inIdent2,inFinal,inFlow,inStream,inReplaceable,inString6,inBooleanLst7,inString8)
     local
       Option<Absyn.RedeclareKeywords> redeclkw_1,redeclkw;
       Absyn.InnerOuter inout_1,inout;
@@ -4883,18 +4940,20 @@ algorithm
       list<Absyn.ComponentItem> ellst;
       Absyn.Info info;
       Option<Absyn.ConstrainClass> constr;
-      Boolean final_,flow_,repl;
+      Boolean final_,flow_,stream_,repl;
       list<Boolean> dr;
       Absyn.Element elt;
-    case (Absyn.ELEMENT(redeclareKeywords = redeclkw,innerOuter = inout,name = id,specification = (spec as Absyn.COMPONENTS(components = ellst)),info = info,constrainClass = constr),cr,final_,flow_,repl,va,dr,cau)
+    case (Absyn.ELEMENT(redeclareKeywords = redeclkw,innerOuter = inout,name = id,
+          specification = (spec as Absyn.COMPONENTS(components = ellst)),info = info,constrainClass = constr),
+          cr,final_,flow_,stream_,repl,va,dr,cau)
       equation
         _ = getCompitemNamed(Absyn.CREF_IDENT(cr,{}), ellst);
         redeclkw_1 = setReplaceableKeywordAttributes(redeclkw, repl);
         inout_1 = setInnerOuterAttributes(dr);
-        spec_1 = setComponentPropertiesInElementspec(spec, cr, flow_, va, cau);
+        spec_1 = setComponentPropertiesInElementspec(spec, cr, flow_, stream_, va, cau);
       then
         Absyn.ELEMENT(final_,redeclkw_1,inout_1,id,spec_1,info,constr);
-    case (elt,cr,_,_,_,_,_,_) then elt;
+    case (elt,cr,_,_,_,_,_,_,_) then elt;
   end matchcontinue;
 end setComponentPropertiesInElement;
 
@@ -4942,32 +5001,35 @@ protected function setComponentPropertiesInElementspec
   inputs:  (Absyn.ElementSpec,
               Absyn.Ident,
               bool, /* flow */
+              bool, /* stream */
               string, /* variability */
               string) /* causality */
   outputs:  Absyn.ElementSpec"
   input Absyn.ElementSpec inElementSpec1;
   input Absyn.Ident inIdent2;
-  input Boolean inBoolean3;
+  input Boolean inFlow;
+  input Boolean inStream;
   input String inString4;
   input String inString5;
   output Absyn.ElementSpec outElementSpec;
 algorithm
   outElementSpec:=
-  matchcontinue (inElementSpec1,inIdent2,inBoolean3,inString4,inString5)
+  matchcontinue (inElementSpec1,inIdent2,inFlow,inStream,inString4,inString5)
     local
       Absyn.ElementAttributes attr_1,attr;
       Absyn.TypeSpec path;
       list<Absyn.ComponentItem> items;
       String cr,va,cau;
-      Boolean flow_;
+      Boolean flow_,stream_;
       Absyn.ElementSpec spec;
-    case (Absyn.COMPONENTS(attributes = attr,typeSpec = path,components = items),cr,flow_,va,cau)
+    case (Absyn.COMPONENTS(attributes = attr,typeSpec = path,components = items),cr,flow_,stream_,va,cau)
       equation
         itemsContainCompname(items, cr);
-        attr_1 = setElementAttributes(attr, flow_, va, cau);
+        attr_1 = setElementAttributes(attr, flow_, stream_, va, cau);
       then
         Absyn.COMPONENTS(attr_1,path,items);
-    case (spec,_,_,_,_) then spec;
+        
+    case (spec,_,_,_,_,_) then spec;
   end matchcontinue;
 end setComponentPropertiesInElementspec;
 
@@ -5000,29 +5062,31 @@ protected function setElementAttributes
   Sets  attributes associated with ElementAttribues.
   inputs: (Absyn.ElementAttributes,
              bool, /* flow */
+             bool, /* stream */
              string, /* variability */
              string) /*causality */
   outputs: Absyn.ElementAttributes"
   input Absyn.ElementAttributes inElementAttributes1;
-  input Boolean inBoolean2;
+  input Boolean inFlow;
+  input Boolean inStream;
   input String inString3;
   input String inString4;
   output Absyn.ElementAttributes outElementAttributes;
 algorithm
   outElementAttributes:=
-  matchcontinue (inElementAttributes1,inBoolean2,inString3,inString4)
+  matchcontinue (inElementAttributes1,inFlow,inStream,inString3,inString4)
     local
       Absyn.Variability va_1;
       Absyn.Direction cau_1;
       list<Absyn.Subscript> dim;
-      Boolean flow_;
+      Boolean flow_,stream_;
       String va,cau;
-    case (Absyn.ATTR(arrayDim = dim),flow_,va,cau)
+    case (Absyn.ATTR(arrayDim = dim),flow_,stream_,va,cau)
       equation
         va_1 = setElementVariability(va);
         cau_1 = setElementCausality(cau);
       then
-        Absyn.ATTR(flow_,va_1,cau_1,dim);
+        Absyn.ATTR(flow_,stream_,va_1,cau_1,dim);
   end matchcontinue;
 end setElementAttributes;
 
@@ -5172,7 +5236,7 @@ algorithm
   outString:=
   matchcontinue (inElementSpec)
     local
-      String path_str,str,import_str,typename,flow_str,variability_str,dir_str,names_str;
+      String path_str,str,import_str,typename,flow_str,stream_str,variability_str,dir_str,names_str;
       Absyn.Path path;
       Absyn.TypeSpec typeSpec;
       Absyn.Import import_;
@@ -5196,13 +5260,12 @@ algorithm
         typename = Dump.unparseTypeSpec(typeSpec);
         names = getComponentitemsName(lst);
         flow_str = attrFlowStr(attr);
+        stream_str = attrStreamStr(attr);
         variability_str = attrVariabilityStr(attr);
         dir_str = attrDirectionStr(attr);
         names_str = Util.stringDelimitList(names, ", ");
-        str = Util.stringAppendList(
-          {"elementtype=component, typename=",typename,", names={",
-          names_str,"}, flow=",flow_str,", variability=",variability_str,", direction=",
-          dir_str});
+        str = Util.stringAppendList({"elementtype=component, typename=",typename,", names={", names_str,"}, flow=",flow_str,
+        ", stream=",stream_str,", variability=",variability_str,", direction=", dir_str});
       then
         str;
   end matchcontinue;
@@ -8000,7 +8063,7 @@ algorithm
   end matchcontinue;
 end getClassComment2;
 
-protected function getClassRestriction
+public function getClassRestriction
 "function: getClassRestriction
   author: PA
   Returns the class restriction of a class as a string."
@@ -8017,7 +8080,7 @@ algorithm
   res_1 := Util.stringAppendList({"\"",res,"\""});
 end getClassRestriction;
 
-protected function isType
+public function isType
 "function: isType
   This function takes a component reference and a program.
   It returns true if the refrenced class has the restriction
@@ -8142,7 +8205,7 @@ algorithm
   end matchcontinue;
 end isBlock;
 
-protected function isFunction
+public function isFunction
 "function: isFunction
    This function takes a component reference and a program.
    It returns true if the refrenced class has the restriction
@@ -8241,7 +8304,7 @@ algorithm
         path = Absyn.crefToPath(classname);
         Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(parts,_),_) = getPathedClassInProgram(path, p);
         publst = getPublicList(parts);
-        Absyn.COMPONENTS(Absyn.ATTR(_,Absyn.PARAM(),_,_),_,_) = getComponentsContainsName(cr, publst);
+        Absyn.COMPONENTS(Absyn.ATTR(_,_,Absyn.PARAM(),_,_),_,_) = getComponentsContainsName(cr, publst);
       then
         true;
     case (_,_,_) then false;
@@ -8311,7 +8374,7 @@ algorithm
         path = Absyn.crefToPath(classname);
         Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(parts,_),_) = getPathedClassInProgram(path, p);
         publst = getPublicList(parts);
-        Absyn.COMPONENTS(Absyn.ATTR(_,Absyn.CONST(),_,_),_,_) = getComponentsContainsName(cr, publst);
+        Absyn.COMPONENTS(Absyn.ATTR(_,_,Absyn.CONST(),_,_),_,_) = getComponentsContainsName(cr, publst);
       then
         true;
     case (_,_,_) then false;
@@ -9292,16 +9355,16 @@ algorithm
 	  io := matchcontinue(str)
 	    case(str) equation
 	      failure(-1 = System.stringFind(str,"parameter"));
-	    then Absyn.ATTR(false,Absyn.PARAM(),Absyn.BIDIR(),{});
+	    then Absyn.ATTR(false,false,Absyn.PARAM(),Absyn.BIDIR(),{});
 
 	    case(str) equation
 	      failure(-1 = System.stringFind(str,"constant"));
-	    then Absyn.ATTR(false,Absyn.CONST(),Absyn.BIDIR(),{});
+	    then Absyn.ATTR(false,false,Absyn.CONST(),Absyn.BIDIR(),{});
 
 	    case(str) equation
 	      failure(-1 = System.stringFind(str,"discrete"));
-	    then Absyn.ATTR(false,Absyn.DISCRETE(),Absyn.BIDIR(),{});
-	    case(str) then Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{});
+	    then Absyn.ATTR(false,false,Absyn.DISCRETE(),Absyn.BIDIR(),{});
+	    case(str) then Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{});
   end matchcontinue;
 end getDefaultAttr;
 
@@ -10042,11 +10105,10 @@ algorithm
   end matchcontinue;
 end getNthComponent2;
 
-public function getComponents "function: getComponents
-
+public function getComponents 
+"function: getComponents
    This function takes a `ComponentRef\', a `Program\' and an int and  returns
-   a list of all components, as returned by get_nth_component.
-"
+   a list of all components, as returned by get_nth_component."
   input Absyn.ComponentRef inComponentRef;
   input Absyn.Program inProgram;
   output String outString;
@@ -11383,7 +11445,7 @@ algorithm
   end matchcontinue;
 end getClassnamesInClass;
 
-protected function getClassnamesInParts "function: getClassnamesInParts
+public function getClassnamesInParts "function: getClassnamesInParts
 
   Helper function to get_classnames_in_class.
 "
@@ -11426,6 +11488,11 @@ algorithm
       String id;
       list<Absyn.ElementItem> rest;
     case {} then {};
+    case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.CLASSDEF(class_ = Absyn.CLASS(body = Absyn.CLASS_EXTENDS(name= id))),constrainClass = NONE)) :: rest))      
+      equation
+        res = getClassnamesInElts(rest);
+      then
+        (id :: res);
     case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.CLASSDEF(class_ = Absyn.CLASS(name = id)),constrainClass = NONE)) :: rest))
       equation
         res = getClassnamesInElts(rest);
@@ -13302,7 +13369,7 @@ algorithm
       SCode.Class c;
       list<Env.Frame> env_1,env;
       Absyn.Path envpath,p_1,p;
-      String tpname,typename,final_,repl,inout_str,flow_str,variability_str,dir_str,str,access;
+      String tpname,typename,final_,repl,inout_str,flow_str,stream_str,variability_str,dir_str,str,access;
       String typeAdStr;
       list<String> names,lst,lst_1,dims;
       Boolean r_1,f;
@@ -13310,7 +13377,8 @@ algorithm
       Absyn.InnerOuter inout;
       Absyn.ElementAttributes attr;
       Option<Absyn.ArrayDim> typeAd;
-    case (Absyn.ELEMENT(final_ = f,redeclareKeywords = r,innerOuter = inout,specification = Absyn.COMPONENTS(attributes = attr,typeSpec = Absyn.TPATH(p, typeAd),components = lst)),access,env)
+    case (Absyn.ELEMENT(final_ = f,redeclareKeywords = r,innerOuter = inout,
+      specification = Absyn.COMPONENTS(attributes = attr,typeSpec = Absyn.TPATH(p, typeAd),components = lst)),access,env)
       equation
         (_,c,env_1) = Lookup.lookupClass(Env.emptyCache,env, p, true);
         SOME(envpath) = Env.getEnvPath(env_1);
@@ -13325,17 +13393,17 @@ algorithm
         repl = Util.boolString(r_1);
         inout_str = innerOuterStr(inout);
         flow_str = attrFlowStr(attr);
+        stream_str = attrStreamStr(attr);
         variability_str = attrVariabilityStr(attr);
         dir_str = attrDirectionStr(attr);
         typeAdStr = arrayDimensionStr(typeAd);
         typeAdStr =  attrDimensionStr(attr);
-        str = Util.stringDelimitList(
-          {access,final_,flow_str,repl,variability_str,inout_str,
-          dir_str}, ", ");
+        str = Util.stringDelimitList({access,final_,flow_str,stream_str,repl,variability_str,inout_str,dir_str}, ", ");
         lst_1 = suffixInfos(lst,dims,typeAdStr,str);
       then
         lst_1;
-    case (Absyn.ELEMENT(final_ = f,redeclareKeywords = r,innerOuter = inout,specification = Absyn.COMPONENTS(attributes = attr,typeSpec = Absyn.TPATH(p, typeAd),components = lst)),access,env)
+    case (Absyn.ELEMENT(final_ = f,redeclareKeywords = r,innerOuter = inout,
+      specification = Absyn.COMPONENTS(attributes = attr,typeSpec = Absyn.TPATH(p, typeAd),components = lst)),access,env)
       equation
         typename = Absyn.pathString(p);
         names = getComponentitemsName(lst);
@@ -13346,11 +13414,10 @@ algorithm
         repl = Util.boolString(r_1);
         inout_str = innerOuterStr(inout);
         flow_str = attrFlowStr(attr);
+        stream_str = attrStreamStr(attr);        
         variability_str = attrVariabilityStr(attr);
         dir_str = attrDirectionStr(attr);
-        str = Util.stringDelimitList(
-          {access,final_,flow_str,repl,variability_str,inout_str,
-          dir_str}, ", ");
+        str = Util.stringDelimitList({access,final_,flow_str,stream_str,repl,variability_str,inout_str,dir_str}, ", ");
         typeAdStr =  attrDimensionStr(attr);
         lst_1 = suffixInfos(lst,dims,typeAdStr,str);
       then
@@ -13537,11 +13604,10 @@ algorithm
   end matchcontinue;
 end innerOuterStr;
 
-protected function attrFlowStr "function: attrFlowStr
-
-  Helper function to get_component_info, retrieve flow attribite as bool
-  string.
-"
+protected function attrFlowStr 
+"function: attrFlowStr
+  Helper function to get_component_info, 
+  retrieve flow attribite as bool string."
   input Absyn.ElementAttributes inElementAttributes;
   output String outString;
 algorithm
@@ -13558,11 +13624,30 @@ algorithm
   end matchcontinue;
 end attrFlowStr;
 
-protected function attrVariabilityStr "function: attrVariabilityStr
+protected function attrStreamStr 
+"function: attrStreamStr
+  Helper function to get_component_info, 
+  retrieve stream attribute as bool string."
+  input Absyn.ElementAttributes inElementAttributes;
+  output String outString;
+algorithm
+  outString:=
+  matchcontinue (inElementAttributes)
+    local
+      String res;
+      Boolean s;
+    case (Absyn.ATTR(stream_ = s))
+      equation
+        res = Util.boolString(s);
+      then
+        res;
+  end matchcontinue;
+end attrStreamStr;
 
-  Helper function to get_component_info, retrieve variability as a
-  string.
-"
+protected function attrVariabilityStr 
+"function: attrVariabilityStr
+  Helper function to get_component_info, 
+  retrieve variability as a string."
   input Absyn.ElementAttributes inElementAttributes;
   output String outString;
 algorithm
@@ -13575,10 +13660,10 @@ algorithm
   end matchcontinue;
 end attrVariabilityStr;
 
-protected function attrDimensionStr "
-  Helper function to get_component_info, retrieve dimension as a
-  string.
-"
+protected function attrDimensionStr 
+"function attrDimensionStr
+  Helper function to getComponentInfo, 
+  retrieve dimension as a string."
   input Absyn.ElementAttributes inElementAttributes;
   output String outString;
 algorithm
@@ -13590,11 +13675,10 @@ algorithm
 end attrDimensionStr;
 
 
-protected function attrDirectionStr "function: attrDirectionStr
-
-  Helper function to get_component_info, retrieve direction as a
-  string.
-"
+protected function attrDirectionStr 
+"function: attrDirectionStr
+  Helper function to get_component_info, 
+  retrieve direction as a string."
   input Absyn.ElementAttributes inElementAttributes;
   output String outString;
 algorithm
@@ -14580,6 +14664,7 @@ algorithm
         res;
     case (modelpath,p,Absyn.CLASS(body = Absyn.DERIVED(typeSpec = Absyn.TPATH(path,_))))
       equation
+        print("Looking up -> lookupClassdef(" +& Absyn.pathString(path) +& ", " +& Absyn.pathString(modelpath) +& ")\n"); 
         (cdef,newpath) = lookupClassdef(path, modelpath, p);
         res = getClassesInClass(newpath, p, cdef);
       then
@@ -14668,6 +14753,18 @@ algorithm
       list<Absyn.Class> p;
       Absyn.Within w;
     case (str,Absyn.PROGRAM(classes = {})) then fail();
+    case (str,Absyn.PROGRAM(classes = (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(name = c1)) :: p),within_ = w))
+      equation
+        failure(equality(str = c1));
+        res = getClassInProgram(str, Absyn.PROGRAM(p,w));
+      then
+        res;
+    case (str,Absyn.PROGRAM(classes = ((c1 as Absyn.CLASS(body = Absyn.CLASS_EXTENDS(name = c1name))) :: p),within_ = w))
+      local Absyn.Class c1;
+      equation
+        equality(str = c1name);
+      then
+        c1;      
     case (str,Absyn.PROGRAM(classes = (Absyn.CLASS(name = c1) :: p),within_ = w))
       equation
         failure(equality(str = c1));
@@ -16659,5 +16756,110 @@ algorithm
     case (_,_,_) then "Error";
   end matchcontinue;
 end getComponentBindingMapable;
+
+protected function getClassnamesInClassList
+  input Absyn.Path inPath;
+  input Absyn.Program inProgram;
+  input Absyn.Class inClass;
+  output list<String> outString;
+algorithm
+  outString:=
+  matchcontinue (inPath,inProgram,inClass)
+    local
+      list<String> strlist;
+      list<String> res;
+      list<Absyn.ClassPart> parts;
+      Absyn.Class cdef;
+      Absyn.Path newpath,inmodel,path;
+      Absyn.Program p;
+    case (_,_,Absyn.CLASS(body = Absyn.PARTS(classParts = parts)))
+      equation
+        strlist = getClassnamesInParts(parts);
+      then
+        strlist;
+
+    case (inmodel,p,Absyn.CLASS(body = Absyn.DERIVED(typeSpec=Absyn.TPATH(path = path))))
+      equation
+        //(cdef,newpath) = lookupClassdef(path, inmodel, p);
+        //res = getClassnamesInClassList(newpath, p, cdef);
+      then
+        {};//res;
+
+    case (inmodel,p,Absyn.CLASS(body = Absyn.OVERLOAD(_, _)))
+      equation        
+      then {};
+
+    case (inmodel,p,Absyn.CLASS(body = Absyn.ENUMERATION(_, _)))
+      equation        
+      then {};
+
+    case (inmodel,p,Absyn.CLASS(body = Absyn.CLASS_EXTENDS(_, _, _, parts)))
+      equation
+        strlist = getClassnamesInParts(parts);  
+      then strlist;
+
+    case (inmodel,p,Absyn.CLASS(body = Absyn.PDER(_,_)))
+      equation        
+      then {};
+        
+  end matchcontinue;
+end getClassnamesInClassList;
+
+protected function joinPaths
+  input String child;
+  input Absyn.Path parent;
+  output Absyn.Path outPath;
+algorithm
+  outPaths:=
+  matchcontinue (child, parent)
+    local
+      Absyn.Path r, res;
+      String c;
+    case (c, r)
+      equation
+        res = Absyn.joinPaths(r, Absyn.IDENT(c));
+      then res;
+  end matchcontinue;
+end joinPaths;
+
+protected function getClassNamesRecursive "function: getClassNamesRecursive
+Returns a string with all the classes for a given path.
+"
+  input Absyn.Path inPath;
+  input Absyn.Program inProgram;
+  input String indent;
+  output String outString;
+algorithm
+  outString:=
+  matchcontinue (inPath,inProgram,indent)
+    local
+      Absyn.Class cdef;
+      String s1,res, parent_string, result;
+      list<String> strlst;
+      Absyn.Path pp, modelpath;
+      Absyn.Program p;
+      String indent;
+      list<Absyn.Path> result_path_lst;
+    case (pp,p,indent)
+      equation
+        cdef = getPathedClassInProgram(pp, p);
+        strlst = getClassnamesInClassList(pp, p, cdef);
+        parent_string = Absyn.pathString(pp);
+        result_path_lst = Util.listMap1(strlst, joinPaths, pp);
+        indent = indent +& "  ";
+        result = Util.stringAppendList(Util.listMap2(result_path_lst,
+          getClassNamesRecursive, p, indent));
+        res = Util.stringAppendList({indent, parent_string,"\n",result});
+      then
+        res;
+    case (pp,_,indent) 
+      equation
+        parent_string = Absyn.pathString(pp);
+        indent = indent +& "  ";
+        s1 = Error.printMessagesStr();
+        res = Util.stringAppendList({indent, parent_string,"\n","PROBLEM GETTING CLASS NAMES: ", s1});
+      then res;
+  end matchcontinue;
+end getClassNamesRecursive;
 
 end Interactive;

@@ -524,15 +524,13 @@ algorithm
       local String str;
       equation
         true = runBackendQ();
-        dlow = DAELow.lower(dae, true, true) "add dummy state" ;
+        dlow = DAELow.lower(dae, /* add dummy state if needed */ true, /* simplify */ true);
         Debug.fcall("dumpdaelow", DAELow.dump, dlow);
         m = DAELow.incidenceMatrix(dlow);
         mT = DAELow.transposeMatrix(m);
         Debug.fcall("bltdump", DAELow.dumpIncidenceMatrix, m);
         Debug.fcall("bltdump", DAELow.dumpIncidenceMatrixT, mT);
-        (v1,v2,dlow_1,m,mT) = DAELow.matchingAlgorithm(dlow, m, mT,
-          (DAELow.INDEX_REDUCTION(),DAELow.EXACT(),
-          DAELow.REMOVE_SIMPLE_EQN()));
+        (v1,v2,dlow_1,m,mT) = DAELow.matchingAlgorithm(dlow, m, mT,(DAELow.INDEX_REDUCTION(),DAELow.EXACT(),DAELow.REMOVE_SIMPLE_EQN()));
         Debug.fcall("bltdump", DAELow.dumpIncidenceMatrix, m);
         Debug.fcall("bltdump", DAELow.dumpIncidenceMatrixT, mT);
         Debug.fcall("bltdump", DAELow.dump, dlow_1);

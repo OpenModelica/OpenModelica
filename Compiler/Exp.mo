@@ -422,6 +422,7 @@ public
 uniontype AttributesTypes "- Attributes"
   record ATTRTYPES
     Boolean flow_ "flow" ;
+    Boolean stream_ "flow" ;
     SCode.Accessibility accessibility "accessibility" ;
     SCode.Variability parameter_ "parameter" ;
     Absyn.Direction direction "direction" ;
@@ -651,6 +652,17 @@ uniontype Flow "The Flow of a variable indicates if it is a Flow variable or not
 end Flow;
 
 public
+uniontype Stream "The Stream of a variable indicates if it is a Stream variable or not, or if
+   it is not a connector variable at all."
+  record STREAM end STREAM;
+
+  record NON_STREAM end NON_STREAM;
+
+  record NON_STREAM_CONNECTOR end NON_STREAM_CONNECTOR;
+    
+end Stream;
+
+public
 uniontype VarDirection
   record INPUT end INPUT;
 
@@ -667,22 +679,21 @@ end VarProtection;
 
 public
 uniontype DAEElement
-  record VAR
+  record VAR  
     ComponentRef componentRef " The variable name";
-    VarKind varible "varible kind" ;
-    VarDirection variable "variable, constant, parameter, etc." ;
+    VarKind kind "varible kind: variable, constant, parameter, etc." ;
+    VarDirection direction "input, output or bidir" ;
     VarProtection protection "if protected or public";
-    TypeExp input_ "input, output or bidir" ;
-    Option<Exp> one "one of the builtin types" ;
-    InstDims binding "Binding expression e.g. for parameters" ;
-    //StartValue dimension "dimension of original component" ;
-    Flow value "value of start attribute" ;
-    list<Absyn.Path> flow_ "Flow of connector variable. Needed for
-						unconnected flow variables" ;
-    Option<VariableAttributes> variableAttributesOption;
-    Option<Absyn.Comment> absynCommentOption;
+    TypeExp ty "one of the builtin types" ;
+    Option<Exp> binding "Binding expression e.g. for parameters ; value of start attribute" ; 
+    InstDims  dims "dimensions";
+    Flow flow_ "Flow of connector variable. Needed for unconnected flow variables" ;
+    Stream stream_ "Stream variables in connectors" ;    
+    list<Absyn.Path> pathLst " " ;
+    Option<VariableAttributes> variableAttributesOption ;
+    Option<Absyn.Comment> absynCommentOption ;
     Absyn.InnerOuter innerOuter "inner/outer required to 'change' outer references";
-    TypeTypes fullType "Full type information required to analyze inner/outer elements";
+    TypeTypes fullType "Full type information required to analyze inner/outer elements";  
   end VAR;
 
   record DEFINE "A solved equation"

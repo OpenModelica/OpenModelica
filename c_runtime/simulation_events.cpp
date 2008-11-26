@@ -37,12 +37,12 @@
 using namespace std;
 
 // vectors with saved values used by pre(v)
-double* h_saved  = 0;
-double* x_saved  = 0;
+double* h_saved = 0;
+double* x_saved = 0;
 double* xd_saved = 0;
-double* y_saved  = 0;
+double* y_saved = 0;
 
-double* gout     = 0;
+double* gout = 0;
 long* zeroCrossingEnabled = 0;
 long inUpdate = 0;
 long inSample = 0;
@@ -53,40 +53,40 @@ static list<long> EventQueue;
  *
  * \return zero if successful.
  */
-int initializeEventData()
-{
-	 // load default initial values.
+int initializeEventData() {
+  // load default initial values.
   gout = new double[globalData->nZeroCrossing];
   h_saved = new double[globalData->nHelpVars];
   x_saved = new double[globalData->nStates];
   xd_saved = new double[globalData->nStates];
   y_saved = new double[globalData->nAlgebraic];
   zeroCrossingEnabled = new long[globalData->nZeroCrossing];
-  if(!y_saved || !gout || !h_saved || !x_saved || !xd_saved || ! zeroCrossingEnabled){
-    cerr << "Could not allocate memory for global event data structures" << endl;
+  if (!y_saved || !gout || !h_saved || !x_saved || !xd_saved
+      || !zeroCrossingEnabled) {
+    cerr << "Could not allocate memory for global event data structures"
+        << endl;
     return -1;
   }
   // adrpo 2006-11-30 -> init the damn structures!
-  memset(gout, 0, sizeof(double)*globalData->nZeroCrossing);
-  memset(h_saved, 0, sizeof(double)*globalData->nHelpVars);
-  memset(x_saved, 0, sizeof(double)*globalData->nStates);
-  memset(xd_saved, 0, sizeof(double)*globalData->nStates);
-  memset(y_saved, 0, sizeof(double)*globalData->nAlgebraic);
-  memset(zeroCrossingEnabled, 0, sizeof(long)*globalData->nZeroCrossing);
+  memset(gout, 0, sizeof(double) * globalData->nZeroCrossing);
+  memset(h_saved, 0, sizeof(double) * globalData->nHelpVars);
+  memset(x_saved, 0, sizeof(double) * globalData->nStates);
+  memset(xd_saved, 0, sizeof(double) * globalData->nStates);
+  memset(y_saved, 0, sizeof(double) * globalData->nAlgebraic);
+  memset(zeroCrossingEnabled, 0, sizeof(long) * globalData->nZeroCrossing);
   return 0;
 }
 
 /* \brief deallocate global data for event handling.
  *
  */
-void deinitializeEventData()
-{
-  delete [] h_saved;
-  delete [] x_saved;
-  delete [] xd_saved;
-  delete [] y_saved;
-  delete [] gout;
-  delete [] zeroCrossingEnabled;
+void deinitializeEventData() {
+  delete[] h_saved;
+  delete[] x_saved;
+  delete[] xd_saved;
+  delete[] y_saved;
+  delete[] gout;
+  delete[] zeroCrossingEnabled;
 }
 
 /* \brief
@@ -101,122 +101,112 @@ void deinitializeEventData()
  * This function checks such initial events and calls the event handling for this. The function is called after the first
  * step is taken by DASSRT (a small tiny step just to check these events)
  * */
-void checkForInitialZeroCrossings(long*jroot)
-{
-	int i;
-	if (sim_verbose) {
-		cout << "checkForIntialZeroCrossings" << endl;
-	}
-	// enable only those that were disabled at init time.
-	for (i=0; i<globalData->nZeroCrossing; i++) {
-		if (zeroCrossingEnabled[i]==0) {
-			zeroCrossingEnabled[i]=1;
-		} else {
-			zeroCrossingEnabled[i]=0;
-		}
-	}
-	function_zeroCrossing(&globalData->nStates,&globalData->timeValue,
-                        globalData->states,&globalData->nZeroCrossing,gout,0,0);
+void checkForInitialZeroCrossings(long*jroot) {
+  int i;
+  if (sim_verbose) {
+    cout << "checkForIntialZeroCrossings" << endl;
+  }
+  // enable only those that were disabled at init time.
+  for (i = 0; i < globalData->nZeroCrossing; i++) {
+    if (zeroCrossingEnabled[i] == 0) {
+      zeroCrossingEnabled[i] = 1;
+    } else {
+      zeroCrossingEnabled[i] = 0;
+    }
+  }
+  function_zeroCrossing(&globalData->nStates, &globalData->timeValue,
+      globalData->states, &globalData->nZeroCrossing, gout, 0, 0);
 
-	for(i=0;i<globalData->nZeroCrossing;i++) {
+  for (i = 0; i < globalData->nZeroCrossing; i++) {
     if (zeroCrossingEnabled[i] && gout[i]) {
       handleZeroCrossing(i);
       function_updateDependents();
       functionDAE_output();
     }
   }
-	emit();
-    CheckForNewEvents(&globalData->timeValue);
-    StartEventIteration(&globalData->timeValue);
+  emit();
+  CheckForNewEvents(&globalData->timeValue);
+  StartEventIteration(&globalData->timeValue);
 
-    saveall();
-    calcEnabledZeroCrossings();
-    if (sim_verbose) {
-    	cout << "checkForIntialZeroCrossings done." << endl;
-    }
+  saveall();
+  calcEnabledZeroCrossings();
+  if (sim_verbose) {
+    cout << "checkForIntialZeroCrossings done." << endl;
+  }
 }
-
 
 /* This function is similar to CheckForNewEvents except that is called during initialization.
  *
  */
 
-void CheckForInitialEvents(double *t)
-{
+void CheckForInitialEvents(double *t) {
   // Check for changes in discrete variables
   globalData->timeValue = *t;
   if (sim_verbose) {
-  	cout << "Check for initial events." << endl;
+    cout << "Check for initial events." << endl;
   }
   // if discrete variable not in when equation has changed, saveall and  solve equations again.
-  while(checkForDiscreteVarChanges()) {
-  	saveall();
-  	function_updateDependents(); }
-  function_zeroCrossing(&globalData->nStates,
-                        &globalData->timeValue,
-                        globalData->states,
-                        &globalData->nZeroCrossing,gout,0,0);
-  for (long i=0;i<globalData->nZeroCrossing;i++) {
-	  if (sim_verbose) printf("gout[%ld]=%f\n",i,gout[i]);
-    if (gout[i] < 0  || zeroCrossingEnabled[i]==0) { // check also zero crossings that are on zero.
-    	if (sim_verbose) {
-    		cout << "adding event " << i << " at initialization" << endl;
-    		}
-       AddEvent(i);
+  while (checkForDiscreteVarChanges()) {
+    saveall();
+    function_updateDependents();
+  }
+  function_zeroCrossing(&globalData->nStates, &globalData->timeValue,
+      globalData->states, &globalData->nZeroCrossing, gout, 0, 0);
+  for (long i = 0; i < globalData->nZeroCrossing; i++) {
+    if (sim_verbose)
+      printf("gout[%ld]=%f\n", i, gout[i]);
+    if (gout[i] < 0 || zeroCrossingEnabled[i] == 0) { // check also zero crossings that are on zero.
+      if (sim_verbose) {
+        cout << "adding event " << i << " at initialization" << endl;
+      }
+      AddEvent(i);
     }
   }
 }
 
-
-void CheckForNewEvents(double *t)
-{
-//	int discVarChange=0;
+void CheckForNewEvents(double *t) {
+  //	int discVarChange=0;
   // Check for changes in discrete variables
   globalData->timeValue = *t;
   // if discrete variable not in when equation has changed, saveall and solve equations again.
-/*
-  while(checkForDiscreteVarChanges()) {
-  	discVarChange=1;
-  	saveall();
-  	function_updateDependents();
-  }
+  /*
+   while(checkForDiscreteVarChanges()) {
+   discVarChange=1;
+   saveall();
+   function_updateDependents();
+   }
 
-	if(!discVarChange) function_updateDependents();
-*/
+   if(!discVarChange) function_updateDependents();
+   */
 
   if (checkForDiscreteVarChanges()) {
-  	AddEvent(-1);
+    AddEvent(-1);
   }
 
-  function_zeroCrossing(&globalData->nStates,
-                        &globalData->timeValue,
-                        globalData->states,
-                        &globalData->nZeroCrossing,gout,0,0);
-  for (long i=0;i<globalData->nZeroCrossing;i++) {
+  function_zeroCrossing(&globalData->nStates, &globalData->timeValue,
+      globalData->states, &globalData->nZeroCrossing, gout, 0, 0);
+  for (long i = 0; i < globalData->nZeroCrossing; i++) {
     if (gout[i] < 0) {
-       AddEvent(i);
+      AddEvent(i);
     }
   }
 }
 
-void AddEvent(long index)
-{
+void AddEvent(long index) {
   list<long>::iterator i;
-  for (i=EventQueue.begin(); i != EventQueue.end(); i++) {
+  for (i = EventQueue.begin(); i != EventQueue.end(); i++) {
     if (*i == index)
       return;
   }
   EventQueue.push_back(index);
-    //cout << "Adding Event:" << index << " queue length:" << EventQueue.size() << endl;
+  //cout << "Adding Event:" << index << " queue length:" << EventQueue.size() << endl;
 }
 
-bool
-ExecuteNextEvent(double *t)
-{
-  if (sim_verbose)
-  {
+bool ExecuteNextEvent(double *t) {
+  if (sim_verbose) {
     cout << "Events in the queue:";
-    for (list<long>::const_iterator it = EventQueue.begin(); it != EventQueue.end(); ++it) {
+    for (list<long>::const_iterator it = EventQueue.begin(); it
+        != EventQueue.end(); ++it) {
       cout << *it << ", ";
     }
     cout << endl;
@@ -224,13 +214,12 @@ ExecuteNextEvent(double *t)
   if (EventQueue.begin() != EventQueue.end()) {
     long nextEvent = EventQueue.front();
     if (sim_verbose) {
-		printf("Executing event id:%ld\n",nextEvent);
+      printf("Executing event id:%ld\n", nextEvent);
     }
-	if (nextEvent >= globalData->nZeroCrossing) {
+    if (nextEvent >= globalData->nZeroCrossing) {
       globalData->timeValue = *t;
-      function_when(nextEvent-globalData->nZeroCrossing);
-    }
-    else if (nextEvent >= 0) {
+      function_when(nextEvent - globalData->nZeroCrossing);
+    } else if (nextEvent >= 0) {
       globalData->timeValue = *t;
       handleZeroCrossing(nextEvent);
       function_updateDependents();
@@ -244,37 +233,35 @@ ExecuteNextEvent(double *t)
   return false;
 }
 
-void
-StartEventIteration(double *t)
-{
+void StartEventIteration(double *t) {
   while (EventQueue.begin() != EventQueue.end()) {
     calcEnabledZeroCrossings();
-    while (ExecuteNextEvent(t)) { }
+    while (ExecuteNextEvent(t)) {
+    }
     inSample = 0;
-//    for (long i = 0; i < globalData->nHelpVars; i++) save(globalData->helpVars[i]);
-	saveall();
+    //    for (long i = 0; i < globalData->nHelpVars; i++) save(globalData->helpVars[i]);
+    saveall();
     globalData->timeValue = *t;
     function_updateDependents();
     CheckForNewEvents(t);
   }
   for (long i = 0; i < globalData->nHelpVars; i++) {
-//  	globalData->helpVars[i] = 0;
-//  	save(globalData->helpVars[i]);
+    //  	globalData->helpVars[i] = 0;
+    //  	save(globalData->helpVars[i]);
   }
   //  cout << "EventIteration done" << endl;
 }
 
-void StateEventHandler(long* jroot, double *t)
-{
+void StateEventHandler(long* jroot, double *t) {
   inSample = 1;
-  for(int i=0;i<globalData->nZeroCrossing;i++) {
-    if (jroot[i] ) {
+  for (int i = 0; i < globalData->nZeroCrossing; i++) {
+    if (jroot[i]) {
       handleZeroCrossing(i);
       function_updateDependents();
       functionDAE_output();
     }
   }
-//  emit();
+  //  emit();
 }
 
 #if defined(__GNUC__) // for GNUC
@@ -285,53 +272,47 @@ void StateEventHandler(long* jroot, double *t)
 #else /* for other compilers */
 inline
 #endif
-void calcEnabledZeroCrossings()
-{
+void calcEnabledZeroCrossings() {
   int i;
-  for (i=0;i<globalData->nZeroCrossing;i++) {
+  for (i = 0; i < globalData->nZeroCrossing; i++) {
     zeroCrossingEnabled[i] = 1;
   }
-  function_zeroCrossing(&globalData->nStates,&globalData->timeValue,
-                        globalData->states,&globalData->nZeroCrossing,gout,0,0);
-  for (i=0;i<globalData->nZeroCrossing;i++) {
+  function_zeroCrossing(&globalData->nStates, &globalData->timeValue,
+      globalData->states, &globalData->nZeroCrossing, gout, 0, 0);
+  for (i = 0; i < globalData->nZeroCrossing; i++) {
     if (gout[i] > 0)
       zeroCrossingEnabled[i] = 1;
     else if (gout[i] < 0)
       zeroCrossingEnabled[i] = -1;
     else
       zeroCrossingEnabled[i] = 0;
- // cout << "e[" << i << "]=" << zeroCrossingEnabled[i] << " gout[" << i << "]="<< gout[i]
-   //  << " init =" << globalData->init << endl;
+    // cout << "e[" << i << "]=" << zeroCrossingEnabled[i] << " gout[" << i << "]="<< gout[i]
+    //  << " init =" << globalData->init << endl;
   }
 }
 
-
 // relation functions used in zero crossing detection
-double Less(double a, double b)
-{
-    return a-b;
+double Less(double a, double b) {
+  return a - b;
 }
 
-double LessEq(double a, double b)
-{
-    return a-b;
+double LessEq(double a, double b) {
+  return a - b;
 }
 
-double Greater(double a, double b)
-{
-    return b-a;
+double Greater(double a, double b) {
+  return b - a;
 }
 
-double GreaterEq(double a, double b)
-{
-    return b-a;
+double GreaterEq(double a, double b) {
+  return b - a;
 }
 
-double Sample(double t, double start, double interval)
-{
-  double pipi = atan(1.0)*8.0;
-  if (t<(start-interval*.25)) return -1.0;
-  return sin(pipi*(t-start)/interval);
+double Sample(double t, double start, double interval) {
+  double pipi = atan(1.0) * 8.0;
+  if (t < (start - interval * .25))
+    return -1.0;
+  return sin(pipi * (t - start) / interval);
 }
 
 /*
@@ -341,61 +322,56 @@ double Sample(double t, double start, double interval)
  * The starting time start and the sample interval interval need to
  * be parameter expressions and need to be a subtype of Real or Integer.
  */
-double sample(double start, double interval)
-{
-  //  double sloop = 4.0/interval;
-  if (inSample == 0) return 0;
-  double tmp = ((globalData->timeValue - start)/interval);
-  tmp-= floor(tmp);
+double sample(double start, double interval) {
+  // double sloop = 4.0/interval;
+  // adrpo: if we test for inSample == 0 no event is generated when start + 0*interval!
+  // if (inSample == 0) return 0;
+  double tmp = ((globalData->timeValue - start) / interval);
+  tmp -= floor(tmp);
   /* adrpo - 2008-01-15
    * comparison was tmp >= 0 fails sometimes on x86 due to extended precision in registers
    * TODO - fix the simulation runtime so that the sample event is generated at EXACTLY that time.
    * below should be: if (tmp >= -0.0001 && tmp < 0.0001) but needs more testing as some models from
    * testsuite fail.
    */
-  if (tmp >= -0.0001 && tmp < 0.0001)
-  {
+  if (tmp >= -0.0001 && tmp < 0.0001) {
     if (sim_verbose)
       cout << "Calling sample(" << start << ", " << interval << ")\n"
-           << "+generating an event at time:" << globalData->timeValue << " tmp: " << tmp << endl;
-  	return 1;
-  }
-  else
-  {
+          << "+generating an event at time:" << globalData->timeValue
+          << " tmp: " << tmp << endl;
+    return 1;
+  } else {
     if (sim_verbose)
       cout << "Calling sample(" << start << ", " << interval << ")\n"
-           << "-NO an event at time:" << globalData->timeValue << " tmp: " << tmp << endl;
+          << "-NO an event at time:" << globalData->timeValue << " tmp: "
+          << tmp << endl;
     return 0;
   }
 }
 
-void saveall()
-{
+void saveall() {
   int i;
-  for(i=0;i<globalData->nStates; i++) {
+    for (i = 0; i < globalData->nStates; i++) {
     x_saved[i] = globalData->states[i];
     xd_saved[i] = globalData->statesDerivatives[i];
   }
- for(i=0;i<globalData->nAlgebraic; i++) {
+  for (i = 0; i < globalData->nAlgebraic; i++) {
     y_saved[i] = globalData->algebraics[i];
   }
-  for(i=0;i<globalData->nHelpVars; i++) {
+  for (i = 0; i < globalData->nHelpVars; i++) {
     h_saved[i] = globalData->helpVars[i];
   }
 }
-
-
-
 
 /* save(v) saves the previous value of a discrete variable v, which can be accessed
  * using pre(v) in Modelica.
  */
 
-void save(double & var)
-{
+void save(double & var) {
   double* pvar = &var;
   long ind;
-  if (sim_verbose) { printf("save %s = %f\n",getName(&var),var);
+  if (sim_verbose) {
+    printf("save %s = %f\n", getName(&var), var);
   }
   ind = long(pvar - globalData->helpVars);
   if (ind >= 0 && ind < globalData->nHelpVars) {
@@ -420,8 +396,7 @@ void save(double & var)
   return;
 }
 
-double pre(double & var)
-{
+double pre(double & var) {
   double* pvar = &var;
   long ind;
 
@@ -439,18 +414,15 @@ double pre(double & var)
   }
   ind = long(pvar - globalData->helpVars);
   if (ind >= 0 && ind < globalData->nHelpVars) {
-  	return h_saved[ind];
+    return h_saved[ind];
   }
   return var;
 }
-bool edge(double& var)
-{
-  return var && ! pre(var);
+bool edge(double& var) {
+  return var && !pre(var);
 }
 
-bool change(double& var)
-{
- return   var && ! pre(var) || !var && pre(var);
+bool change(double& var) {
+  return var && !pre(var) || !var && pre(var);
 }
-
 

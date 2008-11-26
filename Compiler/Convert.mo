@@ -85,42 +85,41 @@ public function fromDAEElemToExpElem "function: fromDAEElemToExpElem
 algorithm
   outElem :=
   matchcontinue (daeElem)
-    case (DAE.VAR(compRef,var,vardirection,varProt,inp,o,bind,
-      		val,f,varAttr,absynComment,innerOut,fType))
+    case (DAE.VAR(compRef,varKind,varDirection,varProt,ty,binding,dims,flow_,stream_,pathLst,varAttr,absynComment,innerOut,fType))
       local
         Exp.ComponentRef compRef " The variable name";
-    		DAE.VarKind var "varible kind" ;
-    		DAE.VarDirection vardirection "variable, constant, parameter, etc." ;
-    		DAE.VarProtection varProt;
-    		DAE.Type inp "input, output or bidir" ;
-    		Option<Exp.Exp> o "one of the builtin types" ;
-    		DAE.InstDims bind "Binding expression e.g. for parameters" ;
-    		DAE.Flow val "value of start attribute" ;
-    		list<Absyn.Path> f "Flow of connector variable. Needed for
-						unconnected flow variables" ;
+    		DAE.VarKind varKind "varible kind: variable, constant, parameter, etc." ;
+    		DAE.VarDirection varDirection "direction: input/output/bidirectional" ;
+    		DAE.VarProtection varProt "protected or not" ;
+    		DAE.Type ty "one of the builtin types" ;
+    		Option<Exp.Exp> binding "Binding expression e.g. for parameters, value of start attribute" ; 
+    		DAE.InstDims dims "dimensions"; 
+    		DAE.Flow flow_ "Flow of connector variable. Needed for unconnected flow variables" ;
+    		DAE.Stream stream_ "Stream connector variables." ;
+    		list<Absyn.Path> pathLst "class names" ;
     		Option<DAE.VariableAttributes> varAttr;
     		Option<Absyn.Comment> absynComment;
     		Absyn.InnerOuter innerOut "inner/outer required to 'change' outer references";
     		Types.Type fType "Full type information required to analyze inner/outer elements";
      		Exp.DAEElement elem;
-     		Exp.VarKind var2;
-     		Exp.VarDirection vardirection2;
+     		Exp.VarKind varKind2;
+     		Exp.VarDirection varDirection2;
      		Exp.VarProtection varProt2;
-     		Exp.TypeExp inp2;
-     		Exp.Flow val2;
+     		Exp.TypeExp ty2;
+     		Exp.Flow flow_2;
+     		Exp.Stream stream_2;
      		Option<Exp.VariableAttributes> varAttr2;
      		Exp.TypeTypes fType2;
      equation
-       var2 = varKindConvert(var);
-       vardirection2 = varDirConvert(vardirection);
+       varKind2 = varKindConvert(varKind);
+       varDirection2 = varDirConvert(varDirection);
        varProt2 = varProtConvert(varProt);
-       inp2 = typeConvert(inp);
-       val2 = flowConvert(val);
+       ty2 = typeConvert(ty);
+       flow_2 = flowConvert(flow_);
+       stream_2 = streamConvert(stream_);
        varAttr2 = varAttrConvert(varAttr);
        fType2 = fromTypeToTypeTypes(fType);
-  	   elem = Exp.VAR(compRef,var2,vardirection2,varProt2,
-  	   inp2,o,bind,
-  	   val2,f,varAttr2,absynComment,innerOut,fType2);
+  	   elem = Exp.VAR(compRef,varKind2,varDirection2,varProt2,ty2,binding,dims,flow_2,stream_2,pathLst,varAttr2,absynComment,innerOut,fType2);
      then elem;
     case (DAE.DEFINE(c,e))
       local
@@ -322,6 +321,19 @@ algorithm
     case (DAE.NON_CONNECTOR()) equation then Exp.NON_CONNECTOR();
   end matchcontinue;
 end flowConvert;
+
+public function streamConvert "function: streamConvert
+  DAE.Stream => Exp.Stream"
+	input DAE.Stream val;
+	output Exp.Stream outVal;
+algorithm
+  outVal :=
+  matchcontinue (val)
+    case (DAE.STREAM()) equation then Exp.STREAM();
+    case (DAE.NON_STREAM()) equation then Exp.NON_STREAM();
+    case (DAE.NON_STREAM_CONNECTOR()) equation then Exp.NON_STREAM_CONNECTOR();
+  end matchcontinue;
+end streamConvert;
 
 public function varAttrConvert "function: varAttrConvert
   DAE.VariableAttributres 'option => Exp.VariableAttributes 'option"
@@ -646,47 +658,49 @@ algorithm
   end matchcontinue;
 end fromExpElemsToDAEElems;
 
-public function fromExpElemToDAEElem "function: fromExpElemToDAEElem
+public function fromExpElemToDAEElem 
+"function fromExpElemToDAEElem
   Exp.DAEElement => DAE.Element"
 	input Exp.DAEElement daeElem;
 	output DAE.Element outElem;
 algorithm
   outElem :=
   matchcontinue (daeElem)
-    case (Exp.VAR(compRef,var,vardirection,varProt,inp,o,bind,val,f,varAttr,absynComment,innerOut,fType))
+    case (Exp.VAR(compRef,var,varDirection,varProt,ty,binding,dims,flow_,stream_,pathLst,varAttr,absynComment,innerOut,fType))
       local
         Exp.ComponentRef compRef " The variable name";
-    		Exp.VarKind var "varible kind" ;
-    		Exp.VarDirection vardirection "variable, constant, parameter, etc." ;
-    		Exp.VarProtection varProt;
-    		Exp.TypeExp inp "input, output or bidir" ;
-    		Option<Exp.Exp> o "one of the builtin types" ;
-    		Exp.InstDims bind "Binding expression e.g. for parameters" ;
-    		Exp.Flow val "value of start attribute" ;
-    		list<Absyn.Path> f "Flow of connector variable. Needed for
-						unconnected flow variables" ;
+    		Exp.VarKind var "varible kind: variable, constant, parameter, etc." ;
+    		Exp.VarDirection varDirection " input/output/bidirectional ";
+    		Exp.VarProtection varProt "protected or not";
+    		Exp.TypeExp ty "one of the builtin types";
+    		Option<Exp.Exp> binding "Binding expression e.g. for parameters, i.e. value of start attribute";
+    		Exp.InstDims dims "dimensions"; 
+    		Exp.Flow flow_ "Flow of connector variable. Needed for unconnected flow variables";
+    		Exp.Stream stream_ "Stream variables" ;
+    		list<Absyn.Path> pathLst;
     		Option<Exp.VariableAttributes> varAttr;
     		Option<Absyn.Comment> absynComment;
     		Absyn.InnerOuter innerOut "inner/outer required to 'change' outer references";
     		Exp.TypeTypes fType "Full type information required to analyze inner/outer elements";
      		DAE.Element elem;
      		DAE.VarKind var2;
-     		DAE.VarDirection vardirection2;
-     		DAE.Type inp2;
+     		DAE.VarDirection varDirection2;
+     		DAE.Type ty2;
      		DAE.VarProtection varProt2;
-     		DAE.Flow val2;
+     		DAE.Flow flow_2;
+     		DAE.Stream stream_2;
      		Option<DAE.VariableAttributes> varAttr2;
      		Types.Type fType2;
      equation
        var2 = varKindConvert2(var);
-       vardirection2 = varDirConvert2(vardirection);
+       varDirection2 = varDirConvert2(varDirection);
        varProt2 = varProtConvert2(varProt);
-       inp2 = typeConvert2(inp);
+       ty2 = typeConvert2(ty);
        varAttr2 = varAttrConvert2(varAttr);
        fType2 = fromTypeTypesToType(fType);
-       val2 = flowConvert2(val);
-  	   elem = DAE.VAR(compRef,var2,vardirection2,varProt2,inp2,o,bind,
-  	   val2,f,varAttr2,absynComment,innerOut,fType2);
+       flow_2 = flowConvert2(flow_);
+       stream_2 = streamConvert2(stream_);
+  	   elem = DAE.VAR(compRef,var2,varDirection2,varProt2,ty2,binding,dims,flow_2,stream_2,pathLst,varAttr2,absynComment,innerOut,fType2);
      then elem;
 
     case (Exp.DEFINE(c,e))
@@ -892,6 +906,19 @@ algorithm
     case (Exp.NON_CONNECTOR()) equation then DAE.NON_CONNECTOR();
   end matchcontinue;
 end flowConvert2;
+
+public function streamConvert2 "function: streamConvert2
+  Exp.Stream => DAE.Stream"
+	input Exp.Stream val;
+	output DAE.Stream outVal;
+algorithm
+  outVal :=
+  matchcontinue (val)
+    case (Exp.STREAM()) equation then DAE.STREAM();
+    case (Exp.NON_STREAM()) equation then DAE.NON_STREAM();
+    case (Exp.NON_STREAM_CONNECTOR()) equation then DAE.NON_STREAM_CONNECTOR();
+  end matchcontinue;
+end streamConvert2;
 
 public function varAttrConvert2 "function: varAttrConvert2
   Exp.VariableAttributes 'option => DAE.VariableAttributes 'option"
@@ -1614,15 +1641,15 @@ public function fromAttributesTypesToAttributes "function: fromAttributesTypesTo
 algorithm
   outType :=
   matchcontinue (attType)
-    case (Exp.ATTRTYPES(f,acc,par,d))
+    case (Exp.ATTRTYPES(f,s,acc,par,d))
     local
-    	Boolean f;
+    	Boolean f,s;
     	SCode.Accessibility acc;
     	SCode.Variability par;
     	Absyn.Direction d;
     	Types.Attributes ret;
     equation
-      ret = Types.ATTR(f,acc,par,d);
+      ret = Types.ATTR(f,s,acc,par,d);
     then ret;
   end matchcontinue;
 end fromAttributesTypesToAttributes;
@@ -2104,15 +2131,15 @@ public function fromAttributesToAttributesTypes "function: fromAttributesToAttri
 algorithm
   outType :=
   matchcontinue (attType)
-    case (Types.ATTR(f,acc,par,d))
+    case (Types.ATTR(f,s,acc,par,d))
     local
-    	Boolean f;
+    	Boolean f,s;
     	SCode.Accessibility acc;
     	SCode.Variability par;
     	Absyn.Direction d;
     	Exp.AttributesTypes ret;
     equation
-      ret = Exp.ATTRTYPES(f,acc,par,d);
+      ret = Exp.ATTRTYPES(f,s,acc,par,d);
     then ret;
   end matchcontinue;
 end fromAttributesToAttributesTypes;

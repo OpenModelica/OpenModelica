@@ -987,7 +987,7 @@ protected function addForLoopScopeConst "function: addForLoopScopeConst
 algorithm
   env_1 := Env.openScope(env, false, SOME("$for loop scope$")) "encapsulated?" ;
   env_2 := Env.extendFrameV(env_1,
-          Types.VAR(i,Types.ATTR(false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR()),
+          Types.VAR(i,Types.ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR()),
           false,typ,Types.VALBOUND(Values.INTEGER(1))), NONE, Env.VAR_UNTYPED(), {});
 end addForLoopScopeConst;
 
@@ -4185,7 +4185,7 @@ algorithm
       equation
         (cache,(exp_1 as Exp.CREF(cr_1,_)),Types.PROP(tp1,_),_) = elabExp(cache,env, exp, impl, NONE,true);
         Types.simpleType(tp1);
-        (cache,Types.ATTR(_,_,SCode.DISCRETE(),_),_,_) = Lookup.lookupVar(cache,env, cr_1);
+        (cache,Types.ATTR(_,_,_,SCode.DISCRETE(),_),_,_) = Lookup.lookupVar(cache,env, cr_1);
       then
         (cache,Exp.CALL(Absyn.IDENT("change"),{exp_1},false,true,Exp.BOOL()),Types.PROP((Types.T_BOOL({}),NONE),Types.C_VAR()));
 
@@ -4212,7 +4212,7 @@ algorithm
       equation
         (cache,(exp_1 as Exp.CREF(cr_1,_)),Types.PROP(tp1,_),_) = elabExp(cache,env, exp, impl, NONE,true);
         Types.simpleType(tp1);
-        (cache,Types.ATTR(_,_,_,_),_,_) = Lookup.lookupVar(cache,env, cr_1);
+        (cache,Types.ATTR(_,_,_,_,_),_,_) = Lookup.lookupVar(cache,env, cr_1);
         Error.addMessage(Error.ARGUMENT_MUST_BE_DISCRETE_VAR, {"First","change"});
       then
         fail();
@@ -5073,6 +5073,13 @@ algorithm
 		then (cache,Exp.CALL(Absyn.IDENT("checkModel"),
           {Exp.CODE(Absyn.C_TYPENAME(className),Exp.OTHER())},false,true,Exp.STRING()),Types.PROP((Types.T_STRING({}),NONE),Types.C_VAR()),SOME(st));
 
+		case (cache,env,Absyn.CREF_IDENT(name = "checkAllModelsRecursive"),{Absyn.CREF(componentReg = cr)},{},impl,SOME(st))
+		  local Absyn.Path className;
+		  equation
+		  className = Absyn.crefToPath(cr);
+		then (cache,Exp.CALL(Absyn.IDENT("checkAllModelsRecursive"),
+          {Exp.CODE(Absyn.C_TYPENAME(className),Exp.OTHER())},false,true,Exp.STRING()),Types.PROP((Types.T_STRING({}),NONE),Types.C_VAR()),SOME(st));
+
 		case (cache,env,Absyn.CREF_IDENT(name = "translateGraphics"),{Absyn.CREF(componentReg = cr)},{},impl,SOME(st))
 		  local Absyn.Path className;
 		  equation
@@ -5092,9 +5099,9 @@ algorithm
           Types.T_COMPLEX(ClassInf.RECORD("SimulationObject"),
           {
           Types.VAR("flatClass",
-          Types.ATTR(false,SCode.RO(),SCode.VAR(),Absyn.BIDIR()),false,(Types.T_STRING({}),NONE),Types.UNBOUND()),
+          Types.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR()),false,(Types.T_STRING({}),NONE),Types.UNBOUND()),
           Types.VAR("exeFile",
-          Types.ATTR(false,SCode.RO(),SCode.VAR(),Absyn.BIDIR()),false,(Types.T_STRING({}),NONE),Types.UNBOUND())},NONE),NONE);
+          Types.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR()),false,(Types.T_STRING({}),NONE),Types.UNBOUND())},NONE),NONE);
       then
         (cache,Exp.CALL(Absyn.IDENT("translateModel"),
           {Exp.CODE(Absyn.C_TYPENAME(className),Exp.OTHER()),filenameprefix},false,true,Exp.STRING()),Types.PROP(recordtype,Types.C_VAR()),SOME(st));
@@ -5111,9 +5118,9 @@ algorithm
           Types.T_COMPLEX(ClassInf.RECORD("SimulationObject"),
           {
           Types.VAR("flatClass",
-          Types.ATTR(false,SCode.RO(),SCode.VAR(),Absyn.BIDIR()),false,(Types.T_STRING({}),NONE),Types.UNBOUND()),
+          Types.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR()),false,(Types.T_STRING({}),NONE),Types.UNBOUND()),
           Types.VAR("exeFile",
-          Types.ATTR(false,SCode.RO(),SCode.VAR(),Absyn.BIDIR()),false,(Types.T_STRING({}),NONE),Types.UNBOUND())},NONE),NONE);
+          Types.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR()),false,(Types.T_STRING({}),NONE),Types.UNBOUND())},NONE),NONE);
       then
         (cache,Exp.CALL(Absyn.IDENT("exportDAEtoMatlab"),
           {Exp.CODE(Absyn.C_TYPENAME(className),Exp.OTHER()),filenameprefix},false,true,Exp.STRING()),Types.PROP(recordtype,Types.C_VAR()),SOME(st));
@@ -5178,7 +5185,7 @@ algorithm
           Types.T_COMPLEX(ClassInf.RECORD("SimulationResult"),
           {
           Types.VAR("resultFile",
-          Types.ATTR(false,SCode.RO(),SCode.VAR(),Absyn.BIDIR()),false,(Types.T_STRING({}),NONE),Types.UNBOUND())},NONE),NONE);
+          Types.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR()),false,(Types.T_STRING({}),NONE),Types.UNBOUND())},NONE),NONE);
       then
         (cache,Exp.CALL(Absyn.IDENT("simulate"),
           {Exp.CODE(Absyn.C_TYPENAME(className),Exp.OTHER()),startTime,stopTime,numberOfIntervals,tolerance,
@@ -5486,7 +5493,7 @@ algorithm
         vars_1 = listAppend(vars_1, {cd1});
       then
         (cache,Exp.CALL(Absyn.IDENT("val"),{Exp.ARRAY(Exp.OTHER(),false,vars_1)},
-          false,true,Exp.INT()),Types.PROP((Types.T_INTEGER({}),NONE),Types.C_VAR()),SOME(st));
+          false,true,Exp.INT()),Types.PROP((Types.T_REAL({}),NONE),Types.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "plotParametric2"),vars,{},impl,SOME(st)) /* PlotParametric is similar to plot but does not allow a single CREF as an
    argument as you are plotting at least one variable as a function of another.
@@ -7614,7 +7621,7 @@ algorithm
          Types.Properties props;
       equation
         (cache,c_1,const) = elabCrefSubs(cache,env, c, impl);
-        (cache,Types.ATTR(_,acc,variability,_),t,binding) = Lookup.lookupVar(cache,env, c_1);
+        (cache,Types.ATTR(_,_,acc,variability,_),t,binding) = Lookup.lookupVar(cache,env, c_1);
         (cache,exp,const,acc_1) = elabCref2(cache,env, c_1, acc, variability, t, binding,doVect);
       then
         (cache,exp,Types.PROP(t,const),acc_1);
@@ -7820,7 +7827,7 @@ algorithm
         tuple<Types.TType, Option<Absyn.Path>> t_1;
         Exp.Type t;
       equation
-        (cache,Types.ATTR(_,acc_1,variability_1,_),t_1,binding_1) = Lookup.lookupVar(cache,env, cref) "If value not constant, but references another parameter, which has a value We need to perform value propagation." ;
+        (cache,Types.ATTR(_,_,acc_1,variability_1,_),t_1,binding_1) = Lookup.lookupVar(cache,env, cref) "If value not constant, but references another parameter, which has a value We need to perform value propagation." ;
         (cache,e,const,acc) = elabCref2(cache,env, cref, acc_1, variability_1, t_1, binding_1,doVect);
       then
         (cache,e,const,acc);

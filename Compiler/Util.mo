@@ -77,7 +77,8 @@ protected import System;
 protected import Print;
 protected import Debug;
 
-public function flagValue "function flagValue
+public function flagValue 
+"function flagValue
   author: x02lucpo
   Extracts the flagvalue from an argument list:
   flagValue('-s',{'-d','hej','-s','file'}) => 'file'"
@@ -114,7 +115,8 @@ algorithm
    end matchcontinue;
 end flagValue;
 
-public function listFill "function: listFill
+public function listFill 
+"function: listFill
   Returns a list of n elements of variable type: replaceable type X subtypeof Any.
   Example: listFill(\"foo\",3) => {\"foo\",\"foo\",\"foo\"}"
   input Type_a inTypeA;
@@ -157,7 +159,8 @@ algorithm
   end matchcontinue;
 end listFill_tail;
 
-public function listMake2 "function listMake2
+public function listMake2 
+"function listMake2
   Takes two arguments of same type and returns a list containing the two."
   input Type_a inTypeA1;
   input Type_a inTypeA2;
@@ -167,7 +170,8 @@ algorithm
   outTypeALst := {inTypeA1, inTypeA2};
 end listMake2;
 
-public function listIntRange "function: listIntRange
+public function listIntRange 
+"function: listIntRange
   Returns a list of n integers from 1 to N.
   Example: listIntRange(3) => {1,2,3}"
   input Integer n;
@@ -225,7 +229,8 @@ algorithm
   end matchcontinue;
 end listIntRange2;
 
-public function listFirst "function: listFirst
+public function listFirst 
+"function: listFirst
   Returns the first element of a list
   Example: listFirst({3,5,7,11,13}) => 3"
   input list<Type_a> inTypeALst;
@@ -249,7 +254,8 @@ algorithm
   end matchcontinue;
 end listRest;
 
-public function listLast "function: listLast
+public function listLast 
+"function: listLast
   Returns the last element of a list. If the list is the empty list, the function fails.
   Example:
     listLast({3,5,7,11,13}) => 13
@@ -273,7 +279,8 @@ algorithm
   end matchcontinue;
 end listLast;
 
-public function listCons "function: listCons
+public function listCons 
+"function: listCons
   Performs the cons operation, i.e. elt::list."
   input list<Type_a> inTypeALst;
   input Type_a inTypeA;
@@ -283,7 +290,8 @@ algorithm
   outTypeALst:= (inTypeA::inTypeALst);
 end listCons;
 
-public function listCreate "function: listCreate
+public function listCreate 
+"function: listCreate
   Create a list from an element."
   input Type_a inTypeA;
   output list<Type_a> outTypeALst;
@@ -292,7 +300,8 @@ algorithm
   outTypeALst:= {inTypeA};
 end listCreate;
 
-public function listStripLast "function: listStripLast
+public function listStripLast 
+"function: listStripLast
   Remove the last element of a list. If the list is the empty list, the function
   returns empty list
   Example:
@@ -317,7 +326,8 @@ algorithm
   end matchcontinue;
 end listStripLast;
 
-public function listFlatten "function: listFlatten
+public function listFlatten 
+"function: listFlatten
   Takes a list of lists and flattens it out,
   producing one list of all elements of the sublists.
   Example: listFlatten({ {1,2},{3,4,5},{6},{} }) => {1,2,3,4,5,6}"
@@ -353,7 +363,8 @@ algorithm
 end listFlatten_tail;
 
 
-public function listAppendElt "function: listAppendElt
+public function listAppendElt 
+"function: listAppendElt
   This function adds an element last to the list
   Example: listAppendElt(1,{2,3}) => {2,3,1}"
   input Type_a inTypeA;
@@ -470,7 +481,8 @@ algorithm
 end listApplyAndFold;
 
 
-public function listMap "function: listMap
+public function listMap 
+"function: listMap
   Takes a list and a function over the elements of the lists, which is applied
   for each element, producing a new list.
   Example: listMap({1,2,3}, intString) => { \"1\", \"2\", \"3\"}"
@@ -543,7 +555,8 @@ algorithm
   end matchcontinue;
 end listMap_impl_2;
 
-public function listMap_2 "function listMap_2
+public function listMap_2 
+"function listMap_2
   Takes a list and a function over the elements returning a tuple of
   two types, which is applied for each element producing two new lists.
   Example:
@@ -625,7 +638,8 @@ algorithm
 end listMap_2_tail;
 
 
-public function listMap1 "function listMap1
+public function listMap1 
+"function listMap1
   Takes a list and a function over the list plus an extra argument sent to the function.
   The function produces a new value which is used for creating a new list.
   Example: listMap1({1,2,3},intAdd,2) => {3,4,5}"
@@ -704,7 +718,8 @@ algorithm
   end matchcontinue;
 end listMap1_tail;
 
-public function listMap1r "function listMap1r
+public function listMap1r 
+"function listMap1r
   Same as listMap1 but swapped arguments on function."
   input list<Type_a> inTypeALst;
   input FuncTypeType_bType_aToType_c inFuncTypeTypeBTypeAToTypeC;
@@ -782,7 +797,8 @@ algorithm
 end listMap1r_tail;
 
 
-public function listMap2 "function listMap2
+public function listMap2 
+"function listMap2
   Takes a list and a function and two extra arguments passed to the function.
   The function produces one new value which is used for creating a new list.
   Example:
@@ -870,7 +886,8 @@ algorithm
   end matchcontinue;
 end listMap2_tail;
 
-public function listMap3 "function listMap3
+public function listMap3 
+"function listMap3
   Takes a list and a function and three extra arguments passed to the function.
   The function produces one new value which is used for creating a new list."
   input list<Type_a> inTypeALst;
@@ -917,7 +934,8 @@ algorithm
   end matchcontinue;
 end listMap3;
 
-public function listMap32 "function listMap32
+public function listMap32 
+"function listMap32
   Takes a list and a function and three extra arguments passed to the function.
   The function produces two values which is used for creating two new lists."
   input list<Type_a> inTypeALst;
@@ -970,7 +988,8 @@ algorithm
   end matchcontinue;
 end listMap32;
 
-public function listMap12 "function: listMap12
+public function listMap12 
+"function: listMap12
   Takes a list and a function with one extra arguments passed to the function.
   The function returns a tuple of two values which are used for creating
   two new lists."
@@ -1014,7 +1033,8 @@ algorithm
   end matchcontinue;
 end listMap12;
 
-public function listMap22 "function: listMap22
+public function listMap22 
+"function: listMap22
   Takes a list and a function with two extra arguments passed to the function.
   The function returns a tuple of two values which are used for creating two new lists
   Example:
@@ -1064,7 +1084,8 @@ algorithm
   end matchcontinue;
 end listMap22;
 
-public function listMap0 "function: listMap0
+public function listMap0 
+"function: listMap0
   Takes a list and a function which does not return a value
   The function is probably a function with side effects, like print.
   Example: listMap0({\"a\",\"b\",\"c\"},print) => ()"
@@ -1091,7 +1112,8 @@ algorithm
   end matchcontinue;
 end listMap0;
 
-public function listListMap "function: listListMap
+public function listListMap 
+"function: listListMap
   Takes a list of lists and a function producing one value.
   The function is applied to each element of the lists resulting
   in a new list of lists.
@@ -1125,7 +1147,8 @@ algorithm
   end matchcontinue;
 end listListMap;
 
-public function listListMap1 "function listListMap1
+public function listListMap1 
+"function listListMap1
   author: PA
   similar to listListMap but for functions taking two arguments.
   The second argument is passed as an extra argument."
@@ -1163,7 +1186,8 @@ algorithm
   end matchcontinue;
 end listListMap1;
 
-public function listFold "function: listFold
+public function listFold 
+"function: listFold
   Takes a list and a function operating on list elements having an extra argument that is \'updated\'
   thus returned from the function. The third argument is the startvalue for the updated value.
   listFold will call the function for each element in a sequence, updating the startvalue
@@ -1200,7 +1224,8 @@ algorithm
   end matchcontinue;
 end listFold;
 
-public function listFold_2 "function: listFold_2
+public function listFold_2 
+"function: listFold_2
   Similar to listFold but relation takes three arguments.
   The first argument is folded (i.e. passed through each relation)
   The second argument is constant (given as argument)
@@ -1236,7 +1261,8 @@ algorithm
   end matchcontinue;
 end listFold_2;
 
-public function listFold_2r "function: listFold_2
+public function listFold_2r 
+"function: listFold_2
   Similar to listFold_2 but reversed argument order in function."
   input list<Type_a> lst;
   input FoldFunc foldFunc;
@@ -1270,7 +1296,8 @@ algorithm
 end listFold_2r;
 
 
-public function listlistFoldMap "function: listlistFoldMap
+public function listlistFoldMap 
+"function: listlistFoldMap
   For example see Interactive.traverseExp."
   input list<list<Type_a>> inTypeALst;
   input FuncTypeTplType_aType_bToTplType_aType_b inFuncTypeTplTypeATypeBToTplTypeATypeB;
@@ -1302,7 +1329,8 @@ algorithm
   end matchcontinue;
 end listlistFoldMap;
 
-public function listFoldMap "function: listFoldMap
+public function listFoldMap 
+"function: listFoldMap
   author: PA
   For example see Exp.traverseExp."
   input list<Type_a> inTypeALst;
@@ -1335,7 +1363,8 @@ algorithm
   end matchcontinue;
 end listFoldMap;
 
-public function listListReverse "function: listListReverse
+public function listListReverse 
+"function: listListReverse
   Takes a list of lists and reverses it at both
   levels, i.e. both the list itself and each sublist
   Example: listListReverse({{1,2},{3,4,5},{6} }) => { {6}, {5,4,3}, {2,1} }"
@@ -1348,7 +1377,8 @@ algorithm
   lsts_2 := listReverse(lsts_1);
 end listListReverse;
 
-public function listThread "function: listThread
+public function listThread 
+"function: listThread
   Takes two lists of the same type and threads (interleaves) them togheter.
   Example: listThread({1,2,3},{4,5,6}) => {4,1,5,2,6,3}"
   input list<Type_a> inTypeALst1;
@@ -1372,7 +1402,8 @@ algorithm
   end matchcontinue;
 end listThread;
 
-public function listThread3 "function: listThread
+public function listThread3 
+"function: listThread
   Takes three lists of the same type and threads (interleaves) them togheter.
   Example: listThread3({1,2,3},{4,5,6},{7,8,9}) => {7,4,1,8,5,2,9,6,3}"
   input list<Type_a> inTypeALst1;
@@ -1395,7 +1426,8 @@ algorithm
   end matchcontinue;
 end listThread3;
 
-public function listThreadMap "function: listThreadMap
+public function listThreadMap 
+"function: listThreadMap
   Takes two lists and a function and threads (interleaves) and maps the elements of the two lists
   creating a new list.
   Example: listThreadMap({1,2},{3,4},intAdd) => {1+3, 2+4}"
@@ -1433,7 +1465,8 @@ algorithm
   end matchcontinue;
 end listThreadMap;
 
-public function listListThreadMap "function: listListThreadMap
+public function listListThreadMap 
+"function: listListThreadMap
   Takes two lists of lists and a function and threads (interleaves)
   and maps the elements  of the elements of the two lists creating a new list.
   Example: listListThreadMap({{1,2}},{{3,4}},int_add) => {{1+3, 2+4}}"
@@ -1471,7 +1504,8 @@ algorithm
   end matchcontinue;
 end listListThreadMap;
 
-public function listThreadTuple "function: listThreadTuple
+public function listThreadTuple 
+"function: listThreadTuple
   Takes two lists and threads (interleaves) the arguments into
   a list of tuples consisting of the two element types.
   Example: listThreadTuple({1,2,3},{true,false,true}) => {(1,true),(2,false),(3,true)}"
@@ -1498,7 +1532,8 @@ algorithm
   end matchcontinue;
 end listThreadTuple;
 
-public function listListThreadTuple "function: listListThreadTuple
+public function listListThreadTuple 
+"function: listListThreadTuple
   Takes two list of lists as arguments and produces a list of
   lists of a two tuple of the element types of each list.
   Example:
@@ -1528,7 +1563,8 @@ algorithm
   end matchcontinue;
 end listListThreadTuple;
 
-public function listSelect "function: listSelect
+public function listSelect 
+"function: listSelect
   This function retrieves all elements of a list for which
   the passed function evaluates to true. The elements that
   evaluates to false are thus removed from the list."
@@ -1563,7 +1599,8 @@ algorithm
   end matchcontinue;
 end listSelect;
 
-public function listSelect1 "function listSelect1
+public function listSelect1 
+"function listSelect1
   Same as listSelect above, but with extra argument to testing function."
   input list<Type_a> inTypeALst;
   input Type_b inTypeB;
@@ -1600,7 +1637,8 @@ algorithm
   end matchcontinue;
 end listSelect1;
 
-public function listSelect2 "function listSelect1
+public function listSelect2 
+"function listSelect1
   Same as listSelect above, but with extra argument to testing function."
   input list<Type_a> inTypeALst;
   input Type_b inTypeB;
@@ -1640,7 +1678,8 @@ algorithm
   end matchcontinue;
 end listSelect2;
 
-public function listSelect1R "function listSelect1R
+public function listSelect1R 
+"function listSelect1R
   Same as listSelect1 above, but with swapped arguments."
   input list<Type_a> inTypeALst;
   input Type_b inTypeB;
@@ -1677,7 +1716,8 @@ algorithm
   end matchcontinue;
 end listSelect1R;
 
-public function listPosition "function: listPosition
+public function listPosition 
+"function: listPosition
   Takes a value and a list of values and returns the (first) position
   the value has in the list. Position index start at zero, such that
   listNth can be used on the resulting position directly.
@@ -1719,7 +1759,8 @@ algorithm
   end matchcontinue;
 end listPos;
 
-public function listGetMember "function: listGetMember
+public function listGetMember 
+"function: listGetMember
   Takes a value and a list of values and returns the value
   if present in the list. If not present, the function will fail.
   Example:
@@ -1750,7 +1791,8 @@ algorithm
   end matchcontinue;
 end listGetMember;
 
-public function listDeleteMember "function: listDeleteMember
+public function listDeleteMember 
+"function: listDeleteMember
   Takes a list and a value and deletes the first occurence of the value in the list
   Example: listDeleteMember({1,2,3,2},2) => {1,3,2}"
   input list<Type_a> inTypeALst;
@@ -1774,7 +1816,8 @@ algorithm
   end matchcontinue;
 end listDeleteMember;
 
-public function listDeleteMemberOnTrue "function: listDeleteMemberOnTrue
+public function listDeleteMemberOnTrue 
+"function: listDeleteMemberOnTrue
   Takes a list and a value and a comparison function and deletes the first
   occurence of the value in the list for which the function returns true.
   Example: listDeleteMemberOnTrue({1,2,3,2},2,intEq) => {1,3,2}"
@@ -1807,7 +1850,8 @@ algorithm
   end matchcontinue;
 end listDeleteMemberOnTrue;
 
-public function listGetMemberOnTrue "function listGetmemberOnTrue
+public function listGetMemberOnTrue 
+"function listGetmemberOnTrue
   Takes a value and a list of values and a comparison function over two values.
   If the value is present in the list (using the comparison function returning true)
   the value is returned, otherwise the function fails.
@@ -1846,7 +1890,8 @@ algorithm
   end matchcontinue;
 end listGetMemberOnTrue;
 
-public function listUnionElt "function: listUnionElt
+public function listUnionElt 
+"function: listUnionElt
   Takes a value and a list of values and inserts the
   value into the list if it is not already in the list.
   If it is in the list it is not inserted.
@@ -1876,7 +1921,8 @@ algorithm
   end matchcontinue;
 end listUnionElt;
 
-public function listUnion "function listUnion
+public function listUnion 
+"function listUnion
   Takes two lists and returns the union of the two lists,
   i.e. a list of all elements combined without duplicates.
   Example: listUnion({0,1},{2,1}) => {0,1,2}"
@@ -1901,7 +1947,8 @@ algorithm
   end matchcontinue;
 end listUnion;
 
-public function listListUnion "function: listListUnion
+public function listListUnion 
+"function: listListUnion
   Takes a list of lists and returns the union of the sublists
   Example: listListUnion({{1},{1,2},{3,4},{5}}) => {1,2,3,4,5}"
   input list<list<Type_a>> inTypeALstLst;
@@ -1924,7 +1971,8 @@ algorithm
   end matchcontinue;
 end listListUnion;
 
-public function listUnionEltOnTrue "function: listUnionEltOnTrue
+public function listUnionEltOnTrue 
+"function: listUnionEltOnTrue
   Takes an elemement and a list and a comparison function over the two values.
   It returns the list with the element inserted if not already present in the
   list, according to the comparison function.
@@ -1959,7 +2007,8 @@ algorithm
   end matchcontinue;
 end listUnionEltOnTrue;
 
-public function listUnionOnTrue "function: listUnionOnTrue
+public function listUnionOnTrue 
+"function: listUnionOnTrue
   Takes two lists and a comparison function over two elements of the list.
   It returns the union of the two lists, using the comparison function passed
   as argument to determine identity between two elements.
@@ -1993,7 +2042,8 @@ algorithm
   end matchcontinue;
 end listUnionOnTrue;
 
-public function listIntersectionOnTrue "function: listIntersectionOnTrue
+public function listIntersectionOnTrue 
+"function: listIntersectionOnTrue
   Takes two lists and a comparison function over two elements of the list.
   It returns the intersection of the two lists, using the comparison function passed as
   argument to determine identity between two elements.
@@ -2032,7 +2082,8 @@ algorithm
   end matchcontinue;
 end listIntersectionOnTrue;
 
-public function listSetEqualOnTrue "function: listSetEqualOnTrue
+public function listSetEqualOnTrue 
+"function: listSetEqualOnTrue
   Takes two lists and a comparison function over two elements of the list.
   It returns true if the two sets are equal, false otherwise."
   input list<Type_a> lst1;
@@ -2058,7 +2109,8 @@ algorithm
   end matchcontinue;
 end listSetEqualOnTrue;
 
-public function listSetDifferenceOnTrue "function: listSetDifferenceOnTrue
+public function listSetDifferenceOnTrue 
+"function: listSetDifferenceOnTrue
   Takes two lists and a comparison function over two elements of the list.
   It returns the set difference of the two lists A-B, using the comparison
   function passed as argument to determine identity between two elements.
@@ -2097,7 +2149,8 @@ algorithm
   end matchcontinue;
 end listSetDifferenceOnTrue;
 
-public function listListUnionOnTrue "function: listListUnionOnTrue
+public function listListUnionOnTrue 
+"function: listListUnionOnTrue
   Takes a list of lists and a comparison function over two elements of the lists.
   It returns the union of all sublists using the comparison function for identity.
   Example: listListUnionOnTrue({{1},{1,2},{3,4}},intEq) => {1,2,3,4}"
@@ -2128,7 +2181,8 @@ algorithm
   end matchcontinue;
 end listListUnionOnTrue;
 
-public function listReplaceAt "function: listReplaceAt
+public function listReplaceAt 
+"function: listReplaceAt
   Takes an element, a position and a list and replaces the value at the given position in
   the list. Position is an integer between 0 and n-1 for a list of n elements
   Example: listReplaceAt(\"A\", 2, {\"a\",\"b\",\"c\"}) => {\"a\",\"b\",\"A\"}"
@@ -2155,7 +2209,8 @@ algorithm
   end matchcontinue;
 end listReplaceAt;
 
-public function listReplaceAtWithFill "function: listReplaceatWithFill
+public function listReplaceAtWithFill 
+"function: listReplaceatWithFill
   Takes
   - an element,
   - a position
@@ -2208,7 +2263,8 @@ algorithm
   end matchcontinue;
 end listReplaceAtWithFill;
 
-public function listReduce "function: listReduce
+public function listReduce 
+"function: listReduce
   Takes a list and a function operating on two elements of the list.
   The function performs a reduction of the lists to a single value using the function.
   Example: listReduce({1,2,3},int_add) => 6"
@@ -2282,7 +2338,8 @@ algorithm
 end listReduce_tail;
 
 
-public function arrayReplaceAtWithFill "function: arrayReplaceAtWithFill
+public function arrayReplaceAtWithFill 
+"function: arrayReplaceAtWithFill
   Takes
   - an element,
   - a position
@@ -2329,7 +2386,8 @@ algorithm
   end matchcontinue;
 end arrayReplaceAtWithFill;
 
-public function arrayExpand "function: arrayExpand
+public function arrayExpand 
+"function: arrayExpand
   Increases the number of elements of a list with n.
   Each of the new elements have the value v."
   input Integer n;
@@ -2346,7 +2404,8 @@ algorithm
   newarr_1 := arrayCopy(arr, newarr);
 end arrayExpand;
 
-public function arrayNCopy "function arrayNCopy
+public function arrayNCopy 
+"function arrayNCopy
   Copeis n elements in src array into dest array
   The function fails if all elements can not be fit into dest array."
   input Type_a[:] src;
@@ -2361,7 +2420,8 @@ algorithm
   dst_1 := arrayCopy2(src, dst, n_1);
 end arrayNCopy;
 
-public function arrayCopy "function: arrayCopy
+public function arrayCopy 
+"function: arrayCopy
   copies all values in src array into dest array.
   The function fails if all elements can not be fit into dest array."
   input Type_a[:] inTypeAArray1;
@@ -2418,7 +2478,8 @@ algorithm
   end matchcontinue;
 end arrayCopy2;
 
-public function tuple21 "function: tuple21
+public function tuple21 
+"function: tuple21
   Takes a tuple of two values and returns the first value.
   Example: tuple21((\"a\",1)) => \"a\""
   input tuple<Type_a, Type_b> inTplTypeATypeB;
@@ -2448,7 +2509,8 @@ algorithm
   end matchcontinue;
 end tuple22;
 
-public function splitTuple2List "function: splitTuple2List
+public function splitTuple2List 
+"function: splitTuple2List
   Takes a list of two-tuples and splits it into two lists.
   Example: splitTuple2List({(\"a\",1),(\"b\",2),(\"c\",3)}) => ({\"a\",\"b\",\"c\"}, {1,2,3})"
   input list<tuple<Type_a, Type_b>> inTplTypeATypeBLst;
@@ -2474,7 +2536,8 @@ algorithm
   end matchcontinue;
 end splitTuple2List;
 
-public function if_ "function: if_
+public function if_ 
+"function: if_
   Takes a boolean and two values.
   Returns the first value (second argument) if the boolean value is
   true, otherwise the second value (third argument) is returned.
@@ -2494,7 +2557,8 @@ algorithm
   end matchcontinue;
 end if_;
 
-public function stringContainsChar "Returns true if a string contains a specified character"
+public function stringContainsChar 
+"Returns true if a string contains a specified character"
   input String str;
   input String char;
   output Boolean res;
@@ -2507,7 +2571,8 @@ algorithm
   end matchcontinue;
 end stringContainsChar;
 
-public function stringAppendList "function stringAppendList
+public function stringAppendList 
+"function stringAppendList
   Takes a list of strings and appends them.
   Example: stringAppendList({\"foo\", \" \", \"bar\"}) => \"foo bar\""
   input list<String> inStringLst;
@@ -2553,7 +2618,8 @@ algorithm
   end matchcontinue;
 end stringAppendList_tail;
 
-public function stringDelimitList "function stringDelimitList
+public function stringDelimitList 
+"function stringDelimitList
   Takes a list of strings and a string delimiter and appends all
   list elements with the string delimiter inserted between elements.
   Example: stringDelimitList({\"x\",\"y\",\"z\"}, \", \") => \"x, y, z\""
@@ -2578,7 +2644,8 @@ algorithm
   end matchcontinue;
 end stringDelimitList;
 
-public function stringDelimitListAndSeparate "function: stringDelimitListAndSeparate
+public function stringDelimitListAndSeparate 
+"function: stringDelimitListAndSeparate
   author: PA
   This function is similar to stringDelimitList, i.e it inserts string delimiters between
   consecutive strings in a list. But it also count the lists and inserts a second string delimiter
@@ -2593,7 +2660,8 @@ algorithm
   res := stringDelimitListAndSeparate2(str, sep1, sep2, n, 0);
 end stringDelimitListAndSeparate;
 
-protected function stringDelimitListAndSeparate2 "function: stringDelimitListAndSeparate2
+protected function stringDelimitListAndSeparate2 
+"function: stringDelimitListAndSeparate2
   author: PA
   Helper function to stringDelimitListAndSeparate"
   input list<String> inStringLst1;
@@ -2640,7 +2708,8 @@ algorithm
   end matchcontinue;
 end stringDelimitListAndSeparate2;
 
-public function stringDelimitListNonEmptyElts "function stringDelimitListNonEmptyElts
+public function stringDelimitListNonEmptyElts 
+"function stringDelimitListNonEmptyElts
   Takes a list of strings and a string delimiter and appends all list elements with
   the string delimiter inserted between those elements that are not empty.
   Example: stringDelimitListNonEmptyElts({\"x\",\"\",\"z\"}, \", \") => \"x, z\""
@@ -2715,7 +2784,8 @@ algorithm
   end matchcontinue;
 end stringReplaceChar2;
 
-public function stringSplitAtChar "function stringSplitAtChar
+public function stringSplitAtChar 
+"function stringSplitAtChar
   Takes a string and a char and split the string at the char returning the list of components.
   Example: stringSplitAtChar(\"hej.b.c\",\".\") => {\"hej,\"b\",\"c\"}"
   input String inString1;
@@ -2781,7 +2851,8 @@ algorithm
   end matchcontinue;
 end stringSplitAtChar2;
 
-public function modelicaStringToCStr "function modelicaStringToCStr
+public function modelicaStringToCStr 
+"function modelicaStringToCStr
  this replaces symbols that are illegal in C to legal symbols
  see replaceStringPatterns to see the format. (example: \".\" becomes \"$p\")
   author: x02lucpo"
@@ -2816,7 +2887,8 @@ algorithm
   end matchcontinue;
 end modelicaStringToCStr1;
 
-public function cStrToModelicaString "function cStrToModelicaString
+public function cStrToModelicaString 
+"function cStrToModelicaString
  this replaces symbols that have been replace to correct value for modelica string
  see replaceStringPatterns to see the format. (example: \"$p\" becomes \".\")
   author: x02lucpo"
@@ -2846,7 +2918,8 @@ algorithm
   end matchcontinue;
 end cStrToModelicaString1;
 
-public function boolOrList "function boolOrList
+public function boolOrList 
+"function boolOrList
   Takes a list of boolean values and applies the boolean OR operator  to the list elements
   Example:
     boolOrList({true,false,false})  => true
@@ -2865,7 +2938,8 @@ algorithm
   end matchcontinue;
 end boolOrList;
 
-public function boolAndList "function: boolAndList
+public function boolAndList 
+"function: boolAndList
   Takes a list of boolean values and applies the boolean AND operator on the elements
   Example:
   boolAndList({}) => true
@@ -2886,7 +2960,8 @@ algorithm
   end matchcontinue;
 end boolAndList;
 
-public function boolString "function: boolString
+public function boolString 
+"function: boolString
   Takes a boolean value and returns a string representation of the boolean value.
   Example: boolString(true) => \"true\""
   input Boolean inBoolean;
@@ -3056,7 +3131,8 @@ algorithm
   end matchcontinue;
 end listFilterBoolean_tail;
 
-public function applyOption "function: applyOption
+public function applyOption 
+"function: applyOption
   Takes an option value and a function over the value.
   It returns in another option value, resulting
   from the application of the function on the value.
@@ -3089,7 +3165,8 @@ algorithm
   end matchcontinue;
 end applyOption;
 
-public function makeOption "function makeOption
+public function makeOption 
+"function makeOption
   Makes a value into value option, using SOME(value)"
   input Type_a inTypeA;
   output Option<Type_a> outTypeAOption;
@@ -3098,7 +3175,8 @@ algorithm
   outTypeAOption:= SOME(inTypeA);
 end makeOption;
 
-public function stringOption "function: stringOption
+public function stringOption 
+"function: stringOption
   author: PA
   Returns string value or empty string from string option."
   input Option<String> inStringOption;
@@ -3112,7 +3190,8 @@ algorithm
   end matchcontinue;
 end stringOption;
 
-public function listSplit "function: listSplit
+public function listSplit 
+"function: listSplit
   Takes a list of values and an position value.
   The function returns the list splitted into two lists at the position given as argument.
   Example: listSplit({1,2,5,7},2) => ({1,2},{5,7})"
@@ -3152,7 +3231,8 @@ algorithm
   end matchcontinue;
 end listSplit;
 
-protected function listSplit2 "helper function to listSplit"
+protected function listSplit2 
+"helper function to listSplit"
   input list<Type_a> inTypeALst1;
   input list<Type_a> inTypeALst2;
   input Integer inInteger3;
@@ -3186,7 +3266,8 @@ algorithm
   end matchcontinue;
 end listSplit2;
 
-public function intPositive "function: intPositive
+public function intPositive 
+"function: intPositive
   Returns true if integer value is positive (>= 0)"
   input Integer v;
   output Boolean res;
@@ -3194,7 +3275,8 @@ algorithm
   res := (v >= 0);
 end intPositive;
 
-public function optionToList "function: optionToList
+public function optionToList 
+"function: optionToList
   Returns an empty list for NONE and a list containing
   the element for SOME(element). To use with listAppend"
   input Option<Type_a> inTypeAOption;
@@ -3223,7 +3305,8 @@ algorithm
   end matchcontinue;
 end flattenOption;
 
-public function isEmptyString "function: isEmptyString
+public function isEmptyString 
+"function: isEmptyString
   Returns true if string is the empty string."
   input String inString;
   output Boolean outBoolean;
@@ -3231,7 +3314,8 @@ algorithm
   outBoolean := stringEqual(inString, "");
 end isEmptyString;
 
-public function isNotEmptyString "function: isNotEmptyString
+public function isNotEmptyString 
+"function: isNotEmptyString
   Returns true if string is not the empty string."
   input String inString;
   output Boolean outBoolean;
@@ -3239,7 +3323,8 @@ algorithm
   outBoolean := boolNot(stringEqual(inString, ""));
 end isNotEmptyString;
 
-public function writeFileOrErrorMsg "function: writeFileOrErrorMsg
+public function writeFileOrErrorMsg 
+"function: writeFileOrErrorMsg
   This function tries to write to a file and if it fails then it
   outputs \"# Cannot write to file: <filename>.\" to errorBuf"
   input String inString1;
@@ -3262,10 +3347,10 @@ algorithm
   end matchcontinue;
 end writeFileOrErrorMsg;
 
-public function systemCallWithErrorMsg "
-  This function executes a command with System.systemCall
-  if System.systemCall does not return 0 then the msg
-  is outputed to errorBuf and the function fails."
+public function systemCallWithErrorMsg 
+"This function executes a command with System.systemCall
+ if System.systemCall does not return 0 then the msg
+ is outputed to errorBuf and the function fails."
   input String inString1;
   input String inString2;
 algorithm
@@ -3312,7 +3397,9 @@ algorithm
   end matchcontinue;
 end charListCompare;
 */
-public function strncmp "function: strncmp
+
+public function strncmp 
+"function: strncmp
   Compare two strings up to the nth character
   Returns true if they are equal."
   input String inString1;
@@ -3343,7 +3430,8 @@ algorithm
   */
 end strncmp;
 
-public function tickStr "function: tickStr
+public function tickStr 
+"function: tickStr
   author: PA
   Returns tick as a string, i.e. an unique number."
   output String s;
@@ -3351,7 +3439,8 @@ algorithm
   s := intString(tick());
 end tickStr;
 
-protected function replaceSlashWithPathDelimiter "function replaceSlashWithPathDelimiter
+protected function replaceSlashWithPathDelimiter 
+"function replaceSlashWithPathDelimiter
   author: x02lucpo
   replace the / with the system-pathdelimiter.
   On Windows must be \\ so that the function getAbsoluteDirectoryAndFile works"
@@ -3363,7 +3452,8 @@ algorithm
   ret_string := System.stringReplace(str, "/", pd);
 end replaceSlashWithPathDelimiter;
 
-public function getAbsoluteDirectoryAndFile "function getAbsoluteDirectoryAndFile
+public function getAbsoluteDirectoryAndFile 
+"function getAbsoluteDirectoryAndFile
   author: x02lucpo
   splits the filepath in directory and filename
   (\"c:\\programs\\file.mo\") => (\"c:\\programs\",\"file.mo\")
@@ -3412,7 +3502,8 @@ algorithm
 end getAbsoluteDirectoryAndFile;
 
 
-public function rawStringToInputString "function: rawStringToInputString
+public function rawStringToInputString 
+"function: rawStringToInputString
   author: x02lucpo
   replace the double-backslash with backslash"
   input String inString;

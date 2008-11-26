@@ -70,6 +70,7 @@ public
 uniontype Attributes "- Attributes"
   record ATTR
     Boolean flow_ "flow" ;
+    Boolean stream_ "stream" ;
     SCode.Accessibility accessibility "accessibility" ;
     SCode.Variability parameter_ "parameter" ;
     Absyn.Direction direction "direction" ;
@@ -658,8 +659,7 @@ algorithm
         tp = typeOfValue(v);
         rest = valuesToVars(vs, ids);
       then
-        (VAR(id,ATTR(false,SCode.RW(),SCode.VAR(),Absyn.BIDIR()),false,
-          tp,UNBOUND()) :: rest);
+        (VAR(id,ATTR(false,false,SCode.RW(),SCode.VAR(),Absyn.BIDIR()),false,tp,UNBOUND()) :: rest);
     case (_,_)
       equation
         Debug.fprint("failtrace", "-values_to_vars failed\n");
@@ -1078,77 +1078,77 @@ algorithm
       then
         v;
     case ((T_ENUM(),_),"quantity") then VAR("quantity",
-          ATTR(false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR()),false,(T_STRING({}),NONE),VALBOUND(Values.STRING("")));  /* axiom	lookup_in_builtin(T_REAL,\"quantity\")
+          ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR()),false,(T_STRING({}),NONE),VALBOUND(Values.STRING("")));  /* axiom	lookup_in_builtin(T_REAL,\"quantity\")
 	  => VAR(\"quantity\",
-		 ATTR(false, SCode.RW, SCode.PARAM, Absyn.BIDIR),
+		 ATTR(false, false, SCode.RW, SCode.PARAM, Absyn.BIDIR),
 		 false, T_STRING, VALBOUND(Values.STRING(\"\")))
 
   axiom	lookup_in_builtin(T_REAL,\"unit\")
 	  => VAR(\"unit\",
-		 ATTR(false, SCode.RW, SCode.PARAM, Absyn.BIDIR),
+		 ATTR(false, false, SCode.RW, SCode.PARAM, Absyn.BIDIR),
 		 false, T_STRING, VALBOUND(Values.STRING(\"\")))
 
   axiom	lookup_in_builtin(T_REAL,\"displayUnit\")
 	  => VAR(\"displayUnit\",
-		 ATTR(false, SCode.RW, SCode.PARAM, Absyn.BIDIR),
+		 ATTR(false, false, SCode.RW, SCode.PARAM, Absyn.BIDIR),
 		 false, T_STRING, VALBOUND(Values.STRING(\"\")))
 
   axiom	lookup_in_builtin(T_REAL,\"min\")
 	  => VAR(\"min\",
-		 ATTR(false, SCode.RW, SCode.PARAM, Absyn.BIDIR),
+		 ATTR(false, false, SCode.RW, SCode.PARAM, Absyn.BIDIR),
 		 false, T_REAL, UNBOUND)
 
   axiom	lookup_in_builtin(T_REAL,\"max\")
 	  => VAR(\"max\",
-		 ATTR(false, SCode.RW, SCode.PARAM, Absyn.BIDIR),
+		 ATTR(false, false, SCode.RW, SCode.PARAM, Absyn.BIDIR),
 		 false, T_REAL, UNBOUND)
 
   axiom	lookup_in_builtin(T_REAL,\"start\")
 	  => VAR(\"start\",
-		 ATTR(false, SCode.RW, SCode.PARAM, Absyn.BIDIR),
+		 ATTR(false, false, SCode.RW, SCode.PARAM, Absyn.BIDIR),
 		 false, T_REAL, VALBOUND(Values.REAL(0.0)))
 
   axiom	lookup_in_builtin(T_REAL,\"fixed\")
 	  => VAR(\"fixed\",
-		 ATTR(false, SCode.RW, SCode.PARAM, Absyn.BIDIR),
+		 ATTR(false, false, SCode.RW, SCode.PARAM, Absyn.BIDIR),
 		 false, T_BOOL, UNBOUND) ( Needs to be set to true/false higher up the call chain
 					  depending on variability of instance))
 
   axiom	lookup_in_builtin((T_REAL(_),_),\"enable\")
 	  => VAR(\"enable\",
-		 ATTR(false, SCode.RW, SCode.PARAM, Absyn.BIDIR),
+		 ATTR(false, false, SCode.RW, SCode.PARAM, Absyn.BIDIR),
 		 false, (T_BOOL({}),NONE), VALBOUND(Values.BOOL(true)))
 
   axiom	lookup_in_builtin((T_REAL(_),_),\"nominal\")
 	  => VAR(\"nominal\",
-		 ATTR(false, SCode.RW, SCode.PARAM, Absyn.BIDIR),
+		 ATTR(false, false, SCode.RW, SCode.PARAM, Absyn.BIDIR),
 		 false, (T_REAL({}),NONE), UNBOUND)
 
  ( optimized away looking up the builtin enumeration type \'stateSelect\' ))
   axiom	lookup_in_builtin((T_REAL(_),_),\"stateSelect\")
 	  => VAR(\"stateSelect\",
-		 ATTR(false, SCode.RW, SCode.PARAM, Absyn.BIDIR),
+		 ATTR(false, false, SCode.RW, SCode.PARAM, Absyn.BIDIR),
 		 false, (T_ENUMERATION({\"never\",\"avoid\",\"default\",\"prefer\",\"always\"}),NONE),
 		 VALBOUND(Values.ENUM(\"default\")))
 
 	( Integer ))
   axiom	lookup_in_builtin((T_INTEGER(_),_),\"quantity\")
 	  => VAR(\"quantity\",
-		 ATTR(false, SCode.RW, SCode.PARAM, Absyn.BIDIR) Enumeration ( type E in spec) */
-    case ((T_ENUM(),_),"min") then VAR("min",ATTR(false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR()),
+		 ATTR(false, false, SCode.RW, SCode.PARAM, Absyn.BIDIR) Enumeration ( type E in spec) */
+    case ((T_ENUM(),_),"min") then VAR("min",ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR()),
           false,(T_ENUM(),NONE),UNBOUND());  /* Should be bound to the first element of
   T_ENUMERATION list higher up in the call chain */
-    case ((T_ENUM(),_),"max") then VAR("max",ATTR(false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR()),
+    case ((T_ENUM(),_),"max") then VAR("max",ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR()),
           false,(T_ENUM(),NONE),UNBOUND());  /* Should be bound to the last element of
   T_ENUMERATION list higher up in the call chain */
-    case ((T_ENUM(),_),"start") then VAR("start",ATTR(false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR()),
+    case ((T_ENUM(),_),"start") then VAR("start",ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR()),
           false,(T_BOOL({}),NONE),UNBOUND());  /* Should be bound to the last element of
   T_ENUMERATION list higher up in the call chain */
-    case ((T_ENUM(),_),"fixed") then VAR("fixed",ATTR(false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR()),
+    case ((T_ENUM(),_),"fixed") then VAR("fixed",ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR()),
           false,(T_BOOL({}),NONE),UNBOUND());  /* Needs to be set to true/false higher up the call chain
   depending on variability of instance */
     case ((T_ENUM(),_),"enable") then VAR("enable",
-          ATTR(false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR()),false,(T_BOOL({}),NONE),VALBOUND(Values.BOOL(true)));
+          ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR()),false,(T_BOOL({}),NONE),VALBOUND(Values.BOOL(true)));
   end matchcontinue;
 end lookupInBuiltin;
 
@@ -1413,7 +1413,7 @@ algorithm
       equation
         vars = Util.listMap(vs, unparseVar);
         vstr = Util.stringAppendList(vars);
-        res = Util.stringAppendList({"record ",name,"\n",vstr,"end record;"});
+        res = Util.stringAppendList({"record ",name,"\n",vstr,"end ", name, ";"});
       then
         res;
     case ((T_COMPLEX(complexClassType = ci_state,complexVarLst = vs,complexTypeOption = SOME(bc_tp)),_))
@@ -2193,12 +2193,15 @@ algorithm
   matchcontinue (inVar)
     local
       Ident n;
-      Boolean fl;
+      Boolean fl,st;
       SCode.Accessibility ac;
       Absyn.Direction dir;
       Type ty;
       Binding bnd;
-    case VAR(name = n,attributes = ATTR(flow_ = fl,accessibility = ac,parameter_ = SCode.PARAM(),direction = dir),protected_ = false,type_ = ty,binding = bnd) then ();  /* LS: false means not protected, hence we ignore protected variables */
+    case VAR(name = n,
+             attributes = ATTR(flow_ = fl,stream_=st,accessibility = ac,parameter_ = SCode.PARAM(),direction = dir),
+             protected_ = false,type_ = ty,binding = bnd) 
+    then ();  /* LS: false means not protected, hence we ignore protected variables */
   end matchcontinue;
 end isParameter;
 
@@ -3285,6 +3288,36 @@ algorithm
         res;
   end matchcontinue;
 end flowVariables;
+
+public function streamVariables "function: streamVariables
+  This function retrieves all variables names that are stream variables, 
+  and prepends the prefix given as an Exp.ComponentRef"
+  input list<Var> inVarLst;
+  input Exp.ComponentRef inComponentRef;
+  output list<Exp.ComponentRef> outExpComponentRefLst;
+algorithm
+  outExpComponentRefLst:=
+  matchcontinue (inVarLst,inComponentRef)
+    local
+      Exp.ComponentRef cr_1,cr;
+      list<Exp.ComponentRef> res;
+      Ident id;
+      list<Var> vs;
+    case ({},_) then {};
+    case ((VAR(name = id,attributes = ATTR(stream_ = true)) :: vs),cr)
+      equation
+        cr_1 = Exp.joinCrefs(cr, Exp.CREF_IDENT(id,{}));
+        res = streamVariables(vs, cr);
+      then
+        (cr_1 :: res);
+    case ((_ :: vs),cr)
+      equation
+        res = streamVariables(vs, cr);
+      then
+        res;
+  end matchcontinue;
+end streamVariables;
+
 
 public function getAllExps "function: getAllExps
 

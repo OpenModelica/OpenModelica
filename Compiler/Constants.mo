@@ -81,7 +81,7 @@ public constant Absyn.Program graphicsProgram=Absyn.PROGRAM(
           {
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Boolean"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -89,7 +89,7 @@ public constant Absyn.Program graphicsProgram=Absyn.PROGRAM(
           SOME(Absyn.CLASSMOD({},SOME(Absyn.BOOL(true))))),NONE,NONE)}),Absyn.INFO("graphics.mo",true,6,0,6,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Real"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -97,7 +97,7 @@ public constant Absyn.Program graphicsProgram=Absyn.PROGRAM(
           NONE),NONE,NONE)}),Absyn.INFO("graphics.mo",true,6,0,6,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Integer"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -108,7 +108,7 @@ public constant Absyn.Program graphicsProgram=Absyn.PROGRAM(
           Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(0)}))))),NONE,NONE)}),Absyn.INFO("graphics.mo",true,6,0,6,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("LinePattern"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -120,7 +120,7 @@ public constant Absyn.Program graphicsProgram=Absyn.PROGRAM(
           Absyn.CREF_QUAL("LinePattern",{},Absyn.CREF_IDENT("Solid",{}))))))),NONE,NONE)}),Absyn.INFO("graphics.mo",true,6,0,6,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Real"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -128,7 +128,7 @@ public constant Absyn.Program graphicsProgram=Absyn.PROGRAM(
           SOME(Absyn.CLASSMOD({},SOME(Absyn.REAL(0.25))))),NONE,NONE)}),Absyn.INFO("graphics.mo",true,6,0,6,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Arrow"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -141,7 +141,7 @@ public constant Absyn.Program graphicsProgram=Absyn.PROGRAM(
           Absyn.CREF(Absyn.CREF_QUAL("Arrow",{},Absyn.CREF_IDENT("None",{}))),Absyn.CREF(Absyn.CREF_QUAL("Arrow",{},Absyn.CREF_IDENT("None",{})))}))))),NONE,NONE)}),Absyn.INFO("graphics.mo",true,6,0,6,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Real"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -149,7 +149,7 @@ public constant Absyn.Program graphicsProgram=Absyn.PROGRAM(
           SOME(Absyn.CLASSMOD({},SOME(Absyn.REAL(3.0))))),NONE,NONE)}),Absyn.INFO("graphics.mo",true,6,0,6,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Boolean"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -162,7 +162,7 @@ public constant Absyn.Program graphicsProgram=Absyn.PROGRAM(
           {
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Boolean"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -170,7 +170,7 @@ public constant Absyn.Program graphicsProgram=Absyn.PROGRAM(
           SOME(Absyn.CLASSMOD({},SOME(Absyn.BOOL(true))))),NONE,NONE)}),Absyn.INFO("graphics.mo",true,7,0,7,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Integer"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -181,7 +181,7 @@ public constant Absyn.Program graphicsProgram=Absyn.PROGRAM(
           Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(0)}))))),NONE,NONE)}),Absyn.INFO("graphics.mo",true,7,0,7,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Integer"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -192,7 +192,7 @@ public constant Absyn.Program graphicsProgram=Absyn.PROGRAM(
           Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(0)}))))),NONE,NONE)}),Absyn.INFO("graphics.mo",true,7,0,7,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("LinePattern"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -204,7 +204,7 @@ public constant Absyn.Program graphicsProgram=Absyn.PROGRAM(
           Absyn.CREF_QUAL("LinePattern",{},Absyn.CREF_IDENT("Solid",{}))))))),NONE,NONE)}),Absyn.INFO("graphics.mo",true,7,0,7,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("FillPattern"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -216,7 +216,7 @@ public constant Absyn.Program graphicsProgram=Absyn.PROGRAM(
           Absyn.CREF_QUAL("FillPattern",{},Absyn.CREF_IDENT("None",{}))))))),NONE,NONE)}),Absyn.INFO("graphics.mo",true,7,0,7,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Real"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -224,7 +224,7 @@ public constant Absyn.Program graphicsProgram=Absyn.PROGRAM(
           SOME(Absyn.CLASSMOD({},SOME(Absyn.REAL(0.25))))),NONE,NONE)}),Absyn.INFO("graphics.mo",true,7,0,7,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Real"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -232,7 +232,7 @@ public constant Absyn.Program graphicsProgram=Absyn.PROGRAM(
           NONE),NONE,NONE)}),Absyn.INFO("graphics.mo",true,7,0,7,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Boolean"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -245,7 +245,7 @@ public constant Absyn.Program graphicsProgram=Absyn.PROGRAM(
           {
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Boolean"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -253,7 +253,7 @@ public constant Absyn.Program graphicsProgram=Absyn.PROGRAM(
           SOME(Absyn.CLASSMOD({},SOME(Absyn.BOOL(true))))),NONE,NONE)}),Absyn.INFO("graphics.mo",true,8,0,8,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Integer"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -264,7 +264,7 @@ public constant Absyn.Program graphicsProgram=Absyn.PROGRAM(
           Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(0)}))))),NONE,NONE)}),Absyn.INFO("graphics.mo",true,8,0,8,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Integer"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -275,7 +275,7 @@ public constant Absyn.Program graphicsProgram=Absyn.PROGRAM(
           Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(0)}))))),NONE,NONE)}),Absyn.INFO("graphics.mo",true,8,0,8,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("LinePattern"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -287,7 +287,7 @@ public constant Absyn.Program graphicsProgram=Absyn.PROGRAM(
           Absyn.CREF_QUAL("LinePattern",{},Absyn.CREF_IDENT("Solid",{}))))))),NONE,NONE)}),Absyn.INFO("graphics.mo",true,8,0,8,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("FillPattern"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -299,7 +299,7 @@ public constant Absyn.Program graphicsProgram=Absyn.PROGRAM(
           Absyn.CREF_QUAL("FillPattern",{},Absyn.CREF_IDENT("None",{}))))))),NONE,NONE)}),Absyn.INFO("graphics.mo",true,8,0,8,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Real"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -307,7 +307,7 @@ public constant Absyn.Program graphicsProgram=Absyn.PROGRAM(
           SOME(Absyn.CLASSMOD({},SOME(Absyn.REAL(0.25))))),NONE,NONE)}),Absyn.INFO("graphics.mo",true,8,0,8,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("BorderPattern"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -319,7 +319,7 @@ public constant Absyn.Program graphicsProgram=Absyn.PROGRAM(
           Absyn.CREF_QUAL("BorderPattern",{},Absyn.CREF_IDENT("None",{}))))))),NONE,NONE)}),Absyn.INFO("graphics.mo",true,8,0,8,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Real"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -328,7 +328,7 @@ public constant Absyn.Program graphicsProgram=Absyn.PROGRAM(
           Absyn.SUBSCRIPT(Absyn.INTEGER(2))},NONE),NONE,NONE)}),Absyn.INFO("graphics.mo",true,8,0,8,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Real"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -340,7 +340,7 @@ public constant Absyn.Program graphicsProgram=Absyn.PROGRAM(
           {
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Boolean"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -348,7 +348,7 @@ public constant Absyn.Program graphicsProgram=Absyn.PROGRAM(
           SOME(Absyn.CLASSMOD({},SOME(Absyn.BOOL(true))))),NONE,NONE)}),Absyn.INFO("graphics.mo",true,9,0,9,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Integer"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -359,7 +359,7 @@ public constant Absyn.Program graphicsProgram=Absyn.PROGRAM(
           Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(0)}))))),NONE,NONE)}),Absyn.INFO("graphics.mo",true,9,0,9,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Integer"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -370,7 +370,7 @@ public constant Absyn.Program graphicsProgram=Absyn.PROGRAM(
           Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(0)}))))),NONE,NONE)}),Absyn.INFO("graphics.mo",true,9,0,9,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("LinePattern"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -382,7 +382,7 @@ public constant Absyn.Program graphicsProgram=Absyn.PROGRAM(
           Absyn.CREF_QUAL("LinePattern",{},Absyn.CREF_IDENT("Solid",{}))))))),NONE,NONE)}),Absyn.INFO("graphics.mo",true,9,0,9,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("FillPattern"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -394,7 +394,7 @@ public constant Absyn.Program graphicsProgram=Absyn.PROGRAM(
           Absyn.CREF_QUAL("FillPattern",{},Absyn.CREF_IDENT("None",{}))))))),NONE,NONE)}),Absyn.INFO("graphics.mo",true,9,0,9,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Real"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -402,7 +402,7 @@ public constant Absyn.Program graphicsProgram=Absyn.PROGRAM(
           SOME(Absyn.CLASSMOD({},SOME(Absyn.REAL(0.25))))),NONE,NONE)}),Absyn.INFO("graphics.mo",true,9,0,9,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Real"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -416,7 +416,7 @@ public constant Absyn.Program graphicsProgram=Absyn.PROGRAM(
           {
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Boolean"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -424,7 +424,7 @@ public constant Absyn.Program graphicsProgram=Absyn.PROGRAM(
           SOME(Absyn.CLASSMOD({},SOME(Absyn.BOOL(true))))),NONE,NONE)}),Absyn.INFO("graphics.mo",true,10,0,10,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Integer"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -435,7 +435,7 @@ public constant Absyn.Program graphicsProgram=Absyn.PROGRAM(
           Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(0)}))))),NONE,NONE)}),Absyn.INFO("graphics.mo",true,10,0,10,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Integer"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -446,7 +446,7 @@ public constant Absyn.Program graphicsProgram=Absyn.PROGRAM(
           Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(0)}))))),NONE,NONE)}),Absyn.INFO("graphics.mo",true,10,0,10,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("LinePattern"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -458,7 +458,7 @@ public constant Absyn.Program graphicsProgram=Absyn.PROGRAM(
           Absyn.CREF_QUAL("LinePattern",{},Absyn.CREF_IDENT("Solid",{}))))))),NONE,NONE)}),Absyn.INFO("graphics.mo",true,10,0,10,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("FillPattern"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -470,7 +470,7 @@ public constant Absyn.Program graphicsProgram=Absyn.PROGRAM(
           Absyn.CREF_QUAL("FillPattern",{},Absyn.CREF_IDENT("None",{}))))))),NONE,NONE)}),Absyn.INFO("graphics.mo",true,10,0,10,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Real"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -478,7 +478,7 @@ public constant Absyn.Program graphicsProgram=Absyn.PROGRAM(
           SOME(Absyn.CLASSMOD({},SOME(Absyn.REAL(0.25))))),NONE,NONE)}),Absyn.INFO("graphics.mo",true,10,0,10,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Real"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -487,13 +487,13 @@ public constant Absyn.Program graphicsProgram=Absyn.PROGRAM(
           Absyn.SUBSCRIPT(Absyn.INTEGER(2))},NONE),NONE,NONE)}),Absyn.INFO("graphics.mo",true,10,0,10,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("String"),NONE),
           {
           Absyn.COMPONENTITEM(Absyn.COMPONENT("textString",{},NONE),NONE,NONE)}),Absyn.INFO("graphics.mo",true,10,0,10,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Real"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -501,7 +501,7 @@ public constant Absyn.Program graphicsProgram=Absyn.PROGRAM(
           SOME(Absyn.CLASSMOD({},SOME(Absyn.REAL(0.0))))),NONE,NONE)}),Absyn.INFO("graphics.mo",true,10,0,10,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("String"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -509,7 +509,7 @@ public constant Absyn.Program graphicsProgram=Absyn.PROGRAM(
           SOME(Absyn.CLASSMOD({},SOME(Absyn.STRING(""))))),NONE,NONE)}),Absyn.INFO("graphics.mo",true,10,0,10,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("TextStyle"),NONE),
           {
           Absyn.COMPONENTITEM(Absyn.COMPONENT("textStyle",{Absyn.NOSUB()},NONE),NONE,NONE)}),Absyn.INFO("graphics.mo",true,10,0,10,0),NONE))})},NONE),Absyn.INFO("graphics.mo",true,0,0,0,0)),
@@ -520,7 +520,7 @@ public constant Absyn.Program graphicsProgram=Absyn.PROGRAM(
           {
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Boolean"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -528,7 +528,7 @@ public constant Absyn.Program graphicsProgram=Absyn.PROGRAM(
           SOME(Absyn.CLASSMOD({},SOME(Absyn.BOOL(true))))),NONE,NONE)}),Absyn.INFO("graphics.mo",true,11,0,11,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Real"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -537,7 +537,7 @@ public constant Absyn.Program graphicsProgram=Absyn.PROGRAM(
           Absyn.SUBSCRIPT(Absyn.INTEGER(2))},NONE),NONE,NONE)}),Absyn.INFO("graphics.mo",true,11,0,11,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("String"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -545,7 +545,7 @@ public constant Absyn.Program graphicsProgram=Absyn.PROGRAM(
           SOME(Absyn.CLASSMOD({},SOME(Absyn.STRING(""))))),NONE,NONE)}),Absyn.INFO("graphics.mo",true,11,0,11,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("String"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -563,7 +563,7 @@ public constant Absyn.Program iconProgram=Absyn.PROGRAM(
           {
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Boolean"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -576,7 +576,7 @@ public constant Absyn.Program iconProgram=Absyn.PROGRAM(
           {
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Real"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -590,7 +590,7 @@ public constant Absyn.Program iconProgram=Absyn.PROGRAM(
           {
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("CoordinateSystem"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -647,7 +647,7 @@ public constant Absyn.Program iconProgram=Absyn.PROGRAM(
           {
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Boolean"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -655,7 +655,7 @@ public constant Absyn.Program iconProgram=Absyn.PROGRAM(
           SOME(Absyn.CLASSMOD({},SOME(Absyn.BOOL(true))))),NONE,NONE)}),Absyn.INFO("icon.mo",true,8,0,8,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Real"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -663,7 +663,7 @@ public constant Absyn.Program iconProgram=Absyn.PROGRAM(
           NONE),NONE,NONE)}),Absyn.INFO("icon.mo",true,8,0,8,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Integer"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -674,7 +674,7 @@ public constant Absyn.Program iconProgram=Absyn.PROGRAM(
           Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(0)}))))),NONE,NONE)}),Absyn.INFO("icon.mo",true,8,0,8,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("LinePattern"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -686,7 +686,7 @@ public constant Absyn.Program iconProgram=Absyn.PROGRAM(
           Absyn.CREF_QUAL("LinePattern",{},Absyn.CREF_IDENT("Solid",{}))))))),NONE,NONE)}),Absyn.INFO("icon.mo",true,8,0,8,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Real"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -694,7 +694,7 @@ public constant Absyn.Program iconProgram=Absyn.PROGRAM(
           SOME(Absyn.CLASSMOD({},SOME(Absyn.REAL(0.25))))),NONE,NONE)}),Absyn.INFO("icon.mo",true,8,0,8,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Arrow"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -707,7 +707,7 @@ public constant Absyn.Program iconProgram=Absyn.PROGRAM(
           Absyn.CREF(Absyn.CREF_QUAL("Arrow",{},Absyn.CREF_IDENT("None",{}))),Absyn.CREF(Absyn.CREF_QUAL("Arrow",{},Absyn.CREF_IDENT("None",{})))}))))),NONE,NONE)}),Absyn.INFO("icon.mo",true,8,0,8,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Real"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -715,7 +715,7 @@ public constant Absyn.Program iconProgram=Absyn.PROGRAM(
           SOME(Absyn.CLASSMOD({},SOME(Absyn.REAL(3.0))))),NONE,NONE)}),Absyn.INFO("icon.mo",true,8,0,8,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Boolean"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -728,7 +728,7 @@ public constant Absyn.Program iconProgram=Absyn.PROGRAM(
           {
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Boolean"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -736,7 +736,7 @@ public constant Absyn.Program iconProgram=Absyn.PROGRAM(
           SOME(Absyn.CLASSMOD({},SOME(Absyn.BOOL(true))))),NONE,NONE)}),Absyn.INFO("icon.mo",true,9,0,9,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Integer"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -747,7 +747,7 @@ public constant Absyn.Program iconProgram=Absyn.PROGRAM(
           Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(0)}))))),NONE,NONE)}),Absyn.INFO("icon.mo",true,9,0,9,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Integer"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -758,7 +758,7 @@ public constant Absyn.Program iconProgram=Absyn.PROGRAM(
           Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(0)}))))),NONE,NONE)}),Absyn.INFO("icon.mo",true,9,0,9,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("LinePattern"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -770,7 +770,7 @@ public constant Absyn.Program iconProgram=Absyn.PROGRAM(
           Absyn.CREF_QUAL("LinePattern",{},Absyn.CREF_IDENT("Solid",{}))))))),NONE,NONE)}),Absyn.INFO("icon.mo",true,9,0,9,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("FillPattern"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -782,7 +782,7 @@ public constant Absyn.Program iconProgram=Absyn.PROGRAM(
           Absyn.CREF_QUAL("FillPattern",{},Absyn.CREF_IDENT("None",{}))))))),NONE,NONE)}),Absyn.INFO("icon.mo",true,9,0,9,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Real"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -790,7 +790,7 @@ public constant Absyn.Program iconProgram=Absyn.PROGRAM(
           SOME(Absyn.CLASSMOD({},SOME(Absyn.REAL(0.25))))),NONE,NONE)}),Absyn.INFO("icon.mo",true,9,0,9,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Real"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -798,7 +798,7 @@ public constant Absyn.Program iconProgram=Absyn.PROGRAM(
           NONE),NONE,NONE)}),Absyn.INFO("icon.mo",true,9,0,9,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Boolean"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -811,7 +811,7 @@ public constant Absyn.Program iconProgram=Absyn.PROGRAM(
           {
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Boolean"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -819,7 +819,7 @@ public constant Absyn.Program iconProgram=Absyn.PROGRAM(
           SOME(Absyn.CLASSMOD({},SOME(Absyn.BOOL(true))))),NONE,NONE)}),Absyn.INFO("icon.mo",true,10,0,10,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Integer"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -830,7 +830,7 @@ public constant Absyn.Program iconProgram=Absyn.PROGRAM(
           Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(0)}))))),NONE,NONE)}),Absyn.INFO("icon.mo",true,10,0,10,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Integer"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -841,7 +841,7 @@ public constant Absyn.Program iconProgram=Absyn.PROGRAM(
           Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(0)}))))),NONE,NONE)}),Absyn.INFO("icon.mo",true,10,0,10,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("LinePattern"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -853,7 +853,7 @@ public constant Absyn.Program iconProgram=Absyn.PROGRAM(
           Absyn.CREF_QUAL("LinePattern",{},Absyn.CREF_IDENT("Solid",{}))))))),NONE,NONE)}),Absyn.INFO("icon.mo",true,10,0,10,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("FillPattern"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -865,7 +865,7 @@ public constant Absyn.Program iconProgram=Absyn.PROGRAM(
           Absyn.CREF_QUAL("FillPattern",{},Absyn.CREF_IDENT("None",{}))))))),NONE,NONE)}),Absyn.INFO("icon.mo",true,10,0,10,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Real"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -873,7 +873,7 @@ public constant Absyn.Program iconProgram=Absyn.PROGRAM(
           SOME(Absyn.CLASSMOD({},SOME(Absyn.REAL(0.25))))),NONE,NONE)}),Absyn.INFO("icon.mo",true,10,0,10,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("BorderPattern"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -885,7 +885,7 @@ public constant Absyn.Program iconProgram=Absyn.PROGRAM(
           Absyn.CREF_QUAL("BorderPattern",{},Absyn.CREF_IDENT("None",{}))))))),NONE,NONE)}),Absyn.INFO("icon.mo",true,10,0,10,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Real"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -894,7 +894,7 @@ public constant Absyn.Program iconProgram=Absyn.PROGRAM(
           Absyn.SUBSCRIPT(Absyn.INTEGER(2))},NONE),NONE,NONE)}),Absyn.INFO("icon.mo",true,10,0,10,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Real"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -906,7 +906,7 @@ public constant Absyn.Program iconProgram=Absyn.PROGRAM(
           {
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Boolean"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -914,7 +914,7 @@ public constant Absyn.Program iconProgram=Absyn.PROGRAM(
           SOME(Absyn.CLASSMOD({},SOME(Absyn.BOOL(true))))),NONE,NONE)}),Absyn.INFO("icon.mo",true,11,0,11,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Integer"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -925,7 +925,7 @@ public constant Absyn.Program iconProgram=Absyn.PROGRAM(
           Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(0)}))))),NONE,NONE)}),Absyn.INFO("icon.mo",true,11,0,11,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Integer"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -936,7 +936,7 @@ public constant Absyn.Program iconProgram=Absyn.PROGRAM(
           Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(0)}))))),NONE,NONE)}),Absyn.INFO("icon.mo",true,11,0,11,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("LinePattern"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -948,7 +948,7 @@ public constant Absyn.Program iconProgram=Absyn.PROGRAM(
           Absyn.CREF_QUAL("LinePattern",{},Absyn.CREF_IDENT("Solid",{}))))))),NONE,NONE)}),Absyn.INFO("icon.mo",true,11,0,11,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("FillPattern"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -960,7 +960,7 @@ public constant Absyn.Program iconProgram=Absyn.PROGRAM(
           Absyn.CREF_QUAL("FillPattern",{},Absyn.CREF_IDENT("None",{}))))))),NONE,NONE)}),Absyn.INFO("icon.mo",true,11,0,11,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Real"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -968,7 +968,7 @@ public constant Absyn.Program iconProgram=Absyn.PROGRAM(
           SOME(Absyn.CLASSMOD({},SOME(Absyn.REAL(0.25))))),NONE,NONE)}),Absyn.INFO("icon.mo",true,11,0,11,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Real"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -982,7 +982,7 @@ public constant Absyn.Program iconProgram=Absyn.PROGRAM(
           {
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Boolean"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -990,7 +990,7 @@ public constant Absyn.Program iconProgram=Absyn.PROGRAM(
           SOME(Absyn.CLASSMOD({},SOME(Absyn.BOOL(true))))),NONE,NONE)}),Absyn.INFO("icon.mo",true,12,0,12,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Integer"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -1001,7 +1001,7 @@ public constant Absyn.Program iconProgram=Absyn.PROGRAM(
           Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(0)}))))),NONE,NONE)}),Absyn.INFO("icon.mo",true,12,0,12,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Integer"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -1012,7 +1012,7 @@ public constant Absyn.Program iconProgram=Absyn.PROGRAM(
           Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(0)}))))),NONE,NONE)}),Absyn.INFO("icon.mo",true,12,0,12,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("LinePattern"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -1024,7 +1024,7 @@ public constant Absyn.Program iconProgram=Absyn.PROGRAM(
           Absyn.CREF_QUAL("LinePattern",{},Absyn.CREF_IDENT("Solid",{}))))))),NONE,NONE)}),Absyn.INFO("icon.mo",true,12,0,12,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("FillPattern"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -1036,7 +1036,7 @@ public constant Absyn.Program iconProgram=Absyn.PROGRAM(
           Absyn.CREF_QUAL("FillPattern",{},Absyn.CREF_IDENT("None",{}))))))),NONE,NONE)}),Absyn.INFO("icon.mo",true,12,0,12,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Real"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -1044,7 +1044,7 @@ public constant Absyn.Program iconProgram=Absyn.PROGRAM(
           SOME(Absyn.CLASSMOD({},SOME(Absyn.REAL(0.25))))),NONE,NONE)}),Absyn.INFO("icon.mo",true,12,0,12,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Real"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -1053,13 +1053,13 @@ public constant Absyn.Program iconProgram=Absyn.PROGRAM(
           Absyn.SUBSCRIPT(Absyn.INTEGER(2))},NONE),NONE,NONE)}),Absyn.INFO("icon.mo",true,12,0,12,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("String"),NONE),
           {
           Absyn.COMPONENTITEM(Absyn.COMPONENT("textString",{},NONE),NONE,NONE)}),Absyn.INFO("icon.mo",true,12,0,12,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Real"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -1067,7 +1067,7 @@ public constant Absyn.Program iconProgram=Absyn.PROGRAM(
           SOME(Absyn.CLASSMOD({},SOME(Absyn.REAL(0.0))))),NONE,NONE)}),Absyn.INFO("icon.mo",true,12,0,12,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("String"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -1075,7 +1075,7 @@ public constant Absyn.Program iconProgram=Absyn.PROGRAM(
           SOME(Absyn.CLASSMOD({},SOME(Absyn.STRING(""))))),NONE,NONE)}),Absyn.INFO("icon.mo",true,12,0,12,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("TextStyle"),NONE),
           {
           Absyn.COMPONENTITEM(Absyn.COMPONENT("textStyle",{Absyn.NOSUB()},NONE),NONE,NONE)}),Absyn.INFO("icon.mo",true,12,0,12,0),NONE))})},NONE),Absyn.INFO("icon.mo",true,0,0,0,0)),
@@ -1086,7 +1086,7 @@ public constant Absyn.Program iconProgram=Absyn.PROGRAM(
           {
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Boolean"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -1094,7 +1094,7 @@ public constant Absyn.Program iconProgram=Absyn.PROGRAM(
           SOME(Absyn.CLASSMOD({},SOME(Absyn.BOOL(true))))),NONE,NONE)}),Absyn.INFO("icon.mo",true,13,0,13,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Real"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -1103,7 +1103,7 @@ public constant Absyn.Program iconProgram=Absyn.PROGRAM(
           Absyn.SUBSCRIPT(Absyn.INTEGER(2))},NONE),NONE,NONE)}),Absyn.INFO("icon.mo",true,13,0,13,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("String"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -1111,7 +1111,7 @@ public constant Absyn.Program iconProgram=Absyn.PROGRAM(
           SOME(Absyn.CLASSMOD({},SOME(Absyn.STRING(""))))),NONE,NONE)}),Absyn.INFO("icon.mo",true,13,0,13,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("String"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -1131,7 +1131,7 @@ public constant Absyn.Program diagramProgram=Absyn.PROGRAM(
           {
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Boolean"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -1144,7 +1144,7 @@ public constant Absyn.Program diagramProgram=Absyn.PROGRAM(
           {
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Real"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -1158,7 +1158,7 @@ public constant Absyn.Program diagramProgram=Absyn.PROGRAM(
           {
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("CoordinateSystem"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -1215,7 +1215,7 @@ public constant Absyn.Program diagramProgram=Absyn.PROGRAM(
           {
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Boolean"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -1223,7 +1223,7 @@ public constant Absyn.Program diagramProgram=Absyn.PROGRAM(
           SOME(Absyn.CLASSMOD({},SOME(Absyn.BOOL(true))))),NONE,NONE)}),Absyn.INFO("diagram.mo",true,8,0,8,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Real"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -1231,7 +1231,7 @@ public constant Absyn.Program diagramProgram=Absyn.PROGRAM(
           NONE),NONE,NONE)}),Absyn.INFO("diagram.mo",true,8,0,8,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Integer"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -1242,7 +1242,7 @@ public constant Absyn.Program diagramProgram=Absyn.PROGRAM(
           Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(0)}))))),NONE,NONE)}),Absyn.INFO("diagram.mo",true,8,0,8,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("LinePattern"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -1254,7 +1254,7 @@ public constant Absyn.Program diagramProgram=Absyn.PROGRAM(
           Absyn.CREF_QUAL("LinePattern",{},Absyn.CREF_IDENT("Solid",{}))))))),NONE,NONE)}),Absyn.INFO("diagram.mo",true,8,0,8,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Real"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -1262,7 +1262,7 @@ public constant Absyn.Program diagramProgram=Absyn.PROGRAM(
           SOME(Absyn.CLASSMOD({},SOME(Absyn.REAL(0.25))))),NONE,NONE)}),Absyn.INFO("diagram.mo",true,8,0,8,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Arrow"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -1275,7 +1275,7 @@ public constant Absyn.Program diagramProgram=Absyn.PROGRAM(
           Absyn.CREF(Absyn.CREF_QUAL("Arrow",{},Absyn.CREF_IDENT("None",{}))),Absyn.CREF(Absyn.CREF_QUAL("Arrow",{},Absyn.CREF_IDENT("None",{})))}))))),NONE,NONE)}),Absyn.INFO("diagram.mo",true,8,0,8,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Real"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -1283,7 +1283,7 @@ public constant Absyn.Program diagramProgram=Absyn.PROGRAM(
           SOME(Absyn.CLASSMOD({},SOME(Absyn.REAL(3.0))))),NONE,NONE)}),Absyn.INFO("diagram.mo",true,8,0,8,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Boolean"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -1296,7 +1296,7 @@ public constant Absyn.Program diagramProgram=Absyn.PROGRAM(
           {
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Boolean"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -1304,7 +1304,7 @@ public constant Absyn.Program diagramProgram=Absyn.PROGRAM(
           SOME(Absyn.CLASSMOD({},SOME(Absyn.BOOL(true))))),NONE,NONE)}),Absyn.INFO("diagram.mo",true,9,0,9,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Integer"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -1315,7 +1315,7 @@ public constant Absyn.Program diagramProgram=Absyn.PROGRAM(
           Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(0)}))))),NONE,NONE)}),Absyn.INFO("diagram.mo",true,9,0,9,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Integer"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -1326,7 +1326,7 @@ public constant Absyn.Program diagramProgram=Absyn.PROGRAM(
           Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(0)}))))),NONE,NONE)}),Absyn.INFO("diagram.mo",true,9,0,9,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("LinePattern"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -1338,7 +1338,7 @@ public constant Absyn.Program diagramProgram=Absyn.PROGRAM(
           Absyn.CREF_QUAL("LinePattern",{},Absyn.CREF_IDENT("Solid",{}))))))),NONE,NONE)}),Absyn.INFO("diagram.mo",true,9,0,9,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("FillPattern"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -1350,7 +1350,7 @@ public constant Absyn.Program diagramProgram=Absyn.PROGRAM(
           Absyn.CREF_QUAL("FillPattern",{},Absyn.CREF_IDENT("None",{}))))))),NONE,NONE)}),Absyn.INFO("diagram.mo",true,9,0,9,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Real"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -1358,7 +1358,7 @@ public constant Absyn.Program diagramProgram=Absyn.PROGRAM(
           SOME(Absyn.CLASSMOD({},SOME(Absyn.REAL(0.25))))),NONE,NONE)}),Absyn.INFO("diagram.mo",true,9,0,9,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Real"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -1366,7 +1366,7 @@ public constant Absyn.Program diagramProgram=Absyn.PROGRAM(
           NONE),NONE,NONE)}),Absyn.INFO("diagram.mo",true,9,0,9,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Boolean"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -1379,7 +1379,7 @@ public constant Absyn.Program diagramProgram=Absyn.PROGRAM(
           {
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Boolean"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -1387,7 +1387,7 @@ public constant Absyn.Program diagramProgram=Absyn.PROGRAM(
           SOME(Absyn.CLASSMOD({},SOME(Absyn.BOOL(true))))),NONE,NONE)}),Absyn.INFO("diagram.mo",true,10,0,10,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Integer"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -1398,7 +1398,7 @@ public constant Absyn.Program diagramProgram=Absyn.PROGRAM(
           Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(0)}))))),NONE,NONE)}),Absyn.INFO("diagram.mo",true,10,0,10,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Integer"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -1409,7 +1409,7 @@ public constant Absyn.Program diagramProgram=Absyn.PROGRAM(
           Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(0)}))))),NONE,NONE)}),Absyn.INFO("diagram.mo",true,10,0,10,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("LinePattern"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -1421,7 +1421,7 @@ public constant Absyn.Program diagramProgram=Absyn.PROGRAM(
           Absyn.CREF_QUAL("LinePattern",{},Absyn.CREF_IDENT("Solid",{}))))))),NONE,NONE)}),Absyn.INFO("diagram.mo",true,10,0,10,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("FillPattern"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -1433,7 +1433,7 @@ public constant Absyn.Program diagramProgram=Absyn.PROGRAM(
           Absyn.CREF_QUAL("FillPattern",{},Absyn.CREF_IDENT("None",{}))))))),NONE,NONE)}),Absyn.INFO("diagram.mo",true,10,0,10,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Real"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -1441,7 +1441,7 @@ public constant Absyn.Program diagramProgram=Absyn.PROGRAM(
           SOME(Absyn.CLASSMOD({},SOME(Absyn.REAL(0.25))))),NONE,NONE)}),Absyn.INFO("diagram.mo",true,10,0,10,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("BorderPattern"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -1453,7 +1453,7 @@ public constant Absyn.Program diagramProgram=Absyn.PROGRAM(
           Absyn.CREF_QUAL("BorderPattern",{},Absyn.CREF_IDENT("None",{}))))))),NONE,NONE)}),Absyn.INFO("diagram.mo",true,10,0,10,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Real"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -1462,7 +1462,7 @@ public constant Absyn.Program diagramProgram=Absyn.PROGRAM(
           Absyn.SUBSCRIPT(Absyn.INTEGER(2))},NONE),NONE,NONE)}),Absyn.INFO("diagram.mo",true,10,0,10,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Real"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -1474,7 +1474,7 @@ public constant Absyn.Program diagramProgram=Absyn.PROGRAM(
           {
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Boolean"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -1482,7 +1482,7 @@ public constant Absyn.Program diagramProgram=Absyn.PROGRAM(
           SOME(Absyn.CLASSMOD({},SOME(Absyn.BOOL(true))))),NONE,NONE)}),Absyn.INFO("diagram.mo",true,11,0,11,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Integer"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -1493,7 +1493,7 @@ public constant Absyn.Program diagramProgram=Absyn.PROGRAM(
           Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(0)}))))),NONE,NONE)}),Absyn.INFO("diagram.mo",true,11,0,11,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Integer"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -1504,7 +1504,7 @@ public constant Absyn.Program diagramProgram=Absyn.PROGRAM(
           Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(0)}))))),NONE,NONE)}),Absyn.INFO("diagram.mo",true,11,0,11,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("LinePattern"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -1516,7 +1516,7 @@ public constant Absyn.Program diagramProgram=Absyn.PROGRAM(
           Absyn.CREF_QUAL("LinePattern",{},Absyn.CREF_IDENT("Solid",{}))))))),NONE,NONE)}),Absyn.INFO("diagram.mo",true,11,0,11,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("FillPattern"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -1528,7 +1528,7 @@ public constant Absyn.Program diagramProgram=Absyn.PROGRAM(
           Absyn.CREF_QUAL("FillPattern",{},Absyn.CREF_IDENT("None",{}))))))),NONE,NONE)}),Absyn.INFO("diagram.mo",true,11,0,11,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Real"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -1536,7 +1536,7 @@ public constant Absyn.Program diagramProgram=Absyn.PROGRAM(
           SOME(Absyn.CLASSMOD({},SOME(Absyn.REAL(0.25))))),NONE,NONE)}),Absyn.INFO("diagram.mo",true,11,0,11,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Real"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -1550,7 +1550,7 @@ public constant Absyn.Program diagramProgram=Absyn.PROGRAM(
           {
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Boolean"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -1558,7 +1558,7 @@ public constant Absyn.Program diagramProgram=Absyn.PROGRAM(
           SOME(Absyn.CLASSMOD({},SOME(Absyn.BOOL(true))))),NONE,NONE)}),Absyn.INFO("diagram.mo",true,12,0,12,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Integer"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -1569,7 +1569,7 @@ public constant Absyn.Program diagramProgram=Absyn.PROGRAM(
           Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(0)}))))),NONE,NONE)}),Absyn.INFO("diagram.mo",true,12,0,12,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Integer"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -1580,7 +1580,7 @@ public constant Absyn.Program diagramProgram=Absyn.PROGRAM(
           Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(0)}))))),NONE,NONE)}),Absyn.INFO("diagram.mo",true,12,0,12,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("LinePattern"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -1592,7 +1592,7 @@ public constant Absyn.Program diagramProgram=Absyn.PROGRAM(
           Absyn.CREF_QUAL("LinePattern",{},Absyn.CREF_IDENT("Solid",{}))))))),NONE,NONE)}),Absyn.INFO("diagram.mo",true,12,0,12,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("FillPattern"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -1604,7 +1604,7 @@ public constant Absyn.Program diagramProgram=Absyn.PROGRAM(
           Absyn.CREF_QUAL("FillPattern",{},Absyn.CREF_IDENT("None",{}))))))),NONE,NONE)}),Absyn.INFO("diagram.mo",true,12,0,12,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Real"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -1612,7 +1612,7 @@ public constant Absyn.Program diagramProgram=Absyn.PROGRAM(
           SOME(Absyn.CLASSMOD({},SOME(Absyn.REAL(0.25))))),NONE,NONE)}),Absyn.INFO("diagram.mo",true,12,0,12,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Real"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -1621,13 +1621,13 @@ public constant Absyn.Program diagramProgram=Absyn.PROGRAM(
           Absyn.SUBSCRIPT(Absyn.INTEGER(2))},NONE),NONE,NONE)}),Absyn.INFO("diagram.mo",true,12,0,12,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("String"),NONE),
           {
           Absyn.COMPONENTITEM(Absyn.COMPONENT("textString",{},NONE),NONE,NONE)}),Absyn.INFO("diagram.mo",true,12,0,12,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Real"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -1635,7 +1635,7 @@ public constant Absyn.Program diagramProgram=Absyn.PROGRAM(
           SOME(Absyn.CLASSMOD({},SOME(Absyn.REAL(0.0))))),NONE,NONE)}),Absyn.INFO("diagram.mo",true,12,0,12,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("String"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -1643,7 +1643,7 @@ public constant Absyn.Program diagramProgram=Absyn.PROGRAM(
           SOME(Absyn.CLASSMOD({},SOME(Absyn.STRING(""))))),NONE,NONE)}),Absyn.INFO("diagram.mo",true,12,0,12,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("TextStyle"),NONE),
           {
           Absyn.COMPONENTITEM(Absyn.COMPONENT("textStyle",{Absyn.NOSUB()},NONE),NONE,NONE)}),Absyn.INFO("diagram.mo",true,12,0,12,0),NONE))})},NONE),Absyn.INFO("diagram.mo",true,0,0,0,0)),
@@ -1654,7 +1654,7 @@ public constant Absyn.Program diagramProgram=Absyn.PROGRAM(
           {
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Boolean"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -1662,7 +1662,7 @@ public constant Absyn.Program diagramProgram=Absyn.PROGRAM(
           SOME(Absyn.CLASSMOD({},SOME(Absyn.BOOL(true))))),NONE,NONE)}),Absyn.INFO("diagram.mo",true,13,0,13,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Real"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -1671,7 +1671,7 @@ public constant Absyn.Program diagramProgram=Absyn.PROGRAM(
           Absyn.SUBSCRIPT(Absyn.INTEGER(2))},NONE),NONE,NONE)}),Absyn.INFO("diagram.mo",true,13,0,13,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("String"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -1679,7 +1679,7 @@ public constant Absyn.Program diagramProgram=Absyn.PROGRAM(
           SOME(Absyn.CLASSMOD({},SOME(Absyn.STRING(""))))),NONE,NONE)}),Absyn.INFO("diagram.mo",true,13,0,13,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("String"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -1712,7 +1712,7 @@ public constant Absyn.Program lineProgram=Absyn.PROGRAM(
           {
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Boolean"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -1720,7 +1720,7 @@ public constant Absyn.Program lineProgram=Absyn.PROGRAM(
           SOME(Absyn.CLASSMOD({},SOME(Absyn.BOOL(true))))),NONE,NONE)}),Absyn.INFO("line.mo",true,1,0,1,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Real"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -1728,7 +1728,7 @@ public constant Absyn.Program lineProgram=Absyn.PROGRAM(
           NONE),NONE,NONE)}),Absyn.INFO("line.mo",true,1,0,1,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Integer"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -1739,7 +1739,7 @@ public constant Absyn.Program lineProgram=Absyn.PROGRAM(
           Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(0)}))))),NONE,NONE)}),Absyn.INFO("line.mo",true,1,0,1,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("LinePattern"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -1751,7 +1751,7 @@ public constant Absyn.Program lineProgram=Absyn.PROGRAM(
           Absyn.CREF_QUAL("LinePattern",{},Absyn.CREF_IDENT("Solid",{}))))))),NONE,NONE)}),Absyn.INFO("line.mo",true,1,0,1,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Real"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -1759,7 +1759,7 @@ public constant Absyn.Program lineProgram=Absyn.PROGRAM(
           SOME(Absyn.CLASSMOD({},SOME(Absyn.REAL(0.25))))),NONE,NONE)}),Absyn.INFO("line.mo",true,1,0,1,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Arrow"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -1772,7 +1772,7 @@ public constant Absyn.Program lineProgram=Absyn.PROGRAM(
           Absyn.CREF(Absyn.CREF_QUAL("Arrow",{},Absyn.CREF_IDENT("None",{}))),Absyn.CREF(Absyn.CREF_QUAL("Arrow",{},Absyn.CREF_IDENT("None",{})))}))))),NONE,NONE)}),Absyn.INFO("line.mo",true,1,0,1,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Real"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -1780,7 +1780,7 @@ public constant Absyn.Program lineProgram=Absyn.PROGRAM(
           SOME(Absyn.CLASSMOD({},SOME(Absyn.REAL(3.0))))),NONE,NONE)}),Absyn.INFO("line.mo",true,1,0,1,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Boolean"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -1798,28 +1798,28 @@ public constant Absyn.Program placementProgram=Absyn.PROGRAM(
           {
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Real"),NONE),
           {
           Absyn.COMPONENTITEM(
           Absyn.COMPONENT("x",{},SOME(Absyn.CLASSMOD({},SOME(Absyn.REAL(0.0))))),NONE,NONE)}),Absyn.INFO("placement.mo",true,2,0,2,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Real"),NONE),
           {
           Absyn.COMPONENTITEM(
           Absyn.COMPONENT("y",{},SOME(Absyn.CLASSMOD({},SOME(Absyn.REAL(0.0))))),NONE,NONE)}),Absyn.INFO("placement.mo",true,2,0,2,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Real"),NONE),
           {
           Absyn.COMPONENTITEM(
           Absyn.COMPONENT("scale",{},SOME(Absyn.CLASSMOD({},SOME(Absyn.REAL(1.0))))),NONE,NONE)}),Absyn.INFO("placement.mo",true,2,0,2,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Real"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -1827,7 +1827,7 @@ public constant Absyn.Program placementProgram=Absyn.PROGRAM(
           SOME(Absyn.CLASSMOD({},SOME(Absyn.REAL(1.0))))),NONE,NONE)}),Absyn.INFO("placement.mo",true,2,0,2,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Boolean"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -1835,7 +1835,7 @@ public constant Absyn.Program placementProgram=Absyn.PROGRAM(
           SOME(Absyn.CLASSMOD({},SOME(Absyn.BOOL(false))))),NONE,NONE)}),Absyn.INFO("placement.mo",true,2,0,2,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Boolean"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -1843,7 +1843,7 @@ public constant Absyn.Program placementProgram=Absyn.PROGRAM(
           SOME(Absyn.CLASSMOD({},SOME(Absyn.BOOL(false))))),NONE,NONE)}),Absyn.INFO("placement.mo",true,2,0,2,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Real"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -1856,7 +1856,7 @@ public constant Absyn.Program placementProgram=Absyn.PROGRAM(
           {
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Boolean"),NONE),
           {
           Absyn.COMPONENTITEM(
@@ -1864,13 +1864,13 @@ public constant Absyn.Program placementProgram=Absyn.PROGRAM(
           SOME(Absyn.CLASSMOD({},SOME(Absyn.BOOL(true))))),NONE,NONE)}),Absyn.INFO("placement.mo",true,2,0,2,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Transformation"),NONE),
           {
           Absyn.COMPONENTITEM(Absyn.COMPONENT("transformation",{},NONE),NONE,NONE)}),Absyn.INFO("placement.mo",true,2,0,2,0),NONE)),
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
           Absyn.TPATH(Absyn.IDENT("Transformation"),NONE),
           {
           Absyn.COMPONENTITEM(Absyn.COMPONENT("iconTransformation",{},NONE),NONE,NONE)}),Absyn.INFO("placement.mo",true,2,0,2,0),NONE))})},NONE),Absyn.INFO("placement.mo",true,0,0,0,0))},Absyn.TOP());

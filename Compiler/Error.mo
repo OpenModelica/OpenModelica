@@ -135,58 +135,60 @@ public constant ErrorID INVALID_CONNECTOR_TYPE=48;
 public constant ErrorID CONNECT_TWO_INPUTS=49;
 public constant ErrorID CONNECT_TWO_OUTPUTS=50;
 public constant ErrorID CONNECT_FLOW_TO_NONFLOW=51;
-public constant ErrorID INVALID_CONNECTOR_VARIABLE=52;
-public constant ErrorID TYPE_ERROR=53;
-public constant ErrorID MODIFY_PROTECTED=54;
-public constant ErrorID INVALID_TUPLE_CONTENT=55;
-public constant ErrorID IMPORT_PACKAGES_ONLY=56;
-public constant ErrorID IMPORT_SEVERAL_NAMES=57;
-public constant ErrorID LOOKUP_TYPE_FOUND_COMP=58;
-public constant ErrorID LOOKUP_ENCAPSULATED_RESTRICTION_VIOLATION=59;
-public constant ErrorID REFERENCE_PROTECTED=60;
-public constant ErrorID ILLEGAL_SLICE_MOD=61;
-public constant ErrorID ILLEGAL_MODIFICATION=62;
-public constant ErrorID INTERNAL_ERROR=63;
-public constant ErrorID TYPE_MISMATCH_ARRAY_EXP=64;
-public constant ErrorID TYPE_MISMATCH_MATRIX_EXP=65;
-public constant ErrorID MATRIX_EXP_ROW_SIZE=66;
-public constant ErrorID OPERAND_BUILTIN_TYPE=67;
-public constant ErrorID WRONG_TYPE_OR_NO_OF_ARGS=68;
-public constant ErrorID DIFFERENT_DIM_SIZE_IN_ARGUMENTS=69;
-public constant ErrorID DER_APPLIED_TO_CONST=70;
-public constant ErrorID ARGUMENT_MUST_BE_INTEGER_OR_REAL=71;
-public constant ErrorID ARGUMENT_MUST_BE_INTEGER=72;
-public constant ErrorID ARGUMENT_MUST_BE_DISCRETE_VAR=73;
-public constant ErrorID TYPE_MUST_BE_SIMPLE=74;
-public constant ErrorID ARGUMENT_MUST_BE_VARIABLE=75;
-public constant ErrorID NO_MATCHING_FUNCTION_FOUND=76;
-public constant ErrorID NO_MATCHING_FUNCTION_FOUND_NO_CANDIDATE = 77;
-public constant ErrorID FUNCTION_COMPS_MUST_HAVE_DIRECTION=78;
-public constant ErrorID FUNCTION_SLOT_ALLREADY_FILLED=79;
-public constant ErrorID NO_SUCH_ARGUMENT=80;
-public constant ErrorID CONSTANT_OR_PARAM_WITH_NONCONST_BINDING=81;
-public constant ErrorID SUBSCRIPT_NOT_INT_OR_INT_ARRAY=82;
-public constant ErrorID TYPE_MISMATCH_IF_EXP=83;
-public constant ErrorID UNRESOLVABLE_TYPE=84;
-public constant ErrorID INCOMPATIBLE_TYPES=85;
-public constant ErrorID ERROR_OPENING_FILE=86;
-public constant ErrorID INHERIT_BASIC_WITH_COMPS=87;
-public constant ErrorID MODIFIER_TYPE_MISMATCH_ERROR=88;
-public constant ErrorID ERROR_FLATTENING=89;
-public constant ErrorID DUPLICATE_ELEMENTS_NOT_IDENTICAL=90;
-public constant ErrorID PACKAGE_VARIABLE_NOT_CONSTANT=91;
-public constant ErrorID RECURSIVE_DEFINITION=92;
-public constant ErrorID NOT_ARRAY_TYPE_IN_FOR_STATEMENT= 93;
-public constant ErrorID BREAK_OUT_OF_LOOP= 94;
-public constant ErrorID DIFFERENT_VARIABLES_SOLVED_IN_ELSEWHEN= 95;
-public constant ErrorID GENERIC_TRANSLATION_ERROR = 96;
-public constant ErrorID MODIFIER_DECLARATION_TYPE_MISMATCH_ERROR=97;
-public constant ErrorID ASSERT_CONSTANT_FALSE_ERROR=98;
+public constant ErrorID CONNECT_STREAM_TO_NONSTREAM=52;
+public constant ErrorID INVALID_CONNECTOR_VARIABLE=53;
+public constant ErrorID TYPE_ERROR=54;
+public constant ErrorID MODIFY_PROTECTED=55;
+public constant ErrorID INVALID_TUPLE_CONTENT=56;
+public constant ErrorID IMPORT_PACKAGES_ONLY=57;
+public constant ErrorID IMPORT_SEVERAL_NAMES=58;
+public constant ErrorID LOOKUP_TYPE_FOUND_COMP=59;
+public constant ErrorID LOOKUP_ENCAPSULATED_RESTRICTION_VIOLATION=60;
+public constant ErrorID REFERENCE_PROTECTED=61;
+public constant ErrorID ILLEGAL_SLICE_MOD=62;
+public constant ErrorID ILLEGAL_MODIFICATION=63;
+public constant ErrorID INTERNAL_ERROR=64;
+public constant ErrorID TYPE_MISMATCH_ARRAY_EXP=65;
+public constant ErrorID TYPE_MISMATCH_MATRIX_EXP=66;
+public constant ErrorID MATRIX_EXP_ROW_SIZE=67;
+public constant ErrorID OPERAND_BUILTIN_TYPE=68;
+public constant ErrorID WRONG_TYPE_OR_NO_OF_ARGS=69;
+public constant ErrorID DIFFERENT_DIM_SIZE_IN_ARGUMENTS=70;
+public constant ErrorID DER_APPLIED_TO_CONST=71;
+public constant ErrorID ARGUMENT_MUST_BE_INTEGER_OR_REAL=72;
+public constant ErrorID ARGUMENT_MUST_BE_INTEGER=73;
+public constant ErrorID ARGUMENT_MUST_BE_DISCRETE_VAR=74;
+public constant ErrorID TYPE_MUST_BE_SIMPLE=75;
+public constant ErrorID ARGUMENT_MUST_BE_VARIABLE=76;
+public constant ErrorID NO_MATCHING_FUNCTION_FOUND=77;
+public constant ErrorID NO_MATCHING_FUNCTION_FOUND_NO_CANDIDATE = 78;
+public constant ErrorID FUNCTION_COMPS_MUST_HAVE_DIRECTION=79;
+public constant ErrorID FUNCTION_SLOT_ALLREADY_FILLED=80;
+public constant ErrorID NO_SUCH_ARGUMENT=81;
+public constant ErrorID CONSTANT_OR_PARAM_WITH_NONCONST_BINDING=82;
+public constant ErrorID SUBSCRIPT_NOT_INT_OR_INT_ARRAY=83;
+public constant ErrorID TYPE_MISMATCH_IF_EXP=84;
+public constant ErrorID UNRESOLVABLE_TYPE=85;
+public constant ErrorID INCOMPATIBLE_TYPES=86;
+public constant ErrorID ERROR_OPENING_FILE=87;
+public constant ErrorID INHERIT_BASIC_WITH_COMPS=88;
+public constant ErrorID MODIFIER_TYPE_MISMATCH_ERROR=89;
+public constant ErrorID ERROR_FLATTENING=90;
+public constant ErrorID DUPLICATE_ELEMENTS_NOT_IDENTICAL=91;
+public constant ErrorID PACKAGE_VARIABLE_NOT_CONSTANT=92;
+public constant ErrorID RECURSIVE_DEFINITION=93;
+public constant ErrorID NOT_ARRAY_TYPE_IN_FOR_STATEMENT= 94;
+public constant ErrorID BREAK_OUT_OF_LOOP= 95;
+public constant ErrorID DIFFERENT_VARIABLES_SOLVED_IN_ELSEWHEN= 96;
+public constant ErrorID GENERIC_TRANSLATION_ERROR = 97;
+public constant ErrorID MODIFIER_DECLARATION_TYPE_MISMATCH_ERROR=98;
+public constant ErrorID ASSERT_CONSTANT_FALSE_ERROR=99;
 public constant ErrorID UNBOUND_PARAMETER_WARNING=500;
 public constant ErrorID BUILTIN_FUNCTION_SUM_HAS_SCALAR_PARAMETER=501;
 public constant ErrorID BUILTIN_FUNCTION_PRODUCT_HAS_SCALAR_PARAMETER=502;
 public constant ErrorID SETTING_FIXED_ATTRIBUTE = 503;
 public constant ErrorID INDEX_REDUCTION_NOTIFICATION=1000;
+
 protected constant list<tuple<Integer, MessageType, Severity, String>> errorTable={(SYNTAX_ERROR,SYNTAX(),ERROR(),"Syntax error near: %s"),
           (GRAMMATIC_ERROR,GRAMMAR(),ERROR(),"error: %s"),
           (LOOKUP_ERROR,TRANSLATION(),ERROR(),
@@ -287,6 +289,8 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           "Cannot connect two output variables while connecting %s to %s unless one of them is inside and the other outside connector."),
           (CONNECT_FLOW_TO_NONFLOW,TRANSLATION(),ERROR(),
           "Cannot connect flow component %s to non-flow component %s"),
+          (CONNECT_STREAM_TO_NONSTREAM,TRANSLATION(),ERROR(),
+          "Cannot connect stream component %s to non-stream component %s"),
           (INVALID_CONNECTOR_VARIABLE,TRANSLATION(),ERROR(),
           "The type of variables %s (%s) are inconsistent in connect equations"),
           (TYPE_ERROR,TRANSLATION(),ERROR(),

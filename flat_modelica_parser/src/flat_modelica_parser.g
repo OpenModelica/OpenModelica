@@ -420,7 +420,8 @@ component_clause :
 		;
 
 type_prefix :
-		(FLOW)?
+		(FLOW
+		|STREAM)?
 		(DISCRETE
 		|PARAMETER
 		|CONSTANT

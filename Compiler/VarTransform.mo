@@ -129,6 +129,7 @@ algorithm
       DAE.InstDims dims;
       DAE.StartValue start;
       DAE.Flow fl;
+      DAE.Stream st;
       list<Absyn.Path> clsLst;
       Option<DAE.VariableAttributes> attr;
       Option<Absyn.Comment> cmt;
@@ -146,50 +147,50 @@ algorithm
 
     case({},repl) then {};
 
-    case(DAE.VAR(cr,kind,dir,prot,tp,SOME(bindExp),dims,fl,clsLst,attr,cmt,io,ftp)::dae,repl)
+    case(DAE.VAR(cr,kind,dir,prot,tp,SOME(bindExp),dims,fl,st,clsLst,attr,cmt,io,ftp)::dae,repl)
       equation
         (bindExp2) = replaceExp(bindExp, repl, NONE);
   			dae2 = applyReplacementsDAE(dae,repl);
         attr = applyReplacementsVarAttr(attr,repl);
-      then DAE.VAR(cr,kind,dir,prot,tp,SOME(bindExp),dims,fl,clsLst,attr,cmt,io,ftp)::dae2;
+      then DAE.VAR(cr,kind,dir,prot,tp,SOME(bindExp),dims,fl,st,clsLst,attr,cmt,io,ftp)::dae2;
 
-    case(DAE.VAR(cr,kind,dir,prot,tp,NONE,dims,fl,clsLst,attr,cmt,io,ftp)::dae,repl)
+    case(DAE.VAR(cr,kind,dir,prot,tp,NONE,dims,fl,st,clsLst,attr,cmt,io,ftp)::dae,repl)
       equation
         dae2 = applyReplacementsDAE(dae,repl);
         attr = applyReplacementsVarAttr(attr,repl);
-  	then DAE.VAR(cr,kind,dir,prot,tp,NONE,dims,fl,clsLst,attr,cmt,io,ftp)::dae2;
+      then DAE.VAR(cr,kind,dir,prot,tp,NONE,dims,fl,st,clsLst,attr,cmt,io,ftp)::dae2;
 
     case(DAE.DEFINE(cr,e)::dae,repl)
       equation
-          (e2) = replaceExp(e, repl, NONE);
+        (e2) = replaceExp(e, repl, NONE);
         (Exp.CREF(cr2,_)) = replaceExp(Exp.CREF(cr,Exp.REAL()), repl, NONE);
         dae2 = applyReplacementsDAE(dae,repl);
       then DAE.DEFINE(cr2,e2)::dae2;
 
     case(DAE.INITIALDEFINE(cr,e)::dae,repl)
       equation
-          (e2) = replaceExp(e, repl, NONE);
+        (e2) = replaceExp(e, repl, NONE);
         (Exp.CREF(cr2,_)) = replaceExp(Exp.CREF(cr,Exp.REAL()), repl, NONE);
         dae2 = applyReplacementsDAE(dae,repl);
       then DAE.INITIALDEFINE(cr2,e2)::dae2;
 
     case(DAE.EQUATION(e1,e2)::dae,repl)
       equation
-          (e11) = replaceExp(e1, repl, NONE);
+        (e11) = replaceExp(e1, repl, NONE);
         (e22) = replaceExp(e2, repl, NONE);
         dae2 = applyReplacementsDAE(dae,repl);
       then DAE.EQUATION(e11,e22)::dae2;
-
+        
     case(DAE.ARRAY_EQUATION(idims,e1,e2)::dae,repl)
       equation
-          (e11) = replaceExp(e1, repl, NONE);
+        (e11) = replaceExp(e1, repl, NONE);
         (e22) = replaceExp(e2, repl, NONE);
         dae2 = applyReplacementsDAE(dae,repl);
       then DAE.ARRAY_EQUATION(idims,e11,e22)::dae2;
 
     case(DAE.WHEN_EQUATION(e1,elist,SOME(elt))::dae,repl)
       equation
-          (e11) = replaceExp(e1, repl, NONE);
+        (e11) = replaceExp(e1, repl, NONE);
         {elt2}= applyReplacementsDAE({elt},repl);
         elist2 = applyReplacementsDAE(elist,repl);
         dae2 = applyReplacementsDAE(dae,repl);
@@ -197,7 +198,7 @@ algorithm
 
     case(DAE.WHEN_EQUATION(e1,elist,NONE)::dae,repl)
       equation
-          (e11) = replaceExp(e1, repl, NONE);
+        (e11) = replaceExp(e1, repl, NONE);
         elist2 = applyReplacementsDAE(elist,repl);
         dae2 = applyReplacementsDAE(dae,repl);
       then DAE.WHEN_EQUATION(e11,elist2,NONE)::dae2;
@@ -220,7 +221,7 @@ algorithm
 
     case(DAE.INITIALEQUATION(e1,e2)::dae,repl)
       equation
-          (e11) = replaceExp(e1, repl, NONE);
+        (e11) = replaceExp(e1, repl, NONE);
         (e22) = replaceExp(e2, repl, NONE);
         dae2 = applyReplacementsDAE(dae,repl);
       then DAE.INITIALEQUATION(e11,e22)::dae2;
@@ -263,8 +264,8 @@ algorithm
 
      case(DAE.ASSERT(e1,e2)::dae,repl)
       equation
-          (e11) = replaceExp(e1, repl, NONE);
-          (e22) = replaceExp(e2, repl, NONE);
+        (e11) = replaceExp(e1, repl, NONE);
+        (e22) = replaceExp(e2, repl, NONE);
         dae2 = applyReplacementsDAE(dae,repl);
       then DAE.ASSERT(e11,e22)::dae2;
 
@@ -276,49 +277,55 @@ algorithm
 
      case(DAE.REINIT(cr,e1)::dae,repl)
       equation
-          (e11) = replaceExp(e1, repl, NONE);
+        (e11) = replaceExp(e1, repl, NONE);
         (Exp.CREF(cr2,_)) = replaceExp(Exp.CREF(cr,Exp.REAL()), repl, NONE);
         dae2 = applyReplacementsDAE(dae,repl);
       then DAE.REINIT(cr2,e11)::dae2;
+        
   end matchcontinue;
 end applyReplacementsDAE;
 
-protected function applyReplacementsVarAttr "Help function to applyReplacementsDAE"
+protected function applyReplacementsVarAttr 
+"Help function to applyReplacementsDAE"
   input Option<DAE.VariableAttributes> attr;
   input VariableReplacements repl;
   output Option<DAE.VariableAttributes> outAttr;
 algorithm
   outAttr := matchcontinue(attr,repl)
-    local Option<Exp.Exp> quantity,unit,displayUnit,min,max,initial_,fixed,nominal;
-      Option<DAE.StateSelect> stateSelect;
-    case(SOME(DAE.VAR_ATTR_REAL(quantity,unit,displayUnit,(min,max),initial_,fixed,nominal,stateSelect)),repl) equation
-      (quantity) = replaceExpOpt(quantity,repl,NONE);
-      (unit) = replaceExpOpt(unit,repl,NONE);
-      (displayUnit) = replaceExpOpt(displayUnit,repl,NONE);
-      (min) = replaceExpOpt(min,repl,NONE);
-      (max) = replaceExpOpt(max,repl,NONE);
-      (initial_) = replaceExpOpt(initial_,repl,NONE);
-      (fixed) = replaceExpOpt(fixed,repl,NONE);
-      (nominal) = replaceExpOpt(nominal,repl,NONE);
+    local Option<Exp.Exp> quantity,unit,displayUnit,min,max,initial_,fixed,nominal; Option<DAE.StateSelect> stateSelect;
+      
+    case(SOME(DAE.VAR_ATTR_REAL(quantity,unit,displayUnit,(min,max),initial_,fixed,nominal,stateSelect)),repl) 
+      equation
+        (quantity) = replaceExpOpt(quantity,repl,NONE);
+        (unit) = replaceExpOpt(unit,repl,NONE);
+        (displayUnit) = replaceExpOpt(displayUnit,repl,NONE);
+        (min) = replaceExpOpt(min,repl,NONE);
+        (max) = replaceExpOpt(max,repl,NONE);
+        (initial_) = replaceExpOpt(initial_,repl,NONE);
+        (fixed) = replaceExpOpt(fixed,repl,NONE);
+        (nominal) = replaceExpOpt(nominal,repl,NONE);
       then SOME(DAE.VAR_ATTR_REAL(quantity,unit,displayUnit,(min,max),initial_,fixed,nominal,stateSelect));
 
-    case(SOME(DAE.VAR_ATTR_INT(quantity,(min,max),initial_,fixed)),repl) equation
-      (quantity) = replaceExpOpt(quantity,repl,NONE);
-      (min) = replaceExpOpt(min,repl,NONE);
-      (max) = replaceExpOpt(max,repl,NONE);
-      (initial_) = replaceExpOpt(initial_,repl,NONE);
-      (fixed) = replaceExpOpt(fixed,repl,NONE);
+    case(SOME(DAE.VAR_ATTR_INT(quantity,(min,max),initial_,fixed)),repl) 
+      equation
+        (quantity) = replaceExpOpt(quantity,repl,NONE);
+        (min) = replaceExpOpt(min,repl,NONE);
+        (max) = replaceExpOpt(max,repl,NONE);
+        (initial_) = replaceExpOpt(initial_,repl,NONE);
+        (fixed) = replaceExpOpt(fixed,repl,NONE);
       then SOME(DAE.VAR_ATTR_INT(quantity,(min,max),initial_,fixed));
 
-      case(SOME(DAE.VAR_ATTR_BOOL(quantity,initial_,fixed)),repl) equation
-      (quantity) = replaceExpOpt(quantity,repl,NONE);
-      (initial_) = replaceExpOpt(initial_,repl,NONE);
-      (fixed) = replaceExpOpt(fixed,repl,NONE);
+    case(SOME(DAE.VAR_ATTR_BOOL(quantity,initial_,fixed)),repl) 
+      equation
+        (quantity) = replaceExpOpt(quantity,repl,NONE);
+        (initial_) = replaceExpOpt(initial_,repl,NONE);
+        (fixed) = replaceExpOpt(fixed,repl,NONE);
       then SOME(DAE.VAR_ATTR_BOOL(quantity,initial_,fixed));
 
-      case(SOME(DAE.VAR_ATTR_STRING(quantity,initial_)),repl) equation
-      (quantity) = replaceExpOpt(quantity,repl,NONE);
-      (initial_) = replaceExpOpt(initial_,repl,NONE);
+    case(SOME(DAE.VAR_ATTR_STRING(quantity,initial_)),repl) 
+      equation
+        (quantity) = replaceExpOpt(quantity,repl,NONE);
+        (initial_) = replaceExpOpt(initial_,repl,NONE);
       then SOME(DAE.VAR_ATTR_STRING(quantity,initial_));
 
       case (NONE(),repl) then NONE();

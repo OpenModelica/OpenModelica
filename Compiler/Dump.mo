@@ -311,6 +311,42 @@ algorithm
   end matchcontinue;
 end unparseClassStr;
 
+public function unparseClassAttributesStr 
+"function: unparseClassAttributesStr
+  Prettyprints Class attributes."
+  input Absyn.Class inClass;
+  output String outString;
+algorithm
+  outString:=
+  matchcontinue (inClass)
+    local
+      Ident is,s1,s2,s2_1,s3,s4,s5,str,n,fi,re,io,s6,s7,s8,s9,name;
+      Integer i_1,i,indent;
+      Boolean p,f,e;
+      Absyn.Restriction r;
+      list<Absyn.ClassPart> parts;
+      Option<Ident> optcmt;
+      Absyn.TypeSpec tspec;
+      Absyn.ElementAttributes attr;
+      list<Absyn.ElementArg> m,cmod;
+      Option<Absyn.Comment> cmt;
+      list<Absyn.EnumLiteral> l;
+      Absyn.EnumDef ENUM_COLON;
+      Absyn.Path fname;
+      list<Ident> vars;
+    case (Absyn.CLASS(name = n,partial_ = p,final_ = f,encapsulated_ = e,restriction = r,body = _))
+      equation
+        s1 = selectString(p, "partial ", "");
+        s2 = selectString(f, "final ", "");
+        s2_1 = selectString(e, "encapsulated ", "");
+        s3 = unparseRestrictionStr(r);
+        str = Util.stringAppendList({s2_1,s1,s2,s3});
+      then
+        str;
+  end matchcontinue;
+end unparseClassAttributesStr;
+
+
 public function unparseCommentOption "function: unparseCommentOption
 
   Prettyprints a Comment.
@@ -1911,14 +1947,16 @@ algorithm
   matchcontinue (inElementAttributes)
     local
       Ident vs,ds;
-      Boolean fl;
+      Boolean fl,st;
       Absyn.Variability var;
       Absyn.Direction dir;
       list<Absyn.Subscript> adim;
-    case (Absyn.ATTR(flow_ = fl,variability = var,direction = dir,arrayDim = adim))
+    case (Absyn.ATTR(flow_ = fl,stream_=st,variability = var,direction = dir,arrayDim = adim))
       equation
         Print.printBuf("Absyn.ATTR(");
         printBool(fl);
+        Print.printBuf(", ");
+        printBool(st);
         Print.printBuf(", ");
         vs = variabilitySymbol(var);
         Print.printBuf(vs);
@@ -1948,17 +1986,18 @@ algorithm
   outString:=
   matchcontinue (inElementAttributes)
     local
-      Ident fs,vs,ds,str;
-      Boolean fl;
+      Ident fs,ss,vs,ds,str;
+      Boolean fl,st;
       Absyn.Variability var;
       Absyn.Direction dir;
       list<Absyn.Subscript> adim;
-    case (Absyn.ATTR(flow_ = fl,variability = var,direction = dir,arrayDim = adim))
+    case (Absyn.ATTR(flow_ = fl,stream_=st,variability = var,direction = dir,arrayDim = adim))
       equation
         fs = selectString(fl, "flow ", "");
+        ss = selectString(st, "stream ", "");
         vs = unparseVariabilitySymbolStr(var);
         ds = unparseDirectionSymbolStr(dir);
-        str = Util.stringAppendList({fs,vs,ds});
+        str = Util.stringAppendList({fs,ss,vs,ds});
       then
         str;
     case (_)

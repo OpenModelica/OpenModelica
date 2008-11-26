@@ -420,7 +420,8 @@ component_clause :
 		;
 
 type_prefix :
-		(FLOW)?
+		(FLOW
+		|STREAM)? /* added Modelica 3.1 stream connector */
 		(DISCRETE
 		|PARAMETER
 		|CONSTANT

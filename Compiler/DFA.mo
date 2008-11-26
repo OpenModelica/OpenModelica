@@ -198,7 +198,7 @@ algorithm
 
         varList = {Absyn.ELEMENTITEM(Absyn.ELEMENT(
           false,NONE(),Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
             Absyn.TPATH(Absyn.IDENT("Boolean"),NONE()),
             {Absyn.COMPONENTITEM(Absyn.COMPONENT("DUMMIE__",{},SOME(Absyn.CLASSMOD({},SOME(Absyn.BOOL(true))))),NONE(),NONE())}),
             Absyn.INFO("f",false,0,0,0,0),NONE()))};
@@ -220,7 +220,7 @@ algorithm
         // Used for catch handling. Keep track of the last righthand side visited.
         varList = {Absyn.ELEMENTITEM(Absyn.ELEMENT(
           false,NONE(),Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
             Absyn.TPATH(Absyn.IDENT("Integer"),NONE()),
             {Absyn.COMPONENTITEM(Absyn.COMPONENT("LASTRIGHTHANDSIDE__",{},NONE()),NONE(),NONE())}),
             Absyn.INFO("f",false,0,0,0,0),NONE()))};
@@ -234,7 +234,7 @@ algorithm
         // This variable is used for catch handling. An array
         varList = {Absyn.ELEMENTITEM(Absyn.ELEMENT(
           false,NONE(),Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
             Absyn.TPATH(Absyn.IDENT("Integer"),NONE()),
             {Absyn.COMPONENTITEM(Absyn.COMPONENT("BOOLVAR__",{Absyn.SUBSCRIPT(Absyn.INTEGER(numCases))},SOME(Absyn.CLASSMOD({},SOME(arrayOfTrue)))),NONE(),NONE())}),
             Absyn.INFO("f",false,0,0,0,0),NONE()))};
@@ -245,7 +245,7 @@ algorithm
         // return anything interesting. DUMMIE__ := VALUEBLOCK( ... )
         varList = {Absyn.ELEMENTITEM(Absyn.ELEMENT(
           false,NONE(),Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
             Absyn.TPATH(Absyn.IDENT("Boolean"),NONE()),
             {Absyn.COMPONENTITEM(Absyn.COMPONENT("DUMMIE__",{},SOME(Absyn.CLASSMOD({},SOME(Absyn.BOOL(true))))),NONE(),NONE())}),
             Absyn.INFO("f",false,0,0,0,0),NONE()))};
@@ -255,7 +255,7 @@ algorithm
         // This boolean variable is used with the catch handling
         varList = {Absyn.ELEMENTITEM(Absyn.ELEMENT(
           false,NONE(),Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
             Absyn.TPATH(Absyn.IDENT("Boolean"),NONE()),
             {Absyn.COMPONENTITEM(Absyn.COMPONENT("NOTDONE__",{},SOME(Absyn.CLASSMOD({},SOME(Absyn.BOOL(true))))),NONE(),NONE())}),
             Absyn.INFO("f",false,0,0,0,0),NONE()))};
@@ -781,7 +781,7 @@ algorithm
         firstPathVar = extractPathVar(first);
         elem1 = {Absyn.ELEMENTITEM(Absyn.ELEMENT(
           false,NONE(),Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
             t,
             {Absyn.COMPONENTITEM(Absyn.COMPONENT(firstPathVar,{},NONE()),NONE(),NONE())}),
             Absyn.INFO("f",false,0,0,0,0),NONE()))};
@@ -789,7 +789,7 @@ algorithm
         secondPathVar = extractPathVar(second);
         elem2 = {Absyn.ELEMENTITEM(Absyn.ELEMENT(
           false,NONE(),Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
             Absyn.TCOMPLEX(Absyn.IDENT("list"),{t},NONE()),
             {Absyn.COMPONENTITEM(Absyn.COMPONENT(secondPathVar,{},NONE()),NONE(),NONE())}),
             Absyn.INFO("f",false,0,0,0,0),NONE()))};
@@ -992,7 +992,7 @@ algorithm
 
         elem = {Absyn.ELEMENTITEM(Absyn.ELEMENT(
           false,NONE(),Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
             firstType,
             {Absyn.COMPONENTITEM(Absyn.COMPONENT(firstPathVar,{},NONE())
             ,NONE(),NONE())}),

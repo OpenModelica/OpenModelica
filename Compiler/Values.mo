@@ -1194,7 +1194,7 @@ algorithm
   outString:=
   matchcontinue (inValue)
     local
-      String s,s_1,s_2,res,res_1;
+      String s,s_1,s_2,res,res_1,recordName;
       Integer n;
       Real x;
       list<Value> vs;
@@ -1231,10 +1231,12 @@ algorithm
         s_2 = stringAppend(s_1, ")");
       then
         s_2;
-    case ((r as RECORD(record_ = _)))
+    case ((r as RECORD(record_ = recordPath)))
+      local Absyn.Path recordPath;
       equation
+        recordName = Absyn.pathString(recordPath);
         s = valRecordString(r);
-        res = Util.stringAppendList({"record\n",s,"end record"});
+        res = Util.stringAppendList({"record ", recordName, "\n", s,"end ", recordName, ";"});
       then
         res;
     case (CODE(A = c))
@@ -1263,11 +1265,10 @@ end valString;
 
 
 
-protected function valRecordString "function: valRecordString
-
+protected function valRecordString 
+"function: valRecordString
   This function returns a textual representation of a record,
- separating each value with a comma.
-"
+ separating each value with a comma."
   input Value inValue;
   output String outString;
 algorithm
@@ -1284,7 +1285,7 @@ algorithm
       equation
         s1 = valString(x);
         s2 = valRecordString(RECORD(cname,xs,ids));
-        res = Util.stringAppendList({id," = ",s1,",\n",s2});
+        res = Util.stringAppendList({"    ",id," = ",s1,",\n",s2});
       then
         res;
     case (RECORD(record_ = cname,orderd = (x :: xs),comp = (id :: ids)))

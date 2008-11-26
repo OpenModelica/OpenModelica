@@ -308,6 +308,7 @@ algorithm
       list<Exp.Subscript> inst_dims;
       Option<Exp.Exp> start;
       DAE.Flow flow_;
+      DAE.Stream stream_;
       list<Absyn.Path> cl;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<Absyn.Comment> comment;
@@ -317,30 +318,48 @@ algorithm
       Absyn.InnerOuter io;
       Types.Type ftp;
       DAE.VarProtection prot;
-    case (str,dae,DAE.VAR(componentRef = cr,varible = vk,variable = vd,protection=prot,input_ = ty,one = SOME(exp),binding = inst_dims,value = flow_,flow_ = cl,variableAttributesOption = dae_var_attr,absynCommentOption = comment,innerOuter=io,fullType=ftp))
+    case (str,dae,DAE.VAR(componentRef = cr,
+                          kind = vk,
+                          direction = vd,
+                          protection=prot,
+                          ty = ty,
+                          binding = SOME(exp),
+                          dims = inst_dims,
+                          flow_ = flow_,
+                          stream_ = stream_,
+                          pathLst = cl,
+                          variableAttributesOption = dae_var_attr,
+                          absynCommentOption = comment,
+                          innerOuter=io,
+                          fullType=ftp))
       equation
         exp_1 = stringPrefixComponentRef(str, isParameterDaelist, dae, exp);
       then
-        DAE.VAR(cr,vk,vd,prot,ty,SOME(exp_1),inst_dims,flow_,cl,
-          dae_var_attr,comment,io,ftp);
+        DAE.VAR(cr,vk,vd,prot,ty,SOME(exp_1),inst_dims,flow_,stream_,cl,dae_var_attr,comment,io,ftp);
+        
     case (str,dae,DAE.DEFINE(componentRef = cr,exp = exp))
       equation
         exp_1 = stringPrefixComponentRef(str, isParameterDaelist, dae, exp);
       then
         DAE.DEFINE(cr,exp_1);
+        
     case (str,dae,DAE.EQUATION(exp = exp1,scalar = exp2))
       equation
         exp1_1 = stringPrefixComponentRef(str, isParameterDaelist, dae, exp1);
         exp2_1 = stringPrefixComponentRef(str, isParameterDaelist, dae, exp2);
       then
         DAE.EQUATION(exp1_1,exp2_1);
+        
     case (str,dae,DAE.ALGORITHM(algorithm_ = alg)) then DAE.ALGORITHM(alg);
-    case (str,dae1,DAE.COMP(ident = n,dAElist = DAE.DAE(elementLst = dae))) /* What happens if a variable is not found among dae, should we check dae1,
-    i.e. where the COMP and FUNCTION was found? */
+      
+    case (str,dae1,DAE.COMP(ident = n,dAElist = DAE.DAE(elementLst = dae))) 
+      /* What happens if a variable is not found among dae, should we check dae1,
+         i.e. where the COMP and FUNCTION was found? */
       equation
         dae_1 = stringPrefixElements(str, dae, dae);
       then
         DAE.COMP(n,DAE.DAE(dae_1));
+        
     case (str,dae1,DAE.FUNCTION(path = n,dAElist = DAE.DAE(elementLst = dae),type_ = ty))
       local
         Absyn.Path n;
@@ -349,6 +368,7 @@ algorithm
         dae_1 = stringPrefixElements(str, dae, dae);
       then
         DAE.FUNCTION(n,DAE.DAE(dae_1),ty);
+        
     case (str,dae1,DAE.EXTFUNCTION(path = n,dAElist = DAE.DAE(elementLst = dae),type_ = ty,externalDecl = decl))
       local
         Absyn.Path n;
@@ -357,6 +377,7 @@ algorithm
         dae_1 = stringPrefixElements(str, dae, dae);
       then
         DAE.EXTFUNCTION(n,DAE.DAE(dae_1),ty,decl);
+        
     case (str,dae,e) then e;
   end matchcontinue;
 end stringPrefixElement;
@@ -369,23 +390,18 @@ algorithm
   matchcontinue (inComponentRef,inDAEElementLst)
     local
       Exp.ComponentRef cr,crv;
-      DAE.VarDirection vd;
-      DAE.Type ty;
-      Option<Exp.Exp> e;
       list<DAE.Element> rest;
-      DAE.VarKind vk;
-    case (cr,(DAE.VAR(componentRef = crv,varible = DAE.PARAM(),variable = vd,input_ = ty,one = e) :: rest))
+    case (cr,(DAE.VAR(componentRef = crv) :: rest))
       equation
         true = Exp.crefEqual(cr, crv);
       then
         ();
-    case (cr,(DAE.VAR(componentRef = crv,varible = vk,variable = vd,input_ = ty,one = e) :: rest))
+    case (cr,(DAE.VAR(componentRef = crv) :: rest))
       equation
         true = Exp.crefEqual(cr, crv);
       then
         fail();
-    case (cr,(e :: rest))
-      local DAE.Element e;
+    case (cr,(_ :: rest))
       equation
         isParameterDaelist(cr, rest);
       then
