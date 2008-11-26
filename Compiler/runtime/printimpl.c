@@ -83,6 +83,7 @@ RML_BEGIN_LABEL(Print__printErrorBuf)
   }
 
   fprintf(stderr, "%s", str);
+  fflush(stderr);
 
   RML_TAILCALLK(rmlSC);
 }
@@ -200,6 +201,7 @@ RML_BEGIN_LABEL(Print__writeBuf)
   }
 
   fprintf(file,"%s",buf);
+  fflush(file);
 
   if (fclose(file) != 0) {
     /* RMLFAIL */
