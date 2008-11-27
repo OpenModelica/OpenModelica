@@ -7,7 +7,7 @@ CC = gcc
 FC = g77
 AR = ar -ru
 UNAME := $(shell uname -m)
-CMDFPUFLAGS := `case ${UNAME} in i[3456]86) echo "-msse2 -mfpmath=sse";; x86_64) echo "-msse2 -mfpmath=sse";; *) echo "";; esac`
+CMDFPUFLAGS := `case ${UNAME} in i[3456]86) echo "-msse2 -mfpmath=sse";; x86_64) echo "-msse2 -mfpmath=sse -fPIC";; *) echo "";; esac`
 FPUFLAGS := ${CMDFPUFLAGS}
 CFLAGS = -Wall -O3 ${FPUFLAGS} -fexceptions -ansi -pedantic -I. $(EXTRA_CFLAGS)
 CPPFLAGS = $(CFLAGS)
