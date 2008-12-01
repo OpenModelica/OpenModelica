@@ -1626,10 +1626,7 @@ algorithm
       then
         (cache,Values.STRING(str),st);
 
-    case (cache,env,
-      Exp.CALL(
-        path = Absyn.IDENT(name = "list"),
-        expLst = {Exp.CODE(Absyn.C_TYPENAME(path),_)}),
+    case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "list"),expLst = {Exp.CODE(Absyn.C_TYPENAME(path),_)}),
       (st as Interactive.SYMBOLTABLE(
         ast = p,explodedAst = sp,instClsLst = ic,
         lstVarVal = iv,compiledFunctions = cf)),msg)
@@ -3631,12 +3628,28 @@ algorithm
       equation
         classNameStr = Absyn.pathString(className);
         errorMsg = Error.printMessagesStr();
-        errorMsg = "Internal error, check of model: " +& classNameStr +& 
-        " failed with:\n" +& errorMsg +& "\n Error Buffer: \n" +& Print.getErrorString() +& "\n";
+        errorMsg = "Internal error, check of model: " +& 
+        classNameStr +& " failed with:\n" +& errorMsg +& 
+        selectIfNotEmpty("Error Buffer:\n", Print.getErrorString());
       then 
         (cache,Values.STRING(errorMsg),st);
   end matchcontinue;
 end checkModel;
+
+protected function selectIfNotEmpty
+  input String inString;
+  input String selector " "; 
+  output String outString;
+algorithm
+  outString := matchcontinue(inString, selector)
+    case (_, "") then "";
+    case (inString, selector)
+      local String s; 
+      equation
+        s = inString +& selector;
+      then s;
+  end matchcontinue;
+end selectIfNotEmpty;
 
 public function translateGraphics "function: translates the graphical annotations from old to new version"
 	input Env.Cache inCache;
@@ -7101,7 +7114,7 @@ algorithm
       Absyn.Class cdef;
       Absyn.Path newpath,inmodel,path;
       Absyn.Program p;
-      String name;
+      String name, baseClassName;
     case (_,_,Absyn.CLASS(body = Absyn.PARTS(classParts = parts)))
       equation
         strlist = Interactive.getClassnamesInParts(parts);
@@ -7121,7 +7134,7 @@ algorithm
       equation        
       then {};
 
-    case (inmodel,p,Absyn.CLASS(body = Absyn.CLASS_EXTENDS(name, _, _, parts)))
+    case (inmodel,p,Absyn.CLASS(body = Absyn.CLASS_EXTENDS(baseClassName, _, _, parts)))
       equation
         strlist = Interactive.getClassnamesInParts(parts);        
       then strlist;
@@ -7177,7 +7190,7 @@ algorithm
       equation
         parent_string = Absyn.pathString(inPath);
         s = Error.printMessagesStr();
-        s = Util.stringAppendList({parent_string,"->","PROBLEM GETTING CLASS PATHS: ", s});
+        s = Util.stringAppendList({parent_string,"->","PROBLEM GETTING CLASS PATHS: ", s, "\n"});
         print(s);
       then {};
   end matchcontinue;
@@ -7214,9 +7227,9 @@ algorithm
       equation          
         allClassPaths = getAllClassPathsRecursive(className, p);
         // print ("All paths: \n" +& Util.stringDelimitList(Util.listMap(allClassPaths, Absyn.pathString), "\n") +& "\n");
-        ret = checkAll(cache, env, allClassPaths, st, msg);
+        checkAll(cache, env, allClassPaths, st, msg);
       then
-        (cache,Values.STRING(ret),st);
+        (cache,Values.STRING("done"),st);
     case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       equation 
         ret = stringAppend("Error checking: ", Absyn.pathString(className));
@@ -7236,8 +7249,7 @@ algorithm
       equation
         res = System.stringFind(inStr, "Internal");
         true = (res >= 0);
-      then "FAILED!";
-        
+      then "FAILED!";        
     case (_) then "OK";
   end matchcontinue;
 end failOrSuccess;    
@@ -7250,7 +7262,6 @@ function checkAll
   input list<Absyn.Path> allClasses;
   input Interactive.InteractiveSymbolTable inInteractiveSymbolTable;
   input Msg inMsg;
-  output String outValue;
 algorithm
   (outCache,outValue,outInteractiveSymbolTable):=
   matchcontinue (inCache,inEnv,allClasses,inInteractiveSymbolTable,inMsg)
@@ -7270,8 +7281,8 @@ algorithm
       Real t1, t2, elapsedTime;
       Absyn.ComponentRef cr;
       Absyn.Class c;
-    case (cache,env,{},_,_) 
-      then "";      
+    case (cache,env,{},_,_) then ();
+                  
     case (cache,env,className::rest,(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)      
       equation
         c = Interactive.getPathedClassInProgram(className, p);
@@ -7283,25 +7294,25 @@ algorithm
         // filter out functions 
         false = Interactive.isFunction(cr, p);        
         // filter out types 
-        false = Interactive.isType(cr, p);        
+        false = Interactive.isType(cr, p);
         print("Checking: " +& Dump.unparseClassAttributesStr(c) +& " " +& Absyn.pathString(className) +& "... ");
         t1 = clock();
         (cache,Values.STRING(str),_) = checkModel(cache, env, className, st, msg);        
         t2 = clock(); elapsedTime = t2 -. t1; s = realString(elapsedTime);        
-        print (s +& " seconds -> " +& failOrSuccess(str) +& "\n");                
-        ret = checkAll(cache, env, rest, st, msg);        
-        ret = str +& "\tTook: " +& s +& " seconds\n" +& ret;
+        print (s +& " seconds -> " +& failOrSuccess(str) +& "\n\t");
+        print (System.stringReplace(str, "\n", "\n\t"));
+        print ("\n");
+        checkAll(cache, env, rest, st, msg);
       then
-        ret;
+        ();
+
     case (cache,env,className::rest,(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       equation
         c = Interactive.getPathedClassInProgram(className, p);                  
-        print("Skipping: " +& Dump.unparseClassAttributesStr(c) +& " " +& Absyn.pathString(className) +& "... \n");        
-        str = stringAppend("Skipping: ", Dump.unparseClassAttributesStr(c) +& " " +& Absyn.pathString(className));
-        ret = checkAll(cache, env, rest, st, msg);
-        ret = str +& "\n" +& ret;
+        print("Skipping: " +& Dump.unparseClassAttributesStr(c) +& " " +& Absyn.pathString(className) +& "... \n");                
+        checkAll(cache, env, rest, st, msg);
       then
-        ret;
+        ();
   end matchcontinue;     
 end checkAll;
           

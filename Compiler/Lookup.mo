@@ -1587,7 +1587,7 @@ algorithm
       String id;
       SCode.Restriction restr;
       list<Env.Frame> env;
-    case ((cl as SCode.CLASS(name = id,restriction = restr,parts = SCode.PARTS(elementLst = elts))),env) /* record class function class */
+    case ((cl as SCode.CLASS(name = id,restriction = restr,classDef = SCode.PARTS(elementLst = elts))),env) /* record class function class */
       equation
         funcelts = buildRecordConstructorElts(elts, env);
         reselt = buildRecordConstructorResultElt(elts, id, env);
@@ -1597,11 +1597,9 @@ algorithm
   end matchcontinue;
 end buildRecordConstructorClass;
 
-protected function buildRecordConstructorElts "function: buildRecordConstructorElts
-
-  Helper function to build_record_constructor_class. Creates the elements
-  of the function class.
-"
+protected function buildRecordConstructorElts 
+"function: buildRecordConstructorElts
+  Helper function to buildRecordConstructorClass. Creates the elements of the function class."
   input list<SCode.Element> inSCodeElementLst;
   input Env.Env inEnv;
   output list<SCode.Element> outSCodeElementLst;
@@ -1623,24 +1621,20 @@ algorithm
       Option<Absyn.Path> bc;
       Option<Absyn.Comment> comment;
       list<Env.Frame> env;
-    case (((comp as SCode.COMPONENT(component = id,innerOuter=io,final_ = fl,replaceable_ = repl,protected_ = prot,
-      attributes = SCode.ATTR(arrayDim = d,flow_ = f,stream_=s,RW = ac,parameter_ = var,input_ = dir),
-      typeSpec = tp, mod = mod,baseclass = bc,this = comment)) :: rest),env)
+    case (((comp as SCode.COMPONENT(component = id,innerOuter=io,finalPrefix = fl,replaceablePrefix = repl,protectedPrefix = prot,
+            attributes = SCode.ATTR(arrayDims = d,flowPrefix = f,streamPrefix = s,accesibility = ac,variability = var,direction = dir),
+            typeSpec = tp, modifications = mod, baseClassPath = bc, comment = comment)) :: rest),env)
       equation
         res = buildRecordConstructorElts(rest, env);
       then
-        (SCode.COMPONENT(id,io,fl,repl,prot,SCode.ATTR(d,f,s,ac,var,Absyn.INPUT()),tp,
-          mod,bc,comment) :: res);
+        (SCode.COMPONENT(id,io,fl,repl,prot,SCode.ATTR(d,f,s,ac,var,Absyn.INPUT()),tp,mod,bc,comment) :: res);
     case ({},_) then {};
   end matchcontinue;
 end buildRecordConstructorElts;
 
-protected function buildRecordConstructorResultElt "function: buildRecordConstructorResultElt
-
-  This function builds the result element of a record constructor function,
-  i.e. the returned variable
-
-"
+protected function buildRecordConstructorResultElt 
+"function: buildRecordConstructorResultElt
+  This function builds the result element of a record constructor function, i.e. the returned variable"
   input list<SCode.Element> elts;
   input SCode.Ident id;
   input Env.Env env;
@@ -1653,21 +1647,19 @@ algorithm
           NONE,NONE);
 end buildRecordConstructorResultElt;
 
-protected function buildRecordConstructorResultMod "function: buildRecordConstructorResultMod
-
+protected function buildRecordConstructorResultMod 
+"function: buildRecordConstructorResultMod
   This function builds up the modification list for the output element of a record constructor.
   Example:
     record foo
        Real x;
        String y;
        end foo;
-   => modifier list become \'result.x=x, result.y=y\'
-"
+   => modifier list become \'result.x=x, result.y=y\'"
   input list<SCode.Element> inSCodeElementLst;
   output list<SCode.SubMod> outSCodeSubModLst;
 algorithm
-  outSCodeSubModLst:=
-  matchcontinue (inSCodeElementLst)
+  outSCodeSubModLst := matchcontinue (inSCodeElementLst)
     local
       list<SCode.SubMod> restmod;
       String id;
@@ -1686,12 +1678,11 @@ algorithm
   end matchcontinue;
 end buildRecordConstructorResultMod;
 
-protected function buildRecordConstructorVarlst "function: buildRecordConstructorVarlst
-
+protected function buildRecordConstructorVarlst 
+"function: buildRecordConstructorVarlst
   This function takes a class  (`SCode.Class\') which holds a definition
   of a record and builds a list of variables of the record used for
-  constructing a record constructor function.
-"
+  constructing a record constructor function."
 	input Env.Cache inCache;
   input SCode.Class inClass;
   input Env.Env inEnv;
@@ -1707,26 +1698,24 @@ algorithm
       list<SCode.Element> elts;
       list<Env.Frame> env;
       Env.Cache cache;
-    case (cache,(cl as SCode.CLASS(parts = SCode.PARTS(elementLst = elts))),env)
+    case (cache,(cl as SCode.CLASS(classDef = SCode.PARTS(elementLst = elts))),env)
       equation
         (cache,inputvarlst) = buildVarlstFromElts(cache,elts, env);
-        (cache,_,_,_,ty,_) = Inst.instClass(cache,env, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cl,
-          {}, true, Inst.TOP_CALL()) "FIXME: impl" ;
+        (cache,_,_,_,ty,_) = Inst.instClass(cache,env, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cl, {}, true, Inst.TOP_CALL()) "FIXME: impl" ;
       then
         (cache,Types.VAR("result",
           Types.ATTR(false,false,SCode.RW(),SCode.VAR(),Absyn.OUTPUT()),false,ty,Types.UNBOUND()) :: inputvarlst);
     case (_,_,_)
       equation
-        Debug.fprint("failtrace", "build_record_constructor_varlst failed\n");
+        Debug.fprint("failtrace", "Lookup.buildRecordConstructorVarlst failed\n");
       then
         fail();
   end matchcontinue;
 end buildRecordConstructorVarlst;
 
-protected function buildVarlstFromElts "function: buildVarlstFromElts
-
-  Helper function to build_record_constructor_varlst
-"
+protected function buildVarlstFromElts 
+"function: buildVarlstFromElts
+  Helper function to build_record_constructor_varlst"
 	input Env.Cache inCache;
   input list<SCode.Element> inSCodeElementLst;
   input Env.Env inEnv;
@@ -1745,7 +1734,8 @@ algorithm
     case (cache,((comp as SCode.COMPONENT(component = _)) :: rest),env)
       equation
         (cache,vars) = buildVarlstFromElts(cache,rest, env);
-        (cache,var) = Inst.instRecordConstructorElt(cache,env, comp, true) "P.A Here we need to do a lookup of the type. Therefore we need the env passed along from lookup_xxxx function. FIXME: impl" ;
+        (cache,var) = Inst.instRecordConstructorElt(cache,env, comp, true) 
+        "P.A Here we need to do a lookup of the type. Therefore we need the env passed along from lookup_xxxx function. FIXME: impl" ;
       then
         (cache,var :: vars);
     case (cache,{},_) then (cache,{});
@@ -1753,18 +1743,17 @@ algorithm
   end matchcontinue;
 end buildVarlstFromElts;
 
-public function isInBuiltinEnv "Class lookup
-  function: isInBuiltinEnv
+/* Class lookup */
 
-  Returns true if function can be found in the builtin environment.
-"
+public function isInBuiltinEnv 
+"function: isInBuiltinEnv
+  Returns true if function can be found in the builtin environment."
 	input Env.Cache inCache;
   input Absyn.Path inPath;
   output Env.Cache outCache;
   output Boolean outBoolean;
 algorithm
-  (outCache,outBoolean):=
-  matchcontinue (inCache,inPath)
+  (outCache,outBoolean) := matchcontinue (inCache,inPath)
     local
       list<Env.Frame> i_env;
       Absyn.Path path;
@@ -1783,16 +1772,15 @@ algorithm
         (cache,true);
     case (cache,path)
       equation
-        Debug.fprintln("failtrace", "is_in_builtin_env failed");
+        Debug.fprintln("failtrace", "Lookup.isInBuiltinEnv failed");
       then
         fail();
   end matchcontinue;
 end isInBuiltinEnv;
 
-protected function lookupClassInEnv "function: lookupClassInEnv
-
-  Helper function to lookup_class. Searches the environment for the class.
-"
+protected function lookupClassInEnv 
+"function: lookupClassInEnv
+  Helper function to lookupClass. Searches the environment for the class."
   input Env.Cache inCache;
   input Env.Env inEnv;
   input Absyn.Path inPath;

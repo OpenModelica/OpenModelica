@@ -6062,7 +6062,7 @@ algorithm
       equation
         path = Absyn.crefToPath(fn);
         (cache,cdef,env_1) = Lookup.lookupClass(cache,env, path, false);
-        SCode.CLASS(name = fid,restriction = SCode.R_EXT_FUNCTION(),parts = SCode.PARTS(used = extdecl)) = cdef;
+        SCode.CLASS(name = fid,restriction = SCode.R_EXT_FUNCTION(),classDef = SCode.PARTS(externalDecl = extdecl)) = cdef;
         SOME(Absyn.EXTERNALDECL(id,lan,out,args,_)) = extdecl;
         Ceval.isKnownExternalFunc(fid, id);
         Debug.fprintln("sei", "function is known external func");
@@ -6409,7 +6409,7 @@ algorithm
     local Env.Cache cache; Env.Env env_1;
       list<SCode.Element> els;
     case (cache,env,path) equation
-      (cache,SCode.CLASS(parts = SCode.PARTS(elementLst = els)),env_1)
+      (cache,SCode.CLASS(classDef = SCode.PARTS(elementLst = els)),env_1)
         	= Lookup.lookupClass(cache,env, path, false);
       true = Inst.isExternalObject(els);
       then (cache,true);

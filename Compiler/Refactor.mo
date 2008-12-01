@@ -1534,16 +1534,36 @@ algorithm
 
 end getCoordsFromCoordSysArgs;
 
-protected function getCoordsFromLayerArgs"function: getCoordsFromLayerArgs
+protected function getExtentModification
+  input list<Absyn.ElementArg> elementArgLst;
+  output Absyn.Exp x1;
+  output Absyn.Exp y1;
+  output Absyn.Exp x2;
+  output Absyn.Exp y2;  
+algorithm
+  (x1,y1,x2,y2) := matchcontinue (elementArgLst)
+    local list<Absyn.ElementArg> rest;
+    case (Absyn.MODIFICATION(
+      componentReg = Absyn.CREF_IDENT(name = "extent"), 
+      modification = SOME(Absyn.CLASSMOD(expOption = SOME(Absyn.ARRAY({Absyn.ARRAY({x1,y1}	),Absyn.ARRAY({x2,y2})}))) )):: rest)
+      equation
+      then (x1,y1,x2,y2);
+        
+    case (_:: rest)
+      equation
+        (x1,y1,x2,y2) = getExtentModification(rest);
+      then (x1,y1,x2,y2);
+  end matchcontinue;         
+end getExtentModification ;
 
-	Helper function to getCoordsInAnnList.
-"
+protected function getCoordsFromLayerArgs
+"function: getCoordsFromLayerArgs
+	Helper function to getCoordsInAnnList."
   input list<Absyn.ElementArg> inAnns;
   output Absyn.Exp x1;
   output Absyn.Exp y1;
   output Absyn.Exp x2;
   output Absyn.Exp y2;
-
 algorithm
 
   (x1,y1,x2,y2) := matchcontinue(inAnns)
@@ -1553,10 +1573,11 @@ algorithm
       Absyn.Exp x1,y1,x2,y2;
       list<Absyn.ElementArg> rest,args;
 
-    case(Absyn.MODIFICATION(componentReg = Absyn.CREF_IDENT(name = "coordinateSystem"), modification = SOME(Absyn.CLASSMOD(elementArgLst = Absyn.MODIFICATION(componentReg = Absyn.CREF_IDENT(name = "extent"), modification = SOME(Absyn.CLASSMOD(expOption = SOME(Absyn.ARRAY({Absyn.ARRAY({x1,y1}	),Absyn.ARRAY({x2,y2})}))) )):: args)))::rest)
-
-    then
-      (x1,y1,x2,y2);
+    case (Absyn.MODIFICATION(componentReg = Absyn.CREF_IDENT(name = "coordinateSystem"), modification = SOME(Absyn.CLASSMOD(elementArgLst = args)))::rest)
+      equation
+        (x1,y1,x2,y2) = getExtentModification(args);
+      then
+        (x1,y1,x2,y2);
 
     case(_ :: rest)
 

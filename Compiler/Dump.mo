@@ -47,8 +47,7 @@ package Dump
 public import Absyn;
 public import Interactive;
 
-public
-type Ident = String;
+public type Ident = String;
 
 protected import Print;
 protected import Util;
@@ -63,7 +62,6 @@ algorithm
   str := Print.getString();
 end dumpExpStr;
 
-
 public function dumpExp
   input Absyn.Exp exp;
   protected String str;
@@ -75,16 +73,12 @@ algorithm
   print("--------------------\n");
 end dumpExp;
 
-
-
-public function dump "function: dump
-
-  Prints a program, i.e. the whole AST, to the Print buffer.
-"
+public function dump 
+"function: dump
+  Prints a program, i.e. the whole AST, to the Print buffer."
   input Absyn.Program inProgram;
 algorithm
-  _:=
-  matchcontinue (inProgram)
+  _ := matchcontinue (inProgram)
     local
       list<Absyn.Class> cs;
       Absyn.Within w;
@@ -100,15 +94,13 @@ algorithm
   end matchcontinue;
 end dump;
 
-public function unparseStr "function: unparseStr
-
-  Prettyprints the Program, i.e. the whole AST, to a string.
-"
+public function unparseStr 
+"function: unparseStr
+  Prettyprints the Program, i.e. the whole AST, to a string."
   input Absyn.Program inProgram;
   output String outString;
 algorithm
-  outString:=
-  matchcontinue (inProgram)
+  outString := matchcontinue (inProgram)
     local
       Ident s1,s2,s3,str;
       list<Absyn.Class> cs;
@@ -125,16 +117,14 @@ algorithm
   end matchcontinue;
 end unparseStr;
 
-public function unparseClassList "function: unparseClassList
-
-  Prettyprints a list of classes
-"
+public function unparseClassList 
+"function: unparseClassList
+  Prettyprints a list of classes"
   input Integer inInteger;
   input list<Absyn.Class> inAbsynClassLst;
   output String outString;
 algorithm
-  outString:=
-  matchcontinue (inInteger,inAbsynClassLst)
+  outString := matchcontinue (inInteger,inAbsynClassLst)
     local
       Ident s1,s2,res;
       Integer i;
@@ -151,16 +141,14 @@ algorithm
   end matchcontinue;
 end unparseClassList;
 
-public function unparseWithin "function: unparseWithin
-
-  Prettyprints a within statement.
-"
+public function unparseWithin 
+"function: unparseWithin
+  Prettyprints a within statement."
   input Integer inInteger;
   input Absyn.Within inWithin;
   output String outString;
 algorithm
-  outString:=
-  matchcontinue (inInteger,inWithin)
+  outString := matchcontinue (inInteger,inWithin)
     local
       Ident s1,s2,str;
       Integer i;
@@ -176,14 +164,12 @@ algorithm
   end matchcontinue;
 end unparseWithin;
 
-protected function dumpWithin "function: dumpWithin
-
-  Dumps within to the Print buffer.
-"
+protected function dumpWithin 
+"function: dumpWithin
+  Dumps within to the Print buffer."
   input Absyn.Within inWithin;
 algorithm
-  _:=
-  matchcontinue (inWithin)
+  _ := matchcontinue (inWithin)
     local Absyn.Path p;
     case (Absyn.TOP())
       equation
@@ -200,10 +186,9 @@ algorithm
   end matchcontinue;
 end dumpWithin;
 
-public function unparseClassStr "function: unparseClassStr
-
-  Prettyprints a Class.
-"
+public function unparseClassStr 
+"function: unparseClassStr
+  Prettyprints a Class."
   input Integer inInteger1;
   input Absyn.Class inClass2;
   input String inString3;
@@ -211,10 +196,9 @@ public function unparseClassStr "function: unparseClassStr
   input String inString5;
   output String outString;
 algorithm
-  outString:=
-  matchcontinue (inInteger1,inClass2,inString3,inString4,inString5)
+  outString := matchcontinue (inInteger1,inClass2,inString3,inString4,inString5)
     local
-      Ident is,s1,s2,s2_1,s3,s4,s5,str,n,fi,re,io,s6,s7,s8,s9,name;
+      Ident is,s1,s2,s2_1,s3,s4,s5,str,n,fi,re,io,s6,s7,s8,s9,name,baseClassName;
       Integer i_1,i,indent;
       Boolean p,f,e;
       Absyn.Restriction r;
@@ -228,7 +212,8 @@ algorithm
       Absyn.EnumDef ENUM_COLON;
       Absyn.Path fname;
       list<Ident> vars;
-    case (i,Absyn.CLASS(name = n,partial_ = p,final_ = f,encapsulated_ = e,restriction = r,body = Absyn.PARTS(classParts = parts,comment = optcmt)),fi,re,io)
+    case (i,Absyn.CLASS(name = n,partial_ = p,final_ = f,encapsulated_ = e,restriction = r,
+                        body = Absyn.PARTS(classParts = parts,comment = optcmt)),fi,re,io)
       equation
         is = indentStr(i);
         s1 = selectString(p, "partial ", "");
@@ -241,7 +226,8 @@ algorithm
         str = Util.stringAppendList({is,s2_1,s1,s2,re,io,s3," ",n,s5,"\n",s4,is,"end ",n});
       then
         str;
-    case (indent,Absyn.CLASS(name = n,partial_ = p,final_ = f,encapsulated_ = e,restriction = r,body = Absyn.DERIVED(typeSpec = tspec,attributes = attr,arguments = m,comment = optcmt)),fi,re,io)
+    case (indent,Absyn.CLASS(name = n,partial_ = p,final_ = f,encapsulated_ = e,restriction = r,
+                             body = Absyn.DERIVED(typeSpec = tspec,attributes = attr,arguments = m,comment = optcmt)),fi,re,io)
       local Option<Absyn.Comment> optcmt;
       equation
         is = indentStr(indent);
@@ -257,7 +243,8 @@ algorithm
         str = Util.stringAppendList({is,s2_1,s1,s2,re,io,s3," ",n,"= ",s4,s5,s6,s8,s9});
       then
         str;
-    case (i,Absyn.CLASS(name = n,partial_ = p,final_ = f,encapsulated_ = e,restriction = r,body = Absyn.ENUMERATION(enumLiterals = Absyn.ENUMLITERALS(enumLiterals = l),comment = cmt)),fi,re,io)
+    case (i,Absyn.CLASS(name = n,partial_ = p,final_ = f,encapsulated_ = e,restriction = r,
+                        body = Absyn.ENUMERATION(enumLiterals = Absyn.ENUMLITERALS(enumLiterals = l),comment = cmt)),fi,re,io)
       equation
         is = indentStr(i);
         s1 = selectString(p, "partial ", "");
@@ -269,7 +256,8 @@ algorithm
         str = Util.stringAppendList({is,s2_1,s1,s2,re,io,s3," ",n,"= enumeration(",s4,")",s5});
       then
         str;
-    case (i,Absyn.CLASS(name = n,partial_ = p,final_ = f,encapsulated_ = e,restriction = r,body = Absyn.ENUMERATION(enumLiterals = ENUM_COLON,comment = cmt)),fi,re,io)
+    case (i,Absyn.CLASS(name = n,partial_ = p,final_ = f,encapsulated_ = e,restriction = r,
+                        body = Absyn.ENUMERATION(enumLiterals = ENUM_COLON,comment = cmt)),fi,re,io)
       equation
         is = indentStr(i);
         s1 = selectString(p, "partial ", "");
@@ -280,7 +268,8 @@ algorithm
         str = Util.stringAppendList({is,s2_1,s1,s2,re,io,s3," ",n,"= enumeration(:)",s5});
       then
         str;
-    case (i,Absyn.CLASS(name = n,partial_ = p,final_ = f,encapsulated_ = e,restriction = r,body = Absyn.CLASS_EXTENDS(name = name,arguments = cmod,comment = optcmt,parts = parts)),fi,re,io)
+    case (i,Absyn.CLASS(name = n,partial_ = p,final_ = f,encapsulated_ = e,restriction = r,
+                        body = Absyn.CLASS_EXTENDS(baseClassName = baseClassName,modifications = cmod,comment = optcmt,parts = parts)),fi,re,io)
       equation
         is = indentStr(i);
         s1 = selectString(p, "partial ", "");
@@ -291,9 +280,7 @@ algorithm
         s4 = unparseClassPartStrLst(i_1, parts, true);
         s5 = unparseMod1Str(cmod);
         s6 = unparseStringCommentOption(optcmt);
-        str = Util.stringAppendList(
-          {is,s2_1,s1,s2,re,io,s3," extends ",name,s5,s6,"\n",s4,is,
-          "end ",name});
+        str = Util.stringAppendList({is,s2_1,s1,s2,re,io,s3," extends ",baseClassName,s5,s6,"\n",s4,is,"end ",baseClassName});
       then
         str;
     case (i,Absyn.CLASS(name = n,partial_ = p,final_ = f,encapsulated_ = e,restriction = r,body = Absyn.PDER(functionName = fname,vars = vars)),fi,re,io)
@@ -317,8 +304,7 @@ public function unparseClassAttributesStr
   input Absyn.Class inClass;
   output String outString;
 algorithm
-  outString:=
-  matchcontinue (inClass)
+  outString := matchcontinue (inClass)
     local
       Ident is,s1,s2,s2_1,s3,s4,s5,str,n,fi,re,io,s6,s7,s8,s9,name;
       Integer i_1,i,indent;
@@ -346,16 +332,13 @@ algorithm
   end matchcontinue;
 end unparseClassAttributesStr;
 
-
-public function unparseCommentOption "function: unparseCommentOption
-
-  Prettyprints a Comment.
-"
+public function unparseCommentOption 
+"function: unparseCommentOption
+  Prettyprints a Comment."
   input Option<Absyn.Comment> inAbsynCommentOption;
   output String outString;
 algorithm
-  outString:=
-  matchcontinue (inAbsynCommentOption)
+  outString := matchcontinue (inAbsynCommentOption)
     local
       Ident s1,str,cmt;
       Option<Absyn.Annotation> annopt;
@@ -374,15 +357,13 @@ algorithm
   end matchcontinue;
 end unparseCommentOption;
 
-public function unparseCommentOptionNoAnnotation "function: unparseCommentOptionNoAnnotation
-
-  Prettyprints a Comment without printing the annotation part.
-"
+public function unparseCommentOptionNoAnnotation 
+"function: unparseCommentOptionNoAnnotation
+  Prettyprints a Comment without printing the annotation part."
   input Option<Absyn.Comment> inAbsynCommentOption;
   output String outString;
 algorithm
-  outString:=
-  matchcontinue (inAbsynCommentOption)
+  outString := matchcontinue (inAbsynCommentOption)
     local Ident str,cmt;
     case (SOME(Absyn.COMMENT(_,SOME(cmt))))
       equation
@@ -393,14 +374,12 @@ algorithm
   end matchcontinue;
 end unparseCommentOptionNoAnnotation;
 
-protected function dumpCommentOption "function: dumpCommentOption
-
-  Prints a Comment to the Print buffer.
-"
+protected function dumpCommentOption 
+"function: dumpCommentOption
+  Prints a Comment to the Print buffer."
   input Option<Absyn.Comment> inAbsynCommentOption;
 algorithm
-  _:=
-  matchcontinue (inAbsynCommentOption)
+  _ := matchcontinue (inAbsynCommentOption)
     local
       Ident str,cmt;
       Option<Absyn.Annotation> annopt;
@@ -427,14 +406,12 @@ algorithm
   end matchcontinue;
 end dumpCommentOption;
 
-protected function dumpAnnotationOption "function: dumpAnnotationOption
-
-  Dumps an annotation option to the Print buffer.
-"
+protected function dumpAnnotationOption 
+"function: dumpAnnotationOption
+  Dumps an annotation option to the Print buffer."
   input Option<Absyn.Annotation> inAbsynAnnotationOption;
 algorithm
-  _:=
-  matchcontinue (inAbsynAnnotationOption)
+  _ := matchcontinue (inAbsynAnnotationOption)
     local list<Absyn.ElementArg> mod;
     case (NONE)
       equation
@@ -451,16 +428,13 @@ algorithm
   end matchcontinue;
 end dumpAnnotationOption;
 
-protected function unparseEnumliterals "function: unparseEnumliterals
-
-  Prettyprints enumeration literals, each consisting of an identifier
-  and an optional comment.
-"
+protected function unparseEnumliterals 
+"function: unparseEnumliterals
+  Prettyprints enumeration literals, each consisting of an identifier and an optional comment."
   input list<Absyn.EnumLiteral> inAbsynEnumLiteralLst;
   output String outString;
 algorithm
-  outString:=
-  matchcontinue (inAbsynEnumLiteralLst)
+  outString := matchcontinue (inAbsynEnumLiteralLst)
     local
       Ident s1,s2,res,str,str2;
       Option<Absyn.Comment> optcmt,optcmt2;
@@ -484,11 +458,10 @@ algorithm
   end matchcontinue;
 end unparseEnumliterals;
 
-protected function printEnumliterals "function: printEnumliterals
-
-  Prints enumeration literals, each consisting of an identifier
-  and an optional comment to the Print buffer.
-"
+protected function printEnumliterals 
+"function: printEnumliterals
+  Prints enumeration literals, each consisting of an 
+  identifier and an optional comment to the Print buffer."
   input list<Absyn.EnumLiteral> lst;
 algorithm
   Print.printBuf("[");
@@ -496,14 +469,12 @@ algorithm
   Print.printBuf("]");
 end printEnumliterals;
 
-protected function printEnumliterals2 "function: printEnumliterals2
-
-  Helper function to print_enumliterals
-"
+protected function printEnumliterals2 
+"function: printEnumliterals2
+  Helper function to printEnumliterals"
   input list<Absyn.EnumLiteral> inAbsynEnumLiteralLst;
 algorithm
-  _:=
-  matchcontinue (inAbsynEnumLiteralLst)
+  _ := matchcontinue (inAbsynEnumLiteralLst)
     local
       Ident str,str2;
       Option<Absyn.Comment> optcmt,optcmt2;
@@ -536,15 +507,13 @@ algorithm
   end matchcontinue;
 end printEnumliterals2;
 
-public function unparseRestrictionStr "function: unparseRestrictionStr
-
-  Prettyprints the class restriction.
-"
+public function unparseRestrictionStr 
+"function: unparseRestrictionStr
+  Prettyprints the class restriction."
   input Absyn.Restriction inRestriction;
   output String outString;
 algorithm
-  outString:=
-  matchcontinue (inRestriction)
+  outString := matchcontinue (inRestriction)
     case Absyn.R_CLASS() then "class";
     case Absyn.R_MODEL() then "model";
     case Absyn.R_RECORD() then "record";
@@ -562,14 +531,12 @@ algorithm
   end matchcontinue;
 end unparseRestrictionStr;
 
-public function dumpIstmt "function: dumpIstmt
-
-  Dumps an interactive statement to the Print buffer.
-"
+public function dumpIstmt 
+"function: dumpIstmt
+  Dumps an interactive statement to the Print buffer."
   input Interactive.InteractiveStmts inInteractiveStmts;
 algorithm
-  _:=
-  matchcontinue (inInteractiveStmts)
+  _ := matchcontinue (inInteractiveStmts)
     local
       Absyn.AlgorithmItem alg;
       Absyn.Exp expr;
@@ -609,20 +576,20 @@ algorithm
   end matchcontinue;
 end dumpIstmt;
 
-public function printInfo "function: printInfo
-
-  Dumps an Info to the Print buffer.
+public function printInfo 
+"function: printInfo
   author: adrpo, 2006-02-05
-"
+  Dumps an Info to the Print buffer."
   input Absyn.Info inInfo;
 algorithm
-  _:=
-  matchcontinue (inInfo)
+  _ := matchcontinue (inInfo)
     local
       Ident s1,s2,s3,s4,filename;
       Boolean isReadOnly;
       Integer sline,scol,eline,ecol;
-    case (Absyn.INFO(fileName = filename,isReadOnly = isReadOnly,lineNumberStart = sline,columnNumberStart = scol,lineNumberEnd = eline,columnNumberEnd = ecol))
+    case (Absyn.INFO(fileName = filename,isReadOnly = isReadOnly,
+                     lineNumberStart = sline,columnNumberStart = scol,
+                     lineNumberEnd = eline,columnNumberEnd = ecol))
       equation
         Print.printBuf("Absyn.INFO(\"");
         Print.printBuf(filename);
@@ -646,11 +613,10 @@ algorithm
   end matchcontinue;
 end printInfo;
 
-public function unparseInfoStr "function: unparseInfoStr
-
-  Translates Info to a string representation
+public function unparseInfoStr 
+"function: unparseInfoStr
   author: adrpo, 2006-02-05
-"
+  Translates Info to a string representation"
   input Absyn.Info inInfo;
   output String outString;
 algorithm
@@ -660,30 +626,28 @@ algorithm
       Ident s1,s2,s3,s4,s5,str,filename;
       Boolean isReadOnly;
       Integer sline,scol,eline,ecol;
-    case (Absyn.INFO(fileName = filename,isReadOnly = isReadOnly,lineNumberStart = sline,columnNumberStart = scol,lineNumberEnd = eline,columnNumberEnd = ecol))
+    case (Absyn.INFO(fileName = filename,isReadOnly = isReadOnly,
+                     lineNumberStart = sline,columnNumberStart = scol,
+                     lineNumberEnd = eline,columnNumberEnd = ecol))
       equation
         s1 = selectString(isReadOnly, "readonly", "writable");
         s2 = intString(sline);
         s3 = intString(scol);
         s4 = intString(eline);
         s5 = intString(ecol);
-        str = Util.stringAppendList(
-          {"Absyn.INFO(\"",filename,"\", ",s1,", ",s2,", ",s3,", ",s4,
-          ", ",s5,")\n"});
+        str = Util.stringAppendList({"Absyn.INFO(\"",filename,"\", ",s1,", ",s2,", ",s3,", ",s4,", ",s5,")\n"});
       then
         str;
   end matchcontinue;
 end unparseInfoStr;
 
-protected function printClass "function: printClass
-
+protected function printClass 
+"function: printClass
   Dumps a Class to the Print buffer.
-  changed by adrpo, 2006-02-05 to use print_info.
-"
+  changed by adrpo, 2006-02-05 to use printInfo."
   input Absyn.Class inClass;
 algorithm
-  _:=
-  matchcontinue (inClass)
+  _ := matchcontinue (inClass)
     local
       Ident n;
       Boolean p,f,e;
@@ -692,53 +656,60 @@ algorithm
       Absyn.Info info;
     case (Absyn.CLASS(name = n,partial_ = p,final_ = f,encapsulated_ = e,restriction = r,body = cdef,info = info))
       equation
-        Print.printBuf("Absyn.CLASS(\"");
-        Print.printBuf(n);
-        Print.printBuf("\", ");
-        printBool(p);
-        Print.printBuf(", ");
-        printBool(f);
-        Print.printBuf(", ");
-        printBool(e);
-        Print.printBuf(", ");
-        printClassRestriction(r);
-        Print.printBuf(", ");
-        printClassdef(cdef);
-        Print.printBuf(", ");
-        printInfo(info);
+        Print.printBuf("Absyn.CLASS(\""); Print.printBuf(n);
+        Print.printBuf("\", ");           printBool(p);
+        Print.printBuf(", ");             printBool(f);
+        Print.printBuf(", ");             printBool(e);
+        Print.printBuf(", ");             printClassRestriction(r);       
+        Print.printBuf(", ");             printClassdef(cdef);
+        Print.printBuf(", ");             printInfo(info);
         Print.printBuf(")\n");
       then
         ();
   end matchcontinue;
 end printClass;
 
-protected function printClassdef "function: printClassdef
-
-  Prints a ClassDef to the Print buffer.
-"
+protected function printClassdef 
+"function: printClassdef
+  Prints a ClassDef to the Print buffer."
   input Absyn.ClassDef inClassDef;
 algorithm
-  _:=
-  matchcontinue (inClassDef)
+  _ := matchcontinue (inClassDef)
     local
       list<Absyn.ClassPart> parts;
-      Option<Ident> comment;
-      Ident s;
+      Option<Ident> commentStr;
+      Option<Absyn.Comment> comment;      
+      Ident s,baseClassName;
       Absyn.TypeSpec tspec;
       Absyn.ElementAttributes attr;
-      list<Absyn.ElementArg> earg;
+      list<Absyn.ElementArg> earg,modifications;
       list<Absyn.EnumLiteral> enumlst;
-    case (Absyn.PARTS(classParts = parts,comment = comment))
+    case (Absyn.PARTS(classParts = parts,comment = commentStr))
       equation
         Print.printBuf("Absyn.PARTS([");
         printListDebug("print_classdef", parts, printClassPart, ", ");
         Print.printBuf("], ");
-        printStringCommentOption(comment);
+        printStringCommentOption(commentStr);
         Print.printBuf(")");
       then
         ();
+    case (Absyn.CLASS_EXTENDS(baseClassName = baseClassName,
+                              modifications = modifications,
+                              parts = parts,
+                              comment = commentStr))
+      equation
+        Print.printBuf("Absyn.CLASS_EXTENDS([");
+        Print.printBuf(baseClassName); Print.printBuf(",[");
+        printList(modifications, printElementArg, ",");
+        Print.printBuf("], ");
+        printStringCommentOption(commentStr);
+        Print.printBuf(", ");        
+        Print.printBuf("Absyn.PARTS([");
+        printListDebug("print_classdef", parts, printClassPart, ", ");
+        Print.printBuf("]))");
+      then
+        ();        
     case (Absyn.DERIVED(typeSpec = tspec,attributes = attr,arguments = earg,comment = comment))
-      local Option<Absyn.Comment> comment;
       equation
         Print.printBuf("Absyn.DERIVED(");
         s = unparseTypeSpec(tspec);
@@ -754,7 +725,6 @@ algorithm
       then
         ();
     case (Absyn.ENUMERATION(enumLiterals = Absyn.ENUMLITERALS(enumLiterals = enumlst),comment = comment))
-      local Option<Absyn.Comment> comment;
       equation
         Print.printBuf("Absyn.ENUMERATION(");
         printEnumliterals(enumlst);
@@ -764,7 +734,6 @@ algorithm
       then
         ();
     case (Absyn.ENUMERATION(enumLiterals = Absyn.ENUM_COLON(),comment = comment))
-      local Option<Absyn.Comment> comment;
       equation
         Print.printBuf("Absyn.ENUMERATION( :, ");
         dumpCommentOption(comment);
@@ -779,106 +748,38 @@ algorithm
   end matchcontinue;
 end printClassdef;
 
-protected function printClassRestriction "function: printClassRestriction
-
-  Prints the class restriction to the Print buffer.
-"
+protected function printClassRestriction 
+"function: printClassRestriction
+  Prints the class restriction to the Print buffer."
   input Absyn.Restriction inRestriction;
 algorithm
-  _:=
-  matchcontinue (inRestriction)
-    case Absyn.R_CLASS()
-      equation
-        Print.printBuf("Absyn.R_CLASS");
-      then
-        ();
-    case Absyn.R_MODEL()
-      equation
-        Print.printBuf("Absyn.R_MODEL");
-      then
-        ();
-    case Absyn.R_RECORD()
-      equation
-        Print.printBuf("Absyn.R_RECORD");
-      then
-        ();
-    case Absyn.R_BLOCK()
-      equation
-        Print.printBuf("Absyn.R_BLOCK");
-      then
-        ();
-    case Absyn.R_CONNECTOR()
-      equation
-        Print.printBuf("Absyn.R_CONNECTOR");
-      then
-        ();
-    case Absyn.R_EXP_CONNECTOR()
-      equation
-        Print.printBuf("Absyn.R_EXP_CONNECTOR");
-      then
-        ();
-    case Absyn.R_TYPE()
-      equation
-        Print.printBuf("Absyn.R_TYPE");
-      then
-        ();
-    case Absyn.R_UNIONTYPE()
-      equation
-        Print.printBuf("Absyn.R_UNIONTYPE");
-      then
-        ();
-    case Absyn.R_PACKAGE()
-      equation
-        Print.printBuf("Absyn.R_PACKAGE");
-      then
-        ();
-    case Absyn.R_FUNCTION()
-      equation
-        Print.printBuf("Absyn.R_FUNCTION");
-      then
-        ();
-    case Absyn.R_ENUMERATION()
-      equation
-        Print.printBuf("Absyn.R_ENUMERATION");
-      then
-        ();
-    case Absyn.R_PREDEFINED_INT()
-      equation
-        Print.printBuf("Absyn.R_PREDEFINED_INT");
-      then
-        ();
-    case Absyn.R_PREDEFINED_REAL()
-      equation
-        Print.printBuf("Absyn.R_PREDEFINED_REAL");
-      then
-        ();
-    case Absyn.R_PREDEFINED_STRING()
-      equation
-        Print.printBuf("Absyn.R_PREDEFINED_STRING");
-      then
-        ();
-    case Absyn.R_PREDEFINED_BOOL()
-      equation
-        Print.printBuf("Absyn.R_PREDEFINED_BOOL");
-      then
-        ();
-    case Absyn.R_PREDEFINED_ENUM()
-      equation
-        Print.printBuf("Absyn.R_PREDEFINED_ENUM");
-      then
-        ();
+  _ := matchcontinue (inRestriction)
+    case Absyn.R_CLASS() equation Print.printBuf("Absyn.R_CLASS"); then ();
+    case Absyn.R_MODEL() equation Print.printBuf("Absyn.R_MODEL"); then ();
+    case Absyn.R_RECORD() equation Print.printBuf("Absyn.R_RECORD"); then ();
+    case Absyn.R_BLOCK() equation Print.printBuf("Absyn.R_BLOCK"); then ();
+    case Absyn.R_CONNECTOR() equation Print.printBuf("Absyn.R_CONNECTOR"); then ();
+    case Absyn.R_EXP_CONNECTOR() equation Print.printBuf("Absyn.R_EXP_CONNECTOR"); then ();
+    case Absyn.R_TYPE() equation Print.printBuf("Absyn.R_TYPE"); then ();
+    case Absyn.R_UNIONTYPE() equation Print.printBuf("Absyn.R_UNIONTYPE"); then ();
+    case Absyn.R_PACKAGE() equation Print.printBuf("Absyn.R_PACKAGE"); then ();
+    case Absyn.R_FUNCTION() equation Print.printBuf("Absyn.R_FUNCTION"); then ();
+    case Absyn.R_ENUMERATION() equation Print.printBuf("Absyn.R_ENUMERATION"); then ();
+    case Absyn.R_PREDEFINED_INT() equation Print.printBuf("Absyn.R_PREDEFINED_INT"); then ();
+    case Absyn.R_PREDEFINED_REAL() equation Print.printBuf("Absyn.R_PREDEFINED_REAL"); then ();
+    case Absyn.R_PREDEFINED_STRING() equation Print.printBuf("Absyn.R_PREDEFINED_STRING"); then ();
+    case Absyn.R_PREDEFINED_BOOL() equation Print.printBuf("Absyn.R_PREDEFINED_BOOL"); then ();
+    case Absyn.R_PREDEFINED_ENUM() equation Print.printBuf("Absyn.R_PREDEFINED_ENUM"); then ();
     case _ then ();
   end matchcontinue;
 end printClassRestriction;
 
-protected function printClassModification "function: printClassModification
-
-  Prints a class modification to a print buffer.
-"
+protected function printClassModification 
+"function: printClassModification
+  Prints a class modification to a print buffer."
   input list<Absyn.ElementArg> inAbsynElementArgLst;
 algorithm
-  _:=
-  matchcontinue (inAbsynElementArgLst)
+  _ := matchcontinue (inAbsynElementArgLst)
     local list<Absyn.ElementArg> l;
     case ({}) then ();
     case (l)
@@ -891,15 +792,13 @@ algorithm
   end matchcontinue;
 end printClassModification;
 
-protected function unparseClassModificationStr "function: unparseClassModificationStr
-
-  Prettyprints a class modification to a string.
-"
+protected function unparseClassModificationStr 
+"function: unparseClassModificationStr
+  Prettyprints a class modification to a string."
   input Absyn.Modification inModification;
   output String outString;
 algorithm
-  outString:=
-  matchcontinue (inModification)
+  outString := matchcontinue (inModification)
     local
       Ident s1,s2,str;
       list<Absyn.ElementArg> l;
@@ -921,14 +820,12 @@ algorithm
   end matchcontinue;
 end unparseClassModificationStr;
 
-protected function printElementArg "function: printElementArg
-
-  Prints an ElementArg to the Print buffer.
-"
+protected function printElementArg 
+"function: printElementArg
+  Prints an ElementArg to the Print buffer."
   input Absyn.ElementArg inElementArg;
 algorithm
-  _:=
-  matchcontinue (inElementArg)
+  _ := matchcontinue (inElementArg)
     local
       Boolean f;
       Absyn.Each each_;
@@ -963,15 +860,13 @@ algorithm
   end matchcontinue;
 end printElementArg;
 
-public function unparseElementArgStr "function: unparseElementArgStr
-
-  Prettyprints an ElementArg to a string.
-"
+public function unparseElementArgStr 
+"function: unparseElementArgStr
+  Prettyprints an ElementArg to a string."
   input Absyn.ElementArg inElementArg;
   output String outString;
 algorithm
-  outString:=
-  matchcontinue (inElementArg)
+  outString := matchcontinue (inElementArg)
     local
       Ident s1,s2,s3,s4,s5,str;
       Boolean f;
@@ -1005,64 +900,48 @@ algorithm
   end matchcontinue;
 end unparseElementArgStr;
 
-protected function unparseRedeclarekeywords "function: unparseRedeclarekeywords
-
-  Prettyprints the redeclare keywords, i.e \'replaceable\' and \'redeclare\'
-"
+protected function unparseRedeclarekeywords 
+"function: unparseRedeclarekeywords
+  Prettyprints the redeclare keywords, i.e replaceable and redeclare"
   input Absyn.RedeclareKeywords inRedeclareKeywords;
   output String outString;
 algorithm
-  outString:=
-  matchcontinue (inRedeclareKeywords)
+  outString := matchcontinue (inRedeclareKeywords)
     case Absyn.REDECLARE() then "redeclare ";
     case Absyn.REPLACEABLE() then "replaceable ";
     case Absyn.REDECLARE_REPLACEABLE() then "redeclare replaceable ";
   end matchcontinue;
 end unparseRedeclarekeywords;
 
-public function unparseEachStr "function: unparseEachStr
-
-  Prettyprints the each keyword.
-"
+public function unparseEachStr 
+"function: unparseEachStr
+  Prettyprints the each keyword."
   input Absyn.Each inEach;
   output String outString;
 algorithm
-  outString:=
-  matchcontinue (inEach)
+  outString := matchcontinue (inEach)
     case (Absyn.EACH()) then "each ";
     case (Absyn.NON_EACH()) then "";
   end matchcontinue;
 end unparseEachStr;
 
-protected function dumpEach "function: dumpEach
-
-  Print the each keyword to the Print buffer
-"
+protected function dumpEach 
+"function: dumpEach
+  Print the each keyword to the Print buffer"
   input Absyn.Each inEach;
 algorithm
-  _:=
-  matchcontinue (inEach)
-    case (Absyn.EACH())
-      equation
-        Print.printBuf("Absyn.EACH");
-      then
-        ();
-    case (Absyn.NON_EACH())
-      equation
-        Print.printBuf("Absyn.NON_EACH");
-      then
-        ();
+  _ := matchcontinue (inEach)
+    case (Absyn.EACH()) equation Print.printBuf("Absyn.EACH"); then ();
+    case (Absyn.NON_EACH()) equation Print.printBuf("Absyn.NON_EACH"); then ();
   end matchcontinue;
 end dumpEach;
 
-protected function printClassPart "function: printClassPart
-
-  Prints the ClassPart to the Print buffer.
-"
+protected function printClassPart 
+"function: printClassPart
+  Prints the ClassPart to the Print buffer."
   input Absyn.ClassPart inClassPart;
 algorithm
-  _:=
-  matchcontinue (inClassPart)
+  _ := matchcontinue (inClassPart)
     local
       list<Absyn.ElementItem> el;
       list<Absyn.EquationItem> eqs;
@@ -1120,14 +999,12 @@ algorithm
   end matchcontinue;
 end printClassPart;
 
-protected function printExternalDecl "function: printExternalDecl
-
-  Prints an external declaration to the Print buffer.
-"
+protected function printExternalDecl 
+"function: printExternalDecl
+  Prints an external declaration to the Print buffer."
   input Absyn.ExternalDecl inExternalDecl;
 algorithm
-  _:=
-  matchcontinue (inExternalDecl)
+  _ := matchcontinue (inExternalDecl)
     local
       Ident idstr,crefstr,expstr,str,lang;
       Option<Ident> id;
@@ -1154,17 +1031,15 @@ algorithm
   end matchcontinue;
 end printExternalDecl;
 
-public function unparseClassPartStrLst "function: unparseClassPartStrLst
-
-  Prettyprints a ClassPart list to a string.
-"
+public function unparseClassPartStrLst 
+"function: unparseClassPartStrLst
+  Prettyprints a ClassPart list to a string."
   input Integer inInteger;
   input list<Absyn.ClassPart> inAbsynClassPartLst;
   input Boolean inBoolean;
   output String outString;
 algorithm
-  outString:=
-  matchcontinue (inInteger,inAbsynClassPartLst,inBoolean)
+  outString := matchcontinue (inInteger,inAbsynClassPartLst,inBoolean)
     local
       Ident s1,s2,res;
       Integer i;
@@ -1183,13 +1058,14 @@ algorithm
 end unparseClassPartStrLst;
 
 protected function unparseClassPartStr
+"function: unparseClassPartStr
+  Prettyprints a ClassPart to a string."
   input Integer inInteger;
   input Absyn.ClassPart inClassPart;
   input Boolean inBoolean;
   output String outString;
 algorithm
-  outString:=
-  matchcontinue (inInteger,inClassPart,inBoolean)
+  outString := matchcontinue (inInteger,inClassPart,inBoolean)
     local
       Integer i,i_1;
       Ident s1,is,str,langstr,outputstr,expstr,annstr,annstr2,ident,res;
@@ -1263,7 +1139,9 @@ algorithm
         str = Util.stringAppendList({is,"initial algorithm \n",s1});
       then
         str;
-    case (i,Absyn.EXTERNAL(externalDecl = Absyn.EXTERNALDECL(funcName = SOME(ident),lang = lang,output_ = SOME(output_),args = expl,annotation_ = ann),annotation_ = ann2),_)
+    case (i,Absyn.EXTERNAL(externalDecl = Absyn.EXTERNALDECL(
+                          funcName = SOME(ident),lang = lang,output_ = SOME(output_),
+                          args = expl,annotation_ = ann),annotation_ = ann2),_)
       equation
         langstr = getExtlangStr(lang);
         outputstr = printComponentRefStr(output_);
@@ -1277,7 +1155,9 @@ algorithm
           expstr,") ",annstr,";",annstr2,"\n"});
       then
         str;
-    case (i,Absyn.EXTERNAL(externalDecl = Absyn.EXTERNALDECL(funcName = SOME(ident),lang = lang,output_ = NONE,args = expl,annotation_ = ann),annotation_ = ann2),_)
+    case (i,Absyn.EXTERNAL(externalDecl = Absyn.EXTERNALDECL(
+                           funcName = SOME(ident),lang = lang,output_ = NONE,
+                           args = expl,annotation_ = ann),annotation_ = ann2),_)
       equation
         langstr = getExtlangStr(lang);
         expstr = printListStr(expl, printExpStr, ",");
@@ -1290,7 +1170,9 @@ algorithm
           annstr,"; ",annstr2,"\n"});
       then
         str;
-    case (i,Absyn.EXTERNAL(externalDecl = Absyn.EXTERNALDECL(funcName = NONE,lang = lang,output_ = NONE,annotation_ = ann),annotation_ = ann2),_)
+    case (i,Absyn.EXTERNAL(externalDecl = Absyn.EXTERNALDECL(
+                           funcName = NONE,lang = lang,output_ = NONE,
+                           annotation_ = ann),annotation_ = ann2),_)
       equation
         is = indentStr(i);
         langstr = getExtlangStr(lang);
@@ -1302,29 +1184,22 @@ algorithm
   end matchcontinue;
 end unparseClassPartStr;
 
-protected function getExtlangStr "function: getExtlangStr
-
-  Prettyprints the external function language string to a string.
-"
+protected function getExtlangStr 
+"function: getExtlangStr
+  Prettyprints the external function language string to a string."
   input Option<String> inStringOption;
   output String outString;
 algorithm
-  outString:=
-  matchcontinue (inStringOption)
+  outString := matchcontinue (inStringOption)
     local Ident res,str;
     case (NONE) then "";
-    case (SOME(str))
-      equation
-        res = Util.stringAppendList({"\"",str,"\""});
-      then
-        res;
+    case (SOME(str)) equation res = Util.stringAppendList({"\"",str,"\""}); then res;
   end matchcontinue;
 end getExtlangStr;
 
-protected function printElementitems "function: printElementitems
-
-  Print a list of ElementItems to the Print buffer.
-"
+protected function printElementitems 
+"function: printElementitems
+  Print a list of ElementItems to the Print buffer."
   input list<Absyn.ElementItem> elts;
 algorithm
   Print.printBuf("[");
@@ -1332,14 +1207,12 @@ algorithm
   Print.printBuf("]");
 end printElementitems;
 
-protected function printElementitems2 "function: printElementitems2
-
-  Helper function to print_elementitems
-"
+protected function printElementitems2 
+"function: printElementitems2
+  Helper function to printElementitems"
   input list<Absyn.ElementItem> inAbsynElementItemLst;
 algorithm
-  _:=
-  matchcontinue (inAbsynElementItemLst)
+  _ := matchcontinue (inAbsynElementItemLst)
     local
       Absyn.Element e;
       Absyn.Annotation a;
@@ -1383,14 +1256,12 @@ algorithm
   end matchcontinue;
 end printElementitems2;
 
-protected function printAnnotation "function: printAnnotation
-
-  Prints an annotation to the Print buffer.
-"
+protected function printAnnotation 
+"function: printAnnotation
+  Prints an annotation to the Print buffer."
   input Absyn.Annotation inAnnotation;
 algorithm
-  _:=
-  matchcontinue (inAnnotation)
+  _ := matchcontinue (inAnnotation)
     local list<Absyn.ElementArg> mod;
     case (Absyn.ANNOTATION(elementArgs = mod))
       equation
@@ -1402,16 +1273,14 @@ algorithm
   end matchcontinue;
 end printAnnotation;
 
-protected function unparseElementitemStrLst "function: unparseElementitemStrLst
-
-  Prettyprints a list of ElementItem to a string.
-"
+protected function unparseElementitemStrLst 
+"function: unparseElementitemStrLst
+  Prettyprints a list of ElementItem to a string."
   input Integer inInteger;
   input list<Absyn.ElementItem> inAbsynElementItemLst;
   output String outString;
 algorithm
-  outString:=
-  matchcontinue (inInteger,inAbsynElementItemLst)
+  outString := matchcontinue (inInteger,inAbsynElementItemLst)
     local
       Ident s1,s2,res;
       Integer i;
@@ -1428,16 +1297,14 @@ algorithm
   end matchcontinue;
 end unparseElementitemStrLst;
 
-public function unparseElementitemStr "function: unparseElementitemStr
-
-  Prettyprints and ElementItem.
-"
+public function unparseElementitemStr 
+"function: unparseElementitemStr
+  Prettyprints and ElementItem."
   input Integer inInteger;
   input Absyn.ElementItem inElementItem;
   output String outString;
 algorithm
-  outString:=
-  matchcontinue (inInteger,inElementItem)
+  outString := matchcontinue (inInteger,inElementItem)
     local
       Ident str,s1;
       Integer i;
@@ -1457,16 +1324,14 @@ algorithm
   end matchcontinue;
 end unparseElementitemStr;
 
-protected function unparseAnnotationOptionSemi "function: unparseAnnotationOptionSemi
-
-  Prettyprint an annotation and a semicolon if annoation present.
-"
+protected function unparseAnnotationOptionSemi 
+"function: unparseAnnotationOptionSemi
+  Prettyprint an annotation and a semicolon if annoation present."
   input Integer inInteger;
   input Option<Absyn.Annotation> inAbsynAnnotationOption;
   output String outString;
 algorithm
-  outString:=
-  matchcontinue (inInteger,inAbsynAnnotationOption)
+  outString := matchcontinue (inInteger,inAbsynAnnotationOption)
     local
       Ident s,res;
       Integer i;
@@ -1481,16 +1346,14 @@ algorithm
   end matchcontinue;
 end unparseAnnotationOptionSemi;
 
-public function unparseAnnotationOption "function: unparseAnnotationOption
-
-  Prettyprint an annotation.
-"
+public function unparseAnnotationOption 
+"function: unparseAnnotationOption
+  Prettyprint an annotation."
   input Integer inInteger;
   input Option<Absyn.Annotation> inAbsynAnnotationOption;
   output String outString;
 algorithm
-  outString:=
-  matchcontinue (inInteger,inAbsynAnnotationOption)
+  outString := matchcontinue (inInteger,inAbsynAnnotationOption)
     local
       Ident s1,s2,str,is;
       list<Absyn.ElementArg> mod;
@@ -2573,10 +2436,9 @@ algorithm
   end matchcontinue;
 end printEquationitem;
 
-protected function unparseEquationStr "function: unparseEquationStr
-
-  Prettyprints an Equation to a string.
-"
+public function unparseEquationStr 
+"function: unparseEquationStr
+  Prettyprints an Equation to a string."
   input Integer inInteger;
   input Absyn.Equation inEquation;
   output String outString;
@@ -4192,16 +4054,16 @@ algorithm
         s3 = unparseStringCommentOption(comment);
         s4 = unparseElementitemStrLst(3, localDecls);
         s5 = getStringList(cases, printCaseStr, "\n");
-        s = Util.stringAppendList({s1, " ", s2, s3, "\n\tlocal ", s3, "\n\t", s4, s5, "\n\tend ", s1});
+        s = Util.stringAppendList({s1, " ", s2, s3, "\n\tlocal\n", s4, s5, "\n\tend ", s1});
       then
         s;
     case (_) then "#UNKNOWN EXPRESSION#";
   end matchcontinue;
 end printExpStr;
 
-public function printCaseStr "
-MetaModelica construct printing
-@author Adrian Pop "
+public function printCaseStr 
+"@author: adrpo 
+  MetaModelica case construct printing"
   input Absyn.Case cas;
   output String out;
 algorithm
@@ -4219,27 +4081,25 @@ algorithm
         s2 = unparseElementitemStrLst(4, l);
         s3 = unparseEquationitemStrLst(4, eq, ";\n");
         s4 = printExpStr(r);
-        s = Util.stringAppendList({"\n\tcase (", s1, ")\n\tlocal ", s2, "\n\tequation\n\t", s3, "\n\tthen ", s4, ";"});
+        s = Util.stringAppendList({"\n\tcase (", s1, ")\n\tlocal ", s2, "\n\tequation\n", s3, "\tthen ", s4, ";"});
       then s;
     case Absyn.ELSE(l, eq, r, c)
       equation
         s2 = unparseElementitemStrLst(4, l);
         s3 = unparseEquationitemStrLst(4, eq, ";\n");
         s4 = printExpStr(r);
-        s = Util.stringAppendList({"\n\telse", "\n\tlocal ", s2, "\n\tequation\n\t", s3, "\n\tthen ", s4, ";"});
+        s = Util.stringAppendList({"\n\telse", "\n\tlocal ", s2, "\n\tequation\n", s3, "\tthen ", s4, ";"});
       then s;
   end matchcontinue;
 end printCaseStr;
 
-public function printCodeStr "function: printCodeStr
-
-   Prettyprint Code to a string.
-"
+public function printCodeStr 
+"function: printCodeStr
+  Prettyprint Code to a string."
   input Absyn.CodeNode inCode;
   output String outString;
 algorithm
-  outString:=
-  matchcontinue (inCode)
+  outString := matchcontinue (inCode)
     local
       Ident s,s1,s2,res;
       Absyn.Path p;
@@ -4292,15 +4152,13 @@ algorithm
   end matchcontinue;
 end printCodeStr;
 
-protected function printElseifStr "function: print_eleseif_str
-
-  Prettyprint elseif to a string
-"
+protected function printElseifStr 
+"function: printEleseifStr
+  Prettyprint elseif to a string"
   input list<tuple<Absyn.Exp, Absyn.Exp>> inTplAbsynExpAbsynExpLst;
   output String outString;
 algorithm
-  outString:=
-  matchcontinue (inTplAbsynExpAbsynExpLst)
+  outString := matchcontinue (inTplAbsynExpAbsynExpLst)
     local
       Ident s1,s2,s3,str;
       Absyn.Exp ec,ee;
@@ -4317,21 +4175,18 @@ algorithm
   end matchcontinue;
 end printElseifStr;
 
-protected function printRowStr "function: printRowStr
-
-  Prettyprint a list of expressions to a string.
-"
+protected function printRowStr 
+"function: printRowStr
+  Prettyprint a list of expressions to a string."
   input list<Absyn.Exp> es;
   output String s;
 algorithm
   s := printListStr(es, printExpStr, ",");
 end printRowStr;
 
-protected function printListStr "function: printListStr
-
-  Same as print_list, except it returns a string
-  instead of printing
-"
+protected function printListStr 
+"function: printListStr
+  Same as printList, except it returns a string instead of printing"
   input list<Type_a> inTypeALst;
   input FuncTypeType_aToString inFuncTypeTypeAToString;
   input String inString;
@@ -4342,8 +4197,7 @@ protected function printListStr "function: printListStr
     output String outString;
   end FuncTypeType_aToString;
 algorithm
-  outString:=
-  matchcontinue (inTypeALst,inFuncTypeTypeAToString,inString)
+  outString := matchcontinue (inTypeALst,inFuncTypeTypeAToString,inString)
     local
       Ident s,srest,s_1,s_2,sep;
       Type_a h;
@@ -4366,15 +4220,13 @@ algorithm
   end matchcontinue;
 end printListStr;
 
-public function opSymbol "function: opSymbol
-
-  Make a string describing different operators.
-"
+public function opSymbol 
+"function: opSymbol
+  Make a string describing different operators."
   input Absyn.Operator inOperator;
   output String outString;
 algorithm
-  outString:=
-  matchcontinue (inOperator)
+  outString := matchcontinue (inOperator)
     case (Absyn.ADD()) then " + ";
     case (Absyn.SUB()) then " - ";
     case (Absyn.MUL()) then "*";
@@ -4394,15 +4246,13 @@ algorithm
   end matchcontinue;
 end opSymbol;
 
-protected function dumpOpSymbol "function: dumpOpSymbol
-
-  Make a string describing different operators.
-"
+protected function dumpOpSymbol 
+"function: dumpOpSymbol
+  Make a string describing different operators."
   input Absyn.Operator inOperator;
   output String outString;
 algorithm
-  outString:=
-  matchcontinue (inOperator)
+  outString := matchcontinue (inOperator)
     case (Absyn.ADD()) then "Absyn.ADD";
     case (Absyn.SUB()) then "Absyn.SUB";
     case (Absyn.MUL()) then "Absyn.MUL";
@@ -4422,14 +4272,16 @@ algorithm
   end matchcontinue;
 end dumpOpSymbol;
 
-public function selectString "- Utility functions
+/*
+ *
+ * Utility functions
+ * These are utility functions used in some of the other functions.
+ *
+ */
 
-  These are utility functions used in some of the other
-  functions.
-  function: selectString
-
-  Select one of the two strings depending on boolean value.
-"
+public function selectString 
+"function: selectString
+  Select one of the two strings depending on boolean value."
   input Boolean inBoolean1;
   input String inString2;
   input String inString3;

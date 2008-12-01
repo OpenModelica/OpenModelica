@@ -77,6 +77,12 @@ int acceptedGrammar = GRAMMAR_MODELICA;
  */
 extern char* corbaSessionName;
 
+/*
+ * adrpo 2008-11-28
+ * flag for accepting different version of Modelica annotations
+ */
+char* annotation_version = "2.x";
+
 void RTOpts_5finit(void)
 {
   type_info = 0;
@@ -93,6 +99,7 @@ void RTOpts_5finit(void)
   version_request = 0;
   corbaSessionName = 0;
   acceptedGrammar = GRAMMAR_MODELICA;
+  annotation_version = "2.x";
 }
 
 /*
@@ -211,42 +218,66 @@ void printFlagError(char* givenFlag, char* correctFlag)
 	fprintf(stderr, "# The flag should be: %s \n", correctFlag);
 }
 
+#define VERSION_OPT1        "++v"
+#define VERSION_OPT2        "+version"
+#define ANNOTATION_VERSION  "+annotationVersion"
+#define TARGET              "+target"
+#define METAMODELICA        "+g"
+
 RML_BEGIN_LABEL(RTOpts__args)
 {
   void *args = rmlA0;
   void *res = (void*)mk_nil();
-
+  int strLen_TARGET = strlen(TARGET);
+  int strLen_METAMODELICA = strlen(METAMODELICA);
+  int strLen_ANNNOTATION_VERSION = strlen(ANNOTATION_VERSION);
   debug_none = 1;
 
   while (RML_GETHDR(args) != RML_NILHDR)
   {
     char *arg = RML_STRINGDATA(RML_CAR(args));
-    if(strcmp(arg,"++version") == 0 || strcmp(arg,"++v") == 0) {
+    if(strcmp(arg,VERSION_OPT1) == 0 ||
+       strcmp(arg,VERSION_OPT2) == 0)
+    {
     	version_request = 1;
     }
-    else if(strncmp(arg,"+target",7) == 0)
+    else if(strncmp(arg,TARGET,strLen_TARGET) == 0)
     {
-    	if (strlen(arg) >= 7 && strcmp(&arg[7], "=gcc") == 0)
+    	if (strlen(arg) >= strLen_TARGET && strcmp(&arg[strLen_TARGET], "=gcc") == 0)
     		simulation_code_target = "gcc";
-    	else if (strlen(arg) >= 7 && strcmp(&arg[7], "=msvc") == 0)
+    	else if (strlen(arg) >= strLen_TARGET && strcmp(&arg[strLen_TARGET], "=msvc") == 0)
     		simulation_code_target = "msvc";
     	else
     	{
-			fprintf(stderr, "# Wrong option: usage: omc [+target=gcc|msvc], default to 'gcc'.\n");
-			RML_TAILCALLK(rmlFC);
+        fprintf(stderr, "# Wrong option: usage: omc [+target=gcc|msvc], default to 'gcc'.\n");
+        RML_TAILCALLK(rmlFC);
     	}
     }
-    else if(strncmp(arg,"+g",2) == 0)
+    else if(strncmp(arg,METAMODELICA,strLen_METAMODELICA) == 0)
     {
-        if (strlen(arg) >= 2 && strcmp(&arg[2], "=MetaModelica") == 0)
+        if (strlen(arg) >= strLen_METAMODELICA && strcmp(&arg[strLen_METAMODELICA], "=MetaModelica") == 0)
             acceptedGrammar = GRAMMAR_METAMODELICA;
-        else if (strlen(arg) >= 2 && strcmp(&arg[2], "=Modelica") == 0)
+        else if (strlen(arg) >= strLen_METAMODELICA && strcmp(&arg[strLen_METAMODELICA], "=Modelica") == 0)
             acceptedGrammar = GRAMMAR_MODELICA;
         else
         {
-            fprintf(stderr, "# Wrong option: usage: omc [+g=Modelica|MetaModelica], default to 'Modelica'.\n");
-            RML_TAILCALLK(rmlFC);
+          fprintf(stderr, "# Wrong option: usage: omc [+g=Modelica|MetaModelica], default to 'Modelica'.\n");
+          RML_TAILCALLK(rmlFC);
         }
+    }
+    else if(strncmp(arg,ANNOTATION_VERSION,strLen_ANNNOTATION_VERSION) == 0)
+    {
+      if (strlen(arg) >= strLen_ANNNOTATION_VERSION && strcmp(&arg[strLen_ANNNOTATION_VERSION], "=1.x") == 0)
+        annotation_version = "1.x";
+      else if (strlen(arg) >= strLen_ANNNOTATION_VERSION && strcmp(&arg[strLen_ANNNOTATION_VERSION], "=2.x") == 0)
+        annotation_version = "2.x";
+      else if (strlen(arg) >= strLen_ANNNOTATION_VERSION && strcmp(&arg[strLen_ANNNOTATION_VERSION], "=3.x") == 0)
+        annotation_version = "3.x";
+      else
+      {
+        fprintf(stderr, "# Wrong option: usage: omc [+annotationVersion=1.x|2.x|3.x], default to '2.x'.\n");
+        RML_TAILCALLK(rmlFC);
+      }
     }
     else if (arg[0] == '+')
     {
@@ -523,5 +554,32 @@ RML_BEGIN_LABEL(RTOpts__acceptMetaModelicaGrammar)
     else
         rmlA0 = RML_PRIM_MKBOOL(RML_FALSE);
   RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+/*
+ * adrpo 2008-11-28
+ */
+RML_BEGIN_LABEL(RTOpts__getAnnotationVersion)
+{
+  rmlA0 = mk_scon(annotation_version);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+/*
+ * adrpo 2008-11-28
+ */
+RML_BEGIN_LABEL(RTOpts__setAnnotationVersion)
+{
+  char* str = strdup(RML_STRINGDATA(rmlA0));
+  if (strcmp(annotation_version, "1.x") == 0 ||
+      strcmp(annotation_version, "2.x") == 0 ||
+      strcmp(annotation_version, "3.x") == 0)
+  {
+    annotation_version = str;
+  }
+  else
+    RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL

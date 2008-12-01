@@ -221,14 +221,17 @@ tokens {
 
 stored_definition returns [void *ast]
 {
-    void *within = 0;
+/*
     void *restr = 0;
     void *imp=0;
     void *c=0;
+*/
+    void *within = 0;    
     void *class_def = 0;
     l_stack el_stack;
 }
     :
+        /*
         #(BEGIN_DEFINITION (e:ENCAPSULATED)? (p:PARTIAL)?
             restr = class_restriction i:IDENT)
         {
@@ -253,6 +256,7 @@ stored_definition returns [void *ast]
             ast = Absyn__IMPORT_5fDEFINITION(imp,mk_none());
         }
         |
+        */
         #(STORED_DEFINITION
             ( within = within_clause )?
             ((f:FINAL )?
@@ -311,6 +315,7 @@ class_definition [bool final] returns [ void* ast ]
     void* restr = 0;
     void* class_spec = 0;
     void* name=0;
+    void* nameEnd=0;
     RefMyAST classDef;
 }
     :
@@ -320,15 +325,18 @@ class_definition [bool final] returns [ void* ast ]
             (ex:EXPANDABLE)?
             restr = class_restriction
             (name = flat_name_path)?
-            class_spec = class_specifier
+            class_spec = class_specifier[&nameEnd]           
         )
         {
             classDef = cd;
-            if (ex && restr == Absyn__R_5fCONNECTOR ) {
-                restr = Absyn__R_5fEXP_5fCONNECTOR;
-            }
+            if (ex && restr == Absyn__R_5fCONNECTOR ) { restr = Absyn__R_5fEXP_5fCONNECTOR; }
             ast = Absyn__CLASS(
-                name?mk_scon((char*)name):mk_scon(""),
+                /*
+                 * adrpo: 
+                 *   if the class is of the form model name ... end nameEnd; use name 
+                 *   if the class is of the form model extends name ... end nameEnd; use nameEnd                 
+                 */
+                name?mk_scon((char*)name):nameEnd,
                 RML_PRIM_MKBOOL(p != 0),
                 RML_PRIM_MKBOOL(final),
                 RML_PRIM_MKBOOL(e != 0),
@@ -361,7 +369,7 @@ class_restriction returns [void* ast]
         )
     ;
 
-class_specifier returns [void* ast]
+class_specifier [void** nameEnd] returns [void* ast]
 {
 	void *comp = 0;
 	void *cmt = 0;
@@ -388,6 +396,7 @@ class_specifier returns [void* ast]
 	                        cmt = string_comment comp = composition)
 	        {
 	            if (!cmod) { cmod = mk_nil(); }
+	            *nameEnd = to_rml_str(i);
 	            ast = Absyn__CLASS_5fEXTENDS(
 	                to_rml_str(i),
 	                cmod,

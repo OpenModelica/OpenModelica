@@ -89,23 +89,24 @@ type ForIterators = list<ForIterator>
      see 3.4.4.2 Array constructor with iterators from Specification";
 
 public
-uniontype Program "- Programs, the top level construct
-  A program is simply a list of class definitions declared at top
-    level in the source file, combined with a within statement that
-    indicates the hieractical position of the program.
-"
+uniontype Program 
+"- Programs, the top level construct
+   A program is simply a list of class definitions declared at top
+   level in the source file, combined with a within statement that
+   indicates the hieractical position of the program."
   record PROGRAM  "PROGRAM, the top level construct"
     list<Class>  classes "List of classes" ;
     Within       within_ "Within clause" ;
   end PROGRAM;
 
-
-/* ModExtension: The following 3 nodes are not standard Modelica
+/* 
+   adrpo: 2008-11-30 !THESE SEEMS NOT TO BE USED ANYMORE!
+   
+   ModExtension: The following 3 nodes are not standard Modelica
    Nodes such as BEGIN_DEFINITION and END_DEFINITION
    can be used for representing packages and classes that are entered piecewise,
    e.g., first entering the package head (as BEGIN_DEFINITION),
    then the contained definitions, then an end package repesented as END_DEFINITION.
- */
 
   record BEGIN_DEFINITION
     Path         path  "path for split definitions" ;
@@ -127,21 +128,23 @@ uniontype Program "- Programs, the top level construct
     ElementSpec   importElementFor "For split definitions" ;
     Option<Path>  insertInto       "Insert into, Default: NONE" ;
   end IMPORT_DEFINITION;
+ */
 
 end Program;
 
 public
 uniontype Within "Within Clauses"
-  record WITHIN
-    Path   path;
+  record WITHIN "the within clause" 
+    Path path "the path for within"; 
   end WITHIN;
-
   record TOP end TOP;
-
 end Within;
 
 public
-uniontype Info "adrpo added 2005-10-29, changed 2006-02-05"
+uniontype Info 
+"@author adrpo 
+ added 2005-10-29, changed 2006-02-05
+ The Info attribute provides location information for elements and classes."
   record INFO
     String fileName "fileName where the class is defined in" ;
     Boolean isReadOnly "isReadOnly : (true|false). Should be true for libraries" ;
@@ -150,7 +153,6 @@ uniontype Info "adrpo added 2005-10-29, changed 2006-02-05"
     Integer lineNumberEnd "lineNumberEnd" ;
     Integer columnNumberEnd "columnNumberEnd" ;
   end INFO;
-
 end Info;
 
 public
@@ -159,17 +161,16 @@ uniontype Class
   if this class is declared as partial, the declared class restriction,
   and the body of the declaration."
  record CLASS
-    Ident name;
+    Ident       name;
     Boolean     partial_   "true if partial" ;
     Boolean     final_     "true if final" ;
     Boolean     encapsulated_ "true if encapsulated" ;
     Restriction restriction  "Restriction" ;
     ClassDef    body;
-    Info       info    "Information: FileName is the class is defined in +
-               isReadOnly bool + start line no + start column no +
-               end line no + end column no";
+    Info        info    "Information: FileName is the class is defined in +
+                         isReadOnly bool + start line no + start column no +
+                         end line no + end column no";
   end CLASS;
-
 end Class;
 
 public
@@ -204,17 +205,16 @@ uniontype ClassDef
   end OVERLOAD;
 
   record CLASS_EXTENDS
-    Ident            name  "name of class to extend" ;
-    list<ElementArg> arguments;
-    Option<String>   comment;
-    list<ClassPart>  parts;
+    Ident            baseClassName  "name of class to extend" ;
+    list<ElementArg> modifications  "modifications to be applied to the base class";
+    Option<String>   comment        "comment";
+    list<ClassPart>  parts          "class parts";
   end CLASS_EXTENDS;
 
   record PDER
     Path         functionName;
     list<Ident>  vars "derived variables" ;
   end PDER;
-
 end ClassDef;
 
 public
@@ -229,7 +229,6 @@ uniontype TypeSpec "ModExtension: new MetaModelica type specification!"
     list<TypeSpec>   typeSpecs;
     Option<ArrayDim> arrayDim;
   end TCOMPLEX;
-
 end TypeSpec;
 
 public

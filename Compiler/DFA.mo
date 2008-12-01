@@ -907,20 +907,25 @@ algorithm
 end generatePathVarDeclarations;
 
 
-public function extractFieldNamesAndTypes "function: extractFieldNamesAndTypes
-	author: KS
-"
+public function extractFieldNamesAndTypes 
+"function: extractFieldNamesAndTypes
+	author: KS"
   input SCode.Class sClass;
   output list<Absyn.Ident> fieldNameList;
   output list<Absyn.TypeSpec> fieldTypes;
 algorithm
-  (fieldNameList,fieldTypes) :=
-  matchcontinue (sClass)
+  (fieldNameList,fieldTypes) := matchcontinue (sClass)
+    local
+      list<Absyn.Ident> fNameList;
+      list<Absyn.TypeSpec> fTypes;
+      list<SCode.Element> elemList;
     case (SCode.CLASS(_,_,_,_,SCode.PARTS(elemList,_,_,_,_,_)))
-      local
-        list<Absyn.Ident> fNameList;
-        list<Absyn.TypeSpec> fTypes;
-        list<SCode.Element> elemList;
+      equation
+        fNameList = Util.listMap(elemList,extractFieldName);
+        fTypes = Util.listMap(elemList,extractFieldType);
+      then (fNameList,fTypes);
+    /* adrpo: handle also the case model extends X end X; */
+    case (SCode.CLASS(_,_,_,_,SCode.CLASS_EXTENDS(_,_,elemList,_,_,_,_)))
       equation
         fNameList = Util.listMap(elemList,extractFieldName);
         fTypes = Util.listMap(elemList,extractFieldType);
@@ -928,68 +933,50 @@ algorithm
   end matchcontinue;
 end extractFieldNamesAndTypes;
 
-
-public function extractFieldName "function: extractFieldName
-	author: KS
-"
+public function extractFieldName 
+"function: extractFieldName
+	author: KS"
   input SCode.Element elem;
   output Absyn.Ident id;
 algorithm
-  id :=
-  matchcontinue (elem)
-    case (SCode.COMPONENT(localId,_,_,_,_,_,_,_,_,_))
-      local
-        Absyn.Ident localId;
-      equation
-      then localId;
+  id := matchcontinue (elem)
+    local Absyn.Ident localId;
+    case (SCode.COMPONENT(localId,_,_,_,_,_,_,_,_,_)) then localId;
   end matchcontinue;
 end extractFieldName;
 
-
-public function extractFieldType "function: extractFieldType
-	author: KS
-"
+public function extractFieldType 
+"function: extractFieldType
+	author: KS"
   input SCode.Element elem;
   output Absyn.TypeSpec typeSpec;
 algorithm
-  typeSpec :=
-  matchcontinue (elem)
-    case (SCode.COMPONENT(_,_,_,_,_,_,t,_,_,_))
-      local
-        Absyn.TypeSpec t;
-      equation
-      then t;
+  typeSpec := matchcontinue (elem)
+    local Absyn.TypeSpec t;    
+    case (SCode.COMPONENT(_,_,_,_,_,_,t,_,_,_)) then t;
   end matchcontinue;
 end extractFieldType;
 
-
-protected function createPathVarDeclarations "function: createPathVarAssignments
+protected function createPathVarDeclarations 
+"function: createPathVarAssignments
 	author: KS
 	Used when we have a record constructor call in a pattern and we need to
-	create path variables of the subpatterns of the record constructor.
-"
+	create path variables of the subpatterns of the record constructor."
   input list<Absyn.Ident> pathVars;
   input list<Absyn.TypeSpec> recTypes;
   input list<Absyn.ElementItem> accElemList;
   output list<Absyn.ElementItem> elemList;
 algorithm
-  elemList :=
-  matchcontinue (pathVars,recTypes,accElemList)
-    case ({},{},localAccElemList)
-      local
-        list<Absyn.ElementItem> localAccElemList;
+  elemList := matchcontinue (pathVars,recTypes,accElemList)
+    local
+      list<Absyn.ElementItem> localAccElemList,elem;
+      Absyn.Ident localRecName,firstPathVar;
+      list<Absyn.Ident> restPathVars;
+      Absyn.TypeSpec firstType;
+      list<Absyn.TypeSpec> restTypes;
+    case ({},{},localAccElemList) then localAccElemList;
+    case (firstPathVar :: restPathVars, firstType :: restTypes,localAccElemList)
       equation
-    then localAccElemList;
-    case (firstPathVar :: restPathVars,
-          firstType :: restTypes,localAccElemList)
-      local
-        list<Absyn.ElementItem> elem,localAccElemList;
-        Absyn.Ident localRecName,firstPathVar;
-        list<Absyn.Ident> restPathVars;
-        Absyn.TypeSpec firstType;
-        list<Absyn.TypeSpec> restTypes;
-      equation
-
         elem = {Absyn.ELEMENTITEM(Absyn.ELEMENT(
           false,NONE(),Absyn.UNSPECIFIED(),"component",
           Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
@@ -997,21 +984,18 @@ algorithm
             {Absyn.COMPONENTITEM(Absyn.COMPONENT(firstPathVar,{},NONE())
             ,NONE(),NONE())}),
             Absyn.INFO("f",false,0,0,0,0),NONE()))};
-
         localAccElemList = listAppend(localAccElemList,elem);
-        localAccElemList = createPathVarDeclarations(restPathVars,
-          restTypes,localAccElemList);
+        localAccElemList = createPathVarDeclarations(restPathVars,restTypes,localAccElemList);
     then localAccElemList;
   end matchcontinue;
 end createPathVarDeclarations;
 
-
-protected function createPathVarAssignments "function: createPathVarAssignments
+protected function createPathVarAssignments 
+"function: createPathVarAssignments
 	author: KS
 	Used when we have a record constructor call in a pattern and need to
 	bind the path variables of the subpatterns of the record constructor
-	to values.
-"
+	to values."
   input Absyn.Ident recVarName;
   input list<Absyn.Ident> pathVarList;
   input list<Absyn.Ident> fieldNameList;
@@ -1019,40 +1003,30 @@ protected function createPathVarAssignments "function: createPathVarAssignments
   input Integer fieldNum;
   output list<Absyn.AlgorithmItem> outList;
 algorithm
-  outList :=
-  matchcontinue (recVarName,pathVarList,fieldNameList,accList,fieldNum)
+  outList := matchcontinue (recVarName,pathVarList,fieldNameList,accList,fieldNum)
     local
-    list<Absyn.AlgorithmItem> localAccList;
+      list<Absyn.AlgorithmItem> localAccList;
+      Absyn.Ident localRecVarName,firstPathVar,firstFieldName;
+      list<Absyn.Ident> restVar,restFieldNames;
+      list<Absyn.AlgorithmItem> elem;
+      list<Absyn.Ident> restVar;
+      Integer n;
     case (_,{},{},localAccList,_) then localAccList;
-
-      // When we are dealing with a function call the fieldNum var is 0, meaning
-      // that we should use fieldNames to create assignments.
-      // When we are dealing with a tuple constructor we use the fieldNum value
-      // in the call to the builtin function metaMGetField
-    case (localRecVarName,firstPathVar :: restVar,firstFieldName :: restFieldNames,
-        localAccList,0)
-      local
-        Absyn.Ident localRecVarName,firstPathVar,firstFieldName;
-        list<Absyn.Ident> restVar,restFieldNames;
-        list<Absyn.AlgorithmItem> elem;
+    // When we are dealing with a function call the fieldNum var is 0, meaning
+    // that we should use fieldNames to create assignments.
+    // When we are dealing with a tuple constructor we use the fieldNum value
+    // in the call to the builtin function metaMGetField
+    case (localRecVarName,firstPathVar::restVar,firstFieldName::restFieldNames,localAccList,0)
       equation
         elem = {Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(
           Absyn.CREF(Absyn.CREF_IDENT(firstPathVar,{})),
           Absyn.CREF(Absyn.CREF_QUAL(localRecVarName,{},
           Absyn.CREF_IDENT(firstFieldName,{})))),NONE())};
-
         localAccList = listAppend(localAccList,elem);
         localAccList = createPathVarAssignments(localRecVarName,restVar,restFieldNames,localAccList,0);
       then localAccList;
-
-        // This case is for tuples when we simply call metaMGetField(x,num)
-    case (localRecVarName,firstPathVar :: restVar,_,
-        localAccList,n)
-      local
-        Absyn.Ident localRecVarName,firstPathVar;
-        list<Absyn.Ident> restVar;
-        list<Absyn.AlgorithmItem> elem;
-        Integer n;
+    // This case is for tuples when we simply call metaMGetField(x,num)
+    case (localRecVarName,firstPathVar :: restVar,_,localAccList,n)
       equation
         elem = {Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(
           Absyn.CREF(Absyn.CREF_IDENT(firstPathVar,{})),
@@ -1064,11 +1038,10 @@ algorithm
   end matchcontinue;
 end createPathVarAssignments;
 
-
-protected function generateIfElseifAndElse "function: generateIfElseifAndElse
+protected function generateIfElseifAndElse 
+"function: generateIfElseifAndElse
 	author: KS
-	Generate if-statements.
-"
+	Generate if-statements."
   input list<Arc> arcs;
   input Absyn.Ident stateVar;
   input Boolean ifOrNotBool;
@@ -1094,6 +1067,7 @@ algorithm
       Absyn.Exp localTrueStatement,branchCheck;
       list<Absyn.AlgorithmItem> localTrueBranch,localElseBranch,algList;
       list<Absyn.Exp,list<Absyn.AlgorithmItem>> localElseIfBranch;
+      list<Absyn.Exp,list<Absyn.AlgorithmItem>> eeElseIfBranch;
       Env.Cache localCache;
       Env.Env localEnv;
       list<tuple<Absyn.Ident,Absyn.TypeSpec>> localDfaEnv;
@@ -1102,34 +1076,36 @@ algorithm
       list<Integer> caseNumbers;
       list<Absyn.ElementItem> localAccNewVars;
       Boolean localLightVs;
+      Absyn.Exp exp,constVal,firstExp;
+      list<Absyn.AlgorithmItem> eIfBranch;
+      Absyn.Ident recordName;
+      list<Absyn.Exp> tempList;
+      Absyn.ComponentRef cRef;              
     case({},_,_,localTrueStatement,localTrueBranch,localElseIfBranch,localCache,_,_,localAccNewVars,_)
-      local
       equation
         algList = {Absyn.ALGORITHMITEM(Absyn.ALG_IF(localTrueStatement,localTrueBranch,localElseIfBranch,{}),NONE())};
       then (localCache,algList,localAccNewVars);
-
-        // DummieState
+        
+    // DummieState
     case(ARC(DUMMIESTATE(),_,_,_) :: _,_,_,localTrueStatement,localTrueBranch,localElseIfBranch,localCache,_,_,localAccNewVars,_)
       equation
         //print("DUMMIE STATE\n");
         algList = {Absyn.ALGORITHMITEM(Absyn.ALG_IF(localTrueStatement,localTrueBranch,localElseIfBranch,{}),NONE())};
       then (localCache,algList,localAccNewVars);
 
-        // Else case
+    // Else case
     case(ARC(localState,_,NONE(),caseNumbers) :: _,localStateVar,_,localTrueStatement,localTrueBranch,localElseIfBranch,localCache,localEnv,localDfaEnv,localAccNewVars,localLightVs)
-      local
-        list<Absyn.Exp,list<Absyn.AlgorithmItem>> eIfBranch;
+      
       equation
         // For the catch handling
         branchCheck = generateBranchCheck(caseNumbers,Absyn.BOOL(true),localLightVs);
-
         (localCache,localElseBranch,localAccNewVars) = fromStatetoAbsynCode(localState,NONE(),localCache,localEnv,localDfaEnv,localAccNewVars,localLightVs);
-        eIfBranch = {(branchCheck,localElseBranch)};
-        localElseIfBranch = listAppend(localElseIfBranch,eIfBranch);
+        eeElseIfBranch = {(branchCheck,localElseBranch)};
+        localElseIfBranch = listAppend(localElseIfBranch,eeElseIfBranch);
         algList = {Absyn.ALGORITHMITEM(Absyn.ALG_IF(localTrueStatement,localTrueBranch,localElseIfBranch,{}),NONE())};
       then (localCache,algList,localAccNewVars);
 
-        //If, Wildcard case
+    //If, Wildcard case
     case(ARC(localState,_,SOME(pat as RP_WILDCARD(_)),caseNumbers) :: rest,localStateVar,true,_,_,_,localCache,localEnv,localDfaEnv,localAccNewVars,localLightVs)
       equation
         (localCache,localTrueBranch,localAccNewVars) = fromStatetoAbsynCode(localState,SOME(pat),localCache,localEnv,localDfaEnv,localAccNewVars,localLightVs);
@@ -1137,45 +1113,37 @@ algorithm
         (localCache,algList,localAccNewVars) = generateIfElseifAndElse(rest,localStateVar,false,branchCheck,localTrueBranch,{},localCache,localEnv,localDfaEnv,localAccNewVars,localLightVs);
       then (localCache,algList,localAccNewVars);
 
-        //If, Cons case
+    //If, Cons case
     case(ARC(localState,_,SOME(pat as RP_CONS(_,_,_)),caseNumbers) :: rest,localStateVar,true,_,_,_,localCache,localEnv,localDfaEnv,localAccNewVars,localLightVs)
-      local
-        Absyn.Exp exp;
       equation
         (localCache,localTrueBranch,localAccNewVars) = fromStatetoAbsynCode(localState,SOME(pat),localCache,localEnv,localDfaEnv,localAccNewVars,localLightVs);
         branchCheck = generateBranchCheck(caseNumbers,Absyn.BOOL(true),localLightVs);
         exp = Absyn.LBINARY(branchCheck,Absyn.AND(),Absyn.LUNARY(Absyn.NOT(),Absyn.CALL(Absyn.CREF_IDENT("emptyListTest",{}),
-         Absyn.FUNCTIONARGS({Absyn.CREF(Absyn.CREF_IDENT(localStateVar,{}))},{}))));
+          Absyn.FUNCTIONARGS({Absyn.CREF(Absyn.CREF_IDENT(localStateVar,{}))},{}))));
         (localCache,algList,localAccNewVars) = generateIfElseifAndElse(rest,localStateVar,false,exp,localTrueBranch,{},localCache,localEnv,localDfaEnv,localAccNewVars,localLightVs);
       then (localCache,algList,localAccNewVars);
 
-       //If, tuple case
+    //If, tuple case
     case(ARC(localState,_,SOME(pat as RP_TUPLE(_,_)),caseNumbers) :: rest,localStateVar,true,_,_,_,localCache,localEnv,localDfaEnv,localAccNewVars,localLightVs)
-      local
       equation
         (localCache,localTrueBranch,localAccNewVars) = fromStatetoAbsynCode(localState,SOME(pat),localCache,localEnv,localDfaEnv,localAccNewVars,localLightVs);
         branchCheck = generateBranchCheck(caseNumbers,Absyn.BOOL(true),localLightVs);
         (localCache,algList,localAccNewVars) = generateIfElseifAndElse(rest,localStateVar,false,branchCheck,localTrueBranch,{},localCache,localEnv,localDfaEnv,localAccNewVars,localLightVs);
       then (localCache,algList,localAccNewVars);
 
-        //If, SOME case
+    //If, SOME case
     case(ARC(localState,_,SOME(pat as RP_SOME(_,_)),caseNumbers) :: rest,localStateVar,true,_,_,_,localCache,localEnv,localDfaEnv,localAccNewVars,localLightVs)
-      local
-        Absyn.Exp exp;
       equation
         (localCache,localTrueBranch,localAccNewVars) = fromStatetoAbsynCode(localState,SOME(pat),localCache,localEnv,localDfaEnv,localAccNewVars,localLightVs);
         branchCheck = generateBranchCheck(caseNumbers,Absyn.BOOL(true),localLightVs);
         exp = Absyn.LBINARY(branchCheck,Absyn.AND(),Absyn.LUNARY(Absyn.NOT(),Absyn.CALL(Absyn.CREF_IDENT("emptyOptionTest",{}),
-         Absyn.FUNCTIONARGS({Absyn.CREF(Absyn.CREF_IDENT(localStateVar,{}))},{}))));
+          Absyn.FUNCTIONARGS({Absyn.CREF(Absyn.CREF_IDENT(localStateVar,{}))},{}))));
         (localCache,algList,localAccNewVars) = generateIfElseifAndElse(rest,localStateVar,false,exp,localTrueBranch,{},localCache,localEnv,localDfaEnv,localAccNewVars,localLightVs);
       then (localCache,algList,localAccNewVars);
 
-        //If, CONSTANT
+    //If, CONSTANT
     case(ARC(localState,_,SOME(pat),caseNumbers) :: rest,localStateVar,true,_,_,_,localCache,localEnv,localDfaEnv,localAccNewVars,localLightVs)
-      local
-        Absyn.Exp exp,constVal,firstExp;
       equation
-
         (localCache,localTrueBranch,localAccNewVars) = fromStatetoAbsynCode(localState,SOME(pat),localCache,localEnv,localDfaEnv,localAccNewVars,localLightVs);
         constVal = getConstantValue(pat);
         firstExp = createConstCompareExp(constVal,localStateVar);
@@ -1184,14 +1152,8 @@ algorithm
         (localCache,algList,localAccNewVars) = generateIfElseifAndElse(rest,localStateVar,false,exp,localTrueBranch,{},localCache,localEnv,localDfaEnv,localAccNewVars,localLightVs);
       then (localCache,algList,localAccNewVars);
 
-        //If, CALL case
-    case(ARC(localState,_,SOME(pat as RP_CALL(_,cRef,_)),caseNumbers) :: rest,localStateVar,true,_,_,_,
-        localCache,localEnv,localDfaEnv,localAccNewVars,localLightVs)
-      local
-        Absyn.Exp exp;
-        Absyn.Ident recordName;
-        list<Absyn.Exp> tempList;
-        Absyn.ComponentRef cRef;
+    //If, CALL case
+    case(ARC(localState,_,SOME(pat as RP_CALL(_,cRef,_)),caseNumbers) :: rest,localStateVar,true,_,_,_,localCache,localEnv,localDfaEnv,localAccNewVars,localLightVs)
       equation
         recordName = Absyn.pathString(Absyn.crefToPath(cRef));
         (localCache,localTrueBranch,localAccNewVars) = fromStatetoAbsynCode(localState,SOME(pat),localCache,localEnv,localDfaEnv,localAccNewVars,localLightVs);
@@ -1200,14 +1162,11 @@ algorithm
         exp = Absyn.LBINARY(Absyn.CALL(Absyn.CREF_IDENT("stringCmp",{}),Absyn.FUNCTIONARGS({Absyn.CREF(Absyn.CREF_QUAL(localStateVar,{},Absyn.CREF_IDENT("fieldTag__",{})))
           ,Absyn.STRING(recordName)},{})),Absyn.AND(),branchCheck);
         (localCache,algList,localAccNewVars) = generateIfElseifAndElse(rest,localStateVar,false,exp,localTrueBranch,{},localCache,localEnv,localDfaEnv,localAccNewVars,localLightVs);
-
       then (localCache,algList,localAccNewVars);
-        //Elseif, wildcard
+        
+    //Elseif, wildcard
     case(ARC(localState,_,SOME(pat as RP_WILDCARD(_)),caseNumbers) :: rest,localStateVar,false,localTrueStatement,
         localTrueBranch,localElseIfBranch,localCache,localEnv,localDfaEnv,localAccNewVars,localLightVs)
-      local
-        list<Absyn.AlgorithmItem> eIfBranch;
-        Absyn.Exp exp;
       equation
         (localCache,eIfBranch,localAccNewVars) = fromStatetoAbsynCode(localState,SOME(pat),localCache,localEnv,localDfaEnv,localAccNewVars,localLightVs);
         branchCheck = generateBranchCheck(caseNumbers,Absyn.BOOL(true),localLightVs);
@@ -1216,12 +1175,9 @@ algorithm
         (localCache,algList,localAccNewVars) = generateIfElseifAndElse(rest,localStateVar,false,localTrueStatement,localTrueBranch,localElseIfBranch,localCache,localEnv,localDfaEnv,localAccNewVars,localLightVs);
       then (localCache,algList,localAccNewVars);
 
-        //Elseif, cons
+    //Elseif, cons
     case(ARC(localState,_,SOME(pat as RP_CONS(_,_,_)),caseNumbers) :: rest,localStateVar,false,localTrueStatement,
         localTrueBranch,localElseIfBranch,localCache,localEnv,localDfaEnv,localAccNewVars,localLightVs)
-      local
-        list<Absyn.AlgorithmItem> eIfBranch;
-        Absyn.Exp exp;
       equation
         (localCache,eIfBranch,localAccNewVars) = fromStatetoAbsynCode(localState,SOME(pat),localCache,localEnv,localDfaEnv,localAccNewVars,localLightVs);
         branchCheck = generateBranchCheck(caseNumbers,Absyn.BOOL(true),localLightVs);
@@ -1232,11 +1188,9 @@ algorithm
         (localCache,algList,localAccNewVars) = generateIfElseifAndElse(rest,localStateVar,false,localTrueStatement,localTrueBranch,localElseIfBranch,localCache,localEnv,localDfaEnv,localAccNewVars,localLightVs);
       then (localCache,algList,localAccNewVars);
 
-        //Elseif, tuple
+    //Elseif, tuple
     case(ARC(localState,_,SOME(pat as RP_TUPLE(_,_)),caseNumbers) :: rest,localStateVar,false,localTrueStatement,
         localTrueBranch,localElseIfBranch,localCache,localEnv,localDfaEnv,localAccNewVars,localLightVs)
-      local
-        list<Absyn.AlgorithmItem> eIfBranch;
       equation
         (localCache,eIfBranch,localAccNewVars) = fromStatetoAbsynCode(localState,SOME(pat),localCache,localEnv,localDfaEnv,localAccNewVars,localLightVs);
         branchCheck = generateBranchCheck(caseNumbers,Absyn.BOOL(true),localLightVs);
@@ -1245,12 +1199,9 @@ algorithm
         (localCache,algList,localAccNewVars) = generateIfElseifAndElse(rest,localStateVar,false,localTrueStatement,localTrueBranch,localElseIfBranch,localCache,localEnv,localDfaEnv,localAccNewVars,localLightVs);
       then (localCache,algList,localAccNewVars);
 
-        //Elseif, some
+    //Elseif, some
     case(ARC(localState,_,SOME(pat as RP_SOME(_,_)),caseNumbers) :: rest,localStateVar,false,localTrueStatement,
         localTrueBranch,localElseIfBranch,localCache,localEnv,localDfaEnv,localAccNewVars,localLightVs)
-      local
-        list<Absyn.AlgorithmItem> eIfBranch;
-        Absyn.Exp exp;
       equation
         (localCache,eIfBranch,localAccNewVars) = fromStatetoAbsynCode(localState,SOME(pat),localCache,localEnv,localDfaEnv,localAccNewVars,localLightVs);
         branchCheck = generateBranchCheck(caseNumbers,Absyn.BOOL(true),localLightVs);
@@ -1261,15 +1212,9 @@ algorithm
         (localCache,algList,localAccNewVars) = generateIfElseifAndElse(rest,localStateVar,false,localTrueStatement,localTrueBranch,localElseIfBranch,localCache,localEnv,localDfaEnv,localAccNewVars,localLightVs);
       then (localCache,algList,localAccNewVars);
 
-          //Elseif, call
+    //Elseif, call
     case(ARC(localState,_,SOME(pat as RP_CALL(_,cRef,_)),caseNumbers) :: rest,localStateVar,false,localTrueStatement,
         localTrueBranch,localElseIfBranch,localCache,localEnv,localDfaEnv,localAccNewVars,localLightVs)
-      local
-        list<Absyn.AlgorithmItem> eIfBranch;
-        list<Absyn.Exp> tempList;
-        Absyn.Exp exp;
-        Absyn.Ident recordName;
-        Absyn.ComponentRef cRef;
       equation
         recordName = Absyn.pathString(Absyn.crefToPath(cRef));
         (localCache,eIfBranch,localAccNewVars) = fromStatetoAbsynCode(localState,SOME(pat),localCache,localEnv,localDfaEnv,localAccNewVars,localLightVs);
@@ -1282,12 +1227,9 @@ algorithm
         (localCache,algList,localAccNewVars) = generateIfElseifAndElse(rest,localStateVar,false,localTrueStatement,localTrueBranch,localElseIfBranch,localCache,localEnv,localDfaEnv,localAccNewVars,localLightVs);
       then (localCache,algList,localAccNewVars);
 
-        //Elseif, constant
+    //Elseif, constant
     case(ARC(localState,_,SOME(pat),caseNumbers) :: rest,localStateVar,false,localTrueStatement,
         localTrueBranch,localElseIfBranch,localCache,localEnv,localDfaEnv,localAccNewVars,localLightVs)
-      local
-        list<Absyn.AlgorithmItem> eIfBranch;
-        Absyn.Exp exp,constVal,firstExp;
       equation
         constVal = getConstantValue(pat);
         (localCache,eIfBranch,localAccNewVars) = fromStatetoAbsynCode(localState,SOME(pat),localCache,localEnv,localDfaEnv,localAccNewVars,localLightVs);

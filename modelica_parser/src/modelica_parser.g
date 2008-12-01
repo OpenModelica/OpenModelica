@@ -149,30 +149,25 @@ class_definition :
 		class_type
 		class_specifier
 		{
-			#class_definition = #([CLASS_DEFINITION, "CLASS_DEFINITION"],
-				class_definition);
+			#class_definition = #([CLASS_DEFINITION, "CLASS_DEFINITION"], class_definition);
 		}
 		;
 
 class_type :
-		( CLASS | MODEL | RECORD | BLOCK | ( EXPANDABLE )? CONNECTOR | TYPE
-        | PACKAGE | FUNCTION | UNIONTYPE
-		)
+		( CLASS | MODEL | RECORD | BLOCK | ( EXPANDABLE )? CONNECTOR | TYPE | PACKAGE | FUNCTION | UNIONTYPE )
 		;
 
 class_specifier:
         i:IDENT class_specifier2[#i]
-    |   EXTENDS! i1:IDENT (class_modification)? string_comment composition
-            END! i2:IDENT!
+    |   EXTENDS! i1:IDENT (class_modification)? string_comment composition END! i2:IDENT!
         {
         	// check if the identifiers at the start and end are the same!
         	if (i1->getText() != i2->getText())
         	{
         		throw
         		ANTLR_USE_NAMESPACE(antlr)
-        		RecognitionException(
-        		"The identifier at start and end are different",
-        		modelicafilename, i2->getLine(), i2->getColumn());
+        		RecognitionException("The identifier at start and end are different",
+        		                     modelicafilename, i2->getLine(), i2->getColumn());
         	}
             #class_specifier = #([CLASS_EXTENDS,"CLASS_EXTENDS"],#class_specifier);
         }
@@ -186,9 +181,8 @@ class_specifier2 [RefMyAST i1]:
 		  	{
         		throw
         		ANTLR_USE_NAMESPACE(antlr)
-        		RecognitionException(
-        		"The identifier at start and end are different",
-        		modelicafilename, i2->getLine(), i2->getColumn());
+        		RecognitionException("The identifier at start and end are different", 
+        		                     modelicafilename, i2->getLine(), i2->getColumn());
 		  	}
 		  }
 		| EQUALS^ base_prefix type_specifier ( class_modification )? comment

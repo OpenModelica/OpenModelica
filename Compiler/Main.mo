@@ -65,7 +65,6 @@ protected import Ceval;
 protected import Env;
 protected import Settings;
 
-
 protected function serverLoop
 "function: serverLoop
   This function is the main loop of the server listening
@@ -450,18 +449,8 @@ algorithm
         fail();
     case {}
       equation
-        Print.printBuf("Usage: omc <options> filename \n");
-        Print.printBuf("omc accepts .mo (Modelica files) \n");
-        Print.printBuf("            .mof (Flat Modelica files) \n");
-        Print.printBuf("            .mos (Modelica Script files) \n");
-        Print.printBuf("Options:\n========");
-        Print.printBuf("+s    Generate simulation code\n");
-        Print.printBuf("+q    Run in quiet mode, ouput nothing\n");
-        Print.printBuf("+d=flags, set flags: \n");
-        Print.printBuf("    blt               apply blt transformation\n");
-        Print.printBuf("    interactive       run in interactive mode\n");
-        Print.printBuf("    interactiveCorba  run in interactive mode using Corba\n");
-        Print.printBuf("    ..., see DEBUG.TXT for further flags\n");
+        print("not enough arguments given to omc!\n"); 
+        printUsage();
       then
         fail();
   end matchcontinue;
@@ -873,21 +862,35 @@ algorithm
   print("Usage: omc [-runtimeOptions +omcOptions] Model.mo|Model.mof|Script.mos\n");
   print("* runtimeOptions: call omc -help for seeing runtime options\n");
   print("* omcOptions:\n");
-  print("\t++v                  will print the version and exit\n");
-  print("\t+s Model.mo          will generate code for Model:\n");
-  print("\t                     Model.cpp           the model C++ code\n");
-  print("\t                     Model_functions.cpp the model functions C++ code\n");
-  print("\t                     Model.makefile      the makefile to compile the model.\n");
-  print("\t                     Model_init.txt      the initial values for parameters\n");
-  print("\t+d=interactive       will start omc as a server listening on the socket interface\n");
-  print("\t+d=interactiveCorba  will start omc as a server listening on the Corba interface\n");
-  print("\t+c=corbaName         works togheter with +d=interactiveCorba;\n");
-  print("\t                     will start omc with a different Corba session name; \n");
-  print("\t                     this way multiple omc compilers can be started\n");
+  print("\t++v|+version               will print the version and exit\n");
+  print("\t+s Model.mo                will generate code for Model:\n");
+  print("\t                           Model.cpp           the model C++ code\n");
+  print("\t                           Model_functions.cpp the model functions C++ code\n");
+  print("\t                           Model.makefile      the makefile to compile the model.\n");
+  print("\t                           Model_init.txt      the initial values for parameters\n");
+  print("\t+d=interactive             will start omc as a server listening on the socket interface\n");
+  print("\t+d=interactiveCorba        will start omc as a server listening on the Corba interface\n");
+  print("\t+c=corbaName               works togheter with +d=interactiveCorba;\n");
+  print("\t                           will start omc with a different Corba session name; \n");
+  print("\t                           this way multiple omc compilers can be started\n");
+  print("\t+s                         generate simulation code\n");
+  print("\t+annotationVersion=1.x     what annotation version should we use\n");
+  print("\t                           accept 1.x or 2.x (default) or 3.x\n"); 
+  print("\t+q                         run in quiet mode, ouput nothing\n");
+  print("\t+metaModelica              accept MetaModelica grammar and semantics\n");  
+  print("\t+d=flags                   set debug flags: \n");  
+  print("\t+d=bltdump                 dump the blt form\n");
+  print("\t+d=failtrace               print what function fail\n");  
+  print("\t+d=parsedump               dump the parsing tree\n");
+  print("\t+d=parseonly               will only parse the givn file and exit\n");    
+  print("\t+d=dynload                 display debug information about dynamic loading of compiled functions\n");
   print("* Examples:\n");
   print("\tomc Model.mo         will produce flattened Model on standard output\n");
   print("\tomc Model.mof        will produce flattened Model on standard output\n");
   print("\tomc Script.mos       will run the commands from Script.mos\n");
+  print("\t*.mo (Modelica files) \n");
+  print("\t*.mof (Flat Modelica files) \n");
+  print("\t*.mos (Modelica Script files) \n");  
 end printUsage;
 
 public function main
@@ -909,6 +912,7 @@ algorithm
         printUsage();
       then ();
     case args
+      local Absyn.Program prg; String resParse; SCode.Program scode;
       equation
         args_1 = RTOpts.args(args);
         // debug_show_depth(6);
@@ -925,6 +929,12 @@ algorithm
         Debug.bcall(imode_1, translateFile, args_1);
       then
         ();
+    case args
+      local Absyn.Program prg; 
+      equation
+        failure(args_1 = RTOpts.args(args));
+        printUsage();
+      then ();
     case _
       equation
         print("# Error encountered! Exiting...\n");

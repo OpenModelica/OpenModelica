@@ -151,30 +151,25 @@ class_definition :
 		class_type
         class_specifier
 		{
-			#class_definition = #([CLASS_DEFINITION, "CLASS_DEFINITION"],
-				class_definition);
+			#class_definition = #([CLASS_DEFINITION, "CLASS_DEFINITION"],class_definition);
 		}
 		;
 
 class_type :
-		( CLASS | MODEL | RECORD | BLOCK | ( EXPANDABLE )? CONNECTOR | TYPE
-        | PACKAGE | FUNCTION | UNIONTYPE
-		)
+		( CLASS | MODEL | RECORD | BLOCK | ( EXPANDABLE )? CONNECTOR | TYPE | PACKAGE | FUNCTION | UNIONTYPE )
 		;
 
 class_specifier:
         n1:name_path /*was IDENT in modelica_parser*/ class_specifier2[#n1]
-    |   EXTENDS! i1:IDENT (class_modification)? string_comment composition
-            END! i2:IDENT!
+    |   EXTENDS! i1:IDENT (class_modification)? string_comment composition END! i2:IDENT!
         {
         	// check if the identifiers at the start and end are the same!
         	if (i1->getText() != i2->getText())
         	{
         		throw
         		ANTLR_USE_NAMESPACE(antlr)
-        		RecognitionException(
-        		"The identifier at start and end are different",
-        		modelicafilename, i2->getLine(), i2->getColumn());
+        		RecognitionException("The identifier at start and end are different",
+        		                     modelicafilename, i2->getLine(), i2->getColumn());
         	}
             #class_specifier = #([CLASS_EXTENDS,"CLASS_EXTENDS"],#class_specifier);
         }
@@ -188,9 +183,8 @@ class_specifier2 [RefMyAST name_path1]:
 		  	{
         		throw
         		ANTLR_USE_NAMESPACE(antlr)
-        		RecognitionException(
-        		"The identifier at start and end are different",
-        		modelicafilename, e->getLine(), e->getColumn());
+        		RecognitionException("The identifier at start and end are different",
+        		                     modelicafilename, e->getLine(), e->getColumn());
 		  	}
 		  }
 		| EQUALS^ base_prefix type_specifier ( class_modification )? comment
@@ -204,16 +198,16 @@ class_specifier2 [RefMyAST name_path1]:
 pder:   DER^ LPAR! name_path COMMA! ident_list RPAR! comment ;
 
 ident_list :
-        IDENT
+      IDENT
     | IDENT COMMA! ident_list
-        {
-            #ident_list=#([IDENT_LIST,"IDENT_LIST"],#ident_list);
-        }
+      {
+         #ident_list=#([IDENT_LIST,"IDENT_LIST"],#ident_list);
+      }
     ;
 
 
 overloading:
-		OVERLOAD^ LPAR! name_list RPAR! comment
+      OVERLOAD^ LPAR! name_list RPAR! comment
 	;
 
 base_prefix:
@@ -227,6 +221,7 @@ name_list:
 enumeration :
 		ENUMERATION^ LPAR! (enum_list | COLON ) RPAR! comment
 		;
+		
 enum_list :
 		enumeration_literal ( COMMA! enumeration_literal)*
 		;

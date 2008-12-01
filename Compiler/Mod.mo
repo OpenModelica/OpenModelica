@@ -38,12 +38,11 @@ package Mod
   Modifications are simply the same kind of modifications used in
   the Absyn module.
 
-  This type is very similar to `SCode.Mod\'.  The main difference is
-  that it uses `Exp.Exp\' for the expressions.  Expressions stored
-  here are prefixed and typechecked.
+  This type is very similar to SCode.Mod.  
+  The main difference is that it uses Exp.Exp for the expressions.  
+  Expressions stored here are prefixed and typechecked.
 
-  The datatype itself is moved to the Types module, in Types.mo, to prevent
-  circular dependencies."
+  The datatype itself is moved to the Types module, in Types.mo, to prevent circular dependencies."
 
 public import Absyn;
 public import Env;
@@ -52,8 +51,7 @@ public import Prefix;
 public import SCode;
 public import Types;
 
-public
-type Ident = String;
+public type Ident = String;
 
 protected import Dump;
 protected import Debug;
@@ -79,8 +77,7 @@ public function elabMod
   output Env.Cache outCache;
   output Types.Mod outMod;
 algorithm
-  (outCache,outMod) :=
-  matchcontinue (inCache,inEnv,inPrefix,inMod,inBoolean)
+  (outCache,outMod) := matchcontinue (inCache,inEnv,inPrefix,inMod,inBoolean)
     local
       Boolean impl,final_;
       list<Types.SubMod> subs_1;
@@ -97,45 +94,43 @@ algorithm
       list<SCode.Element> elist;
       Ident str;
       Env.Cache cache;
+
     case (cache,_,_,SCode.NOMOD(),impl) then (cache,Types.NOMOD());  /* impl */
-    case (cache,env,pre,(m as SCode.MOD(final_ = final_,each_ = each_,subModLst = subs,absynExpOption = NONE)),impl)
+    case (cache,env,pre,(m as SCode.MOD(finalPrefix = final_,eachPrefix = each_,subModLst = subs,absynExpOption = NONE)),impl)
       equation
         (cache,subs_1) = elabSubmods(cache,env, pre, subs, impl);
       then
         (cache,Types.MOD(final_,each_,subs_1,NONE));
 
-        // Only elaborate expressions with non-delayed type checking, see SCode.MOD.
-    case (cache,env,pre,(m as SCode.MOD(final_ = final_,each_ = each_,subModLst = subs,absynExpOption = SOME((e,false)))),impl)
+    // Only elaborate expressions with non-delayed type checking, see SCode.MOD.
+    case (cache,env,pre,(m as SCode.MOD(finalPrefix = final_,eachPrefix = each_,subModLst = subs,absynExpOption = SOME((e,false)))),impl)
       equation
         (cache,subs_1) = elabSubmods(cache,env, pre, subs, impl);
         (cache,e_1,prop,_) = Static.elabExp(cache,env, e, impl, NONE,true);
         (cache,e_val) = elabModValue(cache,env, e_1);
-        (cache,e_2) = Prefix.prefixExp(cache,env, e_1, pre) "Bug: will cause elaboration of parameters without value to fail,
-	 But this can be ok, since a modifier is present, giving it a value
-	 from outer modifications.." ;
+        (cache,e_2) = Prefix.prefixExp(cache,env, e_1, pre) 
+        "Bug: will cause elaboration of parameters without value to fail, 
+         But this can be ok, since a modifier is present, giving it a value from outer modifications.." ;
       then
         (cache,Types.MOD(final_,each_,subs_1,SOME(Types.TYPED(e_2,e_val,prop))));
 
      // Delayed type checking
-     case (cache,env,pre,(m as SCode.MOD(final_ = final_,each_ = each_,subModLst = subs,absynExpOption = SOME((e,true)))),impl)
+     case (cache,env,pre,(m as SCode.MOD(finalPrefix = final_,eachPrefix = each_,subModLst = subs,absynExpOption = SOME((e,true)))),impl)
       equation
         (cache,subs_1) = elabSubmods(cache,env, pre, subs, impl);
       then
         (cache,Types.MOD(final_,each_,subs_1,SOME(Types.UNTYPED(e))));
 
-    case (cache,env,pre,(m as SCode.REDECL(final_ = final_,elementLst = elist)),impl)
+    case (cache,env,pre,(m as SCode.REDECL(finalPrefix = final_,elementLst = elist)),impl)
       equation
-
         //elist_1 = Inst.addNomod(elist);
         elist_1 = elabModRedeclareElements(cache,env,pre,final_,elist,impl);
       then
         (cache,Types.REDECL(final_,elist_1));
+
     case (cache,_,pre,mod,impl)
       equation
-        Debug.fprint("failtrace", "#-- Mod.elabMod ");
-        str = SCode.printModStr(mod);
-        Debug.fprint("failtrace", str);
-        Debug.fprint("failtrace", " failed\n");
+        Debug.fprint("failtrace", "#-- Mod.elabMod " +& SCode.printModStr(mod) +& " failed\n");
       then
         fail();
   end matchcontinue;
@@ -151,75 +146,74 @@ protected function elabModRedeclareElements
 	output list<tuple<SCode.Element, Types.Mod>> modElts "the elaborated modifiers";
 algorithm
 	(modElts) := matchcontinue(inCache,inEnv,inPrefix,final_,elts,impl)
-	local
-	  Env.Cache cache; Env.Env env; Prefix.Prefix pre; Boolean f,fi,repl,p,enc,prot;
-	  Absyn.InnerOuter io;
-	  list<SCode.Element> elts;
-	  SCode.Ident cn,cn2,compname;
-	  Option<Absyn.Path> bc;
-	  Option<Absyn.Comment> cmt;
-	  SCode.Restriction restr;
-	  Absyn.TypeSpec tp,tp1;
-	  Types.Mod emod;
-	  SCode.Attributes attr;
-	  SCode.Mod mod;
+	  local
+	    Env.Cache cache; Env.Env env; Prefix.Prefix pre; Boolean f,fi,repl,p,enc,prot;
+	    Absyn.InnerOuter io;
+	    list<SCode.Element> elts;
+	    SCode.Ident cn,cn2,compname;
+	    Option<Absyn.Path> bc;
+	    Option<Absyn.Comment> cmt;
+	    SCode.Restriction restr;
+	    Absyn.TypeSpec tp,tp1;
+	    Types.Mod emod;
+	    SCode.Attributes attr;
+	    SCode.Mod mod;
+
+	  /* the empty case */
 	  case(cache,env,pre,f,{},_) then {};
 
 	 	// Only derived classdefinitions supported in redeclares for now. TODO: What is allowed according to spec?
 	  case(cache,env,pre,f,SCode.CLASSDEF(cn,fi,repl,SCode.CLASS(cn2,p,enc,restr,SCode.DERIVED(tp,mod)),bc)::elts,impl)
 	    equation
-	     (cache,emod) = elabMod(cache,env,pre,mod,impl);
-	     modElts = elabModRedeclareElements(cache,env,pre,f,elts,impl);
-	     (cache,tp1) = elabModQualifyTypespec(cache,env,tp);
-	 then (SCode.CLASSDEF(cn,fi,repl,SCode.CLASS(cn,p,enc,restr,SCode.DERIVED(tp1,mod)),bc),emod)::modElts;
+	      (cache,emod) = elabMod(cache,env,pre,mod,impl);
+	      modElts = elabModRedeclareElements(cache,env,pre,f,elts,impl);
+	      (cache,tp1) = elabModQualifyTypespec(cache,env,tp);
+	    then (SCode.CLASSDEF(cn,fi,repl,SCode.CLASS(cn,p,enc,restr,SCode.DERIVED(tp1,mod)),bc),emod)::modElts;
 
 		// redeclare of component declaration
-	  case(cache,env,pre,f,SCode.COMPONENT(compname,io,fi,repl,prot,attr,tp,mod,bc,cmt)::elts,impl) equation
-	    (cache,emod) = elabMod(cache,env,pre,mod,impl);
-	    modElts = elabModRedeclareElements(cache,env,pre,f,elts,impl);
-	    (cache,tp1) = elabModQualifyTypespec(cache,env,tp);
-	  then ((SCode.COMPONENT(compname,io,fi,repl,prot,attr,tp1,mod,bc,cmt),emod)::modElts);
-	end matchcontinue;
+	  case(cache,env,pre,f,SCode.COMPONENT(compname,io,fi,repl,prot,attr,tp,mod,bc,cmt)::elts,impl) 
+	    equation
+	      (cache,emod) = elabMod(cache,env,pre,mod,impl);
+	      modElts = elabModRedeclareElements(cache,env,pre,f,elts,impl);
+	      (cache,tp1) = elabModQualifyTypespec(cache,env,tp);
+	    then ((SCode.COMPONENT(compname,io,fi,repl,prot,attr,tp1,mod,bc,cmt),emod)::modElts);
+  end matchcontinue;
 end elabModRedeclareElements;
 
-protected function elabModQualifyTypespec "Help function to elabModRedeclareElements.
-This function makes sure that type specifiers, i.e. class names, in
-redeclarations are looked up in the correct environment. This is achieved by making them
-fully qualified"
-input Env.Cache inCache;
-input Env.Env inEnv;
-input Absyn.TypeSpec tp;
-output Env.Cache outCache;
-output Absyn.TypeSpec outTp;
-
+protected function elabModQualifyTypespec 
+"Help function to elabModRedeclareElements.
+ This function makes sure that type specifiers, i.e. class names, in redeclarations are looked up in the correct environment. 
+ This is achieved by making them fully qualified."
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input Absyn.TypeSpec tp;
+  output Env.Cache outCache;
+  output Absyn.TypeSpec outTp;
 algorithm
   (outCache,outTp) := matchcontinue(inCache,inEnv,tp)
-  	local
-  	  Env.Cache cache; Env.Env env;
-  	  Option<Absyn.ArrayDim> ad;
-  	  Absyn.Path p,p1;
-    case (cache, env,Absyn.TPATH(p,ad)) equation
-      (cache,p1) = Inst.makeFullyQualified(cache,env,p);
-    then (cache,Absyn.TPATH(p1,ad));
-
+    local
+      Env.Cache cache; Env.Env env;
+      Option<Absyn.ArrayDim> ad;
+      Absyn.Path p,p1;
+    case (cache, env,Absyn.TPATH(p,ad)) 
+      equation
+        (cache,p1) = Inst.makeFullyQualified(cache,env,p);
+      then (cache,Absyn.TPATH(p1,ad));
   end matchcontinue;
 end elabModQualifyTypespec;
 
-protected function elabModValue "function: elabModValue
+protected function elabModValue 
+"function: elabModValue
   author: PA
-
-  Helper function to elab_mod. Builds values from modifier expressions
-  if possible.
-  Tries to Constant evaluate an expressions an create a Value option for it.
-"
+  Helper function to elabMod. Builds values from modifier expressions if possible.
+  Tries to Constant evaluate an expressions an create a Value option for it."
   input Env.Cache inCache;
   input Env.Env inEnv;
   input Exp.Exp inExp;
   output Env.Cache outCache;
   output Option<Values.Value> outValuesValueOption;
 algorithm
-  (outCache,outValuesValueOption) :=
-  matchcontinue (inCache,inEnv,inExp)
+  (outCache,outValuesValueOption) := matchcontinue (inCache,inEnv,inExp)
     local
       Values.Value v;
       list<Env.Frame> env;
@@ -234,15 +228,13 @@ algorithm
   end matchcontinue;
 end elabModValue;
 
-public function unelabMod "function: unelabMod
-
-  Transforms Mod back to SCode.Mod, loosing type information.
-"
+public function unelabMod 
+"function: unelabMod
+  Transforms Mod back to SCode.Mod, loosing type information."
   input Types.Mod inMod;
   output SCode.Mod outMod;
 algorithm
-  outMod:=
-  matchcontinue (inMod)
+  outMod := matchcontinue (inMod)
     local
       list<SCode.SubMod> subs_1;
       Types.Mod m,mod;
@@ -254,6 +246,7 @@ algorithm
       Types.Properties p;
       list<SCode.Element> elist_1;
       list<tuple<SCode.Element, Types.Mod>> elist;
+      
     case (Types.NOMOD()) then SCode.NOMOD();
     case ((m as Types.MOD(final_ = final_,each_ = each_,subModLst = subs,eqModOption = NONE)))
       equation
@@ -280,20 +273,16 @@ algorithm
         SCode.REDECL(final_,elist_1);
     case (mod)
       equation
-        Print.printBuf("#-- elab_untyped_mod failed:\n");
-        print("- unelab_mod failed :");
-        s = printModStr(mod);
-        print(s);
-        print("\n");
+        Print.printBuf("#-- Mod.elabUntypedMod failed: " +& printModStr(mod) +& "\n");
+        print("- Mod.elabUntypedMod failed :" +& printModStr(mod) +& "\n");
       then
         fail();
   end matchcontinue;
 end unelabMod;
 
-protected function unelabSubmods "function: unelabSubmods
-
-  Helper function to unelab_mod.
-"
+protected function unelabSubmods 
+"function: unelabSubmods
+  Helper function to unelabMod."
   input list<Types.SubMod> inTypesSubModLst;
   output list<SCode.SubMod> outSCodeSubModLst;
 algorithm
@@ -314,10 +303,9 @@ algorithm
   end matchcontinue;
 end unelabSubmods;
 
-protected function unelabSubmod "function: unelabSubmod
-
-  This function unelaborates on a submodification.
-"
+protected function unelabSubmod 
+"function: unelabSubmod
+  This function unelaborates on a submodification."
   input Types.SubMod inSubMod;
   output list<SCode.SubMod> outSCodeSubModLst;
 algorithm
@@ -362,11 +350,10 @@ algorithm
   end matchcontinue;
 end unelabSubscript;
 
-public function updateMod "function: updateMod
-
+public function updateMod 
+"function: updateMod
   This function updates and untyped modification to a typed one, by looking
-  up the type of the modifier in the environment and update it.
-"
+  up the type of the modifier in the environment and update it."
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input Prefix.Prefix inPrefix;
@@ -517,17 +504,17 @@ algorithm
       list<SCode.Element> elist;
       Ident s;
     case (SCode.NOMOD(),_,_) then Types.NOMOD();
-    case ((m as SCode.MOD(final_ = final_,each_ = each_,subModLst = subs,absynExpOption = NONE)),env,pre)
+    case ((m as SCode.MOD(finalPrefix = final_,eachPrefix = each_,subModLst = subs,absynExpOption = NONE)),env,pre)
       equation
         subs_1 = elabUntypedSubmods(subs, env, pre);
       then
         Types.MOD(final_,each_,subs_1,NONE);
-    case ((m as SCode.MOD(final_ = final_,each_ = each_,subModLst = subs,absynExpOption = SOME((e,_)))),env,pre)
+    case ((m as SCode.MOD(finalPrefix = final_,eachPrefix = each_,subModLst = subs,absynExpOption = SOME((e,_)))),env,pre)
       equation
         subs_1 = elabUntypedSubmods(subs, env, pre);
       then
         Types.MOD(final_,each_,subs_1,SOME(Types.UNTYPED(e)));
-    case ((m as SCode.REDECL(final_ = final_,elementLst = elist)),env,pre)
+    case ((m as SCode.REDECL(finalPrefix = final_,elementLst = elist)),env,pre)
       equation
         elist_1 = Inst.addNomod(elist);
       then
@@ -543,11 +530,9 @@ algorithm
   end matchcontinue;
 end elabUntypedMod;
 
-protected function elabSubmods "function: elabSubmods
-
-  This function helps `elab_mod\' by recusively elaborating on a list
-  of submodifications.
-"
+protected function elabSubmods 
+"function: elabSubmods
+  This function helps `elab_mod\' by recusively elaborating on a list of submodifications."
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input Prefix.Prefix inPrefix;
@@ -556,8 +541,7 @@ protected function elabSubmods "function: elabSubmods
   output Env.Cache outCache;
   output list<Types.SubMod> outTypesSubModLst;
 algorithm
-  (outCache,outTypesSubModLst) :=
-  matchcontinue (inCache,inEnv,inPrefix,inSCodeSubModLst,inBoolean)
+  (outCache,outTypesSubModLst) := matchcontinue (inCache,inEnv,inPrefix,inSCodeSubModLst,inBoolean)
     local
       Boolean impl;
       list<Types.SubMod> x_1,xs_1,res;
@@ -577,11 +561,10 @@ algorithm
   end matchcontinue;
 end elabSubmods;
 
-protected function elabSubmod "function: elabSubmod
-
+protected function elabSubmod 
+"function: elabSubmod
   This function elaborates on a submodification, turning an
-  `SCode.SubMod\' into one or more `Types.SubMod\'s.
-"
+  `SCode.SubMod\' into one or more `Types.SubMod\'s."
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input Prefix.Prefix inPrefix;
@@ -1216,43 +1199,54 @@ algorithm
     case (Types.NOMOD(),Types.NOMOD(),_,_) then Types.NOMOD();
     case (Types.NOMOD(),m,_,_) then m;
     case (m,Types.NOMOD(),_,_) then m;
-    case (Types.REDECL(final_ = f1,tplSCodeElementModLst = {(SCode.COMPONENT(component = id1,innerOuter=io,final_ = f,replaceable_ = r,protected_ = p,attributes = attr,typeSpec = tp,mod = m1,baseclass = bc,this = comment),_)}),Types.REDECL(final_ = f2,tplSCodeElementModLst = {(SCode.COMPONENT(component = id2,mod = m2,baseclass = bc2,this = comment2),_)}),env,pre) /* redeclaring same component */
+    case (Types.REDECL(final_ = f1,tplSCodeElementModLst = 
+           {(SCode.COMPONENT(component = id1,innerOuter=io,finalPrefix = f,replaceablePrefix = r,protectedPrefix = p,attributes = attr,
+                             typeSpec = tp,modifications = m1,baseClassPath = bc,comment = comment),_)}),
+         Types.REDECL(final_ = f2,tplSCodeElementModLst = 
+           {(SCode.COMPONENT(component = id2,modifications = m2,baseClassPath = bc2,comment = comment2),_)}),env,pre) /* redeclaring same component */
       equation
         equality(id1 = id2);
         m1_1 = elabUntypedMod(m2, env, pre);
         m2_1 = elabUntypedMod(m2, env, pre);
         m_2 = merge(m1_1, m2_1, env, pre);
       then
-        Types.REDECL(f1,
-          {
-          (
-          SCode.COMPONENT(id1,io,f,r,p,attr,tp,SCode.NOMOD(),bc,comment),m_2)});
-    case ((mod as Types.REDECL(final_ = f1,tplSCodeElementModLst = (els as {(SCode.COMPONENT(component = id1),_)}))),(mods as Types.MOD(subModLst = subs)),env,pre) then mod;  /* luc_pop : this shoud return the first mod because it have been merged in merge_subs */
-    case (Types.MOD(subModLst = subs),Types.REDECL(final_ = f1,tplSCodeElementModLst = (els as {(SCode.COMPONENT(component = id1),_)})),env,pre) then Types.MOD(false,Absyn.NON_EACH(),
-          (Types.NAMEMOD(id1,Types.REDECL(f1,els)) :: subs),NONE);  /* luc_pop : this shoud return the first mod because it have been merged in merge_subs When modifiers are identical */
+        Types.REDECL(f1,{(SCode.COMPONENT(id1,io,f,r,p,attr,tp,SCode.NOMOD(),bc,comment),m_2)});
+
+    /* luc_pop : this shoud return the first mod because it have been merged in merge_subs */        
+    case ((mod as Types.REDECL(final_ = f1,tplSCodeElementModLst = (els as {(SCode.COMPONENT(component = id1),_)}))),(mods as Types.MOD(subModLst = subs)),env,pre) 
+      then mod;
+
+    /* luc_pop : this shoud return the first mod because it have been merged in merge_subs When modifiers are identical */  
+    case (Types.MOD(subModLst = subs),Types.REDECL(final_ = f1,tplSCodeElementModLst = (els as {(SCode.COMPONENT(component = id1),_)})),env,pre) 
+      then Types.MOD(false,Absyn.NON_EACH(),(Types.NAMEMOD(id1,Types.REDECL(f1,els)) :: subs),NONE);
+
     case (outer_,inner_,_,_) /* When modifiers are identical */
       equation
         equality(outer_ = inner_);
       then
         outer_;
 
-        /* Commented this becaus it gave false positives.
-        The problem is that merge is used repeatedly in the instantiation process even though
-        no real outer modfier is present. This causes this check to succeed even if no modifier is applied.
-        */
-    /*case (m1,(m as Types.MOD(final_ = true)),_,_)
+    /* Commented this becaus it gave false positives.
+     *  The problem is that merge is used repeatedly in the instantiation process even though
+     *   no real outer modfier is present. This causes this check to succeed even if no modifier is applied.
+     */
+    /*
+    case (m1,(m as Types.MOD(final_ = true)),_,_)
       local Types.Mod m1;
       equation
 				print("trying to modify final element with ");print(printModStr(m1));print("\n");
         Print.printBuf("# trying to modify final element\n");
       then
-        fail();*/
-    case (Types.MOD(final_ = final_,each_ = each_,subModLst = subs1,eqModOption = ass1),Types.MOD(final_ = _/*false*, see case above.*/,each_ = each2,subModLst = subs2,eqModOption = ass2),env,pre)
+        fail();
+    */
+    case (Types.MOD(final_ = final_,each_ = each_,subModLst = subs1,eqModOption = ass1),
+          Types.MOD(final_ = _/*false*, see case above.*/,each_ = each2,subModLst = subs2,eqModOption = ass2),env,pre)
       equation
         subs = mergeSubs(subs1, subs2, env, pre);
         ass = mergeEq(ass1, ass2);
       then
         Types.MOD(final_,each_,subs,ass);
+        
     case (outer_,inner_,_,_) then outer_;
   end matchcontinue;
 end merge;

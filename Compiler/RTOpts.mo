@@ -135,19 +135,33 @@ public function versionRequest
   external "C";
 end versionRequest;
 
-/*
- * adrpo 2007-06-11
- * returns true if MetaModelica grammar is accepted
- * returns false if only Modelica grammar is accepted
- */
 public function acceptMetaModelicaGrammar
-"@author adrpo
+"@author adrpo 2007-06-11
  returns: true if MetaModelica grammar is accepted or false otherwise
  usage: omc [+g=Modelica|MetaModelica], default to 'Modelica'."
   output Boolean outBoolean;
 
   external "C";
 end acceptMetaModelicaGrammar;
+
+public function getAnnotationVersion
+"@author adrpo 2008-11-28
+   returns what flag was given at start 
+     omc [+annotationVersion=3.x] 
+   or via the API
+     setAnnotationVersion(\"3.x\"); 
+   for annotations: 1.x or 2.x or 3.x"
+  output String anootationVersion;
+  external "C";
+end getAnnotationVersion;
+
+public function setAnnotationVersion
+"@author adrpo 2008-11-28
+   setAnnotationVersion(\"3.x\"); 
+   for annotations: 1.x or 2.x or 3.x"
+  input String anootationVersion;
+  external "C";
+end setAnnotationVersion;
 
 end RTOpts;
 

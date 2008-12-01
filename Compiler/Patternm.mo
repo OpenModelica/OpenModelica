@@ -2756,7 +2756,7 @@ algorithm
       */
 
         p = Absyn.crefToPath(cRef);
-        (localCache,SCode.CLASS(parts=SCode.PARTS(elementLst = elemList)),localEnv)
+        (localCache,SCode.CLASS(classDef=SCode.PARTS(elementLst = elemList)),localEnv)
          = Lookup.lookupClass(localCache,localEnv, p, true);
         (elemList2,varList) = extractOutputVars(elemList,1,{},{});
 
@@ -2798,7 +2798,8 @@ algorithm
   end matchcontinue;
 end createLhsExp;
 
-protected function extractOutputVars "function: extractOutputVars"
+protected function extractOutputVars 
+"function: extractOutputVars"
   input list<SCode.Element> inList;
   input Integer cnt;
   input list<Absyn.ElementItem> accList1;
@@ -2806,8 +2807,7 @@ protected function extractOutputVars "function: extractOutputVars"
   output list<Absyn.ElementItem> outList1;
   output list<Absyn.Exp> outList2;
 algorithm
-  (outList1,outList2) :=
-  matchcontinue (inList,cnt,accList1,accList2)
+  (outList1,outList2) := matchcontinue (inList,cnt,accList1,accList2)
     local
       list<Absyn.ElementItem> localAccList1;
       list<SCode.Element> rest;
@@ -2815,7 +2815,7 @@ algorithm
       Integer localCnt;
     case ({},localCnt,localAccList1,localAccList2)
     then (localAccList1,localAccList2);
-    case (SCode.COMPONENT(attributes = SCode.ATTR(input_ = Absyn.OUTPUT()),typeSpec = tSpec) :: rest,
+    case (SCode.COMPONENT(attributes = SCode.ATTR(direction = Absyn.OUTPUT()),typeSpec = tSpec) :: rest,
       localCnt,localAccList1,localAccList2)
       local
         Absyn.TypeSpec tSpec;
