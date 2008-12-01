@@ -578,8 +578,8 @@ RML_BEGIN_LABEL(RTOpts__setAnnotationVersion)
       strcmp(annotation_version, "3.x") == 0)
   {
     annotation_version = str;
-  }
-  else
     RML_TAILCALLK(rmlSC);
+  }  
+  RML_TAILCALLK(rmlFC);
 }
 RML_END_LABEL
