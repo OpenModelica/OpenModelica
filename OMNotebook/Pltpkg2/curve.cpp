@@ -56,10 +56,11 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 
 
 Curve::Curve(VariableData* x_, VariableData* y_, QColor& color, LegendLabel* ll):
-x(x_), y(y_), color_(color), label(ll)
+x(x_), y(y_), label(ll)
 {
 	line = new QGraphicsItemGroup;
 
+  setColor(color);
 }
 
 Curve::~Curve()
@@ -91,7 +92,7 @@ void Curve::showLine(bool b)
 void Curve::setColor(QColor c)
 {
 	color_ = c;
-	QPen p(c);
+	QPen p(c, 3);
 	QList<QGraphicsItem*> l = line->children();
 
 	for(int i = 0; i < l.size(); ++i)

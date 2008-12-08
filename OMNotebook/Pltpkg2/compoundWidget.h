@@ -73,6 +73,7 @@ public:
 public slots:
 	void resizeY(quint32 w);
 	void showPreferences();
+  void graphicsResizeY(quint32 w);
 
 public:
 	QVBoxLayout* layout;

@@ -62,7 +62,7 @@ CompoundWidget::CompoundWidget(QWidget* parent):  QWidget(parent)
 
 	QFont f("Arial",10);
 	f.setBold(true);
-	plotTitle->setFont(f);
+	plotTitle->setFont(f); 
 	gwMain->gvBottom = gvBottom;
 	gwMain->gvLeft = gvLeft;
 
@@ -73,7 +73,7 @@ CompoundWidget::CompoundWidget(QWidget* parent):  QWidget(parent)
 	gvBottom->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 	gvBottom->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 	gvLeft->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-	gvLeft->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+	gvLeft->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);	
 
 	connect(gwMain, SIGNAL(resizeY(quint32)), this, SLOT(resizeY(quint32)));
 	connect(gwMain, SIGNAL(showPreferences2()), this, SLOT(showPreferences()));
@@ -89,12 +89,13 @@ CompoundWidget::CompoundWidget(QWidget* parent):  QWidget(parent)
 	gwMain->compoundwidget = this;
 
   //Initialize SoQT
-#ifndef __APPLE_CC__
-	SoQt::init(this);
-#endif
+  //#ifndef __APPLE_CC__  
+	// SoQt::init(this);
+  //#endif
 	visWidget = new IAEX::VisualizationWidget(this);
+	// connect(visWidget, SIGNAL(resizeY(quint32)), this, SLOT(graphicsResizeY(quint32)));
 	visWidget->hide();
-
+	
 }
 
 CompoundWidget::~CompoundWidget()
@@ -115,7 +116,6 @@ void CompoundWidget::showPreferences()
 	PreferenceWindow* pw = new PreferenceWindow(this, 0);
 	pw->setAttribute(Qt::WA_DeleteOnClose);
 	pw->show();
-
 }
 
 void CompoundWidget::resizeY(quint32 w)
@@ -124,12 +124,33 @@ void CompoundWidget::resizeY(quint32 w)
 	gvLeft->update();
 }
 
+void CompoundWidget::graphicsResizeY(quint32 w)
+{
+	visWidget->setMinimumWidth(w+5);
+	visWidget->update();
+}
+
+
 void CompoundWidget::showVis() {
 	visWidget->show();
+  gwMain->showGrid(false);
+  gvLeft->hide();
+  gvBottom->hide();
+  plotTitle->hide();
 	plotWidget->hide();
+	xLabel->hide();
+	yLabel->hide();
+  legendFrame->hide();
 }
 
 void CompoundWidget::hideVis() {
 	visWidget->hide();
 	plotWidget->show();
+  gwMain->showGrid(true);
+  gvLeft->show();
+  gvBottom->show();
+  plotTitle->show();
+	xLabel->show();
+	yLabel->show();
+  legendFrame->show();
 }

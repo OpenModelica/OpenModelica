@@ -9,7 +9,7 @@ namespace IAEX {
 		this->setMinimumHeight(300);
 		this->setMinimumWidth(500);
 
-		QWidget *visframe = new QWidget();
+		QWidget *visframe = new QWidget(this);
 
 		visframe->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
 
@@ -42,7 +42,7 @@ namespace IAEX {
 		connect(timer, SIGNAL(timeout()),
 			this, SLOT(nextFrame()));
 
-		QVBoxLayout *buttonlayout = new QVBoxLayout;
+		QVBoxLayout *buttonlayout = new QVBoxLayout(this);
 		buttonlayout->addWidget(playbutton);
 		buttonlayout->addWidget(stopbutton);
 		buttonlayout->addWidget(rewbutton);

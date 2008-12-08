@@ -199,7 +199,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Copy ext.exe and xml files to build/bin"
-				CommandLine="copy $(TargetPath) $(InputDir)\..\..\build\bin\&#x0D;&#x0A;copy $(ProjectDir)\..\OMNotebookQT4\*.xml $(InputDir)\..\..\build\bin\"
+				CommandLine="copy $(TargetPath) $(InputDir)\..\..\build\bin\&#x0D;&#x0A;copy $(ProjectDir)\..\OMNotebookQT4\*.xml $(InputDir)\..\..\build\bin\&#x0D;&#x0A;"
 			/>
 		</Configuration>
 	</Configurations>
@@ -228,7 +228,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\Pltpkg2\GraphWindow.cpp"
+				RelativePath="..\Pltpkg2\graphWindow.cpp"
 				>
 			</File>
 			<File

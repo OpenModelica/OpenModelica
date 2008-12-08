@@ -76,6 +76,7 @@ GraphWindow::GraphWindow(QWidget* parent): QMainWindow(parent)
 
   connect(graphicsView->gwMain, SIGNAL(newMessage(QString)), this, SLOT(showMessage(QString)));
   QObject::connect(actionGrid, SIGNAL(toggled(bool)), graphicsView->gwMain, SLOT(showGrid(bool)));
+  QObject::connect(actionHold, SIGNAL(toggled(bool)), graphicsView->gwMain, SLOT(setHold(bool)));
 
   QObject::connect(actionPan, SIGNAL(toggled(bool)), graphicsView->gwMain, SLOT(setPan(bool)));
   QObject::connect(actionSelect, SIGNAL(toggled(bool)), graphicsView->gwMain, SLOT(setSelect(bool)));
@@ -90,6 +91,7 @@ GraphWindow::GraphWindow(QWidget* parent): QMainWindow(parent)
   ag->addAction(actionPan);
   ag->addAction(actionSelect);
   ag->addAction(actionZoom);
+  ag->addAction(actionHold);
   ag->setExclusive(true);
 
   connect(actionAboutQt, SIGNAL(triggered()), qApp, SLOT(aboutQt()));

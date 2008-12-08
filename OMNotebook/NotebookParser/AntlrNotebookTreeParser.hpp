@@ -100,7 +100,7 @@ public:
 	{
 		return returnAST;
 	}
-
+	
 protected:
 	ANTLR_USE_NAMESPACE(antlr)RefAST returnAST;
 	ANTLR_USE_NAMESPACE(antlr)RefAST _retTree;
@@ -113,7 +113,7 @@ private:
 		NUM_TOKENS = 179
 	};
 #endif
-
+	
 	static const unsigned long _tokenSet_0_data_[];
 	static const ANTLR_USE_NAMESPACE(antlr)BitSet _tokenSet_0;
 };

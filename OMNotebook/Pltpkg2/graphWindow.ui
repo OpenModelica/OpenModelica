@@ -89,6 +89,7 @@
     <addaction name="actionZoom" />
     <addaction name="actionPan" />
     <addaction name="actionSelect" />
+    <addaction name="actionHold" />
    </widget>
    <widget class="QMenu" name="menuEdit" >
     <property name="title" >
@@ -136,13 +137,24 @@
    <addaction name="actionSelect" />
    <addaction name="actionZoom" />
    <addaction name="actionPan" />
-   <addaction name="separator" />
    <addaction name="actionGrid" />
+   <addaction name="actionHold" />
    <addaction name="separator" />
    <addaction name="actionPreferences" />
    <addaction name="separator" />
    <addaction name="actionActive" />
   </widget>
+  <action name="actionHold" >
+   <property name="checkable" >
+    <bool>true</bool>
+   </property>
+   <property name="checked" >
+    <bool>true</bool>
+   </property>
+   <property name="text" >
+    <string>Hold</string>
+   </property>
+  </action>
   <action name="actionOpen" >
    <property name="enabled" >
     <bool>false</bool>

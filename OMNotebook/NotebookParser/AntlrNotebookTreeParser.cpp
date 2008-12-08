@@ -14,31 +14,31 @@ void AntlrNotebookTreeParser::document(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 	Cell *ws, Factory *f, int readmode
 ) {
 	ANTLR_USE_NAMESPACE(antlr)RefAST document_AST_in = (_t == ANTLR_USE_NAMESPACE(antlr)RefAST(ASTNULL)) ? ANTLR_USE_NAMESPACE(antlr)nullAST : _t;
-
+	
 	//This is in NotebookTreeParser.cpp
 	factory = f;
 	workspace = ws;
-
-
+	
+	
 	// AF
 	imagePartOfText = false;
 	readmode_ = readmode;
-
+	
 	if( readmode_ == READMODE_CONVERTING_ONB )
 			convertingToONB = true;
 		else
 			convertingToONB = false;
-
-
+	
+	
 	result_t result(output);// = new result_t; //??
-
-
+	
+	
 	try {      // for error handling
 		expr(_t,result);
 		_t = _retTree;
-
+		
 		//cout << (*result).first.str() << endl;
-
+		
 	}
 	catch (ANTLR_USE_NAMESPACE(antlr)RecognitionException& ex) {
 		reportError(ex);
@@ -52,11 +52,11 @@ void AntlrNotebookTreeParser::expr(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 	result_t &result
 ) {
 	ANTLR_USE_NAMESPACE(antlr)RefAST expr_AST_in = (_t == ANTLR_USE_NAMESPACE(antlr)RefAST(ASTNULL)) ? ANTLR_USE_NAMESPACE(antlr)nullAST : _t;
-
+	
 	string val;
 	string attr;
-
-
+	
+	
 	try {      // for error handling
 		if (_t == ANTLR_USE_NAMESPACE(antlr)nullAST )
 			_t = ASTNULL;
@@ -118,14 +118,14 @@ void AntlrNotebookTreeParser::expr(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 				else {
 					goto _loop4;
 				}
-
+				
 			}
 			_loop4:;
 			} // ( ... )*
 			exprheader(_t,result);
 			_t = _retTree;
-
-
+			
+			
 			break;
 		}
 		case VALUERIGHT:
@@ -151,9 +151,9 @@ void AntlrNotebookTreeParser::expr(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 		{
 			val=value(_t);
 			_t = _retTree;
-
+			
 			result.first << val;
-
+			
 			break;
 		}
 		case FONTSLANT:
@@ -251,9 +251,9 @@ void AntlrNotebookTreeParser::expr(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 		{
 			attr=attribute(_t);
 			_t = _retTree;
-
+			
 			result.first << attr;
-
+			
 			break;
 		}
 		default:
@@ -284,18 +284,18 @@ void AntlrNotebookTreeParser::exprheader(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 	ANTLR_USE_NAMESPACE(antlr)RefAST red = ANTLR_USE_NAMESPACE(antlr)nullAST;
 	ANTLR_USE_NAMESPACE(antlr)RefAST green = ANTLR_USE_NAMESPACE(antlr)nullAST;
 	ANTLR_USE_NAMESPACE(antlr)RefAST blue = ANTLR_USE_NAMESPACE(antlr)nullAST;
-
+	
 	rules_t rules;
-
-
+	
+	
 	try {      // for error handling
 		if (_t == ANTLR_USE_NAMESPACE(antlr)nullAST )
 			_t = ASTNULL;
 		switch ( _t->getType()) {
 		case NOTEBOOK:
 		{
-
-
+			
+			
 			ANTLR_USE_NAMESPACE(antlr)RefAST __t6 = _t;
 			ANTLR_USE_NAMESPACE(antlr)RefAST tmp3_AST_in = _t;
 			match(_t,NOTEBOOK);
@@ -313,7 +313,7 @@ void AntlrNotebookTreeParser::exprheader(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 				else {
 					goto _loop8;
 				}
-
+				
 			}
 			_loop8:;
 			} // ( ... )*
@@ -328,22 +328,22 @@ void AntlrNotebookTreeParser::exprheader(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 				else {
 					goto _loop10;
 				}
-
+				
 			}
 			_loop10:;
 			} // ( ... )*
 			_t = __t6;
 			_t = _t->getNextSibling();
-
-
+			
+			
 			break;
 		}
 		case LIST:
 		{
-
+			
 			ostringstream listoutput;
 			result_t list(listoutput);
-
+			
 			ANTLR_USE_NAMESPACE(antlr)RefAST __t11 = _t;
 			ANTLR_USE_NAMESPACE(antlr)RefAST tmp4_AST_in = _t;
 			match(_t,LIST);
@@ -359,19 +359,19 @@ void AntlrNotebookTreeParser::exprheader(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 				else {
 					goto _loop13;
 				}
-
+				
 			}
 			_loop13:;
 			} // ( ... )*
 			_t = __t11;
 			_t = _t->getNextSibling();
-
+			
 						//2005-11-09 AF, Added a function for adding/removeing some
 						//chars/symbols from the text
 			string str = StripString::stripNBString( list.first.str() );
-
+			
 						result.first << str << endl;
-
+			
 			break;
 		}
 		case LISTBODY:
@@ -384,16 +384,16 @@ void AntlrNotebookTreeParser::exprheader(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 			_t = _retTree;
 			_t = __t14;
 			_t = _t->getNextSibling();
-
-
+			
+			
 			break;
 		}
 		case CELL:
 		{
-
+			
 				    ostringstream contentoutput;
 			result_t content(contentoutput);
-
+			
 			ANTLR_USE_NAMESPACE(antlr)RefAST __t15 = _t;
 			ANTLR_USE_NAMESPACE(antlr)RefAST tmp6_AST_in = _t;
 			match(_t,CELL);
@@ -435,26 +435,26 @@ void AntlrNotebookTreeParser::exprheader(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 				else {
 					goto _loop18;
 				}
-
+				
 			}
 			_loop18:;
 			} // ( ... )*
 			_t = __t15;
 			_t = _t->getNextSibling();
-
+			
 						//2005-11-09 AF, Added a function for adding/removeing some
 						//chars/symbols from the text
 			string cnt = StripString::stripNBString( content.first.str() );
-
+			
 			if(style)
 			{
 							QString qcnt(cnt.c_str());
-
+			
 							string s1 = style->getText();
 							s1.assign(s1, 1, s1.length()-2);
-
+			
 							QString cellstyle(s1.c_str());
-
+			
 							// 2005-11-09 AF,
 							// if the cellstyle is "Graphics" a new cell shouldn't always be added, sometimes
 							// a image should be added in the existing cell
@@ -471,7 +471,7 @@ void AntlrNotebookTreeParser::exprheader(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 									Cell *text = factory->createCell("Text", workspace);
 									text->setText("IMAGE CELL");
 									text->setStyle("Text");
-
+			
 									workspace->addChild(text);
 								}
 								*/
@@ -479,7 +479,7 @@ void AntlrNotebookTreeParser::exprheader(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 							else
 							{
 								Cell *text = factory->createCell(cellstyle, workspace);
-
+			
 								//RULES
 								//Rules from content.
 								for(rules_t::iterator i=content.second.begin();i!=content.second.end();++i)
@@ -487,19 +487,19 @@ void AntlrNotebookTreeParser::exprheader(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 									//AF text->setStyle(QString((*i).first.c_str()), QString((*i).second.c_str()));
 									//text->addRule(new Rule(QString((*i).first.c_str()), QString((*i).second.c_str())));
 								}
-
+			
 								//Rules from tag.
 								for(rules_t::iterator j = rules.begin(); j != rules.end(); j++)
 								{
 									//AF text->setStyle(QString((*j).first.c_str()), QString((*j).second.c_str()));
 									text->addRule(new Rule(QString((*j).first.c_str()), QString((*j).second.c_str())));
 								}
-
+			
 								//STYLE
 								// 2005-11-08 AF, ändrat ordningen så att setText görs före setStyle
 								text->setText( qcnt );
 								//text->setStyle( cellstyle );
-
+			
 								workspace->addChild(text);
 							}
 			}
@@ -509,18 +509,18 @@ void AntlrNotebookTreeParser::exprheader(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 			//to happen only with cells inside textdata-expressions.
 			result.first << cnt;
 			}
-
+			
 			break;
 		}
 		case CELLGROUPDATA:
 		{
-
+			
 			//CellGroup *group = new CellGroup(workspace->doc());
 			//CellGroup *parent = workspace;
 			Cell *group = factory->createCell("cellgroup", workspace);
 			Cell *parent = workspace;
 			workspace = group;
-
+			
 			ANTLR_USE_NAMESPACE(antlr)RefAST __t19 = _t;
 			ANTLR_USE_NAMESPACE(antlr)RefAST tmp7_AST_in = _t;
 			match(_t,CELLGROUPDATA);
@@ -553,25 +553,25 @@ void AntlrNotebookTreeParser::exprheader(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 			}
 			_t = __t19;
 			_t = _t->getNextSibling();
-
+			
 				if( opengroup )
 							group->setClosed( false );
 						else if( closegroup )
 							group->setClosed( true );
-
-
+			
+			
 			workspace = parent;
 			workspace->addChild(group);
-
+			
 			break;
 		}
 		case STYLEBOX:
 		{
-
+			
 				    ostringstream sboutput;
 			result_t sbcontent(sboutput);
 			rules_t stylerules;
-
+			
 			ANTLR_USE_NAMESPACE(antlr)RefAST __t21 = _t;
 			ANTLR_USE_NAMESPACE(antlr)RefAST tmp8_AST_in = _t;
 			match(_t,STYLEBOX);
@@ -605,7 +605,7 @@ void AntlrNotebookTreeParser::exprheader(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 					else {
 						if ( _cnt24>=1 ) { goto _loop24; } else {throw ANTLR_USE_NAMESPACE(antlr)NoViableAltException(_t);}
 					}
-
+					
 					_cnt24++;
 				}
 				_loop24:;
@@ -624,7 +624,7 @@ void AntlrNotebookTreeParser::exprheader(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 			}
 			_t = __t21;
 			_t = _t->getNextSibling();
-
+			
 			if(sbstyle)
 			{
 			//What happends if a style is added here?
@@ -638,23 +638,23 @@ void AntlrNotebookTreeParser::exprheader(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 			result.second.push_back(*i);
 			}
 			}
-
+			
 			//2005-11-09 AF, Added a function for adding/removeing some
 						//chars/symbols from the text
 			string str = StripString::stripNBString( sbcontent.first.str() );
-
+			
 			// 2005-12-06 AF, Apply the rules to the text
 			str = StripString::applyRulesToText( str, stylerules );
-
+			
 			result.first << str; //sbcontent.first.str();
-
+			
 			break;
 		}
 		case TEXTDATA:
 		{
-
+			
 						imagePartOfText = true;
-
+			
 			ANTLR_USE_NAMESPACE(antlr)RefAST __t25 = _t;
 			ANTLR_USE_NAMESPACE(antlr)RefAST tmp9_AST_in = _t;
 			match(_t,TEXTDATA);
@@ -672,7 +672,7 @@ void AntlrNotebookTreeParser::exprheader(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 				else {
 					goto _loop27;
 				}
-
+				
 			}
 			_loop27:;
 			} // ( ... )*
@@ -687,25 +687,25 @@ void AntlrNotebookTreeParser::exprheader(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 				else {
 					goto _loop29;
 				}
-
+				
 			}
 			_loop29:;
 			} // ( ... )*
 			_t = __t25;
 			_t = _t->getNextSibling();
-
+			
 			imagePartOfText = false;
-
+			
 			break;
 		}
 		case SUPERSCRBOX:
 		{
-
+			
 			ostringstream baseoutput;
 			ostringstream expoutput;
 			result_t base(baseoutput);
 			result_t exp(expoutput);
-
+			
 			ANTLR_USE_NAMESPACE(antlr)RefAST __t30 = _t;
 			ANTLR_USE_NAMESPACE(antlr)RefAST tmp10_AST_in = _t;
 			match(_t,SUPERSCRBOX);
@@ -716,9 +716,9 @@ void AntlrNotebookTreeParser::exprheader(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 			_t = _retTree;
 			_t = __t30;
 			_t = _t->getNextSibling();
-
+			
 			result.first << base.first.str() << "<sup>" << exp.first.str() << "</sup>";
-
+			
 			rules_t::iterator i = base.second.begin();
 			for(; i != base.second.end(); ++i)
 			{
@@ -729,17 +729,17 @@ void AntlrNotebookTreeParser::exprheader(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 			{
 			result.second.push_back((*j));
 			}
-
+			
 			break;
 		}
 		case SUBSCRBOX:
 		{
-
+			
 						ostringstream baseoutputSub;
 			ostringstream expoutputSub;
 			result_t baseSub(baseoutputSub);
 			result_t expSub(expoutputSub);
-
+			
 			ANTLR_USE_NAMESPACE(antlr)RefAST __t31 = _t;
 			ANTLR_USE_NAMESPACE(antlr)RefAST tmp11_AST_in = _t;
 			match(_t,SUBSCRBOX);
@@ -750,9 +750,9 @@ void AntlrNotebookTreeParser::exprheader(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 			_t = _retTree;
 			_t = __t31;
 			_t = _t->getNextSibling();
-
+			
 						result.first << baseSub.first.str() << "<sub>" << expSub.first.str() << "</sub>";
-
+			
 			rules_t::iterator i = baseSub.second.begin();
 			for(; i != baseSub.second.end(); ++i)
 			{
@@ -763,17 +763,17 @@ void AntlrNotebookTreeParser::exprheader(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 			{
 			result.second.push_back((*j));
 			}
-
+			
 			break;
 		}
 		case BUTTONBOX:
 		{
-
+			
 			//Translates all buttons into hyperlinks.
 			ostringstream btoutput;
 			result_t buttonTitle(btoutput);
 			rules_t buttonRules;
-
+			
 			ANTLR_USE_NAMESPACE(antlr)RefAST __t32 = _t;
 			ANTLR_USE_NAMESPACE(antlr)RefAST tmp12_AST_in = _t;
 			match(_t,BUTTONBOX);
@@ -791,7 +791,7 @@ void AntlrNotebookTreeParser::exprheader(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 				else {
 					goto _loop34;
 				}
-
+				
 			}
 			_loop34:;
 			} // ( ... )*
@@ -806,13 +806,13 @@ void AntlrNotebookTreeParser::exprheader(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 				else {
 					goto _loop36;
 				}
-
+				
 			}
 			_loop36:;
 			} // ( ... )*
 			_t = __t32;
 			_t = _t->getNextSibling();
-
+			
 			string filename;
 			//Check rules. Look for ButtonData ->Filename and ButtonStyle=Hyperlink
 			rules_t::iterator i = buttonRules.begin();
@@ -826,8 +826,8 @@ void AntlrNotebookTreeParser::exprheader(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 			}
 			//result.second.push_back(*i);
 			}
-
-
+			
+			
 			// 2006-02-10 AF, Add '#' to filename. Links should have '#'
 			// for specifing internel references. For example internal
 			// referenses for a link;
@@ -835,7 +835,7 @@ void AntlrNotebookTreeParser::exprheader(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 			// filename looks like: Dir/filename.htmlChapterSeven
 			// have to insert # symbol
 			filename = StripString::fixFilename( filename );
-
+			
 			// 2006-03-21 AF, if convertion to ONB - replace .nb with .onb
 			if( convertingToONB )
 			{
@@ -845,23 +845,23 @@ void AntlrNotebookTreeParser::exprheader(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 								filename.replace( index, 3, ".onb" );
 							}
 			}
-
-
+			
+			
 			result.first << "<a href=\"" << filename << "\">"
 			<< buttonTitle.first.str() << "</a>";
-
+			
 			break;
 		}
 		case INTERPRETATIONBOX:
 		{
-
+			
 			// InpterpretationBox contains hidden information in Mathematica
 			ostringstream boxesoutput;
 			result_t boxes(boxesoutput);
-
+			
 			ostringstream interpretationdataoutput;
 			result_t interpretationdata(interpretationdataoutput);
-
+			
 			ANTLR_USE_NAMESPACE(antlr)RefAST __t37 = _t;
 			ANTLR_USE_NAMESPACE(antlr)RefAST tmp13_AST_in = _t;
 			match(_t,INTERPRETATIONBOX);
@@ -872,19 +872,19 @@ void AntlrNotebookTreeParser::exprheader(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 			_t = _retTree;
 			_t = __t37;
 			_t = _t->getNextSibling();
-
-
+			
+			
 			break;
 		}
 		case FILENAME:
 		{
-
+			
 				    ostringstream diroutput;
 				    ostringstream filenameoutput;
 			result_t dir(diroutput);
 			result_t filename(filenameoutput);
 			rules_t filenameRules;
-
+			
 			ANTLR_USE_NAMESPACE(antlr)RefAST __t38 = _t;
 			ANTLR_USE_NAMESPACE(antlr)RefAST tmp14_AST_in = _t;
 			match(_t,FILENAME);
@@ -902,7 +902,7 @@ void AntlrNotebookTreeParser::exprheader(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 				else {
 					goto _loop40;
 				}
-
+				
 			}
 			_loop40:;
 			} // ( ... )*
@@ -917,25 +917,25 @@ void AntlrNotebookTreeParser::exprheader(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 				else {
 					goto _loop42;
 				}
-
+				
 			}
 			_loop42:;
 			} // ( ... )*
 			_t = __t38;
 			_t = _t->getNextSibling();
-
+			
 			//Delete strange newline in directory string.
 			string d = dir.first.str();
 			d.assign(d, 0, d.length()-1);
-
+			
 			result.first << d << "/" << filename.first.str();
-
+			
 			break;
 		}
 		case GRAPHICSDATA:
 		{
-
-
+			
+					
 			ANTLR_USE_NAMESPACE(antlr)RefAST __t43 = _t;
 			ANTLR_USE_NAMESPACE(antlr)RefAST tmp15_AST_in = _t;
 			match(_t,GRAPHICSDATA);
@@ -948,14 +948,14 @@ void AntlrNotebookTreeParser::exprheader(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 			_t = _t->getNextSibling();
 			_t = __t43;
 			_t = _t->getNextSibling();
-
-
+			
+					
 			break;
 		}
 		case DIREXTEDINFINITY:
 		{
-
-
+			
+				
 			ANTLR_USE_NAMESPACE(antlr)RefAST __t44 = _t;
 			ANTLR_USE_NAMESPACE(antlr)RefAST tmp16_AST_in = _t;
 			match(_t,DIREXTEDINFINITY);
@@ -965,16 +965,16 @@ void AntlrNotebookTreeParser::exprheader(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 			_t = _t->getNextSibling();
 			_t = __t44;
 			_t = _t->getNextSibling();
-
-
+			
+				
 			break;
 		}
 		case BOXDATA:
 		{
-
+			
 						ostringstream boxdataoutput;
 			result_t boxdata(boxdataoutput);
-
+					
 			ANTLR_USE_NAMESPACE(antlr)RefAST __t45 = _t;
 			ANTLR_USE_NAMESPACE(antlr)RefAST tmp17_AST_in = _t;
 			match(_t,BOXDATA);
@@ -992,7 +992,7 @@ void AntlrNotebookTreeParser::exprheader(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 				else {
 					goto _loop47;
 				}
-
+				
 			}
 			_loop47:;
 			} // ( ... )*
@@ -1007,21 +1007,21 @@ void AntlrNotebookTreeParser::exprheader(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 				else {
 					goto _loop49;
 				}
-
+				
 			}
 			_loop49:;
 			} // ( ... )*
 			_t = __t45;
 			_t = _t->getNextSibling();
-
+			
 						result.first << StripString::stripSimulationData(boxdata.first.str());
-
+					
 			break;
 		}
 		case RGBCOLOR:
 		{
-
-
+			
+					
 			ANTLR_USE_NAMESPACE(antlr)RefAST __t50 = _t;
 			ANTLR_USE_NAMESPACE(antlr)RefAST tmp18_AST_in = _t;
 			match(_t,RGBCOLOR);
@@ -1037,12 +1037,12 @@ void AntlrNotebookTreeParser::exprheader(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 			_t = _t->getNextSibling();
 			_t = __t50;
 			_t = _t->getNextSibling();
-
+			
 						if( red && green && blue )
 							result.first << red->getText() << ":" << green->getText() << ":" << blue->getText();
 						else
 							result.first << "7777:3333:2222";
-
+					
 			break;
 		}
 		case LIST_SMALL:
@@ -1064,7 +1064,7 @@ void AntlrNotebookTreeParser::exprheader(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 				else {
 					goto _loop53;
 				}
-
+				
 			}
 			_loop53:;
 			} // ( ... )*
@@ -1079,7 +1079,7 @@ void AntlrNotebookTreeParser::exprheader(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 				else {
 					goto _loop55;
 				}
-
+				
 			}
 			_loop55:;
 			} // ( ... )*
@@ -1106,7 +1106,7 @@ void AntlrNotebookTreeParser::exprheader(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 				else {
 					goto _loop58;
 				}
-
+				
 			}
 			_loop58:;
 			} // ( ... )*
@@ -1121,7 +1121,7 @@ void AntlrNotebookTreeParser::exprheader(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 				else {
 					goto _loop60;
 				}
-
+				
 			}
 			_loop60:;
 			} // ( ... )*
@@ -1148,7 +1148,7 @@ void AntlrNotebookTreeParser::exprheader(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 				else {
 					goto _loop63;
 				}
-
+				
 			}
 			_loop63:;
 			} // ( ... )*
@@ -1163,7 +1163,7 @@ void AntlrNotebookTreeParser::exprheader(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 				else {
 					goto _loop65;
 				}
-
+				
 			}
 			_loop65:;
 			} // ( ... )*
@@ -1190,7 +1190,7 @@ void AntlrNotebookTreeParser::exprheader(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 				else {
 					goto _loop68;
 				}
-
+				
 			}
 			_loop68:;
 			} // ( ... )*
@@ -1205,7 +1205,7 @@ void AntlrNotebookTreeParser::exprheader(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 				else {
 					goto _loop70;
 				}
-
+				
 			}
 			_loop70:;
 			} // ( ... )*
@@ -1232,7 +1232,7 @@ void AntlrNotebookTreeParser::exprheader(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 				else {
 					goto _loop73;
 				}
-
+				
 			}
 			_loop73:;
 			} // ( ... )*
@@ -1247,7 +1247,7 @@ void AntlrNotebookTreeParser::exprheader(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 				else {
 					goto _loop75;
 				}
-
+				
 			}
 			_loop75:;
 			} // ( ... )*
@@ -1274,7 +1274,7 @@ void AntlrNotebookTreeParser::exprheader(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 				else {
 					goto _loop78;
 				}
-
+				
 			}
 			_loop78:;
 			} // ( ... )*
@@ -1289,7 +1289,7 @@ void AntlrNotebookTreeParser::exprheader(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 				else {
 					goto _loop80;
 				}
-
+				
 			}
 			_loop80:;
 			} // ( ... )*
@@ -1316,7 +1316,7 @@ void AntlrNotebookTreeParser::exprheader(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 				else {
 					goto _loop83;
 				}
-
+				
 			}
 			_loop83:;
 			} // ( ... )*
@@ -1331,7 +1331,7 @@ void AntlrNotebookTreeParser::exprheader(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 				else {
 					goto _loop85;
 				}
-
+				
 			}
 			_loop85:;
 			} // ( ... )*
@@ -1358,7 +1358,7 @@ void AntlrNotebookTreeParser::exprheader(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 				else {
 					goto _loop88;
 				}
-
+				
 			}
 			_loop88:;
 			} // ( ... )*
@@ -1373,7 +1373,7 @@ void AntlrNotebookTreeParser::exprheader(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 				else {
 					goto _loop90;
 				}
-
+				
 			}
 			_loop90:;
 			} // ( ... )*
@@ -1400,7 +1400,7 @@ void AntlrNotebookTreeParser::exprheader(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 				else {
 					goto _loop93;
 				}
-
+				
 			}
 			_loop93:;
 			} // ( ... )*
@@ -1415,7 +1415,7 @@ void AntlrNotebookTreeParser::exprheader(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 				else {
 					goto _loop95;
 				}
-
+				
 			}
 			_loop95:;
 			} // ( ... )*
@@ -1442,7 +1442,7 @@ void AntlrNotebookTreeParser::exprheader(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 				else {
 					goto _loop98;
 				}
-
+				
 			}
 			_loop98:;
 			} // ( ... )*
@@ -1457,7 +1457,7 @@ void AntlrNotebookTreeParser::exprheader(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 				else {
 					goto _loop100;
 				}
-
+				
 			}
 			_loop100:;
 			} // ( ... )*
@@ -1484,7 +1484,7 @@ void AntlrNotebookTreeParser::exprheader(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 				else {
 					goto _loop103;
 				}
-
+				
 			}
 			_loop103:;
 			} // ( ... )*
@@ -1499,7 +1499,7 @@ void AntlrNotebookTreeParser::exprheader(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 				else {
 					goto _loop105;
 				}
-
+				
 			}
 			_loop105:;
 			} // ( ... )*
@@ -1526,7 +1526,7 @@ void AntlrNotebookTreeParser::exprheader(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 				else {
 					goto _loop108;
 				}
-
+				
 			}
 			_loop108:;
 			} // ( ... )*
@@ -1541,7 +1541,7 @@ void AntlrNotebookTreeParser::exprheader(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 				else {
 					goto _loop110;
 				}
-
+				
 			}
 			_loop110:;
 			} // ( ... )*
@@ -1568,7 +1568,7 @@ void AntlrNotebookTreeParser::exprheader(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 				else {
 					goto _loop113;
 				}
-
+				
 			}
 			_loop113:;
 			} // ( ... )*
@@ -1583,7 +1583,7 @@ void AntlrNotebookTreeParser::exprheader(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 				else {
 					goto _loop115;
 				}
-
+				
 			}
 			_loop115:;
 			} // ( ... )*
@@ -1610,7 +1610,7 @@ void AntlrNotebookTreeParser::exprheader(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 				else {
 					goto _loop118;
 				}
-
+				
 			}
 			_loop118:;
 			} // ( ... )*
@@ -1625,7 +1625,7 @@ void AntlrNotebookTreeParser::exprheader(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 				else {
 					goto _loop120;
 				}
-
+				
 			}
 			_loop120:;
 			} // ( ... )*
@@ -1652,7 +1652,7 @@ void AntlrNotebookTreeParser::exprheader(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 				else {
 					goto _loop123;
 				}
-
+				
 			}
 			_loop123:;
 			} // ( ... )*
@@ -1667,7 +1667,7 @@ void AntlrNotebookTreeParser::exprheader(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 				else {
 					goto _loop125;
 				}
-
+				
 			}
 			_loop125:;
 			} // ( ... )*
@@ -1694,7 +1694,7 @@ void AntlrNotebookTreeParser::exprheader(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 				else {
 					goto _loop128;
 				}
-
+				
 			}
 			_loop128:;
 			} // ( ... )*
@@ -1709,7 +1709,7 @@ void AntlrNotebookTreeParser::exprheader(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 				else {
 					goto _loop130;
 				}
-
+				
 			}
 			_loop130:;
 			} // ( ... )*
@@ -1736,7 +1736,7 @@ void AntlrNotebookTreeParser::exprheader(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 				else {
 					goto _loop133;
 				}
-
+				
 			}
 			_loop133:;
 			} // ( ... )*
@@ -1751,7 +1751,7 @@ void AntlrNotebookTreeParser::exprheader(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 				else {
 					goto _loop135;
 				}
-
+				
 			}
 			_loop135:;
 			} // ( ... )*
@@ -1778,7 +1778,7 @@ void AntlrNotebookTreeParser::exprheader(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 				else {
 					goto _loop138;
 				}
-
+				
 			}
 			_loop138:;
 			} // ( ... )*
@@ -1793,7 +1793,7 @@ void AntlrNotebookTreeParser::exprheader(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 				else {
 					goto _loop140;
 				}
-
+				
 			}
 			_loop140:;
 			} // ( ... )*
@@ -1820,7 +1820,7 @@ void AntlrNotebookTreeParser::exprheader(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 				else {
 					goto _loop143;
 				}
-
+				
 			}
 			_loop143:;
 			} // ( ... )*
@@ -1835,7 +1835,7 @@ void AntlrNotebookTreeParser::exprheader(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 				else {
 					goto _loop145;
 				}
-
+				
 			}
 			_loop145:;
 			} // ( ... )*
@@ -1862,7 +1862,7 @@ void AntlrNotebookTreeParser::exprheader(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 				else {
 					goto _loop148;
 				}
-
+				
 			}
 			_loop148:;
 			} // ( ... )*
@@ -1877,7 +1877,7 @@ void AntlrNotebookTreeParser::exprheader(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 				else {
 					goto _loop150;
 				}
-
+				
 			}
 			_loop150:;
 			} // ( ... )*
@@ -1904,7 +1904,7 @@ void AntlrNotebookTreeParser::exprheader(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 				else {
 					goto _loop153;
 				}
-
+				
 			}
 			_loop153:;
 			} // ( ... )*
@@ -1919,7 +1919,7 @@ void AntlrNotebookTreeParser::exprheader(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 				else {
 					goto _loop155;
 				}
-
+				
 			}
 			_loop155:;
 			} // ( ... )*
@@ -1946,7 +1946,7 @@ void AntlrNotebookTreeParser::exprheader(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 				else {
 					goto _loop158;
 				}
-
+				
 			}
 			_loop158:;
 			} // ( ... )*
@@ -1961,7 +1961,7 @@ void AntlrNotebookTreeParser::exprheader(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 				else {
 					goto _loop160;
 				}
-
+				
 			}
 			_loop160:;
 			} // ( ... )*
@@ -1988,7 +1988,7 @@ void AntlrNotebookTreeParser::exprheader(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 				else {
 					goto _loop163;
 				}
-
+				
 			}
 			_loop163:;
 			} // ( ... )*
@@ -2003,7 +2003,7 @@ void AntlrNotebookTreeParser::exprheader(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 				else {
 					goto _loop165;
 				}
-
+				
 			}
 			_loop165:;
 			} // ( ... )*
@@ -2030,7 +2030,7 @@ void AntlrNotebookTreeParser::exprheader(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 				else {
 					goto _loop168;
 				}
-
+				
 			}
 			_loop168:;
 			} // ( ... )*
@@ -2045,7 +2045,7 @@ void AntlrNotebookTreeParser::exprheader(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 				else {
 					goto _loop170;
 				}
-
+				
 			}
 			_loop170:;
 			} // ( ... )*
@@ -2090,7 +2090,7 @@ string  AntlrNotebookTreeParser::value(ANTLR_USE_NAMESPACE(antlr)RefAST _t) {
 	ANTLR_USE_NAMESPACE(antlr)RefAST none = ANTLR_USE_NAMESPACE(antlr)nullAST;
 	ANTLR_USE_NAMESPACE(antlr)RefAST nullsym = ANTLR_USE_NAMESPACE(antlr)nullAST;
 	ANTLR_USE_NAMESPACE(antlr)RefAST allsym = ANTLR_USE_NAMESPACE(antlr)nullAST;
-
+	
 	try {      // for error handling
 		if (_t == ANTLR_USE_NAMESPACE(antlr)nullAST )
 			_t = ASTNULL;
@@ -2100,13 +2100,13 @@ string  AntlrNotebookTreeParser::value(ANTLR_USE_NAMESPACE(antlr)RefAST _t) {
 			str = _t;
 			match(_t,QSTRING);
 			_t = _t->getNextSibling();
-
+			
 			//Move this to TextCell.
-
+			
 			//Delete quotes
 			value = str->getText();
 			value.assign(value, 1, value.length()-2);
-
+			
 			break;
 		}
 		case NUMBER:
@@ -2114,9 +2114,9 @@ string  AntlrNotebookTreeParser::value(ANTLR_USE_NAMESPACE(antlr)RefAST _t) {
 			num = _t;
 			match(_t,NUMBER);
 			_t = _t->getNextSibling();
-
+			
 			value = string(num->getText());
-
+			
 			break;
 		}
 		case TRUE_:
@@ -2124,9 +2124,9 @@ string  AntlrNotebookTreeParser::value(ANTLR_USE_NAMESPACE(antlr)RefAST _t) {
 			tr = _t;
 			match(_t,TRUE_);
 			_t = _t->getNextSibling();
-
+			
 			value = string(tr->getText());
-
+			
 			break;
 		}
 		case FALSE_:
@@ -2134,9 +2134,9 @@ string  AntlrNotebookTreeParser::value(ANTLR_USE_NAMESPACE(antlr)RefAST _t) {
 			fl = _t;
 			match(_t,FALSE_);
 			_t = _t->getNextSibling();
-
+			
 			value =string(fl->getText());
-
+			
 			break;
 		}
 		case VALUERIGHT:
@@ -2144,9 +2144,9 @@ string  AntlrNotebookTreeParser::value(ANTLR_USE_NAMESPACE(antlr)RefAST _t) {
 			rightval = _t;
 			match(_t,VALUERIGHT);
 			_t = _t->getNextSibling();
-
+			
 			value = string(rightval->getText());
-
+			
 			break;
 		}
 		case VALUELEFT:
@@ -2154,9 +2154,9 @@ string  AntlrNotebookTreeParser::value(ANTLR_USE_NAMESPACE(antlr)RefAST _t) {
 			leftval = _t;
 			match(_t,VALUELEFT);
 			_t = _t->getNextSibling();
-
+			
 			value = string(leftval->getText());
-
+			
 			break;
 		}
 		case VALUECENTER:
@@ -2164,9 +2164,9 @@ string  AntlrNotebookTreeParser::value(ANTLR_USE_NAMESPACE(antlr)RefAST _t) {
 			centerval = _t;
 			match(_t,VALUECENTER);
 			_t = _t->getNextSibling();
-
+			
 			value = string(centerval->getText());
-
+			
 			break;
 		}
 		case VALUESMALLER:
@@ -2174,9 +2174,9 @@ string  AntlrNotebookTreeParser::value(ANTLR_USE_NAMESPACE(antlr)RefAST _t) {
 			smallerval = _t;
 			match(_t,VALUESMALLER);
 			_t = _t->getNextSibling();
-
+			
 			value = string(smallerval->getText());
-
+			
 			break;
 		}
 		case INHERITED:
@@ -2184,9 +2184,9 @@ string  AntlrNotebookTreeParser::value(ANTLR_USE_NAMESPACE(antlr)RefAST _t) {
 			inherited = _t;
 			match(_t,INHERITED);
 			_t = _t->getNextSibling();
-
+			
 					    value = string(inherited->getText());
-
+					
 			break;
 		}
 		case PAPERWIDTH:
@@ -2194,9 +2194,9 @@ string  AntlrNotebookTreeParser::value(ANTLR_USE_NAMESPACE(antlr)RefAST _t) {
 			paperwidth = _t;
 			match(_t,PAPERWIDTH);
 			_t = _t->getNextSibling();
-
+			
 				        value = string(paperwidth->getText());
-
+				
 			break;
 		}
 		case WINDOWWIDTH:
@@ -2204,9 +2204,9 @@ string  AntlrNotebookTreeParser::value(ANTLR_USE_NAMESPACE(antlr)RefAST _t) {
 			windowwidth = _t;
 			match(_t,WINDOWWIDTH);
 			_t = _t->getNextSibling();
-
+			
 				        value = string(windowwidth->getText());
-
+				
 			break;
 		}
 		case TRADITIONALFORM:
@@ -2214,9 +2214,9 @@ string  AntlrNotebookTreeParser::value(ANTLR_USE_NAMESPACE(antlr)RefAST _t) {
 			tradform = _t;
 			match(_t,TRADITIONALFORM);
 			_t = _t->getNextSibling();
-
+			
 			//value = string(tradform->getText());
-
+			
 			break;
 		}
 		case STANDARDFORM:
@@ -2224,9 +2224,9 @@ string  AntlrNotebookTreeParser::value(ANTLR_USE_NAMESPACE(antlr)RefAST _t) {
 			stdform = _t;
 			match(_t,STANDARDFORM);
 			_t = _t->getNextSibling();
-
+			
 			//value = string(stdform->getText());
-
+			
 			break;
 		}
 		case INPUTFORM:
@@ -2234,9 +2234,9 @@ string  AntlrNotebookTreeParser::value(ANTLR_USE_NAMESPACE(antlr)RefAST _t) {
 			inputform = _t;
 			match(_t,INPUTFORM);
 			_t = _t->getNextSibling();
-
+			
 			//value = string(inputform->getText());
-
+			
 			break;
 		}
 		case OUTPUTFORM:
@@ -2244,9 +2244,9 @@ string  AntlrNotebookTreeParser::value(ANTLR_USE_NAMESPACE(antlr)RefAST _t) {
 			outputform = _t;
 			match(_t,OUTPUTFORM);
 			_t = _t->getNextSibling();
-
+			
 			//value = string(outputform->getText());
-
+			
 			break;
 		}
 		case DEFAULTINPUTFORMATTYPE:
@@ -2254,9 +2254,9 @@ string  AntlrNotebookTreeParser::value(ANTLR_USE_NAMESPACE(antlr)RefAST _t) {
 			defaultinputformattype = _t;
 			match(_t,DEFAULTINPUTFORMATTYPE);
 			_t = _t->getNextSibling();
-
+			
 			value = string(defaultinputformattype->getText());
-
+			
 			break;
 		}
 		case AUTOMATIC:
@@ -2264,9 +2264,9 @@ string  AntlrNotebookTreeParser::value(ANTLR_USE_NAMESPACE(antlr)RefAST _t) {
 			automatic = _t;
 			match(_t,AUTOMATIC);
 			_t = _t->getNextSibling();
-
+			
 			//value = string(automatic->getText());
-
+			
 			break;
 		}
 		case NONESYM:
@@ -2274,9 +2274,9 @@ string  AntlrNotebookTreeParser::value(ANTLR_USE_NAMESPACE(antlr)RefAST _t) {
 			none = _t;
 			match(_t,NONESYM);
 			_t = _t->getNextSibling();
-
+			
 			//value = string(none->getText());
-
+			
 			break;
 		}
 		case NULLSYM:
@@ -2284,9 +2284,9 @@ string  AntlrNotebookTreeParser::value(ANTLR_USE_NAMESPACE(antlr)RefAST _t) {
 			nullsym = _t;
 			match(_t,NULLSYM);
 			_t = _t->getNextSibling();
-
+			
 			value = string(nullsym->getText());
-
+			
 			break;
 		}
 		case ALLSYM:
@@ -2294,9 +2294,9 @@ string  AntlrNotebookTreeParser::value(ANTLR_USE_NAMESPACE(antlr)RefAST _t) {
 			allsym = _t;
 			match(_t,ALLSYM);
 			_t = _t->getNextSibling();
-
+			
 			value = string(allsym->getText());
-
+			
 			break;
 		}
 		default:
@@ -2409,7 +2409,7 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 	ANTLR_USE_NAMESPACE(antlr)RefAST imagerangecache = ANTLR_USE_NAMESPACE(antlr)nullAST;
 	ANTLR_USE_NAMESPACE(antlr)RefAST imagecache = ANTLR_USE_NAMESPACE(antlr)nullAST;
 	ANTLR_USE_NAMESPACE(antlr)RefAST modeleditor = ANTLR_USE_NAMESPACE(antlr)nullAST;
-
+	
 	try {      // for error handling
 		if (_t == ANTLR_USE_NAMESPACE(antlr)nullAST )
 			_t = ASTNULL;
@@ -2419,9 +2419,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			fontslant = _t;
 			match(_t,FONTSLANT);
 			_t = _t->getNextSibling();
-
+			
 			value = string(fontslant->getText());
-
+			
 			break;
 		}
 		case FONTSIZE:
@@ -2429,9 +2429,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			fontsize = _t;
 			match(_t,FONTSIZE);
 			_t = _t->getNextSibling();
-
+			
 			value = string(fontsize->getText());
-
+			
 			break;
 		}
 		case FONTCOLOR:
@@ -2439,9 +2439,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			fontcolor = _t;
 			match(_t,FONTCOLOR);
 			_t = _t->getNextSibling();
-
+			
 			value = string(fontcolor->getText());
-
+			
 			break;
 		}
 		case FONTWEIGHT:
@@ -2449,9 +2449,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			fontweight = _t;
 			match(_t,FONTWEIGHT);
 			_t = _t->getNextSibling();
-
+			
 			value = string(fontweight->getText());
-
+			
 			break;
 		}
 		case FONTFAMILY:
@@ -2459,9 +2459,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			fontfamily = _t;
 			match(_t,FONTFAMILY);
 			_t = _t->getNextSibling();
-
+			
 			value = string(fontfamily->getText());
-
+			
 			break;
 		}
 		case FONTVARIATIONS:
@@ -2469,9 +2469,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			fontvariations = _t;
 			match(_t,FONTVARIATIONS);
 			_t = _t->getNextSibling();
-
+			
 			value = string(fontvariations->getText());
-
+			
 			break;
 		}
 		case TEXTALIGNMENT:
@@ -2479,9 +2479,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			textalignment = _t;
 			match(_t,TEXTALIGNMENT);
 			_t = _t->getNextSibling();
-
+			
 			value = string(textalignment->getText());
-
+			
 			break;
 		}
 		case TEXTJUSTIFICATION:
@@ -2489,9 +2489,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			textjustification = _t;
 			match(_t,TEXTJUSTIFICATION);
 			_t = _t->getNextSibling();
-
+			
 			value = string(textjustification->getText());
-
+			
 			break;
 		}
 		case INITIALIZATIONCELL:
@@ -2499,9 +2499,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			initializationcell = _t;
 			match(_t,INITIALIZATIONCELL);
 			_t = _t->getNextSibling();
-
+			
 			value = string(initializationcell->getText());
-
+			
 			break;
 		}
 		case FORMATTYPE_TOKEN:
@@ -2509,9 +2509,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			formattype = _t;
 			match(_t,FORMATTYPE_TOKEN);
 			_t = _t->getNextSibling();
-
+			
 			value = string(formattype->getText());
-
+			
 			break;
 		}
 		case PAGEWIDTH:
@@ -2519,9 +2519,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			pagewidth = _t;
 			match(_t,PAGEWIDTH);
 			_t = _t->getNextSibling();
-
+			
 			value = string(pagewidth->getText());
-
+			
 			break;
 		}
 		case PAGEHEADERS:
@@ -2529,9 +2529,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			pageheaders = _t;
 			match(_t,PAGEHEADERS);
 			_t = _t->getNextSibling();
-
+			
 			value = string(pageheaders->getText());
-
+			
 			break;
 		}
 		case PAGEHEADERLINES:
@@ -2539,9 +2539,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			pageheaderlines = _t;
 			match(_t,PAGEHEADERLINES);
 			_t = _t->getNextSibling();
-
+			
 			value = string(pageheaderlines->getText());
-
+			
 			break;
 		}
 		case PAGEFOOTERS:
@@ -2549,9 +2549,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			pagefooters = _t;
 			match(_t,PAGEFOOTERS);
 			_t = _t->getNextSibling();
-
+			
 			value = string(pagefooters->getText());
-
+			
 			break;
 		}
 		case PAGEFOOTERLINES:
@@ -2559,9 +2559,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			pagefooterlines = _t;
 			match(_t,PAGEFOOTERLINES);
 			_t = _t->getNextSibling();
-
+			
 			value = string(pagefooterlines->getText());
-
+			
 			break;
 		}
 		case PAGEBREAKBELOW:
@@ -2569,9 +2569,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			pagebreakbelow = _t;
 			match(_t,PAGEBREAKBELOW);
 			_t = _t->getNextSibling();
-
+			
 			value = string(pagebreakbelow->getText());
-
+			
 			break;
 		}
 		case PAGEBREAKWITHIN:
@@ -2579,9 +2579,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			pagebreakwithin = _t;
 			match(_t,PAGEBREAKWITHIN);
 			_t = _t->getNextSibling();
-
+			
 			value = string(pagebreakwithin->getText());
-
+			
 			break;
 		}
 		case BOXMARGINS:
@@ -2589,9 +2589,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			boxmargins = _t;
 			match(_t,BOXMARGINS);
 			_t = _t->getNextSibling();
-
+			
 			value = string(boxmargins->getText());
-
+			
 			break;
 		}
 		case BOXBASELINESHIFT:
@@ -2599,9 +2599,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			boxbaselineshift = _t;
 			match(_t,BOXBASELINESHIFT);
 			_t = _t->getNextSibling();
-
+			
 			value = string(boxbaselineshift->getText());
-
+			
 			break;
 		}
 		case LINESPACING:
@@ -2609,9 +2609,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			linespacing = _t;
 			match(_t,LINESPACING);
 			_t = _t->getNextSibling();
-
+			
 			value = string(linespacing->getText());
-
+			
 			break;
 		}
 		case HYPHENATION:
@@ -2619,9 +2619,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			hyphenation = _t;
 			match(_t,HYPHENATION);
 			_t = _t->getNextSibling();
-
+			
 			value = string(hyphenation->getText());
-
+			
 			break;
 		}
 		case ACTIVE_TOKEN:
@@ -2629,9 +2629,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			activetoken = _t;
 			match(_t,ACTIVE_TOKEN);
 			_t = _t->getNextSibling();
-
+			
 			value = string(activetoken->getText());
-
+			
 			break;
 		}
 		case VISIBLE_TOKEN:
@@ -2639,9 +2639,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			visibletoken = _t;
 			match(_t,VISIBLE_TOKEN);
 			_t = _t->getNextSibling();
-
+			
 			value = string(visibletoken->getText());
-
+			
 			break;
 		}
 		case EVALUATABLE:
@@ -2649,9 +2649,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			evaluatable = _t;
 			match(_t,EVALUATABLE);
 			_t = _t->getNextSibling();
-
+			
 			value = string(evaluatable->getText());
-
+			
 			break;
 		}
 		case BUTTONFUNCTION:
@@ -2659,9 +2659,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			buttonfunction = _t;
 			match(_t,BUTTONFUNCTION);
 			_t = _t->getNextSibling();
-
+			
 			value = string(buttonfunction->getText());
-
+			
 			break;
 		}
 		case BUTTONDATA:
@@ -2669,9 +2669,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			buttondata = _t;
 			match(_t,BUTTONDATA);
 			_t = _t->getNextSibling();
-
+			
 			value = string(buttondata->getText());
-
+			
 			break;
 		}
 		case BUTTONEVALUATOR:
@@ -2679,9 +2679,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			buttonevaluator = _t;
 			match(_t,BUTTONEVALUATOR);
 			_t = _t->getNextSibling();
-
+			
 			value = string(buttonevaluator->getText());
-
+			
 			break;
 		}
 		case BUTTONSTYLE:
@@ -2689,9 +2689,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			buttonstyle = _t;
 			match(_t,BUTTONSTYLE);
 			_t = _t->getNextSibling();
-
+			
 			value = string(buttonstyle->getText());
-
+			
 			break;
 		}
 		case CHARACHTERENCODING:
@@ -2699,9 +2699,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			characterencoding = _t;
 			match(_t,CHARACHTERENCODING);
 			_t = _t->getNextSibling();
-
+			
 			value = string(characterencoding->getText());
-
+			
 			break;
 		}
 		case SHOWSTRINGCHARACTERS:
@@ -2709,9 +2709,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			showstringcharacters = _t;
 			match(_t,SHOWSTRINGCHARACTERS);
 			_t = _t->getNextSibling();
-
+			
 			value = string(showstringcharacters->getText());
-
+			
 			break;
 		}
 		case SCREENRECTANGLE:
@@ -2719,9 +2719,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			screenrectangle = _t;
 			match(_t,SCREENRECTANGLE);
 			_t = _t->getNextSibling();
-
+			
 			value = string(screenrectangle->getText());
-
+			
 			break;
 		}
 		case AUTOGENERATEDPACKAGE:
@@ -2729,9 +2729,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			autogeneratedpackage = _t;
 			match(_t,AUTOGENERATEDPACKAGE);
 			_t = _t->getNextSibling();
-
+			
 			value = string(autogeneratedpackage->getText());
-
+			
 			break;
 		}
 		case AUTOITALICWORDS:
@@ -2739,9 +2739,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			autoitalicwords = _t;
 			match(_t,AUTOITALICWORDS);
 			_t = _t->getNextSibling();
-
+			
 			value = string(autoitalicwords->getText());
-
+			
 			break;
 		}
 		case INPUTAUTOREPLACEMENTS:
@@ -2749,9 +2749,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			inputautoreplacements = _t;
 			match(_t,INPUTAUTOREPLACEMENTS);
 			_t = _t->getNextSibling();
-
+			
 			value = string(inputautoreplacements->getText());
-
+			
 			break;
 		}
 		case SCRIPTMINSIZE:
@@ -2759,9 +2759,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			scriptminsize = _t;
 			match(_t,SCRIPTMINSIZE);
 			_t = _t->getNextSibling();
-
+			
 			value = string(scriptminsize->getText());
-
+			
 			break;
 		}
 		case STYLEMEMULISTING:
@@ -2769,9 +2769,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			stylemenulisting = _t;
 			match(_t,STYLEMEMULISTING);
 			_t = _t->getNextSibling();
-
+			
 			value = string(stylemenulisting->getText());
-
+			
 			break;
 		}
 		case COUNTERINCREMENTS:
@@ -2779,9 +2779,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			counterincrements = _t;
 			match(_t,COUNTERINCREMENTS);
 			_t = _t->getNextSibling();
-
+			
 			value = string(counterincrements->getText());
-
+			
 			break;
 		}
 		case COUNTERASSIGNMENTS:
@@ -2789,9 +2789,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			counterassignments = _t;
 			match(_t,COUNTERASSIGNMENTS);
 			_t = _t->getNextSibling();
-
+			
 			value = string(counterassignments->getText());
-
+			
 			break;
 		}
 		case PRIVATEEVALOPTIONS:
@@ -2799,9 +2799,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			privateevaloptions = _t;
 			match(_t,PRIVATEEVALOPTIONS);
 			_t = _t->getNextSibling();
-
+			
 			value = string(privateevaloptions->getText());
-
+			
 			break;
 		}
 		case GROUPPAGEBREAKWITHIN:
@@ -2809,9 +2809,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			grouppagewithin = _t;
 			match(_t,GROUPPAGEBREAKWITHIN);
 			_t = _t->getNextSibling();
-
+			
 			value = string(grouppagewithin->getText());
-
+			
 			break;
 		}
 		case DEFAULTFORMATTYPE:
@@ -2819,9 +2819,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			defaultformattype = _t;
 			match(_t,DEFAULTFORMATTYPE);
 			_t = _t->getNextSibling();
-
+			
 			value = string(defaultformattype->getText());
-
+			
 			break;
 		}
 		case NUMBERMARKS:
@@ -2829,9 +2829,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			numbermarks = _t;
 			match(_t,NUMBERMARKS);
 			_t = _t->getNextSibling();
-
+			
 			value = string(numbermarks->getText());
-
+			
 			break;
 		}
 		case LINEBREAKADJUSTMENTS:
@@ -2839,9 +2839,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			linebreakadjustments = _t;
 			match(_t,LINEBREAKADJUSTMENTS);
 			_t = _t->getNextSibling();
-
+			
 			value = string(linebreakadjustments->getText());
-
+			
 			break;
 		}
 		case VISIOLINEFORMAT:
@@ -2849,9 +2849,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			visiolineformat = _t;
 			match(_t,VISIOLINEFORMAT);
 			_t = _t->getNextSibling();
-
+			
 			value = string(visiolineformat->getText());
-
+			
 			break;
 		}
 		case VISIOFILLFORMAT:
@@ -2859,9 +2859,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			visiofillformat = _t;
 			match(_t,VISIOFILLFORMAT);
 			_t = _t->getNextSibling();
-
+			
 			value = string(visiofillformat->getText());
-
+			
 			break;
 		}
 		case EXTENT:
@@ -2869,9 +2869,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			extent = _t;
 			match(_t,EXTENT);
 			_t = _t->getNextSibling();
-
+			
 			value = string(extent->getText());
-
+			
 			break;
 		}
 		case NAMEPOSITION:
@@ -2879,9 +2879,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			nameposition = _t;
 			match(_t,NAMEPOSITION);
 			_t = _t->getNextSibling();
-
+			
 			value = string(nameposition->getText());
-
+			
 			break;
 		}
 		case CELLTAGS:
@@ -2889,9 +2889,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			celltags = _t;
 			match(_t,CELLTAGS);
 			_t = _t->getNextSibling();
-
+			
 			value = string(celltags->getText());
-
+			
 			break;
 		}
 		case CELLFRAME:
@@ -2899,9 +2899,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			cellframe = _t;
 			match(_t,CELLFRAME);
 			_t = _t->getNextSibling();
-
+			
 			value = string(cellframe->getText());
-
+			
 			break;
 		}
 		case CELLFRAMECOLOR:
@@ -2909,9 +2909,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			cellframecolor = _t;
 			match(_t,CELLFRAMECOLOR);
 			_t = _t->getNextSibling();
-
+			
 			value = string(cellframecolor->getText());
-
+			
 			break;
 		}
 		case CELLFRAMELABELS:
@@ -2919,9 +2919,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			cellframelabels = _t;
 			match(_t,CELLFRAMELABELS);
 			_t = _t->getNextSibling();
-
+			
 			value = string(cellframelabels->getText());
-
+			
 			break;
 		}
 		case CELLFRAMEMARGINS:
@@ -2929,9 +2929,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			cellframemargins = _t;
 			match(_t,CELLFRAMEMARGINS);
 			_t = _t->getNextSibling();
-
+			
 			value = string(cellframemargins->getText());
-
+			
 			break;
 		}
 		case CELLFRAMELABELMARGINS:
@@ -2939,9 +2939,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			cellframelabelmargins = _t;
 			match(_t,CELLFRAMELABELMARGINS);
 			_t = _t->getNextSibling();
-
+			
 			value = string(cellframelabelmargins->getText());
-
+			
 			break;
 		}
 		case CELLLABRLMARGINS:
@@ -2949,9 +2949,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			celllabelmargins = _t;
 			match(_t,CELLLABRLMARGINS);
 			_t = _t->getNextSibling();
-
+			
 			value = string(celllabelmargins->getText());
-
+			
 			break;
 		}
 		case CELLLABELPOSITIONING:
@@ -2959,9 +2959,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			celllabelpositioning = _t;
 			match(_t,CELLLABELPOSITIONING);
 			_t = _t->getNextSibling();
-
+			
 			value = string(celllabelpositioning->getText());
-
+			
 			break;
 		}
 		case CELLMARGINS:
@@ -2969,9 +2969,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			cellmargins = _t;
 			match(_t,CELLMARGINS);
 			_t = _t->getNextSibling();
-
+			
 					    value = string(cellmargins->getText());
-
+					
 			break;
 		}
 		case CELLDINGBAT:
@@ -2979,9 +2979,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			celldingbat = _t;
 			match(_t,CELLDINGBAT);
 			_t = _t->getNextSibling();
-
+			
 				        value = string(celldingbat->getText());
-
+				
 			break;
 		}
 		case CELLHORIZONTALSCROLL:
@@ -2989,9 +2989,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			cellhorizontalscrolling = _t;
 			match(_t,CELLHORIZONTALSCROLL);
 			_t = _t->getNextSibling();
-
+			
 				        value = string(cellhorizontalscrolling->getText());
-
+				
 			break;
 		}
 		case CELLOPEN:
@@ -2999,9 +2999,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			cellopen = _t;
 			match(_t,CELLOPEN);
 			_t = _t->getNextSibling();
-
+			
 				        value = string(cellopen->getText());
-
+				
 			break;
 		}
 		case CELLGENERATED:
@@ -3009,9 +3009,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			cellgenerated = _t;
 			match(_t,CELLGENERATED);
 			_t = _t->getNextSibling();
-
+			
 			value = string(cellgenerated->getText());
-
+			
 			break;
 		}
 		case SHOWCELLBRACKET:
@@ -3019,9 +3019,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			cellshowbracket = _t;
 			match(_t,SHOWCELLBRACKET);
 			_t = _t->getNextSibling();
-
+			
 			value = string(cellshowbracket->getText());
-
+			
 			break;
 		}
 		case SHOWCELLLABEL:
@@ -3029,9 +3029,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			cellshowlabel = _t;
 			match(_t,SHOWCELLLABEL);
 			_t = _t->getNextSibling();
-
+			
 			value = string(cellshowlabel->getText());
-
+			
 			break;
 		}
 		case CELLBRACKETOPT:
@@ -3039,9 +3039,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			cellbracketoptions = _t;
 			match(_t,CELLBRACKETOPT);
 			_t = _t->getNextSibling();
-
+			
 			value = string(cellbracketoptions->getText());
-
+			
 			break;
 		}
 		case EDITABLE:
@@ -3049,9 +3049,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			editable = _t;
 			match(_t,EDITABLE);
 			_t = _t->getNextSibling();
-
+			
 			value = string(editable->getText());
-
+			
 			break;
 		}
 		case BACKGROUND:
@@ -3059,9 +3059,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			background = _t;
 			match(_t,BACKGROUND);
 			_t = _t->getNextSibling();
-
+			
 			value = string(background->getText());
-
+			
 			break;
 		}
 		case CELLGROUPINGRULES:
@@ -3069,9 +3069,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			cellgroupingrules = _t;
 			match(_t,CELLGROUPINGRULES);
 			_t = _t->getNextSibling();
-
+			
 			value = string(cellgroupingrules->getText());
-
+			
 			break;
 		}
 		case WINDOWSIZE:
@@ -3079,9 +3079,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			windowsize = _t;
 			match(_t,WINDOWSIZE);
 			_t = _t->getNextSibling();
-
+			
 			value = string(windowsize->getText());
-
+			
 			break;
 		}
 		case WINDOWMARGINS:
@@ -3089,9 +3089,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			windowmargins = _t;
 			match(_t,WINDOWMARGINS);
 			_t = _t->getNextSibling();
-
+			
 			value = string(windowmargins->getText());
-
+			
 			break;
 		}
 		case WINDOWFRAME:
@@ -3099,9 +3099,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			windowframe = _t;
 			match(_t,WINDOWFRAME);
 			_t = _t->getNextSibling();
-
+			
 			value = string(windowframe->getText());
-
+			
 			break;
 		}
 		case WINDOWELEMENTS:
@@ -3109,9 +3109,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			windowelements = _t;
 			match(_t,WINDOWELEMENTS);
 			_t = _t->getNextSibling();
-
+			
 			//value = string(attr->getText());
-
+			
 			break;
 		}
 		case WINDOWTITLE:
@@ -3119,9 +3119,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			windowtitle = _t;
 			match(_t,WINDOWTITLE);
 			_t = _t->getNextSibling();
-
+			
 			//value = string(attr->getText());
-
+			
 			break;
 		}
 		case WINDOWTOOLBARS:
@@ -3129,9 +3129,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			windowtoolbars = _t;
 			match(_t,WINDOWTOOLBARS);
 			_t = _t->getNextSibling();
-
+			
 			//value = string(attr->getText());
-
+			
 			break;
 		}
 		case WINDOWMOVEABLE:
@@ -3139,9 +3139,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			windowmoveable = _t;
 			match(_t,WINDOWMOVEABLE);
 			_t = _t->getNextSibling();
-
+			
 			//value = string(attr->getText());
-
+			
 			break;
 		}
 		case WINDOWFLOATING:
@@ -3149,9 +3149,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			windowfloating = _t;
 			match(_t,WINDOWFLOATING);
 			_t = _t->getNextSibling();
-
+			
 			//value = string(attr->getText());
-
+			
 			break;
 		}
 		case WINDOWCLICKSELECT:
@@ -3159,9 +3159,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			windowclickselect = _t;
 			match(_t,WINDOWCLICKSELECT);
 			_t = _t->getNextSibling();
-
+			
 			//value = string(attr->getText());
-
+			
 			break;
 		}
 		case STYLEDEFINITIONS:
@@ -3169,9 +3169,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			styledefinitions = _t;
 			match(_t,STYLEDEFINITIONS);
 			_t = _t->getNextSibling();
-
+			
 			value = string(styledefinitions->getText());
-
+			
 			break;
 		}
 		case FRONTENDVERSION:
@@ -3179,9 +3179,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			frontendversion = _t;
 			match(_t,FRONTENDVERSION);
 			_t = _t->getNextSibling();
-
+			
 			value = string(frontendversion->getText());
-
+			
 			break;
 		}
 		case SCREENSTYLEENV:
@@ -3189,9 +3189,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			screenstyleenv = _t;
 			match(_t,SCREENSTYLEENV);
 			_t = _t->getNextSibling();
-
+			
 			value = string(screenstyleenv->getText());
-
+			
 			break;
 		}
 		case PRINTINGSTYLEENV:
@@ -3199,9 +3199,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			printingstyleenv = _t;
 			match(_t,PRINTINGSTYLEENV);
 			_t = _t->getNextSibling();
-
+			
 			value = string(printingstyleenv->getText());
-
+			
 			break;
 		}
 		case PRINTINGOPTIONS:
@@ -3209,9 +3209,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			printingoptions = _t;
 			match(_t,PRINTINGOPTIONS);
 			_t = _t->getNextSibling();
-
+			
 			value = string(printingoptions->getText());
-
+			
 			break;
 		}
 		case PRINTINGCOPIES:
@@ -3219,9 +3219,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			printingcopies = _t;
 			match(_t,PRINTINGCOPIES);
 			_t = _t->getNextSibling();
-
+			
 			value = string(printingcopies->getText());
-
+			
 			break;
 		}
 		case PRINTINGPAGERANGE:
@@ -3229,9 +3229,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			printingpagerange = _t;
 			match(_t,PRINTINGPAGERANGE);
 			_t = _t->getNextSibling();
-
+			
 			value = string(printingpagerange->getText());
-
+			
 			break;
 		}
 		case PRIVATEFONTOPTIONS:
@@ -3239,9 +3239,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			privatefontoption = _t;
 			match(_t,PRIVATEFONTOPTIONS);
 			_t = _t->getNextSibling();
-
+			
 			value = string(privatefontoption->getText());
-
+			
 			break;
 		}
 		case MAGNIFICATION:
@@ -3249,9 +3249,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			magnification = _t;
 			match(_t,MAGNIFICATION);
 			_t = _t->getNextSibling();
-
+			
 			value = string(magnification->getText());
-
+			
 			break;
 		}
 		case GENERATEDCELL:
@@ -3259,9 +3259,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			generatedCell = _t;
 			match(_t,GENERATEDCELL);
 			_t = _t->getNextSibling();
-
+			
 			value = string(generatedCell->getText());
-
+			
 			break;
 		}
 		case CELLAUTOOVRT:
@@ -3269,9 +3269,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			cellautoovrt = _t;
 			match(_t,CELLAUTOOVRT);
 			_t = _t->getNextSibling();
-
+			
 			value = string(cellautoovrt->getText());
-
+			
 			break;
 		}
 		case IMAGESIZE:
@@ -3279,9 +3279,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			imagesize = _t;
 			match(_t,IMAGESIZE);
 			_t = _t->getNextSibling();
-
+			
 			value = string(imagesize->getText());
-
+			
 			break;
 		}
 		case IMAGEMARGINS:
@@ -3289,9 +3289,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			imagemargins = _t;
 			match(_t,IMAGEMARGINS);
 			_t = _t->getNextSibling();
-
+			
 			value = string(imagemargins->getText());
-
+			
 			break;
 		}
 		case IMAGEREGION:
@@ -3299,9 +3299,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			imageregion = _t;
 			match(_t,IMAGEREGION);
 			_t = _t->getNextSibling();
-
+			
 			value = string(imageregion->getText());
-
+			
 			break;
 		}
 		case IMAGERANGECACHE:
@@ -3309,9 +3309,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			imagerangecache = _t;
 			match(_t,IMAGERANGECACHE);
 			_t = _t->getNextSibling();
-
+			
 			value = string(imagerangecache->getText());
-
+			
 			break;
 		}
 		case IMAGECACHE:
@@ -3319,9 +3319,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			imagecache = _t;
 			match(_t,IMAGECACHE);
 			_t = _t->getNextSibling();
-
+			
 			value = string(imagecache->getText());
-
+			
 			break;
 		}
 		case NOT_MATH_MODELEDITOR:
@@ -3329,9 +3329,9 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 			modeleditor = _t;
 			match(_t,NOT_MATH_MODELEDITOR);
 			_t = _t->getNextSibling();
-
+			
 			value = string(modeleditor->getText());
-
+			
 			break;
 		}
 		default:
@@ -3353,22 +3353,22 @@ void AntlrNotebookTreeParser::rule(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 	rules_t &rules
 ) {
 	ANTLR_USE_NAMESPACE(antlr)RefAST rule_AST_in = (_t == ANTLR_USE_NAMESPACE(antlr)RefAST(ASTNULL)) ? ANTLR_USE_NAMESPACE(antlr)nullAST : _t;
-
+	
 	ostringstream attoutput;
 	ostringstream valoutput;
 	result_t attribute(attoutput);
 	result_t value(valoutput);
-
-
+	
+	
 	try {      // for error handling
 		if (_t == ANTLR_USE_NAMESPACE(antlr)nullAST )
 			_t = ASTNULL;
 		switch ( _t->getType()) {
 		case RULE:
 		{
-
-
-
+			
+			
+			
 			ANTLR_USE_NAMESPACE(antlr)RefAST __t173 = _t;
 			ANTLR_USE_NAMESPACE(antlr)RefAST tmp43_AST_in = _t;
 			match(_t,RULE);
@@ -3379,10 +3379,10 @@ void AntlrNotebookTreeParser::rule(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 			_t = _retTree;
 			_t = __t173;
 			_t = _t->getNextSibling();
-
+			
 			//rules.push_back(Rule(attribute.first.str(), value.first.str()));
 			rules.push_back(rule_t(attribute.first.str(), value.first.str()));
-
+			
 			break;
 		}
 		case RULE_SMALL:
@@ -3397,8 +3397,8 @@ void AntlrNotebookTreeParser::rule(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 			_t = _retTree;
 			_t = __t174;
 			_t = _t->getNextSibling();
-
-
+			
+			
 			break;
 		}
 		case RULEDELAYED:
@@ -3413,10 +3413,10 @@ void AntlrNotebookTreeParser::rule(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 			_t = _retTree;
 			_t = __t175;
 			_t = _t->getNextSibling();
-
+			
 			//rules.push_back(Rule(attribute.first.str(), value.first.str()));
 			rules.push_back(rule_t(attribute.first.str(), value.first.str()));
-
+			
 			break;
 		}
 		default:
@@ -3437,17 +3437,17 @@ void AntlrNotebookTreeParser::listelement(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 	result_t &list
 ) {
 	ANTLR_USE_NAMESPACE(antlr)RefAST listelement_AST_in = (_t == ANTLR_USE_NAMESPACE(antlr)RefAST(ASTNULL)) ? ANTLR_USE_NAMESPACE(antlr)nullAST : _t;
-
+	
 	ostringstream resoutput;
 	result_t result(resoutput);
-
-
+	
+	
 	try {      // for error handling
 		expr(_t,result);
 		_t = _retTree;
-
+		
 		list.first << result.first.str();
-
+		
 	}
 	catch (ANTLR_USE_NAMESPACE(antlr)RecognitionException& ex) {
 		reportError(ex);
@@ -3644,36 +3644,36 @@ const char* AntlrNotebookTreeParser::tokenNames[] = {
 };
 
 const unsigned long AntlrNotebookTreeParser::_tokenSet_0_data_[] = { 4294952944UL, 4294959103UL, 4294967295UL, 4294934527UL, 3758096371UL, 467456UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL };
-// "FrontEnd" "List" "list" "Notebook" "Cell" "TextData" "CellGroupData"
-// "GrayLevel" "RGBColor" "FileName" "StyleBox" "StyleData" "BoxData" "ButtonBox"
-// "FormBox" "RowBox" "GridBox" "TagBox" "CounterBox" "AdjustmentBox" "SuperscriptBox"
-// "SubscriptBox" "SubsuperscriptBox" "UnderscriptBox" "OverscriptBox"
-// "UnderoverscriptBox" "FractionBox" "SqrtBox" "RadicalBox" "InterpretationBox"
-// "Annotation" "Equal" "Diagram" "Icon" "Polygon" "Ellipse" "Line" "DirectedInfinity"
-// "OLEData" "FontSlant" "FontSize" "FontColor" "FontWeight" "FontFamily"
-// "FontVariations" "TextAlignment" "TextJustification" "InitializationCell"
-// "FormatType" "PageWidth" "PageHeaders" "PageHeaderLines" "PageFooters"
-// "PageFooterLines" "PageBreakBelow" "PageBreakWithin" "BoxMargins" "BoxBaselineShift"
-// "LineSpacing" "Hyphenation" "Active" "Visible" "Evaluatable" "ButtonFunction"
-// "ButtonData" "ButtonEvaluator" "ButtonStyle" "CharacterEncoding" "ShowStringCharacters"
-// "ScreenRectangle" "AutoGeneratedPackage" "AutoItalicWords" "InputAutoReplacements"
-// "ScriptMinSize" "StyleMenuListing" "CounterIncrements" "CounterAssignments"
-// "PrivateEvaluationOptions" "GroupPageBreakWithin" "DefaultFormatType"
-// "NumberMarks" "LinebreakAdjustments" "VisioLineFormat" "VisioFillFormat"
-// "Extent" "NamePosition" "CellTags" "CellFrame" "CellFrameColor" "CellFrameLabels"
-// "CellFrameMargins" "CellFrameLabelMargins" "CellLabelMargins" "CellLabelPositioning"
-// "CellMargins" "CellDingbat" "CellHorizontalScrolling" "CellOpen" "GeneratedCell"
-// "ShowCellBracket" "ShowCellLabel" "CellBracketOptions" "Editable" "CellGroupingRules"
-// "WindowSize" "WindowMargins" "WindowFrame" "WindowElements" "WindowTitle"
-// "WindowToolbars" "WindowMoveable" "WindowFloating" "WindowClickSelect"
-// "StyleDefinitions" "FrontEndVersion" "ScreenStyleEnvironment" "PrintingStyleEnvironment"
-// "PrintingOptions" "PrintingCopies" "PrintingPageRange" "PrivateFontOptions"
-// "Right" "Left" "Center" "Smaller" "Inherited" "PaperWidth" "WindowWidth"
-// "True" "False" "Automatic" "TraditionalForm" "StandardForm" "InputForm"
-// "OutputForm" "DefaultInputFormatType" "Null" "None" "All" "GraphicsData"
-// "ImageSize" "ImageMargins" "ImageRegion" "ImageRangeCache" "ImageCache"
-// "ModelEditor" "CellAutoOverwrite" "Magnification" NUMBER QSTRING LISTBODY
-// BACKGROUND GENERATEDCELL
+// "FrontEnd" "List" "list" "Notebook" "Cell" "TextData" "CellGroupData" 
+// "GrayLevel" "RGBColor" "FileName" "StyleBox" "StyleData" "BoxData" "ButtonBox" 
+// "FormBox" "RowBox" "GridBox" "TagBox" "CounterBox" "AdjustmentBox" "SuperscriptBox" 
+// "SubscriptBox" "SubsuperscriptBox" "UnderscriptBox" "OverscriptBox" 
+// "UnderoverscriptBox" "FractionBox" "SqrtBox" "RadicalBox" "InterpretationBox" 
+// "Annotation" "Equal" "Diagram" "Icon" "Polygon" "Ellipse" "Line" "DirectedInfinity" 
+// "OLEData" "FontSlant" "FontSize" "FontColor" "FontWeight" "FontFamily" 
+// "FontVariations" "TextAlignment" "TextJustification" "InitializationCell" 
+// "FormatType" "PageWidth" "PageHeaders" "PageHeaderLines" "PageFooters" 
+// "PageFooterLines" "PageBreakBelow" "PageBreakWithin" "BoxMargins" "BoxBaselineShift" 
+// "LineSpacing" "Hyphenation" "Active" "Visible" "Evaluatable" "ButtonFunction" 
+// "ButtonData" "ButtonEvaluator" "ButtonStyle" "CharacterEncoding" "ShowStringCharacters" 
+// "ScreenRectangle" "AutoGeneratedPackage" "AutoItalicWords" "InputAutoReplacements" 
+// "ScriptMinSize" "StyleMenuListing" "CounterIncrements" "CounterAssignments" 
+// "PrivateEvaluationOptions" "GroupPageBreakWithin" "DefaultFormatType" 
+// "NumberMarks" "LinebreakAdjustments" "VisioLineFormat" "VisioFillFormat" 
+// "Extent" "NamePosition" "CellTags" "CellFrame" "CellFrameColor" "CellFrameLabels" 
+// "CellFrameMargins" "CellFrameLabelMargins" "CellLabelMargins" "CellLabelPositioning" 
+// "CellMargins" "CellDingbat" "CellHorizontalScrolling" "CellOpen" "GeneratedCell" 
+// "ShowCellBracket" "ShowCellLabel" "CellBracketOptions" "Editable" "CellGroupingRules" 
+// "WindowSize" "WindowMargins" "WindowFrame" "WindowElements" "WindowTitle" 
+// "WindowToolbars" "WindowMoveable" "WindowFloating" "WindowClickSelect" 
+// "StyleDefinitions" "FrontEndVersion" "ScreenStyleEnvironment" "PrintingStyleEnvironment" 
+// "PrintingOptions" "PrintingCopies" "PrintingPageRange" "PrivateFontOptions" 
+// "Right" "Left" "Center" "Smaller" "Inherited" "PaperWidth" "WindowWidth" 
+// "True" "False" "Automatic" "TraditionalForm" "StandardForm" "InputForm" 
+// "OutputForm" "DefaultInputFormatType" "Null" "None" "All" "GraphicsData" 
+// "ImageSize" "ImageMargins" "ImageRegion" "ImageRangeCache" "ImageCache" 
+// "ModelEditor" "CellAutoOverwrite" "Magnification" NUMBER QSTRING LISTBODY 
+// BACKGROUND GENERATEDCELL 
 const ANTLR_USE_NAMESPACE(antlr)BitSet AntlrNotebookTreeParser::_tokenSet_0(_tokenSet_0_data_,12);
 
 

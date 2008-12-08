@@ -1562,10 +1562,10 @@ namespace IAEX
     if(compoundwidget && compoundwidget->isVisible())
     {
 
-      compoundwidget->setMinimumHeight(250);
+      compoundwidget->setMinimumHeight(550);
       compoundwidget->gvBottom->show();
       compoundwidget->gvLeft->show();
-      height += 250;
+      height += 550;
 
     }
 
@@ -1670,6 +1670,7 @@ namespace IAEX
     }
     contentChanged();
   }
+
   bool GraphCell::isPlot2(QString text)
   {
     QRegExp exp("plot\\(.*\\)|plotParametric\\(.*\\)|plotAll" );
@@ -1830,76 +1831,48 @@ namespace IAEX
         compoundwidget->setMinimumHeight(200);
         }
         */
-      } else if (visualize) {
+      } 
+      else if (visualize) 
+      {
         if(!compoundwidget->visWidget->getServerState())
           compoundwidget->visWidget->setServerState(true);
 
         compoundwidget->showVis();
         showGraphics();
+      }
 
-        /*				if(!compoundwidget->isVisible())
-        {
-        setHeight(height() +400);
-        compoundwidget->show();
-        compoundwidget->setMinimumHeight(400);
-        }*/
+      /*				if(!compoundwidget->isVisible())
+      {
+      setHeight(height() +400);
+      compoundwidget->show();
+      compoundwidget->setMinimumHeight(400);
+      }*/
 
-        // 2006-02-02 AF, Added try-catch
-        QString res, error;
+      // 2006-02-02 AF, Added try-catch
+      QString res, error;
 
-        // 2005-11-24 AF, added check to see if the user wants to quit
-        if( 0 == expr.indexOf( "quit()", 0, Qt::CaseSensitive ))
-        {
-          qApp->closeAllWindows();
-          input_->blockSignals(false);
-          output_->blockSignals(false);
-          return;
-        }
-
-        //			if(!newPlot)
-        if(oldPlot)
-        {
-          try
-          {
-            delegate()->evalExpression( expr );
-          }
-          catch( exception &e )
-          {
-            exceptionInEval(e);
-            input_->blockSignals(false);
-            output_->blockSignals(false);
-            return;
-          }
-
-          res = delegate()->getResult();
-
-
-          try
-          {
-            error = delegate()->getError();
-          }
-          catch( exception &e )
-          {
-            exceptionInEval(e);
-            input_->blockSignals(false);
-            output_->blockSignals(false);
-            return;
-          }
-
-
-        }
-        /*			else if (visualize) {
-        // Run visualize command
-        try
-        {
-        delegate()->evalExpression( expr );
-        }
-        catch( exception &e )
-        {
-        exceptionInEval(e);
+      // 2005-11-24 AF, added check to see if the user wants to quit
+      if( 0 == expr.indexOf( "quit()", 0, Qt::CaseSensitive ))
+      {
+        qApp->closeAllWindows();
         input_->blockSignals(false);
         output_->blockSignals(false);
         return;
+      }
+
+      //			if(!newPlot)
+      if(oldPlot)
+      {
+        try
+        {
+          delegate()->evalExpression( expr );
+        }
+        catch( exception &e )
+        {
+          exceptionInEval(e);
+          input_->blockSignals(false);
+          output_->blockSignals(false);
+          return;
         }
 
         res = delegate()->getResult();
@@ -1907,854 +1880,884 @@ namespace IAEX
 
         try
         {
-        error = delegate()->getError();
+          error = delegate()->getError();
         }
         catch( exception &e )
         {
-        exceptionInEval(e);
-        input_->blockSignals(false);
-        output_->blockSignals(false);
-        return;
+          exceptionInEval(e);
+          input_->blockSignals(false);
+          output_->blockSignals(false);
+          return;
         }
 
-        // Run getannotations command
-        int start = expr.indexOf('(') + 1;
-        int length = expr.lastIndexOf(')') - start;
-        QString modelName = expr.mid(start, length);
-        QString command = "getComponentAnnotations(" + modelName + ");";
-        try
-        {
-        delegate()->evalExpression( command );
-        }
-        catch( exception &e )
-        {
-        exceptionInEval(e);
-        input_->blockSignals(false);
-        output_->blockSignals(false);
-        return;
-        }
-
-        QString annotations = delegate()->getResult();
-
-
-        try
-        {
-        error = delegate()->getError();
-        }
-        catch( exception &e )
-        {
-        exceptionInEval(e);
-        input_->blockSignals(false);
-        output_->blockSignals(false);
-        return;
-        }
-
-        }*/
-        else
-        {
-          try
-          {
-            EvalThread* et = new EvalThread(delegate(), expr);
-            connect(et, SIGNAL(finished()), this, SLOT(delegateFinished()));
-            et->start();
-            //				delegate()->evalExpression( expr );
-          }
-          catch( exception &e )
-          {
-            exceptionInEval(e);
-            input_->blockSignals(false);
-            output_->blockSignals(false);
-            return;
-          }
-        }
-
-        //////////
-        if(oldPlot)
-        {
-          if(error.isEmpty() )
-          {
-
-            output_->selectAll();
-            output_->textCursor().insertText( "{creating plot}" );
-            //output_->setPlainText( "{creating plot}" );
-            output_->update();
-            QCoreApplication::processEvents();
-
-            int sleepTime = 1;
-            bool firstTry = true;
-            while( true )
-            {
-              QString filename = "";
-              bool foundIt = false;
-              /* Search BOTH $OPENMODELICA/tmp and the current directory! */
-              if( dir1.exists( imagename )) { filename = filename1; foundIt = true; }
-              else if( dir2.exists( imagename )) { filename = filename2; foundIt = true; }
-
-              if (foundIt)
-              {
-                QImage *image = new QImage( filename );
-                if( !image->isNull() )
-                {
-                  QString newname = document_->addImage( image );
-                  QTextCharFormat format = output_->currentCharFormat();
-
-                  QTextImageFormat imageformat;
-                  imageformat.merge( format );
-                  imageformat.setHeight( image->height() );
-                  imageformat.setWidth( image->width() );
-                  imageformat.setName( newname );
-
-                  output_->selectAll();
-                  //output_->textCursor().insertText( "{Plot - Generated by PtPlot}" );
-                  //output_->setPlainText("{Plot}\n");
-                  QTextCursor outCursor = output_->textCursor();
-                  //outCursor.movePosition( QTextCursor::End );
-                  outCursor.insertImage( imageformat );
-                  break;
-                }
-                else
-                {
-                  if( firstTry )
-                  {
-                    firstTry = false;
-                    delete image;
-                  }
-                  else
-                  {
-                    output_->selectAll();
-                    output_->textCursor().insertText( "[Error] Unable to read plot image \"" +
-                      filename1 + "or " + filename2 + "\". Please retry." );
-                    setState(ERROR);
-                    break;
-                  }
-                }
-              }
-
-              if( sleepTime > 25 )
-              {
-                output_->selectAll();
-                output_->textCursor().insertText( "[Error] Unable to find plot image \"" +
-                  filename1 + " or " + filename2  + "\"" );
-                setState(ERROR);
-                break;
-              }
-
-              SleeperThread::msleep( 1000 );
-              sleepTime++;
-            }
-
-          }
-          else
-          {
-            // check if resualt is empty
-            if( res.isEmpty() && error.isEmpty() )
-            {
-              setState(FINISHED);
-              res = "[done]";
-            }
-            if( !error.isEmpty() )
-            {
-              res += QString("\n") + error;
-              //		palette.setColor(input_->backgroundRole(), QColor(200,00,00));
-              setState(ERROR);
-            }
-            else
-              setState(FINISHED);
-            //						palette.setColor(input_->backgroundRole(), QColor(200,200,255));
-
-            //		QPalette palette;
-
-            //		palette.setColor(input_->backgroundRole(), QColor(Qt::green));
-            //		input_->setPalette(palette);
-
-            output_->selectAll();
-            output_->textCursor().insertText( res );
-            //output_->setPlainText( res );
-          }
-
-          ++numEvals_;
-          /* remove the image */
-          if( dir1.exists( imagename ))
-            dir1.remove( imagename );
-          if( dir2.exists( imagename ))
-            dir2.remove( imagename );
-
-          contentChanged();
-
-          //Emit that the text have changed
-          emit textChanged(true);
-
-
-        }
 
       }
-      else //!hasDelegate
+      /*			else if (visualize) {
+      // Run visualize command
+      try
       {
-        cout << "Not delegate on GraphCell" << endl;
-        setState(ERROR);
+      delegate()->evalExpression( expr );
       }
-      input_->blockSignals(false);
-      output_->blockSignals(false);
-
-    }
-
-    /*
-    // get the result
-    QString res = delegate()->getResult();
-    QString error;
-
-    // 2006-02-02 AF, Added try-catch
-    try
-    {
-    error = delegate()->getError();
-    }
-    catch( exception &e )
-    {
-    exceptionInEval(e);
-    input_->blockSignals(false);
-    output_->blockSignals(false);
-    return;
-    }
-    */
-    // if the expression is a plot command and the is no errors
-    // in the result, find the image and insert it into the
-    // output part of the cell.
-
-
-    /*
-    if( isPlot() && error.isEmpty() )
-    {
-    output_->selectAll();
-    output_->textCursor().insertText( "{creating plot}" );
-    //output_->setPlainText( "{creating plot}" );
-    output_->update();
-    QCoreApplication::processEvents();
-
-    int sleepTime = 1;
-    bool firstTry = true;
-    while( true )
-    {
-    if( dir.exists( imagename ))
-    {
-    QImage *image = new QImage( filename );
-    if( !image->isNull() )
-    {
-    QString newname = document_->addImage( image );
-    QTextCharFormat format = output_->currentCharFormat();
-
-    QTextImageFormat imageformat;
-    imageformat.merge( format );
-    imageformat.setHeight( image->height() );
-    imageformat.setWidth( image->width() );
-    imageformat.setName( newname );
-
-    output_->selectAll();
-    //output_->textCursor().insertText( "{Plot - Generated by PtPlot}" );
-    //output_->setPlainText("{Plot}\n");
-    QTextCursor outCursor = output_->textCursor();
-    //outCursor.movePosition( QTextCursor::End );
-    outCursor.insertImage( imageformat );
-    break;
-    }
-    else
-    {
-    if( firstTry )
-    {
-    firstTry = false;
-    delete image;
-    }
-    else
-    {
-    output_->selectAll();
-    output_->textCursor().insertText( "[Error] Unable to read plot image \"" + filename + "\". Please retry." );
-    //output_->setPlainText( "[Error] Unable to read plot image \"" + imagename + "\". Please retry." );
-    break;
-    }
-    }
-    }
-
-    if( sleepTime > 25 )
-    {
-    output_->selectAll();
-    output_->textCursor().insertText( "[Error] Unable to find plot image \"" + filename + "\"" );
-    //						output_->setPlainText( "[Error] Unable to found plot image \"" + imagename + "\"" );
-    break;
-    }
-
-    SleeperThread::msleep( 1000 );
-    sleepTime++;
-    }
-
-    }
-    else
-    {
-    */
-    // check if resualt is empty
-    /*
-    if( res.isEmpty() && error.isEmpty() )
-    res = "[done]";
-
-    if( !error.isEmpty() )
-    res += QString("\n") + error;
-
-    output_->selectAll();
-    output_->textCursor().insertText( res );
-    //output_->setPlainText( res );
-    //			}
-
-    ++numEvals_;
-    dir.remove( imagename );
-
-
-    contentChanged();
-
-    //Emit that the text have changed
-    emit textChanged(true);
-    }
-    else
-    cout << "Not delegate on GraphCell" << endl;
-
-    input_->blockSignals(false);
-    output_->blockSignals(false);
-    */
-    /*
-    }
-
-
-    else
-    cout << "Not delegate on GraphCell" << endl;
-
-    input_->blockSignals(false);
-    output_->blockSignals(false);
-
-
-
-    }
-    */
-  }
-
-  void GraphCell::delegateFinished()
-  {
-
-    delete sender();
-
-    QString res = delegate()->getResult();
-    QString error;
-
-    // 2006-02-02 AF, Added try-catch
-    try
-    {
-      error = delegate()->getError();
-    }
-    catch( exception &e )
-    {
+      catch( exception &e )
+      {
       exceptionInEval(e);
       input_->blockSignals(false);
       output_->blockSignals(false);
-
-      setState(ERROR);
       return;
-    }
-    /*
-    //////////////////
-    QString openmodelica( getenv( "OPENMODELICAHOME" ) );
-    if( openmodelica.isEmpty() )
-    QMessageBox::critical( 0, "OpenModelica Error", "Could not find environment variable OPENMODELICAHOME; OMNotebook will therefore not work correctly" );
-
-    if( openmodelica.endsWith("/") || openmodelica.endsWith( "\\") )
-    openmodelica += "bin/";
-    else
-    openmodelica += "/bin/";
-
-    QDir dir;
-    dir.setPath( openmodelica );
-    QString imagename = "omc_tmp_plot.png";
-
-    QString filename = dir.absolutePath();
-    if( !filename.endsWith( "/" ) )
-    filename += "/";
-    filename += imagename;
-
-    if( isPlot() && error.isEmpty() )
-    {
-    output_->selectAll();
-    output_->textCursor().insertText( "{creating plot}" );
-    //output_->setPlainText( "{creating plot}" );
-    output_->update();
-    QCoreApplication::processEvents();
-
-
-    int sleepTime = 1;
-    bool firstTry = true;
-    while( true )
-    {
-    if( dir.exists( imagename ))
-    {
-    QImage *image = new QImage( filename );
-    if( !image->isNull() )
-    {
-    QString newname = document_->addImage( image );
-    QTextCharFormat format = output_->currentCharFormat();
-
-    QTextImageFormat imageformat;
-    imageformat.merge( format );
-    imageformat.setHeight( image->height() );
-    imageformat.setWidth( image->width() );
-    imageformat.setName( newname );
-
-    output_->selectAll();
-    //output_->textCursor().insertText( "{Plot - Generated by PtPlot}" );
-    //output_->setPlainText("{Plot}\n");
-    QTextCursor outCursor = output_->textCursor();
-    //outCursor.movePosition( QTextCursor::End );
-    outCursor.insertImage( imageformat );
-    break;
-    }
-    else
-    {
-    if( firstTry )
-    {
-    firstTry = false;
-    delete image;
-    }
-    else
-    {
-    output_->selectAll();
-    output_->textCursor().insertText( "[Error] Unable to read plot image \"" + filename + "\". Please retry." );
-    //output_->setPlainText( "[Error] Unable to read plot image \"" + imagename + "\". Please retry." );
-    break;
-    }
-    }
-    }
-
-    if( sleepTime > 25 )
-    {
-    output_->selectAll();
-    output_->textCursor().insertText( "[Error] Unable to find plot image \"" + filename + "\"" );
-    //						output_->setPlainText( "[Error] Unable to find plot image \"" + imagename + "\"" );
-    break;
-    }
-
-    SleeperThread::msleep( 1000 );
-    sleepTime++;
-    }
-
-    }
-    else
-    {
-    ///////////////
-    */
-
-    if( res.isEmpty() && error.isEmpty() )
-    {
-      res = "[done]";
-      setState(FINISHED);
-    }
-
-    if( !error.isEmpty() )
-    {
-      setState(ERROR);
-      res += QString("\n") + error;
-    }
-    else
-      setState(FINISHED);
-
-
-
-    QRegExp e("([\\d]+:[\\d]+-[\\d]+:[\\d]+)|([\\d]+:[\\d]+)");
-
-    bool b;
-    int p=0;
-
-
-    output_->selectAll();
-    output_->textCursor().insertText( res );
-
-    QList<QAction*> actions;
-    while((p=res.indexOf(e, p)) > 0)
-    {
-
-      QTextCharFormat f;
-      f.setAnchor(true);
-
-
-
-
-      if(e.cap(1).size() > e.cap(2).size())
-      {
-        f.setAnchorHref(e.cap(1));
-        QTextCursor c(output_->textCursor());
-        c.setPosition(p);
-        c.setPosition(p+=e.cap(1).size(), QTextCursor::KeepAnchor);
-
-
-        f.setAnchor(true);
-        f.setFontUnderline(true);
-        c.mergeCharFormat(f);
-        c.setPosition(output_->toPlainText().size());
-        output_->setTextCursor(c);
-
-
-        MyAction* a = new MyAction(e.cap(1), 0);
-        connect(a, SIGNAL(triggered()), a, SLOT(triggered2()));
-        connect(a, SIGNAL(urlClicked(const QUrl&)), output_, SIGNAL(anchorClicked(const QUrl&)));
-        actions.push_back(a);
       }
+
+      res = delegate()->getResult();
+
+
+      try
+      {
+      error = delegate()->getError();
+      }
+      catch( exception &e )
+      {
+      exceptionInEval(e);
+      input_->blockSignals(false);
+      output_->blockSignals(false);
+      return;
+      }
+
+      // Run getannotations command
+      int start = expr.indexOf('(') + 1;
+      int length = expr.lastIndexOf(')') - start;
+      QString modelName = expr.mid(start, length);
+      QString command = "getComponentAnnotations(" + modelName + ");";
+      try
+      {
+      delegate()->evalExpression( command );
+      }
+      catch( exception &e )
+      {
+      exceptionInEval(e);
+      input_->blockSignals(false);
+      output_->blockSignals(false);
+      return;
+      }
+
+      QString annotations = delegate()->getResult();
+
+
+      try
+      {
+      error = delegate()->getError();
+      }
+      catch( exception &e )
+      {
+      exceptionInEval(e);
+      input_->blockSignals(false);
+      output_->blockSignals(false);
+      return;
+      }
+
+      }*/
       else
       {
-        f.setAnchorHref(e.cap(2));
-        QTextCursor c(output_->textCursor());
-        c.setPosition(p);
-        c.setPosition(p+=e.cap(2).size(), QTextCursor::KeepAnchor);
-
-
-        f.setAnchor(true);
-        f.setFontUnderline(true);
-        c.mergeCharFormat(f);
-        c.setPosition(output_->toPlainText().size());
-        output_->setTextCursor(c);
-
-        MyAction* a = new MyAction(e.cap(2), 0);
-        connect(a, SIGNAL(triggered()), a, SLOT(triggered2()));
-        connect(a, SIGNAL(urlClicked(const QUrl&)), output_, SIGNAL(anchorClicked(const QUrl&)));
-        actions.push_back(a);
-
-        /*
-
-
-        f.setAnchorName(e.cap(2));
-        output_->textCursor().setPosition(p);
-        output_->textCursor().setPosition(p+e.cap(2).size(), QTextCursor::KeepAnchor);
-        //				output_->textCursor().mergeBlockCharFormat(f);
-        output_->textCursor().charFormat().setAnchor(true);
-        //				output_->textCursor().mergeCharFormat(f);
-        */
-
+        try
+        {
+          EvalThread* et = new EvalThread(delegate(), expr);
+          connect(et, SIGNAL(finished()), this, SLOT(delegateFinished()));
+          et->start();
+          //				delegate()->evalExpression( expr );
+        }
+        catch( exception &e )
+        {
+          exceptionInEval(e);
+          input_->blockSignals(false);
+          output_->blockSignals(false);
+          return;
+        }
       }
 
+      //////////
+      if(oldPlot)
+      {
+        if(error.isEmpty() )
+        {
 
-      //		output_->setCurrentCharFormat(f);
-      //			output_->textCursor().setBlockCharFormat(f);
+          output_->selectAll();
+          output_->textCursor().insertText( "{creating plot}" );
+          //output_->setPlainText( "{creating plot}" );
+          output_->update();
+          QCoreApplication::processEvents();
 
+          int sleepTime = 1;
+          bool firstTry = true;
+          while( true )
+          {
+            QString filename = "";
+            bool foundIt = false;
+            /* Search BOTH $OPENMODELICA/tmp and the current directory! */
+            if( dir1.exists( imagename )) { filename = filename1; foundIt = true; }
+            else if( dir2.exists( imagename )) { filename = filename2; foundIt = true; }
 
+            if (foundIt)
+            {
+              QImage *image = new QImage( filename );
+              if( !image->isNull() )
+              {
+                QString newname = document_->addImage( image );
+                QTextCharFormat format = output_->currentCharFormat();
+
+                QTextImageFormat imageformat;
+                imageformat.merge( format );
+                imageformat.setHeight( image->height() );
+                imageformat.setWidth( image->width() );
+                imageformat.setName( newname );
+
+                output_->selectAll();
+                //output_->textCursor().insertText( "{Plot - Generated by PtPlot}" );
+                //output_->setPlainText("{Plot}\n");
+                QTextCursor outCursor = output_->textCursor();
+                //outCursor.movePosition( QTextCursor::End );
+                outCursor.insertImage( imageformat );
+                break;
+              }
+              else
+              {
+                if( firstTry )
+                {
+                  firstTry = false;
+                  delete image;
+                }
+                else
+                {
+                  output_->selectAll();
+                  output_->textCursor().insertText( "[Error] Unable to read plot image \"" +
+                    filename1 + "or " + filename2 + "\". Please retry." );
+                  setState(ERROR);
+                  break;
+                }
+              }
+            }
+
+            if( sleepTime > 25 )
+            {
+              output_->selectAll();
+              output_->textCursor().insertText( "[Error] Unable to find plot image \"" +
+                filename1 + " or " + filename2  + "\"" );
+              setState(ERROR);
+              break;
+            }
+
+            SleeperThread::msleep( 1000 );
+            sleepTime++;
+          }
+
+        }
+        else
+        {
+          // check if resualt is empty
+          if( res.isEmpty() && error.isEmpty() )
+          {
+            setState(FINISHED);
+            res = "[done]";
+          }
+          if( !error.isEmpty() )
+          {
+            res += QString("\n") + error;
+            //		palette.setColor(input_->backgroundRole(), QColor(200,00,00));
+            setState(ERROR);
+          }
+          else
+            setState(FINISHED);
+          //						palette.setColor(input_->backgroundRole(), QColor(200,200,255));
+
+          //		QPalette palette;
+
+          //		palette.setColor(input_->backgroundRole(), QColor(Qt::green));
+          //		input_->setPalette(palette);
+
+          output_->selectAll();
+          output_->textCursor().insertText( res );
+          //output_->setPlainText( res );
+        }
+
+        ++numEvals_;
+        /* remove the image */
+        if( dir1.exists( imagename ))
+          dir1.remove( imagename );
+        if( dir2.exists( imagename ))
+          dir2.remove( imagename );
+
+        contentChanged();
+
+        //Emit that the text have changed
+        emit textChanged(true);
+
+      //}
 
     }
-    emit setStatusMenu(actions);
-    /*
-    else
+    else //!hasDelegate
     {
-    output_->selectAll();
-    output_->textCursor().insertText( res );
-
+      cout << "Not delegate on GraphCell" << endl;
+      setState(ERROR);
     }
-    */
-    //		QMessageBox::information(0, QVariant(res.indexOf(e2)).toString(), QVariant(res.indexOf(e)).toString());
-    //output_->setPlainText( res );
-    //			}
+    input_->blockSignals(false);
+    output_->blockSignals(false);
 
-    ++numEvals_;
-    //		dir.remove( imagename );
-    //} ////fjass
-
-    contentChanged();
-
-    //Emit that the text have changed
-    emit textChanged(true);
   }
-  /*!
-  * \author Anders Fernström
-  * \date 2006-02-02
-  * \date 2006-02-09 (update)
-  *
-  *\brief Method for handleing exceptions in eval()
+
+  /*
+  // get the result
+  QString res = delegate()->getResult();
+  QString error;
+
+  // 2006-02-02 AF, Added try-catch
+  try
+  {
+  error = delegate()->getError();
+  }
+  catch( exception &e )
+  {
+  exceptionInEval(e);
+  input_->blockSignals(false);
+  output_->blockSignals(false);
+  return;
+  }
+  */
+  // if the expression is a plot command and the is no errors
+  // in the result, find the image and insert it into the
+  // output part of the cell.
+
+
+  /*
+  if( isPlot() && error.isEmpty() )
+  {
+  output_->selectAll();
+  output_->textCursor().insertText( "{creating plot}" );
+  //output_->setPlainText( "{creating plot}" );
+  output_->update();
+  QCoreApplication::processEvents();
+
+  int sleepTime = 1;
+  bool firstTry = true;
+  while( true )
+  {
+  if( dir.exists( imagename ))
+  {
+  QImage *image = new QImage( filename );
+  if( !image->isNull() )
+  {
+  QString newname = document_->addImage( image );
+  QTextCharFormat format = output_->currentCharFormat();
+
+  QTextImageFormat imageformat;
+  imageformat.merge( format );
+  imageformat.setHeight( image->height() );
+  imageformat.setWidth( image->width() );
+  imageformat.setName( newname );
+
+  output_->selectAll();
+  //output_->textCursor().insertText( "{Plot - Generated by PtPlot}" );
+  //output_->setPlainText("{Plot}\n");
+  QTextCursor outCursor = output_->textCursor();
+  //outCursor.movePosition( QTextCursor::End );
+  outCursor.insertImage( imageformat );
+  break;
+  }
+  else
+  {
+  if( firstTry )
+  {
+  firstTry = false;
+  delete image;
+  }
+  else
+  {
+  output_->selectAll();
+  output_->textCursor().insertText( "[Error] Unable to read plot image \"" + filename + "\". Please retry." );
+  //output_->setPlainText( "[Error] Unable to read plot image \"" + imagename + "\". Please retry." );
+  break;
+  }
+  }
+  }
+
+  if( sleepTime > 25 )
+  {
+  output_->selectAll();
+  output_->textCursor().insertText( "[Error] Unable to find plot image \"" + filename + "\"" );
+  //						output_->setPlainText( "[Error] Unable to found plot image \"" + imagename + "\"" );
+  break;
+  }
+
+  SleeperThread::msleep( 1000 );
+  sleepTime++;
+  }
+
+  }
+  else
+  {
+  */
+  // check if resualt is empty
+  /*
+  if( res.isEmpty() && error.isEmpty() )
+  res = "[done]";
+
+  if( !error.isEmpty() )
+  res += QString("\n") + error;
+
+  output_->selectAll();
+  output_->textCursor().insertText( res );
+  //output_->setPlainText( res );
+  //			}
+
+  ++numEvals_;
+  dir.remove( imagename );
+
+
+  contentChanged();
+
+  //Emit that the text have changed
+  emit textChanged(true);
+  }
+  else
+  cout << "Not delegate on GraphCell" << endl;
+
+  input_->blockSignals(false);
+  output_->blockSignals(false);
+  */
+  /*
+  }
+
+
+  else
+  cout << "Not delegate on GraphCell" << endl;
+
+  input_->blockSignals(false);
+  output_->blockSignals(false);
+
+
+
+  }
+  */
+}
+
+void GraphCell::delegateFinished()
+{
+
+  delete sender();
+
+  QString res = delegate()->getResult();
+  QString error;
+
+  // 2006-02-02 AF, Added try-catch
+  try
+  {
+    error = delegate()->getError();
+  }
+  catch( exception &e )
+  {
+    exceptionInEval(e);
+    input_->blockSignals(false);
+    output_->blockSignals(false);
+
+    setState(ERROR);
+    return;
+  }
+  /*
+  //////////////////
+  QString openmodelica( getenv( "OPENMODELICAHOME" ) );
+  if( openmodelica.isEmpty() )
+  QMessageBox::critical( 0, "OpenModelica Error", "Could not find environment variable OPENMODELICAHOME; OMNotebook will therefore not work correctly" );
+
+  if( openmodelica.endsWith("/") || openmodelica.endsWith( "\\") )
+  openmodelica += "bin/";
+  else
+  openmodelica += "/bin/";
+
+  QDir dir;
+  dir.setPath( openmodelica );
+  QString imagename = "omc_tmp_plot.png";
+
+  QString filename = dir.absolutePath();
+  if( !filename.endsWith( "/" ) )
+  filename += "/";
+  filename += imagename;
+
+  if( isPlot() && error.isEmpty() )
+  {
+  output_->selectAll();
+  output_->textCursor().insertText( "{creating plot}" );
+  //output_->setPlainText( "{creating plot}" );
+  output_->update();
+  QCoreApplication::processEvents();
+
+
+  int sleepTime = 1;
+  bool firstTry = true;
+  while( true )
+  {
+  if( dir.exists( imagename ))
+  {
+  QImage *image = new QImage( filename );
+  if( !image->isNull() )
+  {
+  QString newname = document_->addImage( image );
+  QTextCharFormat format = output_->currentCharFormat();
+
+  QTextImageFormat imageformat;
+  imageformat.merge( format );
+  imageformat.setHeight( image->height() );
+  imageformat.setWidth( image->width() );
+  imageformat.setName( newname );
+
+  output_->selectAll();
+  //output_->textCursor().insertText( "{Plot - Generated by PtPlot}" );
+  //output_->setPlainText("{Plot}\n");
+  QTextCursor outCursor = output_->textCursor();
+  //outCursor.movePosition( QTextCursor::End );
+  outCursor.insertImage( imageformat );
+  break;
+  }
+  else
+  {
+  if( firstTry )
+  {
+  firstTry = false;
+  delete image;
+  }
+  else
+  {
+  output_->selectAll();
+  output_->textCursor().insertText( "[Error] Unable to read plot image \"" + filename + "\". Please retry." );
+  //output_->setPlainText( "[Error] Unable to read plot image \"" + imagename + "\". Please retry." );
+  break;
+  }
+  }
+  }
+
+  if( sleepTime > 25 )
+  {
+  output_->selectAll();
+  output_->textCursor().insertText( "[Error] Unable to find plot image \"" + filename + "\"" );
+  //						output_->setPlainText( "[Error] Unable to find plot image \"" + imagename + "\"" );
+  break;
+  }
+
+  SleeperThread::msleep( 1000 );
+  sleepTime++;
+  }
+
+  }
+  else
+  {
+  ///////////////
   */
 
-  void GraphCell::setState(int state_)
+  if( res.isEmpty() && error.isEmpty() )
   {
-    input_->state = state_;
-    switch(state_)
+    res = "[done]";
+    setState(FINISHED);
+  }
+
+  if( !error.isEmpty() )
+  {
+    setState(ERROR);
+    res += QString("\n") + error;
+  }
+  else
+    setState(FINISHED);
+
+
+
+  QRegExp e("([\\d]+:[\\d]+-[\\d]+:[\\d]+)|([\\d]+:[\\d]+)");
+
+  bool b;
+  int p=0;
+
+
+  output_->selectAll();
+  output_->textCursor().insertText( res );
+
+  QList<QAction*> actions;
+  while((p=res.indexOf(e, p)) > 0)
+  {
+
+    QTextCharFormat f;
+    f.setAnchor(true);
+
+
+
+
+    if(e.cap(1).size() > e.cap(2).size())
     {
-    case MODIFIED:
-      emit newState("Ready");
-      break;
-    case EVAL:
-      emit newState("Evaluating...");
-      break;
-    case FINISHED:
-      emit newState("Done");
-      break;
-    case ERROR:
-      emit newState("Error");
-      break;
+      f.setAnchorHref(e.cap(1));
+      QTextCursor c(output_->textCursor());
+      c.setPosition(p);
+      c.setPosition(p+=e.cap(1).size(), QTextCursor::KeepAnchor);
+
+
+      f.setAnchor(true);
+      f.setFontUnderline(true);
+      c.mergeCharFormat(f);
+      c.setPosition(output_->toPlainText().size());
+      output_->setTextCursor(c);
+
+
+      MyAction* a = new MyAction(e.cap(1), 0);
+      connect(a, SIGNAL(triggered()), a, SLOT(triggered2()));
+      connect(a, SIGNAL(urlClicked(const QUrl&)), output_, SIGNAL(anchorClicked(const QUrl&)));
+      actions.push_back(a);
+    }
+    else
+    {
+      f.setAnchorHref(e.cap(2));
+      QTextCursor c(output_->textCursor());
+      c.setPosition(p);
+      c.setPosition(p+=e.cap(2).size(), QTextCursor::KeepAnchor);
+
+
+      f.setAnchor(true);
+      f.setFontUnderline(true);
+      c.mergeCharFormat(f);
+      c.setPosition(output_->toPlainText().size());
+      output_->setTextCursor(c);
+
+      MyAction* a = new MyAction(e.cap(2), 0);
+      connect(a, SIGNAL(triggered()), a, SLOT(triggered2()));
+      connect(a, SIGNAL(urlClicked(const QUrl&)), output_, SIGNAL(anchorClicked(const QUrl&)));
+      actions.push_back(a);
+
+      /*
+
+
+      f.setAnchorName(e.cap(2));
+      output_->textCursor().setPosition(p);
+      output_->textCursor().setPosition(p+e.cap(2).size(), QTextCursor::KeepAnchor);
+      //				output_->textCursor().mergeBlockCharFormat(f);
+      output_->textCursor().charFormat().setAnchor(true);
+      //				output_->textCursor().mergeCharFormat(f);
+      */
 
     }
 
+
+    //		output_->setCurrentCharFormat(f);
+    //			output_->textCursor().setBlockCharFormat(f);
+
+
+
+  }
+  emit setStatusMenu(actions);
+  /*
+  else
+  {
+  output_->selectAll();
+  output_->textCursor().insertText( res );
+
+  }
+  */
+  //		QMessageBox::information(0, QVariant(res.indexOf(e2)).toString(), QVariant(res.indexOf(e)).toString());
+  //output_->setPlainText( res );
+  //			}
+
+  ++numEvals_;
+  //		dir.remove( imagename );
+  //} ////fjass
+
+  contentChanged();
+
+  //Emit that the text have changed
+  emit textChanged(true);
+}
+/*!
+* \author Anders Fernström
+* \date 2006-02-02
+* \date 2006-02-09 (update)
+*
+*\brief Method for handleing exceptions in eval()
+*/
+
+void GraphCell::setState(int state_)
+{
+  input_->state = state_;
+  switch(state_)
+  {
+  case MODIFIED:
+    emit newState("Ready");
+    break;
+  case EVAL:
+    emit newState("Evaluating...");
+    break;
+  case FINISHED:
+    emit newState("Done");
+    break;
+  case ERROR:
+    emit newState("Error");
+    break;
 
   }
 
 
-  void GraphCell::exceptionInEval(exception &e)
+}
+
+
+void GraphCell::exceptionInEval(exception &e)
+{
+  // 2006-0-09 AF, try to reconnect to OMC first.
+  try
   {
-    // 2006-0-09 AF, try to reconnect to OMC first.
-    try
+    delegate_->closeConnection();
+    delegate_->reconnect();
+    eval();
+  }
+  catch( exception &e )
+  {
+    // unable to reconnect, ask if user want to restart omc.
+    QString msg = QString( e.what() ) + "\n\nUnable to reconnect with OMC. Do you want to restart OMC?";
+    int result = QMessageBox::critical( 0, tr("Communication Error with OMC"),
+      msg,
+      QMessageBox::Yes | QMessageBox::Default,
+      QMessageBox::No );
+
+    if( result == QMessageBox::Yes )
     {
       delegate_->closeConnection();
-      delegate_->reconnect();
-      eval();
-    }
-    catch( exception &e )
-    {
-      // unable to reconnect, ask if user want to restart omc.
-      QString msg = QString( e.what() ) + "\n\nUnable to reconnect with OMC. Do you want to restart OMC?";
-      int result = QMessageBox::critical( 0, tr("Communication Error with OMC"),
-        msg,
-        QMessageBox::Yes | QMessageBox::Default,
-        QMessageBox::No );
-
-      if( result == QMessageBox::Yes )
+      if( delegate_->startDelegate() )
       {
-        delegate_->closeConnection();
-        if( delegate_->startDelegate() )
-        {
-          // 2006-03-14 AF, wait before trying to reconnect,
-          // give OMC time to start up
-          SleeperThread::msleep( 1000 );
+        // 2006-03-14 AF, wait before trying to reconnect,
+        // give OMC time to start up
+        SleeperThread::msleep( 1000 );
 
-          //delegate_->closeConnection();
-          try
-          {
-            delegate_->reconnect();
-            eval();
-          }
-          catch( exception &e )
-          {
-            QMessageBox::critical( 0, tr("Communication Error"),
-              tr("<B>Unable to communication correctlly with OMC.</B>") );
-          }
+        //delegate_->closeConnection();
+        try
+        {
+          delegate_->reconnect();
+          eval();
+        }
+        catch( exception &e )
+        {
+          QMessageBox::critical( 0, tr("Communication Error"),
+            tr("<B>Unable to communication correctlly with OMC.</B>") );
         }
       }
     }
   }
+}
 
-  /*!
-  * \author Anders Fernström
-  * \date 2005-12-15
-  *
-  *\brief Get/Insert the command that match the last word in the
-  * input editor.
+/*!
+* \author Anders Fernström
+* \date 2005-12-15
+*
+*\brief Get/Insert the command that match the last word in the
+* input editor.
+*/
+void GraphCell::command()
+{
+  CommandCompletion *commandcompletion = CommandCompletion::instance( "commands.xml" );
+  QTextCursor cursor = input_->textCursor();
+
+  if( commandcompletion->insertCommand( cursor ))
+    input_->setTextCursor( cursor );
+}
+
+/*!
+* \author Anders Fernström
+* \date 2005-12-15
+*
+*\brief Get/Insert the next command that match the last word in
+* the input editor.
+*/
+void GraphCell::nextCommand()
+{
+  qDebug("Next Command");
+  CommandCompletion *commandcompletion = CommandCompletion::instance( "commands.xml" );
+  QTextCursor cursor = input_->textCursor();
+
+  if( commandcompletion->nextCommand( cursor ))
+    input_->setTextCursor( cursor );
+}
+
+/*!
+* \author Anders Fernström
+* \date 2005-12-15
+*
+*\brief Select the next field in the command, if any exists
+*/
+void GraphCell::nextField()
+{
+  qDebug("Next Field");
+  CommandCompletion *commandcompletion = CommandCompletion::instance( "commands.xml" );
+  QTextCursor cursor = input_->textCursor();
+
+  if( commandcompletion->nextField( cursor ))
+    input_->setTextCursor( cursor );
+}
+
+/*!
+* \author Anders Fernström
+* \date 2005-12-29
+* \date 2006-01-16 (update)
+*
+* \breif adds the input text editor to the highlighter thread
+* when text have changed.
+*
+* 2006-01-16 AF, don't add text editor if MyTextEdit2 says NO
+*/
+void GraphCell::addToHighlighter()
+{
+  //		QMessageBox::information(0, "uu3", "addToHighlighter");
+  emit textChanged(true);
+  if( input_->toPlainText().isEmpty() )
+    return;
+
+  // 2006-01-16 AF, Don't add the text editor if MyTextEdit2
+  // don't allow it. MyTextEdit2 says no if the user removes
+  // text (backspace or delete).
+  if( dynamic_cast<MyTextEdit2 *>(input_)->isStopingHighlighter() )
+    return;
+
+  //		QMessageBox::information(0,"uu3", "add2");
+
+  HighlighterThread *thread = HighlighterThread::instance();
+  thread->addEditor( input_ );
+}
+
+/*!
+* \author Anders Fernström
+* \date 2006-01-17
+*
+* \breif set the correct style if the charFormat is changed and the
+* cell is empty. This is done because otherwise the style is lost if
+* all text is removed inside a cell.
+*/
+void GraphCell::charFormatChanged(const QTextCharFormat &)
+{
+  //if( input_->toPlainText().isEmpty() )
+  //{
+  input_->blockSignals( true );
+  input_->setAlignment( (Qt::AlignmentFlag)style_.alignment() );
+  input_->mergeCurrentCharFormat( (*style_.textCharFormat()) );
+  input_->document()->rootFrame()->setFrameFormat( (*style_.textFrameFormat()) );
+  input_->blockSignals( false );
+  contentChanged();
+  //}
+}
+
+
+
+
+// ***************************************************************
+
+
+/*! \brief Sets the evaulator delegate.
+*/
+void GraphCell::setDelegate(InputCellDelegate *d)
+{
+  delegate_ = d;
+}
+
+InputCellDelegate *GraphCell::delegate()
+{
+  if(!hasDelegate())
+    throw runtime_error("No delegate.");
+
+  return delegate_;
+}
+
+
+
+bool GraphCell::hasDelegate()
+{
+  return delegate_ != 0;
+}
+
+
+
+
+
+
+
+
+
+
+/*! \brief Do not use this member.
+*
+* This is an ugly part of the cell structure.
+*/
+void GraphCell::addCellWidgets()
+{
+  layout_->addWidget(input_,0,0);
+
+  if(evaluated_)
+    layout_->addWidget(output_,1,0);
+}
+
+void GraphCell::removeCellWidgets()
+{
+  /*
+  // PORT >> layout_->remove(input_);
+  if(evaluated_)
+  layout_->remove(output_);
   */
-  void GraphCell::command()
-  {
-    CommandCompletion *commandcompletion = CommandCompletion::instance( "commands.xml" );
-    QTextCursor cursor = input_->textCursor();
 
-    if( commandcompletion->insertCommand( cursor ))
-      input_->setTextCursor( cursor );
+  layout_->removeWidget(input_);
+  if(evaluated_)
+    layout_->removeWidget(output_);
+}
+
+/*! \brief resets the input cell. Removes all output data and
+*  restores the initial state.
+*/
+void GraphCell::clear()
+{
+  if(evaluated_)
+  {
+    output_->clear();
+    evaluated_ = false;
+    // PORT >> layout_->remove(output_);
+    layout_->removeWidget(output_);
   }
 
-  /*!
-  * \author Anders Fernström
-  * \date 2005-12-15
-  *
-  *\brief Get/Insert the next command that match the last word in
-  * the input editor.
-  */
-  void GraphCell::nextCommand()
+  //input_->setReadOnly(false);
+  input_->setReadOnly(true);
+  input_->clear();
+  treeView()->setClosed(false); //Notis this
+  setClosed(true);
+}
+
+/*!
+* Resize textcell when the mainwindow is resized. This because the
+* cellcontent should always be visible.
+*
+* Added by AF, copied from textcell.cpp
+*/
+void GraphCell::resizeEvent(QResizeEvent *event)
+{
+  contentChanged();
+  Cell::resizeEvent(event);
+}
+
+
+
+
+
+
+
+void GraphCell::mouseDoubleClickEvent(QMouseEvent *)
+{
+  // PORT >>if(treeView()->hasMouse())
+  if(treeView()->testAttribute(Qt::WA_UnderMouse))
   {
-    qDebug("Next Command");
-    CommandCompletion *commandcompletion = CommandCompletion::instance( "commands.xml" );
-    QTextCursor cursor = input_->textCursor();
-
-    if( commandcompletion->nextCommand( cursor ))
-      input_->setTextCursor( cursor );
+    setClosed(!closed_);
   }
+}
 
-  /*!
-  * \author Anders Fernström
-  * \date 2005-12-15
-  *
-  *\brief Select the next field in the command, if any exists
-  */
-  void GraphCell::nextField()
-  {
-    qDebug("Next Field");
-    CommandCompletion *commandcompletion = CommandCompletion::instance( "commands.xml" );
-    QTextCursor cursor = input_->textCursor();
+void GraphCell::accept(Visitor &v)
+{
+  v.visitGraphCellNodeBefore(this);
 
-    if( commandcompletion->nextField( cursor ))
-      input_->setTextCursor( cursor );
-  }
+  if(hasChilds())
+    child()->accept(v);
 
-  /*!
-  * \author Anders Fernström
-  * \date 2005-12-29
-  * \date 2006-01-16 (update)
-  *
-  * \breif adds the input text editor to the highlighter thread
-  * when text have changed.
-  *
-  * 2006-01-16 AF, don't add text editor if MyTextEdit2 says NO
-  */
-  void GraphCell::addToHighlighter()
-  {
-    //		QMessageBox::information(0, "uu3", "addToHighlighter");
-    emit textChanged(true);
-    if( input_->toPlainText().isEmpty() )
-      return;
+  v.visitGraphCellNodeAfter(this);
 
-    // 2006-01-16 AF, Don't add the text editor if MyTextEdit2
-    // don't allow it. MyTextEdit2 says no if the user removes
-    // text (backspace or delete).
-    if( dynamic_cast<MyTextEdit2 *>(input_)->isStopingHighlighter() )
-      return;
-
-    //		QMessageBox::information(0,"uu3", "add2");
-
-    HighlighterThread *thread = HighlighterThread::instance();
-    thread->addEditor( input_ );
-  }
-
-  /*!
-  * \author Anders Fernström
-  * \date 2006-01-17
-  *
-  * \breif set the correct style if the charFormat is changed and the
-  * cell is empty. This is done because otherwise the style is lost if
-  * all text is removed inside a cell.
-  */
-  void GraphCell::charFormatChanged(const QTextCharFormat &)
-  {
-    //if( input_->toPlainText().isEmpty() )
-    //{
-    input_->blockSignals( true );
-    input_->setAlignment( (Qt::AlignmentFlag)style_.alignment() );
-    input_->mergeCurrentCharFormat( (*style_.textCharFormat()) );
-    input_->document()->rootFrame()->setFrameFormat( (*style_.textFrameFormat()) );
-    input_->blockSignals( false );
-    contentChanged();
-    //}
-  }
-
-
-
-
-  // ***************************************************************
-
-
-  /*! \brief Sets the evaulator delegate.
-  */
-  void GraphCell::setDelegate(InputCellDelegate *d)
-  {
-    delegate_ = d;
-  }
-
-  InputCellDelegate *GraphCell::delegate()
-  {
-    if(!hasDelegate())
-      throw runtime_error("No delegate.");
-
-    return delegate_;
-  }
-
-
-
-  bool GraphCell::hasDelegate()
-  {
-    return delegate_ != 0;
-  }
-
-
-
-
-
-
-
-
-
-
-  /*! \brief Do not use this member.
-  *
-  * This is an ugly part of the cell structure.
-  */
-  void GraphCell::addCellWidgets()
-  {
-    layout_->addWidget(input_,0,0);
-
-    if(evaluated_)
-      layout_->addWidget(output_,1,0);
-  }
-
-  void GraphCell::removeCellWidgets()
-  {
-    /*
-    // PORT >> layout_->remove(input_);
-    if(evaluated_)
-    layout_->remove(output_);
-    */
-
-    layout_->removeWidget(input_);
-    if(evaluated_)
-      layout_->removeWidget(output_);
-  }
-
-  /*! \brief resets the input cell. Removes all output data and
-  *  restores the initial state.
-  */
-  void GraphCell::clear()
-  {
-    if(evaluated_)
-    {
-      output_->clear();
-      evaluated_ = false;
-      // PORT >> layout_->remove(output_);
-      layout_->removeWidget(output_);
-    }
-
-    //input_->setReadOnly(false);
-    input_->setReadOnly(true);
-    input_->clear();
-    treeView()->setClosed(false); //Notis this
-    setClosed(true);
-  }
-
-  /*!
-  * Resize textcell when the mainwindow is resized. This because the
-  * cellcontent should always be visible.
-  *
-  * Added by AF, copied from textcell.cpp
-  */
-  void GraphCell::resizeEvent(QResizeEvent *event)
-  {
-    contentChanged();
-    Cell::resizeEvent(event);
-  }
-
-
-
-
-
-
-
-  void GraphCell::mouseDoubleClickEvent(QMouseEvent *)
-  {
-    // PORT >>if(treeView()->hasMouse())
-    if(treeView()->testAttribute(Qt::WA_UnderMouse))
-    {
-      setClosed(!closed_);
-    }
-  }
-
-  void GraphCell::accept(Visitor &v)
-  {
-    v.visitGraphCellNodeBefore(this);
-
-    if(hasChilds())
-      child()->accept(v);
-
-    v.visitGraphCellNodeAfter(this);
-
-    if(hasNext())
-      next()->accept(v);
-  }
+  if(hasNext())
+    next()->accept(v);
+}
 
 }
