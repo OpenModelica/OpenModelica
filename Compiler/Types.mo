@@ -178,12 +178,12 @@ public
 type FuncArg = tuple<Ident, Type> "- Function Argument" ;
 
 public
-uniontype Const "The degree of constantness of an expression is determined by the Const
-    datatype. Variables declared as \'constant\' will get C_CONST constantness.
-    Variables declared as \'parameter\' will get C_PARAM constantness and
-    all other variables are not constant and will get C_VAR constantness.
-
-  - Variable properties"
+uniontype Const 
+"The degree of constantness of an expression is determined by the Const datatype. 
+ Variables declared as \'constant\' will get C_CONST constantness.
+ Variables declared as \'parameter\' will get C_PARAM constantness and
+ all other variables are not constant and will get C_VAR constantness.
+ - Variable properties"
   record C_CONST end C_CONST;
 
   record C_PARAM "\'constant\'s, should always be evaluated" end C_PARAM;
@@ -835,8 +835,7 @@ algorithm
     case ((T_ENUMERATION(names = (l1 :: rest1),varLst = vl1),p1),(T_ENUMERATION(names = (l2 :: rest2),varLst = vl2),p2))
       equation
         equality(l2 = l1);
-        res = subtype((T_ENUMERATION(rest1,vl1),p1),
-          (T_ENUMERATION(rest2,vl2),p2));
+        res = subtype((T_ENUMERATION(rest1,vl1),p1),(T_ENUMERATION(rest2,vl2),p2));
       then
         res;
     case ((T_ENUMERATION(names = {}),_),(T_ENUMERATION(names = _),_)) then true;
@@ -2548,8 +2547,7 @@ end getPropType;
 public function elabType "function: elabType
   author: ??
 
-  Elaborates a type
-"
+  Elaborates a type"
   input Type inType;
   output Exp.Type outType;
 algorithm
@@ -2573,10 +2571,9 @@ algorithm
         Exp.T_ARRAY(t_1,dims);
 
     // Complext type that is subtype of primitive type.
-    case ( (T_COMPLEX(_,_,SOME(t)),_))
-    then elabType(t);
+    case ( (T_COMPLEX(_,_,SOME(t)),_)) then elabType(t);
 
-        // MetaModelica extension
+    // MetaModelica extension
     case ((T_LIST(t),_))
       equation
         t_1 = elabType(t);
@@ -2742,22 +2739,19 @@ algorithm
   end matchcontinue;
 end vectorizableType;
 
-public function typeConvert "function: typeConvert
-
+public function typeConvert 
+"function: typeConvert
   This functions converts the expression in the first argument to
   the type specified in the third argument.  The current type of the
   expression is given in the second argument.
-
-  If no type conversion is possible, this function fails.
-"
+  If no type conversion is possible, this function fails."
   input Exp.Exp inExp1;
   input Type inType2;
   input Type inType3;
   output Exp.Exp outExp;
   output Type outType;
 algorithm
-  (outExp,outType):=
-  matchcontinue (inExp1,inType2,inType3)
+  (outExp,outType) := matchcontinue (inExp1,inType2,inType3)
     local
       list<Exp.Exp> elist_1,elist;
       Exp.Type at,t;
@@ -2896,13 +2890,25 @@ algorithm
       then
         (Exp.TUPLE(elist_1),(T_TUPLE(tys_1),p2));
 
-        /* Enumeration */
+    // Enumeration
     case (exp,(T_ENUM(),_),(T_ENUMERATION(names = l,varLst = v),p2)) then (exp,(T_ENUMERATION(l,v),p2));
+    // int to Enumeration conversion
+    // case (exp,(T_INTEGER(varLstInt = v),p2),(T_ENUM(),_)) then (exp,(T_INTEGER(v),p2));
+    /*
+    // Enumeration to int conversion
+    case (exp,(T_ENUM(),_),(T_INTEGER(varLstInt = v),p2)) then (exp,(T_INTEGER(v),p2));
+    // int to int conversion
+    case (exp,(T_INTEGER(_),_),(T_INTEGER(varLstInt = v),p2)) then (exp,(T_INTEGER(v),p2));
+    // Enumeration 
+    case (exp,(T_ENUMERATION(names = _,varLst = _),_),(T_INTEGER(varLstInt = v),p2))
+      equation
+      then (exp,(T_INTEGER(v),p2));    
+    */
 
-        /* Implicit conversion from Integer to Real */
+    /* Implicit conversion from Integer to Real */
     case (e,(T_INTEGER(varLstInt = v),_),(T_REAL(varLstReal = _),p)) then (Exp.CAST(Exp.REAL(),e),(T_REAL(v),p));
 
-        /* Complex type inheriting primitive type */
+    /* Complex type inheriting primitive type */
     case (e, (T_COMPLEX(complexTypeOption = SOME(t1)),_),t2) equation
       (e_1,t_1) = typeConvert(e,t1,t2);
     then (e_1,t_1);
@@ -2919,7 +2925,7 @@ algorithm
         str = printTypeStr(t1);
         Debug.fprint("tcvt", str);
         Debug.fprint("tcvt", ", ");
-        str = printTypeStr(t1);
+        str = printTypeStr(t2);
         Debug.fprint("tcvt", str);
         Debug.fprint("tcvt", "\n");
       then

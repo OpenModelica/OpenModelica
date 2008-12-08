@@ -35,6 +35,30 @@
  */
 
 /*
+ * adrpo 2008-12-02
+ * http://www.cse.yorku.ca/~oz/hash.html
+ * hash functions which could be useful to replace System__hash:
+ * djb2 hash
+ * unsigned long hash(unsigned char *str)
+ * {
+ *   unsigned long hash = 5381;
+ *   int c;
+ *   while (c = *str++)  hash = ((hash << 5) + hash) + c; // hash * 33 + c
+ *   return hash;
+ * }
+ *******
+ * sdbm hash
+ * static unsigned long sdbm(unsigned char* str)
+ * {
+ *   unsigned long hash = 0;
+ *   int c;
+ *   while (c = *str++) hash = c + (hash << 6) + (hash << 16) - hash;
+ *   return hash;
+ * }
+ *
+ */
+
+/*
  * x08joekl 2008-01-24
  * functions and globals common to both win32 and *nix
  */
@@ -1066,14 +1090,15 @@ RML_BEGIN_LABEL(System__time)
 }
 RML_END_LABEL
 
+#if !defined(_MSC_VER)
+inline
+#endif
 RML_BEGIN_LABEL(System__hash)
 {
   char *str = RML_STRINGDATA(rmlA0);
-  int res=0,i=0,len=strlen(str);
-  while( str[i]&& i<4)
-    res+=(int)str[i++];
-
-  rmlA0 = RML_IMMEDIATE(RML_TAGFIXNUM(res)); //(void*) mk_icon(res);
+  int hash=0, c=0;
+  while( c = *str++ ) hash +=c;
+  rmlA0 = RML_IMMEDIATE(RML_TAGFIXNUM(hash));
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
@@ -2357,14 +2382,12 @@ RML_BEGIN_LABEL(System__time)
 }
 RML_END_LABEL
 
-RML_BEGIN_LABEL(System__hash)
+inline RML_BEGIN_LABEL(System__hash)
 {
   char *str = RML_STRINGDATA(rmlA0);
-  rml_sint_t res=0,i=0,len=strlen(str);
-  while( str[i]&& i<4)
-    res+=(rml_sint_t)str[i++];
-
-  rmlA0 = RML_IMMEDIATE(RML_TAGFIXNUM(res));
+  int hash=0, c=0;
+  while( c = *str++ ) hash +=c;
+  rmlA0 = RML_IMMEDIATE(RML_TAGFIXNUM(hash));
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL

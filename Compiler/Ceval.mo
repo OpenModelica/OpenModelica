@@ -65,9 +65,7 @@ public import Types;
 public
 uniontype Msg
   record MSG "Give error message" end MSG;
-
   record NO_MSG "Do not give error message" end NO_MSG;
-
 end Msg;
 
 protected import SimCodegen;
@@ -141,24 +139,24 @@ algorithm
       Env.Cache cache;
     case (cache,env,Exp.SIZE(exp = exp,sz = SOME(dim)),impl,st,_,msg)
       equation
-        (cache,v,st) = cevalBuiltinSize(cache,env, exp, dim, impl, st, msg) "Handle size separately" ;
+        (cache,v,st) = cevalBuiltinSize(cache, env, exp, dim, impl, st, msg) "Handle size separately" ;
       then
         (cache,v,st);
     case (cache,env,Exp.SIZE(exp = exp,sz = NONE),impl,st,_,msg)
       equation
-        (cache,v,st) = cevalBuiltinSizeMatrix(cache,env, exp, impl, st, msg);
+        (cache,v,st) = cevalBuiltinSizeMatrix(cache, env, exp, impl, st, msg);
       then
         (cache,v,st);
     case (cache,env,Exp.CALL(path = Absyn.IDENT(name = id),expLst = args,builtin = builtin),impl,st,_,msg) /* buildin: as true */
       equation
         handler = cevalBuiltinHandler(id);
-        (cache,v,st) = handler(cache,env, args, impl, st, msg);
+        (cache,v,st) = handler(cache, env, args, impl, st, msg);
       then
         (cache,v,st);
     case (cache,env,(e as Exp.CALL(path = funcpath,expLst = expl,builtin = (builtin as true))),impl,(st as NONE),_,msg)
       equation
-        (cache,vallst) = cevalList(cache,env, expl, impl, st, msg);
-        (cache,newval) = cevalCallFunction(cache,env, e, vallst, msg);
+        (cache,vallst) = cevalList(cache, env, expl, impl, st, msg);
+        (cache,newval,st) = cevalCallFunction(cache, env, e, vallst, st, msg);
       then
         (cache,newval,st);
   end matchcontinue;
@@ -232,7 +230,8 @@ algorithm
   end matchcontinue;
 end cevalBuiltinHandler;
 
-public function ceval "function: ceval
+public function ceval 
+"function: ceval
   This function is used when the value of a constant expression is
   needed.  It takes an environment and an expression and calculates
   its value.
@@ -341,8 +340,7 @@ algorithm
         Exp.ComponentRef c;
         Interactive.InteractiveSymbolTable st;
       equation
-        (cache,v) = cevalCref(cache,env, c, false, msg) "When in interactive mode, always evalutate crefs, i.e non-implicit
-	    mode.." ;
+        (cache,v) = cevalCref(cache,env, c, false, msg) "When in interactive mode, always evalutate crefs, i.e non-implicit mode.." ;
       then
         (cache,v,SOME(st));
 
@@ -375,17 +373,19 @@ algorithm
     case (cache,env,(e as Exp.CALL(path = func,expLst = expl)),(impl as true),(st as SOME(_)),_,msg)
       equation
 				(cache,false) = Static.isExternalObjectFunction(cache,env,func);
-        (cache,vallst) = cevalList(cache,env, expl, impl, st, msg) "Call of record constructors, etc., i.e. functions that can be
-	 constant propagated." ;
+        (cache,vallst) = cevalList(cache,env, expl, impl, st, msg) 
+        "Call of record constructors, etc., i.e. functions that can be constant propagated." ;
         (cache,newval) = cevalFunction(cache,env, func, vallst, impl, msg);
       then
         (cache,newval,st);
 
-    case (cache,env,(e as Exp.CALL(path = func,expLst = expl)),(impl as true),
+    case (cache,env,(e as Exp.CALL(path = func,expLst = expl)),/*(impl as true)*/impl,
       (st as SOME(Interactive.SYMBOLTABLE(p,_,_,_,cflist,_))),_,msg)
-      local Integer funcHandle;
+      local Integer funcHandle; String fNew,fOld; Real buildTime;
       equation
-        (true, funcHandle) = Static.isFunctionInCflist(cflist, func) "Call externally implemented functions." ;
+        (true, funcHandle, buildTime, fOld) = Static.isFunctionInCflist(cflist, func) "Call externally implemented functions." ;
+        Absyn.CLASS(_,_,_,_,Absyn.R_FUNCTION(),_,Absyn.INFO(fileName = fNew)) = Interactive.getPathedClassInProgram(func, p);        
+        false = Static.needToRebuild(fNew,fOld,buildTime); // we don't need to rebuild!        
         (cache,false) = Static.isExternalObjectFunction(cache,env,func);
         (cache,vallst) = cevalList(cache,env, expl, impl, st, msg);
         funcstr = ModUtil.pathString2(func, "_");
@@ -399,18 +399,20 @@ algorithm
       local String s; list<String> ss;
       equation
         (cache,vallst) = cevalList(cache,env, expl, impl, st, msg);
-        (cache,newval)= cevalCallFunction(cache,env, e, vallst, msg);
+        (cache,newval,st)= cevalCallFunction(cache,env, e, vallst, st, msg);
       then
         (cache,newval,st);
 
-    case (cache,env,Exp.BINARY(exp1 = lh,operator = Exp.ADD(ty = Exp.STRING()),exp2 = rh),impl,st,_,msg) /* Strings */
-      local String lhv,rhv;
+    case (cache,env,Exp.BINARY(exp1 = lh,operator = Exp.ADD(ty = Exp.STRING()),exp2 = rh),impl,st,dim,msg) /* Strings */
+      local 
+        String lhv,rhv;
+        Option<Integer> dim;
       equation
-        (cache,Values.STRING(lhv),_) = ceval(cache,env, lh, impl, st, NONE, msg);
-        (cache,Values.STRING(rhv),_) = ceval(cache,env, rh, impl, st, NONE, msg);
+        (cache,Values.STRING(lhv),st_1) = ceval(cache,env, lh, impl, st, dim, msg);
+        (cache,Values.STRING(rhv),st_2) = ceval(cache,env, rh, impl, st_1, dim, msg);
         str = stringAppend(lhv, rhv);
       then
-        (cache,Values.STRING(str),st);
+        (cache,Values.STRING(str),st_2);
 
     case (cache,env,Exp.BINARY(exp1 = lh,operator = Exp.ADD(ty = Exp.REAL()),exp2 = rh),impl,st,dim,msg) /* Numerical */
       local
@@ -819,12 +821,13 @@ protected function cevalCallFunction "function: cevalCallFunction
   input Env.Env inEnv;
   input Exp.Exp inExp;
   input list<Values.Value> inValuesValueLst;
+  input Option<Interactive.InteractiveSymbolTable> inSymTab;  
   input Msg inMsg;
   output Env.Cache outCache;
   output Values.Value outValue;
+  output Option<Interactive.InteractiveSymbolTable> outSymTab;  
 algorithm
-  (outCache,outValue) :=
-  matchcontinue (inCache,inEnv,inExp,inValuesValueLst,inMsg)
+  (outCache,outValue,outSymTab) := matchcontinue (inCache,inEnv,inExp,inValuesValueLst,inSymTab,inMsg)
     local
       Values.Value newval;
       list<Env.Frame> env;
@@ -836,30 +839,68 @@ algorithm
       Msg msg;
       String funcstr,str;
       Env.Cache cache;
-   /*
-   External functions that are "known" should be evaluated without
-	 compilation, e.g. all math functions
-	 */
-    case (cache,env,(e as Exp.CALL(path = funcpath,expLst = expl,builtin = builtin)),vallst,msg)
+      Option<Interactive.InteractiveSymbolTable> st;      
+    /* External functions that are "known" should be evaluated without compilation, e.g. all math functions */
+    case (cache,env,(e as Exp.CALL(path = funcpath,expLst = expl,builtin = builtin)),vallst,st,msg)
       equation
-        (cache,newval) = cevalKnownExternalFuncs(cache,env, funcpath, vallst, msg);
+        (cache,newval) = cevalKnownExternalFuncs(cache, env, funcpath, vallst, msg);
       then
-        (cache,newval);
+        (cache,newval,st);
 
-        // This case prevents the constructor call of external objects of being evaluated
-    case (cache,env,(e as Exp.CALL(path = funcpath,expLst = expl, builtin = builtin)),vallst,msg)
+    // This case prevents the constructor call of external objects of being evaluated
+    case (cache,env,(e as Exp.CALL(path = funcpath,expLst = expl, builtin = builtin)),vallst,st,msg)
       local Types.Type tp;
         Absyn.Path funcpath2;
         String s;
       equation
         cevalIsExternalObjectConstructor(cache,funcpath,env);
-        then fail();
-    case (cache,env,(e as Exp.CALL(path = funcpath,expLst = expl,builtin = builtin)),vallst,msg) /* Call functions in non-interactive mode. FIXME: functions are always generated. Put back the check
-	 and write another rule for the false case that generates the function */
+      then fail();
+    /* Call functions in non-interactive mode. Function already generated! */
+    case (cache,env,(e as Exp.CALL(path = funcpath,expLst = expl,builtin = builtin)),vallst,
+      (st as SOME(Interactive.SYMBOLTABLE(p,_,_,_,cflist,_))),msg)
+      local 
+        Integer funcHandle; String fNew,fOld; Real buildTime;
+        list<Interactive.CompiledCFunction> cflist;
+        Absyn.Program p; 
+      equation
+ 				failure(cevalIsExternalObjectConstructor(cache,funcpath,env));
+ 				(true, funcHandle, buildTime, fOld) = Static.isFunctionInCflist(cflist, funcpath) "Call externally implemented functions." ;
+        Absyn.CLASS(_,_,_,_,Absyn.R_FUNCTION(),_,Absyn.INFO(fileName = fNew)) = Interactive.getPathedClassInProgram(funcpath, p);        
+        false = Static.needToRebuild(fNew,fOld,buildTime); // we don't need to rebuild!        
+        newval = System.executeFunction(funcHandle, vallst);
+      then
+        (cache,newval,st);
+        
+    /* Call functions in non-interactive mode. Function not generated yet, generate and add to the list! 
+    case (cache,env,(e as Exp.CALL(path = funcpath,expLst = expl,builtin = builtin)),vallst,
+      (st as SOME(Interactive.SYMBOLTABLE(p,sp,ic,vl,cflist,lp))),msg)
+      local 
+        Integer libHandle, funcHandle; String fNew,fOld; Real buildTime;
+        list<Interactive.InstantiatedClass> ic;
+        list<Interactive.InteractiveVariable> vl;
+        list<Interactive.LoadedFile> lp;
+        list<SCode.Class> sp;
+      equation
+ 				failure(cevalIsExternalObjectConstructor(cache,funcpath,env));
+        cache = cevalGenerateFunction(cache, env, funcpath);
+        funcstr = ModUtil.pathString2(funcpath, "_");
+        Debug.fprintln("dynload", "cevalCallFunction: about to execute " +& funcstr);
+        libHandle = System.loadLibrary(funcstr);
+        funcHandle = System.lookupFunction(libHandle, stringAppend("in_", funcstr));
+        newval = System.executeFunction(funcHandle, vallst);
+        System.freeFunction(funcHandle);
+        System.freeLibrary(libHandle);
+        buildTime = System.getCurrentTime();
+      then
+        (cache,newval,SOME(Interactive.SYMBOLTABLE(p,sp,ic,vl,(Interactive.CFunction(funcpath,t,funcHandle,buildTime,f) :: cflist,lp))));
+    */
+        
+    /* Call functions in non-interactive mode. None of the above! */
+    case (cache,env,(e as Exp.CALL(path = funcpath,expLst = expl,builtin = builtin)),vallst,st,msg) 
 	    local Integer libHandle, funcHandle;
       equation
  				failure(cevalIsExternalObjectConstructor(cache,funcpath,env));
-        cache = cevalGenerateFunction(cache,env, funcpath);
+        cache = cevalGenerateFunction(cache, env, funcpath);
         funcstr = ModUtil.pathString2(funcpath, "_");
         Debug.fprintln("dynload", "cevalCallFunction: about to execute " +& funcstr);
         libHandle = System.loadLibrary(funcstr);
@@ -868,8 +909,8 @@ algorithm
         System.freeFunction(funcHandle);
         System.freeLibrary(libHandle);
       then
-        (cache,newval);
-    case (cache,env,e,_,_)
+        (cache,newval,st);
+    case (cache,env,e,_,st,_)
       equation
         Debug.fprint("failtrace", "- Ceval.cevalCallFunction failed: ");
         str = Exp.printExpStr(e);
@@ -877,7 +918,7 @@ algorithm
       then
         fail();
   end matchcontinue;
-end cevalCallFunction;
+end cevalCallFunction;  
 
 protected function cevalIsExternalObjectConstructor
 	input Env.Cache cache;
@@ -2000,7 +2041,7 @@ algorithm
         crefCName = Absyn.pathToCref(className);
         true = Interactive.existClass(crefCName, p);
         p_1 = SCode.elaborate(p);
-        (cache,(dae as DAE.DAE(dael)),env) = Inst.instantiateClass(cache,p_1, className);
+        (cache,(dae as DAE.DAE(dael)),env) = Inst.instantiateClass(cache, p_1, className);
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(className,dael,env));
         str = DAE.dumpStr(dae);
       then
@@ -3178,13 +3219,12 @@ algorithm
 	  but where to get t? */
       local
         Absyn.Program p_1;
-        list<Interactive.CompiledCFunction> newCF, newCF_1;
       equation
         mp = Settings.getModelicaPath();
-        (pnew, newCF) = ClassLoader.loadClass(path, mp, cf);
-        (p_1, newCF_1) = Interactive.updateProgram(pnew, p, newCF);
+        pnew = ClassLoader.loadClass(path, mp);
+        p_1 = Interactive.updateProgram(pnew, p);
         str = Print.getString();
-        newst = Interactive.SYMBOLTABLE(p_1,sp,{},iv,newCF_1,lf);
+        newst = Interactive.SYMBOLTABLE(p_1,sp,{},iv,cf,lf);
       then
         (cache,Values.BOOL(true),newst);
 
@@ -3208,12 +3248,11 @@ algorithm
         loadedFiles = lf)),msg)
       local
         Absyn.Program p1;
-        list<Interactive.CompiledCFunction> newCF, newCF_1;
       equation
-        (p1, newCF) = ClassLoader.loadFile(name, cf) "System.regularFileExists(name) => 0 & Parser.parse(name) => p1 &" ;
-        (newp,newCF_1) = Interactive.updateProgram(p1, p, newCF);
+        p1 = ClassLoader.loadFile(name) "System.regularFileExists(name) => 0 & Parser.parse(name) => p1 &" ;
+        newp = Interactive.updateProgram(p1, p);
       then
-        (cache,Values.BOOL(true),Interactive.SYMBOLTABLE(newp,sp,ic,iv,newCF_1,lf));
+        (cache,Values.BOOL(true),Interactive.SYMBOLTABLE(newp,sp,ic,iv,cf,lf));
 
     case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "loadFile"),expLst = {Exp.SCONST(string = name)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg) /* (Values.BOOL(true),Interactive.SYMBOLTABLE(newp,sp,{},iv,cf)) it the rule above have failed then check if file exists without this omc crashes */
       equation
@@ -3694,16 +3733,15 @@ algorithm
         Absyn.Within within_;
         Integer elimLevel;
         Absyn.Program p1;
-        list<Interactive.CompiledCFunction> newCF;
       equation
 	  		cls = Interactive.getPathedClassInProgram(className, p);
         refactoredClass = Refactor.refactorGraphicalAnnotation(p, cls);
         within_ = Interactive.buildWithin(className);
-        (p1,newCF) = Interactive.updateProgram(Absyn.PROGRAM({refactoredClass}, within_), p, cf);
+        p1 = Interactive.updateProgram(Absyn.PROGRAM({refactoredClass}, within_), p);
         s1 = Absyn.pathString(className);
 				retStr=Util.stringAppendList({"Translation of ",s1," successful.\n"});
       then
-        (cache,Values.STRING(retStr),Interactive.SYMBOLTABLE(p1,sp,ic,iv,newCF,lf));
+        (cache,Values.STRING(retStr),Interactive.SYMBOLTABLE(p1,sp,ic,iv,cf,lf));
     case (cache,_,_,st,_) local
       String errorMsg; Boolean strEmpty;
       equation
@@ -4324,8 +4362,7 @@ algorithm
       then
         fail();
 
-		/* For crefs with value binding
-		e.g. size(x,1) when Real x[:]=fill(0,1); */
+		/* For crefs with value binding e.g. size(x,1) when Real x[:]=fill(0,1); */
     case (cache,env,(exp as Exp.CREF(componentRef = cr,ty = crtp)),dim,impl,st,msg)
       local
         Values.Value v;
@@ -4342,8 +4379,9 @@ algorithm
         Exp.Type tp;
         Exp.Exp dim;
       equation
-        tp = Exp.typeof(e) "Special case for array expressions with nonconstant values For now: only arrays of scalar elements: TODO generalize to arbitrary
-	   dimensions" ;
+        tp = Exp.typeof(e) "Special case for array expressions with nonconstant values 
+                            For now: only arrays of scalar elements: 
+                            TODO generalize to arbitrary dimensions" ;
         true = Exp.typeBuiltin(tp);
         (cache,Values.INTEGER(1),st_1) = ceval(cache,env, dim, impl, st, NONE, msg);
         len = listLength((e :: es));
@@ -6025,14 +6063,12 @@ algorithm
       list<String> libs;
     case (cache,env,path)
       equation
-         (cache,false) = Static.isExternalObjectFunction(cache,env,path); //ext objs functions not possible to ceval.
+        (cache,false) = Static.isExternalObjectFunction(cache,env,path); //ext objs functions not possible to ceval.
         Debug.fprintln("ceval", "/*- Ceval.cevalGenerateFunction starting*/");
         pathstr = ModUtil.pathString2(path, "_");
         (cache,gencodestr,_,libs) = cevalGenerateFunctionStr(cache,path, env, {});
         cfilename = stringAppend(pathstr, ".c");
-        str = Util.stringAppendList(
-          {"#include \"modelica.h\"\n#include <stdio.h>\n#include <stdlib.h>\n#include <errno.h>\n",
-           gencodestr});
+        str = Util.stringAppendList({"#include \"modelica.h\"\n#include <stdio.h>\n#include <stdlib.h>\n#include <errno.h>\n", gencodestr});
         System.writeFile(cfilename, str);
         Debug.fprintln("dynload", "cevalGenerateFunction: generating makefile for " +& pathstr);
         makefilename = generateMakefilename(pathstr);
@@ -6095,8 +6131,7 @@ algorithm
         Debug.fprintln("ceval", "/*- Ceval.cevalGenerateFunctionStr starting*/");
         (cache,cls,env_1) = Lookup.lookupClass(cache,env, path, false);
         Debug.fprintln("ceval", "/*- ceval_generate_function_str instantiating*/");
-        (cache,env_2,d) = Inst.implicitFunctionInstantiation(cache,env_1, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
-          cls, {});
+        (cache,env_2,d) = Inst.implicitFunctionInstantiation(cache, env_1, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cls, {});
         Debug.fprint("ceval", "/*- Ceval.cevalGenerateFunctionStr getting functions: ");
         calledfuncs = SimCodegen.getCalledFunctionsInFunction(path, DAE.DAE(d));
         debugfuncs = Util.listMap(calledfuncs, Absyn.pathString);
@@ -6474,6 +6509,12 @@ algorithm
         b = (i1 >=. i2);
       then
         Values.BOOL(b);
+    case (Values.ENUM(string = s1),Exp.EQUAL(ty = Exp.ENUM()),Values.ENUM(string = s2))
+      local String s1,s2;
+      equation
+        b = stringEqual(s1, s2);
+      then
+        Values.BOOL(b);
     case (Values.REAL(real = i1),Exp.EQUAL(ty = Exp.REAL()),Values.REAL(real = i2))
       local Real i1,i2;
       equation
@@ -6716,10 +6757,23 @@ algorithm
       Msg msg;
       String scope_str,str;
       Env.Cache cache;
+
+    
+    /* enumerations are translated to their string representation */
+    case (cache,env,c,impl,msg)  
+      equation         
+        (cache,attr,ty as (Types.T_ENUM(),_),binding) = Lookup.lookupVar(cache, env, c);
+        str = Exp.crefStr(c);
+        Debug.fprintln("ceval","Ceval.cevalCrefBinding:" +& Exp.crefStr(c) +& " val: " +& str);
+      then
+        (cache,Values.ENUM(str));
+      
     case (cache,env,c,impl,msg) /* Search in env for binding. */
       equation
-        (cache,attr,ty,binding) = Lookup.lookupVar(cache,env, c);
-        (cache,v) = cevalCrefBinding(cache,env, c, binding, impl, msg);
+        (cache,attr,ty,binding) = Lookup.lookupVar(cache, env, c);
+        Debug.fprintln("ceval","Ceval.cevalCrefBinding:" +& Exp.crefStr(c));
+        (cache,v) = cevalCrefBinding(cache, env, c, binding, impl, msg);
+        Debug.fprintln("ceval","Ceval.cevalCrefBinding success");
       then
         (cache,v);
     case (cache,env,c,(impl as false),MSG())
@@ -6745,7 +6799,8 @@ algorithm
   end matchcontinue;
 end cevalCref;
 
-public function cevalCrefBinding "function: cevalCrefBinding
+public function cevalCrefBinding 
+"function: cevalCrefBinding
   Helper function to cevalCref.
   Evaluates variables by evaluating their bindings."
 	input Env.Cache inCache;
@@ -6757,8 +6812,7 @@ public function cevalCrefBinding "function: cevalCrefBinding
   output Env.Cache outCache;
   output Values.Value outValue;
 algorithm
-  (outCache,outValue) :=
-  matchcontinue (inCache,inEnv,inComponentRef,inBinding,inBoolean,inMsg)
+  (outCache,outValue) := matchcontinue (inCache,inEnv,inComponentRef,inBinding,inBoolean,inMsg)
     local
       Exp.ComponentRef cr_1,cr,e1;
       list<Exp.Subscript> subsc;
@@ -6771,9 +6825,10 @@ algorithm
       String rfn,iter,id,expstr,s1,s2,str;
       Exp.Exp elexp,iterexp,exp;
       Env.Cache cache;
+            
     case (cache,env,cr,Types.VALBOUND(valBound = v),impl,msg) /* Exp.CREF_IDENT(id,subsc) */
       equation
-        Debug.fprint("tcvt", "+++++++ Ceval.cevalCrefBinding Types.VALBOUND\n");
+        Debug.fprintln("tcvt", "+++++++ Ceval.cevalCrefBinding Types.VALBOUND: " +& Exp.printComponentRefStr(cr));
         cr_1 = Exp.crefStripLastSubs(cr) "lookup without subscripts, so dimension sizes can be determined." ;
         subsc = Exp.crefLastSubs(cr);
         (cache,_,tp,_) = Lookup.lookupVar(cache,env, cr_1) "Exp.CREF_IDENT(id,{})" ;
@@ -6781,37 +6836,41 @@ algorithm
         (cache,res) = cevalSubscriptValue(cache,env, subsc, v, sizelst, impl, msg);
       then
         (cache,res);
-    case (cache,env,_,Types.UNBOUND(),(impl as false),MSG())
+    case (cache,env,cr,Types.UNBOUND(),(impl as false),MSG())
       equation
+        Debug.fprintln("ceval", "#- Ceval.cevalCrefBinding failed (UNBOUND): " +& Exp.printComponentRefStr(cr));
         Print.printBuf("- Ceval.cevalCrefBinding failed (UNBOUND)\n");
       then
         fail();
-    case (cache,env,_,Types.UNBOUND(),(impl as true),MSG())
+    case (cache,env,cr,Types.UNBOUND(),(impl as true),MSG())
       equation
-        Debug.fprint("ceval", "#- Ceval.cevalCrefBinding: Ignoring unbound when implicit");
+        Debug.fprint("ceval", "#- Ceval.cevalCrefBinding: Ignoring unbound when implicit"  +& Exp.printComponentRefStr(cr));
       then
         fail();
-    case (cache,env,Exp.CREF_IDENT(ident = id,subscriptLst = subsc),Types.EQBOUND(exp = exp,constant_ = Types.C_CONST()),impl,MSG()) /* REDUCTION bindings */
+    case (cache,env,cr as Exp.CREF_IDENT(ident = id,subscriptLst = subsc),Types.EQBOUND(exp = exp,constant_ = Types.C_CONST()),impl,MSG()) /* REDUCTION bindings */
       equation
         Exp.REDUCTION(path = Absyn.IDENT(name = rfn),expr = elexp,ident = iter,range = iterexp) = exp;
         equality(rfn = "array");
-        Debug.fprintln("ceval", "#- Ceval.cevalCrefBinding: Array evaluation");
+        // Debug.fprintln("ceval", "#- Ceval.cevalCrefBinding reduction -> array: "  +& Exp.printComponentRefStr(cr));        
+        // Debug.fprintln("ceval", "#- Ceval.cevalCrefBinding: Array evaluation");
       then
         fail();
     case (cache,env,cr,Types.EQBOUND(exp = exp,constant_ = Types.C_CONST()),impl,msg) /* REDUCTION bindings Exp.CREF_IDENT(id,subsc) */
       equation
         Exp.REDUCTION(path = Absyn.IDENT(name = rfn),expr = elexp,ident = iter,range = iterexp) = exp;
         failure(equality(rfn = "array"));
+        Debug.fprintln("ceval", "#- Ceval.cevalCrefBinding reduction -> not array: "  +& Exp.printComponentRefStr(cr));
         cr_1 = Exp.crefStripLastSubs(cr) "lookup without subscripts, so dimension sizes can be determined." ;
         subsc = Exp.crefLastSubs(cr);
         (cache,_,tp,_) = Lookup.lookupVar(cache,env, cr_1) "Exp.CREF_IDENT(id,{})" ;
         sizelst = Types.getDimensionSizes(tp);
-        (cache,v,_) = ceval(cache,env, exp, impl, NONE, NONE, msg);
-        (cache,res) = cevalSubscriptValue(cache,env, subsc, v, sizelst, impl, msg);
+        (cache,v,_) = ceval(cache, env, exp, impl, NONE, NONE, msg);
+        (cache,res) = cevalSubscriptValue(cache, env, subsc, v, sizelst, impl, msg);
       then
         (cache,res);
     case (cache,env,cr,Types.EQBOUND(exp = exp,evaluatedExp = SOME(e_val),constant_ = Types.C_VAR()),impl,msg) /* arbitrary expressions, C_VAR, value exists. Exp.CREF_IDENT(id,subsc) */
       equation
+        Debug.fprintln("ceval", "#- Ceval.cevalCrefBinding C_VAR: "  +& Exp.printComponentRefStr(cr));
         cr_1 = Exp.crefStripLastSubs(cr) "lookup without subscripts, so dimension sizes can be determined." ;
         subsc = Exp.crefLastSubs(cr);
         (cache,_,tp,_) = Lookup.lookupVar(cache,env, cr_1) "Exp.CREF_IDENT(id,{})" ;
@@ -6821,6 +6880,7 @@ algorithm
         (cache,res);
     case (cache,env,cr,Types.EQBOUND(exp = exp,evaluatedExp = SOME(e_val),constant_ = Types.C_PARAM()),impl,msg) /* arbitrary expressions, C_PARAM, value exists. Exp.CREF_IDENT(id,subsc) */
       equation
+        Debug.fprintln("ceval", "#- Ceval.cevalCrefBinding C_PARAM(evaluated): " +& Exp.printComponentRefStr(cr));
         cr_1 = Exp.crefStripLastSubs(cr) "lookup without subscripts, so dimension sizes can be determined." ;
         subsc = Exp.crefLastSubs(cr);
         (cache,_,tp,_) = Lookup.lookupVar(cache,env, cr_1) "Exp.CREF_IDENT(id,{})" ;
@@ -6830,6 +6890,7 @@ algorithm
         (cache,res);
     case (cache,env,cr,Types.EQBOUND(exp = exp,constant_ = Types.C_CONST()),impl,msg) /* arbitrary expressions. When binding has optional value. Exp.CREF_IDENT(id,subsc) */
       equation
+        Debug.fprintln("ceval", "#- Ceval.cevalCrefBinding reduction C_CONST: " +& Exp.printComponentRefStr(cr));
         cr_1 = Exp.crefStripLastSubs(cr) "lookup without subscripts, so dimension sizes can be determined." ;
         subsc = Exp.crefLastSubs(cr);
         (cache,_,tp,_) = Lookup.lookupVar(cache,env, cr_1) "Exp.CREF_IDENT(id,{})" ;
@@ -6840,6 +6901,7 @@ algorithm
         (cache,res);
     case (cache,env,cr,Types.EQBOUND(exp = exp,constant_ = Types.C_PARAM()),impl,msg) /* arbitrary expressions. When binding has optional value. Exp.CREF_IDENT(id,subsc) */
       equation
+        Debug.fprintln("ceval", "#- Ceval.cevalCrefBinding C_PARAM: " +& Exp.printComponentRefStr(cr));
         cr_1 = Exp.crefStripLastSubs(cr) "lookup without subscripts, so dimension sizes can be determined." ;
         subsc = Exp.crefLastSubs(cr);
         (cache,_,tp,_) = Lookup.lookupVar(cache,env, cr_1) "Exp.CREF_IDENT(id,{})" ;
@@ -6848,9 +6910,9 @@ algorithm
         (cache,res)= cevalSubscriptValue(cache,env, subsc, v, sizelst, impl, msg);
       then
         (cache,res);
-    case (cache,env,_,Types.EQBOUND(exp = exp,constant_ = Types.C_VAR()),impl,MSG())
+    case (cache,env,cr,Types.EQBOUND(exp = exp,constant_ = Types.C_VAR()),impl,MSG())
       equation
-        Debug.fprint("ceval", "#- Ceval.cevalCrefBinding failed (nonconstant EQBOUND(");
+        Debug.fprint("ceval", "#- Ceval.cevalCrefBinding failed: "  +& Exp.printComponentRefStr(cr) +& " (nonconstant EQBOUND(");
         expstr = Exp.printExpStr(exp);
         Debug.fprint("ceval", expstr);
         Debug.fprintln("ceval", "))");

@@ -487,11 +487,11 @@ uniontype Equation "Information on one (kind) of equation, different constructor
   end EQ_NORETCALL;
 
   record EQ_FAILURE
-    Equation equ;
+    EquationItem equItem;
   end EQ_FAILURE;
 
   record EQ_EQUALITY
-    Equation equ;
+    EquationItem equItem;
   end EQ_EQUALITY;
 
 end Equation;
@@ -535,11 +535,11 @@ uniontype Algorithm "The Algorithm type describes one algorithm statement in an
   end ALG_NORETCALL;
 
   record ALG_FAILURE
-    Algorithm equ;
+    AlgorithmItem equ;
   end ALG_FAILURE;
 
   record ALG_EQUALITY
-    Algorithm equ;
+    AlgorithmItem equ;
   end ALG_EQUALITY;
 
   record ALG_RETURN

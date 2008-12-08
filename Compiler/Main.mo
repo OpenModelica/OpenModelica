@@ -210,8 +210,7 @@ algorithm
         Interactive.typeCheckFunction(p, isymb) "fails here if the string is not \"Ok\"" ;
         p_1 = Interactive.addScope(p, vars);
         vars_1 = Interactive.updateScope(p, vars);
-        (newprog, cf_1) = Interactive.updateProgram(p_1, iprog, cf);
-        cf_2 = Interactive.removeCompiledFunctions(p, cf_1);
+        newprog = Interactive.updateProgram(p_1, iprog);
         Debug.fprint("dump",
           "\n--------------- Parsed program ---------------\n");
         Debug.fcall("dumpgraphviz", DumpGraphviz.dump, newprog);
@@ -219,7 +218,7 @@ algorithm
         res_1 = makeDebugResult("dump", "Ok");
         res = makeDebugResult("dumpgraphviz", res_1);
       then
-        (true,res,Interactive.SYMBOLTABLE(newprog,a,b,vars_1,cf_2,lf));
+        (true,res,Interactive.SYMBOLTABLE(newprog,a,b,vars_1,cf,lf));
     case (str,isymb) /* Interactively evaluate an algorithm statement or expression */
       equation
         //debug_print("Command: don't typeCheck", str);
@@ -376,7 +375,9 @@ algorithm
         p = Parser.parse(f);
         // show parse errors if there are any
         showErrors(Print.getErrorString(), ErrorExt.printMessagesStr());
-
+        
+        Debug.bcall2(RTOpts.debugFlag("dumpdebug"), debug_print, "PROGRAM:", p);
+        
         Debug.fprint("dump", "\n--------------- Parsed program ---------------\n");
         Debug.fcall("dumpgraphviz", DumpGraphviz.dump, p);
         Debug.fcall("dump", Dump.dump, p);

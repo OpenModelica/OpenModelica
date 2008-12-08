@@ -2522,8 +2522,8 @@ algorithm
   env := Env.extendFrameC(env, stateSelectType);
 end simpleInitialEnv;
 
-public function initialEnv "function: initialEnv
-
+public function initialEnv 
+"function: initialEnv
   The initial environment where instantiation takes place is built
   up using this function.  It creates an empty environment and adds
   all the built-in definitions to it.
@@ -2533,8 +2533,7 @@ public function initialEnv "function: initialEnv
 	- fill
 	- cat
     These operators are catched in the elabBuiltinHandler, along with all
-    others.
-"
+    others."
   input Env.Cache inCache;
   output Env.Cache outCache;
   output list<Env.Frame> env;

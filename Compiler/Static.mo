@@ -726,7 +726,7 @@ algorithm
 
    case (cache,env,e,_,_,_)
       equation
-        Debug.fprint("failtrace", "- elab_exp failed: ");
+        Debug.fprint("failtrace", "- Static.elabExp failed: ");
         expstr = Debug.fcallret("failtrace", Dump.dumpExpStr, e, "");
         Debug.fprintln("failtrace", expstr);
         Debug.fprint("failtrace", "\n env : ");
@@ -1549,10 +1549,11 @@ algorithm
       Option<Interactive.InteractiveSymbolTable> st;
       Env.Cache cache;
       Boolean doVect;
+      list<Types.Var> lstVar;
     case (cache,env,(e :: expl),impl,st,doVect) /* impl */
       equation
         (cache,e_1,Types.PROP(tp,_),_) = elabExp(cache,env, e, impl, st,doVect);
-        ((Types.T_INTEGER({}),_)) = Types.arrayElementType(tp);
+        ((Types.T_INTEGER(lstVar),_)) = Types.arrayElementType(tp);
       then
         ();
     case (cache,env,(e :: expl),impl,st,doVect)
@@ -1587,10 +1588,11 @@ algorithm
       Option<Interactive.InteractiveSymbolTable> st;
       Env.Cache cache;
       Boolean doVect;
+      list<Types.Var> lstVar;
     case (cache,env,(e :: expl),impl,st,doVect) /* impl */
       equation
         (cache,e_1,Types.PROP(tp,_),_) = elabExp(cache,env, e, impl, st,doVect);
-        ((Types.T_REAL({}),_)) = Types.arrayElementType(tp);
+        ((Types.T_REAL(lstVar),_)) = Types.arrayElementType(tp);
       then
         ();
     case (cache,env,(e :: expl),impl,st,doVect)
@@ -2707,22 +2709,23 @@ algorithm
       Absyn.Exp arrexp;
       Boolean impl;
       Env.Cache cache;
+      list<Types.Var> lstVar; 
     case (cache,env,{arrexp},_,impl) /* impl */
       local String str;
       equation
-        (cache,exp_1,Types.PROP((Types.T_INTEGER({}),_),c),_) = elabExp(cache,env, arrexp, impl, NONE,true);
+        (cache,exp_1,Types.PROP((Types.T_INTEGER(lstVar),_),c),_) = elabExp(cache,env, arrexp, impl, NONE,true);
         str = Dump.printExpStr(arrexp);
         Error.addMessage(Error.BUILTIN_FUNCTION_PRODUCT_HAS_SCALAR_PARAMETER, {str});
       then
-         (cache,exp_1,Types.PROP((Types.T_INTEGER({}),NONE),c));
+         (cache,exp_1,Types.PROP((Types.T_INTEGER(lstVar),NONE),c));
     case (cache,env,{arrexp},_,impl) /* impl */
       local String str;
       equation
-        (cache,exp_1,Types.PROP((Types.T_REAL({}),_),c),_) = elabExp(cache,env, arrexp, impl, NONE,true);
+        (cache,exp_1,Types.PROP((Types.T_REAL(lstVar),_),c),_) = elabExp(cache,env, arrexp, impl, NONE,true);
         str = Dump.printExpStr(arrexp);
         Error.addMessage(Error.BUILTIN_FUNCTION_PRODUCT_HAS_SCALAR_PARAMETER, {str});
       then
-         (cache,exp_1,Types.PROP((Types.T_REAL({}),NONE),c));
+         (cache,exp_1,Types.PROP((Types.T_REAL(lstVar),NONE),c));
     case (cache,env,{arrexp},_,impl) /* impl */
       local Exp.Type etp; Types.Type t;
       equation
@@ -2786,22 +2789,23 @@ algorithm
       Absyn.Exp arrexp;
       Boolean impl;
       Env.Cache cache;
+      list<Types.Var> lstVar; 
     case (cache,env,{arrexp},_,impl) /* impl */
       local String str;
       equation
-        (cache,exp_1,Types.PROP((Types.T_INTEGER({}),_),c),_) = elabExp(cache,env, arrexp, impl, NONE,true);
+        (cache,exp_1,Types.PROP((Types.T_INTEGER(lstVar),_),c),_) = elabExp(cache,env, arrexp, impl, NONE,true);
         str = Dump.printExpStr(arrexp);
         Error.addMessage(Error.BUILTIN_FUNCTION_PRODUCT_HAS_SCALAR_PARAMETER, {str});
       then
-         (cache,exp_1,Types.PROP((Types.T_INTEGER({}),NONE),c));
+         (cache,exp_1,Types.PROP((Types.T_INTEGER(lstVar),NONE),c));
     case (cache,env,{arrexp},_,impl) /* impl */
       local String str;
       equation
-        (cache,exp_1,Types.PROP((Types.T_REAL({}),_),c),_) = elabExp(cache,env, arrexp, impl, NONE,true);
+        (cache,exp_1,Types.PROP((Types.T_REAL(lstVar),_),c),_) = elabExp(cache,env, arrexp, impl, NONE,true);
         str = Dump.printExpStr(arrexp);
         Error.addMessage(Error.BUILTIN_FUNCTION_PRODUCT_HAS_SCALAR_PARAMETER, {str});
       then
-         (cache,exp_1,Types.PROP((Types.T_REAL({}),NONE),c));
+         (cache,exp_1,Types.PROP((Types.T_REAL(lstVar),NONE),c));
     case (cache,env,{arrexp},_,impl) /* impl */
       local Exp.Type etp; Types.Type t;
       equation
@@ -2998,7 +3002,8 @@ algorithm
       list<Env.Frame> env;
       Boolean impl;
       Env.Cache cache;
-    case (cache,env,{},{},impl) then (cache,Exp.CALL(Absyn.IDENT("initial"),{},false,true,Exp.BOOL()),Types.PROP((Types.T_BOOL({}),NONE),Types.C_VAR()));  /* impl */
+    case (cache,env,{},{},impl) 
+      then (cache,Exp.CALL(Absyn.IDENT("initial"),{},false,true,Exp.BOOL()),Types.PROP((Types.T_BOOL({}),NONE),Types.C_VAR()));  /* impl */
     case (cache,env,_,_,_)
       equation
         Error.addMessage(Error.WRONG_TYPE_OR_NO_OF_ARGS,
@@ -3028,7 +3033,8 @@ algorithm
       list<Env.Frame> env;
       Boolean impl;
       Env.Cache cache;
-    case (cache,env,{},{},impl) then (cache,Exp.CALL(Absyn.IDENT("terminal"),{},false,true,Exp.BOOL()),Types.PROP((Types.T_BOOL({}),NONE),Types.C_VAR()));  /* impl */
+    case (cache,env,{},{},impl) 
+      then (cache,Exp.CALL(Absyn.IDENT("terminal"),{},false,true,Exp.BOOL()),Types.PROP((Types.T_BOOL({}),NONE),Types.C_VAR()));  /* impl */
     case (cache,env,_,_,impl)
       equation
         Error.addMessage(Error.WRONG_TYPE_OR_NO_OF_ARGS,
@@ -3385,7 +3391,7 @@ algorithm
       Env.Cache cache;
     case (cache,env,{s1},_,impl) /* impl */
       equation
-        (cache,s1_1,Types.PROP((Types.T_REAL({}),NONE),c),_) = elabExp(cache,env, s1, impl, NONE,true) "print \"# floor function not implemented yet\\n\" &" ;
+        (cache,s1_1,Types.PROP((Types.T_REAL(_),NONE),c),_) = elabExp(cache,env, s1, impl, NONE,true) "print \"# floor function not implemented yet\\n\" &" ;
       then
         (cache,Exp.CALL(Absyn.IDENT("floor"),{s1_1},false,true,Exp.REAL()),Types.PROP((Types.T_INTEGER({}),NONE),c));
   end matchcontinue;
@@ -3415,7 +3421,7 @@ algorithm
       Env.Cache cache;
     case (cache,env,{s1},_,impl) /* impl */
       equation
-        (cache,s1_1,Types.PROP((Types.T_REAL({}),NONE),c),_) = elabExp(cache,env, s1, impl, NONE,true);
+        (cache,s1_1,Types.PROP((Types.T_REAL(_),NONE),c),_) = elabExp(cache,env, s1, impl, NONE,true);
       then
         (cache,Exp.CALL(Absyn.IDENT("ceil"),{s1_1},false,true,Exp.REAL()),Types.PROP((Types.T_INTEGER({}),NONE),c));
   end matchcontinue;
@@ -3443,14 +3449,15 @@ algorithm
       Absyn.Exp s1;
       Boolean impl;
       Env.Cache cache;
+      list<Types.Var> lstVar; 
     case (cache,env,{s1},_,impl) /* impl */
       equation
-        (cache,s1_1,Types.PROP((Types.T_REAL({}),NONE),c),_) = elabExp(cache,env, s1, impl, NONE,true);
+        (cache,s1_1,Types.PROP((Types.T_REAL(lstVar),NONE),c),_) = elabExp(cache,env, s1, impl, NONE,true);
       then
         (cache,Exp.CALL(Absyn.IDENT("abs"),{s1_1},false,true,Exp.REAL()),Types.PROP((Types.T_REAL({}),NONE),c));
     case (cache,env,{s1},_,impl)
       equation
-        (cache,s1_1,Types.PROP((Types.T_INTEGER({}),NONE),c),_) = elabExp(cache,env, s1, impl, NONE,true);
+        (cache,s1_1,Types.PROP((Types.T_INTEGER(lstVar),NONE),c),_) = elabExp(cache,env, s1, impl, NONE,true);
       then
         (cache,Exp.CALL(Absyn.IDENT("abs"),{s1_1},false,true,Exp.INT()),Types.PROP((Types.T_INTEGER({}),NONE),c));
   end matchcontinue;
@@ -3478,12 +3485,13 @@ algorithm
       Absyn.Exp s1;
       Boolean impl;
       Env.Cache cache;
+      list<Types.Var> lstVar; 
     case (cache,env,{s1},_,impl) /* impl */
       equation
-        (cache,s1_1,Types.PROP((Types.T_REAL({}),NONE),c),_) = elabExp(cache,env, s1, impl, NONE,true);
+        (cache,s1_1,Types.PROP((Types.T_REAL(lstVar),NONE),c),_) = elabExp(cache,env, s1, impl, NONE,true);
          /* print \"# sqrt function not implemented yet REAL\\n\" */
       then
-        (cache,Exp.CALL(Absyn.IDENT("sqrt"),{s1_1},false,true,Exp.REAL()),Types.PROP((Types.T_REAL({}),NONE),c));
+        (cache,Exp.CALL(Absyn.IDENT("sqrt"),{s1_1},false,true,Exp.REAL()),Types.PROP((Types.T_REAL(lstVar),NONE),c));
   end matchcontinue;
 end elabBuiltinSqrt;
 
@@ -3509,31 +3517,32 @@ algorithm
       Absyn.Exp s1,s2;
       Boolean impl;
       Env.Cache cache;
+      list<Types.Var> lstVar; 
     case (cache,env,{s1,s2},_,impl) /* impl */
       equation
-        (cache,s1_1,Types.PROP((Types.T_REAL({}),NONE),c1),_) = elabExp(cache,env, s1, impl, NONE,true);
-        (cache,s2_1,Types.PROP((Types.T_REAL({}),NONE),c2),_) = elabExp(cache,env, s2, impl, NONE,true);
+        (cache,s1_1,Types.PROP((Types.T_REAL(lstVar),NONE),c1),_) = elabExp(cache,env, s1, impl, NONE,true);
+        (cache,s2_1,Types.PROP((Types.T_REAL(lstVar),NONE),c2),_) = elabExp(cache,env, s2, impl, NONE,true);
         c = Types.constAnd(c1, c2);
       then
         (cache,Exp.CALL(Absyn.IDENT("div"),{s1_1,s2_1},false,true,Exp.REAL()),Types.PROP((Types.T_REAL({}),NONE),c));
     case (cache,env,{s1,s2},_,impl)
       equation
-        (cache,s1_1,Types.PROP((Types.T_INTEGER({}),NONE),c1),_) = elabExp(cache,env, s1, impl, NONE,true);
-        (cache,s2_1,Types.PROP((Types.T_REAL({}),NONE),c2),_) = elabExp(cache,env, s2, impl, NONE,true);
+        (cache,s1_1,Types.PROP((Types.T_INTEGER(lstVar),NONE),c1),_) = elabExp(cache,env, s1, impl, NONE,true);
+        (cache,s2_1,Types.PROP((Types.T_REAL(lstVar),NONE),c2),_) = elabExp(cache,env, s2, impl, NONE,true);
         c = Types.constAnd(c1, c2);
       then
         (cache,Exp.CALL(Absyn.IDENT("div"),{s1_1,s2_1},false,true,Exp.REAL()),Types.PROP((Types.T_REAL({}),NONE),c));
     case (cache,env,{s1,s2},_,impl)
       equation
-        (cache,s1_1,Types.PROP((Types.T_REAL({}),NONE),c1),_) = elabExp(cache,env, s1, impl, NONE,true);
-        (cache,s2_1,Types.PROP((Types.T_INTEGER({}),NONE),c2),_) = elabExp(cache,env, s2, impl, NONE,true);
+        (cache,s1_1,Types.PROP((Types.T_REAL(lstVar),NONE),c1),_) = elabExp(cache,env, s1, impl, NONE,true);
+        (cache,s2_1,Types.PROP((Types.T_INTEGER(lstVar),NONE),c2),_) = elabExp(cache,env, s2, impl, NONE,true);
         c = Types.constAnd(c1, c2);
       then
         (cache,Exp.CALL(Absyn.IDENT("div"),{s1_1,s2_1},false,true,Exp.REAL()),Types.PROP((Types.T_REAL({}),NONE),c));
     case (cache,env,{s1,s2},_,impl)
       equation
-        (cache,s1_1,Types.PROP((Types.T_INTEGER({}),NONE),c1),_) = elabExp(cache,env, s1, impl, NONE,true);
-        (cache,s2_1,Types.PROP((Types.T_INTEGER({}),NONE),c2),_) = elabExp(cache,env, s2, impl, NONE,true);
+        (cache,s1_1,Types.PROP((Types.T_INTEGER(lstVar),NONE),c1),_) = elabExp(cache,env, s1, impl, NONE,true);
+        (cache,s2_1,Types.PROP((Types.T_INTEGER(lstVar),NONE),c2),_) = elabExp(cache,env, s2, impl, NONE,true);
         c = Types.constAnd(c1, c2);
       then
         (cache,Exp.CALL(Absyn.IDENT("div"),{s1_1,s2_1},false,true,Exp.INT()),Types.PROP((Types.T_INTEGER({}),NONE),c));
@@ -3561,31 +3570,32 @@ algorithm
       Absyn.Exp s1,s2;
       Boolean impl;
       Env.Cache cache;
+      list<Types.Var> lstVar;
     case (cache,env,{s1,s2},_,impl) /* impl */
       equation
-        (cache,s1_1,Types.PROP((Types.T_REAL({}),NONE),c1),_) = elabExp(cache,env, s1, impl, NONE,true);
-        (cache,s2_1,Types.PROP((Types.T_REAL({}),NONE),c2),_) = elabExp(cache,env, s2, impl, NONE,true);
+        (cache,s1_1,Types.PROP((Types.T_REAL(lstVar),NONE),c1),_) = elabExp(cache,env, s1, impl, NONE,true);
+        (cache,s2_1,Types.PROP((Types.T_REAL(lstVar),NONE),c2),_) = elabExp(cache,env, s2, impl, NONE,true);
         c = Types.constAnd(c1, c2);
       then
         (cache,Exp.CALL(Absyn.IDENT("mod"),{s1_1,s2_1},false,true,Exp.REAL()),Types.PROP((Types.T_REAL({}),NONE),c));
     case (cache,env,{s1,s2},_,impl)
       equation
-        (cache,s1_1,Types.PROP((Types.T_INTEGER({}),NONE),c1),_) = elabExp(cache,env, s1, impl, NONE,true);
-        (cache,s2_1,Types.PROP((Types.T_REAL({}),NONE),c2),_) = elabExp(cache,env, s2, impl, NONE,true);
+        (cache,s1_1,Types.PROP((Types.T_INTEGER(lstVar),NONE),c1),_) = elabExp(cache,env, s1, impl, NONE,true);
+        (cache,s2_1,Types.PROP((Types.T_REAL(lstVar),NONE),c2),_) = elabExp(cache,env, s2, impl, NONE,true);
         c = Types.constAnd(c1, c2);
       then
         (cache,Exp.CALL(Absyn.IDENT("mod"),{s1_1,s2_1},false,true,Exp.REAL()),Types.PROP((Types.T_REAL({}),NONE),c));
     case (cache,env,{s1,s2},_,impl)
       equation
-        (cache,s1_1,Types.PROP((Types.T_REAL({}),NONE),c1),_) = elabExp(cache,env, s1, impl, NONE,true);
-        (cache,s2_1,Types.PROP((Types.T_INTEGER({}),NONE),c2),_) = elabExp(cache,env, s2, impl, NONE,true);
+        (cache,s1_1,Types.PROP((Types.T_REAL(lstVar),NONE),c1),_) = elabExp(cache,env, s1, impl, NONE,true);
+        (cache,s2_1,Types.PROP((Types.T_INTEGER(lstVar),NONE),c2),_) = elabExp(cache,env, s2, impl, NONE,true);
         c = Types.constAnd(c1, c2);
       then
         (cache,Exp.CALL(Absyn.IDENT("mod"),{s1_1,s2_1},false,true,Exp.REAL()),Types.PROP((Types.T_REAL({}),NONE),c));
     case (cache,env,{s1,s2},_,impl)
       equation
-        (cache,s1_1,Types.PROP((Types.T_INTEGER({}),NONE),c1),_) = elabExp(cache,env, s1, impl, NONE,true);
-        (cache,s2_1,Types.PROP((Types.T_INTEGER({}),NONE),c2),_) = elabExp(cache,env, s2, impl, NONE,true);
+        (cache,s1_1,Types.PROP((Types.T_INTEGER(lstVar),NONE),c1),_) = elabExp(cache,env, s1, impl, NONE,true);
+        (cache,s2_1,Types.PROP((Types.T_INTEGER(lstVar),NONE),c2),_) = elabExp(cache,env, s2, impl, NONE,true);
         c = Types.constAnd(c1, c2);
       then
         (cache,Exp.CALL(Absyn.IDENT("mod"),{s1_1,s2_1},false,true,Exp.INT()),Types.PROP((Types.T_INTEGER({}),NONE),c));
@@ -3614,31 +3624,32 @@ algorithm
       Absyn.Exp s1,s2;
       Boolean impl;
       Env.Cache cache;
+      list<Types.Var> lstVar;
     case (cache,env,{s1,s2},_,impl) /* impl */
       equation
-        (cache,s1_1,Types.PROP((Types.T_REAL({}),NONE),c1),_) = elabExp(cache,env, s1, impl, NONE,true);
-        (cache,s2_1,Types.PROP((Types.T_REAL({}),NONE),c2),_) = elabExp(cache,env, s2, impl, NONE,true);
+        (cache,s1_1,Types.PROP((Types.T_REAL(lstVar),NONE),c1),_) = elabExp(cache,env, s1, impl, NONE,true);
+        (cache,s2_1,Types.PROP((Types.T_REAL(lstVar),NONE),c2),_) = elabExp(cache,env, s2, impl, NONE,true);
         c = Types.constAnd(c1, c2);
       then
         (cache,Exp.CALL(Absyn.IDENT("rem"),{s1_1,s2_1},false,true,Exp.REAL()),Types.PROP((Types.T_REAL({}),NONE),c));
     case (cache,env,{s1,s2},_,impl)
       equation
-        (cache,s1_1,Types.PROP((Types.T_INTEGER({}),NONE),c1),_) = elabExp(cache,env, s1, impl, NONE,true);
-        (cache,s2_1,Types.PROP((Types.T_REAL({}),NONE),c2),_) = elabExp(cache,env, s2, impl, NONE,true);
+        (cache,s1_1,Types.PROP((Types.T_INTEGER(lstVar),NONE),c1),_) = elabExp(cache,env, s1, impl, NONE,true);
+        (cache,s2_1,Types.PROP((Types.T_REAL(lstVar),NONE),c2),_) = elabExp(cache,env, s2, impl, NONE,true);
         c = Types.constAnd(c1, c2);
       then
         (cache,Exp.CALL(Absyn.IDENT("rem"),{s1_1,s2_1},false,true,Exp.REAL()),Types.PROP((Types.T_REAL({}),NONE),c));
     case (cache,env,{s1,s2},_,impl)
       equation
-        (cache,s1_1,Types.PROP((Types.T_REAL({}),NONE),c1),_) = elabExp(cache,env, s1, impl, NONE,true);
-        (cache,s2_1,Types.PROP((Types.T_INTEGER({}),NONE),c2),_) = elabExp(cache,env, s2, impl, NONE,true);
+        (cache,s1_1,Types.PROP((Types.T_REAL(lstVar),NONE),c1),_) = elabExp(cache,env, s1, impl, NONE,true);
+        (cache,s2_1,Types.PROP((Types.T_INTEGER(lstVar),NONE),c2),_) = elabExp(cache,env, s2, impl, NONE,true);
         c = Types.constAnd(c1, c2);
       then
         (cache,Exp.CALL(Absyn.IDENT("rem"),{s1_1,s2_1},false,true,Exp.REAL()),Types.PROP((Types.T_REAL({}),NONE),c));
     case (cache,env,{s1,s2},_,impl)
       equation
-        (cache,s1_1,Types.PROP((Types.T_INTEGER({}),NONE),c1),_) = elabExp(cache,env, s1, impl, NONE,true);
-        (cache,s2_1,Types.PROP((Types.T_INTEGER({}),NONE),c2),_) = elabExp(cache,env, s2, impl, NONE,true);
+        (cache,s1_1,Types.PROP((Types.T_INTEGER(lstVar),NONE),c1),_) = elabExp(cache,env, s1, impl, NONE,true);
+        (cache,s2_1,Types.PROP((Types.T_INTEGER(lstVar),NONE),c2),_) = elabExp(cache,env, s2, impl, NONE,true);
         c = Types.constAnd(c1, c2);
       then
         (cache,Exp.CALL(Absyn.IDENT("rem"),{s1_1,s2_1},false,true,Exp.REAL()),Types.PROP((Types.T_INTEGER({}),NONE),c));
@@ -3668,9 +3679,10 @@ algorithm
       Absyn.Exp s1;
       Boolean impl;
       Env.Cache cache;
+      list<Types.Var> lstVar;
     case (cache,env,{s1},_,impl) /* impl */
       equation
-        (cache,s1_1,Types.PROP((Types.T_REAL({}),NONE),c),_) = elabExp(cache,env, s1, impl, NONE,true);
+        (cache,s1_1,Types.PROP((Types.T_REAL(lstVar),NONE),c),_) = elabExp(cache,env, s1, impl, NONE,true);
          /* print \"# integer function not implemented yet REAL\\n\" */
       then
         (cache,Exp.CALL(Absyn.IDENT("integer"),{s1_1},false,true,Exp.INT()),Types.PROP((Types.T_INTEGER({}),NONE),c));
@@ -3981,14 +3993,15 @@ algorithm
       Boolean impl;
       Types.Const c;
       Env.Cache cache;
+      list<Types.Var> lstVar;
     case (cache,env,{exp},_,impl) /* impl Constness: C_VAR */
       equation
-        (cache,exp_1,Types.PROP((Types.T_BOOL({}),_),Types.C_VAR()),_) = elabExp(cache,env, exp, impl, NONE,true);
+        (cache,exp_1,Types.PROP((Types.T_BOOL(lstVar),_),Types.C_VAR()),_) = elabExp(cache,env, exp, impl, NONE,true);
       then
         (cache,Exp.CALL(Absyn.IDENT("edge"),{exp_1},false,true,Exp.BOOL()),Types.PROP((Types.T_BOOL({}),NONE),Types.C_VAR()));
     case (cache,env,{exp},_,impl) /* constness: C_PARAM & C_CONST */
       equation
-        (cache,exp_1,Types.PROP((Types.T_BOOL({}),_),c),_) = elabExp(cache,env, exp, impl, NONE,true);
+        (cache,exp_1,Types.PROP((Types.T_BOOL(lstVar),_),c),_) = elabExp(cache,env, exp, impl, NONE,true);
         exp_2 = valueExp(Values.BOOL(false));
       then
         (cache,exp_2,Types.PROP((Types.T_BOOL({}),NONE),c));
@@ -4081,6 +4094,7 @@ algorithm
       Ident s;
       list<Absyn.Exp> expl;
       Env.Cache cache;
+      list<Types.Var> lstVar;
 
       /* use elab_call_args to also try vectorized calls */
     case (cache,env,{exp},_,impl)
@@ -4092,7 +4106,7 @@ algorithm
         /* Constant expressions should fail */
     case (cache,env,{(exp as Absyn.CREF(componentReg = cr))},_,impl)
       equation
-        (cache,exp_1,Types.PROP((Types.T_REAL({}),_),c),_) = elabExp(cache,env, exp, impl, NONE,true);
+        (cache,exp_1,Types.PROP((Types.T_REAL(lstVar),_),c),_) = elabExp(cache,env, exp, impl, NONE,true);
         Error.addMessage(Error.DER_APPLIED_TO_CONST, {});
       then
         fail();
@@ -4354,9 +4368,10 @@ algorithm
       Absyn.Exp dim;
       Boolean impl;
       Env.Cache cache;
+      list<Types.Var> lstVar;
     case (cache,env,{dim},_,impl) /* impl */
       equation
-        (cache,dim_exp,Types.PROP((Types.T_INTEGER(_),_),Types.C_CONST()),_) = elabExp(cache,env, dim, impl, NONE,true);
+        (cache,dim_exp,Types.PROP((Types.T_INTEGER(lstVar),_),Types.C_CONST()),_) = elabExp(cache,env, dim, impl, NONE,true);
         (cache,Values.INTEGER(size),_) = Ceval.ceval(cache,env, dim_exp, false, NONE, NONE, Ceval.MSG());
       then
         (cache,Exp.CALL(Absyn.IDENT("identity"),{dim_exp},false,true,Exp.INT()),Types.PROP(
@@ -4366,7 +4381,7 @@ algorithm
           Types.T_ARRAY(Types.DIM(SOME(size)),(Types.T_INTEGER({}),NONE)),NONE)),NONE),Types.C_CONST()));
     case (cache,env,{dim},_,impl)
       equation
-        (cache,dim_exp,Types.PROP((Types.T_INTEGER(_),_),Types.C_PARAM()),_) = elabExp(cache,env, dim, impl, NONE,true);
+        (cache,dim_exp,Types.PROP((Types.T_INTEGER(lstVar),_),Types.C_PARAM()),_) = elabExp(cache,env, dim, impl, NONE,true);
         (cache,Values.INTEGER(size),_) = Ceval.ceval(cache,env, dim_exp, false, NONE, NONE, Ceval.MSG());
       then
         (cache,Exp.CALL(Absyn.IDENT("identity"),{dim_exp},false,true,Exp.INT()),Types.PROP(
@@ -4376,7 +4391,7 @@ algorithm
           Types.T_ARRAY(Types.DIM(SOME(size)),(Types.T_INTEGER({}),NONE)),NONE)),NONE),Types.C_PARAM()));
     case (cache,env,{dim},_,impl)
       equation
-        (cache,dim_exp,Types.PROP((Types.T_INTEGER(_),_),Types.C_VAR()),_) = elabExp(cache,env, dim, impl, NONE,true);
+        (cache,dim_exp,Types.PROP((Types.T_INTEGER(lstVar),_),Types.C_VAR()),_) = elabExp(cache,env, dim, impl, NONE,true);
       then
         (cache,Exp.CALL(Absyn.IDENT("identity"),{dim_exp},false,true,Exp.INT()),Types.PROP(
           (
@@ -6010,12 +6025,32 @@ algorithm
   end matchcontinue;
 end componentRefToPath;
 
-protected function generateCompiledFunction "function: generateCompiledFunction
+public function needToRebuild
+  input String newFile;
+  input String oldFile;
+  input Real   buildTime;
+  output Boolean buildNeeded;
+algorithm
+  buildNeeded := matchcontinue(newFile, oldFile, buildTime)
+    local String newf,oldf; Real bt,nfmt;
+    case ("","",bt) then true; // rebuild all the time if the function has no file!
+    case (newf,oldf,bt)
+      equation
+        true = stringEqual(newf, oldf); // the files should be the same!
+        // the new file nf should have an older modification time than the last build                
+        SOME(nfmt) = System.getFileModificationTime(newf); 
+        true = realGt(bt, nfmt); // the file was not modified since last build
+      then false;
+    case (_,_,_) then true;
+  end matchcontinue;
+end needToRebuild;
+
+protected function generateCompiledFunction 
+"function: generateCompiledFunction
   TODO: This currently only works for top level functions. For functions inside packages
   we need to reimplement without using lookup functions, since we can not build
-  correct env for packages containing functions.
-"
-	input Env.Cache inCache;
+  correct env for packages containing functions."
+  input Env.Cache inCache;
   input Env.Env inEnv;
   input Absyn.ComponentRef inComponentRef;
   input Exp.Exp inExp;
@@ -6034,7 +6069,7 @@ algorithm
       Types.Properties prop;
       Interactive.InteractiveSymbolTable st;
       Absyn.Program p;
-      list<Interactive.CompiledCFunction> cflist;
+      list<Interactive.CompiledCFunction> cflist,newCF;
       SCode.Class cdef,cls;
       Ident fid,pathstr,filename,str1,str2;
       Option<Absyn.ExternalDecl> extdecl;
@@ -6049,19 +6084,24 @@ algorithm
       list<Interactive.InteractiveVariable> c;
       Env.Cache cache;
       list<Interactive.LoadedFile> lf;
+      Real buildTime;
+      Real fileLoadTime;
+      String fNew,fOld;
     case (cache,env,fn,e,prop,SOME((st as Interactive.SYMBOLTABLE(p,_,_,_,cflist,_)))) /* axiom generate_compiled_function(_,_,_,_,NONE) => NONE */
       equation
         Debug.fprintln("sei", "generate_compiled_function: start1");
         pfn = Absyn.crefToPath(fn);
-        (true,_) = isFunctionInCflist(cflist, pfn);
+        Absyn.CLASS(_,_,_,_,Absyn.R_FUNCTION(),_,Absyn.INFO(fileName = fNew)) = Interactive.getPathedClassInProgram(pfn, p);        
+        (true, _, buildTime, fOld) = isFunctionInCflist(cflist, pfn);
+        false = needToRebuild(fNew,fOld,buildTime); // we don't need to rebuild!
         Debug.fprintln("sei", "function is in Cflist");
       then
-        (cache,SOME(st));
+        (cache,SOME(st));      
     case (cache,env,fn,e,prop,st) /* Don not compile if is \"known\" external function, e.g. math lib. */
       local Option<Interactive.InteractiveSymbolTable> st;
       equation
         path = Absyn.crefToPath(fn);
-        (cache,cdef,env_1) = Lookup.lookupClass(cache,env, path, false);
+        (cache,cdef,env_1) = Lookup.lookupClass(cache, env, path, false);
         SCode.CLASS(name = fid,restriction = SCode.R_EXT_FUNCTION(),classDef = SCode.PARTS(externalDecl = extdecl)) = cdef;
         SOME(Absyn.EXTERNALDECL(id,lan,out,args,_)) = extdecl;
         Ceval.isKnownExternalFunc(fid, id);
@@ -6070,18 +6110,20 @@ algorithm
         (cache,st);
     case (cache,env,fn,e,prop,SOME((st as Interactive.SYMBOLTABLE(p,a,b,c,cflist,lf))))
       local Integer libHandle, funcHandle;
-            String funcstr;
+            String funcstr,f;
+            Real buildTime;
+            Boolean ifFuncInList;
       equation
         Debug.fprintln("sei", "generate_compiled_function: start2");
         path = Absyn.crefToPath(fn);
-        (false,_) = isFunctionInCflist(cflist, path);
+        newCF = Interactive.removeCf(path, cflist); // remove it as it might be there with an older build time.
         (cache,false) = isExternalObjectFunction(cache,env,path);
+        Absyn.CLASS(_,_,_,_,Absyn.R_FUNCTION(),_,Absyn.INFO(fileName = f)) = Interactive.getPathedClassInProgram(path, p);
         p_1 = SCode.elaborate(p);
         Debug.fprintln("sei", "generate_compiled_function: elaborated");
         (cache,cls,env_1) = Lookup.lookupClass(cache,env, path, false) "	Inst.instantiate_implicit(p\') => d & message" ;
         Debug.fprintln("sei", "generate_compiled_function: class looked up");
-        (cache,env_2,d) = Inst.implicitFunctionInstantiation(cache,env_1, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
-          cls, {});
+        (cache,env_2,d) = Inst.implicitFunctionInstantiation(cache,env_1, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cls, {});
         Debug.fprintln("sei", "generate_compiled_function: function instantiated");
         Print.clearBuf();
         d_1 = ModUtil.stringPrefixParams(DAE.DAE(d));
@@ -6093,8 +6135,9 @@ algorithm
         libHandle = System.loadLibrary(funcstr);
         funcHandle = System.lookupFunction(libHandle, stringAppend("in_", funcstr));
         System.freeLibrary(libHandle);
+        buildTime = System.getCurrentTime();
       then
-        (cache,SOME(Interactive.SYMBOLTABLE(p,a,b,c,(Interactive.CFunction(path,t,funcHandle) :: cflist),lf)));
+        (cache,SOME(Interactive.SYMBOLTABLE(p,a,b,c,(Interactive.CFunction(path,t,funcHandle,buildTime,f) :: newCF),lf)));
     case (cache,env,fn,e,prop,NONE) /* PROP_TUPLE? */
       equation
         Debug.fprintln("sei", "generate_compiled_function: start3");
@@ -6123,38 +6166,40 @@ algorithm
   end matchcontinue;
 end generateCompiledFunction;
 
-public function isFunctionInCflist "function: isFunctionInCflist
-
+public function isFunctionInCflist 
+"function: isFunctionInCflist
   This function returns true if a function, named by an Absyn.Path,
   is present in the list of precompiled functions that can be executed
   in the interactive mode. If it returns true, it also returns the
-  functionHandle stored in the cflist.
-"
+  functionHandle stored in the cflist."
   input list<Interactive.CompiledCFunction> inTplAbsynPathTypesTypeLst;
   input Absyn.Path inPath;
   output Boolean outBoolean;
   output Integer outFuncHandle;
+  output Real outBuildTime;
+  output String outFileName;
 algorithm
-  (outBoolean,outFuncHandle):=
-  matchcontinue (inTplAbsynPathTypesTypeLst,inPath)
+  (outBoolean,outFuncHandle,outBuildTime,outFileName) := matchcontinue (inTplAbsynPathTypesTypeLst,inPath)
     local
       Absyn.Path path1,path2;
       Types.Type ty;
       list<Interactive.CompiledCFunction> rest;
       Boolean res;
       Integer handle;
-    case ({},_) then (false, -1);
-    case ((Interactive.CFunction(path1,ty,handle) :: rest),path2)
+      Real buildTime;
+      String fileName;
+    case ({},_) then (false, -1, -1.0, "");
+    case ((Interactive.CFunction(path1,ty,handle,buildTime,fileName) :: rest),path2)
       equation
         true = ModUtil.pathEqual(path1, path2);
       then
-        (true, handle);
-    case ((Interactive.CFunction(path1,ty,_) :: rest),path2)
+        (true, handle, buildTime, fileName);
+    case ((Interactive.CFunction(path1,ty,_,_,_) :: rest),path2)
       equation
         false = ModUtil.pathEqual(path1, path2);
-        (res,handle) = isFunctionInCflist(rest, path2);
+        (res,handle,buildTime,fileName) = isFunctionInCflist(rest, path2);
       then
-        (res,handle);
+        (res,handle,buildTime,fileName);
   end matchcontinue;
 end isFunctionInCflist;
 
@@ -7584,12 +7629,12 @@ algorithm
   end matchcontinue;
 end fillSlot;
 
-public function elabCref "function: elabCref
+public function elabCref 
+"function: elabCref
   Elaborate on a component reference.  Check the type of the
   component referred to, and check if the environment contains
   either a constant binding for that variable, or if it contains an
-  equation binding with a constant expression.
-"
+  equation binding with a constant expression."
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input Absyn.ComponentRef inComponentRef;
@@ -7616,6 +7661,7 @@ algorithm
       Ident s,scope;
       Env.Cache cache;
       Boolean doVect;
+
     case (cache,env,c,impl,doVect) /* impl */
       local String str;
          Types.Properties props;
@@ -7707,16 +7753,15 @@ algorithm
   end matchcontinue;
 end fillSubscripts;
 
-protected function elabCref2 "function: elabCref2
-
+protected function elabCref2 
+"function: elabCref2
   This function check whether the component reference found in
-  `elab_cref\' has a binding, and if that binding is constant.  If
-  the binding is a `VALBOUND\' binding, the value is substituted.
-  Constant values are e.g.: 1+5, c1+c2, ps12   ,where c1 and c2 are modelica constants,
+  elabCref has a binding, and if that binding is constant.  
+  If the binding is a VALBOUND binding, the value is substituted.
+  Constant values are e.g.: 1+5, c1+c2, ps12, where c1 and c2 are modelica constants,
  						    ps1 and ps2 are structural parameters.
   Non Constant values are e.g. : p1+p2, x1x2  ,where p1,p2 are modelica parameters,
- 						  x1,x2 modelica variables.
-"
+ 						  x1,x2 modelica variables."
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input Exp.ComponentRef inComponentRef;
@@ -8436,7 +8481,7 @@ algorithm
         (cache,exp,Types.PROP(t2,c));
     case (cache,env,e1,Types.PROP(type_ = t1,constFlag = c1),e2,Types.PROP(type_ = t2,constFlag = c2),e3,Types.PROP(type_ = t3,constFlag = c3),impl,st)
       equation
-        failure(equality(t1 = (Types.T_BOOL({}),NONE)));
+        failure((Types.T_BOOL(_),NONE) = t1);
         e_str = Exp.printExpStr(e1);
         t_str = Types.unparseType(t1);
         Error.addMessage(Error.IF_CONDITION_TYPE_ERROR, {e_str,t_str});
@@ -9334,7 +9379,10 @@ algorithm
         (cache,types);
     case (cache,Absyn.EQUAL(),env,t1,t2)
       equation
+        // Debug.fprintln("static", "t1: " +& Types.printTypeStr(t1) +& " =?= t2: " +& Types.printTypeStr(t2)); 
         scalars = {
+          (Exp.EQUAL(Exp.ENUM()),
+          {(Types.T_ENUMERATION({},{}),NONE),(Types.T_ENUMERATION({},{}),NONE)},(Types.T_BOOL({}),NONE)),        
           (Exp.EQUAL(Exp.INT()),
           {(Types.T_INTEGER({}),NONE),(Types.T_INTEGER({}),NONE)},(Types.T_BOOL({}),NONE)),
           (Exp.EQUAL(Exp.REAL()),

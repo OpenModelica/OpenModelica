@@ -90,16 +90,10 @@ public import Patternm;
 public import MetaUtil;
 public import RTOpts;
 
-
-public type Prefix = Prefix.Prefix "
-  These type aliases are introduced to make the code a little more
-  readable.
-" ;
-
+/* These type aliases are introduced to make the code a little more readable.*/
+public type Prefix = Prefix.Prefix "" ;
 public type Mod = Types.Mod;
-
 public type Ident = Exp.Ident;
-
 public type Env = Env.Env;
 
 public uniontype CallingScope "Calling scope is used to determine when unconnected flow variables
@@ -138,9 +132,6 @@ end DimExp;
 protected import Debug;
 protected import Interactive;
 protected import Util;
-
-
-
 protected import Builtin;
 protected import Dump;
 protected import Lookup;
@@ -782,7 +773,7 @@ algorithm
       equation
         //Debug.fprint("insttr", "inst_program_implicit: ");
         //Debug.fprint("insttr", n);
-        //Debug.fprintln("insttr", "");
+        //Debug.fprintln("insttr", "\n");
         env = Env.extendFrameC(env, c);
         (cache,env_1,dae1) = implicitInstantiation(cache, env, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, c, {});
         (cache,dae2,env_2) = instProgramImplicit(cache,env_1, cs);
@@ -855,20 +846,23 @@ algorithm
         fail();
 
     /* Instantiation of a class. Create new scope and call instClassIn.
-     *  Then generate equations from connects.
+     * Then generate equations from connects.
      */
     case (cache,env,mod,pre,csets,
           (c as SCode.CLASS(name = n,encapsulatedPrefix = encflag,restriction = r, partialPrefix = false)),
           inst_dims,impl,callscope)      
       equation
         //print("\n---- CLASS: "); print(n); print(" ----\n"); print(SCode.printClassStr(c)); //Print out the input SCode class
-        //str = SCode.printClassStr(c); print("------------------- CLASS instClass-----------------\n");print(str);print("\n===============================================\n");
+        //str = SCode.printClassStr(c); print("------------------- CLASS instClass-----------------\n");
+        //print(str);print("\n===============================================\n");
+        //Debug.fprint("insttr", "Inst.instClass: "); Debug.fprint("insttr", n); Debug.fprintln("insttr", "\n");
         env_1 = Env.openScope(env, encflag, SOME(n));
         ci_state = ClassInf.start(r, n);
         (cache,dae1,env_3,(csets_1 as Connect.SETS(_,crs)),ci_state_1,tys,bc_ty)
         			= instClassIn(cache,env_1, mod, pre, csets, ci_state, c, false, inst_dims, impl) ;
         (cache,fq_class) = makeFullyQualified(cache,env, Absyn.IDENT(n));
-				//str = Absyn.pathString(fq_class); print("------------------- CLASS makeFullyQualified instClass-----------------\n");print(n); print("  ");print(str);print("\n===============================================\n");
+        //str = Absyn.pathString(fq_class); print("------------------- CLASS makeFullyQualified instClass-----------------\n");
+        //print(n); print("  ");print(str);print("\n===============================================\n");
         dae1_1 = DAE.setComponentType(dae1, fq_class);
         callscope_1 = isTopCall(callscope);
         dae2 = Connect.equations(csets_1);
@@ -1618,7 +1612,7 @@ algorithm
         csets_filtered = addConnectionCrefs(csets_filtered, eqs_1);
 
         //Add filtered connection sets to env so ceval can reach it
-        env2 = addConnectionSetToEnv(csets_filtered,pre, env2);
+        env2 = addConnectionSetToEnv(csets_filtered, pre, env2);
         id = Env.printEnvPathStr(env);
         pre_str = Prefix.printPrefixStr(pre);
 
@@ -1741,7 +1735,7 @@ algorithm
   end matchcontinue;
 end instClassdef;
 
-protected function removeSelfReference
+public function removeSelfReference
 "@author adrpo
  Removes self reference from a path if it exists.
  Examples:
@@ -2235,12 +2229,12 @@ algorithm
       list<Env.Frame> bc,fs;
       Boolean enc;
     case (Connect.SETS(connection = crs),prefix,
-      (Env.FRAME(optName = n,clsAndVars = bt1,types = bt2,imports = imp,inherited = bc,isEncapsulated = enc) :: fs))
+          (Env.FRAME(optName = n,clsAndVars = bt1,types = bt2,imports = imp,inherited = bc,isEncapsulated = enc) :: fs))
       equation
         prefix_cr = Prefix.prefixToCref(prefix);
       then (Env.FRAME(n,bt1,bt2,imp,bc,(crs,prefix_cr),enc) :: fs);
     case (Connect.SETS(connection = crs),prefix,
-        (Env.FRAME(optName = n,clsAndVars = bt1,types = bt2,imports = imp,inherited = bc,isEncapsulated = enc) :: fs))
+          (Env.FRAME(optName = n,clsAndVars = bt1,types = bt2,imports = imp,inherited = bc,isEncapsulated = enc) :: fs))
       equation
       then (Env.FRAME(n,bt1,bt2,imp,bc,(crs,Exp.CREF_IDENT("",{})),enc) :: fs);
   end matchcontinue;
@@ -2300,7 +2294,7 @@ algorithm
       Exp.ComponentRef cr;
       list<Exp.ComponentRef> crs_1,crs;
       list<Connect.Set> set;
-    case (s,Prefix.NOPRE()) then s;  /* no Prexix, nothing to filter */
+    case (s,Prefix.NOPRE()) then s;  /* no Prefix, nothing to filter */
     case (Connect.SETS(setLst = set,connection = crs),pre)
       equation
         first_pre = Prefix.prefixFirst(pre);
@@ -2941,7 +2935,7 @@ algorithm
     case ((((comp as SCode.COMPONENT(component = id)),cmod) :: xs),mod,env)
       equation
         cmod2 = Mod.lookupCompModification(mod, id);
-        mod_1 = Mod.merge(cmod, cmod2, env, Prefix.NOPRE());
+        mod_1 = Mod.merge(cmod2, cmod, env, Prefix.NOPRE());
         res = updateComponents(xs, mod, env);
       then
         ((comp,mod_1) :: res);
@@ -3739,7 +3733,8 @@ algorithm
         mm_1 = Mod.lookupCompModification(mods_1, n);
         (cache,m) = removeSelfModReference(cache,n,m); // Remove self-reference i.e. A a(x=a.y);
         (cache,m_1) = Mod.elabMod(cache,env2, pre, m, impl);
-        mod = Mod.merge(classmod_1, mm_1, env2, pre);
+        /* mod = Mod.merge(classmod_1, mm_1, env2, pre); */
+        mod = Mod.merge(mm_1, classmod_1, env2, pre);
         mod1 = Mod.merge(mod, m_1, env2, pre);
         mod1_1 = Mod.merge(cmod, mod1, env2, pre);
 
@@ -6090,7 +6085,8 @@ algorithm
 
     /* enumerations */
     case (cache,env,mod,pre,csets,
-          (c as SCode.CLASS(name = n,restriction = SCode.R_TYPE(),classDef = SCode.ENUMERATION(identLst = l))),inst_dims)
+          (c as SCode.CLASS(name = n,restriction = SCode.R_TYPE(),classDef = SCode.ENUMERATION(identLst = l))),
+          inst_dims)
       equation
         enumclass = instEnumeration(n, l);
         env_2 = Env.extendFrameC(env, enumclass);
@@ -6852,7 +6848,7 @@ protected function instEnumeration
   output SCode.Class outClass;
   list<SCode.Element> comp;
 algorithm
-  comp := makeEnumComponents(l);
+  comp := makeEnumComponents(l, 1);
   outClass := SCode.CLASS(n,false,false,SCode.R_ENUMERATION(),SCode.PARTS(comp,{},{},{},{},NONE));
 end instEnumeration;
 
@@ -6862,24 +6858,31 @@ protected function makeEnumComponents
   This function takes a list of strings and returns the elements of
   type EnumType each corresponding to one of the enumeration values."
   input list<String> inStringLst;
+  input Integer index;
   output list<SCode.Element> outSCodeElementLst;
 algorithm
-  outSCodeElementLst := matchcontinue (inStringLst)
+  outSCodeElementLst := matchcontinue (inStringLst,index)
     local
       String str;
+      Integer i;
       list<SCode.Element> els;
       list<String> x;
-    case ({str}) 
+      SCode.Mod m;
+    // maybe we should use: SCode.MOD(false,Absyn.NON_EACH(),{},SOME((Absyn.INTEGER(i),false))) instead of SCode.NOMOD()
+    case ({str},i)
+      equation
+        m = SCode.NOMOD();
       then {SCode.COMPONENT(str,Absyn.UNSPECIFIED(),true,false,false,
             SCode.ATTR({},false,false,SCode.RO(),SCode.CONST(),Absyn.BIDIR()),
-            Absyn.TPATH(Absyn.IDENT("EnumType"),NONE),SCode.NOMOD(),NONE,NONE)};
-    case ((str :: (x as (_ :: _))))
+            Absyn.TPATH(Absyn.IDENT("EnumType"),NONE),m,NONE,NONE)};            
+    case ((str :: (x as (_ :: _))),i)
       equation
-        els = makeEnumComponents(x);
+        els = makeEnumComponents(x,i+1);
+        m = SCode.NOMOD();
       then
         (SCode.COMPONENT(str,Absyn.UNSPECIFIED(),true,false,false,
          SCode.ATTR({},false,false,SCode.RO(),SCode.CONST(),Absyn.BIDIR()),
-         Absyn.TPATH(Absyn.IDENT("EnumType"),NONE),SCode.NOMOD(),NONE,NONE) :: els);
+         Absyn.TPATH(Absyn.IDENT("EnumType"),NONE),m,NONE,NONE) :: els);
   end matchcontinue;
 end makeEnumComponents;
 

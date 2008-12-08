@@ -51,123 +51,107 @@ protected import Parser;
 protected import Print;
 protected import Debug;
 
-public function loadClass "function: loadClass
+public function loadClass 
+"function: loadClass
   This function takes a \'Path\' and the $OPENMODELICALIBRARY as a string
   and tries to load the class from the path.
   If the classname is qualified, the complete package is loaded.
-  E.g. load_class(Modelica.SIunits.Voltage) -> whole Modelica package loaded.
-"
+  E.g. load_class(Modelica.SIunits.Voltage) -> whole Modelica package loaded."
   input Absyn.Path inPath;
   input String inString;
-  input list<Interactive.CompiledCFunction> inCompiledFunctions;
   output Absyn.Program outProgram;
-  output list<Interactive.CompiledCFunction> outCompiledFunctions;
 algorithm
-  (outProgram,outCompiledFunctions):=
-  matchcontinue (inPath,inString,inCompiledFunctions)
+  outProgram := matchcontinue (inPath,inString)
     local
       String gd,classname,mp,pack;
       list<String> mps;
       Absyn.Program p;
       Absyn.Path rest,path;
-      list<Interactive.CompiledCFunction> cf, newCF;
-    case (Absyn.IDENT(name = classname),mp,cf) /* Simple names: Just load the file if it can be found in $OPENMODELICALIBRARY */
+    case (Absyn.IDENT(name = classname),mp) /* Simple names: Just load the file if it can be found in $OPENMODELICALIBRARY */
       equation
         gd = System.groupDelimiter();
         mps = System.strtok(mp, gd);
-        (p, newCF) = loadClassFromMps(classname, mps, cf);
+        p = loadClassFromMps(classname, mps);
       then
-        (p, newCF);
-    case (Absyn.QUALIFIED(name = pack,path = rest),mp, cf) /* Qualified names: First check if it is defined in a file pack.mo */
+        p;
+    case (Absyn.QUALIFIED(name = pack,path = rest),mp) /* Qualified names: First check if it is defined in a file pack.mo */
       equation
         gd = System.groupDelimiter();
         mps = System.strtok(mp, gd);
-        (p, newCF) = loadClassFromMps(pack, mps, cf);
+        p = loadClassFromMps(pack, mps);
       then
-        (p, newCF);
-    case ((path as Absyn.QUALIFIED(name = pack,path = rest)),mp,cf) /* Qualified names: Else, load the complete package and then check that the package contains the file */
+        p;
+    case ((path as Absyn.QUALIFIED(name = pack,path = rest)),mp) /* Qualified names: Else, load the complete package and then check that the package contains the file */
       equation
         gd = System.groupDelimiter();
         mps = System.strtok(mp, gd);
-        (p, newCF) = loadCompletePackageFromMps(pack, mps, Absyn.TOP(), Absyn.PROGRAM({},Absyn.TOP()), cf);
-        _ = Interactive.getPathedClassInProgram(path, p);
+        p = loadCompletePackageFromMps(pack, mps, Absyn.TOP(), Absyn.PROGRAM({},Absyn.TOP()));
+        // _ = Interactive.getPathedClassInProgram(path, p);
       then
-        (p, newCF);
-    case (_,_,_)
+        p;
+    case (_,_)
       equation
-        Debug.fprint("failtrace", "load_class failed\n");
+        Debug.fprint("failtrace", "ClassLoader.loadClass failed\n");
       then
         fail();
   end matchcontinue;
 end loadClass;
 
-protected function existRegularFile "function: existRegularFile
-
-  Checks if a file exists
-"
+protected function existRegularFile 
+"function: existRegularFile
+  Checks if a file exists"
   input String filename;
 algorithm
   0 := System.regularFileExists(filename);
 end existRegularFile;
 
-protected function existDirectoryFile "function: existDirectoryFile
-
-  Checks if a directory exist
-"
+protected function existDirectoryFile 
+"function: existDirectoryFile
+  Checks if a directory exist"
   input String filename;
 algorithm
   0 := System.directoryExists(filename);
 end existDirectoryFile;
 
-protected function loadClassFromMps "function: loadClassFromMps
-
-  Loads a class or classes from a set of paths in OPENMODELICALIBRARY
-"
+protected function loadClassFromMps 
+"function: loadClassFromMps
+  Loads a class or classes from a set of paths in OPENMODELICALIBRARY"
   input Absyn.Ident inIdent;
   input list<String> inStringLst;
-  input list<Interactive.CompiledCFunction> inCompiledFunctions;
   output Absyn.Program outProgram;
-  output list<Interactive.CompiledCFunction> outCompiledFunctions;
 algorithm
-  (outProgram,outCompiledFunctions):=
-  matchcontinue (inIdent,inStringLst,inCompiledFunctions)
+  outProgram := matchcontinue (inIdent,inStringLst)
     local
       Absyn.Program p;
       String class_,mp;
       list<String> mps;
-      list<Interactive.CompiledCFunction> cf, newCF;
-    case (class_,(mp :: mps),cf)
+    case (class_,(mp :: mps))
       equation
-        (p, newCF) = loadClassFromMp(class_, mp, cf);
+        p = loadClassFromMp(class_, mp);
       then
-        (p, newCF);
-    case (class_,(_ :: mps),cf)
+        p;
+    case (class_,(_ :: mps))
       equation
-        (p, newCF) = loadClassFromMps(class_, mps, cf);
+        p = loadClassFromMps(class_, mps);
       then
-        (p, newCF);
+        p;
   end matchcontinue;
 end loadClassFromMps;
 
-protected function loadClassFromMp "function: loadClassFromMp
-
+protected function loadClassFromMp 
+"function: loadClassFromMp
   This function loads a modelica class \"className\" from the file path
   \"<mp>/className.mo\" or it loads complete package from
-  \"<mp>/className/package.mo\"
-"
+  \"<mp>/className/package.mo\""
   input Absyn.Ident inIdent;
   input String inString;
-  input list<Interactive.CompiledCFunction> inCompiledFunctions;
   output Absyn.Program outProgram;
-  output list<Interactive.CompiledCFunction> outCompiledFunctions;
 algorithm
-  (outProgram,outCompiledFunctions):=
-  matchcontinue (inIdent,inString,inCompiledFunctions)
+  outProgram := matchcontinue (inIdent,inString)
     local
       String mp,pd,classfile,classfile_1,class_,mp_1,dirfile,packfile;
       Absyn.Program p;
-      list<Interactive.CompiledCFunction> cf, newCF;
-    case (class_,mp_1,cf)
+    case (class_,mp_1)
       equation
         mp = System.trim(mp_1, " \"\t");
         pd = System.pathDelimiter();
@@ -179,8 +163,8 @@ algorithm
         print("\n");
         p = Parser.parse(classfile_1);
       then
-        (p,cf);
-    case (class_,mp_1,cf)
+        p;
+    case (class_,mp_1)
       equation
         mp = System.trim(mp_1, " \"\t");
         pd = System.pathDelimiter();
@@ -188,66 +172,56 @@ algorithm
         packfile = Util.stringAppendList({dirfile,pd,"package.mo"});
         existDirectoryFile(dirfile);
         existRegularFile(packfile);
-        Print.printBuf(
-          "Class is package stored in a directory, loading whole package(incl. subdir)\n");
-        (p, newCF) = loadCompletePackageFromMp(class_, mp, Absyn.TOP(), Absyn.PROGRAM({},Absyn.TOP()), cf);
+        Print.printBuf("Class is package stored in a directory, loading whole package(incl. subdir)\n");
+        p = loadCompletePackageFromMp(class_, mp, Absyn.TOP(), Absyn.PROGRAM({},Absyn.TOP()));
       then
-        (p, newCF);
-    case (_,_,_)
+        p;
+    case (_,_)
       equation
-        Debug.fprint("failtrace", "load_class_from_mp failed\n");
+        Debug.fprint("failtrace", "ClassLoader.loadClassFromMp failed\n");
       then
         fail();
   end matchcontinue;
 end loadClassFromMp;
 
-protected function loadCompletePackageFromMps "function: loadCompletePackageFromMps
-
-  Loads a whole package from the ModelicaPaths defined in OPENMODELICALIBRARY
-"
+protected function loadCompletePackageFromMps 
+"function: loadCompletePackageFromMps
+  Loads a whole package from the ModelicaPaths defined in OPENMODELICALIBRARY"
   input Absyn.Ident inIdent;
   input list<String> inStringLst;
   input Absyn.Within inWithin;
   input Absyn.Program inProgram;
-  input list<Interactive.CompiledCFunction> inCompiledFunctions;
   output Absyn.Program outProgram;
-  output list<Interactive.CompiledCFunction> outCompiledFunctions;
 algorithm
-  (outProgram,outCompiledFunctions):=
-  matchcontinue (inIdent,inStringLst,inWithin,inProgram,inCompiledFunctions)
+  outProgram := matchcontinue (inIdent,inStringLst,inWithin,inProgram)
     local
       Absyn.Program p,oldp;
       String pack,mp;
       Absyn.Within within_;
       list<String> mps;
-      list<Interactive.CompiledCFunction> cf, newCF;
-    case (pack,(mp :: _),within_,oldp,cf)
+    case (pack,(mp :: _),within_,oldp)
       equation
-        (p, newCF) = loadCompletePackageFromMp(pack, mp, within_, oldp, cf);
+        p = loadCompletePackageFromMp(pack, mp, within_, oldp);
       then
-        (p, newCF);
-    case (pack,(_ :: mps),within_,oldp,cf)
+        p;
+    case (pack,(_ :: mps),within_,oldp)
       equation
-        (p, newCF) = loadCompletePackageFromMps(pack, mps, within_, oldp, cf);
+        p = loadCompletePackageFromMps(pack, mps, within_, oldp);
       then
-        (p, newCF);
+        p;
   end matchcontinue;
 end loadCompletePackageFromMps;
 
-protected function loadCompletePackageFromMp "function: loadCompletePackageFromMp
-
-  Loads a whole package from the ModelicaPaths defined in OPENMODELICALIBRARY
-"
+protected function loadCompletePackageFromMp 
+"function: loadCompletePackageFromMp
+  Loads a whole package from the ModelicaPaths defined in OPENMODELICALIBRARY"
   input Absyn.Ident inIdent;
   input String inString;
   input Absyn.Within inWithin;
   input Absyn.Program inProgram;
-  input list<Interactive.CompiledCFunction> inCompiledFunctions;
   output Absyn.Program outProgram;
-  output list<Interactive.CompiledCFunction> outCompiledFunctions;
 algorithm
-  (outProgram,outCompiledFunctions):=
-  matchcontinue (inIdent,inString,inWithin,inProgram,inCompiledFunctions)
+  outProgram := matchcontinue (inIdent,inString,inWithin,inProgram)
     local
       String pd,mp_1,packagefile,subdirstr,pack,mp;
       list<Absyn.Class> p1,oldc;
@@ -255,8 +229,7 @@ algorithm
       Absyn.Program p1_1,p2,p;
       list<String> subdirs;
       Absyn.Path wpath_1,wpath;
-      list<Interactive.CompiledCFunction> cf, newCF, newCF_1, newCF_2;
-    case (pack,mp,(within_ as Absyn.TOP()),Absyn.PROGRAM(classes = oldc),cf)
+    case (pack,mp,(within_ as Absyn.TOP()),Absyn.PROGRAM(classes = oldc))
       equation
         pd = System.pathDelimiter();
         mp_1 = Util.stringAppendList({mp,pd,pack});
@@ -269,17 +242,17 @@ algorithm
         Print.printBuf("loading ");
         Print.printBuf(packagefile);
         Print.printBuf("\n");
-        (p1_1, newCF) = Interactive.updateProgram(Absyn.PROGRAM(p1,w1), Absyn.PROGRAM(oldc,Absyn.TOP()), cf);
+        p1_1 = Interactive.updateProgram(Absyn.PROGRAM(p1,w1), Absyn.PROGRAM(oldc,Absyn.TOP()));
         subdirs = System.subDirectories(mp_1);
         subdirstr = Util.stringDelimitList(subdirs, ", ");
         print("subdirs =");
         print(subdirstr);
         print("\n");
-        (p2, newCF_1) = loadCompleteSubdirs(subdirs, pack, mp_1, within_, p1_1, newCF);
-        (p, newCF_2) = loadCompleteSubfiles(pack, mp_1, within_, p2, newCF_1);
+        p2 = loadCompleteSubdirs(subdirs, pack, mp_1, within_, p1_1);
+        p = loadCompleteSubfiles(pack, mp_1, within_, p2);
       then
-        (p, newCF_2);
-    case (pack,mp,(within_ as Absyn.WITHIN(path = wpath)),Absyn.PROGRAM(classes = oldc),cf)
+        p;
+    case (pack,mp,(within_ as Absyn.WITHIN(path = wpath)),Absyn.PROGRAM(classes = oldc))
       equation
         pd = System.pathDelimiter();
         mp_1 = Util.stringAppendList({mp,pd,pack});
@@ -292,37 +265,32 @@ algorithm
         Print.printBuf("loading ");
         Print.printBuf(packagefile);
         Print.printBuf("\n");
-        (p1_1,newCF) = Interactive.updateProgram(Absyn.PROGRAM(p1,Absyn.WITHIN(wpath)),
-          Absyn.PROGRAM(oldc,Absyn.TOP()),cf);
+        p1_1 = Interactive.updateProgram(Absyn.PROGRAM(p1,Absyn.WITHIN(wpath)), Absyn.PROGRAM(oldc,Absyn.TOP()));
         subdirs = System.subDirectories(mp_1);
         subdirstr = Util.stringDelimitList(subdirs, ", ");
         print("subdirs =");
         print(subdirstr);
         print("\n");
-        (p2,newCF_1) = loadCompleteSubdirs(subdirs, pack, mp_1, within_, p1_1, newCF);
+        p2 = loadCompleteSubdirs(subdirs, pack, mp_1, within_, p1_1);
         wpath_1 = Absyn.joinPaths(wpath, Absyn.IDENT(pack));
-        (p, newCF_2) = loadCompleteSubfiles(pack, mp_1, within_, p2, newCF_1);
+        p = loadCompleteSubfiles(pack, mp_1, within_, p2);
       then
-        (p, newCF_2);
-    case (_,_,_,_,_) then fail();
+        p;
+    case (_,_,_,_) then fail();
   end matchcontinue;
 end loadCompletePackageFromMp;
 
-protected function loadCompleteSubdirs "function: loadCompleteSubdirs
-
-  Loads all classes present in a subdirectory
-"
+protected function loadCompleteSubdirs 
+"function: loadCompleteSubdirs
+  Loads all classes present in a subdirectory"
   input list<String> inStringLst;
   input Absyn.Ident inIdent;
   input String inString;
   input Absyn.Within inWithin;
   input Absyn.Program inProgram;
-  input list<Interactive.CompiledCFunction> inCompiledFunctions;
   output Absyn.Program outProgram;
-  output list<Interactive.CompiledCFunction> outCompiledFunctions;
 algorithm
-  (outProgram,outCompiledFunctions):=
-  matchcontinue (inStringLst,inIdent,inString,inWithin,inProgram,inCompiledFunctions)
+  outProgram := matchcontinue (inStringLst,inIdent,inString,inWithin,inProgram)
     local
       Absyn.Within w,w2,within_;
       list<Absyn.Class> oldcls;
@@ -330,99 +298,90 @@ algorithm
       Absyn.Program p,p_1,oldp;
       String pack,pack1,mp;
       list<String> packs;
-      list<Interactive.CompiledCFunction> cf, newCF, newCF_1;
-    case ({},_,_,w,Absyn.PROGRAM(classes = oldcls,within_ = w2),cf) then (Absyn.PROGRAM(oldcls,w2),cf);
-    case ((pack :: packs),pack1,mp,(within_ as Absyn.WITHIN(path = pack2)),oldp,cf)
+    case ({},_,_,w,Absyn.PROGRAM(classes = oldcls,within_ = w2)) 
+      then (Absyn.PROGRAM(oldcls,w2));
+    case ((pack :: packs),pack1,mp,(within_ as Absyn.WITHIN(path = pack2)),oldp)
       equation
         pack_1 = Absyn.joinPaths(pack2, Absyn.IDENT(pack1));
-        (p, newCF) = loadCompletePackageFromMp(pack, mp, Absyn.WITHIN(pack_1), oldp, cf);
-        (p_1, newCF_1) = loadCompleteSubdirs(packs, pack1, mp, within_, p, newCF);
+        p = loadCompletePackageFromMp(pack, mp, Absyn.WITHIN(pack_1), oldp);
+        p_1 = loadCompleteSubdirs(packs, pack1, mp, within_, p);
       then
-        (p_1, newCF_1);
-    case ((pack :: packs),pack1,mp,(within_ as Absyn.TOP()),oldp,cf)
+        p_1;
+    case ((pack :: packs),pack1,mp,(within_ as Absyn.TOP()),oldp)
       equation
         pack_1 = Absyn.joinPaths(Absyn.IDENT(pack1), Absyn.IDENT(pack));
-        (p, newCF) = loadCompletePackageFromMp(pack, mp, Absyn.WITHIN(Absyn.IDENT(pack1)), oldp, cf);
-        (p_1, newCF_1) = loadCompleteSubdirs(packs, pack1, mp, within_, p, newCF);
+        p = loadCompletePackageFromMp(pack, mp, Absyn.WITHIN(Absyn.IDENT(pack1)), oldp);
+        p_1 = loadCompleteSubdirs(packs, pack1, mp, within_, p);
       then
-        (p_1, newCF_1);
-    case ((pack :: packs),pack1,mp,within_,p,cf)
+        p_1;
+    case ((pack :: packs),pack1,mp,within_,p)
       equation
-        (p_1, newCF) = loadCompleteSubdirs(packs, pack1, mp, within_, p, cf);
+        p_1 = loadCompleteSubdirs(packs, pack1, mp, within_, p);
       then
-        (p_1, newCF);
-    case (_,_,_,_,_,_)
+        p_1;
+    case (_,_,_,_,_)
       equation
-        print("load_complete_subdirs failed\n");
+        print("ClassLoader.loadCompleteSubdirs failed\n");
       then
         fail();
   end matchcontinue;
 end loadCompleteSubdirs;
 
-protected function loadCompleteSubfiles "function: loadCompleteSubfiles
-
-  This function loads all modelicafiles (.mo) from a subdir package.
-"
+protected function loadCompleteSubfiles 
+"function: loadCompleteSubfiles
+  This function loads all modelicafiles (.mo) from a subdir package."
   input Absyn.Ident inIdent;
   input String inString;
   input Absyn.Within inWithin;
   input Absyn.Program inProgram;
-  input list<Interactive.CompiledCFunction> inCompiledFunctions;
   output Absyn.Program outProgram;
-  output list<Interactive.CompiledCFunction> outCompiledFunctions;
 algorithm
-  (outProgram,outCompiledFunctions):=
-  matchcontinue (inIdent,inString,inWithin,inProgram,inCompiledFunctions)
+  outProgram := matchcontinue (inIdent,inString,inWithin,inProgram)
     local
       list<String> mofiles;
       Absyn.Path within_1,within_;
       Absyn.Program p,oldp;
       String pack,mp;
-      list<Interactive.CompiledCFunction> cf, newCF;
-    case (pack,mp,Absyn.WITHIN(path = within_),oldp,cf)
+    case (pack,mp,Absyn.WITHIN(path = within_),oldp)
       equation
         mofiles = System.moFiles(mp) "Here .mo files in same directory as package.mo should be loaded as sub-packages" ;
         within_1 = Absyn.joinPaths(within_, Absyn.IDENT(pack));
-        (p, newCF) = loadSubpackageFiles(mofiles, mp, Absyn.WITHIN(within_1), oldp, cf);
+        p = loadSubpackageFiles(mofiles, mp, Absyn.WITHIN(within_1), oldp);
       then
-        (p, newCF);
-    case (pack,mp,Absyn.TOP(),oldp,cf)
+        p;
+    case (pack,mp,Absyn.TOP(),oldp)
       equation
         mofiles = System.moFiles(mp) "Here .mo files in same directory as package.mo should be loaded as sub-packages" ;
-        (p, newCF) = loadSubpackageFiles(mofiles, mp, Absyn.WITHIN(Absyn.IDENT(pack)), oldp, cf);
+        p = loadSubpackageFiles(mofiles, mp, Absyn.WITHIN(Absyn.IDENT(pack)), oldp);
       then
-        (p, newCF);
-    case (_,_,_,_,_)
+        p;
+    case (_,_,_,_)
       equation
-        print("load_complete_subfiles failed\n");
+        print("ClassLoader.loadCompleteSubfiles failed\n");
       then
         fail();
   end matchcontinue;
 end loadCompleteSubfiles;
 
-protected function loadSubpackageFiles "function: loadSubpackageFiles
-
-  Loads all classes from a subpackage
-"
+protected function loadSubpackageFiles 
+"function: loadSubpackageFiles
+  Loads all classes from a subpackage"
   input list<String> inStringLst;
   input String inString;
   input Absyn.Within inWithin;
   input Absyn.Program inProgram;
-  input list<Interactive.CompiledCFunction> inCompiledFunction;
   output Absyn.Program outProgram;
-  output list<Interactive.CompiledCFunction> outCompiledFunction;
 algorithm
-  (outProgram,outCompiledFunction):=
-  matchcontinue (inStringLst,inString,inWithin,inProgram,inCompiledFunction)
+  outProgram := matchcontinue (inStringLst,inString,inWithin,inProgram)
     local
       String mp,pd,f_1,f;
       Absyn.Within within_,w;
       list<Absyn.Class> cls,oldc;
       Absyn.Program p_1,p_2;
       list<String> fs;
-      list<Interactive.CompiledCFunction> cf, newCF, newCF_1;
-    case ({},mp,within_,Absyn.PROGRAM(classes = cls,within_ = w),cf) then (Absyn.PROGRAM(cls,w),cf);
-    case ((f :: fs),mp,within_,Absyn.PROGRAM(classes = oldc),cf)
+    case ({},mp,within_,Absyn.PROGRAM(classes = cls,within_ = w)) 
+      then (Absyn.PROGRAM(cls,w));
+    case ((f :: fs),mp,within_,Absyn.PROGRAM(classes = oldc))
       equation
         pd = System.pathDelimiter();
         f_1 = Util.stringAppendList({mp,pd,f});
@@ -433,94 +392,87 @@ algorithm
         Print.printBuf("loading ");
         Print.printBuf(f_1);
         Print.printBuf("\n");
-        (p_1,newCF) = Interactive.updateProgram(Absyn.PROGRAM(cls,within_), Absyn.PROGRAM(oldc,Absyn.TOP()), cf);
-        (p_2,newCF_1) = loadSubpackageFiles(fs, mp, within_, p_1, newCF);
+        p_1 = Interactive.updateProgram(Absyn.PROGRAM(cls,within_), Absyn.PROGRAM(oldc,Absyn.TOP()));
+        p_2 = loadSubpackageFiles(fs, mp, within_, p_1);
       then
-        (p_2,newCF_1);
-    case (_,_,_,_,_)
+        p_2;
+    case (_,_,_,_)
       equation
-        print("load_subpackage_files failed\n");
+        print("ClassLoader.loadSubpackageFiles failed\n");
       then
         fail();
   end matchcontinue;
 end loadSubpackageFiles;
 
-public function loadFile "function loadFile
+public function loadFile 
+"function loadFile
   author: x02lucpo
   load the file or the directory structure if the file is a
-  package.mo
-"
+  package.mo"
   input String inString;
-  input list<Interactive.CompiledCFunction> inCompiledFunctions;
   output Absyn.Program outProgram;
-  output list<Interactive.CompiledCFunction> outCompiledFunctions;
 algorithm
-  (outProgram, outCompiledFunctions):=
-  matchcontinue (inString,inCompiledFunctions)
+  outProgram := matchcontinue (inString)
     local
       String dir,pd,dir_1,name,filename;
       Absyn.Program p1_1,p1;
-      list<Interactive.CompiledCFunction> cf, newCF;
-    case (name,cf)
+    case (name)
       equation
         0 = System.regularFileExists(name);
         (dir,"package.mo") = Util.getAbsoluteDirectoryAndFile(name);
         p1_1 = Parser.parse(name);
         pd = System.pathDelimiter();
         dir_1 = Util.stringAppendList({dir,pd,".."});
-        (p1, newCF) = loadModelFromEachClass(p1_1, cf, dir_1);
+        p1 = loadModelFromEachClass(p1_1, dir_1);
       then
-        (p1, newCF);
-    case (name,cf)
+        p1;
+    case (name)
       equation
         0 = System.regularFileExists(name);
         (dir,filename) = Util.getAbsoluteDirectoryAndFile(name);
         p1 = Parser.parse(name);
       then
-        (p1,cf);
-    case (_,_)
+        p1;
+    case (_)
       equation
-        Debug.fprint("failtrace", "load_file failed\n");
+        Debug.fprint("failtrace", "ClassLoader.loadFile failed\n");
       then
         fail();
   end matchcontinue;
 end loadFile;
 
-protected function loadModelFromEachClass "function loadModelFromEachClass
+protected function loadModelFromEachClass 
+"function loadModelFromEachClass
   author: x02lucpo
-
-  helper function to load_file
-"
+  helper function to loadFile"
   input Absyn.Program inProgram;
-  input list<Interactive.CompiledCFunction> inCompiledFunctions;
   input String inString;
   output Absyn.Program outProgram;
-  output list<Interactive.CompiledCFunction> outCompiledFunctions;
 algorithm
-  (outProgram,outCompiledFunctions):=
-  matchcontinue (inProgram,inCompiledFunctions,inString)
+  outProgram := matchcontinue (inProgram,inString)
     local
       Absyn.Within a;
       Absyn.Path path;
       Absyn.Program pnew,p_res,p_1;
       String id,dir;
-      list<Absyn.Class> res;
-      list<Interactive.CompiledCFunction> cf, newCF, newCF_1, newCF_2;
-    case (Absyn.PROGRAM(classes = {},within_ = a),cf,_) then (Absyn.PROGRAM({},a),cf);
-    case (Absyn.PROGRAM(classes = (Absyn.CLASS(name = id) :: res),within_ = a),cf,dir)
+      list<Absyn.Class> res;      
+    case (Absyn.PROGRAM(classes = {},within_ = a),_) 
+      then (Absyn.PROGRAM({},a));
+    case (Absyn.PROGRAM(classes = (Absyn.CLASS(name = id) :: res),within_ = a),dir)
       equation
         path = Absyn.IDENT(id);
-        (pnew, newCF) = loadClass(path, dir, cf);
-        (p_res, newCF_1) = loadModelFromEachClass(Absyn.PROGRAM(res,a), newCF, dir);
-        (p_1, newCF_2) = Interactive.updateProgram(pnew, p_res, newCF_1);
+        pnew = loadClass(path, dir);
+        p_res = loadModelFromEachClass(Absyn.PROGRAM(res,a), dir);
+        p_1 = Interactive.updateProgram(pnew, p_res);
       then
-        (p_1, newCF_2);
-    case (_,_,_)
+        p_1;
+    case (_,_)
       equation
-        Debug.fprint("failtrace", "-load_model_from_each_class failed\n");
+        Debug.fprint("failtrace", "-ClassLoader.loadModelFromEachClass failed\n");
       then
         fail();
   end matchcontinue;
 end loadModelFromEachClass;
+
 end ClassLoader;
 

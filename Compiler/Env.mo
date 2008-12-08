@@ -310,8 +310,7 @@ public function extendFrameC
   input SCode.Class inClass;
   output Env outEnv;
 algorithm
-  outEnv:=
-  matchcontinue (inEnv,inClass)
+  outEnv := matchcontinue (inEnv,inClass)
     local
       BinTree ht_1,ht,httypes;
       Env env,bcframes,fs;
@@ -321,16 +320,8 @@ algorithm
       Boolean encflag;
       SCode.Class c;
       Ident n;
-    case ((env as
-      (FRAME(
-        optName = id,
-        clsAndVars = ht,
-        types = httypes,
-        imports = imps,
-        inherited = bcframes,
-        connectionSet = crs,
-        isEncapsulated = encflag) :: fs)),
-      (c as SCode.CLASS(name = n)))
+    case ((env as (FRAME(optName = id,clsAndVars = ht,types = httypes,imports = imps,inherited = bcframes,connectionSet = crs,isEncapsulated = encflag) :: fs)),
+          (c as SCode.CLASS(name = n)))
       equation
         (ht_1) = treeAdd(ht, n, CLASS(c,env), System.hash);
       then

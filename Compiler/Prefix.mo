@@ -48,7 +48,8 @@ public import Env;
 public import Lookup;
 
 public
-uniontype Prefix "A \'Prefix\' has a name an a list of constant valued subscripts."
+uniontype Prefix 
+  "A Prefix has a name an a list of constant valued subscripts."
   record NOPRE end NOPRE;
 
   record PRE
@@ -63,16 +64,13 @@ protected import Util;
 protected import Print;
 protected import Debug;
 
-
-public function printPrefixStr "function: printPrefixStr
-
-  Prints a Prefix to a string.
-"
+public function printPrefixStr 
+"function: printPrefixStr
+  Prints a Prefix to a string."
   input Prefix inPrefix;
   output String outString;
 algorithm
-  outString:=
-  matchcontinue (inPrefix)
+  outString := matchcontinue (inPrefix)
     local
       String str,s,rest_1,s_1,s_2;
       Prefix rest;
@@ -101,10 +99,9 @@ algorithm
   end matchcontinue;
 end printPrefixStr;
 
-public function printPrefix "function: printPrefix
-
-  Prints a prefix to the Print buffer.
-"
+public function printPrefix 
+"function: printPrefix
+  Prints a prefix to the Print buffer."
   input Prefix p;
   String s;
 algorithm
@@ -234,10 +231,9 @@ algorithm
   cref_1 := prefixToCref2(pre, SOME(cref));
 end prefixCref;
 
-public function prefixToCref "function: prefixToCref
-
-  Convert a prefix to a component reference.
-"
+public function prefixToCref 
+"function: prefixToCref
+  Convert a prefix to a component reference."
   input Prefix pre;
   output Exp.ComponentRef cref_1;
   Exp.ComponentRef cref_1;
@@ -245,18 +241,16 @@ algorithm
   cref_1 := prefixToCref2(pre, NONE);
 end prefixToCref;
 
-protected function prefixToCref2 "function: prefixToCref2
-
+protected function prefixToCref2 
+"function: prefixToCref2
   Convert a prefix to a component reference. Converting NOPRE with no
-  component reference is an error because a component reference cannot be
-  empty
-"
+  component reference is an error because a component reference cannot 
+  be empty"
   input Prefix inPrefix;
   input Option<Exp.ComponentRef> inExpComponentRefOption;
   output Exp.ComponentRef outComponentRef;
 algorithm
-  outComponentRef:=
-  matchcontinue (inPrefix,inExpComponentRefOption)
+  outComponentRef := matchcontinue (inPrefix,inExpComponentRefOption)
     local
       Exp.ComponentRef cref,cref_1;
       list<Exp.Subscript> s_1;
@@ -284,11 +278,9 @@ algorithm
   end matchcontinue;
 end prefixToCref2;
 
-public function prefixExp "function: prefixExp
-
-  Add the supplied prefix to all component references in an
-  expression.
-"
+public function prefixExp 
+"function: prefixExp
+  Add the supplied prefix to all component references in an expression."
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input Exp.Exp inExp;
@@ -296,8 +288,7 @@ public function prefixExp "function: prefixExp
   output Env.Cache outCache;
   output Exp.Exp outExp;
 algorithm
-  (outCache,outExp) :=
-  matchcontinue (inCache,inEnv,inExp,inPrefix)
+  (outCache,outExp) := matchcontinue (inCache,inEnv,inExp,inPrefix)
     local
       Exp.Exp e,e1_1,e2_1,e1,e2,e3_1,e3,cref_1,dim_1,cref,dim,start_1,stop_1,start,stop,step_1,step,e_1,exp_1,iterexp_1,exp,iterexp;
       Exp.ComponentRef p_1,p;
@@ -450,7 +441,6 @@ algorithm
         (cache,iterexp_1) = prefixExp(cache,env, iterexp, p);
       then
         (cache,Exp.REDUCTION(fcn,exp_1,id,iterexp_1));
-
     case (cache,env,Exp.VALUEBLOCK(t,localDecls = lDecls,body = b,result = res),p)
       local
         Prefix p;
@@ -465,7 +455,7 @@ algorithm
       then
         (cache,Exp.VALUEBLOCK(t,lDecls2,b2,res2));
 
-        // MetaModelica extension. KS
+    // MetaModelica extension. KS
     case (cache,env,Exp.LIST(t,es),p)
       local Prefix p;
         Exp.Type t;
@@ -513,11 +503,10 @@ end prefixExp;
 
 //--------------------------------------------
 //   PART OF THE WORKAROUND FOR VALUEBLOCKS. KS
-public function prefixDecls "function: prefixDecls
-
+public function prefixDecls 
+"function: prefixDecls
   Add the supplied prefix to the DAE elements located in Exp.mo.
-  PART OF THE WORKAROUND FOR VALUEBLOCKS
-"
+  PART OF THE WORKAROUND FOR VALUEBLOCKS"
   input Env.Cache cache;
   input Env.Env env;
 	input list<Exp.DAEElement> lDecls;
@@ -526,8 +515,7 @@ public function prefixDecls "function: prefixDecls
   output Env.Cache outCache;
 	output list<Exp.DAEElement> outDecls;
 algorithm
-  (outCache,outDecls) :=
-  matchcontinue (cache,env,lDecls,accList,p)
+  (outCache,outDecls) := matchcontinue (cache,env,lDecls,accList,p)
     local
       list<Exp.DAEElement> localAccList;
       Prefix pre;
@@ -535,29 +523,29 @@ algorithm
       Env.Env localEnv;
     case (localCache,_,{},localAccList,_) then (localCache,localAccList);
     case (localCache,localEnv,Exp.VAR(cRef,kind,direction,prot,ty,binding,dims,flow_,stream_,pathLst,vAttr,com,inOut,fType):: rest,localAccList,pre)
-    local
-      Exp.ComponentRef cRef;
-    	Exp.VarKind kind "varible kind: variable, constant, parameter, etc." ;
-    	Exp.VarDirection direction "input, output or bidir" ;
-    	Exp.VarProtection prot "if protected or public";
-    	Exp.TypeExp ty "one of the builtin types" ;
-    	Option<Exp.Exp> binding "Binding expression e.g. for parameters, value of start attribute" ;
-    	Exp.InstDims dims "dimension of original component" ;
-    	Exp.Flow flow_ "Flow of connector variable. Needed for unconnected flow variables" ;
-    	Exp.Stream stream_ "Stream connector variables. " ;
-    	list<Absyn.Path> pathLst "class name" ;
-    	Option<Exp.VariableAttributes> vAttr;
-    	Option<Absyn.Comment> com;
-    	Absyn.InnerOuter inOut "inner/outer required to 'change' outer references";
-    	Exp.TypeTypes fType "Full type information required to analyze inner/outer elements";
-    	list<Exp.DAEElement> rest,temp;
-    	Exp.DAEElement elem;
-    equation
-      cRef = prefixCref(pre,cRef);
-      elem = Exp.VAR(cRef,kind,direction,prot,ty,binding,dims,flow_,stream_,pathLst,vAttr,com,inOut,fType);
-      localAccList = listAppend(localAccList,Util.listCreate(elem));
-      (localCache,temp) = prefixDecls(localCache,localEnv,rest,localAccList,pre);
-    then (localCache,temp);
+      local
+        Exp.ComponentRef cRef;
+        Exp.VarKind kind "varible kind: variable, constant, parameter, etc." ;
+        Exp.VarDirection direction "input, output or bidir" ;
+        Exp.VarProtection prot "if protected or public";
+        Exp.TypeExp ty "one of the builtin types" ;
+        Option<Exp.Exp> binding "Binding expression e.g. for parameters, value of start attribute" ;
+        Exp.InstDims dims "dimension of original component" ;
+        Exp.Flow flow_ "Flow of connector variable. Needed for unconnected flow variables" ;
+        Exp.Stream stream_ "Stream connector variables. " ;
+        list<Absyn.Path> pathLst "class name" ;
+        Option<Exp.VariableAttributes> vAttr;
+        Option<Absyn.Comment> com;
+        Absyn.InnerOuter inOut "inner/outer required to 'change' outer references";
+        Exp.TypeTypes fType "Full type information required to analyze inner/outer elements";
+        list<Exp.DAEElement> rest,temp;
+        Exp.DAEElement elem;
+      equation
+        cRef = prefixCref(pre,cRef);
+        elem = Exp.VAR(cRef,kind,direction,prot,ty,binding,dims,flow_,stream_,pathLst,vAttr,com,inOut,fType);
+        localAccList = listAppend(localAccList,Util.listCreate(elem));
+        (localCache,temp) = prefixDecls(localCache,localEnv,rest,localAccList,pre);
+      then (localCache,temp);
     case (localCache,localEnv,Exp.EQUATION(e1,e2) :: rest,localAccList,pre)
       local
         Exp.Exp e1,e2;
@@ -570,14 +558,13 @@ algorithm
         localAccList = listAppend(localAccList,Util.listCreate(elem));
         (localCache,temp) = prefixDecls(localCache,localEnv,rest,localAccList,pre);
       then (localCache,temp);
- end matchcontinue;
+  end matchcontinue;
 end prefixDecls;
 
-public function prefixAlgorithm "function: prefixAlgorithm
-
+public function prefixAlgorithm 
+"function: prefixAlgorithm
   Prefix algorithm.
-  PART OF THE WORKAROUND FOR VALUEBLOCKS
-"
+  PART OF THE WORKAROUND FOR VALUEBLOCKS"
 	input Env.Cache cache;
 	input Env.Env env;
 	input Exp.DAEElement b;
@@ -585,8 +572,7 @@ public function prefixAlgorithm "function: prefixAlgorithm
 	output Env.Cache outCache;
 	output Exp.DAEElement outBody;
 algorithm
-	(outCache,outBody) :=
-	matchcontinue (cache,env,b,p)
+	(outCache,outBody) := matchcontinue (cache,env,b,p)
 	  case (localCache,localEnv,Exp.ALGORITHM(Exp.ALGORITHM2(stmts)),localPrefix)
 	  local
 	  	Env.Cache localCache;
@@ -602,11 +588,10 @@ algorithm
 end prefixAlgorithm;
 
 
-public function prefixStatements "function: prefixStatements
-
+public function prefixStatements 
+"function: prefixStatements
   Prefix statements.
-  PART OF THE WORKAROUND FOR VALUEBLOCKS
-"
+  PART OF THE WORKAROUND FOR VALUEBLOCKS"
 	input Env.Cache cache;
 	input Env.Env env;
 	input list<Exp.Statement> stmts;
@@ -615,8 +600,7 @@ public function prefixStatements "function: prefixStatements
 	output Env.Cache outCache;
 	output list<Exp.Statement> outStmts;
 algorithm
-  (outCache,outStmts) :=
-  matchcontinue (cache,env,stmts,accList,p)
+  (outCache,outStmts) := matchcontinue (cache,env,stmts,accList,p)
     local
       Env.Cache localCache;
       Env.Env localEnv;
@@ -625,66 +609,65 @@ algorithm
     case (localCache,_,{},localAccList,_) then (localCache,localAccList);
     case (localCache,localEnv,Exp.ASSIGN(t,cRef,e) :: rest,localAccList,pre)
       local
-      	Exp.Type t;
-    		Exp.ComponentRef cRef;
-    		Exp.Exp e;
-    		Exp.Statement elem;
-    		list<Exp.Statement> elems;
-    	equation
-    	  cRef = prefixCref(pre,cRef);
-    	  (localCache,e) = prefixExp(localCache,localEnv,e,pre);
-    	  elem = Exp.ASSIGN(t,cRef,e);
-    	  localAccList = listAppend(localAccList,Util.listCreate(elem));
-    	  (localCache,elems) = prefixStatements(localCache,localEnv,rest,localAccList,pre);
-    	then (localCache,elems);
-  	case (localCache,localEnv,Exp.TUPLE_ASSIGN(t,eLst,e) :: rest,localAccList,pre)
-			local
-      	Exp.Type t;
-    		Exp.Exp e;
-    		list<Exp.Exp> eLst;
-    		Exp.Statement elem;
-    		list<Exp.Statement> elems;
-    	equation
-    	  (localCache,e) = prefixExp(localCache,localEnv,e,pre);
-    	  (localCache,eLst) = prefixExpList(localCache,localEnv,eLst,pre);
-    	  elem = Exp.TUPLE_ASSIGN(t,eLst,e);
-    	  localAccList = listAppend(localAccList,Util.listCreate(elem));
-    	  (localCache,elems) = prefixStatements(localCache,localEnv,rest,localAccList,pre);
-    	then (localCache,elems);
-
-  	case (localCache,localEnv,Exp.ASSIGN_ARR(t,cRef,e) :: rest,localAccList,pre)
+        Exp.Type t;
+        Exp.ComponentRef cRef;
+        Exp.Exp e;
+        Exp.Statement elem;
+        list<Exp.Statement> elems;
+      equation
+        cRef = prefixCref(pre,cRef);
+        (localCache,e) = prefixExp(localCache,localEnv,e,pre);
+        elem = Exp.ASSIGN(t,cRef,e);
+        localAccList = listAppend(localAccList,Util.listCreate(elem));
+        (localCache,elems) = prefixStatements(localCache,localEnv,rest,localAccList,pre);
+      then (localCache,elems);
+    case (localCache,localEnv,Exp.TUPLE_ASSIGN(t,eLst,e) :: rest,localAccList,pre)
       local
-      	Exp.Type t;
-    		Exp.ComponentRef cRef;
-    		Exp.Exp e;
-    		Exp.Statement elem;
-    		list<Exp.Statement> elems;
-    	equation
-    	  cRef = prefixCref(pre,cRef);
-    	  (localCache,e) = prefixExp(localCache,localEnv,e,pre);
-    	  elem = Exp.ASSIGN_ARR(t,cRef,e);
-    	  localAccList = listAppend(localAccList,Util.listCreate(elem));
+        Exp.Type t;
+        Exp.Exp e;
+        list<Exp.Exp> eLst;
+        Exp.Statement elem;
+        list<Exp.Statement> elems;
+      equation
+        (localCache,e) = prefixExp(localCache,localEnv,e,pre);
+        (localCache,eLst) = prefixExpList(localCache,localEnv,eLst,pre);
+        elem = Exp.TUPLE_ASSIGN(t,eLst,e);
+        localAccList = listAppend(localAccList,Util.listCreate(elem));
+        (localCache,elems) = prefixStatements(localCache,localEnv,rest,localAccList,pre);
+      then (localCache,elems);
+        
+    case (localCache,localEnv,Exp.ASSIGN_ARR(t,cRef,e) :: rest,localAccList,pre)
+      local
+        Exp.Type t;
+        Exp.ComponentRef cRef;
+        Exp.Exp e;
+        Exp.Statement elem;
+        list<Exp.Statement> elems;
+      equation
+        cRef = prefixCref(pre,cRef);
+        (localCache,e) = prefixExp(localCache,localEnv,e,pre);
+        elem = Exp.ASSIGN_ARR(t,cRef,e);
+        localAccList = listAppend(localAccList,Util.listCreate(elem));
     	  (localCache,elems) = prefixStatements(localCache,localEnv,rest,localAccList,pre);
-    	then (localCache,elems);
-
+      then (localCache,elems);
+        
     case (localCache,localEnv,Exp.FOR(t,bool,id,e,sList) :: rest,localAccList,pre)
       local
-      	Exp.Type t;
+        Exp.Type t;
         Boolean bool;
         Exp.Ident id;
         Exp.Exp e;
-    		Exp.Statement elem;
-    		list<Exp.Statement> elems,sList;
-    	equation
-    	  (localCache,e) = prefixExp(localCache,localEnv,e,pre);
-    	  (localCache,sList) = prefixStatements(localCache,localEnv,sList,{},pre);
-    	  elem = Exp.FOR(t,bool,id,e,sList);
-    	  localAccList = listAppend(localAccList,Util.listCreate(elem));
-    	  (localCache,elems) = prefixStatements(localCache,localEnv,rest,localAccList,pre);
+        Exp.Statement elem;
+        list<Exp.Statement> elems,sList;
+      equation
+        (localCache,e) = prefixExp(localCache,localEnv,e,pre);
+        (localCache,sList) = prefixStatements(localCache,localEnv,sList,{},pre);
+        elem = Exp.FOR(t,bool,id,e,sList);
+        localAccList = listAppend(localAccList,Util.listCreate(elem));
+        (localCache,elems) = prefixStatements(localCache,localEnv,rest,localAccList,pre);        
+      then (localCache,elems);
 
-    	then (localCache,elems);
-
-  case (localCache,localEnv,Exp.IF(e1,sList,elseBranch) :: rest,localAccList,pre)
+    case (localCache,localEnv,Exp.IF(e1,sList,elseBranch) :: rest,localAccList,pre)
       local
         Exp.Exp e1;
         list<Exp.Statement> sList,elems;
@@ -711,7 +694,7 @@ algorithm
         localAccList = listAppend(localAccList,Util.listCreate(elem));
         (localCache,elems) = prefixStatements(localCache,localEnv,rest,localAccList,pre);
       then (localCache,elems);
-
+        
     case (localCache,localEnv,Exp.ASSERTSTMT(e1,e2) :: rest,localAccList,pre)
       local
         Exp.Exp e1,e2;
@@ -724,83 +707,82 @@ algorithm
         localAccList = listAppend(localAccList,Util.listCreate(elem));
         (localCache,elems) = prefixStatements(localCache,localEnv,rest,localAccList,pre);
       then (localCache,elems);
-  	case (localCache,localEnv,Exp.TRY(b) :: rest,localAccList,pre)
-  	  local
+    case (localCache,localEnv,Exp.TRY(b) :: rest,localAccList,pre)
+      local
+        list<Exp.Statement> b;
+        Exp.Statement elem;
+        list<Exp.Statement> elems;
+      equation
+        (localCache,b) = prefixStatements(localCache,localEnv,b,{},pre);
+        elem = Exp.TRY(b);
+        localAccList = listAppend(localAccList,Util.listCreate(elem));
+        (localCache,elems) = prefixStatements(localCache,localEnv,rest,localAccList,pre);
+      then (localCache,elems);
+    case (localCache,localEnv,Exp.CATCH(b) :: rest,localAccList,pre)
+      local
   	    list<Exp.Statement> b;
-  	    Exp.Statement elem;
-    		list<Exp.Statement> elems;
-  	  equation
-  	    (localCache,b) = prefixStatements(localCache,localEnv,b,{},pre);
-  	    elem = Exp.TRY(b);
-    	  localAccList = listAppend(localAccList,Util.listCreate(elem));
-    	  (localCache,elems) = prefixStatements(localCache,localEnv,rest,localAccList,pre);
-    	then (localCache,elems);
-  	case (localCache,localEnv,Exp.CATCH(b) :: rest,localAccList,pre)
-			local
-  	    list<Exp.Statement> b;
-  	    Exp.Statement elem;
-    		list<Exp.Statement> elems;
-  	  equation
-  	    (localCache,b) = prefixStatements(localCache,localEnv,b,{},pre);
-  	    elem = Exp.CATCH(b);
-    	  localAccList = listAppend(localAccList,Util.listCreate(elem));
-    	  (localCache,elems) = prefixStatements(localCache,localEnv,rest,localAccList,pre);
-    	then (localCache,elems);
-  	case (localCache,localEnv,Exp.THROW() :: rest,localAccList,pre)
-  	    local
-  	    	Exp.Statement elem;
+        Exp.Statement elem;
+        list<Exp.Statement> elems;
+      equation
+        (localCache,b) = prefixStatements(localCache,localEnv,b,{},pre);
+        elem = Exp.CATCH(b);
+        localAccList = listAppend(localAccList,Util.listCreate(elem));
+        (localCache,elems) = prefixStatements(localCache,localEnv,rest,localAccList,pre);
+      then (localCache,elems);
+    case (localCache,localEnv,Exp.THROW() :: rest,localAccList,pre)
+      local
+        Exp.Statement elem;
     			list<Exp.Statement> elems;
-    		equation
-    			elem = Exp.THROW();
-    	  	localAccList = listAppend(localAccList,Util.listCreate(elem));
-    	  	(localCache,elems) = prefixStatements(localCache,localEnv,rest,localAccList,pre);
-    		then (localCache,elems);
-  	case (localCache,localEnv,Exp.RETURN() :: rest,localAccList,pre)
-  	    local
-  	    	Exp.Statement elem;
-    			list<Exp.Statement> elems;
-    		equation
-    			elem = Exp.RETURN();
-    	  	localAccList = listAppend(localAccList,Util.listCreate(elem));
-    	  	(localCache,elems) = prefixStatements(localCache,localEnv,rest,localAccList,pre);
-    		then (localCache,elems);
-  	case (localCache,localEnv,Exp.BREAK() :: rest,localAccList,pre)
-  	    local
-  	    	Exp.Statement elem;
-    			list<Exp.Statement> elems;
-    		equation
-    			elem = Exp.BREAK();
-    	  	localAccList = listAppend(localAccList,Util.listCreate(elem));
-    	  	(localCache,elems) = prefixStatements(localCache,localEnv,rest,localAccList,pre);
-    		then (localCache,elems);
-  	case (localCache,localEnv,Exp.GOTO(s) :: rest,localAccList,pre)
-  	  local
-  	    Exp.Statement elem;
-  	    list<Exp.Statement> elems;
-  	    String s;
-  	  equation
-  	    elem = Exp.GOTO(s);
-  	    localAccList = listAppend(localAccList,Util.listCreate(elem));
-  	    (localCache,elems) = prefixStatements(localCache,localEnv,rest,localAccList,pre);
-  	  then (localCache,elems);
-  	case (localCache,localEnv,Exp.LABEL(s) :: rest,localAccList,pre)
-  	  local
-  	    Exp.Statement elem;
-  	    list<Exp.Statement> elems;
-  	    String s;
-  	  equation
-  	    elem = Exp.LABEL(s);
-  	    localAccList = listAppend(localAccList,Util.listCreate(elem));
-  	    (localCache,elems) = prefixStatements(localCache,localEnv,rest,localAccList,pre);
-  	  then (localCache,elems);
+      equation
+        elem = Exp.THROW();
+        localAccList = listAppend(localAccList,Util.listCreate(elem));
+        (localCache,elems) = prefixStatements(localCache,localEnv,rest,localAccList,pre);
+      then (localCache,elems);
+    case (localCache,localEnv,Exp.RETURN() :: rest,localAccList,pre)
+      local
+        Exp.Statement elem;
+        list<Exp.Statement> elems;
+      equation
+        elem = Exp.RETURN();
+        localAccList = listAppend(localAccList,Util.listCreate(elem));
+        (localCache,elems) = prefixStatements(localCache,localEnv,rest,localAccList,pre);
+      then (localCache,elems);
+    case (localCache,localEnv,Exp.BREAK() :: rest,localAccList,pre)
+      local
+        Exp.Statement elem;
+        list<Exp.Statement> elems;
+      equation
+        elem = Exp.BREAK();
+        localAccList = listAppend(localAccList,Util.listCreate(elem));
+        (localCache,elems) = prefixStatements(localCache,localEnv,rest,localAccList,pre);
+      then (localCache,elems);
+    case (localCache,localEnv,Exp.GOTO(s) :: rest,localAccList,pre)
+      local
+        Exp.Statement elem;
+        list<Exp.Statement> elems;
+        String s;
+      equation
+        elem = Exp.GOTO(s);
+        localAccList = listAppend(localAccList,Util.listCreate(elem));
+        (localCache,elems) = prefixStatements(localCache,localEnv,rest,localAccList,pre);
+      then (localCache,elems);
+    case (localCache,localEnv,Exp.LABEL(s) :: rest,localAccList,pre)
+      local
+        Exp.Statement elem;
+        list<Exp.Statement> elems;
+        String s;
+      equation
+        elem = Exp.LABEL(s);
+        localAccList = listAppend(localAccList,Util.listCreate(elem));
+        (localCache,elems) = prefixStatements(localCache,localEnv,rest,localAccList,pre);
+      then (localCache,elems);
   end matchcontinue;
 end prefixStatements;
 
-public function prefixElse "function: prefixElse
-
+public function prefixElse 
+"function: prefixElse
   Prefix else statements.
-  PART OF THE WORKAROUND FOR VALUEBLOCKS
-"
+  PART OF THE WORKAROUND FOR VALUEBLOCKS"
   input Env.Cache cache;
   input Env.Env env;
   input Exp.Else elseBranch;
@@ -808,14 +790,12 @@ public function prefixElse "function: prefixElse
   output Env.Cache outCache;
   output Exp.Else outElse;
 algorithm
-  (outCache,outElse) :=
-  matchcontinue (cache,env,elseBranch,p)
+  (outCache,outElse) := matchcontinue (cache,env,elseBranch,p)
     local
       Env.Cache localCache;
       Env.Env localEnv;
       Prefix pre;
-    case (localCache,localEnv,Exp.NOELSE(),pre)
-      then (localCache,Exp.NOELSE());
+    case (localCache,localEnv,Exp.NOELSE(),pre) then (localCache,Exp.NOELSE());
     case (localCache,localEnv,Exp.ELSEIF(e,lStmt,el),pre)
       local
         Exp.Exp e;
@@ -840,20 +820,17 @@ algorithm
 end prefixElse;
 //------------------------------------------------------
 
-public function prefixExpList "function: prefixExpList
-
-  This function prefixes a list of expressions using the
-  `prefix_exp\' function.
-"
-	input Env.Cache inCache;
+public function prefixExpList 
+"function: prefixExpList
+  This function prefixes a list of expressions using the prefixExp function."
+  input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Exp.Exp> inExpExpLst;
   input Prefix inPrefix;
   output Env.Cache outCache;
   output list<Exp.Exp> outExpExpLst;
 algorithm
-  (outCache,outExpExpLst) :=
-  matchcontinue (inCache,inEnv,inExpExpLst,inPrefix)
+  (outCache,outExpExpLst) := matchcontinue (inCache,inEnv,inExpExpLst,inPrefix)
     local
       Exp.Exp e_1,e;
       list<Exp.Exp> es_1,es;
@@ -870,17 +847,14 @@ algorithm
   end matchcontinue;
 end prefixExpList;
 
-public function prefixCrefList "function: prefixCrefList
-
-  This function prefixes a list of component references using the
-  `prefix_cref function.
-"
+public function prefixCrefList 
+"function: prefixCrefList
+  This function prefixes a list of component references using the prefixCref function."
   input Prefix inPrefix;
   input list<Exp.ComponentRef> inExpComponentRefLst;
   output list<Exp.ComponentRef> outExpComponentRefLst;
 algorithm
-  outExpComponentRefLst:=
-  matchcontinue (inPrefix,inExpComponentRefLst)
+  outExpComponentRefLst := matchcontinue (inPrefix,inExpComponentRefLst)
     local
       Exp.ComponentRef cr_1,cr;
       list<Exp.ComponentRef> crlist_1,crlist;
@@ -894,5 +868,6 @@ algorithm
         (cr_1 :: crlist_1);
   end matchcontinue;
 end prefixCrefList;
+
 end Prefix;
 

@@ -44,14 +44,10 @@ package SCode
 
 public import Absyn;
 
-public
-type Ident = Absyn.Ident "Some definitions are borrowed from `Absyn\'" ;
-
-public
-type Path = Absyn.Path;
-
-public
-type Subscript = Absyn.Subscript;
+/* Some definitions are borrowed from the Absyn module */
+public type Ident = Absyn.Ident;
+public type Path = Absyn.Path;
+public type Subscript = Absyn.Subscript;
 
 public
 uniontype Restriction
@@ -94,11 +90,10 @@ uniontype Mod "- Modifications"
 end Mod;
 
 public
-uniontype SubMod "Modifications are represented in an more structured way than in
-    the `Absyn\' module.  Modifications using qualified names
-    (such as in `x.y =  z\') are normalized (to `x(y = z)\').  And a
-    special case when arrays are subscripted in a modification.
-"
+uniontype SubMod 
+"Modifications are represented in an more structured way than in the `Absyn\' module.  
+ Modifications using qualified names (such as in `x.y =  z\') are normalized (to `x(y = z)\').  
+ And a special case when arrays are subscripted in a modification."
   record NAMEMOD
     Ident ident;
     Mod A "A named component" ;

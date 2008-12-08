@@ -1978,9 +1978,12 @@ public function simplify
   input Exp inExp;
   output Exp outExp;
 algorithm
-  outExp:= simplify1(inExp); // Basic local simplifications
-  outExp:= simplify2(outExp); // Advanced (global) simplifications
- end simplify;
+  // Debug.fprintln("simplify","SIMPLIFY BEFORE->" +& printExpStr(inExp));
+  outExp := simplify1(inExp); // Basic local simplifications
+  // Debug.fprintln("simplify","SIMPLIFY INTERMEDIATE->" +& printExpStr(outExp));
+  outExp := simplify2(outExp); // Advanced (global) simplifications
+  // Debug.fprintln("simplify","SIMPLIFY FINAL->" +& printExpStr(outExp));
+end simplify;
 
 protected function simplify1
 "function: simplify1
@@ -2137,7 +2140,7 @@ algorithm
         e1_1 = simplify1(e1);
         e2_1 = simplify1(e2);
         exp_1 = BINARY(e1_1,op,e2_1);
-        e_1 = simplifyBinary(exp_1, op, e1_1, e2_1);
+        e_1 = simplifyBinary(exp_1, op, e1_1, e2_1); 
       then
         e_1;
 
@@ -2274,7 +2277,7 @@ algorithm
         e1_1 = simplify2(e1);
         e2_1 = simplify2(e2);
         /* Sorting constants, 1+a+2+b => 3+a+b */
-        exp_2 = simplifyBinarySortConstants(exp);
+        exp_2 = simplifyBinarySortConstants(BINARY(e1_1,op,e2_1));
         /* Merging coefficients 2a+4b+3a+b => 5a+5b */
         exp_3 = simplifyBinaryCoeff(exp_2);
       then
@@ -4533,11 +4536,18 @@ algorithm
       list<Exp> exp_lst,exp_lst_1;
     case (e,oper,e1,e2)
       equation
+        /* adrpo: changed as this goes into an infinite loop
+                  because we already did simplify on operands
+                  in the parent call!
         e1_1 = simplify1(e1);
         e2_1 = simplify1(e2);
         true = isConst(e1_1);
         true = isConst(e2_1);
         e3 = simplifyBinaryConst(oper, e1_1, e2_1);
+        */
+        true = isConst(e1);
+        true = isConst(e2);
+        e3 = simplifyBinaryConst(oper, e1, e2);
       then
         e3;
 
@@ -4868,6 +4878,7 @@ algorithm
       then
         RCONST(realv);
     case (INT()) then ICONST(1);
+    case (_) then RCONST(1.0);
   end matchcontinue;
 end createConstOne;
 
