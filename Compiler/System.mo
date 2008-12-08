@@ -480,18 +480,18 @@ end setClassnamesForSimulation;
 public function getVariableValue
   input Real timeStamp;
   input list<Real> timeValues;
-  input list<Real> varValues;
+  input list<Real> varValues; 
   output Real outValue;
 
   external "C" ;
 end getVariableValue;
 
-public function getFileModificationTime
+public function getFileModificationTime 
 "@author adrpo
- this system function returns the modification time of a file as a
- SOME(Real) which represents the time elapsed since the
+ this system function returns the modification time of a file as a 
+ SOME(Real) which represents the time elapsed since the 
  Epoch (00:00:00 UTC, January 1, 1970).
- If the file does not exist or if there is an error the returned value
+ If the file does not exist or if there is an error the returned value 
  will be NONE.
 "
   input  String       fileName;
@@ -500,14 +500,59 @@ public function getFileModificationTime
   external "C" ;
 end getFileModificationTime;
 
-public function getCurrentTime
+public function getCurrentTime 
 "@author adrpo
- this system function returns current time elapsed
+ this system function returns current time elapsed 
  since the Epoch (00:00:00 UTC, January 1, 1970)."
   output Real outValue;
 
   external "C" ;
 end getCurrentTime;
+
+
+public function isSameFile "Checks if two filenames points to the same file"
+  input String fileName1;
+  input String fileName2;
+  external "C";
+end isSameFile; 
+
+public function isIdenticalFile "Checks if two filenames points to the exact same file"
+  input String fileName1;
+  input String fileName2;
+  output Boolean same; 
+  external "C";
+end isIdenticalFile;
+
+public function os "Returns a string with the operating system name
+
+For linux : 'linux'
+
+For Windowns : 'Windows_NT' (the name of env var OS )
+
+"
+  output String str;
+  external "C" ;
+end os;
+
+public function compileCFile
+  input String inString;
+
+  external "C" ;
+end compileCFile;
+
+public function readFileNoNumeric
+  input String inString;
+  output String outString;
+
+  external "C" ;
+end readFileNoNumeric;
+
+public function readValuesFromFile
+  input String inString;
+  output Values.Value outValue;
+
+  external "C" ;
+end readValuesFromFile;
 
 
 end System;

@@ -2775,12 +2775,12 @@ algorithm
       Boolean a;
 
     // Part of ValueBlock implementation, special treatment of _ := VB case
-    case (Algorithm.ASSIGN(_,Exp.CREF_IDENT("WILDCARD__",{}),exp as Exp.VALUEBLOCK(_,_,_,_)),tnr,context)
+    case (Algorithm.ASSIGN(_,Exp.CREF(Exp.CREF_IDENT("WILDCARD__",_,{}),_),exp as Exp.VALUEBLOCK(_,_,_,_)),tnr,context)
       equation
         (cfn,_,tnr1) = generateExpression(exp, tnr, context);
      then (cfn,tnr1);
 
-    case (Algorithm.ASSIGN(type_ = typ,componentRef = cref,exp = exp),tnr,context)
+    case (Algorithm.ASSIGN(type_ = typ,exp1 = Exp.CREF(cref),exp = exp),tnr,context)
       equation
         Debug.fprintln("cgas", "generate_algorithm_statement");
         (cfn1,var1,tnr1) = generateExpression(exp, tnr, context);
@@ -3390,7 +3390,7 @@ algorithm
         cfn_2 = cAddInits(cfn_1, {alloc_str});
         cfn = Util.if_(is_a, cfn_2, cfn_1);
         etp = Exp.typeof(e);
-        (cfn2,tnr1) = generateAlgorithmStatement(Algorithm.ASSIGN(etp,id,e),tnr1,context);
+        (cfn2,tnr1) = generateAlgorithmStatement(Algorithm.ASSIGN(etp,Exp.CREF(id,etp),e),tnr1,context);
         cfn = cMergeFn(cfn,cfn2);
       then
         (cfn,tnr1);
@@ -7502,16 +7502,17 @@ algorithm
       Lib id_1,id,str;
       list<Exp.Subscript> subs;
       Exp.ComponentRef cref_1,cref;
-    case (Exp.CREF_IDENT(ident = id,subscriptLst = subs),str)
+      Exp.Type ty;
+    case (Exp.CREF_IDENT(ident = id,identType = ty,subscriptLst = subs),str)
       equation
         id_1 = stringAppend(id, str);
       then
-        Exp.CREF_IDENT(id_1,subs);
-    case (Exp.CREF_QUAL(ident = id,subscriptLst = subs,componentRef = cref),str)
+        Exp.CREF_IDENT(id_1,ty,subs);
+    case (Exp.CREF_QUAL(ident = id,identType = ty,subscriptLst = subs,componentRef = cref),str)
       equation
         cref_1 = suffixCref(cref, str);
       then
-        Exp.CREF_QUAL(id,subs,cref_1);
+        Exp.CREF_QUAL(id,ty,subs,cref_1);
   end matchcontinue;
 end suffixCref;
 

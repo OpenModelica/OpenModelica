@@ -39,7 +39,19 @@ package ErrorExt
   This file contains the external interface to the error handling.
   Error messages are stored externally, impl. in C++."
 
+
 public import Error;
+
+public function updateCurrentComponent
+  input String str; 
+  input Boolean writeable;
+  input String fileName;
+  input Integer rowstart;
+  input Integer rowend;
+  input Integer colstart;
+  input Integer colend; 
+  external "C";
+end updateCurrentComponent;
 
 public function addMessage
   input Error.ErrorID inErrorID1;
@@ -79,6 +91,10 @@ public function getMessagesStr
   external "C" ;
 end getMessagesStr;
 
+public function clearMessages
+  external "C" ;
+end clearMessages;
+
 public function errorOff
 
   external "C" ;
@@ -88,5 +104,21 @@ public function errorOn
 
   external "C" ;
 end errorOn;
+
+public function setCheckpoint
+
+  external "C" ;
+end setCheckpoint;
+
+public function delCheckpoint
+
+  external "C" ;
+end delCheckpoint;
+
+public function rollBack
+
+  external "C" ;
+end rollBack;
+
 end ErrorExt;
 

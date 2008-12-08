@@ -6279,9 +6279,9 @@ public function generateInitData
   input Real inReal7;
   input Real inTolerance;
   input String method;
+  input String options;
 algorithm
-  _:=
-  matchcontinue (inDAELow1,inPath2,inString3,inString4,inReal5,inReal6,inReal7,inTolerance,method)
+  _ := matchcontinue (inDAELow1,inPath2,inString3,inString4,inReal5,inReal6,inReal7,inTolerance,method,options)
     local
       Real delta_time,step,start,stop,intervals,tolerance;
       String start_str,stop_str,step_str,tolerance_str,nx_str,ny_str,np_str,init_str,str,exe,filename;
@@ -6290,7 +6290,7 @@ algorithm
       DAELow.DAELow dlow;
       Absyn.Path class_;
       
-    case (dlow,class_,exe,filename,start,stop,intervals,tolerance,method) /* classname executable file name filename start time stop time íntervals */
+    case (dlow,class_,exe,filename,start,stop,intervals,tolerance,method,_) /* classname executable file name filename start time stop time íntervals */
       equation
         delta_time = stop -. start;
         step = delta_time/.intervals;
@@ -6321,7 +6321,7 @@ algorithm
       then
         ();
         
-    case (_,_,_,_,_,_,_,_,_)
+    case (_,_,_,_,_,_,_,_,_,_)
       equation
         print("-SimCodegen.generateInitData failed\n");
       then

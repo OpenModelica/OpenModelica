@@ -10502,10 +10502,11 @@ public function translateDae "function: translateDae
    The equations are updated with the new variable names.
 "
   input DAELow inDAELow;
+  input Option<String> dummy;
   output DAELow outDAELow;
 algorithm
   outDAELow:=
-  matchcontinue (inDAELow)
+  matchcontinue (inDAELow,dummy)
     local
       list<Var> varlst,knvarlst,extvarlst, varlst_1,knvarlst_1,extvarlst_1,extvarlst_2,extvarlst_3;
       list<Var> totvars,varlst_2,knvarlst_2,varlst_3,knvarlst_3;
@@ -10519,8 +10520,7 @@ algorithm
       EquationArray eqns_1,seqns_1,ieqns_1,eqns,seqns,ieqns;
       DAELow trans_dae;
       ExternalObjectClasses extObjCls;
-    case (DAELOW(vars,knvars,extVars, eqns,seqns,ieqns,ae,al,
-      	EVENT_INFO(whenClauseLst = wc,zeroCrossingLst = zc),extObjCls))
+    case (DAELOW(vars,knvars,extVars, eqns,seqns,ieqns,ae,al,EVENT_INFO(whenClauseLst = wc,zeroCrossingLst = zc),extObjCls),_)
       equation
         varlst = varList(vars);
         knvarlst = varList(knvars);
@@ -14314,6 +14314,17 @@ algorithm
         fail();
   end matchcontinue;
 end getZeroCrossingIndicesFromWhenClause2;
+
+public function daeVars
+  input DAELow inDAELow;
+  output Variables vars;
+algorithm
+  vars := matchcontinue (inDAELow)
+    local Variables vars1,vars2;
+    case (DAELOW(orderedVars = vars1, knownVars = vars2))
+      then vars1;
+  end matchcontinue;
+end daeVars;
 
 end DAELow;
 

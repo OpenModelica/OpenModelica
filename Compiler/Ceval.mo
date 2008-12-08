@@ -1,9 +1,9 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2008, LinkÃ¶pings University,
+ * Copyright (c) 1998-2008, Linköpings University,
  * Department of Computer and Information Science,
- * SE-58183 LinkÃ¶pings, Sweden.
+ * SE-58183 Linköpings, Sweden.
  *
  * All rights reserved.
  *
@@ -14,7 +14,7 @@
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from LinkÃ¶pings University, either from the above address,
+ * from Linköpings University, either from the above address,
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
  *
@@ -36,22 +36,22 @@ package Ceval
   RCS: $Id$
 
   This module handles constant propagation (or evaluation)
-  When elaborating expressions, in the Static module, expressions are checked to
-  find out its type. It also checks whether the expressions are constant and the function
+  When elaborating expressions, in the Static module, expressions are checked to 
+  find out its type. It also checks whether the expressions are constant and the function 
   ceval in this module will then evaluate the expression to a constant value, defined
   in the Values module.
-
-  Input:
+ 
+  Input: 
  	Env: Environment with bindings
  	Exp: Expression to check for constant evaluation
  	Bool flag determines whether the current instantiation is implicit
  	InteractiveSymbolTable is optional, and used in interactive mode,
  	e.g. from mosh
-
+ 	
   Output:
  	Value: The evaluated value
       InteractiveSymbolTable: Modified symbol table
-      Subscript list : Evaluates subscripts and generates constant expressions.
+      Subscript list : Evaluates subscripts and generates constant expressions. 
 "
 
 public import Env;
@@ -62,10 +62,12 @@ public import DAELow;
 public import Absyn;
 public import Types;
 
-public
+public 
 uniontype Msg
   record MSG "Give error message" end MSG;
+
   record NO_MSG "Do not give error message" end NO_MSG;
+
 end Msg;
 
 protected import SimCodegen;
@@ -93,12 +95,15 @@ protected import Settings;
 protected import Refactor;
 protected import DAEQuery;
 protected import XMLDump;
+protected import Cevalfunc;
+protected import AbsynDep;
+
 
 protected function cevalBuiltin "function: cevalBuiltin
-
+ 
   Helper for ceval. Parts for builtin calls are moved here, for readability.
   See ceval for documentation.
-
+   
   NOTE:    It\'s ok if cevalBuiltin fails. Just means the call was not a builtin function"
 	input Env.Cache inCache;
   input Env.Env inEnv;
@@ -110,7 +115,7 @@ protected function cevalBuiltin "function: cevalBuiltin
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
-algorithm
+algorithm 
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   matchcontinue (inCache,inEnv,inExp,inBoolean,inInteractiveInteractiveSymbolTableOption,inIntegerOption,inMsg)
     local
@@ -135,28 +140,29 @@ algorithm
       String id;
       list<Exp.Exp> args,expl;
       list<Values.Value> vallst;
-      Absyn.Path funcpath;
+      Absyn.Path funcpath,path;
       Env.Cache cache;
     case (cache,env,Exp.SIZE(exp = exp,sz = SOME(dim)),impl,st,_,msg)
-      equation
-        (cache,v,st) = cevalBuiltinSize(cache, env, exp, dim, impl, st, msg) "Handle size separately" ;
+      equation 
+        (cache,v,st) = cevalBuiltinSize(cache,env, exp, dim, impl, st, msg) "Handle size separately" ;
       then
         (cache,v,st);
     case (cache,env,Exp.SIZE(exp = exp,sz = NONE),impl,st,_,msg)
-      equation
-        (cache,v,st) = cevalBuiltinSizeMatrix(cache, env, exp, impl, st, msg);
+      equation 
+        (cache,v,st) = cevalBuiltinSizeMatrix(cache,env, exp, impl, st, msg);
       then
         (cache,v,st);
-    case (cache,env,Exp.CALL(path = Absyn.IDENT(name = id),expLst = args,builtin = builtin),impl,st,_,msg) /* buildin: as true */
-      equation
+    case (cache,env,Exp.CALL(path = path,expLst = args,builtin = builtin),impl,st,_,msg) /* buildin: as true */ 
+      equation 
+        id = Absyn.pathString(path);
         handler = cevalBuiltinHandler(id);
-        (cache,v,st) = handler(cache, env, args, impl, st, msg);
+        (cache,v,st) = handler(cache,env, args, impl, st, msg);
       then
         (cache,v,st);
     case (cache,env,(e as Exp.CALL(path = funcpath,expLst = expl,builtin = (builtin as true))),impl,(st as NONE),_,msg)
-      equation
-        (cache,vallst) = cevalList(cache, env, expl, impl, st, msg);
-        (cache,newval,st) = cevalCallFunction(cache, env, e, vallst, st, msg);
+      equation  
+        (cache,vallst) = cevalList(cache,env, expl, impl, st, msg);
+        (cache,newval) = cevalCallFunction(cache,env, e, vallst, msg);
       then
         (cache,newval,st);
   end matchcontinue;
@@ -167,7 +173,7 @@ protected function cevalBuiltinHandler "function: cevalBuiltinHandler
   function that evaluates that particular function.
   It takes an identifier as input and returns a function that evaluates that
   function or operator.
-
+  
   NOTE: size handled specially. see cevalBuiltin:
         removed: case (\"size\") => cevalBuiltinSize"
   input Absyn.Ident inIdent;
@@ -183,46 +189,46 @@ protected function cevalBuiltinHandler "function: cevalBuiltinHandler
     output Values.Value outValue;
     output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
   end HandlerFunc;
-algorithm
+algorithm 
   handler :=
   matchcontinue (inIdent)
     local String id;
-    case "floor" then cevalBuiltinFloor;
-    case "ceil" then cevalBuiltinCeil;
-    case "abs" then cevalBuiltinAbs;
-    case "sqrt" then cevalBuiltinSqrt;
-    case "div" then cevalBuiltinDiv;
-    case "sin" then cevalBuiltinSin;
+    case "floor" then cevalBuiltinFloor; 
+    case "ceil" then cevalBuiltinCeil; 
+    case "abs" then cevalBuiltinAbs; 
+    case "sqrt" then cevalBuiltinSqrt; 
+    case "div" then cevalBuiltinDiv; 
+    case "sin" then cevalBuiltinSin; 
     case "cos" then cevalBuiltinCos;
     case "tan" then cevalBuiltinTan;
-    case "sinh" then cevalBuiltinSinh;
+    case "sinh" then cevalBuiltinSinh; 
     case "cosh" then cevalBuiltinCosh;
-    case "tanh" then cevalBuiltinTanh;
-    case "log" then cevalBuiltinLog;
-    case "arcsin" then cevalBuiltinAsin;
-    case "arccos" then cevalBuiltinAcos;
-    case "arctan" then cevalBuiltinAtan;
-    case "integer" then cevalBuiltinInteger;
-    case "mod" then cevalBuiltinMod;
-    case "max" then cevalBuiltinMax;
-    case "min" then cevalBuiltinMin;
-    case "rem" then cevalBuiltinRem;
-    case "diagonal" then cevalBuiltinDiagonal;
-    case "transpose" then cevalBuiltinTranspose;
-    case "differentiate" then cevalBuiltinDifferentiate;
-    case "simplify" then cevalBuiltinSimplify;
-    case "sign" then cevalBuiltinSign;
-    case "exp" then cevalBuiltinExp;
-    case "noEvent" then cevalBuiltinNoevent;
-    case "cardinality" then cevalBuiltinCardinality;
-    case "cat" then cevalBuiltinCat;
-    case "identity" then cevalBuiltinIdentity;
-    case "promote" then cevalBuiltinPromote;
+    case "tanh" then cevalBuiltinTanh;                    
+    case "log" then cevalBuiltinLog;   
+    case "arcsin" then cevalBuiltinAsin; 
+    case "arccos" then cevalBuiltinAcos; 
+    case "arctan" then cevalBuiltinAtan; 
+    case "integer" then cevalBuiltinInteger; 
+    case "mod" then cevalBuiltinMod; 
+    case "max" then cevalBuiltinMax; 
+    case "min" then cevalBuiltinMin; 
+    case "rem" then cevalBuiltinRem; 
+    case "diagonal" then cevalBuiltinDiagonal; 
+    case "transpose" then cevalBuiltinTranspose; 
+    case "differentiate" then cevalBuiltinDifferentiate; 
+    case "simplify" then cevalBuiltinSimplify; 
+    case "sign" then cevalBuiltinSign; 
+    case "exp" then cevalBuiltinExp; 
+    case "noEvent" then cevalBuiltinNoevent; 
+    case "cardinality" then cevalBuiltinCardinality; 
+    case "cat" then cevalBuiltinCat; 
+    case "identity" then cevalBuiltinIdentity; 
+    case "promote" then cevalBuiltinPromote; 
     case "String" then cevalBuiltinString;
     //case "semiLinear" then cevalBuiltinSemiLinear;
     //case "delay" then cevalBuiltinDelay;
     case id
-      equation
+      equation 
         Debug.fprint("ceval", "No Ceval.cevalBuiltinHandler found for: ");
         Debug.fprintln("ceval", id);
       then
@@ -230,16 +236,15 @@ algorithm
   end matchcontinue;
 end cevalBuiltinHandler;
 
-public function ceval 
-"function: ceval
+public function ceval "function: ceval
   This function is used when the value of a constant expression is
   needed.  It takes an environment and an expression and calculates
   its value.
-
+ 
   The third argument indicates whether the evaluation is performed in the
   interactive environment (implicit instantiation), in which case function
   calls are evaluated.
-
+  
   The last argument is an optional dimension."
 	input Env.Cache inCache;
   input Env.Env inEnv;
@@ -251,7 +256,7 @@ public function ceval
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
-algorithm
+algorithm 
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   matchcontinue (inCache,inEnv,inExp,inBoolean,inInteractiveInteractiveSymbolTableOption,inIntegerOption,inMsg)
     local
@@ -271,11 +276,11 @@ algorithm
       Values.Value v,newval,value,sval,elt1,elt2,v_1,lhs_1,rhs_1;
       Exp.Exp lh,rh,e,lhs,rhs,start,stop,step,e1,e2,iterexp;
       Absyn.Path funcpath,func;
-      Absyn.Program p;
+      Absyn.Program p,ptot;
       list<Interactive.CompiledCFunction> cflist;
       Exp.Operator relop;
       Env.Cache cache;
-    case (cache,_,Exp.ICONST(integer = x),_,st,_,_) then (cache,Values.INTEGER(x),st);
+    case (cache,_,Exp.ICONST(integer = x),_,st,_,_) then (cache,Values.INTEGER(x),st); 
 
     case (cache,_,Exp.RCONST(real = x),_,st,_,_)
       local Real x;
@@ -292,45 +297,45 @@ algorithm
       then
         (cache,Values.BOOL(x),st);
 
-    case (cache,_,Exp.END(),_,st,SOME(dim),_) then (cache,Values.INTEGER(dim),st);
+    case (cache,_,Exp.END(),_,st,SOME(dim),_) then (cache,Values.INTEGER(dim),st); 
 
     case (cache,_,Exp.END(),_,st,NONE,MSG())
-      equation
+      equation 
         Error.addMessage(Error.END_ILLEGAL_USE_ERROR, {});
       then
         fail();
 
-    case (cache,_,Exp.END(),_,st,NONE,NO_MSG()) then fail();
+    case (cache,_,Exp.END(),_,st,NONE,NO_MSG()) then fail(); 
 
     case (cache,env,Exp.CODE(code = Absyn.C_EXPRESSION(exp = exp)),impl,st,_,msg)
-      equation
+      equation 
         (cache,exp_1) = cevalAstExp(cache,env, exp, impl, st, msg);
       then
         (cache,Values.CODE(Absyn.C_EXPRESSION(exp_1)),st);
 
     case (cache,env,Exp.CODE(code = Absyn.C_EXPRESSION(exp = exp)),impl,st,_,msg)
-      equation
+      equation 
         (cache,exp_1) = cevalAstExp(cache,env, exp, impl, st, msg);
       then
         (cache,Values.CODE(Absyn.C_EXPRESSION(exp_1)),st);
 
     case (cache,env,Exp.CODE(code = Absyn.C_ELEMENT(element = elt)),impl,st,_,msg)
-      equation
+      equation 
         (cache,elt_1) = cevalAstElt(cache,env, elt, impl, st, msg);
       then
         (cache,Values.CODE(Absyn.C_ELEMENT(elt_1)),st);
 
-    case (cache,env,Exp.CODE(code = c),_,st,_,_) then (cache,Values.CODE(c),st);
+    case (cache,env,Exp.CODE(code = c),_,st,_,_) then (cache,Values.CODE(c),st); 
 
     case (cache,env,Exp.ARRAY(array = es),impl,st,_,msg)
-      equation
+      equation 
         (cache,es_1) = cevalList(cache,env, es, impl, st, msg);
         l = listLength(es_1);
       then
         (cache,Values.ARRAY(es_1),st);
 
     case (cache,env,Exp.MATRIX(scalar = expll),impl,st,_,msg)
-      equation
+      equation 
         (cache,elts) = cevalMatrixElt(cache,env, expll, impl, msg);
       then
         (cache,Values.ARRAY(elts),st);
@@ -339,14 +344,15 @@ algorithm
       local
         Exp.ComponentRef c;
         Interactive.InteractiveSymbolTable st;
-      equation
-        (cache,v) = cevalCref(cache,env, c, false, msg) "When in interactive mode, always evalutate crefs, i.e non-implicit mode.." ;
+      equation 
+        (cache,v) = cevalCref(cache,env, c, false, msg) "When in interactive mode, always evalutate crefs, i.e non-implicit
+	    mode.." ;
       then
         (cache,v,SOME(st));
 
     case (cache,env,Exp.CREF(componentRef = c),impl,st,_,msg)
       local Exp.ComponentRef c;
-      equation
+      equation 
         (cache,v) = cevalCref(cache,env, c, impl, msg);
       then
         (cache,v,st);
@@ -356,36 +362,42 @@ algorithm
       local
         Exp.Exp exp;
         Option<Integer> dim;
-      equation
+      equation 
         (cache,v,st_1) = cevalBuiltin(cache,env, exp, impl, st, dim, msg);
       then
         (cache,v,st_1);
 
-    case (cache,env,(e as Exp.CALL(path = _)),(impl as false),NONE,_,NO_MSG()) then fail();
+    case (cache,env,(e as Exp.CALL(path = funcpath,expLst = expl,builtin = builtin)),impl,st,_,msg) 
+      /* Call functions FIXME: functions are always generated. Put back the check
+	  and write another rule for the false case that generates the function */ 
+      equation
+        (cache,vallst) = cevalList(cache,env, expl, impl, st, msg);
+        (cache,newval)= cevalCallFunction(cache,env, e, vallst, msg);
+      then
+        (cache,newval,st);
+
+    case (cache,env,(e as Exp.CALL(path = _)),(impl as false),NONE,_,NO_MSG()) then fail(); 
 
     case (cache,env,(e as Exp.CALL(path = _)),(impl as true),SOME(st),_,msg)
       local Interactive.InteractiveSymbolTable st;
-      equation
+      equation 
         (cache,value,st) = cevalInteractiveFunctions(cache,env, e, st, msg);
       then
         (cache,value,SOME(st));
 
     case (cache,env,(e as Exp.CALL(path = func,expLst = expl)),(impl as true),(st as SOME(_)),_,msg)
-      equation
+      equation 
 				(cache,false) = Static.isExternalObjectFunction(cache,env,func);
-        (cache,vallst) = cevalList(cache,env, expl, impl, st, msg) 
-        "Call of record constructors, etc., i.e. functions that can be constant propagated." ;
+        (cache,vallst) = cevalList(cache,env, expl, impl, st, msg) "Call of record constructors, etc., i.e. functions that can be constant propagated." ;
         (cache,newval) = cevalFunction(cache,env, func, vallst, impl, msg);
       then
         (cache,newval,st);
 
-    case (cache,env,(e as Exp.CALL(path = func,expLst = expl)),/*(impl as true)*/impl,
-      (st as SOME(Interactive.SYMBOLTABLE(p,_,_,_,cflist,_))),_,msg)
-      local Integer funcHandle; String fNew,fOld; Real buildTime;
-      equation
-        (true, funcHandle, buildTime, fOld) = Static.isFunctionInCflist(cflist, func) "Call externally implemented functions." ;
-        Absyn.CLASS(_,_,_,_,Absyn.R_FUNCTION(),_,Absyn.INFO(fileName = fNew)) = Interactive.getPathedClassInProgram(func, p);        
-        false = Static.needToRebuild(fNew,fOld,buildTime); // we don't need to rebuild!        
+    case (cache,env,(e as Exp.CALL(path = func,expLst = expl)),(impl as true),
+      (st as SOME(Interactive.SYMBOLTABLE(p,_,_,_,_,cflist,_))),_,msg)
+      local Integer funcHandle;
+      equation 
+        (true, funcHandle) = Static.isFunctionInCflist(cflist, func) "Call externally implemented functions." ;
         (cache,false) = Static.isExternalObjectFunction(cache,env,func);
         (cache,vallst) = cevalList(cache,env, expl, impl, st, msg);
         funcstr = ModUtil.pathString2(func, "_");
@@ -393,32 +405,30 @@ algorithm
         newval = System.executeFunction(funcHandle, vallst);
       then
         (cache,newval,st);
-
+        
     case (cache,env,(e as Exp.CALL(path = funcpath,expLst = expl,builtin = builtin)),impl,st,_,msg)
       /* Is this case really necessary? */
       local String s; list<String> ss;
       equation
         (cache,vallst) = cevalList(cache,env, expl, impl, st, msg);
-        (cache,newval,st)= cevalCallFunction(cache,env, e, vallst, st, msg);
+        (cache,newval)= cevalCallFunction(cache,env, e, vallst, msg);
       then
         (cache,newval,st);
 
-    case (cache,env,Exp.BINARY(exp1 = lh,operator = Exp.ADD(ty = Exp.STRING()),exp2 = rh),impl,st,dim,msg) /* Strings */
-      local 
-        String lhv,rhv;
-        Option<Integer> dim;
-      equation
-        (cache,Values.STRING(lhv),st_1) = ceval(cache,env, lh, impl, st, dim, msg);
-        (cache,Values.STRING(rhv),st_2) = ceval(cache,env, rh, impl, st_1, dim, msg);
+    case (cache,env,Exp.BINARY(exp1 = lh,operator = Exp.ADD(ty = Exp.STRING()),exp2 = rh),impl,st,_,msg) /* Strings */ 
+      local String lhv,rhv;
+      equation 
+        (cache,Values.STRING(lhv),_) = ceval(cache,env, lh, impl, st, NONE, msg);
+        (cache,Values.STRING(rhv),_) = ceval(cache,env, rh, impl, st, NONE, msg);
         str = stringAppend(lhv, rhv);
       then
-        (cache,Values.STRING(str),st_2);
+        (cache,Values.STRING(str),st);
 
-    case (cache,env,Exp.BINARY(exp1 = lh,operator = Exp.ADD(ty = Exp.REAL()),exp2 = rh),impl,st,dim,msg) /* Numerical */
+    case (cache,env,Exp.BINARY(exp1 = lh,operator = Exp.ADD(ty = Exp.REAL()),exp2 = rh),impl,st,dim,msg) /* Numerical */ 
       local
         Real lhv,rhv;
         Option<Integer> dim;
-      equation
+      equation 
         (cache,Values.REAL(lhv),st_1) = ceval(cache,env, lh, impl, st, dim, msg);
         (cache,Values.REAL(rhv),st_2) = ceval(cache,env, rh, impl, st_1, dim, msg);
         sum = lhv +. rhv;
@@ -427,7 +437,7 @@ algorithm
 
     case (cache,env,Exp.BINARY(exp1 = lh,operator = Exp.ADD_ARR(ty = _),exp2 = rh),impl,st,dim,msg)
       local Option<Integer> dim;
-      equation
+      equation 
         (cache,Values.ARRAY(vlst1),st_1) = ceval(cache,env, lh, impl, st, dim, msg);
         (cache,Values.ARRAY(vlst2),st_2) = ceval(cache,env, rh, impl, st_1, dim, msg);
         reslst = Values.addElementwiseArrayelt(vlst1, vlst2);
@@ -436,7 +446,7 @@ algorithm
 
     case (cache,env,Exp.BINARY(exp1 = lh,operator = Exp.SUB_ARR(ty = _),exp2 = rh),impl,st,dim,msg)
       local Option<Integer> dim;
-      equation
+      equation 
         (cache,Values.ARRAY(vlst1),st_1) = ceval(cache,env, lh, impl, st, dim, msg);
         (cache,Values.ARRAY(vlst2),st_2) = ceval(cache,env, rh, impl, st_1, dim, msg);
         reslst = Values.subElementwiseArrayelt(vlst1, vlst2);
@@ -445,7 +455,7 @@ algorithm
 
     case (cache,env,Exp.BINARY(exp1 = lh,operator = Exp.MUL_SCALAR_ARRAY(ty = _),exp2 = rh),impl,st,dim,msg)
       local Option<Integer> dim;
-      equation
+      equation 
         (cache,sval,st_1) = ceval(cache,env, lh, impl, st, dim, msg);
         (cache,Values.ARRAY(aval),st_2) = ceval(cache,env, rh, impl, st_1, dim, msg);
         reslst = Values.multScalarArrayelt(sval, aval);
@@ -454,7 +464,7 @@ algorithm
 
     case (cache,env,Exp.BINARY(exp1 = lh,operator = Exp.MUL_ARRAY_SCALAR(ty = _),exp2 = rh),impl,st,dim,msg)
       local Option<Integer> dim;
-      equation
+      equation 
         (cache,sval,st_1) = ceval(cache,env, rh, impl, st, dim, msg);
         (cache,Values.ARRAY(aval),st_2) = ceval(cache,env, lh, impl, st_1, dim, msg);
         reslst = Values.multScalarArrayelt(sval, aval);
@@ -463,7 +473,7 @@ algorithm
 
     case (cache,env,Exp.BINARY(exp1 = lh,operator = Exp.DIV_ARRAY_SCALAR(ty = _),exp2 = rh),impl,st,dim,msg)
       local Option<Integer> dim;
-      equation
+      equation 
         (cache,sval,st_1) = ceval(cache,env, rh, impl, st, dim, msg);
         (cache,Values.ARRAY(aval),st_2) = ceval(cache,env, lh, impl, st_1, dim, msg);
         reslst = Values.divArrayeltScalar(sval, aval);
@@ -474,7 +484,7 @@ algorithm
       local
         Values.Value res;
         Option<Integer> dim;
-      equation
+      equation 
         (cache,Values.ARRAY(rhvals),st_1) = ceval(cache,env, rh, impl, st, dim, msg);
         (cache,Values.ARRAY(lhvals),st_2) = ceval(cache,env, lh, impl, st_1, dim, msg);
         res = Values.multScalarProduct(rhvals, lhvals);
@@ -485,7 +495,7 @@ algorithm
       local
         Values.Value res;
         Option<Integer> dim;
-      equation
+      equation 
         (cache,Values.ARRAY((lhvals as (elt1 :: _))),st_1) = ceval(cache,env, lh, impl, st, dim, msg) "{{..}..{..}}  {...}" ;
         (cache,Values.ARRAY((rhvals as (elt2 :: _))),st_2) = ceval(cache,env, rh, impl, st_1, dim, msg);
         true = Values.isArray(elt1);
@@ -498,7 +508,7 @@ algorithm
       local
         Values.Value res;
         Option<Integer> dim;
-      equation
+      equation 
         (cache,Values.ARRAY((rhvals as (elt1 :: _))),st_1) = ceval(cache,env, rh, impl, st, dim, msg) "{...}  {{..}..{..}}" ;
         (cache,Values.ARRAY((lhvals as (elt2 :: _))),st_2) = ceval(cache,env, lh, impl, st_1, dim, msg);
         true = Values.isArray(elt1);
@@ -511,7 +521,7 @@ algorithm
       local
         list<Values.Value> res;
         Option<Integer> dim;
-      equation
+      equation 
         (cache,Values.ARRAY((rhvals as (elt1 :: _))),st_1) = ceval(cache,env, rh, impl, st, dim, msg) "{{..}..{..}}  {{..}..{..}}" ;
         (cache,Values.ARRAY((lhvals as (elt2 :: _))),st_2) = ceval(cache,env, lh, impl, st_1, dim, msg);
         true = Values.isArray(elt1);
@@ -527,9 +537,9 @@ algorithm
         Option<Integer> dim;
       equation
         (cache,res1,st_1) = ceval(cache,env, lh, impl, st, dim, msg);
-        (cache,res2,st_2) = ceval(cache,env, rh, impl, st_1, dim, msg);
+        (cache,res2,st_2) = ceval(cache,env, rh, impl, st_1, dim, msg);        
 				res3 = Values.safeIntRealOp(res1, res2, Values.POWOP);
-      then
+      then 
         (cache,res3,st_2);
 
 		//MUL (integer or real)
@@ -539,7 +549,7 @@ algorithm
         Option<Integer> dim;
       equation
         (cache,res1,st_1) = ceval(cache,env, lh, impl, st, dim, msg);
-        (cache,res2,st_2) = ceval(cache,env, rh, impl, st_1, dim, msg);
+        (cache,res2,st_2) = ceval(cache,env, rh, impl, st_1, dim, msg);        
 				res3 = Values.safeIntRealOp(res1, res2, Values.MULOP);
       then
         (cache,res3,st_2);
@@ -551,7 +561,7 @@ algorithm
         Option<Integer> dim;
       equation
         (cache,res1,st_1) = ceval(cache,env, lh, impl, st, dim, msg);
-        (cache,res2,st_2) = ceval(cache,env, rh, impl, st_1, dim, msg);
+        (cache,res2,st_2) = ceval(cache,env, rh, impl, st_1, dim, msg);        
 				res3 = Values.safeIntRealOp(res1, res2, Values.DIVOP);
       then
         (cache,res3,st_2);
@@ -562,7 +572,7 @@ algorithm
         Real lhv,rhv;
         Option<Integer> dim;
         Values.Value res1;
-      equation
+      equation 
          (cache,res1,st_1) = ceval(cache,env, rh, impl, st, dim, msg);
          true = Values.isZero(res1);
         lh_str = Exp.printExpStr(lh);
@@ -578,7 +588,7 @@ algorithm
         Option<Integer> dim;
       equation
         (cache,res1,st_1) = ceval(cache,env, lh, impl, st, dim, msg);
-        (cache,res2,st_2) = ceval(cache,env, rh, impl, st_1, dim, msg);
+        (cache,res2,st_2) = ceval(cache,env, rh, impl, st_1, dim, msg);        
 				res3 = Values.safeIntRealOp(res1, res2, Values.ADDOP);
       then
         (cache,res3,st_2);
@@ -590,17 +600,17 @@ algorithm
         Option<Integer> dim;
       equation
         (cache,res1,st_1) = ceval(cache,env, lh, impl, st, dim, msg);
-        (cache,res2,st_2) = ceval(cache,env, rh, impl, st_1, dim, msg);
+        (cache,res2,st_2) = ceval(cache,env, rh, impl, st_1, dim, msg);        
 				res3 = Values.safeIntRealOp(res1, res2, Values.SUBOP);
       then
         (cache,res3,st_2);
 
-        /*  unary minus of array */
-    case (cache,env,Exp.UNARY(operator = Exp.UMINUS_ARR(ty = _),exp = exp),impl,st,dim,msg)
+        /*  unary minus of array */  
+    case (cache,env,Exp.UNARY(operator = Exp.UMINUS_ARR(ty = _),exp = exp),impl,st,dim,msg) 
       local
         Exp.Exp exp;
         Option<Integer> dim;
-      equation
+      equation 
         (cache,Values.ARRAY(arr),st_1) = ceval(cache,env, exp, impl, st, dim, msg);
         arr_1 = Util.listMap(arr, Values.valueNeg);
       then
@@ -610,7 +620,7 @@ algorithm
       local
         Exp.Exp exp;
         Option<Integer> dim;
-      equation
+      equation 
         (cache,v,st_1) = ceval(cache,env, exp, impl, st, dim, msg);
         v_1 = Values.valueNeg(v);
       then
@@ -620,18 +630,32 @@ algorithm
       local
         Exp.Exp exp;
         Option<Integer> dim;
-      equation
+      equation 
         (cache,v,st_1) = ceval(cache,env, exp, impl, st, dim, msg);
       then
         (cache,v,st_1);
 
-        /* Logical */
-    case (cache,env,Exp.LBINARY(exp1 = lh,operator = Exp.AND(),exp2 = rh),impl,st,dim,msg)
+        /* Logical */         
+        // special case when leftside is false... 
+        // We allow errors on right hand side. and even if there is no errors, the performance 
+        // will be better.
+    case (cache,env,Exp.LBINARY(exp1 = lh,operator = Exp.AND(),exp2 = rh),impl,st,dim,msg) 
       local
         Boolean lhv,rhv,x;
         Option<Integer> dim;
-      equation
+      equation 
         (cache,Values.BOOL(lhv),st_1) = ceval(cache,env, lh, impl, st, dim, msg);
+        false = lhv;        
+      then
+        (cache,Values.BOOL(false),st_1);
+        
+        /* Logical */ 
+    case (cache,env,Exp.LBINARY(exp1 = lh,operator = Exp.AND(),exp2 = rh),impl,st,dim,msg) 
+      local
+        Boolean lhv,rhv,x;
+        Option<Integer> dim;
+      equation 
+        (cache,Values.BOOL(lhv),st_1) = ceval(cache,env, lh, impl, st, dim, msg);        
         (cache,Values.BOOL(rhv),st_2) = ceval(cache,env, rh, impl, st_1, dim, msg);
         x = boolAnd(lhv, rhv);
       then
@@ -641,34 +665,46 @@ algorithm
       local
         Boolean lhv,rhv,x;
         Option<Integer> dim;
-      equation
+      equation 
         (cache,Values.BOOL(lhv),st_1) = ceval(cache,env, lh, impl, st, dim, msg);
         (cache,Values.BOOL(rhv),st_2) = ceval(cache,env, rh, impl, st_1, dim, msg);
         x = boolOr(lhv, rhv);
       then
         (cache,Values.BOOL(x),st_2);
-
+// Special case for a boolean expression like if( expression or ARRAY_IDEX_OUT_OF_BOUNDS_ERROR) 
+// "expression" in this case we return the lh expression to be equall to 
+// the previous c-code generation.
+    case (cache,env,Exp.LBINARY(exp1 = lh,operator = Exp.OR(),exp2 = rh),impl,st,dim,msg)
+      local
+        Boolean lhv,rhv,x;
+        Option<Integer> dim;
+      equation 
+        (cache,v as Values.BOOL(rhv),st_1) = ceval(cache,env, lh, impl, st, dim, msg);
+        failure((_,_,_) = ceval(cache,env, rh, impl, st_1, dim, msg));
+      then
+        (cache,v,st_1);
+        
     case (cache,env,Exp.LUNARY(operator = Exp.NOT(),exp = e),impl,st,dim,msg)
       local Option<Integer> dim;
-      equation
+      equation 
         (cache,Values.BOOL(b),st_1) = ceval(cache,env, e, impl, st, dim, msg);
         b_1 = boolNot(b);
       then
         (cache,Values.BOOL(b_1),st_1);
 
-        /* Relations */
-    case (cache,env,Exp.RELATION(exp1 = lhs,operator = relop,exp2 = rhs),impl,st,dim,msg)
+        /* Relations */ 
+    case (cache,env,Exp.RELATION(exp1 = lhs,operator = relop,exp2 = rhs),impl,st,dim,msg) 
       local Option<Integer> dim;
-      equation
+      equation 
         (cache,lhs_1,st_1) = ceval(cache,env, lhs, impl, st, dim, msg);
         (cache,rhs_1,st_2) = ceval(cache,env, rhs, impl, st_1, dim, msg);
         v = cevalRelation(lhs_1, relop, rhs_1);
       then
         (cache,v,st_2);
 
-    case (cache,env,Exp.RANGE(ty = Exp.INT(),exp = start,expOption = NONE,range = stop),impl,st,dim,msg) /*  */
+    case (cache,env,Exp.RANGE(ty = Exp.INT(),exp = start,expOption = NONE,range = stop),impl,st,dim,msg) /*  */ 
       local Option<Integer> dim;
-      equation
+      equation 
         (cache,Values.INTEGER(start_1),st_1) = ceval(cache,env, start, impl, st, dim, msg);
         (cache,Values.INTEGER(stop_1),st_2) = ceval(cache,env, stop, impl, st_1, dim, msg);
         arr = cevalRange(start_1, 1, stop_1);
@@ -677,7 +713,7 @@ algorithm
 
     case (cache,env,Exp.RANGE(ty = Exp.INT(),exp = start,expOption = SOME(step),range = stop),impl,st,dim,msg)
       local Option<Integer> dim;
-      equation
+      equation 
         (cache,Values.INTEGER(start_1),st_1) = ceval(cache,env, start, impl, st, dim, msg);
         (cache,Values.INTEGER(step_1),st_2) = ceval(cache,env, step, impl, st_1, dim, msg);
         (cache,Values.INTEGER(stop_1),st_3) = ceval(cache,env, stop, impl, st_2, dim, msg);
@@ -689,7 +725,7 @@ algorithm
       local
         Real start_1,stop_1,step;
         Option<Integer> dim;
-      equation
+      equation 
         (cache,Values.REAL(start_1),st_1) = ceval(cache,env, start, impl, st, dim, msg);
         (cache,Values.REAL(stop_1),st_2) = ceval(cache,env, stop, impl, st_1, dim, msg);
         diff = stop_1 -. start_1;
@@ -702,7 +738,7 @@ algorithm
       local
         Real start_1,step_1,stop_1;
         Option<Integer> dim;
-      equation
+      equation 
         (cache,Values.REAL(start_1),st_1) = ceval(cache,env, start, impl, st, dim, msg);
         (cache,Values.REAL(step_1),st_2) = ceval(cache,env, step, impl, st_1, dim, msg);
         (cache,Values.REAL(stop_1),st_3) = ceval(cache,env, stop, impl, st_2, dim, msg);
@@ -712,7 +748,7 @@ algorithm
 
     case (cache,env,Exp.CAST(ty = Exp.REAL(),exp = e),impl,st,dim,msg)
       local Option<Integer> dim;
-      equation
+      equation 
         (cache,Values.INTEGER(i),st_1) = ceval(cache,env, e, impl, st, dim, msg);
         r = intReal(i);
       then
@@ -720,7 +756,7 @@ algorithm
 
     case (cache,env,Exp.CAST(ty = Exp.T_ARRAY(Exp.REAL(),_),exp = e),impl,st,dim,msg)
       local Option<Integer> dim;
-      equation
+      equation 
         (cache,Values.ARRAY(ivals),st_1) = ceval(cache,env, e, impl, st, dim, msg);
         rvals = Values.typeConvert(Exp.INT(), Exp.REAL(), ivals);
       then
@@ -728,7 +764,7 @@ algorithm
 
     case (cache,env,Exp.CAST(ty = Exp.REAL(),exp = (e as Exp.ARRAY(ty = Exp.INT(),array = expl))),impl,st,dim,msg)
       local Option<Integer> dim;
-      equation
+      equation 
         (cache,Values.ARRAY(vallst),st_1) = ceval(cache,env, e, impl, st, dim, msg);
         vallst_1 = Values.typeConvert(Exp.INT(), Exp.REAL(), vallst);
       then
@@ -736,7 +772,7 @@ algorithm
 
     case (cache,env,Exp.CAST(ty = Exp.REAL(),exp = (e as Exp.RANGE(ty = Exp.INT()))),impl,st,dim,msg)
       local Option<Integer> dim;
-      equation
+      equation 
         (cache,Values.ARRAY(vallst),st_1) = ceval(cache,env, e, impl, st, dim, msg);
         vallst_1 = Values.typeConvert(Exp.INT(), Exp.REAL(), vallst);
       then
@@ -744,7 +780,7 @@ algorithm
 
     case (cache,env,Exp.CAST(ty = Exp.REAL(),exp = (e as Exp.MATRIX(ty = Exp.INT()))),impl,st,dim,msg)
       local Option<Integer> dim;
-      equation
+      equation 
         (cache,Values.ARRAY(vallst),st_1) = ceval(cache,env, e, impl, st, dim, msg);
         vallst_1 = Values.typeConvert(Exp.INT(), Exp.REAL(), vallst);
       then
@@ -754,7 +790,7 @@ algorithm
       local
         Exp.Exp b;
         Option<Integer> dim;
-      equation
+      equation 
         (cache,Values.BOOL(true),st_1) = ceval(cache,env, b, impl, st, dim, msg) "Ifexp, true branch" ;
         (cache,v,st_2) = ceval(cache,env, e1, impl, st_1, dim, msg);
       then
@@ -764,32 +800,40 @@ algorithm
       local
         Exp.Exp b;
         Option<Integer> dim;
-      equation
+      equation 
         (cache,Values.BOOL(false),st_1) = ceval(cache,env, b, impl, st, dim, msg) "Ifexp, false branch" ;
         (cache,v,st_2) = ceval(cache,env, e2, impl, st_1, dim, msg);
       then
         (cache,v,st_2);
 
-    case (cache,env,Exp.ASUB(exp = e,sub = indx),impl,st,dim,msg)
+    case (cache,env,Exp.ASUB(exp = e,sub = ((e1 as Exp.ICONST(indx))::{})),impl,st,dim,msg)
       local Option<Integer> dim;
-      equation
+      equation 
         (cache,Values.ARRAY(vals),st_1) = ceval(cache,env, e, impl, st, dim, msg) "asub" ;
         indx_1 = indx - 1;
         v = listNth(vals, indx_1);
       then
         (cache,v,st_1);
-
-    case (cache,env,Exp.REDUCTION(path = p,expr = exp,ident = iter,range = iterexp),impl,st,dim,MSG()) /* (v,st) */
+    case (cache, env, Exp.ASUB(exp = e,sub = expl ), impl, st, dim, msg)
+      local Option<Integer> dim; String s;
+      equation 
+        (cache,Values.ARRAY(vals),st_1) = ceval(cache,env, e, impl, st, dim, msg) "asub" ;
+        (cache,es_1) = cevalList(cache,env, expl, impl, st_1, msg) "asub exp" ;
+        v = Util.listFirst(es_1);
+        v = Values.nthnthArrayelt(es_1,Values.ARRAY(vals),v);
+      then
+        (cache,v,st_1);
+    case (cache,env,Exp.REDUCTION(path = p,expr = exp,ident = iter,range = iterexp),impl,st,dim,MSG()) /* (v,st) */ 
       local
         Absyn.Path p;
         Exp.Exp exp;
         Option<Integer> dim;
-      equation
-        Print.printBuf("#-- Ceval.ceval reduction\n");
+      equation 
+        print("#-- Ceval.ceval reduction not impl yet.\n");
       then
         fail();
 
-    case (cache,env,Exp.REDUCTION(path = p,expr = exp,ident = iter,range = iterexp),impl,st,dim,NO_MSG()) /* (v,st) */
+    case (cache,env,Exp.REDUCTION(path = p,expr = exp,ident = iter,range = iterexp),impl,st,dim,NO_MSG()) /* (v,st) */ 
       local
         Absyn.Path p;
         Exp.Exp exp;
@@ -797,14 +841,14 @@ algorithm
       then
         fail();
 
-        /* ceval can fail and that is ok, catched by other rules... */
-    case (cache,env,e,_,_,_,MSG())
+        /* ceval can fail and that is ok, catched by other rules... */ 
+    case (cache,env,e,_,_,_,MSG()) 
       equation
+        /*
         Debug.fprint("failtrace", "- Ceval.ceval failed: ");
         str = Exp.printExpStr(e);
         Debug.fprint("failtrace", str);
-        Debug.fprint("failtrace", "\n");
-        /*
+        Debug.fprint("failtrace", "\n");        
         Debug.fprint("failtrace", " Env:" );
         Debug.fcall("failtrace", Env.printEnv, env);
         */
@@ -821,13 +865,12 @@ protected function cevalCallFunction "function: cevalCallFunction
   input Env.Env inEnv;
   input Exp.Exp inExp;
   input list<Values.Value> inValuesValueLst;
-  input Option<Interactive.InteractiveSymbolTable> inSymTab;  
   input Msg inMsg;
   output Env.Cache outCache;
   output Values.Value outValue;
-  output Option<Interactive.InteractiveSymbolTable> outSymTab;  
-algorithm
-  (outCache,outValue,outSymTab) := matchcontinue (inCache,inEnv,inExp,inValuesValueLst,inSymTab,inMsg)
+algorithm 
+  (outCache,outValue) :=
+  matchcontinue (inCache,inEnv,inExp,inValuesValueLst,inMsg)
     local
       Values.Value newval;
       list<Env.Frame> env;
@@ -839,50 +882,66 @@ algorithm
       Msg msg;
       String funcstr,str;
       Env.Cache cache;
-      Option<Interactive.InteractiveSymbolTable> st;      
-    /* External functions that are "known" should be evaluated without compilation, e.g. all math functions */
-    case (cache,env,(e as Exp.CALL(path = funcpath,expLst = expl,builtin = builtin)),vallst,st,msg)
-      equation
-        (cache,newval) = cevalKnownExternalFuncs(cache, env, funcpath, vallst, msg);
+   /* 
+   External functions that are "known" should be evaluated without
+	 compilation, e.g. all math functions 
+	 */ 
+    case (cache,env,(e as Exp.CALL(path = funcpath,expLst = expl,builtin = builtin)),vallst,msg) 
+      equation 
+        (cache,newval) = cevalKnownExternalFuncs(cache,env, funcpath, vallst, msg);
       then
-        (cache,newval,st);
-
-    // This case prevents the constructor call of external objects of being evaluated
-    case (cache,env,(e as Exp.CALL(path = funcpath,expLst = expl, builtin = builtin)),vallst,st,msg)
+        (cache,newval);
+        
+        // This case prevents the constructor call of external objects of being evaluated
+    case (cache,env,(e as Exp.CALL(path = funcpath,expLst = expl, builtin = builtin)),vallst,msg)
       local Types.Type tp;
         Absyn.Path funcpath2;
         String s;
       equation
         cevalIsExternalObjectConstructor(cache,funcpath,env);
-      then fail();
-    /* Call functions in non-interactive mode. Function already generated! */
-    case (cache,env,(e as Exp.CALL(path = funcpath,expLst = expl,builtin = builtin)),vallst,
-      (st as SOME(Interactive.SYMBOLTABLE(p,_,_,_,cflist,_))),msg)
-      local 
-        Integer funcHandle; String fNew,fOld; Real buildTime;
-        list<Interactive.CompiledCFunction> cflist;
-        Absyn.Program p; 
-      equation
- 				failure(cevalIsExternalObjectConstructor(cache,funcpath,env));
- 				(true, funcHandle, buildTime, fOld) = Static.isFunctionInCflist(cflist, funcpath) "Call externally implemented functions." ;
-        Absyn.CLASS(_,_,_,_,Absyn.R_FUNCTION(),_,Absyn.INFO(fileName = fNew)) = Interactive.getPathedClassInProgram(funcpath, p);        
-        false = Static.needToRebuild(fNew,fOld,buildTime); // we don't need to rebuild!        
-        newval = System.executeFunction(funcHandle, vallst);
+        then fail();
+
+        /* Record constructors */
+    case(cache,env,(e as Exp.CALL(path = funcpath,ty = Exp.COMPLEX(varLst=varLst))),vallst,msg)
+      local list<Exp.Var> varLst; list<String> varNames;
+       equation
+      varNames = Util.listMap(varLst,Exp.varName);      
+    then (cache,Values.RECORD(funcpath,vallst,varNames));
+
+    case (cache,env,(e as Exp.CALL(path = funcpath,expLst = expl,builtin = builtin)),vallst,msg)
+      local
+        Absyn.Path p2;
+        String s;
+        Env.Env env1;
+        SCode.Class sc;
+        list<SCode.Element> elementList;
+        SCode.ClassDef cdef;
+        list<DAE.Element> daeList;
+      equation 
+        failure(cevalIsExternalObjectConstructor(cache,funcpath,env));
+        (cache,sc as SCode.CLASS(_,false,_,SCode.R_FUNCTION(),cdef ),env1) = 
+        Lookup.lookupClass(cache,env,funcpath,true);
+        (cache,env1,daeList) = Inst.implicitFunctionInstantiation(cache, env1,Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, sc, {}) ;
+        newval = Cevalfunc.cevalUserFunc(env1,e,vallst,sc,daeList);
+        //print("ret value(/s): "); print(Values.printValStr(newval));print("\n"); 
       then
-        (cache,newval,st);
-        
-    /* Call functions in non-interactive mode. Function not generated yet, generate and add to the list! 
-    case (cache,env,(e as Exp.CALL(path = funcpath,expLst = expl,builtin = builtin)),vallst,
-      (st as SOME(Interactive.SYMBOLTABLE(p,sp,ic,vl,cflist,lp))),msg)
-      local 
-        Integer libHandle, funcHandle; String fNew,fOld; Real buildTime;
-        list<Interactive.InstantiatedClass> ic;
-        list<Interactive.InteractiveVariable> vl;
-        list<Interactive.LoadedFile> lp;
-        list<SCode.Class> sp;
+        (cache,newval);
+
+/*     This match-rule is commented out due to a new constant evaluation algorithm in 
+     Cevalfunc.mo.
+     We still keep this incase we need to have a generate backup in the future.
+     2007-10-26 BZ
+     2007-11-01 readded, external c-function needs this... 
+     TODO: implement a check for external functionrecurisvly.
+*/
+    case (cache,env,(e as Exp.CALL(path = funcpath,expLst = expl,builtin = builtin)),vallst,msg) 
+      /**//* Call functions in non-interactive mode. FIXME: functions are always generated. 
+      Put back the check and write another rule for the false case that generates the function 
+      2007-10-20 partially fixed BZ*//**/
+      local Integer libHandle, funcHandle;
       equation
  				failure(cevalIsExternalObjectConstructor(cache,funcpath,env));
-        cache = cevalGenerateFunction(cache, env, funcpath);
+        cache = cevalGenerateFunction(cache,env, funcpath);
         funcstr = ModUtil.pathString2(funcpath, "_");
         Debug.fprintln("dynload", "cevalCallFunction: about to execute " +& funcstr);
         libHandle = System.loadLibrary(funcstr);
@@ -890,27 +949,21 @@ algorithm
         newval = System.executeFunction(funcHandle, vallst);
         System.freeFunction(funcHandle);
         System.freeLibrary(libHandle);
-        buildTime = System.getCurrentTime();
       then
-        (cache,newval,SOME(Interactive.SYMBOLTABLE(p,sp,ic,vl,(Interactive.CFunction(funcpath,t,funcHandle,buildTime,f) :: cflist,lp))));
-    */
-        
-    /* Call functions in non-interactive mode. None of the above! */
-    case (cache,env,(e as Exp.CALL(path = funcpath,expLst = expl,builtin = builtin)),vallst,st,msg) 
-	    local Integer libHandle, funcHandle;
+        (cache,newval);
+
+    case (cache,env,(e as Exp.CALL(path = funcpath,expLst = expl,builtin = builtin)),vallst,msg) 
+      local String error_Str;
       equation
- 				failure(cevalIsExternalObjectConstructor(cache,funcpath,env));
-        cache = cevalGenerateFunction(cache, env, funcpath);
-        funcstr = ModUtil.pathString2(funcpath, "_");
-        Debug.fprintln("dynload", "cevalCallFunction: about to execute " +& funcstr);
-        libHandle = System.loadLibrary(funcstr);
-        funcHandle = System.lookupFunction(libHandle, stringAppend("in_", funcstr));
-        newval = System.executeFunction(funcHandle, vallst);
-        System.freeFunction(funcHandle);
-        System.freeLibrary(libHandle);
+        error_Str = Absyn.pathString(funcpath);
+        //TODO: readd this when testsuite is okay.
+        //Error.addMessage(Error.FAILED_TO_EVALUATE_FUNCTION, {error_Str});
+        true = RTOpts.debugFlag("nogen");
+        Debug.fprint("failtrace", "- codegeneration is turned off. switch \"nogen\" flag off\n");
       then
-        (cache,newval,st);
-    case (cache,env,e,_,st,_)
+        fail();
+
+    case (cache,env,e,_,_)
       equation
         Debug.fprint("failtrace", "- Ceval.cevalCallFunction failed: ");
         str = Exp.printExpStr(e);
@@ -918,7 +971,7 @@ algorithm
       then
         fail();
   end matchcontinue;
-end cevalCallFunction;  
+end cevalCallFunction;
 
 protected function cevalIsExternalObjectConstructor
 	input Env.Cache cache;
@@ -950,7 +1003,7 @@ protected function cevalKnownExternalFuncs "function: cevalKnownExternalFuncs
   Option<String> id,lan;
   Option<Absyn.ComponentRef> out;
   list<Absyn.Exp> args;
-algorithm
+algorithm 
   (outCache,cdef,env_1) := Lookup.lookupClass(inCache,env, funcpath, false);
   SCode.CLASS(fid,_,_,SCode.R_EXT_FUNCTION(),SCode.PARTS(_,_,_,_,_,extdecl)) := cdef;
   SOME(Absyn.EXTERNALDECL(id,lan,out,args,_)) := extdecl;
@@ -959,26 +1012,26 @@ algorithm
 end cevalKnownExternalFuncs;
 
 public function isKnownExternalFunc "function isKnownExternalFunc
-  Succeds if external function name is
+  Succeds if external function name is 
   \"known\", i.e. no compilation required."
   input String inString;
   input Option<String> inStringOption;
-algorithm
+algorithm 
   _:=
   matchcontinue (inString,inStringOption)
-    case ("acos",SOME("acos")) then ();
-    case ("asin",SOME("asin")) then ();
-    case ("atan",SOME("atan")) then ();
-    case ("atan2",SOME("atan2")) then ();
-    case ("cos",SOME("cos")) then ();
-    case ("cosh",SOME("cosh")) then ();
-    case ("exp",SOME("exp")) then ();
-    case ("log",SOME("log")) then ();
-    case ("log10",SOME("log10")) then ();
-    case ("sin",SOME("sin")) then ();
-    case ("sinh",SOME("sinh")) then ();
-    case ("tan",SOME("tan")) then ();
-    case ("tanh",SOME("tanh")) then ();
+    case ("acos",SOME("acos")) then (); 
+    case ("asin",SOME("asin")) then (); 
+    case ("atan",SOME("atan")) then (); 
+    case ("atan2",SOME("atan2")) then (); 
+    case ("cos",SOME("cos")) then (); 
+    case ("cosh",SOME("cosh")) then (); 
+    case ("exp",SOME("exp")) then (); 
+    case ("log",SOME("log")) then (); 
+    case ("log10",SOME("log10")) then (); 
+    case ("sin",SOME("sin")) then (); 
+    case ("sinh",SOME("sinh")) then (); 
+    case ("tan",SOME("tan")) then (); 
+    case ("tanh",SOME("tanh")) then (); 
   end matchcontinue;
 end isKnownExternalFunc;
 
@@ -990,82 +1043,82 @@ protected function cevalKnownExternalFuncs2 "function: cevalKnownExternalFuncs2
   input list<Values.Value> inValuesValueLst;
   input Msg inMsg;
   output Values.Value outValue;
-algorithm
+algorithm 
   outValue:=
   matchcontinue (inIdent,inAbsynIdentOption,inValuesValueLst,inMsg)
     local Real rv_1,rv,rv1,rv2,sv,cv;
     case ("acos",SOME("acos"),{Values.REAL(real = rv)},_)
-      equation
+      equation 
         rv_1 = System.acos(rv);
       then
         Values.REAL(rv_1);
     case ("asin",SOME("asin"),{Values.REAL(real = rv)},_)
-      equation
+      equation 
         rv_1 = System.asin(rv);
       then
         Values.REAL(rv_1);
     case ("atan",SOME("atan"),{Values.REAL(real = rv)},_)
-      equation
+      equation 
         rv_1 = System.atan(rv);
       then
         Values.REAL(rv_1);
     case ("atan2",SOME("atan2"),{Values.REAL(real = rv1),Values.REAL(real = rv2)},_)
-      equation
+      equation 
         rv_1 = System.atan2(rv1, rv2);
       then
         Values.REAL(rv_1);
     case ("cos",SOME("cos"),{Values.REAL(real = rv)},_)
-      equation
+      equation 
         rv_1 = realCos(rv);
       then
         Values.REAL(rv_1);
     case ("cosh",SOME("cosh"),{Values.REAL(real = rv)},_)
-      equation
+      equation 
         rv_1 = System.cosh(rv);
       then
         Values.REAL(rv_1);
     case ("exp",SOME("exp"),{Values.REAL(real = rv)},_)
-      equation
+      equation 
         rv_1 = realExp(rv);
       then
         Values.REAL(rv_1);
     case ("log",SOME("log"),{Values.REAL(real = rv)},_)
-      equation
+      equation 
         rv_1 = System.log(rv);
       then
         Values.REAL(rv_1);
     case ("log10",SOME("log10"),{Values.REAL(real = rv)},_)
-      equation
+      equation 
         rv_1 = System.log10(rv);
       then
         Values.REAL(rv_1);
     case ("sin",SOME("sin"),{Values.REAL(real = rv)},_)
-      equation
+      equation 
         rv_1 = realSin(rv);
       then
         Values.REAL(rv_1);
     case ("sinh",SOME("sinh"),{Values.REAL(real = rv)},_)
-      equation
+      equation 
         rv_1 = System.sinh(rv);
       then
         Values.REAL(rv_1);
     case ("tan",SOME("tan"),{Values.REAL(real = rv)},_)
-      equation
+      equation 
         sv = realSin(rv);
         cv = realCos(rv);
         rv_1 = sv/.cv;
       then
         Values.REAL(rv_1);
     case ("tanh",SOME("tanh"),{Values.REAL(real = rv)},_)
-      equation
+      equation 
         rv_1 = System.tanh(rv);
       then
         Values.REAL(rv_1);
   end matchcontinue;
 end cevalKnownExternalFuncs2;
 
-protected function cevalFunction "function: cevalFunction
-  For constant evaluation of functions returning a single value.
+protected function cevalFunction "function: cevalFunction 
+  For constant evaluation of functions returning a single value. 
   For now only record constructors."
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -1075,7 +1128,7 @@ protected function cevalFunction "function: cevalFunction
   input Msg inMsg;
   output Env.Cache outCache;
   output Values.Value outValue;
-algorithm
+algorithm 
   (outCache,outValue) :=
   matchcontinue (inCache,inEnv,inPath,inValuesValueLst,inBoolean,inMsg)
     local
@@ -1091,19 +1144,19 @@ algorithm
       Msg msg;
       String s;
       Env.Cache cache;
-    case (cache,env,funcname,vallst,impl,msg) /* For record constructors */
-      equation
+    case (cache,env,funcname,vallst,impl,msg) /* For record constructors */ 
+      equation 
         (_,_) = Lookup.lookupRecordConstructorClass(env, funcname);
         (cache,c,env_1) = Lookup.lookupClass(cache,env, funcname, false);
         compnames = SCode.componentNames(c);
         mod = Types.valuesToMods(vallst, compnames);
-        (cache,dae,_,_,_,_) = Inst.instClass(cache,env_1, mod, Prefix.NOPRE(), Connect.emptySet, c, {}, impl,
+        (cache,dae,_,_,_,_,_) = Inst.instClass(cache,env_1, mod, Prefix.NOPRE(), Connect.emptySet, c, {}, impl, 
           Inst.TOP_CALL());
         value = DAE.daeToRecordValue(funcname, dae, impl);
       then
         (cache,value);
     case (cache,env,funcname,vallst,(impl as true),msg)
-      equation
+      equation 
         Debug.fprint("failtrace", "- Ceval.cevalFunction: Don't know what to do. impl was always false before:");
         s = Absyn.pathString(funcname);
         Debug.fprintln("failtrace", s);
@@ -1116,7 +1169,7 @@ protected function cevalAstExp "relaton: cevalAstExp
   Part of meta-programming using CODE.
   This function evaluates a piece of Expression AST, replacing Eval(variable)
   with the value of the variable, given that it is of type \"Expression\".
-
+  
   Example: y = Code(1 + x)
            2 + 5  ( x + Eval(y) )  =>   2 + 5  ( x + 1 + x )"
 	input Env.Cache inCache;
@@ -1127,7 +1180,7 @@ protected function cevalAstExp "relaton: cevalAstExp
   input Msg inMsg;
   output Env.Cache outCache;
   output Absyn.Exp outExp;
-algorithm
+algorithm 
   (outCache,outExp) :=
   matchcontinue (inCache,inEnv,inExp,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
@@ -1142,41 +1195,41 @@ algorithm
       Absyn.FunctionArgs fa;
       list<Absyn.Exp> expl_1,expl;
       Env.Cache cache;
-    case (cache,_,(e as Absyn.INTEGER(value = _)),_,_,_) then (cache,e);
-    case (cache,_,(e as Absyn.REAL(value = _)),_,_,_) then (cache,e);
-    case (cache,_,(e as Absyn.CREF(componentReg = _)),_,_,_) then (cache,e);
-    case (cache,_,(e as Absyn.STRING(value = _)),_,_,_) then (cache,e);
-    case (cache,_,(e as Absyn.BOOL(value = _)),_,_,_) then (cache,e);
+    case (cache,_,(e as Absyn.INTEGER(value = _)),_,_,_) then (cache,e); 
+    case (cache,_,(e as Absyn.REAL(value = _)),_,_,_) then (cache,e); 
+    case (cache,_,(e as Absyn.CREF(componentReg = _)),_,_,_) then (cache,e); 
+    case (cache,_,(e as Absyn.STRING(value = _)),_,_,_) then (cache,e); 
+    case (cache,_,(e as Absyn.BOOL(value = _)),_,_,_) then (cache,e); 
     case (cache,env,Absyn.BINARY(exp1 = e1,op = op,exp2 = e2),impl,st,msg)
-      equation
+      equation 
         (cache,e1_1) = cevalAstExp(cache,env, e1, impl, st, msg);
         (cache,e2_1) = cevalAstExp(cache,env, e2, impl, st, msg);
       then
         (cache,Absyn.BINARY(e1_1,op,e2_1));
     case (cache,env,Absyn.UNARY(op = op,exp = e),impl,st,msg)
-      equation
+      equation 
         (cache,e_1) = cevalAstExp(cache,env, e, impl, st, msg);
       then
         (cache,Absyn.UNARY(op,e_1));
     case (cache,env,Absyn.LBINARY(exp1 = e1,op = op,exp2 = e2),impl,st,msg)
-      equation
+      equation 
         (cache,e1_1) = cevalAstExp(cache,env, e1, impl, st, msg);
         (cache,e2_1) = cevalAstExp(cache,env, e2, impl, st, msg);
       then
         (cache,Absyn.LBINARY(e1_1,op,e2_1));
     case (cache,env,Absyn.LUNARY(op = op,exp = e),impl,st,msg)
-      equation
+      equation 
         (cache,e_1) = cevalAstExp(cache,env, e, impl, st, msg);
       then
         (cache,Absyn.LUNARY(op,e_1));
     case (cache,env,Absyn.RELATION(exp1 = e1,op = op,exp2 = e2),impl,st,msg)
-      equation
+      equation 
         (cache,e1_1) = cevalAstExp(cache,env, e1, impl, st, msg);
         (cache,e2_1) = cevalAstExp(cache,env, e2, impl, st, msg);
       then
         (cache,Absyn.RELATION(e1_1,op,e2_1));
     case (cache,env,Absyn.IFEXP(ifExp = cond,trueBranch = then_,elseBranch = else_,elseIfBranch = nest),impl,st,msg)
-      equation
+      equation 
         (cache,cond_1) = cevalAstExp(cache,env, cond, impl, st, msg);
         (cache,then_1) = cevalAstExp(cache,env, then_, impl, st, msg);
         (cache,else_1) = cevalAstExp(cache,env, else_, impl, st, msg);
@@ -1185,43 +1238,43 @@ algorithm
         (cache,Absyn.IFEXP(cond_1,then_1,else_1,nest_1));
     case (cache,env,Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "Eval",subscripts = {}),functionArgs = Absyn.FUNCTIONARGS(args = {e},argNames = {})),impl,st,msg)
       local Exp.Exp e_1;
-      equation
+      equation 
         (cache,e_1,_,_) = Static.elabExp(cache,env, e, impl, st,true);
         (cache,Values.CODE(Absyn.C_EXPRESSION(exp)),_) = ceval(cache,env, e_1, impl, st, NONE, msg);
       then
         (cache,exp);
-    case (cache,env,(e as Absyn.CALL(function_ = cr,functionArgs = fa)),_,_,msg) then (cache,e);
+    case (cache,env,(e as Absyn.CALL(function_ = cr,functionArgs = fa)),_,_,msg) then (cache,e); 
     case (cache,env,Absyn.ARRAY(arrayExp = expl),impl,st,msg)
-      equation
+      equation 
         (cache,expl_1) = cevalAstExpList(cache,env, expl, impl, st, msg);
       then
         (cache,Absyn.ARRAY(expl_1));
     case (cache,env,Absyn.MATRIX(matrix = expl),impl,st,msg)
       local list<list<Absyn.Exp>> expl_1,expl;
-      equation
+      equation 
         (cache,expl_1) = cevalAstExpListList(cache,env, expl, impl, st, msg);
       then
         (cache,Absyn.MATRIX(expl_1));
     case (cache,env,Absyn.RANGE(start = e1,step = SOME(e2),stop = e3),impl,st,msg)
-      equation
+      equation 
         (cache,e1_1) = cevalAstExp(cache,env, e1, impl, st, msg);
         (cache,e2_1) = cevalAstExp(cache,env, e2, impl, st, msg);
         (cache,e3_1) = cevalAstExp(cache,env, e3, impl, st, msg);
       then
         (cache,Absyn.RANGE(e1_1,SOME(e2_1),e3_1));
     case (cache,env,Absyn.RANGE(start = e1,step = NONE,stop = e3),impl,st,msg)
-      equation
+      equation 
         (cache,e1_1) = cevalAstExp(cache,env, e1, impl, st, msg);
         (cache,e3_1) = cevalAstExp(cache,env, e3, impl, st, msg);
       then
         (cache,Absyn.RANGE(e1_1,NONE,e3_1));
     case (cache,env,Absyn.TUPLE(expressions = expl),impl,st,msg)
-      equation
+      equation 
         (cache,expl_1) = cevalAstExpList(cache,env, expl, impl, st, msg);
       then
         (cache,Absyn.TUPLE(expl_1));
-    case (cache,env,Absyn.END(),_,_,msg) then (cache,Absyn.END());
-    case (cache,env,(e as Absyn.CODE(code = _)),_,_,msg) then (cache,e);
+    case (cache,env,Absyn.END(),_,_,msg) then (cache,Absyn.END()); 
+    case (cache,env,(e as Absyn.CODE(code = _)),_,_,msg) then (cache,e); 
   end matchcontinue;
 end cevalAstExp;
 
@@ -1235,7 +1288,7 @@ protected function cevalAstExpList "function: cevalAstExpList
   input Msg inMsg;
   output Env.Cache outCache;
   output list<Absyn.Exp> outAbsynExpLst;
-algorithm
+algorithm 
   (outCache,outAbsynExpLst) :=
   matchcontinue (inCache,inEnv,inAbsynExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
@@ -1246,9 +1299,9 @@ algorithm
       Boolean impl;
       Option<Interactive.InteractiveSymbolTable> st;
       Env.Cache cache;
-    case (cache,env,{},_,_,msg) then (cache,{});
+    case (cache,env,{},_,_,msg) then (cache,{}); 
     case (cache,env,(e :: es),impl,st,msg)
-      equation
+      equation 
         (cache,e_1) = cevalAstExp(cache,env, e, impl, st, msg);
         (cache,res) = cevalAstExpList(cache,env, es, impl, st, msg);
       then
@@ -1265,7 +1318,7 @@ protected function cevalAstExpListList "function: cevalAstExpListList"
   input Msg inMsg;
   output Env.Cache outCache;
   output list<list<Absyn.Exp>> outAbsynExpLstLst;
-algorithm
+algorithm 
   (outCache,outAbsynExpLstLst) :=
   matchcontinue (inCache,inEnv,inAbsynExpLstLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
@@ -1276,9 +1329,9 @@ algorithm
       Boolean impl;
       Option<Interactive.InteractiveSymbolTable> st;
       Env.Cache cache;
-    case (cache,env,{},_,_,msg) then (cache,{});
+    case (cache,env,{},_,_,msg) then (cache,{}); 
     case (cache,env,(e :: es),impl,st,msg)
-      equation
+      equation 
         (cache,e_1) = cevalAstExpList(cache,env, e, impl, st, msg);
         (cache,res) = cevalAstExpListList(cache,env, es, impl, st, msg);
       then
@@ -1296,7 +1349,7 @@ protected function cevalAstExpexpList "function: cevalAstExpexpList
   input Msg inMsg;
   output Env.Cache outCache;
   output list<tuple<Absyn.Exp, Absyn.Exp>> outTplAbsynExpAbsynExpLst;
-algorithm
+algorithm 
   (outCache,outTplAbsynExpAbsynExpLst) :=
   matchcontinue (inCache,inEnv,inTplAbsynExpAbsynExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
@@ -1307,9 +1360,9 @@ algorithm
       Boolean impl;
       Option<Interactive.InteractiveSymbolTable> st;
       Env.Cache cache;
-    case (cache,_,{},_,_,msg) then (cache,{});
+    case (cache,_,{},_,_,msg) then (cache,{}); 
     case (cache,env,((e1,e2) :: xs),impl,st,msg)
-      equation
+      equation 
         (cache,e1_1) = cevalAstExp(cache,env, e1, impl, st, msg);
         (cache,e2_1) = cevalAstExp(cache,env, e2, impl, st, msg);
         (cache,res) = cevalAstExpexpList(cache,env, xs, impl, st, msg);
@@ -1319,7 +1372,7 @@ algorithm
 end cevalAstExpexpList;
 
 protected function cevalAstElt "function: cevalAstElt
-  Evaluates an ast constructor for Element nodes, e.g.
+  Evaluates an ast constructor for Element nodes, e.g. 
   Code(parameter Real x=1;)"
 	input Env.Cache inCache;
   input Env.Env inEnv;
@@ -1329,7 +1382,7 @@ protected function cevalAstElt "function: cevalAstElt
   input Msg inMsg;
   output Env.Cache outCache;
   output Absyn.Element outElement;
-algorithm
+algorithm 
   (outCache,outElement) :=
   matchcontinue (inCache,inEnv,inElement,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
@@ -1348,7 +1401,7 @@ algorithm
       Msg msg;
       Env.Cache cache;
     case (cache,env,Absyn.ELEMENT(final_ = f,redeclareKeywords = r,innerOuter = io,name = id,specification = Absyn.COMPONENTS(attributes = attr,typeSpec = tp,components = citems),info = (info as Absyn.INFO(fileName = file,isReadOnly = isReadOnly,lineNumberStart = sline,columnNumberStart = scolumn,lineNumberEnd = eline,columnNumberEnd = ecolumn)),constrainClass = c),impl,st,msg)
-      equation
+      equation 
         (cache,citems_1) = cevalAstCitems(cache,env, citems, impl, st, msg);
       then
         (cache,Absyn.ELEMENT(f,r,io,id,Absyn.COMPONENTS(attr,tp,citems_1),info,c));
@@ -1365,7 +1418,7 @@ protected function cevalAstCitems "function: cevalAstCitems
   input Msg inMsg;
   output Env.Cache outCache;
   output list<Absyn.ComponentItem> outAbsynComponentItemLst;
-algorithm
+algorithm 
   (outCache,outAbsynComponentItemLst) :=
   matchcontinue (inCache,inEnv,inAbsynComponentItemLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
@@ -1381,16 +1434,16 @@ algorithm
       Option<Interactive.InteractiveSymbolTable> st;
       Absyn.ComponentItem x;
       Env.Cache cache;
-    case (cache,_,{},_,_,msg) then (cache,{});
-    case (cache,env,(Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = id,arrayDim = ad,modification = modopt),condition = cond,comment = cmt) :: xs),impl,st,msg) /* If one component fails, the rest should still succeed */
-      equation
+    case (cache,_,{},_,_,msg) then (cache,{}); 
+    case (cache,env,(Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = id,arrayDim = ad,modification = modopt),condition = cond,comment = cmt) :: xs),impl,st,msg) /* If one component fails, the rest should still succeed */ 
+      equation 
         (cache,res) = cevalAstCitems(cache,env, xs, impl, st, msg);
         (cache,modopt_1) = cevalAstModopt(cache,env, modopt, impl, st, msg);
         (cache,ad_1) = cevalAstArraydim(cache,env, ad, impl, st, msg);
       then
         (cache,Absyn.COMPONENTITEM(Absyn.COMPONENT(id,ad_1,modopt_1),cond,cmt) :: res);
-    case (cache,env,(x :: xs),impl,st,msg) /* If one component fails, the rest should still succeed */
-      equation
+    case (cache,env,(x :: xs),impl,st,msg) /* If one component fails, the rest should still succeed */ 
+      equation 
         (cache,res) = cevalAstCitems(cache,env, xs, impl, st, msg);
       then
         (cache,x :: res);
@@ -1406,7 +1459,7 @@ protected function cevalAstModopt "function: cevalAstModopt"
   input Msg inMsg;
   output Env.Cache outCache;
   output Option<Absyn.Modification> outAbsynModificationOption;
-algorithm
+algorithm 
   (outCache,outAbsynModificationOption) :=
   matchcontinue (inCache,inEnv,inAbsynModificationOption,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
@@ -1417,16 +1470,16 @@ algorithm
       Msg msg;
       Env.Cache cache;
     case (cache,env,SOME(mod),st,impl,msg)
-      equation
+      equation 
         (cache,res) = cevalAstModification(cache,env, mod, st, impl, msg);
       then
         (cache,SOME(res));
-    case (cache,env,NONE,_,_,msg) then (cache,NONE);
+    case (cache,env,NONE,_,_,msg) then (cache,NONE); 
   end matchcontinue;
 end cevalAstModopt;
 
 protected function cevalAstModification "function: cevalAstModification
-  This function evaluates Eval(variable) inside an AST Modification  and replaces
+  This function evaluates Eval(variable) inside an AST Modification  and replaces 
   the Eval operator with the value of the variable if it has a type \"Expression\""
 	input Env.Cache inCache;
   input Env.Env inEnv;
@@ -1436,7 +1489,7 @@ protected function cevalAstModification "function: cevalAstModification
   input Msg inMsg;
   output Env.Cache outCache;
   output Absyn.Modification outModification;
-algorithm
+algorithm 
   (outCache,outModification) :=
   matchcontinue (inCache,inEnv,inModification,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
@@ -1448,13 +1501,13 @@ algorithm
       Msg msg;
       Env.Cache cache;
     case (cache,env,Absyn.CLASSMOD(elementArgLst = eltargs,expOption = SOME(e)),impl,st,msg)
-      equation
+      equation 
         (cache,e_1) = cevalAstExp(cache,env, e, impl, st, msg);
         (cache,eltargs_1) = cevalAstEltargs(cache,env, eltargs, impl, st, msg);
       then
         (cache,Absyn.CLASSMOD(eltargs_1,SOME(e_1)));
     case (cache,env,Absyn.CLASSMOD(elementArgLst = eltargs,expOption = NONE),impl,st,msg)
-      equation
+      equation 
         (cache,eltargs_1) = cevalAstEltargs(cache,env, eltargs, impl, st, msg);
       then
         (cache,Absyn.CLASSMOD(eltargs_1,NONE));
@@ -1471,7 +1524,7 @@ protected function cevalAstEltargs "function: cevalAstEltargs
   input Msg inMsg;
   output Env.Cache outCache;
   output list<Absyn.ElementArg> outAbsynElementArgLst;
-algorithm
+algorithm 
   (outCache,outAbsynElementArgLst):=
   matchcontinue (inCache,inEnv,inAbsynElementArgLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
@@ -1486,16 +1539,16 @@ algorithm
       Option<Interactive.InteractiveSymbolTable> st;
       Absyn.ElementArg m;
       Env.Cache cache;
-    case (cache,env,{},_,_,msg) then (cache,{});
-    /* TODO: look through redeclarations for Eval(var) as well */
-    case (cache,env,(Absyn.MODIFICATION(finalItem = b,each_ = e,componentReg = cr,modification = SOME(mod),comment = stropt) :: args),impl,st,msg)
-      equation
+    case (cache,env,{},_,_,msg) then (cache,{}); 
+    /* TODO: look through redeclarations for Eval(var) as well */   
+    case (cache,env,(Absyn.MODIFICATION(finalItem = b,each_ = e,componentReg = cr,modification = SOME(mod),comment = stropt) :: args),impl,st,msg) 
+      equation 
         (cache,mod_1) = cevalAstModification(cache,env, mod, impl, st, msg);
         (cache,res) = cevalAstEltargs(cache,env, args, impl, st, msg);
       then
         (cache,Absyn.MODIFICATION(b,e,cr,SOME(mod_1),stropt) :: res);
-    case (cache,env,(m :: args),impl,st,msg) /* TODO: look through redeclarations for Eval(var) as well */
-      equation
+    case (cache,env,(m :: args),impl,st,msg) /* TODO: look through redeclarations for Eval(var) as well */ 
+      equation 
         (cache,res) = cevalAstEltargs(cache,env, args, impl, st, msg);
       then
         (cache,m :: res);
@@ -1512,7 +1565,7 @@ protected function cevalAstArraydim "function: cevalAstArraydim
   input Msg inMsg;
   output Env.Cache outCache;
   output Absyn.ArrayDim outArrayDim;
-algorithm
+algorithm 
   (outCache,outArrayDim) :=
   matchcontinue (inCache,inEnv,inArrayDim,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
@@ -1523,14 +1576,14 @@ algorithm
       Option<Interactive.InteractiveSymbolTable> st;
       Absyn.Exp e_1,e;
       Env.Cache cache;
-    case (cache,env,{},_,_,msg) then (cache,{});
+    case (cache,env,{},_,_,msg) then (cache,{}); 
     case (cache,env,(Absyn.NOSUB() :: xs),impl,st,msg)
-      equation
+      equation 
         (cache,res) = cevalAstArraydim(cache,env, xs, impl, st, msg);
       then
         (cache,Absyn.NOSUB() :: res);
     case (cache,env,(Absyn.SUBSCRIPT(subScript = e) :: xs),impl,st,msg)
-      equation
+      equation 
         (cache,res) = cevalAstArraydim(cache,env, xs, impl, st, msg);
         (cache,e_1) = cevalAstExp(cache,env, e, impl, st, msg);
       then
@@ -1539,7 +1592,7 @@ algorithm
 end cevalAstArraydim;
 
 protected function cevalInteractiveFunctions "function cevalInteractiveFunctions
-  This function evaluates the functions
+  This function evaluates the functions 
   defined in the interactive environment."
 	input Env.Cache inCache;
   input Env.Env inEnv;
@@ -1549,7 +1602,7 @@ protected function cevalInteractiveFunctions "function cevalInteractiveFunctions
   output Env.Cache outCache;
   output Values.Value outValue;
   output Interactive.InteractiveSymbolTable outInteractiveSymbolTable;
-algorithm
+algorithm 
   (outCache,outValue,outInteractiveSymbolTable):=
   matchcontinue (inCache,inEnv,inExp,inInteractiveSymbolTable,inMsg)
     local
@@ -1561,7 +1614,7 @@ algorithm
       omhome,pwd,filename_1,filename,omhome_1,plotCmd,tmpPlotFile,call,str_1,scriptstr,res_1,mp,pathstr,name,cname;
       Exp.ComponentRef cr,fcr,cref,classname;
       Interactive.InteractiveSymbolTable st,newst,st_1,st_2;
-      Absyn.Program p,pnew,newp;
+      Absyn.Program p,pnew,newp,ptot;
       list<Interactive.InstantiatedClass> ic,ic_1;
       list<Interactive.InteractiveVariable> iv;
       list<Interactive.CompiledCFunction> cf;
@@ -1577,7 +1630,7 @@ algorithm
       list<Integer>[:] m,mt;
       Option<list<tuple<Integer, Integer, DAELow.Equation>>> jac;
       Values.Value ret_val,simValue,size_value,value,v;
-      Exp.Exp filenameprefix,exp,starttime,stoptime,tolerance,interval,method,size_expression,funcref,bool_exp,storeInTemp,asInSimulationCode;
+      Exp.Exp filenameprefix,exp,starttime,stoptime,interval,tolerance,method,size_expression,funcref,bool_exp,storeInTemp,noClean,options,asInSimulationCode;
       Absyn.ComponentRef cr_1;
       Integer size,length,rest;
       list<String> vars_1,vars_2,args;
@@ -1587,6 +1640,7 @@ algorithm
       Env.Cache cache;
       Absyn.Path className;
       list<Interactive.LoadedFile> lf;
+      AbsynDep.Depends aDep;
     case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "lookupClass"),expLst = {Exp.CREF(componentRef = cr)}),
       (st as Interactive.SYMBOLTABLE(
         ast = p,
@@ -1594,9 +1648,10 @@ algorithm
         instClsLst = ic,
         lstVarVal = iv,
         compiledFunctions = cf)),msg)
-      equation
+      equation 
         path = Static.componentRefToPath(cr);
-        p_1 = SCode.elaborate(p);
+        ptot = Interactive.getTotalProgram(path,p);
+        p_1 = SCode.elaborate(ptot);
         (cache,env) = Inst.makeEnvFromProgram(cache,p_1, Absyn.IDENT(""));
         (cache,c,env) = Lookup.lookupClass(cache,env, path, true);
         SOME(p1) = Env.getEnvPath(env);
@@ -1617,7 +1672,7 @@ algorithm
         instClsLst = ic,
         lstVarVal = iv,
         compiledFunctions = cf)),msg)
-      equation
+      equation 
         tp = Interactive.getTypeOfVariable(varid, iv);
         str = Types.unparseType(tp);
       then
@@ -1629,20 +1684,21 @@ algorithm
         explodedAst = sp,
         instClsLst = ic,
         lstVarVal = iv,
-        compiledFunctions = cf)),msg)
-    then (cache,Values.BOOL(true),Interactive.emptySymboltable);
+        compiledFunctions = cf)),msg) 
+    then (cache,Values.BOOL(true),Interactive.emptySymboltable); 
 
     case (cache,env,
       Exp.CALL(path = Absyn.IDENT(name = "clearVariables"),expLst = {}),
       (st as Interactive.SYMBOLTABLE(
         ast = p,
+        depends = aDep,
         explodedAst = fp,
         instClsLst = ic,
         lstVarVal = iv,
         compiledFunctions = cf,
         loadedFiles = lf)),msg)
-      equation
-        newst = Interactive.SYMBOLTABLE(p,fp,ic,{},cf,lf);
+      equation 
+        newst = Interactive.SYMBOLTABLE(p,aDep,fp,ic,{},cf,lf);
       then
         (cache,Values.BOOL(true),newst);
 
@@ -1650,11 +1706,11 @@ algorithm
     case (cache,env,
       Exp.CALL(path = Absyn.IDENT(name = "clearCache"),expLst = {}),
       (st as Interactive.SYMBOLTABLE(
-        ast = p,explodedAst = fp,instClsLst = ic,
+        ast = p,depends=aDep,explodedAst = fp,instClsLst = ic,
         lstVarVal = iv,compiledFunctions = cf,
         loadedFiles = lf)),msg)
-      equation
-        newst = Interactive.SYMBOLTABLE(p,fp,{},iv,cf,lf);
+      equation 
+        newst = Interactive.SYMBOLTABLE(p,aDep,fp,{},iv,cf,lf);
       then
         (cache,Values.BOOL(true),newst);
 
@@ -1662,7 +1718,7 @@ algorithm
       (st as Interactive.SYMBOLTABLE(
         ast = p,explodedAst = sp,instClsLst = ic,
         lstVarVal = iv,compiledFunctions = cf)),msg)
-      equation
+      equation 
         str = Dump.unparseStr(p) ",false" ;
       then
         (cache,Values.STRING(str),st);
@@ -1671,9 +1727,9 @@ algorithm
       (st as Interactive.SYMBOLTABLE(
         ast = p,explodedAst = sp,instClsLst = ic,
         lstVarVal = iv,compiledFunctions = cf)),msg)
-      equation
+      equation 
         class_ = Interactive.getPathedClassInProgram(path, p);
-        str = Dump.unparseStr(Absyn.PROGRAM({class_},Absyn.TOP())) ",false" ;
+        str = Dump.unparseStr(Absyn.PROGRAM({class_},Absyn.TOP(),Absyn.TIMESTAMP(0.0,0.0))) ",false" ;
       then
         (cache,Values.STRING(str),st);
 
@@ -1682,22 +1738,26 @@ algorithm
         path = Absyn.IDENT(name = "jacobian"),
         expLst = {Exp.CREF(componentRef = cr)}),
       (st as Interactive.SYMBOLTABLE(
-        ast = p,explodedAst = sp,instClsLst = ic,
+        ast = p,depends=aDep,explodedAst = sp,instClsLst = ic,
         lstVarVal = iv,compiledFunctions = cf,
         loadedFiles = lf)),msg)
-      equation
+        /*local DAELow.IfEquation[:] ifeqns;*/
+      equation 
         path = Static.componentRefToPath(cr);
-        p_1 = SCode.elaborate(p);
-        (cache,dae_1,env) = Inst.instantiateClass(cache,p_1, path);
-        ((dae as DAE.DAE(dael))) = DAE.transformIfEqToExpr(dae_1);
+        ptot = Interactive.getTotalProgram(path,p);        
+        p_1 = SCode.elaborate(ptot);
+        (cache,dae as DAE.DAE(dael),env) = Inst.instantiateClass(cache,p_1, path);
+        /* ((dae as DAE.DAE(dael))) = DAE.transformIfEqToExpr(dae_1); */
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(path,dael,env));
+        /*((daelow as DAELow.DAELOW(orderedVars=vars,orderedEqs=eqnarr,complexEqns = DAELow.COMPLEX_EQUATIONS(arrayEqs=ae,ifEqns=ifeqns)))) = DAELow.lower(dae, false, true) "no dummy state" ;*/
         ((daelow as DAELow.DAELOW(vars,_,_,eqnarr,_,_,ae,_,_,_))) = DAELow.lower(dae, false, true) "no dummy state" ;
         m = DAELow.incidenceMatrix(daelow);
         mt = DAELow.transposeMatrix(m);
+        /* jac = DAELow.calculateJacobian(vars, eqnarr, ae,ifeqns, m, mt,false); */
         jac = DAELow.calculateJacobian(vars, eqnarr, ae, m, mt,false);
         res = DAELow.dumpJacobianStr(jac);
       then
-        (cache,Values.STRING(res),Interactive.SYMBOLTABLE(p,sp,ic_1,iv,cf,lf));
+        (cache,Values.STRING(res),Interactive.SYMBOLTABLE(p,aDep,sp,ic_1,iv,cf,lf));
 
     case (cache,env,
       Exp.CALL(
@@ -1709,8 +1769,8 @@ algorithm
         instClsLst = ic,
         lstVarVal = iv,
         compiledFunctions = cf)),msg)
-      equation
-        (cache,ret_val,st_1,_,_,_) = translateModel(cache,env, className, st, msg, filenameprefix);
+      equation 
+        (cache,ret_val,st_1,_,_,_) = translateModel(cache,env, className, st, msg, filenameprefix,true);
       then
         (cache,ret_val,st_1);
 
@@ -1724,27 +1784,27 @@ algorithm
         instClsLst = ic,
         lstVarVal = iv,
         compiledFunctions = cf)),msg)
-      equation
+      equation 
         (cache,ret_val,st_1,_) = getIncidenceMatrix(cache,env, className, st, msg, filenameprefix);
       then
         (cache,ret_val,st_1);
-
+        
       case (cache,env,
         Exp.CALL(
           path = Absyn.IDENT(name = "checkModel"),
           expLst = {Exp.CODE(Absyn.C_TYPENAME(className),Exp.OTHER())}),
         (st as Interactive.SYMBOLTABLE(
-          ast = p,
-          explodedAst = sp,
-          instClsLst = ic,
-          lstVarVal = iv,
+          ast = p, 
+          explodedAst = sp, 
+          instClsLst = ic, 
+          lstVarVal = iv, 
           compiledFunctions = cf)),msg)
-        equation
-          (cache,ret_val,st_1) = checkModel(cache,env, className, st, msg);
-        then
-          (cache,ret_val,st_1);
-
-      case (cache,env,
+           equation 
+        (cache,ret_val,st_1) = checkModel(cache,env, className, st, msg);
+      then
+        (cache,ret_val,st_1);
+        
+         case (cache,env,
         Exp.CALL(
           path = Absyn.IDENT(name = "checkAllModelsRecursive"),
           expLst = {Exp.CODE(Absyn.C_TYPENAME(className),Exp.OTHER())}),
@@ -1769,7 +1829,7 @@ algorithm
           instClsLst = ic,
           lstVarVal = iv,
           compiledFunctions = cf)),msg)
-           equation
+           equation 
         (cache,ret_val,st_1) = translateGraphics(cache,env, className, st, msg);
       then
         (cache,ret_val,st_1);
@@ -1783,8 +1843,8 @@ algorithm
         explodedAst = sp,
         instClsLst = ic,
         lstVarVal = iv,
-        compiledFunctions = cf)),msg) /* (Values.STRING(\"The model have been translated\"),st\') */
-      equation
+        compiledFunctions = cf)),msg) /* (Values.STRING(\"The model have been translated\"),st\') */ 
+      equation 
         cmd = Util.rawStringToInputString(cmd);
         Settings.setCompileCommand(cmd);
       then
@@ -1800,7 +1860,7 @@ algorithm
         instClsLst = ic,
         lstVarVal = iv,
         compiledFunctions = cf)),msg)
-      equation
+      equation 
         cmd = Util.rawStringToInputString(cmd);
         Settings.setPlotCommand(cmd);
       then
@@ -1814,7 +1874,7 @@ algorithm
         lstVarVal = iv,
         compiledFunctions = cf)),msg)
       local String str1,res;
-      equation
+      equation 
         res = "";
         str1 = Settings.getCompileCommand();
         res = Util.stringAppendList({res,"Compile command: ", str1,"\n"});
@@ -1837,7 +1897,7 @@ algorithm
         instClsLst = ic,
         lstVarVal = iv,
         compiledFunctions = cf)),msg)
-      equation
+      equation 
         cmd = Util.rawStringToInputString(cmd);
         Settings.setTempDirectoryPath(cmd);
       then
@@ -1853,7 +1913,7 @@ algorithm
         instClsLst = ic,
         lstVarVal = iv,
         compiledFunctions = cf)),msg)
-      equation
+      equation 
         cmd = Util.rawStringToInputString(cmd);
         Settings.setInstallationDirectoryPath(cmd);
       then
@@ -1868,11 +1928,11 @@ algorithm
         lstVarVal = iv,
         compiledFunctions = cf)),msg)
       local String res;
-      equation
+      equation 
         res = Settings.getTempDirectoryPath();
       then
         (cache,Values.STRING(res),st);
-
+        
     case (cache,env,
       Exp.CALL(path = Absyn.IDENT(name = "getInstallationDirectoryPath"),expLst = {}),
       (st as Interactive.SYMBOLTABLE(
@@ -1882,7 +1942,7 @@ algorithm
         lstVarVal = iv,
         compiledFunctions = cf)),msg)
       local String res;
-      equation
+      equation 
         res = Settings.getInstallationDirectoryPath();
       then
         (cache,Values.STRING(res),st);
@@ -1895,60 +1955,72 @@ algorithm
         instClsLst = ic,
         lstVarVal = iv,
         compiledFunctions = cf)),msg)
-      equation
+      equation 
         cmd = Util.rawStringToInputString(cmd);
         Settings.setModelicaPath(cmd);
       then
         (cache,Values.BOOL(true),st);
 
-    case (cache,env,(exp as
-      Exp.CALL(
-        path = Absyn.IDENT(name = "buildModel"),
-        expLst =
-        {Exp.CODE(Absyn.C_TYPENAME(className),_),
+    case (cache,env,(exp as 
+      Exp.CALL( 
+        path = Absyn.IDENT(name = "buildModel"), 
+        expLst = 
+        {Exp.CODE(Absyn.C_TYPENAME(className),_), 
          starttime,
-         stoptime,
-         interval,
-         tolerance,
+         stoptime, 
+         interval, 
+         tolerance, 
          method,
-         filenameprefix,
-         storeInTemp})),
-      (st_1 as Interactive.SYMBOLTABLE(
-        ast = p,
-        explodedAst = sp,
-        instClsLst = ic,
-        lstVarVal = iv,
-        compiledFunctions = cf)),msg)
-      equation
+         filenameprefix, 
+         storeInTemp,
+         noClean,
+         options})),
+         (st_1 as Interactive.SYMBOLTABLE( 
+           ast = p, 
+           explodedAst = sp, 
+           instClsLst = ic, 
+           lstVarVal = iv, 
+           compiledFunctions = cf)),msg)
+      equation 
         (cache,executable,method_str,st,initfilename) = buildModel(cache,env, exp, st_1, msg);
       then
         (cache,Values.ARRAY({Values.STRING(executable),Values.STRING(initfilename)}),st);
-
-    case (cache,env,(exp as
+        
+    case (cache,env,(exp as 
       Exp.CALL(
         path = Absyn.IDENT(name = "buildModel"),
-        expLst =
+        expLst = 
         {
         Exp.CODE(Absyn.C_TYPENAME(className),_),
-        starttime,
+        starttime, 
         stoptime,
         interval,
         tolerance,
         method,
         filenameprefix,
-        storeInTemp})),
+        storeInTemp,
+        noClean,options})),
       (st_1 as Interactive.SYMBOLTABLE(
         ast = p,
         explodedAst = sp,
         instClsLst = ic,
         lstVarVal = iv,
-        compiledFunctions = cf)),msg) /* failing build_model */
-    then (cache,Values.ARRAY({Values.STRING(""),Values.STRING("")}),st_1);
+        compiledFunctions = cf)),msg) /* failing build_model */  
+    then (cache,Values.ARRAY({Values.STRING(""),Values.STRING("")}),st_1); 
 
-    case (cache,env,(exp as
+    case (cache,env,(exp as 
+      Exp.CALL( path = Absyn.IDENT(name = "buildModelBeast"), expLst = {Exp.CODE(Absyn.C_TYPENAME(className),_), starttime,
+         stoptime, interval, tolerance, method, filenameprefix, storeInTemp,noClean,options})),
+         (st_1 as Interactive.SYMBOLTABLE( ast = p, explodedAst = sp, instClsLst = ic, lstVarVal = iv, compiledFunctions = cf)),msg)
+      equation 
+        (cache,executable,method_str,st,initfilename) = buildModelBeast(cache,env, exp, st_1, msg);
+      then
+        (cache,Values.ARRAY({Values.STRING(executable),Values.STRING(initfilename)}),st);
+
+    case (cache,env,(exp as 
       Exp.CALL(
         path = Absyn.IDENT(name = "simulate"),
-        expLst =
+        expLst = 
         {
         Exp.CODE(Absyn.C_TYPENAME(className),_),
         starttime,
@@ -1957,20 +2029,29 @@ algorithm
         tolerance,
         method,
         filenameprefix,
-        storeInTemp})),
+        storeInTemp,
+        noClean,options})),
       (st_1 as Interactive.SYMBOLTABLE(
         ast = p,
         explodedAst = sp,
         instClsLst = ic,
         lstVarVal = iv,
         compiledFunctions = cf)),msg)
-      equation
+        local String s1; Absyn.ComponentRef cr_name;
+      equation 
         (cache,executable,method_str,st,_) = buildModel(cache,env, exp, st_1, msg) "Build and simulate model" ;
         cit = winCitation();
         pwd = System.pwd();
         pd = System.pathDelimiter();
         executableSuffixedExe = stringAppend(executable, System.getExeExt());
         sim_call = Util.stringAppendList({cit,pwd,pd,executableSuffixedExe,cit," > output.log 2>&1"});
+        /* MathCore Version
+        executableSuffixedExe = Util.linuxDotSlash() +& executable +& ".exe";        
+        cr_name = Absyn.pathToCref(className);
+        s1 = Absyn.componentRefStr(cr_name);
+        
+        sim_call = Util.stringAppendList({cit,executableSuffixedExe,cit," > output_" , s1 , ".log 2>&1"});
+        */
         0 = System.systemCall(sim_call);
         result_file = Util.stringAppendList({executable,"_res.plt"});
         simValue = Values.RECORD(Absyn.IDENT("SimulationResult"),
@@ -1978,10 +2059,10 @@ algorithm
                                  {"resultFile"});
         simType = (Types.T_COMPLEX(ClassInf.RECORD("SimulationResult"),
                                    {Types.VAR("resultFile",
-                                    Types.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR()),
+                                    Types.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
                                     false,(Types.T_STRING({}),NONE),
                                     Types.UNBOUND())},
-                                   NONE),NONE);
+                                    NONE),NONE);
         newst = Interactive.addVarToSymboltable("currentSimulationResult", simValue, simType, st);
       then
         (cache,simValue,newst);
@@ -1989,7 +2070,7 @@ algorithm
     case (cache,env,
       Exp.CALL(
         path = Absyn.IDENT(name = "simulate"),
-        expLst =
+        expLst = 
         {
         Exp.CODE(Absyn.C_TYPENAME(className),_),
         starttime,
@@ -1998,19 +2079,19 @@ algorithm
         tolerance,
         method,
         filenameprefix,
-        storeInTemp}),
+        storeInTemp,
+        noClean,options}),
       (st as Interactive.SYMBOLTABLE(
         ast = p,
         explodedAst = sp,
         instClsLst = ic,
         lstVarVal = iv,
         compiledFunctions = cf)),msg)
-      local String errorStr, error;
-      equation
+      local String errorStr;
+      equation 
         omhome = Settings.getInstallationDirectoryPath() "simulation fail for some other reason than OPENMODELICAHOME not being set." ;
         errorStr = Error.printMessagesStr();
-        error = Print.getErrorString();
-        res = Util.stringAppendList({"Simulation failed.\n", errorStr});
+        res = Util.stringAppendList({"Simulation failed.\n",errorStr});
         simValue = Values.RECORD(Absyn.IDENT("SimulationResult"),
                                  {Values.STRING(res)},
                                  {"resultFile"});
@@ -2018,12 +2099,12 @@ algorithm
         (cache,simValue,st);
 
     case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "simulate"),
-      expLst = {Exp.CODE(Absyn.C_TYPENAME(className),_),starttime,stoptime,interval,tolerance,method,filenameprefix}),
+      expLst = {Exp.CODE(Absyn.C_TYPENAME(className),_),starttime,stoptime,interval,tolerance,method,filenameprefix,noClean,options}),
       (st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
-      equation
+      equation 
         simValue = Values.RECORD(Absyn.IDENT("SimulationResult"),
-                                 {Values.STRING("Simulation Failed. Environment variable OPENMODELICAHOME not set.")},
-                                 {"resultFile"});
+                   {Values.STRING("Simulation Failed. Environment variable OPENMODELICAHOME not set.")},
+                   {"resultFile"});
       then
         (cache,simValue,st);
 
@@ -2032,52 +2113,54 @@ algorithm
         path = Absyn.IDENT(name = "instantiateModel"),
         expLst = {Exp.CODE(Absyn.C_TYPENAME(className),_)}),
       (st as Interactive.SYMBOLTABLE(
-        ast = p,explodedAst = sp,instClsLst = ic,
+        ast = p,depends=aDep,explodedAst = sp,instClsLst = ic,
         lstVarVal = iv,compiledFunctions = cf,
         loadedFiles = lf)),msg)
       local Absyn.Path className;
         Absyn.ComponentRef crefCName;
-      equation
+      equation 
         crefCName = Absyn.pathToCref(className);
         true = Interactive.existClass(crefCName, p);
-        p_1 = SCode.elaborate(p);
-        (cache,(dae as DAE.DAE(dael)),env) = Inst.instantiateClass(cache, p_1, className);
+        ptot = Interactive.getTotalProgram(className,p);
+        p_1 = SCode.elaborate(ptot);
+        (cache,(dae as DAE.DAE(dael)),env) = Inst.instantiateClass(cache,p_1, className);
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(className,dael,env));
         str = DAE.dumpStr(dae);
       then
-        (cache,Values.STRING(str),Interactive.SYMBOLTABLE(p,sp,ic_1,iv,cf,lf));
+        (cache,Values.STRING(str),Interactive.SYMBOLTABLE(p,aDep,sp,ic_1,iv,cf,lf));
 
     case (cache,env,
       Exp.CALL(
         path = Absyn.IDENT(name = "instantiateModel"),
         expLst = {Exp.CODE(Absyn.C_TYPENAME(className),_)}),
       (st as Interactive.SYMBOLTABLE(
-        ast = p,explodedAst = sp,instClsLst = ic,
+        ast = p,depends=aDep,explodedAst = sp,instClsLst = ic,
         lstVarVal = iv,compiledFunctions = cf,
-        loadedFiles = lf)),msg) /* model does not exist */
-      equation
+        loadedFiles = lf)),msg) /* model does not exist */ 
+      equation 
 				cr_1 = Absyn.pathToCref(className);
         false = Interactive.existClass(cr_1, p);
       then
-        (cache,Values.STRING("Unknown model.\n"),Interactive.SYMBOLTABLE(p,sp,ic,iv,cf,lf));
+        (cache,Values.STRING("Unknown model.\n"),Interactive.SYMBOLTABLE(p,aDep,sp,ic,iv,cf,lf));
 
     case (cache,env,
       Exp.CALL(
         path = Absyn.IDENT(name = "instantiateModel"),
         expLst = {Exp.CODE(Absyn.C_TYPENAME(path),_)}),
       (st as Interactive.SYMBOLTABLE(
-        ast = p,explodedAst = sp,instClsLst = ic,
+        ast = p,depends=aDep,explodedAst = sp,instClsLst = ic,
         lstVarVal = iv,compiledFunctions = cf,
         loadedFiles = lf)),msg)
-      equation
-        p_1 = SCode.elaborate(p);
+      equation 
+        ptot = Interactive.getTotalProgram(path,p);
+        p_1 = SCode.elaborate(ptot);
         str = Print.getErrorString() "we do not want error msg twice.." ;
         failure((_,_,_) = Inst.instantiateClass(cache,p_1, path));
         Print.clearErrorBuf();
         Print.printErrorBuf(str);
         str = Print.getErrorString();
       then
-        (cache,Values.STRING(str),Interactive.SYMBOLTABLE(p,sp,ic,iv,cf,lf));
+        (cache,Values.STRING(str),Interactive.SYMBOLTABLE(p,aDep,sp,ic,iv,cf,lf));
 
     case (cache,env,
       Exp.CALL(
@@ -2087,13 +2170,13 @@ algorithm
         ast = p,explodedAst = sp,instClsLst = ic,
         lstVarVal = iv,compiledFunctions = cf,
         loadedFiles = lf)),msg) /* function ceval : (Env.Env, Exp.Exp, bool (implicit) ,
-		    Interactive.InteractiveSymbolTable option,
+		    Interactive.InteractiveSymbolTable option, 
 		    int option, ( dimensions )
 		    Msg)
 	  => (Values.Value, Interactive.InteractiveSymbolTable option)
- */
+ */ 
       local list<Exp.Exp> vars;
-      equation
+      equation 
         (cache,(size_value as Values.INTEGER(size)),SOME(st)) = ceval(cache,env, size_expression, true, SOME(st), NONE, msg);
 				vars = Util.listMap(vars,Exp.CodeVarToCref);
         vars_1 = Util.listMap(vars, Exp.printExpStr);
@@ -2112,7 +2195,7 @@ algorithm
         ast = p,explodedAst = sp,instClsLst = ic,
         lstVarVal = iv,compiledFunctions = cf,
         loadedFiles = lf)),msg)
-      equation
+      equation 
         Error.addMessage(Error.SCRIPT_READ_SIM_RES_ERROR, {});
       then
         fail();
@@ -2125,7 +2208,7 @@ algorithm
         ast = p,explodedAst = sp,instClsLst = ic,
         lstVarVal = iv,compiledFunctions = cf,
         loadedFiles = lf)),msg)
-      equation
+      equation 
         pwd = System.pwd();
         pd = System.pathDelimiter();
         filename_1 = Util.stringAppendList({pwd,pd,filename});
@@ -2141,7 +2224,7 @@ algorithm
         ast = p,explodedAst = sp,instClsLst = ic,
         lstVarVal = iv,compiledFunctions = cf,
         loadedFiles = lf)),msg)
-      equation
+      equation 
         Error.addMessage(Error.SCRIPT_READ_SIM_RES_SIZE_ERROR, {});
       then
         fail();
@@ -2157,14 +2240,14 @@ algorithm
       local
         Integer res;
         list<Exp.Exp> vars;
-      equation
+      equation 
         vars = Util.listMap(vars,Exp.CodeVarToCref);
         vars_1 = Util.listMap(vars, Exp.printExpStr) "plot2" ;
         vars_2 = Util.listUnionElt("time", vars_1);
-
-
-        (cache,Values.RECORD(_,{Values.STRING(filename)},_),_) = ceval(cache,env,
-          Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",{}),Exp.OTHER()), true, SOME(st), NONE, msg);
+        
+    
+        (cache,Values.RECORD(_,{Values.STRING(filename)},_),_) = ceval(cache,env, 
+          Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.OTHER(),{}),Exp.OTHER()), true, SOME(st), NONE, msg);
         value = System.readPtolemyplotDataset(filename, vars_2, 0);
         pwd = System.pwd();
         cit = winCitation();
@@ -2190,12 +2273,12 @@ algorithm
         lstVarVal = iv,compiledFunctions = cf,
         loadedFiles = lf)),msg)
       local list<Exp.Exp> vars;
-      equation
+      equation 
         vars = Util.listMap(vars,Exp.CodeVarToCref);
         vars_1 = Util.listMap(vars, Exp.printExpStr) "Catch error reading simulation file." ;
         vars_2 = Util.listUnionElt("time", vars_1);
-        (cache,Values.RECORD(_,{Values.STRING(filename)},_),_) = ceval(cache,env,
-          Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",{}),Exp.OTHER()), true, SOME(st), NONE, msg);
+        (cache,Values.RECORD(_,{Values.STRING(filename)},_),_) = ceval(cache,env, 
+          Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.OTHER(),{}),Exp.OTHER()), true, SOME(st), NONE, msg);
         failure(_ = System.readPtolemyplotDataset(filename, vars_2, 0));
       then
         (cache,Values.STRING("Error reading the simulation result."),st);
@@ -2209,12 +2292,12 @@ algorithm
         lstVarVal = iv,compiledFunctions = cf,
         loadedFiles = lf)),msg)
       local list<Exp.Exp> vars;
-      equation
+      equation 
         vars = Util.listMap(vars,Exp.CodeVarToCref);
         vars_1 = Util.listMap(vars, Exp.printExpStr) "Catch error reading simulation file." ;
         vars_2 = Util.listUnionElt("time", vars_1);
-        failure((_,_,_) = ceval(cache,env,
-          Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",{}),Exp.OTHER()), true, SOME(st), NONE, NO_MSG()));
+        failure((_,_,_) = ceval(cache,env, 
+          Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.OTHER(),{}),Exp.OTHER()), true, SOME(st), NONE, NO_MSG()));
       then
         (cache,Values.STRING("No simulation result to plot."),st);
 
@@ -2229,7 +2312,7 @@ algorithm
       local list<Exp.Exp> vars;
       then
         (cache,Values.STRING("Unknown error while plotting"),st);
-
+   
 //plotAll(model) - file missing
     case (cache,env,
       Exp.CALL(
@@ -2315,7 +2398,6 @@ algorithm
       then
         (cache,Values.BOOL(true),st);
 
-
 //plotAll() - missing file
     case (cache,env,
       Exp.CALL(
@@ -2338,7 +2420,7 @@ algorithm
       equation
 
          (cache,Values.RECORD(_,{Values.STRING(filename)},_),_) = ceval(cache,env,
-          Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",{}),Exp.OTHER()), true, SOME(st), NONE, msg);
+          Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.OTHER(),{}),Exp.OTHER()), true, SOME(st), NONE, msg);
         failure(_ = System.getVariableNames(filename));
 //        vars_2 = Util.stringSplitAtChar(str, " ");
 
@@ -2346,7 +2428,6 @@ algorithm
 
       then
 					(cache,Values.STRING("Error reading the simulation result."),st);
-
 
 //plotAll()
     case (cache,env,
@@ -2370,7 +2451,7 @@ algorithm
       equation
 
                 (cache,Values.RECORD(_,{Values.STRING(filename)},_),_) = ceval(cache,env,
-          Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",{}),Exp.OTHER()), true, SOME(st), NONE, msg);
+          Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.OTHER(),{}),Exp.OTHER()), true, SOME(st), NONE, msg);
         str = System.getVariableNames(filename);
         vars_2 = Util.stringSplitAtChar(str, " ");
         value = System.readPtolemyplotDataset(filename, vars_2, 0);
@@ -2470,7 +2551,7 @@ algorithm
         vars_1 = Util.listMap(vars, Exp.printExpStr) "plot" ;
         vars_2 = Util.listUnionElt("time", vars_1);
         (cache,Values.RECORD(_,{Values.STRING(filename)},_),_) = ceval(cache,env,
-          Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",{}),Exp.OTHER()), true, SOME(st), NONE, msg);
+          Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.OTHER(),{}),Exp.OTHER()), true, SOME(st), NONE, msg);
         value = System.readPtolemyplotDataset(filename, vars_2, 0);
         res = Values.sendPtolemyplotDataset(value, vars_2, "Plot by OpenModelica", interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, Exp.printExpStr(xRange), Exp.printExpStr(yRange));
 
@@ -2500,7 +2581,7 @@ algorithm
         vars_1 = Util.listMap(vars, Exp.printExpStr) "Catch error reading simulation file." ;
         vars_2 = Util.listUnionElt("time", vars_1);
         (cache,Values.RECORD(_,{Values.STRING(filename)},_),_) = ceval(cache,env,
-          Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",{}),Exp.OTHER()), true, SOME(st), NONE, msg);
+          Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.OTHER(),{}),Exp.OTHER()), true, SOME(st), NONE, msg);
         failure(_ = System.readPtolemyplotDataset(filename, vars_2, 0));
       then
         (cache,Values.STRING("Error reading the simulation result."),st);
@@ -2527,7 +2608,7 @@ algorithm
         vars_1 = Util.listMap(vars, Exp.printExpStr) "Catch error reading simulation file." ;
         vars_2 = Util.listUnionElt("time", vars_1);
         failure((_,_,_) = ceval(cache,env,
-          Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",{}),Exp.OTHER()), true, SOME(st), NONE, NO_MSG()));
+          Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.OTHER(),{}),Exp.OTHER()), true, SOME(st), NONE, NO_MSG()));
       then
         (cache,Values.STRING("No simulation result to plot."),st);
 
@@ -2572,11 +2653,11 @@ algorithm
       equation
         print("visualize(model)\n");
 
-        //HÃ¤r ska jag komma in, bygga en vettig argumentlista till readptol...
+        //Här ska jag komma in, bygga en vettig argumentlista till readptol...
 
-        //Jag mÃ¥ste fÃ¥ readptol att skicka alla variabler i .plt-filen, och en idÃ© Ã¤r
-        //att gÃ¶ra en egen enkel funktion som i princip Ã¤r en grep pÃ¥ DataSet: i filen..
-        //Kolla pÃ¥ senddata:emulateStreamData
+        //Jag måste få readptol att skicka alla variabler i .plt-filen, och en idé är
+        //att göra en egen enkel funktion som i princip är en grep på DataSet: i filen..
+        //Kolla på senddata:emulateStreamData
 
         //vars = Util.listMap(vars,Exp.CodeVarToCref);
         //vars = Util.listMap(vars, Exp.printExpStr) "plot" ;
@@ -2645,14 +2726,14 @@ algorithm
 				Boolean legend, logX, logY, points;
 				Boolean grid;
       equation
-        print("hittaderÃ¤ttigen\n");
+        print("hittaderättigen\n");
         vars = Util.listMap(vars,Exp.CodeVarToCref);
         vars_1 = Util.listMap(vars, Exp.printExpStr) "plot" ;
         vars_2 = Util.listUnionElt("time", vars_1);
 //        listMap(vars_2, print);
         print(Util.stringAppendList(vars_2));
         (cache,Values.RECORD(_,{Values.STRING(filename)},_),_) = ceval(cache,env,
-          Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",{}),Exp.OTHER()), true, SOME(st), NONE, msg);
+          Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.OTHER(),{}),Exp.OTHER()), true, SOME(st), NONE, msg);
         print("tjo\n");
         value = System.readPtolemyplotDataset(filename, vars_2, 0);
         print("value = " +& Values.valString(value));
@@ -2683,7 +2764,7 @@ algorithm
         vars_1 = Util.listMap(vars, Exp.printExpStr) "Catch error reading simulation file." ;
         vars_2 = Util.listUnionElt("time", vars_1);
         (cache,Values.RECORD(_,{Values.STRING(filename)},_),_) = ceval(cache,env,
-          Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",{}),Exp.OTHER()), true, SOME(st), NONE, msg);
+          Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.OTHER(),{}),Exp.OTHER()), true, SOME(st), NONE, msg);
         failure(_ = System.readPtolemyplotDataset(filename, vars_2, 0));
       then
         (cache,Values.STRING("Error reading the simulation result."),st);
@@ -2709,7 +2790,7 @@ algorithm
         vars_1 = Util.listMap(vars, Exp.printExpStr) "Catch error reading simulation file." ;
         vars_2 = Util.listUnionElt("time", vars_1);
         failure((_,_,_) = ceval(cache,env,
-          Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",{}),Exp.OTHER()), true, SOME(st), NONE, NO_MSG()));
+          Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.OTHER(),{}),Exp.OTHER()), true, SOME(st), NONE, NO_MSG()));
       then
         (cache,Values.STRING("No simulation result to plot."),st);
 
@@ -2734,6 +2815,7 @@ algorithm
 
 // } visualize
 
+/* adpo: val OpenModelica version:
     case (cache,env,
       Exp.CALL(
         path = Absyn.IDENT(name = "val"),
@@ -2759,7 +2841,7 @@ algorithm
         (cache,Values.REAL(timeStamp),SOME(st)) = ceval(cache,env, varTimeStamp, true, SOME(st), NONE, msg);
 
         (cache,Values.RECORD(_,{Values.STRING(filename)},_),_) = ceval(cache,env,
-        Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",{}),Exp.OTHER()), true, SOME(st), NONE, msg);
+        Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.OTHER(),{}),Exp.OTHER()), true, SOME(st), NONE, msg);
 
         Values.ARRAY({Values.ARRAY(varValues)}) = System.readPtolemyplotDataset(filename, vars_1, 0);
         Values.ARRAY({Values.ARRAY(timeValues)}) = System.readPtolemyplotDataset(filename, {"time"}, 0);
@@ -2796,7 +2878,7 @@ algorithm
         (cache,Values.INTEGER(timeStamp),SOME(st)) = ceval(cache,env, varTimeStamp, true, SOME(st), NONE, msg);
 
         (cache,Values.RECORD(_,{Values.STRING(filename)},_),_) = ceval(cache,env,
-        Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",{}),Exp.OTHER()), true, SOME(st), NONE, msg);
+        Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.OTHER(),{}),Exp.OTHER()), true, SOME(st), NONE, msg);
 
         Values.ARRAY({Values.ARRAY(varValues)}) = System.readPtolemyplotDataset(filename, vars_1, 0);
         Values.ARRAY({Values.ARRAY(timeValues)}) = System.readPtolemyplotDataset(filename, {"time"}, 0);
@@ -2807,8 +2889,77 @@ algorithm
         val = System.getVariableValue(intReal(timeStamp), tV, vV);
       then
         (cache,Values.REAL(val),st);
+*/   
 
+     case (cache,env,
+      Exp.CALL(
+        path = Absyn.IDENT(name = "val"),
+        expLst = {varName, varTimeStamp}),
+      (st as Interactive.SYMBOLTABLE(
+        ast = p,explodedAst = sp,instClsLst = ic,
+        lstVarVal = iv,compiledFunctions = cf,
+        loadedFiles = lf)),msg)
+      local 
+        Exp.Exp varName, varTimeStamp;
+        Real timeStamp;               
+        Real val;
+        String varNameStr;
+      equation         
+        varName = Exp.CodeVarToCref(varName);
+        varNameStr = Exp.printExpStr(varName);        
+        (cache,Values.REAL(timeStamp),SOME(st)) = ceval(cache,env, varTimeStamp, true, SOME(st), NONE, msg);
+        (cache,val) = cevalVal(cache,env,SOME(st),timeStamp,varNameStr);                       
+      then
+        (cache,Values.REAL(val),st);
 
+    case (cache,env,
+      Exp.CALL(
+        path = Absyn.IDENT(name = "val"),
+        expLst = {varName, varTimeStamp}),
+      (st as Interactive.SYMBOLTABLE(
+        ast = p,explodedAst = sp,instClsLst = ic,
+        lstVarVal = iv,compiledFunctions = cf,
+        loadedFiles = lf)),msg)
+      local 
+        Exp.Exp varName, varTimeStamp;
+        Integer timeStampI;
+        Real timeStamp;               
+        Real val;
+        String varNameStr;
+      equation         
+        varName = Exp.CodeVarToCref(varName);
+        varNameStr = Exp.printExpStr(varName);        
+        (cache,Values.INTEGER(timeStampI),SOME(st)) = ceval(cache,env, varTimeStamp, true, SOME(st), NONE, msg);
+        timeStamp = intReal(timeStampI);        
+        (cache,val) = cevalVal(cache,env,SOME(st),timeStamp,varNameStr);                       
+      then
+        (cache,Values.REAL(val),st);        
+        
+    case (cache,env,
+      Exp.CALL(
+        path = Absyn.IDENT(name = "val"),
+        expLst = {varName, varTimeStamp}),
+      (st as Interactive.SYMBOLTABLE(
+        ast = p,explodedAst = sp,instClsLst = ic,
+        lstVarVal = iv,compiledFunctions = cf,
+        loadedFiles = lf)),msg)
+      local 
+        Exp.Exp varName, varTimeStamp;
+        Integer timeStampI;
+        Real timeStamp;               
+        Values.Value val;
+        String varNameStr;
+        list<Values.Value> vals;
+        list<Real> timeStamps;
+      equation         
+        varName = Exp.CodeVarToCref(varName);
+        varNameStr = Exp.printExpStr(varName);        
+        (cache,Values.ARRAY(vals),SOME(st)) = ceval(cache,env, varTimeStamp, true, SOME(st), NONE, msg);               
+         timeStamps = Util.listMap(vals,Values.valueReal);
+        (cache,val) = cevalValArray(cache,env,SOME(st),timeStamps,varNameStr);                       
+      then
+        (cache,val,st);        
+     
     case (cache,env,
       Exp.CALL(
         path = Absyn.IDENT(name = "val"),
@@ -2816,32 +2967,32 @@ algorithm
       (st as Interactive.SYMBOLTABLE(
         ast = p,explodedAst = sp,instClsLst = ic,
         lstVarVal = iv,compiledFunctions = cf,
-        loadedFiles = lf)),msg)
-      local
+        loadedFiles = lf)),msg)      
+      local 
         list<Exp.Exp> vars;
       then
         (cache,Values.STRING("Error, check variable name and time variables"),st);
-
-
-    /* plotparametric This rule represents the normal case when an array of at least two elements
-     *  is given as an argument
+        
+        
+    /* plotparametric This rule represents the normal case when an array of at least two elements 
+     *  is given as an argument  
      */
     case (cache,env,
       Exp.CALL(path = Absyn.IDENT(name = "plotParametric2"),expLst = vars),
       (st as Interactive.SYMBOLTABLE(
         ast = p,explodedAst = sp,instClsLst = ic,
         lstVarVal = iv,compiledFunctions = cf,
-        loadedFiles = lf)),msg)
+        loadedFiles = lf)),msg)  
       local
         Integer res;
         list<Exp.Exp> vars;
-      equation
+      equation 
         vars = Util.listMap(vars,Exp.CodeVarToCref);
         vars_1 = Util.listMap(vars, Exp.printExpStr);
         length = listLength(vars_1);
         (length > 1) = true;
-        (cache,Values.RECORD(_,{Values.STRING(filename)},_),_) = ceval(cache,env,
-          Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",{}),Exp.OTHER()), true, SOME(st), NONE, msg);
+        (cache,Values.RECORD(_,{Values.STRING(filename)},_),_) = ceval(cache,env, 
+          Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.OTHER(),{}),Exp.OTHER()), true, SOME(st), NONE, msg);
         value = System.readPtolemyplotDataset(filename, vars_1, 0);
         pwd = System.pwd();
         cit = winCitation();
@@ -2883,7 +3034,7 @@ algorithm
         vars = Util.listMap(vars,Exp.CodeVarToCref);
         vars_1 = Util.listMap(vars, Exp.printExpStr) "Catch error reading simulation file." ;
         (cache,Values.RECORD(_,{Values.STRING(filename)},_),_) = ceval(cache,env,
-          Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",{}),Exp.OTHER()), true, SOME(st), NONE, msg) "Util.list_union_elt(\"time\",vars\') => vars\'\' &" ;
+          Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.OTHER(),{}),Exp.OTHER()), true, SOME(st), NONE, msg) "Util.list_union_elt(\"time\",vars\') => vars\'\' &" ;
         failure(_ = System.readPtolemyplotDataset(filename, vars_1, 0));
       then
         (cache,Values.STRING("Error reading the simulation result."),st);
@@ -2899,7 +3050,7 @@ algorithm
         vars = Util.listMap(vars,Exp.CodeVarToCref);
         vars_1 = Util.listMap(vars, Exp.printExpStr) "Catch error reading simulation file." ;
         failure((_,_,_) = ceval(cache,env,
-          Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",{}),Exp.OTHER()), true, SOME(st), NONE, NO_MSG())) "Util.list_union_elt(\"time\",vars\') => vars\'\' &" ;
+          Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.OTHER(),{}),Exp.OTHER()), true, SOME(st), NONE, NO_MSG())) "Util.list_union_elt(\"time\",vars\') => vars\'\' &" ;
       then
         (cache,Values.STRING("No simulation result to plot."),st);
 
@@ -2976,7 +3127,7 @@ algorithm
         length = listLength(vars_1);
         (length > 1) = true;
         (cache,Values.RECORD(_,{Values.STRING(filename)},_),_) = ceval(cache,env,
-          Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",{}),Exp.OTHER()), true, SOME(st), NONE, msg);
+          Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.OTHER(),{}),Exp.OTHER()), true, SOME(st), NONE, msg);
          value = System.readPtolemyplotDataset(filename, vars_1, 0);
          res = Values.sendPtolemyplotDataset(value, vars_1, "Plot by OpenModelica", interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, Exp.printExpStr(xRange), Exp.printExpStr(yRange));
 
@@ -2994,11 +3145,9 @@ algorithm
         vars = Util.listMap(vars,Exp.CodeVarToCref);
         vars_1 = Util.listMap(vars, Exp.printExpStr) "Catch error reading simulation file." ;
         failure((_,_,_) = ceval(cache,env,
-          Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",{}),Exp.OTHER()), true, SOME(st), NONE, NO_MSG())) "Util.list_union_elt(\"time\",vars\') => vars\'\' &" ;
+          Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.OTHER(),{}),Exp.OTHER()), true, SOME(st), NONE, NO_MSG())) "Util.list_union_elt(\"time\",vars\') => vars\'\' &" ;
       then
         (cache,Values.STRING("No simulation result to plot."),st);
-
-
 
 
     case (cache,env,
@@ -3008,7 +3157,7 @@ algorithm
         lstVarVal = iv,compiledFunctions = cf,
         loadedFiles = lf)),msg)
       local list<Exp.Exp> vars;
-      equation
+      equation 
         vars = Util.listMap(vars,Exp.CodeVarToCref);
         vars_1 = Util.listMap(vars, Exp.printExpStr) "Catch error with less than two elements (=variables) in the array.
            This means we cannot plot var2 as a function of var1 as var2 is missing" ;
@@ -3024,11 +3173,11 @@ algorithm
         lstVarVal = iv,compiledFunctions = cf,
         loadedFiles = lf)),msg)
       local list<Exp.Exp> vars;
-      equation
+      equation 
         vars = Util.listMap(vars,Exp.CodeVarToCref);
         vars_1 = Util.listMap(vars, Exp.printExpStr) "Catch error reading simulation file." ;
-        (cache,Values.RECORD(_,{Values.STRING(filename)},_),_) = ceval(cache,env,
-          Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",{}),Exp.OTHER()), true, SOME(st), NONE, msg) "Util.list_union_elt(\"time\",vars\') => vars\'\' &" ;
+        (cache,Values.RECORD(_,{Values.STRING(filename)},_),_) = ceval(cache,env, 
+          Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.OTHER(),{}),Exp.OTHER()), true, SOME(st), NONE, msg) "Util.list_union_elt(\"time\",vars\') => vars\'\' &" ;
         failure(_ = System.readPtolemyplotDataset(filename, vars_1, 0));
       then
         (cache,Values.STRING("Error reading the simulation result."),st);
@@ -3040,11 +3189,11 @@ algorithm
         lstVarVal = iv,compiledFunctions = cf,
         loadedFiles = lf)),msg)
       local list<Exp.Exp> vars;
-      equation
+      equation 
         vars = Util.listMap(vars,Exp.CodeVarToCref);
         vars_1 = Util.listMap(vars, Exp.printExpStr) "Catch error reading simulation file." ;
-        failure((_,_,_) = ceval(cache,env,
-          Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",{}),Exp.OTHER()), true, SOME(st), NONE, NO_MSG())) "Util.list_union_elt(\"time\",vars\') => vars\'\' &" ;
+        failure((_,_,_) = ceval(cache,env, 
+          Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.OTHER(),{}),Exp.OTHER()), true, SOME(st), NONE, NO_MSG())) "Util.list_union_elt(\"time\",vars\') => vars\'\' &" ;
       then
         (cache,Values.STRING("No simulation result to plot."),st);
 
@@ -3057,6 +3206,7 @@ algorithm
       local list<Exp.Exp> vars;
       then
         (cache,Values.STRING("Unknown error while plotting"),st);
+    /* end plotparametric */        
 
     case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "enableSendData"),expLst = {Exp.BCONST(bool = b)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       local
@@ -3093,10 +3243,8 @@ algorithm
       then
         (cache,Values.BOOL(true),st);
 
-
-
-    case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "timing"),expLst = {exp}),st,msg)
-      equation
+    case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "timing"),expLst = {exp}),st,msg)  
+      equation 
         t1 = System.time();
         (cache,value,SOME(st_1)) = ceval(cache,env, exp, true, SOME(st), NONE, msg);
         t2 = System.time();
@@ -3105,19 +3253,19 @@ algorithm
         (cache,Values.REAL(time),st_1);
 
     case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "setCompiler"),expLst = {Exp.SCONST(string = str)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
-      equation
+      equation 
         System.setCCompiler(str);
       then
         (cache,Values.BOOL(true),st);
 
     case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "setCompilerFlags"),expLst = {Exp.SCONST(string = str)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
-      equation
+      equation 
         System.setCFlags(str);
       then
         (cache,Values.BOOL(true),st);
 
     case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "setDebugFlags"),expLst = {Exp.SCONST(string = str)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
-      equation
+      equation 
         str_1 = stringAppend("+d=", str);
         args = RTOpts.args({str_1});
       then
@@ -3125,72 +3273,84 @@ algorithm
 
     case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "cd"),expLst = {Exp.SCONST(string = str)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       local Integer res;
-      equation
+      equation 
         res = System.cd(str);
         (res == 0) = true;
         str_1 = System.pwd();
       then
         (cache,Values.STRING(str_1),st);
 
-    case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "cd"),expLst = {Exp.SCONST(string = str)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg) /* no such directory */
-      equation
+    case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "cd"),expLst = {Exp.SCONST(string = str)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg) /* no such directory */ 
+      equation 
         failure(0 = System.directoryExists(str));
         res = Util.stringAppendList({"Error, directory ",str," does not exist,"});
       then
         (cache,Values.STRING(res),st);
 
     case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "cd"),expLst = {}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
-      equation
+      equation 
         str_1 = System.pwd();
       then
         (cache,Values.STRING(str_1),st);
 
     case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "getVersion"),expLst = {}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
-      equation
+      equation 
         str_1 = Settings.getVersionNr();
       then
         (cache,Values.STRING(str_1),st);
 
     case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "getTempDirectoryPath"),expLst = {}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
-      equation
+      equation 
         str_1 = Settings.getTempDirectoryPath();
       then
         (cache,Values.STRING(str_1),st);
 
     case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "system"),expLst = {Exp.SCONST(string = str)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       local Integer res;
-      equation
+      equation 
         res = System.systemCall(str);
       then
         (cache,Values.INTEGER(res),st);
 
     case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "readFile"),expLst = {Exp.SCONST(string = str)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
-      equation
+      equation 
         str_1 = System.readFile(str);
+      then
+        (cache,Values.STRING(str_1),st);
+        
+    case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "readFileNoNumeric"),expLst = {Exp.SCONST(string = str)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
+      equation 
+        str_1 = System.readFileNoNumeric(str);
       then
         (cache,Values.STRING(str_1),st);
 
     case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "getErrorString"),expLst = {}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
-      equation
+      equation 
         str = Error.printMessagesStr();
       then
         (cache,Values.STRING(str),st);
 
-    case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "getMessagesString"),expLst = {}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg) /* New error message implementation */
-      equation
+    case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "getMessagesString"),expLst = {}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg) /* New error message implementation */ 
+      equation 
         str = Error.printMessagesStr();
       then
         (cache,Values.STRING(str),st);
+     
+    case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "clearMessages"),expLst = {}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)  
+      equation 
+        Error.clearMessages();
+      then
+        (cache,Values.BOOL(true),st);
 
     case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "getMessagesStringInternal"),expLst = {}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
-      equation
+      equation 
         str = Error.getMessagesStr();
       then
         (cache,Values.STRING(str),st);
 
     case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "runScript"),expLst = {Exp.SCONST(string = str)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       local String msg;
-      equation
+      equation 
         scriptstr = System.readFile(str);
         (istmts,msg) = Parser.parsestringexp(scriptstr);
         equality(msg = "Ok");
@@ -3199,10 +3359,10 @@ algorithm
       then
         (cache,Values.STRING(res_1),newst);
 
-    case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "runScript"),expLst = {Exp.SCONST(string = str)}),st,msg) then (cache,Values.BOOL(false),st);
+    case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "runScript"),expLst = {Exp.SCONST(string = str)}),st,msg) then (cache,Values.BOOL(false),st); 
 
     case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "generateCode"),expLst = {Exp.CODE(Absyn.C_TYPENAME(path),_)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
-      equation
+      equation 
         cache = cevalGenerateFunction(cache,env, path) "	& Inst.instantiate_implicit(p\') => d &" ;
       then
         (cache,Values.BOOL(true),st);
@@ -3212,104 +3372,113 @@ algorithm
         path = Absyn.IDENT(name = "loadModel"),
         expLst = {Exp.CODE(Absyn.C_TYPENAME(path),_)}),
       (st as Interactive.SYMBOLTABLE(
-        ast = p,explodedAst = sp,instClsLst = ic,
+        ast = p,depends=aDep,explodedAst = sp,instClsLst = ic,
         lstVarVal = iv,compiledFunctions = cf,
         loadedFiles = lf)),msg) /* add path to symboltable for compiled functions
 	  Interactive.SYMBOLTABLE(p,sp,ic,iv,(path,t)::cf),
-	  but where to get t? */
-      local
-        Absyn.Program p_1;
-      equation
+	  but where to get t? */ 
+      local Absyn.Program p_1;
+        list<Interactive.CompiledCFunction> newCF, newCF_1;
+      equation 
         mp = Settings.getModelicaPath();
-        pnew = ClassLoader.loadClass(path, mp);
-        p_1 = Interactive.updateProgram(pnew, p);
+        (pnew, newCF) = ClassLoader.loadClass(path, mp, cf);
+        (p_1, newCF_1) = Interactive.updateProgram(pnew, p, newCF);
         str = Print.getString();
-        newst = Interactive.SYMBOLTABLE(p_1,sp,{},iv,cf,lf);
+        newst = Interactive.SYMBOLTABLE(p_1,aDep,sp,{},iv,newCF_1,lf);
       then
         (cache,Values.BOOL(true),newst);
 
     case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "loadModel"),expLst = {Exp.CODE(Absyn.C_TYPENAME(path),_)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
-      equation
+      equation 
         pathstr = ModUtil.pathString(path);
         Error.addMessage(Error.LOAD_MODEL_ERROR, {pathstr});
       then
         (cache,Values.BOOL(false),st);
 
-    case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "loadModel"),expLst = {Exp.CODE(Absyn.C_TYPENAME(path),_)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
-    then (cache,Values.BOOL(false),st);  /* loadModel failed */
+    case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "loadModel"),expLst = {Exp.CODE(Absyn.C_TYPENAME(path),_)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg) 
+    then (cache,Values.BOOL(false),st);  /* loadModel failed */ 
 
     case (cache,env,
       Exp.CALL(
         path = Absyn.IDENT(name = "loadFile"),
         expLst = {Exp.SCONST(string = name)}),
       (st as Interactive.SYMBOLTABLE(
-        ast = p,explodedAst = sp,instClsLst = ic,
+        ast = p,depends=aDep,explodedAst = sp,instClsLst = ic,
         lstVarVal = iv,compiledFunctions = cf,
         loadedFiles = lf)),msg)
-      local
-        Absyn.Program p1;
-      equation
-        p1 = ClassLoader.loadFile(name) "System.regularFileExists(name) => 0 & Parser.parse(name) => p1 &" ;
-        newp = Interactive.updateProgram(p1, p);
+      local Absyn.Program p1;
+        list<Interactive.CompiledCFunction> newCF, newCF_1;
+      equation 
+        (p1, newCF) = ClassLoader.loadFile(name, cf) "System.regularFileExists(name) => 0 & Parser.parse(name) => p1 &" ;
+        (newp,newCF_1) = Interactive.updateProgram(p1, p, newCF);
       then
-        (cache,Values.BOOL(true),Interactive.SYMBOLTABLE(newp,sp,ic,iv,cf,lf));
+        (cache,Values.BOOL(true),Interactive.SYMBOLTABLE(newp,aDep,sp,ic,iv,newCF_1,lf));
 
-    case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "loadFile"),expLst = {Exp.SCONST(string = name)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg) /* (Values.BOOL(true),Interactive.SYMBOLTABLE(newp,sp,{},iv,cf)) it the rule above have failed then check if file exists without this omc crashes */
-      equation
+    case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "loadFile"),expLst = {Exp.SCONST(string = name)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg) /* (Values.BOOL(true),Interactive.SYMBOLTABLE(newp,sp,{},iv,cf)) it the rule above have failed then check if file exists without this omc crashes */ 
+      equation 
         rest = System.regularFileExists(name);
         (rest > 0) = true;
       then
         (cache,Values.BOOL(false),st);
 
-    case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "loadFile"),expLst = {Exp.SCONST(string = name)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg) /* not Parser.parse(name) => _ */
-    then (cache,Values.BOOL(false),st);
+    case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "loadFile"),expLst = {Exp.SCONST(string = name)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg) /* not Parser.parse(name) => _ */  
+    then (cache,Values.BOOL(false),st); 
 
-    case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "saveModel"),expLst = {Exp.SCONST(string = filename),Exp.CREF(componentRef = cr)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
-      equation
-        classpath = Static.componentRefToPath(cr);
+    case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "saveModel"),expLst = {Exp.SCONST(string = filename),Exp.CODE(Absyn.C_TYPENAME(classpath),_)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
+      equation        
         class_ = Interactive.getPathedClassInProgram(classpath, p);
-        str = Dump.unparseStr(Absyn.PROGRAM({class_},Absyn.TOP())) ",true" ;
+        str = Dump.unparseStr(Absyn.PROGRAM({class_},Absyn.TOP(),Absyn.TIMESTAMP(0.0,0.0))) ",true" ;
         System.writeFile(filename, str);
       then
         (cache,Values.BOOL(true),st);
+        
+    case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "saveTotalModel"),expLst = {Exp.SCONST(string = filename),Exp.CODE(Absyn.C_TYPENAME(classpath),_)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
+      local AbsynDep.Depends dep; AbsynDep.AvlTree uses;
+      equation 
+        class_ = Interactive.getPathedClassInProgram(classpath, p);
+        ptot = Interactive.getTotalProgram(classpath,p);
+        str = Dump.unparseStr(ptot) ",true" ;
+        System.writeFile(filename, str);
+      then
+        (cache,Values.BOOL(true),st);        
 
     case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "saveModel"),expLst = {Exp.SCONST(string = name),Exp.CREF(componentRef = cr)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
-      equation
+      equation 
         classpath = Static.componentRefToPath(cr) "Error writing to file" ;
         class_ = Interactive.getPathedClassInProgram(classpath, p);
-        str = Dump.unparseStr(Absyn.PROGRAM({class_},Absyn.TOP())) ",true" ;
+        str = Dump.unparseStr(Absyn.PROGRAM({class_},Absyn.TOP(),Absyn.TIMESTAMP(0.0,0.0))) ",true" ;
         Error.addMessage(Error.WRITING_FILE_ERROR, {name});
       then
         (cache,Values.BOOL(false),st);
 
     case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "save"),expLst = {Exp.CODE(Absyn.C_TYPENAME(className),_)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       local Absyn.Program p_1;
-      equation
+      equation 
         (p_1,filename) = Interactive.getContainedClassAndFile(className, p);
         str = Dump.unparseStr(p_1) ",true" ;
         System.writeFile(filename, str);
       then
         (cache,Values.BOOL(true),st);
 
-    case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "save"),expLst = {Exp.CODE(Absyn.C_TYPENAME(className),_)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
-    then (cache,Values.BOOL(false),st);
+    case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "save"),expLst = {Exp.CODE(Absyn.C_TYPENAME(className),_)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg) 
+    then (cache,Values.BOOL(false),st); 
 
     case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "saveAll"),expLst = {Exp.SCONST(string = filename)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
-      equation
+      equation 
         str = Dump.unparseStr(p) ",true" ;
         System.writeFile(filename, str);
       then
         (cache,Values.BOOL(true),st);
 
     case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "saveModel"),expLst = {Exp.SCONST(string = name),Exp.CODE(Absyn.C_TYPENAME(classpath),_)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
-      equation
+      equation 
         cname = Absyn.pathString(classpath);
         Error.addMessage(Error.LOOKUP_ERROR, {cname,"global"});
       then
         (cache,Values.BOOL(false),st);
 
     case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "help"),expLst = {}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
-      equation
+      equation 
         omhome = Settings.getInstallationDirectoryPath();
         omhome_1 = System.trim(omhome, "\"");
         cit = winCitation();
@@ -3321,61 +3490,61 @@ algorithm
         (cache,Values.STRING(str),st);
 
     case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "getUnit"),expLst = {Exp.CREF(componentRef = cref),Exp.CREF(componentRef = classname)}),st,msg)
-      equation
+      equation 
         (cache,v,st_1) = getBuiltinAttribute(cache,classname, cref, "unit", st);
       then
         (cache,v,st_1);
 
     case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "getQuantity"),expLst = {Exp.CREF(componentRef = cref),Exp.CREF(componentRef = classname)}),st,msg)
-      equation
+      equation 
         (cache,v,st_1) = getBuiltinAttribute(cache,classname, cref, "quantity", st);
       then
         (cache,v,st_1);
 
     case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "getDisplayUnit"),expLst = {Exp.CREF(componentRef = cref),Exp.CREF(componentRef = classname)}),st,msg)
-      equation
+      equation 
         (cache,v,st_1) = getBuiltinAttribute(cache,classname, cref, "displayUnit", st);
       then
         (cache,v,st_1);
 
     case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "getMin"),expLst = {Exp.CREF(componentRef = cref),Exp.CREF(componentRef = classname)}),st,msg)
-      equation
+      equation 
         (cache,v,st_1) = getBuiltinAttribute(cache,classname, cref, "min", st);
       then
         (cache,v,st_1);
 
     case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "getMax"),expLst = {Exp.CREF(componentRef = cref),Exp.CREF(componentRef = classname)}),st,msg)
-      equation
+      equation 
         (cache,v,st_1) = getBuiltinAttribute(cache,classname, cref, "max", st);
       then
         (cache,v,st_1);
 
     case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "getStart"),expLst = {Exp.CREF(componentRef = cref),Exp.CREF(componentRef = classname)}),st,msg)
-      equation
+      equation 
         (cache,v,st_1) = getBuiltinAttribute(cache,classname, cref, "start", st);
       then
         (cache,v,st_1);
 
     case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "getFixed"),expLst = {Exp.CREF(componentRef = cref),Exp.CREF(componentRef = classname)}),st,msg)
-      equation
+      equation 
         (cache,v,st_1) = getBuiltinAttribute(cache,classname, cref, "fixed", st);
       then
         (cache,v,st_1);
 
     case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "getNominal"),expLst = {Exp.CREF(componentRef = cref),Exp.CREF(componentRef = classname)}),st,msg)
-      equation
+      equation 
         (cache,v,st_1) = getBuiltinAttribute(cache,classname, cref, "nominal", st);
       then
         (cache,v,st_1);
 
     case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "getStateSelect"),expLst = {Exp.CREF(componentRef = cref),Exp.CREF(componentRef = classname)}),st,msg)
-      equation
+      equation 
         (cache,v,st_1) = getBuiltinAttribute(cache,classname, cref, "stateSelect", st);
       then
         (cache,v,st_1);
 
     case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "echo"),expLst = {bool_exp}),st,msg)
-      equation
+      equation 
         (cache,(v as Values.BOOL(bval)),SOME(st_1)) = ceval(cache,env, bool_exp, true, SOME(st), NONE, msg);
         setEcho(bval);
       then
@@ -3421,30 +3590,30 @@ algorithm
 end cevalInteractiveFunctions;
 
 
-protected function setEcho
+protected function setEcho 
   input Boolean echo;
 algorithm
   _:=
   matchcontinue (echo)
     local
     case (true)
-      equation
+      equation 
         Settings.setEcho(1);
       then
         ();
     case (false)
-      equation
+      equation 
         Settings.setEcho(0);
       then
         ();
-  end matchcontinue;
+  end matchcontinue; 
 end setEcho;
 
 
 protected function generateMakefilename "function generateMakefilename"
   input String filenameprefix;
   output String makefilename;
-algorithm
+algorithm 
   makefilename := Util.stringAppendList({filenameprefix,".makefile"});
 end generateMakefilename;
 
@@ -3462,7 +3631,7 @@ public function getIncidenceMatrix "function getIncidenceMatrix
   output Values.Value outValue;
   output Interactive.InteractiveSymbolTable outInteractiveSymbolTable;
   output String outString;
-algorithm
+algorithm 
   (outCache,outValue,outInteractiveSymbolTable,outString):=
   matchcontinue (inCache,inEnv,className,inInteractiveSymbolTable,inMsg,inExp)
     local
@@ -3481,17 +3650,17 @@ algorithm
       list<String> libs;
       Exp.ComponentRef cr;
       Interactive.InteractiveSymbolTable st;
-      Absyn.Program p;
+      Absyn.Program p,ptot;
       list<Interactive.InteractiveVariable> iv;
       list<Interactive.CompiledCFunction> cf;
       Msg msg;
       Exp.Exp fileprefix;
       Env.Cache cache;
       Integer elimLevel;
-    case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg,fileprefix) /* mo file directory */
+    case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg,fileprefix) /* mo file directory */ 
       local
         String flatModelicaStr;
-      equation
+      equation 
         (cache,filenameprefix) = extractFilePrefix(cache,env, fileprefix, st, msg);
         p_1 = SCode.elaborate(p);
         (cache,dae_1,env) = Inst.instantiateClass(cache,p_1, className);
@@ -3525,15 +3694,16 @@ public function translateModel "function translateModel
   input Interactive.InteractiveSymbolTable inInteractiveSymbolTable;
   input Msg inMsg;
   input Exp.Exp inExp;
+  input Boolean addDummy "if true, add a dummy state";
   output Env.Cache outCache;
   output Values.Value outValue;
   output Interactive.InteractiveSymbolTable outInteractiveSymbolTable;
   output DAELow.DAELow outDAELow;
   output list<String> outStringLst;
   output String outString;
-algorithm
+algorithm 
   (outCache,outValue,outInteractiveSymbolTable,outDAELow,outStringLst,outString):=
-  matchcontinue (inCache,inEnv,className,inInteractiveSymbolTable,inMsg,inExp)
+  matchcontinue (inCache,inEnv,className,inInteractiveSymbolTable,inMsg,inExp,addDummy)
     local
       String filenameprefix,cname_str,filename,funcfilename,makefilename,file_dir;
       Absyn.Path classname;
@@ -3550,28 +3720,29 @@ algorithm
       list<String> libs;
       Exp.ComponentRef cr;
       Interactive.InteractiveSymbolTable st;
-      Absyn.Program p;
+      Absyn.Program p,ptot;
       list<Interactive.InteractiveVariable> iv;
       list<Interactive.CompiledCFunction> cf;
       Msg msg;
       Exp.Exp fileprefix;
       Env.Cache cache;
       String MakefileHeader;
-    case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg,fileprefix) /* mo file directory */
-      equation
+    case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg,fileprefix,addDummy) /* mo file directory */ 
+      equation 
         (cache,filenameprefix) = extractFilePrefix(cache,env, fileprefix, st, msg);
-        p_1 = SCode.elaborate(p);
-        (cache,dae_1,env) = Inst.instantiateClass(cache,p_1, className);
-        ((dae as DAE.DAE(dael))) = DAE.transformIfEqToExpr(dae_1);
+        ptot = Interactive.getTotalProgram(className,p);
+        p_1 = SCode.elaborate(ptot);
+        (cache,dae as DAE.DAE(dael),env) = Inst.instantiateClass(cache,p_1, className);
+        /* ((dae as DAE.DAE(dael))) = DAE.transformIfEqToExpr(dae_1); */
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(className,dael,env));
-        dlow = DAELow.lower(dae, true, true);
+        dlow = DAELow.lower(dae, addDummy, true);
         Debug.fprint("bltdump", "Lowered DAE:\n");
         Debug.fcall("bltdump", DAELow.dump, dlow);
         m = DAELow.incidenceMatrix(dlow);
         mT = DAELow.transposeMatrix(m);
-        (ass1,ass2,dlow_1,m,mT) = DAELow.matchingAlgorithm(dlow, m, mT, (DAELow.INDEX_REDUCTION(),DAELow.EXACT(), DAELow.REMOVE_SIMPLE_EQN()));
+        (ass1,ass2,dlow_1,m,mT) = DAELow.matchingAlgorithm(dlow, m, mT, (DAELow.INDEX_REDUCTION(),DAELow.EXACT(),DAELow.REMOVE_SIMPLE_EQN()));
         (comps) = DAELow.strongComponents(m, mT, ass1, ass2);
-        indexed_dlow = DAELow.translateDae(dlow_1);
+        indexed_dlow = DAELow.translateDae(dlow_1,NONE);
         indexed_dlow_1 = DAELow.calculateValues(indexed_dlow);
         Debug.fprint("bltdump", "indexed DAE:\n");
         Debug.fcall("bltdump", DAELow.dumpIncidenceMatrix, m);
@@ -3580,16 +3751,16 @@ algorithm
         Debug.fcall("bltdump", DAELow.dumpMatching, ass1);
         cname_str = Absyn.pathString(className);
         filename = Util.stringAppendList({filenameprefix,".cpp"});
-        Debug.fprintln("dynload", "translateModel: Generating simultaion code and functions.");
+        Debug.fprintln("dynload", "translateModel: Generating simulation code and functions.");
         funcfilename = Util.stringAppendList({filenameprefix,"_functions.cpp"});
         makefilename = generateMakefilename(filenameprefix);
         a_cref = Absyn.pathToCref(className);
         file_dir = getFileDir(a_cref, p);
         libs = SimCodegen.generateFunctions(p_1, dae, indexed_dlow_1, className, funcfilename);
-        SimCodegen.generateSimulationCode(dae, indexed_dlow_1, ass1, ass2, m, mT, comps, className, filename, funcfilename,file_dir);
+        SimCodegen.generateSimulationCode(dae, /* dlow_1,*/ indexed_dlow_1, ass1, ass2, m, mT, comps, className, filename, funcfilename,file_dir);
         SimCodegen.generateMakefile(makefilename, filenameprefix, libs, file_dir);
-        /*
-        s_call = Util.stringAppendList({"make -f ",cname_str, ".makefile\n"})
+        /* 
+        s_call = Util.stringAppendList({"make -f ",cname_str, ".makefile\n"}) 
         */
       then
         (cache,Values.STRING("The model has been translated"),st,indexed_dlow_1,libs,file_dir);
@@ -3606,8 +3777,8 @@ public function checkModel "function: checkModel
   output Env.Cache outCache;
   output Values.Value outValue;
   output Interactive.InteractiveSymbolTable outInteractiveSymbolTable;
-algorithm
-  (outCache,outValue,outInteractiveSymbolTable):=
+algorithm 
+  (outCache,outValue,outInteractiveSymbolTable) := 
   matchcontinue (inCache,inEnv,className,inInteractiveSymbolTable,inMsg)
     local
       String filenameprefix,cname_str,filename,funcfilename,makefilename,file_dir;
@@ -3625,55 +3796,79 @@ algorithm
       list<String> libs;
       Exp.ComponentRef cr;
       Interactive.InteractiveSymbolTable st;
-      Absyn.Program p;
+      Absyn.Program p,ptot;
       list<Interactive.InteractiveVariable> iv;
       list<Interactive.CompiledCFunction> cf;
       Msg msg;
       Exp.Exp fileprefix;
       Env.Cache cache;
-      String classNameStr;
-    case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
-      local Integer eqnSize,varSize,simpleEqnSize;
-        String eqnSizeStr,varSizeStr,retStr,simpleEqnSizeStr;
-        DAELow.EquationArray eqns;
-        Integer elimLevel;
+      Integer eqnSize,varSize,simpleEqnSize;
+      String warnings,eqnSizeStr,varSizeStr,retStr,classNameStr,simpleEqnSizeStr;
+      DAELow.EquationArray eqns;
+      Integer elimLevel; 
+
+    case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)  
       equation
+        ptot = Interactive.getTotalProgram(className,p);
+        // this case should not handle functions
+        failure(Absyn.CLASS(_,_,_,_,Absyn.R_FUNCTION(),_,_) = Interactive.getPathedClassInProgram(className, p)); 
         _ = Error.getMessagesStr() "Clear messages";
         Print.clearErrorBuf() "Clear error buffer";
-        p_1 = SCode.elaborate(p);
-        (cache,dae_1,env) = Inst.instantiateClass(cache,p_1, className);
-        ((dae as DAE.DAE(dael))) = DAE.transformIfEqToExpr(dae_1);
+        p_1 = SCode.elaborate(ptot); 
+        (cache, dae as DAE.DAE(dael), env) = Inst.instantiateClass(inCache, p_1, className);
+        
+        /* ((dae as DAE.DAE(dael))) = DAE.transformIfEqToExpr(dae_1); */
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(className,dael,env));
         elimLevel = RTOpts.eliminationLevel();
         RTOpts.setEliminationLevel(0); // No variable elimination
-        (dlow as DAELow.DAELOW(orderedVars = DAELow.VARIABLES(numberOfVars = varSize),orderedEqs = eqns))
-        	= DAELow.lower(dae, false/* no dummy variable*/, true);
+        (dlow as DAELow.DAELOW(orderedVars = DAELow.VARIABLES(numberOfVars = varSize),orderedEqs = eqns)) 
+        = DAELow.lower(dae, false/* no dummy variable*/, true);
         RTOpts.setEliminationLevel(elimLevel); // reset elimination level.
-        	eqnSize = DAELow.equationSize(eqns);
-				simpleEqnSize = DAELow.countSimpleEquations(eqns);
-				eqnSizeStr = intString(eqnSize);
-				varSizeStr = intString(varSize);
-				simpleEqnSizeStr = intString(simpleEqnSize);
-
-				classNameStr = Absyn.pathString(className);
-				retStr=Util.stringAppendList({
-				"Check of ", classNameStr, " successful. ", 
-				"Model ", classNameStr, " has ", eqnSizeStr, " equation(s) and ", varSizeStr, " variable(s)."});
+        eqnSize = DAELow.equationSize(eqns);
+        (eqnSize,varSize) = subtractDummy(DAELow.daeVars(dlow),eqnSize,varSize);
+        simpleEqnSize = DAELow.countSimpleEquations(eqns);
+        eqnSizeStr = intString(eqnSize);
+        varSizeStr = intString(varSize);
+        simpleEqnSizeStr = intString(simpleEqnSize);
+        
+        classNameStr = Absyn.pathString(className);
+        warnings = Error.printMessagesStr();
+        retStr=Util.stringAppendList({"Check of ",classNameStr," completed successfully.\n\n",warnings,"\nClass ",classNameStr," has ",eqnSizeStr," equation(s) and ",
+          varSizeStr," variable(s).\n",simpleEqnSizeStr," of these are trivial equation(s).\n"});
       then
         (cache,Values.STRING(retStr),st);
+
+    case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)  
+      equation 
+        _ = Error.getMessagesStr() "Clear messages";
+        Print.clearErrorBuf() "Clear error buffer";
+        ptot = Interactive.getTotalProgram(className,p);
+        //(cache,dae as DAE.DAE(dael),env) = checkModelInstantiateCall(cache,ptot, className);
         
-    case (cache,_,className,st,_) local
+        Absyn.CLASS(_,_,_,_,Absyn.R_FUNCTION(),_,_) = Interactive.getPathedClassInProgram(className, p);
+        p_1 = SCode.elaborate(ptot);
+        (cache, dae as DAE.DAE(dael), env) = Inst.instantiateFunctionImplicit(inCache, p_1, className);
+      
+        ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(className,dael,env));
+				classNameStr = Absyn.pathString(className);
+				warnings = Error.printMessagesStr();
+				// TODO: add a check if warnings is empty, if so then remove \n... --> warnings,"\nClass  <--- line below.
+				retStr=Util.stringAppendList({"Check of ",classNameStr," completed successfully.\n\n",warnings,"\n"});
+      then
+        (cache,Values.STRING(retStr),st);
+
+    case (cache,env,className,st,_) local
       String errorMsg; Boolean strEmpty;
       equation
-        classNameStr = Absyn.pathString(className);
-        errorMsg = Error.printMessagesStr();
-        errorMsg = "Internal error, check of model: " +& 
-        classNameStr +& " failed with:\n" +& errorMsg +& 
-        selectIfNotEmpty("Error Buffer:\n", Print.getErrorString());
-      then 
-        (cache,Values.STRING(errorMsg),st);
+      classNameStr = Absyn.pathString(className);
+      errorMsg = Error.printMessagesStr();
+      strEmpty = (System.strcmp("",errorMsg)==0);
+      errorMsg = Util.if_(strEmpty,"Internal error, check of model failed with no error message.",errorMsg);
+      errorMsg = errorMsg +& selectIfNotEmpty("Error Buffer:\n", Print.getErrorString());
+    then (cache,Values.STRING(errorMsg),st);  
+
   end matchcontinue;
-end checkModel;
+end checkModel; 
 
 protected function selectIfNotEmpty
   input String inString;
@@ -3699,7 +3894,7 @@ public function translateGraphics "function: translates the graphical annotation
   output Env.Cache outCache;
   output Values.Value outValue;
   output Interactive.InteractiveSymbolTable outInteractiveSymbolTable;
-algorithm
+algorithm 
   (outCache,outValue,outInteractiveSymbolTable):=
   matchcontinue (inCache,inEnv,className,inInteractiveSymbolTable,inMsg)
     local
@@ -3725,7 +3920,10 @@ algorithm
       Exp.Exp fileprefix;
       Env.Cache cache;
       list<Interactive.LoadedFile> lf;
-    case (cache,env,className,(st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf,lf)),msg)
+      Absyn.TimeStamp ts;
+      AbsynDep.Depends aDep;
+
+    case (cache,env,className,(st as Interactive.SYMBOLTABLE(p as Absyn.PROGRAM(globalBuildTimes=ts),aDep,sp,ic,iv,cf,lf)),msg)  
       local Integer eqnSize,varSize,simpleEqnSize;
         String eqnSizeStr,varSizeStr,retStr,classNameStr,simpleEqnSizeStr,s1;
         DAELow.EquationArray eqns;
@@ -3733,29 +3931,31 @@ algorithm
         Absyn.Within within_;
         Integer elimLevel;
         Absyn.Program p1;
-      equation
-	  		cls = Interactive.getPathedClassInProgram(className, p);
+        list<Interactive.CompiledCFunction> newCF;
+      equation         
+	  		cls = Interactive.getPathedClassInProgram(className, p);        
         refactoredClass = Refactor.refactorGraphicalAnnotation(p, cls);
         within_ = Interactive.buildWithin(className);
-        p1 = Interactive.updateProgram(Absyn.PROGRAM({refactoredClass}, within_), p);
+        (p1,newCF) = Interactive.updateProgram(Absyn.PROGRAM({refactoredClass}, within_,ts), p, cf);
         s1 = Absyn.pathString(className);
 				retStr=Util.stringAppendList({"Translation of ",s1," successful.\n"});
       then
-        (cache,Values.STRING(retStr),Interactive.SYMBOLTABLE(p1,sp,ic,iv,cf,lf));
+        (cache,Values.STRING(retStr),Interactive.SYMBOLTABLE(p1,aDep,sp,ic,iv,newCF,lf));
+        
     case (cache,_,_,st,_) local
       String errorMsg; Boolean strEmpty;
       equation
       errorMsg = Error.printMessagesStr();
       strEmpty = (System.strcmp("",errorMsg)==0);
       errorMsg = Util.if_(strEmpty,"Internal error, translating graphics to new version",errorMsg);
-    then (cache,Values.STRING(errorMsg),st);
+    then (cache,Values.STRING(errorMsg),st);  
 
   end matchcontinue;
-end translateGraphics;
+end translateGraphics; 
 
 
 protected function extractFilePrefix "function extractFilePrefix
-  author: x02lucpo
+  author: x02lucpo 
   extracts the file prefix from Exp.Exp as string"
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -3764,7 +3964,7 @@ protected function extractFilePrefix "function extractFilePrefix
   input Msg inMsg;
   output Env.Cache outCache;
   output String outString;
-algorithm
+algorithm 
   (outCache,outString):=
   matchcontinue (inCache,inEnv,inExp,inInteractiveSymbolTable,inMsg)
     local
@@ -3780,11 +3980,11 @@ algorithm
       Msg msg;
       Env.Cache cache;
     case (cache,env,filenameprefix,(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
-      equation
+      equation 
         (cache,Values.STRING(prefix_str),SOME(st)) = ceval(cache,env, filenameprefix, true, SOME(st), NONE, msg);
       then
         (cache,prefix_str);
-    case (_,_,_,_,_) then fail();
+    case (_,_,_,_,_) then fail(); 
   end matchcontinue;
 end extractFilePrefix;
 
@@ -3802,20 +4002,21 @@ protected function calculateSimulationSettings "function calculateSimulationSett
   output Real outReal2 "start time";
   output Real outReal3 "stop time";
   output Real outReal4 "step size";
-  output Real outReal5 "tolerance";
+  output Real tolerance "tolerance";
   output String outString5 "method";
-algorithm
-  (outCache,outString1,outReal2,outReal3,outReal4,outReal5,outString5):=
+  output String optionsStr;
+algorithm 
+  (outCache,outString1,outReal2,outReal3,outReal4,tolerance,outString5,optionsStr):=
   matchcontinue (inCache,inEnv,inExp,inInteractiveSymbolTable,inMsg,inString)
     local
-      String prefix_str,method_str,init_filename,cname_str;
+      String prefix_str,method_str,init_filename,cname_str,options_str;
       Interactive.InteractiveSymbolTable st;
       Values.Value starttime_v,stoptime_v,tolerance_v;
       Integer interval_i;
       Real starttime_r,stoptime_r,interval_r,tolerance_r;
       list<Env.Frame> env;
       Exp.ComponentRef cr;
-      Exp.Exp starttime,stoptime,interval,tolerance,method,filenameprefix;
+      Exp.Exp starttime,stoptime,interval,toleranceExp,method,options,filenameprefix;
       Absyn.Program p;
       list<SCode.Class> sp;
       list<Interactive.InstantiatedClass> ic;
@@ -3824,24 +4025,25 @@ algorithm
       Msg msg;
       Env.Cache cache;
       Absyn.Path className;
-    case (cache,env,Exp.CALL(expLst = {Exp.CODE(Absyn.C_TYPENAME(className),_),starttime,stoptime,interval,tolerance,method,filenameprefix,_}),
-      (st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg,cname_str)
-      equation
+    case (cache,env,Exp.CALL(expLst = {Exp.CODE(Absyn.C_TYPENAME(className),_),starttime,stoptime,interval,toleranceExp,method,filenameprefix,_,_,options}),
+         (st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg,cname_str)
+      equation 
         (cache,Values.STRING(prefix_str),SOME(st)) = ceval(cache,env, filenameprefix, true, SOME(st), NONE, msg);
         (cache,starttime_v,SOME(st)) = ceval(cache,env, starttime, true, SOME(st), NONE, msg);
-        (cache,stoptime_v,SOME(st)) = ceval(cache,env, stoptime, true, SOME(st), NONE, msg);
+        (cache,stoptime_v,SOME(st)) = ceval(cache,env, stoptime, true, SOME(st), NONE, msg);        
         (cache,Values.INTEGER(interval_i),SOME(st)) = ceval(cache,env, interval, true, SOME(st), NONE, msg);
-        (cache,tolerance_v,SOME(st)) = ceval(cache,env, tolerance, true, SOME(st), NONE, msg);
+        (cache,tolerance_v,SOME(st)) = ceval(cache,env, toleranceExp, true, SOME(st), NONE, msg);
         (cache,Values.STRING(method_str),SOME(st)) = ceval(cache,env, method, true, SOME(st), NONE, msg);
+        (cache,Values.STRING(options_str),SOME(st)) = ceval(cache,env, options, true, SOME(st), NONE, msg);
         starttime_r = Values.valueReal(starttime_v);
         stoptime_r = Values.valueReal(stoptime_v);
         interval_r = intReal(interval_i);
         tolerance_r = Values.valueReal(tolerance_v);
         init_filename = Util.stringAppendList({prefix_str,"_init.txt"});
       then
-        (cache,init_filename,starttime_r,stoptime_r,interval_r,tolerance_r,method_str);
+        (cache,init_filename,starttime_r,stoptime_r,interval_r,tolerance_r,method_str,options_str);
     case (_,_,_,_,_,_)
-      equation
+      equation 
         Print.printErrorBuf("#- Ceval.calculateSimulationSettings failed\n");
       then
         fail();
@@ -3861,51 +4063,88 @@ public function buildModel "function buildModel
   output String outString2 "method";
   output Interactive.InteractiveSymbolTable outInteractiveSymbolTable3;
   output String outString4 "initFileName";
-algorithm
+algorithm 
   (outCache,outString1,outString2,outInteractiveSymbolTable3,outString4):=
   matchcontinue (inCache,inEnv,inExp,inInteractiveSymbolTable,inMsg)
     local
       Values.Value ret_val;
-      Interactive.InteractiveSymbolTable st,st_1;
+      Interactive.InteractiveSymbolTable st,st_1,st2;
       DAELow.DAELow indexed_dlow_1;
       list<String> libs;
-      String file_dir,cname_str,init_filename,method_str,filenameprefix,makefilename,oldDir,tempDir;
-      Absyn.Path classname;
+      String prefix_str,file_dir,cname_str,init_filename,method_str,filenameprefix,makefilename,oldDir,tempDir,tolerance_str,options_str;
+      Absyn.Path classname,w;
+      Absyn.Program p,p2;
+      Absyn.Class cdef;
+      list<Interactive.CompiledCFunction> cf;
       Real starttime_r,stoptime_r,interval_r,tolerance_r;
       list<Env.Frame> env;
-      Exp.Exp exp,starttime,stoptime,interval,tolerance,method,fileprefix,storeInTemp;
-      Exp.ComponentRef cr;
-      Absyn.Program p;
+      Exp.Exp exp,starttime,stoptime,interval,tolerance,method,fileprefix,storeInTemp,noClean,options;
+      Exp.ComponentRef cr;      
       list<SCode.Class> sp;
+      AbsynDep.Depends aDep;
       list<Interactive.InstantiatedClass> ic;
-      list<Interactive.InteractiveVariable> iv;
-      list<Interactive.CompiledCFunction> cf;
+      list<Interactive.InteractiveVariable> iv;      
       Msg msg;
+      Absyn.Within win1;
       Env.Cache cache;
       Boolean cdToTemp;
     case (cache,env,(exp as Exp.CALL(path = Absyn.IDENT(name = _),
-      expLst = {Exp.CODE(Absyn.C_TYPENAME(classname),_),starttime,stoptime,interval,tolerance,method,fileprefix,storeInTemp})),
-      (st_1 as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
-      equation
+          expLst = {Exp.CODE(Absyn.C_TYPENAME(classname),_),starttime,stoptime,interval,tolerance,method,fileprefix,storeInTemp,_,options})),
+          (st_1 as Interactive.SYMBOLTABLE(ast = p as Absyn.PROGRAM(globalBuildTimes=Absyn.TIMESTAMP(_,edit)),explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
+      // If we already have an up-to-date version of the binary file, we don't need to recompile. 
+      local String exeFile;
+        Real edit,build; Integer existFile;
+        String s1,s2;
+      equation 
+        //cdef = Interactive.getPathedClassInProgram(classname,p);
+        _ = Error.getMessagesStr() "Clear messages";
+        // Only compile if change occured after last build.
+        ( Absyn.CLASS(info = Absyn.INFO(buildTimes= Absyn.TIMESTAMP(build,_)))) = Interactive.getPathedClassInProgram(classname,p);
+        true = (build >. edit);
+        (cache,Values.BOOL(cdToTemp),SOME(st)) = ceval(cache,env, storeInTemp, true, SOME(st_1), NONE, msg);
+        oldDir = System.pwd();
+        changeToTempDirectory(cdToTemp);
+        (cache,filenameprefix) = extractFilePrefix(cache,env, fileprefix, st_1, msg);
+        (cache,Values.STRING(prefix_str),SOME(st2)) = ceval(cache,env, fileprefix, true, SOME(st_1), NONE, msg);
+        init_filename = Util.stringAppendList({prefix_str,"_init.txt"});
+        (cache,Values.STRING(method_str),SOME(st2)) = ceval(cache,env, method, true, SOME(st2), NONE, msg);
+        exeFile = Util.stringAppendList({filenameprefix, ".exe"});
+        existFile = System.regularFileExists(exeFile);
+        _ = System.cd(oldDir);
+        true = existFile == 0; 
+    then
+      (cache,filenameprefix,method_str,st2,init_filename);
+
+    case (cache,env,(exp as Exp.CALL(path = Absyn.IDENT(name = _),expLst = ({Exp.CODE(Absyn.C_TYPENAME(classname),_),starttime,stoptime,interval,tolerance,method,fileprefix,storeInTemp,noClean,options}))),(st_1 as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
+      local Absyn.TimeStamp ts,ts2;
+        Real r1,r2,globalEdit,globalBuild;
+        String s1,s2,s3;
+        
+      equation 
+        (cdef as Absyn.CLASS(info = Absyn.INFO(buildTimes=ts as Absyn.TIMESTAMP(_,globalEdit)))) = Interactive.getPathedClassInProgram(classname,p);
+        Absyn.PROGRAM(_,_,Absyn.TIMESTAMP(globalBuild,_)) = p;
+           
         _ = Error.getMessagesStr() "Clear messages";
         (cache,Values.BOOL(cdToTemp),SOME(st)) = ceval(cache,env, storeInTemp, true, SOME(st_1), NONE, msg);
         oldDir = System.pwd();
         changeToTempDirectory(cdToTemp);
-        (cache,ret_val,st,indexed_dlow_1,libs,file_dir) = translateModel(cache,env, classname, st_1, msg, fileprefix);
+        (cache,ret_val,st,indexed_dlow_1,libs,file_dir) = translateModel(cache,env, classname, st_1, msg, fileprefix,true);
         cname_str = Absyn.pathString(classname);
-        (cache,init_filename,starttime_r,stoptime_r,interval_r,tolerance_r,method_str) = calculateSimulationSettings(cache,env, exp, st, msg, cname_str);
+        (cache,init_filename,starttime_r,stoptime_r,interval_r,tolerance_r,method_str,options_str) = calculateSimulationSettings(cache,env, exp, st, msg, cname_str);
         (cache,filenameprefix) = extractFilePrefix(cache,env, fileprefix, st, msg);
-        SimCodegen.generateInitData(indexed_dlow_1, classname, filenameprefix, init_filename,
-          starttime_r, stoptime_r, interval_r, tolerance_r, method_str);
+        SimCodegen.generateInitData(indexed_dlow_1, classname, filenameprefix, init_filename, 
+          starttime_r, stoptime_r, interval_r, tolerance_r, method_str,options_str);
+        win1 = getWithinStatement(classname);       
+        s3 = extractNoCleanCommand(noClean);
         makefilename = generateMakefilename(filenameprefix);
         Debug.fprintln("dynload", "buildModel: about to compile model " +& filenameprefix +& ", " +& file_dir);
-        compileModel(filenameprefix, libs, file_dir);
+        compileModel(filenameprefix, libs, file_dir, s3); 
         Debug.fprintln("dynload", "buildModel: Compiling done.");
         _ = System.cd(oldDir);
-
-        // s_call = Util.stringAppendList({"make -f ",cname_str, ".makefile\n"});
+        p = setBuildTime(p,classname);
+        st2 = st;// Interactive.replaceSymbolTableProgram(st,p); 
       then
-        (cache,filenameprefix,method_str,st,init_filename);
+        (cache,filenameprefix,method_str,st2,init_filename);
     case (_,_,_,_,_)
       then
         fail();
@@ -3913,11 +4152,11 @@ algorithm
 end buildModel;
 
 protected function changeToTempDirectory "function changeToTempDirectory
-changes to temp directory (set using the functions from Settings.mo)
+changes to temp directory (set using the functions from Settings.mo) 
 if the boolean flag given as input is true"
 	input Boolean cdToTemp;
 algorithm
-  _ := matchcontinue(cdToTemp)
+  _ := matchcontinue(cdToTemp) 
   local String tempDir;
     case(true) equation
    			tempDir = Settings.getTempDirectoryPath();
@@ -3929,12 +4168,12 @@ end changeToTempDirectory;
 
 public function getFileDir "function: getFileDir
   author: x02lucpo
-  returns the dir where class file (.mo) was saved or
+  returns the dir where class file (.mo) was saved or 
   $OPENMODELICAHOME/work if the file was not saved yet"
   input Absyn.ComponentRef inComponentRef "class";
   input Absyn.Program inProgram;
   output String outString;
-algorithm
+algorithm 
   outString:=
   matchcontinue (inComponentRef,inProgram)
     local
@@ -3946,7 +4185,7 @@ algorithm
       Absyn.ComponentRef class_;
       Absyn.Program p;
     case (class_,p)
-      equation
+      equation 
         p_class = Absyn.crefToPath(class_) "change to the saved files directory" ;
         cdef = Interactive.getPathedClassInProgram(p_class, p);
         filename = Absyn.classFilename(cdef);
@@ -3958,7 +4197,7 @@ algorithm
       then
         dir_1;
     case (class_,p)
-      equation
+      equation 
         omhome = Settings.getInstallationDirectoryPath() "model not yet saved! change to $OPENMODELICAHOME/work" ;
         omhome_1 = System.trim(omhome, "\"");
         pd = System.pathDelimiter();
@@ -3966,7 +4205,7 @@ algorithm
         dir_1 = Util.stringAppendList({cit,omhome_1,pd,"work",cit});
       then
         dir_1;
-    case (_,_) then "";  /* this function should never fail */
+    case (_,_) then "";  /* this function should never fail */ 
   end matchcontinue;
 end getFileDir;
 
@@ -3976,15 +4215,16 @@ protected function compileModel "function: compileModel
   input String inFilePrefix;
   input list<String> inLibsList;
   input String inFileDir;
-algorithm
-  _:= matchcontinue (inFilePrefix,inLibsList,inFileDir)
+  input String noClean;
+algorithm 
+  _:= matchcontinue (inFilePrefix,inLibsList,inFileDir,noClean)
     local
       String pd,omhome,omhome_1,cd_path,libsfilename,libs_str,s_call,fileprefix,file_dir,command,filename,str;
       list<String> libs;
-
+      
       // If compileCommand not set, use $OPENMODELICAHOME\bin\Compile
-    case (fileprefix,libs,file_dir)
-      equation
+    case (fileprefix,libs,file_dir,noClean) 
+      equation 
         "" = Settings.getCompileCommand();
         pd = System.pathDelimiter();
         omhome = Settings.getInstallationDirectoryPath();
@@ -3992,16 +4232,16 @@ algorithm
         cd_path = System.pwd();
         libsfilename = stringAppend(fileprefix, ".libs");
         libs_str = Util.stringDelimitList(libs, " ");
-        System.writeFile(libsfilename, libs_str);
+                System.writeFile(libsfilename, libs_str);
         s_call = Util.stringAppendList({"set OPENMODELICAHOME=",omhome_1,"&& \"",
-          omhome_1,pd,"bin",pd,"Compile","\""," ",fileprefix});
+          omhome_1,pd,"bin",pd,"Compile","\""," ",fileprefix," ",noClean});        
         Debug.fprintln("dynload", "compileModel: running " +& s_call);
         0 = System.systemCall(s_call)  ;
       then
         ();
         // If compileCommand is set.
-    case (fileprefix,libs,file_dir)
-      equation
+    case (fileprefix,libs,file_dir,noClean)
+      equation 
         command = Settings.getCompileCommand();
         false = Util.isEmptyString(command);
         omhome = Settings.getInstallationDirectoryPath();
@@ -4010,51 +4250,51 @@ algorithm
         libs_str = Util.stringDelimitList(libs, " ");
         libsfilename = stringAppend(fileprefix, ".libs");
         System.writeFile(libsfilename, libs_str);
-        s_call = Util.stringAppendList({"set OPENMODELICAHOME=",omhome_1,"&& ",command," ",fileprefix});
+        s_call = Util.stringAppendList({"set OPENMODELICAHOME=",omhome_1,"&& ",command," ",fileprefix," ",noClean});
         // print(s_call);
         Debug.fprintln("dynload", "compileModel: running " +& s_call);
         0 = System.systemCall(s_call) ;
       then
-        ();
-
-    case (fileprefix,libs,file_dir) /* compilation failed */
-      equation
+        ();     
+        
+    case (fileprefix,libs,file_dir,_) /* compilation failed */ 
+      equation 
         filename = Util.stringAppendList({fileprefix,".log"});
         0 = System.regularFileExists(filename);
         str = System.readFile(filename);
         Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {str});
       then
         fail();
-    case (fileprefix,libs,file_dir)
+    case (fileprefix,libs,file_dir,_)
       local Integer retVal;
-      equation
+      equation 
         command = Settings.getCompileCommand();
         false = Util.isEmptyString(command);
         retVal = System.regularFileExists(command);
-        true = retVal <> 0;
+        true = retVal <> 0; 
         str=Util.stringAppendList({"command ",command," not found. Check $OPENMODELICAHOME"});
         Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {str});
       then fail();
-
-    case (fileprefix,libs,file_dir) /* compilation failed\\n */
+        
+    case (fileprefix,libs,file_dir,_) /* compilation failed\\n */ 
       local Integer retVal;
-      equation
+      equation  
         omhome = Settings.getInstallationDirectoryPath();
         omhome_1 = System.stringReplace(omhome, "\"", "");
         pd = System.pathDelimiter();
-        /* adrpo - 2006-08-28 ->
-         * please leave Compile instead of Compile.bat
+        /* adrpo - 2006-08-28 -> 
+         * please leave Compile instead of Compile.bat 
          * here as it has to work on Linux too
          */
         s_call = Util.stringAppendList({"\"",omhome_1,pd,"bin",pd,"Compile","\""});
         retVal = System.regularFileExists(s_call);
-        true = retVal <> 0;
+        true = retVal <> 0; 
         str=Util.stringAppendList({"command ",s_call," not found. Check $OPENMODELICAHOME"});
         Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {str});
       then
         fail();
-    case (fileprefix,libs,file_dir)
-      equation
+    case (fileprefix,libs,file_dir,_)
+      equation 
         Print.printErrorBuf("#- Error building simulation code. Ceval.compileModel failed.\n ");
       then
         fail();
@@ -4063,24 +4303,24 @@ end compileModel;
 
 protected function winCitation "function: winCitation
   author: PA
-  Returns a citation mark if platform is windows, otherwise empty string.
+  Returns a citation mark if platform is windows, otherwise empty string. 
   Used by simulate to make whitespaces work in filepaths for WIN32"
   output String outString;
-algorithm
+algorithm 
   outString:=
   matchcontinue ()
     case ()
-      equation
+      equation 
         "WIN32" = System.platform();
       then
         "\"";
-    case () then "";
+    case () then ""; 
   end matchcontinue;
 end winCitation;
 
 protected function getBuiltinAttribute "function: getBuiltinAttribute
-  Retrieves a builtin attribute of a variable in a class by instantiating
-  the class and retrieving the attribute value from the flat variable."
+  Retrieves a builtin attribute of a variable in a class by instantiating 
+  the class and retrieving the attribute value from the flat variable."	
 	input Env.Cache inCache;
   input Exp.ComponentRef inComponentRef1;
   input Exp.ComponentRef inComponentRef2;
@@ -4089,7 +4329,7 @@ protected function getBuiltinAttribute "function: getBuiltinAttribute
   output Env.Cache outCache;
   output Values.Value outValue;
   output Interactive.InteractiveSymbolTable outInteractiveSymbolTable;
-algorithm
+algorithm 
   (outCache,outValue,outInteractiveSymbolTable):=
   matchcontinue (inCache,inComponentRef1,inComponentRef2,inString3,inInteractiveSymbolTable4)
     local
@@ -4102,7 +4342,7 @@ algorithm
       Exp.Exp exp;
       String str,n,attribute;
       Interactive.InteractiveSymbolTable st;
-      Absyn.Program p;
+      Absyn.Program p,ptot;
       list<SCode.Class> sp,p_1;
       list<Interactive.InstantiatedClass> ic,ic_1;
       list<Interactive.InteractiveVariable> vars;
@@ -4116,6 +4356,7 @@ algorithm
       Values.Value v;
       Env.Cache cache;
       list<Interactive.LoadedFile> lf;
+      AbsynDep.Depends aDep;
     case (cache,classname,cref,"stateSelect",
       (st as Interactive.SYMBOLTABLE(
         ast = p,
@@ -4123,37 +4364,39 @@ algorithm
         instClsLst = ic,
         lstVarVal = vars,
         compiledFunctions = cf)))
-      equation
+      equation 
         classname_1 = Static.componentRefToPath(classname) "Check cached instantiated class" ;
         Interactive.INSTCLASS(_,dae,env) = Interactive.getInstantiatedClass(ic, classname_1);
-        cref_1 = Exp.joinCrefs(cref, Exp.CREF_IDENT("stateSelect",{}));
-        (cache,attr,ty,Types.EQBOUND(exp,_,_)) = Lookup.lookupVar(cache,env, cref_1);
+        cref_1 = Exp.joinCrefs(cref, Exp.CREF_IDENT("stateSelect",Exp.OTHER(),{}));
+        (cache,attr,ty,Types.EQBOUND(exp,_,_),_,_) = Lookup.lookupVar(cache,env, cref_1); 
         str = Exp.printExpStr(exp);
       then
         (cache,Values.STRING(str),st);
     case (cache,classname,cref,"stateSelect",
       Interactive.SYMBOLTABLE(
         ast = p,
+        depends = aDep,
         explodedAst = sp,
         instClsLst = ic,
         lstVarVal = vars,
         compiledFunctions = cf,
         loadedFiles = lf))
-      equation
+      equation 
         classname_1 = Static.componentRefToPath(classname);
-        p_1 = SCode.elaborate(p);
+        ptot = Interactive.getTotalProgram(classname_1,p);          
+        p_1 = SCode.elaborate(ptot);
         (cache,env) = Inst.makeEnvFromProgram(cache,p_1, Absyn.IDENT(""));
         (cache,(c as SCode.CLASS(n,_,encflag,r,_)),env_1) = Lookup.lookupClass(cache,env, classname_1, true);
         env3 = Env.openScope(env_1, encflag, SOME(n));
         ci_state = ClassInf.start(r, n);
-        (cache,dae1,env4,csets_1,ci_state_1,tys,_) = Inst.instClassIn(cache,env3, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
+        (cache,dae1,env4,csets_1,ci_state_1,tys,_,_) = Inst.instClassIn(cache,env3, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
           ci_state, c, false, {}, false);
-        cref_1 = Exp.joinCrefs(cref, Exp.CREF_IDENT("stateSelect",{}));
-        (cache,attr,ty,Types.EQBOUND(exp,_,_)) = Lookup.lookupVar(cache,env4, cref_1);
+        cref_1 = Exp.joinCrefs(cref, Exp.CREF_IDENT("stateSelect",Exp.OTHER(),{}));
+        (cache,attr,ty,Types.EQBOUND(exp,_,_),_,_) = Lookup.lookupVar(cache,env4, cref_1);
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(classname_1,dae1,env4));
         str = Exp.printExpStr(exp);
       then
-        (cache,Values.STRING(str),Interactive.SYMBOLTABLE(p,sp,ic_1,vars,cf,lf));
+        (cache,Values.STRING(str),Interactive.SYMBOLTABLE(p,aDep,sp,ic_1,vars,cf,lf));
     case (cache,classname,cref,attribute,
       (st as Interactive.SYMBOLTABLE(
         ast = p,
@@ -4161,35 +4404,37 @@ algorithm
         instClsLst = ic,
         lstVarVal = vars,
         compiledFunctions = cf)))
-      equation
+      equation 
         classname_1 = Static.componentRefToPath(classname);
         Interactive.INSTCLASS(_,dae,env) = Interactive.getInstantiatedClass(ic, classname_1);
-        cref_1 = Exp.joinCrefs(cref, Exp.CREF_IDENT(attribute,{}));
-        (cache,attr,ty,Types.VALBOUND(v)) = Lookup.lookupVar(cache,env, cref_1);
+        cref_1 = Exp.joinCrefs(cref, Exp.CREF_IDENT(attribute,Exp.OTHER(),{}));
+        (cache,attr,ty,Types.VALBOUND(v),_,_) = Lookup.lookupVar(cache,env, cref_1);
       then
         (cache,v,st);
     case (cache,classname,cref,attribute,
       (st as Interactive.SYMBOLTABLE(
         ast = p,
+        depends = aDep,
         explodedAst = sp,
         instClsLst = ic,
         lstVarVal = vars,
         compiledFunctions = cf,
         loadedFiles = lf)))
-      equation
+      equation 
         classname_1 = Static.componentRefToPath(classname);
-        p_1 = SCode.elaborate(p);
+        ptot = Interactive.getTotalProgram(classname_1,p);          
+        p_1 = SCode.elaborate(ptot);
         (cache,env) = Inst.makeEnvFromProgram(cache,p_1, Absyn.IDENT(""));
         (cache,(c as SCode.CLASS(n,_,encflag,r,_)),env_1) = Lookup.lookupClass(cache,env, classname_1, true);
         env3 = Env.openScope(env_1, encflag, SOME(n));
         ci_state = ClassInf.start(r, n);
-        (cache,dae1,env4,csets_1,ci_state_1,tys,_) = Inst.instClassIn(cache,env3, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
+        (cache,dae1,env4,csets_1,ci_state_1,tys,_,_) = Inst.instClassIn(cache,env3, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
           ci_state, c, false, {}, false);
-        cref_1 = Exp.joinCrefs(cref, Exp.CREF_IDENT(attribute,{}));
-        (cache,attr,ty,Types.VALBOUND(v)) = Lookup.lookupVar(cache,env4, cref_1);
+        cref_1 = Exp.joinCrefs(cref, Exp.CREF_IDENT(attribute,Exp.OTHER(),{}));
+        (cache,attr,ty,Types.VALBOUND(v),_,_) = Lookup.lookupVar(cache,env4, cref_1);
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(classname_1,dae1,env4));
       then
-        (cache,v,Interactive.SYMBOLTABLE(p,sp,ic_1,vars,cf,lf));
+        (cache,v,Interactive.SYMBOLTABLE(p,aDep,sp,ic_1,vars,cf,lf));
   end matchcontinue;
 end getBuiltinAttribute;
 
@@ -4202,7 +4447,7 @@ protected function cevalMatrixElt "function: cevalMatrixElt
   input Msg inMsg;
   output Env.Cache outCache;
   output list<Values.Value> outValuesValueLst;
-algorithm
+algorithm 
   (outCache,outValuesValueLst) :=
   matchcontinue (inCache,inEnv,inTplExpExpBooleanLstLst,inBoolean,inMsg)
     local
@@ -4215,12 +4460,12 @@ algorithm
       Msg msg;
       Env.Cache cache;
     case (cache,env,(expl :: expll),impl,msg)
-      equation
+      equation 
         (cache,v) = cevalMatrixEltRow(cache,env, expl, impl, msg);
         (cache,vl)= cevalMatrixElt(cache,env, expll, impl, msg);
       then
         (cache,v :: vl);
-    case (cache,_,{},_,msg) then (cache,{});
+    case (cache,_,{},_,msg) then (cache,{}); 
   end matchcontinue;
 end cevalMatrixElt;
 
@@ -4233,7 +4478,7 @@ protected function cevalMatrixEltRow "function: cevalMatrixEltRow
   input Msg inMsg;
   output Env.Cache outCache;
   output Values.Value outValue;
-algorithm
+algorithm 
   (outCache,outValue) :=
   matchcontinue (inCache,inEnv,inTplExpExpBooleanLst,inBoolean,inMsg)
     local
@@ -4246,12 +4491,12 @@ algorithm
       Msg msg;
       Env.Cache cache;
     case (cache,env,((e,_) :: rest),impl,msg)
-      equation
+      equation 
         (cache,res,_) = ceval(cache,env, e, impl, NONE, NONE, msg);
         (cache,Values.ARRAY(resl)) = cevalMatrixEltRow(cache,env, rest, impl, msg);
       then
         (cache,Values.ARRAY((res :: resl)));
-    case (cache,env,{},_,msg) then (cache,Values.ARRAY({}));
+    case (cache,env,{},_,msg) then (cache,Values.ARRAY({})); 
   end matchcontinue;
 end cevalMatrixEltRow;
 
@@ -4267,7 +4512,7 @@ protected function cevalBuiltinSize "function: cevalBuiltinSize
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
-algorithm
+algorithm 
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   matchcontinue (inCache,inEnv1,inExp2,inExp3,inBoolean4,inInteractiveInteractiveSymbolTableOption5,inMsg6)
     local
@@ -4289,8 +4534,8 @@ algorithm
       list<Exp.Exp> es;
       Env.Cache cache;
     case (cache,env,Exp.CREF(componentRef = cr,ty = tp),dim,impl,st,msg)
-      equation
-        (cache,attr,tp,bind) = Lookup.lookupVar(cache,env, cr) "If dimensions known, always ceval" ;
+      equation 
+        (cache,attr,tp,bind,_,_) = Lookup.lookupVar(cache,env, cr) "If dimensions known, always ceval" ;
         true = Types.dimensionsKnown(tp);
         sizelst = Types.getDimensionSizes(tp);
         (cache,Values.INTEGER(dim),st_1) = ceval(cache,env, dim, impl, st, NONE, msg);
@@ -4302,13 +4547,13 @@ algorithm
       local
         Exp.Type tp;
         Exp.Exp dim;
-      equation
+      equation 
         (cache,dims) = Inst.elabComponentArraydimFromEnv(cache,env, cr) "If component not instantiated yet, recursive definition.
 	 For example,
-	 Real x{:}(min=fill(1.0,size(x,1))) = {1.0}
-
+	 Real x{:}(min=fill(1.0,size(x,1))) = {1.0} 
+	 
 	  When size(x,1) should be determined, x must be instantiated, but
-	  that is not done yet. Solution: Examine Element to find modifier
+	  that is not done yet. Solution: Examine Element to find modifier 
 	  which will determine dimension size.
 	" ;
         (cache,Values.INTEGER(dimv),st_1) = ceval(cache,env, dim, impl, st, NONE, msg);
@@ -4317,15 +4562,15 @@ algorithm
         (cache,v2,st_1);
     case (cache,env,Exp.CREF(componentRef = cr,ty = tp),dim,(impl as true),st,msg)
       local Exp.Exp dim;
-      equation
-        (cache,attr,tp,bind) = Lookup.lookupVar(cache,env, cr) "If dimensions not known and impl=true, just silently fail" ;
+      equation 
+        (cache,attr,tp,bind,_,_) = Lookup.lookupVar(cache,env, cr) "If dimensions not known and impl=true, just silently fail" ;
         false = Types.dimensionsKnown(tp);
       then
         fail();
     case (cache,env,Exp.CREF(componentRef = cr,ty = tp),dim,(impl as false),st,MSG())
       local Exp.Exp dim;
-      equation
-        (cache,attr,tp,bind) = Lookup.lookupVar(cache,env, cr) "If dimensions not known and impl=false, error message" ;
+      equation 
+        (cache,attr,tp,bind,_,_) = Lookup.lookupVar(cache,env, cr) "If dimensions not known and impl=false, error message" ;
 
         false = Types.dimensionsKnown(tp);
         cr_str = Exp.printComponentRefStr(cr);
@@ -4336,39 +4581,40 @@ algorithm
         fail();
     case (cache,env,Exp.CREF(componentRef = cr,ty = tp),dim,(impl as false),st,NO_MSG())
       local Exp.Exp dim;
-      equation
-        (cache,attr,tp,bind) = Lookup.lookupVar(cache,env, cr);
+      equation 
+        (cache,attr,tp,bind,_,_) = Lookup.lookupVar(cache,env, cr);
         false = Types.dimensionsKnown(tp);
       then
         fail();
     case (cache,env,(exp as Exp.CREF(componentRef = cr,ty = crtp)),dim,(impl as false),st,MSG())
       local Exp.Exp dim;
-      equation
-        (cache,attr,tp,Types.UNBOUND()) = Lookup.lookupVar(cache,env, cr) "For crefs without value binding" ;
+      equation 
+        (cache,attr,tp,Types.UNBOUND(),_,_) = Lookup.lookupVar(cache,env, cr) "For crefs without value binding" ;
         expstr = Exp.printExpStr(exp);
         Error.addMessage(Error.UNBOUND_VALUE, {expstr});
       then
         fail();
     case (cache,env,(exp as Exp.CREF(componentRef = cr,ty = crtp)),dim,(impl as false),st,NO_MSG())
       local Exp.Exp dim;
-      equation
-        (cache,attr,tp,Types.UNBOUND()) = Lookup.lookupVar(cache,env, cr);
+      equation 
+        (cache,attr,tp,Types.UNBOUND(),_,_) = Lookup.lookupVar(cache,env, cr);
       then
         fail();
     case (cache,env,(exp as Exp.CREF(componentRef = cr,ty = crtp)),dim,(impl as true),st,msg)
       local Exp.Exp dim;
-      equation
-        (cache,attr,tp,Types.UNBOUND()) = Lookup.lookupVar(cache,env, cr) "For crefs without value binding. If impl=true just silently fail" ;
+      equation 
+        (cache,attr,tp,Types.UNBOUND(),_,_) = Lookup.lookupVar(cache,env, cr) "For crefs without value binding. If impl=true just silently fail" ;
       then
         fail();
-
-		/* For crefs with value binding e.g. size(x,1) when Real x[:]=fill(0,1); */
+               
+		/* For crefs with value binding
+		e.g. size(x,1) when Real x[:]=fill(0,1); */
     case (cache,env,(exp as Exp.CREF(componentRef = cr,ty = crtp)),dim,impl,st,msg)
       local
         Values.Value v;
         Exp.Exp dim;
-      equation
-        (cache,attr,tp,binding) = Lookup.lookupVar(cache,env, cr)  ;
+      equation 
+        (cache,attr,tp,binding,_,_) = Lookup.lookupVar(cache,env, cr)  ;     
         (cache,Values.INTEGER(dimv),st_1) = ceval(cache,env, dim, impl, st, NONE, msg);
         (cache,v) = cevalCrefBinding(cache,env, cr, binding, impl, msg);
         v2 = cevalBuiltinSize2(v, dimv);
@@ -4378,18 +4624,17 @@ algorithm
       local
         Exp.Type tp;
         Exp.Exp dim;
-      equation
-        tp = Exp.typeof(e) "Special case for array expressions with nonconstant values 
-                            For now: only arrays of scalar elements: 
-                            TODO generalize to arbitrary dimensions" ;
+      equation 
+        tp = Exp.typeof(e) "Special case for array expressions with nonconstant values For now: only arrays of scalar elements: TODO generalize to arbitrary
+	   dimensions" ;
         true = Exp.typeBuiltin(tp);
         (cache,Values.INTEGER(1),st_1) = ceval(cache,env, dim, impl, st, NONE, msg);
         len = listLength((e :: es));
       then
         (cache,Values.INTEGER(len),st_1);
-
+        
        /* For expressions with value binding that can not determine type
-		e.g. size(x,2) when Real x[:,:]=fill(0.0,0,2); empty array with second dimension == 2, no way of
+		e.g. size(x,2) when Real x[:,:]=fill(0.0,0,2); empty array with second dimension == 2, no way of 
 		knowing that from the value. Must investigate the expression itself.*/
     case (cache,env,exp,dim,impl,st,msg)
       local
@@ -4397,19 +4642,19 @@ algorithm
         Exp.Exp dim;
         list<Option<Integer>> adims;
         Integer i;
-      equation
+      equation 
         (cache,Values.ARRAY({}),st_1) = ceval(cache,env, exp, impl, st, NONE, msg) "try to ceval expression, for constant expressions" ;
         (cache,Values.INTEGER(dimv),st_1) = ceval(cache,env, dim, impl, st, NONE, msg);
         adims = Exp.arrayTypeDimensions(Exp.typeof(exp));
 				SOME(i) = listNth(adims,dimv-1);
       then
         (cache,Values.INTEGER(i),st_1);
-
+        
     case (cache,env,exp,dim,impl,st,msg)
       local
         Values.Value v;
         Exp.Exp dim;
-      equation
+      equation 
         (cache,v,st_1) = ceval(cache,env, exp, impl, st, NONE, msg) "try to ceval expression, for constant expressions" ;
         (cache,Values.INTEGER(dimv),st_1) = ceval(cache,env, dim, impl, st, NONE, msg);
         v2 = cevalBuiltinSize2(v, dimv);
@@ -4417,11 +4662,11 @@ algorithm
         (cache,v2,st_1);
     case (cache,env,exp,dim,impl,st,MSG())
       local Exp.Exp dim;
-      equation
-        Debug.fprint("failtrace", "#-- Ceval.cevalBuiltinSize failed: ");
+      equation 
+        Print.printErrorBuf("#-- Ceval.cevalBuiltinSize failed: ");
         expstr = Exp.printExpStr(exp);
-        Debug.fprint("failtrace", expstr);
-        Debug.fprint("failtrace", "\n");
+        Print.printErrorBuf(expstr);
+        Print.printErrorBuf("\n");
       then
         fail();
   end matchcontinue;
@@ -4432,7 +4677,7 @@ protected function cevalBuiltinSize2 "function: cevalBultinSize2
   input Values.Value inValue;
   input Integer inInteger;
   output Values.Value outValue;
-algorithm
+algorithm 
   outValue:=
   matchcontinue (inValue,inInteger)
     local
@@ -4440,19 +4685,19 @@ algorithm
       list<Values.Value> lst;
       Values.Value l;
     case (Values.ARRAY(valueLst = lst),1)
-      equation
+      equation 
         dim = listLength(lst);
       then
         Values.INTEGER(dim);
     case (Values.ARRAY(valueLst = (l :: lst)),ind)
       local Values.Value dim;
-      equation
+      equation 
         ind_1 = ind - 1;
         dim = cevalBuiltinSize2(l, ind_1);
       then
         dim;
     case (_,_)
-      equation
+      equation 
         Debug.fprint("failtrace", "- Ceval.cevalBuiltinSize2 failed\n");
       then
         fail();
@@ -4461,12 +4706,12 @@ end cevalBuiltinSize2;
 
 protected function cevalBuiltinSize3 "function: cevalBuiltinSize3
   author: PA
-  Helper function to cevalBuiltinSize.
+  Helper function to cevalBuiltinSize. 
   Used when recursive definition (attribute modifiers using size) is used."
   input list<Inst.DimExp> inInstDimExpLst;
   input Integer inInteger;
   output Values.Value outValue;
-algorithm
+algorithm 
   outValue:=
   matchcontinue (inInstDimExpLst,inInteger)
     local
@@ -4475,13 +4720,13 @@ algorithm
       Exp.Subscript sub;
       Option<Exp.Exp> eopt;
     case (dims,n)
-      equation
+      equation 
         n_1 = n - 1;
         Inst.DIMINT(v) = listNth(dims, n_1);
       then
         Values.INTEGER(v);
     case (dims,n)
-      equation
+      equation 
         n_1 = n - 1;
         Inst.DIMEXP(sub,eopt) = listNth(dims, n_1);
         print("- Ceval.cevalBuiltinSize_3 failed DIMEXP in dimesion\n");
@@ -4502,7 +4747,7 @@ protected function cevalBuiltinAbs "function: cevalBuiltinAbs
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
-algorithm
+algorithm 
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
@@ -4515,13 +4760,13 @@ algorithm
       Integer iv;
       Env.Cache cache;
     case (cache,env,{exp},impl,st,msg)
-      equation
+      equation 
         (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st, NONE, msg);
         rv_1 = realAbs(rv);
       then
         (cache,Values.REAL(rv_1),st);
     case (cache,env,{exp},impl,st,msg)
-      equation
+      equation 
         (cache,Values.INTEGER(iv),_) = ceval(cache,env, exp, impl, st, NONE, msg);
         iv = intAbs(iv);
       then
@@ -4541,7 +4786,7 @@ protected function cevalBuiltinSign "function: cevalBuiltinSign
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
-algorithm
+algorithm 
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
@@ -4554,7 +4799,7 @@ algorithm
       Integer iv,iv_1;
       Env.Cache cache;
     case (cache,env,{exp},impl,st,msg)
-      equation
+      equation 
         (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st, NONE, msg);
         b1 = (rv >. 0.0);
         b2 = (rv <. 0.0);
@@ -4563,7 +4808,7 @@ algorithm
       then
         (cache,Values.REAL(rv_1),st);
     case (cache,env,{exp},impl,st,msg)
-      equation
+      equation 
         (cache,Values.INTEGER(iv),_) = ceval(cache,env, exp, impl, st, NONE, msg);
         b1 = (iv > 0);
         b2 = (iv < 0);
@@ -4586,7 +4831,7 @@ protected function cevalBuiltinExp "function: cevalBuiltinExp
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
-algorithm
+algorithm 
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
@@ -4598,7 +4843,7 @@ algorithm
       Msg msg;
       Env.Cache cache;
     case (cache,env,{exp},impl,st,msg)
-      equation
+      equation 
         (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st, NONE, msg);
         rv_1 = realExp(rv);
       then
@@ -4620,7 +4865,7 @@ protected function cevalBuiltinNoevent "function: cevalBuiltinNoevent
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
-algorithm
+algorithm 
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
@@ -4632,7 +4877,7 @@ algorithm
       Msg msg;
       Env.Cache cache;
     case (cache,env,{exp},impl,st,msg)
-      equation
+      equation 
         (cache,v,_) = ceval(cache,env, exp, impl, st, NONE, msg);
       then
         (cache,v,st);
@@ -4641,8 +4886,8 @@ end cevalBuiltinNoevent;
 
 protected function cevalBuiltinCardinality "function: cevalBuiltinCardinality
   author: PA
-  Evaluates the cardinality operator. The cardinality of a connector
-  instance is its number of (inside and outside) connections, i.e.
+  Evaluates the cardinality operator. The cardinality of a connector 
+  instance is its number of (inside and outside) connections, i.e. 
   number of occurences in connect equations."
 	input Env.Cache inCache;
   input Env.Env inEnv;
@@ -4653,7 +4898,7 @@ protected function cevalBuiltinCardinality "function: cevalBuiltinCardinality
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
-algorithm
+algorithm 
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
@@ -4665,26 +4910,27 @@ algorithm
       Msg msg;
       Env.Cache cache;
     case (cache,env,{Exp.CREF(componentRef = cr)},impl,st,msg)
-      equation
+      equation 
         (cache,cnt) = cevalCardinality(cache,env, cr);
       then
         (cache,Values.INTEGER(cnt),st);
   end matchcontinue;
 end cevalBuiltinCardinality;
 
-protected function cevalCardinality "function: cevalCardinality
+protected function cevalCardinality "function: cevalCardinality 
   author: PA
-  counts the number of connect occurences of the
+  counts the number of connect occurences of the 
   component ref in equations in current scope."
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input Exp.ComponentRef inComponentRef;
   output Env.Cache outCache;
   output Integer outInteger;
-algorithm
+algorithm 
   (outCache,outInteger) :=
   matchcontinue (inCache,inEnv,inComponentRef)
     local
+      Env.Env env;
       list<Exp.ComponentRef> cr_lst,cr_lst2,cr_totlst,crs;
       Integer res;
       Exp.ComponentRef cr;
@@ -4692,28 +4938,30 @@ algorithm
       Absyn.Path path;
       Exp.ComponentRef prefix,currentPrefix;
       Absyn.Ident currentPrefixIdent;
-    case (cache,(Env.FRAME(connectionSet = (crs,prefix)) :: _),cr)
-      equation
+    case (cache,env ,cr)
+      equation 
+        (env as (Env.FRAME(connectionSet = (crs,prefix))::_)) = Env.stripForLoopScope(env);
         cr_lst = Util.listSelect1(crs, cr, Exp.crefContainedIn);
         currentPrefixIdent= Exp.crefLastIdent(prefix);
-        currentPrefix = Exp.CREF_IDENT(currentPrefixIdent,{});
+        currentPrefix = Exp.CREF_IDENT(currentPrefixIdent,Exp.OTHER(),{});
  		    //	Select connect references that has cr as suffix and correct Prefix.
         cr_lst = Util.listSelect1R(cr_lst, currentPrefix, Exp.crefPrefixOf);
-
+        
         // Select connect references that are identifiers (inside connectors)
         cr_lst2 = Util.listSelect(crs,Exp.crefIsIdent);
         cr_lst2 = Util.listSelect1(cr_lst2,cr,Exp.crefEqual);
-
-        cr_totlst = listAppend(cr_lst,cr_lst2);
+        
+        cr_totlst = Util.listUnionOnTrue(listAppend(cr_lst,cr_lst2),{},Exp.crefEqual);
         res = listLength(cr_totlst);
-        /*
+        
+        /*print("inFrame :");print(Env.printEnvPathStr(env));print("\n");  
         print("cardinality(");print(Exp.printComponentRefStr(cr));print(")=");print(intString(res));
+        print("\nicrefs =");print(Util.stringDelimitList(Util.listMap(crs,Exp.printComponentRefStr),","));
+        print("\ncrefs =");print(Util.stringDelimitList(Util.listMap(cr_totlst,Exp.printComponentRefStr),","));
         print("\n");
-        print("icrefs =");print(Util.stringDelimitList(Util.listMap(crs,Exp.printComponentRefStr),","));
-        print("crefs =");print(Util.stringDelimitList(Util.listMap(cr_totlst,Exp.printComponentRefStr),","));
-        print("\n");
-       	print("prefix =");print(Exp.printComponentRefStr(prefix));print("\n");
-       	*/
+       	print("prefix =");print(Exp.printComponentRefStr(prefix));print("\n");*/       	
+       //	print("env:");print(Env.printEnvStr(env));
+       	
       then
         (cache,res);
   end matchcontinue;
@@ -4731,7 +4979,7 @@ protected function cevalBuiltinCat "function: cevalBuiltinCat
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
-algorithm
+algorithm 
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
@@ -4746,7 +4994,7 @@ algorithm
       Msg msg;
       Env.Cache cache;
     case (cache,env,(dim :: matrices),impl,st,msg)
-      equation
+      equation 
         (cache,Values.INTEGER(dim_int),_) = ceval(cache,env, dim, impl, st, NONE, msg);
         (cache,mat_lst) = cevalList(cache,env, matrices, impl, st, msg);
         v = cevalCat(mat_lst, dim_int);
@@ -4767,7 +5015,7 @@ protected function cevalBuiltinIdentity "function: cevalBuiltinIdentity
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
-algorithm
+algorithm 
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
@@ -4781,11 +5029,11 @@ algorithm
       Msg msg;
      	Env.Cache cache;
     case (cache,env,{dim},impl,st,msg)
-      equation
+      equation 
         (cache,Values.INTEGER(dim_int),_) = ceval(cache,env, dim, impl, st, NONE, msg);
         dim_int_1 = dim_int + 1;
         expl = Util.listFill(Exp.ICONST(1), dim_int);
-        (cache,retExp) = cevalBuiltinDiagonal2(cache,env, Exp.ARRAY(Exp.INT(),true,expl), impl, st, dim_int_1,
+        (cache,retExp) = cevalBuiltinDiagonal2(cache,env, Exp.ARRAY(Exp.INT(),true,expl), impl, st, dim_int_1, 
           1, {}, msg);
       then
         (cache,Values.ARRAY(retExp),st);
@@ -4804,7 +5052,7 @@ protected function cevalBuiltinPromote "function: cevalBuiltinPromote
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
-algorithm
+algorithm 
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
@@ -4817,7 +5065,7 @@ algorithm
       Msg msg;
       Env.Cache cache;
     case (cache,env,{arr,dim},impl,st,msg)
-      equation
+      equation 
         (cache,arr_val,_) = ceval(cache,env, arr, impl, st, NONE, msg);
         (cache,Values.INTEGER(dim_val),_) = ceval(cache,env, dim, impl, st, NONE, msg);
         res = cevalBuiltinPromote2(arr_val, dim_val);
@@ -4831,16 +5079,16 @@ protected function cevalBuiltinPromote2 "function: cevalBuiltinPromote2
   input Values.Value inValue;
   input Integer inInteger;
   output Values.Value outValue;
-algorithm
+algorithm 
   outValue:=
   matchcontinue (inValue,inInteger)
     local
       Values.Value v;
       Integer n_1,n;
       list<Values.Value> vs_1,vs;
-    case (v,0) then Values.ARRAY({v});
+    case (v,0) then Values.ARRAY({v}); 
     case (Values.ARRAY(valueLst = vs),n)
-      equation
+      equation 
         n_1 = n - 1;
         vs_1 = Util.listMap1(vs, cevalBuiltinPromote2, n_1);
       then
@@ -4861,7 +5109,7 @@ protected function cevalBuiltinString "
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
-algorithm
+algorithm 
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
@@ -4876,62 +5124,62 @@ algorithm
       String str;
       Integer i; Real r; Boolean b;
     case (cache,env,{exp,_,_,_},impl,st,msg)
-      equation
+      equation 
         (cache,Values.INTEGER(i),_) = ceval(cache,env, exp, impl, st, NONE, msg);
 				str = intString(i);
       then
         (cache,Values.STRING(str),st);
 
     case (cache,env,{exp,_,_,_},impl,st,msg)
-      equation
+      equation 
         (cache,Values.REAL(r),_) = ceval(cache,env, exp, impl, st, NONE, msg);
 				str = realString(r);
       then
-        (cache,Values.STRING(str),st);
-
+        (cache,Values.STRING(str),st); 
+        
     case (cache,env,{exp,_,_,_},impl,st,msg)
-      equation
+      equation 
         (cache,Values.BOOL(b),_) = ceval(cache,env, exp, impl, st, NONE, msg);
 				str = Util.boolString(b);
       then
-        (cache,Values.STRING(str),st);
-
+        (cache,Values.STRING(str),st);                 
+        
   end matchcontinue;
 end cevalBuiltinString;
 
 protected function cevalCat "function: cevalCat
-  evaluates the cat operator given a list of
+  evaluates the cat operator given a list of 
   array values and a concatenation dimension."
   input list<Values.Value> v_lst;
   input Integer dim;
   output Values.Value outValue;
   list<Values.Value> v_lst_1;
-algorithm
+algorithm 
   v_lst_1 := catDimension(v_lst, dim);
   outValue := Values.ARRAY(v_lst_1);
 end cevalCat;
 
 protected function catDimension "function: catDimension
-  Helper function to cevalCat, concatenates a list
+  Helper function to cevalCat, concatenates a list 
   arrays as Values, given a dimension as integer."
   input list<Values.Value> inValuesValueLst;
   input Integer inInteger;
   output list<Values.Value> outValuesValueLst;
-algorithm
+algorithm 
   outValuesValueLst:=
   matchcontinue (inValuesValueLst,inInteger)
     local
       list<list<Values.Value>> vlst_lst,v_lst_lst,v_lst_lst_1;
       list<Values.Value> v_lst_1,vlst,vlst2;
       Integer dim_1,len,dim;
-    case (vlst,1) /* base case for first dimension */
-      equation
+    case (vlst,1) /* base case for first dimension */ 
+      equation 
         vlst_lst = Util.listMap(vlst, Values.arrayValues);
         v_lst_1 = Util.listFlatten(vlst_lst);
       then
         v_lst_1;
-    case (vlst,dim) /* higher dimensions */
-      equation
+    case (vlst,dim) /* higher dimensions */ 
+      equation 
         v_lst_lst = Util.listMap(vlst, Values.arrayValues);
         dim_1 = dim - 1;
         v_lst_lst_1 = catDimension2(v_lst_lst, dim_1);
@@ -4950,7 +5198,7 @@ protected function catDimension2 "function: catDimension2
   input list<list<Values.Value>> inValuesValueLstLst;
   input Integer inInteger;
   output list<list<Values.Value>> outValuesValueLstLst;
-algorithm
+algorithm 
   outValuesValueLstLst:=
   matchcontinue (inValuesValueLstLst,inInteger)
     local
@@ -4958,7 +5206,7 @@ algorithm
       list<list<Values.Value>> first_lst_2,lst,rest,rest_1,res;
       Integer dim;
     case (lst,dim)
-      equation
+      equation 
         l_lst = Util.listFirst(lst);
         1 = listLength(l_lst);
         first_lst = Util.listMap(lst, Util.listFirst);
@@ -4967,7 +5215,7 @@ algorithm
       then
         first_lst_2;
     case (lst,dim)
-      equation
+      equation 
         first_lst = Util.listMap(lst, Util.listFirst);
         rest = Util.listMap(lst, Util.listRest);
         first_lst_1 = catDimension(first_lst, dim);
@@ -4990,7 +5238,7 @@ protected function cevalBuiltinFloor "function: cevalBuiltinFloor
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
-algorithm
+algorithm 
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
@@ -5003,7 +5251,7 @@ algorithm
       Msg msg;
       Env.Cache cache;
     case (cache,env,{exp},impl,st,msg)
-      equation
+      equation 
         (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st, NONE, msg);
         rv_1 = realFloor(rv);
         iv=realInt(rv_1);
@@ -5024,7 +5272,7 @@ protected function cevalBuiltinCeil "function cevalBuiltinCeil
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
-algorithm
+algorithm 
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
@@ -5037,7 +5285,7 @@ algorithm
       Msg msg;
       Env.Cache cache;
     case (cache,env,{exp},impl,st,msg)
-      equation
+      equation 
         (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st, NONE, msg);
         rv_1 = realFloor(rv);
         ri = realInt(rv_1);
@@ -5046,7 +5294,7 @@ algorithm
       then
         (cache,Values.INTEGER(ri),st);
     case (cache,env,{exp},impl,st,msg)
-      equation
+      equation 
         (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st, NONE, msg);
         rv_1 = realFloor(rv);
         ri = realInt(rv_1);
@@ -5068,7 +5316,7 @@ protected function cevalBuiltinSqrt "function: cevalBuiltinSqrt
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
-algorithm
+algorithm 
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
@@ -5080,14 +5328,14 @@ algorithm
       Msg msg;
       Env.Cache cache;
     case (cache,env,{exp},impl,st,msg)
-      equation
+      equation 
         (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st, NONE, msg);
         (rv <. 0.0) = true;
         Error.addMessage(Error.NEGATIVE_SQRT, {});
       then
         fail();
     case (cache,env,{exp},impl,st,msg)
-      equation
+      equation 
         (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st, NONE, msg);
         rv_1 = realSqrt(rv);
       then
@@ -5107,7 +5355,7 @@ protected function cevalBuiltinSin "function cevalBuiltinSin
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
-algorithm
+algorithm 
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
@@ -5119,7 +5367,7 @@ algorithm
       Msg msg;
       Env.Cache cache;
     case (cache,env,{exp},impl,st,msg)
-      equation
+      equation 
         (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st, NONE, msg);
         rv_1 = realSin(rv);
       then
@@ -5139,7 +5387,7 @@ protected function cevalBuiltinSinh "function cevalBuiltinSinh
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
-algorithm
+algorithm 
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
@@ -5151,7 +5399,7 @@ algorithm
       Msg msg;
       Env.Cache cache;
     case (cache,env,{exp},impl,st,msg)
-      equation
+      equation 
         (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st, NONE, msg);
         rv_1 = System.sinh(rv);
       then
@@ -5171,7 +5419,7 @@ protected function cevalBuiltinCos "function cevalBuiltinCos
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
-algorithm
+algorithm 
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
@@ -5183,7 +5431,7 @@ algorithm
       Msg msg;
       Env.Cache cache;
     case (cache,env,{exp},impl,st,msg)
-      equation
+      equation 
         (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st, NONE, msg);
         rv_1 = realCos(rv);
       then
@@ -5203,7 +5451,7 @@ protected function cevalBuiltinCosh "function cevalBuiltinCosh
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
-algorithm
+algorithm 
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
@@ -5215,7 +5463,7 @@ algorithm
       Msg msg;
       Env.Cache cache;
     case (cache,env,{exp},impl,st,msg)
-      equation
+      equation 
         (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st, NONE, msg);
         rv_1 = System.cosh(rv);
       then
@@ -5235,7 +5483,7 @@ protected function cevalBuiltinLog "function cevalBuiltinLog
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
-algorithm
+algorithm 
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
@@ -5247,7 +5495,7 @@ algorithm
       Msg msg;
       Env.Cache cache;
     case (cache,env,{exp},impl,st,msg)
-      equation
+      equation 
         (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st, NONE, msg);
         rv_1 = System.log(rv);
       then
@@ -5267,7 +5515,7 @@ protected function cevalBuiltinTan "function cevalBuiltinTan
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
-algorithm
+algorithm 
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
@@ -5278,8 +5526,8 @@ algorithm
       Option<Interactive.InteractiveSymbolTable> st;
       Msg msg;
       Env.Cache cache;
-    case (cache,env,{exp},impl,st,msg) /* tan is not implemented in MetaModelica Compiler (MMC) for some strange reason. */
-      equation
+    case (cache,env,{exp},impl,st,msg) /* tan is not implemented in MetaModelica Compiler (MMC) for some strange reason. */ 
+      equation 
         (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st, NONE, msg);
         sv = realSin(rv);
         cv = realCos(rv);
@@ -5301,7 +5549,7 @@ protected function cevalBuiltinTanh "function cevalBuiltinTanh
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
-algorithm
+algorithm 
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
@@ -5312,8 +5560,8 @@ algorithm
       Option<Interactive.InteractiveSymbolTable> st;
       Msg msg;
       Env.Cache cache;
-    case (cache,env,{exp},impl,st,msg) /* tanh is not implemented in MetaModelica Compiler (MMC) for some strange reason. */
-      equation
+    case (cache,env,{exp},impl,st,msg) /* tanh is not implemented in MetaModelica Compiler (MMC) for some strange reason. */ 
+      equation 
         (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st, NONE, msg);
          rv_1 = System.tanh(rv);
       then
@@ -5333,7 +5581,7 @@ protected function cevalBuiltinAsin "function cevalBuiltinAsin
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
-algorithm
+algorithm 
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
@@ -5345,7 +5593,7 @@ algorithm
       Msg msg;
       Env.Cache cache;
     case (cache,env,{exp},impl,st,msg)
-      equation
+      equation 
         (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st, NONE, msg);
         rv_1 = System.asin(rv);
       then
@@ -5365,7 +5613,7 @@ protected function cevalBuiltinAcos "function cevalBuiltinAcos
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
-algorithm
+algorithm 
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
@@ -5377,7 +5625,7 @@ algorithm
       Msg msg;
       Env.Cache cache;
     case (cache,env,{exp},impl,st,msg)
-      equation
+      equation 
         (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st, NONE, msg);
         rv_1 = System.acos(rv);
       then
@@ -5397,7 +5645,7 @@ protected function cevalBuiltinAtan "function cevalBuiltinAtan
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
-algorithm
+algorithm 
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
@@ -5408,8 +5656,8 @@ algorithm
       Option<Interactive.InteractiveSymbolTable> st;
       Msg msg;
       Env.Cache cache;
-    case (cache,env,{exp},impl,st,msg) /* atan is not implemented in MetaModelica Compiler (MMC) for some strange reason. */
-      equation
+    case (cache,env,{exp},impl,st,msg) /* atan is not implemented in MetaModelica Compiler (MMC) for some strange reason. */ 
+      equation 
         (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st, NONE, msg);
         rv_1 = System.atan(rv);
       then
@@ -5429,7 +5677,7 @@ protected function cevalBuiltinDiv "function cevalBuiltinDiv
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
-algorithm
+algorithm 
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
@@ -5443,7 +5691,7 @@ algorithm
       String exp1_str,exp2_str,lh_str,rh_str;
       Env.Cache cache;
     case (cache,env,{exp1,exp2},impl,st,msg)
-      equation
+      equation 
         (cache,Values.REAL(rv1),_) = ceval(cache,env, exp1, impl, st, NONE, msg);
         (cache,Values.REAL(rv2),_) = ceval(cache,env, exp2, impl, st, NONE, msg);
         rv_1 = rv1/.rv2;
@@ -5452,7 +5700,7 @@ algorithm
       then
         (cache,Values.REAL(rv_2),st);
     case (cache,env,{exp1,exp2},impl,st,msg)
-      equation
+      equation 
         (cache,Values.INTEGER(ri),_) = ceval(cache,env, exp1, impl, st, NONE, msg);
         rv1 = intReal(ri);
         (cache,Values.REAL(rv2),_) = ceval(cache,env, exp2, impl, st, NONE, msg);
@@ -5462,7 +5710,7 @@ algorithm
       then
         (cache,Values.REAL(rv_2),st);
     case (cache,env,{exp1,exp2},impl,st,msg)
-      equation
+      equation 
         (cache,Values.REAL(rv1),_) = ceval(cache,env, exp1, impl, st, NONE, msg);
         (cache,Values.INTEGER(ri),_) = ceval(cache,env, exp2, impl, st, NONE, msg);
         rv2 = intReal(ri);
@@ -5472,14 +5720,14 @@ algorithm
       then
         (cache,Values.REAL(rv_2),st);
     case (cache,env,{exp1,exp2},impl,st,msg)
-      equation
+      equation 
         (cache,Values.INTEGER(ri1),_) = ceval(cache,env, exp1, impl, st, NONE, msg);
         (cache,Values.INTEGER(ri2),_) = ceval(cache,env, exp2, impl, st, NONE, msg);
         ri_1 = ri1/ri2;
       then
         (cache,Values.INTEGER(ri_1),st);
     case (cache,env,{exp1,exp2},impl,st,MSG())
-      equation
+      equation 
         (cache,Values.REAL(rv2),_) = ceval(cache,env, exp2, impl, st, NONE, MSG());
         (rv2 ==. 0.0) = true;
         exp1_str = Exp.printExpStr(exp1);
@@ -5488,13 +5736,13 @@ algorithm
       then
         fail();
     case (cache,env,{exp1,exp2},impl,st,NO_MSG())
-      equation
+      equation 
         (cache,Values.REAL(rv2),_) = ceval(cache,env, exp2, impl, st, NONE, NO_MSG());
         (rv2 ==. 0.0) = true;
       then
         fail();
     case (cache,env,{exp1,exp2},impl,st,MSG())
-      equation
+      equation 
         (cache,Values.INTEGER(ri2),_) = ceval(cache,env, exp2, impl, st, NONE, MSG());
         (ri2 == 0) = true;
         lh_str = Exp.printExpStr(exp1);
@@ -5503,7 +5751,7 @@ algorithm
       then
         fail();
     case (cache,env,{exp1,exp2},impl,st,NO_MSG())
-      equation
+      equation 
         (cache,Values.INTEGER(ri2),_) = ceval(cache,env, exp2, impl, st, NONE, NO_MSG());
         (ri2 == 0) = true;
       then
@@ -5523,7 +5771,7 @@ protected function cevalBuiltinMod "function cevalBuiltinMod
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
-algorithm
+algorithm 
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
@@ -5537,7 +5785,7 @@ algorithm
       String lhs_str,rhs_str;
       Env.Cache cache;
     case (cache,env,{exp1,exp2},impl,st,msg)
-      equation
+      equation 
         (cache,Values.REAL(rv1),_) = ceval(cache,env, exp1, impl, st, NONE, msg);
         (cache,Values.REAL(rv2),_) = ceval(cache,env, exp2, impl, st, NONE, msg);
         rva = rv1/.rv2;
@@ -5547,7 +5795,7 @@ algorithm
       then
         (cache,Values.REAL(rvd),st);
     case (cache,env,{exp1,exp2},impl,st,msg)
-      equation
+      equation 
         (cache,Values.INTEGER(ri),_) = ceval(cache,env, exp1, impl, st, NONE, msg);
         rv1 = intReal(ri);
         (cache,Values.REAL(rv2),_) = ceval(cache,env, exp2, impl, st, NONE, msg);
@@ -5558,7 +5806,7 @@ algorithm
       then
         (cache,Values.REAL(rvd),st);
     case (cache,env,{exp1,exp2},impl,st,msg)
-      equation
+      equation 
         (cache,Values.REAL(rv1),_) = ceval(cache,env, exp1, impl, st, NONE, msg);
         (cache,Values.INTEGER(ri),_) = ceval(cache,env, exp2, impl, st, NONE, msg);
         rv2 = intReal(ri);
@@ -5569,7 +5817,7 @@ algorithm
       then
         (cache,Values.REAL(rvd),st);
     case (cache,env,{exp1,exp2},impl,st,msg)
-      equation
+      equation 
         (cache,Values.INTEGER(ri1),_) = ceval(cache,env, exp1, impl, st, NONE, msg);
         (cache,Values.INTEGER(ri2),_) = ceval(cache,env, exp2, impl, st, NONE, msg);
         rv1 = intReal(ri1);
@@ -5582,7 +5830,7 @@ algorithm
       then
         (cache,Values.INTEGER(ri_1),st);
     case (cache,env,{exp1,exp2},impl,st,MSG())
-      equation
+      equation 
         (cache,Values.REAL(rv2),_) = ceval(cache,env, exp2, impl, st, NONE, MSG());
         (rv2 ==. 0.0) = true;
         lhs_str = Exp.printExpStr(exp1);
@@ -5591,13 +5839,13 @@ algorithm
       then
         fail();
     case (cache,env,{exp1,exp2},impl,st,NO_MSG())
-      equation
+      equation 
         (cache,Values.REAL(rv2),_) = ceval(cache,env, exp2, impl, st, NONE, NO_MSG());
         (rv2 ==. 0.0) = true;
       then
         fail();
     case (cache,env,{exp1,exp2},impl,st,MSG())
-      equation
+      equation 
         (cache,Values.INTEGER(ri2),_) = ceval(cache,env, exp2, impl, st, NONE, MSG());
         (ri2 == 0) = true;
         lhs_str = Exp.printExpStr(exp1);
@@ -5606,7 +5854,7 @@ algorithm
       then
         fail();
     case (cache,env,{exp1,exp2},impl,st,NO_MSG())
-      equation
+      equation 
         (cache,Values.INTEGER(ri2),_) = ceval(cache,env, exp2, impl, st, NONE, NO_MSG());
         (ri2 == 0) = true;
       then
@@ -5626,7 +5874,7 @@ protected function cevalBuiltinMax "function cevalBuiltinMax
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
-algorithm
+algorithm 
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
@@ -5640,20 +5888,20 @@ algorithm
       Real r1,r2,r;
       Env.Cache cache;
     case (cache,env,{arr},impl,st,msg)
-      equation
+      equation 
         (cache,v,_) = ceval(cache,env, arr, impl, st, NONE, msg);
         (v_1) = cevalBuiltinMax2(v);
       then
         (cache,v_1,st);
     case (cache,env,{s1,s2},impl,st,msg)
-      equation
+      equation 
         (cache,Values.INTEGER(i1),_) = ceval(cache,env, s1, impl, st, NONE, msg);
         (cache,Values.INTEGER(i2),_) = ceval(cache,env, s2, impl, st, NONE, msg);
         i = intMax(i1, i2);
       then
         (cache,Values.INTEGER(i),st);
     case (cache,env,{s1,s2},impl,st,msg)
-      equation
+      equation 
         (cache,Values.REAL(r1),_) = ceval(cache,env, s1, impl, st, NONE, msg);
         (cache,Values.REAL(r2),_) = ceval(cache,env, s2, impl, st, NONE, msg);
         r = realMax(r1, r2);
@@ -5666,7 +5914,7 @@ protected function cevalBuiltinMax2 "function: cevalBuiltinMax2
   Helper function to cevalBuiltinMax."
   input Values.Value inValue;
   output Values.Value outValue;
-algorithm
+algorithm 
   outValue:=
   matchcontinue (inValue)
     local
@@ -5674,7 +5922,7 @@ algorithm
       Values.Value v1,v,vl;
       list<Values.Value> vls;
     case (Values.ARRAY(valueLst = (v1 :: (vls as (_ :: _)))))
-      equation
+      equation 
         (Values.INTEGER(i1)) = cevalBuiltinMax2(v1);
         (Values.INTEGER(i2)) = cevalBuiltinMax2(Values.ARRAY(vls));
         res = intMax(i1, i2);
@@ -5682,25 +5930,25 @@ algorithm
         Values.INTEGER(res);
     case (Values.ARRAY(valueLst = (v1 :: (vls as (_ :: _)))))
       local Real i1,i2,res;
-      equation
+      equation 
         (Values.REAL(i1)) = cevalBuiltinMax2(v1);
         (Values.REAL(i2)) = cevalBuiltinMax2(Values.ARRAY(vls));
         res = realMax(i1, i2);
       then
         Values.REAL(res);
     case (Values.ARRAY(valueLst = {vl}))
-      equation
+      equation 
         (v) = cevalBuiltinMax2(vl);
       then
         v;
-    case (Values.INTEGER(integer = i)) then Values.INTEGER(i);
+    case (Values.INTEGER(integer = i)) then Values.INTEGER(i); 
     case (Values.REAL(real = i))
       local Real i;
       then
         Values.REAL(i);
     case (_)
-      equation
-        print("- Ceval.cevalBuiltinMax2 failed\n");
+      equation 
+        //print("- Ceval.cevalBuiltinMax2 failed\n");
       then
         fail();
   end matchcontinue;
@@ -5718,7 +5966,7 @@ protected function cevalBuiltinMin "function: cevalBuiltinMin
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
-algorithm
+algorithm 
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
@@ -5732,20 +5980,20 @@ algorithm
       Real r1,r2,r;
       Env.Cache cache;
     case (cache,env,{arr},impl,st,msg)
-      equation
+      equation 
         (cache,v,_) = ceval(cache,env, arr, impl, st, NONE, msg);
         (v_1) = cevalBuiltinMin2(v);
       then
         (cache,v_1,st);
     case (cache,env,{s1,s2},impl,st,msg)
-      equation
+      equation 
         (cache,Values.INTEGER(i1),_) = ceval(cache,env, s1, impl, st, NONE, msg);
         (cache,Values.INTEGER(i2),_) = ceval(cache,env, s2, impl, st, NONE, msg);
         i = intMin(i1, i2);
       then
         (cache,Values.INTEGER(i),st);
     case (cache,env,{s1,s2},impl,st,msg)
-      equation
+      equation 
         (cache,Values.REAL(r1),_) = ceval(cache,env, s1, impl, st, NONE, msg);
         (cache,Values.REAL(r2),_) = ceval(cache,env, s2, impl, st, NONE, msg);
         r = realMin(r1, r2);
@@ -5758,7 +6006,7 @@ protected function cevalBuiltinMin2 "function: cevalBuiltinMin2
   Helper function to cevalBuiltinMin."
   input Values.Value inValue;
   output Values.Value outValue;
-algorithm
+algorithm 
   outValue:=
   matchcontinue (inValue)
     local
@@ -5766,7 +6014,7 @@ algorithm
       Values.Value v1,v,vl;
       list<Values.Value> vls;
     case (Values.ARRAY(valueLst = (v1 :: (vls as (_ :: _)))))
-      equation
+      equation 
         (Values.INTEGER(i1)) = cevalBuiltinMin2(v1);
         (Values.INTEGER(i2)) = cevalBuiltinMin2(Values.ARRAY(vls));
         res = intMin(i1, i2);
@@ -5774,18 +6022,18 @@ algorithm
         Values.INTEGER(res);
     case (Values.ARRAY(valueLst = (v1 :: (vls as (_ :: _)))))
       local Real i1,i2,res;
-      equation
+      equation 
         (Values.REAL(i1)) = cevalBuiltinMin2(v1);
         (Values.REAL(i2)) = cevalBuiltinMin2(Values.ARRAY(vls));
         res = realMin(i1, i2);
       then
         Values.REAL(res);
     case (Values.ARRAY(valueLst = {vl}))
-      equation
+      equation 
         (v) = cevalBuiltinMin2(vl);
       then
         v;
-    case (Values.INTEGER(integer = i)) then Values.INTEGER(i);
+    case (Values.INTEGER(integer = i)) then Values.INTEGER(i); 
     case (Values.REAL(real = i))
       local Real i;
       then
@@ -5805,7 +6053,7 @@ protected function cevalBuiltinDifferentiate "function cevalBuiltinDifferentiate
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
-algorithm
+algorithm 
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
@@ -5818,19 +6066,19 @@ algorithm
       Msg msg;
       Env.Cache cache;
     case (cache,env,{exp1,Exp.CREF(componentRef = cr)},impl,st,msg)
-      equation
+      equation 
         differentiated_exp = Derive.differentiateExpCont(exp1, cr);
         differentiated_exp_1 = Exp.simplify(differentiated_exp);
         /*
-         this is wrong... this should be used instead but unelabExp must be able to unelaborate a complete exp
+         this is wrong... this should be used instead but unelabExp must be able to unelaborate a complete exp 
          now it doesn't so the expression is returned as string Exp.unelabExp(differentiated_exp') => absyn_exp
-        */
+        */        
         ret_val = Exp.printExpStr(differentiated_exp_1);
       then
         (cache,Values.STRING(ret_val),st);
-    case (_,_,_,_,st,msg) /* =>  (Values.CODE(Absyn.C_EXPRESSION(absyn_exp)),st) */
-      equation
-        Print.printBuf("#- Differentiation failed. Celab.cevalBuiltinDifferentiate failed.\n");
+    case (_,_,_,_,st,msg) /* =>  (Values.CODE(Absyn.C_EXPRESSION(absyn_exp)),st) */ 
+      equation 
+        print("#- Differentiation failed. Celab.cevalBuiltinDifferentiate failed.\n");
       then
         fail();
   end matchcontinue;
@@ -5848,7 +6096,7 @@ protected function cevalBuiltinSimplify "function cevalBuiltinSimplify
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
-algorithm
+algorithm 
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
@@ -5860,14 +6108,14 @@ algorithm
       Msg msg;
       Env.Cache cache;
     case (cache,env,{exp1},impl,st,msg)
-      equation
+      equation 
         exp1_1 = Exp.simplify(exp1);
         ret_val = Exp.printExpStr(exp1_1) "this should be used instead but unelab_exp must be able to unelaborate a complete exp Exp.unelab_exp(simplifyd_exp\') => absyn_exp" ;
       then
         (cache,Values.STRING(ret_val),st);
-    case (_,_,_,_,st,MSG()) /* =>  (Values.CODE(Absyn.C_EXPRESSION(absyn_exp)),st) */
-      equation
-        Print.printBuf("#- Simplification failed. Ceval.cevalBuildinSimplify failed.\n");
+    case (_,_,_,_,st,MSG()) /* =>  (Values.CODE(Absyn.C_EXPRESSION(absyn_exp)),st) */ 
+      equation 
+        print("#- Simplification failed. Ceval.cevalBuildinSimplify failed.\n");
       then
         fail();
   end matchcontinue;
@@ -5885,7 +6133,7 @@ protected function cevalBuiltinRem "function cevalBuiltinRem
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
-algorithm
+algorithm 
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
@@ -5899,7 +6147,7 @@ algorithm
       String exp1_str,exp2_str;
       Env.Cache cache;
     case (cache,env,{exp1,exp2},impl,st,msg)
-      equation
+      equation 
         (cache,Values.REAL(rv1),_) = ceval(cache,env, exp1, impl, st, NONE, msg);
         (cache,Values.REAL(rv2),_) = ceval(cache,env, exp2, impl, st, NONE, msg);
         rva = rv1/.rv2;
@@ -5910,7 +6158,7 @@ algorithm
       then
         (cache,Values.REAL(rvd),st);
     case (cache,env,{exp1,exp2},impl,st,msg)
-      equation
+      equation 
         (cache,Values.INTEGER(ri),_) = ceval(cache,env, exp1, impl, st, NONE, msg);
         rv1 = intReal(ri);
         (cache,Values.REAL(rv2),_) = ceval(cache,env, exp2, impl, st, NONE, msg);
@@ -5922,7 +6170,7 @@ algorithm
       then
         (cache,Values.REAL(rvd),st);
     case (cache,env,{exp1,exp2},impl,st,msg)
-      equation
+      equation 
         (cache,Values.REAL(rv1),_) = ceval(cache,env, exp1, impl, st, NONE, msg);
         (cache,Values.INTEGER(ri),_) = ceval(cache,env, exp2, impl, st, NONE, msg);
         rv2 = intReal(ri);
@@ -5934,7 +6182,7 @@ algorithm
       then
         (cache,Values.REAL(rvd),st);
     case (cache,env,{exp1,exp2},impl,st,msg)
-      equation
+      equation 
         (cache,Values.INTEGER(ri1),_) = ceval(cache,env, exp1, impl, st, NONE, msg);
         (cache,Values.INTEGER(ri2),_) = ceval(cache,env, exp2, impl, st, NONE, msg);
         rv1 = intReal(ri1);
@@ -5948,7 +6196,7 @@ algorithm
       then
         (cache,Values.INTEGER(ri_1),st);
     case (cache,env,{exp1,exp2},impl,st,MSG())
-      equation
+      equation 
         (cache,Values.REAL(rv2),_) = ceval(cache,env, exp2, impl, st, NONE, MSG());
         (rv2 ==. 0.0) = true;
         exp1_str = Exp.printExpStr(exp1);
@@ -5957,13 +6205,13 @@ algorithm
       then
         fail();
     case (cache,env,{exp1,exp2},impl,st,NO_MSG())
-      equation
+      equation 
         (cache,Values.REAL(rv2),_) = ceval(cache,env, exp2, impl, st, NONE, NO_MSG());
         (rv2 ==. 0.0) = true;
       then
         fail();
     case (cache,env,{exp1,exp2},impl,st,MSG())
-      equation
+      equation 
         (cache,Values.INTEGER(ri2),_) = ceval(cache,env, exp2, impl, st, NONE, MSG());
         (ri2 == 0) = true;
         exp1_str = Exp.printExpStr(exp1);
@@ -5972,7 +6220,7 @@ algorithm
       then
         fail();
     case (cache,env,{exp1,exp2},impl,st,NO_MSG())
-      equation
+      equation 
         (cache,Values.INTEGER(ri2),_) = ceval(cache,env, exp2, impl, st, NONE, NO_MSG());
         (ri2 == 0) = true;
       then
@@ -5992,7 +6240,7 @@ protected function cevalBuiltinInteger "function cevalBuiltinInteger
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
-algorithm
+algorithm 
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
@@ -6005,7 +6253,7 @@ algorithm
       Msg msg;
       Env.Cache cache;
     case (cache,env,{exp},impl,st,msg)
-      equation
+      equation 
         (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st, NONE, msg);
         ri = realInt(rv);
       then
@@ -6051,9 +6299,9 @@ public function cevalGenerateFunction "function: cevalGenerateFunction
   input Env.Env inEnv;
   input Absyn.Path inPath;
   output Env.Cache outCache;
-algorithm
+algorithm 
   outCache :=
-  matchcontinue (inCache,inEnv,inPath)
+  matchcontinue (inCache,inEnv,inPath) 
     local
       String pathstr,gencodestr,cfilename,makefilename,omhome,str,libsstr;
       list<Env.Frame> env;
@@ -6062,13 +6310,16 @@ algorithm
       String MakefileHeader;
       list<String> libs;
     case (cache,env,path)
-      equation
-        (cache,false) = Static.isExternalObjectFunction(cache,env,path); //ext objs functions not possible to ceval.
+      equation 
+        false = RTOpts.debugFlag("nogen");
+         (cache,false) = Static.isExternalObjectFunction(cache,env,path); //ext objs functions not possible to ceval.
         Debug.fprintln("ceval", "/*- Ceval.cevalGenerateFunction starting*/");
         pathstr = ModUtil.pathString2(path, "_");
         (cache,gencodestr,_,libs) = cevalGenerateFunctionStr(cache,path, env, {});
         cfilename = stringAppend(pathstr, ".c");
-        str = Util.stringAppendList({"#include \"modelica.h\"\n#include <stdio.h>\n#include <stdlib.h>\n#include <errno.h>\n", gencodestr});
+        str = Util.stringAppendList(
+          {"#include \"modelica.h\"\n#include <stdio.h>\n#include <stdlib.h>\n#include <errno.h>\n",
+           gencodestr});
         System.writeFile(cfilename, str);
         Debug.fprintln("dynload", "cevalGenerateFunction: generating makefile for " +& pathstr);
         makefilename = generateMakefilename(pathstr);
@@ -6084,12 +6335,16 @@ algorithm
           " $(LDFLAGS)",
           " ",libsstr," -lm \n"});
         System.writeFile(makefilename, str);
-        compileModel(pathstr, {}, "");
+        compileModel(pathstr, {}, "", "");
       then
         (cache);
-    case (cache,_,_)
-      equation
-        Debug.fprint("failtrace", "/*- Ceval.cevalGenerateFunction failed*/\n");
+    case (cache,env,path)      
+      equation 
+        pathstr = Absyn.pathString(path);
+        pathstr = stringAppend("/*- Ceval.cevalGenerateFunction failed(", pathstr);
+        pathstr = stringAppend(pathstr,")*/\n");
+        (cache,false) = Static.isExternalObjectFunction(cache,env,path);
+        Debug.fprint("failtrace", pathstr);
       then
         fail();
   end matchcontinue;
@@ -6107,7 +6362,7 @@ protected function cevalGenerateFunctionStr "function: cevalGenerateFunctionStr
   output String outString;
   output list<Absyn.Path> outAbsynPathLst;
   output list<String> outLibs;
-algorithm
+algorithm 
   (outCache,outString,outAbsynPathLst,outLibs):=
   matchcontinue (inCache,inPath,inEnv,inAbsynPathLst)
     local
@@ -6120,18 +6375,20 @@ algorithm
       String debugfuncsstr,funcname,funccom,thisfuncstr,resstr;
       DAE.DAElist d_1;
       Env.Cache cache;
-    case (cache,path,env,gflist) /* If getmember succeeds, path is in generated functions list, so do nothing */
-      equation
+    case (cache,path,env,gflist) /* If getmember succeeds, path is in generated functions list, so do nothing */ 
+      equation 
         gfmember = Util.listGetMemberOnTrue(path, gflist, ModUtil.pathEqual);
       then
         (cache,"",gflist,{});
-    case (cache,path,env,gflist) /* If getmember fails, path is not in generated functions list, hence generate it */
-      equation
+    case (cache,path,env,gflist) /* If getmember fails, path is not in generated functions list, hence generate it */ 
+      equation 
+        false = RTOpts.debugFlag("nogen");
         failure(_ = Util.listGetMemberOnTrue(path, gflist, ModUtil.pathEqual));
         Debug.fprintln("ceval", "/*- Ceval.cevalGenerateFunctionStr starting*/");
         (cache,cls,env_1) = Lookup.lookupClass(cache,env, path, false);
         Debug.fprintln("ceval", "/*- ceval_generate_function_str instantiating*/");
-        (cache,env_2,d) = Inst.implicitFunctionInstantiation(cache, env_1, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cls, {});
+        (cache,env_2,d) = Inst.implicitFunctionInstantiation(cache,env_1, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
+          cls, {});
         Debug.fprint("ceval", "/*- Ceval.cevalGenerateFunctionStr getting functions: ");
         calledfuncs = SimCodegen.getCalledFunctionsInFunction(path, DAE.DAE(d));
         debugfuncs = Util.listMap(calledfuncs, Absyn.pathString);
@@ -6153,9 +6410,22 @@ algorithm
         libs = listAppend(libs, libs_2);
       then
         (cache,resstr,(path :: gflist),libs);
-    case (_,_,env,_)
-      equation
-        Debug.fprint("failtrace", "/*- Ceval.cevalGenerateFunctionStr failed*/\n");
+    case (_,path,env,_)
+      local String ss1;
+      equation 
+        true = RTOpts.debugFlag("nogen");
+        ss1 = Absyn.pathString(path);
+        ss1 = Util.stringAppendList({"/*- Ceval.cevalGenerateFunctionStr failed( ",ss1," ) set \"nogen\" flag to false */\n"});
+        Debug.fprint("failtrace", ss1);
+      then
+        fail();
+    case (_,path,env,_)
+      local String ss1;
+      equation 
+        false = RTOpts.debugFlag("nogen");
+        ss1 = Absyn.pathString(path);
+        ss1 = Util.stringAppendList({"/*- Ceval.cevalGenerateFunctionStr failed( ",ss1," )*/\n"});
+        Debug.fprint("failtrace", ss1);
       then
         fail();
   end matchcontinue;
@@ -6171,7 +6441,7 @@ protected function cevalGenerateFunctionStrList "function: cevalGenerateFunction
   output list<String> outStringLst;
   output list<Absyn.Path> outAbsynPathLst;
   output list<String> outLibs;
-algorithm
+algorithm 
   (outCache,outStringLst,outAbsynPathLst,outLibs):=
   matchcontinue (inCache,inAbsynPathLst1,inEnv2,inAbsynPathLst3)
     local
@@ -6206,7 +6476,7 @@ protected function cevalBuiltinDiagonal "function cevalBuiltinDiagonal
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
-algorithm
+algorithm 
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
@@ -6220,7 +6490,7 @@ algorithm
       Msg msg;
       Env.Cache cache;
     case (cache,env,{exp},impl,st,msg)
-      equation
+      equation 
         (cache,Values.ARRAY(rv2),_) = ceval(cache,env, exp, impl, st, NONE, msg);
         dimension = listLength(rv2);
         correctDimension = dimension + 1;
@@ -6232,7 +6502,7 @@ algorithm
       then
         (cache,Values.ARRAY(retExp),st);
     case (_,_,_,_,_,MSG())
-      equation
+      equation 
         Print.printErrorBuf("#- Error, could not evaulate diagonal. Ceval.cevalBuiltinDiagonal failed.\n");
       then
         fail();
@@ -6240,8 +6510,8 @@ algorithm
 end cevalBuiltinDiagonal;
 
 protected function cevalBuiltinDiagonal2 "function: cevalBuiltinDiagonal2
-   This is a help function that is calling itself recursively to
-   generate the a nxn matrix with some special diagonal elements.
+   This is a help function that is calling itself recursively to 
+   generate the a nxn matrix with some special diagonal elements. 
    See cevalBuiltinDiagonal."
 	input Env.Cache inCache;
   input Env.Env inEnv1;
@@ -6254,7 +6524,7 @@ protected function cevalBuiltinDiagonal2 "function: cevalBuiltinDiagonal2
   input Msg inMsg8;
   output Env.Cache outCache;
   output list<Values.Value> outValuesValueLst;
-algorithm
+algorithm 
   (outCache,outValuesValueLst) :=
   matchcontinue (inCache,inEnv1,inExp2,inBoolean3,inInteractiveInteractiveSymbolTableOption4,inInteger5,inInteger6,inValuesValueLst7,inMsg8)
     local
@@ -6262,27 +6532,30 @@ algorithm
       Integer correctDim,correctPlace,newRow,matrixDimension,row;
       list<Values.Value> zeroList,listWithElement,retExp,appendedList,listIN,list_;
       list<Env.Frame> env;
-      Exp.Exp s1;
+      Exp.Exp s1,s2;
       Boolean impl;
       Option<Interactive.InteractiveSymbolTable> st;
       Msg msg;
       String RowString,matrixDimensionString;
       Env.Cache cache;
     case (cache,env,s1,impl,st,matrixDimension,row,{},msg)
-      equation
-        (cache,Values.REAL(rv2),_) = ceval(cache,env, Exp.ASUB(s1,row), impl, st, NONE, msg);
+      equation 
+        s2 = Exp.ICONST(row);
+        (cache,Values.REAL(rv2),_) = ceval(cache,env, Exp.ASUB(s1,{s2}), impl, st, NONE, msg);
         correctDim = matrixDimension - 1;
         zeroList = Util.listFill(Values.REAL(0.0), correctDim);
         correctPlace = row - 1;
         listWithElement = Util.listReplaceAt(Values.REAL(rv2), correctPlace, zeroList);
         newRow = row + 1;
-        (cache,retExp) = cevalBuiltinDiagonal2(cache,env, s1, impl, st, matrixDimension, newRow,
+        (cache,retExp) = cevalBuiltinDiagonal2(cache,env, s1, impl, st, matrixDimension, newRow, 
           {Values.ARRAY(listWithElement)}, msg);
       then
         (cache,retExp);
     case (cache,env,s1,impl,st,matrixDimension,row,listIN,msg)
-      equation
-        (cache,Values.REAL(rv2),_) = ceval(cache,env, Exp.ASUB(s1,row), impl, st, NONE, msg);
+      equation 
+        s2 = Exp.ICONST(row);
+        (cache,Values.REAL(rv2),_) = ceval(cache,env, Exp.ASUB(s1,{s2}), impl, st, NONE, msg);
+
         failure(equality(matrixDimension = row));
         correctDim = matrixDimension - 1;
         zeroList = Util.listFill(Values.REAL(0.0), correctDim);
@@ -6290,46 +6563,49 @@ algorithm
         listWithElement = Util.listReplaceAt(Values.REAL(rv2), correctPlace, zeroList);
         newRow = row + 1;
         appendedList = listAppend(listIN, {Values.ARRAY(listWithElement)});
-        (cache,retExp)= cevalBuiltinDiagonal2(cache,env, s1, impl, st, matrixDimension, newRow, appendedList,
+        (cache,retExp)= cevalBuiltinDiagonal2(cache,env, s1, impl, st, matrixDimension, newRow, appendedList, 
           msg);
       then
         (cache,retExp);
     case (cache,env,s1,impl,st,matrixDimension,row,{},msg)
       local Integer rv2;
-      equation
-        (cache,Values.INTEGER(rv2),_) = ceval(cache,env, Exp.ASUB(s1,row), impl, st, NONE, msg);
+      equation 
+        s2 = Exp.ICONST(row);
+        (cache,Values.INTEGER(rv2),_) = ceval(cache,env, Exp.ASUB(s1,{s2}), impl, st, NONE, msg);
         correctDim = matrixDimension - 1;
         zeroList = Util.listFill(Values.INTEGER(0), correctDim);
         correctPlace = row - 1;
         listWithElement = Util.listReplaceAt(Values.INTEGER(rv2), correctPlace, zeroList);
         newRow = row + 1;
-        (cache,retExp) = cevalBuiltinDiagonal2(cache,env, s1, impl, st, matrixDimension, newRow,
+        (cache,retExp) = cevalBuiltinDiagonal2(cache,env, s1, impl, st, matrixDimension, newRow, 
           {Values.ARRAY(listWithElement)}, msg);
       then
         (cache,retExp);
-
+    
     case (cache,env,s1,impl,st,matrixDimension,row,listIN,msg)
       local Integer rv2;
-      equation
-        (cache,Values.INTEGER(rv2),_) = ceval(cache,env, Exp.ASUB(s1,row), impl, st, NONE, msg);
+      equation 
+        s2 = Exp.ICONST(row);
+        (cache,Values.INTEGER(rv2),_) = ceval(cache,env, Exp.ASUB(s1,{s2}), impl, st, NONE, msg);
         failure(equality(matrixDimension = row));
+        
         correctDim = matrixDimension - 1;
         zeroList = Util.listFill(Values.INTEGER(0), correctDim);
         correctPlace = row - 1;
         listWithElement = Util.listReplaceAt(Values.INTEGER(rv2), correctPlace, zeroList);
         newRow = row + 1;
         appendedList = listAppend(listIN, {Values.ARRAY(listWithElement)});
-        (cache,retExp) = cevalBuiltinDiagonal2(cache,env, s1, impl, st, matrixDimension, newRow, appendedList,
+        (cache,retExp) = cevalBuiltinDiagonal2(cache,env, s1, impl, st, matrixDimension, newRow, appendedList, 
           msg);
       then
         (cache,retExp);
     case (cache,env,s1,impl,st,matrixDimension,row,listIN,msg)
-      equation
+      equation 
         equality(matrixDimension = row);
       then
         (cache,listIN);
     case (_,_,_,_,_,matrixDimension,row,list_,MSG())
-      equation
+      equation 
         print("#- Ceval.cevalBuiltinDiagonal2: Couldn't elaborate Ceval.cevalBuiltinDiagonal2()\n");
         RowString = intString(row);
         matrixDimensionString = intString(matrixDimension);
@@ -6349,7 +6625,7 @@ protected function cevalBuiltinTranspose "function cevalBuiltinTranspose
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
-algorithm
+algorithm 
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
@@ -6362,7 +6638,7 @@ algorithm
       Msg msg;
       Env.Cache cache;
     case (cache,env,{exp},impl,st,msg)
-      equation
+      equation 
         (cache,Values.ARRAY(vlst),_) = ceval(cache,env, exp, impl, st, NONE, msg);
         (Values.ARRAY(valueLst = vlst2) :: _) = vlst;
         dim1 = listLength(vlst2);
@@ -6370,7 +6646,7 @@ algorithm
       then
         (cache,Values.ARRAY(vlst_1),st);
     case (_,_,_,_,_,MSG())
-      equation
+      equation 
         Print.printErrorBuf("#- Error, could not evaluate transpose. Celab.cevalBuildinTranspose failed.\n");
       then
         fail();
@@ -6384,21 +6660,21 @@ protected function cevalBuiltinTranspose2 "function: cevalBuiltinTranspose2
   input Integer inInteger2 "index";
   input Integer inInteger3 "dimension";
   output list<Values.Value> outValuesValueLst;
-algorithm
+algorithm 
   outValuesValueLst:=
   matchcontinue (inValuesValueLst1,inInteger2,inInteger3)
     local
       list<Values.Value> transposed_row,rest,vlst;
       Integer indx_1,indx,dim1;
     case (vlst,indx,dim1)
-      equation
+      equation 
         (indx <= dim1) = true;
         transposed_row = Util.listMap1(vlst, Values.nthArrayelt, indx);
         indx_1 = indx + 1;
         rest = cevalBuiltinTranspose2(vlst, indx_1, dim1);
       then
         (Values.ARRAY(transposed_row) :: rest);
-    case (_,_,_) then {};
+    case (_,_,_) then {}; 
   end matchcontinue;
 end cevalBuiltinTranspose2;
 
@@ -6413,7 +6689,7 @@ protected function cevalBuiltinSizeMatrix "function: cevalBuiltinSizeMatrix
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
-algorithm
+algorithm 
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   matchcontinue (inCache,inEnv,inExp,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
@@ -6430,14 +6706,14 @@ algorithm
       Exp.Exp exp;
       Env.Cache cache;
     case (cache,env,Exp.CREF(componentRef = cr,ty = tp),impl,st,msg)
-      equation
-        (cache,attr,tp,bind) = Lookup.lookupVar(cache,env, cr);
+      equation 
+        (cache,attr,tp,bind,_,_) = Lookup.lookupVar(cache,env, cr);
         sizelst = Types.getDimensionSizes(tp);
         v = Values.intlistToValue(sizelst);
       then
         (cache,v,st);
     case (cache,env,exp,impl,st,msg)
-      equation
+      equation 
         (cache,v,st_1) = ceval(cache,env, exp, impl, st, NONE, msg);
         tp = Types.typeOfValue(v);
         sizelst = Types.getDimensionSizes(tp);
@@ -6453,7 +6729,7 @@ protected function cevalRelation "function: cevalRelation
   input Exp.Operator inOperator2;
   input Values.Value inValue3;
   output Values.Value outValue;
-algorithm
+algorithm 
   outValue:=
   matchcontinue (inValue1,inOperator2,inValue3)
     local
@@ -6461,74 +6737,104 @@ algorithm
       Exp.Type t;
       Boolean b,nb1,nb2,ba,bb,b1,b2;
       Integer i1,i2;
+      String s1,s2;
     case (v1,Exp.GREATER(ty = t),v2)
-      equation
+      equation 
         v = cevalRelation(v2, Exp.LESS(t), v1);
       then
         v;
-    case (Values.INTEGER(integer = i1),Exp.LESS(ty = Exp.INT()),Values.INTEGER(integer = i2)) /* Integers */
-      equation
+        
+                
+    case (Values.STRING(string = s1),Exp.LESS(ty = Exp.STRING()),Values.STRING(string = s2))  /* Strings */
+      equation 
+        i1 = System.strcmp(s1,s2);
+        b = (i1 < 0); 
+      then
+        Values.BOOL(b);
+    case (Values.STRING(string = s1),Exp.LESSEQ(ty = Exp.STRING()),Values.STRING(string = s2))
+      equation 
+        i1 = System.strcmp(s1,s2);
+        b = (i1 <= 0); 
+      then
+        Values.BOOL(b);
+    case (Values.STRING(string = s1),Exp.GREATEREQ(ty = Exp.STRING()),Values.STRING(string = s2))
+      equation 
+        i1 = System.strcmp(s1,s2);
+        b = (i1 >= 0); 
+      then
+        Values.BOOL(b);
+
+    case (Values.STRING(string = s1),Exp.EQUAL(ty = Exp.STRING()),Values.STRING(string = s2))
+      equation 
+        i1 = System.strcmp(s1,s2);
+        b = (i1 == 0); 
+      then
+        Values.BOOL(b);
+    case (Values.STRING(string = s1),Exp.NEQUAL(ty = Exp.STRING()),Values.STRING(string = s2))
+      equation 
+        i1 = System.strcmp(s1,s2);
+        b = (i1 <> 0); 
+      then
+        Values.BOOL(b);
+        
+        
+    case (Values.INTEGER(integer = i1),Exp.LESS(ty = Exp.INT()),Values.INTEGER(integer = i2)) /* Integers */ 
+      equation 
         b = (i1 < i2);
       then
         Values.BOOL(b);
     case (Values.INTEGER(integer = i1),Exp.LESSEQ(ty = Exp.INT()),Values.INTEGER(integer = i2))
-      equation
+      equation 
         b = (i1 <= i2);
       then
         Values.BOOL(b);
     case (Values.INTEGER(integer = i1),Exp.GREATEREQ(ty = Exp.INT()),Values.INTEGER(integer = i2))
-      equation
+      equation 
         b = (i1 >= i2);
       then
         Values.BOOL(b);
     case (Values.INTEGER(integer = i1),Exp.EQUAL(ty = Exp.INT()),Values.INTEGER(integer = i2))
-      equation
+      equation 
         b = (i1 == i2);
       then
         Values.BOOL(b);
-    case (Values.INTEGER(integer = i1),Exp.NEQUAL(ty = Exp.INT()),Values.INTEGER(integer = i2)) /* Reals */
-      equation
+    case (Values.INTEGER(integer = i1),Exp.NEQUAL(ty = Exp.INT()),Values.INTEGER(integer = i2))
+      equation 
         b = (i1 <> i2);
       then
         Values.BOOL(b);
-    case (Values.REAL(real = i1),Exp.LESS(ty = Exp.REAL()),Values.REAL(real = i2)) /* Reals */
+    case (Values.REAL(real = i1),Exp.LESS(ty = Exp.REAL()),Values.REAL(real = i2)) /* Reals */ 
       local Real i1,i2;
-      equation
+      equation 
         b = (i1 <. i2);
       then
         Values.BOOL(b);
     case (Values.REAL(real = i1),Exp.LESSEQ(ty = Exp.REAL()),Values.REAL(real = i2))
       local Real i1,i2;
-      equation
+      equation 
         b = (i1 <=. i2);
       then
         Values.BOOL(b);
     case (Values.REAL(real = i1),Exp.GREATEREQ(ty = Exp.REAL()),Values.REAL(real = i2))
       local Real i1,i2;
-      equation
+      equation 
         b = (i1 >=. i2);
-      then
-        Values.BOOL(b);
-    case (Values.ENUM(string = s1),Exp.EQUAL(ty = Exp.ENUM()),Values.ENUM(string = s2))
-      local String s1,s2;
-      equation
-        b = stringEqual(s1, s2);
       then
         Values.BOOL(b);
     case (Values.REAL(real = i1),Exp.EQUAL(ty = Exp.REAL()),Values.REAL(real = i2))
       local Real i1,i2;
-      equation
+      equation 
         b = (i1 ==. i2);
       then
         Values.BOOL(b);
-    case (Values.REAL(real = i1),Exp.NEQUAL(ty = Exp.REAL()),Values.REAL(real = i2)) /* Booleans */
+    case (Values.REAL(real = i1),Exp.NEQUAL(ty = Exp.REAL()),Values.REAL(real = i2)) /* Booleans */ 
       local Real i1,i2;
-      equation
+      equation 
         b = (i1 <>. i2);
       then
         Values.BOOL(b);
-    case (Values.BOOL(boolean = b1),Exp.NEQUAL(ty = Exp.BOOL()),Values.BOOL(boolean = b2)) /* Booleans */
-      equation
+    case (Values.BOOL(boolean = b1),Exp.NEQUAL(ty = Exp.BOOL()),Values.BOOL(boolean = b2)) /* Booleans */ 
+      equation 
         nb1 = boolNot(b1) "b1 != b2  == (b1 and not b2) or (not b1 and b2)" ;
         nb2 = boolNot(b2);
         ba = boolAnd(b1, nb2);
@@ -6537,7 +6843,7 @@ algorithm
       then
         Values.BOOL(b);
     case (Values.BOOL(boolean = b1),Exp.EQUAL(ty = Exp.BOOL()),Values.BOOL(boolean = b2))
-      equation
+      equation 
         nb1 = boolNot(b1) "b1 == b2  ==> b1 and b2 or (not b1 and not b2)" ;
         nb2 = boolNot(b2);
         ba = boolAnd(b1, b2);
@@ -6545,8 +6851,8 @@ algorithm
         b = boolOr(ba, bb);
       then
         Values.BOOL(b);
-    case (Values.BOOL(boolean = false),Exp.LESS(ty = Exp.BOOL()),Values.BOOL(boolean = true)) then Values.BOOL(true);
-    case (Values.BOOL(boolean = _),Exp.LESS(ty = Exp.BOOL()),Values.BOOL(boolean = _)) then Values.BOOL(false);
+    case (Values.BOOL(boolean = false),Exp.LESS(ty = Exp.BOOL()),Values.BOOL(boolean = true)) then Values.BOOL(true); 
+    case (Values.BOOL(boolean = _),Exp.LESS(ty = Exp.BOOL()),Values.BOOL(boolean = _)) then Values.BOOL(false); 
     case (Values.STRING(string = s1),Exp.EQUAL(ty = Exp.STRING()),Values.STRING(string = s2))
       local
         String s1,s2;
@@ -6556,22 +6862,22 @@ algorithm
         Values.BOOL(b);
 
     case (_,_,_)
-      equation
+      equation 
         Debug.fprint("failtrace", "- Ceval.cevalRelation failed\n");
-        print("- Ceval.cevalRelation failed\n");
+        //print("- Ceval.cevalRelation failed\n");
       then
         fail();
   end matchcontinue;
 end cevalRelation;
 
 protected function cevalRange "function: cevalRange
-  This function evaluates a range expression.
+  This function evaluates a range expression. 
   It only handles integers."
   input Integer inInteger1;
   input Integer inInteger2;
   input Integer inInteger3;
   output list<Values.Value> outValuesValueLst;
-algorithm
+algorithm 
   outValuesValueLst:=
   matchcontinue (inInteger1,inInteger2,inInteger3)
     local
@@ -6579,12 +6885,12 @@ algorithm
       Boolean b1,b2,c1,b3,b4,c2;
       list<Values.Value> res;
     case (start,_,stop)
-      equation
+      equation 
         (start == stop) = true "e.g. 1:1 => {1}" ;
       then
         {Values.INTEGER(start)};
     case (j,d,k)
-      equation
+      equation 
         b1 = (j > k) "if d > 0 and j>k or if d < 0 and j<k" ;
         b2 = (d > 0);
         c1 = boolAnd(b1, b2);
@@ -6595,7 +6901,7 @@ algorithm
       then
         {};
     case (start,step,stop)
-      equation
+      equation 
         res = cevalRange2(start, step, stop);
       then
         res;
@@ -6608,19 +6914,19 @@ protected function cevalRange2 "function: cevalRange2
   input Integer inInteger2;
   input Integer inInteger3;
   output list<Values.Value> outValuesValueLst;
-algorithm
+algorithm 
   outValuesValueLst:=
   matchcontinue (inInteger1,inInteger2,inInteger3)
     local
       Integer start,stop,next,step;
       list<Values.Value> l;
     case (start,_,stop)
-      equation
+      equation 
         (start > stop) = true;
       then
         {};
     case (start,step,stop)
-      equation
+      equation 
         (start > stop) = false;
         next = start + step "redundant" ;
         l = cevalRange2(next, step, stop);
@@ -6630,13 +6936,13 @@ algorithm
 end cevalRange2;
 
 protected function cevalRangeReal "function: cevalRangeReal
-  This function evaluates a range expression.
+  This function evaluates a range expression.  
   It only handles reals."
   input Real inReal1;
   input Real inReal2;
   input Real inReal3;
   output list<Values.Value> outValuesValueLst;
-algorithm
+algorithm 
   outValuesValueLst:=
   matchcontinue (inReal1,inReal2,inReal3)
     local
@@ -6644,12 +6950,12 @@ algorithm
       Boolean b1,b2,c1,b3,b4,c2;
       list<Values.Value> res;
     case (start,_,stop)
-      equation
+      equation 
         (start ==. stop) = true "e.g. 1:1 => {1}" ;
       then
         {Values.REAL(start)};
     case (j,d,k)
-      equation
+      equation 
         b1 = (j >. k) "if d > 0 and j>k or if d < 0 and j<k" ;
         b2 = (d >. 0.0);
         c1 = boolAnd(b1, b2);
@@ -6660,7 +6966,7 @@ algorithm
       then
         {};
     case (j,d,k)
-      equation
+      equation 
         res = cevalRangeReal2(j, d, k);
       then
         res;
@@ -6673,19 +6979,19 @@ protected function cevalRangeReal2 "function: cevalRangeReal2
   input Real inReal2;
   input Real inReal3;
   output list<Values.Value> outValuesValueLst;
-algorithm
+algorithm 
   outValuesValueLst:=
   matchcontinue (inReal1,inReal2,inReal3)
     local
       Real start,stop,next,step;
       list<Values.Value> l;
     case (start,_,stop)
-      equation
+      equation 
         (start >. stop) = true;
       then
         {};
     case (start,step,stop)
-      equation
+      equation 
         (start >. stop) = false;
         next = start +. step "redundant" ;
         l = cevalRangeReal2(next, step, stop);
@@ -6695,7 +7001,7 @@ algorithm
 end cevalRangeReal2;
 
 public function cevalList "function: cevalList
-  This function does constant
+  This function does constant 
   evaluation on a list of expressions."
 	input Env.Cache inCache;
   input Env.Env inEnv;
@@ -6705,7 +7011,7 @@ public function cevalList "function: cevalList
   input Msg inMsg;
   output Env.Cache outCache;
   output list<Values.Value> outValuesValueLst;
-algorithm
+algorithm 
   (outCache,outValuesValueLst):=
   matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
@@ -6718,14 +7024,14 @@ algorithm
       list<Values.Value> vs;
       list<Exp.Exp> exps;
       Env.Cache cache;
-    case (cache,env,{},_,_,msg) then (cache,{});
+    case (cache,env,{},_,_,msg) then (cache,{}); 
     case (cache,env,{exp},impl,st,msg)
-      equation
+      equation 
         (cache,v,_) = ceval(cache,env, exp, impl, st, NONE, msg);
       then
         (cache,{v});
     case (cache,env,(exp :: exps),impl,st,msg)
-      equation
+      equation 
         (cache,v,_) = ceval(cache,env, exp, impl, st, NONE, msg);
         (cache,vs) = cevalList(cache,env, exps, impl, st, msg);
       then
@@ -6734,7 +7040,7 @@ algorithm
 end cevalList;
 
 protected function cevalCref "function: cevalCref
-  Evaluates ComponentRef, i.e. variables, by
+  Evaluates ComponentRef, i.e. variables, by 
   looking up variables in the environment."
 	input Env.Cache inCache;
   input Env.Env inEnv;
@@ -6743,7 +7049,7 @@ protected function cevalCref "function: cevalCref
   input Msg inMsg;
   output Env.Cache outCache;
   output Values.Value outValue;
-algorithm
+algorithm 
   (outCache,outValue) :=
   matchcontinue (inCache,inEnv,inComponentRef,inBoolean,inMsg)
     local
@@ -6757,40 +7063,38 @@ algorithm
       Msg msg;
       String scope_str,str;
       Env.Cache cache;
-
     
-    /* enumerations are translated to their string representation */
+    /* Search in env for binding, special rule for enumerations, the cr does not have a value since it -is- a value. */
     case (cache,env,c,impl,msg)  
-      equation         
-        (cache,attr,ty as (Types.T_ENUM(),_),binding) = Lookup.lookupVar(cache, env, c);
-        str = Exp.crefStr(c);
-        Debug.fprintln("ceval","Ceval.cevalCrefBinding:" +& Exp.crefStr(c) +& " val: " +& str);
+      equation 
+        (cache,attr,ty as (Types.T_ENUM(),_),binding,_,_) = Lookup.lookupVar(cache,env, c);
       then
-        (cache,Values.ENUM(str));
-      
-    case (cache,env,c,impl,msg) /* Search in env for binding. */
-      equation
-        (cache,attr,ty,binding) = Lookup.lookupVar(cache, env, c);
-        Debug.fprintln("ceval","Ceval.cevalCrefBinding:" +& Exp.crefStr(c));
-        (cache,v) = cevalCrefBinding(cache, env, c, binding, impl, msg);
-        Debug.fprintln("ceval","Ceval.cevalCrefBinding success");
+        (cache,Values.ENUM(c));  
+    
+    /* Search in env for binding. */
+    case (cache,env,c,impl,msg)  
+      equation 
+        (cache,attr,ty,binding,_,_) = Lookup.lookupVar(cache,env, c);
+        false = crefEqualValue(c,binding);        
+        (cache,v) = cevalCrefBinding(cache,env, c, binding, impl, msg);
       then
         (cache,v);
+        
     case (cache,env,c,(impl as false),MSG())
-      equation
-        failure((_,_,_,_) = Lookup.lookupVar(cache,env, c));
+      equation 
+        failure((_,_,_,_,_,_) = Lookup.lookupVar(cache,env, c));
         scope_str = Env.printEnvPathStr(env);
         str = Exp.printComponentRefStr(c);
         Error.addMessage(Error.LOOKUP_VARIABLE_ERROR, {str,scope_str});
       then
         fail();
     case (cache,env,c,(impl as false),NO_MSG())
-      equation
-        failure((_,_,_,_) = Lookup.lookupVar(cache,env, c));
+      equation 
+        failure((_,_,_,_,_,_) = Lookup.lookupVar(cache,env, c));
       then
         fail();
-    case (cache,env,c,(impl as false),MSG()) /* No binding found. */
-      equation
+    case (cache,env,c,(impl as false),MSG()) /* No binding found. */ 
+      equation 
         str = Exp.printComponentRefStr(c);
         scope_str = Env.printEnvPathStr(env);
         Error.addMessage(Error.NO_CONSTANT_BINDING, {str,scope_str});
@@ -6799,9 +7103,8 @@ algorithm
   end matchcontinue;
 end cevalCref;
 
-public function cevalCrefBinding 
-"function: cevalCrefBinding
-  Helper function to cevalCref.
+public function cevalCrefBinding "function: cevalCrefBinding
+  Helper function to cevalCref. 
   Evaluates variables by evaluating their bindings."
 	input Env.Cache inCache;
   input Env.Env inEnv;
@@ -6811,8 +7114,9 @@ public function cevalCrefBinding
   input Msg inMsg;
   output Env.Cache outCache;
   output Values.Value outValue;
-algorithm
-  (outCache,outValue) := matchcontinue (inCache,inEnv,inComponentRef,inBinding,inBoolean,inMsg)
+algorithm 
+  (outCache,outValue) :=
+  matchcontinue (inCache,inEnv,inComponentRef,inBinding,inBoolean,inMsg)
     local
       Exp.ComponentRef cr_1,cr,e1;
       list<Exp.Subscript> subsc;
@@ -6825,112 +7129,124 @@ algorithm
       String rfn,iter,id,expstr,s1,s2,str;
       Exp.Exp elexp,iterexp,exp;
       Env.Cache cache;
-            
-    case (cache,env,cr,Types.VALBOUND(valBound = v),impl,msg) /* Exp.CREF_IDENT(id,subsc) */
-      equation
-        Debug.fprintln("tcvt", "+++++++ Ceval.cevalCrefBinding Types.VALBOUND: " +& Exp.printComponentRefStr(cr));
+    case (cache,env,cr,Types.VALBOUND(valBound = v),impl,msg) /* Exp.CREF_IDENT(id,subsc) */ 
+      equation 
+        Debug.fprint("tcvt", "+++++++ Ceval.cevalCrefBinding Types.VALBOUND\n");
         cr_1 = Exp.crefStripLastSubs(cr) "lookup without subscripts, so dimension sizes can be determined." ;
         subsc = Exp.crefLastSubs(cr);
-        (cache,_,tp,_) = Lookup.lookupVar(cache,env, cr_1) "Exp.CREF_IDENT(id,{})" ;
+        (cache,_,tp,_,_,_) = Lookup.lookupVar(cache,env, cr_1) "Exp.CREF_IDENT(id,{})" ;
         sizelst = Types.getDimensionSizes(tp);
         (cache,res) = cevalSubscriptValue(cache,env, subsc, v, sizelst, impl, msg);
       then
         (cache,res);
     case (cache,env,cr,Types.UNBOUND(),(impl as false),MSG())
-      equation
-        Debug.fprintln("ceval", "#- Ceval.cevalCrefBinding failed (UNBOUND): " +& Exp.printComponentRefStr(cr));
-        Print.printBuf("- Ceval.cevalCrefBinding failed (UNBOUND)\n");
+      local 
+        Exp.ComponentRef cr;
+      equation 
+        /*Print.printBuf("- Ceval.cevalCrefBinding failed (UNBOUND)\n");*/
+       //Debug.fprint("ceval", "#- Ceval.cevalCrefBinding failed (UNBOUND)");
+/*       print("Ceval.cevalCrefBinding failed (UNBOUND) *********\n");
+       print(Exp.printComponentRefStr(cr));
+       print("\n");
+*/      then
+        fail();
+    case (cache,env,_,Types.UNBOUND(),(impl as true),MSG())
+      equation 
+        Debug.fprint("ceval", "#- Ceval.cevalCrefBinding: Ignoring unbound when implicit");
       then
         fail();
-    case (cache,env,cr,Types.UNBOUND(),(impl as true),MSG())
-      equation
-        Debug.fprint("ceval", "#- Ceval.cevalCrefBinding: Ignoring unbound when implicit"  +& Exp.printComponentRefStr(cr));
-      then
-        fail();
-    case (cache,env,cr as Exp.CREF_IDENT(ident = id,subscriptLst = subsc),Types.EQBOUND(exp = exp,constant_ = Types.C_CONST()),impl,MSG()) /* REDUCTION bindings */
-      equation
+
+        /* REDUCTION bindings */ 
+    case (cache,env,Exp.CREF_IDENT(ident = id,subscriptLst = subsc),Types.EQBOUND(exp = exp,constant_ = Types.C_CONST()),impl,MSG()) 
+      equation 
         Exp.REDUCTION(path = Absyn.IDENT(name = rfn),expr = elexp,ident = iter,range = iterexp) = exp;
         equality(rfn = "array");
-        // Debug.fprintln("ceval", "#- Ceval.cevalCrefBinding reduction -> array: "  +& Exp.printComponentRefStr(cr));        
-        // Debug.fprintln("ceval", "#- Ceval.cevalCrefBinding: Array evaluation");
+        Debug.fprintln("ceval", "#- Ceval.cevalCrefBinding: Array evaluation");
       then
         fail();
-    case (cache,env,cr,Types.EQBOUND(exp = exp,constant_ = Types.C_CONST()),impl,msg) /* REDUCTION bindings Exp.CREF_IDENT(id,subsc) */
-      equation
+
+        /* REDUCTION bindings Exp.CREF_IDENT(id,subsc) */ 
+    case (cache,env,cr,Types.EQBOUND(exp = exp,constant_ = Types.C_CONST()),impl,msg) 
+      equation 
         Exp.REDUCTION(path = Absyn.IDENT(name = rfn),expr = elexp,ident = iter,range = iterexp) = exp;
         failure(equality(rfn = "array"));
-        Debug.fprintln("ceval", "#- Ceval.cevalCrefBinding reduction -> not array: "  +& Exp.printComponentRefStr(cr));
         cr_1 = Exp.crefStripLastSubs(cr) "lookup without subscripts, so dimension sizes can be determined." ;
         subsc = Exp.crefLastSubs(cr);
-        (cache,_,tp,_) = Lookup.lookupVar(cache,env, cr_1) "Exp.CREF_IDENT(id,{})" ;
-        sizelst = Types.getDimensionSizes(tp);
-        (cache,v,_) = ceval(cache, env, exp, impl, NONE, NONE, msg);
-        (cache,res) = cevalSubscriptValue(cache, env, subsc, v, sizelst, impl, msg);
-      then
-        (cache,res);
-    case (cache,env,cr,Types.EQBOUND(exp = exp,evaluatedExp = SOME(e_val),constant_ = Types.C_VAR()),impl,msg) /* arbitrary expressions, C_VAR, value exists. Exp.CREF_IDENT(id,subsc) */
-      equation
-        Debug.fprintln("ceval", "#- Ceval.cevalCrefBinding C_VAR: "  +& Exp.printComponentRefStr(cr));
-        cr_1 = Exp.crefStripLastSubs(cr) "lookup without subscripts, so dimension sizes can be determined." ;
-        subsc = Exp.crefLastSubs(cr);
-        (cache,_,tp,_) = Lookup.lookupVar(cache,env, cr_1) "Exp.CREF_IDENT(id,{})" ;
-        sizelst = Types.getDimensionSizes(tp);
-        (cache,res) = cevalSubscriptValue(cache,env, subsc, e_val, sizelst, impl, msg);
-      then
-        (cache,res);
-    case (cache,env,cr,Types.EQBOUND(exp = exp,evaluatedExp = SOME(e_val),constant_ = Types.C_PARAM()),impl,msg) /* arbitrary expressions, C_PARAM, value exists. Exp.CREF_IDENT(id,subsc) */
-      equation
-        Debug.fprintln("ceval", "#- Ceval.cevalCrefBinding C_PARAM(evaluated): " +& Exp.printComponentRefStr(cr));
-        cr_1 = Exp.crefStripLastSubs(cr) "lookup without subscripts, so dimension sizes can be determined." ;
-        subsc = Exp.crefLastSubs(cr);
-        (cache,_,tp,_) = Lookup.lookupVar(cache,env, cr_1) "Exp.CREF_IDENT(id,{})" ;
-        sizelst = Types.getDimensionSizes(tp);
-        (cache,res)= cevalSubscriptValue(cache,env, subsc, e_val, sizelst, impl, msg);
-      then
-        (cache,res);
-    case (cache,env,cr,Types.EQBOUND(exp = exp,constant_ = Types.C_CONST()),impl,msg) /* arbitrary expressions. When binding has optional value. Exp.CREF_IDENT(id,subsc) */
-      equation
-        Debug.fprintln("ceval", "#- Ceval.cevalCrefBinding reduction C_CONST: " +& Exp.printComponentRefStr(cr));
-        cr_1 = Exp.crefStripLastSubs(cr) "lookup without subscripts, so dimension sizes can be determined." ;
-        subsc = Exp.crefLastSubs(cr);
-        (cache,_,tp,_) = Lookup.lookupVar(cache,env, cr_1) "Exp.CREF_IDENT(id,{})" ;
+        (cache,_,tp,_,_,_) = Lookup.lookupVar(cache,env, cr_1) "Exp.CREF_IDENT(id,{})" ;
         sizelst = Types.getDimensionSizes(tp);
         (cache,v,_) = ceval(cache,env, exp, impl, NONE, NONE, msg);
         (cache,res) = cevalSubscriptValue(cache,env, subsc, v, sizelst, impl, msg);
       then
         (cache,res);
-    case (cache,env,cr,Types.EQBOUND(exp = exp,constant_ = Types.C_PARAM()),impl,msg) /* arbitrary expressions. When binding has optional value. Exp.CREF_IDENT(id,subsc) */
-      equation
-        Debug.fprintln("ceval", "#- Ceval.cevalCrefBinding C_PARAM: " +& Exp.printComponentRefStr(cr));
+        
+        /* arbitrary expressions, C_VAR, value exists. Exp.CREF_IDENT(id,subsc) */ 
+    case (cache,env,cr,Types.EQBOUND(exp = exp,evaluatedExp = SOME(e_val),constant_ = Types.C_VAR()),impl,msg) 
+      equation 
         cr_1 = Exp.crefStripLastSubs(cr) "lookup without subscripts, so dimension sizes can be determined." ;
         subsc = Exp.crefLastSubs(cr);
-        (cache,_,tp,_) = Lookup.lookupVar(cache,env, cr_1) "Exp.CREF_IDENT(id,{})" ;
+        (cache,_,tp,_,_,_) = Lookup.lookupVar(cache,env, cr_1) "Exp.CREF_IDENT(id,{})" ;
+        sizelst = Types.getDimensionSizes(tp);
+        (cache,res) = cevalSubscriptValue(cache,env, subsc, e_val, sizelst, impl, msg);
+      then
+        (cache,res);
+
+        /* arbitrary expressions, C_PARAM, value exists. Exp.CREF_IDENT(id,subsc) */ 
+    case (cache,env,cr,Types.EQBOUND(exp = exp,evaluatedExp = SOME(e_val),constant_ = Types.C_PARAM()),impl,msg) 
+      equation 
+        cr_1 = Exp.crefStripLastSubs(cr) "lookup without subscripts, so dimension sizes can be determined." ;
+        subsc = Exp.crefLastSubs(cr);
+        (cache,_,tp,_,_,_) = Lookup.lookupVar(cache,env, cr_1) "Exp.CREF_IDENT(id,{})" ;
+        sizelst = Types.getDimensionSizes(tp);
+        (cache,res)= cevalSubscriptValue(cache,env, subsc, e_val, sizelst, impl, msg);
+      then
+        (cache,res);
+
+        /* arbitrary expressions. When binding has optional value. Exp.CREF_IDENT(id,subsc) */
+    case (cache,env,cr,Types.EQBOUND(exp = exp,constant_ = Types.C_CONST()),impl,msg)  
+      equation 
+        cr_1 = Exp.crefStripLastSubs(cr) "lookup without subscripts, so dimension sizes can be determined." ;
+        subsc = Exp.crefLastSubs(cr);
+        (cache,_,tp,_,_,_) = Lookup.lookupVar(cache,env, cr_1) "Exp.CREF_IDENT(id,{})" ;
+        sizelst = Types.getDimensionSizes(tp);
+        (cache,v,_) = ceval(cache,env, exp, impl, NONE, NONE, msg);
+        (cache,res) = cevalSubscriptValue(cache,env, subsc, v, sizelst, impl, msg);
+      then
+        (cache,res);
+
+        /* arbitrary expressions. When binding has optional value. Exp.CREF_IDENT(id,subsc) */ 
+    case (cache,env,cr,Types.EQBOUND(exp = exp,constant_ = Types.C_PARAM()),impl,msg) 
+      equation 
+        cr_1 = Exp.crefStripLastSubs(cr) "lookup without subscripts, so dimension sizes can be determined." ;
+        subsc = Exp.crefLastSubs(cr);
+        (cache,_,tp,_,_,_) = Lookup.lookupVar(cache,env, cr_1) "Exp.CREF_IDENT(id,{})" ;
         sizelst = Types.getDimensionSizes(tp);
         (cache,v,_) = ceval(cache,env, exp, impl, NONE, NONE, msg);
         (cache,res)= cevalSubscriptValue(cache,env, subsc, v, sizelst, impl, msg);
       then
         (cache,res);
-    case (cache,env,cr,Types.EQBOUND(exp = exp,constant_ = Types.C_VAR()),impl,MSG())
-      equation
-        Debug.fprint("ceval", "#- Ceval.cevalCrefBinding failed: "  +& Exp.printComponentRefStr(cr) +& " (nonconstant EQBOUND(");
+    case (cache,env,_,Types.EQBOUND(exp = exp,constant_ = Types.C_VAR()),impl,MSG())
+      equation 
+        Debug.fprint("ceval", "#- Ceval.cevalCrefBinding failed (nonconstant EQBOUND(");
         expstr = Exp.printExpStr(exp);
         Debug.fprint("ceval", expstr);
         Debug.fprintln("ceval", "))");
       then
         fail();
     case (cache,_,e1,Types.EQBOUND(exp = exp),_,_)
-      equation
+      equation 
+        /* FAILTRACE REMOVE
         s1 = Exp.printComponentRefStr(e1);
         s2 = Exp.printExpStr(exp);
         str = Util.stringAppendList({"- Ceval.cevalCrefBinding: ",s1," = ",s2," failed\n"});
         Debug.fprint("failtrace", str);
+        */
       then
         fail();
   end matchcontinue;
 end cevalCrefBinding;
 
 protected function cevalSubscriptValue "function: cevalSubscriptValue
-  Helper function to cevalCrefBinding. It applies
+  Helper function to cevalCrefBinding. It applies 
   subscripts to array values to extract array elements."
 	input Env.Cache inCache;
   input Env.Env inEnv;
@@ -6941,7 +7257,7 @@ protected function cevalSubscriptValue "function: cevalSubscriptValue
   input Msg inMsg;
   output Env.Cache outCache;
   output Values.Value outValue;
-algorithm
+algorithm 
   (outCache,outValue) :=
   matchcontinue (inCache,inEnv,inExpSubscriptLst,inValue,inIntegerLst,inBoolean,inMsg)
     local
@@ -6956,16 +7272,16 @@ algorithm
       Msg msg;
       Env.Cache cache;
     case (cache,env,(Exp.INDEX(exp = exp) :: subs),Values.ARRAY(valueLst = lst),(dim :: dims),impl,msg)
-      equation
+      equation 
         (cache,Values.INTEGER(n),_) = ceval(cache,env, exp, impl, NONE, SOME(dim), msg);
         n_1 = n - 1;
         subval = listNth(lst, n_1);
         (cache,res) = cevalSubscriptValue(cache,env, subs, subval, dims, impl, msg);
       then
         (cache,res);
-    case (cache,env,{},v,_,_,_) then (cache,v);
+    case (cache,env,{},v,_,_,_) then (cache,v); 
     case (_,_,_,_,_,_,_)
-      equation
+      equation 
         Debug.fprint("failtrace", "- Ceval.cevalSubscriptValue failed\n");
       then
         fail();
@@ -6975,7 +7291,10 @@ end cevalSubscriptValue;
 public function cevalSubscripts "function: cevalSubscripts
   This function relates a list of subscripts to their canonical
   forms, which is when all expressions are evaluated to constant
-  values."
+  values. For instance
+  the subscript list {1,p,q} (as in x[1,p,q]) where p and q have constant values 2,3 respectively will become
+  {1,2,3} (resulting in x[1,2,3]).
+  "
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Exp.Subscript> inExpSubscriptLst;
@@ -6984,7 +7303,7 @@ public function cevalSubscripts "function: cevalSubscripts
   input Msg inMsg;
   output Env.Cache outCache;
   output list<Exp.Subscript> outExpSubscriptLst;
-algorithm
+algorithm 
   (outCache,outExpSubscriptLst) :=
   matchcontinue (inCache,inEnv,inExpSubscriptLst,inIntegerLst,inBoolean,inMsg)
     local
@@ -6996,9 +7315,9 @@ algorithm
       Boolean impl;
       Msg msg;
       Env.Cache cache;
-    case (cache,_,{},_,_,_) then (cache,{});
+    case (cache,_,{},_,_,_) then (cache,{}); 
     case (cache,env,(sub :: subs),(dim :: dims),impl,msg)
-      equation
+      equation 
         (cache,sub_1) = cevalSubscript(cache,env, sub, dim, impl, msg);
         (cache,subs_1) = cevalSubscripts(cache,env, subs, dims, impl, msg);
       then
@@ -7006,8 +7325,8 @@ algorithm
   end matchcontinue;
 end cevalSubscripts;
 
-protected function cevalSubscript "function: cevalSubscript
-  This function relates a subscript to its canonical forms, which
+public function cevalSubscript "function: cevalSubscript
+  This function relates a subscript to its canonical forms, which 
   is when all expressions are evaluated to constant values."
 	input Env.Cache inCache;
   input Env.Env inEnv;
@@ -7017,7 +7336,7 @@ protected function cevalSubscript "function: cevalSubscript
   input Msg inMsg;
   output Env.Cache outCache;
   output Exp.Subscript outSubscript;
-algorithm
+algorithm 
   (outCache,outSubscript) :=
   matchcontinue (inCache,inEnv,inSubscript,inInteger,inBoolean,inMsg)
     local
@@ -7028,17 +7347,20 @@ algorithm
       Boolean impl;
       Msg msg;
       Env.Cache cache;
-    case (cache,env,Exp.WHOLEDIM(),_,_,_) then (cache,Exp.WHOLEDIM());
+      Integer indx;
+    case (cache,env,Exp.WHOLEDIM(),_,_,_) then (cache,Exp.WHOLEDIM());  
     case (cache,env,Exp.INDEX(exp = e1),dim,impl,msg)
-      equation
-        (cache,v1,_) = ceval(cache,env, e1, impl, NONE, SOME(dim), msg);
+      equation 
+        (cache,v1 as Values.INTEGER(indx),_) = ceval(cache,env, e1, impl, NONE, SOME(dim), msg);
         e1_1 = Static.valueExp(v1);
+        true = indx <= dim;
       then
         (cache,Exp.INDEX(e1_1));
     case (cache,env,Exp.SLICE(exp = e1),dim,impl,msg)
-      equation
+      equation 
         (cache,v1,_) = ceval(cache,env, e1, impl, NONE, SOME(dim), msg);
         e1_1 = Static.valueExp(v1);
+       true = dimensionSliceInRange(v1,dim);
       then
         (cache,Exp.SLICE(e1_1));
   end matchcontinue;
@@ -7110,7 +7432,7 @@ algorithm
         mT = DAELow.transposeMatrix(m);
         (ass1,ass2,dlow_1,m,mT) = DAELow.matchingAlgorithm(dlow, m, mT, (DAELow.INDEX_REDUCTION(),DAELow.EXACT(), DAELow.REMOVE_SIMPLE_EQN()));
         (comps) = DAELow.strongComponents(m, mT, ass1, ass2);
-        indexed_dlow = DAELow.translateDae(dlow_1);
+        indexed_dlow = DAELow.translateDae(dlow_1,NONE);
         indexed_dlow_1 = DAELow.calculateValues(indexed_dlow);
         xml_filename = Util.stringAppendList({filenameprefix,".xml"});
         Print.clearBuf();
@@ -7377,5 +7699,295 @@ algorithm
         ();
   end matchcontinue;     
 end checkAll;
-          
+
+public function buildModelBeast "function buildModelBeast
+ copy & pasted by: Otto
+ translates and builds the model by running compiler script on the generated makefile"
+	input Env.Cache inCache;
+  input Env.Env inEnv;
+  input Exp.Exp inExp;
+  input Interactive.InteractiveSymbolTable inInteractiveSymbolTable;
+  input Msg inMsg;
+  output Env.Cache outCache;
+  output String outString1 "className";
+  output String outString2 "method";
+  output Interactive.InteractiveSymbolTable outInteractiveSymbolTable3;
+  output String outString4 "initFileName";
+algorithm 
+  (outCache,outString1,outString2,outInteractiveSymbolTable3,outString4):=
+  matchcontinue (inCache,inEnv,inExp,inInteractiveSymbolTable,inMsg)
+    local
+      Values.Value ret_val;
+      Interactive.InteractiveSymbolTable st,st_1,st2;
+      DAELow.DAELow indexed_dlow_1;
+      list<String> libs;
+      String prefix_str,file_dir,cname_str,init_filename,method_str,filenameprefix,makefilename,oldDir,tempDir,options_str;
+      Absyn.Path classname,w;
+      Absyn.Program p,p2;
+      Absyn.Class cdef;
+      list<Interactive.CompiledCFunction> cf;
+      Real starttime_r,stoptime_r,interval_r,tolerance_r;
+      list<Env.Frame> env;
+      Exp.Exp exp,starttime,stoptime,interval,method,tolerance,fileprefix,storeInTemp,noClean,options;
+      Exp.ComponentRef cr;      
+      list<SCode.Class> sp;
+      AbsynDep.Depends aDep;
+      list<Interactive.InstantiatedClass> ic;
+      list<Interactive.InteractiveVariable> iv;      
+      Msg msg;
+      Absyn.Within win1;
+      Env.Cache cache;
+      Boolean cdToTemp;
+    case (cache,env,(exp as Exp.CALL(path = Absyn.IDENT(name = _),expLst = ({Exp.CODE(Absyn.C_TYPENAME(classname),_),starttime,stoptime,interval,tolerance, method,fileprefix,storeInTemp,noClean,options}))),(st_1 as Interactive.SYMBOLTABLE(ast = p  as Absyn.PROGRAM(globalBuildTimes=ts),explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
+      local Absyn.TimeStamp ts;
+        Real r1,r2;
+        String s1,s2,s3,makefilename;
+      equation 
+        cdef = Interactive.getPathedClassInProgram(classname,p);        
+        _ = Error.getMessagesStr() "Clear messages";
+        (cache,Values.BOOL(cdToTemp),SOME(st)) = ceval(cache,env, storeInTemp, true, SOME(st_1), NONE, msg);
+        oldDir = System.pwd();
+        changeToTempDirectory(cdToTemp);
+        (cache,ret_val,st,indexed_dlow_1,libs,file_dir) = translateModel(cache,env, classname, st_1, msg, fileprefix,true);
+        cname_str = Absyn.pathString(classname);
+        (cache,init_filename,starttime_r,stoptime_r,interval_r,tolerance_r,method_str,options_str) = calculateSimulationSettings(cache,env, exp, st, msg, cname_str);
+        (cache,filenameprefix) = extractFilePrefix(cache,env, fileprefix, st, msg);
+        SimCodegen.generateInitData(indexed_dlow_1, classname, filenameprefix, init_filename, starttime_r, stoptime_r, interval_r,tolerance_r,method_str,options_str);
+        makefilename = generateMakefilename(filenameprefix);
+        Debug.fprintln("dynload", "buildModel: about to compile model " +& filenameprefix +& ", " +& file_dir);
+        compileModel(filenameprefix, libs, file_dir, "");
+        Debug.fprintln("dynload", "buildModel: Compiling done.");
+        /* SimCodegen.generateMakefileBeast(makefilename, filenameprefix, libs, file_dir); */
+        win1 = getWithinStatement(classname);
+        p2 = Absyn.PROGRAM({cdef},win1,ts);
+        s3 = extractNoCleanCommand(noClean);
+        compileModel(filenameprefix, libs, file_dir,s3); 
+        _ = System.cd(oldDir);
+        /* (p as Absyn.PROGRAM(globalBuildTimes=Absyn.TIMESTAMP(r1,r2))) = Interactive.updateProgram2(p2,p,false); */       
+        st2 = st; // Interactive.replaceSymbolTableProgram(st,p);
+      then
+        (cache,filenameprefix,"",st2,"");
+    case (_,_,_,_,_)
+      then
+        fail();
+  end matchcontinue;
+end buildModelBeast;
+
+public function getValueString "
+Constant evaluates Expression and returns a string representing value. 
+"
+  input Exp.Exp e1;
+  output String ostring;
+algorithm ostring := matchcontinue( e1)
+  case(e1)
+    local Values.Value val;
+      String ret;
+    equation
+      (_,val as Values.STRING(ret),_) = ceval(Env.emptyCache,Env.emptyEnv, e1,true,NONE,NONE,MSG());
+    then
+      ret;
+  case(e1)
+    local Values.Value val;
+      String ret;
+    equation
+      (_,val,_) = ceval(Env.emptyCache,Env.emptyEnv, e1,true,NONE,NONE,MSG());
+      ret = Values.printValStr(val);
+    then
+      ret;
+      
+end matchcontinue;
+end getValueString;
+
+protected function cevalTuple 
+  input list<Exp.Exp> inexps;
+  output list<Values.Value> oval;
+algorithm oval := matchcontinue(inexps)
+  case({}) then {};
+case(e ::expl)
+  local
+    Exp.Exp e;
+    list<Exp.Exp> expl;
+    Values.Value v;
+    list<Values.Value> vs;
+  equation
+    (_,v,_) = ceval(Env.emptyCache, Env.emptyEnv, e,true,NONE,NONE,MSG);
+    vs = cevalTuple(expl);
+  then
+    v::vs;
+end matchcontinue;
+end cevalTuple;
+
+protected function cevalValArray "Help function to cevalInteractiveFunctions. Handles val(var,{timestamps})"
+	input Env.Cache cache;
+	input Env.Env env;
+  input Option<Interactive.InteractiveSymbolTable> st;
+	input list<Real> timeStamps;
+	input String varName;
+	output Env.Cache outCache;
+	output Values.Value value;
+algorithm
+  (outCache,value) := matchcontinue(cache,env,st,timeStamps,varName)
+  local list<Values.Value> vals;
+    Real v,timeStamp;
+    case(cache,env,st,{},varName) then (cache,Values.ARRAY({}));
+    case(cache,env,st,timeStamp::timeStamps,varName) equation
+      (cache,v) = cevalVal(cache,env,st,timeStamp,varName);
+      (cache,Values.ARRAY(vals)) = cevalValArray(cache,env,st,timeStamps,varName);
+    then (cache,Values.ARRAY(Values.REAL(v)::vals));
+  end matchcontinue;
+end cevalValArray;
+
+protected function cevalVal "Help function to cevalInteractiveFunctions. Handles val(var,timestamp)"
+	input Env.Cache cache;
+	input Env.Env env;
+  input Option<Interactive.InteractiveSymbolTable> stopt;
+	input Real timeStamp;
+	input String varName;
+	output Env.Cache outCache;
+	output Real value;
+algorithm
+  (outCache,value) := matchcontinue(cache,env,st,timeStamp,varName)
+  local Real val; list<Real> tV, vV; list<Values.Value> varValues, timeValues;
+    Interactive.InteractiveSymbolTable st;
+    String filename;
+    case(cache,env,SOME(st),timeStamp,varName) equation            
+      (cache,Values.RECORD(_,{Values.STRING(filename)},_),_) = ceval(cache,env, 
+        Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.OTHER(),{}),Exp.OTHER()), true, SOME(st), NONE, NO_MSG());
+      
+      Values.ARRAY({Values.ARRAY(varValues)}) = System.readPtolemyplotDataset(filename, {varName}, 0);
+      Values.ARRAY({Values.ARRAY(timeValues)}) = System.readPtolemyplotDataset(filename, {"time"}, 0); 
+      
+      tV = Values.valueReals(timeValues);
+      vV = Values.valueReals(varValues);  
+      val = System.getVariableValue(timeStamp, tV, vV);                
+      then (cache,val);       
+  end matchcontinue;
+end cevalVal;
+
+protected function subtractDummy 
+"if $dummy is present in Variables, subtract 1 from equation and variable size, otherwise not"
+  input DAELow.Variables vars;
+  input Integer eqnSize;
+  input Integer varSize;
+  output Integer outEqnSize;
+  output Integer outVarSize;
+algorithm
+  (outEqnSize,outVarSize) := matchcontinue(vars,eqnSize,varSize)
+    case(vars,eqnSize,varSize) equation
+      (_,_) = DAELow.getVar(Exp.CREF_IDENT("$dummy",Exp.OTHER(),{}),vars);
+    then (eqnSize-1,varSize-1);
+    case(vars,eqnSize,varSize) then (eqnSize,varSize);
+  end matchcontinue;
+end subtractDummy;
+
+protected function setBuildTime " sets the build time of a class. This is done using traverseClasses and not using updateProgram, because updateProgram updates
+edit times"
+  input Absyn.Program p;
+  input Absyn.Path path;
+  output Absyn.Program outP;
+algorithm
+  ((outP,_,_)) := Interactive.traverseClasses(p, NONE, setBuildTimeVisitor, path, false /* Skip protected */);
+end setBuildTime;
+
+protected function setBuildTimeVisitor "Visitor function to set build time"
+  input tuple<Absyn.Class, Option<Absyn.Path>,Absyn.Path> inTpl;
+  output tuple<Absyn.Class, Option<Absyn.Path>,Absyn.Path> outTpl;
+algorithm
+  outTpl := matchcontinue(inTpl)
+  local String name; Boolean p,f,e,ro; Absyn.Restriction r; Absyn.ClassDef cdef; 
+    String fname; Integer i1,i2,i3,i4;
+    Absyn.Path path2,path;
+    Absyn.TimeStamp ts;
+   
+    case((Absyn.CLASS(name,p,f,e,r,cdef,Absyn.INFO(fname,ro,i1,i2,i3,i4,ts)),SOME(path2),path)) 
+      equation
+        true = ModUtil.pathEqual(Absyn.joinPaths(path2,Absyn.IDENT(name)),path);
+        ts =Absyn.setTimeStampBool(ts,false);
+      then ((Absyn.CLASS(name,p,f,e,r,cdef,Absyn.INFO(fname,ro,i1,i2,i3,i4,ts)),SOME(path),path));
+    case(inTpl) then inTpl;
+      
+    case((Absyn.CLASS(name,p,f,e,r,cdef,Absyn.INFO(fname,ro,i1,i2,i3,i4,ts)),NONE,path)) 
+      equation
+        true = ModUtil.pathEqual(Absyn.IDENT(name),path);
+        ts =Absyn.setTimeStampBool(ts,false);
+      then ((Absyn.CLASS(name,p,f,e,r,cdef,Absyn.INFO(fname,ro,i1,i2,i3,i4,ts)),NONE,path));
+    case(inTpl) then inTpl;  
+  end matchcontinue;
+end setBuildTimeVisitor;
+
+protected function extractNoCleanCommand "Function: extractNoCleanCommand
+"
+input Exp.Exp inexpl;
+output String outString;
+algorithm outString := matchcontinue(inexpl)
+  local Boolean noclean; String str;
+  case(Exp.BCONST(true)) then "noclean";
+  case(_) then "";
+  end matchcontinue;
+  end extractNoCleanCommand;
+protected function getWithinStatement " function getWithinStatement
+To get a correct Within-path with unknown input-path.
+"
+  input Absyn.Path ip;
+  output Absyn.Within op;
+algorithm op :=  matchcontinue(ip)
+  local Absyn.Path path;
+  case(path) equation path = Absyn.stripLast(path); then Absyn.WITHIN(path);
+  case(path) then Absyn.TOP;
+end matchcontinue;
+end getWithinStatement;
+
+protected function compileOrNot " function compileOrNot
+This function compares last-build-time vs last-edit-time, and if we have edited since we built last time 
+it fails. 
+"
+input Absyn.Class classIn;
+algorithm _:= matchcontinue(classIn)
+  local 
+    Absyn.Class c1;
+    Absyn.Info nfo;
+    Real tb,te;
+    case(c1 as Absyn.CLASS(info = nfo as Absyn.INFO(buildTimes = Absyn.TIMESTAMP(tb,te))))
+    equation
+    true = (tb >.te);
+     then ();
+    case(_) then fail();    
+end matchcontinue;
+end compileOrNot;
+
+protected function crefEqualValue ""
+  input Exp.ComponentRef c;
+  input Types.Binding v;
+  output Boolean outBoolean;
+algorithm outBoolean := matchcontinue(c,v)
+  case(c,(v as Types.EQBOUND(Exp.CREF(c2,_),NONE,_)))
+    local Exp.ComponentRef c2;
+    equation
+      true = Exp.crefEqual(c,c2);
+    then
+      true;
+  case(_,_) then false;
+end matchcontinue;
+end crefEqualValue;
+
+protected function dimensionSliceInRange "Checks that the values of a dimension slice is all in the range 1 to dim size
+if so returns true, else returns false"
+input Values.Value arr;
+input Integer dimSize;
+output Boolean inRange;
+algorithm
+  inRange := matchcontinue(arr,dimSize)
+  local Integer indx;
+    list<Values.Value> vlst;
+    case(Values.ARRAY({}),_) then true;
+    case(Values.ARRAY(Values.INTEGER(indx)::vlst),dimSize) equation
+      true = indx <= dimSize;
+      true = dimensionSliceInRange(Values.ARRAY(vlst),dimSize);
+    then true;
+    case(_,_) then false;
+  end matchcontinue;
+end dimensionSliceInRange;
+
+
 end Ceval;
+

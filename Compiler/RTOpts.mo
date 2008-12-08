@@ -40,6 +40,7 @@ package RTOpts
 
   This module is used pretty much everywhere where debug calls are made."
 
+
 public function args
   input list<String> inStringLst;
   output list<String> outStringLst;
@@ -77,6 +78,14 @@ public function debugFlag
 
   external "C" ;
 end debugFlag;
+
+public function setDebugFlag
+  input String inString;
+  input Integer value; 
+  output Boolean str;
+  
+  external "C" ;
+end setDebugFlag;
 
 public function noProc
   output Integer outInteger;
@@ -131,9 +140,9 @@ end silent;
 
 public function versionRequest
   output Boolean outBoolean;
-
+  
   external "C";
-end versionRequest;
+  end versionRequest;
 
 public function acceptMetaModelicaGrammar
 "@author adrpo 2007-06-11
