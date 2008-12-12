@@ -1,5 +1,10 @@
 header "pre_include_hpp"
 {
+  #define _CRT_SECURE_NO_WARNINGS
+  #if defined(_MSC_VER)
+    #define itoa _itoa
+  #endif
+
 // adrpo disabling warnings
 #pragma warning( disable : 4267)  // Disable warning messages C4267
 // disable: 'initializing' : conversion from 'size_t' to 'int', possible loss of data
@@ -20,7 +25,7 @@ Date:      2004-05-26
 Revised on
 Comments: we walk on the flat modelica tree, buil a XML DOM tree and serialize
 ************************************************************************/
-
+    
   #define null 0
 
   extern "C"
@@ -59,7 +64,7 @@ class flat_modelica_tree_parser extends TreeParser;
 options
 {
     importVocab = flat_modelica_parser;
-    k = 2;
+    k = 1;
     buildAST = true;
     defaultErrorHandler = false;
 	ASTLabelType = "RefMyAST";
@@ -260,31 +265,39 @@ stored_definition
 			pRootElementModelica->appendChild(pRootElementFlatModelicaXML);
             ast = pRootElementModelica;
 
-			unsigned int elementCount = pFlatModelicaXMLDoc->getElementsByTagName(X("*"))->getLength();
+			XMLSize_t elementCount = pFlatModelicaXMLDoc->getElementsByTagName(X("*"))->getLength();
 			std::cout << std::endl;
 	        std::cout << "The tree just created contains: " << elementCount
 	        << " elements." << std::endl;
 
-	        // create the writer
-			DOMWriter* domWriter = pDOMImpl->createDOMWriter();
-			// set the pretty print feature
-			if (domWriter->canSetFeature(XMLUni::fgDOMWRTFormatPrettyPrint, true))
-				 domWriter->setFeature(XMLUni::fgDOMWRTFormatPrettyPrint, true);
-			// fix the file
+            // get a serializer, an instance of DOMLSSerializer
+            XMLCh tempStr[3] = {chLatin_L, chLatin_S, chNull};
+            DOMImplementation *impl = DOMImplementationRegistry::getDOMImplementation(tempStr);
+	        // create the writer            
+            DOMLSSerializer   *domSerializer = ((DOMImplementationLS*)impl)->createLSSerializer();
+            DOMLSOutput       *theOutputDesc = ((DOMImplementationLS*)impl)->createLSOutput();
+            static XMLCh*                   gOutputEncoding        = 0;
+            // set user specified output encoding
+            theOutputDesc->setEncoding(gOutputEncoding);            
 
+            DOMConfiguration* serializerConfig=domSerializer->getDomConfig();
+			// set the pretty print feature
+			if (serializerConfig->canSetParameter(XMLUni::fgDOMWRTFormatPrettyPrint, true))
+				 serializerConfig->setParameter(XMLUni::fgDOMWRTFormatPrettyPrint, true);
+		    
+			// fix the file
 			XMLFormatTarget *myFormatTarget = new LocalFileFormatTarget(X(xmlFilename.c_str()));
-			//XMLFormatTarget *myOutFormatTarget = new StdOutFormatTarget;
+            theOutputDesc->setByteStream(myFormatTarget);
 
 			// serialize a DOMNode to the local file "
-			domWriter->writeNode(myFormatTarget, *pFlatModelicaXMLDoc);
-			//domWriter->writeNode(myOutFormatTarget, *pFlatModelicaXMLDoc);
+			domSerializer->write(pFlatModelicaXMLDoc, theOutputDesc);
 
 			myFormatTarget->flush();
-			//myOutFormatTarget->flush();
-			domWriter->release();
+            theOutputDesc->release();
+			domSerializer->release();
 
 			delete myFormatTarget;
-			//delete myOutFormatTarget;
+
 			// release the document
 			pFlatModelicaXMLDoc->release();
 			// terminate the XML framework
@@ -548,7 +561,7 @@ composition [DOMElement* definition] returns [DOMElement* ast]
 				( pExternalFunctionCall = annotation[0 /*none*/, pExternalFunctionCall, INSIDE_EXTERNAL])?
 				(
 				  { pExternalFunctionCall->appendChild(pFlatModelicaXMLDoc->createElement(X("semicolon"))); }
-				  pExternalFunctionCall = annotation[0 /*none*/, pExternalFunctionCall, INSIDE_EXTERNAL]
+				  #(EXTERNAL_ANNOTATION pExternalFunctionCall = annotation[0 /*none*/, pExternalFunctionCall, INSIDE_EXTERNAL])
 				 )*
 			)
 		)?
@@ -1264,14 +1277,13 @@ equation[DOMElement* definition] returns [DOMElement* ast]
 equation_funcall returns [DOMElement* ast]
 {
   DOMElement* fcall = 0;
+  DOMElement* cref = 0;
 }
 	:
-		i:IDENT fcall = function_call
+		cref = component_reference fcall = function_call
 		{
 			 DOMElement*  pEquCall = pFlatModelicaXMLDoc->createElement(X("equ_call"));
-			 pEquCall->setAttribute(X("ident"), str2xml(i));
-			 pEquCall->setAttribute(X("sline"), X(itoa(i->getLine(),stmp,10)));
-			 pEquCall->setAttribute(X("scolumn"), X(itoa(i->getColumn(),stmp,10)));
+			 pEquCall->appendChild(cref);
 			 pEquCall->appendChild(fcall);
 			 ast = pEquCall;
 		}

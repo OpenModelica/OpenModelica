@@ -161,9 +161,7 @@ EXPONENT :
 UNSIGNED_INTEGER :
         (DIGIT)+ ('.' (DIGIT)* { $setType(UNSIGNED_REAL);} )?
         (EXPONENT { $setType(UNSIGNED_REAL); } )?
-    |
-        ('.' DIGIT) => ('.' (DIGIT)+ { $setType(UNSIGNED_REAL);})
-        (EXPONENT { $setType(UNSIGNED_REAL); } )?
+    |   ('.' (DIGIT)+ { $setType(UNSIGNED_REAL);}) (EXPONENT { $setType(UNSIGNED_REAL); } )?
     |
       '.' { $setType(DOT); }
 	;

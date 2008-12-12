@@ -8,14 +8,14 @@ Comments: some includes for the xercesc parser and a xml helper class
 
 #ifndef __MODELICAXML_H_
 #define __MODELICAXML_H_
-
+#define _CRT_SECURE_NO_WARNINGS
 // ---------------------------------------------------------------------------
 //  Includes
 // ---------------------------------------------------------------------------
 #include <xercesc/util/PlatformUtils.hpp>
 #include <xercesc/util/XMLString.hpp>
 #include <xercesc/dom/DOM.hpp>
-#include <xercesc/dom/DOMWriter.hpp>
+#include <xercesc/dom/DOMLSSerializer.hpp>
 #include <xercesc/framework/LocalFileInputSource.hpp>
 #include <xercesc/framework/LocalFileFormatTarget.hpp>
 #include <xercesc/framework/StdOutFormatTarget.hpp>

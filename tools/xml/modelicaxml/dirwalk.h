@@ -1,4 +1,6 @@
 
+#define _CRT_SECURE_NO_WARNINGS
+
 #ifndef _DIRWALK_H_
 #define _DIRWALK_H_
 

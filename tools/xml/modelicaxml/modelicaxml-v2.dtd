@@ -269,9 +269,8 @@ equation_list
 <!ATTLIST equ_elsewhen
 	%location;
 >
-<!ELEMENT equ_call (function_arguments)>
+<!ELEMENT equ_call (component_reference, function_arguments)>
 <!ATTLIST equ_call
-	ident CDATA #REQUIRED
 	%location;
 >
 <!ELEMENT equ_connect (component_reference, component_reference)>

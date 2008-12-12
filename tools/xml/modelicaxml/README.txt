@@ -1,6 +1,14 @@
 
-In order to compile ModelicaXML on Linux or Cygwin you will need:
+In order to compile ModelicaXML on Windows you will need:
+---------------------------------------------------------
+OMDev package:
+http://www.ida.liu.se/~adrpo/omc/omdev/mingw/
+Visual Studio 2008 (Pro or Express)
+Open the ModelicaXML.sln
 
+
+In order to compile ModelicaXML on Linux or Cygwin you will need:
+-----------------------------------------------------------------
 Antlr v2:
 http://www.antlr2.org/download/antlr-2.7.7.tar.gz
 
@@ -9,7 +17,7 @@ http://xml.apache.org/xerces-c/
 Check your system, it might be that you already have it.
 In Cygwin is in:
 /usr/include/xercesc
-/usr/lib/xerces-c25.dll.a
+/usr/lib/xerces-c3.dll.a
 
 
 Edit the apropriate makefiles:
@@ -25,4 +33,4 @@ Cygwin: make -f Makefile.cygwin
 
 
 Adrian Pop [adrpo@ida.liu.se]
-2007-06-12
+2008-12-12

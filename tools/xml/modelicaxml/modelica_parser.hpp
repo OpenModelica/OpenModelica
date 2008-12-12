@@ -2,7 +2,7 @@
 #define INC_modelica_parser_hpp_
 
 #include <antlr/config.hpp>
-/* $ANTLR 2.7.5rc2 (20050108): "modelica_parser.g" -> "modelica_parser.hpp"$ */
+/* $ANTLR 2.7.7 (2006-11-01): "modelica_parser.g" -> "modelica_parser.hpp"$ */
 #include <antlr/TokenStream.hpp>
 #include <antlr/TokenBuffer.hpp>
 #include "modelica_parserTokenTypes.hpp"
@@ -161,7 +161,7 @@ public:
 	{
 		return ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST);
 	}
-
+	
 protected:
 	RefMyAST returnAST;
 private:
@@ -173,7 +173,7 @@ private:
 		NUM_TOKENS = 147
 	};
 #endif
-
+	
 	static const unsigned long _tokenSet_0_data_[];
 	static const ANTLR_USE_NAMESPACE(antlr)BitSet _tokenSet_0;
 	static const unsigned long _tokenSet_1_data_[];

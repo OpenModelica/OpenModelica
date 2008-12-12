@@ -318,7 +318,7 @@ equation :
 		|	conditional_equation_e
 		|	for_clause_e
 		|	when_clause_e
-		|   IDENT function_call
+		|   component_reference function_call
 		)
         {
             #equation = #([EQUATION_STATEMENT,"EQUATION_STATEMENT"], #equation);

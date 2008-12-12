@@ -1,29 +1,25 @@
-Microsoft Visual Studio Solution File, Format Version 8.00
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual Studio 2008
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ModelicaXML", "ModelicaXML.vcproj", "{57E77DDB-F6BC-4CE1-91E7-D669544DCFFC}"
-	ProjectSection(ProjectDependencies) = postProject
-	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FlatModelicaXML", "..\FlatModelicaXML\FlatModelicaXML.vcproj", "{29D27443-5B16-45C0-B46F-3551BC103922}"
-	ProjectSection(ProjectDependencies) = postProject
-	EndProjectSection
 EndProject
 Global
-	GlobalSection(SolutionConfiguration) = preSolution
-		Debug = Debug
-		Release = Release
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
 	EndGlobalSection
-	GlobalSection(ProjectConfiguration) = postSolution
-		{57E77DDB-F6BC-4CE1-91E7-D669544DCFFC}.Debug.ActiveCfg = Debug|Win32
-		{57E77DDB-F6BC-4CE1-91E7-D669544DCFFC}.Debug.Build.0 = Debug|Win32
-		{57E77DDB-F6BC-4CE1-91E7-D669544DCFFC}.Release.ActiveCfg = Release|Win32
-		{57E77DDB-F6BC-4CE1-91E7-D669544DCFFC}.Release.Build.0 = Release|Win32
-		{29D27443-5B16-45C0-B46F-3551BC103922}.Debug.ActiveCfg = Debug|Win32
-		{29D27443-5B16-45C0-B46F-3551BC103922}.Debug.Build.0 = Debug|Win32
-		{29D27443-5B16-45C0-B46F-3551BC103922}.Release.ActiveCfg = Release|Win32
-		{29D27443-5B16-45C0-B46F-3551BC103922}.Release.Build.0 = Release|Win32
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{57E77DDB-F6BC-4CE1-91E7-D669544DCFFC}.Debug|Win32.ActiveCfg = Debug|Win32
+		{57E77DDB-F6BC-4CE1-91E7-D669544DCFFC}.Debug|Win32.Build.0 = Debug|Win32
+		{57E77DDB-F6BC-4CE1-91E7-D669544DCFFC}.Release|Win32.ActiveCfg = Release|Win32
+		{57E77DDB-F6BC-4CE1-91E7-D669544DCFFC}.Release|Win32.Build.0 = Release|Win32
+		{29D27443-5B16-45C0-B46F-3551BC103922}.Debug|Win32.ActiveCfg = Debug|Win32
+		{29D27443-5B16-45C0-B46F-3551BC103922}.Debug|Win32.Build.0 = Debug|Win32
+		{29D27443-5B16-45C0-B46F-3551BC103922}.Release|Win32.ActiveCfg = Release|Win32
+		{29D27443-5B16-45C0-B46F-3551BC103922}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
-	GlobalSection(ExtensibilityGlobals) = postSolution
-	EndGlobalSection
-	GlobalSection(ExtensibilityAddIns) = postSolution
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
 	EndGlobalSection
 EndGlobal

@@ -3,6 +3,11 @@
 
 #line 2 "walker.g"
 
+  #define _CRT_SECURE_NO_WARNINGS
+  #if defined(_MSC_VER)
+    #define itoa _itoa
+  #endif
+
 // adrpo disabling warnings
 #pragma warning( disable : 4267)  // Disable warning messages C4267
 // disable: 'initializing' : conversion from 'size_t' to 'int', possible loss of data
@@ -13,13 +18,13 @@
 #pragma warning( disable : 4101)  // Disable warning messages C4101
 // disable: warning C4101: 'pe' : unreferenced local variable
 
-#line 17 "flat_modelica_tree_parser.hpp"
+#line 22 "flat_modelica_tree_parser.hpp"
 #include <antlr/config.hpp>
 #include "flat_modelica_tree_parserTokenTypes.hpp"
-/* $ANTLR 2.7.5rc2 (20050108): "walker.g" -> "flat_modelica_tree_parser.hpp"$ */
+/* $ANTLR 2.7.7 (2006-11-01): "walker.g" -> "flat_modelica_tree_parser.hpp"$ */
 #include <antlr/TreeParser.hpp>
 
-#line 15 "walker.g"
+#line 20 "walker.g"
 
 /************************************************************************
 File: walker.g
@@ -28,7 +33,7 @@ Date:      2004-05-26
 Revised on
 Comments: we walk on the flat modelica tree, buil a XML DOM tree and serialize
 ************************************************************************/
-
+    
   #define null 0
 
   extern "C"
@@ -50,10 +55,10 @@ Comments: we walk on the flat modelica tree, buil a XML DOM tree and serialize
 typedef ANTLR_USE_NAMESPACE(antlr)ASTRefCount<MyAST> RefMyAST;
 
 
-#line 54 "flat_modelica_tree_parser.hpp"
+#line 59 "flat_modelica_tree_parser.hpp"
 class CUSTOM_API flat_modelica_tree_parser : public ANTLR_USE_NAMESPACE(antlr)TreeParser, public flat_modelica_tree_parserTokenTypes
 {
-#line 74 "walker.g"
+#line 79 "walker.g"
 
 
 	/* some xml helpers declarations */
@@ -183,7 +188,7 @@ class CUSTOM_API flat_modelica_tree_parser : public ANTLR_USE_NAMESPACE(antlr)Tr
 		else if (iSwitch == 2) pNode->setAttribute(X("visibility"), X("protected"));
 		else { /* error, shouldn't happen */ }
 	}
-#line 58 "flat_modelica_tree_parser.hpp"
+#line 63 "flat_modelica_tree_parser.hpp"
 public:
 	flat_modelica_tree_parser();
 	static void initializeASTFactory( ANTLR_USE_NAMESPACE(antlr)ASTFactory& factory );
@@ -351,20 +356,20 @@ public:
 	{
 		return ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST);
 	}
-
+	
 protected:
 	RefMyAST returnAST;
 	RefMyAST _retTree;
 private:
 	static const char* tokenNames[];
 #ifndef NO_STATIC_CONSTS
-	static const int NUM_TOKENS = 159;
+	static const int NUM_TOKENS = 160;
 #else
 	enum {
-		NUM_TOKENS = 159
+		NUM_TOKENS = 160
 	};
 #endif
-
+	
 	static const unsigned long _tokenSet_0_data_[];
 	static const ANTLR_USE_NAMESPACE(antlr)BitSet _tokenSet_0;
 	static const unsigned long _tokenSet_1_data_[];

@@ -1,4 +1,4 @@
-// $ANTLR 2.7.6 (2005-12-22): walker.g -> modelica_tree_parserTokenTypes.txt$
+// $ANTLR 2.7.7 (2006-11-01): walker.g -> modelica_tree_parserTokenTypes.txt$
 modelica_tree_parser    // output token vocab name
 ALGORITHM="algorithm"=4
 AND="and"=5

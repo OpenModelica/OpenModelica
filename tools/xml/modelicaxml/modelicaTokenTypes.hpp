@@ -1,7 +1,7 @@
 #ifndef INC_modelicaTokenTypes_hpp_
 #define INC_modelicaTokenTypes_hpp_
 
-/* $ANTLR 2.7.5rc2 (20050108): "modelica_lexer.g" -> "modelicaTokenTypes.hpp"$ */
+/* $ANTLR 2.7.7 (2006-11-01): "modelica_lexer.g" -> "modelicaTokenTypes.hpp"$ */
 
 #ifndef CUSTOM_API
 # define CUSTOM_API

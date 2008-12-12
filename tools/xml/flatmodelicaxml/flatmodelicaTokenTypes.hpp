@@ -1,7 +1,7 @@
 #ifndef INC_flatmodelicaTokenTypes_hpp_
 #define INC_flatmodelicaTokenTypes_hpp_
 
-/* $ANTLR 2.7.5rc2 (20050108): "flat_modelica_lexer.g" -> "flatmodelicaTokenTypes.hpp"$ */
+/* $ANTLR 2.7.7 (2006-11-01): "flat_modelica_lexer.g" -> "flatmodelicaTokenTypes.hpp"$ */
 
 #ifndef CUSTOM_API
 # define CUSTOM_API

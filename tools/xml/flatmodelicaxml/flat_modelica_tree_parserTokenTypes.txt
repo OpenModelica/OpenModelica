@@ -1,4 +1,4 @@
-// $ANTLR 2.7.5rc2 (20050108): walker.g -> flat_modelica_tree_parserTokenTypes.txt$
+// $ANTLR 2.7.7 (2006-11-01): walker.g -> flat_modelica_tree_parserTokenTypes.txt$
 flat_modelica_tree_parser    // output token vocab name
 ALGORITHM="algorithm"=4
 AND="and"=5
@@ -155,3 +155,4 @@ UNQUALIFIED=155
 INTERACTIVE_STMT=156
 INTERACTIVE_ALG=157
 INTERACTIVE_EXP=158
+EXTERNAL_ANNOTATION=159

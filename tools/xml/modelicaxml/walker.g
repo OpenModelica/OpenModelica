@@ -1,5 +1,10 @@
 header "pre_include_hpp"
 {
+  #define _CRT_SECURE_NO_WARNINGS
+  #if defined(_MSC_VER)
+    #define itoa _itoa
+  #endif
+
 // adrpo disabling warnings
 #pragma warning( disable : 4267)  // Disable warning messages C4267
 // disable: 'initializing' : conversion from 'size_t' to 'int', possible loss of data
@@ -20,7 +25,7 @@ Date:       2003-06-10
 Revised on 2003-10-26 17:58:42 (write the definition even if has no childs)
 Comments: we walk on the modelica tree, buil a XML DOM tree and serialize
 ************************************************************************/
-
+  
   #define null 0
 
   extern "C"
@@ -1280,14 +1285,13 @@ equation[DOMElement* definition] returns [DOMElement* ast]
 equation_funcall returns [DOMElement* ast]
 {
   DOMElement* fcall = 0;
+  DOMElement* cref = 0;
 }
 	:
-		i:IDENT fcall = function_call
+		cref = component_reference fcall = function_call
 		{
 			 DOMElement*  pEquCall = pModelicaXMLDoc->createElement(X("equ_call"));
-			 pEquCall->setAttribute(X("ident"), str2xml(i));
-			 pEquCall->setAttribute(X("sline"), X(itoa(i->getLine(),stmp,10)));
-			 pEquCall->setAttribute(X("scolumn"), X(itoa(i->getColumn(),stmp,10)));
+			 pEquCall->appendChild(cref);
 			 pEquCall->appendChild(fcall);
 			 ast = pEquCall;
 		}

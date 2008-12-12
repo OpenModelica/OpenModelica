@@ -1,8 +1,9 @@
+#define _CRT_SECURE_NO_WARNINGS
 /************************************************************************
 File: modelicaxml.h
 Created By: Adrian Pop adrpo@ida.liu.se
 Date:       2003-08-28 (PELAB Internal Conference)
-Revised on 2003-10-26 17:58:42
+Revised on 2008-12-12
 Comments: some includes for the xercesc parser and a xml helper class
 ************************************************************************/
 
@@ -15,7 +16,7 @@ Comments: some includes for the xercesc parser and a xml helper class
 #include <xercesc/util/PlatformUtils.hpp>
 #include <xercesc/util/XMLString.hpp>
 #include <xercesc/dom/DOM.hpp>
-#include <xercesc/dom/DOMWriter.hpp>
+#include <xercesc/dom/DOMLSSerializer.hpp>
 #include <xercesc/framework/LocalFileInputSource.hpp>
 #include <xercesc/framework/LocalFileFormatTarget.hpp>
 #include <xercesc/framework/StdOutFormatTarget.hpp>

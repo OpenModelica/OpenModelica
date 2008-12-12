@@ -602,7 +602,7 @@ equation :
 		|	for_clause_e
 		|	connect_clause
 		|	when_clause_e
-		|   IDENT function_call
+		|   component_reference function_call
 		)
         {
             #equation = #([EQUATION_STATEMENT,"EQUATION_STATEMENT"], #equation);
