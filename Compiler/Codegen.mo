@@ -435,15 +435,15 @@ algorithm
 end cPrintDeclarations;
 
 protected function addNewlineIfNotEmpty
-input  String inStr;
-output String outStr;
+  input  String inStr;
+  output String outStr;
 algorithm
   outStr := matchcontinue (inStr)
     local String sTrim;  
     case (inStr)
       equation
          sTrim = System.trim(inStr, " ");
-         failure(true = stringEqual(sTrim, ""));
+         false = stringEqual(sTrim, "");
       then (inStr +& "\n");
     case (inStr) then "";
   end matchcontinue;  

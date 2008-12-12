@@ -895,38 +895,33 @@ end NamedArg;
 
 
 uniontype Operator "Expression operators"
-  record ADD end ADD;
-
-  record SUB end SUB;
-
-  record MUL end MUL;
-
-  record DIV end DIV;
-
-  record POW end POW;
-
-  record UPLUS end UPLUS;
-
-  record UMINUS end UMINUS;
-
-  record AND end AND;
-
-  record OR end OR;
-
-  record NOT end NOT;
-
-  record LESS end LESS;
-
-  record LESSEQ end LESSEQ;
-
-  record GREATER end GREATER;
-
-  record GREATEREQ end GREATEREQ;
-
-  record EQUAL end EQUAL;
-
-  record NEQUAL end NEQUAL;
-
+  /* arithmetic operators */
+  record ADD       "addition"                    end ADD;
+  record SUB       "subtraction"                 end SUB;
+  record MUL       "multiplication"              end MUL;
+  record DIV       "division"                    end DIV;
+  record POW       "power"                       end POW;
+  record UPLUS     "unary plus"                  end UPLUS;
+  record UMINUS    "unary minus"                 end UMINUS;
+  /* element-wise arithmetic operators */
+  record ADD_EW    "element-wise addition"       end ADD_EW;
+  record SUB_EW    "element-wise subtraction"    end SUB_EW;
+  record MUL_EW    "element-wise multiplication" end MUL_EW;
+  record DIV_EW    "element-wise division"       end DIV_EW;
+  record POW_EW    "element-wise power"          end POW_EW;
+  record UPLUS_EW  "element-wise unary minus"    end UPLUS_EW;
+  record UMINUS_EW "element-wise unary plus"     end UMINUS_EW;
+  /* logical operators */
+  record AND       "logical and"                 end AND;
+  record OR        "logical or"                  end OR;
+  record NOT       "logical not"                 end NOT;
+  /* relational operators */
+  record LESS      "less than"                   end LESS;
+  record LESSEQ    "less than or equal"          end LESSEQ;
+  record GREATER   "greater than"                end GREATER;
+  record GREATEREQ "greater than or equal"       end GREATEREQ;
+  record EQUAL     "relational equal"            end EQUAL;
+  record NEQUAL    "relational not equal"        end NEQUAL;
 end Operator;
 
 

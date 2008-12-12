@@ -152,6 +152,7 @@ algorithm
       String mp,pd,classfile,classfile_1,class_,mp_1,dirfile,packfile;
       Absyn.Program p;
     case (class_,mp_1)
+      local Real t1, t2; String s;
       equation
         mp = System.trim(mp_1, " \"\t");
         pd = System.pathDelimiter();
@@ -160,8 +161,11 @@ algorithm
         existRegularFile(classfile_1);
         print("parsing ");
         print(classfile_1);
-        print("\n");
+        t1 = clock();
         p = Parser.parse(classfile_1);
+        t2 = clock();
+        s = realString(t2 -. t1);        
+        print(" [" +& s +& "s]\n");
       then
         p;
     case (class_,mp_1)
@@ -229,7 +233,8 @@ algorithm
       Absyn.Program p1_1,p2,p;
       list<String> subdirs;
       Absyn.Path wpath_1,wpath;
-    case (pack,mp,(within_ as Absyn.TOP()),Absyn.PROGRAM(classes = oldc))
+      Real t1, t2; String s;
+    case (pack,mp,(within_ as Absyn.TOP()),Absyn.PROGRAM(classes = oldc)) 
       equation
         pd = System.pathDelimiter();
         mp_1 = Util.stringAppendList({mp,pd,pack});
@@ -237,8 +242,11 @@ algorithm
         existRegularFile(packagefile);
         print("parsing ");
         print(packagefile);
-        print("\n");
+        t1 = clock();
         Absyn.PROGRAM(p1,w1) = Parser.parse(packagefile);
+        t2 = clock();
+        s = realString(t2 -. t1);        
+        print(" [" +& s +& "s]\n");
         Print.printBuf("loading ");
         Print.printBuf(packagefile);
         Print.printBuf("\n");
@@ -260,8 +268,11 @@ algorithm
         existRegularFile(packagefile);
         print("parsing ");
         print(packagefile);
-        print("\n");
+        t1 = clock();        
         Absyn.PROGRAM(p1,w1) = Parser.parse(packagefile);
+        t2 = clock();
+        s  = realString(t2 -. t1);        
+        print(" [" +& s +& "s]\n");
         Print.printBuf("loading ");
         Print.printBuf(packagefile);
         Print.printBuf("\n");
@@ -379,6 +390,7 @@ algorithm
       list<Absyn.Class> cls,oldc;
       Absyn.Program p_1,p_2;
       list<String> fs;
+      Real t1, t2; String s;
     case ({},mp,within_,Absyn.PROGRAM(classes = cls,within_ = w)) 
       then (Absyn.PROGRAM(cls,w));
     case ((f :: fs),mp,within_,Absyn.PROGRAM(classes = oldc))
@@ -387,8 +399,11 @@ algorithm
         f_1 = Util.stringAppendList({mp,pd,f});
         print("parsing ");
         print(f_1);
-        print("\n");
+        t1 = clock();        
         Absyn.PROGRAM(cls,_) = Parser.parse(f_1);
+        t2 = clock();
+        s  = realString(t2 -. t1);        
+        print(" [" +& s +& "s]\n");        
         Print.printBuf("loading ");
         Print.printBuf(f_1);
         Print.printBuf("\n");

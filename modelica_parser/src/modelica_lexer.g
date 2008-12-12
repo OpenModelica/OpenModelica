@@ -39,12 +39,14 @@ options {
 class modelica_lexer extends Lexer;
 
 options {
-    k=2;
+    /* k=2; */
     charVocabulary = '\3'..'\377';
     exportVocab = modelica;
     testLiterals = false;
     defaultErrorHandler = false;
     caseSensitive = true;
+    codeGenMakeSwitchThreshold=2;
+    codeGenBitsetTestThreshold=3;
 }
 
 tokens {
@@ -109,6 +111,20 @@ tokens {
 	RETURN		= "return"  ;
 	BREAK		= "break"	;
 	STREAM		= "stream"	; /* for Modelica 3.1 stream connectors */
+	LESSEQ    ;
+	LESSGT    ;
+	GREATEREQ ;
+	EQEQ      ;
+	COLON     ;
+	ASSIGN    ;
+	ML_COMMENT ;
+	/* Modelica 3.0 element-wise operators */
+    PLUS_EW  ;
+    MINUS_EW ;
+    STAR_EW  ;
+    SLASH_EW ;
+    POWER_EW ;
+	
 	/* MetaModelica keywords. I guess not all are needed here. */
 	AS		= "as"	;
 	CASE		= "case"	;
@@ -120,14 +136,7 @@ tokens {
 	UNIONTYPE	= "uniontype"		;
 	WILD		= "_"			;
 	SUBTYPEOF   = "subtypeof"  ;
-	/*
-	LIST		= "list"	;
-	OPTION		= "Option"		;
-	TUPLE		= "tuple"		;
-	FAIL		= "fail";
-	*/
-	LESSEQ ;
-	RLESS  ;
+	COLONCOLON ;
 }
 
 
@@ -141,59 +150,42 @@ LBRACK		: '['	;
 RBRACK		: ']'	;
 LBRACE		: '{'	;
 RBRACE		: '}'	;
-EQUALS		: '='	;
-ASSIGN		: ":="	;
-PLUS		: '+'|"+."|"+&" ;
-MINUS		: '-'|"-." ;
-STAR		: '*'|"*." ;
-SLASH		: '/'|"/." ;
+COLON		: ':' ( (':' { $setType(COLONCOLON);}) | ('='{$setType(ASSIGN);}) )?;
+PLUS		: '+'('.'|'&')? ;
+MINUS		: '-'('.')? ;
+STAR		: '*'('.')? ;
 COMMA		: ',';
-LESS		: '<'
-			(  ('='   { $setType(LESSEQ); })
-			 | ('.'   { $setType(RLESS); })
-			 | ("=."  { $setType(LESSEQ); })
-			 | ('>'   { $setType(LESSGT); })
-			 | (">."  { $setType(LESSGT); })
-			)?
-			;
-LESSGT		: ("!=")('.')?;
-GREATER		: '>' ;
-RGREATER	: ">." ;
-GREATEREQ	: ">="(".")?;
-EQEQ		: "=="(('.')|('&'))?;
-COLON		: ':'	;
-SEMICOLON	: ';'	;
-POWER		: '^'('.')?;
-
+LESS		: '<' ( ('.' {$setType(LESS);})|('='('.')? {$setType(LESSEQ);})|('>'('.')? {$setType(LESSGT);}) )? ;
+GREATER		: '>' ( ('.' {$setType(GREATER);})|('='('.')? {$setType(GREATEREQ);}) )? ;
+EQUALS		: '=' ('='(('.')|('&'))? {$setType(EQEQ);} )?;
+SEMICOLON	: ';' ;
+POWER		: '^'('.')? ;
 /* MetaModelica operators */
-COLONCOLON      : "::"  ;
-MOD		: '%'   ;
-
+MOD         : '%'   ;
 
 WS :
-	(	' '
-	|	'\t'
-	|	( "\r\n" | '\r' |	'\n' ) { newline(); }
+	( ' '
+	| '\t'
+	| NL
 	)
 	{ $setType(antlr::Token::SKIP); }
 	;
 
-ML_COMMENT :
-		"/*"
-		(options { generateAmbigWarnings=false; } : ML_COMMENT_CHAR
-		| {LA(2)!='/'}? '*')*
-		"*/" { $setType(antlr::Token::SKIP); } ;
-
-protected
-ML_COMMENT_CHAR :
-		("\r\n" | '\n') { newline(); }
-		| ~('*'|'\n'|'\r')
+SLASH : '/' {$setType(SLASH);}
+        ( '.' {$setType(SLASH);}
+        | '/' ( ~('\r'|'\n') )* {$setType(antlr::Token::SKIP);}
+		| '*' ( options { generateAmbigWarnings=false; } : ML_COMMENT_CHAR | {LA(2)!='/'}? '*')* '*''/' {$setType(antlr::Token::SKIP);}
+		)?        
 		;
 
-SL_COMMENT :
-		"//" (~('\n' | '\r') )*
-		{  $setType(antlr::Token::SKIP); }
-  	;
+protected
+NL: (('\r')? '\n') { newline(); };
+
+protected 
+ML_COMMENT_CHAR:
+         NL 
+       | ~('*'|'\r'|'\n')
+	 ;
 
 IDENT options { testLiterals = true; paraphrase = "an identifier";} :
 		   ('_' {  $setType(WILD); } | NONDIGIT { $setType(IDENT); })
@@ -220,25 +212,30 @@ EXPONENT :
 
 
 UNSIGNED_INTEGER :
-        (DIGIT)+ ('.' (DIGIT)* { $setType(UNSIGNED_REAL);} )?
-        (EXPONENT { $setType(UNSIGNED_REAL); } )?
-    |
-        ('.' DIGIT) => ('.' (DIGIT)+ { $setType(UNSIGNED_REAL);})
-        (EXPONENT { $setType(UNSIGNED_REAL); } )?
-    |
-      '.' { $setType(DOT); }
+    (DIGIT)+ ('.' (DIGIT)* { $setType(UNSIGNED_REAL); } )? (EXPONENT { $setType(UNSIGNED_REAL); } )?      
+  | ('.' { $setType(DOT); } )
+      ( (DIGIT)+ { $setType(UNSIGNED_REAL); } (EXPONENT { $setType(UNSIGNED_REAL); } )?
+         | /* Modelica 3.0 element-wise operators! */
+         (('+' { $setType(PLUS_EW); }) 
+          |('-' { $setType(MINUS_EW); }) 
+          |('*' { $setType(STAR_EW); }) 
+          |('/' { $setType(SLASH_EW); }) 
+          |('^' { $setType(POWER_EW); })
+          )?
+      )
 	;
 
 STRING : '"'! (SCHAR | SESCAPE)* '"'!;
 
-
 protected
-SCHAR :	(options { generateAmbigWarnings=false; } : ('\n' | "\r\n"))	{ newline(); }
+SCHAR :	
+      NL
 	| '\t'
 	| ~('\n' | '\t' | '\r' | '\\' | '"');
 
 protected
-QCHAR :	(options { generateAmbigWarnings=false; } : ('\n' | "\r\n"))	{ newline(); }
+QCHAR :	
+      NL	
 	| '\t'
 	| ~('\n' | '\t' | '\r' | '\\' | '\'');
 

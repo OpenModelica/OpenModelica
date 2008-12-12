@@ -240,7 +240,7 @@ algorithm
         s6 = unparseTypeSpec(tspec);
         s8 = unparseMod1Str(m);
         s9 = unparseCommentOption(optcmt);
-        str = Util.stringAppendList({is,s2_1,s1,s2,re,io,s3," ",n,"= ",s4,s5,s6,s8,s9});
+        str = Util.stringAppendList({is,s2_1,s1,s2,re,io,s3," ",n," = ",s4,s5,s6,s8,s9});
       then
         str;
     case (i,Absyn.CLASS(name = n,partial_ = p,final_ = f,encapsulated_ = e,restriction = r,
@@ -253,7 +253,7 @@ algorithm
         s3 = unparseRestrictionStr(r);
         s4 = unparseEnumliterals(l);
         s5 = unparseCommentOption(cmt);
-        str = Util.stringAppendList({is,s2_1,s1,s2,re,io,s3," ",n,"= enumeration(",s4,")",s5});
+        str = Util.stringAppendList({is,s2_1,s1,s2,re,io,s3," ",n," = enumeration(",s4,")",s5});
       then
         str;
     case (i,Absyn.CLASS(name = n,partial_ = p,final_ = f,encapsulated_ = e,restriction = r,
@@ -265,7 +265,7 @@ algorithm
         s2_1 = selectString(e, "encapsulated ", "");
         s3 = unparseRestrictionStr(r);
         s5 = unparseCommentOption(cmt);
-        str = Util.stringAppendList({is,s2_1,s1,s2,re,io,s3," ",n,"= enumeration(:)",s5});
+        str = Util.stringAppendList({is,s2_1,s1,s2,re,io,s3," ",n," = enumeration(:)",s5});
       then
         str;
     case (i,Absyn.CLASS(name = n,partial_ = p,final_ = f,encapsulated_ = e,restriction = r,
@@ -814,7 +814,7 @@ algorithm
     case (Absyn.CLASSMOD(expOption = SOME(e)))
       equation
         s1 = printExpStr(e);
-        str = Util.stringAppendList({"=",s1});
+        str = Util.stringAppendList({" = ",s1});
       then
         str;
   end matchcontinue;
@@ -1150,7 +1150,7 @@ algorithm
         annstr = unparseAnnotationOption(i, ann);
         annstr2 = unparseAnnotationOptionSemi(i, ann2);
         str = Util.stringAppendList(
-          {"\n",is,"external ",langstr," ",outputstr,"=",ident,"(",
+          {"\n",is,"external ",langstr," ",outputstr," = ",ident,"(",
           expstr,") ",annstr,";",annstr2,"\n"});
       then
         str;
@@ -1766,15 +1766,13 @@ algorithm
   end matchcontinue;
 end printImport;
 
-public function unparseImportStr "function: unparseImportStr
-
-  Prettyprints an Import to a string.
-"
+public function unparseImportStr 
+"function: unparseImportStr
+  Prettyprints an Import to a string."
   input Absyn.Import inImport;
   output String outString;
 algorithm
-  outString:=
-  matchcontinue (inImport)
+  outString := matchcontinue (inImport)
     local
       Ident s1,s2,str,i;
       Absyn.Path p;
@@ -2343,7 +2341,7 @@ algorithm
     case SOME(e)
       equation
         s1 = printExpStr(e);
-        str = stringAppend("=", s1);
+        str = stringAppend(" = ", s1);
       then
         str;
   end matchcontinue;
@@ -2365,6 +2363,8 @@ algorithm
       Absyn.ForIterators iterators;
       Ident i;
       Absyn.EquationItem equItem;
+      Absyn.ComponentRef cr;
+      Absyn.FunctionArgs fargs;
     case (Absyn.EQ_IF(ifExp = e,equationTrueItems = tb,elseIfBranches = eb,equationElseItems = fb))
       equation
         Print.printBuf("IF (");
@@ -2385,6 +2385,14 @@ algorithm
         Print.printBuf(")");
       then
         ();
+    case (Absyn.EQ_NORETCALL(functionName = cr,functionArgs = fargs)) /* EQ_NORETCALL */
+      equation
+        Print.printBuf("EQ_NORETCALL(");
+        Print.printBuf(printComponentRefStr(cr) +& "(");
+        Print.printBuf(printFunctionArgsStr(fargs));
+        Print.printBuf(")");
+      then
+        ();        
     case (Absyn.EQ_CONNECT(connector1 = e1,connector2 = e2))
       local Absyn.ComponentRef e1,e2;
       equation
@@ -2496,7 +2504,7 @@ algorithm
         s1 = printExpStr(e1);
         s2 = printExpStr(e2);
         is = indentStr(i);
-        str = Util.stringAppendList({is,s1,"=",s2});
+        str = Util.stringAppendList({is,s1," = ",s2});
       then
         str;
     case (i,Absyn.EQ_CONNECT(connector1 = e1,connector2 = e2))
@@ -2550,7 +2558,7 @@ algorithm
         str;
     case (_,_)
       equation
-        Print.printBuf(" ** Failure! UNKNOWN EQUATION ** ");
+        Print.printBuf(" /** Failure! UNKNOWN EQUATION **/ ");
       then
         "";
   end matchcontinue;
@@ -2745,6 +2753,8 @@ algorithm
       Absyn.ForIterators iterators;
       Ident i;
       Absyn.AlgorithmItem algItem;
+      Absyn.ComponentRef cref;
+      Absyn.FunctionArgs fargs;      
     case (Absyn.ALG_ASSIGN(assignComponent = assignComp,value = exp))
       equation
         Print.printBuf("ALG_ASSIGN(");
@@ -2752,6 +2762,14 @@ algorithm
         Print.printBuf(" := ");
         printExp(exp);
         Print.printBuf(")");
+      then
+        ();
+    case (Absyn.ALG_NORETCALL(functionCall = cr,functionArgs = fargs)) /* ALG_NORETCALL */
+      equation
+        Print.printBuf("ALG_NORETCALL(");        
+        Print.printBuf(printComponentRefStr(cr) +& "(");
+        Print.printBuf(printFunctionArgsStr(fargs));
+        Print.printBuf(")");        
       then
         ();
     case (Absyn.ALG_IF(ifExp = e,trueBranch = tb,elseIfAlgorithmBranch = eb,elseBranch = fb))
@@ -3800,7 +3818,7 @@ algorithm
     case Absyn.NAMEDARG(argName = ident,argValue = e)
       equation
         Print.printBuf(ident);
-        Print.printBuf("=");
+        Print.printBuf(" = ");
         printExp(e);
       then
         ();
@@ -3821,7 +3839,7 @@ algorithm
       Absyn.Exp e;
     case Absyn.NAMEDARG(argName = ident,argValue = e)
       equation
-        s1 = stringAppend(ident, "=");
+        s1 = stringAppend(ident, " = ");
         s2 = printExpStr(e);
         str = stringAppend(s1, s2);
       then
@@ -3860,19 +3878,30 @@ algorithm
     case (Absyn.CALL(function_ = _)) then 0;
     case (Absyn.ARRAY(arrayExp = _)) then 0;
     case (Absyn.MATRIX(matrix = _)) then 0;
-    case (Absyn.BINARY(op = Absyn.POW())) then 1;
+    /* arithmetic operators */
+    case (Absyn.BINARY(op = Absyn.POW())) then 1;      
     case (Absyn.BINARY(op = Absyn.DIV())) then 2;
-    case (Absyn.BINARY(op = Absyn.MUL())) then 3;
+    case (Absyn.BINARY(op = Absyn.MUL())) then 3;      
     case (Absyn.UNARY(op = Absyn.UPLUS())) then 4;
     case (Absyn.UNARY(op = Absyn.UMINUS())) then 4;
     case (Absyn.BINARY(op = Absyn.ADD())) then 5;
     case (Absyn.BINARY(op = Absyn.SUB())) then 5;
+    /* the new arithmetic operators element-wise from Modelica 3.0  */
+    case (Absyn.BINARY(op = Absyn.POW_EW())) then 1;      
+    case (Absyn.BINARY(op = Absyn.DIV_EW())) then 2;
+    case (Absyn.BINARY(op = Absyn.MUL_EW())) then 3;
+    case (Absyn.UNARY(op = Absyn.UPLUS_EW())) then 4;
+    case (Absyn.UNARY(op = Absyn.UMINUS_EW())) then 4;           
+    case (Absyn.BINARY(op = Absyn.ADD_EW())) then 5;
+    case (Absyn.BINARY(op = Absyn.SUB_EW())) then 5;
+    /* relational operators */    
     case (Absyn.RELATION(op = Absyn.LESS())) then 6;
     case (Absyn.RELATION(op = Absyn.LESSEQ())) then 6;
     case (Absyn.RELATION(op = Absyn.GREATER())) then 6;
     case (Absyn.RELATION(op = Absyn.GREATEREQ())) then 6;
     case (Absyn.RELATION(op = Absyn.EQUAL())) then 6;
     case (Absyn.RELATION(op = Absyn.NEQUAL())) then 6;
+    /* logical operatos */
     case (Absyn.LUNARY(op = Absyn.NOT())) then 7;
     case (Absyn.LBINARY(op = Absyn.AND())) then 8;
     case (Absyn.LBINARY(op = Absyn.OR())) then 9;
@@ -3884,11 +3913,10 @@ algorithm
 end expPriority;
 
 
-protected function parenthesize "function: parenthesize
-
-  Adds parentheisis to a string if expression and parent expression
-  priorities requires it.
-"
+protected function parenthesize 
+"function: parenthesize
+  Adds parentheisis to a string if expression 
+  and parent expression priorities requires it."
   input String inString1;
   input Integer inInteger2;
   input Integer inInteger3;
@@ -4354,16 +4382,27 @@ public function opSymbol
   output String outString;
 algorithm
   outString := matchcontinue (inOperator)
+    /* arithmetic operators */
     case (Absyn.ADD()) then " + ";
     case (Absyn.SUB()) then " - ";
-    case (Absyn.MUL()) then "*";
-    case (Absyn.DIV()) then "/";
-    case (Absyn.POW()) then "^";
-    case (Absyn.UMINUS()) then "-";
-    case (Absyn.UPLUS()) then "+";
+    case (Absyn.MUL()) then " * ";
+    case (Absyn.DIV()) then " / ";
+    case (Absyn.POW()) then " ^ ";
+    case (Absyn.UMINUS()) then " -";
+    case (Absyn.UPLUS()) then " +";
+    /* element-wise arithmetic operators */
+    case (Absyn.ADD_EW()) then " .+ ";
+    case (Absyn.SUB_EW()) then " .- ";
+    case (Absyn.MUL_EW()) then " .* ";
+    case (Absyn.DIV_EW()) then " ./ ";
+    case (Absyn.POW_EW()) then " .^ ";
+    case (Absyn.UMINUS_EW()) then " .-";
+    case (Absyn.UPLUS_EW()) then " .+";
+    /* logical operators */
     case (Absyn.AND()) then " and ";
     case (Absyn.OR()) then " or ";
     case (Absyn.NOT()) then "not ";
+    /* relational operators */
     case (Absyn.LESS()) then " < ";
     case (Absyn.LESSEQ()) then " <= ";
     case (Absyn.GREATER()) then " > ";
@@ -4380,6 +4419,7 @@ protected function dumpOpSymbol
   output String outString;
 algorithm
   outString := matchcontinue (inOperator)
+    /* arithmetic operators */
     case (Absyn.ADD()) then "Absyn.ADD";
     case (Absyn.SUB()) then "Absyn.SUB";
     case (Absyn.MUL()) then "Absyn.MUL";
@@ -4387,9 +4427,19 @@ algorithm
     case (Absyn.POW()) then "Absyn.POW";
     case (Absyn.UMINUS()) then "Absyn.UMINUS";
     case (Absyn.UPLUS()) then "Absyn.UPLUS";
+    /* element-wise arithmetic operators */
+    case (Absyn.ADD_EW()) then "Absyn.ADD_EW";
+    case (Absyn.SUB_EW()) then "Absyn.SUB_EW";
+    case (Absyn.MUL_EW()) then "Absyn.MUL_EW";
+    case (Absyn.DIV_EW()) then "Absyn.DIV_EW";
+    case (Absyn.POW_EW()) then "Absyn.POW_EW";
+    case (Absyn.UMINUS_EW()) then "Absyn.UMINUS_EW";
+    case (Absyn.UPLUS_EW()) then "Absyn.UPLUS_EW";
+    /* logical operators */
     case (Absyn.AND()) then "Absyn.AND";
     case (Absyn.OR()) then "Absyn.OR";
     case (Absyn.NOT()) then "Absyn.NOT";
+    /* relational operators */
     case (Absyn.LESS()) then "Absyn.LESS";
     case (Absyn.LESSEQ()) then "Absyn.LESSEQ";
     case (Absyn.GREATER()) then "Absyn.GREATER";

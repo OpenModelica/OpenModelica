@@ -733,7 +733,7 @@ protected function generateExternalObjectConstructorAlias
 	   equation
 	     v_str = Exp.printComponentRefStr(name);
 	     v_str2 = Exp.printComponentRefStr(cr);
-	     stmt = Util.stringAppendList({v_str," = ",v_str2,";\n"});
+	     stmt = Util.stringAppendList({v_str," = ",v_str2,";"});
 	     cfunc = Codegen.cAddStatements(Codegen.cEmptyFunction,{stmt});
 	     then (cfunc,cg_in);
 	       // Skip non-aliases constructors.
@@ -3746,7 +3746,7 @@ algorithm
         res = Util.stringAppendList(
           {"int checkForDiscreteVarChanges()\n{\n",
           "  int needToIterate=0;\n",
-          check_code_1,"  ",check_code2_1,
+          check_code_1,"  ",check_code2_1,"\n",
 				  "  for (long i = 0; i < localData->nHelpVars; i++) {\n",
 				  "    if (change(localData->helpVars[i])) { needToIterate=1; }\n  }\n",
           "  return needToIterate;\n","}\n"});
@@ -6891,7 +6891,7 @@ algorithm
         (cfunc1,cg_id1_1,cfunc2,cg_id2_1,extra_funcs1) = 
         
         generateZeroCrossing2(xs, index_1, dae, dlow, ass1, ass2, blocks, helpVarInfo, cg_id1, cg_id2);
-        stmt1 = Util.stringAppendList({"ZEROCROSSING(",index_str,",",zc_str,");\n"});
+        stmt1 = Util.stringAppendList({"ZEROCROSSING(",index_str,",",zc_str,");"});
         
         (Codegen.CFUNCTION(rettp,fn,retrec,arg,vars,init,stmts,cleanups),saveStmts,cg_id2_2,extra_funcs2) = 
         buildZeroCrossingEqns(dae, dlow, ass1, ass2, eql, blocks, cg_id2_1);
@@ -7185,7 +7185,7 @@ algorithm
       equation
         cr_str = Exp.printComponentRefStr(cr);
         exp_str = printExpCppStr(exp);
-        eqn_str = Util.stringAppendList({"    ",cr_str," = ",exp_str,";\n"});
+        eqn_str = Util.stringAppendList({"    ",cr_str," = ",exp_str,";"});
       then
         eqn_str;
   end matchcontinue;
@@ -7772,7 +7772,7 @@ algorithm
         res = generateComputeRemovedEqns2(rest);
         cr_str = Exp.printComponentRefStr(cr);
         exp_str = printExpCppStr(exp);
-        s1 = Util.stringAppendList({cr_str," = ",exp_str,";\n"});
+        s1 = Util.stringAppendList({cr_str," = ",exp_str,";"});
       then
         (s1 :: res);
   end matchcontinue;
@@ -8263,21 +8263,20 @@ algorithm
       equation
         cr_str = Exp.printComponentRefStr(cr);
         (cfn,var,cg_id_1) = Codegen.generateExpression(exp, cg_id, Codegen.simContext);
-        stmt = Util.stringAppendList({cr_str," = ",var,";\n"});
+        stmt = Util.stringAppendList({cr_str," = ",var,";"});
         cfn = Codegen.cAddStatements(cfn, {stmt});
       then
         (cfn,cg_id_1);
     case (dae,cr,(exp as Exp.CALL(path = path,expLst = args,tuple_ = (tuple_ as true),builtin = builtin)),origname,cg_id)
       equation
-        print(
-          "-simcodegen: build_assignment: Tuple return values from functions not implemented\n");
+        print("-simcodegen: build_assignment: Tuple return values from functions not implemented\n");
       then
         fail();
     case (dae,cr,exp,origname,cg_id)
       equation
         cr_str = Exp.printComponentRefStr(cr);
         (cfn,var,cg_id_1) = Codegen.generateExpression(exp, cg_id, Codegen.simContext);
-        stmt = Util.stringAppendList({cr_str," = ",var,";\n"});
+        stmt = Util.stringAppendList({cr_str," = ",var,";"});
         cfn = Codegen.cAddStatements(cfn, {stmt});
       then
         (cfn,cg_id_1);
