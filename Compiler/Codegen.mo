@@ -435,15 +435,15 @@ algorithm
 end cPrintDeclarations;
 
 protected function addNewlineIfNotEmpty
-input  String inStr;
-output String outStr;
+  input  String inStr;
+  output String outStr;
 algorithm
   outStr := matchcontinue (inStr)
     local String sTrim;  
     case (inStr)
       equation
          sTrim = System.trim(inStr, " ");
-         failure(true = stringEqual(sTrim, ""));
+         false = stringEqual(sTrim, "");
       then (inStr +& "\n");
     case (inStr) then "";
   end matchcontinue;  
@@ -2780,7 +2780,7 @@ algorithm
         (cfn,_,tnr1) = generateExpression(exp, tnr, context);
      then (cfn,tnr1);
 
-    case (Algorithm.ASSIGN(type_ = typ,exp1 = Exp.CREF(cref),exp = exp),tnr,context)
+    case (Algorithm.ASSIGN(type_ = typ,exp1 = Exp.CREF(cref,_),exp = exp),tnr,context)
       equation
         Debug.fprintln("cgas", "generate_algorithm_statement");
         (cfn1,var1,tnr1) = generateExpression(exp, tnr, context);
@@ -3534,6 +3534,7 @@ algorithm
     local
       DAE.Element var;
       Exp.ComponentRef id,id_1,idstr;
+      Exp.Exp expstr;
       DAE.VarKind vk;
       DAE.VarDirection vd;
       DAE.Type typ;
@@ -3585,9 +3586,14 @@ algorithm
         emptyprep = stringEqual(pre, "");
         iStr = intString(i);
         id_1_str = Util.stringAppendList({"out.","targ",iStr});
-        idstr = Util.if_(emptyprep, id, Exp.CREF_IDENT(id_1_str,{}));
+        expstr = Util.if_(emptyprep, 
+                         Exp.CREF(id, Exp.OTHER()), 
+                         Exp.CREF(Exp.CREF_IDENT(id_1_str,Exp.OTHER(),{}),Exp.OTHER()));
+        idstr = Util.if_(emptyprep, 
+                         id, 
+                         Exp.CREF_IDENT(id_1_str,Exp.OTHER(),{}));
         exptype = daeExpType(typ);
-        scalarassign = Algorithm.ASSIGN(exptype,idstr,e);
+        scalarassign = Algorithm.ASSIGN(exptype,expstr,e);
         arrayassign = Algorithm.ASSIGN_ARR(exptype,idstr,e);
         assign = Util.if_(is_a, arrayassign, scalarassign);
         (cfn,tnr1) = generateAlgorithmStatement(assign, tnr, context);
@@ -6707,11 +6713,11 @@ algorithm
       equation
         DAE.EXTARGSIZE(componentRef = cr,attributes = attr,type_ = ty,exp = dim) = arg;
         Debug.fprintln("cgtr", "generate_extcall_vardecl_f77_5");
-        tmpname_1 = varNameArray(cr, attr,i);
+        tmpname_1 = varNameArray(cr, attr, i);
         tnrstr = intString(tnr);
         tnr_1 = tnr + 1;
         tmpstr = Util.stringAppendList({tmpname_1,"_size_",tnrstr});
-        tmpcref = Exp.CREF_IDENT(tmpstr,{});
+        tmpcref = Exp.CREF_IDENT(tmpstr,Exp.OTHER(),{});
         callstr = generateExtArraySizeCall(arg);
         declstr = Util.stringAppendList({"int ",tmpstr,";"});
         decl = cAddVariables(cEmptyFunction, {declstr});

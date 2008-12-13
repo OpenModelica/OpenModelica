@@ -135,9 +135,6 @@ public constant ErrorID INVALID_CONNECTOR_TYPE=48;
 public constant ErrorID CONNECT_TWO_INPUTS=49;
 public constant ErrorID CONNECT_TWO_OUTPUTS=50;
 public constant ErrorID CONNECT_FLOW_TO_NONFLOW=51;
-/*
-public constant ErrorID CONNECT_STREAM_TO_NONSTREAM=52;
-*/
 public constant ErrorID INVALID_CONNECTOR_VARIABLE=52;
 public constant ErrorID TYPE_ERROR=53;
 public constant ErrorID MODIFY_PROTECTED=54;
@@ -195,6 +192,7 @@ public constant ErrorID ILLEGAL_EQUATION_TYPE=105;
 public constant ErrorID ASSERT_FAILED=106;
 public constant ErrorID WARNING_IMPORT_PACKAGES_ONLY=107;
 public constant ErrorID MISSING_INNER_PREFIX = 108;
+public constant ErrorID CONNECT_STREAM_TO_NONSTREAM=109;
 public constant ErrorID UNBOUND_PARAMETER_WARNING=500;
 public constant ErrorID BUILTIN_FUNCTION_SUM_HAS_SCALAR_PARAMETER=501;
 public constant ErrorID BUILTIN_FUNCTION_PRODUCT_HAS_SCALAR_PARAMETER=502;

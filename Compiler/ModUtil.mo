@@ -391,7 +391,7 @@ algorithm
       list<DAE.Element> rest;
       DAE.VarKind vk;
     case (cr,(DAE.VAR(componentRef = crv,
-                      variability = DAE.PARAM(),
+                      kind = DAE.PARAM(),
                       direction = vd,
                       ty = ty,
                       binding = e) :: rest))
@@ -400,7 +400,7 @@ algorithm
       then
         ();
     case (cr,(DAE.VAR(componentRef = crv,
-                      variability = vk,
+                      kind = vk,
                       direction = vd,
                       ty = ty,
                       binding = e) :: rest))

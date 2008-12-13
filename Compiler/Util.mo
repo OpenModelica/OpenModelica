@@ -1612,6 +1612,7 @@ algorithm
         ();
   end matchcontinue;
 end listMap01;
+
 public function listListAppendLast "appends to the last element of a list of list of elements"
   input list<list<Type_a>> llst;
   input list<Type_a> lst;

@@ -3378,13 +3378,12 @@ algorithm
 	  Interactive.SYMBOLTABLE(p,sp,ic,iv,(path,t)::cf),
 	  but where to get t? */ 
       local Absyn.Program p_1;
-        list<Interactive.CompiledCFunction> newCF, newCF_1;
       equation 
         mp = Settings.getModelicaPath();
-        (pnew, newCF) = ClassLoader.loadClass(path, mp, cf);
-        (p_1, newCF_1) = Interactive.updateProgram(pnew, p, newCF);
+        pnew = ClassLoader.loadClass(path, mp);
+        p_1 = Interactive.updateProgram(pnew, p);
         str = Print.getString();
-        newst = Interactive.SYMBOLTABLE(p_1,aDep,sp,{},iv,newCF_1,lf);
+        newst = Interactive.SYMBOLTABLE(p_1,aDep,sp,{},iv,cf,lf);
       then
         (cache,Values.BOOL(true),newst);
 
@@ -3407,12 +3406,11 @@ algorithm
         lstVarVal = iv,compiledFunctions = cf,
         loadedFiles = lf)),msg)
       local Absyn.Program p1;
-        list<Interactive.CompiledCFunction> newCF, newCF_1;
       equation 
-        (p1, newCF) = ClassLoader.loadFile(name, cf) "System.regularFileExists(name) => 0 & Parser.parse(name) => p1 &" ;
-        (newp,newCF_1) = Interactive.updateProgram(p1, p, newCF);
+        p1 = ClassLoader.loadFile(name) "System.regularFileExists(name) => 0 & Parser.parse(name) => p1 &" ;
+        newp = Interactive.updateProgram(p1, p);
       then
-        (cache,Values.BOOL(true),Interactive.SYMBOLTABLE(newp,aDep,sp,ic,iv,newCF_1,lf));
+        (cache,Values.BOOL(true),Interactive.SYMBOLTABLE(newp,aDep,sp,ic,iv,cf,lf));
 
     case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "loadFile"),expLst = {Exp.SCONST(string = name)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg) /* (Values.BOOL(true),Interactive.SYMBOLTABLE(newp,sp,{},iv,cf)) it the rule above have failed then check if file exists without this omc crashes */ 
       equation 
@@ -3936,11 +3934,11 @@ algorithm
 	  		cls = Interactive.getPathedClassInProgram(className, p);        
         refactoredClass = Refactor.refactorGraphicalAnnotation(p, cls);
         within_ = Interactive.buildWithin(className);
-        (p1,newCF) = Interactive.updateProgram(Absyn.PROGRAM({refactoredClass}, within_,ts), p, cf);
+        p1 = Interactive.updateProgram(Absyn.PROGRAM({refactoredClass}, within_,ts), p);
         s1 = Absyn.pathString(className);
 				retStr=Util.stringAppendList({"Translation of ",s1," successful.\n"});
       then
-        (cache,Values.STRING(retStr),Interactive.SYMBOLTABLE(p1,aDep,sp,ic,iv,newCF,lf));
+        (cache,Values.STRING(retStr),Interactive.SYMBOLTABLE(p1,aDep,sp,ic,iv,cf,lf));
         
     case (cache,_,_,st,_) local
       String errorMsg; Boolean strEmpty;

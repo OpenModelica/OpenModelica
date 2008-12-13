@@ -293,7 +293,7 @@ extern "C"
 
 			if (parseonly) /* only do the parsing, do not build the AST and return a null ast! */
 			{
-				rmlA0 = Absyn__PROGRAM(mk_nil(), Absyn__TOP);
+				rmlA0 = Absyn__PROGRAM(mk_nil(), Absyn__TOP, Absyn__TIMESTAMP(mk_rcon(0.0),mk_rcon(0.0)));
 				RML_TAILCALLK(rmlSC);
 			}
 

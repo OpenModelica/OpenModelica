@@ -733,7 +733,7 @@ protected function generateExternalObjectConstructorAlias
 	   equation
 	     v_str = Exp.printComponentRefStr(name);
 	     v_str2 = Exp.printComponentRefStr(cr);
-	     stmt = Util.stringAppendList({v_str," = ",v_str2,";\n"});
+	     stmt = Util.stringAppendList({v_str," = ",v_str2,";"});
 	     cfunc = Codegen.cAddStatements(Codegen.cEmptyFunction,{stmt});
 	     then (cfunc,cg_in);
 	       // Skip non-aliases constructors.
@@ -2597,7 +2597,7 @@ algorithm
         true = Exp.crefIsFirstArrayElt(cr);
         cr_1 = Exp.crefStripLastSubs(cr);
         cr_name = Exp.printComponentRefStr(cr_1);
-        cr_name_1 = Util.modelicaStringToCStr(cr_name);
+        cr_name_1 = Util.modelicaStringToCStr(cr_name,true);
         indx_str = intString(indx);
         res = Util.stringAppendList({"#define $",cr_name_1," ",array,"[",indx_str,"]\n"});
       then
@@ -3746,7 +3746,7 @@ algorithm
         res = Util.stringAppendList(
           {"int checkForDiscreteVarChanges()\n{\n",
           "  int needToIterate=0;\n",
-          check_code_1,"  ",check_code2_1,
+          check_code_1,"  ",check_code2_1,"\n",
 				  "  for (long i = 0; i < localData->nHelpVars; i++) {\n",
 				  "    if (change(localData->helpVars[i])) { needToIterate=1; }\n  }\n",
           "  return needToIterate;\n","}\n"});
@@ -4739,8 +4739,8 @@ algorithm
         // We need to strip subs from origname since they are removed in cr.
         cr_1 = Exp.crefStripLastSubs(origname);
         // Since we use origname we need to replace '.' with '$P' manually.
-        cr_1_str = stringAppend("$",Util.modelicaStringToCStr(Exp.printComponentRefStr(cr_1)));
-        cr_1 = Exp.CREF_IDENT(cr_1_str,{});
+        cr_1_str = stringAppend("$",Util.modelicaStringToCStr(Exp.printComponentRefStr(cr_1),true));
+        cr_1 = Exp.CREF_IDENT(cr_1_str,Exp.OTHER(),{});
         (e1,e2) = solveTrivialArrayEquation(cr_1,e1,e2);
         (s1,cg_id_1,f1) = generateSingleArrayEqnCode2(cr_1, cr_1, e1, e2, cg_id);
       then
@@ -5093,7 +5093,7 @@ algorithm
       equation
         pstr = intString(pos);
         str = Util.stringAppendList({"xloc[",pstr,"]"});
-        repl_1 = VarTransform.addReplacement(repl, cr, Exp.CREF(Exp.CREF_IDENT(str,{}),Exp.REAL()));
+        repl_1 = VarTransform.addReplacement(repl, cr, Exp.CREF(Exp.CREF_IDENT(str,Exp.REAL(),{}),Exp.REAL()));
         pos_1 = pos + 1;
         repl_2 = makeResidualReplacements2(repl_1, crs, pos_1);
       then
@@ -5857,10 +5857,10 @@ algorithm
       equation
         index_str = intString(index);
         name = Exp.printComponentRefStr(cr);
-        c_name = Util.modelicaStringToCStr(name);
+        c_name = Util.modelicaStringToCStr(name,true);
         res = Util.stringAppendList({DAELow.derivativeNamePrefix,c_name}) "	Util.string_append_list({\"xd{\",index_str, \"}\"}) => res" ;
       then
-        DAELow.VAR(Exp.CREF_IDENT(res,{}),DAELow.STATE(),dir,tp,exp,v,dim,index,cr,classes,attr,comment,flow_,stream_);
+        DAELow.VAR(Exp.CREF_IDENT(res,Exp.REAL(),{}),DAELow.STATE(),dir,tp,exp,v,dim,index,cr,classes,attr,comment,flow_,stream_);
         
     case (v)
       local DAELow.Var v;
@@ -5983,9 +5983,9 @@ algorithm
         = getEquationAndSolvedVar(e, eqns, vars, ass2) "Solving the state s means solving for der(s)" ;
         indxs = intString(indx);
         name = Exp.printComponentRefStr(cr);
-        c_name = Util.modelicaStringToCStr(name);
+        c_name = Util.modelicaStringToCStr(name,true);
         id = Util.stringAppendList({DAELow.derivativeNamePrefix,c_name});
-        cr_1 = Exp.CREF_IDENT(id,{});
+        cr_1 = Exp.CREF_IDENT(id,Exp.REAL(),{});
         varexp = Exp.CREF(cr_1,Exp.REAL());
         expr = Exp.solve(e1, e2, varexp);
         (exp_func,var,cg_id_1) = 
@@ -6003,9 +6003,9 @@ algorithm
         getEquationAndSolvedVar(e, eqns, vars, ass2);
         indxs = intString(indx);
         name = Exp.printComponentRefStr(cr) "	Util.string_append_list({\"xd{\",indxs,\"}\"}) => id &" ;
-        c_name = Util.modelicaStringToCStr(name);
+        c_name = Util.modelicaStringToCStr(name,true);
         id = Util.stringAppendList({DAELow.derivativeNamePrefix,c_name});
-        cr_1 = Exp.CREF_IDENT(id,{});
+        cr_1 = Exp.CREF_IDENT(id,Exp.REAL(),{});
         varexp = Exp.CREF(cr_1,Exp.REAL());
         failure(_ = Exp.solve(e1, e2, varexp));
         (res,cg_id_1,f1) = generateOdeSystem2NonlinearResiduals(false,{cr_1}, {eqn},ae, cg_id);
@@ -6891,7 +6891,7 @@ algorithm
         (cfunc1,cg_id1_1,cfunc2,cg_id2_1,extra_funcs1) = 
         
         generateZeroCrossing2(xs, index_1, dae, dlow, ass1, ass2, blocks, helpVarInfo, cg_id1, cg_id2);
-        stmt1 = Util.stringAppendList({"ZEROCROSSING(",index_str,",",zc_str,");\n"});
+        stmt1 = Util.stringAppendList({"ZEROCROSSING(",index_str,",",zc_str,");"});
         
         (Codegen.CFUNCTION(rettp,fn,retrec,arg,vars,init,stmts,cleanups),saveStmts,cg_id2_2,extra_funcs2) = 
         buildZeroCrossingEqns(dae, dlow, ass1, ass2, eql, blocks, cg_id2_1);
@@ -7185,7 +7185,7 @@ algorithm
       equation
         cr_str = Exp.printComponentRefStr(cr);
         exp_str = printExpCppStr(exp);
-        eqn_str = Util.stringAppendList({"    ",cr_str," = ",exp_str,";\n"});
+        eqn_str = Util.stringAppendList({"    ",cr_str," = ",exp_str,";"});
       then
         eqn_str;
   end matchcontinue;
@@ -7772,7 +7772,7 @@ algorithm
         res = generateComputeRemovedEqns2(rest);
         cr_str = Exp.printComponentRefStr(cr);
         exp_str = printExpCppStr(exp);
-        s1 = Util.stringAppendList({cr_str," = ",exp_str,";\n"});
+        s1 = Util.stringAppendList({cr_str," = ",exp_str,";"});
       then
         (s1 :: res);
   end matchcontinue;
@@ -8198,7 +8198,7 @@ algorithm
         exp = Exp.BINARY(e1,Exp.SUB(Exp.REAL()),e2);
         simplify_exp = Exp.simplify(exp);
         cr_str = Util.stringAppendList({"delta[",indx_str,"]"}) "Use array named \'delta\' for residuals" ;
-        new_cr = Exp.CREF_IDENT(cr_str,{});
+        new_cr = Exp.CREF_IDENT(cr_str,Exp.REAL(),{});
         origname_str = Exp.printComponentRefStr(origname);
         (cfn,cg_id_1) = buildAssignment(dae, new_cr, simplify_exp, origname_str, cg_id);
       then
@@ -8263,21 +8263,20 @@ algorithm
       equation
         cr_str = Exp.printComponentRefStr(cr);
         (cfn,var,cg_id_1) = Codegen.generateExpression(exp, cg_id, Codegen.simContext);
-        stmt = Util.stringAppendList({cr_str," = ",var,";\n"});
+        stmt = Util.stringAppendList({cr_str," = ",var,";"});
         cfn = Codegen.cAddStatements(cfn, {stmt});
       then
         (cfn,cg_id_1);
     case (dae,cr,(exp as Exp.CALL(path = path,expLst = args,tuple_ = (tuple_ as true),builtin = builtin)),origname,cg_id)
       equation
-        print(
-          "-simcodegen: build_assignment: Tuple return values from functions not implemented\n");
+        print("-simcodegen: build_assignment: Tuple return values from functions not implemented\n");
       then
         fail();
     case (dae,cr,exp,origname,cg_id)
       equation
         cr_str = Exp.printComponentRefStr(cr);
         (cfn,var,cg_id_1) = Codegen.generateExpression(exp, cg_id, Codegen.simContext);
-        stmt = Util.stringAppendList({cr_str," = ",var,";\n"});
+        stmt = Util.stringAppendList({cr_str," = ",var,";"});
         cfn = Codegen.cAddStatements(cfn, {stmt});
       then
         (cfn,cg_id_1);
@@ -8387,13 +8386,13 @@ algorithm
   matchcontinue (inExp,inInteger)
     local
       String s,s_1,s_2,res,sym,s1,s2,s3,s4,s_3,res_1,ifstr,thenstr,elsestr,s_4,slast,argstr,fs,s5,s_5,res2,crstr,dimstr,str,expstr,iterstr,id;
-      Integer x,pri2_1,pri2,pri3,pri1,ival,i;
+      Integer x,pri2_1,pri2,pri3,pri1,ival;
       Real two_1,two,rval;
       Exp.ComponentRef c;
       Exp.Exp e1,e2,e21,e22,e,t,f,start,stop,step,cr,dim,exp,iterexp;
       Exp.Operator op;
       Exp.Type ty,ty2,REAL;
-      list<Exp.Exp> args,es;
+      list<Exp.Exp> args,es,sub;
       Boolean builtin;
       Absyn.Path fcn;
       list<Exp.ComponentRef> cref_list;
@@ -8699,14 +8698,14 @@ algorithm
       then
         s;
 
-    case (Exp.ASUB(exp = e,sub = i),pri1)
+    case (Exp.ASUB(exp = e,sub = {e1}),pri1)
       equation
         pri2 = 51;
         cref_list = Exp.getCrefFromExp(e);
         (s1,pri3) = Exp.printLeftparStr(pri1, pri2);
         s2 = printExp2Str(e, pri3);
         s3 = Exp.printRightparStr(pri1, pri2);
-        s4 = intString(i);
+        s4 = printExp2Str(e1, pri1);
         s = stringAppend(s1, s2);
         s_1 = stringAppend(s, s3);
         s_2 = stringAppend(s_1, "[");

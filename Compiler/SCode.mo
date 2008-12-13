@@ -157,6 +157,7 @@ uniontype ClassDef
   record DERIVED "a derived class"
     Absyn.TypeSpec typeSpec "typeSpec: type specification" ;
     Mod modifications;
+    Absyn.ElementAttributes attributes;
   end DERIVED;
 
   record ENUMERATION "an enumeration"
@@ -285,7 +286,7 @@ uniontype Element "- Elements
   end CLASSDEF;
 
   record IMPORT "an import element"
-    Absyn.Import importElement;
+    Absyn.Import imp "the import definition";
   end IMPORT;
 
   record COMPONENT "a component"
@@ -1698,6 +1699,8 @@ algorithm
       Attributes attr;
       String modStr;
       Absyn.Path path;
+      Option<Absyn.Path> pathOpt;
+      Absyn.Import imp;
 
     case EXTENDS(baseClassPath = path,modifications = mod)
       equation 
@@ -1730,7 +1733,7 @@ algorithm
         res = Util.stringAppendList({"CLASSDEF(",n,",...,",str,")"});
       then
         res;
-    case (IMPORT(imp = imp)) 
+    case (IMPORT(imp = imp))
       equation
          str = "IMPORT("+& Absyn.printImportString(imp) +& ");";
       then str; 
@@ -1754,12 +1757,16 @@ algorithm
       Variability var;
       Option<Absyn.Comment> comment;
       Attributes attr;
+      Absyn.Path path;
+      Absyn.Import imp;
+      
     case EXTENDS(baseClassPath = path,modifications = mod)
       equation 
         str = Absyn.pathString(path);
         res = Util.stringAppendList({"extends ",str,";"});
       then
         res;
+        
     case COMPONENT(component = n,finalPrefix = final_,replaceablePrefix = repl,protectedPrefix = prot,
                    attributes = ATTR(variability = var),typeSpec = typath,modifications = mod,
                    baseClassPath = pathOpt,comment = comment)
@@ -1771,12 +1778,14 @@ algorithm
         res = Util.stringAppendList({vs," ",s," ",n,mod_str,"; // from baseclass: ",str,"\n"});
       then
         res;
+        
     case CLASSDEF(name = n,finalPrefix = final_,replaceablePrefix = repl,classDef = cl,baseClassPath = _)
       equation 
         str = printClassStr(cl);
         res = Util.stringAppendList({"class ",n,"\n",str,"end ",n,";\n"});
       then
         res;
+        
     case (IMPORT(imp = imp)) 
       equation
          str = "import "+& Absyn.printImportString(imp) +& ";";

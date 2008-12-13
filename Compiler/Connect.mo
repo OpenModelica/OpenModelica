@@ -1570,7 +1570,7 @@ algorithm
       s1 = printOuterConnectsStr(outerConn);
       s2 = Exp.printComponentRefStr(cr1);
       s3 = Exp.printComponentRefStr(cr2);
-      str = "(" +& s2 +& "("+&Dump.unparseInnerouterStr(io1) +&"), " +& s3 +&"("+& Dump.unparseInnerouterStr(io2) +& ") ) ," +& s1;
+      str = "(" +& s2 +& "("+& Dump.unparseInnerouterStr(io1) +&"), " +& s3 +&"("+& Dump.unparseInnerouterStr(io2) +& ") ) ," +& s1;
     then str;
   end matchcontinue;
 end printOuterConnectsStr;

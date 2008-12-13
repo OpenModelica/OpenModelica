@@ -580,7 +580,7 @@ local
   case(ev as Exp.COMPLEX_VAR(name,tp))
     equation
       ty = expTypetoTypesType(tp);
-      tv = VAR(name,ATTR(false,SCode.RW, SCode.VAR, Absyn.BIDIR, Absyn.UNSPECIFIED),false,ty,UNBOUND);
+      tv = VAR(name,ATTR(false,false,SCode.RW, SCode.VAR, Absyn.BIDIR, Absyn.UNSPECIFIED),false,ty,UNBOUND);
       then
         tv;
   case(_) equation print("error in convertFromExpToTypesVar\n"); then fail();
@@ -1037,7 +1037,7 @@ algorithm
         tp = typeOfValue(v);
         rest = valuesToVars(vs, ids);
       then
-        (VAR(id,ATTR(false,SCode.RW(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,
+        (VAR(id,ATTR(false,false,SCode.RW(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,
           tp,UNBOUND()) :: rest);
     case (_,_)
       equation 
@@ -1167,14 +1167,14 @@ public function setVarInput "Sets a Types.Var to input"
 algorithm
   outV := matchcontinue(v)
   local Ident name;
-    Boolean f,p;
+    Boolean f,p,stream_;
     Type tp;
     Binding bind;
     SCode.Accessibility a;
     SCode.Variability v;
     Absyn.InnerOuter io;
     
-    case( VAR(name,ATTR(f,a,v,_,io),p,tp,bind)) then VAR(name,ATTR(f,a,v,Absyn.INPUT(),io),p,tp,bind);
+    case( VAR(name,ATTR(f,stream_,a,v,_,io),p,tp,bind)) then VAR(name,ATTR(f,stream_,a,v,Absyn.INPUT(),io),p,tp,bind);
   end matchcontinue;
 end setVarInput;
 
@@ -1517,22 +1517,22 @@ algorithm
       then
         v;
     case ((T_ENUM(),_),"quantity") then VAR("quantity",
-          ATTR(false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,(T_STRING({}),NONE),VALBOUND(Values.STRING("")));  
+          ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,(T_STRING({}),NONE),VALBOUND(Values.STRING("")));  
 
-    case ((T_ENUM(),_),"min") then VAR("min",ATTR(false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
+    case ((T_ENUM(),_),"min") then VAR("min",ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
           false,(T_ENUM(),NONE),UNBOUND());  /* Should be bound to the first element of
   T_ENUMERATION list higher up in the call chain */ 
-    case ((T_ENUM(),_),"max") then VAR("max",ATTR(false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
+    case ((T_ENUM(),_),"max") then VAR("max",ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
           false,(T_ENUM(),NONE),UNBOUND());  /* Should be bound to the last element of 
   T_ENUMERATION list higher up in the call chain */ 
-    case ((T_ENUM(),_),"start") then VAR("start",ATTR(false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
+    case ((T_ENUM(),_),"start") then VAR("start",ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
           false,(T_BOOL({}),NONE),UNBOUND());  /* Should be bound to the last element of 
   T_ENUMERATION list higher up in the call chain */ 
-    case ((T_ENUM(),_),"fixed") then VAR("fixed",ATTR(false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
+    case ((T_ENUM(),_),"fixed") then VAR("fixed",ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
           false,(T_BOOL({}),NONE),UNBOUND());  /* Needs to be set to true/false higher up the call chain
   depending on variability of instance */ 
     case ((T_ENUM(),_),"enable") then VAR("enable",
-          ATTR(false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,(T_BOOL({}),NONE),VALBOUND(Values.BOOL(true))); 
+          ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,(T_BOOL({}),NONE),VALBOUND(Values.BOOL(true))); 
   end matchcontinue;
 end lookupInBuiltin;
 
@@ -3784,10 +3784,14 @@ algorithm
       list<Exp.ComponentRef> res;
       Ident id;
       list<Var> vs;
+      Exp.Type ty2;
+      Type ty;
+      
     case ({},_) then {};
-    case ((VAR(name = id,attributes = ATTR(stream_ = true)) :: vs),cr)
+    case ((VAR(name = id,attributes = ATTR(stream_ = true),type_ = ty) :: vs),cr)
       equation
-        cr_1 = Exp.joinCrefs(cr, Exp.CREF_IDENT(id,{}));
+        ty2 = elabType(ty);
+        cr_1 = Exp.joinCrefs(cr, Exp.CREF_IDENT(id,ty2,{}));
         res = streamVariables(vs, cr);
       then
         (cr_1 :: res);

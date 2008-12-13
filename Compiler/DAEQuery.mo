@@ -630,17 +630,17 @@ algorithm
       list<String> lst1,lst2,lst3,res,lst3_1;
       Exp.Type tp;
       Exp.ComponentRef cr;
-      Exp.Exp e;
+      Exp.Exp e, e1;
       list<Algorithm.Statement> rest,stmts;
       DAELow.Variables vars;
       list<Exp.Exp> expl;
       Algorithm.Else else_;
     case ({},_) then {};
-    case ((Algorithm.ASSIGN(type_ = tp,componentRef = cr,exp = e) :: rest),vars)
+    case ((Algorithm.ASSIGN(type_ = tp,exp1 = e1,exp = e) :: rest),vars)
       equation
         lst1 = incidenceRowStmts(rest, vars);
         lst2 = incidenceRowExp(e, vars);
-        lst3 = incidenceRowExp(Exp.CREF(cr,Exp.OTHER()), vars);
+        lst3 = incidenceRowExp(e1, vars);
         res = Util.listFlatten({lst1,lst2,lst3});
       then
         res;
@@ -1029,8 +1029,8 @@ algorithm
         p = Exp.expPriority(e);
         p1 = Exp.expPriority(e1);
         p2 = Exp.expPriority(e2);
-        s1_1 = Exp.parenthesize(s1, p1, p);
-        s2_1 = Exp.parenthesize(s2, p2, p);
+        s1_1 = Exp.parenthesize(s1, p1, p, false);
+        s2_1 = Exp.parenthesize(s2, p2, p, true);
         s = stringAppend(s1_1, sym);
         s_1 = stringAppend(s, s2_1);
       then
@@ -1041,7 +1041,7 @@ algorithm
         s = printExpStr(e1);
         p = Exp.expPriority(e);
         p1 = Exp.expPriority(e1);
-        s_1 = Exp.parenthesize(s, p1, p);
+        s_1 = Exp.parenthesize(s, p1, p,false);
         s_2 = stringAppend(sym, s_1);
       then
         s_2;
@@ -1053,8 +1053,8 @@ algorithm
         p = Exp.expPriority(e);
         p1 = Exp.expPriority(e1);
         p2 = Exp.expPriority(e2);
-        s1_1 = Exp.parenthesize(s1, p1, p);
-        s2_1 = Exp.parenthesize(s2, p2, p);
+        s1_1 = Exp.parenthesize(s1, p1, p, false);
+        s2_1 = Exp.parenthesize(s2, p2, p, true);
         s = stringAppend(s1_1, sym);
         s_1 = stringAppend(s, s2_1);
       then
@@ -1065,7 +1065,7 @@ algorithm
         s = printExpStr(e1);
         p = Exp.expPriority(e);
         p1 = Exp.expPriority(e1);
-        s_1 = Exp.parenthesize(s, p1, p);
+        s_1 = Exp.parenthesize(s, p1, p, false);
         s_2 = stringAppend(sym, s_1);
       then
         s_2;
@@ -1077,8 +1077,8 @@ algorithm
         p = Exp.expPriority(e);
         p1 = Exp.expPriority(e1);
         p2 = Exp.expPriority(e2);
-        s1_1 = Exp.parenthesize(s1, p1, p);
-        s2_1 = Exp.parenthesize(s2, p1, p);
+        s1_1 = Exp.parenthesize(s1, p1, p, false);
+        s2_1 = Exp.parenthesize(s2, p1, p, true);
         s = stringAppend(s1_1, sym);
         s_1 = stringAppend(s, s2_1);
       then
@@ -1092,9 +1092,9 @@ algorithm
         pc = Exp.expPriority(cond);
         pt = Exp.expPriority(tb);
         pf = Exp.expPriority(fb);
-        cs_1 = Exp.parenthesize(cs, pc, p);
-        ts_1 = Exp.parenthesize(ts, pt, p);
-        fs_1 = Exp.parenthesize(fs, pf, p);
+        cs_1 = Exp.parenthesize(cs, pc, p, false);
+        ts_1 = Exp.parenthesize(ts, pt, p, false);
+        fs_1 = Exp.parenthesize(fs, pf, p, false);
         str = Util.stringAppendList({"if ",cs_1," then ",ts_1," else ",fs_1});
       then
         str;
@@ -1138,8 +1138,8 @@ algorithm
         p = Exp.expPriority(e);
         pstart = Exp.expPriority(start);
         pstop = Exp.expPriority(stop);
-        s1_1 = Exp.parenthesize(s1, pstart, p);
-        s3_1 = Exp.parenthesize(s3, pstop, p);
+        s1_1 = Exp.parenthesize(s1, pstart, p, false);
+        s3_1 = Exp.parenthesize(s3, pstop, p, false);
         s = Util.stringAppendList({s1_1,":",s3_1});
       then
         s;
@@ -1152,9 +1152,9 @@ algorithm
         pstart = Exp.expPriority(start);
         pstop = Exp.expPriority(stop);
         pstep = Exp.expPriority(step);
-        s1_1 = Exp.parenthesize(s1, pstart, p);
-        s3_1 = Exp.parenthesize(s3, pstop, p);
-        s2_1 = Exp.parenthesize(s2, pstep, p);
+        s1_1 = Exp.parenthesize(s1, pstart, p, false);
+        s3_1 = Exp.parenthesize(s3, pstop, p, false);
+        s2_1 = Exp.parenthesize(s2, pstep, p, false);
         s = Util.stringAppendList({s1_1,":",s2_1,":",s3_1});
       then
         s;
@@ -1193,13 +1193,13 @@ algorithm
         res = Util.stringAppendList({"CAST(",str,", ",s,")"});
       then
         res;
-    case (e as Exp.ASUB(exp = e1,sub = i))
+    case (e as Exp.ASUB(exp = e1,sub = {e2}))
       equation
         p = Exp.expPriority(e);
         pe1 = Exp.expPriority(e1);
         s1 = printExp2Str(e1);
-        s1_1 = Exp.parenthesize(s1, pe1, p);
-        s4 = intString(i);
+        s1_1 = Exp.parenthesize(s1, pe1, p, false);
+        s4 = printExp2Str(e2);
         s_4 = Util.stringAppendList({s1_1,"[",s4,"]"});
       then
         s_4;

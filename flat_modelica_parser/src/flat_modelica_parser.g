@@ -47,20 +47,19 @@ options {
 class flat_modelica_parser extends Parser;
 
 options {
-    codeGenMakeSwitchThreshold = 3;
-    codeGenBitsetTestThreshold = 4;
+    codeGenMakeSwitchThreshold = 2;
+    codeGenBitsetTestThreshold = 3;
 	importVocab = modelica;
     defaultErrorHandler = false;
 	k = 2;
 	buildAST = true;
     ASTLabelType = "RefMyAST";
-
 }
 
 tokens {
     ALGORITHM_STATEMENT;
 	ARGUMENT_LIST;
-	CLASS_DEFINITION	;
+	CLASS_DEFINITION;
     CLASS_EXTENDS ;
 	CLASS_MODIFICATION;
 	CODE_EXPRESSION;
@@ -99,6 +98,8 @@ tokens {
 	STRING_COMMENT;
 	UNARY_MINUS	;
 	UNARY_PLUS	;
+	UNARY_MINUS_EW ;
+	UNARY_PLUS_EW ;
 	UNQUALIFIED;
 	FLAT_IDENT;
 	TYPE_LIST;
@@ -112,7 +113,6 @@ tokens {
 
 
 stored_definition :
-
 			(within_clause SEMICOLON!)?
 			((FINAL)? cd:class_definition s:SEMICOLON!
 			{
@@ -416,7 +416,7 @@ component_clause :
 
 type_prefix :
 		(FLOW
-		|STREAM)?
+		|STREAM)? /* added Modelica 3.1 stream connector */
 		(DISCRETE
 		|PARAMETER
 		|CONSTANT
@@ -608,12 +608,11 @@ algorithm_annotation_list :
         }
 
 equation :
-		(   (simple_expression EQUALS) => equality_equation
+		(   equality_equation
 		|	conditional_equation_e
 		|	for_clause_e
 		|	connect_clause
 		|	when_clause_e
-		|   component_reference function_call // function call
 		|   FAILURE^ LPAR! equation RPAR!
 		|   EQUALITY^ LPAR! equation RPAR!
 		)
@@ -641,8 +640,7 @@ equation :
         }
 
 algorithm :
-		(	(simple_expression ASSIGN) => assign_clause_a
-		|	component_reference function_call
+		(	assign_clause_a
 		|	conditional_equation_a
 		|	for_clause_a
 		|	while_clause
@@ -675,12 +673,12 @@ algorithm :
           AFTER_SYNC;
         }
 
-assign_clause_a :
-		   simple_expression ASSIGN^ expression
+assign_clause_a :          		  
+		simple_expression ( ASSIGN^ expression )?  
 		;
 
-equality_equation :
-		simple_expression EQUALS^ expression
+equality_equation :		  
+		simple_expression ( EQUALS^ expression )? 		
 		;
 
 conditional_equation_e :
@@ -758,7 +756,7 @@ equation_list_then :
 equation_list :
 		{LA(1) != END || (LA(1) == END && LA(2) != IDENT)}?
 		|
-		(equation SEMICOLON! equation_list)
+		( equation SEMICOLON! equation_list )
 		;
 
 algorithm_list :
@@ -782,7 +780,6 @@ connector_ref_2 :
 /*
  * 2.2.7 Expressions
  */
-
 expression :
 		( if_expression
 		| simple_expression
@@ -898,11 +895,11 @@ code_expression ! :
 	;
 
 code_equation_clause :
-		( EQUATION^ (equation SEMICOLON! | annotation SEMICOLON! )*  )
+		( EQUATION^ ( equation SEMICOLON! | annotation SEMICOLON! )*  )
 		;
 
 code_initial_equation_clause :
- 		{ LA(2)==EQUATION}?
+ 		{ LA(2)==EQUATION }?
  		INITIAL! ec:code_equation_clause
          {
              #code_initial_equation_clause = #([INITIAL_EQUATION,"INTIAL_EQUATION"], ec);
@@ -912,12 +909,11 @@ code_initial_equation_clause :
 code_algorithm_clause :
 		ALGORITHM^ (algorithm SEMICOLON! | annotation SEMICOLON!)*
 		;
+
 code_initial_algorithm_clause :
 		{ LA(2) == ALGORITHM }?
 		INITIAL! ALGORITHM^
-		(algorithm SEMICOLON!
-		|annotation SEMICOLON!
-		)*
+		( algorithm SEMICOLON! | annotation SEMICOLON! )*
 		{
 			#code_initial_algorithm_clause = #([INITIAL_ALGORITHM,"INTIAL_ALGORITHM"], #code_initial_algorithm_clause);
 		}
@@ -939,39 +935,29 @@ logical_factor :
 		;
 
 relation :
-		arithmetic_expression ( ( LESS^ | LESSEQ^ | GREATER^ | GREATEREQ^ | EQEQ^ | LESSGT^ | RLESS^ | RGREATER^ ) arithmetic_expression )?
-		;
-
-rel_op :
-		( LESS^ | LESSEQ^ | GREATER^ | GREATEREQ^ | EQEQ^ | LESSGT^ )
+		arithmetic_expression 
+		( ( LESS^ | LESSEQ^ | GREATER^ | GREATEREQ^ | EQEQ^ | LESSGT^ | RLESS^ | RGREATER^ ) arithmetic_expression )?
 		;
 
 arithmetic_expression :
-		unary_arithmetic_expression ( ( PLUS^ | MINUS^ ) term )*
+		unary_arithmetic_expression ( ( PLUS^ | MINUS^ | PLUS_EW^ | MINUS_EW^ ) term )*
 		;
 
 unary_arithmetic_expression ! :
-		( PLUS t1:term
-		{
-			#unary_arithmetic_expression = #([UNARY_PLUS,"PLUS"], #t1);
-		}
-		| MINUS t2:term
-		{
-			#unary_arithmetic_expression = #([UNARY_MINUS,"MINUS"], #t2);
-		}
-		| t3:term
-		{
-			#unary_arithmetic_expression = #t3;
-		}
-		)
-		;
+	( PLUS t1:term     { #unary_arithmetic_expression = #([UNARY_PLUS,"PLUS"], #t1); }
+	| MINUS t2:term	   { #unary_arithmetic_expression = #([UNARY_MINUS,"MINUS"], #t2); }
+	| PLUS_EW t3:term  { #unary_arithmetic_expression = #([UNARY_PLUS_EW,"PLUS"], #t3); }
+	| MINUS_EW t4:term { #unary_arithmetic_expression = #([UNARY_MINUS_EW,"MINUS"], #t4); }
+	| t5:term          { #unary_arithmetic_expression = #t5; }
+	)
+	;
 
 term :
-		factor ( ( STAR^ | SLASH^ ) factor )*
+		factor ( ( STAR^ | SLASH^ | STAR_EW^ | SLASH_EW^ ) factor )*
 		;
 
 factor :
-		primary ( POWER^ primary )?
+		primary ( ( POWER^ | POWER_EW^ ) primary )?
 		;
 
 primary :
@@ -1007,25 +993,17 @@ component_reference__function_call ! :
 	;
 
 name_path :
-		{ LA(2)!=DOT }? IDENT |
-		IDENT DOT^ name_path
+		  { LA(2)!=DOT }? IDENT 
+		| IDENT DOT^ name_path
 		;
 
 name_path_star returns [bool val=false]
 		:
-		{ LA(2)!=DOT }? IDENT { val=false;}|
-		{ LA(2)!=DOT }? STAR! { val=true;}|
-		i:IDENT DOT^ val = np:name_path_star
-		{
-			if(!(#np))
-			{
-				#name_path_star = #i;
-			}
-		}
-		;
+	  { LA(2) != DOT }? IDENT { val=false; } ( STAR_EW! { val=true;  } )?
+	| i:IDENT DOT^ val = np:name_path_star { if(!(#np))	{ #name_path_star = #i;	} };
 
 component_reference :
-		IDENT^ ( array_subscripts )? ( DOT^ component_reference )?
+		  IDENT^ ( array_subscripts )? ( DOT^ component_reference )?
 		| WILD
 		;
 
@@ -1079,7 +1057,7 @@ named_arguments :
 		;
 
 named_arguments2 :
-		named_argument ( COMMA! (COMMA IDENT EQUALS) => named_arguments2)?
+		named_argument (COMMA! named_argument)*
 		;
 
 named_argument :
@@ -1092,6 +1070,7 @@ expression_list :
 			#expression_list=#([EXPRESSION_LIST,"EXPRESSION_LIST"],#expression_list);
 		}
 		;
+
 expression_list2 :
 		expression (COMMA! expression_list2)?
 	    ;
@@ -1106,7 +1085,6 @@ subscript :
 
 comment :
 		(
-			//string_comment	 ANNOTATION )=> annotation
 			string_comment (annotation)?
 		)
 		{
@@ -1115,7 +1093,7 @@ comment :
 		;
 
 string_comment :
-		( STRING ((PLUS STRING) => ( PLUS^ STRING )+ | ) )?
+		( STRING (PLUS^ STRING)*)?
 		{
             if (#string_comment)
             {

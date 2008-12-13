@@ -960,12 +960,12 @@ sudh as:
        Option<Exp.Exp> min,max,Initial,nominal;
        Option<Exp.Exp> fixed;
        Option<DAE.StateSelect> stateSel;
-   case (SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),NONE(),NONE(),NONE())),_) then ();
-   case (SOME(DAE.VAR_ATTR_INT(NONE(),(NONE(),NONE()),NONE(),NONE())),_) then ();
-   case (SOME(DAE.VAR_ATTR_BOOL(NONE(),NONE(),NONE())),_) then ();
-   case (SOME(DAE.VAR_ATTR_STRING(NONE(),NONE())),_) then ();
-   case (SOME(DAE.VAR_ATTR_ENUMERATION(NONE(),(NONE(),NONE()),NONE(),NONE())),_) then ();
-   case (SOME(DAE.VAR_ATTR_REAL(quant,unit,displayUnit,min_max,Initial,fixed,nominal,stateSel)),Content)
+   case (SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),NONE(),NONE(),NONE(),_,_,_)),_) then ();
+   case (SOME(DAE.VAR_ATTR_INT(NONE(),(NONE(),NONE()),NONE(),NONE(),_,_,_)),_) then ();
+   case (SOME(DAE.VAR_ATTR_BOOL(NONE(),NONE(),NONE(),_,_,_)),_) then ();
+   case (SOME(DAE.VAR_ATTR_STRING(NONE(),NONE(),_,_,_)),_) then ();
+   case (SOME(DAE.VAR_ATTR_ENUMERATION(NONE(),(NONE(),NONE()),NONE(),NONE(),_,_,_)),_) then ();
+   case (SOME(DAE.VAR_ATTR_REAL(quant,unit,displayUnit,min_max,Initial,fixed,nominal,stateSel,_,_,_)),Content)
       equation
         dumpStrOpenTag(Content);
         dumpOptExp(quant,VAR_ATTR_QUANTITY);
@@ -979,7 +979,7 @@ sudh as:
         dumpOptExp(fixed,VAR_ATTR_FIXED);
         dumpStrCloseTag(Content);
       then();
-    case (SOME(DAE.VAR_ATTR_INT(quant,min_max,Initial,fixed)),Content)
+    case (SOME(DAE.VAR_ATTR_INT(quant,min_max,Initial,fixed,_,_,_)),Content)
       equation
         dumpStrOpenTag(Content);
         dumpOptExp(quant,VAR_ATTR_QUANTITY);
@@ -989,7 +989,7 @@ sudh as:
         dumpOptExp(fixed,VAR_ATTR_FIXED);
         dumpStrCloseTag(Content);
       then();
-    case (SOME(DAE.VAR_ATTR_BOOL(quant,Initial,fixed)),Content)
+    case (SOME(DAE.VAR_ATTR_BOOL(quant,Initial,fixed,_,_,_)),Content)
       equation
         dumpStrOpenTag(Content);
         dumpOptExp(quant,VAR_ATTR_QUANTITY);
@@ -997,14 +997,14 @@ sudh as:
         dumpOptExp(fixed,VAR_ATTR_FIXED);
         dumpStrCloseTag(Content);
       then();
-    case (SOME(DAE.VAR_ATTR_STRING(quant,Initial)),Content)
+    case (SOME(DAE.VAR_ATTR_STRING(quant,Initial,_,_,_)),Content)
       equation
         dumpStrOpenTag(Content);
         dumpOptExp(quant,VAR_ATTR_QUANTITY);
         dumpOptExp(Initial,VAR_ATTR_INITIALVALUE);
         dumpStrCloseTag(Content);
       then();
-    case (SOME(DAE.VAR_ATTR_ENUMERATION(quant,min_max,Initial,fixed)),Content)
+    case (SOME(DAE.VAR_ATTR_ENUMERATION(quant,min_max,Initial,fixed,_,_,_)),Content)
       equation
         dumpStrOpenTag(Content);
         dumpOptExp(quant,VAR_ATTR_QUANTITY);
@@ -1562,12 +1562,12 @@ algorithm
         dumpStrCloseTag(MathMLOperator);
         dumpStrCloseTag(MathMLApply);
       then ();
-    case (e as Exp.ASUB(exp = e1,sub = i))
+    case (e as Exp.ASUB(exp = e1,sub = {e2}))
       equation
         dumpStrOpenTag(MathMLApply);
         dumpStrVoidTag(MathMLSelector);
         dumpExp2(e1);
-        dumpStrMathMLNumber(intString(i));
+        dumpExp2(e2);
         dumpStrCloseTag(MathMLApply);
       then ();
     case (Exp.SIZE(exp = cr,sz = SOME(dim)))
@@ -2843,8 +2843,8 @@ algorithm
         p = Exp.expPriority(e);
         p1 = Exp.expPriority(e1);
         p2 = Exp.expPriority(e2);
-        s1_1 = Exp.parenthesize(s1, p1, p);
-        s2_1 = Exp.parenthesize(s2, p2, p);
+        s1_1 = Exp.parenthesize(s1, p1, p, false);
+        s2_1 = Exp.parenthesize(s2, p2, p, true);
         s = stringAppend(s1_1, sym);
         s_1 = stringAppend(s, s2_1);
       then
@@ -2855,7 +2855,7 @@ algorithm
         s = printExpStr(e1);
         p = Exp.expPriority(e);
         p1 = Exp.expPriority(e1);
-        s_1 = Exp.parenthesize(s, p1, p);
+        s_1 = Exp.parenthesize(s, p1, p, false);
         s_2 = stringAppend(sym, s_1);
       then
         s_2;
@@ -2867,8 +2867,8 @@ algorithm
         p = Exp.expPriority(e);
         p1 = Exp.expPriority(e1);
         p2 = Exp.expPriority(e2);
-        s1_1 = Exp.parenthesize(s1, p1, p);
-        s2_1 = Exp.parenthesize(s2, p2, p);
+        s1_1 = Exp.parenthesize(s1, p1, p, false);
+        s2_1 = Exp.parenthesize(s2, p2, p, true);
         s = stringAppend(s1_1, sym);
         s_1 = stringAppend(s, s2_1);
       then
@@ -2879,7 +2879,7 @@ algorithm
         s = printExpStr(e1);
         p = Exp.expPriority(e);
         p1 = Exp.expPriority(e1);
-        s_1 = Exp.parenthesize(s, p1, p);
+        s_1 = Exp.parenthesize(s, p1, p, false);
         s_2 = stringAppend(sym, s_1);
       then
         s_2;
@@ -2891,8 +2891,8 @@ algorithm
         p = Exp.expPriority(e);
         p1 = Exp.expPriority(e1);
         p2 = Exp.expPriority(e2);
-        s1_1 = Exp.parenthesize(s1, p1, p);
-        s2_1 = Exp.parenthesize(s2, p1, p);
+        s1_1 = Exp.parenthesize(s1, p1, p, false);
+        s2_1 = Exp.parenthesize(s2, p1, p, true);
         s = stringAppend(s1_1, sym);
         s_1 = stringAppend(s, s2_1);
       then
@@ -2906,9 +2906,9 @@ algorithm
         pc = Exp.expPriority(cond);
         pt = Exp.expPriority(tb);
         pf = Exp.expPriority(fb);
-        cs_1 = Exp.parenthesize(cs, pc, p);
-        ts_1 = Exp.parenthesize(ts, pt, p);
-        fs_1 = Exp.parenthesize(fs, pf, p);
+        cs_1 = Exp.parenthesize(cs, pc, p, false);
+        ts_1 = Exp.parenthesize(ts, pt, p, false);
+        fs_1 = Exp.parenthesize(fs, pf, p, false);
         str = Util.stringAppendList({"if ",cs_1," then ",ts_1," else ",fs_1});
       then
         str;
@@ -2952,8 +2952,8 @@ algorithm
         p = Exp.expPriority(e);
         pstart = Exp.expPriority(start);
         pstop = Exp.expPriority(stop);
-        s1_1 = Exp.parenthesize(s1, pstart, p);
-        s3_1 = Exp.parenthesize(s3, pstop, p);
+        s1_1 = Exp.parenthesize(s1, pstart, p, false);
+        s3_1 = Exp.parenthesize(s3, pstop, p, false);
         s = Util.stringAppendList({s1_1,":",s3_1});
       then
         s;
@@ -2966,9 +2966,9 @@ algorithm
         pstart = Exp.expPriority(start);
         pstop = Exp.expPriority(stop);
         pstep = Exp.expPriority(step);
-        s1_1 = Exp.parenthesize(s1, pstart, p);
-        s3_1 = Exp.parenthesize(s3, pstop, p);
-        s2_1 = Exp.parenthesize(s2, pstep, p);
+        s1_1 = Exp.parenthesize(s1, pstart, p, false);
+        s3_1 = Exp.parenthesize(s3, pstop, p, false);
+        s2_1 = Exp.parenthesize(s2, pstep, p, false);
         s = Util.stringAppendList({s1_1,":",s2_1,":",s3_1});
       then
         s;
@@ -3007,13 +3007,13 @@ algorithm
         res = Util.stringAppendList({"CAST(",str,", ",s,")"});
       then
         res;
-    case (e as Exp.ASUB(exp = e1,sub = i))
+    case (e as Exp.ASUB(exp = e1,sub = {e2}))
       equation
         p = Exp.expPriority(e);
         pe1 = Exp.expPriority(e1);
         s1 = printExp2Str(e1);
-        s1_1 = Exp.parenthesize(s1, pe1, p);
-        s4 = intString(i);
+        s1_1 = Exp.parenthesize(s1, pe1, p, false);
+        s4 = printExp2Str(e2);
         s_4 = Util.stringAppendList({s1_1,"[",s4,"]"});
       then
         s_4;

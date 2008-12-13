@@ -111,7 +111,7 @@ type Value2 = list<Exp.ComponentRef>;
 
 protected import System;
 protected import Util;
-protected import Debug;
+//protected import Debug;
 protected import Absyn;
 protected import Types;
 
@@ -445,6 +445,123 @@ algorithm
 end emptyReplacements;
 
 public function replaceEquations "function: replaceEquations
+
+  This function takes a list of equations ana a set of variable replacements
+  and applies the replacements on all equations.
+  The function returns the updated list of equations
+"
+  input list<DAELow.Equation> inDAELowEquationLst;
+  input VariableReplacements inVariableReplacements;
+  output list<DAELow.Equation> outDAELowEquationLst;
+algorithm
+  outDAELowEquationLst:=
+  matchcontinue (inDAELowEquationLst,inVariableReplacements)
+    local
+      Exp.Exp e1_1,e2_1,e1_2,e2_2,e1,e2,e_1,e_2,e;
+      list<DAELow.Equation> es_1,es;
+      VariableReplacements repl;
+      DAELow.Equation a;
+      Exp.ComponentRef cr;
+      Integer indx;
+      list<Exp.Exp> expl,expl1,expl2;
+      DAELow.WhenEquation whenEqn,whenEqn1;
+    case ({},_) then {};
+    case ((DAELow.ARRAY_EQUATION(indx,expl)::es),repl)
+      equation
+        expl1 = Util.listMap2(expl,replaceExp,repl,NONE);
+        expl2 = Util.listMap(expl1,Exp.simplify);
+        es_1 = replaceEquations(es,repl);
+      then
+         (DAELow.ARRAY_EQUATION(indx,expl2)::es_1);
+    case ((DAELow.EQUATION(exp = e1,scalar = e2) :: es),repl)
+      equation
+        e1_1 = replaceExp(e1, repl, NONE);
+        e2_1 = replaceExp(e2, repl, NONE);
+        e1_2 = Exp.simplify(e1_1);
+        e2_2 = Exp.simplify(e2_1);
+        es_1 = replaceEquations(es, repl);
+      then
+        (DAELow.EQUATION(e1_2,e2_2) :: es_1);
+    case (((a as DAELow.ALGORITHM(index = _)) :: es),repl)
+      equation
+        es_1 = replaceEquations(es, repl);
+      then
+        (a :: es_1);
+    case ((DAELow.SOLVED_EQUATION(componentRef = cr,exp = e) :: es),repl)
+      equation
+        e_1 = replaceExp(e, repl, NONE);
+        e_2 = Exp.simplify(e_1);
+        es_1 = replaceEquations(es, repl);
+      then
+        (DAELow.SOLVED_EQUATION(cr,e_2) :: es_1);
+    case ((DAELow.RESIDUAL_EQUATION(exp = e) :: es),repl)
+      equation
+        e_1 = replaceExp(e, repl, NONE);
+        e_2 = Exp.simplify(e_1);
+        es_1 = replaceEquations(es, repl);
+      then
+        (DAELow.RESIDUAL_EQUATION(e_2) :: es_1);
+
+    case ((DAELow.WHEN_EQUATION(whenEqn) :: es),repl)
+      equation
+				whenEqn1 = replaceWhenEquation(whenEqn,repl);
+        es_1 = replaceEquations(es, repl);
+      then
+        (DAELow.WHEN_EQUATION(whenEqn1) :: es_1);
+
+    case ((a :: es),repl)
+      equation
+        es_1 = replaceEquations(es, repl);
+      then
+        (a :: es_1);
+  end matchcontinue;
+end replaceEquations;
+
+protected function replaceWhenEquation "Replaces variables in a when equation"
+	input DAELow.WhenEquation whenEqn;
+  input VariableReplacements repl;
+  output DAELow.WhenEquation outWhenEqn;
+algorithm
+  outWhenEqn := matchcontinue(whenEqn,repl)
+  local Integer i;
+    Exp.ComponentRef cr,cr1;
+    Exp.Exp e,e1,e2;
+    Exp.Type tp;
+    DAELow.WhenEquation elsePart,elsePart2;
+
+    case (DAELow.WHEN_EQ(i,cr,e,NONE),repl) equation
+        e1 = replaceExp(e, repl, NONE);
+        e2 = Exp.simplify(e1);
+        Exp.CREF(cr1,_) = replaceExp(Exp.CREF(cr,Exp.OTHER()),repl,NONE);
+    then DAELow.WHEN_EQ(i,cr1,e2,NONE);
+
+			// Replacements makes cr negative, a = -b
+	  case (DAELow.WHEN_EQ(i,cr,e,NONE),repl) equation
+        Exp.UNARY(Exp.UMINUS(tp),Exp.CREF(cr1,_)) = replaceExp(Exp.CREF(cr,Exp.OTHER()),repl,NONE);
+        e1 = replaceExp(e, repl, NONE);
+        e2 = Exp.simplify(Exp.UNARY(Exp.UMINUS(tp),e1));
+    then DAELow.WHEN_EQ(i,cr1,e2,NONE);
+
+    case (DAELow.WHEN_EQ(i,cr,e,SOME(elsePart)),repl) equation
+        elsePart2 = replaceWhenEquation(elsePart,repl);
+        e1 = replaceExp(e, repl, NONE);
+        e2 = Exp.simplify(e1);
+        Exp.CREF(cr1,_) = replaceExp(Exp.CREF(cr,Exp.OTHER()),repl,NONE);
+    then DAELow.WHEN_EQ(i,cr1,e2,SOME(elsePart2));
+
+			// Replacements makes cr negative, a = -b
+	  case (DAELow.WHEN_EQ(i,cr,e,SOME(elsePart)),repl) equation
+        elsePart2 = replaceWhenEquation(elsePart,repl);
+        Exp.UNARY(Exp.UMINUS(tp),Exp.CREF(cr1,_)) = replaceExp(Exp.CREF(cr,Exp.OTHER()),repl,NONE);
+        e1 = replaceExp(e, repl, NONE);
+        e2 = Exp.simplify(Exp.UNARY(Exp.UMINUS(tp),e1));
+    then DAELow.WHEN_EQ(i,cr1,e2,SOME(elsePart2));
+
+  end matchcontinue;
+end replaceWhenEquation;
+
+/*
+public function replaceEquations "function: replaceEquations
  
   This function takes a list of equations ana a set of variable replacements
   and applies the replacements on all equations.
@@ -537,7 +654,8 @@ algorithm
         (a :: es_1);
   end matchcontinue;
 end replaceEquations;
-
+*/
+/*
 protected function replaceWhenEquation "Replaces variables in a when equation"
 	input DAELow.WhenEquation whenEqn;
   input VariableReplacements repl;
@@ -548,7 +666,8 @@ algorithm
     Exp.Exp e,e1,e2,cond;
     DAELow.WhenEquation elsePart,elsePart2;
     DAELow.Equation eq;
-    case (DAELow.WHEN_EQ(i,cond,eq,NONE),repl) equation
+    case (DAELow.WHEN_EQ(i,_,cond,eq,NONE),repl) 
+      equation
         {eq as DAELow.EQUATION(e1,e2)} = replaceEquations({eq},repl);
         (e1,e2) = shiftUnaryMinusToRHS(e1,e2);
     then DAELow.WHEN_EQ(i,cond,DAELow.EQUATION(e1,e2),NONE);
@@ -559,6 +678,7 @@ algorithm
     then DAELow.WHEN_EQ(i,cond,DAELow.EQUATION(e1,e2),SOME(elsePart2));
   end matchcontinue;
 end replaceWhenEquation;
+*/
 
 protected function shiftUnaryMinusToRHS "
 Author: BZ, 2008-09
@@ -580,6 +700,7 @@ algorithm (lhsFixed,rhsFixed) := matchcontinue(lhs,rhs)
 end matchcontinue;
 end shiftUnaryMinusToRHS;
 
+/*
 public function replaceIfEquations "This function takes a list of if-equations and a set of 
 variable replacement sand applies the replacements on all if-equations.
 The function returns the updated list of if-equations."
@@ -607,6 +728,7 @@ algorithm
 
   end matchcontinue;
 end replaceIfEquations;
+*/
 
 public function replaceMultiDimEquations "function: replaceMultiDimEquations
  
@@ -662,7 +784,7 @@ algorithm
       Boolean b1;
       Algorithm.Ident id1;
     case ({},_) then {}; 
-    case ((Algorithm.ASSIGN(type_ = tp,(exp1 = e2),exp = e) :: xs),repl)
+    case ((Algorithm.ASSIGN(type_ = tp,exp1 = e2,exp = e) :: xs),repl)
       equation 
         e_1 = replaceExp(e, repl, NONE);
         e_2 = replaceExp(e2, repl, NONE);

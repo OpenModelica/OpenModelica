@@ -33,6 +33,7 @@
 #include <stdlib.h>
 #include "rml.h"
 
+
 #define GROWTH_FACTOR 1.4  /* According to some roumours of buffer growth */
 #define INITIAL_BUFSIZE 4000 /* Seems reasonable */
 char *buf = NULL;
@@ -43,8 +44,8 @@ int cursize=0;
 
 int errorNfilled=0;
 int errorCursize=0;
-
 int increase_buffer(void);
+int increase_buffer_fixed(int);
 int error_increase_buffer(void);
 void Print_5finit(void)
 {
@@ -54,7 +55,7 @@ void Print_5finit(void)
 int print_error_buf_impl(char *str)
 {
   /*  printf("cursize: %d, nfilled %d, strlen: %d\n",cursize,nfilled,strlen(str));*/
-
+  
   if (str == NULL) {
     return -1;
   }
@@ -70,21 +71,34 @@ int print_error_buf_impl(char *str)
   return 0;
 }
 
+RML_BEGIN_LABEL(Print__setBufSize)
+{
+  int newSize = (int)RML_IMMEDIATE(RML_UNTAGFIXNUM(rmlA0));
+  if (newSize > 0) {
+  	printf(" setting init_size to: %d\n",newSize); 
+    increase_buffer_fixed(newSize);
+  }  
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(Print__unSetBufSize)
+{
+  int newSize = (int)RML_IMMEDIATE(RML_UNTAGFIXNUM(rmlA0));
+      increase_buffer_fixed(INITIAL_BUFSIZE);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
 RML_BEGIN_LABEL(Print__printErrorBuf)
 {
   char* str = RML_STRINGDATA(rmlA0);
-  if (rml_trace_enabled)
-  {
-    fprintf(stderr, "Print.printErrorBuf - printing error buffer: %s\n", str);
-    fflush(stderr);
-  }
   if (print_error_buf_impl(str) != 0) {
     RML_TAILCALLK(rmlFC);
   }
-
-  fprintf(stderr, "%s", str);
-  fflush(stderr);
-
+  
+  /*  printf("%s",str);*/
+  
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
@@ -92,11 +106,6 @@ RML_END_LABEL
 RML_BEGIN_LABEL(Print__clearErrorBuf)
 {
   errorNfilled=0;
-  if (rml_trace_enabled)
-  {
-    fprintf(stderr, "Print.clearErrorBuf - error buffer cleared\n");
-    fflush(stderr);
-  }
   if (errorBuf != 0) {
     errorBuf[0]='\0';
   }
@@ -107,16 +116,12 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(Print__getErrorString)
 {
-  if (rml_trace_enabled)
-  {
-    fprintf(stderr, "Print.getErrorString - string: %s\n", errorBuf);
-    fflush(stderr);
-  }
   if (errorBuf == 0) {
     if(error_increase_buffer() != 0) {
       RML_TAILCALLK(rmlFC);
     }
   }
+
   rmlA0=(void*)mk_scon(errorBuf);
   RML_TAILCALLK(rmlSC);
 }
@@ -126,24 +131,17 @@ RML_END_LABEL
 RML_BEGIN_LABEL(Print__printBuf)
 {
   char* str = RML_STRINGDATA(rmlA0);
-  if (rml_trace_enabled)
-  {
-    fprintf(stderr, "Print.printBuf - string: %s\n", str);
-    fflush(stderr);
-  }
   /*  printf("cursize: %d, nfilled %d, strlen: %d\n",cursize,nfilled,strlen(str));*/
-
+    
   while (nfilled + strlen(str)+1 > cursize) {
     if(increase_buffer()!= 0) {
         RML_TAILCALLK(rmlFC);
     }
     /* printf("increased -- cursize: %d, nfilled %d\n",cursize,nfilled);*/
   }
-
   sprintf((char*)(buf+strlen(buf)),"%s",str);
   nfilled=strlen(buf);
-
-  /* printf("%s", str); */
+  /*  printf("%s",str);*/
 
   RML_TAILCALLK(rmlSC);
 }
@@ -151,11 +149,6 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(Print__clearBuf)
 {
-  if (rml_trace_enabled)
-  {
-    fprintf(stderr, "Print.clearBuf - clearing print buffer\n");
-    fflush(stderr);
-  }
   nfilled=0;
   if (buf != 0) {
     buf[0]='\0';
@@ -167,11 +160,6 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(Print__getString)
 {
-  if (rml_trace_enabled)
-  {
-    fprintf(stderr, "Print.getString - getting the print buffer: %s\n", buf);
-    fflush(stderr);
-  }
   if (buf == 0) {
     if (increase_buffer() != 0) {
       RML_TAILCALLK(rmlFC);
@@ -187,16 +175,11 @@ RML_BEGIN_LABEL(Print__writeBuf)
 {
   char * filename = RML_STRINGDATA(rmlA0);
   FILE * file;
-  if (rml_trace_enabled)
-  {
-    fprintf(stderr, "Print.writeBuf - writing to file: %s the buffer: %s \n", filename, buf);
-    fflush(stderr);
-  }
 
   file = fopen(filename,"w");
-
+  
   if (file == NULL || buf == NULL || buf[0]=='\0') {
-    /* HOWTO: RML fail */
+    /* HOWTO: RML fail */    
     /* RML_TAILCALLK(rmlFC); */
   }
 
@@ -207,13 +190,13 @@ RML_BEGIN_LABEL(Print__writeBuf)
     /* RMLFAIL */
     /* RML_TAILCALLK(rmlFC); */
   }
-
+  
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
 
-int increase_buffer(void)
+int increase_buffer(void) 
 {
   char * new_buf;
   int new_size;
@@ -224,6 +207,7 @@ int increase_buffer(void)
     new_buf[0]='\0';
     cursize = INITIAL_BUFSIZE;
   } else {
+  	//fprintf(stderr,"increasing buffer from %d to %d \n",cursize,((int)(cursize * GROWTH_FACTOR)));
     new_buf = (char*)malloc(new_size =(int) (cursize * GROWTH_FACTOR));
     if (new_buf == NULL) { return -1; }
     memcpy(new_buf,buf,cursize);
@@ -236,7 +220,32 @@ int increase_buffer(void)
   return 0;
 }
 
-int error_increase_buffer(void)
+int increase_buffer_fixed(int increase)
+{
+  char * new_buf;
+  int new_size;
+
+  if (cursize == 0) {
+    new_buf = (char*)malloc(increase);
+    if (new_buf == NULL) { return -1; }
+    new_buf[0]='\0';
+    cursize = increase;
+  } else {
+  	//fprintf(stderr,"increasing buffer from %d to %d \n",cursize,((int)(cursize * GROWTH_FACTOR)));
+    new_buf = (char*)malloc(new_size =(int) (increase));
+    if (new_buf == NULL) { return -1; }
+    //memcpy(new_buf,buf,cursize);
+    cursize = new_size;
+  }
+  //printf("new buff size set to: %d\n",cursize);
+  if (buf) {
+    free(buf);
+  }
+  buf = new_buf;
+  return 0;
+} 
+
+int error_increase_buffer(void) 
 {
   char * new_buf;
   int new_size;

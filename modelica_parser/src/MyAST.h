@@ -150,7 +150,7 @@ public:
    {
       	CommonAST::initialize(t);
       	line = t->getLine();
-	column = t->getColumn();
+	      column = t->getColumn();
    }
 
    virtual void initialize( RefMyAST ast )
@@ -178,6 +178,18 @@ public:
    {
       return ANTLR_USE_NAMESPACE(antlr)RefAST(RefMyAST(new MyAST()));
    }
+
+   double getLastBuildTime( void )
+   {
+     return 0.0;
+   }
+
+   double getLastEditTime( void )
+   {
+      return 0.0;
+   }
+
+
 private:
    int line;
    int column;

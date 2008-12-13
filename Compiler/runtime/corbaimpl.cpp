@@ -69,8 +69,8 @@ HANDLE omc_client_request_event;
 HANDLE omc_return_value_ready;
 HANDLE clientlock;
 
-extern char *omc_cmd_message;
-extern char *omc_reply_message;
+char * omc_cmd_message = "";
+char * omc_reply_message = "";
 
 #ifndef NOMICO
 CORBA::ORB_var orb;
@@ -89,12 +89,12 @@ extern "C" {
 DWORD WINAPI runOrb(void* arg);
 
 void display_omc_error(DWORD lastError, LPTSTR lpszMessage)
-{
+{ 
     LPVOID lpMsgBuf;
     LPVOID lpDisplayBuf;
-
+    
     FormatMessage(
-        FORMAT_MESSAGE_ALLOCATE_BUFFER |
+        FORMAT_MESSAGE_ALLOCATE_BUFFER | 
         FORMAT_MESSAGE_FROM_SYSTEM |
         FORMAT_MESSAGE_IGNORE_INSERTS,
         NULL,
@@ -103,16 +103,16 @@ void display_omc_error(DWORD lastError, LPTSTR lpszMessage)
         (LPTSTR) &lpMsgBuf,
         0, NULL );
 
-    lpDisplayBuf = (LPVOID)LocalAlloc(LMEM_ZEROINIT,
-        (lstrlen((LPCTSTR)lpMsgBuf)+lstrlen((LPCTSTR)lpszMessage)+40)*sizeof(TCHAR));
-    wsprintf((LPTSTR)lpDisplayBuf,
-        TEXT("%s failed with error %d:\n%s"),
-        lpszMessage, lastError, lpMsgBuf);
+    lpDisplayBuf = (LPVOID)LocalAlloc(LMEM_ZEROINIT, 
+        (lstrlen((LPCTSTR)lpMsgBuf)+lstrlen((LPCTSTR)lpszMessage)+40)*sizeof(TCHAR)); 
+    wsprintf((LPTSTR)lpDisplayBuf, 
+        TEXT("%s failed with error %d:\n%s"), 
+        lpszMessage, lastError, lpMsgBuf); 
     MessageBox(NULL, (LPCTSTR)lpDisplayBuf, TEXT("OpenModelica OMC Error"), MB_ICONERROR);
 
     LocalFree(lpMsgBuf);
     LocalFree(lpDisplayBuf);
-    ExitProcess(lastError);
+    ExitProcess(lastError); 
 }
 
 void Corba_5finit(void)
@@ -123,7 +123,11 @@ void Corba_5finit(void)
 RML_BEGIN_LABEL(Corba__initialize)
 {
 #ifndef NOMICO
+#if defined(USE_OMNIORB)
+  char *dummyArgv[] = { "omc", "-NoResolve", "-IIOPAddr", "inet:127.0.0.1:0" /*,  "-ORBDebugLevel", "10", "-ORBIIOPBlocking" */ };
+#else
   char *dummyArgv[] = { "omc", "-ORBNoResolve", "-ORBIIOPAddr", "inet:127.0.0.1:0" /*,  "-ORBDebugLevel", "10", "-ORBIIOPBlocking" */ };
+#endif
   int argc=4;
   string omc_client_request_event_name 	= "omc_client_request_event";
   string omc_return_value_ready_name   	= "omc_return_value_ready";
@@ -143,45 +147,49 @@ Please stop or kill the other OMC process first!\nOpenModelica OMC will now exit
   }
   omc_client_request_event = CreateEvent(NULL,FALSE,FALSE,omc_client_request_event_name.c_str());
   lastError = GetLastError();
-  if (omc_client_request_event == NULL || (omc_client_request_event != NULL && lastError == ERROR_ALREADY_EXISTS))
+  if (omc_client_request_event == NULL || (omc_client_request_event != NULL && lastError == ERROR_ALREADY_EXISTS)) 
   {
   	display_omc_error(lastError, errorMessage);
-    fprintf(stderr, "CreateEvent '%s' error: %d\n", omc_client_request_event_name.c_str(), lastError);
+    fprintf(stderr, "CreateEvent '%s' error: %d\n", omc_client_request_event_name.c_str(), lastError);	
 	RML_TAILCALLK(rmlFC);
   }
   omc_return_value_ready = CreateEvent(NULL,FALSE,FALSE,omc_return_value_ready_name.c_str());
-  lastError = GetLastError();
-  if (omc_return_value_ready == NULL && (omc_return_value_ready != NULL && lastError == ERROR_ALREADY_EXISTS))
+  lastError = GetLastError();  
+  if (omc_return_value_ready == NULL && (omc_return_value_ready != NULL && lastError == ERROR_ALREADY_EXISTS)) 
   {
   	display_omc_error(lastError, errorMessage);
-  	fprintf(stderr, "CreateEvent '%s' error: %d\n", omc_return_value_ready_name.c_str(), lastError);
+  	fprintf(stderr, "CreateEvent '%s' error: %d\n", omc_return_value_ready_name.c_str(), lastError);		
 	RML_TAILCALLK(rmlFC);
   }
   lock = CreateMutex(NULL, FALSE, lock_name.c_str());
-  lastError = GetLastError();
+  lastError = GetLastError();  
   if (lock == NULL || (lock != NULL && lastError == ERROR_ALREADY_EXISTS))
   {
   	display_omc_error(lastError, errorMessage);
     fprintf(stderr, "CreateMutex '%s' error: %d\n", lock_name.c_str(), GetLastError());
-	RML_TAILCALLK(rmlFC);
-  }
+	RML_TAILCALLK(rmlFC);    
+  }  
   clientlock = CreateMutex(NULL, FALSE, clientlock_name.c_str());
-  lastError = GetLastError();
+  lastError = GetLastError();    
   if (clientlock == NULL || (clientlock != NULL && lastError == ERROR_ALREADY_EXISTS))
   {
   	display_omc_error(lastError, errorMessage);
     fprintf(stderr, "CreateMutex '%s' error: %d\n", clientlock_name.c_str(), GetLastError());
-	RML_TAILCALLK(rmlFC);
-  }
-
+	RML_TAILCALLK(rmlFC);    
+  }  
+  
+#if defined(USE_OMNIORB)
+  orb = CORBA::ORB_init(argc, dummyArgv, "omniORB4");
+#else
   orb = CORBA::ORB_init(argc, dummyArgv, "mico-local-orb");
+#endif
   poaobj = orb->resolve_initial_references("RootPOA");
   poa = PortableServer::POA::_narrow(poaobj);
   mgr = poa->the_POAManager();
 
   /* get the temporary directory */
   char tempPath[1024];
-  GetTempPath(1000,tempPath);
+  GetTempPath(1000,tempPath);      
   /* start omc differently if we have a corba session name */
   if (corbaSessionName != NULL) /* yehaa, we have a session name */
   {
@@ -193,22 +201,22 @@ Please stop or kill the other OMC process first!\nOpenModelica OMC will now exit
 	  pl.length(1);
 	  pl[0] = poa->create_id_assignment_policy (PortableServer::USER_ID);
 	  omcpoa = poa->create_POA ("OMCPOA", mgr, pl);
-
+	  
 	  oid = new PortableServer::ObjectId_var(PortableServer::string_to_ObjectId (corbaSessionName));
 	  server = new OmcCommunication_impl();
     omcpoa->activate_object_with_id(*oid, server);
-	  /*
+	  /* 
 	   * build the reference to store in the file
-	   */
+	   */  
 	  ref = omcpoa->id_to_reference (oid->in());
 	  objref_file << tempPath << "openmodelica.objid." << corbaSessionName;
-  }
+  }  
   else /* we don't have a session name, start OMC normaly */
   {
-      server = new OmcCommunication_impl();
+      server = new OmcCommunication_impl(); 
       oid = new PortableServer::ObjectId_var(poa->activate_object(server));
   	  ref = poa->id_to_reference (oid->in());
-  	  objref_file << tempPath << "openmodelica.objid";
+  	  objref_file << tempPath << "openmodelica.objid";	  
   }
 
   str = (const char*)orb->object_to_string (ref.in());
@@ -222,14 +230,14 @@ Please stop or kill the other OMC process first!\nOpenModelica OMC will now exit
   // Start thread that listens on incomming messages.
   HANDLE orb_thr_handle;
   DWORD orb_thr_id;
-
+  
   orb_thr_handle = CreateThread(NULL, 0, runOrb, NULL, 0, &orb_thr_id);
 
   std::cout << "Created server." << std::endl;
   std::cout << "Dumped Corba IOR in file: " << objref_file.str().c_str() << std::endl;
   std::cout << "Started the Corba ORB thread with id: " << orb_thr_id << std::endl;
   std::cout << "Created Mutexes: " << lock_name.c_str() << ", " << clientlock_name.c_str() << std::endl;
-  std::cout << "Created Events: " << omc_client_request_event_name.c_str() << ", " << omc_return_value_ready_name.c_str() << std::endl;
+  std::cout << "Created Events: " << omc_client_request_event_name.c_str() << ", " << omc_return_value_ready_name.c_str() << std::endl;      
 #endif //NOMICO
   RML_TAILCALLK(rmlSC);
 }
@@ -237,16 +245,16 @@ RML_END_LABEL
 
 DWORD WINAPI runOrb(void* arg) {
 #ifndef NOMICO
-	try
+	try 
 	{
 		orb->run();
-	} catch (CORBA::Exception) {
+	} catch (CORBA::Exception&) {
 		// run can throw exception when other side closes.
 	}
 
-  if (poa)
+  if (poa) 
     poa->destroy(TRUE,TRUE);
-  if (server)
+  if (server) 
     delete server;
 
 #endif // NOMICO
@@ -258,11 +266,11 @@ RML_BEGIN_LABEL(Corba__waitForCommand)
 {
 #ifndef NOMICO
   while (WAIT_OBJECT_0 != WaitForSingleObject(omc_client_request_event,INFINITE) );
-
+  
   if (rml_trace_enabled)
     fprintf(stderr, "Corba.mo (corbaimpl.cpp): received cmd: %s\n", omc_cmd_message);
   rmlA0=mk_scon(omc_cmd_message);
-
+  
   WaitForSingleObject(lock,INFINITE); // Lock so no other tread can talk to omc.
 
 #endif // NOMICO
@@ -292,7 +300,7 @@ RML_BEGIN_LABEL(Corba__close)
 #ifndef NOMICO
   try {
     orb->shutdown(FALSE);
-  } catch (CORBA::Exception) {
+  } catch (CORBA::Exception&) {
     cerr << "Error shutting down." << endl;
   }
   remove(objref_file.str().c_str());
@@ -302,10 +310,10 @@ RML_BEGIN_LABEL(Corba__close)
 RML_END_LABEL
 }
 
-#else
+#else 
 /*******************************************************
  * *****************************************************
- *                 linux stuff here
+ *                 linux stuff here 
  * *****************************************************
  * *****************************************************
  */
@@ -326,8 +334,8 @@ pthread_cond_t corba_waitformsg;
 pthread_mutex_t corba_waitlock;
 bool corba_waiting=false;
 
-extern char *omc_cmd_message;
-extern char *omc_reply_message;
+char * omc_cmd_message = "";
+char * omc_reply_message = "";
 
 #ifndef NOMICO
 CORBA::ORB_var orb;
@@ -344,7 +352,7 @@ OmcCommunication_impl* server;
 
 extern "C" {
 void* runOrb(void*arg);
-
+  
 void Corba_5finit(void)
 {
 
@@ -354,17 +362,33 @@ void Corba_5finit(void)
 RML_BEGIN_LABEL(Corba__initialize)
 {
 #ifndef NOMICO
+#if defined(USE_OMNIORB)
+  char *dummyArgv[] = { "omc", "-NoResolve", "-IIOPAddr", "inet:127.0.0.1:0" /*,  "-ORBDebugLevel", "10", "-ORBIIOPBlocking" */ };
+#else
   char *dummyArgv[] = { "omc", "-ORBNoResolve", "-ORBIIOPAddr", "inet:127.0.0.1:0" /*,  "-ORBDebugLevel", "10", "-ORBIIOPBlocking" */ };
+#endif
   int argc=4;
+  
   pthread_cond_init(&omc_waitformsg,NULL);
   pthread_cond_init(&corba_waitformsg,NULL);
   pthread_mutex_init(&corba_waitlock,NULL);
   pthread_mutex_init(&omc_waitlock,NULL);
 
+#if defined(USE_OMNIORB)  
+  orb = CORBA::ORB_init(argc, dummyArgv, "omniORB4");
+#else
   orb = CORBA::ORB_init(argc, dummyArgv, "mico-local-orb");
+#endif
   poaobj = orb->resolve_initial_references("RootPOA");
   poa = PortableServer::POA::_narrow(poaobj);
   mgr = poa->the_POAManager();
+
+  /* get temp dir */
+  char tmpDir[1024];
+  strcpy(tmpDir, "/tmp");
+  if (getenv("TMPDIR") != 0) {
+    strcpy(tmpDir, getenv("TMPDIR"));
+  }
 
   /* get the user name */
   char *user = getenv("USER");
@@ -380,22 +404,26 @@ RML_BEGIN_LABEL(Corba__initialize)
 	  pl.length(1);
 	  pl[0] = poa->create_id_assignment_policy (PortableServer::USER_ID);
 	  omcpoa = poa->create_POA ("OMCPOA", mgr, pl);
-
+	  
 	  oid = PortableServer::string_to_ObjectId (corbaSessionName);
 	  server = new OmcCommunication_impl();
+#if defined(USE_OMNIORB)	  
+	  omcpoa->activate_object_with_id(oid, server);
+#else
 	  omcpoa->activate_object_with_id(*oid, server);
-	  /*
+#endif	  
+	  /* 
 	   * build the reference to store in the file
-	   */
+	   */  
 	  ref = omcpoa->id_to_reference (oid.in());
-	  objref_file << "/tmp/openmodelica." << user << ".objid." << corbaSessionName;
-  }
+	  objref_file << tmpDir << "/openmodelica." << user << ".objid." << corbaSessionName;
+  }  
   else /* we don't have a session name, start OMC normaly */
   {
-      server = new OmcCommunication_impl();
+      server = new OmcCommunication_impl(); 
   	  oid = poa->activate_object(server);
   	  ref = poa->id_to_reference (oid.in());
-  	  objref_file << "/tmp/openmodelica." << user << ".objid";
+  	  objref_file << tmpDir << "/openmodelica." << user << ".objid";	  
   }
 
   str = orb->object_to_string (ref.in());
@@ -420,18 +448,26 @@ RML_BEGIN_LABEL(Corba__initialize)
 }
 RML_END_LABEL
 
-void* runOrb(void* arg)
+void* runOrb(void* arg) 
 {
-#ifndef NOMICO
+#ifndef NOMICO	
   try {
     orb->run();
-  } catch (CORBA::Exception) {
+  } catch (CORBA::Exception&) {
     // run can throw exception when other side closes.
   }
 
+#if defined(USE_OMNIORB)
+try {
+  poa->destroy(true,true);
+} catch (CORBA::Exception&) {
+  // silently ignore errors here
+}
+#else
   poa->destroy(TRUE,TRUE);
+#endif
   delete server;
-#endif // NOMICO
+#endif // NOMICO  
   return NULL;
 }
 
@@ -451,18 +487,18 @@ RML_BEGIN_LABEL(Corba__waitForCommand)
 
   rmlA0=mk_scon(omc_cmd_message);
   pthread_mutex_lock(&lock); // Lock so no other tread can talk to omc.
-#endif // NOMICO
+#endif // NOMICO  
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
 RML_BEGIN_LABEL(Corba__sendreply)
 {
-#ifndef NOMICO
+#ifndef NOMICO	
   char *msg=RML_STRINGDATA(rmlA0);
 
   // Signal to Corba that it can return, taking the value in message
-  pthread_mutex_lock(&corba_waitlock);
+  pthread_mutex_lock(&corba_waitlock); 
   corba_waiting=true;
   omc_reply_message = msg;
 
@@ -470,23 +506,27 @@ RML_BEGIN_LABEL(Corba__sendreply)
   pthread_mutex_unlock(&corba_waitlock);
 
   pthread_mutex_unlock(&lock); // Unlock, so other threads can ask omc stuff.
-#endif // NOMICO
+#endif // NOMICO  
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
 RML_BEGIN_LABEL(Corba__close)
 {
-#ifndef NOMICO
+#ifndef NOMICO	
   try {
+#if defined(USE_OMNIORB)
+    orb->shutdown(false);
+#else
     orb->shutdown(FALSE);
-  } catch (CORBA::Exception) {
+#endif
+  } catch (CORBA::Exception&) {
     cerr << "Error shutting down." << endl;
   }
   remove(objref_file.str().c_str());
-#ifdef HAVE_PTHREAD_YIELD
+#ifdef HAVE_PTHREAD_YIELD  
     pthread_yield(); // Allowing other thread to shutdown.
-#else
+#else  
   sched_yield(); // use as backup (in cygwin)
 #endif
 #endif // NOMICO

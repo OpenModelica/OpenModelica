@@ -1258,13 +1258,14 @@ algorithm
       then
         s_2;
     case ((r as RECORD(record_ = recordPath)))
-      local Absyn.Path recordPath;
+      local Absyn.Path recordPath; String recordName;
       equation
         recordName = Absyn.pathString(recordPath);
         s = valRecordString(r);
         res = Util.stringAppendList({"record ", recordName, "\n", s,"end ", recordName, ";"});
       then
         res;
+        
     case (CODE(A = c))
       equation 
         res = Dump.printCodeStr(c);

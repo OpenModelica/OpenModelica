@@ -83,8 +83,8 @@ algorithm
         knvars = DAELow.vararrayList(knvararr);
         addVariables(vars, starttask);
         addVariables(knvars, starttask);
-        addVariables({DAELow.VAR(Exp.CREF_IDENT("sim_time",{}),DAELow.VARIABLE(),
-                      DAE.INPUT(),DAE.REAL(),NONE,NONE,{},0,Exp.CREF_IDENT("time",{}),{},NONE,
+        addVariables({DAELow.VAR(Exp.CREF_IDENT("sim_time",Exp.REAL(),{}),DAELow.VARIABLE(),
+                      DAE.INPUT(),DAE.REAL(),NONE,NONE,{},0,Exp.CREF_IDENT("time",Exp.REAL(),{}),{},NONE,
                       NONE,DAE.NON_CONNECTOR(),DAE.NON_STREAM())}, starttask);
         buildBlocks(dae, ass1, ass2, blocks);
         print("done building taskgraph, about to build inits.\n");
@@ -360,9 +360,9 @@ algorithm
         indxs = intString(indx) "	print \"solving for state\\n\" &" ;
         origname_str = Exp.printComponentRefStr(origname);
         name = Exp.printComponentRefStr(cr) "	Util.string_append_list({\"xd{\",indxs,\"}\"}) => id &" ;
-        c_name = Util.modelicaStringToCStr(name);
+        c_name = Util.modelicaStringToCStr(name,true);
         id = Util.stringAppendList({DAELow.derivativeNamePrefix,c_name});
-        cr_1 = Exp.CREF_IDENT(id,{});
+        cr_1 = Exp.CREF_IDENT(id,Exp.REAL(),{});
         varexp = Exp.CREF(cr_1,Exp.REAL());
         expr = Exp.solve(e1, e2, varexp);
         buildAssignment(cr_1, expr, origname_str) "	Exp.print_exp_str e1 => e1s &
@@ -394,9 +394,9 @@ algorithm
         DAELow.VAR(cr,DAELow.STATE(),_,_,_,_,_,indx,origname,_,dae_var_attr,_,flow_,stream_) = listNth(varlst, v_1);
         indxs = intString(indx);
         name = Exp.printComponentRefStr(cr) "	Util.string_append_list({\"xd{\",indxs,\"}\"}) => id &" ;
-        c_name = Util.modelicaStringToCStr(name);
+        c_name = Util.modelicaStringToCStr(name,true);
         id = Util.stringAppendList({DAELow.derivativeNamePrefix,c_name});
-        cr_1 = Exp.CREF_IDENT(id,{});
+        cr_1 = Exp.CREF_IDENT(id,Exp.REAL(),{});
         varexp = Exp.CREF(cr_1,Exp.REAL());
         failure(_ = Exp.solve(e1, e2, varexp));
         buildNonlinearEquations({varexp}, {Exp.BINARY(e1,Exp.SUB(Exp.REAL()),e2)});
@@ -517,7 +517,7 @@ algorithm
       equation
         pstr = intString(pos);
         str = Util.stringAppendList({"xloc[",pstr,"]"});
-        repl_1 = VarTransform.addReplacement(repl, cr, Exp.CREF(Exp.CREF_IDENT(str,{}),Exp.REAL()));
+        repl_1 = VarTransform.addReplacement(repl, cr, Exp.CREF(Exp.CREF_IDENT(str,Exp.REAL(),{}),Exp.REAL()));
         pos_1 = pos + 1;
         repl_2 = makeResidualReplacements2(repl_1, es, pos_1);
       then

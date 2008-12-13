@@ -2829,7 +2829,7 @@ algorithm
           false,NONE(),Absyn.UNSPECIFIED(),"component",
           Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
             tSpec,{Absyn.COMPONENTITEM(Absyn.COMPONENT(n2,{},NONE()),NONE(),NONE())}),
-            Absyn.INFO("f",false,0,0,0,0),NONE()));
+            Absyn.INFO("f",false,0,0,0,0,Absyn.dummyTimeStamp),NONE()));
         elem2 = Absyn.CREF(Absyn.CREF_IDENT(n2,{}));
         localAccList1 = listAppend(localAccList1,{elem1});
         localAccList2 = listAppend(localAccList2,{elem2});

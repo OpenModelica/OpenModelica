@@ -52,8 +52,6 @@ public import Types;
 public import Values;
 public import ClassInf;
 
-protected import Error;
-
 public 
 type Ident = String;
 
@@ -550,45 +548,51 @@ And update binding value if NONE."
   input list<tuple<Exp.ComponentRef,Exp.Exp>> outerMods;
   output list<Element> outDae;
 algorithm
-   outDae := matchcontinue(var,dae,outerMods)
-   			local Exp.ComponentRef cr;
-   			  list<Element> elist,elist2;
-   			  Element e,v;
-   			  Ident id;
-   			  Exp.ComponentRef cr;
-   			  VarKind kind;
-   			  VarDirection dir;
-    			Type tp;
-   			  Option<Exp.Exp> bind;
-   			  InstDims dim;
-    			Flow flow_;
-    			Stream stream_;
-   			  list<Absyn.Path> cls;
-    			Option<VariableAttributes> attr;
-   			  Option<Absyn.Comment> cmt;
-    			Absyn.InnerOuter io,io2;
-   			  Types.Type ftp;
-   			  VarProtection prot;
-   			  Exp.Exp exp;
-     case({},var,_) then {};
-     case(VAR(cr,kind,dir,prot,tp,SOME(exp),dim,flow_,steam_,cls,attr,cmt,io,ftp)::dae,var,outerMods) equation
-       true = Exp.crefEqual(var,cr);
-       // don't check outerMods for binding, while the inner/innerouter already has a higherpriority binding.
-       io2 = removeInnerAttribute(io);
-     then VAR(cr,kind,dir,prot,tp,SOME(exp),dim,flow_,stream_,cls,attr,cmt,io2,ftp)::dae;
-     case(VAR(cr,kind,dir,prot,tp,NONE,dim,flow_,cls,attr,cmt,io,ftp)::dae,var,outerMods) equation
-       true = Exp.crefEqual(var,cr);
-       bind = getOuterBinding(cr,outerMods); // check for previous definition on the outer variable
-       io2 = removeInnerAttribute(io);
-     then VAR(cr,kind,dir,prot,tp,bind,dim,flow_,cls,attr,cmt,io2,ftp)::dae;
-     case(COMP(id,DAE(elist))::dae,var,outerMods) equation
-       elist2=removeInnerAttr(elist,var,outerMods);
-       dae = removeInnerAttr(dae,var,outerMods);
-     then COMP(id,DAE(elist2))::dae;
-     case(e::dae,var,outerMods) equation
-         dae = removeInnerAttr(dae,var,outerMods);
-      then e::dae;        
-   end matchcontinue;
+  outDae := matchcontinue(dae,var,outerMods)
+    local 
+      Exp.ComponentRef cr;
+      list<Element> elist,elist2;
+      Element e,v;
+      Ident id;
+      Exp.ComponentRef cr;
+      VarKind kind;
+      VarDirection dir;
+      Type tp;
+      Option<Exp.Exp> bind;
+      InstDims dim;
+      Flow flow_;
+      Stream stream_;
+      list<Absyn.Path> cls;
+      Option<VariableAttributes> attr;
+      Option<Absyn.Comment> cmt;
+      Absyn.InnerOuter io,io2;
+      Types.Type ftp;
+      VarProtection prot;
+      list<Element> rest;
+      Exp.Exp exp;
+    case({},var,_) then {};
+    case(VAR(cr,kind,dir,prot,tp,SOME(exp),dim,flow_,stream_,cls,attr,cmt,io,ftp)::rest,var,outerMods) 
+      equation
+        true = Exp.crefEqual(var,cr);
+        // don't check outerMods for binding, while the inner/innerouter already has a higherpriority binding.
+        io2 = removeInnerAttribute(io);
+      then VAR(cr,kind,dir,prot,tp,SOME(exp),dim,flow_,stream_,cls,attr,cmt,io2,ftp)::rest;
+    case(VAR(cr,kind,dir,prot,tp,NONE,dim,flow_,stream_,cls,attr,cmt,io,ftp)::rest,var,outerMods) 
+      equation
+        true = Exp.crefEqual(var,cr);
+        bind = getOuterBinding(cr,outerMods); // check for previous definition on the outer variable
+        io2 = removeInnerAttribute(io);
+      then VAR(cr,kind,dir,prot,tp,bind,dim,flow_,stream_,cls,attr,cmt,io2,ftp)::rest;
+    case(COMP(id,DAE(elist))::rest,var,outerMods) 
+      equation
+        elist2=removeInnerAttr(elist,var,outerMods);
+        rest = removeInnerAttr(rest,var,outerMods);
+      then COMP(id,DAE(elist2))::rest;
+    case(e::rest,var,outerMods) 
+      equation
+        rest = removeInnerAttr(rest,var,outerMods);
+      then e::rest;
+  end matchcontinue;
 end removeInnerAttr;
 
 protected function getOuterBinding "
@@ -2616,7 +2620,7 @@ algorithm
         Print.printBuf(";\n");
       then
         ();
-    case (Algorithm.ASSIGN((exp1 = e2 as Exp.CREF(c,_)),exp = e),i) 
+    case (Algorithm.ASSIGN(exp1 = e2 as Exp.CREF(c,_),exp = e),i) 
       equation 
         indent(i);
         Exp.printComponentRef(c);
@@ -3177,8 +3181,8 @@ public function isParameterOrConstant "
 algorithm 
   b:=
   matchcontinue (inElement)
-    case VAR(varible = CONST()) then true; 
-    case VAR(varible = PARAM()) then true;
+    case VAR(kind = CONST()) then true; 
+    case VAR(kind = PARAM()) then true;
     case(_) then false;
   end matchcontinue;
 end isParameterOrConstant;
@@ -3534,7 +3538,13 @@ algorithm
       DAElist l;
       Absyn.Path fpath;
       tuple<Types.TType, Option<Absyn.Path>> t;
-    case VAR(componentRef = cr,varible = vk,direction= vd,input_ = ty,one = NONE,variableAttributesOption = dae_var_attr,absynCommentOption = comment)
+    case VAR(componentRef = cr,
+             kind = vk,
+             direction = vd,
+             ty = ty,
+             binding = NONE,
+             variableAttributesOption = dae_var_attr,
+             absynCommentOption = comment)
       equation 
         Print.printBuf("VAR(");
         Exp.printComponentRef(cr);
@@ -3548,7 +3558,13 @@ algorithm
         Print.printBuf(")");
       then
         ();
-    case VAR(componentRef = cr,varible = vk,direction = vd,input_ = ty,one = SOME(e),variableAttributesOption = dae_var_attr,absynCommentOption = comment)
+    case VAR(componentRef = cr,
+             kind = vk,
+             direction = vd,
+             ty = ty,
+             binding = SOME(e),
+             variableAttributesOption = dae_var_attr,
+             absynCommentOption = comment)
       equation 
         Print.printBuf("VAR(");
         Exp.printComponentRef(cr);
@@ -4009,7 +4025,7 @@ algorithm
       Exp.ComponentRef cr;
       Exp.Exp e;
       list<Element> lst;
-    case (((v as VAR(componentRef = cr,one = SOME(e))) :: (lst as (_ :: _))))
+    case (((v as VAR(componentRef = cr,binding = SOME(e))) :: (lst as (_ :: _))))
       equation 
         expstr = Exp.printExpStr(e);
         s3 = stringAppend(expstr, ",");
@@ -4017,19 +4033,19 @@ algorithm
         str = stringAppend(s3, s4);
       then
         str;
-    case (((v as VAR(componentRef = cr,one = NONE)) :: (lst as (_ :: _))))
+    case (((v as VAR(componentRef = cr,binding = NONE)) :: (lst as (_ :: _))))
       equation 
         s1 = "-,";
         s2 = getBindingsStr(lst);
         str = stringAppend(s1, s2);
       then
         str;
-    case ({(v as VAR(componentRef = cr,one = SOME(e)))})
+    case ({(v as VAR(componentRef = cr,binding = SOME(e)))})
       equation 
         str = Exp.printExpStr(e);
       then
         str;
-    case ({(v as VAR(componentRef = cr,one = NONE))}) then ""; 
+    case ({(v as VAR(componentRef = cr,binding = NONE))}) then ""; 
   end matchcontinue;
 end getBindingsStr;
 
@@ -4045,12 +4061,12 @@ algorithm (outc,oute) := matchcontinue (inElementLst)
       Exp.ComponentRef cr;
       Exp.Exp e;
       case({}) then ({},{});
-    case (VAR(componentRef = cr,one = SOME(e)) :: inElementLst)
+    case (VAR(componentRef = cr,binding = SOME(e)) :: inElementLst)
       equation 
         (outc,oute) = getBindings(inElementLst);
       then
         (cr::outc,e::oute);
-    case (VAR(componentRef = cr,one = NONE) :: inElementLst) 
+    case (VAR(componentRef = cr,binding  = NONE) :: inElementLst) 
       equation (outc,oute) = getBindings(inElementLst); then (outc,oute);
     case (_) equation print(" error in getBindings \n"); then fail();  
   end matchcontinue;
@@ -4101,7 +4117,7 @@ algorithm
       list<Element> xs,lst;
       Ident id;
     case ({}) then {}; 
-    case ((VAR(componentRef = cr,value = FLOW()) :: xs))
+    case ((VAR(componentRef = cr,flow_ = FLOW()) :: xs))
       equation 
         res = getFlowVariables(xs);
       then
@@ -4198,11 +4214,12 @@ algorithm
     case ((cr :: xs),id)
       equation
         res = getStreamVariables2(xs, id);
-        cr_1 = Exp.joinCrefs(Exp.CREF_IDENT(id,{}), cr);
+        cr_1 = Exp.joinCrefs(Exp.CREF_IDENT(id,Exp.OTHER(),{}), cr);
       then
         (cr_1 :: res);
   end matchcontinue;
 end getStreamVariables2;
+
 public function daeToRecordValue "function: daeToRecordValue
   Transforms a list of elements into a record value.
   TODO: This does not work for records inside records. 
@@ -4284,6 +4301,7 @@ algorithm
       Type c;
       InstDims e;
       Flow g;
+      Stream stream_;
       Stream s;
       list<Absyn.Path> h;
       Option<VariableAttributes> dae_var_attr;
@@ -4295,9 +4313,25 @@ algorithm
       tuple<Types.TType, Option<Absyn.Path>> t;
       Types.Type tp;
       Absyn.InnerOuter io;
+      list<Exp.Exp> conds, conds_1;
+      list<list<Element>> trueBranches, trueBranches_1;
+      list<Element> eelts;
       VarProtection prot;
     case ({}) then {}; 
-    case ((VAR(componentRef = cr,varible = a,direction= b,protection=prot,input_ = c,one = d,binding = e,value = g,flow_ = h,variableAttributesOption = dae_var_attr,absynCommentOption = comment,innerOuter=io,fullType=tp) :: elts))
+    case ((VAR(componentRef = cr,
+               kind = a,
+               direction = b,
+               protection = prot,
+               ty = c,
+               binding = d,
+               dims = e,
+               flow_ = g,
+               stream_ = stream_,
+               pathLst = h,
+               variableAttributesOption = dae_var_attr,
+               absynCommentOption = comment,
+               innerOuter=io,
+               fullType=tp) :: elts))
       local Exp.Type ty;
       equation 
         str = Exp.printComponentRefStr(cr);
@@ -4306,7 +4340,7 @@ algorithm
         d_1 = toModelicaFormExpOpt(d);
         ty = Exp.crefType(cr); 
       then
-        (VAR(Exp.CREF_IDENT(str_1,ty,{}),a,b,prot,c,d_1,e,g,h,dae_var_attr,
+        (VAR(Exp.CREF_IDENT(str_1,ty,{}),a,b,prot,c,d_1,e,g,stream_,h,dae_var_attr,
           comment,io,tp) :: elts_1);
     case ((DEFINE(componentRef = cr,exp = e) :: elts))
       local Exp.Exp e;
@@ -4838,6 +4872,7 @@ algorithm
       Option<Exp.Exp> bndexp,startvalexp;
       InstDims instdims;
       Flow flow_;
+      Stream stream_;
       list<Absyn.Path> pathlist;
       Option<VariableAttributes> dae_var_attr;
       Option<Absyn.Comment> comment;
@@ -4851,7 +4886,17 @@ algorithm
       list<ExtArg> args;
       ExtArg retarg;
       Option<Absyn.Annotation> ann;
-    case VAR(componentRef = cref,varible = vk,direction= vd,input_ = ty,one = bndexp,binding = instdims,value = flow_,flow_ = pathlist,variableAttributesOption = dae_var_attr,absynCommentOption = comment) /* VAR */ 
+    case VAR(componentRef = cref,
+             kind = vk,
+             direction= vd,
+             ty = ty,
+             binding = bndexp,
+             dims = instdims,
+             flow_ = flow_,
+             stream_ = stream_,
+             pathLst = pathlist,
+             variableAttributesOption = dae_var_attr,
+             absynCommentOption = comment) /* VAR */ 
       equation 
         e1 = Util.optionToList(bndexp);
         e3 = Util.listMap(instdims, getAllExpsSubscript);

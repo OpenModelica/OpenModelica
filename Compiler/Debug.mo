@@ -143,6 +143,7 @@ algorithm
     local
       Type_a arg1;
       Type_b arg2;
+      String flag;
     case (flag,func,arg1,arg2)
       equation 
         true = RTOpts.debugFlag(flag);

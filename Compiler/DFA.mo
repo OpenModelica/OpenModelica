@@ -201,7 +201,7 @@ algorithm
           Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
             Absyn.TPATH(Absyn.IDENT("Boolean"),NONE()),
             {Absyn.COMPONENTITEM(Absyn.COMPONENT("DUMMIE__",{},SOME(Absyn.CLASSMOD({},SOME(Absyn.BOOL(true))))),NONE(),NONE())}),
-            Absyn.INFO("f",false,0,0,0,0),NONE()))};
+            Absyn.INFO("f",false,0,0,0,0,Absyn.TIMESTAMP(0.0,0.0)),NONE()))};
 
         varList = listAppend(varList,newVars);
 
@@ -223,7 +223,7 @@ algorithm
           Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
             Absyn.TPATH(Absyn.IDENT("Integer"),NONE()),
             {Absyn.COMPONENTITEM(Absyn.COMPONENT("LASTRIGHTHANDSIDE__",{},NONE()),NONE(),NONE())}),
-            Absyn.INFO("f",false,0,0,0,0),NONE()))};
+            Absyn.INFO("f",false,0,0,0,0,Absyn.TIMESTAMP(0.0,0.0)),NONE()))};
 
         localVarList = listAppend(localVarList,varList);
 
@@ -237,7 +237,7 @@ algorithm
           Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
             Absyn.TPATH(Absyn.IDENT("Integer"),NONE()),
             {Absyn.COMPONENTITEM(Absyn.COMPONENT("BOOLVAR__",{Absyn.SUBSCRIPT(Absyn.INTEGER(numCases))},SOME(Absyn.CLASSMOD({},SOME(arrayOfTrue)))),NONE(),NONE())}),
-            Absyn.INFO("f",false,0,0,0,0),NONE()))};
+            Absyn.INFO("f",false,0,0,0,0,Absyn.TIMESTAMP(0.0,0.0)),NONE()))};
 
         localVarList = listAppend(localVarList,varList);
 
@@ -248,7 +248,7 @@ algorithm
           Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
             Absyn.TPATH(Absyn.IDENT("Boolean"),NONE()),
             {Absyn.COMPONENTITEM(Absyn.COMPONENT("DUMMIE__",{},SOME(Absyn.CLASSMOD({},SOME(Absyn.BOOL(true))))),NONE(),NONE())}),
-            Absyn.INFO("f",false,0,0,0,0),NONE()))};
+            Absyn.INFO("f",false,0,0,0,0,Absyn.TIMESTAMP(0.0,0.0)),NONE()))};
 
         localVarList = listAppend(localVarList,varList);
 
@@ -258,7 +258,7 @@ algorithm
           Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
             Absyn.TPATH(Absyn.IDENT("Boolean"),NONE()),
             {Absyn.COMPONENTITEM(Absyn.COMPONENT("NOTDONE__",{},SOME(Absyn.CLASSMOD({},SOME(Absyn.BOOL(true))))),NONE(),NONE())}),
-            Absyn.INFO("f",false,0,0,0,0),NONE()))};
+            Absyn.INFO("f",false,0,0,0,0,Absyn.TIMESTAMP(0.0,0.0)),NONE()))};
 
         localVarList = listAppend(localVarList,varList);
 
@@ -784,7 +784,7 @@ algorithm
           Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
             t,
             {Absyn.COMPONENTITEM(Absyn.COMPONENT(firstPathVar,{},NONE()),NONE(),NONE())}),
-            Absyn.INFO("f",false,0,0,0,0),NONE()))};
+            Absyn.INFO("f",false,0,0,0,0,Absyn.TIMESTAMP(0.0,0.0)),NONE()))};
 
         secondPathVar = extractPathVar(second);
         elem2 = {Absyn.ELEMENTITEM(Absyn.ELEMENT(
@@ -792,7 +792,7 @@ algorithm
           Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
             Absyn.TCOMPLEX(Absyn.IDENT("list"),{t},NONE()),
             {Absyn.COMPONENTITEM(Absyn.COMPONENT(secondPathVar,{},NONE()),NONE(),NONE())}),
-            Absyn.INFO("f",false,0,0,0,0),NONE()))};
+            Absyn.INFO("f",false,0,0,0,0,Absyn.TIMESTAMP(0.0,0.0)),NONE()))};
 
         // Add the new variables to the DFA environment
         // For example, if we have a pattern:
@@ -941,7 +941,7 @@ public function extractFieldName
 algorithm
   id := matchcontinue (elem)
     local Absyn.Ident localId;
-    case (SCode.COMPONENT(localId,_,_,_,_,_,_,_,_,_)) then localId;
+    case (SCode.COMPONENT(localId,_,_,_,_,_,_,_,_,_,_,_)) then localId;
   end matchcontinue;
 end extractFieldName;
 
@@ -953,7 +953,7 @@ public function extractFieldType
 algorithm
   typeSpec := matchcontinue (elem)
     local Absyn.TypeSpec t;    
-    case (SCode.COMPONENT(_,_,_,_,_,_,t,_,_,_)) then t;
+    case (SCode.COMPONENT(typeSpec = t)) then t;
   end matchcontinue;
 end extractFieldType;
 
@@ -983,7 +983,7 @@ algorithm
             firstType,
             {Absyn.COMPONENTITEM(Absyn.COMPONENT(firstPathVar,{},NONE())
             ,NONE(),NONE())}),
-            Absyn.INFO("f",false,0,0,0,0),NONE()))};
+            Absyn.INFO("f",false,0,0,0,0,Absyn.TIMESTAMP(0.0,0.0)),NONE()))};
         localAccElemList = listAppend(localAccElemList,elem);
         localAccElemList = createPathVarDeclarations(restPathVars,restTypes,localAccElemList);
     then localAccElemList;

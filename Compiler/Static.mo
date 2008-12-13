@@ -4491,7 +4491,7 @@ algorithm
       equation 
         (cache,(exp_1 as Exp.CREF(cr_1,_)),Types.PROP(tp1,_),_) = elabExp(cache,env, exp, impl, NONE,true);
         Types.simpleType(tp1);
-        (cache,Types.ATTR(_,_,SCode.DISCRETE(),_,_),_,_,_,_) = Lookup.lookupVar(cache,env, cr_1);
+        (cache,Types.ATTR(_,_,_,SCode.DISCRETE(),_,_),_,_,_,_) = Lookup.lookupVar(cache,env, cr_1);
       then
         (cache,Exp.CALL(Absyn.IDENT("change"),{exp_1},false,true,Exp.BOOL()),Types.PROP((Types.T_BOOL({}),NONE),Types.C_VAR()));
 
@@ -4518,7 +4518,7 @@ algorithm
       equation 
         (cache,(exp_1 as Exp.CREF(cr_1,_)),Types.PROP(tp1,_),_) = elabExp(cache,env, exp, impl, NONE,true);
         Types.simpleType(tp1);
-        (cache,Types.ATTR(_,_,_,_,_),_,_,_,_) = Lookup.lookupVar(cache,env, cr_1);
+        (cache,Types.ATTR(_,_,_,_,_,_),_,_,_,_) = Lookup.lookupVar(cache,env, cr_1);
         Error.addMessage(Error.ARGUMENT_MUST_BE_DISCRETE_VAR, {"First","change"});
       then
         fail();
@@ -8073,7 +8073,7 @@ algorithm
         Option<Exp.Exp> splicedExp;
       equation 
         (cache,c_1,_) = elabCrefSubs(cache,env, c,Prefix.NOPRE(), impl);
-        (cache,Types.ATTR(_,acc,variability,_,_),t,binding,splicedExp,_) = Lookup.lookupVar(cache,env, c_1);
+        (cache,Types.ATTR(_,_,acc,variability,_,_),t,binding,splicedExp,_) = Lookup.lookupVar(cache,env, c_1);
         (cache,exp,const,acc_1) = elabCref2(cache,env, c_1, acc, variability, t, binding,doVect,splicedExp);
         exp = makeASUBArrayAdressing(c,cache,env,impl,exp,splicedExp);
       then
@@ -8477,19 +8477,21 @@ algorithm
         e_1 = crefVectorize(doVect,Exp.CREF(cr_1,t), tt,NONE);
       then
         (cache,e_1,Types.C_VAR(),acc);
-    case (cache,env,cr,acc,_,(tt as (Types.T_ENUM(),_)),_,doVect,_) /* Enum constants does not have a value expression */ 
+    /* Enum constants does not have a value expression */
+    case (cache,env,cr,acc,_,(tt as (Types.T_ENUM(),_)),_,doVect,_) 
       local Exp.Type t;
       equation 
         t = Types.elabType(tt);
       then
         (cache,Exp.CREF(cr,t),Types.C_CONST(),acc);
+    /* If value not constant, but references another parameter, which has a value We need to perform value propagation. */
     case (cache,env,cr,acc,variability,tp,Types.EQBOUND(exp = Exp.CREF(componentRef = cref,ty = t),constant_ = Types.C_VAR()),doVect,splicedExp)
       local
         tuple<Types.TType, Option<Absyn.Path>> t_1;
         Option<Exp.Exp> splicedExp;
         Exp.Type t;
       equation 
-        (cache,Types.ATTR(_,acc_1,variability_1,_,_),t_1,binding_1,splicedExp,_) = Lookup.lookupVar(cache,env, cref) "If value not constant, but references another parameter, which has a value We need to perform value propagation." ;
+        (cache,Types.ATTR(_,_,acc_1,variability_1,_,_),t_1,binding_1,splicedExp,_) = Lookup.lookupVar(cache,env, cref);
         (cache,e,const,acc) = elabCref2(cache,env, cref, acc_1, variability_1, t_1, binding_1,doVect,splicedExp);
       then
         (cache,e,const,acc);
@@ -9275,7 +9277,7 @@ algorithm
     case (cache,env,cr as Absyn.CREF_QUAL(name = id,subScripts = ss,componentRef = subs),crefPrefix,impl)
       equation 
         cr = Prefix.prefixCref(crefPrefix,Exp.CREF_IDENT(id,Exp.OTHER(),{}));
-        (cache,Types.ATTR(_,_,vt,_,_),t,_,_,_) = Lookup.lookupVar(cache,env, cr);
+        (cache,Types.ATTR(_,_,_,vt,_,_),t,_,_,_) = Lookup.lookupVar(cache,env, cr);
         sl = Types.getDimensions(t);
         ty = Types.elabType(t);
         (cache,ss_1,const1) = elabSubscriptsDims(cache,env, ss, sl, impl);

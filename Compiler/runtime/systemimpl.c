@@ -260,19 +260,24 @@ char* _replace(const char* source_str,
 // windows and mingw32
 #if defined(__MINGW32__) || defined(_MSC_VER)
 
+#include <stdlib.h>
 #include <direct.h>
 #include <assert.h>
+#include <string.h>
 #include <time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <stdio.h>
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#include <shlwapi.h>
+
 #include "rml.h"
-#include "../Values.h"
-#include "../Absyn.h"
+#include "Values.h"
+#include "Absyn.h"
 
 #define MAXPATHLEN MAX_PATH
+#define S_IFLNK  0120000  /* symbolic link */
 
 struct modelica_ptr_s {
   union {
@@ -284,8 +289,10 @@ struct modelica_ptr_s {
   } data;
   unsigned int cnt;
 };
+
 static struct modelica_ptr_s ptr_vector[MAX_PTR_INDEX];
 static modelica_integer last_ptr_index = -1;
+
 
 void System_5finit(void)
 {
@@ -323,9 +330,9 @@ void System_5finit(void)
 	if (omhome) {
 		mingwpath = malloc(2*strlen(omhome)+25);
 		sprintf(mingwpath,"%s\\mingw\\bin;%s\\lib", omhome, omhome);
-		if (strncmp(mingwpath, path, strlen(mingwpath)) != 0) {
-			newPath = malloc(strlen(path) + strlen(mingwpath) + 10);
-			sprintf(newPath, "PATH=%s;%s", mingwpath, path);
+		if (strncmp(mingwpath,path,strlen(mingwpath))!=0) {
+			newPath = malloc(strlen(path)+strlen(mingwpath)+10);
+			sprintf(newPath,"PATH=%s;%s",mingwpath,path);
 			_putenv(newPath);
 			free(newPath);
 		}
@@ -338,9 +345,33 @@ void System_5finit(void)
 //		char senddatalibs[] = "SENDDATALIBS= -lsendData -lQtNetwork -lQtCore -lQtGui -luuid -lole32 -lws2_32";
 		_putenv("SENDDATALIBS=-lsendData -lQtNetwork-mingw -lQtCore-mingw -lQtGui-mingw -luuid -lole32 -lws2_32");
 //		_putenv(senddatalibs);
-	}
+    }
 }
 
+
+RML_BEGIN_LABEL(System__isSameFile)
+{
+  char *fileName1 = RML_STRINGDATA(rmlA0);
+  char *fileName2 = RML_STRINGDATA(rmlA1);
+  int same = 0;
+  HRESULT res1,res2;
+  char canonName1[1024],canonName2[1024];
+  DWORD size=1024;
+  DWORD size2=1024;
+  if (UrlCanonicalize(fileName1,canonName1,&size,0) != S_OK ||
+  	UrlCanonicalize(fileName2,canonName2,&size2,0) != S_OK) {
+  		printf("Error, fileName1 =%s, fileName2 = %s couldn't be canonicalized\n",fileName1,fileName2);
+  		RML_TAILCALLK(rmlFC);
+  	};
+  	//printf("Canonicalized f1:%s, \nf2:%s\n",canonName1,canonName2);
+  same = strcmp(canonName1,canonName2) == 0;
+  if (same) {
+	  	RML_TAILCALLK(rmlSC);
+  } else {
+	  	RML_TAILCALLK(rmlFC);
+  }
+}
+RML_END_LABEL
 
 RML_BEGIN_LABEL(System__strtok)
 {
@@ -404,10 +435,54 @@ RML_BEGIN_LABEL(System__removeFirstAndLastChar)
 
       res[length-1] = '\0';
     }
+
   rmlA0 = (void*) mk_scon(res);
   /* adrpo added 2004-10-29 */
   free(res);
 
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__isIdenticalFile)
+{
+  char *fileName1 = RML_STRINGDATA(rmlA0);
+  char *fileName2 = RML_STRINGDATA(rmlA1);
+  char emptyString[5] = "empty";
+  int res=1,i;
+  FILE *fp1,*fp2,*d1,*d2;
+  long fileSize1,fileSize2;
+  fp1 = fopen(fileName1, "r");
+
+  if(!fp1){
+	  //printf("Error opening the file: %s, creating it\n",fileName1);
+	  d1 = fopen(fileName1,"w+");
+	  for(i=0;i<5;++i)
+		  fputc(emptyString[i],d1);
+	  fclose(d1);
+  }
+  fp1 = fopen(fileName1, "r");
+  fp2 = fopen(fileName2, "r");
+  if(!fp2){
+  	  //printf("Error opening the file(#2): %s\n",fileName2);
+ 	  rmlA0 = RML_FALSE;
+  	  RML_TAILCALLK(rmlSC);
+    }
+
+  fseek(fp1 , 0 , SEEK_END);
+  fileSize1 = ftell(fp1);
+  rewind(fp1);
+  fseek(fp2 , 0 , SEEK_END);
+  fileSize2 = ftell(fp2);
+  rewind(fp2);
+  if(fileSize1 != fileSize2)
+    res=-1;
+  else
+    for(i=0;i<fileSize1;++i)
+    	if(fgetc(fp1) != fgetc(fp2))
+    		res=-1;
+  fclose(fp1);fclose(fp2);
+  rmlA0 = res?RML_TRUE:RML_FALSE; //mk_bcon(res);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
@@ -424,6 +499,18 @@ int str_contain_char( const char* chars, const char chr)
   return 0;
 }
 
+RML_BEGIN_LABEL(System__os)
+{
+	char *envvalue;
+	envvalue = getenv("OS");
+	if (envvalue == NULL) {
+	   rmlA0 = (void*) mk_scon("Windows_NT");
+	} else {
+      rmlA0 = (void*) mk_scon(envvalue);
+	}
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
 
 /*  this removes chars in second from the beginning and end of the first
     string and returns it */
@@ -754,6 +841,56 @@ void free_function(modelica_ptr_t func)
   /* noop */
 }
 
+
+RML_BEGIN_LABEL(System__compileCFile)
+{
+  char* str = RML_STRINGDATA(rmlA0);
+  char command[255];
+  char exename[255];
+  char *tmp;
+
+  assert(strlen(str) < 255);
+  if (strlen(str) >= 255) {
+    RML_TAILCALLK(rmlFC);
+  }
+  if (cc == NULL||cflags == NULL) {
+    RML_TAILCALLK(rmlFC);
+  }
+  memcpy(exename,str,strlen(str)-2);
+  exename[strlen(str)-2]='\0';
+
+  sprintf(command,"%s %s -o %s %s > compilelog.txt 2>&1",cc,str,exename,cflags);
+  //printf("compile using: %s\n",command);
+
+  _putenv("GCC_EXEC_PREFIX=");
+  tmp = getenv("MODELICAUSERCFLAGS");
+  if (tmp == NULL || tmp[0] == '\0'  ) {
+	  _putenv("MODELICAUSERCFLAGS=  ");
+  }
+  if (system(command) != 0) {
+    RML_TAILCALLK(rmlFC);
+  }
+
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+//RML_BEGIN_LABEL(System__executeFunction)
+//{
+//  char* str = RML_STRINGDATA(rmlA0);
+//  char command[255];
+//  int ret_val;
+//  sprintf(command,".\\%s %s_in.txt %s_out.txt",str,str,str);
+//  ret_val = system(command);
+//
+//  if (ret_val != 0) {
+//    RML_TAILCALLK(rmlFC);
+//  }
+//
+//  RML_TAILCALLK(rmlSC);
+//}
+//RML_END_LABEL
+
 RML_BEGIN_LABEL(System__systemCall)
 {
 	int ret_val;
@@ -874,6 +1011,93 @@ RML_BEGIN_LABEL(System__readFile)
 
   /* adrpo added 2004-10-26 */
   free(buf);
+
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+int stringContains(char *str,char c){
+	int i;
+	for(i=0;i<strlen(str);++i)
+		if(str[i]==c){
+			//printf(" match: %c == %c\n",str[i],c);
+			return 1;
+		}
+	return 0;
+}
+
+void filterString(char* buf,char* bufRes){
+	  int res,i,bufPointer = 0,slen;
+	  char preChar,cc;
+	  char filterChars[11] = "0123456789.";
+	  char numeric[10] = "0123456789";
+	  slen = strlen(buf);
+	  preChar = '\0';
+	  for(i=0;i<slen;++i){
+		  cc = buf[i];
+		  if((stringContains(filterChars,buf[i]))){
+			  if(buf[i]=='.'){
+				if(stringContains(numeric,preChar) || (( i < slen+1) && stringContains(numeric,buf[i+1])) ){
+					;//printf(" skipped-1: %c\n",buf[i]);
+				}
+				else
+					bufRes[bufPointer++] = buf[i];
+			  }
+			  else
+			  {
+				  ;//printf(" skipped-2: %c\n",buf[i]);
+			  }
+		  }
+		  else{
+			  bufRes[bufPointer++] = buf[i];
+		  }
+		  preChar = buf[i];
+	  }
+	  bufRes[bufPointer++] = '\0';
+}
+
+RML_BEGIN_LABEL(System__readFileNoNumeric)
+{
+  char* filename = RML_STRINGDATA(rmlA0);
+  char* buf, *bufRes;
+  int res,i,bufPointer = 0;
+  FILE * file = NULL;
+  struct stat statstr;
+  res = stat(filename, &statstr);
+
+  if(res!=0)
+  {
+    char *c_tokens[1]={filename};
+    c_add_message(85, /* ERROR_OPENING_FILE */
+		  "SCRIPTING",
+		  "ERROR",
+		  "Error opening file %s.",
+		  c_tokens,
+		  1);
+    rmlA0 = (void*) mk_scon("No such file");
+    RML_TAILCALLK(rmlSC);
+  }
+
+  file = fopen(filename,"rb");
+  buf = malloc(statstr.st_size+1);
+  bufRes = malloc(statstr.st_size+1+70*sizeof(char));
+  if( (res = fread(buf, sizeof(char), statstr.st_size, file)) != statstr.st_size)
+  {
+	/* adrpo added 2004-10-26 */
+	free(buf);
+    rmlA0 = (void*) mk_scon("Failed while reading file");
+    RML_TAILCALLK(rmlSC);
+  }
+  buf[statstr.st_size] = '\0';
+  filterString(buf,bufRes);
+  fclose(file);
+  sprintf(bufRes,"%s\nFilter count from numberic domain: %d",bufRes,(strlen(buf)-strlen(bufRes)));
+
+  rmlA0 = (void*) mk_scon(bufRes);
+
+  /* adrpo added 2004-10-26 */
+  free(buf);
+  free(bufRes);
 
   RML_TAILCALLK(rmlSC);
 }
@@ -1001,6 +1225,160 @@ RML_BEGIN_LABEL(System__getVariableNames)
 	RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
+
+
+//void* read_one_value_from_file(FILE* file, type_description* desc)
+//{
+//  void *res=NULL;
+//  int ival;
+//  double rval;
+//  double *rval_arr;
+//  int *ival_arr;
+//  int size;
+//  if (desc->ndims == 0) /* Scalar value */
+//  {
+//    if (desc->type == 'i') {
+//      fscanf(file,"%d",&ival);
+//      res =(void*) Values__INTEGER(mk_icon(ival));
+//    } else if (desc->type == 'r') {
+//      fscanf(file,"%le",&rval);
+//      res = (void*) Values__REAL(mk_rcon(rval));
+//    } else if (desc->type == 'b') {
+//      fscanf(file,"%le",&rval);
+//      res = (void*) Values__BOOL(rval?RML_TRUE:RML_FALSE/*mk_bcon(rval)*/);
+//    }
+//  } else if (desc->ndims == 1 && desc->type == 's') { /* Scalar String */
+//    int i;
+//    char* tmp;
+//    tmp = malloc(sizeof(char)*(desc->dim_size[0]+1));
+//    if (!tmp) return NULL;
+//    for(i=0;i<desc->dim_size[0];i++) {
+//      tmp[i] = fgetc(file);
+//      if (tmp[i] == EOF) {
+//	return NULL;
+//      }
+//    }
+//    tmp[i]='\0';
+//    res = (void*) Values__STRING(mk_scon(tmp));
+//  }
+//  else  /* Array value */
+//  {
+//    int currdim,el,i;
+//    /* REAL ARRAYS */
+//    if (desc->type == 'r') {
+//	/* Create array to hold inserted values, max dimension as size */
+//	size = 1;
+//	for (currdim=0;currdim < desc->ndims; currdim++) {
+//	  size *= desc->dim_size[currdim];
+//	}
+//	rval_arr = (double*)malloc(sizeof(double)*size);
+//	if(rval_arr == NULL) {
+//	  return NULL;
+//	}
+//	/* Fill the array in reversed order */
+//	for(i=size-1;i>=0;i--) {
+//	  fscanf(file,"%le",&rval_arr[i]);
+//	}
+//
+//	next_realelt(NULL);
+//	/* 1 is current dimension (start value) */
+//	res =(void*) Values__ARRAY(generate_array('r',1,desc,(void*)rval_arr));
+//      }
+//      /* REAL ARRAY END, INTEGER ARRAY START*/
+//
+//      if (desc->type == 'i') {
+//	int currdim,el,i;
+//	/* Create array to hold inserted values, mult of dimensions as size */
+//	size = 1;
+//	for (currdim=0;currdim < desc->ndims; currdim++) {
+//	  size *= desc->dim_size[currdim];
+//	}
+//	ival_arr = (int*)malloc(sizeof(int)*size);
+//	if(ival_arr==NULL) {
+//	  return NULL;
+//	}
+//	/* Fill the array in reversed order */
+//	for(i=size-1;i>=0;i--) {
+//	  fscanf(file,"%f",&ival_arr[i]);
+//	}
+//	next_intelt(NULL);
+//	res = (void*) Values__ARRAY(generate_array('i',1,desc,(void*)ival_arr));
+//      }
+//      /*INTEGER ARRAY ENDS BOOLEAN ARRAY START*/
+//
+//	if (desc->type == 'b')
+//	{
+//		int currdim,el,i;
+//		/* Create array to hold inserted values, mult of dimensions as size */
+//		size = 1;
+//		for (currdim=0;currdim < desc->ndims; currdim++) {
+//	  		size *= desc->dim_size[currdim];
+//		}
+//		rval_arr = (double*)malloc(sizeof(double)*size);
+//		if(rval_arr==NULL) {
+//	  		return NULL;
+//		}
+//		/* Fill the array in reversed order */
+//		for(i=size-1;i>=0;i--) {
+//	  		fscanf(file,"%le",&rval_arr[i]);
+//		}
+//			next_intelt(NULL);
+//			res = (void*) Values__ARRAY(generate_array('b',1,desc,(void*)rval_arr));
+//	}
+//	if (desc->type == 's') {
+//		printf("Error, array of strings not impl. yet.\n");
+//	}
+//  }
+//  return res;
+//}
+
+//RML_BEGIN_LABEL(System__readValuesFromFile)
+//{
+//  int stat=0;
+//  int varcount=0;
+//  type_description desc;
+//  void *lst = (void*)mk_nil();
+//  void *res = NULL;
+//  char* filename = RML_STRINGDATA(rmlA0);
+//  FILE * file=NULL;
+//  file = fopen(filename,"r");
+//  if (file == NULL) {
+//    RML_TAILCALLK(rmlFC);
+//  }
+//
+//  /* Read the first value */
+//  stat = read_type_description(file,&desc);
+//  if (stat != 0) {
+//    printf("Error reading values from file\n");
+//    RML_TAILCALLK(rmlFC);
+//  }
+//
+//  while (stat == 0) { /* Loop for tuples. At the end of while, we try to read another description */
+//    res = read_one_value_from_file(file, &desc);
+//    if (res == NULL) {
+//      printf("Error reading values from file2 %s ..\n", filename);
+//      RML_TAILCALLK(rmlFC);
+//    }
+//    lst = (void*)mk_cons(res, lst);
+//    varcount++;
+//    read_to_eol(file);
+//    stat = read_type_description(file,&desc);
+//    /*
+//    printf("varcount is : %d\n", varcount);
+//    printf("stat is : %d\n", stat);
+//    */
+//  }
+//  if (varcount > 1) { /* if tuple */
+//    rmlA0 = lst;
+//    rml_prim_once(RML__list_5freverse);
+//    rmlA0 = (void*) Values__TUPLE(rmlA0);
+//  }
+//  else {
+//    rmlA0 = (void*)res;
+//  }
+//  RML_TAILCALLK(rmlSC);
+//}
+//RML_END_LABEL
 
 RML_BEGIN_LABEL(System__readPtolemyplotDataset)
 {
@@ -1252,6 +1630,68 @@ RML_BEGIN_LABEL(System__tanh)
 }
 RML_END_LABEL
 
+double next_realelt(double *arr)
+{
+  static int curpos;
+
+  if(arr == NULL) {
+    curpos = 0;
+    return 0.0;
+  }
+  else {
+    return arr[curpos++];
+  }
+}
+
+int next_intelt(int *arr)
+{
+  static int curpos;
+
+  if(arr == NULL) {
+    curpos = 0;
+    return 0;
+  }
+  else return arr[curpos++];
+}
+
+//void* generate_array(char type, int curdim, type_description *desc, void *data)
+//
+//{
+//  void *lst;
+//  double rval;
+//  int ival;
+//  int i;
+//  lst = (void*)mk_nil();
+//  if (curdim == desc->ndims)
+//  {
+//    for (i=0; i< desc->dim_size[curdim-1]; i++)
+//    {
+//      if (type == 'r')
+//      {
+//	    rval = next_realelt((double*)data);
+//	    lst = (void*)mk_cons(Values__REAL(mk_rcon(rval)),lst);
+//      }
+//      else if (type == 'i')
+//      {
+//	    ival = next_intelt((int*)data);
+//	    lst = (void*)mk_cons(Values__INTEGER(mk_icon(ival)),lst);
+//      }
+//      else if (type == 'b')
+//      {
+//	    rval = next_realelt((double*)data);
+//	    lst = (void*)mk_cons(Values__BOOL(rval?RML_TRUE:RML_FALSE/*mk_bcon(rval)*/),lst);
+//      }
+//    }
+//  }
+//  else
+//  {
+//    for (i=0; i< desc->dim_size[curdim-1]; i++) {
+//    lst = (void*)mk_cons(Values__ARRAY(generate_array(type,curdim+1,desc,data)),lst);
+//  }
+//  }
+//  return lst;
+//}
+
 char* class_names_for_simulation = NULL;
 RML_BEGIN_LABEL(System__getClassnamesForSimulation)
 {
@@ -1488,6 +1928,8 @@ RML_END_LABEL
 
 #include <time.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <sys/unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -1642,8 +2084,237 @@ void System_5finit(void)
 #endif
 	} else {
 		putenv("SENDDATALIBS=-lsendData");
-	}
+    }
 }
+
+/**
+ * Author BZ
+ * helper function for getSymbolicLinkPath
+ **/
+char *mergePathWithLink(char *path,char *linkPath)
+{
+    char *lastSlash;
+    char *newPath = (char *) malloc(sizeof(char)*MAXPATHLEN);
+    //printf(" entered mergePathWithLink, path: %s, link: %s\n",path,linkPath);
+    if(linkPath[0] =='/') // if link is non relative
+	return linkPath;
+    // else; replace ......./link with ..../link_result
+    lastSlash = strrchr(path,'/')+1;
+    *lastSlash = '\0';
+    strncpy(newPath,path,lastSlash-path+1);
+    strcat(newPath,linkPath);
+    free(linkPath);
+return newPath;
+}
+
+/**
+ * Author BZ, 2008-09
+ * helper function for findSymbolicLinks
+ * This function evaluates each directory/file and if it is a symbolic link, call mergePathWithLink
+ * to produce resulting path ( if a link is refering to a relative dir or not).
+ *
+ * */
+char *getSymbolicLinkPath(char* path)
+{
+    int err,readChars;
+    char *buffer;
+    struct stat ss;
+
+    err = lstat(path,&ss);
+    //printf(" check existence %s\n",path);
+    if(err==0){ // file exists
+    	//printf("okay succ %s, %d\n",path,ss.st_mode);
+    	if(S_ISLNK(ss.st_mode))
+    	{
+    	    //printf("*** is link *** %s\n",path);
+    	    buffer = (char *) malloc(sizeof(char)*MAXPATHLEN);
+    	    readChars = readlink (path, buffer, MAXPATHLEN);
+    	    if(readChars >0){
+    	    	buffer[readChars]='\0';
+    	    	buffer = mergePathWithLink(path,buffer);
+    	    	free(path);
+    	    	path = buffer;
+    	    	//printf(" have %s from symolic link\n",path);
+    	    	path = getSymbolicLinkPath(path);
+    	    	//printf(" after recursive call, terminating; %s\n\n",path);
+    	    }
+    	    else if(readChars==-1){
+    	    	free(buffer);
+    	    }
+    	}
+    	return path;
+    }
+    else{
+        //printf(" no existing: %s\n",path);
+    	return path;
+    }
+}
+/**
+ * Author BZ, 2008-09
+ * This function traverses all directories searching for symbolic links like;
+ * home/bjozac/linkToNewDir/a.mo
+ * 1) isLink(/home) "then get link path"
+ * 2) isLink(/home/bjozac/) same as above, do nothing
+ * 3) isLink(/home/bjozac/linkToNewDir) => true, new path: /home/bjozac/NewDir/
+ * 4) isLink(/home/bjozac/newDir/a.mo)
+ **/
+char* findSymbolicLinks(char* path)
+{
+    int readChars=0,pointer=0,i;
+    char *curRes = (char *) malloc(sizeof(char)*MAXPATHLEN);
+    char *destPos;
+    char *curPos;
+    char *endPos;
+    curRes[0]='\0';
+    curPos = path;
+    if(path[0]=='/'){
+	curRes = strcat(curRes,"/");
+        curPos = &path[1]; // skip first slash, will add when finished.
+    }
+
+    for(i=0;i<100;++i){
+        endPos = strchr(curPos,'/');
+        if(endPos==NULL){ // End OF String
+	    endPos = strrchr(curPos,'\0');
+	    strncat(curRes,curPos,endPos-curPos); // add filename
+	    //printf(" check: %s ==> " ,curRes);
+	    curRes = getSymbolicLinkPath(curRes);
+	    //printf("\tbecame: %s\n",curRes);
+	    free(path);
+    	    return curRes;
+	}
+	strncat(curRes,curPos,endPos-curPos);
+	curRes = getSymbolicLinkPath(curRes);
+	if(curRes[strlen(curRes)-1] != '/')
+    	    strcat(curRes,"/");
+	//printf("path: %s\n",curRes);
+	curPos = endPos+1;
+    }
+    if(strchr(path,'/')!=NULL)
+	fprintf(stderr,"possible error in save-function\n");
+    free(path);
+    return curRes;
+}
+
+
+/* Normalize a path i.e. transforms /usr/local/..//lib to /usr/lib
+   returns NULL on failure.
+
+*/
+char* normalizePath(const char* src)
+{
+  const char* srcEnd = src + strlen(src);
+  const char* srcPos = src;
+  char* dest;
+  char* targetPos = dest;
+  char* newSrcPos = NULL;
+  char* p = NULL;
+  char* tmp;
+  int appendSlash = 0;
+
+  if (strlen(src) == 0) {
+    return NULL;
+  }
+
+  if (src[0] != '/') {
+    /* it is a relative path, so prepend cwd */
+    tmp = malloc(1024);
+    p = getcwd(tmp, 1024);
+    if (p == NULL) {
+      free(tmp);
+      return NULL;
+    }
+    dest = malloc(strlen(src) + strlen(p) + 2);
+    strcpy(dest, p);
+    free(p);
+    targetPos = dest + strlen(dest);
+    if (dest[strlen(dest) - 1] != '/') {
+      appendSlash = 1;
+    }
+  }
+  else {
+    /* absolute path */
+    dest = malloc(strlen(src) + 2);
+    dest[0] = '\0';
+    targetPos = dest;
+    appendSlash = 1;
+  }
+
+  while (srcPos < srcEnd) {
+    if (strstr(srcPos, "..") == (srcPos)) {
+      /* found .. remove last part of the path in dest */
+      p = strrchr(dest, '/');
+      if (p == NULL) {
+        p = dest;
+        appendSlash = 0;
+      }
+      p[0] = '\0';
+      targetPos = p;
+      /* seek next / in src */
+      srcPos = strchr(srcPos, '/');
+      if (srcPos == NULL) {
+        break;
+      }
+      srcPos = srcPos + 1; /* skip the found / */
+      continue;
+    }
+    if (appendSlash) {
+      targetPos[0] = '/';
+      targetPos++;
+      targetPos[0] = '\0'; /* always null terminate so that dest is a valid string */
+    }
+    newSrcPos = strchr(srcPos, '/');
+    /* printf("dest = %s\n", dest); */
+    /* printf("srcPos = %s\n", srcPos); */
+    /* printf("newSrcPos = %s\n", newSrcPos); */
+    if (newSrcPos == NULL) {
+      /* did not find any more / copy rest of string and end */
+      strcpy(targetPos, srcPos);
+      break;
+    }
+    if (newSrcPos == srcPos) {
+      /* skip multiple / */
+      srcPos = srcPos + 1;
+      appendSlash = 0;
+      continue;
+    }
+    strncpy(targetPos, srcPos, newSrcPos - srcPos);
+    targetPos = targetPos + (newSrcPos - srcPos);
+    srcPos = newSrcPos + 1; /* + 1 to skip the found / */
+    appendSlash = 1;
+  }
+  //printf("calling: -->%s<--\n" ,dest);
+  dest = findSymbolicLinks(dest);
+  //printf(" RES:  %s\n",dest);
+  return dest;
+}
+/*
+*/
+
+RML_BEGIN_LABEL(System__isSameFile)
+{
+  char* fileName1 = RML_STRINGDATA(rmlA0);
+  char* fileName2 = RML_STRINGDATA(rmlA1);
+  char* normPath1 = normalizePath(fileName1);
+  char* normPath2 = normalizePath(fileName2);
+  int same = 0;
+  if (normPath1 == NULL || normPath2 == NULL) {
+    if (normPath1) free(normPath1);
+    if (normPath2) free(normPath2);
+    RML_TAILCALLK(rmlFC);
+  }
+
+  same = strcmp(normPath1, normPath2) == 0;
+  free(normPath1);
+  free(normPath2);
+  if (same) {
+    RML_TAILCALLK(rmlSC);
+  }
+  else {
+    RML_TAILCALLK(rmlFC);
+  }
+}
+RML_END_LABEL
 
 RML_BEGIN_LABEL(System__strtok)
 {
@@ -1726,6 +2397,12 @@ int str_contain_char( const char* chars, const char chr)
   return 0;
 }
 
+RML_BEGIN_LABEL(System__os)
+{
+  rmlA0 = (void*) mk_scon("linux");
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
 
 /*  this removes chars in second from the beginning and end of the first
     string and returns it */
@@ -1844,6 +2521,48 @@ RML_BEGIN_LABEL(System__strncmp)
 }
 RML_END_LABEL
 
+RML_BEGIN_LABEL(System__isIdenticalFile)
+{
+  char *fileName1 = RML_STRINGDATA(rmlA0);
+  char *fileName2 = RML_STRINGDATA(rmlA1);
+  char emptyString[5] = "empty";
+  int res=1,i;
+  FILE *fp1,*fp2,*d1,*d2;
+  long fileSize1,fileSize2;
+  fp1 = fopen(fileName1, "r");
+
+  if(!fp1){
+	  //printf("Error opening the file: %s, creating it\n",fileName1);
+	  d1 = fopen(fileName1,"w+");
+	  for(i=0;i<5;++i)
+		  fputc(emptyString[i],d1);
+	  fclose(d1);
+  }
+  fp1 = fopen(fileName1, "r");
+  fp2 = fopen(fileName2, "r");
+  if(!fp2){
+  	  //printf("Error opening the file(#2): %s\n",fileName2);
+ 	  rmlA0 = RML_FALSE/*mk_bcon(-1)*/;
+  	  RML_TAILCALLK(rmlSC);
+    }
+  fseek(fp1 , 0 , SEEK_END);
+  fileSize1 = ftell(fp1);
+  rewind(fp1);
+  fseek(fp2 , 0 , SEEK_END);
+  fileSize2 = ftell(fp2);
+  rewind(fp2);
+  if(fileSize1 != fileSize2)
+    res=-1;
+  else
+    for(i=0;i<fileSize1;++i)
+    	if(fgetc(fp1) != fgetc(fp2))
+    		res=-1;
+  fclose(fp1);fclose(fp2);
+  rmlA0 = res?RML_FALSE:RML_TRUE/*mk_bcon(res)*/;
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
 
 RML_BEGIN_LABEL(System__stringReplace)
 {
@@ -1878,7 +2597,7 @@ RML_END_LABEL
 RML_BEGIN_LABEL(System__setCCompiler)
 {
   char* str = RML_STRINGDATA(rmlA0);
-  if (set_cc(str)) {
+  if(set_cc(str))  {
     RML_TAILCALLK(rmlFC);
   }
   RML_TAILCALLK(rmlSC);
@@ -2048,6 +2767,62 @@ void free_function(modelica_ptr_t func)
   /* noop */
 }
 
+RML_BEGIN_LABEL(System__compileCFile)
+{
+  char* str = RML_STRINGDATA(rmlA0);
+  char command[255];
+  char exename[255];
+  char *tmp;
+
+  if (strlen(str) >= 255) {
+    RML_TAILCALLK(rmlFC);
+  }
+  if (cc == NULL||cflags == NULL) {
+    RML_TAILCALLK(rmlFC);
+  }
+  memcpy(exename,str,strlen(str)-2);
+  exename[strlen(str)-2]='\0';
+
+  sprintf(command,"%s %s -o %s %s > compilelog.txt 2>&1",cc,str,exename,cflags);
+  //printf("compile using: %s\n",command);
+
+#ifndef __APPLE_CC__  /* seems that we need to disable this on MacOS */
+  putenv("GCC_EXEC_PREFIX=");
+#endif
+  tmp = getenv("MODELICAUSERCFLAGS");
+  if (tmp == NULL || tmp[0] == '\0'  ) {
+	  putenv("MODELICAUSERCFLAGS=  ");
+  }
+  if (system(command) != 0) {
+    RML_TAILCALLK(rmlFC);
+  }
+
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__executeFunction)
+{
+  char* str = RML_STRINGDATA(rmlA0);
+  char command[255];
+  int ret_val;
+  sprintf(command,"./%s %s_in.txt %s_out.txt",str,str,str);
+  ret_val = system(command);
+  if (ret_val != 0) {
+    RML_TAILCALLK(rmlFC);
+  }
+
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__getExeExt)
+{
+  rmlA0 = (void*) mk_scon("");
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
 RML_BEGIN_LABEL(System__systemCall)
 {
   int ret_val;
@@ -2145,6 +2920,91 @@ RML_BEGIN_LABEL(System__readFile)
 
   /* adrpo added 2004-10-26 */
   free(buf);
+
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+int stringContains(char *str,char c){
+	int i;
+	for(i=0;i<strlen(str);++i)
+		if(str[i]==c){
+			//printf(" match: %c == %c\n",str[i],c);
+			return 1;
+		}
+	return 0;
+}
+void filterString(char* buf,char* bufRes){
+	  int res,i,bufPointer = 0,slen;
+	  char preChar,cc;
+	  char filterChars[11] = "0123456789.";
+	  char numeric[10] = "0123456789";
+	  slen = strlen(buf);
+	  preChar = '\0';
+	  for(i=0;i<slen;++i){
+		  cc = buf[i];
+		  if((stringContains(filterChars,buf[i]))){
+			  if(buf[i]=='.'){
+				if(stringContains(numeric,preChar) || (( i < slen+1) && stringContains(numeric,buf[i+1])) ){
+					;//printf(" skipped-1: %c\n",buf[i]);
+				}
+				else
+					bufRes[bufPointer++] = buf[i];
+			  }
+			  else
+			  {
+				  ;//printf(" skipped-2: %c\n",buf[i]);
+			  }
+		  }
+		  else{
+			  bufRes[bufPointer++] = buf[i];
+		  }
+		  preChar = buf[i];
+	  }
+	  bufRes[bufPointer++] = '\0';
+}
+
+RML_BEGIN_LABEL(System__readFileNoNumeric)
+{
+  char* filename = RML_STRINGDATA(rmlA0);
+  char* buf, *bufRes;
+  int res,i,bufPointer = 0;
+  FILE * file = NULL;
+  struct stat statstr;
+  res = stat(filename, &statstr);
+
+  if(res!=0)
+  {
+    char *c_tokens[1]={filename};
+    c_add_message(85, /* ERROR_OPENING_FILE */
+		  "SCRIPTING",
+		  "ERROR",
+		  "Error opening file %s.",
+		  c_tokens,
+		  1);
+    rmlA0 = (void*) mk_scon("No such file");
+    RML_TAILCALLK(rmlSC);
+  }
+
+  file = fopen(filename,"rb");
+  buf = malloc(statstr.st_size+1);
+  bufRes = malloc(statstr.st_size+1+70*sizeof(char));
+  if( (res = fread(buf, sizeof(char), statstr.st_size, file)) != statstr.st_size)
+  {
+	/* adrpo added 2004-10-26 */
+	free(buf);
+    rmlA0 = (void*) mk_scon("Failed while reading file");
+    RML_TAILCALLK(rmlSC);
+  }
+  buf[statstr.st_size] = '\0';
+  filterString(buf,bufRes);
+  fclose(file);
+  sprintf(bufRes,"%s\nFilter count from numberic domain: %d",bufRes,(strlen(buf)-strlen(bufRes)));
+  rmlA0 = (void*) mk_scon(bufRes);
+
+  /* adrpo added 2004-10-26 */
+  free(buf);
+  free(bufRes);
 
   RML_TAILCALLK(rmlSC);
 }
@@ -2291,6 +3151,159 @@ RML_BEGIN_LABEL(System__getVariableNames)
 	getVariableList(model, lst);
 	rmlA0 = (void*)mk_scon(lst);
 	RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+void* read_one_value_from_file(FILE* file, type_description* desc)
+{
+  void *res=NULL;
+  int ival;
+  double rval;
+  double *rval_arr;
+  int *ival_arr;
+  int size;
+  if (desc->ndims == 0) /* Scalar value */
+  {
+    if (desc->type == 'i') {
+      fscanf(file,"%d",&ival);
+      res =(void*) Values__INTEGER(mk_icon(ival));
+    } else if (desc->type == 'r') {
+      fscanf(file,"%le",&rval);
+      res = (void*) Values__REAL(mk_rcon(rval));
+    } else if (desc->type == 'b') {
+      fscanf(file,"%le",&rval);
+      res = (void*) Values__BOOL(rval?RML_TRUE:RML_FALSE/*mk_bcon(rval)*/);
+    }
+  } else if (desc->ndims == 1 && desc->type == 's') { /* Scalar String */
+    int i;
+    char* tmp;
+    tmp = malloc(sizeof(char)*(desc->dim_size[0]+1));
+    if (!tmp) return NULL;
+    for(i=0;i<desc->dim_size[0];i++) {
+      tmp[i] = fgetc(file);
+      if (tmp[i] == EOF) {
+	return NULL;
+      }
+    }
+    tmp[i]='\0';
+    res = (void*) Values__STRING(mk_scon(tmp));
+  }
+  else  /* Array value */
+  {
+    int currdim,el,i;
+    /* REAL ARRAYS */
+    if (desc->type == 'r') {
+	/* Create array to hold inserted values, max dimension as size */
+	size = 1;
+	for (currdim=0;currdim < desc->ndims; currdim++) {
+	  size *= desc->dim_size[currdim];
+	}
+	rval_arr = (double*)malloc(sizeof(double)*size);
+	if(rval_arr == NULL) {
+	  return NULL;
+	}
+	/* Fill the array in reversed order */
+	for(i=size-1;i>=0;i--) {
+	  fscanf(file,"%le",&rval_arr[i]);
+	}
+
+	next_realelt(NULL);
+	/* 1 is current dimension (start value) */
+	res =(void*) Values__ARRAY(generate_array('r',1,desc,(void*)rval_arr));
+      }
+      /* REAL ARRAY END, INTEGER ARRAY START*/
+
+      if (desc->type == 'i') {
+	int currdim,el,i;
+	/* Create array to hold inserted values, mult of dimensions as size */
+	size = 1;
+	for (currdim=0;currdim < desc->ndims; currdim++) {
+	  size *= desc->dim_size[currdim];
+	}
+	ival_arr = (int*)malloc(sizeof(int)*size);
+	if(ival_arr==NULL) {
+	  return NULL;
+	}
+	/* Fill the array in reversed order */
+	for(i=size-1;i>=0;i--) {
+	  fscanf(file,"%f",&ival_arr[i]);
+	}
+	next_intelt(NULL);
+	res = (void*) Values__ARRAY(generate_array('i',1,desc,(void*)ival_arr));
+      }
+      /*INTEGER ARRAY ENDS BOOLEAN ARRAY START*/
+
+	if (desc->type == 'b')
+	{
+		int currdim,el,i;
+		/* Create array to hold inserted values, mult of dimensions as size */
+		size = 1;
+		for (currdim=0;currdim < desc->ndims; currdim++) {
+	  		size *= desc->dim_size[currdim];
+		}
+		rval_arr = (double*)malloc(sizeof(double)*size);
+		if(rval_arr==NULL) {
+	  		return NULL;
+		}
+		/* Fill the array in reversed order */
+		for(i=size-1;i>=0;i--) {
+	  		fscanf(file,"%le",&rval_arr[i]);
+		}
+			next_intelt(NULL);
+			res = (void*) Values__ARRAY(generate_array('b',1,desc,(void*)rval_arr));
+	}
+	if (desc->type == 's') {
+		printf("Error, array of strings not impl. yet.\n");
+	}
+  }
+  return res;
+}
+
+RML_BEGIN_LABEL(System__readValuesFromFile)
+{
+  int stat=0;
+  int varcount=0;
+  type_description desc;
+  void *lst = (void*)mk_nil();
+  void *res = NULL;
+  char* filename = RML_STRINGDATA(rmlA0);
+  FILE * file=NULL;
+  file = fopen(filename,"r");
+  if (file == NULL) {
+    RML_TAILCALLK(rmlFC);
+  }
+
+  /* Read the first value */
+  stat = read_type_description(file,&desc);
+  if (stat != 0) {
+    printf("Error reading values from file\n");
+    RML_TAILCALLK(rmlFC);
+  }
+
+  while (stat == 0) { /* Loop for tuples. At the end of while, we try to read another description */
+    res = read_one_value_from_file(file, &desc);
+    if (res == NULL) {
+      printf("Error reading values from file2 %s .\n", filename);
+      RML_TAILCALLK(rmlFC);
+    }
+    lst = (void*)mk_cons(res, lst);
+    varcount++;
+    read_to_eol(file);
+    stat = read_type_description(file,&desc);
+    /*
+    printf("varcount is : %d\n", varcount);
+    printf("stat is : %d\n", stat);
+    */
+  }
+  if (varcount > 1) { /* if tuple */
+    rmlA0 = lst;
+    rml_prim_once(RML__list_5freverse);
+    rmlA0 = (void*) Values__TUPLE(rmlA0);
+  }
+  else {
+    rmlA0 = (void*)res;
+  }
+  RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
@@ -2540,6 +3553,68 @@ RML_BEGIN_LABEL(System__tanh)
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
+
+double next_realelt(double *arr)
+{
+  static int curpos;
+
+  if(arr == NULL) {
+    curpos = 0;
+    return 0.0;
+  }
+  else {
+    return arr[curpos++];
+  }
+}
+
+int next_intelt(int *arr)
+{
+  static int curpos;
+
+  if(arr == NULL) {
+    curpos = 0;
+    return 0;
+  }
+  else return arr[curpos++];
+}
+
+void* generate_array(char type, int curdim, type_description *desc, void *data)
+
+{
+  void *lst;
+  double rval;
+  int ival;
+  int i;
+  lst = (void*)mk_nil();
+  if (curdim == desc->ndims)
+  {
+    for (i=0; i< desc->dim_size[curdim-1]; i++)
+    {
+      if (type == 'r')
+      {
+	    rval = next_realelt((double*)data);
+	    lst = (void*)mk_cons(Values__REAL(mk_rcon(rval)),lst);
+      }
+      else if (type == 'i')
+      {
+	    ival = next_intelt((int*)data);
+	    lst = (void*)mk_cons(Values__INTEGER(mk_icon(ival)),lst);
+      }
+      else if (type == 'b')
+      {
+	    rval = next_realelt((double*)data);
+	    lst = (void*)mk_cons(Values__BOOL(rval?RML_TRUE:RML_FALSE/*mk_bcon(rval)*/),lst);
+      }
+    }
+  }
+  else
+  {
+    for (i=0; i< desc->dim_size[curdim-1]; i++) {
+    lst = (void*)mk_cons(Values__ARRAY(generate_array(type,curdim+1,desc,data)),lst);
+  }
+  }
+  return lst;
+}
 
 char* class_names_for_simulation = NULL;
 RML_BEGIN_LABEL(System__getClassnamesForSimulation)

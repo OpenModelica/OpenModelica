@@ -270,7 +270,7 @@ algorithm
       tuple<list<Exp.ComponentRef>,Exp.ComponentRef> crs;
       Boolean encflag;
       Ident id;
-    case ((FRAME(list_2 = ht,list_3 = httypes,list_4 = imps,list_5 = bcframes,current6 = crs,encapsulated_7 = encflag) :: res),id) 
+    case ((FRAME(clsAndVars = ht,types = httypes,imports = imps,inherited = bcframes,connectionSet = crs,isEncapsulated = encflag) :: res),id) 
     then (FRAME(SOME(id),ht,httypes,imps,bcframes,crs,encflag) :: res); 
   end matchcontinue;
 end nameScope;
@@ -281,7 +281,7 @@ public function stripForLoopScope "strips for loop scopes"
 algorithm
   outEnv := matchcontinue(env)
   local String name;
-    case(FRAME(class_1 = SOME(name))::env) equation
+    case(FRAME(optName = SOME(name))::env) equation
       equality(name=Inst.forScopeName);
       env = stripForLoopScope(env);
     then env; 
@@ -297,7 +297,7 @@ public function getScopeName "function: getScopeName
 algorithm 
   name:=
   matchcontinue (inEnv)
-    case ((FRAME(class_1 = SOME(name))::_)) then (name); 
+    case ((FRAME(optName = SOME(name))::_)) then (name); 
   end matchcontinue;
 end getScopeName;
 
@@ -309,12 +309,12 @@ public function getScopeNames "function: getScopeName
 algorithm names := matchcontinue (inEnv)
   local String name;
   case ({}) then {};
-  case ((FRAME(class_1 = SOME(name))::inEnv)) 
+  case ((FRAME(optName = SOME(name))::inEnv)) 
     equation
       names = getScopeNames(inEnv);
     then 
       name::names; 
-  case ((FRAME(class_1 = NONE)::inEnv)) 
+  case ((FRAME(optName = NONE)::inEnv)) 
     equation
       names = getScopeNames(inEnv);
     then 
@@ -329,16 +329,16 @@ input Env classEnv;
 output Env outEnv;
 algorithm
   outEnv := matchcontinue(env,classEnv)
-  local   Option<Ident> class_1;
-    AvlTree list_2, list_3 ;   
-    list<Item> list_4;
-    list<Frame> list_5,fs;
+  local   Option<Ident> optName;
+    AvlTree clsAndVars, types ;   
+    list<Item> imports;
+    list<Frame> inherited,fs;
     tuple<list<Exp.ComponentRef>,Exp.ComponentRef> crefs;
     Boolean enc; 
     
-    case(FRAME(class_1,list_2,list_3,list_4,list_5,crefs,enc)::fs,classEnv) equation
-      list_2 = updateEnvClassesInTree(list_2,classEnv);
-    then FRAME(class_1,list_2,list_3,list_4,list_5,crefs,enc)::fs;
+    case(FRAME(optName,clsAndVars,types,imports,inherited,crefs,enc)::fs,classEnv) equation
+      clsAndVars = updateEnvClassesInTree(clsAndVars,classEnv);
+    then FRAME(optName,clsAndVars,types,imports,inherited,crefs,enc)::fs;
   end matchcontinue;
 end updateEnvClasses;
 
@@ -407,7 +407,7 @@ algorithm
       Boolean encflag;
       SCode.Class c;
       Ident n;
-    case ((env as (FRAME(class_1 = id,list_2 = ht,list_3 = httypes,list_4 = imps,list_5 = bcframes,current6 = crs,encapsulated_7 = encflag) :: fs)),(c as SCode.CLASS(name = n)))
+    case ((env as (FRAME(optName = id,clsAndVars = ht,types = httypes,imports = imps,inherited = bcframes,connectionSet = crs,isEncapsulated = encflag) :: fs)),(c as SCode.CLASS(name = n)))
       equation 
         (ht_1) = avlTreeAdd(ht, n, CLASS(c,env));
       then
@@ -470,7 +470,7 @@ algorithm
       Types.Var v;
       Ident n;
       Option<tuple<SCode.Element, Types.Mod>> c;
-    case ((FRAME(class_1 = id,list_2 = ht,list_3 = httypes,list_4 = imps,list_5 = bcframes,current6 = crs,encapsulated_7 = encflag) :: fs),(v as Types.VAR(name = n)),c,i,env) /* environment of component */ 
+    case ((FRAME(optName = id,clsAndVars = ht,types = httypes,imports = imps,inherited = bcframes,connectionSet = crs,isEncapsulated = encflag) :: fs),(v as Types.VAR(name = n)),c,i,env) /* environment of component */ 
       equation 
         //failure((_)= avlTreeGet(ht, n)); 
         (ht_1) = avlTreeAdd(ht, n, VAR(v,c,i,env));
@@ -478,7 +478,7 @@ algorithm
         (FRAME(id,ht_1,httypes,imps,bcframes,crs,encflag) :: fs);
 
         // Variable already added, perhaps from baseclass
-    case (remember as (FRAME(class_1 = id,list_2 = ht,list_3 = httypes,list_4 = imps,list_5 = bcframes,current6 = crs,encapsulated_7 = encflag) :: fs),
+    case (remember as (FRAME(optName = id,clsAndVars = ht,types = httypes,imports = imps,inherited = bcframes,connectionSet = crs,isEncapsulated = encflag) :: fs),
           (v as Types.VAR(name = n)),c,i,env) /* environment of component */ 
       equation 
         (_)= avlTreeGet(ht, n); 
@@ -514,18 +514,18 @@ algorithm
       Types.Var v;
       Ident n,id;
     case ({},_,i,_) then {};  /* fully instantiated env of component */ 
-    case ((FRAME(class_1 = sid,list_2 = ht,list_3 = httypes,list_4 = imps,list_5 = bcframes,current6 = crs,encapsulated_7 = encflag) :: fs),(v as Types.VAR(name = n)),i,env)
+    case ((FRAME(optName = sid,clsAndVars = ht,types = httypes,imports = imps,inherited = bcframes,connectionSet = crs,isEncapsulated = encflag) :: fs),(v as Types.VAR(name = n)),i,env)
       equation 
         VAR(_,c,_,_) = avlTreeGet(ht, n);
         (ht_1) = avlTreeAdd(ht, n, VAR(v,c,i,env));
       then
         (FRAME(sid,ht_1,httypes,imps,bcframes,crs,encflag) :: fs);
-    case ((FRAME(class_1 = sid,list_2 = ht,list_3 = httypes,list_4 = imps,list_5 = bcframes,current6 = crs,encapsulated_7 = encflag) :: fs),(v as Types.VAR(name = n)),i,env) /* Also check frames above, e.g. when variable is in base class */ 
+    case ((FRAME(optName = sid,clsAndVars = ht,types = httypes,imports = imps,inherited = bcframes,connectionSet = crs,isEncapsulated = encflag) :: fs),(v as Types.VAR(name = n)),i,env) /* Also check frames above, e.g. when variable is in base class */ 
       equation 
         frames = updateFrameV(fs, v, i, env);
       then
         (FRAME(sid,ht,httypes,imps,bcframes,crs,encflag) :: frames);
-    case ((FRAME(class_1 = sid,list_2 = ht,list_3 = httypes,list_4 = imps,list_5 = bcframes,current6 = crs,encapsulated_7 = encflag) :: fs),Types.VAR(name = n),_,_)
+    case ((FRAME(optName = sid,clsAndVars = ht,types = httypes,imports = imps,inherited = bcframes,connectionSet = crs,isEncapsulated = encflag) :: fs),Types.VAR(name = n),_,_)
       equation 
         /*Print.printBuf("- update_frame_v, variable ");
         Print.printBuf(n);
@@ -571,13 +571,13 @@ algorithm
       Boolean encflag;
       Ident n;
       tuple<Types.TType, Option<Absyn.Path>> t;
-    case ((FRAME(class_1 = sid,list_2 = ht,list_3 = httypes,list_4 = imps,list_5 = bcframes,current6 = crs,encapsulated_7 = encflag) :: fs),n,t)
+    case ((FRAME(optName = sid,clsAndVars = ht,types = httypes,imports = imps,inherited = bcframes,connectionSet = crs,isEncapsulated = encflag) :: fs),n,t)
       equation 
         TYPE(tps) = avlTreeGet(httypes, n) "Other types with that name allready exist, add this type as well" ;
         (httypes_1) = avlTreeAdd(httypes, n, TYPE((t :: tps)));
       then
         (FRAME(sid,ht,httypes_1,imps,bcframes,crs,encflag) :: fs);
-    case ((FRAME(class_1 = sid,list_2 = ht,list_3 = httypes,list_4 = imps,list_5 = bcframes,current6 = crs,encapsulated_7 = encflag) :: fs),n,t)
+    case ((FRAME(optName = sid,clsAndVars = ht,types = httypes,imports = imps,inherited = bcframes,connectionSet = crs,isEncapsulated = encflag) :: fs),n,t)
       equation 
         failure(TYPE(_) = avlTreeGet(httypes, n)) "No other types exists" ;
         (httypes_1) = avlTreeAdd(httypes, n, TYPE({t}));
@@ -606,7 +606,7 @@ algorithm
       Boolean encflag;
       Absyn.Import imp;
       Env env;
-    case ((FRAME(class_1 = sid,list_2 = ht,list_3 = httypes,list_4 = imps,list_5 = bcframes,current6 = crs,encapsulated_7 = encflag) :: fs),imp) 
+    case ((FRAME(optName = sid,clsAndVars = ht,types = httypes,imports = imps,inherited = bcframes,connectionSet = crs,isEncapsulated = encflag) :: fs),imp) 
       equation
         false = memberImportList(imps,imp);
     then (FRAME(sid,ht,httypes,(IMPORT(imp) :: imps),bcframes,crs,encflag) :: fs);
@@ -657,7 +657,7 @@ algorithm
       tuple<list<Exp.ComponentRef>,Exp.ComponentRef> crefs;
       Boolean enc;
       Frame f;
-    case ((FRAME(class_1 = sid,list_2 = cls,list_3 = tps,list_4 = imps,list_5 = bc,current6 = crefs,encapsulated_7 = enc) :: fs),(f :: _)) 
+    case ((FRAME(optName = sid,clsAndVars = cls,types = tps,imports = imps,inherited = bc,connectionSet = crefs,isEncapsulated = enc) :: fs),(f :: _)) 
       then (FRAME(sid,cls,tps,imps,(f :: bc),crefs,enc) :: fs);  /* env bc env */ 
   end matchcontinue;
 end addBcFrame;
@@ -689,7 +689,7 @@ public function getClassName
 algorithm
    name := matchcontinue (inEnv) 
    	local Ident n;
-   	case FRAME(class_1 = SOME(n))::_ then n;
+   	case FRAME(optName = SOME(n))::_ then n;
   end matchcontinue;
 end getClassName;    	
 
@@ -709,8 +709,8 @@ algorithm
       Ident id;
       Absyn.Path path,path_1;
       Env rest;
-    case ({FRAME(class_1 = SOME(id)),FRAME(class_1 = NONE)}) then SOME(Absyn.IDENT(id)); 
-    case ((FRAME(class_1 = SOME(id)) :: rest))
+    case ({FRAME(optName = SOME(id)),FRAME(optName = NONE)}) then SOME(Absyn.IDENT(id)); 
+    case ((FRAME(optName = SOME(id)) :: rest))
       equation 
         SOME(path) = getEnvPath(rest);
         path_1 = Absyn.joinPaths(path, Absyn.IDENT(id));
@@ -812,7 +812,7 @@ algorithm
   _ := matchcontinue(env ) 
   local list<Exp.ComponentRef> crs;
    Env env;
-    case(env as (FRAME(current6 = (crs,_))::_)) equation
+    case(env as (FRAME(connectionSet = (crs,_))::_)) equation
       print(printEnvPathStr(env));print(" :   ");
       print(Util.stringDelimitList(Util.listMap(crs,Exp.printComponentRefStr),", "));
       print("\n");            
@@ -837,7 +837,7 @@ algorithm
       Env bcframes;
       tuple<list<Exp.ComponentRef>,Exp.ComponentRef> crs;
       Boolean encflag;
-    case FRAME(class_1 = SOME(sid),list_2 = ht,list_3 = httypes,list_4 = imps,list_5 = bcframes,current6 = crs,encapsulated_7 = encflag)
+    case FRAME(optName = SOME(sid),clsAndVars = ht,types = httypes,imports = imps,inherited = bcframes,connectionSet = crs,isEncapsulated = encflag)
       equation 
         s1 = printAvlTreeStr(ht);
         s2 = printAvlTreeStr(httypes);
@@ -849,7 +849,7 @@ algorithm
           ") \nclasses and vars:\n=============\n",s1,"   Types:\n======\n",s2,"   Imports:\n=======\n",s3,"baseclass:\n======\n",s4,"end baseclass\n"});
       then
         res;
-    case FRAME(class_1 = NONE,list_2 = ht,list_3 = httypes,list_4 = imps,list_5 = bcframes,current6 = crs,encapsulated_7 = encflag)
+    case FRAME(optName = NONE,clsAndVars = ht,types = httypes,imports = imps,inherited = bcframes,connectionSet = crs,isEncapsulated = encflag)
       equation 
         s1 = printAvlTreeStr(ht);
         s2 = printAvlTreeStr(httypes);
@@ -881,7 +881,7 @@ algorithm
       Env bcframes;
       tuple<list<Exp.ComponentRef>,Exp.ComponentRef> crs;
       Boolean encflag;
-    case FRAME(class_1 = SOME(sid),list_2 = ht,list_3 = httypes,list_4 = imps,list_5 = bcframes,current6 = crs,encapsulated_7 = encflag)
+    case FRAME(optName = SOME(sid),clsAndVars = ht,types = httypes,imports = imps,inherited = bcframes,connectionSet = crs,isEncapsulated = encflag)
       equation 
         s1 = printAvlTreeStr(ht);
         encflag_str = Util.boolString(encflag);
@@ -890,7 +890,7 @@ algorithm
           ") \nclasses and vars:\n=============\n",s1,"\n\n\n"});
       then
         res;
-    case FRAME(class_1 = NONE,list_2 = ht,list_3 = httypes,list_4 = imps,list_5 = bcframes,current6 = crs,encapsulated_7 = encflag)
+    case FRAME(optName = NONE,clsAndVars = ht,types = httypes,imports = imps,inherited = bcframes,connectionSet = crs,isEncapsulated = encflag)
       equation 
         s1 = printAvlTreeStr(ht);
         encflag_str = Util.boolString(encflag);
@@ -1353,7 +1353,7 @@ algorithm
       list<Exp.ComponentRef> res;
       Option<Ident> sid;
       AvlTree ht;
-    case ((FRAME(class_1 = sid,list_2 = ht) :: _))
+    case ((FRAME(optName = sid,clsAndVars = ht) :: _))
       equation 
         res = localOutsideConnectorFlowvars2(SOME(ht));
       then
@@ -1410,7 +1410,7 @@ algorithm
       list<Exp.ComponentRef> res;
       Option<Ident> sid;
       AvlTree ht;
-    case ((FRAME(class_1 = sid,list_2 = ht) :: _))
+    case ((FRAME(optName = sid,clsAndVars = ht) :: _))
       equation 
         res = localInsideConnectorFlowvars2(SOME(ht));
       then

@@ -38,6 +38,6 @@ class OmcCommunication_impl :  virtual public POA_OmcCommunication{
   char* sendExpression( const char* expr );
   char* sendClass( const char* expr );
 };
-
+    
 
 #endif

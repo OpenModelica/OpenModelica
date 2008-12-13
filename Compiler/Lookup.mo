@@ -841,7 +841,7 @@ inside connector, i.e. for connector reference a.b the innerOuter attribute is f
 algorithm
   (outCache,attr,tp):=matchcontinue(cache,env,cr)
   local Exp.ComponentRef cr1;
-      Boolean f;
+      Boolean f,stream_;
       SCode.Variability var; SCode.Accessibility acc;
       Absyn.Direction dir;
       Absyn.InnerOuter io;
@@ -851,11 +851,11 @@ algorithm
       (cache,attr1,ty1,_) = lookupVarLocal(cache,env,cr);
     then (cache,attr1,ty1);
     case(cache,env,cr as Exp.CREF_QUAL(ident=_)) equation
-       (cache,attr1 as Types.ATTR(f,acc,var,dir,_),ty1,_) = lookupVarLocal(cache,env,cr);
+       (cache,attr1 as Types.ATTR(f,stream_,acc,var,dir,_),ty1,_) = lookupVarLocal(cache,env,cr);
       cr1 = Exp.crefStripLastIdent(cr);
       /* Find innerOuter attribute from "parent" */
       (cache,Types.ATTR(innerOuter=io),_,_) = lookupVarLocal(cache,env,cr1);
-    then (cache,Types.ATTR(f,acc,var,dir,io),ty1);
+    then (cache,Types.ATTR(f,stream_,acc,var,dir,io),ty1);
   end matchcontinue;
 end lookupConnectorVar;
 
@@ -970,7 +970,7 @@ algorithm
       Exp.ComponentRef ref;
       Env.Cache cache;
       Option<Exp.Exp> splicedExp;
-    case (cache,((frame as Env.FRAME(class_1 = sid,list_2 = ht,list_4 = imps)) :: fs),ref)
+    case (cache,((frame as Env.FRAME(optName = sid,clsAndVars = ht,imports = imps)) :: fs),ref)
       equation 
           (cache,attr,ty,binding,splicedExp ) = lookupVarF(cache,ht, ref);
       then
@@ -1089,7 +1089,7 @@ algorithm
         (cache,env,attr,ty,bind);
         
         /* Search base classes */
-    case (cache,Env.FRAME(list_5 = (bcframes as (_ :: _)))::fs,cref)
+    case (cache,Env.FRAME(inherited = (bcframes as (_ :: _)))::fs,cref)
        local
          Env.Env dbgEnv; // BZ: Added(2008-11), did not affect test suite. Added duo to correctness.
       equation 
@@ -1097,14 +1097,14 @@ algorithm
       then
         (cache,dbgEnv,attr,ty,bind);
         /* Search among qualified imports, e.g. import A.B; or import D=A.B; */
-    case (cache,(env as (Env.FRAME(class_1 = sid,list_4 = items) :: _)),(cr as Exp.CREF_IDENT(ident = id,subscriptLst = sb)))
+    case (cache,(env as (Env.FRAME(optName = sid,imports = items) :: _)),(cr as Exp.CREF_IDENT(ident = id,subscriptLst = sb)))
       equation 
         (cache,p_env,attr,ty,bind) = lookupQualifiedImportedVarInFrame(cache,items, env, id);        
       then
         (cache,p_env,attr,ty,bind);
         
         /* Search among unqualified imports, e.g. import A.B.* */
-    case (cache,(env as (Env.FRAME(class_1 = sid,list_4 = items) :: _)),(cr as Exp.CREF_IDENT(ident = id,subscriptLst = sb)))
+    case (cache,(env as (Env.FRAME(optName = sid,imports = items) :: _)),(cr as Exp.CREF_IDENT(ident = id,subscriptLst = sb)))
       local Boolean unique;
       equation 
         (cache,p_env,attr,ty,bind,unique) = lookupUnqualifiedImportedVarInFrame(cache,items, env, id);
@@ -1157,13 +1157,13 @@ algorithm
       Exp.ComponentRef cref;
       Env.Cache cache;
       /* Lookup in frame */
-    case (cache,(Env.FRAME(class_1 = sid,list_2 = ht) :: fs),cref)
+    case (cache,(Env.FRAME(optName = sid,clsAndVars = ht) :: fs),cref)
       equation 
         (cache,attr,ty,binding,_) = lookupVarF(cache,ht, cref);
       then
         (cache,attr,ty,binding);
         
-    case (cache,(Env.FRAME(class_1 = SOME("$for loop scope$")) :: env),cref)
+    case (cache,(Env.FRAME(optName = SOME("$for loop scope$")) :: env),cref)
       equation 
         (cache,attr,ty,binding) = lookupVarLocal(cache,env, cref) "Exception, when in for loop scope allow search of next scope" ;
       then
@@ -1195,7 +1195,7 @@ algorithm
       Env.AvlTree ht;
       String id;
       Env.Cache cache;
-    case (cache,env as (Env.FRAME(class_1 = sid,list_2 = ht) :: fs),id) /* component environment */ 
+    case (cache,env as (Env.FRAME(optName = sid,clsAndVars = ht) :: fs),id) /* component environment */ 
       equation 
         (cache,fv,c,i,env) = lookupVar2(cache,ht, id);
       then
@@ -1272,7 +1272,7 @@ algorithm
       String id;
       list<Env.Frame> rest;
       Env.Cache cache;
-    case (cache,(Env.FRAME(class_1 = sid,list_2 = ht) :: _),id)
+    case (cache,(Env.FRAME(optName = sid,clsAndVars = ht) :: _),id)
       equation 
         (cache,fv,c,i,_) = lookupVar2(cache,ht, id);
       then
@@ -1335,7 +1335,7 @@ algorithm
       then
         (cache,reslist);
     /* Simple name, search frame */
-    case (cache,(env as (Env.FRAME(class_1 = sid,list_2 = ht,list_3 = httypes) :: fs)),(iid as Absyn.IDENT(name = id)))
+    case (cache,(env as (Env.FRAME(optName = sid,clsAndVars = ht,types = httypes) :: fs)),(iid as Absyn.IDENT(name = id)))
       local String id,s;
       equation 
         (cache,c1 as _::_)= lookupFunctionsInFrame(cache,ht, httypes, env, id);
@@ -1348,14 +1348,14 @@ algorithm
       equation 
         (cache,(c as SCode.CLASS(id,_,encflag,restr,_)),env_1) = lookupClass2(cache,f::fs, iid, false);
         true = SCode.isFunctionOrExtFunction(restr);
-        (cache,(env_2 as (Env.FRAME(class_1 = sid,list_2 = ht,list_3 = httypes)::_))) 
+        (cache,(env_2 as (Env.FRAME(optName = sid,clsAndVars = ht,types = httypes)::_))) 
            = Inst.implicitFunctionTypeInstantiation(cache,env_1, c);
         (cache,c1 as _::_)= lookupFunctionsInFrame(cache,ht, httypes, env_2, id);
       then
         (cache,c1);
       
       /*For qualified function names, e.g. Modelica.Math.sin */  
-    case (cache,(env as (Env.FRAME(class_1 = sid,list_2 = ht,list_3 = httypes) :: fs)),(iid as Absyn.QUALIFIED(name = pack,path = path)))
+    case (cache,(env as (Env.FRAME(optName = sid,clsAndVars = ht,types = httypes) :: fs)),(iid as Absyn.QUALIFIED(name = pack,path = path)))
       local String id,s;
       equation 
         (cache,(c as SCode.CLASS(id,_,encflag,restr,_)),env_1) = lookupClass2(cache,env, Absyn.IDENT(pack), false) ;
@@ -1431,7 +1431,7 @@ algorithm
       String id;
       Env.Frame f;
       Env.Cache cache;
-    case (cache,(env as (Env.FRAME(class_1 = sid,list_2 = ht,list_3 = httypes) :: fs)),Absyn.IDENT(name = id))
+    case (cache,(env as (Env.FRAME(optName = sid,clsAndVars = ht,types = httypes) :: fs)),Absyn.IDENT(name = id))
       equation 
         (cache,c,env_1) = lookupTypeInFrame(cache,ht, httypes, env, id);
       then
@@ -1626,7 +1626,7 @@ algorithm
       list<Env.Item> imps;
       String id;
       Env.Frame f;
-    case ((env as (Env.FRAME(class_1 = sid,list_2 = ht,list_4 = imps) :: fs)),Absyn.IDENT(name = id))
+    case ((env as (Env.FRAME(optName = sid,clsAndVars = ht,imports = imps) :: fs)),Absyn.IDENT(name = id))
       equation 
         (c,_) = lookupRecconstInFrame(ht, env, id);
       then
@@ -1710,20 +1710,30 @@ protected function buildRecordConstructorClass2 "help function to buildRecordCon
   input Env.Env env;
   output list<SCode.Element> funcelts;
   output list<SCode.Element> elts;  
-  algorithm
-    (funcelts,elts) := matchcontinue(cl,mods,env)
-    local list<SCode.Element> elts,cdefelts,restElts; Env.Env env1;
-      case(SCode.CLASS(parts = SCode.PARTS(elementLst = elts)),mods,env)
-        equation
-          (cdefelts,restElts) = Inst.classdefAndImpElts(elts);
-          env1 = Inst.addClassdefsToEnv(env, cdefelts, false,NONE);
-          funcelts = buildRecordConstructorElts(restElts,mods,env1);
-        then (funcelts,elts);
-      case(cl,mods,env) equation
-        print("buildRecordConstructorClass2 failed, cl:"+&SCode.printClassStr(cl)+&"\n");
-        then fail();
-       /* TODO: short class defs */   
-    end matchcontinue;
+algorithm
+  (funcelts,elts) := matchcontinue(cl,mods,env)
+    local 
+      list<SCode.Element> elts,cdefelts,restElts; Env.Env env1;
+    /* a class with parts */
+    case(SCode.CLASS(classDef = SCode.PARTS(elementLst = elts)),mods,env)
+      equation
+        (cdefelts,restElts) = Inst.classdefAndImpElts(elts);
+        env1 = Inst.addClassdefsToEnv(env, cdefelts, false,NONE);
+        funcelts = buildRecordConstructorElts(restElts,mods,env1);
+      then (funcelts,elts);
+    /* adrpo: TODO! handle also the case model extends x end x; */
+    case(SCode.CLASS(classDef = SCode.CLASS_EXTENDS(elementLst = elts)),mods,env)
+      equation
+        (cdefelts,restElts) = Inst.classdefAndImpElts(elts);
+        env1 = Inst.addClassdefsToEnv(env, cdefelts, false,NONE);
+        funcelts = buildRecordConstructorElts(restElts,mods,env1);
+      then (funcelts,elts);
+    // fail
+    case(cl,mods,env) equation
+      print("buildRecordConstructorClass2 failed, cl:"+&SCode.printClassStr(cl)+&"\n");
+    then fail();
+      /* TODO: short class defs */   
+  end matchcontinue;
 end buildRecordConstructorClass2;
 
 protected function buildRecordConstructorElts "function: buildRecordConstructorElts
@@ -1740,13 +1750,12 @@ protected function buildRecordConstructorElts "function: buildRecordConstructorE
   input Env.Env env;
   output list<SCode.Element> outSCodeElementLst;
 algorithm 
-  outSCodeElementLst:=
-  matchcontinue (inSCodeElementLst,mods,env)
+  outSCodeElementLst := matchcontinue (inSCodeElementLst,mods,env)
     local
       list<SCode.Element> res,rest,res1,res2;
       SCode.Element comp;
       String id;
-      Boolean fl,repl,prot,f;
+      Boolean fl,repl,prot,f,st;
       Absyn.InnerOuter io;
       list<Absyn.Subscript> d;
       SCode.Accessibility ac;
@@ -1760,10 +1769,11 @@ algorithm
       Option<Absyn.Exp> cond; 
       SCode.Class cl;
       Absyn.Path path;
-     SCode.Mod mod,umod;
-     Types.Mod mod_1,compMod;     
-     Option<Absyn.Info> nfo;
-    case (((comp as SCode.COMPONENT( id,io,fl,repl,prot,SCode.ATTR(d,f,ac,var,dir),tp,mod,bc,comment,cond,nfo)) :: rest),mods,env)
+      SCode.Mod mod,umod;
+      Types.Mod mod_1,compMod;     
+      Option<Absyn.Info> nfo;
+      
+    case (((comp as SCode.COMPONENT( id,io,fl,repl,prot,SCode.ATTR(d,f,st,ac,var,dir),tp,mod,bc,comment,cond,nfo)) :: rest),mods,env)
       equation 
         (_,mod_1) = Mod.elabMod(Env.emptyCache,env, Prefix.NOPRE(), mod, false);
         mod_1 = Mod.merge(mods,mod_1,env,Prefix.NOPRE());
@@ -1771,7 +1781,7 @@ algorithm
         umod = Mod.unelabMod(compMod);
         res = buildRecordConstructorElts(rest, mods,env);
       then
-        (SCode.COMPONENT(id,io,fl,repl,prot,SCode.ATTR(d,f,ac,var,Absyn.INPUT()),tp,
+        (SCode.COMPONENT(id,io,fl,repl,prot,SCode.ATTR(d,f,st,ac,var,Absyn.INPUT()),tp,
           umod,bc,comment,cond,nfo) :: res);
 
     case (SCode.EXTENDS(path,mod) :: rest,mods,env)
@@ -1803,7 +1813,9 @@ protected function buildRecordConstructorResultElt "function: buildRecordConstru
 algorithm 
   submodlst := buildRecordConstructorResultMod(elts);
   outElement := SCode.COMPONENT("result",Absyn.UNSPECIFIED(),false,false,false,
-          SCode.ATTR({},false,SCode.RW(),SCode.VAR(),Absyn.OUTPUT()),Absyn.TPATH(Absyn.IDENT(id),NONE),SCode.MOD(false,Absyn.NON_EACH(),submodlst,NONE),
+          SCode.ATTR({},false,false,SCode.RW(),SCode.VAR(),Absyn.OUTPUT()),
+          Absyn.TPATH(Absyn.IDENT(id),NONE),
+          SCode.MOD(false,Absyn.NON_EACH(),submodlst,NONE),
           NONE,NONE,NONE,NONE);
 end buildRecordConstructorResultElt;
 
@@ -1866,7 +1878,7 @@ algorithm
       list<SCode.Element> elts,cdefelts,restElts;
       list<Env.Frame> env,env1;
       Env.Cache cache;
-    case (cache,(cl as SCode.CLASS(parts = SCode.PARTS(elementLst = elts))),env)
+    case (cache,(cl as SCode.CLASS(classDef = SCode.PARTS(elementLst = elts))),env)
       equation 
         (cdefelts,restElts) = Inst.classdefAndImpElts(elts);
         env1 = Inst.addClassdefsToEnv(env, cdefelts, false,NONE);
@@ -1875,7 +1887,20 @@ algorithm
           {}, true, Inst.TOP_CALL()) "FIXME: impl" ;
       then
         (cache,Types.VAR("result",
-          Types.ATTR(false,SCode.RW(),SCode.VAR(),Absyn.OUTPUT(),Absyn.UNSPECIFIED()),false,ty,Types.UNBOUND()) :: inputvarlst);
+          Types.ATTR(false,false,SCode.RW(),SCode.VAR(),Absyn.OUTPUT(),Absyn.UNSPECIFIED()),false,ty,Types.UNBOUND()) :: inputvarlst);
+
+     /* adrpo: TODO! handle also the case model extends x end x; */          
+    case (cache,(cl as SCode.CLASS(classDef = SCode.CLASS_EXTENDS(elementLst = elts))),env)
+      equation 
+        (cdefelts,restElts) = Inst.classdefAndImpElts(elts);
+        env1 = Inst.addClassdefsToEnv(env, cdefelts, false,NONE);
+        (cache,inputvarlst) = buildVarlstFromElts(cache,restElts, Types.NOMOD(),env1);        
+        (cache,_,_,_,ty,_,_) = Inst.instClass(cache,env1, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cl, 
+          {}, true, Inst.TOP_CALL()) "FIXME: impl" ;
+      then
+        (cache,Types.VAR("result",
+          Types.ATTR(false,false,SCode.RW(),SCode.VAR(),Absyn.OUTPUT(),Absyn.UNSPECIFIED()),false,ty,Types.UNBOUND()) :: inputvarlst);
+          
     case (_,_,_)
       equation 
         Debug.fprint("failtrace", "buildRecordConstructorVarlst failed\n");
@@ -1945,12 +1970,19 @@ algorithm
   (outCache,vLst) := matchcontinue(cache,env,cl,mods)
   local list<SCode.Element> elts,cdefelts,restElts;
     Env.Env env1;
-    case(cache,env,SCode.CLASS(parts = SCode.PARTS(elementLst = elts)),mods)
+    case(cache,env,SCode.CLASS(classDef = SCode.PARTS(elementLst = elts)),mods)
       equation
         (cdefelts,restElts) = Inst.classdefAndImpElts(elts);
         env1 = Inst.addClassdefsToEnv(env, cdefelts, false,NONE);        
         (outCache,vLst) = buildVarlstFromElts(cache,restElts,mods,env1);
       then (outCache,vLst);
+    /* adrpo: TODO! handle also model extends x end x; */
+    case(cache,env,SCode.CLASS(classDef = SCode.CLASS_EXTENDS(elementLst = elts)),mods)
+      equation
+        (cdefelts,restElts) = Inst.classdefAndImpElts(elts);
+        env1 = Inst.addClassdefsToEnv(env, cdefelts, false,NONE);        
+        (outCache,vLst) = buildVarlstFromElts(cache,restElts,mods,env1);
+      then (outCache,vLst);        
     case(_,_,cl,mods) equation
       Debug.fprint("failtrace", "- buildVarlstFromElts2 failed!\n class:"+&SCode.printClassStr(cl)+&"\n");
     then fail();
@@ -2021,7 +2053,7 @@ algorithm
         (cache,c,env_1) = lookupClassInFrame(cache,frame, (frame :: fs), id, msg) "print \"looking in env for \" & print id & print \"\\n\" &" ;
       then
         (cache,c,env_1);
-    case (cache,(env as (Env.FRAME(class_1 = SOME(sid),encapsulated_7 = true) :: fs)),(aid as Absyn.IDENT(name = id)),_)
+    case (cache,(env as (Env.FRAME(optName = SOME(sid),isEncapsulated = true) :: fs)),(aid as Absyn.IDENT(name = id)),_)
       equation 
         equality(id = sid) "Special case if looking up the class that -is- encapsulated. That must be allowed." ;
         (cache,c,env) = lookupClassInEnv(cache,fs, aid, true);
@@ -2030,7 +2062,7 @@ algorithm
         
         /* lookup stops at encapsulated classes except for builtin
 	    scope, if not found in builtin scope, error */ 
-    case (cache,(env as (Env.FRAME(class_1 = SOME(sid),encapsulated_7 = true) :: fs)),(aid as Absyn.IDENT(name = id)),true) 
+    case (cache,(env as (Env.FRAME(optName = SOME(sid),isEncapsulated = true) :: fs)),(aid as Absyn.IDENT(name = id)),true) 
       equation 
         (cache,i_env) = Builtin.initialEnv(cache);
         failure((_,_,_) = lookupClassInEnv(cache,i_env, aid, false));
@@ -2039,14 +2071,14 @@ algorithm
       then
         fail();
    
-    case (cache,(Env.FRAME(class_1 = sid,encapsulated_7 = true) :: fs),(aid as Absyn.IDENT(name = id)),msgflag) /* lookup stops at encapsulated classes, except for builtin scope */ 
+    case (cache,(Env.FRAME(optName = sid,isEncapsulated = true) :: fs),(aid as Absyn.IDENT(name = id)),msgflag) /* lookup stops at encapsulated classes, except for builtin scope */ 
       local Option<String> sid;
       equation 
         (cache,i_env) = Builtin.initialEnv(cache);
         (cache,c,env_1) = lookupClassInEnv(cache,i_env, aid, msgflag);
       then
         (cache,c,env_1);
-    case (cache,((f as Env.FRAME(class_1 = sid,encapsulated_7 = false)) :: fs),id,msgflag) /* if not found and not encapsulated, look in next enclosing scope */ 
+    case (cache,((f as Env.FRAME(optName = sid,isEncapsulated = false)) :: fs),id,msgflag) /* if not found and not encapsulated, look in next enclosing scope */ 
       local
         Option<String> sid;
         Absyn.Path id;
@@ -2083,28 +2115,28 @@ algorithm
       Env.Item item;
 
       /* Check this scope for class */
-    case (cache,Env.FRAME(class_1 = sid,list_2 = ht),totenv,id,_)
+    case (cache,Env.FRAME(optName = sid,clsAndVars = ht),totenv,id,_)
       equation 
         Env.CLASS(c,_) = Env.avlTreeGet(ht, id);               
       then
         (cache,c,totenv);            
         
         /* Search base classes */ 
-    case (cache,Env.FRAME(list_5 = (bcframes as (_ :: _))),totenv,name,_) 
+    case (cache,Env.FRAME(inherited = (bcframes as (_ :: _))),totenv,name,_) 
       equation         
         (cache,c,env) = lookupClass2(cache,bcframes, Absyn.IDENT(name), false);
       then
         (cache,c,env);
         
         /* Search among the qualified imports, e.g. import A.B; or import D=A.B; */
-    case (cache,Env.FRAME(class_1 = sid,list_4 = items),totenv,name,_)
+    case (cache,Env.FRAME(optName = sid,imports = items),totenv,name,_)
       equation 
         (cache,c,env_1) = lookupQualifiedImportedClassInFrame(cache,items, totenv, name);
       then
         (cache,c,env_1);
         
         /* Search among the unqualified imports, e.g. import A.B.*; */
-    case (cache,Env.FRAME(class_1 = sid,list_4 = items),totenv,name,_)
+    case (cache,Env.FRAME(optName = sid,imports = items),totenv,name,_)
       local Boolean unique;
       equation 
         (cache,c,env_1,unique) = lookupUnqualifiedImportedClassInFrame(cache,items, totenv, name) "unique" ;
@@ -2350,7 +2382,7 @@ algorithm
   matchcontinue (inCache,inBinTree,inComponentRef)
     local
       String n,id;
-      Boolean f;
+      Boolean f,stream_;
       SCode.Accessibility acc;
       SCode.Variability vt;
       Absyn.Direction di;
@@ -2378,20 +2410,20 @@ algorithm
         Exp.Type tty;
         Absyn.InnerOuter io;        
       equation 
-        (cache,Types.VAR(n,Types.ATTR(f,acc,vt,di,io),_,ty,bind),_,_,_) = lookupVar2(cache,ht, id);
+        (cache,Types.VAR(n,Types.ATTR(f,stream_,acc,vt,di,io),_,ty,bind),_,_,_) = lookupVar2(cache,ht, id);
         ty_1 = checkSubscripts(ty, ss);
         ss = addArrayDimensions(ty,ty_1,ss);
         tty = Types.elabType(ty_1);     
         ty2_2 = Types.elabType(ty);
         splicedExp = Exp.CREF(Exp.CREF_IDENT(id,ty2_2, ss),tty);
       then
-        (cache,Types.ATTR(f,acc,vt,di,io),ty_1,bind,SOME(splicedExp));
+        (cache,Types.ATTR(f,stream_,acc,vt,di,io),ty_1,bind,SOME(splicedExp));
     
     /* Qualified variables looked up through component environment with a spliced exp */
     case (cache,ht,xCref as (Exp.CREF_QUAL(ident = id,subscriptLst = ss,componentRef = ids)))  
       local        
       equation 
-        (cache,Types.VAR(n,Types.ATTR(f,acc,vt,di,io),_,ty2,bind),_,_,compenv) = lookupVar2(cache,ht, id);
+        (cache,Types.VAR(n,Types.ATTR(f,stream_,acc,vt,di,io),_,ty2,bind),_,_,compenv) = lookupVar2(cache,ht, id);
         (cache,attr,ty,binding,texp,_) = lookupVar(cache,compenv, ids);
         (tCref::ltCref) = elabComponentRecursive((texp)); 
         ty1 = checkSubscripts(ty2, ss);
@@ -2407,11 +2439,11 @@ algorithm
         /* Qualified componentname without spliced exp.*/
     case (cache,ht,xCref as (Exp.CREF_QUAL(ident = id,subscriptLst = ss,componentRef = ids)))      
       equation 
-        (cache,Types.VAR(n,Types.ATTR(f,acc,vt,di,io),_,ty2,bind),_,_,compenv) = lookupVar2(cache,ht, id);
+        (cache,Types.VAR(n,Types.ATTR(f,stream_,acc,vt,di,io),_,ty2,bind),_,_,compenv) = lookupVar2(cache,ht, id);
         (cache,attr,ty,binding,texp,_) = lookupVar(cache,compenv, ids);
         {} = elabComponentRecursive((texp));
       then
-        (cache,attr,ty,binding,NONE());        
+        (cache,attr,ty,binding,NONE());
   end matchcontinue;
 end lookupVarF;
 

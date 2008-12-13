@@ -54,20 +54,20 @@ public:
 
   ErrorMessage(long errorID,
 	       std::string type,
-	       std::string severity,
+	       std::string severity, 
 	       std::string message,
 	       std::list<std::string> &tokens,
 	       long startLineNo,
 	       long startColumnNo,
 	       long endLineNo,
 	       long endColumnNo,
-	       bool isReadOnly,
+	       bool isReadOnly,	       
 	       std::string filename);
 
   long getID() { return errorID_; };
-
+  
   std::string getType() { return messageType_; };
-
+  
   std::string getSeverity() { return severity_; };
 
   // Returns the expanded message with inserted tokens.
@@ -91,7 +91,7 @@ private:
   std::string severity_;
   std::string message_;
   std::list<std::string> tokens_;
-
+  
   /* adrpo 2006-02-05 changed the ones below */
   long startLineNo_;
   long startColumnNo_;

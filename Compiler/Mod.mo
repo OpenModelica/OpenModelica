@@ -1305,7 +1305,7 @@ Helper function for merge
 algorithm outMod:= matchcontinue (inMod1)
   local 
     Types.Mod m;
-    case (Types.REDECL(tplSCodeElementModLst = {(SCode.COMPONENT(final_=true),_)})) 
+    case (Types.REDECL(tplSCodeElementModLst = {(SCode.COMPONENT(finalPrefix=true),_)})) 
       then false;      
     case(Types.MOD(final_ = true))
       then false;        
@@ -1353,9 +1353,14 @@ algorithm
       Absyn.Each each_,each2;
       Option<Absyn.Exp> cond;
       Option<Absyn.Info> info;
-    case (m,Types.NOMOD(),_,_) then m; 
-        
-    case (Types.REDECL(final_ = f1,tplSCodeElementModLst = {(SCode.COMPONENT(component = id1,innerOuter=io,final_ = f,replaceable_ = r,protected_ = p,attributes = attr,typeSpec = tp,mod = m1,baseclass = bc,this = comment,condition=cond,info=info),_)}),Types.REDECL(final_ = f2,tplSCodeElementModLst = {(SCode.COMPONENT(component = id2,mod = m2,baseclass = bc2,this = comment2),_)}),env,pre) /* redeclaring same component */ 
+    case (m,Types.NOMOD(),_,_) 
+      then m; 
+    /* redeclaring same component */
+    case (Types.REDECL(final_ = f1,tplSCodeElementModLst = 
+          {(SCode.COMPONENT(component = id1,innerOuter=io,finalPrefix = f,replaceablePrefix = r,protectedPrefix = p,
+                            attributes = attr,typeSpec = tp,modifications = m1,baseClassPath = bc,comment=comment,condition=cond,info=info),_)}),
+          Types.REDECL(final_ = f2,tplSCodeElementModLst = 
+          {(SCode.COMPONENT(component = id2,modifications = m2,baseClassPath = bc2,comment = comment2),_)}),env,pre) 
       equation 
         equality(id1 = id2);
         m1_1 = elabUntypedMod(m2, env, pre);

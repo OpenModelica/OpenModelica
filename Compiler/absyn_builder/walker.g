@@ -63,8 +63,6 @@ options {
     language = "Cpp";
 }
 
-
-
 class modelica_tree_parser extends TreeParser;
 
 options {
@@ -74,6 +72,8 @@ options {
     /* Adrian Pop fixed for antlr-2.7.6 (k can be only 1 for tree parsers): k = 2; to: */
     k = 1;
     defaultErrorHandler = false;
+	codeGenMakeSwitchThreshold = 2;
+	codeGenBitsetTestThreshold = 3;
 }
 
 tokens {
@@ -271,7 +271,7 @@ stored_definition returns [void *ast]
         )
         {
             if (within == 0) { within=Absyn__TOP; }
-            ast = Absyn__PROGRAM(make_rml_list_from_stack(el_stack),within);
+            ast = Absyn__PROGRAM(make_rml_list_from_stack(el_stack),within,Absyn__TIMESTAMP(mk_rcon(0.0),mk_rcon(1.0)));
         }
     ;
 
@@ -348,7 +348,10 @@ class_definition [bool final] returns [ void* ast ]
                   mk_icon(classDef?classDef->getLine():0),
                   mk_icon(classDef?classDef->getColumn():0),
                   mk_icon(classDef?classDef->getEndLine():0),
-                  mk_icon(classDef?classDef->getEndColumn():0)
+                  mk_icon(classDef?classDef->getEndColumn():0),
+                  Absyn__TIMESTAMP(
+                  mk_rcon(classDef?classDef->getLastBuildTime():0),
+                  mk_rcon(classDef?classDef->getLastEditTime():0))
                   )
             );
             if (name) free(name);
@@ -681,7 +684,10 @@ element returns [void* ast]
                               mk_icon(i_clause->getLine()),
                               mk_icon(i_clause->getColumn()),
                               mk_icon(i_clause->getEndLine()),
-                              mk_icon(i_clause->getEndColumn())
+                              mk_icon(i_clause->getEndColumn()),
+                              Absyn__TIMESTAMP(
+                              mk_rcon(i_clause->getLastBuildTime()),
+                              mk_rcon(i_clause->getLastEditTime()))
                               ),mk_none());
 			}
 		| e_spec = e_clause:extends_clause
@@ -693,7 +699,10 @@ element returns [void* ast]
                               mk_icon(e_clause->getLine()),
                               mk_icon(e_clause->getColumn()),
                               mk_icon(e_clause->getEndLine()),
-                              mk_icon(e_clause->getEndColumn())
+                              mk_icon(e_clause->getEndColumn()),
+                              Absyn__TIMESTAMP(
+                              mk_rcon(e_clause->getLastBuildTime()),
+                              mk_rcon(e_clause->getLastEditTime()))
                               ),mk_none());
 			}
 		| #(decl:DECLARATION
@@ -714,7 +723,10 @@ element returns [void* ast]
 		                              mk_icon(decl->getLine()),
 		                              mk_icon(decl->getColumn()),
 		                              mk_icon(decl->getEndLine()),
-		                              mk_icon(decl->getEndColumn())
+		                              mk_icon(decl->getEndColumn()),
+		                              Absyn__TIMESTAMP(
+		                              mk_rcon(decl->getLastBuildTime()),
+		                              mk_rcon(decl->getLastEditTime()))
                                      ),mk_none());
 
 						}
@@ -733,7 +745,10 @@ element returns [void* ast]
 	                                mk_icon(decl->getLine()),
 	                                mk_icon(decl->getColumn()),
 	                                mk_icon(decl->getEndLine()),
-	                                mk_icon(decl->getEndColumn())
+	                                mk_icon(decl->getEndColumn()),
+	                                Absyn__TIMESTAMP(
+	                                mk_rcon(decl->getLastBuildTime()),
+		                            mk_rcon(decl->getLastEditTime()))
                                     ),
 								constr? mk_some(Absyn__CONSTRAINCLASS(constr, cmt? mk_some(cmt):mk_none())) : mk_none());
 						}
@@ -763,7 +778,10 @@ element returns [void* ast]
 	                               mk_icon(def->getLine()),
 	                               mk_icon(def->getColumn()),
 	                               mk_icon(def->getEndLine()),
-	                               mk_icon(def->getEndColumn())
+	                               mk_icon(def->getEndColumn()),
+	                               Absyn__TIMESTAMP(
+	                               mk_rcon(def->getLastBuildTime()),
+		                           mk_rcon(def->getLastEditTime()))
                                    ),mk_none());
 
 						}
@@ -787,8 +805,11 @@ element returns [void* ast]
                               RML_FALSE,
                               mk_icon(def->getLine()),
                               mk_icon(def->getColumn()),
-	                      mk_icon(def->getEndLine()),
-	                      mk_icon(def->getEndColumn())
+	                          mk_icon(def->getEndLine()),
+	                          mk_icon(def->getEndColumn()),
+	                          Absyn__TIMESTAMP(
+	                          mk_rcon(def->getLastBuildTime()),
+	                          mk_rcon(def->getLastEditTime()))
                               ),
                                 constr ? mk_some(Absyn__CONSTRAINCLASS(constr,cmt ? mk_some(cmt):mk_none())) : mk_none());
 						}
@@ -1407,7 +1428,7 @@ equation_funcall returns [void* ast]
 	void* fcall = 0;
 }
 	:
-	 (cref = component_reference fcall = function_call) /* here will be a no-ret function call */
+	 #(FUNCTION_CALL cref = component_reference fcall = function_call) /* here will be a no-ret function call */
 		{
 			ast = Absyn__EQ_5fNORETCALL(cref, fcall);
 		}
@@ -1460,10 +1481,10 @@ algorithm_function_call returns [void* ast]
 	void* args;
 }
 	:
-		cref = component_reference args = function_call /* here will be a no-ret function call */
-		{
-		  ast = Absyn__ALG_5fNORETCALL(cref, args);
-		}
+	#(FUNCTION_CALL cref = component_reference args = function_call) /* here will be a no-ret function call */
+	{
+	  ast = Absyn__ALG_5fNORETCALL(cref, args);
+	}
 	;
 
 equality_equation returns [void* ast]
@@ -1950,17 +1971,14 @@ logical_term returns [void* ast]
 	void* e2;
 }
 	:
-		(ast = logical_factor
-		| #(AND e1 = logical_term e2 = logical_factor)
-			{
-				ast = Absyn__LBINARY(e1,Absyn__AND,e2);
-			}
-		)
+	(ast = logical_factor
+	| #(AND e1 = logical_term e2 = logical_factor) { ast = Absyn__LBINARY(e1,Absyn__AND,e2); }
+	)
 	;
 
 logical_factor returns [void* ast]
 	:
-		#(NOT ast = relation { ast = Absyn__LUNARY(Absyn__NOT,ast); })
+	#(NOT ast = relation { ast = Absyn__LUNARY(Absyn__NOT,ast); })
 	| ast = relation;
 
 relation returns [void* ast]
@@ -1970,40 +1988,32 @@ relation returns [void* ast]
 	void* e2 = 0;
 }
 	:
-		( ast = arithmetic_expression
-		|
-			( #(LESS e1=arithmetic_expression e2=arithmetic_expression)
-				{ op = Absyn__LESS; }
-			| #(RLESS e1=arithmetic_expression e2=arithmetic_expression)
-				{ op = Absyn__LESS; }
-			| #(LESSEQ e1=arithmetic_expression e2=arithmetic_expression)
-				{ op = Absyn__LESSEQ; }
-			| #(GREATER e1=arithmetic_expression e2=arithmetic_expression)
-				{ op = Absyn__GREATER; }
-			| #(RGREATER e1=arithmetic_expression e2=arithmetic_expression)
-				{ op = Absyn__GREATER; }
-			| #(GREATEREQ e1=arithmetic_expression e2=arithmetic_expression)
-				{ op = Absyn__GREATEREQ; }
-			| #(EQEQ e1=arithmetic_expression e2=arithmetic_expression)
-				{ op = Absyn__EQUAL; }
-			| #(LESSGT e1=arithmetic_expression e2=arithmetic_expression )
-				{ op = Absyn__NEQUAL; }
-			)
-			{
-				ast = Absyn__RELATION(e1,op,e2);
-			}
-		)
+	( ast = arithmetic_expression
+	|
+	( #(LESS e1=arithmetic_expression e2=arithmetic_expression)      { op = Absyn__LESS; }
+	| #(RLESS e1=arithmetic_expression e2=arithmetic_expression)     { op = Absyn__LESS; }
+	| #(LESSEQ e1=arithmetic_expression e2=arithmetic_expression)    { op = Absyn__LESSEQ; }
+	| #(GREATER e1=arithmetic_expression e2=arithmetic_expression)   { op = Absyn__GREATER; }
+	| #(RGREATER e1=arithmetic_expression e2=arithmetic_expression)  { op = Absyn__GREATER; }
+	| #(GREATEREQ e1=arithmetic_expression e2=arithmetic_expression) { op = Absyn__GREATEREQ; }
+	| #(EQEQ e1=arithmetic_expression e2=arithmetic_expression)      { op = Absyn__EQUAL; }
+	| #(LESSGT e1=arithmetic_expression e2=arithmetic_expression)    { op = Absyn__NEQUAL; }
+	)
+	{
+		ast = Absyn__RELATION(e1,op,e2);
+	}
+	)
 	;
 
 rel_op returns [void* ast]
 	:
-		( LESS { ast = Absyn__LESS; }
-		| LESSEQ { ast = Absyn__LESSEQ; }
-		| GREATER { ast = Absyn__GREATER; }
-		| GREATEREQ { ast = Absyn__GREATEREQ; }
-		| EQEQ { ast = Absyn__EQUAL; }
-		| LESSGT { ast = Absyn__NEQUAL; }
-		)
+	( LESS { ast = Absyn__LESS; }
+	| LESSEQ { ast = Absyn__LESSEQ; }
+	| GREATER { ast = Absyn__GREATER; }
+	| GREATEREQ { ast = Absyn__GREATEREQ; }
+	| EQEQ { ast = Absyn__EQUAL; }
+	| LESSGT { ast = Absyn__NEQUAL; }
+	)
 	;
 
 arithmetic_expression returns [void* ast]
@@ -2012,24 +2022,22 @@ arithmetic_expression returns [void* ast]
 	void* e2;
 }
 	:
-		(ast = unary_arithmetic_expression
-		|#(PLUS e1 = arithmetic_expression e2 = term)
-			{
-				ast = Absyn__BINARY(e1,Absyn__ADD,e2);
-			}
-		|#(MINUS e1 = arithmetic_expression e2 = term)
-			{
-				ast = Absyn__BINARY(e1,Absyn__SUB,e2);
-			}
-		)
+	(ast = unary_arithmetic_expression
+	|#(PLUS e1 = arithmetic_expression e2 = term)     { ast = Absyn__BINARY(e1,Absyn__ADD,e2); }
+	|#(MINUS e1 = arithmetic_expression e2 = term)    { ast = Absyn__BINARY(e1,Absyn__SUB,e2); }
+	|#(PLUS_EW e1 = arithmetic_expression e2 = term)  { ast = Absyn__BINARY(e1,Absyn__ADD_5fEW,e2); }
+	|#(MINUS_EW e1 = arithmetic_expression e2 = term) { ast = Absyn__BINARY(e1,Absyn__SUB_5fEW,e2); }
+	)
 	;
 
 unary_arithmetic_expression returns [void* ast]
 	:
-		(#(UNARY_PLUS ast = term) { ast = Absyn__UNARY(Absyn__UPLUS,ast); }
-		|#(UNARY_MINUS ast = term) { ast = Absyn__UNARY(Absyn__UMINUS,ast); }
-		| ast = term
-		)
+	(#(UNARY_PLUS ast = term) { ast = Absyn__UNARY(Absyn__UPLUS,ast); }
+	|#(UNARY_MINUS ast = term) { ast = Absyn__UNARY(Absyn__UMINUS,ast); }
+	|#(UNARY_PLUS_EW ast = term) { ast = Absyn__UNARY(Absyn__UPLUS_5fEW,ast); }
+	|#(UNARY_MINUS_EW ast = term) { ast = Absyn__UNARY(Absyn__UMINUS_5fEW,ast); }
+	| ast = term
+	)
 	;
 
 term returns [void* ast]
@@ -2039,14 +2047,10 @@ term returns [void* ast]
 }
 	:
 		(ast = factor
-		|#(STAR e1 = term e2 = factor)
-			{
-				ast = Absyn__BINARY(e1,Absyn__MUL,e2);
-			}
-		|#(SLASH e1 = term e2 = factor)
-			{
-				ast = Absyn__BINARY(e1,Absyn__DIV,e2);
-			}
+		|#(STAR e1 = term e2 = factor)     { ast = Absyn__BINARY(e1,Absyn__MUL,e2); }
+		|#(SLASH e1 = term e2 = factor)	   { ast = Absyn__BINARY(e1,Absyn__DIV,e2); }
+		|#(STAR_EW e1 = term e2 = factor)  { ast = Absyn__BINARY(e1,Absyn__MUL_5fEW,e2); }
+		|#(SLASH_EW e1 = term e2 = factor) { ast = Absyn__BINARY(e1,Absyn__DIV_5fEW,e2); }		
 		)
 	;
 
@@ -2057,10 +2061,8 @@ factor returns [void* ast]
 }
 	:
 		(ast = primary
-		|#(POWER e1 = primary e2 = primary)
-			{
-				ast = Absyn__BINARY(e1,Absyn__POW,e2);
-			}
+		|#(POWER e1 = primary e2 = primary)    { ast = Absyn__BINARY(e1,Absyn__POW,e2); }
+		|#(POWER_EW e1 = primary e2 = primary) { ast = Absyn__BINARY(e1,Absyn__POW_5fEW,e2); }		
 		)
 	;
 
@@ -2432,6 +2434,7 @@ flat_subscript returns [std::string ast]
 			}
 		)
 	;
+	
 flat_component_reference [void**lastarrsub]	returns [void* ast]
 {
 	void* arr = 0;
@@ -2464,13 +2467,13 @@ flat_component_reference [void**lastarrsub]	returns [void* ast]
 	;
 
 /* flat_name_path is used in flat modelica where a model name can be qualified.
-* E.g.
-* model A.B.C
-*   Real x.y;
-* end A.B.C;
-*
-* This is solved by collecting the tokens and forming an identifier which is "A.B.C"
-*/
+ * E.g.
+ * model A.B.C
+ *   Real x.y;
+ * end A.B.C;
+ *
+ * This is solved by collecting the tokens and forming an identifier which is "A.B.C"
+ */
 flat_name_path returns [void* ast]
 {
 	char* buf=0;

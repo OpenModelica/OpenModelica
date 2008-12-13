@@ -580,7 +580,7 @@ uniontype Value
   end LISTVAL;
 
   record ENUMVAL
-    String string;
+    ComponentRef value;
   end ENUMVAL;
 
   record ARRAYVAL
@@ -1028,7 +1028,7 @@ protected import Print;
 protected import ModUtil;
 protected import Derive;
 protected import Dump;
-protected import Error;
+//protected import Error;
 protected import Debug;
 protected import Static;
 protected import Env;
@@ -2283,6 +2283,7 @@ algorithm
       list<Subscript> ssl,ssl_2,subs;
       list<ComponentRef> crefs;
       ComponentRef cr;
+      Integer dim;
  	  Boolean sc;
 
     case(exp_1,{}) then exp_1;
@@ -5478,7 +5479,7 @@ algorithm
     then fail();
     
     case(END()) then Absyn.END();
-    case(VALUEBLOCK(_,_,_)) equation 
+    case(VALUEBLOCK(_,_,_,_)) equation 
       print("unelab of VALUEBLOCK not impl. yet");
     then fail();
   end matchcontinue;

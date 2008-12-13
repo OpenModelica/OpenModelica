@@ -554,7 +554,7 @@ algorithm
         Debug.fcall("execstat",print, "*** Main -> To lower dae at time: " +& realString(clock()) +& "\n" );
         dlow = DAELow.lower(dae, /* add dummy state if needed */ true, /* simplify */ true);
         
-        dlow = DAELow.lower(dae, true) "add dummy state" ;
+        dlow = DAELow.lower(dae, true, true) "add dummy state" ;
         Debug.fcall("dumpdaelow", DAELow.dump, dlow);
         m = DAELow.incidenceMatrix(dlow);
         mT = DAELow.transposeMatrix(m);
@@ -577,7 +577,7 @@ algorithm
          * str = DAELow.unparseStr(dlow, comps, v1, v2, false,str);
          * //Debug.fcall("flat", DAELow.unparseStr,dlow, comps, v1, v2, true);
         **/
-        Debug.fcall("eqnsizedump",DAELow.dumpComponentSizes,comps);
+        // Debug.fcall("eqnsizedump",DAELow.dumpComponentSizes,comps);
         Debug.fcall("bltdump", DAELow.dumpComponents, comps);
 				str = DAELow.dumpComponentsGraphStr(DAELow.systemSize(dlow_1),m,mT,v1,v2);
 				Debug.fcall("dumpcompgraph",print,str);
@@ -705,7 +705,7 @@ algorithm
         file_dir = Ceval.getFileDir(a_cref, ap);
         Debug.fcall("execstat",print, "*** Main -> simcodgen -> generateFunctions: " +& realString(clock()) +& "\n" );
         libs = SimCodegen.generateFunctions(p, dae, indexed_dlow_1, classname, funcfilename);
-        SimCodegen.generateSimulationCode(dae, dlow,indexed_dlow_1, ass1, ass2, m, mt, comps, classname, 
+        SimCodegen.generateSimulationCode(dae, dlow, /* indexed_dlow_1, */ ass1, ass2, m, mt, comps, classname, 
           filename, funcfilename,file_dir);
         SimCodegen.generateInitData(indexed_dlow_1, classname, cname_str, init_filename, 0.0, 
           1.0, 500.0,1e-6,"dassl","");

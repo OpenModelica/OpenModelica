@@ -47,20 +47,19 @@ options {
 class modelica_parser extends Parser;
 
 options {
-    codeGenMakeSwitchThreshold = 3;
-    codeGenBitsetTestThreshold = 4;
+    codeGenMakeSwitchThreshold = 2;
+    codeGenBitsetTestThreshold = 3;
 	importVocab = modelica;
     defaultErrorHandler = false;
 	k = 2;
 	buildAST = true;
     ASTLabelType = "RefMyAST";
-
 }
 
 tokens {
     ALGORITHM_STATEMENT;
 	ARGUMENT_LIST;
-	CLASS_DEFINITION	;
+	CLASS_DEFINITION;
     CLASS_EXTENDS ;
 	CLASS_MODIFICATION;
 	CODE_EXPRESSION;
@@ -99,6 +98,8 @@ tokens {
 	STRING_COMMENT;
 	UNARY_MINUS	;
 	UNARY_PLUS	;
+	UNARY_MINUS_EW ;
+	UNARY_PLUS_EW ;
 	UNQUALIFIED;
 	FLAT_IDENT;
 	TYPE_LIST;
@@ -292,6 +293,9 @@ element_list :
     		  	std::cout << (#e)->toString() << std::endl;
     		  	std::cout << s->getLine() << ":" << s->getColumn() << std::endl;
     		  	*/
+            /* adrpo: FIXME! check if needed! */
+    		RefMyAST(#e)->setLine((#e)->getLine());
+    		RefMyAST(#e)->setColumn((#e)->getColumn());
 			RefMyAST(#e)->setEndLine(s->getLine());
 			RefMyAST(#e)->setEndColumn(s->getColumn());
 		   	if (#e->getFirstChild())
@@ -300,6 +304,9 @@ element_list :
     		  	   std::cout << (#e->getFirstChild())->toString() << std::endl;
     		  	   std::cout << s->getLine() << ":" << s->getColumn() << std::endl;
     		  	   */
+               /* adrpo: FIXME! check if needed! */
+    		   RefMyAST(#e)->setLine((#e)->getLine());
+    		   RefMyAST(#e)->setColumn((#e)->getColumn());	   
 			   RefMyAST(#e->getFirstChild())->setEndLine(s->getLine());
 			   RefMyAST(#e->getFirstChild())->setEndColumn(s->getColumn());
 		        }
@@ -559,7 +566,40 @@ equation_annotation_list :
 
           AFTER_SYNC;
         }
+/*
+temptest :
+	e1:equation s1:SEMICOLON!
+	{
+		#temptest = #([EQUATION_STATEMENT,"EQUATION_STATEMENT"], #temptest);		
+ *******
+ * The problem here is to aquire the start line and column of 'e1'. 
+ * e1 will be a tree of some sort and we are interested in the leftmost tree's position.
+ * 1) the problem is that we can't get to that child from here and modification on MyAST.h 
+ * does not seem to work. If we locate where the functions are 'overwriten' we can do a  
+ * depth search and find the leftmost node and extract information from there. 
+ * 2) Another approach to the problem is the semi-implemented one here where we keep setting
+ * line and column information reversed-recursivly (bottoms up). 
+ * This works for all cases but the 'syntactic predicate': 
+ * ' 	equation : 
+ *		(   (simple_expression EQUALS) => tmp:equality_equation '
+ * then we lose track on the information. I did not find any information on how to extract 
+ * simple_expression part from this. 
+ *  
+ * BZ 2007-11-16
+ *
+ ******
+		std::cout << "Start temptest: " <<(#e1)->getLine() << ":" << (#e1)->getColumn() << std::endl;
+		std::cout << "End temptest: " <<(#s1)->getLine() << ":" << (#s1)->getColumn() << std::endl;
 
+		RefMyAST(#temptest)->setEndLine((#s1)->getLine());
+		RefMyAST(#temptest)->setEndColumn((#s1)->getColumn());
+/********
+		RefMyAST(#temptest)->setLine((#e1)->getLine());
+		RefMyAST(#temptest)->setColumn((#e1)->getColumn());
+
+	}
+	;
+*/	
 algorithm_clause :
 		ALGORITHM^
 		    algorithm_annotation_list
@@ -600,12 +640,11 @@ algorithm_annotation_list :
 
 
 equation :
-		(   (simple_expression EQUALS) => equality_equation
+		(   equality_equation	 
 		|	conditional_equation_e
 		|	for_clause_e
 		|	connect_clause
-		|	when_clause_e
-		|   component_reference function_call // function call
+		|	when_clause_e   
 		|   FAILURE^ LPAR! equation RPAR!
 		|   EQUALITY^ LPAR! equation RPAR!
 		)
@@ -633,8 +672,7 @@ equation :
         }
 
 algorithm :
-		(	(simple_expression ASSIGN) => assign_clause_a
-		|	component_reference function_call
+		(	assign_clause_a
 		|	conditional_equation_a
 		|	for_clause_a
 		|	while_clause
@@ -667,12 +705,23 @@ algorithm :
           AFTER_SYNC;
         }
 
-assign_clause_a :
-		simple_expression ASSIGN^ expression
+assign_clause_a :          		  
+		simple_expression 
+        (   ASSIGN^ expression 
+          | i1:EQUALS expression 
+            {      
+               throw 
+        		ANTLR_USE_NAMESPACE(antlr)
+        		RecognitionException(
+        		"Algorithms can not contain equations ('='), use assignments (':=') instead", 
+        		modelicafilename, i1->getLine(), i1->getColumn());
+             }          
+        )?  
 		;
 
-equality_equation :
-		simple_expression EQUALS^ expression
+
+equality_equation :		  
+		simple_expression ( EQUALS^ expression )? 		
 		;
 
 conditional_equation_e :
@@ -889,7 +938,7 @@ code_expression ! :
 	;
 
 code_equation_clause :
-		( EQUATION^ (equation SEMICOLON! | annotation SEMICOLON! )*  )
+		( EQUATION^ ( equation SEMICOLON! | annotation SEMICOLON! )*  )
 		;
 
 code_initial_equation_clause :
@@ -907,9 +956,7 @@ code_algorithm_clause :
 code_initial_algorithm_clause :
 		{ LA(2) == ALGORITHM }?
 		INITIAL! ALGORITHM^
-		(algorithm SEMICOLON!
-		| annotation SEMICOLON!
-		)*
+		( algorithm SEMICOLON! | annotation SEMICOLON! )*
 		{
 			#code_initial_algorithm_clause = #([INITIAL_ALGORITHM,"INTIAL_ALGORITHM"], #code_initial_algorithm_clause);
 		}
@@ -931,36 +978,29 @@ logical_factor :
 		;
 
 relation :
-		arithmetic_expression ( ( LESS^ | LESSEQ^ | GREATER^ | GREATEREQ^ | EQEQ^ | LESSGT^ | RLESS^ | RGREATER^ ) arithmetic_expression )?
+		arithmetic_expression 
+		( ( LESS^ | LESSEQ^ | GREATER^ | GREATEREQ^ | EQEQ^ | LESSGT^ | RLESS^ | RGREATER^ ) arithmetic_expression )?
 		;
 
-
 arithmetic_expression :
-		unary_arithmetic_expression ( ( PLUS^ | MINUS^ ) term )*
+		unary_arithmetic_expression ( ( PLUS^ | MINUS^ | PLUS_EW^ | MINUS_EW^ ) term )*
 		;
 
 unary_arithmetic_expression ! :
-		( PLUS t1:term
-		{
-			#unary_arithmetic_expression = #([UNARY_PLUS,"PLUS"], #t1);
-		}
-		| MINUS t2:term
-		{
-			#unary_arithmetic_expression = #([UNARY_MINUS,"MINUS"], #t2);
-		}
-		| t3:term
-		{
-			#unary_arithmetic_expression = #t3;
-		}
-		)
-		;
+	( PLUS t1:term     { #unary_arithmetic_expression = #([UNARY_PLUS,"PLUS"], #t1); }
+	| MINUS t2:term	   { #unary_arithmetic_expression = #([UNARY_MINUS,"MINUS"], #t2); }
+	| PLUS_EW t3:term  { #unary_arithmetic_expression = #([UNARY_PLUS_EW,"PLUS"], #t3); }
+	| MINUS_EW t4:term { #unary_arithmetic_expression = #([UNARY_MINUS_EW,"MINUS"], #t4); }
+	| t5:term          { #unary_arithmetic_expression = #t5; }
+	)
+	;
 
 term :
-		factor ( ( STAR^ | SLASH^ ) factor )*
+		factor ( ( STAR^ | SLASH^ | STAR_EW^ | SLASH_EW^ ) factor )*
 		;
 
 factor :
-		primary ( POWER^ primary )?
+		primary ( ( POWER^ | POWER_EW^ ) primary )?
 		;
 
 primary :
@@ -977,7 +1017,6 @@ primary :
 		| END
 		)
     ;
-
 
 component_reference__function_call ! :
 		cr:component_reference ( fc:function_call )?
@@ -997,25 +1036,17 @@ component_reference__function_call ! :
 	;
 
 name_path :
-		{ LA(2)!=DOT }? IDENT |
-		IDENT DOT^ name_path
+		  { LA(2)!=DOT }? IDENT 
+		| IDENT DOT^ name_path
 		;
 
 name_path_star returns [bool val=false]
 		:
-		{ LA(2)!=DOT }? IDENT { val=false; }|
-		{ LA(2)!=DOT }? STAR! { val=true;  }|
-		i:IDENT DOT^ val = np:name_path_star
-		{
-			if(!(#np))
-			{
-				#name_path_star = #i;
-			}
-		}
-		;
+	  { LA(2) != DOT }? IDENT { val=false; } ( STAR_EW! { val=true;  } )?
+	| i:IDENT DOT^ val = np:name_path_star { if(!(#np))	{ #name_path_star = #i;	} };
 
 component_reference :
-		IDENT^ ( array_subscripts )? ( DOT^ component_reference )?
+		  IDENT^ ( array_subscripts )? ( DOT^ component_reference )?
 		| WILD
 		;
 
@@ -1069,7 +1100,7 @@ named_arguments :
 		;
 
 named_arguments2 :
-		named_argument ( COMMA! (COMMA IDENT EQUALS) => named_arguments2)?
+		named_argument (COMMA! named_argument)*
 		;
 
 named_argument :
@@ -1096,8 +1127,7 @@ subscript :
 		;
 
 comment :
-		(
-			//string_comment	 ANNOTATION )=> annotation
+		(			
 			string_comment (annotation)?
 		)
 		{
@@ -1106,7 +1136,7 @@ comment :
 		;
 
 string_comment :
-		( STRING ((PLUS STRING) => ( PLUS^ STRING )+ | ) )?
+		( STRING (PLUS^ STRING)*)?
 		{
             if (#string_comment)
             {
