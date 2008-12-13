@@ -204,7 +204,7 @@
 					>
 					<Tool
 						Name="VCCustomBuildTool"
-						CommandLine="java -cp &quot;C:\OMDev\bin\antlr\antlr.jar&quot; antlr.Tool $(InputPath)"
+						CommandLine="java -cp &quot;C:\OMDev\bin\antlr\antlr.jar&quot; antlr.Tool $(InputPath)&#x0D;&#x0A;"
 						Outputs="modelica_lexer.cpp modelica_lexer.hpp modelicaTokenTypes.txt"
 					/>
 				</FileConfiguration>
@@ -230,7 +230,7 @@
 					>
 					<Tool
 						Name="VCCustomBuildTool"
-						CommandLine="java -cp &quot;C:\OMDev\bin\antlr\antlr.jar&quot; antlr.Tool $(InputPath)"
+						CommandLine="java -cp &quot;C:\OMDev\bin\antlr\antlr.jar&quot; antlr.Tool $(InputPath)&#x0D;&#x0A;"
 						Outputs="modelica_parser.hpp modelica_parser.cpp modelica_parserTokenTypes.txt"
 					/>
 				</FileConfiguration>
@@ -239,7 +239,7 @@
 					>
 					<Tool
 						Name="VCCustomBuildTool"
-						CommandLine="java -cp &quot;C:\OMDev\bin\antlr\antlr.jar&quot; antlr.Tool $(InputPath)&#x0D;&#x0A;"
+						CommandLine="java -cp &quot;C:\OMDev\bin\antlr\antlr.jar&quot; antlr.Tool $(InputPath)&#x0D;&#x0A;  "
 						AdditionalDependencies="modelica_lexer.hpp modelica_lexer.cpp"
 						Outputs="modelica_parser.hpp modelica_parser.cpp modelica_parserTokenTypes.txt"
 					/>
@@ -273,7 +273,7 @@
 					>
 					<Tool
 						Name="VCCustomBuildTool"
-						CommandLine="java -cp &quot;C:\OMDev\bin\antlr\antlr.jar&quot; antlr.Tool $(InputPath)"
+						CommandLine="java -cp &quot;C:\OMDev\bin\antlr\antlr.jar&quot; antlr.Tool $(InputPath)&#x0D;&#x0A;"
 						AdditionalDependencies="modelica_parser.cpp modelica_lexer.cpp"
 						Outputs="modelica_tree_parser.cpp modelica_tree_parser.hpp"
 					/>
@@ -283,7 +283,7 @@
 					>
 					<Tool
 						Name="VCCustomBuildTool"
-						CommandLine="java -cp &quot;C:\OMDev\bin\antlr\antlr.jar&quot; antlr.Tool $(InputPath)&#x0D;&#x0A;"
+						CommandLine="java -cp &quot;C:\OMDev\bin\antlr\antlr.jar&quot; antlr.Tool $(InputPath)&#x0D;&#x0A; "
 						AdditionalDependencies="modelica_parser.cpp modelica_lexer.cpp"
 						Outputs="modelica_tree_parser.cpp modelica_tree_parser.hpp"
 					/>

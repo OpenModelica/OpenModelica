@@ -261,8 +261,14 @@ public:
 	public: DOMElement*  modification(RefMyAST _t);
 	public: void * argument_list(RefMyAST _t);
 	public: DOMElement*  argument(RefMyAST _t);
-	public: DOMElement*  element_modification(RefMyAST _t);
+	public: DOMElement*  element_modification_or_replaceable(RefMyAST _t);
 	public: DOMElement*  element_redeclaration(RefMyAST _t);
+	public: DOMElement*  element_modification(RefMyAST _t,
+		bool e, bool f
+	);
+	public: DOMElement*  element_replaceable(RefMyAST _t,
+		bool eachB, bool finalB, bool redeclareB
+	);
 	public: DOMElement*  component_clause1(RefMyAST _t,
 		DOMElement *parent
 	);
@@ -279,13 +285,13 @@ public:
 	public: DOMElement*  connect_clause(RefMyAST _t);
 	public: DOMElement*  equation_funcall(RefMyAST _t);
 	public: DOMElement*  function_call(RefMyAST _t);
+	public: DOMElement*  simple_expression(RefMyAST _t);
 	public: DOMElement*  tuple_expression_list(RefMyAST _t);
 	public: DOMElement*  algorithm_function_call(RefMyAST _t);
 	public: DOMElement*  conditional_equation_a(RefMyAST _t);
 	public: DOMElement*  for_clause_a(RefMyAST _t);
 	public: DOMElement*  while_clause(RefMyAST _t);
 	public: DOMElement*  when_clause_a(RefMyAST _t);
-	public: DOMElement*  simple_expression(RefMyAST _t);
 	public: DOMElement*  equation_list(RefMyAST _t,
 		DOMElement* pEquationList
 	);
@@ -336,10 +342,10 @@ protected:
 private:
 	static const char* tokenNames[];
 #ifndef NO_STATIC_CONSTS
-	static const int NUM_TOKENS = 151;
+	static const int NUM_TOKENS = 157;
 #else
 	enum {
-		NUM_TOKENS = 151
+		NUM_TOKENS = 157
 	};
 #endif
 	

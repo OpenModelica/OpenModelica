@@ -383,10 +383,11 @@ DOMElement* ModelicaXML::createModelicaXMLDOMElement(const char* fileName)
   modelica_lexer *lexer = 0;
   modelica_parser *parser = 0;
   modelica_tree_parser *walker = 0;
+  antlr::ASTFactory *my_factory = 0;
 
   try
   {
-    antlr::ASTFactory *my_factory = new antlr::ASTFactory("MyAST", MyAST::factory);
+    my_factory = new antlr::ASTFactory("MyAST", MyAST::factory);
     lexer = new modelica_lexer(file);
     lexer->setFilename(fileName);
     parser = new modelica_parser(*lexer);
@@ -433,9 +434,12 @@ DOMElement* ModelicaXML::createModelicaXMLDOMElement(const char* fileName)
   //wfile << std::endl << "SUCCESS! File:" << fileName << std::endl;
   //wfile.close();
   // delete the lexer, parser and walker
-  // delete lexer;
-  // delete parser;
-  // delete walker;
+
+  if (lexer) delete lexer;
+  if (parser) delete parser;
+  if (walker) delete walker;
+  if (my_factory) delete my_factory;
+
   return pRootElementModelicaXML;
 }
 

@@ -14,8 +14,8 @@ options {
 class modelica_parser extends Parser;
 
 options {
-    codeGenMakeSwitchThreshold = 3;
-    codeGenBitsetTestThreshold = 4;
+    codeGenMakeSwitchThreshold = 2;
+    codeGenBitsetTestThreshold = 3;
 	importVocab = modelica;
     defaultErrorHandler = false;
 	k = 2;
@@ -28,7 +28,7 @@ tokens {
     ALGORITHM_STATEMENT;
 	ARGUMENT_LIST;
     BEGIN_DEFINITION;
-	CLASS_DEFINITION	;
+	CLASS_DEFINITION;
     CLASS_EXTENDS ;
 	CLASS_MODIFICATION;
 	CODE_EXPRESSION;
@@ -68,8 +68,9 @@ tokens {
 	STRING_COMMENT;
 	UNARY_MINUS	;
 	UNARY_PLUS	;
+	UNARY_MINUS_EW	;
+	UNARY_PLUS_EW	;	
 	UNQUALIFIED;
-
 }
 
 
@@ -148,21 +149,17 @@ class_definition :
 		class_type
         class_specifier
 		{
-			#class_definition = #([CLASS_DEFINITION, "CLASS_DEFINITION"],
-				class_definition);
+			#class_definition = #([CLASS_DEFINITION, "CLASS_DEFINITION"], class_definition);
 		}
 		;
 
 class_type :
-		( CLASS | MODEL | RECORD | BLOCK | ( EXPANDABLE )? CONNECTOR | TYPE
-        | PACKAGE | FUNCTION
-		)
+		( CLASS | MODEL | RECORD | BLOCK | ( EXPANDABLE )? CONNECTOR | TYPE | PACKAGE | FUNCTION )
 		;
 
 class_specifier:
         IDENT class_specifier2
-    |   EXTENDS! IDENT (class_modification)? string_comment composition
-            END! IDENT!
+    |   EXTENDS! IDENT (class_modification)? string_comment composition END! IDENT!
         {
             #class_specifier = #([CLASS_EXTENDS,"CLASS_EXTENDS"],#class_specifier);
         }
@@ -333,25 +330,6 @@ element :
 			}
 		}
 		;
-		/*
-        exception
-        catch [ANTLR_USE_NAMESPACE(antlr)RecognitionException &e]
-        {
-          BEFORE_SYNC;
-
-          // Sync to SEMICOLON
-          while(LA(1) != SEMICOLON)
-          {
-            if(LA(1) == EOF_)
-            {
-              throw ANTLR_USE_NAMESPACE(antlr)RecognitionException("unexpected end of file", modelicafilename, LT(1)->getLine(), LT(1)->getColumn());
-            }
-            consume();
-          }
-
-          AFTER_SYNC;
-        }
-        */
 
 import_clause :
 		IMPORT^ (explicit_import_name | implicit_import_name) comment
@@ -388,7 +366,7 @@ extends_clause :
 		;
 
 constraining_clause :
-		extends_clause
+		extends_clause | CONSTRAINEDBY^ name_path ( class_modification )?
 		;
 
 /*
@@ -400,7 +378,7 @@ component_clause :
 		;
 
 type_prefix :
-		(FLOW)?
+		(FLOW|STREAM)?		
 		(DISCRETE
 		|PARAMETER
 		|CONSTANT
@@ -539,62 +517,17 @@ equation_annotation_list :
         */
 
 algorithm_clause :
-		ALGORITHM^
-		(algorithm SEMICOLON!
-		|annotation SEMICOLON!
-		)*
-		;
-		/*
-        exception
-        catch [ANTLR_USE_NAMESPACE(antlr)RecognitionException &e]
-        {
-          BEFORE_SYNC;
-
-          // Sync to {END, EQUATION, ALGORITHM, INITIAL, PROTECTED, PUBLIC}
-          while(LA(1) != END && LA(1) != EQUATION && LA(1) != ALGORITHM && LA(1) != INITIAL
-                && LA(1) != PROTECTED && LA(1) != PUBLIC)
-          {
-            if(LA(1) == EOF_)
-            {
-              throw ANTLR_USE_NAMESPACE(antlr)RecognitionException("unexpected end of file", modelicafilename, LT(1)->getLine(), LT(1)->getColumn());
-            }
-            consume();
-          }
-
-          AFTER_SYNC;
-        }
-        */
+		ALGORITHM^ 
+		    algorithm_annotation_list
+		;		
 
 initial_algorithm_clause :
-		{ LA(2)==ALGORITHM}?
-		INITIAL! ALGORITHM^
-		(algorithm SEMICOLON!
-		|annotation SEMICOLON!
-		)*
-		{
-	            #initial_algorithm_clause = #([INITIAL_ALGORITHM,"INTIAL_ALGORITHM"], #initial_algorithm_clause);
-		}
-		;
-		/*
-        exception
-        catch [ANTLR_USE_NAMESPACE(antlr)RecognitionException &e]
+		{ LA(2)==ALGORITHM }?
+		INITIAL! ac: algorithm_clause
         {
-          BEFORE_SYNC;
-
-          // Sync to {END, EQUATION, ALGORITHM, INITIAL, PROTECTED, PUBLIC}
-          while(LA(1) != END && LA(1) != EQUATION && LA(1) != ALGORITHM && LA(1) != INITIAL
-                && LA(1) != PROTECTED && LA(1) != PUBLIC)
-          {
-            if(LA(1) == EOF_)
-            {
-              throw ANTLR_USE_NAMESPACE(antlr)RecognitionException("unexpected end of file", modelicafilename, LT(1)->getLine(), LT(1)->getColumn());
-            }
-            consume();
-          }
-
-          AFTER_SYNC;
+            #initial_algorithm_clause = #([INITIAL_ALGORITHM,"INTIAL_ALGORITHM"], ac);
         }
-        */
+		;
 
 equation :
 		(   (simple_expression EQUALS) => equality_equation
@@ -609,28 +542,17 @@ equation :
         }
 		comment
 		;
-		/*
-        exception
-        catch [ANTLR_USE_NAMESPACE(antlr)RecognitionException &e]
-        {
-          BEFORE_SYNC;
 
-          // Sync to SEMICOLON
-          while(LA(1) != SEMICOLON)
-          {
-            if(LA(1) == EOF_)
-            {
-              throw ANTLR_USE_NAMESPACE(antlr)RecognitionException("unexpected end of file", modelicafilename, LT(1)->getLine(), LT(1)->getColumn());
-            }
-            consume();
-          }
-
-          AFTER_SYNC;
-        }
-        */
+algorithm_annotation_list :
+		{ LA(1) == END || LA(1) == EQUATION || LA(1) == ALGORITHM || LA(1)==INITIAL
+		 || LA(1) == PROTECTED || LA(1) == PUBLIC }?
+		|
+		( algorithm SEMICOLON! | annotation SEMICOLON!) algorithm_annotation_list
+		;
 
 algorithm :
-		( assign_clause_a
+		(   (simple_expression ASSIGN) => assign_clause_a 
+		|   component_reference function_call
 		|	multi_assign_clause_a
 		|	conditional_equation_a
 		|	for_clause_a
@@ -662,7 +584,9 @@ algorithm :
         }
         */
 
-assign_clause_a : component_reference	( ASSIGN^ expression | function_call );
+assign_clause_a :  
+        simple_expression ASSIGN^ expression
+        ;
 
 multi_assign_clause_a :
         LPAR! expression_list RPAR! ASSIGN^ component_reference function_call;
@@ -744,7 +668,9 @@ equation_list :
 		;
 
 algorithm_list :
-		( algorithm SEMICOLON! )*
+		{LA(1) != END || (LA(1) == END && LA(2) != IDENT)}?
+		|
+		( algorithm SEMICOLON! algorithm_list )
 		;
 
 connect_clause :
@@ -888,31 +814,24 @@ rel_op :
 		;
 
 arithmetic_expression :
-		unary_arithmetic_expression ( ( PLUS^ | MINUS^ ) term )*
+		unary_arithmetic_expression ( ( PLUS^ | MINUS^ | PLUS_EW^ | MINUS_EW^ ) term )*
 		;
 
 unary_arithmetic_expression ! :
-		( PLUS t1:term
-		{
-			#unary_arithmetic_expression = #([UNARY_PLUS,"PLUS"], #t1);
-		}
-		| MINUS t2:term
-		{
-			#unary_arithmetic_expression = #([UNARY_MINUS,"MINUS"], #t2);
-		}
-		| t3:term
-		{
-			#unary_arithmetic_expression = #t3;
-		}
+		( PLUS t1:term  { #unary_arithmetic_expression = #([UNARY_PLUS,"PLUS"], #t1); }
+		| MINUS t2:term { #unary_arithmetic_expression = #([UNARY_MINUS,"MINUS"], #t2); }
+		| PLUS_EW t3:term  { #unary_arithmetic_expression = #([UNARY_PLUS_EW,"PLUS"], #t3); }
+		| MINUS_EW t4:term { #unary_arithmetic_expression = #([UNARY_MINUS_EW,"MINUS"], #t4); }
+		| t5:term {	#unary_arithmetic_expression = #t5;	}
 		)
 		;
 
 term :
-		factor ( ( STAR^ | SLASH^ ) factor )*
+		factor ( ( STAR^ | SLASH^ | STAR_EW^ | SLASH_EW^ ) factor )*
 		;
 
 factor :
-		primary ( POWER^ primary )?
+		primary ( ( POWER^ | POWER_EW^ ) primary )?
 		;
 
 primary :
@@ -948,22 +867,13 @@ component_reference__function_call ! :
 	;
 
 name_path :
-		{ LA(2)!=DOT }? IDENT |
-		IDENT DOT^ name_path
+		{ LA(2)!=DOT }? IDENT | IDENT DOT^ name_path
 		;
 
 name_path_star returns [bool val=false]
 		:
-		{ LA(2)!=DOT }? IDENT { val=false;}|
-		{ LA(2)!=DOT }? STAR! { val=true;}|
-		i:IDENT DOT^ val = np:name_path_star
-		{
-			if(!(#np))
-			{
-				#name_path_star = #i;
-			}
-		}
-		;
+	  { LA(2) != DOT }? IDENT { val=false; } ( STAR_EW! { val=true;  } )?
+	| i:IDENT DOT^ val = np:name_path_star { if(!(#np))	{ #name_path_star = #i;	} };
 
 component_reference :
 		IDENT^ ( array_subscripts )? ( DOT^ component_reference )?
