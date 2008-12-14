@@ -304,6 +304,7 @@ algorithm
       list<list<tuple<Exp.Exp, Boolean>>> xs_1,xs;
       String id,s;
       Env.Cache cache;
+    case (cache,_,e,NOPRE()) then (cache,e);      
     case (cache,_,(e as Exp.ICONST(integer = _)),_) then (cache,e);
     case (cache,_,(e as Exp.RCONST(real = _)),_) then (cache,e);
     case (cache,_,(e as Exp.SCONST(string = _)),_) then (cache,e);
@@ -383,6 +384,13 @@ algorithm
       local Prefix p;
       then
         (cache,Exp.ARRAY(t,a,{}));
+    case (cache,env,Exp.ARRAY(ty = t,scalar = a,array = es),p as PRE(_,{i},_))
+      local Prefix p; Integer i; Exp.Exp e;
+      equation        
+        e = listNth(es, i-1);
+        Debug.fprint("prefix", "{v1,v2,v3}[" +& intString(i) +& "] => "  +& Exp.printExp2Str(e) +& "\n");
+      then
+        (cache,e);        
     case (cache,env,Exp.ARRAY(ty = t,scalar = a,array = es),p)
       local Prefix p;
       equation
@@ -489,11 +497,12 @@ algorithm
       then (cache,Exp.META_OPTION(NONE()));
         // ------------------------
 
-    case (_,_,e,_)
+    case (_,_,e, p)
+      local Prefix p;
       equation
         Debug.fprint("failtrace", "-prefix_exp failed on exp:");
         s = Exp.printExpStr(e);
-        Debug.fprint("failtrace", s);
+        Debug.fprint("failtrace", s +& " prefix: " +& printPrefixStr(p));
         Debug.fprint("failtrace", "\n");
       then
         fail();

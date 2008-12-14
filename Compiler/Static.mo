@@ -6280,7 +6280,7 @@ algorithm
     case (cache,env,fn,args,nargs,impl,st) /* ..Other functions */
       local Exp.Type tp;
       equation
-        Debug.fprintln("failtrace", "Static.elabCallArgs[" +& Absyn.pathString(fn) +& "] - no records, before Lookup.lookupFunctionsInEnv(cache,env, fn)");
+        // Debug.fprintln("failtrace", "Static.elabCallArgs[" +& Absyn.pathString(fn) +& "] - no records, before Lookup.lookupFunctionsInEnv(cache,env, fn)");
         (cache,typelist as _::_) = Lookup.lookupFunctionsInEnv(cache,env, fn)
         "PR. A function can have several types. Taking an array with
 	       different dimensions as parameter for example. Because of this we
@@ -6289,30 +6289,30 @@ algorithm
 	       functiontype of several possibilites. The solution is to send
 	       in the funktion type of the user function and check both the
 	       function name and the function\'s type." ;
-	      Debug.fprintln("failtrace", "Static.elabCallArgs - no records, before elabTypes");
+	      // Debug.fprintln("failtrace", "Static.elabCallArgs - no records, before elabTypes");
         (cache,args_1,constlist,restype,functype,vect_dims,slots) = elabTypes(cache,env, args,nargs, typelist, true/* Check types*/,impl)
         "The constness of a function depends on the inputs. If all inputs are constant the call itself is constant." ;
-        Debug.fprintln("failtrace", "Static.elabCallArgs - no records, before deoverloadFuncname");
+        // Debug.fprintln("failtrace", "Static.elabCallArgs - no records, before deoverloadFuncname");
         fn_1 = deoverloadFuncname(fn, functype);
-        Debug.fprintln("failtrace", "Static.elabCallArgs - no records, before isTuple");
+        // Debug.fprintln("failtrace", "Static.elabCallArgs - no records, before isTuple");
         tuple_ = isTuple(restype);
-        Debug.fprintln("failtrace", "Static.elabCallArgs - no records, before isBuiltinFunc");
+        // Debug.fprintln("failtrace", "Static.elabCallArgs - no records, before isBuiltinFunc");
         (cache,builtin) = isBuiltinFunc(cache,fn_1);
-        Debug.fprintln("failtrace", "Static.elabCallArgs - no records, before Util.listReduce");
+        // Debug.fprintln("failtrace", "Static.elabCallArgs - no records, before Util.listReduce");
         const = calculateConstantness(constlist);
-        Debug.fprintln("failtrace", "Static.elabCallArgs - no records, before determineConstSpecialFunc");
+        // Debug.fprintln("failtrace", "Static.elabCallArgs - no records, before determineConstSpecialFunc");
         (cache,const) = determineConstSpecialFunc(cache,env,const,fn);
-        Debug.fprintln("failtrace", "Static.elabCallArgs - no records, before elabConsts");
+        // Debug.fprintln("failtrace", "Static.elabCallArgs - no records, before elabConsts");
         tyconst = elabConsts(restype, const);
-        Debug.fprintln("failtrace", "Static.elabCallArgs - no records, before getProperties");
+        // Debug.fprintln("failtrace", "Static.elabCallArgs - no records, before getProperties");
         prop = getProperties(restype, tyconst);
-        Debug.fprintln("failtrace", "Static.elabCallArgs - no records, before Types.elabType");
+        // Debug.fprintln("failtrace", "Static.elabCallArgs - no records, before Types.elabType");
  	      tp = Types.elabType(restype);
-        Debug.fprintln("failtrace", "Static.elabCallArgs - no records, before addDefaultArgs");
+        // Debug.fprintln("failtrace", "Static.elabCallArgs - no records, before addDefaultArgs");
  	      (cache,args_2,slots2) = addDefaultArgs(cache,env,args_1,fn,slots,impl);
-        Debug.fprintln("failtrace", "Static.elabCallArgs - no records, before vectorizeCall");
+        // Debug.fprintln("failtrace", "Static.elabCallArgs - no records, before vectorizeCall");
         (call_exp,prop_1) = vectorizeCall(Exp.CALL(fn_1,args_2,tuple_,builtin,tp), restype, vect_dims, slots2, prop);
-        Debug.fprintln("failtrace", "Static.elabCallArgs - no records, after vectorizeCall");
+        // Debug.fprintln("failtrace", "Static.elabCallArgs - no records, after vectorizeCall");
       then
         (cache,call_exp,prop_1);
 
@@ -6500,7 +6500,8 @@ algorithm
       list<Slot> slots;
       Exp.Type etp;
     case (e,e_type,{},_,prop) then (e,prop);  /* exp exp_type */
-    case (Exp.CALL(path = fn,expLst = args,tuple_ = tuple_,builtin = builtin,ty = etp),e_type,(Types.DIM(integerOption = SOME(dim)) :: ad),slots,prop) /* Scalar expression, i.e function call */
+    /* Scalar expression, i.e function call */
+    case (Exp.CALL(path = fn,expLst = args,tuple_ = tuple_,builtin = builtin,ty = etp),e_type,(Types.DIM(integerOption = SOME(dim)) :: ad),slots,prop)
       equation
         exp_type = Types.elabType(e_type);
         vect_exp = vectorizeCallScalar(Exp.CALL(fn,args,tuple_,builtin,etp), exp_type, dim, slots);
@@ -6508,7 +6509,8 @@ algorithm
         tp_1 = Types.liftArray(tp, SOME(dim));
       then
         (vect_exp_1,Types.PROP(tp_1,c));
-    case (Exp.ARRAY(ty = tp,scalar = scalar,array = expl),e_type,(Types.DIM(integerOption = SOME(dim)) :: ad),slots,prop) /* array expression of function calls */
+    /* array expression of function calls */
+    case (Exp.ARRAY(ty = tp,scalar = scalar,array = expl),e_type,(Types.DIM(integerOption = SOME(dim)) :: ad),slots,prop)
       equation
         exp_type = Types.elabType(e_type);
         vect_exp = vectorizeCallArray(Exp.ARRAY(tp,scalar,expl), exp_type, dim, slots);
@@ -6674,7 +6676,8 @@ algorithm
       Absyn.Path fn;
       Boolean t,b;
       Exp.Type tp;
-    case (expl,slots,cur_dim,dim,Exp.CALL(path = fn,expLst = args,tuple_ = t,builtin = b,ty=tp)) /* cur_dim - current indx in dim dim - dimension size */
+    /* cur_dim - current indx in dim dim - dimension size */
+    case (expl,slots,cur_dim,dim,Exp.CALL(path = fn,expLst = args,tuple_ = t,builtin = b,ty=tp))
       equation
         (cur_dim <= dim) = true;
         callargs = vectorizeCallScalar3(expl, slots, cur_dim);

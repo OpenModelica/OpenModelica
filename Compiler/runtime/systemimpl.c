@@ -313,7 +313,7 @@ void System_5finit(void)
    * Visual Studio then use the SSE instructions,
    * not the normal i387 FPU
    */
-  set_cflags("-Wall -msse2 -mfpmath=sse ${MODELICAUSERCFLAGS}");
+  set_cflags("-msse2 -mfpmath=sse ${MODELICAUSERCFLAGS}");
 #else
   set_cflags("${MODELICAUSERCFLAGS}");
 #endif
@@ -1627,7 +1627,7 @@ void System_5finit(void)
    * if we are on i386 or x86_64 then use the
    * SSE instructions, not the normal i387 FPU
    */
-  set_cflags("-Wall -msse2 -mfpmath=sse ${MODELICAUSERCFLAGS}");
+  set_cflags("-msse2 -mfpmath=sse ${MODELICAUSERCFLAGS}");
 #else
 	set_cflags("${MODELICAUSERCFLAGS}");
 #endif

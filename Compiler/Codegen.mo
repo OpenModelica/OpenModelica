@@ -3824,10 +3824,9 @@ algorithm
   end matchcontinue;
 end generateWhenConditionExpression;
 
-public function generateExpressions "function: generateExpressions
-
-  Generates code for a list of expressions.
-"
+public function generateExpressions 
+"function: generateExpressions
+  Generates code for a list of expressions."
   input list<Exp.Exp> inExpExpLst;
   input Integer inInteger;
   input Context inContext;
@@ -4913,10 +4912,9 @@ algorithm
   end matchcontinue;
 end generateBinary;
 
-protected function generateTempDecl "function: generateTempDecl
-
-  Generates code for the declaration of a temporary variable.
-"
+protected function generateTempDecl 
+"function: generateTempDecl
+  Generates code for the declaration of a temporary variable."
   input String inString;
   input Integer inInteger;
   output String outString1;
@@ -4939,10 +4937,9 @@ algorithm
   end matchcontinue;
 end generateTempDecl;
 
-protected function generateScalarLhsCref "function: generateScalarLhsCref
-
-  Helper function to generate_algorithm_statement.
-"
+protected function generateScalarLhsCref 
+"function: generateScalarLhsCref
+  Helper function to generateAlgorithmStatement."
   input Exp.Type inType;
   input Exp.ComponentRef inComponentRef;
   input Integer inInteger;
@@ -4974,7 +4971,7 @@ algorithm
       then
         (cfn,var,tnr_1);
 
-        /* two special cases rules for 1 and 2 dimensions for faster code (no vararg) */
+    /* two special cases rules for 1 and 2 dimensions for faster code (no vararg) */
     case (t,Exp.CREF_IDENT(ident = id,subscriptLst = idx),tnr,context)
       equation
         Debug.fprintln("gcge", "generating cref ccode");

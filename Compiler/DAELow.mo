@@ -396,7 +396,7 @@ protected import SimCodegen;
 
 protected constant BinTree emptyBintree=TREENODE(NONE,NONE,NONE) " Empty binary tree " ;
 
-public constant String derivativeNamePrefix="$derivative";
+public constant String derivativeNamePrefix="$DER";
 
 public function dumpDAELowEqnList
 

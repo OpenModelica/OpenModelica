@@ -1978,11 +1978,22 @@ public function simplify
   input Exp inExp;
   output Exp outExp;
 algorithm
-  // Debug.fprintln("simplify","SIMPLIFY BEFORE->" +& printExpStr(inExp));
-  outExp := simplify1(inExp); // Basic local simplifications
-  // Debug.fprintln("simplify","SIMPLIFY INTERMEDIATE->" +& printExpStr(outExp));
-  outExp := simplify2(outExp); // Advanced (global) simplifications
-  // Debug.fprintln("simplify","SIMPLIFY FINAL->" +& printExpStr(outExp));
+  outExp := matchcontinue(inExp)
+    local Exp e, eNew;
+    case (e)
+      equation
+        true = RTOpts.getNoSimplify();
+        eNew = simplify1(e);
+      then eNew;
+    case (e)
+      equation	      
+        // Debug.fprintln("simplify","SIMPLIFY BEFORE->" +& printExpStr(e));
+        eNew = simplify1(e); // Basic local simplifications
+        // Debug.fprintln("simplify","SIMPLIFY INTERMEDIATE->" +& printExpStr(eNew));
+        eNew = simplify2(eNew); // Advanced (global) simplifications
+        // Debug.fprintln("simplify","SIMPLIFY FINAL->" +& printExpStr(eNew));
+      then eNew;
+  end matchcontinue;
 end simplify;
 
 protected function simplify1
@@ -2269,8 +2280,12 @@ protected function simplify2
   output Exp outExp;
 algorithm
   outExp := matchcontinue(inExp)
-  local Exp e,exp,e1,e2,e1_1,e2_1,exp_2,exp_3;
-     Operator op;
+    local 
+      Exp e,exp,e1,e2,e1_1,e2_1,exp_2,exp_3;
+      Operator op;
+    /* simplify unary */
+    case(UNARY(op,e)) equation e = simplify2(e); then UNARY(op,e);        
+    /* simplify binary */
     case ((exp as BINARY(exp1 = e1,operator = op,exp2 = e2))) /* multiple terms/factor simplifications */
       local String s1,s2; Boolean b;
       equation
@@ -2282,6 +2297,7 @@ algorithm
         exp_3 = simplifyBinaryCoeff(exp_2);
       then
         exp_3;
+    /* no other simplification */
     case (e) then e;
   end matchcontinue;
 end simplify2;
@@ -2295,8 +2311,7 @@ protected function simplifyBinaryArray
   input Exp inExp3;
   output Exp outExp;
 algorithm
-  outExp:=
-  matchcontinue (inExp1,inOperator2,inExp3)
+  outExp := matchcontinue (inExp1,inOperator2,inExp3)
     local
       Exp e_1,e1,e2,res,s1,a1;
       Type tp;
@@ -2700,8 +2715,9 @@ algorithm
        String str;
 
     case ((e as BINARY(exp1 = e1,operator = MUL(ty = tp),exp2 = e2)))
-        local Exp res1,res2,zero;
-          Boolean b1,b2,b;
+      local 
+        Exp res1,res2,zero;
+        Boolean b1,b2,b;
       equation
         e_lst  = factors(e);
         e_lst_1 = Util.listMap(e_lst,simplify2); // simplify2 for recursive
@@ -6352,7 +6368,7 @@ algorithm
   s := printExp2Str(e);
 end printExpStr;
 
-protected function printExp2Str
+public function printExp2Str
 "function: printExp2Str
   Helper function to printExpStr."
   input Exp inExp;

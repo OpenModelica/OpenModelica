@@ -1484,6 +1484,34 @@ algorithm
          failure(RTOpts.setAnnotationVersion(annotationVersion));        
       then
         ("false",st);
+
+    /* adrpo added 2008-12-14 set the noSimplify flag */
+    case (ISTMTS(interactiveStmtLst =
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "setNoSimplify"),
+      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.BOOL(value = noSimplify)},
+        argNames = {})))}), st)
+      local 
+        Boolean noSimplify;
+        String str;
+      equation
+         RTOpts.setNoSimplify(noSimplify);
+         str = "NoSimplify = " +& Util.if_(noSimplify,"true","false");         
+      then
+        (str,st);
+
+    /* adrpo added 2008-12-14 get the noSimplify flag */
+    case (ISTMTS(interactiveStmtLst =
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getNoSimplify"),
+      functionArgs = Absyn.FUNCTIONARGS(args = {},
+        argNames = {})))}), st)
+      local 
+        Boolean noSimplify; 
+        String str;
+      equation
+         noSimplify = RTOpts.getNoSimplify();
+         str = "NoSimplify = " +& Util.if_(noSimplify,"true","false");
+      then
+        (str,st);
         
     /* adrpo added 2006-10-16
      * - i think this function is needed here!

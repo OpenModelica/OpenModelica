@@ -70,6 +70,12 @@ char* simulation_code_target = "gcc";
 int acceptedGrammar = GRAMMAR_MODELICA;
 
 /*
+ * adrpo 2008-12-13
+ * flag for turning of expression simplification!
+ */
+int noSimplify = 0;
+
+/*
  * @author adrpo
  * @date 2007-02-08
  * This variable is defined in corbaimpl.cpp and set
@@ -100,6 +106,7 @@ void RTOpts_5finit(void)
   corbaSessionName = 0;
   acceptedGrammar = GRAMMAR_MODELICA;
   annotation_version = "2.x";
+  noSimplify = 0;
 }
 
 /*
@@ -223,6 +230,7 @@ void printFlagError(char* givenFlag, char* correctFlag)
 #define ANNOTATION_VERSION  "+annotationVersion"
 #define TARGET              "+target"
 #define METAMODELICA        "+g"
+#define NO_SIMPLIFY         "+noSimplify"
 
 RML_BEGIN_LABEL(RTOpts__args)
 {
@@ -231,6 +239,7 @@ RML_BEGIN_LABEL(RTOpts__args)
   int strLen_TARGET = strlen(TARGET);
   int strLen_METAMODELICA = strlen(METAMODELICA);
   int strLen_ANNNOTATION_VERSION = strlen(ANNOTATION_VERSION);
+  int strLen_NO_SIMPLIFY = strlen(NO_SIMPLIFY);
   debug_none = 1;
 
   while (RML_GETHDR(args) != RML_NILHDR)
@@ -278,6 +287,16 @@ RML_BEGIN_LABEL(RTOpts__args)
         fprintf(stderr, "# Wrong option: usage: omc [+annotationVersion=1.x|2.x|3.x], default to '2.x'.\n");
         RML_TAILCALLK(rmlFC);
       }
+    }
+    else if(strncmp(arg,NO_SIMPLIFY,strLen_NO_SIMPLIFY) == 0)
+    {
+        if (strlen(arg) == strLen_NO_SIMPLIFY)
+            noSimplify = 1;
+        else
+        {
+          fprintf(stderr, "# Wrong option: usage: omc [+noSimplify], by default is to simplify.\n");
+          RML_TAILCALLK(rmlFC);
+        }
     }
     else if (arg[0] == '+')
     {
@@ -579,7 +598,29 @@ RML_BEGIN_LABEL(RTOpts__setAnnotationVersion)
   {
     annotation_version = str;
     RML_TAILCALLK(rmlSC);
-  }  
+  }
   RML_TAILCALLK(rmlFC);
+}
+RML_END_LABEL
+
+
+/*
+ * adrpo 2008-12-13
+ */
+RML_BEGIN_LABEL(RTOpts__setNoSimplify)
+{
+  noSimplify = RML_UNTAGFIXNUM(rmlA0);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+
+/*
+ * adrpo 2008-12-13
+ */
+RML_BEGIN_LABEL(RTOpts__getNoSimplify)
+{
+  rmlA0 = noSimplify?RML_TRUE:RML_FALSE;
+  RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL

@@ -1424,7 +1424,7 @@ algorithm
         res;
     case MOD(finalPrefix = final_,eachPrefix = each_,subModLst = subs,absynExpOption = ass)
       equation
-        final_str = Util.if_(final_, "final", "");
+        final_str = Util.if_(final_, "final ", "");
         each_str = Dump.unparseEachStr(each_);
         subs_str = printSubs1Str(subs);
         ass_str = printEqmodStr(ass);
@@ -1508,16 +1508,16 @@ algorithm
     case {} then "";
     case {NAMEMOD(ident = n,A = mod)}
       equation
-        Print.printBuf(n);
+        // Print.printBuf(n);
         s = printModStr(mod);
-        res = stringAppend(n, s);
+        res = n +& " " +&  s;
       then
         res;
     case (NAMEMOD(ident = n,A = mod) :: subs)
       equation
         mod_str = printModStr(mod);
         str = printSubsStr(subs);
-        res = Util.stringAppendList({n, mod_str, ", ", str});
+        res = Util.stringAppendList({n, " ", mod_str, ", ", str});
       then
         res;
     case {IDXMOD(subscriptLst = ss,an = mod)}
@@ -1553,9 +1553,9 @@ algorithm
     case {} then "";
     case l
       equation
-        Print.printBuf("(");
+        //Print.printBuf("(");
         s = printSubsStr(l);
-        Print.printBuf(")");
+        //Print.printBuf(")");
         res = Util.stringAppendList({"(",s,")"});
       then
         res;

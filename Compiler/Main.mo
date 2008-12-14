@@ -858,7 +858,7 @@ end readSettingsFile;
 function printUsage
 algorithm
   print("OpenModelica Compiler version: "); print(Settings.getVersionNr()); print("\n");
-  print("http://www.ida.liu.se/labs/pelab/modelica/OpenModelica.html\n");
+  print("http://www.OpenModelica.org\n");
   print("Please check the System Guide for full information about flags.\n");
   print("Usage: omc [-runtimeOptions +omcOptions] Model.mo|Model.mof|Script.mos\n");
   print("* runtimeOptions: call omc -help for seeing runtime options\n");
@@ -877,13 +877,14 @@ algorithm
   print("\t+s                         generate simulation code\n");
   print("\t+annotationVersion=1.x     what annotation version should we use\n");
   print("\t                           accept 1.x or 2.x (default) or 3.x\n"); 
+  print("\t+noSimplify                do not simplify expressions (default is to simplify)\n");
   print("\t+q                         run in quiet mode, ouput nothing\n");
   print("\t+metaModelica              accept MetaModelica grammar and semantics\n");  
   print("\t+d=flags                   set debug flags: \n");  
   print("\t+d=bltdump                 dump the blt form\n");
   print("\t+d=failtrace               print what function fail\n");  
   print("\t+d=parsedump               dump the parsing tree\n");
-  print("\t+d=parseonly               will only parse the givn file and exit\n");    
+  print("\t+d=parseonly               will only parse the given file and exit\n");    
   print("\t+d=dynload                 display debug information about dynamic loading of compiled functions\n");
   print("* Examples:\n");
   print("\tomc Model.mo         will produce flattened Model on standard output\n");
@@ -891,7 +892,7 @@ algorithm
   print("\tomc Script.mos       will run the commands from Script.mos\n");
   print("\t*.mo (Modelica files) \n");
   print("\t*.mof (Flat Modelica files) \n");
-  print("\t*.mos (Modelica Script files) \n");  
+  print("\t*.mos (Modelica Script files) \n");
 end printUsage;
 
 public function main
