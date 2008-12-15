@@ -17443,7 +17443,9 @@ Retrieves a total program for a model by only building dependencies for the affe
   input Absyn.Program p;
   output Absyn.Program outP;
 algorithm
-  outP := matchcontinue(modelName,p)
+  outP := p;
+  /*
+  matchcontinue(modelName,p)
   local AbsynDep.Depends dep; AbsynDep.AvlTree uses; Absyn.Program p2,p1;
     case(modelName,p) equation
       dep = getTotalProgram2(modelName,p);
@@ -17454,6 +17456,7 @@ algorithm
       p = updateProgram(p1,p2);
     then p;  
   end matchcontinue;
+  */
 end getTotalProgram;
 
 protected function getTotalProgram2 "Help function to getTotalProgram"

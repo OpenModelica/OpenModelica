@@ -83,6 +83,12 @@ extern char* corbaSessionName;
  */
 char* annotation_version = "2.x";
 
+/*
+ * adrpo 2008-12-15
+ * flag +showErrorMessages for printing all messages comming to the error buffer
+ */
+int showErrorMessages = 0;
+
 void RTOpts_5finit(void)
 {
   type_info = 0;
@@ -100,6 +106,7 @@ void RTOpts_5finit(void)
   corbaSessionName = 0;
   acceptedGrammar = GRAMMAR_MODELICA;
   annotation_version = "2.x";
+  showErrorMessages = 0;
 }
 
 /*
@@ -242,12 +249,12 @@ int check_debug_flag(char const* strdata)
   return flg;
 }
 
-
 #define VERSION_OPT1        "++v"
 #define VERSION_OPT2        "+version"
 #define ANNOTATION_VERSION  "+annotationVersion"
 #define TARGET              "+target"
 #define METAMODELICA        "+g"
+#define SHOW_ERROR_MESSAGES "+showErrorMessages"
 
 RML_BEGIN_LABEL(RTOpts__args)
 {
@@ -256,7 +263,7 @@ RML_BEGIN_LABEL(RTOpts__args)
   int strLen_TARGET = strlen(TARGET);
   int strLen_METAMODELICA = strlen(METAMODELICA);
   int strLen_ANNNOTATION_VERSION = strlen(ANNOTATION_VERSION);
-  debug_none = 1;
+  int strLen_SHOW_ERROR_MESSAGES = strlen(SHOW_ERROR_MESSAGES);
 
   debug_none = 1;
 
@@ -305,6 +312,16 @@ RML_BEGIN_LABEL(RTOpts__args)
         fprintf(stderr, "# Wrong option: usage: omc [+annotationVersion=1.x|2.x|3.x], default to '2.x'.\n");
         RML_TAILCALLK(rmlFC);
       }
+    }
+    else if(strncmp(arg,SHOW_ERROR_MESSAGES,strLen_SHOW_ERROR_MESSAGES) == 0)
+    {
+        if (strlen(arg) == strLen_SHOW_ERROR_MESSAGES)
+            showErrorMessages = 1;
+        else
+        {
+          fprintf(stderr, "# Wrong option: usage: omc [+showErrorMessages], default to not show them.\n");
+          RML_TAILCALLK(rmlFC);
+        }
     }
     else if (arg[0] == '+')
     {

@@ -300,7 +300,8 @@ algorithm
         
     case (_,_,_,_)
       equation 
-        print("ClassLoader.loadCompletePackageFromMp failed\n");
+        // adrpo: not needed as it might fail due to no package file!
+        // print("ClassLoader.loadCompletePackageFromMp failed\n");
       then fail();
       
   end matchcontinue;

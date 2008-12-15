@@ -3838,12 +3838,11 @@ algorithm
 
     case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)  
       equation 
-        _ = Error.getMessagesStr() "Clear messages";
-        Print.clearErrorBuf() "Clear error buffer";
         ptot = Interactive.getTotalProgram(className,p);
-        //(cache,dae as DAE.DAE(dael),env) = checkModelInstantiateCall(cache,ptot, className);
-        
+        //(cache,dae as DAE.DAE(dael),env) = checkModelInstantiateCall(cache,ptot, className);        
         Absyn.CLASS(_,_,_,_,Absyn.R_FUNCTION(),_,_) = Interactive.getPathedClassInProgram(className, p);
+        _ = Error.getMessagesStr() "Clear messages";
+        Print.clearErrorBuf() "Clear error buffer";        
         p_1 = SCode.elaborate(ptot);
         (cache, dae as DAE.DAE(dael), env) = Inst.instantiateFunctionImplicit(inCache, p_1, className);
       
@@ -3856,13 +3855,13 @@ algorithm
         (cache,Values.STRING(retStr),st);
 
     case (cache,env,className,st,_) local
-      String errorMsg; Boolean strEmpty;
+      String errorMsg; Boolean strEmpty; String errorBuffer;
       equation
       classNameStr = Absyn.pathString(className);
       errorMsg = Error.printMessagesStr();
       strEmpty = (System.strcmp("",errorMsg)==0);
       errorMsg = Util.if_(strEmpty,"Internal error, check of model failed with no error message.",errorMsg);
-      errorMsg = errorMsg +& selectIfNotEmpty("Error Buffer:\n", Print.getErrorString());
+      // errorMsg = errorMsg +& selectIfNotEmpty("Error Buffer:\n", Print.getErrorString());
     then (cache,Values.STRING(errorMsg),st);  
 
   end matchcontinue;
@@ -7629,10 +7628,10 @@ algorithm
     local Integer res;
     case (inStr)
       equation
-        res = System.stringFind(inStr, "Internal");
+        res = System.stringFind(inStr, "successfully");
         true = (res >= 0);
-      then "FAILED!";        
-    case (_) then "OK";
+      then "OK";
+    case (_) then "FAILED!";
   end matchcontinue;
 end failOrSuccess;    
 
@@ -7674,7 +7673,7 @@ algorithm
         // filter out packages 
         false = Interactive.isPackage(cr, p);
         // filter out functions 
-        false = Interactive.isFunction(cr, p);        
+        // false = Interactive.isFunction(cr, p);        
         // filter out types 
         false = Interactive.isType(cr, p);
         print("Checking: " +& Dump.unparseClassAttributesStr(c) +& " " +& Absyn.pathString(className) +& "... ");
