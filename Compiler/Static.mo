@@ -75,8 +75,7 @@ public import RTOpts;
 
 protected import OptManager;
 
-public 
-type Ident = String;
+public type Ident = String;
 
 public 
 uniontype Slot
@@ -86,7 +85,6 @@ uniontype Slot
     Option<Exp.Exp> expExpOption;
     list<Types.ArrayDim> typesArrayDimLst;
   end SLOT;
-
 end Slot;
 
 protected import ClassInf;
@@ -102,6 +100,7 @@ protected import Util;
 protected import Mod;
 protected import Prefix;
 protected import Ceval;
+protected import CevalScript;
 protected import Connect;
 protected import Error;
 protected import System;
@@ -6488,7 +6487,7 @@ algorithm
         d_1 = ModUtil.stringPrefixParams(DAE.DAE(d));
         libs = Codegen.generateFunctions(d_1);
         Debug.fprintln("sei", "generate_compiled_function: function generated");
-        cache = Ceval.cevalGenerateFunction(cache,env,path);
+        cache = CevalScript.cevalGenerateFunction(cache,env,path);
         t = Types.getPropType(prop) "	& Debug.fprintln(\"sei\", \"generate_compiled_function: compiled\")" ;
         funcstr = ModUtil.pathString2(path, "_");
         libHandle = System.loadLibrary(funcstr);

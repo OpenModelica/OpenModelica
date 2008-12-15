@@ -90,7 +90,7 @@ protected import Settings;
 protected import Algorithm;
 protected import Types;
 protected import Env;
-protected import Ceval;
+protected import CevalScript;
 
 public function generateMakefile
 "function: generateMakefile
@@ -110,7 +110,7 @@ algorithm
       list<String> libs;
     case (filename,cname,libs,"") /* filename classname libs directory for mo-file */
       equation
-        MakefileHeader = Ceval.generateMakefileHeader();
+        MakefileHeader = CevalScript.generateMakefileHeader();
         cpp_file = Util.stringAppendList({cname,".cpp"});
         libs_1 = Util.stringDelimitList(libs, " ");
         omhome_1 = Settings.getInstallationDirectoryPath();
@@ -132,7 +132,7 @@ algorithm
         ();
     case (filename,cname,libs,file_dir)
       equation
-        MakefileHeader = Ceval.generateMakefileHeader();
+        MakefileHeader = CevalScript.generateMakefileHeader();
         cpp_file = Util.stringAppendList({cname,".cpp"});
         libs_1 = Util.stringDelimitList(libs, " ");
         omhome_1 = Settings.getInstallationDirectoryPath();

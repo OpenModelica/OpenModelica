@@ -23,10 +23,14 @@ RTOBJ   = $(srcdir)/runtime/systemimpl.o $(srcdir)/../c_runtime/libc_runtime.a \
 	$(srcdir)/runtime/daeext.o $(CORBAOBJ) \
 	$(srcdir)/modpar/libmodpar.a $(srcdir)/runtime/settingsimpl.o
 
+# The MO sources
 SRCMO= Absyn.mo \
+	AbsynDep.mo \
 	Algorithm.mo \
 	Builtin.mo \
 	Ceval.mo \
+	CevalScript.mo \
+	Cevalfunc.mo \
 	ClassInf.mo \
 	ClassLoader.mo \
 	Codegen.mo \
@@ -45,6 +49,11 @@ SRCMO= Absyn.mo \
 	Exp.mo \
 	SCode.mo \
 	Graphviz.mo \
+	HashTable.mo \
+	HashTable2.mo \
+	HashTable3.mo \
+	HashTable4.mo \
+	HashTable5.mo \
 	Inst.mo \
 	Interactive.mo \
 	Lookup.mo \
@@ -61,12 +70,14 @@ SRCMO= Absyn.mo \
 	Util.mo \
 	Values.mo \
 	VarTransform.mo \
+	BackendVarTransform.mo \
 	Refactor.mo \
 	DAEQuery.mo \
 	XMLDump.mo
 
+# These are externally defined MO modules
 ALLMO = $(SRCMO) DAEEXT.mo Print.mo RTOpts.mo System.mo Parser.mo \
-		TaskGraphExt.mo Corba.mo Socket.mo ErrorExt.mo Settings.mo
+		TaskGraphExt.mo Corba.mo Socket.mo ErrorExt.mo Settings.mo OptManager.mo 
 
 SRCC=	$(SRCMO:.mo=.c)
 SRCH=	$(SRCMO:.mo=.h)

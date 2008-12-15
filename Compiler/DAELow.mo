@@ -56,23 +56,13 @@ public import Algorithm;
 public
 uniontype VarKind "- Variabile kind"
   record VARIABLE end VARIABLE;
-
   record STATE end STATE;
-
   record DUMMY_DER end DUMMY_DER;
-
   record DUMMY_STATE end DUMMY_STATE;
-
   record DISCRETE end DISCRETE;
-
   record PARAM end PARAM;
-
   record CONST end CONST;
-
-  record EXTOBJ
-    Absyn.Path fullClassName;
-  end EXTOBJ;
-
+  record EXTOBJ Absyn.Path fullClassName; end EXTOBJ;
 end VarKind;
 
 public
@@ -93,7 +83,6 @@ uniontype Var "- Variables"
     DAE.Flow flow_ "flow ; if the variable is a flow" ;
     DAE.Stream stream_ "stream ; if the variable is a stream variable. Modelica 3.1 specs" ;
   end VAR;
-
 end Var;
 
 public
@@ -390,9 +379,9 @@ protected import SCode;
 protected import Dump;
 protected import System;
 protected import VarTransform;
+protected import BackendVarTransform;
 protected import Error;
 protected import SimCodegen;
-
 
 protected constant BinTree emptyBintree=TREENODE(NONE,NONE,NONE) " Empty binary tree " ;
 
@@ -3062,10 +3051,10 @@ algorithm
         repl = VarTransform.emptyReplacements();
         (eqns_1,seqns,movedvars_1,vartransf) = removeSimpleEquations2(eqns, vars, knvars, emptyBintree, states, repl);
         Debug.fcall("dumprepl", VarTransform.dumpReplacements, vartransf);
-        eqns_2 = VarTransform.replaceEquations(eqns_1, vartransf);
-        seqns_1 = VarTransform.replaceEquations(seqns, vartransf);
-        ieqns_1 = VarTransform.replaceEquations(ieqns, vartransf);
-        arreqns1 = VarTransform.replaceMultiDimEquations(arreqns, vartransf);
+        eqns_2 = BackendVarTransform.replaceEquations(eqns_1, vartransf);
+        seqns_1 = BackendVarTransform.replaceEquations(seqns, vartransf);
+        ieqns_1 = BackendVarTransform.replaceEquations(ieqns, vartransf);
+        arreqns1 = BackendVarTransform.replaceMultiDimEquations(arreqns, vartransf);
         (vars_1,knvars_1) = moveVariables(vars, knvars, movedvars_1);
         eqns_3 = renameDerivatives(eqns_2);
         seqns_2 = renameDerivatives(seqns_1);
@@ -3270,7 +3259,7 @@ algorithm
     case ({},vars,knvars,mvars,states,repl) then ({},{},mvars,repl);
 
     case (e::eqns,vars,knvars,mvars,states,repl) equation
-      {e} = VarTransform.replaceEquations({e},repl);
+      {e} = BackendVarTransform.replaceEquations({e},repl);
       (e1 as Exp.CREF(cr1,_),e2) = simpleEquation(e,false);
       failure(_ = treeGet(states, cr1)) "cr1 not state";
       isVariable(cr1, vars, knvars) "cr1 not constant";
@@ -3283,7 +3272,7 @@ algorithm
 
       // Swapped args
     case (e::eqns,vars,knvars,mvars,states,repl) equation
-      {EQUATION(e1,e2)} = VarTransform.replaceEquations({e},repl);
+      {EQUATION(e1,e2)} = BackendVarTransform.replaceEquations({e},repl);
       (e1 as Exp.CREF(cr1,_),e2) = simpleEquation(EQUATION(e2,e1),true);
       failure(_ = treeGet(states, cr1)) "cr1 not state";
       isVariable(cr1, vars, knvars) "cr1 not constant";
@@ -3298,7 +3287,7 @@ algorithm
     case ((e :: eqns),vars,knvars,mvars,states,repl)
       local Equation eq1;
       equation
-        {eq1} = VarTransform.replaceEquations({e},repl);
+        {eq1} = BackendVarTransform.replaceEquations({e},repl);
         //print("not removed simple ");print(equationStr(e));print("\n     -> ");print(equationStr(eq1));
         //print("\n\n");
         (eqns_1,seqns_1,mvars_1,repl_1) = removeSimpleEquations2(eqns, vars, knvars, mvars, states, repl) "Not a simple variable, check rest" ;

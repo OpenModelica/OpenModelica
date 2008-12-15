@@ -51,7 +51,6 @@ protected import DAELow;
 protected import Inst;
 protected import Interactive;
 protected import RTOpts;
-protected import OptManager;
 protected import Debug;
 protected import Socket;
 protected import Print;
@@ -63,8 +62,7 @@ protected import TaskGraphExt;
 protected import SimCodegen;
 protected import ErrorExt;
 protected import Error;
-protected import Types;
-protected import Ceval;
+protected import CevalScript;
 protected import Env;
 protected import Settings;
 
@@ -552,18 +550,14 @@ algorithm
       equation 
         true = runBackendQ();
         Debug.fcall("execstat",print, "*** Main -> To lower dae at time: " +& realString(clock()) +& "\n" );
-        dlow = DAELow.lower(dae, /* add dummy state if needed */ true, /* simplify */ true);
-        
-        dlow = DAELow.lower(dae, true, true) "add dummy state" ;
+        dlow = DAELow.lower(dae, /* add dummy state if needed */ true, /* simplify */ true);        
         Debug.fcall("dumpdaelow", DAELow.dump, dlow);
         m = DAELow.incidenceMatrix(dlow);
         mT = DAELow.transposeMatrix(m);
         Debug.fcall("bltdump", DAELow.dumpIncidenceMatrix, m);
         Debug.fcall("bltdump", DAELow.dumpIncidenceMatrixT, mT);
         Debug.fcall("execstat",print, "*** Main -> To run matching at time: " +& realString(clock()) +& "\n" );
-        (v1,v2,dlow_1,m,mT) = DAELow.matchingAlgorithm(dlow, m, mT, 
-          (DAELow.INDEX_REDUCTION(),DAELow.EXACT(),
-          DAELow.REMOVE_SIMPLE_EQN()));
+        (v1,v2,dlow_1,m,mT) = DAELow.matchingAlgorithm(dlow, m, mT, (DAELow.INDEX_REDUCTION(), DAELow.EXACT(), DAELow.REMOVE_SIMPLE_EQN()));
         Debug.fcall("bltdump", DAELow.dumpIncidenceMatrix, m);
         Debug.fcall("bltdump", DAELow.dumpIncidenceMatrixT, mT);
         Debug.fcall("bltdump", DAELow.dump, dlow_1);
@@ -702,7 +696,7 @@ algorithm
         init_filename = Util.stringAppendList({cname_str,"_init.txt"});
         makefilename = Util.stringAppendList({cname_str,".makefile"});
         a_cref = Absyn.pathToCref(classname);
-        file_dir = Ceval.getFileDir(a_cref, ap);
+        file_dir = CevalScript.getFileDir(a_cref, ap);
         Debug.fcall("execstat",print, "*** Main -> simcodgen -> generateFunctions: " +& realString(clock()) +& "\n" );
         libs = SimCodegen.generateFunctions(p, dae, indexed_dlow_1, classname, funcfilename);
         SimCodegen.generateSimulationCode(dae, dlow, /* indexed_dlow_1, */ ass1, ass2, m, mt, comps, classname, 
