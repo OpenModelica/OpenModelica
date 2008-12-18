@@ -37,42 +37,8 @@ package BackendVarTransform
   
   This file is a stub!"
 
-public import DAELow;
 public import Exp;
 public import VarTransform; 
 protected import Util;
-
-public function replaceEquations 
-"function: replaceEquations
-  This function takes a list of equations ana a set of variable 
-  replacements and applies the replacements on all equations.
-  The function returns the updated list of equations"
-  input list<DAELow.Equation> inDAELowEquationLst;
-  input VarTransform.VariableReplacements inVariableReplacements;
-  output list<DAELow.Equation> outDAELowEquationLst;
-algorithm
-  outDAELowEquationLst := {};
-end replaceEquations;
-  
-protected function replaceWhenEquation "Replaces variables in a when equation"
-	input DAELow.WhenEquation whenEqn;
-  input VarTransform.VariableReplacements repl;
-  output DAELow.WhenEquation outWhenEqn;
-algorithm
-  outWhenEqn := whenEqn;
-end replaceWhenEquation;
-
-public function replaceMultiDimEquations "function: replaceMultiDimEquations
- 
-  This function takes a list of equations ana a set of variable replacements
-  and applies the replacements on all array equations.
-  The function returns the updated list of array equations
-"
-  input list<DAELow.MultiDimEquation> inDAELowEquationLst;
-  input VarTransform.VariableReplacements inVariableReplacements;
-  output list<DAELow.MultiDimEquation> outDAELowEquationLst;
-algorithm 
-  outDAELowEquationLst := {};
-end replaceMultiDimEquations;
 
 end BackendVarTransform;

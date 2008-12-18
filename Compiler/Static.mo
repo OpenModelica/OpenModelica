@@ -93,7 +93,9 @@ protected import Print;
 protected import Lookup;
 protected import Debug;
 protected import Inst;
+/*
 protected import Codegen;
+*/
 protected import ModUtil;
 protected import DAE;
 protected import Util;
@@ -6485,7 +6487,8 @@ algorithm
         Debug.fprintln("sei", "generate_compiled_function: function instantiated");
         Print.clearBuf();
         d_1 = ModUtil.stringPrefixParams(DAE.DAE(d));
-        libs = Codegen.generateFunctions(d_1);
+        /* libs = Codegen.generateFunctions(d_1); */
+        libs = {};
         Debug.fprintln("sei", "generate_compiled_function: function generated");
         cache = CevalScript.cevalGenerateFunction(cache,env,path);
         t = Types.getPropType(prop) "	& Debug.fprintln(\"sei\", \"generate_compiled_function: compiled\")" ;

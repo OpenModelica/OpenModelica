@@ -49,7 +49,6 @@ package CevalScript
       InteractiveSymbolTable: Modified symbol table
       Subscript list : Evaluates subscripts and generates constant expressions."
 
-public import DAELow;
 public import Exp;
 public import Env;
 public import Interactive;
@@ -58,16 +57,12 @@ public import Absyn;
 public import Types;
 public import Ceval;
 
-protected import SimCodegen;
 protected import AbsynDep;
 protected import Refactor;
-protected import DAEQuery;
-protected import XMLDump;
 protected import ClassLoader;
 protected import Parser;
 protected import Dump;
 protected import ClassInf;
-protected import Codegen;
 protected import Settings;
 protected import SCode;
 protected import DAE;
