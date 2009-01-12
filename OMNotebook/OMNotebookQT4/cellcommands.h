@@ -63,7 +63,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #include "factory.h"
 #include "cellcursor.h"
 #include "document.h"
-#include "application.h"
+#include "cellapplication.h"
 
 
 using namespace std;

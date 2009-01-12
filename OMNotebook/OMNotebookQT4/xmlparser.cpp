@@ -146,41 +146,43 @@ namespace IAEX
     {
       if(!(ba = qUncompress(ba)).size())
       {
+        file.close();
         string msg = "The file " + filename_.toStdString() + " is not a valid onbz file.";
         throw runtime_error(msg.c_str());
       }
     }
-
-    /* -- no freaking conversion
+    
     if(ba.indexOf("<InputCell") != -1)
     {
-    QSettings s("PELAB", "OMNotebook");
-    bool alwaysConvert = s.value("AlwaysConvert", false).toBool();
-    QMessageBox m;
-    int i;
-    if(!alwaysConvert)
-    {
-    m.setWindowTitle("OMNotebook");
-    m.setText("Do you want to convert this file to the current document version?");
-    m.setIcon(QMessageBox::Question);
-    m.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
-    QPushButton* always = m.addButton("Always convert old documents", QMessageBox::YesRole );
+      /*
+      QSettings s("PELAB", "OMNotebook");
+      bool alwaysConvert = s.value("AlwaysConvert", true).toBool();
+      QMessageBox m;
+      int i;
+      if(!alwaysConvert)
+      {
+        m.setWindowTitle("OMNotebook");
+        m.setText("Do you want to convert this file to the current document version?");
+        m.setIcon(QMessageBox::Question);
+        m.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+        QPushButton* always = m.addButton("Always convert old documents", QMessageBox::YesRole );
 
-    i = m.exec();
+        i = m.exec();
 
-    if(m.clickedButton() == always)
-    {
-    s.setValue("AlwaysConvert", true);
-    alwaysConvert = true;
+        if(m.clickedButton() == always)
+        {
+          s.setValue("AlwaysConvert", true);
+          alwaysConvert = true;
+        }
+      }
+
+      if(alwaysConvert || i == QMessageBox::Yes)
+      */
+      ba = ba.replace("<InputCell", "<GraphCell").
+        replace("/InputCell>", "/GraphCell>").
+        replace("style=\"Input\"", "style=\"Graph\"");
+
     }
-    }
-
-    if(alwaysConvert || i == QMessageBox::Yes)
-    ba = ba.replace("<InputCell", "<GraphCell").replace("/InputCell>", "/GraphCell>").replace("style=\"Input\"", "style=\"Graph\"");
-
-
-    }
-    */
 
     if(!domdoc.setContent(ba))
     {
@@ -188,6 +190,7 @@ namespace IAEX
       string msg = "Could not understand content of " + filename_.toStdString();
       throw runtime_error( msg.c_str() );
     }
+
     file.close();
 
     // go to correct parse function
@@ -415,10 +418,12 @@ namespace IAEX
       {
         if( e.tagName() == XML_TEXT )
         {
+          
           // adrpo --> add URL conversion because Qt 4.4.2 doesn't accept \ in the URL!
           QString text = e.text();
           // replace all href="...\..." with href=".../..."
-          QRegExp rx("(href[^=]*=[^\"]*\"[^\"\\\\]*)\\\\([^\"]*\")");
+          QString pattern("(href[^=]*=[^\"]*\"[^\"\\\\]*)\\\\([^\"]*\")");
+          QRegExp rx(pattern);
           rx.setCaseSensitivity(Qt::CaseInsensitive);
           rx.setMinimal(true);
           rx.setPatternSyntax(QRegExp::RegExp);
@@ -431,8 +436,9 @@ namespace IAEX
           {
             while (done > -1)
             {
-              // int numX = rx.numCaptures(); QString s1 = rx.cap(1),s2 = rx.cap(2); cout << numX << " " << s1.toStdString() << "-" << s2.toStdString() << endl;
-              text = text.replace(rx, "\\1/\\2");
+              // int numX = rx.numCaptures(); QString s1 = rx.cap(1),s2 = rx.cap(2); 
+              // cout << numX << " " << s1.toStdString() << "-" << s2.toStdString() << endl;
+              text = text.replace(rx, rx.cap(1) + QString::fromAscii("/") + rx.cap(2));
               done = rx.indexIn(text);
             }
             textcell->setTextHtml( text );

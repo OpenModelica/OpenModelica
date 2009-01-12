@@ -87,13 +87,13 @@ namespace IAEX
 		Q_OBJECT
 
 	public:
-		NotebookWindow(Document *subject, const QString& filename=0,
+		NotebookWindow(Document *subject, const QString filename=0,
 			QWidget *parent=0);
 		virtual ~NotebookWindow();
 
 		virtual void update();
 		virtual Document* document();
-		Application *application();
+		CellApplication *application();
 
 	public slots:
 		void updateMenus();						// Added 2005-11-07 AF
@@ -125,7 +125,7 @@ namespace IAEX
 
 	private slots:
 		void newFile();
-		void openFile(const QString &filename=0);
+		void openFile(const QString filename=0);
 		void closeFile();
 		void closeEvent( QCloseEvent *event );			// Added 2006-01-19 AF
 		void aboutQTNotebook();
@@ -174,7 +174,6 @@ namespace IAEX
 		void moveCursorDown();
 		void groupCellsAction();
 		void inputCellsAction();
-		void graphCellsAction();
 		void textCellsAction();
 		void updateRecentFiles(QString);
 
@@ -270,7 +269,6 @@ private:
 
 		QAction *groupAction;
 		QAction *inputAction;
-		QAction *graphAction;
 		QAction *textAction;
 
 		QAction *aboutAction;
@@ -354,7 +352,7 @@ private:
 		QHash<QAction*, DocumentView*> windows_;
 
 		//Change to Document.
-		Application *app_;
+		CellApplication *app_;
 		Document *subject_;
 
 		//list<Document *> opendocs_;

@@ -74,7 +74,7 @@ namespace IAEX
 		Q_OBJECT
 
 	public:
-		static CommandCompletion *instance( const QString &filename );
+		static CommandCompletion *instance( const QString filename );
 		bool insertCommand( QTextCursor &cursor );
 		bool nextCommand( QTextCursor &cursor );
 		QString helpCommand();
@@ -84,7 +84,7 @@ namespace IAEX
 	private:
 		void initializeCommands();
 		void parseCommand(QDomNode node, CommandUnit *item) const;
-		CommandCompletion( const QString &filename );
+		CommandCompletion( const QString filename );
 
 		static CommandCompletion *instance_;
 		QDomDocument *doc_;

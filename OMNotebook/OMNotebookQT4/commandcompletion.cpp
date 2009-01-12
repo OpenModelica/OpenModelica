@@ -91,7 +91,7 @@ namespace IAEX
 	 *
 	 * \param filename The file that will be read.
 	 */
-	CommandCompletion::CommandCompletion( const QString &filename )
+	CommandCompletion::CommandCompletion( const QString filename )
 		: currentCommand_( -1 ),
 		currentField_( -1 ),
 		currentList_( 0 ),
@@ -133,7 +133,7 @@ namespace IAEX
 	 * \param filename The file that will be read.
 	 * \return The CommandCompetion object
 	 */
-	CommandCompletion *CommandCompletion::instance( const QString &filename )
+	CommandCompletion *CommandCompletion::instance( const QString filename )
 	{
 		if( !instance_ )
 			instance_ = new CommandCompletion( filename );

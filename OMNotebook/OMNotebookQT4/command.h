@@ -84,15 +84,15 @@ namespace IAEX
       virtual QString commandName(){ return QString("NoCommandNameSet");}
 
       void setDocument(Document *document){document_ = document;}
-      void setApplication(Application *app){application_ = app;}
+      void setApplication(CellApplication *app){application_ = app;}
 
    protected:
       Document *document(){ return document_;}
-      Application *application(){return application_;}
+      CellApplication *application(){return application_;}
 
    private:
       Document *document_;
-      Application *application_;
+      CellApplication *application_;
    };
 
 

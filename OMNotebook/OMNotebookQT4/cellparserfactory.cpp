@@ -75,18 +75,18 @@ namespace IAEX
    NBParser *CellParserFactory::createParser(QString filename, Factory *f, Document *document, int readmode)
    {
       // PORT >>filename = filename.stripWhiteSpace();
-	  filename = filename.trimmed();
+	  QString fileName = filename.trimmed();
 
 
-	  if( filename.endsWith(".onb", Qt::CaseInsensitive) ||
-		  filename.endsWith(".xml", Qt::CaseInsensitive) ||
-		  filename.endsWith(".onbz", Qt::CaseInsensitive))
+	  if( fileName.endsWith(".onb", Qt::CaseInsensitive) ||
+		  fileName.endsWith(".xml", Qt::CaseInsensitive) ||
+		  fileName.endsWith(".onbz", Qt::CaseInsensitive))
       {
-		 return new XMLParser(filename, f, document, readmode);//openXMLFile(filename);
+		 return new XMLParser(fileName, f, document, readmode);//openXMLFile(filename);
       }
-      else if(filename.endsWith(".nb", Qt::CaseInsensitive))
+      else if(fileName.endsWith(".nb", Qt::CaseInsensitive))
       {
-		 return new NotebookParser(filename, f, readmode); //openNotebookFile(filename);
+		 return new NotebookParser(fileName, f, readmode); //openNotebookFile(filename);
       }
       else
       {

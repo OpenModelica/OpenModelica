@@ -107,6 +107,7 @@ namespace IAEX
 		: QObject()
 	{
 		app_ = new QApplication(argc, argv);
+    mainWindow = SoQt::init(argc, argv, argv[0]);
 		QDir dir;
 
 		// 2006-05-03 AF, Notebook socket...

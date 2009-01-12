@@ -137,7 +137,7 @@ namespace IAEX
 	 *
 	 * \todo Remove the dependency of QFrame from document.(Ingemar Axelsson)
 	 */
-	CellDocument::CellDocument( Application *a, const QString filename,
+	CellDocument::CellDocument( CellApplication *a, const QString filename,
 		int readmode )
 		: changed_(false),
 		open_(false),
@@ -147,7 +147,8 @@ namespace IAEX
 		lastClickedCell_(0)
 	{
     filename_ = filename;
-		mainFrame_ = new QFrame();
+    //Initialize SoQT
+    mainFrame_ = new QFrame(a->getMainWindow());
 
 		mainFrame_->setSizePolicy(QSizePolicy(QSizePolicy::Expanding,
 			QSizePolicy::Expanding));
@@ -155,9 +156,6 @@ namespace IAEX
 		mainLayout_ = new QGridLayout(mainFrame_);
 		mainLayout_->setMargin(0);
 		mainLayout_->setSpacing(0);
-
-		//Initialize SoQT
-		SoQt::init(mainFrame_);
 
 		//Initialize workspace.
 		factory_ = new CellFactory(this);
@@ -221,12 +219,12 @@ namespace IAEX
 	 * 2005-10-02 AF, Added saved_ variable
 	 * 2005-12-01 AF, Added try-catch
 	 */
-	void CellDocument::open( const QString &filename, int readmode )
+	void CellDocument::open( const QString filename, int readmode )
 	{
 		filename_ = filename;
 
 		ParserFactory *parserFactory = new CellParserFactory();
-		NBParser *parser = parserFactory->createParser(filename, factory_, this, readmode);
+		NBParser *parser = parserFactory->createParser(filename_, factory_, this, readmode);
 
 		// 2005-12-01 AF, Added try-catch
 		try
@@ -1058,27 +1056,27 @@ namespace IAEX
 //	void CellDocument::anchorClicked(const QUrl *link)
 	{
 		// 2006-02-10 AF, check if path is empty
-    fprintf(stderr, "receive link: %s\n", link->toString().toStdString().c_str());
+    fprintf(stderr, "received link: %s\n", link->toString().toStdString().c_str());
     fflush(stderr); fflush(stdout);
 		if( !link->path().isEmpty() )
 		{
 			// 2005-12-05 AF, check if filename exists, otherwise use work dir
-			if( filename_.isEmpty() || filename_.isEmpty() )
+			if( filename_.isEmpty() )
 			{
 				// replace '\' with '/' in the link path
-				QString linkpath = link->path();
+        QString linkpath = link->toLocalFile();
 				linkpath.replace( "\\", "/" );
 
 				QDir dir;
-				executeCommand(new OpenFileCommand( dir.absolutePath() + "/" + linkpath ));
+        executeCommand(new OpenFileCommand( dir.absolutePath() + '/' + linkpath ));
 			}
 			else
 			{
 				// replace '\' with '/' in the link path
-				QString linkpath = link->path();
+				QString linkpath = link->toLocalFile();
 				linkpath.replace( "\\", "/" );
 
-				executeCommand(new OpenFileCommand( QFileInfo(filename_).absolutePath() + "/" + linkpath ));
+        executeCommand(new OpenFileCommand( QFileInfo(filename_).absolutePath() + '/' + linkpath ));
 			}
 		}
 

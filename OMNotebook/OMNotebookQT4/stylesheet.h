@@ -95,7 +95,7 @@ namespace IAEX
 		void parseChapterLevelTag(QDomElement element, CellStyle *item) const;
 
 	private:
-		Stylesheet(const QString &filename);
+		Stylesheet(const QString filename);
 
 		QDomDocument *doc_;
 		static Stylesheet *instance_;

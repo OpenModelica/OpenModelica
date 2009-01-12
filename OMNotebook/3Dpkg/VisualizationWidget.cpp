@@ -9,9 +9,9 @@ namespace IAEX {
 		this->setMinimumHeight(300);
 		this->setMinimumWidth(500);
 
-		QWidget *visframe = new QWidget(this);
+		visframe_ = new QWidget(this);
 
-		visframe->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
+		visframe_->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
 
 		simdata_ = new SimulationData();
 		simdata_->setFrame(0);
@@ -29,31 +29,31 @@ namespace IAEX {
 		slider_->setRange(1000*simdata_->get_start_time(), 1000*simdata_->get_end_time());
 		slider_->setValue(0);
     currentTime_ = 1000*simdata_->get_start_time();
-		QTimer *timer = new QTimer(this);
+		timer_ = new QTimer(this);
 		// 40 fps
-		timer->setInterval(25);
+		timer_->setInterval(25);
 
 		connect(slider_, SIGNAL(valueChanged(int)),
 			this, SLOT(sliderChanged(int)));
 		connect(playbutton, SIGNAL(clicked()),
-			timer, SLOT(start()));
+			timer_, SLOT(start()));
 		connect(stopbutton, SIGNAL(clicked()),
-			timer, SLOT(stop()));
-		connect(timer, SIGNAL(timeout()),
+			timer_, SLOT(stop()));
+		connect(timer_, SIGNAL(timeout()),
 			this, SLOT(nextFrame()));
 
-		QVBoxLayout *buttonlayout = new QVBoxLayout(this);
-		buttonlayout->addWidget(playbutton);
-		buttonlayout->addWidget(stopbutton);
-		buttonlayout->addWidget(rewbutton);
-		buttonlayout->addWidget(slider_);
-		buttonlayout->addWidget(label_);
-		buttonlayout->setAlignment(slider_, Qt::AlignHCenter);
-		buttonlayout->setAlignment(label_, Qt::AlignHCenter);
+		buttonlayout_ = new QVBoxLayout(this);
+		buttonlayout_->addWidget(playbutton);
+		buttonlayout_->addWidget(stopbutton);
+		buttonlayout_->addWidget(rewbutton);
+		buttonlayout_->addWidget(slider_);
+		buttonlayout_->addWidget(label_);
+		buttonlayout_->setAlignment(slider_, Qt::AlignHCenter);
+		buttonlayout_->setAlignment(label_, Qt::AlignHCenter);
 
-		buttonframe->setLayout(buttonlayout);
+		buttonframe->setLayout(buttonlayout_);
 
-		eviewer_ = new SoQtExaminerViewer(visframe, NULL, TRUE, SoQtFullViewer::BUILD_NONE);
+		eviewer_ = new SoQtExaminerViewer(visframe_, NULL, TRUE, SoQtFullViewer::BUILD_NONE);
 		eviewer_->setSize(SbVec2s(500,400));
 		eviewer_->setSceneGraph(simdata_->getSceneGraph());
 		eviewer_->setBackgroundColor(SbColor(0.85f, 0.85f, 0.85f));
@@ -62,7 +62,7 @@ namespace IAEX {
 		//cam->
 
 		QHBoxLayout *framelayout = new QHBoxLayout;
-		framelayout->addWidget(visframe);
+		framelayout->addWidget(visframe_);
 		framelayout->addWidget(buttonframe);
 		this->setLayout(framelayout);
 
@@ -75,6 +75,12 @@ namespace IAEX {
 
 	VisualizationWidget::~VisualizationWidget(void)
 	{
+    delete slider_;
+    delete eviewer_;
+    delete visframe_;
+    delete server;
+    delete buttonlayout_;
+    delete timer_;
 	}
 
 	void VisualizationWidget::sliderChanged(int val) {

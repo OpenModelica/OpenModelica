@@ -108,7 +108,7 @@ CompoundWidget::~CompoundWidget()
 	delete yLabel;
 	delete plotTitle;
 	delete layout;
-
+  delete visWidget;
 }
 
 void CompoundWidget::showPreferences()

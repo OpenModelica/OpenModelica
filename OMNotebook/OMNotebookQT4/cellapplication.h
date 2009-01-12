@@ -86,12 +86,15 @@ namespace IAEX
 		void removeTempFiles(QString filename);			// Added 2006-01-16 AF
 		vector<DocumentView *> documentViewList();		// Added 2006-01-27 AF
 		void removeDocumentView( DocumentView *view );	// Added 2006-01-27 AF
+    QApplication* getApplication() { return app_; }
+    QWidget* getMainWindow() { return mainWindow; }
 
 	private:
 		void convertDrModelica();						// Added 2006-03-21 AF
 
 	private:
 		QApplication *app_;
+    QWidget* mainWindow;
 		vector<Document *> documents_;
 		vector<DocumentView *> views_;
 		CommandCenter *cmdCenter_;
@@ -100,6 +103,6 @@ namespace IAEX
 
 		NotebookSocket *notebooksocket_;
 	};
-};
+}
 
 #endif

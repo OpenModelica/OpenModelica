@@ -93,7 +93,7 @@ namespace IAEX
 	 *
 	 * \param filename The file that will be read.
 	 */
-	Stylesheet::Stylesheet(const QString &filename)
+	Stylesheet::Stylesheet(const QString filename)
 	{
 		//read a stylesheet file.
 		doc_ = new QDomDocument("StyleDoc");

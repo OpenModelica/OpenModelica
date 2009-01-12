@@ -141,7 +141,7 @@ namespace IAEX
 	 * Also made som other updates /AF
 	 */
 	NotebookWindow::NotebookWindow(Document *subject,
-		const QString &filename, QWidget *parent)
+		const QString filename, QWidget *parent)
 		: DocumentView(parent),
 		subject_(subject),
 		filename_(filename),
@@ -305,7 +305,6 @@ namespace IAEX
 
 		delete groupAction;
 		delete inputAction;
-		delete graphAction;
 		delete textAction;
 
 		delete aboutAction;
@@ -428,7 +427,7 @@ namespace IAEX
 	/*!
 	 * \author Ingemar Axelsson
 	 */
-	Application *NotebookWindow::application()
+	CellApplication *NotebookWindow::application()
 	{
 		return subject_->application();
 	}
@@ -743,38 +742,22 @@ namespace IAEX
 		connect(pasteCellAction, SIGNAL(triggered()), this, SLOT(pasteCell()));
 		*/
 
-		// 2005-10-07 AF, Porting, replaced this
-		//QAction *addCellAction = new QAction("Add cell", "&Add Cell", CTRL+Key_A, this, "addcell");
-		//QObject::connect(addCellAction, SIGNAL(activated()), this, SLOT(createNewCell()));
 		addCellAction = new QAction( tr("&Add Cell (previus cell style)"), this);
 		addCellAction->setShortcut( tr("Alt+Enter") );
 		addCellAction->setStatusTip( tr("Add a new textcell with the previuos cells style") );
 		connect(addCellAction, SIGNAL(triggered()), this, SLOT(createNewCell()));
 
-		// 2005-10-07 AF, Porting, replaced this
-		//QAction *inputAction = new QAction("Inputcell", "&Input cell", CTRL+SHIFT+Key_I, this, "inputcells");
-		//QObject::connect(inputAction, SIGNAL(activated()), this, SLOT(inputCellsAction()));
 		inputAction = new QAction( tr("Add &Inputcell"), this);
 		inputAction->setShortcut( tr("Ctrl+Shift+I") );
 		inputAction->setStatusTip( tr("Add an input cell") );
 		connect(inputAction, SIGNAL(triggered()), this, SLOT(inputCellsAction()));
-
 		/// fjass
-
-		graphAction = new QAction( tr("Add &Graphcell"), this);
-		graphAction->setShortcut( tr("Ctrl+Shift+R") );
-		graphAction->setStatusTip( tr("Add a graph cell") );
-		connect(graphAction, SIGNAL(triggered()), this, SLOT(graphCellsAction()));
-
 		textAction = new QAction( tr("Add &Textcell"), this);
 		textAction->setShortcut( tr("Ctrl+Shift+T") );
 		textAction->setStatusTip( tr("Add a text cell") );
 		connect(textAction, SIGNAL(triggered()), this, SLOT(textCellsAction()));
 		// \fjass
 
-		// 2005-10-07 AF, Porting, replaced this
-		//QAction *groupAction = new QAction("Group Cells", "&Group cells", CTRL+SHIFT+Key_G, this, "groupcells");
-		//QObject::connect(groupAction, SIGNAL(activated()), this, SLOT(groupCellsAction()));
 		groupAction = new QAction( tr("&Groupcell"), this);
 		groupAction->setShortcut( tr("Ctrl+Shift+G") );
 		groupAction->setStatusTip( tr("Groupcell") );
@@ -827,7 +810,6 @@ namespace IAEX
 		//cellMenu->addSeparator();
 		cellMenu->addAction( addCellAction );
 		cellMenu->addAction( inputAction );
-		cellMenu->addAction( graphAction );
 		cellMenu->addAction( textAction );
 
 		cellMenu->addAction( groupAction );
@@ -2501,7 +2483,7 @@ namespace IAEX
 	 *
 	 * \brief Open a file. Shows a file dialog.
 	 */
-	void NotebookWindow::openFile(const QString &filename)
+	void NotebookWindow::openFile(const QString filename)
 	{
 		try
 		{
@@ -2762,8 +2744,7 @@ namespace IAEX
 			}
 
 			statusBar()->showMessage("Saving file");
-			application()->commandCenter()->executeCommand(
-				new SaveDocumentCommand(subject_, filename));
+			application()->commandCenter()->executeCommand(new SaveDocumentCommand(subject_, filename));
 
 			filename_ = filename;
 			statusBar()->showMessage("Ready");
@@ -3737,14 +3718,6 @@ namespace IAEX
 	 * are updated when new cell is added.
 	 */
 	void NotebookWindow::inputCellsAction()
-	{
-		subject_->executeCommand(new CreateNewCellCommand("Input"));
-		subject_->updateScrollArea();
-		updateChapterCounters();
-	}
-
-
-	void NotebookWindow::graphCellsAction()
 	{
 		subject_->executeCommand(new CreateNewCellCommand("Graph"));
 		subject_->updateScrollArea();

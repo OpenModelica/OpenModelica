@@ -64,6 +64,9 @@ namespace IAEX {
 		QSlider *slider_;
 		QLabel *label_;
 		SimulationData *simdata_;
+    QWidget *visframe_;
+    QVBoxLayout *buttonlayout_;
+    QTimer* timer_;
 		int currentTime_;
 		QTextBrowser *input_;
 

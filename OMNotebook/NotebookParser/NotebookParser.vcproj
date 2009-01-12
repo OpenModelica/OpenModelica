@@ -43,7 +43,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="&quot;$(QNBHOME)\OMNotebookQT4&quot;;&quot;$(QTHOME)\include&quot;;&quot;$(QTHOME)\include\QtCore&quot;;&quot;$(OMDEV)\include\&quot;"
-				PreprocessorDefinitions="WIN32;_DEBUG;_LIB"
+				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;UNICODE;QT_LARGEFILE_SUPPORT"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"

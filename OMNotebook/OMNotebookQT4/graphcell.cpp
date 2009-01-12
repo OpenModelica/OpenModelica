@@ -2094,7 +2094,8 @@ namespace IAEX
     else //!hasDelegate
     {
       cout << "Not delegate on GraphCell" << endl;
-      setState(ERROR);
+      // adrpo: do not set error as it might be a group cell
+      //setState(ERROR);
     }
     input_->blockSignals(false);
     output_->blockSignals(false);
@@ -2348,13 +2349,13 @@ void GraphCell::delegateFinished()
   ///////////////
   */
 
-  if( res.isEmpty() && error.isEmpty() )
+  if( res.isEmpty() && (error.isEmpty() || error.size() == 0) )
   {
     res = "[done]";
     setState(FINISHED);
   }
 
-  if( !error.isEmpty() )
+  if( !error.isEmpty() && error.size() != 0)
   {
     setState(ERROR);
     res += QString("\n") + error;

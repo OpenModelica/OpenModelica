@@ -123,7 +123,7 @@ namespace IAEX
       }
       catch( exception e )
       {
-        QMessageBox::warning( 0, "Warrning", e.what(), "OK" );
+        QMessageBox::warning( 0, "Warning", e.what(), "OK" );
       }
 
       try

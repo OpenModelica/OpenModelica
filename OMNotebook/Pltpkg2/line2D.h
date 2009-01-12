@@ -52,12 +52,14 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #include <QGraphicsPathItem>
 #include <QPen>
 
+#define PLOT_LINE_WIDTH 0
+
 class Line2D: public QGraphicsLineItem
 {
   //	Q_OBJECT
 public:
   Line2D(qreal x1, qreal y1, qreal x2, qreal y2,
-	 QPen pen = QPen(Qt::blue),
+	 QPen newPen = QPen(Qt::red),
 	 QGraphicsItem*	parent=0, QGraphicsScene* scene=0);
   ~Line2D();
 

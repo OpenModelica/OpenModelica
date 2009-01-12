@@ -63,7 +63,6 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #include "application.h"
 #include "cellapplication.h"
 
-
 using namespace std;
 using namespace IAEX;
 

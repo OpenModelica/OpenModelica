@@ -22,7 +22,7 @@ class QTcpSocket;
 namespace IAEX
 {
 	// forward declaration
-	class Application;
+	class CellApplication;
 
 
 	class NotebookSocket : public QObject
@@ -30,7 +30,7 @@ namespace IAEX
 		Q_OBJECT
 
 	public:
-		NotebookSocket( Application* application );
+		NotebookSocket( CellApplication* application );
 		~NotebookSocket();
 
 		// core functions
@@ -49,7 +49,7 @@ namespace IAEX
 		bool startServer();
 
 	private:
-		Application* application_;
+		CellApplication* application_;
 
 		QTcpSocket* socket_;
 		QTcpSocket* incommingSocket_;

@@ -121,7 +121,7 @@ GraphWidget::GraphWidget(QWidget* parent): QGraphicsView(parent)
   antiAliasing = false;
   doSetArea = false;
   doFitInView = false;
-  hold = true;
+  hold = false;
 
   variableCount = 0;
 
@@ -671,7 +671,6 @@ void GraphWidget::getData()
     }
     else if (command == QString("simulationDataStream"))
     {
-      hold = true;
       compoundwidget->hideVis();
       emit newMessage("Receiving streaming data...");
       disconnect(activeSocket, SIGNAL(readyRead()), 0, 0);
@@ -979,7 +978,7 @@ void GraphWidget::createGrid(bool numbersOnly)
   else
   {
     xMajorDist = gridDist(xMin, xMax);
-    xMinorDist = xMajorDist/5;
+    xMinorDist = xMajorDist/2;
   }
 
   if(fixedYSize)
@@ -989,7 +988,7 @@ void GraphWidget::createGrid(bool numbersOnly)
   else
   {
     yMajorDist = gridDist(yMin, yMax);
-    yMinorDist = yMajorDist/5;
+    yMinorDist = yMajorDist/2;
   }
 
   if(!numbersOnly)
@@ -1381,9 +1380,9 @@ QColor GraphWidget::generateColor(int index)
   switch(index)
   {
   case 0:
-    return Qt::blue;
-  case 1:
     return Qt::red;
+  case 1:
+    return Qt::blue;
   case 2:
     return Qt::green;
   case 3:
@@ -1407,6 +1406,7 @@ void GraphWidget::drawLine(QDataStream& ds)
   ds >> x0 >> y0 >> x1 >> y1 >> color >> fillColor;
 
   QPen pen(color);
+  pen.setWidth(PLOT_LINE_WIDTH);
   QBrush brush(fillColor);
 
   QGraphicsLineItem *e = new QGraphicsLineItem(x0, y0, x1, y1);
@@ -1452,6 +1452,7 @@ void GraphWidget::drawRect(QDataStream& ds)
   qreal x0, y0, x1, y1;
   ds >> x0 >> y0 >> x1 >> y1 >> color >> fillColor;
   QPen pen(color);
+  pen.setWidth(PLOT_LINE_WIDTH);
   QBrush brush(fillColor);
 
   // graphicsItems->addToGroup(graphicsScene->addRect(QRectF(QPointF(x0,y0), QSizeF(x1-x0, y1-y0)), pen, brush));
@@ -1473,6 +1474,7 @@ void GraphWidget::drawEllipse(QDataStream& ds)
   ds >> x0 >> y0 >> x1 >> y1 >> color >> fillColor;
 
   QPen pen(color);
+  pen.setWidth(PLOT_LINE_WIDTH);
   QBrush brush(fillColor);
   QGraphicsEllipseItem *e = new QGraphicsEllipseItem(QRectF(QPointF(x0, y0), QSizeF(x1-x0, y1-y0)));
   e->setPen(pen);
@@ -1764,6 +1766,7 @@ void GraphWidget::setLogarithmic(bool b)
       }
 
       QPen pen(curves[i]->color_);
+      pen.setWidth(PLOT_LINE_WIDTH);
 
       if(!C || drawNextPoint)
       {
@@ -1804,6 +1807,7 @@ void GraphWidget::setLogarithmic(bool b)
     if(!C)
     {
       QPen pen(curves[i]->color_);
+      pen.setWidth(PLOT_LINE_WIDTH);
       Point* p = new Point(x1, y1, .02, .02, pen.color(), this,0, graphicsScene,
         curves[i]->x->variableName() + ": " + QVariant(x1_).toString() +"\n" +
         curves[i]->y->variableName() + ": " + QVariant(y1_).toString());
@@ -2033,12 +2037,13 @@ void GraphWidget::plotPtolemyDataStream()
     double y0_, y1_;
     double x0_, x1_;
 
-    QPen color;
+    QPen color;    
 
     for(quint32 k=0; k < quint32(yVars.size()); ++k)
     {
       currentYVar=yVars[k];
       color = temporaryCurves[currentYVar]->color_;
+      color.setWidth(PLOT_LINE_WIDTH);
 
       int maxIndex = min(variables[currentXVar]->size()-1, variables[currentYVar]->size()-1);
 
@@ -2161,7 +2166,6 @@ void GraphWidget::plotPtolemyDataStream()
         Point* p = new Point(x1, y1, .02, .02, color.color(), this,0, graphicsScene);
         p->setVisible(temporaryCurves[currentYVar]->drawPoints);
         temporaryCurves[currentYVar]->dataPoints.append(p);
-
 
       }
     }

@@ -70,8 +70,7 @@ namespace IAEX
     * \todo implement undo/redo functionality. This needs some changes
     * in the command classes.(Ingemar Axelsson)
     */
-   CellCommandCenter::CellCommandCenter(Application *a)
-      : app_(a)
+   CellCommandCenter::CellCommandCenter(CellApplication *a) : app_(a)
    {
    }
 
@@ -108,12 +107,12 @@ namespace IAEX
 		}
 	}
 
-   Application *CellCommandCenter::application()
+   CellApplication *CellCommandCenter::application()
    {
       return app_;
    }
 
-   void CellCommandCenter::setApplication(Application *app)
+   void CellCommandCenter::setApplication(CellApplication *app)
    {
       app_ = app;
    }

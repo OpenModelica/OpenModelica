@@ -79,7 +79,7 @@ using namespace std;
 namespace IAEX
 {
 	//Forward declaration
-	class Application;
+	class CellApplication;
 	class Cell;
 	class Command;
 	class DocumentView;
@@ -100,7 +100,7 @@ namespace IAEX
 
 	public:
 		//Application
-		virtual Application *application() = 0;
+		virtual CellApplication *application() = 0;
 
 		//State
 		virtual bool hasChanged() const = 0;
@@ -109,7 +109,7 @@ namespace IAEX
 		virtual bool isEmpty() const = 0;					// Added 2006-08-24 AF
 
 		//File operations
-		virtual void open( const QString &filename, int readmode ) = 0;
+		virtual void open( const QString filename, int readmode ) = 0;
 		virtual void close() = 0;
 		virtual QString getFilename() = 0;
 		virtual void setFilename( QString filename ) = 0;	//AF

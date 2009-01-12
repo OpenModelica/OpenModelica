@@ -53,7 +53,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 
 namespace IAEX
 {
-   class Application;
+   class CellApplication;
 
 
    /*! \interface CommandCenter
@@ -65,8 +65,8 @@ namespace IAEX
    {
    public:
       virtual void executeCommand(Command *) = 0;
-      virtual Application *application() = 0;
-      virtual void setApplication(Application *) = 0;
+      virtual CellApplication *application() = 0;
+      virtual void setApplication(CellApplication *) = 0;
    };
 };
 

@@ -300,13 +300,17 @@ namespace IAEX
 		graphcell.setAttribute( XML_GRAPHCELL_SHOWGRAPH, node->showGraph?XML_TRUE:XML_FALSE);
 
 
-
-for(int i = 0; i < node->compoundwidget->gwMain->variableData.size(); ++i)
+int sizeVars = node->compoundwidget->gwMain->variableData.size();
+for(int i = 0; i < sizeVars; ++i)
 {
 
 		QDomElement data = domdoc_.createElement(XML_GRAPHCELL_DATA);
 
-		data.setAttribute(XML_GRAPHCELL_LABEL, node->compoundwidget->gwMain->variableData[i]->variableName());
+    CompoundWidget *cw = node->compoundwidget;
+    GraphWidget *gw  = cw->gwMain;
+    VariableData *vd = gw->variableData[i];    
+    QString varName = vd->variableName();
+		data.setAttribute(XML_GRAPHCELL_LABEL, varName);
 		data.setAttribute(XML_GRAPHCELL_ID, "0");
 
 

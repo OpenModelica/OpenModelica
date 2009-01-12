@@ -20,7 +20,7 @@
 #include <QtNetwork/QTcpSocket>
 
 // IAEX Headers
-#include "application.h"
+#include "cellapplication.h"
 #include "notebooksocket.h"
 
 
@@ -35,7 +35,7 @@ namespace IAEX
      * \brief Handles communication with other instances (processes)
 	 * of the application using tcp sockets.
 	 */
-	NotebookSocket::NotebookSocket( Application* application )
+	NotebookSocket::NotebookSocket( CellApplication* application )
 		: application_( application ),
 		server_( 0 ),
 		foundServer_( false )

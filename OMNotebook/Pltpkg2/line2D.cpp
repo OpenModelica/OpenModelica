@@ -58,12 +58,13 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 
 using namespace std;
 
-Line2D::Line2D(qreal x1, qreal y1, qreal x2, qreal y2, QPen pen,
+Line2D::Line2D(qreal x1, qreal y1, qreal x2, qreal y2, QPen newPen,
                QGraphicsItem* parent, QGraphicsScene* scene):
 QGraphicsLineItem(x1, y1, x2, y2, parent, scene)
 {
-
-	setPen(pen);
+  //setFlags(QGraphicsItem::ItemIgnoresTransformations);
+	setPen(newPen);
+  pen().setWidth(PLOT_LINE_WIDTH);
 }
 
 Line2D::~Line2D()

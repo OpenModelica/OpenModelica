@@ -117,7 +117,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Copying OMNotebook and xml files to build\bin"
-				CommandLine="copy $(TargetPath) $(InputDir)\..\..\build\bin\&#x0D;&#x0A;copy $(ProjectDir)\*.xml $(InputDir)\..\..\build\bin\"
+				CommandLine="copy $(TargetPath) $(InputDir)\..\..\build\bin\&#x0D;&#x0A;copy $(ProjectDir)\*.xml $(InputDir)\..\..\build\bin\&#x0D;&#x0A;"
 			/>
 		</Configuration>
 		<Configuration
@@ -153,13 +153,13 @@
 				AdditionalOptions="-Zm200 -w34100 -w34189"
 				Optimization="1"
 				AdditionalIncludeDirectories="&quot;$(QNBHOME)\NotebookParser&quot;;&quot;$(OMDEV)\include\mico-win32-msvc\&quot;;&quot;$(OMDEV)\include\&quot;;.;&quot;$(QTHOME)\include&quot;;&quot;$(QTHOME)\include\QtGui&quot;;&quot;$(QTHOME)\include\QtCore&quot;;&quot;$(QTHOME)\mkspecs\win32-msvc2008&quot;;&quot;$(COINDIR)\include\&quot;"
-				PreprocessorDefinitions="WIN32;QT_DEBUG;SOQT_DLL;COIN_DLL"
+				PreprocessorDefinitions="WIN32;QT_DEBUG;SOQT_DLL;COIN_DLL;UNICODE;QT_LARGEFILE_SUPPORT"
 				GeneratePreprocessedFile="0"
 				MinimalRebuild="true"
 				ExceptionHandling="1"
 				RuntimeLibrary="3"
 				BufferSecurityCheck="false"
-				TreatWChar_tAsBuiltInType="false"
+				TreatWChar_tAsBuiltInType="true"
 				RuntimeTypeInfo="true"
 				AssemblerListingLocation="Debug\"
 				ObjectFile="Debug\"

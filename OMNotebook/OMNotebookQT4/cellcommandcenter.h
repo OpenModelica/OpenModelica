@@ -50,27 +50,27 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 
 #include "commandcenter.h"
 #include "command.h"
-#include "application.h"
+#include "cellapplication.h"
 
 namespace IAEX
 {
    class CellCommandCenter : public CommandCenter
    {
    public:
-      CellCommandCenter(Application *a);
+      CellCommandCenter(CellApplication *a);
       virtual ~CellCommandCenter();
 
       virtual void executeCommand(Command *cmd);
-      virtual Application *application();
+      virtual CellApplication *application();
 
-      virtual void setApplication(Application *app);
+      virtual void setApplication(CellApplication *app);
 
    private:
       void storeCommands();
 
-      Application *app_;
+      CellApplication *app_;
       vector<Command *> storage_;
    };
-};
+}
 
 #endif

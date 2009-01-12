@@ -59,7 +59,6 @@ Curve::Curve(VariableData* x_, VariableData* y_, QColor& color, LegendLabel* ll)
 x(x_), y(y_), label(ll)
 {
 	line = new QGraphicsItemGroup;
-
   setColor(color);
 }
 
@@ -92,11 +91,12 @@ void Curve::showLine(bool b)
 void Curve::setColor(QColor c)
 {
 	color_ = c;
-	QPen p(c, 3);
+	QPen p(c);
+  p.setWidth(PLOT_LINE_WIDTH);
 	QList<QGraphicsItem*> l = line->children();
 
 	for(int i = 0; i < l.size(); ++i)
-		static_cast<Line2D*>(l[i])->setPen(c);
+		static_cast<Line2D*>(l[i])->setPen(p);
 
 	for(int i = 0; i < dataPoints.size(); ++i)
 	{

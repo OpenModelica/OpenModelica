@@ -68,7 +68,7 @@ class QScrollArea;
 class QUrl;
 
 //IAEX Headers
-#include "application.h"
+#include "cellapplication.h"
 #include "document.h"
 #include "xmlparser.h"
 
@@ -83,14 +83,14 @@ namespace IAEX
 	public:
 		typedef vector<DocumentView*> observers_t;
 
-		CellDocument(Application *a, const QString filenamem, int readmode = READMODE_NORMAL);
+		CellDocument(CellApplication *a, const QString filename, int readmode = READMODE_NORMAL);
 		virtual ~CellDocument();
 
-		void setApplication(Application *app){app_ = app;}
-		Application *application(){ return app_;}
+		void setApplication(CellApplication *app){app_ = app;}
+		CellApplication *application(){ return app_;}
 
 		//Document implementations
-		virtual void open( const QString &filename, int readmode = READMODE_NORMAL );
+		virtual void open( const QString filename, int readmode = READMODE_NORMAL );
 		virtual void close();
 		virtual QString getFilename();
 		virtual void setFilename( QString filename );	//AF
@@ -207,7 +207,7 @@ namespace IAEX
 		bool open_;
 		bool saved_;
 
-		Application *app_;
+		CellApplication *app_;
 		QString filename_;
 
 		Cell *workspace_;				//This should alwas be a cellgroup.

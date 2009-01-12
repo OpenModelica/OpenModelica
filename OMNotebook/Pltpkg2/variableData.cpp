@@ -60,7 +60,7 @@ using namespace std;
 
 VariableData::VariableData(QString name_, QString id, QString data)
 {
-	name = name_;
+	name = new QString(name_);
 
 	QByteArray ba = QByteArray::fromBase64( data.toLatin1() );
 	QBuffer b(&ba);
@@ -75,5 +75,5 @@ VariableData::VariableData(QString name_, QString id, QString data)
 
 VariableData::~VariableData()
 {
-
+  delete name;
 }
