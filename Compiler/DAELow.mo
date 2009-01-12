@@ -6756,7 +6756,7 @@ algorithm
       list<CrefIndex> vs;
     case (cr,{})
       equation
-        Debug.fprint("failtrace", "-DAELow.getVar3 failed on:" +& Exp.printComponentRefStr(cr) +& "\n");
+        // Debug.fprint("failtrace", "-DAELow.getVar3 failed on:" +& Exp.printComponentRefStr(cr) +& "\n");
       then
         fail();
     case (cr,(CREFINDEX(cref = cr2,index = v) :: _))

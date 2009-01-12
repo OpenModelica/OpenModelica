@@ -4138,27 +4138,42 @@ algorithm
         // Convert back to DAE uniontypes from Exp uniontypes, part of a work-around
         ld2 = Convert.fromExpElemsToDAEElems(ld,{});
         b2 = Convert.fromExpElemToDAEElem(b);
-
         (cfn,tnr_1) = generateVars(ld2, isVarQ, tnr, funContext);
-
         (cfn1,tnr2) = generateAlgorithms(Util.listCreate(b2), tnr_1, context);
-
         (cfn1_2,var,tnr3) = generateExpression(res, tnr2, context);
-
         cfn1_2 = cMergeFns({cfn,cfn1,cfn1_2});
-
         cfn1_2 = cMoveDeclsAndInitsToStatements(cfn1_2);
         //-----
         (cfn1_2,tnr4,var) = addValueblockRetVar(ty,cfn1_2,tnr3,var,context);
         //-----
-
         cfn1_2 = cAddBlockAroundStatements(cfn1_2);
       then (cfn1_2,var,tnr4);
 
-    case (Exp.ASUB(exp = _),_,_)
+    /* handle the easy case */
+    case (Exp.ASUB(exp = e as Exp.RANGE(ty = t), sub=i),tnr,context)
+      local 
+        String mem_decl, mem_var, get_mem_stmt, rest_mem_stmt, tShort;
+        Integer tnr_mem;
+        CFunction mem_fn;
       equation
-        Debug.fprint("failtrace",
-          "# Codegen.generate_expression: asub not implemented\n");
+        (mem_decl,mem_var,tnr_mem) = generateTempDecl("state", tnr);
+        get_mem_stmt = Util.stringAppendList({mem_var," = get_memory_state();"});
+        rest_mem_stmt = Util.stringAppendList({"restore_memory_state(",mem_var,");"});
+        (cfn1,var1,tnr1) = generateExpression(e, tnr_mem, context);
+        type_string = expTypeStr(t, false);
+        tShort = expShortTypeStr(t);
+        (tdecl,tvar2,tnr2) = generateTempDecl(type_string, tnr1);
+        istr = intString(i);
+        stmt = Util.stringAppendList({tvar2, " = ", tShort, "_get(&", var1, ", ", istr, ");"});
+        cfn = cAddVariables(cfn1, {mem_decl,tdecl});
+        cfn = cPrependStatements(cfn, {get_mem_stmt});
+        cfn = cAddStatements(cfn, {stmt, rest_mem_stmt});
+      then
+        (cfn,tvar2,tnr2);
+
+    case (Exp.ASUB(exp = _),tnr,context)
+      equation
+        Debug.fprint("failtrace", "# Codegen.generate_expression: asub not implemented: " +& Exp.printExp2Str(inExp) +& "\n");
       then
         fail();
 

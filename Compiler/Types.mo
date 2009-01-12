@@ -1313,6 +1313,8 @@ algorithm
     local Type ty;
     case ((T_ARRAY(arrayDim = DIM(integerOption = _),arrayType = ty),_)) then ty;
     case ((T_COMPLEX(_,_,SOME(ty)),_)) then unliftArray(ty);
+    /* adrpo: handle also functions returning arrays! */
+    case ((T_FUNCTION(_,ty),_)) then unliftArray(ty);
   end matchcontinue;
 end unliftArray;
 
