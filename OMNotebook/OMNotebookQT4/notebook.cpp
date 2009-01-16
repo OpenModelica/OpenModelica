@@ -1642,6 +1642,7 @@ namespace IAEX
 	/*!
 	 * \author Ingemar Axelsson
 	 */
+  /*
 	void NotebookWindow::createSavingTimer()
 	{
 		//start a saving timer.
@@ -1651,6 +1652,7 @@ namespace IAEX
 		connect(savingTimer_, SIGNAL(timeout()),
 			this, SLOT(save()));
 	}
+  */
 
 
 

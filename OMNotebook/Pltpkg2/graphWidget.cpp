@@ -381,6 +381,8 @@ GraphWidget::~GraphWidget()
 
   for(map<QString, VariableData*>::iterator i = variables.begin(); i != variables.end(); ++i)
     delete i->second;
+  variables.clear();
+  // variableData.clear();
 
   delete contextMenu;
 
@@ -1223,7 +1225,7 @@ void GraphWidget::paintEvent(QPaintEvent *pe)
     {
       originalZoom();
 
-      // setArea(newRect); fjass
+      setArea(newRect); // fjass
       // setArea(QRectF(10,-5,5,5));
       doSetArea = false;
     }
@@ -1314,7 +1316,7 @@ void GraphWidget::showGrid(bool b)
       graphicsScene->grid = 0;
     }
 
-    createGrid(true);
+    // createGrid(true);
     graphicsScene->gridVisible = false;
   }
   if(b)
@@ -1627,6 +1629,8 @@ void GraphWidget::ptolemyDataStreamClosed()
     graphicsScene->addItem(i->second->line);
   }
   cerr << "variables size: " << variables.size() << endl;
+  // clear the variable data!
+  variableData.clear();
   for(map<QString, VariableData*>::iterator i = variables.begin(); i != variables.end(); ++i)
     variableData.append(i->second);
 

@@ -66,8 +66,6 @@ CompoundWidget::CompoundWidget(QWidget* parent):  QWidget(parent)
 	gwMain->gvBottom = gvBottom;
 	gwMain->gvLeft = gvLeft;
 
-
-
 	gvBottom->setScene(gwMain->graphicsScene->xRulerScene);
 	gvLeft->setScene(gwMain->graphicsScene->yRulerScene);
 	gvBottom->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
@@ -134,6 +132,7 @@ void CompoundWidget::graphicsResizeY(quint32 w)
 void CompoundWidget::showVis() {
 	visWidget->show();
   gwMain->showGrid(false);
+  gwMain->hide();  
   gvLeft->hide();
   gvBottom->hide();
   plotTitle->hide();
@@ -147,6 +146,7 @@ void CompoundWidget::hideVis() {
 	visWidget->hide();
 	plotWidget->show();
   gwMain->showGrid(true);
+  gwMain->show();
   gvLeft->show();
   gvBottom->show();
   plotTitle->show();

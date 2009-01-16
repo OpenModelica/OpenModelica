@@ -619,7 +619,6 @@ namespace IAEX
           gCell->compoundwidget->gwMain->variables[label] =v;
 
           gCell->compoundwidget->gwMain->variableData.push_back(v);
-
         }
         else if( e.tagName() == XML_GRAPHCELL_GRAPH )
         {
@@ -829,7 +828,6 @@ namespace IAEX
     b.close();
 
     gCell->compoundwidget->gwMain->setLogarithmic(false);
-
     gCell->compoundwidget->gwMain->doFitInView = false;
     gCell->compoundwidget->gwMain->doSetArea = true;
     gCell->compoundwidget->gwMain->newRect = r;

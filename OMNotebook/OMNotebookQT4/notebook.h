@@ -191,7 +191,7 @@ namespace IAEX
 
 		bool cellEditable();			//Added 2005-11-11 AF
 		void evalCells();				//Added 2006-02-14 AF
-		void createSavingTimer();
+		//void createSavingTimer();
 
 	private:
 		QToolBar* toolBar;
@@ -358,7 +358,7 @@ private:
 		//list<Document *> opendocs_;
 		QString filename_;
 
-		QTimer *savingTimer_;
+		// QTimer *savingTimer_;
 		map<QString, QAction*> styles_;
 
 		SearchForm* findForm_;		// added 2006-08-24 AF

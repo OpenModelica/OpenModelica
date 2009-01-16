@@ -482,7 +482,7 @@ namespace IAEX
         //				if(prevLevel >= 0 && 2*(i.level()) != prevLevel )
         if(prevLevel > 2*i.level())
         {
-          int j = t.position();
+          // int j = t.position();
           /*
           t.setPosition(t.block().position());
           QMessageBox::information(0, "uu3", t.block().text());
@@ -1211,7 +1211,7 @@ namespace IAEX
     //		input_->document()->setHtml( input_->toHtml() ); //uu
     //		input_->document()->setPlainText(tmp);
 
-    bool b = input_->document()->isEmpty();
+    // bool b = input_->document()->isEmpty();
     /*
     input_->document()->setPlainText(text);
 
@@ -1638,7 +1638,7 @@ namespace IAEX
   bool GraphCell::isPlot(QString text)
   {
     //		QRegExp exp( "plot\\((.*)|plotParametric\\((.*)|simulate" );
-    QRegExp exp( "plot2\\((.*)|plotParametric2\\((.*)" );
+    QRegExp exp( "plot2[ ]*\\((.*)|plotParametric2[ ]*\\((.*)" );
     if( text.isNull() )
     {
       if( 0 <= input_->toPlainText().indexOf( exp, 0 ) )
@@ -1673,7 +1673,7 @@ namespace IAEX
 
   bool GraphCell::isPlot2(QString text)
   {
-    QRegExp exp("plot\\(.*\\)|plotParametric\\(.*\\)|plotAll" );
+    QRegExp exp("plot[ ]*\\(.*\\)|plotParametric[ ]*\\(.*\\)|plotAll[ ]*\\(.*\\)" );
 
     if( text.isNull() )
     {
@@ -1699,7 +1699,7 @@ namespace IAEX
 
   bool GraphCell::isVisualize(QString text)
   {
-    QRegExp exp( "visualize\\((.*)" );
+    QRegExp exp( "visualize[ ]*\\((.*)" );
 
 
     if( text.isNull() )
@@ -1957,11 +1957,14 @@ namespace IAEX
       else
       {
         try
-        {
+        {          
           EvalThread* et = new EvalThread(delegate(), expr);
           connect(et, SIGNAL(finished()), this, SLOT(delegateFinished()));
           et->start();
-          //				delegate()->evalExpression( expr );
+          if (!visualize && !newPlot) et->wait();
+          /*
+          delegate()->evalExpression(expr);
+          */
         }
         catch( exception &e )
         {
@@ -2093,7 +2096,7 @@ namespace IAEX
     }
     else //!hasDelegate
     {
-      cout << "Not delegate on GraphCell" << endl;
+      // cout << "Not delegate on GraphCell" << endl;
       // adrpo: do not set error as it might be a group cell
       //setState(ERROR);
     }
@@ -2367,7 +2370,7 @@ void GraphCell::delegateFinished()
 
   QRegExp e("([\\d]+:[\\d]+-[\\d]+:[\\d]+)|([\\d]+:[\\d]+)");
 
-  bool b;
+  // bool b;
   int p=0;
 
 
@@ -2532,8 +2535,8 @@ void GraphCell::exceptionInEval(exception &e)
         }
         catch( exception &e )
         {
-          QMessageBox::critical( 0, tr("Communication Error"),
-            tr("<B>Unable to communication correctlly with OMC.</B>") );
+          e.what();
+          QMessageBox::critical( 0, tr("Communication Error"), tr("<B>Unable to communication correctlly with OMC.</B>") );
         }
       }
     }

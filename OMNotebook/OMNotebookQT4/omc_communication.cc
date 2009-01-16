@@ -131,7 +131,7 @@ POA_OmcCommunication::_narrow_helper (const char * repoid)
 }
 
 POA_OmcCommunication *
-POA_OmcCommunication::_narrow (PortableServer::Servant serv)
+POA_OmcCommunication::_narrow (PortableServer::Servant serv) 
 {
   void * p;
   if ((p = serv->_narrow_helper ("IDL:OmcCommunication:1.0")) != NULL) {
@@ -168,7 +168,7 @@ char* OmcCommunication_stub::sendExpression( const char* _par_expr )
 
   __req.invoke();
 
-  mico_sii_throw( &__req,
+  mico_sii_throw( &__req, 
     0);
   return _res;
 }
@@ -222,7 +222,7 @@ char* OmcCommunication_stub::sendClass( const char* _par_model )
 
   __req.invoke();
 
-  mico_sii_throw( &__req,
+  mico_sii_throw( &__req, 
     0);
   return _res;
 }
@@ -390,7 +390,7 @@ POA_OmcCommunication::invoke (CORBA::StaticServerRequest_ptr __req)
       return;
   }
 
-  CORBA::Exception * ex =
+  CORBA::Exception * ex = 
     new CORBA::BAD_OPERATION (0, CORBA::COMPLETED_NO);
   __req->set_exception (ex);
   __req->write_results();

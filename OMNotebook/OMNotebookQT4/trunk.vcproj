@@ -88,7 +88,7 @@
 				IgnoreAllDefaultLibraries="false"
 				IgnoreDefaultLibraryNames=""
 				DelayLoadDLLs=""
-				GenerateDebugInformation="false"
+				GenerateDebugInformation="true"
 				ProgramDatabaseFile=""
 				SubSystem="2"
 				StackReserveSize="6000000"

@@ -152,7 +152,7 @@
 				ProgramDataBaseFileName=".\"
 				WarningLevel="3"
 				SuppressStartupBanner="true"
-				DebugInformationFormat="0"
+				DebugInformationFormat="3"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -172,7 +172,7 @@
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="&quot;$(QTHOME)\lib&quot;;&quot;$(COINDIR)\lib&quot;;&quot;$(SolutionDir)\Release\&quot;"
-				GenerateDebugInformation="false"
+				GenerateDebugInformation="true"
 				ProgramDatabaseFile=""
 				SubSystem="2"
 				RandomizedBaseAddress="1"

@@ -42,7 +42,7 @@ namespace IAEX {
 		connect(timer_, SIGNAL(timeout()),
 			this, SLOT(nextFrame()));
 
-		buttonlayout_ = new QVBoxLayout(this);
+		buttonlayout_ = new QVBoxLayout();
 		buttonlayout_->addWidget(playbutton);
 		buttonlayout_->addWidget(stopbutton);
 		buttonlayout_->addWidget(rewbutton);
