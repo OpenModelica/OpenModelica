@@ -120,7 +120,7 @@ algorithm
       Boolean p,f,e;
       Absyn.Restriction r;
       list<Absyn.ClassPart> parts;
-    case (Absyn.CLASS(name = n,partial_ = p,final_ = f,encapsulated_ = e,restriction = r,body = Absyn.PARTS(classParts = parts)))
+    case (Absyn.CLASS(name = n,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,body = Absyn.PARTS(classParts = parts)))
       equation 
         rs = Absyn.restrString(r) "print \"> Beginning of rule print_class\\n\" &" ;
         nl = printParts(parts) "& print \"> End of rule print_class\\n\"" ;
@@ -266,11 +266,11 @@ algorithm
     local
       Graphviz.Attribute fa;
       Graphviz.Node elsp;
-      Boolean final_;
+      Boolean finalPrefix;
       Absyn.ElementSpec spec;
-    case (Absyn.ELEMENT(final_ = final_,specification = spec))
+    case (Absyn.ELEMENT(finalPrefix = finalPrefix,specification = spec))
       equation 
-        fa = makeBoolAttr("final", final_) "print \"> Beginning of rule print_element\\n\" &" ;
+        fa = makeBoolAttr("final", finalPrefix) "print \"> Beginning of rule print_element\\n\" &" ;
         elsp = printElementspec(spec) "& print \"> End of rule print_element\\n\"" ;
       then
         Graphviz.NODE("ELEMENT",{fa},{elsp});

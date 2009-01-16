@@ -136,11 +136,11 @@ algorithm
       Exp.ComponentRef origname;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<Absyn.Comment> comment;
-      DAE.Flow flow_;
+      DAE.Flow flowPrefix;
       list<DAELow.Var> rest;
       Exp.Exp e;
     case ({}) then ();
-    case ((DAELow.VAR(varKind = DAELow.VARIABLE(),index = indx,origVarName = origname,values = dae_var_attr,comment = comment,flow_ = flow_) :: rest))
+    case ((DAELow.VAR(varKind = DAELow.VARIABLE(),index = indx,origVarName = origname,values = dae_var_attr,comment = comment,flowPrefix = flowPrefix) :: rest))
       equation
         e = DAE.getStartAttr(dae_var_attr);
         v = Exp.printExpStr(e);
@@ -149,14 +149,14 @@ algorithm
         buildInits2(rest);
       then
         ();
-    case ((DAELow.VAR(varKind = DAELow.VARIABLE(),index = indx,origVarName = origname,values = dae_var_attr,comment = comment,flow_ = flow_) :: rest))
+    case ((DAELow.VAR(varKind = DAELow.VARIABLE(),index = indx,origVarName = origname,values = dae_var_attr,comment = comment,flowPrefix = flowPrefix) :: rest))
       equation
         origname_str = Exp.printComponentRefStr(origname);
         TaskGraphExt.addInitVar(indx, "0.0", origname_str);
         buildInits2(rest);
       then
         ();
-    case ((DAELow.VAR(varKind = DAELow.STATE(),index = indx,origVarName = origname,values = dae_var_attr,comment = comment,flow_ = flow_) :: rest))
+    case ((DAELow.VAR(varKind = DAELow.STATE(),index = indx,origVarName = origname,values = dae_var_attr,comment = comment,flowPrefix = flowPrefix) :: rest))
       equation
         e = DAE.getStartAttr(dae_var_attr);
         v = Exp.printExpStr(e);
@@ -165,14 +165,14 @@ algorithm
         buildInits2(rest);
       then
         ();
-    case ((DAELow.VAR(varKind = DAELow.STATE(),index = indx,origVarName = origname,values = dae_var_attr,comment = comment,flow_ = flow_) :: rest))
+    case ((DAELow.VAR(varKind = DAELow.STATE(),index = indx,origVarName = origname,values = dae_var_attr,comment = comment,flowPrefix = flowPrefix) :: rest))
       equation
         origname_str = Exp.printComponentRefStr(origname);
         TaskGraphExt.addInitState(indx, "0.0", origname_str);
         buildInits2(rest);
       then
         ();
-    case ((DAELow.VAR(varKind = DAELow.DUMMY_DER(),index = indx,origVarName = origname,values = dae_var_attr,comment = comment,flow_ = flow_) :: rest))
+    case ((DAELow.VAR(varKind = DAELow.DUMMY_DER(),index = indx,origVarName = origname,values = dae_var_attr,comment = comment,flowPrefix = flowPrefix) :: rest))
       equation
         e = DAE.getStartAttr(dae_var_attr);
         v = Exp.printExpStr(e);
@@ -181,14 +181,14 @@ algorithm
         buildInits2(rest);
       then
         ();
-    case ((DAELow.VAR(varKind = DAELow.DUMMY_DER(),index = indx,origVarName = origname,values = dae_var_attr,comment = comment,flow_ = flow_) :: rest))
+    case ((DAELow.VAR(varKind = DAELow.DUMMY_DER(),index = indx,origVarName = origname,values = dae_var_attr,comment = comment,flowPrefix = flowPrefix) :: rest))
       equation
         origname_str = Exp.printComponentRefStr(origname);
         TaskGraphExt.addInitVar(indx, "0.0", origname_str);
         buildInits2(rest);
       then
         ();
-    case ((DAELow.VAR(varKind = DAELow.DUMMY_STATE(),index = indx,origVarName = origname,values = dae_var_attr,comment = comment,flow_ = flow_) :: rest))
+    case ((DAELow.VAR(varKind = DAELow.DUMMY_STATE(),index = indx,origVarName = origname,values = dae_var_attr,comment = comment,flowPrefix = flowPrefix) :: rest))
       equation
          e = DAE.getStartAttr(dae_var_attr);
         v = Exp.printExpStr(e);
@@ -197,14 +197,14 @@ algorithm
         buildInits2(rest);
       then
         ();
-    case ((DAELow.VAR(varKind = DAELow.DUMMY_STATE(),index = indx,origVarName = origname,values = dae_var_attr,comment = comment,flow_ = flow_) :: rest))
+    case ((DAELow.VAR(varKind = DAELow.DUMMY_STATE(),index = indx,origVarName = origname,values = dae_var_attr,comment = comment,flowPrefix = flowPrefix) :: rest))
       equation
         origname_str = Exp.printComponentRefStr(origname);
         TaskGraphExt.addInitVar(indx, "0.0", origname_str);
         buildInits2(rest);
       then
         ();
-    case ((DAELow.VAR(varKind = DAELow.PARAM(),bindValue = SOME(value),index = indx,origVarName = origname,values = dae_var_attr,comment = comment,flow_ = flow_) :: rest))
+    case ((DAELow.VAR(varKind = DAELow.PARAM(),bindValue = SOME(value),index = indx,origVarName = origname,values = dae_var_attr,comment = comment,flowPrefix = flowPrefix) :: rest))
       local Values.Value value;
       equation
         v = Values.valString(value);
@@ -213,14 +213,14 @@ algorithm
         buildInits2(rest);
       then
         ();
-    case ((DAELow.VAR(varKind = DAELow.PARAM(),bindValue = NONE,index = indx,origVarName = origname,values = dae_var_attr,comment = comment,flow_ = flow_) :: rest))
+    case ((DAELow.VAR(varKind = DAELow.PARAM(),bindValue = NONE,index = indx,origVarName = origname,values = dae_var_attr,comment = comment,flowPrefix = flowPrefix) :: rest))
       equation
         origname_str = Exp.printComponentRefStr(origname);
         TaskGraphExt.addInitParam(indx, "0.0", origname_str);
         buildInits2(rest);
       then
         ();
-    case ((DAELow.VAR(varKind = DAELow.CONST(),bindValue = SOME(value),index = indx,origVarName = origname,values = dae_var_attr,comment = comment,flow_ = flow_) :: rest))
+    case ((DAELow.VAR(varKind = DAELow.CONST(),bindValue = SOME(value),index = indx,origVarName = origname,values = dae_var_attr,comment = comment,flowPrefix = flowPrefix) :: rest))
       local Values.Value value;
       equation
         v = Values.valString(value);
@@ -229,7 +229,7 @@ algorithm
         buildInits2(rest);
       then
         ();
-    case ((DAELow.VAR(varKind = DAELow.CONST(),bindValue = NONE,index = indx,origVarName = origname,values = dae_var_attr,comment = comment,flow_ = flow_) :: rest))
+    case ((DAELow.VAR(varKind = DAELow.CONST(),bindValue = NONE,index = indx,origVarName = origname,values = dae_var_attr,comment = comment,flowPrefix = flowPrefix) :: rest))
       equation
         origname_str = Exp.printComponentRefStr(origname);
         TaskGraphExt.addInitParam(indx, "0.0", origname_str);
@@ -322,8 +322,8 @@ algorithm
       DAELow.VarKind kind;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<Absyn.Comment> comment;
-      DAE.Flow flow_;
-      DAE.Stream stream_;
+      DAE.Flow flowPrefix;
+      DAE.Stream streamPrefix;
       String origname_str,indxs,name,c_name,id;
       DAELow.Variables vars;
       DAELow.EquationArray eqns;
@@ -335,7 +335,7 @@ algorithm
         v = ass2[e_1 + 1];
         v_1 = v - 1 "v == variable no solved in this equation" ;
         varlst = DAELow.varList(vars);
-        ((v as DAELow.VAR(cr,kind,_,_,_,_,_,_,origname,_,dae_var_attr,comment,flow_,stream_))) = listNth(varlst, v_1);
+        ((v as DAELow.VAR(cr,kind,_,_,_,_,_,_,origname,_,dae_var_attr,comment,flowPrefix,streamPrefix))) = listNth(varlst, v_1);
         origname_str = Exp.printComponentRefStr(origname);
         isNonState(kind);
         varexp = Exp.CREF(cr,Exp.REAL()) "print \"Solving for non-states\\n\" &" ;
@@ -356,7 +356,7 @@ algorithm
         v = ass2[e_1 + 1];
         v_1 = v - 1 "v == variable no solved in this equation" ;
         varlst = DAELow.varList(vars);
-        DAELow.VAR(cr,DAELow.STATE(),_,_,_,_,_,indx,origname,_,dae_var_attr,comment,flow_,stream_) = listNth(varlst, v_1);
+        DAELow.VAR(cr,DAELow.STATE(),_,_,_,_,_,indx,origname,_,dae_var_attr,comment,flowPrefix,streamPrefix) = listNth(varlst, v_1);
         indxs = intString(indx) "	print \"solving for state\\n\" &" ;
         origname_str = Exp.printComponentRefStr(origname);
         name = Exp.printComponentRefStr(cr) "	Util.string_append_list({\"xd{\",indxs,\"}\"}) => id &" ;
@@ -391,7 +391,7 @@ algorithm
         v = ass2[e_1 + 1];
         v_1 = v - 1 "v == variable no solved in this equation" ;
         varlst = DAELow.varList(vars);
-        DAELow.VAR(cr,DAELow.STATE(),_,_,_,_,_,indx,origname,_,dae_var_attr,_,flow_,stream_) = listNth(varlst, v_1);
+        DAELow.VAR(cr,DAELow.STATE(),_,_,_,_,_,indx,origname,_,dae_var_attr,_,flowPrefix,streamPrefix) = listNth(varlst, v_1);
         indxs = intString(indx);
         name = Exp.printComponentRefStr(cr) "	Util.string_append_list({\"xd{\",indxs,\"}\"}) => id &" ;
         c_name = Util.modelicaStringToCStr(name,true);
@@ -409,7 +409,7 @@ algorithm
         v = ass2[e_1 + 1];
         v_1 = v - 1 "v == variable no solved in this equation" ;
         varlst = DAELow.varList(vars);
-        ((v as DAELow.VAR(cr,kind,_,_,_,_,_,_,origname,_,dae_var_attr,comment,flow_,stream_))) = listNth(varlst, v_1);
+        ((v as DAELow.VAR(cr,kind,_,_,_,_,_,_,origname,_,dae_var_attr,comment,flowPrefix,streamPrefix))) = listNth(varlst, v_1);
         isNonState(kind);
         varexp = Exp.CREF(cr,Exp.REAL()) "print \"Solving for non-states\\n\" &" ;
         failure(expr = Exp.solve(e1, e2, varexp));
@@ -716,8 +716,8 @@ algorithm
       Exp.ComponentRef cr,origname;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<Absyn.Comment> comment;
-      DAE.Flow flow_;
-      DAE.Stream stream_;
+      DAE.Flow flowPrefix;
+      DAE.Stream streamPrefix;
       list<Exp.ComponentRef> cr1,cr2,crs,crs_1;
       list<String> crs_2,crs2,res;
       String crstr,origname_str;
@@ -731,7 +731,7 @@ algorithm
         DAELow.EQUATION(e1,e2) = DAELow.equationNth(eqns, e_1);
         v = ass2[e_1 + 1];
         v_1 = v - 1 "v == variable no solved in this equation" ;
-        ((v as DAELow.VAR(cr,DAELow.VARIABLE(),_,_,_,_,_,_,origname,_,dae_var_attr,comment,flow_,stream_))) = DAELow.vararrayNth(vararr, v_1);
+        ((v as DAELow.VAR(cr,DAELow.VARIABLE(),_,_,_,_,_,_,origname,_,dae_var_attr,comment,flowPrefix,streamPrefix))) = DAELow.vararrayNth(vararr, v_1);
         cr1 = Exp.getCrefFromExp(e1);
         cr2 = Exp.getCrefFromExp(e2);
         crs = listAppend(cr1, cr2);
@@ -762,10 +762,10 @@ algorithm
       Exp.ComponentRef cf,name;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<Absyn.Comment> comment;
-      DAE.Flow flow_;
-      DAE.Stream stream_;
+      DAE.Flow flowPrefix;
+      DAE.Stream streamPrefix;
       Integer start;
-    case (DAELow.VAR(varName = cf,origVarName = name,values = dae_var_attr,comment = comment,flow_ = flow_,stream_ = stream_),start)
+    case (DAELow.VAR(varName = cf,origVarName = name,values = dae_var_attr,comment = comment,flowPrefix = flowPrefix,streamPrefix = streamPrefix),start)
       equation
         cfs = Exp.crefStr(cf);
         name_str = Exp.printComponentRefStr(name) "print \"adding variable \" & print cfs & print \"\\n\" &" ;

@@ -509,6 +509,13 @@ public function getCurrentTime
   external "C" ;
 end getCurrentTime;
 
+public function getCurrentTimeStr "
+returns current time in format Www Mmm dd hh:mm:ss yyyy
+using the asctime() function in time.h (libc)
+"
+  output String timeStr;
+  external "C";
+end getCurrentTimeStr;
 
 public function isSameFile "Checks if two filenames points to the same file"
   input String fileName1;

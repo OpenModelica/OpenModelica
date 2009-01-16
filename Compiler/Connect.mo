@@ -100,6 +100,7 @@ uniontype Sets "The connection \'Sets\' contains
 end Sets;
 uniontype OuterConnect
   record OUTERCONNECT
+    Prefix.Prefix scope "the scope that this connect was created";
     Exp.ComponentRef cr1;
     Absyn.InnerOuter io1 "inner/outer attribute for cr1 component";
     Face f1;
@@ -134,6 +135,7 @@ public function addOuterConnection " Adds a connection with a reference to an ou
 These are added to a special list, such that they can be moved up in the instance hierachy to a place
 where both instances are defined.
 "
+  input Prefix.Prefix scope;
   input Sets sets;
   input Exp.ComponentRef cr1;
   input Exp.ComponentRef cr2;
@@ -144,16 +146,16 @@ where both instances are defined.
   
   output Sets outSets;
 algorithm
-  outSets := matchcontinue(sets,cr1,cr2,io1,io2,f1,f2)
+  outSets := matchcontinue(scope,sets,cr1,cr2,io1,io2,f1,f2)
   local list<Set> ss;
     list<Exp.ComponentRef> crs,dc;
     list<OuterConnect> oc;
     /* First check if already added */
-    case(sets as SETS(ss,crs,dc,oc),cr1,cr2,io1,io2,f1,f2) equation
+    case(scope,sets as SETS(ss,crs,dc,oc),cr1,cr2,io1,io2,f1,f2) equation
       _::_ = Util.listSelect2(oc,cr1,cr2,outerConnectionMatches);
     then sets;
       
-    case(SETS(ss,crs,dc,oc),cr1,cr2,io1,io2,f1,f2) then SETS(ss,crs,dc,OUTERCONNECT(cr1,io1,f1,cr2,io2,f2)::oc);        
+    case(scope,SETS(ss,crs,dc,oc),cr1,cr2,io1,io2,f1,f2) then SETS(ss,crs,dc,OUTERCONNECT(scope,cr1,io1,f1,cr2,io2,f2)::oc);        
   end matchcontinue;
 end addOuterConnection;
 
@@ -1048,10 +1050,10 @@ end removeSet;
 public function unconnectedFlowEquations "Unconnected flow variables.
   function: unconnectedFlowEquations 
  
-  This function will generate set-to-zero equations for INNER flow variables.
-  It can not generate for outer flow varaibles, since we do not yet know if 
+  This function will generate set-to-zero equations for INSIDE flow variables.
+  It can not generate for OUTSIDE flow varaibles, since we do not yet know if 
   these are connected or not. This is only known in the preceding recursive 
-  call. However, the top call must generate for both inner and outer 
+  call. However, the top call must generate for both INSIDE and OUTSIDE
   connectors, hence the last argument, true for top call"
  	input Env.Cache inCache;
   input Sets inSets;
@@ -1059,22 +1061,31 @@ public function unconnectedFlowEquations "Unconnected flow variables.
   input Env.Env inEnv;
   input Prefix.Prefix prefix;
   input Boolean inBoolean;
+  input list<OuterConnect> ocl;   
   output Env.Cache outCache;
   output list<DAE.Element> outDAEElementLst;
 algorithm 
   (outCache,outDAEElementLst) :=
-  matchcontinue (inCache,inSets,inDAEElementLst,inEnv,prefix,inBoolean)
+  matchcontinue (inCache,inSets,inDAEElementLst,inEnv,prefix,inBoolean,ocl)
     local
-      list<Exp.ComponentRef> v1,v2,vars,vars2,vars3,unconnectedvars,deletedComponents;
+      list<Exp.ComponentRef> v1,v2,v3,vSpecial,vars,vars2,vars3,unconnectedvars,deletedComponents;
       list<DAE.Element> dae_1,dae;
       Sets csets;
       list<Env.Frame> env;
       Env.Cache cache;
       Exp.ComponentRef prefixCref;
-    case (cache,(csets as SETS(deletedComponents = deletedComponents)),dae,env,prefix,true)
+        list<Set> set;
+    case (cache,(csets as SETS(setLst = set, deletedComponents = deletedComponents)),dae,env,prefix,true,ocl)
+      local list<Exp.ComponentRef> flowCrefs;
       equation 
         v1 = Env.localOutsideConnectorFlowvars(env) "if outermost call look at both inner and outer unconnected connectors" ;
         v2 = Env.localInsideConnectorFlowvars(env);
+        /* TODO: finish this part, This is currently not used due to bad specifications.
+	 			as of 2008-12 we do not know wheter an inner connector connected as inside should generate a = 0.0 equation or not.
+				flowCrefs = extractFlowCrefs(set);
+				(v3,vSpecial) = extractOuterNonEnvDeclaredVars(ocl,true,flowCrefs);
+				vars = listAppend(v1, listAppend(v2,v3));
+				*/
         vars = listAppend(v1, v2);
         vars2 = getInnerFlowVariables(csets);
         vars3 = getOuterConnectFlowVariables(csets,vars,prefix);       
@@ -1083,16 +1094,16 @@ algorithm
         vars2 = Util.listMap(vars2,Exp.crefStripLastSubs); 
         unconnectedvars = removeVariables(vars, vars2);
         unconnectedvars = removeUnconnectedDeletedComponents(unconnectedvars,csets);
-        /*print("unconnectedVars top level:");print(Util.stringDelimitList(Util.listMap(unconnectedvars,Exp.printComponentRefStr),","));print("\n");
-        print("vars top level:");print(Util.stringDelimitList(Util.listMap(vars,Exp.printComponentRefStr),","));print("\n");
-        print("vars2 top level:");print(Util.stringDelimitList(Util.listMap(vars2,Exp.printComponentRefStr),","));print("\n");
-    */
+      
         // no prefix for top level
+        /* SE COMMENT ABOVE  
+				unconnectedvars = Util.listUnion(vSpecial,unconnectedvars);*/
+        
         (cache,dae_1) = generateZeroflowEquations(cache,unconnectedvars,env,Prefix.NOPRE(),deletedComponents);
       then
         (cache,dae_1);
 
-      case (cache,(csets as SETS(deletedComponents = deletedComponents)),dae,env,prefix,false)
+      case (cache,(csets as SETS(deletedComponents = deletedComponents)),dae,env,prefix,false,ocl)
       equation 
         vars = Env.localInsideConnectorFlowvars(env);
         vars2 = getInnerFlowVariables(csets);
@@ -1100,26 +1111,133 @@ algorithm
         vars2 = Util.listMap1(vars2,Exp.crefStripPrefix,prefixCref);
         vars3 = getOuterConnectFlowVariables(csets,vars,prefix);       
         vars2 = listAppend(vars3,vars2);
-        /*print("vars:");print(Util.stringDelimitList(Util.listMap(vars,Exp.printComponentRefStr),","));print("\n");
-        print("vars2:");print(Util.stringDelimitList(Util.listMap(vars2,Exp.printComponentRefStr),","));print("\n");
-        print("vars3:");print(Util.stringDelimitList(Util.listMap(vars2,Exp.printComponentRefStr),","));print("\n");*/
-        
-
-        
         // last array subscripts are not present in vars, therefor removed from vars2 too.
         vars2 = Util.listMap(vars2,Exp.crefStripLastSubs);
         unconnectedvars = removeVariables(vars, vars2);
         unconnectedvars = removeUnconnectedDeletedComponents(unconnectedvars,csets);
-        //print("unconnectedVars:");print(Util.stringDelimitList(Util.listMap(unconnectedvars,Exp.printComponentRefStr),","));print("\n");
-        
+          
 				// Add prefix that was "removed" above
         (cache,dae_1) = generateZeroflowEquations(cache,unconnectedvars,env,prefix,deletedComponents);
       then
         (cache,dae_1);
-    case (cache,csets,dae,env,_,_) 
+    case (cache,csets,dae,env,_,_,_) 
     then (cache,{}); 
   end matchcontinue;
 end unconnectedFlowEquations;
+
+/* The following following "dead code" belongs to function unconnectedFlowEquations
+		See the TODO, text. 
+
+
+protected function extractOuterNonEnvDeclaredVars ""
+  input list<OuterConnect> outerConnects;
+  input Boolean includeInside;
+  input list<Exp.ComponentRef> definedFlowVars;
+  output list<Exp.ComponentRef> outCrefs;
+  output list<Exp.ComponentRef> outCrefs2;
+algorithm (outCrefs,outCrefs2) := matchcontinue(outerConnects,includeInside,definedFlowVars)
+  local
+    Exp.ComponentRef cr1,cr2;
+    Absyn.InnerOuter io1,io2;
+    Face f1,f2;
+    list<Exp.ComponentRef> crefs1,crefs2;
+    list<list<Exp.ComponentRef>> tmpCrefContainer;
+  case({},_,_) then ({},{});
+  case(OUTERCONNECT(_,cr1,io1,f1,cr2,io2,f2)::outerConnects,includeInside,definedFlowVars)
+    equation
+      crefs1 = extractOuterNonEnvDeclaredVars22(cr1,io1,f1);
+      crefs2 = extractOuterNonEnvDeclaredVars22(cr1,io1,f1);
+      crefs1 = listAppend(crefs1,crefs2);
+      tmpCrefContainer = Util.listMap1(crefs1,extractOuterNonEnvDeclaredVarsFilterFlow,definedFlowVars);
+      crefs1 = Util.listFold(tmpCrefContainer,Util.listUnion,{});
+      outCrefs  = cr1::{cr2};
+      tmpCrefContainer = Util.listMap1(outCrefs,extractOuterNonEnvDeclaredVarsFilterFlow,definedFlowVars);
+      outCrefs = Util.listFold(tmpCrefContainer,Util.listUnion,{});
+    then
+      (outCrefs,crefs1);
+end matchcontinue;
+end extractOuterNonEnvDeclaredVars;
+
+protected function extractOuterNonEnvDeclaredVars22 ""
+input Exp.ComponentRef cr;
+input Absyn.InnerOuter io;
+input Face dir;
+output list<Exp.ComponentRef> res;
+algorithm res := matchcontinue(cr,io,dir)
+  case(cr,Absyn.INNER(),INNER) then {cr};
+  case(_,_,_) then {};
+  end matchcontinue;
+end extractOuterNonEnvDeclaredVars22;
+
+protected function extractOuterNonEnvDeclaredVars2 ""
+input Exp.ComponentRef cr;
+input Absyn.InnerOuter io;
+input Face dir;
+output list<Exp.ComponentRef> res;
+algorithm res := matchcontinue(cr,io,dir)
+  case(cr,Absyn.INNER(),INNER) then {cr};
+  case(cr,_,OUTER) then {cr};
+  case(_,_,_) then {};
+  end matchcontinue;
+end extractOuterNonEnvDeclaredVars2;
+
+protected function extractOuterNonEnvDeclaredVarsFilterFlow ""
+input Exp.ComponentRef cr;
+input list<Exp.ComponentRef> flows;
+output list<Exp.ComponentRef> outCrefs;
+algorithm outCrefs := matchcontinue(cr,flows)
+  local
+    Exp.ComponentRef flow1;
+    list<Exp.ComponentRef> recRes;
+  case(cr,{}) then {};
+  case(cr, flow1::flows)
+    equation
+      true = Exp.crefPrefixOf(cr,flow1);
+      recRes = extractOuterNonEnvDeclaredVarsFilterFlow(cr,flows);
+      recRes = Util.listUnionElt(flow1,recRes);
+      then 
+        recRes;
+  case(cr, flow1::flows)
+    equation
+      false = Exp.crefPrefixOf(cr,flow1);
+      recRes = extractOuterNonEnvDeclaredVarsFilterFlow(cr,flows);
+    then 
+      recRes;
+   end matchcontinue;
+end extractOuterNonEnvDeclaredVarsFilterFlow;
+
+public function isOutside ""
+  input Face f;
+  output Boolean b;
+algorithm b:= matchcontinue(f)
+  case(OUTER) then true;
+  case(_) then false;
+end matchcontinue;
+end isOutside;
+
+protected function extractFlowCrefs "
+Author: BZ, 2008-12
+Get all flow vars as Exp.ComponentRef from a list of sets.
+"
+  input list<Set> inSets;
+  output list<Exp.ComponentRef> ocrefs;
+algorithm ocrefs := matchcontinue(inSets)
+  case({}) then {};
+  case(EQU(_)::inSets) then extractFlowCrefs(inSets);
+  case(FLOW(lv)::inSets)
+    local
+      list<tuple<Exp.ComponentRef, Face>> lv;
+      list<Exp.ComponentRef> recRes,res;
+    equation
+      res = Util.listMap(lv,Util.tuple21);
+      recRes = extractFlowCrefs(inSets);
+      res = listAppend(res,recRes);
+    then
+      res;
+  case(_) equation print(" failure in extractFlowCrefs\n"); then fail();
+end matchcontinue;
+end extractFlowCrefs;
+*/
 
 protected function removeUnconnectedDeletedComponents "Removes deleted components,
  i.e. with conditional declaration = false, from
@@ -1304,7 +1422,7 @@ algorithm
   flowVars := matchcontinue(outerConnect,allFlowVars,prefix)
   local Exp.ComponentRef cr1,cr2;
     Absyn.InnerOuter io1,io2;
-    case(OUTERCONNECT(cr1,io1,_,cr2,io2,_),allFlowVars,prefix) equation
+    case(OUTERCONNECT(_,cr1,io1,_,cr2,io2,_),allFlowVars,prefix) equation
       cr1 = removePrefixOnNonOuter(cr1,io1,prefix);
       cr2 = removePrefixOnNonOuter(cr2,io2,prefix);
       flowVars = listAppend(
@@ -1509,13 +1627,13 @@ algorithm
     case ((c,INNER()))
       equation 
         s1 = Exp.printComponentRefStr(c);
-        s2 = s1 +& " INNER";
+        s2 = s1 +& " INSIDE";
       then
         s2;
     case ((c,OUTER()))
       equation 
         s1 = Exp.printComponentRefStr(c);
-        s2 = s1 +& " OUTER";
+        s2 = s1 +& " OUTSIDE";
       then
         s2;
   end matchcontinue;
@@ -1566,7 +1684,7 @@ algorithm
     Absyn.InnerOuter io1,io2;
     case({}) then "";
       
-    case(OUTERCONNECT(cr1,io1,_,cr2,io2,_)::outerConn) equation
+    case(OUTERCONNECT(_,cr1,io1,_,cr2,io2,_)::outerConn) equation
       s1 = printOuterConnectsStr(outerConn);
       s2 = Exp.printComponentRefStr(cr1);
       s3 = Exp.printComponentRefStr(cr2);
@@ -1615,13 +1733,13 @@ algorithm
     case ((c,INNER()))
       equation 
         s = Exp.printComponentRefStr(c);
-        res = stringAppend(s, " INNER");
+        res = stringAppend(s, " INSIDE");
       then
         res;
     case ((c,OUTER()))
       equation 
         s = Exp.printComponentRefStr(c);
-        res = stringAppend(s, " OUTER");
+        res = stringAppend(s, " OUTSIDE");
       then
         res;
   end matchcontinue;

@@ -78,8 +78,7 @@ algorithm
         fail();
     case (dae_equation,_)
       equation
-        DAELow.dumpDAELowEqnList({dae_equation},"differentiate_equation_time\n",false);
-        print("-differentiate_equation_time faile\n");
+        print("-differentiate_equation_time failed\n");
       then
         fail();
   end matchcontinue;
@@ -124,7 +123,7 @@ algorithm
     case (Exp.CREF(componentRef = Exp.CREF_IDENT(ident = "time",subscriptLst = {}),ty = tp),_) then Exp.RCONST(1.0);
     case ((e as Exp.CREF(componentRef = cr,ty = tp)),timevars) /* special rule for DUMMY_STATES, they become DUMMY_DER */
       equation
-        ({DAELow.VAR(cr,DAELow.DUMMY_STATE(),_,_,_,_,_,_,_,_,_,_,_,_)},_) = DAELow.getVar(cr, timevars);
+        ({DAELow.VAR(varKind=DAELow.DUMMY_STATE())},_) = DAELow.getVar(cr, timevars);
         cr_str = Exp.printComponentRefStr(cr);
         ty = Exp.crefType(cr);
         cr_str_1 = SimCodegen.changeNameForDerivative(cr_str);

@@ -841,7 +841,7 @@ inside connector, i.e. for connector reference a.b the innerOuter attribute is f
 algorithm
   (outCache,attr,tp):=matchcontinue(cache,env,cr)
   local Exp.ComponentRef cr1;
-      Boolean f,stream_;
+      Boolean f,streamPrefix;
       SCode.Variability var; SCode.Accessibility acc;
       Absyn.Direction dir;
       Absyn.InnerOuter io;
@@ -851,11 +851,11 @@ algorithm
       (cache,attr1,ty1,_) = lookupVarLocal(cache,env,cr);
     then (cache,attr1,ty1);
     case(cache,env,cr as Exp.CREF_QUAL(ident=_)) equation
-       (cache,attr1 as Types.ATTR(f,stream_,acc,var,dir,_),ty1,_) = lookupVarLocal(cache,env,cr);
+       (cache,attr1 as Types.ATTR(f,streamPrefix,acc,var,dir,_),ty1,_) = lookupVarLocal(cache,env,cr);
       cr1 = Exp.crefStripLastIdent(cr);
       /* Find innerOuter attribute from "parent" */
       (cache,Types.ATTR(innerOuter=io),_,_) = lookupVarLocal(cache,env,cr1);
-    then (cache,Types.ATTR(f,stream_,acc,var,dir,io),ty1);
+    then (cache,Types.ATTR(f,streamPrefix,acc,var,dir,io),ty1);
   end matchcontinue;
 end lookupConnectorVar;
 
@@ -2382,7 +2382,7 @@ algorithm
   matchcontinue (inCache,inBinTree,inComponentRef)
     local
       String n,id;
-      Boolean f,stream_;
+      Boolean f,streamPrefix;
       SCode.Accessibility acc;
       SCode.Variability vt;
       Absyn.Direction di;
@@ -2410,20 +2410,20 @@ algorithm
         Exp.Type tty;
         Absyn.InnerOuter io;        
       equation 
-        (cache,Types.VAR(n,Types.ATTR(f,stream_,acc,vt,di,io),_,ty,bind),_,_,_) = lookupVar2(cache,ht, id);
+        (cache,Types.VAR(n,Types.ATTR(f,streamPrefix,acc,vt,di,io),_,ty,bind),_,_,_) = lookupVar2(cache,ht, id);
         ty_1 = checkSubscripts(ty, ss);
         ss = addArrayDimensions(ty,ty_1,ss);
         tty = Types.elabType(ty_1);     
         ty2_2 = Types.elabType(ty);
         splicedExp = Exp.CREF(Exp.CREF_IDENT(id,ty2_2, ss),tty);
       then
-        (cache,Types.ATTR(f,stream_,acc,vt,di,io),ty_1,bind,SOME(splicedExp));
+        (cache,Types.ATTR(f,streamPrefix,acc,vt,di,io),ty_1,bind,SOME(splicedExp));
     
     /* Qualified variables looked up through component environment with a spliced exp */
     case (cache,ht,xCref as (Exp.CREF_QUAL(ident = id,subscriptLst = ss,componentRef = ids)))  
       local        
       equation 
-        (cache,Types.VAR(n,Types.ATTR(f,stream_,acc,vt,di,io),_,ty2,bind),_,_,compenv) = lookupVar2(cache,ht, id);
+        (cache,Types.VAR(n,Types.ATTR(f,streamPrefix,acc,vt,di,io),_,ty2,bind),_,_,compenv) = lookupVar2(cache,ht, id);
         (cache,attr,ty,binding,texp,_) = lookupVar(cache,compenv, ids);
         (tCref::ltCref) = elabComponentRecursive((texp)); 
         ty1 = checkSubscripts(ty2, ss);
@@ -2439,7 +2439,7 @@ algorithm
         /* Qualified componentname without spliced exp.*/
     case (cache,ht,xCref as (Exp.CREF_QUAL(ident = id,subscriptLst = ss,componentRef = ids)))      
       equation 
-        (cache,Types.VAR(n,Types.ATTR(f,stream_,acc,vt,di,io),_,ty2,bind),_,_,compenv) = lookupVar2(cache,ht, id);
+        (cache,Types.VAR(n,Types.ATTR(f,streamPrefix,acc,vt,di,io),_,ty2,bind),_,_,compenv) = lookupVar2(cache,ht, id);
         (cache,attr,ty,binding,texp,_) = lookupVar(cache,compenv, ids);
         {} = elabComponentRecursive((texp));
       then

@@ -92,9 +92,9 @@ algorithm
 
     case (Absyn.CLASS(
       name = n,
-      partial_ = part,
-      final_ = f,
-      encapsulated_ = e,
+      partialPrefix = part,
+      finalPrefix = f,
+      encapsulatedPrefix = e,
       restriction = r,
       body = d,
       info = file_info),p,Absyn.IDENT(name = ""))
@@ -108,9 +108,9 @@ algorithm
 
     case (Absyn.CLASS(
       name = n,
-      partial_ = part,
-      final_ = f,
-      encapsulated_ = e,
+      partialPrefix = part,
+      finalPrefix = f,
+      encapsulatedPrefix = e,
       restriction = r,
       body = d,
       info = file_info),p,cPath)
@@ -433,7 +433,7 @@ algorithm
       Absyn.Path cPath;
       Env.Env env;
 
-    case(Absyn.ELEMENT(final_ = f, redeclareKeywords = rdk,
+    case(Absyn.ELEMENT(finalPrefix = f, redeclareKeywords = rdk,
       innerOuter = io, name = n, specification = es, info = i, constrainClass = cc),p,cPath,env)
 
       equation

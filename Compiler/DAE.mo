@@ -60,6 +60,9 @@ type InstDims = list<Exp.Subscript>;
 
 public 
 type StartValue = Option<Exp.Exp>;
+  
+public constant String UNIQUEIO = "$unique$outer$";
+  
 
 public 
 uniontype VarKind
@@ -165,8 +168,8 @@ uniontype Element
     Type ty "one of the builtin types" ;
     Option<Exp.Exp> binding "Binding expression e.g. for parameters ; value of start attribute" ; 
     InstDims  dims "dimensions";
-    Flow flow_ "Flow of connector variable. Needed for unconnected flow variables" ;
-    Stream stream_ "Stream variables in connectors" ;
+    Flow flowPrefix "Flow of connector variable. Needed for unconnected flow variables" ;
+    Stream streamPrefix "Stream variables in connectors" ;
     list<Absyn.Path> pathLst " " ;
     Option<VariableAttributes> variableAttributesOption;
     Option<Absyn.Comment> absynCommentOption;
@@ -302,7 +305,7 @@ uniontype VariableAttributes
     Option<StateSelect> stateSelectOption;
     Option<Exp.Exp> equationBound;
     Option<Boolean> isProtected;
-    Option<Boolean> final_;
+    Option<Boolean> finalPrefix;
   end VAR_ATTR_REAL;
 
   record VAR_ATTR_INT
@@ -312,7 +315,7 @@ uniontype VariableAttributes
     Option<Exp.Exp> fixed "fixed - true: default for parameter/constant, false - default for other variables" ;
     Option<Exp.Exp> equationBound;
     Option<Boolean> isProtected; // ,eb,ip
-    Option<Boolean> final_;
+    Option<Boolean> finalPrefix;
   end VAR_ATTR_INT;
 
   record VAR_ATTR_BOOL
@@ -321,7 +324,7 @@ uniontype VariableAttributes
     Option<Exp.Exp> fixed "fixed - true: default for parameter/constant, false - default for other variables" ;
     Option<Exp.Exp> equationBound;
     Option<Boolean> isProtected;
-    Option<Boolean> final_;
+    Option<Boolean> finalPrefix;
   end VAR_ATTR_BOOL;
 
   record VAR_ATTR_STRING
@@ -329,7 +332,7 @@ uniontype VariableAttributes
     Option<Exp.Exp> initial_ "Initial value" ;
     Option<Exp.Exp> equationBound;
     Option<Boolean> isProtected;
-    Option<Boolean> final_;
+    Option<Boolean> finalPrefix;
   end VAR_ATTR_STRING;
 
   record VAR_ATTR_ENUMERATION
@@ -339,7 +342,7 @@ uniontype VariableAttributes
     Option<Exp.Exp> fixed "fixed - true: default for parameter/constant, false - default for other variables" ;
     Option<Exp.Exp> equationBound;
     Option<Boolean> isProtected;
-    Option<Boolean> final_;
+    Option<Boolean> finalPrefix;
   end VAR_ATTR_ENUMERATION;
 
 end VariableAttributes;
@@ -451,48 +454,96 @@ protected import Debug;
 protected import Error;
 protected import SCode;
 protected import Env;
+protected import System;
 
 public function removeEquations "Removes all equations and algorithms, from the dae"
 	input list<Element> inDae;
-	output list<Element> outDae;
+	output list<Element> outDaeNonEq;
+	output list<Element> outDaeEq;
 algorithm
 	inDae := matchcontinue(inDae)
-	local Element v,e;
-	      list<Element> elts,elts2,elts22,elts1,elts11;
-	      Ident  id;
-	  case({}) then  {};
+	  local Element v,e;
+	    list<Element> elts,elts2,elts22,elts1,elts11,elts3,elts33;
+	    Ident  id;
+	  case({}) then  ({},{});
 	    
 	  case((v as VAR(componentRef=_))::elts) equation
-	    elts2=removeEquations(elts);
-	    then v::elts2;
+	    (elts2,elts3)=removeEquations(elts);
+	  then (v::elts2,elts3);
 	  case(COMP(id,DAE(elts1))::elts2) equation
-	    elts11 = removeEquations(elts1);
-	    elts22 = removeEquations(elts2);
-	  then COMP(id,DAE(elts11))::elts22;
-	  case(EQUATION(_,_)::elts2) then removeEquations(elts2);
-	  case(EQUEQUATION(_,_)::elts2) then removeEquations(elts2);
-	  case(INITIALEQUATION(_,_)::elts2) then removeEquations(elts2);
-	  case(ARRAY_EQUATION(_,_,_)::elts2) then removeEquations(elts2);
-	  case(COMPLEX_EQUATION(_,_)::elts2) then removeEquations(elts2);
-	  case(INITIAL_COMPLEX_EQUATION(_,_)::elts2) then removeEquations(elts2);
-	  case(INITIALDEFINE(_,_)::elts2) then removeEquations(elts2);	    
-	  case(DEFINE(_,_)::elts2) then removeEquations(elts2);	    	    
-	  case(WHEN_EQUATION(_,_,_)::elts2) then removeEquations(elts2);	    	    
-	  case(IF_EQUATION(_,_,_)::elts2) then removeEquations(elts2);	    	    	    
-	  case(INITIAL_IF_EQUATION(_,_,_)::elts2) then removeEquations(elts2);	    	    	    	    
-	  case(ALGORITHM(_)::elts2) then removeEquations(elts2);
-	  case(INITIALALGORITHM(_)::elts2) then removeEquations(elts2);
+	    (elts11,elts3) = removeEquations(elts1);
+	    (elts22,elts33) = removeEquations(elts2);
+	    elts3 = listAppend(elts3,elts33);
+	  then (COMP(id,DAE(elts11))::elts22,elts3);
+	  case((e as EQUATION(_,_))::elts2)
+	    equation
+	      (outDaeNonEq,outDaeEq) = removeEquations(elts2);
+	    then (outDaeNonEq,e::outDaeEq);
+	  case((e as EQUEQUATION(_,_))::elts2) 
+	    equation
+	      (outDaeNonEq,outDaeEq) = removeEquations(elts2);
+	    then (outDaeNonEq,e::outDaeEq);
+	  case((e as INITIALEQUATION(_,_))::elts2) 
+	    equation
+	      (outDaeNonEq,outDaeEq) = removeEquations(elts2);
+	    then (outDaeNonEq,e::outDaeEq);
+	  case((e as ARRAY_EQUATION(_,_,_))::elts2) 
+	    equation
+	      (outDaeNonEq,outDaeEq) = removeEquations(elts2);
+	    then (outDaeNonEq,e::outDaeEq);
+	  case((e as COMPLEX_EQUATION(_,_))::elts2)  
+	    equation
+	      (outDaeNonEq,outDaeEq) = removeEquations(elts2);
+	    then (outDaeNonEq,e::outDaeEq);
+	  case((e as INITIAL_COMPLEX_EQUATION(_,_))::elts2)  
+	    equation
+	      (outDaeNonEq,outDaeEq) = removeEquations(elts2);
+	    then (outDaeNonEq,e::outDaeEq);
+	  case((e as INITIALDEFINE(_,_))::elts2)  
+	    equation
+	      (outDaeNonEq,outDaeEq) = removeEquations(elts2);
+	    then (outDaeNonEq,e::outDaeEq);	    
+	  case((e as DEFINE(_,_))::elts2)  
+	    equation
+	      (outDaeNonEq,outDaeEq) = removeEquations(elts2);
+	    then (outDaeNonEq,e::outDaeEq);	    	    
+	  case((e as WHEN_EQUATION(_,_,_))::elts2)  
+	    equation
+	      (outDaeNonEq,outDaeEq) = removeEquations(elts2);
+	    then (outDaeNonEq,e::outDaeEq);	    	    
+	  case((e as IF_EQUATION(_,_,_))::elts2)  
+	    equation
+	      (outDaeNonEq,outDaeEq) = removeEquations(elts2);
+	    then (outDaeNonEq,e::outDaeEq);	    	    	    
+	  case((e as INITIAL_IF_EQUATION(_,_,_))::elts2)  
+	    equation
+	      (outDaeNonEq,outDaeEq) = removeEquations(elts2);
+	    then (outDaeNonEq,e::outDaeEq);	    	    	    	    
+	  case((e as ALGORITHM(_))::elts2)  
+	    equation
+	      (outDaeNonEq,outDaeEq) = removeEquations(elts2);
+	    then (outDaeNonEq,e::outDaeEq);
+	  case((e as INITIALALGORITHM(_))::elts2)  
+	    equation
+	      (outDaeNonEq,outDaeEq) = removeEquations(elts2);
+	    then (outDaeNonEq,e::outDaeEq);
 	  case((e as FUNCTION(path=_))::elts2) equation
-	    elts22 = removeEquations(elts2);
-    then e::elts22;
+	    (elts22,elts3) = removeEquations(elts2);
+    then (e::elts22,elts3);
 	  case((e as EXTFUNCTION(path=_))::elts2) equation
-	    elts22 = removeEquations(elts2);
-    then e::elts22;	      
+	    (elts22,elts3) = removeEquations(elts2);
+    then (e::elts22,elts3);  
 	  case((e as EXTOBJECTCLASS(path=_))::elts2) equation
-	    elts22 = removeEquations(elts2);
-    then e::elts22;	            
-	  case(ASSERT(_,_)::elts2) then removeEquations(elts2);
-	  case(REINIT(_,_)::elts2) then removeEquations(elts2);	    
+	    (elts22,elts3) = removeEquations(elts2);
+    then (e::elts22,elts3);	            
+	  case((e as ASSERT(_,_))::elts2) 
+	    equation
+	      (outDaeNonEq,outDaeEq) = removeEquations(elts2);
+	    then (outDaeNonEq,e::outDaeEq);
+	  case((e as REINIT(_,_))::elts2) 
+	    equation
+	      (outDaeNonEq,outDaeEq) = removeEquations(elts2);
+	    then (outDaeNonEq,e::outDaeEq);	    
 	end matchcontinue;  
   
 end removeEquations;
@@ -529,72 +580,135 @@ algorithm
    end matchcontinue;
 end removeVariable;
 
-public function removeInnerAttrs "
-Remove the inner attribute of all vars in list
-And update binding value if NONE."
+public function removeInnerAttrs "Remove the inner attribute of all vars in list"
   input list<Element> dae;
   input list<Exp.ComponentRef> vars;
-  input list<tuple<Exp.ComponentRef,Exp.Exp>> outerMods;
   output list<Element> outDae;
 algorithm
-  outDae := Util.listFold_2r(vars,removeInnerAttr,dae,outerMods);
+  outDae := Util.listFold(vars,removeInnerAttr,dae);
 end removeInnerAttrs;
 
-public function removeInnerAttr "
-Remove the inner attribute from variable in the DAE
-And update binding value if NONE."
+public function removeInnerAttr "Remove the inner attribute from variable in the DAE"
+  input Exp.ComponentRef var;
   input list<Element> dae;
-  input Exp.ComponentRef var;  
-  input list<tuple<Exp.ComponentRef,Exp.Exp>> outerMods;
   output list<Element> outDae;
 algorithm
-  outDae := matchcontinue(dae,var,outerMods)
-    local 
-      Exp.ComponentRef cr;
-      list<Element> elist,elist2;
-      Element e,v;
-      Ident id;
-      Exp.ComponentRef cr;
-      VarKind kind;
-      VarDirection dir;
-      Type tp;
-      Option<Exp.Exp> bind;
-      InstDims dim;
-      Flow flow_;
-      Stream stream_;
-      list<Absyn.Path> cls;
-      Option<VariableAttributes> attr;
-      Option<Absyn.Comment> cmt;
-      Absyn.InnerOuter io,io2;
-      Types.Type ftp;
-      VarProtection prot;
-      list<Element> rest;
-      Exp.Exp exp;
-    case({},var,_) then {};
-    case(VAR(cr,kind,dir,prot,tp,SOME(exp),dim,flow_,stream_,cls,attr,cmt,io,ftp)::rest,var,outerMods) 
-      equation
-        true = Exp.crefEqual(var,cr);
-        // don't check outerMods for binding, while the inner/innerouter already has a higherpriority binding.
-        io2 = removeInnerAttribute(io);
-      then VAR(cr,kind,dir,prot,tp,SOME(exp),dim,flow_,stream_,cls,attr,cmt,io2,ftp)::rest;
-    case(VAR(cr,kind,dir,prot,tp,NONE,dim,flow_,stream_,cls,attr,cmt,io,ftp)::rest,var,outerMods) 
-      equation
-        true = Exp.crefEqual(var,cr);
-        bind = getOuterBinding(cr,outerMods); // check for previous definition on the outer variable
-        io2 = removeInnerAttribute(io);
-      then VAR(cr,kind,dir,prot,tp,bind,dim,flow_,stream_,cls,attr,cmt,io2,ftp)::rest;
-    case(COMP(id,DAE(elist))::rest,var,outerMods) 
-      equation
-        elist2=removeInnerAttr(elist,var,outerMods);
-        rest = removeInnerAttr(rest,var,outerMods);
-      then COMP(id,DAE(elist2))::rest;
-    case(e::rest,var,outerMods) 
-      equation
-        rest = removeInnerAttr(rest,var,outerMods);
-      then e::rest;
-  end matchcontinue;
+   outDae := matchcontinue(var,dae)
+   			local Exp.ComponentRef cr,oldVar,newVar;
+   			  list<Element> elist,elist2,elist3;
+   			  Element e,v,u,o;
+   			  Ident id;
+   			  Exp.ComponentRef cr;
+   			  VarKind kind;
+   			  VarDirection dir;
+    			Type tp;
+   			  Option<Exp.Exp> bind;
+   			  InstDims dim;
+    			Flow flow_;
+   			  list<Absyn.Path> cls;
+    			Option<VariableAttributes> attr;
+   			  Option<Absyn.Comment> cmt;
+    			Absyn.InnerOuter io,io2;
+   			  Types.Type ftp;
+   			  VarProtection prot;
+   			  Stream st;
+     case(var,{}) then {};
+     /* When having an inner outer, we declare two variables on the same line. 
+        Since we can not handle this with current instantiation procedure, we create temporary variables in the dae.
+        These are named uniqly and renamed later in "instClass" 
+     */ 
+     case(var,VAR(oldVar,kind,dir,prot,tp,bind,dim,flow_,st,cls,attr,cmt,(io as Absyn.INNEROUTER()),ftp)::dae) equation
+       true = compareUniquedVarWithNonUnique(var,oldVar);
+       newVar = nameInnerouterUniqueCref(oldVar);
+       o = VAR(oldVar,kind,dir,prot,tp,NONE,dim,flow_,st,cls,attr,cmt,Absyn.OUTER(),ftp) "intact";
+       u = VAR(newVar,kind,dir,prot,tp,bind,dim,flow_,st,cls,attr,cmt,Absyn.UNSPECIFIED(),ftp) " unique'ified";
+       elist3 = u::{o};
+       dae = listAppend(elist3,dae);
+     then 
+       dae;
+         
+     case(var,VAR(cr,kind,dir,prot,tp,bind,dim,flow_,st,cls,attr,cmt,io,ftp)::dae) equation
+       true = Exp.crefEqual(var,cr);
+       io2 = removeInnerAttribute(io);
+     then 
+       VAR(cr,kind,dir,prot,tp,bind,dim,flow_,st,cls,attr,cmt,io2,ftp)::dae;
+       
+     case(var,COMP(id,DAE(elist))::dae) equation
+       elist2=removeInnerAttr(var,elist);
+       dae = removeInnerAttr(var,dae);
+     then COMP(id,DAE(elist2))::dae;
+     case(var,e::dae) equation
+         dae = removeInnerAttr(var,dae);
+      then e::dae;        
+   end matchcontinue;
 end removeInnerAttr;
 
+protected function compareUniquedVarWithNonUnique "
+Author: BZ, workaround to get innerouter elements to work.
+This function strips the 'unique identifer' from the cref and compares.
+"
+input Exp.ComponentRef cr1;
+input Exp.ComponentRef cr2;
+output Boolean equal;
+String s1,s2,s3;
+algorithm
+  s1 := Exp.printComponentRefStr(cr1);
+  s2 := Exp.printComponentRefStr(cr2);
+  s1 := System.stringReplace(s1, UNIQUEIO, "");
+  s2 := System.stringReplace(s2, UNIQUEIO, "");
+  equal := stringEqual(s1,s2);
+end compareUniquedVarWithNonUnique;
+
+public function nameInnerouterUniqueCref "
+Author: BZ, 2008-11
+Renames a var to unique name
+"
+  input Exp.ComponentRef inCr;
+  output Exp.ComponentRef outCr;
+algorithm outCr := matchcontinue(inCr)
+  local
+    Exp.ComponentRef newChild,child;
+    String id;
+    Exp.Type idt;
+    list<Exp.Subscript> subs;
+  case(Exp.CREF_IDENT(id,idt,subs))
+    equation
+      id = UNIQUEIO +& id;
+    then
+      Exp.CREF_IDENT(id,idt,subs);
+  case(Exp.CREF_QUAL(id,idt,subs,child))
+    equation
+      newChild = nameInnerouterUniqueCref(child);      
+    then
+      Exp.CREF_QUAL(id,idt,subs,newChild);
+      
+end matchcontinue;
+end nameInnerouterUniqueCref;
+
+public function unNameInnerouterUniqueCref ""
+input Exp.ComponentRef cr;
+input String removalString;
+output Exp.ComponentRef ocr;
+algorithm ocr := matchcontinue(cr,removalString)
+  local
+    String str,str2;
+    Exp.Type ty;
+    Exp.ComponentRef child,child_2;
+    list<Exp.Subscript> subs;
+  case(Exp.CREF_IDENT(str,ty,subs),removalString)
+    equation
+      str2 = System.stringReplace(str, removalString, "");
+      then
+        Exp.CREF_IDENT(str2,ty,subs);
+  case(Exp.CREF_QUAL(str,ty,subs,child),removalString)
+    equation
+      child_2 = unNameInnerouterUniqueCref(child,removalString);
+      str2 = System.stringReplace(str, removalString, "");
+    then
+      Exp.CREF_QUAL(str2,ty,subs,child_2);
+  case(_,_) equation print(" failure unNameInnerouterUniqueCref\n"); then fail(); 
+  end matchcontinue;
+end unNameInnerouterUniqueCref;
 protected function getOuterBinding "
 Author: BZ, 2008-11
 Aquire the binding on the outer/innerouter variable, to transfer to inner variable.
@@ -916,7 +1030,7 @@ algorithm
       Exp.Exp exp,dim;
       Types.Attributes attr;
     case NOEXTARG() then "void"; 
-    case EXTARG(componentRef = cr,attributes = Types.ATTR(flow_ = fl,stream_=st,accessibility = acc,parameter_ = var,direction = dir),type_ = ty)
+    case EXTARG(componentRef = cr,attributes = Types.ATTR(flowPrefix = fl,streamPrefix=st,accessibility = acc,parameter_ = var,direction = dir),type_ = ty)
       equation 
         crstr = Exp.printComponentRefStr(cr);
         dirstr = Dump.directionSymbol(dir);
@@ -1723,31 +1837,31 @@ public function setFinalAttr "
   sets the start attribute. If NONE, assumes Real attributes.
 "
   input Option<VariableAttributes> attr;
-  input Boolean final_;
+  input Boolean finalPrefix;
   output Option<VariableAttributes> outAttr;  
 algorithm 
   outAttr:=
-  matchcontinue (attr,final_)
+  matchcontinue (attr,finalPrefix)
     local
       Option<Exp.Exp> q,u,du,i,f,n;
       tuple<Option<Exp.Exp>, Option<Exp.Exp>> minMax;
       Option<StateSelect> ss;
       Option<Exp.Exp> eb;
       Option<Boolean> ip,fn; 
-    case (SOME(VAR_ATTR_REAL(q,u,du,minMax,i,f,n,ss,eb,ip,_)),final_) 
-    then SOME(VAR_ATTR_REAL(q,u,du,minMax,i,f,n,ss,eb,ip,SOME(final_)));
-    case (SOME(VAR_ATTR_INT(q,minMax,i,f,eb,ip,_)),final_)
-    then SOME(VAR_ATTR_INT(q,minMax,i,f,eb,ip,SOME(final_)));
-    case (SOME(VAR_ATTR_BOOL(q,i,f,eb,ip,_)),final_) 
-    then SOME(VAR_ATTR_BOOL(q,i,f,eb,ip,SOME(final_)));
-    case (SOME(VAR_ATTR_STRING(q,i,eb,ip,_)),final_)
-    then SOME(VAR_ATTR_STRING(q,i,eb,ip,SOME(final_)));
+    case (SOME(VAR_ATTR_REAL(q,u,du,minMax,i,f,n,ss,eb,ip,_)),finalPrefix) 
+    then SOME(VAR_ATTR_REAL(q,u,du,minMax,i,f,n,ss,eb,ip,SOME(finalPrefix)));
+    case (SOME(VAR_ATTR_INT(q,minMax,i,f,eb,ip,_)),finalPrefix)
+    then SOME(VAR_ATTR_INT(q,minMax,i,f,eb,ip,SOME(finalPrefix)));
+    case (SOME(VAR_ATTR_BOOL(q,i,f,eb,ip,_)),finalPrefix) 
+    then SOME(VAR_ATTR_BOOL(q,i,f,eb,ip,SOME(finalPrefix)));
+    case (SOME(VAR_ATTR_STRING(q,i,eb,ip,_)),finalPrefix)
+    then SOME(VAR_ATTR_STRING(q,i,eb,ip,SOME(finalPrefix)));
       
-    case (SOME(VAR_ATTR_ENUMERATION(q,minMax,u,du,eb,ip,_)),final_) 
-    then SOME(VAR_ATTR_ENUMERATION(q,minMax,u,du,eb,ip,SOME(final_)));
+    case (SOME(VAR_ATTR_ENUMERATION(q,minMax,u,du,eb,ip,_)),finalPrefix) 
+    then SOME(VAR_ATTR_ENUMERATION(q,minMax,u,du,eb,ip,SOME(finalPrefix)));
       
-    case (NONE,final_)
-      then SOME(VAR_ATTR_REAL(NONE,NONE,NONE,(NONE,NONE),NONE,NONE,NONE,NONE,NONE,NONE,SOME(final_)));
+    case (NONE,finalPrefix)
+      then SOME(VAR_ATTR_REAL(NONE,NONE,NONE,(NONE,NONE),NONE,NONE,NONE,NONE,NONE,NONE,SOME(finalPrefix)));
   end matchcontinue;
 end setFinalAttr;
 
@@ -2034,8 +2148,8 @@ algorithm
       VarKind kind;
       VarDirection dir;
       Type typ;
-      Flow flow_;
-      Stream stream_;
+      Flow flowPrefix;
+      Stream streamPrefix;
       list<Absyn.Path> classlst,class_;
       Option<VariableAttributes> dae_var_attr;
       Option<Absyn.Comment> comment;
@@ -2045,8 +2159,8 @@ algorithm
              direction = dir,
              ty = typ,
              binding = NONE,
-             flow_ = flow_,
-             stream_ = stream_,
+             flowPrefix = flowPrefix,
+             streamPrefix = streamPrefix,
              pathLst = classlst,
              variableAttributesOption = dae_var_attr,
              absynCommentOption = comment)
@@ -2069,8 +2183,8 @@ algorithm
              direction = dir,
              ty = typ,
              binding = SOME(e),
-             flow_ = flow_,
-             stream_ = stream_,
+             flowPrefix = flowPrefix,
+             streamPrefix = streamPrefix,
              pathLst = class_,
              variableAttributesOption = dae_var_attr,
              absynCommentOption = comment)
@@ -2104,8 +2218,8 @@ algorithm
       VarKind kind;
       VarDirection dir;
       Type typ;
-      Flow flow_;
-      Stream stream_;
+      Flow flowPrefix;
+      Stream streamPrefix;
       list<Absyn.Path> classlst;
       Option<VariableAttributes> dae_var_attr;
       Option<Absyn.Comment> comment;
@@ -2117,8 +2231,8 @@ algorithm
              protection=prot,
              ty = typ,
              binding = NONE,
-             flow_ = flow_,
-             stream_ =  stream_,
+             flowPrefix = flowPrefix,
+             streamPrefix =  streamPrefix,
              pathLst = classlst,
              variableAttributesOption = dae_var_attr,
              absynCommentOption = comment)
@@ -2140,8 +2254,8 @@ algorithm
              protection=prot,
              ty = typ,
              binding = SOME(e),
-             flow_ = flow_,
-             stream_ = stream_,
+             flowPrefix = flowPrefix,
+             streamPrefix = streamPrefix,
              pathLst = classlst,
              variableAttributesOption = dae_var_attr,
              absynCommentOption = comment)
@@ -3310,8 +3424,8 @@ algorithm
       Type tp;
       Option<Exp.Exp> bind;
       InstDims dim;
-      Flow flow_;
-      Stream stream_;
+      Flow flowPrefix;
+      Stream streamPrefix;
       list<Absyn.Path> lst;
       Option<VariableAttributes> dae_var_attr;
       Option<Absyn.Comment> comment;
@@ -3328,8 +3442,8 @@ algorithm
                ty = tp,
                binding = bind,
                dims = dim,
-               flow_ = flow_,
-               stream_ = stream_,
+               flowPrefix = flowPrefix,
+               streamPrefix = streamPrefix,
                pathLst = lst,
                variableAttributesOption = dae_var_attr,
                absynCommentOption = comment,
@@ -3338,7 +3452,7 @@ algorithm
       equation 
         xs_1 = setComponentType(xs, newtype);
       then
-        (VAR(cr,kind,dir,prot,tp,bind,dim,flow_,stream_,(newtype :: lst),dae_var_attr,comment,io,ftp) :: xs_1);
+        (VAR(cr,kind,dir,prot,tp,bind,dim,flowPrefix,streamPrefix,(newtype :: lst),dae_var_attr,comment,io,ftp) :: xs_1);
         
     case ((x :: xs),newtype)
       equation 
@@ -4117,7 +4231,7 @@ algorithm
       list<Element> xs,lst;
       Ident id;
     case ({}) then {}; 
-    case ((VAR(componentRef = cr,flow_ = FLOW()) :: xs))
+    case ((VAR(componentRef = cr,flowPrefix = FLOW()) :: xs))
       equation 
         res = getFlowVariables(xs);
       then
@@ -4175,7 +4289,7 @@ algorithm
       list<Element> xs,lst;
       Ident id;
     case ({}) then {};
-    case ((VAR(componentRef = cr,stream_ = STREAM()) :: xs))
+    case ((VAR(componentRef = cr,streamPrefix = STREAM()) :: xs))
       equation
         res = getStreamVariables(xs);
       then
@@ -4301,7 +4415,7 @@ algorithm
       Type c;
       InstDims e;
       Flow g;
-      Stream stream_;
+      Stream streamPrefix;
       Stream s;
       list<Absyn.Path> h;
       Option<VariableAttributes> dae_var_attr;
@@ -4325,8 +4439,8 @@ algorithm
                ty = c,
                binding = d,
                dims = e,
-               flow_ = g,
-               stream_ = stream_,
+               flowPrefix = g,
+               streamPrefix = streamPrefix,
                pathLst = h,
                variableAttributesOption = dae_var_attr,
                absynCommentOption = comment,
@@ -4340,7 +4454,7 @@ algorithm
         d_1 = toModelicaFormExpOpt(d);
         ty = Exp.crefType(cr); 
       then
-        (VAR(Exp.CREF_IDENT(str_1,ty,{}),a,b,prot,c,d_1,e,g,stream_,h,dae_var_attr,
+        (VAR(Exp.CREF_IDENT(str_1,ty,{}),a,b,prot,c,d_1,e,g,streamPrefix,h,dae_var_attr,
           comment,io,tp) :: elts_1);
     case ((DEFINE(componentRef = cr,exp = e) :: elts))
       local Exp.Exp e;
@@ -4693,7 +4807,7 @@ algorithm
       Type ty;
       Option<Exp.Exp> bndexp,startvalexp;
       InstDims instdims;
-      Flow flow_;
+      Flow flowPrefix;
       list<Absyn.Path> pathlist;
       Option<VariableAttributes> dae_var_attr;
       Option<Absyn.Comment> comment;
@@ -4871,8 +4985,8 @@ algorithm
       Type ty;
       Option<Exp.Exp> bndexp,startvalexp;
       InstDims instdims;
-      Flow flow_;
-      Stream stream_;
+      Flow flowPrefix;
+      Stream streamPrefix;
       list<Absyn.Path> pathlist;
       Option<VariableAttributes> dae_var_attr;
       Option<Absyn.Comment> comment;
@@ -4892,8 +5006,8 @@ algorithm
              ty = ty,
              binding = bndexp,
              dims = instdims,
-             flow_ = flow_,
-             stream_ = stream_,
+             flowPrefix = flowPrefix,
+             streamPrefix = streamPrefix,
              pathLst = pathlist,
              variableAttributesOption = dae_var_attr,
              absynCommentOption = comment) /* VAR */ 
@@ -5211,6 +5325,618 @@ algorithm flowString := matchcontinue(var)
   case(NON_CONNECTOR) then "non_connector";
 end matchcontinue;
 end dumpFlow;
+
+public function renameTimeToDollarTime "
+Author: BZ, 2009-1
+rename the keyword time to globalData->timeValue, this is a special case for functions since they do not get translated in to c_crefs.
+"
+  input list<Element> dae;
+  output list<Element> odae;  
+algorithm (odae,_) := traverseDAE(dae, renameTimeToDollarTimeVisitor,0);
+end renameTimeToDollarTime;
+
+protected function renameTimeToDollarTimeVisitor "
+Author: BZ, 2009-01
+The visitor function for traverseDAE.calls Exp.traverseExp on the expression.
+"
+input Exp.Exp exp; 
+input Integer arg; 
+output Exp.Exp oexp; 
+output Integer oarg; 
+algorithm (oexp,oarg) := matchcontinue(exp,arg)
+  local
+    Exp.Type ty;
+    Exp.ComponentRef cr,cr2;
+  case(exp,oarg) 
+    equation
+      ((oexp,oarg)) = Exp.traverseExp(exp,renameTimeToDollarTimeFromCref,oarg);
+    then 
+      (oexp,oarg);
+  end matchcontinue;
+end renameTimeToDollarTimeVisitor;
+
+protected function renameTimeToDollarTimeFromCref "
+Author: BZ, 2008-12
+Function for Exp.traverseExp, removes the constant 'UNIQUEIO' from any cref it might visit.
+"
+  input tuple<Exp.Exp, Integer> inTplExpExpString;
+  output tuple<Exp.Exp, Integer> outTplExpExpString;
+algorithm outTplExpExpString := matchcontinue (inTplExpExpString)
+  local Exp.ComponentRef cr,cr2; Exp.Type cty,ty; Integer oarg; list<Exp.Subscript> subs;
+  case((Exp.CREF(Exp.CREF_IDENT("time",cty,subs),ty),oarg))    
+  then ((Exp.CREF(Exp.CREF_IDENT("globalData->timeValue",cty,subs),ty),oarg));
+  case(inTplExpExpString) then inTplExpExpString;
+end matchcontinue;   
+end renameTimeToDollarTimeFromCref;
+
+
+public function renameUniqueOuterVars "
+Author: BZ, 2008-12
+Rename innerouter(the inner part of innerouter) variables that have been renamed to a.b.$unique$var
+Just remove the $unique$ from the var name.
+This function traverses the entire dae.
+"
+  input list<Element> dae;
+  output list<Element> odae;  
+algorithm (odae,_) := traverseDAE(dae, renameUniqueVisitor,0);
+end renameUniqueOuterVars;
+
+protected function renameUniqueVisitor "
+Author: BZ, 2008-12
+The visitor function for traverseDAE. 
+calls Exp.traverseExp on the expression.
+"
+input Exp.Exp exp; 
+input Integer arg; 
+output Exp.Exp oexp; 
+output Integer oarg; 
+algorithm (oexp,oarg) := matchcontinue(exp,arg)
+  local
+    Exp.Type ty;
+    Exp.ComponentRef cr,cr2;
+  case(exp,oarg) 
+    equation
+      ((oexp,oarg)) = Exp.traverseExp(exp,removeUniqieIdentifierFromCref,oarg);
+    then 
+      (oexp,oarg);
+  end matchcontinue;
+end renameUniqueVisitor;
+
+protected function removeUniqieIdentifierFromCref "
+Author: BZ, 2008-12
+Function for Exp.traverseExp, removes the constant 'UNIQUEIO' from any cref it might visit.
+"
+  input tuple<Exp.Exp, Integer> inTplExpExpString;
+  output tuple<Exp.Exp, Integer> outTplExpExpString;
+algorithm outTplExpExpString := matchcontinue (inTplExpExpString)
+  local Exp.ComponentRef cr,cr2; Exp.Type ty; Integer oarg;
+  case((Exp.CREF(cr,ty),oarg))    
+    equation
+      cr2 = unNameInnerouterUniqueCref(cr,UNIQUEIO);
+    then ((Exp.CREF(cr2,ty),oarg));
+    case(inTplExpExpString) then inTplExpExpString;
+  end matchcontinue;   
+end removeUniqieIdentifierFromCref;
+
+public function nameUniqueOuterVars "
+Author: BZ, 2008-12
+Rename all variables to the form a.b.$unique$var, call
+This function traverses the entire dae.
+"
+  input list<Element> dae;
+  output list<Element> odae;  
+algorithm (odae,_) := traverseDAE(dae, nameUniqueVisitor,0);
+end nameUniqueOuterVars;
+
+protected function nameUniqueVisitor "
+Author: BZ, 2008-12
+The visitor function for traverseDAE. 
+calls Exp.traverseExp on the expression.
+"
+input Exp.Exp exp; 
+input Integer arg; 
+output Exp.Exp oexp; 
+output Integer oarg; 
+algorithm (oexp,oarg) := matchcontinue(exp,arg)
+  local
+    Exp.Type ty;
+    Exp.ComponentRef cr,cr2;
+  case(exp,oarg) 
+    equation
+      ((oexp,oarg)) = Exp.traverseExp(exp,addUniqieIdentifierToCref,oarg);
+    then 
+      (oexp,oarg);
+  end matchcontinue;
+end nameUniqueVisitor;
+
+protected function addUniqieIdentifierToCref "
+Author: BZ, 2008-12
+Function for Exp.traverseExp, adds the constant 'UNIQUEIO' to the CREF_IDENT() part of the cref.
+"
+  input tuple<Exp.Exp, Integer> inTplExpExpString;
+  output tuple<Exp.Exp, Integer> outTplExpExpString;
+algorithm outTplExpExpString := matchcontinue (inTplExpExpString)
+  local Exp.ComponentRef cr,cr2; Exp.Type ty; Integer oarg;
+  case((Exp.CREF(cr,ty),oarg))    
+    equation
+      cr2 = nameInnerouterUniqueCref(cr);
+    then ((Exp.CREF(cr2,ty),oarg));
+    case(inTplExpExpString) then inTplExpExpString;
+  end matchcontinue;   
+end addUniqieIdentifierToCref;
+
+// helper functions for traverseDAE
+protected function traverseDAEOptExp "
+Author: BZ, 2008-12
+Traverse an optional expression, helper function for traverseDAE
+"
+  input Option<Exp.Exp> oexp;
+  input FuncExpType func;
+  input Type_a extraArg;
+  output Option<Exp.Exp> ooexp;
+  output Type_a oextraArg;
+  partial function FuncExpType input Exp.Exp exp; input Type_a arg; output Exp.Exp oexp; output Type_a oarg; end FuncExpType;
+  replaceable type Type_a subtypeof Any;
+algorithm(ooexp,oextraArg) := matchcontinue(oexp,func,extraArg)
+  case(NONE,func,extraArg) then (NONE,extraArg);
+  case(SOME(e),func,extraArg)
+    local Exp.Exp e;
+    equation
+      (e,extraArg) = func(e,extraArg);
+    then
+      (SOME(e),extraArg);
+end matchcontinue;
+end traverseDAEOptExp;
+
+protected function traverseDAEExpList "
+Author: BZ, 2008-12
+Traverse an list of expressions, helper function for traverseDAE
+"
+  input list<Exp.Exp> exps;
+  input FuncExpType func;
+  input Type_a extraArg;
+  output list<Exp.Exp> oexps;
+  output Type_a oextraArg;
+  partial function FuncExpType input Exp.Exp exp; input Type_a arg; output Exp.Exp oexp; output Type_a oarg; end FuncExpType;
+  replaceable type Type_a subtypeof Any;
+algorithm(oexps,oextraArg) := matchcontinue(exps,func,extraArg)
+  local Exp.Exp e; 
+  case({},func,extraArg) then ({},extraArg);
+  case(e::exps,func,extraArg)
+    equation
+      (e,extraArg) = func(e,extraArg);
+      (oexps,extraArg) = traverseDAEExpList(exps,func,extraArg);
+    then
+      (e::oexps,extraArg);
+end matchcontinue;
+end traverseDAEExpList;
+
+protected function traverseDAEList "
+Author: BZ, 2008-12
+Helper function for traverseDAE, traverses a list of dae element list. 
+"
+  input list<list<Element>> daeList;
+  input FuncExpType func;
+  input Type_a extraArg;
+  output list<list<Element>> traversedDaeList;
+  output Type_a oextraArg;
+  partial function FuncExpType input Exp.Exp exp; input Type_a arg; output Exp.Exp oexp; output Type_a oarg; end FuncExpType;
+  replaceable type Type_a subtypeof Any;
+algorithm (traversedDaeList,Type_a) := matchcontinue(daeList,func,extraArg)
+  local 
+    list<Element> branch,branch2;
+    list<list<Element>> recRes; 
+  case({},func,extraArg) then ({},extraArg);
+  case(branch::daeList,func,extraArg)
+    equation
+      (branch2,extraArg) = traverseDAE(branch,func,extraArg);
+      (recRes,extraArg) = traverseDAEList(daeList,func,extraArg);
+    then
+      (branch2::recRes,extraArg);
+end matchcontinue;
+end traverseDAEList;
+
+public function traverseDAE "
+Author: BZ, 2008-12
+This function traverses all dae exps.
+NOTE, it also traverses DAE.VAR(componenname) as an expression.
+"
+  input list<Element> daeList;
+  input FuncExpType func;
+  input Type_a extraArg;
+  output list<Element> traversedDaeList;
+  output Type_a oextraArg;
+  partial function FuncExpType input Exp.Exp exp; input Type_a arg; output Exp.Exp oexp; output Type_a oarg; end FuncExpType;
+  replaceable type Type_a subtypeof Any;
+algorithm (traversedDaeList,Type_a) := matchcontinue(daeList,func,extraArg)
+  local
+    Exp.ComponentRef cr,cr2,cr1,cr1_2;
+    list<Element> dae,dae2,elist,elist2,elist22,elist1,elist11;
+    Element elt,elt2,elt22,elt1,elt11;
+    VarKind kind;
+    VarDirection dir;
+    Type tp;
+    Exp.Exp bindExp,bindExp2,e,e2,e22,e1,e11;
+    InstDims dims;
+    StartValue start;
+    Flow fl;
+    list<Absyn.Path> clsLst;
+    Option<VariableAttributes> attr;
+    Option<Absyn.Comment> cmt;
+    Option<Exp.Exp> optExp;
+    Absyn.InnerOuter io;
+    Types.Type ftp;
+    list<Integer> idims;
+    ExternalDecl extDecl;
+    Ident id;
+    Absyn.Path path;
+    list<Algorithm.Statement> stmts,stmts2;
+    VarProtection prot;
+    list<list<Element>> tbs,tbs_1;
+    list<Exp.Exp> conds,conds_1; 
+    Stream st;
+  case({},_,extraArg) then ({},extraArg);
+  case(VAR(cr,kind,dir,prot,tp,optExp,dims,fl,st,clsLst,attr,cmt,io,ftp)::dae,func,extraArg) 
+    equation
+      (Exp.CREF(cr2,_),extraArg) = func(Exp.CREF(cr,Exp.REAL()), extraArg);
+      (optExp,extraArg) = traverseDAEOptExp(optExp,func,extraArg);      
+      (attr,extraArg) = traverseDAEVarAttr(attr,func,extraArg);
+      (dae2,extraArg) = traverseDAE(dae,func,extraArg);
+    then  (VAR(cr2,kind,dir,prot,tp,optExp,dims,fl,st,clsLst,attr,cmt,io,ftp)::dae2,extraArg);
+      
+  case(DEFINE(cr,e)::dae,func,extraArg)
+    equation
+      (e2,extraArg) = func(e, extraArg);
+      (Exp.CREF(cr2,_),extraArg) = func(Exp.CREF(cr,Exp.REAL()), extraArg);
+      (dae2,extraArg) = traverseDAE(dae,func,extraArg);
+    then (DEFINE(cr2,e2)::dae2,extraArg);
+      
+  case(INITIALDEFINE(cr,e)::dae,func,extraArg) 
+    equation
+      (e2,extraArg) = func(e, extraArg);
+      (Exp.CREF(cr2,_),extraArg) = func(Exp.CREF(cr,Exp.REAL()), extraArg);
+      (dae2,extraArg) = traverseDAE(dae,func,extraArg);
+    then (INITIALDEFINE(cr2,e2)::dae2,extraArg);
+      
+  case(EQUEQUATION(cr,cr1)::dae,func,extraArg) 
+    equation
+      (Exp.CREF(cr2,_),extraArg) = func(Exp.CREF(cr,Exp.REAL()), extraArg);
+      (Exp.CREF(cr1_2,_),extraArg) = func(Exp.CREF(cr1,Exp.REAL()), extraArg);
+      (dae2,extraArg) = traverseDAE(dae,func,extraArg);
+    then (EQUEQUATION(cr2,cr1_2)::dae2,extraArg);
+      
+  case(EQUATION(e1,e2)::dae,func,extraArg) 
+    equation
+      (e11,extraArg) = func(e1, extraArg);
+      (e22,extraArg) = func(e2, extraArg);
+      (dae2,extraArg) = traverseDAE(dae,func,extraArg);
+    then (EQUATION(e11,e22)::dae2,extraArg);
+      
+  case(COMPLEX_EQUATION(e1,e2)::dae,func,extraArg) 
+    equation
+      (e11,extraArg) = func(e1, extraArg);
+      (e22,extraArg) = func(e2, extraArg);
+      (dae2,extraArg) = traverseDAE(dae,func,extraArg);
+    then (COMPLEX_EQUATION(e11,e22)::dae2,extraArg);
+      
+  case(ARRAY_EQUATION(idims,e1,e2)::dae,func,extraArg) 
+    equation
+      (e11, extraArg) = func(e1, extraArg);
+      (e22, extraArg) = func(e2, extraArg);
+      (dae2,extraArg) = traverseDAE(dae,func,extraArg);
+    then (ARRAY_EQUATION(idims,e11,e22)::dae2,extraArg);
+      
+  case(WHEN_EQUATION(e1,elist,SOME(elt))::dae,func,extraArg) 
+    equation
+      (e11, extraArg) = func(e1, extraArg);
+      ({elt2}, extraArg)= traverseDAE({elt},func,extraArg);
+      (elist2, extraArg) = traverseDAE(elist,func,extraArg);
+      (dae2,extraArg) = traverseDAE(dae,func,extraArg);
+    then (WHEN_EQUATION(e11,elist2,SOME(elt2))::dae2,extraArg);
+      
+  case(WHEN_EQUATION(e1,elist,NONE)::dae,func,extraArg) 
+    equation
+      (e11,extraArg) = func(e1, extraArg);
+      (elist2,extraArg) = traverseDAE(elist,func,extraArg);
+      (dae2,extraArg) = traverseDAE(dae,func,extraArg);
+    then (WHEN_EQUATION(e11,elist2,NONE)::dae2,extraArg);
+      
+  case(INITIALEQUATION(e1,e2)::dae,func,extraArg) 
+    equation
+      (e11,extraArg) = func(e1, extraArg);
+      (e22,extraArg) = func(e2, extraArg);
+      (dae2,extraArg) = traverseDAE(dae,func,extraArg);
+    then (INITIALEQUATION(e11,e22)::dae2,extraArg);
+      
+  case(COMP(id,DAE(elist))::dae,func,extraArg) 
+    equation
+      (elist2,extraArg) = traverseDAE(elist,func,extraArg);
+      (dae2,extraArg) = traverseDAE(dae,func,extraArg);
+    then (COMP(id,DAE(elist))::dae2,extraArg);
+      
+  case(FUNCTION(path,DAE(elist),ftp)::dae,func,extraArg) 
+    equation
+      (elist2,extraArg) = traverseDAE(elist,func,extraArg);
+      (dae2,extraArg) = traverseDAE(dae,func,extraArg);
+    then (FUNCTION(path,DAE(elist2),ftp)::dae2,extraArg);
+      
+  case(EXTFUNCTION(path,DAE(elist),ftp,extDecl)::dae,func,extraArg) 
+    equation
+      (elist2,extraArg) = traverseDAE(elist,func,extraArg);
+      (dae2,extraArg) = traverseDAE(dae,func,extraArg);
+    then (EXTFUNCTION(path,DAE(elist2),ftp,extDecl)::dae2,extraArg);
+      
+  case(EXTOBJECTCLASS(path,elt1,elt2)::dae,func,extraArg) 
+    equation
+      ({elt11,elt22},extraArg) =  traverseDAE({elt1,elt2},func,extraArg);
+      (dae2,extraArg) = traverseDAE(dae,func,extraArg);
+    then (EXTOBJECTCLASS(path,elt1,elt2)::dae2,extraArg);
+      
+  case(ASSERT(e1,e2)::dae,func,extraArg) 
+    equation
+      (e11,extraArg) = func(e1,extraArg);
+      (e22,extraArg) = func(e2,extraArg);          
+      (dae2,extraArg) = traverseDAE(dae,func,extraArg);
+    then (ASSERT(e11,e22)::dae2,extraArg);
+      
+  case(TERMINATE(e1)::dae,func,extraArg) 
+    equation
+      (e11,extraArg) = func(e1,extraArg);
+      (dae2,extraArg) = traverseDAE(dae,func,extraArg);
+    then (TERMINATE(e11)::dae2,extraArg);        
+      
+  case(REINIT(cr,e1)::dae,func,extraArg) 
+    equation
+      (e11,extraArg) = func(e1,extraArg);
+      (Exp.CREF(cr2,_),extraArg) = func(Exp.CREF(cr,Exp.REAL()),extraArg);
+      (dae2,extraArg) = traverseDAE(dae,func,extraArg);
+    then (REINIT(cr2,e11)::dae2,extraArg);
+      
+  case(ALGORITHM(Algorithm.ALGORITHM(stmts))::dae,func,extraArg) 
+    equation
+      (stmts2,extraArg) = traverseDAEEquationsStmts(stmts,func,extraArg);
+      (dae2,extraArg) = traverseDAE(dae,func,extraArg);
+    then (ALGORITHM(Algorithm.ALGORITHM(stmts2))::dae2,extraArg);
+      
+  case(INITIALALGORITHM(Algorithm.ALGORITHM(stmts))::dae,func,extraArg) 
+    equation
+      (stmts2,extraArg) = traverseDAEEquationsStmts(stmts,func,extraArg);
+      (dae2,extraArg) = traverseDAE(dae,func,extraArg);
+    then (INITIALALGORITHM(Algorithm.ALGORITHM(stmts2))::dae2,extraArg);
+      
+  case(IF_EQUATION(conds,tbs,elist2)::dae,func,extraArg)
+    equation
+      (conds_1,extraArg) = traverseDAEExpList(conds, func, extraArg);
+      (tbs_1,extraArg) = traverseDAEList(tbs,func,extraArg);
+      (elist22,extraArg) = traverseDAE(elist2,func,extraArg);
+      (dae2,extraArg) = traverseDAE(dae,func,extraArg);
+    then (IF_EQUATION(conds_1,tbs_1,elist22)::dae2,extraArg);
+
+  case(INITIAL_IF_EQUATION(conds,tbs,elist2)::dae,func,extraArg)
+    equation
+      (conds_1,extraArg) = traverseDAEExpList(conds, func, extraArg);
+      (tbs_1,extraArg) = traverseDAEList(tbs,func,extraArg);
+      (elist22,extraArg) = traverseDAE(elist2,func,extraArg); 
+      (dae2,extraArg) = traverseDAE(dae,func,extraArg);
+    then (INITIAL_IF_EQUATION(conds_1,tbs_1,elist22)::dae2,extraArg);
+
+  case(elt::_,_,_)
+    equation print(" failure in DAE.traverseDAE\n"); dumpElements({elt}); then fail();
+end matchcontinue;
+end traverseDAE;
+
+public function traverseDAEEquationsStmts "function: traverseDAEEquationsStmts
+  Author: BZ, 2008-12
+  Helper function to traverseDAE,
+  Handles the traversing of Algorithm.Statement.
+"
+  input list<Algorithm.Statement> inStmts;
+  input FuncExpType func;
+  input Type_a extraArg;
+  output list<Algorithm.Statement> outStmts;
+  output Type_a oextraArg;
+  partial function FuncExpType input Exp.Exp exp; input Type_a arg; output Exp.Exp oexp; output Type_a oarg; end FuncExpType;
+  replaceable type Type_a subtypeof Any;
+algorithm(outStmts,oextraArg) := matchcontinue(inStmts,func,extraArg)
+    local
+      Exp.Exp e_1,e_2,e,e2;
+      list<Exp.Exp> expl1,expl2;
+      Exp.ComponentRef cr_1,cr;
+      list<Algorithm.Statement> xs_1,xs,stmts,stmts2;
+      Exp.Type tp,tt;
+      Algorithm.Statement x,ew,ew_1;
+      Boolean b1;
+      Algorithm.Ident id1;
+      list<Integer> li;
+  case ({},_,extraArg) then ({},extraArg);
+      
+  case ((Algorithm.ASSIGN(type_ = tp,(exp1 = e2),exp = e) :: xs),func,extraArg)
+    equation 
+      (e_1,extraArg) = func(e, extraArg);
+      (e_2,extraArg) = func(e2, extraArg);
+      (xs_1,extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
+    then (Algorithm.ASSIGN(tp,e_2,e_1) :: xs_1,extraArg);
+      
+  case ((Algorithm.TUPLE_ASSIGN(type_ = tp,expExpLst = expl1, exp = e) :: xs),func,extraArg)
+    equation 
+      (e_1, extraArg) = func(e, extraArg);
+      (expl2, extraArg) = traverseDAEExpList(expl1,func,extraArg);
+      (xs_1, extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
+    then ((Algorithm.TUPLE_ASSIGN(tp,expl2,e_1) :: xs_1),extraArg);
+      
+  case ((Algorithm.ASSIGN_ARR(type_ = tp,componentRef = cr, exp = e) :: xs),func,extraArg)
+    equation 
+      (e_1, extraArg) = func(e, extraArg); 
+      (e_2 as Exp.CREF(cr_1,_), extraArg) = func(Exp.CREF(cr,Exp.OTHER()), extraArg); 
+      (xs_1, extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
+    then (Algorithm.ASSIGN_ARR(tp,cr_1,e_1) :: xs_1,extraArg);
+      
+  case (((x as Algorithm.FOR(type_=tp,boolean=b1,ident=id1,exp=e,statementLst=stmts)) :: xs),func,extraArg)
+    equation 
+      (stmts2, extraArg) = traverseDAEEquationsStmts(stmts,func,extraArg);
+      (e_1, extraArg) = func(e, extraArg); 
+      (xs_1, extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
+    then (Algorithm.FOR(tp,b1,id1,e_1,stmts2) :: xs_1,extraArg);
+      
+  case (((x as Algorithm.WHILE(exp = e,statementLst=stmts)) :: xs),func,extraArg)
+    equation 
+      (stmts2, extraArg) = traverseDAEEquationsStmts(stmts,func,extraArg);
+      (e_1, extraArg) = func(e, extraArg); 
+      (xs_1, extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
+    then (Algorithm.WHILE(e_1,stmts2) :: xs_1,extraArg);
+      
+  case (((x as Algorithm.WHEN(exp = e,statementLst=stmts,elseWhen=NONE,helpVarIndices=li)) :: xs),func,extraArg)
+    equation 
+      (stmts2, extraArg) = traverseDAEEquationsStmts(stmts,func,extraArg);
+      (e_1, extraArg) = func(e, extraArg); 
+      (xs_1, extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
+    then (Algorithm.WHEN(e_1,stmts2,NONE,li) :: xs_1,extraArg);
+      
+  case (((x as Algorithm.WHEN(exp = e,statementLst=stmts,elseWhen=SOME(ew),helpVarIndices=li)) :: xs),func,extraArg)
+    equation 
+      ({ew_1}, extraArg) = traverseDAEEquationsStmts({ew},func,extraArg);
+      (stmts2, extraArg) = traverseDAEEquationsStmts(stmts,func,extraArg);
+      (e_1, extraArg) = func(e, extraArg); 
+      (xs_1, extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
+    then (Algorithm.WHEN(e_1,stmts2,SOME(ew),li) :: xs_1,extraArg);
+      
+  case (((x as Algorithm.ASSERT(cond = e, msg=e2)) :: xs),func,extraArg)
+    equation 
+      (e_1, extraArg) = func(e, extraArg); 
+      (e_2, extraArg) = func(e2, extraArg); 
+      (xs_1, extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
+    then (Algorithm.ASSERT(e_1,e_2) :: xs_1,extraArg);
+      
+  case (((x as Algorithm.TERMINATE(msg = e)) :: xs),func,extraArg)
+    equation 
+      (e_1, extraArg) = func(e, extraArg);
+      (xs_1, extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
+    then (Algorithm.TERMINATE(e_1) :: xs_1,extraArg);
+      
+  case (((x as Algorithm.REINIT(var = e,value=e2)) :: xs),func,extraArg)
+    equation 
+      (e_1, extraArg) = func(e, extraArg); 
+      (e_2, extraArg) = func(e2, extraArg); 
+      (xs_1, extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
+    then (Algorithm.REINIT(e_1,e_2) :: xs_1,extraArg);
+      
+  case (((x as Algorithm.NORETCALL(functionName = fnName, functionArgs = expl1)) :: xs),func,extraArg)
+    local Absyn.Path fnName;
+    equation 
+      (expl2, extraArg) = traverseDAEExpList(expl1, func, extraArg);
+      (xs_1, extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
+    then (Algorithm.NORETCALL(fnName, expl1) :: xs_1,extraArg);
+      
+  case (((x as Algorithm.RETURN()) :: xs),func,extraArg)
+    equation 
+      (xs_1, extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
+    then (x :: xs_1,extraArg);   
+      
+  case (((x as Algorithm.BREAK()) :: xs),func,extraArg)
+    equation 
+      (xs_1, extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
+    then (x :: xs_1,extraArg);
+      
+  case (((x as Algorithm.IF(exp=e,statementLst=stmts,else_ = el)) :: xs),func,extraArg)
+    local Algorithm.Else el,el_1;
+    equation 
+      (el_1,extraArg) = traverseDAEEquationsStmtsElse(el,func,extraArg);
+      (stmts2,extraArg) = traverseDAEEquationsStmts(stmts,func,extraArg);
+      (e_1,extraArg) = func(e, extraArg); 
+      (xs_1,extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
+    then (Algorithm.IF(e_1,stmts2,el_1) :: xs_1,extraArg);
+      
+  case ((x :: xs),func,extraArg)
+    equation 
+      print("Warning, not implemented in replace_equations_stmts\n");
+      (xs_1,extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
+    then (x :: xs_1,extraArg);
+end matchcontinue;
+end traverseDAEEquationsStmts;
+
+protected function traverseDAEEquationsStmtsElse "
+Author: BZ, 2008-12
+Helper function for traverseDAEEquationsStmts
+"
+  input Algorithm.Else inElse;
+  input FuncExpType func;
+  input Type_a extraArg;
+  output Algorithm.Else outElse;
+  output Type_a oextraArg;
+  partial function FuncExpType input Exp.Exp exp; input Type_a arg; output Exp.Exp oexp; output Type_a oarg; end FuncExpType;
+  replaceable type Type_a subtypeof Any;
+algorithm (outElse,extraArg) := matchcontinue(inElse,func,extraArg)
+  local 
+    Exp.Exp e,e_1;
+    list<Algorithm.Statement> st,st_1;
+    Algorithm.Else el,el_1;
+  case(Algorithm.NOELSE(),_,extraArg) then (Algorithm.NOELSE,extraArg);
+  case(Algorithm.ELSEIF(e,st,el),func,extraArg)
+    equation
+      (el_1,extraArg) = traverseDAEEquationsStmtsElse(el,func,extraArg);
+      (st_1,extraArg) = traverseDAEEquationsStmts(st,func,extraArg);
+      (e_1,extraArg) = func(e, extraArg); 
+    then (Algorithm.ELSEIF(e_1,st_1,el_1),extraArg);
+  case(Algorithm.ELSE(st),func,extraArg)
+    equation
+      (st_1,extraArg) = traverseDAEEquationsStmts(st,func,extraArg);
+    then (Algorithm.ELSE(st_1),extraArg);      
+end matchcontinue;
+end traverseDAEEquationsStmtsElse;
+
+protected function traverseDAEVarAttr "
+Author: BZ, 2008-12
+Help function to traverseDAE
+"
+  input Option<VariableAttributes> attr;
+  input FuncExpType func;
+  input Type_a extraArg;
+  output Option<VariableAttributes> traversedDaeList;
+  output Type_a oextraArg;
+  partial function FuncExpType input Exp.Exp exp; input Type_a arg; output Exp.Exp oexp; output Type_a oarg; end FuncExpType;
+  replaceable type Type_a subtypeof Any;
+algorithm (outAttr,extraArg) := matchcontinue(attr,func,extraArg)
+    local Option<Exp.Exp> quantity,unit,displayUnit,min,max,initial_,fixed,nominal,eb;
+      Option<StateSelect> stateSelect;
+      Option<Boolean> ip,fn;
+    case(SOME(VAR_ATTR_REAL(quantity,unit,displayUnit,(min,max),initial_,fixed,nominal,stateSelect,eb,ip,fn)),func,extraArg) equation
+      (quantity,extraArg) = traverseDAEOptExp(quantity,func,extraArg);
+      (unit,extraArg) = traverseDAEOptExp(unit,func,extraArg);
+      (displayUnit,extraArg) = traverseDAEOptExp(displayUnit,func,extraArg);      
+      (min,extraArg) = traverseDAEOptExp(min,func,extraArg);
+      (max,extraArg) = traverseDAEOptExp(max,func,extraArg);
+      (initial_,extraArg) = traverseDAEOptExp(initial_,func,extraArg);
+      (fixed,extraArg) = traverseDAEOptExp(fixed,func,extraArg);
+      (nominal,extraArg) = traverseDAEOptExp(nominal,func,extraArg);                                          
+      then (SOME(VAR_ATTR_REAL(quantity,unit,displayUnit,(min,max),initial_,fixed,nominal,stateSelect,eb,ip,fn)),extraArg);
+   
+    case(SOME(VAR_ATTR_INT(quantity,(min,max),initial_,fixed,eb,ip,fn)),func,extraArg) equation
+      (quantity,extraArg) = traverseDAEOptExp(quantity,func,extraArg);
+      (min,extraArg) = traverseDAEOptExp(min,func,extraArg);
+      (max,extraArg) = traverseDAEOptExp(max,func,extraArg);
+      (initial_,extraArg) = traverseDAEOptExp(initial_,func,extraArg);
+      (fixed,extraArg) = traverseDAEOptExp(fixed,func,extraArg);
+      then (SOME(VAR_ATTR_INT(quantity,(min,max),initial_,fixed,eb,ip,fn)),extraArg);
+    
+      case(SOME(VAR_ATTR_BOOL(quantity,initial_,fixed,eb,ip,fn)),func,extraArg) equation
+      (quantity,extraArg) = traverseDAEOptExp(quantity,func,extraArg);
+      (initial_,extraArg) = traverseDAEOptExp(initial_,func,extraArg);
+      (fixed,extraArg) = traverseDAEOptExp(fixed,func,extraArg);
+      then (SOME(VAR_ATTR_BOOL(quantity,initial_,fixed,eb,ip,fn)),extraArg);
+
+      case(SOME(VAR_ATTR_STRING(quantity,initial_,eb,ip,fn)),func,extraArg) equation
+      (quantity,extraArg) = traverseDAEOptExp(quantity,func,extraArg);
+      (initial_,extraArg) = traverseDAEOptExp(initial_,func,extraArg);
+      then (SOME(VAR_ATTR_STRING(quantity,initial_,eb,ip,fn)),extraArg);
+        
+      case(SOME(VAR_ATTR_ENUMERATION(quantity,(min,max),initial_,fixed,eb,ip,fn)),func,extraArg) equation
+        (quantity,extraArg) = traverseDAEOptExp(quantity,func,extraArg);
+        (initial_,extraArg) = traverseDAEOptExp(initial_,func,extraArg);
+      then (SOME(VAR_ATTR_ENUMERATION(quantity,(min,max),initial_,fixed,eb,ip,fn)),extraArg);
+
+      case (NONE(),_,extraArg) then (NONE(),extraArg);        
+  end matchcontinue; 
+end traverseDAEVarAttr; 
 
 end DAE;
 

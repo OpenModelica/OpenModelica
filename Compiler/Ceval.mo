@@ -3876,6 +3876,32 @@ algorithm
   end matchcontinue;
 end cevalSubscript;
 
+public function getValueString "
+Constant evaluates Expression and returns a string representing value. 
+"
+  input Exp.Exp e1;
+  output String ostring;
+algorithm ostring := matchcontinue( e1)
+  case(e1)
+    local Values.Value val;
+      String ret;
+    equation
+      (_,val as Values.STRING(ret),_) = ceval(Env.emptyCache,Env.emptyEnv, e1,true,NONE,NONE,MSG());
+    then
+      ret;
+  case(e1)
+    local Values.Value val;
+      String ret;
+    equation
+      (_,val,_) = ceval(Env.emptyCache,Env.emptyEnv, e1,true,NONE,NONE,MSG());
+      ret = Values.printValStr(val);
+    then
+      ret;
+      
+end matchcontinue;
+end getValueString;
+
+
 protected function cevalTuple 
   input list<Exp.Exp> inexps;
   output list<Values.Value> oval;

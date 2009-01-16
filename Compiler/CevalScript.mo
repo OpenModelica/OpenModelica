@@ -213,7 +213,7 @@ algorithm
         ast = p,explodedAst = sp,instClsLst = ic,
         lstVarVal = iv,compiledFunctions = cf)),msg)
       equation 
-        str = Dump.unparseStr(p) ",false" ;
+        str = Dump.unparseStr(p,false);
       then
         (cache,Values.STRING(str),st);
 
@@ -223,7 +223,7 @@ algorithm
         lstVarVal = iv,compiledFunctions = cf)),msg)
       equation 
         class_ = Interactive.getPathedClassInProgram(path, p);
-        str = Dump.unparseStr(Absyn.PROGRAM({class_},Absyn.TOP(),Absyn.TIMESTAMP(0.0,0.0))) ",false" ;
+        str = Dump.unparseStr(Absyn.PROGRAM({class_},Absyn.TOP(),Absyn.TIMESTAMP(0.0,0.0)),false) ;
       then
         (cache,Values.STRING(str),st);
 
@@ -1919,7 +1919,7 @@ algorithm
     case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "saveModel"),expLst = {Exp.SCONST(string = filename),Exp.CODE(Absyn.C_TYPENAME(classpath),_)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       equation        
         class_ = Interactive.getPathedClassInProgram(classpath, p);
-        str = Dump.unparseStr(Absyn.PROGRAM({class_},Absyn.TOP(),Absyn.TIMESTAMP(0.0,0.0))) ",true" ;
+        str = Dump.unparseStr(Absyn.PROGRAM({class_},Absyn.TOP(),Absyn.TIMESTAMP(0.0,0.0)),true) ;
         System.writeFile(filename, str);
       then
         (cache,Values.BOOL(true),st);
@@ -1929,7 +1929,7 @@ algorithm
       equation 
         class_ = Interactive.getPathedClassInProgram(classpath, p);
         ptot = Interactive.getTotalProgram(classpath,p);
-        str = Dump.unparseStr(ptot) ",true" ;
+        str = Dump.unparseStr(ptot,true);
         System.writeFile(filename, str);
       then
         (cache,Values.BOOL(true),st);        
@@ -1938,7 +1938,7 @@ algorithm
       equation 
         classpath = Static.componentRefToPath(cr) "Error writing to file" ;
         class_ = Interactive.getPathedClassInProgram(classpath, p);
-        str = Dump.unparseStr(Absyn.PROGRAM({class_},Absyn.TOP(),Absyn.TIMESTAMP(0.0,0.0))) ",true" ;
+        str = Dump.unparseStr(Absyn.PROGRAM({class_},Absyn.TOP(),Absyn.TIMESTAMP(0.0,0.0)),true);
         Error.addMessage(Error.WRITING_FILE_ERROR, {name});
       then
         (cache,Values.BOOL(false),st);
@@ -1947,7 +1947,7 @@ algorithm
       local Absyn.Program p_1;
       equation 
         (p_1,filename) = Interactive.getContainedClassAndFile(className, p);
-        str = Dump.unparseStr(p_1) ",true" ;
+        str = Dump.unparseStr(p_1,true);
         System.writeFile(filename, str);
       then
         (cache,Values.BOOL(true),st);
@@ -1957,7 +1957,7 @@ algorithm
 
     case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "saveAll"),expLst = {Exp.SCONST(string = filename)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       equation 
-        str = Dump.unparseStr(p) ",true" ;
+        str = Dump.unparseStr(p,true);
         System.writeFile(filename, str);
       then
         (cache,Values.BOOL(true),st);
@@ -2968,7 +2968,7 @@ algorithm
       Option<Interactive.InteractiveSymbolTable> st;
       Ceval.Msg msg;
       Env.Cache cache;
-    case (cache,env,Absyn.ELEMENT(final_ = f,redeclareKeywords = r,innerOuter = io,name = id,specification = Absyn.COMPONENTS(attributes = attr,typeSpec = tp,components = citems),info = (info as Absyn.INFO(fileName = file,isReadOnly = isReadOnly,lineNumberStart = sline,columnNumberStart = scolumn,lineNumberEnd = eline,columnNumberEnd = ecolumn)),constrainClass = c),impl,st,msg)
+    case (cache,env,Absyn.ELEMENT(finalPrefix = f,redeclareKeywords = r,innerOuter = io,name = id,specification = Absyn.COMPONENTS(attributes = attr,typeSpec = tp,components = citems),info = (info as Absyn.INFO(fileName = file,isReadOnly = isReadOnly,lineNumberStart = sline,columnNumberStart = scolumn,lineNumberEnd = eline,columnNumberEnd = ecolumn)),constrainClass = c),impl,st,msg)
       equation 
         (cache,citems_1) = cevalAstCitems(cache,env, citems, impl, st, msg);
       then
@@ -3793,7 +3793,7 @@ algorithm
       equation
         c = Interactive.getPathedClassInProgram(className, p);
         // filter out partial classes
-        Absyn.CLASS(partial_ = false) = c; 
+        Absyn.CLASS(partialPrefix = false) = c; 
         cr = Absyn.pathToCref(className); 
         // filter out packages 
         false = Interactive.isPackage(cr, p);

@@ -2396,21 +2396,21 @@ content of a variable. In particular it takes:
 * varFixed: fixed attribute for variables (default fixed
   value is used if not found. Default is true for parameters
   (and constants) and false for variables)
-* flow_: tells if it's a flow variable or not
-* stream_: tells if it's a stream variable or not
+* flowPrefix: tells if it's a flow variable or not
+* streamPrefix: tells if it's a stream variable or not
 * comment: a comment associated to the variable.
 Please note that all the inputs must be passed as String variables.
 "
-  input String varno,cr,kind,dir,var_type,indx,old_name,varFixed,flow_,stream_,comment;
+  input String varno,cr,kind,dir,var_type,indx,old_name,varFixed,flowPrefix,streamPrefix,comment;
 algorithm
   _:=
-  matchcontinue (varno,cr,kind,dir,var_type,indx,old_name,varFixed,flow_,stream_,comment)
+  matchcontinue (varno,cr,kind,dir,var_type,indx,old_name,varFixed,flowPrefix,streamPrefix,comment)
       //local String str;
-    case (varno,cr,kind,dir,var_type,indx,old_name,varFixed,flow_,stream_,"")
+    case (varno,cr,kind,dir,var_type,indx,old_name,varFixed,flowPrefix,streamPrefix,"")
     equation
     /*
       str= Util.stringAppendList({"\n<Variable id=\"",varno,"\" name=\"",cr,"\" varKind=\"",kind,"\" varDirection=\"",dir,"\" varType=\"",var_type,"\" index=\"",indx,"\" origName=\"",
-            old_name,"\" fixed=\"",varFixed,"\" flow=\"",flow_,"\" stream=\"",stream_,"\">"});
+            old_name,"\" fixed=\"",varFixed,"\" flow=\"",flowPrefix,"\" stream=\"",streamPrefix,"\">"});
     then str;
     */
       Print.printBuf("\n<");Print.printBuf(VARIABLE);Print.printBuf(" ");Print.printBuf(VAR_ID);Print.printBuf("=\"");Print.printBuf(varno);
@@ -2421,11 +2421,11 @@ algorithm
       Print.printBuf("\" ");Print.printBuf(VAR_INDEX);Print.printBuf("=\"");Print.printBuf(indx);
       Print.printBuf("\" ");Print.printBuf(VAR_ORIGNAME);Print.printBuf("=\"");Print.printBuf(old_name);
       Print.printBuf("\" ");Print.printBuf(VAR_FIXED);Print.printBuf("=\"");Print.printBuf(varFixed);
-      Print.printBuf("\" ");Print.printBuf(VAR_FLOW);Print.printBuf("=\"");Print.printBuf(flow_);
-      Print.printBuf("\" ");Print.printBuf(VAR_STREAM);Print.printBuf("=\"");Print.printBuf(stream_);
+      Print.printBuf("\" ");Print.printBuf(VAR_FLOW);Print.printBuf("=\"");Print.printBuf(flowPrefix);
+      Print.printBuf("\" ");Print.printBuf(VAR_STREAM);Print.printBuf("=\"");Print.printBuf(streamPrefix);
       Print.printBuf("\">");
     then();
-    case (varno,cr,kind,dir,var_type,indx,old_name,varFixed,flow_,stream_,comment)
+    case (varno,cr,kind,dir,var_type,indx,old_name,varFixed,flowPrefix,streamPrefix,comment)
     equation
       Print.printBuf("\n<");Print.printBuf(VARIABLE);Print.printBuf(" ");Print.printBuf(VAR_ID);Print.printBuf("=\"");Print.printBuf(varno);
       Print.printBuf("\" ");Print.printBuf(VAR_NAME);Print.printBuf("=\"");Print.printBuf(cr);
@@ -2435,14 +2435,14 @@ algorithm
       Print.printBuf("\" ");Print.printBuf(VAR_INDEX);Print.printBuf("=\"");Print.printBuf(indx);
       Print.printBuf("\" ");Print.printBuf(VAR_ORIGNAME);Print.printBuf("=\"");Print.printBuf(old_name);
       Print.printBuf("\" ");Print.printBuf(VAR_FIXED);Print.printBuf("=\"");Print.printBuf(varFixed);
-      Print.printBuf("\" ");Print.printBuf(VAR_FLOW);Print.printBuf("=\"");Print.printBuf(flow_);
-      Print.printBuf("\" ");Print.printBuf(VAR_STREAM);Print.printBuf("=\"");Print.printBuf(stream_);
+      Print.printBuf("\" ");Print.printBuf(VAR_FLOW);Print.printBuf("=\"");Print.printBuf(flowPrefix);
+      Print.printBuf("\" ");Print.printBuf(VAR_STREAM);Print.printBuf("=\"");Print.printBuf(streamPrefix);
       Print.printBuf("\" ");Print.printBuf(VAR_COMMENT);Print.printBuf("=\"");Print.printBuf(comment);
       Print.printBuf("\">");
     then ();
       /*
       str= Util.stringAppendList({"\n<Variable id=\"",varno,"\" name=\"",cr,"\" varKind=\"",kind,"\" varDirection=\"",dir,"\" varType=\"",var_type,"\" index=\"",indx,"\" origName=\"",
-            old_name,"\" fixed=\"",varFixed,"\" flow=\"",flow_,"\"  stream=\"",stream_,"\" comment=\"",comment,"\">"});
+            old_name,"\" fixed=\"",varFixed,"\" flow=\"",flowPrefix,"\"  stream=\"",streamPrefix,"\" comment=\"",comment,"\">"});
     then str;
     */
   end matchcontinue;
@@ -2563,8 +2563,8 @@ algorithm
       list<Absyn.Path> paths;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<Absyn.Comment> comment;
-      DAE.Flow flow_;
-      DAE.Stream stream_;
+      DAE.Flow flowPrefix;
+      DAE.Stream streamPrefix;
       list<DAELow.Var> xs;
       DAE.Type var_type;
       DAE.InstDims arry_Dim;
@@ -2583,12 +2583,12 @@ algorithm
                             className = paths,
                             values = dae_var_attr,
                             comment = comment,
-                            flow_ = flow_,
-                            stream_ = stream_)) :: xs),varno)
+                            flowPrefix = flowPrefix,
+                            streamPrefix = streamPrefix)) :: xs),varno)
       equation
         dumpVariable(intString(varno),Exp.crefStr(cr),dumpKind(kind),dumpDirectionStr(dir),dumpTypeStr(var_type),
-                     intString(indx),Exp.crefStr(old_name),Util.boolString(DAELow.varFixed(v)),dumpFlowStr(flow_),
-                     dumpStreamStr(stream_),unparseCommentOptionNoAnnotation(comment));
+                     intString(indx),Exp.crefStr(old_name),Util.boolString(DAELow.varFixed(v)),dumpFlowStr(flowPrefix),
+                     dumpStreamStr(streamPrefix),unparseCommentOptionNoAnnotation(comment));
         dumpBindValueExpression(e,b);
         //The command below adds information to the XML about the dimension of the
         //containing vector, in the casse the variable is an element of a vector.
@@ -2629,8 +2629,8 @@ algorithm
       list<Absyn.Path> paths;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<Absyn.Comment> comment;
-      DAE.Flow flow_;
-      DAE.Stream stream_;
+      DAE.Flow flowPrefix;
+      DAE.Stream streamPrefix;
       list<DAELow.Var> xs;
       DAE.Type var_type;
       DAE.InstDims arry_Dim;
@@ -2649,11 +2649,11 @@ algorithm
                             className = paths,
                             values = dae_var_attr,
                             comment = comment,
-                            flow_ = flow_,
-                            stream_ = stream_)) :: xs),crefIdxLstArr,strIdxLstArr,varno)
+                            flowPrefix = flowPrefix,
+                            streamPrefix = streamPrefix)) :: xs),crefIdxLstArr,strIdxLstArr,varno)
       equation
         dumpVariable(intString(varno),Exp.crefStr(cr),dumpKind(kind),dumpDirectionStr(dir),dumpTypeStr(var_type),intString(indx),
-                        Exp.crefStr(old_name),Util.boolString(DAELow.varFixed(v)),dumpFlowStr(flow_),dumpStreamStr(stream_),
+                        Exp.crefStr(old_name),Util.boolString(DAELow.varFixed(v)),dumpFlowStr(flowPrefix),dumpStreamStr(streamPrefix),
                         Dump.unparseCommentOption(comment));
         dumpBindValueExpression(e,b);
         //The command below adds information to the XML about the dimension of the

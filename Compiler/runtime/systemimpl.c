@@ -787,7 +787,7 @@ RML_BEGIN_LABEL(System__loadLibrary)
 
   h = LoadLibrary(libname);
   if (h == NULL) {
-    fprintf(stderr, "Unable to load `%s': %lu.\n", libname, GetLastError());
+    //fprintf(stderr, "Unable to load `%s': %lu.\n", libname, GetLastError());
     RML_TAILCALLK(rmlFC);
   }
   libIndex = alloc_ptr();
@@ -874,22 +874,6 @@ RML_BEGIN_LABEL(System__compileCFile)
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
-
-//RML_BEGIN_LABEL(System__executeFunction)
-//{
-//  char* str = RML_STRINGDATA(rmlA0);
-//  char command[255];
-//  int ret_val;
-//  sprintf(command,".\\%s %s_in.txt %s_out.txt",str,str,str);
-//  ret_val = system(command);
-//
-//  if (ret_val != 0) {
-//    RML_TAILCALLK(rmlFC);
-//  }
-//
-//  RML_TAILCALLK(rmlSC);
-//}
-//RML_END_LABEL
 
 RML_BEGIN_LABEL(System__systemCall)
 {
@@ -1909,6 +1893,19 @@ RML_BEGIN_LABEL(System__getCurrentTime)
 }
 RML_END_LABEL
 
+RML_BEGIN_LABEL(System__getCurrentTimeStr)
+{
+  time_t t;
+  struct tm* localTime;
+  char * dateStr;
+  time( &t );
+  localTime = localtime(&t);
+  dateStr = asctime(localTime);
+  rmlA0 = mk_scon(dateStr);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
 /*
  * @author adrpo
  * this function sets the depth of variable showing in Eclipse.
@@ -2713,7 +2710,7 @@ RML_BEGIN_LABEL(System__loadLibrary)
   snprintf(libname, MAXPATHLEN, "./%s.so", str);
   h = dlopen(libname, RTLD_LOCAL | RTLD_NOW);
   if (h == NULL) {
-    fprintf(stderr, "Unable to load `%s': %s.\n", libname, dlerror());
+    //fprintf(stderr, "Unable to load `%s': %s.\n", libname, dlerror());
     RML_TAILCALLK(rmlFC);
   }
   libIndex = alloc_ptr();
@@ -2801,20 +2798,6 @@ RML_BEGIN_LABEL(System__compileCFile)
 }
 RML_END_LABEL
 
-RML_BEGIN_LABEL(System__executeFunction)
-{
-  char* str = RML_STRINGDATA(rmlA0);
-  char command[255];
-  int ret_val;
-  sprintf(command,"./%s %s_in.txt %s_out.txt",str,str,str);
-  ret_val = system(command);
-  if (ret_val != 0) {
-    RML_TAILCALLK(rmlFC);
-  }
-
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
 
 RML_BEGIN_LABEL(System__getExeExt)
 {
@@ -3827,6 +3810,19 @@ RML_BEGIN_LABEL(System__getCurrentTime)
 }
 RML_END_LABEL
 
+RML_BEGIN_LABEL(System__getCurrentTimeStr)
+{
+  time_t t;
+  struct tm* localTime;
+  char * dateStr;
+  time( &t );
+  localTime = localtime(&t);
+  dateStr = asctime(localTime);
+  rmlA0 = mk_scon(dateStr);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
 /*
  * @author adrpo
  * this function sets the depth of variable showing in Eclipse.
@@ -3933,14 +3929,10 @@ RML_BEGIN_LABEL(System__executeFunction)
   modelica_ptr_t func = NULL;
   int retval = -1;
   void *retarg = NULL;
-
   func = lookup_ptr(funcIndex);
-
   if (func == NULL)
     RML_TAILCALLK(rmlFC);
-
   retval = execute_function(rmlA1, &retarg, func->data.func.handle);
-
   if (retval) {
     RML_TAILCALLK(rmlFC);
   } else {
@@ -4515,7 +4507,6 @@ static int execute_function(void *in_arg, void **out_arg,
 
   while (RML_GETHDR(v) != RML_NILHDR) {
     void *val = RML_CAR(v);
-
     if (value_to_type_desc(val, arg)) {
       restore_memory_state(mem_state);
       return -1;
@@ -4526,13 +4517,10 @@ static int execute_function(void *in_arg, void **out_arg,
     ++arg;
     v = RML_CDR(v);
   }
-
   init_type_description(arg);
   init_type_description(&retarg);
   retarg.retval = 1;
-
   retval = func(arglst, &retarg);
-
   arg = arglst;
   while (arg->type != TYPE_DESC_NONE) {
 	/* puttype(arg); */

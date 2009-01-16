@@ -308,8 +308,8 @@ algorithm
       DAE.Type ty;
       list<Exp.Subscript> inst_dims;
       Option<Exp.Exp> start;
-      DAE.Flow flow_;
-      DAE.Stream stream_;
+      DAE.Flow flowPrefix;
+      DAE.Stream streamPrefix;
       list<Absyn.Path> cl;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<Absyn.Comment> comment;
@@ -326,8 +326,8 @@ algorithm
                           ty = ty,
                           binding = SOME(exp),
                           dims = inst_dims,
-                          flow_ = flow_,
-                          stream_ = stream_,
+                          flowPrefix = flowPrefix,
+                          streamPrefix = streamPrefix,
                           pathLst = cl,
                           variableAttributesOption = dae_var_attr,
                           absynCommentOption = comment,
@@ -336,7 +336,7 @@ algorithm
       equation 
         exp_1 = stringPrefixComponentRef(str, isParameterDaelist, dae, exp);
       then
-        DAE.VAR(cr,vk,vd,prot,ty,SOME(exp_1),inst_dims,flow_,stream_,cl,dae_var_attr,comment,io,ftp);
+        DAE.VAR(cr,vk,vd,prot,ty,SOME(exp_1),inst_dims,flowPrefix,streamPrefix,cl,dae_var_attr,comment,io,ftp);
     case (str,dae,DAE.DEFINE(componentRef = cr,exp = exp))
       equation 
         exp_1 = stringPrefixComponentRef(str, isParameterDaelist, dae, exp);

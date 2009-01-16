@@ -206,6 +206,7 @@ public constant ErrorID WARNING_RELATION_ON_REAL=509;
 public constant ErrorID ERROR_BUILTIN_DELAY=510;
 public constant ErrorID When_With_IF=511;
 public constant ErrorID OUTER_MODIFICATION=512;
+public constant ErrorID REDUNDANT_GUESS=513 "Used by MathCore in Backend";
 
 public constant ErrorID INDEX_REDUCTION_NOTIFICATION=1000;
 public constant ErrorID SELECTED_STATE_DUE_TO_START_NOTIFICATION = 1001;
@@ -258,7 +259,7 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (UNBOUND_VALUE,TRANSLATION(),ERROR(),
           "Variable %s has no value."),
           (NEGATIVE_SQRT,TRANSLATION(),ERROR(),
-          "Error, negative value as argument to sqrt."),
+          "Negative value as argument to sqrt."),
           (NO_CONSTANT_BINDING,TRANSLATION(),ERROR(),
           "No constant value for variable %s in scope %s."),
           (TYPE_NOT_FROM_PREDEFINED,TRANSLATION(),ERROR(),
@@ -398,40 +399,40 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (PACKAGE_VARIABLE_NOT_CONSTANT, TRANSLATION(),ERROR(),"Variable %s in package %s is not constant"),
           (RECURSIVE_DEFINITION,TRANSLATION(),ERROR(),"Class %s has a recursive definition, i.e. contains an instance of itself"),
           (UNBOUND_PARAMETER_WARNING,TRANSLATION(),WARNING(),
-          "Warning, parameter %s has no value, and is fixed during initialization (fixed=true)"),
+          "Parameter %s has no value, and is fixed during initialization (fixed=true)"),
           (BUILTIN_FUNCTION_SUM_HAS_SCALAR_PARAMETER,TRANSLATION(),WARNING(),
-          "Warning, function \"sum\" has scalar as argument in sum(%s)"),
+          "Function \"sum\" has scalar as argument in sum(%s)"),
           (BUILTIN_FUNCTION_PRODUCT_HAS_SCALAR_PARAMETER,TRANSLATION(),WARNING(),
-          "Warning, function \"product\" has scalar as argument in sum(%s)"),       
+          "Function \"product\" has scalar as argument in sum(%s)"),       
           (INDEX_REDUCTION_NOTIFICATION,SYMBOLIC(),NOTIFICATION(),
-          "Notification, differentiated equation %s to %s for index reduction"),
+          "Differentiated equation %s to %s for index reduction"),
           (SELECTED_STATE_DUE_TO_START_NOTIFICATION,SYMBOLIC(),NOTIFICATION(),
           "Selecting %s as state since it has a start value and a potential state variable (appearing inside der()) was found in the same scope without start value."),
           
           (DIFFERENT_VARIABLES_SOLVED_IN_ELSEWHEN,SYMBOLIC(),ERROR(),
-          "Error, The same variables must me solved in elsewhen clause as in the when clause"),
+          "The same variables must me solved in elsewhen clause as in the when clause"),
           (ASSERT_CONSTANT_FALSE_ERROR,SYMBOLIC(),ERROR(),
-          "Error, assert triggered during translation: %s"),
+          "assert triggered during translation: %s"),
           (SETTING_FIXED_ATTRIBUTE,TRANSLATION(),WARNING(),
-          "Warning, no variable has fixed=false but model contains initial equations. Setting fixed=false to the following variables: %s"),
+          "No variable has fixed=false but model contains initial equations. Setting fixed=false to the following variables: %s"),
           (PROPAGATE_START_VALUE,TRANSLATION(),WARNING(),
-          "Warning, failed to propagate the start value from variable dummy state %s to state %s. Provide a start value for the selected state instead"),  
+          "Failed to propagate the start value from variable dummy state %s to state %s. Provide a start value for the selected state instead"),  
           (SEMI_SUPPORTED_FUNCTION,TRANSLATION(),WARNING(),
-          "Warning, using non-standardized function %s. For full conformance with language specification please use appropriate function in e.g. Modelica.Math"),
+          "Using non-standardized function %s. For full conformance with language specification please use appropriate function in e.g. Modelica.Math"),
           (GENERIC_TRANSLATION_ERROR,TRANSLATION(),ERROR(),
           "Error, %s"),  
           (ARRAY_INDEX_OUT_OF_BOUNDS(),TRANSLATION(),ERROR(),
-          "Error, Index out of bounds. Adressing position: %s, while array length is: %s"),
+          "Index out of bounds. Adressing position: %s, while array length is: %s"),
           (SELF_REFERENCE_EQUATION(),TRANSLATION(), WARNING(),
-          "Warning, circular reference with variable \"%s\""),
+          "Circular reference with variable \"%s\""),
 /*   ******* INACTIVE FOR NOW
           (CLASS_NAME_VARIABLE(), TRANSLATION(),ERROR(),
-          "Error, Declared a variable with name %s while having a class named %s"),
+          "Declared a variable with name %s while having a class named %s"),
 */          
-          (DUPLICATE_MODIFICATIONS,TRANSLATION(),ERROR(),"Error, duplicate modifications in %s"),
+          (DUPLICATE_MODIFICATIONS,TRANSLATION(),ERROR(),"Duplicate modifications in %s"),
           (COMPONENT_CONDITION_VARIABILITY,TRANSLATION(),ERROR(),
           "Component condition must be parameter or constant expression (in %s)."),
-          (DUPLICATE_MODIFICATIONS,TRANSLATION(),ERROR(),"Error, duplicate modifications in %s"),
+          (DUPLICATE_MODIFICATIONS,TRANSLATION(),ERROR(),"Duplicate modifications in %s"),
           (ILLEGAL_SUBSCRIPT,TRANSLATION(),ERROR(),
           "Illegal subscript %s for dimensions %s"),
           (ASSERT_FAILED,TRANSLATION(),ERROR(),
@@ -446,17 +447,19 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (FINAL_OVERRIDE,TRANSLATION(),ERROR(),
           "trying to override final variable in class: %s"),
           (WARNING_IMPORT_PACKAGES_ONLY,TRANSLATION(),WARNING(),  
-          "Warning, %s is not a package, imports is only allowed for packages."),
+          "%s is not a package, imports is only allowed for packages."),
           (WARNING_RELATION_ON_REAL,TRANSLATION(),WARNING(),  
-          "Warning, in %s, %s on Reals is only allowed inside functions."),
+          "In %s, %s on Reals is only allowed inside functions."),
           (ERROR_BUILTIN_DELAY,TRANSLATION(),ERROR(),  
-          "Error, builtin function delay(expr,delayTime,delayMax*) failed: %s"),
+          "Builtin function delay(expr,delayTime,delayMax*) failed: %s"),
           (When_With_IF,TRANSLATION(),ERROR(),  
-          "Error, When equations using if-statements on form 'if a then b=c else b = d' not implemented yet, use 'b=if a then c else d' as work around\n%s"),
+          "When equations using if-statements on form 'if a then b=c else b = d' not implemented yet, use 'b=if a then c else d' as work around\n%s"),
           (OUTER_MODIFICATION,TRANSLATION(),ERROR(),  
-          "Error, modification on outer element: %s"),
+          "Modification on outer element: %s"),
+          (REDUNDANT_GUESS,TRANSLATION(),WARNING(),  
+          "Start value is assigned for variable: %s, but not used since %s"),          
           (MISSING_INNER_PREFIX,TRANSLATION(),ERROR(),
-          "Error, component must have prefix 'inner' since corresponding outer declaration found for component %s.")  
+          "Component must have prefix 'inner' since corresponding outer declaration found for component %s.")  
           };
           
 protected import ErrorExt;
@@ -739,9 +742,9 @@ protected function severityStr "function: severityStr
 algorithm 
   outString:=
   matchcontinue (inSeverity)
-    case (ERROR()) then "ERROR"; 
-    case (WARNING()) then "WARNING"; 
-    case (NOTIFICATION()) then "NOTIFICATION"; 
+    case (ERROR()) then "Error"; 
+    case (WARNING()) then "Warning"; 
+    case (NOTIFICATION()) then "Notification"; 
   end matchcontinue;
 end severityStr;
 

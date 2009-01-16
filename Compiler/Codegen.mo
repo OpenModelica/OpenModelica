@@ -1392,8 +1392,8 @@ algorithm
       DAE.Type typ;
       Option<Exp.Exp> initopt;
       list<Exp.Subscript> inst_dims;
-      DAE.Flow flow_;
-      DAE.Stream stream_;
+      DAE.Flow flowPrefix;
+      DAE.Stream streamPrefix;
       list<Absyn.Path> class_;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<Absyn.Comment> comment;
@@ -1403,8 +1403,8 @@ algorithm
                           ty = typ,
                           binding = initopt,
                           dims = inst_dims,
-                          flow_ = flow_,
-                          stream_=stream_,
+                          flowPrefix = flowPrefix,
+                          streamPrefix=streamPrefix,
                           pathLst = class_,
                           variableAttributesOption = dae_var_attr,
                           absynCommentOption = comment)),i)
@@ -1449,8 +1449,8 @@ algorithm
                          direction = vd,
                          ty = ty,
                          dims = {},
-                         flow_ = fl,
-                         stream_ = st,
+                         flowPrefix = fl,
+                         streamPrefix = st,
                          pathLst = cl,
                          variableAttributesOption = dae_var_attr,
                          absynCommentOption = comment)))
@@ -1465,8 +1465,8 @@ algorithm
                          direction = vd,
                          ty = ty,
                          dims = (_ :: _),
-                         flow_ = fl,
-                         stream_ = st, 
+                         flowPrefix = fl,
+                         streamPrefix = st, 
                          pathLst = cl,
                          variableAttributesOption = dae_var_attr,
                          absynCommentOption = comment)))
@@ -2201,8 +2201,8 @@ algorithm
       DAE.Type t;
       Option<Exp.Exp> e;
       list<Exp.Subscript> id;
-      DAE.Flow flow_;
-      DAE.Stream stream_;
+      DAE.Flow flowPrefix;
+      DAE.Stream streamPrefix;
       list<Absyn.Path> class_;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<Absyn.Comment> comment;
@@ -2222,8 +2222,8 @@ algorithm
                            ty = t,
                            binding = e,
                            dims = id,
-                           flow_ = flow_,
-                           stream_ = stream_,
+                           flowPrefix = flowPrefix,
+                           streamPrefix = streamPrefix,
                            pathLst = class_,
                            variableAttributesOption = dae_var_attr,
                            absynCommentOption = comment)) :: r),rd,rv,i,tnr,context)
@@ -2268,8 +2268,8 @@ algorithm
       DAE.Type typ;
       Option<Exp.Exp> e;
       list<Exp.Subscript> inst_dims;
-      DAE.Flow flow_;
-      DAE.Stream stream_;
+      DAE.Flow flowPrefix;
+      DAE.Stream streamPrefix;
       list<Absyn.Path> class_;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<Absyn.Comment> comment;
@@ -2282,8 +2282,8 @@ algorithm
                           ty = typ,
                           binding = e,
                           dims = inst_dims,
-                          flow_ = flow_,
-                          stream_ = stream_,
+                          flowPrefix = flowPrefix,
+                          streamPrefix = streamPrefix,
                           pathLst = class_,
                           variableAttributesOption = dae_var_attr,
                           absynCommentOption = comment)),prefix,i,tnr,context)
@@ -2341,8 +2341,8 @@ algorithm
       DAE.Type t;
       Option<Exp.Exp> e;
       list<Exp.Subscript> id;
-      DAE.Flow flow_;
-      DAE.Stream stream_;
+      DAE.Flow flowPrefix;
+      DAE.Stream streamPrefix;
       list<Absyn.Path> class_;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<Absyn.Comment> comment;
@@ -2356,8 +2356,8 @@ algorithm
                            ty = t,
                            binding = e,
                            dims = id,
-                           flow_ = flow_,
-                           stream_ = stream_,
+                           flowPrefix = flowPrefix,
+                           streamPrefix = streamPrefix,
                            pathLst = class_,
                            variableAttributesOption = dae_var_attr,
                            absynCommentOption = comment)) :: r),rv,i,tnr,extdecl)
@@ -2375,8 +2375,8 @@ algorithm
                            ty = t,
                            binding = e,
                            dims = id,
-                           flow_ = flow_,
-                           stream_ = stream_,
+                           flowPrefix = flowPrefix,
+                           streamPrefix = streamPrefix,
                            pathLst = class_,
                            variableAttributesOption = dae_var_attr,
                            absynCommentOption = comment)) :: r),rv,i,tnr,extdecl)
@@ -2422,8 +2422,8 @@ algorithm
       DAE.Type typ;
       Option<Exp.Exp> e;
       list<Exp.Subscript> inst_dims;
-      DAE.Flow flow_;
-      DAE.Stream stream_;
+      DAE.Flow flowPrefix;
+      DAE.Stream streamPrefix;
       list<Absyn.Path> class_;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<Absyn.Comment> comment;
@@ -2434,8 +2434,8 @@ algorithm
                           ty = typ,
                           binding = e,
                           dims = inst_dims,
-                          flow_ = flow_,
-                          stream_ = stream_,
+                          flowPrefix = flowPrefix,
+                          streamPrefix = streamPrefix,
                           pathLst = class_,
                           variableAttributesOption = dae_var_attr,
                           absynCommentOption = comment)),prefix,i,tnr)
@@ -3317,8 +3317,8 @@ algorithm
       DAE.VarDirection vd;
       DAE.Type typ;
       list<Exp.Subscript> inst_dims;
-      DAE.Flow flow_;
-      DAE.Stream stream_;
+      DAE.Flow flowPrefix;
+      DAE.Stream streamPrefix;
       list<Absyn.Path> class_;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<Absyn.Comment> comment;
@@ -3333,8 +3333,8 @@ algorithm
                           ty = typ,
                           binding = NONE,
                           dims = inst_dims,
-                          flow_ = flow_,
-                          stream_ = stream_,
+                          flowPrefix = flowPrefix,
+                          streamPrefix = streamPrefix,
                           pathLst = class_,
                           variableAttributesOption = dae_var_attr,
                           absynCommentOption = comment)),tnr,context)
@@ -3366,8 +3366,8 @@ algorithm
                           ty = typ,
                           binding = SOME(e),
                           dims = inst_dims,
-                          flow_ = flow_,
-                          stream_ = stream_,
+                          flowPrefix = flowPrefix,
+                          streamPrefix = streamPrefix,
                           pathLst = class_,
                           variableAttributesOption = dae_var_attr,
                           absynCommentOption = comment)),tnr,context)
@@ -3401,8 +3401,8 @@ algorithm
                           ty = typ,
                           binding = SOME(e),
                           dims = inst_dims,
-                          flow_ = flow_,
-                          stream_ = stream_,
+                          flowPrefix = flowPrefix,
+                          streamPrefix = streamPrefix,
                           pathLst = class_,
                           variableAttributesOption = dae_var_attr,
                           absynCommentOption = comment)),tnr,context)
@@ -3454,8 +3454,8 @@ algorithm
       DAE.VarDirection vd;
       DAE.Type typ;
       list<Exp.Subscript> inst_dims;
-      DAE.Flow flow_;
-      DAE.Stream stream_;
+      DAE.Flow flowPrefix;
+      DAE.Stream streamPrefix;
       list<Absyn.Path> class_;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<Absyn.Comment> comment;
@@ -3470,8 +3470,8 @@ algorithm
                           ty = typ,
                           binding = NONE,
                           dims = inst_dims,
-                          flow_ = flow_,
-                          stream_ = stream_,
+                          flowPrefix = flowPrefix,
+                          streamPrefix = streamPrefix,
                           pathLst = class_,
                           variableAttributesOption = dae_var_attr,
                           absynCommentOption = comment)),tnr,context)
@@ -3497,15 +3497,15 @@ algorithm
                           ty = typ,
                           binding = SOME(e),
                           dims = inst_dims,
-                          flow_ = flow_,
-                          stream_ = stream_,
+                          flowPrefix = flowPrefix,
+                          streamPrefix = streamPrefix,
                           pathLst = class_,
                           variableAttributesOption = dae_var_attr,
                           absynCommentOption = comment,
                           innerOuter=io,
                           fullType=tp)),tnr,context)
       equation
-        (cfn,tnr1) = generateVarDecl(DAE.VAR(id,vk,vd,prot,typ,NONE,inst_dims,flow_,stream_,class_,dae_var_attr,comment,io,tp), tnr, context);
+        (cfn,tnr1) = generateVarDecl(DAE.VAR(id,vk,vd,prot,typ,NONE,inst_dims,flowPrefix,streamPrefix,class_,dae_var_attr,comment,io,tp), tnr, context);
       then
         (cfn,tnr1);
         
@@ -3539,8 +3539,8 @@ algorithm
       DAE.VarDirection vd;
       DAE.Type typ;
       list<Exp.Subscript> inst_dims;
-      DAE.Flow flow_;
-      DAE.Stream stream_;
+      DAE.Flow flowPrefix;
+      DAE.Stream streamPrefix;
       list<Absyn.Path> class_;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<Absyn.Comment> comment;
@@ -3561,8 +3561,8 @@ algorithm
                           ty = typ,
                           binding = NONE,
                           dims = inst_dims,
-                          flow_ = flow_,
-                          stream_ = stream_,
+                          flowPrefix = flowPrefix,
+                          streamPrefix = streamPrefix,
                           pathLst = class_,
                           variableAttributesOption = dae_var_attr,
                           absynCommentOption = comment)),i,tnr,pre,context)
@@ -3575,8 +3575,8 @@ algorithm
                           ty = typ,
                           binding = SOME(e),
                           dims = inst_dims,
-                          flow_ = flow_,
-                          stream_ = stream_,
+                          flowPrefix = flowPrefix,
+                          streamPrefix = streamPrefix,
                           pathLst = class_,
                           variableAttributesOption = dae_var_attr,
                           absynCommentOption = comment)),i,tnr,pre,context)

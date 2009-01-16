@@ -92,8 +92,8 @@ algorithm
       DAE.Type ty "one of the builtin types" ;
       Option<Exp.Exp> binding "Binding expression e.g. for parameters, value of start attribute" ; 
       DAE.InstDims dims "dimensions"; 
-      DAE.Flow flow_ "Flow of connector variable. Needed for unconnected flow variables" ;
-      DAE.Stream stream_ "Stream connector variables." ;
+      DAE.Flow flowPrefix "Flow of connector variable. Needed for unconnected flow variables" ;
+      DAE.Stream streamPrefix "Stream connector variables." ;
       list<Absyn.Path> pathLst "class names" ;
       Option<DAE.VariableAttributes> varAttr;
       Option<Absyn.Comment> absynComment;
@@ -104,8 +104,8 @@ algorithm
       Exp.VarDirection varDirection2;
       Exp.VarProtection varProt2;
       Exp.TypeExp ty2;
-      Exp.Flow flow_2;
-      Exp.Stream stream_2;
+      Exp.Flow flowPrefix2;
+      Exp.Stream streamPrefix2;
       Option<Exp.VariableAttributes> varAttr2;
       Exp.TypeTypes fType2;
       list<Exp.Exp> e;
@@ -114,17 +114,17 @@ algorithm
       list<list<Exp.DAEElement>> elems1;
       list<Exp.DAEElement> elems2;
       Exp.DAEElement elem;      
-    case (DAE.VAR(compRef,varKind,varDirection,varProt,ty,binding,dims,flow_,stream_,pathLst,varAttr,absynComment,innerOut,fType))
+    case (DAE.VAR(compRef,varKind,varDirection,varProt,ty,binding,dims,flowPrefix,streamPrefix,pathLst,varAttr,absynComment,innerOut,fType))
       equation
         varKind2 = varKindConvert(varKind);
         varDirection2 = varDirConvert(varDirection);
         varProt2 = varProtConvert(varProt);
         ty2 = typeConvert(ty);
-        flow_2 = flowConvert(flow_);
-        stream_2 = streamConvert(stream_);
+        flowPrefix2 = flowConvert(flowPrefix);
+        streamPrefix2 = streamConvert(streamPrefix);
         varAttr2 = varAttrConvert(varAttr);
         fType2 = fromTypeToTypeTypes(fType);
-        elem = Exp.VAR(compRef,varKind2,varDirection2,varProt2,ty2,binding,dims,flow_2,stream_2,pathLst,varAttr2,absynComment,innerOut,fType2);
+        elem = Exp.VAR(compRef,varKind2,varDirection2,varProt2,ty2,binding,dims,flowPrefix2,streamPrefix2,pathLst,varAttr2,absynComment,innerOut,fType2);
       then elem;
     case (DAE.DEFINE(c,e))
       local
@@ -671,8 +671,8 @@ algorithm
       Exp.TypeExp ty "one of the builtin types";
       Option<Exp.Exp> binding "Binding expression e.g. for parameters, i.e. value of start attribute";
       Exp.InstDims dims "dimensions"; 
-      Exp.Flow flow_ "Flow of connector variable. Needed for unconnected flow variables";
-      Exp.Stream stream_ "Stream variables" ;
+      Exp.Flow flowPrefix "Flow of connector variable. Needed for unconnected flow variables";
+      Exp.Stream streamPrefix "Stream variables" ;
       list<Absyn.Path> pathLst;
       Option<Exp.VariableAttributes> varAttr;
       Option<Absyn.Comment> absynComment;
@@ -683,12 +683,12 @@ algorithm
       DAE.VarDirection varDirection2;
       DAE.Type ty2;
       DAE.VarProtection varProt2;
-      DAE.Flow flow_2;
-      DAE.Stream stream_2;
+      DAE.Flow flowPrefix2;
+      DAE.Stream streamPrefix2;
       Option<DAE.VariableAttributes> varAttr2;
       Types.Type fType2;
       
-    case (Exp.VAR(compRef,var,varDirection,varProt,ty,binding,dims,flow_,stream_,pathLst,varAttr,absynComment,innerOut,fType))
+    case (Exp.VAR(compRef,var,varDirection,varProt,ty,binding,dims,flowPrefix,streamPrefix,pathLst,varAttr,absynComment,innerOut,fType))
       equation
         var2 = varKindConvert2(var);
         varDirection2 = varDirConvert2(varDirection);
@@ -696,9 +696,9 @@ algorithm
         ty2 = typeConvert2(ty);
         varAttr2 = varAttrConvert2(varAttr);
         fType2 = fromTypeTypesToType(fType);
-        flow_2 = flowConvert2(flow_);
-        stream_2 = streamConvert2(stream_);
-        elem = DAE.VAR(compRef,var2,varDirection2,varProt2,ty2,binding,dims,flow_2,stream_2,pathLst,varAttr2,absynComment,innerOut,fType2);
+        flowPrefix2 = flowConvert2(flowPrefix);
+        streamPrefix2 = streamConvert2(streamPrefix);
+        elem = DAE.VAR(compRef,var2,varDirection2,varProt2,ty2,binding,dims,flowPrefix2,streamPrefix2,pathLst,varAttr2,absynComment,innerOut,fType2);
       then elem;
 
     case (Exp.DEFINE(c,e))

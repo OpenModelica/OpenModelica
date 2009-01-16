@@ -395,17 +395,16 @@ algorithm
       Absyn.Restriction r;
       Absyn.ClassDef d;
       Absyn.Info file_info;
-    case ((c as Absyn.CLASS(name = n,partial_ = p,final_ = f,encapsulated_ = e,restriction = r,body = d,info = file_info)))
+    case ((c as Absyn.CLASS(name = n,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,body = d,info = file_info)))
       equation
         // Debug.fprint("elab", "Elaborating class:" +& n +& "\n");
         r_1 = elabRestriction(c, r); // uniontype will not get elaborated!
         d_1 = elabClassdef(d);
       then
         CLASS(n,p,e,r_1,d_1);
-    case ((c as Absyn.CLASS(name = n,partial_ = p,final_ = f,encapsulated_ = e,restriction = r,body = d,info = file_info)))
+    case ((c as Absyn.CLASS(name = n,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,body = d,info = file_info)))
       equation
-        Debug.fprintln("elab", "Elaborating class failed:" +& n);
-        Debug.fprintln("elab", Dump.unparseClassStr(3, c, "", "", ""));
+        Debug.fprintln("elab", "Elaborating class failed:" +& n+&"\n");
       then
         fail();
   end matchcontinue;
@@ -462,7 +461,7 @@ algorithm
       Option<String> cmt;
       Absyn.Info file_info;
     case (Absyn.CLASS(body = Absyn.PARTS(classParts = (Absyn.EXTERNAL(externalDecl = _) :: _)))) then true; 
-    case (Absyn.CLASS(name = a,partial_ = b,final_ = c,encapsulated_ = d,restriction = e,
+    case (Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
                       body = Absyn.PARTS(classParts = (_ :: rest),comment = cmt),info = file_info))
       equation 
         res = containsExternalFuncDecl(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(rest,cmt),file_info));
@@ -471,7 +470,7 @@ algorithm
     /* adrpo: handling also the case model extends X external ... end X; */
     case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = (Absyn.EXTERNAL(externalDecl = _) :: _)))) then true;
     /* adrpo: handling also the case model extends X external ... end X; */
-    case (Absyn.CLASS(name = a,partial_ = b,final_ = c,encapsulated_ = d,restriction = e,
+    case (Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
                       body = Absyn.CLASS_EXTENDS(parts = (_ :: rest),comment = cmt),
                       info = file_info))
       equation
@@ -883,7 +882,7 @@ algorithm
       Absyn.ElementSpec s;
       Absyn.InnerOuter io;
       Absyn.Info info;
-    case (Absyn.ELEMENT(final_ = f,innerOuter = io, redeclareKeywords = repl,specification = s,info = info),prot)
+    case (Absyn.ELEMENT(finalPrefix = f,innerOuter = io, redeclareKeywords = repl,specification = s,info = info),prot)
       equation 
         es = elabElementspec(f, io, repl,  prot, s,SOME(info));
       then
@@ -895,7 +894,7 @@ protected function elabElementspec
 "function: elabElementspec 
   This function turns an Absyn.ElementSpec to a list of SCode.Element.
   The boolean arguments say if the element is final and protected, respectively."
-  input Boolean final_;
+  input Boolean finalPrefix;
   input Absyn.InnerOuter io;
   input Option<Absyn.RedeclareKeywords> inAbsynRedeclareKeywordsOption2;
   input Boolean inBoolean3;
@@ -903,11 +902,11 @@ protected function elabElementspec
   input Option<Absyn.Info> info;
   output list<Element> outElementLst;
 algorithm 
-  outElementLst := matchcontinue (final_,io,inAbsynRedeclareKeywordsOption2,inBoolean3,inElementSpec4,info)
+  outElementLst := matchcontinue (finalPrefix,io,inAbsynRedeclareKeywordsOption2,inBoolean3,inElementSpec4,info)
     local
       ClassDef de_1;
       Restriction re_1;
-      Boolean final_,prot,rp,pa,fi,e,repl_1,fl,st;
+      Boolean finalPrefix,prot,rp,pa,fi,e,repl_1,fl,st;
       Option<Absyn.RedeclareKeywords> repl;
       Absyn.Class cl;
       String n,ns;
@@ -927,18 +926,18 @@ algorithm
       list<Absyn.ComponentItem> xs;
       Absyn.Import imp;
       Option<Absyn.Exp> cond;
-    case (final_,_,repl,prot,
+    case (finalPrefix,_,repl,prot,
       Absyn.CLASSDEF(replaceable_ = rp,
-                     class_ = (cl as Absyn.CLASS(name = n,partial_ = pa,final_ = fi,encapsulated_ = e,restriction = re,
+                     class_ = (cl as Absyn.CLASS(name = n,partialPrefix = pa,finalPrefix = fi,encapsulatedPrefix = e,restriction = re,
                                                  body = de,info = file_info))),info)
       equation 
         Debug.fprintln("elab", "elaborating local class: " +& n);
         re_1 = elabRestriction(cl, re); // uniontype will not get elaborated!
         de_1 = elabClassdef(de);
       then
-        {CLASSDEF(n,final_,rp,CLASS(n,pa,e,re_1,de_1),NONE)};
+        {CLASSDEF(n,finalPrefix,rp,CLASS(n,pa,e,re_1,de_1),NONE)};
 
-    case (final_,_,repl,prot,Absyn.EXTENDS(path = n,elementArg = args),info)
+    case (finalPrefix,_,repl,prot,Absyn.EXTENDS(path = n,elementArg = args),info)
       local Absyn.Path n;
       equation 
         Debug.fprintln("elab", "elaborating extends: " +& Absyn.pathString(n));        
@@ -949,21 +948,21 @@ algorithm
 
     case (_,_,_,_,Absyn.COMPONENTS(components = {}),info) then {};
  
-    case (final_,io,repl,prot,Absyn.COMPONENTS(attributes = 
-      (attr as Absyn.ATTR(flow_ = fl,stream_=st,variability = pa,direction = di,arrayDim = ad)),typeSpec = t,
+    case (finalPrefix,io,repl,prot,Absyn.COMPONENTS(attributes = 
+      (attr as Absyn.ATTR(flowPrefix = fl,streamPrefix=st,variability = pa,direction = di,arrayDim = ad)),typeSpec = t,
       components = (Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = n,arrayDim = d,modification = m),comment = comment,condition=cond) :: xs)),info)
       local Absyn.Variability pa;
       equation 
         Debug.fprintln("elab", "elaborating component: " +& n);        
-        xs_1 = elabElementspec(final_, io, repl, prot, Absyn.COMPONENTS(attr,t,xs),info);
+        xs_1 = elabElementspec(finalPrefix, io, repl, prot, Absyn.COMPONENTS(attr,t,xs),info);
         mod = buildMod(m, false, Absyn.NON_EACH());
         pa_1 = elabVariability(pa) "PR. This adds the arraydimension that may be specified together with the type of the component." ;
         tot_dim = listAppend(d, ad);
         repl_1 = elabRedeclarekeywords(repl);
       then
-        (COMPONENT(n,io,final_,repl_1,prot,ATTR(tot_dim,fl,st,RW(),pa_1,di),t,mod,NONE,comment,cond,info) :: xs_1);
+        (COMPONENT(n,io,finalPrefix,repl_1,prot,ATTR(tot_dim,fl,st,RW(),pa_1,di),t,mod,NONE,comment,cond,info) :: xs_1);
 
-    case (final_,_,repl,prot,Absyn.IMPORT(import_ = imp),_) 
+    case (finalPrefix,_,repl,prot,Absyn.IMPORT(import_ = imp),_) 
       equation
         Debug.fprintln("elab", "elaborating import: " +& Dump.unparseImportStr(imp));
       then 
@@ -1225,23 +1224,23 @@ algorithm
   outMod := matchcontinue (inAbsynModificationOption,inBoolean,inEach)
     local
       Absyn.Exp e;
-      Boolean final_;
+      Boolean finalPrefix;
       Absyn.Each each_;
       list<SubMod> subs;
       list<Absyn.ElementArg> l;
     case (NONE,_,_) then NOMOD();  /* final */ 
-    case (SOME(Absyn.CLASSMOD({},(SOME(e)))),final_,each_) then MOD(final_,each_,{},SOME((e,false))); 
-    case (SOME(Absyn.CLASSMOD({},(NONE))),final_,each_) then MOD(final_,each_,{},NONE); 
-    case (SOME(Absyn.CLASSMOD(l,SOME(e))),final_,each_)
+    case (SOME(Absyn.CLASSMOD({},(SOME(e)))),finalPrefix,each_) then MOD(finalPrefix,each_,{},SOME((e,false))); 
+    case (SOME(Absyn.CLASSMOD({},(NONE))),finalPrefix,each_) then MOD(finalPrefix,each_,{},NONE); 
+    case (SOME(Absyn.CLASSMOD(l,SOME(e))),finalPrefix,each_)
       equation 
         subs = buildArgs(l);
       then
-        MOD(final_,each_,subs,SOME((e,false)));
-    case (SOME(Absyn.CLASSMOD(l,NONE)),final_,each_)
+        MOD(finalPrefix,each_,subs,SOME((e,false)));
+    case (SOME(Absyn.CLASSMOD(l,NONE)),finalPrefix,each_)
       equation 
         subs = buildArgs(l);
       then
-        MOD(final_,each_,subs,NONE);        
+        MOD(finalPrefix,each_,subs,NONE);        
   end matchcontinue;
 end buildMod;
 
@@ -1276,7 +1275,7 @@ algorithm
       list<SubMod> subs;
       Mod mod_1;
       SubMod sub;
-      Boolean final_;
+      Boolean finalPrefix;
       Absyn.Each each_;
       Absyn.ComponentRef cref;
       Option<Absyn.Modification> mod;
@@ -1288,22 +1287,22 @@ algorithm
       Absyn.ElementSpec spec;
       Option<Absyn.ConstrainClass> constropt;
     case {} then {}; 
-    case ((Absyn.MODIFICATION(finalItem = final_,each_ = each_,componentReg = cref,modification = mod,comment = cmt) :: xs))
+    case ((Absyn.MODIFICATION(finalItem = finalPrefix,each_ = each_,componentReg = cref,modification = mod,comment = cmt) :: xs))
       equation 
         subs = buildArgs(xs);
-        mod_1 = buildMod(mod, final_, each_);
+        mod_1 = buildMod(mod, finalPrefix, each_);
         sub = buildSub(cref, mod_1);
       then
         (sub :: subs);
-    case ((Absyn.REDECLARATION(finalItem = final_,redeclareKeywords = keywords,each_ = each_,elementSpec = spec,constrainClass = constropt) :: xs))
+    case ((Absyn.REDECLARATION(finalItem = finalPrefix,redeclareKeywords = keywords,each_ = each_,elementSpec = spec,constrainClass = constropt) :: xs))
       equation 
         subs = buildArgs(xs);
         n = Absyn.elementSpecName(spec);
-        elist = elabElementspec(final_, Absyn.UNSPECIFIED(), NONE, false, spec, NONE) 
+        elist = elabElementspec(finalPrefix, Absyn.UNSPECIFIED(), NONE, false, spec, NONE) 
         "LS:: do not know what to use for *protected*, so using false 
          LS:: do not know what to use for *replaceable*, so using false" ;
       then
-        (NAMEMOD(n,REDECL(final_,elist)) :: subs);
+        (NAMEMOD(n,REDECL(finalPrefix,elist)) :: subs);
   end matchcontinue;
 end buildArgs;
 
@@ -1466,9 +1465,9 @@ algorithm
   outString:=
   matchcontinue (inMod)
     local
-      String final_str,str,res,each_str,subs_str,ass_str;
+      String finalPrefixstr,str,res,each_str,subs_str,ass_str;
       list<String> strs;
-      Boolean b,final_;
+      Boolean b,finalPrefix;
       list<Element> elist;
       Absyn.Each each_;
       list<SubMod> subs;
@@ -1477,19 +1476,19 @@ algorithm
     case REDECL(finalPrefix = b,elementLst = elist)
       equation 
         Print.printBuf("redeclare(");
-        final_str = Util.if_(b, "final", "");
+        finalPrefixstr = Util.if_(b, "final", "");
         strs = Util.listMap(elist, printElementStr);
         str = Util.stringDelimitList(strs, ",");
-        res = Util.stringAppendList({"redeclare(",final_str,str,")"});
+        res = Util.stringAppendList({"redeclare(",finalPrefixstr,str,")"});
       then
         res;
-    case MOD(finalPrefix = final_,eachPrefix = each_,subModLst = subs,absynExpOption = ass)
+    case MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,absynExpOption = ass)
       equation 
-        final_str = Util.if_(final_, "final", "");
+        finalPrefixstr = Util.if_(finalPrefix, "final", "");
         each_str = Dump.unparseEachStr(each_);
         subs_str = printSubs1Str(subs);
         ass_str = printEqmodStr(ass);
-        res = Util.stringAppendList({final_str,each_str,subs_str,ass_str});
+        res = Util.stringAppendList({finalPrefixstr,each_str,subs_str,ass_str});
       then
         res;
     case _
@@ -1690,7 +1689,7 @@ algorithm
       String str,str2,res,n,mod_str,s,vs;
       Absyn.Path path,typath;
       Mod mod;
-      Boolean final_,repl,prot;
+      Boolean finalPrefix,repl,prot;
       Absyn.InnerOuter io;
       Class cl;
       Variability var;
@@ -1709,13 +1708,13 @@ algorithm
         res = Util.stringAppendList({"EXTENDS(",str,", modification=",modStr,")"});
       then
         res;
-    case CLASSDEF(name = n,finalPrefix = final_,replaceablePrefix = repl,classDef = cl,baseClassPath = SOME(path))
+    case CLASSDEF(name = n,finalPrefix = finalPrefix,replaceablePrefix = repl,classDef = cl,baseClassPath = SOME(path))
       equation 
         str = Absyn.pathString(path);
         res = Util.stringAppendList({"CLASSDEF(",n,", from basclass: ",str,")"});
       then
         res;
-    case COMPONENT(component = n,innerOuter=io,finalPrefix = final_,replaceablePrefix = repl,
+    case COMPONENT(component = n,innerOuter=io,finalPrefix = finalPrefix,replaceablePrefix = repl,
                    protectedPrefix = prot, attributes = ATTR(variability = var),typeSpec = tySpec,
                    modifications = mod,baseClassPath = pathOpt,comment = comment)
       equation 
@@ -1727,7 +1726,7 @@ algorithm
         res = Util.stringAppendList({"COMPONENT(",n, " in/out: ", str2, " mod: ",mod_str, " tp: ", s," var :",vs,", baseClass: ", str,")"});
       then
         res;
-    case CLASSDEF(name = n,finalPrefix = final_,replaceablePrefix = repl,classDef = cl,baseClassPath = pathOpt)
+    case CLASSDEF(name = n,finalPrefix = finalPrefix,replaceablePrefix = repl,classDef = cl,baseClassPath = pathOpt)
       equation 
         str = printClassStr(cl);
         res = Util.stringAppendList({"CLASSDEF(",n,",...,",str,")"});
@@ -1752,7 +1751,7 @@ algorithm
       Option<Absyn.Path> pathOpt;
       Absyn.TypeSpec typath;
       Mod mod;
-      Boolean final_,repl,prot;
+      Boolean finalPrefix,repl,prot;
       Class cl;
       Variability var;
       Option<Absyn.Comment> comment;
@@ -1767,7 +1766,7 @@ algorithm
       then
         res;
         
-    case COMPONENT(component = n,finalPrefix = final_,replaceablePrefix = repl,protectedPrefix = prot,
+    case COMPONENT(component = n,finalPrefix = finalPrefix,replaceablePrefix = repl,protectedPrefix = prot,
                    attributes = ATTR(variability = var),typeSpec = typath,modifications = mod,
                    baseClassPath = pathOpt,comment = comment)
       equation 
@@ -1779,7 +1778,7 @@ algorithm
       then
         res;
         
-    case CLASSDEF(name = n,finalPrefix = final_,replaceablePrefix = repl,classDef = cl,baseClassPath = _)
+    case CLASSDEF(name = n,finalPrefix = finalPrefix,replaceablePrefix = repl,classDef = cl,baseClassPath = _)
       equation 
         str = printClassStr(cl);
         res = Util.stringAppendList({"class ",n,"\n",str,"end ",n,";\n"});
@@ -2053,11 +2052,11 @@ algorithm
   outClass := matchcontinue (inClass,inBoolean)
     local
       String id;
-      Boolean enc,partial_;
+      Boolean enc,partialPrefix;
       Restriction restr;
       ClassDef def;
-    case (CLASS(name = id,encapsulatedPrefix = enc,restriction = restr,classDef = def),partial_) 
-      then CLASS(id,partial_,enc,restr,def); 
+    case (CLASS(name = id,encapsulatedPrefix = enc,restriction = restr,classDef = def),partialPrefix) 
+      then CLASS(id,partialPrefix,enc,restr,def); 
   end matchcontinue;
 end classSetPartial;
 

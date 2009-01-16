@@ -579,7 +579,7 @@ algorithm
       
     case (localCache,_,{},localAccList,_) then (localCache,localAccList);
     case (localCache,localEnv,Exp.VAR(cRef,v1,v2,prot,ty,binding,dims,
-      											flow_,stream_,f,vAttr,com,inOut,fType)
+      											flowPrefix,streamPrefix,f,vAttr,com,inOut,fType)
        :: rest,localAccList,pre)
     local
       Exp.ComponentRef cRef;
@@ -590,8 +590,8 @@ algorithm
     	Option<Exp.Exp> binding "binding" ;
     	Exp.InstDims dims "Binding expression e.g. for parameters" ;
     	//Exp.StartValue dim "dimension of original component" ;
-    	Exp.Flow flow_ "Flow of connector variable. Needed for unconnected flow variables" ;
-    	Exp.Stream stream_ "stream or no strem" ;
+    	Exp.Flow flowPrefix "Flow of connector variable. Needed for unconnected flow variables" ;
+    	Exp.Stream streamPrefix "stream or no strem" ;
     	list<Absyn.Path> f "the list of classes";
     	Option<Exp.VariableAttributes> vAttr;
     	Option<Absyn.Comment> com "comment";
@@ -601,7 +601,7 @@ algorithm
     	Exp.DAEElement elem;
     equation
       cRef = prefixCref(pre,cRef);  
-      elem = Exp.VAR(cRef,v1,v2,prot,ty,binding,dims,flow_,stream_,f,vAttr,com,inOut,fType);  
+      elem = Exp.VAR(cRef,v1,v2,prot,ty,binding,dims,flowPrefix,streamPrefix,f,vAttr,com,inOut,fType);  
       localAccList = listAppend(localAccList,Util.listCreate(elem));
       (localCache,temp) = prefixDecls(localCache,localEnv,rest,localAccList,pre);  
     then (localCache,temp);

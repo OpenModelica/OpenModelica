@@ -184,6 +184,16 @@ protected import Print;
 protected import Debug;
 protected import Error;
 
+public function algorithmEmpty "Returns true if algorithm is empty, i.e. no statements"
+  input Algorithm alg;
+  output Boolean empty;
+algorithm
+  empty := matchcontinue(alg)
+    case(ALGORITHM({})) then true;
+    case(_) then false;
+  end matchcontinue;
+end algorithmEmpty;
+
 public function makeAssignment 
 "function: makeAssignment
   This function creates an `ASSIGN\' construct, and checks that the

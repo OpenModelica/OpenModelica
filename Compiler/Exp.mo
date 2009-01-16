@@ -437,8 +437,8 @@ end VarTypes;
 public 
 uniontype AttributesTypes "- Attributes"
   record ATTRTYPES
-    Boolean flow_ "flow" ;
-    Boolean stream_ "flow" ;
+    Boolean flowPrefix "flow" ;
+    Boolean streamPrefix "flow" ;
     SCode.Accessibility accessibility "accessibility" ;
     SCode.Variability parameter_ "parameter" ;
     Absyn.Direction direction "direction" ;
@@ -703,8 +703,8 @@ uniontype DAEElement
     TypeExp ty "one of the builtin types" ;
     Option<Exp> binding "Binding expression e.g. for parameters ; value of start attribute" ; 
     InstDims  dims "dimensions";
-    Flow flow_ "Flow of connector variable. Needed for unconnected flow variables" ;
-    Stream stream_ "Stream variables in connectors" ;    
+    Flow flowPrefix "Flow of connector variable. Needed for unconnected flow variables" ;
+    Stream streamPrefix "Stream variables in connectors" ;    
     list<Absyn.Path> pathLst " " ;
     Option<VariableAttributes> variableAttributesOption;
     Option<Absyn.Comment> absynCommentOption;
@@ -1254,6 +1254,25 @@ algorithm
         res;
   end matchcontinue;
 end crefLastIdent;
+
+public function crefIdent "function: crefLastSubs
+ 
+  Return the last ComponentRef
+"
+  input ComponentRef inComponentRef;
+  output ComponentRef outSubscriptLst;
+algorithm outSubscriptLst:= matchcontinue (inComponentRef)
+    local
+      Ident id;
+      ComponentRef res,cr;      
+    case (inComponentRef as CREF_IDENT(ident = id)) then inComponentRef; 
+    case (CREF_QUAL(componentRef = cr))
+      equation 
+        res = crefIdent(cr);
+      then
+        res;
+  end matchcontinue;
+end crefIdent;
 
 public function crefLastSubs 
 "function: crefLastSubs 
@@ -3715,12 +3734,13 @@ algorithm
   end matchcontinue;
 end noFactors;
 
-protected function negate
+public function negate
 "function: negate
   author: PA
   Negates an expression."
   input Exp e;
   output Exp outExp;
+protected 
   Type t;
 algorithm 
   outExp := matchcontinue(e)
@@ -6614,6 +6634,15 @@ public function printExpListStr
 algorithm
   res := Util.stringDelimitList(Util.listMap(expl,printExpStr),", ");  
 end printExpListStr;
+
+public function printOptExpStr ""
+input Option<Exp> oexp;
+output String str;
+algorithm str := matchcontinue(oexp) 
+  case(NONE) then "";
+  case(SOME(e)) local Exp e; then printExpStr(e); 
+  end matchcontinue;
+end printOptExpStr;
   
 public function printExpStr 
 "function: printExpStr 
@@ -10411,6 +10440,29 @@ algorithm
   end matchcontinue;
 end crefLastType;
 
+public function crefSetLastType "
+sets the 'last' type of a cref.
+"
+  input ComponentRef inRef;
+  input Type newType;
+  output ComponentRef outRef;
+algorithm outRef := matchcontinue (inRef,newType)
+    local
+      Type ty; 
+      ComponentRef child;
+      list<Subscript> subs;
+      String id;
+      case(CREF_IDENT(id,_,subs),newType)
+        then
+          CREF_IDENT(id,newType,subs);
+      case(CREF_QUAL(id,ty,subs,child),newType)
+        equation
+          child = crefSetLastType(child,newType);
+        then
+          CREF_QUAL(id,ty,subs,child);
+  end matchcontinue;
+end crefSetLastType;
+
 public function crefType "Function: crefType 
 Function for extracting the type out of a componentReference. 
 "
@@ -10469,7 +10521,7 @@ algorithm
   end matchcontinue;
 end crefNameType;
 
-protected function expSub
+public function expSub
 "function: expMul
   author: PA
   Subtracts two scalar expressions."

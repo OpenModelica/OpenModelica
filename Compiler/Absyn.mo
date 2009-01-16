@@ -114,8 +114,8 @@ uniontype Program
   record BEGIN_DEFINITION
     Path         path  "path for split definitions" ;
     Restriction  restriction   "Class restriction" ;
-    Boolean      partial_      "true if partial" ;
-    Boolean      encapsulated_ "true if encapsulated" ;
+    Boolean      partialPrefix      "true if partial" ;
+    Boolean      encapsulatedPrefix "true if encapsulated" ;
   end BEGIN_DEFINITION;
 
   record END_DEFINITION
@@ -176,9 +176,9 @@ uniontype Class
   and the body of the declaration."
  record CLASS
     Ident name;
-    Boolean     partial_   "true if partial" ;
-    Boolean     final_     "true if final" ;
-    Boolean     encapsulated_ "true if encapsulated" ;
+    Boolean     partialPrefix   "true if partial" ;
+    Boolean     finalPrefix     "true if final" ;
+    Boolean     encapsulatedPrefix "true if encapsulated" ;
     Restriction restriction  "Restriction" ;
     ClassDef    body;
     Info       info    "Information: FileName is the class is defined in + 
@@ -323,7 +323,7 @@ public
 uniontype Element "Elements
   The basic element type in Modelica"
   record ELEMENT
-    Boolean                   final_;
+    Boolean                   finalPrefix;
     Option<RedeclareKeywords> redeclareKeywords "replaceable, redeclare" ;
     InnerOuter                innerOuter "inner/outer" ;
     Ident                     name;
@@ -644,8 +644,8 @@ end Each;
 public 
 uniontype ElementAttributes "- Component attributes"
   record ATTR
-    Boolean flow_ "flow" ;
-    Boolean stream_ "stream" ;
+    Boolean flowPrefix "flow" ;
+    Boolean streamPrefix "stream" ;
 //    Boolean inner_ "inner";
 //    Boolean outer_ "outer";
     Variability variability "variability ; parameter, constant etc." ;
@@ -2186,7 +2186,7 @@ algorithm
       Restriction r;
       ClassDef body;
       TimeStamp build;
-    case (CLASS(name = n,partial_ = p,final_ = f,encapsulated_ = e,restriction = r,body = body),filename,build) 
+    case (CLASS(name = n,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,body = body),filename,build) 
       then CLASS(n,p,f,e,r,body,INFO(filename,false,0,0,0,0, build)  ); 
   end matchcontinue;
 end setClassFilename;
@@ -2212,7 +2212,7 @@ algorithm
       Restriction r;
       ClassDef body;
       Info nfo;
-    case (CLASS(name = n,partial_ = p,final_ = f,encapsulated_ = e,restriction = r,body = body),newName) 
+    case (CLASS(name = n,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,body = body),newName) 
       then CLASS(newName,p,f,e,r,body,INFO("",false,0,0,0,0, TIMESTAMP(0.0,0.0))  ); 
   end matchcontinue;
 end setClassName;
@@ -2484,7 +2484,7 @@ algorithm
       Boolean p,f,e;
       Restriction r;
       ClassDef body;
-    case (CLASS(name = n,partial_ = p,final_ = f,encapsulated_ = e,restriction = r,body = body))
+    case (CLASS(name = n,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,body = body))
     then n;
   end matchcontinue;
 end getClassName;

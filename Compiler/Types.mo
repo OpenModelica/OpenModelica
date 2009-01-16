@@ -69,8 +69,8 @@ end Var;
 public 
 uniontype Attributes "- Attributes"
   record ATTR
-    Boolean flow_ "flow" ;
-    Boolean stream_ "stream" ;
+    Boolean flowPrefix "flow" ;
+    Boolean streamPrefix "stream" ;
     SCode.Accessibility accessibility "accessibility" ;
     SCode.Variability parameter_ "parameter" ;
     Absyn.Direction direction "direction" ;
@@ -269,14 +269,14 @@ end SubMod;
 public 
 uniontype Mod "Modification"
   record MOD
-    Boolean final_ "final" ;
+    Boolean finalPrefix "final" ;
     Absyn.Each each_;
     list<SubMod> subModLst;
     Option<EqMod> eqModOption;
   end MOD;
 
   record REDECL
-    Boolean final_ "final" ;
+    Boolean finalPrefix "final" ;
     list<tuple<SCode.Element, Mod>> tplSCodeElementModLst;
   end REDECL;
 
@@ -834,7 +834,7 @@ algorithm
       list<SubMod> subs;
       Option<EqMod> eq;
       Mod m;
-    case (MOD(final_ = f,each_ = each_,subModLst = subs,eqModOption = eq)) then MOD(f,each_,{},eq); 
+    case (MOD(finalPrefix = f,each_ = each_,subModLst = subs,eqModOption = eq)) then MOD(f,each_,{},eq); 
     case (m) then m; 
   end matchcontinue;
 end stripSubmod;
@@ -1167,14 +1167,14 @@ public function setVarInput "Sets a Types.Var to input"
 algorithm
   outV := matchcontinue(v)
   local Ident name;
-    Boolean f,p,stream_;
+    Boolean f,p,streamPrefix;
     Type tp;
     Binding bind;
     SCode.Accessibility a;
     SCode.Variability v;
     Absyn.InnerOuter io;
     
-    case( VAR(name,ATTR(f,stream_,a,v,_,io),p,tp,bind)) then VAR(name,ATTR(f,stream_,a,v,Absyn.INPUT(),io),p,tp,bind);
+    case( VAR(name,ATTR(f,streamPrefix,a,v,_,io),p,tp,bind)) then VAR(name,ATTR(f,streamPrefix,a,v,Absyn.INPUT(),io),p,tp,bind);
   end matchcontinue;
 end setVarInput;
 
@@ -2612,7 +2612,7 @@ algorithm
       Type ty;
       Binding bnd;
     case VAR(name = n,
-             attributes = ATTR(flow_ = fl,stream_=st,accessibility = ac,parameter_ = SCode.PARAM(),direction = dir),
+             attributes = ATTR(flowPrefix = fl,streamPrefix=st,accessibility = ac,parameter_ = SCode.PARAM(),direction = dir),
              protected_ = false,type_ = ty,binding = bnd) 
     then ();  /* LS: false means not protected, hence we ignore protected variables */
   end matchcontinue;
@@ -3755,7 +3755,7 @@ algorithm
       Exp.Type ty2;
       Type ty;
     case ({},_) then {}; 
-    case ((VAR(name = id,attributes = ATTR(flow_ = true),type_ = ty) :: vs),cr)
+    case ((VAR(name = id,attributes = ATTR(flowPrefix = true),type_ = ty) :: vs),cr)
       equation 
         ty2 = elabType(ty);
         cr_1 = Exp.joinCrefs(cr, Exp.CREF_IDENT(id,ty2,{}));
@@ -3788,7 +3788,7 @@ algorithm
       Type ty;
       
     case ({},_) then {};
-    case ((VAR(name = id,attributes = ATTR(stream_ = true),type_ = ty) :: vs),cr)
+    case ((VAR(name = id,attributes = ATTR(streamPrefix = true),type_ = ty) :: vs),cr)
       equation
         ty2 = elabType(ty);
         cr_1 = Exp.joinCrefs(cr, Exp.CREF_IDENT(id,ty2,{}));

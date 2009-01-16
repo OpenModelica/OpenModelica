@@ -826,7 +826,7 @@ algorithm
       Prefix.Prefix pre;
       Connect.Sets csets,csets_1;
       String n;
-      Boolean partial_,impl,callscope_1,encflag;
+      Boolean partialPrefix,impl,callscope_1,encflag;
       ClassInf.State ci_state,ci_state_1;
       list<DAE.Element> dae1,dae1_1,dae2,dae3,dae;
       list<Exp.ComponentRef> crs;
@@ -844,7 +844,7 @@ algorithm
       String str;
       list<Exp.ComponentRef> dc;
       /*  Classes with the keyword partial can not be instantiated. They can only be inherited */ 
-    case (cache,env,mod,pre,csets,SCode.CLASS(name = n,partialPrefix = (partial_ as true)),_,(impl as false),_)
+    case (cache,env,mod,pre,csets,SCode.CLASS(name = n,partialPrefix = (partialPrefix as true)),_,(impl as false),_)
       equation 
         Error.addMessage(Error.INST_PARTIAL_CLASS, {n});
       then
@@ -869,13 +869,14 @@ algorithm
         callscope_1 = isTopCall(callscope);              
         //print("in class ");print(n);print(" generate equations for sets:");print(Connect.printSetsStr(csets_1));print("\n");
         checkMissingInnerDecl(dae1_1,callscope_1);
-        csets_1 = retrieveOuterConnections(cache,env_3,pre,csets_1);
+        (csets_1,_) = retrieveOuterConnections(cache,env_3,pre,csets_1,callscope_1);
         //print("updated sets: ");print(Connect.printSetsStr(csets_1));print("\n");        
         dae2 = Connect.equations(csets_1,pre);
-        (cache,dae3) = Connect.unconnectedFlowEquations(cache,csets_1, dae1, env_3, pre,callscope_1);
+        (cache,dae3) = Connect.unconnectedFlowEquations(cache,csets_1, dae1, env_3, pre,callscope_1,{});
         dae = Util.listFlatten({dae1_1,dae2,dae3});
         ty = mktype(fq_class, ci_state_1, tys, bc_ty) ;
         //print("\n---- DAE ----\n"); DAE.printDAE(DAE.DAE(dae));  //Print out flat modelica
+         dae = renameUniqueVarsInTopScope(callscope_1,dae);
       then 
         (cache,dae,env_3,Connect.SETS({},crs,dc,oc),ty,ci_state_1,oDA);
 
@@ -948,7 +949,7 @@ algorithm
         dae1_1 = DAE.setComponentType(dae1, fq_class);
         callscope_1 = isTopCall(callscope);
         dae2 = Connect.equations(csets_1,pre);
-        (cache,dae3) = Connect.unconnectedFlowEquations(cache,csets_1, dae1, env_3, pre,callscope_1);
+        (cache,dae3) = Connect.unconnectedFlowEquations(cache,csets_1, dae1, env_3, pre,callscope_1,{});
         dae = Util.listFlatten({dae1_1,dae2,dae3});
         /*
         (cache,typename) = makeFullyQualified(cache,env_3, Absyn.IDENT(n));
@@ -1681,7 +1682,7 @@ algorithm
         dae = Util.listFlatten({dae1,dae2,dae3,dae4,dae5});
         
         //Change outer references to corresponding inner reference
-        dae = changeOuterReferences(dae);
+      (dae,csets5) = changeOuterReferences(dae,csets5);
       then
         (cache,dae,env5,csets5,ci_state6,tys,NONE/* no basictype bc*/,NONE);
    
@@ -1823,42 +1824,182 @@ algorithm
   end matchcontinue;
 end removeSelfReference;
 
-protected function changeOuterReferences 
-"Changes the outer references in a dae to the corresponding
- inner reference, given that an inner reference exist in the DAE.
- Updates the inner variable binding value to deeper innerouter value(if exists _only_ at the outer at not at current node)."
+protected function changeOuterReferences "
+
+Changes the outer references in a dae to the corresponding
+inner reference, given that an inner reference exist in the DAE.
+Update connection sets incase of Absyn.INNEROUTER()  
+"
   input list<DAE.Element> inDae;
+  input Connect.Sets csets;
   output list<DAE.Element> outDae;
+  output Connect.Sets ocsets;
   protected
   list<DAE.Element> innerVars,outerVars,allVars;
   VarTransform.VariableReplacements repl;
   list<Exp.ComponentRef> srcs,targets;
-algorithm 
-  (outDae) := matchcontinue(inDae)
+algorithm (ocsets,outDae) := matchcontinue(inDae,csets)
   local
-    list<tuple<Exp.ComponentRef,Exp.Exp>> outerMods;
-    list<Exp.Exp> exps;
-    list<Exp.ComponentRef> crefs;
-  case(inDae)
+  case(inDae,csets)
     equation
       innerVars = DAE.getAllMatchingElements(inDae,DAE.isInnerVar);
       outerVars = DAE.getAllMatchingElements(inDae,DAE.isOuterVar);  
       repl = buildInnerOuterRepl(innerVars,outerVars,VarTransform.emptyReplacements());
 
-      //Aquire deeper innerouter modification to apply to current instantiation object.
-      (crefs,exps) = DAE.getBindings(outerVars);
-      crefs = VarTransform.applyReplacementList(repl,crefs);
-      outerMods = Util.makeTuple(crefs,exps);
-      
       srcs = VarTransform.replacementSources(repl);
       targets = VarTransform.replacementTargets(repl);
       inDae = DAE.removeVariables(inDae,srcs);
-      inDae = DAE.removeInnerAttrs(inDae,targets,outerMods);
-      outDae = VarTransform.applyReplacementsDAE(inDae,repl);
+      inDae = DAE.removeInnerAttrs(inDae,targets); 
+      outDae = VarTransform.applyReplacementsDAE(inDae,repl,NONE);
+      ocsets = changeOuterReferences2(repl,csets);
     then
-      outDae;
+      (outDae,ocsets);
 end matchcontinue;
 end changeOuterReferences;
+
+protected function changeOuterReferences2 "
+Author: BZ, 2008-09 
+Helper function for changeOuterReferences 
+Verfify that we have replacement rules, then apply them for the outerconnect.
+With the difference that we add the scope of the inner declaration to the connection set variables.
+"
+input VarTransform.VariableReplacements repl;
+input Connect.Sets csets;
+output Connect.Sets ocsets;
+algorithm ocsets := matchcontinue(repl,csets)
+  case(repl,Connect.SETS(_,_,_,{})) then csets;
+  case(repl,csets)
+    local list<Exp.ComponentRef> targets;
+    equation
+      targets = VarTransform.replacementTargets(repl);
+      true = intEq(listLength(targets),0);
+      then csets;
+  case(repl,Connect.SETS(sets,ccons,dcs,ocs))
+    local
+    list<Connect.Set> sets;
+    list<Exp.ComponentRef> ccons,dcs;    
+		list<Connect.OuterConnect> ocs,ocs2;
+		equation
+		  ocs2 = changeOuterReferences3(ocs,repl);
+		  then
+		    Connect.SETS(sets,ccons,dcs,ocs2);
+  end matchcontinue;
+end changeOuterReferences2;
+
+protected function changeOuterReferences3 "
+Author: BZ, 2008-09 
+Helper function for changeOuterReferences 
+Extract the innouter declared connections. 
+"
+input list<Connect.OuterConnect> ocs;
+input VarTransform.VariableReplacements repl;
+output list<Connect.OuterConnect> oocs;
+algorithm oocs := matchcontinue(ocs,repl)
+  local
+    list<Connect.OuterConnect> recRes;
+    Exp.ComponentRef cr1,cr2,ncr1,ncr2,cr3,ver1,ver2;
+    Absyn.InnerOuter io1,io2;
+    Connect.Face f1,f2;
+    Prefix.Prefix scope;
+    list<Exp.ComponentRef> src,dst;
+  case({},_) then {};
+  case(Connect.OUTERCONNECT(scope,cr1,io1,f1,cr2,io2,f2)::ocs,repl)
+    equation
+      (_,true) = innerOuterBooleans(io1);
+      cr3 = Prefix.prefixCref(scope,cr1);
+      src = VarTransform.replacementSources(repl);
+      dst = VarTransform.replacementTargets(repl);
+      ncr1 = changeOuterReferences4(cr3,src,dst);
+      ver1 = Exp.crefFirstIdent(ncr1);
+      ver2 = Exp.crefFirstIdent(cr1);
+      false = Exp.crefEqual(ver1,ver2);
+      recRes = changeOuterReferences3(ocs,repl);
+    then
+      Connect.OUTERCONNECT(scope,ncr1,Absyn.INNER(),f1,cr2,io2,f2)::recRes;
+  case(Connect.OUTERCONNECT(scope,cr1,io1,f1,cr2,io2,f2)::ocs,repl)
+    equation
+      (_,true) = innerOuterBooleans(io2);
+      cr3 = Prefix.prefixCref(scope,cr2);      
+      src = VarTransform.replacementSources(repl);
+      dst = VarTransform.replacementTargets(repl); 
+      ncr2 = changeOuterReferences4(cr3,src,dst);
+      ver1 = Exp.crefFirstIdent(ncr2);
+      ver2 = Exp.crefFirstIdent(cr2);
+      false = Exp.crefEqual(ver1,ver2);
+      recRes = changeOuterReferences3(ocs,repl);
+    then
+      Connect.OUTERCONNECT(scope,cr1,io1,f1,ncr2,Absyn.INNER(),f2)::recRes;
+  case(Connect.OUTERCONNECT(scope,cr1,io1,f1,cr2,io2,f2)::ocs,repl)
+    local String s1,s2; 
+    equation
+      s1 = Exp.printComponentRefStr(cr1);
+      s2 = Exp.printComponentRefStr(cr2);
+      recRes = changeOuterReferences3(ocs,repl); 
+      then 
+        Connect.OUTERCONNECT(scope,cr1,io1,f1,cr2,io2,f2)::recRes;
+  end matchcontinue; 
+end changeOuterReferences3;
+
+protected function changeOuterReferences4 "
+Author: BZ, 2008-12
+Helper function for changeOuterReferences.
+Finds the common part of the variable and it's source of replacement.
+Then uses the first common part of the replacement destination.
+ex:
+ m1.m2.m3, m1.m2.m3.m4, m2.m3.m4
+ ==> m2.$unique'ified$m3 
+"
+input Exp.ComponentRef inCr;
+input list<Exp.ComponentRef> src,dst;
+output Exp.ComponentRef outCr;
+algorithm outCr := matchcontinue(inCr,src,dst)
+  local Exp.ComponentRef s,d,cr1,cr2;
+  case(inCr,s::src,d::dst)
+    equation
+      true = Exp.crefPrefixOf(inCr,s);
+      cr1 = extractCommonPart(inCr,d);
+      false = Exp.crefIsIdent(cr1); // an ident can not be the inner part of an innerouter.
+      outCr = DAE.nameInnerouterUniqueCref(cr1);     
+      then
+        outCr;
+  case(inCr,s::src,d::dst)
+    equation
+      false = Exp.crefPrefixOf(inCr,s);
+      outCr = changeOuterReferences4(inCr,src,dst);
+      then
+        outCr;
+  end matchcontinue;
+end changeOuterReferences4;
+
+protected function extractCommonPart "
+Author: BZ, 2008-12
+Compares two crefs ex:
+model1.model2.connector vs model2.connector.variable
+would become: model2.connector
+"
+input Exp.ComponentRef prefixedCref;
+input Exp.ComponentRef innerCref;
+output Exp.ComponentRef cr3;
+algorithm cr3 := matchcontinue(prefixedCref,innerCref)
+local
+  Exp.Type ty,ty2;
+  Exp.ComponentRef c1,c2,c3;  
+  case(prefixedCref,innerCref)
+    equation
+     c1 = Exp.crefIdent(prefixedCref);
+     c2 = Exp.crefIdent(innerCref);
+     true = Exp.crefEqual(c1,c2);
+     c3 = Exp.crefSetLastType(innerCref,Exp.crefLastType(prefixedCref));     
+     then
+       c3;
+  case(prefixedCref,innerCref)
+    equation
+      c2 = Exp.crefStripLastIdent(innerCref);      
+      cr3 = extractCommonPart(prefixedCref,c2);
+    then
+      cr3;
+  end matchcontinue;
+end extractCommonPart;
 
 protected function buildInnerOuterRepl 
 "Builds replacement rules for changing outer references 
@@ -1870,8 +2011,7 @@ protected function buildInnerOuterRepl
 algorithm
   repl := matchcontinue(innerVars,outerVars,inRepl)
     local VarTransform.VariableReplacements repl; DAE.Element v;
-    case({},_,repl) then repl;
-      
+    case({},_,repl) then repl;    
     case(v::innerVars,outerVars,repl) 
       equation
       repl = buildInnerOuterReplVar(v,outerVars,repl);
@@ -1891,6 +2031,13 @@ algorithm
 	  local 
         list<Exp.ComponentRef> outerCrs,ourOuterCrs;
 	    Exp.ComponentRef cr; VarTransform.VariableReplacements repl;
+	  case(DAE.VAR(componentRef = cr, innerOuter = Absyn.INNEROUTER()),outerVars,repl) 
+	    equation
+        outerCrs = Util.listMap(outerVars,DAE.varCref);
+	      ourOuterCrs = Util.listSelect1(outerCrs,cr,isInnerOuterMatch);
+	      cr = DAE.nameInnerouterUniqueCref(cr);
+        repl = Util.listFold_2r(ourOuterCrs,VarTransform.addReplacement,repl,Exp.CREF(cr,Exp.OTHER()));
+	    then repl;
 	  case(DAE.VAR(componentRef = cr),outerVars,repl) 
 	    equation
 	      outerCrs = Util.listMap(outerVars,DAE.varCref);
@@ -2383,7 +2530,7 @@ algorithm
       list<Connect.Set> set;
       list<Exp.ComponentRef> dc;
       list<Connect.OuterConnect> oc;
-    case (s,Prefix.NOPRE()) then s;  /* no Prexix, nothing to filter */ 
+    case (s,Prefix.NOPRE()) then s;  /* no Prefix, nothing to filter */ 
     case (Connect.SETS(setLst = set,connection = crs,deletedComponents=dc,outerConnects=oc),pre)
       equation 
         first_pre = Prefix.prefixFirst(pre);
@@ -3545,7 +3692,7 @@ algorithm
       ClassInf.State cistate;
       SCode.Element comp;
       String n;
-      Boolean final_,repl,prot,flow_,stream_,impl;
+      Boolean finalPrefix,repl,prot,flowPrefix,streamPrefix,impl;
       Absyn.InnerOuter io;
       SCode.Attributes attr;
       list<Absyn.Subscript> ad;
@@ -3569,11 +3716,11 @@ algorithm
     case (env,mod,pre,csets,cistate,
         (((comp as SCode.COMPONENT(component = n,
                                    innerOuter=io,
-                                   finalPrefix = final_,
+                                   finalPrefix = finalPrefix,
                                    replaceablePrefix = repl,
                                    protectedPrefix = prot,
-                                   attributes = (attr as SCode.ATTR(arrayDims = ad,flowPrefix = flow_,
-                                                                    streamPrefix = stream_,accesibility = acc,
+                                   attributes = (attr as SCode.ATTR(arrayDims = ad,flowPrefix = flowPrefix,
+                                                                    streamPrefix = streamPrefix,accesibility = acc,
                                                                     variability = param,direction = dir)),
                                    typeSpec = t,
                                    modifications = m,
@@ -3583,9 +3730,9 @@ algorithm
                                    info = aInfo)),cmod) :: xs),
         allcomps,eqns,instdims,impl) 
       equation 
-        m = traverseModAddFinal(m, final_);
+        m = traverseModAddFinal(m, finalPrefix);
         env_1 = addComponentsToEnv2(env, mod, pre, csets, cistate, 
-          {(SCode.COMPONENT(n,io,final_,repl,prot,attr,t,m,bc,comment, aExp, aInfo),cmod)}, instdims, impl);
+          {(SCode.COMPONENT(n,io,finalPrefix,repl,prot,attr,t,m,bc,comment, aExp, aInfo),cmod)}, instdims, impl);
         env_2 = addComponentsToEnv(env_1, mod, pre, csets, cistate, xs, allcomps, eqns, instdims, impl);
       then
         env_2;
@@ -3642,7 +3789,7 @@ algorithm
       ClassInf.State ci_state;
       SCode.Element comp;
       String n;
-      Boolean final_,repl,prot,flow_,stream_,impl;
+      Boolean finalPrefix,repl,prot,flowPrefix,streamPrefix,impl;
       Absyn.InnerOuter io;
       SCode.Attributes attr;
       list<Absyn.Subscript> ad;
@@ -3660,8 +3807,8 @@ algorithm
 
     /* a component */
     case (env,mods,pre,csets,ci_state,
-          ((comp as SCode.COMPONENT(n,io,final_,repl,prot,
-                                    attr as SCode.ATTR(ad,flow_,stream_,acc,param,dir),
+          ((comp as SCode.COMPONENT(n,io,finalPrefix,repl,prot,
+                                    attr as SCode.ATTR(ad,flowPrefix,streamPrefix,acc,param,dir),
                                     t,m,bc,comment,condition,info),cmod) :: xs),
           inst_dims,impl)
       equation 
@@ -3679,7 +3826,7 @@ algorithm
 	       be redeclared through a modification" ;
         cmod_1 = Mod.merge(compmod, cmod, env, pre);
         env_1 = Env.extendFrameV(env, 
-          Types.VAR(n,Types.ATTR(flow_,stream_,acc,param,dir,io),prot,
+          Types.VAR(n,Types.ATTR(flowPrefix,streamPrefix,acc,param,dir,io),prot,
           (Types.T_NOTYPE(),NONE),Types.UNBOUND()), SOME((comp,cmod_1)), Env.VAR_UNTYPED(), {});
         env_2 = addComponentsToEnv2(env_1, mods, pre, csets, ci_state, xs, inst_dims, impl);
       then
@@ -3787,7 +3934,7 @@ algorithm
       Absyn.Import imp;
       InstDims instdims,inst_dims;
       String n,n2,s,scope_str,ns;
-      Boolean final_,repl,prot,f2,repl2,impl,flow_,stream_;
+      Boolean finalPrefix,repl,prot,f2,repl2,impl,flowPrefix,streamPrefix;
       SCode.Class cls2,c,cl;
       list<DAE.Element> dae,dae2;
       Exp.ComponentRef vn;
@@ -3835,7 +3982,7 @@ algorithm
     case (cache,env,mods,pre,csets,ci_state,(SCode.CLASSDEF(name = n,replaceablePrefix = true,classDef = c),_),inst_dims,impl)
       equation 
         //Redeclare of class definition, replaceable is true
-        ((classmod as Types.REDECL(final_,{(SCode.CLASSDEF(n2,f2,repl2,cls2,_),_)}))) = Mod.lookupModificationP(mods, Absyn.IDENT(n))  ;
+        ((classmod as Types.REDECL(finalPrefix,{(SCode.CLASSDEF(n2,f2,repl2,cls2,_),_)}))) = Mod.lookupModificationP(mods, Absyn.IDENT(n))  ;
         (cache,env_1,dae) = instClassDecl(cache,env, classmod, pre, csets, cls2, inst_dims); 
         //Debug.fprintln (\"insttr\", \"--Classdef mods\") &
 			  //Debug.fcall (\"insttr\", Mod.print_mod, classmod) &
@@ -3847,7 +3994,7 @@ algorithm
     /* non replaceable class definition */
     case (cache,env,mods,pre,csets,ci_state,(SCode.CLASSDEF(name = n,replaceablePrefix = false,classDef = c),_),inst_dims,impl)
       equation 
-        ((classmod as Types.REDECL(final_,{(SCode.CLASSDEF(n2,f2,repl2,cls2,_),_)}))) = Mod.lookupModificationP(mods, Absyn.IDENT(n)) 
+        ((classmod as Types.REDECL(finalPrefix,{(SCode.CLASSDEF(n2,f2,repl2,cls2,_),_)}))) = Mod.lookupModificationP(mods, Absyn.IDENT(n)) 
         "Redeclare of class definition, replaceable is false" ;
         Error.addMessage(Error.REDECLARE_NON_REPLACEABLE, {n});
       then
@@ -3869,9 +4016,9 @@ algorithm
 	  // an extended prefix.
     case (cache,env,mods,pre,csets,ci_state,
           ((comp as SCode.COMPONENT(component = n,innerOuter=io,
-                                    finalPrefix = final_,replaceablePrefix = repl,protectedPrefix = prot,
-      		                          attributes = (attr as SCode.ATTR(arrayDims = ad,flowPrefix = flow_,
-      		                                                           streamPrefix = stream_, accesibility = acc,
+                                    finalPrefix = finalPrefix,replaceablePrefix = repl,protectedPrefix = prot,
+      		                          attributes = (attr as SCode.ATTR(arrayDims = ad,flowPrefix = flowPrefix,
+      		                                                           streamPrefix = streamPrefix, accesibility = acc,
       		                                                           variability = param,direction = dir)),
       		                          typeSpec = ( ts as Absyn.TPATH(t, _)), 
       		                          modifications = m,
@@ -3881,8 +4028,8 @@ algorithm
       		                          info = aInfo)),cmod),
           inst_dims,impl)  
       equation
-        m = traverseModAddFinal(m, final_); 
-        comp = SCode.COMPONENT(n,io,final_,repl,prot,attr,ts,m,bc,comment, cond, aInfo);
+        m = traverseModAddFinal(m, finalPrefix); 
+        comp = SCode.COMPONENT(n,io,finalPrefix,repl,prot,attr,ts,m,bc,comment, cond, aInfo);
         // Fails if multiple decls not identical
         alreadyDeclared = checkMultiplyDeclared(cache,env,mods,pre,csets,ci_state,(comp,cmod),inst_dims,impl);
         ci_state = ClassInf.trans(ci_state, ClassInf.FOUND_COMPONENT());
@@ -3910,7 +4057,7 @@ algorithm
         crefs2 = getCrefFromDim(ad);
         crefs3 = getCrefFromCond(cond);
         crefs_1 = Util.listFlatten({crefs,crefs2,crefs3});
-        (env,crefs_2,cache) = removeSelfReferenceAndUpdate(env,crefs_1,owncref,t,cache,ci_state,csets,prot,attr,impl,io,inst_dims,pre,mods,final_);
+        (env,crefs_2,cache) = removeSelfReferenceAndUpdate(env,crefs_1,owncref,t,cache,ci_state,csets,prot,attr,impl,io,inst_dims,pre,mods,finalPrefix);
         (cache,env) = getDerivedEnv(cache,env, bc);
         (cache,env2,csets) = updateComponentsInEnv(cache,mods, crefs_2, env, ci_state, csets, impl);
 				//Update the untyped modifiers to typed ones, and extract class and 
@@ -3948,8 +4095,8 @@ algorithm
         mod1_1 = Mod.merge(mod1_1, variableClassMod, env2, pre);
         
         /* Apply redeclaration modifier to component */
-        (cache,SCode.COMPONENT(n,io,final_,repl,prot,
-                               (attr as SCode.ATTR(ad,flow_,stream_,acc,param,dir)),
+        (cache,SCode.COMPONENT(n,io,finalPrefix,repl,prot,
+                               (attr as SCode.ATTR(ad,flowPrefix,streamPrefix,acc,param,dir)),
                                Absyn.TPATH(t, _),m,bc,comment,cond,_),
         mod_1,env2_1,csets) = redeclareType(cache,mod1_1, comp, env2, pre, ci_state, csets, impl);
         (cache,env_1) = getDerivedEnv(cache,env, bc);
@@ -3967,19 +4114,19 @@ algorithm
         (cache,dims) = elabArraydim(cache,env2_1, owncref, t,ad, eq, impl, NONE,true)  ;
         //Instantiate the component 
          inst_dims = listAppend(inst_dims,{{}}); // Start a new "set" of inst_dims for this component (in instance hierarchy), see InstDims
-        (cache,compenv,dae,csets_1,ty) = instVar(cache,cenv, ci_state, mod_1, pre, csets, n, cl, attr, prot, dims, {}, inst_dims, impl, comment,io,final_);
+        (cache,compenv,dae,csets_1,ty) = instVar(cache,cenv, ci_state, mod_1, pre, csets, n, cl, attr, prot, dims, {}, inst_dims, impl, comment,io,finalPrefix);
 				//The environment is extended (updated) with the new variable binding. 
         (cache,binding) = makeBinding(cache,env2_1, attr, mod_1, ty) ; 
         //true in update_frame means the variable is now instantiated. 
-        new_var = Types.VAR(n,Types.ATTR(flow_,stream_,acc,param,dir,io),prot,ty,binding);
+        new_var = Types.VAR(n,Types.ATTR(flowPrefix,streamPrefix,acc,param,dir,io),prot,ty,binding);
 
         //type info present Now we can also put the binding into the dae.
         //If the type is one of the simple, predifined types a simple variable 
         //declaration is added to the DAE. 
         env_1 = Env.updateFrameV(env2_1, new_var, Env.VAR_DAE(), compenv)  ;
-        vars = Util.if_(alreadyDeclared,{},{Types.VAR(n,Types.ATTR(flow_,stream_,acc,param,dir,io),prot,ty,binding)});
+        vars = Util.if_(alreadyDeclared,{},{Types.VAR(n,Types.ATTR(flowPrefix,streamPrefix,acc,param,dir,io),prot,ty,binding)});
         dae = Util.if_(alreadyDeclared,{},dae);
-        dae = Util.if_(ModUtil.isOuter(io),DAE.removeEquations(dae),dae);
+        dae = handleInnerOuterEquations(io,dae);
         
         /* if declaration condition is true, remove dae elements and connections */
         (cache,dae,csets_1) = instConditionalDeclaration(cache,env2,cond,n,dae,csets_1,pre);
@@ -4002,7 +4149,7 @@ algorithm
     // MetaModelica Complex Types. Part of MetaModelica extension.
     //------------------------------------------------------------------------
     case (cache,env,mods,pre,csets,ci_state,
-          ((comp as SCode.COMPONENT(n,io,final_,repl,prot,attr as SCode.ATTR(ad,flow_,stream_,acc,param,dir),
+          ((comp as SCode.COMPONENT(n,io,finalPrefix,repl,prot,attr as SCode.ATTR(ad,flowPrefix,streamPrefix,acc,param,dir),
                                     tSpec as Absyn.TCOMPLEX(typeName,_,_), m, bc,comment,cond,aInfo),cmod)),
           inst_dims,impl)
       local Absyn.Path typeName;
@@ -4050,14 +4197,14 @@ algorithm
         // mod1_1 = Mod.merge(cmod, mod1, env2, pre);
 
 				/* Apply redeclaration modifier to component */
-        // (cache,SCode.COMPONENT(n,io,final_,repl,prot,(attr as SCode.ATTR(ad,flow_,stream_,acc,param,dir)),_,m,bc,comment),mod_1,env2_1,csets)
+        // (cache,SCode.COMPONENT(n,io,finalPrefix,repl,prot,(attr as SCode.ATTR(ad,flowPrefix,streamPrefix,acc,param,dir)),_,m,bc,comment),mod_1,env2_1,csets)
         // = redeclareType(cache,mod1_1, comp, env2, pre, ci_state, csets, impl);
         (cache,env_1) = getDerivedEnv(cache,env, bc);
         //---------
         // We build up a class structure for the complex type
         id=Absyn.pathString(typeName);
         cl = SCode.CLASS(id,false,false,SCode.R_TYPE(),
-                         SCode.DERIVED(tSpec,SCode.NOMOD(),Absyn.ATTR(flow_, stream_,Absyn.VAR(),Absyn.BIDIR(),ad)));
+                         SCode.DERIVED(tSpec,SCode.NOMOD(),Absyn.ATTR(flowPrefix, streamPrefix,Absyn.VAR(),Absyn.BIDIR(),ad)));
         // (cache,cl,cenv) = Lookup.lookupClass(cache,env_1, Absyn.IDENT("Integer"), true);
 
 				// If the element is protected, and an external modification
@@ -4071,21 +4218,21 @@ algorithm
         (cache,dims) = elabArraydim(cache,env, owncref, Absyn.IDENT("Integer"),ad, NONE, impl, NONE,true)  ;
 
         // Instantiate the component
-        (cache,compenv,dae,csets_1,ty) = instVar(cache,env, ci_state, Types.NOMOD(), pre, csets, n, cl, attr, prot, dims, {}, inst_dims, impl, comment,io,final_);
+        (cache,compenv,dae,csets_1,ty) = instVar(cache,env, ci_state, Types.NOMOD(), pre, csets, n, cl, attr, prot, dims, {}, inst_dims, impl, comment,io,finalPrefix);
 
 				// The environment is extended (updated) with the new variable binding.
         (cache,binding) = makeBinding(cache,env, attr, Types.NOMOD(), ty) ;
 
         // true in update_frame means the variable is now instantiated.
-        new_var = Types.VAR(n,Types.ATTR(flow_,stream_,acc,param,dir,io),prot,ty,binding) ;
+        new_var = Types.VAR(n,Types.ATTR(flowPrefix,streamPrefix,acc,param,dir,io),prot,ty,binding) ;
 
         // type info present Now we can also put the binding into the dae.
         // If the type is one of the simple, predifined types a simple variable
         // declaration is added to the DAE.
         env_1 = Env.updateFrameV(env, new_var, Env.VAR_DAE(), compenv)  ;
-        vars = Util.if_(alreadyDeclared,{},{Types.VAR(n,Types.ATTR(flow_,stream_,acc,param,dir,io),prot,ty,binding)});
+        vars = Util.if_(alreadyDeclared,{},{Types.VAR(n,Types.ATTR(flowPrefix,streamPrefix,acc,param,dir,io),prot,ty,binding)});
         dae = Util.if_(alreadyDeclared,{},dae);
-        dae = Util.if_(ModUtil.isOuter(io),DAE.removeEquations(dae),dae);
+        dae = handleInnerOuterEquations(io,dae);
         // If an outer element, remove this variable from the DAE. Variable references will be bound to
         // corresponding inner element instead.
         // dae2 = Util.if_(ModUtil.isOuter(io),{},dae);
@@ -4097,7 +4244,7 @@ algorithm
     // and prints an error message about the unknown class. 
     // Failure => ({},env,csets,ci_state,{}) 
     case (cache,env,_,pre,csets,ci_state,
-          (SCode.COMPONENT(component = n, innerOuter=io,finalPrefix = final_,replaceablePrefix = repl,
+          (SCode.COMPONENT(component = n, innerOuter=io,finalPrefix = finalPrefix,replaceablePrefix = repl,
                            protectedPrefix = prot,
                            attributes=SCode.ATTR(variability=vt),typeSpec = Absyn.TPATH(t,_)),_),_,_) 
       local Absyn.ComponentRef tref; SCode.Variability vt;
@@ -4268,7 +4415,7 @@ algorithm
       list<Env.Frame> env,env_1,env2,env2_1,cenv,compenv;
       Types.Mod mod;
       String n;
-      Boolean final_,repl,prot;
+      Boolean finalPrefix,repl,prot;
       SCode.Element oldElt; Types.Mod oldMod;
       tuple<SCode.Element,Types.Mod> newComp;
       Env.InstStatus instStatus;
@@ -4280,7 +4427,7 @@ algorithm
      * If the two variables are not identical, an error is given.
      */ 
     case (cache,env,mod,prefix,csets,ciState,
-          (newComp as (SCode.COMPONENT(component = n,finalPrefix = final_,replaceablePrefix = repl,protectedPrefix = prot),_)),_,_)
+          (newComp as (SCode.COMPONENT(component = n,finalPrefix = finalPrefix,replaceablePrefix = repl,protectedPrefix = prot),_)),_,_)
       equation 
         //print(n);
         //print("looking for multiple declared components, env:");
@@ -4292,7 +4439,7 @@ algorithm
        
     // If not multiply declared, return.
     case (cache,env,mod,prefix,csets,ciState,
-          (newComp as (SCode.COMPONENT(component = n,finalPrefix = final_,replaceablePrefix = repl,protectedPrefix = prot),_)),_,_)
+          (newComp as (SCode.COMPONENT(component = n,finalPrefix = finalPrefix,replaceablePrefix = repl,protectedPrefix = prot),_)),_,_)
       equation 
         failure((_,_,SOME((oldElt,oldMod)),_,_) = Lookup.lookupIdentLocal(cache,env, n)); 
       then false;
@@ -4489,7 +4636,7 @@ algorithm
       Types.Mod m_1,old_m_1,m_2,m_3,m,rmod;
       SCode.Element redecl,newcomp,comp;
       String n1,n2;
-      Boolean final_,repl,prot,repl2,prot2,impl,redfin;
+      Boolean finalPrefix,repl,prot,repl2,prot2,impl,redfin;
       Absyn.TypeSpec t,t2;
       SCode.Mod mod,old_mod;
       Option<Absyn.Path> bc;
@@ -4501,7 +4648,7 @@ algorithm
 
     /* Implicit instantation */
     case (cache,(m as Types.REDECL(tplSCodeElementModLst = (((redecl as 
-          SCode.COMPONENT(component = n1,finalPrefix = final_,replaceablePrefix = repl,protectedPrefix = prot,
+          SCode.COMPONENT(component = n1,finalPrefix = finalPrefix,replaceablePrefix = repl,protectedPrefix = prot,
                           typeSpec = t,modifications = mod,baseClassPath = bc,comment = comment)),rmod) :: rest))),
           SCode.COMPONENT(component = n2,finalPrefix = false,replaceablePrefix = repl2,protectedPrefix = prot2,
                           typeSpec = t2,modifications = old_mod),env,pre,ci_state,csets,impl) 
@@ -4516,8 +4663,8 @@ algorithm
       then
         (cache,redecl,m_3,env_1,csets);
 /*    case (cache,(m as Types.REDECL(tplSCodeElementModLst = 
-      (((redecl as SCode.CLASSDEF(name = n1,final_ = final_,replaceable_ = repl)),rmod) :: rest))),
-      SCode.CLASSDEF(name = n2,final_ = false,replaceable_ = repl2),env,pre,ci_state,csets,impl) 
+      (((redecl as SCode.CLASSDEF(name = n1,finalPrefix = finalPrefix,replaceable_ = repl)),rmod) :: rest))),
+      SCode.CLASSDEF(name = n2,finalPrefix = false,replaceable_ = repl2),env,pre,ci_state,csets,impl) 
 */    
     // redeclaration of classes: 
     case (cache,(m as Types.REDECL(tplSCodeElementModLst = (((redecl as SCode.CLASSDEF(name = n1) ),rmod) :: rest))),
@@ -4543,8 +4690,8 @@ algorithm
       then
         (cache,redecl,rmod,env_1,csets);
         
-    case (cache,(mod as Types.REDECL(final_ = redfin,tplSCodeElementModLst = (((redecl as 
-          SCode.COMPONENT(component = n1,finalPrefix = final_,replaceablePrefix = repl,protectedPrefix = prot,
+    case (cache,(mod as Types.REDECL(finalPrefix = redfin,tplSCodeElementModLst = (((redecl as 
+          SCode.COMPONENT(component = n1,finalPrefix = finalPrefix,replaceablePrefix = repl,protectedPrefix = prot,
                           typeSpec = t,baseClassPath = bc,comment = comment)),rmod) :: rest))),(comp as 
           SCode.COMPONENT(component = n2,finalPrefix = false,replaceablePrefix = repl2,protectedPrefix = prot2,
                           typeSpec = t2,comment = comment2)),env,pre,ci_state,csets,impl)
@@ -4554,7 +4701,7 @@ algorithm
         (cache,newcomp,mod,env_1,csets) = redeclareType(cache,Types.REDECL(redfin,rest), comp, env, pre, ci_state, csets, impl);
       then
         (cache,newcomp,mod,env_1,csets);
-    case (cache,Types.REDECL(final_ = redfin,tplSCodeElementModLst = (_ :: rest)),comp,env,pre,ci_state,csets,impl)
+    case (cache,Types.REDECL(finalPrefix = redfin,tplSCodeElementModLst = (_ :: rest)),comp,env,pre,ci_state,csets,impl)
       local Types.Mod mod;
       equation 
         (cache,newcomp,mod,env_1,csets) = redeclareType(cache,Types.REDECL(redfin,rest), comp, env, pre, ci_state, 
@@ -4562,7 +4709,7 @@ algorithm
       then
         (cache,newcomp,mod,env_1,csets);
 
-    case (cache,Types.REDECL(final_ = redfin,tplSCodeElementModLst = {}),comp,env,pre,ci_state,csets,impl) 
+    case (cache,Types.REDECL(finalPrefix = redfin,tplSCodeElementModLst = {}),comp,env,pre,ci_state,csets,impl) 
       then (cache,comp,Types.NOMOD(),env,csets); 
         
     case (cache,mod,comp,env,pre,ci_state,csets,impl)
@@ -4602,7 +4749,7 @@ protected function instVar
   input Boolean inBoolean;
   input Option<Absyn.Comment> inAbsynCommentOption;
   input Absyn.InnerOuter io;
-  input Boolean final_;
+  input Boolean finalPrefix;
   output Env.Cache outCache;
   output Env outEnv;
   output list<DAE.Element> outDAEElementLst;
@@ -4610,7 +4757,7 @@ protected function instVar
   output Types.Type outType;
 algorithm 
   (outCache,outEnv,outDAEElementLst,outSets,outType):=
-  matchcontinue (outCache,inEnv,inState,inMod,inPrefix,inSets,inIdent,inClass,inAttributes,protection,inDimExpLst,inIntegerLst,inInstDims,inBoolean,inAbsynCommentOption,io,final_)
+  matchcontinue (outCache,inEnv,inState,inMod,inPrefix,inSets,inIdent,inClass,inAttributes,protection,inDimExpLst,inIntegerLst,inInstDims,inBoolean,inAbsynCommentOption,io,finalPrefix)
     local
       list<DimExp> dims_1,dims;
       list<Env.Frame> compenv,env;
@@ -4633,22 +4780,22 @@ algorithm
    	// e.g. Point p => Real p{3}; These must be handled separately since even if they do not 
 	 	// appear to be an array, they can. Therefore we need to collect
  	 	// the full dimensionality and call inst_var2 
-    case (cache,env,ci_state,mod,pre,csets,n,(cl as SCode.CLASS(name = id)),attr,prot,dims,idxs,inst_dims,impl,comment,io,final_) 
+    case (cache,env,ci_state,mod,pre,csets,n,(cl as SCode.CLASS(name = id)),attr,prot,dims,idxs,inst_dims,impl,comment,io,finalPrefix) 
       equation 
 				// Collect dimensions
         (cache,(dims_1 as (_ :: _))) = getUsertypeDimensions(cache,env, mod, pre, cl, inst_dims, impl);
         attr = propagateClassPrefix(attr,pre);
-        (cache,compenv,dae,csets_1,ty_1) = instVar2(cache,env, ci_state, mod, pre, csets, n, cl, attr, prot, dims_1, idxs, inst_dims, impl, comment,io,final_);
+        (cache,compenv,dae,csets_1,ty_1) = instVar2(cache,env, ci_state, mod, pre, csets, n, cl, attr, prot, dims_1, idxs, inst_dims, impl, comment,io,finalPrefix);
         ty = makeArrayType(dims_1, ty_1);
       then
         (cache,compenv,dae,csets_1,ty);
         
     // Generic case: fall trough 
-    case (cache,env,ci_state,mod,pre,csets,n,(cl as SCode.CLASS(name = id)),attr,prot,dims,idxs,inst_dims,impl,comment,io,final_) 
+    case (cache,env,ci_state,mod,pre,csets,n,(cl as SCode.CLASS(name = id)),attr,prot,dims,idxs,inst_dims,impl,comment,io,finalPrefix) 
       equation 
         attr = propagateClassPrefix(attr,pre);
         (cache,compenv,dae,csets_1,ty_1) = instVar2(cache,env, ci_state, mod, pre, csets, n, cl, attr, prot, dims, idxs, 
-          inst_dims, impl, comment,io,final_);
+          inst_dims, impl, comment,io,finalPrefix);
       then
         (cache,compenv,dae,csets_1,ty_1);
   end matchcontinue;
@@ -4673,15 +4820,15 @@ protected function instVar2
   input Boolean inBoolean;
   input Option<Absyn.Comment> inAbsynCommentOption;
   input Absyn.InnerOuter io;
-  input Boolean final_;
+  input Boolean finalPrefix;
   output Env.Cache outCache;
   output Env outEnv;
   output list<DAE.Element> outDAEElementLst;
   output Connect.Sets outSets;
   output Types.Type outType;
 algorithm 
-  (outCache,outEnv,outDAEElementLst,outSets,outType,final_):=
-  matchcontinue (inCache,inEnv,inState,inMod,inPrefix,inSets,inIdent,inClass,inAttributes,protection,inDimExpLst,inIntegerLst,inInstDims,inBoolean,inAbsynCommentOption,io,final_)
+  (outCache,outEnv,outDAEElementLst,outSets,outType,finalPrefix):=
+  matchcontinue (inCache,inEnv,inState,inMod,inPrefix,inSets,inIdent,inClass,inAttributes,protection,inDimExpLst,inIntegerLst,inInstDims,inBoolean,inAbsynCommentOption,io,finalPrefix)
     local
       InstDims inst_dims,inst_dims_1;
       list<Exp.Subscript> dims_1,subs;
@@ -4702,7 +4849,7 @@ algorithm
       SCode.Attributes attr;
       list<DimExp> dims;
       list<Integer> idxs,idxs_1;
-      Boolean impl,flow_,stream_;
+      Boolean impl,flowPrefix,streamPrefix;
       Option<Absyn.Comment> comment;
       Option<DAE.VariableAttributes> dae_var_attr;
       SCode.Accessibility acc;
@@ -4728,7 +4875,7 @@ algorithm
 	  // input Real x[:]; component environement The class is instantiated 
 	  // with the calculated modification, and an extended prefix. 
     //     
-	    case (cache,env,ci_state,mod,pre,csets,n,cl,attr,prot,dims,idxs,inst_dims,impl,comment,io,final_) 
+	    case (cache,env,ci_state,mod,pre,csets,n,cl,attr,prot,dims,idxs,inst_dims,impl,comment,io,finalPrefix) 
         equation 
         ClassInf.isFunction(ci_state);
         
@@ -4750,12 +4897,12 @@ algorithm
         //Generate variable with default binding
         ty_2 = Types.elabType(ty_1);
         cr = Prefix.prefixCref(pre, Exp.CREF_IDENT(n,ty_2,{}));
-        dae = daeDeclare(cr, ci_state, ty, attr, prot, SOME(e_1), {dims_1}, NONE, NONE, comment,io,final_,true);
+        dae = daeDeclare(cr, ci_state, ty, attr, prot, SOME(e_1), {dims_1}, NONE, NONE, comment,io,finalPrefix,true);
       then
         (cache,env_1,dae,csets_1,ty_1);
    
           /* Function variables without binding */
-    case (cache,env,ci_state,mod,pre,csets,n,cl,attr,prot,dims,idxs,inst_dims,impl,comment,io,final_) 
+    case (cache,env,ci_state,mod,pre,csets,n,cl,attr,prot,dims,idxs,inst_dims,impl,comment,io,finalPrefix) 
        equation 
         ClassInf.isFunction(ci_state);
          //Instantiate type of the component, skip dae/not flattening
@@ -4763,16 +4910,16 @@ algorithm
         cr = Prefix.prefixCref(pre, Exp.CREF_IDENT(n,Exp.OTHER(),{}));
         //Do all dimensions...
         dims_1 = instDimExpLst(dims, impl)  ;
-        dae = daeDeclare(cr, ci_state, ty, attr,prot, NONE, {dims_1}, NONE, NONE, comment,io,final_,true);
+        dae = daeDeclare(cr, ci_state, ty, attr,prot, NONE, {dims_1}, NONE, NONE, comment,io,finalPrefix,true);
         arrty = makeArrayType(dims, ty);
       then
         (cache,env_1,dae,csets,arrty);
 
     /* Constants */ 
     case (cache,env,ci_state,(mod as Types.MOD(eqModOption = SOME(Types.TYPED(e,_,_)))),pre,csets,n,cl,
-          SCode.ATTR(flowPrefix = flow_,streamPrefix=stream_,
+          SCode.ATTR(flowPrefix = flowPrefix,streamPrefix=streamPrefix,
                      accesibility = acc,variability = (vt as SCode.CONST()),direction = dir),
-          prot,{},idxs,inst_dims,impl,comment,io,final_) 
+          prot,{},idxs,inst_dims,impl,comment,io,finalPrefix) 
       equation 
         idxs_1 = listReverse(idxs);
         pre_1 = Prefix.prefixAdd(n, idxs_1, pre,vt);
@@ -4782,16 +4929,16 @@ algorithm
         identType = makeCrefBaseType(ty,inst_dims);
         cr = Prefix.prefixCref(pre, Exp.CREF_IDENT(n,identType,subs));        
         (cache,dae_var_attr) = instDaeVariableAttributes(cache,env, mod, ty, {}) "inst_mod_equation(cr,ty,mod) => dae2 &" ;
-        dae3 = daeDeclare(cr, ci_state, ty, SCode.ATTR({},flow_,stream_,acc,vt,dir),prot, SOME(e), inst_dims, NONE, dae_var_attr, comment,io,final_,false);
+        dae3 = daeDeclare(cr, ci_state, ty, SCode.ATTR({},flowPrefix,streamPrefix,acc,vt,dir),prot, SOME(e), inst_dims, NONE, dae_var_attr, comment,io,finalPrefix,false);
         dae = listAppend(dae1_1, dae3);
       then
         (cache,env_1,dae,csets_1,ty);
 
     /* Parameters */ 
     case (cache,env,ci_state,(mod as Types.MOD(eqModOption = SOME(Types.TYPED(e,_,_)))),pre,csets,n,cl,
-          SCode.ATTR(flowPrefix = flow_,streamPrefix = stream_,
+          SCode.ATTR(flowPrefix = flowPrefix,streamPrefix = streamPrefix,
                      accesibility = acc,variability = (vt as SCode.PARAM()),direction = dir),
-          prot,{},idxs,inst_dims,impl,comment,io,final_) 
+          prot,{},idxs,inst_dims,impl,comment,io,finalPrefix) 
       equation 
         idxs_1 = listReverse(idxs);
         pre_1 = Prefix.prefixAdd(n, idxs_1, pre,vt);        
@@ -4802,7 +4949,7 @@ algorithm
         cr = Prefix.prefixCref(pre, Exp.CREF_IDENT(n,identType,subs));   
         start = instStartBindingExp(mod, ty, idxs_1);
         (cache,dae_var_attr) = instDaeVariableAttributes(cache,env, mod, ty, {});
-        dae3 = daeDeclare(cr, ci_state, ty, SCode.ATTR({},flow_,stream_,acc,vt,dir),prot, SOME(e), inst_dims, start, dae_var_attr, comment,io,final_,false);
+        dae3 = daeDeclare(cr, ci_state, ty, SCode.ATTR({},flowPrefix,streamPrefix,acc,vt,dir),prot, SOME(e), inst_dims, start, dae_var_attr, comment,io,finalPrefix,false);
         dae = listAppend(dae1_1, dae3);
       then
         (cache,env_1,dae,csets_1,ty);
@@ -4811,9 +4958,9 @@ algorithm
          * Exception: external objects, see below.
          */
     case (cache,env,ci_state,mod,pre,csets,n,cl,
-          SCode.ATTR(flowPrefix = flow_, streamPrefix = stream_,
+          SCode.ATTR(flowPrefix = flowPrefix, streamPrefix = streamPrefix,
                      accesibility = acc,variability = vt,direction = dir),
-          prot,{},idxs,inst_dims,impl,comment,io,final_) 
+          prot,{},idxs,inst_dims,impl,comment,io,finalPrefix) 
       equation 
         idxs_1 = listReverse(idxs);
         pre_1 = Prefix.prefixAdd(n, idxs_1, pre,vt);
@@ -4834,12 +4981,12 @@ algorithm
         //Debug.fprint("insttrind", "\n ******************\n ");
         //Debug.fprint("insttrind", "\n ");
         start = instStartBindingExp(mod, ty, idxs_1);
-        eOpt = makeExternalObjectBinding(ty,mod);
+        eOpt = makeVariableBinding(ty,mod);
         (cache,dae_var_attr) = instDaeVariableAttributes(cache,env, mod, ty, {}) "idxs\'" ;
         dir = propagateAbSCDirection(dir,oDA); 
         false = modificationOnOuter(cr,mod,io); 
-        dae3 = daeDeclare(cr, ci_state, ty, SCode.ATTR({},flow_,stream_,acc,vt,dir),prot, eOpt,
-          inst_dims, start, dae_var_attr, comment,io,final_,false);
+        dae3 = daeDeclare(cr, ci_state, ty, SCode.ATTR({},flowPrefix,streamPrefix,acc,vt,dir),prot, eOpt,
+          inst_dims, start, dae_var_attr, comment,io,finalPrefix,false);
         dae2 = Util.if_(Types.isComplexType(ty), dae2,{});
         dae3 = listAppend(dae2,dae3);
         dae = listAppend(dae1_1, dae3);
@@ -4847,12 +4994,12 @@ algorithm
         (cache,env_1,dae,csets_1,ty);
     
         /* Array variables , e.g. Real x[3]*/
-    case (cache,env,ci_state,mod,pre,csets,n,cl,attr,prot,(dim :: dims),idxs,inst_dims,impl,comment,io,final_) 
+    case (cache,env,ci_state,mod,pre,csets,n,cl,attr,prot,(dim :: dims),idxs,inst_dims,impl,comment,io,finalPrefix) 
       equation 
         dime = instDimExp(dim, impl);
         inst_dims_1 = Util.listListAppendLast(inst_dims, {dime});
         (cache,compenv,dae,Connect.SETS(_,crs,dc,oc),ty) = 
-          instArray(cache,env, ci_state, mod, pre, csets, n, (cl,attr),prot, 1, dim, dims, idxs, inst_dims_1, impl, comment,io,final_);
+          instArray(cache,env, ci_state, mod, pre, csets, n, (cl,attr),prot, 1, dim, dims, idxs, inst_dims_1, impl, comment,io,finalPrefix);
         dimt = instDimType(dim);        
         ty_1 = liftNonBasicTypes(ty,dimt); // Do not lift types extending basic type, they are already array types.
        /* ty_1 = Types.liftArray(ty, dimt);*/
@@ -4886,29 +5033,32 @@ algorithm
   end matchcontinue;
 end liftNonBasicTypes;
 
-protected function makeExternalObjectBinding 
-"Helper relation to instVar2
- For external objects the binding contains the constructor call.  
- This must be inserted in the DAE.VAR as the binding expression so the constructor code can be generated.
- If the type is not externa object, NONE is returned, since an equation should be generated instead with instModEquation."
-  input Types.Type tp;
-  input Types.Mod mod;
-  output Option<Exp.Exp> eOpt;
-algorithm
-  eOpt := matchcontinue(tp,mod)
-    local Exp.Exp e,e1; Types.Properties p;
-    case ((Types.T_COMPLEX(complexClassType=ClassInf.EXTERNAL_OBJ(_)),_),Types.MOD(eqModOption = SOME(Types.TYPED(e,_,_))))
-      then SOME(e);
+protected function makeVariableBinding "Helper relation to instVar2
 
-    case(tp,mod) // added 2008-11 BZ, vars now have binding in DAE.VAR and not extra equation.
-      equation
-        SOME(Types.TYPED(e,_,p)) = Mod.modEquation(mod);
-        (e1,_) = Types.matchProp(e, p,Types.PROP(tp,Types.C_VAR()));
-      then
-        SOME(e1);
+For external objects the binding contains the constructor call.  This must be inserted in the DAE.VAR 
+as the binding expression so the constructor code can be generated.
+-- BZ 2008-11, added:
+If the type is not externa object, the normal binding value is bound, 
+Unless it is a complex var that not inherites a basic type. In that case DAE.Equation are generated.
+"
+input Types.Type tp;
+input Types.Mod mod;
+output Option<Exp.Exp> eOpt;
+
+algorithm eOpt := matchcontinue(tp,mod)
+  local Exp.Exp e,e1;Types.Properties p;
+  case ((Types.T_COMPLEX(complexClassType=ClassInf.EXTERNAL_OBJ(_)),_),
+    Types.MOD(eqModOption = SOME(Types.TYPED(e,_,_))))
+    then SOME(e);
+  case(tp,mod)
+    equation
+      SOME(Types.TYPED(e,_,p)) = Mod.modEquation(mod);
+      (e1,_) = Types.matchProp(e, p,Types.PROP(tp,Types.C_VAR()));
+    then
+      SOME(e1);
   case (_,_) then NONE;
 end matchcontinue;
-end makeExternalObjectBinding;
+end makeVariableBinding;
 
 protected function makeArrayType 
 "function: makeArrayType 
@@ -5197,7 +5347,7 @@ algorithm
     local
       tuple<Types.TType, Option<Absyn.Path>> ty;
       String n,id,str,str2,str3;
-      Boolean final_,repl,prot,flow_,stream_;
+      Boolean finalPrefix,repl,prot,flowPrefix,streamPrefix;
       Absyn.InnerOuter io;
       SCode.Attributes attr;
       list<Absyn.Subscript> ad,subscr;
@@ -5228,7 +5378,7 @@ algorithm
      */ 
     case (cache,mods,(cref as Absyn.CREF_IDENT(name = id,subscripts = subscr)),env,ci_state,csets,impl,updatedComps) 
       equation 
-        (cache,ty,SOME((SCode.COMPONENT(n,io,final_,repl,prot,(attr as SCode.ATTR(ad,flow_,stream_,acc,param,dir)),Absyn.TPATH(t, _),m,bc,comment,cond,_),cmod)),_) 
+        (cache,ty,SOME((SCode.COMPONENT(n,io,finalPrefix,repl,prot,(attr as SCode.ATTR(ad,flowPrefix,streamPrefix,acc,param,dir)),Absyn.TPATH(t, _),m,bc,comment,cond,_),cmod)),_) 
         	= Lookup.lookupIdent(cache,env, id);
         (cache,cl,cenv) = Lookup.lookupClass(cache,env, t, false);
         (mods,cmod,m) = noModForUpdatedComponents(updatedComps,cref,mods,cmod,m);
@@ -5251,11 +5401,11 @@ algorithm
         (cache,dims) = elabArraydim(cache,env2, cref, t,ad, eq, impl, NONE,true) 
         "The variable declaration and the (optional) equation modification are inspected for array dimensions." ;
         /* Instantiate the component */
-        (cache,compenv,dae1,csets_1,ty) = instVar(cache,cenv, ci_state, mod_3, Prefix.NOPRE(), csets, n, cl, attr, prot, dims, {}, {}, impl, NONE,io,final_);
+        (cache,compenv,dae1,csets_1,ty) = instVar(cache,cenv, ci_state, mod_3, Prefix.NOPRE(), csets, n, cl, attr, prot, dims, {}, {}, impl, NONE,io,finalPrefix);
         /* The environment is extended with the new variable binding. */
         (cache,binding) = makeBinding(cache,env2, attr, mod_3, ty)  ;
         /* type info present */
-        env_1 = Env.updateFrameV(env2, Types.VAR(n,Types.ATTR(flow_,stream_,acc,param,dir,io),prot,ty,binding), Env.VAR_TYPED(), compenv);
+        env_1 = Env.updateFrameV(env2, Types.VAR(n,Types.ATTR(flowPrefix,streamPrefix,acc,param,dir,io),prot,ty,binding), Env.VAR_TYPED(), compenv);
         updatedComps = HashTable5.delete(cref,updatedComps);
       then
         (cache,env_1,csets_1,updatedComps);
@@ -5282,7 +5432,7 @@ algorithm
         /* For qualified names, e.g. a.b.c, instanitate component a */
     case (cache,mods,(cref as Absyn.CREF_QUAL(name = id)),env,ci_state,csets,impl,updatedComps)  
       equation 
-        (cache,tyVar,SOME((SCode.COMPONENT(n,io,final_,repl,prot,(attr as SCode.ATTR(ad,flow_,stream_,acc,param,dir)),Absyn.TPATH(t,_),m,_,comment,cond,_),cmod)),_) 
+        (cache,tyVar,SOME((SCode.COMPONENT(n,io,finalPrefix,repl,prot,(attr as SCode.ATTR(ad,flowPrefix,streamPrefix,acc,param,dir)),Absyn.TPATH(t,_),m,_,comment,cond,_),cmod)),_) 
         	= Lookup.lookupIdent(cache,env, id);               
         (cache,cl,cenv) = Lookup.lookupClass(cache,env, t, false);
         
@@ -5311,14 +5461,14 @@ algorithm
         (cache,dims) = elabArraydim(cache,env2, owncref, t,ad, eq, impl, NONE,true);
 
         /* Instantiate the component */
-        (cache,compenv,dae1,csets_1,ty) = instVar(cache,cenv, ci_state, mod_3, Prefix.NOPRE(), csets, n, cl, attr, prot, dims, {}, {}, false, NONE,io,final_);
+        (cache,compenv,dae1,csets_1,ty) = instVar(cache,cenv, ci_state, mod_3, Prefix.NOPRE(), csets, n, cl, attr, prot, dims, {}, {}, false, NONE,io,finalPrefix);
 
         /*The environment is extended with the new variable binding.*/
         (cache,binding) = makeBinding(cache,env2, attr, mod_3, ty);
 
         /* type info present */        
         env_1 = Env.updateFrameV(env2, 
-          Types.VAR(n,Types.ATTR(flow_,stream_,acc,param,dir,io),prot,ty,binding), Env.VAR_TYPED(), compenv);
+          Types.VAR(n,Types.ATTR(flowPrefix,streamPrefix,acc,param,dir,io),prot,ty,binding), Env.VAR_TYPED(), compenv);
         updatedComps = HashTable5.delete(cref,updatedComps);
       then
         (cache,env_1,csets_1,updatedComps);
@@ -5459,8 +5609,8 @@ protected function propagateDirection
       DAE.Type t;
       Option<Exp.Exp> e;
       list<Exp.Subscript> id;
-      DAE.Flow flow_;
-      DAE.Stream stream_;
+      DAE.Flow flowPrefix;
+      DAE.Stream streamPrefix;
       list<Absyn.Path> class_;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<Absyn.Comment> comment;
@@ -5484,8 +5634,8 @@ protected function propagateDirection
                    ty = t,
                    binding = e,
                    dims = id,
-                   flow_ = flow_,
-                   stream_ = stream_,
+                   flowPrefix = flowPrefix,
+                   streamPrefix = streamPrefix,
                    pathLst = class_,
                    variableAttributesOption = dae_var_attr,
                    absynCommentOption = comment,
@@ -5495,7 +5645,7 @@ protected function propagateDirection
         dir_1 = absynDirToDaeDir(dir);
         r_1 = propagateDirection(r, dir);
       then
-        (DAE.VAR(cr,vk,dir_1,prot,t,e,id,flow_,stream_,class_,dae_var_attr,comment,io,tp) :: r_1);
+        (DAE.VAR(cr,vk,dir_1,prot,t,e,id,flowPrefix,streamPrefix,class_,dae_var_attr,comment,io,tp) :: r_1);
 
    /* Error, component declared as input or output  when containing variable that has prefix input. */
     case ((DAE.VAR(componentRef = cr,
@@ -5505,8 +5655,8 @@ protected function propagateDirection
                    ty = t,
                    binding = e,
                    dims = id,
-                   flow_ = flow_,
-                   stream_ = stream_,
+                   flowPrefix = flowPrefix,
+                   streamPrefix = streamPrefix,
                    pathLst = class_,
                    variableAttributesOption = dae_var_attr,
                    absynCommentOption = comment,
@@ -5526,8 +5676,8 @@ protected function propagateDirection
                    ty = t,
                    binding = e,
                    dims = id,
-                   flow_ = flow_,
-                   stream_ = stream_,
+                   flowPrefix = flowPrefix,
+                   streamPrefix = streamPrefix,
                    pathLst = class_,
                    variableAttributesOption = dae_var_attr,
                    absynCommentOption = comment) :: r),dir)  
@@ -5570,8 +5720,8 @@ protected function propagateInnerOuter
       DAE.Type t;
       Option<Exp.Exp> e;
       list<Exp.Subscript> id;
-      DAE.Flow flow_;
-      DAE.Stream stream_;
+      DAE.Flow flowPrefix;
+      DAE.Stream streamPrefix;
       list<Absyn.Path> class_;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<Absyn.Comment> comment;
@@ -5596,8 +5746,8 @@ protected function propagateInnerOuter
                    ty = t,
                    binding = e,
                    dims = id,
-                   flow_ = flow_,
-                   stream_ = stream_,
+                   flowPrefix = flowPrefix,
+                   streamPrefix = streamPrefix,
                    pathLst = class_,
                    variableAttributesOption = dae_var_attr,
                    absynCommentOption = comment,
@@ -5607,7 +5757,7 @@ protected function propagateInnerOuter
 				false = ModUtil.isUnspecified(io);
         r_1 = propagateInnerOuter(r, io);
       then
-        (DAE.VAR(cr,vk,dir,prot,t,e,id,flow_,stream_,class_,dae_var_attr,comment,io,tp) :: r_1);
+        (DAE.VAR(cr,vk,dir,prot,t,e,id,flowPrefix,streamPrefix,class_,dae_var_attr,comment,io,tp) :: r_1);
 
 			/* If var already have inner/outer, keep it. */
     case ( (v as DAE.VAR(componentRef = _)) :: r,io) 
@@ -5669,7 +5819,7 @@ protected function instArray
   input Boolean inBoolean;
   input Option<Absyn.Comment> inAbsynCommentOption;
   input Absyn.InnerOuter io;
-  input Boolean final_;
+  input Boolean finalPrefix;
   output Env.Cache outCache;
   output Env outEnv;
   output list<DAE.Element> outDAEElementLst;
@@ -5677,7 +5827,7 @@ protected function instArray
   output Types.Type outType;
 algorithm 
   (outCache,outEnv,outDAEElementLst,outSets,outType):=
-  matchcontinue (cache,inEnv,inState,inMod,inPrefix,inSets,inIdent,inTplSCodeClassSCodeAttributes,protection,inInteger,inDimExp,inDimExpLst,inIntegerLst,inInstDims,inBoolean,inAbsynCommentOption,io,final_)
+  matchcontinue (cache,inEnv,inState,inMod,inPrefix,inSets,inIdent,inTplSCodeClassSCodeAttributes,protection,inInteger,inDimExp,inDimExpLst,inIntegerLst,inInstDims,inBoolean,inAbsynCommentOption,io,finalPrefix)
     local
       Exp.Exp e,e_1;
       Types.Properties p,p2;
@@ -5715,24 +5865,24 @@ algorithm
       then
         (cache,env_1,{dae},csets,ty);
 
-    case (cache,env,ci_state,mod,pre,csets,n,(cl,attr),prot,i,DIMEXP(subscript = _),dims,idxs,inst_dims,impl,comment,io,final_)
+    case (cache,env,ci_state,mod,pre,csets,n,(cl,attr),prot,i,DIMEXP(subscript = _),dims,idxs,inst_dims,impl,comment,io,finalPrefix)
       equation 
         (cache,compenv,daeLst,csets,ty) = 
-          instVar2(cache, env, ci_state, mod, pre, csets, n, cl, attr, prot, dims, (i :: idxs), inst_dims, impl, comment,io,final_);
+          instVar2(cache, env, ci_state, mod, pre, csets, n, cl, attr, prot, dims, (i :: idxs), inst_dims, impl, comment,io,finalPrefix);
       then
         (cache,compenv,daeLst,csets,ty);
 
 		/* Special case when instantiating Real[0]. We need to know the type */
-    case (cache,env,ci_state,mod,pre,csets,n,(cl,attr),prot,i,DIMINT(0),dims,idxs,inst_dims,impl,comment,io,final_)
+    case (cache,env,ci_state,mod,pre,csets,n,(cl,attr),prot,i,DIMINT(0),dims,idxs,inst_dims,impl,comment,io,finalPrefix)
       equation 
         ErrorExt.setCheckpoint();
         (cache,compenv,_,csets,ty) = 
-           instVar2(cache,env, ci_state, mod, pre, csets, n, cl, attr,prot, dims, (0 :: idxs), inst_dims, impl, comment,io,final_);
+           instVar2(cache,env, ci_state, mod, pre, csets, n, cl, attr,prot, dims, (0 :: idxs), inst_dims, impl, comment,io,finalPrefix);
         ErrorExt.rollBack();
       then
         (cache,compenv,{},csets,ty);
 
-    case (cache,env,ci_state,mod,pre,csets,n,(cl,attr),prot,i,DIMINT(integer = stop),dims,idxs,inst_dims,impl,comment,io,final_)
+    case (cache,env,ci_state,mod,pre,csets,n,(cl,attr),prot,i,DIMINT(integer = stop),dims,idxs,inst_dims,impl,comment,io,finalPrefix)
       equation 
         (i > stop) = true;
       then
@@ -5759,14 +5909,14 @@ algorithm
         (cache,env_1,daeLst,csets_2,ty);
     */
         
-    case (cache,env,ci_state,mod,pre,csets,n,(cl,attr),prot,i,DIMINT(integer = stop),dims,idxs,inst_dims,impl,comment,io,final_)
+    case (cache,env,ci_state,mod,pre,csets,n,(cl,attr),prot,i,DIMINT(integer = stop),dims,idxs,inst_dims,impl,comment,io,finalPrefix)
       equation 
         mod_1 = Mod.lookupIdxModification(mod, i);
         (cache,env_1,dae1,csets_1,ty) = 
-           instVar2(cache,env, ci_state, mod_1, pre, csets, n, cl, attr, prot,dims, (i :: idxs), inst_dims, impl, comment,io,final_);
+           instVar2(cache,env, ci_state, mod_1, pre, csets, n, cl, attr, prot,dims, (i :: idxs), inst_dims, impl, comment,io,finalPrefix);
         i_1 = i + 1;
         (cache,_,dae2,csets_2,_) = 
-          instArray(cache,env, ci_state, mod, pre, csets_1, n, (cl,attr), prot, i_1, DIMINT(stop), dims, idxs, inst_dims, impl, comment,io,final_);
+          instArray(cache,env, ci_state, mod, pre, csets_1, n, (cl,attr), prot, i_1, DIMINT(stop), dims, idxs, inst_dims, impl, comment,io,finalPrefix);
         daeLst = listAppend(dae1, dae2);
       then
         (cache,env_1,daeLst,csets_2,ty);
@@ -5807,7 +5957,7 @@ algorithm
     local
       Types.Var ty;
       String n,id;
-      Boolean final_,repl,prot,flow_,stream_;
+      Boolean finalPrefix,repl,prot,flowPrefix,streamPrefix;
       Absyn.InnerOuter io;
       SCode.Attributes attr;
       list<Absyn.Subscript> ad;
@@ -5825,7 +5975,7 @@ algorithm
       Env.Cache cache;
     case (cache,env,(cref as Exp.CREF_IDENT(ident = id)))
       equation 
-        (cache,ty,SOME((SCode.COMPONENT(n,io,final_,repl,prot,(attr as SCode.ATTR(ad,flow_,stream_,acc,param,dir)),_,m,bc,comment,_,_),cmod)),_) 
+        (cache,ty,SOME((SCode.COMPONENT(n,io,finalPrefix,repl,prot,(attr as SCode.ATTR(ad,flowPrefix,streamPrefix,acc,param,dir)),_,m,bc,comment,_,_),cmod)),_) 
         	= Lookup.lookupIdent(cache,env, id);
         cmod_1 = Types.stripSubmod(cmod);
         m_1 = SCode.stripSubmod(m);
@@ -7285,20 +7435,20 @@ protected function daeDeclare
   input Option<DAE.VariableAttributes> inDAEVariableAttributesOption;
   input Option<Absyn.Comment> inAbsynCommentOption;
   input Absyn.InnerOuter io;
-  input Boolean final_;
+  input Boolean finalPrefix;
   input Boolean declareComplexVars "if true, declare variables for complex variables, e.g. record vars in functions";  
   output list<DAE.Element> outDAEElementLst;
 algorithm 
   outDAEElementLst:=
-  matchcontinue (inComponentRef,inState,inType,inAttributes,protection,inExpExpOption,inInstDims,inStartValue,inDAEVariableAttributesOption,inAbsynCommentOption,io,final_,declareComplexVars )
+  matchcontinue (inComponentRef,inState,inType,inAttributes,protection,inExpExpOption,inInstDims,inStartValue,inDAEVariableAttributesOption,inAbsynCommentOption,io,finalPrefix,declareComplexVars )
     local
-      DAE.Flow flow_1;
-      DAE.Stream stream_1;
+      DAE.Flow flowPrefix1;
+      DAE.Stream streamPrefix1;
       list<DAE.Element> dae;
       Exp.ComponentRef vn;
       ClassInf.State ci_state;
       tuple<Types.TType, Option<Absyn.Path>> ty;
-      Boolean flow_,stream_,prot;
+      Boolean flowPrefix,streamPrefix,prot;
       SCode.Variability par;
       Absyn.Direction dir;
       Option<Exp.Exp> e,start;
@@ -7306,14 +7456,14 @@ algorithm
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<Absyn.Comment> comment;
     case (vn,ci_state,ty,
-          SCode.ATTR(flowPrefix = flow_,
-                     streamPrefix = stream_,
+          SCode.ATTR(flowPrefix = flowPrefix,
+                     streamPrefix = streamPrefix,
                      variability = par,direction = dir),
-          prot,e,inst_dims,start,dae_var_attr,comment,io,final_,declareComplexVars )
+          prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars )
       equation 
-        flow_1 = DAE.toFlow(flow_, ci_state);
-        stream_1 = DAE.toStream(stream_, ci_state);
-        dae = daeDeclare2(vn, ty, flow_1, stream_1, par, dir,prot, e, inst_dims, start, dae_var_attr, comment,io,final_,declareComplexVars );
+        flowPrefix1 = DAE.toFlow(flowPrefix, ci_state);
+        streamPrefix1 = DAE.toStream(streamPrefix, ci_state);
+        dae = daeDeclare2(vn, ty, flowPrefix1, streamPrefix1, par, dir,prot, e, inst_dims, start, dae_var_attr, comment,io,finalPrefix,declareComplexVars );
       then
         dae;
     case (_,_,_,_,_,_,_,_,_,_,_,_,_)
@@ -7340,19 +7490,19 @@ protected function daeDeclare2
   input Option<DAE.VariableAttributes> inDAEVariableAttributesOption;
   input Option<Absyn.Comment> inAbsynCommentOption;
 	input Absyn.InnerOuter io;
-	input Boolean final_;
+	input Boolean finalPrefix;
 	input Boolean declareComplexVars;
   output list<DAE.Element> outDAEElementLst;
 algorithm 
   outDAEElementLst:=
   matchcontinue (inComponentRef,inType,inFlow,inStream,inVariability,inDirection,protection,inExpExpOption,
-                 inInstDims,inStartValue,inDAEVariableAttributesOption,inAbsynCommentOption,io,final_,declareComplexVars)
+                 inInstDims,inStartValue,inDAEVariableAttributesOption,inAbsynCommentOption,io,finalPrefix,declareComplexVars)
     local
       list<DAE.Element> dae;
       Exp.ComponentRef vn;
       tuple<Types.TType, Option<Absyn.Path>> ty;
-      DAE.Flow flow_;
-      DAE.Stream stream_;
+      DAE.Flow flowPrefix;
+      DAE.Stream streamPrefix;
       Absyn.Direction dir;
       Option<Exp.Exp> e,start;
       InstDims inst_dims;
@@ -7360,24 +7510,24 @@ algorithm
       Option<Absyn.Comment> comment;
       Boolean prot;
       
-    case (vn,ty,flow_,stream_,SCode.VAR(),dir,prot,e,inst_dims,start,dae_var_attr,comment,io,final_,declareComplexVars)
+    case (vn,ty,flowPrefix,streamPrefix,SCode.VAR(),dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars)
       equation 
-        dae = daeDeclare3(vn, ty, flow_, stream_, DAE.VARIABLE(), dir,prot, e, inst_dims, start, dae_var_attr, comment,io,final_,declareComplexVars);
+        dae = daeDeclare3(vn, ty, flowPrefix, streamPrefix, DAE.VARIABLE(), dir,prot, e, inst_dims, start, dae_var_attr, comment,io,finalPrefix,declareComplexVars);
       then
         dae;
-    case (vn,ty,flow_,stream_,SCode.DISCRETE(),dir,prot,e,inst_dims,start,dae_var_attr,comment,io,final_,declareComplexVars )
+    case (vn,ty,flowPrefix,streamPrefix,SCode.DISCRETE(),dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars )
       equation 
-        dae = daeDeclare3(vn, ty, flow_, stream_, DAE.DISCRETE(), dir,prot, e, inst_dims, start, dae_var_attr, comment,io,final_,declareComplexVars );
+        dae = daeDeclare3(vn, ty, flowPrefix, streamPrefix, DAE.DISCRETE(), dir,prot, e, inst_dims, start, dae_var_attr, comment,io,finalPrefix,declareComplexVars );
       then
         dae;
-    case (vn,ty,flow_,stream_,SCode.PARAM(),dir,prot,e,inst_dims,start,dae_var_attr,comment,io,final_,declareComplexVars )
+    case (vn,ty,flowPrefix,streamPrefix,SCode.PARAM(),dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars )
       equation 
-        dae = daeDeclare3(vn, ty, flow_, stream_, DAE.PARAM(), dir,prot, e, inst_dims, start, dae_var_attr, comment,io,final_,declareComplexVars );
+        dae = daeDeclare3(vn, ty, flowPrefix, streamPrefix, DAE.PARAM(), dir,prot, e, inst_dims, start, dae_var_attr, comment,io,finalPrefix,declareComplexVars );
       then
         dae;
-    case (vn,ty,flow_,stream_,SCode.CONST(),dir,prot,e,inst_dims,start,dae_var_attr,comment,io,final_,declareComplexVars )
+    case (vn,ty,flowPrefix,streamPrefix,SCode.CONST(),dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars )
       equation 
-        dae = daeDeclare3(vn, ty, flow_, stream_,DAE.CONST(), dir,prot, e, inst_dims, start, dae_var_attr, comment,io,final_,declareComplexVars );
+        dae = daeDeclare3(vn, ty, flowPrefix, streamPrefix,DAE.CONST(), dir,prot, e, inst_dims, start, dae_var_attr, comment,io,finalPrefix,declareComplexVars );
       then
         dae;
     case (_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
@@ -7404,12 +7554,12 @@ protected function daeDeclare3
   input Option<DAE.VariableAttributes> inDAEVariableAttributesOption;
   input Option<Absyn.Comment> inAbsynCommentOption;
   input Absyn.InnerOuter io;
-  input Boolean final_;
+  input Boolean finalPrefix;
   input Boolean declareComplexVars;
   output list<DAE.Element> outDAEElementLst;
 algorithm 
   outDAEElementLst:=
-  matchcontinue (inComponentRef,inType,inFlow,inStream,inVarKind,inDirection,protection,inExpExpOption,inInstDims,inStartValue,inDAEVariableAttributesOption,inAbsynCommentOption,io,final_,declareComplexVars )
+  matchcontinue (inComponentRef,inType,inFlow,inStream,inVarKind,inDirection,protection,inExpExpOption,inInstDims,inStartValue,inDAEVariableAttributesOption,inAbsynCommentOption,io,finalPrefix,declareComplexVars )
     local
       list<DAE.Element> dae;
       Exp.ComponentRef vn;
@@ -7423,22 +7573,22 @@ algorithm
       Option<Absyn.Comment> comment;
       Boolean prot;
       DAE.VarProtection prot1;
-    case (vn,ty,fl,st,vk,Absyn.INPUT(),prot,e,inst_dims,start,dae_var_attr,comment,io,final_,declareComplexVars)
+    case (vn,ty,fl,st,vk,Absyn.INPUT(),prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars)
       equation 
         prot1 = makeDaeProt(prot);
-        dae = daeDeclare4(vn, ty, fl, st, vk, DAE.INPUT(),prot1, e, inst_dims, start, dae_var_attr, comment,io,final_,declareComplexVars);
+        dae = daeDeclare4(vn, ty, fl, st, vk, DAE.INPUT(),prot1, e, inst_dims, start, dae_var_attr, comment,io,finalPrefix,declareComplexVars);
       then
         dae;
-    case (vn,ty,fl,st,vk,Absyn.OUTPUT(),prot,e,inst_dims,start,dae_var_attr,comment,io,final_,declareComplexVars)
+    case (vn,ty,fl,st,vk,Absyn.OUTPUT(),prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars)
       equation 
         prot1 = makeDaeProt(prot);
-        dae = daeDeclare4(vn, ty, fl, st, vk, DAE.OUTPUT(),prot1, e, inst_dims, start, dae_var_attr, comment,io,final_,declareComplexVars);
+        dae = daeDeclare4(vn, ty, fl, st, vk, DAE.OUTPUT(),prot1, e, inst_dims, start, dae_var_attr, comment,io,finalPrefix,declareComplexVars);
       then
         dae;
-    case (vn,ty,fl,st,vk,Absyn.BIDIR(),prot,e,inst_dims,start,dae_var_attr,comment,io,final_,declareComplexVars)
+    case (vn,ty,fl,st,vk,Absyn.BIDIR(),prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars)
       equation 
         prot1 = makeDaeProt(prot);
-        dae = daeDeclare4(vn, ty, fl, st, vk, DAE.BIDIR(),prot1, e, inst_dims, start, dae_var_attr, comment,io,final_,declareComplexVars);
+        dae = daeDeclare4(vn, ty, fl, st, vk, DAE.BIDIR(),prot1, e, inst_dims, start, dae_var_attr, comment,io,finalPrefix,declareComplexVars);
       then
         dae;
     case (_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
@@ -7473,12 +7623,12 @@ protected function daeDeclare4
   input Option<DAE.VariableAttributes> inDAEVariableAttributesOption;
   input Option<Absyn.Comment> inAbsynCommentOption;
   input Absyn.InnerOuter io;
-  input Boolean final_;
+  input Boolean finalPrefix;
   input Boolean declareComplexVars;
   output list<DAE.Element> outDAEElementLst;
 algorithm 
   outDAEElementLst:=
-  matchcontinue (inComponentRef,inType,inFlow,inStream,inVarKind,inVarDirection,protection,inExpExpOption,inInstDims,inStartValue,inDAEVariableAttributesOption,inAbsynCommentOption,io,final_,declareComplexVars)
+  matchcontinue (inComponentRef,inType,inFlow,inStream,inVarKind,inVarDirection,protection,inExpExpOption,inInstDims,inStartValue,inDAEVariableAttributesOption,inAbsynCommentOption,io,finalPrefix,declareComplexVars)
     local
       Exp.ComponentRef vn,c;
       DAE.Flow fl;
@@ -7499,47 +7649,47 @@ algorithm
       DAE.VarProtection prot;
       list<Exp.Subscript> finst_dims;
 
-    case (vn,ty as(Types.T_INTEGER(varLstInt = _),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,final_,declareComplexVars) 
+    case (vn,ty as(Types.T_INTEGER(varLstInt = _),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars) 
       equation 
         finst_dims = Util.listFlatten(inst_dims);
-        dae_var_attr = DAE.setFinalAttr(dae_var_attr,final_);
+        dae_var_attr = DAE.setFinalAttr(dae_var_attr,finalPrefix);
       then {DAE.VAR(vn,kind,dir,prot,DAE.INT(),e,finst_dims,fl,st,{},dae_var_attr,comment,io,ty)};
          
-    case (vn,ty as(Types.T_REAL(varLstReal = _),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,final_,declareComplexVars)
+    case (vn,ty as(Types.T_REAL(varLstReal = _),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars)
       equation 
         finst_dims = Util.listFlatten(inst_dims);
-        dae_var_attr = DAE.setFinalAttr(dae_var_attr,final_);
+        dae_var_attr = DAE.setFinalAttr(dae_var_attr,finalPrefix);
       then {DAE.VAR(vn,kind,dir,prot,DAE.REAL(),e,finst_dims,fl,st,{},dae_var_attr,comment,io,ty)};
          
-    case (vn,ty as(Types.T_BOOL(varLstBool = _),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,final_,declareComplexVars) 
+    case (vn,ty as(Types.T_BOOL(varLstBool = _),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars) 
       equation 
         finst_dims = Util.listFlatten(inst_dims);
-        dae_var_attr = DAE.setFinalAttr(dae_var_attr,final_);
+        dae_var_attr = DAE.setFinalAttr(dae_var_attr,finalPrefix);
       then {DAE.VAR(vn,kind,dir,prot,DAE.BOOL(),e,finst_dims,fl,st,{},dae_var_attr,comment,io,ty)};
          
-    case (vn,ty as(Types.T_STRING(varLstString = _),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,final_,declareComplexVars) 
+    case (vn,ty as(Types.T_STRING(varLstString = _),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars) 
       equation 
         finst_dims = Util.listFlatten(inst_dims);
-        dae_var_attr = DAE.setFinalAttr(dae_var_attr,final_);
+        dae_var_attr = DAE.setFinalAttr(dae_var_attr,finalPrefix);
       then {DAE.VAR(vn,kind,dir,prot,DAE.STRING(),e,finst_dims,fl,st,{},dae_var_attr,comment,io,ty)};
          
-    case (vn,ty as(Types.T_ENUM(),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,final_,declareComplexVars) then {}; 
+    case (vn,ty as(Types.T_ENUM(),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars) then {}; 
 
     /* MetaModelica extensions */
-    case (vn,ty as(Types.T_LIST(_),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,final_,declareComplexVars)
+    case (vn,ty as(Types.T_LIST(_),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars)
       equation
         finst_dims = Util.listFlatten(inst_dims);
-        dae_var_attr = DAE.setFinalAttr(dae_var_attr,final_);      
+        dae_var_attr = DAE.setFinalAttr(dae_var_attr,finalPrefix);      
       then {DAE.VAR(vn,kind,dir,prot,DAE.LIST(),e,finst_dims,fl,st,{},dae_var_attr,comment,io,ty)};
-    case (vn,ty as(Types.T_METATUPLE(_),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,final_,declareComplexVars)
+    case (vn,ty as(Types.T_METATUPLE(_),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars)
       equation
         finst_dims = Util.listFlatten(inst_dims);
-        dae_var_attr = DAE.setFinalAttr(dae_var_attr,final_);
+        dae_var_attr = DAE.setFinalAttr(dae_var_attr,finalPrefix);
       then {DAE.VAR(vn,kind,dir,prot,DAE.METATUPLE(),e,finst_dims,fl,st,{},dae_var_attr,comment,io,ty)};
-    case (vn,ty as(Types.T_METAOPTION(_),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,final_,declareComplexVars)
+    case (vn,ty as(Types.T_METAOPTION(_),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars)
       equation
         finst_dims = Util.listFlatten(inst_dims);
-        dae_var_attr = DAE.setFinalAttr(dae_var_attr,final_);
+        dae_var_attr = DAE.setFinalAttr(dae_var_attr,finalPrefix);
       then {DAE.VAR(vn,kind,dir,prot,DAE.METAOPTION(),e,finst_dims,fl,st,{},dae_var_attr,comment,io,ty)};
     /*----------------------------*/
     
@@ -7547,43 +7697,43 @@ algorithm
   	 * e.g Myenum my !=> constant EnumType my.enum1,... {DAE.VAR(vn, kind, dir, DAE.ENUM, e, inst_dims)} 
   	 * instantiation of complex type extending from basic type 
      */ 
-    case (vn,ty as(Types.T_ENUMERATION(names = l),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,final_,declareComplexVars)
+    case (vn,ty as(Types.T_ENUMERATION(names = l),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars)
       equation 
         finst_dims = Util.listFlatten(inst_dims);
-        dae_var_attr = DAE.setFinalAttr(dae_var_attr,final_);
+        dae_var_attr = DAE.setFinalAttr(dae_var_attr,finalPrefix);
       then {DAE.VAR(vn,kind,dir,prot,DAE.ENUMERATION(l),e,finst_dims,fl,st,{}, dae_var_attr,comment,io,ty)};  
 
     /* Complex type that is Record*/
-    case (vn, ty as (Types.T_COMPLEX(complexClassType = ClassInf.RECORD(string = s)),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,final_,declareComplexVars)
+    case (vn, ty as (Types.T_COMPLEX(complexClassType = ClassInf.RECORD(string = s)),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars)
       equation
         finst_dims = Util.listFlatten(inst_dims);
-        dae_var_attr = DAE.setFinalAttr(dae_var_attr,final_);
+        dae_var_attr = DAE.setFinalAttr(dae_var_attr,finalPrefix);
       then {DAE.VAR(vn,kind,dir,prot,DAE.RECORD(s),e,finst_dims,fl,st,{},dae_var_attr,comment,io,ty)};
 
           /* Complex type that is ExternalObject*/
-     case (vn, ty as (Types.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(path)),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,final_,declareComplexVars)
+     case (vn, ty as (Types.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(path)),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars)
        local Absyn.Path path;
        equation 
          finst_dims = Util.listFlatten(inst_dims);
-         dae_var_attr = DAE.setFinalAttr(dae_var_attr,final_);
+         dae_var_attr = DAE.setFinalAttr(dae_var_attr,finalPrefix);
        then {DAE.VAR(vn,kind,dir,prot,DAE.EXT_OBJECT(path),e,finst_dims,fl,st,{},dae_var_attr,comment,io,ty)};
             
       /* instantiation of complex type extending from basic type */ 
-    case (vn,(Types.T_COMPLEX(complexClassType = ci,complexTypeOption = SOME(tp)),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,final_,declareComplexVars)
+    case (vn,(Types.T_COMPLEX(complexClassType = ci,complexTypeOption = SOME(tp)),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars)
       equation
         (_,dae_var_attr) = instDaeVariableAttributes(Env.emptyCache,Env.emptyEnv, Types.NOMOD(), tp, {});
-        dae_var_attr = DAE.setFinalAttr(dae_var_attr,final_);
-        dae = daeDeclare4(vn,tp,fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,final_,declareComplexVars);
+        dae_var_attr = DAE.setFinalAttr(dae_var_attr,finalPrefix);
+        dae = daeDeclare4(vn,tp,fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars);
     then dae;
 		
 		/* Array that extends basic type */          
-    case (vn,(Types.T_ARRAY(arrayDim = Types.DIM(integerOption = SOME(dim)),arrayType = tp),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,final_,declareComplexVars)
+    case (vn,(Types.T_ARRAY(arrayDim = Types.DIM(integerOption = SOME(dim)),arrayType = tp),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars)
       equation 
-        dae = daeDeclare4(vn, tp, fl, st, kind, dir, prot,e, inst_dims, start, dae_var_attr,comment,io,final_,declareComplexVars);
+        dae = daeDeclare4(vn, tp, fl, st, kind, dir, prot,e, inst_dims, start, dae_var_attr,comment,io,finalPrefix,declareComplexVars);
       then dae;
 
     /* Report an error */
-    case (vn,(Types.T_ARRAY(arrayDim = Types.DIM(integerOption = NONE),arrayType = tp),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,final_,declareComplexVars)
+    case (vn,(Types.T_ARRAY(arrayDim = Types.DIM(integerOption = NONE),arrayType = tp),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars)
       equation 
         s = Exp.printComponentRefStr(vn);
         Error.addMessage(Error.DIMENSION_NOT_KNOWN, {s});
@@ -7591,7 +7741,7 @@ algorithm
         fail();
         
         /* Complex/Record components, only if declareComplexVars is true */
-    case(vn,ty as (Types.T_COMPLEX(ClassInf.RECORD(name),varLst,_),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,final_,true)
+    case(vn,ty as (Types.T_COMPLEX(ClassInf.RECORD(name),varLst,_),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,true)
       local String name; list<Types.Var> varLst; list<DAE.Var> daeVarLst;
       equation
         finst_dims = Util.listFlatten(inst_dims);
@@ -9456,21 +9606,21 @@ algorithm
         fail();
 
         /* The type must be identical and flow of connected variables must be same */
-    case (env,_,t1,Types.ATTR(flow_ = flow1),_,t2,Types.ATTR(flow_ = flow2))
+    case (env,_,t1,Types.ATTR(flowPrefix = flow1),_,t2,Types.ATTR(flowPrefix = flow2))
       equation 
         equality(flow1 = flow2);
         true = Types.equivtypes(t1, t2);
       then
         ();
 
-    case (env,c1,_,Types.ATTR(flow_ = true),c2,_,Types.ATTR(flow_ = false))
+    case (env,c1,_,Types.ATTR(flowPrefix = true),c2,_,Types.ATTR(flowPrefix = false))
       equation 
         c1_str = Exp.printComponentRefStr(c1);
         c2_str = Exp.printComponentRefStr(c2);
         Error.addMessage(Error.CONNECT_FLOW_TO_NONFLOW, {c1_str,c2_str});
       then
         fail();
-    case (env,c1,_,Types.ATTR(flow_ = false),c2,_,Types.ATTR(flow_ = true))
+    case (env,c1,_,Types.ATTR(flowPrefix = false),c2,_,Types.ATTR(flowPrefix = true))
       equation 
         c1_str = Exp.printComponentRefStr(c1);
         c2_str = Exp.printComponentRefStr(c2);
@@ -9478,21 +9628,21 @@ algorithm
       then
         fail();
         
-    /* adrpo: streams cannot be flow also! all checks are done with flow_ = flase */
-    case (env,_,t1,Types.ATTR(stream_ = stream1, flow_ = false),_,t2,Types.ATTR(stream_ = stream2, flow_ = false))
+    /* adrpo: streams cannot be flow also! all checks are done with flowPrefix = flase */
+    case (env,_,t1,Types.ATTR(streamPrefix = stream1, flowPrefix = false),_,t2,Types.ATTR(streamPrefix = stream2, flowPrefix = false))
       equation
         equality(stream1 = stream2);
         true = Types.equivtypes(t1, t2);
       then
         ();
-    case (env,c1,_,Types.ATTR(stream_ = true, flow_ = false),c2,_,Types.ATTR(stream_ = false, flow_ = false))
+    case (env,c1,_,Types.ATTR(streamPrefix = true, flowPrefix = false),c2,_,Types.ATTR(streamPrefix = false, flowPrefix = false))
       equation
         c1_str = Exp.printComponentRefStr(c1);
         c2_str = Exp.printComponentRefStr(c2);
         Error.addMessage(Error.CONNECT_STREAM_TO_NONSTREAM, {c1_str,c2_str});
       then
         fail();
-    case (env,c1,_,Types.ATTR(stream_ = false, flow_ = false),c2,_,Types.ATTR(stream_ = true, flow_ = false))
+    case (env,c1,_,Types.ATTR(streamPrefix = false, flowPrefix = false),c2,_,Types.ATTR(streamPrefix = true, flowPrefix = false))
       equation
         c1_str = Exp.printComponentRefStr(c1);
         c2_str = Exp.printComponentRefStr(c2);
@@ -9508,7 +9658,7 @@ algorithm
       then
         fail();
 
-    case (env,c1,t1,Types.ATTR(flow_ = flow1),c2,t2,Types.ATTR(flow_ = flow2))
+    case (env,c1,t1,Types.ATTR(flowPrefix = flow1),c2,t2,Types.ATTR(flowPrefix = flow2))
       local Types.Type t1,t2; Boolean flow1,flow2,b0; String s0,s1,s2;
       equation 
         b0 = Types.equivtypes(t1, t2);
@@ -9598,23 +9748,22 @@ algorithm
       Integer dim1,dim2;
       list<DAE.Element> dae;
       list<Types.Var> l1,l2;
-      Boolean flow_;
+      Boolean flowPrefix;
       String c1_str,t1_str,t2_str,c2_str;
       Env.Cache cache;
       Absyn.InnerOuter io1,io2;
       Boolean c1outer,c2outer;
       /* connections to outer components */      
-      case(cache,sets,env,pre,c1,f1,t1,vt1,c2,f2,t2,vt2,flow_,io1,io2) equation  
+      case(cache,sets,env,pre,c1,f1,t1,vt1,c2,f2,t2,vt2,flowPrefix,io1,io2) equation  
         
        true = outerConnection(io1,io2);
        c1_1 = Prefix.prefixCref(pre, c1);
        c2_1 = Prefix.prefixCref(pre, c2);
        /* The cref that is outer should not be prefixed */
-       (_,c1outer) = innerOuterBooleans(io1);
-       (_,c2outer) = innerOuterBooleans(io2);
+       (c1outer,c2outer) = referOuter(io1,io2);
        c1_1 = Util.if_(c1outer,c1,c1_1);
        c2_1 = Util.if_(c2outer,c2,c2_1);
-       sets = Connect.addOuterConnection(sets,c1_1,c2_1,io1,io2,f1,f2);
+       sets = Connect.addOuterConnection(pre,sets,c1_1,c2_1,io1,io2,f1,f2);
       then (cache,sets,{});
       /* flow - with a subtype of Real */ 
     case (cache,sets,env,pre,c1,f1,(Types.T_REAL(varLstReal = _),_),vt1,c2,f2,(Types.T_REAL(varLstReal = _),_),vt2,true,io1,io2) 
@@ -9703,12 +9852,12 @@ algorithm
         (cache,sets_1,{});
 
         /* Connection of arrays of complex types */        
-    case (cache,sets,env,pre,c1,f1,(Types.T_ARRAY(arrayDim = Types.DIM(integerOption = SOME(dim1)),arrayType = t1),_),vt1,c2,f2,(Types.T_ARRAY(arrayDim = Types.DIM(integerOption = SOME(dim2)),arrayType = t2),_),vt2,flow_,io1,io2)
+    case (cache,sets,env,pre,c1,f1,(Types.T_ARRAY(arrayDim = Types.DIM(integerOption = SOME(dim1)),arrayType = t1),_),vt1,c2,f2,(Types.T_ARRAY(arrayDim = Types.DIM(integerOption = SOME(dim2)),arrayType = t2),_),vt2,flowPrefix,io1,io2)
       equation 
         ((Types.T_COMPLEX(complexClassType=_),_)) = Types.arrayElementType(t1);
         ((Types.T_COMPLEX(complexClassType=_),_)) = Types.arrayElementType(t2);        
         equality(dim1 = dim2);
-        (cache,sets_1,dae) = connectArrayComponents(cache,sets,env,pre,c1,f1,t1,vt1,c2,f2,t2,vt2,flow_,io1,io2,dim1,1);
+        (cache,sets_1,dae) = connectArrayComponents(cache,sets,env,pre,c1,f1,t1,vt1,c2,f2,t2,vt2,flowPrefix,io1,io2,dim1,1);
       then
         (cache,sets_1,dae);
         
@@ -9730,16 +9879,16 @@ algorithm
         (cache,sets_1,{});
 
         /* Complex types t1 extending basetype */ 
-    case (cache,sets,env,pre,c1,f1,(Types.T_COMPLEX(complexVarLst = l1,complexTypeOption = SOME(bc_tp1)),_),vt1,c2,f2,t2,vt2,flow_,io1,io2) 
+    case (cache,sets,env,pre,c1,f1,(Types.T_COMPLEX(complexVarLst = l1,complexTypeOption = SOME(bc_tp1)),_),vt1,c2,f2,t2,vt2,flowPrefix,io1,io2) 
       equation 
-        (cache,sets_1,dae) = connectComponents(cache,sets, env, pre, c1, f1, bc_tp1,vt1, c2, f2, t2,vt2, flow_,io1,io2);
+        (cache,sets_1,dae) = connectComponents(cache,sets, env, pre, c1, f1, bc_tp1,vt1, c2, f2, t2,vt2, flowPrefix,io1,io2);
       then
         (cache,sets_1,dae);
 
         /* Complex types t2 extending basetype */ 
-    case (cache,sets,env,pre,c1,f1,t1,vt1,c2,f2,(Types.T_COMPLEX(complexVarLst = l1,complexTypeOption = SOME(bc_tp2)),_),vt2,flow_,io1,io2) 
+    case (cache,sets,env,pre,c1,f1,t1,vt1,c2,f2,(Types.T_COMPLEX(complexVarLst = l1,complexTypeOption = SOME(bc_tp2)),_),vt2,flowPrefix,io1,io2) 
       equation 
-        (cache,sets_1,dae) = connectComponents(cache,sets, env, pre, c1, f1, t1, vt1,c2, f2, bc_tp2,vt2, flow_,io1,io2);
+        (cache,sets_1,dae) = connectComponents(cache,sets, env, pre, c1, f1, t1, vt1,c2, f2, bc_tp2,vt2, flowPrefix,io1,io2);
       then
         (cache,sets_1,dae);
         
@@ -9812,25 +9961,25 @@ algorithm
       Integer dim1,dim2;
       list<DAE.Element> dae,dae1,dae2;
       list<Types.Var> l1,l2;
-      Boolean flow_;
+      Boolean flowPrefix;
       String c1_str,t1_str,t2_str,c2_str;
       Env.Cache cache;
       Absyn.InnerOuter io1,io2;
       
-    case(cache,sets,env,pre,c1,f1,t1,vt1,c2,f2,t2,vt2,flow_,io1,io2,dim1,i)
+    case(cache,sets,env,pre,c1,f1,t1,vt1,c2,f2,t2,vt2,flowPrefix,io1,io2,dim1,i)
       equation
         true = (dim1 == i);
         c1 = Exp.replaceCrefSliceSub(c1,{Exp.INDEX(Exp.ICONST(i))});
         c2 = Exp.replaceCrefSliceSub(c2,{Exp.INDEX(Exp.ICONST(i))});
-        (cache,sets_1,dae)= connectComponents(cache,sets,env,pre,c1,f1,t1,vt1,c2,f2,t2,vt2,flow_,io1,io2);
+        (cache,sets_1,dae)= connectComponents(cache,sets,env,pre,c1,f1,t1,vt1,c2,f2,t2,vt2,flowPrefix,io1,io2);
       then (cache,sets_1,dae);
 
-    case(cache,sets,env,pre,c1,f1,t1,vt1,c2,f2,t2,vt2,flow_,io1,io2,dim1,i)
+    case(cache,sets,env,pre,c1,f1,t1,vt1,c2,f2,t2,vt2,flowPrefix,io1,io2,dim1,i)
       equation     
         c11 = Exp.replaceCrefSliceSub(c1,{Exp.INDEX(Exp.ICONST(i))});
         c21 = Exp.replaceCrefSliceSub(c2,{Exp.INDEX(Exp.ICONST(i))});
-        (cache,sets_1,dae1)= connectComponents(cache,sets,env,pre,c11,f1,t1,vt1,c21,f2,t2,vt2,flow_,io1,io2);
-        (cache,sets_1,dae2) = connectArrayComponents(cache,sets_1,env,pre,c1,f1,t1,vt1,c2,f2,t2,vt2,flow_,io1,io2,dim1,i+1);
+        (cache,sets_1,dae1)= connectComponents(cache,sets,env,pre,c11,f1,t1,vt1,c21,f2,t2,vt2,flowPrefix,io1,io2);
+        (cache,sets_1,dae2) = connectArrayComponents(cache,sets_1,env,pre,c1,f1,t1,vt1,c2,f2,t2,vt2,flowPrefix,io1,io2,dim1,i+1);
         dae = listAppend(dae1,dae2);
       then (cache,sets_1,dae);
   end matchcontinue;
@@ -9876,8 +10025,8 @@ algorithm
       Exp.Type ty_2,ty_22;
       Env.Cache cache;
     case (cache,sets,env,_,_,{},vt1,_,_,{},vt2,io1,io2) then (cache,sets,{}); 
-    case (cache,sets,env,c1,f1,(Types.VAR(name = n,attributes = (attr1 as Types.ATTR(flow_ = flow1,parameter_ = vta)),type_ = ty1) :: xs1),vt1,
-                         c2,f2,(Types.VAR(attributes = (attr2 as Types.ATTR(flow_ = flow2,parameter_ = vtb)),type_ = ty2) :: xs2),vt2,io1,io2)
+    case (cache,sets,env,c1,f1,(Types.VAR(name = n,attributes = (attr1 as Types.ATTR(flowPrefix = flow1,parameter_ = vta)),type_ = ty1) :: xs1),vt1,
+                         c2,f2,(Types.VAR(attributes = (attr2 as Types.ATTR(flowPrefix = flow2,parameter_ = vtb)),type_ = ty2) :: xs2),vt2,io1,io2)
       equation 
         ty_2 = Types.elabType(ty1);
         c1_1 = Exp.extendCref(c1, ty_2, n, {});
@@ -10152,6 +10301,23 @@ algorithm
     case (env,Exp.CREF_IDENT(ident = _)) then Connect.OUTER(); 
   end matchcontinue;
 end componentFace;
+
+protected function componentFaceType "function: componentFace
+  Author: BZ, 2008-12
+  Same functionalty as componentFace, with the difference that this function
+  checks ident-type rather then env->lookup ==> type.   
+"
+  input Exp.ComponentRef inComponentRef;
+  output Connect.Face outFace;
+algorithm 
+  outFace:=
+  matchcontinue (inComponentRef)
+    case (Exp.CREF_QUAL(identType = Types.T_COMPLEX(complexClassType=ClassInf.CONNECTOR(_))))
+    then Connect.OUTER();       
+    case (Exp.CREF_QUAL(componentRef =_)) then Connect.INNER();    
+    case (Exp.CREF_IDENT(ident = _)) then Connect.OUTER(); 
+  end matchcontinue;
+end componentFaceType;
 
 protected function instBinding 
 "function: instBinding 
@@ -10664,7 +10830,7 @@ algorithm
         dae;
     case (_,_,Types.MOD(eqModOption = NONE),impl) then {}; 
     case (_,_,Types.NOMOD(),impl) then {}; 
-    case (_,_,Types.REDECL(final_ = _),impl) then {}; 
+    case (_,_,Types.REDECL(finalPrefix = _),impl) then {}; 
     case (c,t,m,impl)
       local tuple<Types.TType, Option<Absyn.Path>> t;
       equation 
@@ -10728,7 +10894,7 @@ algorithm
       String e_tp_str,tp_str,e_str,e_str_1;
       Env.Cache cache;
     case (cache,_,_,Types.NOMOD(),tp) then (cache,Types.UNBOUND()); 
-    case (cache,_,_,Types.REDECL(final_ = _),tp) then (cache,Types.UNBOUND()); 
+    case (cache,_,_,Types.REDECL(finalPrefix = _),tp) then (cache,Types.UNBOUND()); 
     case (cache,_,_,Types.MOD(eqModOption = NONE),tp) then (cache,Types.UNBOUND());
     /* adrpo: CHECK! do we need this here? numerical values 
     case (cache,env,_,Types.MOD(eqModOption = SOME(Types.TYPED(e,_,Types.PROP(e_tp,_)))),tp) 
@@ -10801,8 +10967,8 @@ algorithm
       DAE.VarDirection vd;
       DAE.Type ty;
       list<Exp.Subscript> inst_dims;
-      DAE.Flow flow_;
-      DAE.Stream stream_;
+      DAE.Flow flowPrefix;
+      DAE.Stream streamPrefix;
       list<Absyn.Path> class_;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<Absyn.Comment> comment;
@@ -10820,8 +10986,8 @@ algorithm
                               ty = ty,
                               binding = exp,
                               dims = inst_dims,
-                              flow_ = flow_,
-                              stream_ = stream_,
+                              flowPrefix = flowPrefix,
+                              streamPrefix = streamPrefix,
                               pathLst = class_,
                               variableAttributesOption = dae_var_attr,
                               absynCommentOption = comment,
@@ -10830,7 +10996,7 @@ algorithm
       equation 
         (exp_1,done_1) = initVarsModelicaOutput2(cr, exp, done);
         (exp_2,todorest_1) = initVarsModelicaOutput2(cr, exp_1, todorest);
-        done_2 = listAppend(done_1,{DAE.VAR(cr,vk,vd,prot,ty,exp_2,inst_dims,flow_,stream_,class_,dae_var_attr,comment,io,ftp)});
+        done_2 = listAppend(done_1,{DAE.VAR(cr,vk,vd,prot,ty,exp_2,inst_dims,flowPrefix,streamPrefix,class_,dae_var_attr,comment,io,ftp)});
         done_3 = initVarsModelicaOutput1(done_2, todorest_1);
       then
         done_3;
@@ -10940,14 +11106,14 @@ algorithm
       SCode.Element elt;
       Env.Cache cache;
       Absyn.InnerOuter io;
-      Boolean final_;
+      Boolean finalPrefix;
 
     case (cache,env,SCode.COMPONENT(component = id,replaceablePrefix = repl,protectedPrefix = prot,
                                     attributes = (attr as SCode.ATTR(arrayDims = dim,flowPrefix = f,streamPrefix=s,
                                                                      accesibility = acc, variability = var,direction = dir)),
                                     typeSpec = Absyn.TPATH(t, _),modifications = mod,
                                     baseClassPath = bc,comment = comment,innerOuter=io,
-                                    finalPrefix = final_),outerMod,impl) 
+                                    finalPrefix = finalPrefix),outerMod,impl) 
       equation 
         //Debug.fprint("recconst", "inst_record_constructor_elt called\n");
         (cache,cl,cenv) = Lookup.lookupClass(cache,env, t, true);
@@ -10958,7 +11124,7 @@ algorithm
         (cache,dimexp) = elabArraydim(cache,env, owncref,t, dim, NONE, false, NONE,true);
         //Debug.fprint("recconst", "calling inst_var\n");
         (cache,_,_,_,tp_1) = instVar(cache,cenv, ClassInf.FUNCTION(""), mod_1, Prefix.NOPRE(), 
-          Connect.emptySet, id, cl, attr, prot,dimexp, {}, {}, impl, comment,io,final_);
+          Connect.emptySet, id, cl, attr, prot,dimexp, {}, {}, impl, comment,io,finalPrefix);
         //Debug.fprint("recconst", "Type of argument:");
         Debug.fprint("recconst", Types.printTypeStr(tp_1));
         //Debug.fprint("recconst", "\nMod=");
@@ -11471,6 +11637,24 @@ algorithm
   end matchcontinue;
 end selectList;
 
+protected function renameUniqueVarsInTopScope "
+Author: BZ, 2008-09 
+Helper function for instClass. If top scope, traverse DAE and change any uniqnamed vars back to original.
+This is a work around for innerouter declarations.
+"
+  input Boolean isTopScope;
+  input list<DAE.Element> dae;
+  output list<DAE.Element> odae;
+algorithm odae := matchcontinue(isTopScope,dae)
+  case(true,dae)
+    equation
+      odae = DAE.renameUniqueOuterVars(dae);
+    then
+      odae;
+  case(false,dae) then dae;
+end matchcontinue;
+end renameUniqueVarsInTopScope; 
+
 protected function retrieveOuterConnections "Moves outerConnections to connection sets
 author PA:
 This function moves the connections put in outerConnects to the connection
@@ -11481,16 +11665,18 @@ outerConnects for use higher up in the instance hierarchy.
   input Env.Env env;
   input Prefix pre;
   input Connect.Sets csets;
+  input Boolean topCall;
   output Connect.Sets outCsets;
+  output list<Connect.OuterConnect> innerOuterConnects;
 algorithm
-  outCsets := matchcontinue(cache,env,pre,csets)
+  outCsets := matchcontinue(cache,env,pre,csets,topCall)
   local list<Connect.Set> setLst;
     list<Exp.ComponentRef> crs;
     list<Exp.ComponentRef> delcomps;
     list<Connect.OuterConnect> outerConnects;
-    case(cache,env,pre,Connect.SETS(setLst,crs,delcomps,outerConnects)) equation
-       (outerConnects,setLst,crs) = retrieveOuterConnections2(cache,env,pre,outerConnects,setLst,crs);
-    then Connect.SETS(setLst,crs,delcomps,outerConnects);        
+    case(cache,env,pre,Connect.SETS(setLst,crs,delcomps,outerConnects),topCall) equation
+       (outerConnects,setLst,crs,innerOuterConnects) = retrieveOuterConnections2(cache,env,pre,outerConnects,setLst,crs,topCall);
+    then (Connect.SETS(setLst,crs,delcomps,outerConnects),innerOuterConnects);        
   end matchcontinue;
 end retrieveOuterConnections;
 
@@ -11501,43 +11687,129 @@ protected function retrieveOuterConnections2 "help function to retrieveOuterConn
   input list<Connect.OuterConnect> outerConnects;
   input list<Connect.Set> setLst;
   input list<Exp.ComponentRef> crs;
+  input Boolean topCall;
   output list<Connect.OuterConnect> outOuterConnects;
   output list<Connect.Set> outSetLst;
   output list<Exp.ComponentRef> outCrs;
+  output list<Connect.OuterConnect> innerOuterConnects;
 algorithm
-  (outOuterConnects,outSetLst,outCrs) := matchcontinue(cache,env,pre,outerConnects,setLst,crs)
+  (outOuterConnects,outSetLst,outCrs,innerOuterConnects) := matchcontinue(cache,env,pre,outerConnects,setLst,crs,topCall)
   local Exp.ComponentRef cr1,cr2,cr1first,cr2first;
     Absyn.InnerOuter io1,io2;
+    Connect.OuterConnect oc;
     Boolean keepInOuter,inner1,inner2,outer1,outer2,added,cr1Outer,cr2Outer;    
     Connect.Face f1,f2;    
-    case(cache,env,pre,{},setLst,crs) then ({},setLst,crs);
+    Prefix.Prefix scope;
+    case(cache,env,pre,{},setLst,crs,_) then ({},setLst,crs,{});
       
-    case(cache,env,pre,Connect.OUTERCONNECT(cr1,io1,f1,cr2,io2,f2)::outerConnects,setLst,crs) equation
+    case(cache,env,pre,Connect.OUTERCONNECT(scope,cr1,io1,f1,cr2,io2,f2)::outerConnects,setLst,crs,topCall) equation
       cr1first = Exp.crefFirstIdent(cr1);
       cr2first = Exp.crefFirstIdent(cr2);
       (inner1,outer1) = lookupVarInnerOuterAttr(cache,env,cr1first,cr2first);
-      true = inner1;      
+      true = inner1;
+      /*      
       f1 = componentFace(env,cr1);
       f2 = componentFace(env,cr2);
+      */
+      f1 = componentFaceType(cr1);
+      f2 = componentFaceType(cr2); 
       (setLst,crs,added) = Connect.addOuterConnectToSets(cr1,cr2,io1,io2,f1,f2,setLst,crs);
       /* If no connection set available (added = false), create new one */
       setLst = addOuterConnectIfEmpty(cache,env,pre,setLst,added,cr1,io1,f1,cr2,io2,f2);      
       
-      (outerConnects,setLst,crs) = retrieveOuterConnections2(cache,env,pre,outerConnects,setLst,crs);
-      outerConnects = Util.if_(outer1,Connect.OUTERCONNECT(cr1,io1,f1,cr2,io2,f2)::outerConnects,outerConnects);      
-    then (outerConnects,setLst,crs);
+      (outerConnects,setLst,crs,innerOuterConnects) = retrieveOuterConnections2(cache,env,pre,outerConnects,setLst,crs,topCall);
+      outerConnects = Util.if_(outer1,Connect.OUTERCONNECT(scope,cr1,io1,f1,cr2,io2,f2)::outerConnects,outerConnects);      
+    then (outerConnects,setLst,crs,innerOuterConnects);
+      
+      /* This case is for innerouter declarations, since we do not have them in enviroment we need to treat them
+      in a special way */
+    case(cache,env,pre,(oc as Connect.OUTERCONNECT(scope,cr1,io1,f1,cr2,io2,f2))::outerConnects,setLst,crs,true)
+      local Boolean b1,b2,b3,b4; 
+      equation
+        (b1,b3) = innerOuterBooleans(io1);
+        (b2,b4) = innerOuterBooleans(io2);
+        true = boolOr(b1,b2); // for inner outer we set Absyn.INNER() 
+        false = boolOr(b3,b4); 
+        f1 = componentFaceType(cr1);
+        f2 = componentFaceType(cr2);
+        cr1 = DAE.unNameInnerouterUniqueCref(cr1,DAE.UNIQUEIO);
+        cr2 = DAE.unNameInnerouterUniqueCref(cr2,DAE.UNIQUEIO);
+        io1 = convertInnerOuterInnerToOuter(io1); // we need to change from inner to outer to be able to join sets in: addOuterConnectToSets 
+        io2 = convertInnerOuterInnerToOuter(io2);
+        (setLst,crs,added) = Connect.addOuterConnectToSets(cr1,cr2,io1,io2,f1,f2,setLst,crs);
+        /* If no connection set available (added = false), create new one */
+        setLst = addOuterConnectIfEmptyNoEnv(cache,env,pre,setLst,added,cr1,io1,f1,cr2,io2,f2);
+        (outerConnects,setLst,crs,innerOuterConnects) = retrieveOuterConnections2(cache,env,pre,outerConnects,setLst,crs,true);
+      then (outerConnects,setLst,crs,innerOuterConnects);
          
-    case(cache,env,pre,Connect.OUTERCONNECT(cr1,io1,f1,cr2,io2,f2)::outerConnects,setLst,crs) equation
-      (outerConnects,setLst,crs) = retrieveOuterConnections2(cache,env,pre,outerConnects,setLst,crs);
-    then (Connect.OUTERCONNECT(cr1,io1,f1,cr2,io2,f2)::outerConnects,setLst,crs);  
+    case(cache,env,pre,Connect.OUTERCONNECT(scope,cr1,io1,f1,cr2,io2,f2)::outerConnects,setLst,crs,topCall) equation
+      (outerConnects,setLst,crs,innerOuterConnects) = retrieveOuterConnections2(cache,env,pre,outerConnects,setLst,crs,topCall);
+    then (Connect.OUTERCONNECT(scope,cr1,io1,f1,cr2,io2,f2)::outerConnects,setLst,crs,innerOuterConnects);  
   end matchcontinue;
 end retrieveOuterConnections2;
+
+protected function convertInnerOuterInnerToOuter "
+Author: BZ, 2008-12 
+Change from Absyn.INNER => Absyn.OUTER, this to be able to use normal functions for the innerouter declared variables/connections.
+"
+input Absyn.InnerOuter io;
+output Absyn.InnerOuter oio;
+algorithm oio := matchcontinue(io) 
+  case(Absyn.INNER()) then Absyn.OUTER();
+  case(io) then io;
+  end matchcontinue;
+end convertInnerOuterInnerToOuter; 
 
 protected function addOuterConnectIfEmpty "help function to retrieveOuterConnections2
 author PA.
 
 Adds a new connectionset if inner component found but no connection set refering to the inner component. In that
 case the outer connection (from inside sub-components) forms a connection set of their own.
+"
+  input Env.Cache cache;  
+  input Env.Env env;
+  input Prefix pre;
+  input list<Connect.Set> setLst;
+  input Boolean added "if true, this function does nothing";
+  input Exp.ComponentRef cr1;
+  input Absyn.InnerOuter io1;
+  input Connect.Face f1;
+  input Exp.ComponentRef cr2;
+  input Absyn.InnerOuter io2;
+  input Connect.Face f2;
+  output list<Connect.Set> outSetLst;
+algorithm
+  outSetLst := matchcontinue(cache,env,pre,setLst,added,cr1,io1,f1,cr2,io2,f2)
+     local SCode.Variability vt1,vt2;
+       Types.Type t1,t2;
+       Boolean flowPrefix;
+       list<DAE.Element> dae;
+       list<Connect.Set> setLst2;
+       Connect.Sets csets;
+    case(cache,env,pre,setLst,true,_,_,_,_,_,_) then setLst;
+    
+    case(cache,env,pre,setLst,false,cr1,io1,f1,cr2,io2,f2) equation
+      (cache,Types.ATTR(flowPrefix,_,_,vt1,_,_),t1,_,_,_) = Lookup.lookupVar(cache,env,cr1);
+      (cache,Types.ATTR(_,_,_,vt2,_,_),t2,_,_,_) = Lookup.lookupVar(cache,env,cr2);
+       io1 = removeOuter(io1);
+       io2 = removeOuter(io2);            
+      (cache,csets as Connect.SETS(setLst=setLst2),dae) = connectComponents(cache,Connect.emptySet,env,pre,cr1,f1,t1,vt1,cr2,f2,t2,vt2,flowPrefix,io1,io2);     
+      /* TODO: take care of dae, can contain asserts from connections */
+      setLst = listAppend(setLst,setLst2);
+    then (setLst);
+     /* This can fail, for innerouter, the inner part is not declared in env so instead the call to addOuterConnectIfEmptyNoEnv will succed.
+    case(cache,env,pre,setLst,_,cr1,_,_,cr2,_,_) equation print("#FAILURE# in: addOuterConnectIfEmpty:__ " +& Exp.printComponentRefStr(cr1) +& " " +& Exp.printComponentRefStr(cr2) +& "\n"); then fail();*/
+      
+  end matchcontinue;
+end addOuterConnectIfEmpty;  
+
+protected function addOuterConnectIfEmptyNoEnv "help function to retrieveOuterConnections2
+author BZ.
+
+Adds a new connectionset if inner component found but no connection set refering to the inner component. In that
+case the outer connection (from inside sub-components) forms a connection set of their own.
+	2008-12: This is an extension of addOuterConnectIfEmpty, with the difference that we only need to find one variable
+in the enviroment.
 "
   input Env.Cache cache;  
   input Env.Env env;
@@ -11562,16 +11834,30 @@ algorithm
     case(cache,env,pre,setLst,true,_,_,_,_,_,_) then setLst;
     
     case(cache,env,pre,setLst,false,cr1,io1,f1,cr2,io2,f2) equation
-      (cache,Types.ATTR(flow_,_,_,vt1,_,_),t1,_,_,_) = Lookup.lookupVar(cache,env,cr1);
-      (cache,Types.ATTR(_,_,_,vt2,_,_),t2,_,_,_) = Lookup.lookupVar(cache,env,cr2);
-       io1 = removeOuter(io1);
-       io2 = removeOuter(io2);            
-      (cache,csets as Connect.SETS(setLst=setLst2),dae) = connectComponents(cache,Connect.emptySet,env,pre,cr1,f1,t1,vt1,cr2,f2,t2,vt2,flow_,io1,io2);     
+      (cache,Types.ATTR(flowPrefix=flow_,parameter_=vt1),t1,_,_,_) = Lookup.lookupVar(cache,env,cr1);
+      pre = Prefix.NOPRE();
+      t2 = t1;
+      vt2 = vt1;
+      io1 = removeOuter(io1);
+      io2 = removeOuter(io2);            
+      (cache,csets as Connect.SETS(setLst=setLst2),dae) = connectComponents(cache,Connect.emptySet,env,pre,cr1,f1,t1,vt1,cr2,f2,t2,vt2,flow_,io1,io2);
       /* TODO: take care of dae, can contain asserts from connections */
       setLst = listAppend(setLst,setLst2);
     then (setLst);
+    case(cache,env,pre,setLst,false,cr1,io1,f1,cr2,io2,f2) equation
+      pre = Prefix.NOPRE();
+      (cache,Types.ATTR(flowPrefix=flow_,parameter_=vt2),t2,_,_,_) = Lookup.lookupVar(cache,env,cr2);
+      t1 = t2;
+      vt1 = vt2;
+      io1 = removeOuter(io1);
+      io2 = removeOuter(io2);            
+      (cache,csets as Connect.SETS(setLst=setLst2),dae) = connectComponents(cache,Connect.emptySet,env,pre,cr1,f1,t1,vt1,cr2,f2,t2,vt2,flow_,io1,io2);
+      /* TODO: take care of dae, can contain asserts from connections */
+      setLst = listAppend(setLst,setLst2);
+    then (setLst);
+    case(cache,env,pre,setLst,_,_,_,_,_,_,_) equation print("failure in: addOuterConnectIfEmptyNOENV\n"); then fail();
   end matchcontinue;
-end addOuterConnectIfEmpty;  
+end addOuterConnectIfEmptyNoEnv; 
 
 protected function removeOuter "Removes outer attribute, keeping inner"
   input Absyn.InnerOuter io;
@@ -11799,9 +12085,9 @@ If it is final,
 traverses down in the modifier setting all final elements to true.
 "
   input SCode.Mod mod;
-  input Boolean final_;
+  input Boolean finalPrefix;
   output SCode.Mod mod2;
-algorithm mod2 := matchcontinue(mod,final_)
+algorithm mod2 := matchcontinue(mod,finalPrefix)
   case(mod, false) then mod;
   case(mod, true) 
     equation
@@ -11910,6 +12196,36 @@ algorithm osubs:= matchcontinue(subs)
 end matchcontinue;
 end traverseModAddFinal4;
 
+protected function handleInnerOuterEquations "
+Author: BZ, 2008-12
+Depending on the inner outer declaration we do different things for dae declared for a variable.
+If it is an outer variable, we remove all equations(will be declared again in the inner part).
+If it is InnerOuter declared, we rename all the crefs in this equation to unique vars, 
+	while we want to keep them with this prefix for the inner part of the innerouter.  
+"
+input Absyn.InnerOuter io;
+input list<DAE.Element> dae;
+output list<DAE.Element> odae;
+algorithm odae := matchcontinue(io,dae)
+  case(Absyn.OUTER(),dae) 
+    equation
+      (odae,_) = DAE.removeEquations(dae);
+        then
+          odae;
+  case(Absyn.INNEROUTER(),dae)
+    local list<DAE.Element> dae1,dae2;
+    equation
+      (dae1,dae2) = DAE.removeEquations(dae);
+      dae2 = DAE.nameUniqueOuterVars(dae2);
+      dae = listAppend(dae1,dae2);
+      then
+        dae;
+  case(Absyn.INNER(),dae) then dae;
+  case(Absyn.UNSPECIFIED (),dae) then dae;
+  case(_,dae) equation print("FAILURE in handleInnerOuterEquations\n"); then fail(); 
+  end matchcontinue;
+end handleInnerOuterEquations;
+
 protected function modifyInstantiateClass "Function: modifyInstantiateClass
 Here we check a modifier and a path, if we have a redeclaration of the class pointed 
 byt the path, we add this to a special reclaration modifier.
@@ -11989,13 +12305,13 @@ the element.
   input InstDims inst_dims;
   input Prefix.Prefix pre;
   input Types.Mod mods;
-  input Boolean final_;
+  input Boolean finalPrefix;
   output Env.Env o2; 
   output list<Absyn.ComponentRef> o1;  
   output Env.Cache o3;
 algorithm
   (o1,o2,o3) := 
-  matchcontinue(inEnv,inRefs,inRef,inPath,cache,inState,icsets,p,iattr,impl,io,inst_dims,pre,mods,final_)
+  matchcontinue(inEnv,inRefs,inRef,inPath,cache,inState,icsets,p,iattr,impl,io,inst_dims,pre,mods,finalPrefix)
     local 
       Absyn.Path sty;
       Absyn.ComponentRef c1,c2;
@@ -12011,7 +12327,7 @@ algorithm
       Types.Type ty;
       ClassInf.State state;
       Types.Attributes attr;
-      Boolean prot,flow_,stream_;
+      Boolean prot,flowPrefix,streamPrefix;
       Connect.Sets csets;
       SCode.Attributes attr;
       list<DimExp> dims;
@@ -12027,19 +12343,19 @@ algorithm
         (env,cl2,cache);
     case(env,cl1,c1 as Absyn.CREF_IDENT(name = n) ,sty,cache,state,csets,prot,
          (attr as SCode.ATTR(arrayDims = ad,
-                             flowPrefix = flow_,
-                             streamPrefix = stream_,
+                             flowPrefix = flowPrefix,
+                             streamPrefix = streamPrefix,
                              accesibility = acc,
                              variability = param,
                              direction = dir)),
-         impl,io,inst_dims,pre,mods,final_) // we have reference to ourself, try to instantiate type.  
+         impl,io,inst_dims,pre,mods,finalPrefix) // we have reference to ourself, try to instantiate type.  
       equation 
 //        Error.addMessage(Error.SELF_REFERENCE_EQUATION, {n});
         cl2 = removeCrefFromCrefs(cl1, c1);
         (cache,c,cenv) = Lookup.lookupClass(cache,env, sty, true);
         (cache,dims) = elabArraydim(cache,cenv, c1, sty, ad, NONE, impl, NONE,true)  ;
-        (cache,compenv,_,_,ty) = instVar(cache,cenv, state, Types.NOMOD(), pre, csets, n, c, attr, prot, dims, {}, inst_dims, impl, NONE ,io,final_);
-        new_var = Types.VAR(n,Types.ATTR(flow_,stream_,acc,param,dir,io),prot,ty,Types.UNBOUND());
+        (cache,compenv,_,_,ty) = instVar(cache,cenv, state, Types.NOMOD(), pre, csets, n, c, attr, prot, dims, {}, inst_dims, impl, NONE ,io,finalPrefix);
+        new_var = Types.VAR(n,Types.ATTR(flowPrefix,streamPrefix,acc,param,dir,io),prot,ty,Types.UNBOUND());
         env = Env.updateFrameV(env, new_var, Env.VAR_TYPED(), compenv)  ;
       then
         (env,cl2,cache);    
@@ -12271,6 +12587,31 @@ algorithm
   end matchcontinue;
 end innerOuterBooleans;  
 
+protected function referOuter "
+Author: BZ, 2008-12 
+determin the innerouter attributes for 2 connections.
+Special cases:
+  if (innerouter , unspecified) -> do NOT prefix firstelement refers to outer elem
+  if (innerouter , outer) -> DO prefix
+  else
+  	use normal function( innerOuterBooleans)
+"
+input Absyn.InnerOuter io1;
+input Absyn.InnerOuter io2;
+output Boolean prefix1;
+output Boolean prefix2;
+algorithm (prefix1,prefix2) := matchcontinue(io1,io2)
+  case(Absyn.INNEROUTER(),Absyn.UNSPECIFIED()) then (true,false);
+  case(Absyn.INNEROUTER(),Absyn.OUTER()) then (false,true);
+  case(io1,io2)
+    local Boolean b1,b2;
+      equation
+        (_,b1) = innerOuterBooleans(io1);
+        (_,b2) = innerOuterBooleans(io2);
+        then (b1,b2);
+  end matchcontinue;
+end referOuter;
+
 protected function outerConnection "Returns true if either Absyn.InnerOuter is OUTER."
   input Absyn.InnerOuter io1;
   input Absyn.InnerOuter io2;
@@ -12296,12 +12637,13 @@ algorithm updatedEnv := matchcontinue(csets,typedRef)
   local 
     Connect.Sets cs1;
     list<Connect.Set> arg1;
-    list<Exp.ComponentRef> arg2_1,arg2_2;
+    list<Exp.ComponentRef> arg2,arg2_2;
     list<Exp.ComponentRef> arg3;			      
-    list<Connect.OuterConnect> arg4; 
-  case((cs1 as Connect.SETS(arg1,arg2_1,arg3,arg4)),typedRef)
+    list<Connect.OuterConnect> arg4,arg4_2; 
+  case((cs1 as Connect.SETS(arg1,arg2,arg3,arg4)),typedRef)
       equation
-        arg2_2 = updateConnectionSetTypes2(arg2_1,typedRef);        
+        //TODO: update types for rest of set(arg1,arg3,arg4)
+        arg2_2 = updateConnectionSetTypesCrefs(arg2,typedRef);        
         then 
           Connect.SETS(arg1,arg2_2,arg3,arg4);
   case(_,_)
@@ -12312,7 +12654,7 @@ algorithm updatedEnv := matchcontinue(csets,typedRef)
 end matchcontinue;
 end updateConnectionSetTypes;
 
-protected function updateConnectionSetTypes2 "Function: updateConnectionSetTypes2
+protected function updateConnectionSetTypesCrefs "Function: updateConnectionSetTypes2
 helper function for updateConnectionSetTypes
 "
   input list<Exp.ComponentRef> list1;
@@ -12326,15 +12668,16 @@ algorithm lsit3 := matchcontinue(list1,list2)
   case(cr1::cr1s, cr2) 
     equation 
       true = Exp.crefEqual(cr1,cr2);
+      cr2s = updateConnectionSetTypesCrefs(cr1s,cr2);
     then 
-      cr2::cr1s; 
+      cr2::cr2s; 
   case(cr1::cr1s,cr2)
     equation 
-      cr2s = updateConnectionSetTypes2(cr1s,cr2);
+      cr2s = updateConnectionSetTypesCrefs(cr1s,cr2);
     then 
       cr1::cr2s;    
 end matchcontinue;
-end updateConnectionSetTypes2;
+end updateConnectionSetTypesCrefs;
 
 protected function modificationOnOuter "
 Author BZ, 2008-11 
@@ -12347,7 +12690,7 @@ output Boolean modd;
 algorithm omodexp := matchcontinue(cr,inMod,io)
   local
     String s1,s2;
-  case(cr,Types.MOD(final_ = _),Absyn.OUTER())
+  case(cr,Types.MOD(finalPrefix = _),Absyn.OUTER())
     equation
       s1 = Exp.printComponentRefStr(cr);
       Error.addMessage(Error.OUTER_MODIFICATION, {s1});
@@ -12537,8 +12880,8 @@ protected function propagateVariability " help function to propagateAttributes, 
       DAE.Type t;
       Option<Exp.Exp> e;
       list<Exp.Subscript> id;
-      DAE.Flow flow_;
-      DAE.Stream stream_;
+      DAE.Flow flowPrefix;
+      DAE.Stream streamPrefix;
       list<Absyn.Path> class_;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<Absyn.Comment> comment;
@@ -12554,18 +12897,18 @@ protected function propagateVariability " help function to propagateAttributes, 
     case ({},_) then {}; 
       
       /* parameter */
-    case ((DAE.VAR(cr,vk,dir,prot,t,e,id,flow_,stream_,class_,dae_var_attr,comment,io,tp) :: r),SCode.PARAM()) 
+    case ((DAE.VAR(cr,vk,dir,prot,t,e,id,flowPrefix,streamPrefix,class_,dae_var_attr,comment,io,tp) :: r),SCode.PARAM()) 
       equation 
         r_1 = propagateVariability(r, vt);
       then
-        (DAE.VAR(cr,DAE.PARAM(),dir,prot,t,e,id,flow_,stream_,class_,dae_var_attr,comment,io,tp) :: r_1);
+        (DAE.VAR(cr,DAE.PARAM(),dir,prot,t,e,id,flowPrefix,streamPrefix,class_,dae_var_attr,comment,io,tp) :: r_1);
 
       /* constant */
-    case ((DAE.VAR(cr,vk,dir,prot,t,e,id,flow_,stream_,class_,dae_var_attr,comment,io,tp) :: r),SCode.CONST()) 
+    case ((DAE.VAR(cr,vk,dir,prot,t,e,id,flowPrefix,streamPrefix,class_,dae_var_attr,comment,io,tp) :: r),SCode.CONST()) 
       equation 
         r_1 = propagateVariability(r, vt);
       then
-        (DAE.VAR(cr,DAE.CONST(),dir,prot,t,e,id,flow_,stream_,class_,dae_var_attr,comment,io,tp) :: r_1);
+        (DAE.VAR(cr,DAE.CONST(),dir,prot,t,e,id,flowPrefix,streamPrefix,class_,dae_var_attr,comment,io,tp) :: r_1);
 
 
 			/* Traverse components */

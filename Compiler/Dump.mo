@@ -98,22 +98,24 @@ public function unparseStr
 "function: unparseStr
   Prettyprints the Program, i.e. the whole AST, to a string."
   input Absyn.Program inProgram;
+  input Boolean inBoolean "Used by MathCore, and dependencies to other modules requires this to also be in OpenModelica. Contact peter.aronsson@mathcore.com for
+  explanation";
   output String outString;
 algorithm
-  outString := matchcontinue (inProgram)
+  outString := matchcontinue (inProgram,inBoolean)
     local
       Ident s1,s2,s3,str;
       list<Absyn.Class> cs;
       Absyn.Within w;
-    case Absyn.PROGRAM(classes = {}) then "";
-    case Absyn.PROGRAM(classes = cs,within_ = w)
+    case (Absyn.PROGRAM(classes = {}),_) then "";
+    case (Absyn.PROGRAM(classes = cs,within_ = w),_)
       equation
         s1 = unparseWithin(0, w);
         s2 = unparseClassList(0, cs);
         str = Util.stringAppendList({s1,s2,"\n"});
       then
         str;
-    case (_) then "unparsing failed\n";
+    case (_,_) then "unparsing failed\n";
   end matchcontinue;
 end unparseStr;
 
@@ -212,7 +214,7 @@ algorithm
       Absyn.EnumDef ENUM_COLON;
       Absyn.Path fname;
       list<Ident> vars;
-    case (i,Absyn.CLASS(name = n,partial_ = p,final_ = f,encapsulated_ = e,restriction = r,
+    case (i,Absyn.CLASS(name = n,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
                         body = Absyn.PARTS(classParts = parts,comment = optcmt)),fi,re,io)
       equation
         is = indentStr(i);
@@ -226,7 +228,7 @@ algorithm
         str = Util.stringAppendList({is,s2_1,s1,s2,re,io,s3," ",n,s5,"\n",s4,is,"end ",n});
       then
         str;
-    case (indent,Absyn.CLASS(name = n,partial_ = p,final_ = f,encapsulated_ = e,restriction = r,
+    case (indent,Absyn.CLASS(name = n,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
                              body = Absyn.DERIVED(typeSpec = tspec,attributes = attr,arguments = m,comment = optcmt)),fi,re,io)
       local Option<Absyn.Comment> optcmt;
       equation
@@ -243,7 +245,7 @@ algorithm
         str = Util.stringAppendList({is,s2_1,s1,s2,re,io,s3," ",n," = ",s4,s5,s6,s8,s9});
       then
         str;
-    case (i,Absyn.CLASS(name = n,partial_ = p,final_ = f,encapsulated_ = e,restriction = r,
+    case (i,Absyn.CLASS(name = n,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
                         body = Absyn.ENUMERATION(enumLiterals = Absyn.ENUMLITERALS(enumLiterals = l),comment = cmt)),fi,re,io)
       equation
         is = indentStr(i);
@@ -256,7 +258,7 @@ algorithm
         str = Util.stringAppendList({is,s2_1,s1,s2,re,io,s3," ",n," = enumeration(",s4,")",s5});
       then
         str;
-    case (i,Absyn.CLASS(name = n,partial_ = p,final_ = f,encapsulated_ = e,restriction = r,
+    case (i,Absyn.CLASS(name = n,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
                         body = Absyn.ENUMERATION(enumLiterals = ENUM_COLON,comment = cmt)),fi,re,io)
       equation
         is = indentStr(i);
@@ -268,7 +270,7 @@ algorithm
         str = Util.stringAppendList({is,s2_1,s1,s2,re,io,s3," ",n," = enumeration(:)",s5});
       then
         str;
-    case (i,Absyn.CLASS(name = n,partial_ = p,final_ = f,encapsulated_ = e,restriction = r,
+    case (i,Absyn.CLASS(name = n,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
                         body = Absyn.CLASS_EXTENDS(baseClassName = baseClassName,modifications = cmod,comment = optcmt,parts = parts)),fi,re,io)
       equation
         is = indentStr(i);
@@ -283,7 +285,7 @@ algorithm
         str = Util.stringAppendList({is,s2_1,s1,s2,re,io,s3," extends ",baseClassName,s5,s6,"\n",s4,is,"end ",baseClassName});
       then
         str;
-    case (i,Absyn.CLASS(name = n,partial_ = p,final_ = f,encapsulated_ = e,restriction = r,body = Absyn.PDER(functionName = fname,vars = vars)),fi,re,io)
+    case (i,Absyn.CLASS(name = n,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,body = Absyn.PDER(functionName = fname,vars = vars)),fi,re,io)
       equation
         is = indentStr(i);
         s1 = selectString(p, "partial ", "");
@@ -320,7 +322,7 @@ algorithm
       Absyn.EnumDef ENUM_COLON;
       Absyn.Path fname;
       list<Ident> vars;
-    case (Absyn.CLASS(name = n,partial_ = p,final_ = f,encapsulated_ = e,restriction = r,body = _))
+    case (Absyn.CLASS(name = n,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,body = _))
       equation
         s1 = selectString(p, "partial ", "");
         s2 = selectString(f, "final ", "");
@@ -654,7 +656,7 @@ algorithm
       Absyn.Restriction r;
       Absyn.ClassDef cdef;
       Absyn.Info info;
-    case (Absyn.CLASS(name = n,partial_ = p,final_ = f,encapsulated_ = e,restriction = r,body = cdef,info = info))
+    case (Absyn.CLASS(name = n,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,body = cdef,info = info))
       equation
         Print.printBuf("Absyn.CLASS(\""); Print.printBuf(n);
         Print.printBuf("\", ");           printBool(p);
@@ -1385,16 +1387,16 @@ algorithm
   _:=
   matchcontinue (inElement)
     local
-      Boolean final_;
+      Boolean finalPrefix;
       Option<Absyn.RedeclareKeywords> repl;
       Absyn.InnerOuter inout;
       Ident name,text;
       Absyn.ElementSpec spec;
       Absyn.Info info;
-    case (Absyn.ELEMENT(final_ = final_,redeclareKeywords = repl,innerOuter = inout,name = name,specification = spec,info = info,constrainClass = NONE))
+    case (Absyn.ELEMENT(finalPrefix = finalPrefix,redeclareKeywords = repl,innerOuter = inout,name = name,specification = spec,info = info,constrainClass = NONE))
       equation
         Print.printBuf("Absyn.ELEMENT(");
-        printBool(final_);
+        printBool(finalPrefix);
         Print.printBuf(", _");
         Print.printBuf(", ");
         printInnerouter(inout);
@@ -1407,10 +1409,10 @@ algorithm
         Print.printBuf("), NONE)");
       then
         ();
-    case (Absyn.ELEMENT(final_ = final_,redeclareKeywords = repl,innerOuter = inout,name = name,specification = spec,info = info,constrainClass = SOME(_)))
+    case (Absyn.ELEMENT(finalPrefix = finalPrefix,redeclareKeywords = repl,innerOuter = inout,name = name,specification = spec,info = info,constrainClass = SOME(_)))
       equation
         Print.printBuf("Absyn.ELEMENT(");
-        printBool(final_);
+        printBool(finalPrefix);
         Print.printBuf(", _");
         Print.printBuf(", ");
         printInnerouter(inout);
@@ -1464,15 +1466,15 @@ algorithm
     local
       Ident s1,s2,s3,s4,s5,str,name,text;
       Integer i;
-      Boolean final_;
+      Boolean finalPrefix;
       Absyn.RedeclareKeywords repl;
       Absyn.InnerOuter inout;
       Absyn.ElementSpec spec;
       Absyn.Info info;
       Option<Absyn.ConstrainClass> constr;
-    case (i,Absyn.ELEMENT(final_ = final_,redeclareKeywords = SOME(repl),innerOuter = inout,specification = spec,info = info,constrainClass = constr))
+    case (i,Absyn.ELEMENT(finalPrefix = finalPrefix,redeclareKeywords = SOME(repl),innerOuter = inout,specification = spec,info = info,constrainClass = constr))
       equation
-        s1 = selectString(final_, "final ", "");
+        s1 = selectString(finalPrefix, "final ", "");
         s2 = unparseRedeclarekeywords(repl);
         s3 = unparseInnerouterStr(inout);
         s4 = unparseElementspecStr(i, spec, s1, s2, s3);
@@ -1480,9 +1482,9 @@ algorithm
         str = Util.stringAppendList({s4,s5,";"});
       then
         str;
-    case (i,Absyn.ELEMENT(final_ = final_,redeclareKeywords = NONE,innerOuter = inout,specification = spec,info = info,constrainClass = constr))
+    case (i,Absyn.ELEMENT(finalPrefix = finalPrefix,redeclareKeywords = NONE,innerOuter = inout,specification = spec,info = info,constrainClass = constr))
       equation
-        s1 = selectString(final_, "final ", "");
+        s1 = selectString(finalPrefix, "final ", "");
         s3 = unparseInnerouterStr(inout);
         s4 = unparseElementspecStr(i, spec, s1, "", s3);
         s5 = unparseConstrainclassOptStr(constr);
@@ -1811,7 +1813,7 @@ algorithm
       Absyn.Variability var;
       Absyn.Direction dir;
       list<Absyn.Subscript> adim;
-    case (Absyn.ATTR(flow_ = fl,stream_=st,variability = var,direction = dir,arrayDim = adim))
+    case (Absyn.ATTR(flowPrefix = fl,streamPrefix=st,variability = var,direction = dir,arrayDim = adim))
       equation
         Print.printBuf("Absyn.ATTR(");
         printBool(fl);
@@ -1851,7 +1853,7 @@ algorithm
       Absyn.Variability var;
       Absyn.Direction dir;
       list<Absyn.Subscript> adim;
-    case (Absyn.ATTR(flow_ = fl,stream_=st,variability = var,direction = dir,arrayDim = adim))
+    case (Absyn.ATTR(flowPrefix = fl,streamPrefix=st,variability = var,direction = dir,arrayDim = adim))
       equation
         fs = selectString(fl, "flow ", "");
         ss = selectString(st, "stream ", "");

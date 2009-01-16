@@ -56,7 +56,7 @@ char* _replace(char* source_str,char* search_str,char* replace_str); //Defined i
 void Settings_5finit(void)
 {
 
-// On windows, set Temp directory path to Temp directory as returned by GetTempPath, 
+// On windows, set Temp directory path to Temp directory as returned by GetTempPath,
 // which is usually TMP or TEMP or windows catalogue.
 #ifdef WIN32
 	int numChars;
@@ -67,7 +67,7 @@ void Settings_5finit(void)
 	if (numChars == 1024 || numChars == 0) {
 		printf("Error setting temppath in Kernel\n");
 	} else {
-	if (tempDirectoryPath) { 
+	if (tempDirectoryPath) {
 		free(tempDirectoryPath);
 		tempDirectoryPath=0;
 	}
@@ -164,7 +164,7 @@ RML_BEGIN_LABEL(Settings__setInstallationDirectoryPath)
     RML_TAILCALLK(rmlFC);
   }
   memcpy(installationDirectoryPath,command,strlen(command)+1);
-  
+
   /* create a str of the form: OPENMODELICAHOME=<PATH>*/
   omhome = (char*)malloc(strlen(command)+1+18);
   if (omhome == NULL) {
@@ -190,7 +190,7 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(Settings__getInstallationDirectoryPath)
 {
- 
+
     char *path = getenv("OPENMODELICAHOME");
     if (path == NULL) {
       rmlA0 = (void*) mk_scon("");
@@ -198,7 +198,7 @@ RML_BEGIN_LABEL(Settings__getInstallationDirectoryPath)
     }
     else
       rmlA0 = (void*) mk_scon(path);
-  
+
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
@@ -263,7 +263,7 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(Settings__getModelicaPath)
 {
-	 
+
 	 char *path = getenv("OPENMODELICALIBRARY");
 	 if (path == NULL) {
 	    rmlA0 = (void*) mk_scon("");
@@ -295,14 +295,14 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(Settings__dumpSettings)
 {
-  if(compileCommand) 
+  if(compileCommand)
     printf("compile command: %s\n",compileCommand);
 
- 
-  if(tempDirectoryPath) 
+
+  if(tempDirectoryPath)
     printf("temp directory path: %s\n",tempDirectoryPath);
- 
-  if(plotCommand) 
+
+  if(plotCommand)
     printf("plot command: %s\n",plotCommand);
 
 
