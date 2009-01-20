@@ -1,49 +1,34 @@
 /*
-------------------------------------------------------------------------------------
-This file is part of OpenModelica.
-
-Copyright (c) 1998-2006, Linköpings universitet,
-Department of Computer and Information Science, PELAB
-See also: www.ida.liu.se/projects/OpenModelica
-
-All rights reserved.
-
-(The new BSD license, see also
-http://www.opensource.org/licenses/bsd-license.php)
-
-
-Redistribution and use in source and binary forms, with or without
-modification,
-are permitted provided that the following conditions are met:
-
-* Redistributions of source code must retain the above copyright notice,
-this list of conditions and the following disclaimer.
-
-* Redistributions in binary form must reproduce the above copyright notice,
-this list of conditions and the following disclaimer in the documentation
-and/or other materials provided with the distribution.
-
-* Neither the name of Linköpings universitet nor the names of its contributors
-may be used to endorse or promote products derived from this software without
-specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
-LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-POSSIBILITY OF SUCH DAMAGE.
-
-For more information about the Qt-library visit TrollTech:s webpage regarding
-licence: http://www.trolltech.com/products/qt/licensing.html
-
-------------------------------------------------------------------------------------
-*/
+ * This file is part of OpenModelica.
+ *
+ * Copyright (c) 1998-2008, Linköpings University,
+ * Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
+ * All rights reserved.
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC
+ * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF
+ * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC
+ * PUBLIC LICENSE.
+ *
+ * The OpenModelica software and the Open Source Modelica
+ * Consortium (OSMC) Public License (OSMC-PL) are obtained
+ * from Linköpings University, either from the above address,
+ * from the URL: http://www.ida.liu.se/projects/OpenModelica
+ * and in the OpenModelica distribution.
+ *
+ * This program is distributed  WITHOUT ANY WARRANTY; without
+ * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
+ * OF OSMC-PL.
+ *
+ * See the full OSMC Public License conditions for more details.
+ *
+ * For more information about the Qt-library visit TrollTech's webpage 
+ * regarding the Qt licence: http://www.trolltech.com/products/qt/licensing.html
+ */
 
 /*!
 * \file GraphCell.cpp
@@ -93,8 +78,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 
 #include "evalthread.h"
 
-namespace IAEX
-{
+namespace IAEX {
   /*!
   * \class SleeperThread
   * \author Anders Ferström
@@ -323,26 +307,8 @@ namespace IAEX
     {
       inCommand = false;
       stopHighlighter = false;
-      //			QMessageBox::information(0, "uu6", QVariant(textCursor().block().userState()).toString());
-      //			Indent a(toPlainText());
-      //			setText(a.indentedText(&indentationStates));
-      //
-      //			int i = 1;
-      //			for(QTextBlock b =this->document()->begin(); b != this->document()->end(); b = b.next())
-      //			{
-      //				b.setUserState(++i);
-      ////				if(i > 5)
-      ////					QMessageBox::information(0,  "uu5", QVariant(b.previous().userState()).toString());
-      //				//				QMessageBox::information(0, "uu5", b.text());
-      //			}
-
       indentText();
-      //			event->ignore();
-      //			QTextBrowser::keyPressEvent( event );
-      //			update();
-
     }
-
     else if(event->modifiers() == Qt::ControlModifier && event->key() == Qt::Key_K)
     {
       inCommand = false;
@@ -356,90 +322,25 @@ namespace IAEX
         tc.setPosition(i +1, QTextCursor::KeepAnchor);
 
       tc.insertText("");
-      //			int i = toPlainText().indexOf("\n", tc.position());
-
-
-      //			event->ignore();
       QTextBrowser::keyPressEvent( event );
-      //						update();
     }
     // TAB
     else if( event->key() == Qt::Key_Tab )
     {
       inCommand = false;
       stopHighlighter = false;
-
       textCursor().insertText( "  " );
     }
     else if( event->key() == Qt::Key_Enter || event->key() == Qt::Key_Return )
     {
-
       if(autoIndent)
       {
-        /*
-        QString prevLine, currentLine=toPlainText().left(textCursor().position());
-        int i = currentLine.lastIndexOf("\n");
-        int i2 = currentLine.lastIndexOf("\n", i-1);
-        prevLine = currentLine.mid(i2+1, i-i2-1);
-        currentLine = currentLine.right(currentLine.size() - i -1);
-
-        int currentLevel = currentLine.indexOf(QRegExp("\\S|$"));
-        int prevLevel = prevLine.indexOf(QRegExp("\\S|$"));
-        int ilevel = 2*indentationLevel(currentLine, true);
-
-        if(currentLevel > prevLevel && ilevel < 0)
-        {
-        QTextCursor t(textCursor());
-        t.clearSelection();
-        t.setPosition(i+1);
-        t.setPosition(i+1 +currentLevel-prevLevel-2 -ilevel, QTextCursor::MoveMode::KeepAnchor);
-        if(t.selection().toPlainText().indexOf(QRegExp("\\S"))< 0)
-        t.insertText("");
-        //				currentLevel += ilevel;
-        currentLevel -= (currentLevel -prevLevel -2 + -ilevel);
-        }
-        else if(currentLevel == prevLevel && ilevel <0)
-        {
-        QTextCursor t(textCursor());
-        t.clearSelection();
-        t.setPosition(i+1);
-        t.setPosition(i+1 -ilevel, QTextCursor::MoveMode::KeepAnchor);
-        if(t.selection().toPlainText().indexOf(QRegExp("\\S"))< 0)
-        t.insertText("");
-        currentLevel += ilevel;
-        }
-        else if(ilevel > 0)
-        {
-        currentLevel += ilevel;
-        }
-
-        if(currentLevel > 1 && lessIndented(currentLine))
-        {
-        QTextCursor t(textCursor());
-        t.clearSelection();
-        t.setPosition(i+1);
-        t.setPosition(i+1 +currentLevel-prevLevel +2, QTextCursor::MoveMode::KeepAnchor);
-        if(t.selection().toPlainText().indexOf(QRegExp("\\S"))< 0)
-        t.insertText("");
-
-        currentLevel = prevLevel;
-        }
-        //			textCursor().insertText(QString(currentLevel +2*indentationLevel(currentLine, false), ' '));
-        QTextBrowser::keyPressEvent(event);
-        textCursor().insertText(QString(currentLevel, ' '));
-        }
-        else
-        QTextBrowser::keyPressEvent(event);
-        */
-
-        //			QMessageBox::information(0, "uu", textCursor().block().text());
         QTextCursor t(textCursor());
         QString tmp, tmp2;
-        //				tmp = t.block().text();
         int k2 = t.blockNumber();
         QTextBlock b = t.block();
         int k = b.userState();
-        int prevLevel = b.text().indexOf(QRegExp("\\S"));//tmp.indexOf(QRegExp("\\S")) ;
+        int prevLevel = b.text().indexOf(QRegExp("\\S"));
 
         while(k2 >= 0 && !indentationStates.contains(k))
         {
@@ -447,11 +348,7 @@ namespace IAEX
           b = b.previous();
           --k2;
           k = b.userState();
-          //					QMessageBox::information(0, "uu", QVariant(k).toString());
         }
-        //				QMessageBox::information(0, "uu", QVariant(k).toString());
-        //				QMessageBox::information(0, "uu2", tmp);
-        //				Indent i(toPlainText().left(t.position()));
         Indent i(tmp);
         if(indentationStates.contains(k))
         {
@@ -465,60 +362,32 @@ namespace IAEX
           i.ism.skipNext = s->skipNext;
           i.ism.state = s->state;
           i.current = s->current;
-          //					QMessageBox::information(0, "uu3", s->current);
           i.next = s->next;
-
         }
-
-
-
-
-        //}
-        //			tmp = tmp.right(tmp.size() - tmp.lastIndexOf("\n"));
 
         i.indentedText();
 
-        //				QMessageBox::information(0, "uu1", QString("%1, %2").arg(prevLevel).arg(2*i.level()));
-        //				if(prevLevel >= 0 && 2*(i.level()) != prevLevel )
         if(prevLevel > 2*i.level())
         {
-          // int j = t.position();
-          /*
-          t.setPosition(t.block().position());
-          QMessageBox::information(0, "uu3", t.block().text());
-          t.setPosition(t.block().position() + max(0,t.block().text().indexOf(QRegExp("\\S"))), QTextCursor::KeepAnchor);
-          t.insertText(QString(2*i.level(), '_'));
-          QMessageBox::information(0, "uu", t.selection().toPlainText());
-          //					t.setPosition(t.block().position() + t.block().text().size());
-
-          t.setPosition(t.block().position() + t.block().text().size()+1);
-          */
-
           t.setPosition(t.block().position());
           t.setPosition(t.block().position() + prevLevel-2*(i.level()),QTextCursor::KeepAnchor);
           if(!t.selection().toPlainText().trimmed().size())
             t.insertText("");
-          //			t.setPosition(t.block().position() + t.block().length());
           t.setPosition(t.block().position() + t.block().length() -1);
-
         }
 
         QTextBrowser::keyPressEvent(event);
         t.insertText(QString(2*i.level(), ' '));
-
       }
       else
         QTextBrowser::keyPressEvent(event);
-
     }
     else
     {
       inCommand = false;
       stopHighlighter = false;
-
       QTextBrowser::keyPressEvent( event );
     }
-
 
     updatePosition();
 
@@ -536,11 +405,9 @@ namespace IAEX
 
   void MyTextEdit2::updatePosition()
   {
-
     int pos = textCursor().position();
     int row = toPlainText().left(pos).count("\n") +1;
     int col = pos - toPlainText().left(pos).lastIndexOf("\n");
-
     emit updatePos(row, col);
   }
 
@@ -567,7 +434,6 @@ namespace IAEX
     updatePosition();
     if(state != ERROR)
       emit setState(MODIFIED);
-
   }
 
   void MyTextEdit2::goToPos(const QUrl& u)
@@ -577,7 +443,6 @@ namespace IAEX
     int c=u.toString().section(e, 1,1).toInt();
     int r2=u.toString().section(e, 2,2).toInt();
     int c2=u.toString().section(e, 3,3).toInt();
-
 
     int p = 0;
     for(int i = 1; i < r; ++i)
@@ -595,11 +460,8 @@ namespace IAEX
       p2 += (c2-1);
       tc.setPosition(p2, QTextCursor::KeepAnchor);
     }
-
     setTextCursor(tc);
-
     updatePos(r, c);
-
     setFocus(Qt::MouseFocusReason);
   }
 
@@ -608,9 +470,9 @@ namespace IAEX
     emit urlClicked(QUrl(text()));
   }
 
-  MyAction::MyAction(const QString& text, QObject* parent): QAction(text, parent) {}
-
-  //	};
+  MyAction::MyAction(const QString& text, QObject* parent): QAction(text, parent) 
+  {
+  }
 
   /*!
   * \class GraphCell
@@ -618,7 +480,7 @@ namespace IAEX
   *
   * \brief Describes how an GraphCell works.
   *
-  * Input cells is places where the user can do input. To evaluate
+  * Input cells is placed where the user can do input. To evaluate
   * the content of an GraphCell just press shift+enter. It will
   * throw an exception if it cant find OMC. Start OMC with
   * following commandline:
@@ -642,14 +504,9 @@ namespace IAEX
   * 2005-11-23 AF, added document to the constructor, because need
   * the document to insert images to the output part if ploting.
   */
-  GraphCell::GraphCell(Document *doc, QWidget *parent)
-    : Cell(parent),
-    evaluated_(false),
-    closed_(true),
-    delegate_(0),
-    oldHeight_( 0 ),
-    document_(doc),
-    compoundwidget(0)
+  GraphCell::GraphCell(Document *doc, QWidget *parent) : 
+   Cell(parent), evaluated_(false), closed_(true), delegate_(0), 
+   oldHeight_( 0 ), document_(doc), compoundwidget(0)
   {
     QWidget *main = new QWidget(this);
     setMainWidget(main);
@@ -716,7 +573,6 @@ namespace IAEX
     delete output_;
     if(imageFile)
       delete imageFile;
-    //delete syntaxHighlighter_;
   }
 
   /*!
@@ -740,24 +596,15 @@ namespace IAEX
     variableButton = new QPushButton("D",input_);
     variableButton->setToolTip("New simulation data available");
 
-    //		QHBoxLayout *lo = new QHBoxLayout();
-    //		lo->addItem(new QSpacerItem(1, 1), 1, 1);
-
-    //		lo->addWidget(l, 1, Qt::AlignRight);
-    //		input_->setLayout(lo);
-    //		l->setFrameShape(QFrame::Box);
     variableButton->setMaximumWidth(25);
-    //l->setFrameStyle(QFrame::Sunken | QFrame::Box);
     layout_->addWidget( input_, 1, 1 );
     layout_->addWidget(variableButton, 1, 2);
     variableButton->hide();
     // 2006-03-02 AF, Add a chapter counter
     createChapterCounter();
 
-    //input_->setReadOnly( false );
     input_->setReadOnly( true );
     input_->setUndoRedoEnabled( true );
-    //input_->setFrameStyle( QFrame::NoFrame );
     input_->setFrameShape( QFrame::Box );
     input_->setAutoFormatting( QTextEdit::AutoNone );
 
@@ -767,47 +614,34 @@ namespace IAEX
 
     QPalette palette;
     palette.setColor(input_->backgroundRole(), QColor(200,200,255));
-    //		palette.setColor(input_->backgroundRole(), QColor(Qt::green));
     input_->setPalette(palette);
 
     variableButton->setPalette(palette);
     // is this needed, don't know /AF
     input_->installEventFilter(this);
 
-
-    connect( input_, SIGNAL( textChanged() ),
-      this, SLOT( contentChanged() ));
-    connect( input_, SIGNAL( clickOnCell() ),
-      this, SLOT( clickEvent() ));
-    connect( input_, SIGNAL( wheelMove(QWheelEvent*) ),
-      this, SLOT( wheelEvent(QWheelEvent*) ));
+    connect( input_, SIGNAL( textChanged() ), this, SLOT( contentChanged() ));
+    connect( input_, SIGNAL( clickOnCell() ), this, SLOT( clickEvent() ));
+    connect( input_, SIGNAL( wheelMove(QWheelEvent*) ), this, SLOT( wheelEvent(QWheelEvent*) ));
     // 2005-12-15 AF, new connections
-    connect( input_, SIGNAL( eval() ),
-      this, SLOT( eval() ));
-    connect( input_, SIGNAL( command() ),
-      this, SLOT( command() ));
-    connect( input_, SIGNAL( nextCommand() ),
-      this, SLOT( nextCommand() ));
-    connect( input_, SIGNAL( nextField() ),
-      this, SLOT( nextField() ));
+    connect( input_, SIGNAL( eval() ), this, SLOT( eval() ));
+    connect( input_, SIGNAL( command() ), this, SLOT( command() ));
+    connect( input_, SIGNAL( nextCommand() ), this, SLOT( nextCommand() ));
+    connect( input_, SIGNAL( nextField() ), this, SLOT( nextField() ));
     //2005-12-29 AF
-    connect( input_, SIGNAL( textChanged() ),
-      this, SLOT( addToHighlighter() ));
+    connect( input_, SIGNAL( textChanged() ), this, SLOT( addToHighlighter() ));
     // 2006-01-17 AF, new...
     connect( input_, SIGNAL( currentCharFormatChanged(const QTextCharFormat &) ),
       this, SLOT( charFormatChanged(const QTextCharFormat &) ));
     // 2006-04-27 AF,
-    connect( input_, SIGNAL( forwardAction(int) ),
-      this, SIGNAL( forwardAction(int) ));
+    connect( input_, SIGNAL( forwardAction(int) ), this, SIGNAL( forwardAction(int) ));
 
     connect( input_, SIGNAL(updatePos(int, int)), this, SIGNAL(updatePos(int, int)));
     contentChanged();
 
     connect(input_, SIGNAL(setState(int)), this, SLOT(setState(int)));
     connect(input_, SIGNAL(textChanged()), input_, SLOT(setModified()));
-
   }
-
 
   void GraphCell::showVariableButton(bool b)
   {
@@ -836,35 +670,30 @@ namespace IAEX
 
     output_->setOpenLinks(false);
 
-    //output_->setFrameShape( QFrame::Panel );
     output_->setFrameShape( QFrame::Box );
     output_->setAutoFormatting( QTextEdit::AutoNone );
 
     output_->setHorizontalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
     output_->setVerticalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
-    //		output_->setContextMenuPolicy( Qt::NoContextMenu );
 
-    connect( output_, SIGNAL( textChanged() ),
-      this, SLOT(contentChanged()));
-    connect( output_, SIGNAL( clickOnCell() ),
-      this, SLOT( clickEventOutput() ));
-    connect( output_, SIGNAL( wheelMove(QWheelEvent*) ),
-      this, SLOT( wheelEvent(QWheelEvent*) ));
+    connect( output_, SIGNAL( textChanged() ), this, SLOT(contentChanged()));
+    connect( output_, SIGNAL( clickOnCell() ), this, SLOT( clickEventOutput() ));
+    connect( output_, SIGNAL( wheelMove(QWheelEvent*) ), this, SLOT( wheelEvent(QWheelEvent*) ));
 
     connect(output_, SIGNAL(forwardAction(int)), this, SIGNAL(forwardAction(int)));
 
     setOutputStyle();
 
-    output_->setTextInteractionFlags(Qt::TextSelectableByMouse|Qt::TextSelectableByKeyboard|Qt::LinksAccessibleByMouse|Qt::LinksAccessibleByKeyboard);
-    //		QPalette palette;
-    //		palette.setColor(input_->backgroundRole(), QColor(Qt::gray));
-    //		output_->setPalette(palette);
+    output_->setTextInteractionFlags(
+      Qt::TextSelectableByMouse|
+      Qt::TextSelectableByKeyboard|
+      Qt::LinksAccessibleByMouse|
+      Qt::LinksAccessibleByKeyboard);
     output_->hide();
   }
 
   void GraphCell::createCompoundWidget()
   {
-
     compoundwidget = new CompoundWidget(mainWidget());
     compoundwidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
@@ -873,22 +702,14 @@ namespace IAEX
     compoundwidget->gwMain->setServerState(false);
     compoundwidget->visWidget->setServerState(false);
     compoundwidget->hide();
-
-
-    //		connect( compoundwidget, SIGNAL( wheelMove(QWheelEvent*) ),
-    //			this, SLOT( wheelEvent(QWheelEvent*) ));
-
-
-
-
   }
 
   bool MyTextEdit2::lessIndented(QString s)
   {
     QRegExp l("\\b(equation|algorithm|public|protected|else|elseif)\\b");
-
     return s.indexOf(l) >= 0;
   }
+
   int MyTextEdit2::indentationLevel(QString s, bool includeNegative)
   {
     QRegExp e1("\\b(model|class|type|connector|block|record|function|record|for|when|package|if)\\b");
@@ -906,8 +727,6 @@ namespace IAEX
 
   void MyTextEdit2::indentText()
   {
-
-
     Indent a(toPlainText());
     setText(a.indentedText(&indentationStates));
 
@@ -915,94 +734,10 @@ namespace IAEX
     for(QTextBlock b =this->document()->begin(); b != this->document()->end(); b = b.next())
     {
       b.setUserState(++i);
-      //				if(i > 5)
-      //					QMessageBox::information(0,  "uu5", QVariant(b.previous().userState()).toString());
-      //				QMessageBox::information(0, "uu5", b.text());
     }
-
-
-
-
-
-
-
-    //		stopHighlighter = true;
-
-    //		int level = 0;
-    //		QString s =  toPlainText();
-    //
-    //		QTextStream ts(&s);
-    //		QRegExp e1("\\b(model|class|type|connector|block|record|function|record|for|when|package|if)\\b");
-    //		QRegExp e1b("end\\s+(model|class|type|connector|block|record|function|record|for|when|package|if)\\b");
-    //		QRegExp e1c("\\b(else\\s+if|else\\s+[\\S]+[\\s]*;|then\\s+[\\S]+[\\s]*;)\\b");
-    //		QRegExp e1c2("\\b(else\\b[\\S]+[\\s]*;)\\b");
-    //		QRegExp e1c3("b\\s+else");
-    //		//QRegExp e1c3("\\b(else\\bif|else\\b[\\S]+[\\s]*;|then\\b[\\S]+[\\s]*;)\\b");
-    //
-    //		e1c.setMinimal(true);
-    //		QRegExp e2("\\bend\\b");
-    //		QRegExp lessIndented("\\b(equation|algorithm|public|protected|else|elseif)\\b");
-    //		QRegExp newLineEnd("^end\\b");
-    //		QString tmp, res;
-    //		int levelMod = 0;
-    //		QMessageBox::information(0, "uu", QVariant(QString("a b else ; ").indexOf(e1c3)).toString());
-    //		while(!ts.atEnd())
-    //		{
-    //			level=max(0, level);
-    //			levelMod = 0;
-    //			tmp = ts.readLine();
-    //
-    //
-    //			if(tmp.trimmed().left(2) == QString("//"))
-    //			{
-    ////				tmp = QString( 2*(level + levelMod), ' ') + tmp + "\n";
-    //				res = res +tmp +"\n";
-    //				continue;
-    //			}
-    //			tmp = tmp.trimmed();
-    //
-    //			if(tmp.indexOf(lessIndented) >= 0)
-    //				--levelMod;
-    //
-    ////			if(tmp.left(2) != QString("//"))
-    //
-    ////			level -= tmp.count(newLineEnd);
-    //			if(tmp.indexOf(newLineEnd) >= 0)
-    //				--levelMod;
-    //
-    //			/*
-    //			if(tmp.indexOf(newLineEnd) >= 0)
-    //				levelMod = -1;
-    //			else
-    //				levelMod = 0;
-    //*/
-    ////			QMessageBox::information(0, tmp, QVariant(level+levelMod).toString());
-    //			//			QMessageBox::information(0, "uu",QString("_") + tmp + "_");
-    //			tmp = QString( 2*(level + levelMod), ' ') + tmp + "\n";
-    ////			QMessageBox::information(0, "uu",QString("_") + tmp + "_");
-    //
-    ////			if(tmp.left(2) != QString("//"))
-    //				level = level + tmp.count(e1) - tmp.count(e2) - tmp.count(e1b) -tmp.count(e1c);
-    ////				if(tmp.indexOf(newLineEnd) >= 0)
-    ////					++level ;
-    //
-    //			res += tmp;
-    //		}
-    //
-    //		QTextCursor t(textCursor());
-    ////		t.setPosition(0);
-    ////		t.select(QTextCursor::SelectionType::Document);
-    //
-    //		setText(res.trimmed());
-    //
-
-    //		t.insertText(res);
     emit textChanged();
-    //		setText(res.trimmed());
-
-    //		stopHighlighter = false;
-
   }
+
   /*!
   * \author Anders Fernström
   * \date 2006-04-21
@@ -1053,8 +788,7 @@ namespace IAEX
     chaptercounter_->setFixedWidth(50);
     chaptercounter_->setReadOnly( true );
 
-    connect( chaptercounter_, SIGNAL( clickOnCell() ),
-      this, SLOT( clickEvent() ));
+    connect( chaptercounter_, SIGNAL( clickOnCell() ), this, SLOT( clickEvent() ));
 
     addChapterCounter( chaptercounter_ );
   }
@@ -1207,18 +941,6 @@ namespace IAEX
 
     // 2005-12-16 AF, unblock signals and tell highlighter to highlight
     input_->document()->blockSignals(false);
-
-    //		input_->document()->setHtml( input_->toHtml() ); //uu
-    //		input_->document()->setPlainText(tmp);
-
-    // bool b = input_->document()->isEmpty();
-    /*
-    input_->document()->setPlainText(text);
-
-    //		input_->document()->setPlainText( input_->toPlainText() );
-
-    input_->document()->rootFrame()->setFrameFormat( (*style_.textFrameFormat()) );
-    */
     contentChanged();
   }
 
@@ -1255,8 +977,6 @@ namespace IAEX
     {
       output_->setPlainText( text );
       evaluated_ = true;
-      //setClosed( false );
-
       contentChanged();
     }
   }
@@ -1279,7 +999,6 @@ namespace IAEX
     {
       output_->setHtml( html );
       evaluated_ = true;
-      //setClosed( false );
       contentChanged();
     }
   }
@@ -1318,24 +1037,19 @@ namespace IAEX
   */
   void GraphCell::setStyle(CellStyle style)
   {
-
     if( style.name() == "Graph" )
     {
       Cell::setStyle( style );
-
       // select all the text
       input_->selectAll();
-
       // set the new style settings
       input_->setAlignment( (Qt::AlignmentFlag)style_.alignment() );
       input_->mergeCurrentCharFormat( (*style_.textCharFormat()) );
       input_->document()->rootFrame()->setFrameFormat( (*style_.textFrameFormat()) );
-
       // unselect the text
       QTextCursor cursor(	input_->textCursor() );
       cursor.clearSelection();
       input_->setTextCursor( cursor );
-
       // 2006-03-02 AF, set chapter counter style
       chaptercounter_->selectAll();
       chaptercounter_->mergeCurrentCharFormat( (*style_.textCharFormat()) );
@@ -1475,7 +1189,6 @@ namespace IAEX
     {
       output_->hide();
       compoundwidget->hide();
-
     }
     else
     {
@@ -1514,7 +1227,6 @@ namespace IAEX
   */
   void GraphCell::clickEvent()
   {
-    //if( input_->isReadOnly() )
     emit clicked(this);
   }
 
@@ -1540,8 +1252,7 @@ namespace IAEX
   {
     int height = input_->document()->documentLayout()->documentSize().toSize().height();
 
-    if( height < 0 )
-      height = 30;
+    if( height < 0 ) height = 30;
 
     // add a little extra, just in case /AF
     input_->setMinimumHeight( height + 3 );
@@ -1550,8 +1261,7 @@ namespace IAEX
     {
       int outHeight = output_->document()->documentLayout()->documentSize().toSize().height();
 
-      if( outHeight < 0 )
-        outHeight = 30;
+      if( outHeight < 0 ) outHeight = 30;
 
       output_->setMinimumHeight( outHeight );
       height += outHeight;
@@ -1561,14 +1271,11 @@ namespace IAEX
     // have chagned /AF
     if(compoundwidget && compoundwidget->isVisible())
     {
-
       compoundwidget->setMinimumHeight(550);
       compoundwidget->gvBottom->show();
       compoundwidget->gvLeft->show();
       height += 550;
-
     }
-
 
     setHeight( height + 3 );
     emit textChanged();
@@ -1635,9 +1342,8 @@ namespace IAEX
   * inputpart of the cell will be tested.
   * \return If plot command or not
   */
-  bool GraphCell::isPlot(QString text)
+  bool GraphCell::isJavaPlot(QString text)
   {
-    //		QRegExp exp( "plot\\((.*)|plotParametric\\((.*)|simulate" );
     QRegExp exp( "plot2[ ]*\\((.*)|plotParametric2[ ]*\\((.*)" );
     if( text.isNull() )
     {
@@ -1661,7 +1367,6 @@ namespace IAEX
     compoundwidget->show();
     showGraph = true;
 
-
     if(!compoundwidget->isVisible())
     {
       setHeight(height() +200);
@@ -1671,7 +1376,7 @@ namespace IAEX
     contentChanged();
   }
 
-  bool GraphCell::isPlot2(QString text)
+  bool GraphCell::isQtPlot(QString text)
   {
     QRegExp exp("plot[ ]*\\(.*\\)|plotParametric[ ]*\\(.*\\)|plotAll[ ]*\\(.*\\)" );
 
@@ -1739,27 +1444,28 @@ namespace IAEX
   * highlightning is used in the output cell.
   *
   */
+  QMutex* guard = new QMutex(QMutex::Recursive);
+
   void GraphCell::eval()
   {
     input_->blockSignals(true);
     output_->blockSignals(true);
 
-
     setState(EVAL);
-
 
     if( hasDelegate() )
     {
 
       // Only the text, no html tags. /AF
       QString expr = input_->toPlainText();
-      //expr = expr.simplified();
 
       emit newExpr(expr);
 
       QString openmodelica( getenv( "OPENMODELICAHOME" ) );
       if( openmodelica.isEmpty() )
-        QMessageBox::critical( 0, "OpenModelica Error", "Could not find environment variable OPENMODELICAHOME; OMNotebook will therefore not work correctly" );
+        QMessageBox::critical( 0, 
+           "OpenModelica Error", 
+           "Could not find environment variable OPENMODELICAHOME; OMNotebook will therefore not work correctly" );
 
       if( openmodelica.endsWith("/") || openmodelica.endsWith( "\\") )
         openmodelica += "tmp/";
@@ -1778,7 +1484,6 @@ namespace IAEX
       if( !filename2.endsWith( "/" ) ) filename2 += "/";
       filename2 += imagename;
 
-
       // 2006-02-17 AF,
       evaluated_ = true;
       setClosed(false);
@@ -1788,65 +1493,37 @@ namespace IAEX
       output_->selectAll();
       output_->textCursor().insertText( "{evaluating expression}" );
       setOutputStyle();
-      //output_->setPlainText( "{evaluating expression}" );
       output_->update();
       QCoreApplication::processEvents();
 
-
       // remove plot.png if it already exist, don't want any
       // old plot.
-      bool oldPlot = isPlot(input_->toPlainText());
-      bool newPlot = isPlot2(input_->toPlainText());
+      bool oldPlot = isJavaPlot(input_->toPlainText());
+      bool newPlot = isQtPlot(input_->toPlainText());
       bool visualize = isVisualize(input_->toPlainText());
 
       if( oldPlot )
       {
         setClosed(false);
-
         if( dir1.exists( imagename ))
           dir1.remove( imagename );
         if( dir2.exists( imagename ))
           dir2.remove( imagename );
-
         compoundwidget->hide();
-
       }
       else if(newPlot)
       {
         setClosed(false);
-
-        //				showGraphics();
-        //		if(!compoundwidget->gwMain->getServerState())
         compoundwidget->gwMain->setServerState(true);
-
         compoundwidget->hideVis();
-
-        /*
-        if(!compoundwidget->gwMain->getServerState())
-        compoundwidget->gwMain->setServerState(true);
-        if(!compoundwidget->isVisible())
-        {
-        setHeight(height() +200);
-        compoundwidget->show();
-        compoundwidget->setMinimumHeight(200);
-        }
-        */
       } 
-      else if (visualize) 
+      else if (visualize)
       {
         if(!compoundwidget->visWidget->getServerState())
           compoundwidget->visWidget->setServerState(true);
-
         compoundwidget->showVis();
         showGraphics();
       }
-
-      /*				if(!compoundwidget->isVisible())
-      {
-      setHeight(height() +400);
-      compoundwidget->show();
-      compoundwidget->setMinimumHeight(400);
-      }*/
 
       // 2006-02-02 AF, Added try-catch
       QString res, error;
@@ -1860,12 +1537,11 @@ namespace IAEX
         return;
       }
 
-      //			if(!newPlot)
       if(oldPlot)
       {
         try
         {
-          delegate()->evalExpression( expr );
+          getDelegate()->evalExpression( expr );
         }
         catch( exception &e )
         {
@@ -1874,13 +1550,10 @@ namespace IAEX
           output_->blockSignals(false);
           return;
         }
-
-        res = delegate()->getResult();
-
-
+        res = getDelegate()->getResult();
         try
         {
-          error = delegate()->getError();
+          error = getDelegate()->getError();
         }
         catch( exception &e )
         {
@@ -1889,88 +1562,27 @@ namespace IAEX
           output_->blockSignals(false);
           return;
         }
-
-
       }
-      /*			else if (visualize) {
-      // Run visualize command
-      try
-      {
-      delegate()->evalExpression( expr );
-      }
-      catch( exception &e )
-      {
-      exceptionInEval(e);
-      input_->blockSignals(false);
-      output_->blockSignals(false);
-      return;
-      }
-
-      res = delegate()->getResult();
-
-
-      try
-      {
-      error = delegate()->getError();
-      }
-      catch( exception &e )
-      {
-      exceptionInEval(e);
-      input_->blockSignals(false);
-      output_->blockSignals(false);
-      return;
-      }
-
-      // Run getannotations command
-      int start = expr.indexOf('(') + 1;
-      int length = expr.lastIndexOf(')') - start;
-      QString modelName = expr.mid(start, length);
-      QString command = "getComponentAnnotations(" + modelName + ");";
-      try
-      {
-      delegate()->evalExpression( command );
-      }
-      catch( exception &e )
-      {
-      exceptionInEval(e);
-      input_->blockSignals(false);
-      output_->blockSignals(false);
-      return;
-      }
-
-      QString annotations = delegate()->getResult();
-
-
-      try
-      {
-      error = delegate()->getError();
-      }
-      catch( exception &e )
-      {
-      exceptionInEval(e);
-      input_->blockSignals(false);
-      output_->blockSignals(false);
-      return;
-      }
-
-      }*/
-      else
-      {
+      else /* all the other commands */
+      {    
+        guard->lock();
         try
         {          
-          EvalThread* et = new EvalThread(delegate(), expr);
-          connect(et, SIGNAL(finished()), this, SLOT(delegateFinished()));
+          // adrpo:FIXME! WRONG! TODO! this is wrong!
+          //       the commands should be sent to OMC in the same sequence
+          //       they appear in the notebook, otherwise a simulate command
+          //       might finish later than a plot!
+          EvalThread* et = new EvalThread(getDelegate(), expr);
+          connect(et, SIGNAL(finished()), this, SLOT(delegateFinished()));          
           et->start();
-          if (!visualize && !newPlot) et->wait();
-          /*
-          delegate()->evalExpression(expr);
-          */
+          if (!visualize && !newPlot) { et->wait(); }
         }
         catch( exception &e )
         {
+          guard->unlock();
           exceptionInEval(e);
           input_->blockSignals(false);
-          output_->blockSignals(false);
+          output_->blockSignals(false);          
           return;
         }
       }
@@ -2049,7 +1661,6 @@ namespace IAEX
             SleeperThread::msleep( 1000 );
             sleepTime++;
           }
-
         }
         else
         {
@@ -2062,17 +1673,17 @@ namespace IAEX
           if( !error.isEmpty() )
           {
             res += QString("\n") + error;
-            //		palette.setColor(input_->backgroundRole(), QColor(200,00,00));
+            // palette.setColor(input_->backgroundRole(), QColor(200,00,00));
             setState(ERROR);
           }
           else
             setState(FINISHED);
-          //						palette.setColor(input_->backgroundRole(), QColor(200,200,255));
+          // palette.setColor(input_->backgroundRole(), QColor(200,200,255));
 
-          //		QPalette palette;
+          // QPalette palette;
 
-          //		palette.setColor(input_->backgroundRole(), QColor(Qt::green));
-          //		input_->setPalette(palette);
+          // palette.setColor(input_->backgroundRole(), QColor(Qt::green));
+          // input_->setPalette(palette);
 
           output_->selectAll();
           output_->textCursor().insertText( res );
@@ -2090,678 +1701,391 @@ namespace IAEX
 
         //Emit that the text have changed
         emit textChanged(true);
-
-      //}
-
+      }
+      else //!hasDelegate
+      {
+        // cout << "Not delegate on GraphCell" << endl;
+        // adrpo: do not set error as it might be a group cell
+        //setState(ERROR);
+      }
+      input_->blockSignals(false);
+      output_->blockSignals(false);
     }
-    else //!hasDelegate
+  }
+
+  void GraphCell::delegateFinished()
+  {
+    EvalThread* et = static_cast<EvalThread*>(sender());
+    QString res   = et->getResult();
+    QString error = et->getError();
+
+    delete sender();
+
+    guard->unlock();
+
+    if( res.isEmpty() && (error.isEmpty() || error.size() == 0) )
     {
-      // cout << "Not delegate on GraphCell" << endl;
-      // adrpo: do not set error as it might be a group cell
-      //setState(ERROR);
+      res = "[done]";
+      setState(FINISHED);
     }
-    input_->blockSignals(false);
-    output_->blockSignals(false);
 
-  }
-
-  /*
-  // get the result
-  QString res = delegate()->getResult();
-  QString error;
-
-  // 2006-02-02 AF, Added try-catch
-  try
-  {
-  error = delegate()->getError();
-  }
-  catch( exception &e )
-  {
-  exceptionInEval(e);
-  input_->blockSignals(false);
-  output_->blockSignals(false);
-  return;
-  }
-  */
-  // if the expression is a plot command and the is no errors
-  // in the result, find the image and insert it into the
-  // output part of the cell.
-
-
-  /*
-  if( isPlot() && error.isEmpty() )
-  {
-  output_->selectAll();
-  output_->textCursor().insertText( "{creating plot}" );
-  //output_->setPlainText( "{creating plot}" );
-  output_->update();
-  QCoreApplication::processEvents();
-
-  int sleepTime = 1;
-  bool firstTry = true;
-  while( true )
-  {
-  if( dir.exists( imagename ))
-  {
-  QImage *image = new QImage( filename );
-  if( !image->isNull() )
-  {
-  QString newname = document_->addImage( image );
-  QTextCharFormat format = output_->currentCharFormat();
-
-  QTextImageFormat imageformat;
-  imageformat.merge( format );
-  imageformat.setHeight( image->height() );
-  imageformat.setWidth( image->width() );
-  imageformat.setName( newname );
-
-  output_->selectAll();
-  //output_->textCursor().insertText( "{Plot - Generated by PtPlot}" );
-  //output_->setPlainText("{Plot}\n");
-  QTextCursor outCursor = output_->textCursor();
-  //outCursor.movePosition( QTextCursor::End );
-  outCursor.insertImage( imageformat );
-  break;
-  }
-  else
-  {
-  if( firstTry )
-  {
-  firstTry = false;
-  delete image;
-  }
-  else
-  {
-  output_->selectAll();
-  output_->textCursor().insertText( "[Error] Unable to read plot image \"" + filename + "\". Please retry." );
-  //output_->setPlainText( "[Error] Unable to read plot image \"" + imagename + "\". Please retry." );
-  break;
-  }
-  }
-  }
-
-  if( sleepTime > 25 )
-  {
-  output_->selectAll();
-  output_->textCursor().insertText( "[Error] Unable to find plot image \"" + filename + "\"" );
-  //						output_->setPlainText( "[Error] Unable to found plot image \"" + imagename + "\"" );
-  break;
-  }
-
-  SleeperThread::msleep( 1000 );
-  sleepTime++;
-  }
-
-  }
-  else
-  {
-  */
-  // check if resualt is empty
-  /*
-  if( res.isEmpty() && error.isEmpty() )
-  res = "[done]";
-
-  if( !error.isEmpty() )
-  res += QString("\n") + error;
-
-  output_->selectAll();
-  output_->textCursor().insertText( res );
-  //output_->setPlainText( res );
-  //			}
-
-  ++numEvals_;
-  dir.remove( imagename );
-
-
-  contentChanged();
-
-  //Emit that the text have changed
-  emit textChanged(true);
-  }
-  else
-  cout << "Not delegate on GraphCell" << endl;
-
-  input_->blockSignals(false);
-  output_->blockSignals(false);
-  */
-  /*
-  }
-
-
-  else
-  cout << "Not delegate on GraphCell" << endl;
-
-  input_->blockSignals(false);
-  output_->blockSignals(false);
-
-
-
-  }
-  */
-}
-
-void GraphCell::delegateFinished()
-{
-
-  delete sender();
-
-  QString res = delegate()->getResult();
-  QString error;
-
-  // 2006-02-02 AF, Added try-catch
-  try
-  {
-    error = delegate()->getError();
-  }
-  catch( exception &e )
-  {
-    exceptionInEval(e);
-    input_->blockSignals(false);
-    output_->blockSignals(false);
-
-    setState(ERROR);
-    return;
-  }
-  /*
-  //////////////////
-  QString openmodelica( getenv( "OPENMODELICAHOME" ) );
-  if( openmodelica.isEmpty() )
-  QMessageBox::critical( 0, "OpenModelica Error", "Could not find environment variable OPENMODELICAHOME; OMNotebook will therefore not work correctly" );
-
-  if( openmodelica.endsWith("/") || openmodelica.endsWith( "\\") )
-  openmodelica += "bin/";
-  else
-  openmodelica += "/bin/";
-
-  QDir dir;
-  dir.setPath( openmodelica );
-  QString imagename = "omc_tmp_plot.png";
-
-  QString filename = dir.absolutePath();
-  if( !filename.endsWith( "/" ) )
-  filename += "/";
-  filename += imagename;
-
-  if( isPlot() && error.isEmpty() )
-  {
-  output_->selectAll();
-  output_->textCursor().insertText( "{creating plot}" );
-  //output_->setPlainText( "{creating plot}" );
-  output_->update();
-  QCoreApplication::processEvents();
-
-
-  int sleepTime = 1;
-  bool firstTry = true;
-  while( true )
-  {
-  if( dir.exists( imagename ))
-  {
-  QImage *image = new QImage( filename );
-  if( !image->isNull() )
-  {
-  QString newname = document_->addImage( image );
-  QTextCharFormat format = output_->currentCharFormat();
-
-  QTextImageFormat imageformat;
-  imageformat.merge( format );
-  imageformat.setHeight( image->height() );
-  imageformat.setWidth( image->width() );
-  imageformat.setName( newname );
-
-  output_->selectAll();
-  //output_->textCursor().insertText( "{Plot - Generated by PtPlot}" );
-  //output_->setPlainText("{Plot}\n");
-  QTextCursor outCursor = output_->textCursor();
-  //outCursor.movePosition( QTextCursor::End );
-  outCursor.insertImage( imageformat );
-  break;
-  }
-  else
-  {
-  if( firstTry )
-  {
-  firstTry = false;
-  delete image;
-  }
-  else
-  {
-  output_->selectAll();
-  output_->textCursor().insertText( "[Error] Unable to read plot image \"" + filename + "\". Please retry." );
-  //output_->setPlainText( "[Error] Unable to read plot image \"" + imagename + "\". Please retry." );
-  break;
-  }
-  }
-  }
-
-  if( sleepTime > 25 )
-  {
-  output_->selectAll();
-  output_->textCursor().insertText( "[Error] Unable to find plot image \"" + filename + "\"" );
-  //						output_->setPlainText( "[Error] Unable to find plot image \"" + imagename + "\"" );
-  break;
-  }
-
-  SleeperThread::msleep( 1000 );
-  sleepTime++;
-  }
-
-  }
-  else
-  {
-  ///////////////
-  */
-
-  if( res.isEmpty() && (error.isEmpty() || error.size() == 0) )
-  {
-    res = "[done]";
-    setState(FINISHED);
-  }
-
-  if( !error.isEmpty() && error.size() != 0)
-  {
-    setState(ERROR);
-    res += QString("\n") + error;
-  }
-  else
-    setState(FINISHED);
-
-
-
-  QRegExp e("([\\d]+:[\\d]+-[\\d]+:[\\d]+)|([\\d]+:[\\d]+)");
-
-  // bool b;
-  int p=0;
-
-
-  output_->selectAll();
-  output_->textCursor().insertText( res );
-
-  QList<QAction*> actions;
-  while((p=res.indexOf(e, p)) > 0)
-  {
-
-    QTextCharFormat f;
-    f.setAnchor(true);
-
-
-
-
-    if(e.cap(1).size() > e.cap(2).size())
+    if( !error.isEmpty() && error.size() != 0)
     {
-      f.setAnchorHref(e.cap(1));
-      QTextCursor c(output_->textCursor());
-      c.setPosition(p);
-      c.setPosition(p+=e.cap(1).size(), QTextCursor::KeepAnchor);
-
-
-      f.setAnchor(true);
-      f.setFontUnderline(true);
-      c.mergeCharFormat(f);
-      c.setPosition(output_->toPlainText().size());
-      output_->setTextCursor(c);
-
-
-      MyAction* a = new MyAction(e.cap(1), 0);
-      connect(a, SIGNAL(triggered()), a, SLOT(triggered2()));
-      connect(a, SIGNAL(urlClicked(const QUrl&)), output_, SIGNAL(anchorClicked(const QUrl&)));
-      actions.push_back(a);
+      setState(ERROR);
+      res += QString("\n") + error;
     }
     else
+      setState(FINISHED);
+
+    QRegExp e("([\\d]+:[\\d]+-[\\d]+:[\\d]+)|([\\d]+:[\\d]+)");
+
+    // bool b;
+    int p=0;
+
+    output_->selectAll();
+    output_->textCursor().insertText( res );
+
+    QList<QAction*> actions;
+    while((p=res.indexOf(e, p)) > 0)
     {
-      f.setAnchorHref(e.cap(2));
-      QTextCursor c(output_->textCursor());
-      c.setPosition(p);
-      c.setPosition(p+=e.cap(2).size(), QTextCursor::KeepAnchor);
-
-
+      QTextCharFormat f;
       f.setAnchor(true);
-      f.setFontUnderline(true);
-      c.mergeCharFormat(f);
-      c.setPosition(output_->toPlainText().size());
-      output_->setTextCursor(c);
 
-      MyAction* a = new MyAction(e.cap(2), 0);
-      connect(a, SIGNAL(triggered()), a, SLOT(triggered2()));
-      connect(a, SIGNAL(urlClicked(const QUrl&)), output_, SIGNAL(anchorClicked(const QUrl&)));
-      actions.push_back(a);
+      if(e.cap(1).size() > e.cap(2).size())
+      {
+        f.setAnchorHref(e.cap(1));
+        QTextCursor c(output_->textCursor());
+        c.setPosition(p);
+        c.setPosition(p+=e.cap(1).size(), QTextCursor::KeepAnchor);
 
-      /*
+        f.setAnchor(true);
+        f.setFontUnderline(true);
+        c.mergeCharFormat(f);
+        c.setPosition(output_->toPlainText().size());
+        output_->setTextCursor(c);
 
+        MyAction* a = new MyAction(e.cap(1), 0);
+        connect(a, SIGNAL(triggered()), a, SLOT(triggered2()));
+        connect(a, SIGNAL(urlClicked(const QUrl&)), output_, SIGNAL(anchorClicked(const QUrl&)));
+        actions.push_back(a);
+      }
+      else
+      {
+        f.setAnchorHref(e.cap(2));
+        QTextCursor c(output_->textCursor());
+        c.setPosition(p);
+        c.setPosition(p+=e.cap(2).size(), QTextCursor::KeepAnchor);
 
-      f.setAnchorName(e.cap(2));
-      output_->textCursor().setPosition(p);
-      output_->textCursor().setPosition(p+e.cap(2).size(), QTextCursor::KeepAnchor);
-      //				output_->textCursor().mergeBlockCharFormat(f);
-      output_->textCursor().charFormat().setAnchor(true);
-      //				output_->textCursor().mergeCharFormat(f);
-      */
+        f.setAnchor(true);
+        f.setFontUnderline(true);
+        c.mergeCharFormat(f);
+        c.setPosition(output_->toPlainText().size());
+        output_->setTextCursor(c);
 
+        MyAction* a = new MyAction(e.cap(2), 0);
+        connect(a, SIGNAL(triggered()), a, SLOT(triggered2()));
+        connect(a, SIGNAL(urlClicked(const QUrl&)), output_, SIGNAL(anchorClicked(const QUrl&)));
+        actions.push_back(a);
+      }
     }
+    emit setStatusMenu(actions);
 
-
-    //		output_->setCurrentCharFormat(f);
-    //			output_->textCursor().setBlockCharFormat(f);
-
-
-
-  }
-  emit setStatusMenu(actions);
-  /*
-  else
-  {
-  output_->selectAll();
-  output_->textCursor().insertText( res );
-
-  }
-  */
-  //		QMessageBox::information(0, QVariant(res.indexOf(e2)).toString(), QVariant(res.indexOf(e)).toString());
-  //output_->setPlainText( res );
-  //			}
-
-  ++numEvals_;
-  //		dir.remove( imagename );
-  //} ////fjass
-
-  contentChanged();
+    ++numEvals_;
+    contentChanged();
 
   //Emit that the text have changed
-  emit textChanged(true);
-}
-/*!
-* \author Anders Fernström
-* \date 2006-02-02
-* \date 2006-02-09 (update)
-*
-*\brief Method for handleing exceptions in eval()
-*/
+    emit textChanged(true);
+  }
+  /*!
+  * \author Anders Fernström
+  * \date 2006-02-02
+  * \date 2006-02-09 (update)
+  *
+  *\brief Method for handleing exceptions in eval()
+  */
 
-void GraphCell::setState(int state_)
-{
-  input_->state = state_;
-  switch(state_)
+  void GraphCell::setState(int state_)
   {
-  case MODIFIED:
-    emit newState("Ready");
-    break;
-  case EVAL:
-    emit newState("Evaluating...");
-    break;
-  case FINISHED:
-    emit newState("Done");
-    break;
-  case ERROR:
-    emit newState("Error");
-    break;
-
+    input_->state = state_;
+    switch(state_)
+    {
+    case MODIFIED:
+      emit newState("Ready");
+      break;
+    case EVAL:
+      emit newState("Evaluating...");
+      break;
+    case FINISHED:
+      emit newState("Done");
+      break;
+    case ERROR:
+      emit newState("Error");
+      break;
+    }
   }
 
-
-}
-
-
-void GraphCell::exceptionInEval(exception &e)
-{
-  // 2006-0-09 AF, try to reconnect to OMC first.
-  try
+  void GraphCell::exceptionInEval(exception &e)
   {
-    delegate_->closeConnection();
-    delegate_->reconnect();
-    eval();
-  }
-  catch( exception &e )
-  {
-    // unable to reconnect, ask if user want to restart omc.
-    QString msg = QString( e.what() ) + "\n\nUnable to reconnect with OMC. Do you want to restart OMC?";
-    int result = QMessageBox::critical( 0, tr("Communication Error with OMC"),
-      msg,
-      QMessageBox::Yes | QMessageBox::Default,
-      QMessageBox::No );
-
-    if( result == QMessageBox::Yes )
+    // 2006-0-09 AF, try to reconnect to OMC first.
+    try
     {
       delegate_->closeConnection();
-      if( delegate_->startDelegate() )
-      {
-        // 2006-03-14 AF, wait before trying to reconnect,
-        // give OMC time to start up
-        SleeperThread::msleep( 1000 );
+      delegate_->reconnect();
+      eval();
+    }
+    catch( exception &e )
+    {
+      // unable to reconnect, ask if user want to restart omc.
+      QString msg = QString( e.what() ) + "\n\nUnable to reconnect with OMC. Do you want to restart OMC?";
+      int result = QMessageBox::critical( 0, tr("Communication Error with OMC"),
+        msg,
+        QMessageBox::Yes | QMessageBox::Default,
+        QMessageBox::No );
 
-        //delegate_->closeConnection();
-        try
+      if( result == QMessageBox::Yes )
+      {
+        delegate_->closeConnection();
+        if( delegate_->startDelegate() )
         {
-          delegate_->reconnect();
-          eval();
-        }
-        catch( exception &e )
-        {
-          e.what();
-          QMessageBox::critical( 0, tr("Communication Error"), tr("<B>Unable to communication correctlly with OMC.</B>") );
+          // 2006-03-14 AF, wait before trying to reconnect,
+          // give OMC time to start up
+          SleeperThread::msleep( 1000 );
+
+          //delegate_->closeConnection();
+          try
+          {
+            delegate_->reconnect();
+            eval();
+          }
+          catch( exception &e )
+          {
+            e.what();
+            QMessageBox::critical( 0, tr("Communication Error"), tr("<B>Unable to communication correctly with OMC.</B>") );
+          }
         }
       }
     }
   }
-}
 
-/*!
-* \author Anders Fernström
-* \date 2005-12-15
-*
-*\brief Get/Insert the command that match the last word in the
-* input editor.
-*/
-void GraphCell::command()
-{
-  CommandCompletion *commandcompletion = CommandCompletion::instance( "commands.xml" );
-  QTextCursor cursor = input_->textCursor();
-
-  if( commandcompletion->insertCommand( cursor ))
-    input_->setTextCursor( cursor );
-}
-
-/*!
-* \author Anders Fernström
-* \date 2005-12-15
-*
-*\brief Get/Insert the next command that match the last word in
-* the input editor.
-*/
-void GraphCell::nextCommand()
-{
-  qDebug("Next Command");
-  CommandCompletion *commandcompletion = CommandCompletion::instance( "commands.xml" );
-  QTextCursor cursor = input_->textCursor();
-
-  if( commandcompletion->nextCommand( cursor ))
-    input_->setTextCursor( cursor );
-}
-
-/*!
-* \author Anders Fernström
-* \date 2005-12-15
-*
-*\brief Select the next field in the command, if any exists
-*/
-void GraphCell::nextField()
-{
-  qDebug("Next Field");
-  CommandCompletion *commandcompletion = CommandCompletion::instance( "commands.xml" );
-  QTextCursor cursor = input_->textCursor();
-
-  if( commandcompletion->nextField( cursor ))
-    input_->setTextCursor( cursor );
-}
-
-/*!
-* \author Anders Fernström
-* \date 2005-12-29
-* \date 2006-01-16 (update)
-*
-* \breif adds the input text editor to the highlighter thread
-* when text have changed.
-*
-* 2006-01-16 AF, don't add text editor if MyTextEdit2 says NO
-*/
-void GraphCell::addToHighlighter()
-{
-  //		QMessageBox::information(0, "uu3", "addToHighlighter");
-  emit textChanged(true);
-  if( input_->toPlainText().isEmpty() )
-    return;
-
-  // 2006-01-16 AF, Don't add the text editor if MyTextEdit2
-  // don't allow it. MyTextEdit2 says no if the user removes
-  // text (backspace or delete).
-  if( dynamic_cast<MyTextEdit2 *>(input_)->isStopingHighlighter() )
-    return;
-
-  //		QMessageBox::information(0,"uu3", "add2");
-
-  HighlighterThread *thread = HighlighterThread::instance();
-  thread->addEditor( input_ );
-}
-
-/*!
-* \author Anders Fernström
-* \date 2006-01-17
-*
-* \breif set the correct style if the charFormat is changed and the
-* cell is empty. This is done because otherwise the style is lost if
-* all text is removed inside a cell.
-*/
-void GraphCell::charFormatChanged(const QTextCharFormat &)
-{
-  //if( input_->toPlainText().isEmpty() )
-  //{
-  input_->blockSignals( true );
-  input_->setAlignment( (Qt::AlignmentFlag)style_.alignment() );
-  input_->mergeCurrentCharFormat( (*style_.textCharFormat()) );
-  input_->document()->rootFrame()->setFrameFormat( (*style_.textFrameFormat()) );
-  input_->blockSignals( false );
-  contentChanged();
-  //}
-}
-
-
-
-
-// ***************************************************************
-
-
-/*! \brief Sets the evaulator delegate.
-*/
-void GraphCell::setDelegate(InputCellDelegate *d)
-{
-  delegate_ = d;
-}
-
-InputCellDelegate *GraphCell::delegate()
-{
-  if(!hasDelegate())
-    throw runtime_error("No delegate.");
-
-  return delegate_;
-}
-
-
-
-bool GraphCell::hasDelegate()
-{
-  return delegate_ != 0;
-}
-
-
-
-
-
-
-
-
-
-
-/*! \brief Do not use this member.
-*
-* This is an ugly part of the cell structure.
-*/
-void GraphCell::addCellWidgets()
-{
-  layout_->addWidget(input_,0,0);
-
-  if(evaluated_)
-    layout_->addWidget(output_,1,0);
-}
-
-void GraphCell::removeCellWidgets()
-{
-  /*
-  // PORT >> layout_->remove(input_);
-  if(evaluated_)
-  layout_->remove(output_);
+  /*!
+  * \author Anders Fernström
+  * \date 2005-12-15
+  *
+  *\brief Get/Insert the command that match the last word in the
+  * input editor.
   */
-
-  layout_->removeWidget(input_);
-  if(evaluated_)
-    layout_->removeWidget(output_);
-}
-
-/*! \brief resets the input cell. Removes all output data and
-*  restores the initial state.
-*/
-void GraphCell::clear()
-{
-  if(evaluated_)
+  void GraphCell::command()
   {
-    output_->clear();
-    evaluated_ = false;
-    // PORT >> layout_->remove(output_);
-    layout_->removeWidget(output_);
+    CommandCompletion *commandcompletion = CommandCompletion::instance( "commands.xml" );
+    QTextCursor cursor = input_->textCursor();
+
+    if( commandcompletion->insertCommand( cursor ))
+      input_->setTextCursor( cursor );
   }
 
-  //input_->setReadOnly(false);
-  input_->setReadOnly(true);
-  input_->clear();
-  treeView()->setClosed(false); //Notis this
-  setClosed(true);
-}
-
-/*!
-* Resize textcell when the mainwindow is resized. This because the
-* cellcontent should always be visible.
-*
-* Added by AF, copied from textcell.cpp
-*/
-void GraphCell::resizeEvent(QResizeEvent *event)
-{
-  contentChanged();
-  Cell::resizeEvent(event);
-}
-
-
-
-
-
-
-
-void GraphCell::mouseDoubleClickEvent(QMouseEvent *)
-{
-  // PORT >>if(treeView()->hasMouse())
-  if(treeView()->testAttribute(Qt::WA_UnderMouse))
+  /*!
+  * \author Anders Fernström
+  * \date 2005-12-15
+  *
+  *\brief Get/Insert the next command that match the last word in
+  * the input editor.
+  */
+  void GraphCell::nextCommand()
   {
-    setClosed(!closed_);
+    qDebug("Next Command");
+    CommandCompletion *commandcompletion = CommandCompletion::instance( "commands.xml" );
+    QTextCursor cursor = input_->textCursor();
+
+    if( commandcompletion->nextCommand( cursor ))
+      input_->setTextCursor( cursor );
   }
-}
 
-void GraphCell::accept(Visitor &v)
-{
-  v.visitGraphCellNodeBefore(this);
+  /*!
+  * \author Anders Fernström
+  * \date 2005-12-15
+  *
+  *\brief Select the next field in the command, if any exists
+  */
+  void GraphCell::nextField()
+  {
+    qDebug("Next Field");
+    CommandCompletion *commandcompletion = CommandCompletion::instance( "commands.xml" );
+    QTextCursor cursor = input_->textCursor();
 
-  if(hasChilds())
-    child()->accept(v);
+    if( commandcompletion->nextField( cursor ))
+      input_->setTextCursor( cursor );
+  }
 
-  v.visitGraphCellNodeAfter(this);
+  /*!
+  * \author Anders Fernström
+  * \date 2005-12-29
+  * \date 2006-01-16 (update)
+  *
+  * \breif adds the input text editor to the highlighter thread
+  * when text have changed.
+  *
+  * 2006-01-16 AF, don't add text editor if MyTextEdit2 says NO
+  */
+  void GraphCell::addToHighlighter()
+  {
+    //		QMessageBox::information(0, "uu3", "addToHighlighter");
+    emit textChanged(true);
+    if( input_->toPlainText().isEmpty() )
+      return;
 
-  if(hasNext())
-    next()->accept(v);
-}
+    // 2006-01-16 AF, Don't add the text editor if MyTextEdit2
+    // don't allow it. MyTextEdit2 says no if the user removes
+    // text (backspace or delete).
+    if( dynamic_cast<MyTextEdit2 *>(input_)->isStopingHighlighter() )
+      return;
+
+    //		QMessageBox::information(0,"uu3", "add2");
+
+    HighlighterThread *thread = HighlighterThread::instance();
+    thread->addEditor( input_ );
+  }
+
+  /*!
+  * \author Anders Fernström
+  * \date 2006-01-17
+  *
+  * \breif set the correct style if the charFormat is changed and the
+  * cell is empty. This is done because otherwise the style is lost if
+  * all text is removed inside a cell.
+  */
+  void GraphCell::charFormatChanged(const QTextCharFormat &)
+  {
+    //if( input_->toPlainText().isEmpty() )
+    //{
+    input_->blockSignals( true );
+    input_->setAlignment( (Qt::AlignmentFlag)style_.alignment() );
+    input_->mergeCurrentCharFormat( (*style_.textCharFormat()) );
+    input_->document()->rootFrame()->setFrameFormat( (*style_.textFrameFormat()) );
+    input_->blockSignals( false );
+    contentChanged();
+    //}
+  }
+
+
+
+
+  // ***************************************************************
+
+
+  /*! \brief Sets the evaulator delegate.
+  */
+  void GraphCell::setDelegate(InputCellDelegate *d)
+  {
+    delegate_ = d;
+  }
+
+  InputCellDelegate *GraphCell::getDelegate()
+  {
+    if(!hasDelegate())
+      throw runtime_error("No delegate.");
+
+    return delegate_;
+  }
+
+
+
+  bool GraphCell::hasDelegate()
+  {
+    return delegate_ != 0;
+  }
+
+
+
+
+
+
+
+
+
+
+  /*! \brief Do not use this member.
+  *
+  * This is an ugly part of the cell structure.
+  */
+  void GraphCell::addCellWidgets()
+  {
+    layout_->addWidget(input_,0,0);
+
+    if(evaluated_)
+      layout_->addWidget(output_,1,0);
+  }
+
+  void GraphCell::removeCellWidgets()
+  {
+    /*
+    // PORT >> layout_->remove(input_);
+    if(evaluated_)
+    layout_->remove(output_);
+    */
+
+    layout_->removeWidget(input_);
+    if(evaluated_)
+      layout_->removeWidget(output_);
+  }
+
+  /*! \brief resets the input cell. Removes all output data and
+  *  restores the initial state.
+  */
+  void GraphCell::clear()
+  {
+    if(evaluated_)
+    {
+      output_->clear();
+      evaluated_ = false;
+      // PORT >> layout_->remove(output_);
+      layout_->removeWidget(output_);
+    }
+
+    //input_->setReadOnly(false);
+    input_->setReadOnly(true);
+    input_->clear();
+    treeView()->setClosed(false); //Notis this
+    setClosed(true);
+  }
+
+  /*!
+  * Resize textcell when the mainwindow is resized. This because the
+  * cellcontent should always be visible.
+  *
+  * Added by AF, copied from textcell.cpp
+  */
+  void GraphCell::resizeEvent(QResizeEvent *event)
+  {
+    contentChanged();
+    Cell::resizeEvent(event);
+  }
+
+
+
+
+
+
+
+  void GraphCell::mouseDoubleClickEvent(QMouseEvent *)
+  {
+    // PORT >>if(treeView()->hasMouse())
+    if(treeView()->testAttribute(Qt::WA_UnderMouse))
+    {
+      setClosed(!closed_);
+    }
+  }
+
+  void GraphCell::accept(Visitor &v)
+  {
+    v.visitGraphCellNodeBefore(this);
+
+    if(hasChilds())
+      child()->accept(v);
+
+    v.visitGraphCellNodeAfter(this);
+
+    if(hasNext())
+      next()->accept(v);
+  }
 
 }

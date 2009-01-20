@@ -729,10 +729,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\menuItem.h"
-				>
-			</File>
-			<File
 				RelativePath=".\nbparser.h"
 				>
 			</File>
@@ -882,10 +878,6 @@
 			</File>
 			<File
 				RelativePath=".\replaceallvisitor.h"
-				>
-			</File>
-			<File
-				RelativePath=".\resource.h"
 				>
 			</File>
 			<File
