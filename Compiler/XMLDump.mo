@@ -524,23 +524,24 @@ the output is like:
 "
   input list<DAELow.MultiDimEquation> inMultiDimEquationLst;
   input String inContent;
+  input Exp.Exp addMathMLCode;
 algorithm
   _:=
-  matchcontinue (inMultiDimEquationLst,inContent)
-    case ({},_) then ();
-    case (inMultiDimEquationLst,inContent)
+  matchcontinue (inMultiDimEquationLst,inContent,addMathMLCode)
+    case ({},_,_) then ();
+    case (inMultiDimEquationLst,inContent,_)
       local Integer len;
       equation
         len = listLength(inMultiDimEquationLst);
         len >= 1 = false;
       then();
-    case (inMultiDimEquationLst,inContent)
+    case (inMultiDimEquationLst,inContent,addMathMLCode)
       local Integer len;
       equation
         len = listLength(inMultiDimEquationLst);
         len >= 1 = true;
         dumpStrOpenTagAttr(inContent, DIMENSION, intString(len));
-        dumpArrayEqns2(inMultiDimEquationLst);
+        dumpArrayEqns2(inMultiDimEquationLst,addMathMLCode);
         dumpStrCloseTag(inContent);
       then ();
   end matchcontinue;
@@ -569,15 +570,16 @@ The output, if the list is not empty is something like this:
 </ARRAY_EQUATION>
 "
   input list<DAELow.MultiDimEquation> inMultiDimEquationLst;
+  input Exp.Exp addMathMLCode;
 algorithm
   _:=
-  matchcontinue (inMultiDimEquationLst)
+  matchcontinue (inMultiDimEquationLst,addMathMLCode)
     local
       String s1,s2,s;
       Exp.Exp e1,e2;
       list<DAELow.MultiDimEquation> es;
-    case ({}) then ();
-    case ((DAELow.MULTIDIM_EQUATION(left = e1,right = e2) :: es))
+    case ({},_) then ();
+    case ((DAELow.MULTIDIM_EQUATION(left = e1,right = e2) :: es),Exp.BCONST(bool=true))
       equation
         s1 = Exp.printExpStr(e1);
         s2 = Exp.printExpStr(e2);
@@ -593,7 +595,16 @@ algorithm
         dumpStrCloseTag(MATH);
         dumpStrCloseTag(MathML);
         dumpStrCloseTag(ARRAY_EQUATION);
-        dumpArrayEqns2(es);
+        dumpArrayEqns2(es,Exp.BCONST(true));
+      then ();
+    case ((DAELow.MULTIDIM_EQUATION(left = e1,right = e2) :: es),Exp.BCONST(bool=false))
+      equation
+        s1 = Exp.printExpStr(e1);
+        s2 = Exp.printExpStr(e2);
+        s = Util.stringAppendList({s1," = ",s2,"\n"});
+        dumpStrOpenTagAttr(ARRAY_EQUATION, EXP_STRING, s);
+        dumpStrCloseTag(ARRAY_EQUATION);
+        dumpArrayEqns2(es,Exp.BCONST(false));
       then ();
   end matchcontinue;
 end dumpArrayEqns2;
@@ -608,36 +619,38 @@ printed.
 "
   input Option<Exp.Exp> inOptExpExp;
   input Option<Values.Value> inOptValuesValue;
+  input Exp.Exp addMathMLCode;
 
   algorithm
     _:=
-  matchcontinue (inOptExpExp,inOptValuesValue)
+  matchcontinue (inOptExpExp,inOptValuesValue,addMathMLCode)
       local
         Exp.Exp e;
         Values.Value b;
-  case(NONE,NONE)
+        Exp.Exp addMMLCode;
+  case(NONE,NONE,_)
     equation
     then();
-  case(SOME(e),NONE)
-    equation
-      dumpStrOpenTag(BIND_VALUE_EXPRESSION);
-      dumpOptExp(inOptExpExp,BIND_EXPRESSION);
-      dumpStrCloseTag(BIND_VALUE_EXPRESSION);
-    then();
-  case(NONE,SOME(b))
+  case(SOME(e),NONE,addMMLCode)
     equation
       dumpStrOpenTag(BIND_VALUE_EXPRESSION);
-      dumpOptValue(inOptValuesValue,BIND_VALUE);
+      dumpOptExp(inOptExpExp,BIND_EXPRESSION,addMMLCode);
       dumpStrCloseTag(BIND_VALUE_EXPRESSION);
     then();
-  case(SOME(e),SOME(b))
+  case(NONE,SOME(b),addMMLCode)
     equation
       dumpStrOpenTag(BIND_VALUE_EXPRESSION);
-      dumpOptExp(inOptExpExp,BIND_EXPRESSION);
-      dumpOptValue(inOptValuesValue,BIND_VALUE);
+      dumpOptValue(inOptValuesValue,BIND_VALUE,addMMLCode);
       dumpStrCloseTag(BIND_VALUE_EXPRESSION);
     then();
-  case(_,_)
+  case(SOME(e),SOME(b),addMMLCode)
+    equation
+      dumpStrOpenTag(BIND_VALUE_EXPRESSION);
+      dumpOptExp(inOptExpExp,BIND_EXPRESSION,addMMLCode);
+      dumpOptValue(inOptValuesValue,BIND_VALUE,addMMLCode);
+      dumpStrCloseTag(BIND_VALUE_EXPRESSION);
+    then();
+  case(_,_,_)
     then ();
   end matchcontinue;
 end dumpBindValueExpression;
@@ -841,9 +854,10 @@ particular all the elements are optional, it means that if no element is present
 the relative tag is not printed.
 "
   input DAELow.DAELow inDAELow;
+  input Exp.Exp addMathMLCode;
 algorithm
   _:=
-  matchcontinue (inDAELow)
+  matchcontinue (inDAELow,addMathMLCode)
     local
       list<DAELow.Var> vars,knvars,extvars;
 
@@ -886,12 +900,14 @@ algorithm
       DAELow.MultiDimEquation[:] ae;
       Algorithm.Algorithm[:] algs;
       list<DAELow.ZeroCrossing> zc;
+      
+      Exp.Exp addMML;
 
 
     case (DAELow.DAELOW(vars_orderedVars as DAELow.VARIABLES(crefIdxLstArr=crefIdxLstArr_orderedVars,strIdxLstArr=strIdxLstArr_orderedVars,varArr=varArr_orderedVars,bucketSize=bucketSize_orderedVars,numberOfVars=numberOfVars_orderedVars),
                  vars_knownVars as DAELow.VARIABLES(crefIdxLstArr=crefIdxLstArr_knownVars,strIdxLstArr=strIdxLstArr_knownVars,varArr=varArr_knownVars,bucketSize=bucketSize_knownVars,numberOfVars=numberOfVars_knownVars),
                  vars_externalObject as DAELow.VARIABLES(crefIdxLstArr=crefIdxLstArr_externalObject,strIdxLstArr=strIdxLstArr_externalObject,varArr=varArr_externalObject,bucketSize=bucketSize_externalObject,numberOfVars=numberOfVars_externalObject),
-                 eqns,reqns,ieqns,ae,algs,DAELow.EVENT_INFO(zeroCrossingLst = zc),extObjCls))
+                 eqns,reqns,ieqns,ae,algs,DAELow.EVENT_INFO(zeroCrossingLst = zc),extObjCls),addMML)
       equation
 
         vars    = DAELow.varList(vars_orderedVars);
@@ -904,22 +920,22 @@ algorithm
         dumpStrOpenTagAttr(VARIABLES, DIMENSION, intString(listLength(vars)+listLength(knvars)+listLength(extvars)));
 
         //Bucket size info is no longer present.
-        dumpVars(vars,crefIdxLstArr_orderedVars,strIdxLstArr_orderedVars,stringAppend(ORDERED,VARIABLES_));
-        dumpVars(knvars,crefIdxLstArr_knownVars,strIdxLstArr_knownVars,stringAppend(KNOWN,VARIABLES_));
-        dumpVars(extvars,crefIdxLstArr_externalObject,strIdxLstArr_externalObject,stringAppend(EXTERNAL,VARIABLES_));
+        dumpVars(vars,crefIdxLstArr_orderedVars,strIdxLstArr_orderedVars,stringAppend(ORDERED,VARIABLES_),addMML);
+        dumpVars(knvars,crefIdxLstArr_knownVars,strIdxLstArr_knownVars,stringAppend(KNOWN,VARIABLES_),addMML);
+        dumpVars(extvars,crefIdxLstArr_externalObject,strIdxLstArr_externalObject,stringAppend(EXTERNAL,VARIABLES_),addMML);
         dumpExtObjCls(extObjCls,stringAppend(EXTERNAL,CLASSES_));
 
         dumpStrCloseTag(VARIABLES);
 
         eqnsl  = DAELow.equationList(eqns);
-        dumpEqns(eqnsl,EQUATIONS);
+        dumpEqns(eqnsl,EQUATIONS,addMML);
         reqnsl = DAELow.equationList(reqns);
-        dumpEqns(reqnsl,stringAppend(SIMPLE,EQUATIONS_));
+        dumpEqns(reqnsl,stringAppend(SIMPLE,EQUATIONS_),addMML);
         ieqnsl = DAELow.equationList(ieqns);
-        dumpEqns(ieqnsl,stringAppend(INITIAL,EQUATIONS_));
-        dumpZeroCrossing(zc,stringAppend(ZERO_CROSSING,LIST_));
+        dumpEqns(ieqnsl,stringAppend(INITIAL,EQUATIONS_),addMML);
+        dumpZeroCrossing(zc,stringAppend(ZERO_CROSSING,LIST_),addMML);
         ae_lst = arrayList(ae);
-        dumpArrayEqns(ae_lst,ARRAY_OF_EQUATIONS);
+        dumpArrayEqns(ae_lst,ARRAY_OF_EQUATIONS,addMML);
         dumpAlgorithms(arrayList(algs));
 
 				dumpStrCloseTag(DAE_CLOSE);
@@ -952,70 +968,72 @@ sudh as:
 "
   input Option<DAE.VariableAttributes> dae_var_attr;
   input String Content;
+  input Exp.Exp addMathMLCode;
  algorithm
-   _:= matchcontinue(dae_var_attr,Content)
+   _:= matchcontinue(dae_var_attr,Content,addMathMLCode)
      local
        tuple<Option<Exp.Exp>, Option<Exp.Exp>> min_max;
        Option<Exp.Exp> quant,unit,displayUnit;
        Option<Exp.Exp> min,max,Initial,nominal;
        Option<Exp.Exp> fixed;
        Option<DAE.StateSelect> stateSel;
-   case (SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),NONE(),NONE(),NONE())),_) then ();
-   case (SOME(DAE.VAR_ATTR_INT(NONE(),(NONE(),NONE()),NONE(),NONE())),_) then ();
-   case (SOME(DAE.VAR_ATTR_BOOL(NONE(),NONE(),NONE())),_) then ();
-   case (SOME(DAE.VAR_ATTR_STRING(NONE(),NONE())),_) then ();
-   case (SOME(DAE.VAR_ATTR_ENUMERATION(NONE(),(NONE(),NONE()),NONE(),NONE())),_) then ();
-   case (SOME(DAE.VAR_ATTR_REAL(quant,unit,displayUnit,min_max,Initial,fixed,nominal,stateSel)),Content)
+       Exp.Exp addMMLCode;
+   case (SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),NONE(),NONE(),NONE())),_,_) then ();
+   case (SOME(DAE.VAR_ATTR_INT(NONE(),(NONE(),NONE()),NONE(),NONE())),_,_) then ();
+   case (SOME(DAE.VAR_ATTR_BOOL(NONE(),NONE(),NONE())),_,_) then ();
+   case (SOME(DAE.VAR_ATTR_STRING(NONE(),NONE())),_,_) then ();
+   case (SOME(DAE.VAR_ATTR_ENUMERATION(NONE(),(NONE(),NONE()),NONE(),NONE())),_,_) then ();
+   case (SOME(DAE.VAR_ATTR_REAL(quant,unit,displayUnit,min_max,Initial,fixed,nominal,stateSel)),Content,addMMLCode)
       equation
         dumpStrOpenTag(Content);
-        dumpOptExp(quant,VAR_ATTR_QUANTITY);
-        dumpOptExp(unit,VAR_ATTR_UNIT);
-        dumpOptExp(displayUnit,VAR_ATTR_DISPLAY_UNIT);
+        dumpOptExp(quant,VAR_ATTR_QUANTITY,addMMLCode);
+        dumpOptExp(unit,VAR_ATTR_UNIT,addMMLCode);
+        dumpOptExp(displayUnit,VAR_ATTR_DISPLAY_UNIT,addMMLCode);
         dumpOptionDAEStateSelect(stateSel,VAR_ATTR_STATESELECT);
-        dumpOptExp(Util.tuple21(min_max),VAR_ATTR_MINVALUE);
-        dumpOptExp(Util.tuple22(min_max),VAR_ATTR_MAXVALUE);
-        dumpOptExp(nominal,VAR_ATTR_NOMINAL);
-        dumpOptExp(Initial,VAR_ATTR_INITIALVALUE);
-        dumpOptExp(fixed,VAR_ATTR_FIXED);
+        dumpOptExp(Util.tuple21(min_max),VAR_ATTR_MINVALUE,addMMLCode);
+        dumpOptExp(Util.tuple22(min_max),VAR_ATTR_MAXVALUE,addMMLCode);
+        dumpOptExp(nominal,VAR_ATTR_NOMINAL,addMMLCode);
+        dumpOptExp(Initial,VAR_ATTR_INITIALVALUE,addMMLCode);
+        dumpOptExp(fixed,VAR_ATTR_FIXED,addMMLCode);
         dumpStrCloseTag(Content);
       then();
-    case (SOME(DAE.VAR_ATTR_INT(quant,min_max,Initial,fixed)),Content)
+    case (SOME(DAE.VAR_ATTR_INT(quant,min_max,Initial,fixed)),Content,addMMLCode)
       equation
         dumpStrOpenTag(Content);
-        dumpOptExp(quant,VAR_ATTR_QUANTITY);
-        dumpOptExp(Util.tuple21(min_max),VAR_ATTR_MINVALUE);
-        dumpOptExp(Util.tuple22(min_max),VAR_ATTR_MAXVALUE);
-        dumpOptExp(Initial,VAR_ATTR_INITIALVALUE);
-        dumpOptExp(fixed,VAR_ATTR_FIXED);
+        dumpOptExp(quant,VAR_ATTR_QUANTITY,addMMLCode);
+        dumpOptExp(Util.tuple21(min_max),VAR_ATTR_MINVALUE,addMMLCode);
+        dumpOptExp(Util.tuple22(min_max),VAR_ATTR_MAXVALUE,addMMLCode);
+        dumpOptExp(Initial,VAR_ATTR_INITIALVALUE,addMMLCode);
+        dumpOptExp(fixed,VAR_ATTR_FIXED,addMMLCode);
         dumpStrCloseTag(Content);
       then();
-    case (SOME(DAE.VAR_ATTR_BOOL(quant,Initial,fixed)),Content)
+    case (SOME(DAE.VAR_ATTR_BOOL(quant,Initial,fixed)),Content,addMMLCode)
       equation
         dumpStrOpenTag(Content);
-        dumpOptExp(quant,VAR_ATTR_QUANTITY);
-        dumpOptExp(Initial,VAR_ATTR_INITIALVALUE);
-        dumpOptExp(fixed,VAR_ATTR_FIXED);
+        dumpOptExp(quant,VAR_ATTR_QUANTITY,addMMLCode);
+        dumpOptExp(Initial,VAR_ATTR_INITIALVALUE,addMMLCode);
+        dumpOptExp(fixed,VAR_ATTR_FIXED,addMMLCode);
         dumpStrCloseTag(Content);
       then();
-    case (SOME(DAE.VAR_ATTR_STRING(quant,Initial)),Content)
+    case (SOME(DAE.VAR_ATTR_STRING(quant,Initial)),Content,addMMLCode)
       equation
         dumpStrOpenTag(Content);
-        dumpOptExp(quant,VAR_ATTR_QUANTITY);
-        dumpOptExp(Initial,VAR_ATTR_INITIALVALUE);
+        dumpOptExp(quant,VAR_ATTR_QUANTITY,addMMLCode);
+        dumpOptExp(Initial,VAR_ATTR_INITIALVALUE,addMMLCode);
         dumpStrCloseTag(Content);
       then();
-    case (SOME(DAE.VAR_ATTR_ENUMERATION(quant,min_max,Initial,fixed)),Content)
+    case (SOME(DAE.VAR_ATTR_ENUMERATION(quant,min_max,Initial,fixed)),Content,addMMLCode)
       equation
         dumpStrOpenTag(Content);
-        dumpOptExp(quant,VAR_ATTR_QUANTITY);
-        dumpOptExp(Util.tuple21(min_max),VAR_ATTR_MINVALUE);
-        dumpOptExp(Util.tuple22(min_max),VAR_ATTR_MAXVALUE);
-        dumpOptExp(Initial,VAR_ATTR_INITIALVALUE);
-        dumpOptExp(fixed,VAR_ATTR_FIXED);
+        dumpOptExp(quant,VAR_ATTR_QUANTITY,addMMLCode);
+        dumpOptExp(Util.tuple21(min_max),VAR_ATTR_MINVALUE,addMMLCode);
+        dumpOptExp(Util.tuple22(min_max),VAR_ATTR_MAXVALUE,addMMLCode);
+        dumpOptExp(Initial,VAR_ATTR_INITIALVALUE,addMMLCode);
+        dumpOptExp(fixed,VAR_ATTR_FIXED,addMMLCode);
         dumpStrCloseTag(Content);
         then();
-    case (NONE(),_) then ();
-    case (_,_)
+    case (NONE(),_,_) then ();
+    case (_,_,_)
       equation
         dumpComment("unknown VariableAttributes");
       then ();
@@ -1052,23 +1070,25 @@ The output is:
 "
   input list<DAELow.Equation> eqns;
   input String inContent;
+  input Exp.Exp addMathMLCode;
 algorithm
   _:=
-  matchcontinue (eqns,inContent)
-    case ({},_) then ();
-    case (eqns,inContent)
+  matchcontinue (eqns,inContent,addMathMLCode)
+      local Exp.Exp addMMLCode;
+    case ({},_,_) then ();
+    case (eqns,inContent,_)
       local Integer len;
       equation
         len = listLength(eqns);
         len >= 1 = false;
       then();
-    case (eqns,inContent)
+    case (eqns,inContent,addMMLCode)
       local Integer len;
       equation
         len = listLength(eqns);
         len >= 1 = true;
         dumpStrOpenTagAttr(inContent, DIMENSION, intString(len));
-        dumpEqns2(eqns, 1);
+        dumpEqns2(eqns, 1,addMMLCode);
         dumpStrCloseTag(inContent);
       then ();
   end matchcontinue;
@@ -1080,19 +1100,21 @@ protected function dumpEqns2 "
 "
   input list<DAELow.Equation> inEquationLst;
   input Integer inInteger;
+  input Exp.Exp addMathMLCode;
 algorithm
   _:=
-  matchcontinue (inEquationLst,inInteger)
+  matchcontinue (inEquationLst,inInteger,addMathMLCode)
     local
       String es,is;
       DAELow.Value index;
       DAELow.Equation eqn;
       list<DAELow.Equation> eqns;
-    case ({},_) then ();
-    case ((eqn :: eqns),index)
+      Exp.Exp addMMLCode;
+    case ({},_,_) then ();
+    case ((eqn :: eqns),index,addMMLCode)
       equation
-        dumpEquation(eqn, intString(index));
-        dumpEqns2(eqns, index+1);
+        dumpEquation(eqn, intString(index),addMMLCode);
+        dumpEqns2(eqns, index+1,addMMLCode);
       then ();
   end matchcontinue;
 end dumpEqns2;
@@ -1130,17 +1152,19 @@ For example, if the element is an Array of Equations:
 "
   input DAELow.Equation inEquation;
   input String inIndexNumber;
+  input Exp.Exp addMathMLCode;
 algorithm
   _:=
-  matchcontinue (inEquation,inIndexNumber)
+  matchcontinue (inEquation,inIndexNumber,addMathMLCode)
     local
       String s1,s2,res,indx_str,is,var_str,indexS;
       Exp.Exp e1,e2,e;
       DAELow.Value indx,i;
       list<Exp.Exp> expl;
       Exp.ComponentRef cr;
+      Exp.Exp addMMLCode;
 
-    case (DAELow.EQUATION(exp = e1,scalar = e2),indexS)
+    case (DAELow.EQUATION(exp = e1,scalar = e2),indexS,Exp.BCONST(bool=true))
       equation
         s1 = Exp.printExpStr(e1);
         s2 = Exp.printExpStr(e2);
@@ -1158,10 +1182,19 @@ algorithm
         dumpStrCloseTag(MathML);
         dumpStrCloseTag(EQUATION);
       then ();
-    case (DAELow.ARRAY_EQUATION(index = indx,crefOrDerCref = expl),indexS)
+    case (DAELow.EQUATION(exp = e1,scalar = e2),indexS,Exp.BCONST(bool=false))
+      equation
+        s1 = Exp.printExpStr(e1);
+        s2 = Exp.printExpStr(e2);
+        res = Util.stringAppendList({s1," = ",s2});
+        dumpStrOpenTagAttr(EQUATION,ID,indexS);
+        Print.printBuf(res);
+        dumpStrCloseTag(EQUATION);
+      then ();
+    case (DAELow.ARRAY_EQUATION(index = indx,crefOrDerCref = expl),indexS,addMMLCode)
       equation
         dumpStrOpenTagAttr(ARRAY_OF_EQUATIONS,ID,indexS);
-        dumpLstExp(expl,ARRAY_EQUATION);
+        dumpLstExp(expl,ARRAY_EQUATION,addMMLCode);
         dumpStrOpenTagAttr(ADDITIONAL_INFO, stringAppend(ARRAY_OF_EQUATIONS,ID_), intString(indx));
         dumpStrOpenTag(stringAppend(INVOLVED,VARIABLES_));
         dumpStrOpenTag(VARIABLE);
@@ -1171,7 +1204,7 @@ algorithm
         dumpStrCloseTag(ADDITIONAL_INFO);
         dumpStrCloseTag(ARRAY_OF_EQUATIONS);
       then ();
-    case (DAELow.SOLVED_EQUATION(componentRef = cr,exp = e2),indexS)
+    case (DAELow.SOLVED_EQUATION(componentRef = cr,exp = e2),indexS,Exp.BCONST(bool=true))
       equation
         s1 = Exp.printComponentRefStr(cr);
         s2 = Exp.printExpStr(e2);
@@ -1189,7 +1222,16 @@ algorithm
         dumpStrCloseTag(MathML);
         dumpStrCloseTag(stringAppend(SOLVED,EQUATION_));
       then ();
-    case (DAELow.WHEN_EQUATION(whenEquation = DAELow.WHEN_EQ(index = i,left = cr,right = e2)),indexS)
+    case (DAELow.SOLVED_EQUATION(componentRef = cr,exp = e2),indexS,Exp.BCONST(bool=false))
+      equation
+        s1 = Exp.printComponentRefStr(cr);
+        s2 = Exp.printExpStr(e2);
+        res = Util.stringAppendList({s1," := ",s2});
+        dumpStrOpenTagAttr(stringAppend(SOLVED,EQUATION_),ID,indexS);
+        Print.printBuf(res);
+        dumpStrCloseTag(stringAppend(SOLVED,EQUATION_));
+      then ();
+    case (DAELow.WHEN_EQUATION(whenEquation = DAELow.WHEN_EQ(index = i,left = cr,right = e2)),indexS,Exp.BCONST(bool=true))
       equation
         s1 = Exp.printComponentRefStr(cr);
         s2 = Exp.printExpStr(e2);
@@ -1209,7 +1251,18 @@ algorithm
         dumpStrTagContent(stringAppend(stringAppend(WHEN,EQUATION_),ID_),is);
         dumpStrCloseTag(stringAppend(WHEN,EQUATION_));
       then ();
-    case (DAELow.RESIDUAL_EQUATION(exp = e),indexS)
+    case (DAELow.WHEN_EQUATION(whenEquation = DAELow.WHEN_EQ(index = i,left = cr,right = e2)),indexS,Exp.BCONST(bool=false))
+      equation
+        s1 = Exp.printComponentRefStr(cr);
+        s2 = Exp.printExpStr(e2);
+        is = intString(i);
+        res = Util.stringAppendList({s1," := ",s2});
+        dumpStrOpenTagAttr(stringAppend(WHEN,EQUATION_),ID,indexS);
+        Print.printBuf(res);
+        dumpStrTagContent(stringAppend(stringAppend(WHEN,EQUATION_),ID_),is);
+        dumpStrCloseTag(stringAppend(WHEN,EQUATION_));
+      then ();
+    case (DAELow.RESIDUAL_EQUATION(exp = e),indexS,Exp.BCONST(bool=true))
       equation
         s1 = Exp.printExpStr(e);
         res = Util.stringAppendList({s1,"= 0"});
@@ -1226,7 +1279,15 @@ algorithm
         dumpStrCloseTag(MathML);
         dumpStrCloseTag(stringAppend(RESIDUAL,EQUATION_));
       then ();
-    case (DAELow.ALGORITHM(index = i),indexS)
+    case (DAELow.RESIDUAL_EQUATION(exp = e),indexS,Exp.BCONST(bool=false))
+      equation
+        s1 = Exp.printExpStr(e);
+        res = Util.stringAppendList({s1,"= 0"});
+        dumpStrOpenTagAttr(stringAppend(RESIDUAL,EQUATION_),ID,indexS);
+        Print.printBuf(res);
+        dumpStrCloseTag(stringAppend(RESIDUAL,EQUATION_));
+      then ();
+    case (DAELow.ALGORITHM(index = i),indexS,_)
       equation
         is = intString(i);
         dumpStrOpenTagAttr(ALGORITHM,ID,indexS);
@@ -1250,12 +1311,25 @@ public function dumpExp
   </MathML>"
   input Exp.Exp e;
   //output String s;
+  input Exp.Exp addMathMLCode;
 algorithm
-  dumpStrOpenTag(MathML);
-  dumpStrOpenTagAttr(MATH, MathMLXmlns, MathMLWeb);
-  dumpExp2(e);
-  dumpStrCloseTag(MATH);
-  dumpStrCloseTag(MathML);
+  _:=
+  matchcontinue (e,addMathMLCode)
+    local
+      Exp.Exp inExp;
+      Exp.Exp addMMLCode;
+    case(inExp,Exp.BCONST(bool=true))
+      equation
+        dumpStrOpenTag(MathML);
+        dumpStrOpenTagAttr(MATH, MathMLXmlns, MathMLWeb);
+        dumpExp2(inExp);
+        dumpStrCloseTag(MATH);
+        dumpStrCloseTag(MathML);
+      then();
+    case(_,Exp.BCONST(bool=false))
+      then();
+    case(_,_) then();   
+  end matchcontinue; 
 end dumpExp;
 
 
@@ -1457,7 +1531,7 @@ algorithm
         dumpStrVoidTag(MathMLTranspose);
         dumpStrOpenTag(MathMLApply);
         dumpStrOpenTag(MathMLVector);
-        dumpList(es,dumpExp);
+        dumpList(es,dumpExp3);
         dumpStrCloseTag(MathMLVector);
         dumpStrCloseTag(MathMLApply);
         dumpStrCloseTag(MathMLApply);
@@ -1601,6 +1675,21 @@ algorithm
 end dumpExp2;
 
 
+public function dumpExp3
+"function: dumpExp3
+  This function is an auxiliary function for dumpExp2 function. 
+"
+  input Exp.Exp e;
+  //output String s;
+algorithm
+  dumpStrOpenTag(MathML);
+  dumpStrOpenTagAttr(MATH, MathMLXmlns, MathMLWeb);
+  dumpExp2(e);
+  dumpStrCloseTag(MATH);
+  dumpStrCloseTag(MathML);
+end dumpExp3;
+
+
 public function dumpExtObjCls "
 
 Dump classes of external objects within the 'classes' attribute
@@ -1686,25 +1775,6 @@ algorithm
     case DAE.NON_CONNECTOR() then VAR_FLOW_NONCONNECTOR;
   end matchcontinue;
 end dumpFlowStr;
-
-public function dumpStreamStr "
-This function returns a string with
-the content of the stream type of a variable.
-It could be:
- - Stream
- - NonStream
- - NonStreamConnector
-"
-  input DAE.Stream inVarStream;
-  output String outString;
-algorithm
-  outString:=
-  matchcontinue (inVarStream)
-    case DAE.STREAM()               then VAR_STREAM_STREAM;
-    case DAE.NON_STREAM()           then VAR_STREAM_NONSTREAM;
-    case DAE.NON_STREAM_CONNECTOR() then VAR_STREAM_NONSTREAM_CONNECTOR;
-  end matchcontinue;
-end dumpStreamStr;
 
 
 public function dumpKind "
@@ -1813,17 +1883,18 @@ the output is like:
  "
   input list<Exp.Exp> inLstExp;
   input String inContent;
+  input Exp.Exp addMathMLCode;
 algorithm
   _:=
-  matchcontinue (inLstExp,inContent)
-    case ({},_) then ();
-    case (inLstExp,inContent)
+  matchcontinue (inLstExp,inContent,addMathMLCode)
+    case ({},_,_) then ();
+    case (inLstExp,inContent,_)
       local
         Integer len;equation
         len = listLength(inLstExp);
         len >= 1 = false;
       then();
-    case (inLstExp,inContent)
+    case (inLstExp,inContent,addMathMLCode)
       local
         Integer len;
         String Lst;
@@ -1832,7 +1903,7 @@ algorithm
         len >= 1 = true;
         Lst = stringAppend(inContent,LIST_);
         dumpStrOpenTagAttr(Lst, DIMENSION, intString(len));
-        dumpLstExp2(inLstExp,inContent);
+        dumpLstExp2(inLstExp,inContent,addMathMLCode);
         dumpStrCloseTag(Lst);
       then ();
   end matchcontinue;
@@ -1862,21 +1933,22 @@ The output, if the list is not empty is something like this:
 "
   input list<Exp.Exp> inLstExp;
   input String Content;
+  input Exp.Exp addMathMLCode;
 algorithm
   _:=
-  matchcontinue (inLstExp,Content)
+  matchcontinue (inLstExp,Content,addMathMLCode)
     local
       String s1,s2,s,inContent;
       Exp.Exp e;
       list<Exp.Exp> es;
-    case ({},_) then ();
-    case ((e :: es),inContent)
+    case ({},_,_) then ();
+    case ((e :: es),inContent,addMathMLCode)
       equation
         s = Exp.printExpStr(e);
         dumpStrOpenTagAttr(inContent, EXP_STRING, s);
-        dumpExp(e);
+        dumpExp(e,addMathMLCode);
         dumpStrCloseTag(inContent);
-        dumpLstExp2(es,inContent);
+        dumpLstExp2(es,inContent,addMathMLCode);
       then ();
   end matchcontinue;
 end dumpLstExp2;
@@ -1982,16 +2054,17 @@ See dumpExp function for more details.
 "
   input Option<Exp.Exp> inExpExpOption;
   input String Content;
+  input Exp.Exp addMathMLCode;
 algorithm
   _:=
-  matchcontinue (inExpExpOption,Content)
+  matchcontinue (inExpExpOption,Content,addMathMLCode)
     local
       Exp.Exp e;
-    case (NONE(),_) then ();
-    case (SOME(e),_)
+    case (NONE(),_,_) then ();
+    case (SOME(e),_,addMathMLCode)
       equation
         dumpStrOpenTagAttr(Content,EXP_STRING,printExpStr(e));
-        dumpExp(e);
+        dumpExp(e,addMathMLCode);
         dumpStrCloseTag(Content);
       then ();
   end matchcontinue;
@@ -2039,16 +2112,18 @@ standard output like:
 "
   input Option<Values.Value> inValueValueOption;
   input String Content;
+  input Exp.Exp addMathMLCode;
 algorithm
   _ :=
-  matchcontinue (inValueValueOption,Content)
+  matchcontinue (inValueValueOption,Content,addMathMLCode)
     local
       Values.Value v;
-    case (NONE,_)  then ();
-    case (SOME(v),Content)
+      Exp.Exp addMMLCode;
+    case (NONE,_,_)  then ();
+    case (SOME(v),Content,addMMLCode)
       equation
         dumpStrOpenTagAttr(Content,EXP_STRING,Exp.printExpStr(Static.valueExp(v)));
-        dumpExp(Static.valueExp(v));
+        dumpExp(Static.valueExp(v),addMMLCode);
         dumpStrCloseTag(Content);
       then ();
   end matchcontinue;
@@ -2087,6 +2162,26 @@ algorithm
     then ();
 	end matchcontinue;
 end dumpStrCloseTag;
+
+
+public function dumpStreamStr "
+This function returns a string with
+the content of the stream type of a variable.
+It could be:
+ - Stream
+ - NonStream
+ - NonStreamConnector
+"
+  input DAE.Stream inVarStream;
+  output String outString;
+algorithm
+  outString:=
+  matchcontinue (inVarStream)
+    case DAE.STREAM()               then VAR_STREAM_STREAM;
+    case DAE.NON_STREAM()           then VAR_STREAM_NONSTREAM;
+    case DAE.NON_STREAM_CONNECTOR() then VAR_STREAM_NONSTREAM_CONNECTOR;
+  end matchcontinue;
+end dumpStreamStr;
 
 
 public function dumpStringIdxLstArr "
@@ -2498,39 +2593,40 @@ is:
   input list<DAELow.CrefIndex>[:] crefIdxLstArr;
   input list<DAELow.StringIndex>[:] strIdxLstArr;
   input String Content;
+  input Exp.Exp addMathMLCode;
 algorithm
-    _ := matchcontinue (vars,crefIdxLstArr,strIdxLstArr,Content)
-   local Integer len;
-    case ({},_,_,_)
+    _ := matchcontinue (vars,crefIdxLstArr,strIdxLstArr,Content,addMathMLCode)
+   local Integer len;Exp.Exp addMMLCode;
+    case ({},_,_,_,_)
       then();
-    case (vars,crefIdxLstArr,strIdxLstArr,Content)
+    case (vars,crefIdxLstArr,strIdxLstArr,Content,_)
       equation
         len = listLength(vars);
         len >= 1 = false;
       then ();
-    case (vars,crefIdxLstArr,strIdxLstArr,Content)
+    case (vars,crefIdxLstArr,strIdxLstArr,Content,addMMLCode)
       equation
         len = listLength(vars);
         len >= 1 = true;
         listLength(crefIdxLstArr[1]) >= 1  = true;
         dumpStrOpenTagAttr(Content,DIMENSION,intString(len));
         dumpStrOpenTag(stringAppend(VARIABLES,LIST_));
-        dumpVarsAdds2(vars,crefIdxLstArr,strIdxLstArr,1);
+        dumpVarsAdds2(vars,crefIdxLstArr,strIdxLstArr,1,addMMLCode);
         dumpStrCloseTag(stringAppend(VARIABLES,LIST_));
         dumpStrCloseTag(Content);
       then();
-    case (vars,_,_,Content)
+    case (vars,_,_,Content,addMMLCode)
       equation
         len = listLength(vars);
         len >= 1 = true;
         listLength(crefIdxLstArr[1]) >= 1  = false;
         dumpStrOpenTagAttr(Content,DIMENSION,intString(len));
         dumpStrOpenTag(stringAppend(VARIABLES,LIST_));
-        dumpVars2(vars,1);
+        dumpVars2(vars,1,addMMLCode);
         dumpStrCloseTag(stringAppend(VARIABLES,LIST_));
         dumpStrCloseTag(Content);
       then ();
-    case (vars,_,_,_)
+    case (vars,_,_,_,_)
       equation
         len = listLength(vars);
         len >= 1 = false;
@@ -2548,9 +2644,10 @@ See dumpVariable for more details on the XML output.
 "
   input list<DAELow.Var> inVarLst;
   input Integer inInteger;
+  input Exp.Exp addMathMLCode;
 algorithm
   _:=
-  matchcontinue (inVarLst,inInteger)
+  matchcontinue (inVarLst,inInteger,addMathMLCode)
     local
       String varnostr,dirstr,str,path_str,comment_str,s,indx_str;
       list<String> paths_lst,path_strs;
@@ -2570,7 +2667,8 @@ algorithm
       DAE.InstDims arry_Dim;
       Option<Values.Value> b;
       Integer var_1;
-    case ({},_) then ();
+      Exp.Exp addMMLCode;
+    case ({},_,_) then ();
     case (((v as DAELow.VAR(varName = cr,
                             varKind = kind,
                             varDirection = dir,
@@ -2584,20 +2682,20 @@ algorithm
                             values = dae_var_attr,
                             comment = comment,
                             flow_ = flow_,
-                            stream_ = stream_)) :: xs),varno)
+                            stream_ = stream_)) :: xs),varno,addMMLCode)
       equation
         dumpVariable(intString(varno),Exp.crefStr(cr),dumpKind(kind),dumpDirectionStr(dir),dumpTypeStr(var_type),
                      intString(indx),Exp.crefStr(old_name),Util.boolString(DAELow.varFixed(v)),dumpFlowStr(flow_),
                      dumpStreamStr(stream_),unparseCommentOptionNoAnnotation(comment));
-        dumpBindValueExpression(e,b);
+        dumpBindValueExpression(e,b,addMMLCode);
         //The command below adds information to the XML about the dimension of the
         //containing vector, in the casse the variable is an element of a vector.
         //dumpDAEInstDims(arry_Dim,"ArrayDims");
         dumpAbsynPathLst(paths,stringAppend(CLASSES,NAMES_));
-        dumpDAEVariableAttributes(dae_var_attr,VAR_ATTRIBUTES_VALUES);
+        dumpDAEVariableAttributes(dae_var_attr,VAR_ATTRIBUTES_VALUES,addMMLCode);
         dumpStrCloseTag(VARIABLE);
         var_1=varno+1;
-        dumpVars2(xs,var_1);
+        dumpVars2(xs,var_1,addMMLCode);
       then ();
   end matchcontinue;
 end dumpVars2;
@@ -2614,9 +2712,10 @@ See dumpVariable for more details on the XML output.
   input list<DAELow.CrefIndex>[:] crefIdxLstArr;
   input list<DAELow.StringIndex>[:] strIdxLstArr;
   input Integer inInteger;
+  input Exp.Exp addMathMLCode;
 algorithm
   _:=
-  matchcontinue (inVarLst,crefIdxLstArr,strIdxLstArr,inInteger)
+  matchcontinue (inVarLst,crefIdxLstArr,strIdxLstArr,inInteger,addMathMLCode)
     local
       String varnostr,dirstr,str,path_str,comment_str,s,indx_str;
       list<String> paths_lst,path_strs;
@@ -2636,7 +2735,8 @@ algorithm
       DAE.InstDims arry_Dim;
       Option<Values.Value> b;
       Integer var_1;
-    case ({},_,_,_) then ();
+      Exp.Exp addMMLCode;
+    case ({},_,_,_,_) then ();
     case (((v as DAELow.VAR(varName = cr,
                             varKind = kind,
                             varDirection = dir,
@@ -2650,21 +2750,21 @@ algorithm
                             values = dae_var_attr,
                             comment = comment,
                             flow_ = flow_,
-                            stream_ = stream_)) :: xs),crefIdxLstArr,strIdxLstArr,varno)
+                            stream_ = stream_)) :: xs),crefIdxLstArr,strIdxLstArr,varno,addMMLCode)
       equation
         dumpVariable(intString(varno),Exp.crefStr(cr),dumpKind(kind),dumpDirectionStr(dir),dumpTypeStr(var_type),intString(indx),
                         Exp.crefStr(old_name),Util.boolString(DAELow.varFixed(v)),dumpFlowStr(flow_),dumpStreamStr(stream_),
                         Dump.unparseCommentOption(comment));
-        dumpBindValueExpression(e,b);
+        dumpBindValueExpression(e,b,addMMLCode);
         //The command below adds information to the XML about the dimension of the
         //containing vector, in the casse the variable is an element of a vector.
         //dumpDAEInstDims(arry_Dim,"ArrayDims");
         dumpAbsynPathLst(paths,stringAppend(CLASSES,NAMES_));
-        dumpDAEVariableAttributes(dae_var_attr,VAR_ATTRIBUTES_VALUES);
+        dumpDAEVariableAttributes(dae_var_attr,VAR_ATTRIBUTES_VALUES,addMMLCode);
         dumpVarsAdditionalInfo(crefIdxLstArr,strIdxLstArr,varno);
         dumpStrCloseTag(VARIABLE);
         var_1 = varno+1;
-        dumpVarsAdds2(xs,crefIdxLstArr,strIdxLstArr,var_1);
+        dumpVarsAdds2(xs,crefIdxLstArr,strIdxLstArr,var_1,addMMLCode);
       then ();
   end matchcontinue;
 end dumpVarsAdds2;
@@ -2681,23 +2781,24 @@ the zero crossing list. The output is:
 "
   input list<DAELow.ZeroCrossing> zeroCross;
   input String inContent;
+  input Exp.Exp addMathMLCode;
 algorithm
   _:=
-  matchcontinue (zeroCross,inContent)
-    case ({},_) then ();
-    case (zeroCross,inContent)
+  matchcontinue (zeroCross,inContent,addMathMLCode)
+    case ({},_,_) then ();
+    case (zeroCross,inContent,_)
       local Integer len;
       equation
         len = listLength(zeroCross);
         len >= 1 = false;
       then();
-    case (zeroCross,inContent)
+    case (zeroCross,inContent,addMathMLCode)
       local Integer len;
       equation
         len = listLength(zeroCross);
         len >= 1 = true;
         dumpStrOpenTagAttr(inContent, DIMENSION, intString(len));
-        dumpZcLst(zeroCross);
+        dumpZcLst(zeroCross,addMathMLCode);
         dumpStrCloseTag(inContent);
       then ();
   end matchcontinue;
@@ -2727,22 +2828,23 @@ of the zero crossing elements in XML format. The output is:
 </stringAppend(ZERO_CROSSING,ELEMENT_)>
  "
   input list<DAELow.ZeroCrossing> inZeroCrossingLst;
+  input Exp.Exp addMathMLCode;
 algorithm
   _:=
-  matchcontinue (inZeroCrossingLst)
+  matchcontinue (inZeroCrossingLst,addMathMLCode)
     local
-      Exp.Exp e;
+      Exp.Exp e,addMMLCode;
       list<DAELow.Value> eq,wc;
       list<DAELow.ZeroCrossing> zcLst;
-    case {} then ();
-    case (DAELow.ZERO_CROSSING(relation_ = e,occurEquLst = eq,occurWhenLst = wc) :: zcLst)
+    case ({},_) then ();
+    case (DAELow.ZERO_CROSSING(relation_ = e,occurEquLst = eq,occurWhenLst = wc) :: zcLst,addMMLCode)
       equation
         dumpStrOpenTagAttr(stringAppend(ZERO_CROSSING,ELEMENT_),EXP_STRING,Exp.printExpStr(e));
-        dumpExp(e);
+        dumpExp(e,addMMLCode);
         dumpLstIntAttr(eq,stringAppend(INVOLVED,EQUATIONS_),stringAppend(EQUATION,ID_));
         dumpLstIntAttr(wc,stringAppend(INVOLVED,stringAppend(WHEN_,EQUATIONS_)),stringAppend(WHEN,stringAppend(EQUATION_,ID_)));
         dumpStrCloseTag(stringAppend(ZERO_CROSSING,ELEMENT_));
-        dumpZcLst(zcLst);
+        dumpZcLst(zcLst,addMMLCode);
       then ();
   end matchcontinue;
 end dumpZcLst;

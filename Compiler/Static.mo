@@ -5838,19 +5838,21 @@ algorithm
         (cache,Exp.CALL(Absyn.IDENT("echo"),{bool_exp_1},false,true,Exp.STRING()),Types.PROP((Types.T_BOOL({}),NONE),Types.C_CONST()),SOME(st));
 
 case (cache,env,Absyn.CREF_IDENT(name = "dumpXMLDAE"),{Absyn.CREF(componentReg = cr)},args,impl,SOME(st))
-      local Absyn.Path className; Exp.Exp storeInTemp,asInSimulationCode;
+      local Absyn.Path className; Exp.Exp storeInTemp,asInSimulationCode,addMathMLCode;
       equation
         className = Absyn.crefToPath(cr);
         cname_str = Absyn.pathString(className);
         (cache,asInSimulationCode) = getOptionalNamedArg(cache,env, SOME(st), impl, "asInSimulationCode",
           (Types.T_BOOL({}),NONE), args, Exp.BCONST(false));
+        (cache,addMathMLCode) = getOptionalNamedArg(cache,env, SOME(st), impl, "addMathMLCode",
+          (Types.T_BOOL({}),NONE), args, Exp.BCONST(false));          
         (cache,filenameprefix) = getOptionalNamedArg(cache,env, SOME(st), impl, "fileNamePrefix",
           (Types.T_STRING({}),NONE), args, Exp.SCONST(cname_str));
         (cache,storeInTemp) = getOptionalNamedArg(cache,env, SOME(st), impl, "storeInTemp",
           (Types.T_BOOL({}),NONE), args, Exp.BCONST(false));
       then
         (cache,Exp.CALL(Absyn.IDENT("dumpXMLDAE"),
-          {Exp.CODE(Absyn.C_TYPENAME(className),Exp.OTHER()),asInSimulationCode,filenameprefix,storeInTemp},false,true,Exp.OTHER()),Types.PROP(
+          {Exp.CODE(Absyn.C_TYPENAME(className),Exp.OTHER()),asInSimulationCode,addMathMLCode,filenameprefix,storeInTemp},false,true,Exp.OTHER()),Types.PROP(
           (
           Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_STRING({}),NONE)),NONE),Types.C_VAR()),SOME(st));
   end matchcontinue;
