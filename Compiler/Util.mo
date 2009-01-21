@@ -68,10 +68,10 @@ public uniontype ReplacePattern
   end REPLACEPATTERN;
 end ReplacePattern;
 
-protected constant list<ReplacePattern> replaceStringPatterns={REPLACEPATTERN(".","$P"),
-          REPLACEPATTERN("[","$lB"),REPLACEPATTERN("]","$rB"),
-          REPLACEPATTERN("(","$lP"),REPLACEPATTERN(")","$rP"),
-          REPLACEPATTERN(",","$c")};
+protected constant list<ReplacePattern> replaceStringPatterns={REPLACEPATTERN(".","$p"),
+          REPLACEPATTERN("[","$lb"),REPLACEPATTERN("]","$rb"),
+          REPLACEPATTERN("(","$lp"),REPLACEPATTERN(")","$rp"),
+          REPLACEPATTERN(",","$comma")};
 
 protected import System;
 protected import Print;

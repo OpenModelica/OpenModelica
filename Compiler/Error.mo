@@ -211,7 +211,7 @@ public constant ErrorID REDUNDANT_GUESS=513 "Used by MathCore in Backend";
 public constant ErrorID INDEX_REDUCTION_NOTIFICATION=1000;
 public constant ErrorID SELECTED_STATE_DUE_TO_START_NOTIFICATION = 1001;
 protected constant list<tuple<Integer, MessageType, Severity, String>> errorTable={(SYNTAX_ERROR,SYNTAX(),ERROR(),"Syntax error near: %s"),
-          (GRAMMATIC_ERROR,GRAMMAR(),ERROR(),"error: %s"),
+          (GRAMMATIC_ERROR,GRAMMAR(),ERROR(),"%s"),
           (LOOKUP_ERROR,TRANSLATION(),ERROR(),
           "Class %s not found in scope %s."),
           (LOOKUP_ERROR_COMPNAME,TRANSLATION(),ERROR(),

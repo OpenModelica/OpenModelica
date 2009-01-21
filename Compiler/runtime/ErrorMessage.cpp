@@ -42,18 +42,18 @@
 			     std::string type,
 			     std::string severity,
 			     std::string message,
-			     std::list<std::string>& tokens) 
+			     std::list<std::string>& tokens)
     : errorID_(errorID),
       messageType_(type),
       severity_(severity),
       message_(message),
       tokens_(tokens)
-							      
+
 {
-  startLineNo_ = 0; 
+  startLineNo_ = 0;
   startColumnNo_ = 0;
-  endLineNo_ = 0; 
-  endColumnNo_ = 0;  
+  endLineNo_ = 0;
+  endColumnNo_ = 0;
   isReadOnly_ = false;
   filename_ = std::string("");
 }
@@ -68,7 +68,7 @@ ErrorMessage::ErrorMessage(long errorID,
 			   long endLineNo,
 			   long endColumnNo,
 			   bool isReadOnly,
-			   std::string filename) 
+			   std::string filename)
     :
     errorID_(errorID),
     messageType_(type),
@@ -84,35 +84,35 @@ ErrorMessage::ErrorMessage(long errorID,
 {
 }
 
-/* 
+/*
  * adrpo, 2006-02-05 changed position handling
  */
-std::string ErrorMessage::getMessage() 
+std::string ErrorMessage::getMessage()
 {
   std::string fullMessage = message_;
   std::list<std::string>::iterator tok;
   std::string::size_type str_pos;
   for (tok=tokens_.begin(); tok != tokens_.end(); tok++) {
     str_pos=fullMessage.find("%s");
-    if (str_pos < fullMessage.size()) 
+    if (str_pos < fullMessage.size())
     {
       fullMessage.replace(str_pos,2,*tok);
     }
-    else 
+    else
     {
       std::cerr << "Internal error in error handling, no %s left to replace "<< *tok << " with." << std::endl;
     }
   }
   std::stringstream str;
-  str << "["<< filename_ << ":" << startLineNo_ << ":" << startColumnNo_ << "-" << 
-  endLineNo_ << ":" << endColumnNo_ << ":" << (isReadOnly_?"readonly":"writable") << "]: ";
+  str << "["<< filename_ << ":" << startLineNo_ << ":" << startColumnNo_ << "-" <<
+  endLineNo_ << ":" << endColumnNo_ << ":" << (isReadOnly_?"readonly":"writable") << "] " << severity_ << ": ";
   std::string positionInfo = str.str();
-  if (filename_ == "" && startLineNo_ == 0 && startColumnNo_ == 0 && 
-      endLineNo_ == 0 && endColumnNo_ == 0 /*&& isReadOnly_ == false*/) 
+  if (filename_ == "" && startLineNo_ == 0 && startColumnNo_ == 0 &&
+      endLineNo_ == 0 && endColumnNo_ == 0 /*&& isReadOnly_ == false*/)
   {
-    return fullMessage;
-  } 
-  else 
+    return severity_+": "+fullMessage;
+  }
+  else
   {
     return positionInfo + fullMessage;
   }
@@ -123,7 +123,7 @@ std::string ErrorMessage::getFullMessage()
   std::string message_text= getMessage();
 
   std::stringstream strbuf;
-  
+
   strbuf << "{\"" << message_text << "\", \"" <<
     messageType_ << "\", \"" <<
     severity_ << "\", \"" <<

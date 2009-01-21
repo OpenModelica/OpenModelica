@@ -7704,12 +7704,12 @@ algorithm
       then {DAE.VAR(vn,kind,dir,prot,DAE.ENUMERATION(l),e,finst_dims,fl,st,{}, dae_var_attr,comment,io,ty)};  
 
     /* Complex type that is Record*/
-    case (vn, ty as (Types.T_COMPLEX(complexClassType = ClassInf.RECORD(string = s)),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars)
+/*    case (vn, ty as (Types.T_COMPLEX(complexClassType = ClassInf.RECORD(string = s)),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars)
       equation
         finst_dims = Util.listFlatten(inst_dims);
         dae_var_attr = DAE.setFinalAttr(dae_var_attr,finalPrefix);
       then {DAE.VAR(vn,kind,dir,prot,DAE.RECORD(s),e,finst_dims,fl,st,{},dae_var_attr,comment,io,ty)};
-
+*/
           /* Complex type that is ExternalObject*/
      case (vn, ty as (Types.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(path)),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars)
        local Absyn.Path path;

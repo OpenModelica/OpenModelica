@@ -89,11 +89,7 @@ uniontype Type
   record ENUM end ENUM;
 
   record LIST end LIST; // MetaModelica list. KS
-
-  record RECORD
-    String name;
-  end RECORD;
-
+  
   record METATUPLE end METATUPLE;  // MetaModelica tuple. KS
 
   record METAOPTION end METAOPTION;  // MetaModelica option. KS
@@ -1523,7 +1519,7 @@ algorithm
   Print.printBuf(str);
 end dumpVars;
 
-protected function dumpVarsStr "function: dumpVarsStr
+public function dumpVarsStr "function: dumpVarsStr
  
   Dump variables to a string.
 "
@@ -2066,14 +2062,7 @@ algorithm
         Print.printBuf("String  ");
       then
         ();
-/*
-    case RECORD(name = i)
-      equation
-        Print.printBuf("Record ");
-        Print.printBuf(i);
-      then
-        ();
-*/
+        
     case ENUM()
       equation 
         Print.printBuf("Enum ");
@@ -2116,13 +2105,7 @@ algorithm
     case BOOL() then "Boolean "; 
     case STRING() then "String "; 
     case ENUM() then "Enum "; 
-/*
-    case RECORD(name = s1)
-      equation
-        s2 = stringAppend("Record ", s1);
-      then
-        s2;
-*/
+
     case ENUMERATION(stringLst = l)
       equation 
         s1 = Util.stringDelimitList(l, ", ");
@@ -3384,7 +3367,7 @@ public function getInputVars "function getInputVars
   output list<Element> vl_1;
   list<Element> vl_1;
 algorithm 
-  vl_1 := getMatchingElements(vl, isInputVar);
+  vl_1 := getMatchingElements(vl, isInput);
 end getInputVars;
 
 public function generateDaeType "function generateDaeType
@@ -3538,6 +3521,22 @@ algorithm
     case VAR(componentRef = n,kind = VARIABLE(),direction = INPUT(),ty = ty) then ();
   end matchcontinue;
 end isInputVar;
+
+public function isInput "function: isInputVar 
+  author: PA
+ 
+  Succeeds if Element is an input .
+"
+  input Element inElement;
+algorithm 
+  _:=
+  matchcontinue (inElement)
+    local
+      Exp.ComponentRef n;
+      Type ty;
+    case VAR(direction = INPUT()) then ();
+  end matchcontinue;
+end isInput;
 
 protected function isNotVar "function: isNotVar 
   author: LS

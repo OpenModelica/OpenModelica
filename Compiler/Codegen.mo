@@ -1250,13 +1250,15 @@ algorithm
     local
       DAE.Element var;
       list<DAE.Element> rest;
+      Absyn.Path path;
       String name, first_str, last_str;
       Types.Type ft;
       list<String> strs,rest_strs,decl_strs;
       list<String> rt, rt_1;
     case ({},rt) then ({},rt);
-    case (((var as DAE.VAR(ty = DAE.RECORD(name = name), fullType = ft)) :: rest),rt)
+    case (((var as DAE.VAR(ty = DAE.COMPLEX(name = path), fullType = ft)) :: rest),rt)
       equation
+        name = Absyn.pathString(path);
         failure(_ = Util.listGetMember(name,rt));
         first_str = Util.stringAppendList({"struct ",name," {"});
         decl_strs = generateRecordDeclarations(ft);
@@ -1491,14 +1493,14 @@ protected function daeExpType
 algorithm
   outType:=
   matchcontinue (inType)
-    local String name;
+    local String name; Absyn.Path path; list<DAE.Var> varLst;
     case DAE.INT() then Exp.INT();
     case DAE.REAL() then Exp.REAL();
     case DAE.STRING() then Exp.STRING();
     case DAE.BOOL() then Exp.BOOL();
     case DAE.ENUM() then Exp.ENUM();
     case DAE.LIST() then Exp.T_LIST(Exp.OTHER()); // MetaModelica list
-    case DAE.RECORD(name = name) then Exp.T_RECORD(name);
+    case DAE.COMPLEX(path,varLst) equation name = Absyn.pathString(path); then /* TODO: translate vars */ Exp.COMPLEX(name,{},ClassInf.UNKNOWN(name));
     case DAE.METATUPLE() then Exp.T_METATUPLE({}); // MetaModelica tuple
     case DAE.METAOPTION() then Exp.T_METAOPTION(Exp.OTHER()); // MetaModelica tuple
     case _ then Exp.OTHER();
@@ -7661,7 +7663,7 @@ algorithm
     case (DAE.VAR(componentRef = id,
                   kind = vk,
                   direction = DAE.INPUT(),
-                  ty = DAE.RECORD(_),
+                  ty = DAE.COMPLEX(name=_),
                   dims = {},
                   fullType = rt) :: r)
       local
@@ -7835,7 +7837,7 @@ algorithm
     case (DAE.VAR(componentRef = id,
                   kind = vk,
                   direction = DAE.OUTPUT(),
-                  ty = (t as DAE.RECORD(_)),
+                  ty = (t as DAE.COMPLEX(name=_)),
                   dims = {},
                   fullType = rt) :: r,i)
       local

@@ -1196,6 +1196,13 @@ algorithm
   end matchcontinue;
 end arrayValues;
 
+public function makeReal "Creates a real value "
+  input Real r;
+  output Value v;
+algorithm
+  v := REAL(r);
+end makeReal;
+
 public function makeArray "function: makeArray
  
   Construct an array of a list of Values.
