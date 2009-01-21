@@ -134,7 +134,11 @@ bool Connection::startExternalViewer()
     while (1)
     {
       ticks++;
+#if defined(WIN32)
       if( plotViewerProcess->waitForStarted(500) ) break;
+#else
+      if( plotViewerProcess->waitForStarted(-1) ) break;
+#endif
       else
       {
         cerr << "simulation runtime: the plot viewer could not start: " << path.toStdString().c_str();
