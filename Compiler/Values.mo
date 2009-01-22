@@ -1329,8 +1329,9 @@ algorithm
       then
         res;
     case(RECORD(orderd=xs,comp=ids)) equation 
-        print("-valRecordString failed. vals="+&Util.stringDelimitList(Util.listMap(xs,valString),",")
-        +&" comps="+&Util.stringDelimitList(ids,",")+&"\n"); then fail();
+        /*print("-valRecordString failed. vals="+&Util.stringDelimitList(Util.listMap(xs,valString),",")
+        +&" comps="+&Util.stringDelimitList(ids,",")+&"\n");*/ 
+    then fail();
   end matchcontinue;
 end valRecordString;
 
