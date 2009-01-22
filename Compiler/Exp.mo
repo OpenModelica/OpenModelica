@@ -233,11 +233,11 @@ uniontype Exp "Expressions
     Type ty;
   end CODE;
 
-  record REDUCTION
-    Absyn.Path path;
-    Exp expr "expr" ;
-    Ident ident;
-    Exp range "range Reduction expression" ;
+  record REDUCTION "e.g. sum(i*i+1) for i in 1:4"
+    Absyn.Path path "array, sum,..";
+    Exp expr "expr, e.g i*i+1" ;
+    Ident ident "e.g. i";
+    Exp range "range Reduction expression e.g. 1:4" ;
   end REDUCTION;
 
   record END "array index to last element, e.g. a{end}:=1;" end END;
