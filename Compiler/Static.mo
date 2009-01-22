@@ -522,10 +522,10 @@ algorithm
         (types,consts) = splitProps(props);
       then
         (cache,Exp.TUPLE(e_1),Types.PROP_TUPLE((Types.T_TUPLE(types),NONE),Types.TUPLE_CONST(consts)),st);
-    case (cache,env,Absyn.CALL(function_ = fn,functionArgs = Absyn.FOR_ITER_FARG(exp = exp,iterators=iterators)),impl,st,doVect) /* Array-related expressions Elab reduction expressions, including array() constructor */
+    case (cache,env,Absyn.CALL(function_ = fn,functionArgs = Absyn.FOR_ITER_FARG(exp = exp, iterators=iterators)),impl,st,doVect) /* Array-related expressions Elab reduction expressions, including array() constructor */
       local
         Exp.Exp e;
-        Absyn.Exp exp;
+        Absyn.Exp exp; 
       equation 
         (cache,e,prop,st_1) = elabCallReduction(cache,env, fn, exp, iterators, impl, st,doVect);
       then
@@ -1088,25 +1088,13 @@ algorithm
       Boolean b;
       list<Exp.Exp> expl;
       list<Values.Value> vallst;
-    case (cache,env,fn,exp,{(iter,SOME(iterexp))},impl,st,doVect)
-      equation
-        (cache,iterexp_1,Types.PROP((Types.T_ARRAY((arraydim as Types.DIM(_)),iterty),_),iterconst),_)
-        	= elabExp(cache,env, iterexp, impl, st,doVect);
-        env_1 = addForLoopScopeConst(env, iter, iterty);
-        (cache,exp_1,Types.PROP(expty,expconst),st) = elabExp(cache,env_1, exp, impl, st,doVect) "const so that expr is elaborated to const" ;
-        const = Types.constAnd(expconst, iterconst);
-        prop = Types.PROP((Types.T_ARRAY(arraydim,expty),NONE),const);
-        fn_1 = Absyn.crefToPath(fn);
-      then
-        (cache,Exp.REDUCTION(fn_1,exp_1,iter,iterexp_1),prop,st);
-    case (cache,env,fn,exp,iterators,impl,st,doVect)
-      equation
-        Debug.fprint("failtrace", "Static.elabCallReduction - multiple iterators, not yet handled!\n");
-      then fail();
-
-/* MathCore cases
-      Symbolically expand arrays if iterator is parameter or constant
-      case (cache,env,Absyn.CREF_IDENT("array",{}),exp,iter,iterexp,impl,st,doVect)
+      /*Symbolically expand arrays if iterator is parameter or constant
+        NOTE: This only works for one iterator.
+        TODO: Implement support for more iterators. 
+      */
+      case (cache,env,Absyn.CREF_IDENT("array",{}),exp,(afis as (iter,SOME(iterexp))::{}),impl,st,doVect)
+        local
+          Absyn.ForIterators afis;
       equation 
         (cache,iterexp_1,Types.PROP((Types.T_ARRAY((arraydim as Types.DIM(_)),iterty),_),iterconst),_) 
         	= elabExp(cache,env, iterexp, impl, st,doVect);         
@@ -1122,19 +1110,21 @@ algorithm
         prop = Types.PROP(ty,const);
       then
         (cache,Exp.ARRAY(etp,b,expl),prop,st);
-        
-    case (cache,env,fn,exp,iter,iterexp,impl,st,doVect)
-      equation 
-        (cache,iterexp_1,Types.PROP((Types.T_ARRAY((arraydim as Types.DIM(_)),iterty),_),iterconst),_) 
+case (cache,env,fn,exp,{(iter,SOME(iterexp))},impl,st,doVect)
+      equation
+        (cache,iterexp_1,Types.PROP((Types.T_ARRAY((arraydim as Types.DIM(_)),iterty),_),iterconst),_)
         	= elabExp(cache,env, iterexp, impl, st,doVect);
         env_1 = addForLoopScopeConst(env, iter, iterty);
         (cache,exp_1,Types.PROP(expty,expconst),st) = elabExp(cache,env_1, exp, impl, st,doVect) "const so that expr is elaborated to const" ;
         const = Types.constAnd(expconst, iterconst);
         prop = Types.PROP((Types.T_ARRAY(arraydim,expty),NONE),const);
         fn_1 = Absyn.crefToPath(fn);
-      then
+      then 
         (cache,Exp.REDUCTION(fn_1,exp_1,iter,iterexp_1),prop,st);
-*/
+    case (cache,env,fn,exp,iterators,impl,st,doVect)
+      equation
+        Debug.fprint("failtrace", "Static.elabCallReduction - multiple iterators, not yet handled!\n");
+      then fail();
   end matchcontinue;
 end elabCallReduction;
 

@@ -81,7 +81,7 @@ type ForIterator = tuple<Ident, Option<Exp>>
      see 3.3.3.2 Several Iterators from Modelica Specification.
    * in array iterators where the expression should always be SOME(Exp),
      see 3.4.4.2 Array constructor with iterators from Specification";
-type ForIterators = list<ForIterator>
+public type ForIterators = list<ForIterator>
 "For Iterators -
    these are used in:
    * for loops where the expression part can be NONE and then the range
