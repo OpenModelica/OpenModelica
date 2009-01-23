@@ -1582,7 +1582,7 @@ namespace IAEX {
           guard->unlock();
           exceptionInEval(e);
           input_->blockSignals(false);
-          output_->blockSignals(false);          
+          output_->blockSignals(false);
           return;
         }
       }

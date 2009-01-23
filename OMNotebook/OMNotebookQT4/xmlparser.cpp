@@ -823,7 +823,7 @@ namespace IAEX
     gCell->compoundwidget->gwMain->newRect = r;
     gCell->compoundwidget->gwMain->originalArea = r;
 
-    if(!gCell->isJavaPlot())
+    if(!gCell->isQtPlot())
       gCell->compoundwidget->hide();
 
     //		gCell->compoundwidget->gwMain->graphicsScene->addItem(gCell->compoundwidget->gwMain->graphicsItems);

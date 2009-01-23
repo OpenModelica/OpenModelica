@@ -143,6 +143,8 @@
    <addaction name="actionPreferences" />
    <addaction name="separator" />
    <addaction name="actionActive" />
+   <addaction name="separator" />
+   <addaction name="actionImage" />
   </widget>
   <action name="actionHold" >
    <property name="checkable" >

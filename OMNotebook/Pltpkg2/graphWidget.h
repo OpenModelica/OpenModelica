@@ -94,6 +94,8 @@ public slots:
 
 	void newWindow();
 	void zoomIn(QRectF);
+  void saveImage();
+  void exportToClipboard();
 
 	void setExpr(QString);
 
