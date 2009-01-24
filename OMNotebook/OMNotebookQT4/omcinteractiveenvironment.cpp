@@ -86,8 +86,8 @@ namespace IAEX
 
 	OmcInteractiveEnvironment::~OmcInteractiveEnvironment()
   {
-    if (selfInstance)
-      delete selfInstance;
+    //if (selfInstance)
+    //  delete selfInstance;
   }
 
 	QString OmcInteractiveEnvironment::getResult()
@@ -327,7 +327,7 @@ namespace IAEX
 			env->evalExpression( getVersion );
 			version = env->getResult();
 			version.remove( "\"" );
-			delete env;
+			//delete env;
 		}
 		catch( exception &e )
 		{
