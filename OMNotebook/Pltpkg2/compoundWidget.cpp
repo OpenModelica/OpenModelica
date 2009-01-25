@@ -38,8 +38,9 @@ CompoundWidget::CompoundWidget(QWidget* parent):  QWidget(parent)
 {
 //	this->resize(672, 784);
 //	this->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
-	plotWidget = new QWidget(this);
-	plotWidget->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
+//  plotWidget = new QWidget(this);
+//  plotWidget->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
+//  plotWidget->resize(400, 300);
 //	plotWidget->setMinimumHeight(784);
 //	plotWidget->setMinimumWidth(672);
 
@@ -61,8 +62,8 @@ CompoundWidget::CompoundWidget(QWidget* parent):  QWidget(parent)
 	connect(gwMain, SIGNAL(resizeY(quint32)), this, SLOT(resizeY(quint32)));
 	connect(gwMain, SIGNAL(showPreferences2()), this, SLOT(showPreferences()));
 
-	layout = new QVBoxLayout;
-	legendFrame->setLayout(layout);
+	layout = new QVBoxLayout;  
+	legendFrame->setLayout(layout);  
 
 //	legendFrame->setMinimumWidth(50);
 
@@ -121,7 +122,7 @@ void CompoundWidget::showVis() {
   gvLeft->hide();
   gvBottom->hide();
   plotTitle->hide();
-	plotWidget->hide();
+	// plotWidget->hide();
 	xLabel->hide();
 	yLabel->hide();
   legendFrame->hide();
@@ -129,7 +130,7 @@ void CompoundWidget::showVis() {
 
 void CompoundWidget::hideVis() {
 	visWidget->hide();
-	plotWidget->show();
+	// plotWidget->show();
   gwMain->showGrid(true);
   gwMain->show();
   gvLeft->show();

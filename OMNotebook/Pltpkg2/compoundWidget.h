@@ -63,7 +63,7 @@ public slots:
 public:
 	QVBoxLayout* layout;
 	IAEX::VisualizationWidget* visWidget;
-	QWidget* plotWidget;
+	// QWidget* plotWidget;
 };
 
 

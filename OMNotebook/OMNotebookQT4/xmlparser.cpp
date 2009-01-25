@@ -772,41 +772,6 @@ namespace IAEX
       gCell->compoundwidget->gwMain->antiAliasing = true;
       gCell->compoundwidget->gwMain->aaAction->setChecked(true);
     }
-    bool showGraphics = (element.attribute(XML_GRAPHCELL_SHOWGRAPH, XML_FALSE) == XML_TRUE)?true:false;
-    if(showGraphics)
-    {
-      gCell->showGraph = true;
-      gCell->showGraphics();
-    }
-    else
-      gCell->compoundwidget->hide();
-
-
-
-    // 2006-01-17 AF, check if the inputcell is open or closed
-    QString closed = element.attribute( XML_CLOSED, XML_FALSE );
-
-
-    if( closed == XML_TRUE )
-    {
-      gCell->setClosed( true,true );
-
-    }
-    else if( closed == XML_FALSE )
-    {
-      /*
-      gCell->setHeight(gCell->height() +200);
-      gCell->compoundwidget->show();
-      gCell->compoundwidget->setMinimumHeight(200);
-      gCell->setEvaluated(true);
-      */
-      gCell->setClosed( false,true );
-    }
-    else
-      throw runtime_error( "Unknown closed value in inputcell" );
-
-
-
 
     QByteArray ba = QByteArray::fromBase64( element.attribute(XML_GRAPHCELL_AREA).toLatin1());
     QBuffer b(&ba);
@@ -823,10 +788,27 @@ namespace IAEX
     gCell->compoundwidget->gwMain->newRect = r;
     gCell->compoundwidget->gwMain->originalArea = r;
 
-    if(!gCell->isQtPlot())
+    // 2006-01-17 AF, check if the inputcell is open or closed
+    QString closed = element.attribute( XML_CLOSED, XML_FALSE );
+    if( closed == XML_TRUE )
+      gCell->setClosed( true,true );
+    else if( closed == XML_FALSE )
+      gCell->setClosed( false,true );
+    else
+      throw runtime_error( "Unknown closed value in inputcell" );
+
+    bool showGraphics = (element.attribute(XML_GRAPHCELL_SHOWGRAPH, XML_FALSE) == XML_TRUE)?true:false;
+    if(showGraphics)
+    {
+      gCell->showGraph = true;
+      gCell->showGraphics();
+      gCell->compoundwidget->gwMain->resetZoom();
+    }
+    else
       gCell->compoundwidget->hide();
 
-    //		gCell->compoundwidget->gwMain->graphicsScene->addItem(gCell->compoundwidget->gwMain->graphicsItems);
+    if(!gCell->isQtPlot())
+      gCell->compoundwidget->hide();
 
     parent->addChild( graphcell );
   }

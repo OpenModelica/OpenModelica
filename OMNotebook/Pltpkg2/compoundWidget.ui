@@ -6,8 +6,26 @@
     <x>0</x>
     <y>0</y>
     <width>500</width>
-    <height>400</height>
+    <height>300</height>
    </rect>
+  </property>
+  <property name="sizePolicy" >
+   <sizepolicy vsizetype="MinimumExpanding" hsizetype="MinimumExpanding" >
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
+  </property>
+  <property name="minimumSize" >
+   <size>
+    <width>500</width>
+    <height>300</height>
+   </size>
+  </property>
+  <property name="baseSize" >
+   <size>
+    <width>500</width>
+    <height>400</height>
+   </size>
   </property>
   <property name="palette" >
    <palette>
@@ -428,7 +446,7 @@
    <string>Form</string>
   </property>
   <property name="styleSheet" >
-   <string>background-color: white</string>
+   <string notr="true" >background-color: white</string>
   </property>
   <layout class="QGridLayout" >
    <property name="margin" >
@@ -448,9 +466,7 @@
      <item row="1" column="2" >
       <widget class="GraphWidget" name="gwMain" >
        <property name="sizePolicy" >
-        <sizepolicy>
-         <hsizetype>7</hsizetype>
-         <vsizetype>7</vsizetype>
+        <sizepolicy vsizetype="Expanding" hsizetype="Expanding" >
          <horstretch>0</horstretch>
          <verstretch>0</verstretch>
         </sizepolicy>
@@ -469,9 +485,7 @@
      <item row="2" column="2" >
       <widget class="QGraphicsView" name="gvBottom" >
        <property name="sizePolicy" >
-        <sizepolicy>
-         <hsizetype>7</hsizetype>
-         <vsizetype>0</vsizetype>
+        <sizepolicy vsizetype="Fixed" hsizetype="Expanding" >
          <horstretch>0</horstretch>
          <verstretch>0</verstretch>
         </sizepolicy>
@@ -489,7 +503,7 @@
         </size>
        </property>
        <property name="styleSheet" >
-        <string>background-color: white</string>
+        <string notr="true" >background-color: white</string>
        </property>
        <property name="frameShape" >
         <enum>QFrame::NoFrame</enum>
@@ -502,9 +516,7 @@
      <item row="1" column="1" >
       <widget class="QGraphicsView" name="gvLeft" >
        <property name="sizePolicy" >
-        <sizepolicy>
-         <hsizetype>5</hsizetype>
-         <vsizetype>7</vsizetype>
+        <sizepolicy vsizetype="Expanding" hsizetype="Preferred" >
          <horstretch>0</horstretch>
          <verstretch>0</verstretch>
         </sizepolicy>
@@ -522,7 +534,7 @@
         </size>
        </property>
        <property name="styleSheet" >
-        <string>background-color: white</string>
+        <string notr="true" >background-color: white</string>
        </property>
        <property name="frameShape" >
         <enum>QFrame::NoFrame</enum>
@@ -950,7 +962,7 @@
         </palette>
        </property>
        <property name="styleSheet" >
-        <string>background-color: white</string>
+        <string notr="true" >background-color: white</string>
        </property>
        <property name="frameShape" >
         <enum>QFrame::StyledPanel</enum>
@@ -963,15 +975,13 @@
      <item row="1" column="0" >
       <widget class="VerticalLabel" name="yLabel" >
        <property name="sizePolicy" >
-        <sizepolicy>
-         <hsizetype>0</hsizetype>
-         <vsizetype>7</vsizetype>
+        <sizepolicy vsizetype="Expanding" hsizetype="Fixed" >
          <horstretch>0</horstretch>
          <verstretch>0</verstretch>
         </sizepolicy>
        </property>
        <property name="styleSheet" >
-        <string>background-color: white</string>
+        <string notr="true" >background-color: white</string>
        </property>
        <property name="text" >
         <string>y</string>
@@ -987,7 +997,7 @@
         <font/>
        </property>
        <property name="styleSheet" >
-        <string>background-color:white</string>
+        <string notr="true" >background-color:white</string>
        </property>
        <property name="text" >
         <string>Plot title</string>
@@ -1003,7 +1013,7 @@
         <enum>Qt::LeftToRight</enum>
        </property>
        <property name="styleSheet" >
-        <string>background-color: white</string>
+        <string notr="true" >background-color: white</string>
        </property>
        <property name="text" >
         <string>x</string>

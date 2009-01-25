@@ -38,17 +38,19 @@
 #include <QGraphicsPathItem>
 #include <QPen>
 
-#define PLOT_LINE_WIDTH 0
+#define PLOT_LINE_WIDTH 2
 
 class Line2D: public QGraphicsLineItem
 {
   //	Q_OBJECT
 public:
   Line2D(qreal x1, qreal y1, qreal x2, qreal y2,
-	 QPen newPen = QPen(Qt::red),
+	 QPen newPen = QPen(Qt::red), 
+   qreal width=0, 
+   bool bCosmetic = false,   
 	 QGraphicsItem*	parent=0, QGraphicsScene* scene=0);
   ~Line2D();
-
+  QRectF boundingRect() const;
 };
 
 

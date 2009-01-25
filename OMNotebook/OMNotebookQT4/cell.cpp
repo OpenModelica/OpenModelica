@@ -509,8 +509,7 @@ namespace IAEX
 			mainWidget_ = newWidget;
 			mainlayout_->addWidget(newWidget,1,1);
 
-			mainWidget_->setSizePolicy(QSizePolicy(QSizePolicy::Expanding,
-				QSizePolicy::Expanding));
+			mainWidget_->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
 
 			QPalette palette;
 			palette.setColor(mainWidget_->backgroundRole(), backgroundColor());

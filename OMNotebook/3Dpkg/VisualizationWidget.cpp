@@ -37,9 +37,9 @@ namespace IAEX {
 	VisualizationWidget::VisualizationWidget(QWidget *parent) : QWidget(parent)
 	{
 #ifndef __APPLE_CC__
-		this->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
+		this->setMinimumWidth(600);
 		this->setMinimumHeight(300);
-		this->setMinimumWidth(500);
+		this->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
 
 		visframe_ = new QWidget(this);
 
@@ -86,14 +86,15 @@ namespace IAEX {
 		buttonframe->setLayout(buttonlayout_);
 
 		eviewer_ = new SoQtExaminerViewer(visframe_, NULL, TRUE, SoQtFullViewer::BUILD_NONE);
-		eviewer_->setSize(SbVec2s(500,400));
+		//eviewer_->setSize(SbVec2s(600,400));
+    //eviewer_->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
 		eviewer_->setSceneGraph(simdata_->getSceneGraph());
-		eviewer_->setBackgroundColor(SbColor(0.85f, 0.85f, 0.85f));
+		eviewer_->setBackgroundColor(SbColor(0.95f, 0.95f, 0.95f));
 
 		//SoCamera *cam = eviewer_->getCamera();
 		//cam->
 
-		QHBoxLayout *framelayout = new QHBoxLayout;
+		QHBoxLayout *framelayout = new QHBoxLayout(this);
 		framelayout->addWidget(visframe_);
 		framelayout->addWidget(buttonframe);
 		this->setLayout(framelayout);

@@ -1,16 +1,16 @@
 <ui version="4.0" >
  <class>graphWindow</class>
- <widget class="QMainWindow" name="Plot Window" >
+ <widget class="QMainWindow" name="graphWindow" >
   <property name="geometry" >
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>671</width>
-    <height>682</height>
+    <width>600</width>
+    <height>400</height>
    </rect>
   </property>
   <property name="windowTitle" >
-   <string>graphWindow</string>
+   <string>Plot Window</string>
   </property>
   <widget class="QWidget" name="centralwidget" >
    <property name="styleSheet" >
@@ -52,8 +52,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>671</width>
-     <height>21</height>
+     <width>600</width>
+     <height>19</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuHelp" >

@@ -43,16 +43,31 @@
 
 using namespace std;
 
-Line2D::Line2D(qreal x1, qreal y1, qreal x2, qreal y2, QPen newPen,
+Line2D::Line2D(qreal x1, qreal y1, qreal x2, qreal y2, QPen newPen, 
+               qreal width,  bool bCosmetic,
                QGraphicsItem* parent, QGraphicsScene* scene):
 QGraphicsLineItem(x1, y1, x2, y2, parent, scene)
 {
-  //setFlags(QGraphicsItem::ItemIgnoresTransformations);
+  //setFlag(flag, enabled);  
 	setPen(newPen);
-  pen().setWidth(PLOT_LINE_WIDTH);
+  pen().setWidth(width);
+  pen().setCosmetic(bCosmetic);
 }
 
 Line2D::~Line2D()
 {
 
+}
+
+QRectF Line2D::boundingRect() const
+{
+    const qreal x1 = line().p1().x();
+    const qreal x2 = line().p2().x();
+    const qreal y1 = line().p1().y();
+    const qreal y2 = line().p2().y();
+    qreal lx = qMin(x1, x2);
+    qreal rx = qMax(x1, x2);
+    qreal ty = qMin(y1, y2);
+    qreal by = qMax(y1, y2);
+    return QRectF(lx, ty, rx - lx, by - ty);
 }

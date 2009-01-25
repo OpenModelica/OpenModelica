@@ -52,6 +52,7 @@ class Point: public QGraphicsEllipseItem
   double xPos, yPos, hgt, wdt;
   void move(double, double);
   void updateSize();
+  //QString toolTip () const;
 
  protected:
   virtual void hoverEnterEvent ( QGraphicsSceneHoverEvent * event );
@@ -63,7 +64,7 @@ class Point: public QGraphicsEllipseItem
  private:
   const GraphWidget* graphwidget;
   double dx, dy;
-
+  //const QString& label_;
 };
 
 #endif

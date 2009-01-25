@@ -93,7 +93,7 @@ void LegendLabel::deleteCurve()
 
 	delete curve;
 //	delete menu;
-	deleteLater();
+	// deleteLater();
 }
 
 

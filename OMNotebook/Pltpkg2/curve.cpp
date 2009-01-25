@@ -77,7 +77,8 @@ void Curve::setColor(QColor c)
 {
 	color_ = c;
 	QPen p(c);
-  p.setWidth(PLOT_LINE_WIDTH);
+  p.setWidthF(PLOT_LINE_WIDTH);
+  p.setCosmetic(true);
 	QList<QGraphicsItem*> l = line->children();
 
 	for(int i = 0; i < l.size(); ++i)
@@ -86,6 +87,6 @@ void Curve::setColor(QColor c)
 	for(int i = 0; i < dataPoints.size(); ++i)
 	{
 		dataPoints[i]->color = c;
-		dataPoints[i]->setPen(p);
+		dataPoints[i]->setPen(QPen(c));
 	}
 }

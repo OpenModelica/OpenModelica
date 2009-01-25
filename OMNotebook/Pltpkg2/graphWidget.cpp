@@ -114,9 +114,6 @@ GraphWidget::GraphWidget(QWidget* parent): QGraphicsView(parent)
 
   variableCount = 0;
 
-  this->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
-  this->setMinimumHeight(150);
-
   this->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
   this->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
@@ -898,7 +895,7 @@ void GraphWidget::createGrid(bool numbersOnly)
     delete ti;
 
   QPen pen(Qt::lightGray);
-  QPen pen2(Qt::darkGray);
+  QPen pen2(pen); // Qt::darkGray);
 
   double xMin2, xMax2, yMin2, yMax2;
 
@@ -1113,7 +1110,6 @@ void GraphWidget::paintEvent(QPaintEvent *pe)
       }
       graphicsScene->setSceneRect(graphicsScene->itemsBoundingRect());
       graphicsScene->gridVisible = visible;
-      updatePointSizes();
       doFitInView = false;
     }
     else if(doSetArea)
@@ -1240,6 +1236,7 @@ void GraphWidget::drawLine(QDataStream& ds)
 
   QPen pen(color);
   pen.setWidth(PLOT_LINE_WIDTH);
+  pen.setCosmetic(true);
   QBrush brush(fillColor);
 
   QGraphicsLineItem *e = new QGraphicsLineItem(x0, y0, x1, y1);
@@ -1285,6 +1282,7 @@ void GraphWidget::drawRect(QDataStream& ds)
   ds >> x0 >> y0 >> x1 >> y1 >> color >> fillColor;
   QPen pen(color);
   pen.setWidth(PLOT_LINE_WIDTH);
+  pen.setCosmetic(true);
   QBrush brush(fillColor);
   // graphicsItems->addToGroup(graphicsScene->addRect(QRectF(QPointF(x0,y0), QSizeF(x1-x0, y1-y0)), pen, brush));
   QGraphicsRectItem *e = new QGraphicsRectItem(QRectF(QPointF(x0, y0), QSizeF(x1-x0, y1-y0)));
@@ -1303,6 +1301,7 @@ void GraphWidget::drawEllipse(QDataStream& ds)
   ds >> x0 >> y0 >> x1 >> y1 >> color >> fillColor;
   QPen pen(color);
   pen.setWidth(PLOT_LINE_WIDTH);
+  pen.setCosmetic(true);
   QBrush brush(fillColor);
   QGraphicsEllipseItem *e = new QGraphicsEllipseItem(QRectF(QPointF(x0, y0), QSizeF(x1-x0, y1-y0)));
   e->setPen(pen);
@@ -1554,6 +1553,7 @@ void GraphWidget::setLogarithmic(bool b)
 
       QPen pen(curves[i]->color_);
       pen.setWidth(PLOT_LINE_WIDTH);
+      pen.setCosmetic(true);
 
       if(!C || drawNextPoint)
       {
@@ -1575,14 +1575,14 @@ void GraphWidget::setLogarithmic(bool b)
 
       if(curves[i]->interpolation == INTERPOLATION_LINEAR)
       {
-        Line2D* l = new Line2D(x0, y0, x1, y1,pen);
+        Line2D* l = new Line2D(x0, y0, x1, y1,pen, PLOT_LINE_WIDTH, true);
         curves[i]->line->addToGroup(l);
       }
       else if(curves[i]->interpolation == INTERPOLATION_CONSTANT)
       {
-        Line2D* l = new Line2D(x0, y0,x1, y0, pen);
+        Line2D* l = new Line2D(x0, y0,x1, y0, pen, PLOT_LINE_WIDTH, true);
         curves[i]->line->addToGroup(l);
-        l = new Line2D(x1, y0,x1, y1, pen);
+        l = new Line2D(x1, y0,x1, y1, pen, PLOT_LINE_WIDTH, true);
         curves[i]->line->addToGroup(l);
       }
     }
@@ -1591,6 +1591,7 @@ void GraphWidget::setLogarithmic(bool b)
     {
       QPen pen(curves[i]->color_);
       pen.setWidth(PLOT_LINE_WIDTH);
+      pen.setCosmetic(true);
       Point* p = new Point(x1, y1, .02, .02, pen.color(), this,0, graphicsScene,
         curves[i]->x->variableName() + ": " + QVariant(x1_).toString() +"\n" +
         curves[i]->y->variableName() + ": " + QVariant(y1_).toString());
@@ -1788,6 +1789,7 @@ void GraphWidget::plotPtolemyDataStream()
       currentYVar=yVars[k];
       color = temporaryCurves[currentYVar]->color_;
       color.setWidth(PLOT_LINE_WIDTH);
+      color.setCosmetic(true);
 
       int maxIndex = min(variables[currentXVar]->size()-1, variables[currentYVar]->size()-1);
 
@@ -1860,20 +1862,20 @@ void GraphWidget::plotPtolemyDataStream()
 
           if(temporaryCurves[currentYVar]->interpolation == INTERPOLATION_LINEAR)
           {
-            Line2D* l = new Line2D(x0, y0, x1, y1,color);
+            Line2D* l = new Line2D(x0, y0, x1, y1,color, PLOT_LINE_WIDTH, true);
             temporaryCurves[currentYVar]->line->addToGroup(l);
             l->show();
           }
           else if(temporaryCurves[currentYVar]->interpolation == INTERPOLATION_CONSTANT)
           {
-            Line2D* l = new Line2D(x0, y0,x1,y0,color);
+            Line2D* l = new Line2D(x0, y0,x1,y0,color, PLOT_LINE_WIDTH, true);
             temporaryCurves[currentYVar]->line->addToGroup(l);
-            l = new Line2D(x1, y0,x1,y1,color);
+            l = new Line2D(x1, y0,x1,y1,color, PLOT_LINE_WIDTH, true);
             temporaryCurves[currentYVar]->line->addToGroup(l);
           }
           else if(temporaryCurves[currentYVar]->interpolation == INTERPOLATION_NONE)
           {
-            Line2D* l = new Line2D(x0, y0, x1, y1,color);
+            Line2D* l = new Line2D(x0, y0, x1, y1,color, PLOT_LINE_WIDTH, true);
             l->setVisible(false);
             temporaryCurves[currentYVar]->line->addToGroup(l);
           }

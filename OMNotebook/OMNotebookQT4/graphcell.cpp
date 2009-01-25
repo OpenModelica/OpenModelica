@@ -695,9 +695,9 @@ namespace IAEX {
   void GraphCell::createCompoundWidget()
   {
     compoundwidget = new CompoundWidget(mainWidget());
-    compoundwidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    // compoundwidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
-    layout_->addWidget( compoundwidget, 3, 1 );
+    layout_->addWidget( compoundwidget, 3, 1 /*, Qt::AlignHCenter*/);
 
     compoundwidget->gwMain->setServerState(false);
     compoundwidget->visWidget->setServerState(false);
@@ -1255,7 +1255,7 @@ namespace IAEX {
     if( height < 0 ) height = 30;
 
     // add a little extra, just in case /AF
-    input_->setMinimumHeight( height + 3 );
+    input_->setMinimumHeight( height );
 
     if( evaluated_ && !closed_ )
     {
@@ -1271,19 +1271,18 @@ namespace IAEX {
     // have chagned /AF
     if(compoundwidget && compoundwidget->isVisible())
     {
-      compoundwidget->setMinimumHeight(550);
       compoundwidget->gvBottom->show();
       compoundwidget->gvLeft->show();
-      height += 550;
+      height += compoundwidget->height();
     }
 
-    setHeight( height + 3 );
+    setHeight( height );
     emit textChanged();
 
-    if( oldHeight_ != (height + 3 ) )
+    if( oldHeight_ != height )
       emit heightChanged();
 
-    oldHeight_ = height + 3;
+    oldHeight_ = height;
   }
 
   /*!
@@ -1358,7 +1357,6 @@ namespace IAEX {
         return true;
       else
         return false;
-
     }
   }
 
@@ -1367,12 +1365,10 @@ namespace IAEX {
     compoundwidget->show();
     showGraph = true;
 
-    if(!compoundwidget->isVisible())
-    {
-      setHeight(height() +200);
-      compoundwidget->show();
-      compoundwidget->setMinimumHeight(200);
-    }
+    //if(!compoundwidget->isVisible())
+    //{      
+    //  compoundwidget->show();
+    //}
     contentChanged();
   }
 
@@ -1987,21 +1983,10 @@ namespace IAEX {
     return delegate_;
   }
 
-
-
   bool GraphCell::hasDelegate()
   {
     return delegate_ != 0;
   }
-
-
-
-
-
-
-
-
-
 
   /*! \brief Do not use this member.
   *
@@ -2059,12 +2044,6 @@ namespace IAEX {
     contentChanged();
     Cell::resizeEvent(event);
   }
-
-
-
-
-
-
 
   void GraphCell::mouseDoubleClickEvent(QMouseEvent *)
   {
