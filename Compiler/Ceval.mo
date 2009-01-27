@@ -1945,6 +1945,25 @@ algorithm
         compiledFunctions = cf)),msg) /* failing build_model */
     then (cache,Values.ARRAY({Values.STRING(""),Values.STRING("")}),st_1);
 
+    /* adrpo: see if the model exists before simulation! */
+    case (cache,env,(exp as
+      Exp.CALL(path = Absyn.IDENT(name = "simulate"),
+        expLst = {Exp.CODE(Absyn.C_TYPENAME(className),_),starttime,stoptime,interval,tolerance,method,filenameprefix,storeInTemp})),
+      (st_1 as Interactive.SYMBOLTABLE(
+        ast = p, explodedAst = sp, instClsLst = ic, lstVarVal = iv, compiledFunctions = cf)),msg)
+      local
+        Absyn.ComponentRef crefCName;
+        String errMsg;
+      equation
+        crefCName = Absyn.pathToCref(className);
+        false = Interactive.existClass(crefCName, p);
+        errMsg = "Simulation Failed. Model: " +& Absyn.pathString(className) +& " does not exists! Please load it first before simulation.";
+        simValue = Values.RECORD(Absyn.IDENT("SimulationResult"),
+                                 {Values.STRING(errMsg)},
+                                 {"resultFile"});
+      then
+        (cache,simValue,st_1);
+
     case (cache,env,(exp as
       Exp.CALL(
         path = Absyn.IDENT(name = "simulate"),
@@ -2005,7 +2024,7 @@ algorithm
         instClsLst = ic,
         lstVarVal = iv,
         compiledFunctions = cf)),msg)
-      local String errorStr, error;
+      local String errorStr, error;      
       equation
         omhome = Settings.getInstallationDirectoryPath() "simulation fail for some other reason than OPENMODELICAHOME not being set." ;
         errorStr = Error.printMessagesStr();

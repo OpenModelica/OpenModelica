@@ -4410,7 +4410,33 @@ algorithm
         (cfn1,var2,tnr2) = generateExpression(s2, tnr1, context);
         (tdecl,tvar,tnr3) = generateTempDecl(tp_str, tnr2);
         cfn2 = cAddVariables(cfn1, {tdecl});
-        stmt = Util.stringAppendList({tvar," = max(",var1,",",var2,");"});
+        stmt = Util.stringAppendList({tvar," = max(((modelica_real)(",var1,")),((modelica_real)(",var2,")));"});
+        cfn = cAddStatements(cfn2, {stmt});
+      then
+        (cfn,tvar,tnr3);
+      /* min */
+    case (Exp.CALL(path = Absyn.IDENT(name = "min"),expLst = {arg},tuple_ = false,builtin = true),tnr,context) /* min(v), v is vector */
+      equation
+        tp = Exp.typeof(arg);
+        tp_str = expTypeStr(tp, true);
+        tp_str2 = expTypeStr(tp, false);
+        (cfn1,var1,tnr1) = generateExpression(arg, tnr, context);
+        fn_name = stringAppend("min_", tp_str);
+        (tdecl,tvar,tnr2) = generateTempDecl(tp_str2, tnr1);
+        cfn2 = cAddVariables(cfn1, {tdecl});
+        stmt = Util.stringAppendList({tvar," = ",fn_name,"(&",var1,");"});
+        cfn = cAddStatements(cfn2, {stmt});
+      then
+        (cfn,tvar,tnr2);
+    case (Exp.CALL(path = Absyn.IDENT(name = "min"),expLst = {s1,s2},tuple_ = false,builtin = true),tnr,context) /* min (a,b) a, b scalars */
+      equation
+        tp = Exp.typeof(s1);
+        tp_str = expTypeStr(tp, false);
+        (cfn1,var1,tnr1) = generateExpression(s1, tnr, context);
+        (cfn1,var2,tnr2) = generateExpression(s2, tnr1, context);
+        (tdecl,tvar,tnr3) = generateTempDecl(tp_str, tnr2);
+        cfn2 = cAddVariables(cfn1, {tdecl});
+        stmt = Util.stringAppendList({tvar," = min(((modelica_real)(",var1,")),((modelica_real)(",var2,")));"});
         cfn = cAddStatements(cfn2, {stmt});
       then
         (cfn,tvar,tnr3);
