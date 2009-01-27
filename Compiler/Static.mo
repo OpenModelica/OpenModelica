@@ -8595,6 +8595,10 @@ algorithm
       local Ident x;
       then
         Exp.SCONST(x);
+    case (Values.ENUM(x))
+      local Ident x;
+      then
+        Exp.SCONST(x);
     case (Values.BOOL(boolean = x))
       local Boolean x;
       then
@@ -8615,7 +8619,10 @@ algorithm
       then
         Exp.TUPLE(explist);
     case v
+      local String x;
       equation
+        // x = Values.valString(v);
+        // x = "value_exp failed for value:" +& x;
         Error.addMessage(Error.INTERNAL_ERROR, {"value_exp failed"});
       then
         fail();
