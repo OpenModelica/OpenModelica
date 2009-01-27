@@ -837,7 +837,8 @@ algorithm
         checkPackageVariableConstant(p_env,attr,ty,cref);
       then
         (cache,attr,ty,binding);
-    case (_,env,cref) equation
+    case (_,env,cref) 
+      equation
       // Debug.fprintln("failtrace", "Lookup.lookupVar - case 3: " +& Exp.crefStr(cref));
       /* Debug.fprint(\"failtrace\",  \"- lookup_var failed\\n\") */  then fail();
   end matchcontinue;

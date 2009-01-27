@@ -8566,17 +8566,6 @@ algorithm
         _ = getPathedClassInProgram(path, p);
       then
         true;
-    case (cr,p)
-      equation
-        failure(path = Absyn.crefToPath(cr));
-      then
-        false;
-    case (cr,p)
-      equation
-        path = Absyn.crefToPath(cr);
-        failure(_ = getPathedClassInProgram(path, p));
-      then
-        false;
     case (cr,p) then false;
   end matchcontinue;
 end existClass;

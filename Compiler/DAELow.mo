@@ -4282,7 +4282,7 @@ algorithm
         (res1,vars,i_1,whenClauseList3);
     case (DAE.WHEN_EQUATION(condition = cond),_,_)
       equation
-        print("fel i lowerWhenEqn");
+        print("Error in lowerWhenEqn");
       then fail();
   end matchcontinue;
 end lowerWhenEqn;

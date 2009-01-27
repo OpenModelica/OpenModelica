@@ -2054,12 +2054,52 @@ primary returns [void* ast]
 	:
 		( ui:UNSIGNED_INTEGER
 			{
+			    /*
 				int v;
-				if(str_to_int(ui->getText(),&v)== 0) {
+				if(str_to_int(ui->getText(),&v)== 0) 
+				{
 					ast = Absyn__INTEGER(mk_icon(v));
 				} else {
 					ast = Absyn__REAL(mk_rcon(str_to_double(ui->getText())));
 				}
+				*/
+		    	unsigned long int ltmp;
+		    	char *rest;
+		    	ltmp = strtoul(ui->getText().c_str(),&rest,10);
+		    	/* adrpo: truncate integers that are more than 2^30-1 */
+		    	if (ltmp > 2147483647) /* might be a real! */
+		    	{
+				    std::cerr << std::endl
+				              << modelicafilename.c_str()
+				              << ":" 
+				              << ui->getLine() 
+				              << ":"
+				              << ui->getColumn()
+				              << " Warning: Modelica supports only 32 bit signed integers! Transforming: " 
+				              << ui->getText()
+				              << " into a real"
+				              << std::endl;
+		    		ltmp = 1073741823;
+		    		ast = Absyn__REAL(mk_rcon(str_to_double(ui->getText())));
+		    	}
+		    	else if (ltmp > 1073741823)
+		    	{
+				    std::cerr << std::endl
+				              << modelicafilename.c_str()
+				              << ":" 
+				              << ui->getLine() 
+				              << ":"
+				              << ui->getColumn()
+				              << " Warning: OpenModelica supports only 31 bit signed integers! Truncating integer: " 
+				              << ui->getText()
+				              << " to: " 
+				              << 1073741823
+				              << std::endl;
+		    		ltmp = 1073741823;
+		    		ast = Absyn__INTEGER(mk_icon(ltmp));				               
+		    	} 	
+		    	else
+		    	  ast = Absyn__INTEGER(mk_icon(ltmp));
 			}
 		| ur:UNSIGNED_REAL
 			{
