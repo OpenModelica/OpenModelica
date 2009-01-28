@@ -13125,7 +13125,11 @@ algorithm
         (_,mod_2) = Mod.elabMod(Env.emptyCache,env, Prefix.NOPRE(), mod_1, true);
         (_,dae,_,cs,t,state) = Inst.instClass(Env.emptyCache,env, mod_2, Prefix.NOPRE(), Connect.emptySet,
           placementclass, {}, false, Inst.TOP_CALL());
+        //debug_print("dae", dae);        
+        //print("before:\n"); print(intString(listLength(dae))); print(" "); DAE.dump(DAE.DAE(dae)); print(Print.getString()); print ("\n");
         dae_1 = Inst.initVarsModelicaOutput(dae) "Put bindings of variables as expressions inside variable elements of the dae instead of equations" ;
+        //debug_print("dae_1", dae_1);
+        //print("after:\n"); print(intString(listLength(dae_1))); print(" "); DAE.dump(DAE.DAE(dae_1)); print(Print.getString()); print ("\n");
         str = DAE.getVariableBindingsStr(dae_1);
       then
         str;

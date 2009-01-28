@@ -3471,6 +3471,12 @@ algorithm
       Option<Absyn.Comment> comment;
       Absyn.InnerOuter io;
       Types.Type tp;
+    /* adrpo: filter out records! */
+    case ((x as VAR(ty = RECORD(_))) :: lst)
+      equation
+        res = getVariableList(lst);
+      then
+        (res);      
     case ((x as VAR(_,_,_,_,_,_,_,_,_,_,_,_,_,_)) :: lst)
       equation
         res = getVariableList(lst);
