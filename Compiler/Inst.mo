@@ -8975,6 +8975,7 @@ algorithm
       Absyn.Algorithm alg;
       Env.Cache cache;
       Prefix pre; 
+      Absyn.ForIterators forIterators;
 
     //------------------------------------------
     // Part of MetaModelica list extension. KS
@@ -9161,14 +9162,15 @@ algorithm
         (cache,stmt);
         
     /* For loop */
-    case (cache,env,pre,Absyn.ALG_FOR(iterators = {(i,SOME(e))},forBody = sl),initial_,impl)
-      local tuple<Types.TType, Option<Absyn.Path>> t;
+    case (cache,env,pre,Absyn.ALG_FOR(iterators = forIterators,forBody = sl),initial_,impl)
+//      local tuple<Types.TType, Option<Absyn.Path>> t;
       equation 
-        (cache,e_1,(prop as Types.PROP((Types.T_ARRAY(_,t),_),_)),_) = Static.elabExp(cache,env, e, impl, NONE,true);
-        (cache,e_2) = Prefix.prefixExp(cache,env, e_1, pre);
-        env_1 = addForLoopScope(env, i, t);
-        (cache,sl_1) = instAlgorithmitems(cache,env_1,pre, sl,initial_,impl);
-        stmt = Algorithm.makeFor(i, e_2, prop, sl_1);
+//        (cache,e_1,(prop as Types.PROP((Types.T_ARRAY(_,t),_),_)),_) = Static.elabExp(cache,env, e, impl, NONE,true);
+//        (cache,e_2) = Prefix.prefixExp(cache,env, e_1, pre);
+//        env_1 = addForLoopScope(env, i, t);
+//        (cache,sl_1) = instAlgorithmitems(cache,env_1,pre, sl,initial_,impl);
+//        stmt = Algorithm.makeFor(i, e_2, prop, sl_1);
+        (cache,stmt)=instForStatement(cache,env,pre,forIterators,sl,initial_,impl);
       then
         (cache,stmt);
         
@@ -9324,6 +9326,125 @@ algorithm
   end matchcontinue;
 end instStatement;
 
+protected function instForStatement "Helper function for instStatement"
+  input Env.Cache inCache;
+  input list<Env.Frame> inEnv;
+  input Prefix inPrefix;
+  input Absyn.ForIterators inIterators;
+  input list<Absyn.AlgorithmItem> inForBody;
+  input SCode.Initial inInitial;
+  input Boolean inBool;
+  output Env.Cache outCache;
+  output Algorithm.Statement outStatement;
+algorithm
+  (outCache,outStatement):=matchcontinue(inCache,inEnv,inPrefix,inIterators,inForBody,inInitial,inBool)
+  local
+    Env.Cache cache;
+    list<Env.Frame> env,env_1;
+    Prefix pre;
+    list<Absyn.ForIterator> restIterators;
+    list<Absyn.AlgorithmItem> sl;
+    SCode.Initial initial_;
+    Boolean impl;
+    tuple<Types.TType, Option<Absyn.Path>> t;
+    Exp.Exp e_1,e_2;
+    list<Algorithm.Statement> sl_1;
+    String i;
+    Absyn.Exp e;
+    Algorithm.Statement stmt,stmt_1;
+    Types.Properties prop;
+    list<tuple<Absyn.ComponentRef,Integer>> lst;
+//    Absyn.ComponentRef acref;
+//    Integer dimNum;
+    tuple<Absyn.ComponentRef, Integer> tpl;
+    case (cache,env,pre,{(i,SOME(e))},sl,initial_,impl)
+      equation 
+        (cache,e_1,(prop as Types.PROP((Types.T_ARRAY(_,t),_),_)),_) = Static.elabExp(cache,env, e, impl, NONE,true);
+        (cache,e_2) = Prefix.prefixExp(cache,env, e_1, pre);
+        env_1 = addForLoopScope(env, i, t);
+        (cache,sl_1) = instAlgorithmitems(cache,env_1,pre, sl,initial_,impl);
+        stmt = Algorithm.makeFor(i, e_2, prop, sl_1);
+      then
+        (cache,stmt);
+    case (cache,env,pre,(i,SOME(e))::restIterators,sl,initial_,impl)
+      equation
+        (cache,e_1,(prop as Types.PROP((Types.T_ARRAY(_,t),_),_)),_) = Static.elabExp(cache,env, e, impl, NONE,true);
+        (cache,e_2) = Prefix.prefixExp(cache,env, e_1, pre);
+        env_1 = addForLoopScope(env, i, t);
+        (cache,stmt_1)=instForStatement(cache,env_1,pre,restIterators,sl,initial_,impl);
+        sl_1={stmt_1};
+        stmt = Algorithm.makeFor(i, e_2, prop, sl_1);
+      then
+        (cache,stmt);
+    case (cache,env,pre,{(i,NONE)},sl,initial_,impl)
+      equation 
+        lst=Absyn.findIteratorInAlgorithmItemLst(i,sl);
+//        len=listLength(lst);
+//        zero=0;
+//        equality(zero=len);
+        equality(lst={});
+        Error.addMessage(Error.IMPLICIT_ITERATOR_NOT_FOUND_IN_LOOP_BODY,{i});        
+      then
+        fail();
+    case (cache,env,pre,(i,NONE)::restIterators,sl,initial_,impl)
+      equation 
+        lst=Absyn.findIteratorInAlgorithmItemLst(i,sl);
+        equality(lst={});
+        Error.addMessage(Error.IMPLICIT_ITERATOR_NOT_FOUND_IN_LOOP_BODY,{i});        
+      then
+        fail();
+    case (cache,env,pre,{(i,NONE)},sl,initial_,impl) //The verison w/o assertions
+      equation 
+        lst=Absyn.findIteratorInAlgorithmItemLst(i,sl);
+        failure(equality(lst={}));
+        tpl=Util.listFirst(lst);
+//        e=Absyn.RANGE(1,NONE,Absyn.CALL(Absyn.CREF_IDENT("size",{}),Absyn.FUNCTIONARGS({Absyn.CREF(acref),Absyn.INTEGER(dimNum)},{})));
+        e=rangeExpression(tpl);
+        (cache,e_1,(prop as Types.PROP((Types.T_ARRAY(_,t),_),_)),_) = Static.elabExp(cache,env, e, impl, NONE,true);
+        (cache,e_2) = Prefix.prefixExp(cache,env, e_1, pre);
+        env_1 = addForLoopScope(env, i, t);
+        (cache,sl_1) = instAlgorithmitems(cache,env_1,pre, sl,initial_,impl);
+        stmt = Algorithm.makeFor(i, e_2, prop, sl_1);
+      then
+        (cache,stmt);
+    case (cache,env,pre,(i,NONE)::restIterators,sl,initial_,impl) //The verison w/o assertions
+      equation 
+        lst=Absyn.findIteratorInAlgorithmItemLst(i,sl);
+        failure(equality(lst={}));
+        tpl=Util.listFirst(lst);
+//        e=Absyn.RANGE(1,NONE,Absyn.CALL(Absyn.CREF_IDENT("size",{}),Absyn.FUNCTIONARGS({Absyn.CREF(acref),Absyn.INTEGER(dimNum)},{})));
+        e=rangeExpression(tpl);
+        (cache,e_1,(prop as Types.PROP((Types.T_ARRAY(_,t),_),_)),_) = Static.elabExp(cache,env, e, impl, NONE,true);
+        (cache,e_2) = Prefix.prefixExp(cache,env, e_1, pre);
+        env_1 = addForLoopScope(env, i, t);
+        (cache,stmt_1)=instForStatement(cache,env_1,pre,restIterators,sl,initial_,impl);
+        sl_1={stmt_1};
+        stmt = Algorithm.makeFor(i, e_2, prop, sl_1);
+      then
+        (cache,stmt);
+        
+  end matchcontinue;
+end instForStatement;
+
+protected function rangeExpression "
+The function takes a tuple of Absyn.ComponentRef (an array variable) and an integer i and constructs 
+the range expression (Absyn.Exp) for the ith dimension of the variable
+"
+  input tuple<Absyn.ComponentRef, Integer> inTuple;
+  output Absyn.Exp outExp;
+algorithm
+  outExp:=matchcontinue(inTuple)
+  local
+    Absyn.Exp e;
+    Absyn.ComponentRef acref;
+    Integer dimNum;           
+    tuple<Absyn.ComponentRef, Integer> tpl;
+    case (tpl as (acref,dimNum))
+      equation
+        e=Absyn.RANGE(Absyn.INTEGER(1),NONE,Absyn.CALL(Absyn.CREF_IDENT("size",{}),Absyn.FUNCTIONARGS({Absyn.CREF(acref),Absyn.INTEGER(dimNum)},{})));
+      then e;
+  end matchcontinue;
+end rangeExpression;              
 
 /* MetaModelica Language Extension */
 protected function createMatchStatement 

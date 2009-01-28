@@ -2548,4 +2548,518 @@ algorithm v3 := matchcontinue(v1,v2)
 end matchcontinue;
 end propagateAbsynDirection;
 
+protected function findIteratorInAlgorithmItem 
+  input String inString;
+  input AlgorithmItem inAlgItem;
+  output list<tuple<ComponentRef, Integer>> outLst;
+algorithm
+    outLst:=matchcontinue(inString,inAlgItem)
+    local 
+      list<tuple<ComponentRef, Integer>> lst;
+      Algorithm alg;
+      String id;
+      case (id,ALGORITHMITEM(algorithm_=alg))
+        equation
+          lst=findIteratorInAlgorithm(id,alg);
+        then lst;
+      case (_,_) then {};
+  end matchcontinue;
+end findIteratorInAlgorithmItem;
+
+protected function findIteratorInAlgorithm  
+  input String inString;
+  input Algorithm inAlg;               
+  output list<tuple<ComponentRef, Integer>> outLst;
+algorithm
+    outLst:=matchcontinue(inString,inAlg)
+    local 
+      String id;
+      list<tuple<ComponentRef, Integer>> lst,lst_1,lst_2,lst_3,lst_4;
+      Exp e_1,e_2;
+      list<AlgorithmItem> algLst_1,algLst_2;
+      list<tuple<Exp, list<AlgorithmItem>>> elseIfBranch;
+      list<ForIterator> forIterators;
+      FunctionArgs funcArgs;
+      AlgorithmItem algItem;
+      
+      case (id,ALG_ASSIGN(e_1,e_2))
+        equation
+          lst_1=findIteratorInExp(id,e_1);  
+          lst_2=findIteratorInExp(id,e_2);
+          lst=listAppend(lst_1,lst_2);
+        then lst;
+      case (id,ALG_IF(e_1,algLst_1,elseIfBranch,algLst_2))
+        equation        
+          lst_1=findIteratorInExp(id,e_1);  
+          lst_2=findIteratorInAlgorithmItemLst(id,algLst_1);
+          lst_3=findIteratorInElseIfBranch(id,elseIfBranch);
+          lst_4=findIteratorInAlgorithmItemLst(id,algLst_2);
+          lst=Util.listFlatten({lst_1,lst_2,lst_3,lst_4});
+        then lst;
+      case (id, ALG_FOR(forIterators,algLst_1))
+        equation
+          true=iteratorPresentAmongIterators(id,forIterators);
+          lst=findIteratorInForIteratorsBounds(id,forIterators);
+        then lst;        
+      case (id, ALG_FOR(forIterators,algLst_1))
+        equation
+          false=iteratorPresentAmongIterators(id,forIterators);
+          lst_1=findIteratorInAlgorithmItemLst(id,algLst_1);
+          lst_2=findIteratorInForIteratorsBounds(id,forIterators);
+          lst=listAppend(lst_1,lst_2);
+        then lst;
+      case (id, ALG_WHILE(e_1,algLst_1))
+        equation            
+          lst_1=findIteratorInExp(id,e_1);  
+          lst_2=findIteratorInAlgorithmItemLst(id,algLst_1);
+          lst=listAppend(lst_1,lst_2);
+        then lst;
+      case (id,ALG_WHEN_A(e_1,algLst_1,elseIfBranch))
+        equation        
+          lst_1=findIteratorInExp(id,e_1);  
+          lst_2=findIteratorInAlgorithmItemLst(id,algLst_1);
+          lst_3=findIteratorInElseIfBranch(id,elseIfBranch);
+          lst=Util.listFlatten({lst_1,lst_2,lst_3});
+        then lst;
+      case (id,ALG_NORETCALL(_,funcArgs))          
+        equation        
+          lst=findIteratorInFunctionArgs(id,funcArgs);
+        then lst;
+      case (id,ALG_FAILURE(algItem))          
+        equation        
+          lst=findIteratorInAlgorithmItem(id,algItem);
+        then lst;
+      case (id,ALG_EQUALITY(algItem))          
+        equation        
+          lst=findIteratorInAlgorithmItem(id,algItem);
+        then lst;
+      case (id,ALG_TRY(algLst_1))
+        equation        
+          lst=findIteratorInAlgorithmItemLst(id,algLst_1);
+        then lst;
+      case (id,ALG_CATCH(algLst_1))
+        equation        
+          lst=findIteratorInAlgorithmItemLst(id,algLst_1);
+        then lst;
+      case (_,_) then {};
+  end matchcontinue;
+end findIteratorInAlgorithm;
+        
+public function findIteratorInAlgorithmItemLst"
+Used by Inst.instForStatement
+"
+//This function is not tail-recursive, and I don't know how to fix it -- alleb 
+  input String inString;
+  input list<AlgorithmItem> inAlgItemLst;
+  output list<tuple<ComponentRef, Integer>> outLst;
+algorithm
+    outLst:=matchcontinue(inString,inAlgItemLst)
+    local 
+      list<tuple<ComponentRef, Integer>> lst,lst_1,lst_2;
+      String id;
+      list<AlgorithmItem> rest;
+      AlgorithmItem algItem;
+      case (id,{}) then {};
+      case (id,algItem::rest)
+        equation
+          lst_1=findIteratorInAlgorithmItem(id,algItem);
+          lst_2=findIteratorInAlgorithmItemLst(id,rest);
+          lst=listAppend(lst_1,lst_2);
+        then lst;
+  end matchcontinue;
+end findIteratorInAlgorithmItemLst;
+               
+protected function findIteratorInElseIfBranch //This function is not tail-recursive, and I don't know how to fix it -- alleb              
+  input String inString;
+  input list<tuple<Exp, list<AlgorithmItem>>> inElseIfBranch;
+  output list<tuple<ComponentRef, Integer>> outLst;
+algorithm
+    outLst:=matchcontinue(inString,inElseIfBranch)
+    local 
+      list<tuple<ComponentRef, Integer>> lst,lst_1,lst_2,lst_3;
+      String id;
+      list<tuple<Exp, list<AlgorithmItem>>> rest;
+      Exp exp;
+      list<AlgorithmItem> algItemLst;
+      case (id,{}) then {};
+      case (id,(exp,algItemLst)::rest)
+        equation
+          lst_1=findIteratorInExp(id,exp);
+          lst_2=findIteratorInAlgorithmItemLst(id,algItemLst);
+          lst_3=findIteratorInElseIfBranch(id,rest);
+          lst=Util.listFlatten({lst_1,lst_2,lst_3});
+        then lst;
+  end matchcontinue;
+end findIteratorInElseIfBranch; 
+
+protected function findIteratorInElseIfExpBranch //This function is not tail-recursive, and I don't know how to fix it -- alleb              
+  input String inString;
+  input list<tuple<Exp, Exp>> inElseIfBranch;
+  output list<tuple<ComponentRef, Integer>> outLst;
+algorithm
+    outLst:=matchcontinue(inString,inElseIfBranch)
+    local 
+      list<tuple<ComponentRef, Integer>> lst,lst_1,lst_2,lst_3;
+      String id;
+      list<tuple<Exp, Exp>> rest;
+      Exp e_1,e_2;
+      case (id,{}) then {};
+      case (id,(e_1,e_2)::rest)
+        equation
+          lst_1=findIteratorInExp(id,e_1);
+          lst_2=findIteratorInExp(id,e_2);
+          lst_3=findIteratorInElseIfExpBranch(id,rest);
+          lst=Util.listFlatten({lst_1,lst_2,lst_3});
+        then lst;
+  end matchcontinue;
+end findIteratorInElseIfExpBranch; 
+
+protected function findIteratorInFunctionArgs           
+  input String inString;
+  input FunctionArgs inFunctionArgs;
+  output list<tuple<ComponentRef, Integer>> outLst;
+algorithm
+    outLst:=matchcontinue(inString,inFunctionArgs)
+    local 
+      list<tuple<ComponentRef, Integer>> lst,lst_1,lst_2;
+      String id;
+      list<Exp> expLst;
+      list<NamedArg> namedArgs;
+      Exp exp;
+      list<ForIterator> forIterators;
+      case (id,FUNCTIONARGS(expLst,namedArgs))
+        equation
+          lst_1=findIteratorInExpLst(id,expLst);
+          lst_2=findIteratorInNamedArgs(id,namedArgs);
+          lst=listAppend(lst_1,lst_2);
+        then lst;
+      case (id, FOR_ITER_FARG(exp,forIterators))
+        equation
+          true=iteratorPresentAmongIterators(id,forIterators);
+          lst=findIteratorInForIteratorsBounds(id,forIterators);
+        then lst;                  
+      case (id, FOR_ITER_FARG(exp,forIterators))
+        equation
+          false=iteratorPresentAmongIterators(id,forIterators);
+          lst_1=findIteratorInExp(id,exp);
+          lst_2=findIteratorInForIteratorsBounds(id,forIterators);
+          lst=listAppend(lst_1,lst_2);
+        then lst;                  
+  end matchcontinue;
+end findIteratorInFunctionArgs;
+
+protected function iteratorPresentAmongIterators
+  input String inString;
+  input list<ForIterator> inForIterators;
+  output Boolean outBool;
+algorithm
+    outBool:=matchcontinue(inString,inForIterators)
+    local 
+      String id,id1;
+      Boolean bool;
+      list<ForIterator> rest;
+      case (id,{}) then false;
+      case (id,(id1,_)::rest)
+        equation
+          equality(id=id1);
+        then true;
+      case (id,(id1,_)::rest)
+        equation
+          failure(equality(id=id1));
+          bool=iteratorPresentAmongIterators(id,rest);
+        then bool;
+  end matchcontinue;
+end iteratorPresentAmongIterators;            
+              
+protected function findIteratorInExpLst//This function is not tail-recursive, and I don't know how to fix it -- alleb 
+  input String inString;
+  input list<Exp> inExpLst;
+  output list<tuple<ComponentRef, Integer>> outLst;
+algorithm
+    outLst:=matchcontinue(inString,inExpLst)
+    local 
+      list<tuple<ComponentRef, Integer>> lst,lst_1,lst_2;
+      String id;
+      list<Exp> rest;
+      Exp exp;
+      case (id,{}) then {};
+      case (id,exp::rest)
+        equation
+          lst_1=findIteratorInExp(id,exp);
+          lst_2=findIteratorInExpLst(id,rest);
+          lst=listAppend(lst_1,lst_2);
+        then lst;
+  end matchcontinue;
+end findIteratorInExpLst;
+               
+protected function findIteratorInExpLstLst//This function is not tail-recursive, and I don't know how to fix it -- alleb 
+  input String inString;
+  input list<list<Exp>> inExpLstLst;
+  output list<tuple<ComponentRef, Integer>> outLst;
+algorithm
+    outLst:=matchcontinue(inString,inExpLstLst)
+    local 
+      list<tuple<ComponentRef, Integer>> lst,lst_1,lst_2;
+      String id;
+      list<list<Exp>> rest;
+      list<Exp> expLst;
+      case (id,{}) then {};
+      case (id,expLst::rest)
+        equation
+          lst_1=findIteratorInExpLst(id,expLst);
+          lst_2=findIteratorInExpLstLst(id,rest);
+          lst=listAppend(lst_1,lst_2);
+        then lst;
+  end matchcontinue;
+end findIteratorInExpLstLst;
+               
+protected function findIteratorInNamedArgs  
+  input String inString;
+  input list<NamedArg> inNamedArgs;
+  output list<tuple<ComponentRef, Integer>> outLst;
+algorithm
+    outLst:=matchcontinue(inString,inNamedArgs)
+    local 
+      list<tuple<ComponentRef, Integer>> lst,lst_1,lst_2;
+      String id;
+      list<NamedArg> rest;
+      Exp exp;
+      case (id,{}) then {};
+      case (id,NAMEDARG(_,exp)::rest)
+        equation
+          lst_1=findIteratorInExp(id,exp);
+          lst_2=findIteratorInNamedArgs(id,rest);
+          lst=listAppend(lst_1,lst_2);
+        then lst;
+  end matchcontinue;
+end findIteratorInNamedArgs;      
+          
+protected function findIteratorInForIteratorsBounds  
+  input String inString;
+  input list<ForIterator> inForIterators;
+  output list<tuple<ComponentRef, Integer>> outLst;
+algorithm
+    outLst:=matchcontinue(inString,inForIterators)
+    local 
+      list<tuple<ComponentRef, Integer>> lst,lst_1,lst_2;
+      String id;
+      list<ForIterator> rest;
+      Exp exp;
+      case (id,{}) then {};
+      case (id,(_,NONE)::rest)   
+        equation
+          lst=findIteratorInForIteratorsBounds(id,rest);
+        then lst;
+      case (id,(_,SOME(exp))::rest)
+        equation
+          lst_1=findIteratorInExp(id,exp);
+          lst_2=findIteratorInForIteratorsBounds(id,rest);
+          lst=listAppend(lst_1,lst_2);
+        then lst;
+  end matchcontinue;
+end findIteratorInForIteratorsBounds;
+
+protected function findIteratorInExp      
+  input String inString;
+  input Exp inExp;
+  output list<tuple<ComponentRef, Integer>> outLst;
+algorithm
+    outLst:=matchcontinue(inString,inExp)
+    local 
+      list<tuple<ComponentRef, Integer>> lst,lst_1,lst_2,lst_3,lst_4;
+      String id;
+      Exp e_1,e_2,e_3;
+      list<Exp> expLst;
+      list<list<Exp>> expLstLst;
+      ComponentRef cref;
+      list<tuple<Exp, Exp>> elseIfBranch;
+      FunctionArgs funcArgs;
+      Option<Exp> expOpt;
+      
+      case(id, CREF(cref))
+        equation
+          lst=findIteratorInCRef(id,cref);
+        then lst;
+      case(id, BINARY(e_1,_,e_2))
+        equation
+          lst_1=findIteratorInExp(id,e_1);
+          lst_2=findIteratorInExp(id,e_2);
+          lst=listAppend(lst_1,lst_2);
+        then lst;
+      case(id, UNARY(_,e_1))
+        equation
+          lst=findIteratorInExp(id,e_1);
+        then lst;
+      case(id, LBINARY(e_1,_,e_2))
+        equation
+          lst_1=findIteratorInExp(id,e_1);
+          lst_2=findIteratorInExp(id,e_2);
+          lst=listAppend(lst_1,lst_2);
+        then lst;
+      case(id, LUNARY(_,e_1))
+        equation
+          lst=findIteratorInExp(id,e_1);
+        then lst;
+      case(id, RELATION(e_1,_,e_2))
+        equation
+          lst_1=findIteratorInExp(id,e_1);
+          lst_2=findIteratorInExp(id,e_2);
+          lst=listAppend(lst_1,lst_2);
+        then lst;
+      case(id, IFEXP(e_1,e_2,e_3,elseIfBranch))
+        equation
+          lst_1=findIteratorInExp(id,e_1);
+          lst_2=findIteratorInExp(id,e_2);
+          lst_3=findIteratorInExp(id,e_3);
+          lst_4=findIteratorInElseIfExpBranch(id,elseIfBranch);
+          lst=Util.listFlatten({lst_1,lst_2,lst_3,lst_4});          
+        then lst;
+      case (id,CALL(_,funcArgs))          
+        equation        
+          lst=findIteratorInFunctionArgs(id,funcArgs);
+        then lst;
+      case (id, ARRAY(expLst))          
+        equation        
+          lst=findIteratorInExpLst(id,expLst);
+        then lst;
+      case (id, MATRIX(expLstLst))          
+        equation        
+          lst=findIteratorInExpLstLst(id,expLstLst);
+        then lst;
+      case(id, RANGE(e_1,expOpt,e_2))
+        equation
+          lst_1=findIteratorInExp(id,e_1);
+          lst_2=findIteratorInExpOpt(id,expOpt);
+          lst_3=findIteratorInExp(id,e_2);
+          lst=Util.listFlatten({lst_1,lst_2,lst_3});          
+        then lst;
+      case (id, TUPLE(expLst))          
+        equation        
+          lst=findIteratorInExpLst(id,expLst);
+        then lst;
+      case (id, LIST(expLst))          
+        equation        
+          lst=findIteratorInExpLst(id,expLst);
+        then lst;
+      case(_,_) then {};    
+  end matchcontinue;    
+end findIteratorInExp;     
+              
+protected function findIteratorInExpOpt 
+  input String inString;
+  input Option<Exp> inExpOpt;
+  output list<tuple<ComponentRef, Integer>> outLst;
+algorithm
+    outLst:=matchcontinue(inString,inExpOpt)
+    local 
+      list<tuple<ComponentRef, Integer>> lst;
+      String id;
+      Exp exp;
+      case (id,NONE) then {};
+      case (id,SOME(exp))
+        equation
+          lst=findIteratorInExp(id,exp);
+        then lst;
+  end matchcontinue;
+end findIteratorInExpOpt;
+
+protected function findIteratorInCRef "
+The most important among \"findIteratorIn...\" functions -- they all use this one in the end
+" 
+  input String inString;
+  input ComponentRef inCref;
+  output list<tuple<ComponentRef, Integer>> outLst;
+algorithm
+    outLst:=matchcontinue(inString,inCref)
+    local 
+      list<tuple<ComponentRef, Integer>> lst,lst_1,lst_2,lst_3;
+      String id,name;
+      list<Subscript> subLst;
+      ComponentRef cref;
+      list<Integer> intLst;
+      case(id, CREF_IDENT(name,subLst))
+        equation
+        intLst=findIteratorInSubscripts(id,subLst,1);
+        lst=combineCRefAndIntLst(CREF_IDENT(name,{}),intLst);
+        then lst;
+      case(id, CREF_QUAL(name,subLst,cref))
+        equation
+        intLst=findIteratorInSubscripts(id,subLst,1);
+        lst_1=combineCRefAndIntLst(CREF_IDENT(name,{}),intLst);
+        lst_2=findIteratorInCRef(id,cref);
+        lst_3=qualifyCRefIntLst(name,subLst,lst_2);
+        lst=listAppend(lst_1,lst_3);
+        then lst;
+      case (_,WILD()) then {};    
+  end matchcontinue;
+end findIteratorInCRef;
+
+protected function findIteratorInSubscripts
+  input String inString;
+  input list<Subscript> inSubLst;
+  input Integer inInt;
+  output list<Integer> outIntLst;
+algorithm
+    outLst:=matchcontinue(inString,inSubLst,inInt)
+    local 
+      list<Integer> lst;
+      Integer n, n_1;
+      String id,name;
+      list<Subscript> rest;
+      Subscript sub;
+      case (_,{},_) then {};
+      case (id,SUBSCRIPT(CREF(CREF_IDENT(name,{})))::rest,n)
+        equation
+          equality(id=name);
+          n_1=n+1;
+          lst=findIteratorInSubscripts(id,rest,n_1);
+        then n::lst;
+      case (id,_::rest,n)    
+        equation
+          n_1=n+1;
+          lst=findIteratorInSubscripts(id,rest,n_1);
+        then lst;
+  end matchcontinue;
+end findIteratorInSubscripts;   
+
+protected function combineCRefAndIntLst
+  input ComponentRef inCRef;
+  input list<Integer> inIntLst;     
+  output list<tuple<ComponentRef, Integer>> outLst;
+algorithm
+    outLst:=matchcontinue(inCRef,inIntLst)
+    local 
+      ComponentRef cref;
+      list<Integer> rest;
+      Integer i;
+      list<tuple<ComponentRef, Integer>> lst;
+      case (_,{}) then {};
+      case (cref,i::rest)
+        equation
+          lst=combineCRefAndIntLst(cref,rest);
+        then (cref,i)::lst;
+  end matchcontinue;
+end combineCRefAndIntLst;  
+
+protected function qualifyCRefIntLst
+  input String inString;
+  input list<Subscript> inSubLst;
+  input list<tuple<ComponentRef, Integer>> inLst;
+  output list<tuple<ComponentRef, Integer>> outLst;
+algorithm
+    outLst:=matchcontinue(inString,inSubLst,inLst)
+    local 
+      ComponentRef cref;
+      String name;
+      list<Subscript> subLst;
+      list<tuple<ComponentRef, Integer>> rest,lst;
+      Integer i;
+      case (_,_,{}) then {};
+      case (name,subLst,(cref,i)::rest)
+        equation
+          lst=qualifyCRefIntLst(name,subLst,rest);
+        then (CREF_QUAL(name,subLst,cref),i)::lst;    
+  end matchcontinue;
+end qualifyCRefIntLst;                        
+          
 end Absyn;

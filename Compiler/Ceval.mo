@@ -302,6 +302,33 @@ algorithm
       then
         (cache,Values.ARRAY(reslst),st_2);
 
+    case (cache,env,Exp.BINARY(exp1 = lh,operator = Exp.MUL_ARR(ty = _),exp2 = rh),impl,st,dim,msg)
+      local Option<Integer> dim;
+      equation 
+        (cache,Values.ARRAY(vlst1),st_1) = ceval(cache,env, lh, impl, st, dim, msg);
+        (cache,Values.ARRAY(vlst2),st_2) = ceval(cache,env, rh, impl, st_1, dim, msg);
+        reslst = Values.mulElementwiseArrayelt(vlst1, vlst2);
+      then
+        (cache,Values.ARRAY(reslst),st_2);
+
+    case (cache,env,Exp.BINARY(exp1 = lh,operator = Exp.DIV_ARR(ty = _),exp2 = rh),impl,st,dim,msg)
+      local Option<Integer> dim;
+      equation 
+        (cache,Values.ARRAY(vlst1),st_1) = ceval(cache,env, lh, impl, st, dim, msg);
+        (cache,Values.ARRAY(vlst2),st_2) = ceval(cache,env, rh, impl, st_1, dim, msg);
+        reslst = Values.divElementwiseArrayelt(vlst1, vlst2);
+      then
+        (cache,Values.ARRAY(reslst),st_2);
+
+    case (cache,env,Exp.BINARY(exp1 = lh,operator = Exp.POW_ARR2(ty = _),exp2 = rh),impl,st,dim,msg)
+      local Option<Integer> dim;
+      equation 
+        (cache,Values.ARRAY(vlst1),st_1) = ceval(cache,env, lh, impl, st, dim, msg);
+        (cache,Values.ARRAY(vlst2),st_2) = ceval(cache,env, rh, impl, st_1, dim, msg);
+        reslst = Values.powElementwiseArrayelt(vlst1, vlst2);
+      then
+        (cache,Values.ARRAY(reslst),st_2);
+
     case (cache,env,Exp.BINARY(exp1 = lh,operator = Exp.MUL_SCALAR_ARRAY(ty = _),exp2 = rh),impl,st,dim,msg)
       local Option<Integer> dim;
       equation 
@@ -317,6 +344,69 @@ algorithm
         (cache,sval,st_1) = ceval(cache,env, rh, impl, st, dim, msg);
         (cache,Values.ARRAY(aval),st_2) = ceval(cache,env, lh, impl, st_1, dim, msg);
         reslst = Values.multScalarArrayelt(sval, aval);
+      then
+        (cache,Values.ARRAY(reslst),st_2);
+
+    case (cache,env,Exp.BINARY(exp1 = lh,operator = Exp.ADD_SCALAR_ARRAY(ty = _),exp2 = rh),impl,st,dim,msg)
+      local Option<Integer> dim;
+      equation 
+        (cache,sval,st_1) = ceval(cache,env, lh, impl, st, dim, msg);
+        (cache,Values.ARRAY(aval),st_2) = ceval(cache,env, rh, impl, st_1, dim, msg);
+        reslst = Values.addScalarArrayelt(sval, aval);
+      then
+        (cache,Values.ARRAY(reslst),st_2);
+
+    case (cache,env,Exp.BINARY(exp1 = lh,operator = Exp.ADD_ARRAY_SCALAR(ty = _),exp2 = rh),impl,st,dim,msg)
+      local Option<Integer> dim;
+      equation 
+        (cache,sval,st_1) = ceval(cache,env, rh, impl, st, dim, msg);
+        (cache,Values.ARRAY(aval),st_2) = ceval(cache,env, lh, impl, st_1, dim, msg);
+        reslst = Values.addScalarArrayelt(sval, aval);
+      then
+        (cache,Values.ARRAY(reslst),st_2);
+
+    case (cache,env,Exp.BINARY(exp1 = lh,operator = Exp.SUB_SCALAR_ARRAY(ty = _),exp2 = rh),impl,st,dim,msg)
+      local Option<Integer> dim;
+      equation 
+        (cache,sval,st_1) = ceval(cache,env, lh, impl, st, dim, msg);
+        (cache,Values.ARRAY(aval),st_2) = ceval(cache,env, rh, impl, st_1, dim, msg);
+        reslst = Values.subScalarArrayelt(sval, aval);
+      then
+        (cache,Values.ARRAY(reslst),st_2);
+
+    case (cache,env,Exp.BINARY(exp1 = lh,operator = Exp.SUB_ARRAY_SCALAR(ty = _),exp2 = rh),impl,st,dim,msg)
+      local Option<Integer> dim;
+      equation 
+        (cache,sval,st_1) = ceval(cache,env, rh, impl, st, dim, msg);
+        (cache,Values.ARRAY(aval),st_2) = ceval(cache,env, lh, impl, st_1, dim, msg);
+        reslst = Values.subArrayeltScalar(sval, aval);
+      then
+        (cache,Values.ARRAY(reslst),st_2);
+
+    case (cache,env,Exp.BINARY(exp1 = lh,operator = Exp.POW_SCALAR_ARRAY(ty = _),exp2 = rh),impl,st,dim,msg)
+      local Option<Integer> dim;
+      equation 
+        (cache,sval,st_1) = ceval(cache,env, lh, impl, st, dim, msg);
+        (cache,Values.ARRAY(aval),st_2) = ceval(cache,env, rh, impl, st_1, dim, msg);
+        reslst = Values.powScalarArrayelt(sval, aval);
+      then
+        (cache,Values.ARRAY(reslst),st_2);
+
+    case (cache,env,Exp.BINARY(exp1 = lh,operator = Exp.POW_ARRAY_SCALAR(ty = _),exp2 = rh),impl,st,dim,msg)
+      local Option<Integer> dim;
+      equation 
+        (cache,sval,st_1) = ceval(cache,env, rh, impl, st, dim, msg);
+        (cache,Values.ARRAY(aval),st_2) = ceval(cache,env, lh, impl, st_1, dim, msg);
+        reslst = Values.powArrayeltScalar(sval, aval);
+      then
+        (cache,Values.ARRAY(reslst),st_2);
+
+    case (cache,env,Exp.BINARY(exp1 = lh,operator = Exp.DIV_SCALAR_ARRAY(ty = _),exp2 = rh),impl,st,dim,msg)
+      local Option<Integer> dim;
+      equation 
+        (cache,sval,st_1) = ceval(cache,env, lh, impl, st, dim, msg);
+        (cache,Values.ARRAY(aval),st_2) = ceval(cache,env, rh, impl, st_1, dim, msg);
+        reslst = Values.divScalarArrayelt(sval, aval);
       then
         (cache,Values.ARRAY(reslst),st_2);
 
@@ -1236,7 +1326,7 @@ algorithm
       Option<Interactive.InteractiveSymbolTable> st_1,st;
       list<Env.Frame> env;
       Exp.ComponentRef cr;
-      Boolean impl;
+      Boolean impl,bl;
       Msg msg;
       list<Inst.DimExp> dims;
       Values.Value v2;
@@ -1245,6 +1335,26 @@ algorithm
       String cr_str,dim_str,size_str,expstr;
       list<Exp.Exp> es;
       Env.Cache cache;
+      list<list<tuple<Exp.Exp, Boolean>>> mat;
+    case (cache,_,Exp.MATRIX(scalar=mat),Exp.ICONST(1),_,st,_)
+      equation
+        v=listLength(mat);
+      then 
+        (cache,Values.INTEGER(v),st);   
+    case (cache,_,Exp.MATRIX(scalar=mat),Exp.ICONST(2),_,st,_)
+      equation
+        v=listLength(Util.listFirst(mat));
+      then 
+        (cache,Values.INTEGER(v),st);   
+    case (cache,env,Exp.MATRIX(scalar=mat),Exp.ICONST(dim),impl,st,msg)
+      equation
+        bl=(dim>2);
+        true=bl;
+        dim_1=dim-2;
+        e=Util.tuple21(Util.listFirst(Util.listFirst(mat)));
+        (cache,Values.INTEGER(v),st_1)=cevalBuiltinSize(cache,env,e,Exp.ICONST(dim_1),impl,st,msg);
+      then 
+        (cache,Values.INTEGER(v),st);   
     case (cache,env,Exp.CREF(componentRef = cr,ty = tp),dim,impl,st,msg)
       equation 
         (cache,attr,tp,bind,_,_) = Lookup.lookupVar(cache,env, cr) "If dimensions known, always ceval" ;

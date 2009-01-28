@@ -714,6 +714,122 @@ algorithm
   end matchcontinue;
 end subElementwiseArrayelt;
 
+public function mulElementwiseArrayelt "function: mulElementwiseArrayelt
+ 
+  Perform elementwise multiplication of two arrays of values
+"
+  input list<Value> inValueLst1;
+  input list<Value> inValueLst2;
+  output list<Value> outValueLst;
+algorithm 
+  outValueLst:=
+  matchcontinue (inValueLst1,inValueLst2)
+    local
+      list<Value> reslst,res2,v1lst,rest1,v2lst,rest2;
+      Integer res,v1,v2;
+    case ((ARRAY(valueLst = v1lst) :: rest1),(ARRAY(valueLst = v2lst) :: rest2))
+      equation 
+        reslst = mulElementwiseArrayelt(v1lst, v2lst);
+        res2 = mulElementwiseArrayelt(rest1, rest2);
+      then
+        (ARRAY(reslst) :: res2);
+    case ((INTEGER(integer = v1) :: rest1),(INTEGER(integer = v2) :: rest2))
+      equation 
+        res = v1 * v2;
+        res2 = mulElementwiseArrayelt(rest1, rest2);
+      then
+        (INTEGER(res) :: res2);
+    case ((REAL(real = v1) :: rest1),(REAL(real = v2) :: rest2))
+      local Real res,v1,v2;
+      equation 
+        res = v1 *. v2;
+        res2 = mulElementwiseArrayelt(rest1, rest2);
+      then
+        (REAL(res) :: res2);
+    case ({},{}) then {}; 
+  end matchcontinue;
+end mulElementwiseArrayelt;
+
+public function divElementwiseArrayelt "function: divElementwiseArrayelt
+ 
+  Perform elementwise division of two arrays of values
+"
+  input list<Value> inValueLst1;
+  input list<Value> inValueLst2;
+  output list<Value> outValueLst;
+algorithm 
+  outValueLst:=
+  matchcontinue (inValueLst1,inValueLst2)
+    local
+      list<Value> reslst,res2,v1lst,rest1,v2lst,rest2;
+      Real res;
+      Integer v1,v2;
+    case ((ARRAY(valueLst = v1lst) :: rest1),(ARRAY(valueLst = v2lst) :: rest2))
+      equation 
+        reslst = divElementwiseArrayelt(v1lst, v2lst);
+        res2 = divElementwiseArrayelt(rest1, rest2);
+      then
+        (ARRAY(reslst) :: res2);
+    case ((INTEGER(integer = v1) :: rest1),(INTEGER(integer = v2) :: rest2))
+      local Real v1_1,v2_1;
+      equation 
+        v1_1=intReal(v1);
+        v2_1=intReal(v2);
+        res = v1_1 /. v2_1;
+        res2 = divElementwiseArrayelt(rest1, rest2);
+      then
+        (REAL(res) :: res2);
+    case ((REAL(real = v1) :: rest1),(REAL(real = v2) :: rest2))
+      local Real res,v1,v2;
+      equation 
+        res = v1 /. v2;
+        res2 = divElementwiseArrayelt(rest1, rest2);
+      then
+        (REAL(res) :: res2);
+    case ({},{}) then {}; 
+  end matchcontinue;
+end divElementwiseArrayelt;
+
+public function powElementwiseArrayelt "function: powElementwiseArrayelt
+ 
+  Computes elementwise powers of two arrays of values
+"
+  input list<Value> inValueLst1;
+  input list<Value> inValueLst2;
+  output list<Value> outValueLst;
+algorithm 
+  outValueLst:=
+  matchcontinue (inValueLst1,inValueLst2)
+    local
+      list<Value> reslst,res2,v1lst,rest1,v2lst,rest2;
+      Integer v1,v2;
+      Real res;
+    case ((ARRAY(valueLst = v1lst) :: rest1),(ARRAY(valueLst = v2lst) :: rest2))
+      equation 
+        reslst = powElementwiseArrayelt(v1lst, v2lst);
+        res2 = powElementwiseArrayelt(rest1, rest2);
+      then
+        (ARRAY(reslst) :: res2);
+    case ((INTEGER(integer = v1) :: rest1),(INTEGER(integer = v2) :: rest2))
+      local Real v1_1,v2_1;
+      equation 
+        v1_1=intReal(v1);
+        v2_1=intReal(v2);
+        res = v1_1 ^. v2_1;
+        res2 = powElementwiseArrayelt(rest1, rest2);
+      then
+        (REAL(res) :: res2);
+    case ((REAL(real = v1) :: rest1),(REAL(real = v2) :: rest2))
+      local Real res,v1,v2;
+      equation 
+        res = v1 ^. v2;
+        res2 = powElementwiseArrayelt(rest1, rest2);
+      then
+        (REAL(res) :: res2);
+    case ({},{}) then {}; 
+  end matchcontinue;
+end powElementwiseArrayelt;
+
 public function expValue "function: expValue
  
   Returns the value of constant expressions in Exp.Exp
@@ -939,6 +1055,364 @@ algorithm
     case (_,{}) then {}; 
   end matchcontinue;
 end multScalarArrayelt;
+
+public function addScalarArrayelt "function: addScalarArrayelt
+ 
+  Adds a scalar to an list of Values, i.e. array.
+"
+  input Value inValue;
+  input list<Value> inValueLst;
+  output list<Value> outValueLst;
+algorithm 
+  outValueLst:=
+  matchcontinue (inValue,inValueLst)
+    local
+      list<Value> r1,r2,vals,rest;
+      Value sval;
+      Integer v1,v2;
+      Real v2_1,v1_1;
+    case (sval,(ARRAY(valueLst = vals) :: rest))
+      equation 
+        r1 = addScalarArrayelt(sval, vals);
+        r2 = addScalarArrayelt(sval, rest);
+      then
+        (ARRAY(r1) :: r2);
+    case ((sval as INTEGER(integer = v1)),(INTEGER(integer = v2) :: rest))
+      local Integer r1;
+      equation 
+        r1 = v1+v2;
+        r2 = addScalarArrayelt(sval, rest);
+      then
+        (INTEGER(r1) :: r2);
+    case ((sval as REAL(real = v1)),(INTEGER(integer = v2) :: rest))
+      local Real r1,v1;
+      equation 
+        v2_1 = intReal(v2);
+        r1 = v1+.v2_1;
+        r2 = addScalarArrayelt(sval, rest);
+      then
+        (REAL(r1) :: r2);
+    case ((sval as INTEGER(integer = v1)),(REAL(real = v2) :: rest))
+      local Real r1,v2;
+      equation 
+        v1_1 = intReal(v1);
+        r1 = v1_1+.v2;
+        r2 = addScalarArrayelt(sval, rest);
+      then
+        (REAL(r1) :: r2);
+    case ((sval as REAL(real = v1)),(REAL(real = v2) :: rest))
+      local Real r1,v1,v2;
+      equation 
+        r1 = v1+.v2;
+        r2 = addScalarArrayelt(sval, rest);
+      then
+        (REAL(r1) :: r2);
+    case ((sval as STRING(string = v1)),(STRING(string = v2) :: rest))
+      local String r1,v1,v2;
+      equation 
+        r1 = v1+&v2;
+        r2 = addScalarArrayelt(sval, rest);
+      then
+        (STRING(r1) :: r2);
+    case (_,{}) then {}; 
+  end matchcontinue;
+end addScalarArrayelt;
+
+public function divScalarArrayelt "function: divScalarArrayelt
+ 
+  Divide a scalar with an list of Values, i.e. array.
+"
+  input Value inValue;
+  input list<Value> inValueLst;
+  output list<Value> outValueLst;
+algorithm 
+  outValueLst:=
+  matchcontinue (inValue,inValueLst)
+    local
+      list<Value> r1,r2,vals,rest;
+      Value sval;
+      Integer v1,v2;
+      Real v2_1,v1_1;
+      String s2;
+    case (sval,(ARRAY(valueLst = vals) :: rest))
+      equation 
+        r1 = divScalarArrayelt(sval, vals);
+        r2 = divScalarArrayelt(sval, rest);
+      then
+        (ARRAY(r1) :: r2);
+    case (sval ,(INTEGER(integer = v2) :: rest))
+      equation 
+        equality(v2 = 0);
+        s2 = valString(sval);
+        Error.addMessage(Error.DIVISION_BY_ZERO, {"0",s2});
+      then
+        fail();
+    case (sval ,(REAL(real = v2_1) :: rest))
+      equation 
+        equality(v2_1 = 0.0);
+        s2 = valString(sval);
+        Error.addMessage(Error.DIVISION_BY_ZERO, {"0.0",s2});
+      then
+        fail();
+    case ((sval as INTEGER(integer = v1)),(INTEGER(integer = v2) :: rest))
+      local Real r1;
+      equation
+        v1_1=intReal(v1);
+        v2_1=intReal(v2); 
+        r1 = v1_1/.v2_1;
+        r2 = divScalarArrayelt(sval, rest);
+      then
+        (REAL(r1) :: r2);
+    case ((sval as REAL(real = v1)),(INTEGER(integer = v2) :: rest))
+      local Real r1,v1;
+      equation 
+        v2_1 = intReal(v2);
+        r1 = v1/.v2_1;
+        r2 = divScalarArrayelt(sval, rest);
+      then
+        (REAL(r1) :: r2);
+    case ((sval as INTEGER(integer = v1)),(REAL(real = v2) :: rest))
+      local Real r1,v2;
+      equation 
+        v1_1 = intReal(v1);
+        r1 = v1_1/.v2;
+        r2 = divScalarArrayelt(sval, rest);
+      then
+        (REAL(r1) :: r2);
+    case ((sval as REAL(real = v1)),(REAL(real = v2) :: rest))
+      local Real r1,v1,v2;
+      equation 
+        r1 = v1/.v2;
+        r2 = divScalarArrayelt(sval, rest);
+      then
+        (REAL(r1) :: r2);
+    case (_,{}) then {}; 
+  end matchcontinue;
+end divScalarArrayelt;
+
+public function subScalarArrayelt "function: subScalarArrayelt
+ 
+  subtracts a list of Values, i.e. array, from a scalar.
+"
+  input Value inValue;
+  input list<Value> inValueLst;
+  output list<Value> outValueLst;
+algorithm 
+  outValueLst:=
+  matchcontinue (inValue,inValueLst)
+    local
+      list<Value> r1,r2,vals,rest;
+      Value sval;
+      Integer v1,v2;
+      Real v2_1,v1_1;
+    case (sval,(ARRAY(valueLst = vals) :: rest))
+      equation 
+        r1 = subScalarArrayelt(sval, vals);
+        r2 = subScalarArrayelt(sval, rest);
+      then
+        (ARRAY(r1) :: r2);
+    case ((sval as INTEGER(integer = v1)),(INTEGER(integer = v2) :: rest))
+      local Integer r1;
+      equation 
+        r1 = v1-v2;
+        r2 = subScalarArrayelt(sval, rest);
+      then
+        (INTEGER(r1) :: r2);
+    case ((sval as REAL(real = v1)),(INTEGER(integer = v2) :: rest))
+      local Real r1,v1;
+      equation 
+        v2_1 = intReal(v2);
+        r1 = v1-.v2_1;
+        r2 = subScalarArrayelt(sval, rest);
+      then
+        (REAL(r1) :: r2);
+    case ((sval as INTEGER(integer = v1)),(REAL(real = v2) :: rest))
+      local Real r1,v2;
+      equation 
+        v1_1 = intReal(v1);
+        r1 = v1_1-.v2;
+        r2 = subScalarArrayelt(sval, rest);
+      then
+        (REAL(r1) :: r2);
+    case ((sval as REAL(real = v1)),(REAL(real = v2) :: rest))
+      local Real r1,v1,v2;
+      equation 
+        r1 = v1-.v2;
+        r2 = subScalarArrayelt(sval, rest);
+      then
+        (REAL(r1) :: r2);
+    case (_,{}) then {}; 
+  end matchcontinue;
+end subScalarArrayelt;
+
+public function powScalarArrayelt "function: powScalarArrayelt
+ 
+  Takes a power of a scalar with an list of Values, i.e. array.
+"
+  input Value inValue;
+  input list<Value> inValueLst;
+  output list<Value> outValueLst;
+algorithm 
+  outValueLst:=
+  matchcontinue (inValue,inValueLst)
+    local
+      list<Value> r1,r2,vals,rest;
+      Value sval;
+      Integer v1,v2;
+      Real v2_1,v1_1;
+    case (sval,(ARRAY(valueLst = vals) :: rest))
+      equation 
+        r1 = powScalarArrayelt(sval, vals);
+        r2 = powScalarArrayelt(sval, rest);
+      then
+        (ARRAY(r1) :: r2);
+    case ((sval as INTEGER(integer = v1)),(INTEGER(integer = v2) :: rest))
+      local Real r1;
+      equation
+        v1_1=intReal(v1);
+        v2_1=intReal(v2); 
+        r1 = v1_1^.v2_1;
+        r2 = powScalarArrayelt(sval, rest);
+      then
+        (REAL(r1) :: r2);
+    case ((sval as REAL(real = v1)),(INTEGER(integer = v2) :: rest))
+      local Real r1,v1;
+      equation 
+        v2_1 = intReal(v2);
+        r1 = v1^.v2_1;
+        r2 = powScalarArrayelt(sval, rest);
+      then
+        (REAL(r1) :: r2);
+    case ((sval as INTEGER(integer = v1)),(REAL(real = v2) :: rest))
+      local Real r1,v2;
+      equation 
+        v1_1 = intReal(v1);
+        r1 = v1_1^.v2;
+        r2 = powScalarArrayelt(sval, rest);
+      then
+        (REAL(r1) :: r2);
+    case ((sval as REAL(real = v1)),(REAL(real = v2) :: rest))
+      local Real r1,v1,v2;
+      equation 
+        r1 = v1^.v2;
+        r2 = powScalarArrayelt(sval, rest);
+      then
+        (REAL(r1) :: r2);
+    case (_,{}) then {}; 
+  end matchcontinue;
+end powScalarArrayelt;
+
+public function subArrayeltScalar "function: subArrayeltScalar
+ 
+  subtracts a scalar from a list of Values, i.e. array.
+"
+  input Value inValue;
+  input list<Value> inValueLst;
+  output list<Value> outValueLst;
+algorithm 
+  outValueLst:=
+  matchcontinue (inValue,inValueLst)
+    local
+      list<Value> r1,r2,vals,rest;
+      Value sval;
+      Integer v1,v2;
+      Real v2_1,v1_1;
+    case (sval,(ARRAY(valueLst = vals) :: rest))
+      equation 
+        r1 = subArrayeltScalar(sval, vals);
+        r2 = subArrayeltScalar(sval, rest);
+      then
+        (ARRAY(r1) :: r2);
+    case ((sval as INTEGER(integer = v1)),(INTEGER(integer = v2) :: rest))
+      local Integer r1;
+      equation 
+        r1 = v2-v1;
+        r2 = subArrayeltScalar(sval, rest);
+      then
+        (INTEGER(r1) :: r2);
+    case ((sval as REAL(real = v1)),(INTEGER(integer = v2) :: rest))
+      local Real r1,v1;
+      equation 
+        v2_1 = intReal(v2);
+        r1 = v2_1-.v1;
+        r2 = subArrayeltScalar(sval, rest);
+      then
+        (REAL(r1) :: r2);
+    case ((sval as INTEGER(integer = v1)),(REAL(real = v2) :: rest))
+      local Real r1,v2;
+      equation 
+        v1_1 = intReal(v1);
+        r1 = v2-.v1_1;
+        r2 = subArrayeltScalar(sval, rest);
+      then
+        (REAL(r1) :: r2);
+    case ((sval as REAL(real = v1)),(REAL(real = v2) :: rest))
+      local Real r1,v1,v2;
+      equation 
+        r1 = v2-.v1;
+        r2 = subArrayeltScalar(sval, rest);
+      then
+        (REAL(r1) :: r2);
+    case (_,{}) then {}; 
+  end matchcontinue;
+end subArrayeltScalar;
+
+public function powArrayeltScalar "function: powArrayeltScalar
+ 
+  Takes a power of a list of Values, i.e. array, with a scalar.
+"
+  input Value inValue;
+  input list<Value> inValueLst;
+  output list<Value> outValueLst;
+algorithm 
+  outValueLst:=
+  matchcontinue (inValue,inValueLst)
+    local
+      list<Value> r1,r2,vals,rest;
+      Value sval;
+      Integer v1,v2;
+      Real v2_1,v1_1;
+    case (sval,(ARRAY(valueLst = vals) :: rest))
+      equation 
+        r1 = powArrayeltScalar(sval, vals);
+        r2 = powArrayeltScalar(sval, rest);
+      then
+        (ARRAY(r1) :: r2);
+    case ((sval as INTEGER(integer = v1)),(INTEGER(integer = v2) :: rest))
+      local Real r1;
+      equation
+        v1_1=intReal(v1);
+        v2_1=intReal(v2); 
+        r1 = v2_1^.v1_1;
+        r2 = powArrayeltScalar(sval, rest);
+      then
+        (REAL(r1) :: r2);
+    case ((sval as REAL(real = v1)),(INTEGER(integer = v2) :: rest))
+      local Real r1,v1;
+      equation 
+        v2_1 = intReal(v2);
+        r1 = v2_1^.v1;
+        r2 = powArrayeltScalar(sval, rest);
+      then
+        (REAL(r1) :: r2);
+    case ((sval as INTEGER(integer = v1)),(REAL(real = v2) :: rest))
+      local Real r1,v2;
+      equation 
+        v1_1 = intReal(v1);
+        r1 = v2^.v1_1;
+        r2 = powArrayeltScalar(sval, rest);
+      then
+        (REAL(r1) :: r2);
+    case ((sval as REAL(real = v1)),(REAL(real = v2) :: rest))
+      local Real r1,v1,v2;
+      equation 
+        r1 = v2^.v1;
+        r2 = powArrayeltScalar(sval, rest);
+      then
+        (REAL(r1) :: r2);
+    case (_,{}) then {}; 
+  end matchcontinue;
+end powArrayeltScalar;
 
 public function multScalarProduct "function: multScalarProduct
  

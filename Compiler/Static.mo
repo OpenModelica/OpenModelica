@@ -10195,6 +10195,66 @@ algorithm
       then
         fail();
 
+    case (Exp.MUL_ARR(ty = _),{typ1,typ2},rtype)
+      equation 
+        true = Types.subtype(typ1, typ2);
+      then
+        typ1;
+
+    case (Exp.MUL_ARR(ty = _),{typ1,typ2},rtype)
+      equation 
+        true = Types.subtype(typ1, typ2);
+      then
+        typ1;
+
+    case (Exp.MUL_ARR(ty = _),{typ1,typ2},_)
+      equation 
+        t1_str = Types.unparseType(typ1);
+        t2_str = Types.unparseType(typ2);
+        Error.addMessage(Error.INCOMPATIBLE_TYPES, {"vector elementwise multiplication",t1_str,t2_str});
+      then
+        fail();
+
+    case (Exp.DIV_ARR(ty = _),{typ1,typ2},rtype)
+      equation 
+        true = Types.subtype(typ1, typ2);
+      then
+        typ1;
+
+    case (Exp.DIV_ARR(ty = _),{typ1,typ2},rtype)
+      equation 
+        true = Types.subtype(typ1, typ2);
+      then
+        typ1;
+
+    case (Exp.DIV_ARR(ty = _),{typ1,typ2},_)
+      equation 
+        t1_str = Types.unparseType(typ1);
+        t2_str = Types.unparseType(typ2);
+        Error.addMessage(Error.INCOMPATIBLE_TYPES, {"vector elementwise division",t1_str,t2_str});
+      then
+        fail();
+
+    case (Exp.POW_ARR2(ty = _),{typ1,typ2},rtype)
+      equation 
+        true = Types.subtype(typ1, typ2);
+      then
+        typ1;
+
+    case (Exp.POW_ARR2(ty = _),{typ1,typ2},rtype)
+      equation 
+        true = Types.subtype(typ1, typ2);
+      then
+        typ1;
+
+    case (Exp.POW_ARR2(ty = _),{typ1,typ2},_)
+      equation 
+        t1_str = Types.unparseType(typ1);
+        t2_str = Types.unparseType(typ2);
+        Error.addMessage(Error.INCOMPATIBLE_TYPES, {"elementwise vector^vector",t1_str,t2_str});
+      then
+        fail();
+
     case (Exp.MUL_SCALAR_PRODUCT(ty = _),{typ1,typ2},rtype)
       equation 
         true = Types.subtype(typ1, typ2);
@@ -10271,7 +10331,21 @@ algorithm
 
     case (Exp.MUL_ARRAY_SCALAR(ty = _),{typ1,typ2},rtype) then typ1;  /* rtype */ 
 
+    case (Exp.ADD_SCALAR_ARRAY(ty = _),{typ1,typ2},rtype) then typ2;  /* rtype */ 
+
+    case (Exp.ADD_ARRAY_SCALAR(ty = _),{typ1,typ2},rtype) then typ1;  /* rtype */ 
+
+    case (Exp.SUB_SCALAR_ARRAY(ty = _),{typ1,typ2},rtype) then typ2;  /* rtype */ 
+
+    case (Exp.SUB_ARRAY_SCALAR(ty = _),{typ1,typ2},rtype) then typ1;  /* rtype */ 
+
+    case (Exp.DIV_SCALAR_ARRAY(ty = _),{typ1,typ2},rtype) then typ2;  /* rtype */ 
+
     case (Exp.DIV_ARRAY_SCALAR(ty = _),{typ1,typ2},rtype) then typ1;  /* rtype */ 
+
+    case (Exp.POW_ARRAY_SCALAR(ty = _),{typ1,typ2},rtype) then typ1;  /* rtype */ 
+
+    case (Exp.POW_SCALAR_ARRAY(ty = _),{typ1,typ2},rtype) then typ2;  /* rtype */ 
 
     case (Exp.ADD(ty = _),_,typ) then typ; 
 
@@ -10414,8 +10488,8 @@ algorithm
   (outCache,outTplExpOperatorTypesTypeLstTypesTypeLst) :=
   matchcontinue (inCache,inOperator1,inEnv2,inType3,inType4)
     local
-      list<tuple<Types.TType, Option<Absyn.Path>>> intarrtypes,realarrtypes,stringarrtypes,inttypes,realtypes;
-      list<tuple<Exp.Operator, list<tuple<Types.TType, Option<Absyn.Path>>>, tuple<Types.TType, Option<Absyn.Path>>>> intarrs,realarrs,stringarrs,scalars,userops,arrays,types,scalarprod,matrixprod,intscalararrs,realscalararrs,intarrsscalar,realarrsscalar,realarrscalar,arrscalar;
+      list<tuple<Types.TType, Option<Absyn.Path>>> intarrtypes,realarrtypes,stringarrtypes,inttypes,realtypes,stringtypes;
+      list<tuple<Exp.Operator, list<tuple<Types.TType, Option<Absyn.Path>>>, tuple<Types.TType, Option<Absyn.Path>>>> intarrs,realarrs,stringarrs,scalars,userops,arrays,types,scalarprod,matrixprod,intscalararrs,realscalararrs,intarrsscalar,realarrsscalar,realarrscalar,arrscalar,stringscalararrs,stringarrsscalar;
       list<Env.Frame> env;
       tuple<Types.TType, Option<Absyn.Path>> t1,t2,int_scalar,int_vector,int_matrix,real_scalar,real_vector,real_matrix;
       Exp.Operator int_mul,real_mul,int_mul_sp,real_mul_sp,int_mul_mp,real_mul_mp,real_div,real_pow,int_pow;
@@ -10445,6 +10519,44 @@ algorithm
         types = Util.listFlatten({scalars,arrays/*,userops*/});
       then
         (cache,types);
+    case (cache,Absyn.ADD_EW(),env,t1,t2) /* Arithmetical operators */ 
+      equation 
+        intarrtypes = arrayTypeList(9, (Types.T_INTEGER({}),NONE)) "The ADD operator" ;
+        realarrtypes = arrayTypeList(9, (Types.T_REAL({}),NONE));
+        stringarrtypes = arrayTypeList(9, (Types.T_STRING({}),NONE));
+        inttypes = nTypes(9, (Types.T_INTEGER({}),NONE));
+        realtypes = nTypes(9, (Types.T_REAL({}),NONE));
+        stringtypes = nTypes(9, (Types.T_STRING({}),NONE));
+        intarrs = operatorReturn(Exp.ADD_ARR(Exp.INT()), intarrtypes, intarrtypes, 
+          intarrtypes);
+        realarrs = operatorReturn(Exp.ADD_ARR(Exp.REAL()), realarrtypes, realarrtypes, 
+          realarrtypes);
+        stringarrs = operatorReturn(Exp.ADD_ARR(Exp.STRING()), stringarrtypes, stringarrtypes, 
+          stringarrtypes);
+        scalars = {
+          (Exp.ADD(Exp.INT()),
+          {(Types.T_INTEGER({}),NONE),(Types.T_INTEGER({}),NONE)},(Types.T_INTEGER({}),NONE)),
+          (Exp.ADD(Exp.REAL()),
+          {(Types.T_REAL({}),NONE),(Types.T_REAL({}),NONE)},(Types.T_REAL({}),NONE)),
+          (Exp.ADD(Exp.STRING()),
+          {(Types.T_STRING({}),NONE),(Types.T_STRING({}),NONE)},(Types.T_STRING({}),NONE))};
+        intscalararrs = operatorReturn(Exp.ADD_SCALAR_ARRAY(Exp.INT()), inttypes, intarrtypes, 
+          intarrtypes);
+        realscalararrs = operatorReturn(Exp.ADD_SCALAR_ARRAY(Exp.REAL()), realtypes, realarrtypes, 
+          realarrtypes);
+        intarrsscalar = operatorReturn(Exp.ADD_ARRAY_SCALAR(Exp.INT()), intarrtypes, inttypes, 
+          intarrtypes);
+        realarrsscalar = operatorReturn(Exp.ADD_ARRAY_SCALAR(Exp.REAL()), realarrtypes, realtypes, 
+          realarrtypes);
+        stringscalararrs = operatorReturn(Exp.ADD_SCALAR_ARRAY(Exp.STRING()), stringtypes, stringarrtypes, 
+          stringarrtypes);
+        stringarrsscalar = operatorReturn(Exp.ADD_ARRAY_SCALAR(Exp.STRING()), stringarrtypes, stringtypes, 
+          stringarrtypes);
+        types = Util.listFlatten({scalars,intscalararrs,realscalararrs,stringscalararrs,intarrsscalar,
+          realarrsscalar,stringarrsscalar,intarrs,realarrs,stringarrs});
+      then
+        (cache,types);      
+        
     case (cache,Absyn.SUB(),env,t1,t2)
       equation 
         intarrtypes = arrayTypeList(9, (Types.T_INTEGER({}),NONE)) "the SUB operator" ;
@@ -10462,6 +10574,34 @@ algorithm
         types = Util.listFlatten({scalars,intarrs,realarrs/*,userops*/});
       then
         (cache,types);
+    case (cache,Absyn.SUB_EW(),env,t1,t2) /* Arithmetical operators */ 
+      equation 
+        intarrtypes = arrayTypeList(9, (Types.T_INTEGER({}),NONE)) "The SUB operator" ;
+        realarrtypes = arrayTypeList(9, (Types.T_REAL({}),NONE));
+        inttypes = nTypes(9, (Types.T_INTEGER({}),NONE));
+        realtypes = nTypes(9, (Types.T_REAL({}),NONE));
+        intarrs = operatorReturn(Exp.SUB_ARR(Exp.INT()), intarrtypes, intarrtypes, 
+          intarrtypes);
+        realarrs = operatorReturn(Exp.SUB_ARR(Exp.REAL()), realarrtypes, realarrtypes, 
+          realarrtypes);
+        scalars = {
+          (Exp.SUB(Exp.INT()),
+          {(Types.T_INTEGER({}),NONE),(Types.T_INTEGER({}),NONE)},(Types.T_INTEGER({}),NONE)),
+          (Exp.SUB(Exp.REAL()),
+          {(Types.T_REAL({}),NONE),(Types.T_REAL({}),NONE)},(Types.T_REAL({}),NONE))};
+        intscalararrs = operatorReturn(Exp.SUB_SCALAR_ARRAY(Exp.INT()), inttypes, intarrtypes, 
+          intarrtypes);
+        realscalararrs = operatorReturn(Exp.SUB_SCALAR_ARRAY(Exp.REAL()), realtypes, realarrtypes, 
+          realarrtypes);
+        intarrsscalar = operatorReturn(Exp.SUB_ARRAY_SCALAR(Exp.INT()), intarrtypes, inttypes, 
+          intarrtypes);
+        realarrsscalar = operatorReturn(Exp.SUB_ARRAY_SCALAR(Exp.REAL()), realarrtypes, realtypes, 
+          realarrtypes);
+        types = Util.listFlatten({scalars,intscalararrs,realscalararrs,intarrsscalar,
+          realarrsscalar,intarrs,realarrs});
+      then
+        (cache,types);
+        
     case (cache,Absyn.MUL(),env,t1,t2)
       equation 
         intarrtypes = arrayTypeList(9, (Types.T_INTEGER({}),NONE)) "The MUL operator" ;
@@ -10502,6 +10642,34 @@ algorithm
           realarrsscalar,scalarprod,matrixprod/*,userops*/});
       then
         (cache,types);
+    case (cache,Absyn.MUL_EW(),env,t1,t2) /* Arithmetical operators */ 
+      equation 
+        intarrtypes = arrayTypeList(9, (Types.T_INTEGER({}),NONE)) "The MUL operator" ;
+        realarrtypes = arrayTypeList(9, (Types.T_REAL({}),NONE));
+        inttypes = nTypes(9, (Types.T_INTEGER({}),NONE));
+        realtypes = nTypes(9, (Types.T_REAL({}),NONE));
+        intarrs = operatorReturn(Exp.MUL_ARR(Exp.INT()), intarrtypes, intarrtypes, 
+          intarrtypes);
+        realarrs = operatorReturn(Exp.MUL_ARR(Exp.REAL()), realarrtypes, realarrtypes, 
+          realarrtypes);
+        scalars = {
+          (Exp.MUL(Exp.INT()),
+          {(Types.T_INTEGER({}),NONE),(Types.T_INTEGER({}),NONE)},(Types.T_INTEGER({}),NONE)),
+          (Exp.MUL(Exp.REAL()),
+          {(Types.T_REAL({}),NONE),(Types.T_REAL({}),NONE)},(Types.T_REAL({}),NONE))};
+        intscalararrs = operatorReturn(Exp.MUL_SCALAR_ARRAY(Exp.INT()), inttypes, intarrtypes, 
+          intarrtypes);
+        realscalararrs = operatorReturn(Exp.MUL_SCALAR_ARRAY(Exp.REAL()), realtypes, realarrtypes, 
+          realarrtypes);
+        intarrsscalar = operatorReturn(Exp.MUL_ARRAY_SCALAR(Exp.INT()), intarrtypes, inttypes, 
+          intarrtypes);
+        realarrsscalar = operatorReturn(Exp.MUL_ARRAY_SCALAR(Exp.REAL()), realarrtypes, realtypes, 
+          realarrtypes);
+        types = Util.listFlatten({scalars,intscalararrs,realscalararrs,intarrsscalar,
+          realarrsscalar,intarrs,realarrs});
+      then
+        (cache,types);
+        
     case (cache,Absyn.DIV(),env,t1,t2)
       equation 
         realarrtypes = arrayTypeList(9, (Types.T_REAL({}),NONE)) "The DIV operator" ;
@@ -10515,6 +10683,24 @@ algorithm
         types = Util.listFlatten({scalars,realarrscalar/*,userops*/});
       then
         (cache,types);
+    case (cache,Absyn.DIV_EW(),env,t1,t2) /* Arithmetical operators */ 
+      equation 
+        realarrtypes = arrayTypeList(9, (Types.T_REAL({}),NONE));
+        realtypes = nTypes(9, (Types.T_REAL({}),NONE));
+        realarrs = operatorReturn(Exp.DIV_ARR(Exp.REAL()), realarrtypes, realarrtypes, 
+          realarrtypes);
+        scalars = {
+          (Exp.DIV(Exp.REAL()),
+          {(Types.T_REAL({}),NONE),(Types.T_REAL({}),NONE)},(Types.T_REAL({}),NONE))};
+        realscalararrs = operatorReturn(Exp.DIV_SCALAR_ARRAY(Exp.REAL()), realtypes, realarrtypes, 
+          realarrtypes);
+        realarrsscalar = operatorReturn(Exp.DIV_ARRAY_SCALAR(Exp.REAL()), realarrtypes, realtypes, 
+          realarrtypes);
+        types = Util.listFlatten({scalars,realscalararrs,
+          realarrsscalar,realarrs});
+      then
+        (cache,types);
+        
     case (cache,Absyn.POW(),env,t1,t2)
       equation 
         real_scalar = (Types.T_REAL({}),NONE) "The POW operator. a^b is only defined for integer exponents, i.e. b must
@@ -10533,6 +10719,24 @@ algorithm
         types = Util.listFlatten({scalars,arrscalar/*,userops*/});
       then
         (cache,types);
+    case (cache,Absyn.POW_EW(),env,t1,t2)  
+      equation 
+        realarrtypes = arrayTypeList(9, (Types.T_REAL({}),NONE));
+        realtypes = nTypes(9, (Types.T_REAL({}),NONE));
+        realarrs = operatorReturn(Exp.POW_ARR2(Exp.REAL()), realarrtypes, realarrtypes, 
+          realarrtypes);
+        scalars = {
+          (Exp.POW(Exp.REAL()),
+          {(Types.T_REAL({}),NONE),(Types.T_REAL({}),NONE)},(Types.T_REAL({}),NONE))};
+        realscalararrs = operatorReturn(Exp.POW_SCALAR_ARRAY(Exp.REAL()), realtypes, realarrtypes, 
+          realarrtypes);
+        realarrsscalar = operatorReturn(Exp.POW_ARRAY_SCALAR(Exp.REAL()), realarrtypes, realtypes, 
+          realarrtypes);
+        types = Util.listFlatten({scalars,realscalararrs,
+          realarrsscalar,realarrs});
+      then
+        (cache,types);
+        
     case (cache,Absyn.UMINUS(),env,t1,t2)
       equation 
         scalars = {
@@ -10549,6 +10753,36 @@ algorithm
       then
         (cache,types);
     case (cache,Absyn.UPLUS(),env,t1,t2)
+      equation 
+        scalars = {
+          (Exp.UPLUS(Exp.INT()),{(Types.T_INTEGER({}),NONE)},
+          (Types.T_INTEGER({}),NONE)),
+          (Exp.UPLUS(Exp.REAL()),{(Types.T_REAL({}),NONE)},
+          (Types.T_REAL({}),NONE))} "The UPLUS operator, unary plus." ;
+        intarrtypes = arrayTypeList(9, (Types.T_INTEGER({}),NONE));
+        realarrtypes = arrayTypeList(9, (Types.T_REAL({}),NONE));
+        intarrs = operatorReturnUnary(Exp.UPLUS(Exp.INT()), intarrtypes, intarrtypes);
+        realarrs = operatorReturnUnary(Exp.UPLUS(Exp.REAL()), realarrtypes, realarrtypes);
+        /*(cache,userops) = getKoeningOperatorTypes(cache,"unaryPlus", env, t1, t2);*/
+        types = Util.listFlatten({scalars,intarrs,realarrs/*,userops*/});
+      then
+        (cache,types);
+    case (cache,Absyn.UMINUS_EW(),env,t1,t2)
+      equation 
+        scalars = {
+          (Exp.UMINUS(Exp.INT()),{(Types.T_INTEGER({}),NONE)},
+          (Types.T_INTEGER({}),NONE)),
+          (Exp.UMINUS(Exp.REAL()),{(Types.T_REAL({}),NONE)},
+          (Types.T_REAL({}),NONE))} "The UMINUS operator, unary minus" ;
+        intarrtypes = arrayTypeList(9, (Types.T_INTEGER({}),NONE));
+        realarrtypes = arrayTypeList(9, (Types.T_REAL({}),NONE));
+        intarrs = operatorReturnUnary(Exp.UMINUS_ARR(Exp.INT()), intarrtypes, intarrtypes);
+        realarrs = operatorReturnUnary(Exp.UMINUS_ARR(Exp.REAL()), realarrtypes, realarrtypes);
+        /*(cache,userops) = getKoeningOperatorTypes(cache,"unaryMinus", env, t1, t2);*/
+        types = Util.listFlatten({scalars,intarrs,realarrs/*,userops*/});
+      then
+        (cache,types);
+    case (cache,Absyn.UPLUS_EW(),env,t1,t2)
       equation 
         scalars = {
           (Exp.UPLUS(Exp.INT()),{(Types.T_INTEGER({}),NONE)},

@@ -321,6 +321,14 @@ uniontype Operator "Operators which are overloaded in the abstract syntax are he
     Type ty;
   end SUB_ARR;
 
+  record MUL_ARR
+    Type ty;
+  end MUL_ARR;
+
+  record DIV_ARR
+    Type ty;
+  end DIV_ARR;
+
   record MUL_SCALAR_ARRAY
     Type ty "a  { b, c }" ;
   end MUL_SCALAR_ARRAY;
@@ -328,6 +336,22 @@ uniontype Operator "Operators which are overloaded in the abstract syntax are he
   record MUL_ARRAY_SCALAR
     Type ty "{a, b}  c" ;
   end MUL_ARRAY_SCALAR;
+
+  record ADD_SCALAR_ARRAY
+    Type ty "a  { b, c }" ;
+  end ADD_SCALAR_ARRAY;
+
+  record ADD_ARRAY_SCALAR
+    Type ty "{a, b}  c" ;
+  end ADD_ARRAY_SCALAR;
+
+  record SUB_SCALAR_ARRAY
+    Type ty "a  { b, c }" ;
+  end SUB_SCALAR_ARRAY;
+
+  record SUB_ARRAY_SCALAR
+    Type ty "{a, b}  c" ;
+  end SUB_ARRAY_SCALAR;
 
   record MUL_SCALAR_PRODUCT
     Type ty "{a, b}  {c, d}" ;
@@ -341,9 +365,25 @@ uniontype Operator "Operators which are overloaded in the abstract syntax are he
     Type ty "{a, b} / c" ;
   end DIV_ARRAY_SCALAR;
 
+  record DIV_SCALAR_ARRAY
+    Type ty "a  { b, c }" ;
+  end DIV_SCALAR_ARRAY;
+
+  record POW_ARRAY_SCALAR
+    Type ty "{a, b} / c" ;
+  end POW_ARRAY_SCALAR;
+
+  record POW_SCALAR_ARRAY
+    Type ty "a  { b, c }" ;
+  end POW_SCALAR_ARRAY;
+
   record POW_ARR
-    Type ty;
+    Type ty;  /*Power of a matrix*/
   end POW_ARR;
+
+  record POW_ARR2
+    Type ty;  /*Elementwise power of arrays*/
+  end POW_ARR2;
 
   record AND end AND;
 
@@ -2389,6 +2429,30 @@ algorithm
         res = simplifyVectorBinary(e1, SUB(tp), e2);
       then
         res;
+    case (e1,MUL_ARR(ty = _),e2)
+      equation 
+        tp = typeof(e1);
+        e1 = simplify1(e1);
+        e2 = simplify1(e2);
+        res = simplifyVectorBinary(e1, MUL(tp), e2);
+      then
+        res;
+    case (e1,DIV_ARR(ty = _),e2)
+      equation 
+        tp = typeof(e1);
+        e1 = simplify1(e1);
+        e2 = simplify1(e2);        
+        res = simplifyVectorBinary(e1, DIV(tp), e2);
+      then
+        res;
+    case (e1,POW_ARR2(ty = _),e2)
+      equation 
+        tp = typeof(e1);
+        e1 = simplify1(e1);
+        e2 = simplify1(e2);
+        res = simplifyVectorBinary(e1, POW(tp), e2);
+      then
+        res;
         
         // v1 - -v2 => v1 + v2
     case(e1,SUB_ARR(ty=tp),e2)
@@ -2460,7 +2524,77 @@ algorithm
       then
         res;
 
-    /* array / matrix */        
+    /* scalar .+ array */
+    case (s1,ADD_SCALAR_ARRAY(ty = tp),a1)
+      local Boolean b; Operator op2; Type atp,atp2;
+      equation 
+        a1 = simplify1(a1);
+        tp = typeof(s1);
+        atp = typeof(a1);
+        atp2 = unliftArray(atp);
+        b = typeBuiltin(atp2);
+        op2 = Util.if_(b,ADD(tp),ADD_SCALAR_ARRAY(atp2));        
+        res = simplifyVectorScalar(s1, op2, a1);
+      then
+        res;
+        
+    /* array .+ scalar */
+    case (a1,ADD_ARRAY_SCALAR(ty = tp),s1)
+      local Boolean b; Operator op2; Type atp,atp2;
+      equation 
+        a1 = simplify1(a1);
+        tp = typeof(s1);
+        atp = typeof(a1);
+        atp2 = unliftArray(atp);
+        b = typeBuiltin(atp2);
+        op2 = Util.if_(b,ADD(tp),ADD_ARRAY_SCALAR(atp2));
+        res = simplifyVectorScalar(s1, op2, a1);        
+      then
+        res;
+
+    /* scalar .- array */
+    case (s1,SUB_SCALAR_ARRAY(ty = tp),a1)
+      local Boolean b; Operator op2; Type atp,atp2;
+      equation 
+        a1 = simplify1(a1);
+        tp = typeof(s1);
+        atp = typeof(a1);
+        atp2 = unliftArray(atp);
+        b = typeBuiltin(atp2);
+        op2 = Util.if_(b,SUB(tp),SUB_SCALAR_ARRAY(atp2));        
+        res = simplifyVectorScalar(s1, op2, a1);
+      then
+        res;
+        
+    /* array .- scalar */
+    case (a1,SUB_ARRAY_SCALAR(ty = tp),s1)
+      local Boolean b; Operator op2; Type atp,atp2;
+      equation 
+        a1 = simplify1(a1);
+        tp = typeof(s1);
+        atp = typeof(a1);
+        atp2 = unliftArray(atp);
+        b = typeBuiltin(atp2);
+        op2 = Util.if_(b,SUB(tp),SUB_ARRAY_SCALAR(atp2));
+        res = simplifyVectorScalar(a1, op2, s1);        
+      then
+        res;
+
+
+    /* scalar ./ array */
+    case (s1,DIV_SCALAR_ARRAY(ty = tp),a1)
+      local Boolean b; Operator op2; Type atp,atp2;
+      equation 
+        a1 = simplify1(a1);
+        tp = typeof(s1);
+        atp = typeof(a1);
+        atp2 = unliftArray(atp);
+        b = typeBuiltin(atp2);
+        op2 = Util.if_(b,DIV(tp),DIV_SCALAR_ARRAY(atp2));        
+        res = simplifyVectorScalar(s1, op2, a1);
+      then
+        res;
+    /* array / scalar */        
     case (a1,DIV_ARRAY_SCALAR(ty = tp),s1)
       local Boolean b; Operator op2; Type atp,atp2;
       equation 
@@ -2490,6 +2624,34 @@ algorithm
       then
         res;
         
+    /* scalar .^ array */
+    case (s1,POW_SCALAR_ARRAY(ty = tp),a1)
+      local Boolean b; Operator op2; Type atp,atp2;
+      equation 
+        a1 = simplify1(a1);
+        tp = typeof(s1);
+        atp = typeof(a1);
+        atp2 = unliftArray(atp);
+        b = typeBuiltin(atp2);
+        op2 = Util.if_(b,POW(tp),POW_SCALAR_ARRAY(atp2));        
+        res = simplifyVectorScalar(s1, op2, a1);
+      then
+        res;
+        
+    /* array .+ scalar */
+    case (a1,POW_ARRAY_SCALAR(ty = tp),s1)
+      local Boolean b; Operator op2; Type atp,atp2;
+      equation 
+        a1 = simplify1(a1);
+        tp = typeof(s1);
+        atp = typeof(a1);
+        atp2 = unliftArray(atp);
+        b = typeBuiltin(atp2);
+        op2 = Util.if_(b,POW(tp),POW_ARRAY_SCALAR(atp2));
+        res = simplifyVectorScalar(a1, op2, s1);        
+      then
+        res;
+
     case (e1,MUL_SCALAR_PRODUCT(ty = tp),e2)
       equation 
         res = simplifyScalarProduct(e1, e2);
@@ -3556,6 +3718,46 @@ algorithm
         exp = simplify1(BINARY(e1_1,op,e2_1));
       then
         exp;
+    case (exp as BINARY(exp1 = e1,operator = ADD_SCALAR_ARRAY(ty = t),exp2 = e2),indx)
+      equation 
+        e2_1 = simplifyAsub(e2, indx);
+        e1_1 = simplify1(e1);
+        t2 = typeof(e2_1);
+        b = typeBuiltin(t2);
+        op = Util.if_(b,ADD(t2),ADD_SCALAR_ARRAY(t2));
+        exp = simplify1(BINARY(e1_1,op,e2_1));
+      then
+        exp;
+    case (BINARY(exp1 = e1,operator = ADD_ARRAY_SCALAR(ty = t),exp2 = e2),indx)
+      equation 
+        e1_1 = simplifyAsub(e1, indx);
+        e2_1 = simplify1(e2);
+        t2 = typeof(e1_1);
+        b = typeBuiltin(t2);
+        op = Util.if_(b,ADD(t2),ADD_ARRAY_SCALAR(t2));
+        exp = simplify1(BINARY(e1_1,op,e2_1));
+      then
+        exp;
+    case (exp as BINARY(exp1 = e1,operator = SUB_SCALAR_ARRAY(ty = t),exp2 = e2),indx)
+      equation 
+        e2_1 = simplifyAsub(e2, indx);
+        e1_1 = simplify1(e1);
+        t2 = typeof(e2_1);
+        b = typeBuiltin(t2);
+        op = Util.if_(b,SUB(t2),SUB_SCALAR_ARRAY(t2));
+        exp = simplify1(BINARY(e1_1,op,e2_1));
+      then
+        exp;
+    case (BINARY(exp1 = e1,operator = SUB_ARRAY_SCALAR(ty = t),exp2 = e2),indx)
+      equation 
+        e1_1 = simplifyAsub(e1, indx);
+        e2_1 = simplify1(e2);
+        t2 = typeof(e1_1);
+        b = typeBuiltin(t2);
+        op = Util.if_(b,SUB(t2),SUB_ARRAY_SCALAR(t2));
+        exp = simplify1(BINARY(e1_1,op,e2_1));
+      then
+        exp;
 
     case (exp as BINARY(exp1 = e1,operator = MUL_MATRIX_PRODUCT(ty = t),exp2 = e2),indx)
      local Exp e;
@@ -3565,6 +3767,16 @@ algorithm
       then
         e;
 
+    case (exp as BINARY(exp1 = e1,operator = DIV_SCALAR_ARRAY(ty = t),exp2 = e2),indx)
+      equation 
+        e2_1 = simplifyAsub(e2, indx);
+        e1_1 = simplify1(e1);
+        t2 = typeof(e2_1);
+        b = typeBuiltin(t2);
+        op = Util.if_(b,DIV(t2),DIV_SCALAR_ARRAY(t2));
+        exp = simplify1(BINARY(e1_1,op,e2_1));
+      then
+        exp;
     case (BINARY(exp1 = e1,operator = DIV_ARRAY_SCALAR(ty = t),exp2 = e2),indx)
       equation 
         e1_1 = simplifyAsub(e1, indx);
@@ -3575,6 +3787,26 @@ algorithm
         exp = simplify1(BINARY(e1_1,DIV(t),e2_1));
       then
         exp;
+    case (exp as BINARY(exp1 = e1,operator = POW_SCALAR_ARRAY(ty = t),exp2 = e2),indx)
+      equation 
+        e2_1 = simplifyAsub(e2, indx);
+        e1_1 = simplify1(e1);
+        t2 = typeof(e2_1);
+        b = typeBuiltin(t2);
+        op = Util.if_(b,POW(t2),POW_SCALAR_ARRAY(t2));
+        exp = simplify1(BINARY(e1_1,op,e2_1));
+      then
+        exp;
+    case (BINARY(exp1 = e1,operator = POW_ARRAY_SCALAR(ty = t),exp2 = e2),indx)
+      equation 
+        e1_1 = simplifyAsub(e1, indx);
+        e2_1 = simplify1(e2);
+        t2 = typeof(e1_1);
+        b = typeBuiltin(t2);
+        op = Util.if_(b,POW(t2),POW_ARRAY_SCALAR(t2));
+        exp = simplify1(BINARY(e1_1,op,e2_1));
+      then
+        exp;
     case (BINARY(exp1 = e1,operator = ADD_ARR(ty = t),exp2 = e2),indx)
         local Boolean b; Type t2; Operator op2;
       equation 
@@ -3583,6 +3815,39 @@ algorithm
         t2 = typeof(e1_1);
         b = typeBuiltin(t2);
         op2 = Util.if_(b,ADD(t2),ADD_ARR(t2));
+        exp = simplify1(BINARY(e1_1,op2,e2_1));
+      then
+        exp;
+    case (BINARY(exp1 = e1,operator = MUL_ARR(ty = t),exp2 = e2),indx)
+        local Boolean b; Type t2; Operator op2;
+      equation 
+        e1_1 = simplifyAsub(e1, indx);
+        e2_1 = simplifyAsub(e2, indx);
+        t2 = typeof(e1_1);
+        b = typeBuiltin(t2);
+        op2 = Util.if_(b,MUL(t2),MUL_ARR(t2));
+        exp = simplify1(BINARY(e1_1,op2,e2_1));
+      then
+        exp;
+    case (BINARY(exp1 = e1,operator = DIV_ARR(ty = t),exp2 = e2),indx)
+        local Boolean b; Type t2; Operator op2;
+      equation 
+        e1_1 = simplifyAsub(e1, indx);
+        e2_1 = simplifyAsub(e2, indx);
+        t2 = typeof(e1_1);
+        b = typeBuiltin(t2);
+        op2 = Util.if_(b,DIV(t2),DIV_ARR(t2));
+        exp = simplify1(BINARY(e1_1,op2,e2_1));
+      then
+        exp;
+    case (BINARY(exp1 = e1,operator = POW_ARR2(ty = t),exp2 = e2),indx)
+        local Boolean b; Type t2; Operator op2;
+      equation 
+        e1_1 = simplifyAsub(e1, indx);
+        e2_1 = simplifyAsub(e2, indx);
+        t2 = typeof(e1_1);
+        b = typeBuiltin(t2);
+        op2 = Util.if_(b,POW(t2),POW_ARR2(t2));
         exp = simplify1(BINARY(e1_1,op2,e2_1));
       then
         exp;
@@ -4427,7 +4692,14 @@ algorithm
     case (UPLUS_ARR(ty = t)) then t; 
     case (ADD_ARR(ty = t)) then t; 
     case (SUB_ARR(ty = t)) then t; 
-    case (MUL_SCALAR_ARRAY(ty = t)) then t; 
+    case (MUL_ARR(ty = t)) then t; 
+    case (DIV_ARR(ty = t)) then t; 
+    case (POW_ARR2(ty = t)) then t; 
+    case (MUL_SCALAR_ARRAY(ty = t)) then t;  //Why no MUL_ARRAY_SCALAR? -- AlLeb
+    case (DIV_SCALAR_ARRAY(ty = t)) then t;  
+    case (ADD_SCALAR_ARRAY(ty = t)) then t;  
+    case (SUB_SCALAR_ARRAY(ty = t)) then t;  
+    case (POW_SCALAR_ARRAY(ty = t)) then t;  
     case (MUL_SCALAR_PRODUCT(ty = t)) then t; 
     case (MUL_MATRIX_PRODUCT(ty = t)) then t; 
     case (DIV_ARRAY_SCALAR(ty = t)) then t; 
@@ -6180,14 +6452,25 @@ algorithm
     case (SUB(ty = _)) then 33; 
     case (ADD_ARR(ty = _)) then 32; 
     case (SUB_ARR(ty = _)) then 33; 
+    case (MUL_ARR(ty = _)) then 35; 
+    case (DIV_ARR(ty = _)) then 36; 
+    case (POW_ARR(ty = _)) then 38; 
+    case (POW_ARR2(ty = _)) then 38; 
     case (MUL(ty = _)) then 35; 
     case (MUL_SCALAR_ARRAY(ty = _)) then 35; 
     case (MUL_ARRAY_SCALAR(ty = _)) then 35; 
+    case (ADD_SCALAR_ARRAY(ty = _)) then 32; 
+    case (ADD_ARRAY_SCALAR(ty = _)) then 32; 
+    case (SUB_SCALAR_ARRAY(ty = _)) then 33; 
+    case (SUB_ARRAY_SCALAR(ty = _)) then 33; 
     case (MUL_SCALAR_PRODUCT(ty = _)) then 35; 
     case (MUL_MATRIX_PRODUCT(ty = _)) then 35; 
     case (DIV(ty = _)) then 36; 
+    case (DIV_SCALAR_ARRAY(ty = _)) then 36; 
     case (DIV_ARRAY_SCALAR(ty = _)) then 36; 
     case (POW(ty = _)) then 38; 
+    case (POW_SCALAR_ARRAY(ty = _)) then 38; 
+    case (POW_ARRAY_SCALAR(ty = _)) then 38; 
   end matchcontinue;
 end binopPriority;
 
@@ -6320,10 +6603,21 @@ algorithm
     case (EQUAL(ty = _)) then " = ";  
     case (ADD_ARR(ty = _)) then " + "; 
     case (SUB_ARR(ty = _)) then " - "; 
+    case (MUL_ARR(ty = _)) then " * "; 
+    case (DIV_ARR(ty = _)) then " / "; 
+    case (POW_ARR(ty = _)) then " ^ "; 
+    case (POW_ARR2(ty = _)) then " ^ "; 
     case (MUL_SCALAR_ARRAY(ty = _)) then " * "; 
     case (MUL_ARRAY_SCALAR(ty = _)) then " * "; 
+    case (ADD_SCALAR_ARRAY(ty = _)) then " + "; 
+    case (ADD_ARRAY_SCALAR(ty = _)) then " + "; 
+    case (SUB_SCALAR_ARRAY(ty = _)) then " - "; 
+    case (SUB_ARRAY_SCALAR(ty = _)) then " - "; 
+    case (POW_SCALAR_ARRAY(ty = _)) then " ^ "; 
+    case (POW_ARRAY_SCALAR(ty = _)) then " ^ "; 
     case (MUL_SCALAR_PRODUCT(ty = _)) then " * "; 
     case (MUL_MATRIX_PRODUCT(ty = _)) then " * "; 
+    case (DIV_SCALAR_ARRAY(ty = _)) then " / "; 
     case (DIV_ARRAY_SCALAR(ty = _)) then " / "; 
   end matchcontinue;
 end binopSymbol1;
@@ -6368,10 +6662,21 @@ algorithm
     case (POW(ty = t)) then " ^ "; 
     case (ADD_ARR(ty = _)) then " + "; 
     case (SUB_ARR(ty = _)) then " - "; 
+    case (MUL_ARR(ty = _)) then " * "; 
+    case (DIV_ARR(ty = _)) then " / "; 
+    case (POW_ARR(ty = _)) then " ^ "; 
+    case (POW_ARR2(ty = _)) then " ^ "; 
     case (MUL_SCALAR_ARRAY(ty = _)) then " * "; 
     case (MUL_ARRAY_SCALAR(ty = _)) then " * "; 
+    case (ADD_SCALAR_ARRAY(ty = _)) then " + "; 
+    case (ADD_ARRAY_SCALAR(ty = _)) then " + "; 
+    case (SUB_SCALAR_ARRAY(ty = _)) then " - "; 
+    case (SUB_ARRAY_SCALAR(ty = _)) then " - "; 
+    case (POW_SCALAR_ARRAY(ty = _)) then " ^ "; 
+    case (POW_ARRAY_SCALAR(ty = _)) then " ^ "; 
     case (MUL_SCALAR_PRODUCT(ty = _)) then " * "; 
     case (MUL_MATRIX_PRODUCT(ty = _)) then " * "; 
+    case (DIV_SCALAR_ARRAY(ty = _)) then " / "; 
     case (DIV_ARRAY_SCALAR(ty = _)) then " / "; 
   end matchcontinue;
 end binopSymbol2;
@@ -6983,11 +7288,21 @@ algorithm
     case (MATRIX(ty= _)) then 0; 
     case (BINARY(operator = POW(_))) then 1; 
     case (BINARY(operator = POW_ARR(_))) then 1;       
+    case (BINARY(operator = POW_ARR2(_))) then 1;       
+    case (BINARY(operator = POW_SCALAR_ARRAY(_))) then 1;
+    case (BINARY(operator = POW_ARRAY_SCALAR(_))) then 1;
     case (BINARY(operator = DIV(_))) then 2; 
+    case (BINARY(operator = DIV_ARR(_))) then 2;       
+    case (BINARY(operator = DIV_SCALAR_ARRAY(_))) then 2;
     case (BINARY(operator = DIV_ARRAY_SCALAR(_))) then 2;
     case (BINARY(operator = MUL(_))) then 3; 
+    case (BINARY(operator = MUL_ARR(_))) then 3;       
     case (BINARY(operator = MUL_SCALAR_ARRAY(_))) then 3;
     case (BINARY(operator = MUL_ARRAY_SCALAR(_))) then 3;
+    case (BINARY(operator = ADD_SCALAR_ARRAY(_))) then 5;
+    case (BINARY(operator = ADD_ARRAY_SCALAR(_))) then 5;
+    case (BINARY(operator = SUB_SCALAR_ARRAY(_))) then 5;
+    case (BINARY(operator = SUB_ARRAY_SCALAR(_))) then 5;
     case (BINARY(operator = MUL_SCALAR_PRODUCT(_))) then 3;
     case (BINARY(operator = MUL_MATRIX_PRODUCT(_))) then 3;
     case (UNARY(operator = UPLUS(_))) then 6; 
@@ -7278,12 +7593,22 @@ algorithm
     case (UPLUS_ARR(ty = _),UPLUS_ARR(ty = _)) then true; 
     case (ADD_ARR(ty = _),ADD_ARR(ty = _)) then true; 
     case (SUB_ARR(ty = _),SUB_ARR(ty = _)) then true; 
+    case (MUL_ARR(ty = _),MUL_ARR(ty = _)) then true; 
+    case (DIV_ARR(ty = _),DIV_ARR(ty = _)) then true; 
     case (MUL_SCALAR_ARRAY(ty = _),MUL_SCALAR_ARRAY(ty = _)) then true; 
     case (MUL_ARRAY_SCALAR(ty = _),MUL_ARRAY_SCALAR(ty = _)) then true; 
+    case (ADD_SCALAR_ARRAY(ty = _),ADD_SCALAR_ARRAY(ty = _)) then true; 
+    case (ADD_ARRAY_SCALAR(ty = _),ADD_ARRAY_SCALAR(ty = _)) then true; 
+    case (SUB_SCALAR_ARRAY(ty = _),SUB_SCALAR_ARRAY(ty = _)) then true; 
+    case (SUB_ARRAY_SCALAR(ty = _),SUB_ARRAY_SCALAR(ty = _)) then true; 
     case (MUL_SCALAR_PRODUCT(ty = _),MUL_SCALAR_PRODUCT(ty = _)) then true; 
     case (MUL_MATRIX_PRODUCT(ty = _),MUL_MATRIX_PRODUCT(ty = _)) then true; 
+    case (DIV_SCALAR_ARRAY(ty = _),DIV_SCALAR_ARRAY(ty = _)) then true; 
     case (DIV_ARRAY_SCALAR(ty = _),DIV_ARRAY_SCALAR(ty = _)) then true; 
+    case (POW_SCALAR_ARRAY(ty = _),POW_SCALAR_ARRAY(ty = _)) then true; 
+    case (POW_ARRAY_SCALAR(ty = _),POW_ARRAY_SCALAR(ty = _)) then true; 
     case (POW_ARR(ty = _),POW_ARR(ty = _)) then true; 
+    case (POW_ARR2(ty = _),POW_ARR2(ty = _)) then true; 
     case (AND(),AND()) then true; 
     case (OR(),OR()) then true; 
     case (NOT(),NOT()) then true; 
@@ -10643,12 +10968,22 @@ algorithm
     case(UPLUS_ARR(_)) then Absyn.UPLUS();        
     case(ADD_ARR(_)) then Absyn.ADD();
     case(SUB_ARR(_)) then Absyn.SUB();      
+    case(MUL_ARR(_)) then Absyn.MUL();
+    case(DIV_ARR(_)) then Absyn.DIV();      
     case(MUL_SCALAR_ARRAY(_)) then Absyn.MUL();      
     case(MUL_ARRAY_SCALAR(_)) then Absyn.MUL();
+    case(ADD_SCALAR_ARRAY(_)) then Absyn.ADD();      
+    case(ADD_ARRAY_SCALAR(_)) then Absyn.ADD();
+    case(SUB_SCALAR_ARRAY(_)) then Absyn.SUB();      
+    case(SUB_ARRAY_SCALAR(_)) then Absyn.SUB();
     case(MUL_SCALAR_PRODUCT(_)) then Absyn.MUL();      
     case(MUL_MATRIX_PRODUCT(_)) then Absyn.MUL();
+    case(DIV_SCALAR_ARRAY(_)) then Absyn.DIV();      
     case(DIV_ARRAY_SCALAR(_)) then Absyn.DIV();            
+    case(POW_SCALAR_ARRAY(_)) then Absyn.POW();      
+    case(POW_ARRAY_SCALAR(_)) then Absyn.POW();
     case(POW_ARR(_)) then Absyn.POW();
+    case(POW_ARR2(_)) then Absyn.POW();
     case(AND()) then Absyn.AND();
     case(OR()) then Absyn.OR();      
     case(NOT()) then Absyn.NOT();      
