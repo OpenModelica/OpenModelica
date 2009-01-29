@@ -4852,6 +4852,62 @@ algorithm
 				Types.PROP((Types.T_STRING({}),NONE),c));		
   end matchcontinue;
 end elabBuiltinString;
+
+protected function elabBuiltinSkew "
+  author: BZ, 2008-12
+ 
+  This function handles the built-in skew operator.
+"
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input list<Absyn.Exp> inAbsynExpLst;
+  input list<Absyn.NamedArg> inNamedArg;  
+  input Boolean inBoolean;
+  output Env.Cache outCache;
+  output Exp.Exp outExp;
+  output Types.Properties outProperties;
+algorithm 
+  (outCache,outExp,outProperties):=
+  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
+    local
+      Exp.Exp exp;
+      tuple<Types.TType, Option<Absyn.Path>> tp,arr_tp;
+      Types.Const c,const;
+      list<Types.Const> constlist;
+      Exp.Type tp_1,etp;
+      list<Env.Frame> env;
+      Absyn.Exp e;
+      Boolean impl,scalar;
+      list<Exp.Exp> expl,expl_1,args_1;
+      list<Integer> dims;
+      Env.Cache cache;
+      Types.Properties prop;
+      list<Absyn.Exp> args;
+      list<Absyn.NamedArg> nargs;
+      list<Slot> slots,newslots;
+      list<Types.Var> tvars;
+      Option<Absyn.Path> opath1,opath2,opath;
+      Types.Type ty1,ty2;
+    case (cache,env,args as e::_,nargs,impl) 
+      equation 
+        (cache,exp,prop as Types.PROP( type_ = (  Types.T_ARRAY( arrayDim = Types.DIM(SOME(3)), arrayType = (Types.T_REAL(tvars),opath1)),opath), constFlag = c),_) = elabExp(cache,env, e, impl, NONE,false);
+        ty2 = (Types.T_ARRAY(Types.DIM(SOME(3)), (Types.T_REAL(tvars),opath1)),opath1);
+        ty1 = (Types.T_ARRAY(Types.DIM(SOME(3)),ty2),opath1);
+      then
+        (cache,
+            Exp.CALL(Absyn.IDENT("skew"),{exp},false,true,Exp.T_ARRAY(Exp.REAL(),{SOME(3),SOME(3)})),
+            Types.PROP(ty1,c) );
+    case (cache,env,args as e::_,nargs,impl) 
+      equation 
+        (cache,exp,prop as Types.PROP( type_ = (  Types.T_ARRAY( arrayDim = Types.DIM(SOME(3)), arrayType = (Types.T_INTEGER(tvars),opath1)),_), constFlag = c),_) = elabExp(cache,env, e, impl, NONE,false);
+        ty2 = (Types.T_ARRAY(Types.DIM(SOME(3)), (Types.T_INTEGER(tvars),opath1)),opath1);
+        ty1 = (Types.T_ARRAY(Types.DIM(SOME(3)),ty2),opath1);
+      then
+        (cache,
+            Exp.CALL(Absyn.IDENT("skew"),{exp},false,true,Exp.T_ARRAY(Exp.INT(),{SOME(3),SOME(3)})),
+            Types.PROP(ty1,c) );
+  end matchcontinue;
+end elabBuiltinSkew;
   
 protected function elabBuiltinVector "function: elabBuiltinVector
   author: PA
@@ -5171,6 +5227,8 @@ algorithm
     case "cross" then elabBuiltinCross;
       
     case "String" then elabBuiltinString;
+      
+    case "skew" then elabBuiltinSkew;
       
   end matchcontinue;
 end elabBuiltinHandler;
@@ -6659,9 +6717,7 @@ algorithm
         prop = getProperties(restype, tyconst);
  	    tp = Types.elabType(restype); 
  	    (cache,args_2,slots2) = addDefaultArgs(cache,env,args_1,fn,slots,impl);
-         
-        (call_exp,prop_1) = vectorizeCall(Exp.CALL(fn_1,args_2,tuple_,builtin,tp), restype, vect_dims, 
-          slots2, prop);
+        (call_exp,prop_1) = vectorizeCall(Exp.CALL(fn_1,args_2,tuple_,builtin,tp), restype, vect_dims, slots2, prop);
       then
         (cache,call_exp,prop_1);
         

@@ -3205,6 +3205,8 @@ algorithm
       env = Env.extendFrameT(env, "skew", array1dimreal2array3dimreal);
       env = Env.extendFrameT(env, "sqrt", int2real);
       env = Env.extendFrameT(env, "sqrt", real2real);
+      env = Env.extendFrameT(env, "mod", intInt2int); 
+      env = Env.extendFrameT(env, "mod", realReal2real);
       /*
       env = Env.extendFrameT(env, "semiLinear", realRealReal2real);
       env = Env.extendFrameT(env, "delay", realReal2real);

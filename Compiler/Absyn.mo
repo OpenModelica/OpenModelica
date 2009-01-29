@@ -1474,6 +1474,51 @@ then s1;
 end matchcontinue;
 end componentRefStr;
 
+public function typeSpecEqual "
+Author BZ 2009-01
+Check wheter two type specs are equal or not.
+"
+  input TypeSpec a,b;
+  output Boolean ob;
+algorithm ob := matchcontinue(a,b)
+  local
+    Path p1,p2;
+    Option<ArrayDim> oad1,oad2;
+    list<TypeSpec> lst1,lst2;
+  case(TPATH(p1,oad1), TPATH(p2,oad2))
+    equation
+      true = ModUtil.pathEqual(p1,p2);
+      true = optArrayDimEqual(oad1,oad2);
+    then true;
+  case(TCOMPLEX(p1,lst1,oad1),TCOMPLEX(p2,lst2,oad2))
+    equation
+      true = ModUtil.pathEqual(p1,p2);
+      true = Util.isListEqualWithCompareFunc(lst1,lst2,typeSpecEqual);
+      true = optArrayDimEqual(oad1,oad2);      
+      then
+        true;
+  case(_,_) then false;  
+end matchcontinue; 
+end typeSpecEqual;
+
+public function optArrayDimEqual "
+Author BZ 
+helperfunction for typeSpecEqual 
+"
+  input Option<ArrayDim> oad1,oad2;
+  output Boolean b;
+algorithm b:= matchcontinue(oad1,oad2)
+  local
+    list<Subscript> ad1,ad2;
+  case(SOME(ad1),SOME(ad2))
+    equation 
+    true = Util.isListEqualWithCompareFunc(ad1,ad2,subscriptEqual);
+    then true;
+  case(NONE,NONE) then true;
+  case(_,_) then false;
+end matchcontinue;
+end optArrayDimEqual;
+
 public function typeSpecPathString "function: pathString
   This function simply converts a Path to a string."
   input TypeSpec tp;  
@@ -1874,6 +1919,19 @@ algorithm
     case(p,FULLYQUALIFIED(p2)) then joinPaths(p,p2);
   end matchcontinue;
 end joinPaths;
+
+public function optPathAppend "
+Author BZ, 2009-01
+Appends a path to optional 'base'-path.
+"
+  input Option<Path> basePath;
+  input Path lastPath;
+  output Path mergedPath;
+algorithm mergedPath := matchcontinue(basePath, lastPath)
+  case(NONE,lastPath) then lastPath;
+  case(SOME(mergedPath), lastPath) then pathAppendList({mergedPath,lastPath}); 
+end matchcontinue;
+end optPathAppend;
 
 public function pathAppendList "function: pathAppendList
   author Lucian
@@ -2333,6 +2391,20 @@ algorithm
     case (_) then false; 
   end matchcontinue;
 end isPackageRestriction;
+
+public function subscriptEqual "
+Author BZ, 2009-01 
+Check if two subscripts are equal.
+"
+input Subscript ss1,ss2;
+output Boolean b;
+algorithm b:= matchcontinue(ss1,ss2)
+  local Exp e1,e2;
+  case(NOSUB,NOSUB) then true;
+  case(SUBSCRIPT(e1),SUBSCRIPT(e2)) then expEqual(e1,e2);
+  case(_,_) then false;
+  end matchcontinue;
+end subscriptEqual;
 
 public function expEqual "Returns true if two expressions are equal"
   input Exp exp1;

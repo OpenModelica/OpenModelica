@@ -1329,10 +1329,11 @@ algorithm
   (outCache,outDAEElementLst) :=
   matchcontinue (inCache,inExpComponentRefLst,inEnv,prefix,deletedComponents)
     local
-      list<DAE.Element> res;
+      list<DAE.Element> res,res1;
       Exp.ComponentRef cr;
       Env.Env env;
       Types.Type tp;
+      Exp.Type arrType;
       list<Exp.ComponentRef> xs;
       list<int> dimSizes;
       list<Option<Integer>> dimSizesOpt;
@@ -1349,9 +1350,12 @@ algorithm
         dimExps = Util.listMap(dimSizes,Exp.makeIntegerExp);
         (cache,res) = generateZeroflowEquations(cache,xs,env,prefix,deletedComponents);
         cr2 = Prefix.prefixCref(prefix,cr);
+        arrType = Exp.T_ARRAY(Exp.REAL(),dimSizesOpt);
+        dimExps = {Exp.ICONST(0),Exp.ICONST(0),Exp.ICONST(0)};
+        res1 = generateZeroflowArrayEquations(cr, dimSizes, Exp.RCONST(0.0));
+        res = listAppend(res1,res);
       then
-        (cache,DAE.EQUATION(Exp.CREF(cr2,Exp.REAL()),Exp.CALL(Absyn.IDENT("fill"),Exp.RCONST(0.0)::dimExps,false,true,Exp.T_ARRAY(Exp.REAL(),dimSizesOpt))) :: res);         
- 
+        (cache,res);
     case (cache,(cr :: xs),env,prefix,deletedComponents) // For scalars.
       equation
         (cache,_,tp,_,_,_) = Lookup.lookupVar(cache,env,cr);
@@ -1362,6 +1366,93 @@ algorithm
         (cache,DAE.EQUATION(Exp.CREF(cr2,Exp.REAL()),Exp.RCONST(0.0)) :: res);
   end matchcontinue;
 end generateZeroflowEquations;
+
+protected function generateZeroflowArrayEquations
+"function generateZeroflowArrayEquations
+ @author adrpo
+ Given:
+ - a component reference (ex. a.b)
+ - a list of dimensions  (ex. {3, 4})
+ - an expression         (ex. expr)
+ this function will generate a list of equations of the form:
+ { a.b[1,1] = expr, a.b[1,2] = expr, a.b[1,3] = expr, a.b[1.4] = expr,
+   a.b[2,1] = expr, a.b[2,2] = expr, a.b[2,3] = expr, a.b[2.4] = expr,
+   a.b[3,1] = expr, a.b[3,2] = expr, a.b[3,3] = expr, a.b[3.4] = expr }"
+  input Exp.ComponentRef cr;
+  input list<Integer> dimensions;
+  input Exp.Exp initExp;
+  output list<DAE.Element> equations;
+algorithm
+  equations := matchcontinue(cr, dimensions, initExp)
+    local
+      list<DAE.Element> out;
+      list<list<Integer>> indexIntegerLists;
+      list<list<Exp.Subscript>> indexSubscriptLists;
+    case(cr, dimensions, initExp)
+      equation
+        // take the list of dimensions: ex. {2, 5, 3}
+        // and generate a list of ranges: ex. {{1, 2}, {1, 2, 3, 4, 5}, {1, 2, 3}}
+        indexIntegerLists = Util.listMap(dimensions, Util.listIntRange);
+        // from a list like: {{1, 2}, {1, 2, 3, 4, 5}
+        // generate a list like: { { {Exp.INDEX(Exp.ICONST(1)}, {Exp.INDEX(Exp.ICONST(2)} }, ... }
+        indexSubscriptLists = Util.listListMap(indexIntegerLists, integer2Subscript);
+        // now generate a product of all lists in { {lst1}, {lst2}, {lst3} }
+        // which will generate indexes like [1, 1, 1], [1, 1, 2], [1, 2, 3] ... [2, 5, 3]
+        indexSubscriptLists = generateAllIndexes(indexSubscriptLists, {});
+        out = Util.listMap1(indexSubscriptLists, genZeroEquation, (cr, initExp));
+      then
+        out;
+  end matchcontinue;
+end generateZeroflowArrayEquations;
+
+protected function genZeroEquation
+"@author adrpo
+ given an integer transform it into an list<Exp.Subscript>"
+  input   list<Exp.Subscript> indexSubscriptList;
+  input   tuple<Exp.ComponentRef, Exp.Exp> crAndInitExp;
+  output  DAE.Element eq;
+algorithm
+  eq := matchcontinue (indexSubscriptList, crAndInitExp)
+    local
+      Exp.ComponentRef cr;
+      Exp.Exp initExp;
+    case (indexSubscriptList, (cr, initExp))
+      equation
+        cr = Exp.subscriptCref(cr, indexSubscriptList);
+      then
+        DAE.EQUATION(Exp.CREF(cr,Exp.REAL()), initExp);
+  end matchcontinue;
+end genZeroEquation;
+
+function generateAllIndexes
+  input  list<list<Exp.Subscript>> inIndexLists;
+  input  list<list<Exp.Subscript>> accumulator;
+  output list<list<Exp.Subscript>> outIndexLists;
+algorithm
+  outIndexLists := matchcontinue (inIndexLists, accumulator)
+    local
+      list<Exp.Subscript> hd;
+      list<list<Exp.Subscript>> tail, res1, res2;
+    case ({}, accumulator) then accumulator;
+    case (hd::tail, accumulator)
+      equation
+        //print ("generateAllIndexes hd:"); printMe(hd);
+        res1 = Util.listProduct({hd}, accumulator);
+        res2 = generateAllIndexes(tail, res1);
+        //print ("generateAllIndexes res2:"); Util.listMap0(res2, printMe);
+      then
+        res2;
+  end matchcontinue;
+end generateAllIndexes;
+
+protected function integer2Subscript
+"@author adrpo
+ given an integer transform it into an Exp.Subscript"
+  input  Integer       index;
+  output Exp.Subscript subscript;
+algorithm
+ subscript := Exp.INDEX(Exp.ICONST(index));
+end integer2Subscript;
 
 protected function getAllFlowVariables "function: getAllFlowVariables
   

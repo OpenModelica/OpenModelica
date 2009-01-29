@@ -1920,6 +1920,17 @@ algorithm
   end matchcontinue;
 end unparseVariability;
 
+public function isElementExtends "
+Author BZ, 2009-01 
+check if an element is of type EXTENDS or not. 
+"
+  input Element ele;
+  output Boolean isExtend;
+algorithm isExtend := matchcontinue(ele)
+  case(EXTENDS(baseClassPath = _)) then true;
+  case(_) then false;
+end matchcontinue;
+end isElementExtends;
 
 public function isParameterOrConst 
 "function: isParameterOrConst

@@ -247,6 +247,36 @@ algorithm isequal := matchcontinue(input1,input2,equalLength)
   end matchcontinue;
 end isListEqual;
 
+public function isListEqualWithCompareFunc "
+Author BZ 2009-01
+Compares the elements of two lists using provided compare function.
+" 
+input list<Type_a> input1;
+input list<Type_a> input2;
+input compareFunc cmpFunc;
+output Boolean isequal;
+partial function compareFunc
+  input Type_a inp1;
+  input Type_a inp2;
+  output Boolean resFunc;
+end compareFunc;
+replaceable type Type_a subtypeof Any;
+algorithm isequal := matchcontinue(input1,input2,cmpFunc)
+  local
+    Type_a a,b;
+    list<Type_a> al,bl;
+    case({},{},_) then true; 
+  case({},_,_) then false;
+  case(_,{},_) then false;
+  case(a::al,b::bl,cmpFunc)
+    equation
+      true = cmpFunc(a,b);
+      true = isListEqualWithCompareFunc(al,bl,cmpFunc);
+    then true;
+  case(_,_,_) then false;
+  end matchcontinue;
+end isListEqualWithCompareFunc;
+
 public function listFill_tail 
 "function: listFill_tail
  @author adrpo

@@ -460,7 +460,7 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (REDUNDANT_GUESS,TRANSLATION(),WARNING(),  
           "Start value is assigned for variable: %s, but not used since %s"),          
           (MISSING_INNER_PREFIX,TRANSLATION(),ERROR(),
-          "Component must have prefix 'inner' since corresponding outer declaration found for component %s."),  
+          "No corresponding 'INNER' declaration found for component %s declared as '%s'."),
           (IMPLICIT_ITERATOR_NOT_FOUND_IN_LOOP_BODY,TRANSLATION(),ERROR(),
           "Identificator %s of implicit for iterator must be present as array subscript in the loop body.")  
           };

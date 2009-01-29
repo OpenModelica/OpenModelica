@@ -2888,16 +2888,10 @@ algorithm
       then
         fail();
         
-    /* fail after printing the error message */
-    case (cache,env,mod,(SCode.EXTENDS(baseClassPath = tp,modifications = emod) :: rest),ci_state,className,impl)
-      equation 
-        //print("instExtendsList failed on extends ");print(Absyn.pathString(tp));print("\n");
-      then
-        fail();
-
     /* instantiate elements that are not extends */
     case (cache,env,mod,(elt :: rest),ci_state,className,impl) /* Components that are not EXTENDS */
       equation
+         false = SCode.isElementExtends(elt) "verify that it is not an extends element";
         (cache,env_1,mods,compelts2,eq2,initeq2,alg2,ialg2) = 
         instExtendsList(cache,env, mod, rest, ci_state, className, impl);
       then
@@ -3002,21 +2996,15 @@ algorithm
       then
         fail();
 
-    /* print a debugging message */
-    case (cache,env,mod,(SCode.EXTENDS(baseClassPath = tp,modifications = emod) :: rest),ci_state,_,impl)
-      equation 
-        //Debug.fprint("failtrace", "Failed Inst.partialInstExtendsList on EXTENDS\n env:");
-        Env.printEnv(env);
-      then
-        fail();
-
     /* instantiate components that are not EXTENDS */
     case (cache,env,mod,(elt :: rest),ci_state,className,impl) 
       equation 
+        // If used, line below, the kernel fails to instantiate some base packages (such as Icons.Library, from IntroductoryExamples.HelloWorld)
+        //false = SCode.isElementExtends(elt); 
         (cache,env_1,mods,compelts2,eq2,initeq2,alg2,ialg2) = partialInstExtendsList(cache,env, mod, rest, ci_state, className, impl);
       then
         (cache,env_1,mods,((elt,Types.NOMOD()) :: compelts2),eq2,initeq2,alg2,ialg2);
-
+        
     /* no further elements to instantiate */
     case (cache,env,mod,{},ci_state,className,impl) then (cache,env,mod,{},{},{},{},{});
 
@@ -3354,17 +3342,10 @@ algorithm
       equation  
         /* make variable_string for error printing*/ 
         ele = Util.tuple21(el);
-        path = Absyn.IDENT("");
-        path = Prefix.prefixPath(path,pre);
-        nopre = Util.isEqual(path,Absyn.IDENT(""));
-        prepath = Absyn.pathString(path);
-        // already a dot included ?spi
-        //prepath = stringAppend(prepath,"."); 
-        prepath = Util.if_(nopre,"",prepath);
         (str, info) = extractCurrentName(ele);
-        str = stringAppend(prepath,str);
-        Error.updateCurrentComponent(str,info);
-          /* to here */
+        path = Absyn.IDENT(str);
+        path = Prefix.prefixPath(path,pre);        
+        str = Absyn.pathString(path);         
 
         // A frequent used debugging line 
         //print("Instantiating element: " +& str +& " in scope " +& Env.getScopeName(env) +& "\n"); 
@@ -4057,7 +4038,7 @@ algorithm
         crefs2 = getCrefFromDim(ad);
         crefs3 = getCrefFromCond(cond);
         crefs_1 = Util.listFlatten({crefs,crefs2,crefs3});
-        (env,crefs_2,cache) = removeSelfReferenceAndUpdate(env,crefs_1,owncref,t,cache,ci_state,csets,prot,attr,impl,io,inst_dims,pre,mods,finalPrefix);
+        (env,crefs_2,cache) = removeSelfReferenceAndUpdate(env,crefs_1,owncref,t,cache,ci_state,csets,prot,attr,impl,io,inst_dims,pre,mods,finalPrefix,aInfo);
         (cache,env) = getDerivedEnv(cache,env, bc);
         (cache,env2,csets) = updateComponentsInEnv(cache,mods, crefs_2, env, ci_state, csets, impl);
 				//Update the untyped modifiers to typed ones, and extract class and 
@@ -4114,7 +4095,7 @@ algorithm
         (cache,dims) = elabArraydim(cache,env2_1, owncref, t,ad, eq, impl, NONE,true)  ;
         //Instantiate the component 
          inst_dims = listAppend(inst_dims,{{}}); // Start a new "set" of inst_dims for this component (in instance hierarchy), see InstDims
-        (cache,compenv,dae,csets_1,ty) = instVar(cache,cenv, ci_state, mod_1, pre, csets, n, cl, attr, prot, dims, {}, inst_dims, impl, comment,io,finalPrefix);
+        (cache,compenv,dae,csets_1,ty) = instVar(cache,cenv, ci_state, mod_1, pre, csets, n, cl, attr, prot, dims, {}, inst_dims, impl, comment,io,finalPrefix,aInfo);
 				//The environment is extended (updated) with the new variable binding. 
         (cache,binding) = makeBinding(cache,env2_1, attr, mod_1, ty) ; 
         //true in update_frame means the variable is now instantiated. 
@@ -4218,7 +4199,7 @@ algorithm
         (cache,dims) = elabArraydim(cache,env, owncref, Absyn.IDENT("Integer"),ad, NONE, impl, NONE,true)  ;
 
         // Instantiate the component
-        (cache,compenv,dae,csets_1,ty) = instVar(cache,env, ci_state, Types.NOMOD(), pre, csets, n, cl, attr, prot, dims, {}, inst_dims, impl, comment,io,finalPrefix);
+        (cache,compenv,dae,csets_1,ty) = instVar(cache,env, ci_state, Types.NOMOD(), pre, csets, n, cl, attr, prot, dims, {}, inst_dims, impl, comment,io,finalPrefix,aInfo);
 
 				// The environment is extended (updated) with the new variable binding.
         (cache,binding) = makeBinding(cache,env, attr, Types.NOMOD(), ty) ;
@@ -4750,14 +4731,14 @@ protected function instVar
   input Option<Absyn.Comment> inAbsynCommentOption;
   input Absyn.InnerOuter io;
   input Boolean finalPrefix;
+  input Option<Absyn.Info> onfo;
   output Env.Cache outCache;
   output Env outEnv;
   output list<DAE.Element> outDAEElementLst;
   output Connect.Sets outSets;
   output Types.Type outType;
-algorithm 
-  (outCache,outEnv,outDAEElementLst,outSets,outType):=
-  matchcontinue (outCache,inEnv,inState,inMod,inPrefix,inSets,inIdent,inClass,inAttributes,protection,inDimExpLst,inIntegerLst,inInstDims,inBoolean,inAbsynCommentOption,io,finalPrefix)
+algorithm (outCache,outEnv,outDAEElementLst,outSets,outType):=
+  matchcontinue (outCache,inEnv,inState,inMod,inPrefix,inSets,inIdent,inClass,inAttributes,protection,inDimExpLst,inIntegerLst,inInstDims,inBoolean,inAbsynCommentOption,io,finalPrefix,onfo)
     local
       list<DimExp> dims_1,dims;
       list<Env.Frame> compenv,env;
@@ -4776,28 +4757,41 @@ algorithm
       Option<Absyn.Comment> comment;
       Env.Cache cache;
       Boolean prot;
+      Absyn.Path p1;
+      String str;
    	// impl component environment dae elements for component Variables of userdefined type, 
    	// e.g. Point p => Real p{3}; These must be handled separately since even if they do not 
 	 	// appear to be an array, they can. Therefore we need to collect
- 	 	// the full dimensionality and call inst_var2 
-    case (cache,env,ci_state,mod,pre,csets,n,(cl as SCode.CLASS(name = id)),attr,prot,dims,idxs,inst_dims,impl,comment,io,finalPrefix) 
+ 	 	// the full dimensionality and call inst_var2 	 	 
+    case (cache,env,ci_state,mod,pre,csets,n,(cl as SCode.CLASS(name = id)),attr,prot,dims,idxs,inst_dims,impl,comment,io,finalPrefix,onfo) 
       equation 
 				// Collect dimensions
+        p1 = Absyn.IDENT(n);
+        p1 = Prefix.prefixPath(p1,pre);
+        str = Absyn.pathString(p1);         
+        Error.updateCurrentComponent(str,onfo);
         (cache,(dims_1 as (_ :: _))) = getUsertypeDimensions(cache,env, mod, pre, cl, inst_dims, impl);
         attr = propagateClassPrefix(attr,pre);
         (cache,compenv,dae,csets_1,ty_1) = instVar2(cache,env, ci_state, mod, pre, csets, n, cl, attr, prot, dims_1, idxs, inst_dims, impl, comment,io,finalPrefix);
         ty = makeArrayType(dims_1, ty_1);
+        Error.updateCurrentComponent("",NONE); 
       then
         (cache,compenv,dae,csets_1,ty);
         
     // Generic case: fall trough 
-    case (cache,env,ci_state,mod,pre,csets,n,(cl as SCode.CLASS(name = id)),attr,prot,dims,idxs,inst_dims,impl,comment,io,finalPrefix) 
+    case (cache,env,ci_state,mod,pre,csets,n,(cl as SCode.CLASS(name = id)),attr,prot,dims,idxs,inst_dims,impl,comment,io,finalPrefix,onfo) 
       equation 
+                p1 = Absyn.IDENT(n);
+        p1 = Prefix.prefixPath(p1,pre);
+        str = Absyn.pathString(p1);         
+        Error.updateCurrentComponent(str,onfo);
         attr = propagateClassPrefix(attr,pre);
         (cache,compenv,dae,csets_1,ty_1) = instVar2(cache,env, ci_state, mod, pre, csets, n, cl, attr, prot, dims, idxs, 
           inst_dims, impl, comment,io,finalPrefix);
+          Error.updateCurrentComponent("",NONE); 
       then
         (cache,compenv,dae,csets_1,ty_1);
+    case(_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_) equation Error.updateCurrentComponent("",NONE); then fail();
   end matchcontinue;
 end instVar;
 
@@ -5371,14 +5365,14 @@ algorithm
       Option<Absyn.Exp> cond;
       Types.Var tyVar;
       Env.InstStatus is;
-      
+      Option<Absyn.Info> onfo;
       
     /* Variables that have Element in Environment, i.e. no type 
 	 * information are instantiated here to get the type. 
      */ 
     case (cache,mods,(cref as Absyn.CREF_IDENT(name = id,subscripts = subscr)),env,ci_state,csets,impl,updatedComps) 
       equation 
-        (cache,ty,SOME((SCode.COMPONENT(n,io,finalPrefix,repl,prot,(attr as SCode.ATTR(ad,flowPrefix,streamPrefix,acc,param,dir)),Absyn.TPATH(t, _),m,bc,comment,cond,_),cmod)),_) 
+        (cache,ty,SOME((SCode.COMPONENT(n,io,finalPrefix,repl,prot,(attr as SCode.ATTR(ad,flowPrefix,streamPrefix,acc,param,dir)),Absyn.TPATH(t, _),m,bc,comment,cond,onfo),cmod)),_) 
         	= Lookup.lookupIdent(cache,env, id);
         (cache,cl,cenv) = Lookup.lookupClass(cache,env, t, false);
         (mods,cmod,m) = noModForUpdatedComponents(updatedComps,cref,mods,cmod,m);
@@ -5401,7 +5395,7 @@ algorithm
         (cache,dims) = elabArraydim(cache,env2, cref, t,ad, eq, impl, NONE,true) 
         "The variable declaration and the (optional) equation modification are inspected for array dimensions." ;
         /* Instantiate the component */
-        (cache,compenv,dae1,csets_1,ty) = instVar(cache,cenv, ci_state, mod_3, Prefix.NOPRE(), csets, n, cl, attr, prot, dims, {}, {}, impl, NONE,io,finalPrefix);
+        (cache,compenv,dae1,csets_1,ty) = instVar(cache,cenv, ci_state, mod_3, Prefix.NOPRE(), csets, n, cl, attr, prot, dims, {}, {}, impl, NONE,io,finalPrefix,onfo);
         /* The environment is extended with the new variable binding. */
         (cache,binding) = makeBinding(cache,env2, attr, mod_3, ty)  ;
         /* type info present */
@@ -5430,12 +5424,12 @@ algorithm
         (cache,env,csets,updatedComps);
 
         /* For qualified names, e.g. a.b.c, instanitate component a */
-    case (cache,mods,(cref as Absyn.CREF_QUAL(name = id)),env,ci_state,csets,impl,updatedComps)  
+    case (cache,mods,(cref as Absyn.CREF_QUAL(name = id)),env,ci_state,csets,impl,updatedComps)
+      local Option<Absyn.Info> onfo;    
       equation 
-        (cache,tyVar,SOME((SCode.COMPONENT(n,io,finalPrefix,repl,prot,(attr as SCode.ATTR(ad,flowPrefix,streamPrefix,acc,param,dir)),Absyn.TPATH(t,_),m,_,comment,cond,_),cmod)),_) 
-        	= Lookup.lookupIdent(cache,env, id);               
+        (cache,tyVar,SOME((SCode.COMPONENT(n,io,finalPrefix,repl,prot,(attr as SCode.ATTR(ad,flowPrefix,streamPrefix,acc,param,dir)),Absyn.TPATH(t,_),m,_,comment,cond,onfo),cmod)),_) 
+              = Lookup.lookupIdent(cache,env, id);
         (cache,cl,cenv) = Lookup.lookupClass(cache,env, t, false);
-        
         (mods,cmod,m) = noModForUpdatedComponents(updatedComps,cref,mods,cmod,m);
         crefs = getCrefFromMod(m);
         updatedComps = HashTable5.add((cref,0),updatedComps);
@@ -5461,7 +5455,7 @@ algorithm
         (cache,dims) = elabArraydim(cache,env2, owncref, t,ad, eq, impl, NONE,true);
 
         /* Instantiate the component */
-        (cache,compenv,dae1,csets_1,ty) = instVar(cache,cenv, ci_state, mod_3, Prefix.NOPRE(), csets, n, cl, attr, prot, dims, {}, {}, false, NONE,io,finalPrefix);
+        (cache,compenv,dae1,csets_1,ty) = instVar(cache,cenv, ci_state, mod_3, Prefix.NOPRE(), csets, n, cl, attr, prot, dims, {}, {}, false, NONE,io,finalPrefix,onfo);
 
         /*The environment is extended with the new variable binding.*/
         (cache,binding) = makeBinding(cache,env2, attr, mod_3, ty);
@@ -8201,10 +8195,11 @@ algorithm
 
         /* reinit statement */
     case (cache,env,mod,pre,csets,ci_state,SCode.EQ_REINIT(cref = cr,expReinit = e2),initial_,impl)
-      local Exp.ComponentRef cr_2; Exp.Type t;
+      local Exp.ComponentRef cr_2; Exp.Type t; Types.Properties tprop1,tprop2;
       equation 
-        (cache,Exp.CREF(cr_1,t),_,_) = Static.elabCref(cache,env, cr, impl,false) "reinit statement" ;
-        (cache,e2_1,_,_) = Static.elabExp(cache,env, e2, impl, NONE,true);
+        (cache,Exp.CREF(cr_1,t),tprop1,_) = Static.elabCref(cache,env, cr, impl,false) "reinit statement" ;
+        (cache,e2_1,tprop2,_) = Static.elabExp(cache,env, e2, impl, NONE,true);
+        (e2_1,_) = Types.matchProp(e2_1, tprop2, tprop1);
         (cache,e2_2) = Prefix.prefixExp(cache,env, e2_1, pre);
         (cache,Exp.CREF(cr_2,_)) = Prefix.prefixExp(cache,env, Exp.CREF(cr_1,t), pre);        
       then
@@ -9091,7 +9086,7 @@ algorithm
         stmt = Algorithm.makeAssignment(Exp.CREF(ce_1,t), cprop, e_2, eprop, acc, initial_);
       then
         (cache,stmt);
-    /* TODO: Use this when we have fixed states in DAELow.lower(...)
+        /* der(x) := ... */
     case (cache,env,pre,Absyn.ALG_ASSIGN(assignComponent = 
       (e2 as Absyn.CALL(function_ = Absyn.CREF_IDENT(name="der"),functionArgs=(Absyn.FUNCTIONARGS(args={Absyn.CREF(cr)})) )),value = e),initial_,impl)
       local
@@ -9106,7 +9101,6 @@ algorithm
         stmt = Algorithm.makeAssignment(e2_2_2, cprop, e_2, eprop, SCode.RW() ,initial_);
       then
         (cache,stmt);
-        */
 		// v[i] := expr (in e.g. for loops)
     case (cache,env,pre,Absyn.ALG_ASSIGN(assignComponent = Absyn.CREF(cr),value = e),initial_,impl)
       equation 
@@ -11228,13 +11222,13 @@ algorithm
       Env.Cache cache;
       Absyn.InnerOuter io;
       Boolean finalPrefix;
-
-    case (cache,env,SCode.COMPONENT(component = id,replaceablePrefix = repl,protectedPrefix = prot,
+      Option<Absyn.Info> onfo;
+    case (cache,env,SCode.COMPONENT(info = onfo, component = id,replaceablePrefix = repl,protectedPrefix = prot,
                                     attributes = (attr as SCode.ATTR(arrayDims = dim,flowPrefix = f,streamPrefix=s,
                                                                      accesibility = acc, variability = var,direction = dir)),
                                     typeSpec = Absyn.TPATH(t, _),modifications = mod,
                                     baseClassPath = bc,comment = comment,innerOuter=io,
-                                    finalPrefix = finalPrefix),outerMod,impl) 
+                                    finalPrefix = finalPrefix),outerMod,impl)
       equation 
         //Debug.fprint("recconst", "inst_record_constructor_elt called\n");
         (cache,cl,cenv) = Lookup.lookupClass(cache,env, t, true);
@@ -11245,7 +11239,7 @@ algorithm
         (cache,dimexp) = elabArraydim(cache,env, owncref,t, dim, NONE, false, NONE,true);
         //Debug.fprint("recconst", "calling inst_var\n");
         (cache,_,_,_,tp_1) = instVar(cache,cenv, ClassInf.FUNCTION(""), mod_1, Prefix.NOPRE(), 
-          Connect.emptySet, id, cl, attr, prot,dimexp, {}, {}, impl, comment,io,finalPrefix);
+          Connect.emptySet, id, cl, attr, prot,dimexp, {}, {}, impl, comment,io,finalPrefix,onfo);
         //Debug.fprint("recconst", "Type of argument:");
         Debug.fprint("recconst", Types.printTypeStr(tp_1));
         //Debug.fprint("recconst", "\nMod=");
@@ -12061,17 +12055,21 @@ protected function checkMissingInnerDecl2 "help function to checkMissingInnerDec
   input list<DAE.Element> innerVars;
 algorithm
   _ := matchcontinue(outerVar,innerVars)
-  local String str; Exp.ComponentRef cr; DAE.Element v;
+  local String str,str2; Exp.ComponentRef cr; DAE.Element v;
     list<Exp.ComponentRef> crs;
     case(DAE.VAR(componentRef=cr),innerVars) equation
       crs = Util.listMap(innerVars,DAE.varCref);
       {_} = Util.listSelect1(crs, cr,isInnerOuterMatch);
     then ();
-    case(DAE.VAR(componentRef=cr),innerVars) equation
+    case(DAE.VAR(componentRef=cr, innerOuter = io),innerVars) 
+      local Absyn.InnerOuter io;
+      equation
+        str2 = SCode.innerouterString(io);
       crs = Util.listMap(innerVars,DAE.varCref);
       {} = Util.listSelect1(crs, cr,isInnerOuterMatch);
        str = Exp.printComponentRefStr(cr);
-      Error.addMessage(Error.MISSING_INNER_PREFIX,{str});
+      Error.addMessage(Error.MISSING_INNER_PREFIX,{str,str2});
+      print(" error: " +& str +& "\n");
     then fail();
   end matchcontinue;
 end checkMissingInnerDecl2;
@@ -12427,12 +12425,12 @@ the element.
   input Prefix.Prefix pre;
   input Types.Mod mods;
   input Boolean finalPrefix;
+  input Option<Absyn.Info> onfo;
   output Env.Env o2; 
   output list<Absyn.ComponentRef> o1;  
   output Env.Cache o3;
-algorithm
-  (o1,o2,o3) := 
-  matchcontinue(inEnv,inRefs,inRef,inPath,cache,inState,icsets,p,iattr,impl,io,inst_dims,pre,mods,finalPrefix)
+algorithm (o1,o2,o3) :=  
+  matchcontinue(inEnv,inRefs,inRef,inPath,cache,inState,icsets,p,iattr,impl,io,inst_dims,pre,mods,finalPrefix,onfo)
     local 
       Absyn.Path sty;
       Absyn.ComponentRef c1,c2;
@@ -12454,7 +12452,7 @@ algorithm
       list<DimExp> dims;
       Types.Var new_var;
       
-    case(env,cl1,c1,_,cache,_,_,_,_,_,_,_,_,_,_)
+    case(env,cl1,c1,_,cache,_,_,_,_,_,_,_,_,_,_,_)
       equation 
         cl2 = removeCrefFromCrefs(cl1, c1);
         i1 = listLength(cl2);
@@ -12463,24 +12461,18 @@ algorithm
       then
         (env,cl2,cache);
     case(env,cl1,c1 as Absyn.CREF_IDENT(name = n) ,sty,cache,state,csets,prot,
-         (attr as SCode.ATTR(arrayDims = ad,
-                             flowPrefix = flowPrefix,
-                             streamPrefix = streamPrefix,
-                             accesibility = acc,
-                             variability = param,
-                             direction = dir)),
-         impl,io,inst_dims,pre,mods,finalPrefix) // we have reference to ourself, try to instantiate type.  
+         (attr as SCode.ATTR(arrayDims = ad, flowPrefix = flowPrefix, streamPrefix = streamPrefix, accesibility = acc, variability = param, direction = dir)), impl,io,inst_dims,pre,mods,finalPrefix,onfo) 
+         // we have reference to ourself, try to instantiate type.  
       equation 
-//        Error.addMessage(Error.SELF_REFERENCE_EQUATION, {n});
         cl2 = removeCrefFromCrefs(cl1, c1);
         (cache,c,cenv) = Lookup.lookupClass(cache,env, sty, true);
         (cache,dims) = elabArraydim(cache,cenv, c1, sty, ad, NONE, impl, NONE,true)  ;
-        (cache,compenv,_,_,ty) = instVar(cache,cenv, state, Types.NOMOD(), pre, csets, n, c, attr, prot, dims, {}, inst_dims, impl, NONE ,io,finalPrefix);
+        (cache,compenv,_,_,ty) = instVar(cache,cenv, state, Types.NOMOD(), pre, csets, n, c, attr, prot, dims, {}, inst_dims, impl, NONE ,io,finalPrefix,onfo);
         new_var = Types.VAR(n,Types.ATTR(flowPrefix,streamPrefix,acc,param,dir,io),prot,ty,Types.UNBOUND());
         env = Env.updateFrameV(env, new_var, Env.VAR_TYPED(), compenv)  ;
       then
         (env,cl2,cache);    
-    case(env,cl1,c1,_,cache,_,_,_,_,_,_,_,_,_,_)
+    case(env,cl1,c1,_,cache,_,_,_,_,_,_,_,_,_,_,_)
       equation 
         cl2 = removeCrefFromCrefs(cl1, c1);
       then

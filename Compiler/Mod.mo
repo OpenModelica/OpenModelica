@@ -1286,11 +1286,12 @@ algorithm outMod:= matchcontinue (inMod1,inMod2,inEnv3,inPrefix4)
         true = modSubsetOrEqual(inMod1,inMod2);
       then doMerge(inMod1,inMod2,inEnv3,inPrefix4);
     case(inMod1,inMod2,inEnv3,inPrefix4)
-      local String s;
+      local String s; Option<Absyn.Path> p;
       equation
         false = merge2(inMod2);
         false = modSubsetOrEqual(inMod1,inMod2);
-        s = Env.getScopeName(inEnv3);
+        p = Env.getEnvPath(inEnv3);
+        s = Absyn.optPathString(p);
         Error.addMessage(Error.FINAL_OVERRIDE, {s}); // having a string there incase we 
       then fail();
   end matchcontinue;  

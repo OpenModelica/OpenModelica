@@ -4658,7 +4658,14 @@ algorithm
         (v,kv,extVars,e,re,ie,ae,al,whenclauses_1,extObjCls) = lower2(DAE.DAE(xs), states, whenclauses);
       then
         (v,kv,extVars,e,re,ie,ae,al,whenclauses_1,extObjCls);
-
+	case (DAE.DAE(elementLst = (ddl :: xs)),_,_)
+	local DAE.Element ddl; String s3;
+      equation
+        print("-DAELow.lower2 failed\n");
+		s3 = DAE.dumpElementsStr({ddl});
+		print(s3 +& "\n");
+      then
+        fail();
     case (_,_,_)
       equation
         print("-DAELow.lower2 failed\n");
