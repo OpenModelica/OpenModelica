@@ -2808,13 +2808,6 @@ RML_BEGIN_LABEL(System__compileCFile)
 RML_END_LABEL
 
 
-RML_BEGIN_LABEL(System__getExeExt)
-{
-  rmlA0 = (void*) mk_scon("");
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
-
 RML_BEGIN_LABEL(System__systemCall)
 {
   int ret_val;
@@ -3157,6 +3150,7 @@ RML_BEGIN_LABEL(System__getVariableNames)
 }
 RML_END_LABEL
 
+#if 0 
 void* read_one_value_from_file(FILE* file, type_description* desc)
 {
   void *res=NULL;
@@ -3309,6 +3303,7 @@ RML_BEGIN_LABEL(System__readValuesFromFile)
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
+#endif
 
 RML_BEGIN_LABEL(System__readPtolemyplotDataset)
 {
@@ -3581,6 +3576,7 @@ int next_intelt(int *arr)
   else return arr[curpos++];
 }
 
+#if 0
 void* generate_array(char type, int curdim, type_description *desc, void *data)
 
 {
@@ -3618,6 +3614,7 @@ void* generate_array(char type, int curdim, type_description *desc, void *data)
   }
   return lst;
 }
+#endif
 
 char* class_names_for_simulation = NULL;
 RML_BEGIN_LABEL(System__getClassnamesForSimulation)
