@@ -38,7 +38,9 @@ int main(int argc, char** argv)
 {
    QApplication a(argc, argv);
    QFrame *mainFrame_ = new QFrame();
+#ifndef __APPLE_CC__
    SoQt::init(mainFrame_);
+#endif
    GraphWindow *w = new GraphWindow(mainFrame_);
    w->compoundWidget->gwMain->setServerState(true);
    w->show();

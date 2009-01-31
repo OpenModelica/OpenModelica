@@ -92,7 +92,9 @@ namespace IAEX
 		: QObject()
 	{
 		app_ = new QApplication(argc, argv);
-    mainWindow = SoQt::init(argc, argv, argv[0]);
+#ifndef __APPLE_CC__
+                mainWindow = SoQt::init(argc, argv, argv[0]);
+#endif
 		QDir dir;
 
 		// 2006-05-03 AF, Notebook socket...
