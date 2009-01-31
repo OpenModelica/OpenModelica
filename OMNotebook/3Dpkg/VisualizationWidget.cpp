@@ -108,12 +108,14 @@ namespace IAEX {
 
 	VisualizationWidget::~VisualizationWidget(void)
 	{
+#ifndef __APPLE_CC__        
     delete slider_;
     delete eviewer_;
     delete visframe_;
     delete server;
     delete buttonlayout_;
     delete timer_;
+#endif        
 	}
 
 	void VisualizationWidget::sliderChanged(int val) {
