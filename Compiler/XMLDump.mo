@@ -473,7 +473,7 @@ algorithm
         len = listLength(algs);
         len >= 1 = true;
         dumpStrOpenTagAttr(ALGORITHMS,DIMENSION,intString(len));
-        dumpAlgorithms2(algs,1);
+        dumpAlgorithms2(algs,0);
         dumpStrCloseTag(ALGORITHMS);
     then();
   end matchcontinue;
