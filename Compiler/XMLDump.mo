@@ -84,6 +84,7 @@ package XMLDump
   public import Absyn;
   public import Algorithm;
   public import DAE;
+  public import DAEEXT;
   public import DAELow;
   public import Dump;
   public import Exp;
@@ -104,7 +105,7 @@ package XMLDump
 
   protected constant String LABEL          = "label";
   protected constant String ANCHOR         = "anchor";
-  protected constant String ALGORITHM_NAME = "name";
+  protected constant String ALGORITHM_NAME = "algorithmName";
 
   /*
   This String is used in:
@@ -145,6 +146,7 @@ package XMLDump
   protected constant String INVOLVED = "involved";
 
   protected constant String ADDITIONAL_INFO = "additionalInfo";
+  protected constant String SOLVING_INFO    = "solvingInfo";
 
   //This is the name that identifies the Variables' block. It's also used to compose the other
   //Variables' names, such as KnownVariables, OrderedVariables, and so on.
@@ -295,7 +297,12 @@ package XMLDump
   */
   protected constant String ARRAY_EQUATION         = "arrayEquation";
 
-  protected constant String ALGORITHMS              = "algorithms";
+  protected constant String ALGORITHMS             = "algorithms";
+  
+  protected constant String MATCHING_ALGORITHM     = "matchingAlgorithm";
+  protected constant String SOLVED_IN              = "solvedIn";
+  protected constant String BLT_REPRESENTATION     = "bltRepresentation";
+  protected constant String BLT_BLOCK              = "bltBlock";
 
 
   protected constant String MATH                   = "math";
@@ -610,6 +617,28 @@ algorithm
 end dumpArrayEqns2;
 
 
+public function dumpBltInvolvedEquations "
+This function dumps the equation ID for each block of the BLT
+using an xml representation:
+<involvedEquation equationId=\"\"/>
+...
+"
+  input list<DAELow.Value> inList;
+algorithm
+  _:=
+  matchcontinue(inList)
+      local
+        DAELow.Value el;
+        list<DAELow.Value> remList;
+    case {} then ();
+    case(el :: remList)
+      equation
+        dumpStrTagAttrNoChild(stringAppend(INVOLVED,EQUATION_), stringAppend(EQUATION,ID_), intString(el));
+        dumpBltInvolvedEquations(remList);
+      then();
+  end matchcontinue;
+end dumpBltInvolvedEquations;
+
 public function dumpBindValueExpression "
 This function is necessary for printing the
 BindValue and BindExpression of a variable,
@@ -663,6 +692,64 @@ Function for adding comments using the XML tag.
 algorithm
   Print.printBuf("<!--");Print.printBuf(inComment);Print.printBuf("-->");
 end dumpComment;
+
+
+public function dumpComponents "
+function: dumpComponents
+This function is used to print BLT information using xml format.
+The output is something like:
+<bltBlock id=\"\">
+  <InvolvedEquation equationID=\"\"/>
+  ....
+</bltBlock>
+"
+  input list<list<Integer>> l;
+algorithm
+  _:=
+  matchcontinue(l)
+    case(l)
+      equation
+        listLength(l) >=1 = false;
+        then();
+    case(l)
+      equation
+        listLength(l)>=1 = true;
+        dumpStrOpenTag(BLT_REPRESENTATION);
+        dumpComponents2(l, 1);
+        dumpStrCloseTag(BLT_REPRESENTATION);
+        then();
+  end matchcontinue;
+end dumpComponents;
+
+
+protected function dumpComponents2 "
+function: dumpComponents2
+  Helper function to dump_components.
+"
+  input list<list<Integer>> inIntegerLstLst;
+  input Integer inInteger;
+algorithm
+  _:=
+  matchcontinue (inIntegerLstLst,inInteger)
+    local
+      DAELow.Value ni,i_1,i;
+      list<String> ls;
+      String s;
+      list<DAELow.Value> l;
+      list<list<DAELow.Value>> lst;
+    case ({},_) then ();
+    case ((l :: lst),i)
+      equation
+        ni = DAEEXT.getLowLink(i);
+        dumpStrOpenTagAttr(BLT_BLOCK, ID, intString(i));
+        dumpBltInvolvedEquations(l);
+        dumpStrCloseTag(BLT_BLOCK);
+        i_1 = i + 1;
+        dumpComponents2(lst, i_1);
+      then
+        ();
+  end matchcontinue;
+end dumpComponents2;
 
 
 public function dumpCrefIdxLstArr "
@@ -854,10 +941,11 @@ particular all the elements are optional, it means that if no element is present
 the relative tag is not printed.
 "
   input DAELow.DAELow inDAELow;
+  input Exp.Exp addSolvingInfo;
   input Exp.Exp addMathMLCode;
 algorithm
   _:=
-  matchcontinue (inDAELow,addMathMLCode)
+  matchcontinue (inDAELow,addSolvingInfo,addMathMLCode)
     local
       list<DAELow.Var> vars,knvars,extvars;
 
@@ -901,13 +989,13 @@ algorithm
       Algorithm.Algorithm[:] algs;
       list<DAELow.ZeroCrossing> zc;
       
-      Exp.Exp addMML;
+      Exp.Exp addSolInfo,addMML;
 
 
     case (DAELow.DAELOW(vars_orderedVars as DAELow.VARIABLES(crefIdxLstArr=crefIdxLstArr_orderedVars,strIdxLstArr=strIdxLstArr_orderedVars,varArr=varArr_orderedVars,bucketSize=bucketSize_orderedVars,numberOfVars=numberOfVars_orderedVars),
                  vars_knownVars as DAELow.VARIABLES(crefIdxLstArr=crefIdxLstArr_knownVars,strIdxLstArr=strIdxLstArr_knownVars,varArr=varArr_knownVars,bucketSize=bucketSize_knownVars,numberOfVars=numberOfVars_knownVars),
                  vars_externalObject as DAELow.VARIABLES(crefIdxLstArr=crefIdxLstArr_externalObject,strIdxLstArr=strIdxLstArr_externalObject,varArr=varArr_externalObject,bucketSize=bucketSize_externalObject,numberOfVars=numberOfVars_externalObject),
-                 eqns,reqns,ieqns,ae,algs,DAELow.EVENT_INFO(zeroCrossingLst = zc),extObjCls),addMML)
+                 eqns,reqns,ieqns,ae,algs,DAELow.EVENT_INFO(zeroCrossingLst = zc),extObjCls),addSolInfo,addMML)
       equation
 
         vars    = DAELow.varList(vars_orderedVars);
@@ -937,6 +1025,8 @@ algorithm
         ae_lst = arrayList(ae);
         dumpArrayEqns(ae_lst,ARRAY_OF_EQUATIONS,addMML);
         dumpAlgorithms(arrayList(algs));
+        
+        dumpSolvingInfo(addSolInfo,inDAELow);
 
 				dumpStrCloseTag(DAE_CLOSE);
       then ();
@@ -1291,7 +1381,7 @@ algorithm
       equation
         is = intString(i);
         dumpStrOpenTagAttr(ALGORITHM,ID,indexS);
-        dumpStrTagContent(stringAppend(ALGORITHM,ID),is);
+        dumpStrTagContent(stringAppend(ALGORITHM,ID_),is);
         dumpStrOpenTagAttr(ANCHOR, ALGORITHM_NAME, stringAppend(stringAppend(ALGORITHM_REF,"_"),is));
         dumpStrCloseTag(ANCHOR);
         dumpStrCloseTag(ALGORITHM);
@@ -2044,6 +2134,76 @@ algorithm
 end dumpLstStr;
 
 
+public function dumpMatching 
+"function: dumpMatching
+  author: PA
+  prints the matching information on stdout."
+  input Integer[:] v;
+  DAELow.Value len;
+  String len_str;
+algorithm
+   _:=
+  matchcontinue(v)
+  case(v)
+    equation
+      arrayLength(v) >= 1  = false;
+    then();
+  case(v)
+    equation
+      arrayLength(v) >= 1  = true;
+      dumpStrOpenTag(MATCHING_ALGORITHM);
+      dumpMatching2(v, 0);
+      dumpStrCloseTag(MATCHING_ALGORITHM);
+  then();
+    end matchcontinue;    
+end dumpMatching;
+
+
+protected function dumpMatching2 
+"function: dumpMatching2
+  Helper function to dumpMatching."
+  input Integer[:] inIntegerArray;
+  input Integer inInteger;
+algorithm
+  _:=
+  matchcontinue (inIntegerArray,inInteger)
+    local
+      DAELow.Value len,i_1,eqn,i;
+      String s,s2;
+      DAELow.Value[:] v;
+    case (v,i)
+      equation
+        len = array_length(v);
+        i_1 = i + 1;
+        (len == i_1) = true;
+        s = intString(i_1);
+        eqn = v[i + 1];
+        s2 = intString(eqn);
+        Print.printBuf("\n<");Print.printBuf(SOLVED_IN);Print.printBuf(" ");
+        Print.printBuf(stringAppend(VARIABLE,ID_));Print.printBuf("=\"");Print.printBuf(s);Print.printBuf("\" ");        
+        Print.printBuf(stringAppend(EQUATION,ID_));Print.printBuf("=\"");Print.printBuf(s2);Print.printBuf("\" ");
+        Print.printBuf("/>");
+      then
+        ();
+    case (v,i)
+      equation
+        len = array_length(v);
+        i_1 = i + 1;
+        (len == i_1) = false;
+        s = intString(i_1);
+        eqn = v[i + 1];
+        s2 = intString(eqn);
+        Print.printBuf("\n<");Print.printBuf(SOLVED_IN);Print.printBuf(" ");
+        Print.printBuf(stringAppend(VARIABLE,ID_));Print.printBuf("=\"");Print.printBuf(s);Print.printBuf("\" ");
+        Print.printBuf(stringAppend(EQUATION,ID_));Print.printBuf("=\"");Print.printBuf(s2);Print.printBuf("\" ");
+        Print.printBuf("/>");
+        dumpMatching2(v, i_1);
+      then
+        ();
+  end matchcontinue;
+end dumpMatching2;
+
+
 public function dumpOptExp "
 This function print to a new line the content of
 a Optional<Exp.Exp> in a XML element like:
@@ -2139,6 +2299,59 @@ algorithm
   es_1 := Util.listMap(es, Util.tuple21);
   dumpList(es_1, dumpExp2);
 end dumpRow;
+
+
+public function dumpSolvingInfo "
+  Function necessary to print additional information
+  that are useful for solving a DAE system, such as:
+  - matching algorithm output
+  - BLT form
+  This is done using a xml representation such as:
+  <AdditionalInfo>
+    <SolvingInfo>
+      <MatchingAlgorithm>
+        <SolvedIn variableID=\"\" equationID=\"\"/>
+        ...
+        <SolvedIn variableID=\"\" equationID=\"\"/>
+      </MatchingAlgorithm>
+      <BLTRepresentation>
+        <Block id=\"\">
+          <InvolvedEquation equationID=\"\"/>
+          ....
+        </Block>
+        ....
+      </BLTRepresentation>
+    </SolvingInfo>
+  </AdditionalInfo>
+  "
+  input Exp.Exp addSolvingInfo;
+  input DAELow.DAELow inDAELow;
+algorithm
+  _:=
+  matchcontinue (addSolvingInfo,inDAELow)
+      local DAELow.DAELow dlow;
+  case (Exp.BCONST(bool=false),_)
+    equation
+    then ();
+  case (Exp.BCONST(bool=true),dlow)
+    local
+      list<Integer>[:] m,mT;
+      Integer[:] v1,v2;
+      list<list<Integer>> comps;
+    equation
+      m = DAELow.incidenceMatrix(dlow);
+      mT = DAELow.transposeMatrix(m);
+      (v1,v2,_,m,mT) = DAELow.matchingAlgorithm(dlow, m, mT,(DAELow.INDEX_REDUCTION(),DAELow.EXACT(),DAELow.REMOVE_SIMPLE_EQN()));
+      (comps) = DAELow.strongComponents(m, mT, v1, v2);
+      dumpStrOpenTag(ADDITIONAL_INFO);
+      dumpStrOpenTag(SOLVING_INFO);
+      dumpMatching(v1);
+      dumpComponents(comps);      
+      dumpStrCloseTag(SOLVING_INFO);
+      dumpStrCloseTag(ADDITIONAL_INFO);
+    then ();
+	end matchcontinue;
+end dumpSolvingInfo;
 
 
 public function dumpStrCloseTag "
@@ -2362,6 +2575,35 @@ algorithm
     then();
 	end matchcontinue;
 end dumpStrOpenTagAttr;
+
+
+public function dumpStrTagAttrNoChild "
+  Function necessary to print a new
+  XML element containing an attribute. The XML
+  element's name, the name and the content of the
+  element's attribute are passed as String inputs.
+  The result is to print on a new line
+  a string like:
+  <Content Attribute=AttributeContent>
+  "
+  input String inContent;
+  input String Attribute;
+  input String AttributeContent;
+algorithm
+  _:=
+  matchcontinue (inContent,Attribute,AttributeContent)
+      local String inString,inAttribute,inAttributeContent;
+  case ("",_,_)  equation  Print.printBuf("");  then();
+  case (_,"",_)  equation  Print.printBuf("");  then();
+  case (_,_,"")  equation  Print.printBuf("");  then();
+  case (inString,"",_)  equation dumpStrOpenTag(inString);  then ();
+  case (inString,_,"")  equation dumpStrOpenTag(inString);  then ();
+  case (inString,inAttribute,inAttributeContent)
+    equation
+      Print.printBuf("\n<");Print.printBuf(inString);Print.printBuf(" ");Print.printBuf(Attribute);Print.printBuf("=\"");Print.printBuf(inAttributeContent);Print.printBuf("\" />");
+    then();
+	end matchcontinue;
+end dumpStrTagAttrNoChild;
 
 
 public function dumpStrTagContent "
