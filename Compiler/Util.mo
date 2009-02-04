@@ -4022,6 +4022,23 @@ algorithm
   */
 end listFilter;
 
+public function listFilter1 
+"Author BZ 
+  Same as listFilter, but with an extra argument
+"
+  input list<Type_a> inTypeALst;
+  input FuncTypeType_aTo inFuncTypeTypeATo;
+  input Type_b extraArg;
+  output list<Type_a> outTypeALst;
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+  partial function FuncTypeType_aTo
+    input Type_a inTypeA;
+    input Type_b inTypeB;
+  end FuncTypeType_aTo;
+algorithm outTypeALst:= listFilter1_tail(inTypeALst, inFuncTypeTypeATo, {},extraArg);
+end listFilter1;
+
 public function listAddElementFirst "
 Author: BZ, 2008-07 Adds an element first to a list.
 "
@@ -4067,6 +4084,43 @@ algorithm
         vl_1;
   end matchcontinue;
 end listFilter_tail;
+
+public function listFilter1_tail 
+"function: listFilter_tail
+ @author adrpo
+ tail recursive implementation of listFilter"
+  input list<Type_a> inTypeALst;
+  input FuncTypeType_aTo inFuncTypeTypeATo;
+  input list<Type_a> accTypeALst;
+  input Type_b extraArg;
+  output list<Type_a> outTypeALst;
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+  partial function FuncTypeType_aTo
+    input Type_a inTypeA;
+    input Type_b inTypeB;
+  end FuncTypeType_aTo;
+algorithm outTypeALst := matchcontinue (inTypeALst,inFuncTypeTypeATo,accTypeALst,extraArg)
+    local
+      list<Type_a> vl_1,vl;
+      Type_a v;
+      FuncTypeType_aTo cond;
+    case ({},_,accTypeALst,extraArg) then accTypeALst; 
+    case ((v :: vl), cond, accTypeALst,extraArg)
+      equation 
+        cond(v,extraArg);
+        accTypeALst = listAppend(accTypeALst, {v});
+        vl_1 = listFilter1_tail(vl, cond, accTypeALst,extraArg);
+      then
+        (vl_1);
+    case ((v :: vl),cond, accTypeALst,extraArg)
+      equation 
+        failure(cond(v,extraArg));
+        vl_1 = listFilter1_tail(vl, cond, accTypeALst,extraArg);
+      then
+        vl_1;
+  end matchcontinue;
+end listFilter1_tail;
 
 public function listFilterBoolean 
 "function: listFilterBoolean

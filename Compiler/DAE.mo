@@ -702,7 +702,12 @@ algorithm ocr := matchcontinue(cr,removalString)
       str2 = System.stringReplace(str, removalString, "");
     then
       Exp.CREF_QUAL(str2,ty,subs,child_2);
-  case(_,_) equation print(" failure unNameInnerouterUniqueCref\n"); then fail(); 
+  case(Exp.WILD(),_) then Exp.WILD(); 
+  case(child,_) 
+    equation 
+      print(" failure unNameInnerouterUniqueCref: ");
+      print(Exp.printComponentRefStr(child) +& "\n"); 
+      then fail(); 
   end matchcontinue;
 end unNameInnerouterUniqueCref;
 protected function getOuterBinding "

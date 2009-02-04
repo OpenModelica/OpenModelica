@@ -1709,6 +1709,30 @@ algorithm
   end matchcontinue;
 end removePrefix;
 
+public function pathContains "
+Author BZ, 
+checks if one Absyn.IDENT(..) is contained in path.
+"
+input Path p1,p2;
+output Boolean b;
+algorithm b := matchcontinue(p1,p2)
+  local
+    String str1,str2;
+    Path qp;
+    Boolean b1,b2;
+  case(IDENT(str1),IDENT(str2))
+      then stringEqual(str1,str2);
+  case(QUALIFIED(str1,qp),(p2 as IDENT(str2))) 
+    equation
+      b1 = stringEqual(str1,str2);
+      b2 = pathContains(qp,p2);
+      b1 = boolOr(b1,b2);
+      then 
+        b1;
+  case(FULLYQUALIFIED(qp),p2) then pathContains(qp,p2);
+  end matchcontinue;
+end pathContains;
+
 public function pathContainedIn "This function checks if subPath is contained in path.
 If it is the complete path is returned. Otherwise the function fails.
 For example,
