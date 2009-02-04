@@ -1577,7 +1577,7 @@ algorithm
       list<Integer>[:] m,mt;
       Option<list<tuple<Integer, Integer, DAELow.Equation>>> jac;
       Values.Value ret_val,simValue,size_value,value,v;
-      Exp.Exp filenameprefix,exp,starttime,stoptime,tolerance,interval,method,size_expression,funcref,bool_exp,storeInTemp,asInSimulationCode,addSolvingInfo,addMathMLCode;
+      Exp.Exp filenameprefix,exp,starttime,stoptime,tolerance,interval,method,size_expression,funcref,bool_exp,storeInTemp,asInSimulationCode,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode;
       Absyn.ComponentRef cr_1;
       Integer size,length,rest;
       list<String> vars_1,vars_2,args;
@@ -3405,6 +3405,7 @@ algorithm
         expLst =
         {Exp.CODE(Absyn.C_TYPENAME(className),_),
          asInSimulationCode,
+         addOriginalIncidenceMatrix,
          addSolvingInfo,         
          addMathMLCode,
          filenameprefix,
@@ -3429,6 +3430,7 @@ algorithm
         {
         Exp.CODE(Absyn.C_TYPENAME(className),_),
         asInSimulationCode,
+        addOriginalIncidenceMatrix,
         addSolvingInfo,        
         addMathMLCode,
         filenameprefix,
@@ -7098,13 +7100,13 @@ algorithm
       Absyn.Program p;
       DAELow.DAELow indexed_dlow_1;
       Env.Cache cache;
-      Exp.Exp exp,fileprefix,storeInTemp,addSolvingInfo,addMathMLCode;
+      Exp.Exp exp,fileprefix,storeInTemp,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode;
       Exp.ComponentRef cr;
       Interactive.InteractiveSymbolTable st,st_1;
       Msg msg;
       Values.Value ret_val;
     case (cache,env,(exp as Exp.CALL(path = Absyn.IDENT(name = _),
-      expLst = {Exp.CODE(Absyn.C_TYPENAME(classname),_),Exp.BCONST(bool=true),addSolvingInfo,addMathMLCode,fileprefix,storeInTemp})),
+      expLst = {Exp.CODE(Absyn.C_TYPENAME(classname),_),Exp.BCONST(bool=true),addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,fileprefix,storeInTemp})),
       (st_1 as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       local
         Boolean x;
@@ -7137,14 +7139,14 @@ algorithm
         indexed_dlow_1 = DAELow.calculateValues(indexed_dlow);
         xml_filename = Util.stringAppendList({filenameprefix,".xml"});
         Print.clearBuf();
-        XMLDump.dumpDAELow(indexed_dlow_1,addSolvingInfo,addMathMLCode);
+        XMLDump.dumpDAELow(indexed_dlow_1,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode);
         xml_contents = Print.getString();
         Print.clearBuf();
         System.writeFile(xml_filename,xml_contents);
       then
         (cache,st,xml_contents,stringAppend("The model has been dumped to xml file: ",xml_filename));
     case (cache,env,(exp as Exp.CALL(path = Absyn.IDENT(name = _),
-      expLst = {Exp.CODE(Absyn.C_TYPENAME(classname),_),Exp.BCONST(bool=false),addSolvingInfo,addMathMLCode,fileprefix,storeInTemp})),
+      expLst = {Exp.CODE(Absyn.C_TYPENAME(classname),_),Exp.BCONST(bool=false),addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,fileprefix,storeInTemp})),
       (st_1 as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       local
         Boolean x;
@@ -7172,7 +7174,7 @@ algorithm
         (_,_,dlow_1,m,mT) = DAELow.matchingAlgorithm(dlow, m, mT, (DAELow.INDEX_REDUCTION(),DAELow.EXACT(), DAELow.REMOVE_SIMPLE_EQN()));
         xml_filename = Util.stringAppendList({filenameprefix,".xml"});
         Print.clearBuf();
-        XMLDump.dumpDAELow(dlow_1,addSolvingInfo,addMathMLCode);
+        XMLDump.dumpDAELow(dlow_1,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode);
         xml_contents = Print.getString();
         Print.clearBuf();
         System.writeFile(xml_filename,xml_contents);

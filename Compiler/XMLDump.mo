@@ -299,10 +299,17 @@ package XMLDump
 
   protected constant String ALGORITHMS             = "algorithms";
   
-  protected constant String MATCHING_ALGORITHM     = "matchingAlgorithm";
-  protected constant String SOLVED_IN              = "solvedIn";
-  protected constant String BLT_REPRESENTATION     = "bltRepresentation";
-  protected constant String BLT_BLOCK              = "bltBlock";
+  /*This strings here below are used for printing additionalInfo
+  concerning the DAE system of equations, such as:
+   - the original incidence matrix (before performing matching and BLT
+   - the matching algorithm output
+   - the blocks obtained after running the BLT algorithm (Tarjan)
+   */
+  protected constant String MATCHING_ALGORITHM        = "matchingAlgorithm";
+  protected constant String SOLVED_IN                 = "solvedIn";
+  protected constant String BLT_REPRESENTATION        = "bltRepresentation";
+  protected constant String BLT_BLOCK                 = "bltBlock";
+  protected constant String ORIGINAL_INCIDENCE_MATRIX = "originalIncidenceMatrix";
 
 
   protected constant String MATH                   = "math";
@@ -941,11 +948,12 @@ particular all the elements are optional, it means that if no element is present
 the relative tag is not printed.
 "
   input DAELow.DAELow inDAELow;
+  input Exp.Exp addOriginalIncidenceMatrix;
   input Exp.Exp addSolvingInfo;
   input Exp.Exp addMathMLCode;
 algorithm
   _:=
-  matchcontinue (inDAELow,addSolvingInfo,addMathMLCode)
+  matchcontinue (inDAELow,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode)
     local
       list<DAELow.Var> vars,knvars,extvars;
 
@@ -989,13 +997,13 @@ algorithm
       Algorithm.Algorithm[:] algs;
       list<DAELow.ZeroCrossing> zc;
       
-      Exp.Exp addSolInfo,addMML;
+      Exp.Exp addOrInMatrix,addSolInfo,addMML;
 
 
     case (DAELow.DAELOW(vars_orderedVars as DAELow.VARIABLES(crefIdxLstArr=crefIdxLstArr_orderedVars,strIdxLstArr=strIdxLstArr_orderedVars,varArr=varArr_orderedVars,bucketSize=bucketSize_orderedVars,numberOfVars=numberOfVars_orderedVars),
                  vars_knownVars as DAELow.VARIABLES(crefIdxLstArr=crefIdxLstArr_knownVars,strIdxLstArr=strIdxLstArr_knownVars,varArr=varArr_knownVars,bucketSize=bucketSize_knownVars,numberOfVars=numberOfVars_knownVars),
                  vars_externalObject as DAELow.VARIABLES(crefIdxLstArr=crefIdxLstArr_externalObject,strIdxLstArr=strIdxLstArr_externalObject,varArr=varArr_externalObject,bucketSize=bucketSize_externalObject,numberOfVars=numberOfVars_externalObject),
-                 eqns,reqns,ieqns,ae,algs,DAELow.EVENT_INFO(zeroCrossingLst = zc),extObjCls),addSolInfo,addMML)
+                 eqns,reqns,ieqns,ae,algs,DAELow.EVENT_INFO(zeroCrossingLst = zc),extObjCls),addOrInMatrix,addSolInfo,addMML)
       equation
 
         vars    = DAELow.varList(vars_orderedVars);
@@ -1026,7 +1034,7 @@ algorithm
         dumpArrayEqns(ae_lst,ARRAY_OF_EQUATIONS,addMML);
         dumpAlgorithms(arrayList(algs));
         
-        dumpSolvingInfo(addSolInfo,inDAELow);
+        dumpSolvingInfo(addOrInMatrix,addSolInfo,inDAELow);
 
 				dumpStrCloseTag(DAE_CLOSE);
       then ();
@@ -1867,6 +1875,94 @@ algorithm
 end dumpFlowStr;
 
 
+public function dumpIncidenceMatrix "
+This function dumps a matrix using an xml representation.
+<matrix>
+     <matrixrow>
+          <cn> 0 </cn>
+          <cn> 1 </cn>
+          <cn> 0 </cn>
+     </matrixrow>
+     <matrixrow> 
+     ...
+</matrix>
+"
+  input DAELow.IncidenceMatrix m;
+  list<list<DAELow.Value>> m_1;
+algorithm
+/*  _:=
+  matchcontinue(m)
+    case (m)
+      equation
+        listLength(m)>=1 = false;
+    then ();
+    case (m)
+        local list<list<Value>> m_1;
+      equation*/
+        //listLength(m)>=1 = true;
+        dumpStrOpenTag(MathML);
+        dumpStrOpenTagAttr(MATH, MathMLXmlns, MathMLWeb);
+        dumpStrOpenTag(MathMLMatrix);
+        m_1 := arrayList(m);
+        dumpIncidenceMatrix2(m_1,1);
+        dumpStrCloseTag(MathMLMatrix);
+        dumpStrCloseTag(MATH);
+        dumpStrCloseTag(MathML);
+/*    then ();
+  end matchcontinue;*/
+end dumpIncidenceMatrix;
+
+
+public function dumpIncidenceMatrix2 "
+Help function to dumpMatrix
+"
+  input list<list<Integer>> m;
+  input Integer rowIndex;
+algorithm
+  _:=
+  matchcontinue(m,rowIndex)
+    local
+      list<DAELow.Value> row;
+      list<list<DAELow.Value>> rows;
+    case ({},_) then ();
+    case ((row :: rows),rowIndex)
+      equation
+        dumpStrOpenTag(MathMLMatrixrow);
+        dumpMatrixIntegerRow(row);
+        dumpStrCloseTag(MathMLMatrixrow);
+        dumpIncidenceMatrix2(rows,rowIndex+1);
+      then ();
+  end matchcontinue;
+end dumpIncidenceMatrix2;    
+
+
+public function dumpMatrixIntegerRow "
+Function to print a matrix row of integer elements
+using an xml representation, as:
+ <cn> integerValue </cn>
+ ...
+"
+  input list<Integer> inIntegerLst;
+algorithm
+  _:=
+  matchcontinue (inIntegerLst)
+    local
+      String s;
+      DAELow.Value x;
+      list<DAELow.Value> xs;
+    case ({}) then ();
+    case ((x :: xs))
+      equation
+        s = intString(x);
+        dumpStrOpenTag(MathMLVariable);
+        Print.printBuf(s);
+        dumpStrCloseTag(MathMLVariable);        
+        dumpMatrixIntegerRow(xs);
+      then ();
+  end matchcontinue;
+end dumpMatrixIntegerRow;
+
+
 public function dumpKind "
 This function returns a string containing
 the kind of a variable, that could be:
@@ -2324,16 +2420,17 @@ public function dumpSolvingInfo "
     </SolvingInfo>
   </AdditionalInfo>
   "
+  input Exp.Exp addOriginalIncidenceMatrix;
   input Exp.Exp addSolvingInfo;
   input DAELow.DAELow inDAELow;
 algorithm
   _:=
-  matchcontinue (addSolvingInfo,inDAELow)
+  matchcontinue (addOriginalIncidenceMatrix,addSolvingInfo,inDAELow)
       local DAELow.DAELow dlow;
-  case (Exp.BCONST(bool=false),_)
+  case (Exp.BCONST(bool=false),Exp.BCONST(bool=false),_)
     equation
     then ();
-  case (Exp.BCONST(bool=true),dlow)
+  case (Exp.BCONST(bool=true),Exp.BCONST(bool=true),dlow)
     local
       list<Integer>[:] m,mT;
       Integer[:] v1,v2;
@@ -2343,6 +2440,42 @@ algorithm
       mT = DAELow.transposeMatrix(m);
       (v1,v2,_,m,mT) = DAELow.matchingAlgorithm(dlow, m, mT,(DAELow.INDEX_REDUCTION(),DAELow.EXACT(),DAELow.REMOVE_SIMPLE_EQN()));
       (comps) = DAELow.strongComponents(m, mT, v1, v2);
+      //(blt_states,blt_no_states) = DAELow.generateStatePartition(comps, dlow, v1, v2, m, mt);
+      dumpStrOpenTag(ADDITIONAL_INFO);
+      dumpStrOpenTag(ORIGINAL_INCIDENCE_MATRIX);
+      dumpIncidenceMatrix(m);
+      dumpStrCloseTag(ORIGINAL_INCIDENCE_MATRIX);
+      dumpStrOpenTag(SOLVING_INFO);
+      dumpMatching(v1);
+      dumpComponents(comps);      
+      dumpStrCloseTag(SOLVING_INFO);
+      dumpStrCloseTag(ADDITIONAL_INFO);
+    then ();
+  case (Exp.BCONST(bool=true),Exp.BCONST(bool=false),dlow)
+    local
+      list<Integer>[:] m,mT;
+      Integer[:] v1,v2;
+      list<list<Integer>> comps;
+    equation
+      m = DAELow.incidenceMatrix(dlow);
+      mT = DAELow.transposeMatrix(m);
+      dumpStrOpenTag(ADDITIONAL_INFO);
+      dumpStrOpenTag(ORIGINAL_INCIDENCE_MATRIX);
+      dumpIncidenceMatrix(m);
+      dumpStrCloseTag(ORIGINAL_INCIDENCE_MATRIX);
+      dumpStrCloseTag(ADDITIONAL_INFO);
+    then ();
+  case (Exp.BCONST(bool=false),Exp.BCONST(bool=true),dlow)
+    local
+      list<Integer>[:] m,mT;
+      Integer[:] v1,v2;
+      list<list<Integer>> comps;
+    equation
+      m = DAELow.incidenceMatrix(dlow);
+      mT = DAELow.transposeMatrix(m);
+      (v1,v2,_,m,mT) = DAELow.matchingAlgorithm(dlow, m, mT,(DAELow.INDEX_REDUCTION(),DAELow.EXACT(),DAELow.REMOVE_SIMPLE_EQN()));
+      (comps) = DAELow.strongComponents(m, mT, v1, v2);
+      //(blt_states,blt_no_states) = DAELow.generateStatePartition(comps, dlow, v1, v2, m, mt);
       dumpStrOpenTag(ADDITIONAL_INFO);
       dumpStrOpenTag(SOLVING_INFO);
       dumpMatching(v1);
