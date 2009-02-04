@@ -539,23 +539,24 @@ the output is like:
   input list<DAELow.MultiDimEquation> inMultiDimEquationLst;
   input String inContent;
   input Exp.Exp addMathMLCode;
+  input Exp.Exp dumpResiduals;
 algorithm
   _:=
-  matchcontinue (inMultiDimEquationLst,inContent,addMathMLCode)
-    case ({},_,_) then ();
-    case (inMultiDimEquationLst,inContent,_)
+  matchcontinue (inMultiDimEquationLst,inContent,addMathMLCode,dumpResiduals)
+    case ({},_,_,_) then ();
+    case (inMultiDimEquationLst,inContent,_,_)
       local Integer len;
       equation
         len = listLength(inMultiDimEquationLst);
         len >= 1 = false;
       then();
-    case (inMultiDimEquationLst,inContent,addMathMLCode)
+    case (inMultiDimEquationLst,inContent,addMathMLCode,dumpResiduals)
       local Integer len;
       equation
         len = listLength(inMultiDimEquationLst);
         len >= 1 = true;
         dumpStrOpenTagAttr(inContent, DIMENSION, intString(len));
-        dumpArrayEqns2(inMultiDimEquationLst,addMathMLCode);
+        dumpArrayEqns2(inMultiDimEquationLst,addMathMLCode,dumpResiduals);
         dumpStrCloseTag(inContent);
       then ();
   end matchcontinue;
@@ -585,15 +586,16 @@ The output, if the list is not empty is something like this:
 "
   input list<DAELow.MultiDimEquation> inMultiDimEquationLst;
   input Exp.Exp addMathMLCode;
+  input Exp.Exp dumpResiduals;
 algorithm
   _:=
-  matchcontinue (inMultiDimEquationLst,addMathMLCode)
+  matchcontinue (inMultiDimEquationLst,addMathMLCode,dumpResiduals)
     local
       String s1,s2,s;
       Exp.Exp e1,e2;
       list<DAELow.MultiDimEquation> es;
-    case ({},_) then ();
-    case ((DAELow.MULTIDIM_EQUATION(left = e1,right = e2) :: es),Exp.BCONST(bool=true))
+    case ({},_,_) then ();
+    case ((DAELow.MULTIDIM_EQUATION(left = e1,right = e2) :: es),Exp.BCONST(bool=true),Exp.BCONST(bool=false))
       equation
         s1 = Exp.printExpStr(e1);
         s2 = Exp.printExpStr(e2);
@@ -609,17 +611,48 @@ algorithm
         dumpStrCloseTag(MATH);
         dumpStrCloseTag(MathML);
         dumpStrCloseTag(ARRAY_EQUATION);
-        dumpArrayEqns2(es,Exp.BCONST(true));
+        dumpArrayEqns2(es,Exp.BCONST(true),Exp.BCONST(false));
       then ();
-    case ((DAELow.MULTIDIM_EQUATION(left = e1,right = e2) :: es),Exp.BCONST(bool=false))
+    case ((DAELow.MULTIDIM_EQUATION(left = e1,right = e2) :: es),Exp.BCONST(bool=false),Exp.BCONST(false))
       equation
         s1 = Exp.printExpStr(e1);
         s2 = Exp.printExpStr(e2);
         s = Util.stringAppendList({s1," = ",s2,"\n"});
         dumpStrOpenTagAttr(ARRAY_EQUATION, EXP_STRING, s);
         dumpStrCloseTag(ARRAY_EQUATION);
-        dumpArrayEqns2(es,Exp.BCONST(false));
+        dumpArrayEqns2(es,Exp.BCONST(false),Exp.BCONST(false));
       then ();
+    case ((DAELow.MULTIDIM_EQUATION(left = e1,right = e2) :: es),Exp.BCONST(bool=true),Exp.BCONST(bool=true))
+      equation
+        s1 = Exp.printExpStr(e1);
+        s2 = Exp.printExpStr(e2);
+        s = Util.stringAppendList({s1," - (",s2,") = 0\n"});
+        dumpStrOpenTagAttr(ARRAY_EQUATION, EXP_STRING, s);
+        dumpStrOpenTag(MathML);
+        dumpStrOpenTagAttr(MATH, MathMLXmlns, MathMLWeb);
+        dumpStrOpenTag(MathMLApply);
+        dumpStrVoidTag(MathMLEquivalent);
+        dumpStrOpenTag(MathMLApply);
+        dumpStrOpenTag(MathMLMinus);
+        dumpExp2(e1);
+        dumpExp2(e2);
+        dumpStrCloseTag(MathMLApply);
+        dumpExp2(Exp.RCONST(0.0));
+        dumpStrCloseTag(MathMLApply);
+        dumpStrCloseTag(MATH);
+        dumpStrCloseTag(MathML);
+        dumpStrCloseTag(ARRAY_EQUATION);
+        dumpArrayEqns2(es,Exp.BCONST(true),Exp.BCONST(true));
+      then ();
+    case ((DAELow.MULTIDIM_EQUATION(left = e1,right = e2) :: es),Exp.BCONST(bool=false),Exp.BCONST(true))
+      equation
+        s1 = Exp.printExpStr(e1);
+        s2 = Exp.printExpStr(e2);
+        s = Util.stringAppendList({s1," - (",s2,") = 0\n"});
+        dumpStrOpenTagAttr(ARRAY_EQUATION, EXP_STRING, s);
+        dumpStrCloseTag(ARRAY_EQUATION);
+        dumpArrayEqns2(es,Exp.BCONST(false),Exp.BCONST(true));
+      then ();        
   end matchcontinue;
 end dumpArrayEqns2;
 
@@ -951,9 +984,10 @@ the relative tag is not printed.
   input Exp.Exp addOriginalIncidenceMatrix;
   input Exp.Exp addSolvingInfo;
   input Exp.Exp addMathMLCode;
+  input Exp.Exp dumpResiduals;
 algorithm
   _:=
-  matchcontinue (inDAELow,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode)
+  matchcontinue (inDAELow,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals)
     local
       list<DAELow.Var> vars,knvars,extvars;
 
@@ -997,13 +1031,13 @@ algorithm
       Algorithm.Algorithm[:] algs;
       list<DAELow.ZeroCrossing> zc;
       
-      Exp.Exp addOrInMatrix,addSolInfo,addMML;
+      Exp.Exp addOrInMatrix,addSolInfo,addMML,dumpRes;
 
 
     case (DAELow.DAELOW(vars_orderedVars as DAELow.VARIABLES(crefIdxLstArr=crefIdxLstArr_orderedVars,strIdxLstArr=strIdxLstArr_orderedVars,varArr=varArr_orderedVars,bucketSize=bucketSize_orderedVars,numberOfVars=numberOfVars_orderedVars),
                  vars_knownVars as DAELow.VARIABLES(crefIdxLstArr=crefIdxLstArr_knownVars,strIdxLstArr=strIdxLstArr_knownVars,varArr=varArr_knownVars,bucketSize=bucketSize_knownVars,numberOfVars=numberOfVars_knownVars),
                  vars_externalObject as DAELow.VARIABLES(crefIdxLstArr=crefIdxLstArr_externalObject,strIdxLstArr=strIdxLstArr_externalObject,varArr=varArr_externalObject,bucketSize=bucketSize_externalObject,numberOfVars=numberOfVars_externalObject),
-                 eqns,reqns,ieqns,ae,algs,DAELow.EVENT_INFO(zeroCrossingLst = zc),extObjCls),addOrInMatrix,addSolInfo,addMML)
+                 eqns,reqns,ieqns,ae,algs,DAELow.EVENT_INFO(zeroCrossingLst = zc),extObjCls),addOrInMatrix,addSolInfo,addMML,dumpRes)
       equation
 
         vars    = DAELow.varList(vars_orderedVars);
@@ -1024,14 +1058,14 @@ algorithm
         dumpStrCloseTag(VARIABLES);
 
         eqnsl  = DAELow.equationList(eqns);
-        dumpEqns(eqnsl,EQUATIONS,addMML);
+        dumpEqns(eqnsl,EQUATIONS,addMML,dumpRes);
         reqnsl = DAELow.equationList(reqns);
-        dumpEqns(reqnsl,stringAppend(SIMPLE,EQUATIONS_),addMML);
+        dumpEqns(reqnsl,stringAppend(SIMPLE,EQUATIONS_),addMML,dumpRes);
         ieqnsl = DAELow.equationList(ieqns);
-        dumpEqns(ieqnsl,stringAppend(INITIAL,EQUATIONS_),addMML);
+        dumpEqns(ieqnsl,stringAppend(INITIAL,EQUATIONS_),addMML,dumpRes);
         dumpZeroCrossing(zc,stringAppend(ZERO_CROSSING,LIST_),addMML);
         ae_lst = arrayList(ae);
-        dumpArrayEqns(ae_lst,ARRAY_OF_EQUATIONS,addMML);
+        dumpArrayEqns(ae_lst,ARRAY_OF_EQUATIONS,addMML,dumpRes);
         dumpAlgorithms(arrayList(algs));
         
         dumpSolvingInfo(addOrInMatrix,addSolInfo,inDAELow);
@@ -1169,24 +1203,25 @@ The output is:
   input list<DAELow.Equation> eqns;
   input String inContent;
   input Exp.Exp addMathMLCode;
+  input Exp.Exp dumpResiduals;
 algorithm
   _:=
-  matchcontinue (eqns,inContent,addMathMLCode)
+  matchcontinue (eqns,inContent,addMathMLCode,dumpResiduals)
       local Exp.Exp addMMLCode;
-    case ({},_,_) then ();
-    case (eqns,inContent,_)
+    case ({},_,_,_) then ();
+    case (eqns,inContent,_,_)
       local Integer len;
       equation
         len = listLength(eqns);
         len >= 1 = false;
       then();
-    case (eqns,inContent,addMMLCode)
+    case (eqns,inContent,addMMLCode,dumpResiduals)
       local Integer len;
       equation
         len = listLength(eqns);
         len >= 1 = true;
         dumpStrOpenTagAttr(inContent, DIMENSION, intString(len));
-        dumpEqns2(eqns, 1,addMMLCode);
+        dumpEqns2(eqns, 1,addMMLCode,dumpResiduals);
         dumpStrCloseTag(inContent);
       then ();
   end matchcontinue;
@@ -1199,21 +1234,27 @@ protected function dumpEqns2 "
   input list<DAELow.Equation> inEquationLst;
   input Integer inInteger;
   input Exp.Exp addMathMLCode;
+  input Exp.Exp dumpResiduals;
 algorithm
   _:=
-  matchcontinue (inEquationLst,inInteger,addMathMLCode)
+  matchcontinue (inEquationLst,inInteger,addMathMLCode,dumpResiduals)
     local
       String es,is;
       DAELow.Value index;
       DAELow.Equation eqn;
       list<DAELow.Equation> eqns;
       Exp.Exp addMMLCode;
-    case ({},_,_) then ();
-    case ((eqn :: eqns),index,addMMLCode)
+    case ({},_,_,_) then ();
+    case ((eqn :: eqns),index,addMMLCode,Exp.BCONST(bool=false))
       equation
         dumpEquation(eqn, intString(index),addMMLCode);
-        dumpEqns2(eqns, index+1,addMMLCode);
+        dumpEqns2(eqns, index+1,addMMLCode,Exp.BCONST(false));
       then ();
+    case ((eqn :: eqns),index,addMMLCode,Exp.BCONST(bool=true))
+      equation
+        dumpEquation(DAELow.equationToResidualForm(eqn), intString(index),addMMLCode);
+        dumpEqns2(eqns, index+1,addMMLCode,Exp.BCONST(true));
+      then ();        
   end matchcontinue;
 end dumpEqns2;
 

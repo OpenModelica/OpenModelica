@@ -5838,7 +5838,7 @@ algorithm
         (cache,Exp.CALL(Absyn.IDENT("echo"),{bool_exp_1},false,true,Exp.STRING()),Types.PROP((Types.T_BOOL({}),NONE),Types.C_CONST()),SOME(st));
 
 case (cache,env,Absyn.CREF_IDENT(name = "dumpXMLDAE"),{Absyn.CREF(componentReg = cr)},args,impl,SOME(st))
-      local Absyn.Path className; Exp.Exp storeInTemp,asInSimulationCode,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode;
+      local Absyn.Path className; Exp.Exp storeInTemp,asInSimulationCode,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals;
       equation
         className = Absyn.crefToPath(cr);
         cname_str = Absyn.pathString(className);
@@ -5849,6 +5849,8 @@ case (cache,env,Absyn.CREF_IDENT(name = "dumpXMLDAE"),{Absyn.CREF(componentReg =
         (cache,addSolvingInfo) = getOptionalNamedArg(cache,env, SOME(st), impl, "addSolvingInfo",
           (Types.T_BOOL({}),NONE), args, Exp.BCONST(false));          
         (cache,addMathMLCode) = getOptionalNamedArg(cache,env, SOME(st), impl, "addMathMLCode",
+          (Types.T_BOOL({}),NONE), args, Exp.BCONST(false));
+        (cache,dumpResiduals) = getOptionalNamedArg(cache,env, SOME(st), impl, "dumpResiduals",
           (Types.T_BOOL({}),NONE), args, Exp.BCONST(false));          
         (cache,filenameprefix) = getOptionalNamedArg(cache,env, SOME(st), impl, "fileNamePrefix",
           (Types.T_STRING({}),NONE), args, Exp.SCONST(cname_str));
@@ -5856,7 +5858,7 @@ case (cache,env,Absyn.CREF_IDENT(name = "dumpXMLDAE"),{Absyn.CREF(componentReg =
           (Types.T_BOOL({}),NONE), args, Exp.BCONST(false));
       then
         (cache,Exp.CALL(Absyn.IDENT("dumpXMLDAE"),
-          {Exp.CODE(Absyn.C_TYPENAME(className),Exp.OTHER()),asInSimulationCode,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,filenameprefix,storeInTemp},false,true,Exp.OTHER()),Types.PROP(
+          {Exp.CODE(Absyn.C_TYPENAME(className),Exp.OTHER()),asInSimulationCode,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals,filenameprefix,storeInTemp},false,true,Exp.OTHER()),Types.PROP(
           (
           Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_STRING({}),NONE)),NONE),Types.C_VAR()),SOME(st));
   end matchcontinue;
