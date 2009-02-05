@@ -61,6 +61,7 @@
 //IAEX headers
 #include "sendData.h"
 #include <sstream>
+#include <stdexcept>
 
 #if defined(_MSC_VER) || defined(__MINGW32__)
 #define _CRT_SECURE_NO_WARNINGS
@@ -96,18 +97,25 @@ Connection::~Connection()
 
 const char* Connection::getExternalViewerFileName()
 {
-  char* omdir = getenv("OPENMODELICAHOME");
-  QString path(omdir);
+  char* viewerPath = NULL;
+  string path( getenv( "OPENMODELICAHOME" ) );
+	if( path.empty() )
+		throw runtime_error( "Could not find environment variable OPENMODELICAHOME" );
+  /*
   if(path.endsWith("/") || path.endsWith("\\"))
     path += "bin/ext";
   else
     path += "/bin/ext";
+  */
+  path += "/bin/ext";
 #ifdef WIN32
   path += ".exe";
 #elif defined(__APPLE_CC__)
   path += ".app";
 #endif
-  return path.toStdString().c_str();
+  viewerPath = strdup(path.c_str());
+  // fprintf(stderr, "ViewerPath: %s", viewerPath);
+  return viewerPath;
 }
 
 

@@ -367,8 +367,8 @@ RML_BEGIN_LABEL(System__strtok)
   free(str);
 
   /* adrpo changed 2004-10-29
-  rml_prim_once(RML__list_5freverse);
-  RML_TAILCALLK(rmlSC);
+  * rml_prim_once(RML__list_5freverse);
+  * RML_TAILCALLK(rmlSC);
   */
   RML_TAILCALLQ(RML__list_5freverse,1);
 }
