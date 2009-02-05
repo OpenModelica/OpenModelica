@@ -44,7 +44,7 @@
 				AdditionalIncludeDirectories=".\GeneratedFiles\Release;.\GeneratedFiles;&quot;$(OMDEV)\include\mico-win32-msvc&quot;;&quot;$(QTHOME)\include&quot;;&quot;$(ProjectDir)&quot;"
 				PreprocessorDefinitions="WIN32,NDEBUG,QT_NO_DEBUG"
 				RuntimeLibrary="2"
-				DebugInformationFormat="0"
+				DebugInformationFormat="3"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -60,7 +60,7 @@
 				AdditionalDependencies="qtmain.lib QtCore4.lib QtGui4.lib QtXml4.lib mico2313.lib"
 				OutputFile="$(OutDir)\OMShell.exe"
 				AdditionalLibraryDirectories="&quot;$(QTHOME)\lib&quot;;&quot;$(OMDEV)\lib\mico-win32-msvc\&quot;"
-				GenerateDebugInformation="false"
+				GenerateDebugInformation="true"
 				SubSystem="2"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
