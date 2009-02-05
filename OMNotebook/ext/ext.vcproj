@@ -236,6 +236,20 @@
 				>
 			</File>
 			<File
+				RelativePath=".\qtres.qrc"
+				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						CommandLine="$(QTHOME)\bin\rcc.exe -o generatedfiles/qtres.cpp qtres.qrc"
+						AdditionalDependencies="qtres.qrc"
+						Outputs="generatedfiles/qtres.cpp"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
 				RelativePath="..\Pltpkg2\variableData.cpp"
 				>
 			</File>
@@ -425,6 +439,10 @@
 					/>
 				</FileConfiguration>
 			</File>
+			<File
+				RelativePath=".\generatedfiles\qtres.cpp"
+				>
+			</File>
 		</Filter>
 		<File
 			RelativePath=".\ext.rc"
@@ -432,6 +450,18 @@
 		</File>
 		<File
 			RelativePath="..\OMNotebookQT4\omnotebook_png.png"
+			>
+		</File>
+		<File
+			RelativePath=".\Resources\plotWindow.bmp"
+			>
+		</File>
+		<File
+			RelativePath=".\Resources\plotWindow.ico"
+			>
+		</File>
+		<File
+			RelativePath=".\Resources\plotWindow.png"
 			>
 		</File>
 	</Files>

@@ -32,18 +32,23 @@
 
 #include <QApplication>
 #include "../Pltpkg2/graphWindow.h" 
+#include "resource.h" 
 using namespace std;
 
 int main(int argc, char** argv)
 {
    QApplication a(argc, argv);
    QFrame *mainFrame_ = new QFrame();
+   QMainWindow *mw = new QMainWindow();
+   mw->setWindowTitle("Plot Window");
+   mw->setWindowIcon( QIcon(":/Resources/plotWindow.bmp"));
 #ifndef __APPLE_CC__
    SoQt::init(mainFrame_);
 #endif
    GraphWindow *w = new GraphWindow(mainFrame_);
+   mw->setCentralWidget(w);
    w->compoundWidget->gwMain->setServerState(true);
-   w->show();
+   mw->show();
 
    return a.exec();
 }
