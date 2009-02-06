@@ -29,7 +29,7 @@ endif
 all: libmodpar.a
 
 libmodpar.a: $(OBJECTS)
-	ar -r $@ $(OBJECTS)
+	ar -sr $@ $(OBJECTS)
 
 INCFLAGS =-I$(RMLINCLUDE) -I$(BOOST_HOME) -I$(top_builddir)/mosh/src
 
