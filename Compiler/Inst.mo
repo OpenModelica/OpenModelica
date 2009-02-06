@@ -8195,15 +8195,21 @@ algorithm
 
         /* reinit statement */
     case (cache,env,mod,pre,csets,ci_state,SCode.EQ_REINIT(cref = cr,expReinit = e2),initial_,impl)
-      local Exp.ComponentRef cr_2; Exp.Type t; Types.Properties tprop1,tprop2;
+      local  list<DAE.Element> trDae;
+        Exp.ComponentRef cr_2; Exp.Type t; Types.Properties tprop1,tprop2;
       equation 
+        (cache,e1_1,tprop2,_) = Static.elabExp(cache,env, Absyn.CREF(cr), impl, NONE,true);
         (cache,Exp.CREF(cr_1,t),tprop1,_) = Static.elabCref(cache,env, cr, impl,false) "reinit statement" ;
         (cache,e2_1,tprop2,_) = Static.elabExp(cache,env, e2, impl, NONE,true);
         (e2_1,_) = Types.matchProp(e2_1, tprop2, tprop1);
+        (cache,e1_1,e2_1,tprop1) = condenseArrayEquation(cache,env,Absyn.CREF(cr),e2,e1_1,e2_1,tprop1,tprop2,impl);
         (cache,e2_2) = Prefix.prefixExp(cache,env, e2_1, pre);
-        (cache,Exp.CREF(cr_2,_)) = Prefix.prefixExp(cache,env, Exp.CREF(cr_1,t), pre);        
+        (cache,e1_2) = Prefix.prefixExp(cache,env, e1_1, pre);
+        //(cache,Exp.CREF(cr_2,_)) = Prefix.prefixExp(cache,env, Exp.CREF(cr_1,t), pre);   
+        trDae = instEqEquation(e1_2, tprop1, e2_2, tprop2, initial_, impl);
+        trDae = Util.listMap(trDae,makeDAEArrayEqToReinitForm);
       then
-        (cache,{DAE.REINIT(cr_2,e2_2)},env,csets,ci_state);
+        (cache,trDae,env,csets,ci_state);
         
     case (cache,env,mod,pre,csets,ci_state,SCode.EQ_NORETCALL(cr,fargs),initial_,impl)
       local Exp.ComponentRef cr_2; Exp.Type t; Absyn.Path path; list<Exp.Exp> expl; Absyn.FunctionArgs fargs;
@@ -8221,6 +8227,27 @@ algorithm
         fail();
   end matchcontinue;
 end instEquationCommon;
+
+protected function makeDAEArrayEqToReinitForm "
+Author: BZ, 2009-02 
+Function for transforming DAE equations into DAE.REINIT form, used by instEquationCommon   
+"
+input DAE.Element inEq;
+output DAE.Element outEqn;
+algorithm outEqn := matchcontinue(inEq)
+  local
+    Exp.ComponentRef cr,cr2; 
+    Exp.Exp e1,e2,e;
+    Exp.Type t;
+  case(DAE.EQUATION(Exp.CREF(cr,_),e)) then DAE.REINIT(cr,e);
+  case(DAE.DEFINE(cr,e)) then DAE.REINIT(cr,e);
+  case(DAE.EQUEQUATION(cr,cr2))
+    equation
+      t = Exp.crefLastType(cr2);
+      then DAE.REINIT(cr,Exp.CREF(cr2,t));
+  case(_) equation print("Failure in: makeDAEArrayEqToReinitForm\n"); then fail();
+end matchcontinue;
+end makeDAEArrayEqToReinitForm;
 
 protected function condenseArrayEquation "This function transforms makes the two sides of an array equation
 into its condense form. By default, most array variables are vectorized,
