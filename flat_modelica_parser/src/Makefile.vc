@@ -1,0 +1,72 @@
+# Peter Aronsson, MathCore Engineering AB
+# peter.aronsson@mathcore.com
+# This makefile is part of MathCore build system.
+
+CC=cl
+CXX=cl
+AR=LIB
+
+MODELICA_PARSER=..\..\modelica_parser\src
+
+ANTLR_HOME=$(OMDEV)\
+
+INCLUDES=/I$(MODELICA_PARSER) /I$(ANTLR_HOME)\include\
+
+LIBP=/L$(ANTRL_HOME)\lib\antlr-win32-msvc
+
+CFLAGS = $(INCP) /Ob2 /Ox /O2 /Ot /Oy /D "WIN32" /D "NDEBUG" /D "_CONSOLE"\
+	 /D "_MBCS" /FD /EHsc /MT /W3 /nologo /c /TC /wd4311 /wd4312
+CXXFLAGS = $(CFLAGS)
+
+ANTLRFLAGS=
+ANTLRCLASSPATH=-cp $(OMDEV)\bin\antlr\antlr.jar
+
+LIB = $(LIBP) -/antlr
+
+lexergen= flat_modelica_lexer.cpp flat_modelica_lexer.hpp \
+	  modelicaTokenTypes.hpp modelicaTokenTypes.txt
+
+parsergen= flat_modelica_parser.cpp flat_modelica_parser.hpp \
+	   flat_modelica_parserTokenTypes.hpp flat_modelica_parserTokenTypes.txt
+
+lexersrcs=flat_modelica_lexer.cpp
+parsersrcs=flat_modelica_parser.cpp
+
+lexerobjs=$(lexersrcs:.cpp=.obj)
+parserobjs=$(parsersrcs:.cpp=.obj)
+
+helperobjs =  parse_tree_dumper.obj token_names.obj
+
+OBJS = $(lexerobjs) $(parserobjs)
+#$(helperobjs)
+
+all: flat_modelica_parservc.lib
+
+vctarget: $(lexergen) $(parsergen)
+
+flat_modelica_parservc.lib: $(OBJS)
+	$(AR) /OUT:$@ $(OBJS)
+
+$(lexergen): flat_modelica_lexer.g
+	java $(ANTLRCLASSPATH) antlr.Tool $(ANTLRFLAGS) $<
+
+$(parsergen): flat_modelica_parser.g flat_modelica_lexer.g
+	java $(ANTLRCLASSPATH) antlr.Tool $(ANTLRFLAGS) $<
+
+.c.obj:
+	$(CC) $(CFLAGS) $<
+
+.cpp.obj:
+	$(CXX) $(CXXFLAGS) $<
+
+clean:
+	-rm -f *.o *~ core *.core libflat_modelica_parser.a
+
+reallyclean: clean
+	-rm -f $(lexergen) $(parsergen)
+
+flat_modelica_lexer.obj:flat_modelica_lexer.cpp flat_modelica_lexer.hpp
+flat_modelica_parser.obj:flat_modelica_parser.cpp flat_modelica_parser.hpp
+parse_tree_dumper.obj:
+	cd $(MODELICA_PARSER) && $(MAKE) /f Makefile.vc&& cd ..\..\flat_modelica_parser\src
+

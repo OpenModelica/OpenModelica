@@ -1,0 +1,91 @@
+# Peter Aronsson, MathCore Engineering AB
+# peter.aronsson@mathcore.com
+# This makefile is part of MathCore build system.
+
+
+CC=cl
+CXX=cl
+COPY = $(OMDEV)\tools\msys\bin\cp.exe -p -f
+
+ANTLRFLAGS = #-traceTreeParser
+ANTLRCLASSPATH=-cp $(OMDEV)\bin\antlr\antlr.jar
+ANTLR_HOME = $(OMDEV)
+
+ANTLR_INCP=/I$(OMDEV)\include
+ANTLR_LIBP=/L$(OMDEV)\lib\antlr-msys-mingw
+
+RML_HOME =  $(OMDEV)
+RML_INCP = /I$(OMDEV)\tools\rml\include\plain
+
+FLAT_PARSE_HOME = ..\..\flat_modelica_parser
+FLAT_PARSE_INCP = /I$(FLAT_PARSE_HOME)/src
+FLAT_PARSE_LIBP = /L$(FLAT_PARSE_HOME)/src
+
+PARSE_HOME = ..\..\modelica_parser
+PARSE_HOME_UNIX = ../../modelica_parser
+PARSE_INCP = /I$(PARSE_HOME)\src
+PARSE_LIBP = /L$(PARSE_HOME)\src
+
+INCP = $(ANTLR_INCP) $(PARSE_INCP) $(FLAT_PARSE_INCP) $(RML_INCP)
+LIBP = $(ANTLR_LIBP) $(PARSE_LIBP) $(FLAT_PARSE_LIBP)
+
+#CFLAGS = $(INCP) /Ob2 /Ox /O2 /Ot /Oy /D "WIN32" /D "NDEBUG" /D "_CONSOLE"\
+#	 /D "_MBCS" /FD /EHsc /MT /W3 /nologo /c /TC /wd4311 /wd4312
+CFLAGS=$(INCP) /Ob2 /Ox /O2 /Ot /GL /Oy /D "WIN32" /D "NDEBUG" /D "_LIB" /D "_MBCS" /FD /EHsc /MT /GS /Fd"antlr.pdb" /W3 /nologo /c /Zi /TP
+	 
+	 
+CXXFLAGS = $(CFLAGS)
+LINKFLAGS = $(LIBP)
+
+LIBS = /l antlr /l modelica_parser /l flat_modelica_parser
+
+PARSER_OBJS = ..\..\flat_modelica_parser\src\flat_modelica_parservc.lib \
+	..\..\modelica_parser\src\modelica_parservc.lib
+
+walkergen= modelica_tree_parser.cpp modelica_tree_parser.hpp \
+	   modelica_tree_parserTokenTypes.hpp modelica_tree_parserTokenTypes.txt
+
+walkerobjs=modelica_tree_parser.obj
+
+exprparsegen = modelica_expression_parser.cpp modelica_expression_parser.hpp
+
+exprparseobjs=modelica_expression_parser.obj
+
+OBJS = $(walkerobjs) $(exprparseobjs) $(PARSER_OBJS) parse.obj
+
+all : flat_parser parser absyn_buildervc.lib
+
+parser:
+	cd $(PARSE_HOME)\src && $(MAKE) /f Makefile.win
+
+flat_parser:
+	cd $(FLAT_PARSE_HOME)\src && $(MAKE) /f Makefile.vc
+
+absyn_buildervc.lib : $(OBJS)
+	LIB /out:$@ $(OBJS)
+
+$(walkergen): walker.g modelica_parserTokenTypes.txt
+	java $(ANTLRCLASSPATH) antlr.Tool $(ANTLRFLAGS) walker.g
+
+$(exprparsegen): expression_parser.g modelica_parserTokenTypes.txt
+	java $(ANTLRCLASSPATH) antlr.Tool -glib $(PARSE_HOME)\src\modelica_parser.g $(ANTLRFLAGS) expression_parser.g
+
+modelica_parserTokenTypes.txt : $(PARSE_HOME)\src\modelica_parserTokenTypes.txt
+	$(COPY) $(PARSE_HOME_UNIX)/src/modelica_parserTokenTypes.txt .
+	
+.c.obj:
+	$(CC) $(CFLAGS) $<
+
+.cpp.obj:
+	$(CXX) $(CXXFLAGS) $<
+
+clean:
+	del -f *.obj *~ core *.core walker absyn_buildervc.lib
+	del -f $(walkergen) modelica_parserTokenTypes.txt
+
+reallyclean: clean
+
+walker.obj : walker.cpp $(PARSE_HOME)\src\modelica_lexer.hpp $(PARSE_HOME)\src\modelica_parser.hpp \
+	$(FLAT_PARSE_HOME)\src\flat_modelica_parser.hpp \
+	$(FLAT_PARSE_HOME)\src\flat_modelica_lexer.hpp
+

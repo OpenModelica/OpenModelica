@@ -2,10 +2,13 @@ CPP=cl /nologo
 LINK=link
 LINKFLAGS = -lib /nologo
 
-INCLUDES = /I "$(ANTLR_HOME)\lib\cpp"
-LIBP = /libpath:"$(ANTLR_HOME)\lib\cpp"
+INCLUDES = /I$(OMDEV)\include
+#CFLAGS = $(INCLUDES) /Ob2 /Ox /O2 /Ot /Oy /D "WIN32" /D "NDEBUG" /D "_CONSOLE"\
+#	 /D "_MBCS" /FD /EHsc /MT /W3 /nologo /c /TC /wd4311 /wd4312
 
-CFLAGS = $(INCLUDES) /GX /D DEBUG
+CFLAGS=/Ob2 /Ox /O2 /Ot /GL /Oy $(INCLUDES) /D "WIN32" /D "NDEBUG" /D "_LIB" /D "_MBCS" /FD /EHsc /MT /GS /Fd"antlr.pdb" /W3 /nologo /c /Zi /TP
+	 
+
 CPPFLAGS = $(CFLAGS)
 
 ANTLRFLAGS=
@@ -22,26 +25,36 @@ lexerobjs=$(lexersrcs:.cpp=.obj)
 parserobjs=$(parsersrcs:.cpp=.obj)
 helperobjs=token_names.obj parse_tree_dumper.obj
 
-OBJS = $(OBJS) $(lexerobjs) $(parserobjs) $(helperobjs)
+OBJS = $(lexerobjs) $(parserobjs) $(helperobjs)
 
-ANTLR = java -cp "$(ANTLR_HOME)" antlr.Tool
+ANTLRCLASSPATH=-cp $(OMDEV)/bin/antlr/antlr.jar
+ANTLR = java $(ANTLRCLASSPATH) antlr.Tool
 
-all : modelica_parser.lib
+all : modelica_parservc.lib
 
-modelica_parser.lib : $(OBJS)
+modelica_parservc.lib : modelica_lexer.obj modelica_parser.obj token_names.obj parse_tree_dumper.obj
 	$(LINK) $(LINKFLAGS) $(OBJS) /out:$@
+	
+modelica_parser.obj: $(parsergen)
+	$(CC) $(CFLAGS) modelica_parser.cpp
 
-$(lexergen) : ModelicaLexer.g
-	$(ANTLR) $(ANTLRFLAGS) $**
+modelica_lexer.obj: $(lexergen)
+	$(CC) $(CFLAGS) modelica_lexer.cpp
 
-$(parsergen) : Modelica.g ModelicaLexer.g
-	$(ANTLR) $(ANTLRFLAGS) Modelica.g
+token_names.obj: token_names.hpp
+	$(CC) $(CFLAGS) token_names.cpp
+	
+parse_tree_dumper.obj: parse_tree_dumper.hpp
+	$(CC) $(CFLAGS) parse_tree_dumper.cpp
+	
+$(lexergen) : modelica_lexer.g
+	$(ANTLR) modelica_lexer.g
+
+$(parsergen) : modelica_parser.g
+	$(ANTLR) modelica_parser.g
 
 clean:
-	-rm -f *.o *.obj *~ core *.core
-
-reallyclean: clean
-	-rm -f $(lexergen) $(parsergen)
+	del /f *.o *.obj modelica_parservc.lib $(lexergen) $(parsergen)
 
 $(lexerobjs) : $(lexergen)
 $(parserobjs) : $(parsergen)
