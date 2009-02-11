@@ -8,14 +8,14 @@ AR=LIB
 
 MODELICA_PARSER=..\..\modelica_parser\src
 
-ANTLR_HOME=$(OMDEV)\
+ANTLR_HOME=$(OMDEV)
 
-INCLUDES=/I$(MODELICA_PARSER) /I$(ANTLR_HOME)\include\
+INCLUDES=/I$(MODELICA_PARSER) /I$(ANTLR_HOME)\include
 
 LIBP=/L$(ANTRL_HOME)\lib\antlr-win32-msvc
 
-CFLAGS = $(INCP) /Ob2 /Ox /O2 /Ot /Oy /D "WIN32" /D "NDEBUG" /D "_CONSOLE"\
-	 /D "_MBCS" /FD /EHsc /MT /W3 /nologo /c /TC /wd4311 /wd4312
+CFLAGS = $(INCLUDES) /Ob2 /Ox /O2 /Ot /Oy /D "WIN32" /D "NDEBUG" /D "_CONSOLE"\
+	 /D "_MBCS" /FD /EHsc /MT /W3 /nologo /c /TP /wd4311 /wd4312
 CXXFLAGS = $(CFLAGS)
 
 ANTLRFLAGS=
@@ -48,10 +48,10 @@ flat_modelica_parservc.lib: $(OBJS)
 	$(AR) /OUT:$@ $(OBJS)
 
 $(lexergen): flat_modelica_lexer.g
-	java $(ANTLRCLASSPATH) antlr.Tool $(ANTLRFLAGS) $<
+	java $(ANTLRCLASSPATH) antlr.Tool $(ANTLRFLAGS) flat_modelica_lexer.g
 
 $(parsergen): flat_modelica_parser.g flat_modelica_lexer.g
-	java $(ANTLRCLASSPATH) antlr.Tool $(ANTLRFLAGS) $<
+	java $(ANTLRCLASSPATH) antlr.Tool $(ANTLRFLAGS) flat_modelica_parser.g
 
 .c.obj:
 	$(CC) $(CFLAGS) $<
