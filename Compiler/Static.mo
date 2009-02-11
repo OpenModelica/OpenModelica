@@ -5160,7 +5160,7 @@ algorithm
         (cache,numberOfIntervals) = getOptionalNamedArg(cache,env, SOME(st), impl, "numberOfIntervals",
           (Types.T_INTEGER({}),NONE), args, Exp.ICONST(500));
         (cache,tolerance) = getOptionalNamedArg(cache,env, SOME(st), impl, "tolerance", (Types.T_REAL({}),NONE),
-          args, Exp.RCONST(1e-10));
+          args, Exp.RCONST(1e-4));
         (cache,method) = getOptionalNamedArg(cache,env, SOME(st), impl, "method", (Types.T_STRING({}),NONE),
           args, Exp.SCONST("dassl"));
         cname_str = Absyn.pathString(className);
@@ -5187,7 +5187,7 @@ algorithm
         (cache,numberOfIntervals) = getOptionalNamedArg(cache,env, SOME(st), impl, "numberOfIntervals",
           (Types.T_INTEGER({}),NONE), args, Exp.ICONST(500));
         (cache,tolerance) = getOptionalNamedArg(cache,env, SOME(st), impl, "tolerance", (Types.T_REAL({}),NONE),
-          args, Exp.RCONST(1e-10));
+          args, Exp.RCONST(1e-4));
         (cache,method) = getOptionalNamedArg(cache,env, SOME(st), impl, "method", (Types.T_STRING({}),NONE),
           args, Exp.SCONST("dassl"));
         classname = componentRefToPath(cr_1) "this extracts the fileNamePrefix which is used when generating code and init-file" ;
