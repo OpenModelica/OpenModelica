@@ -96,7 +96,7 @@
 		<field name="$1">0</field>
 		<field name="$2">1</field>
 		<field name="$3">500</field>
-		<field name="$4">1e-6</field>
+		<field name="$4">1e-4</field>
 		<helptext>Translates a model and simulates it. Ex: simulate(dcmotor). Ex: simulate(dcmotor,startTime=0, stopTime=10, numberOfIntervals=1000).</helptext>
 	</command>
 	<command name="buildModel($0, startTime=$1, stopTime=$2, numberOfIntervals=$3, tolerance=$4, storeInTemp=$5)">
@@ -104,7 +104,7 @@
 		<field name="$1">0</field>
 		<field name="$2">1</field>
 		<field name="$3">500</field>
-		<field name="$4">1e-6</field>
+		<field name="$4">1e-4</field>
 		<field name="$5">false</field>
 		<helptext>Translates a model and simulates it. Ex: buildModel(dcmotor). Ex: buildMotor(dcmotor,startTime=0, stopTime=10, numberOfIntervals=1000).</helptext>
 	</command>
