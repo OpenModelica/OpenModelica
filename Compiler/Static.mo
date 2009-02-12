@@ -4908,6 +4908,51 @@ algorithm
             Types.PROP(ty1,c) );
   end matchcontinue;
 end elabBuiltinSkew;
+ 
+protected function elabBuiltinConstrain "
+  author: BZ, 2009-01
+ 
+  This function handles the built-in elabBuiltinconstrain function.
+"
+	input Env.Cache inCache;
+  input Env.Env inEnv;
+  input list<Absyn.Exp> inAbsynExpLst;
+  input list<Absyn.NamedArg> inNamedArg;  
+  input Boolean impl;
+  output Env.Cache outCache;
+  output Exp.Exp outExp;
+  output Types.Properties outProperties;
+algorithm 
+  (outCache,outExp,outProperties):=
+  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,impl)
+    local
+      Exp.Exp e1,e2,e3;
+      tuple<Types.TType, Option<Absyn.Path>> tp,arr_tp;
+      Types.Const c1,c2,c3,const;
+      Exp.Type tp1,tp2,tp3,etp;
+      list<Env.Frame> env;
+      Absyn.Exp e,v1,v2,v3;
+      list<Exp.Exp> expl,expl_1,args_1;
+      list<Integer> dims;
+      Env.Cache cache;
+      Types.Properties prop;
+      list<Absyn.Exp> args;
+      list<Absyn.NamedArg> nargs;
+      list<Slot> slots,newslots;
+      list<Types.Var> tvars;
+      Option<Absyn.Path> opath1,opath2;
+      Types.Type ty1,ty2,ty3;
+    case (cache,env,{v1,v2,v3},nargs,impl) 
+      equation 
+         (cache,e1,Types.PROP(ty1,c1),_) = elabExp(cache,env, v1, impl, NONE,true);
+         (cache,e2,Types.PROP(ty2,c2),_) = elabExp(cache,env, v2, impl, NONE,true);
+         (cache,e3,Types.PROP(ty3,c3),_) = elabExp(cache,env, v3, impl, NONE,true);
+      then
+        (cache,
+        Exp.CALL(Absyn.IDENT("constrain"),{e1,e2,e3},false,true,Exp.OTHER()),
+        Types.PROP(ty1,c1) );
+  end matchcontinue;
+  end elabBuiltinConstrain; 
   
 protected function elabBuiltinVector "function: elabBuiltinVector
   author: PA
@@ -5229,6 +5274,8 @@ algorithm
     case "String" then elabBuiltinString;
       
     case "skew" then elabBuiltinSkew;
+      
+    case "constrain" then elabBuiltinConstrain;
       
   end matchcontinue;
 end elabBuiltinHandler;
@@ -6271,9 +6318,11 @@ algorithm
       then
         (cache,Exp.CALL(Absyn.IDENT("echo"),{bool_exp_1},false,true,Exp.STRING()),Types.PROP((Types.T_BOOL({}),NONE),Types.C_CONST()),SOME(st));
 
+    case (cache,env,Absyn.CREF_IDENT(name = "getClassesInModelicaPath"),{},{},impl,SOME(st))
+      then (cache,Exp.CALL(Absyn.IDENT("getClassesInModelicaPath"),{},false,true,Exp.STRING()),Types.PROP((Types.T_BOOL({}),NONE),Types.C_CONST()),SOME(st));
+        
     case (cache,env,Absyn.CREF_IDENT(name = "checkExamplePackages"),{},{},impl,SOME(st))
-      then
-        (cache,Exp.CALL(Absyn.IDENT("checkExamplePackages"),{},false,true,Exp.STRING()),Types.PROP((Types.T_BOOL({}),NONE),Types.C_CONST()),SOME(st));
+    then (cache,Exp.CALL(Absyn.IDENT("checkExamplePackages"),{},false,true,Exp.STRING()),Types.PROP((Types.T_BOOL({}),NONE),Types.C_CONST()),SOME(st));
         
 case (cache,env,Absyn.CREF_IDENT(name = "dumpXMLDAE"),{Absyn.CREF(componentReg = cr)},args,impl,SOME(st))
       local Absyn.Path className; Exp.Exp storeInTemp,asInSimulationCode;

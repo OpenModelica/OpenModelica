@@ -2510,8 +2510,30 @@ protected constant tuple<Types.TType, Option<Type_a>> option2boolean=(
 
 protected constant tuple<Types.TType, Option<Type_a>> anyInteger2any=(
           Types.T_FUNCTION({("x1",(Types.T_NOTYPE(),NONE)),("x2",(Types.T_INTEGER({}),NONE))},(Types.T_NOTYPE(),NONE)),NONE);
-//----
 
+protected constant tuple<Types.TType, Option<Type_a>> array1dimrealarray1dimrealarray1dimreal2real=(
+          Types.T_FUNCTION(
+          {
+          ("x",(Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_REAL({}),NONE)),NONE)),
+          ("y",(Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_REAL({}),NONE)),NONE)),
+          ("z",(Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_REAL({}),NONE)),NONE))
+          },
+          (Types.T_REAL({}),NONE)),NONE);
+protected constant tuple<Types.TType, Option<Type_a>> realrealreal2real=(
+          Types.T_FUNCTION(
+          {
+          ("x",(Types.T_REAL({}),NONE)),
+          ("y",(Types.T_REAL({}),NONE)),
+          ("z",(Types.T_REAL({}),NONE))
+          },(Types.T_REAL({}),NONE)),NONE);
+protected constant tuple<Types.TType, Option<Type_a>> intintint2int =(
+          Types.T_FUNCTION(
+          {
+          ("x",(Types.T_INTEGER({}),NONE)),
+          ("y",(Types.T_INTEGER({}),NONE)),
+          ("z",(Types.T_INTEGER({}),NONE))
+          },(Types.T_INTEGER({}),NONE)),NONE);
+          
 public function isTanh
   input Absyn.Path inPath;
 algorithm 
@@ -3207,6 +3229,8 @@ algorithm
       env = Env.extendFrameT(env, "sqrt", real2real);
       env = Env.extendFrameT(env, "mod", intInt2int); 
       env = Env.extendFrameT(env, "mod", realReal2real);
+      env = Env.extendFrameT(env, "constrain", realrealreal2real);
+      env = Env.extendFrameT(env, "constrain", intintint2int);
       /*
       env = Env.extendFrameT(env, "semiLinear", realRealReal2real);
       env = Env.extendFrameT(env, "delay", realReal2real);
