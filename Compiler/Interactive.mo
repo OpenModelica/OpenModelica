@@ -7466,20 +7466,14 @@ algorithm
   end matchcontinue;
 end traverseClasses;
 
-protected function traverseClasses2
-"function: traverseClasses2
-   Helper function to traverseClasses.
-   inputs: (Absyn.Class list,
-              Absyn.Path option,
-              ((Absyn.Class  Absyn.Path option  \'a) => (Absyn.Class   Absyn.Path option \'a)),  /* rel-ation to apply */
-	   \'a, /* extra value passed to re-lation */
-	   bool) /* true = traverse protected elements */
-   outputs: (Absyn.Class list  Absyn.Path option  \'a)"
+protected function traverseClasses2 
+"function: traverseClasses2  
+   Helperfunction to traverseClasses."
   input list<Absyn.Class> inAbsynClassLst;
   input Option<Absyn.Path> inAbsynPathOption;
   input FuncTypeTplAbsyn_ClassAbsyn_PathOptionType_aToTplAbsyn_ClassAbsyn_PathOptionType_a inFuncTypeTplAbsynClassAbsynPathOptionTypeAToTplAbsynClassAbsynPathOptionTypeA;
-  input Type_a inTypeA;
-  input Boolean inBoolean;
+  input Type_a inTypeA "extra argument";
+  input Boolean inBoolean "visit protected elements";
   output tuple<list<Absyn.Class>, Option<Absyn.Path>, Type_a> outTplAbsynClassLstAbsynPathOptionTypeA;
   partial function FuncTypeTplAbsyn_ClassAbsyn_PathOptionType_aToTplAbsyn_ClassAbsyn_PathOptionType_a
     input tuple<Absyn.Class, Option<Absyn.Path>, Type_a> inTplAbsynClassAbsynPathOptionTypeA;
@@ -7487,7 +7481,7 @@ protected function traverseClasses2
     replaceable type Type_a subtypeof Any;
   end FuncTypeTplAbsyn_ClassAbsyn_PathOptionType_aToTplAbsyn_ClassAbsyn_PathOptionType_a;
   replaceable type Type_a subtypeof Any;
-algorithm
+algorithm 
   outTplAbsynClassLstAbsynPathOptionTypeA:=
   matchcontinue (inAbsynClassLst,inAbsynPathOption,inFuncTypeTplAbsynClassAbsynPathOptionTypeAToTplAbsynClassAbsynPathOptionTypeA,inTypeA,inBoolean)
     local
@@ -7497,37 +7491,92 @@ algorithm
       Absyn.Class class_1,class_2,class_;
       list<Absyn.Class> classes_1,classes;
       Boolean traverse_prot;
-    case ({},pa,visitor,args,_) then (({},pa,args));
+    case ({},pa,visitor,args,_) then (({},pa,args)); 
     case ((class_ :: classes),pa,visitor,args,traverse_prot)
-      equation
+      equation 
         ((class_1,pa_1,args_1)) = visitor((class_,pa,args));
         ((class_2,pa_2,args_2)) = traverseInnerClass(class_1, pa, visitor, args_1, traverse_prot);
         ((classes_1,pa_3,args_3)) = traverseClasses2(classes, pa, visitor, args_2, traverse_prot);
       then
         (((class_2 :: classes_1),pa_3,args_3));
-    case (_,_,_,_,_)
-      equation
-        print("-traverse_classes2 failed\n");
+    
+    /* Visitor failed, but class contains inner classes after traversal, i.e. those inner classes didn't fail, and thus
+    the class must be included also */
+      case ((class_ :: classes),pa,visitor,args,traverse_prot)
+      equation 
+        ((class_2,pa_2,args_2)) = traverseInnerClass(class_, pa, visitor, args, traverse_prot);
+        true = classHasLocalClasses(class_2);
+        ((classes_1,pa_3,args_3)) = traverseClasses2(classes, pa, visitor, args_2, traverse_prot);
+      then
+        (((class_2 :: classes_1),pa_3,args_3));
+    
+    /* Visitor failed, remove class */
+    case ((class_ :: classes),pa,visitor,args,traverse_prot)
+      equation 
+        ((classes_1,pa_3,args_3)) = traverseClasses2(classes, pa, visitor, args, traverse_prot);
+      then
+        ((classes_1,pa_3,args_3));        
+    case ((class_ :: classes),_,_,_,_)
+      equation 
+        print("-traverse_classes2 failed on class:");
+        print(Absyn.pathString(Absyn.className(class_)));
+        print("\n");
       then
         fail();
   end matchcontinue;
 end traverseClasses2;
 
-protected function traverseInnerClass
-"function: traverseInnerClass
-   Helper function to traverseClasses2.
-   This function traverses all inner classes of a class.
-   inputs:  (Absyn.Class, /* class to traverse inner classes in */
-               Absyn.Path option,
-               ((Absyn.Class  Absyn.Path option  \'a) => (Absyn.Class   Absyn.Path option \'a)), /* visitor rlation */
-               \'a /* extra argument */,
-               bool ) /* true = traverse protected elts */
-   outputs: (Absyn.Class  Absyn.Path option  \'a)"
+protected function classHasLocalClasses 
+"Returns true if class contains a local class"
+  input Absyn.Class cl;
+  output Boolean res;
+algorithm
+  cl := matchcontinue(cl)
+  local list<Absyn.ClassPart> parts;
+    case(Absyn.CLASS(body= Absyn.PARTS(classParts = parts))) equation
+      res = partsHasLocalClass(parts);
+    then res;
+  end matchcontinue;
+end classHasLocalClasses;
+
+protected function partsHasLocalClass 
+"Help function to classHasLocalClass"
+  input list<Absyn.ClassPart> parts;
+  output Boolean res;
+algorithm
+  res := matchcontinue(parts)
+  local list<Absyn.ElementItem> elts;
+    case(Absyn.PUBLIC(elts)::parts) equation
+      true = eltsHasLocalClass(elts);
+    then true;
+    case(Absyn.PROTECTED(elts)::parts) equation
+      true = eltsHasLocalClass(elts);
+    then true;
+    case(_::parts) then partsHasLocalClass(parts);
+    case(_) then false;
+  end matchcontinue;
+end partsHasLocalClass;
+
+protected function eltsHasLocalClass 
+"help function to partsHasLocalClass"
+  input list<Absyn.ElementItem> elts;
+  output Boolean res;
+algorithm
+  res := matchcontinue(elts)
+    case(Absyn.ELEMENTITEM(Absyn.ELEMENT(specification=Absyn.CLASSDEF(class_=_)))::elts) then true;
+    case(_::elts) then eltsHasLocalClass(elts);
+    case(_) then false;  
+  end matchcontinue;
+end eltsHasLocalClass;
+
+protected function traverseInnerClass 
+"function: traverseInnerClass  
+   Helperfunction to traverseClasses2. This function traverses all inner classes of a class."
   input Absyn.Class inClass;
   input Option<Absyn.Path> inAbsynPathOption;
   input FuncTypeTplAbsyn_ClassAbsyn_PathOptionType_aToTplAbsyn_ClassAbsyn_PathOptionType_a inFuncTypeTplAbsynClassAbsynPathOptionTypeAToTplAbsynClassAbsynPathOptionTypeA;
-  input Type_a inTypeA;
-  input Boolean inBoolean;
+  input Type_a inTypeA "extra value";
+  input Boolean inBoolean "if true, traverse protected elts";
   output tuple<Absyn.Class, Option<Absyn.Path>, Type_a> outTplAbsynClassAbsynPathOptionTypeA;
   partial function FuncTypeTplAbsyn_ClassAbsyn_PathOptionType_aToTplAbsyn_ClassAbsyn_PathOptionType_a
     input tuple<Absyn.Class, Option<Absyn.Path>, Type_a> inTplAbsynClassAbsynPathOptionTypeA;
@@ -7535,7 +7584,7 @@ protected function traverseInnerClass
     replaceable type Type_a subtypeof Any;
   end FuncTypeTplAbsyn_ClassAbsyn_PathOptionType_aToTplAbsyn_ClassAbsyn_PathOptionType_a;
   replaceable type Type_a subtypeof Any;
-algorithm
+algorithm 
   outTplAbsynClassAbsynPathOptionTypeA:=
   matchcontinue (inClass,inAbsynPathOption,inFuncTypeTplAbsynClassAbsynPathOptionTypeAToTplAbsynClassAbsynPathOptionTypeA,inTypeA,inBoolean)
     local
@@ -7551,21 +7600,21 @@ algorithm
       FuncTypeTplAbsyn_ClassAbsyn_PathOptionType_aToTplAbsyn_ClassAbsyn_PathOptionType_a visitor;
       Absyn.Class cl;
     case (Absyn.CLASS(name = name,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,body = Absyn.PARTS(classParts = parts,comment = str_opt),info = file_info),SOME(pa),visitor,args,visit_prot)
-      equation
+      equation 
         tmp_pa = Absyn.joinPaths(pa, Absyn.IDENT(name));
         ((parts_1,pa_1,args_1)) = traverseInnerClassParts(parts, SOME(tmp_pa), visitor, args, visit_prot);
       then
         ((
           Absyn.CLASS(name,p,f,e,r,Absyn.PARTS(parts_1,str_opt),file_info),pa_1,args_1));
     case (Absyn.CLASS(name = name,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,body = Absyn.PARTS(classParts = parts,comment = str_opt),info = file_info),NONE,visitor,args,visit_prot)
-      equation
+      equation 
         ((parts_1,pa_1,args_1)) = traverseInnerClassParts(parts, SOME(Absyn.IDENT(name)), visitor, args, visit_prot);
       then
         ((
           Absyn.CLASS(name,p,f,e,r,Absyn.PARTS(parts_1,str_opt),file_info),pa_1,args_1));
     case (Absyn.CLASS(name = name,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,body = Absyn.PARTS(classParts = parts,comment = str_opt),info = file_info),pa,visitor,args,visit_prot)
       local Option<Absyn.Path> pa;
-      equation
+      equation 
         ((parts_1,pa_1,args_1)) = traverseInnerClassParts(parts, pa, visitor, args, visit_prot);
       then
         ((
@@ -7577,20 +7626,14 @@ algorithm
   end matchcontinue;
 end traverseInnerClass;
 
-protected function traverseInnerClassParts
-"function: traverseInnerClassParts
-   Helper function to traverseInnerClass
-   inputs:  (Absyn.ClassPart list,
-               Absyn.Path option,
-               ((Absyn.Class  Absyn.Path option  \'a) => (Absyn.Class   Absyn.Path option \'a)), /* visitor */
-               \'a,
-               bool) /* true = visit protected elements */
-   outputs: (Absyn.ClassPart list  Absyn.Path option  \'a)"
+protected function traverseInnerClassParts 
+"function: traverseInnerClassParts  
+   Helper function to traverseInnerClass"
   input list<Absyn.ClassPart> inAbsynClassPartLst;
   input Option<Absyn.Path> inAbsynPathOption;
   input FuncTypeTplAbsyn_ClassAbsyn_PathOptionType_aToTplAbsyn_ClassAbsyn_PathOptionType_a inFuncTypeTplAbsynClassAbsynPathOptionTypeAToTplAbsynClassAbsynPathOptionTypeA;
-  input Type_a inTypeA;
-  input Boolean inBoolean;
+  input Type_a inTypeA "extra argument";
+  input Boolean inBoolean "visist protected elts";
   output tuple<list<Absyn.ClassPart>, Option<Absyn.Path>, Type_a> outTplAbsynClassPartLstAbsynPathOptionTypeA;
   partial function FuncTypeTplAbsyn_ClassAbsyn_PathOptionType_aToTplAbsyn_ClassAbsyn_PathOptionType_a
     input tuple<Absyn.Class, Option<Absyn.Path>, Type_a> inTplAbsynClassAbsynPathOptionTypeA;
@@ -7598,7 +7641,7 @@ protected function traverseInnerClassParts
     replaceable type Type_a subtypeof Any;
   end FuncTypeTplAbsyn_ClassAbsyn_PathOptionType_aToTplAbsyn_ClassAbsyn_PathOptionType_a;
   replaceable type Type_a subtypeof Any;
-algorithm
+algorithm 
   outTplAbsynClassPartLstAbsynPathOptionTypeA:=
   matchcontinue (inAbsynClassPartLst,inAbsynPathOption,inFuncTypeTplAbsynClassAbsynPathOptionTypeAToTplAbsynClassAbsynPathOptionTypeA,inTypeA,inBoolean)
     local
@@ -7609,41 +7652,35 @@ algorithm
       FuncTypeTplAbsyn_ClassAbsyn_PathOptionType_aToTplAbsyn_ClassAbsyn_PathOptionType_a visitor;
       Boolean visit_prot;
       Absyn.ClassPart part;
-    case ({},pa,_,args,_) then (({},pa,args));
+    case ({},pa,_,args,_) then (({},pa,args)); 
     case ((Absyn.PUBLIC(contents = elts) :: parts),pa,visitor,args,visit_prot)
-      equation
+      equation 
         ((elts_1,pa_1,args_1)) = traverseInnerClassElements(elts, pa, visitor, args, visit_prot);
         ((parts_1,pa_2,args_2)) = traverseInnerClassParts(parts, pa, visitor, args_1, visit_prot);
       then
         (((Absyn.PUBLIC(elts_1) :: parts_1),pa_2,args_2));
     case ((Absyn.PROTECTED(contents = elts) :: parts),pa,visitor,args,true)
-      equation
+      equation 
         ((elts_1,pa_1,args_1)) = traverseInnerClassElements(elts, pa, visitor, args, true);
         ((parts_1,pa_2,args_2)) = traverseInnerClassParts(parts, pa, visitor, args_1, true);
       then
         (((Absyn.PROTECTED(elts_1) :: parts_1),pa_2,args_2));
     case ((part :: parts),pa,visitor,args,true)
-      equation
+      equation 
         ((parts_1,pa_1,args_1)) = traverseInnerClassParts(parts, pa, visitor, args, true);
       then
         (((part :: parts_1),pa_1,args_1));
   end matchcontinue;
 end traverseInnerClassParts;
 
-protected function traverseInnerClassElements
-"function traverseInnerClassElements
-   Helper function to traverseInnerClassParts.
-   inputs:  (Absyn.ElementItem list,
-               Absyn.Path option,
-               ((Absyn.Class  Absyn.Path option  \'a) => (Absyn.Class  Absyn.Path option  \'a)), /* visitor */
-               \'a,
-               bool)  /* visit protected elts */
-   outputs: (Absyn.ElementItem list  Absyn.Path option  \'a)"
+protected function traverseInnerClassElements 
+"function traverseInnerClassElements  
+   Helper function to traverseInnerClassParts"
   input list<Absyn.ElementItem> inAbsynElementItemLst;
   input Option<Absyn.Path> inAbsynPathOption;
   input FuncTypeTplAbsyn_ClassAbsyn_PathOptionType_aToTplAbsyn_ClassAbsyn_PathOptionType_a inFuncTypeTplAbsynClassAbsynPathOptionTypeAToTplAbsynClassAbsynPathOptionTypeA;
   input Type_a inTypeA;
-  input Boolean inBoolean;
+  input Boolean inBoolean "visit protected elts";
   output tuple<list<Absyn.ElementItem>, Option<Absyn.Path>, Type_a> outTplAbsynElementItemLstAbsynPathOptionTypeA;
   partial function FuncTypeTplAbsyn_ClassAbsyn_PathOptionType_aToTplAbsyn_ClassAbsyn_PathOptionType_a
     input tuple<Absyn.Class, Option<Absyn.Path>, Type_a> inTplAbsynClassAbsynPathOptionTypeA;
@@ -7651,7 +7688,7 @@ protected function traverseInnerClassElements
     replaceable type Type_a subtypeof Any;
   end FuncTypeTplAbsyn_ClassAbsyn_PathOptionType_aToTplAbsyn_ClassAbsyn_PathOptionType_a;
   replaceable type Type_a subtypeof Any;
-algorithm
+algorithm 
   outTplAbsynElementItemLstAbsynPathOptionTypeA:=
   matchcontinue (inAbsynElementItemLst,inAbsynPathOption,inFuncTypeTplAbsynClassAbsynPathOptionTypeAToTplAbsynClassAbsynPathOptionTypeA,inTypeA,inBoolean)
     local
@@ -7667,36 +7704,50 @@ algorithm
       Option<Absyn.ConstrainClass> constr;
       FuncTypeTplAbsyn_ClassAbsyn_PathOptionType_aToTplAbsyn_ClassAbsyn_PathOptionType_a visitor;
       Absyn.ElementItem elt;
-    case ({},pa,_,args,_) then (({},pa,args));
+    case ({},pa,_,args,_) then (({},pa,args)); 
     case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(finalPrefix = f,redeclareKeywords = r,innerOuter = io,name = n,specification = elt_spec,info = info,constrainClass = constr)) :: elts),pa,visitor,args,visit_prot)
-      equation
+      equation 
         ((elt_spec_1,pa_1,args_1)) = traverseInnerClassElementspec(elt_spec, pa, visitor, args, visit_prot);
         ((elts_1,pa_2,args_2)) = traverseInnerClassElements(elts, pa, visitor, args_1, visit_prot);
       then
         ((
           (Absyn.ELEMENTITEM(Absyn.ELEMENT(f,r,io,n,elt_spec_1,info,constr)) :: elts_1),pa_2,args_2));
+   
+   /* Visitor failed in elementspec, but inner classes succeeded, include class */
+    case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(finalPrefix = f,redeclareKeywords = r,innerOuter = io,name = n,specification = Absyn.CLASSDEF(repl,cl),info = info,constrainClass = constr)) :: elts),pa,visitor,args,visit_prot)
+      local Boolean repl; Absyn.Class cl;
+      equation 
+         ((cl,pa_1,args_1)) = traverseInnerClass(cl, pa, visitor, args, visit_prot);
+        true  = classHasLocalClasses(cl);
+        ((elts_1,pa_2,args_2)) = traverseInnerClassElements(elts, pa, visitor, args_1, visit_prot);
+      then
+        ((
+          (Absyn.ELEMENTITEM(Absyn.ELEMENT(f,r,io,n,Absyn.CLASSDEF(repl,cl),info,constr))::elts_1),pa_2,args_2));
+   
+   /* Visitor failed in elementspec, remove class */
+    case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(finalPrefix = f,redeclareKeywords = r,innerOuter = io,name = n,specification = elt_spec,info = info,constrainClass = constr)) :: elts),pa,visitor,args,visit_prot)
+      equation 
+        ((elts_1,pa_2,args_2)) = traverseInnerClassElements(elts, pa, visitor, args, visit_prot);
+      then
+        ((
+          elts_1,pa_2,args_2));
+                    
     case ((elt :: elts),pa,visitor,args,visit_prot)
-      equation
+      equation 
         ((elts_1,pa_1,args_1)) = traverseInnerClassElements(elts, pa, visitor, args, visit_prot);
       then
         (((elt :: elts_1),pa_1,args_1));
   end matchcontinue;
 end traverseInnerClassElements;
 
-protected function traverseInnerClassElementspec
-"function: traverseInnerClassElementspec
-   Helper function to traverseInnerClassElements
-   inputs:  (Absyn.ElementSpec,
-               Absyn.Path option,
-               ((Absyn.Class  Absyn.Path option  \'a) => (Absyn.Class  Absyn.Path option   \'a)), /* visitor */
-               \'a,
-               bool) /* visit protected elts */
-   outputs: (Absyn.ElementSpec  Absyn.Path option  \'a)"
+protected function traverseInnerClassElementspec 
+"function: traverseInnerClassElementspec  
+   Helperfunction to traverseInnerClassElements"
   input Absyn.ElementSpec inElementSpec;
   input Option<Absyn.Path> inAbsynPathOption;
   input FuncTypeTplAbsyn_ClassAbsyn_PathOptionType_aToTplAbsyn_ClassAbsyn_PathOptionType_a inFuncTypeTplAbsynClassAbsynPathOptionTypeAToTplAbsynClassAbsynPathOptionTypeA;
   input Type_a inTypeA;
-  input Boolean inBoolean;
+  input Boolean inBoolean "visit protected elts";
   output tuple<Absyn.ElementSpec, Option<Absyn.Path>, Type_a> outTplAbsynElementSpecAbsynPathOptionTypeA;
   partial function FuncTypeTplAbsyn_ClassAbsyn_PathOptionType_aToTplAbsyn_ClassAbsyn_PathOptionType_a
     input tuple<Absyn.Class, Option<Absyn.Path>, Type_a> inTplAbsynClassAbsynPathOptionTypeA;
@@ -7704,7 +7755,7 @@ protected function traverseInnerClassElementspec
     replaceable type Type_a subtypeof Any;
   end FuncTypeTplAbsyn_ClassAbsyn_PathOptionType_aToTplAbsyn_ClassAbsyn_PathOptionType_a;
   replaceable type Type_a subtypeof Any;
-algorithm
+algorithm 
   outTplAbsynElementSpecAbsynPathOptionTypeA:=
   matchcontinue (inElementSpec,inAbsynPathOption,inFuncTypeTplAbsynClassAbsynPathOptionTypeAToTplAbsynClassAbsynPathOptionTypeA,inTypeA,inBoolean)
     local
@@ -7715,24 +7766,26 @@ algorithm
       FuncTypeTplAbsyn_ClassAbsyn_PathOptionType_aToTplAbsyn_ClassAbsyn_PathOptionType_a visitor;
       Absyn.ElementSpec elt_spec;
     case (Absyn.CLASSDEF(replaceable_ = repl,class_ = class_),pa,visitor,args,visit_prot)
-      equation
+      equation 
         ((class_1,pa_1,args_1)) = visitor((class_,pa,args));
         ((class_2,pa_2,args_2)) = traverseInnerClass(class_1, pa, visitor, args_1, visit_prot);
       then
         ((Absyn.CLASSDEF(repl,class_2),pa_2,args_2));
-    case (elt_spec,pa,_,args,_) then ((elt_spec,pa,args));
+    case (elt_spec as Absyn.EXTENDS(path=_),pa,_,args,_) then ((elt_spec,pa,args));
+    case (elt_spec as Absyn.IMPORT(import_=_),pa,_,args,_) then ((elt_spec,pa,args));
+    case (elt_spec as Absyn.COMPONENTS(attributes=_),pa,_,args,_) then ((elt_spec,pa,args));      
   end matchcontinue;
 end traverseInnerClassElementspec;
 
-public function isPrimitive
-"function: isPrimitive
-  This function takes a component reference and a program.
+public function isPrimitive 
+"function: isPrimitive  
+  Thisfunction takes a component reference and a program. 
   It returns the true if the refrenced type is a primitive
   type, otherwise it returns false."
   input Absyn.ComponentRef inComponentRef;
   input Absyn.Program inProgram;
   output Boolean outBoolean;
-algorithm
+algorithm 
   outBoolean:=
   matchcontinue (inComponentRef,inProgram)
     local
@@ -7742,17 +7795,17 @@ algorithm
       Absyn.ComponentRef cr;
       Absyn.Program p;
     case (cr,p)
-      equation
+      equation 
         path = Absyn.crefToPath(cr);
         class_ = getPathedClassInProgram(path, p);
         res = isPrimitiveClass(class_, p);
       then
         res;
-    case (Absyn.CREF_IDENT(name = "Real"),_) then true;  /* Instead of elaborating and lookup these in env, we optimize a bit and just return true for these */
-    case (Absyn.CREF_IDENT(name = "Integer"),_) then true;
-    case (Absyn.CREF_IDENT(name = "String"),_) then true;
-    case (Absyn.CREF_IDENT(name = "Boolean"),_) then true;
-    case (_,_) then false;
+    case (Absyn.CREF_IDENT(name = "Real"),_) then true;  /* Instead of elaborating and lookup these in env, we optimize a bit and just return true for these */ 
+    case (Absyn.CREF_IDENT(name = "Integer"),_) then true; 
+    case (Absyn.CREF_IDENT(name = "String"),_) then true; 
+    case (Absyn.CREF_IDENT(name = "Boolean"),_) then true; 
+    case (_,_) then false; 
   end matchcontinue;
 end isPrimitive;
 
@@ -17426,7 +17479,7 @@ algorithm
       uses = AbsynDep.getUsesTransitive(dep,modelName);
       uses = AbsynDep.avlTreeAdd(uses,modelName,{});
       p1 = extractProgram(p,uses);
-      p2 = getTotalModelOnTop(p,modelName) "creates a top model if target is qualified";
+      p2 = getTotalModelOnTop(p,modelName) "creates a top model if target is qualified";      
       p = updateProgram(p1,p2);
     then p;  
   end matchcontinue;
