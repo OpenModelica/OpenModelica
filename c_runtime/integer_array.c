@@ -37,7 +37,7 @@
 #include <assert.h>
 #include <stdarg.h>
 
-static inline modelica_integer integer_get(integer_array_t *a, size_t i)
+modelica_integer integer_get(integer_array_t *a, size_t i)
 {
     return ((modelica_integer *) a->data)[i];
 }
@@ -56,7 +56,6 @@ static inline void integer_set(integer_array_t *a, size_t i, modelica_integer r)
  **
  ** sets all fields in a integer_array, i.e. data, ndims and dim_size.
  **/
-
 void integer_array_create(integer_array_t *dest, modelica_integer *data,
                           int ndims, ...)
 {
@@ -65,6 +64,7 @@ void integer_array_create(integer_array_t *dest, modelica_integer *data,
     base_array_create(dest, data, ndims, ap);
     va_end(ap);
 }
+
 
 void simple_alloc_1d_integer_array(integer_array_t* dest, int n)
 {

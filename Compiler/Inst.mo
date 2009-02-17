@@ -144,6 +144,7 @@ protected import ModUtil;
 protected import VarTransform;
 protected import OptManager;
 protected import HashTable5;
+protected import Print;
 
 public constant String forScopeName="$for loop scope$";
 
@@ -8835,12 +8836,14 @@ algorithm
     case (cache,env,_,pre,csets,ci_state,SCode.ALGORITHM(statements = statements,baseClassPath = bc),impl) /* impl */ 
       equation 
         (cache,env_1) = getDerivedEnv(cache,env, bc) "If algorithm is inherited, find base class environment" ;
-        (cache,statements_1) = instStatements(cache,env_1,pre, statements, SCode.NON_INITIAL(),impl);
+        (cache,statements_1) = instStatements(cache,env_1, pre, statements, SCode.NON_INITIAL(),impl);
       then
         (cache,{DAE.ALGORITHM(Algorithm.ALGORITHM(statements_1))},env,csets,ci_state);
-    case (_,_,_,_,_,_,algSCode,_)
+    case (_,_,_,_,_,_,algSCode as SCode.ALGORITHM(statements = statements),_)
       equation 
-        Debug.fprintln("failtrace", "- Inst.instAlgorithm failed");
+        Debug.fprintln("failtrace", "- Inst.instAlgorithm failed:");
+        // Util.listMap0(statements, Dump.printAlgorithm);
+        // print(Print.getString());
       then
         fail();
   end matchcontinue;
@@ -9090,6 +9093,7 @@ algorithm
         absynStmt = Absyn.ALG_ASSIGN(Absyn.CREF(c1),vb);
 
         (cache,stmt) = instStatement(cache,env,pre,absynStmt,initial_,impl);
+        // debug_print("stmts->", stmt);
       then
         (cache,stmt);
 
@@ -11581,7 +11585,7 @@ algorithm
             Absyn.TPATH(t2,NONE()),
             {Absyn.COMPONENTITEM(Absyn.COMPONENT("VEC__",subscriptList,NONE()),NONE(),NONE())}),
             Absyn.INFO("f",false,0,0,0,0,Absyn.TIMESTAMP(0.0,0.0)),NONE()))};
-
+        // print("decls:" +& Dump.unparseElementitemStrLst(0, decls) +& "\n");
       then (localCache,decls);
   end matchcontinue;
 end createForIteratorArray;

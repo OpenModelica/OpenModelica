@@ -962,7 +962,7 @@ uniontype Statement "There are four kinds of statements.  Assignments (`a := b;\
     (`when E do S; end when;\')."
   record ASSIGN
     Type type_;
-    ComponentRef componentRef;
+    Exp exp1;
     Exp exp;
   end ASSIGN;
 
@@ -6958,7 +6958,7 @@ algorithm
   s := printExp2Str(e);
 end printExpStr;
 
-protected function printExp2Str 
+public function printExp2Str 
 "function: printExp2Str 
   Helper function to printExpStr."
   input Exp inExp;
@@ -7836,9 +7836,9 @@ algorithm
       equation
         true = containWholeDim(cr);
         name = printComponentRefStr(cr); 
-        false = Util.stringContainsChar(name,"$");
+        false = Util.stringContainsChar(name,"$");        
         id = Util.stringAppendList({"$",id});
-        id = Util.stringReplaceChar(id,".","$p");
+        id = Util.stringReplaceChar(id,".","$p");        
       then
         (CREF(CREF_IDENT(id,t2,ssl),ety),1);
     case (e,s,_) then (e,0); 

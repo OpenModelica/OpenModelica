@@ -2394,12 +2394,14 @@ algorithm
       then Exp.CREF_IDENT(name,ty,subs);
     case (VAR(varName = Exp.CREF_QUAL(name,ty,subs,cr2),varKind=STATE()))
       equation
-       failure(0=System.strncmp(derivativeNamePrefix,name,stringLength(derivativeNamePrefix)));
+        failure(0=System.strncmp(derivativeNamePrefix,name,stringLength(derivativeNamePrefix)));
         name = stringAppend(derivativeNamePrefix,name);
       then Exp.CREF_QUAL(name,ty,subs,cr2);
 
 		// For non-states, return name
-    case (VAR(varName = cr)) then cr;
+    case (VAR(varName = cr))
+      equation
+      then cr;
 
   end matchcontinue;
 end varCrefPrefixStates;
@@ -3074,7 +3076,7 @@ end removeSimpleEquations;
 protected function renameDerivatives "function: renameDerivatives
   author: PA
 
-  Renames $DER$x to der(x) for all equations given as argument.
+  Renames $derivative$x to der(x) for all equations given as argument.
 
 "
   input list<Equation> inEquationLst;
@@ -3090,14 +3092,14 @@ algorithm
     case ({}) then {};
     case ((EQUATION(exp = e1,scalar = e2) :: es))
       equation
-        ((e1_1,_)) = Exp.traverseExp(e1, renameDerivativesExp, "$DER$");
-        ((e2_1,_)) = Exp.traverseExp(e2, renameDerivativesExp, "$DER$");
+        ((e1_1,_)) = Exp.traverseExp(e1, renameDerivativesExp, "$derivative$");
+        ((e2_1,_)) = Exp.traverseExp(e2, renameDerivativesExp, "$derivative$");
         es_1 = renameDerivatives(es);
       then
         (EQUATION(e1_1,e2_1) :: es_1);
     case ((SOLVED_EQUATION(componentRef = cr1,exp = e1) :: es))
       equation
-        ((e1_1,_)) = Exp.traverseExp(e1, renameDerivativesExp, "$DER$");
+        ((e1_1,_)) = Exp.traverseExp(e1, renameDerivativesExp, "$derivative$");
         es_1 = renameDerivatives(es);
       then
         (SOLVED_EQUATION(cr1,e1_1) :: es_1);
@@ -3112,7 +3114,7 @@ end renameDerivatives;
 protected function renameMultiDimDerivatives "function: renameMultiDimDerivatives
   author: PA
 
-  Renames $DER$x to der(x) for all array equations given as argument.
+  Renames $derivative$x to der(x) for all array equations given as argument.
 
 "
   input list<MultiDimEquation> inEquationLst;
@@ -3129,8 +3131,8 @@ algorithm
     case ({}) then {};
     case ((MULTIDIM_EQUATION(left= e1,right= e2,dimSize=dims) :: es))
       equation
-        ((e1_1,_)) = Exp.traverseExp(e1, renameDerivativesExp, "$DER$");
-        ((e2_1,_)) = Exp.traverseExp(e2, renameDerivativesExp, "$DER$");
+        ((e1_1,_)) = Exp.traverseExp(e1, renameDerivativesExp, "$derivative$");
+        ((e2_1,_)) = Exp.traverseExp(e2, renameDerivativesExp, "$derivative$");
         es_1 = renameMultiDimDerivatives(es);
       then
         (MULTIDIM_EQUATION(dims,e1_1,e2_1) :: es_1);
@@ -3169,7 +3171,7 @@ end renameDerivativesExp;
 protected function renameDerivatives2 "function: renameDerivatives2
   author: PA
 
-  Renames der(x) to $DER$x for all equations given as argument.
+  Renames der(x) to $derivative$x for all equations given as argument.
 
 "
   input list<Equation> inEquationLst;
@@ -3185,14 +3187,14 @@ algorithm
     case ({}) then {};
     case ((EQUATION(exp = e1,scalar = e2) :: es))
       equation
-        ((e1_1,_)) = Exp.traverseExp(e1, renameDerivativesExp2, "$DER$");
-        ((e2_1,_)) = Exp.traverseExp(e2, renameDerivativesExp2, "$DER$");
+        ((e1_1,_)) = Exp.traverseExp(e1, renameDerivativesExp2, "$derivative");
+        ((e2_1,_)) = Exp.traverseExp(e2, renameDerivativesExp2, "$derivative");
         es_1 = renameDerivatives2(es);
       then
         (EQUATION(e1_1,e2_1) :: es_1);
     case ((SOLVED_EQUATION(componentRef = cr1,exp = e1) :: es))
       equation
-        ((e1_1,_)) = Exp.traverseExp(e1, renameDerivativesExp2, "$DER$");
+        ((e1_1,_)) = Exp.traverseExp(e1, renameDerivativesExp2, "$derivative");
         es_1 = renameDerivatives2(es);
       then
         (SOLVED_EQUATION(cr1,e1_1) :: es_1);
@@ -3206,7 +3208,7 @@ end renameDerivatives2;
 
 protected function renameDerivativesExp2 "function rename_derivatives_exp
 
-  Renames  der(x) to \"$DER$x\"
+  Renames  der(x) to \"$derivative$x\"
 "
   input tuple<Exp.Exp, String> inTplExpExpString;
   output tuple<Exp.Exp, String> outTplExpExpString;
@@ -12537,7 +12539,7 @@ algorithm
         indxs = intString(indx);
         name = Exp.printComponentRefStr(cr);
         c_name = Util.modelicaStringToCStr(name,true);
-        newid = Util.stringAppendList({"%$",c_name});
+        newid = Util.stringAppendList({"%",c_name});        
         etp = makeExpType(tp);
       then
         ((Exp.CREF(cr,etp) :: s1),(Exp.CREF(Exp.CREF_IDENT(newid,etp,{}),etp) :: t1));
@@ -12586,7 +12588,7 @@ algorithm
         name = Exp.printComponentRefStr(cr_1);
         c_name = Util.modelicaStringToCStr(name,true);
         int_dims = Util.listMap(Exp.subscriptsInt(instdims),Util.makeOption);
-        newid = Util.stringAppendList({"$",c_name});
+        newid = c_name; // Util.stringAppendList({"$",c_name});
         etp = makeExpType(tp);
         (s1,t1) = algVariableArrayReplacements(vs);
       then
@@ -12680,7 +12682,7 @@ algorithm
         (s1,t1) = derivativeReplacements(ss);
         name = Exp.printComponentRefStr(s);
         c_name = Util.modelicaStringToCStr(name,true);
-        newid = Util.stringAppendList({derivativeNamePrefix,"$",c_name})  ;
+        newid = Util.stringAppendList({derivativeNamePrefix, c_name}); // "$",c_name})  ;
         // Derivatives are always or REAL type
       then
         ((Exp.CALL(Absyn.IDENT("der"),{Exp.CREF(s,Exp.REAL())},false,true,Exp.REAL()) :: s1),
@@ -12964,7 +12966,7 @@ algorithm
     case (name,i,_,var_prefix) /* varible prefix, \"%\" or \"\" rule	int_string(i) => is & 	Util.string_append_list({var_prefix,\"y{\",is,\"}\"}) => id 	------------------- 	transform_variable(i, VARIABLE,var_prefix) => Exp.CREF_IDENT(id,{}) rule	int_string(i) => is & 	Util.string_append_list({var_prefix,\"x{\",is,\"}\"}) => id 	------------------- 	transform_variable(i, STATE,var_prefix) => Exp.CREF_IDENT(id,{}) rule	int_string(i) => is & 	Util.string_append_list({var_prefix,\"y{\",is,\"}\"}) => id 	------------------- 	transform_variable(i, DUMMY_DER,var_prefix) => Exp.CREF_IDENT(id,{}) rule	int_string(i) => is & 	Util.string_append_list({var_prefix,\"y{\",is,\"}\"}) => id 	------------------- 	transform_variable(i, DUMMY_STATE,var_prefix) => Exp.CREF_IDENT(id,{}) rule	int_string(i) => is & 	Util.string_append_list({var_prefix,\"y{\",is,\"}\"}) => id 	------------------- 	transform_variable(i, DISCRETE,var_prefix) => Exp.CREF_IDENT(id,{}) rule	int_string(i) => is & 	Util.string_append_list({var_prefix,\"p{\",is,\"}\"}) => id 	------------------- 	transform_variable(i, PARAM,var_prefix) => Exp.CREF_IDENT(id,{}) rule	int_string(i) => is & 	Util.string_append_list({var_prefix,\"p{\",is,\"}\"}) => id 	------------------- 	transform_variable(i, CONST,var_prefix) => Exp.CREF_IDENT(id,{}) */
       equation
         id_1 = Util.modelicaStringToCStr(name,true);
-        id = Util.stringAppendList({var_prefix,"$",id_1});
+        id = Util.stringAppendList({var_prefix, id_1}); // "$",id_1});
       then
         Exp.CREF_IDENT(id,Exp.OTHER(),{});
   end matchcontinue;

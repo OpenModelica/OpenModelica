@@ -35,7 +35,7 @@
 #include <assert.h>
 #include <stdarg.h>
 
-static inline modelica_boolean boolean_get(boolean_array_t *a, size_t i)
+modelica_boolean boolean_get(boolean_array_t *a, size_t i)
 {
     return ((modelica_boolean *) a->data)[i];
 }

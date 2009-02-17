@@ -477,7 +477,7 @@ algorithm
       Boolean b1;
       Algorithm.Ident id1;
     case ({},_,_) then {}; 
-    case ((Algorithm.ASSIGN(type_ = tp,(exp1 = e2),exp = e) :: xs),repl,condExpFunc)
+    case ((Algorithm.ASSIGN(type_ = tp,exp1 = e2,exp = e) :: xs),repl,condExpFunc)
       equation 
         e_1 = replaceExp(e, repl, condExpFunc);
         e_2 = replaceExp(e2, repl, condExpFunc);
@@ -738,7 +738,7 @@ algorithm
           print(s);
         Debug.fprint("addrepl", s);*/
         ht_1 = HashTable2.add((src_1, dst_1),ht);
-        invHt_1 = addReplacementInv(invHt, src_1, dst_1);       
+        invHt_1 = addReplacementInv(invHt, src_1, dst_1);
       then
         REPLACEMENTS(ht_1,invHt_1);
     case (_,_,_)

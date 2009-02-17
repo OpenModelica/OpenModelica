@@ -3818,9 +3818,11 @@ algorithm
         false = OptManager.getOption("translateDAEString");
         then
           str;
-    case(str,false) equation
-      res_str = "$"+& modelicaStringToCStr1(str, replaceStringPatterns);     
-    then res_str;    
+    case(str,false) 
+      equation
+        res_str = "$"+& modelicaStringToCStr1(str, replaceStringPatterns);
+        // debug_print("prefix$", res_str);
+      then res_str;    
     case(str,true) equation
       str = modelicaStringToCStr2(str);
     then str;
@@ -3835,7 +3837,7 @@ algorithm
   outDerName := matchcontinue(derName)
   local String name;
     case(derName) equation
-      0 = System.strncmp(derName,"DER(",4);
+      0 = System.strncmp(derName,"der(",4);
       _::name::_= System.strtok(derName,"()");
       // "$derivative" should be replaced by DAELow.derivativeNamePrefix when circular imports possible
       name = "$derivative" +& modelicaStringToCStr(name,false); 

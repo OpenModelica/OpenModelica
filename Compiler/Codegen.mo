@@ -2748,6 +2748,27 @@ algorithm
   end matchcontinue;
 end generateAlgorithmWhenStatement;
 
+protected function buildCrefFromAsub
+  input Exp.ComponentRef cref;
+  input list<Exp.Exp> subs;
+  output Exp.ComponentRef cRefOut;
+algorithm
+  cRefOut := matchcontinue(cref, subs)
+    local 
+      Exp.Exp sub; 
+      list<Exp.Exp> rest; 
+      Exp.ComponentRef crNew;
+      list<Exp.Subscript> indexes;
+    case (cref, {}) then cref;
+    case (cref, subs)
+      equation
+        indexes = Util.listMap(subs, Exp.makeIndexSubscript);
+        crNew = Exp.subscriptCref(cref, indexes); 
+      then
+        crNew;
+  end matchcontinue; 
+end buildCrefFromAsub;
+
 protected function generateAlgorithmStatement 
 "function : generateAlgorithmStatement
    returns: CFunction | Code 
@@ -2788,6 +2809,32 @@ algorithm
         (cfn1,var1,tnr1) = generateExpression(exp, tnr, context);
         (cfn2,var2,tnr2) = generateScalarLhsCref(typ, cref, tnr1, context);
         stmt = Util.stringAppendList({var2," = ",var1,";"});
+        cfn_1 = cMergeFn(cfn1, cfn2);
+        cfn = cAddStatements(cfn_1, {stmt});
+      then
+        (cfn,tnr2);
+    
+    /* adrpo: handle ASUB on LHS */ 
+    case (Algorithm.ASSIGN(type_ = typ,exp1 = asub as Exp.ASUB(exp = Exp.CREF(cref,t), sub=subs),exp = exp),tnr,context)
+      local 
+        list<Exp.Exp> subs; Exp.Exp asub; Exp.ComponentRef crefBuild;
+      equation
+        Debug.fprintln("cgas", "generate_algorithm_statement");
+        (cfn1,var1,tnr1) = generateExpression(exp, tnr, context);
+        crefBuild = buildCrefFromAsub(cref,subs);
+        (cfn2,var2,tnr2) = generateScalarLhsCref(typ, crefBuild, tnr1, context);
+        stmt = Util.stringAppendList({var2," = ",var1,";"});
+        cfn_1 = cMergeFn(cfn1, cfn2);
+        cfn = cAddStatements(cfn_1, {stmt});
+      then
+        (cfn,tnr2);        
+
+    case (Algorithm.ASSIGN(type_ = typ,exp1 = e1,exp = exp),tnr,context)
+      equation
+        Debug.fprintln("cgas", "generate_algorithm_statement");
+        (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);        
+        (cfn2,var2,tnr2) = generateExpression(exp, tnr1, context);
+        stmt = Util.stringAppendList({var1," = ",var2,";"});
         cfn_1 = cMergeFn(cfn1, cfn2);
         cfn = cAddStatements(cfn_1, {stmt});
       then
@@ -4164,10 +4211,45 @@ algorithm
         cfn1_2 = cAddBlockAroundStatements(cfn1_2);
       then (cfn1_2,var,tnr4);
 
-    case (Exp.ASUB(exp = _),_,_)
+    /* handle the easy case */
+    /* range[x] */
+    case (Exp.ASUB(exp = e as Exp.RANGE(ty = t), sub={idx}),tnr,context)
+      local 
+        String mem_decl, mem_var, get_mem_stmt, rest_mem_stmt, tShort;
+        Integer tnr_mem;
+        CFunction mem_fn;
+        Exp.Exp idx;
       equation
-        Debug.fprint("failtrace",
-          "# Codegen.generate_expression: asub not implemented\n");
+        (mem_decl,mem_var,tnr_mem) = generateTempDecl("state", tnr);
+        get_mem_stmt = Util.stringAppendList({mem_var," = get_memory_state();"});
+        rest_mem_stmt = Util.stringAppendList({"restore_memory_state(",mem_var,");"});
+        (cfn1,var1,tnr1) = generateExpression(e, tnr_mem, context);
+        type_string = expTypeStr(t, false);
+        tShort = expShortTypeStr(t);
+        (tdecl,tvar2,tnr2) = generateTempDecl(type_string, tnr1);
+        (cfn2,var2,tnr2) = generateExpression(idx, tnr2, context);
+        stmt = Util.stringAppendList({tvar2, " = ", tShort, "_get(&", var1, ", ", var2, ");"});
+        cfn1 = cMergeFn(cfn1, cfn2);
+        cfn = cAddVariables(cfn1, {mem_decl,tdecl});
+        cfn = cPrependStatements(cfn, {get_mem_stmt});
+        cfn = cAddStatements(cfn, {stmt, rest_mem_stmt});
+      then
+        (cfn,tvar2,tnr2);
+     
+    // cref[x, y] - try to transform it into a cref 
+    case (Exp.ASUB(exp = e as Exp.CREF(cref,t), sub=subs),tnr,context)
+      local 
+        list<Exp.Exp> subs;
+        Exp.ComponentRef cref, crefBuild;
+      equation
+        crefBuild = buildCrefFromAsub(cref, subs);
+        (cfn,var,tnr_1) = generateRhsCref(crefBuild, t, tnr, context);
+      then
+        (cfn,var,tnr_1);
+    
+    case (Exp.ASUB(exp = _),tnr,context)
+      equation
+        Debug.fprint("failtrace", "# Codegen.generate_expression: asub not implemented: " +& Exp.printExp2Str(inExp) +& "\n");
       then
         fail();
 

@@ -1302,7 +1302,8 @@ algorithm
         str_arr_2;
     case ((v :: vs),str_arr,nx,ny,np)
       equation
-        print("generate_fixed_vector3 failed\n");
+        print("generateAttrVectorDiscrete2 failed\n");
+        // debug_print("variable:", v);
       then
         fail();
   end matchcontinue;
@@ -1487,6 +1488,7 @@ algorithm
     case ((v :: vs),str_arr,nx,ny,np)
       equation
         print("generate_fixed_vector3 failed\n");
+        // debug_print("variable:", v);
       then
         fail();
   end matchcontinue;
@@ -2599,7 +2601,7 @@ algorithm
         cr_name = Exp.printComponentRefStr(cr_1);
         cr_name_1 = Util.modelicaStringToCStr(cr_name,true);
         indx_str = intString(indx);
-        res = Util.stringAppendList({"#define $",cr_name_1," ",array,"[",indx_str,"]\n"});
+        res = Util.stringAppendList({"#define ",cr_name_1," ",array,"[",indx_str,"]\n"});
       then
         res;
     case (_,_,_,_) then "";
@@ -4739,7 +4741,7 @@ algorithm
         // We need to strip subs from origname since they are removed in cr.
         cr_1 = Exp.crefStripLastSubs(origname);
         // Since we use origname we need to replace '.' with '$P' manually.
-        cr_1_str = stringAppend("$",Util.modelicaStringToCStr(Exp.printComponentRefStr(cr_1),true));
+        cr_1_str = Util.modelicaStringToCStr(Exp.printComponentRefStr(cr_1),true); // stringAppend("$",Util.modelicaStringToCStr(Exp.printComponentRefStr(cr_1),true));
         cr_1 = Exp.CREF_IDENT(cr_1_str,Exp.OTHER(),{});
         (e1,e2) = solveTrivialArrayEquation(cr_1,e1,e2);
         (s1,cg_id_1,f1) = generateSingleArrayEqnCode2(cr_1, cr_1, e1, e2, cg_id);
@@ -5983,8 +5985,9 @@ algorithm
         = getEquationAndSolvedVar(e, eqns, vars, ass2) "Solving the state s means solving for der(s)" ;
         indxs = intString(indx);
         name = Exp.printComponentRefStr(cr);
-        c_name = Util.modelicaStringToCStr(name,true);
-        id = Util.stringAppendList({DAELow.derivativeNamePrefix,c_name});
+        // c_name = Util.modelicaStringToCStr(name,true);
+        // id = Util.stringAppendList({DAELow.derivativeNamePrefix,c_name});
+        id = Util.stringAppendList({DAELow.derivativeNamePrefix, name});
         cr_1 = Exp.CREF_IDENT(id,Exp.REAL(),{});
         varexp = Exp.CREF(cr_1,Exp.REAL());
         expr = Exp.solve(e1, e2, varexp);
@@ -6222,7 +6225,7 @@ algorithm
       then
         res;
         
-    case (_,_,_)
+    case (p,paths,allpaths)
       equation
         print("SimCodegen.generateFunctions3 failed\n");
       then

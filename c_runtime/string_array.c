@@ -35,7 +35,7 @@
 #include <assert.h>
 #include <stdarg.h>
 
-static inline modelica_string_t string_get(string_array_t *a, size_t i)
+modelica_string_t string_get(string_array_t *a, size_t i)
 {
     return ((modelica_string_t *) a->data)[i];
 }

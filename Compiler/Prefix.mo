@@ -346,6 +346,7 @@ algorithm
       list<list<tuple<Exp.Exp, Boolean>>> xs_1,xs;
       String id,s;
       Env.Cache cache;
+    case (cache,_,e,NOPRE()) then (cache,e);       
     case (cache,_,(e as Exp.ICONST(integer = _)),_) then (cache,e); 
     case (cache,_,(e as Exp.RCONST(real = _)),_) then (cache,e); 
     case (cache,_,(e as Exp.SCONST(string = _)),_) then (cache,e); 
@@ -670,17 +671,16 @@ algorithm
       list<Exp.Statement> localAccList,rest;
       Prefix pre;
     case (localCache,_,{},localAccList,_) then (localCache,localAccList);
-    case (localCache,localEnv,Exp.ASSIGN(t,cRef,e) :: rest,localAccList,pre)  
+    case (localCache,localEnv,Exp.ASSIGN(t,e1,e) :: rest,localAccList,pre)  
       local
       	Exp.Type t;
-    		Exp.ComponentRef cRef;
-    		Exp.Exp e;
+    		Exp.Exp e,e1;
     		Exp.Statement elem;
     		list<Exp.Statement> elems;
     	equation
-    	  cRef = prefixCref(pre,cRef);
+    	  (localCache,e1) = prefixExp(localCache,localEnv,e1,pre);
     	  (localCache,e) = prefixExp(localCache,localEnv,e,pre);  
-    	  elem = Exp.ASSIGN(t,cRef,e);
+    	  elem = Exp.ASSIGN(t,e1,e);
     	  localAccList = listAppend(localAccList,Util.listCreate(elem));
     	  (localCache,elems) = prefixStatements(localCache,localEnv,rest,localAccList,pre);
     	then (localCache,elems);  

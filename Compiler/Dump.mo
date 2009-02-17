@@ -1274,7 +1274,7 @@ algorithm
   end matchcontinue;
 end printAnnotation;
 
-protected function unparseElementitemStrLst 
+public function unparseElementitemStrLst 
 "function: unparseElementitemStrLst
   Prettyprints a list of ElementItem to a string."
   input Integer inInteger;
@@ -4171,6 +4171,12 @@ algorithm
         s = Util.stringAppendList({s1, " ", s2, s3, s4, s5, "\n\tend ", s1});
       then
         s;
+    case Absyn.VALUEBLOCK(_,_,result)
+    local Absyn.Exp result;
+      equation
+        s1 = printExpStr(result);
+        s = "valueblock(..., result=" +& s1 +& ")";
+      then s;         
     case (_) then "#UNKNOWN EXPRESSION#";
   end matchcontinue;
 end printExpStr;

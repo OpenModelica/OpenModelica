@@ -618,6 +618,7 @@ algorithm
         
         Types.Properties prop;
       equation 
+        // debug_print("elabExp->VALUEBLOCKALGORITHMS", b);
         env2 = Env.openScope(env, false, NONE());
         
         // Tranform declarations such as Real x,y; to Real x; Real y;
@@ -630,10 +631,10 @@ algorithm
         ld_mod = Inst.addNomod(ld2);
         
         env2 = Inst.addComponentsToEnv(env2, Types.NOMOD(), Prefix.NOPRE(), 
-          Connect.SETS({},{},{},{}), ClassInf.UNKNOWN("temp"), ld_mod, {}, {}, {}, impl);    
+          Connect.SETS({},{},{},{}), ClassInf.FUNCTION("dummieFunc"), ld_mod, {}, {}, {}, impl);    
         
         (cache,dae1,env2,_,_,_) = Inst.instElementList(cache,env2,
-          Types.NOMOD(), Prefix.NOPRE(), Connect.SETS({},{},{},{}), ClassInf.UNKNOWN("temp"),
+          Types.NOMOD(), Prefix.NOPRE(), Connect.SETS({},{},{},{}), ClassInf.FUNCTION("dummieFunc"),
           ld_mod,{},impl);
         
         //----------------------------------------------------------------------
@@ -643,16 +644,18 @@ algorithm
         //----------------------------------------------------------------------
         // Convert into Exp records
         dae2 = Convert.fromDAEElemsToExpElems(dae1_2,{});
-        
+        // debug_print("before->Inst.instAlgorithmitems",b);        
         (cache,b_alg) = Inst.instAlgorithmitems(cache,env2,Prefix.NOPRE(),b,SCode.NON_INITIAL(),true);
-        
+        // debug_print("after->Inst.instAlgorithmitems","");
         // Convert into Exp records
-        b_alg_2 = Convert.fromAlgStatesToExpStates(b_alg,{});		    
+        b_alg_2 = Convert.fromAlgStatesToExpStates(b_alg,{});
+        // debug_print("after->Convert.fromAlgStatesToExpStates","");		    
         b_alg_dae = Exp.ALGORITHM(Exp.ALGORITHM2(b_alg_2));
-        
+        // debug_print("before -> res",res);
         (cache,res2,prop as Types.PROP(tp,_),st) = elabExp(cache,env2,res,impl,st,doVect);
+        // debug_print("after -> res",res2);
         tp_1 = Types.elabType(tp);
-        
+        // debug_print("end",tp_1);        
       then (cache,Exp.VALUEBLOCK(tp_1,dae2,b_alg_dae,res2),prop,st);
         
         //Equations must converted into Algorithm statements
@@ -677,6 +680,7 @@ algorithm
         
         Types.Properties prop;
       equation 
+        // debug_print("elabExp->VALUEBLOCKEQUATIONS", b2);
         // Equations are transformed into algorithm assignments
         b =  fromEquationsToAlgAssignments(b2,{});       
         
@@ -692,10 +696,10 @@ algorithm
         ld_mod = Inst.addNomod(ld2);
         
         env2 = Inst.addComponentsToEnv(env2, Types.NOMOD(), Prefix.NOPRE(), 
-          Connect.SETS({},{},{},{}), ClassInf.UNKNOWN("temp"), ld_mod, {}, {}, {}, impl);    
+          Connect.SETS({},{},{},{}), ClassInf.FUNCTION("dummieFunc"), ld_mod, {}, {}, {}, impl);    
         
         (cache,dae1,env2,_,_,_) = Inst.instElementList(cache,env2,
-          Types.NOMOD(), Prefix.NOPRE(), Connect.SETS({},{},{},{}), ClassInf.UNKNOWN("temp"),
+          Types.NOMOD(), Prefix.NOPRE(), Connect.SETS({},{},{},{}), ClassInf.FUNCTION("dummieFunc"),
           ld_mod,{},impl);
         
         //----------------------------------------------------------------------

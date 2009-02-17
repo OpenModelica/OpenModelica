@@ -41,6 +41,9 @@ typedef double modelica_real;
 
 typedef base_array_t real_array_t;
 
+/* Indexing */
+modelica_real real_get(real_array_t *a, size_t i);
+
 /* Setting the fields of a real_array */
 void real_array_create(real_array_t *dst, modelica_real *data, int ndims, ...);
 

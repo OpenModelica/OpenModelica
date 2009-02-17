@@ -37,7 +37,7 @@
 #include <assert.h>
 #include <stdarg.h>
 
-static inline modelica_real real_get(real_array_t *a, size_t i)
+modelica_real real_get(real_array_t *a, size_t i)
 {
     return ((modelica_real *) a->data)[i];
 }

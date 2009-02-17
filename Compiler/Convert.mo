@@ -417,7 +417,7 @@ algorithm
     	first2 = fromAlgStateToExpState(first);
     	localAccList = listAppend(localAccList,Util.listCreate(first2));
      	lst = fromAlgStatesToExpStates(rest,localAccList);
-    	then lst;
+  	then lst;
   end matchcontinue;
 end fromAlgStatesToExpStates;
 
@@ -427,14 +427,13 @@ public function fromAlgStateToExpState "function: fromAlgStateToExpState
 	output Exp.Statement outState;
 algorithm
   outState := matchcontinue (algState)
-    case (Algorithm.ASSIGN(t,Exp.CREF(cRef,_),e))
+    case (Algorithm.ASSIGN(t,e1,e))
       local
     		Exp.Type t;
-    		Exp.ComponentRef cRef;
-    		Exp.Exp e;
+    		Exp.Exp e,e1;
     		Exp.Statement elem;
       equation
-        elem = Exp.ASSIGN(t,cRef,e);
+        elem = Exp.ASSIGN(t,e1,e);
       then elem;
     case (Algorithm.TUPLE_ASSIGN(t,expLst,e))
     	local
@@ -453,7 +452,7 @@ algorithm
          Exp.Statement elem;
        equation
          elem = Exp.ASSIGN_ARR(t,compRef,e);
-         then elem;
+       then elem;
     case (Algorithm.IF(e,sLst,else_))
       	local
       	  Exp.Exp e;
@@ -583,6 +582,12 @@ algorithm
 		  equation
 		    elem = Exp.LABEL(s);
 		  then elem;
+		case (alg)
+		  local
+		    Algorithm.Statement alg;
+		  equation
+		    debug_print("fromAlgStateToExpState failed at:", alg);
+		  then fail();
   end matchcontinue;
 end fromAlgStateToExpState;
 
@@ -1018,14 +1023,13 @@ public function fromExpStateToAlgState "function: fromExpStateToAlgState
 algorithm
   outState :=
   matchcontinue (algState)
-    case (Exp.ASSIGN(t,cRef,e))
+    case (Exp.ASSIGN(t,e1,e))
       local
     		Exp.Type t;
-    		Exp.ComponentRef cRef;
-    		Exp.Exp e;
+    		Exp.Exp e,e1;
     		Algorithm.Statement elem;
       equation
-        elem = Algorithm.ASSIGN(t,Exp.CREF(cRef,t),e);
+        elem = Algorithm.ASSIGN(t,e1,e);
       then elem;
     case (Exp.TUPLE_ASSIGN(t,expLst,e))
     	local

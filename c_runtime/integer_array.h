@@ -40,6 +40,9 @@ typedef int modelica_integer;
 
 typedef base_array_t integer_array_t;
 
+/* indexing */
+modelica_integer integer_get(integer_array_t *a, size_t i);
+
 /* Settings the fields of a integer_array */
 void integer_array_create(integer_array_t *dst, modelica_integer *data,
                           int ndims, ...);

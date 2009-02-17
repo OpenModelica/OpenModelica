@@ -39,6 +39,9 @@
 
 typedef base_array_t string_array_t;
 
+/* Indexing */
+modelica_string_t string_get(string_array_t *a, size_t i);
+
 /* Setting the fields of a string_array */
 void string_array_create(string_array_t *dst, modelica_string_t *data, int ndims, ...);
 
