@@ -373,7 +373,6 @@ algorithm
   		    	outv;  		  
   		  case (REAL(rv1),INTEGER(iv2), POWOP)
   		    equation
-  		      print(" REAL-INTEGER \n");
   		      rv2 = intReal(iv2);
   		      rv3 = realPow(rv1, rv2);
   		  then 
