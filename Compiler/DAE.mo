@@ -5754,7 +5754,7 @@ algorithm(outStmts,oextraArg) := matchcontinue(inStmts,func,extraArg)
       list<Integer> li;
   case ({},_,extraArg) then ({},extraArg);
       
-  case ((Algorithm.ASSIGN(type_ = tp,(exp1 = e2),exp = e) :: xs),func,extraArg)
+  case ((Algorithm.ASSIGN(type_ = tp,exp1 = e2,exp = e) :: xs),func,extraArg)
     equation 
       (e_1,extraArg) = func(e, extraArg);
       (e_2,extraArg) = func(e2, extraArg);
