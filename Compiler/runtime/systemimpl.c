@@ -1474,6 +1474,91 @@ RML_BEGIN_LABEL(System__hash)
 }
 RML_END_LABEL
 
+int fileExistsLocal(char * s){
+	int ret=-1;
+	WIN32_FIND_DATA FileData;
+	HANDLE sh;
+	sh = FindFirstFile(s, &FileData);
+	if (sh == INVALID_HANDLE_VALUE) {
+		ret = -1;
+	}
+	else {
+		if ((FileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0) {
+			ret = -1;
+		}
+		else {
+			ret = 0;
+		}
+		FindClose(sh);
+	}
+return ret;
+}
+
+RML_BEGIN_LABEL(System__getPackageFileNames)
+{
+	char* dir = RML_STRINGDATA(rmlA0);
+	char* fileName = RML_STRINGDATA(rmlA1);
+    char * strSearch = (char*)malloc(sizeof(char*)*(strlen(dir)+strlen(fileName)+10));
+    char * tmpSearchString = (char*)malloc(sizeof(char*)*MAX_PATH);
+    int mallocSize = MAX_PATH,current=0;
+    char * retString = (char*)malloc(mallocSize*sizeof(char*));
+    int ret_val;
+    void *res;
+    WIN32_FIND_DATA FileData;
+    HANDLE sh;
+    
+    sprintf(strSearch,"%s\\*\0",dir);    
+	sh = FindFirstFile(strSearch, &FileData);
+	
+	if (sh == INVALID_HANDLE_VALUE) {
+		printf(" invalid\n");
+	}
+	else {
+		if ((FileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0) {			
+			sprintf(tmpSearchString,"%s\\%s\\%s",dir,FileData.cFileName,fileName);
+			if(fileExistsLocal(tmpSearchString)==0){
+				if(strlen(FileData.cFileName)+current>mallocSize){
+					mallocSize *= 2;
+					retString = (char *)realloc(retString,mallocSize);
+				}
+				if(current==0){
+					sprintf(retString,"%s",FileData.cFileName);
+				}
+				else{
+					sprintf(retString,",%s",FileData.cFileName);
+				}
+				current +=strlen(FileData.cFileName)+1;
+			}
+		}
+	}
+	while(FindNextFile(sh, &FileData) != 0){
+		if ((FileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0) {
+			sprintf(tmpSearchString,"%s\\%s\\%s",dir,FileData.cFileName,fileName);
+			if(fileExistsLocal(tmpSearchString)==0){
+				if(strlen(FileData.cFileName)+current>mallocSize){
+					mallocSize *= 2;
+					retString = (char *)realloc(retString,mallocSize);
+				}
+				if(current==0){
+					sprintf(retString,"%s",FileData.cFileName);
+				}
+				else{
+					sprintf(retString,"%s,%s",retString,FileData.cFileName);
+				}
+				current +=strlen(FileData.cFileName)+1;
+			}
+		}
+	}
+	FindClose(sh);
+	//printf(" to return: %s\n",retString);
+	rmlA0 = (void*) mk_scon(retString);
+	free(strSearch);
+	free(tmpSearchString);
+	free(retString);
+	RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
 RML_BEGIN_LABEL(System__directoryExists)
 {
 	char* str = RML_STRINGDATA(rmlA0);
@@ -1481,10 +1566,8 @@ RML_BEGIN_LABEL(System__directoryExists)
 	void *res;
 	WIN32_FIND_DATA FileData;
 	HANDLE sh;
-
 	if (str == NULL)
 		RML_TAILCALLK(rmlFC);
-
 	sh = FindFirstFile(str, &FileData);
 	if (sh == INVALID_HANDLE_VALUE) {
 		ret_val = 1;
@@ -1498,9 +1581,7 @@ RML_BEGIN_LABEL(System__directoryExists)
 		}
 		FindClose(sh);
 	}
-
 	rmlA0 = (void*) mk_icon(ret_val);
-
 	RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
@@ -3416,6 +3497,61 @@ RML_BEGIN_LABEL(System__groupDelimiter)
   rmlA0 = (void*) mk_scon(":");
 
   RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+char *path_cat (const char *str1, char *str2,char *fileString) {
+    size_t str1_len = strlen(str1),str2_len = strlen(str2);
+    struct stat buf;
+    char *result;
+    int ret_val;
+
+    result = (char *)malloc(PATH_MAX*sizeof( *result));
+    if(strcmp(str2,"..") ==0 || strcmp(str2,".")==0){ result[0]= '\0'; return result;}
+    sprintf(result,"%s%s/%s",str1,str2,fileString);
+    ret_val = stat(result, &buf);
+
+    if (ret_val == 0 && buf.st_mode & S_IFREG) {
+            return result;
+    }
+    result[0]='\0';
+    return result;
+}
+
+
+RML_BEGIN_LABEL(System__getPackageFileNames)
+{
+    char* dir_path = RML_STRINGDATA(rmlA0);
+    char* fileName = RML_STRINGDATA(rmlA1);
+    struct dirent *dp;
+    int mallocSize = PATH_MAX,current=0;
+    char * retString = (char*)malloc(mallocSize*sizeof(char*));
+    // enter existing path to directory below
+    DIR *dir = opendir(dir_path);
+    while ((dp=readdir(dir)) != NULL) {
+            char *tmp;
+            tmp = path_cat(dir_path, dp->d_name, fileName);
+            if(strlen(tmp)>0){
+                if(strlen(dp->d_name)+current>mallocSize){
+                    mallocSize *= 2;
+                    retString = (char *)realloc(retString,mallocSize);
+                }
+                if(current==0){
+                    sprintf(retString,"%s",dp->d_name);
+                }
+                else{
+                    sprintf(retString,"%s,%s",retString,dp->d_name);
+                }
+                current +=strlen(dp->d_name)+1;
+            }
+            free(tmp);
+            tmp=NULL;
+    }
+    closedir(dir);
+    //printf(" res string linux: %s\n" , retString);
+    rmlA0 = (void*) mk_scon(retString);
+    free(retString);
+    RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 

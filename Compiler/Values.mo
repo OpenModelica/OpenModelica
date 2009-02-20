@@ -357,6 +357,14 @@ algorithm
   		  then 
   		    	REAL(rv3);    		    			  
   		  //POW
+  		   case (INTEGER(iv1),INTEGER(iv2), POWOP) // this means indirect that we are dealing with decimal numbers (a^(-b)) = 1/a^b
+  		    equation
+  		      true = (iv2 < 0);
+  		      rv1 = intReal(iv1);
+  		      rv2 = intReal(iv2);
+  		      rv3 = realPow(rv1, rv2);
+  		  then 
+  		    	REAL(rv3); 
   		  case (INTEGER(iv1),INTEGER(iv2), POWOP)
   		    equation
   		      e = Exp.safeIntOp(iv1,iv2,Exp.POWOP);
@@ -365,6 +373,7 @@ algorithm
   		    	outv;  		  
   		  case (REAL(rv1),INTEGER(iv2), POWOP)
   		    equation
+  		      print(" REAL-INTEGER \n");
   		      rv2 = intReal(iv2);
   		      rv3 = realPow(rv1, rv2);
   		  then 

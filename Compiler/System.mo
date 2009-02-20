@@ -388,6 +388,14 @@ public function regularFileExists
   external "C" ;
 end regularFileExists;
 
+public function getPackageFileNames
+  input String inString1;
+  input String inString2;
+  output String outString;
+  
+  external "C" ;
+end getPackageFileNames;
+
 public function directoryExists
   input String inString;
   output Integer outInteger;

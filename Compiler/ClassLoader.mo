@@ -109,7 +109,7 @@ algorithm
   0 := System.regularFileExists(filename);
 end existRegularFile;
 
-protected function existDirectoryFile 
+public function existDirectoryFile 
 "function: existDirectoryFile 
   Checks if a directory exist"
   input String filename;

@@ -1541,13 +1541,13 @@ public function modEquation "function: modEquation
 "
   input Types.Mod inMod;
   output Option<Types.EqMod> outTypesEqModOption;
-algorithm 
+algorithm
   outTypesEqModOption:=
   matchcontinue (inMod)
     local Option<Types.EqMod> e;
-    case Types.NOMOD() then NONE; 
-    case Types.REDECL(finalPrefix = _) then NONE; 
-    case Types.MOD(eqModOption = e) then e; 
+    case Types.NOMOD() then NONE;
+    case Types.REDECL(finalPrefix = _) then NONE;
+    case Types.MOD(eqModOption = e) then e;
   end matchcontinue;
 end modEquation;
 
