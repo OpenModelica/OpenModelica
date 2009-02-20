@@ -4734,12 +4734,91 @@ algorithm
   end matchcontinue;
 end elabBuiltinScalar;
 
+protected function elabBuiltinSkew "
+  author: PA
+ 
+  This function handles the built in skew operator.
+ 
+"
+	input Env.Cache inCache;
+  input Env.Env inEnv;
+  input list<Absyn.Exp> inAbsynExpLst;
+  input list<Absyn.NamedArg> inNamedArg;  
+  input Boolean inBoolean;
+  output Env.Cache outCache;
+  output Exp.Exp outExp;
+  output Types.Properties outProperties;
+algorithm 
+  (outCache,outExp,outProperties):=
+  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
+    local
+      Exp.Exp e1,e2;
+      tuple<Types.TType, Option<Absyn.Path>> tp1,tp2;
+      Types.Const c1,c2,c;
+      Boolean scalar1,scalar2;
+      list<Env.Frame> env;
+      Boolean impl;
+      Env.Cache cache;
+      Absyn.Exp v1,v2;
+      list<Exp.Exp> expl1,expl2;
+      list<list<tuple<Exp.Exp,Boolean>>> mexpl;
+      Exp.Type etp1,etp2,etp,etp3;
+      Types.Type eltTp;
+
+			//First, try symbolic simplification      
+    case (cache,env,{v1},_,impl) equation
+      (cache,Exp.ARRAY(etp1,scalar1,expl1),Types.PROP(tp1,c1),_) = elabExp(cache,env, v1, impl, NONE,true);
+      {3} = Types.getDimensionSizes(tp1);
+      mexpl = elabBuiltinSkew2(expl1,scalar1);
+      etp3 = Types.elabType(tp1);
+      tp1 = Types.liftArray(tp1,SOME(3));      
+      then 
+        (cache,Exp.MATRIX(etp3,3,mexpl),Types.PROP(tp1,c1));
+
+		//Fallback, use builtin function skew
+    case (cache,env,{v1},_,impl) equation
+      (cache,e1,Types.PROP(tp1,c1),_) = elabExp(cache,env, v1, impl, NONE,true);
+       {3} = Types.getDimensionSizes(tp1);
+       etp = Exp.typeof(e1);
+       eltTp = Types.arrayElementType(tp1);
+       tp1 = Types.liftArray(Types.liftArray(eltTp,SOME(3)),SOME(3));
+       then (cache,Exp.CALL(Absyn.IDENT("skew"),{e1},false,true,Exp.T_ARRAY(etp,{SOME(3),SOME(3)})),
+         		 Types.PROP(tp1,Types.C_VAR()));
+  end matchcontinue;
+end elabBuiltinSkew;
+
+protected function elabBuiltinSkew2 "help function to elabBuiltinSkew"
+	input list<Exp.Exp> v1;
+	input  Boolean scalar;
+	output list<list<tuple<Exp.Exp,Boolean>>> res;
+algorithm
+  res := matchcontinue(v1,scalar)
+  local Exp.Exp x1,x2,x3,zero,a11,a12,a13,a21,a22,a23,a31,a32,a33;
+    Boolean s;
+ 		
+ 		// skew(x)
+    case({x1,x2,x3},s) equation
+        zero = Exp.makeConstZero(Exp.typeof(x1));
+        a11 = zero;
+        a12 = Exp.negate(x3);
+        a13 = x2;
+        a21 = x3;
+        a22 = zero;
+        a23 = Exp.negate(x1);
+        a31 = Exp.negate(x2);
+        a32 = x1;
+        a33 = zero;
+    	  
+    then {{(a11,s),(a12,s),(a13,s)},{(a21,s),(a22,s),(a23,s)},{(a31,s),(a32,s),(a33,s)}};
+  end matchcontinue; 
+end elabBuiltinSkew2;
+
+
 protected function elabBuiltinCross "
   author: PA
  
   This function handles the built in cross operator.
-  For example, scalar({x[1],x[2],x[3]},{y[1],y[2],y[3]}) 
-  => {x[2]*y[3]-x[3]*y[2],x[3]*y[1]-x[1]*y[3],x[1]*y[2]-x[2]*y[1]}
+  
 "
 	input Env.Cache inCache;
   input Env.Env inEnv;
@@ -4856,107 +4935,6 @@ algorithm
 				Types.PROP((Types.T_STRING({}),NONE),c));		
   end matchcontinue;
 end elabBuiltinString;
-
-protected function elabBuiltinSkew "
-  author: BZ, 2008-12
- 
-  This function handles the built-in skew operator.
-"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
-  input list<Absyn.Exp> inAbsynExpLst;
-  input list<Absyn.NamedArg> inNamedArg;  
-  input Boolean inBoolean;
-  output Env.Cache outCache;
-  output Exp.Exp outExp;
-  output Types.Properties outProperties;
-algorithm 
-  (outCache,outExp,outProperties):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
-    local
-      Exp.Exp exp;
-      tuple<Types.TType, Option<Absyn.Path>> tp,arr_tp;
-      Types.Const c,const;
-      list<Types.Const> constlist;
-      Exp.Type tp_1,etp;
-      list<Env.Frame> env;
-      Absyn.Exp e;
-      Boolean impl,scalar;
-      list<Exp.Exp> expl,expl_1,args_1;
-      list<Integer> dims;
-      Env.Cache cache;
-      Types.Properties prop;
-      list<Absyn.Exp> args;
-      list<Absyn.NamedArg> nargs;
-      list<Slot> slots,newslots;
-      list<Types.Var> tvars;
-      Option<Absyn.Path> opath1,opath2,opath;
-      Types.Type ty1,ty2;
-    case (cache,env,args as e::_,nargs,impl) 
-      equation 
-        (cache,exp,prop as Types.PROP( type_ = (  Types.T_ARRAY( arrayDim = Types.DIM(SOME(3)), arrayType = (Types.T_REAL(tvars),opath1)),opath), constFlag = c),_) = elabExp(cache,env, e, impl, NONE,false);
-        ty2 = (Types.T_ARRAY(Types.DIM(SOME(3)), (Types.T_REAL(tvars),opath1)),opath1);
-        ty1 = (Types.T_ARRAY(Types.DIM(SOME(3)),ty2),opath1);
-      then
-        (cache,
-            Exp.CALL(Absyn.IDENT("skew"),{exp},false,true,Exp.T_ARRAY(Exp.REAL(),{SOME(3),SOME(3)})),
-            Types.PROP(ty1,c) );
-    case (cache,env,args as e::_,nargs,impl) 
-      equation 
-        (cache,exp,prop as Types.PROP( type_ = (  Types.T_ARRAY( arrayDim = Types.DIM(SOME(3)), arrayType = (Types.T_INTEGER(tvars),opath1)),_), constFlag = c),_) = elabExp(cache,env, e, impl, NONE,false);
-        ty2 = (Types.T_ARRAY(Types.DIM(SOME(3)), (Types.T_INTEGER(tvars),opath1)),opath1);
-        ty1 = (Types.T_ARRAY(Types.DIM(SOME(3)),ty2),opath1);
-      then
-        (cache,
-            Exp.CALL(Absyn.IDENT("skew"),{exp},false,true,Exp.T_ARRAY(Exp.INT(),{SOME(3),SOME(3)})),
-            Types.PROP(ty1,c) );
-  end matchcontinue;
-end elabBuiltinSkew;
- 
-protected function elabBuiltinConstrain "
-  author: BZ, 2009-01
- 
-  This function handles the built-in elabBuiltinconstrain function.
-"
-	input Env.Cache inCache;
-  input Env.Env inEnv;
-  input list<Absyn.Exp> inAbsynExpLst;
-  input list<Absyn.NamedArg> inNamedArg;  
-  input Boolean impl;
-  output Env.Cache outCache;
-  output Exp.Exp outExp;
-  output Types.Properties outProperties;
-algorithm 
-  (outCache,outExp,outProperties):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,impl)
-    local
-      Exp.Exp e1,e2,e3;
-      tuple<Types.TType, Option<Absyn.Path>> tp,arr_tp;
-      Types.Const c1,c2,c3,const;
-      Exp.Type tp1,tp2,tp3,etp;
-      list<Env.Frame> env;
-      Absyn.Exp e,v1,v2,v3;
-      list<Exp.Exp> expl,expl_1,args_1;
-      list<Integer> dims;
-      Env.Cache cache;
-      Types.Properties prop;
-      list<Absyn.Exp> args;
-      list<Absyn.NamedArg> nargs;
-      list<Slot> slots,newslots;
-      list<Types.Var> tvars;
-      Option<Absyn.Path> opath1,opath2;
-      Types.Type ty1,ty2,ty3;
-    case (cache,env,{v1,v2,v3},nargs,impl) 
-      equation 
-         (cache,e1,Types.PROP(ty1,c1),_) = elabExp(cache,env, v1, impl, NONE,true);
-         (cache,e2,Types.PROP(ty2,c2),_) = elabExp(cache,env, v2, impl, NONE,true);
-         (cache,e3,Types.PROP(ty3,c3),_) = elabExp(cache,env, v3, impl, NONE,true);
-      then
-        (cache,
-        Exp.CALL(Absyn.IDENT("constrain"),{e1,e2,e3},false,true,Exp.OTHER()),
-        Types.PROP(ty1,c1) );
-  end matchcontinue;
-  end elabBuiltinConstrain; 
   
 protected function elabBuiltinVector "function: elabBuiltinVector
   author: PA
@@ -5274,13 +5252,11 @@ algorithm
     case "scalar" then elabBuiltinScalar; 
       
     case "cross" then elabBuiltinCross;
-      
-    case "String" then elabBuiltinString;
-      
+    
     case "skew" then elabBuiltinSkew;
       
-    case "constrain" then elabBuiltinConstrain;
-      
+    case "String" then elabBuiltinString;
+            
   end matchcontinue;
 end elabBuiltinHandler;
 
@@ -6322,12 +6298,6 @@ algorithm
       then
         (cache,Exp.CALL(Absyn.IDENT("echo"),{bool_exp_1},false,true,Exp.STRING()),Types.PROP((Types.T_BOOL({}),NONE),Types.C_CONST()),SOME(st));
 
-    case (cache,env,Absyn.CREF_IDENT(name = "getClassesInModelicaPath"),{},{},impl,SOME(st))
-      then (cache,Exp.CALL(Absyn.IDENT("getClassesInModelicaPath"),{},false,true,Exp.STRING()),Types.PROP((Types.T_BOOL({}),NONE),Types.C_CONST()),SOME(st));
-        
-    case (cache,env,Absyn.CREF_IDENT(name = "checkExamplePackages"),{},{},impl,SOME(st))
-    then (cache,Exp.CALL(Absyn.IDENT("checkExamplePackages"),{},false,true,Exp.STRING()),Types.PROP((Types.T_BOOL({}),NONE),Types.C_CONST()),SOME(st));
-        
 case (cache,env,Absyn.CREF_IDENT(name = "dumpXMLDAE"),{Absyn.CREF(componentReg = cr)},args,impl,SOME(st))
       local Absyn.Path className; Exp.Exp storeInTemp,asInSimulationCode;
       equation
@@ -6774,7 +6744,9 @@ algorithm
         prop = getProperties(restype, tyconst);
  	    tp = Types.elabType(restype); 
  	    (cache,args_2,slots2) = addDefaultArgs(cache,env,args_1,fn,slots,impl);
-        (call_exp,prop_1) = vectorizeCall(Exp.CALL(fn_1,args_2,tuple_,builtin,tp), restype, vect_dims, slots2, prop);
+         
+        (call_exp,prop_1) = vectorizeCall(Exp.CALL(fn_1,args_2,tuple_,builtin,tp), restype, vect_dims, 
+          slots2, prop);
       then
         (cache,call_exp,prop_1);
         

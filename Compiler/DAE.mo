@@ -5579,6 +5579,8 @@ algorithm (traversedDaeList,Type_a) := matchcontinue(daeList,func,extraArg)
     list<list<Element>> tbs,tbs_1;
     list<Exp.Exp> conds,conds_1; 
     Stream st;
+    Absyn.Path path; 
+    list<Exp.Exp> expl;
   case({},_,extraArg) then ({},extraArg);
   case(VAR(cr,kind,dir,prot,tp,optExp,dims,fl,st,clsLst,attr,cmt,io,ftp)::dae,func,extraArg) 
     equation
@@ -5687,8 +5689,14 @@ algorithm (traversedDaeList,Type_a) := matchcontinue(daeList,func,extraArg)
     equation
       (e11,extraArg) = func(e1,extraArg);
       (dae2,extraArg) = traverseDAE(dae,func,extraArg);
-    then (TERMINATE(e11)::dae2,extraArg);        
-      
+    then (TERMINATE(e11)::dae2,extraArg);    
+  
+  case(NORETCALL(path,expl)::dae,func,extraArg) 
+    equation
+      (expl,extraArg) = traverseDAEExpList(expl,func,extraArg);
+      (dae2,extraArg) = traverseDAE(dae,func,extraArg);
+    then (NORETCALL(path,expl)::dae2,extraArg);
+                
   case(REINIT(cr,e1)::dae,func,extraArg) 
     equation
       (e11,extraArg) = func(e1,extraArg);

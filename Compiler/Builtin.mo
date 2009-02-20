@@ -2519,6 +2519,14 @@ protected constant tuple<Types.TType, Option<Type_a>> array1dimrealarray1dimreal
           ("z",(Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_REAL({}),NONE)),NONE))
           },
           (Types.T_REAL({}),NONE)),NONE);
+protected constant tuple<Types.TType, Option<Type_a>> array1dimrealarray1dimrealarray1dimreal2array1dimreal=(
+          Types.T_FUNCTION(
+          {
+          ("x",(Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_REAL({}),NONE)),NONE)),
+          ("y",(Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_REAL({}),NONE)),NONE)),
+          ("z",(Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_REAL({}),NONE)),NONE))
+          },
+          (Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_REAL({}),NONE)),NONE)),NONE);          
 protected constant tuple<Types.TType, Option<Type_a>> realrealreal2real=(
           Types.T_FUNCTION(
           {
@@ -3230,7 +3238,7 @@ algorithm
       env = Env.extendFrameT(env, "mod", intInt2int); 
       env = Env.extendFrameT(env, "mod", realReal2real);
       env = Env.extendFrameT(env, "constrain", realrealreal2real);
-      env = Env.extendFrameT(env, "constrain", intintint2int);
+      env = Env.extendFrameT(env, "constrain", array1dimrealarray1dimrealarray1dimreal2array1dimreal);
       /*
       env = Env.extendFrameT(env, "semiLinear", realRealReal2real);
       env = Env.extendFrameT(env, "delay", realReal2real);

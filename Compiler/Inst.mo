@@ -8214,10 +8214,13 @@ algorithm
         
     case (cache,env,mod,pre,csets,ci_state,SCode.EQ_NORETCALL(cr,fargs),initial_,impl)
       local Exp.ComponentRef cr_2; Exp.Type t; Absyn.Path path; list<Exp.Exp> expl; Absyn.FunctionArgs fargs;
+        Exp.Exp exp;
       equation 
-        (cache,Exp.CALL(path,expl,_,_,_),_,_) = Static.elabExp(cache,env,Absyn.CALL(cr,fargs),impl,NONE,false);        
+        (cache,exp,_,_) = Static.elabExp(cache,env,Absyn.CALL(cr,fargs),impl,NONE,false);
+        (cache,exp) = Prefix.prefixExp(cache,env,exp,pre);
+        dae = instEquationNoRetCallVectorization(exp);        
       then
-        (cache,{DAE.NORETCALL(path,expl)},env,csets,ci_state);
+        (cache,dae,env,csets,ci_state);
         
     case (_,env,_,_,_,_,eqn,_,impl) 
       equation 
@@ -8228,6 +8231,24 @@ algorithm
         fail();
   end matchcontinue;
 end instEquationCommon;
+
+protected function instEquationNoRetCallVectorization "creates DAE for NORETCALLs and also performs vectorization if needed"
+  input Exp.Exp expCall;
+  output list<DAE.Element> dae;
+algorithm
+  dae := matchcontinue(expCall)
+  local Absyn.Path fn; list<Exp.Exp> expl; Exp.Type ty; Boolean s; Exp.Exp e;
+    list<DAE.Element> dae1,dae2;
+    case(expCall as Exp.CALL(path=fn,expLst=expl)) then {DAE.NORETCALL(fn,expl)};
+    case(Exp.ARRAY(ty,s,e::expl)) equation
+      dae1 = instEquationNoRetCallVectorization(Exp.ARRAY(ty,s,expl));
+      dae2 = instEquationNoRetCallVectorization(e);
+      dae = listAppend(dae1,dae2);
+    then dae;
+    case(Exp.ARRAY(ty,s,{})) equation
+    then {};
+  end matchcontinue;
+end instEquationNoRetCallVectorization;
 
 protected function makeDAEArrayEqToReinitForm "
 Author: BZ, 2009-02 

@@ -2086,7 +2086,7 @@ algorithm
     local
       Real v,rv;
       Integer n,i_1,i;
-      Exp e,res,exp,c,f,t_1,f_1,e1_1,exp_1,e1,e_1,e2,e2_1,exp_2,exp_3,e3_1,e3;
+      Exp e,res,exp,c,f,t_1,f_1,e1_1,exp_1,e1,e_1,e2,e2_1,exp_2,exp_3,e3_1,e3,cond;
       Type t,tp_1,tp,tp1,tp2,t1;
       Boolean b,remove_if;
       Ident idn;
@@ -2098,7 +2098,15 @@ algorithm
       Operator op;
       String before, after;
       Real time1,time2;
-
+      
+      /* noEvent propagated to relations */
+    case(CALL(Absyn.IDENT("noEvent"),{e},tpl,builtin,tp))
+      local Boolean tpl,builtin; Type tp;      
+       equation
+         e1 = simplify1(stripNoEvent(e));
+         e2 = addNoEventToRelations(e1);
+     then e2;         
+      
     case (CAST(ty = REAL(),exp=e ))
       local Exp e; Real v;
       equation
@@ -2122,6 +2130,11 @@ algorithm
         res = ARRAY(tp,b,exps_1);
       then
         res;
+    
+    case(CAST(tp,IFEXP(cond,e1,e2))) equation
+      e1_1 = simplify1(CAST(tp,e1));
+      e2_1 = simplify1(CAST(tp,e2));
+    then IFEXP(cond,e1_1,e2_1);
 
     case (CAST(ty = tp,exp = e))
       local list<list<tuple<Exp, Boolean>>> exps,exps_1;
@@ -2209,7 +2222,7 @@ algorithm
       local
         Exp ae1;
       equation 
-        e = simplifyAsub(e, i) "For arbitrary vector operations, e.g (a+b-c){1} => a{1}+b{1}-c{1}" ;
+        e = simplifyAsub(e, i) "For arbitrary vector operations, e.g (a+b-c)[1] => a[1]+b[1]-c[1]" ;
       then
         e;
 
@@ -2303,7 +2316,47 @@ algorithm
   end matchcontinue;
 end simplify1;
 
-protected function simplifyCref
+public function stripNoEvent
+" Function that strips all noEvent() calls in an expression"
+  input Exp e;
+  output Exp outE;  
+algorithm
+  ((outE,_)) := traverseExp(e,stripNoEventExp,0);
+end stripNoEvent;  
+
+protected function stripNoEventExp "
+traversal function for stripNoEvent"
+input tuple<Exp,Integer/*dummy*/> inTpl;
+output tuple<Exp,Integer> outTpl;
+algorithm
+  outTpl := matchcontinue(inTpl)
+  local Exp e; Integer i;
+    case((CALL(path=Absyn.IDENT("noEvent"),expLst={e}),i)) then ((e,i));
+    case((e,i)) then ((e,i));
+  end matchcontinue;
+end stripNoEventExp;
+
+public function addNoEventToRelations
+" Function that adds a  noEvent() call to all relations in an expression"
+  input Exp e;
+  output Exp outE;  
+algorithm
+  ((outE,_)) := traverseExp(e,addNoEventToRelationExp,0);
+end addNoEventToRelations;  
+
+protected function addNoEventToRelationExp "
+traversal function for addNoEventToRelations"
+  input tuple<Exp,Integer/*dummy*/> inTpl;
+  output tuple<Exp,Integer> outTpl;
+algorithm
+  outTpl := matchcontinue(inTpl)
+  local Exp e; Integer i;
+    case((e as RELATION(exp1=_),i)) then ((CALL(Absyn.IDENT("noEvent"),{e},false,true,BOOL()),i));
+    case((e,i)) then ((e,i));
+  end matchcontinue;
+end addNoEventToRelationExp;
+
+protected function simplifyCref 
 " Function for simplifying
   x[{y,z,q}] to {x[y], x[z], x[q]}"
   input ComponentRef inCREF;
@@ -3660,7 +3713,7 @@ algorithm
   outExp:=
   matchcontinue (inExp,inInteger)
     local
-      Exp e_1,e,e1_1,e2_1,e1,e2,exp;
+      Exp e_1,e,e1_1,e2_1,e1,e2,exp,cond;
       Type t,t_1,t2;
       Integer indx,i_1,n;
       Operator op,op2;
@@ -3875,6 +3928,10 @@ algorithm
         e_1 = simplify1(ASUB(e,{ae1}));
       then
         e_1;
+    case(e as IFEXP(cond,e1,e2),indx) equation
+       e1_1 = simplifyAsub(e1, indx);
+       e2_1 = simplifyAsub(e2, indx);
+    then IFEXP(cond,e1_1,e2_1);    
   end matchcontinue;
 end simplifyAsub;
 
@@ -6948,7 +7005,7 @@ algorithm str := matchcontinue(oexp)
   case(SOME(e)) local Exp e; then printExpStr(e); 
   end matchcontinue;
 end printOptExpStr;
-  
+    
 public function printExpStr 
 "function: printExpStr 
   This function prints a complete expression."
