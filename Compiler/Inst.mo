@@ -144,7 +144,7 @@ protected import ModUtil;
 protected import VarTransform;
 protected import OptManager;
 protected import HashTable5;
-protected import Print;
+//protected import Print;
 
 public constant String forScopeName="$for loop scope$";
 
