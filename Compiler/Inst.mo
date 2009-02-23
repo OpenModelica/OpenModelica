@@ -7598,15 +7598,33 @@ algorithm
       then
         (cache,{DAE.TERMINATE(e1_2)},env,csets,ci_state);
 
-    /* reinit statement */
-    case (cache,env,mod,pre,csets,ci_state,SCode.EQ_REINIT(cref = cr,reinitExpression = e2),initial_,impl)      
+    /* reinit statement, adrpo: this is wrong if we have arrays in reinit
+    case (cache,env,mod,pre,csets,ci_state,SCode.EQ_REINIT(cref = cr,reinitExpression = e2),initial_,impl)       
       equation
-        (cache,Exp.CREF(cr_1,t),_,_) = Static.elabCref(cache,env, cr, impl,false) "reinit statement" ;
+        (cache,Exp.CREF(cr_1,t),_,_) = Static.elabCref(cache,env, cr, impl,true) "reinit statement" ;
         (cache,e2_1,_,_) = Static.elabExp(cache,env, e2, impl, NONE,true);
         (cache,e2_2) = Prefix.prefixExp(cache,env, e2_1, pre);
         (cache,Exp.CREF(cr_2,_)) = Prefix.prefixExp(cache,env, Exp.CREF(cr_1,t), pre);
       then
         (cache,{DAE.REINIT(cr_2,e2_2)},env,csets,ci_state);
+   */
+    case (cache,env,mod,pre,csets,ci_state,SCode.EQ_REINIT(cref = cr,reinitExpression = exp2),initial_,impl)
+      local  
+        Absyn.Exp exp1,exp2;
+        Types.Properties tp1,tp2, tpp1, tpp2;
+        list<DAE.Element> listDAE;
+      equation 
+        exp1 = Absyn.CREF(cr);
+        (cache,e1_1,tp1,_) = Static.elabExp(cache,env,exp1,impl,NONE,true);
+        (cache,e2_1,tp2,_) = Static.elabExp(cache,env,exp2,impl,NONE,true);
+        (e2_1,_) = Types.matchProp(e2_1, tp2, tp1);
+        (cache,e1_1,e2_1) = condenseArrayEquation(cache,env,exp1,exp2,e1_1,e2_1,tp2,impl);
+        (cache,e2_2) = Prefix.prefixExp(cache,env, e2_1, pre);
+        (cache,e1_2) = Prefix.prefixExp(cache,env, e1_1, pre);   
+        listDAE = instEqEquation(e1_2, tp1, e2_2, tp2, initial_, impl);
+        listDAE = transformToReinit(listDAE);
+      then
+        (cache,listDAE,env,csets,ci_state);   
 
     case (_,env,_,_,_,_,eqn,_,impl)
       equation
@@ -7616,6 +7634,41 @@ algorithm
         fail();
   end matchcontinue;
 end instEquationCommon;
+
+protected function transformToReinit 
+"function transformToReinit
+ because arrays might be present in SCode.REINIT(arr1, arr2)
+ we need to vectorize arr1 and arr2, build equations out
+ of the components of the arrays and the re-translate them
+ back to {DAE.REINIT(arr1[1],arr2[1]), ..., DAE.REINIT(arr1[N],arr2[N])"
+  input list<DAE.Element> inLst;
+  output list<DAE.Element> outLst;
+algorithm 
+  outLst := matchcontinue(inLst)
+    local
+      Exp.ComponentRef cr1,cr2; Exp.Exp e1,e2;
+      Exp.Type t;
+      list<DAE.Element> rest, lst;
+      DAE.Element x;
+    /* empty list */
+    case ({}) then {};
+    /* an equation */
+    case(DAE.EQUATION(Exp.CREF(cr1,_),e2)::rest)
+      equation
+        lst = transformToReinit(rest); 
+      then DAE.REINIT(cr1,e2)::lst;
+    /* a definition */
+    case(DAE.DEFINE(cr1,e2)::rest)
+      equation
+        lst = transformToReinit(rest); 
+      then DAE.REINIT(cr1,e2)::lst;
+    /* anything else should not be present */ 
+    case(x :: rest) 
+      equation 
+        Debug.fprintln("failtrace", "- Inst.transformToReinit failed\n");         
+      then fail();
+  end matchcontinue;
+end transformToReinit;
 
 protected function condenseArrayEquation 
 "This function transforms makes the two sides of an array equation into its condense form. 

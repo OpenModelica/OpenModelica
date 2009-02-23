@@ -4985,6 +4985,7 @@ algorithm
       list<list<tuple<Exp, Boolean>>> explst;
       Option<Exp> optexp;
     case (CALL(path = Absyn.IDENT(name = "der"))) then false;
+    case (CALL(path = Absyn.IDENT(name = "pre"))) then false;      
     case (CALL(path = _,ty=T_ARRAY(_,_))) then true;
     case (CALL(path = _)) then false;
     case (BINARY(exp1 = e1,exp2 = e2)) /* Binary */

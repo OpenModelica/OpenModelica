@@ -4546,9 +4546,10 @@ algorithm
     case (DAE.DAE(elementLst = ((e as DAE.ARRAY_EQUATION(dimension = ds,exp = e1,array = e2)) :: xs)),states,whenclauses)
       local MultiDimEquation e_1;
       equation
+        // debug_print("array_eq", "YES");
+        e_1 = lowerArrEqn(e);
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,algs,whenclauses_1,extObjCls)
         = lower2(DAE.DAE(xs), states, whenclauses);
-        e_1 = lowerArrEqn(e);
       then
         (vars,knvars,extVars,eqns,reqns,ieqns,(e_1 :: aeqns),algs,whenclauses_1,extObjCls);
 
@@ -6117,6 +6118,11 @@ algorithm
       Exp.ComponentRef cr,name;
       DAE.Flow flow_;
       Variables vars;
+    /* adrpo: ignore records! */
+    case ((v as VAR(varName = cr,origVarName = name,flow_ = flow_, varType = DAE.RECORD(_))),
+          (vars as VARIABLES(crefIdxLstArr = hashvec,strIdxLstArr = oldhashvec,varArr = varr,bucketSize = bsize,numberOfVars = n)))
+    then
+      vars;
     case ((v as VAR(varName = cr,origVarName = name,flow_ = flow_)),(vars as VARIABLES(crefIdxLstArr = hashvec,strIdxLstArr = oldhashvec,varArr = varr,bucketSize = bsize,numberOfVars = n)))
       equation
         failure((_,_) = getVar(cr, vars)) "adding when not existing previously" ;

@@ -1071,7 +1071,7 @@ algorithm
 
     case (cache,env,cr)
       equation
-        Debug.fprintln("failtrace", "Lookup.lookupVarInPackages failed:" +& Exp.printComponentRefStr(cr));
+        Debug.fprintln("lookup", "Lookup.lookupVarInPackages failed:" +& Exp.printComponentRefStr(cr));
       then fail();
   end matchcontinue;
 end lookupVarInPackages;
