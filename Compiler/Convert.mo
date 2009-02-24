@@ -582,12 +582,14 @@ algorithm
 		  equation
 		    elem = Exp.LABEL(s);
 		  then elem;
+		/* Does not compile in release on win32
 		case (alg)
 		  local
 		    Algorithm.Statement alg;
 		  equation
 		    debug_print("fromAlgStateToExpState failed at:", alg);
 		  then fail();
+		*/
   end matchcontinue;
 end fromAlgStateToExpState;
 
