@@ -3776,33 +3776,6 @@ algorithm
         (cache,s1_1,prop) = verifyBuiltInHandlerType(cache,env,{s1},impl,Types.isIntegerOrSubTypeInteger,"sqrt");
       then
         (cache,s1_1,prop);
-/*
-    case (cache,env,{s1},_,impl)  
-      equation 
-        (cache,s1_1,Types.PROP(ty,c),_) = elabExp(cache,env, s1, impl, NONE,true);
-        (s1_1,ty2) = Types.matchType(s1_1, ty, (Types.T_REAL({}),NONE));
-      then
-        (cache,Exp.CALL(Absyn.IDENT("sqrt"),{s1_1},false,true,Exp.REAL()),Types.PROP(ty2,c));
-        */
-    case(cache,env,{s1},_,impl)
-      local String stringy,s123; Types.Type ty; Boolean b;
-      equation
-        (cache,s1_1,Types.PROP(ty,c),_) = elabExp(cache,env, s1, impl, NONE,true);
-        stringy = Types.printTypeStr(ty);
-        b = Types.isRealOrSubTypeReal(ty);
-        s123 = Util.boolString(b); 
-        print("Var: " +& Exp.printExpStr(s1_1) +& ", Type: " +& stringy +& " isReal: " +& s123+& "\n");
-        (_,ty) = Types.matchType(s1_1, ty, (Types.T_REAL({}),NONE));
-        print(" return from matchType: " +& Types.printTypeStr(ty) +& "\n"); 
-      then
-        fail();
-    case(_,_,inAbsynExpLst,_,_)
-      local String stringy;
-      equation
-        stringy = "FAILED sqrt(" +& Util.stringDelimitList(Util.listMap(inAbsynExpLst,Dump.dumpExpStr),", ") +& ")\n";
-        print(stringy );
-      then
-        fail();
   end matchcontinue;
 end elabBuiltinSqrt;
 
@@ -4417,7 +4390,7 @@ algorithm
         false = Types.isRealOrSubTypeReal(ety);
         ls = Util.listMap({exp}, Dump.printExpStr);
         es1 = Util.stringDelimitList(ls, ", ");
-        es3 = Types.printTypeStr(ety);
+        es3 = Types.unparseType(ety);
         ls = listAppend({es1,es1},{es3});
         Error.addMessage(Error.DERIVATIVE_NON_REAL, ls);
       then

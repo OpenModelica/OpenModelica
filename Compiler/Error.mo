@@ -465,7 +465,7 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (MISSING_INNER_PREFIX,TRANSLATION(),ERROR(),
           "No corresponding 'INNER' declaration found for component %s declared as '%s'."),
           (DERIVATIVE_NON_REAL,TRANSLATION(),ERROR(),  
-          "Illegal derivative. der(%s) where %s is of type %s, which is not a subtype of real"),
+          "Illegal derivative. der(%s) where %s is of type %s, which is not a subtype of Real"),
           (IMPLICIT_ITERATOR_NOT_FOUND_IN_LOOP_BODY,TRANSLATION(),ERROR(),
           "Identificator %s of implicit for iterator must be present as array subscript in the loop body.")  
           };
