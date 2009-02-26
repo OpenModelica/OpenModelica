@@ -659,21 +659,43 @@ end isReal;
 
 public function isRealOrSubTypeReal "
 Author BZ 2008-05
-This function verifies if it is somekind of a Real type we are working with. 
+This function verifies if it is some kind of a Real type we are working with. 
 "
   input Type inType;
   output Boolean b;
 algorithm b := matchcontinue(inType)
-  local Type ty; Boolean lb1,lb2;
+  local Type ty; Boolean lb1,lb2,lb3;
   case(ty)
     equation
       lb1 = isReal(ty);
       lb2 = subtype(ty, (T_REAL({}),NONE));
-      lb1 = boolOr(lb1,lb2); 
+      lb3 = subtype((T_REAL({}),NONE),ty);
+      lb1 = boolOr(lb1,boolAnd(lb2,lb3));
+      //lb1 = boolOr(lb1,lb2);  
     then lb1;
   case(_) then false;
 end matchcontinue; 
 end isRealOrSubTypeReal;
+
+public function isIntegerOrSubTypeInteger "
+Author BZ 2009-02
+This function verifies if it is some kind of a Integer type we are working with. 
+"
+  input Type inType;
+  output Boolean b;
+algorithm b := matchcontinue(inType)
+  local Type ty; Boolean lb1,lb2,lb3;
+  case(ty)
+    equation
+      lb1 = isInteger(ty);
+      lb2 = subtype(ty, (T_INTEGER({}),NONE));
+      lb3 = subtype((T_INTEGER({}),NONE),ty);
+      lb1 = boolOr(lb1,boolAnd(lb2,lb3)); 
+      //lb1 = boolOr(lb1,lb2); 
+    then lb1;
+  case(_) then false;
+end matchcontinue; 
+end isIntegerOrSubTypeInteger;
 
 public function isInteger "Returns true if type is Integer"
 input Type tp;
@@ -1948,16 +1970,19 @@ algorithm
       then
         str;
     case ((T_COMPLEX(complexClassType = st,complexVarLst = vars,complexTypeOption = bc),_))
+      local String compType;
       equation 
+        compType = Util.stringDelimitList( Util.listMap(Util.genericOption(bc),printTypeStr), ", ");
        s1 = Util.stringDelimitList(Util.listMap(vars, printVarStr),", ");
-       str = Util.stringAppendList({"composite(",s1,")"});  
+       compType = Util.if_(stringLength(compType)>0, "::derived From::" +& compType,"");
+       str = Util.stringAppendList({"composite(",s1,") ", compType});  
       then
         str;
     case ((T_ARRAY(arrayDim = dim,arrayType = t),_))
       equation 
         s1 = printArraydimStr(dim);
         s2 = printTypeStr(t);
-        str = Util.stringAppendList({"array[", s1,", of type",s2,"]"});
+        str = Util.stringAppendList({"array[", s1,", of type ",s2,"]"});
       then
         str;
     case ((T_FUNCTION(funcArg = params,funcResultType = restype),_))

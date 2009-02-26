@@ -9841,7 +9841,7 @@ algorithm  oty := matchcontinue(subs,ty)
   case({},ty) then ty;
   case(_::rest, ty) 
     equation
-      ty = unliftArray(ty); 
+      ty = unliftArray(ty);
       ty = unliftArrayTypeWithSubs(rest,ty);
     then
       ty;
@@ -11093,7 +11093,7 @@ algorithm str := matchcontinue(inExp)
   case(CREF(cr,_)) then debugPrintComponentRefTypeStr(cr);    
   case(ARRAY(_,_,expl))
     equation
-      s1 = Util.stringAppendList(Util.listMap(expl,debugPrintComponentRefExp));
+      s1 = "{" +& Util.stringAppendList(Util.listMap(expl,debugPrintComponentRefExp)) +& "}";
     then
       s1;
   case(inExp) then printExpStr(inExp); // when not cref, print expression anyways since it is used for some debugging.

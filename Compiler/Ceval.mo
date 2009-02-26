@@ -2098,7 +2098,7 @@ algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
-      Real rv,rv_1,rvt,rv_2;
+      Real rv,rv_1,rvt,rv_2,realRet;
       Integer ri,ri_1;
       list<Env.Frame> env;
       Exp.Exp exp;
@@ -2112,17 +2112,18 @@ algorithm
         rv_1 = realFloor(rv);
         ri = realInt(rv_1);
         rvt = intReal(ri);
-        (rvt ==. rv) = true;
+        (rvt ==. rv) = true;        
       then
-        (cache,Values.INTEGER(ri),st);
+        (cache,Values.REAL(rvt),st);
     case (cache,env,{exp},impl,st,msg)
       equation 
         (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st, NONE, msg);
         rv_1 = realFloor(rv);
         ri = realInt(rv_1);
         ri_1 = ri + 1;
+        realRet = intReal(ri_1); 
       then
-        (cache,Values.INTEGER(ri_1),st);
+        (cache,Values.REAL(realRet),st);
   end matchcontinue;
 end cevalBuiltinCeil;
 

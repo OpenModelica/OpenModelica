@@ -207,7 +207,10 @@ public constant ErrorID WARNING_RELATION_ON_REAL=509;
 public constant ErrorID ERROR_BUILTIN_DELAY=510;
 public constant ErrorID When_With_IF=511;
 public constant ErrorID OUTER_MODIFICATION=512;
+public constant ErrorID DERIVATIVE_NON_REAL=514;
 public constant ErrorID REDUNDANT_GUESS=513 "Used by MathCore in Backend";
+
+
 
 public constant ErrorID INDEX_REDUCTION_NOTIFICATION=1000;
 public constant ErrorID SELECTED_STATE_DUE_TO_START_NOTIFICATION = 1001;
@@ -350,7 +353,7 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (DIFFERENT_DIM_SIZE_IN_ARGUMENTS,TRANSLATION(),ERROR(),
           "Different dimension sizes in arguments to %s"),
           (DER_APPLIED_TO_CONST,TRANSLATION(),ERROR(),
-          "der operator applied to constant expression"),
+          "der operator applied to constant expression der(%s)"),
           (ARGUMENT_MUST_BE_INTEGER_OR_REAL,TRANSLATION(),ERROR(),
           "%s argument to %s must be Integer or Real expression"),
           (ARGUMENT_MUST_BE_INTEGER,TRANSLATION(),ERROR(),
@@ -456,11 +459,13 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (When_With_IF,TRANSLATION(),ERROR(),  
           "When equations using if-statements on form 'if a then b=c else b = d' not implemented yet, use 'b=if a then c else d' as work around\n%s"),
           (OUTER_MODIFICATION,TRANSLATION(),ERROR(),  
-          "Modification on outer element: %s"),
+          "Modification on outer element: %s"),          
           (REDUNDANT_GUESS,TRANSLATION(),WARNING(),  
           "Start value is assigned for variable: %s, but not used since %s"),          
           (MISSING_INNER_PREFIX,TRANSLATION(),ERROR(),
           "No corresponding 'INNER' declaration found for component %s declared as '%s'."),
+          (DERIVATIVE_NON_REAL,TRANSLATION(),ERROR(),  
+          "Illegal derivative. der(%s) where %s is of type %s, which is not a subtype of real"),
           (IMPLICIT_ITERATOR_NOT_FOUND_IN_LOOP_BODY,TRANSLATION(),ERROR(),
           "Identificator %s of implicit for iterator must be present as array subscript in the loop body.")  
           };
@@ -509,10 +514,12 @@ algorithm
       MessageTokens tokens;
     case (error_id,tokens)
       equation 
+        //print(" adding message: " +& intString(error_id) +& "\n");
         (msg_type,severity,msg) = lookupMessage(error_id);
         msg_type_str = messageTypeStr(msg_type);
         severity_string = severityStr(severity);
         ErrorExt.addMessage(error_id, msg_type_str, severity_string, msg, tokens);
+        //print(" succ add " +& msg_type_str +& " " +& severity_string +& ",  " +& msg +& "\n");
       then
         ();
     case (error_id,tokens)

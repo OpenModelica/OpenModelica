@@ -2800,11 +2800,14 @@ algorithm
       */      
       env = Env.extendFrameT(env, "cardinality", anyconnector2int);
       env = Env.extendFrameT(env, "div", realReal2real) "non-differentiable functions" ;
+      env = Env.extendFrameT(env, "div", intInt2int) "non-differentiable functions" ;
       env = Env.extendFrameT(env, "rem", realReal2real);
-      env = Env.extendFrameT(env, "ceil", real2int);
+      env = Env.extendFrameT(env, "rem", intInt2int);
+      env = Env.extendFrameT(env, "ceil", real2real);
       envb = Env.extendFrameT(env, "floor", real2int);
       env = Env.extendFrameT(envb, "integer", real2int);
       env = Env.extendFrameT(env, "abs", real2real) "differentiable functions" ;
+      env = Env.extendFrameT(env, "abs", int2int) "differentiable functions" ;
       env = Env.extendFrameT(env, "sign", real2real);
       env = Env.extendFrameT(env, "sin", real2real) "Not in the report" ;
       env = Env.extendFrameT(env, "cos", real2real);
@@ -3235,8 +3238,8 @@ algorithm
       env = Env.extendFrameT(env, "skew", array1dimreal2array3dimreal);
       env = Env.extendFrameT(env, "sqrt", int2real);
       env = Env.extendFrameT(env, "sqrt", real2real);
-      env = Env.extendFrameT(env, "mod", intInt2int); 
       env = Env.extendFrameT(env, "mod", realReal2real);
+      env = Env.extendFrameT(env, "mod", intInt2int);
       env = Env.extendFrameT(env, "constrain", realrealreal2real);
       env = Env.extendFrameT(env, "constrain", array1dimrealarray1dimrealarray1dimreal2array1dimreal);
       /*

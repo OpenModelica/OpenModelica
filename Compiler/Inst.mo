@@ -2380,7 +2380,7 @@ protected function instBasictypeBaseclass
   end RealSignal;
   Such classes can not have any other components, 
   and can only inherit one basic type."
-	input Env.Cache inCache;
+  input Env.Cache inCache;
   input Env inEnv1;
   input list<SCode.Element> inSCodeElementLst2;
   input list<SCode.Element> inSCodeElementLst3;
@@ -2419,9 +2419,47 @@ algorithm
         ErrorExt.rollBack();
       then
         (cache,SOME(ty),tys);
+    case (cache,env,{SCode.EXTENDS(baseClassPath = path,modifications = mod)},{},mods,inst_dims)
+      equation
+        ErrorExt.delCheckpoint();
+      then fail();
     case (cache,env,{SCode.EXTENDS(baseClassPath = path,modifications = mod)},(_ :: _),mods,inst_dims) /* Inherits baseclass -and- has components */
       equation 
         ErrorExt.setCheckpoint();
+        instBasictypeBaseclass2(inCache,inEnv1,inSCodeElementLst2,inSCodeElementLst3,inMod4,inInstDims5);
+      then
+        fail();    
+  end matchcontinue;
+end instBasictypeBaseclass;
+
+protected function instBasictypeBaseclass2 "
+Author: BZ, 2009-02
+Helper function for instBasictypeBaseClass
+Handles the fail case rollbacks/deleteCheckpoint of errors.
+"
+	input Env.Cache inCache;
+  input Env inEnv1;
+  input list<SCode.Element> inSCodeElementLst2;
+  input list<SCode.Element> inSCodeElementLst3;
+  input Mod inMod4;
+  input InstDims inInstDims5;
+  algorithm _ := matchcontinue(inCache,inEnv1,inSCodeElementLst2,inSCodeElementLst3,inMod4,inInstDims5)
+        local
+      Types.Mod m_1,m_2,mods;
+      SCode.Class cdef,cdef_1;
+      list<Env.Frame> cenv,env_1,env;
+      list<DAE.Element> dae;
+      tuple<Types.TType, Option<Absyn.Path>> ty;
+      list<Types.Var> tys;
+      ClassInf.State st;
+      Boolean b1,b2,b3;
+      Absyn.Path path;
+      SCode.Mod mod;
+      InstDims inst_dims;
+      String classname;
+      Env.Cache cache;
+    case (cache,env,{SCode.EXTENDS(baseClassPath = path,modifications = mod)},(_ :: _),mods,inst_dims) /* Inherits baseclass -and- has components */
+      equation        
         (cache,m_1) = Mod.elabMod(cache,env, Prefix.NOPRE(), mod, true) "impl" ;
         (cache,cdef,cenv) = Lookup.lookupClass(cache,env, path, true);
         cdef_1 = SCode.classSetPartial(cdef, false);
@@ -2433,14 +2471,10 @@ algorithm
         ErrorExt.rollBack();
         Error.addMessage(Error.INHERIT_BASIC_WITH_COMPS, {classname});
       then
-        fail();    
-    case (cache,env,_,_,mods,inst_dims)
-      equation 
-        ErrorExt.delCheckpoint();
-      then
-        fail();
-  end matchcontinue;
-end instBasictypeBaseclass;
+        ();
+    case(_,_,_,_,_,_) equation ErrorExt.delCheckpoint(); then ();
+    end matchcontinue;
+end instBasictypeBaseclass2;
 
 protected function addConnectionSetToEnv 
 "function: addConnectionSetToEnv

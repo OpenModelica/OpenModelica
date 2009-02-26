@@ -193,9 +193,13 @@ extern "C"
   RML_BEGIN_LABEL(ErrorExt__rollBack)
   {   
 	  if(checkPoints.size() > 0){
-		  //printf(" ERROREXT: rollback to: %d\n",checkPoints[checkPoints.size()-1]);
+		  //printf(" ERROREXT: rollback to: %d from %d\n",checkPoints.back(),errorMessageQueue.size());
+		  /*std::string res("");
+		  if(!errorMessageQueue.empty())
+			  res = res+errorMessageQueue.front()->getMessage()+string("\n");
+		  printf(res.c_str());*/
 		  //printf(" rollback from: %d to: %d\n",errorMessageQueue.size(),checkPoints.back());
-		  while(errorMessageQueue.size() >= checkPoints.back() && errorMessageQueue.size() > 0){		  
+		  while(errorMessageQueue.size() > checkPoints.back() && errorMessageQueue.size() > 0){		  
 			  //printf("*** %d deleted %d ***\n",errorMessageQueue.size(),checkPoints.back());
 			  errorMessageQueue.pop();
 		  }
