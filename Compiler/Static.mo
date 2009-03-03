@@ -3085,7 +3085,7 @@ algorithm
 end elabBuiltinProduct2;
 
 protected function elabBuiltinPre "function: elabBuiltinPre
- 
+
   This function elaborates the builtin operator pre.
   Input is the arguments to the pre operator and the environment, Env.Env.
 "
@@ -3097,7 +3097,7 @@ protected function elabBuiltinPre "function: elabBuiltinPre
   output Env.Cache outCache;
   output Exp.Exp outExp;
   output Types.Properties outProperties;
-algorithm 
+algorithm
   (outCache,outExp,outProperties):=
   matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
     local
@@ -3111,7 +3111,50 @@ algorithm
       Ident s,el_str;
       list<Absyn.Exp> expl;
       Env.Cache cache;
-    case (cache,env,{exp},_,impl) /* impl */ 
+      
+    /* an matrix? */
+    case (cache,env,{exp},_,impl) /* impl */
+      local
+        Types.Type t,t2;
+        Exp.Type etp,etp_org;
+        list<Exp.Exp> expl_1;
+        Boolean sc;
+      equation         
+        (cache,exp_1 as Exp.MATRIX(_, _, _),Types.PROP(t as (Types.T_ARRAY(dim,tp),_),c),_) = elabExp(cache, env, exp, impl, NONE, true);
+
+        true = Types.isArray(t);
+
+        t2 = Types.unliftArray(t);
+        etp = Types.elabType(t2);
+
+        exp_2 = elabBuiltinPreMatrix(Exp.CALL(Absyn.IDENT("pre"),{exp_1},false,true,etp),t2);
+      then
+        (cache,exp_2,Types.PROP(t,c));
+      
+    /* an array? */
+    case (cache,env,{exp},_,impl) /* impl */
+      local
+        Types.Type t,t2;
+        Exp.Type etp,etp_org;
+        list<Exp.Exp> expl_1;
+        Boolean sc;
+      equation         
+        (cache,exp_1,Types.PROP(t as (Types.T_ARRAY(dim,tp),_),c),_) = elabExp(cache, env, exp, impl, NONE,true);
+
+        true = Types.isArray(t);
+
+        t2 = Types.unliftArray(t);
+        etp = Types.elabType(t2);
+
+        (expl_1,sc) = elabBuiltinPre2(Exp.CALL(Absyn.IDENT("pre"),{exp_1},false,true,etp),t2);
+
+        etp_org = Types.elabType(t);
+        exp_2 = Exp.ARRAY(etp_org,  sc,  expl_1);
+      then
+        (cache,exp_2,Types.PROP(t,c));
+
+    /* a scalar? */
+    case (cache,env,{exp},_,impl) /* impl */
       local Exp.Type t; String str;
       equation
         (cache,exp_1,Types.PROP(tp,c),_) = elabExp(cache,env, exp, impl, NONE,true);
@@ -3120,30 +3163,9 @@ algorithm
         exp_2 = Exp.CALL(Absyn.IDENT("pre"),{exp_1},false,true,t);
       then
         (cache,exp_2,Types.PROP(tp,c));
-        case (cache,env,{exp},_,impl) /* impl */ 
-      local 
-        Types.Type t,t2; 
-        Exp.Type etp,etp_org; 
-        list<Exp.Exp> expl_1;
-        Boolean sc;
-      equation
-        (cache,exp_1,Types.PROP(t as (Types.T_ARRAY(dim,tp),_),c),_) = elabExp(cache, env, exp, impl, NONE,true);
-
-        true = Types.isArray(t);
-        
-        t2 = Types.unliftArray(t);
-        etp = Types.elabType(t2);
-        
-        (expl_1,sc) = elabBuiltinPre2(Exp.CALL(Absyn.IDENT("pre"),{exp_1},false,true,etp),t2);
-        
-        etp_org = Types.elabType(t);
-        exp_2 = Exp.ARRAY(etp_org,  sc,  expl_1);
-
-      then
-        (cache,exp_2,Types.PROP(t,c));
     case (cache,env,{exp},_,impl)
       local Exp.Exp exp;
-      equation 
+      equation
         (cache,exp,Types.PROP(tp,c),_) = elabExp(cache,env, exp, impl, NONE,true);
         false = Types.basicType(tp);
         s = Exp.printExpStr(exp);
@@ -3151,7 +3173,7 @@ algorithm
       then
         fail();
     case (cache,env,expl,_,_)
-      equation 
+      equation
         el_str = Exp.printListStr(expl, Dump.printExpStr, ", ");
         s = Util.stringAppendList({"pre(",el_str,")"});
         Error.addMessage(Error.WRONG_TYPE_OR_NO_OF_ARGS, {s});
@@ -3169,57 +3191,133 @@ output list<Exp.Exp> outExp;
 output Boolean sc;
 algorithm
   (outExp) := matchcontinue(inExp,t)
-    local 
+    local
       Exp.Type ty;
       Boolean sc;
+      Integer i;
       list<Exp.Exp> expl,e;
       Exp.Exp exp_1;
-    case(Exp.CALL(_,{Exp.ARRAY(ty,sc,expl)},_,_,_),t) 
+      list<list<tuple<Exp.Exp, Boolean>>> matrixExpl, matrixExplPre;
+      list<Boolean> boolList;
+      
+    case(Exp.CALL(_,{Exp.ARRAY(ty,sc,expl)},_,_,_),t)
       equation
-      (e) = makePreLst(expl, t);
-    then (e,sc);
-    case (exp_1,t) 
+        (e) = makePreLst(expl, t);
+      then (e,sc);
+    case(Exp.CALL(_,{Exp.MATRIX(ty,i,matrixExpl)},_,_,_),t)
+      equation        
+        matrixExplPre = makePreMatrix(matrixExpl, t);
+      then ({Exp.MATRIX(ty,i,matrixExplPre)},false);
+    case (exp_1,t)
       equation
-      then 
+      then
         (exp_1 :: {},false);
-          
+
   end matchcontinue;
 end elabBuiltinPre2;
 
-protected function makePreLst "function: makePreLst
- 
-  Takes a list of expressions and makes a list of pre - expressions
-"
+protected function makePreLst 
+"function: makePreLst
+  Takes a list of expressions and makes a list of pre - expressions"
   input list<Exp.Exp> inExpLst;
   input Types.Type t;
   output list<Exp.Exp> outExp;
-algorithm 
+algorithm
   (outExp):=
   matchcontinue (inExpLst,t)
       local
         Exp.Exp exp_1;
         list<Exp.Exp> expl_1;
-    case((exp_1 :: expl_1),t)   
-      local 
+        
+    case((exp_1 :: expl_1),t)
+      local
         Exp.Exp exp_2;
         list<Exp.Exp> expl_2;
         Exp.Type ttt;
         Types.Type ttY;
       equation
         ttt = Types.elabType(t);
-        exp_2 = Exp.CALL(Absyn.IDENT("pre"),{exp_1},false,true,ttt); 
+        exp_2 = Exp.CALL(Absyn.IDENT("pre"),{exp_1},false,true,ttt);
         (expl_2) = makePreLst(expl_1,t);
       then
-        ((exp_2 :: expl_2)); 
+        ((exp_2 :: expl_2));
 
       case ({},t)
         equation
-      then 
-        ( {}); 
-        
-      
+      then
+        ({});
   end matchcontinue;
 end makePreLst;
+
+protected function elabBuiltinPreMatrix 
+"function: elabBuiltinPreMatrix
+ Help function for elabBuiltinPreMatrix, when type is matrix, send it here."
+  input Exp.Exp inExp;
+  input Types.Type t;
+  output Exp.Exp outExp;
+algorithm
+  (outExp) := matchcontinue(inExp,t)
+    local
+      Exp.Type ty;
+      Boolean sc;
+      Integer i;
+      list<Exp.Exp> expl,e;
+      Exp.Exp exp_1;
+      list<list<tuple<Exp.Exp, Boolean>>> matrixExpl, matrixExplPre;
+      list<Boolean> boolList;
+            
+    case(Exp.CALL(_,{Exp.MATRIX(ty,i,matrixExpl)},_,_,_),t)
+      equation        
+        matrixExplPre = makePreMatrix(matrixExpl, t);
+      then Exp.MATRIX(ty,i,matrixExplPre);
+        
+    case (exp_1,t) then exp_1;
+  end matchcontinue;
+end elabBuiltinPreMatrix;
+
+protected function makePreMatrix 
+"function: makePreMatrix
+  Takes a list of matrix expressions and makes a list of pre - matrix expressions"
+  input list<list<tuple<Exp.Exp, Boolean>>> inMatrixExp;
+  input Types.Type t;
+  output list<list<tuple<Exp.Exp, Boolean>>> outMatrixExp;
+algorithm
+  (outMatrixExp) := matchcontinue (inMatrixExp,t)
+    local
+      list<list<tuple<Exp.Exp, Boolean>>> lstLstExp, lstLstExpRest;
+      list<tuple<Exp.Exp, Boolean>> lstExpBool, lstExpBoolPre;
+      
+    case ({},t) then {};
+    case(lstExpBool::lstLstExpRest,t)
+      equation
+        lstExpBoolPre = mkLstPre(lstExpBool, t);
+        lstLstExp = makePreMatrix(lstLstExpRest, t);
+      then
+        lstExpBoolPre ::lstLstExp;
+  end matchcontinue;
+end makePreMatrix;
+
+function mkLstPre
+  input  list<tuple<Exp.Exp, Boolean>> inLst;
+  input  Types.Type t;
+  output list<tuple<Exp.Exp, Boolean>> outLst;
+algorithm
+  outLst := matchcontinue(inLst, t)
+    local
+      Exp.Exp exp; Boolean b;    
+      Exp.Exp expPre;
+      Exp.Type ttt;
+      list<tuple<Exp.Exp, Boolean>> rest;
+    case ({}, t) then {};      
+    case ((exp,b)::rest, t)
+      equation
+        ttt = Types.elabType(t);
+        exp = Exp.CALL(Absyn.IDENT("pre"),{exp},false,true,ttt);
+        rest = mkLstPre(rest,t);
+      then
+        (exp, b)::rest;
+  end matchcontinue;
+end mkLstPre;
 
 protected function elabBuiltinInitial "function: elabBuiltinInitial
  
@@ -4350,10 +4448,9 @@ algorithm
   end matchcontinue;
 end elabBuiltinSign;
 
-protected function elabBuiltinDer "function: elabBuiltinDer
- 
-  This function handles the built in der operator.
-"
+protected function 
+"function: elabBuiltinDer 
+  This function handles the built in der operator."
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
