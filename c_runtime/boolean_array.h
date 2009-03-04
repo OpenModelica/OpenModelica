@@ -41,8 +41,14 @@ typedef signed char modelica_boolean;
 
 typedef base_array_t boolean_array_t;
 
-/* Indexing */
+/* Indexing 1 dimensions */
 modelica_boolean boolean_get(boolean_array_t *a, size_t i);
+/* Indexing 2 dimensions */
+modelica_boolean boolean_get_2D(boolean_array_t *a, size_t i, size_t j);
+/* Indexing 3 dimensions */
+modelica_boolean boolean_get_3D(boolean_array_t *a, size_t i, size_t j, size_t k);
+/* Indexing 4 dimensions */
+modelica_boolean boolean_get_4D(boolean_array_t *a, size_t i, size_t j, size_t k, size_t l);
 
 /* Setting the fields of a boolean_array */
 void boolean_array_create(boolean_array_t *dst, modelica_boolean *data, int ndims, ...);

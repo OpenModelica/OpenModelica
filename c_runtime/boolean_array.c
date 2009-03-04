@@ -40,6 +40,27 @@ modelica_boolean boolean_get(boolean_array_t *a, size_t i)
     return ((modelica_boolean *) a->data)[i];
 }
 
+/* Indexing 2 dimensions */
+modelica_boolean boolean_get_2D(boolean_array_t *a, size_t i, size_t j)
+{
+  modelica_boolean value = boolean_get(a, i * a->dim_size[1] + j);
+  return value;
+}
+
+/* Indexing 3 dimensions */
+modelica_boolean boolean_get_3D(boolean_array_t *a, size_t i, size_t j, size_t k)
+{
+  modelica_boolean value = boolean_get(a, i * a->dim_size[1] + j * a->dim_size[2] + k);
+  return value;
+}
+
+/* Indexing 4 dimensions */
+modelica_boolean boolean_get_4D(boolean_array_t *a, size_t i, size_t j, size_t k, size_t l)
+{
+  modelica_boolean value = boolean_get(a, i * a->dim_size[1] + j * a->dim_size[2] + k * a->dim_size[3] + l);
+  return value;
+}
+
 static inline modelica_boolean *boolean_ptrget(boolean_array_t *a, size_t i)
 {
     return ((modelica_boolean *) a->data) + i;

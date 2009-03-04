@@ -8015,8 +8015,8 @@ algorithm
   end matchcontinue;
 end elabCref2;
 
-protected function crefVectorize "function: crefVectorize
-
+protected function crefVectorize 
+"function: crefVectorize
   This function takes a 'Exp.Exp' and a 'Types.Type' and if the expression
   is a ComponentRef and the type is an array it returns an array of
   component references with subscripts for each index.
@@ -8024,8 +8024,7 @@ protected function crefVectorize "function: crefVectorize
   gives cref_vectorize('x', <arraytype>) => '{x[1],x[2],x[3]}
   This is needed since the DAE does not know what the variable 'x' is, it only
   knows the variables 'x[1]', 'x[2]' and 'x[3]'.
-  NOTE: Currently only works for one and two dimensions.
-"
+  NOTE: Currently only works for one and two dimensions."
 	input Boolean performVectorization "if false, return input";
   input Exp.Exp inExp;
   input Types.Type inType;
