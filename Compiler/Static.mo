@@ -4448,7 +4448,7 @@ algorithm
   end matchcontinue;
 end elabBuiltinSign;
 
-protected function 
+protected function elabBuiltinDer
 "function: elabBuiltinDer 
   This function handles the built in der operator."
 	input Env.Cache inCache;
