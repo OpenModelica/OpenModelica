@@ -1570,7 +1570,7 @@ algorithm
   tree := AVLTREENODE(NONE,0,NONE,NONE);
 end avlTreeNew;
  
-protected function avlTreeAdd "
+public function avlTreeAdd "
  Help function to avlTreeAdd.
  "
   input AvlTree inAvlTree;

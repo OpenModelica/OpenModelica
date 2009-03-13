@@ -2687,7 +2687,7 @@ algorithm
   ppStmt(alg, 2);
 end ppStatement;
 
-protected function ppStatementStr 
+public function ppStatementStr 
 "function: ppStatementStr 
   Prettyprint an algorithm statement to a string."
   input Algorithm.Statement alg;
