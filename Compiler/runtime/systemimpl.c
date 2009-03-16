@@ -533,12 +533,13 @@ RML_BEGIN_LABEL(System__trim)
             start_pos++;
           if(str_contain_char(chars_to_be_removed,res[end_pos]))
             end_pos--;
+          if (start_pos == end_pos) break;
         }
 
 
       res[length] = '\0';
     }
-  if(start_pos < end_pos)
+  if(start_pos <= end_pos)
     {
       res[end_pos+1] = '\0';
       rmlA0 = (void*) mk_scon(&res[start_pos]);
@@ -2512,12 +2513,13 @@ RML_BEGIN_LABEL(System__trim)
             start_pos++;
           if(str_contain_char(chars_to_be_removed,res[end_pos]))
             end_pos--;
+          if (start_pos == end_pos) break;
         }
 
 
       res[length] = '\0';
     }
-  if(start_pos < end_pos)
+  if(start_pos <= end_pos)
     {
       res[end_pos+1] = '\0';
       rmlA0 = (void*) mk_scon(&res[start_pos]);
