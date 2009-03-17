@@ -202,14 +202,14 @@ algorithm
     case ((row :: {}),rowIndex)
       equation
         str1 = getIncidenceRow(row);
-        str = Util.stringAppendList({"[", str1, "]"});
+        str = Util.stringAppendList({"{", str1, "}"});
       then
         str;
     case ((row :: rows),rowIndex)
       equation
         str1 = getIncidenceRow(row);
         str2 = getIncidenceMatrix2(rows,rowIndex+1);
-        str = Util.stringAppendList({"[", str1, "],",  str2});
+        str = Util.stringAppendList({"{", str1, "},",  str2});
       then
         str;
   end matchcontinue;
@@ -792,7 +792,7 @@ algorithm
         s3 = incidenceRowExp(e3, vars);
         ss3 = getIncidenceRow(s3);
         // build the string now
-        ss = Util.stringAppendList({"{'if', ",s,",'", opStr, "' {",ss1,"}",",{", ss2, "},", ss3, "}"});
+        ss = Util.stringAppendList({"{'if', ",s,",'", opStr, "' {",ss1,"}",",{", ss2, "},",  "{", ss3,"}", "}"});
         pStr = {ss};
       then
         pStr;
