@@ -1715,6 +1715,7 @@ algorithm
       list<Value> vs;
       Value r;
       Absyn.CodeNode c;
+      Exp.ComponentRef cr;
     case INTEGER(integer = n)
       equation 
         s = intString(n);
@@ -1770,9 +1771,12 @@ algorithm
         s_2 = stringAppend(s_1, "}");
       then
         s_2;
+    case(ENUM(cr)) equation
+      s = "enumerationValue("+&Exp.printComponentRefStr(cr)+&")";
+    then s;
     case _
       equation 
-       //print("- val_string failed\n");
+       print("- val_string failed\n");
       then
         fail();
   end matchcontinue;
