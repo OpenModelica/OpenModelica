@@ -1772,11 +1772,11 @@ algorithm
       then
         s_2;
     case(ENUM(cr)) equation
-      s = "enumerationValue("+&Exp.printComponentRefStr(cr)+&")";
+      s = Exp.printComponentRefStr(cr);
     then s;
     case _
       equation 
-       print("- val_string failed\n");
+       //print("- val_string failed\n");
       then
         fail();
   end matchcontinue;
