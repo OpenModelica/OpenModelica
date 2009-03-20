@@ -353,23 +353,29 @@ RML_BEGIN_LABEL(System__isSameFile)
 {
   char *fileName1 = RML_STRINGDATA(rmlA0);
   char *fileName2 = RML_STRINGDATA(rmlA1);
+  char *fn1_2,*fn2_2;
   int same = 0;
   HRESULT res1,res2;
-  char canonName1[1024],canonName2[1024];
-  DWORD size=1024;
-  DWORD size2=1024;
+  char canonName1[MAX_PATH],canonName2[MAX_PATH];
+  DWORD size=MAX_PATH;
+  DWORD size2=MAX_PATH;
   if (UrlCanonicalize(fileName1,canonName1,&size,0) != S_OK ||
   	UrlCanonicalize(fileName2,canonName2,&size2,0) != S_OK) {
   		printf("Error, fileName1 =%s, fileName2 = %s couldn't be canonicalized\n",fileName1,fileName2);
   		RML_TAILCALLK(rmlFC);
   	};
-  	//printf("Canonicalized f1:%s, \nf2:%s\n",canonName1,canonName2);
-  same = strcmp(canonName1,canonName2) == 0;
-  if (same) {
-	  	RML_TAILCALLK(rmlSC);
-  } else {
-	  	RML_TAILCALLK(rmlFC);
-  }
+  //printf("Canonicalized f1:%s, \nf2:%s\n",canonName1,canonName2);
+  fn1_2 = _replace(canonName1,"//","/");
+  fn2_2 = _replace(canonName2,"//","/");
+  //printf("Replaced form f1:%s, \nf2:%s\n",fn1_2,fn2_2);
+  same = strcmp(fn1_2,fn2_2);
+   
+  free(fn1_2);
+  free(fn2_2);
+  if(same ==0)
+    RML_TAILCALLK(rmlSC);
+  else 
+    RML_TAILCALLK(rmlFC);
 }
 RML_END_LABEL
 
