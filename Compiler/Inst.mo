@@ -3383,7 +3383,7 @@ algorithm
         str = Absyn.pathString(path);         
 
         // A frequent used debugging line 
-        //print("Instantiating element: " +& str +& " in scope " +& Env.getScopeName(env) +& "\n"); 
+        print("Instantiating element: " +& str +& " in scope " +& Env.getScopeName(env) +& "\n"); 
         (cache,dae1,env_1,csets_1,ci_state_1,tys1) = instElement(cache,env, mod, pre, csets, ci_state, el, inst_dims, impl);
         Error.updateCurrentComponent("",NONE); 
         (cache,dae2,env_2,csets_2,ci_state_2,tys2) = instElementList(cache,env_1, mod, pre, csets_1, ci_state_1, els, inst_dims, impl);

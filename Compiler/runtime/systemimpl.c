@@ -368,14 +368,15 @@ RML_BEGIN_LABEL(System__isSameFile)
   fn1_2 = _replace(canonName1,"//","/");
   fn2_2 = _replace(canonName2,"//","/");
   //printf("Replaced form f1:%s, \nf2:%s\n",fn1_2,fn2_2);
-  same = strcmp(fn1_2,fn2_2);
-   
+  same = strcmp(fn1_2,fn2_2) == 0;
   free(fn1_2);
   free(fn2_2);
-  if(same ==0)
+  if(same){
     RML_TAILCALLK(rmlSC);
-  else 
+  }
+  else {
     RML_TAILCALLK(rmlFC);
+  }
 }
 RML_END_LABEL
 
