@@ -1805,6 +1805,23 @@ algorithm
   end matchcontinue;
 end setProtectedAttr;
 
+public function getProtectedAttr " 
+  retrieves the protected attribute form VariableAttributes.
+"
+  input Option<VariableAttributes> attr;
+  output Boolean isProtected;
+algorithm 
+  isProtected:=
+  matchcontinue (attr)      
+    case (SOME(VAR_ATTR_REAL(isProtected=SOME(isProtected)))) then isProtected; 
+    case (SOME(VAR_ATTR_INT(isProtected=SOME(isProtected)))) then isProtected;
+    case (SOME(VAR_ATTR_BOOL(isProtected=SOME(isProtected)))) then isProtected;     
+    case (SOME(VAR_ATTR_STRING(isProtected=SOME(isProtected)))) then isProtected;
+    case (SOME(VAR_ATTR_ENUMERATION(isProtected=SOME(isProtected)))) then isProtected; 
+    case(_) then false;
+  end matchcontinue;
+end getProtectedAttr;
+
 public function setFixedAttr "Function: setFixedAttr
 Sets the start attribute:fixed to inputarg
 " 
@@ -1962,7 +1979,7 @@ algorithm
       Option<Exp.Exp> quant,unit,displayUnit;
       Option<Exp.Exp> min,max,Initial,nominal;
       Option<Exp.Exp> fixed;
-      Option<StateSelect> stateSel;      
+      Option<StateSelect> stateSel;
     case (SOME(VAR_ATTR_REAL(quant,unit,displayUnit,(min,max),Initial,fixed,nominal,stateSel,_,_,_)))
       equation 
         quantity = Dump.getOptionWithConcatStr(quant, Exp.printExpStr, "quantity = ");

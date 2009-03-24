@@ -1340,7 +1340,54 @@ algorithm
   end matchcontinue;
 end listMap3;
 
-/* TODO: listMap4, listMap5, listMap6, can be created upon requests ;) */
+public function listMap4 "function listMap4
+  Takes a list and a function and four extra arguments passed to the function.
+  The function produces one new value which is used for creating a new list."
+  input list<Type_a> inTypeALst;
+  input mapFunc f;
+  input Type_b inTypeB;
+  input Type_c inTypeC;
+  input Type_d inTypeD;
+  input Type_e inTypeE;
+  output list<Type_f> outTypeELst;
+  replaceable type Type_a subtypeof Any;
+  partial function mapFunc
+    input Type_a inTypeA;
+    input Type_b inTypeB;
+    input Type_c inTypeC;
+    input Type_d inTypeD;
+    input Type_e inTypeE;
+    output Type_f outTypeF;
+  end mapFunc;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;
+  replaceable type Type_d subtypeof Any;
+  replaceable type Type_e subtypeof Any;
+  replaceable type Type_f subtypeof Any;  
+algorithm 
+  outTypeELst:=
+  matchcontinue (inTypeALst,f,inTypeB,inTypeC,inTypeD,inTypeE)
+    local
+      Type_e f_1;
+      list<Type_e> r_1;
+      Type_a f;
+      list<Type_a> r;
+      mapFunc fn;
+      Type_b extraarg1;
+      Type_c extraarg2;
+      Type_d extraarg3;
+      Type_e extraarg4;
+    case ({},_,_,_,_,_) then {}; 
+    case ((f :: r),fn,extraarg1,extraarg2,extraarg3,extraarg4)
+      equation 
+        f_1 = fn(f, extraarg1, extraarg2, extraarg3,extraarg4);
+        r_1 = listMap4(r, fn, extraarg1, extraarg2, extraarg3,extraarg4);
+      then
+        (f_1 :: r_1);
+  end matchcontinue;
+end listMap4;
+
+/* TODO: listMap5, listMap6, can be created upon requests ;) */
 
 public function listMap7 "function listMap7
   Takes a list and a function and seven extra arguments passed to the function.
