@@ -18917,7 +18917,7 @@ algorithm
       local String compString;
         list<Exp.Exp> dbgList;
       equation     
-      compString = Absyn.componentRefStr(cr);
+      compString = Absyn.printComponentRefStr(cr);
       cr = Absyn.crefStripLastSubs(cr);
       path = Absyn.crefToPath(cr);
       failure(_ = HashTable2.get(Exp.CREF_IDENT(compString, Exp.OTHER(),{}),ht)) "do not add local variables to depndencies";

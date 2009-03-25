@@ -1453,12 +1453,12 @@ public function expComponentRefStr ""
   output String outString;
 algorithm outString := matchcontinue(aexp)
   local ComponentRef cr;
-  case(CREF(cr)) then componentRefStr(cr);
+  case(CREF(cr)) then printComponentRefStr(cr);
   case(_) equation print("Error input for exp_Component_Ref_Str was not a string\n"); then fail();   
 end matchcontinue; 
 end expComponentRefStr;
 
-public function componentRefStr ""
+public function printComponentRefStr ""
 input ComponentRef cr;
 output String ostring;
 algorithm ostring := matchcontinue(cr)
@@ -1468,11 +1468,11 @@ algorithm ostring := matchcontinue(cr)
   case(CREF_IDENT(s1,_)) then s1;
   case(CREF_QUAL(s1,_,child))
     equation 
-    s2 = componentRefStr(child);
+    s2 = printComponentRefStr(child);
     s1 = s1 +& "." +& s2;
 then s1;    
 end matchcontinue;
-end componentRefStr;
+end printComponentRefStr;
 
 public function typeSpecEqual "
 Author BZ 2009-01
