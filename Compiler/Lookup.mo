@@ -61,6 +61,7 @@ protected import Static;
 protected import Connect;
 protected import Error;
 protected import Util;
+protected import ConnectionGraph;
 
 /*   - Lookup functions
  
@@ -112,8 +113,8 @@ algorithm
       equation 
         (cache,c ,env_1) = lookupClass2(cache,env, path, false);
         true = Inst.classIsExternalObject(c);
-        (cache,_,_::env_1,_,_,_,_) = Inst.instClass(cache,env_1, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, c, 
-          {}, false, Inst.TOP_CALL());
+        (cache,_,_::env_1,_,_,_,_,_) = Inst.instClass(cache,env_1, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, c, 
+          {}, false, Inst.TOP_CALL(), ConnectionGraph.EMPTY);
           
         ident = Absyn.pathLastIdent(path); /* Once class has instantiated we only need to look up the last
         	part of the name as a type */
@@ -586,8 +587,8 @@ algorithm
         (cache,(c as SCode.CLASS(id,_,encflag,restr,_)),env_1) = lookupClass2(cache,{fr}, path, false);
         env2 = Env.openScope(env_1, encflag, SOME(id));
         ci_state = ClassInf.start(restr, id);
-        (cache,_,(f :: _),_,_,_,_,_) = Inst.instClassIn(cache,env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
-          ci_state, c, false, {}, false);
+        (cache,_,(f :: _),_,_,_,_,_,_,_) = Inst.instClassIn(cache,env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
+          ci_state, c, false, {}, false, ConnectionGraph.EMPTY);
         (cache,p_env,attr,ty,bind) = lookupVarInPackages(cache,{f}, Exp.CREF_IDENT(ident,Exp.OTHER(),{}));
         (cache,more) = moreLookupUnqualifiedImportedVarInFrame(cache,fs, env, ident);
         unique = boolNot(more);
@@ -1031,8 +1032,8 @@ algorithm
         	= lookupClass2(cache,env, Absyn.IDENT(id1), false) "Special case for looking up enumerations" ;
         env3 = Env.openScope(env2, encflag, SOME(n));
         ci_state = ClassInf.start(r, n);
-        (cache,_,env5,_,_,types,_,_) = Inst.instClassIn(cache,env3, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
-          ci_state, c, false, {}, false);
+        (cache,_,env5,_,_,types,_,_,_,_) = Inst.instClassIn(cache,env3, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
+          ci_state, c, false, {}, false, ConnectionGraph.EMPTY);
         (cache,p_env,attr,ty,bind) = lookupVarInPackages(cache,env5, id2);
       then
         (cache,p_env,attr,ty,bind);
@@ -1073,8 +1074,8 @@ algorithm
         (cache,(c as SCode.CLASS(n,_,encflag,r,_)),env2) = lookupClass2(cache,env, Absyn.IDENT(id), false);
         env3 = Env.openScope(env2, encflag, SOME(n));
         ci_state = ClassInf.start(r, n);
-        (cache,_,env5,_,_,types,_,_) = Inst.instClassIn(cache,env3, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
-          ci_state, c, false, {}, /*true*/false);
+        (cache,_,env5,_,_,types,_,_,_,_) = Inst.instClassIn(cache,env3, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
+          ci_state, c, false, {}, /*true*/false, ConnectionGraph.EMPTY);
         (cache,p_env,attr,ty,bind) = lookupVarInPackages(cache,env5, cref);
       then
         (cache,p_env,attr,ty,bind);
@@ -1362,8 +1363,8 @@ algorithm
         env2 = Env.openScope(env_1, encflag, SOME(id));
         ci_state = ClassInf.start(restr, id);
         
-        //(cache,_,env_2,_,_,_,_,_) = Inst.instClassIn(cache,env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
-        //   ci_state, c, false/*FIXME:prot*/, {}, false);
+        //(cache,_,env_2,_,_,_,_,_,_) = Inst.instClassIn(cache,env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
+        //   ci_state, c, false/*FIXME:prot*/, {}, false, ConnectionGraph.EMPTY);
         (cache,env_2,cistate1) = Inst.partialInstClassIn(cache,env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
           ci_state, c, false, {});
         (cache,reslist) = lookupFunctionsInEnv(cache,env_2, path);
@@ -1404,7 +1405,7 @@ algorithm
           Types.T_FUNCTION(
           {
           ("x",
-          (Types.T_COMPLEX(ClassInf.CONNECTOR("$$"),{},NONE),NONE))},(Types.T_INTEGER({}),NONE)),NONE)};  /* function_name cardinality */ 
+          (Types.T_COMPLEX(ClassInf.CONNECTOR("$$"),{},NONE,NONE),NONE))},(Types.T_INTEGER({}),NONE)),NONE)};  /* function_name cardinality */ 
   end matchcontinue;
 end createGenericBuiltinFunctions; 
 
@@ -1595,8 +1596,8 @@ algorithm
         equation
           Env.CLASS(cdef,cenv) = Env.avlTreeGet(ht, id);
 	        true = Inst.classIsExternalObject(cdef);
-	        (cache,_,env_1,_,t,_,_) = Inst.instClass(cache,cenv, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cdef, 
-         	 {}, false, Inst.TOP_CALL());
+	        (cache,_,env_1,_,t,_,_,_) = Inst.instClass(cache,cenv, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cdef, 
+         	 {}, false, Inst.TOP_CALL(), ConnectionGraph.EMPTY);
           (cache,t,_) = lookupTypeInEnv(cache,env_1, Absyn.IDENT(id));
            //s = Types.unparseType(t);
          	 //print("type :");print(s);print("\n");
@@ -1883,8 +1884,8 @@ algorithm
         (cdefelts,restElts) = Inst.classdefAndImpElts(elts);
         env1 = Inst.addClassdefsToEnv(env, cdefelts, false,NONE);
         (cache,inputvarlst) = buildVarlstFromElts(cache,restElts, Types.NOMOD(),env1);        
-        (cache,_,_,_,ty,_,_) = Inst.instClass(cache,env1, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cl, 
-          {}, true, Inst.TOP_CALL()) "FIXME: impl" ;
+        (cache,_,_,_,ty,_,_,_) = Inst.instClass(cache,env1, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cl, 
+          {}, true, Inst.TOP_CALL(), ConnectionGraph.EMPTY) "FIXME: impl" ;
       then
         (cache,Types.VAR("result",
           Types.ATTR(false,false,SCode.RW(),SCode.VAR(),Absyn.OUTPUT(),Absyn.UNSPECIFIED()),false,ty,Types.UNBOUND()) :: inputvarlst);
@@ -1895,8 +1896,8 @@ algorithm
         (cdefelts,restElts) = Inst.classdefAndImpElts(elts);
         env1 = Inst.addClassdefsToEnv(env, cdefelts, false,NONE);
         (cache,inputvarlst) = buildVarlstFromElts(cache,restElts, Types.NOMOD(),env1);        
-        (cache,_,_,_,ty,_,_) = Inst.instClass(cache,env1, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cl, 
-          {}, true, Inst.TOP_CALL()) "FIXME: impl" ;
+        (cache,_,_,_,ty,_,_,_) = Inst.instClass(cache,env1, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cl, 
+          {}, true, Inst.TOP_CALL(), ConnectionGraph.EMPTY) "FIXME: impl" ;
       then
         (cache,Types.VAR("result",
           Types.ATTR(false,false,SCode.RW(),SCode.VAR(),Absyn.OUTPUT(),Absyn.UNSPECIFIED()),false,ty,Types.UNBOUND()) :: inputvarlst);
@@ -2288,7 +2289,7 @@ algorithm
       then
         ((Types.T_ARRAY(Types.DIM(NONE),t_1),p));
         
-    case ((Types.T_COMPLEX(_,_,SOME(t)),_),ys)
+    case ((Types.T_COMPLEX(_,_,SOME(t),_),_),ys)
       then checkSubscripts(t,ys); 
     case(t as (Types.T_NOTYPE(),_),_) then t;
     case (t,s)

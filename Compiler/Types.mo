@@ -101,6 +101,9 @@ type Type = tuple<TType, Option<Absyn.Path>> "
      for the class where the type originates from.
 
 - Type" ;
+
+public
+type EqualityConstraint = Option<Absyn.Path>;
  
 public 
 uniontype TType "-TType contains the actual type"
@@ -148,6 +151,7 @@ uniontype TType "-TType contains the actual type"
     ClassInf.State complexClassType "complexClassType ; The type of. a class" ;
     list<Var> complexVarLst "complexVarLst ; The variables of a complex type" ;
     Option<Type> complexTypeOption "complexTypeOption ; A complex type can be a subtype of another (primitive) type (through extends). In that case the varlist is empty" ;
+    EqualityConstraint equalityConstraint;
   end T_COMPLEX;
 
   record T_FUNCTION
@@ -470,7 +474,7 @@ This function checks wheter a type is complex AND not extending a base type.
 input Type ty;
 output Boolean b;
 algorithm b := matchcontinue(ty)
-  case((T_COMPLEX(_,_::_,_),_)) then true; // not derived from baseclass   
+  case((T_COMPLEX(_,_::_,_,_),_)) then true; // not derived from baseclass   
   case(_) then false;
   end matchcontinue;
 end isComplexType;
@@ -555,7 +559,7 @@ algorithm
       list<Var> tvars;
       equation 
         tvars = Util.listMap(evars, convertFromExpToTypesVar);
-        ty = (T_COMPLEX(ClassInf.RECORD("____"),tvars,NONE),NONE); 
+        ty = (T_COMPLEX(ClassInf.RECORD("____"),tvars,NONE,NONE),NONE); 
         then 
           ty; 
     case(_)
@@ -628,7 +632,7 @@ algorithm
   b := matchcontinue(tp)
   local list<Boolean> bLst;
     list<Var> varLst;
-    case((T_COMPLEX(ClassInf.RECORD(_),varLst,_),_)) equation
+    case((T_COMPLEX(ClassInf.RECORD(_),varLst,_,_),_)) equation
         bLst = Util.listMap(Util.listMap(varLst,getVarType),isReal);
         b = Util.boolAndList(bLst);      
     then b;
@@ -750,7 +754,7 @@ algorithm
   matchcontinue (inType)
       local Type t;
     case ((T_ARRAY(arrayDim = _),_)) then true; 
-    case ((T_COMPLEX(_,_,SOME(t)),_)) then isArray(t);      
+    case ((T_COMPLEX(_,_,SOME(t),_),_)) then isArray(t);      
     case ((_,_)) then false; 
   end matchcontinue;
 end isArray;
@@ -810,7 +814,7 @@ algorithm
         n = ndims(t);
       then
         n + 1;
-    case ((T_COMPLEX(_,_,SOME(t)),_)) equation
+    case ((T_COMPLEX(_,_,SOME(t),_),_)) equation
         n = ndims(t);
     then n;
     case ((_,_)) then 0; 
@@ -879,7 +883,7 @@ algorithm
         res = getDimensionSizes(tp);
       then
         (i :: res);
-    case ((T_COMPLEX(_,_,SOME(tp)),_))
+    case ((T_COMPLEX(_,_,SOME(tp),_),_))
       then getDimensionSizes(tp);        
     case ((_,_)) then {}; 
   end matchcontinue;
@@ -903,7 +907,7 @@ algorithm
         res = getDimensions(tp);
       then
         (dimopt :: res);
-    case ((T_COMPLEX(_,_,SOME(tp)),_))
+    case ((T_COMPLEX(_,_,SOME(tp),_),_))
       then getDimensions(tp);        
     case ((_,_)) then {}; 
   end matchcontinue;
@@ -1007,7 +1011,7 @@ algorithm
           MOD(false,Absyn.NON_EACH(),{},
           SOME(
           TYPED(rec_call,SOME(Values.RECORD(cname,vals,val_names)),
-          PROP((T_COMPLEX(ClassInf.RECORD(cname_str),varlst,NONE),NONE),
+          PROP((T_COMPLEX(ClassInf.RECORD(cname_str),varlst,NONE,NONE),NONE),
           C_VAR()))))) :: res),NONE);
     case ((v :: _),_)
       equation 
@@ -1112,7 +1116,7 @@ algorithm
         vars = valuesToVars(vl, ids);
         cname_str = Absyn.pathString(cname);
       then
-        ((T_COMPLEX(ClassInf.RECORD(cname_str),vars,NONE),NONE));
+        ((T_COMPLEX(ClassInf.RECORD(cname_str),vars,NONE,NONE),NONE));
 
         // MetaModelica list type
     case ((w as Values.LIST(valueLst = (v :: _))))
@@ -1692,15 +1696,16 @@ algorithm
       Option<Integer> i;
       ClassInf.State ci;
       list<Var> varlst;
+      EqualityConstraint ec;
     case ((T_ARRAY(arrayDim = dim,arrayType = ty),path),i)
       equation 
         ty_1 = liftArrayRight(ty, i);
       then
         ((T_ARRAY(dim,ty_1),path));
-    case((T_COMPLEX(ci,varlst,SOME(ty)),path),i)
+    case((T_COMPLEX(ci,varlst,SOME(ty),ec),path),i)
       equation
         ty_1 = liftArrayRight(ty,i);
-        then ((T_COMPLEX(ci,varlst,SOME(ty_1)),path));          
+        then ((T_COMPLEX(ci,varlst,SOME(ty_1),ec),path));          
     case ((ty,path),i)
       local TType ty;
       then
@@ -1719,7 +1724,7 @@ algorithm
   matchcontinue (inType)
     local Type ty;
     case ((T_ARRAY(arrayDim = DIM(integerOption = _),arrayType = ty),_)) then ty; 
-    case ((T_COMPLEX(_,_,SOME(ty)),_)) then unliftArray(ty);
+    case ((T_COMPLEX(_,_,SOME(ty),_),_)) then unliftArray(ty);
   end matchcontinue;
 end unliftArray;
 
@@ -2676,7 +2681,7 @@ algorithm
       then
         res;
         
-    case ((T_COMPLEX(_,_,SOME(tp)),_)::xs) 
+    case ((T_COMPLEX(_,_,SOME(tp),_),_)::xs) 
       equation
         r1 = containReal({tp});
         r2 = containReal(xs);
@@ -2751,7 +2756,7 @@ algorithm
         (ty_1,dimlist_1);
         
         // Complex type extending basetype.
-    case ((T_COMPLEX(_,_,SOME(ty)),_)) equation
+    case ((T_COMPLEX(_,_,SOME(ty),_),_)) equation
       (ty_1,dimlist) = flattenArrayTypeOpt(ty);
       then (ty_1,dimlist);
 
@@ -3049,7 +3054,7 @@ algorithm
       then
         Exp.T_ARRAY(t_1,dims);
         
-    case ( (T_COMPLEX(_,_,SOME(t)),_)) 
+    case ( (T_COMPLEX(_,_,SOME(t),_),_)) 
       then elabType(t);
         
         // MetaModelica extension
@@ -3073,7 +3078,7 @@ algorithm
         t_l2 = Util.listMap(t_l,elabType);
       then Exp.T_METATUPLE(t_l2);
 
-    case(    (T_COMPLEX(CIS,tcvl as _::_,_),_)   )
+    case(    (T_COMPLEX(CIS,tcvl as _::_,_,_),_)   )
       local 
         list<Var> tcvl; 
         ClassInf.State CIS; 
@@ -3586,10 +3591,10 @@ algorithm
       Boolean havereal;
       list<Var> v;
 
-    case (PROP((T_COMPLEX(_,_,SOME(t1)),_),c1),PROP(t2,c2),havereal) 
+    case (PROP((T_COMPLEX(_,_,SOME(t1),_),_),c1),PROP(t2,c2),havereal) 
     then matchWithPromote(PROP(t1,c1),PROP(t2,c2),havereal);
 
-    case (PROP(t1,c1),PROP((T_COMPLEX(_,_,SOME(t2)),_),c2),havereal)
+    case (PROP(t1,c1),PROP((T_COMPLEX(_,_,SOME(t2),_),_),c2),havereal)
     then matchWithPromote(PROP(t1,c1),PROP(t2,c2),havereal);
 
      

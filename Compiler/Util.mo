@@ -247,6 +247,15 @@ algorithm isequal := matchcontinue(input1,input2,equalLength)
   end matchcontinue;
 end isListEqual;
 
+public function isListNotEmpty 
+input list<Type_a> input1;
+output Boolean isempty;
+algorithm isempty := matchcontinue(input1)
+  case({}) then false; 
+  case(_) then true;  
+  end matchcontinue;
+end isListNotEmpty;
+
 public function isListEqualWithCompareFunc "
 Author BZ 2009-01
 Compares the elements of two lists using provided compare function.

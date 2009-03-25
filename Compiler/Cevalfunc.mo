@@ -22,6 +22,7 @@ public import SCode;
 public import Prefix;
 public import Connect;
 public import ClassInf;
+public import ConnectionGraph;
 
 protected import Ceval;
 protected import Util;
@@ -126,7 +127,7 @@ algorithm
           env1;          
     case(env, ((ele1 as SCode.COMPONENT(component = varName, typeSpec = Absyn.TPATH(path = apath), modifications=mod1, attributes = SCode.ATTR(direction = Absyn.INPUT() ) ))::eles1), (val1::vals1),((e1 as Exp.CALL(path = _))::restExps))
       equation
-        (tty as (Types.T_COMPLEX(recordconst,typeslst,cto),_)) = makeComplexForEnv(e1, val1); //Types.expTypetoTypesType(ety);
+        (tty as (Types.T_COMPLEX(recordconst,typeslst,cto,_),_)) = makeComplexForEnv(e1, val1); //Types.expTypetoTypesType(ety);
         complexEnv = Env.newFrame(false); 
         complexEnv = makeComplexEnv({complexEnv},typeslst);
         env1 = Env.extendFrameV(env,
@@ -154,7 +155,7 @@ algorithm
         /*************** FUNCTION VARIABLE BEGINS ******************/
     case(env, ((ele1 as SCode.COMPONENT(component=varName,attributes = SCode.ATTR(arrayDims=adim, direction = Absyn.BIDIR()), typeSpec = Absyn.TPATH(path = apath), modifications = mod1)) ::eles1), (vals1),restExps)
       equation
-        (tty as (Types.T_COMPLEX(_,typeslst,_),_) )= getTypeFromName(apath,env);
+        (tty as (Types.T_COMPLEX(_,typeslst,_,_),_) )= getTypeFromName(apath,env);
         binding = makeBinding(mod1,env,tty); 
         env1 = Env.extendFrameV(env, 
           Types.VAR(varName,Types.ATTR(false,false,SCode.RW(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
@@ -202,9 +203,9 @@ algorithm (oType) := matchcontinue(inExp, inVal)
   case(Exp.CALL(recordName,_,_,_,ty), inVal as Values.RECORD(_,vals,names ))
     equation
       pathName = Absyn.pathString(recordName);
-      (cty as (Types.T_COMPLEX(_,lv,_),_)) = Types.expTypetoTypesType(ty);
+      (cty as (Types.T_COMPLEX(_,lv,_,_),_)) = Types.expTypetoTypesType(ty);
       lv2 = setValuesInRecord(lv,names,vals);
-      cty2 = (Types.T_COMPLEX(ClassInf.RECORD(pathName) ,lv2 , NONE),NONE); 
+      cty2 = (Types.T_COMPLEX(ClassInf.RECORD(pathName) ,lv2 , NONE, NONE),NONE); 
     then
       cty2;
 end matchcontinue;
@@ -274,7 +275,7 @@ algorithm oType := matchcontinue(inVars,invarName,inValue)
     equation 
       equality(varName3 = varName2);
       lv2 = setValuesInRecord(typeslst,names,vals);
-      ty2 = (Types.T_COMPLEX(ClassInf.RECORD(varName2) ,lv2 , NONE),NONE);
+      ty2 = (Types.T_COMPLEX(ClassInf.RECORD(varName2) ,lv2 , NONE, NONE),NONE);
       tv = Types.VAR(varName3,a,p,ty2,Types.VALBOUND(val));
     then tv;
   case(Types.VAR(varName3,a,p,t,b) ,varName2::varNames, val::values)
@@ -317,7 +318,7 @@ local
       env2 = makeComplexEnv(env1, vars);
       then 
         env2;
-  case(env, (tv as Types.VAR(name,attr,prot,(ty as (Types.T_COMPLEX(_,typeslst,_),_)) , _))::vars)
+  case(env, (tv as Types.VAR(name,attr,prot,(ty as (Types.T_COMPLEX(_,typeslst,_,_),_)) , _))::vars)
     equation
        complexEnv = Env.newFrame(false); 
        complexEnv = makeComplexEnv({complexEnv},typeslst);
@@ -792,7 +793,7 @@ algorithm outVal := matchcontinue(inVal,env,toAssign)
       list<Values.Value> vals;
       list<String> names;
     equation
-      (_,_,t as (Types.T_COMPLEX(_,typeslst,_),_),_,_,_) = Lookup.lookupVar(Env.emptyCache,env, Exp.CREF_IDENT(str,Exp.OTHER(),{}));
+      (_,_,t as (Types.T_COMPLEX(_,typeslst,_,_),_),_,_,_) = Lookup.lookupVar(Env.emptyCache,env, Exp.CREF_IDENT(str,Exp.OTHER(),{}));
       nlist = setValuesInRecord(typeslst,names,vals);
       fr = Env.newFrame(false); 
       complexEnv = makeComplexEnv({fr},nlist);
@@ -1110,7 +1111,7 @@ algorithm oval := matchcontinue(inType)
   case((Types.T_STRING(_),_)) then Values.STRING("");
   case((Types.T_BOOL(_),_)) then Values.BOOL(false);
   case((Types.T_ENUM,_)) then Values.ENUM(Exp.CREF_IDENT("",Exp.ENUM(),{})); 
-  case((Types.T_COMPLEX(ClassInf.RECORD(str), typesVar,_),_))
+  case((Types.T_COMPLEX(ClassInf.RECORD(str), typesVar,_,_),_))
     local 
       list<Types.Var> typesVar;
       String str;
@@ -1165,8 +1166,8 @@ algorithm
     case(p ,env) 
       equation
         (_,typeClass as SCode.CLASS(name=className),env1) = Lookup.lookupClass(Env.emptyCache, env, p, false);
-        (_,_,env2,_,ty,_,_) = Inst.instClass(
-          Env.emptyCache,env1,Types.NOMOD(),Prefix.NOPRE(),Connect.emptySet,typeClass,{}, true, Inst.INNER_CALL);
+        (_,_,env2,_,ty,_,_,_) = Inst.instClass(
+          Env.emptyCache,env1,Types.NOMOD(),Prefix.NOPRE(),Connect.emptySet,typeClass,{}, true, Inst.INNER_CALL, ConnectionGraph.EMPTY);
       then
         ty;
     case (_,_) 

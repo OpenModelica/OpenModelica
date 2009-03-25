@@ -425,9 +425,9 @@ algorithm
     case ((Types.T_STRING(varLstString = _),_)) then Exp.STRING(); 
     case ((Types.T_BOOL(varLstBool = _),_)) then Exp.BOOL(); 
     case ((Types.T_ARRAY(arrayType = t),_)) then getTypeExpType(t);
-    case ((Types.T_COMPLEX(_,{},SOME(t)),_))
+    case ((Types.T_COMPLEX(_,{},SOME(t),_),_))
        then getTypeExpType(t);
-    case ((Types.T_COMPLEX(_,_::_,_),_)) 
+    case ((Types.T_COMPLEX(_,_::_,_,_),_)) 
       equation 
       print("Warning complex_varList not implemented for Array_assign\n");
       then fail();

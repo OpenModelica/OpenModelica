@@ -1334,7 +1334,7 @@ algorithm
     equation
       lst2 =fromVarTypesListToVarList(lst,{});
       cType2 = fromTypeTypesToType(cType);
-      ret = ((Types.T_COMPLEX(s,lst2,SOME(cType2)),p));
+      ret = ((Types.T_COMPLEX(s,lst2,SOME(cType2),NONE),p));
     then ret;
 
  	  case ((Exp.T_COMPLEXTYPES(s,lst,NONE()),p))
@@ -1344,7 +1344,7 @@ algorithm
       list<Types.Var> lst2;
 		equation
 		  lst2 = fromVarTypesListToVarList(lst,{});
-		  ret = ((Types.T_COMPLEX(s,lst2,NONE()),p));
+		  ret = ((Types.T_COMPLEX(s,lst2,NONE(),NONE),p));
 		then ret;
 
 	  case ((Exp.T_FUNCTIONTYPES(lst,fType),p))
@@ -1779,7 +1779,7 @@ algorithm
 	    ret = ((Exp.T_ARRAYTYPES(arrDim2,arrType2),p));
 	  then ret;
 
-	  case ((Types.T_COMPLEX(s,lst,SOME(cType)),p))
+	  case ((Types.T_COMPLEX(s,lst,SOME(cType),_),p))
 	  local
 		  ClassInf.State s;
       list<Types.Var> lst;
@@ -1792,7 +1792,7 @@ algorithm
       ret = ((Exp.T_COMPLEXTYPES(s,temp,SOME(cType2)),p));
     then ret;
 
- 	  case ((Types.T_COMPLEX(s,lst,NONE()),p))
+ 	  case ((Types.T_COMPLEX(s,lst,NONE(),_),p))
 	  local
 		  ClassInf.State s;
       list<Types.Var> lst;

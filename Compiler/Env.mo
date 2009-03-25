@@ -1377,7 +1377,7 @@ algorithm
       Option<AvlTree> l,r;
       Absyn.InnerOuter io;
     case (NONE) then {}; 
-    case (SOME(AVLTREENODE(SOME(AVLTREEVALUE(_,VAR(Types.VAR(id,Types.ATTR(innerOuter=io),_,(Types.T_COMPLEX(ClassInf.CONNECTOR(_),vars,_),_),_),_,_,_))),_,l,r)))
+    case (SOME(AVLTREENODE(SOME(AVLTREEVALUE(_,VAR(Types.VAR(id,Types.ATTR(innerOuter=io),_,(Types.T_COMPLEX(ClassInf.CONNECTOR(_),vars,_,_),_),_),_,_,_))),_,l,r)))
       equation 
         lst1 = localOutsideConnectorFlowvars2(l);
         lst2 = localOutsideConnectorFlowvars2(r);
@@ -1437,7 +1437,7 @@ algorithm
     case (NONE) then {}; 
     
     /* If CONNECTOR then  outside and not inside, skip.. */
-    case (SOME(AVLTREENODE(SOME(AVLTREEVALUE(_,VAR(Types.VAR(id,_,_,(Types.T_COMPLEX(ClassInf.CONNECTOR(_),_,_),_),_),_,_,_))),_,l,r)))  
+    case (SOME(AVLTREENODE(SOME(AVLTREEVALUE(_,VAR(Types.VAR(id,_,_,(Types.T_COMPLEX(ClassInf.CONNECTOR(_),_,_,_),_),_),_,_,_))),_,l,r)))  
       equation 
         lst1 = localInsideConnectorFlowvars2(l);
         lst2 = localInsideConnectorFlowvars2(r);
@@ -1446,7 +1446,7 @@ algorithm
         res;
         
      /* If OUTER, skip.. */
-    case (SOME(AVLTREENODE(SOME(AVLTREEVALUE(_,VAR(Types.VAR(id,Types.ATTR(innerOuter=io),_,(Types.T_COMPLEX(_,vars,_),_),_),_,_,_))),_,l,r)))  
+    case (SOME(AVLTREENODE(SOME(AVLTREEVALUE(_,VAR(Types.VAR(id,Types.ATTR(innerOuter=io),_,(Types.T_COMPLEX(_,vars,_,_),_),_),_,_,_))),_,l,r)))  
       equation
         (_,true) = Inst.innerOuterBooleans(io); 
         lst1 = localInsideConnectorFlowvars2(l);
@@ -1455,7 +1455,7 @@ algorithm
       then
         res;   
     /* ... else retrieve connectors as subcomponents */
-    case (SOME(AVLTREENODE(SOME(AVLTREEVALUE(_,VAR(Types.VAR(id,_,_,(Types.T_COMPLEX(_,vars,_),_),_),_,_,_))),_,l,r)))  
+    case (SOME(AVLTREENODE(SOME(AVLTREEVALUE(_,VAR(Types.VAR(id,_,_,(Types.T_COMPLEX(_,vars,_,_),_),_),_,_,_))),_,l,r)))  
       equation 
         lst1 = localInsideConnectorFlowvars3(vars, id);
         lst2 = localInsideConnectorFlowvars2(l);

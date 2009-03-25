@@ -59,6 +59,7 @@ public import Interactive;
 public import Values;
 public import Absyn;
 public import Types;
+public import ConnectionGraph;
 
 public 
 uniontype Msg
@@ -1225,8 +1226,8 @@ algorithm
         (cache,c,env_1) = Lookup.lookupClass(cache,env, funcname, false);
         compnames = SCode.componentNames(c);
         mod = Types.valuesToMods(vallst, compnames);
-        (cache,dae,_,_,_,_,_) = Inst.instClass(cache,env_1, mod, Prefix.NOPRE(), Connect.emptySet, c, {}, impl, 
-          Inst.TOP_CALL());
+        (cache,dae,_,_,_,_,_,_) = Inst.instClass(cache,env_1, mod, Prefix.NOPRE(), Connect.emptySet, c, {}, impl, 
+          Inst.TOP_CALL(),ConnectionGraph.EMPTY);
         value = DAE.daeToRecordValue(funcname, dae, impl);
       then
         (cache,value);

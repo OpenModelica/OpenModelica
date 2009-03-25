@@ -166,7 +166,7 @@ constant tuple<Types.TType, Option<Type_a>> nil2real=(Types.T_FUNCTION({},(Types
 
 protected constant tuple<Types.TType, Option<Type_a>> nil2bool=(Types.T_FUNCTION({},(Types.T_REAL({}),NONE)),NONE);
 
-protected constant tuple<Types.TType, Option<Type_a>> record2str=(Types.T_FUNCTION({("x",(Types.T_COMPLEX(ClassInf.UNKNOWN(""),{},NONE()),NONE))},(Types.T_STRING({}),NONE)),NONE);
+protected constant tuple<Types.TType, Option<Type_a>> record2str=(Types.T_FUNCTION({("x",(Types.T_COMPLEX(ClassInf.UNKNOWN(""),{},NONE(),NONE),NONE))},(Types.T_STRING({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> strStr2bool=(Types.T_FUNCTION({("x",(Types.T_STRING({}),NONE)),("y",(Types.T_STRING({}),NONE))},(Types.T_BOOL({}),NONE)),NONE);
 

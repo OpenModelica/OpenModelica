@@ -9,6 +9,7 @@ SRCMO= Absyn.mo \
 	ClassLoader.mo \
 	Codegen.mo \
 	Connect.mo \
+	ConnectionGraph.mo \
 	Convert.mo \
 	DAE.mo \
 	DAELow.mo \
@@ -28,6 +29,7 @@ SRCMO= Absyn.mo \
 	HashTable3.mo \
 	HashTable4.mo \
 	HashTable5.mo \
+	HashTableCG.mo \
 	Inst.mo \
 	Interactive.mo \
 	Lookup.mo \

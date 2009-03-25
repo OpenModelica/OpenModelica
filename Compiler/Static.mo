@@ -72,6 +72,7 @@ public import Algorithm;
 public import Convert;
 public import MetaUtil;
 public import RTOpts;
+public import ConnectionGraph;
 
 protected import OptManager;
 
@@ -633,9 +634,9 @@ algorithm
         env2 = Inst.addComponentsToEnv(env2, Types.NOMOD(), Prefix.NOPRE(), 
           Connect.SETS({},{},{},{}), ClassInf.FUNCTION("dummieFunc"), ld_mod, {}, {}, {}, impl);    
         
-        (cache,dae1,env2,_,_,_) = Inst.instElementList(cache,env2,
+        (cache,dae1,env2,_,_,_,_) = Inst.instElementList(cache,env2,
           Types.NOMOD(), Prefix.NOPRE(), Connect.SETS({},{},{},{}), ClassInf.FUNCTION("dummieFunc"),
-          ld_mod,{},impl);
+          ld_mod,{},impl,ConnectionGraph.EMPTY);
         
         //----------------------------------------------------------------------
         // The instantiation of the components may have produced some equations
@@ -698,9 +699,9 @@ algorithm
         env2 = Inst.addComponentsToEnv(env2, Types.NOMOD(), Prefix.NOPRE(), 
           Connect.SETS({},{},{},{}), ClassInf.FUNCTION("dummieFunc"), ld_mod, {}, {}, {}, impl);    
         
-        (cache,dae1,env2,_,_,_) = Inst.instElementList(cache,env2,
+        (cache,dae1,env2,_,_,_,_) = Inst.instElementList(cache,env2,
           Types.NOMOD(), Prefix.NOPRE(), Connect.SETS({},{},{},{}), ClassInf.FUNCTION("dummieFunc"),
-          ld_mod,{},impl);
+          ld_mod,{},impl,ConnectionGraph.EMPTY);
         
         //----------------------------------------------------------------------
         // The instantiation of the components may have produced some equations
@@ -1188,17 +1189,17 @@ algorithm
   outType:=
   matchcontinue (inEnv,inCode)
     local list<Env.Frame> env;
-    case (env,Absyn.C_TYPENAME(path = _)) then ((Types.T_COMPLEX(ClassInf.UNKNOWN("TypeName"),{},NONE),NONE)); 
-    case (env,Absyn.C_VARIABLENAME(componentRef = _)) then ((Types.T_COMPLEX(ClassInf.UNKNOWN("VariableName"),{},NONE),
+    case (env,Absyn.C_TYPENAME(path = _)) then ((Types.T_COMPLEX(ClassInf.UNKNOWN("TypeName"),{},NONE,NONE),NONE)); 
+    case (env,Absyn.C_VARIABLENAME(componentRef = _)) then ((Types.T_COMPLEX(ClassInf.UNKNOWN("VariableName"),{},NONE,NONE),
           NONE)); 
     case (env,Absyn.C_EQUATIONSECTION(boolean = _)) then ((
-          Types.T_COMPLEX(ClassInf.UNKNOWN("EquationSection"),{},NONE),NONE)); 
+          Types.T_COMPLEX(ClassInf.UNKNOWN("EquationSection"),{},NONE,NONE),NONE)); 
     case (env,Absyn.C_ALGORITHMSECTION(boolean = _)) then ((
-          Types.T_COMPLEX(ClassInf.UNKNOWN("AlgorithmSection"),{},NONE),NONE)); 
-    case (env,Absyn.C_ELEMENT(element = _)) then ((Types.T_COMPLEX(ClassInf.UNKNOWN("Element"),{},NONE),NONE)); 
-    case (env,Absyn.C_EXPRESSION(exp = _)) then ((Types.T_COMPLEX(ClassInf.UNKNOWN("Expression"),{},NONE),
+          Types.T_COMPLEX(ClassInf.UNKNOWN("AlgorithmSection"),{},NONE,NONE),NONE)); 
+    case (env,Absyn.C_ELEMENT(element = _)) then ((Types.T_COMPLEX(ClassInf.UNKNOWN("Element"),{},NONE,NONE),NONE)); 
+    case (env,Absyn.C_EXPRESSION(exp = _)) then ((Types.T_COMPLEX(ClassInf.UNKNOWN("Expression"),{},NONE,NONE),
           NONE)); 
-    case (env,Absyn.C_MODIFICATION(modification = _)) then ((Types.T_COMPLEX(ClassInf.UNKNOWN("Modification"),{},NONE),
+    case (env,Absyn.C_MODIFICATION(modification = _)) then ((Types.T_COMPLEX(ClassInf.UNKNOWN("Modification"),{},NONE,NONE),
           NONE)); 
   end matchcontinue;
 end elabCodeType;
@@ -5670,7 +5671,7 @@ algorithm
           Types.VAR("flatClass",
           Types.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,(Types.T_STRING({}),NONE),Types.UNBOUND()),
           Types.VAR("exeFile",
-          Types.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,(Types.T_STRING({}),NONE),Types.UNBOUND())},NONE),NONE);
+          Types.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,(Types.T_STRING({}),NONE),Types.UNBOUND())},NONE,NONE),NONE);
       then
         (cache,Exp.CALL(Absyn.IDENT("translateModel"),
           {Exp.CODE(Absyn.C_TYPENAME(className),Exp.OTHER()),filenameprefix},false,true,Exp.STRING()),Types.PROP(recordtype,Types.C_VAR()),SOME(st));
@@ -5689,7 +5690,7 @@ algorithm
           Types.VAR("flatClass",
           Types.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,(Types.T_STRING({}),NONE),Types.UNBOUND()),
           Types.VAR("exeFile",
-          Types.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,(Types.T_STRING({}),NONE),Types.UNBOUND())},NONE),NONE);
+          Types.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,(Types.T_STRING({}),NONE),Types.UNBOUND())},NONE,NONE),NONE);
       then
         (cache,Exp.CALL(Absyn.IDENT("exportDAEtoMatlab"),
           {Exp.CODE(Absyn.C_TYPENAME(className),Exp.OTHER()),filenameprefix},false,true,Exp.STRING()),Types.PROP(recordtype,Types.C_VAR()),SOME(st));
@@ -5792,7 +5793,7 @@ algorithm
           Types.T_COMPLEX(ClassInf.RECORD("SimulationResult"),
           {
           Types.VAR("resultFile",
-          Types.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,(Types.T_STRING({}),NONE),Types.UNBOUND())},NONE),NONE);
+          Types.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,(Types.T_STRING({}),NONE),Types.UNBOUND())},NONE,NONE),NONE);
       then
         (cache,Exp.CALL(Absyn.IDENT("simulate"),
           {Exp.CODE(Absyn.C_TYPENAME(className),Exp.OTHER()),startTime,stopTime,
@@ -6837,7 +6838,7 @@ algorithm
       /* Record constructors, user defined or implicit*/ 
     case (cache,env,fn,args,nargs,impl,st) 
       equation 
-        (cache,(t as (Types.T_FUNCTION(fargs,(outtype as (Types.T_COMPLEX(ClassInf.RECORD(_),_,_),_))),_)),env_1) 
+        (cache,(t as (Types.T_FUNCTION(fargs,(outtype as (Types.T_COMPLEX(ClassInf.RECORD(_),_,_,_),_))),_)),env_1) 
         	= Lookup.lookupType(cache,env, fn, true);
         slots = makeEmptySlots(fargs);
         (cache,args_1,newslots,constlist) = elabInputArgs(cache,env, args, nargs, slots, true /*checkTypes*/ ,impl);
@@ -8790,7 +8791,7 @@ algorithm
       
     case(false, e, _, _) then e;
       /* types extending basictype */
-    case (doVect,e,(Types.T_COMPLEX(_,_,SOME(t)),_),_)
+    case (doVect,e,(Types.T_COMPLEX(_,_,SOME(t),_),_),_)
       equation 
         e = crefVectorize(doVect,e,t,NONE);
       then e;
@@ -10628,7 +10629,7 @@ algorithm
         ns = nDims(t);
       then
         ns + 1;
-    case ((Types.T_COMPLEX(_,_,SOME(t)),_)) 
+    case ((Types.T_COMPLEX(_,_,SOME(t),_),_)) 
     equation
       ns = nDims(t);
       then ns;
@@ -10655,7 +10656,7 @@ algorithm
         n = dimSize(t, d_1);
       then
         n;
-    case ((Types.T_COMPLEX(_,_,SOME(t)),_),d)
+    case ((Types.T_COMPLEX(_,_,SOME(t),_),_),d)
       equation 
        n = dimSize(t, d);
       then
@@ -10682,7 +10683,7 @@ algorithm
         t_1 = elementType(t);
       then
         t_1;
-    case ((Types.T_COMPLEX(_,_,SOME(t)),_)) 
+    case ((Types.T_COMPLEX(_,_,SOME(t),_),_)) 
       equation
         t_1 = elementType(t);
       then t_1;

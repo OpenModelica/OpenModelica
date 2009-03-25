@@ -54,6 +54,7 @@ public import Types;
 public import Values;
 public import Env;
 public import Settings;
+public import ConnectionGraph;
 
 protected import HashTable2;
 
@@ -13241,7 +13242,7 @@ algorithm
         mod_1 = SCode.buildMod(SOME(Absyn.CLASSMOD(mod,NONE)), false, Absyn.NON_EACH());
         (_,mod_2) = Mod.elabMod(Env.emptyCache,env_1, Prefix.NOPRE(), mod_1, false);
         c_1 = SCode.classSetPartial(c, false);
-        (_,dae,_,cs,t,state,_) = Inst.instClass(Env.emptyCache,env_1, mod_2, Prefix.NOPRE(), Connect.emptySet, c_1, {}, false, Inst.TOP_CALL());
+        (_,dae,_,cs,t,state,_,_) = Inst.instClass(Env.emptyCache,env_1, mod_2, Prefix.NOPRE(), Connect.emptySet, c_1, {}, false, Inst.TOP_CALL(), ConnectionGraph.EMPTY);
         dae_1 = Inst.initVarsModelicaOutput(dae) "Put bindings of variables as expressions inside variable elements of the dae instead of equations" ;
         gexpstr = DAE.getVariableBindingsStr(dae_1);
         gexpstr_1 = Util.stringAppendList({"{",gexpstr,"}"});
@@ -13469,8 +13470,8 @@ algorithm
         placementc = getClassInProgram("Icon", p);
         placementclass = SCode.elabClass(placementc);
         (_,mod_2) = Mod.elabMod(Env.emptyCache,env, Prefix.NOPRE(), mod_1, false);
-        (_,dae,_,cs,t,state,_) = Inst.instClass(Env.emptyCache,env, mod_2, Prefix.NOPRE(), Connect.emptySet,
-          placementclass, {}, false, Inst.TOP_CALL());
+        (_,dae,_,cs,t,state,_,_) = Inst.instClass(Env.emptyCache,env, mod_2, Prefix.NOPRE(), Connect.emptySet,
+          placementclass, {}, false, Inst.TOP_CALL(), ConnectionGraph.EMPTY);
         dae_1 = Inst.initVarsModelicaOutput(dae) "Put bindings of variables as expressions inside variable elements of the dae instead of equations" ;
         str = DAE.getVariableBindingsStr(dae_1);
         (_,graphicexp2,prop) = Static.elabGraphicsExp(Env.emptyCache,env, graphicexp, false) "impl" ;
@@ -13493,8 +13494,8 @@ algorithm
         placementc = getClassInProgram("Icon", p);
         placementclass = SCode.elabClass(placementc);
         (_,mod_2) = Mod.elabMod(Env.emptyCache,env, Prefix.NOPRE(), mod_1, true);
-        (_,dae,_,cs,t,state,_) = Inst.instClass(Env.emptyCache,env, mod_2, Prefix.NOPRE(), Connect.emptySet,
-          placementclass, {}, false, Inst.TOP_CALL());
+        (_,dae,_,cs,t,state,_,_) = Inst.instClass(Env.emptyCache,env, mod_2, Prefix.NOPRE(), Connect.emptySet,
+          placementclass, {}, false, Inst.TOP_CALL(), ConnectionGraph.EMPTY);
         dae_1 = Inst.initVarsModelicaOutput(dae) "Put bindings of variables as expressions inside variable elements of the dae instead of equations" ;
         str = DAE.getVariableBindingsStr(dae_1);
       then
@@ -13510,8 +13511,8 @@ algorithm
         placementc = getClassInProgram("Diagram", p);
         placementclass = SCode.elabClass(placementc);
         (_,mod_2) = Mod.elabMod(Env.emptyCache,env, Prefix.NOPRE(), mod_1, false);
-        (_,dae,_,cs,t,state,_) = Inst.instClass(Env.emptyCache,env, mod_2, Prefix.NOPRE(), Connect.emptySet,
-          placementclass, {}, false, Inst.TOP_CALL());
+        (_,dae,_,cs,t,state,_,_) = Inst.instClass(Env.emptyCache,env, mod_2, Prefix.NOPRE(), Connect.emptySet,
+          placementclass, {}, false, Inst.TOP_CALL(), ConnectionGraph.EMPTY);
         dae_1 = Inst.initVarsModelicaOutput(dae) "Put bindings of variables as expressions inside variable elements of the dae instead of equations" ;
         str = DAE.getVariableBindingsStr(dae_1);
         (_,graphicexp2,prop) = Static.elabGraphicsExp(Env.emptyCache,env, graphicexp, false) "impl" ;
@@ -13530,8 +13531,8 @@ algorithm
         placementc = getClassInProgram(anncname, p);
         placementclass = SCode.elabClass(placementc);
         (_,mod_2) = Mod.elabMod(Env.emptyCache,env, Prefix.NOPRE(), mod_1, false);
-        (_,dae,_,cs,t,state,_) = Inst.instClass(Env.emptyCache,env, mod_2, Prefix.NOPRE(), Connect.emptySet,
-          placementclass, {}, false, Inst.TOP_CALL());
+        (_,dae,_,cs,t,state,_,_) = Inst.instClass(Env.emptyCache,env, mod_2, Prefix.NOPRE(), Connect.emptySet,
+          placementclass, {}, false, Inst.TOP_CALL(), ConnectionGraph.EMPTY);
         dae_1 = Inst.initVarsModelicaOutput(dae) "Put bindings of variables as expressions inside variable elements of the dae instead of equations" ;
         str = DAE.getVariableBindingsStr(dae_1);
       then
@@ -18257,8 +18258,8 @@ algorithm
       (_,(cl as SCode.CLASS(id,_,encflag,restr,_)),env_1) = Lookup.lookupClass(Env.emptyCache,env, p_class, false);
       env2 = Env.openScope(env_1, encflag, SOME(id));
       ci_state = ClassInf.start(restr, id);
-      (_,_,env_2,_,_,_,_,_) = Inst.instClassIn(Env.emptyCache,env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
-        ci_state, cl, false, {},false);
+      (_,_,env_2,_,_,_,_,_,_,_) = Inst.instClassIn(Env.emptyCache,env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
+        ci_state, cl, false, {},false, ConnectionGraph.EMPTY);
     then env_2;
     end matchcontinue;
 end getClassEnvNoElaboration;
