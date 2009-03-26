@@ -1769,7 +1769,6 @@ algorithm
         // end Icons;
         // if we don't check that, then the compiler enters an infinite loop!
         // what we do is removing Icons from extends Icons.BaseLibrary;
-        print("Derived\n");
         cn = removeSelfReference(className, cn);
         (cache,(c as SCode.CLASS(cn2,_,enc2,r,_)),cenv) = Lookup.lookupClass(cache,env, cn, true);
         cenv_2 = Env.openScope(cenv, enc2, SOME(cn2));
