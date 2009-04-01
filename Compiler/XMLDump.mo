@@ -3064,6 +3064,7 @@ See dumpVariable for more details on the XML output.
 algorithm
   _:=
   matchcontinue (inVarLst,inInteger,addMathMLCode)
+      
     local
       String varnostr,dirstr,str,path_str,comment_str,s,indx_str;
       list<String> paths_lst,path_strs;
@@ -3100,7 +3101,7 @@ algorithm
                             flow_ = flow_,
                             stream_ = stream_)) :: xs),varno,addMMLCode)
       equation
-        dumpVariable(intString(varno),Exp.crefStr(cr),dumpKind(kind),dumpDirectionStr(dir),dumpTypeStr(var_type),
+        dumpVariable(intString(varno),Exp.printComponentRefStr(cr),dumpKind(kind),dumpDirectionStr(dir),dumpTypeStr(var_type),
                      intString(indx),Exp.crefStr(old_name),Util.boolString(DAELow.varFixed(v)),dumpFlowStr(flow_),
                      dumpStreamStr(stream_),unparseCommentOptionNoAnnotation(comment));
         dumpBindValueExpression(e,b,addMMLCode);
@@ -3168,7 +3169,7 @@ algorithm
                             flow_ = flow_,
                             stream_ = stream_)) :: xs),crefIdxLstArr,strIdxLstArr,varno,addMMLCode)
       equation
-        dumpVariable(intString(varno),Exp.crefStr(cr),dumpKind(kind),dumpDirectionStr(dir),dumpTypeStr(var_type),intString(indx),
+        dumpVariable(intString(varno),Exp.printComponentRefStr(cr),dumpKind(kind),dumpDirectionStr(dir),dumpTypeStr(var_type),intString(indx),
                         Exp.crefStr(old_name),Util.boolString(DAELow.varFixed(v)),dumpFlowStr(flow_),dumpStreamStr(stream_),
                         Dump.unparseCommentOption(comment));
         dumpBindValueExpression(e,b,addMMLCode);
