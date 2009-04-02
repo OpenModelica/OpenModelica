@@ -1901,7 +1901,7 @@ algorithm outComps := matchcontinue(inComps, ocr,allComps,className)
   case(inComps, SOME(cr), allComps,className)
     equation
       Debug.fprint("failtrace", "ExtractConstantPlusDeps::Failure to find " +& Exp.printComponentRefStr(cr) +& ", returning \n");
-      Debug.fprint("failtrace", "Elements to instantiate:" +& intString(listLength(inComps)) +& "\n"
+      Debug.fprint("failtrace", "Elements to instantiate:" +& intString(listLength(inComps)) +& "\n");
     then 
       inComps;
 end matchcontinue;
