@@ -18259,7 +18259,7 @@ algorithm
       env2 = Env.openScope(env_1, encflag, SOME(id));
       ci_state = ClassInf.start(restr, id);
       (_,_,env_2,_,_,_,_,_,_,_) = Inst.instClassIn(Env.emptyCache,env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
-        ci_state, cl, false, {},false, ConnectionGraph.EMPTY);
+        ci_state, cl, false, {},false, ConnectionGraph.EMPTY,NONE);
     then env_2;
     end matchcontinue;
 end getClassEnvNoElaboration;

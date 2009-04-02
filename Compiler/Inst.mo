@@ -872,7 +872,7 @@ algorithm
         env_1 = Env.openScope(env, encflag, SOME(n));
         ci_state = ClassInf.start(r, n);
         (cache,dae1,env_3,(csets_1 as Connect.SETS(_,crs,dc,oc)),ci_state_1,tys,bc_ty,oDA,equalityConstraint, graph) 
-        			= instClassIn(cache,env_1, mod, pre, csets, ci_state, c, false, inst_dims, impl, graph) ;
+        			= instClassIn(cache,env_1, mod, pre, csets, ci_state, c, false, inst_dims, impl, graph,NONE) ;
         (cache,fq_class) = makeFullyQualified(cache,env, Absyn.IDENT(n));
 				//str = Absyn.pathString(fq_class); print("------------------- CLASS makeFullyQualified instClass-----------------\n");print(n); print("  ");print(str);print("\n===============================================\n");
         dae1_1 = DAE.setComponentType(dae1, fq_class);
@@ -954,7 +954,7 @@ algorithm
         ci_state = ClassInf.start(r, n);
         c_1 = SCode.classSetPartial(c, false);
         (cache,dae1,env_3,(csets_1 as Connect.SETS(_,crs,dc,oc)),ci_state_1,tys,bc_ty,_,_,_) 
-        = instClassIn(cache,env_1, mod, pre, csets, ci_state, c_1, false, inst_dims, impl, ConnectionGraph.EMPTY) ;
+        = instClassIn(cache,env_1, mod, pre, csets, ci_state, c_1, false, inst_dims, impl, ConnectionGraph.EMPTY,NONE);
         (cache,fq_class) = makeFullyQualified(cache,env_3, Absyn.IDENT(n));
         dae1_1 = DAE.setComponentType(dae1, fq_class);
         callscope_1 = isTopCall(callscope);
@@ -998,6 +998,7 @@ public function instClassIn
   input InstDims inInstDims8;
   input Boolean inBoolean9;
   input ConnectionGraph.ConnectionGraph inGraph;
+  input Option<Exp.ComponentRef> instSingleCref;
 	output Env.Cache outCache;
   output list<DAE.Element> outDAEElementLst;
   output Env outEnv;
@@ -1010,7 +1011,7 @@ public function instClassIn
   output ConnectionGraph.ConnectionGraph outGraph;
 algorithm 
   (outCache,outDAEElementLst,outEnv,outSets,outState,outTypesVarLst,outTypesTypeOption,optDerAttr,outEqualityConstraint,outGraph):=
-  matchcontinue (inCache,inEnv1,inMod2,inPrefix3,inSets4,inState5,inClass6,inBoolean7,inInstDims8,inBoolean9,inGraph)
+  matchcontinue (inCache,inEnv1,inMod2,inPrefix3,inSets4,inState5,inClass6,inBoolean7,inInstDims8,inBoolean9,inGraph,instSingleCref)
     local
       Option<tuple<Types.TType, Option<Absyn.Path>>> bc;
       list<Env.Frame> env,env_1;
@@ -1035,7 +1036,7 @@ algorithm
       Types.EqualityConstraint equalityConstraint;
       ConnectionGraph.ConnectionGraph graph;
       /*  Real class */ 
-    case (cache,env,mods,pre,csets as Connect.SETS(connection = crs,deletedComponents=dc,outerConnects=oc),ci_state,(c as SCode.CLASS(name = "Real",restriction = r,classDef = d)),prot,inst_dims,impl,graph) 
+    case (cache,env,mods,pre,csets as Connect.SETS(connection = crs,deletedComponents=dc,outerConnects=oc),ci_state,(c as SCode.CLASS(name = "Real",restriction = r,classDef = d)),prot,inst_dims,impl,graph,_) 
       equation 
         tys = instRealClass(cache,env,mods,pre);     
         bc = arrayBasictypeBaseclass(inst_dims, (Types.T_REAL(tys),NONE));        
@@ -1043,28 +1044,28 @@ algorithm
         (cache,{},env,Connect.SETS({},crs,dc,oc),ci_state,tys,bc,NONE,NONE,graph);       
         
         /* Integer class */
-    case (cache,env,mods,pre,csets as Connect.SETS(connection = crs,deletedComponents=dc,outerConnects=oc),ci_state,(c as SCode.CLASS(name = "Integer",restriction = r,classDef = d)),prot,inst_dims,impl,graph) 
+    case (cache,env,mods,pre,csets as Connect.SETS(connection = crs,deletedComponents=dc,outerConnects=oc),ci_state,(c as SCode.CLASS(name = "Integer",restriction = r,classDef = d)),prot,inst_dims,impl,graph,_) 
       equation
         tys =  instIntegerClass(cache,env,mods,pre);       
         bc = arrayBasictypeBaseclass(inst_dims, (Types.T_INTEGER(tys),NONE));
       then (cache,{},env,Connect.SETS({},crs,dc,oc),ci_state,tys,NONE,NONE,NONE,graph);   
 
         /* String class */
-    case (cache,env,mods,pre,csets as Connect.SETS(connection = crs,deletedComponents=dc,outerConnects=oc),ci_state,(c as SCode.CLASS(name = "String",restriction = r,classDef = d)),prot,inst_dims,impl,graph) 
+    case (cache,env,mods,pre,csets as Connect.SETS(connection = crs,deletedComponents=dc,outerConnects=oc),ci_state,(c as SCode.CLASS(name = "String",restriction = r,classDef = d)),prot,inst_dims,impl,graph,_) 
       equation
         tys =  instStringClass(cache,env,mods,pre);    
         bc = arrayBasictypeBaseclass(inst_dims, (Types.T_STRING(tys),NONE));        
       then (cache,{},env,Connect.SETS({},crs,dc,oc),ci_state,tys,NONE,NONE,NONE,graph);   
 
         /* Boolean class */
-    case (cache,env,mods,pre,csets as Connect.SETS(connection = crs,deletedComponents=dc,outerConnects=oc),ci_state,(c as SCode.CLASS(name = "Boolean",restriction = r,classDef = d)),prot,inst_dims,impl,graph) 
+    case (cache,env,mods,pre,csets as Connect.SETS(connection = crs,deletedComponents=dc,outerConnects=oc),ci_state,(c as SCode.CLASS(name = "Boolean",restriction = r,classDef = d)),prot,inst_dims,impl,graph,_) 
       equation
         tys =  instBooleanClass(cache,env,mods,pre); 
         bc = arrayBasictypeBaseclass(inst_dims, (Types.T_BOOL(tys),NONE));        
       then (cache,{},env,Connect.SETS({},crs,dc,oc),ci_state,tys,NONE,NONE,NONE,graph);           
   
    	/* Ignore functions if not implicit instantiation */ 
-    case (cache,env,mods,pre,Connect.SETS(connection = crs,deletedComponents=dc,outerConnects=oc),ci_state,cls,_,_,(impl as false),graph) 
+    case (cache,env,mods,pre,Connect.SETS(connection = crs,deletedComponents=dc,outerConnects=oc),ci_state,cls,_,_,(impl as false),graph,_) 
       equation        
         true = SCode.isFunction(cls);
         clsname = SCode.className(cls);
@@ -1073,7 +1074,7 @@ algorithm
         (cache,{},env,Connect.SETS({},crs,dc,oc),ci_state,{},NONE,NONE,NONE,graph);
          
     /* Instantiate a class definition made of parts */
-    case (cache,env,mods,pre,csets,ci_state,(c as SCode.CLASS(name = n,restriction = r,classDef = d)),prot,inst_dims,impl,graph)
+    case (cache,env,mods,pre,csets,ci_state,(c as SCode.CLASS(name = n,restriction = r,classDef = d)),prot,inst_dims,impl,graph,instSingleCref)
       local String s; Absyn.Path fullPath;
         Boolean b;
       equation 
@@ -1086,7 +1087,7 @@ algorithm
         //Debug.fprint("insttr", "\n");
 
 				//t1 = clock();
-        (cache,l,env_1,csets_1,ci_state_1,tys,bc,oDA,equalityConstraint,graph) = instClassdef(cache,env, mods, pre, csets, ci_state, n,d, r, prot, inst_dims, impl,graph);
+        (cache,l,env_1,csets_1,ci_state_1,tys,bc,oDA,equalityConstraint,graph) = instClassdef(cache,env, mods, pre, csets, ci_state, n,d, r, prot, inst_dims, impl,graph,instSingleCref);
 
         /*t2 = clock();
         time = t2 -. t1;
@@ -1099,7 +1100,7 @@ algorithm
       then
         (cache,l,env_1,csets_1,ci_state_1,tys,bc,oDA,equalityConstraint,graph);
     
-    case (cache,env,mods,pre,csets,ci_state,(c as SCode.CLASS(name = n,restriction = r,classDef = d)),prot,inst_dims,impl,graph)
+    case (cache,env,mods,pre,csets,ci_state,(c as SCode.CLASS(name = n,restriction = r,classDef = d)),prot,inst_dims,impl,graph,_)
       equation 
         //print("instClassIn(");print(n);print("failed\n");
         //Debug.fprintln("failtrace", "- Inst.instClassIn failed" +& n);
@@ -1579,6 +1580,7 @@ protected function instClassdef
   input InstDims inInstDims9;
   input Boolean inBoolean10;
   input ConnectionGraph.ConnectionGraph inGraph;
+  input Option<Exp.ComponentRef> instSingleCref;
   output Env.Cache outCache;
   output list<DAE.Element> outDAEElementLst;
   output Env outEnv;
@@ -1591,7 +1593,7 @@ protected function instClassdef
   output ConnectionGraph.ConnectionGraph outGraph;
 algorithm 
   (outCache,outDAEElementLst,outEnv,outSets,outState,outTypesVarLst,outTypesTypeOption,optDerAttr,outEqualityConstraint,outGraph):=
-  matchcontinue (inCache,inEnv1,inMod2,inPrefix3,inSets4,inState5,className,inClassDef6,inRestriction7,inBoolean8,inInstDims9,inBoolean10,inGraph)
+  matchcontinue (inCache,inEnv1,inMod2,inPrefix3,inSets4,inState5,className,inClassDef6,inRestriction7,inBoolean8,inInstDims9,inBoolean10,inGraph,instSingleCref)
     local
       list<SCode.Element> cdefelts,compelts,extendselts,els;
       list<Env.Frame> env1,env2,env3,env,env4,env5,cenv,cenv_2,env_2;
@@ -1632,7 +1634,7 @@ algorithm
                       initialEquationLst = {},
                       normalAlgorithmLst = {},
                       initialAlgorithmLst = {}),
-          re,prot,inst_dims,impl,graph) 
+          re,prot,inst_dims,impl,graph,instSingleCref) 
       equation  
         (cdefelts,extendselts as (_ :: _),compelts) = splitElts(els) "extendselts should be empty, checked in inst_basic type below";
         env1 = addClassdefsToEnv(env, cdefelts, impl,NONE) "1. CLASSDEF & IMPORT nodes and COMPONENT nodes(add to env)" ;
@@ -1644,7 +1646,7 @@ algorithm
         // Search for equalityConstraint
         equalityConstraint = equalityConstraint(cache, env, els);
 
-        ErrorExt.errorOn();
+        //ErrorExt.errorOn();
       then
         (cache,{},env,Connect.SETS({},crs,dc,oc),ci_state,tys,bc,NONE,equalityConstraint,graph);
         
@@ -1652,12 +1654,8 @@ algorithm
      * and have two local functions: constructor and destructor (and no other elements). 
      */
     case (cache,env,mods,pre,csets,ci_state,className,
-          SCode.PARTS(elementLst = els, 
-                      normalEquationLst = eqs, 
-                      initialEquationLst = initeqs,
-                      normalAlgorithmLst = alg,
-                      initialAlgorithmLst = initalg),
-              re,prot,inst_dims,impl,graph) 
+          SCode.PARTS(elementLst = els, normalEquationLst = eqs, initialEquationLst = initeqs,
+            normalAlgorithmLst = alg, initialAlgorithmLst = initalg), re,prot,inst_dims,impl,graph,instSingleCref) 
       equation
        	true = isExternalObject(els);
        	(cache,dae,env,ci_state) = instantiateExternalObject(cache,env,els,impl);       	
@@ -1671,9 +1669,11 @@ algorithm
                       initialEquationLst = initeqs,
                       normalAlgorithmLst = alg,
                       initialAlgorithmLst = initalg),
-          re,prot,inst_dims,impl,graph) 
+          re,prot,inst_dims,impl,graph,instSingleCref)
+          local list<Mod> tmpModList; 
       equation 
         ci_state1 = ClassInf.trans(ci_state, ClassInf.NEWDEF());
+        els = extractConstantPlusDeps(els,instSingleCref,{},className);
         (cdefelts,extendselts,compelts) = splitElts(els);                          
                 
         env1 = addClassdefsToEnv(env, cdefelts, impl, SOME(mods)) "1. CLASSDEF & IMPORT nodes and COMPONENT nodes(add to env)" ;
@@ -1719,6 +1719,7 @@ algorithm
         env2 = addConnectionSetToEnv(csets_filtered,pre, env2);
         id = Env.printEnvPathStr(env);       
         
+
         //Add variables to env, wihtout type and binding, which will be added 
         //later in inst_element_list (where update_variable is called)" 
         env3 = addComponentsToEnv(env2, emods, pre, csets, ci_state, compelts_1, compelts_1, eqs_1, inst_dims, impl);
@@ -1730,6 +1731,7 @@ algorithm
         cdefelts_1 = addNomod(cdefelts);
         compelts_2 = Util.listFlatten({compelts_2,compelts_1, cdefelts_1});
         //Instantiate components 
+ 
         (cache,dae1,env5,csets1,ci_state2,tys,graph) = instElementList(cache,env4, mods, pre, csets, ci_state1, compelts_2, inst_dims, impl,graph);
         //Instantiate equations (see function "instEquation")
         (cache,dae2,_,csets2,ci_state3,graph) = instList(cache,env5, mods, pre, csets1, ci_state2, instEquation, eqs_1, impl, graph) ;
@@ -1758,7 +1760,7 @@ algorithm
         /* This rule describes how to instantiate a derived class definition */ 
     case (cache,env,mods,pre,csets,ci_state,className,
           SCode.DERIVED(Absyn.TPATH(path = cn,arrayDim = ad),modifications = mod,attributes=DA),
-          re,prot,inst_dims,impl,graph)
+          re,prot,inst_dims,impl,graph,instSingleCref)
       local Absyn.ElementAttributes DA;
       equation 
         // adrpo - here we need to check if we don't have recursive extends of the form:
@@ -1780,7 +1782,7 @@ algorithm
         inst_dims2 = instDimExpLst(dims, impl);
         inst_dims_1 = Util.listListAppendLast(inst_dims, inst_dims2);
         (cache,dae,env_2,csets_1,ci_state_1,tys,bc,oDA,equalityConstraint,graph) = instClassIn(cache,cenv_2, mods_1, pre, csets, new_ci_state, c, prot, 
-          inst_dims_1, impl, graph) "instantiate class in opened scope. " ;
+          inst_dims_1, impl, graph, NONE) "instantiate class in opened scope. " ;
         ClassInf.assertValid(ci_state_1, re) "Check for restriction violations" ;
         oDA = Absyn.mergeElementAttributes(DA,oDA);        
       then
@@ -1789,7 +1791,7 @@ algorithm
     /* MetaModelica extension */
     case (cache,env,mods,pre,csets,ci_state,className,
           SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT("list"),tSpecs,_),modifications = mod, attributes=DA),
-          re,prot,inst_dims,impl,graph)
+          re,prot,inst_dims,impl,graph,instSingleCref)
       local 
         list<Absyn.TypeSpec> tSpecs; list<Types.Type> tys; Types.Type ty;
         Absyn.ElementAttributes DA;
@@ -1803,7 +1805,7 @@ algorithm
 
     case (cache,env,mods,pre,csets,ci_state,className,
           SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT("Option"),tSpecs,_),modifications = mod, attributes=DA),
-          re,prot,inst_dims,impl,graph)
+          re,prot,inst_dims,impl,graph,instSingleCref)
       local 
         list<Absyn.TypeSpec> tSpecs; list<Types.Type> tys; Types.Type ty;
         Absyn.ElementAttributes DA;
@@ -1817,7 +1819,7 @@ algorithm
 
     case (cache,env,mods,pre,csets,ci_state,className,
           SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT("tuple"),tSpecs,_),modifications = mod, attributes=DA),
-          re,prot,inst_dims,impl,graph)
+          re,prot,inst_dims,impl,graph,instSingleCref)
       local 
         list<Absyn.TypeSpec> tSpecs; list<Types.Type> tys;
         Absyn.ElementAttributes DA;
@@ -1832,7 +1834,7 @@ algorithm
     /* If the class is derived from a class that can not be found in the environment, this rule prints an error message. */    
     case (cache,env,mods,pre,csets,ci_state,className,
           SCode.DERIVED(Absyn.TPATH(path = cn, arrayDim = ad),modifications = mod),
-          re,prot,inst_dims,impl,graph)
+          re,prot,inst_dims,impl,graph,instSingleCref)
       equation 
         failure((_,_,_) = Lookup.lookupClass(cache,env, cn, false));
         cns = Absyn.pathString(cn);
@@ -1843,7 +1845,7 @@ algorithm
         
    case (cache,env,mods,pre,csets,ci_state,className,
          SCode.DERIVED(Absyn.TPATH(path = cn, arrayDim = ad),modifications = mod),
-         re,prot,inst_dims,impl,graph)
+         re,prot,inst_dims,impl,graph,instSingleCref)
   equation 
     failure((_,_,_) = Lookup.lookupClass(cache,env, cn, false));
         Debug.fprint("failtrace", "- inst_classdef DERIVED( ");
@@ -1853,7 +1855,7 @@ algorithm
       then
         fail();
         
-    case (_,env,_,_,_,_,_,_,_,_,_,_,_)
+    case (_,env,_,_,_,_,_,_,_,_,_,_,_,instSingleCref)
       equation 
         Debug.fprint("failtrace", "- Inst.instClassdef failed\n class :");
         s = Env.printEnvPathStr(env);
@@ -1863,6 +1865,173 @@ algorithm
         fail();
   end matchcontinue;
 end instClassdef;
+
+protected function extractConstantPlusDeps "
+Author: BZ, 2009-04
+This function filters the list of elements to instantiate depending on optional(Exp.ComponentRef), the
+optional argument is set in Lookup.lookupVarInPackages.
+If it is set, we are only looking for one variable in current scope hence we are not interested in 
+instantiating more then nescessary.
+
+The actuall action of this function is to compare components to the Exp.ComponentRef name
+if it is found return that component and any dependant components(modifiers), this is done by calling the function recursivly.
+
+If the component specified in argument 2 is not found, we return all extend and import statements.
+TODO: search import and extends statements for specified variable.
+       this includes to check class definitions to so that we do not need to instantiate local class definitions while looking for a constant.
+"
+  input list<SCode.Element> inComps;
+  input Option<Exp.ComponentRef> ocr;
+  input list<SCode.Element> allComps;
+  input String className;
+  output list<SCode.Element> outComps;
+algorithm outComps := matchcontinue(inComps, ocr,allComps,className)
+  local Exp.ComponentRef cr;
+  case(inComps, NONE,allComps,className) then inComps;
+  case(inComps, SOME(cr), allComps,className)
+    local
+      list<String> elemStrings;
+      list<SCode.Element> elems;
+    equation
+      outComps = extractConstantPlusDeps2(inComps, ocr,allComps,className,{});
+      true = listLength(outComps) >= 1;
+      outComps = listReverse(outComps);
+    then 
+      outComps;
+  case(inComps, SOME(cr), allComps,className)
+    equation
+      Debug.fprint("failtrace", "ExtractConstantPlusDeps::Failure to find " +& Exp.printComponentRefStr(cr) +& ", returning \n");
+      Debug.fprint("failtrace", "Elements to instantiate:" +& intString(listLength(inComps)) +& "\n"
+    then 
+      inComps;
+end matchcontinue;
+end extractConstantPlusDeps;
+  
+protected function extractConstantPlusDeps2 "
+Author: BZ, 2009-04
+Helper function for extractConstantPlusDeps
+"
+  input list<SCode.Element> inComps;
+  input Option<Exp.ComponentRef> ocr;
+  input list<SCode.Element> allComps;
+  input String className;
+  input list<String> existing;
+  output list<SCode.Element> outComps;
+algorithm outComps := matchcontinue(inComps, ocr,allComps,className,existing)
+  local
+    SCode.Element compMod;
+    list<SCode.Element> recDeps;
+    SCode.Element selem;
+    Types.Mod mod;
+    String name,name2;
+    SCode.Mod umod,scmod;
+    case({},SOME(cr),_,_,_)
+      local Exp.ComponentRef cr; 
+      equation
+        //print(" failure to find: " +& Exp.printComponentRefStr(cr) +& " in scope: " +& className +& "\n");
+      then {};
+    case({},_,_,_,_) then fail();
+    case(inComps,NONE,_,_,_) then inComps;
+      /*
+    case( (selem as SCode.CLASSDEF(name=name2))::inComps,SOME(Exp.CREF_IDENT(ident=name)),allComps,className,existing)
+      local
+        list<Absyn.ComponentRef> crefs,crefs2;
+      equation
+        true = stringEqual(name,name2);
+        outComps = extractConstantPlusDeps2(inComps,ocr,allComps,className,existing);
+      then
+        selem::outComps;
+        */
+    case( ((selem as SCode.CLASSDEF(name=name2)))::inComps,SOME(Exp.CREF_IDENT(ident=name)),allComps,className,existing)
+      equation
+        //false = stringEqual(name,name2);   
+        allComps = listAppend({selem},allComps);
+        existing = listAppend({name2},existing);
+        outComps = extractConstantPlusDeps2(inComps,ocr,allComps,className,existing);
+      then //extractConstantPlusDeps2(inComps,ocr,allComps,className,existing);
+         selem::outComps;
+         
+    case((selem as SCode.COMPONENT(component=name2,modifications=scmod))::inComps,SOME(Exp.CREF_IDENT(ident=name)),allComps,className,existing)
+      local 
+        list<Absyn.ComponentRef> crefs,crefs2;
+      equation
+        true = stringEqual(name,name2);
+        crefs = getCrefFromMod(scmod);
+        allComps = listAppend(inComps,allComps);
+        existing = listAppend({name2},existing);
+        recDeps = extractConstantPlusDeps3(crefs,allComps,className,existing);
+      then
+        selem::recDeps;
+        
+    case( ( (selem as SCode.COMPONENT(component=name2)))::inComps,SOME(Exp.CREF_IDENT(ident=name)),allComps,className,existing)
+      equation
+        false = stringEqual(name,name2);
+        allComps = listAppend({selem},allComps);
+      then extractConstantPlusDeps2(inComps,ocr,allComps,className,existing);
+         
+    case((compMod as SCode.EXTENDS(baseClassPath=p))::inComps,(ocr as SOME(Exp.CREF_IDENT(ident=_))),allComps,className,existing)
+      local Absyn.Path p; 
+      equation 
+        allComps = listAppend({compMod},allComps);
+        recDeps = extractConstantPlusDeps2(inComps,ocr,allComps,className,existing); 
+        then 
+          compMod::recDeps;
+    case((compMod as SCode.IMPORT(imp=_))::inComps,(ocr as SOME(Exp.CREF_IDENT(ident=_))),allComps,className,existing) 
+      equation 
+        allComps = listAppend({compMod},allComps);
+        recDeps = extractConstantPlusDeps2(inComps,ocr,allComps,className,existing); 
+      then 
+        compMod::recDeps;
+    case(_,_,_,_,_) equation print(" failure in get_Constan_PlusDeps \n"); then fail();   
+end matchcontinue;
+end extractConstantPlusDeps2;
+
+protected function extractConstantPlusDeps3 "
+Author: BZ, 2009-04
+Helper function for extractConstantPlusDeps
+"
+input list<Absyn.ComponentRef> acrefs;
+input list<SCode.Element> remainingComps;
+input String className;
+input list<String> existing;
+output list<SCode.Element> outComps;
+algorithm outComps := matchcontinue(acrefs,remainingComps,className,existing)
+  local
+    String s1,s2,s3,s4;
+    Absyn.ComponentRef acr;
+    list<SCode.Element> localComps;
+  case({},_,_,_) then {};
+  case(Absyn.CREF_QUAL(s1,_,(acr as Absyn.CREF_IDENT(s2,_)))::acrefs,remainingComps,className,existing)
+    equation
+      true = stringEqual(className,s1); // in same scope look up.
+      acrefs = acr::acrefs;
+      then
+        extractConstantPlusDeps3(acrefs,remainingComps,className,existing);
+  case((acr as Absyn.CREF_QUAL(s1,_,_))::acrefs,remainingComps,className,existing)
+    equation
+      false = stringEqual(className,s1);
+      outComps = extractConstantPlusDeps3(acrefs,remainingComps,className,existing);
+      then
+        outComps;
+  case(Absyn.CREF_IDENT(s1,_)::acrefs,remainingComps,className,existing) // modifer dep already added
+    equation
+      true = Util.listContainsWithCompareFunc(s1,existing,stringEqual);
+    then 
+      extractConstantPlusDeps3(acrefs,remainingComps,className,existing);
+  case(Absyn.CREF_IDENT(s1,_)::acrefs,remainingComps,className,existing)
+    local 
+      list<SCode.Element> elems;
+      list<String> names;
+    equation
+      localComps = extractConstantPlusDeps2(remainingComps,SOME(Exp.CREF_IDENT(s1,Exp.OTHER(),{})),{},className,existing);
+      names = SCode.componentNamesFromElts(localComps);
+      existing = listAppend(names,existing);
+      outComps = extractConstantPlusDeps3(acrefs,remainingComps,className,existing);
+      outComps = listAppend(localComps,outComps);
+    then
+      outComps;
+  end matchcontinue;
+end extractConstantPlusDeps3;
 
 protected function removeSelfReference
 "@author adrpo
@@ -3474,7 +3643,6 @@ algorithm
   end matchcontinue;
 end instElementList;
 
-
 protected function classdefElts2 
 "function: classdeElts2
   author: PA
@@ -4206,7 +4374,7 @@ algorithm
 				// The variable declaration and the (optional) equation modification are inspected for array dimensions.
 				
         (cache,dims) = elabArraydim(cache,env2_1, owncref, t,ad, eq, impl, NONE,true)  ;
-        //Instantiate the component 
+        //Instantiate the component  
          inst_dims = listAppend(inst_dims,{{}}); // Start a new "set" of inst_dims for this component (in instance hierarchy), see InstDims
         (cache,compenv,dae,csets_1,ty,graph) = instVar(cache,cenv, ci_state, mod_1, pre, csets, n, cl, attr, prot, dims, {}, inst_dims, impl, comment,io,finalPrefix,aInfo,graph);
 				//The environment is extended (updated) with the new variable binding. 
@@ -6838,7 +7006,7 @@ algorithm
         env_1 = Env.extendFrameT(cenv, n, ty1);
         prot = false;
         (cache,_,tempenv,_,_,_,_,_,_,_) = 
-          instClassdef(cache,env_1, mod, pre, csets_1, ClassInf.FUNCTION(n), n,parts, restr, prot, inst_dims, true,ConnectionGraph.EMPTY) "how to get this? impl" ;
+          instClassdef(cache,env_1, mod, pre, csets_1, ClassInf.FUNCTION(n), n,parts, restr, prot, inst_dims, true,ConnectionGraph.EMPTY,NONE) "how to get this? impl" ;
         (cache,extdecl) = instExtDecl(cache,tempenv, n, parts, true) "impl" ;
       then
         (cache,env_1,{DAE.EXTFUNCTION(fpath,DAE.DAE(dae),ty1,extdecl)});

@@ -301,7 +301,7 @@ uniontype Element "- Elements
     Option<Path> baseClassPath    "the base class path if this component originates from a base class" ;
     Option<Absyn.Comment> comment "this if for extraction of comments and annotations from Absyn" ;
     Option<Absyn.Exp> condition   "the conditional declaration of a component";
-    Option<Absyn.Info> info        "this is for line and column numbers, also file name.";
+    Option<Absyn.Info> info       "this is for line and column numbers, also file name.";
   end COMPONENT;
 end Element;
 
@@ -1664,7 +1664,7 @@ algorithm
   str := matchcontinue (optPath)
     local Absyn.Path path;
     case (SOME(path)) then Absyn.pathString(path);
-    case (SOME(path)) then "<nothing>";
+    case (NONE) then "<nothing>";
   end matchcontinue;
 end unparseOptPath;
 
@@ -1727,7 +1727,7 @@ algorithm
       then
         res;
     case CLASSDEF(name = n,finalPrefix = finalPrefix,replaceablePrefix = repl,classDef = cl,baseClassPath = pathOpt)
-      equation 
+      equation
         str = printClassStr(cl);
         res = Util.stringAppendList({"CLASSDEF(",n,",...,",str,")"});
       then
@@ -2008,7 +2008,7 @@ algorithm
   end matchcontinue;
 end componentNames;
 
-protected function componentNamesFromElts 
+public function componentNamesFromElts 
 "function: componentNamesFromElts
   Helper function to componentNames."
   input list<Element> inElementLst;

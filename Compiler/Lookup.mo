@@ -588,7 +588,7 @@ algorithm
         env2 = Env.openScope(env_1, encflag, SOME(id));
         ci_state = ClassInf.start(restr, id);
         (cache,_,(f :: _),_,_,_,_,_,_,_) = Inst.instClassIn(cache,env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
-          ci_state, c, false, {}, false, ConnectionGraph.EMPTY);
+          ci_state, c, false, {}, false, ConnectionGraph.EMPTY,NONE);
         (cache,p_env,attr,ty,bind) = lookupVarInPackages(cache,{f}, Exp.CREF_IDENT(ident,Exp.OTHER(),{}));
         (cache,more) = moreLookupUnqualifiedImportedVarInFrame(cache,fs, env, ident);
         unique = boolNot(more);
@@ -1033,7 +1033,7 @@ algorithm
         env3 = Env.openScope(env2, encflag, SOME(n));
         ci_state = ClassInf.start(r, n);
         (cache,_,env5,_,_,types,_,_,_,_) = Inst.instClassIn(cache,env3, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
-          ci_state, c, false, {}, false, ConnectionGraph.EMPTY);
+          ci_state, c, false, {}, false, ConnectionGraph.EMPTY,NONE);
         (cache,p_env,attr,ty,bind) = lookupVarInPackages(cache,env5, id2);
       then
         (cache,p_env,attr,ty,bind);
@@ -1069,13 +1069,15 @@ algorithm
              (cache,p_env,attr,ty,bind);
 
       // lookup of constants on form A.B in packages. instantiate package and look inside.
-    case (cache,env,cr as Exp.CREF_QUAL(ident = id,subscriptLst = {},componentRef = cref)) /* First part of name is a class. */ 
+    case (cache,env,cr as Exp.CREF_QUAL(ident = id,subscriptLst = {},componentRef = cref)) /* First part of name is a class. */
+      local Option<Exp.ComponentRef> filterCref; 
       equation 
         (cache,(c as SCode.CLASS(n,_,encflag,r,_)),env2) = lookupClass2(cache,env, Absyn.IDENT(id), false);
         env3 = Env.openScope(env2, encflag, SOME(n));
         ci_state = ClassInf.start(r, n);
+        filterCref = makeOptIdentOrNone(cref);
         (cache,_,env5,_,_,types,_,_,_,_) = Inst.instClassIn(cache,env3, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
-          ci_state, c, false, {}, /*true*/false, ConnectionGraph.EMPTY);
+          ci_state, c, false, {}, /*true*/false, ConnectionGraph.EMPTY,filterCref);
         (cache,p_env,attr,ty,bind) = lookupVarInPackages(cache,env5, cref);
       then
         (cache,p_env,attr,ty,bind);
@@ -1100,7 +1102,7 @@ algorithm
         /* Search among qualified imports, e.g. import A.B; or import D=A.B; */
     case (cache,(env as (Env.FRAME(optName = sid,imports = items) :: _)),(cr as Exp.CREF_IDENT(ident = id,subscriptLst = sb)))
       equation 
-        (cache,p_env,attr,ty,bind) = lookupQualifiedImportedVarInFrame(cache,items, env, id);        
+        (cache,p_env,attr,ty,bind) = lookupQualifiedImportedVarInFrame(cache,items, env, id);
       then
         (cache,p_env,attr,ty,bind);
         
@@ -1119,11 +1121,26 @@ algorithm
       then
         (cache,p_env,attr,ty,bind);
 
-    case (cache,env,cr) /* Debug.fprint(\"failtrace\",  \"lookup_var_in_packages failed\\n exp:\" ) &
+    case (cache,env,cr) 
+      /* Debug.fprint(\"failtrace\",  \"lookup_var_in_packages failed\\n exp:\" ) &
 	Debug.fcall(\"failtrace\", Exp.print_component_ref, cr) &
 	Debug.fprint(\"failtrace\", \"\\n\") */  then fail(); 
   end matchcontinue;
 end lookupVarInPackages;
+
+protected function makeOptIdentOrNone "
+Author: BZ, 2009-04
+Helper function for lookupVarInPackages
+Makes an optional Exp.ComponentRef if the input Exp.ComponentRef is a Exp.CREF_IDENT otherwise
+'NONE' is returned
+"
+input Exp.ComponentRef incr;
+output Option<Exp.ComponentRef> ocR;
+algorithm ocR := matchcontinue(incr)
+  case(incr as Exp.CREF_IDENT(_,_,_)) then SOME(incr);
+  case(_) then NONE;
+  end matchcontinue;
+end makeOptIdentOrNone;
 
 public function lookupVarLocal "function: lookupVarLocal
   

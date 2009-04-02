@@ -4145,7 +4145,7 @@ end listFilter_tail;
 
 public function listFilter1_tail 
 "function: listFilter_tail
- @author adrpo
+ @author bz
  tail recursive implementation of listFilter"
   input list<Type_a> inTypeALst;
   input FuncTypeType_aTo inFuncTypeTypeATo;
