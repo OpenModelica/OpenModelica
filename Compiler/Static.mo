@@ -2848,7 +2848,8 @@ algorithm
     case (elst,indx,dim1)
       equation 
         (indx <= dim1) = true;
-        (e :: es) = Util.listMap1(elst, Exp.nthArrayExp, indx);
+        indx_1 = indx - 1;
+        (e :: es) = Util.listMap1(elst, Exp.nthArrayExp, indx_1);
         tp = Exp.typeof(e);
         indx_1 = indx + 1;
         rest = elabBuiltinTranspose2(elst, indx_1, dim1);
