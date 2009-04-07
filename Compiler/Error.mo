@@ -194,6 +194,7 @@ public constant ErrorID WARNING_IMPORT_PACKAGES_ONLY=107;
 public constant ErrorID MISSING_INNER_PREFIX = 108;
 public constant ErrorID CONNECT_STREAM_TO_NONSTREAM=109;
 public constant ErrorID IMPLICIT_ITERATOR_NOT_FOUND_IN_LOOP_BODY=110;
+public constant ErrorID STRUCT_SINGULAR_SYSTEM_INITIALIZATION=111;
 public constant ErrorID UNBOUND_PARAMETER_WARNING=500;
 public constant ErrorID BUILTIN_FUNCTION_SUM_HAS_SCALAR_PARAMETER=501;
 public constant ErrorID BUILTIN_FUNCTION_PRODUCT_HAS_SCALAR_PARAMETER=502;
@@ -467,7 +468,9 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (DERIVATIVE_NON_REAL,TRANSLATION(),ERROR(),  
           "Illegal derivative. der(%s) where %s is of type %s, which is not a subtype of Real"),
           (IMPLICIT_ITERATOR_NOT_FOUND_IN_LOOP_BODY,TRANSLATION(),ERROR(),
-          "Identificator %s of implicit for iterator must be present as array subscript in the loop body.")  
+          "Identificator %s of implicit for iterator must be present as array subscript in the loop body."),
+          (STRUCT_SINGULAR_SYSTEM_INITIALIZATION,TRANSLATION(),ERROR(),
+          "The initialization problem of model is structurally singular, error found sorting equations %s for variables %s")  
           };
           
 protected import ErrorExt;
