@@ -1514,15 +1514,15 @@ RML_BEGIN_LABEL(System__getPackageFileNames)
     void *res;
     WIN32_FIND_DATA FileData;
     HANDLE sh;
-    
-    sprintf(strSearch,"%s\\*\0",dir);    
+
+    sprintf(strSearch,"%s\\*\0",dir);
 	sh = FindFirstFile(strSearch, &FileData);
-	
+
 	if (sh == INVALID_HANDLE_VALUE) {
 		printf(" invalid\n");
 	}
 	else {
-		if ((FileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0) {			
+		if ((FileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0) {
 			sprintf(tmpSearchString,"%s\\%s\\%s",dir,FileData.cFileName,fileName);
 			if(fileExistsLocal(tmpSearchString)==0){
 				if(strlen(FileData.cFileName)+current>mallocSize){
@@ -1624,6 +1624,19 @@ RML_BEGIN_LABEL(System__regularFileExists)
 	RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
+
+RML_BEGIN_LABEL(System__removeFile)
+{
+	char* str = RML_STRINGDATA(rmlA0);
+	int ret_val;
+	ret_val = remove(str);
+
+	rmlA0 = (void*) mk_icon(ret_val);
+
+	RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
 
 #ifdef WIN32
 RML_BEGIN_LABEL(System__platform)
@@ -3240,7 +3253,7 @@ RML_BEGIN_LABEL(System__getVariableNames)
 }
 RML_END_LABEL
 
-#if 0 
+#if 0
 void* read_one_value_from_file(FILE* file, type_description* desc)
 {
   void *res=NULL;
@@ -3610,6 +3623,19 @@ RML_BEGIN_LABEL(System__regularFileExists)
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
+
+RML_BEGIN_LABEL(System__removeFile)
+{
+	char* str = RML_STRINGDATA(rmlA0);
+	int ret_val;
+	ret_val = remove(str);
+
+	rmlA0 = (void*) mk_icon(ret_val);
+
+	RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
 
 #ifdef WIN32
 RML_BEGIN_LABEL(System__platform)

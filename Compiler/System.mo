@@ -383,10 +383,17 @@ end groupDelimiter;
 
 public function regularFileExists
   input String inString;
-  output Integer outInteger;
+  output Integer outInteger "returns 0 if file exists";
 
   external "C" ;
 end regularFileExists;
+
+public function removeFile "Removes a file, returns 0 if suceeds, implemented using remove() in stdio.h"
+  input String fileName;
+  output Integer res;
+  
+  external "C";
+end removeFile;
 
 public function getPackageFileNames
   input String inString1;
