@@ -1352,7 +1352,7 @@ algorithm
         cr2 = Prefix.prefixCref(prefix,cr);
         arrType = Exp.T_ARRAY(Exp.REAL(),dimSizesOpt);
         dimExps = {Exp.ICONST(0),Exp.ICONST(0),Exp.ICONST(0)};
-        res1 = generateZeroflowArrayEquations(cr, dimSizes, Exp.RCONST(0.0));
+        res1 = generateZeroflowArrayEquations(cr2, dimSizes, Exp.RCONST(0.0));
         res = listAppend(res1,res);
       then
         (cache,res);
