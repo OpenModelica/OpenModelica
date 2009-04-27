@@ -327,18 +327,18 @@ algorithm
       canon2 = canonical(partition,ref2);
       (partition, true) = connectCanonicalComponents(partition,canon1,canon2);
       dae = listAppend(dae, connectionDae);
-      print(Exp.printComponentRefStr(ref1));
+      /*print(Exp.printComponentRefStr(ref1));
       print(" -- ");
       print(Exp.printComponentRefStr(ref2));
-      print("\n");
+      print("\n");*/
     then (partition, dae);
     case(partition,ref1,ref2,_,connectionDae,dae)
     equation
       dae = listAppend(dae, connectionDae);
-      print(Exp.printComponentRefStr(ref1));
+      /*print(Exp.printComponentRefStr(ref1));
       print(" -/- ");
       print(Exp.printComponentRefStr(ref2));
-      print("\n");
+      print("\n");*/
     then (partition, dae);
   end matchcontinue;
 end connectComponents;
@@ -375,14 +375,14 @@ function addRootsToTable
 algorithm
   outTable := matchcontinue(inTable, inRoots, inFirstRoot)
     local
-      HashTableCG.HashTable table, table1, table2;
+      HashTableCG.HashTable table;
       Exp.ComponentRef root, firstRoot;
       list<Exp.ComponentRef> tail;
     case(table, (root::tail), firstRoot)
     equation
-      table1 = HashTableCG.add((root,firstRoot), table);
-      table2 = addRootsToTable(table, tail, firstRoot);
-    then table2;
+      table = HashTableCG.add((root,firstRoot), table);
+      table = addRootsToTable(table, tail, firstRoot);
+    then table; 
     case(table, {}, _)
     then table;
   end matchcontinue;
