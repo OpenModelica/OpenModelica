@@ -33,6 +33,27 @@ public
  type Key = Exp.ComponentRef;
  type Value = Exp.ComponentRef;
    
+public function printList 
+  input list<tuple<Key,Value>> inList;
+algorithm
+  _ := matchcontinue(inList)
+  local 
+    list<tuple<Key,Value>> tail;
+    Key key;
+    Value value;
+    case({}) equation
+    then ();
+    case((key,value)::tail) equation
+      print("    ");
+      print(Exp.printComponentRefStr(key));
+      print(" = ");
+      print(Exp.printComponentRefStr(value));
+      print("\n");
+      printList(tail);
+    then ();
+  end matchcontinue;
+end printList;   
+   
 protected function hashFunc "
   author: PA
  
@@ -114,6 +135,8 @@ algorithm
       tuple<Key,Value> v,newv;
       Key key;
       Value value;
+      list<tuple<Key,Value>> debugList;
+      HashTable result;
       /* Adding when not existing previously */
     case ((v as (key,value)),(hashTable as HASHTABLE(hashvec,varr,bsize,n)))
       equation 
@@ -125,11 +148,14 @@ algorithm
         indexes = hashvec[indx + 1];        
         hashvec_1 = arrayUpdate(hashvec, indx + 1, ((key,newpos) :: indexes));
         n_1 = valueArrayLength(varr_1);
-        print("HashTableGC.add(");
+        /*print("HashTableGC.add(");
         print(Exp.printComponentRefStr(key));
         print(",");
         print(Exp.printComponentRefStr(value));
         print(")\n");
+        result = HASHTABLE(hashvec_1,varr_1,bsize,n_1);
+        debugList = hashTableList(result);
+        printList(debugList);*/
       then HASHTABLE(hashvec_1,varr_1,bsize,n_1);
       
       /* adding when allready present => Updating value */
@@ -139,11 +165,11 @@ algorithm
         //print("adding when present, indx =" );print(intString(indx));print("\n");
         indx_1 = indx - 1;
         varr_1 = valueArraySetnth(varr, indx, newv);
-        print("HashTableGC.add(");
+        /*print("HashTableGC.add(");
         print(Exp.printComponentRefStr(key));
         print(",");
         print(Exp.printComponentRefStr(value));
-        print(") (allready present)\n");
+        print(") (allready present)\n");*/
       then HASHTABLE(hashvec,varr_1,bsize,n);
     case (_,_)
       equation 
@@ -226,11 +252,11 @@ algorithm
         indexes = hashvec[hashindx + 1];
         indx = get2(key, indexes);
         v = valueArrayNth(varr, indx);
-        print("HashTableGC.get(");
+        /*print("HashTableGC.get(");
         print(Exp.printComponentRefStr(key));
         print(") = ");
         print(Exp.printComponentRefStr(v));
-        print("\n");
+        print("\n");*/
       then
         (v,indx);
   end matchcontinue;
