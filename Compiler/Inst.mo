@@ -1808,7 +1808,7 @@ algorithm
         inst_dims2 = instDimExpLst(dims, impl);
         inst_dims_1 = Util.listListAppendLast(inst_dims, inst_dims2);
         (cache,dae,env_2,csets_1,ci_state_1,tys,bc,oDA,equalityConstraint,graph) = instClassIn(cache,cenv_2, mods_1, pre, csets, new_ci_state, c, prot, 
-          inst_dims_1, impl, graph, NONE) "instantiate class in opened scope. " ;
+          inst_dims_1, impl, graph, instSingleCref) "instantiate class in opened scope. " ;
         ClassInf.assertValid(ci_state_1, re) "Check for restriction violations" ;
         oDA = Absyn.mergeElementAttributes(DA,oDA);        
       then

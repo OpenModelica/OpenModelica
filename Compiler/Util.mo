@@ -256,6 +256,69 @@ algorithm isempty := matchcontinue(input1)
   end matchcontinue;
 end isListNotEmpty;
 
+public function listFindWithCompareFunc "
+Author BZ 2009-04
+Search list for a provided element using the provided function.
+Return the index of the element if found, otherwise fail.
+"
+  input list<Type_a> input1;
+  input Type_a input2;
+  input compareFunc cmpFunc;  
+  output Integer isequal;
+  partial function compareFunc
+    input Type_a inp1;
+    input Type_a inp2;
+    output Boolean resFunc;
+  end compareFunc;
+  replaceable type Type_a subtypeof Any;
+algorithm isequal := matchcontinue(input1,input2,cmpFunc)
+  local     
+    Type_a a,b;
+    list<Type_a> al,bl;
+    case({},_,_) equation print("listFindWithCompareFunc failed - end of list\n"); then fail(); 
+    case(a::al,b,cmpFunc)
+      equation
+        true = cmpFunc(a,b);
+        then
+          0;
+    case(a::al,b,cmpFunc)
+      equation
+        false = cmpFunc(a,b);
+        then
+          1+listFindWithCompareFunc(al,b,cmpFunc);
+    case(_,_,_) equation print(" generic-failure in listFindWithCompareFunc\n"); then fail();  
+end matchcontinue;
+end listFindWithCompareFunc; 
+
+public function selectAndRemoveNth "
+Author BZ 2009-04
+Extracts N'th element and keeping rest of list intact. 
+For readability a third position argument has to be passed along.  
+"
+input list<Type_a> inList;
+input Integer elemPos;
+input Integer curPos;
+output Type_a selected;
+output list<Type_a> rest;
+replaceable type Type_a subtypeof Any;
+algorithm (selected,rest) := matchcontinue(inList,elemPos,curPos)
+  local
+    list<Type_a> al,al2;
+    Type_a a,a2;
+  case(a::al,elemPos,curPos)
+    equation      
+      true = intEq(elemPos,curPos);
+      then
+        (a,al);
+  case(a::al,elemPos,curPos)
+    equation      
+      false = intEq(elemPos,curPos);
+      (a2,al2) = selectAndRemoveNth(al,elemPos,curPos+1);      
+      then
+        (a2,a::al2);  
+  end matchcontinue;
+end selectAndRemoveNth;
+
 public function isListEqualWithCompareFunc "
 Author BZ 2009-01
 Compares the elements of two lists using provided compare function.
@@ -1397,7 +1460,7 @@ algorithm
 end listMap4;
 
 /* TODO: listMap5, listMap6, can be created upon requests ;) */
-
+/* TODO: listMap9 ... listMapN can also be created upon request... */
 public function listMap7 "function listMap7
   Takes a list and a function and seven extra arguments passed to the function.
   The function produces one new value which is used for creating a new list."
@@ -1450,6 +1513,61 @@ algorithm
   end matchcontinue;
 end listMap7;
 
+public function listMap8 "
+Author BZ 
+  Takes a list and a function and seven extra arguments passed to the function.
+  The function produces one new value which is used for creating a new list."
+  input list<Type_a> lst;
+  input listMap8Func func;
+  input Type_b a1;
+  input Type_c a2;
+  input Type_d a3;
+  input Type_e a4;
+  input Type_f a5;
+  input Type_g a6;
+  input Type_h a7;
+  input Type_j a8;
+  output list<Type_i> outLst;
+  replaceable type Type_a subtypeof Any;
+  partial function listMap8Func
+    input Type_a inTypeA;
+    input Type_b inTypeB;
+    input Type_c inTypeC;
+    input Type_d inTypeD;
+    input Type_e inTypeE;
+    input Type_f inTypeF;
+    input Type_g inTypeG;
+    input Type_h inTypeH;
+    input Type_j inTypeJ;
+    output Type_i outTypeI; 
+  end listMap8Func;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;
+  replaceable type Type_d subtypeof Any;
+  replaceable type Type_e subtypeof Any;
+  replaceable type Type_f subtypeof Any;
+  replaceable type Type_g subtypeof Any;
+  replaceable type Type_h subtypeof Any;
+  replaceable type Type_i subtypeof Any;    
+  replaceable type Type_j subtypeof Any;
+algorithm 
+  outLst:=
+  matchcontinue (lst,func,a1,a2,a3,a4,a5,a6,a7,a8)
+    local
+      Type_e f_1;
+      list<Type_e> r_1;
+      Type_a f;
+      list<Type_a> r;
+
+    case ({},_,_,_,_,_,_,_,_,_) then {}; 
+    case ((f :: r),func,a1,a2,a3,a4,a5,a6,a7,a8)
+      equation 
+        f_1 = func(f, a1,a2,a3,a4,a5,a6,a7,a8);
+        r_1 = listMap8(r, func, a1,a2,a3,a4,a5,a6,a7,a8);
+      then
+        (f_1 :: r_1);
+  end matchcontinue;
+end listMap8;
 public function listMap32 "function listMap32
   Takes a list and a function and three extra arguments passed to the function.
   The function produces two values which is used for creating two new lists."

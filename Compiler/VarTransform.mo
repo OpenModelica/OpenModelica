@@ -658,6 +658,51 @@ algorithm
   end matchcontinue;
 end dumpReplacements;
 
+public function dumpReplacementsStr "
+Author BZ 2009-04
+Function for dumping replacements to string.
+"
+  input VariableReplacements inVariableReplacements;
+  output String ostr;
+algorithm ostr := matchcontinue (inVariableReplacements)
+    local
+      list<Exp.Exp> srcs,dsts;
+      list<String> srcstrs,dststrs,dststrs_1,strs;
+      String str,len_str,s1;
+      Integer len;
+      HashTable2.HashTable ht;
+      list<tuple<Exp.ComponentRef,Exp.Exp>> tplLst;
+    case (REPLACEMENTS(hashTable = ht))
+      equation 
+        (tplLst) = HashTable2.hashTableList(ht);
+        str = Util.stringDelimitList(Util.listMap(tplLst,printReplacementTupleStr),"\n");
+        s1 = "Replacements: (" +& intString(listLength(tplLst)) +& ")\n=============\n" +& str +& "\n";
+      then
+        s1;
+  end matchcontinue;
+end dumpReplacementsStr;
+
+public function getAllReplacements "
+Author BZ 2009-04
+Extract all crefs -> exp to two separate lists.
+"
+input VariableReplacements inVariableReplacements;
+output list<Exp.ComponentRef> crefs;
+output list<Exp.Exp> dsts;
+algorithm (dsts,crefs) := matchcontinue (inVariableReplacements)
+    local
+      HashTable2.HashTable ht;
+      list<tuple<Exp.ComponentRef,Exp.Exp>> tplLst;
+    case (REPLACEMENTS(hashTable = ht))
+      equation 
+        tplLst = HashTable2.hashTableList(ht);
+        crefs = Util.listMap(tplLst,Util.tuple21);
+        dsts = Util.listMap(tplLst,Util.tuple22);
+      then
+        (crefs,dsts);
+  end matchcontinue;
+end getAllReplacements;
+
 protected function printReplacementTupleStr "help function to dumpReplacements"
   input tuple<Exp.ComponentRef,Exp.Exp> tpl;
   output String str;
