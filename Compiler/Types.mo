@@ -103,7 +103,7 @@ type Type = tuple<TType, Option<Absyn.Path>> "
 - Type" ;
 
 public
-type EqualityConstraint = Option<Absyn.Path>;
+type EqualityConstraint = Option<tuple<Absyn.Path, Integer>>;
  
 public 
 uniontype TType "-TType contains the actual type"

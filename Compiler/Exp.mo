@@ -6620,6 +6620,32 @@ algorithm
   end matchcontinue;
 end makeRealArray;
 
+public function makeListOfZeros
+  input Integer inDimension;
+  output list<Exp> outList;
+algorithm
+  outList := matchcontinue(inDimension)
+    local Integer dimension;
+      Exp head;
+      list<Exp> tail;
+      case(0)
+        then {};
+      case(dimension) equation
+        head = RCONST(0.0);
+        tail = makeListOfZeros(dimension-1);
+        then head :: tail;
+  end matchcontinue;    
+end makeListOfZeros;
+
+public function makeRealArrayOfZeros
+  input Integer inDimension;
+  output Exp outExp;
+  list<Exp> l;
+algorithm
+  l := makeListOfZeros(inDimension);
+  outExp := makeRealArray(l);
+end makeRealArrayOfZeros;
+
 public function binopSymbol
 "function: binopSymbol
   Return a string representation of the Operator."

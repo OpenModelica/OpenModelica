@@ -1513,6 +1513,27 @@ algorithm
   end matchcontinue;
 end addCachedEnv;
 
+protected function equalityConstraintOutputDimension
+  input list<SCode.Element> inElements;
+  output Integer outDimension;
+algorithm
+  outDimension := matchcontinue(inElements)
+  local
+    list<SCode.Element> tail;
+    Integer dim;
+    case({}) equation
+      then 0;
+    case(SCode.COMPONENT(attributes = SCode.ATTR(
+        direction = Absyn.OUTPUT,
+        arrayDims = {Absyn.SUBSCRIPT(Absyn.INTEGER(dim))}
+      )) :: _) equation
+      then dim;
+    case(_ :: tail) equation
+      dim = equalityConstraintOutputDimension(tail);
+      then dim;
+  end matchcontinue;
+end equalityConstraintOutputDimension;
+
 protected function equalityConstraint
   "function: equalityConstraint
     Tests if the given elements contain equalityConstraint function and returns 
@@ -1525,17 +1546,18 @@ protected function equalityConstraint
 algorithm
   (outCache, outResult) := matchcontinue(inCache, inEnv, inCdefelts)
   local
-      list<SCode.Element> tail;
+      list<SCode.Element> tail, els;      
       String name;
       Env.Cache cache;
       Env env;
       Absyn.Path path;
       list<Types.Type> types;
-      Integer length;
+      Integer dimension;
       Types.EqualityConstraint result;
     case(cache, env, {})
       then NONE;
-    case(cache, env, SCode.CLASSDEF(classDef = classDef as SCode.CLASS(name = "equalityConstraint", restriction = SCode.R_FUNCTION)) :: _)
+    case(cache, env, SCode.CLASSDEF(classDef = classDef as SCode.CLASS(name = "equalityConstraint", restriction = SCode.R_FUNCTION,
+         classDef = SCode.PARTS(elementLst = els))) :: _)
       local 
         SCode.Class classDef;
       equation
@@ -1547,7 +1569,11 @@ algorithm
         print("type count: ");
         print(intString(length));
         print("\n");*/
-      then SOME(path);    
+        dimension = equalityConstraintOutputDimension(els);
+        /*print("dimension: ");
+        print(intString(dimension));
+        print("\n");*/
+      then SOME((path, dimension));    
     case(cache, env, _ :: tail)
       then equalityConstraint(cache, env, tail);
   end matchcontinue;
@@ -10412,11 +10438,13 @@ algorithm
         
     /* Connection of connectors with an equality constraint.*/
     case (cache,sets,env,pre,c1,f1,
-        t1 as (Types.T_COMPLEX(equalityConstraint=SOME(fpath1)),_),vt1,c2,f2,
-        t2 as (Types.T_COMPLEX(equalityConstraint=SOME(fpath2)),_),vt2,flowPrefix,io1,io2,
+        t1 as (Types.T_COMPLEX(equalityConstraint=SOME((fpath1,dim1))),_),vt1,c2,f2,
+        t2 as (Types.T_COMPLEX(equalityConstraint=SOME((fpath2,dim2))),_),vt2,flowPrefix,io1,io2,
         (graph as ConnectionGraph.GRAPH(updateGraph = true))) 
       local
         Absyn.Path fpath1, fpath2;
+        Integer dim1, dim2;
+        Exp.Exp zeroVector;
       equation         
         c1_1 = Prefix.prefixCref(pre, c1);
         c2_1 = Prefix.prefixCref(pre, c2);        
@@ -10436,9 +10464,10 @@ algorithm
         /* Add an edge to connection graph. The edge contains daes to be added in 
            both cases whether the edge remains or is broken.             
          */
+        zeroVector = Exp.makeRealArrayOfZeros(dim1);
         graph = ConnectionGraph.addConnection(graph, c1_1, c2_1, dae, 
           {DAE.EQUATION(
-          Exp.RCONST(0.0), 
+          zeroVector, 
           Exp.CALL(fpath1, 
           {Exp.CREF(c1_1, Exp.OTHER()), Exp.CREF(c2_1, Exp.OTHER())}, 
           false, false, Exp.REAL)
