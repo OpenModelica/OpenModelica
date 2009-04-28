@@ -88,6 +88,7 @@ package XMLDump
   public import DAELow;
   public import Dump;
   public import Exp;
+  public import ModUtil;  
   public import Print;
   public import RTOpts;
   public import Static;
@@ -297,7 +298,16 @@ package XMLDump
   */
   protected constant String ARRAY_EQUATION         = "arrayEquation";
 
-  protected constant String ALGORITHMS             = "algorithms";
+  protected constant String ALGORITHMS              = "algorithms";
+  protected constant String FUNCTIONS               = "functions";
+  protected constant String FUNCTION                = "function";
+  protected constant String FUNCTION_NAME           = "name";
+  protected constant String FUNCTION_ORIGNAME       = VAR_ORIGNAME;  
+  protected constant String NAME_BINDINGS           = "nameBindings";
+  protected constant String C_NAME                  = "cName";  
+  protected constant String C_IMPLEMENTATIONS       = "cImplementations";
+  protected constant String MODELICA_IMPLEMENTATION = "ModelicaImplementation";
+  
   
   /*This strings here below are used for printing additionalInfo
   concerning the DAE system of equations, such as:
@@ -981,13 +991,15 @@ particular all the elements are optional, it means that if no element is present
 the relative tag is not printed.
 "
   input DAELow.DAELow inDAELow;
+  input list<Absyn.Path> functionNames;
+  input list<DAE.Element> functions;
   input Exp.Exp addOriginalIncidenceMatrix;
   input Exp.Exp addSolvingInfo;
   input Exp.Exp addMathMLCode;
   input Exp.Exp dumpResiduals;
 algorithm
   _:=
-  matchcontinue (inDAELow,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals)
+  matchcontinue (inDAELow,functionNames,functions,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals)
     local
       list<DAELow.Var> vars,knvars,extvars;
 
@@ -1031,13 +1043,16 @@ algorithm
       Algorithm.Algorithm[:] algs;
       list<DAELow.ZeroCrossing> zc;
       
+      list<Absyn.Path> inFunctionNames;
+      list<DAE.Element> inFunctions;
+      
       Exp.Exp addOrInMatrix,addSolInfo,addMML,dumpRes;
 
 
     case (DAELow.DAELOW(vars_orderedVars as DAELow.VARIABLES(crefIdxLstArr=crefIdxLstArr_orderedVars,strIdxLstArr=strIdxLstArr_orderedVars,varArr=varArr_orderedVars,bucketSize=bucketSize_orderedVars,numberOfVars=numberOfVars_orderedVars),
                  vars_knownVars as DAELow.VARIABLES(crefIdxLstArr=crefIdxLstArr_knownVars,strIdxLstArr=strIdxLstArr_knownVars,varArr=varArr_knownVars,bucketSize=bucketSize_knownVars,numberOfVars=numberOfVars_knownVars),
                  vars_externalObject as DAELow.VARIABLES(crefIdxLstArr=crefIdxLstArr_externalObject,strIdxLstArr=strIdxLstArr_externalObject,varArr=varArr_externalObject,bucketSize=bucketSize_externalObject,numberOfVars=numberOfVars_externalObject),
-                 eqns,reqns,ieqns,ae,algs,DAELow.EVENT_INFO(zeroCrossingLst = zc),extObjCls),addOrInMatrix,addSolInfo,addMML,dumpRes)
+                 eqns,reqns,ieqns,ae,algs,DAELow.EVENT_INFO(zeroCrossingLst = zc),extObjCls),inFunctionNames,inFunctions,addOrInMatrix,addSolInfo,addMML,dumpRes)
       equation
 
         vars    = DAELow.varList(vars_orderedVars);
@@ -1067,9 +1082,8 @@ algorithm
         ae_lst = arrayList(ae);
         dumpArrayEqns(ae_lst,ARRAY_OF_EQUATIONS,addMML,dumpRes);
         dumpAlgorithms(arrayList(algs));
-        
+        dumpFunctions(inFunctionNames,inFunctions);
         dumpSolvingInfo(addOrInMatrix,addSolInfo,inDAELow);
-
 				dumpStrCloseTag(DAE_CLOSE);
       then ();
   end matchcontinue;
@@ -1431,8 +1445,9 @@ algorithm
         is = intString(i);
         dumpStrOpenTagAttr(ALGORITHM,ID,indexS);
         dumpStrTagContent(stringAppend(ALGORITHM,ID_),is);
-        dumpStrOpenTagAttr(ANCHOR, ALGORITHM_NAME, stringAppend(stringAppend(ALGORITHM_REF,"_"),is));
-        dumpStrCloseTag(ANCHOR);
+        dumpStrTagAttrNoChild(ANCHOR, ALGORITHM_NAME, stringAppend(stringAppend(ALGORITHM_REF,"_"),is));
+        //dumpStrOpenTagAttr(ANCHOR, ALGORITHM_NAME, stringAppend(stringAppend(ALGORITHM_REF,"_"),is));
+        //dumpStrCloseTag(ANCHOR);
         dumpStrCloseTag(ALGORITHM);
       then ();
   end matchcontinue;
@@ -1916,6 +1931,150 @@ algorithm
 end dumpFlowStr;
 
 
+public function dumpFunctions "
+This function dumps a list of functions
+"
+  input list<Absyn.Path> inFunctionNames;
+  input list<DAE.Element> funcelems;
+algorithm
+  _:=
+  matchcontinue (inFunctionNames,funcelems)
+      local
+        String s;
+        list<Absyn.Path> names;
+    case ({},_) then();
+    case (names,funcelems)
+      equation
+        dumpStrOpenTag(FUNCTIONS);
+				dumpFunctions2(inFunctionNames,funcelems);				
+				dumpStrCloseTag(FUNCTIONS);        
+  then();
+  end matchcontinue;
+end dumpFunctions;
+
+
+public function dumpFunctions2 "
+Help function for dumpFunctions
+"
+  input list<Absyn.Path> inFunctionNames;
+  input list<DAE.Element> funcelems;  
+algorithm
+  _:=
+  matchcontinue (inFunctionNames,funcelems)
+      local
+        Absyn.Path name;
+        DAE.Element fun;
+        list<Absyn.Path> rem_names;
+        list<DAE.Element> rem_fun;
+    case ({},_) then();
+    case (_,{}) then();
+    case (name::rem_names, fun :: rem_fun)
+      equation
+        dumpFunctions3(name,fun);
+        dumpFunctions2(rem_names,rem_fun);        
+  then();
+  end matchcontinue;
+end dumpFunctions2;
+
+
+protected function dumpFunctions3 "
+Help function to dumpFunctions2
+"
+  input Absyn.Path name;
+  input DAE.Element fun;  
+algorithm
+  _:=
+  matchcontinue (name,fun)
+    case(name,fun)
+      equation
+      Print.printBuf("\n<");Print.printBuf(FUNCTION);
+      Print.printBuf(" ");Print.printBuf(FUNCTION_NAME);Print.printBuf("=\"");Print.printBuf(Absyn.pathString(name));Print.printBuf("\"");
+      Print.printBuf(" ");Print.printBuf(MODELICA_IMPLEMENTATION);Print.printBuf("=\"");Print.printBuf(DAE.dumpFunctionStr(fun));
+      Print.printBuf("\"/>");
+    then();
+    case (_,_) then();      
+/*
+        dumpStrOpenTag(Function)
+        dumpAttribute(name= Absyn.pathString(name));
+        dumpAttribute(Modelica implementation = DAE.dumpFunctionStr(fun));
+        dumpStrCloseTag(Function)
+*/        
+   end matchcontinue;
+end dumpFunctions3;
+
+
+public function dumpFunctionNames "
+This function dump the names of all the functions are passed.
+The function names are printed as couples of original name
+and c function name. See dumpFunctionNames2 for details.
+"
+  input list<Absyn.Path> libs;
+algorithm
+  _:=
+  matchcontinue (libs)
+    local
+      list<Absyn.Path> s;
+  case ({}) then ();
+  case (s)
+    equation
+      dumpStrOpenTag(NAME_BINDINGS);      
+      dumpFunctionNames2(s);
+      dumpStrCloseTag(NAME_BINDINGS);
+    then();
+  end matchcontinue;
+end dumpFunctionNames;
+
+
+protected function dumpFunctionNames2 "
+Help function to dumpFunctionNames.
+"
+  input list<Absyn.Path> libs;
+algorithm
+  _:=
+  matchcontinue (libs)
+    local
+      Absyn.Path s;
+      list<Absyn.Path> remaining;
+  case ({}) then ();
+  case (s :: remaining)
+    local
+      String fn_name_str;
+      String s_path;
+    equation
+      s_path = Absyn.pathString(s);
+      fn_name_str = ModUtil.pathString2(s, "_");
+      fn_name_str = stringAppend("_", fn_name_str);
+      Print.printBuf("\n<");Print.printBuf(FUNCTION);
+      Print.printBuf(" ");Print.printBuf(FUNCTION_ORIGNAME);Print.printBuf("=\"");Print.printBuf(s_path);Print.printBuf("\"");
+      Print.printBuf(" ");Print.printBuf(C_NAME);Print.printBuf("=\"");Print.printBuf(fn_name_str);
+      Print.printBuf("\"/>");
+      dumpFunctionNames2(remaining);
+    then();
+  end matchcontinue;
+end dumpFunctionNames2;
+
+
+function dumpFunctionsStr "
+This function returns the code of all the functions 
+that are used in the DAELow model.
+The functions are printed as Modelica code.
+"
+  input list<DAE.Element> inL;
+  output String FuncsString;
+algorithm
+  FuncsString :=
+  matchcontinue(inL)
+    local
+      DAE.Element el;
+      list<DAE.Element> rem;
+      //case (_) then ();
+      case {}  then "";
+      case (el::rem)  then stringAppend(DAE.dumpFunctionStr(el),dumpFunctionsStr(rem));
+  end matchcontinue;
+end dumpFunctionsStr;
+
+
+
 public function dumpIncidenceMatrix "
 This function dumps a matrix using an xml representation.
 <matrix>
@@ -1954,7 +2113,7 @@ algorithm
 end dumpIncidenceMatrix;
 
 
-public function dumpIncidenceMatrix2 "
+protected function dumpIncidenceMatrix2 "
 Help function to dumpMatrix
 "
   input list<list<Integer>> m;
@@ -1975,6 +2134,23 @@ algorithm
       then ();
   end matchcontinue;
 end dumpIncidenceMatrix2;    
+
+
+public function dumpLibs
+  input list<String> libs;
+algorithm
+  _:=
+  matchcontinue (libs)
+    local
+      String s;
+      list<String> remaining;
+  case ({}) then ();
+  case (s :: remaining)
+    equation
+      Print.printBuf(s);
+    then();
+  end matchcontinue;
+end dumpLibs;
 
 
 public function dumpMatrixIntegerRow "
@@ -2549,6 +2725,33 @@ algorithm
     then ();
 	end matchcontinue;
 end dumpStrCloseTag;
+
+
+public function dumpStrFunctions "
+This function is used to print all the information of the functions
+are used in the DAELow model.
+The functions are printed using the inFunctions string containing the
+body of the functions.
+"
+  input String inFunctions;
+  input list<Absyn.Path> inFunctionNames;
+algorithm
+  _:=
+  matchcontinue (inFunctions,inFunctionNames)
+    local
+      String s;
+      list<Absyn.Path> names;
+    case("",_)
+      then();
+    case (s,names)
+      equation
+        dumpStrOpenTag(FUNCTIONS);
+				dumpFunctionNames(inFunctionNames);
+        dumpStrTagContent(C_IMPLEMENTATIONS, inFunctions);				
+				dumpStrCloseTag(FUNCTIONS);
+			then();
+	end matchcontinue;
+end dumpStrFunctions;
 
 
 public function dumpStreamStr "
@@ -3639,5 +3842,6 @@ algorithm
     case (_) then "";
   end matchcontinue;
 end unparseCommentOptionNoAnnotation;
+
 
 end XMLDump;

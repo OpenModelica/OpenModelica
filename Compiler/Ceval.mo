@@ -7092,7 +7092,6 @@ algorithm
       Boolean cdToTemp,asInSimulationCode;
       Real starttime_r,stoptime_r,interval_r,tolerance_r;
       String file_dir,cname_str,init_filename,method_str,filenameprefix,makefilename,oldDir,tempDir;
-      list<String> libs;
       list<SCode.Class> sp;
       list<Interactive.InstantiatedClass> ic;
       list<Interactive.InteractiveVariable> iv;
@@ -7120,6 +7119,8 @@ algorithm
         list<Interactive.InstantiatedClass> ic_1,ic;
         list<SCode.Class> p_1,sp;
         list<list<Integer>> comps;
+        list<Absyn.Path> funcpaths; 
+        list<DAE.Element> funcelems;
       equation
         //asInSimulationCode==true => it's necessary to do all the translation's steps before dumping with xml
         _ = Error.getMessagesStr() "Clear messages";
@@ -7140,8 +7141,10 @@ algorithm
         indexed_dlow = DAELow.translateDae(dlow_1);
         indexed_dlow_1 = DAELow.calculateValues(indexed_dlow);
         xml_filename = Util.stringAppendList({filenameprefix,".xml"});
+        funcpaths = SimCodegen.getCalledFunctions(dae, indexed_dlow_1);
+        funcelems = SimCodegen.generateFunctions2(p_1, funcpaths);
         Print.clearBuf();
-        XMLDump.dumpDAELow(indexed_dlow_1,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals);
+        XMLDump.dumpDAELow(indexed_dlow_1,funcpaths,funcelems,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals);
         xml_contents = Print.getString();
         Print.clearBuf();
         System.writeFile(xml_filename,xml_contents);
@@ -7158,6 +7161,8 @@ algorithm
         list<DAE.Element> dael;
         list<Interactive.InstantiatedClass> ic_1,ic;
         list<SCode.Class> p_1,sp;
+        list<Absyn.Path> funcpaths;
+        list<DAE.Element> funcelems;
       equation
         //asInSimulationCode==false => it's NOT necessary to do all the translation's steps before dumping with xml
         _ = Error.getMessagesStr() "Clear messages";
@@ -7175,8 +7180,10 @@ algorithm
         mT = DAELow.transposeMatrix(m);
         (_,_,dlow_1,m,mT) = DAELow.matchingAlgorithm(dlow, m, mT, (DAELow.INDEX_REDUCTION(),DAELow.EXACT(), DAELow.REMOVE_SIMPLE_EQN()));
         xml_filename = Util.stringAppendList({filenameprefix,".xml"});
+        funcpaths = SimCodegen.getCalledFunctions(dae, dlow_1);
+        funcelems = SimCodegen.generateFunctions2(p_1, funcpaths);
         Print.clearBuf();
-        XMLDump.dumpDAELow(dlow_1,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals);
+        XMLDump.dumpDAELow(dlow_1,funcpaths,funcelems,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals);        
         xml_contents = Print.getString();
         Print.clearBuf();
         System.writeFile(xml_filename,xml_contents);
@@ -7187,6 +7194,7 @@ algorithm
         fail();
   end matchcontinue;
 end dumpXMLDAE;
+
 
 protected function getClassnamesInClassList
   input Absyn.Path inPath;

@@ -1,9 +1,9 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2008, Linköpings University,
+ * Copyright (c) 1998-2008, LinkÃ¶pings University,
  * Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
+ * SE-58183 LinkÃ¶ping, Sweden.
  *
  * All rights reserved.
  *
@@ -14,7 +14,7 @@
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköpings University, either from the above address,
+ * from LinkÃ¶pings University, either from the above address,
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
  *
@@ -6127,7 +6127,7 @@ algorithm
   end matchcontinue;
 end generateFunctions;
 
-protected function generateExternalObjectIncludes 
+public function generateExternalObjectIncludes 
 "Generates the library paths for external objects"
 	input DAELow.DAELow daelow;
   output list<String> includes;
@@ -6165,7 +6165,7 @@ algorithm
   end matchcontinue;
 end generateExternalObjectInclude;
 
-protected function generateFunctions2 
+public function generateFunctions2 
 "function: generateFunctions2
   author: PA
   Helper function to generateFunctions."
@@ -6290,7 +6290,7 @@ algorithm
       DAELow.DAELow dlow;
       Absyn.Path class_;
       
-    case (dlow,class_,exe,filename,start,stop,intervals,tolerance,method) /* classname executable file name filename start time stop time íntervals */
+    case (dlow,class_,exe,filename,start,stop,intervals,tolerance,method) /* classname executable file name filename start time stop time intervals */
       equation
         delta_time = stop -. start;
         step = delta_time/.intervals;
@@ -8771,7 +8771,7 @@ algorithm
   end matchcontinue;
 end crefModelicaStr;
 
-protected function getCalledFunctions 
+public function getCalledFunctions 
 "function: getCalledFunctions
   Goes through the DAELow structure, finds all function 
   calls and returns them in a list. Removes duplicates."
