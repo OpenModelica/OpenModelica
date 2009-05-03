@@ -922,6 +922,7 @@ algorithm
     case "identity" then cevalBuiltinIdentity; 
     case "promote" then cevalBuiltinPromote; 
     case "String" then cevalBuiltinString;
+    case "isRoot" then cevalBuiltinIsRoot;
     //case "semiLinear" then cevalBuiltinSemiLinear;
     //case "delay" then cevalBuiltinDelay;
     case id
@@ -2864,6 +2865,36 @@ algorithm
         Values.REAL(i);
   end matchcontinue;
 end cevalBuiltinMin2;
+
+protected function cevalBuiltinIsRoot "function cevalBuiltinCos
+  author: HN
+  Evaluates the builtin Connections.isRoot function."
+	input Env.Cache inCache;
+  input Env.Env inEnv;
+  input list<Exp.Exp> inExpExpLst;
+  input Boolean inBoolean;
+  input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Msg inMsg;
+  output Env.Cache outCache;
+  output Values.Value outValue;
+  output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
+algorithm 
+  (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
+  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+    local
+      list<Env.Frame> env;
+      Exp.Exp exp;
+      Boolean impl;
+      Option<Interactive.InteractiveSymbolTable> st;
+      Msg msg;
+      Env.Cache cache;
+    case (cache,env,{exp},impl,st,msg)
+      equation 
+        // TODO We have to get the list of roots here somehow from Inst.instProgram 
+      then
+        (cache,Values.BOOL(false),st);
+  end matchcontinue;
+end cevalBuiltinIsRoot;
 
 protected function cevalBuiltinDifferentiate "function cevalBuiltinDifferentiate
   author: LP
