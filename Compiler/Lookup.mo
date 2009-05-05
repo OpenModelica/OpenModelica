@@ -148,7 +148,16 @@ algorithm
       ftype = Types.makeFunctionType(fpath, varlst);
       then 
         (cache,ftype,env_1);      
-        
+    
+    /* Special handling for Connections.isRoot */
+    case (cache,env,Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")),msg)
+      local Types.Type ftype;
+      equation 
+        ftype = (Types.T_FUNCTION({("x", (Types.T_ANYTYPE(NONE), NONE))}, 
+          (Types.T_BOOL({}), NONE)), NONE);
+      then
+        (cache, ftype, env);        
+            
    	/* Error for type not found */
     case (cache,env,path,true)
       equation 
@@ -2026,13 +2035,13 @@ algorithm
     case (cache,path)
       equation 
         (cache,i_env) = Builtin.initialEnv(cache);
-        (_,{}) = lookupFunctionsInEnv(Env.emptyCache,i_env, path);
+        (cache,{}) = lookupFunctionsInEnv(cache,i_env, path);
       then
         (cache,false);
     case (cache,path)
       equation 
         (cache,i_env) = Builtin.initialEnv(cache);
-        (_,_) = lookupFunctionsInEnv(Env.emptyCache,i_env, path);
+        (cache,_) = lookupFunctionsInEnv(cache,i_env, path);
       then
         (cache,true);
     case (cache,path)

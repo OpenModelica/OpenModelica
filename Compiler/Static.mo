@@ -4840,6 +4840,38 @@ algorithm
   end matchcontinue;
 end elabBuiltinIdentity;
 
+protected function elabBuiltinIsRoot "function: elabBuiltinIsRoot
+ 
+  This function elaborates on the builtin operator Connections.isRoot.
+"
+	input Env.Cache inCache;
+  input Env.Env inEnv;
+  input list<Absyn.Exp> inAbsynExpLst;
+  input list<Absyn.NamedArg> inNamedArg;  
+  input Boolean inBoolean;
+  output Env.Cache outCache;
+  output Exp.Exp outExp;
+  output Types.Properties outProperties;
+algorithm 
+  (outCache,outExp,outProperties):=
+  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
+    local
+      list<Env.Frame> env;
+      Env.Cache cache;
+      Boolean impl;
+      Absyn.Exp exp0;
+      Exp.Exp exp;
+    case (cache,env,{exp0},{},impl) /* impl */
+      equation
+      (cache, exp, _, _) = elabExp(cache, env, exp0, false, NONE, false);
+      then
+        (cache,
+        Exp.CALL(Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")), {exp},
+             false, true, Exp.BOOL),
+        Types.PROP((Types.T_BOOL({}), NONE), Types.C_CONST));
+  end matchcontinue;
+end elabBuiltinIsRoot;
+
 protected function elabBuiltinScalar "function: elab_builtin_
   author: PA
  
@@ -5389,6 +5421,9 @@ algorithm
         _ = elabBuiltinHandler(id);
       then
         (cache,true);
+    case (cache, Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")))
+      then
+        (cache,true);                
     case (cache,path)
       equation 
         (cache,true) = Lookup.isInBuiltinEnv(cache,path);
@@ -5469,6 +5504,12 @@ algorithm
       equation 
         handler = elabBuiltinHandlerGeneric(name);
         (cache,exp,prop) = handler(cache,env, args, nargs, impl);
+      then
+        (cache,exp,prop);
+    case (cache,env,Absyn.CREF_QUAL(name = "Connections",
+              componentRef = Absyn.CREF_IDENT(name = "isRoot")),args,nargs,impl) 
+      equation  
+        (cache,exp,prop) = elabBuiltinIsRoot(cache,env, args, nargs, impl);
       then
         (cache,exp,prop);
   end matchcontinue;

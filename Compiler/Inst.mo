@@ -718,6 +718,7 @@ algorithm
       list<SCode.Class> cs;
       Env.Cache cache;
       ConnectionGraph.ConnectionGraph graph;
+      list<Exp.ComponentRef> roots;
     case (cache,env,{})
       equation 
         Error.addMessage(Error.NO_CLASSES_LOADED, {});
@@ -730,7 +731,8 @@ algorithm
         //Debug.fprint("insttr", n);
         //Debug.fprintln("insttr", "");
         (cache,dae,env_1,csets,_,_,_,graph) = instClass(cache,env, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, c, {}, false, TOP_CALL(), ConnectionGraph.EMPTY) ;
-        (_ /* roots */,dae2) = ConnectionGraph.findResultGraph(graph);
+        (roots,dae2) = ConnectionGraph.findResultGraph(graph);
+        dae = ConnectionGraph.evalIsRoot(roots, dae);
         dae = listAppend(dae, dae2);
         Debug.fcall("execstat",print, "*** Inst -> exit at time: " +& realString(clock()) +& "\n" );
       then

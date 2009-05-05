@@ -34,6 +34,7 @@ public import HashTableCG;
 public import Exp;
 public import Util;
 public import DAE;
+public import Absyn;
 
 type Edges = list<tuple<Exp.ComponentRef,Exp.ComponentRef>>;
 type DaeEdges = list<tuple<Exp.ComponentRef,Exp.ComponentRef,list<DAE.Element>,list<DAE.Element>>>;
@@ -441,21 +442,23 @@ function addPotentialRootsToTable
 algorithm
   (outTable,outRoots) := matchcontinue(inTable, inPotentialRoots, inRoots, inFirstRoot)
     local
-      HashTableCG.HashTable table, table1, table2;
-      Exp.ComponentRef root, firstRoot;
-      list<Exp.ComponentRef> roots, roots2;
+      HashTableCG.HashTable table;
+      Exp.ComponentRef root, firstRoot, canon1, canon2;
+      list<Exp.ComponentRef> roots;
       list<tuple<Exp.ComponentRef,Real>> tail;
     case(table, {}, roots, _)
     then (table,roots);
     case(table, ((root,_)::tail), roots, firstRoot)
     equation
-      (table1,_) = connectComponents(table, root, firstRoot, {}, {}, {});
-      (table2,roots2) = addPotentialRootsToTable(table1, tail, root::roots, firstRoot);
-    then (table2,roots2);
+      canon1 = canonical(table,root);
+      canon2 = canonical(table,firstRoot);
+      (table, true) = connectCanonicalComponents(table,canon1,canon2);
+      (table, roots) = addPotentialRootsToTable(table, tail, root::roots, firstRoot);
+    then (table,roots);
     case(table, (_::tail), roots, firstRoot)
     equation
-      (table2,roots2) = addPotentialRootsToTable(table, tail, roots, firstRoot);
-    then (table2,roots2);
+      (table,roots) = addPotentialRootsToTable(table, tail, roots, firstRoot);
+    then (table,roots);
   end matchcontinue;
 end addPotentialRootsToTable;
 
@@ -511,5 +514,35 @@ algorithm
   outRoots := finalRoots;
   outDae := dae;
 end findResultGraph;
+
+function evalIsRoot  
+  input list<Exp.ComponentRef> inRoots;
+  input list<DAE.Element> inDae;
+  output list<DAE.Element> outDae;
+algorithm
+  (outDae, _) := DAE.traverseDAE(inDae, evalIsRootHelper, inRoots);
+end evalIsRoot;
+
+function evalIsRootHelper
+  input Exp.Exp inExp; 
+  input list<Exp.ComponentRef> inRoots; 
+  output Exp.Exp outExp; 
+  output list<Exp.ComponentRef> outRoots;
+algorithm  
+  (outExp,outRoots) := matchcontinue(inExp,inRoots)
+  local  
+    Exp.Exp exp; 
+    list<Exp.ComponentRef> roots;
+    Exp.ComponentRef cref;
+    Boolean result;
+    case (Exp.CALL(path=Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")), 
+          expLst={Exp.CREF(componentRef = cref)}), roots)
+      equation
+        result = Util.listContainsWithCompareFunc(cref, roots, Exp.crefEqual);
+      then (Exp.BCONST(result), roots);
+    case (exp, roots)
+      then (exp, roots);
+  end matchcontinue;
+end evalIsRootHelper;
 
 end ConnectionGraph;
