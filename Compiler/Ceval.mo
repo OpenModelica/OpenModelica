@@ -3492,7 +3492,7 @@ algorithm
   end matchcontinue;
 end cevalRelation;
 
-protected function cevalRange "function: cevalRange
+public function cevalRange "function: cevalRange
   This function evaluates a range expression. 
   It only handles integers."
   input Integer inInteger1;
@@ -3689,9 +3689,9 @@ algorithm
     /* Search in env for binding, special rule for enumerations, the cr does not have a value since it -is- a value. */
     case (cache,env,c,impl,msg)  
       equation 
-        (cache,attr,ty as (Types.T_ENUM(),_),binding,_,_) = Lookup.lookupVar(cache,env, c);
+        (cache,attr,ty as (Types.T_ENUM(),_),binding,_,_) = Lookup.lookupVar(cache, env, c);
       then
-        (cache,Values.ENUM(c));  
+        (cache,Values.ENUM(c, 0));  
     
     /* Search in env for binding. */
     case (cache,env,c,impl,msg)  
@@ -3978,6 +3978,14 @@ algorithm
         true = indx <= dim;
       then
         (cache,Exp.INDEX(e1_1));
+    /* indexing using enum! */
+    case (cache,env,Exp.INDEX(exp = e1),dim,impl,msg)
+      equation 
+        (cache,v1 as Values.ENUM(_,indx),_) = ceval(cache,env, e1, impl, NONE, SOME(dim), msg);
+        e1_1 = Static.valueExp(v1);
+        true = indx <= dim;
+      then
+        (cache,Exp.INDEX(e1_1));        
     case (cache,env,Exp.SLICE(exp = e1),dim,impl,msg)
       equation 
         (cache,v1,_) = ceval(cache,env, e1, impl, NONE, SOME(dim), msg);

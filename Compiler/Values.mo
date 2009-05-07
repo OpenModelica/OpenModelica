@@ -66,6 +66,7 @@ uniontype Value
 
   record ENUM
     Exp.ComponentRef value;
+    Integer index;
   end ENUM;
 
   record ARRAY
@@ -1771,7 +1772,7 @@ algorithm
         s_2 = stringAppend(s_1, "}");
       then
         s_2;
-    case(ENUM(cr)) equation
+    case(ENUM(cr,_)) equation
       s = Exp.printComponentRefStr(cr);
     then s;
     case _
@@ -1781,8 +1782,6 @@ algorithm
         fail();
   end matchcontinue;
 end valString;
-
-
 
 protected function valRecordString 
 "function: valRecordString 

@@ -9738,6 +9738,7 @@ algorithm
       tuple<Types.TType, Option<Absyn.Path>> t;
       Absyn.Exp e;
     case ((Types.T_INTEGER(varLstInt = _),_),_,sub) then Exp.INDEX(sub); 
+    case ((Types.T_ENUM(),_),_,sub) then Exp.INDEX(sub);      
     case ((Types.T_ARRAY(arrayType = (Types.T_INTEGER(varLstInt = _),_)),_),_,sub) then Exp.SLICE(sub); 
     case (t,e,_)
       equation 
@@ -10104,7 +10105,7 @@ algorithm
       varlst = Util.listThreadMap(namelst,tpl,Exp.makeVar);
       name = Absyn.pathString(path);
     then Exp.CALL(path,expl,false,false,Exp.COMPLEX("",varlst,ClassInf.RECORD(name)));
-    case(Values.ENUM(cr)) then Exp.CREF(cr,Exp.ENUM());
+    case(Values.ENUM(cr,x)) then Exp.CREF(cr,Exp.ENUM());
     case v
       equation 
         print("value_exp failed for "+&Values.valString(v)+&"\n");
@@ -11077,7 +11078,8 @@ algorithm
           (Exp.LESS(Exp.REAL()),
           {(Types.T_REAL({}),NONE),(Types.T_REAL({}),NONE)},(Types.T_BOOL({}),NONE)),
           (Exp.LESS(Exp.STRING()),
-          {(Types.T_STRING({}),NONE),(Types.T_STRING({}),NONE)},(Types.T_BOOL({}),NONE))} "\'<\' operator" ;
+          {(Types.T_STRING({}),NONE),(Types.T_STRING({}),NONE)},(Types.T_BOOL({}),NONE)),
+          (Exp.LESS(Exp.ENUM()),{t1,t2},(Types.T_BOOL({}),NONE))} "\'<\' operator" ;
         /*(cache,userops) = getKoeningOperatorTypes(cache,"less", env, t1, t2);*/
         types = Util.listFlatten({scalars/*,userops*/});
       then
@@ -11090,7 +11092,8 @@ algorithm
           (Exp.LESSEQ(Exp.REAL()),
           {(Types.T_REAL({}),NONE),(Types.T_REAL({}),NONE)},(Types.T_BOOL({}),NONE)),
           (Exp.LESSEQ(Exp.STRING()),
-          {(Types.T_STRING({}),NONE),(Types.T_STRING({}),NONE)},(Types.T_BOOL({}),NONE))} "\'<=\' operator" ;
+          {(Types.T_STRING({}),NONE),(Types.T_STRING({}),NONE)},(Types.T_BOOL({}),NONE)),
+          (Exp.LESSEQ(Exp.ENUM()),{t1,t2},(Types.T_BOOL({}),NONE))} "\'<=\' operator" ;
         /*(cache,userops) = getKoeningOperatorTypes(cache,"lessEqual", env, t1, t2);*/
         types = Util.listFlatten({scalars/*,userops*/});
       then
@@ -11103,7 +11106,8 @@ algorithm
           (Exp.GREATER(Exp.REAL()),
           {(Types.T_REAL({}),NONE),(Types.T_REAL({}),NONE)},(Types.T_BOOL({}),NONE)),
           (Exp.GREATER(Exp.STRING()),
-          {(Types.T_STRING({}),NONE),(Types.T_STRING({}),NONE)},(Types.T_BOOL({}),NONE))} "\'>\' operator" ;
+          {(Types.T_STRING({}),NONE),(Types.T_STRING({}),NONE)},(Types.T_BOOL({}),NONE)),
+          (Exp.GREATER(Exp.ENUM()),{t1,t2},(Types.T_BOOL({}),NONE))} "\'>\' operator" ;
         /*(cache,userops) = getKoeningOperatorTypes(cache,"greater", env, t1, t2);*/
         types = Util.listFlatten({scalars/*,userops*/});
       then
@@ -11116,7 +11120,8 @@ algorithm
           (Exp.GREATEREQ(Exp.REAL()),
           {(Types.T_REAL({}),NONE),(Types.T_REAL({}),NONE)},(Types.T_BOOL({}),NONE)),
           (Exp.GREATEREQ(Exp.STRING()),
-          {(Types.T_STRING({}),NONE),(Types.T_STRING({}),NONE)},(Types.T_BOOL({}),NONE))} "\'>=\' operator" ;
+          {(Types.T_STRING({}),NONE),(Types.T_STRING({}),NONE)},(Types.T_BOOL({}),NONE)),
+          (Exp.GREATEREQ(Exp.ENUM()),{t1,t2},(Types.T_BOOL({}),NONE))} "\'>=\' operator" ;
         /*(cache,userops) = getKoeningOperatorTypes(cache,"greaterEqual", env, t1, t2);*/
         types = Util.listFlatten({scalars/*,userops*/});
       then
@@ -11131,7 +11136,8 @@ algorithm
           (Exp.EQUAL(Exp.STRING()),
           {(Types.T_STRING({}),NONE),(Types.T_STRING({}),NONE)},(Types.T_BOOL({}),NONE)),
           (Exp.EQUAL(Exp.BOOL()),
-          {(Types.T_BOOL({}),NONE),(Types.T_BOOL({}),NONE)},(Types.T_BOOL({}),NONE))} "\'==\' operator" ;
+          {(Types.T_BOOL({}),NONE),(Types.T_BOOL({}),NONE)},(Types.T_BOOL({}),NONE)),
+          (Exp.EQUAL(Exp.ENUM()),{t1,t2},(Types.T_BOOL({}),NONE))} "\'==\' operator" ;
         /*(cache,userops) = getKoeningOperatorTypes(cache,"equal", env, t1, t2);*/
         types = Util.listFlatten({scalars/*,userops*/});
       then
@@ -11146,7 +11152,8 @@ algorithm
           (Exp.NEQUAL(Exp.STRING()),
           {(Types.T_STRING({}),NONE),(Types.T_STRING({}),NONE)},(Types.T_BOOL({}),NONE)),
           (Exp.NEQUAL(Exp.BOOL()),
-          {(Types.T_BOOL({}),NONE),(Types.T_BOOL({}),NONE)},(Types.T_BOOL({}),NONE))} "\'!=\' operator" ;
+          {(Types.T_BOOL({}),NONE),(Types.T_BOOL({}),NONE)},(Types.T_BOOL({}),NONE)),
+          (Exp.NEQUAL(Exp.ENUM()),{t1,t2},(Types.T_BOOL({}),NONE))} "\'!=\' operator" ;
         /*(cache,userops) = getKoeningOperatorTypes(cache,"notEqual", env, t1, t2);*/
         types = Util.listFlatten({scalars/*,userops*/});
       then

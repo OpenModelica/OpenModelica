@@ -1110,7 +1110,7 @@ algorithm oval := matchcontinue(inType)
   case((Types.T_REAL(_),_)) then Values.REAL(0.0);
   case((Types.T_STRING(_),_)) then Values.STRING("");
   case((Types.T_BOOL(_),_)) then Values.BOOL(false);
-  case((Types.T_ENUM,_)) then Values.ENUM(Exp.CREF_IDENT("",Exp.ENUM(),{})); 
+  case((Types.T_ENUM,_)) then Values.ENUM(Exp.CREF_IDENT("",Exp.ENUM(),{}),0); 
   case((Types.T_COMPLEX(ClassInf.RECORD(str), typesVar,_,_),_))
     local 
       list<Types.Var> typesVar;

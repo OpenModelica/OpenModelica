@@ -3842,7 +3842,21 @@ algorithm
         env_2 = addClassdefsToEnv2(env_1, xs, impl,redeclareMod);
       then
         env_2;
-        //otherwise, extend frame with in class. 
+        
+    // adrpo: see if is an enumeration! then extend frame with in class. 
+    case (env,( (sel1 as SCode.CLASSDEF(name = s, classDef = SCode.CLASS(classDef=SCode.ENUMERATION(identLst)))) :: xs),impl,redeclareMod)
+      local 
+        String s; 
+        list<SCode.Ident> identLst; 
+        SCode.Class enumclass;
+      equation 
+        enumclass = instEnumeration(s, identLst);        
+        env_1 = Env.extendFrameC(env, enumclass);
+        env_2 = addClassdefsToEnv2(env_1, xs, impl,redeclareMod);
+      then
+        env_2;
+        
+    // otherwise, extend frame with in class. 
     case (env,( (sel1 as SCode.CLASSDEF(classDef = cl)) :: xs),impl,redeclareMod)
       equation 
         env_1 = Env.extendFrameC(env, cl);
@@ -6562,6 +6576,19 @@ algorithm
       then
         (cache,NONE :: l);
 
+    /* adrpo: See if our array dimension comes from an enumeration! */
+    case (cache,env,cref,(Absyn.SUBSCRIPT(subScript = Absyn.CREF(cr)) :: ds),impl,st,doVect)
+      local Absyn.ComponentRef cr; Absyn.Path typePath; list<SCode.Element> elementLst;
+      equation 
+        typePath = Absyn.crefToPath(cr);
+        /* make sure is an enumeration! */
+        (_, SCode.CLASS(_, _, _, SCode.R_ENUMERATION(), SCode.PARTS(elementLst, {}, {}, {}, {}, NONE())), _) = 
+             Lookup.lookupClass(cache, env, typePath, false);
+        i = listLength(elementLst);
+        (cache,l) = elabArraydimDecl(cache,env, cref, ds, impl, st,doVect);
+      then
+        (cache,SOME(DIMINT(i)) :: l);
+
     /* Constant dimension creates DIMINT */
     case (cache,env,cref,(Absyn.SUBSCRIPT(subScript = d) :: ds),impl,st,doVect) 
       equation 
@@ -6777,6 +6804,14 @@ algorithm
         l = elabArraydimType2(t, ad);
       then
         (SOME(DIMINT(i)) :: l);
+    /*
+    case ((Types.T_ARRAY(arrayDim = Types.DIM(integerOption = NONE),arrayType = t),_),{})
+      then
+        (NONE :: {});
+    case ((Types.T_ARRAY(arrayDim = Types.DIM(integerOption = SOME(i)),arrayType = t),_),{})
+      then
+        (SOME(DIMINT(i)) :: {});
+    */        
     case (_,{}) then {}; 
     case (t,(_ :: ad)) /* PR, for debugging */ 
       equation 
@@ -7704,6 +7739,7 @@ algorithm
   outClass := SCode.CLASS(n,false,false,SCode.R_ENUMERATION(),SCode.PARTS(comp,{},{},{},{},NONE));
 end instEnumeration;
 
+
 protected function makeEnumComponents 
 "function: makeEnumComponents
   author: PA
@@ -8481,11 +8517,36 @@ algorithm
       then
         (cache,{DAE.WHEN_EQUATION(e_2,dae1,NONE)},env_1,csets,ci_state_1,graph);
 
+
 /* seems unnecessary to handle when equations that are initial `for\' loops
 	  The loop expression is evaluated to a constant array of
 	  integers, and then the loop is unrolled.	 
           FIXME: Why lookup after add_for_loop_scope ?
 	 */ 
+
+    // adrpo: handle the case where range is a enumeration!
+    case (cache,env,mod,pre,csets,ci_state,SCode.EQ_FOR(index = i,range = Absyn.CREF(cr),eEquationLst = el),initial_,impl,graph)
+      local 
+        Absyn.ComponentRef cr;
+        Absyn.Path typePath;
+        Integer len;
+        list<SCode.Element> elementLst;
+        list<Values.Value> vals;
+      equation 
+        typePath = Absyn.crefToPath(cr);
+        /* make sure is an enumeration! */
+        (_, SCode.CLASS(_, _, _, SCode.R_ENUMERATION(), SCode.PARTS(elementLst, {}, {}, {}, {}, NONE())), _) = 
+             Lookup.lookupClass(cache, env, typePath, false);
+        len = listLength(elementLst);        
+        env_1 = addForLoopScope(env, i, (Types.T_INTEGER({}),NONE())) "//Debug.fprintln (\"insti\", \"for expression elaborated\") &" ;
+        (cache,Types.ATTR(false,false,SCode.RW(),SCode.VAR(),_,_),(Types.T_INTEGER(_),_),Types.UNBOUND(),_,_) 
+        = Lookup.lookupVar(cache,env_1, Exp.CREF_IDENT(i,Exp.OTHER(),{})) "	//Debug.fprintln (\"insti\", \"loop-variable added to scope\") &" ;
+        vals = Ceval.cevalRange(1,1,len);
+        (cache,dae,csets_1,graph) = unroll(cache,env_1, mod, pre, csets, ci_state, i, Values.ARRAY(vals), el, initial_, impl,graph) "	//Debug.fprintln (\"insti\", \"for expression evaluated\") &" ;
+        ci_state_1 = instEquationCommonCiTrans(ci_state, initial_) "	//Debug.fprintln (\"insti\", \"for expression unrolled\") & 	& //Debug.fprintln (\"insttr\", \"inst_equation_common_eqfor_1 succeeded\")" ;
+      then
+        (cache,dae,env,csets_1,ci_state_1,graph);
+
     case (cache,env,mod,pre,csets,ci_state,SCode.EQ_FOR(index = i,range = e,eEquationLst = el),initial_,impl,graph) 
       equation 
         (cache,e_1,Types.PROP((Types.T_ARRAY(Types.DIM(_),id_t),_),_),_) = Static.elabExp(cache,env, e, impl, NONE,true) "//Debug.fprintln (\"insttr\", \"inst_equation_common_eqfor_1\") &" ;

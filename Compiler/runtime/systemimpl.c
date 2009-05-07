@@ -4257,7 +4257,7 @@ static int value_to_type_desc(void *value, type_description *desc)
       data = RML_CDR(data);
     }
   }; break;
-  case Values__ENUM_3dBOX1:
+  case Values__ENUM_3dBOX2:
   case Values__LIST_3dBOX1:
   case Values__CODE_3dBOX1:
     /* unsupported */
@@ -4412,7 +4412,7 @@ static int get_array_type_and_dims(type_description *desc, void *arrdata)
     return 1;
   case Values__ARRAY_3dBOX1:
     return (1 + get_array_type_and_dims(desc, RML_STRUCTDATA(item)[0]));
-  case Values__ENUM_3dBOX1:
+  case Values__ENUM_3dBOX2:
   case Values__LIST_3dBOX1:
   case Values__TUPLE_3dBOX1:
   case Values__RECORD_3dBOX3:

@@ -1540,7 +1540,7 @@ algorithm
 	  case (Exp.REALVAL(r)) then Values.REAL(r);
 	  case (Exp.STRINGVAL(s)) then Values.STRING(s);
 	  case (Exp.BOOLVAL(b)) then Values.BOOL(b);
-	  case (Exp.ENUMVAL(cr)) then Values.ENUM(cr);
+	  case (Exp.ENUMVAL(cr)) then Values.ENUM(cr,0);
 	  case (Exp.CODEVAL(c)) then Values.CODE(c);
 	  case (Exp.LISTVAL(vLst))
 	    equation
@@ -1993,7 +1993,7 @@ algorithm
 	  case (Values.REAL(r)) then Exp.REALVAL(r);
 	  case (Values.STRING(s)) then Exp.STRINGVAL(s);
 	  case (Values.BOOL(b)) then Exp.BOOLVAL(b);
-	  case (Values.ENUM(cr)) then Exp.ENUMVAL(cr);
+	  case (Values.ENUM(cr,_)) then Exp.ENUMVAL(cr);
 	  case (Values.LIST(vLst))
 	    equation
 	      vLst2 = fromValueLstToValueTypesLst(vLst,{});
