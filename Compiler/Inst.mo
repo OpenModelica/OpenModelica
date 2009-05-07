@@ -5273,6 +5273,9 @@ algorithm
         start = instStartBindingExp(mod, ty, idxs_1);
         (cache,dae_var_attr) = instDaeVariableAttributes(cache,env, mod, ty, {});
         dae3 = daeDeclare(cr, ci_state, ty, SCode.ATTR({},flowPrefix,streamPrefix,acc,vt,dir),prot, SOME(e), inst_dims, start, dae_var_attr, comment,io,finalPrefix,false);
+        dae2 = instModEquation(cr, ty, mod, impl);
+        dae2 = Util.if_(Types.isComplexType(ty), dae2,{});
+        dae3 = listAppend(dae2,dae3); 
         dae = listAppend(dae1_1, dae3);
       then
         (cache,env_1,dae,csets_1,ty,graph);
