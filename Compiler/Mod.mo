@@ -1750,12 +1750,10 @@ algorithm
     case (Types.NOMOD()) then "()"; 
     case Types.REDECL(finalPrefix = finalPrefix,tplSCodeElementModLst = elist)
       equation 
-        Print.printBuf("(redeclare(");
         elist_1 = Util.listMap(elist, Util.tuple21);
         finalPrefixstr = Util.if_(finalPrefix, "final", "");
         str_lst = Util.listMap(elist_1, SCode.printElementStr);
         str = Util.stringDelimitList(str_lst, ", ");
-        Print.printBuf("))");
         res = Util.stringAppendList({"(redeclare(",finalPrefixstr,str,"))"});
       then
         res;
@@ -1782,7 +1780,7 @@ algorithm
   Print.printBuf(str);
 end printMod;
 
-protected function printSubs1Str "function: printSubs1Str
+public function printSubs1Str "function: printSubs1Str
  
   Helper function to print_mod_str
 "

@@ -1040,7 +1040,7 @@ algorithm
       /*  Real class */ 
     case (cache,env,mods,pre,csets as Connect.SETS(connection = crs,deletedComponents=dc,outerConnects=oc),ci_state,(c as SCode.CLASS(name = "Real",restriction = r,classDef = d)),prot,inst_dims,impl,graph,_) 
       equation 
-        tys = instRealClass(cache,env,mods,pre);     
+        tys = instRealClass(cache,env,mods,pre);      
         bc = arrayBasictypeBaseclass(inst_dims, (Types.T_REAL(tys),NONE));        
       then
         (cache,{},env,Connect.SETS({},crs,dc,oc),ci_state,tys,bc,NONE,NONE,graph);       
@@ -1176,8 +1176,11 @@ algorithm
           Types.VAR("always",Types.ATTR(false,false,SCode.RO(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,(Types.T_ENUM(),NONE),Types.UNBOUND())
           }),NONE),p);
       then v::varLst;   
-    case(cache,env,Types.MOD(f,e,_::submods,eqmod),pre) 
+    case(cache,env,Types.MOD(f,e,smod::submods,eqmod),pre)
+      local String s1; Types.SubMod smod; 
       equation
+        {s1} = Mod.printSubs1Str({smod}); 
+        Error.addMessage(Error.UNUSED_MODIFIER,{s1,", (modifer on real class)"});
         varLst = instRealClass(cache,env,Types.MOD(f,e,submods,eqmod),pre);
       then varLst;
     case(cache,env,Types.MOD(f,e,{},eqmod),pre) then {};
@@ -1231,8 +1234,11 @@ algorithm
         varLst = instIntegerClass(cache,env,Types.MOD(f,e,submods,eqmod),pre);
         v = instBuiltinAttribute(cache,env,"nominal",optVal,exp,(Types.T_INTEGER({}),NONE),p);
         then v::varLst;           
-    case(cache,env,Types.MOD(f,e,_::submods,eqmod),pre) 
+    case(cache,env,Types.MOD(f,e,smod::submods,eqmod),pre)
+      local String s1; Types.SubMod smod;
       equation
+        {s1} = Mod.printSubs1Str({smod});
+        Error.addMessage(Error.UNUSED_MODIFIER,{s1,", (modifer on Integer class)"});
         varLst = instIntegerClass(cache,env,Types.MOD(f,e,submods,eqmod),pre);
       then varLst;
     case(cache,env,Types.MOD(f,e,{},eqmod),pre) then {};
@@ -1265,8 +1271,11 @@ algorithm
         varLst = instStringClass(cache,env,Types.MOD(f,e,submods,eqmod),pre);
         v = instBuiltinAttribute(cache,env,"start",optVal,exp,(Types.T_STRING({}),NONE),p);
         then v::varLst;      
-    case(cache,env,Types.MOD(f,e,_::submods,eqmod),pre) 
+    case(cache,env,Types.MOD(f,e,smod::submods,eqmod),pre)
+      local String s1; Types.SubMod smod; 
       equation
+        {s1} = Mod.printSubs1Str({smod}); 
+        Error.addMessage(Error.UNUSED_MODIFIER,{s1,", (modifer on String class)"});
         varLst = instStringClass(cache,env,Types.MOD(f,e,submods,eqmod),pre);
       then varLst;
     case(cache,env,Types.MOD(f,e,{},eqmod),pre) then {};
@@ -1304,8 +1313,11 @@ algorithm
         varLst = instIntegerClass(cache,env,Types.MOD(f,e,submods,eqmod),pre);
         v = instBuiltinAttribute(cache,env,"fixed",optVal,exp,(Types.T_BOOL({}),NONE),p);
       then v::varLst;              
-    case(cache,env,Types.MOD(f,e,_::submods,eqmod),pre) 
+    case(cache,env,Types.MOD(f,e,smod::submods,eqmod),pre)
+      local String s1; Types.SubMod smod; 
       equation
+        {s1} = Mod.printSubs1Str({smod}); 
+        Error.addMessage(Error.UNUSED_MODIFIER,{s1,", (modifer on Boolean class)"});
         varLst = instBooleanClass(cache,env,Types.MOD(f,e,submods,eqmod),pre);
       then varLst;
     case(cache,env,Types.MOD(f,e,{},eqmod),pre) then {};
@@ -1626,12 +1638,13 @@ algorithm
       list<SCode.Element> cdefelts,compelts,extendselts,els;
       list<Env.Frame> env1,env2,env3,env,env4,env5,cenv,cenv_2,env_2;
       list<tuple<SCode.Element, Mod>> cdefelts_1,cdefelts_2,extcomps,compelts_1,compelts_2;
+      list<SCode.Element> compelts_2_elem;
       Connect.Sets csets,csets1,csets_filtered,csets2,csets3,csets4,csets5,csets_1;
       list<DAE.Element> dae1,dae2,dae3,dae4,dae5,dae;
       ClassInf.State ci_state1,ci_state,ci_state2,ci_state3,ci_state4,ci_state5,ci_state6,new_ci_state,ci_state_1;
       list<Types.Var> tys;
       Option<tuple<Types.TType, Option<Absyn.Path>>> bc;
-      Types.Mod mods,emods,m,mod_1,mods_1,mods_2;
+      Types.Mod mods,emods,m,mod_1,mods_1,mods_2,checkMods;
       Prefix.Prefix pre;
       list<SCode.Equation> eqs,initeqs,eqs2,initeqs2,eqs_1,initeqs_1;
       list<SCode.Algorithm> alg,initalg,alg2,initalg2,alg_1,initalg_1;
@@ -1758,8 +1771,12 @@ algorithm
         compelts_1 = addNomod(compelts);
         cdefelts_1 = addNomod(cdefelts);
         compelts_2 = Util.listFlatten({compelts_2,compelts_1, cdefelts_1});
-        //Instantiate components 
+        //Instantiate components
  
+        compelts_2_elem = Util.listMap(compelts_2,Util.tuple21);
+        checkMods = Mod.merge(mods,emods,env4,Prefix.NOPRE());
+        matchModificationToComponents(compelts_2_elem,checkMods,className);
+     
         (cache,dae1,env5,csets1,ci_state2,tys,graph) = instElementList(cache,env4, mods, pre, csets, ci_state1, compelts_2, inst_dims, impl,graph);
         //Instantiate equations (see function "instEquation")
         (cache,dae2,_,csets2,ci_state3,graph) = instList(cache,env5, mods, pre, csets1, ci_state2, instEquation, eqs_1, impl, graph) ;
@@ -1893,6 +1910,52 @@ algorithm
         fail();
   end matchcontinue;
 end instClassdef;
+
+protected function matchModificationToComponents "
+Author: BZ, 2009-05
+This function is called from instClassDef, recursivly remove modifers on each component.
+What ever is left in modifier is printed as a warning. That means that we have modifiers on a component that does not exist.
+ 
+"
+  input list<SCode.Element> elems;
+  input Types.Mod inmod;
+  input String callingScope;
+algorithm _ := matchcontinue(elems, inmod,callingScope)
+  local
+    SCode.Element elem;
+    String cn,s1,s2;
+    Types.Mod mod;
+  case({},Types.NOMOD,_) then ();
+  case({},Types.MOD(subModLst={}),_) then ();
+  case({},inmod,callingScope)
+    equation
+      inmod = Types.removeMod(inmod,"$$" +& callingScope);
+      s1 = Mod.printModStr(inmod); 
+      s2 = ", (modifer in scope: " +& callingScope +& ")";      
+      Error.addMessage(Error.UNUSED_MODIFIER,{s1,s2});
+    then (); 
+      
+  case((elem as SCode.COMPONENT(component=cn))::elems,inmod,callingScope)
+    equation
+      inmod = Types.removeMod(inmod,cn);
+      matchModificationToComponents(elems,inmod,callingScope);
+    then
+      ();
+  case((elem as SCode.EXTENDS(modifications=_))::elems,inmod,callingScope)
+    equation matchModificationToComponents(elems,inmod,callingScope); then ();
+  case((elem as SCode.CLASSDEF(name=cn,replaceablePrefix=true))::elems,inmod,callingScope)
+    equation 
+      inmod = Types.removeMod(inmod,cn);
+      matchModificationToComponents(elems,inmod,callingScope); 
+    then ();
+  case((elem as SCode.IMPORT(imp=_))::elems,inmod,callingScope)
+    equation matchModificationToComponents(elems,inmod,callingScope); then ();
+  case( (elem as SCode.CLASSDEF(replaceablePrefix=false))::elems,inmod,callingScope)
+    equation
+      matchModificationToComponents(elems,inmod,callingScope); 
+    then ();
+end matchcontinue;
+end matchModificationToComponents;
 
 protected function extractConstantPlusDeps "
 Author: BZ, 2009-04
@@ -2900,7 +2963,7 @@ algorithm
         env1 = addClassdefsToEnv(env, cdefelts, true,NONE) " CLASSDEF & IMPORT nodes are added to env" ;
         (cache,env2,emods,extcomps,eqs2,initeqs2,alg2,initalg2) = 
         partialInstExtendsList(cache,env1, mods, extendselts, ci_state, className, true) 
-        "2. EXTENDS Nodes instExtendsList only flatten inhteritance structure. It does not perform component instantiations." ;
+        "2. EXTENDS Nodes inst_Extends_List only flatten inhteritance structure. It does not perform component instantiations." ;
 		lst_constantEls = addNomod(listAppend(constantEls(extendselts),constantEls(els))) " Retrieve all constants";		
 	    /* Since partial instantiation is done in lookup, we need to add inherited classes here.
 	       Otherwise when looking up e.g. A.B where A inherits the definition of B, and without having a
@@ -3085,8 +3148,7 @@ algorithm
   end matchcontinue;
 end getOptionArraydim;
 
-protected function instExtendsList 
-"function: instExtendsList 
+protected function instExtendsList " 
   author: PA
   This function flattens out the inheritance structure of a class.
   It takes an SCode.Element list and flattens out the extends nodes

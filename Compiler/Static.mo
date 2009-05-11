@@ -4490,8 +4490,7 @@ algorithm
         ls = Util.listMap({exp}, Dump.printExpStr);
         es1 = Util.stringDelimitList(ls, ", ");
         es3 = Types.unparseType(ety);
-        ls = listAppend({es1,es1},{es3});
-        Error.addMessage(Error.DERIVATIVE_NON_REAL, ls);
+        Error.addMessage(Error.DERIVATIVE_NON_REAL, {es1,es1,es3});
       then
         fail(); 
     case (cache,env,{exp},_,impl) 

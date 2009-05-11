@@ -864,6 +864,61 @@ algorithm
     case (m) then m; 
   end matchcontinue;
 end stripSubmod;
+
+public function removeMod "
+Author: BZ, 2009-05
+Remove a modifier(/s) on a specified component.
+TODO: implement IDXMOD and a better support for redeclare. 
+"
+  input Mod inmod;
+  input String componentModified;
+  output Mod outmod; 
+algorithm outmod := matchcontinue(inmod,componentModified)
+  local
+    Boolean b;
+    Absyn.Each e; 
+    list<SubMod> subs;
+    Option<EqMod> oem;
+  case(NOMOD,_) then NOMOD;
+    // TODO: implement check for redeclare
+  case((inmod as REDECL(_,_)),_) 
+    equation
+    then NOMOD;
+    
+  case(MOD(b,e,subs,oem),componentModified)
+    equation
+      subs = removeModInSubs(subs,componentModified);
+    then
+      MOD(b,e,subs,oem);
+end matchcontinue; 
+end removeMod;
+
+protected function removeModInSubs "" 
+  input list<SubMod> insubs;
+  input String componentName;
+  output list<SubMod> outsubs;
+algorithm outsubs := matchcontinue(insubs,componentName)
+  local
+    Mod m1,m2;
+    list<SubMod> subs1,subs2;
+    String s1;
+    SubMod sub;
+  case({},_) then {};
+  case((sub as NAMEMOD(s1,m1))::insubs,componentName)
+    equation
+      subs1 = Util.if_(stringEqual(s1,componentName),{},{NAMEMOD(s1,m1)});
+      subs2 = removeModInSubs(insubs,componentName) "check for multiple mod on same comp";
+      outsubs = listAppend(subs1,subs2); 
+    then
+      outsubs;
+  case((sub as IDXMOD(_,m1))::insubs,componentName)
+    equation
+      //TODO: implement check for idxmod? 
+      subs2 = removeModInSubs(insubs,componentName);       
+    then
+      sub::subs2;
+end matchcontinue;
+end removeModInSubs;
   
 public function getDimensionSizes "function: getDimensionSizes
   

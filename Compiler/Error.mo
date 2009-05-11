@@ -208,9 +208,9 @@ public constant ErrorID WARNING_RELATION_ON_REAL=509;
 public constant ErrorID ERROR_BUILTIN_DELAY=510;
 public constant ErrorID When_With_IF=511;
 public constant ErrorID OUTER_MODIFICATION=512;
-public constant ErrorID DERIVATIVE_NON_REAL=514;
 public constant ErrorID REDUNDANT_GUESS=513 "Used by MathCore in Backend";
-
+public constant ErrorID DERIVATIVE_NON_REAL=514;
+public constant ErrorID UNUSED_MODIFIER=515;
 
 
 public constant ErrorID INDEX_REDUCTION_NOTIFICATION=1000;
@@ -462,7 +462,9 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (OUTER_MODIFICATION,TRANSLATION(),ERROR(),  
           "Modification on outer element: %s"),          
           (REDUNDANT_GUESS,TRANSLATION(),WARNING(),  
-          "Start value is assigned for variable: %s, but not used since %s"),          
+          "Start value is assigned for variable: %s, but not used since %s"),
+          (UNUSED_MODIFIER,TRANSLATION(),WARNING(),  
+          "Modifer declared but never used: %s %s"),
           (MISSING_INNER_PREFIX,TRANSLATION(),ERROR(),
           "No corresponding 'INNER' declaration found for component %s declared as '%s'."),
           (DERIVATIVE_NON_REAL,TRANSLATION(),ERROR(),  
