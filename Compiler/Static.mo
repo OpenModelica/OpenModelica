@@ -2929,7 +2929,7 @@ protected function elabBuiltinSum "function: elabBuiltinSum
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
-    input list<Absyn.NamedArg> inNamedArg;  
+  input list<Absyn.NamedArg> inNamedArg;  
   input Boolean inBoolean;
 	output Env.Cache outCache;
   output Exp.Exp outExp;
@@ -2965,13 +2965,17 @@ algorithm
         Error.addMessage(Error.BUILTIN_FUNCTION_PRODUCT_HAS_SCALAR_PARAMETER, {str});
       then
          (cache,exp_1,Types.PROP((Types.T_REAL({}),NONE),c));
-    case (cache,env,{arrexp},_,impl) /* impl */ 
-      local Exp.Type etp; Types.Type t;
+    case (cache,env,aexps,_,impl)  
+      local 
+        Exp.Type etp; 
+        Types.Type t;
+        list<Absyn.Exp> aexps;
       equation 
-        (cache,exp_1,Types.PROP(t as (Types.T_ARRAY(dim,tp),_),c),_) = elabExp(cache,env, arrexp, impl, NONE,true);
-        tp = Types.arrayElementType(t);        
+        arrexp = Util.listFirst(aexps);
+        (cache,exp_1,Types.PROP(t,c),_) = elabExp(cache,env, arrexp, impl, NONE,true);
+        (tp,_) = Types.flattenArrayType(t);        
         etp = Types.elabType(tp);
-        exp_2 = elabBuiltinSum2(Exp.CALL(Absyn.IDENT("sum"),{exp_1},false,true,etp));  
+        exp_2 = elabBuiltinSum2(Exp.CALL(Absyn.IDENT("sum"),{exp_1},false,true,etp));
       then
         (cache,exp_2,Types.PROP(tp,c)); 
   end matchcontinue;

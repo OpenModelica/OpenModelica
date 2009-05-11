@@ -2779,6 +2779,10 @@ algorithm
         dimlist_1 = listAppend(dimlist, {dim});
       then
         (ty_1,dimlist_1);
+        // Complex type extending basetype.
+    case ((T_COMPLEX(_,_,SOME(ty),_),_)) equation
+      (ty_1,dimlist) = flattenArrayType(ty);
+    then (ty_1,dimlist);
     case ty then (ty,{}); 
   end matchcontinue;
 end flattenArrayType;
