@@ -195,6 +195,7 @@ public constant ErrorID MISSING_INNER_PREFIX = 108;
 public constant ErrorID CONNECT_STREAM_TO_NONSTREAM=109;
 public constant ErrorID IMPLICIT_ITERATOR_NOT_FOUND_IN_LOOP_BODY=110;
 public constant ErrorID STRUCT_SINGULAR_SYSTEM_INITIALIZATION=111;
+public constant ErrorID CIRCULAR_EQUATION=112;
 public constant ErrorID UNBOUND_PARAMETER_WARNING=500;
 public constant ErrorID BUILTIN_FUNCTION_SUM_HAS_SCALAR_PARAMETER=501;
 public constant ErrorID BUILTIN_FUNCTION_PRODUCT_HAS_SCALAR_PARAMETER=502;
@@ -211,6 +212,7 @@ public constant ErrorID OUTER_MODIFICATION=512;
 public constant ErrorID REDUNDANT_GUESS=513 "Used by MathCore in Backend";
 public constant ErrorID DERIVATIVE_NON_REAL=514;
 public constant ErrorID UNUSED_MODIFIER=515;
+public constant ErrorID SELECTED_STATES=515;
 
 
 public constant ErrorID INDEX_REDUCTION_NOTIFICATION=1000;
@@ -472,7 +474,10 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (IMPLICIT_ITERATOR_NOT_FOUND_IN_LOOP_BODY,TRANSLATION(),ERROR(),
           "Identificator %s of implicit for iterator must be present as array subscript in the loop body."),
           (STRUCT_SINGULAR_SYSTEM_INITIALIZATION,TRANSLATION(),ERROR(),
-          "The initialization problem of model is structurally singular, error found sorting equations %s for variables %s")  
+          "The initialization problem of model is structurally singular, error found sorting equations %s for variables %s"),
+          (CIRCULAR_EQUATION, TRANSLATION(),ERROR(), " Equation : '%s'  has circular references for variable %s."),
+          (SELECTED_STATES,TRANSLATION(),NOTIFICATION(), "The following variables are selected as states: %s")
+            
           };
           
 protected import ErrorExt;
@@ -633,6 +638,12 @@ public function clearMessages "clears the message buffer"
 algorithm
   ErrorExt.clearMessages();
 end clearMessages;
+
+public function getNumMessages "Returns the number of messages in the message queue"
+  output Integer num;
+algorithm
+  num := ErrorExt.getNumMessages();
+end getNumMessages;
 
 public function getMessagesStr "Relations for interactive comm. These returns the messages as an array 
   of strings, suitable for sending to clients like model editor, MDT, etc.

@@ -1072,6 +1072,7 @@ protected import Dump;
 protected import Debug;
 protected import Static;
 protected import Env;
+protected import System;
 
 protected constant Exp rconstone=RCONST(1.0);
 
@@ -1229,6 +1230,14 @@ algorithm
         CREF_QUAL(i,OTHER(),{},c);
   end matchcontinue;
 end pathToCref;
+
+public function crefSortFunc "A sorting function (greatherThan) for crefs"
+  input ComponentRef cr1;
+  input ComponentRef cr2;
+  output Boolean greaterThan;
+algorithm
+  greaterThan := System.strcmp(printComponentRefStr(cr1),printComponentRefStr(cr2)) > 0;
+end crefSortFunc;
 
 public function crefStr
 "function: crefStr 

@@ -85,6 +85,12 @@ public function printMessagesStr
   external "C" ;
 end printMessagesStr;
 
+public function getNumMessages
+  output Integer num;
+  
+  external "C";
+end getNumMessages;
+
 public function getMessagesStr
   output String outString;
 

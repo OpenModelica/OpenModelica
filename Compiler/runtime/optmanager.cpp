@@ -68,6 +68,8 @@ extern "C"
 		options.insert(std::pair<std::string,bool>("MOOSEScaleEquations",true));
 		options.insert(std::pair<std::string,bool>("analyticJacobian",false));
 		options.insert(std::pair<std::string,bool>("dummyOption",false));
+		options.insert(std::pair<std::string,bool>("logSelectedStates",false));
+
 		//options.insert(std::pair<std::string,bool>("dummy",false));
 
 /*		for(stringMap::const_iterator it = options.begin(); it != options.end(); ++it)
