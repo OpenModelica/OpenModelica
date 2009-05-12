@@ -459,14 +459,18 @@ void* runOrb(void* arg)
 
 #if defined(USE_OMNIORB)
 try {
-  poa->destroy(true,true);
+  if (poa) {
+    poa->destroy(true,true);
+  }
 } catch (CORBA::Exception&) {
   // silently ignore errors here
 }
 #else
   poa->destroy(TRUE,TRUE);
 #endif
-  delete server;
+  if (server) {
+      delete server;
+  }
 #endif // NOMICO  
   return NULL;
 }
@@ -516,7 +520,7 @@ RML_BEGIN_LABEL(Corba__close)
 #ifndef NOMICO	
   try {
 #if defined(USE_OMNIORB)
-    orb->shutdown(false);
+    orb->shutdown(true); // true otherwise we get a crash on Leopard
 #else
     orb->shutdown(FALSE);
 #endif
