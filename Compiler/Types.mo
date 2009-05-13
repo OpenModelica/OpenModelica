@@ -1817,6 +1817,21 @@ algorithm
   end matchcontinue;
 end arrayElementType;
 
+public function unparseEqMod "prints eqmod to a string"
+  input EqMod eq;
+  output String str;
+algorithm
+  str := matchcontinue(eq)
+  local Exp.Exp e; Absyn.Exp e2;
+    case(TYPED(e,_,_)) equation
+      str =Exp.printExpStr(e);
+    then str;
+    case(UNTYPED(e2)) equation
+      str = Dump.printExpStr(e2);
+    then str;
+  end matchcontinue;
+end unparseEqMod;
+
 public function unparseType "function: unparseType
  
   This function prints a Modelica type as a piece of Modelica code.

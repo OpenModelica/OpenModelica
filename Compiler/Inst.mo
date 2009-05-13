@@ -2418,7 +2418,11 @@ algorithm
 end stripCommonCrefPart;
 
 protected function instClassDefHelper 
-"Function: instClassDefHelper"
+"Function: instClassDefHelper
+
+MetaModelica extension. KS TODO: Document this function!!!!
+
+"
   input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.TypeSpec> inSpecs;
@@ -5148,7 +5152,7 @@ algorithm (outCache,outEnv,outDAEElementLst,outSets,outType,outGraph):=
       String str;
       ConnectionGraph.ConnectionGraph graph;
    	// impl component environment dae elements for component Variables of userdefined type, 
-   	// e.g. Point p => Real p{3}; These must be handled separately since even if they do not 
+   	// e.g. Point p => Real p[3]; These must be handled separately since even if they do not 
 	 	// appear to be an array, they can. Therefore we need to collect
  	 	// the full dimensionality and call inst_var2 	 	 
     case (cache,env,ci_state,mod,pre,csets,n,(cl as SCode.CLASS(name = id)),attr,prot,dims,idxs,inst_dims,impl,comment,io,finalPrefix,onfo,graph) 
@@ -5556,7 +5560,7 @@ algorithm
       then (cache,dim1);
       /*----------------------*/
 
-    /* Derived classes with restriction type, e.g. type Point = Real{3}; */ 
+    /* Derived classes with restriction type, e.g. type Point = Real[3]; */ 
     case (cache,env,mods,pre,SCode.CLASS(name = id,restriction = SCode.R_TYPE(),
                                          classDef = SCode.DERIVED(Absyn.TPATH(path = cn, arrayDim = ad),modifications = mod)),
           dims,impl) 
@@ -5567,7 +5571,7 @@ algorithm
         (cache,mod_1) = Mod.elabMod(cache,env, pre, mod, impl);
         mods_2 = Mod.merge(mods, mod_1, env, pre);
         eq = Mod.modEquation(mods_2);
-        mods_3 = Mod.lookupCompModification(mods_2, id);
+        mods_3 = Mod.lookupCompModification(mods_2, id);                
         (cache,dim1) = getUsertypeDimensions(cache,cenv, mods_3, pre, cl, dims, impl);
         (cache,dim2) = elabArraydim(cache,env, owncref, cn, ad_1, eq, impl, NONE,true);
         res = listAppend(dim2, dim1);
@@ -6536,15 +6540,30 @@ algorithm
         Error.addMessage(Error.ARRAY_DIMENSION_MISMATCH, {e_str,t_str,dim_str});
       then
         fail();
-    case (_,_,cref,path,ad,_,_,_,_)
+    case (_,_,cref,path,ad,SOME(eq),_,_,_)
+      local Types.EqMod eq;
       equation 
         Debug.fprint("failtrace", "- elab_arraydim failed\n cref:");
         Debug.fcall("failtrace", Dump.printComponentRef, cref);
         Debug.fprint("failtrace", " dim: ");
-        Debug.fcall("failtrace", Dump.printArraydim, ad);
+        Debug.fprint("failtrace", Dump.printArraydimStr(ad));
         Debug.fprint("failtrace", " path: ");
         Debug.fprint("failtrace", Absyn.pathString(path));
-        Debug.fprint("failtrace", "\n");
+        Debug.fprint("failtrace", ", ");
+        Debug.fprint("failtrace","eq:"+&Types.unparseEqMod(eq));
+      then
+        fail();
+       
+       case (_,_,cref,path,ad,NONE,_,_,_)
+      equation 
+        Debug.fprint("failtrace", "- elab_arraydim failed\n cref:");
+        Debug.fcall("failtrace", Dump.printComponentRef, cref);
+        Debug.fprint("failtrace", " dim: ");
+        Debug.fprint("failtrace", Dump.printArraydimStr(ad));
+        Debug.fprint("failtrace", " path: ");
+        Debug.fprint("failtrace", Absyn.pathString(path));
+        Debug.fprint("failtrace", ", ");
+        Debug.fprint("failtrace","eq:NONE");
       then
         fail();
   end matchcontinue;
