@@ -960,8 +960,10 @@ algorithm
     case (Types.REDECL(finalPrefix = _),_) then Types.NOMOD(); 
     case (Types.MOD(finalPrefix=f,each_=e,subModLst = subs,eqModOption=eqMod),n)
       equation 
-        mod1 = lookupCompModification2(subs, n);
+        //print(" looking for mod on: " +& n +& "\n"); 
+        mod1 = lookupCompModification2(subs, n);        
         mod2 = lookupComplexCompModification(eqMod,n,f,e);
+        //print(" found inside compmod: " +& printModStr(mod1) +& "\n And in complexcomp: " +& printModStr(mod2) +& "\n");
         mod = checkDuplicateModifications(mod1,mod2);
       then
         mod;
@@ -1762,6 +1764,7 @@ algorithm
         finalPrefixstr = Util.if_(finalPrefix, "final", "");
         s1 = printSubs1Str(subs);
         s1_1 = Util.stringDelimitList(s1, ",");
+        s1_1 = Util.if_(listLength(subs)>=1," {" +& s1_1 +& "} ",s1_1);
         s2 = printEqmodStr(eq);
         str = Util.stringAppendList({finalPrefixstr,s1_1,s2});
       then

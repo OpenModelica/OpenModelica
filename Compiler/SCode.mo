@@ -1565,6 +1565,7 @@ algorithm
       equation 
         Print.printBuf(n);
         s = printModStr(mod);
+        //s = " _mod--" +& printModStr(mod) +& "--mod_";
         res = stringAppend(n, s);
       then
         res;
@@ -1572,7 +1573,7 @@ algorithm
       equation 
         mod_str = printModStr(mod);
         str = printSubsStr(subs);
-        res = Util.stringAppendList({n, " = ", mod_str, ", ", str});
+        res = Util.stringAppendList({n, mod_str, ", ", str});
       then
         res;
     case {IDXMOD(subscriptLst = ss,an = mod)}
@@ -1593,7 +1594,7 @@ algorithm
   end matchcontinue;
 end printSubsStr;
 
-protected function printSubs1Str 
+public function printSubs1Str 
 "function: printSubs1Str 
   Helper function to printSubsStr."
   input list<SubMod> inSubModLst;
@@ -1792,8 +1793,7 @@ algorithm
   end matchcontinue;
 end unparseElementStr;
 
-public function printClassStr
-"function printClassStr
+public function printClassStr "
   prints a class to a string"
   input Class inClass;
   output String outString;
@@ -2007,6 +2007,16 @@ algorithm
     case (_) then {}; 
   end matchcontinue;
 end componentNames;
+
+public function elementName ""
+input Element e;
+output String s;
+algorithm s := matchcontinue(e)
+  case(COMPONENT(component = s)) then s;
+  case(CLASSDEF(name = s)) then s;
+  case(_) then "";
+  end matchcontinue;
+end elementName;
 
 public function componentNamesFromElts 
 "function: componentNamesFromElts

@@ -250,6 +250,7 @@ extern "C"
 	tokenlst=RML_CDR(tokenlst);
       }
       add_message(errorID,tp,severity,message,tokens);
+      //printf(" Adding message, size: %d, %s\n",errorMessageQueue.size(),message);
     }
     RML_TAILCALLK(rmlSC);
   }

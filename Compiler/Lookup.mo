@@ -1839,6 +1839,8 @@ protected function buildRecordConstructorResultElt "function: buildRecordConstru
   list<SCode.SubMod> submodlst;
 algorithm 
   submodlst := buildRecordConstructorResultMod(elts);
+  //print(" creating element of type: " +& id +& "\n"); 
+  //print(" with generated mods:" +& SCode.printSubs1Str(submodlst) +& "\n");
   outElement := SCode.COMPONENT("result",Absyn.UNSPECIFIED(),false,false,false,
           SCode.ATTR({},false,false,SCode.RW(),SCode.VAR(),Absyn.OUTPUT()),
           Absyn.TPATH(Absyn.IDENT(id),NONE),
@@ -1866,23 +1868,36 @@ algorithm
       String id;
       list<SCode.Element> rest;
       /* Component*/      
-    case ((SCode.COMPONENT(component = id) :: rest))
-      equation 
-        restmod = buildRecordConstructorResultMod(rest);
-      then
-        (SCode.NAMEMOD("result",
-          SCode.MOD(false,Absyn.NON_EACH(),
-          {
-          SCode.NAMEMOD(id,
-          SCode.MOD(false,Absyn.NON_EACH(),{},
-          SOME((Absyn.CREF(Absyn.CREF_IDENT(id,{})),false))))},NONE)) :: restmod);
-
     case ({}) then {}; 
-    case(_) equation
-
-      then fail();
+      case(inSCodeElementLst)
+      equation 
+        restmod = buildRecordConstructorResultMod2(inSCodeElementLst);
+      then
+        {SCode.NAMEMOD("result",SCode.MOD(false,Absyn.NON_EACH(),restmod,NONE))};
+    
+    case(_) equation then fail();
   end matchcontinue;
 end buildRecordConstructorResultMod;
+
+protected function buildRecordConstructorResultMod2 "
+"
+  input list<SCode.Element> inElems;
+  output list<SCode.SubMod> outMods;
+algorithm outMods := matchcontinue (inElems)
+  local
+    SCode.SubMod localMod;
+    String id;
+  case ({}) then {};
+  case ((SCode.COMPONENT(component = id) :: inElems))
+    equation
+      localMod = SCode.NAMEMOD(id, SCode.MOD(false,Absyn.NON_EACH(),{},
+        SOME((Absyn.CREF(Absyn.CREF_IDENT(id,{})),false)))); 
+      outMods = buildRecordConstructorResultMod2(inElems);      
+    then
+      localMod::outMods;
+  case(_) equation print("buildRecordConstructorResultMod2 failed\n"); then fail();
+end matchcontinue;
+end buildRecordConstructorResultMod2;
 
 protected function buildRecordConstructorVarlst "function: buildRecordConstructorVarlst
  

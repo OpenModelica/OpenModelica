@@ -879,11 +879,19 @@ algorithm outmod := matchcontinue(inmod,componentModified)
     Absyn.Each e; 
     list<SubMod> subs;
     Option<EqMod> oem;
+    list<tuple<SCode.Element, Mod>> redecls;
   case(NOMOD,_) then NOMOD;
     // TODO: implement check for redeclare
-  case((inmod as REDECL(_,_)),_) 
+  case((inmod as REDECL(b,redecls)),componentModified) 
     equation
-    then NOMOD;
+      redecls = removeRedeclareMods(redecls,componentModified);
+      /*
+        record REDECL
+    Boolean finalPrefix "final" ;
+    list<tuple<SCode.Element, Mod>> tplSCodeElementModLst;
+  end REDECL;
+      */
+    then REDECL(b,redecls);
     
   case(MOD(b,e,subs,oem),componentModified)
     equation
@@ -893,7 +901,42 @@ algorithm outmod := matchcontinue(inmod,componentModified)
 end matchcontinue; 
 end removeMod;
 
-protected function removeModInSubs "" 
+protected function removeRedeclareMods "
+"
+input list<tuple<SCode.Element, Mod>> inLst;
+input String currComp;
+output list<tuple<SCode.Element, Mod>> outLst;
+algorithm outLst := matchcontinue(inLst,currComp)
+  local
+    SCode.Element comp; 
+    Mod mod;
+    String s1;
+  case({},_) then {};
+  case((comp,mod)::inLst,currComp)
+    equation      
+      outLst = removeRedeclareMods(inLst,currComp);
+      s1 = SCode.elementName(comp);
+      print(" found: " +& s1 +& "\n");
+      true = stringEqual(s1,currComp);
+    then
+      outLst;
+  case((comp,mod)::inLst,currComp)
+    equation      
+      outLst = removeRedeclareMods(inLst,currComp);
+      /*
+      s1 = SCode.elementName(comp);
+      false = stringEqual(s1,currComp);
+      */
+    then
+      (comp,mod)::outLst;
+  case(_,_) equation print("removeRedeclareMods failed\n"); then fail();  
+  end matchcontinue;
+end removeRedeclareMods;
+
+protected function removeModInSubs "
+Author BZ, 2009-05
+Helper function for removeMod, removes modifiers in submods;
+" 
   input list<SubMod> insubs;
   input String componentName;
   output list<SubMod> outsubs;
