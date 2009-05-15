@@ -29,27 +29,60 @@
  */
 
 package ConnectionGraph
+" file:	 ConnectionGraph.mo
+  package:      ConnectionGraph
+  description: Constant propagation of expressions
 
+  RCS: $Id: Ceval.mo 4018 2009-05-07 01:06:33Z adrpo $
+
+  This module contains a connection breaking algorithm and  
+  related data structures. The input of the algorithm is
+  collected to ConnectionGraph record during instantiation.
+  The entry point to the algorithm is findResultGraph. 
+  
+  The algorithm is implemented using a disjoint-set
+  data structure that represents the components of
+  elements so far connected. Each component has
+  an unique canonical element. The data structure is
+  implemented by a hash table, that contains an entry
+  for each non-canonical element so that a path beginning
+  from some element eventually ends to the canonical element
+  of the same component.
+  
+  Roots are represented as connections to dummy root
+  element. In this way, all elements will be in the
+  same component after the algorithm finishes assuming
+  that the model is valid. 
+ "
+      
 public import HashTableCG;
 public import Exp;
 public import Util;
 public import DAE;
 public import Absyn;
 
+/* A list of edges 
+ */
 type Edges = list<tuple<Exp.ComponentRef,Exp.ComponentRef>>;
+/* A list of edges, each edge associated with two lists of DAE elements
+ * (these elements represent equations to be added if the edge
+ * is preserved or broken) 
+ */
 type DaeEdges = list<tuple<Exp.ComponentRef,Exp.ComponentRef,list<DAE.Element>,list<DAE.Element>>>;
 
 uniontype ConnectionGraph
+  "Input structure for connection breaking algorithm. It is collected during instantiation phase."
     record GRAPH
       Boolean updateGraph;
-      list<Exp.ComponentRef> definiteRoots;
-      list<tuple<Exp.ComponentRef,Real>> potentialRoots;
-      Edges branches;
-      DaeEdges connections;
+      list<Exp.ComponentRef> definiteRoots "Roots defined with Connection.root";
+      list<tuple<Exp.ComponentRef,Real>> potentialRoots "Roots defined with Connection.potentialRoot";
+      Edges branches "Edges defined with Connection.branch";
+      DaeEdges connections "Edges defined with connect statement";
     end GRAPH;
 end ConnectionGraph;
 
 function printEdges
+  "Prints a list of edges to stdout."
   input Edges inEdges;
 algorithm
   _ := matchcontinue(inEdges)
@@ -73,6 +106,7 @@ algorithm
 end printEdges;
 
 function printDaeEdges
+  "Prints a list of dae edges to stdout."
   input DaeEdges inEdges;
 algorithm
   _ := matchcontinue(inEdges)
@@ -96,6 +130,7 @@ algorithm
 end printDaeEdges;
 
 function printConnectionGraph
+  "Prints the content of ConnectionGraph structure."
   input ConnectionGraph inGraph;
 algorithm
   _ := matchcontinue(inGraph)
@@ -112,10 +147,15 @@ algorithm
   end matchcontinue;
 end printConnectionGraph;
 
+/* Initial connection graph with no edges in it.
+ */
 constant ConnectionGraph EMPTY = GRAPH( true, {}, {}, {}, {} );
+/* Initial connection graph with updateGraph set to false.
+ */
 constant ConnectionGraph NOUPDATE_EMPTY = GRAPH( false, {}, {}, {}, {} );
 
 function getDefiniteRoots
+  "Accessor for ConnectionGraph.definititeRoots."
   input ConnectionGraph inGraph;
   output list<Exp.ComponentRef> outResult;
 algorithm
@@ -127,6 +167,7 @@ algorithm
 end getDefiniteRoots;
 
 function getPotentialRoots
+  "Accessor for ConnectionGraph.potentialRoots."
   input ConnectionGraph inGraph;
   output list<tuple<Exp.ComponentRef,Real>> outResult;
 algorithm
@@ -138,6 +179,7 @@ algorithm
 end getPotentialRoots;
 
 function getBranches
+  "Accessor for ConnectionGraph.branches."
   input ConnectionGraph inGraph;
   output Edges outResult;
 algorithm
@@ -149,6 +191,7 @@ algorithm
 end getBranches;
 
 function getConnections
+  "Accessor for ConnectionGraph.connections."
   input ConnectionGraph inGraph;
   output DaeEdges outResult;
 algorithm
@@ -160,6 +203,7 @@ algorithm
 end getConnections;
 
 function addDefiniteRoot 
+  "Adds a new definite root to ConnectionGraph"
   input ConnectionGraph inGraph;
   input Exp.ComponentRef inRoot;
   output ConnectionGraph outGraph;
@@ -184,6 +228,7 @@ algorithm
 end addDefiniteRoot;
 
 function addPotentialRoot 
+  "Adds a new potential root to ConnectionGraph"
   input ConnectionGraph inGraph;
   input Exp.ComponentRef inRoot;
   input Real inPriority;
@@ -210,6 +255,7 @@ algorithm
 end addPotentialRoot;
 
 function addBranch
+  "Adds a new branch to ConnectionGraph"
   input ConnectionGraph inGraph;
   input Exp.ComponentRef inRef1;
   input Exp.ComponentRef inRef2;
@@ -236,6 +282,7 @@ algorithm
 end addBranch;
 
 function addConnection
+  "Adds a new connection to ConnectionGraph"
   input ConnectionGraph inGraph;
   input Exp.ComponentRef inRef1;
   input Exp.ComponentRef inRef2;
@@ -265,6 +312,8 @@ algorithm
 end addConnection;
 
 function canonical
+  "Returns the canonical element of the component where input element belongs to. 
+   See explanation at the top of file."
   input HashTableCG.HashTable inPartition;
   input Exp.ComponentRef inRef;
 //  output HashTableCG.HashTable outPartition;
@@ -286,6 +335,8 @@ algorithm
 end canonical;
 
 function areInSameComponent
+  "Tells whether the elements belong to the same component. 
+   See explanation at the top of file."
   input HashTableCG.HashTable inPartition;
   input Exp.ComponentRef inRef1;
   input Exp.ComponentRef inRef2;
@@ -307,6 +358,10 @@ algorithm
 end areInSameComponent;
 
 function connectComponents
+  "Tries to connect two components whose elements are given. Depending
+  on wheter the connection success or not (i.e are the components already
+  connected), adds either inConnectionDae or inBreakDae to the list of
+  DAE elements."
   input HashTableCG.HashTable inPartition;
   input Exp.ComponentRef inRef1;
   input Exp.ComponentRef inRef2;
@@ -345,6 +400,8 @@ algorithm
 end connectComponents;
 
 function connectCanonicalComponents
+  "Tries to connect two components whose canonical elements are given.
+  Helper function for connectionComponents."
   input HashTableCG.HashTable inPartition;
   input Exp.ComponentRef inRef1;
   input Exp.ComponentRef inRef2;
@@ -369,6 +426,8 @@ algorithm
 end connectCanonicalComponents;
 
 function addRootsToTable
+  "Adds a root the the graph. This is implemented by connecting
+  the root to inFirstRoot element."
   input HashTableCG.HashTable inTable;
   input list<Exp.ComponentRef> inRoots;
   input Exp.ComponentRef inFirstRoot;
@@ -390,6 +449,7 @@ algorithm
 end addRootsToTable;
 
 function resultGraphWithRoots
+  "Creates an initial graph with given definite roots."
   input list<Exp.ComponentRef> roots;
   output HashTableCG.HashTable outTable;
   HashTableCG.HashTable table0;
@@ -401,6 +461,7 @@ algorithm
 end resultGraphWithRoots;
 
 function addBranchesToTable
+  "Adds all branches to the graph."
   input HashTableCG.HashTable inTable;
   input list<tuple<Exp.ComponentRef, Exp.ComponentRef>> inBranches;
   output HashTableCG.HashTable outTable;
@@ -421,6 +482,7 @@ algorithm
 end addBranchesToTable;
 
 function ord
+  "An ordering function for potential roots."
   input tuple<Exp.ComponentRef,Real> inEl1;
   input tuple<Exp.ComponentRef,Real> inEl2;
   output Boolean outBoolean;
@@ -433,6 +495,7 @@ algorithm
 end ord;
 
 function addPotentialRootsToTable
+  "Adds all potential roots to graph."
   input HashTableCG.HashTable inTable;
   input list<tuple<Exp.ComponentRef,Real>> inPotentialRoots;
   input list<Exp.ComponentRef> inRoots;
@@ -463,6 +526,7 @@ algorithm
 end addPotentialRootsToTable;
 
 function addConnections
+  "Adds all connections to graph."
   input HashTableCG.HashTable inTable;
   input DaeEdges inConnections;
   input list<DAE.Element> inDae;  
@@ -487,6 +551,8 @@ algorithm
 end addConnections;
 
 function findResultGraph
+  "Given ConnectionGraph structure, breaks all connections, determines
+  roots and generates a list of dae elements."
   input ConnectionGraph inGraph;
   output list<Exp.ComponentRef> outRoots;
   output list<DAE.Element> outDae;
@@ -516,6 +582,8 @@ algorithm
 end findResultGraph;
 
 function evalIsRoot  
+  "Replaces all Connections.isRoot calls by true or false depending on
+  wheter the parameter is in the list of roots."
   input list<Exp.ComponentRef> inRoots;
   input list<DAE.Element> inDae;
   output list<DAE.Element> outDae;
@@ -524,6 +592,7 @@ algorithm
 end evalIsRoot;
 
 function evalIsRootHelper
+  "Helper function for evalIsRoot."
   input Exp.Exp inExp; 
   input list<Exp.ComponentRef> inRoots; 
   output Exp.Exp outExp; 
