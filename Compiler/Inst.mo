@@ -1039,36 +1039,41 @@ algorithm
       Types.EqualityConstraint equalityConstraint;
       ConnectionGraph.ConnectionGraph graph;
       /*  Real class */ 
-    case (cache,env,mods,pre,csets as Connect.SETS(connection = crs,deletedComponents=dc,outerConnects=oc),ci_state,(c as SCode.CLASS(name = "Real",restriction = r,classDef = d)),prot,inst_dims,impl,graph,_) 
+    case (cache,env,mods,pre,csets as Connect.SETS(connection = crs,deletedComponents=dc,outerConnects=oc),
+          ci_state,(c as SCode.CLASS(name = "Real",restriction = r,classDef = d)),prot,inst_dims,impl,graph,_) 
       equation 
         tys = instRealClass(cache,env,mods,pre);
         bc = arrayBasictypeBaseclass(inst_dims, (Types.T_REAL(tys),NONE));                
       then
-        (cache,{},env,Connect.SETS({},crs,dc,oc),ci_state,tys,bc,NONE,NONE,graph);       
+        (cache,{},env,Connect.SETS({},crs,dc,oc),ci_state,tys,bc /* NONE */,NONE,NONE,graph);       
         
         /* Integer class */
-    case (cache,env,mods,pre,csets as Connect.SETS(connection = crs,deletedComponents=dc,outerConnects=oc),ci_state,(c as SCode.CLASS(name = "Integer",restriction = r,classDef = d)),prot,inst_dims,impl,graph,_) 
+    case (cache,env,mods,pre,csets as Connect.SETS(connection = crs,deletedComponents=dc,outerConnects=oc),
+          ci_state,(c as SCode.CLASS(name = "Integer",restriction = r,classDef = d)),prot,inst_dims,impl,graph,_) 
       equation
         tys =  instIntegerClass(cache,env,mods,pre);       
         bc = arrayBasictypeBaseclass(inst_dims, (Types.T_INTEGER(tys),NONE));
-      then (cache,{},env,Connect.SETS({},crs,dc,oc),ci_state,tys,NONE,NONE,NONE,graph);   
+      then (cache,{},env,Connect.SETS({},crs,dc,oc),ci_state,tys,bc /* NONE */,NONE,NONE,graph);   
 
         /* String class */
-    case (cache,env,mods,pre,csets as Connect.SETS(connection = crs,deletedComponents=dc,outerConnects=oc),ci_state,(c as SCode.CLASS(name = "String",restriction = r,classDef = d)),prot,inst_dims,impl,graph,_) 
+    case (cache,env,mods,pre,csets as Connect.SETS(connection = crs,deletedComponents=dc,outerConnects=oc),
+          ci_state,(c as SCode.CLASS(name = "String",restriction = r,classDef = d)),prot,inst_dims,impl,graph,_) 
       equation
         tys =  instStringClass(cache,env,mods,pre);    
         bc = arrayBasictypeBaseclass(inst_dims, (Types.T_STRING(tys),NONE));        
-      then (cache,{},env,Connect.SETS({},crs,dc,oc),ci_state,tys,NONE,NONE,NONE,graph);   
+      then (cache,{},env,Connect.SETS({},crs,dc,oc),ci_state,tys,bc /* NONE */,NONE,NONE,graph);   
 
         /* Boolean class */
-    case (cache,env,mods,pre,csets as Connect.SETS(connection = crs,deletedComponents=dc,outerConnects=oc),ci_state,(c as SCode.CLASS(name = "Boolean",restriction = r,classDef = d)),prot,inst_dims,impl,graph,_) 
+    case (cache,env,mods,pre,csets as Connect.SETS(connection = crs,deletedComponents=dc,outerConnects=oc),
+          ci_state,(c as SCode.CLASS(name = "Boolean",restriction = r,classDef = d)),prot,inst_dims,impl,graph,_) 
       equation
         tys =  instBooleanClass(cache,env,mods,pre); 
         bc = arrayBasictypeBaseclass(inst_dims, (Types.T_BOOL(tys),NONE));        
-      then (cache,{},env,Connect.SETS({},crs,dc,oc),ci_state,tys,NONE,NONE,NONE,graph);           
+      then (cache,{},env,Connect.SETS({},crs,dc,oc),ci_state,tys,bc /* NONE */,NONE,NONE,graph);           
   
    	/* Ignore functions if not implicit instantiation */ 
-    case (cache,env,mods,pre,Connect.SETS(connection = crs,deletedComponents=dc,outerConnects=oc),ci_state,cls,_,_,(impl as false),graph,_) 
+    case (cache,env,mods,pre,Connect.SETS(connection = crs,deletedComponents=dc,outerConnects=oc),
+          ci_state,cls,_,_,(impl as false),graph,_) 
       equation        
         true = SCode.isFunction(cls);
         clsname = SCode.className(cls);
@@ -2077,7 +2082,11 @@ algorithm outComps := matchcontinue(inComps, ocr,allComps,className,existing)
         recDeps = extractConstantPlusDeps2(inComps,ocr,allComps,className,existing); 
       then 
         compMod::recDeps;
-    case(_,_,_,_,_) equation print(" failure in get_Constan_PlusDeps \n"); then fail();   
+    case(inComps, ocr, allComps, className, existing) 
+      equation
+        //debug_print("all",  (inComps, ocr, allComps, className, existing));
+        print(" failure in get_Constant_PlusDeps \n"); 
+      then fail();   
 end matchcontinue;
 end extractConstantPlusDeps2;
 
@@ -5239,11 +5248,11 @@ algorithm
       Exp.Type ty_2;
       DAE.Element daeeq;
       list<DAE.Element> dae1,dae,dae1_1,dae3,dae2,daex;
-      Types.Mod mod;
+      Types.Mod mod,mod2;
       Prefix.Prefix pre,pre_1;
       String n,prefix_str;
       SCode.Class cl;
-      SCode.Attributes attr;
+      SCode.Attributes attr,attr2;
       list<DimExp> dims;
       list<Integer> idxs,idxs_1;
       Boolean impl,flowPrefix,streamPrefix;
@@ -5404,6 +5413,36 @@ algorithm
         dae = listAppend(dae1_1, dae3);
       then
         (cache,env_1,dae,csets_1,ty,graph);
+    
+
+//        /* Array variables of the form:
+//          type Alias = Integer[3](each min=0, each max=0); Alias x = {1,1,1} */
+//    case (cache,env,ci_state,mod,pre,csets,n,
+//          cl as SCode.CLASS(classDef=SCode.DERIVED(Absyn.TPATH(path,SOME(_)),scodeMod,absynAttr)),
+//          attr,prot,(dim :: dims),idxs,inst_dims,impl,comment,io,finalPrefix,graph)
+//      local SCode.Class clBase; Absyn.Path path;
+//            Absyn.ElementAttributes absynAttr;
+//            SCode.Mod scodeMod;            
+//            Types.Mod mod2, mod3;
+//      equation         
+//        dime = instDimExp(dim, impl);
+//        inst_dims_1 = Util.listListAppendLast(inst_dims, {dime});
+//        (_,clBase,_) = Lookup.lookupClass(cache, env, path, true);
+//        /* adrpo: TODO: merge also the attributes, i.e.:
+//           type A = input discrete flow Integer[3];
+//           A x; <-- input discrete flow IS NOT propagated even if it should. FIXME!
+//         */
+//        //SOME(attr3) = Absyn.mergeElementAttributes(attr,SOME(absynAttr));
+//        (_,mod2) = Mod.elabMod(cache, env, pre, scodeMod, impl);
+//        mod3 = Mod.merge(mod, mod2, env, pre);
+//        (cache,compenv,dae,Connect.SETS(_,crs,dc,oc),ty,graph) =
+//          instArray(cache,env, ci_state, mod3, pre, csets, n, (clBase,attr),prot, 1, dim, dims, idxs, inst_dims_1, impl, comment,io,finalPrefix,graph);
+//        dimt = instDimType(dim);
+//        ty_1 = ty;
+//        //ty_1 = liftNonBasicTypes(ty,dimt); // Do not lift types extending basic type, they are already array types.
+//       /* ty_1 = Types.liftArray(ty, dimt);*/
+//      then
+//        (cache,compenv,dae,Connect.SETS({},crs,dc,oc),ty_1,graph);    
     
         /* Array variables , e.g. Real x[3]*/
     case (cache,env,ci_state,mod,pre,csets,n,cl,attr,prot,(dim :: dims),idxs,inst_dims,impl,comment,io,finalPrefix,graph) 
@@ -5591,6 +5630,8 @@ algorithm
         res = listAppend(dim2, dim1);
       then
         (cache,res);
+    case (cache,_,_,_,SCode.CLASS(name = _),_,_) 
+      then (cache,{});
   end matchcontinue;
 end getUsertypeDimensions;
 
@@ -6323,6 +6364,32 @@ algorithm
       then
         (cache,env_1,daeLst,csets_2,ty);
     */
+    /* adrpo: if a class is derived WITH AN ARRAY DIMENSION we should instVar2 the derived from type not the actual type!!! */
+    case (cache,env,ci_state,mod,pre,csets,n,
+          (cl as SCode.CLASS(classDef=SCode.DERIVED(Absyn.TPATH(path,SOME(_)),scodeMod,absynAttr)),attr),
+          prot,i,DIMINT(integer = stop),dims,idxs,inst_dims,impl,comment,io,finalPrefix,graph)
+      local SCode.Class clBase; Absyn.Path path;
+            Absyn.ElementAttributes absynAttr;
+            SCode.Mod scodeMod;            
+            Types.Mod mod2, mod3;
+      equation                 
+        (_,clBase,_) = Lookup.lookupClass(cache, env, path, true);
+        /* adrpo: TODO: merge also the attributes, i.e.:
+           type A = input discrete flow Integer[3];
+           A x; <-- input discrete flow IS NOT propagated even if it should. FIXME!
+         */
+        //SOME(attr3) = Absyn.mergeElementAttributes(attr,SOME(absynAttr));
+        (_,mod2) = Mod.elabMod(cache, env, pre, scodeMod, impl);
+        mod3 = Mod.merge(mod, mod2, env, pre);
+        mod_1 = Mod.lookupIdxModification(mod3, i);                            
+        (cache,env_1,dae1,csets_1,ty,graph) = 
+           instVar2(cache,env, ci_state, mod_1, pre, csets, n, clBase, attr, prot,dims, (i :: idxs), {} /* inst_dims */, impl, comment,io,finalPrefix,graph);
+        i_1 = i + 1;
+        (cache,_,dae2,csets_2,_,graph) = 
+          instArray(cache,env, ci_state, mod, pre, csets_1, n, (cl,attr), prot, i_1, DIMINT(stop), dims, idxs, {} /* inst_dims */, impl, comment,io,finalPrefix,graph);
+        daeLst = listAppend(dae1, dae2);
+      then
+        (cache,env_1,daeLst,csets_2,ty,graph);
         
     case (cache,env,ci_state,mod,pre,csets,n,(cl,attr),prot,i,DIMINT(integer = stop),dims,idxs,inst_dims,impl,comment,io,finalPrefix,graph)
       equation 
@@ -6335,6 +6402,7 @@ algorithm
         daeLst = listAppend(dae1, dae2);
       then
         (cache,env_1,daeLst,csets_2,ty,graph);
+        
     case (_,_,_,_,_,_,n,(_,_),_,_,_,_,_,_,_,_,_,_,_)
       equation 
         Debug.fprintln("failtrace", "- Inst.instArray failed: " +& n);
@@ -6557,14 +6625,14 @@ algorithm
     case (_,_,cref,path,ad,SOME(eq),_,_,_)
       local Types.EqMod eq;
       equation 
-        Debug.fprint("failtrace", "- elab_arraydim failed\n cref:");
+        Debug.fprint("failtrace", "- Inst.elabArraydim failed\n cref:");
         Debug.fcall("failtrace", Dump.printComponentRef, cref);
         Debug.fprint("failtrace", " dim: ");
         Debug.fprint("failtrace", Dump.printArraydimStr(ad));
         Debug.fprint("failtrace", " path: ");
         Debug.fprint("failtrace", Absyn.pathString(path));
         Debug.fprint("failtrace", ", ");
-        Debug.fprint("failtrace","eq:"+&Types.unparseEqMod(eq));
+        Debug.fprint("failtrace","eq:" +& Types.unparseEqMod(eq) +& "\n");
       then
         fail();
        
@@ -13124,7 +13192,9 @@ algorithm (o1,o2,o3) :=
       then
         (env,cl2,cache);
     case(env,cl1,c1 as Absyn.CREF_IDENT(name = n) ,sty,cache,state,csets,prot,
-         (attr as SCode.ATTR(arrayDims = ad, flowPrefix = flowPrefix, streamPrefix = streamPrefix, accesibility = acc, variability = param, direction = dir)), impl,io,inst_dims,pre,mods,finalPrefix,onfo) 
+         (attr as SCode.ATTR(arrayDims = ad, flowPrefix = flowPrefix, streamPrefix = streamPrefix, 
+                             accesibility = acc, variability = param, direction = dir)), 
+         impl,io,inst_dims,pre,mods,finalPrefix,onfo) 
          // we have reference to ourself, try to instantiate type.  
       equation 
         cl2 = removeCrefFromCrefs(cl1, c1);
@@ -13619,8 +13689,10 @@ algorithm cref := matchcontinue(inEle)
   local String crefName;
   case(SCode.CLASSDEF(name=crefName)) then {Absyn.CREF_IDENT(crefName,{})};
   case(SCode.COMPONENT(component=crefName)) then {Absyn.CREF_IDENT(crefName,{})};
-  case(SCode.EXTENDS(_,_)) equation Debug.fprint("failtrace", "-Inst.get_Cref_From_Comp not implemented for SCode.EXTENDS(_,_)\n"); then {};
-  case(SCode.IMPORT(_)) equation Debug.fprint("failtrace", "-Inst.get_Cref_From_Comp not implemented for SCode.IMPORT(_,_)\n"); then {};
+  case(SCode.EXTENDS(_,_)) 
+    equation Debug.fprint("inst", "-Inst.get_Cref_From_Comp not implemented for SCode.EXTENDS(_,_)\n"); then {};
+  case(SCode.IMPORT(_)) 
+    equation Debug.fprint("inst", "-Inst.get_Cref_From_Comp not implemented for SCode.IMPORT(_,_)\n"); then {};
 end matchcontinue;
 end getCrefFromComp;
 

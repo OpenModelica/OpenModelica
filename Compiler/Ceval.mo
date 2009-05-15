@@ -3360,14 +3360,16 @@ algorithm
       Boolean b,nb1,nb2,ba,bb,b1,b2;
       Integer i1,i2;
       String s1,s2;
+      Exp.ComponentRef cr1, cr2;
+      
     case (v1,Exp.GREATER(ty = t),v2)
       equation 
         v = cevalRelation(v2, Exp.LESS(t), v1);
       then
         v;
-        
                 
-    case (Values.STRING(string = s1),Exp.LESS(ty = Exp.STRING()),Values.STRING(string = s2))  /* Strings */
+    /* Strings */
+    case (Values.STRING(string = s1),Exp.LESS(ty = Exp.STRING()),Values.STRING(string = s2))
       equation 
         i1 = System.strcmp(s1,s2);
         b = (i1 < 0); 
@@ -3385,7 +3387,6 @@ algorithm
         b = (i1 >= 0); 
       then
         Values.BOOL(b);
-
     case (Values.STRING(string = s1),Exp.EQUAL(ty = Exp.STRING()),Values.STRING(string = s2))
       equation 
         i1 = System.strcmp(s1,s2);
@@ -3398,9 +3399,16 @@ algorithm
         b = (i1 <> 0); 
       then
         Values.BOOL(b);
+    case (Values.STRING(string = s1),Exp.EQUAL(ty = Exp.STRING()),Values.STRING(string = s2))
+      local
+        String s1,s2;
+      equation
+        b = (s1 ==& s2);
+      then
+        Values.BOOL(b);        
         
-        
-    case (Values.INTEGER(integer = i1),Exp.LESS(ty = Exp.INT()),Values.INTEGER(integer = i2)) /* Integers */ 
+    /* Integers */
+    case (Values.INTEGER(integer = i1),Exp.LESS(ty = Exp.INT()),Values.INTEGER(integer = i2)) 
       equation 
         b = (i1 < i2);
       then
@@ -3425,7 +3433,9 @@ algorithm
         b = (i1 <> i2);
       then
         Values.BOOL(b);
-    case (Values.REAL(real = i1),Exp.LESS(ty = Exp.REAL()),Values.REAL(real = i2)) /* Reals */ 
+        
+    /* Reals */
+    case (Values.REAL(real = i1),Exp.LESS(ty = Exp.REAL()),Values.REAL(real = i2))  
       local Real i1,i2;
       equation 
         b = (i1 <. i2);
@@ -3449,13 +3459,15 @@ algorithm
         b = (i1 ==. i2);
       then
         Values.BOOL(b);
-    case (Values.REAL(real = i1),Exp.NEQUAL(ty = Exp.REAL()),Values.REAL(real = i2)) /* Booleans */ 
+    case (Values.REAL(real = i1),Exp.NEQUAL(ty = Exp.REAL()),Values.REAL(real = i2)) 
       local Real i1,i2;
       equation 
         b = (i1 <>. i2);
       then
         Values.BOOL(b);
-    case (Values.BOOL(boolean = b1),Exp.NEQUAL(ty = Exp.BOOL()),Values.BOOL(boolean = b2)) /* Booleans */ 
+    
+    /* Booleans */
+    case (Values.BOOL(boolean = b1),Exp.NEQUAL(ty = Exp.BOOL()),Values.BOOL(boolean = b2))  
       equation 
         nb1 = boolNot(b1) "b1 != b2  == (b1 and not b2) or (not b1 and b2)" ;
         nb2 = boolNot(b2);
@@ -3475,14 +3487,38 @@ algorithm
         Values.BOOL(b);
     case (Values.BOOL(boolean = false),Exp.LESS(ty = Exp.BOOL()),Values.BOOL(boolean = true)) then Values.BOOL(true); 
     case (Values.BOOL(boolean = _),Exp.LESS(ty = Exp.BOOL()),Values.BOOL(boolean = _)) then Values.BOOL(false); 
-    case (Values.STRING(string = s1),Exp.EQUAL(ty = Exp.STRING()),Values.STRING(string = s2))
-      local
-        String s1,s2;
-      equation
-        b = (s1 ==& s2);
+
+    /* Enumerations */
+    case (Values.ENUM(cr1,i1),Exp.LESS(ty = Exp.ENUM()),Values.ENUM(cr2,i2)) 
+      equation         
+        b = (i1 < i2);
       then
         Values.BOOL(b);
-
+    case (Values.ENUM(cr1,i1),Exp.LESSEQ(ty = Exp.ENUM()),Values.ENUM(cr2,i2))
+      equation 
+        b = (i1 <= i2);
+      then
+        Values.BOOL(b);
+    case (Values.ENUM(cr1,i1),Exp.GREATEREQ(ty = Exp.ENUM()),Values.ENUM(cr2,i2))
+      equation 
+        b = (i1 >= i2);
+      then
+        Values.BOOL(b);
+    case (Values.ENUM(cr1,i1),Exp.EQUAL(ty = Exp.ENUM()),Values.ENUM(cr2,i2))
+      equation 
+        ba = Exp.crefEqual(cr1, cr2); 
+        bb = (i1 == i2);
+        b = boolAnd(ba, bb);
+      then
+        Values.BOOL(b);
+    case (Values.ENUM(cr1,i1),Exp.NEQUAL(ty = Exp.ENUM()),Values.ENUM(cr2,i2))
+      equation
+        ba = boolNot(Exp.crefEqual(cr1, cr2));
+        bb = (i1 <> i2);
+        b = boolAnd(ba, bb);
+      then
+        Values.BOOL(b);
+        
     case (_,_,_)
       equation 
         Debug.fprint("failtrace", "- Ceval.cevalRelation failed\n");

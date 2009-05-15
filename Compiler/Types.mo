@@ -1204,6 +1204,10 @@ algorithm
         dim1 = listLength((v :: vs));
       then
         ((T_ARRAY(DIM(SOME(dim1)),tp),NONE));
+    case ((w as Values.ARRAY(valueLst = ({}))))
+      equation 
+      then
+        ((T_ARRAY(DIM(SOME(0)),(T_NOTYPE(),NONE)),NONE));        
     case ((w as Values.TUPLE(valueLst = vs)))
       equation 
         ts = Util.listMap(vs, typeOfValue);
@@ -3250,6 +3254,8 @@ algorithm
     case(e,inProperties2,inProperties3) 
       equation 
         Debug.fprint("failtrace", " Failure in Types->match_Prop exp: "+& Exp.printExpStr(e)+& "\n");
+        Debug.fprint("failtrace", printPropStr(inProperties2) +& "\n");
+        Debug.fprint("failtrace", printPropStr(inProperties3) +& "\n");
         /*
         print("\nExp:" +& Exp.printExpStr(e) +& "\n");
         print(" 1: " +& printPropStr(inProperties2) +& "\n");
@@ -3529,7 +3535,7 @@ algorithm
     /* Complex type inheriting primitive type */        
     case (e, (T_COMPLEX(complexTypeOption = SOME(t1)),_),t2) equation
       (e_1,t_1) = typeConvert(e,t1,t2);
-    then (e_1,t_1);    
+    then (e_1,t_1);
     case (e, t1,(T_COMPLEX(complexTypeOption = SOME(t2)),_)) equation
       (e_1,t_1) = typeConvert(e,t1,t2);
     then (e_1,t_1); 
