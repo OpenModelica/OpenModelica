@@ -158,7 +158,7 @@ public
 uniontype Element
   record VAR 
     Exp.ComponentRef componentRef " The variable name";
-    VarKind kind "varible kind: variable, constant, parameter, etc." ;
+    VarKind kind "varible kind: variable, constant, parameter, discrete etc." ;
     VarDirection direction "input, output or bidir" ;
     VarProtection protection "if protected or public";
     Type ty "one of the builtin types" ;
@@ -3653,6 +3653,21 @@ algorithm
   end matchcontinue;
 end dumpDebugElist;
 
+public function dumpDebugDAE ""
+  input DAElist dae;
+  output String str;
+algorithm str := matchcontinue(dae)
+  local
+    list<Element> elems;
+  case(DAE(elems)) 
+    equation
+      dumpDebugElist(elems);
+      str = Print.getString();
+    then
+      str;
+end matchcontinue;
+end dumpDebugDAE;
+
 public function dumpDebugElement "function: dumpDebugElement
  
   Dump element using parenthesis.
@@ -3684,7 +3699,7 @@ algorithm
         Print.printBuf("VAR(");
         Exp.printComponentRef(cr);
         Print.printBuf(", ");
-        dumpKind(vk);
+        dumpKind(vk); 
         comment_str = Dump.unparseCommentOption(comment);
         Print.printBuf("  comment:");
         Print.printBuf(comment_str);

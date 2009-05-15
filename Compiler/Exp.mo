@@ -1438,6 +1438,26 @@ algorithm
   end matchcontinue;
 end crefStripLastSubs;
 
+public function crefSetLastSubs " 
+"
+  input ComponentRef inComponentRef;
+  input list<Subscript> insubs;
+  output ComponentRef outComponentRef;
+algorithm outComponentRef := matchcontinue (inComponentRef,insubs)
+    local
+      Ident id;
+      list<Subscript> subs,s;
+      ComponentRef cr_1,cr;
+      Type t2;
+    case (CREF_IDENT(ident = id,identType = t2,subscriptLst = subs),insubs) then CREF_IDENT(id,t2,insubs); 
+    case (CREF_QUAL(ident = id,identType = t2,subscriptLst = s,componentRef = cr),insubs)
+      equation 
+        cr_1 = crefSetLastSubs(cr,insubs);
+      then
+        CREF_QUAL(id,t2,s,cr_1);
+  end matchcontinue;
+end crefSetLastSubs;
+
 public function crefStripLastSubsStringified 
 "function crefStripLastSubsStringified
   author: PA
