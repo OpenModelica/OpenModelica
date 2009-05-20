@@ -394,7 +394,7 @@ algorithm
         s1 = findFlowSet(ss, r1_1,d1);
         s2 = findFlowSet(ss, r2_1,d2);
         ss_1 = merge(ss, s1, s2);
-        ss_2 = addArrayFlow(ss_1, r1,d1, r2,d2, i_1);
+        ss_2 = addArrayFlow(ss_1, r1,d1, r2,d2, i_1);        
       then
         ss_2;
   end matchcontinue;
@@ -1086,10 +1086,18 @@ algorithm
 				(v3,vSpecial) = extractOuterNonEnvDeclaredVars(ocl,true,flowCrefs);
 				vars = listAppend(v1, listAppend(v2,v3));
 				*/
+				
+				//print(" v1: " +& Util.stringDelimitList(Util.listMap(v1,Exp.printComponentRefStr),", ") +& "\n");
+				//print(" v2: " +& Util.stringDelimitList(Util.listMap(v2,Exp.printComponentRefStr),", ") +& "\n");
+				
         vars = listAppend(v1, v2);
-        vars2 = getInnerFlowVariables(csets);
-        vars3 = getOuterConnectFlowVariables(csets,vars,prefix);       
+        vars2 = getInnerFlowVariables(csets);     
+        vars3 = getOuterConnectFlowVariables(csets,vars,prefix);
         vars2 = listAppend(vars3,vars2);
+        
+        //print(" vars2 : " +& Util.stringDelimitList(Util.listMap(vars2,Exp.printComponentRefStr),", ") +& "\n");
+        
+        //print(" acquired: " +& Util.stringDelimitList(Util.listMap(vars2,Exp.printComponentRefStr),", ") +& "\n");
         // last array subscripts are not present in vars, therefor removed from vars2 too.
         vars2 = Util.listMap(vars2,Exp.crefStripLastSubs); 
         unconnectedvars = removeVariables(vars, vars2);
@@ -1098,7 +1106,6 @@ algorithm
         // no prefix for top level
         /* SE COMMENT ABOVE  
 				unconnectedvars = Util.listUnion(vSpecial,unconnectedvars);*/
-        
         (cache,dae_1) = generateZeroflowEquations(cache,unconnectedvars,env,Prefix.NOPRE(),deletedComponents);
       then
         (cache,dae_1);
@@ -1418,7 +1425,7 @@ algorithm
       Exp.Exp initExp;
     case (indexSubscriptList, (cr, initExp))
       equation
-        cr = Exp.subscriptCref(cr, indexSubscriptList);
+        cr = Exp.subscriptCref(cr, indexSubscriptList);        
       then
         DAE.EQUATION(Exp.CREF(cr,Exp.REAL()), initExp);
   end matchcontinue;
@@ -1708,28 +1715,6 @@ algorithm
   Print.printBuf(printSetStr(inSet));
 end printSet;
 
-protected function pritnFlowRefStr ""
-  input tuple<Exp.ComponentRef, Face> inTplExpComponentRefFace;
-  output String os;
-algorithm 
-  os:=
-  matchcontinue (inTplExpComponentRefFace)
-    local Exp.ComponentRef c; String s1,s2;
-    case ((c,INNER()))
-      equation 
-        s1 = Exp.printComponentRefStr(c);
-        s2 = s1 +& " INSIDE";
-      then
-        s2;
-    case ((c,OUTER()))
-      equation 
-        s1 = Exp.printComponentRefStr(c);
-        s2 = s1 +& " OUTSIDE";
-      then
-        s2;
-  end matchcontinue;
-end pritnFlowRefStr;
-
 protected function printFlowRef
   input tuple<Exp.ComponentRef, Face> inTplExpComponentRefFace;
 algorithm 
@@ -1812,7 +1797,7 @@ algorithm
   end matchcontinue;
 end printSetStr;
 
-protected function printFlowRefStr
+public function printFlowRefStr
   input tuple<Exp.ComponentRef, Face> inTplExpComponentRefFace;
   output String outString;
 algorithm 

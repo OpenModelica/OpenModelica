@@ -467,6 +467,15 @@ algorithm
   end matchcontinue;
 end simpleType;
 
+public function isComplexConnector ""
+input Type t;
+output Boolean b;
+algorithm b := matchcontinue(t)
+  case((T_COMPLEX(ClassInf.CONNECTOR(_),_,_,_),_)) then true;
+  case(_) then false;
+  end matchcontinue;
+end isComplexConnector;
+
 public function isComplexType "
 Author: BZ, 2008-11
 This function checks wheter a type is complex AND not extending a base type.

@@ -1436,6 +1436,35 @@ algorithm
       Absyn.InnerOuter io;
     case (NONE) then {}; 
     
+    
+         /* Case where we have an array, assumed indexed which contains complex types. */
+    case (SOME(AVLTREENODE(SOME(AVLTREEVALUE(_,VAR(Types.VAR(id,(tatr as Types.ATTR(innerOuter=io)),b3,(tmpty as (Types.T_ARRAY(ad,at),_)),bind),_,_,_))),_,l,r)))
+      local
+        Types.ArrayDim ad;
+        Types.Type at,tmpty,flatArrayType;
+        Types.Attributes tatr;
+        Boolean b3;
+        Types.Binding bind;
+        list<Integer> adims;
+        list<Types.Var> tvars;
+        list<list<Integer>> indexIntegerLists;
+        list<list<Exp.Subscript>> indexSubscriptLists;
+        //list<Exp.ComponentRef> arrayComplex;
+      equation 
+        (_,false) = Inst.innerOuterBooleans(io); 
+        ((flatArrayType as (Types.T_COMPLEX(_,tvars,_,_),_)),adims) = Types.flattenArrayType(tmpty);
+        false = Types.isComplexConnector(flatArrayType);
+        
+        indexSubscriptLists = createSubs(adims);
+        
+        lst1 = localInsideConnectorFlowvars3_2(tvars, id, indexSubscriptLists);
+        lst2 = localInsideConnectorFlowvars2(l);
+        lst3 = localInsideConnectorFlowvars2(r);
+        res = Util.listFlatten({lst1,lst2,lst3});
+        //print(" returning: " +& Util.stringDelimitList(Util.listMap(res,Exp.printComponentRefStr), ", ") +& "\n");
+      then
+        res;   
+        
     /* If CONNECTOR then  outside and not inside, skip.. */
     case (SOME(AVLTREENODE(SOME(AVLTREEVALUE(_,VAR(Types.VAR(id,_,_,(Types.T_COMPLEX(ClassInf.CONNECTOR(_),_,_,_),_),_),_,_,_))),_,l,r)))  
       equation 
@@ -1505,6 +1534,140 @@ algorithm
         res;
   end matchcontinue;
 end localInsideConnectorFlowvars3;
+
+protected function localInsideConnectorFlowvars3_2 "
+Author: BZ, 2009-05
+Extract vars from complex types. 
+Helper function for array complex vars. 
+"
+  input list<Types.Var> inTypesVarLst;
+  input Ident inIdent;
+  input list<list<Exp.Subscript>> ssubs;
+  output list<Exp.ComponentRef> outExpComponentRefLst;
+algorithm 
+  outExpComponentRefLst:=
+  matchcontinue (inTypesVarLst,inIdent,ssubs)
+    local
+      list<Exp.ComponentRef> lst1,lst2,lst3,res;
+      Ident id,oid,name;
+      list<Types.Var> vars,xs;
+      Absyn.InnerOuter io;
+      list<Exp.Subscript> s;
+      Types.Var tv;
+    case ({},_,_) then {}; 
+    case (_,_,{}) then {};
+    case (((tv as Types.VAR(name = id,attributes=Types.ATTR(innerOuter=io),type_ = (Types.T_COMPLEX(complexClassType = ClassInf.CONNECTOR(string = name),complexVarLst = vars),_))) :: xs),oid,s::ssubs)
+      equation 
+        lst3 = localInsideConnectorFlowvars3_2({tv},oid,ssubs);
+        lst1 = localInsideConnectorFlowvars3_2(xs, oid,s::ssubs);
+        (_,false) = Inst.innerOuterBooleans(io);
+        //lst2 = Types.flowVariables(vars, Exp.CREF_QUAL(oid,Exp.OTHER(),{},Exp.CREF_IDENT(id,Exp.OTHER(),{})));
+        lst2 = Types.flowVariables(vars, Exp.CREF_QUAL(oid,Exp.COMPLEX(name,{},ClassInf.CONNECTOR(name)),s,Exp.CREF_IDENT(id,Exp.COMPLEX(name,{},ClassInf.CONNECTOR(name)),{})));
+        res = Util.listFlatten({lst1, lst2,lst3});
+      then
+        res;
+    case ((_ :: xs),oid,ssubs)
+      equation 
+        //print(" **** FAILURE localInsideConnectorFlowvars3\n **** "); 
+        res = localInsideConnectorFlowvars3_2(xs, oid,ssubs);
+      then
+        res;
+  end matchcontinue;
+end localInsideConnectorFlowvars3_2;
+
+protected function createSubs "
+Author: BZ, 2009-05
+Create subscripts from given integerlist of dimensions, ex
+{2,3} => {1,1},{1,2},{1,3},{2,1},{2,2},{2,3}.
+"
+  input list<Integer> inInts;
+  output list<list<Exp.Subscript>> osubs;
+algorithm osubs := matchcontinue(inInts)
+  local
+    list<Integer> ints;
+    Integer i;
+    list<Exp.Subscript> localSubs;
+  case({}) then {};
+  case(i::inInts)
+    equation
+      osubs = createSubs(inInts);
+      ints = Util.listIntRange(i);
+      localSubs = Util.listMap(ints,integer2Subscript);
+      osubs = createSubs2(localSubs,osubs);
+       //_ = Util.listMap(osubs,dummyDump);
+    then 
+      osubs;
+end matchcontinue;
+end createSubs;
+
+protected function dummyDump "
+Author: BZ, 2009-05
+Debug function, print subscripts. 
+"
+input list<Exp.Subscript> subs;
+output String str; 
+algorithm str := matchcontinue(subs)
+  local
+      Exp.Subscript s;
+  case(subs)
+    equation
+      str = " subs: " +& Util.stringDelimitList(Util.listMap(subs,Exp.printSubscriptStr),", ") +& "\n";
+      print(str);
+      then
+        str;
+  end matchcontinue;
+end dummyDump; 
+
+protected function createSubs2
+input list<Exp.Subscript> s;
+input list<list<Exp.Subscript>> subs;
+output list<list<Exp.Subscript>> osubs;
+algorithm osubs := matchcontinue(s,subs)
+  local
+    list<Exp.Subscript> lsubs;
+    list<list<Exp.Subscript>> lssubs;
+    Exp.Subscript sub;
+    case({},_) then {};
+    case(sub::s,{}) // base case
+    equation
+      osubs = createSubs2(s,{});
+      then
+        {sub}::osubs;
+  case(sub::s,subs)
+    equation
+      lssubs = createSubs3(sub,subs);
+      osubs = createSubs2(s,subs);
+      osubs = listAppend(lssubs,osubs);
+      then
+         osubs;
+  end matchcontinue;
+end createSubs2;
+
+protected function createSubs3
+input Exp.Subscript s;
+input list<list<Exp.Subscript>> subs;
+output list<list<Exp.Subscript>> osubs;
+algorithm osubs := matchcontinue(s,subs)
+  local
+    list<Exp.Subscript> lsubs;
+    case(_,{}) then {};
+  case(s,lsubs::subs)
+    equation
+      osubs = createSubs3(s,subs);
+      lsubs = listAppend({s},lsubs);
+      then
+         lsubs::osubs;
+  end matchcontinue;
+end createSubs3;
+
+protected function integer2Subscript "
+@author adrpo
+ given an integer transform it into an Exp.Subscript"
+  input  Integer       index;
+  output Exp.Subscript subscript;
+algorithm
+ subscript := Exp.INDEX(Exp.ICONST(index));
+end integer2Subscript;
 
 /* AVL impementation */
 
