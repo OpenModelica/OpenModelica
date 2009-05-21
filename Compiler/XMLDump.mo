@@ -1266,7 +1266,20 @@ algorithm
       then ();
     case ((eqn :: eqns),index,addMMLCode,Exp.BCONST(bool=true))
       equation
-        dumpEquation(DAELow.equationToResidualForm(eqn), intString(index),addMMLCode);
+        //dumpEquation(DAELow.equationToResidualForm(eqn), intString(index),addMMLCode);
+        //This should be done as above. The problem is that the DAELow.equationToResidualForm(eqn) method
+        //is not working as expected, probably due to the fact that considers only scalar right hand side
+        //part of equation, i.e. it works correctly if we have something like a = b (with a and b scalar)
+        //thus obtaining a -b = 0.
+        //The DAELow.equationToResidualForm is not working properly when the right part of the equation is not
+        //a scalar. Cosidering the following equation: x = y - z will then results in obtaining the wrong
+        //residual equation x - y - z and not x - (y - z).
+        //Even if I didn't debug such a method I made some test via printing the equation that confirmed
+        //the problem.
+        //By the way, when all doubt will be clearified the follow line:
+        dumpResidual(eqn, intString(index),addMMLCode);
+        //will be substituted with:
+        //dumpEquation(DAELow.equationToResidualForm(eqn), intString(index),addMMLCode);
         dumpEqns2(eqns, index+1,addMMLCode,Exp.BCONST(true));
       then ();        
   end matchcontinue;
@@ -1418,7 +1431,7 @@ algorithm
     case (DAELow.RESIDUAL_EQUATION(exp = e),indexS,Exp.BCONST(bool=true))
       equation
         s1 = Exp.printExpStr(e);
-        res = Util.stringAppendList({s1,"= 0"});
+        res = Util.stringAppendList({s1," = 0"});
         dumpStrOpenTagAttr(stringAppend(RESIDUAL,EQUATION_),ID,indexS);
         Print.printBuf(res);
         dumpStrOpenTag(MathML);
@@ -1435,7 +1448,7 @@ algorithm
     case (DAELow.RESIDUAL_EQUATION(exp = e),indexS,Exp.BCONST(bool=false))
       equation
         s1 = Exp.printExpStr(e);
-        res = Util.stringAppendList({s1,"= 0"});
+        res = Util.stringAppendList({s1," = 0"});
         dumpStrOpenTagAttr(stringAppend(RESIDUAL,EQUATION_),ID,indexS);
         Print.printBuf(res);
         dumpStrCloseTag(stringAppend(RESIDUAL,EQUATION_));
@@ -3802,6 +3815,199 @@ algorithm
     case (Exp.NEQUAL(ty = _)) then MathMLNotEqual;
   end matchcontinue;
 end relopSymbol;
+
+
+public function dumpResidual "
+This function is necessary to print an equation element as a residual.
+Since in Modelica is possible to have different kind of
+equations, the DAELow representation of the OMC distinguish
+between:
+ - normal equations
+ - array equations
+ - solved equations
+ - when equations
+ - residual equations
+ - algorithm references
+This function prints the content using XML representation.
+The output changes according to the content of the equation.
+For example, if the element is an Array of Equations:
+<ArrayOfEquations ID=..>
+  <ARRAY_EQUATION>
+    ..
+    <MathML>
+     ...
+   </MathML>
+   <ADDITIONAL_INFO stringAppend(ARRAY_OF_EQUATIONS,ID_)=...>
+     <INVOLVEDVARIABLES>
+       <VARIABLE>...</VARIABLE>
+       ...
+       <VARIABLE>...</VARIABLE>
+     </INVOLVEDVARIABLES>
+   </ADDITIONAL_INFO>
+  </ARRAY_EQUATION>
+</ARRAY_OF_EQUATIONS>
+"
+  input DAELow.Equation inEquation;
+  input String inIndexNumber;
+  input Exp.Exp addMathMLCode;
+algorithm
+  _:=
+  matchcontinue (inEquation,inIndexNumber,addMathMLCode)
+    local
+      String s1,s2,res,indx_str,is,var_str,indexS;
+      Exp.Exp e1,e2,e;
+      DAELow.Value indx,i;
+      list<Exp.Exp> expl;
+      Exp.ComponentRef cr;
+      Exp.Exp addMMLCode;
+
+    case (DAELow.EQUATION(exp = e1,scalar = e2),indexS,Exp.BCONST(bool=true))
+      equation
+        s1 = Exp.printExpStr(e1);
+        s2 = Exp.printExpStr(e2);
+        res = Util.stringAppendList({s1," ( ",s2,") = 0"});
+        dumpStrOpenTagAttr(EQUATION,ID,indexS);
+        Print.printBuf(res);
+        dumpStrOpenTag(MathML);
+        dumpStrOpenTagAttr(MATH, MathMLXmlns, MathMLWeb);
+        dumpStrOpenTag(MathMLApply);
+        dumpStrVoidTag(MathMLEquivalent);
+        dumpStrOpenTag(MathMLApply);
+        dumpStrOpenTag(MathMLMinus);
+        dumpExp2(e1);
+        dumpExp2(e2);
+        dumpStrCloseTag(MathMLApply);
+        dumpExp2(Exp.RCONST(0.0));
+        dumpStrCloseTag(MathMLApply);
+        dumpStrCloseTag(MATH);
+        dumpStrCloseTag(MathML);
+        dumpStrCloseTag(EQUATION);
+      then ();
+    case (DAELow.EQUATION(exp = e1,scalar = e2),indexS,Exp.BCONST(bool=false))
+      equation
+        s1 = Exp.printExpStr(e1);
+        s2 = Exp.printExpStr(e2);
+        res = Util.stringAppendList({s1," - ( ",s2, " ) = 0"});
+        dumpStrOpenTagAttr(EQUATION,ID,indexS);
+        Print.printBuf(res);
+        dumpStrCloseTag(EQUATION);
+      then ();
+    case (DAELow.ARRAY_EQUATION(index = indx,crefOrDerCref = expl),indexS,addMMLCode)
+      equation
+        dumpStrOpenTagAttr(ARRAY_OF_EQUATIONS,ID,indexS);
+        dumpLstExp(expl,ARRAY_EQUATION,addMMLCode);
+        dumpStrOpenTagAttr(ADDITIONAL_INFO, stringAppend(ARRAY_OF_EQUATIONS,ID_), intString(indx));
+        dumpStrOpenTag(stringAppend(INVOLVED,VARIABLES_));
+        dumpStrOpenTag(VARIABLE);
+        var_str=Util.stringDelimitList(Util.listMap(expl,Exp.printExpStr),Util.stringAppendList({"</",VARIABLE,">\n<",VARIABLE,">"}));
+        dumpStrCloseTag(VARIABLE);
+        dumpStrCloseTag(stringAppend(INVOLVED,VARIABLES_));
+        dumpStrCloseTag(ADDITIONAL_INFO);
+        dumpStrCloseTag(ARRAY_OF_EQUATIONS);
+      then ();
+    case (DAELow.SOLVED_EQUATION(componentRef = cr,exp = e2),indexS,Exp.BCONST(bool=true))
+      equation
+        s1 = Exp.printComponentRefStr(cr);
+        s2 = Exp.printExpStr(e2);
+        res = Util.stringAppendList({s1," - ( ",s2," ) := 0"});
+        dumpStrOpenTagAttr(stringAppend(SOLVED,EQUATION_),ID,indexS);
+        Print.printBuf(res);
+        dumpStrOpenTag(MathML);
+        dumpStrOpenTagAttr(MATH, MathMLXmlns, MathMLWeb);
+        dumpStrOpenTag(MathMLApply);
+        dumpStrVoidTag(MathMLEquivalent);
+        dumpStrOpenTag(MathMLApply);
+        dumpStrOpenTag(MathMLMinus);
+        Print.printBuf(s1);
+        dumpExp2(e2);
+        dumpStrCloseTag(MathMLApply);
+        dumpExp2(Exp.RCONST(0.0));
+        dumpStrCloseTag(MathMLApply);
+        dumpStrCloseTag(MATH);
+        dumpStrCloseTag(MathML);
+        dumpStrCloseTag(stringAppend(SOLVED,EQUATION_));
+      then ();
+    case (DAELow.SOLVED_EQUATION(componentRef = cr,exp = e2),indexS,Exp.BCONST(bool=false))
+      equation
+        s1 = Exp.printComponentRefStr(cr);
+        s2 = Exp.printExpStr(e2);
+        res = Util.stringAppendList({s1," - (",s2,") := 0"});
+        dumpStrOpenTagAttr(stringAppend(SOLVED,EQUATION_),ID,indexS);
+        Print.printBuf(res);
+        dumpStrCloseTag(stringAppend(SOLVED,EQUATION_));
+      then ();
+    case (DAELow.WHEN_EQUATION(whenEquation = DAELow.WHEN_EQ(index = i,left = cr,right = e2)),indexS,Exp.BCONST(bool=true))
+      equation
+        s1 = Exp.printComponentRefStr(cr);
+        s2 = Exp.printExpStr(e2);
+        is = intString(i);
+        res = Util.stringAppendList({s1," - (",s2,") := 0"});
+        dumpStrOpenTagAttr(stringAppend(WHEN,EQUATION_),ID,indexS);
+        Print.printBuf(res);
+        dumpStrOpenTag(MathML);
+        dumpStrOpenTagAttr(MATH, MathMLXmlns, MathMLWeb);
+        dumpStrOpenTag(MathMLApply);
+        dumpStrVoidTag(MathMLEquivalent);
+        dumpStrOpenTag(MathMLApply);
+        dumpStrOpenTag(MathMLMinus);
+        Print.printBuf(s1);
+        dumpExp2(e2);
+        dumpStrCloseTag(MathMLApply);
+        dumpExp2(Exp.RCONST(0.0));
+        dumpStrCloseTag(MathMLApply);
+        dumpStrCloseTag(MATH);
+        dumpStrCloseTag(MathML);
+        dumpStrTagContent(stringAppend(stringAppend(WHEN,EQUATION_),ID_),is);
+        dumpStrCloseTag(stringAppend(WHEN,EQUATION_));
+      then ();
+    case (DAELow.WHEN_EQUATION(whenEquation = DAELow.WHEN_EQ(index = i,left = cr,right = e2)),indexS,Exp.BCONST(bool=false))
+      equation
+        s1 = Exp.printComponentRefStr(cr);
+        s2 = Exp.printExpStr(e2);
+        is = intString(i);
+        res = Util.stringAppendList({s1," - (",s2,") := 0"});
+        dumpStrOpenTagAttr(stringAppend(WHEN,EQUATION_),ID,indexS);
+        Print.printBuf(res);
+        dumpStrTagContent(stringAppend(stringAppend(WHEN,EQUATION_),ID_),is);
+        dumpStrCloseTag(stringAppend(WHEN,EQUATION_));
+      then ();
+    case (DAELow.RESIDUAL_EQUATION(exp = e),indexS,Exp.BCONST(bool=true))
+      equation
+        s1 = Exp.printExpStr(e);
+        res = Util.stringAppendList({s1," = 0"});
+        dumpStrOpenTagAttr(stringAppend(RESIDUAL,EQUATION_),ID,indexS);
+        Print.printBuf(res);
+        dumpStrOpenTag(MathML);
+        dumpStrOpenTagAttr(MATH, MathMLXmlns, MathMLWeb);
+        dumpStrOpenTag(MathMLApply);
+        dumpStrVoidTag(MathMLEquivalent);
+        dumpExp2(e);
+        dumpStrMathMLNumber("0");
+        dumpStrCloseTag(MathMLApply);
+        dumpStrCloseTag(MATH);
+        dumpStrCloseTag(MathML);
+        dumpStrCloseTag(stringAppend(RESIDUAL,EQUATION_));
+      then ();
+    case (DAELow.RESIDUAL_EQUATION(exp = e),indexS,Exp.BCONST(bool=false))
+      equation
+        s1 = Exp.printExpStr(e);
+        res = Util.stringAppendList({s1," = 0"});
+        dumpStrOpenTagAttr(stringAppend(RESIDUAL,EQUATION_),ID,indexS);
+        Print.printBuf(res);
+        dumpStrCloseTag(stringAppend(RESIDUAL,EQUATION_));
+      then ();
+    case (DAELow.ALGORITHM(index = i),indexS,_)
+      equation
+        is = intString(i);
+        dumpStrOpenTagAttr(ALGORITHM,ID,indexS);
+        dumpStrTagContent(stringAppend(ALGORITHM,ID_),is);
+        dumpStrTagAttrNoChild(ANCHOR, ALGORITHM_NAME, stringAppend(stringAppend(ALGORITHM_REF,"_"),is));
+        //dumpStrOpenTagAttr(ANCHOR, ALGORITHM_NAME, stringAppend(stringAppend(ALGORITHM_REF,"_"),is));
+        //dumpStrCloseTag(ANCHOR);
+        dumpStrCloseTag(ALGORITHM);
+      then ();
+  end matchcontinue;
+end dumpResidual;
 
 
 public function unaryopSymbol "
