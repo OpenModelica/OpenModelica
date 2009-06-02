@@ -4344,7 +4344,11 @@ algorithm
         (cache,(dims_1 as (_ :: _))) = getUsertypeDimensions(cache,env, mod, pre, cl, inst_dims, impl);
         (cache,compenv,dae,csets_1,ty_1) = instVar2(cache,env, ci_state, mod, pre, csets, n, cl, attr, prot, dims_1, idxs,
           inst_dims, impl, comment,io);
-        ty = makeArrayType(dims_1, ty_1);
+        // adrpo: 2009-06-02, change this below from 
+        //                    ty_1 = makeArrayType(dims_1, ty_1);
+        //                    as this doubles the array dimension wrongy
+        //                    i.e. Real[X] wrongly becomes Real[X,X].
+        ty = ty_1; 
       then
         (cache,compenv,dae,csets_1,ty);
         
