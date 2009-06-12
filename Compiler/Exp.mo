@@ -2162,7 +2162,7 @@ algorithm
     
     case(CAST(tp,IFEXP(cond,e1,e2))) equation
       e1_1 = simplify1(CAST(tp,e1));
-      e2_1 = simplify1(CAST(tp,e2));
+      e2_1 = simplify1(CAST(tp,e2));      
     then IFEXP(cond,e1_1,e2_1);
 
     case (CAST(ty = tp,exp = e))
@@ -2324,7 +2324,7 @@ algorithm
         e1_1 = simplify1(e1);
         e2_1 = simplify1(e2);
         e3_1 = simplify1(e3);
-        remove_if = expEqual(e2, e3);
+        remove_if = expEqual(e2_1, e3_1);
         res = Util.if_(remove_if, e2_1, IFEXP(e1,e2_1,e3_1));
       then
         res;
