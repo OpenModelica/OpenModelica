@@ -5183,7 +5183,7 @@ algorithm (outCache,outEnv,outDAEElementLst,outSets,outType,outGraph):=
         (cache,(dims_1 as (_ :: _))) = getUsertypeDimensions(cache,env, mod, pre, cl, inst_dims, impl);
         attr = propagateClassPrefix(attr,pre);
         (cache,compenv,dae,csets_1,ty_1,graph) = instVar2(cache,env, ci_state, mod, pre, csets, n, cl, attr, prot, dims_1, idxs, inst_dims, impl, comment,io,finalPrefix,graph);
-        ty = makeArrayType(dims_1, ty_1);
+        ty = ty_1; // adrpo: this doubles the dimension! ty = makeArrayType(dims_1, ty_1);
         Error.updateCurrentComponent("",NONE); 
       then
         (cache,compenv,dae,csets_1,ty,graph);
