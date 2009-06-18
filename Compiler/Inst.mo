@@ -12798,15 +12798,31 @@ algorithm
     case(DAE.VAR(componentRef=cr, innerOuter = io),innerVars) 
       local Absyn.InnerOuter io;
       equation
-        str2 = SCode.innerouterString(io);
+        str2 = Dump.unparseInnerouterStr(io);
         crs = Util.listMap(innerVars,DAE.varCref);
         {} = Util.listSelect1(crs, cr,isInnerOuterMatch);
         str = Exp.printComponentRefStr(cr);
         Error.addMessage(Error.MISSING_INNER_PREFIX,{str,str2});
-        print(" error: " +& str +& "\n");
-      then fail();
+        failExceptForCheck();
+      then (); 
   end matchcontinue;
 end checkMissingInnerDecl2;
+
+public function failExceptForCheck "function that fails if checkModel option is not set, otherwise it succeeds
+
+It should be used for the cases when normal instantiation should fail but a instantiation for performing
+checkModel call should not fail 
+"
+algorithm
+  _ := matchcontinue()
+    case() equation
+      true = OptManager.getOption("checkModel");
+    then ();
+    case() equation
+      //false = OptManager.getOption("checkModel");
+    then fail();
+  end matchcontinue;
+end failExceptForCheck;
 
 protected function extractCurrentName "Function: extractCurrentName
 Extract SCode.Element name.
