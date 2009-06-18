@@ -8319,7 +8319,8 @@ algorithm
       Ident s,scope;
       Env.Cache cache;
       Boolean doVect;
-      Exp.Type et;      
+      Exp.Type et;
+      Absyn.InnerOuter io;      
     case (cache,env,c as Absyn.WILD(),impl,doVect) /* impl */   
       equation
         t = (Types.T_ANYTYPE(NONE),NONE);
@@ -8332,8 +8333,8 @@ algorithm
         Option<Exp.Exp> splicedExp;
       equation 
         (cache,c_1,_) = elabCrefSubs(cache,env, c,Prefix.NOPRE(), impl);
-        (cache,Types.ATTR(_,_,acc,variability,_,_),t,binding,splicedExp,_) = Lookup.lookupVar(cache,env, c_1);
-        (cache,exp,const,acc_1) = elabCref2(cache,env, c_1, acc, variability, t, binding,doVect,splicedExp);
+        (cache,Types.ATTR(_,_,acc,variability,_,io),t,binding,splicedExp,_) = Lookup.lookupVar(cache,env, c_1);
+        (cache,exp,const,acc_1) = elabCref2(cache,env, c_1, acc, variability, io,t, binding,doVect,splicedExp);
         exp = makeASUBArrayAdressing(c,cache,env,impl,exp,splicedExp);
       then
         (cache,exp,Types.PROP(t,const),acc_1); 
@@ -8597,6 +8598,7 @@ protected function elabCref2 "function: elabCref2
   input Exp.ComponentRef inComponentRef;
   input SCode.Accessibility inAccessibility;
   input SCode.Variability inVariability;
+  input Absyn.InnerOuter io;
   input Types.Type inType;
   input Types.Binding inBinding;
   input Boolean performVectorization "true => vectorized expressions";
@@ -8607,7 +8609,7 @@ protected function elabCref2 "function: elabCref2
   output SCode.Accessibility outAccessibility;
 algorithm 
   (outCache,outExp,outConst,outAccessibility):=
-  matchcontinue (inCache,inEnv,inComponentRef,inAccessibility,inVariability,inType,inBinding,performVectorization,splicedExp)
+  matchcontinue (inCache,inEnv,inComponentRef,inAccessibility,inVariability,io,inType,inBinding,performVectorization,splicedExp)
     local
       Exp.Type t_1;
       Exp.ComponentRef cr,cr_1,cref;
@@ -8624,15 +8626,15 @@ algorithm
       Types.Binding binding;
       Env.Cache cache;
       Boolean doVect;
-    case (cache,_,cr,acc,_,(t as (Types.T_NOTYPE(),_)),_,doVect,_) /* If type not yet determined, component must be referencing itself. 
+    case (cache,_,cr,acc,_,io,(t as (Types.T_NOTYPE(),_)),_,doVect,_) /* If type not yet determined, component must be referencing itself. 
 	    constantness undecidable since binding not available, 
 	    return C_VAR */ 
       equation 
         t_1 = Types.elabType(t);
       then
         (cache,Exp.CREF(cr,t_1),Types.C_VAR(),acc);
-    case (cache,_,cr,acc,SCode.VAR(),tt,_,doVect,sexp )
-      //case (cache,_,_,acc,SCode.VAR(),tt,_,doVect,sexp as SOME(Exp.CREF(cr,_)))
+    case (cache,_,cr,acc,SCode.VAR(),io,tt,_,doVect,sexp )
+      //case (cache,_,_,acc,SCode.VAR(),io,tt,_,doVect,sexp as SOME(Exp.CREF(cr,_)))
       local Exp.Type t;
       equation 
         t = Types.elabType(tt);
@@ -8640,7 +8642,7 @@ algorithm
         e = crefVectorize(doVect,Exp.CREF(cr_1,t), tt,sexp) "PA: added2006-01-11" ;
       then
         (cache,e,Types.C_VAR(),acc);
-    case (cache,_,cr,acc,SCode.DISCRETE(),tt,_,doVect,_)
+    case (cache,_,cr,acc,SCode.DISCRETE(),io,tt,_,doVect,_)
       local Exp.Type t;
       equation 
         t = Types.elabType(tt);
@@ -8648,7 +8650,7 @@ algorithm
         e = crefVectorize(doVect,Exp.CREF(cr_1,t), tt,NONE);
       then
         (cache,e,Types.C_VAR(),acc);
-    case (cache,env,cr,acc,SCode.CONST(),t,binding,doVect,_)
+    case (cache,env,cr,acc,SCode.CONST(),io,t,binding,doVect,_)
       //local Exp.Type t;
       equation 
         (cache,v) = Ceval.cevalCrefBinding(cache,env,cr,binding,false,Ceval.MSG());
@@ -8659,7 +8661,7 @@ algorithm
         (cache,e_1,Types.C_CONST(),SCode.RO());
         
         /* evaluate parameters if "evalparam" is set */
-    case (cache,env,cr,acc,SCode.PARAM(),tt,Types.VALBOUND(valBound = v),doVect,_)
+    case (cache,env,cr,acc,SCode.PARAM(),io,tt,Types.VALBOUND(valBound = v),doVect,_)
       local Exp.Type t;
       equation 
         true = RTOpts.debugFlag("evalparam");
@@ -8673,7 +8675,7 @@ algorithm
       then
         (cache,e_1,Types.C_PARAM(),SCode.RO());
         
-        case (cache,env,cr,acc,var,tt,Types.EQBOUND(exp = exp,constant_ = const),doVect,_) 
+        case (cache,env,cr,acc,var,io,tt,Types.EQBOUND(exp = exp,constant_ = const),doVect,_) 
       local Exp.Type t;
       equation 
         true = SCode.isParameterOrConst(var);
@@ -8691,7 +8693,7 @@ algorithm
         (cache,e_1,Types.C_PARAM(),SCode.RO());
         
 
-    case (cache,env,cr,acc,SCode.PARAM(),tt,Types.VALBOUND(valBound = v),doVect,_)
+    case (cache,env,cr,acc,SCode.PARAM(),io,tt,Types.VALBOUND(valBound = v),doVect,_)
       local Exp.Type t;
       equation 
         t = Types.elabType(tt);
@@ -8699,7 +8701,7 @@ algorithm
         e_1 = crefVectorize(doVect,Exp.CREF(cr_1,t), tt,NONE);
       then
         (cache,e_1,Types.C_PARAM(),acc);
-    case (cache,env,cr,acc,SCode.CONST(),tt,Types.EQBOUND(exp = exp,constant_ = const),doVect,_) 
+    case (cache,env,cr,acc,SCode.CONST(),io,tt,Types.EQBOUND(exp = exp,constant_ = const),doVect,_) 
       local Exp.Type t;
       equation 
         t = Types.elabType(tt) "Constants with equal binings should be constant, i.e. true
@@ -8718,7 +8720,7 @@ algorithm
         e_1 = crefVectorize(doVect,Exp.CREF(cr_1,t), tt,NONE);
       then
         (cache,e_1,Types.C_PARAM(),acc);*/
-    case (cache,env,cr,acc,SCode.PARAM(),tt,Types.EQBOUND(exp = exp ,constant_ = const),doVect,sexp)
+    case (cache,env,cr,acc,SCode.PARAM(),io,tt,Types.EQBOUND(exp = exp ,constant_ = const),doVect,sexp)
       local Exp.Type t;
       equation 
         t = Types.elabType(tt) "parameters with equal binding becomes C_PARAM" ;
@@ -8727,7 +8729,7 @@ algorithm
       then
         (cache,e_1,Types.C_PARAM(),acc);
         
-    case (cache,env,cr,acc,_,tt,Types.EQBOUND(exp = exp,constant_ = const),doVect,_)
+    case (cache,env,cr,acc,_,io,tt,Types.EQBOUND(exp = exp,constant_ = const),doVect,_)
       local Exp.Type t;
       equation 
         t = Types.elabType(tt) "..the rest should be non constant, even if they have a 
@@ -8737,24 +8739,24 @@ algorithm
       then
         (cache,e_1,Types.C_VAR(),acc);
     /* Enum constants does not have a value expression */
-    case (cache,env,cr,acc,_,(tt as (Types.T_ENUM(),_)),_,doVect,_) 
+    case (cache,env,cr,acc,_,io,(tt as (Types.T_ENUM(),_)),_,doVect,_) 
       local Exp.Type t;
       equation 
         t = Types.elabType(tt);
       then
         (cache,Exp.CREF(cr,t),Types.C_CONST(),acc);
     /* If value not constant, but references another parameter, which has a value We need to perform value propagation. */
-    case (cache,env,cr,acc,variability,tp,Types.EQBOUND(exp = Exp.CREF(componentRef = cref,ty = t),constant_ = Types.C_VAR()),doVect,splicedExp)
+    case (cache,env,cr,acc,variability,io,tp,Types.EQBOUND(exp = Exp.CREF(componentRef = cref,ty = t),constant_ = Types.C_VAR()),doVect,splicedExp)
       local
         tuple<Types.TType, Option<Absyn.Path>> t_1;
         Option<Exp.Exp> splicedExp;
         Exp.Type t;
       equation 
-        (cache,Types.ATTR(_,_,acc_1,variability_1,_,_),t_1,binding_1,splicedExp,_) = Lookup.lookupVar(cache,env, cref);
-        (cache,e,const,acc) = elabCref2(cache,env, cref, acc_1, variability_1, t_1, binding_1,doVect,splicedExp);
+        (cache,Types.ATTR(_,_,acc_1,variability_1,_,io),t_1,binding_1,splicedExp,_) = Lookup.lookupVar(cache,env, cref);
+        (cache,e,const,acc) = elabCref2(cache,env, cref, acc_1, variability_1, io,t_1, binding_1,doVect,splicedExp);
       then
         (cache,e,const,acc);
-    case (cache,_,cr,_,_,_,Types.EQBOUND(exp = exp,constant_ = Types.C_VAR()),doVect,_)
+    case (cache,_,cr,_,_,_,_,Types.EQBOUND(exp = exp,constant_ = Types.C_VAR()),doVect,_)
       equation 
         s = Exp.printComponentRefStr(cr);
         str = Exp.printExpStr(exp);
@@ -8762,7 +8764,7 @@ algorithm
       then
         fail();
     /* constants without value produce error. */
-    case (cache,env,cr,acc,SCode.CONST(),tt,Types.UNBOUND(),doVect,_) 
+    case (cache,env,cr,acc,SCode.CONST(),io,tt,Types.UNBOUND(),doVect,_) 
       local Exp.Type t;
       equation 
         s = Exp.printComponentRefStr(cr);
@@ -8773,10 +8775,11 @@ algorithm
       then
         (cache,Exp.CREF(cr_1,t),Types.C_CONST(),acc);
       
+      
         
         /* Parameters without value but with fixed=false is ok, these are given value
         during initialization. */ 
-    case (cache,env,cr,acc,SCode.PARAM(),tt,Types.UNBOUND(),doVect,_) 
+    case (cache,env,cr,acc,SCode.PARAM(),io,tt,Types.UNBOUND(),doVect,_) 
       local Exp.Type t; String s1;
       equation 
         false = Types.getFixedVarAttribute(tt);        
@@ -8784,9 +8787,19 @@ algorithm
         cr_1 = fillCrefSubscripts(cr, tt);
       then
         (cache,Exp.CREF(cr_1,t),Types.C_PARAM(),acc);
+        
+       /* outer parameters without value is ok. */ 
+    case (cache,env,cr,acc,SCode.PARAM(),io,tt,Types.UNBOUND(),doVect,_) 
+      local Exp.Type t; String s1;
+      equation 
+        (_,true) = Inst.innerOuterBooleans(io);
+        t = Types.elabType(tt);
+        cr_1 = fillCrefSubscripts(cr, tt);
+      then
+        (cache,Exp.CREF(cr_1,t),Types.C_PARAM(),acc);  
 
         /* Parameters without value with fixed=true or no fixed attribute set produce warning */                 
-    case (cache,env,cr,acc,SCode.PARAM(),tt,Types.UNBOUND(),doVect,_) 
+    case (cache,env,cr,acc,SCode.PARAM(),io,tt,Types.UNBOUND(),doVect,_) 
       local Exp.Type t; String s1;
       equation        
         s = Exp.printComponentRefStr(cr);
@@ -8796,7 +8809,7 @@ algorithm
         e_1 = crefVectorize(doVect,Exp.CREF(cr_1,t), tt,NONE);
       then
         (cache,e_1,Types.C_PARAM(),acc);
-    case (cache,env,cr,acc,var,tp,bind,doVect,_)
+    case (cache,env,cr,acc,var,io,tp,bind,doVect,_)
       equation 
         Debug.fprint("failtrace", "-elab_cref2 failed for "+&Exp.printComponentRefStr(cr)+&"\n env:"+&Env.printEnvStr(env));
       then

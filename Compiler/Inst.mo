@@ -12799,12 +12799,12 @@ algorithm
       local Absyn.InnerOuter io;
       equation
         str2 = SCode.innerouterString(io);
-      crs = Util.listMap(innerVars,DAE.varCref);
-      {} = Util.listSelect1(crs, cr,isInnerOuterMatch);
-       str = Exp.printComponentRefStr(cr);
-      Error.addMessage(Error.MISSING_INNER_PREFIX,{str,str2});
-      print(" error: " +& str +& "\n");
-    then fail();
+        crs = Util.listMap(innerVars,DAE.varCref);
+        {} = Util.listSelect1(crs, cr,isInnerOuterMatch);
+        str = Exp.printComponentRefStr(cr);
+        Error.addMessage(Error.MISSING_INNER_PREFIX,{str,str2});
+        print(" error: " +& str +& "\n");
+      then fail();
   end matchcontinue;
 end checkMissingInnerDecl2;
 
