@@ -4415,6 +4415,21 @@ algorithm
       then
         (cache,Values.INTEGER(len),st_1);
 
+    // adrpo 2009-06-08: it doen't need to be a builtin type as long as the dimension is an integer!
+    case (cache,env,Exp.ARRAY(array = (e :: es)),dim,impl,st,msg)
+      local
+        Exp.Type tp;
+        Exp.Exp dim;
+      equation
+        tp = Exp.typeof(e) "Special case for array expressions with nonconstant values 
+                            For now: only arrays of scalar elements: 
+                            TODO generalize to arbitrary dimensions" ;
+        false = Exp.typeBuiltin(tp); 
+        (cache,Values.INTEGER(1),st_1) = ceval(cache,env, dim, impl, st, NONE, msg);
+        len = listLength((e :: es));
+      then
+        (cache,Values.INTEGER(len),st_1);
+
        /* For expressions with value binding that can not determine type
 		e.g. size(x,2) when Real x[:,:]=fill(0.0,0,2); empty array with second dimension == 2, no way of
 		knowing that from the value. Must investigate the expression itself.*/

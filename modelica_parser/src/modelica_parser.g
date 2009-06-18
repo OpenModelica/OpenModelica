@@ -330,15 +330,10 @@ element_list :
 element :
 			ic:import_clause
 		|	ec:extends_clause
-		|	(REDECLARE)?
-        (FINAL)?
-        (INNER)?
-        (OUTER)?
-		(	(class_definition | cc:component_clause)
-			|(REPLACEABLE ( class_definition | cc2:component_clause )
-				(constraining_clause comment)?
-			 )
-		)
+		|	(REDECLARE)? (FINAL)? (INNER)? (OUTER)?
+			((class_definition | cc:component_clause)
+			|(REPLACEABLE ( class_definition | cc2:component_clause ) (constraining_clause comment)?)
+			)
 		{
 			if(#cc != null || #cc2 != null)
 			{
@@ -399,11 +394,12 @@ implicit_import_name!
 // Note that this is a minor modification of the standard by
 // allowing the comment.
 extends_clause :
-		EXTENDS^ name_path ( class_modification )?
+	   EXTENDS^ name_path (class_modification)? (annotation)?
 		;
 
 constraining_clause :
-		extends_clause | CONSTRAINEDBY^ name_path ( class_modification )?
+			EXTENDS^ name_path  (class_modification)? 
+		|	CONSTRAINEDBY^ name_path ( class_modification )?
 		;
 
 /*

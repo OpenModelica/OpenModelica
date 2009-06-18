@@ -352,6 +352,7 @@ uniontype ElementSpec "An element is something that occurs in a public or protec
   record EXTENDS
     Path path "path" ;
     list<ElementArg> elementArg "elementArg" ;
+    Option<Annotation> annotationOpt "optional annotation";
   end EXTENDS;
 
   record IMPORT

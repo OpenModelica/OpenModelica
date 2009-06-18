@@ -5776,22 +5776,24 @@ algorithm
       list<Env.Frame> env;
       Absyn.Modification mod;
       Absyn.Element elt;
+      Option<Absyn.Annotation> annOpt;
+      
       /* special case for clearing modifications */
    /* case (Absyn.ELEMENT(final_ = f,redeclareKeywords = r,innerOuter = i,name = n,
-      specification = Absyn.EXTENDS(path = path,elementArg = eargs),info = info,constrainClass = constr),
+      specification = Absyn.EXTENDS(path = path,elementArg = eargs,annotationOpt = annOpt),info = info,constrainClass = constr),
       inherit,submod,Absyn.CLASSMOD(elementArgLst = {},expOption = NONE),env)
 
-      then Absyn.ELEMENT(f,r,i,n,Absyn.EXTENDS(path,{}),info,constr); */
+      then Absyn.ELEMENT(f,r,i,n,Absyn.EXTENDS(path,{},annOpt),info,constr); */
 
     case (Absyn.ELEMENT(final_ = f,redeclareKeywords = r,innerOuter = i,name = n,
-      specification = Absyn.EXTENDS(path = path,elementArg = eargs),info = info,constrainClass = constr),
+      specification = Absyn.EXTENDS(path = path,elementArg = eargs, annotationOpt = annOpt),info = info,constrainClass = constr),
       inherit,submod,mod,env)
       equation
         (_,path_1) = Inst.makeFullyQualified(Env.emptyCache,env, path);
         true = ModUtil.pathEqual(inherit, path_1);
         eargs_1 = setSubmodifierInElementargs(eargs, submod, mod);
       then
-        Absyn.ELEMENT(f,r,i,n,Absyn.EXTENDS(path,eargs_1),info,constr);
+        Absyn.ELEMENT(f,r,i,n,Absyn.EXTENDS(path,eargs_1,annOpt),info,constr);
     case (elt,_,_,_,_) then elt;
   end matchcontinue;
 end setExtendsSubmodifierInElement;
@@ -5833,7 +5835,7 @@ algorithm
         env = getClassEnv(p, p_class);
         exts = getExtendsElementspecInClass(cdef);
         exts_1 = Util.listMap1(exts, makeExtendsFullyQualified, env);
-        {Absyn.EXTENDS(extpath,extmod)} = Util.listSelect1(exts_1, name, extendsElementspecNamed);
+        {Absyn.EXTENDS(extpath,extmod,_)} = Util.listSelect1(exts_1, name, extendsElementspecNamed);
         mod = getModificationValue(extmod, subident);
         res = Dump.unparseModificationStr(mod);
       then
@@ -5856,11 +5858,13 @@ algorithm
       Absyn.Path path_1,path;
       list<Absyn.ElementArg> earg;
       list<Env.Frame> env;
-    case (Absyn.EXTENDS(path = path,elementArg = earg),env)
+      Option<Absyn.Annotation> annOpt;
+      
+    case (Absyn.EXTENDS(path = path,elementArg = earg,annotationOpt = annOpt),env)
       equation
         (_,path_1) = Inst.makeFullyQualified(Env.emptyCache,env, path);
       then
-        Absyn.EXTENDS(path_1,earg);
+        Absyn.EXTENDS(path_1,earg,annOpt);
   end matchcontinue;
 end makeExtendsFullyQualified;
 
@@ -5900,7 +5904,7 @@ algorithm
         exts = getExtendsElementspecInClass(cdef);
         env = getClassEnv(p, p_class);
         exts_1 = Util.listMap1(exts, makeExtendsFullyQualified, env);
-        {Absyn.EXTENDS(extpath,extmod)} = Util.listSelect1(exts_1, name, extendsElementspecNamed);
+        {Absyn.EXTENDS(extpath,extmod,_)} = Util.listSelect1(exts_1, name, extendsElementspecNamed);
         res = getModificationNames(extmod);
         res_1 = Util.stringDelimitList(res, ", ");
         res_2 = Util.stringAppendList({"{",res_1,"}"});
@@ -5964,7 +5968,7 @@ algorithm
         ext;
     case (Absyn.CLASS(body = Absyn.DERIVED(typeSpec=Absyn.TPATH(tp,_), arguments=eltArg)))
       then
-        {Absyn.EXTENDS(tp,eltArg)}; // Note: the array dimensions of DERIVED are lost. They must be
+        {Absyn.EXTENDS(tp,eltArg,NONE())}; // Note: the array dimensions of DERIVED are lost. They must be
         														// queried by another api-function
     case (_) then {};
   end matchcontinue;
@@ -7321,6 +7325,8 @@ algorithm
       Absyn.Import import_1,import_;
       Boolean changed;
       Option<Absyn.ArrayDim> x;
+      Option<Absyn.Annotation> annOpt;
+      
     case (Absyn.COMPONENTS(attributes = a,typeSpec = Absyn.TPATH(path_1,x),components = comp_items),old_comp,new_comp,env) /* the old name for the component signal if something in class have been changed rule  Absyn.path_string(old_comp) => old_str & Absyn.path_string(new_comp) => new_str & Util.string_append_list({old_str,\" ==> \", new_str,\"\\n\"}) => print_str & print print_str & int_eq(1,2) => true --------- rename_class_in_element_spec(A,old_comp,new_comp,env) => (A,false) */
       equation
         (_,SCode.CLASS(id,_,_,_,_),cenv) = Lookup.lookupClass(Env.emptyCache,env, path_1, false);
@@ -7330,7 +7336,7 @@ algorithm
         new_path = changeLastIdent(path, new_comp) "& Absyn.path_string(path) => old_str & Absyn.path_string(new_comp) => new_str & Absyn.path_string(new_path) => new2_str & Util.string_append_list({old_str,\" =E=> \", new_str,\" \",new2_str ,\"\\n\"}) => print_str & print print_str &" ;
       then
         (Absyn.COMPONENTS(a,Absyn.TPATH(new_path,x),comp_items),true);
-    case (Absyn.EXTENDS(path = path_1,elementArg = a),old_comp,new_comp,env)
+    case (Absyn.EXTENDS(path = path_1,elementArg = a, annotationOpt = annOpt),old_comp,new_comp,env)
       local list<Absyn.ElementArg> a;
       equation
         (_,_,cenv) = Lookup.lookupClass(Env.emptyCache,env, path_1, false) "print \"rename_class_in_element_spec Absyn.EXTENDS(path,_) not implemented yet\"" ;
@@ -7338,7 +7344,7 @@ algorithm
         true = ModUtil.pathEqual(path, old_comp);
         new_path = changeLastIdent(path_1, new_comp);
       then
-        (Absyn.EXTENDS(new_path,a),true);
+        (Absyn.EXTENDS(new_path,a,annOpt),true);
     case (Absyn.IMPORT(import_ = import_,comment = a),old_comp,new_comp,env)
       local Option<Absyn.Comment> a;
       equation
@@ -9744,7 +9750,7 @@ algorithm
         cdef = getPathedClassInProgram(modelpath, p);
         extends_ = getExtendsInClass(cdef);
         n_1 = n - 1;
-        Absyn.EXTENDS(path,_) = listNth(extends_, n_1);
+        Absyn.EXTENDS(path,_,_) = listNth(extends_, n_1);
         s = Absyn.pathString(path);
       then
         s;
@@ -15867,16 +15873,17 @@ algorithm
       list<Absyn.ElementArg> eargs,eargs1;
       Absyn.ElementAttributes attr;
       list<Absyn.ComponentItem> comps,comps1;
+      Option<Absyn.Annotation> annOpt;
       
     case(Absyn.CLASSDEF(r,cl)) 
       equation
         ((cl1,_,_)) = transformFlatClass((cl,NONE,0));
       then Absyn.CLASSDEF(r,cl1);
 
-    case(Absyn.EXTENDS(path,eargs)) 
+    case(Absyn.EXTENDS(path,eargs,annOpt)) 
       equation
         eargs1 = Util.listMap(eargs,transformFlatElementArg);
-      then Absyn.EXTENDS(path,eargs1);
+      then Absyn.EXTENDS(path,eargs1,annOpt);
 
     case(eltSpec as Absyn.IMPORT(import_ = _)) then eltSpec;
 

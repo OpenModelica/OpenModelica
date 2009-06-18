@@ -853,15 +853,18 @@ extends_clause returns [void* ast]
 {
 	void* path;
 	void* mod = 0;
+	void* ann = 0;
 }
 	:
 		(#(e:EXTENDS
 				path = name_path
 				( mod = class_modification )?
+				( ann = annotation )?
 			)
 			{
 				if (!mod) mod = mk_nil();
-				ast = Absyn__EXTENDS(path,mod);
+				if (!ann) ann = mk_none();
+				ast = Absyn__EXTENDS(path,mod,mk_some(ann));
 			}
 		)
 	;
@@ -879,7 +882,7 @@ constraining_clause returns [void *ast]
 			)
 			{
 				if (!mod) mod = mk_nil();
-				ast = Absyn__EXTENDS(path,mod);
+				ast = Absyn__EXTENDS(path,mod,mk_none());
 			}
 		)
 	;
