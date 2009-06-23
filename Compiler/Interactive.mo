@@ -17774,13 +17774,12 @@ algorithm
   outP := matchcontinue(modelName,p)
   local AbsynDep.Depends dep; AbsynDep.AvlTree uses; Absyn.Program p2,p1;
     case(modelName,p) equation
-      /*dep = getTotalProgram2(modelName,p);
+      dep = getTotalProgram2(modelName,p);
       uses = AbsynDep.getUsesTransitive(dep,modelName);
       uses = AbsynDep.avlTreeAdd(uses,modelName,{});
       p1 = extractProgram(p,uses);
       p2 = getTotalModelOnTop(p,modelName) "creates a top model if target is qualified";      
-      p = updateProgram(p1,p2);
-      */
+      p = updateProgram(p1,p2);      
       // Debug.fprintln("deps", Dump.unparseStr(p, false));
     then p;  
   end matchcontinue;
@@ -18002,8 +18001,13 @@ algorithm
           d = buildClassDependsInImport(import_,optPath,cname,(d,p,env,ht));
         then d;
           
+        case(false,Absyn.CLASSDEF(class_=cl as Absyn.CLASS(name="equalityConstraint", body = classDef)),optPath,cname,(d,p,env,ht))
+          equation
+          d = AbsynDep.addDependency(d, cname, Absyn.joinPaths(cname,Absyn.IDENT("equalityConstraint")));
+          then d;
+              
         case(false,Absyn.CLASSDEF(class_=cl as Absyn.CLASS(name=id, body = classDef)),optPath,cname,(d,p,env,ht))
-          /* adrpo: what about type.equalityConstraint? 
+          /*  
           equation          
             env2 = getClassEnvNoElaborationScope(p,optPath,env);
             d = buildClassDependsInClassDef(classDef,optPath,Absyn.IDENT(id),(d,p,env2,ht));
