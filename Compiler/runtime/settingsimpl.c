@@ -47,8 +47,10 @@
 #endif
 
 char* compileCommand = 0;
+char* compilePath = 0;
 char* tempDirectoryPath = 0;
 char* plotCommand = 0;
+
 int echo = 1; //true
 
 char* _replace(char* source_str,char* search_str,char* replace_str); //Defined in systemimpl.c
@@ -66,15 +68,16 @@ void Settings_5finit(void)
 	numChars= GetTempPath(1024, tempDirectory);
 	if (numChars == 1024 || numChars == 0) {
 		printf("Error setting temppath in Kernel\n");
-	} else {
-	if (tempDirectoryPath) {
+	} 
+	else {
+	 if (tempDirectoryPath) {
 		free(tempDirectoryPath);
 		tempDirectoryPath=0;
-	}
-	// Must do replacement in two steps, since the _replace function can not have similar source as target.
-	str = _replace(tempDirectory,"\\","/");
-	tempDirectoryPath= _replace(str,"/","\\\\");
-	free(str);
+	 }
+	 // Must do replacement in two steps, since the _replace function can not have similar source as target.
+	 str = _replace(tempDirectory,"\\","/");
+	 tempDirectoryPath= _replace(str,"/","\\\\");
+	 free(str);
 	}
 #else
   char* str = NULL;
@@ -88,6 +91,9 @@ void Settings_5finit(void)
     strcpy(tempDirectoryPath, str);
   }
 #endif
+compileCommand = malloc(sizeof(char)*(strlen("g++") + 1)); 
+strcpy(compileCommand,"g++");
+
 
 }
 
@@ -106,13 +112,11 @@ RML_BEGIN_LABEL(Settings__setCompileCommand)
   char* command = RML_STRINGDATA(rmlA0);
   if(compileCommand)
     free(compileCommand);
-
   compileCommand = (char*)malloc(strlen(command)+1);
   if (compileCommand == NULL) {
     RML_TAILCALLK(rmlFC);
   }
   memcpy(compileCommand,command,strlen(command)+1);
-
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
@@ -121,6 +125,31 @@ RML_BEGIN_LABEL(Settings__getCompileCommand)
 {
   if(compileCommand)
     rmlA0 = (void*) mk_scon(strdup(compileCommand));
+  else
+    rmlA0 = (void*) mk_scon("");
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(Settings__setCompilePath)
+{
+  char* command = RML_STRINGDATA(rmlA0);
+  if(compilePath)
+    free(compilePath);
+
+  compilePath = (char*)malloc(strlen(command)+1);
+  if (compilePath == NULL) {
+    RML_TAILCALLK(rmlFC);
+  }
+  memcpy(compilePath,command,strlen(command)+1);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(Settings__getCompilePath)
+{
+  if(compilePath)
+    rmlA0 = (void*) mk_scon(strdup(compilePath));
   else
     rmlA0 = (void*) mk_scon("");
   RML_TAILCALLK(rmlSC);
@@ -297,6 +326,9 @@ RML_BEGIN_LABEL(Settings__dumpSettings)
 {
   if(compileCommand)
     printf("compile command: %s\n",compileCommand);
+
+  if(compilePath)
+    printf("Compiler path: %s\n",compilePath);
 
 
   if(tempDirectoryPath)
