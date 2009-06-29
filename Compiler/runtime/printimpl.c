@@ -35,7 +35,7 @@
 
 
 #define GROWTH_FACTOR 1.4  /* According to some roumours of buffer growth */
-#define INITIAL_BUFSIZE 4000 /* Seems reasonable */
+#define INITIAL_BUFSIZE 1000 /* Seems reasonable */
 char *buf = NULL;
 char *errorBuf = NULL;
 
@@ -172,12 +172,15 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(Print__getString)
 {
-  if (buf == 0) {
+  if(buf == NULL || buf[0]=='\0' || cursize==0){
+	  rmlA0=(void*)mk_scon("");
+	  RML_TAILCALLK(rmlSC);
+  }
+  if (buf == 0) {	
     if (increase_buffer() != 0) {
       RML_TAILCALLK(rmlFC);
     }
   }
-
   rmlA0=(void*)mk_scon(buf);
   RML_TAILCALLK(rmlSC);
 }
@@ -210,20 +213,20 @@ RML_END_LABEL
 
 int increase_buffer(void)
 {
+	
   char * new_buf;
   int new_size;
-
   if (cursize == 0) {
-    new_buf = (char*)malloc(INITIAL_BUFSIZE);
+    new_buf = (char*)malloc(INITIAL_BUFSIZE*sizeof(char));
     if (new_buf == NULL) { return -1; }
     new_buf[0]='\0';
     cursize = INITIAL_BUFSIZE;
   } else {
   	//fprintf(stderr,"increasing buffer from %d to %d \n",cursize,((int)(cursize * GROWTH_FACTOR)));
-    new_buf = (char*)malloc(new_size =(int) (cursize * GROWTH_FACTOR));
+    new_buf = (char*)malloc((new_size =(int) (cursize * GROWTH_FACTOR))*sizeof(char));
     if (new_buf == NULL) { return -1; }
     memcpy(new_buf,buf,cursize);
-    cursize = new_size;
+    cursize = new_size;    
   }
   if (buf) {
     free(buf);
@@ -238,13 +241,14 @@ int increase_buffer_fixed(int increase)
   int new_size;
 
   if (cursize == 0) {
-    new_buf = (char*)malloc(increase);
+    new_buf = (char*)malloc(increase*sizeof(char));
     if (new_buf == NULL) { return -1; }
     new_buf[0]='\0';
     cursize = increase;
   } else {
-  	//fprintf(stderr,"increasing buffer from %d to %d \n",cursize,((int)(cursize * GROWTH_FACTOR)));
-    new_buf = (char*)malloc(new_size =(int) (increase));
+	new_size = (int)(cursize+increase);
+  	//fprintf(stderr,"increasing buffer_FIXED_ from %d to %d \n",cursize,new_size);
+    new_buf = (char*)malloc(new_size*sizeof(char));
     if (new_buf == NULL) { return -1; }
     //memcpy(new_buf,buf,cursize);
     cursize = new_size;
@@ -263,12 +267,12 @@ int error_increase_buffer(void)
   int new_size;
 
   if (errorCursize == 0) {
-    new_buf = (char*)malloc(INITIAL_BUFSIZE);
+    new_buf = (char*)malloc(INITIAL_BUFSIZE*sizeof(char));
     if (new_buf == NULL) { return -1; }
     new_buf[0]='\0';
     errorCursize = INITIAL_BUFSIZE;
   } else {
-    new_buf = (char*)malloc(new_size =(int) (errorCursize * GROWTH_FACTOR));
+    new_buf = (char*)malloc(new_size =(int) (errorCursize * GROWTH_FACTOR*sizeof(char)));
     if (new_buf == NULL) { return -1; }
     memcpy(new_buf,errorBuf,errorCursize);
     errorCursize = new_size;
