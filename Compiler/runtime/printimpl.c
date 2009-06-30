@@ -35,7 +35,7 @@
 
 
 #define GROWTH_FACTOR 1.4  /* According to some roumours of buffer growth */
-#define INITIAL_BUFSIZE 1000 /* Seems reasonable */
+#define INITIAL_BUFSIZE 4000 /* Seems reasonable */
 char *buf = NULL;
 char *errorBuf = NULL;
 
@@ -162,6 +162,7 @@ RML_BEGIN_LABEL(Print__clearBuf)
   nfilled=0;
   if (buf != 0) {
     /* adrpo 2008-12-15 free the print buffer as it might have got quite big meantime */
+    free(buf);
     buf = NULL;
     cursize = 0;
   }
@@ -272,7 +273,7 @@ int error_increase_buffer(void)
     new_buf[0]='\0';
     errorCursize = INITIAL_BUFSIZE;
   } else {
-    new_buf = (char*)malloc(new_size =(int) (errorCursize * GROWTH_FACTOR*sizeof(char)));
+    new_buf = (char*)malloc((new_size =(int) (errorCursize * GROWTH_FACTOR))*sizeof(char));
     if (new_buf == NULL) { return -1; }
     memcpy(new_buf,errorBuf,errorCursize);
     errorCursize = new_size;
