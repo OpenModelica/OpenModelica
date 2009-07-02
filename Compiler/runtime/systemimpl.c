@@ -1881,7 +1881,7 @@ for(; RML_GETHDR(timeValues) == RML_CONSHDR && valueFound == 0; timeValues = RML
   }
   if(valueFound == 0){
 		// value could not be found in the dataset, what do we do?
-		printf("\n WARNING: timestamp outside simulation timeline \n");
+	    printf("\n WARNING: timestamp(%f) outside simulation timeline \n",timeStamp);
 		RML_TAILCALLK(rmlFC);
 	} else {
 

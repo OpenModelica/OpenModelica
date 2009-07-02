@@ -345,6 +345,59 @@ algorithm
   end matchcontinue;
 end instantiateClass;
 
+public function instantiatePartialClass "
+Author: BZ, 2009-07
+This is a function for instantiating partial 'top' classes.
+It does so by converting the partial class into a non partial class.
+"
+	input Env.Cache inCache;
+  input SCode.Program inProgram;
+  input SCode.Path inPath;
+  output Env.Cache outCache;
+  output DAE.DAElist outDAElist;
+  output Env outEnv;
+algorithm 
+  (outCache,outDAElist,outEnv) := matchcontinue (inCache,inProgram,inPath)
+    local
+      Absyn.Path cr,path;
+      list<Env.Frame> env,env_1,env_2;
+      list<DAE.Element> dae1,dae;
+      list<SCode.Class> cdecls;
+      String name2,n,pathstr,name,cname_str;
+      SCode.Class cdef;
+      Env.Cache cache;
+    case (cache,{},cr)
+      equation 
+        Error.addMessage(Error.NO_CLASSES_LOADED, {});
+      then
+        fail();
+    case (cache,(cdecls as (_ :: _)),(path as Absyn.IDENT(name = name2))) /* top level class */ 
+      equation 
+        (cache,env) = Builtin.initialEnv(cache);
+        (cache,env_1,dae1) = instClassDecls(cache,env, cdecls, path);
+        cdecls = Util.listMap1(cdecls,SCode.classSetPartial,false);
+        (cache,dae,env_2) = instClassInProgram(cache,env_1, cdecls, path);
+      then
+        (cache,DAE.DAE({DAE.COMP(name2,DAE.DAE(dae))}),env_2);
+    case (cache,(cdecls as (_ :: _)),(path as Absyn.QUALIFIED(name = name))) /* class in package */ 
+      equation 
+        (cache,env) = Builtin.initialEnv(cache);
+        (cache,env_1,_) = instClassDecls(cache,env, cdecls, path);
+        (cache,(cdef as SCode.CLASS(n,_,_,_,_)),env_2) = Lookup.lookupClass(cache,env_1, path, true);
+        cdef = SCode.classSetPartial(cdef, false);
+        (cache,dae,env_2,_,_,_,_,_) = instClass(cache,env_2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cdef, {}, false, TOP_CALL(), ConnectionGraph.EMPTY) "impl" ;
+        pathstr = Absyn.pathString(path);
+      then
+        (cache,DAE.DAE({DAE.COMP(pathstr,DAE.DAE(dae))}),env_2);
+    case (cache,cdecls,path) /* error instantiating */ 
+      equation 
+        cname_str = Absyn.pathString(path);
+        Error.addMessage(Error.ERROR_FLATTENING, {cname_str});
+      then
+        fail();
+  end matchcontinue;
+end instantiatePartialClass;
+
 public function instantiateClassImplicit 
 "function: instantiateClassImplicit
   author: PA
@@ -12802,9 +12855,17 @@ algorithm
         crs = Util.listMap(innerVars,DAE.varCref);
         {} = Util.listSelect1(crs, cr,isInnerOuterMatch);
         str = Exp.printComponentRefStr(cr);
-        Error.addMessage(Error.MISSING_INNER_PREFIX,{str,str2});
         failExceptForCheck();
       then (); 
+    case(DAE.VAR(componentRef=cr, innerOuter = io),innerVars) 
+      local Absyn.InnerOuter io;
+      equation
+        str2 = Dump.unparseInnerouterStr(io);
+        crs = Util.listMap(innerVars,DAE.varCref);
+        {} = Util.listSelect1(crs, cr,isInnerOuterMatch);
+        str = Exp.printComponentRefStr(cr);
+        Error.addMessage(Error.MISSING_INNER_PREFIX,{str,str2});
+      then fail(); 
   end matchcontinue;
 end checkMissingInnerDecl2;
 

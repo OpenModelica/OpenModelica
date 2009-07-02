@@ -3164,6 +3164,7 @@ algorithm
       local Exp.Type t; String str;
       equation
         (cache,exp_1,Types.PROP(tp,c),_) = elabExp(cache,env, exp, impl, NONE,true);
+        (tp,_) = Types.flattenArrayType(tp);
         true = Types.basicType(tp);
         t = Types.elabType(tp);
         exp_2 = Exp.CALL(Absyn.IDENT("pre"),{exp_1},false,true,t);
@@ -3173,6 +3174,7 @@ algorithm
       local Exp.Exp exp;
       equation
         (cache,exp,Types.PROP(tp,c),_) = elabExp(cache,env, exp, impl, NONE,true);
+        (tp,_) = Types.flattenArrayType(tp);
         false = Types.basicType(tp);
         s = Exp.printExpStr(exp);
         Error.addMessage(Error.OPERAND_BUILTIN_TYPE, {"pre",s});
