@@ -228,6 +228,23 @@ bool Unit::isDimensionless()
 	return (typeParamVec.size() == 0);
 }
 
+bool Unit::isBaseUnit()
+{
+	bool onefound = false;
+	for(vector<Rational>::iterator p = unitVec.begin(); p != unitVec.end(); p++){
+		if((*p).denom != 1)
+			return false;
+		if((*p).num == 1){
+			if(onefound) return false;
+			else onefound = true;
+		}
+		else if((*p).num != 0)
+			 return false;		
+	}
+	return true;
+}
+
+
 /***************************************************************************************/
 /*   CLASS: UnitParser                                                                 */
 /***************************************************************************************/
@@ -258,7 +275,13 @@ void UnitParser::addBase(const string quantityName, const string unitName, const
 	for(unsigned long j=0; j < _base.size(); j++){
 		u.unitVec.push_back(Rational((_base.size()-1)==j?1:0));
 	}
-	_derived[b.unitSymbol] = u;
+	
+	//Force the old unit vectors to have the same lenght as the new one
+	for(map<string,Unit>::iterator p = _units.begin(); p != _units.end(); p++){
+		(*p).second.unitVec.push_back(Rational(0));
+	}
+
+	_units[b.unitSymbol] = u;
 }
 
 
@@ -276,7 +299,7 @@ UnitRes UnitParser::addDerived(const string quantityName, const string unitName,
 	u.prefixExpo = prefixExpo;
 	u.scaleFactor = scaleFactor;
 	u.offset = offset;
-	_derived[unitSymbol] = u;
+	_units[unitSymbol] = u;
 	return res;
 }
 
@@ -287,6 +310,7 @@ string UnitParser::unit2str(Unit unit)
 	// - Develop a way to generate the most appropriate derived units as well.
 	// - Support for offset
 	// - Support for SI-prefixes
+
 
 	bool first(true);
 	stringstream ss;
@@ -490,17 +514,17 @@ UnitRes UnitParser::parseSymbol(Scanner& scan, Unit& unit)
 	if(tok != scan.TOK_ID) return UnitRes(UnitRes::PARSE_ERROR, scan.getLastPos());
 	
 	//Only a derived unit?
-	if(_derived.find(str) != _derived.end())
+	if(_units.find(str) != _units.end())
 	{
-		unit = _derived[str];
+		unit = _units[str];
 		return UnitRes(UnitRes::UNIT_OK);
 	}
 	
 	//Find prefix
 	for(unsigned int i=1; i<=str.size(); i++){
 		if(_prefix.find(str.substr(0,i)) != _prefix.end()){
-			if(_derived.find(str.substr(i)) != _derived.end()){
-				unit = _derived[str.substr(i)];
+			if(_units.find(str.substr(i)) != _units.end()){
+				unit = _units[str.substr(i)];
 				if(!unit.prefixAllowed)
 					return UnitRes(UnitRes::PREFIX_NOT_ALLOWED, scan.getLastPos());
 				unit.prefixExpo = Rational::add(unit.prefixExpo,_prefix[str.substr(0,i)]);
@@ -719,7 +743,6 @@ bool Scanner::finished(){
 }
 
   
-
 /** Test function that prints out tokenized strings. */
 void TestScanner(){
 	string s = "  (	. hi.There'we.are12.-0211 +77	) /";

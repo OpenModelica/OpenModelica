@@ -114,6 +114,9 @@ public:
 	/* Returns true if both the unitVec only contains zero exponents, and there are no type parameters */
 	bool isDimensionless();
 
+	/* Returns true if the unit is a base unit. If it is a derived unit, false is returned. */
+	bool isBaseUnit();
+
 	/** Internal variable for handling kg units */
 	bool prefixAllowed;
 
@@ -220,8 +223,8 @@ private:
 	/** Base quantities and units(vector of names) */
 	vector<Base> _base;
 	
-	/** Derived units map. Mapping from unit symbol to unit definition */
-	map<string,Unit> _derived;
+	/** Mapping from unit symbol to unit definitions. Includes both base and derived units. */
+	map<string,Unit> _units;
 
 	/** Parse */
 	UnitRes parseExpression(Scanner& scan, Unit& unit);
