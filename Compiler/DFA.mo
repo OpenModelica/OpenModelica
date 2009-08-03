@@ -941,7 +941,7 @@ public function extractFieldName
 algorithm
   id := matchcontinue (elem)
     local Absyn.Ident localId;
-    case (SCode.COMPONENT(localId,_,_,_,_,_,_,_,_,_,_,_)) then localId;
+    case (SCode.COMPONENT(localId,_,_,_,_,_,_,_,_,_,_,_,_)) then localId;
   end matchcontinue;
 end extractFieldName;
 

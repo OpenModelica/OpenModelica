@@ -283,6 +283,7 @@ uniontype Element "- Elements
     Boolean replaceablePrefix  "replaceable prefix" ;
     Class   classDef           "the class definition" ;
     Option<Path> baseClassPath "the base class path if this class definition originates from a base class" ;
+    Option<Absyn.ConstrainClass> cc;
   end CLASSDEF;
 
   record IMPORT "an import element"
@@ -302,6 +303,7 @@ uniontype Element "- Elements
     Option<Absyn.Comment> comment "this if for extraction of comments and annotations from Absyn" ;
     Option<Absyn.Exp> condition   "the conditional declaration of a component";
     Option<Absyn.Info> info       "this is for line and column numbers, also file name.";
+    Option<Absyn.ConstrainClass> cc "The constraining class for the component"; 
   end COMPONENT;
 end Element;
 
@@ -650,28 +652,43 @@ algorithm
       list<Element> els,es_1,els_1;
       list<Absyn.ElementItem> es;
       list<Absyn.ClassPart> rest;
+      Absyn.ClassPart cp;
     case {} then {}; 
-    case ((Absyn.PUBLIC(contents = es) :: rest))
+    case(Absyn.PUBLIC(contents = es) :: rest)
       equation 
         es_1 = elabEitemlist(es, false);      
         els = elabClassdefElements(rest);
         els_1 = listAppend(es_1, els);
       then
         els_1;
-    case ((Absyn.PROTECTED(contents = es) :: rest))
+    case(Absyn.PROTECTED(contents = es) :: rest)
       equation 
         es_1 = elabEitemlist(es, true);      
         els = elabClassdefElements(rest);
         els_1 = listAppend(es_1, els);
       then
         els_1;
-    case (_ :: rest) /* ignore all other than PUBLIC and PROTECTED, i.e. elements */ 
+    case (cp :: rest) /* ignore all other than PUBLIC and PROTECTED, i.e. elements */ 
       equation 
+        false = isPubOrProt(cp);
         els = elabClassdefElements(rest);
       then
         els;
   end matchcontinue;
 end elabClassdefElements;
+
+protected function isPubOrProt "
+Author: BZ
+Helper function for elabClassdefElements, verify a fail
+"
+  input Absyn.ClassPart cp;
+  output Boolean ob;
+algorithm ob := matchcontinue(cp)
+  case(Absyn.PUBLIC(contents = _)) then true;
+  case(Absyn.PROTECTED(contents = _)) then true;
+  case(_) then false;
+end matchcontinue;
+end isPubOrProt;
 
 protected function elabClassdefEquations 
 "function: elabClassdefEquations 
@@ -882,9 +899,16 @@ algorithm
       Absyn.ElementSpec s;
       Absyn.InnerOuter io;
       Absyn.Info info;
-    case (Absyn.ELEMENT(finalPrefix = f,innerOuter = io, redeclareKeywords = repl,specification = s,info = info),prot)
+      Option<Absyn.ConstrainClass> cc;
+      Absyn.Path p;
+    case (Absyn.ELEMENT(constrainClass = (cc as SOME(Absyn.CONSTRAINCLASS(elementSpec = Absyn.EXTENDS(path=p)))), finalPrefix = f,innerOuter = io, redeclareKeywords = repl,specification = s,info = info),prot)
       equation 
-        es = elabElementspec(f, io, repl,  prot, s,SOME(info));
+        es = elabElementspec(cc,f, io, repl,  prot, s,SOME(info));
+      then
+        es;
+    case (Absyn.ELEMENT(constrainClass = cc,finalPrefix = f,innerOuter = io, redeclareKeywords = repl,specification = s,info = info),prot)
+      equation 
+        es = elabElementspec(cc, f, io, repl,  prot, s,SOME(info));
       then
         es;
   end matchcontinue;
@@ -894,6 +918,7 @@ protected function elabElementspec
 "function: elabElementspec 
   This function turns an Absyn.ElementSpec to a list of SCode.Element.
   The boolean arguments say if the element is final and protected, respectively."
+  input Option<Absyn.ConstrainClass> cc;
   input Boolean finalPrefix;
   input Absyn.InnerOuter io;
   input Option<Absyn.RedeclareKeywords> inAbsynRedeclareKeywordsOption2;
@@ -902,7 +927,7 @@ protected function elabElementspec
   input Option<Absyn.Info> info;
   output list<Element> outElementLst;
 algorithm 
-  outElementLst := matchcontinue (finalPrefix,io,inAbsynRedeclareKeywordsOption2,inBoolean3,inElementSpec4,info)
+  outElementLst := matchcontinue (cc,finalPrefix,io,inAbsynRedeclareKeywordsOption2,inBoolean3,inElementSpec4,info)
     local
       ClassDef de_1;
       Restriction re_1;
@@ -926,7 +951,7 @@ algorithm
       list<Absyn.ComponentItem> xs;
       Absyn.Import imp;
       Option<Absyn.Exp> cond;
-    case (finalPrefix,_,repl,prot,
+    case (cc,finalPrefix,_,repl,prot,
       Absyn.CLASSDEF(replaceable_ = rp,
                      class_ = (cl as Absyn.CLASS(name = n,partialPrefix = pa,finalPrefix = fi,encapsulatedPrefix = e,restriction = re,
                                                  body = de,info = file_info))),info)
@@ -935,9 +960,9 @@ algorithm
         re_1 = elabRestriction(cl, re); // uniontype will not get elaborated!
         de_1 = elabClassdef(de);
       then
-        {CLASSDEF(n,finalPrefix,rp,CLASS(n,pa,e,re_1,de_1),NONE)};
+        {CLASSDEF(n,finalPrefix,rp,CLASS(n,pa,e,re_1,de_1),NONE,cc)};
 
-    case (finalPrefix,_,repl,prot,Absyn.EXTENDS(path = n,elementArg = args),info)
+    case (cc,finalPrefix,_,repl,prot,Absyn.EXTENDS(path = n,elementArg = args),info)
       local Absyn.Path n;
       equation 
         Debug.fprintln("elab", "elaborating extends: " +& Absyn.pathString(n));        
@@ -946,23 +971,23 @@ algorithm
       then
         {EXTENDS(n,mod)};
 
-    case (_,_,_,_,Absyn.COMPONENTS(components = {}),info) then {};
+    case (cc,_,_,_,_,Absyn.COMPONENTS(components = {}),info) then {};
  
-    case (finalPrefix,io,repl,prot,Absyn.COMPONENTS(attributes = 
+    case (cc,finalPrefix,io,repl,prot,Absyn.COMPONENTS(attributes = 
       (attr as Absyn.ATTR(flowPrefix = fl,streamPrefix=st,variability = pa,direction = di,arrayDim = ad)),typeSpec = t,
       components = (Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = n,arrayDim = d,modification = m),comment = comment,condition=cond) :: xs)),info)
       local Absyn.Variability pa;
       equation 
         Debug.fprintln("elab", "elaborating component: " +& n);        
-        xs_1 = elabElementspec(finalPrefix, io, repl, prot, Absyn.COMPONENTS(attr,t,xs),info);
-        mod = buildMod(m, false, Absyn.NON_EACH());
+        xs_1 = elabElementspec(cc,finalPrefix, io, repl, prot, Absyn.COMPONENTS(attr,t,xs),info);
+        mod = buildMod(m, false, Absyn.NON_EACH());          
         pa_1 = elabVariability(pa) "PR. This adds the arraydimension that may be specified together with the type of the component." ;
         tot_dim = listAppend(d, ad);
         repl_1 = elabRedeclarekeywords(repl);
       then
-        (COMPONENT(n,io,finalPrefix,repl_1,prot,ATTR(tot_dim,fl,st,RW(),pa_1,di),t,mod,NONE,comment,cond,info) :: xs_1);
+        (COMPONENT(n,io,finalPrefix,repl_1,prot,ATTR(tot_dim,fl,st,RW(),pa_1,di),t,mod,NONE,comment,cond,info,cc) :: xs_1);
 
-    case (finalPrefix,_,repl,prot,Absyn.IMPORT(import_ = imp),_) 
+    case (cc,finalPrefix,_,repl,prot,Absyn.IMPORT(import_ = imp),_) 
       equation
         Debug.fprintln("elab", "elaborating import: " +& Dump.unparseImportStr(imp));
       then 
@@ -1239,10 +1264,162 @@ algorithm
     case (SOME(Absyn.CLASSMOD(l,NONE)),finalPrefix,each_)
       equation 
         subs = buildArgs(l);
+        true = verifyNonMultipleMods(l);
       then
         MOD(finalPrefix,each_,subs,NONE);        
   end matchcontinue;
 end buildMod;
+
+protected function verifyNonMultipleMods "
+Author: BZ, 2008-07
+This function checks that we do not have multiple modifiers on same component.
+Ex 'myModel mo(C=3.15,redeclare Modelica.Resistor C)' should generate an error.
+"
+input list<Absyn.ElementArg> elems;
+output Boolean succ;
+algorithm succ := matchcontinue(elems)
+  case(elems) equation true = listLength(elems) <=1; then true;
+    
+  case(elems)
+    local
+      String errorString,errorComp;
+      Absyn.ComponentRef cr;
+    equation
+      (errorString,(cr as Absyn.CREF_IDENT(errorComp,_))) = getDoubleMods(elems,{});
+      false = intEq(stringLength(errorString),0); 
+      Error.addMessage(Error.MULTIPLE_MODIFIER, {errorComp,errorString});
+      then
+        false;
+  
+  case(elems) then true;
+  end matchcontinue;
+end verifyNonMultipleMods;
+
+protected function getDoubleMods "
+Author BZ
+Helper function for verifyNonMultipleMods
+"
+  input list<Absyn.ElementArg> elems;
+  input list<Absyn.ComponentRef> crefs;
+  output String double;
+  output Absyn.ComponentRef double;
+algorithm double := matchcontinue(elems,crefs)
+  local
+    Absyn.ComponentRef cr,doubleCr;
+    Absyn.ElementArg ea;
+    String error,n,error2;
+    Absyn.ElementSpec spec;
+    Option<Absyn.Modification> oam;
+  case({},cr::_) then ("", cr);
+  case((ea as Absyn.MODIFICATION(componentReg = cr,modification=oam))::elems,crefs)
+    equation
+      false = Util.listContainsWithCompareFunc(cr,crefs,Absyn.crefEqual);
+      (error, doubleCr) = getDoubleMods(elems,cr::crefs);
+      error2 = prettyPrintElementModifier(ea);
+      error = error +& Util.if_(boolAnd(stringLength(error)>0,Absyn.crefEqual(doubleCr,cr))," and " +& error2 ,"");
+    then
+      (error,cr);
+      
+  case((ea as Absyn.MODIFICATION(componentReg = cr,modification=oam))::elems,crefs)
+    equation
+      true = Util.listContainsWithCompareFunc(cr,crefs,Absyn.crefEqual);
+      error = prettyPrintElementModifier(ea);
+    then
+      (error,cr);
+  case(Absyn.REDECLARATION(elementSpec = spec)::elems,crefs)
+    equation
+      n = Absyn.elementSpecName(spec);
+      cr = Absyn.CREF_IDENT(n,{});
+      false = Util.listContainsWithCompareFunc(cr,crefs,Absyn.crefEqual);
+      (error, doubleCr) = getDoubleMods(elems,cr::crefs);
+      error = error +& Util.if_(boolAnd(stringLength(error)>0,Absyn.crefEqual(doubleCr,cr))," and Redeclaration of component " +& n,"");
+    then
+      (error,cr); 
+  case(Absyn.REDECLARATION(elementSpec = spec)::elems,crefs)
+    equation
+      n = Absyn.elementSpecName(spec);
+      cr = Absyn.CREF_IDENT(n,{});
+      true = Util.listContainsWithCompareFunc(cr,crefs,Absyn.crefEqual);
+    then
+      ("Redeclaration of component "+&n,cr); 
+end matchcontinue;
+end getDoubleMods;
+
+protected function prettyPrintOptModifier "
+Author BZ, 2008-07
+Pretty print SCode.Mod
+"
+input Option<Absyn.Modification> oam;
+input String comp;
+output String str;
+algorithm str := matchcontinue(oam,comp)
+  local
+    Absyn.Modification m;
+  case(NONE,_) then "";
+  case(SOME(m),comp)
+    equation
+      str = prettyPrintModifier(m,comp);
+      then
+        str; 
+  end matchcontinue;
+end prettyPrintOptModifier;
+
+protected function prettyPrintModifier "
+Author BZ, 2008-07
+Helper function for prettyPrintOptModifier
+"
+input Absyn.Modification oam;
+input String comp;
+output String str;
+algorithm str := matchcontinue(oam,comp)
+  local
+    Absyn.Modification m;
+    Absyn.Exp exp;
+    list<Absyn.ElementArg> laea;
+    Absyn.ElementArg aea; 
+  case(Absyn.CLASSMOD(_,SOME(exp)),comp)
+    equation
+      str = comp +& " = " +&Dump.printExpStr(exp);
+      then
+        str;
+  case(Absyn.CLASSMOD((laea as aea::{}),NONE),comp)
+    equation
+    str = comp +& "(" +&prettyPrintElementModifier(aea) +&")";
+    then
+      str; 
+  case(Absyn.CLASSMOD((laea as _::{}),NONE),comp)
+    equation
+      str = comp +& "({" +& Util.stringDelimitList(Util.listMap(laea,prettyPrintElementModifier),", ") +& "})";
+    then
+      str;
+  end matchcontinue;
+end prettyPrintModifier;
+
+protected function prettyPrintElementModifier "
+Author BZ, 2008-07
+Helper function for prettyPrintOptModifier
+
+TODO: implement type of new redeclare component
+"
+  input Absyn.ElementArg aea;
+  output String str;
+algorithm str := matchcontinue(aea)
+  local
+    Option<Absyn.Modification> oam;
+    String compName;
+    Absyn.ElementSpec spec;
+    Absyn.ComponentRef cr;
+  case(Absyn.MODIFICATION(modification = oam,componentReg=cr))
+    equation  
+      compName = Absyn.printComponentRefStr(cr);
+    then prettyPrintOptModifier(oam,compName);
+  case(Absyn.REDECLARATION(elementSpec=spec))
+    equation
+      compName = Absyn.elementSpecName(spec);
+    then
+      "Redeclaration of (" +& compName +& ")";
+end matchcontinue;
+end prettyPrintElementModifier;
 
 public function stripSubmod 
 "function: stripSubmod
@@ -1298,7 +1475,7 @@ algorithm
       equation 
         subs = buildArgs(xs);
         n = Absyn.elementSpecName(spec);
-        elist = elabElementspec(finalPrefix, Absyn.UNSPECIFIED(), NONE, false, spec, NONE) 
+        elist = elabElementspec(constropt,finalPrefix, Absyn.UNSPECIFIED(), NONE, false, spec, NONE) 
         "LS:: do not know what to use for *protected*, so using false 
          LS:: do not know what to use for *replaceable*, so using false" ;
       then
@@ -1563,9 +1740,7 @@ algorithm
     case {} then ""; 
     case {NAMEMOD(ident = n,A = mod)}
       equation 
-        Print.printBuf(n);
         s = printModStr(mod);
-        //s = " _mod--" +& printModStr(mod) +& "--mod_";
         res = stringAppend(n, s);
       then
         res;
@@ -1608,9 +1783,7 @@ algorithm
     case {} then ""; 
     case l
       equation 
-        Print.printBuf("(");
         s = printSubsStr(l);
-        Print.printBuf(")");
         res = Util.stringAppendList({"(",s,")"});
       then
         res;
@@ -2113,7 +2286,7 @@ public function elementEqual
       Absyn.InnerOuter io,io2;
       Attributes attr1,attr2; Mod mod1,mod2; 
       Absyn.TypeSpec tp1,tp2;
-     case (CLASSDEF(name1,f1,r1,cl1,_),CLASSDEF(name2,f2,r2,cl2,_))
+     case (CLASSDEF(name1,f1,r1,cl1,_,_),CLASSDEF(name2,f2,r2,cl2,_,_))
        equation
          b1 = stringEqual(name1,name2);
          b2 = Util.boolEqual(f1,f2);
@@ -2121,7 +2294,7 @@ public function elementEqual
          b3 = classEqual(cl1,cl2);
          equal = Util.boolAndList({b1,b2,b3});
        then equal;
-     case (COMPONENT(name1,io,f1,r1,p1,attr1,tp1,mod1,_,_,_,_), COMPONENT(name2,io2,f2,r2,p2,attr2,tp2,mod2,_,_,_,_))
+     case (COMPONENT(name1,io,f1,r1,p1,attr1,tp1,mod1,_,_,_,_,_), COMPONENT(name2,io2,f2,r2,p2,attr2,tp2,mod2,_,_,_,_,_))
        equation
          b1 = stringEqual(name1,name2);
          b1a = ModUtil.innerOuterEqual(io,io2);
@@ -2683,8 +2856,9 @@ algorithm
       Option<Absyn.Comment> a10;
       Option<Absyn.Exp> a11;
       Option<Absyn.Info> a12;
-  case(COMPONENT(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12), nfo)
-    then COMPONENT(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,SOME(nfo));
+      Option<Absyn.ConstrainClass> a13;
+  case(COMPONENT(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13), nfo)
+    then COMPONENT(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,SOME(nfo),a13);
   case(elem,_) then elem;
     end matchcontinue;
 end elabElementAddinfo;

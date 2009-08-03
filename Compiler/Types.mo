@@ -874,6 +874,75 @@ algorithm
   end matchcontinue;
 end stripSubmod;
 
+public function removeFirstSubsRedecl "
+Author: BZ, 2009-08
+Removed REDECLARE() statements at first level of SubMods
+"
+  input Mod inMod;
+  output Mod outMod;
+algorithm 
+  outMod:=
+  matchcontinue (inMod)
+    local
+      Boolean f;
+      Absyn.Each each_;
+      list<SubMod> subs;
+      Option<EqMod> eq;
+      Mod m;
+    case (MOD(finalPrefix = f,each_ = each_,subModLst = {},eqModOption = eq)) then MOD(f,each_,{},eq); 
+    case (MOD(finalPrefix = f,each_ = each_,subModLst = subs,eqModOption = NONE))
+      equation
+         {} = removeRedecl(subs);
+      then 
+        NOMOD(); 
+    case (MOD(finalPrefix = f,each_ = each_,subModLst = subs,eqModOption = eq))
+      equation
+         subs = removeRedecl(subs);
+      then 
+        MOD(f,each_,subs,eq); 
+    case (m) then m; 
+  end matchcontinue;
+end removeFirstSubsRedecl;
+
+protected function removeRedecl "
+Author BZ
+helper function for removeFirstSubsRedecl
+"
+input list<SubMod> subs;
+output list<SubMod> osubs;
+algorithm osubs := matchcontinue(subs)
+  local
+    SubMod sm;
+    String s;
+  case({}) then {};
+  case(NAMEMOD(s,REDECL(_,_))::subs)
+    equation
+       then removeRedecl(subs);
+  case(sm::subs) 
+    equation
+      osubs = removeRedecl(subs);
+      then
+        sm::osubs;
+  end matchcontinue;
+end removeRedecl;
+
+public function removeModList "
+Author BZ, 2009-07
+Delete a list of named modifiers
+"
+input Mod inMod;
+input list<String> remStrings;
+output Mod outMod;
+String s;
+algorithm outMod := matchcontinue(inMod,remStrings)  
+  case(inMod,{}) then inMod;
+  case(inMod, s::remStrings)
+    equation
+      inMod = removeMod(inMod,s);
+      then removeModList(inMod,remStrings);
+  end matchcontinue;
+end removeModList;
+
 public function removeMod "
 Author: BZ, 2009-05
 Remove a modifier(/s) on a specified component.
@@ -890,17 +959,12 @@ algorithm outmod := matchcontinue(inmod,componentModified)
     Option<EqMod> oem;
     list<tuple<SCode.Element, Mod>> redecls;
   case(NOMOD,_) then NOMOD;
-    // TODO: implement check for redeclare
   case((inmod as REDECL(b,redecls)),componentModified) 
     equation
       redecls = removeRedeclareMods(redecls,componentModified);
-      /*
-        record REDECL
-    Boolean finalPrefix "final" ;
-    list<tuple<SCode.Element, Mod>> tplSCodeElementModLst;
-  end REDECL;
-      */
-    then REDECL(b,redecls);
+      outmod = Util.if_(listLength(redecls) > 0,REDECL(b,redecls), NOMOD); 
+    then 
+      outmod;
     
   case(MOD(b,e,subs,oem),componentModified)
     equation
@@ -925,17 +989,12 @@ algorithm outLst := matchcontinue(inLst,currComp)
     equation      
       outLst = removeRedeclareMods(inLst,currComp);
       s1 = SCode.elementName(comp);
-      print(" found: " +& s1 +& "\n");
       true = stringEqual(s1,currComp);
     then
       outLst;
   case((comp,mod)::inLst,currComp)
     equation      
       outLst = removeRedeclareMods(inLst,currComp);
-      /*
-      s1 = SCode.elementName(comp);
-      false = stringEqual(s1,currComp);
-      */
     then
       (comp,mod)::outLst;
   case(_,_) equation print("removeRedeclareMods failed\n"); then fail();  

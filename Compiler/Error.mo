@@ -213,6 +213,7 @@ public constant ErrorID REDUNDANT_GUESS=513 "Used by MathCore in Backend";
 public constant ErrorID DERIVATIVE_NON_REAL=514;
 public constant ErrorID UNUSED_MODIFIER=515;
 public constant ErrorID SELECTED_STATES=515;
+public constant ErrorID MULTIPLE_MODIFIER=516;
 
 
 public constant ErrorID INDEX_REDUCTION_NOTIFICATION=1000;
@@ -380,7 +381,7 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (CONSTANT_OR_PARAM_WITH_NONCONST_BINDING,TRANSLATION(),
           ERROR(),"%s is a constant or parameter with a non-constant initializer %s"),
           (SUBSCRIPT_NOT_INT_OR_INT_ARRAY,TRANSLATION(),ERROR(),
-          "Subscript is not an integer or integer array in %s whis is of type %s"),
+          "Subscript is not an integer or integer array in %s which is of type %s"),
           (TYPE_MISMATCH_IF_EXP,TRANSLATION(),ERROR(),
           "Type mismatch in if-expression, true branch: %s has type %s,  false branch: %s has type %s"),
           (UNRESOLVABLE_TYPE,TRANSLATION(),ERROR(),
@@ -402,7 +403,7 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
 		      (BREAK_OUT_OF_LOOP, GRAMMAR(), WARNING(),
 		      "A break statement not inside a loop"),  
           (DUPLICATE_ELEMENTS_NOT_IDENTICAL,TRANSLATION(),ERROR(),
-          "Error duplicate elements (due to inherited elements) not identical, first element is: %s, second element is: %s"),
+          "Duplicate elements (due to inherited elements) not identical, first element is: %s, second element is: %s"),
           (PACKAGE_VARIABLE_NOT_CONSTANT, TRANSLATION(),ERROR(),"Variable %s in package %s is not constant"),
           (RECURSIVE_DEFINITION,TRANSLATION(),ERROR(),"Class %s has a recursive definition, i.e. contains an instance of itself"),
           (UNBOUND_PARAMETER_WARNING,TRANSLATION(),WARNING(),
@@ -465,14 +466,18 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           "Modification on outer element: %s"),          
           (REDUNDANT_GUESS,TRANSLATION(),WARNING(),  
           "Start value is assigned for variable: %s, but not used since %s"),
-          (UNUSED_MODIFIER,TRANSLATION(),WARNING(),  
-          "Modifer declared but never used: %s %s"),
+          (UNUSED_MODIFIER,TRANSLATION(),ERROR(),   
+          "In modifier %s"),
           (MISSING_INNER_PREFIX,TRANSLATION(),ERROR(),
           "No corresponding 'inner' declaration found for component %s declared as '%s'."),
           (DERIVATIVE_NON_REAL,TRANSLATION(),ERROR(),  
           "Illegal derivative. der(%s) where %s is of type %s, which is not a subtype of Real"),
           (IMPLICIT_ITERATOR_NOT_FOUND_IN_LOOP_BODY,TRANSLATION(),ERROR(),
           "Identificator %s of implicit for iterator must be present as array subscript in the loop body."),
+          
+          (MULTIPLE_MODIFIER,TRANSLATION(),ERROR(),
+          "Multiple modifers in same scope for component %s, modifiers: %s"),
+          
           (STRUCT_SINGULAR_SYSTEM_INITIALIZATION,TRANSLATION(),ERROR(),
           "The initialization problem of model is structurally singular, error found sorting equations %s for variables %s"),
           (CIRCULAR_EQUATION, TRANSLATION(),ERROR(), " Equation : '%s'  has circular references for variable %s."),

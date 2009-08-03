@@ -8005,7 +8005,7 @@ algorithm
     case (cache,(SLOT(an = (id,tp),true_ = false,expExpOption = e,typesArrayDimLst = ds) :: xs),class_,env,impl)
       equation 
         (cache,res) = fillDefaultSlots(cache,xs, class_, env, impl);
-        SCode.COMPONENT(_,_,_,_,_,_,_,SCode.MOD(_,_,_,SOME((dexp,_))),_,_,_,_) = SCode.getElementNamed(id, class_);
+        SCode.COMPONENT(_,_,_,_,_,_,_,SCode.MOD(_,_,_,SOME((dexp,_))),_,_,_,_,_) = SCode.getElementNamed(id, class_);
         (cache,exp,Types.PROP(t,c1),_) = elabExp(cache,env, dexp, impl, NONE,true);
         (exp_1,_) = Types.matchType(exp, t, tp);
       then
@@ -8098,7 +8098,7 @@ algorithm
 
         /* check if vectorized argument */         
     case (cache,env,(e :: es),((farg as (_,vt)) :: vs),slots,checkTypes as true,impl) 
-      equation 
+      equation
         (cache,e_1,Types.PROP(t,c1),_) = elabExp(cache,env, e, impl, NONE,true);
         (e_2,_,ds) = Types.vectorizableType(e_1, t, vt);
         (cache,slots_1,clist) = elabPositionalInputArgs(cache,env, es, vs, slots,checkTypes, impl);
@@ -9211,7 +9211,7 @@ algorithm
         exp1;
     case(_)
       equation        
-        print("Failur\n\n"); 
+        print("Failure\n\n"); 
       then 
         fail();
   end matchcontinue;
@@ -9644,6 +9644,7 @@ algorithm
         ErrorExt.rollBack();
         s1 = Dump.printSubscriptsStr(subs);
         s2 = Types.printDimensionsStr(dims);
+        //print(" adding error for {{" +& s1 +& "}},,{{" +& s2 +& "}} "); 
         Error.addMessage(Error.ILLEGAL_SUBSCRIPT,{s1,s2});
       then fail();
     end matchcontinue;

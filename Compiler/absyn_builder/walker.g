@@ -893,16 +893,15 @@ constraining_clause returns [void *ast]
 	void* mod = 0;
 }
     :
-		  (ast = extends_clause)
-		| (#(e:CONSTRAINEDBY
-				path = name_path
-				( mod = class_modification )?
-			)
+	    (ast = extends_clause)
+		
+		| (#(n:CONSTRAINEDBY path = name_path ( mod = class_modification )? )
 			{
 				if (!mod) mod = mk_nil();
 				ast = Absyn__EXTENDS(path,mod);
 			}
 		)
+
 	;
 
 // returns datatype ElementSpec
@@ -1052,15 +1051,16 @@ component_declaration returns [void* ast]
 	void* cmt = 0;
 	void* dec = 0;
     void* cond = 0;
-
+    void* constr = 0;
 }
 	:
-		(dec = declaration) (cond = conditional_attribute)? (cmt = comment)?
+		(dec = declaration) (cond = conditional_attribute)? (/*constr = constraining_clause*/ cmt = comment)? /*SEMICOLON*/
 		{
-			ast = Absyn__COMPONENTITEM(
+			ast = Absyn__COMPONENTITEM(  
                 dec,
                 cond ? mk_some(cond): mk_none(),
-                cmt ? mk_some(cmt) : mk_none()
+                /*constr ? mk_some(Absyn__CONSTRAINCLASS(constr,cmt?mk_some(cmt):mk_none())) : mk_none(),*/
+                constr ? mk_none() : cmt ? mk_some(cmt) :mk_none()
             );
 		}
 	;
@@ -1178,8 +1178,8 @@ argument returns [void* ast]
 
 element_modification_or_replaceable returns [void * ast]
     :
-        (e:EACH)?
-		(f:FINAL)?
+         (e:EACH)?
+		(f:FINAL)?		
         (ast = element_modification[e!=NULL,f!=NULL]
         | ast = element_replaceable[e!=NULL,f!=NULL,false] )
     ;

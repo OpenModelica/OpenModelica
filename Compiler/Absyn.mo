@@ -1770,6 +1770,27 @@ algorithm
   end matchcontinue;
 end pathContainedIn;
 
+public function getCrefsFromSubs "
+Author BZ 2009-08
+Function for getting ComponentRefs out from Subscripts
+"
+  input list<Subscript> subs;
+  output list<ComponentRef> crefs;
+algorithm crefs := matchcontinue(subs)
+  local
+    list<ComponentRef> crefs1;
+    Exp exp;
+    case({}) then {};
+    case(SUBSCRIPT(exp)::subs)
+      equation
+        crefs1 = getCrefsFromSubs(subs);
+        crefs = getCrefFromExp(exp);
+        crefs = listAppend(crefs,crefs1);
+        then
+          crefs;
+end matchcontinue;
+end getCrefsFromSubs;
+
 public function getCrefFromExp "function: getCrefFromExp
   Returns a flattened list of the 
   component references in an expression"

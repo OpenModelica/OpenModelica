@@ -3797,17 +3797,8 @@ algorithm
         (cache,res) = cevalSubscriptValue(cache,env, subsc, v, sizelst, impl, msg);
       then
         (cache,res);
-    case (cache,env,cr,Types.UNBOUND(),(impl as false),MSG())
-      local 
-        Exp.ComponentRef cr;
-      equation 
-        /*Print.printBuf("- Ceval.cevalCrefBinding failed (UNBOUND)\n");*/
-       //Debug.fprint("ceval", "#- Ceval.cevalCrefBinding failed (UNBOUND)");
-/*       print("Ceval.cevalCrefBinding failed (UNBOUND) *********\n");
-       print(Exp.printComponentRefStr(cr));
-       print("\n");
-*/      then
-        fail();
+    case (cache,env,_,Types.UNBOUND(),(impl as false),MSG())
+      then fail();
     case (cache,env,_,Types.UNBOUND(),(impl as true),MSG())
       equation 
         Debug.fprint("ceval", "#- Ceval.cevalCrefBinding: Ignoring unbound when implicit");

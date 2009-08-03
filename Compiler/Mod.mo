@@ -65,8 +65,7 @@ protected import Error;
 protected import Print;
 //protected import Interactive;
 
-public function elabMod
-"function: elabMod
+public function elabMod "
   This function elaborates on the expressions in a modification and
   turns them into global expressions.  This is done because the
   expressions in modifications must be elaborated on in the context
@@ -170,26 +169,27 @@ algorithm
 	  SCode.Mod mod;
 	  Option<Absyn.Exp> cond;
 	  Option<Absyn.Info> info;
-
+	  Option<Absyn.ConstrainClass> cc;
 	  /* the empty case */
 	  case(cache,env,pre,f,{},_) then {};
 	 
 	 	// Only derived classdefinitions supported in redeclares for now. TODO: What is allowed according to spec?
-	  case(cache,env,pre,f,SCode.CLASSDEF(cn,fi,repl,SCode.CLASS(cn2,p,enc,restr,SCode.DERIVED(tp,mod,attr1)),bc)::elts,impl)
+	  case(cache,env,pre,f,SCode.CLASSDEF(cn,fi,repl,SCode.CLASS(cn2,p,enc,restr,SCode.DERIVED(tp,mod,attr1)),bc,cc)::elts,impl)
 	    local 
-	      Absyn.ElementAttributes attr1; 
+	      Absyn.ElementAttributes attr1;
+	      Option<Absyn.ConstrainClass> cc; 
 	    equation
 	     (cache,emod) = elabMod(cache,env,pre,mod,impl); 
 	     modElts = elabModRedeclareElements(cache,env,pre,f,elts,impl);
 	     (cache,tp1) = elabModQualifyTypespec(cache,env,tp);
-	 then (SCode.CLASSDEF(cn,fi,repl,SCode.CLASS(cn,p,enc,restr,SCode.DERIVED(tp1,mod,attr1)),bc),emod)::modElts;
+	 then (SCode.CLASSDEF(cn,fi,repl,SCode.CLASS(cn,p,enc,restr,SCode.DERIVED(tp1,mod,attr1)),bc,cc),emod)::modElts;
 
 		// redeclare of component declaration		 
-	  case(cache,env,pre,f,SCode.COMPONENT(compname,io,fi,repl,prot,attr,tp,mod,bc,cmt,cond,info)::elts,impl) equation
+	  case(cache,env,pre,f,SCode.COMPONENT(compname,io,fi,repl,prot,attr,tp,mod,bc,cmt,cond,info,cc)::elts,impl) equation
 	    (cache,emod) = elabMod(cache,env,pre,mod,impl); 
 	    modElts = elabModRedeclareElements(cache,env,pre,f,elts,impl);
 	    (cache,tp1) = elabModQualifyTypespec(cache,env,tp);
-	  then ((SCode.COMPONENT(compname,io,fi,repl,prot,attr,tp1,mod,bc,cmt,cond,info),emod)::modElts);
+	  then ((SCode.COMPONENT(compname,io,fi,repl,prot,attr,tp1,mod,bc,cmt,cond,info,cc),emod)::modElts);
 	end matchcontinue;  
 end elabModRedeclareElements;
 
@@ -366,7 +366,7 @@ end unelabSubscript;
 
 public function updateMod 
 "function: updateMod
-  This function updates and untyped modification to a typed one, by looking
+  This function updates an untyped modification to a typed one, by looking
   up the type of the modifier in the environment and update it."
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -943,7 +943,7 @@ public function lookupCompModification "function: lookupCompModification
  
   This function is used to look up an identifier in a modification.
 "
-  input Types.Mod inMod;
+  input Types.Mod inMod; 
   input Absyn.Ident inIdent;
   output Types.Mod outMod;
 algorithm 
@@ -960,15 +960,49 @@ algorithm
     case (Types.REDECL(finalPrefix = _),_) then Types.NOMOD(); 
     case (Types.MOD(finalPrefix=f,each_=e,subModLst = subs,eqModOption=eqMod),n)
       equation 
-        //print(" looking for mod on: " +& n +& "\n"); 
         mod1 = lookupCompModification2(subs, n);        
         mod2 = lookupComplexCompModification(eqMod,n,f,e);
-        //print(" found inside compmod: " +& printModStr(mod1) +& "\n And in complexcomp: " +& printModStr(mod2) +& "\n");
         mod = checkDuplicateModifications(mod1,mod2);
       then
         mod;
   end matchcontinue;
 end lookupCompModification;
+
+public function lookupCompModification12 "function: lookupCompModification
+Author: BZ, 2009-07 
+Function for looking up modifiers on specific component. 
+And put it in a Types.Mod(Types.NAMEDMOD(comp,mod)) format.   
+"
+  input Types.Mod inMod; 
+  input Absyn.Ident inIdent;
+  output Types.Mod outMod;
+algorithm 
+  outMod:=
+  matchcontinue (inMod,inIdent)
+    local
+      Types.Mod mod,mod1,mod2,m;
+      list<Types.SubMod> subs;
+      Ident n,i;
+      Option<Types.EqMod> eqMod;
+      Absyn.Each e;
+      Boolean f;
+      case(inMod,inIdent)
+        equation
+          Types.NOMOD() = lookupCompModification(inMod,inIdent);
+          then
+            Types.NOMOD();
+      case(inMod,inIdent)
+        equation
+          (m as Types.MOD(_,_, {}, SOME(_))) = lookupCompModification(inMod,inIdent);
+        then
+          m;
+      case(inMod,inIdent)
+        equation
+          m = lookupCompModification(inMod,inIdent);
+          then
+            Types.MOD(false, Absyn.NON_EACH(), {Types.NAMEMOD(inIdent,m)},NONE);
+  end matchcontinue;
+end lookupCompModification12;
 
 protected function lookupComplexCompModification "Lookups a component modification from a complex constructor 
 (e.g. record constructor) by name."
@@ -1160,6 +1194,12 @@ algorithm
         (mod_1,subs_1);
     case ((Types.NAMEMOD(ident = name,mod = nmod) :: subs),eq,y)
       equation 
+        Types.NOMOD() = lookupIdxModification3(nmod, y);
+        (mod_1,subs_1) = lookupIdxModification2(subs, eq, y);
+      then
+        (mod_1,subs_1);
+    case ((Types.NAMEMOD(ident = name,mod = nmod) :: subs),eq,y)
+      equation 
         nmod_1 = lookupIdxModification3(nmod, y);
         (mod_1,subs_1) = lookupIdxModification2(subs, eq, y);
       then
@@ -1282,11 +1322,13 @@ algorithm outMod:= matchcontinue (inMod1,inMod2,inEnv3,inPrefix4)
     case(inMod1,inMod2,inEnv3,inPrefix4)
       equation
         true = merge2(inMod2);
-      then doMerge(inMod1,inMod2,inEnv3,inPrefix4);        
+      then doMerge(inMod1,inMod2,inEnv3,inPrefix4);
+
     case(inMod1,inMod2,inEnv3,inPrefix4)
       equation
         true = modSubsetOrEqual(inMod1,inMod2);
       then doMerge(inMod1,inMod2,inEnv3,inPrefix4);
+        
     case(inMod1,inMod2,inEnv3,inPrefix4)
       local String s; Option<Absyn.Path> p;
       equation
@@ -1294,7 +1336,8 @@ algorithm outMod:= matchcontinue (inMod1,inMod2,inEnv3,inPrefix4)
         false = modSubsetOrEqual(inMod1,inMod2);
         p = Env.getEnvPath(inEnv3);
         s = Absyn.optPathString(p);
-        Error.addMessage(Error.FINAL_OVERRIDE, {s}); // having a string there incase we 
+        Error.addMessage(Error.FINAL_OVERRIDE, {s}); // having a string there incase we
+        //print(" final override: " +& s +& "\n "); 
       then fail();
   end matchcontinue;  
 end merge;
@@ -1355,15 +1398,16 @@ algorithm
       Option<Types.EqMod> ass,ass1,ass2;
       Absyn.Each each_,each2;
       Option<Absyn.Exp> cond;
+      Option<Absyn.ConstrainClass> cc;
       Option<Absyn.Info> info;
     case (m,Types.NOMOD(),_,_) 
-      then m; 
-    /* redeclaring same component */
+    then m; 
+      /* redeclaring same component */
     case (Types.REDECL(finalPrefix = f1,tplSCodeElementModLst = 
-          {(SCode.COMPONENT(component = id1,innerOuter=io,finalPrefix = f,replaceablePrefix = r,protectedPrefix = p,
-                            attributes = attr,typeSpec = tp,modifications = m1,baseClassPath = bc,comment=comment,condition=cond,info=info),_)}),
-          Types.REDECL(finalPrefix = f2,tplSCodeElementModLst = 
-          {(SCode.COMPONENT(component = id2,modifications = m2,baseClassPath = bc2,comment = comment2),_)}),env,pre) 
+    {(SCode.COMPONENT(component = id1,innerOuter=io,finalPrefix = f,replaceablePrefix = r,protectedPrefix = p,
+      attributes = attr,typeSpec = tp,modifications = m1,baseClassPath = bc,comment=comment,condition=cond,info=info),_)}),
+      Types.REDECL(finalPrefix = f2,tplSCodeElementModLst = 
+      {(SCode.COMPONENT(component = id2,modifications = m2,baseClassPath = bc2,comment = comment2,cc=cc),_)}),env,pre) 
       equation 
         equality(id1 = id2);
         m1_1 = elabUntypedMod(m2, env, pre);
@@ -1372,15 +1416,20 @@ algorithm
       then
         Types.REDECL(f1,
           {
-          (
-          SCode.COMPONENT(id1,io,f,r,p,attr,tp,SCode.NOMOD(),bc,comment,cond,info),m_2)});
-    case ((mod as Types.REDECL(finalPrefix = f1,tplSCodeElementModLst = (els as {(SCode.COMPONENT(component = id1),_)}))),(mods as Types.MOD(subModLst = subs)),env,pre) then mod;  /* luc_pop : this shoud return the first mod because it have been merged in merge_subs */ 
-
-      /* TODO: Investigate what this is really good for (BZ 2008-03-04)*/
-    case (Types.MOD(subModLst = subs),Types.REDECL(finalPrefix = f1,tplSCodeElementModLst = (els as {(SCode.COMPONENT(component = id1),_)})),env,pre) 
-      then Types.MOD(false,Absyn.NON_EACH(),
-          (Types.NAMEMOD(id1,Types.REDECL(f1,els)) :: subs),NONE);  
-          /* luc_pop : this shoud return the first mod because it have been merged in merge_subs When modifiers are identical */ 
+            (
+                SCode.COMPONENT(id1,io,f,r,p,attr,tp,SCode.NOMOD(),bc,comment,cond,info,cc),m_2)});
+        
+        /* luc_pop : this shoud return the first mod because it have been merged in merge_subs */
+    case ((mod as Types.REDECL(finalPrefix = f1,tplSCodeElementModLst = (els as {(SCode.COMPONENT(component = id1),_)}))),(mods as Types.MOD(subModLst = subs)),env,pre) then mod;   
+        
+    case ((icm as Types.MOD(subModLst = subs)),Types.REDECL(finalPrefix = f1,tplSCodeElementModLst = (els as {( (celm as SCode.COMPONENT(component = id1)),cm)})),env,pre)
+      local
+        Types.Mod cm,icm;
+        SCode.Element celm;
+      equation  
+        cm = merge(cm,icm,env,pre);
+      then 
+        Types.REDECL(f1,{(celm,cm)});
         
         /* When modifiers are identical */ 
     case (outer_,inner_,_,_) 
@@ -1388,18 +1437,7 @@ algorithm
         equality(outer_ = inner_);
       then
         outer_;
-    
-        /* Commented this becaus it gave false positives. 
-        The problem is that merge is used repeatedly in the instantiation process even though 
-        no real outer modfier is present. This causes this check to succeed even if no modifier is applied.
-        */
-    /*case (m1,(m as Types.MOD(finalPrefix = true)),_,_)
-      local Types.Mod m1;
-      equation 
-				print("trying to modify final element with ");print(printModStr(m1));print("\n");
-        Print.printBuf("# trying to modify final element\n"); 
-      then
-        fail();*/
+        
     case (Types.MOD(finalPrefix = finalPrefix,each_ = each_,subModLst = subs1,eqModOption = ass1),Types.MOD(finalPrefix = _/*false*, see case above.*/,each_ = each2,subModLst = subs2,eqModOption = ass2),env,pre)
       equation 
         subs = mergeSubs(subs1, subs2, env, pre);
@@ -1425,7 +1463,6 @@ algorithm
 end doMerge;
 
 protected function mergeSubs "function: mergeSubs
-  
   This function merges to list of `Types.SubMod\'s.
 "
   input list<Types.SubMod> inTypesSubModLst1;
@@ -1437,19 +1474,66 @@ algorithm
   outTypesSubModLst:=
   matchcontinue (inTypesSubModLst1,inTypesSubModLst2,inEnv3,inPrefix4)
     local
-      list<Types.SubMod> s1,s1_1,ss,s2;
-      Types.SubMod s_1,s;
+      list<Types.SubMod> s1,s1_1,ss,s2,s2_new,s_rec;
+      Types.SubMod s_1,s,s_first;
       list<Env.Frame> env;
       Prefix.Prefix pre;
-    case (s1,{},_,_) then s1; 
-    case (s1,(s :: s2),env,pre)
-      equation 
-        (s1_1,s_1) = mergeSubs2(s1, s, env, pre);
-        ss = mergeSubs(s1_1, s2, env, pre);
-      then
-        (s_1 :: ss);
+      case ({},s1,_,_) then s1;
+      case (s1,{},_,_) then s1;
+      case((s::s1),s2,env,pre) // outer, inner, env, pre
+        equation
+          (s_first,s2_new) = mergeSubs2_2(s,s2,env,pre);
+          s_rec = mergeSubs(s1,s2_new,env,pre);
+          then
+            (s_first::s_rec);
   end matchcontinue;
 end mergeSubs;
+
+protected function mergeSubs2_2 "
+Author: BZ, 2009-07
+Helper function for mergeSubs, used to detect failures in Mod.merge
+"
+  input Types.SubMod inSubMod; 
+  input list<Types.SubMod> inTypesSubModLst;
+  input Env.Env inEnv;
+  input Prefix.Prefix inPrefix;  
+  output Types.SubMod outSubMod;
+  output list<Types.SubMod> outTypesSubModLst;
+algorithm 
+  (outTypesSubModLst,outSubMod):=
+  matchcontinue (inSubMod,inTypesSubModLst,inEnv,inPrefix)
+    local
+      Types.SubMod m,s,s1,s2;
+      Types.Mod m1,m2;
+      Ident n1,n2;
+      list<Types.SubMod> ss,ss_1;
+      list<Env.Frame> env;
+      Prefix.Prefix pre;
+      list<Integer> i1,i2;
+    case (m,{},_,_) then (m,{}); 
+      /* Modifications in the list take precedence */
+    case (Types.NAMEMOD(ident = n1,mod = m1),(Types.NAMEMOD(ident = n2,mod = m2) :: ss),env,pre)  
+      local Types.Mod m;
+      equation 
+        equality(n1 = n2);
+        m = merge(m1, m2, env, pre);
+      then
+        (Types.NAMEMOD(n1,m),ss);
+    case (Types.IDXMOD(integerLst = i1,mod = m1),(Types.IDXMOD(integerLst = i2,mod = m2) :: ss),env,pre)
+      local Types.Mod m;
+      equation 
+        equality(i1 = i2);
+        m = merge(m1, m2, env, pre);
+      then
+        (Types.IDXMOD(i1,m),ss);
+    case (s1,(s2::ss),env,pre)
+      equation 
+        true = verifySubMerge(s1,s2); 
+        (s,ss_1) = mergeSubs2_2(s1, ss, env, pre);
+      then
+        (s,s2::ss_1);
+  end matchcontinue;
+end mergeSubs2_2;
 
 protected function mergeSubs2 "function: mergeSubs2
   
@@ -1753,7 +1837,7 @@ algorithm
     case Types.REDECL(finalPrefix = finalPrefix,tplSCodeElementModLst = elist)
       equation 
         elist_1 = Util.listMap(elist, Util.tuple21);
-        finalPrefixstr = Util.if_(finalPrefix, "final", "");
+        finalPrefixstr = Util.if_(finalPrefix, " final", "");
         str_lst = Util.listMap(elist_1, SCode.printElementStr);
         str = Util.stringDelimitList(str_lst, ", ");
         res = Util.stringAppendList({"(redeclare(",finalPrefixstr,str,"))"});
@@ -1761,7 +1845,7 @@ algorithm
         res;
     case Types.MOD(finalPrefix = finalPrefix,each_ = each_,subModLst = subs,eqModOption = eq)
       equation 
-        finalPrefixstr = Util.if_(finalPrefix, "final", "");
+        finalPrefixstr = Util.if_(finalPrefix, " final", "");
         s1 = printSubs1Str(subs);
         s1_1 = Util.stringDelimitList(s1, ",");
         s1_1 = Util.if_(listLength(subs)>=1," {" +& s1_1 +& "} ",s1_1);
@@ -1782,6 +1866,78 @@ algorithm
   str := printModStr(m);
   Print.printBuf(str);
 end printMod;
+
+public function prettyPrintMod "
+Author BZ, 2009-07 
+Prints a readable format of a modifier. 
+" 
+  input Types.Mod m;
+  input Integer depth;
+  output String str;
+algorithm str := matchcontinue(m,depth)
+  local 
+    list<tuple<SCode.Element, Types.Mod>> tup;
+    list<Types.SubMod> subs;
+    String s1,s2;
+  case(Types.MOD(subModLst = subs, eqModOption=NONE),0) // 0 since we are only interested in this scopes modifier.
+    equation
+      str = prettyPrintSubs(subs,depth);
+    then str;
+      
+  case(Types.MOD(subModLst = subs, eqModOption=NONE),1) then "";
+      
+  case(Types.MOD(eqModOption=SOME(eq)),depth)
+    local
+      Types.EqMod eq;
+    equation
+      str = Types.unparseEqMod(eq);
+    then
+      str;
+  case(Types.REDECL(tplSCodeElementModLst = tup),depth)
+    equation
+      s1 = Util.stringDelimitList(Util.listMap(Util.listMap(tup,Util.tuple21),SCode.elementName),", ");
+      //print(Util.stringDelimitList(Util.listMap(Util.listMap(tup,Util.tuple21),SCode.printElementStr),",") +& "\n");
+      //s2 = Util.stringDelimitList(Util.listMap1(Util.listMap(tup,Util.tuple22),prettyPrintMod,0),", ");
+      //print(" (depth: " +& intString(depth) +& " (("+&s2+&")))Redeclaration of element(s): " +& s1 +& "\n");
+      //print(" ok\n");
+    then
+      "redeclare...";
+  case(Types.NOMOD,_) then "";
+  case(_,_) equation print(" failed prettyPrintMod\n"); then fail(); 
+end matchcontinue;
+end prettyPrintMod;
+
+protected function prettyPrintSubs "
+Author BZ
+Helper function for prettyPrintMod
+"
+  input list<Types.SubMod> inSubs;
+  input Integer depth;
+  output String str; 
+algorithm str := matchcontinue(inSubs,depth)
+  local 
+    String s1,s2,s3,id;
+    Types.SubMod s;
+    Types.Mod m;
+    list<Integer> li;
+  case({},_) then "";
+  case((s as Types.NAMEMOD(id,m))::inSubs,depth)
+    equation
+      //s1 = prettyPrintSubs(inSubs);
+      s2  = prettyPrintMod(m,depth+1);
+      s2 = Util.if_(stringLength(s2) == 0, ""," = " +& s2);
+      s2 = "(" +& id +& s2 +& "), class or component " +& id; 
+    then
+      s2;
+  case((s as Types.IDXMOD(li,m))::inSubs,depth)
+    equation 
+      //s1 = prettyPrintSubs(inSubs);
+      s2  = prettyPrintMod(m,depth+1);
+      s1 = "["+& Util.stringDelimitList(Util.listMap(li,intString),",")+&"]" +& " = " +& s2;
+    then
+      s1;
+end matchcontinue;
+end prettyPrintSubs;
 
 public function printSubs1Str "function: printSubs1Str
  

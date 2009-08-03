@@ -1799,8 +1799,8 @@ algorithm
       SCode.Mod mod,umod;
       Types.Mod mod_1,compMod;     
       Option<Absyn.Info> nfo;
-      
-    case (((comp as SCode.COMPONENT( id,io,fl,repl,prot,SCode.ATTR(d,f,st,ac,var,dir),tp,mod,bc,comment,cond,nfo)) :: rest),mods,env)
+      Option<Absyn.ConstrainClass> cc;
+    case (((comp as SCode.COMPONENT( id,io,fl,repl,prot,SCode.ATTR(d,f,st,ac,var,dir),tp,mod,bc,comment,cond,nfo,cc)) :: rest),mods,env)
       equation 
         (_,mod_1) = Mod.elabMod(Env.emptyCache,env, Prefix.NOPRE(), mod, false);
         mod_1 = Mod.merge(mods,mod_1,env,Prefix.NOPRE());
@@ -1809,7 +1809,7 @@ algorithm
         res = buildRecordConstructorElts(rest, mods,env);
       then
         (SCode.COMPONENT(id,io,fl,repl,prot,SCode.ATTR(d,f,st,ac,var,Absyn.INPUT()),tp,
-          umod,bc,comment,cond,nfo) :: res);
+          umod,bc,comment,cond,nfo,cc) :: res);
 
     case (SCode.EXTENDS(path,mod) :: rest,mods,env)
       equation 
@@ -1845,7 +1845,7 @@ algorithm
           SCode.ATTR({},false,false,SCode.RW(),SCode.VAR(),Absyn.OUTPUT()),
           Absyn.TPATH(Absyn.IDENT(id),NONE),
           SCode.MOD(false,Absyn.NON_EACH(),submodlst,NONE),
-          NONE,NONE,NONE,NONE);
+          NONE,NONE,NONE,NONE,NONE);
 end buildRecordConstructorResultElt;
 
 protected function buildRecordConstructorResultMod "function: buildRecordConstructorResultMod

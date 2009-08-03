@@ -2083,6 +2083,44 @@ algorithm
   end matchcontinue;
 end listFold_2r;
 
+public function listFold_3 "function: listFold_3
+  Similar to listFold but relation takes four arguments. 
+  The first argument is folded (i.e. passed through each relation)
+  The second argument is constant (given as argument)
+  The third argument is iterated over list."
+  input list<Type_a> lst;
+  input FoldFunc foldFunc;
+  input Type_b foldArg;
+  input Type_c extraArg;
+  input Type_d extraArg2;
+  output Type_b res;
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;
+  replaceable type Type_d subtypeof Any;
+  partial function FoldFunc
+    input Type_b foldArg;    
+    input Type_a iterated;
+    input Type_c extraArg;
+    input Type_d extraArg2;
+    output Type_b foldArg;
+  end FoldFunc;
+algorithm 
+  res:=
+  matchcontinue (lst,foldFunc,foldArg,extraArg,extraArg2)
+    local
+      Type_b foldArg1,foldArg2;
+      Type_a l;
+      list<Type_a> lst;
+    case ({},foldFunc,foldArg,extraArg,extraArg2) then foldArg; 
+    case ((l :: lst),foldFunc,foldArg,extraArg,extraArg2)
+      equation 
+        foldArg1 = foldFunc(foldArg,l,extraArg,extraArg2);
+        foldArg2 = listFold_3(lst, foldFunc,foldArg1, extraArg, extraArg2);
+      then
+        foldArg2;
+  end matchcontinue;
+end listFold_3;
 
 public function listlistFoldMap "function: listlistFoldMap
   For example see Interactive.traverseExp."

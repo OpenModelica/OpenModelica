@@ -31,6 +31,7 @@
 #include <iostream>
 #include <fstream>
 #include <queue>
+#include <stack>
 #include <list>
 
 using namespace std;
@@ -71,7 +72,7 @@ bool error_on=true;
   std::string currVariable("");
   absyn_info finfo;
   bool haveInfo(false);
-  queue<ErrorMessage*> errorMessageQueue; // Global variable of all error messages.
+  stack<ErrorMessage*> errorMessageQueue; // Global variable of all error messages.
   vector<int> checkPoints;
   /* Adds a message without file info. */
   void add_message(int errorID,
@@ -90,7 +91,7 @@ bool error_on=true;
     if(!haveInfo){
     	ErrorMessage *msg = new ErrorMessage((long)errorID, std::string(type ), std::string(severity), /*std::string(message),*/ tmp, tokens);
     	if (errorMessageQueue.empty() ||
-	    (!errorMessageQueue.empty() && errorMessageQueue.back()->getFullMessage() != msg->getFullMessage())) {
+	    (!errorMessageQueue.empty() && errorMessageQueue.top()->getFullMessage() != msg->getFullMessage())) {
            /*std::cerr << "inserting error message "<< msg.getFullMessage() << " on variable "<< currVariable << std::endl;*/
            errorMessageQueue.push(msg);
         }
@@ -100,7 +101,7 @@ bool error_on=true;
     	    finfo.rs,finfo.cs,finfo.re,finfo.ce,finfo.wr/*not important?*/,finfo.fn);
 
     	if (errorMessageQueue.empty() ||
-	    (!errorMessageQueue.empty() && errorMessageQueue.back()->getFullMessage() != msg->getFullMessage())) {
+	    (!errorMessageQueue.empty() && errorMessageQueue.top()->getFullMessage() != msg->getFullMessage())) {
            /*std::cerr << "inserting error message "<< msg.getFullMessage() << " on variable "<< currVariable << std::endl;
            std::cerr << "values: " << finfo.rs << " " << finfo.ce << std::endl;*/
            errorMessageQueue.push(msg);
@@ -149,7 +150,7 @@ bool error_on=true;
 		     isReadOnly,
 		     std::string(filename));
     if (errorMessageQueue.empty() ||
-	(!errorMessageQueue.empty() && errorMessageQueue.back()->getFullMessage() != msg->getFullMessage())) {
+	(!errorMessageQueue.empty() && errorMessageQueue.top()->getFullMessage() != msg->getFullMessage())) {
       /*std::cerr << "inserting error message "<< msg.getFullMessage() << std::endl;*/
       errorMessageQueue.push(msg);
     }
@@ -167,7 +168,7 @@ extern "C"
   {
     // empty the queue.
     while(!errorMessageQueue.empty()) {
-        delete errorMessageQueue.front();
+        delete errorMessageQueue.top();
     	errorMessageQueue.pop();
     }
   }
@@ -194,16 +195,21 @@ extern "C"
   {
 	  if(checkPoints.size() > 0){
 		  //printf(" ERROREXT: rollback to: %d from %d\n",checkPoints.back(),errorMessageQueue.size());
-		  /*std::string res("");
-		  if(!errorMessageQueue.empty())
-			  res = res+errorMessageQueue.front()->getMessage()+string("\n");
-		  printf(res.c_str());*/
+		  std::string res("");
+		  //printf(res.c_str());
 		  //printf(" rollback from: %d to: %d\n",errorMessageQueue.size(),checkPoints.back());
 		  while(errorMessageQueue.size() > checkPoints.back() && errorMessageQueue.size() > 0){
 			  //printf("*** %d deleted %d ***\n",errorMessageQueue.size(),checkPoints.back());
+			  /*if(!errorMessageQueue.empty()){
+				  res = res+errorMessageQueue.top()->getMessage()+string("\n");
+				  printf( (string("Deleted: ") + res).c_str());
+			  }*/
 			  errorMessageQueue.pop();
 		  }
-
+		  /*if(!errorMessageQueue.empty()){
+		  	res = res+errorMessageQueue.top()->getMessage()+string("\n");
+		    printf("(%d)new bottom message: %s\n",checkPoints.size(),res.c_str());
+		  }*/
 		  checkPoints.pop_back();
 	  }
 	  RML_TAILCALLK(rmlSC);
@@ -294,8 +300,8 @@ extern "C"
   {
     std::string res("");
     while(!errorMessageQueue.empty()) {
-      res = res+errorMessageQueue.front()->getMessage()+string("\n");
-      delete errorMessageQueue.front();
+      res = errorMessageQueue.top()->getMessage()+string("\n")+res;
+      delete errorMessageQueue.top();
       errorMessageQueue.pop();
     }
     rmlA0 = mk_scon((char*)res.c_str());
@@ -307,8 +313,8 @@ extern "C"
   {
     std::string res("{");
     while(!errorMessageQueue.empty()) {
-      res = res+errorMessageQueue.front()->getFullMessage()+string("\n");
-      delete errorMessageQueue.front();
+      res = errorMessageQueue.top()->getFullMessage()+string("\n")+res;
+      delete errorMessageQueue.top();
       errorMessageQueue.pop();
     }
     res+=string("}");
@@ -320,7 +326,7 @@ extern "C"
   RML_BEGIN_LABEL(ErrorExt__clearMessages)
    {
      while(!errorMessageQueue.empty()) {
-    	delete errorMessageQueue.front();
+    	delete errorMessageQueue.top();
     	errorMessageQueue.pop();
      }
      RML_TAILCALLK(rmlSC);
