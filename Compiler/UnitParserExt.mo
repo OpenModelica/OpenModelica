@@ -1,0 +1,34 @@
+package UnitParserExt "external package interface for UnitParser. Copyright MathCore engineering AB 2008"
+
+public import UnitAbsyn;
+
+public function initSIUnits "initialize the UnitParser with the SI units"
+  external "C";
+end initSIUnits;
+
+
+public function unit2str"Translate a unit to a string"
+  input list<Integer> noms "nominators";
+  input list<Integer> denoms"denominators";
+  input list<Integer> tpnoms ;
+  input list<Integer> tpdenoms;
+  input list<String> tpstrs;
+  input Real scaleFactor;
+  input Real offset;     
+  output String res;
+  external "C";  
+end unit2str;
+
+public function str2unit "Translate a unit string to a unit"
+  input String res;
+  output list<Integer> noms;
+  output list<Integer> denoms;
+  output list<Integer> tpnoms;
+  output list<Integer> tpdenoms;
+  output list<String> tpstrs;
+  output Real scaleFactor;
+  output Real offset;
+  external "C";
+end str2unit;
+
+end UnitParserExt;

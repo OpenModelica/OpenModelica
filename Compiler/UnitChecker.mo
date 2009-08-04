@@ -44,6 +44,8 @@ public import UnitAbsynBuilder;
  
 
 protected import Debug;
+protected import Error;
+protected import OptManager;
 
 public uniontype UnitCheckResult
   record CONSISTENT end CONSISTENT;  // May be complete or incomplete
@@ -67,6 +69,11 @@ algorithm
      UnitAbsyn.UnitTerm tm1;
      UnitCheckResult res1;
      UnitAbsyn.SpecUnit su1,su2;
+     String s1,s2,s3;
+     case(_,st1) equation
+       false = OptManager.getOption("unitChecking");       
+     then (CONSISTENT,st1);
+
      //No more terms?
      case({},st1) 
        then (CONSISTENT,st1);
@@ -78,6 +85,10 @@ algorithm
      //Is inconsistent?       
      case(tm1::rest1,st1) equation
        (INCONSISTENT(su1,su2),_,st2) = checkTerm(tm1,st1);
+       s1 = UnitAbsynBuilder.printTermsStr({tm1});
+       s2 = UnitAbsynBuilder.unit2str(UnitAbsyn.SPECIFIED(su1));
+       s3 = UnitAbsynBuilder.unit2str(UnitAbsyn.SPECIFIED(su2));
+       Error.addMessage(Error.INCONSISTENT_UNITS,{s1,s2,s3});    
        then(INCONSISTENT(su1,su2),st2);
      case(_,_) equation
        Debug.fprint("failtrace", "UnitChecker::check() failed\n");       
@@ -140,43 +151,43 @@ algorithm
      UnitAbsyn.SpecUnit su1,su2,su3;
      Math.Rational expo1;
      Integer loc;
-     case(UnitAbsyn.ADD(ut1,ut2),st1) equation
+     case(UnitAbsyn.ADD(ut1,ut2,_),st1) equation
        (res1,su1,st2) = checkTerm(ut1,st1);
        (res2,su2,st3) = checkTerm(ut2,st2);
        (res3,st4) = unify(su1,su2,st3);
        res4 = chooseResult(res1,res2,res3);
        then(res4,su1,st4);
-     case(UnitAbsyn.SUB(ut1,ut2),st1) equation
+     case(UnitAbsyn.SUB(ut1,ut2,_),st1) equation
        (res1,su1,st2) = checkTerm(ut1,st1);
        (res2,su2,st3) = checkTerm(ut2,st2);
        (res3,st4) = unify(su1,su2,st3);
        res4 = chooseResult(res1,res2,res3);
        then(res4,su1,st4);
-     case(UnitAbsyn.MUL(ut1,ut2),st1) equation
+     case(UnitAbsyn.MUL(ut1,ut2,_),st1) equation
        (res1,su1,st2) = checkTerm(ut1,st1);
        (res2,su2,st3) = checkTerm(ut2,st2);
        su3 = mulSpecUnit(su1,su2);
        res4 = chooseResult(res1,res2,CONSISTENT);
        then(res4,su3,st3);
-     case(UnitAbsyn.DIV(ut1,ut2),st1) equation
+     case(UnitAbsyn.DIV(ut1,ut2,_),st1) equation
        (res1,su1,st2) = checkTerm(ut1,st1);
        (res2,su2,st3) = checkTerm(ut2,st2);
        su3 = divSpecUnit(su1,su2);
        res4 = chooseResult(res1,res2,CONSISTENT);
        then(res4,su3,st3);
-     case(UnitAbsyn.EQN(ut1,ut2),st1) equation
+     case(UnitAbsyn.EQN(ut1,ut2,_),st1) equation
        (res1,su1,st2) = checkTerm(ut1,st1);
        (res2,su2,st3) = checkTerm(ut2,st2);
        (res3,st4) = unify(su1,su2,st3);
        res4 = chooseResult(res1,res2,res3);
        then(res4,su1,st4);
-     case(UnitAbsyn.LOC(loc),st1) equation
+     case(UnitAbsyn.LOC(loc,_),st1) equation
        (UnitAbsyn.UNSPECIFIED) = UnitAbsynBuilder.find(loc,st1);
        then(CONSISTENT,UnitAbsyn.SPECUNIT((Math.RATIONAL(1,1),UnitAbsyn.TYPEPARAMETER("",loc))::{},{}),st1);
-     case(UnitAbsyn.LOC(loc),st1) equation
+     case(UnitAbsyn.LOC(loc,_),st1) equation
        (UnitAbsyn.SPECIFIED(su1)) = UnitAbsynBuilder.find(loc,st1);
        then(CONSISTENT,su1,st1);
-     case(UnitAbsyn.POW(ut1,expo1),st1) equation
+     case(UnitAbsyn.POW(ut1,expo1,_),st1) equation
        (res1,su1,st2) = checkTerm(ut1,st1);
        su2 = powSpecUnit(su1,expo1);
        then(res1,su2,st2);

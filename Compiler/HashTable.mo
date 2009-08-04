@@ -295,9 +295,10 @@ algorithm
         indx_1 = indx - 1;
         varr_1 = valueArrayClearnth(varr, indx);
       then HASHTABLE(hashvec,varr_1,bsize,n);
-    case (_,_)
+    case (_,hashTable)
       equation 
         print("-HashTable.delete failed\n");
+        print("content:"); dumpHashTable(hashTable);
       then
         fail();
   end matchcontinue;

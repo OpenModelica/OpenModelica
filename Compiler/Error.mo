@@ -214,6 +214,7 @@ public constant ErrorID DERIVATIVE_NON_REAL=514;
 public constant ErrorID UNUSED_MODIFIER=515;
 public constant ErrorID SELECTED_STATES=515;
 public constant ErrorID MULTIPLE_MODIFIER=516;
+public constant ErrorID INCONSISTENT_UNITS=517;
 
 
 public constant ErrorID INDEX_REDUCTION_NOTIFICATION=1000;
@@ -481,8 +482,8 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (STRUCT_SINGULAR_SYSTEM_INITIALIZATION,TRANSLATION(),ERROR(),
           "The initialization problem of model is structurally singular, error found sorting equations %s for variables %s"),
           (CIRCULAR_EQUATION, TRANSLATION(),ERROR(), " Equation : '%s'  has circular references for variable %s."),
-          (SELECTED_STATES,TRANSLATION(),NOTIFICATION(), "The following variables are selected as states: %s")
-            
+          (SELECTED_STATES,TRANSLATION(),NOTIFICATION(), "The following variables are selected as states: %s"),
+          (INCONSISTENT_UNITS, TRANSLATION(),WARNING(),"The system of units is inconsistent in term %s with the units %s and %s respectively.") 
           };
           
 protected import ErrorExt;

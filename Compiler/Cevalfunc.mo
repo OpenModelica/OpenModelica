@@ -31,6 +31,7 @@ protected import Debug;
 protected import Lookup;
 protected import Static;
 protected import Inst;
+protected import UnitAbsyn;
 
 protected constant String forScopeName="$for loop scope$";
 
@@ -1166,8 +1167,8 @@ algorithm
     case(p ,env) 
       equation
         (_,typeClass as SCode.CLASS(name=className),env1) = Lookup.lookupClass(Env.emptyCache, env, p, false);
-        (_,_,env2,_,ty,_,_,_) = Inst.instClass(
-          Env.emptyCache,env1,Types.NOMOD(),Prefix.NOPRE(),Connect.emptySet,typeClass,{}, true, Inst.INNER_CALL, ConnectionGraph.EMPTY);
+        (_,_,env2,_,_,ty,_,_,_) = Inst.instClass(
+          Env.emptyCache,env1,UnitAbsyn.noStore,Types.NOMOD(),Prefix.NOPRE(),Connect.emptySet,typeClass,{}, true, Inst.INNER_CALL, ConnectionGraph.EMPTY);
       then
         ty;
     case (_,_) 

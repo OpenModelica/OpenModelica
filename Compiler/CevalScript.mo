@@ -84,6 +84,7 @@ protected import System;
 protected import Error;
 protected import Static;
 protected import ConnectionGraph;
+protected import UnitAbsyn;
 
 public function cevalInteractiveFunctions 
 "function cevalInteractiveFunctions
@@ -3350,7 +3351,7 @@ algorithm
         (cache,(c as SCode.CLASS(n,_,encflag,r,_)),env_1) = Lookup.lookupClass(cache,env, classname_1, true);
         env3 = Env.openScope(env_1, encflag, SOME(n));
         ci_state = ClassInf.start(r, n);
-        (cache,dae1,env4,csets_1,ci_state_1,tys,_,_,_,_) = Inst.instClassIn(cache,env3, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
+        (cache,dae1,env4,_,csets_1,ci_state_1,tys,_,_,_,_) = Inst.instClassIn(cache,env3, UnitAbsyn.noStore,Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
           ci_state, c, false, {}, false, ConnectionGraph.EMPTY,NONE);
         cref_1 = Exp.joinCrefs(cref, Exp.CREF_IDENT("stateSelect",Exp.OTHER(),{}));
         (cache,attr,ty,Types.EQBOUND(exp,_,_),_,_) = Lookup.lookupVar(cache,env4, cref_1);
@@ -3389,7 +3390,7 @@ algorithm
         (cache,(c as SCode.CLASS(n,_,encflag,r,_)),env_1) = Lookup.lookupClass(cache,env, classname_1, true);
         env3 = Env.openScope(env_1, encflag, SOME(n));
         ci_state = ClassInf.start(r, n);
-        (cache,dae1,env4,csets_1,ci_state_1,tys,_,_,_,_) = Inst.instClassIn(cache,env3, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
+        (cache,dae1,env4,_,csets_1,ci_state_1,tys,_,_,_,_) = Inst.instClassIn(cache,env3, UnitAbsyn.noStore,Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
           ci_state, c, false, {}, false, ConnectionGraph.EMPTY,NONE);
         cref_1 = Exp.joinCrefs(cref, Exp.CREF_IDENT(attribute,Exp.OTHER(),{}));
         (cache,attr,ty,Types.VALBOUND(v),_,_) = Lookup.lookupVar(cache,env4, cref_1);

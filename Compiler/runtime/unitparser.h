@@ -45,9 +45,10 @@ public:
 	virtual ~Rational(){;}
 	long num;	//numerator
 	long denom;	//denominator
-	bool isZero(); 
+	bool isZero();
 	bool is(long numerator, long denominator=1);
-	string toString(); //e.g. "(7/9)". If denominator i zero, only numerator is printed, e.g. "7".
+	string toString(); //e.g. "(7/9)". If denominator is one, only numerator is printed, e.g. "7".
+	double toReal();
 	void fixsign();
 	static Rational simplify(const Rational q);
 	static Rational sub(Rational q1, Rational q2);
@@ -69,16 +70,16 @@ struct UnitRes{
 		UNIT_OFFSET_ERROR,
 		UNIT_SCALE_ERROR,
 		UNIT_WRONG_BASE, //Need to be base 10 for exponent prefixes
-		UNIT_NOT_FOUND, 
+		UNIT_NOT_FOUND,
 		PREFIX_NOT_FOUND,
-		INVALID_INT,	
+		INVALID_INT,
 		PREFIX_NOT_ALLOWED, //Some units e.g. "kg" are not allowed to have prefix. See SI-brochure v8, page 122, sec. 3.2
 		BASE_ALREADY_DEFINED,
 	};
 
 	UnitRes(ResVal res, unsigned int charNumber = 0) : result(res), charNo(charNumber) {;}
 	virtual ~UnitRes(){;}
-	
+
 	bool Ok() {return result == UNIT_OK;}
 	ResVal result;			//Result enum
 	unsigned int charNo;	//If error, charcter number in string where the error is
@@ -87,21 +88,21 @@ struct UnitRes{
 
 class Unit{
 public:
-	Unit(long pExp=0, long sFact=1, long off=0) : 
-	  prefixExpo(Rational(pExp)), scaleFactor(Rational(sFact)), offset(Rational(off)), prefixAllowed(true) {;}
+	Unit(long pExp=0, long sFact=1, long off=0,double w = 1.0,bool b=false) :
+	  prefixExpo(Rational(pExp)), scaleFactor(Rational(sFact)), offset(Rational(off)), prefixAllowed(true), weight(w) {;}
 
 	/** Vector stating exponents to the unit vector */
-	vector<Rational> unitVec;	
+	vector<Rational> unitVec;
 
 	/** Exponent value for the prefix. E.g. if [mm] is defined, it is 10^-3*[m], e.g. prefixExpo = -3 */
 	Rational prefixExpo;
 
 	/** Scalar factor including both SI prefix and unit scalar factors (e.g. feet -> meter) */
-	Rational scaleFactor;		
-	
+	Rational scaleFactor;
+
 	/** Offset to base unit. E.g. celcius have offset 273.15 (i.e. add 273.15 to the value to get it in Kelvin) */
-	Rational offset;				
-	
+	Rational offset;
+
 	/** Unit type parameter vector. The strings include a prepend apostrophe  ,e.g. "'p"	*/
 	map<string,Rational> typeParamVec;
 
@@ -111,6 +112,9 @@ public:
 	/** The unit name, if known. */
 	string	unitName;
 
+	/** The unit symbol, if known. */
+	string	unitSymbol;
+
 	/* Returns true if both the unitVec only contains zero exponents, and there are no type parameters */
 	bool isDimensionless();
 
@@ -119,6 +123,9 @@ public:
 
 	/** Internal variable for handling kg units */
 	bool prefixAllowed;
+
+	/** Weight used for pretty printing algorithm */
+	double weight;
 
 	/* Division of two unit vectors */
 	static UnitRes div(Unit u1, Unit u2, Unit& ur);
@@ -136,12 +143,13 @@ private:
 
 class Base{
 public:
-	Base(string q, string un, string us, bool p) : quantityName(q), 
-		unitName(un), unitSymbol(us), prefixAllowed(p) {;}
+	Base(string q, string un, string us, bool p, double w=1.0) : quantityName(q),
+		unitName(un), unitSymbol(us), prefixAllowed(p),weight(w) {;}
 	string quantityName;
 	string unitName;
 	string unitSymbol;
 	bool prefixAllowed;
+	double weight /*weight for pretty printing algorithm*/;
 };
 
 /* Scanner for a unit type string */
@@ -162,7 +170,7 @@ public:
 		TOK_EOS,		//End of string
 	};
 
-	/* Returns the next token in the string, or TOK_EOF if it is the last one. 
+	/* Returns the next token in the string, or TOK_EOF if it is the last one.
 	   If the token consist of a specific string  'tokstr'. If TOK_UNKNOWN is returned,
 	   method getPos() can be called to get the integer index to the unknown token */
 	TokenType getToken(string& tokstr);
@@ -193,20 +201,23 @@ public:
 	/** Add prefix symbols. E.g. "m" has exponent -3, (m=10^-3) */
 	void addPrefix(const string symbol, Rational exponent);
 
-	/** 
+	/**
 	  Add a base quantity/unit
       @param prefixAllowed Normally set to true. Should be false for [kg], since we are not allowed to prefix this base unit.
 	                                             Should instead prefix the "derived unit [g]
 	*/
-	void addBase(const string quantityName, const string unitName, 
+	void addBase(const string quantityName, const string unitName,
 		const string unitSymbol, bool prefixAllowed);
 
 	/** Add a derived quantity/unit */
-	UnitRes addDerived(const string quantityName, const string unitName, const string unitSymbol, 
-		const string unitStrExp, Rational prefixExpo, Rational scaleFactor, Rational offset, bool prefixAllowed);
+	UnitRes addDerived(const string quantityName, const string unitName, const string unitSymbol,
+		const string unitStrExp, Rational prefixExpo, Rational scaleFactor, Rational offset, bool prefixAllowed,double weight);
 
-	/** Convert a unit vector to a unit text string (unparse) */
+	/** Convert a unit vector to a unit text string (unparse) - simple version, e.g. "m-2.kg2.s-3" */
 	string unit2str(Unit unit);
+
+	/** Convert a unit vector to a unit text string (unparse) - using MIP algorithm to select most appropriate units */
+	string prettyPrintUnit2str(Unit unit);
 
 	/** Convert a unit text string to a unit vector type (parse) */
 	UnitRes str2unit(const string unitstr, Unit& unit);
@@ -222,7 +233,7 @@ private:
 
 	/** Base quantities and units(vector of names) */
 	vector<Base> _base;
-	
+
 	/** Mapping from unit symbol to unit definitions. Includes both base and derived units. */
 	map<string,Unit> _units;
 
@@ -234,6 +245,9 @@ private:
 	UnitRes parseFactor(Scanner& scan, Unit& unit);
 	UnitRes parseSymbol(Scanner& scan, Unit& unit);
 	UnitRes parseRational(Scanner& scan, Rational& q);
+
+	/* MIP */
+	Unit solveMIP(Unit);
 };
 
 

@@ -51,6 +51,9 @@ public import Env;
 /* protected imports */
 protected import Types;
 protected import ClassInf;
+protected import Exp;
+protected import Values;
+
 
 /*
 - The primitive types 
@@ -177,7 +180,32 @@ protected constant tuple<Types.TType, Option<Type_a>> int2string =(
           Types.T_FUNCTION({("x",(Types.T_INTEGER({}),NONE))},(Types.T_STRING({}),NONE)),NONE);
           
 protected constant tuple<Types.TType, Option<Type_a>> bool2string =(
-          Types.T_FUNCTION({("x",(Types.T_BOOL({}),NONE))},(Types.T_STRING({}),NONE)),NONE);          
+          Types.T_FUNCTION({("x",(Types.T_BOOL({}),NONE))},(Types.T_STRING({}),NONE)),NONE);
+
+/* type for builtin operator der has unit type parameter to be able to express that derivative of expression
+ means an addition of 1/s on the unit dimension */          
+protected constant tuple<Types.TType, Option<Type_a>> derType=(
+          Types.T_FUNCTION({("x",(Types.T_REAL(
+          {
+            Types.VAR(
+              "unit",
+              Types.ATTR(false,false,SCode.RW,SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
+              false,
+              (Types.T_STRING({}),NONE),
+              Types.EQBOUND(Exp.SCONST("'p"),SOME(Values.STRING("'p")),Types.C_CONST)
+              )          
+          }
+          ),NONE))},
+          /* Return type*/
+          (Types.T_REAL({
+            Types.VAR(
+              "unit",
+              Types.ATTR(false,false,SCode.RW,SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
+              false,
+              (Types.T_STRING({}),NONE),
+              Types.EQBOUND(Exp.SCONST("'p/s"),SOME(Values.STRING("'p/s")),Types.C_CONST)
+              )
+          }),NONE)),NONE);                    
           
 protected constant tuple<Types.TType, Option<Type_a>> real2real=(
           Types.T_FUNCTION({("x",(Types.T_REAL({}),NONE))},(Types.T_REAL({}),NONE)),NONE);
@@ -2793,7 +2821,7 @@ algorithm
       env = Env.extendFrameT(env, "semiLinear", realRealReal2Real);      
       env = Env.extendFrameT(env, "change", real2bool);
       env = Env.extendFrameT(env, "edge", bool2bool);
-      env = Env.extendFrameT(env, "der", real2real);
+      env = Env.extendFrameT(env, "der", derType);
       /* Removed due to handling in static.mo
       env = Env.extendFrameT(env, "delay", realReal2real);
       env = Env.extendFrameT(env, "delay", realRealReal2Real);

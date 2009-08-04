@@ -1664,6 +1664,21 @@ algorithm
   Print.printBuf(res);
 end dumpVariableAttributes;
 
+public function getUnitAttr "
+  Return the unit attribute
+"
+  input Option<VariableAttributes> inVariableAttributesOption;
+  output Exp.Exp start;
+algorithm 
+  start:=
+  matchcontinue (inVariableAttributesOption)
+    local
+      Exp.Exp u;
+    case (SOME(VAR_ATTR_REAL(_,SOME(u),_,_,_,_,_,_,_,_,_))) then u;
+    case (_) then Exp.SCONST(""); 
+  end matchcontinue;
+end getUnitAttr;
+
 public function getStartAttrEmpty " 
   Return the start attribute.
 "

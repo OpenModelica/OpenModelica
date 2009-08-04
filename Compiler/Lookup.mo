@@ -62,6 +62,7 @@ protected import Connect;
 protected import Error;
 protected import Util;
 protected import ConnectionGraph;
+protected import UnitAbsyn;
 
 /*   - Lookup functions
  
@@ -113,7 +114,7 @@ algorithm
       equation 
         (cache,c ,env_1) = lookupClass2(cache,env, path, false);
         true = Inst.classIsExternalObject(c);
-        (cache,_,_::env_1,_,_,_,_,_) = Inst.instClass(cache,env_1, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, c, 
+        (cache,_,_::env_1,_,_,_,_,_,_) = Inst.instClass(cache,env_1, UnitAbsyn.noStore, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, c, 
           {}, false, Inst.TOP_CALL(), ConnectionGraph.EMPTY);
           
         ident = Absyn.pathLastIdent(path); /* Once class has instantiated we only need to look up the last
@@ -596,7 +597,7 @@ algorithm
         (cache,(c as SCode.CLASS(id,_,encflag,restr,_)),env_1) = lookupClass2(cache,{fr}, path, false);
         env2 = Env.openScope(env_1, encflag, SOME(id));
         ci_state = ClassInf.start(restr, id);
-        (cache,_,(f :: _),_,_,_,_,_,_,_) = Inst.instClassIn(cache,env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
+        (cache,_,(f :: _),_,_,_,_,_,_,_,_) = Inst.instClassIn(cache,env2, UnitAbsyn.noStore,Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
           ci_state, c, false, {}, false, ConnectionGraph.EMPTY,NONE);
         (cache,p_env,attr,ty,bind) = lookupVarInPackages(cache,{f}, Exp.CREF_IDENT(ident,Exp.OTHER(),{}));
         (cache,more) = moreLookupUnqualifiedImportedVarInFrame(cache,fs, env, ident);
@@ -1041,7 +1042,7 @@ algorithm
         	= lookupClass2(cache,env, Absyn.IDENT(id1), false) "Special case for looking up enumerations" ;
         env3 = Env.openScope(env2, encflag, SOME(n));
         ci_state = ClassInf.start(r, n);
-        (cache,_,env5,_,_,types,_,_,_,_) = Inst.instClassIn(cache,env3, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
+        (cache,_,env5,_,_,_,types,_,_,_,_) = Inst.instClassIn(cache,env3, UnitAbsyn.noStore, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
           ci_state, c, false, {}, false, ConnectionGraph.EMPTY,NONE);
         (cache,p_env,attr,ty,bind) = lookupVarInPackages(cache,env5, id2);
       then
@@ -1085,7 +1086,7 @@ algorithm
         env3 = Env.openScope(env2, encflag, SOME(n));
         ci_state = ClassInf.start(r, n);
         filterCref = makeOptIdentOrNone(cref);
-        (cache,_,env5,_,_,types,_,_,_,_) = Inst.instClassIn(cache,env3, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
+        (cache,_,env5,_,_,_,types,_,_,_,_) = Inst.instClassIn(cache,env3, UnitAbsyn.noStore, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
           ci_state, c, false, {}, /*true*/false, ConnectionGraph.EMPTY,filterCref);
         (cache,p_env,attr,ty,bind) = lookupVarInPackages(cache,env5, cref);
       then
@@ -1622,7 +1623,7 @@ algorithm
         equation
           Env.CLASS(cdef,cenv) = Env.avlTreeGet(ht, id);
 	        true = Inst.classIsExternalObject(cdef);
-	        (cache,_,env_1,_,t,_,_,_) = Inst.instClass(cache,cenv, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cdef, 
+	        (cache,_,env_1,_,_,t,_,_,_) = Inst.instClass(cache,cenv, UnitAbsyn.noStore,Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cdef, 
          	 {}, false, Inst.TOP_CALL(), ConnectionGraph.EMPTY);
           (cache,t,_) = lookupTypeInEnv(cache,env_1, Absyn.IDENT(id));
            //s = Types.unparseType(t);
@@ -1925,7 +1926,7 @@ algorithm
         (cdefelts,restElts) = Inst.classdefAndImpElts(elts);
         env1 = Inst.addClassdefsToEnv(env, cdefelts, false,NONE);
         (cache,inputvarlst) = buildVarlstFromElts(cache,restElts, Types.NOMOD(),env1);        
-        (cache,_,_,_,ty,_,_,_) = Inst.instClass(cache,env1, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cl, 
+        (cache,_,_,_,_,ty,_,_,_) = Inst.instClass(cache,env1, UnitAbsyn.noStore, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cl, 
           {}, true, Inst.TOP_CALL(), ConnectionGraph.EMPTY) "FIXME: impl" ;
       then
         (cache,Types.VAR("result",
@@ -1937,7 +1938,7 @@ algorithm
         (cdefelts,restElts) = Inst.classdefAndImpElts(elts);
         env1 = Inst.addClassdefsToEnv(env, cdefelts, false,NONE);
         (cache,inputvarlst) = buildVarlstFromElts(cache,restElts, Types.NOMOD(),env1);        
-        (cache,_,_,_,ty,_,_,_) = Inst.instClass(cache,env1, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cl, 
+        (cache,_,_,_,_,ty,_,_,_) = Inst.instClass(cache,env1,UnitAbsyn.noStore, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cl, 
           {}, true, Inst.TOP_CALL(), ConnectionGraph.EMPTY) "FIXME: impl" ;
       then
         (cache,Types.VAR("result",

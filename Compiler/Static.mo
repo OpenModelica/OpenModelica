@@ -74,7 +74,6 @@ public import MetaUtil;
 public import RTOpts;
 public import ConnectionGraph;
 
-protected import OptManager;
 
 public type Ident = String;
 
@@ -88,6 +87,9 @@ uniontype Slot
   end SLOT;
 end Slot;
 
+
+protected import OptManager;
+protected import UnitAbsyn;
 protected import ClassInf;
 protected import Dump;
 protected import Print;
@@ -634,7 +636,7 @@ algorithm
         env2 = Inst.addComponentsToEnv(env2, Types.NOMOD(), Prefix.NOPRE(), 
           Connect.SETS({},{},{},{}), ClassInf.FUNCTION("dummieFunc"), ld_mod, {}, {}, {}, impl);    
         
-        (cache,dae1,env2,_,_,_,_) = Inst.instElementList(cache,env2,
+        (cache,dae1,env2,_,_,_,_,_) = Inst.instElementList(cache,env2,UnitAbsyn.noStore,
           Types.NOMOD(), Prefix.NOPRE(), Connect.SETS({},{},{},{}), ClassInf.FUNCTION("dummieFunc"),
           ld_mod,{},impl,ConnectionGraph.EMPTY);
         
@@ -699,7 +701,7 @@ algorithm
         env2 = Inst.addComponentsToEnv(env2, Types.NOMOD(), Prefix.NOPRE(), 
           Connect.SETS({},{},{},{}), ClassInf.FUNCTION("dummieFunc"), ld_mod, {}, {}, {}, impl);    
         
-        (cache,dae1,env2,_,_,_,_) = Inst.instElementList(cache,env2,
+        (cache,dae1,env2,_,_,_,_,_) = Inst.instElementList(cache,env2, UnitAbsyn.noStore,
           Types.NOMOD(), Prefix.NOPRE(), Connect.SETS({},{},{},{}), ClassInf.FUNCTION("dummieFunc"),
           ld_mod,{},impl,ConnectionGraph.EMPTY);
         

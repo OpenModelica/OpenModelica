@@ -67,6 +67,7 @@ uniontype Msg
   record NO_MSG "Do not give error message" end NO_MSG;
 end Msg;
 
+protected import UnitAbsyn;
 protected import Static;
 protected import Print;
 protected import ModUtil;
@@ -1226,7 +1227,7 @@ algorithm
         (cache,c,env_1) = Lookup.lookupClass(cache,env, funcname, false);
         compnames = SCode.componentNames(c);
         mod = Types.valuesToMods(vallst, compnames);
-        (cache,dae,_,_,_,_,_,_) = Inst.instClass(cache,env_1, mod, Prefix.NOPRE(), Connect.emptySet, c, {}, impl, 
+        (cache,dae,_,_,_,_,_,_,_) = Inst.instClass(cache,env_1,UnitAbsyn.noStore, mod, Prefix.NOPRE(), Connect.emptySet, c, {}, impl, 
           Inst.TOP_CALL(),ConnectionGraph.EMPTY);
         value = DAE.daeToRecordValue(funcname, dae, impl);
       then

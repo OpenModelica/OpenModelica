@@ -32,6 +32,7 @@
 #include "unitparser.h"
 #include <iostream>
 #include <sstream>
+#include "lp_lib.h"
 
 /***************************************************************************************/
 /*   CLASS: Rational                                                                   */
@@ -39,7 +40,7 @@
 
 
 
-Rational::Rational(long numerator, long denominator) 
+Rational::Rational(long numerator, long denominator)
 {
 	num = numerator;
 	denom = denominator;
@@ -75,7 +76,13 @@ string Rational::toString()
 		return ss.str();
 	}
 }
-  
+
+double Rational::toReal()
+{
+	if (denom == 0) cerr << "Division by zero in << "<<toString() << endl;
+	double r = (double)num / (double) denom;
+	return r;
+}
 
 
 Rational Rational::sub(Rational q1, Rational q2)
@@ -161,7 +168,7 @@ UnitRes Unit::paramutil(Unit u1, Unit u2, Unit& ur, bool mulop)
 		if(i < u2.unitVec.size())
 			q2 = u2.unitVec[i];
 		ur.unitVec.push_back(mulop ? Rational::add(q1,q2) : Rational::sub(q1,q2));
-	}	
+	}
 
 	map<string,Rational>::iterator p1 = u1.typeParamVec.begin();
 	map<string,Rational>::iterator p2 = u2.typeParamVec.begin();
@@ -212,7 +219,7 @@ UnitRes Unit::pow(Unit u, const Rational e, Unit& ur)
 	ur.unitVec.clear();
 	for(unsigned int i=0;i < u.unitVec.size(); i++){
 		ur.unitVec.push_back(Rational::mul(u.unitVec[i],e));
-	}	
+	}
 	for(map<string,Rational>::iterator p = u.typeParamVec.begin(); p != u.typeParamVec.end(); p++){
 		(*p).second = Rational::mul((*p).second, e);
 	}
@@ -239,7 +246,7 @@ bool Unit::isBaseUnit()
 			else onefound = true;
 		}
 		else if((*p).num != 0)
-			 return false;		
+			 return false;
 	}
 	return true;
 }
@@ -250,7 +257,7 @@ bool Unit::isBaseUnit()
 /***************************************************************************************/
 
 
-UnitParser::UnitParser() 
+UnitParser::UnitParser()
 {
 }
 
@@ -272,10 +279,11 @@ void UnitParser::addBase(const string quantityName, const string unitName, const
 	u.prefixAllowed = b.prefixAllowed;
 	u.quantityName = b.quantityName;
 	u.unitName = b.unitName;
+	u.unitSymbol = unitSymbol;
 	for(unsigned long j=0; j < _base.size(); j++){
 		u.unitVec.push_back(Rational((_base.size()-1)==j?1:0));
 	}
-	
+
 	//Force the old unit vectors to have the same lenght as the new one
 	for(map<string,Unit>::iterator p = _units.begin(); p != _units.end(); p++){
 		(*p).second.unitVec.push_back(Rational(0));
@@ -286,8 +294,8 @@ void UnitParser::addBase(const string quantityName, const string unitName, const
 
 
 
-UnitRes UnitParser::addDerived(const string quantityName, const string unitName, const string unitSymbol, const string unitStrExp, 
-							   Rational prefixExpo, Rational scaleFactor, Rational offset, bool prefixAllowed)
+UnitRes UnitParser::addDerived(const string quantityName, const string unitName, const string unitSymbol, const string unitStrExp,
+							   Rational prefixExpo, Rational scaleFactor, Rational offset, bool prefixAllowed,double weight=1.0)
 {
 	Unit u;
 	UnitRes res = str2unit(unitStrExp, u);
@@ -295,12 +303,197 @@ UnitRes UnitParser::addDerived(const string quantityName, const string unitName,
 		return res;
 	u.quantityName = quantityName;
 	u.unitName = unitName;
+	u.unitSymbol = unitSymbol;
 	u.prefixAllowed = prefixAllowed;
 	u.prefixExpo = prefixExpo;
 	u.scaleFactor = scaleFactor;
 	u.offset = offset;
+	u.weight = weight;
 	_units[unitSymbol] = u;
 	return res;
+}
+
+string UnitParser::prettyPrintUnit2str(Unit unit)
+{
+	Unit prettyUnit = solveMIP(unit);
+   return unit2str(prettyUnit);
+}
+
+Unit UnitParser::solveMIP(Unit unit)
+{
+  int numBaseUnits = _base.size();
+  int numDerivedUnits=0;
+  // Counting the derived units by traversing all units
+  for( map<string,Unit>::iterator it=_units.begin(); it != _units.end(); it++)
+		  if (!it->second.isBaseUnit()) numDerivedUnits++;
+  int NU = numBaseUnits + numDerivedUnits;
+
+  // Create MIP with 2*NU variables(columns)
+  lprec *lp = make_lp(0,2*NU);
+  if (lp == NULL) {
+	  cerr <<"Internal error pretty printing expression. Using simple approach" << endl;
+	  return unit;
+  }
+
+  /* Set name of variables for debug printing */
+  int i;
+  for ( i=1;i<=numBaseUnits;i++) {
+	  char * s1= (char*)_base[i-1].unitName.c_str();
+	  char * s2 = (char*)(string("-")+string(s1)).c_str();
+	  if (!set_col_name(lp,i,s1)) {cerr << "ERROR1" << endl;}
+	  if (!set_col_name(lp,NU+i,s2)) {cerr << "ERROR" << endl;}
+  }
+  for( map<string,Unit>::iterator it=_units.begin(); it != _units.end(); it++) {
+	  if (!it->second.isBaseUnit()) {
+		  char * s1= (char*)it->second.unitName.c_str();
+		  char * s2 = (char*)(string("-")+string(s1)).c_str();
+		  if(!set_col_name(lp,i,s1)) { cerr << "ERROR2" << endl;}
+		  if(!set_col_name(lp,NU+i,s2))  { cerr << "ERROR3" << endl; }
+		  i++;
+	  }
+  }
+
+  // Increases efficency when adding rows.
+  set_add_rowmode(lp,TRUE);
+
+  double *row = new double[2*NU];
+  int *colno= new int[2*NU];
+
+  if (!row || !colno) {
+	  cerr <<"Internal error pretty printing expression (allocation of memory). Using simple approach" << endl;
+	  return unit;
+  }
+
+  int c;
+  // Set the constraint
+  for (int r = 0;r<numBaseUnits;r++) {
+      int j=0;
+      /* Set 0..numBaseUnits-1 first columns */
+	  for(c=0;c < numBaseUnits; c++) {
+		  colno[j]=c+1;
+    	  row[j++] = r == c?1:0;
+	  }
+	  /* Set numBaseUnits .. NU-1 following columns */
+	  for( map<string,Unit>::iterator it=_units.begin(); it != _units.end(); it++) {
+		 Unit u = it->second;
+		 if (!u.isBaseUnit()) {
+			 colno[j] = 1+c;
+			 row[j++] = u.unitVec[r].toReal();
+			 c++;
+		 }
+	  }
+	  for (int j2=0 ; j2 < NU; j2++) {
+		  colno[j]=colno[j2]+NU;
+		  row[j++] = -row[j2];
+	  }
+	  double b = unit.unitVec[r].toReal();
+	  if(!add_constraintex(lp,j,row,colno,EQ,b)) {
+		  cerr << "Internal error pretty printing expression (adding row to lp). Using simple approach" << endl;
+		  return unit;
+	  }
+  }
+  set_add_rowmode(lp,FALSE);
+
+  /* Set the objective */
+  int j=0;
+  int c2;
+  /* element 0..numBaseUnits-1*/
+  for (c2=0; c2 < numBaseUnits;c2++ ) {
+	  double cost=0;
+	  for (int r2=0; r2 < numBaseUnits; r2++) {
+		  cost+= fabs(unit.unitVec[r2].toReal()- (c2==r2?1:0));
+	  }
+	  cost *= _base[c2].weight;
+	  colno[j]=c2+1;
+	  row[j++]=cost;
+  }
+  /* elements numBaseUnits .. NU -1 */
+  c2=numBaseUnits;
+  for(map<string,Unit>::iterator it=_units.begin(); it != _units.end(); it++) {
+	  double cost=0;
+	  Unit u = it->second;
+	  if (!u.isBaseUnit()) {
+		  for(int r2=0; r2 < numBaseUnits; r2++) {
+			  cost += fabs(unit.unitVec[r2].toReal() - u.unitVec[r2].toReal());
+		  }
+		  cost *= u.weight;
+		  colno[j]=c2+1;
+		  row[j++]=cost;
+		  c2++;
+	  }
+  }
+  /* elements NU .. NU+numBaseUnits-1 */
+  for (int c2=0; c2 < numBaseUnits;c2++ ) {
+ 	  double cost=0;
+ 	  for (int r2=0; r2 < numBaseUnits; r2++) {
+ 		  cost+= fabs(unit.unitVec[r2].toReal()- (c2==r2?-1:0));
+ 	  }
+ 	  cost *= _base[c2].weight;
+ 	  colno[j]=c2+NU+1;
+ 	  row[j++]=cost;
+   }
+  /* elements NU+numBaseUnits .. 2*NU -1 */
+  c2=numBaseUnits;
+   for(map<string,Unit>::iterator it=_units.begin(); it != _units.end(); it++) {
+ 	  double cost=0;
+ 	  Unit u = it->second;
+ 	  if (!u.isBaseUnit()) {
+ 		  for(int r2=0; r2 < numBaseUnits; r2++) {
+ 			  cost += fabs(unit.unitVec[r2].toReal() + u.unitVec[r2].toReal());
+ 		  }
+ 		  cost *= u.weight;
+ 		  colno[j]=c2+NU+1;
+ 		  row[j++]=cost;
+ 		 c2++;
+ 	  }
+   }
+  if (!set_obj_fnex(lp,j,row,colno)) {
+	  cerr  << "Internal error pretty printing expression (adding objective to lp). Using simple approach" << endl;
+	  return unit;
+  }
+
+  /* Set up domain , Reals for base units, Integers for derived units */
+  int v=0;
+  for ( ; v < numBaseUnits; v++) 	set_int(lp,v+1,FALSE);
+  for ( ; v < NU; v++) 						set_int(lp,v+1,TRUE);
+  for ( ; v < NU+numBaseUnits; v++) 			set_int(lp,v+1,FALSE);
+  for ( ; v< 2*NU; v++) 						set_int(lp,v+1,TRUE);
+
+  /* Set up lower and upper bound */
+  double maxDim=0;
+  for (vector<Rational>::iterator it=unit.unitVec.begin(); it != unit.unitVec.end(); it++) {
+	  maxDim = max(it->toReal(),maxDim);
+  }
+  for(v=0;v<2*NU;v++) {
+	  set_upbo(lp,v+1,maxDim);
+  }
+  //cout << "LP debug:" << endl;
+  set_verbose(lp,-1); // NO printing
+  //print_lp(lp);
+  int res = solve(lp);
+  Unit prettyUnit,retVal;
+  if (res == 0) {
+	  //cerr << "result =" << get_var_primalresult(lp,0) << endl;
+	  for (int i =0 ; i< 2*NU; i++) {
+		  double res = get_var_primalresult(lp,i+1+numBaseUnits);
+		  //cerr << i << " : " << res << endl ;
+		  if (i>=NU) {
+			  //cerr << "Resetting elt " << i << " at pos " << i%NU << endl;
+			  prettyUnit.unitVec[i%NU] = Rational((long)(prettyUnit.unitVec[i%NU].toReal()-res));
+		  } else {
+			  //cerr << "Setting elt " << i << endl;
+			  prettyUnit.unitVec.push_back(Rational((long)res));
+		  }
+	  }
+	  //cerr << "resulting unit =" << unit2str(prettyUnit) << endl;
+	  retVal = prettyUnit;
+  } else {
+	  retVal = unit;
+  }
+  free_lp(&lp);
+  delete row;
+  delete colno;
+  return retVal;
 }
 
 string UnitParser::unit2str(Unit unit)
@@ -318,44 +511,56 @@ string UnitParser::unit2str(Unit unit)
 	//Print scale factor
 	if(!unit.scaleFactor.is(1,1) || (unit.isDimensionless() && unit.prefixExpo.isZero())){
 		ss << unit.scaleFactor.toString();
-		first = false;	
+		first = false;
 	}
 
 	//Prefix exponent
 	if(unit.prefixExpo.is(1,1)){
 		if(!first)
-			ss << ".";			
+			ss << ".";
 		ss << "10";
 		first = false;
 	}
 	else if(!unit.prefixExpo.isZero()){
 		if(!first)
-			ss << ".";			
+			ss << ".";
 		ss << "10^" << unit.prefixExpo.toString();
 		first = false;
 	}
-
-	//print type parameters (variables)
+    //print type parameters (variables)
 	for(map<string,Rational>::iterator p = unit.typeParamVec.begin(); p != unit.typeParamVec.end(); p++){
 		if(!(*p).second.isZero()){
 			if(!first)
-				ss << ".";			
+				ss << ".";
 			ss << (*p).first << ((*p).second.is(1) ? "" : (*p).second.toString());
 			first = false;
-		}		
+		}
 	}
-
 	//Print unit vector using base units
-	for(unsigned int i = 0; i<unit.unitVec.size(); i++){
+	unsigned int i;
+	for(i = 0; i<min(unit.unitVec.size(),_base.size()); i++){
 		Rational q(unit.unitVec[i]);
 		if(!q.isZero()){
 			if(!first)
-				ss << ".";			
+				ss << ".";
 			ss << _base[i].unitSymbol << (q.is(1) ? "" : q.toString());
 			first = false;
 		}
-	}	
+	}
+	//Print unit vector using derived units
+	for (map<string,Unit>::iterator it=_units.begin(); it!=_units.end(); it++) {
+		if (!it->second.isBaseUnit()) {
+			Rational q(unit.unitVec[i]);
 
+			if(!q.isZero()){
+				if(!first)
+					ss << ".";
+					ss << it->second.unitSymbol << (q.is(1) ? "" : q.toString());
+					first = false;
+			}
+			i++;
+		}
+	}
 	return ss.str();
 }
 
@@ -386,7 +591,7 @@ UnitRes UnitParser::parseExpression(Scanner& scan, Unit& unit)
 		case Scanner::TOK_DIV :
 			scan.getToken(str);
 			res = parseDenominator(scan, u2);
-			if(!res.Ok()) return res;			
+			if(!res.Ok()) return res;
 			res = Unit::div(u1,u2,unit);
 			if(!res.Ok()) return res;
 			return res;
@@ -473,8 +678,8 @@ UnitRes UnitParser::parseFactor(Scanner& scan, Unit& unit)
 			}
 
 		case Scanner::TOK_PARAM :  //Unit type parameter
-			scan.getToken(str);			
-			if(!res.Ok()) return res;			
+			scan.getToken(str);
+			if(!res.Ok()) return res;
 			unit = Unit();
 			scanpostemp = scan.getpos();
 			res = parseRational(scan, q);
@@ -512,14 +717,14 @@ UnitRes UnitParser::parseSymbol(Scanner& scan, Unit& unit)
 	string str;
 	Scanner::TokenType tok = scan.getToken(str);
 	if(tok != scan.TOK_ID) return UnitRes(UnitRes::PARSE_ERROR, scan.getLastPos());
-	
+
 	//Only a derived unit?
 	if(_units.find(str) != _units.end())
 	{
 		unit = _units[str];
 		return UnitRes(UnitRes::UNIT_OK);
 	}
-	
+
 	//Find prefix
 	for(unsigned int i=1; i<=str.size(); i++){
 		if(_prefix.find(str.substr(0,i)) != _prefix.end()){
@@ -573,13 +778,13 @@ UnitRes UnitParser::parseRational(Scanner& scan, Rational& q){
 		q = Rational(l1,l2);
 		return UnitRes(UnitRes::UNIT_OK);
 	}
-	else 
+	else
 		return UnitRes(UnitRes::PARSE_ERROR, scan.getLastPos());
 }
 
 
 void UnitParser::initSIUnits(){
-	
+
 	//Add prefixes
 	addPrefix("da",Rational(1));	// deca
 	addPrefix("h",Rational(2));		// hecto
@@ -612,33 +817,32 @@ void UnitParser::initSIUnits(){
 	addBase("luminous intensity", "candela", "cd", true);
 
 	//Special derived unit for handling gram
-	addDerived("mass", "gram", "g", "kg", Rational(-3), Rational(1), Rational(0), true); 
+	addDerived("mass", "gram", "g", "kg", Rational(-3), Rational(1), Rational(0), true);
 
 	//Standard derived units (SI brochure 8th ed., page 118)
-	addDerived("plane angle", "radian", "rad", "m/m", Rational(0), Rational(1), Rational(0), true); 
-	addDerived("solid angle", "steradian", "sr", "m2/m2", Rational(0), Rational(1), Rational(0), true); 
-	addDerived("frequency", "hertz", "Hz", "s-1", Rational(0), Rational(1), Rational(0), true); 
-	addDerived("force", "newton", "N", "m.kg.s-2", Rational(0), Rational(1), Rational(0), true); 
-	addDerived("pressure, stress", "pascal", "Pa", "N/m2", Rational(0), Rational(1), Rational(0), true); 
-	addDerived("energy, work, amount of heat", "joule", "J", "N.m", Rational(0), Rational(1), Rational(0), true); 
-	addDerived("power, radiant flux", "watt", "W", "J/s", Rational(0), Rational(1), Rational(0), true); 
-	addDerived("electric charge, amount of electricity", "coulomb", "C", "s.A", Rational(0), Rational(1), Rational(0), true); 
-	addDerived("electric potential difference, electromotive force", "volt", "V", "W/A", Rational(0), Rational(1), Rational(0), true); 
-	addDerived("capacitance", "farad", "F", "C/V", Rational(0), Rational(1), Rational(0), true); 
-	addDerived("electric resistance", "ohm", "Ohm", "V/A", Rational(0), Rational(1), Rational(0), true); 
-	addDerived("electric conductance", "siemens", "S", "A/V", Rational(0), Rational(1), Rational(0), true); 
-	addDerived("magnetic flux", "weber", "Wb", "V.s", Rational(0), Rational(1), Rational(0), true); 
-	addDerived("magnetic flux density", "tesla", "T", "Wb/m2", Rational(0), Rational(1), Rational(0), true); 
-	addDerived("inductance", "henry", "H", "Wb/A", Rational(0), Rational(1), Rational(0), true); 
-	addDerived("Celsius temperature", "degree Celsius", "degC", "K", Rational(0), Rational(1), Rational(27315,100), true); 
-	addDerived("luminous flux", "lumen", "lm", "cd.sr", Rational(0), Rational(1), Rational(0), true); 
-	addDerived("illuminance", "lux", "lx", "lm/m2", Rational(0), Rational(1), Rational(0), true); 
-	addDerived("activity referred to a radionuclide", "becquerel", "Bq", "s-1", Rational(0), Rational(1), Rational(0), true); 
-	addDerived("absorbed dose, specific energy (imparted), kerma", "gray", "Gy", "J/kg", Rational(0), Rational(1), Rational(0), true); 
-	addDerived("dose equivalent, ambient dose equivalent, directional dose equivalent, personal dose equivalent", "sievert", "Sv", "J/kg", Rational(0), Rational(1), Rational(0), true); 
-	addDerived("catalyctic activity", "katal", "kat", "s-1.mol", Rational(0), Rational(1), Rational(0), true); 
+	addDerived("plane angle", "radian", "rad", "m/m", Rational(0), Rational(1), Rational(0), true);
+	addDerived("solid angle", "steradian", "sr", "m2/m2", Rational(0), Rational(1), Rational(0), true);
+	addDerived("frequency", "hertz", "Hz", "s-1", Rational(0), Rational(1), Rational(0), true,1.2);
+	addDerived("force", "newton", "N", "m.kg.s-2", Rational(0), Rational(1), Rational(0), true);
+	addDerived("pressure, stress", "pascal", "Pa", "N/m2", Rational(0), Rational(1), Rational(0), true);
+	addDerived("energy, work, amount of heat", "joule", "J", "N.m", Rational(0), Rational(1), Rational(0), true);
+	addDerived("power, radiant flux", "watt", "W", "J/s", Rational(0), Rational(1), Rational(0), true);
+	addDerived("electric charge, amount of electricity", "coulomb", "C", "s.A", Rational(0), Rational(1), Rational(0), true);
+	addDerived("electric potential difference, electromotive force", "volt", "V", "W/A", Rational(0), Rational(1), Rational(0), true);
+	addDerived("capacitance", "farad", "F", "C/V", Rational(0), Rational(1), Rational(0), true);
+	addDerived("electric resistance", "ohm", "Ohm", "V/A", Rational(0), Rational(1), Rational(0), true);
+	addDerived("electric conductance", "siemens", "S", "A/V", Rational(0), Rational(1), Rational(0), true);
+	addDerived("magnetic flux", "weber", "Wb", "V.s", Rational(0), Rational(1), Rational(0), true);
+	addDerived("magnetic flux density", "tesla", "T", "Wb/m2", Rational(0), Rational(1), Rational(0), true);
+	addDerived("inductance", "henry", "H", "Wb/A", Rational(0), Rational(1), Rational(0), true);
+	addDerived("Celsius temperature", "degree Celsius", "degC", "K", Rational(0), Rational(1), Rational(27315,100), true);
+	addDerived("luminous flux", "lumen", "lm", "cd.sr", Rational(0), Rational(1), Rational(0), true);
+	addDerived("illuminance", "lux", "lx", "lm/m2", Rational(0), Rational(1), Rational(0), true);
+	addDerived("activity referred to a radionuclide", "becquerel", "Bq", "s-1", Rational(0), Rational(1), Rational(0), true,1.2);
+	addDerived("absorbed dose, specific energy (imparted), kerma", "gray", "Gy", "J/kg", Rational(0), Rational(1), Rational(0), true);
+	addDerived("dose equivalent, ambient dose equivalent, directional dose equivalent, personal dose equivalent", "sievert", "Sv", "J/kg", Rational(0), Rational(1), Rational(0), true);
+	addDerived("catalyctic activity", "katal", "kat", "s-1.mol", Rational(0), Rational(1), Rational(0), true);
 }
-
 
 /***************************************************************************************/
 /*   CLASS: Scanner                                                                    */
@@ -664,7 +868,7 @@ Scanner::TokenType Scanner::getTokenInternal(string& tokstr, unsigned int& index
 
 	//Check if it was the last token
 	if(isEOS(index))
-		return TOK_EOS;		
+		return TOK_EOS;
 
 	//Check character tokens
 	switch(_str[index]){
@@ -673,18 +877,18 @@ Scanner::TokenType Scanner::getTokenInternal(string& tokstr, unsigned int& index
 			return TOK_DIV;
 		case '(' :
 			index++;
-			return TOK_LPARAN;  
+			return TOK_LPARAN;
 		case ')' :
 			index++;
 			return TOK_RPARAN;
 		case '.' :
 			index++;
-			return TOK_DOT;  
+			return TOK_DOT;
 		case '^' :
 			index++;
-			return TOK_EXPO; 
+			return TOK_EXPO;
 	}
-	
+
 	//Check if identifier or token
 	if(isTextChar(index) || _str[index] == '\''){
 		unsigned int idx = index++;
@@ -699,9 +903,9 @@ Scanner::TokenType Scanner::getTokenInternal(string& tokstr, unsigned int& index
 			else
 				return TOK_PARAM;
 		}
-		return TOK_ID;			
+		return TOK_ID;
 	}
-	
+
 	//Get potential sign of integer
 	unsigned int idx = index;
 	if(_str[index] == '+' || _str[index] == '-')
@@ -742,7 +946,7 @@ bool Scanner::finished(){
 	return _index >= _str.size();
 }
 
-  
+
 /** Test function that prints out tokenized strings. */
 void TestScanner(){
 	string s = "  (	. hi.There'we.are12.-0211 +77	) /";
@@ -753,25 +957,25 @@ void TestScanner(){
 	while((tok = scan.getToken(str)) != Scanner::TOK_EOS){
 		switch(tok){
 			case Scanner::TOK_DIV :
-				cout << "/,"; 
+				cout << "/,";
 				break;
 			case Scanner::TOK_LPARAN :
-				cout << "(,"; 
+				cout << "(,";
 				break;
 			case Scanner::TOK_RPARAN :
-				cout << "),"; 
+				cout << "),";
 				break;
 			case Scanner::TOK_DOT :
-				cout << ".,"; 
+				cout << ".,";
 				break;
 			case Scanner::TOK_ID :
-				cout << "\"" << str << "\","; 
+				cout << "\"" << str << "\",";
 				break;
 			case Scanner::TOK_PARAM :
-				cout << "[" << str << "],"; 
+				cout << "[" << str << "],";
 				break;
 			case Scanner::TOK_INT :
-				cout << str << ","; 
+				cout << str << ",";
 				break;
 			case Scanner::TOK_UNKNOWN :
 				cout << "** UNKNOWN at pos " << scan.getPos() << "\n";
