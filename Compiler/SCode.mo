@@ -668,27 +668,10 @@ algorithm
         els_1 = listAppend(es_1, els);
       then
         els_1;
-    case (cp :: rest) /* ignore all other than PUBLIC and PROTECTED, i.e. elements */ 
-      equation 
-        false = isPubOrProt(cp);
-        els = elabClassdefElements(rest);
-      then
-        els;
+    case (_ :: rest) /* ignore all other than PUBLIC and PROTECTED, i.e. elements */ 
+      then elabClassdefElements(rest);
   end matchcontinue;
 end elabClassdefElements;
-
-protected function isPubOrProt "
-Author: BZ
-Helper function for elabClassdefElements, verify a fail
-"
-  input Absyn.ClassPart cp;
-  output Boolean ob;
-algorithm ob := matchcontinue(cp)
-  case(Absyn.PUBLIC(contents = _)) then true;
-  case(Absyn.PROTECTED(contents = _)) then true;
-  case(_) then false;
-end matchcontinue;
-end isPubOrProt;
 
 protected function elabClassdefEquations 
 "function: elabClassdefEquations 
@@ -1264,86 +1247,10 @@ algorithm
     case (SOME(Absyn.CLASSMOD(l,NONE)),finalPrefix,each_)
       equation 
         subs = buildArgs(l);
-        true = verifyNonMultipleMods(l);
       then
         MOD(finalPrefix,each_,subs,NONE);        
   end matchcontinue;
 end buildMod;
-
-protected function verifyNonMultipleMods "
-Author: BZ, 2008-07
-This function checks that we do not have multiple modifiers on same component.
-Ex 'myModel mo(C=3.15,redeclare Modelica.Resistor C)' should generate an error.
-"
-input list<Absyn.ElementArg> elems;
-output Boolean succ;
-algorithm succ := matchcontinue(elems)
-  case(elems) equation true = listLength(elems) <=1; then true;
-    
-  case(elems)
-    local
-      String errorString,errorComp;
-      Absyn.ComponentRef cr;
-    equation
-      (errorString,(cr as Absyn.CREF_IDENT(errorComp,_))) = getDoubleMods(elems,{});
-      false = intEq(stringLength(errorString),0); 
-      Error.addMessage(Error.MULTIPLE_MODIFIER, {errorComp,errorString});
-      then
-        false;
-  
-  case(elems) then true;
-  end matchcontinue;
-end verifyNonMultipleMods;
-
-protected function getDoubleMods "
-Author BZ
-Helper function for verifyNonMultipleMods
-"
-  input list<Absyn.ElementArg> elems;
-  input list<Absyn.ComponentRef> crefs;
-  output String double;
-  output Absyn.ComponentRef double;
-algorithm double := matchcontinue(elems,crefs)
-  local
-    Absyn.ComponentRef cr,doubleCr;
-    Absyn.ElementArg ea;
-    String error,n,error2;
-    Absyn.ElementSpec spec;
-    Option<Absyn.Modification> oam;
-  case({},cr::_) then ("", cr);
-  case((ea as Absyn.MODIFICATION(componentReg = cr,modification=oam))::elems,crefs)
-    equation
-      false = Util.listContainsWithCompareFunc(cr,crefs,Absyn.crefEqual);
-      (error, doubleCr) = getDoubleMods(elems,cr::crefs);
-      error2 = prettyPrintElementModifier(ea);
-      error = error +& Util.if_(boolAnd(stringLength(error)>0,Absyn.crefEqual(doubleCr,cr))," and " +& error2 ,"");
-    then
-      (error,cr);
-      
-  case((ea as Absyn.MODIFICATION(componentReg = cr,modification=oam))::elems,crefs)
-    equation
-      true = Util.listContainsWithCompareFunc(cr,crefs,Absyn.crefEqual);
-      error = prettyPrintElementModifier(ea);
-    then
-      (error,cr);
-  case(Absyn.REDECLARATION(elementSpec = spec)::elems,crefs)
-    equation
-      n = Absyn.elementSpecName(spec);
-      cr = Absyn.CREF_IDENT(n,{});
-      false = Util.listContainsWithCompareFunc(cr,crefs,Absyn.crefEqual);
-      (error, doubleCr) = getDoubleMods(elems,cr::crefs);
-      error = error +& Util.if_(boolAnd(stringLength(error)>0,Absyn.crefEqual(doubleCr,cr))," and Redeclaration of component " +& n,"");
-    then
-      (error,cr); 
-  case(Absyn.REDECLARATION(elementSpec = spec)::elems,crefs)
-    equation
-      n = Absyn.elementSpecName(spec);
-      cr = Absyn.CREF_IDENT(n,{});
-      true = Util.listContainsWithCompareFunc(cr,crefs,Absyn.crefEqual);
-    then
-      ("Redeclaration of component "+&n,cr); 
-end matchcontinue;
-end getDoubleMods;
 
 protected function prettyPrintOptModifier "
 Author BZ, 2008-07

@@ -477,7 +477,7 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           "Identificator %s of implicit for iterator must be present as array subscript in the loop body."),
           
           (MULTIPLE_MODIFIER,TRANSLATION(),ERROR(),
-          "Multiple modifers in same scope for component %s, modifiers: %s"),
+          "Multiple modifers in same scope for element %s, %s"),
           
           (STRUCT_SINGULAR_SYSTEM_INITIALIZATION,TRANSLATION(),ERROR(),
           "The initialization problem of model is structurally singular, error found sorting equations %s for variables %s"),

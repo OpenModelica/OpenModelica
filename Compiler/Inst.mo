@@ -1178,7 +1178,7 @@ algorithm
     
     case (cache,env,store,mods,pre,csets,ci_state,(c as SCode.CLASS(name = n,restriction = r,classDef = d)),prot,inst_dims,impl,graph,_)
       equation 
-        //print("instClassIn(");print(n);print("failed\n");
+        //print("instClassIn(");print(n);print(") failed\n");
         //Debug.fprintln("failtrace", "- Inst.instClassIn failed" +& n);
       then
         fail();
@@ -3926,7 +3926,7 @@ algorithm
         path = Absyn.IDENT(str);
         path = Prefix.prefixPath(path,pre);        
         str = Absyn.pathString(path);         
-
+        verifySingleMod(mod,pre,str);
 /*
 classmod = Mod.lookupModificationP(mods, t);
 mm = Mod.lookupCompModification(mods, n);
@@ -3946,11 +3946,73 @@ mm = Mod.lookupCompModification(mods, n);
         (cache,dae,env_2,store,csets_2,ci_state_2,tys,graph);
     case (_,_,_,_,_,_,_,els,_,_,_)
       equation 
+        //print("instElementList failed\n ");
         Debug.fprintln("failtrace", "- Inst.instElementList failed");
       then
         fail();
   end matchcontinue;
 end instElementList;
+
+protected function verifySingleMod "
+Author BZ 
+Checks so that we only have one modifier for each element. 
+Fails on; a(x=3, redeclare Integer x)
+"
+  input Mod m;
+  input Prefix.Prefix pre;
+  input String str;
+algorithm _ := matchcontinue(m,pre,str)
+  local
+    list<Types.SubMod> subs;
+  case(Types.MOD(_,_,subs,_),pre,str)
+    equation
+      verifySingleMod2(subs,{},pre,str);
+    then
+      ();
+  case(Types.NOMOD,pre,str) then ();
+  case(Types.REDECL(finalPrefix=_),pre,str) then ();
+end matchcontinue;
+end verifySingleMod;
+
+protected function verifySingleMod2 "
+helper function for verifySingleMod
+"
+  input list<Types.SubMod> subs;
+  input list<String> prior;
+  input Prefix.Prefix pre;
+  input String str;
+algorithm _ := matchcontinue(subs,prior,pre,str)
+  local String n,s1;
+  case({},_,pre,str) then ();
+  case(Types.NAMEMOD(ident = n)::subs,prior,pre,str)
+    equation
+      false = Util.listContainsWithCompareFunc(n,prior,stringEqual);
+      verifySingleMod2(subs,n::prior,pre,str);
+      then
+        ();
+  case(Types.NAMEMOD(ident = n)::subs,prior,pre,str)
+    equation
+      true = Util.listContainsWithCompareFunc(n,prior,stringEqual);
+      s1 = makePrefixString(pre);
+      Error.addMessage(Error.MULTIPLE_MODIFIER, {n,s1});
+      then
+        fail();        
+  end matchcontinue;
+end verifySingleMod2;
+
+protected function makePrefixString "
+helper function for verifySingleMod, pretty output
+"
+input Prefix.Prefix pre;
+output String str;
+algorithm str := matchcontinue(pre)
+  case(Prefix.NOPRE()) then "from top scope";
+  case(pre) 
+    equation 
+      str = "from calling scope: " +& Prefix.printPrefixStr(pre); 
+    then str;
+  end matchcontinue;
+end makePrefixString;
 
 protected function classdefElts2 
 "function: classdeElts2
@@ -5289,8 +5351,6 @@ algorithm
         m_2 = Mod.merge(compMod, innerCompMod, env_1, pre);
       then
         (cache,redComp,m_2,env_1,csets);
-        //(cache,redecl,m_2,env_1,csets);
-
 
 // no constraining type on comp, throw away modifiers prior to redeclaration
     case (cache,(m as Types.REDECL(tplSCodeElementModLst = (((redecl as 
