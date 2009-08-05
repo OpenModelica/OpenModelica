@@ -30,11 +30,11 @@ endif
 SHELL	= /bin/sh
 CC	= gcc
 IDL	= @IDLCMD@
-CFLAGS	+= -O3 -I$(RMLINCLUDE) -I$(top_builddir)/c_runtime  -I$(top_builddir)/c_runtime/superlu/include -I$(srcdir) -I. $(CORBAINCL) -I../
+CFLAGS	+= -O3 -I$(RMLINCLUDE) -I$(top_builddir)/c_runtime  -I$(top_builddir)/c_runtime/superlu/include -I$(srcdir) -I. $(CORBAINCL) -I../ -Ilpsolve
 CXXFLAGS = $(CFLAGS)
 SRC	= rtopts.c socketimpl.c printimpl.c systemimpl.c settingsimpl.c
 
-CPPSRC  = ptolemyio.cpp daeext.cpp ErrorMessage.cpp errorext.cpp optmanager.cpp $(CORBASRC)
+CPPSRC  = unitparser.cpp unitparserext.cpp ptolemyio.cpp daeext.cpp ErrorMessage.cpp errorext.cpp optmanager.cpp $(CORBASRC)
 OBJ     = $(SRC:.c=.o) $(CPPSRC:.cpp=.o) $(CPPSRC:.cc=.o)
 
 all: runtime.a 
