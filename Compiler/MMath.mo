@@ -1,4 +1,4 @@
-package Math "copyright MathCore Engineering AB 2008 
+package MMath "copyright MathCore Engineering AB 2008 
 
 author Peter Aronsson (peter.aronsson@mathcore.com)
 
@@ -129,4 +129,4 @@ algorithm
   end matchcontinue;
 end testRational;
 
-end Math;
+end MMath;

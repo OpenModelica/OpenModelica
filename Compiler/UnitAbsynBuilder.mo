@@ -9,7 +9,7 @@ for unit checker module
 
 public import UnitAbsyn;
 public import DAE;
-public import Math;
+public import MMath;
 public import Env;
 public import HashTable;
 public import Types;
@@ -257,7 +257,7 @@ algorithm
     s1 = Exp.printExpStr(e);
     then s1;
        
-    case(UnitAbsyn.POW(ut1,Math.RATIONAL(i1,i2),e)) equation
+    case(UnitAbsyn.POW(ut1,MMath.RATIONAL(i1,i2),e)) equation
       s1 = Exp.printExpStr(e);
     then s1;
               
@@ -313,8 +313,8 @@ protected function printUnit "prints a unit to stdout (only for debugging)"
 input UnitAbsyn.Unit unit;
 algorithm 
   _ := matchcontinue(unit)
-  local list<tuple<Math.Rational,UnitAbsyn.TypeParameter>> typeparams;
-    list<Math.Rational> baseunits;
+  local list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> typeparams;
+    list<MMath.Rational> baseunits;
     /*case(unit) equation
       print(unit2str(unit));      
     then();*/
@@ -334,12 +334,12 @@ algorithm
 end printUnit;
    
 protected function printBaseUnitsStr "help function to printUnit"
-  input list<Math.Rational> lst;
+  input list<MMath.Rational> lst;
   output String str;  
 algorithm
   str := matchcontinue(lst)
   local Integer i1,i2,i3,i4;
-    case(Math.RATIONAL(i1,i2)::Math.RATIONAL(i3,i4)::_) equation
+    case(MMath.RATIONAL(i1,i2)::MMath.RATIONAL(i3,i4)::_) equation
     str = "m^("+&intString(i1)+&"/"+&intString(i2)+&")"
     +&  "s^("+&intString(i3)+&"/"+&intString(i4)+&")" ;
     then str;
@@ -349,32 +349,32 @@ algorithm
 end printBaseUnitsStr;
   
 protected function printTypeParameterStr "help function to printUnit"
-  input tuple<Math.Rational,UnitAbsyn.TypeParameter> typeParam;
+  input tuple<MMath.Rational,UnitAbsyn.TypeParameter> typeParam;
   output String str;
 algorithm
   str := matchcontinue(typeParam)
   local String name; Integer i1,i2,i3,indx;
-    case((Math.RATIONAL(0,0),UnitAbsyn.TYPEPARAMETER(name,indx))) equation
+    case((MMath.RATIONAL(0,0),UnitAbsyn.TYPEPARAMETER(name,indx))) equation
       str = name +& "[indx =" +& intString(indx) +& "]";
       then str;
-    case((Math.RATIONAL(i1,1),UnitAbsyn.TYPEPARAMETER(name,indx))) equation
+    case((MMath.RATIONAL(i1,1),UnitAbsyn.TYPEPARAMETER(name,indx))) equation
       str = name +& "^" +& intString(i1) +& "[indx=" +& intString(indx) +& "]";     
     then str;
-    case((Math.RATIONAL(i1,i2),UnitAbsyn.TYPEPARAMETER(name,indx))) equation
+    case((MMath.RATIONAL(i1,i2),UnitAbsyn.TYPEPARAMETER(name,indx))) equation
       str = name+& "^("+& intString(i1) +& "/" +& intString(i2)+&")" +& "[indx=" +& intString(indx) +& "]";     
     then str;
   end matchcontinue; 
 end printTypeParameterStr;
 
 public function splitRationals "splits a list of Rationals into a list of numerators and denominators"
-  input list<Math.Rational> rationals;
+  input list<MMath.Rational> rationals;
   output list<Integer> nums;
   output list<Integer> denoms;
 algorithm
   (nums,denoms) := matchcontinue(rationals)
   local Integer i1,i2;
     case({}) then ({},{});
-    case(Math.RATIONAL(i1,i2)::rationals) equation
+    case(MMath.RATIONAL(i1,i2)::rationals) equation
       (nums,denoms) = splitRationals(rationals);
     then (i1::nums,i2::denoms);
   end matchcontinue;
@@ -383,14 +383,14 @@ end splitRationals;
 public function joinRationals "joins a lists of numerators and denominators into list of Rationals"
   input list<Integer> nums;
   input list<Integer> denoms;
-  output list<Math.Rational> rationals;
+  output list<MMath.Rational> rationals;
 algorithm
   (rationals) := matchcontinue(nums,denoms)
   local Integer i1,i2;
     case({},{}) then ({});
     case(i1::nums,i2::denoms) equation
       rationals = joinRationals(nums,denoms);
-    then (Math.RATIONAL(i1,i2)::rationals);
+    then (MMath.RATIONAL(i1,i2)::rationals);
   end matchcontinue;
 end joinRationals;
 
@@ -398,7 +398,7 @@ public function joinTypeParams "creates type parameter lists from list of numera
   input list<Integer> nums;
   input list<Integer> denoms;
   input list<String> tpstrs;
-  output list<tuple<Math.Rational,UnitAbsyn.TypeParameter>> typeParams;
+  output list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> typeParams;
 algorithm
   typeParams := matchcontinue(nums,denoms,tpstrs)
     local Integer i1,i2;
@@ -406,12 +406,12 @@ algorithm
     case({},{},{}) then {};
     case(i1::nums,i2::denoms,tpParam::tpstrs) equation
       typeParams = joinTypeParams(nums,denoms,tpstrs);
-    then (Math.RATIONAL(i1,i2),UnitAbsyn.TYPEPARAMETER(tpParam,0))::typeParams;
+    then (MMath.RATIONAL(i1,i2),UnitAbsyn.TYPEPARAMETER(tpParam,0))::typeParams;
   end matchcontinue;  
 end joinTypeParams;
   
 public function splitTypeParams "splits type parameter lists into numerators, denominators and typeparameter names"
-  input list<tuple<Math.Rational,UnitAbsyn.TypeParameter>> typeParams;
+  input list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> typeParams;
   output list<Integer> nums;
   output list<Integer> denoms;
   output list<String> tpstrs; 
@@ -419,7 +419,7 @@ algorithm
   (nums,denoms,tpstrs) := matchcontinue(typeParams)
   local String tpParam; Integer i1,i2;
     case({}) then ({},{},{});
-    case((Math.RATIONAL(i1,i2),UnitAbsyn.TYPEPARAMETER(tpParam,_))::typeParams) equation
+    case((MMath.RATIONAL(i1,i2),UnitAbsyn.TYPEPARAMETER(tpParam,_))::typeParams) equation
       (nums,denoms,tpstrs) = splitTypeParams(typeParams);
     then (i1::nums,i2::denoms,tpParam::tpstrs);
   end matchcontinue;  
@@ -580,8 +580,8 @@ protected function createTypeParameterLocations3 "help function to createTypePar
   output Integer outNextElt;
 algorithm
   (outUnit,outHt,outNextElt) := matchcontinue(unit,ht,nextElt)
-  local list<tuple<Math.Rational,UnitAbsyn.TypeParameter>> params;
-    list<Math.Rational> units;
+  local list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> params;
+    list<MMath.Rational> units;
      /* Only succeeds for units with type parameters */
     case(UnitAbsyn.SPECIFIED(UnitAbsyn.SPECUNIT(params as _::_,units)),ht,nextElt) equation
       (params,ht,nextElt) = createTypeParameterLocations4(params,ht,nextElt);
@@ -590,16 +590,16 @@ algorithm
 end createTypeParameterLocations3;
 
 protected function createTypeParameterLocations4 "help function to createTypeParameterLocations3"
-  input list<tuple<Math.Rational,UnitAbsyn.TypeParameter>> params;
+  input list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> params;
   input HashTable.HashTable ht;  
   input Integer nextElt;
-  output list<tuple<Math.Rational,UnitAbsyn.TypeParameter>> outParams;
+  output list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> outParams;
   output HashTable.HashTable outHt;
   output Integer outNextElt;
 algorithm
   (outParams,outHt,outNextElt) := matchcontinue(params,ht,nextElt)
-  local Integer indx; String name; Math.Rational r;
-    tuple<Math.Rational,UnitAbsyn.TypeParameter> param;
+  local Integer indx; String name; MMath.Rational r;
+    tuple<MMath.Rational,UnitAbsyn.TypeParameter> param;
     case({},ht,nextElt) then ({},ht,nextElt);
    
     case((r,UnitAbsyn.TYPEPARAMETER(name,0))::params,ht,nextElt) equation
@@ -921,8 +921,8 @@ algorithm
   (outStore,outHt) := matchcontinue(dae,store,ht)
   local Exp.ComponentRef cr; Option<DAE.VariableAttributes> attropt;
     Integer indx; String unitStr;
-    list<Math.Rational> units;
-    list<tuple<Math.Rational,UnitAbsyn.TypeParameter>> typeParams;
+    list<MMath.Rational> units;
+    list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> typeParams;
     UnitAbsyn.Unit unit;
     Exp.Exp e1,e2;
     case({},store,ht) then (store,ht);
@@ -956,8 +956,8 @@ algorithm
   (outStore,outHt) := matchcontinue(dae,store,ht)
   local Exp.ComponentRef cr; Option<DAE.VariableAttributes> attropt;
     Integer indx; String unitStr;
-    list<Math.Rational> units;
-    list<tuple<Math.Rational,UnitAbsyn.TypeParameter>> typeParams;
+    list<MMath.Rational> units;
+    list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> typeParams;
     UnitAbsyn.Unit unit;
     Exp.Exp e1,e2;
     case({},store,ht) then (store,ht);    
@@ -1028,11 +1028,11 @@ public function unitMultiply "Multiplying two units corresponds to adding the un
   
 algorithm
   u := matchcontinue(u1,u2)
-  local list<tuple<Math.Rational,UnitAbsyn.TypeParameter>> tparams1,tparams2,tparams;
-    list<Math.Rational> units,units1,units2;
+  local list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> tparams1,tparams2,tparams;
+    list<MMath.Rational> units,units1,units2;
     case(UnitAbsyn.SPECIFIED(UnitAbsyn.SPECUNIT(tparams1,units1)),UnitAbsyn.SPECIFIED(UnitAbsyn.SPECUNIT(tparams2,units2))) equation
       tparams = listAppend(tparams1,tparams2);
-      units = Util.listThreadMap(units1,units2,Math.addRational);
+      units = Util.listThreadMap(units1,units2,MMath.addRational);
     then UnitAbsyn.SPECIFIED(UnitAbsyn.SPECUNIT(tparams,units));
   end matchcontinue;
 end unitMultiply;
@@ -1059,8 +1059,8 @@ algorithm
     local 
       list<Integer> nums,denoms,tpnoms,tpdenoms;
       list<String> tpstrs;
-      list<tuple<Math.Rational,UnitAbsyn.TypeParameter>> typeParams;
-      list<Math.Rational> units;
+      list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> typeParams;
+      list<MMath.Rational> units;
       
     case(UnitAbsyn.SPECIFIED(UnitAbsyn.SPECUNIT(typeParams,units))) equation
       (nums,denoms) = splitRationals(units);
@@ -1078,8 +1078,8 @@ protected
    list<Integer> nums,denoms,tpnoms,tpdenoms;
    list<String> tpstrs;  
    Real scaleFactor,offset;
-   list<tuple<Math.Rational,UnitAbsyn.TypeParameter>> typeParams;
-   list<Math.Rational> units;
+   list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> typeParams;
+   list<MMath.Rational> units;
 algorithm
   (nums,denoms,tpnoms,tpdenoms,tpstrs,scaleFactor,offset) := UnitParserExt.str2unit(res);
   units := joinRationals(nums,denoms);
@@ -1106,13 +1106,13 @@ public function buildTest1
   output UnitAbsyn.UnitTerms ut;
   output UnitAbsyn.Store sigma; 
 protected
-  Math.Rational r0,r1,nr1,nr2; 
+  MMath.Rational r0,r1,nr1,nr2; 
   UnitAbsyn.Unit unitderx,unitderv,unitx,unitv,unita;
   algorithm
-    r0 := Math.RATIONAL(0,0);
-    r1 := Math.RATIONAL(1,0);
-    nr1 := Math.RATIONAL(-1,0);
-    nr2 := Math.RATIONAL(-2,0);
+    r0 := MMath.RATIONAL(0,0);
+    r1 := MMath.RATIONAL(1,0);
+    nr1 := MMath.RATIONAL(-1,0);
+    nr2 := MMath.RATIONAL(-2,0);
     ut := { 
     UnitAbsyn.EQN(UnitAbsyn.LOC(1,Exp.SCONST("1")),UnitAbsyn.LOC(4,Exp.SCONST("4")),Exp.SCONST("1==4")),
     UnitAbsyn.EQN(UnitAbsyn.LOC(2,Exp.SCONST("2")),UnitAbsyn.LOC(5,Exp.SCONST("5")),Exp.SCONST("2==5"))                  
@@ -1145,10 +1145,10 @@ end Test2;
   output UnitAbsyn.UnitTerms ut;
   output UnitAbsyn.Locations sigma; 
 protected
-  Math.Rational r0,r1;
+  MMath.Rational r0,r1;
   algorithm
-    r0 := Math.RATIONAL(0,0);
-    r1 := Math.RATIONAL(1,0);
+    r0 := MMath.RATIONAL(0,0);
+    r1 := MMath.RATIONAL(1,0);
     ut := { 
     UnitAbsyn.EQN(UnitAbsyn.LOC("z"),UnitAbsyn.SUB(UnitAbsyn.LOC("x"),UnitAbsyn.LOC("y")))
     };
@@ -1173,11 +1173,11 @@ end Test3;
   output UnitAbsyn.UnitTerms ut;
   output UnitAbsyn.Locations sigma; 
 protected
-  Math.Rational r0,r1,nr1;
+  MMath.Rational r0,r1,nr1;
   algorithm
-    r0 := Math.RATIONAL(0,0);
-    r1 := Math.RATIONAL(1,0);
-    nr1 := Math.RATIONAL(-1,0);
+    r0 := MMath.RATIONAL(0,0);
+    r1 := MMath.RATIONAL(1,0);
+    nr1 := MMath.RATIONAL(-1,0);
     ut := { 
     UnitAbsyn.EQN(UnitAbsyn.LOC("z"),UnitAbsyn.SUB(UnitAbsyn.LOC("x"),UnitAbsyn.LOC("y")))
     };
@@ -1204,11 +1204,11 @@ end test5;
   output UnitAbsyn.UnitTerms ut;
   output UnitAbsyn.Locations sigma; 
 protected
-  Math.Rational r0,r1,nr1;
+  MMath.Rational r0,r1,nr1;
   algorithm
-    r0 := Math.RATIONAL(0,0);
-    r1 := Math.RATIONAL(1,0);
-    nr1 := Math.RATIONAL(-1,0);
+    r0 := MMath.RATIONAL(0,0);
+    r1 := MMath.RATIONAL(1,0);
+    nr1 := MMath.RATIONAL(-1,0);
     ut := { 
     UnitAbsyn.EQN(UnitAbsyn.LOC("z"),UnitAbsyn.MUL(UnitAbsyn.LOC("x"),UnitAbsyn.LOC("y")))
     };
@@ -1244,11 +1244,11 @@ end Test8;
   output UnitAbsyn.UnitTerms ut;
   output UnitAbsyn.Locations sigma; 
 protected
-  Math.Rational r0,r1,nr1;
+  MMath.Rational r0,r1,nr1;
   algorithm
-    r0 := Math.RATIONAL(0,0);
-    r1 := Math.RATIONAL(1,0);
-    nr1 := Math.RATIONAL(-1,0);
+    r0 := MMath.RATIONAL(0,0);
+    r1 := MMath.RATIONAL(1,0);
+    nr1 := MMath.RATIONAL(-1,0);
     ut := { 
     UnitAbsyn.EQN(UnitAbsyn.LOC("x"),UnitAbsyn.LOC("Foo8(x)")),
     UnitAbsyn.EQN(UnitAbsyn.LOC("v1"),UnitAbsyn.LOC("Foo8(v2)"))

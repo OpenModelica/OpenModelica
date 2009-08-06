@@ -4,15 +4,15 @@ author Peter Aronsson (peter.aronsson@mathcore.com)
 This module contains the datatypes for representing unit terms.
 "
 
-public import Math;
+public import MMath;
 public import HashTable;
 public import Exp;
 
 public   
 uniontype SpecUnit   
   record SPECUNIT " "
-    list<tuple<Math.Rational,TypeParameter>> typeParameters "A type parameter also has an exponent."; 
-    list<Math.Rational> units "first seven elements are the SI base units";
+    list<tuple<MMath.Rational,TypeParameter>> typeParameters "A type parameter also has an exponent."; 
+    list<MMath.Rational> units "first seven elements are the SI base units";
   end SPECUNIT;
 end SpecUnit;
 
@@ -77,7 +77,7 @@ uniontype UnitTerm "A unit term is either
     
   record POW "exponentiation"
       UnitTerm ut1;
-    	Math.Rational exponent "ut^exponent";    	 
+    	MMath.Rational exponent "ut^exponent";    	 
     	Exp.Exp origExp "for proper error reporting"; 
   end POW;
 end UnitTerm;

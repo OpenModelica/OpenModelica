@@ -145,7 +145,7 @@ protected import ModUtil;
 protected import VarTransform;
 protected import OptManager;
 protected import HashTable5;
-protected import Math;
+protected import MMath;
 protected import UnitAbsynBuilder;
 protected import UnitChecker;
 

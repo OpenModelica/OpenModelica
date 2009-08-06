@@ -38,7 +38,7 @@ This package is used for checking if an equation system is consistent, inconsist
 "
 
 public import UnitAbsyn;
-public import Math;
+public import MMath;
 public import UnitAbsynBuilder;
 
  
@@ -149,7 +149,7 @@ algorithm
      UnitAbsyn.Store st1,st2,st3,st4;
      UnitAbsyn.UnitTerm ut1,ut2;
      UnitAbsyn.SpecUnit su1,su2,su3;
-     Math.Rational expo1;
+     MMath.Rational expo1;
      Integer loc;
      case(UnitAbsyn.ADD(ut1,ut2,_),st1) equation
        (res1,su1,st2) = checkTerm(ut1,st1);
@@ -183,7 +183,7 @@ algorithm
        then(res4,su1,st4);
      case(UnitAbsyn.LOC(loc,_),st1) equation
        (UnitAbsyn.UNSPECIFIED) = UnitAbsynBuilder.find(loc,st1);
-       then(CONSISTENT,UnitAbsyn.SPECUNIT((Math.RATIONAL(1,1),UnitAbsyn.TYPEPARAMETER("",loc))::{},{}),st1);
+       then(CONSISTENT,UnitAbsyn.SPECUNIT((MMath.RATIONAL(1,1),UnitAbsyn.TYPEPARAMETER("",loc))::{},{}),st1);
      case(UnitAbsyn.LOC(loc,_),st1) equation
        (UnitAbsyn.SPECIFIED(su1)) = UnitAbsynBuilder.find(loc,st1);
        then(CONSISTENT,su1,st1);
@@ -242,17 +242,17 @@ algorithm
   local
     Boolean r1;
     Integer i1a,i1b,i2a,i2b;
-    list<Math.Rational> rest1,rest2;
+    list<MMath.Rational> rest1,rest2;
     case(UnitAbsyn.SPECUNIT(_,{}),UnitAbsyn.SPECUNIT(_,{})) 
       then true;
-    case(UnitAbsyn.SPECUNIT(_,{}),UnitAbsyn.SPECUNIT(_,Math.RATIONAL(0,_)::rest1)) equation
+    case(UnitAbsyn.SPECUNIT(_,{}),UnitAbsyn.SPECUNIT(_,MMath.RATIONAL(0,_)::rest1)) equation
       r1 = isSpecUnitEq(UnitAbsyn.SPECUNIT({},{}), UnitAbsyn.SPECUNIT({},rest1));
       then r1;      
-    case(UnitAbsyn.SPECUNIT(_,Math.RATIONAL(0,_)::rest1),UnitAbsyn.SPECUNIT(_,{})) equation
+    case(UnitAbsyn.SPECUNIT(_,MMath.RATIONAL(0,_)::rest1),UnitAbsyn.SPECUNIT(_,{})) equation
       r1 = isSpecUnitEq(UnitAbsyn.SPECUNIT({},rest1),UnitAbsyn.SPECUNIT({},{}));
       then r1;
-    case(UnitAbsyn.SPECUNIT(_,Math.RATIONAL(i1a,i1b)::rest1), 
-      UnitAbsyn.SPECUNIT(_,Math.RATIONAL(i2a,i2b)::rest2)) equation
+    case(UnitAbsyn.SPECUNIT(_,MMath.RATIONAL(i1a,i1b)::rest1), 
+      UnitAbsyn.SPECUNIT(_,MMath.RATIONAL(i2a,i2b)::rest2)) equation
         equality(i1a = i2a);
         equality(i1b = i2b);
         r1 = isSpecUnitEq(UnitAbsyn.SPECUNIT({},rest1),UnitAbsyn.SPECUNIT({},rest2));
@@ -313,14 +313,14 @@ algorithm
   (loc,suout) := matchcontinue(suin)
     local 
      UnitAbsyn.SpecUnit su1,su2;
-     Math.Rational expo1,expo2;
+     MMath.Rational expo1,expo2;
      Integer loc1;
      String name;
-     list<Math.Rational> unitvec1;
-     list<tuple<Math.Rational,UnitAbsyn.TypeParameter>> rest1;        
+     list<MMath.Rational> unitvec1;
+     list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> rest1;        
     case(UnitAbsyn.SPECUNIT((expo1,UnitAbsyn.TYPEPARAMETER(name,loc1))::rest1,unitvec1)) equation
       su1 = divSpecUnit(newDimlessSpecUnit(),UnitAbsyn.SPECUNIT(rest1,unitvec1));
-      expo2 = Math.divRational(Math.RATIONAL(1,1), expo1);
+      expo2 = MMath.divRational(MMath.RATIONAL(1,1), expo1);
       su2 = powSpecUnit(su1,expo2);
       then (loc1,su2);
     case(_) equation
@@ -366,8 +366,8 @@ public function mulSpecUnit "Multiplying two units corresponds to adding the uni
   output UnitAbsyn.SpecUnit u;  
 algorithm
   u := matchcontinue(u1,u2)
-  local list<tuple<Math.Rational,UnitAbsyn.TypeParameter>> tparams1,tparams2,tparams3,tparams4;
-    list<Math.Rational> units,units1,units2;
+  local list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> tparams1,tparams2,tparams3,tparams4;
+    list<MMath.Rational> units,units1,units2;
     case(UnitAbsyn.SPECUNIT(tparams1,units1),UnitAbsyn.SPECUNIT(tparams2,units2)) equation
       tparams3 = listAppend(tparams1,tparams2);
       tparams4 = normalizeParamsExponents(tparams3);
@@ -380,17 +380,17 @@ algorithm
 end mulSpecUnit;
 
 public function mulUnitVec "multiplication of two unit vector"
-  input list<Math.Rational> inunitvec1;
-  input list<Math.Rational> inunitvec2;
-  output list<Math.Rational> outunitvec; 
+  input list<MMath.Rational> inunitvec1;
+  input list<MMath.Rational> inunitvec2;
+  output list<MMath.Rational> outunitvec; 
 algorithm
   outunitvec := matchcontinue(inunitvec1,inunitvec2)
   local
-    Math.Rational expo1,expo2,expo3;
-    list<Math.Rational> rest1,rest2,rest3;
+    MMath.Rational expo1,expo2,expo3;
+    list<MMath.Rational> rest1,rest2,rest3;
     case ({},{}) then {}; 
     case(expo1::rest1,expo2::rest2) equation
-      expo3 = Math.addRational(expo1,expo2);
+      expo3 = MMath.addRational(expo1,expo2);
       rest3 = mulUnitVec(rest1,rest2);
     then (expo3::rest3);   
     case(expo1::rest1,{}) equation
@@ -413,8 +413,8 @@ public function divSpecUnit "Divide two specified units"
   output UnitAbsyn.SpecUnit u;  
 algorithm
   u := matchcontinue(u1,u2)
-  local list<tuple<Math.Rational,UnitAbsyn.TypeParameter>> tparams1,tparams2,tparams3,tparams4,tparams5;
-    list<Math.Rational> units,units1,units2;
+  local list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> tparams1,tparams2,tparams3,tparams4,tparams5;
+    list<MMath.Rational> units,units1,units2;
     case(UnitAbsyn.SPECUNIT(tparams1,units1),UnitAbsyn.SPECUNIT(tparams2,units2)) equation
       tparams3 = negParamList(tparams2,{});
       tparams4 = listAppend(tparams1,tparams3);
@@ -428,24 +428,24 @@ algorithm
 end divSpecUnit;
 
 public function divUnitVec "division of two unit vectors"
-  input list<Math.Rational> inunitvec1;
-  input list<Math.Rational> inunitvec2;
-  output list<Math.Rational> outunitvec; 
+  input list<MMath.Rational> inunitvec1;
+  input list<MMath.Rational> inunitvec2;
+  output list<MMath.Rational> outunitvec; 
 algorithm
   outunitvec := matchcontinue(inunitvec1,inunitvec2)
   local
-    Math.Rational expo1,expo2,expo3;
-    list<Math.Rational> rest1,rest2,rest3;
+    MMath.Rational expo1,expo2,expo3;
+    list<MMath.Rational> rest1,rest2,rest3;
     case ({},{}) then {}; 
     case(expo1::rest1,expo2::rest2) equation
-      expo3 = Math.subRational(expo1,expo2);
+      expo3 = MMath.subRational(expo1,expo2);
       rest3 = divUnitVec(rest1,rest2);
     then (expo3::rest3);   
     case(expo1::rest1,{}) equation
       rest3 = divUnitVec(rest1,{});
     then (expo1::rest3);   
     case({},expo1::rest1) equation
-      expo2 = Math.subRational(Math.RATIONAL(0,1),expo1);
+      expo2 = MMath.subRational(MMath.RATIONAL(0,1),expo1);
       rest3 = divUnitVec({},rest1);
     then (expo2::rest3);   
     case(_,_) equation
@@ -457,12 +457,12 @@ end divUnitVec;
 
 public function powSpecUnit "Power of a specified unit"
   input UnitAbsyn.SpecUnit suin;
-  input Math.Rational expo;
+  input MMath.Rational expo;
   output UnitAbsyn.SpecUnit uout;  
 algorithm
   u := matchcontinue(suin,expo)
-  local list<tuple<Math.Rational,UnitAbsyn.TypeParameter>> params1,params2;
-    list<Math.Rational> unitvec1,unitvec2;
+  local list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> params1,params2;
+    list<MMath.Rational> unitvec1,unitvec2;
     case(UnitAbsyn.SPECUNIT(params1,unitvec1),expo) equation
       params2 = powUnitParams(params1,expo); 
       unitvec2 = powUnitVec(unitvec1,expo);
@@ -475,18 +475,18 @@ end powSpecUnit;
 
 
 public function powUnitParams "exponent power of the unit type parameters"
-  input list<tuple<Math.Rational,UnitAbsyn.TypeParameter>> inparams;
-  input Math.Rational expo;  
-  output list<tuple<Math.Rational,UnitAbsyn.TypeParameter>> outparams; 
+  input list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> inparams;
+  input MMath.Rational expo;  
+  output list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> outparams; 
 algorithm
   outparams := matchcontinue(inparams,expo)
   local
-    Math.Rational expo1,expo2,expo3;
+    MMath.Rational expo1,expo2,expo3;
     UnitAbsyn.TypeParameter param;
-    list<tuple<Math.Rational,UnitAbsyn.TypeParameter>> rest1,rest2;
+    list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> rest1,rest2;
     case ({},_) then {}; 
     case((expo1,param)::rest1,expo2) equation
-      expo3 = Math.multRational(expo1,expo2);
+      expo3 = MMath.multRational(expo1,expo2);
       rest2 = powUnitParams(rest1,expo2);
     then ((expo3,param)::rest2);   
     case(_,_) equation
@@ -496,17 +496,17 @@ algorithm
 end powUnitParams;
 
 public function powUnitVec "exponent power of the unit vector"
-  input list<Math.Rational> inunitvec;
-  input Math.Rational expo;  
-  output list<Math.Rational> outunitvec; 
+  input list<MMath.Rational> inunitvec;
+  input MMath.Rational expo;  
+  output list<MMath.Rational> outunitvec; 
 algorithm
   outunitvec := matchcontinue(inunitvec,expo)
   local
-    Math.Rational expo1,expo2,expo3;
-    list<Math.Rational> rest1,rest2;
+    MMath.Rational expo1,expo2,expo3;
+    list<MMath.Rational> rest1,rest2;
     case ({},_) then {}; 
     case(expo1::rest1,expo2) equation
-      expo3 = Math.multRational(expo1,expo2);
+      expo3 = MMath.multRational(expo1,expo2);
       rest2 = powUnitVec(rest1,expo2);
     then (expo3::rest2);   
     case(_,_) equation
@@ -517,20 +517,20 @@ end powUnitVec;
 
 
 protected function negParamList 
-  input list<tuple<Math.Rational,UnitAbsyn.TypeParameter>> ine;
-  input list<tuple<Math.Rational,UnitAbsyn.TypeParameter>> ac;
-  output list<tuple<Math.Rational,UnitAbsyn.TypeParameter>> oute;
+  input list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> ine;
+  input list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> ac;
+  output list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> oute;
 algorithm
   oute := matchcontinue(ine,ac)
   local 
-    Math.Rational qr;
+    MMath.Rational qr;
     Integer i1,i2,indx;
     String name;
     UnitAbsyn.TypeParameter p;
-    list<tuple<Math.Rational,UnitAbsyn.TypeParameter>> rest,pres,ac2;
+    list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> rest,pres,ac2;
     case ({},ac2) then ac2;
-    case ((Math.RATIONAL(i1,i2),UnitAbsyn.TYPEPARAMETER(name,indx))::rest,ac2) equation
-      qr = Math.multRational(Math.RATIONAL(-1,1),Math.RATIONAL(i1,i2));
+    case ((MMath.RATIONAL(i1,i2),UnitAbsyn.TYPEPARAMETER(name,indx))::rest,ac2) equation
+      qr = MMath.multRational(MMath.RATIONAL(-1,1),MMath.RATIONAL(i1,i2));
       pres = negParamList(rest,(qr,UnitAbsyn.TYPEPARAMETER(name,indx))::ac2);      
     then pres;  
     case(_,_) equation
@@ -565,8 +565,8 @@ algorithm
   (unit,outSt) := matchcontinue(u,st)
   local
     UnitAbsyn.Unit u1;
-    list<tuple<Math.Rational,UnitAbsyn.TypeParameter>> params1,params2,params3;
-    list<Math.Rational> unitvec1,unitvec2;
+    list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> params1,params2,params3;
+    list<MMath.Rational> unitvec1,unitvec2;
     UnitAbsyn.Store st2;
     UnitAbsyn.SpecUnit su2,su3;
     case (UnitAbsyn.UNSPECIFIED,st) 
@@ -582,26 +582,26 @@ algorithm
 end normalizeOnUnit;
 
 protected function normalizeParamsExponents "normalize the exponents of a parameter list" 
-  input list<tuple<Math.Rational,UnitAbsyn.TypeParameter>> inparams;
-  output list<tuple<Math.Rational,UnitAbsyn.TypeParameter>> outparams;
+  input list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> inparams;
+  output list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> outparams;
 algorithm
   outparams := matchcontinue(inparams)
   local
-    list<tuple<Math.Rational,UnitAbsyn.TypeParameter>> rest1,rest2,rest3;
+    list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> rest1,rest2,rest3;
     String name;
     Integer loc1;
-    Math.Rational expo1,expo2,expo3;
-    tuple<Math.Rational,UnitAbsyn.TypeParameter> param;
+    MMath.Rational expo1,expo2,expo3;
+    tuple<MMath.Rational,UnitAbsyn.TypeParameter> param;
     //Case: No more elements in list
     case ({}) then {};
     //Case: Found duplicate parameter in list  
     case ((expo1,UnitAbsyn.TYPEPARAMETER(name,loc1))::rest1) equation
       (true,expo2,rest2) = getParam(rest1,loc1);
-      expo3 = Math.addRational(expo1,expo2);
+      expo3 = MMath.addRational(expo1,expo2);
       rest3 = normalizeParamsExponents((expo3,UnitAbsyn.TYPEPARAMETER(name,loc1))::rest2);
       then rest3;       
     //Case: No duplicates in list and exponent IS zero
-    case ((Math.RATIONAL(0,1),_)::rest1) equation
+    case ((MMath.RATIONAL(0,1),_)::rest1) equation
       rest2 = normalizeParamsExponents(rest1);
       then (rest2);
     //Case: No duplicates in list and exponent is not zero
@@ -615,21 +615,21 @@ algorithm
 end normalizeParamsExponents;
 
 protected function getParam "returns the next param in list and removes it from the list. 'found'=true if an location existed" 
-  input list<tuple<Math.Rational,UnitAbsyn.TypeParameter>> inparams;
+  input list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> inparams;
   input Integer loc;
   output Boolean found;
-  output Math.Rational outexpo;
-  output list<tuple<Math.Rational,UnitAbsyn.TypeParameter>> outparams;  
+  output MMath.Rational outexpo;
+  output list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> outparams;  
 algorithm
   (expo,outparams) := matchcontinue(inparams,loc)
   local
-    list<tuple<Math.Rational,UnitAbsyn.TypeParameter>> rest,rest2;
+    list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> rest,rest2;
     String name;
     Integer loc2;
-    Math.Rational expo;
+    MMath.Rational expo;
     Boolean found2; 
-    tuple<Math.Rational,UnitAbsyn.TypeParameter> param;
-    case ({},loc) then (false,Math.RATIONAL(1,1),{});
+    tuple<MMath.Rational,UnitAbsyn.TypeParameter> param;
+    case ({},loc) then (false,MMath.RATIONAL(1,1),{});
     case ((expo,UnitAbsyn.TYPEPARAMETER(name,loc2))::rest,loc) equation
       equality(loc2 = loc);
       then (true,expo,rest);
@@ -645,7 +645,7 @@ end getParam;
 
  
 protected function normalizeParamsValues "normalize the values that the the list of unit parameters points at" 
-  input list<tuple<Math.Rational,UnitAbsyn.TypeParameter>> inparams;
+  input list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> inparams;
   input UnitAbsyn.SpecUnit suin;
   input UnitAbsyn.Store st;
   output UnitAbsyn.SpecUnit uout;
@@ -653,13 +653,13 @@ protected function normalizeParamsValues "normalize the values that the the list
 algorithm
   (outparams,uout,outSt) := matchcontinue(inparams,suin,st)
   local
-    list<tuple<Math.Rational,UnitAbsyn.TypeParameter>> rest;
+    list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> rest;
     UnitAbsyn.Store st2,st3;
     UnitAbsyn.Unit u2;
     UnitAbsyn.SpecUnit su2,su3;
     String name;
     Integer loc;
-    Math.Rational expo;
+    MMath.Rational expo;
     case ({},suin,st) then (suin,st);
     case ((expo,UnitAbsyn.TYPEPARAMETER(name,loc))::rest,suin,st) equation
       (u2,st2) = normalize(loc,st);
@@ -677,13 +677,13 @@ protected function mulSpecUnitWithNorm
   input UnitAbsyn.Unit normunit;
   input String name;
   input Integer loc;
-  input Math.Rational expo;
+  input MMath.Rational expo;
   output UnitAbsyn.SpecUnit suout;
 algorithm
   suout := matchcontinue(suin,normunit,name,loc,expo)
   local
-    input list<tuple<Math.Rational,UnitAbsyn.TypeParameter>> params;
-    list<Math.Rational> unitvec;
+    input list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> params;
+    list<MMath.Rational> unitvec;
     UnitAbsyn.SpecUnit su2,sunorm,su3,su4;
     case (UnitAbsyn.SPECUNIT(params,unitvec),UnitAbsyn.UNSPECIFIED,name,loc,expo) 
       then (UnitAbsyn.SPECUNIT((expo,UnitAbsyn.TYPEPARAMETER(name,loc))::params,unitvec));
@@ -707,8 +707,8 @@ protected
 algorithm  
   _ := matchcontinue(text,su)
   local
-    list<tuple<Math.Rational,UnitAbsyn.TypeParameter>> params;
-    list<Math.Rational> unitvec;
+    list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> params;
+    list<MMath.Rational> unitvec;
     String str;
     case(str,UnitAbsyn.SPECUNIT(params,unitvec)) equation      
 	  print(str);
@@ -722,16 +722,16 @@ algorithm
 end printSpecUnit;
 
 public function printSpecUnitParams 
-  input list<tuple<Math.Rational,UnitAbsyn.TypeParameter>> params;
+  input list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> params;
 algorithm
   _ := matchcontinue(params)
   local
     String name;
     Integer i1,i2,loc;
-    list<tuple<Math.Rational,UnitAbsyn.TypeParameter>> rest;
+    list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> rest;
     case({})
       then ();
-    case((Math.RATIONAL(i1,i2),UnitAbsyn.TYPEPARAMETER(name,loc))::rest) equation
+    case((MMath.RATIONAL(i1,i2),UnitAbsyn.TYPEPARAMETER(name,loc))::rest) equation
        print("(\"");
        print(name);
        print("\",");
