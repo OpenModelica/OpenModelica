@@ -1661,6 +1661,14 @@ RML_BEGIN_LABEL(System__platform)
 }
 #endif
 
+RML_BEGIN_LABEL(System__realCeil)
+{
+  rmlA0 = rml_prim_mkreal(ceil(rml_prim_get_real(rmlA0)));
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+
 RML_BEGIN_LABEL(System__asin)
 {
   rmlA0 = rml_prim_mkreal(asin(rml_prim_get_real(rmlA0)));
@@ -3658,6 +3666,13 @@ RML_BEGIN_LABEL(System__platform)
   RML_TAILCALLK(rmlSC);
 }
 #endif
+
+RML_BEGIN_LABEL(System__realCeil)
+{
+  rmlA0 = rml_prim_mkreal(ceil(rml_prim_get_real(rmlA0)));
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
 
 RML_BEGIN_LABEL(System__asin)
 {

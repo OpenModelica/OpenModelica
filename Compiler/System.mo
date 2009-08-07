@@ -416,6 +416,14 @@ public function platform
   external "C" ;
 end platform;
 
+public function realCeil
+  input Real inReal;
+  output Real outReal;
+
+  external "C" ;
+end realCeil;
+
+
 public function asin
   input Real inReal;
   output Real outReal;

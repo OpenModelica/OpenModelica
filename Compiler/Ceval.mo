@@ -2514,14 +2514,14 @@ algorithm
       Option<Interactive.InteractiveSymbolTable> st;
       Msg msg;
       String exp1_str,exp2_str,lh_str,rh_str;
-      Env.Cache cache;
+      Env.Cache cache; Boolean b;
     case (cache,env,{exp1,exp2},impl,st,msg)
       equation 
         (cache,Values.REAL(rv1),_) = ceval(cache,env, exp1, impl, st, NONE, msg);
         (cache,Values.REAL(rv2),_) = ceval(cache,env, exp2, impl, st, NONE, msg);
         rv_1 = rv1/.rv2;
-        ri = realInt(rv_1);
-        rv_2 = intReal(ri);
+        b = rv_1 <. 0.0;
+        rv_2 = Util.if_(b,System.realCeil(rv_1),realFloor(rv_1));        
       then
         (cache,Values.REAL(rv_2),st);
     case (cache,env,{exp1,exp2},impl,st,msg)
@@ -2530,8 +2530,8 @@ algorithm
         rv1 = intReal(ri);
         (cache,Values.REAL(rv2),_) = ceval(cache,env, exp2, impl, st, NONE, msg);
         rv_1 = rv1/.rv2;
-        ri_1 = realInt(rv_1);
-        rv_2 = intReal(ri_1);
+         b = rv_1 <. 0.0;
+        rv_2 = Util.if_(b,System.realCeil(rv_1),realFloor(rv_1));
       then
         (cache,Values.REAL(rv_2),st);
     case (cache,env,{exp1,exp2},impl,st,msg)
@@ -2540,8 +2540,8 @@ algorithm
         (cache,Values.INTEGER(ri),_) = ceval(cache,env, exp2, impl, st, NONE, msg);
         rv2 = intReal(ri);
         rv_1 = rv1/.rv2;
-        ri_1 = realInt(rv_1);
-        rv_2 = intReal(ri_1);
+        b = rv_1 <. 0.0;
+        rv_2 = Util.if_(b,System.realCeil(rv_1),realFloor(rv_1));
       then
         (cache,Values.REAL(rv_2),st);
     case (cache,env,{exp1,exp2},impl,st,msg)
@@ -2962,8 +2962,8 @@ algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
-      Real rv1,rv2,rva,rva_1,rvb,rvd;
-      Integer rvai,ri,ri1,ri2,ri_1;
+      Real rv1,rv2,rva,rva_1,rvb,rvd,dr;
+      Integer rvai,ri,ri1,ri2,ri_1,di;
       list<Env.Frame> env;
       Exp.Exp exp1,exp2;
       Boolean impl;
@@ -2975,11 +2975,8 @@ algorithm
       equation 
         (cache,Values.REAL(rv1),_) = ceval(cache,env, exp1, impl, st, NONE, msg);
         (cache,Values.REAL(rv2),_) = ceval(cache,env, exp2, impl, st, NONE, msg);
-        rva = rv1/.rv2;
-        rvai = realInt(rva);
-        rva_1 = intReal(rvai);
-        rvb = rva_1*.rv2;
-        rvd = rv1 -. rvb;
+        (cache,Values.REAL(dr),_) = cevalBuiltinDiv(cache,env,{exp1,exp2},impl,st,msg);
+        rvd = rv1 -. rv2 *. dr;
       then
         (cache,Values.REAL(rvd),st);
     case (cache,env,{exp1,exp2},impl,st,msg)
@@ -2987,11 +2984,8 @@ algorithm
         (cache,Values.INTEGER(ri),_) = ceval(cache,env, exp1, impl, st, NONE, msg);
         rv1 = intReal(ri);
         (cache,Values.REAL(rv2),_) = ceval(cache,env, exp2, impl, st, NONE, msg);
-        rva = rv1/.rv2;
-        rvai = realInt(rva);
-        rva_1 = intReal(rvai);
-        rvb = rva_1*.rv2;
-        rvd = rv1 -. rvb;
+        (cache,Values.REAL(dr),_) = cevalBuiltinDiv(cache,env,{exp1,exp2},impl,st,msg);
+        rvd = rv1 -. rv2 *. dr;
       then
         (cache,Values.REAL(rvd),st);
     case (cache,env,{exp1,exp2},impl,st,msg)
@@ -2999,25 +2993,17 @@ algorithm
         (cache,Values.REAL(rv1),_) = ceval(cache,env, exp1, impl, st, NONE, msg);
         (cache,Values.INTEGER(ri),_) = ceval(cache,env, exp2, impl, st, NONE, msg);
         rv2 = intReal(ri);
-        rva = rv1/.rv2;
-        rvai = realInt(rva);
-        rva_1 = intReal(rvai);
-        rvb = rva_1*.rv2;
-        rvd = rv1 -. rvb;
+       (cache,Values.REAL(dr),_) = cevalBuiltinDiv(cache,env,{exp1,exp2},impl,st,msg);
+        rvd = rv1 -. rv2 *. dr;
       then
         (cache,Values.REAL(rvd),st);
     case (cache,env,{exp1,exp2},impl,st,msg)
       equation 
         (cache,Values.INTEGER(ri1),_) = ceval(cache,env, exp1, impl, st, NONE, msg);
         (cache,Values.INTEGER(ri2),_) = ceval(cache,env, exp2, impl, st, NONE, msg);
-        rv1 = intReal(ri1);
-        rv2 = intReal(ri2);
-        rva = rv1/.rv2;
-        rvai = realInt(rva);
-        rva_1 = intReal(rvai);
-        rvb = rva_1*.rv2;
-        rvd = rv1 -. rvb;
-        ri_1 = realInt(rvd);
+         (cache,Values.INTEGER(ri),_) = ceval(cache,env, exp2, impl, st, NONE, msg);
+       (cache,Values.INTEGER(di),_) = cevalBuiltinDiv(cache,env,{exp1,exp2},impl,st,msg);
+       ri_1 = ri1 - ri2 * di;
       then
         (cache,Values.INTEGER(ri_1),st);
     case (cache,env,{exp1,exp2},impl,st,MSG())
