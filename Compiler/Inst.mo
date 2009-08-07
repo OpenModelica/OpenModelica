@@ -397,6 +397,7 @@ algorithm
     case (cache,cdecls,path) /* error instantiating */ 
       equation 
         cname_str = Absyn.pathString(path);
+        //print(" Error flattening partial, errors: " +& ErrorExt.printMessagesStr() +& "\n");
         Error.addMessage(Error.ERROR_FLATTENING, {cname_str});
       then
         fail();
@@ -9029,32 +9030,7 @@ algorithm
 	     EQ_IF. When the condition is constant evaluate it and 
 	     select the correct branch */ 
      
-    case (cache,env,mod,pre,csets,ci_state,SCode.EQ_IF(condition = conditions,thenBranch = tb,elseBranch = fb),SCode.NON_INITIAL(),impl,graph)
-      equation 
-        true = OptManager.getOption("cevalEquation"); // BoschRexroth specifics
-        (cache, expl1,props,_) = Static.elabExpList(cache,env, conditions, impl, NONE,true);
-        (Types.PROP((Types.T_BOOL(_),_),_)) = Types.propsAnd(props);
-        (cache,valList) = Ceval.cevalList(cache,env, expl1, impl, NONE, Ceval.NO_MSG());
-        blist = Util.listMap(valList,Values.valueBool);
-        b = selectList(blist, tb, fb);
-        (cache,dae,env_1,csets_1,ci_state_1,graph) = instList(cache,env, mod, pre, csets, ci_state, instEEquation, b, impl, graph);
-      then
-        (cache,dae,env_1,csets_1,ci_state_1,graph);
-
-        /* initial EQ_IF. When the condition is constant evaluate it and 
-         select the correct branch */ 
-    case (cache,env,mod,pre,csets,ci_state,SCode.EQ_IF(condition = conditions,thenBranch = tb,elseBranch = fb),SCode.INITIAL(),impl,graph) 
-      equation 
-        true = OptManager.getOption("cevalEquation"); // BoschRexroth specifics
-        (cache, expl1,props,_) = Static.elabExpList(cache,env, conditions, impl, NONE,true);
-        (Types.PROP((Types.T_BOOL(_),_),_)) = Types.propsAnd(props);
-        (cache,valList) = Ceval.cevalList(cache,env, expl1, impl, NONE, Ceval.NO_MSG());
-        blist = Util.listMap(valList,Values.valueBool);
-        b = selectList(blist, tb, fb);
-        (cache,dae,env_1,csets_1,ci_state_1,graph) = instList(cache,env, mod, pre, csets, ci_state, instEInitialequation, b, impl,graph);
-      then
-        (cache,dae,env_1,csets_1,ci_state_1,graph);
-
+  
         /* IF_EQUATION */ 
     case (cache,env,mod,pre,csets,ci_state,SCode.EQ_IF(condition = conditions,thenBranch = tb,elseBranch = fb),SCode.NON_INITIAL(),impl,graph)
       equation 

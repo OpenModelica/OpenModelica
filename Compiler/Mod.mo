@@ -1921,9 +1921,16 @@ algorithm str := matchcontinue(inSubs,depth)
     Types.Mod m;
     list<Integer> li;
   case({},_) then "";
-  case((s as Types.NAMEMOD(id,m))::inSubs,depth)
+  case((s as Types.NAMEMOD(id,(m as Types.REDECL(finalPrefix=_))))::inSubs,depth)
     equation
       //s1 = prettyPrintSubs(inSubs);
+      //s2  = prettyPrintMod(m,depth+1);
+      //s2 = Util.if_(stringLength(s2) == 0, ""," = " +& s2);
+      s2 = " redeclare(" +& id +&  "), class or component " +& id; 
+    then
+      s2;
+  case((s as Types.NAMEMOD(id,m))::inSubs,depth)
+    equation
       s2  = prettyPrintMod(m,depth+1);
       s2 = Util.if_(stringLength(s2) == 0, ""," = " +& s2);
       s2 = "(" +& id +& s2 +& "), class or component " +& id; 
