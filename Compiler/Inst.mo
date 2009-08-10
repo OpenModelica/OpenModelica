@@ -354,6 +354,7 @@ public function instantiatePartialClass "
 Author: BZ, 2009-07
 This is a function for instantiating partial 'top' classes.
 It does so by converting the partial class into a non partial class.
+Currently used by: MathCore.modelEquations, CevalScript.checkModel
 "
 	input Env.Cache inCache;
   input SCode.Program inProgram;
@@ -9029,9 +9030,32 @@ algorithm
 	     should be used.
 	     EQ_IF. When the condition is constant evaluate it and 
 	     select the correct branch */ 
-     
-  
-        /* IF_EQUATION */ 
+
+ case (cache,env,mod,pre,csets,ci_state,SCode.EQ_IF(condition = conditions,thenBranch = tb,elseBranch = fb),SCode.NON_INITIAL(),impl,graph)
+      equation 
+        (cache, expl1,props,_) = Static.elabExpList(cache,env, conditions, impl, NONE,true);
+        (Types.PROP((Types.T_BOOL(_),_),_)) = Types.propsAnd(props);
+        (cache,valList) = Ceval.cevalList(cache,env, expl1, impl, NONE, Ceval.NO_MSG());
+        blist = Util.listMap(valList,Values.valueBool);
+        b = selectList(blist, tb, fb);
+        (cache,dae,env_1,csets_1,ci_state_1,graph) = instList(cache,env, mod, pre, csets, ci_state, instEEquation, b, impl, graph);
+      then
+        (cache,dae,env_1,csets_1,ci_state_1,graph);
+
+        /* initial EQ_IF. When the condition is constant evaluate it and 
+         select the correct branch */ 
+    case (cache,env,mod,pre,csets,ci_state,SCode.EQ_IF(condition = conditions,thenBranch = tb,elseBranch = fb),SCode.INITIAL(),impl,graph) 
+      equation 
+        (cache, expl1,props,_) = Static.elabExpList(cache,env, conditions, impl, NONE,true);
+        (Types.PROP((Types.T_BOOL(_),_),_)) = Types.propsAnd(props);
+        (cache,valList) = Ceval.cevalList(cache,env, expl1, impl, NONE, Ceval.NO_MSG());
+        blist = Util.listMap(valList,Values.valueBool);
+        b = selectList(blist, tb, fb);
+        (cache,dae,env_1,csets_1,ci_state_1,graph) = instList(cache,env, mod, pre, csets, ci_state, instEInitialequation, b, impl,graph);
+      then
+        (cache,dae,env_1,csets_1,ci_state_1,graph);
+             
+        // IF_EQUATION  
     case (cache,env,mod,pre,csets,ci_state,SCode.EQ_IF(condition = conditions,thenBranch = tb,elseBranch = fb),SCode.NON_INITIAL(),impl,graph)
       equation 
         (cache, expl1,props,_) = Static.elabExpList(cache,env, conditions, impl, NONE,true);
@@ -9042,7 +9066,7 @@ algorithm
       then
         (cache,{DAE.IF_EQUATION(expl1,dael,dae2)},env_1,csets,ci_state_1,graph);
 
-        /* Initial IF_EQUATION */
+        // Initial IF_EQUATION 
     case (cache,env,mod,pre,csets,ci_state,SCode.EQ_IF(condition = conditions,thenBranch = tb,elseBranch = fb),SCode.INITIAL(),impl,graph)
       equation 
         (cache, expl1,props,_) = Static.elabExpList(cache,env, conditions, impl, NONE,true);
@@ -9052,6 +9076,7 @@ algorithm
         (cache,dae2,env_2,_,ci_state_2,graph) = instList(cache,env_1, mod, pre, csets, ci_state, instEInitialequation, fb, impl,graph) "There are no connections inside if-clauses." ;
       then
         (cache,{DAE.INITIAL_IF_EQUATION(expl1,dael,dae2)},env_1,csets,ci_state_1,graph);
+
         /* `when equation\' statement, modelica 1.1 
          When statements are instantiated by evaluating the
          conditional expression.
