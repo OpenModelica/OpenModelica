@@ -196,6 +196,8 @@ public constant ErrorID CONNECT_STREAM_TO_NONSTREAM=109;
 public constant ErrorID IMPLICIT_ITERATOR_NOT_FOUND_IN_LOOP_BODY=110;
 public constant ErrorID STRUCT_SINGULAR_SYSTEM_INITIALIZATION=111;
 public constant ErrorID CIRCULAR_EQUATION=112;
+public constant ErrorID IF_EQUATION_NO_ELSE=113;
+public constant ErrorID IF_EQUATION_UNBALANCED=114;
 public constant ErrorID UNBOUND_PARAMETER_WARNING=500;
 public constant ErrorID BUILTIN_FUNCTION_SUM_HAS_SCALAR_PARAMETER=501;
 public constant ErrorID BUILTIN_FUNCTION_PRODUCT_HAS_SCALAR_PARAMETER=502;
@@ -483,7 +485,9 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           "The initialization problem of model is structurally singular, error found sorting equations %s for variables %s"),
           (CIRCULAR_EQUATION, TRANSLATION(),ERROR(), " Equation : '%s'  has circular references for variable %s."),
           (SELECTED_STATES,TRANSLATION(),NOTIFICATION(), "The following variables are selected as states: %s"),
-          (INCONSISTENT_UNITS, TRANSLATION(),WARNING(),"The system of units is inconsistent in term %s with the units %s and %s respectively.") 
+          (INCONSISTENT_UNITS, TRANSLATION(),WARNING(),"The system of units is inconsistent in term %s with the units %s and %s respectively."),
+          (IF_EQUATION_NO_ELSE, TRANSLATION(),ERROR(),"In equation %s. If-equation with conditions that are not parameter expressions must have an else branch, in equation."),
+          (IF_EQUATION_UNBALANCED, TRANSLATION(),ERROR(),"In equation %s. If-equation with conditions that are not parameter expressions must have the same number of equations in each branch, equation count is %s for each respective branch.") 
           };
           
 protected import ErrorExt;
