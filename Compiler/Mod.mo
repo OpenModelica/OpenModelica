@@ -1134,10 +1134,7 @@ algorithm
         (mod_1,subs_1) = lookupIdxModification2(subs, NONE, idx);
         mod_2 = merge(Types.MOD(f,each_,subs_1,NONE), mod_1, {}, Prefix.NOPRE());
         eq_1 = indexEqmod(eq, {idx});
-        mod_3 = merge(mod_2, Types.MOD(f,each_,{},eq_1), {}, Prefix.NOPRE()) "	& print \"lookup_idx_modificaton input :\" &
-	print_mod_str inmod => s & print s & print \"\\n\" 
-	& print \"lookup_idx_modificaton returns :\" &
-	print_mod_str mod\'\'\' => s & print s & print \"\\n\"" ;
+        mod_3 = merge(mod_2, Types.MOD(f,each_,{},eq_1), {}, Prefix.NOPRE());
       then
         mod_3;
     case (mod,idx)
@@ -1235,15 +1232,16 @@ algorithm
     local
       Option<Types.EqMod> eq_1,eq;
       Boolean f;
-      list<Types.SubMod> subs;
+      list<Types.SubMod> subs,subs_1;
       Integer idx;
     case (Types.NOMOD(),_) then Types.NOMOD();  /* indx */ 
     case (Types.REDECL(finalPrefix = _),_) then Types.NOMOD(); 
     case (Types.MOD(finalPrefix = f,each_ = Absyn.NON_EACH(),subModLst = subs,eqModOption = eq),idx)
       equation 
+        (_,subs_1) = lookupIdxModification2(subs, NONE, idx);
         eq_1 = indexEqmod(eq, {idx});
       then
-        Types.MOD(f,Absyn.NON_EACH(),subs,eq_1);
+        Types.MOD(f,Absyn.NON_EACH(),subs_1,eq_1);
     case (Types.MOD(finalPrefix = f,each_ = Absyn.EACH(),subModLst = subs,eqModOption = eq),idx) then Types.MOD(f,Absyn.EACH(),subs,eq); 
     case (_,_) equation
       Debug.fprint("failtrace", "-lookupIdxModification3 failed\n");

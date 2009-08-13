@@ -361,6 +361,15 @@ algorithm
           e2 = Exp.ASUB(Exp.CREF(p_1,t),es_1);
     then (cache,e2); 
       
+    case (cache,env,(e as Exp.ASUB(exp = e1, sub = expl)),pre) 
+      local list<Exp.Exp> expl;
+      equation
+        (cache,es_1) = prefixExpList(cache,env, expl, pre);
+        (cache,e1) = prefixExp(cache,env,e1,pre);
+        e2 = Exp.ASUB(e1,es_1);
+      then (cache,e2); 
+      
+      
     case (cache,env,Exp.CREF(componentRef = p,ty = t),pre)
       equation 
         (cache,_,_,_) = Lookup.lookupVarLocal(cache,env, p);

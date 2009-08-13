@@ -923,6 +923,7 @@ algorithm
     case "identity" then cevalBuiltinIdentity; 
     case "promote" then cevalBuiltinPromote; 
     case "String" then cevalBuiltinString;
+    case "linspace" then cevalBuiltinLinspace;
     //case "semiLinear" then cevalBuiltinSemiLinear;
     //case "delay" then cevalBuiltinDelay;
     case id
@@ -1970,6 +1971,70 @@ algorithm
         
   end matchcontinue;
 end cevalBuiltinString;
+
+protected function cevalBuiltinLinspace "
+  author: PA
+  Evaluates the linpace function"
+	input Env.Cache inCache;
+  input Env.Env inEnv;
+  input list<Exp.Exp> inExpExpLst;
+  input Boolean inBoolean;
+  input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Msg inMsg;
+  output Env.Cache outCache;
+  output Values.Value outValue;
+  output Option<Interactive.InteractiveSymbolTable> st;
+algorithm 
+  (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
+  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,st,inMsg)
+      local
+        Exp.Exp x,y,n; Integer size;
+        Real rx,ry; list<Values.Value> valLst; Env.Cache cache; Boolean impl; Env.Env env; Msg msg;      
+    case (cache,env,{x,y,n},impl,st,msg) equation
+      (cache,Values.INTEGER(size),_) = ceval(cache,env, n, impl, st, NONE, msg);
+      verifyLinspaceN(size,{x,y,n});
+      (cache,Values.REAL(rx),_) = ceval(cache,env, x, impl, st, NONE, msg);
+      (cache,Values.REAL(ry),_) = ceval(cache,env, y, impl, st, NONE, msg);
+      valLst = cevalBuiltinLinspace2(rx,ry,size,1);
+    then (cache,Values.ARRAY(valLst),st);
+      
+  end matchcontinue;
+end cevalBuiltinLinspace;
+
+protected function verifyLinspaceN "checks that n>=2 for linspace(x,y,n) "
+  input Integer n;
+  input list<Exp.Exp> expl;
+algorithm
+  _ := matchcontinue(n,expl)
+  local String s; Exp.Exp x,y,nx;
+    case(n,_) equation
+      true = n >= 2;
+    then ();
+    case(_,{x,y,nx}) equation
+      s = "linspace("+&Exp.printExpStr(x)+&", "+&Exp.printExpStr(y)+&", "+&Exp.printExpStr(nx)+&")";
+      Error.addMessage(Error.LINSPACE_ILLEGAL_SIZE_ARG,{s});
+    then fail();
+  end matchcontinue;
+end verifyLinspaceN;
+
+protected function cevalBuiltinLinspace2 "Helper function to cevalBuiltinLinspace"
+  input Real rx;
+  input Real ry;
+  input Integer size;
+  input Integer i "iterator 1 <= i <= size";
+  output list<Values.Value> valLst;
+algorithm
+  valLst := matchcontinue(rx,ry,size,i)
+  local Real r;
+    case(rx,ry,size,i) equation
+      true = i > size; 
+    then {};
+    case(rx,ry,size,i) equation
+      r = rx +. (ry -. rx)*. intReal(i-1) /. intReal(size - 1);
+      valLst = cevalBuiltinLinspace2(rx,ry,size,i+1);
+    then Values.REAL(r)::valLst;      
+  end matchcontinue;
+end cevalBuiltinLinspace2;
 
 protected function cevalCat "function: cevalCat
   evaluates the cat operator given a list of 

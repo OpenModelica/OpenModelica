@@ -1450,7 +1450,7 @@ algorithm
     case(cache,env,id,_,bind,expectedTp,Types.PROP(bindTp,_)) local String s1,s2;
       equation 
         failure((_,_) = Types.matchType(bind,bindTp,expectedTp));
-        s1 = "builtin attribute " +& id;
+        s1 = "builtin attribute " +& id +& " of type "+&Types.unparseType(bindTp);
         s2 = Types.unparseType(expectedTp);
         Error.addMessage(Error.TYPE_ERROR,{s1,s2});
       then fail();   
@@ -5835,7 +5835,7 @@ algorithm
     case (cache,env,store,ci_state,mod,pre,csets,n,cl,attr,prot,(dim :: dims),idxs,inst_dims,impl,comment,io,finalPrefix,graph) 
       equation 
         dime = instDimExp(dim, impl);
-        inst_dims_1 = Util.listListAppendLast(inst_dims, {dime});
+        inst_dims_1 = Util.listListAppendLast(inst_dims, {dime});        
         (cache,compenv,store,dae,Connect.SETS(_,crs,dc,oc),ty,graph) = 
           instArray(cache,env,store, ci_state, mod, pre, csets, n, (cl,attr),prot, 1, dim, dims, idxs, inst_dims_1, impl, comment,io,finalPrefix,graph);
         dimt = instDimType(dim);        
@@ -6747,7 +6747,7 @@ algorithm
         (cache,env_1,store,{dae},csets,ty,graph);
 
     case (cache,env,store,ci_state,mod,pre,csets,n,(cl,attr),prot,i,DIMEXP(subscript = _),dims,idxs,inst_dims,impl,comment,io,finalPrefix,graph)
-      equation 
+      equation         
         (cache,compenv,store,daeLst,csets,ty,graph) = 
           instVar2(cache, env, store,ci_state, mod, pre, csets, n, cl, attr, prot, dims, (i :: idxs), inst_dims, impl, comment,io,finalPrefix,graph);
       then

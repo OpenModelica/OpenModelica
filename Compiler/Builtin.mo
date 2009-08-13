@@ -2160,6 +2160,14 @@ protected constant tuple<Types.TType, Option<Type_a>> intInt2vectorreal=(
           ("y",(Types.T_INTEGER({}),NONE))},
           (Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_REAL({}),NONE)),
           NONE)),NONE);
+          
+protected constant tuple<Types.TType, Option<Type_a>> realRealInt2vectorreal=(
+          Types.T_FUNCTION(
+          {("x",(Types.T_REAL({}),NONE)),
+          ("y",(Types.T_REAL({}),NONE)),
+          ("n",(Types.T_INTEGER({}),NONE))},
+          (Types.T_ARRAY(Types.DIM(NONE),(Types.T_REAL({}),NONE)),
+          NONE)),NONE);          
 
 protected constant tuple<Types.TType, Option<Type_a>> array1dimint2array3dimint=(
           Types.T_FUNCTION(
@@ -3154,7 +3162,7 @@ algorithm
       env = Env.extendFrameT(env, "array", n6real2arrayreal);
       env = Env.extendFrameT(env, "array", n7real2arrayreal);
       env = Env.extendFrameT(env, "array", n8real2arrayreal);
-      env = Env.extendFrameT(env, "linspace", intInt2vectorreal);
+      env = Env.extendFrameT(env, "linspace", realRealInt2vectorreal);
       env = Env.extendFrameT(env, "min", intInt2int);
       env = Env.extendFrameT(env, "min", realReal2real);
       env = Env.extendFrameT(env, "min", array1dimint2int);
