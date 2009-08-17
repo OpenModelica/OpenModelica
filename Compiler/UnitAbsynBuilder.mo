@@ -438,10 +438,10 @@ algorithm
     case(env,dae,store) equation
       false = OptManager.getOption("unitChecking");
     then(UnitAbsyn.noStore,{});
-      
+    case(env,dae,UnitAbsyn.NOSTORE()) then  (UnitAbsyn.NOSTORE(),{});     
     case(env,dae,UnitAbsyn.INSTSTORE(st,ht)) equation  
      (terms,st) = buildTerms(env,dae,ht,st);
-      st = createTypeParameterLocations(st);           
+      st = createTypeParameterLocations(st);
      then (UnitAbsyn.INSTSTORE(st,ht),terms);
     /*case(_,_,_) equation
       print("instBuildUnitTerms failed!!\n");
