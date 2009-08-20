@@ -294,8 +294,15 @@ void UnitParser::addBase(const string quantityName, const string unitName, const
 
 
 
-UnitRes UnitParser::addDerived(const string quantityName, const string unitName, const string unitSymbol, const string unitStrExp,
-							   Rational prefixExpo, Rational scaleFactor, Rational offset, bool prefixAllowed,double weight=1.0)
+void UnitParser::addDerived(const string quantityName, const string unitName, const string unitSymbol, const string unitStrExp, 
+							   Rational prefixExpo, Rational scaleFactor, Rational offset, bool prefixAllowed)
+{
+	DerivedInfo di(quantityName, unitName, unitSymbol, unitStrExp, prefixExpo, scaleFactor, offset, prefixAllowed);
+	_tempDerived.push_back(di);
+}
+
+UnitRes UnitParser::addDerivedInternal(const string quantityName, const string unitName, const string unitSymbol, const string unitStrExp, 
+							   Rational prefixExpo, Rational scaleFactor, Rational offset, bool prefixAllowed)
 {
 	Unit u;
 	UnitRes res = str2unit(unitStrExp, u);
@@ -312,6 +319,32 @@ UnitRes UnitParser::addDerived(const string quantityName, const string unitName,
 	_units[unitSymbol] = u;
 	return res;
 }
+
+
+UnitRes UnitParser::commit()
+{
+	list<DerivedInfo> tmp;
+	int initSize = _tempDerived.size();
+	while(_tempDerived.size() != 0)
+	{	
+		unsigned int startSize = _tempDerived.size();
+		while(_tempDerived.size() != 0)
+		{
+			DerivedInfo d = _tempDerived.front();
+			UnitRes res = addDerivedInternal(d.quantityName,d.unitName,d.unitSymbol,d.unitStrExp,
+				d.prefixExpo, d.scaleFactor, d.offset, d.prefixAllowed);
+			_tempDerived.pop_front();
+			if(!res.Ok())
+				tmp.push_back(d);
+		}
+		if(tmp.size() == startSize)
+			return UnitRes::ERROR_ADDING_UNIT;
+		_tempDerived = tmp;
+		tmp.clear();
+	}
+	return UnitRes(UnitRes::UNIT_OK);
+}
+
 
 string UnitParser::prettyPrintUnit2str(Unit unit)
 {
@@ -782,9 +815,7 @@ UnitRes UnitParser::parseRational(Scanner& scan, Rational& q){
 		return UnitRes(UnitRes::PARSE_ERROR, scan.getLastPos());
 }
 
-
-void UnitParser::initSIUnits(){
-
+void UnitParser::initPrefixes(){
 	//Add prefixes
 	addPrefix("da",Rational(1));	// deca
 	addPrefix("h",Rational(2));		// hecto
@@ -806,6 +837,11 @@ void UnitParser::initSIUnits(){
 	addPrefix("a",Rational(-18));	// atto
 	addPrefix("z",Rational(-21));	// zepto
 	addPrefix("y",Rational(-24));	// yocto
+}
+
+void UnitParser::initSIUnits(){
+	//Add prefixes
+	initPrefixes();
 
 	//Init base units (SI brochure 8th ed., page 116)
 	addBase("length", "metre", "m", true);
@@ -820,28 +856,30 @@ void UnitParser::initSIUnits(){
 	addDerived("mass", "gram", "g", "kg", Rational(-3), Rational(1), Rational(0), true);
 
 	//Standard derived units (SI brochure 8th ed., page 118)
-	addDerived("plane angle", "radian", "rad", "m/m", Rational(0), Rational(1), Rational(0), true);
-	addDerived("solid angle", "steradian", "sr", "m2/m2", Rational(0), Rational(1), Rational(0), true);
-	addDerived("frequency", "hertz", "Hz", "s-1", Rational(0), Rational(1), Rational(0), true,1.2);
-	addDerived("force", "newton", "N", "m.kg.s-2", Rational(0), Rational(1), Rational(0), true);
-	addDerived("pressure, stress", "pascal", "Pa", "N/m2", Rational(0), Rational(1), Rational(0), true);
-	addDerived("energy, work, amount of heat", "joule", "J", "N.m", Rational(0), Rational(1), Rational(0), true);
-	addDerived("power, radiant flux", "watt", "W", "J/s", Rational(0), Rational(1), Rational(0), true);
-	addDerived("electric charge, amount of electricity", "coulomb", "C", "s.A", Rational(0), Rational(1), Rational(0), true);
-	addDerived("electric potential difference, electromotive force", "volt", "V", "W/A", Rational(0), Rational(1), Rational(0), true);
-	addDerived("capacitance", "farad", "F", "C/V", Rational(0), Rational(1), Rational(0), true);
-	addDerived("electric resistance", "ohm", "Ohm", "V/A", Rational(0), Rational(1), Rational(0), true);
-	addDerived("electric conductance", "siemens", "S", "A/V", Rational(0), Rational(1), Rational(0), true);
-	addDerived("magnetic flux", "weber", "Wb", "V.s", Rational(0), Rational(1), Rational(0), true);
-	addDerived("magnetic flux density", "tesla", "T", "Wb/m2", Rational(0), Rational(1), Rational(0), true);
-	addDerived("inductance", "henry", "H", "Wb/A", Rational(0), Rational(1), Rational(0), true);
-	addDerived("Celsius temperature", "degree Celsius", "degC", "K", Rational(0), Rational(1), Rational(27315,100), true);
-	addDerived("luminous flux", "lumen", "lm", "cd.sr", Rational(0), Rational(1), Rational(0), true);
-	addDerived("illuminance", "lux", "lx", "lm/m2", Rational(0), Rational(1), Rational(0), true);
-	addDerived("activity referred to a radionuclide", "becquerel", "Bq", "s-1", Rational(0), Rational(1), Rational(0), true,1.2);
-	addDerived("absorbed dose, specific energy (imparted), kerma", "gray", "Gy", "J/kg", Rational(0), Rational(1), Rational(0), true);
-	addDerived("dose equivalent, ambient dose equivalent, directional dose equivalent, personal dose equivalent", "sievert", "Sv", "J/kg", Rational(0), Rational(1), Rational(0), true);
-	addDerived("catalyctic activity", "katal", "kat", "s-1.mol", Rational(0), Rational(1), Rational(0), true);
+	addDerived("plane angle", "radian", "rad", "m/m", Rational(0), Rational(1), Rational(0), true); 
+	addDerived("solid angle", "steradian", "sr", "m2/m2", Rational(0), Rational(1), Rational(0), true); 
+	addDerived("frequency", "hertz", "Hz", "s-1", Rational(0), Rational(1), Rational(0), true); 
+	addDerived("force", "newton", "N", "m.kg.s-2", Rational(0), Rational(1), Rational(0), true); 
+	addDerived("pressure, stress", "pascal", "Pa", "N/m2", Rational(0), Rational(1), Rational(0), true); 
+	addDerived("power, radiant flux", "watt", "W", "J/s", Rational(0), Rational(1), Rational(0), true); 
+	addDerived("energy, work, amount of heat", "joule", "J", "N.m", Rational(0), Rational(1), Rational(0), true); 
+	addDerived("electric charge, amount of electricity", "coulomb", "C", "s.A", Rational(0), Rational(1), Rational(0), true); 
+	addDerived("electric potential difference, electromotive force", "volt", "V", "W/A", Rational(0), Rational(1), Rational(0), true); 
+	addDerived("capacitance", "farad", "F", "C/V", Rational(0), Rational(1), Rational(0), true); 
+	addDerived("electric resistance", "ohm", "Ohm", "V/A", Rational(0), Rational(1), Rational(0), true); 
+	addDerived("electric conductance", "siemens", "S", "A/V", Rational(0), Rational(1), Rational(0), true); 
+	addDerived("magnetic flux", "weber", "Wb", "V.s", Rational(0), Rational(1), Rational(0), true); 
+	addDerived("magnetic flux density", "tesla", "T", "Wb/m2", Rational(0), Rational(1), Rational(0), true); 
+	addDerived("inductance", "henry", "H", "Wb/A", Rational(0), Rational(1), Rational(0), true); 
+	addDerived("Celsius temperature", "degree Celsius", "degC", "K", Rational(0), Rational(1), Rational(27315,100), true); 
+	addDerived("luminous flux", "lumen", "lm", "cd.sr", Rational(0), Rational(1), Rational(0), true); 
+	addDerived("illuminance", "lux", "lx", "lm/m2", Rational(0), Rational(1), Rational(0), true); 
+	addDerived("activity referred to a radionuclide", "becquerel", "Bq", "s-1", Rational(0), Rational(1), Rational(0), true); 
+	addDerived("absorbed dose, specific energy (imparted), kerma", "gray", "Gy", "J/kg", Rational(0), Rational(1), Rational(0), true); 
+	addDerived("dose equivalent, ambient dose equivalent, directional dose equivalent, personal dose equivalent", "sievert", "Sv", "J/kg", Rational(0), Rational(1), Rational(0), true); 
+	addDerived("catalyctic activity", "katal", "kat", "s-1.mol", Rational(0), Rational(1), Rational(0), true); 
+
+	commit();
 }
 
 /***************************************************************************************/

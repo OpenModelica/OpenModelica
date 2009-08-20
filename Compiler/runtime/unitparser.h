@@ -35,6 +35,7 @@
 #include <vector>
 #include <string>
 #include <map>
+#include <list>
 
 using namespace std;
 
@@ -75,6 +76,7 @@ struct UnitRes{
 		INVALID_INT,
 		PREFIX_NOT_ALLOWED, //Some units e.g. "kg" are not allowed to have prefix. See SI-brochure v8, page 122, sec. 3.2
 		BASE_ALREADY_DEFINED,
+		ERROR_ADDING_UNIT
 	};
 
 	UnitRes(ResVal res, unsigned int charNumber = 0) : result(res), charNo(charNumber) {;}
@@ -192,6 +194,21 @@ private:
 	unsigned int _lastindex;
 };
 
+class DerivedInfo{
+public:
+	DerivedInfo(string qn, string un, string usym, string ustr, Rational pe, Rational sf, Rational o, bool pa) 
+		: quantityName(qn), unitName(un), unitSymbol(usym), unitStrExp(ustr), prefixExpo(pe), scaleFactor(sf),
+		offset(o),prefixAllowed(pa) {;}
+	string quantityName;
+	string unitName;
+	string unitSymbol; 
+	string unitStrExp;
+	Rational prefixExpo;
+	Rational scaleFactor; 
+	Rational offset;
+	bool prefixAllowed;
+};
+
 
 class UnitParser{
 public:
@@ -210,10 +227,13 @@ public:
 		const string unitSymbol, bool prefixAllowed);
 
 	/** Add a derived quantity/unit */
-	UnitRes addDerived(const string quantityName, const string unitName, const string unitSymbol,
-		const string unitStrExp, Rational prefixExpo, Rational scaleFactor, Rational offset, bool prefixAllowed,double weight);
+	void addDerived(const string quantityName, const string unitName, const string unitSymbol, 
+		const string unitStrExp, Rational prefixExpo, Rational scaleFactor, Rational offset, bool prefixAllowed);
 
-	/** Convert a unit vector to a unit text string (unparse) - simple version, e.g. "m-2.kg2.s-3" */
+	/** Call this method after adding all base and derived unit. */
+	UnitRes commit();
+
+	/** Convert a unit vector to a unit text string (unparse) */
 	string unit2str(Unit unit);
 
 	/** Convert a unit vector to a unit text string (unparse) - using MIP algorithm to select most appropriate units */
@@ -222,14 +242,26 @@ public:
 	/** Convert a unit text string to a unit vector type (parse) */
 	UnitRes str2unit(const string unitstr, Unit& unit);
 
+	/** Init prefixes without init units */
+	void initPrefixes();
+
 	/** Initiates the standard base and derived SI units according to the SI brochure, 8th edition, 2006*/
 	void initSIUnits();
 
 
 
 private:
+
+	/** Add a derived quantity/unit */
+	UnitRes addDerivedInternal(const string quantityName, const string unitName, const string unitSymbol, 
+		const string unitStrExp, Rational prefixExpo, Rational scaleFactor, Rational offset, bool prefixAllowed);
+
+
 	/** Prefixes */
 	map<string,Rational> _prefix;
+
+	/** A temp cash of the derived unit */
+	list<DerivedInfo> _tempDerived;
 
 	/** Base quantities and units(vector of names) */
 	vector<Base> _base;
