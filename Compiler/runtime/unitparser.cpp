@@ -32,7 +32,9 @@
 #include "unitparser.h"
 #include <iostream>
 #include <sstream>
-#include "lp_lib.h"
+#ifndef NO_LPLIB 
+  #include "lp_lib.h"
+#endif
 
 /***************************************************************************************/
 /*   CLASS: Rational                                                                   */
@@ -51,6 +53,7 @@ Rational::Rational(long numerator, long denominator)
  * of ambiguity that needs to be adressed. */
 void Rational::rationalize(double r)
 {
+#ifndef NO_LPLIB 
 	const double eps = 1e-6;
 	double rapp;
 	long numerator=(long)r;
@@ -65,6 +68,7 @@ void Rational::rationalize(double r)
 	num = numerator/d;
 	denom = denominator/d;
 	//cout << "Rationalized " << r << " to " << num << " / " << denom << endl;
+#endif
 }
 
 Rational::Rational(const Rational& r){
@@ -272,6 +276,22 @@ bool Unit::isBaseUnit()
 }
 
 
+bool Unit::equalNoWeight(const Unit& u)
+{
+	unsigned int i = 0;
+	if(unitVec.size() != u.unitVec.size())
+		return false;
+	for(unsigned int i = 0; i < unitVec.size(); i++)
+	{
+		if(!unitVec[i].equal(u.unitVec[i]))
+			return false;
+	}
+
+	return (scaleFactor.equal(u.scaleFactor) && offset.equal(u.offset));
+}
+
+
+
 /***************************************************************************************/
 /*   CLASS: UnitParser                                                                 */
 /***************************************************************************************/
@@ -333,11 +353,38 @@ UnitRes UnitParser::addDerivedInternal(const string quantityName, const string u
 	u.unitSymbol = unitSymbol;
 	u.prefixAllowed = prefixAllowed;
 	u.prefixExpo = prefixExpo;
-	u.scaleFactor = scaleFactor;
+	u.scaleFactor = scaleFactor; 
 	u.offset = offset;
-	u.weight = weight;
-	_units[unitSymbol] = u;
+	u.weight = weight; 
+
+	map<string,Unit>::iterator p = _units.find(unitSymbol);
+	// Unit already defined?
+	if(p == _units.end()){
+		//No - add new unit
+		_units[unitSymbol] = u;
+	}
+	else{
+		//Yes - just update weight
+		if(u.equalNoWeight((*p).second)){
+			Unit u2 =_units[unitSymbol];
+			u2.weight *= weight;
+			_units[unitSymbol] = u2; 
+		}
+		else
+			return UnitRes(UnitRes::UNITS_DEFINED_WITH_DIFFERENT_EXPR);
+	} 
 	return res;
+}
+
+void UnitParser::accumulateWeight(const string unitSymbol, double weight)
+{
+	map<string,Unit>::iterator p = _units.find(unitSymbol);
+	if(p != _units.end())
+	{
+		Unit u2 =_units[unitSymbol];
+		u2.weight *= weight;
+		_units[unitSymbol] = u2; 
+	}
 }
 
 
@@ -374,6 +421,7 @@ string UnitParser::prettyPrintUnit2str(Unit unit)
 
 Unit UnitParser::solveMIP(Unit unit)
 {
+#ifndef NO_LPLIB 
   int numBaseUnits = _base.size();
   int numDerivedUnits=0;
   // Counting the derived units by traversing all units
@@ -558,6 +606,9 @@ Unit UnitParser::solveMIP(Unit unit)
   delete row;
   delete colno;
   return retVal;
+#else 
+   return unit;
+#endif
 }
 
 string UnitParser::unit2str(Unit unit)

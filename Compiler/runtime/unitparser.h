@@ -52,6 +52,7 @@ public:
 	double toReal();
 	void rationalize(double r);
 	void fixsign();
+	bool equal(Rational r) {return r.num==num && r.denom==denom;}
 	static Rational simplify(const Rational q);
 	static Rational sub(Rational q1, Rational q2);
 	static Rational add(Rational q1, Rational q2);
@@ -61,7 +62,7 @@ public:
 
 };
 
-
+ 
 
 struct UnitRes{
 	UnitRes() : result(UNIT_OK), charNo(0) {;}
@@ -78,7 +79,8 @@ struct UnitRes{
 		INVALID_INT,
 		PREFIX_NOT_ALLOWED, //Some units e.g. "kg" are not allowed to have prefix. See SI-brochure v8, page 122, sec. 3.2
 		BASE_ALREADY_DEFINED,
-		ERROR_ADDING_UNIT
+		ERROR_ADDING_UNIT,
+		UNITS_DEFINED_WITH_DIFFERENT_EXPR
 	};
 
 	UnitRes(ResVal res, unsigned int charNumber = 0) : result(res), charNo(charNumber) {;}
@@ -139,6 +141,9 @@ public:
 
 	/* Exponent power on a unit vector */
 	static UnitRes pow(Unit u, const Rational e, Unit& ur);
+   
+	/** Checks if the unit is equal to another unit, without comparing weights */
+	bool equalNoWeight(const Unit& u);
 private:
 	static UnitRes paramutil(Unit u1, Unit u2, Unit& ur, bool mulop);
 
@@ -232,6 +237,9 @@ public:
 	/** Add a derived quantity/unit */
 	void addDerived(const string quantityName, const string unitName, const string unitSymbol,
 		const string unitStrExp, Rational prefixExpo, Rational scaleFactor, Rational offset, bool prefixAllowed, double weight=1.0);
+
+	/** Multiply the weight factor to an existing unit symbol. If the symbol does not exist, nothing is updated */
+    void accumulateWeight(const string unitSymbol, double weight);
 
 	/** Call this method after adding all base and derived unit. */
 	UnitRes commit();
