@@ -14,13 +14,81 @@ public import Env;
 public import HashTable;
 public import Types;
 public import Exp;
+public import Absyn;
 
 protected import Util;
 protected import UnitParserExt;
-protected import Absyn;
 protected import Lookup;
 protected import System;
 protected import OptManager;
+protected import Interactive;
+protected import SCode;
+
+
+
+public function registerUnits "traverses the Absyn.Program and registers all defineunits.
+Note: this requires that instantiation is done on a 'total program', so only defineunits that 
+are referenced in the model are picked up
+"
+  input Absyn.Program prg;
+algorithm
+  print("registerUnits called\n");
+  ((_,_,_)) := Interactive.traverseClasses(prg,NONE,registerUnitInClass,0,false); // defineunits must be in public section.
+end registerUnits;
+  
+protected function registerUnitInClass " help function to registerUnits"
+  input tuple<Absyn.Class,Option<Absyn.Path>,Integer> inTpl;
+  output tuple<Absyn.Class,Option<Absyn.Path>,Integer> outTpl;
+algorithm
+  outTpl := matchcontinue(inTpl)
+  local Absyn.Class cl;
+    Option<Absyn.Path> pa;
+    Integer i;
+    list<Absyn.Element> defunits;
+    list<Absyn.ElementItem> elts;
+    String n;
+    case((cl as Absyn.CLASS(name=n),pa,i)) equation
+      elts = Interactive.getElementitemsInClass(cl);
+      defunits = Interactive.getDefineunitsInElements(elts);
+      registerDefineunits(defunits);
+    then ((cl,pa,i));
+    case((cl,pa,i)) then ((cl,pa,i));    
+  end matchcontinue;
+end registerUnitInClass;
+
+protected function registerDefineunits "help function to registerUnitInClass"
+  input list<Absyn.Element> elts;
+algorithm
+   _ := matchcontinue(elts) 
+   local String name; list<Absyn.NamedArg> args; Absyn.Element du;
+     String exp; Real weight;
+     case({}) then ();
+     /* Derived unit with weigth */
+     case((du as Absyn.DEFINEUNIT(name=_))::elts) equation
+       {SCode.DEFINEUNIT(name,SOME(exp),SOME(weight))} = SCode.elabElement(du,false);       
+       UnitParserExt.addDerivedWeight(name,exp,weight);
+       registerDefineunits(elts);
+     then ();
+     
+     /* Derived unit without weigth */
+     case((du as Absyn.DEFINEUNIT(name=_))::elts) equation
+       {SCode.DEFINEUNIT(name,SOME(exp),NONE)} = SCode.elabElement(du,false);
+       UnitParserExt.addDerived(name,exp);
+       registerDefineunits(elts);
+     then ();
+            
+       /* base unit does not not have weight*/
+     case((du as Absyn.DEFINEUNIT(name=_))::elts) equation
+       {SCode.DEFINEUNIT(name,NONE,_)} = SCode.elabElement(du,false);
+       UnitParserExt.addBase(name);
+       registerDefineunits(elts);
+     then ();
+     
+     case(_) equation
+       print("registerDefineunits failed\n");
+     then fail();
+  end matchcontinue;
+end registerDefineunits; 
 
 public function add "Adds a unit to the UnitAbsyn.Store"
   input UnitAbsyn.Unit unit; 
@@ -222,7 +290,7 @@ public function printTermsStr "print the terms to a string"
   input UnitAbsyn.UnitTerms terms;
   output String str;
 algorithm
-  str := "{" +& Util.stringDelimitList(Util.listMap(terms,printTermStr),",") +& "}";     
+  str := "{" +& Util.stringDelimitList(Util.listMap(terms,printTermStr),",") +& "}";
 end printTermsStr;
 
 public function printTermStr "print one term to a string"
@@ -274,7 +342,8 @@ algorithm
       printStore(s);
       print("\nht:");
       HashTable.dumpHashTable(h);
-    then ();      
+    then ();
+    case(UnitAbsyn.NOSTORE()) then ();      
   end matchcontinue;
 end printInstStore;
 
@@ -398,14 +467,17 @@ public function joinTypeParams "creates type parameter lists from list of numera
   input list<Integer> nums;
   input list<Integer> denoms;
   input list<String> tpstrs;
+  input Option<Integer> funcInstIdOpt;
   output list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> typeParams;
 algorithm
-  typeParams := matchcontinue(nums,denoms,tpstrs)
+  typeParams := matchcontinue(nums,denoms,tpstrs,funcInstIdOpt)
     local Integer i1,i2;
-      String tpParam;
-    case({},{},{}) then {};
-    case(i1::nums,i2::denoms,tpParam::tpstrs) equation
-      typeParams = joinTypeParams(nums,denoms,tpstrs);
+      String tpParam,s;
+    case({},{},{},_) then {};
+    case(i1::nums,i2::denoms,tpParam::tpstrs,funcInstIdOpt) equation
+      typeParams = joinTypeParams(nums,denoms,tpstrs,funcInstIdOpt);
+        s=Util.stringOption(Util.applyOption(funcInstIdOpt,intString));
+        tpParam = tpParam +& s;
     then (MMath.RATIONAL(i1,i2),UnitAbsyn.TYPEPARAMETER(tpParam,0))::typeParams;
   end matchcontinue;  
 end joinTypeParams;
@@ -429,23 +501,30 @@ public function instBuildUnitTerms "builds unit terms and stores for a DAE. It a
 variable names to store locations."
   input Env.Env env;
   input list<DAE.Element> dae;
+  input list<DAE.Element> compDae "to collect variable bindings";
   input UnitAbsyn.InstStore store;
   output UnitAbsyn.InstStore outStore;
   output UnitAbsyn.UnitTerms terms;  
 algorithm
-  (outStore,terms) := matchcontinue(env,dae,store)
-  local UnitAbsyn.Store st; HashTable.HashTable ht;
-    case(env,dae,store) equation
+  (outStore,terms) := matchcontinue(env,dae,compDae,store)
+  local UnitAbsyn.Store st; HashTable.HashTable ht; UnitAbsyn.UnitTerms terms2;
+    case(env,dae,compDae,store) equation
       false = OptManager.getOption("unitChecking");
     then(UnitAbsyn.noStore,{});
-    case(env,dae,UnitAbsyn.NOSTORE()) then  (UnitAbsyn.NOSTORE(),{});     
-    case(env,dae,UnitAbsyn.INSTSTORE(st,ht)) equation  
+    case(env,dae,compDae,UnitAbsyn.NOSTORE()) then  (UnitAbsyn.NOSTORE(),{});     
+    case(env,dae,compDae,UnitAbsyn.INSTSTORE(st,ht)) equation  
      (terms,st) = buildTerms(env,dae,ht,st);
+     (terms2,st) = buildTerms(env,compDae,ht,st) "to get bindings of scalar variables";
+     terms = listAppend(terms,terms2);
+     //print("built terms, store :"); printStore(st);
+     //print("ht =");HashTable.dumpHashTable(ht);
       st = createTypeParameterLocations(st);
+     // print("built type param, store :"); printStore(st);
+     terms = listReverse(terms);
      then (UnitAbsyn.INSTSTORE(st,ht),terms);
-    /*case(_,_,_) equation
+    case(_,_,_,_) equation
       print("instBuildUnitTerms failed!!\n");
-    then fail();*/       
+    then fail();       
   end matchcontinue;
 end instBuildUnitTerms;  
 
@@ -479,7 +558,7 @@ algorithm
     then UnitAbsyn.noStore;
       
     case(UnitAbsyn.INSTSTORE(st,ht),(Types.T_REAL(Types.VAR(name="unit",binding = Types.EQBOUND(exp=Exp.SCONST(unitStr)))::_),_),cr) equation
-      unit = str2unit(unitStr);
+      unit = str2unit(unitStr,NONE);
       (st,indx) = add(unit,st);
        ht = HashTable.add((cr,indx),ht);       
     then UnitAbsyn.INSTSTORE(st,ht);     
@@ -642,9 +721,10 @@ algorithm
     local Exp.Exp e1,e2; UnitAbsyn.UnitTerm ut1,ut2;
       list<UnitAbsyn.UnitTerm> terms1,terms2,terms;
       Exp.ComponentRef cr1,cr2;
+      list<DAE.Element> dae1;
     case(env,{},ht,store) then ({},store);
     case(env,DAE.EQUATION(e1,e2)::dae,ht,store) equation
-      (ut1,terms1,store) = buildTermExp(env,e1,ht,store);
+      (ut1,terms1,store) = buildTermExp(env,e1,ht,store);      
       (ut2,terms2,store) = buildTermExp(env,e2,ht,store);
       (terms,store) = buildTerms(env,dae,ht,store);
       terms = listAppend(terms1,listAppend(terms2,terms));
@@ -657,6 +737,21 @@ algorithm
       terms = listAppend(terms1,listAppend(terms2,terms));
     then  (UnitAbsyn.EQN(ut1,ut2,Exp.BINARY(Exp.CREF(cr1,Exp.OTHER()),Exp.SUB(Exp.REAL()),Exp.CREF(cr2,Exp.OTHER())))::terms,store);
            
+      /* Only consider variables with binding from this instance level, not furhter down */
+    case(env,DAE.VAR(componentRef=cr1 as Exp.CREF_IDENT(_,_,_),binding = SOME(e1))::dae,ht,store) equation      
+      (ut1,terms1,store) = buildTermExp(env,Exp.CREF(cr1,Exp.OTHER()),ht,store);
+      (ut2,terms2,store) = buildTermExp(env,e1,ht,store);
+      (terms,store) = buildTerms(env,dae,ht,store);
+      terms = listAppend(terms1,listAppend(terms2,terms));    
+    then  (UnitAbsyn.EQN(ut1,ut2,Exp.BINARY(Exp.CREF(cr1,Exp.OTHER()),Exp.SUB(Exp.REAL()),e1))::terms,store);
+            
+    case(env,DAE.DEFINE(cr1,e1)::dae,ht,store) equation
+      (ut1,terms1,store) = buildTermExp(env,Exp.CREF(cr1,Exp.OTHER()),ht,store);
+      (ut2,terms2,store) = buildTermExp(env,e1,ht,store);
+      (terms,store) = buildTerms(env,dae,ht,store);
+      terms = listAppend(terms1,listAppend(terms2,terms));
+    then  (UnitAbsyn.EQN(ut1,ut2,Exp.BINARY(Exp.CREF(cr1,Exp.OTHER()),Exp.SUB(Exp.REAL()),e1))::terms,store);
+        
     case(env,_::dae,ht,store) equation
       (terms,store) = buildTerms(env,dae,ht,store);
       then (terms,store);    
@@ -680,14 +775,50 @@ algorithm
     list<UnitAbsyn.UnitTerm> terms1,terms2,terms;
     list<Exp.Exp> expl;
     
-    case(env,e as Exp.RCONST(r),ht,store) equation
+    /*case(env,e as Exp.RCONST(r),ht,store) equation
       s1 = realString(r);
       indx = HashTable.get(Exp.CREF_IDENT(s1,Exp.OTHER(),{}),ht);
+    then (UnitAbsyn.LOC(indx,e),{},store);*/
+    
+    case(env,e as Exp.ICONST(i),ht,store) local Integer i; equation
+      s1 = "$"+&intString(tick())+&"_"+&intString(i);
+      (store,indx) = add(UnitAbsyn.UNSPECIFIED(),store);
+       ht = HashTable.add((Exp.CREF_IDENT(s1,Exp.OTHER(),{}),indx),ht);
     then (UnitAbsyn.LOC(indx,e),{},store);
     
+    /* for each constant, add new unspecified unit*/
+    case(env,e as Exp.RCONST(r),ht,store)equation
+      s1 = "$"+&intString(tick())+&"_"+&realString(r);
+      (store,indx) = add(UnitAbsyn.UNSPECIFIED(),store);
+       ht = HashTable.add((Exp.CREF_IDENT(s1,Exp.OTHER(),{}),indx),ht);
+    then (UnitAbsyn.LOC(indx,e),{},store);
+    
+    case(env,Exp.CAST(_,e1),ht,store) equation
+      (ut,terms,store) = buildTermExp(env,e1,ht,store);
+    then (ut,terms,store);
+      
     case(env,e as Exp.CREF(cr,_),ht,store) equation
      indx = HashTable.get(cr,ht);
     then (UnitAbsyn.LOC(indx,e),{},store);
+    
+    /* special case for pow */
+    case(env,e as Exp.BINARY(e1,Exp.POW(_),e2 as Exp.ICONST(i)),ht,store) local Integer i;
+      equation
+        (ut1,terms1,store) = buildTermExp(env,e1,ht,store);
+        (ut2,terms2,store) = buildTermExp(env,e2,ht,store);
+        terms = listAppend(terms1,terms2);
+        ut = UnitAbsyn.POW(ut1,MMath.RATIONAL(i,1),e);
+    then (ut,terms,store);
+    
+    case(env,e as Exp.BINARY(e1,Exp.POW(_),e2 as Exp.RCONST(r)),ht,store) local Integer i; Real r;
+      equation
+        (ut1,terms1,store) = buildTermExp(env,e1,ht,store);
+        (ut2,terms2,store) = buildTermExp(env,e2,ht,store);
+        terms = listAppend(terms1,terms2);
+        i = realInt(r);
+        true = intReal(i) -. r ==. 0.0;
+        ut = UnitAbsyn.POW(ut1,MMath.RATIONAL(i,1),e);
+    then (ut,terms,store);  
       
     case(env,e as Exp.BINARY(e1,op,e2),ht,store) equation
       (ut1,terms1,store) = buildTermExp(env,e1,ht,store);
@@ -719,12 +850,12 @@ algorithm
     then (UnitAbsyn.EQN(ut1,ut2,e),terms,store);
     
     /* function call */
-    case(env,Exp.CALL(path=path,expLst=expl),ht,store) equation
-      (ut,terms,store) = buildTermCall(env,path,expl,ht,store);       
+    case(env,e as Exp.CALL(path=path,expLst=expl),ht,store) equation
+      (ut,terms,store) = buildTermCall(env,path,e,expl,ht,store);       
     then  (ut,terms,store);
         
     case(env,e as Exp.CALL(path=_),ht,store) equation
-      print("buildTermExp CALL not impl. yet");
+      print("buildTermExp CALL failed exp: "+&Exp.printExpStr(e)+&"\n");
     then (UnitAbsyn.LOC(0,e),{},store);            
   end matchcontinue;
 end buildTermExp;
@@ -732,6 +863,7 @@ end buildTermExp;
 protected function buildTermCall "builds a term and additional terms from a function call"
   input Env.Env env;
   input Absyn.Path path;
+  input Exp.Exp funcCallExp;
   input list<Exp.Exp> expl;
   input HashTable.HashTable ht;
   input UnitAbsyn.Store store;
@@ -739,59 +871,67 @@ protected function buildTermCall "builds a term and additional terms from a func
   output list<UnitAbsyn.UnitTerm> extraTerms "additional terms from e.g. function calls";
   output UnitAbsyn.Store outStore;
 algorithm
-  (ut,extraTerms,outStore) := matchcontinue(env,path,expl,ht,store)
+  (ut,extraTerms,outStore) := matchcontinue(env,path,funcCallExp,expl,ht,store)
     local list<Integer> formalParamIndxs; Integer resIndx;
       list<UnitAbsyn.UnitTerm> actTermLst,terms,terms2,extraTerms2; Types.Type functp;
-       
-    case(env,path,expl,ht,store) equation
+       Integer funcInstId;
+    case(env,path,funcCallExp,expl,ht,store) equation
        (_,functp,_) = Lookup.lookupType(Env.emptyCache(),env,path,false);
-       (store,formalParamIndxs) = buildFuncTypeStores(functp,store);
+       funcInstId=tick();
+       (store,formalParamIndxs) = buildFuncTypeStores(functp,funcInstId,store);
        (actTermLst,extraTerms,store) = buildTermExpList(env,expl,ht,store);
         terms = buildFormal2ActualParamTerms(formalParamIndxs,actTermLst);
-        (terms2 as {ut},extraTerms2,store) = buildResultTerms(functp,store);
+        (terms2 as {ut},extraTerms2,store) = buildResultTerms(functp,funcInstId,funcCallExp,store);
         extraTerms = listAppend(extraTerms,listAppend(extraTerms2,terms));
-    then (ut,extraTerms,store); 
+    then (ut,extraTerms,store);     
   end matchcontinue;
 end buildTermCall;    
 
 protected function buildResultTerms "build stores and terms for assigning formal output arguments to
 new locations"
   input Types.Type functp;
+  input Integer funcInstId;
+  input Exp.Exp funcCallExp;
   input UnitAbsyn.Store store;
   output list<UnitAbsyn.UnitTerm> terms;
   output list<UnitAbsyn.UnitTerm> extraTerms;
   output UnitAbsyn.Store outStore;
 algorithm
-  (terms,outStore) := matchcontinue(functp,store)
+  (terms,outStore) := matchcontinue(functp,funcInstId,funcCallExp,store)
   local String unitStr; UnitAbsyn.Unit unit; Integer indx,indx2;
     list<Types.Type> typeLst;
     /* Real */
-    case((Types.T_FUNCTION(_,functp),_),store) equation
+    case((Types.T_FUNCTION(_,functp),_),funcInstId,funcCallExp,store) equation
       unitStr = getUnitStr(functp);
-      unit = str2unit(unitStr);
+      unit = str2unit(unitStr,SOME(funcInstId));
      (store,indx) = add(unit,store);
      (store,indx2) = add(UnitAbsyn.UNSPECIFIED(),store);
-      then ({UnitAbsyn.LOC(indx2,Exp.SCONST("<undef>"))},{UnitAbsyn.EQN(UnitAbsyn.LOC(indx2,Exp.SCONST("<undef>")),UnitAbsyn.LOC(indx,Exp.SCONST("<undef>")),Exp.SCONST("<undef>"))},store);
+      then ({UnitAbsyn.LOC(indx2,funcCallExp)},{UnitAbsyn.EQN(UnitAbsyn.LOC(indx2,funcCallExp),UnitAbsyn.LOC(indx,funcCallExp),funcCallExp)},store);
     /* Tuple */
-    case((Types.T_FUNCTION(_,(Types.T_TUPLE(typeLst),_)),_),store) equation
-      (terms,extraTerms,store) = buildTupleResultTerms(typeLst,store);
+    case((Types.T_FUNCTION(_,(Types.T_TUPLE(typeLst),_)),_),funcInstId,funcCallExp,store) equation
+      (terms,extraTerms,store) = buildTupleResultTerms(typeLst,funcInstId,funcCallExp,store);
      then (terms,extraTerms,store);
+    case(_,_,_,_) equation
+      print("buildResultTerms failed\n");
+    then fail();
   end matchcontinue;
 end buildResultTerms;
 
 protected function buildTupleResultTerms "help function to buildResultTerms"
   input list<Types.Type> functps;
+  input Integer funcInstId;
+  input Exp.Exp funcCallExp;
   input UnitAbsyn.Store store;
   output list<UnitAbsyn.UnitTerm> terms;
   output list<UnitAbsyn.UnitTerm> extraTerms;
   output UnitAbsyn.Store outStore;
 algorithm
-  (terms,extraTerms,outStore) := matchcontinue(functps,store)
+  (terms,extraTerms,outStore) := matchcontinue(functps,funcInstId,funcCallExp,store)
   local list<UnitAbsyn.UnitTerm> terms1,terms2,extraTerms1,extraTerms2; Types.Type tp;
-    case({},store) then ({},{},store);
-    case(tp::functps,store) equation
-      (terms1,extraTerms1,store) = buildResultTerms(tp,store);
-      (terms2,extraTerms2,store) = buildTupleResultTerms(functps,store);
+    case({},funcInstId,funcCallExp,store) then ({},{},store);
+    case(tp::functps,funcInstId,funcCallExp,store) equation
+      (terms1,extraTerms1,store) = buildResultTerms(tp,funcInstId,funcCallExp,store);
+      (terms2,extraTerms2,store) = buildTupleResultTerms(functps,funcInstId,funcCallExp,store);
       terms = listAppend(terms1,terms2);
       extraTerms = listAppend(extraTerms1,extraTerms2);
     then (terms,extraTerms,store);
@@ -815,39 +955,47 @@ algorithm
       (ut,eterms1,store) =  buildTermExp(env,e,ht,store);
       (terms,eterms2,store) = buildTermExpList(env,expl,ht,store);
       extraTerms = listAppend(eterms1,eterms2);
-    then (ut::terms,extraTerms,store);     
+    then (ut::terms,extraTerms,store);  
+    case(_,e::_,_,_) equation
+      print("buildTermExpList failed for exp"+&Exp.printExpStr(e)+&"\n");
+    then fail();   
   end matchcontinue;
 end buildTermExpList;
   
 
 protected function buildFuncTypeStores "help function to buildTermCall"
   input Types.Type funcType;
+  input Integer funcInstId "unique id for each function call to make unique type parameter names";
   input UnitAbsyn.Store store;
   output UnitAbsyn.Store outStore;
   output list<Integer> indxs;
 algorithm
-  (outStore,indxs) := matchcontinue(funcType,store)
-  local list<Types.FuncArg>  args;
-    case((Types.T_FUNCTION(args,_),_),store) equation
-      (store,indxs) = buildFuncTypeStores2(args,store);
+  (outStore,indxs) := matchcontinue(funcType,funcInstId,store)
+  local list<Types.FuncArg>  args; Types.Type tp;
+    case((Types.T_FUNCTION(args,_),_),funcInstId,store) equation
+      (store,indxs) = buildFuncTypeStores2(args,funcInstId,store);
     then (store,indxs);
+    case(tp,_,_) equation
+      print("buildFuncTypeStores failed, tp"+&Types.unparseType(tp)+&"\n");
+    then fail();
   end matchcontinue;
 end buildFuncTypeStores; 
 
 protected function buildFuncTypeStores2 "help function to buildFuncTypeStores"
   input list<Types.FuncArg> fargs;
+  input Integer funcInstId;
   input UnitAbsyn.Store store;
   output UnitAbsyn.Store outStore;
   output list<Integer> indxs;
 algorithm
-  (outStore,indxs) := matchcontinue(fargs,store)
+  (outStore,indxs) := matchcontinue(fargs,funcInstId,store)
   local String unitStr; Integer indx; Types.Type tp; UnitAbsyn.Unit unit;
-    case({},store) then (store,{});
-    case((_,tp)::fargs,store) equation
+    case({},funcInstId,store) then (store,{});
+    case((_,tp)::fargs,funcInstId,store) equation
       unitStr = getUnitStr(tp);
-      unit = str2unit(unitStr);
-      (store,indx) = add(unit,store);      
-      (store,indxs) = buildFuncTypeStores2(fargs,store);
+      unit = str2unit(unitStr,SOME(funcInstId));
+      (store,indx) = add(unit,store);
+      (store,indxs) = buildFuncTypeStores2(fargs,funcInstId,store);
     then (store,indx::indxs);
   end matchcontinue;
 end buildFuncTypeStores2;
@@ -863,6 +1011,8 @@ algorithm
     case((Types.T_REAL(Types.VAR(name="unit",binding=Types.EQBOUND(exp=Exp.SCONST(str)))::_),_))
       then str;
     case((Types.T_REAL(_::varLst),optPath)) then getUnitStr((Types.T_REAL(varLst),optPath));
+    case((Types.T_REAL({}),_)) then "";
+    case(tp) equation print("getUnitStr for type "+&Types.unparseType(tp)+&" failed\n"); then fail();
   end matchcontinue;  
 end getUnitStr;
 
@@ -878,6 +1028,9 @@ algorithm
       terms = buildFormal2ActualParamTerms(formalParamIndxs,actualParamIndxs);
       e = origExpInTerm(ut);
     then UnitAbsyn.EQN(UnitAbsyn.LOC(loc1,e),ut,e)::terms;
+    case(_,_) equation
+      print("buildFormal2ActualParamTerms failed\n");
+    then fail();
   end matchcontinue;
 end buildFormal2ActualParamTerms;
 
@@ -928,7 +1081,7 @@ algorithm
     case({},store,ht) then (store,ht);
     case(DAE.VAR(componentRef=cr,variableAttributesOption=attropt)::dae,store,ht) equation
       Exp.SCONST(unitStr) = DAE.getUnitAttr(attropt);
-      unit = str2unit(unitStr); /* Scale and offset not used yet*/
+      unit = str2unit(unitStr,NONE); /* Scale and offset not used yet*/
       (store,indx) = add(unit,store);
       ht = HashTable.add((cr,indx),ht);
       (store,ht) = buildStores2(dae,store,ht);
@@ -1047,7 +1200,7 @@ algorithm
     case(NONE) then UnitAbsyn.UNSPECIFIED();
     case(SOME(Exp.ADD(_))) then UnitAbsyn.UNSPECIFIED();
     case(SOME(Exp.SUB(_))) then UnitAbsyn.UNSPECIFIED();
-    case(SOME(_)) then str2unit("1");                
+    case(SOME(_)) then str2unit("1",NONE);                
   end matchcontinue;
 end selectConstantUnit;
 
@@ -1073,6 +1226,7 @@ end unit2str;
 
 public function str2unit "Translate a unit string to a unit"
   input String res;
+  input Option<Integer> funcInstIdOpt;
   output UnitAbsyn.Unit unit;
 protected
    list<Integer> nums,denoms,tpnoms,tpdenoms;
@@ -1083,7 +1237,7 @@ protected
 algorithm
   (nums,denoms,tpnoms,tpdenoms,tpstrs,scaleFactor,offset) := UnitParserExt.str2unit(res);
   units := joinRationals(nums,denoms);
-  typeParams := joinTypeParams(tpnoms,tpdenoms,tpstrs);  
+  typeParams := joinTypeParams(tpnoms,tpdenoms,tpstrs,funcInstIdOpt);  
   unit := UnitAbsyn.SPECIFIED(UnitAbsyn.SPECUNIT(typeParams,units));
 end str2unit;
 

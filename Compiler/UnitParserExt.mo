@@ -31,4 +31,31 @@ public function str2unit "Translate a unit string to a unit"
   external "C";
 end str2unit;
 
+public function addBase "adds a base unit without weight"
+  input String name;
+  external "C";
+end addBase;
+
+public function addDerived "adds a derived unit without weight"
+  input String name;
+  input String exp;
+  external "C";
+end addDerived;
+
+public function addDerivedWeight "adds a derived unit with weight"
+  input String name;
+  input String exp;
+  input Real weight;
+  external "C";
+end addDerivedWeight;
+
+public function clear "clears the unitparser from stored units"
+  external "C";
+end clear;
+
+public function commit "commits all units, must be run before doing unit checking and after last unit has been added
+with addBase or addDerived."
+  external "C";
+end commit;
+
 end UnitParserExt;

@@ -221,42 +221,11 @@ tokens {
 
 stored_definition returns [void *ast]
 {
-/*
-    void *restr = 0;
-    void *imp=0;
-    void *c=0;
-*/
     void *within = 0;    
     void *class_def = 0;
     l_stack el_stack;
 }
-    :
-        /*
-        #(BEGIN_DEFINITION (e:ENCAPSULATED)? (p:PARTIAL)?
-            restr = class_restriction i:IDENT)
-        {
-            ast = Absyn__BEGIN_5fDEFINITION(Absyn__IDENT(to_rml_str(i)),
-                restr,
-                RML_PRIM_MKBOOL(p != 0),
-                RML_PRIM_MKBOOL(e != 0));
-        }
-        |
-        #(END_DEFINITION i2:IDENT)
-        {
-            ast = Absyn__END_5fDEFINITION(to_rml_str(i2));
-        }
-        |
-        #(COMPONENT_DEFINITION c=component_clause)
-        {
-            ast = Absyn__COMP_5fDEFINITION(c,mk_none());
-        }
-        |
-        #(IMPORT_DEFINITION imp=import_clause)
-        {
-            ast = Absyn__IMPORT_5fDEFINITION(imp,mk_none());
-        }
-        |
-        */
+    :      
         #(STORED_DEFINITION
             ( within = within_clause )?
             ((f:FINAL )?
@@ -671,6 +640,7 @@ element returns [void* ast]
 	void* constr = 0;
     void* cmt = 0;
     void* keywords = 0;
+    void* na=0;
 
 }
 
@@ -690,6 +660,11 @@ element returns [void* ast]
                               mk_rcon(i_clause->getLastEditTime()))
                               ),mk_none());
 			}
+	    | #(DEFINEUNIT i2:IDENT (na = named_arguments)? )
+	      {
+	        if(!na) na = mk_nil();
+	        ast = Absyn__DEFINEUNIT(to_rml_str(i2),na);	      
+	      }
 		| e_spec = e_clause:extends_clause
 			{
 				ast = Absyn__ELEMENT(RML_FALSE,mk_none(),Absyn__UNSPECIFIED,mk_scon("extends"),

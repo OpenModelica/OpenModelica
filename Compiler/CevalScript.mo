@@ -85,6 +85,8 @@ protected import Error;
 protected import Static;
 protected import ConnectionGraph;
 protected import UnitAbsyn;
+protected import UnitParserExt;
+protected import UnitAbsynBuilder;
 
 public function cevalInteractiveFunctions 
 "function cevalInteractiveFunctions
@@ -3210,7 +3212,12 @@ algorithm
         failure(Absyn.CLASS(_,_,_,_,Absyn.R_FUNCTION(),_,_) = Interactive.getPathedClassInProgram(className, p)); 
         _ = Error.getMessagesStr() "Clear messages";
         Print.clearErrorBuf() "Clear error buffer";
-        p_1 = SCode.elaborate(ptot); 
+        p_1 = SCode.elaborate(ptot);
+        
+        UnitParserExt.clear();
+        UnitAbsynBuilder.registerUnits(ptot);
+        UnitParserExt.commit();
+         
         (cache, dae as DAE.DAE(dael), env) = Inst.instantiateClass(inCache, p_1, className);
         
         /* ((dae as DAE.DAE(dael))) = DAE.transformIfEqToExpr(dae_1); */
@@ -3242,6 +3249,11 @@ algorithm
         _ = Error.getMessagesStr() "Clear messages";
         Print.clearErrorBuf() "Clear error buffer";        
         p_1 = SCode.elaborate(ptot);
+        
+        UnitParserExt.clear();
+        UnitAbsynBuilder.registerUnits(ptot);
+        UnitParserExt.commit();
+        
         (cache, dae as DAE.DAE(dael), env) = Inst.instantiateFunctionImplicit(inCache, p_1, className);
       
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(className,dael,env));

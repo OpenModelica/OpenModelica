@@ -1348,7 +1348,7 @@ algorithm
       local String id;
       equation 
         _ = Static.elabBuiltinHandler(id) "Check for builtin operators" ;
-        Env.FRAME(sid,ht,httypes,_,_,_,_) = Env.topFrame(env);
+        Env.FRAME(sid,ht,httypes,_,_,_,_,_) = Env.topFrame(env);
         (cache,reslist) = lookupFunctionsInFrame(cache,ht, httypes, env, id);
       then
         (cache,reslist);
@@ -1857,7 +1857,7 @@ protected function buildRecordConstructorResultMod "function: buildRecordConstru
        Real x;
        String y;
        end foo;
-   => modifier list become \'result.x=x, result.y=y\'
+   => modifier list become \'x=x, y=y\'
 "
   input list<SCode.Element> inSCodeElementLst;
   output list<SCode.SubMod> outSCodeSubModLst;
@@ -1870,12 +1870,12 @@ algorithm
       list<SCode.Element> rest;
       /* Component*/      
     case ({}) then {}; 
-      case(inSCodeElementLst)
+   
+    case(inSCodeElementLst)
       equation 
         restmod = buildRecordConstructorResultMod2(inSCodeElementLst);
       then
-        {SCode.NAMEMOD("result",SCode.MOD(false,Absyn.NON_EACH(),restmod,NONE))};
-    
+        restmod;        
     case(_) equation then fail();
   end matchcontinue;
 end buildRecordConstructorResultMod;

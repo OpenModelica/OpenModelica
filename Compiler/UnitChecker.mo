@@ -91,7 +91,8 @@ algorithm
        Error.addMessage(Error.INCONSISTENT_UNITS,{s1,s2,s3});    
        then(INCONSISTENT(su1,su2),st2);
      case(_,_) equation
-       Debug.fprint("failtrace", "UnitChecker::check() failed\n");       
+       Debug.fprint("failtrace", "UnitChecker::check() failed\n");
+       print("check failed\n");
       then fail();
    end matchcontinue;
 end check; 
@@ -301,8 +302,8 @@ end unifyunits;
 public function newDimlessSpecUnit "creates a new dimensionless unit"
   output UnitAbsyn.SpecUnit su;
 algorithm
-  UnitAbsyn.SPECIFIED(su) := UnitAbsynBuilder.str2unit("1");  
-end newDimlessSpecUnit;  
+  UnitAbsyn.SPECIFIED(su) := UnitAbsynBuilder.str2unit("1",NONE);  
+end newDimlessSpecUnit;
 
 
 public function getUnknown "gets the first unknown in a specified unit"

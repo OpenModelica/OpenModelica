@@ -1,9 +1,13 @@
 /* External interface for UnitParserExt module */
 #include "unitparser.h"
 
-UnitParser unitParser;
+UnitParser* unitParser=0;
+
+#include <iostream>
+#include <string>
 
 using namespace std;
+
 
 extern "C"
 {
@@ -14,13 +18,62 @@ extern "C"
 
 void UnitParserExt_5finit(void)
 {
-	unitParser.initSIUnits();
+	unitParser = new UnitParser;
 }
 
 RML_BEGIN_LABEL(UnitParserExt__initSIUnits)
 {
-
     RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(UnitParserExt__clear)
+{
+	if (unitParser) delete unitParser;
+	unitParser = new UnitParser;
+    RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(UnitParserExt__commit)
+{
+	unitParser->commit();
+    RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+
+RML_BEGIN_LABEL(UnitParserExt__addBase)
+{
+   char * name = (char*) RML_STRINGDATA(rmlA0);
+   cout << "addBase(" << name << ")"<<endl;
+   if (strcmp(name,"kg")==0) {
+	   unitParser->addBase("","",name,false);
+   } else {
+	   unitParser->addBase("","",name,true);
+   }
+	RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(UnitParserExt__addDerived)
+{
+   char * name = (char*) RML_STRINGDATA(rmlA0);
+   char * exp = (char*) RML_STRINGDATA(rmlA1);
+   cout << "addDerived(" << name << ", "<<exp << ")" << endl;
+   unitParser->addDerived(name,name,name,exp,Rational(0),Rational(1),Rational(0),true);
+   RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(UnitParserExt__addDerivedWeight)
+{
+   char * name = (char*) RML_STRINGDATA(rmlA0);
+   char * exp = (char*) RML_STRINGDATA(rmlA1);
+   double w = rml_prim_get_real(rmlA2);
+   cout << "addDerived(" << name << ", "<<exp << ", " << w << ")"<< endl;
+   unitParser->addDerived(name,name,name,exp,Rational(0),Rational(1),Rational(0),true,w);
+   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
@@ -31,6 +84,8 @@ RML_BEGIN_LABEL(UnitParserExt__unit2str)
 	string tpParam;
 	nums = rmlA0;
 	Unit unit;
+	unit.unitVec.clear();
+	unit.typeParamVec.clear();
 	/* Add baseunits*/
 	while(RML_GETHDR(nums) == RML_CONSHDR) {
 		i1 = RML_UNTAGFIXNUM(RML_CAR(nums));
@@ -44,12 +99,12 @@ RML_BEGIN_LABEL(UnitParserExt__unit2str)
 		i1 = RML_UNTAGFIXNUM(RML_CAR(tpnoms));
 		i2 = RML_UNTAGFIXNUM(RML_CAR(tpdenoms));
 		tpParam = string(RML_STRINGDATA(RML_CAR(tpstrs)));
-		unit.typeParamVec[tpParam]=Rational(i1,i2);
+		unit.typeParamVec.insert(std::pair<string,Rational>(tpParam,Rational(i1,i2)));
 		tpnoms = RML_CDR(tpnoms);
 		tpdenoms = RML_CDR(tpdenoms);
 	}
-	//string res = unitParser.unit2str(unit);
-	string res = unitParser.prettyPrintUnit2str(unit);
+	//string res = unitParser->unit2str(unit);
+	string res = unitParser->prettyPrintUnit2str(unit);
 
 	rmlA0 = (void*) mk_scon((char*)res.c_str());
     RML_TAILCALLK(rmlSC);
@@ -60,7 +115,11 @@ RML_BEGIN_LABEL(UnitParserExt__str2unit)
 {
     string str = string(RML_STRINGDATA(rmlA0));
     Unit unit;
-    unitParser.str2unit(str,unit);
+    UnitRes res = unitParser->str2unit(str,unit);
+    if (!res.Ok()) {
+    	std::cerr << "error parsing unit " << str << std::endl;
+    	RML_TAILCALLK(rmlFC);
+    }
 
     /* Build rml objects */
     void* nums=mk_nil(); void* denoms=mk_nil(); void* tpnoms=mk_nil(); void* tpdenoms=mk_nil(); void* tpstrs=mk_nil();

@@ -47,6 +47,26 @@ Rational::Rational(long numerator, long denominator)
 	fixsign();
 }
 
+/* Rationalize a double precision number using an epsilon, should be a constructor but that leads to a lot
+ * of ambiguity that needs to be adressed. */
+void Rational::rationalize(double r)
+{
+	const double eps = 1e-6;
+	double rapp;
+	long numerator=(long)r;
+	long denominator=1;
+	do {
+		rapp = (double)numerator/ (double)denominator;
+		denominator*=10;
+		numerator=(long)(r*denominator);
+	} while(fabs(r-rapp) > eps);
+
+	long d = gcd(numerator,denominator);
+	num = numerator/d;
+	denom = denominator/d;
+	//cout << "Rationalized " << r << " to " << num << " / " << denom << endl;
+}
+
 Rational::Rational(const Rational& r){
 	num = r.num;
 	denom = r.denom;
@@ -294,15 +314,15 @@ void UnitParser::addBase(const string quantityName, const string unitName, const
 
 
 
-void UnitParser::addDerived(const string quantityName, const string unitName, const string unitSymbol, const string unitStrExp, 
-							   Rational prefixExpo, Rational scaleFactor, Rational offset, bool prefixAllowed)
+void UnitParser::addDerived(const string quantityName, const string unitName, const string unitSymbol, const string unitStrExp,
+							   Rational prefixExpo, Rational scaleFactor, Rational offset, bool prefixAllowed,double weight)
 {
-	DerivedInfo di(quantityName, unitName, unitSymbol, unitStrExp, prefixExpo, scaleFactor, offset, prefixAllowed);
+	DerivedInfo di(quantityName, unitName, unitSymbol, unitStrExp, prefixExpo, scaleFactor, offset, prefixAllowed,weight);
 	_tempDerived.push_back(di);
 }
 
-UnitRes UnitParser::addDerivedInternal(const string quantityName, const string unitName, const string unitSymbol, const string unitStrExp, 
-							   Rational prefixExpo, Rational scaleFactor, Rational offset, bool prefixAllowed)
+UnitRes UnitParser::addDerivedInternal(const string quantityName, const string unitName, const string unitSymbol, const string unitStrExp,
+							   Rational prefixExpo, Rational scaleFactor, Rational offset, bool prefixAllowed, double weight=1.0)
 {
 	Unit u;
 	UnitRes res = str2unit(unitStrExp, u);
@@ -326,13 +346,13 @@ UnitRes UnitParser::commit()
 	list<DerivedInfo> tmp;
 	int initSize = _tempDerived.size();
 	while(_tempDerived.size() != 0)
-	{	
+	{
 		unsigned int startSize = _tempDerived.size();
 		while(_tempDerived.size() != 0)
 		{
 			DerivedInfo d = _tempDerived.front();
 			UnitRes res = addDerivedInternal(d.quantityName,d.unitName,d.unitSymbol,d.unitStrExp,
-				d.prefixExpo, d.scaleFactor, d.offset, d.prefixAllowed);
+				d.prefixExpo, d.scaleFactor, d.offset, d.prefixAllowed,d.weight);
 			_tempDerived.pop_front();
 			if(!res.Ok())
 				tmp.push_back(d);
@@ -419,7 +439,7 @@ Unit UnitParser::solveMIP(Unit unit)
 		  colno[j]=colno[j2]+NU;
 		  row[j++] = -row[j2];
 	  }
-	  double b = unit.unitVec[r].toReal();
+	  double b = r < unit.unitVec.size() ? unit.unitVec[r].toReal() : 0.0;
 	  if(!add_constraintex(lp,j,row,colno,EQ,b)) {
 		  cerr << "Internal error pretty printing expression (adding row to lp). Using simple approach" << endl;
 		  return unit;
@@ -434,9 +454,10 @@ Unit UnitParser::solveMIP(Unit unit)
   for (c2=0; c2 < numBaseUnits;c2++ ) {
 	  double cost=0;
 	  for (int r2=0; r2 < numBaseUnits; r2++) {
-		  cost+= fabs(unit.unitVec[r2].toReal()- (c2==r2?1:0));
+		  double b = r2 < unit.unitVec.size() ? unit.unitVec[r2].toReal() : 0.0;
+		  cost+= fabs(b - (c2==r2?1:0));
 	  }
-	  cost *= _base[c2].weight;
+	  cost /= _base[c2].weight;
 	  colno[j]=c2+1;
 	  row[j++]=cost;
   }
@@ -447,9 +468,11 @@ Unit UnitParser::solveMIP(Unit unit)
 	  Unit u = it->second;
 	  if (!u.isBaseUnit()) {
 		  for(int r2=0; r2 < numBaseUnits; r2++) {
-			  cost += fabs(unit.unitVec[r2].toReal() - u.unitVec[r2].toReal());
+			  double b1 = r2 < unit.unitVec.size() ? unit.unitVec[r2].toReal() : 0.0;
+			  double b2 = r2 < u.unitVec.size() ? u.unitVec[r2].toReal() : 0.0;
+			  cost += fabs(b1 - b2);
 		  }
-		  cost *= u.weight;
+		  cost /= u.weight;
 		  colno[j]=c2+1;
 		  row[j++]=cost;
 		  c2++;
@@ -459,9 +482,10 @@ Unit UnitParser::solveMIP(Unit unit)
   for (int c2=0; c2 < numBaseUnits;c2++ ) {
  	  double cost=0;
  	  for (int r2=0; r2 < numBaseUnits; r2++) {
- 		  cost+= fabs(unit.unitVec[r2].toReal()- (c2==r2?-1:0));
+ 		 double b = r2 < unit.unitVec.size() ? unit.unitVec[r2].toReal() : 0.0;
+ 		  cost+= fabs(b - (c2==r2?-1:0));
  	  }
- 	  cost *= _base[c2].weight;
+ 	  cost /= _base[c2].weight;
  	  colno[j]=c2+NU+1;
  	  row[j++]=cost;
    }
@@ -472,9 +496,11 @@ Unit UnitParser::solveMIP(Unit unit)
  	  Unit u = it->second;
  	  if (!u.isBaseUnit()) {
  		  for(int r2=0; r2 < numBaseUnits; r2++) {
- 			  cost += fabs(unit.unitVec[r2].toReal() + u.unitVec[r2].toReal());
+ 			 double b1 = r2 < unit.unitVec.size() ? unit.unitVec[r2].toReal() : 0.0;
+ 			 double b2 = r2 < u.unitVec.size() ? u.unitVec[r2].toReal() : 0.0;
+ 			  cost += fabs(b1 + b2);
  		  }
- 		  cost *= u.weight;
+ 		  cost /= u.weight;
  		  colno[j]=c2+NU+1;
  		  row[j++]=cost;
  		 c2++;
@@ -512,10 +538,15 @@ Unit UnitParser::solveMIP(Unit unit)
 		  //cerr << i << " : " << res << endl ;
 		  if (i>=NU) {
 			  //cerr << "Resetting elt " << i << " at pos " << i%NU << endl;
-			  prettyUnit.unitVec[i%NU] = Rational((long)(prettyUnit.unitVec[i%NU].toReal()-res));
+			  Rational r;
+			  r.rationalize(res);
+			  prettyUnit.unitVec[i%NU] = Rational::sub(prettyUnit.unitVec[i%NU],r);
 		  } else {
 			  //cerr << "Setting elt " << i << endl;
-			  prettyUnit.unitVec.push_back(Rational((long)res));
+			  Rational r;
+			  r.rationalize(res);
+			  //cerr << "setting elt " << i << " to rational " << r.toString() << endl;
+			  prettyUnit.unitVec.push_back(r);
 		  }
 	  }
 	  //cerr << "resulting unit =" << unit2str(prettyUnit) << endl;
@@ -572,7 +603,7 @@ string UnitParser::unit2str(Unit unit)
 	//Print unit vector using base units
 	unsigned int i;
 	for(i = 0; i<min(unit.unitVec.size(),_base.size()); i++){
-		Rational q(unit.unitVec[i]);
+		Rational q(i<unit.unitVec.size()? unit.unitVec[i]:Rational(0,0));
 		if(!q.isZero()){
 			if(!first)
 				ss << ".";
@@ -583,7 +614,7 @@ string UnitParser::unit2str(Unit unit)
 	//Print unit vector using derived units
 	for (map<string,Unit>::iterator it=_units.begin(); it!=_units.end(); it++) {
 		if (!it->second.isBaseUnit()) {
-			Rational q(unit.unitVec[i]);
+			Rational q(i<unit.unitVec.size()? unit.unitVec[i]:Rational(0,0));
 
 			if(!q.isZero()){
 				if(!first)
@@ -856,28 +887,28 @@ void UnitParser::initSIUnits(){
 	addDerived("mass", "gram", "g", "kg", Rational(-3), Rational(1), Rational(0), true);
 
 	//Standard derived units (SI brochure 8th ed., page 118)
-	addDerived("plane angle", "radian", "rad", "m/m", Rational(0), Rational(1), Rational(0), true); 
-	addDerived("solid angle", "steradian", "sr", "m2/m2", Rational(0), Rational(1), Rational(0), true); 
-	addDerived("frequency", "hertz", "Hz", "s-1", Rational(0), Rational(1), Rational(0), true); 
-	addDerived("force", "newton", "N", "m.kg.s-2", Rational(0), Rational(1), Rational(0), true); 
-	addDerived("pressure, stress", "pascal", "Pa", "N/m2", Rational(0), Rational(1), Rational(0), true); 
-	addDerived("power, radiant flux", "watt", "W", "J/s", Rational(0), Rational(1), Rational(0), true); 
-	addDerived("energy, work, amount of heat", "joule", "J", "N.m", Rational(0), Rational(1), Rational(0), true); 
-	addDerived("electric charge, amount of electricity", "coulomb", "C", "s.A", Rational(0), Rational(1), Rational(0), true); 
-	addDerived("electric potential difference, electromotive force", "volt", "V", "W/A", Rational(0), Rational(1), Rational(0), true); 
-	addDerived("capacitance", "farad", "F", "C/V", Rational(0), Rational(1), Rational(0), true); 
-	addDerived("electric resistance", "ohm", "Ohm", "V/A", Rational(0), Rational(1), Rational(0), true); 
-	addDerived("electric conductance", "siemens", "S", "A/V", Rational(0), Rational(1), Rational(0), true); 
-	addDerived("magnetic flux", "weber", "Wb", "V.s", Rational(0), Rational(1), Rational(0), true); 
-	addDerived("magnetic flux density", "tesla", "T", "Wb/m2", Rational(0), Rational(1), Rational(0), true); 
-	addDerived("inductance", "henry", "H", "Wb/A", Rational(0), Rational(1), Rational(0), true); 
-	addDerived("Celsius temperature", "degree Celsius", "degC", "K", Rational(0), Rational(1), Rational(27315,100), true); 
-	addDerived("luminous flux", "lumen", "lm", "cd.sr", Rational(0), Rational(1), Rational(0), true); 
-	addDerived("illuminance", "lux", "lx", "lm/m2", Rational(0), Rational(1), Rational(0), true); 
-	addDerived("activity referred to a radionuclide", "becquerel", "Bq", "s-1", Rational(0), Rational(1), Rational(0), true); 
-	addDerived("absorbed dose, specific energy (imparted), kerma", "gray", "Gy", "J/kg", Rational(0), Rational(1), Rational(0), true); 
-	addDerived("dose equivalent, ambient dose equivalent, directional dose equivalent, personal dose equivalent", "sievert", "Sv", "J/kg", Rational(0), Rational(1), Rational(0), true); 
-	addDerived("catalyctic activity", "katal", "kat", "s-1.mol", Rational(0), Rational(1), Rational(0), true); 
+	addDerived("plane angle", "radian", "rad", "m/m", Rational(0), Rational(1), Rational(0), true);
+	addDerived("solid angle", "steradian", "sr", "m2/m2", Rational(0), Rational(1), Rational(0), true);
+	addDerived("frequency", "hertz", "Hz", "s-1", Rational(0), Rational(1), Rational(0), true, 0.8);
+	addDerived("force", "newton", "N", "m.kg.s-2", Rational(0), Rational(1), Rational(0), true);
+	addDerived("pressure, stress", "pascal", "Pa", "N/m2", Rational(0), Rational(1), Rational(0), true);
+	addDerived("power, radiant flux", "watt", "W", "J/s", Rational(0), Rational(1), Rational(0), true);
+	addDerived("energy, work, amount of heat", "joule", "J", "N.m", Rational(0), Rational(1), Rational(0), true);
+	addDerived("electric charge, amount of electricity", "coulomb", "C", "s.A", Rational(0), Rational(1), Rational(0), true);
+	addDerived("electric potential difference, electromotive force", "volt", "V", "W/A", Rational(0), Rational(1), Rational(0), true);
+	addDerived("capacitance", "farad", "F", "C/V", Rational(0), Rational(1), Rational(0), true);
+	addDerived("electric resistance", "ohm", "Ohm", "V/A", Rational(0), Rational(1), Rational(0), true);
+	addDerived("electric conductance", "siemens", "S", "A/V", Rational(0), Rational(1), Rational(0), true);
+	addDerived("magnetic flux", "weber", "Wb", "V.s", Rational(0), Rational(1), Rational(0), true);
+	addDerived("magnetic flux density", "tesla", "T", "Wb/m2", Rational(0), Rational(1), Rational(0), true);
+	addDerived("inductance", "henry", "H", "Wb/A", Rational(0), Rational(1), Rational(0), true);
+	addDerived("Celsius temperature", "degree Celsius", "degC", "K", Rational(0), Rational(1), Rational(27315,100), true);
+	addDerived("luminous flux", "lumen", "lm", "cd.sr", Rational(0), Rational(1), Rational(0), true);
+	addDerived("illuminance", "lux", "lx", "lm/m2", Rational(0), Rational(1), Rational(0), true);
+	addDerived("activity referred to a radionuclide", "becquerel", "Bq", "s-1", Rational(0), Rational(1), Rational(0), true,0.8);
+	addDerived("absorbed dose, specific energy (imparted), kerma", "gray", "Gy", "J/kg", Rational(0), Rational(1), Rational(0), true);
+	addDerived("dose equivalent, ambient dose equivalent, directional dose equivalent, personal dose equivalent", "sievert", "Sv", "J/kg", Rational(0), Rational(1), Rational(0), true);
+	addDerived("catalyctic activity", "katal", "kat", "s-1.mol", Rational(0), Rational(1), Rational(0), true);
 
 	commit();
 }

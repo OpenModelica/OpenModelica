@@ -1896,13 +1896,23 @@ algorithm
         equalityConstraint = equalityConstraint(cache, env, els);
        
         // Perform unit checking/dimensional analysis	               
-        daetemp = Connect.equations(csets5,pre); // ToDO. calculation of connect eqns done twice. remove in future.          
+        daetemp = Connect.equations(csets5,pre); // ToDO. calculation of connect eqns done twice. remove in future.                          
         // equations from components (dae1) not considered, they are checked in resp recursive call
-        (store,ut)=  UnitAbsynBuilder.instBuildUnitTerms(env,Util.listFlatten({daetemp,dae2,dae3,dae4,dae5}),store);          
+        // but bindings on scalar variables must be considered, therefore passing dae1 separately
+        (store,ut)=  UnitAbsynBuilder.instBuildUnitTerms(env,Util.listFlatten({daetemp,dae2,dae3,dae4,dae5}),dae1,store);          
+        
+        print("built store for "+&className+&"\n");
+        UnitAbsynBuilder.printInstStore(store);
+        print("terms for "+&className+&"\n");
+        UnitAbsynBuilder.printTerms(ut);
         // perform the check
-        (res,st3) = UnitChecker.check(ut,UnitAbsynBuilder.instGetStore(store));
+        (res,st3) = UnitChecker.check(ut,UnitAbsynBuilder.instGetStore(store));        
         // updates store so higher up in instance hierarchy can use the results
-        store = UnitAbsynBuilder.updateInstStore(store,st3);                     
+        store = UnitAbsynBuilder.updateInstStore(store,st3);                   
+       
+        print("store for "+&className+&"\n");
+        UnitAbsynBuilder.printInstStore(store);
+        print("dae1="+&DAE.dumpDebugDAE(DAE.DAE(dae1))+&"\n");
       then
         (cache,dae,env5,store,csets5,ci_state6,tys,NONE/* no basictype bc*/,NONE,equalityConstraint,graph);
    
@@ -1911,7 +1921,7 @@ algorithm
     case (cache,env,store,mods,pre,csets,ci_state,className,
           SCode.DERIVED(Absyn.TPATH(path = cn,arrayDim = ad),modifications = mod,attributes=DA),
           re,prot,inst_dims,impl,graph,instSingleCref)
-      local Absyn.ElementAttributes DA;
+      local Absyn.ElementAttributes DA; Absyn.Path fq_class;
       equation 
         // adrpo - here we need to check if we don't have recursive extends of the form:
         // package Icons
@@ -2177,6 +2187,13 @@ algorithm outComps := matchcontinue(inComps, ocr,allComps,className,existing)
         then 
           compMod::recDeps;
     case((compMod as SCode.IMPORT(imp=_))::inComps,(ocr as SOME(Exp.CREF_IDENT(ident=_))),allComps,className,existing) 
+      equation 
+        allComps = listAppend({compMod},allComps);
+        recDeps = extractConstantPlusDeps2(inComps,ocr,allComps,className,existing); 
+      then 
+        compMod::recDeps;
+        
+    case((compMod as SCode.DEFINEUNIT(name=_))::inComps,(ocr as SOME(Exp.CREF_IDENT(ident=_))),allComps,className,existing) 
       equation 
         allComps = listAppend({compMod},allComps);
         recDeps = extractConstantPlusDeps2(inComps,ocr,allComps,className,existing); 
@@ -2970,15 +2987,16 @@ algorithm
       Exp.ComponentRef prefix_cr;
       list<Env.Frame> bc,fs;
       Boolean enc;
+      list<SCode.Element> defineUnits;
     case (Connect.SETS(connection = crs),prefix,
-      (Env.FRAME(optName = n,clsAndVars = bt1,types = bt2,imports = imp,inherited = bc,isEncapsulated = enc) :: fs))
+      (Env.FRAME( n,bt1,bt2,imp,bc,_,enc,defineUnits) :: fs))
       equation
         prefix_cr = Prefix.prefixToCref(prefix);
-    then (Env.FRAME(n,bt1,bt2,imp,bc,(crs,prefix_cr),enc) :: fs); 
+    then (Env.FRAME(n,bt1,bt2,imp,bc,(crs,prefix_cr),enc,defineUnits) :: fs); 
     case (Connect.SETS(connection = crs),prefix,
-        (Env.FRAME(optName = n,clsAndVars = bt1,types = bt2,imports = imp,inherited = bc,isEncapsulated = enc) :: fs))
+        (Env.FRAME(n,bt1,bt2,imp,bc,_,enc,defineUnits) :: fs))
       equation
-      then (Env.FRAME(n,bt1,bt2,imp,bc,(crs,Exp.CREF_IDENT("",Exp.OTHER(),{})),enc) :: fs); 
+      then (Env.FRAME(n,bt1,bt2,imp,bc,(crs,Exp.CREF_IDENT("",Exp.OTHER(),{})),enc,defineUnits) :: fs); 
  
   end matchcontinue;
 end addConnectionSetToEnv;
@@ -4215,6 +4233,13 @@ algorithm
         env_2 = addClassdefsToEnv2(env_1, xs, impl,redeclareMod);
       then
         env_2;
+    case(env,((elt as SCode.DEFINEUNIT(name=_))::xs), impl,redeclareMod)
+      local SCode.Element elt; 
+      equation
+        env_1 = Env.extendFrameDefunit(env,elt);
+        env_2 = addClassdefsToEnv2(env_1, xs, impl,redeclareMod);
+      then env_2;
+        
     case(_,_,_,_)
       equation
         Debug.fprint("failtrace", "- Inst.addClassdefsToEnv2 failed\n");
@@ -5191,54 +5216,40 @@ algorithm
       tuple<list<Exp.ComponentRef>,Exp.ComponentRef> crs;
       Absyn.Path tp,envpath,newTp;
       Env.Cache cache;
-
+      list<SCode.Element> defineUnits;
+ 
     /* case (cache,env,NONE) then (cache,env); adrpo: CHECK if needed! */
 
     case (cache,
-          (env as (Env.FRAME(optName = id,
-                             clsAndVars = cl,
-                             types = tps,
-                             imports = imps,
-                             connectionSet = crs,
-                             isEncapsulated = enc) :: fs)),NONE) 
+          (env as (Env.FRAME(id, cl,tps,imps,_,crs,enc,defineUnits) :: fs)),NONE) 
       then 
-        (cache,Env.FRAME(id,cl,tps,imps,{},crs,enc)::fs);
+        (cache,Env.FRAME(id,cl,tps,imps,{},crs,enc,defineUnits)::fs);
  
     /* Special case to avoid infinite recursion.
      * If in scope A.B and searching for A.B.C.D, look for C.D directly in the scope. Otherwise, A.B 
      * will be instantiated over and over again, see testcase packages2.mo
      */      		
     case (cache,
-          (env as (Env.FRAME(optName = id,
-                             clsAndVars = cl,
-                             types = tps,
-                             imports = imps,
-                             connectionSet = crs,
-                             isEncapsulated = enc) :: fs)),SOME(tp)) 
+          (env as (Env.FRAME(id,cl,tps,imps,_,crs,enc,defineUnits) :: fs)),SOME(tp)) 
       equation
 				SOME(envpath) = Env.getEnvPath(env);
 				true = Absyn.pathPrefixOf(envpath,tp);
 				newTp = Absyn.removePrefix(envpath,tp);
 				(cache,env_2) = Lookup.lookupAndInstantiate(cache,env,newTp,true);
       then
-        (cache,Env.FRAME(id,cl,tps,imps,env_2,crs,enc) :: fs);
+        (cache,Env.FRAME(id,cl,tps,imps,env_2,crs,enc,defineUnits) :: fs);
             
     /* Base classes are fully qualified names, search from top scope.
     * This is needed since the environment can be encapsulated, but inherited classes are not affected 
     * by this and therefore should search from top scope directly. 
     */ 
     case (cache,
-          (env as (Env.FRAME(optName = id,
-                             clsAndVars = cl,
-                             types = tps,
-                             imports = imps,
-                             connectionSet = crs,
-                             isEncapsulated = enc) :: fs)),SOME(tp))
+          (env as (Env.FRAME(id,cl,tps,imps,_,crs,enc,defineUnits) :: fs)),SOME(tp))
       equation 
         top_frame = Env.topFrame(env);
         (cache,env_2) = Lookup.lookupAndInstantiate(cache,{top_frame},tp,true);
       then
-        (cache,Env.FRAME(id,cl,tps,imps,env_2,crs,enc) :: fs);
+        (cache,Env.FRAME(id,cl,tps,imps,env_2,crs,enc,defineUnits) :: fs);
     case (_,_,_)
       equation 
         Debug.fprint("failtrace", "-Int.getDerivedEnv failed\n");
@@ -5709,14 +5720,14 @@ algorithm
         //Make it an array type since we are not flattening
         ty_1 = makeArrayType(dims, ty);
 
-        
+        (cache,dae_var_attr) = instDaeVariableAttributes(cache,env, mod, ty, {});
         // Check binding type matches variable type
         (e_1,_) = Types.matchProp(e, p,Types.PROP(ty_1,Types.C_VAR()));
         
         //Generate variable with default binding
         ty_2 = Types.elabType(ty_1);
         cr = Prefix.prefixCref(pre, Exp.CREF_IDENT(n,ty_2,{}));
-        dae = daeDeclare(cr, ci_state, ty, attr, prot, SOME(e_1), {dims_1}, NONE, NONE, comment,io,finalPrefix,true);
+        dae = daeDeclare(cr, ci_state, ty, attr, prot, SOME(e_1), {dims_1}, NONE, dae_var_attr, comment,io,finalPrefix,true);
         store = UnitAbsynBuilder.instAddStore(store,ty,cr);
       then
         (cache,env_1,store,dae,csets_1,ty_1,graph);
@@ -5724,19 +5735,17 @@ algorithm
           /* Function variables without binding */
     case (cache,env,store,ci_state,mod,pre,csets,n,(cl as SCode.CLASS(name=n2)),attr,prot,dims,idxs,inst_dims,impl,comment,io,finalPrefix,graph)
       local
-        Types.Mod tm1,tm2; 
+        Types.Mod tm1,tm2,mod2; 
         String n2;
        equation 
         ClassInf.isFunction(ci_state);
-         //Instantiate type of the component, skip dae/not flattening
-         tm1 = Mod.lookupCompModification(mod,n);
-         tm2 = Mod.lookupModificationP(mod,Absyn.IDENT(n2));
-         mod = Mod.merge(tm1,tm2,env,pre);
+         //Instantiate type of the component, skip dae/not flattening   
         (cache,_,env_1,store,csets,ty,st,_,_) = instClass(cache,env, store, mod, pre, csets, cl, inst_dims, impl, INNER_CALL(), ConnectionGraph.EMPTY) ;
         cr = Prefix.prefixCref(pre, Exp.CREF_IDENT(n,Exp.OTHER(),{}));
+        (cache,dae_var_attr) = instDaeVariableAttributes(cache,env, mod, ty, {});
         //Do all dimensions...
         dims_1 = instDimExpLst(dims, impl)  ;
-        dae = daeDeclare(cr, ci_state, ty, attr,prot, NONE, {dims_1}, NONE, NONE, comment,io,finalPrefix,true);
+        dae = daeDeclare(cr, ci_state, ty, attr,prot, NONE, {dims_1}, NONE, dae_var_attr, comment,io,finalPrefix,true);
         arrty = makeArrayType(dims, ty);
         store = UnitAbsynBuilder.instAddStore(store,ty,cr);
       then
@@ -5755,7 +5764,7 @@ algorithm
         subs = Exp.intSubscripts(idxs_1);
         identType = makeCrefBaseType(ty,inst_dims);
         cr = Prefix.prefixCref(pre, Exp.CREF_IDENT(n,identType,subs));        
-        (cache,dae_var_attr) = instDaeVariableAttributes(cache,env, mod, ty, {}) "inst_mod_equation(cr,ty,mod) => dae2 &" ;
+        (cache,dae_var_attr) = instDaeVariableAttributes(cache,env, mod, ty, {});
         dae3 = daeDeclare(cr, ci_state, ty, SCode.ATTR({},flowPrefix,streamPrefix,acc,vt,dir),prot, SOME(e), inst_dims, NONE, dae_var_attr, comment,io,finalPrefix,false);
         dae = listAppend(dae1_1, dae3);
         store = UnitAbsynBuilder.instAddStore(store,ty,cr);
@@ -5824,6 +5833,7 @@ algorithm
         false = modificationOnOuter(cr,mod,io); 
         dae3 = daeDeclare(cr, ci_state, ty, SCode.ATTR({},flowPrefix,streamPrefix,acc,vt,dir),prot, eOpt,
           inst_dims, start, dae_var_attr, comment,io,finalPrefix,false);
+        dae3 = DAE.setComponentTypeOpt(dae3, Types.getClassnameOpt(ty));
         dae2 = Util.if_(Types.isComplexType(ty), dae2,{});
         dae3 = listAppend(dae2,dae3);
         dae = listAppend(dae1_1, dae3);
@@ -7648,7 +7658,7 @@ algorithm
     /* normal functions */
     case (cache,env,mod,pre,csets,(c as SCode.CLASS(name = n,restriction = SCode.R_FUNCTION())),inst_dims)
       equation 
-        (cache,dae,cenv,_,csets_1,ty,st,_,_) = instClass(cache,env, UnitAbsynBuilder.emptyInstStore(),mod, pre, csets, c, inst_dims, true, INNER_CALL(), ConnectionGraph.EMPTY);
+        (cache,dae,cenv,_,csets_1,ty,st,_,_) = instClass(cache,env, UnitAbsynBuilder.emptyInstStore(),mod, pre, csets, c, inst_dims, true, INNER_CALL(), ConnectionGraph.EMPTY);        
         env_1 = Env.extendFrameC(env,c);
         (cache,fpath) = makeFullyQualified(cache,env_1, Absyn.IDENT(n));
         ty1 = setFullyQualifiedTypename(ty,fpath);
@@ -13281,7 +13291,7 @@ end extractCurrentName;
 
 protected function splitElts "
 This function splits the Element list into three lists
-1. Class definitions and imports
+1. Class definitions , imports and defineunits
 2. Extends elements
 3. Components
 "
@@ -13303,6 +13313,10 @@ algorithm
     then (cdef :: cdefImpElts,extElts,compElts);
         
     case (((imp as SCode.IMPORT(imp = _)) :: xs)) equation 
+      (cdefImpElts,extElts,compElts) = splitElts(xs);
+    then (imp :: cdefImpElts,extElts,compElts);
+
+    case (((imp as SCode.DEFINEUNIT(name = _)) :: xs)) equation 
       (cdefImpElts,extElts,compElts) = splitElts(xs);
     then (imp :: cdefImpElts,extElts,compElts);
         

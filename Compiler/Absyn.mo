@@ -331,6 +331,11 @@ uniontype Element "Elements
     Info                      info  "File name the class is defined in + line no + column no" ;
     Option<ConstrainClass> constrainClass "constrainClass ; only valid for classdef and component" ;
   end ELEMENT;
+  
+  record DEFINEUNIT 
+    Ident name;
+    list<NamedArg> args; 
+  end DEFINEUNIT;
 
   record TEXT
     Option<Ident> optName "optName : optional name of text, e.g. model with syntax error.

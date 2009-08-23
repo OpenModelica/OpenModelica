@@ -2583,6 +2583,20 @@ algorithm
   end matchcontinue;
 end getClassname;
 
+public function getClassnameOpt "function: getClassname
+ 
+  Return the classname as option from a type.
+"
+  input Type inType;
+  output Option<Absyn.Path> outPath;
+algorithm 
+  outPath:=
+  matchcontinue (inType)
+    local Option<Absyn.Path> p;
+    case ((_,p)) then p; 
+  end matchcontinue;
+end getClassnameOpt;
+
 public function getVars "function getVars
   author: LS 
   

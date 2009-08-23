@@ -870,18 +870,19 @@ algorithm oenv := matchcontinue(env,inVal,inCr)
     list<Env.Frame> farg5;
     tuple<list<Exp.ComponentRef>,Exp.ComponentRef> farg6;
     Boolean farg7;
+    list<SCode.Element> defineUnits;
     
     String str;
     Absyn.ComponentRef child;
     Integer hash;
-  case( ( (frame as Env.FRAME(farg1, farg2, farg3, farg4, farg5, farg6, farg7) ) :: frames), 
+  case( ( (frame as Env.FRAME(farg1, farg2, farg3, farg4, farg5, farg6, farg7,defineUnits) ) :: frames), 
     inVal,inCr)    
     equation
       str = Absyn.crefFirstIdent(inCr);
       (_,_,_,_,_,_) = Lookup.lookupVar(Env.emptyCache, {frame}, Exp.CREF_IDENT(str,Exp.OTHER(),{}));
       farg22 = setQualValue2(farg2, inVal,inCr,0);
       then
-        Env.FRAME(farg1,farg22,farg3,farg4,farg5,farg6,farg7) :: frames;    
+        Env.FRAME(farg1,farg22,farg3,farg4,farg5,farg6,farg7,defineUnits) :: frames;    
   case( frame :: frames, inVal,inCr ) // didn't find in this frame. 
     equation 
       newFrames = setQualValue(frames,inVal,inCr);

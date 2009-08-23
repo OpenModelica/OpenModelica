@@ -50,6 +50,7 @@ public:
 	bool is(long numerator, long denominator=1);
 	string toString(); //e.g. "(7/9)". If denominator is one, only numerator is printed, e.g. "7".
 	double toReal();
+	void rationalize(double r);
 	void fixsign();
 	static Rational simplify(const Rational q);
 	static Rational sub(Rational q1, Rational q2);
@@ -57,6 +58,7 @@ public:
 	static Rational mul(Rational q1, Rational q2);
 	static Rational div(Rational q1, Rational q2);
 	static long gcd(long a, long b);
+
 };
 
 
@@ -196,17 +198,18 @@ private:
 
 class DerivedInfo{
 public:
-	DerivedInfo(string qn, string un, string usym, string ustr, Rational pe, Rational sf, Rational o, bool pa) 
+	DerivedInfo(string qn, string un, string usym, string ustr, Rational pe, Rational sf, Rational o, bool pa, double w)
 		: quantityName(qn), unitName(un), unitSymbol(usym), unitStrExp(ustr), prefixExpo(pe), scaleFactor(sf),
-		offset(o),prefixAllowed(pa) {;}
+		offset(o),prefixAllowed(pa), weight(w) {;}
 	string quantityName;
 	string unitName;
-	string unitSymbol; 
+	string unitSymbol;
 	string unitStrExp;
 	Rational prefixExpo;
-	Rational scaleFactor; 
+	Rational scaleFactor;
 	Rational offset;
 	bool prefixAllowed;
+	double weight;
 };
 
 
@@ -227,8 +230,8 @@ public:
 		const string unitSymbol, bool prefixAllowed);
 
 	/** Add a derived quantity/unit */
-	void addDerived(const string quantityName, const string unitName, const string unitSymbol, 
-		const string unitStrExp, Rational prefixExpo, Rational scaleFactor, Rational offset, bool prefixAllowed);
+	void addDerived(const string quantityName, const string unitName, const string unitSymbol,
+		const string unitStrExp, Rational prefixExpo, Rational scaleFactor, Rational offset, bool prefixAllowed, double weight=1.0);
 
 	/** Call this method after adding all base and derived unit. */
 	UnitRes commit();
@@ -253,8 +256,8 @@ public:
 private:
 
 	/** Add a derived quantity/unit */
-	UnitRes addDerivedInternal(const string quantityName, const string unitName, const string unitSymbol, 
-		const string unitStrExp, Rational prefixExpo, Rational scaleFactor, Rational offset, bool prefixAllowed);
+	UnitRes addDerivedInternal(const string quantityName, const string unitName, const string unitSymbol,
+		const string unitStrExp, Rational prefixExpo, Rational scaleFactor, Rational offset, bool prefixAllowed, double weight);
 
 
 	/** Prefixes */

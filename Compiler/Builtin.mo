@@ -206,6 +206,75 @@ protected constant tuple<Types.TType, Option<Type_a>> derType=(
               Types.EQBOUND(Exp.SCONST("'p/s"),SOME(Values.STRING("'p/s")),Types.C_CONST)
               )
           }),NONE)),NONE);                    
+
+protected constant tuple<Types.TType, Option<Type_a>> dimesionlessReal2DimensionlessReal=(
+          Types.T_FUNCTION({("x",(Types.T_REAL(
+          {
+            Types.VAR(
+              "unit",
+              Types.ATTR(false,false,SCode.RW,SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
+              false,
+              (Types.T_STRING({}),NONE),
+              Types.EQBOUND(Exp.SCONST("1"),SOME(Values.STRING("1")),Types.C_CONST)
+              )          
+          }
+          ),NONE))},
+          /* Return type*/
+          (Types.T_REAL({
+            Types.VAR(
+              "unit",
+              Types.ATTR(false,false,SCode.RW,SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
+              false,
+              (Types.T_STRING({}),NONE),
+              Types.EQBOUND(Exp.SCONST("1"),SOME(Values.STRING("1")),Types.C_CONST)
+              )
+          }),NONE)),NONE);
+          
+protected constant tuple<Types.TType, Option<Type_a>> sqrtint2real=(
+          Types.T_FUNCTION({("x",(Types.T_INTEGER(
+          {
+            Types.VAR(
+              "unit",
+              Types.ATTR(false,false,SCode.RW,SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
+              false,
+              (Types.T_STRING({}),NONE),
+              Types.EQBOUND(Exp.SCONST("'p"),SOME(Values.STRING("'p")),Types.C_CONST)
+              )          
+          }
+          ),NONE))},
+          /* Return type*/
+          (Types.T_REAL({
+            Types.VAR(
+              "unit",
+              Types.ATTR(false,false,SCode.RW,SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
+              false,
+              (Types.T_STRING({}),NONE),
+              Types.EQBOUND(Exp.SCONST("'p(1/2)"),SOME(Values.STRING("'p(1/2)")),Types.C_CONST)
+              )
+          }),NONE)),NONE);
+
+protected constant tuple<Types.TType, Option<Type_a>> sqrtreal2real=(
+          Types.T_FUNCTION({("x",(Types.T_REAL(
+          {
+            Types.VAR(
+              "unit",
+              Types.ATTR(false,false,SCode.RW,SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
+              false,
+              (Types.T_STRING({}),NONE),
+              Types.EQBOUND(Exp.SCONST("'p"),SOME(Values.STRING("'p")),Types.C_CONST)
+              )          
+          }
+          ),NONE))},
+          /* Return type*/
+          (Types.T_REAL({
+            Types.VAR(
+              "unit",
+              Types.ATTR(false,false,SCode.RW,SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
+              false,
+              (Types.T_STRING({}),NONE),
+              Types.EQBOUND(Exp.SCONST("'p(1/2)"),SOME(Values.STRING("'p(1/2))")),Types.C_CONST)
+              )
+          }),NONE)),NONE);
           
 protected constant tuple<Types.TType, Option<Type_a>> real2real=(
           Types.T_FUNCTION({("x",(Types.T_REAL({}),NONE))},(Types.T_REAL({}),NONE)),NONE);
@@ -2857,10 +2926,10 @@ algorithm
       env = Env.extendFrameT(env, "asin", real2real);
       env = Env.extendFrameT(env, "acos", real2real);
       env = Env.extendFrameT(env, "atan", real2real);
-      env = Env.extendFrameT(env, "exp", real2real);
-      env = Env.extendFrameT(env, "log", real2real);
-      env = Env.extendFrameT(env, "ln", real2real);      
-      env = Env.extendFrameT(env, "log10", real2real);
+      env = Env.extendFrameT(env, "exp", dimesionlessReal2DimensionlessReal);
+      env = Env.extendFrameT(env, "log", dimesionlessReal2DimensionlessReal);
+      env = Env.extendFrameT(env, "ln", dimesionlessReal2DimensionlessReal);      
+      env = Env.extendFrameT(env, "log10", dimesionlessReal2DimensionlessReal);
       env = Env.extendFrameT(env, "ndims", array1dimint2int) "PR. Add the built in array functions here. Also do it for real, string and bool" ;
       env = Env.extendFrameT(env, "ndims", array2dimint2int);
       env = Env.extendFrameT(env, "ndims", array3dimint2int);
@@ -3272,8 +3341,8 @@ algorithm
       env = Env.extendFrameT(env, "cross", array1dimreal2array1dimreal);
       env = Env.extendFrameT(env, "skew", array1dimint2array3dimint);
       env = Env.extendFrameT(env, "skew", array1dimreal2array3dimreal);
-      env = Env.extendFrameT(env, "sqrt", int2real);
-      env = Env.extendFrameT(env, "sqrt", real2real);
+      env = Env.extendFrameT(env, "sqrt", sqrtint2real);
+      env = Env.extendFrameT(env, "sqrt", sqrtreal2real);
       env = Env.extendFrameT(env, "mod", realReal2real);
       env = Env.extendFrameT(env, "mod", intInt2int);
       env = Env.extendFrameT(env, "constrain", realrealreal2real);

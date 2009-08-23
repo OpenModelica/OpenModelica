@@ -1472,6 +1472,7 @@ algorithm
       Absyn.ElementSpec spec;
       Absyn.Info info;
       Option<Absyn.ConstrainClass> constr;
+      list<Absyn.NamedArg> nargs;
     case (i,Absyn.ELEMENT(finalPrefix = finalPrefix,redeclareKeywords = SOME(repl),innerOuter = inout,specification = spec,info = info,constrainClass = constr))
       equation
         s1 = selectString(finalPrefix, "final ", "");
@@ -1491,6 +1492,15 @@ algorithm
         str = Util.stringAppendList({s4,s5,";"});
       then
         str;
+    case(i,Absyn.DEFINEUNIT(name,{})) equation
+      s1 = indentStr(i)+&"defineunit "+&name+&";";
+    then s1;
+        
+    case(i,Absyn.DEFINEUNIT(name,nargs)) equation
+      s1 = printListStr(nargs, printNamedArgStr, ", ");
+      s2 = indentStr(i)+&"defineunit "+&name+&" ("+&s1+&");"; 
+    then s2;
+      
     case (i,Absyn.TEXT(optName = SOME(name),string = text,info = info))
       equation
         s1 = unparseInfoStr(info);
@@ -1505,6 +1515,9 @@ algorithm
         str = Util.stringAppendList({"/* Absyn.TEXT(NONE, \"",text,"\", ",s1,"); */"});
       then
         str;
+    case(_,_) equation
+      print("unparseElementStr failed\n");
+    then fail();
   end matchcontinue;
 end unparseElementStr;
 

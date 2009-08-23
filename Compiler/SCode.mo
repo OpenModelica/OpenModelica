@@ -305,6 +305,12 @@ uniontype Element "- Elements
     Option<Absyn.Info> info       "this is for line and column numbers, also file name.";
     Option<Absyn.ConstrainClass> cc "The constraining class for the component"; 
   end COMPONENT;
+  
+  record DEFINEUNIT "a unit defintion has a name and the two optional parameters exp, and weight"
+    Ident name;
+    Option<String> exp;
+    Option<Real> weight;
+  end DEFINEUNIT;
 end Element;
 
 public 
@@ -864,7 +870,7 @@ algorithm
   end matchcontinue;
 end elabEitemlist;
   
-protected function elabElement 
+public function elabElement 
 "function: elabElement
   This function converts an Absyn.Element to a list of SCode.Element.  
   The original element may declare several components at once, and 
@@ -894,8 +900,44 @@ algorithm
         es = elabElementspec(cc, f, io, repl,  prot, s,SOME(info));
       then
         es;
+    case(Absyn.DEFINEUNIT(name,args),prot) local Option<String> expOpt; Option<Real> weightOpt;
+      list<Absyn.NamedArg> args; String name; 
+      equation
+        expOpt = elabDefineunitParam(args,"exp");
+        weightOpt = elabDefineunitParam2(args,"weight");
+    then {DEFINEUNIT(name,expOpt,weightOpt)};
   end matchcontinue;
 end elabElement;
+
+protected function elabDefineunitParam " help function to elabElement"
+  input list<Absyn.NamedArg> args;
+  input String arg;
+  output Option<String> expOpt;
+algorithm
+  (expOpt) := matchcontinue(args,arg)
+    local String str,name;
+    case(Absyn.NAMEDARG(name,Absyn.STRING(str))::_,arg) equation
+      true = name ==& arg;
+    then SOME(str);
+    case({},arg) then NONE;
+    case(_::args,arg) then elabDefineunitParam(args,arg);  
+  end matchcontinue;
+end elabDefineunitParam;
+
+protected function elabDefineunitParam2 " help function to elabElement"
+  input list<Absyn.NamedArg> args;
+  input String arg;
+  output Option<Real> weightOpt;
+algorithm
+  (expOpt) := matchcontinue(args,arg)
+    local String name; Real r;
+    case(Absyn.NAMEDARG(name,Absyn.REAL(r))::_,arg) equation
+      true = name ==& arg;
+    then SOME(r);
+    case({},arg) then NONE;
+    case(_::args,arg) then elabDefineunitParam2(args,arg);  
+  end matchcontinue;
+end elabDefineunitParam2;
 
 protected function elabElementspec 
 "function: elabElementspec 

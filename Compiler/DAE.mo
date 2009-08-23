@@ -3424,6 +3424,24 @@ algorithm
   end matchcontinue;
 end generateDaeType;
 
+public function setComponentTypeOpt "
+  
+  See setComponentType
+"
+  input list<Element> inElementLst;
+  input Option<Absyn.Path> inPath;
+  output list<Element> outElementLst;
+algorithm 
+  outElementLst:=
+  matchcontinue (inElementLst,inPath)
+      local Absyn.Path p;
+    case (inElementLst,SOME(p)) equation
+      outElementLst = setComponentType(inElementLst,p);
+    then outElementLst ;
+    case(inElementLst,NONE) then inElementLst;
+  end matchcontinue;
+end setComponentTypeOpt;
+
 public function setComponentType "function: setComponentType
   
   This function takes a dae element list and a type name and 
@@ -3676,6 +3694,7 @@ algorithm str := matchcontinue(dae)
     list<Element> elems;
   case(DAE(elems)) 
     equation
+      Print.clearBuf();
       dumpDebugElist(elems);
       str = Print.getString();
     then

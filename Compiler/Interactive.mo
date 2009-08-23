@@ -13926,6 +13926,22 @@ algorithm
   end matchcontinue;
 end getNthComponentInClass;
 
+public function getDefineunitsInElements "retrives defineunit definitions in elements"
+  input list<Absyn.ElementItem> elts;
+  output list<Absyn.Element> outElts;
+algorithm
+  outElts := matchcontinue(elts)
+  local Absyn.Element e;
+    case({}) then {};
+    case(Absyn.ELEMENTITEM(e as Absyn.DEFINEUNIT(name=_))::elts) equation
+      outElts = getDefineunitsInElements(elts);
+    then e::outElts;
+    case(_::elts) equation
+      outElts = getDefineunitsInElements(elts);
+    then outElts;    
+  end matchcontinue;
+end getDefineunitsInElements;
+
 public function getElementitemsInClass 
 "function: getElementitemsInClass
    Both public and protected lists are searched."
@@ -18988,7 +19004,7 @@ algorithm
    case(Absyn.ELEMENTITEM(Absyn.ELEMENT(specification=eltSpec))::elts,optPath,cname,(d,p,env,ht)) equation
      d = buildClassDependsInEltSpec(false,eltSpec,optPath,cname,(d,p,env,ht));
      d = buildClassDependsinElts(elts,optPath,cname,(d,p,env,ht));     
-   then d;
+   then d;   
    case(_::elts,optPath,cname,(d,p,env,ht)) equation
      d = buildClassDependsinElts(elts,optPath,cname,(d,p,env,ht));     
    then d;     
