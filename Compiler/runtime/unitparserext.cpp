@@ -1,10 +1,18 @@
 /* External interface for UnitParserExt module */
 #include "unitparser.h"
 
+ #include <stack>
+using namespace std;
+
+
+
 UnitParser* unitParser=0;
+
+stack<UnitParser*> rollbackStack;
 
 #include <iostream>
 #include <string>
+#include <stack>
 
 using namespace std;
 
@@ -27,6 +35,31 @@ RML_BEGIN_LABEL(UnitParserExt__initSIUnits)
 }
 RML_END_LABEL
 
+RML_BEGIN_LABEL(UnitParserExt__checkpoint)
+{
+    UnitParser *copy = new UnitParser(*unitParser);
+    rollbackStack.push(unitParser);
+    unitParser = copy;
+	RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+
+RML_BEGIN_LABEL(UnitParserExt__rollback)
+{
+	if (rollbackStack.size() == 0) {
+		cerr << "Error, rollback on empty stack" << endl;
+		RML_TAILCALLK(rmlFC);
+	}
+	UnitParser * old = rollbackStack.top();
+	rollbackStack.pop();
+	delete unitParser;
+	unitParser=old;
+    RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+
 RML_BEGIN_LABEL(UnitParserExt__clear)
 {
 	if (unitParser) delete unitParser;
@@ -43,10 +76,20 @@ RML_BEGIN_LABEL(UnitParserExt__commit)
 RML_END_LABEL
 
 
+RML_BEGIN_LABEL(UnitParserExt__registerWeight)
+{
+ char * name = RML_STRINGDATA(rmlA0);
+ double w = rml_prim_get_real(rmlA1);
+ //cout << "registerWeight(" << name << ", "<<w <<")"<<endl;
+ unitParser->accumulateWeight(name,w);
+ RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
 RML_BEGIN_LABEL(UnitParserExt__addBase)
 {
    char * name = (char*) RML_STRINGDATA(rmlA0);
-   cout << "addBase(" << name << ")"<<endl;
+   //cout << "addBase(" << name << ")"<<endl;
    if (strcmp(name,"kg")==0) {
 	   unitParser->addBase("","",name,false);
    } else {
@@ -60,7 +103,7 @@ RML_BEGIN_LABEL(UnitParserExt__addDerived)
 {
    char * name = (char*) RML_STRINGDATA(rmlA0);
    char * exp = (char*) RML_STRINGDATA(rmlA1);
-   cout << "addDerived(" << name << ", "<<exp << ")" << endl;
+   //cout << "addDerived(" << name << ", "<<exp << ")" << endl;
    unitParser->addDerived(name,name,name,exp,Rational(0),Rational(1),Rational(0),true);
    RML_TAILCALLK(rmlSC);
 }
@@ -71,7 +114,7 @@ RML_BEGIN_LABEL(UnitParserExt__addDerivedWeight)
    char * name = (char*) RML_STRINGDATA(rmlA0);
    char * exp = (char*) RML_STRINGDATA(rmlA1);
    double w = rml_prim_get_real(rmlA2);
-   cout << "addDerived(" << name << ", "<<exp << ", " << w << ")"<< endl;
+   //cout << "addDerived(" << name << ", "<<exp << ", " << w << ")"<< endl;
    unitParser->addDerived(name,name,name,exp,Rational(0),Rational(1),Rational(0),true,w);
    RML_TAILCALLK(rmlSC);
 }

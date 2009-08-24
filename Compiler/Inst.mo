@@ -148,6 +148,7 @@ protected import HashTable5;
 protected import MMath;
 protected import UnitAbsynBuilder;
 protected import UnitChecker;
+protected import UnitParserExt;
 
 public import UnitAbsyn;
 
@@ -1808,6 +1809,7 @@ algorithm
           re,prot,inst_dims,impl,graph,instSingleCref)
           local list<Mod> tmpModList; 
       equation 
+        UnitParserExt.checkpoint();        
         //print(" Instclassdef for: " +& Prefix.printPrefixStr(pre) +& "." +&  className +& " mods: " +& Mod.printModStr(mods)+& "\n"); 
         ci_state1 = ClassInf.trans(ci_state, ClassInf.NEWDEF());
         els = extractConstantPlusDeps(els,instSingleCref,{},className);
@@ -1865,6 +1867,7 @@ algorithm
         cdefelts_1 = addNomod(cdefelts);
         compelts_2 = Util.listFlatten({compelts_2,compelts_1, cdefelts_1});
         //Instantiate components
+         
  
         compelts_2_elem = Util.listMap(compelts_2,Util.tuple21);
         checkMods = Mod.merge(mods,emods,env4,Prefix.NOPRE());
@@ -1901,18 +1904,23 @@ algorithm
         // but bindings on scalar variables must be considered, therefore passing dae1 separately
         (store,ut)=  UnitAbsynBuilder.instBuildUnitTerms(env,Util.listFlatten({daetemp,dae2,dae3,dae4,dae5}),dae1,store);          
         
-        print("built store for "+&className+&"\n");
-        UnitAbsynBuilder.printInstStore(store);
-        print("terms for "+&className+&"\n");
-        UnitAbsynBuilder.printTerms(ut);
+        //print("built store for "+&className+&"\n");
+        //UnitAbsynBuilder.printInstStore(store);
+        //print("terms for "+&className+&"\n");
+        //UnitAbsynBuilder.printTerms(ut);
+  
+        UnitAbsynBuilder.registerUnitWeights(cache,env,dae1);
+        
         // perform the check
         (res,st3) = UnitChecker.check(ut,UnitAbsynBuilder.instGetStore(store));        
         // updates store so higher up in instance hierarchy can use the results
         store = UnitAbsynBuilder.updateInstStore(store,st3);                   
        
-        print("store for "+&className+&"\n");
-        UnitAbsynBuilder.printInstStore(store);
-        print("dae1="+&DAE.dumpDebugDAE(DAE.DAE(dae1))+&"\n");
+        //print("store for "+&className+&"\n");
+        //UnitAbsynBuilder.printInstStore(store);
+        //print("dae1="+&DAE.dumpDebugDAE(DAE.DAE(dae1))+&"\n");
+        UnitParserExt.rollback();
+        //print("rollback for "+&className+&"\n");
       then
         (cache,dae,env5,store,csets5,ci_state6,tys,NONE/* no basictype bc*/,NONE,equalityConstraint,graph);
    

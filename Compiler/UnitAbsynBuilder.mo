@@ -24,7 +24,53 @@ protected import OptManager;
 protected import Interactive;
 protected import SCode;
 
+public function registerUnitWeights "traverses all dae variables and adjusts weights depending on defineunits defined
+in the scopes of the classLst for each variable"
+  input Env.Cache cache;
+  input Env.Env env;  
+  input list<DAE.Element> dae;
+ protected 
+ list<Absyn.Path> paths; list<SCode.Element> du;
+algorithm
+    paths := Util.listListUnion(Util.listMap(DAE.getMatchingElements(dae,DAE.isVar),DAE.getClassList));
+    du := Util.listListUnion(Util.listMap1(paths,retrieveUnitsFromEnv,(cache,env)));
+    registerUnitWeightDefineunits(du);
+ end registerUnitWeights;
 
+protected function retrieveUnitsFromEnv "help function to registerUnitWeights"
+  input Absyn.Path p;
+  input tuple<Env.Cache,Env.Env> tpl;
+  output list<SCode.Element> du;
+
+algorithm
+   du := matchcontinue(p,tpl) local 
+   Env.Env env; list<SCode.Element> du;
+     case(p,tpl) equation
+       (_,_,env as Env.FRAME(defineUnits = du)::_) = Lookup.lookupClass(Util.tuple21(tpl),Util.tuple22(tpl),p,false);
+     then du;
+     case(p,tpl) then {};
+  end matchcontinue;   
+end retrieveUnitsFromEnv;
+
+protected function registerUnitWeightDefineunits "help function to registerUnitWeightForClass"
+  input list<SCode.Element> du;
+algorithm 
+   _ := matchcontinue(du)
+   local String n; Real w; 
+     case(SCode.DEFINEUNIT(name=n,weight = SOME(w))::du) equation
+       UnitParserExt.registerWeight(n,w);
+       registerUnitWeightDefineunits(du);
+     then ();
+     case(SCode.DEFINEUNIT(name=n,weight = NONE)::du) equation
+       registerUnitWeightDefineunits(du);
+     then ();
+     case(_::du) equation
+       registerUnitWeightDefineunits(du);
+     then ();
+     case({}) then ();   
+    
+  end matchcontinue;
+end registerUnitWeightDefineunits;
 
 public function registerUnits "traverses the Absyn.Program and registers all defineunits.
 Note: this requires that instantiation is done on a 'total program', so only defineunits that 
@@ -32,7 +78,6 @@ are referenced in the model are picked up
 "
   input Absyn.Program prg;
 algorithm
-  print("registerUnits called\n");
   ((_,_,_)) := Interactive.traverseClasses(prg,NONE,registerUnitInClass,0,false); // defineunits must be in public section.
 end registerUnits;
   
@@ -64,15 +109,15 @@ algorithm
      String exp; Real weight;
      case({}) then ();
      /* Derived unit with weigth */
-     case((du as Absyn.DEFINEUNIT(name=_))::elts) equation
-       {SCode.DEFINEUNIT(name,SOME(exp),SOME(weight))} = SCode.elabElement(du,false);       
+     /*case((du as Absyn.DEFINEUNIT(name=_))::elts) equation
+       {SCode.DEFINEUNIT(name,SOME(exp),_)} = SCode.elabElement(du,false);       
        UnitParserExt.addDerivedWeight(name,exp,weight);
        registerDefineunits(elts);
-     then ();
+     then ();*/
      
      /* Derived unit without weigth */
      case((du as Absyn.DEFINEUNIT(name=_))::elts) equation
-       {SCode.DEFINEUNIT(name,SOME(exp),NONE)} = SCode.elabElement(du,false);
+       {SCode.DEFINEUNIT(name,SOME(exp),_)} = SCode.elabElement(du,false);
        UnitParserExt.addDerived(name,exp);
        registerDefineunits(elts);
      then ();

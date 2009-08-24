@@ -36,6 +36,13 @@ public function addBase "adds a base unit without weight"
   external "C";
 end addBase;
 
+public function registerWeight "registers a weight to be multiplied with the weigth factor of a derived unit"
+  input String name;
+  input Real weight;
+  external "C";
+end registerWeight;
+
+
 public function addDerived "adds a derived unit without weight"
   input String name;
   input String exp;
@@ -48,6 +55,14 @@ public function addDerivedWeight "adds a derived unit with weight"
   input Real weight;
   external "C";
 end addDerivedWeight;
+
+public function checkpoint "copies all unitparser information to allow changing unit weights locally for a component"
+   external "C";
+end checkPoint;
+
+public function rollback "rollback the copy made in checkPoint call"
+  external "C";
+end rollback;  
 
 public function clear "clears the unitparser from stored units"
   external "C";

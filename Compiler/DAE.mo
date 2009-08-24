@@ -367,6 +367,15 @@ matchcontinue (bindExp,attr)
    end matchcontinue;
 end addEquationBoundString;
 
+public function getClassList "get list of classes from Var"
+  input Element v;
+  output list<Absyn.Path> lst;
+algorithm
+  lst := matchcontinue(v)
+    case(VAR(pathLst = lst)) then lst;
+  end matchcontinue;
+end getClassList;
+
 public function getBoundStartEquation ""
 input VariableAttributes attr;
 output Exp.Exp oe;

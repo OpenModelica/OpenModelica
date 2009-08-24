@@ -32,7 +32,7 @@
 #include "unitparser.h"
 #include <iostream>
 #include <sstream>
-#ifndef NO_LPLIB 
+#ifndef NO_LPLIB
   #include "lp_lib.h"
 #endif
 
@@ -53,7 +53,7 @@ Rational::Rational(long numerator, long denominator)
  * of ambiguity that needs to be adressed. */
 void Rational::rationalize(double r)
 {
-#ifndef NO_LPLIB 
+#ifndef NO_LPLIB
 	const double eps = 1e-6;
 	double rapp;
 	long numerator=(long)r;
@@ -353,9 +353,9 @@ UnitRes UnitParser::addDerivedInternal(const string quantityName, const string u
 	u.unitSymbol = unitSymbol;
 	u.prefixAllowed = prefixAllowed;
 	u.prefixExpo = prefixExpo;
-	u.scaleFactor = scaleFactor; 
+	u.scaleFactor = scaleFactor;
 	u.offset = offset;
-	u.weight = weight; 
+	u.weight = weight;
 
 	map<string,Unit>::iterator p = _units.find(unitSymbol);
 	// Unit already defined?
@@ -368,11 +368,11 @@ UnitRes UnitParser::addDerivedInternal(const string quantityName, const string u
 		if(u.equalNoWeight((*p).second)){
 			Unit u2 =_units[unitSymbol];
 			u2.weight *= weight;
-			_units[unitSymbol] = u2; 
+			_units[unitSymbol] = u2;
 		}
 		else
 			return UnitRes(UnitRes::UNITS_DEFINED_WITH_DIFFERENT_EXPR);
-	} 
+	}
 	return res;
 }
 
@@ -383,7 +383,7 @@ void UnitParser::accumulateWeight(const string unitSymbol, double weight)
 	{
 		Unit u2 =_units[unitSymbol];
 		u2.weight *= weight;
-		_units[unitSymbol] = u2; 
+		_units[unitSymbol] = u2;
 	}
 }
 
@@ -421,7 +421,7 @@ string UnitParser::prettyPrintUnit2str(Unit unit)
 
 Unit UnitParser::solveMIP(Unit unit)
 {
-#ifndef NO_LPLIB 
+#ifndef NO_LPLIB
   int numBaseUnits = _base.size();
   int numDerivedUnits=0;
   // Counting the derived units by traversing all units
@@ -500,7 +500,7 @@ Unit UnitParser::solveMIP(Unit unit)
   int c2;
   /* element 0..numBaseUnits-1*/
   for (c2=0; c2 < numBaseUnits;c2++ ) {
-	  double cost=0;
+	  double cost=1;
 	  for (int r2=0; r2 < numBaseUnits; r2++) {
 		  double b = r2 < unit.unitVec.size() ? unit.unitVec[r2].toReal() : 0.0;
 		  cost+= fabs(b - (c2==r2?1:0));
@@ -512,7 +512,7 @@ Unit UnitParser::solveMIP(Unit unit)
   /* elements numBaseUnits .. NU -1 */
   c2=numBaseUnits;
   for(map<string,Unit>::iterator it=_units.begin(); it != _units.end(); it++) {
-	  double cost=0;
+	  double cost=1;
 	  Unit u = it->second;
 	  if (!u.isBaseUnit()) {
 		  for(int r2=0; r2 < numBaseUnits; r2++) {
@@ -528,7 +528,7 @@ Unit UnitParser::solveMIP(Unit unit)
   }
   /* elements NU .. NU+numBaseUnits-1 */
   for (int c2=0; c2 < numBaseUnits;c2++ ) {
- 	  double cost=0;
+ 	  double cost=1;
  	  for (int r2=0; r2 < numBaseUnits; r2++) {
  		 double b = r2 < unit.unitVec.size() ? unit.unitVec[r2].toReal() : 0.0;
  		  cost+= fabs(b - (c2==r2?-1:0));
@@ -540,7 +540,7 @@ Unit UnitParser::solveMIP(Unit unit)
   /* elements NU+numBaseUnits .. 2*NU -1 */
   c2=numBaseUnits;
    for(map<string,Unit>::iterator it=_units.begin(); it != _units.end(); it++) {
- 	  double cost=0;
+ 	  double cost=1;
  	  Unit u = it->second;
  	  if (!u.isBaseUnit()) {
  		  for(int r2=0; r2 < numBaseUnits; r2++) {
@@ -597,7 +597,7 @@ Unit UnitParser::solveMIP(Unit unit)
 			  prettyUnit.unitVec.push_back(r);
 		  }
 	  }
-	  //cerr << "resulting unit =" << unit2str(prettyUnit) << endl;
+	  //cout << "resulting unit =" << unit2str(prettyUnit) << endl;
 	  retVal = prettyUnit;
   } else {
 	  retVal = unit;
@@ -606,7 +606,7 @@ Unit UnitParser::solveMIP(Unit unit)
   delete row;
   delete colno;
   return retVal;
-#else 
+#else
    return unit;
 #endif
 }
