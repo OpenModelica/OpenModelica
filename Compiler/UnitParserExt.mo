@@ -58,7 +58,7 @@ end addDerivedWeight;
 
 public function checkpoint "copies all unitparser information to allow changing unit weights locally for a component"
    external "C";
-end checkPoint;
+end checkpoint;
 
 public function rollback "rollback the copy made in checkPoint call"
   external "C";
