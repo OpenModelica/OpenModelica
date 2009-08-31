@@ -58,7 +58,7 @@ OmcCommunication_impl::OmcCommunication_impl()
 char* OmcCommunication_impl::sendExpression( const char* expr )
 {
   WaitForSingleObject(clientlock,INFINITE); // Lock so no other tread can talk to omc.
-  //const char* retval = "";
+  char* retval = "";
 
   // Signal to omc that message has arrived. 
 
@@ -67,10 +67,10 @@ char* OmcCommunication_impl::sendExpression( const char* expr )
 
   // Wait for omc to process message
   while(WAIT_OBJECT_0 != WaitForSingleObject(omc_return_value_ready, INFINITE));
-  //retval = CORBA::string_dup(omc_reply_message); // dup the string here on this thread!
+  retval = CORBA::string_dup(omc_reply_message); // dup the string here on this thread!
   ReleaseMutex(clientlock);
   
-  return CORBA::string_dup(omc_reply_message); // Has already been string_dup (prepared for CORBA)
+  return retval;//CORBA::string_dup(omc_reply_message); // Has already been string_dup (prepared for CORBA)
 } 
 
 char* OmcCommunication_impl::sendClass( const char* expr )
