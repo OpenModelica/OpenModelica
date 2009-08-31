@@ -325,10 +325,13 @@ extern "C" {
 using namespace std;
 
 pthread_mutex_t lock;
+pthread_mutex_t clientlock;
+
 // Condition variable for keeping omc waiting for client requests
 pthread_cond_t omc_waitformsg;
 pthread_mutex_t omc_waitlock;
 bool omc_waiting=false;
+
 // Condition variable for keeping corba waiting for returnvalue from omc
 pthread_cond_t corba_waitformsg;
 pthread_mutex_t corba_waitlock;
@@ -373,6 +376,7 @@ RML_BEGIN_LABEL(Corba__initialize)
   pthread_cond_init(&corba_waitformsg,NULL);
   pthread_mutex_init(&corba_waitlock,NULL);
   pthread_mutex_init(&omc_waitlock,NULL);
+  pthread_mutex_init(&clientlock, NULL);
 
 #if defined(USE_OMNIORB)  
   orb = CORBA::ORB_init(argc, dummyArgv, "omniORB4");

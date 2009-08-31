@@ -96,6 +96,8 @@ extern "C" {
   #include <pthread.h>
 }
 
+extern pthread_mutex_t clientlock;
+
 extern pthread_cond_t omc_waitformsg;
 extern pthread_mutex_t omc_waitlock;
 
@@ -119,6 +121,7 @@ OmcCommunication_impl::OmcCommunication_impl()
 
 char* OmcCommunication_impl::sendExpression( const char* expr )
 {
+  pthread_mutex_lock(&clientlock);
   char* result;
   // Signal to omc that message has arrived. 
   pthread_mutex_lock(&omc_waitlock);
@@ -133,9 +136,10 @@ char* OmcCommunication_impl::sendExpression( const char* expr )
     pthread_cond_wait(&corba_waitformsg,&corba_waitlock);
   }
   corba_waiting = false;
+  result = CORBA::string_dup(omc_reply_message);
   pthread_mutex_unlock(&corba_waitlock);
-  
-  return CORBA::string_dup(omc_reply_message); // Has already been string_dup (prepared for CORBA)
+  pthread_mutex_unlock(&clientlock);
+  return result; // Has already been string_dup (prepared for CORBA)
 } 
 
 char* OmcCommunication_impl::sendClass( const char* expr )
