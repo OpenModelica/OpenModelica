@@ -58,6 +58,7 @@ void Rational::rationalize(double r)
 	double rapp;
 	long numerator=(long)r;
 	long denominator=1;
+	r = round(r/eps)*eps;
 	do {
 		rapp = (double)numerator/ (double)denominator;
 		denominator*=10;

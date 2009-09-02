@@ -61,6 +61,7 @@ tokens {
 	CONSTANT	= "constant"	;
 	DISCRETE	= "discrete"	;
     DER         = "der";
+    DEFINEUNIT  = "defineunit"  ;
 	EACH		= "each"	;
 	ELSE		= "else"	;
 	ELSEIF		= "elseif"	;
