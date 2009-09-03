@@ -32,10 +32,19 @@ in the scopes of the classLst for each variable"
  protected 
  list<Absyn.Path> paths; list<SCode.Element> du;
 algorithm
-    paths := Util.listListUnion(Util.listMap(DAE.getMatchingElements(dae,DAE.isVar),DAE.getClassList));
-    du := Util.listListUnion(Util.listMap1(paths,retrieveUnitsFromEnv,(cache,env)));
-    registerUnitWeightDefineunits(du);
- end registerUnitWeights;
+   _ := matchcontinue(cache,env,dae)
+     case(cache,env,dae) equation       
+       false = OptManager.getOption("unitChecking");    
+   then ();
+   case(cache,env,dae) equation
+     /* TODO: This is very unefficient. It increases instantiationtime by factor 2 for 
+    	 instantiation of largeTests/TestNandTotal.mo */
+       paths = Util.listListUnion(Util.listMap(dae,DAE.getClassList));
+       du = Util.listListUnion(Util.listMap1(paths,retrieveUnitsFromEnv,(cache,env)));
+       registerUnitWeightDefineunits(du);
+   then ();
+   end matchcontinue;
+end registerUnitWeights;
 
 protected function retrieveUnitsFromEnv "help function to registerUnitWeights"
   input Absyn.Path p;

@@ -373,6 +373,7 @@ public function getClassList "get list of classes from Var"
 algorithm
   lst := matchcontinue(v)
     case(VAR(pathLst = lst)) then lst;
+    case(_) then {};
   end matchcontinue;
 end getClassList;
 
