@@ -90,8 +90,9 @@ public function addDependency "add a dependency tha a class 'cl' uses another cl
    local 
      AvlTree uses, usedBy;
      case(DEPENDS(uses,usedBy),cl,usesClass) equation
+       //print("ADD "+&Absyn.pathString(cl)+&" -> {"+&Absyn.pathString(usesClass)+&"}\n");
          uses = avlTreeAdd(uses,cl,{usesClass});
-         usedBy = avlTreeAdd(usedBy,usesClass,{cl});
+         usedBy = avlTreeAdd(usedBy,usesClass,{cl});      
      then DEPENDS(uses,usedBy);
    end matchcontinue;
  end addDependency;
@@ -315,7 +316,6 @@ algorithm
       Option<AvlTree> left,right;     
       Integer rhval,h;
       AvlTree t_1,t,right_1,left_1,bt;
-      
       /* empty tree*/
     case (AVLTREENODE(value = NONE,height=h,left = NONE,right = NONE),key,value) 
     	then AVLTREENODE(SOME(AVLTREEVALUE(key,value)),1,NONE,NONE);  

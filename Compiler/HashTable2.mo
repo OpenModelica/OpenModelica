@@ -249,6 +249,27 @@ algorithm
   end matchcontinue;
 end get2;
 
+public function dumpHashTable ""
+  input HashTable t;
+algorithm
+  print("HashTable:\n");
+  print(Util.stringDelimitList(Util.listMap(hashTableList(t),dumpTuple),"\n"));
+  print("\n");
+end dumpHashTable;
+
+protected function dumpTuple
+  input tuple<Key,Value> tpl;
+  output String str;
+algorithm
+  str := matchcontinue(tpl)
+  local 
+    Exp.ComponentRef cr; Exp.Exp e;
+    case((cr,e)) equation
+      str = "{" +& Exp.printComponentRefStr(cr) +& ",{" +& Exp.printExpStr(e)+& "}}";
+    then str;
+  end matchcontinue;
+end dumpTuple;
+
 public function hashTableValueList "return the Value entries as a list of Values"
   input HashTable hashTable;
   output list<Value> valLst;

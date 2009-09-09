@@ -1188,7 +1188,7 @@ algorithm
   end matchcontinue;
 end instClassIn;
 
-protected function isBuiltInClass "
+public function isBuiltInClass "
 Author: BZ, this function identifies built in classes.
 " 
   input String className;

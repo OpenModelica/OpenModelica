@@ -1164,7 +1164,7 @@ algorithm
       equation
         env = cacheGetEnv2(path2,path,tree);
         //print("found ");print(Absyn.pathString(path));print(" in cache at scope");
-				//print(Absyn.pathString(path2));print("\n");
+				//print(Absyn.pathString(path2));print("  pathEnv:"+&printEnvPathStr(env)+&"\n");
       then env;
   end matchcontinue;
 end cacheGetEnv;
@@ -1205,14 +1205,7 @@ algorithm
          equality(id=id2);
          //print("found qualified (1) ");print(id);print("\n");
          env = cacheGetEnv2(path2,path,CACHETREE(id2,env2,children2));
-       then env;
-           
-    // for qualified name, try next
-     case (Absyn.QUALIFIED(id,path2),path,CACHETREE(id2,env2,_::children2))
-       equation
-         //print("try next qualified ");print(id);print("\n");
-         env = cacheGetEnv2(path2,path,CACHETREE(id2,env2,children2));
-       then env;
+       then env;           
    end matchcontinue;  
 end cacheGetEnv2;
 
