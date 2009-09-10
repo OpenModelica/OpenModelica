@@ -29,6 +29,11 @@
  */
 
 
+#if defined(_MSC_VER)
+ #define round(dbl) (dbl >= 0.0 ? (int)(dbl + 0.5) : ((dbl - (double)(int)dbl) <= -0.5 ? (int)dbl : (int)(dbl - 0.5)))
+#endif
+
+
 #include "unitparser.h"
 #include <iostream>
 #include <sstream>
