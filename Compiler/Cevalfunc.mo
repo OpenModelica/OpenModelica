@@ -431,16 +431,16 @@ algorithm
         // assign, tuple assign
     case(env, Absyn.ALG_ASSIGN(ae1 as Absyn.CREF(_), ae2))
       equation
-       (_,e1,Types.PROP(t,_),_) = Static.elabExp(Env.emptyCache,env,ae2,true,NONE,false); 
-        (_,value,_) = Ceval.ceval(Env.emptyCache,env, e1, true, NONE, NONE, Ceval.MSG());
+       (_,e1,Types.PROP(t,_),_) = Static.elabExp(Env.emptyCache(),env,ae2,true,NONE,false); 
+        (_,value,_) = Ceval.ceval(Env.emptyCache(),env, e1, true, NONE, NONE, Ceval.MSG());
         env1 = setValue(value, env, ae1);
       then
         env1;
     case(env, Absyn.ALG_ASSIGN(assignComponent = Absyn.TUPLE(expressions = crefexps),value = ae1))
       equation
-        (_,resExp,prop,_) = Static.elabExp(Env.emptyCache,env, ae1, true, NONE,true);
+        (_,resExp,prop,_) = Static.elabExp(Env.emptyCache(),env, ae1, true, NONE,true);
         ((Types.T_TUPLE(types),_)) = Types.getPropType(prop);
-        (_,Values.TUPLE(values),_) = Ceval.ceval(Env.emptyCache,env, resExp, true, NONE, NONE, Ceval.MSG());
+        (_,Values.TUPLE(values),_) = Ceval.ceval(Env.emptyCache(),env, resExp, true, NONE, NONE, Ceval.MSG());
         env1 = setValues(crefexps,types,values,env);
         then
           env1;
@@ -485,7 +485,7 @@ algorithm
       local
         String estr;
       equation 
-        (_,e1,_,_) = Static.elabExp(Env.emptyCache,env, ae1, true, NONE,true);
+        (_,e1,_,_) = Static.elabExp(Env.emptyCache(),env, ae1, true, NONE,true);
         estr = Exp.printExpStr(e1);
         Error.addMessage(Error.NOT_ARRAY_TYPE_IN_FOR_STATEMENT, {estr});
       then 
@@ -508,15 +508,15 @@ algorithm
     case(env, Absyn.ALG_NORETCALL(functionCall = Absyn.CREF_IDENT(name = "assert"),
       functionArgs = Absyn.FUNCTIONARGS(args = {cond,msg})))
       equation 
-        (_,econd,_,_) = Static.elabExp(Env.emptyCache,env, cond, true, NONE,true);
-        (_,Values.BOOL(true),_) = Ceval.ceval(Env.emptyCache,env, econd, true, NONE, NONE, Ceval.MSG());
+        (_,econd,_,_) = Static.elabExp(Env.emptyCache(),env, cond, true, NONE,true);
+        (_,Values.BOOL(true),_) = Ceval.ceval(Env.emptyCache(),env, econd, true, NONE, NONE, Ceval.MSG());
       then 
         env;
     case(env, Absyn.ALG_NORETCALL(functionCall = Absyn.CREF_IDENT(name = "assert"),
       functionArgs = Absyn.FUNCTIONARGS(args = {cond,msg})))
       equation 
-        (_,e1,_,_) = Static.elabExp(Env.emptyCache,env, msg, true, NONE,true);
-        (_,Values.STRING(varName),_) = Ceval.ceval(Env.emptyCache,env, e1, true, NONE, NONE, Ceval.MSG());
+        (_,e1,_,_) = Static.elabExp(Env.emptyCache(),env, msg, true, NONE,true);
+        (_,Values.STRING(varName),_) = Ceval.ceval(Env.emptyCache(),env, e1, true, NONE, NONE, Ceval.MSG());
         Error.addMessage(Error.ASSERT_FAILED, {varName});
       then
         fail();
@@ -583,7 +583,7 @@ algorithm
     case (value,exp,algitemlst,algrest,env) /* Report type error */ 
       local Exp.Exp e1;
       equation 
-        (_,e1,_,_) = Static.elabExp(Env.emptyCache,env,inExp,true,NONE,false); 
+        (_,e1,_,_) = Static.elabExp(Env.emptyCache(),env,inExp,true,NONE,false); 
         estr = Exp.printExpStr(e1);
         vtype = Types.typeOfValue(value);
         tstr = Types.unparseType(vtype);
@@ -607,16 +607,16 @@ algorithm oval := matchcontinue(inExp,env,expectedType)
     Values.Value value;
   case(inExp,env,NONE)
     equation
-      (_,e1,_,_) = Static.elabExp(Env.emptyCache,env,inExp,true,NONE,false); 
-      (_,value,_) = Ceval.ceval(Env.emptyCache,env, e1, true, NONE, NONE, Ceval.MSG());
+      (_,e1,_,_) = Static.elabExp(Env.emptyCache(),env,inExp,true,NONE,false); 
+      (_,value,_) = Ceval.ceval(Env.emptyCache(),env, e1, true, NONE, NONE, Ceval.MSG());
     then 
       value;
   case(inExp,env,SOME(ty))
     local Types.Type ty,ty2;
     equation      
-      (_,e1,Types.PROP(ty2,_),_) = Static.elabExp(Env.emptyCache,env,inExp,true,NONE,false); 
+      (_,e1,Types.PROP(ty2,_),_) = Static.elabExp(Env.emptyCache(),env,inExp,true,NONE,false); 
       (e2,_) = Types.matchType(e1,ty2,ty);
-      (_,value,_) = Ceval.ceval(Env.emptyCache,env, e2, true, NONE, NONE, Ceval.MSG());
+      (_,value,_) = Ceval.ceval(Env.emptyCache(),env, e2, true, NONE, NONE, Ceval.MSG());
     then 
       value;            
   case(_,_,_)
@@ -794,7 +794,7 @@ algorithm outVal := matchcontinue(inVal,env,toAssign)
       list<Values.Value> vals;
       list<String> names;
     equation
-      (_,_,t as (Types.T_COMPLEX(_,typeslst,_,_),_),_,_,_) = Lookup.lookupVar(Env.emptyCache,env, Exp.CREF_IDENT(str,Exp.OTHER(),{}));
+      (_,_,t as (Types.T_COMPLEX(_,typeslst,_,_),_),_,_,_) = Lookup.lookupVar(Env.emptyCache(),env, Exp.CREF_IDENT(str,Exp.OTHER(),{}));
       nlist = setValuesInRecord(typeslst,names,vals);
       fr = Env.newFrame(false); 
       complexEnv = makeComplexEnv({fr},nlist);
@@ -807,7 +807,7 @@ algorithm outVal := matchcontinue(inVal,env,toAssign)
       local 
         list<Absyn.Subscript> subs;
       equation
-        (_,_,t,Types.VALBOUND(value2),_,_) = Lookup.lookupVar(Env.emptyCache,env, Exp.CREF_IDENT(str,Exp.OTHER(),{}));
+        (_,_,t,Types.VALBOUND(value2),_,_) = Lookup.lookupVar(Env.emptyCache(),env, Exp.CREF_IDENT(str,Exp.OTHER(),{}));
         value = mergeValues(value2,value,subs,env,t); 
         env1 = updateVarinEnv(env,str,value,t);
       then
@@ -820,7 +820,7 @@ algorithm outVal := matchcontinue(inVal,env,toAssign)
         Exp.ComponentRef eme;
         String str2;
       equation 
-        (_,_,t,Types.VALBOUND(value2),_,_) = Lookup.lookupVar(Env.emptyCache,env, Exp.CREF_IDENT(str,Exp.OTHER(),{}));
+        (_,_,t,Types.VALBOUND(value2),_,_) = Lookup.lookupVar(Env.emptyCache(),env, Exp.CREF_IDENT(str,Exp.OTHER(),{}));
         env1 = setQualValue(env,value,Absyn.CREF_QUAL(str,subs,child));
       then
         env1;
@@ -879,7 +879,7 @@ algorithm oenv := matchcontinue(env,inVal,inCr)
     inVal,inCr)    
     equation
       str = Absyn.crefFirstIdent(inCr);
-      (_,_,_,_,_,_) = Lookup.lookupVar(Env.emptyCache, {frame}, Exp.CREF_IDENT(str,Exp.OTHER(),{}));
+      (_,_,_,_,_,_) = Lookup.lookupVar(Env.emptyCache(), {frame}, Exp.CREF_IDENT(str,Exp.OTHER(),{}));
       farg22 = setQualValue2(farg2, inVal,inCr,0);
       then
         Env.FRAME(farg1,farg22,farg3,farg4,farg5,farg6,farg7,defineUnits) :: frames;    
@@ -970,7 +970,7 @@ algorithm
     local Env.Env env1;
     case(env,varName,newVal,ty) 
       equation
-        (_,_,_,_,_,_) = Lookup.lookupVar(Env.emptyCache, env,Exp.CREF_IDENT(varName,Exp.OTHER(),{}));
+        (_,_,_,_,_,_) = Lookup.lookupVar(Env.emptyCache(), env,Exp.CREF_IDENT(varName,Exp.OTHER(),{}));
         env1 = Env.updateFrameV(env, 
           Types.VAR(varName,Types.ATTR(false,false,SCode.RW(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
             false,ty,Types.VALBOUND(newVal)), Env.VAR_TYPED(), {}); 
@@ -1167,9 +1167,9 @@ algorithm
         ty;
     case(p ,env) 
       equation
-        (_,typeClass as SCode.CLASS(name=className),env1) = Lookup.lookupClass(Env.emptyCache, env, p, false);
+        (_,typeClass as SCode.CLASS(name=className),env1) = Lookup.lookupClass(Env.emptyCache(), env, p, false);
         (_,_,env2,_,_,ty,_,_,_) = Inst.instClass(
-          Env.emptyCache,env1,UnitAbsyn.noStore,Types.NOMOD(),Prefix.NOPRE(),Connect.emptySet,typeClass,{}, true, Inst.INNER_CALL, ConnectionGraph.EMPTY);
+          Env.emptyCache(),env1,UnitAbsyn.noStore,Types.NOMOD(),Prefix.NOPRE(),Connect.emptySet,typeClass,{}, true, Inst.INNER_CALL, ConnectionGraph.EMPTY);
       then
         ty;
     case (_,_) 
@@ -1218,7 +1218,7 @@ algorithm
     case({},_) then {};
     case(((ele1 as SCode.COMPONENT(component = varName, attributes = SCode.ATTR(direction = Absyn.OUTPUT() ) ))::eles1),env)
       equation
-        (_,_,_,Types.VALBOUND(value),_,_) = Lookup.lookupVar(Env.emptyCache,env, Exp.CREF_IDENT(varName,Exp.OTHER(),{}));
+        (_,_,_,Types.VALBOUND(value),_,_) = Lookup.lookupVar(Env.emptyCache(),env, Exp.CREF_IDENT(varName,Exp.OTHER(),{}));
         lval = getOutputVarValues(eles1,env);
       then
        value::lval; 
@@ -1275,8 +1275,8 @@ algorithm oval := matchcontinue(oldVal,newVal,insubs,env,ty)
 
   case((oldVal as Values.ARRAY(valueLst = values1)),newVal,((sub as Absyn.SUBSCRIPT(exp))::subs),env,ty)
     equation
-      (_,e1,_,_) = Static.elabExp(Env.emptyCache,env,exp,true,NONE,false); 
-      (_,value as Values.INTEGER(x),_) = Ceval.ceval(Env.emptyCache,env, e1, true, NONE, NONE, Ceval.MSG());
+      (_,e1,_,_) = Static.elabExp(Env.emptyCache(),env,exp,true,NONE,false); 
+      (_,value as Values.INTEGER(x),_) = Ceval.ceval(Env.emptyCache(),env, e1, true, NONE, NONE, Ceval.MSG());
       val1 = listNth(values1 ,(x-1)); // to be replaced
       val2 = mergeValues(val1,newVal,subs,env,ty);
       values2 = Util.listReplaceAt(val2,(x-1),values1);

@@ -9741,7 +9741,7 @@ algorithm
   outExp:=matchcontinue(inExp)
   local ComponentRef e_cref; Absyn.ComponentRef cref;
     case(CODE(Absyn.C_VARIABLENAME(cref),_)) equation
-      (_,e_cref) = Static.elabUntypedCref(Env.emptyCache,Env.emptyEnv,cref,false);
+      (_,e_cref) = Static.elabUntypedCref(Env.emptyCache(),Env.emptyEnv,cref,false);
       then CREF(e_cref,OTHER());
   end matchcontinue;
 end CodeVarToCref;

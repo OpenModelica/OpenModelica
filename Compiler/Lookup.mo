@@ -834,7 +834,7 @@ algorithm
       Absyn.Path path;
     case (env,path)
       equation 
-        (_,c as SCode.CLASS(restriction=SCode.R_RECORD()) ,env_1) = lookupClass2(Env.emptyCache,env, path, false);
+        (_,c as SCode.CLASS(restriction=SCode.R_RECORD()) ,env_1) = lookupClass2(Env.emptyCache(),env, path, false);
         c = buildRecordConstructorClass(c, env_1);
       then
         (c,env_1);
@@ -1803,7 +1803,7 @@ algorithm
       Option<Absyn.ConstrainClass> cc;
     case (((comp as SCode.COMPONENT( id,io,fl,repl,prot,SCode.ATTR(d,f,st,ac,var,dir),tp,mod,bc,comment,cond,nfo,cc)) :: rest),mods,env)
       equation 
-        (_,mod_1) = Mod.elabMod(Env.emptyCache,env, Prefix.NOPRE(), mod, false);
+        (_,mod_1) = Mod.elabMod(Env.emptyCache(),env, Prefix.NOPRE(), mod, false);
         mod_1 = Mod.merge(mods,mod_1,env,Prefix.NOPRE());
         compMod = Mod.lookupModificationP(mod_1,Absyn.IDENT(id));
         umod = Mod.unelabMod(compMod);
@@ -1814,9 +1814,9 @@ algorithm
 
     case (SCode.EXTENDS(path,mod) :: rest,mods,env)
       equation 
-        (_,mod_1) = Mod.elabMod(Env.emptyCache,env, Prefix.NOPRE(), mod, false);
+        (_,mod_1) = Mod.elabMod(Env.emptyCache(),env, Prefix.NOPRE(), mod, false);
         mod_1 = Mod.merge(mods,mod_1,env,Prefix.NOPRE());
-        (_,cl,env_1) = lookupClass(Env.emptyCache,env, path, false);
+        (_,cl,env_1) = lookupClass(Env.emptyCache(),env, path, false);
         res1 = buildRecordConstructorElts(rest,mods, env);
         (res2,_) = buildRecordConstructorClass2(cl,mod_1,env_1);
         res = listAppend(res2,res1);
@@ -1987,7 +1987,7 @@ algorithm
 
     case (cache,((SCode.EXTENDS(path,mod)) :: rest),mods,env)
       equation 
-        (_,cl,env_1) = lookupClass(Env.emptyCache,env, path, false);
+        (_,cl,env_1) = lookupClass(cache,env, path, false);
         (cache,mod2) = Mod.elabMod(cache,env_1, Prefix.NOPRE(), mod, false);
         mod2 = Mod.merge(mods,mod2,env_1,Prefix.NOPRE());                  
        (cache,vars1) = buildVarlstFromElts2(cache,env_1,cl,mod2);

@@ -143,6 +143,46 @@ algorithm
   end matchcontinue;
 end add;
 
+public function addNoUpdCheck "
+  author: PA
+ 
+  Add a Key-Value tuple to hashtable.
+  If the Key-Value tuple allready exists, the function updates the Value.
+"
+  input tuple<Key,Value> entry;
+  input HashTable hashTable;
+  output HashTable outHahsTable;
+algorithm 
+  outVariables:=
+  matchcontinue (entry,hashTable)
+    local     
+      Integer hval,indx,newpos,n,n_1,bsize,indx_1;
+      ValueArray varr_1,varr;
+      list<tuple<Key,Integer>> indexes;
+      list<tuple<Key,Integer>>[:] hashvec_1,hashvec;
+      String name_str;      
+      tuple<Key,Value> v,newv;
+      Key key;
+      Value value;
+      /* Adding when not existing previously */
+    case ((v as (key,value)),(hashTable as HASHTABLE(hashvec,varr,bsize,n)))
+      equation 
+        hval = hashFunc(key);
+        indx = intMod(hval, bsize);
+        newpos = valueArrayLength(varr);
+        varr_1 = valueArrayAdd(varr, v);
+        indexes = hashvec[indx + 1];
+        hashvec_1 = arrayUpdate(hashvec, indx + 1, ((key,newpos) :: indexes));
+        n_1 = valueArrayLength(varr_1);        
+      then HASHTABLE(hashvec_1,varr_1,bsize,n_1);
+          case (_,_)
+      equation 
+        print("-HashTable2.addNoUpdCheck failed\n");
+      then
+        fail();
+  end matchcontinue;
+end addNoUpdCheck;
+
 public function delete "
   author: PA
  

@@ -91,7 +91,7 @@ type Ident = String " An identifier is just a string " ;
 
 public uniontype Cache
   record CACHE 
-    Option<EnvCache> envCache "The cache consists of environments from which classes can be found";
+    Option<EnvCache>[:] envCache "The cache consists of environments from which classes can be found";
     Option<Env> initialEnv "and the initial environment";
   end CACHE;
 end Cache;
@@ -182,7 +182,17 @@ protected import Inst;
 
 public constant Env emptyEnv={} "- Values" ;
 
-public constant Cache emptyCache = CACHE(NONE,NONE);
+//public constant Cache emptyCache = CACHE(NONE,NONE);
+
+public function emptyCache
+  output Cache cache;
+
+protected Option<EnvCache>[:] arr;
+algorithm
+  //print("EMPTYCACHE\n");
+  arr := listArray({NONE});
+  cache := CACHE(arr,NONE);
+end emptyCache;
 
 public function newFrame "- Relations
   function: newFrame
@@ -1095,7 +1105,7 @@ public function setCachedInitialEnv "set the initial environment in the cache"
 algorithm	
   outCache := matchcontinue(inCache,env) 
   local
-    	Option<EnvCache> envCache;
+    	Option<EnvCache>[:] envCache;
 
     case (CACHE(envCache,_),env) equation 
  //    	print("setCachedInitialEnv\n");
@@ -1110,9 +1120,10 @@ public function cacheGet "Get an environment from the cache."
   output Env env;
 algorithm
   env:= matchcontinue(scope,path,cache)
-  local CacheTree tree;
-   case (scope,path,CACHE(SOME(ENVCACHE(tree)),_))
+  local CacheTree tree;  Option<EnvCache>[:] arr;
+   case (scope,path,CACHE(arr ,_))
       equation
+        SOME(ENVCACHE(tree)) = arr[1];
         env = cacheGetEnv(scope,path,tree);
         //print("got cached env for ");print(Absyn.pathString(path)); print("\n");
       then env;          
@@ -1129,20 +1140,25 @@ algorithm
   outCache := matchcontinue(fullpath,inCache,env)
   local CacheTree tree;
     Option<Env> ie;
+    Option<EnvCache>[:] arr;
       
-    case (fullpath,CACHE(NONE,ie),env) 
+    case (fullpath,CACHE(arr,ie),env) 
       equation
+        NONE = arr[1];
         tree = cacheAddEnv(fullpath,CACHETREE("$global",emptyEnv,{}),env);
         //print("Adding ");print(Absyn.pathString(fullpath));print(" to empty cache\n");
-      then CACHE(SOME(ENVCACHE(tree)),ie);
-    case (fullpath,CACHE(SOME(ENVCACHE(tree)),ie),env) 
+        arr = arrayUpdate(arr,1,SOME(ENVCACHE(tree)));
+      then CACHE(arr,ie);
+    case (fullpath,CACHE(arr,ie),env) 
       equation
+        SOME(ENVCACHE(tree))=arr[1];
        // print(" about to Adding ");print(Absyn.pathString(fullpath));print(" to cache:\n");
       tree = cacheAddEnv(fullpath,tree,env);
       
        //print("Adding ");print(Absyn.pathString(fullpath));print(" to cache\n");
         //print(printCacheStr(CACHE(SOME(ENVCACHE(tree)),ie)));
-      then CACHE(SOME(ENVCACHE(tree)),ie);
+        arr = arrayUpdate(arr,1,SOME(ENVCACHE(tree)));
+      then CACHE(arr,ie);
     case (_,_,_) equation print("cacheAdd failed\n"); then fail();
   end matchcontinue;
 end cacheAdd;
@@ -1337,13 +1353,15 @@ public function printCacheStr
 algorithm
   str := matchcontinue(cache)
   local CacheTree tree;
-    case CACHE(SOME(ENVCACHE(tree)),_) 
+    Option<EnvCache>[:] arr;
+    case CACHE(arr,_) 
       local String s;
       equation
+        SOME(ENVCACHE(tree)) = arr[1];
       s = printCacheTreeStr(tree,1); 
       str = Util.stringAppendList({"Cache:\n",s,"\n"});
       then str;
-    case CACHE(NONE,_) then "EMPTY CACHE\n";
+    case CACHE(_,_) then "EMPTY CACHE\n";
   end matchcontinue;
 end printCacheStr;
 

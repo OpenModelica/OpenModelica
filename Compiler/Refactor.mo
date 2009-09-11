@@ -700,7 +700,7 @@ algorithm
 
     case(cPath,path,p, env) // if it fails try the hard way
       equation
-        (_,fullPath) = Inst.makeFullyQualified(Env.emptyCache,env,path);
+        (_,fullPath) = Inst.makeFullyQualified(Env.emptyCache(),env,path);
     //    debug_print("getRestrictionFromPath: LookingUp:", Absyn.pathString(fullPath));
         cdef = Interactive.getPathedClassInProgram(fullPath,p);
         restriction = getRestrictionInClass(cdef);
@@ -1136,7 +1136,7 @@ algorithm
       equation
         //	p_1 = SCode.elaborate(p);
         //	(_,env) = Inst.makeSimpleEnvFromProgram(Env.emptyCache,p_1, Absyn.IDENT(""));
-        (_,fullPath) = Inst.makeFullyQualified(Env.emptyCache,env,path);
+        (_,fullPath) = Inst.makeFullyQualified(Env.emptyCache(),env,path);
         //	print("env:\n");print(Env.printEnvStr(env));
         //str = Absyn.pathString(cPath);
         //print("\npath = ");

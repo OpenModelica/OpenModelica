@@ -1602,7 +1602,7 @@ algorithm
   outCache := matchcontinue(inCache,id,env)
   local
     Absyn.Path path,newPath;
-          
+    
     case(inCache,id,env) 
       equation
       SOME(path) = Env.getEnvPath(env);
@@ -1859,7 +1859,7 @@ algorithm
 
         //Add variables to env, wihtout type and binding, which will be added 
         //later in inst_element_list (where update_variable is called)" 
-        env3 = addComponentsToEnv(env2, emods, pre, csets, ci_state, compelts_1, compelts_1, eqs_1, inst_dims, impl);
+        (cache,env3) = addComponentsToEnv(cache,env2, emods, pre, csets, ci_state, compelts_1, compelts_1, eqs_1, inst_dims, impl);
         //Update the modifiers of elements to typed ones, needed for modifiers
 		    //on components that are inherited.
         (cache,compelts_2,env4,csets) = updateCompeltsMods(cache,env3, pre, extcomps, ci_state, csets, impl);
@@ -3141,7 +3141,7 @@ algorithm
 	     */
 		cdefelts2 = classdefElts2(extcomps);
 		env2 = addClassdefsToEnv(env2,cdefelts2,true,NONE); // Add inherited classes to env              
-		env3 = addComponentsToEnv(env2, mods, pre, csets, ci_state, 
+		(cache,env3) = addComponentsToEnv(cache,env2, mods, pre, csets, ci_state, 
 		lst_constantEls, lst_constantEls, {}, inst_dims, false);
 		(cache,_,env3,_,_,ci_state2,_,_) = 
 		instElementList(cache,env3, UnitAbsyn.noStore, mods, pre, csets, ci_state1, lst_constantEls, inst_dims, true, ConnectionGraph.EMPTY) "instantiate constants";
@@ -4351,6 +4351,7 @@ public function addComponentsToEnv
   sizes of components and by investigating if-equations. If an if-equation
   has a boolean expression controlled by parameter(s), these are structural
   parameters."
+  input Env.Cache inCache;
   input Env inEnv1;
   input Mod inMod2;
   input Prefix inPrefix3;
@@ -4361,9 +4362,10 @@ public function addComponentsToEnv
   input list<SCode.Equation> inSCodeEquationLst8;
   input InstDims inInstDims9;
   input Boolean inBoolean10;
+  output Env.Cache outCache;
   output Env outEnv;
 algorithm 
-  outEnv := matchcontinue (inEnv1,inMod2,inPrefix3,inSets4,inState5,inTplSCodeElementModLst6,inTplSCodeElementModLst7,inSCodeEquationLst8,inInstDims9,inBoolean10)
+  (outCache,outEnv) := matchcontinue (inCache,inEnv1,inMod2,inPrefix3,inSets4,inState5,inTplSCodeElementModLst6,inTplSCodeElementModLst7,inSCodeEquationLst8,inInstDims9,inBoolean10)
     local
       list<Env.Frame> env,env_1,env_2;
       Types.Mod mod,cmod;
@@ -4389,10 +4391,11 @@ algorithm
       Option<Absyn.Exp> aExp;
       Option<Absyn.Info> aInfo;
       Option<Absyn.ConstrainClass> cc;
+      Env.Cache cache;
     /* implicit inst. */
-    case (env,_,_,_,_,{},_,_,_,_) then env;
+    case (cache,env,_,_,_,_,{},_,_,_,_) then (cache,env);
       /* A component */ 
-    case (env,mod,pre,csets,cistate,
+    case (cache,env,mod,pre,csets,cistate,
         (((comp as SCode.COMPONENT(component = n,
                                    innerOuter=io,
                                    finalPrefix = finalPrefix,
@@ -4420,36 +4423,36 @@ algorithm
         
         
         compModLocal = Mod.lookupCompModification12(mod,n);
-        (_,selem,smod,env,csets) = redeclareType(Env.emptyCache,compModLocal, 
+        (cache,selem,smod,env,csets) = redeclareType(cache,compModLocal, 
         /*comp,*/ SCode.COMPONENT(n,io,finalPrefix,repl,prot,attr,tss,m,bc,comment, aExp, aInfo,cc),
         env, pre, cistate, csets, impl,cmod);
-        env_1 = addComponentsToEnv2(env, mod, pre, csets, cistate, {(selem,smod)}, instdims, impl);
-        env_2 = addComponentsToEnv(env_1, mod, pre, csets, cistate, xs, allcomps, eqns, instdims, impl);
+        (cache,env_1) = addComponentsToEnv2(cache,env, mod, pre, csets, cistate, {(selem,smod)}, instdims, impl);
+        (cache,env_2) = addComponentsToEnv(cache,env_1, mod, pre, csets, cistate, xs, allcomps, eqns, instdims, impl);
       then
-        env_2;
+        (cache,env_2);
         
         /* Import statement */
-    case (env,mod,pre,csets,cistate,((SCode.IMPORT(_),_) :: xs),allcomps,eqns,instdims,impl)
+    case (cache,env,mod,pre,csets,cistate,((SCode.IMPORT(_),_) :: xs),allcomps,eqns,instdims,impl)
       equation 
-        env_2 = addComponentsToEnv(env, mod, pre, csets, cistate, xs, allcomps, eqns, instdims, impl);
+        (cache,env_2) = addComponentsToEnv(cache,env, mod, pre, csets, cistate, xs, allcomps, eqns, instdims, impl);
       then
-        env_2;
+        (cache,env_2);
         
         /* Extends elements */ 
-    case (env,mod,pre,csets,cistate,((SCode.EXTENDS(_,_),_) :: xs),allcomps,eqns,instdims,impl)
+    case (cache,env,mod,pre,csets,cistate,((SCode.EXTENDS(_,_),_) :: xs),allcomps,eqns,instdims,impl)
       equation 
-        env_2 = addComponentsToEnv(env, mod, pre, csets, cistate, xs, allcomps, eqns, instdims, impl);
+        (cache,env_2) = addComponentsToEnv(cache,env, mod, pre, csets, cistate, xs, allcomps, eqns, instdims, impl);
       then
-        env_2;
+        (cache,env_2);
 
         /* Class definitions */ 
-    case (env,mod,pre,csets,cistate,((SCode.CLASSDEF(name = _),_) :: xs),allcomps,eqns,instdims,impl)
+    case (cache,env,mod,pre,csets,cistate,((SCode.CLASSDEF(name = _),_) :: xs),allcomps,eqns,instdims,impl)
       equation 
-        env_2 = addComponentsToEnv(env, mod, pre, csets, cistate, xs, allcomps, eqns, instdims, impl);
+        (cache,env_2) = addComponentsToEnv(cache,env, mod, pre, csets, cistate, xs, allcomps, eqns, instdims, impl);
       then
-        env_2;
+        (cache,env_2);
 
-    case (_,_,_,_,_,comps,_,_,_,_)
+    case (_,_,_,_,_,_,comps,_,_,_,_)
       equation 
         Debug.fprintln("failtrace", "- Inst.addComponentsToEnv failed");
       then
@@ -4461,6 +4464,7 @@ protected function addComponentsToEnv2
 "function addComponentsToEnv2
   Helper function to addComponentsToEnv. 
   Extends the environment with an untyped variable for the component."
+  input Env.Cache inCache;
   input Env inEnv;
   input Mod inMod;
   input Prefix inPrefix;
@@ -4469,9 +4473,10 @@ protected function addComponentsToEnv2
   input list<tuple<SCode.Element, Mod>> inTplSCodeElementModLst;
   input InstDims inInstDims;
   input Boolean inBoolean;
+  output Env.Cache outCache;
   output Env outEnv;
 algorithm 
-  outEnv := matchcontinue (inEnv,inMod,inPrefix,inSets,inState,inTplSCodeElementModLst,inInstDims,inBoolean)
+  (outCache,outEnv) := matchcontinue (inCache,inEnv,inMod,inPrefix,inSets,inState,inTplSCodeElementModLst,inInstDims,inBoolean)
     local
       Types.Mod compmod,cmod_1,mods,cmod;
       list<Env.Frame> env_1,env_2,env;
@@ -4496,8 +4501,9 @@ algorithm
       Option<Absyn.Info> info;
       Option<Absyn.Exp> condition;
       Option<Absyn.ConstrainClass> cc;
+      Env.Cache cache;
     /* a component */
-    case (env,mods,pre,csets,ci_state,
+    case (cache,env,mods,pre,csets,ci_state,
           ((comp as SCode.COMPONENT(n,io,finalPrefix,repl,prot,
                                     attr as SCode.ATTR(ad,flowPrefix,streamPrefix,acc,param,dir),
                                     t,m,bc,comment,condition,info,cc),cmod) :: xs),
@@ -4519,12 +4525,12 @@ algorithm
         env_1 = Env.extendFrameV(env, 
           Types.VAR(n,Types.ATTR(flowPrefix,streamPrefix,acc,param,dir,io),prot,
           (Types.T_NOTYPE(),NONE),Types.UNBOUND()), SOME((comp,cmod_1)), Env.VAR_UNTYPED(), {});
-        env_2 = addComponentsToEnv2(env_1, mods, pre, csets, ci_state, xs, inst_dims, impl);
+        (cache,env_2) = addComponentsToEnv2(cache,env_1, mods, pre, csets, ci_state, xs, inst_dims, impl);
       then
-        env_2;
+        (cache,env_2);
         
-    case (env,_,_,_,_,{},_,_) then env; 
-    case (env,_,_,_,_,comps,_,_)
+    case (cache,env,_,_,_,_,{},_,_) then (cache,env); 
+    case (cache,env,_,_,_,_,comps,_,_)
       equation 
         Debug.fprint("failtrace", "- Inst.addComponentsToEnv2 failed\n");
         Debug.fprint("failtrace", "\n\n");
@@ -5524,16 +5530,16 @@ algorithm str := matchcontinue(cc,env)
   case(NONE,_) then {};
   case(SOME(Absyn.CONSTRAINCLASS(elementSpec = Absyn.EXTENDS(path,args))),env)
     equation
-      (_,(cl as SCode.CLASS(name = name, classDef = SCode.PARTS(elementLst=selems))) ,clenv) = Lookup.lookupClass(Env.emptyCache,env,path,false);
+      (_,(cl as SCode.CLASS(name = name, classDef = SCode.PARTS(elementLst=selems))) ,clenv) = Lookup.lookupClass(Env.emptyCache(),env,path,false);
       (_,extendselts,compelts) = splitElts(selems); 
-      (_,_,_,extcomps,_,_,_,_) = instExtendsList(Env.emptyCache, env, Types.NOMOD(), extendselts, ClassInf.UNKNOWN(""), name, true);
+      (_,_,_,extcomps,_,_,_,_) = instExtendsList(Env.emptyCache(), env, Types.NOMOD(), extendselts, ClassInf.UNKNOWN(""), name, true);
       extcompelts = Util.listMap(extcomps,Util.tuple21);
       compelts = listAppend(compelts,extcompelts);
     then
       compelts;  
   case(SOME(Absyn.CONSTRAINCLASS(elementSpec = Absyn.EXTENDS(path,args))),env)
     equation
-      (_,(cl as SCode.CLASS(classDef = SCode.DERIVED(typeSpec = Absyn.TPATH(path = derP)))) ,clenv) = Lookup.lookupClass(Env.emptyCache,env,path,false);
+      (_,(cl as SCode.CLASS(classDef = SCode.DERIVED(typeSpec = Absyn.TPATH(path = derP)))) ,clenv) = Lookup.lookupClass(Env.emptyCache(),env,path,false);
       compelts = extractConstrainingComps(SOME(Absyn.CONSTRAINCLASS(Absyn.EXTENDS(derP,{}),NONE)),env);
     then
       compelts;  
@@ -7594,7 +7600,7 @@ algorithm
         Env.Env fs;        
       equation 
         crPath = Exp.pathToCref(path);
-        (cache,_,_,_,_) = Lookup.lookupVarInternal(Env.emptyCache,{f}, crPath);
+        (cache,_,_,_,_) = Lookup.lookupVarInternal(cache,{f}, crPath);
         path3 = makeFullyQualified2({},Absyn.pathLastIdent(path));
       then
         (cache,Absyn.FULLYQUALIFIED(path3));     
@@ -8684,7 +8690,7 @@ algorithm
       /* instantiation of complex type extending from basic type */ 
     case (vn,(Types.T_COMPLEX(complexClassType = ci,complexTypeOption = SOME(tp)),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars)
       equation
-        (_,dae_var_attr) = instDaeVariableAttributes(Env.emptyCache,Env.emptyEnv, Types.NOMOD(), tp, {});
+        (_,dae_var_attr) = instDaeVariableAttributes(Env.emptyCache(),Env.emptyEnv, Types.NOMOD(), tp, {});
         dae_var_attr = DAE.setFinalAttr(dae_var_attr,finalPrefix);
         dae = daeDeclare4(vn,tp,fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars);
     then dae;
@@ -10240,7 +10246,7 @@ algorithm
       local Exp.Exp unvectorisedExpl;
       equation 
         (cache,(e_1 as Exp.TUPLE(_)),eprop,_) = Static.elabExp(cache,env, e, impl, NONE,true);
-        (_,_,_) = Ceval.ceval(Env.emptyCache,Env.emptyEnv, e_1, false, NONE, NONE, Ceval.MSG());
+        (_,_,_) = Ceval.ceval(Env.emptyCache(),Env.emptyEnv, e_1, false, NONE, NONE, Ceval.MSG());
         (cache,expl_1,cprops,_) = Static.elabExpList(cache,env, expl, impl, NONE,false);
         (cache,expl_2) = Prefix.prefixExpList(cache,env,expl_1,pre);
         stmt = Algorithm.makeTupleAssignment(expl_2, cprops, e_1, eprop,initial_);
@@ -11583,7 +11589,7 @@ algorithm
         Ident id;
     case (env,Exp.CREF_QUAL(ident = id,componentRef = cr)) equation
        (_,_,(Types.T_COMPLEX(complexClassType=ClassInf.CONNECTOR(_)),_),_,_,_) 
-         = Lookup.lookupVar(Env.emptyCache,env,Exp.CREF_IDENT(id,Exp.OTHER(),{}));
+         = Lookup.lookupVar(Env.emptyCache(),env,Exp.CREF_IDENT(id,Exp.OTHER(),{}));
     then Connect.OUTER();       
     case (env,Exp.CREF_QUAL(componentRef =_)) then Connect.INNER(); 
     case (env,Exp.CREF_IDENT(ident = _)) then Connect.OUTER(); 
@@ -12711,7 +12717,7 @@ algorithm
         ld2 = SCode.elabEitemlist(ld,false);
         ld2 = componentElts(ld2);
         ld_mod = addNomod(ld2);
-        env2 = addComponentsToEnv(env2, Types.NOMOD(), Prefix.NOPRE(),
+        (localCache,env2) = addComponentsToEnv(localCache,env2, Types.NOMOD(), Prefix.NOPRE(),
         Connect.SETS({},{},{},{}), ClassInf.UNKNOWN("temp"), ld_mod, {}, {}, {}, impl);
 			 (cache2,_,env2,_,_,_,_,_) = instElementList(localCache,env2,UnitAbsyn.noStore,
 			  Types.NOMOD(), Prefix.NOPRE(), Connect.SETS({},{},{},{}), ClassInf.UNKNOWN("temp"),
@@ -13359,7 +13365,7 @@ algorithm (osele,oenv) := matchcontinue(env,inMod,sele)
     equation
       (mo2,lsm2) =  extractCorrectClassMod2(lsm,str,{});
       (_, sele2 as SCode.CLASSDEF(classDef = retcl) , _, env2, _) = 
-      redeclareType(Env.emptyCache, mo2,sele,env, Prefix.NOPRE(), ClassInf.MODEL(str),Connect.emptySet, true,Types.NOMOD());
+      redeclareType(Env.emptyCache(), mo2,sele,env, Prefix.NOPRE(), ClassInf.MODEL(str),Connect.emptySet, true,Types.NOMOD());
     then 
       (env2,retcl);
 end matchcontinue;

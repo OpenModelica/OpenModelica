@@ -4085,14 +4085,14 @@ algorithm ostring := matchcontinue( e1)
     local Values.Value val;
       String ret;
     equation
-      (_,val as Values.STRING(ret),_) = ceval(Env.emptyCache,Env.emptyEnv, e1,true,NONE,NONE,MSG());
+      (_,val as Values.STRING(ret),_) = ceval(Env.emptyCache(),Env.emptyEnv, e1,true,NONE,NONE,MSG());
     then
       ret;
   case(e1)
     local Values.Value val;
       String ret;
     equation
-      (_,val,_) = ceval(Env.emptyCache,Env.emptyEnv, e1,true,NONE,NONE,MSG());
+      (_,val,_) = ceval(Env.emptyCache(),Env.emptyEnv, e1,true,NONE,NONE,MSG());
       ret = Values.printValStr(val);
     then
       ret;
@@ -4113,7 +4113,7 @@ case(e ::expl)
     Values.Value v;
     list<Values.Value> vs;
   equation
-    (_,v,_) = ceval(Env.emptyCache, Env.emptyEnv, e,true,NONE,NONE,MSG);
+    (_,v,_) = ceval(Env.emptyCache(), Env.emptyEnv, e,true,NONE,NONE,MSG);
     vs = cevalTuple(expl);
   then
     v::vs;
