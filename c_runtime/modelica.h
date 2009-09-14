@@ -98,6 +98,7 @@ typedef modelica_real noEvent_rettype;
 typedef modelica_real floor_rettype;
 typedef modelica_real ceil_rettype;
 typedef modelica_real sample_rettype;
+typedef modelica_boolean change_rettype;
 typedef modelica_integer integer_rettype;
 
 #if defined(__cplusplus)
