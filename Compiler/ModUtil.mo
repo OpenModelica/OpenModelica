@@ -51,6 +51,7 @@ protected import RTOpts;
 protected import Util;
 protected import Algorithm;
 protected import Types;
+protected import System;
 
 protected function stringPrefixComponentRefs ""
   input String inString;
@@ -527,10 +528,9 @@ algorithm
   end matchcontinue;
 end pathString;
 
-public function pathString2 "function: pathString2
- 
-  Helper function to path_string.
-"
+protected function pathString2 
+"function: pathString2 
+  Helper function to path_string."
   input Absyn.Path inPath;
   input String inString;
   output String outString;
@@ -604,6 +604,38 @@ algorithm
     case (_,_) then false; 
   end matchcontinue;
 end typeSpecEqual;
+
+public function pathStringReplaceDot "function: pathStringReplaceDot
+  Helper function to path_string.
+"
+  input Absyn.Path inPath;
+  input String inString;
+  output String outString;
+algorithm
+  outString:=
+  matchcontinue (inPath,inString)
+    local
+      String s,ns,s1,ss,str,dstr,safe_s;
+      Absyn.Path n;
+    case (Absyn.IDENT(name = s),str)
+      equation
+        dstr = stringAppend(str, str);
+        safe_s = System.stringReplace(s, str, dstr);
+      then
+        safe_s;
+    case(Absyn.FULLYQUALIFIED(n),str) then pathStringReplaceDot(n,str);
+    case (Absyn.QUALIFIED(name = s,path = n),str)
+      equation
+        ns = pathStringReplaceDot(n, str);
+        dstr = stringAppend(str, str);
+        safe_s = System.stringReplace(s, str, dstr);
+        s1 = stringAppend(safe_s, str);
+        ss = stringAppend(s1, ns);
+      then
+        ss;
+  end matchcontinue;
+end pathStringReplaceDot;
+
 
 
 end ModUtil;

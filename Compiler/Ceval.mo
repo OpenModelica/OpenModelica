@@ -58,8 +58,10 @@ public import Exp;
 public import Interactive;
 public import Values;
 public import Absyn;
+public import AbsynDep;
 public import Types;
 public import ConnectionGraph;
+public import InstanceHierarchy;
 
 public 
 uniontype Msg
@@ -217,13 +219,70 @@ algorithm
         (cache,v,st_1) = cevalBuiltin(cache,env, exp, impl, st, dim, msg);
       then
         (cache,v,st_1);
+        
+    case (cache,env,(e as Exp.CALL(path = func,expLst = expl)),impl,st,_,msg)
+      equation
+        (cache,false) = Static.isExternalObjectFunction(cache,env,func);
+        (cache,vallst) = cevalList(cache, env, expl, impl, st, msg) 
+        "Call of record constructors, etc., i.e. functions that can be constant propagated." ;
+        (cache,newval) = cevalFunction(cache, env, func, vallst, impl, msg);
+      then
+        (cache,newval,st);        
+
+    /* see if function is in CF list and the build time is less than the edit time */
+    case (cache,env,(e as Exp.CALL(path = func,expLst = expl)),/*(impl as true)*/impl,
+      (st as SOME(Interactive.SYMBOLTABLE(p as Absyn.PROGRAM(globalBuildTimes=Absyn.TIMESTAMP(_,edit)),_,_,_,_,cflist,_))),_,msg)
+      local 
+        Integer funcHandle; 
+        String fNew,fOld; 
+        Real buildTime, edit, build;        
+      equation
+        false = RTOpts.debugFlag("nogen");
+        (cache,false) = Static.isExternalObjectFunction(cache,env,func);        
+        (true, funcHandle, buildTime, fOld) = Static.isFunctionInCflist(cflist, func);
+        Absyn.CLASS(_,_,_,_,Absyn.R_FUNCTION(),_,Absyn.INFO(fileName = fNew)) = Interactive.getPathedClassInProgram(func, p);
+        // see if the build time from the class is the same as the build time from the compiled functions list
+        false = stringEqual(fNew,""); // see if the WE have a file or not!        
+        false = Static.needToRebuild(fNew,fOld,buildTime); // we don't need to rebuild!
+        (cache,vallst) = cevalList(cache,env, expl, impl, st, msg);
+        funcstr = ModUtil.pathStringReplaceDot(func, "_");
+        Debug.fprintln("dynload", "CALL: About to execute function present in CF list: " +& funcstr);
+        newval = System.executeFunction(funcHandle, vallst);
+      then
+        (cache,newval,st);
+
+    /* see if function is in CF list and the build time is less than the edit time */
+    case (cache,env,(e as Exp.CALL(path = func,expLst = expl)),/*impl as true*/impl,
+      (st as SOME(Interactive.SYMBOLTABLE(p as Absyn.PROGRAM(globalBuildTimes=Absyn.TIMESTAMP(_,edit)),_,_,_,_,cflist,_))),_,msg)
+      local 
+        Integer funcHandle; 
+        String fNew,fOld; 
+        Real buildTime, edit, build;        
+      equation
+        false = RTOpts.debugFlag("nogen");
+        
+        (cache,false) = Static.isExternalObjectFunction(cache,env,func);
+        (true, funcHandle, buildTime, fOld) = Static.isFunctionInCflist(cflist, func);        
+        Absyn.CLASS(_,_,_,_,Absyn.R_FUNCTION(),_,Absyn.INFO(buildTimes= Absyn.TIMESTAMP(build,_))) = Interactive.getPathedClassInProgram(func, p);
+
+        // see if the build time from the class is the same as the build time from the compiled functions list
+        //debug_print("edit",edit);  
+        true = (buildTime >=. build);
+        true = (buildTime >. edit);
+
+        (cache,vallst) = cevalList(cache,env, expl, impl, st, msg);        
+        funcstr = ModUtil.pathStringReplaceDot(func, "_")        ;
+        Debug.fprintln("dynload", "CALL: About to execute function present in CF list: " +& funcstr);
+        newval = System.executeFunction(funcHandle, vallst);
+      then
+        (cache,newval,st);
 
     case (cache,env,(e as Exp.CALL(path = funcpath,expLst = expl,builtin = builtin)),impl,st,_,msg) 
       /* Call functions FIXME: functions are always generated. Put back the check
 	  and write another rule for the false case that generates the function */ 
       equation
         (cache,vallst) = cevalList(cache,env, expl, impl, st, msg);
-        (cache,newval)= cevalCallFunction(cache,env, e, vallst, msg);
+        (cache,newval,st)= cevalCallFunction(cache, env, e, vallst, msg, st);
       then
         (cache,newval,st);
 
@@ -235,36 +294,16 @@ algorithm
         (cache,value,st) = CevalScript.cevalInteractiveFunctions(cache,env, e, st, msg);
       then
         (cache,value,SOME(st));
-
-    case (cache,env,(e as Exp.CALL(path = func,expLst = expl)),(impl as true),(st as SOME(_)),_,msg)
-      equation 
-				(cache,false) = Static.isExternalObjectFunction(cache,env,func);
-        (cache,vallst) = cevalList(cache,env, expl, impl, st, msg) "Call of record constructors, etc., i.e. functions that can be constant propagated." ;
-        (cache,newval) = cevalFunction(cache,env, func, vallst, impl, msg);
-      then
-        (cache,newval,st);
-
-    case (cache,env,(e as Exp.CALL(path = func,expLst = expl)),(impl as true),
-      (st as SOME(Interactive.SYMBOLTABLE(p,_,_,_,_,cflist,_))),_,msg)
-      local Integer funcHandle;
-      equation 
-        (true, funcHandle) = Static.isFunctionInCflist(cflist, func) "Call externally implemented functions." ;
-        (cache,false) = Static.isExternalObjectFunction(cache,env,func);
-        (cache,vallst) = cevalList(cache,env, expl, impl, st, msg);
-        funcstr = ModUtil.pathString2(func, "_");
-        Debug.fprintln("dynload", "CALL: about to execute: " +& funcstr);
-        newval = System.executeFunction(funcHandle, vallst);
-      then
-        (cache,newval,st);
-        
-    case (cache,env,(e as Exp.CALL(path = funcpath,expLst = expl,builtin = builtin)),impl,st,_,msg)
-      /* Is this case really necessary? */
+    
+    /* Is this case really necessary?   
+    case (cache,env,(e as Exp.CALL(path = funcpath,expLst = expl,builtin = builtin)),impl,st,_,msg)        
       local String s; list<String> ss;
       equation
         (cache,vallst) = cevalList(cache,env, expl, impl, st, msg);
-        (cache,newval)= cevalCallFunction(cache,env, e, vallst, msg);
+        (cache,newval,st)= cevalCallFunction(cache,env, e, vallst, msg, st);
       then
         (cache,newval,st);
+    */        
 
     case (cache,env,Exp.BINARY(exp1 = lh,operator = Exp.ADD(ty = Exp.STRING()),exp2 = rh),impl,st,_,msg) /* Strings */ 
       local String lhv,rhv;
@@ -859,8 +898,8 @@ algorithm
         (cache,v,st);
     case (cache,env,(e as Exp.CALL(path = funcpath,expLst = expl,builtin = (builtin as true))),impl,(st as NONE),_,msg)
       equation  
-        (cache,vallst) = cevalList(cache,env, expl, impl, st, msg);
-        (cache,newval) = cevalCallFunction(cache,env, e, vallst, msg);
+        (cache,vallst) = cevalList(cache, env, expl, impl, st, msg);
+        (cache,newval,st) = cevalCallFunction(cache, env, e, vallst, msg, st);
       then
         (cache,newval,st);
   end matchcontinue;
@@ -944,11 +983,13 @@ protected function cevalCallFunction "function: cevalCallFunction
   input Exp.Exp inExp;
   input list<Values.Value> inValuesValueLst;
   input Msg inMsg;
+  input Option<Interactive.InteractiveSymbolTable> inSymTab;
   output Env.Cache outCache;
   output Values.Value outValue;
+  output Option<Interactive.InteractiveSymbolTable> outSymTab;  
 algorithm 
-  (outCache,outValue) :=
-  matchcontinue (inCache,inEnv,inExp,inValuesValueLst,inMsg)
+  (outCache,outValue,outSymTab) :=
+  matchcontinue (inCache,inEnv,inExp,inValuesValueLst,inMsg,inSymTab)
     local
       Values.Value newval;
       list<Env.Frame> env;
@@ -960,33 +1001,38 @@ algorithm
       Msg msg;
       String funcstr,str;
       Env.Cache cache;
+      Option<Interactive.InteractiveSymbolTable> st;
    /* 
    External functions that are "known" should be evaluated without
 	 compilation, e.g. all math functions 
 	 */ 
-    case (cache,env,(e as Exp.CALL(path = funcpath,expLst = expl,builtin = builtin)),vallst,msg) 
+    case (cache,env,(e as Exp.CALL(path = funcpath,expLst = expl,builtin = builtin)),vallst,msg,st) 
       equation 
         (cache,newval) = cevalKnownExternalFuncs(cache,env, funcpath, vallst, msg);
       then
-        (cache,newval);
+        (cache,newval,st);
         
         // This case prevents the constructor call of external objects of being evaluated
-    case (cache,env,(e as Exp.CALL(path = funcpath,expLst = expl, builtin = builtin)),vallst,msg)
+    case (cache,env,(e as Exp.CALL(path = funcpath,expLst = expl, builtin = builtin)),vallst,msg,st)
       local Types.Type tp;
         Absyn.Path funcpath2;
         String s;
       equation
         cevalIsExternalObjectConstructor(cache,funcpath,env);
-        then fail();
+      then 
+        fail();
 
         /* Record constructors */
-    case(cache,env,(e as Exp.CALL(path = funcpath,ty = Exp.COMPLEX(varLst=varLst))),vallst,msg)
-      local list<Exp.Var> varLst; list<String> varNames;
-       equation
-      varNames = Util.listMap(varLst,Exp.varName);      
-    then (cache,Values.RECORD(funcpath,vallst,varNames));
+    case(cache,env,(e as Exp.CALL(path = funcpath,ty = Exp.COMPLEX(name=name, varLst=varLst))),vallst,msg,st)
+      local 
+        list<Exp.Var> varLst; list<String> varNames; String name;
+      equation        
+        true = RTOpts.debugFlag("evalfunc");
+        varNames = Util.listMap(varLst,Exp.varName);
+      then 
+        (cache,Values.RECORD(Absyn.IDENT(name),vallst,varNames),st);
 
-    case (cache,env,(e as Exp.CALL(path = funcpath,expLst = expl,builtin = builtin)),vallst,msg)
+    case (cache,env,(e as Exp.CALL(path = funcpath,expLst = expl,builtin = builtin)),vallst,msg,st)
       local
         Absyn.Path p2;
         String s;
@@ -995,15 +1041,25 @@ algorithm
         list<SCode.Element> elementList;
         SCode.ClassDef cdef;
         list<DAE.Element> daeList;
-      equation 
+      equation
+        true = RTOpts.debugFlag("evalfunc"); 
         failure(cevalIsExternalObjectConstructor(cache,funcpath,env));
         (cache,sc as SCode.CLASS(_,false,_,SCode.R_FUNCTION(),cdef ),env1) = 
         Lookup.lookupClass(cache,env,funcpath,true);
-        (cache,env1,daeList) = Inst.implicitFunctionInstantiation(cache, env1,Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, sc, {}) ;
+        (cache,env1,_,daeList) = 
+        Inst.implicitFunctionInstantiation(
+          cache, 
+          env1,
+          InstanceHierarchy.emptyInstanceHierarchy,
+          Types.NOMOD(), 
+          Prefix.NOPRE(), 
+          Connect.emptySet, 
+          sc, 
+          {}) ;
         newval = Cevalfunc.cevalUserFunc(env1,e,vallst,sc,daeList);
         //print("ret value(/s): "); print(Values.printValStr(newval));print("\n"); 
       then
-        (cache,newval);
+        (cache,newval,st);
 
 /*     This match-rule is commented out due to a new constant evaluation algorithm in 
      Cevalfunc.mo.
@@ -1012,15 +1068,20 @@ algorithm
      2007-11-01 readded, external c-function needs this... 
      TODO: implement a check for external functionrecurisvly.
 */
-    case (cache,env,(e as Exp.CALL(path = funcpath,expLst = expl,builtin = builtin)),vallst,msg) 
       /**//* Call functions in non-interactive mode. FIXME: functions are always generated. 
       Put back the check and write another rule for the false case that generates the function 
       2007-10-20 partially fixed BZ*//**/
-      local Integer libHandle, funcHandle;
+      
+    case (cache,env,(e as Exp.CALL(path = funcpath,expLst = expl,builtin = builtin)),vallst,msg,st) // crap! we have no symboltable!
+      local
+        Integer libHandle, funcHandle;
+        String funcstr,f;
       equation
  				failure(cevalIsExternalObjectConstructor(cache,funcpath,env));
-        cache = CevalScript.cevalGenerateFunction(cache,env, funcpath);
-        funcstr = ModUtil.pathString2(funcpath, "_");
+ 				// make sure is NOT a record constructor!
+ 				failure((_,_) = cevalFunction(cache,env,funcpath,vallst,false,msg)); 				
+        cache = CevalScript.cevalGenerateFunction(cache, env, funcpath);        
+        funcstr = ModUtil.pathStringReplaceDot(funcpath, "_");
         Debug.fprintln("dynload", "cevalCallFunction: about to execute " +& funcstr);
         libHandle = System.loadLibrary(funcstr);
         funcHandle = System.lookupFunction(libHandle, stringAppend("in_", funcstr));
@@ -1028,9 +1089,55 @@ algorithm
         System.freeFunction(funcHandle);
         System.freeLibrary(libHandle);
       then
-        (cache,newval);
+        (cache,newval,st);      
+      
+    case (cache,env,(e as Exp.CALL(path = funcpath,expLst = expl,builtin = builtin)),vallst,msg,
+          SOME(Interactive.SYMBOLTABLE(p as Absyn.PROGRAM(globalBuildTimes=ts),aDep,a,b,c,cf,lf))) // yeha! we have a symboltable!
+      local
+        Absyn.Program p;
+        AbsynDep.Depends aDep;
+        list<SCode.Class> a;
+        list<Interactive.InstantiatedClass> b;
+        list<Interactive.InteractiveVariable> c;
+        list<Interactive.CompiledCFunction> cf;
+        list<Interactive.LoadedFile> lf;
+        Absyn.TimeStamp ts;
+        Integer libHandle, funcHandle;
+        String funcstr,f;
+        Real buildTime;
+        Boolean ifFuncInList;            
+        list<Interactive.CompiledCFunction> newCF;
+        String name;
+        Boolean           ppref, fpref, epref;
+        Absyn.Restriction restriction  "Restriction" ;
+        Absyn.ClassDef    body;
+        Absyn.Info        info;
+        Absyn.Within      w;
+      equation
+ 				failure(cevalIsExternalObjectConstructor(cache,funcpath,env));
+ 				// make sure is NOT a record constructor!
+ 				failure((_,_) = cevalFunction(cache,env,funcpath,vallst,false,msg));
+        newCF = Interactive.removeCf(funcpath, cf); // remove it as it might be there with an older build time. 				
+        cache = CevalScript.cevalGenerateFunction(cache, env, funcpath);        
+        funcstr = ModUtil.pathStringReplaceDot(funcpath, "_");
+        Debug.fprintln("dynload", "cevalCallFunction: about to execute " +& funcstr);
+        libHandle = System.loadLibrary(funcstr);
+        funcHandle = System.lookupFunction(libHandle, stringAppend("in_", funcstr));
+        newval = System.executeFunction(funcHandle, vallst);
+        System.freeLibrary(libHandle);
+        buildTime = System.getCurrentTime();
+        // update the build time in the class!
+        Absyn.CLASS(name,ppref,fpref,epref,Absyn.R_FUNCTION(),body,info) = Interactive.getPathedClassInProgram(funcpath, p);
+        info = Absyn.setBuildTimeInInfo(buildTime,info);
+        ts = Absyn.setTimeStampBuild(ts, buildTime);
+        w = Interactive.buildWithin(funcpath);
+        p = Interactive.updateProgram(p,Absyn.PROGRAM({Absyn.CLASS(name,ppref,fpref,epref,Absyn.R_FUNCTION(),body,info)},w,ts));
+        f = Absyn.getFileNameFromInfo(info);
+      then
+        (cache,newval,SOME(Interactive.SYMBOLTABLE(p, aDep, a, b, c, 
+          (Interactive.CFunction(funcpath,(Types.T_NOTYPE(),SOME(funcpath)),funcHandle,buildTime,f) :: newCF), lf)));
 
-    case (cache,env,(e as Exp.CALL(path = funcpath,expLst = expl,builtin = builtin)),vallst,msg) 
+    case (cache,env,(e as Exp.CALL(path = funcpath,expLst = expl,builtin = builtin)),vallst,msg,st) 
       local String error_Str;
       equation
         error_Str = Absyn.pathString(funcpath);
@@ -1041,7 +1148,7 @@ algorithm
       then
         fail();
 
-    case (cache,env,e,_,_)
+    case (cache,env,e,_,_,st)
       equation
         Debug.fprint("failtrace", "- Ceval.cevalCallFunction failed: ");
         str = Exp.printExpStr(e);
@@ -1222,17 +1329,19 @@ algorithm
       Msg msg;
       String s;
       Env.Cache cache;
+      
     case (cache,env,funcname,vallst,impl,msg) /* For record constructors */ 
       equation 
         (_,_) = Lookup.lookupRecordConstructorClass(env, funcname);
         (cache,c,env_1) = Lookup.lookupClass(cache,env, funcname, false);
         compnames = SCode.componentNames(c);
         mod = Types.valuesToMods(vallst, compnames);
-        (cache,dae,_,_,_,_,_,_,_) = Inst.instClass(cache,env_1,UnitAbsyn.noStore, mod, Prefix.NOPRE(), Connect.emptySet, c, {}, impl, 
+        (cache,_,_,_,dae,_,_,_,_,_) = Inst.instClass(cache,env_1,InstanceHierarchy.emptyInstanceHierarchy,UnitAbsyn.noStore, mod, Prefix.NOPRE(), Connect.emptySet, c, {}, impl, 
           Inst.TOP_CALL(),ConnectionGraph.EMPTY);
         value = DAE.daeToRecordValue(funcname, dae, impl);
       then
         (cache,value);
+        
     case (cache,env,funcname,vallst,(impl as true),msg)
       equation 
         Debug.fprint("failtrace", "- Ceval.cevalFunction: Don't know what to do. impl was always false before:");
@@ -1450,13 +1559,29 @@ algorithm
         Exp.Type tp;
         Exp.Exp dim;
       equation 
-        tp = Exp.typeof(e) "Special case for array expressions with nonconstant values For now: only arrays of scalar elements: TODO generalize to arbitrary
-	   dimensions" ;
+        tp = Exp.typeof(e) "Special case for array expressions with nonconstant 
+                            values For now: only arrays of scalar elements: 
+                            TODO generalize to arbitrary dimensions" ;
         true = Exp.typeBuiltin(tp);
         (cache,Values.INTEGER(1),st_1) = ceval(cache,env, dim, impl, st, NONE, msg);
         len = listLength((e :: es));
       then
         (cache,Values.INTEGER(len),st_1);
+        
+    // adrpo 2009-06-08: it doen't need to be a builtin type as long as the dimension is an integer!
+    case (cache,env,Exp.ARRAY(array = (e :: es)),dim,impl,st,msg)
+      local
+        Exp.Type tp;
+        Exp.Exp dim;
+      equation
+        tp = Exp.typeof(e) "Special case for array expressions with nonconstant values 
+                            For now: only arrays of scalar elements: 
+                            TODO generalize to arbitrary dimensions" ;
+        false = Exp.typeBuiltin(tp); 
+        (cache,Values.INTEGER(1),st_1) = ceval(cache,env, dim, impl, st, NONE, msg);
+        len = listLength((e :: es));
+      then
+        (cache,Values.INTEGER(len),st_1);        
         
        /* For expressions with value binding that can not determine type
 		e.g. size(x,2) when Real x[:,:]=fill(0.0,0,2); empty array with second dimension == 2, no way of 

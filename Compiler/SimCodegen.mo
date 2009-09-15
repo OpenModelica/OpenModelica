@@ -91,6 +91,7 @@ protected import Algorithm;
 protected import Types;
 protected import Env;
 protected import CevalScript;
+protected import InstanceHierarchy;
 
 public function generateMakefile
 "function: generateMakefile
@@ -112,6 +113,7 @@ algorithm
       equation
         MakefileHeader = CevalScript.generateMakefileHeader();
         cpp_file = Util.stringAppendList({cname,".cpp"});
+        libs = Util.listUnion(libs, libs); // un-double the libs
         libs_1 = Util.stringDelimitList(libs, " ");
         omhome_1 = Settings.getInstallationDirectoryPath();
         omhome = System.trim(omhome_1, "\"");
@@ -134,6 +136,7 @@ algorithm
       equation
         MakefileHeader = CevalScript.generateMakefileHeader();
         cpp_file = Util.stringAppendList({cname,".cpp"});
+        libs = Util.listUnion(libs, libs); // un-double the libs        
         libs_1 = Util.stringDelimitList(libs, " ");
         omhome_1 = Settings.getInstallationDirectoryPath();
         omhome = System.trim(omhome_1, "\"");
@@ -222,7 +225,12 @@ algorithm
             "#include \"modelica.h\"\n",
             "#include \"assert.h\"\n",
             "#include \"string.h\"\n",
-            "#include \"simulation_runtime.h\"\n",
+            "#include \"simulation_runtime.h\"\n\n",
+            "#if defined(_MSC_VER) && !defined(_SIMULATION_RUNTIME_H)\n",
+            "  #define DLLExport   __declspec( dllexport ) \n",
+            "#else \n",
+            "  #define DLLExport /* nothing */\n",
+            "#endif \n\n",            
             "#include \"",funcfilename,"\"\n\n",
             extObjInclude,cglobal,coutput,in_str,out_str,
             cstate,czerocross,cwhen,c_ode,s_code,s_code2,
@@ -1441,11 +1449,10 @@ algorithm
   end matchcontinue;
 end generateFixedVectorDefault2;
 
-protected function generateFixedVector3 "function: generateFixedVector3
+protected function generateFixedVector3 
+"function: generateFixedVector3
   author: PA
-
-  Helper function to generate_fixed_vector2
-"
+  Helper function to generate_fixed_vector2"
   input list<DAELow.Var> inDAELowVarLst1;
   input String[:] inStringArray2;
   input Integer inInteger3;
@@ -1453,8 +1460,7 @@ protected function generateFixedVector3 "function: generateFixedVector3
   input Integer inInteger5;
   output String[:] outStringArray;
 algorithm
-  outStringArray:=
-  matchcontinue (inDAELowVarLst1,inStringArray2,inInteger3,inInteger4,inInteger5)
+  outStringArray := matchcontinue (inDAELowVarLst1,inStringArray2,inInteger3,inInteger4,inInteger5)
     local
       String[:] str_arr,str_arr_1,str_arr_2;
       DAELow.Var v;
@@ -2621,7 +2627,10 @@ algorithm
     local
       String var_name,der_var_name_1,origname,prefix,ret_str,origname_1;
       list<String> origname_lst,origname_lst_1;
-    case (origname) /* catch the variable names a */
+    case (origname_1) /* print \"change_name_for_derivative FAILED\" */  
+      then "der("+& origname_1 +& ")";
+/*            
+    case (origname) // catch the variable names a 
       equation
         {var_name} = Util.stringSplitAtChar(origname, ".");
         der_var_name_1 = Util.stringAppendList({"der(",var_name,")"});
@@ -2637,7 +2646,9 @@ algorithm
         ret_str = Util.stringAppendList({prefix,".",der_var_name_1});
       then
         ret_str;
-    case (origname_1) /* print \"change_name_for_derivative FAILED\" */  then origname_1;
+    case (origname_1) // print \"change_name_for_derivative FAILED\"   
+      then origname_1;
+*/
   end matchcontinue;
 end changeNameForDerivative;
 
@@ -3233,8 +3244,7 @@ algorithm
         cname = Absyn.pathString(class_);
         (blt_states,blt_no_states) = DAELow.generateStatePartition(comps, dlow, ass1, ass2, m, mt);
         (block_code,_,extra_funcs) = generateOdeBlocks(false,dlow,ass1, ass2, blt_states, 0);
-        func_1 = Codegen.cMakeFunction("int", "functionODE", {},
-          {""});
+        func_1 = Codegen.cMakeFunction("int", "functionODE", {}, {""});
         func_1 = addMemoryManagement(func_1);
         func = Codegen.cAddCleanups(func_1, {"return 0;"});
         func_1 = Codegen.cMergeFns({func,block_code});
@@ -4607,7 +4617,7 @@ algorithm
 
         eqn_lst = DAELow.equationList(eqn);
         var_lst = DAELow.varList(v);
-        crefs = Util.listMap(var_lst, DAELow.varCrefPrefixStates);// get varnames and prefix $derivative for states.
+        crefs = Util.listMap(var_lst, DAELow.varCrefPrefixStates);// get varnames and prefix $der for states.
         (s1,cg_id_1,f1) = generateOdeSystem2NonlinearResiduals(mixedEvent,crefs, eqn_lst,ae, cg_id);
       then
         (s1,cg_id_1,f1);
@@ -4615,7 +4625,7 @@ algorithm
       equation
         eqn_lst = DAELow.equationList(eqn);
         var_lst = DAELow.varList(v);
-        crefs = Util.listMap(var_lst, DAELow.varCrefPrefixStates); // get varnames and prefix $derivative for states.
+        crefs = Util.listMap(var_lst, DAELow.varCrefPrefixStates); // get varnames and prefix $der for states.
         (s1,cg_id_1,f1) = generateOdeSystem2NonlinearResiduals(mixedEvent,crefs, eqn_lst, ae, cg_id);
       then
         (s1,cg_id_1,f1);
@@ -4698,11 +4708,10 @@ algorithm
   end matchcontinue;
 end generateSingleAlgorithmCode;
 
-protected function generateSingleArrayEqnCode "function: generateSingleArrayEqnCode
+protected function generateSingleArrayEqnCode 
+"function: generateSingleArrayEqnCode
   author: PA
-
-  Generates code for a system consisting of a  single array equation.
-"
+  Generates code for a system consisting of a  single array equation."
   input DAELow.DAELow inDAELow;
   input Option<list<tuple<Integer, Integer, DAELow.Equation>>> inTplIntegerIntegerDAELowEquationLstOption;
   input Integer inInteger;
@@ -5859,7 +5868,7 @@ algorithm
       equation
         index_str = intString(index);
         name = Exp.printComponentRefStr(cr);
-        c_name = Util.modelicaStringToCStr(name,true);
+        c_name = name; // adrpo: 2009-09-07 this doubles $!! c_name = Util.modelicaStringToCStr(name,true);
         res = Util.stringAppendList({DAELow.derivativeNamePrefix,c_name}) "	Util.string_append_list({\"xd{\",index_str, \"}\"}) => res" ;
       then
         DAELow.VAR(Exp.CREF_IDENT(res,Exp.REAL(),{}),DAELow.STATE(),dir,tp,exp,v,dim,index,cr,classes,attr,comment,flowPrefix,streamPrefix);
@@ -5900,6 +5909,11 @@ algorithm
         var = DAELow.getVarAt(vars, v);
       then
         (eqn,var);
+    case (e,eqns,vars,ass2) /* equation no. assignments2 */
+      equation
+        Debug.fprintln("failtrace", "SimCodegen.getEquationAndSolvedVar failed at index: " +& intString(e));
+      then
+        fail();        
   end matchcontinue;
 end getEquationAndSolvedVar;
 
@@ -6006,7 +6020,7 @@ algorithm
         getEquationAndSolvedVar(e, eqns, vars, ass2);
         indxs = intString(indx);
         name = Exp.printComponentRefStr(cr) "	Util.string_append_list({\"xd{\",indxs,\"}\"}) => id &" ;
-        c_name = Util.modelicaStringToCStr(name,true);
+        c_name = name; // Util.modelicaStringToCStr(name,true);
         id = Util.stringAppendList({DAELow.derivativeNamePrefix,c_name});
         cr_1 = Exp.CREF_IDENT(id,Exp.REAL(),{});
         varexp = Exp.CREF(cr_1,Exp.REAL());
@@ -6202,7 +6216,7 @@ algorithm
       
     case (p,(path :: paths),allpaths)  local String s;
       equation
-        (_,fdae,_) = Inst.instantiateFunctionImplicit(Env.emptyCache,p, path);
+        (_,_,_,fdae) = Inst.instantiateFunctionImplicit(Env.emptyCache(), InstanceHierarchy.emptyInstanceHierarchy, p, path);
         DAE.DAE(elementLst = {DAE.FUNCTION(dAElist = dae,type_ = t)}) = fdae;
         patched_dae = DAE.DAE({DAE.FUNCTION(path,dae,t)});
         subfuncs = getCalledFunctionsInFunction(path, patched_dae);
@@ -6215,7 +6229,7 @@ algorithm
     case (p,(path :: paths),allpaths)
       local String s;
       equation
-        (_,fdae,_) = Inst.instantiateFunctionImplicit(Env.emptyCache,p, path);
+        (_,_,_,fdae) = Inst.instantiateFunctionImplicit(Env.emptyCache(), InstanceHierarchy.emptyInstanceHierarchy, p, path);
         DAE.DAE(elementLst = {DAE.EXTFUNCTION(dAElist = dae,type_ = t,externalDecl = extdecl)}) = fdae;
         patched_dae = DAE.DAE({DAE.EXTFUNCTION(path,dae,t,extdecl)});
         subfuncs = getCalledFunctionsInFunction(path, patched_dae);
@@ -8596,7 +8610,7 @@ algorithm
 
     case (Exp.CALL(path = fcn,expLst = args,builtin = (builtin as true)),_)
       equation
-        fs = Absyn.pathString2(fcn, "_");
+        fs = ModUtil.pathStringReplaceDot(fcn, "_");
         argstr = Exp.printListStr(args, printExpCppStr, ",");
         s = Util.stringAppendList({fs,"(",argstr,")"});
       then
@@ -8606,7 +8620,7 @@ algorithm
 	   underscore, to distringuish betweeen the lib function for external
 	   functions and the wrapper function. */
       equation
-        fs = Absyn.pathString2(fcn, "_");
+        fs = ModUtil.pathStringReplaceDot(fcn, "_");
         argstr = Exp.printListStr(args, printExpCppStr, ",");
         s = Util.stringAppendList({"_",fs,"(",argstr,").",fs,"_rettype_1"});
       then
@@ -8839,6 +8853,8 @@ algorithm
         fcallexps_1 = Util.listSelect(fcallexps, isNotBuiltinCall);
         calledfuncs = Util.listMap(fcallexps_1, getCallPath);
         res1 = removeDuplicatePaths(calledfuncs);
+        // adrpo: 2009-09-10 remove our own function if there is a recursive call!
+        res1 = removePathFromList(res1, path);
         Debug.fprint("info", "Found called functions: ") "debug" ;
         debugpathstrs = Util.listMap(res1, Absyn.pathString) "debug" ;
         debugpathstr = Util.stringDelimitList(debugpathstrs, ", ") "debug" ;

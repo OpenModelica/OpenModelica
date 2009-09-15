@@ -287,7 +287,7 @@ struct modelica_ptr_s {
     } func;
     HMODULE lib;
   } data;
-  unsigned int cnt;
+  int cnt; // not unsigned as 0-1 would be a huge number if you call freeLibrary several times!
 };
 
 static struct modelica_ptr_s ptr_vector[MAX_PTR_INDEX];
@@ -784,35 +784,48 @@ RML_BEGIN_LABEL(System__loadLibrary)
 {
   const char *str = RML_STRINGDATA(rmlA0);
   char libname[MAXPATHLEN];
+  char currentDirectory[MAXPATHLEN];
+  DWORD bufLen = MAXPATHLEN;
   modelica_ptr_t lib = NULL;
   modelica_integer libIndex;
   HMODULE h;
+  /* adrpo: use BACKSLASH here as specified here: http://msdn.microsoft.com/en-us/library/ms684175(VS.85).aspx */
+  GetCurrentDirectory(bufLen,currentDirectory);
 #if defined(_MSC_VER)
-  _snprintf(libname, MAXPATHLEN, "./%s.dll", str);
+  _snprintf(libname, MAXPATHLEN, "%s\\%s.dll", currentDirectory, str);
 #else
-  snprintf(libname, MAXPATHLEN, "./%s.dll", str);
+  snprintf(libname, MAXPATHLEN, "%s\\%s.dll", currentDirectory, str);
 #endif
 
   h = LoadLibrary(libname);
   if (h == NULL) {
-    //fprintf(stderr, "Unable to load `%s': %lu.\n", libname, GetLastError());
+    fprintf(stderr, "Unable to load '%s': %lu.\n", libname, GetLastError());
+    fflush(stderr);
     RML_TAILCALLK(rmlFC);
   }
   libIndex = alloc_ptr();
   if (libIndex < 0) {
+    fprintf(stderr, "Error loading library %s!\n", libname); fflush(stderr);
     FreeLibrary(h);
+    h = NULL;
     RML_TAILCALLK(rmlFC);
   }
-  lib = lookup_ptr(libIndex);
+  lib = lookup_ptr(libIndex); // lib->cnt = 1
   lib->data.lib = h;
   rmlA0 = (void*) mk_icon(libIndex);
+  /* fprintf(stderr, "LIB LOAD [%s] index[%d]/count[%u]/handle[%ul].\n", libname, lib->cnt, libIndex, h); fflush(stderr); */
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
 void free_library(modelica_ptr_t lib)
 {
-  FreeLibrary(lib->data.lib);
+  if (!FreeLibrary(lib->data.lib))
+  {
+    fprintf(stderr,"System.freeLibrary error code: %lu while unloading dll.\n", GetLastError());
+    fflush(stderr);
+  }
+  /* fprintf(stderr, "LIB UNLOAD index[%d]/count[%d]/handle[%ul].\n", (lib-ptr_vector),((modelica_ptr_t)(lib-ptr_vector))->cnt, lib->data.lib); fflush(stderr); */
 }
 
 RML_BEGIN_LABEL(System__lookupFunction)
@@ -838,17 +851,12 @@ RML_BEGIN_LABEL(System__lookupFunction)
   func = lookup_ptr(funcIndex);
   func->data.func.handle = funcptr;
   func->data.func.lib = libIndex;
-  ++(lib->cnt);
+  ++(lib->cnt); // lib->cnt = 2
+  /* fprintf(stderr, "LOOKUP LIB index[%d]/count[%d]/handle[%lu] function %s[%d].\n", libIndex, lib->cnt, lib->data.lib, str, funcIndex); fflush(stderr); */
   rmlA0 = (void*) mk_icon(funcIndex);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
-
-void free_function(modelica_ptr_t func)
-{
-  /* noop */
-}
-
 
 RML_BEGIN_LABEL(System__compileCFile)
 {
@@ -2007,7 +2015,7 @@ RML_BEGIN_LABEL(System__getCurrentTime)
   time_t t;
   double elapsedTime;             // the time elapsed as double
   time( &t );
-  rmlA0 = mk_rcon(difftime(t, 0)); // the file modification time
+  rmlA0 = mk_rcon(difftime(t, 0)); // the current time
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
@@ -2878,11 +2886,6 @@ RML_BEGIN_LABEL(System__lookupFunction)
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
-
-void free_function(modelica_ptr_t func)
-{
-  /* noop */
-}
 
 RML_BEGIN_LABEL(System__compileCFile)
 {
@@ -4091,11 +4094,14 @@ RML_BEGIN_LABEL(System__freeFunction)
     RML_TAILCALLK(rmlFC);
   }
 
+
   if (lib->cnt <= 1) {
     free_library(lib);
     free_ptr(func->data.func.lib);
+    // fprintf(stderr, "library count %u, after unloading!\n", lib->cnt); fflush(stderr);
   } else {
     --(lib->cnt);
+    // fprintf(stderr, "library count %u, no unloading!\n", lib->cnt); fflush(stderr);
   }
 
   free_function(func);
@@ -4118,8 +4124,10 @@ RML_BEGIN_LABEL(System__freeLibrary)
   if (lib->cnt <= 1) {
     free_library(lib);
     free_ptr(libIndex);
+    /* fprintf(stderr, "LIB UNLOAD index[%d]/count[%d]/handle[%ul].\n", libIndex, lib->cnt, lib->data.lib); fflush(stderr); */
   } else {
     --(lib->cnt);
+    /* fprintf(stderr, "LIB *NO* UNLOAD index[%d]/count[%d]/handle[%ul].\n", libIndex, lib->cnt, lib->data.lib); fflush(stderr); */
   }
 
   RML_TAILCALLK(rmlSC);
@@ -4130,11 +4138,17 @@ RML_BEGIN_LABEL(System__executeFunction)
 {
   modelica_integer funcIndex = RML_UNTAGFIXNUM(rmlA0);
   modelica_ptr_t func = NULL;
+  modelica_ptr_t lib = NULL;
   int retval = -1;
   void *retarg = NULL;
   func = lookup_ptr(funcIndex);
   if (func == NULL)
     RML_TAILCALLK(rmlFC);
+
+  /* lib = lookup_ptr(func->data.func.lib); */
+  /* fprintf(stderr, "CALL FUNCTION LIB \n"); */
+  /* index[%d]/count[%d]/handle[%ul].\n", (lib-ptr_vector),((modelica_ptr_t)(lib-ptr_vector))->cnt, lib->data.lib); fflush(stderr); */
+
   retval = execute_function(rmlA1, &retarg, func->data.func.handle);
   if (retval) {
     RML_TAILCALLK(rmlFC);
@@ -4588,111 +4602,7 @@ int parse_array(type_description *desc, void *arrdata)
   assert(0);
   return -1;
 }
-#if 0 /* only used for debug */
-static void puttype(const type_description *desc)
-{
-  switch (desc->type) {
-  case TYPE_DESC_REAL:
-    fprintf(stderr, "REAL: %g\n", desc->data.real);
-    break;
-  case TYPE_DESC_INT:
-    fprintf(stderr, "INT: %d\n", desc->data.integer);
-    break;
-  case TYPE_DESC_BOOL:
-    fprintf(stderr, "BOOL: %c\n", desc->data.boolean ? 't' : 'f');
-    break;
-  case TYPE_DESC_STRING:
-    fprintf(stderr, "STR: '%s'\n", desc->data.string);
-    break;
-  case TYPE_DESC_TUPLE: {
-    size_t e;
-    fprintf(stderr, "TUPLE (%u):\n", desc->data.tuple.elements);
-    for (e = 0; e < desc->data.tuple.elements; ++e) {
-      fprintf(stderr, "\t");
-      puttype(desc->data.tuple.element + e);
-    }
-  }; break;
-  case TYPE_DESC_REAL_ARRAY: {
-    int d;
-    fprintf(stderr, "REAL ARRAY [%d] (", desc->data.real_array.ndims);
-    for (d = 0; d < desc->data.real_array.ndims; ++d)
-      fprintf(stderr, "%d, ", desc->data.real_array.dim_size[d]);
-    fprintf(stderr, ")\n");
-    if (desc->data.real_array.ndims == 1) {
-      int e;
-      fprintf(stderr, "\t[");
-      for (e = 0; e < desc->data.real_array.dim_size[0]; ++e)
-        fprintf(stderr, "%g, ",
-                ((modelica_real *) desc->data.real_array.data)[e]);
-      fprintf(stderr, "]\n");
-    }
-  }; break;
-  case TYPE_DESC_INT_ARRAY: {
-    int d;
-    fprintf(stderr, "INT ARRAY [%d] (", desc->data.int_array.ndims);
-    for (d = 0; d < desc->data.int_array.ndims; ++d)
-      fprintf(stderr, "%d, ", desc->data.int_array.dim_size[d]);
-    fprintf(stderr, ")\n");
-    if (desc->data.int_array.ndims == 1) {
-      int e;
-      fprintf(stderr, "\t[");
-      for (e = 0; e < desc->data.int_array.dim_size[0]; ++e)
-        fprintf(stderr, "%d, ",
-                ((modelica_integer *) desc->data.int_array.data)[e]);
-      fprintf(stderr, "]\n");
-    }
-  }; break;
-  case TYPE_DESC_BOOL_ARRAY: {
-    int d;
-    fprintf(stderr, "BOOL ARRAY [%d] (", desc->data.bool_array.ndims);
-    for (d = 0; d < desc->data.bool_array.ndims; ++d)
-      fprintf(stderr, "%d, ", desc->data.bool_array.dim_size[d]);
-    fprintf(stderr, ")\n");
-    if (desc->data.bool_array.ndims == 1) {
-      int e;
-      fprintf(stderr, "\t[");
-      for (e = 0; e < desc->data.bool_array.dim_size[0]; ++e)
-        fprintf(stderr, "%c, ",
-                ((modelica_boolean *) desc->data.bool_array.data)[e] ? 'T':'F');
-      fprintf(stderr, "]\n");
-    }
-  }; break;
-  case TYPE_DESC_STRING_ARRAY: {
-    int d;
-    fprintf(stderr, "STRING ARRAY [%d] (", desc->data.string_array.ndims);
-    for (d = 0; d < desc->data.string_array.ndims; ++d)
-      fprintf(stderr, "%d, ", desc->data.string_array.dim_size[d]);
-    fprintf(stderr, ")\n");
-    if (desc->data.string_array.ndims == 1) {
-      int e;
-      fprintf(stderr, "\t[");
-      for (e = 0; e < desc->data.string_array.dim_size[0]; ++e)
-        fprintf(stderr, "%s, ",
-                ((modelica_string_t *) desc->data.string_array.data)[e]);
-      fprintf(stderr, "]\n");
-    }
-  }; break;
-  case TYPE_DESC_COMPLEX:
-    fprintf(stderr, "COMPLEX\n");
-    break;
-  case TYPE_DESC_NONE:
-    fprintf(stderr, "NONE\n");
-    break;
-  case TYPE_DESC_RECORD:
-	  {
-		  int i;
-		  fprintf(stderr, "RECORD: %s\n", desc->data.record.record_name);
-          for (i = 0; i < desc->data.record.elements; i++)
-		  {
-			  fprintf(stderr, "NAME: %s\n", desc->data.record.name[i]);
-              puttype(&(desc->data.record.element[i]));
-		  }
-	  }
-    break;
-  }
-  fflush(stderr);
-}
-#endif
+
 static int execute_function(void *in_arg, void **out_arg,
                             int (* func)(type_description *,
                                          type_description *))
@@ -4705,6 +4615,8 @@ static int execute_function(void *in_arg, void **out_arg,
 
   mem_state = get_memory_state();
 
+  /* fprintf(stderr, "input parameters:\n"); fflush(stderr); */
+
   v = in_arg;
   arg = arglst;
 
@@ -4712,21 +4624,26 @@ static int execute_function(void *in_arg, void **out_arg,
     void *val = RML_CAR(v);
     if (value_to_type_desc(val, arg)) {
       restore_memory_state(mem_state);
-      return -1;
+       puttype(arg);
+       /* fprintf(stderr, "returning from execute function due to value_to_type_desc failure!\n"); fflush(stderr); */
+       return -1;
     }
-
     /* puttype(arg); */
-
     ++arg;
     v = RML_CDR(v);
   }
+
   init_type_description(arg);
   init_type_description(&retarg);
+
   retarg.retval = 1;
+
+  /* call our function pointer! */
   retval = func(arglst, &retarg);
+
+  /* free the type description for the input parameters! */
   arg = arglst;
   while (arg->type != TYPE_DESC_NONE) {
-	/* puttype(arg); */
     free_type_description(arg);
     ++arg;
   }
@@ -4736,14 +4653,11 @@ static int execute_function(void *in_arg, void **out_arg,
   if (retval) {
     return 1;
   } else {
-    /*
-      fprintf(stderr, "X - Retarg:\n");
-      puttype(&retarg);
-    */
-
     (*out_arg) = type_desc_to_value(&retarg);
-    /* out_arg doesn't seem to get freed, something we can do anything about?*/
-	/* puttype(&retarg); */
+    /* out_arg doesn't seem to get freed, something we can do anything about?
+     * adrpo: 2009-09. it shouldn't be freed!
+     */
+    /* fprintf(stderr, "output results:\n"); fflush(stderr); puttype(&retarg); */
     free_type_description(&retarg);
 
     if ((*out_arg) == NULL) {
@@ -4753,4 +4667,12 @@ static int execute_function(void *in_arg, void **out_arg,
 
     return 0;
   }
+}
+
+void free_function(modelica_ptr_t func)
+{
+  /* noop */
+  modelica_ptr_t lib = NULL;
+  lib = lookup_ptr(func->data.func.lib);
+  /* fprintf(stderr, "FUNCTION FREE LIB index[%d]/count[%d]/handle[%ul].\n", (lib-ptr_vector),((modelica_ptr_t)(lib-ptr_vector))->cnt, lib->data.lib); fflush(stderr); */
 }

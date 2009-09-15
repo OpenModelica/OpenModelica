@@ -323,11 +323,17 @@ protected constant tuple<Types.TType, Option<Type_a>> realRealReal2Real=(
           Types.T_FUNCTION(
           {("x",(Types.T_REAL({}),NONE)),("y",(Types.T_REAL({}),NONE)),("z",(Types.T_REAL({}),NONE))},(Types.T_REAL({}),NONE)),NONE);
 
-protected constant tuple<Types.TType, Option<Type_a>> anyconnector2int=(
+protected constant tuple<Types.TType, Option<Type_a>> anyNonExpandableConnector2int=(
           Types.T_FUNCTION(
           {
           ("x",
-          (Types.T_ANYTYPE(SOME(ClassInf.CONNECTOR("$dummy$"))),NONE))},(Types.T_INTEGER({}),NONE)),NONE);
+          (Types.T_ANYTYPE(SOME(ClassInf.CONNECTOR("$dummy$",false))),NONE))},(Types.T_INTEGER({}),NONE)),NONE);
+
+protected constant tuple<Types.TType, Option<Type_a>> anyExpandableConnector2int=(
+          Types.T_FUNCTION(
+          {
+          ("x",
+          (Types.T_ANYTYPE(SOME(ClassInf.CONNECTOR("$dummy$",true))),NONE))},(Types.T_INTEGER({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array1dimint2int=(
           Types.T_FUNCTION(
@@ -2903,7 +2909,8 @@ algorithm
       env = Env.extendFrameT(env, "delay", realReal2real);
       env = Env.extendFrameT(env, "delay", realRealReal2Real);
       */      
-      env = Env.extendFrameT(env, "cardinality", anyconnector2int);
+      env = Env.extendFrameT(env, "cardinality", anyNonExpandableConnector2int);
+      env = Env.extendFrameT(env, "cardinality", anyExpandableConnector2int);
       env = Env.extendFrameT(env, "div", realReal2real) "non-differentiable functions" ;
       env = Env.extendFrameT(env, "div", intInt2int) "non-differentiable functions" ;
       env = Env.extendFrameT(env, "rem", realReal2real);

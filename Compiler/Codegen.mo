@@ -635,7 +635,7 @@ algorithm
                    cleanupStatementLst = cl)
       equation
         args_str = Util.stringDelimitList(ad, ", ");
-        stmt_str = Util.stringAppendList({rt," ",fn,"(",args_str,");"});
+        stmt_str = Util.stringAppendList({"DLLExport \n", rt," ",fn,"(",args_str,");"});
         i0 = 0;
         i1 = cPrintIndentedList(rts, i0);
         Print.printBuf("\n");
@@ -1500,7 +1500,11 @@ algorithm
     case DAE.BOOL() then Exp.BOOL();
     case DAE.ENUM() then Exp.ENUM();
     case DAE.LIST() then Exp.T_LIST(Exp.OTHER()); // MetaModelica list
-    case DAE.COMPLEX(path,varLst) equation name = Absyn.pathString(path); then /* TODO: translate vars */ Exp.COMPLEX(name,{},ClassInf.UNKNOWN(name));
+    case DAE.COMPLEX(path,varLst) 
+      equation 
+        name = Absyn.pathString(path); 
+      then /* TODO: translate vars */ 
+        Exp.COMPLEX(name,{},ClassInf.UNKNOWN(name));
     case DAE.METATUPLE() then Exp.T_METATUPLE({}); // MetaModelica tuple
     case DAE.METAOPTION() then Exp.T_METAOPTION(Exp.OTHER()); // MetaModelica tuple
     case _ then Exp.OTHER();
@@ -1542,7 +1546,7 @@ algorithm
         res = expShortTypeStr(t);
       then
         res;
-    case Exp.T_RECORD(name = name)
+    case Exp.COMPLEX(name = name)
       local String name;
       equation
         res = stringAppend("struct ", name);
@@ -1571,7 +1575,7 @@ algorithm
         str = "void*";
       then str;
 
-    case ((t as Exp.T_RECORD(_)),_)
+    case ((t as Exp.COMPLEX(_,_,_)),_)
       equation
         str = expShortTypeStr(t);
       then
@@ -1841,7 +1845,7 @@ protected function generateFunctionName
   input Absyn.Path fpath;
   output String fstr;
 algorithm
-  fstr := ModUtil.pathString2(fpath, "_");
+  fstr := ModUtil.pathStringReplaceDot(fpath, "_");
 end generateFunctionName;
 
 protected function generateExtFunctionArgs 
@@ -4674,7 +4678,7 @@ algorithm
     case (Exp.UMINUS(ty = Exp.REAL()),e,tnr,context)
       equation
         (cfn,var,tnr_1) = generateExpression(e, tnr, context);
-        var_1 = Util.stringAppendList({"(-",var,")"});
+        var_1 = Util.stringAppendList({"(-",var,")"});        
       then
         (cfn,var_1,tnr_1);
     case (Exp.UMINUS(ty = Exp.INT()),e,tnr,context)
@@ -4686,9 +4690,17 @@ algorithm
     case (Exp.UMINUS(ty = Exp.OTHER()),e,tnr,context)
       equation
         (cfn,var,tnr_1) = generateExpression(e, tnr, context);
-        var_1 = Util.stringAppendList({"(-",var,")"});
+        var_1 = Util.stringAppendList({"(-(",var,"))"});
       then
         (cfn,var_1,tnr_1);
+    case (Exp.UMINUS(ty = tp),e,tnr,context)
+      equation
+        (cfn,var,tnr_1) = generateExpression(e, tnr, context);
+        var_1 = Util.stringAppendList({"(-(",var,"))"});
+        //Debug.fprintln("codegen", "UMINUS("  +& Exp.typeString(tp) +& ")");
+        //Debug.fprintln("codegen", "Variable" +& var);
+      then
+        (cfn,var_1,tnr_1);        
     case (Exp.UPLUS_ARR(ty = Exp.REAL()),e,tnr,context)
       equation
         (cfn,var,tnr_1) = generateExpression(e, tnr, context);
@@ -7883,7 +7895,7 @@ algorithm
     case ((Types.T_COMPLEX(complexClassType = ClassInf.RECORD(_), complexVarLst = varlst), SOME(path)),base_str)
       equation
         args = Util.listMap1(varlst, generateOutVar, base_str);
-        path_str = ModUtil.pathString2(path, "_");
+        path_str = ModUtil.pathStringReplaceDot(path, "_");
         path_str = Util.stringAppendList({"\"",path_str,"\""});
       then
         (path_str, args);

@@ -75,7 +75,8 @@ SRCMO= Absyn.mo \
 	BackendVarTransform.mo \
 	Refactor.mo \
 	DAEQuery.mo \
-	XMLDump.mo
+	XMLDump.mo \
+	InstanceHierarchy.mo
 
 # These are externally defined MO modules
 ALLMO = $(SRCMO) DAEEXT.mo Print.mo RTOpts.mo System.mo Parser.mo \

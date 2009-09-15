@@ -47,7 +47,7 @@ package Interactive
 
 public import Absyn;
 public import AbsynDep;
-//public import OptManager;
+public import OptManager;
 public import SCode;
 public import DAE;
 public import Types;
@@ -58,6 +58,7 @@ public import ConnectionGraph;
 
 protected import HashTable2;
 protected import UnitAbsyn;
+protected import InstanceHierarchy;
 
 /*
 ** CompiledCFunction
@@ -73,6 +74,8 @@ uniontype CompiledCFunction
     Absyn.Path path;
     Types.Type retType;
     Integer funcHandle;
+    Real buildTime "the build time for this function";
+    String loadedFromFile "the file we loaded this function from";    
   end CFunction;
 end CompiledCFunction;
 
@@ -345,7 +348,9 @@ algorithm
       equation
         env = buildEnvFromSymboltable(st);
         scode_class = SCode.elabClass(absyn_class);
-        (_,env_1,d) = Inst.implicitFunctionInstantiation(Env.emptyCache,env, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, scode_class, {});
+        (_,env_1,_,d) = 
+          Inst.implicitFunctionInstantiation(Env.emptyCache(),env,InstanceHierarchy.emptyInstanceHierarchy, 
+                                             Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, scode_class, {});
       then
         ();
     case (Absyn.PROGRAM(classes = (class_list as (cls :: morecls)), within_ = w, globalBuildTimes=ts),st) /* Recursively go through all classes */
@@ -462,6 +467,7 @@ algorithm
 			list<Absyn.AlgorithmItem> algItemList;
       Values.Value startv, stepv, stopv;
       Absyn.Exp starte, stepe, stope;
+      Env.Cache cache;
       
     case (Absyn.ALGORITHMITEM(
       		algorithm_ = Absyn.ALG_NORETCALL(functionCall = Absyn.CREF_IDENT(name = "assert"),
@@ -469,20 +475,18 @@ algorithm
       		(st as SYMBOLTABLE(ast = p)))
       equation
         env = buildEnvFromSymboltable(st);
-        (_,econd,prop,SOME(st_1)) = Static.elabExp(Env.emptyCache,env, cond, true, SOME(st),true);
-        (_,Values.BOOL(true),SOME(st_2)) = Ceval.ceval(Env.emptyCache,env, econd, true, SOME(st_1), NONE, Ceval.MSG());
+        (cache,econd,prop,SOME(st_1)) = Static.elabExp(Env.emptyCache(),env, cond, true, SOME(st),true);
+        (_,Values.BOOL(true),SOME(st_2)) = Ceval.ceval(cache,env, econd, true, SOME(st_1), NONE, Ceval.MSG());
       then
         ("",st_2);
         
-    case
-      (Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_NORETCALL(functionCall = Absyn.CREF_IDENT(name = "assert"),
-      functionArgs = Absyn.FUNCTIONARGS(args = {cond,msg}))),
-      (st as SYMBOLTABLE(ast = p)))
+    case (Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_NORETCALL(functionCall = Absyn.CREF_IDENT(name = "assert"),
+          functionArgs = Absyn.FUNCTIONARGS(args = {cond,msg}))),
+          (st as SYMBOLTABLE(ast = p)))
       equation
         env = buildEnvFromSymboltable(st);
-        (_,msg_1,prop,SOME(st_1)) = Static.elabExp(Env.emptyCache,env, msg, true, SOME(st),true);
-        (_,Values.STRING(str),SOME(st_2)) =
-        Ceval.ceval(Env.emptyCache,env, msg_1, true, SOME(st_1), NONE, Ceval.MSG());
+        (cache,msg_1,prop,SOME(st_1)) = Static.elabExp(Env.emptyCache(),env, msg, true, SOME(st),true);
+        (_,Values.STRING(str),SOME(st_2)) = Ceval.ceval(cache,env, msg_1, true, SOME(st_1), NONE, Ceval.MSG());
       then
         (str,st_2);
         
@@ -493,8 +497,8 @@ algorithm
         (st as SYMBOLTABLE(ast = p)))
       equation
         env = buildEnvFromSymboltable(st);
-        (_,sexp,Types.PROP(t,_),SOME(st_1)) = Static.elabExp(Env.emptyCache,env, exp, true, SOME(st),true);
-        (_,value,SOME(st_2)) = Ceval.ceval(Env.emptyCache,env, sexp, true, SOME(st_1), NONE, Ceval.MSG());
+        (cache,sexp,Types.PROP(t,_),SOME(st_1)) = Static.elabExp(Env.emptyCache(),env, exp, true, SOME(st),true);
+        (_,value,SOME(st_2)) = Ceval.ceval(cache,env, sexp, true, SOME(st_1), NONE, Ceval.MSG());
         str = Values.valString(value);
         newst = addVarToSymboltable(ident, value, t, st_2);
       then
@@ -507,10 +511,10 @@ algorithm
         (st as SYMBOLTABLE(ast = p))) /* Since expressions cannot be tuples an empty string is returned */
       equation
         env = buildEnvFromSymboltable(st);
-        (_,srexp,rprop,SOME(st_1)) = Static.elabExp(Env.emptyCache,env, rexp, true, SOME(st),true);
+        (cache,srexp,rprop,SOME(st_1)) = Static.elabExp(Env.emptyCache(),env, rexp, true, SOME(st),true);
         ((Types.T_TUPLE(types),_)) = Types.getPropType(rprop);
         idents = Util.listMap(crefexps, getIdentFromTupleCrefexp);
-        (_,Values.TUPLE(values),SOME(st_2)) = Ceval.ceval(Env.emptyCache,env, srexp, true, SOME(st_1), NONE, Ceval.MSG());
+        (_,Values.TUPLE(values),SOME(st_2)) = Ceval.ceval(cache, env, srexp, true, SOME(st_1), NONE, Ceval.MSG());
         newst = addVarsToSymboltable(idents, values, types, st_2);
       then
         ("",newst);
@@ -816,11 +820,13 @@ algorithm
       Values.Value value;
       Absyn.Exp exp;
       Absyn.Program p;
+      Env.Cache cache;
+      
     case (exp,(st as SYMBOLTABLE(ast = p)))
       equation
         env = buildEnvFromSymboltable(st);
-        (_,sexp,prop,SOME(st_1)) = Static.elabExp(Env.emptyCache,env, exp, true, SOME(st),true);
-        (_,value,SOME(st_2)) = Ceval.ceval(Env.emptyCache,env, sexp, true, SOME(st_1), NONE, Ceval.MSG());
+        (cache,sexp,prop,SOME(st_1)) = Static.elabExp(Env.emptyCache(), env, exp, true, SOME(st),true);
+        (_,value,SOME(st_2)) = Ceval.ceval(cache,env, sexp, true, SOME(st_1), NONE, Ceval.MSG());
       then
         (value,st_2);
   end matchcontinue;
@@ -839,7 +845,7 @@ protected function stringRepresOfExpr
   InteractiveSymbolTable st_1;
 algorithm
   env := buildEnvFromSymboltable(st);
-  (_,sexp,prop,SOME(st_1)) := Static.elabExp(Env.emptyCache,env, exp, true, SOME(st),true);
+  (_,sexp,prop,SOME(st_1)) := Static.elabExp(Env.emptyCache(),env, exp, true, SOME(st),true);
   estr := Exp.printExpStr(sexp);
 end stringRepresOfExpr;
 
@@ -1187,7 +1193,7 @@ algorithm
       SYMBOLTABLE(ast = p, explodedAst = sp, instClsLst = ic, lstVarVal = vars, compiledFunctions = cf))
       equation
         p_1 = SCode.elaborate(p);
-        (_,env) = Inst.makeEnvFromProgram(Env.emptyCache,p_1, Absyn.IDENT(""));
+        (_,env) = Inst.makeEnvFromProgram(Env.emptyCache(),p_1, Absyn.IDENT(""));
         env_1 = addVarsToEnv(vars, env);
 	    then
         env_1;
@@ -1211,7 +1217,7 @@ algorithm
       list<InteractiveVariable> rest;
     case ((IVAR(varIdent = id,value = v,type_ = tp) :: rest),env)
       equation
-        (_,_,_,_,_,_) = Lookup.lookupVar(Env.emptyCache,env, Exp.CREF_IDENT(id,Exp.OTHER(),{}));
+        (_,_,_,_,_,_) = Lookup.lookupVar(Env.emptyCache(),env, Exp.CREF_IDENT(id,Exp.OTHER(),{}));
         env_1 = Env.updateFrameV(env,
           Types.VAR(id,Types.ATTR(false,false,SCode.RW(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
           false,tp,Types.VALBOUND(v)), Env.VAR_TYPED(), {});
@@ -1220,7 +1226,7 @@ algorithm
         env_2;
     case ((IVAR(varIdent = id,value = v,type_ = tp) :: rest),env)
       equation
-        failure((_,_,_,_,_,_) = Lookup.lookupVar(Env.emptyCache,env, Exp.CREF_IDENT(id,Exp.OTHER(),{})));
+        failure((_,_,_,_,_,_) = Lookup.lookupVar(Env.emptyCache(),env, Exp.CREF_IDENT(id,Exp.OTHER(),{})));
         env_1 = Env.extendFrameV(env,
           Types.VAR(id,Types.ATTR(false,false,SCode.RW(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
           false,tp,Types.VALBOUND(v)), NONE, Env.VAR_UNTYPED(), {});
@@ -2330,6 +2336,17 @@ algorithm
         failure(resstr = listClass(cr, p));
       then
         ("",st);
+
+    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = 
+          Absyn.CREF_IDENT(name = "setOption"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = Absyn.CREF_IDENT(str, _)),Absyn.BOOL(value = b)})))}),
+          (st as SYMBOLTABLE(ast = p,depends = aDep,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+      local 
+        Boolean b;
+      equation
+        _ = OptManager.setOption(str, b);
+      then
+        ("true",st);
+        
   end matchcontinue;
 end evaluateGraphicalApi;
 
@@ -4075,7 +4092,7 @@ protected
   Real t1,t2,t3;
 algorithm
   p_1 := SCode.elaborate(p);
-  (_,env) := Inst.makeEnvFromProgram(Env.emptyCache,p_1, Absyn.IDENT(""));
+  (_,env) := Inst.makeEnvFromProgram(Env.emptyCache(),p_1, Absyn.IDENT(""));
   ((p_1,_,(comps,p,env))) := traverseClasses(p, NONE, extractAllComponentsVisitor,
           (COMPONENTS({},0),p,env), true) "traverse protected" ;
 end extractAllComponents;
@@ -4108,7 +4125,7 @@ algorithm
         false = isReadOnly(file_info);
         path_1 = Absyn.joinPaths(pa, Absyn.IDENT(id));
         cenv = getClassEnvNoElaboration(p, path_1, env);
-        (_,pa_1) = Inst.makeFullyQualified(Env.emptyCache,cenv, path_1);
+        (_,pa_1) = Inst.makeFullyQualified(Env.emptyCache(), cenv, path_1);
         comps_1 = extractComponentsFromClass(class_, pa_1, comps, cenv);
       then
         ((class_,SOME(pa),(comps_1,p,env)));
@@ -4118,7 +4135,7 @@ algorithm
         path_1 = Absyn.IDENT(id);
 
         cenv = getClassEnvNoElaboration(p, path_1, env);
-        (_,pa_1) = Inst.makeFullyQualified(Env.emptyCache,cenv, path_1);
+        (_,pa_1) = Inst.makeFullyQualified(Env.emptyCache(),cenv, path_1);
         comps_1 = extractComponentsFromClass(class_, pa_1, comps, cenv);
       then
         ((class_,NONE,(comps_1,p,env)));
@@ -4289,24 +4306,30 @@ algorithm
       Component comp;
       list<Absyn.ElementArg> elementargs;
       Real t1,t2,t3,t4;
+      Env.Cache cache;
+      
     case (pa,Absyn.COMPONENTS(typeSpec = Absyn.TPATH(path_1,_),components = comp_items),comps,env) /* the QUALIFIED path for the class */
       equation
-        (_,SCode.CLASS(id,_,_,_,_),cenv) = Lookup.lookupClass(Env.emptyCache,env, path_1, false);
+        (cache,SCode.CLASS(id,_,_,_,_),cenv) = Lookup.lookupClass(Env.emptyCache(),env, path_1, false);
         path_1 = Absyn.IDENT(id);
-        (_,path) = Inst.makeFullyQualified(Env.emptyCache,cenv, path_1);
+        (cache,path) = Inst.makeFullyQualified(cache, cenv, path_1);
         comps_1 = extractComponentsFromComponentitems(pa, path, comp_items, comps, env);
       then
         comps_1;
     case (pa,Absyn.EXTENDS(path = path_1,elementArg = elementargs),comps,env)
       equation
-        (_,_,cenv) = Lookup.lookupClass(Env.emptyCache,env, path_1, false) "print \"extract_components_from_elementspec Absyn.EXTENDS(path,_) not implemented yet\"" ;
-        (_,path) = Inst.makeFullyQualified(Env.emptyCache,cenv, path_1);
+        (cache,_,cenv) = Lookup.lookupClass(Env.emptyCache(),env, path_1, false) 
+        "print \"extract_components_from_elementspec Absyn.EXTENDS(path,_) not implemented yet\"" ;
+        (_,path) = Inst.makeFullyQualified(cache,cenv, path_1);
         comp = EXTENDSITEM(pa,path);
         comps_1 = addComponentToComponents(comp, comps);
         comps_2 = extractComponentsFromElementargs(pa, elementargs, comps_1, env);
       then
         comps_2;
-    case (_,_,comps,env) then comps;  /* rule  extract_components_from_class(class,pa,comps,env) => comps\' ------------------------------- extract_components_from_elementspec(pa,Absyn.CLASSDEF(_,class), comps,env) => comps\' */
+    case (_,_,comps,env) then comps;  
+      /* rule  extract_components_from_class(class,pa,comps,env) => comps\' 
+         ------------------------------- 
+         extract_components_from_elementspec(pa,Absyn.CLASSDEF(_,class), comps,env) => comps\' */
   end matchcontinue;
 end extractComponentsFromElementspec;
 
@@ -4669,6 +4692,7 @@ public function getClassEnv
   Boolean encflag;
   SCode.Restriction restr;
   ClassInf.State ci_state;
+  Env.Cache cache;
 algorithm
   env_2 := matchcontinue (p,p_class)
     case (p,p_class) // Special case for derived classes. When instantiating a derived class, the environment
@@ -4676,19 +4700,21 @@ algorithm
       local Absyn.Path tp;
       equation
         p_1 = SCode.elaborate(p);
-        (_,env) = Inst.makeEnvFromProgram(Env.emptyCache,p_1, Absyn.IDENT(""));
-        (_,(cl as SCode.CLASS(id,_,encflag,restr,SCode.DERIVED(typeSpec=Absyn.TPATH(tp,_)))),env_1) = 
-        Lookup.lookupClass(Env.emptyCache,env, p_class, false);
+        (cache,env) = Inst.makeEnvFromProgram(Env.emptyCache(),p_1, Absyn.IDENT(""));
+        (cache,(cl as SCode.CLASS(id,_,encflag,restr,SCode.DERIVED(typeSpec=Absyn.TPATH(tp,_)))),env_1) = 
+        Lookup.lookupClass(cache,env, p_class, false);
       then env_1;
 
     case (p,p_class)
       equation
         p_1 = SCode.elaborate(p);
-        (_,env) = Inst.makeEnvFromProgram(Env.emptyCache,p_1, Absyn.IDENT(""));
-        (_,(cl as SCode.CLASS(id,_,encflag,restr,_)),env_1) = Lookup.lookupClass(Env.emptyCache,env, p_class, false);
+        (cache,env) = Inst.makeEnvFromProgram(Env.emptyCache(),p_1, Absyn.IDENT(""));
+        (cache,(cl as SCode.CLASS(id,_,encflag,restr,_)),env_1) = Lookup.lookupClass(cache,env, p_class, false);
         env2 = Env.openScope(env_1, encflag, SOME(id));
         ci_state = ClassInf.start(restr, id);
-        (_,env_2,_) = Inst.partialInstClassIn(Env.emptyCache,env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, ci_state, cl, false, {});
+        (_,env_2,_,_) = 
+          Inst.partialInstClassIn(cache,env2,InstanceHierarchy.emptyInstanceHierarchy,
+                                  Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, ci_state, cl, false, {});
       then env_2;
     case (p,p_class) then {};
   end matchcontinue;
@@ -5803,6 +5829,7 @@ algorithm
       list<Env.Frame> env;
       Absyn.Modification mod;
       Absyn.Element elt;
+      Option<Absyn.Annotation> annOpt;
       /* special case for clearing modifications */
    /* case (Absyn.ELEMENT(finalPrefix = f,redeclareKeywords = r,innerOuter = i,name = n,
       specification = Absyn.EXTENDS(path = path,elementArg = eargs),info = info,constrainClass = constr),
@@ -5811,14 +5838,14 @@ algorithm
       then Absyn.ELEMENT(f,r,i,n,Absyn.EXTENDS(path,{}),info,constr); */
 
     case (Absyn.ELEMENT(finalPrefix = f,redeclareKeywords = r,innerOuter = i,name = n,
-      specification = Absyn.EXTENDS(path = path,elementArg = eargs),info = info,constrainClass = constr),
+      specification = Absyn.EXTENDS(path = path,elementArg = eargs,annotationOpt=annOpt),info = info,constrainClass = constr),
       inherit,submod,mod,env)
       equation
-        (_,path_1) = Inst.makeFullyQualified(Env.emptyCache,env, path);
+        (_,path_1) = Inst.makeFullyQualified(Env.emptyCache(),env, path);
         true = ModUtil.pathEqual(inherit, path_1);
         eargs_1 = setSubmodifierInElementargs(eargs, submod, mod);
       then
-        Absyn.ELEMENT(f,r,i,n,Absyn.EXTENDS(path,eargs_1),info,constr);
+        Absyn.ELEMENT(f,r,i,n,Absyn.EXTENDS(path,eargs_1,annOpt),info,constr);
     case (elt,_,_,_,_) then elt;
   end matchcontinue;
 end setExtendsSubmodifierInElement;
@@ -5860,7 +5887,7 @@ algorithm
         env = getClassEnv(p, p_class);
         exts = getExtendsElementspecInClass(cdef);
         exts_1 = Util.listMap1(exts, makeExtendsFullyQualified, env);
-        {Absyn.EXTENDS(extpath,extmod)} = Util.listSelect1(exts_1, name, extendsElementspecNamed);
+        {Absyn.EXTENDS(extpath,extmod,_)} = Util.listSelect1(exts_1, name, extendsElementspecNamed);
         mod = getModificationValue(extmod, subident);
         res = Dump.unparseModificationStr(mod);
       then
@@ -5883,11 +5910,13 @@ algorithm
       Absyn.Path path_1,path;
       list<Absyn.ElementArg> earg;
       list<Env.Frame> env;
-    case (Absyn.EXTENDS(path = path,elementArg = earg),env)
+      Option<Absyn.Annotation> annOpt;
+      
+    case (Absyn.EXTENDS(path = path,elementArg = earg,annotationOpt=annOpt),env)
       equation
-        (_,path_1) = Inst.makeFullyQualified(Env.emptyCache,env, path);
+        (_,path_1) = Inst.makeFullyQualified(Env.emptyCache(),env, path);
       then
-        Absyn.EXTENDS(path_1,earg);
+        Absyn.EXTENDS(path_1,earg,annOpt);
   end matchcontinue;
 end makeExtendsFullyQualified;
 
@@ -5927,7 +5956,7 @@ algorithm
         exts = getExtendsElementspecInClass(cdef);
         env = getClassEnv(p, p_class);
         exts_1 = Util.listMap1(exts, makeExtendsFullyQualified, env);
-        {Absyn.EXTENDS(extpath,extmod)} = Util.listSelect1(exts_1, name, extendsElementspecNamed);
+        {Absyn.EXTENDS(extpath,extmod,_)} = Util.listSelect1(exts_1, name, extendsElementspecNamed);
         res = getModificationNames(extmod);
         res_1 = Util.stringDelimitList(res, ", ");
         res_2 = Util.stringAppendList({"{",res_1,"}"});
@@ -5999,8 +6028,9 @@ algorithm
     /* a derived class */
     case (Absyn.CLASS(body = Absyn.DERIVED(typeSpec=Absyn.TPATH(tp,_), arguments=eltArg)))
       then
-        {Absyn.EXTENDS(tp,eltArg)}; // Note: the array dimensions of DERIVED are lost. They must be
-        														// queried by another api-function
+        {Absyn.EXTENDS(tp,eltArg,NONE())}; 
+        // Note: the array dimensions of DERIVED are lost. They must be
+        // queried by another api-function
     case (_) then {};
   end matchcontinue;
 end getExtendsElementspecInClass;
@@ -7111,7 +7141,7 @@ algorithm
         old_path = Absyn.crefToPath(old_class) "class in package" ;
         new_path = Absyn.crefToPath(new_name);
         pa_1 = SCode.elaborate(p);
-        (_,env) = Inst.makeEnvFromProgram(Env.emptyCache,pa_1, Absyn.IDENT(""));
+        (_,env) = Inst.makeEnvFromProgram(Env.emptyCache(),pa_1, Absyn.IDENT(""));
         ((p_1,_,(_,_,_,path_str_lst,_))) = traverseClasses(p, NONE, renameClassVisitor, (old_path,new_path,p,{},env),
           true) "traverse protected" ;
         path_str_lst_no_empty = Util.stringDelimitListNonEmptyElts(path_str_lst, ",");
@@ -7125,7 +7155,7 @@ algorithm
         old_path_no_last = Absyn.stripLast(old_path);
         new_path = Absyn.joinPaths(old_path_no_last, new_path_1);
         pa_1 = SCode.elaborate(p);
-        (_,env) = Inst.makeEnvFromProgram(Env.emptyCache,pa_1, Absyn.IDENT(""));
+        (_,env) = Inst.makeEnvFromProgram(Env.emptyCache(),pa_1, Absyn.IDENT(""));
         ((p_1,_,(_,_,_,path_str_lst,_))) = traverseClasses(p, NONE, renameClassVisitor, (old_path,new_path,p,{},env),
           true) "traverse protected" ;
         path_str_lst_no_empty = Util.stringDelimitListNonEmptyElts(path_str_lst, ",");
@@ -7242,7 +7272,8 @@ algorithm
       Option<Absyn.Comment> co;
       Absyn.Class class_;
       Option<list<Absyn.Subscript>> subscripts;
-      Absyn.ElementAttributes attrs;      
+      Absyn.ElementAttributes attrs;
+      Env.Cache cache;
 
     /* the class with the component the old name for the component signal if something in class have been changed */      
     case (Absyn.CLASS(name = name,partialPrefix = partialPrefix,finalPrefix = finalPrefix,encapsulatedPrefix = encapsulatedPrefix,restriction = restriction,
@@ -7264,9 +7295,9 @@ algorithm
                       body = Absyn.DERIVED(typeSpec=Absyn.TPATH(path_1,subscripts),attributes = attrs,arguments = elementarg,comment = co),
                       info = file_info),old_comp,new_comp,env)
       equation
-        (_,SCode.CLASS(name,_,_,_,_),cenv) = Lookup.lookupClass(Env.emptyCache, env, path_1, false);
+        (cache,SCode.CLASS(name,_,_,_,_),cenv) = Lookup.lookupClass(Env.emptyCache(), env, path_1, false);
         path_1 = Absyn.IDENT(name);
-        (_,path) = Inst.makeFullyQualified(Env.emptyCache,cenv, path_1);
+        (_,path) = Inst.makeFullyQualified(cache, cenv, path_1);
         true = ModUtil.pathEqual(path, old_comp);
         new_path = changeLastIdent(path_1, new_comp);
       then
@@ -7384,24 +7415,27 @@ algorithm
       Absyn.Import import_1,import_;
       Boolean changed;
       Option<Absyn.ArrayDim> x;
+      Option<Absyn.Annotation> annOpt;
+      Env.Cache cache;
+      
     case (Absyn.COMPONENTS(attributes = a,typeSpec = Absyn.TPATH(path_1,x),components = comp_items),old_comp,new_comp,env) /* the old name for the component signal if something in class have been changed rule  Absyn.path_string(old_comp) => old_str & Absyn.path_string(new_comp) => new_str & Util.string_append_list({old_str,\" ==> \", new_str,\"\\n\"}) => print_str & print print_str & int_eq(1,2) => true --------- rename_class_in_element_spec(A,old_comp,new_comp,env) => (A,false) */
       equation
-        (_,SCode.CLASS(id,_,_,_,_),cenv) = Lookup.lookupClass(Env.emptyCache,env, path_1, false);
+        (cache,SCode.CLASS(id,_,_,_,_),cenv) = Lookup.lookupClass(Env.emptyCache(),env, path_1, false);
         path_1 = Absyn.IDENT(id);
-        (_,path) = Inst.makeFullyQualified(Env.emptyCache,cenv, path_1);
+        (_,path) = Inst.makeFullyQualified(cache, cenv, path_1);
         true = ModUtil.pathEqual(path, old_comp);
         new_path = changeLastIdent(path, new_comp) "& Absyn.path_string(path) => old_str & Absyn.path_string(new_comp) => new_str & Absyn.path_string(new_path) => new2_str & Util.string_append_list({old_str,\" =E=> \", new_str,\" \",new2_str ,\"\\n\"}) => print_str & print print_str &" ;
       then
         (Absyn.COMPONENTS(a,Absyn.TPATH(new_path,x),comp_items),true);
-    case (Absyn.EXTENDS(path = path_1,elementArg = a),old_comp,new_comp,env)
+    case (Absyn.EXTENDS(path = path_1,elementArg = a, annotationOpt=annOpt),old_comp,new_comp,env)
       local list<Absyn.ElementArg> a;
       equation
-        (_,_,cenv) = Lookup.lookupClass(Env.emptyCache,env, path_1, false) "print \"rename_class_in_element_spec Absyn.EXTENDS(path,_) not implemented yet\"" ;
-        (_,path) = Inst.makeFullyQualified(Env.emptyCache,cenv, path_1);
+        (cache,_,cenv) = Lookup.lookupClass(Env.emptyCache(),env, path_1, false) "print \"rename_class_in_element_spec Absyn.EXTENDS(path,_) not implemented yet\"" ;
+        (_,path) = Inst.makeFullyQualified(cache,cenv, path_1);
         true = ModUtil.pathEqual(path, old_comp);
         new_path = changeLastIdent(path_1, new_comp);
       then
-        (Absyn.EXTENDS(new_path,a),true);
+        (Absyn.EXTENDS(new_path,a,annOpt),true);
     case (Absyn.IMPORT(import_ = import_,comment = a),old_comp,new_comp,env)
       local Option<Absyn.Comment> a;
       equation
@@ -7432,26 +7466,28 @@ algorithm
       Absyn.Path path,new_path,path_1,old_comp,new_comp;
       String id;
       Absyn.Import import_;
+      Env.Cache cache;
+      
     case (Absyn.NAMED_IMPORT(name = id,path = path_1),old_comp,new_comp,env) /* the old name for the component signal if something in class have been changed */
       equation
-        (_,_,cenv) = Lookup.lookupClass(Env.emptyCache,env, path_1, false);
-        (_,path) = Inst.makeFullyQualified(Env.emptyCache,cenv, path_1);
+        (cache,_,cenv) = Lookup.lookupClass(Env.emptyCache(),env, path_1, false);
+        (_,path) = Inst.makeFullyQualified(cache,cenv, path_1);
         true = ModUtil.pathEqual(path, old_comp);
         new_path = changeLastIdent(path_1, new_comp);
       then
         (Absyn.NAMED_IMPORT(id,new_path),true);
     case (Absyn.QUAL_IMPORT(path = path_1),old_comp,new_comp,env)
       equation
-        (_,_,cenv) = Lookup.lookupClass(Env.emptyCache,env, path_1, false);
-        (_,path) = Inst.makeFullyQualified(Env.emptyCache,cenv, path_1);
+        (cache,_,cenv) = Lookup.lookupClass(Env.emptyCache(),env, path_1, false);
+        (_,path) = Inst.makeFullyQualified(cache,cenv, path_1);
         true = ModUtil.pathEqual(path, old_comp);
         new_path = changeLastIdent(path_1, new_comp);
       then
         (Absyn.QUAL_IMPORT(new_path),true);
     case (Absyn.NAMED_IMPORT(name = id,path = path_1),old_comp,new_comp,env)
       equation
-        (_,_,cenv) = Lookup.lookupClass(Env.emptyCache,env, path_1, false);
-        (_,path) = Inst.makeFullyQualified(Env.emptyCache,cenv, path_1);
+        (cache,_,cenv) = Lookup.lookupClass(Env.emptyCache(),env, path_1, false);
+        (_,path) = Inst.makeFullyQualified(cache,cenv, path_1);
         true = ModUtil.pathEqual(path, old_comp);
         new_path = changeLastIdent(path_1, new_comp);
       then
@@ -8345,6 +8381,12 @@ algorithm
         Absyn.CLASS(_,_,_,_,Absyn.R_CONNECTOR(),_,_) = getPathedClassInProgram(path, p);
       then
         true;
+    case (cr,p)
+      equation
+        path = Absyn.crefToPath(cr);
+        Absyn.CLASS(_,_,_,_,Absyn.R_EXP_CONNECTOR(),_,_) = getPathedClassInProgram(path, p);
+      then
+        true;        
     case (cr,p) then false;
   end matchcontinue;
 end isConnector;
@@ -8944,7 +8986,7 @@ algorithm
   end matchcontinue;
 end removeAnyEltsFunctions;
 
-protected function removeCf
+public function removeCf
 "function: removeCf
   Helper function to removeCompiledFunctions and removeAnySubFunctions."
   input Absyn.Path inPath;
@@ -8960,11 +9002,11 @@ algorithm
       Integer funcHandle;
     case (_,{}) then {};
       //t as (Types.T_FUNCTION(fargs,(outtype as (Types.T_COMPLEX(ClassInf.RECORD(_),_,_),_))),_)),env_1)
-    case (p1,(CFunction(p2,t,funcHandle) :: rest))
+    case (p1,(CFunction(p2,t,funcHandle,_,_) :: rest))
       local String tmp;
       equation
         true = ModUtil.pathEqual(p1, p2);
-        tmp = ModUtil.pathString2(p1, "_");
+        tmp = ModUtil.pathStringReplaceDot(p1, "_");
         System.freeFunction(funcHandle);
         res = removeCf(p1, rest);
       then
@@ -9226,6 +9268,8 @@ algorithm
       Absyn.TimeStamp ts;
     case (path,inmodel,p as Absyn.PROGRAM(globalBuildTimes=ts))
       equation
+        // remove self reference, otherwise we go into an infinite loop!        
+        path = Inst.removeSelfReference(Absyn.pathLastIdent(inmodel),path);        
         inmodeldef = getPathedClassInProgram(inmodel, p) "Look first inside \'inmodel\'" ;
         cdef = getPathedClassInProgram(path, Absyn.PROGRAM({inmodeldef},Absyn.TOP(),ts));
         newpath = Absyn.joinPaths(inmodel, path);
@@ -10005,13 +10049,15 @@ algorithm
       Integer n,n_1;
       Absyn.Program p;
       list<Absyn.ElementSpec> extends_;
+      Env.Cache cache;
+      
     case (model_,n,p)
       equation
         modelpath = Absyn.crefToPath(model_);
         cdef = getPathedClassInProgram(modelpath, p);
         p_1 = SCode.elaborate(p);
-        (_,env) = Inst.makeEnvFromProgram(Env.emptyCache,p_1, Absyn.IDENT(""));
-        (_,(c as SCode.CLASS(id,_,encflag,restr,_)),env_1) = Lookup.lookupClass(Env.emptyCache,env, modelpath, false);
+        (cache,env) = Inst.makeEnvFromProgram(Env.emptyCache(),p_1, Absyn.IDENT(""));
+        (_,(c as SCode.CLASS(id,_,encflag,restr,_)),env_1) = Lookup.lookupClass(cache,env, modelpath, false);
         str = getNthInheritedClass2(c, cdef, n, env_1);
       then
         str;
@@ -10021,7 +10067,7 @@ algorithm
         cdef = getPathedClassInProgram(modelpath, p);
         extends_ = getExtendsInClass(cdef);
         n_1 = n - 1;
-        Absyn.EXTENDS(path,_) = listNth(extends_, n_1);
+        Absyn.EXTENDS(path,_,_) = listNth(extends_, n_1);
         s = Absyn.pathString(path);
       then
         s;
@@ -10160,8 +10206,9 @@ algorithm
       equation
         env2 = Env.openScope(env, encflag, SOME(id));
         ci_state = ClassInf.start(restr, id);
-        (_,env_2,_) = Inst.partialInstClassIn(Env.emptyCache,env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
-          ci_state, c, false, {});
+        (_,env_2,_,_) = 
+          Inst.partialInstClassIn(Env.emptyCache(),env2,InstanceHierarchy.emptyInstanceHierarchy, 
+                                  Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, ci_state, c, false, {});
         lst = getBaseClasses(cdef, env_2);
         n_1 = n - 1;
         cref = listNth(lst, n_1);
@@ -10313,12 +10360,14 @@ algorithm
       Absyn.ComponentRef model_;
       Absyn.Program p;
       Integer n;
+      Env.Cache cache;
+      
     case (model_,p,n)
       equation
         modelpath = Absyn.crefToPath(model_);
         p_1 = SCode.elaborate(p);
-        (_,env) = Inst.makeEnvFromProgram(Env.emptyCache,p_1, Absyn.IDENT(""));
-        (_,(c as SCode.CLASS(id,_,encflag,restr,_)),env_1) = Lookup.lookupClass(Env.emptyCache,env, modelpath, false);
+        (cache,env) = Inst.makeEnvFromProgram(Env.emptyCache(),p_1, Absyn.IDENT(""));
+        (_,(c as SCode.CLASS(id,_,encflag,restr,_)),env_1) = Lookup.lookupClass(cache,env, modelpath, false);
         cdef = getPathedClassInProgram(modelpath, p);
         str = getNthComponent2(c, cdef, n, env_1);
       then
@@ -10327,10 +10376,9 @@ algorithm
   end matchcontinue;
 end getNthComponent;
 
-protected function getNthComponent2 "function: getNthComponent2
-
-  Helper function to get_nth_component.
-"
+protected function getNthComponent2 
+"function: getNthComponent2
+  Helper function to get_nth_component."
   input SCode.Class inClass1;
   input Absyn.Class inClass2;
   input Integer inInteger3;
@@ -10353,8 +10401,10 @@ algorithm
       equation
         env2 = Env.openScope(env, encflag, SOME(id));
         ci_state = ClassInf.start(restr, id);
-        (_,env_2,_) = Inst.partialInstClassIn(Env.emptyCache,env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
-          ci_state, c, false, {});
+        (_,env_2,_,_) = 
+          Inst.partialInstClassIn(Env.emptyCache(),env2,InstanceHierarchy.emptyInstanceHierarchy,
+                                  Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
+                                  ci_state, c, false, {});
         comp = getNthComponentInClass(cdef, n);
         {s1} = getComponentInfoOld(comp, env_2);
         s2 = stringAppend("{", s1);
@@ -10392,17 +10442,20 @@ algorithm
       list<Absyn.Element> comps1,comps2;
       Absyn.ComponentRef model_;
       Absyn.Program p;
+      Env.Cache cache;
+      
     case (model_,p)
       equation
         modelpath = Absyn.crefToPath(model_);
         cdef = getPathedClassInProgram(modelpath, p);
         p_1 = SCode.elaborate(p);
-        (_,env) = Inst.makeEnvFromProgram(Env.emptyCache,p_1, Absyn.IDENT(""));
-        (_,(c as SCode.CLASS(id,_,encflag,restr,_)),env_1) = Lookup.lookupClass(Env.emptyCache,env, modelpath, false);
+        (cache,env) = Inst.makeEnvFromProgram(Env.emptyCache(),p_1, Absyn.IDENT(""));
+        (cache,(c as SCode.CLASS(id,_,encflag,restr,_)),env_1) = Lookup.lookupClass(cache,env, modelpath, false);
         env2 = Env.openScope(env_1, encflag, SOME(id));
         ci_state = ClassInf.start(restr, id);
-        (_,env_2,_) = Inst.partialInstClassIn(Env.emptyCache,env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
-          ci_state, c, false, {});
+        (_,env_2,_,_) = 
+          Inst.partialInstClassIn(cache, env2, InstanceHierarchy.emptyInstanceHierarchy, Types.NOMOD(), 
+                                  Prefix.NOPRE(), Connect.emptySet, ci_state, c, false, {});
         comps1 = getPublicComponentsInClass(cdef);
         s1 = getComponentsInfo(comps1, "\"public\"", env_2);
         comps2 = getProtectedComponentsInClass(cdef);
@@ -11856,7 +11909,8 @@ algorithm
       Absyn.Path envpath,p1;
       String tpname,str;
       Absyn.ComponentRef cref;
-      SCode.Class c;      
+      SCode.Class c;
+      Env.Cache cache;      
       
     case (Absyn.CLASS(body = Absyn.PARTS(classParts = parts)),env)
       equation
@@ -11867,7 +11921,7 @@ algorithm
     /* adrpo: handle the case for model extends baseClassName end baseClassName; */
     case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(baseClassName, modifications, comment, parts = parts)),env)
       equation
-        (_,c,cenv) = Lookup.lookupClass(Env.emptyCache, env, Absyn.IDENT(baseClassName), true);
+        (cache,c,cenv) = Lookup.lookupClass(Env.emptyCache(), env, Absyn.IDENT(baseClassName), true);
         SOME(envpath) = Env.getEnvPath(cenv);
         p1 = Absyn.joinPaths(envpath, Absyn.IDENT(baseClassName));
         cref = Absyn.pathToCref(p1);
@@ -11883,7 +11937,7 @@ algorithm
         Absyn.ComponentRef cref;
         SCode.Class c;
       equation
-        (_,c,cenv) = Lookup.lookupClass(Env.emptyCache, env, tp, true);
+        (cache,c,cenv) = Lookup.lookupClass(Env.emptyCache(), env, tp, true);
         SOME(envpath) = Env.getEnvPath(cenv);
         tpname = Absyn.pathLastIdent(tp);
         p1 = Absyn.joinPaths(envpath, Absyn.IDENT(tpname));
@@ -11893,7 +11947,7 @@ algorithm
         
     case (Absyn.CLASS(body = Absyn.DERIVED(typeSpec=Absyn.TPATH(tp,_))),env)
       equation
-        (_,c,cenv) = Lookup.lookupClass(Env.emptyCache, env, tp, true);
+        (cache,c,cenv) = Lookup.lookupClass(Env.emptyCache(), env, tp, true);
         NONE = Env.getEnvPath(cenv);
         cref = Absyn.pathToCref(tp);
         then {cref};
@@ -11956,7 +12010,7 @@ algorithm
     case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.EXTENDS(path = path))) :: rest),env)
       equation
         cl = getBaseClassesFromElts(rest, env) "Inherited class is defined inside package" ;
-        (_,c,env_1) = Lookup.lookupClass(Env.emptyCache,env, path, true);
+        (_,c,env_1) = Lookup.lookupClass(Env.emptyCache(),env, path, true);
         SOME(envpath) = Env.getEnvPath(env_1);
         tpname = Absyn.pathLastIdent(path);
         p_1 = Absyn.joinPaths(envpath, Absyn.IDENT(tpname));
@@ -11967,7 +12021,7 @@ algorithm
     case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.EXTENDS(path = path))) :: rest),env)
       equation
         cl = getBaseClassesFromElts(rest, env) "Inherited class defined on top level scope" ;
-        (_,c,env_1) = Lookup.lookupClass(Env.emptyCache,env, path, true);
+        (_,c,env_1) = Lookup.lookupClass(Env.emptyCache(),env, path, true);
         NONE = Env.getEnvPath(env_1);
         cref = Absyn.pathToCref(path);
       then
@@ -12722,6 +12776,21 @@ algorithm
         (str,tp) = getNthConnectorStr(p, modelpath, lst, newn);
       then
         (str,tp);
+    case (p,modelpath,(Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.COMPONENTS(typeSpec = Absyn.TPATH(tp,_),components = complst),constrainClass = NONE)) :: lst),n)
+      equation
+        (Absyn.CLASS(_,_,_,_,Absyn.R_EXP_CONNECTOR(),_,_),newmodelpath) = lookupClassdef(tp, modelpath, p);
+        str = getNthCompname(complst, n);
+      then
+        (str,tp);
+    case (p,modelpath,(Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.COMPONENTS(typeSpec = Absyn.TPATH(tp,_),components = complst),constrainClass = NONE)) :: lst),n)
+      equation
+        (Absyn.CLASS(_,_,_,_,Absyn.R_EXP_CONNECTOR(),_,_),newmodelpath) = lookupClassdef(tp, modelpath, p) 
+        "Not so fast, since we lookup and instantiate two times just because this was not the connector we were looking for." ;
+        c1 = listLength(complst);
+        newn = n - c1;
+        (str,tp) = getNthConnectorStr(p, modelpath, lst, newn);
+      then
+        (str,tp);        
     case (p,modelpath,(_ :: lst),n)
       equation
         (str,tp) = getNthConnectorStr(p, modelpath, lst, n);
@@ -12882,6 +12951,16 @@ algorithm
       then
         c1 + c2;
         
+    case (modelpath,p,(Absyn.ELEMENTITEM(element = 
+      Absyn.ELEMENT(specification = Absyn.COMPONENTS(typeSpec = Absyn.TPATH(tp, _),components = complst),
+      constrainClass = NONE)) :: lst))
+      equation
+        (Absyn.CLASS(_,_,_,_,Absyn.R_EXP_CONNECTOR(),_,_),newmodelpath) = lookupClassdef(tp, modelpath, p);
+        c1 = listLength(complst);
+        c2 = countConnectors(modelpath, p, lst);
+      then
+        c1 + c2;        
+        
     case (modelpath,p,(_ :: lst)) /* Rule above didn\'t match => element not connector components, try rest of list */
       equation
         res = countConnectors(modelpath, p, lst);
@@ -12910,6 +12989,8 @@ algorithm
       Exp.Exp newexp;
       String gexpstr;
       list<Absyn.ElementArg> elts;
+      Env.Cache cache;
+      
     case (Absyn.EQUATIONITEM(equation_ = Absyn.EQ_CONNECT(connector1 = _),
       comment = SOME(Absyn.COMMENT(SOME(Absyn.ANNOTATION({Absyn.MODIFICATION(_,_,Absyn.CREF_IDENT("Line",_),SOME(Absyn.CLASSMOD(elts,NONE)),_)})),_))))
       local Absyn.Program lineProgram;
@@ -12917,8 +12998,8 @@ algorithm
         lineProgram = modelicaAnnotationProgram(RTOpts.getAnnotationVersion());
         fargs = createFuncargsFromElementargs(elts);
         p_1 = SCode.elaborate(lineProgram);
-        (_,env) = Inst.makeEnvFromProgram(Env.emptyCache,p_1, Absyn.IDENT(""));
-        (_,newexp,_) = Static.elabGraphicsExp(Env.emptyCache,env, Absyn.CALL(Absyn.CREF_IDENT("Line",{}),fargs), false) "impl" ;
+        (cache,env) = Inst.makeEnvFromProgram(Env.emptyCache(),p_1, Absyn.IDENT(""));
+        (_,newexp,_) = Static.elabGraphicsExp(cache,env, Absyn.CALL(Absyn.CREF_IDENT("Line",{}),fargs), false) "impl" ;
         Print.clearErrorBuf() "this is to clear the error-msg generated by the annotations." ;
         gexpstr = Exp.printExpStr(newexp);
       then
@@ -13169,7 +13250,7 @@ protected function getComponentAnnotationsFromElts
 algorithm     
   placementProgram := modelicaAnnotationProgram(RTOpts.getAnnotationVersion());
   p_1 := SCode.elaborate(placementProgram);
-  (_,env) := Inst.makeEnvFromProgram(Env.emptyCache,p_1, Absyn.IDENT(""));
+  (_,env) := Inst.makeEnvFromProgram(Env.emptyCache(),p_1, Absyn.IDENT(""));
   res := getComponentitemsAnnotations(comps, env);
   res_1 := Util.stringDelimitList(res, ",");
 end getComponentAnnotationsFromElts;
@@ -13217,8 +13298,7 @@ protected function getComponentitemsAnnotationsFromItems
   input Env.Env inEnv;
   output list<String> outStringLst;
 algorithm
-  outStringLst:=
-  matchcontinue (inAbsynComponentItemLst,inEnv)
+  outStringLst := matchcontinue (inAbsynComponentItemLst,inEnv)
     local
       list<Env.Frame> env,env_1;
       SCode.Class c,c_1;
@@ -13232,6 +13312,7 @@ algorithm
       list<String> res;
       list<Absyn.ElementArg> mod;
       list<Absyn.ComponentItem> rest;
+      Env.Cache cache;
       
     case ({},env) then {};
     case ((Absyn.COMPONENTITEM(comment = SOME(
@@ -13239,11 +13320,14 @@ algorithm
             SOME(Absyn.ANNOTATION((Absyn.MODIFICATION(_,_,Absyn.CREF_IDENT("Placement",_),SOME(Absyn.CLASSMOD(mod,NONE)),_) :: _))),
             _))) :: rest),env)
       equation
-        (_,c,env_1) = Lookup.lookupClass(Env.emptyCache,env, Absyn.IDENT("Placement"), false);
+        (cache,c,env_1) = Lookup.lookupClass(Env.emptyCache(),env, Absyn.IDENT("Placement"), false);
         mod_1 = SCode.buildMod(SOME(Absyn.CLASSMOD(mod,NONE)), false, Absyn.NON_EACH());
-        (_,mod_2) = Mod.elabMod(Env.emptyCache,env_1, Prefix.NOPRE(), mod_1, false);
+        (cache,mod_2) = Mod.elabMod(cache,env_1, Prefix.NOPRE(), mod_1, false);
         c_1 = SCode.classSetPartial(c, false);
-        (_,dae,_,_,cs,t,state,_,_) = Inst.instClass(Env.emptyCache,env_1,UnitAbsyn.noStore, mod_2, Prefix.NOPRE(), Connect.emptySet, c_1, {}, false, Inst.TOP_CALL(), ConnectionGraph.EMPTY);
+        (_,_,_,_,dae,cs,t,state,_,_) = 
+          Inst.instClass(cache,env_1,InstanceHierarchy.emptyInstanceHierarchy,
+                         UnitAbsyn.noStore, mod_2, Prefix.NOPRE(), Connect.emptySet, 
+                         c_1, {}, false, Inst.TOP_CALL(), ConnectionGraph.EMPTY);
         dae_1 = Inst.initVarsModelicaOutput(dae) "Put bindings of variables as expressions inside variable elements of the dae instead of equations" ;
         gexpstr = DAE.getVariableBindingsStr(dae_1);
         gexpstr_1 = Util.stringAppendList({"{",gexpstr,"}"});
@@ -13460,23 +13544,25 @@ algorithm
       Exp.Exp graphicexp2;
       Types.Properties prop;
       Absyn.Program p;
+      Env.Cache cache;
       
     case (p,Absyn.ANNOTATION(elementArgs = {Absyn.MODIFICATION(componentReg = Absyn.CREF_IDENT(name = "Icon"),modification = SOME(Absyn.CLASSMOD(mod,_)))}))
       equation
+        print(Dump.unparseStr(p, false));
         (stripmod,{Absyn.MODIFICATION(_,_,_,SOME(Absyn.CLASSMOD(_,SOME(graphicexp))),_)}) = stripGraphicsModification(mod);
-        mod_1 = SCode.buildMod(SOME(Absyn.CLASSMOD(stripmod,NONE)), false,
-          Absyn.NON_EACH());
+        mod_1 = SCode.buildMod(SOME(Absyn.CLASSMOD(stripmod,NONE)), false, Absyn.NON_EACH());
         p_1 = SCode.elaborate(p);
-        (_,env) = Inst.makeSimpleEnvFromProgram(Env.emptyCache,p_1, Absyn.IDENT("Icon"));
+        (cache,env) = Inst.makeSimpleEnvFromProgram(Env.emptyCache(),p_1, Absyn.IDENT("Icon"));
         placementc = getClassInProgram("Icon", p);
         placementclass = SCode.elabClass(placementc);
-        (_,mod_2) = Mod.elabMod(Env.emptyCache,env, Prefix.NOPRE(), mod_1, false);
-        (_,dae,_,_,cs,t,state,_,_) = Inst.instClass(Env.emptyCache,env, UnitAbsyn.noStore,mod_2, Prefix.NOPRE(), Connect.emptySet,
-          placementclass, {}, false, Inst.TOP_CALL(), ConnectionGraph.EMPTY);
+        (cache,mod_2) = Mod.elabMod(cache,env, Prefix.NOPRE(), mod_1, false);
+        (cache,_,_,_,dae,cs,t,state,_,_) = 
+          Inst.instClass(cache,env, InstanceHierarchy.emptyInstanceHierarchy, UnitAbsyn.noStore,mod_2, Prefix.NOPRE(), 
+                         Connect.emptySet,placementclass, {}, false, Inst.TOP_CALL(), ConnectionGraph.EMPTY);
         dae_1 = Inst.initVarsModelicaOutput(dae) "Put bindings of variables as expressions inside variable elements of the dae instead of equations" ;
         str = DAE.getVariableBindingsStr(dae_1);
-        (_,graphicexp2,prop) = Static.elabGraphicsExp(Env.emptyCache,env, graphicexp, false) "impl" ;
-        Print.clearErrorBuf() "this is to clear the error-msg generated by the annotations." ;
+        (_,graphicexp2,prop) = Static.elabGraphicsExp(cache, env, graphicexp, false) "impl" ;
+        //Print.clearErrorBuf() "this is to clear the error-msg generated by the annotations." ;
         gexpstr = Exp.printExpStr(graphicexp2);
         s1 = stringAppend(str, ",");
         totstr = stringAppend(s1, gexpstr);
@@ -13487,16 +13573,18 @@ algorithm
       /* First line in the first rule above fails if return value from
          strip_graphics_modification doesn\'t match the rhs of => */
       equation
+        print(Dump.unparseStr(p, false));
         (stripmod,gxmods) = stripGraphicsModification(mod);
-        mod_1 = SCode.buildMod(SOME(Absyn.CLASSMOD(stripmod,NONE)), false,
-          Absyn.NON_EACH());
+        mod_1 = SCode.buildMod(SOME(Absyn.CLASSMOD(stripmod,NONE)), false, Absyn.NON_EACH());
         p_1 = SCode.elaborate(p);
-        (_,env) = Inst.makeSimpleEnvFromProgram(Env.emptyCache,p_1, Absyn.IDENT("Icon"));
+        (cache,env) = Inst.makeSimpleEnvFromProgram(Env.emptyCache(),p_1, Absyn.IDENT("Icon"));
         placementc = getClassInProgram("Icon", p);
         placementclass = SCode.elabClass(placementc);
-        (_,mod_2) = Mod.elabMod(Env.emptyCache,env, Prefix.NOPRE(), mod_1, true);
-        (_,dae,_,_,cs,t,state,_,_) = Inst.instClass(Env.emptyCache,env, UnitAbsyn.noStore,mod_2, Prefix.NOPRE(), Connect.emptySet,
-          placementclass, {}, false, Inst.TOP_CALL(), ConnectionGraph.EMPTY);
+        (cache,mod_2) = Mod.elabMod(cache,env, Prefix.NOPRE(), mod_1, true);
+        (cache,_,_,_,dae,cs,t,state,_,_) = 
+          Inst.instClass(cache,env,InstanceHierarchy.emptyInstanceHierarchy, UnitAbsyn.noStore,
+                         mod_2, Prefix.NOPRE(), Connect.emptySet, placementclass, {}, false, Inst.TOP_CALL(), 
+                         ConnectionGraph.EMPTY);
         dae_1 = Inst.initVarsModelicaOutput(dae) "Put bindings of variables as expressions inside variable elements of the dae instead of equations" ;
         str = DAE.getVariableBindingsStr(dae_1);
       then
@@ -13504,20 +13592,22 @@ algorithm
         
     case (p,Absyn.ANNOTATION(elementArgs = {Absyn.MODIFICATION(componentReg = Absyn.CREF_IDENT(name = "Diagram"),modification = SOME(Absyn.CLASSMOD(mod,_)))}))
       equation
+        print(Dump.unparseStr(p, false));
         (stripmod,{Absyn.MODIFICATION(_,_,_,SOME(Absyn.CLASSMOD(_,SOME(graphicexp))),_)}) = stripGraphicsModification(mod);
-        mod_1 = SCode.buildMod(SOME(Absyn.CLASSMOD(stripmod,NONE)), false,
-          Absyn.NON_EACH());
+        mod_1 = SCode.buildMod(SOME(Absyn.CLASSMOD(stripmod,NONE)), false, Absyn.NON_EACH());
         p_1 = SCode.elaborate(p);
-        (_,env) = Inst.makeEnvFromProgram(Env.emptyCache,p_1, Absyn.IDENT("Diagram"));
+        (cache,env) = Inst.makeEnvFromProgram(Env.emptyCache(),p_1, Absyn.IDENT("Diagram"));
         placementc = getClassInProgram("Diagram", p);
         placementclass = SCode.elabClass(placementc);
-        (_,mod_2) = Mod.elabMod(Env.emptyCache,env, Prefix.NOPRE(), mod_1, false);
-        (_,dae,_,_,cs,t,state,_,_) = Inst.instClass(Env.emptyCache,env, UnitAbsyn.noStore, mod_2, Prefix.NOPRE(), Connect.emptySet,
-          placementclass, {}, false, Inst.TOP_CALL(), ConnectionGraph.EMPTY);
+        (cache,mod_2) = Mod.elabMod(cache,env, Prefix.NOPRE(), mod_1, false);
+        (cache,_,_,_,dae,cs,t,state,_,_) = 
+          Inst.instClass(cache,env, InstanceHierarchy.emptyInstanceHierarchy, 
+                         UnitAbsyn.noStore, mod_2, Prefix.NOPRE(), Connect.emptySet,
+                         placementclass, {}, false, Inst.TOP_CALL(), ConnectionGraph.EMPTY);
         dae_1 = Inst.initVarsModelicaOutput(dae) "Put bindings of variables as expressions inside variable elements of the dae instead of equations" ;
         str = DAE.getVariableBindingsStr(dae_1);
-        (_,graphicexp2,prop) = Static.elabGraphicsExp(Env.emptyCache,env, graphicexp, false) "impl" ;
-        Print.clearErrorBuf() "this is to clear the error-msg generated by the annotations." ;
+        (_,graphicexp2,prop) = Static.elabGraphicsExp(cache,env, graphicexp, false) "impl" ;
+        //Print.clearErrorBuf() "this is to clear the error-msg generated by the annotations." ;
         gexpstr = Exp.printExpStr(graphicexp2);
         s1 = stringAppend(str, ",");
         totstr = stringAppend(s1, gexpstr);
@@ -13526,21 +13616,25 @@ algorithm
         
     case (p,Absyn.ANNOTATION(elementArgs = {Absyn.MODIFICATION(componentReg = Absyn.CREF_IDENT(name = anncname),modification = SOME(Absyn.CLASSMOD(mod,_)))}))
       equation
+        print(Dump.unparseStr(p, false));
         mod_1 = SCode.buildMod(SOME(Absyn.CLASSMOD(mod,NONE)), false, Absyn.NON_EACH());
         p_1 = SCode.elaborate(p);
-        (_,env) = Inst.makeEnvFromProgram(Env.emptyCache,p_1, Absyn.IDENT(anncname));
+        (cache,env) = Inst.makeEnvFromProgram(Env.emptyCache(),p_1, Absyn.IDENT(anncname));
         placementc = getClassInProgram(anncname, p);
         placementclass = SCode.elabClass(placementc);
-        (_,mod_2) = Mod.elabMod(Env.emptyCache,env, Prefix.NOPRE(), mod_1, false);
-        (_,dae,_,_,cs,t,state,_,_) = Inst.instClass(Env.emptyCache,env, UnitAbsyn.noStore, mod_2, Prefix.NOPRE(), Connect.emptySet,
-          placementclass, {}, false, Inst.TOP_CALL(), ConnectionGraph.EMPTY);
+        (cache,mod_2) = Mod.elabMod(cache,env, Prefix.NOPRE(), mod_1, false);
+        (cache,_,_,_,dae,cs,t,state,_,_) = 
+          Inst.instClass(cache,env, InstanceHierarchy.emptyInstanceHierarchy, UnitAbsyn.noStore, 
+                         mod_2, Prefix.NOPRE(), Connect.emptySet, placementclass, {}, false, Inst.TOP_CALL(), 
+                         ConnectionGraph.EMPTY);
         dae_1 = Inst.initVarsModelicaOutput(dae) "Put bindings of variables as expressions inside variable elements of the dae instead of equations" ;
         str = DAE.getVariableBindingsStr(dae_1);
       then
         str;
         
-    case (_,_)
+    case (p,_)
       equation
+        print(Dump.unparseStr(p, false));
         Print.printBuf("get_annotation_string failed!\n");
       then
         fail();
@@ -14099,7 +14193,7 @@ algorithm
                         specification = Absyn.COMPONENTS(attributes = attr,typeSpec = Absyn.TPATH(p, typeAd),components = lst)),
           access,env)
       equation
-        (_,c,env_1) = Lookup.lookupClass(Env.emptyCache,env, p, true);
+        (_,c,env_1) = Lookup.lookupClass(Env.emptyCache(),env, p, true);
         SOME(envpath) = Env.getEnvPath(env_1);
         tpname = Absyn.pathLastIdent(p);
         p_1 = Absyn.joinPaths(envpath, Absyn.IDENT(tpname));
@@ -14280,7 +14374,7 @@ algorithm
                         specification = Absyn.COMPONENTS(attributes = attr,typeSpec = Absyn.TPATH(p, _),components = lst)),
           env)
       equation
-        (_,c,env_1) = Lookup.lookupClass(Env.emptyCache,env, p, true);
+        (_,c,env_1) = Lookup.lookupClass(Env.emptyCache(),env, p, true);
         SOME(envpath) = Env.getEnvPath(env_1);
         tpname = Absyn.pathLastIdent(p);
         p_1 = Absyn.joinPaths(envpath, Absyn.IDENT(tpname));
@@ -16290,16 +16384,17 @@ algorithm
       list<Absyn.ElementArg> eargs,eargs1;
       Absyn.ElementAttributes attr;
       list<Absyn.ComponentItem> comps,comps1;
+      Option<Absyn.Annotation> annOpt;
       
     case(Absyn.CLASSDEF(r,cl)) 
       equation
         ((cl1,_,_)) = transformFlatClass((cl,NONE,0));
       then Absyn.CLASSDEF(r,cl1);
 
-    case(Absyn.EXTENDS(path,eargs)) 
+    case(Absyn.EXTENDS(path,eargs,annOpt)) 
       equation
         eargs1 = Util.listMap(eargs,transformFlatElementArg);
-      then Absyn.EXTENDS(path,eargs1);
+      then Absyn.EXTENDS(path,eargs1,annOpt);
 
     case(eltSpec as Absyn.IMPORT(import_ = _)) then eltSpec;
 
@@ -17811,7 +17906,7 @@ algorithm
   local SCode.Program p_1; Env.Env env; 
     case(path,p) equation
       p_1 = SCode.elaborate(p);
-      (_,env) = Inst.makeEnvFromProgram(Env.emptyCache,p_1, Absyn.IDENT(""));
+      (_,env) = Inst.makeEnvFromProgram(Env.emptyCache(),p_1, Absyn.IDENT(""));
       dep = getTotalProgramDep(AbsynDep.emptyDepends(),path,p,env);
     then dep;
   end matchcontinue;
@@ -18205,7 +18300,7 @@ algorithm
     Env.Env cenv,env; SCode.Program p_1;
     Absyn.Path scope2,path2; 
     case(path,_,_,env,p) equation
-      (_,fqPath) = Inst.makeFullyQualified(Env.emptyCache,env, path);
+      (_,fqPath) = Inst.makeFullyQualified(Env.emptyCache(),env, path);
     then fqPath;
 
    /* case(path,SOME(path2),className,env,p) equation
@@ -18266,26 +18361,28 @@ protected function getClassEnvNoElaboration "function: getClassEnvNoElaboration
   list<Env.Frame> env_1,env2,env_2;
   ClassInf.State ci_state;
   Real t1,t2;
+  Env.Cache cache;
 algorithm 
   env_2 := matchcontinue(p,p_class,env)
 /* First try partial instantiation */
     case(p,p_class,env) equation
-      (_,(cl as SCode.CLASS(id,_,encflag,restr,_)),env_1) = Lookup.lookupClass(Env.emptyCache,env, p_class, false);
+      (cache,(cl as SCode.CLASS(id,_,encflag,restr,_)),env_1) = Lookup.lookupClass(Env.emptyCache(),env, p_class, false);
       env2 = Env.openScope(env_1, encflag, SOME(id));
       ci_state = ClassInf.start(restr, id);
-      (_,env_2,_) = Inst.partialInstClassIn(Env.emptyCache,env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
-    ci_state, cl, false, {});
+      (cache,env_2,_,_) = Inst.partialInstClassIn(cache, env2, InstanceHierarchy.emptyInstanceHierarchy, 
+                                                  Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
+                                                  ci_state, cl, false, {});
     then env_2;
     case(p,p_class,env) equation
-      (_,(cl as SCode.CLASS(id,_,encflag,restr,_)),env_1) = Lookup.lookupClass(Env.emptyCache,env, p_class, false);
+      (cache,(cl as SCode.CLASS(id,_,encflag,restr,_)),env_1) = Lookup.lookupClass(Env.emptyCache(),env, p_class, false);
       env2 = Env.openScope(env_1, encflag, SOME(id));
       ci_state = ClassInf.start(restr, id);
-      (_,_,env_2,_,_,_,_,_,_,_,_) = Inst.instClassIn(Env.emptyCache,env2, UnitAbsyn.noStore,Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
-        ci_state, cl, false, {},false, ConnectionGraph.EMPTY,NONE);
+      (cache,env_2,_,_,_,_,_,_,_,_,_,_) = Inst.instClassIn(cache,env2, InstanceHierarchy.emptyInstanceHierarchy, 
+                                                       UnitAbsyn.noStore,Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
+                                                       ci_state, cl, false, {},false, ConnectionGraph.EMPTY,NONE);
     then env_2;
     end matchcontinue;
 end getClassEnvNoElaboration;
-
 
 protected function buildClassDependsInClassDef "help function to buildClassDependsVisitor"
   input Absyn.ClassDef cdef;
@@ -18400,7 +18497,7 @@ algorithm
   classStr:= Absyn.pathString(modelName);
   classStr2 := System.stringReplace(classStr,".","_");
   info := Absyn.INFO("",false,0,0,0,0,Absyn.TIMESTAMP(0.0,0.0));
-  elementspec := Absyn.EXTENDS(modelName,{});
+  elementspec := Absyn.EXTENDS(modelName,{},NONE());
   cl := Absyn.CLASS(classStr2,false,false,false,Absyn.R_MODEL(),
     Absyn.PARTS({Absyn.PUBLIC({Absyn.ELEMENTITEM(
       Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"",elementspec,info,NONE)
@@ -18499,7 +18596,7 @@ algorithm
     Absyn.Path scope2,path2; 
     
     case(path,scope,className,env,p) equation     
-      (_,fqPath) = Inst.makeFullyQualified(Env.emptyCache,env, path);
+      (_,fqPath) = Inst.makeFullyQualified(Env.emptyCache(),env, path);
     then fqPath;
 
 /*    case(path,SOME(path2),className,env,p) equation

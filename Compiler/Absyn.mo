@@ -374,6 +374,7 @@ uniontype ElementSpec "An element is something that occurs in a public or protec
   record EXTENDS
     Path path "path" ;
     list<ElementArg> elementArg "elementArg" ;
+    Option<Annotation> annotationOpt "optional annotation";
   end EXTENDS;
 
   record IMPORT
@@ -1022,9 +1023,11 @@ uniontype Restriction "These constructors each correspond to a different kind of
 
   record R_BLOCK end R_BLOCK;
 
-  record R_CONNECTOR end R_CONNECTOR;
+  record R_CONNECTOR "connector class" 
+  end R_CONNECTOR;
 
-  record R_EXP_CONNECTOR end R_EXP_CONNECTOR;
+  record R_EXP_CONNECTOR "expandable connector class" 
+  end R_EXP_CONNECTOR;
 
   record R_TYPE end R_TYPE;
 
@@ -2225,6 +2228,7 @@ algorithm
     case R_RECORD() then "RECORD"; 
     case R_BLOCK() then "BLOCK"; 
     case R_CONNECTOR() then "CONNECTOR"; 
+    case R_EXP_CONNECTOR() then "EXPANDABLE CONNECTOR";
     case R_TYPE() then "TYPE"; 
     case R_PACKAGE() then "PACKAGE"; 
     case R_FUNCTION() then "FUNCTION"; 
@@ -3182,6 +3186,38 @@ algorithm
           lst=qualifyCRefIntLst(name,subLst,rest);
         then (CREF_QUAL(name,subLst,cref),i)::lst;    
   end matchcontinue;
-end qualifyCRefIntLst;                        
+end qualifyCRefIntLst;
+
+public function setBuildTimeInInfo
+  input Real buildTime;
+  input Info inInfo;
+  output Info outInfo;
+algorithm
+  outInfo := matchcontinue(buildTime, inInfo)
+    local
+      String fileName "fileName where the class is defined in";
+      Boolean isReadOnly "isReadOnly : (true|false). Should be true for libraries";
+      Integer lineNumberStart "lineNumberStart";
+      Integer columnNumberStart "columnNumberStart";
+      Integer lineNumberEnd "lineNumberEnd";
+      Integer columnNumberEnd "columnNumberEnd";
+      Real lastBuildTime "Last Build Time";
+      Real lastEditTime "Last Edit Time";
+    case (buildTime, INFO(fileName, isReadOnly, lineNumberStart, columnNumberStart, 
+                          lineNumberEnd, columnNumberEnd, TIMESTAMP(lastBuildTime,lastEditTime)))      
+    then 
+      (INFO(fileName, isReadOnly, lineNumberStart, columnNumberStart, lineNumberEnd, columnNumberEnd, TIMESTAMP(buildTime,lastEditTime)));
+  end matchcontinue;
+end setBuildTimeInInfo;
+
+public function getFileNameFromInfo
+  input Info inInfo;
+  output String inFileName;
+algorithm
+  inFileName := matchcontinue(inInfo)
+    local String fileName;
+    case (INFO(fileName = fileName)) then fileName;
+  end matchcontinue;
+end getFileNameFromInfo;
           
 end Absyn;

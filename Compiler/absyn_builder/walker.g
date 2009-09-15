@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2008, Linkopings University,
+ * Copyright (c) 1998-2009, Linkopings University,
  * Department of Computer and Information Science,
  * SE-58183 Linkoping, Sweden.
  *
@@ -48,6 +48,7 @@ header "post_include_hpp" {
 		#include "rml.h"
 		#include "../Absyn.h"
 		#include "../Interactive.h"
+		#include <time.h>
     }
 
 	#include <cstdlib>
@@ -225,7 +226,7 @@ stored_definition returns [void *ast]
     void *class_def = 0;
     l_stack el_stack;
 }
-    :      
+    :
         #(STORED_DEFINITION
             ( within = within_clause )?
             ((f:FINAL )?
@@ -240,7 +241,10 @@ stored_definition returns [void *ast]
         )
         {
             if (within == 0) { within=Absyn__TOP; }
-            ast = Absyn__PROGRAM(make_rml_list_from_stack(el_stack),within,Absyn__TIMESTAMP(mk_rcon(0.0),mk_rcon(1.0)));
+            time_t t;
+            double elapsedTime;             // the time elapsed as double
+            time( &t );
+            ast = Absyn__PROGRAM(make_rml_list_from_stack(el_stack),within,Absyn__TIMESTAMP(mk_rcon(0.0),mk_rcon(difftime(t, 0))));
         }
     ;
 
@@ -780,7 +784,7 @@ element returns [void* ast]
                               RML_FALSE,
                               mk_icon(def->getLine()),
                               mk_icon(def->getColumn()),
-	                          mk_icon(def->getEndLine()),
+	                      mk_icon(def->getEndLine()),
 	                          mk_icon(def->getEndColumn()),
 	                          Absyn__TIMESTAMP(
 	                          mk_rcon(def->getLastBuildTime()),
@@ -849,35 +853,33 @@ extends_clause returns [void* ast]
 {
 	void* path;
 	void* mod = 0;
+	void* ann = 0;
 }
 	:
 		(#(e:EXTENDS
 				path = name_path
 				( mod = class_modification )?
+				( ann = annotation )?
 			)
 			{
 				if (!mod) mod = mk_nil();
-				ast = Absyn__EXTENDS(path,mod);
+				ann = ann ? mk_some(ann) : mk_none();
+				ast = Absyn__EXTENDS(path,mod,ann);
 			}
 		)
 	;
 
-constraining_clause returns [void *ast]
-{
-	void* path;
-	void* mod = 0;
-}
-    :
-	    (ast = extends_clause)
-		
-		| (#(n:CONSTRAINEDBY path = name_path ( mod = class_modification )? )
-			{
-				if (!mod) mod = mk_nil();
-				ast = Absyn__EXTENDS(path,mod);
-			}
-		)
-
-	;
+constraining_clause returns [void *ast] 
+{ void* path=0; void* mod = 0; } :
+(
+  (#(EXTENDS path = name_path ( mod = class_modification )?)
+     { ast = Absyn__EXTENDS(path,mod?mod:mk_nil(),mk_none()); }
+  )  
+| (#(CONSTRAINEDBY path = name_path ( mod = class_modification )?)
+     { ast = Absyn__EXTENDS(path,mod?mod:mk_nil(),mk_none()); }
+  )  
+)
+;
 
 // returns datatype ElementSpec
 component_clause returns [void* ast]
@@ -1153,8 +1155,8 @@ argument returns [void* ast]
 
 element_modification_or_replaceable returns [void * ast]
     :
-         (e:EACH)?
-		(f:FINAL)?		
+        (e:EACH)?
+		(f:FINAL)?
         (ast = element_modification[e!=NULL,f!=NULL]
         | ast = element_replaceable[e!=NULL,f!=NULL,false] )
     ;
@@ -2050,12 +2052,52 @@ primary returns [void* ast]
 	:
 		( ui:UNSIGNED_INTEGER
 			{
+			    /*
 				int v;
-				if(str_to_int(ui->getText(),&v)== 0) {
+				if(str_to_int(ui->getText(),&v)== 0) 
+				{
 					ast = Absyn__INTEGER(mk_icon(v));
 				} else {
 					ast = Absyn__REAL(mk_rcon(str_to_double(ui->getText())));
 				}
+				*/
+		    	unsigned long int ltmp;
+		    	char *rest;
+		    	ltmp = strtoul(ui->getText().c_str(),&rest,10);
+		    	/* adrpo: truncate integers that are more than 2^30-1 */
+		    	if (ltmp > 2147483647) /* might be a real! */
+		    	{
+				    std::cerr << std::endl
+				              << modelicafilename.c_str()
+				              << ":" 
+				              << ui->getLine() 
+				              << ":"
+				              << ui->getColumn()
+				              << " Warning: Modelica supports only 32 bit signed integers! Transforming: " 
+				              << ui->getText()
+				              << " into a real"
+				              << std::endl;
+		    		ltmp = 1073741823;
+		    		ast = Absyn__REAL(mk_rcon(str_to_double(ui->getText())));
+		    	}
+		    	else if (ltmp > 1073741823)
+		    	{
+				    std::cerr << std::endl
+				              << modelicafilename.c_str()
+				              << ":" 
+				              << ui->getLine() 
+				              << ":"
+				              << ui->getColumn()
+				              << " Warning: OpenModelica supports only 31 bit signed integers! Truncating integer: " 
+				              << ui->getText()
+				              << " to: " 
+				              << 1073741823
+				              << std::endl;
+		    		ltmp = 1073741823;
+		    		ast = Absyn__INTEGER(mk_icon(ltmp));				               
+		    	} 	
+		    	else
+		    	  ast = Absyn__INTEGER(mk_icon(ltmp));
 			}
 		| ur:UNSIGNED_REAL
 			{

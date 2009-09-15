@@ -937,7 +937,7 @@ algorithm
         terms = buildFormal2ActualParamTerms(formalParamIndxs,actTermLst);
         (terms2 as {ut},extraTerms2,store) = buildResultTerms(functp,funcInstId,funcCallExp,store);
         extraTerms = listAppend(extraTerms,listAppend(extraTerms2,terms));
-    then (ut,extraTerms,store);     
+    then (ut,extraTerms,store);
   end matchcontinue;
 end buildTermCall;    
 

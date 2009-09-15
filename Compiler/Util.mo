@@ -68,15 +68,20 @@ public uniontype ReplacePattern
   end REPLACEPATTERN;
 end ReplacePattern;
 
-protected constant list<ReplacePattern> replaceStringPatterns={REPLACEPATTERN(".","$p"),
-          REPLACEPATTERN("[","$lb"),REPLACEPATTERN("]","$rb"),
-          REPLACEPATTERN("(","$lp"),REPLACEPATTERN(")","$rp"),
-          REPLACEPATTERN(",","$comma")};
 
 protected import System;
 protected import Print;
 protected import Debug;
 protected import OptManager;
+protected import DAELow;
+
+protected constant list<ReplacePattern> replaceStringPatterns=
+         {REPLACEPATTERN(".",DAELow.pointStr),
+          REPLACEPATTERN("[",DAELow.leftBraketStr),REPLACEPATTERN("]",DAELow.rightBraketStr),
+          REPLACEPATTERN("(",DAELow.leftParStr),REPLACEPATTERN(")",DAELow.rightParStr),
+          REPLACEPATTERN(",",DAELow.commaStr)};
+
+
 public function sort "sorts a list given an ordering function. 
 
 Uses the mergesort algorithm.
@@ -4017,7 +4022,7 @@ end stringSplitAtChar2;
 
 public function modelicaStringToCStr "function modelicaStringToCStr
  this replaces symbols that are illegal in C to legal symbols
- see replaceStringPatterns to see the format. (example: \".\" becomes \"$p\")
+ see replaceStringPatterns to see the format. (example: \".\" becomes \"$P\")
   author: x02lucpo"
   input String str;
   input Boolean changeDerCall "if true, first change 'DER(v)' to $derivativev";
@@ -4047,12 +4052,18 @@ first  changes name 'der(v)' to $derivativev and 'pre(v)' to 'pre(v)' with appli
   output String outDerName;
 algorithm
   outDerName := matchcontinue(derName)
-  local String name;
+  local 
+    String name;
+    list<String> names;
     case(derName) equation
       0 = System.strncmp(derName,"der(",4);
-      _::name::_= System.strtok(derName,"()");
-      // "$derivative" should be replaced by DAELow.derivativeNamePrefix when circular imports possible
-      name = "$derivative" +& modelicaStringToCStr(name,false); 
+      // adrpo: 2009-09-08
+      // the commented text: _::name::_ = listLast(System.strtok(derName,"()"));
+      // is wrong as der(der(x)) ends up beeing translated to $der$der instead
+      // of $der$der$x. Changed to the following 2 lines below!
+      _::names = (System.strtok(derName,"()"));
+      names = listMap1(names, modelicaStringToCStr, false); 
+      name = DAELow.derivativeNamePrefix +& stringAppendList(names); 
     then name;
     case(derName) equation
       0 = System.strncmp(derName,"pre(",4);

@@ -111,6 +111,7 @@ protected import Error;
 protected import System;
 protected import ErrorExt;
 protected import AbsynDep;
+protected import InstanceHierarchy;
 
 public function elabExpList "Expression elaboration of Absyn.Exp list, i.e. lists of expressions."
 	input Env.Cache inCache;
@@ -633,12 +634,14 @@ algorithm
         // Transform the element list into a list of element,NOMOD
         ld_mod = Inst.addNomod(ld2);
         
-        (cache,env2) = Inst.addComponentsToEnv(cache,env2, Types.NOMOD(), Prefix.NOPRE(), 
+        (cache,env2,_) = Inst.addComponentsToEnv(cache, env2, InstanceHierarchy.emptyInstanceHierarchy, Types.NOMOD(), Prefix.NOPRE(), 
           Connect.SETS({},{},{},{}), ClassInf.FUNCTION("dummieFunc"), ld_mod, {}, {}, {}, impl);    
         
-        (cache,dae1,env2,_,_,_,_,_) = Inst.instElementList(cache,env2,UnitAbsyn.noStore,
-          Types.NOMOD(), Prefix.NOPRE(), Connect.SETS({},{},{},{}), ClassInf.FUNCTION("dummieFunc"),
-          ld_mod,{},impl,ConnectionGraph.EMPTY);
+        (cache,env2,_,_,dae1,_,_,_,_) = 
+          Inst.instElementList(cache,env2,InstanceHierarchy.emptyInstanceHierarchy, UnitAbsyn.noStore,
+                               Types.NOMOD(), Prefix.NOPRE(), Connect.SETS({},{},{},{}), 
+                               ClassInf.FUNCTION("dummieFunc"),
+                               ld_mod,{},impl,ConnectionGraph.EMPTY);
         
         //----------------------------------------------------------------------
         // The instantiation of the components may have produced some equations
@@ -698,12 +701,14 @@ algorithm
         // Transform the element list into a list of element,NOMOD
         ld_mod = Inst.addNomod(ld2);
         
-        (cache,env2) = Inst.addComponentsToEnv(cache,env2, Types.NOMOD(), Prefix.NOPRE(), 
-          Connect.SETS({},{},{},{}), ClassInf.FUNCTION("dummieFunc"), ld_mod, {}, {}, {}, impl);    
+        (cache,env2,_) = Inst.addComponentsToEnv(cache, env2, InstanceHierarchy.emptyInstanceHierarchy, Types.NOMOD(), 
+                                           Prefix.NOPRE(), Connect.SETS({},{},{},{}), 
+                                           ClassInf.FUNCTION("dummieFunc"), ld_mod, {}, {}, {}, impl);    
         
-        (cache,dae1,env2,_,_,_,_,_) = Inst.instElementList(cache,env2, UnitAbsyn.noStore,
-          Types.NOMOD(), Prefix.NOPRE(), Connect.SETS({},{},{},{}), ClassInf.FUNCTION("dummieFunc"),
-          ld_mod,{},impl,ConnectionGraph.EMPTY);
+        (cache,env2,_,_,dae1,_,_,_,_) = 
+          Inst.instElementList(cache,env2, InstanceHierarchy.emptyInstanceHierarchy, UnitAbsyn.noStore,
+                               Types.NOMOD(), Prefix.NOPRE(), Connect.SETS({},{},{},{}), ClassInf.FUNCTION("dummieFunc"),
+                               ld_mod,{},impl,ConnectionGraph.EMPTY);
         
         //----------------------------------------------------------------------
         // The instantiation of the components may have produced some equations
@@ -5035,8 +5040,9 @@ algorithm
     case (cache,env,{v1,v2},_,impl) equation
       (cache,Exp.ARRAY(etp1,scalar1,expl1),Types.PROP(tp1,c1),_) = elabExp(cache,env, v1, impl, NONE,true);
       (cache,Exp.ARRAY(etp2,scalar2,expl2),Types.PROP(tp2,c2),_) = elabExp(cache,env, v2, impl, NONE,true);
-      {3} = Types.getDimensionSizes(tp1);
-      {3} = Types.getDimensionSizes(tp2);
+      // adrpo 2009-05-15: cross can fail if given a function with input Real[:]!
+      //{3} = Types.getDimensionSizes(tp1);
+      //{3} = Types.getDimensionSizes(tp2);
       expl3 = elabBuiltinCross2(expl1,expl2);
       c = Types.constAnd(c1,c2);
       etp3 = Types.elabType(tp1);
@@ -5047,8 +5053,9 @@ algorithm
     case (cache,env,{v1,v2},_,impl) equation
       (cache,e1,Types.PROP(tp1,c1),_) = elabExp(cache,env, v1, impl, NONE,true);
       (cache,e2,Types.PROP(tp2,c2),_) = elabExp(cache,env, v2, impl, NONE,true);
-       {3} = Types.getDimensionSizes(tp1);
-       {3} = Types.getDimensionSizes(tp2);
+      // adrpo 2009-05-15: cross can fail if given a function with input Real[:]!
+       //{3} = Types.getDimensionSizes(tp1);
+       //{3} = Types.getDimensionSizes(tp2);
        etp = Exp.typeof(e1);
        eltTp = Types.arrayElementType(tp1);
        then (cache,Exp.CALL(Absyn.IDENT("cross"),{e1,e2},false,true,Exp.T_ARRAY(etp,{SOME(3)})),
@@ -5123,6 +5130,45 @@ algorithm
   end matchcontinue;
 end elabBuiltinString;
 
+protected function elabBuiltinRooted 
+"author: adrpo
+  This function handles the built-in rooted operator. (MultiBody)"
+	input Env.Cache inCache;
+  input Env.Env inEnv;
+  input list<Absyn.Exp> inAbsynExpLst;
+  input list<Absyn.NamedArg> inNamedArg;  
+  input Boolean inBoolean;
+  output Env.Cache outCache;
+  output Exp.Exp outExp;
+  output Types.Properties outProperties;
+algorithm 
+  (outCache,outExp,outProperties):=
+  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
+    local
+      Exp.Exp exp;
+      tuple<Types.TType, Option<Absyn.Path>> tp,arr_tp;
+      Types.Const c,const;
+      list<Types.Const> constlist;
+      Exp.Type tp_1,etp;
+      list<Env.Frame> env;
+      Absyn.Exp e;
+      Boolean impl,scalar;
+      list<Exp.Exp> expl,expl_1,args_1;
+      list<Integer> dims;
+      Env.Cache cache;
+      Types.Properties prop;
+      list<Absyn.Exp> args;
+      list<Absyn.NamedArg> nargs;
+      list<Slot> slots,newslots;
+    case (cache,env,args as _,nargs,impl) 
+      equation 
+      then
+				(cache, 
+				Exp.BCONST(true),        
+				Types.PROP((Types.T_BOOL({}),NONE),Types.C_CONST()));		
+  end matchcontinue;
+end elabBuiltinRooted;
+  
 protected function elabBuiltinLinspace "
   author: PA
  
@@ -5453,6 +5499,7 @@ algorithm
     case "cross" then elabBuiltinCross;
     case "skew" then elabBuiltinSkew;
     case "String" then elabBuiltinString;
+    case "rooted" then elabBuiltinRooted;
     case "linspace" then elabBuiltinLinspace;
   end matchcontinue;
 end elabBuiltinHandler;
@@ -5674,7 +5721,7 @@ case (Absyn.CREF_IDENT(name = name,subscripts = {}),expl)
       lst = Util.listMap(expl, Dump.printExpStr);
       s = Util.stringDelimitList(lst, ", ");
       s = Util.stringAppendList({name,"(",s,")'.\n"});
-      Error.addMessage(Error.WRONG_TYPE_OR_NO_OF_ARGS, {s});        
+      Error.addMessage(Error.WRONG_TYPE_OR_NO_OF_ARGS, {s});
       then 
         true;
 case(_,_) then false;
@@ -6728,11 +6775,31 @@ algorithm
   end matchcontinue;
 end componentRefToPath;
 
-protected function generateCompiledFunction "function: generateCompiledFunction 
+public function needToRebuild
+  input String newFile;
+  input String oldFile;
+  input Real   buildTime;
+  output Boolean buildNeeded;
+algorithm
+  buildNeeded := matchcontinue(newFile, oldFile, buildTime)
+    local String newf,oldf; Real bt,nfmt;
+    case ("","",bt) then true; // rebuild all the time if the function has no file!
+    case (newf,oldf,bt)
+      equation
+        true = stringEqual(newf, oldf); // the files should be the same!
+        // the new file nf should have an older modification time than the last build                
+        SOME(nfmt) = System.getFileModificationTime(newf); 
+        true = realGt(bt, nfmt); // the file was not modified since last build
+      then false;
+    case (_,_,_) then true;
+  end matchcontinue;
+end needToRebuild;
+
+protected function generateCompiledFunction 
+"function: generateCompiledFunction 
   TODO: This currently only works for top level functions. For functions inside packages 
   we need to reimplement without using lookup functions, since we can not build
-  correct env for packages containing functions.   
-"
+  correct env for packages containing functions."
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input Absyn.ComponentRef inComponentRef;
@@ -6769,14 +6836,11 @@ algorithm
       list<Interactive.InteractiveVariable> c;
       Env.Cache cache;
       list<Interactive.LoadedFile> lf;
-    case (cache,env,fn,e,prop,SOME((st as Interactive.SYMBOLTABLE(p,_,_,_,_,cflist,_)))) /* axiom generate_compiled_function(_,_,_,_,NONE) => NONE */ 
-      equation 
-        Debug.fprintln("sei", "generate_compiled_function: start1");
-        pfn = Absyn.crefToPath(fn);
-        (true,_) = isFunctionInCflist(cflist, pfn);
-        Debug.fprintln("sei", "function is in Cflist");
-      then
-        (cache,SOME(st));
+      Real buildTime;
+      Real fileLoadTime;
+      String fNew,fOld;
+      Real edit, build;
+      
     case (cache,env,fn,e,prop,st) /* Do not compile if the function is a \"known\" external function, e.g. math lib. */ 
       local Option<Interactive.InteractiveSymbolTable> st;
       equation 
@@ -6788,44 +6852,89 @@ algorithm
         Debug.fprintln("sei", "function is known external func");
       then
         (cache,st);
-    case (cache,env,fn,e,prop,SOME((st as Interactive.SYMBOLTABLE(p,aDep,a,b,c,cflist,lf))))
-      local Integer libHandle, funcHandle;
-            String funcstr;
+      
+    /* see if we have the function and we don'e need to rebuild! */
+    case (cache,env,fn,e,prop,SOME((st as Interactive.SYMBOLTABLE(p,_,_,_,_,cflist,_))))
+      equation
+        Debug.fprintln("sei", "generate_compiled_function: start1");
+        pfn = Absyn.crefToPath(fn);
+        (true, _, buildTime, fOld) = isFunctionInCflist(cflist, pfn);        
+        Absyn.CLASS(_,_,_,_,Absyn.R_FUNCTION(),_,Absyn.INFO(fileName = fNew)) = Interactive.getPathedClassInProgram(pfn, p);
+        false = stringEqual(fNew,""); // see if the WE have a file or not!        
+        false = needToRebuild(fNew,fOld,buildTime); // we don't need to rebuild!
+        Debug.fprintln("sei", "function is in Cflist");
+      then
+        (cache,SOME(st));
+        
+    /* see if we have the function and we don'e need to rebuild based on ast build times */
+    case (cache,env,fn,e,prop,SOME((st as Interactive.SYMBOLTABLE(p as Absyn.PROGRAM(globalBuildTimes=Absyn.TIMESTAMP(_,edit)),_,_,_,_,cflist,_))))      
+      equation
+        Debug.fprintln("sei", "generate_compiled_function: start1.5");
+        pfn = Absyn.crefToPath(fn);
+        (true, _, buildTime, fOld) = isFunctionInCflist(cflist, pfn);        
+        Absyn.CLASS(_,_,_,_,Absyn.R_FUNCTION(),_,Absyn.INFO(buildTimes=Absyn.TIMESTAMP(build,_))) = Interactive.getPathedClassInProgram(pfn, p);        
+        // see if the build time from the class is the same as the build time from the compiled functions list
+        true = (buildTime >=. build);
+        true = (buildTime >. edit);
+        Debug.fprintln("sei", "function is in Cflist with the same build time as the class");
+      then
+        (cache,SOME(st));
+            
+    case (cache,env,fn,e,prop,SOME((st as Interactive.SYMBOLTABLE(p as Absyn.PROGRAM(globalBuildTimes=ts),aDep,a,b,c,cflist,lf))))
+      local 
+        Absyn.TimeStamp ts;
+        Integer libHandle, funcHandle;
+        String funcstr,f;
+        Real buildTime;
+        Boolean ifFuncInList;            
+        list<Interactive.CompiledCFunction> newCF;
+        String name;
+        Boolean           ppref, fpref, epref;
+        Absyn.Restriction restriction  "Restriction" ;
+        Absyn.ClassDef    body;
+        Absyn.Info        info;
+        Absyn.Within      w;
+            
       equation
         Debug.fprintln("sei", "generate_compiled_function: start2");
         path = Absyn.crefToPath(fn);
-        (false,_) = isFunctionInCflist(cflist, path);
         (cache,false) = isExternalObjectFunction(cache,env,path);
+                
+        newCF = Interactive.removeCf(path, cflist); // remove it as it might be there with an older build time.
+        Absyn.CLASS(name,ppref,fpref,epref,Absyn.R_FUNCTION(),body,info) = Interactive.getPathedClassInProgram(path, p);
         p_1 = SCode.elaborate(p);
         Debug.fprintln("sei", "generate_compiled_function: elaborated");
         (cache,cls,env_1) = Lookup.lookupClass(cache,env, path, false) "	Inst.instantiate_implicit(p\') => d & message" ;
         Debug.fprintln("sei", "generate_compiled_function: class looked up");
-        (cache,env_2,d) = Inst.implicitFunctionInstantiation(cache,env_1, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
-          cls, {});
+        (cache,env_2,_,d) = Inst.implicitFunctionInstantiation(cache, env_1, InstanceHierarchy.emptyInstanceHierarchy, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cls, {});
         Debug.fprintln("sei", "generate_compiled_function: function instantiated");
         Print.clearBuf();
         d_1 = ModUtil.stringPrefixParams(DAE.DAE(d));
         /* libs = Codegen.generateFunctions(d_1); */
-        libs = {};
         Debug.fprintln("sei", "generate_compiled_function: function generated");
         cache = CevalScript.cevalGenerateFunction(cache,env,path);
         t = Types.getPropType(prop) "	& Debug.fprintln(\"sei\", \"generate_compiled_function: compiled\")" ;
-        funcstr = ModUtil.pathString2(path, "_");
+        funcstr = ModUtil.pathStringReplaceDot(path, "_");
         libHandle = System.loadLibrary(funcstr);
         funcHandle = System.lookupFunction(libHandle, stringAppend("in_", funcstr));
         System.freeLibrary(libHandle);
+        buildTime = System.getCurrentTime();
+        // update the build time in the class!
+        info = Absyn.setBuildTimeInInfo(buildTime,info);
+        ts = Absyn.setTimeStampBuild(ts, buildTime);
+        w = Interactive.buildWithin(path);
+        p = Interactive.updateProgram(p,Absyn.PROGRAM({Absyn.CLASS(name,ppref,fpref,epref,Absyn.R_FUNCTION(),body,info)},w,ts));
+        f = Absyn.getFileNameFromInfo(info);
+        Debug.fprintln("sei", "Static: added the function in the compiled functions list");        
       then
-        (cache,SOME(Interactive.SYMBOLTABLE(p,aDep,a,b,c,(Interactive.CFunction(path,t,funcHandle) :: cflist),lf)));
+        (cache,SOME(Interactive.SYMBOLTABLE(p,aDep,a,b,c,(Interactive.CFunction(path,t,funcHandle,buildTime,f) :: newCF),lf)));
+        
     case (cache,env,fn,e,prop,NONE) /* PROP_TUPLE? */ 
       equation 
       Debug.fprintln("sei", "generate_compiled_function: start3");
       then
         (cache,NONE);
-    case (cache,env,cr,exp,prop,st) /* 
-  rule	( If fails, skip it. ))
-	--------------------------------------------------
-	generate_compiled_function(_,_,_,_,st) => st
- */ 
+    case (cache,env,cr,exp,prop,st) 
       local Option<Interactive.InteractiveSymbolTable> st;
       equation 
         Debug.fprintln("failtrace", "- generate_compiled_function failed4");
@@ -6844,38 +6953,40 @@ algorithm
   end matchcontinue;
 end generateCompiledFunction;
 
-public function isFunctionInCflist "function: isFunctionInCflist
- 
-  This function returns true if a function, named by an Absyn.Path, 
+public function isFunctionInCflist 
+"function: isFunctionInCflist
+  This function returns true if a function, named by an Absyn.Path,
   is present in the list of precompiled functions that can be executed
   in the interactive mode. If it returns true, it also returns the
-  functionHandle stored in the cflist.
-"
+  functionHandle stored in the cflist."
   input list<Interactive.CompiledCFunction> inTplAbsynPathTypesTypeLst;
   input Absyn.Path inPath;
   output Boolean outBoolean;
   output Integer outFuncHandle;
-algorithm 
-  (outBoolean,outFuncHandle):=
-  matchcontinue (inTplAbsynPathTypesTypeLst,inPath)
+  output Real outBuildTime;
+  output String outFileName;
+algorithm
+  (outBoolean,outFuncHandle,outBuildTime,outFileName) := matchcontinue (inTplAbsynPathTypesTypeLst,inPath)
     local
       Absyn.Path path1,path2;
       Types.Type ty;
       list<Interactive.CompiledCFunction> rest;
       Boolean res;
       Integer handle;
-    case ({},_) then (false, -1);
-    case ((Interactive.CFunction(path1,ty,handle) :: rest),path2)
+      Real buildTime;
+      String fileName;
+    case ({},_) then (false, -1, -1.0, "");
+    case ((Interactive.CFunction(path1,ty,handle,buildTime,fileName) :: rest),path2)
       equation
         true = ModUtil.pathEqual(path1, path2);
       then
-        (true, handle);
-    case ((Interactive.CFunction(path1,ty,_) :: rest),path2)
+        (true, handle, buildTime, fileName);
+    case ((Interactive.CFunction(path1,ty,_,_,_) :: rest),path2)
       equation
         false = ModUtil.pathEqual(path1, path2);
-        (res,handle) = isFunctionInCflist(rest, path2);
+        (res,handle,buildTime,fileName) = isFunctionInCflist(rest, path2);
       then
-        (res,handle);
+        (res,handle,buildTime,fileName);
   end matchcontinue;
 end isFunctionInCflist;
 

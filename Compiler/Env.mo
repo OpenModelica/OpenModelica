@@ -1421,7 +1421,8 @@ algorithm
       Option<AvlTree> l,r;
       Absyn.InnerOuter io;
     case (NONE) then {}; 
-    case (SOME(AVLTREENODE(SOME(AVLTREEVALUE(_,VAR(Types.VAR(id,Types.ATTR(innerOuter=io),_,(Types.T_COMPLEX(ClassInf.CONNECTOR(_),vars,_,_),_),_),_,_,_))),_,l,r)))
+    case (SOME(AVLTREENODE(SOME(AVLTREEVALUE(_,VAR(Types.VAR(id,Types.ATTR(innerOuter=io),_,
+          (Types.T_COMPLEX(ClassInf.CONNECTOR(_,_),vars,_,_),_),_),_,_,_))),_,l,r)))
       equation 
         lst1 = localOutsideConnectorFlowvars2(l);
         lst2 = localOutsideConnectorFlowvars2(r);
@@ -1482,7 +1483,8 @@ algorithm
     
     
          /* Case where we have an array, assumed indexed which contains complex types. */
-    case (SOME(AVLTREENODE(SOME(AVLTREEVALUE(_,VAR(Types.VAR(id,(tatr as Types.ATTR(innerOuter=io)),b3,(tmpty as (Types.T_ARRAY(ad,at),_)),bind),_,_,_))),_,l,r)))
+    case (SOME(AVLTREENODE(SOME(AVLTREEVALUE(_,VAR(Types.VAR(id,(tatr as Types.ATTR(innerOuter=io)),b3,
+          (tmpty as (Types.T_ARRAY(ad,at),_)),bind),_,_,_))),_,l,r)))
       local
         Types.ArrayDim ad;
         Types.Type at,tmpty,flatArrayType;
@@ -1510,7 +1512,8 @@ algorithm
         res;   
         
     /* If CONNECTOR then  outside and not inside, skip.. */
-    case (SOME(AVLTREENODE(SOME(AVLTREEVALUE(_,VAR(Types.VAR(id,_,_,(Types.T_COMPLEX(ClassInf.CONNECTOR(_),_,_,_),_),_),_,_,_))),_,l,r)))  
+    case (SOME(AVLTREENODE(SOME(AVLTREEVALUE(_,VAR(Types.VAR(id,_,_,
+          (Types.T_COMPLEX(ClassInf.CONNECTOR(_,_),_,_,_),_),_),_,_,_))),_,l,r)))  
       equation 
         lst1 = localInsideConnectorFlowvars2(l);
         lst2 = localInsideConnectorFlowvars2(r);
@@ -1519,7 +1522,8 @@ algorithm
         res;
         
      /* If OUTER, skip.. */
-    case (SOME(AVLTREENODE(SOME(AVLTREEVALUE(_,VAR(Types.VAR(id,Types.ATTR(innerOuter=io),_,(Types.T_COMPLEX(_,vars,_,_),_),_),_,_,_))),_,l,r)))  
+    case (SOME(AVLTREENODE(SOME(AVLTREEVALUE(_,VAR(Types.VAR(id,Types.ATTR(innerOuter=io),_,
+          (Types.T_COMPLEX(_,vars,_,_),_),_),_,_,_))),_,l,r)))  
       equation
         (_,true) = Inst.innerOuterBooleans(io); 
         lst1 = localInsideConnectorFlowvars2(l);
@@ -1528,7 +1532,8 @@ algorithm
       then
         res;   
     /* ... else retrieve connectors as subcomponents */
-    case (SOME(AVLTREENODE(SOME(AVLTREEVALUE(_,VAR(Types.VAR(id,_,_,(Types.T_COMPLEX(_,vars,_,_),_),_),_,_,_))),_,l,r)))  
+    case (SOME(AVLTREENODE(SOME(AVLTREEVALUE(_,VAR(Types.VAR(id,_,_,
+          (Types.T_COMPLEX(_,vars,_,_),_),_),_,_,_))),_,l,r)))  
       equation 
         lst1 = localInsideConnectorFlowvars3(vars, id);
         lst2 = localInsideConnectorFlowvars2(l);
@@ -1561,13 +1566,22 @@ algorithm
       Ident id,oid,name;
       list<Types.Var> vars,xs;
       Absyn.InnerOuter io;
+      Boolean isExpandable;
     case ({},_) then {}; 
-    case ((Types.VAR(name = id,attributes=Types.ATTR(innerOuter=io),type_ = (Types.T_COMPLEX(complexClassType = ClassInf.CONNECTOR(string = name),complexVarLst = vars),_)) :: xs),oid)
+    case ((Types.VAR(name = id,attributes=Types.ATTR(innerOuter=io),
+           type_ = (Types.T_COMPLEX(complexClassType = ClassInf.CONNECTOR(string = name, isExpandable = isExpandable),
+                    complexVarLst = vars),_)) :: xs),oid)
       equation 
         lst1 = localInsideConnectorFlowvars3(xs, oid);
         (_,false) = Inst.innerOuterBooleans(io);
         //lst2 = Types.flowVariables(vars, Exp.CREF_QUAL(oid,Exp.OTHER(),{},Exp.CREF_IDENT(id,Exp.OTHER(),{})));
-        lst2 = Types.flowVariables(vars, Exp.CREF_QUAL(oid,Exp.COMPLEX(name,{},ClassInf.CONNECTOR(name)),{},Exp.CREF_IDENT(id,Exp.COMPLEX(name,{},ClassInf.CONNECTOR(name)),{})));
+        lst2 = Types.flowVariables(vars, Exp.CREF_QUAL(oid,
+                                                       Exp.COMPLEX(name,{},ClassInf.CONNECTOR(name,isExpandable)),
+                                                       {},
+                                                       Exp.CREF_IDENT(id,
+                                                                      Exp.COMPLEX(name,
+                                                                      {},
+                                                                      ClassInf.CONNECTOR(name,isExpandable)),{})));
         res = listAppend(lst1, lst2);
       then
         res;
@@ -1598,15 +1612,24 @@ algorithm
       Absyn.InnerOuter io;
       list<Exp.Subscript> s;
       Types.Var tv;
+      Boolean isExpandable;
     case ({},_,_) then {}; 
     case (_,_,{}) then {};
-    case (((tv as Types.VAR(name = id,attributes=Types.ATTR(innerOuter=io),type_ = (Types.T_COMPLEX(complexClassType = ClassInf.CONNECTOR(string = name),complexVarLst = vars),_))) :: xs),oid,s::ssubs)
+    case (((tv as Types.VAR(name = id,attributes=Types.ATTR(innerOuter=io),type_ = 
+           (Types.T_COMPLEX(complexClassType = ClassInf.CONNECTOR(string = name, isExpandable = isExpandable),
+                            complexVarLst = vars),_))) :: xs),oid,s::ssubs)
       equation 
         lst3 = localInsideConnectorFlowvars3_2({tv},oid,ssubs);
         lst1 = localInsideConnectorFlowvars3_2(xs, oid,s::ssubs);
         (_,false) = Inst.innerOuterBooleans(io);
         //lst2 = Types.flowVariables(vars, Exp.CREF_QUAL(oid,Exp.OTHER(),{},Exp.CREF_IDENT(id,Exp.OTHER(),{})));
-        lst2 = Types.flowVariables(vars, Exp.CREF_QUAL(oid,Exp.COMPLEX(name,{},ClassInf.CONNECTOR(name)),s,Exp.CREF_IDENT(id,Exp.COMPLEX(name,{},ClassInf.CONNECTOR(name)),{})));
+        lst2 = Types.flowVariables(vars, 
+                                   Exp.CREF_QUAL(oid,
+                                                 Exp.COMPLEX(name,{},ClassInf.CONNECTOR(name,isExpandable)),
+                                                 s,
+                                                 Exp.CREF_IDENT(id,
+                                                                Exp.COMPLEX(name,{},ClassInf.CONNECTOR(name,isExpandable)),
+                                                                {})));
         res = Util.listFlatten({lst1, lst2,lst3});
       then
         res;

@@ -60,7 +60,7 @@ options
 {
     importVocab = modelica_parser;
     k = 1;
-    buildAST = true;
+    buildAST = false;
     defaultErrorHandler = false;
     ASTLabelType = "RefMyAST";
 }

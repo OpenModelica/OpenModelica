@@ -87,10 +87,6 @@ uniontype Type "- Basic types
   end COMPLEX;
   record OTHER "e.g. complex types, etc." end OTHER;
 
-  record T_RECORD
-    Ident name;
-  end T_RECORD;
-
   record T_ARRAY
     Type ty;
     list<Option<Integer>> arrayDimensions "arrayDimensions" ;
@@ -1073,6 +1069,7 @@ protected import Debug;
 protected import Static;
 protected import Env;
 protected import System;
+protected import DAELow;
 
 protected constant Exp rconstone=RCONST(1.0);
 
@@ -6058,11 +6055,6 @@ algorithm
     case BOOL() then "BOOL"; 
     case STRING() then "STRING"; 
     case OTHER() then "OTHER"; 
-    case (T_RECORD(name = s1))
-      equation
-        s2 = stringAppend("RECORD ", s1);
-      then
-        s2;
     case (T_ARRAY(ty = t,arrayDimensions = dims))
       equation 
         ss = Util.listMap(Util.listMap1(dims, Util.applyOption,int_string),Util.stringOption);
@@ -6948,7 +6940,7 @@ algorithm
   end matchcontinue;
 end printComponentRefStr;
 
-protected function printComponentRef2Str 
+public function printComponentRef2Str 
 "function: printComponentRef2Str 
   Helper function to printComponentRefStr."
   input Ident inIdent;
@@ -7952,7 +7944,7 @@ algorithm
         name = printComponentRefStr(cr); 
         false = Util.stringContainsChar(name,"$");        
         id = Util.stringAppendList({"$",id});
-        id = Util.stringReplaceChar(id,".","$p");        
+        id = Util.stringReplaceChar(id,".",DAELow.pointStr);        
       then
         (CREF(CREF_IDENT(id,t2,ssl),ety),1);
     case (e,s,_) then (e,0); 

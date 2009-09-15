@@ -1,17 +1,14 @@
-package Cevalfunc "
-    Copyright (C) MathCore Engineering AB, 2007
- 
+package Cevalfunc 
+"Copyright (C) MathCore Engineering AB, 2007
  
  Author: Bjorn Zachrisson 
-
   
   file:	 Cevalfunc.mo
   module:      MATHCORE
   description: This module constant evaluates userdefined functions, speeds up instantination process.
-  It includes 
-  Constant evaluations of function and algorithm statements.
+  It includes Constant evaluations of function and algorithm statements.
   RCS: $Id: Cevalfunc.mo 3059 2008-05-15 07:03:53Z bjozac $
-"
+  "
 public import Env;
 public import Exp;
 public import Values; 
@@ -31,6 +28,7 @@ protected import Debug;
 protected import Lookup;
 protected import Static;
 protected import Inst;
+protected import InstanceHierarchy;
 protected import UnitAbsyn;
 
 protected constant String forScopeName="$for loop scope$";
@@ -1168,8 +1166,8 @@ algorithm
     case(p ,env) 
       equation
         (_,typeClass as SCode.CLASS(name=className),env1) = Lookup.lookupClass(Env.emptyCache(), env, p, false);
-        (_,_,env2,_,_,ty,_,_,_) = Inst.instClass(
-          Env.emptyCache(),env1,UnitAbsyn.noStore,Types.NOMOD(),Prefix.NOPRE(),Connect.emptySet,typeClass,{}, true, Inst.INNER_CALL, ConnectionGraph.EMPTY);
+        (_,env2,_,_,_,_,ty,_,_,_) = Inst.instClass(
+          Env.emptyCache(),env1,InstanceHierarchy.emptyInstanceHierarchy,UnitAbsyn.noStore,Types.NOMOD(),Prefix.NOPRE(),Connect.emptySet,typeClass,{}, true, Inst.INNER_CALL, ConnectionGraph.EMPTY);
       then
         ty;
     case (_,_) 

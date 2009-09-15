@@ -45,8 +45,8 @@ options {
     testLiterals = false;
     defaultErrorHandler = false;
     caseSensitive = true;
-    codeGenMakeSwitchThreshold=2;
-    codeGenBitsetTestThreshold=3;
+    //codeGenMakeSwitchThreshold=2;
+    //codeGenBitsetTestThreshold=3;
 }
 
 tokens {

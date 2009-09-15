@@ -65,6 +65,7 @@ protected import Error;
 protected import CevalScript;
 protected import Env;
 protected import Settings;
+protected import InstanceHierarchy;
 
 protected function serverLoop
 "function: serverLoop
@@ -213,9 +214,10 @@ algorithm
         p_1 = Interactive.addScope(p, vars);
         vars_1 = Interactive.updateScope(p, vars);
         newprog = Interactive.updateProgram(p_1, iprog);
-        cf_1 = Interactive.removeCompiledFunctions(p, cf);
-        Debug.fprint("dump", 
-          "\n--------------- Parsed program ---------------\n");
+        // not needed. the functions will be remove by examining
+        // build times and files!
+        cf_1 = cf; // cf_1 = Interactive.removeCompiledFunctions(p, cf);
+        Debug.fprint("dump", "\n--------------- Parsed program ---------------\n");
         Debug.fcall("dumpgraphviz", DumpGraphviz.dump, newprog);
         Debug.fcall("dump", Dump.dump, newprog);
         res_1 = makeClassDefResult(p_1) "return vector of toplevel classnames";
@@ -418,7 +420,8 @@ algorithm
         Debug.fprint("info", "---instantiating\n");
         //print(" Inst.Instantiate " +& realString(clock()) +&"\n");
         Debug.fcall("execstat",print, "*** Main -> To instantiate at time: " +& realString(clock()) +& "\n" );
-        (_,d_1) = Inst.instantiate(Env.emptyCache,p_1);
+        (_,_,d_1) = Inst.instantiate(Env.emptyCache(),InstanceHierarchy.emptyInstanceHierarchy,p_1);
+        d_1 = DAE.transformIfEqToExpr(d_1);
         Debug.fcall("execstat",print, "*** Main -> done instantiation at time: " +& realString(clock()) +& "\n" );
         //print(" Inst.Instantiate " +& realString(clock()) +&" DONE\n");
         Debug.fprint("beforefixmodout", "Explicit part:\n");
@@ -699,10 +702,8 @@ algorithm
         file_dir = CevalScript.getFileDir(a_cref, ap);
         Debug.fcall("execstat",print, "*** Main -> simcodgen -> generateFunctions: " +& realString(clock()) +& "\n" );
         libs = SimCodegen.generateFunctions(p, dae, indexed_dlow_1, classname, funcfilename);
-        SimCodegen.generateSimulationCode(dae, dlow, /* indexed_dlow_1, */ ass1, ass2, m, mt, comps, classname, 
-          filename, funcfilename,file_dir);
-        SimCodegen.generateInitData(indexed_dlow_1, classname, cname_str, init_filename, 0.0, 
-          1.0, 500.0,1e-6,"dassl","");
+        SimCodegen.generateSimulationCode(dae, indexed_dlow_1, ass1, ass2, m, mt, comps, classname, filename, funcfilename,file_dir);
+        SimCodegen.generateInitData(indexed_dlow_1, classname, cname_str, init_filename, 0.0, 1.0, 500.0,1e-6,"dassl","");
         SimCodegen.generateMakefile(makefilename, cname_str, libs, file_dir);
       then
         ();

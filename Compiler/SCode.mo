@@ -59,7 +59,9 @@ uniontype Restriction
   record R_MODEL end R_MODEL;
   record R_RECORD end R_RECORD;
   record R_BLOCK end R_BLOCK;
-  record R_CONNECTOR end R_CONNECTOR;
+  record R_CONNECTOR
+    Boolean isExpandable;  
+  end R_CONNECTOR;
   record R_TYPE end R_TYPE;
   record R_PACKAGE end R_PACKAGE;
   record R_FUNCTION end R_FUNCTION;
@@ -441,8 +443,8 @@ algorithm
     case (_,Absyn.R_MODEL()) then R_MODEL(); 
     case (_,Absyn.R_RECORD()) then R_RECORD(); 
     case (_,Absyn.R_BLOCK()) then R_BLOCK(); 
-    case (_,Absyn.R_CONNECTOR()) then R_CONNECTOR(); 
-    case (_,Absyn.R_EXP_CONNECTOR()) then R_CONNECTOR();  /* fixme */ 
+    case (_,Absyn.R_CONNECTOR()) then R_CONNECTOR(false); 
+    case (_,Absyn.R_EXP_CONNECTOR()) then R_CONNECTOR(true);  /* fixme */ 
     case (_,Absyn.R_TYPE()) then R_TYPE();  /* fixme */ 
     case (_,Absyn.R_PACKAGE()) then R_PACKAGE(); 
     case (_,Absyn.R_ENUMERATION()) then R_ENUMERATION(); 
@@ -1637,7 +1639,8 @@ algorithm
     case R_MODEL() then "MODEL"; 
     case R_RECORD() then "RECORD"; 
     case R_BLOCK() then "BLOCK"; 
-    case R_CONNECTOR() then "CONNECTOR"; 
+    case R_CONNECTOR(false) then "CONNECTOR"; 
+    case R_CONNECTOR(true) then "EXPANDABLE_CONNECTOR";
     case R_TYPE() then "TYPE"; 
     case R_PACKAGE() then "PACKAGE"; 
     case R_FUNCTION() then "FUNCTION"; 
@@ -1645,7 +1648,9 @@ algorithm
     case R_PREDEFINED_INT() then "PREDEFINED_INT"; 
     case R_PREDEFINED_REAL() then "PREDEFINED_REAL"; 
     case R_PREDEFINED_STRING() then "PREDEFINED_STRING"; 
-    case R_PREDEFINED_BOOL() then "PREDEFINED_BOOL"; 
+    case R_PREDEFINED_BOOL() then "PREDEFINED_BOOL";
+    case R_PREDEFINED_ENUM() then "PREDEFINED_ENUM";      
+    case R_ENUMERATION() then "ENUMERATION";       
   end matchcontinue;
 end restrString;
 
@@ -2293,7 +2298,8 @@ algorithm
      case (R_MODEL(),R_MODEL()) then true;
      case (R_RECORD(),R_RECORD()) then true;
      case (R_BLOCK(),R_BLOCK()) then true;
-     case (R_CONNECTOR(),R_CONNECTOR()) then true;
+     case (R_CONNECTOR(true),R_CONNECTOR(true)) then true; // expandable connectors
+     case (R_CONNECTOR(false),R_CONNECTOR(false)) then true; // non expandable connectors
      case (R_TYPE(),R_TYPE()) then true;
      case (R_PACKAGE(),R_PACKAGE()) then true;
      case (R_FUNCTION(),R_FUNCTION()) then true;

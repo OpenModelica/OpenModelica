@@ -4190,6 +4190,14 @@ algorithm
       Option<Absyn.Comment> comment;
       Absyn.InnerOuter io;
       Types.Type tp;
+            
+    /* adrpo: filter out records! */
+    case ((x as VAR(ty = COMPLEX(_,_))) :: lst)
+      equation
+        res = getVariableList(lst);
+      then
+        (res);   
+              
     case ((x as VAR(_,_,_,_,_,_,_,_,_,_,_,_,_,_)) :: lst)
       equation 
         res = getVariableList(lst);
@@ -5214,10 +5222,9 @@ algorithm
   end matchcontinue;
 end getAllExpsSubscript;
 
-protected function getAllExpsExtarg "function: getAllExpsExtarg
-  
-  Get all exps from an ExtArg 
-"
+protected function getAllExpsExtarg 
+"function: getAllExpsExtarg  
+  Get all exps from an ExtArg"
   input ExtArg inExtArg;
   output list<Exp.Exp> outExpExpLst;
 algorithm 
@@ -5258,14 +5265,13 @@ algorithm
   end matchcontinue;
 end getAllExpsExtarg;
 
-public function transformIfEqToExpr "function: transformIfEqToExpr
-  transform all if equations to ordinary equations involving if-expressions
-"
+public function transformIfEqToExpr 
+"function: transformIfEqToExpr
+  transform all if equations to ordinary equations involving if-expressions"
   input DAElist inDAElist;
   output DAElist outDAElist;
 algorithm 
-  outDAElist:=
-  matchcontinue (inDAElist)
+  outDAElist := matchcontinue (inDAElist)
     local
       DAElist sublist_result,result,sublist;
       list<Element> rest_result,rest,res2,res1,res;
@@ -5295,9 +5301,9 @@ algorithm
   end matchcontinue;
 end transformIfEqToExpr;
 
-protected function ifEqToExpr "function: ifEqToExpr
-  Transform one if-equation into equations involving if-expressions
-"
+protected function ifEqToExpr 
+"function: ifEqToExpr
+  Transform one if-equation into equations involving if-expressions"
   input Element inElement;
   output list<Element> outElementLst;
 algorithm 
@@ -5357,7 +5363,7 @@ algorithm
   outElementLst:=
   matchcontinue (inExp1,inElementLst2,inElementLst3)
       
-    case (_,{},{}) then {}; 
+    case (_,{{}},{}) then {}; 
 
     case (conds,tbs,fb::fbs)
       local 

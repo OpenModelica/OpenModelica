@@ -69,6 +69,7 @@ uniontype State "- Machine states, the string contains the classname."
 
   record CONNECTOR
     String string;
+    Boolean isExpandable;
   end CONNECTOR;
 
   record TYPE
@@ -329,12 +330,12 @@ public function start "!includecode
 algorithm 
   outState:=
   matchcontinue (inRestriction,inString)
-    local String s;
+    local String s; Boolean isExpandable;
     case (SCode.R_CLASS(),s) then UNKNOWN(s); 
     case (SCode.R_MODEL(),s) then MODEL(s); 
     case (SCode.R_RECORD(),s) then RECORD(s); 
     case (SCode.R_BLOCK(),s) then BLOCK(s); 
-    case (SCode.R_CONNECTOR(),s) then CONNECTOR(s); 
+    case (SCode.R_CONNECTOR(isExpandable),s) then CONNECTOR(s,isExpandable); 
     case (SCode.R_TYPE(),s) then TYPE(s); 
     case (SCode.R_PACKAGE(),s) then PACKAGE(s); 
     case (SCode.R_FUNCTION(),s) then FUNCTION(s); 
@@ -363,11 +364,12 @@ algorithm
       String s;
       State st;
       Event ev;
+      Boolean isExpandable;
     case (UNKNOWN(string = s),NEWDEF()) then IS_NEW(s);  /* Event `NEWDEF\' */ 
     case (MODEL(string = s),NEWDEF()) then MODEL(s); 
     case (RECORD(string = s),NEWDEF()) then RECORD(s); 
     case (BLOCK(string = s),NEWDEF()) then BLOCK(s); 
-    case (CONNECTOR(string = s),NEWDEF()) then CONNECTOR(s); 
+    case (CONNECTOR(string = s,isExpandable=isExpandable),NEWDEF()) then CONNECTOR(s,isExpandable); 
     case (TYPE(string = s),NEWDEF()) then TYPE(s); // A type can be constructed with long definition
      case (PACKAGE(string = s),NEWDEF()) then PACKAGE(s); 
     case (FUNCTION(string = s),NEWDEF()) then FUNCTION(s); 
@@ -384,12 +386,14 @@ algorithm
     case (MODEL(string = s),FOUND_COMPONENT()) then MODEL(s); 
     case (RECORD(string = s),FOUND_COMPONENT()) then RECORD(s); 
     case (BLOCK(string = s),FOUND_COMPONENT()) then BLOCK(s); 
-    case (CONNECTOR(string = s),FOUND_COMPONENT()) then CONNECTOR(s); 
+    case (CONNECTOR(string = s,isExpandable = isExpandable),FOUND_COMPONENT()) then CONNECTOR(s,isExpandable);
     case (TYPE(string = s),FOUND_COMPONENT())  // A type can not contain components
       equation 
         Error.addMessage(Error.TYPE_NOT_FROM_PREDEFINED, {s});
       then
         fail(); 
+    /* adrpo 2009-05-15: type Orientation can contain equalityConstraint function! */
+    //case (TYPE(string = s),FOUND_COMPONENT()) then TYPE(s); 
     case (PACKAGE(string = s),FOUND_COMPONENT()) then PACKAGE(s); 
     case (FUNCTION(string = s),FOUND_COMPONENT()) then FUNCTION(s); 
     case (ENUMERATION(string = s),FOUND_COMPONENT()) then ENUMERATION(s);
@@ -410,7 +414,7 @@ algorithm
       then
         fail();
     case (BLOCK(string = s),FOUND_EQUATION()) then BLOCK(s); 
-    case (CONNECTOR(string = s),FOUND_EQUATION())
+    case (CONNECTOR(string = s,isExpandable = isExpandable),FOUND_EQUATION())
       equation 
         Error.addMessage(Error.EQUATION_IN_CONNECTOR, {s});
       then
@@ -456,12 +460,13 @@ algorithm
     case (IS_NEW(string = s),SCode.R_RECORD()) then (); 
     case (BLOCK(string = s),SCode.R_BLOCK()) then (); 
     case (HAS_EQUATIONS(string = s),SCode.R_BLOCK()) then (); 
-    case (CONNECTOR(string = _),SCode.R_CONNECTOR()) then (); 
-    case (IS_NEW(string = _),SCode.R_CONNECTOR()) then (); 
-    case (TYPE_INTEGER(string = _),SCode.R_CONNECTOR()) then (); 
-    case (TYPE_REAL(string = _),SCode.R_CONNECTOR()) then (); 
-    case (TYPE_STRING(string = _),SCode.R_CONNECTOR()) then (); 
-    case (TYPE_BOOL(string = _),SCode.R_CONNECTOR()) then (); 
+    case (CONNECTOR(string = _,isExpandable=false),SCode.R_CONNECTOR(false)) then (); 
+    case (CONNECTOR(string = _,isExpandable=true),SCode.R_CONNECTOR(true)) then ();
+    case (IS_NEW(string = _),SCode.R_CONNECTOR(_)) then (); 
+    case (TYPE_INTEGER(string = _),SCode.R_CONNECTOR(_)) then (); 
+    case (TYPE_REAL(string = _),SCode.R_CONNECTOR(_)) then (); 
+    case (TYPE_STRING(string = _),SCode.R_CONNECTOR(_)) then (); 
+    case (TYPE_BOOL(string = _),SCode.R_CONNECTOR(_)) then (); 
     case (TYPE(string = s),SCode.R_TYPE()) then (); 
     case (TYPE_INTEGER(string = s),SCode.R_TYPE()) then (); 
     case (TYPE_REAL(string = s),SCode.R_TYPE()) then (); 

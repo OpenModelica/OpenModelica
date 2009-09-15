@@ -77,6 +77,7 @@ protected import RTOpts;
 protected import Debug;
 protected import Lookup;
 protected import Inst;
+protected import InstanceHierarchy;
 protected import Prefix;
 protected import Connect;
 protected import Print;
@@ -244,8 +245,9 @@ algorithm
         path = Static.componentRefToPath(cr);
         ptot = Interactive.getTotalProgram(path,p);        
         p_1 = SCode.elaborate(ptot);
-        (cache,dae as DAE.DAE(dael),env) = Inst.instantiateClass(cache,p_1, path);
-        /* ((dae as DAE.DAE(dael))) = DAE.transformIfEqToExpr(dae_1); */
+        (cache,env,_, dae as DAE.DAE(dael)) = 
+        Inst.instantiateClass(cache,InstanceHierarchy.emptyInstanceHierarchy,p_1, path);
+        ((dae as DAE.DAE(dael))) = DAE.transformIfEqToExpr(dae);
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(path,dael,env));
         /*((daelow as DAELow.DAELOW(orderedVars=vars,orderedEqs=eqnarr,complexEqns = DAELow.COMPLEX_EQUATIONS(arrayEqs=ae,ifEqns=ifeqns)))) = DAELow.lower(dae, false, true) "no dummy state" ;*/
         ((daelow as DAELow.DAELOW(vars,_,_,eqnarr,_,_,ae,_,_,_))) = DAELow.lower(dae, false, true) "no dummy state" ;
@@ -621,7 +623,9 @@ algorithm
         true = Interactive.existClass(crefCName, p);
         ptot = Interactive.getTotalProgram(className,p);
         p_1 = SCode.elaborate(ptot);
-        (cache,(dae as DAE.DAE(dael)),env) = Inst.instantiateClass(cache,p_1, className);
+        (cache,env,_,(dae as DAE.DAE(dael))) = 
+        Inst.instantiateClass(cache,InstanceHierarchy.emptyInstanceHierarchy,p_1,className);
+        // ((dae as DAE.DAE(dael))) = DAE.transformIfEqToExpr(dael);        
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(className,dael,env));
         str = DAE.dumpStr(dae);
       then
@@ -653,7 +657,8 @@ algorithm
         ptot = Interactive.getTotalProgram(path,p);
         p_1 = SCode.elaborate(ptot);
         str = Print.getErrorString() "we do not want error msg twice.." ;
-        failure((_,_,_) = Inst.instantiateClass(cache,p_1, path));
+        failure((_,_,_,_) = 
+        Inst.instantiateClass(cache,InstanceHierarchy.emptyInstanceHierarchy,p_1,path));
         Print.clearErrorBuf();
         Print.printErrorBuf(str);
         str = Print.getErrorString();
@@ -2196,7 +2201,8 @@ algorithm
       equation 
         (cache,filenameprefix) = extractFilePrefix(cache,env, fileprefix, st, msg);
         p_1 = SCode.elaborate(p);
-        (cache,dae_1,env) = Inst.instantiateClass(cache,p_1, className);
+        (cache,env,_,dae_1) = 
+        Inst.instantiateClass(cache,InstanceHierarchy.emptyInstanceHierarchy,p_1,className);
         ((dae as DAE.DAE(dael))) = DAE.transformIfEqToExpr(dae_1);
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(className,dael,env));
         a_cref = Absyn.pathToCref(className);
@@ -2265,8 +2271,9 @@ algorithm
         (cache,filenameprefix) = extractFilePrefix(cache,env, fileprefix, st, msg);
         ptot = Interactive.getTotalProgram(className,p);
         p_1 = SCode.elaborate(ptot);
-        (cache,dae as DAE.DAE(dael),env) = Inst.instantiateClass(cache,p_1, className);
-        /* ((dae as DAE.DAE(dael))) = DAE.transformIfEqToExpr(dae_1); */
+        (cache,env,_,dae as DAE.DAE(dael)) = 
+        Inst.instantiateClass(cache,InstanceHierarchy.emptyInstanceHierarchy,p_1,className);
+        ((dae as DAE.DAE(dael))) = DAE.transformIfEqToExpr(dae);
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(className,dael,env));
         dlow = DAELow.lower(dae, addDummy, true);
         Debug.fprint("bltdump", "Lowered DAE:\n");
@@ -2613,9 +2620,10 @@ algorithm
         cd_path = System.pwd();
         libsfilename = stringAppend(fileprefix, ".libs");
         libs_str = Util.stringDelimitList(libs, " ");
-                System.writeFile(libsfilename, libs_str);
-        s_call = Util.stringAppendList({"set OPENMODELICAHOME=",omhome_1,"&& \"",
-          omhome_1,pd,"bin",pd,"Compile","\""," ",fileprefix," ",noClean});        
+        System.writeFile(libsfilename, libs_str);
+        s_call = 
+        Util.stringAppendList({"set OPENMODELICAHOME=",omhome_1,"&& ",
+          omhome_1,pd,"bin",pd,"Compile"," ",fileprefix," ",noClean});
         Debug.fprintln("dynload", "compileModel: running " +& s_call);
         0 = System.systemCall(s_call)  ;
       then
@@ -2631,7 +2639,7 @@ algorithm
         libs_str = Util.stringDelimitList(libs, " ");
         libsfilename = stringAppend(fileprefix, ".libs");
         System.writeFile(libsfilename, libs_str);
-        s_call = Util.stringAppendList({"set OPENMODELICAHOME=",omhome_1,"&& ",command," ",fileprefix," ",noClean});
+        s_call = Util.stringAppendList({"set OPENMODELICAHOME=",omhome_1," && ",command," ",fileprefix," ",noClean});
         // print(s_call);
         Debug.fprintln("dynload", "compileModel: running " +& s_call);
         0 = System.systemCall(s_call) ;
@@ -3212,15 +3220,14 @@ algorithm
         failure(Absyn.CLASS(_,_,_,_,Absyn.R_FUNCTION(),_,_) = Interactive.getPathedClassInProgram(className, p)); 
         _ = Error.getMessagesStr() "Clear messages";
         Print.clearErrorBuf() "Clear error buffer";
-        p_1 = SCode.elaborate(ptot);
+        p_1 = SCode.elaborate(ptot); 
         
         UnitParserExt.clear();
         UnitAbsynBuilder.registerUnits(ptot);
         UnitParserExt.commit();
-         
-        (cache, dae as DAE.DAE(dael), env) = Inst.instantiateClass(inCache, p_1, className);
-        
-        /* ((dae as DAE.DAE(dael))) = DAE.transformIfEqToExpr(dae_1); */
+        (cache, env, _, dae as DAE.DAE(dael)) = 
+        Inst.instantiateClass(inCache, InstanceHierarchy.emptyInstanceHierarchy, p_1, className);        
+        ((dae as DAE.DAE(dael))) = DAE.transformIfEqToExpr(dae);
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(className,dael,env));
         elimLevel = RTOpts.eliminationLevel();
         RTOpts.setEliminationLevel(0); // No variable elimination
@@ -3253,8 +3260,9 @@ algorithm
         UnitParserExt.clear();
         UnitAbsynBuilder.registerUnits(ptot);
         UnitParserExt.commit();
-        
-        (cache, dae as DAE.DAE(dael), env) = Inst.instantiateFunctionImplicit(inCache, p_1, className);
+
+        (cache, env, _, dae as DAE.DAE(dael)) = 
+        Inst.instantiateFunctionImplicit(inCache, InstanceHierarchy.emptyInstanceHierarchy, p_1, className);
       
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(className,dael,env));
 				classNameStr = Absyn.pathString(className);
@@ -3346,6 +3354,7 @@ algorithm
         str = Exp.printExpStr(exp);
       then
         (cache,Values.STRING(str),st);
+        
     case (cache,classname,cref,"stateSelect",
       Interactive.SYMBOLTABLE(
         ast = p,
@@ -3363,7 +3372,7 @@ algorithm
         (cache,(c as SCode.CLASS(n,_,encflag,r,_)),env_1) = Lookup.lookupClass(cache,env, classname_1, true);
         env3 = Env.openScope(env_1, encflag, SOME(n));
         ci_state = ClassInf.start(r, n);
-        (cache,dae1,env4,_,csets_1,ci_state_1,tys,_,_,_,_) = Inst.instClassIn(cache,env3, UnitAbsyn.noStore,Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
+        (cache,env4,_,_,dae1,csets_1,ci_state_1,tys,_,_,_,_) = Inst.instClassIn(cache,env3, InstanceHierarchy.emptyInstanceHierarchy,UnitAbsyn.noStore,Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
           ci_state, c, false, {}, false, ConnectionGraph.EMPTY,NONE);
         cref_1 = Exp.joinCrefs(cref, Exp.CREF_IDENT("stateSelect",Exp.OTHER(),{}));
         (cache,attr,ty,Types.EQBOUND(exp,_,_),_,_) = Lookup.lookupVar(cache,env4, cref_1);
@@ -3371,6 +3380,7 @@ algorithm
         str = Exp.printExpStr(exp);
       then
         (cache,Values.STRING(str),Interactive.SYMBOLTABLE(p,aDep,sp,ic_1,vars,cf,lf));
+        
     case (cache,classname,cref,attribute,
       (st as Interactive.SYMBOLTABLE(
         ast = p,
@@ -3385,6 +3395,7 @@ algorithm
         (cache,attr,ty,Types.VALBOUND(v),_,_) = Lookup.lookupVar(cache,env, cref_1);
       then
         (cache,v,st);
+        
     case (cache,classname,cref,attribute,
       (st as Interactive.SYMBOLTABLE(
         ast = p,
@@ -3402,13 +3413,14 @@ algorithm
         (cache,(c as SCode.CLASS(n,_,encflag,r,_)),env_1) = Lookup.lookupClass(cache,env, classname_1, true);
         env3 = Env.openScope(env_1, encflag, SOME(n));
         ci_state = ClassInf.start(r, n);
-        (cache,dae1,env4,_,csets_1,ci_state_1,tys,_,_,_,_) = Inst.instClassIn(cache,env3, UnitAbsyn.noStore,Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
+        (cache,env4,_,_,dae1,csets_1,ci_state_1,tys,_,_,_,_) = Inst.instClassIn(cache,env3, InstanceHierarchy.emptyInstanceHierarchy, UnitAbsyn.noStore,Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
           ci_state, c, false, {}, false, ConnectionGraph.EMPTY,NONE);
         cref_1 = Exp.joinCrefs(cref, Exp.CREF_IDENT(attribute,Exp.OTHER(),{}));
         (cache,attr,ty,Types.VALBOUND(v),_,_) = Lookup.lookupVar(cache,env4, cref_1);
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(classname_1,dae1,env4));
       then
         (cache,v,Interactive.SYMBOLTABLE(p,aDep,sp,ic_1,vars,cf,lf));
+
   end matchcontinue;
 end getBuiltinAttribute;
 
@@ -3560,7 +3572,8 @@ algorithm
         (cache,filenameprefix) = extractFilePrefix(cache,env, fileprefix, st, msg);
         cname_str = Absyn.pathString(classname);
         p_1 = SCode.elaborate(p);
-        (cache,dae_1,env) = Inst.instantiateClass(cache,p_1, classname);
+        (cache,env,_,dae_1) = 
+        Inst.instantiateClass(cache,InstanceHierarchy.emptyInstanceHierarchy, p_1, classname);
         ((dae as DAE.DAE(dael))) = DAE.transformIfEqToExpr(dae_1);
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(classname,dael,env));
         dlow = DAELow.lower(dae, true, true);
@@ -3598,7 +3611,8 @@ algorithm
         (cache,filenameprefix) = extractFilePrefix(cache,env, fileprefix, st, msg);
         cname_str = Absyn.pathString(classname);
         p_1 = SCode.elaborate(p);
-        (cache,dae_1,env) = Inst.instantiateClass(cache,p_1, classname);
+        (cache,env,_,dae_1) = 
+        Inst.instantiateClass(cache,InstanceHierarchy.emptyInstanceHierarchy,p_1, classname);
         ((dae as DAE.DAE(dael))) = DAE.transformIfEqToExpr(dae_1);
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(classname,dael,env));
         dlow = DAELow.lower(dae, true, true);
@@ -3919,14 +3933,14 @@ algorithm ostring := matchcontinue( e1)
     local Values.Value val;
       String ret;
     equation
-      (_,val as Values.STRING(ret),_) = Ceval.ceval(Env.emptyCache,Env.emptyEnv, e1,true,NONE,NONE,Ceval.MSG());
+      (_,val as Values.STRING(ret),_) = Ceval.ceval(Env.emptyCache(),Env.emptyEnv, e1,true,NONE,NONE,Ceval.MSG());
     then
       ret;
   case(e1)
     local Values.Value val;
       String ret;
     equation
-      (_,val,_) = Ceval.ceval(Env.emptyCache,Env.emptyEnv, e1,true,NONE,NONE,Ceval.MSG());
+      (_,val,_) = Ceval.ceval(Env.emptyCache(),Env.emptyEnv, e1,true,NONE,NONE,Ceval.MSG());
       ret = Values.printValStr(val);
     then
       ret;
@@ -3936,7 +3950,6 @@ end getValueString;
 
 public function generateMakefileHeader
   output String hdr;
-  //omhome = System.trim(omhome, "\"");
 algorithm
   hdr := matchcontinue ()
     local
@@ -3994,11 +4007,22 @@ algorithm
         false = RTOpts.debugFlag("nogen");
          (cache,false) = Static.isExternalObjectFunction(cache,env,path); //ext objs functions not possible to Ceval.ceval.
         Debug.fprintln("ceval", "/*- Ceval.cevalGenerateFunction starting*/");
-        pathstr = ModUtil.pathString2(path, "_");
+        pathstr = ModUtil.pathStringReplaceDot(path, "_");
         (cache,gencodestr,_,libs) = cevalGenerateFunctionStr(cache,path, env, {});
         cfilename = stringAppend(pathstr, ".c");
         str = Util.stringAppendList(
-          {"#include \"modelica.h\"\n#include <stdio.h>\n#include <stdlib.h>\n#include <errno.h>\n",
+          {"#include \"modelica.h\"\n#include <stdio.h>\n#include <stdlib.h>\n#include <errno.h>\n\n",
+           "#if defined(_MSC_VER)\n",
+           "  #define DLLExport   __declspec( dllexport ) \n",
+           "#else \n",
+           "  #define DLLExport /* nothing */\n",
+           "#endif \n\n",
+           "#if !defined(MODELICA_ASSERT)\n",
+           "  #define MODELICA_ASSERT(cond,msg) { if (!(cond)) fprintf(stderr,\"Modelica Assert: %s!\\n\", msg); }\n",
+           "#endif\n",
+           "#if !defined(MODELICA_TERMINATE)\n",
+           "  #define MODELICA_TERMINATE(msg) { fprintf(stderr,\"Modelica Terminate: %s!\\n\", msg); fflush(stderr); }\n",
+           "#endif\n\n\n",
            gencodestr});
         System.writeFile(cfilename, str);
         Debug.fprintln("dynload", "cevalGenerateFunction: generating makefile for " +& pathstr);
@@ -4006,6 +4030,7 @@ algorithm
         omhome = Settings.getInstallationDirectoryPath();
         omhome = System.trim(omhome, "\""); //Remove any quotation marks from omhome.
         MakefileHeader = generateMakefileHeader();
+        libs = Util.listUnion(libs, libs); // un-double the libs
         libsstr = Util.stringDelimitList(libs, " ");
         str = Util.stringAppendList(
           {MakefileHeader,"\n.PHONY: ",pathstr,"\n",
@@ -4067,8 +4092,10 @@ algorithm
         Debug.fprintln("ceval", "/*- Ceval.cevalGenerateFunctionStr starting*/");
         (cache,cls,env_1) = Lookup.lookupClass(cache,env, path, false);
         Debug.fprintln("ceval", "/*- ceval_generate_function_str instantiating*/");
-        (cache,env_2,d) = Inst.implicitFunctionInstantiation(cache,env_1, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
-          cls, {});
+        (cache,env_2,_,d) = 
+        Inst.implicitFunctionInstantiation(
+           cache, env_1, InstanceHierarchy.emptyInstanceHierarchy,
+           Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cls, {});
         Debug.fprint("ceval", "/*- Ceval.cevalGenerateFunctionStr getting functions: ");
         calledfuncs = SimCodegen.getCalledFunctionsInFunction(path, DAE.DAE(d));
         debugfuncs = Util.listMap(calledfuncs, Absyn.pathString);

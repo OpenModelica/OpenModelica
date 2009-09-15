@@ -91,18 +91,16 @@ void Settings_5finit(void)
     strcpy(tempDirectoryPath, str);
   }
 #endif
-compileCommand = malloc(sizeof(char)*(strlen("g++") + 1)); 
-strcpy(compileCommand,"g++");
+compileCommand = malloc(sizeof(char)*(strlen("") + 1));
+strcpy(compileCommand,"");
 
 
 }
 
 
-
-
 RML_BEGIN_LABEL(Settings__getVersionNr)
 {
-    rmlA0 = (void*) mk_scon("1.4.4");
+    rmlA0 = (void*) mk_scon("1.5.0");
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL

@@ -34,6 +34,7 @@ SRCMO= Absyn.mo \
 	Interactive.mo \
 	Lookup.mo \
 	Main.mo \
+	MMath.mo \
 	MetaUtil.mo \
 	Mod.mo \
 	ModUtil.mo \
@@ -43,13 +44,17 @@ SRCMO= Absyn.mo \
 	SimCodegen.mo \
 	Types.mo \
 	TaskGraph.mo \
+	UnitAbsyn.mo \
+	UnitAbsynBuilder.mo \
+	UnitChecker.mo \
 	Util.mo \
 	Values.mo \
 	VarTransform.mo \
 	BackendVarTransform.mo \
-	Refactor.mo \
 	DAEQuery.mo \
-	XMLDump.mo
+	XMLDump.mo \
+	Refactor.mo \
+	InstanceHierarchy.mo
 
 ALLMO = $(SRCMO) \
 	DAEEXT.mo \

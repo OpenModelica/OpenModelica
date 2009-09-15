@@ -471,7 +471,7 @@ public function isComplexConnector ""
 input Type t;
 output Boolean b;
 algorithm b := matchcontinue(t)
-  case((T_COMPLEX(ClassInf.CONNECTOR(_),_,_,_),_)) then true;
+  case((T_COMPLEX(ClassInf.CONNECTOR(_,_),_,_,_),_)) then true;
   case(_) then false;
   end matchcontinue;
 end isComplexConnector;

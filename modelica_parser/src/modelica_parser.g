@@ -47,12 +47,12 @@ options {
 class modelica_parser extends Parser;
 
 options {
+	buildAST = true;
     codeGenMakeSwitchThreshold = 2;
     codeGenBitsetTestThreshold = 3;
 	importVocab = modelica;
     defaultErrorHandler = false;
 	k = 2;
-	buildAST = true;
     ASTLabelType = "RefMyAST";
 }
 
@@ -130,8 +130,7 @@ stored_definition :
 			)*
 			EOF!
 			{
-				#stored_definition = #([STORED_DEFINITION,"STORED_DEFINITION"],
-				#stored_definition);
+				#stored_definition = #([STORED_DEFINITION,"STORED_DEFINITION"],#stored_definition);
 			}
 			;
 
@@ -409,11 +408,12 @@ implicit_import_name!
 // Note that this is a minor modification of the standard by
 // allowing the comment.
 extends_clause :
-		EXTENDS^ name_path ( class_modification )?
+	   EXTENDS^ name_path (class_modification)? (annotation)?
 		;
 
 constraining_clause :
-		extends_clause | CONSTRAINEDBY^ name_path ( class_modification )?
+			EXTENDS^ name_path  (class_modification)? 
+		|	CONSTRAINEDBY^ name_path ( class_modification )?
 		;
 
 /*
