@@ -42,7 +42,7 @@ else
  CORBALIBS=
 endif
 
-LDFLAGS = -lm -L$(RMLHOME)/lib/plain -lrml_g $(ANTLR_LIBP) -lantlr $(LIBSOCKET) $(CORBALIBS) -ldl
+LDFLAGS = -lm -L$(RMLHOME)/lib/plain -lrml_g $(ANTLR_LIBP) -lantlr $(LIBSOCKET) $(CORBALIBS) -ldl ../runtime/lpsolve/lib7/linux/liblpsolve55.so
 
 ifdef QTHOME
 PLTPKGFLAGS = -L../../build/lib -lsendData -L$(QTHOME)/lib -lQtNetwork -lQtCore -lQtGui
