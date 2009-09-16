@@ -86,6 +86,13 @@ tokens {
 
     typedef std::string mstring;
 
+    double getCurrentTime(void)
+    {             
+      time_t t;
+      double elapsedTime;             // the time elapsed as double
+      time( &t );
+      return difftime(t, 0);
+    }
 
     void* to_rml_str(RefMyAST &t)
     {
@@ -241,10 +248,7 @@ stored_definition returns [void *ast]
         )
         {
             if (within == 0) { within=Absyn__TOP; }
-            time_t t;
-            double elapsedTime;             // the time elapsed as double
-            time( &t );
-            ast = Absyn__PROGRAM(make_rml_list_from_stack(el_stack),within,Absyn__TIMESTAMP(mk_rcon(0.0),mk_rcon(difftime(t, 0))));
+            ast = Absyn__PROGRAM(make_rml_list_from_stack(el_stack),within,Absyn__TIMESTAMP(mk_rcon(0.0),mk_rcon(getCurrentTime())));
         }
     ;
 

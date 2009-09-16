@@ -31,6 +31,12 @@
 #include "read_write.h"
 #include <string.h>
 
+char *my_strdup(const char *s) {
+    char *p = malloc(strlen(s) + 1);
+    if(p) { strcpy(p, s); }
+    return p;
+}
+
 #if 1 /* only used for debug */
 void puttype(const type_description *desc)
 {
@@ -125,11 +131,15 @@ void puttype(const type_description *desc)
   case TYPE_DESC_RECORD:
     {
       int i;
-      fprintf(stderr, "RECORD: %s\n", desc->data.record.record_name);
-          for (i = 0; i < desc->data.record.elements; i++)
+      fprintf(stderr, "RECORD: %s ", desc->data.record.record_name?desc->data.record.record_name:"[no name]");
+      if (!desc->data.record.elements)
+        fprintf(stderr, "has no members!?\n");
+      else
+        fprintf(stderr, "has the following members:\n");
+      for (i = 0; i < desc->data.record.elements; i++)
       {
         fprintf(stderr, "NAME: %s\n", desc->data.record.name[i]);
-              puttype(&(desc->data.record.element[i]));
+        puttype(&(desc->data.record.element[i]));
       }
     }
     break;
@@ -649,7 +659,8 @@ void write_modelica_record(type_description *desc, const char *name, ...)
   if (desc->type != TYPE_DESC_NONE)
     desc = add_tuple_item(desc);
   desc->type = TYPE_DESC_RECORD;
-  desc->data.record.record_name = name;
+  assert(name != NULL);
+  desc->data.record.record_name = my_strdup(name);
   desc->data.record.elements = 0;
   desc->data.record.name = NULL;
   desc->data.record.element = NULL;

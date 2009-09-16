@@ -87,6 +87,7 @@ protected import Connect;
 protected import Error;
 protected import Cevalfunc;
 protected import CevalScript;
+protected import Dump;
 
 public function ceval 
 "function: ceval
@@ -227,10 +228,10 @@ algorithm
         "Call of record constructors, etc., i.e. functions that can be constant propagated." ;
         (cache,newval) = cevalFunction(cache, env, func, vallst, impl, msg);
       then
-        (cache,newval,st);        
-
-    /* see if function is in CF list and the build time is less than the edit time */
-    case (cache,env,(e as Exp.CALL(path = func,expLst = expl)),/*(impl as true)*/impl,
+        (cache,newval,st);
+    /* adrpo: TODO! this needs more work as if we don't have a symtab we run into unloading of dlls problem */                
+    // see if function is in CF list and the build time is less than the edit time
+    case (cache,env,(e as Exp.CALL(path = func,expLst = expl)),impl,// (impl as true)
       (st as SOME(Interactive.SYMBOLTABLE(p as Absyn.PROGRAM(globalBuildTimes=Absyn.TIMESTAMP(_,edit)),_,_,_,_,cflist,_))),_,msg)
       local 
         Integer funcHandle; 
@@ -250,9 +251,9 @@ algorithm
         newval = System.executeFunction(funcHandle, vallst);
       then
         (cache,newval,st);
-
-    /* see if function is in CF list and the build time is less than the edit time */
-    case (cache,env,(e as Exp.CALL(path = func,expLst = expl)),/*impl as true*/impl,
+    /* adrpo: TODO! this needs more work as if we don't have a symtab we run into unloading of dlls problem */
+    // see if function is in CF list and the build time is less than the edit time 
+    case (cache,env,(e as Exp.CALL(path = func,expLst = expl)),impl,// impl as true
       (st as SOME(Interactive.SYMBOLTABLE(p as Absyn.PROGRAM(globalBuildTimes=Absyn.TIMESTAMP(_,edit)),_,_,_,_,cflist,_))),_,msg)
       local 
         Integer funcHandle; 
@@ -263,7 +264,11 @@ algorithm
         
         (cache,false) = Static.isExternalObjectFunction(cache,env,func);
         (true, funcHandle, buildTime, fOld) = Static.isFunctionInCflist(cflist, func);        
-        Absyn.CLASS(_,_,_,_,Absyn.R_FUNCTION(),_,Absyn.INFO(buildTimes= Absyn.TIMESTAMP(build,_))) = Interactive.getPathedClassInProgram(func, p);
+        Absyn.CLASS(_,_,_,_,Absyn.R_FUNCTION(),_,Absyn.INFO(fileName = fNew, buildTimes= Absyn.TIMESTAMP(build,_))) = 
+           Interactive.getPathedClassInProgram(func, p);
+
+        // note, this should only work for classes that have no file name!
+        true = stringEqual(fNew,""); // see that we don't have a file!
 
         // see if the build time from the class is the same as the build time from the compiled functions list
         //debug_print("edit",edit);  
@@ -276,7 +281,7 @@ algorithm
         newval = System.executeFunction(funcHandle, vallst);
       then
         (cache,newval,st);
-
+    /* adrpo: TODO! this needs more work as if we don't have a symtab we run into unloading of dlls problem */
     case (cache,env,(e as Exp.CALL(path = funcpath,expLst = expl,builtin = builtin)),impl,st,_,msg) 
       /* Call functions FIXME: functions are always generated. Put back the check
 	  and write another rule for the false case that generates the function */ 
@@ -295,16 +300,6 @@ algorithm
       then
         (cache,value,SOME(st));
     
-    /* Is this case really necessary?   
-    case (cache,env,(e as Exp.CALL(path = funcpath,expLst = expl,builtin = builtin)),impl,st,_,msg)        
-      local String s; list<String> ss;
-      equation
-        (cache,vallst) = cevalList(cache,env, expl, impl, st, msg);
-        (cache,newval,st)= cevalCallFunction(cache,env, e, vallst, msg, st);
-      then
-        (cache,newval,st);
-    */        
-
     case (cache,env,Exp.BINARY(exp1 = lh,operator = Exp.ADD(ty = Exp.STRING()),exp2 = rh),impl,st,_,msg) /* Strings */ 
       local String lhv,rhv;
       equation 
@@ -1022,12 +1017,12 @@ algorithm
       then 
         fail();
 
-        /* Record constructors */
+    /* Record constructors */
     case(cache,env,(e as Exp.CALL(path = funcpath,ty = Exp.COMPLEX(name=name, varLst=varLst))),vallst,msg,st)
       local 
         list<Exp.Var> varLst; list<String> varNames; String name;
       equation        
-        true = RTOpts.debugFlag("evalfunc");
+        //true = RTOpts.debugFlag("evalfunc");
         varNames = Util.listMap(varLst,Exp.varName);
       then 
         (cache,Values.RECORD(Absyn.IDENT(name),vallst,varNames),st);
@@ -1042,7 +1037,7 @@ algorithm
         SCode.ClassDef cdef;
         list<DAE.Element> daeList;
       equation
-        true = RTOpts.debugFlag("evalfunc"); 
+        //true = RTOpts.debugFlag("evalfunc"); 
         failure(cevalIsExternalObjectConstructor(cache,funcpath,env));
         (cache,sc as SCode.CLASS(_,false,_,SCode.R_FUNCTION(),cdef ),env1) = 
         Lookup.lookupClass(cache,env,funcpath,true);
@@ -1071,26 +1066,7 @@ algorithm
       /**//* Call functions in non-interactive mode. FIXME: functions are always generated. 
       Put back the check and write another rule for the false case that generates the function 
       2007-10-20 partially fixed BZ*//**/
-      
-    case (cache,env,(e as Exp.CALL(path = funcpath,expLst = expl,builtin = builtin)),vallst,msg,st) // crap! we have no symboltable!
-      local
-        Integer libHandle, funcHandle;
-        String funcstr,f;
-      equation
- 				failure(cevalIsExternalObjectConstructor(cache,funcpath,env));
- 				// make sure is NOT a record constructor!
- 				failure((_,_) = cevalFunction(cache,env,funcpath,vallst,false,msg)); 				
-        cache = CevalScript.cevalGenerateFunction(cache, env, funcpath);        
-        funcstr = ModUtil.pathStringReplaceDot(funcpath, "_");
-        Debug.fprintln("dynload", "cevalCallFunction: about to execute " +& funcstr);
-        libHandle = System.loadLibrary(funcstr);
-        funcHandle = System.lookupFunction(libHandle, stringAppend("in_", funcstr));
-        newval = System.executeFunction(funcHandle, vallst);
-        System.freeFunction(funcHandle);
-        System.freeLibrary(libHandle);
-      then
-        (cache,newval,st);      
-      
+    /* adrpo: TODO! this needs more work as if we don't have a symtab we run into unloading of dlls problem */      
     case (cache,env,(e as Exp.CALL(path = funcpath,expLst = expl,builtin = builtin)),vallst,msg,
           SOME(Interactive.SYMBOLTABLE(p as Absyn.PROGRAM(globalBuildTimes=ts),aDep,a,b,c,cf,lf))) // yeha! we have a symboltable!
       local
@@ -1113,29 +1089,54 @@ algorithm
         Absyn.ClassDef    body;
         Absyn.Info        info;
         Absyn.Within      w;
+        String funcFileNameStr;
       equation
+        false = RTOpts.debugFlag("nogen");
  				failure(cevalIsExternalObjectConstructor(cache,funcpath,env));
  				// make sure is NOT a record constructor!
  				failure((_,_) = cevalFunction(cache,env,funcpath,vallst,false,msg));
-        newCF = Interactive.removeCf(funcpath, cf); // remove it as it might be there with an older build time. 				
-        cache = CevalScript.cevalGenerateFunction(cache, env, funcpath);        
-        funcstr = ModUtil.pathStringReplaceDot(funcpath, "_");
+        newCF = Interactive.removeCf(funcpath, cf); // remove it as it might be there with an older build time.        
+        (cache, funcstr) = CevalScript.cevalGenerateFunction(cache, env, funcpath);
         Debug.fprintln("dynload", "cevalCallFunction: about to execute " +& funcstr);
         libHandle = System.loadLibrary(funcstr);
         funcHandle = System.lookupFunction(libHandle, stringAppend("in_", funcstr));
         newval = System.executeFunction(funcHandle, vallst);
         System.freeLibrary(libHandle);
-        buildTime = System.getCurrentTime();
+        buildTime = System.getCurrentTime();        
+        // adrpo: TODO! this needs more work as if we don't have a symtab we run into unloading of dlls problem
         // update the build time in the class!
         Absyn.CLASS(name,ppref,fpref,epref,Absyn.R_FUNCTION(),body,info) = Interactive.getPathedClassInProgram(funcpath, p);
         info = Absyn.setBuildTimeInInfo(buildTime,info);
         ts = Absyn.setTimeStampBuild(ts, buildTime);
         w = Interactive.buildWithin(funcpath);
-        p = Interactive.updateProgram(p,Absyn.PROGRAM({Absyn.CLASS(name,ppref,fpref,epref,Absyn.R_FUNCTION(),body,info)},w,ts));
+        Debug.fprintln("dynload", "Updating build time for function path: " +& Absyn.pathString(funcpath) +& " within: " +& Dump.unparseWithin(0, w) +& "\n");
+        p = Interactive.updateProgram(Absyn.PROGRAM({Absyn.CLASS(name,ppref,fpref,epref,Absyn.R_FUNCTION(),body,info)},w,ts), p);
         f = Absyn.getFileNameFromInfo(info);
       then
         (cache,newval,SOME(Interactive.SYMBOLTABLE(p, aDep, a, b, c, 
-          (Interactive.CFunction(funcpath,(Types.T_NOTYPE(),SOME(funcpath)),funcHandle,buildTime,f) :: newCF), lf)));
+          Interactive.CFunction(funcpath,(Types.T_NOTYPE(),SOME(funcpath)),funcHandle,buildTime,f)::newCF, lf)));
+
+    case (cache,env,(e as Exp.CALL(path = funcpath,expLst = expl,builtin = builtin)),vallst,msg,NONE()) // crap! we have no symboltable!
+      local
+        Integer libHandle, funcHandle;
+        String funcstr,f,funcFileNameStr;
+      equation
+        false = RTOpts.debugFlag("nogen");        
+ 				failure(cevalIsExternalObjectConstructor(cache,funcpath,env));
+ 				// make sure is NOT a record constructor!
+ 				failure((_,_) = cevalFunction(cache,env,funcpath,vallst,false,msg));
+        // we might actually have a function loaded here already!
+        // we need to unload all functions to not get conflicts!        
+        (cache,funcstr) = CevalScript.cevalGenerateFunction(cache, env, funcpath);
+        // generate a uniquely named dll!        
+        Debug.fprintln("dynload", "cevalCallFunction: about to execute " +& funcstr);
+        libHandle = System.loadLibrary(funcstr);
+        funcHandle = System.lookupFunction(libHandle, stringAppend("in_", funcstr));
+        newval = System.executeFunction(funcHandle, vallst);
+        System.freeFunction(funcHandle);
+        System.freeLibrary(libHandle);
+      then
+        (cache,newval,NONE());
 
     case (cache,env,(e as Exp.CALL(path = funcpath,expLst = expl,builtin = builtin)),vallst,msg,st) 
       local String error_Str;

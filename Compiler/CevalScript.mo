@@ -1866,7 +1866,7 @@ algorithm
 
     case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "generateCode"),expLst = {Exp.CODE(Absyn.C_TYPENAME(path),_)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       equation 
-        cache = cevalGenerateFunction(cache,env, path) "	& Inst.instantiate_implicit(p\') => d &" ;
+        (cache,_) = cevalGenerateFunction(cache,env, path) "	& Inst.instantiate_implicit(p\') => d &" ;
       then
         (cache,Values.BOOL(true),st);
 
@@ -2626,6 +2626,7 @@ algorithm
           omhome_1,pd,"bin",pd,"Compile"," ",fileprefix," ",noClean});
         Debug.fprintln("dynload", "compileModel: running " +& s_call);
         0 = System.systemCall(s_call)  ;
+        Debug.fprintln("dynload", "compileModel: successful! ");        
       then
         ();
         // If compileCommand is set.
@@ -2639,10 +2640,11 @@ algorithm
         libs_str = Util.stringDelimitList(libs, " ");
         libsfilename = stringAppend(fileprefix, ".libs");
         System.writeFile(libsfilename, libs_str);
-        s_call = Util.stringAppendList({"set OPENMODELICAHOME=",omhome_1," && ",command," ",fileprefix," ",noClean});
+        s_call = Util.stringAppendList({"set OPENMODELICAHOME=",omhome_1,"&& ",command," ",fileprefix," ",noClean});
         // print(s_call);
         Debug.fprintln("dynload", "compileModel: running " +& s_call);
         0 = System.systemCall(s_call) ;
+        Debug.fprintln("dynload", "compileModel: successful! ");        
       then
         ();     
         
@@ -2652,6 +2654,7 @@ algorithm
         0 = System.regularFileExists(filename);
         str = System.readFile(filename);
         Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {str});
+        Debug.fprintln("dynload", "compileModel: failed!");        
       then
         fail();
     case (fileprefix,libs,file_dir,_)
@@ -3986,14 +3989,24 @@ algorithm
   makefilename := Util.stringAppendList({filenameprefix,".makefile"});
 end generateMakefilename;
 
+protected function generateFunctionName
+"@author adrpo: 
+ generate the function name from a path."
+  input Absyn.Path functionPath;
+  output String functionName; 
+algorithm
+  functionName := ModUtil.pathStringReplaceDot(functionPath, "_");
+end generateFunctionName;
+
 public function cevalGenerateFunction "function: cevalGenerateFunction
   Generates code for a given function name."
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input Absyn.Path inPath;
   output Env.Cache outCache;
+  output String functionName;
 algorithm 
-  outCache :=
+  (outCache,functionName) :=
   matchcontinue (inCache,inEnv,inPath) 
     local
       String pathstr,gencodestr,cfilename,makefilename,omhome,str,libsstr;
@@ -4002,13 +4015,14 @@ algorithm
       Env.Cache cache;
       String MakefileHeader;
       list<String> libs;
-    case (cache,env,path)
+
+    case (cache, env, path)
       equation 
         false = RTOpts.debugFlag("nogen");
-         (cache,false) = Static.isExternalObjectFunction(cache,env,path); //ext objs functions not possible to Ceval.ceval.
-        Debug.fprintln("ceval", "/*- Ceval.cevalGenerateFunction starting*/");
-        pathstr = ModUtil.pathStringReplaceDot(path, "_");
-        (cache,gencodestr,_,libs) = cevalGenerateFunctionStr(cache,path, env, {});
+        (cache,false) = Static.isExternalObjectFunction(cache,env,path); //ext objs functions not possible to Ceval.ceval.
+        pathstr = generateFunctionName(path); 
+        Debug.fprintln("ceval", "/*- Ceval.cevalGenerateFunction starting*/");        
+        (cache,gencodestr,_,libs) = cevalGenerateFunctionStr(cache, path, env, {});
         cfilename = stringAppend(pathstr, ".c");
         str = Util.stringAppendList(
           {"#include \"modelica.h\"\n#include <stdio.h>\n#include <stdlib.h>\n#include <errno.h>\n\n",
@@ -4042,13 +4056,14 @@ algorithm
         System.writeFile(makefilename, str);
         compileModel(pathstr, {}, "", "");
       then
-        (cache);
-    case (cache,env,path)      
+        (cache,pathstr);
+    case (cache, env, path)
       equation 
-        pathstr = Absyn.pathString(path);
+        false = RTOpts.debugFlag("nogen");      
+        (cache,false) = Static.isExternalObjectFunction(cache,env,path);    
+        pathstr = generateFunctionName(path);
         pathstr = stringAppend("/*- Ceval.cevalGenerateFunction failed(", pathstr);
         pathstr = stringAppend(pathstr,")*/\n");
-        (cache,false) = Static.isExternalObjectFunction(cache,env,path);
         Debug.fprint("failtrace", pathstr);
       then
         fail();

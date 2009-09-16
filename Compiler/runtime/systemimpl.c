@@ -29,6 +29,11 @@
  */
 
 /*
+ * TODO! unify the functions in this file for all platforms as is really hard to follow!
+ *       if we have 2 definition for each function!
+ */
+
+/*
  * adrpo 2007-05-09
  * UNCOMMENT THIS ONLY IF YOU COMPILE OMC IN DEBUG MODE!!!!!
  * #define RML_DEBUG
@@ -70,6 +75,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include "read_write.h"
+
+/* use this one to output messages depending on flags! */
+int check_debug_flag(char const* strdata);
 
 static char * cc=NULL;
 static char * cxx=NULL;
@@ -256,6 +264,8 @@ char* _replace(const char* source_str,
 
   return ostr;
 }
+
+
 
 // windows and mingw32
 #if defined(__MINGW32__) || defined(_MSC_VER)
@@ -813,19 +823,20 @@ RML_BEGIN_LABEL(System__loadLibrary)
   lib = lookup_ptr(libIndex); // lib->cnt = 1
   lib->data.lib = h;
   rmlA0 = (void*) mk_icon(libIndex);
-  /* fprintf(stderr, "LIB LOAD [%s] index[%d]/count[%u]/handle[%ul].\n", libname, lib->cnt, libIndex, h); fflush(stderr); */
+  if (check_debug_flag("dynload")) { fprintf(stderr, "LIB LOAD name[%s] index[%d] handle[%lu].\n", libname, libIndex, h); fflush(stderr); }
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
 void free_library(modelica_ptr_t lib)
 {
+  if (check_debug_flag("dynload")) { fprintf(stderr, "LIB UNLOAD handle[%lu].\n", lib->data.lib); fflush(stderr); }
   if (!FreeLibrary(lib->data.lib))
   {
     fprintf(stderr,"System.freeLibrary error code: %lu while unloading dll.\n", GetLastError());
     fflush(stderr);
   }
-  /* fprintf(stderr, "LIB UNLOAD index[%d]/count[%d]/handle[%ul].\n", (lib-ptr_vector),((modelica_ptr_t)(lib-ptr_vector))->cnt, lib->data.lib); fflush(stderr); */
+  lib->data.lib = NULL;
 }
 
 RML_BEGIN_LABEL(System__lookupFunction)
@@ -2838,24 +2849,37 @@ RML_BEGIN_LABEL(System__loadLibrary)
   snprintf(libname, MAXPATHLEN, "./%s.so", str);
   h = dlopen(libname, RTLD_LOCAL | RTLD_NOW);
   if (h == NULL) {
-    //fprintf(stderr, "Unable to load `%s': %s.\n", libname, dlerror());
+    fprintf(stderr, "Unable to load `%s': %s.\n", libname, dlerror()); fflush(stderr);
     RML_TAILCALLK(rmlFC);
   }
   libIndex = alloc_ptr();
   if (libIndex < 0) {
+    fprintf(stderr, "Error loading library %s!\n", libname); fflush(stderr);
     dlclose(h);
     RML_TAILCALLK(rmlFC);
   }
   lib = lookup_ptr(libIndex);
   lib->data.lib = h;
   rmlA0 = (void*) mk_icon(libIndex);
+  if (check_debug_flag("dynload"))
+  {
+    fprintf(stderr, "LIB LOAD [%s].\n", libname, lib->cnt, libIndex, h); fflush(stderr);
+  }
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
 void free_library(modelica_ptr_t lib)
 {
-  dlclose(lib->data.lib);
+  if (check_debug_flag("dynload")) { fprintf(stderr, "LIB UNLOAD handle[%lu].\n", lib->data.lib); fflush(stderr); }
+  if (dlclose(lib->data.lib))
+  {
+    /* report an error here!
+    fprintf(stderr,"System.freeLibrary error code: %lu while unloading dll.\n", );
+    fflush(stderr);
+    */
+  }
+  lib->data.lib = NULL;
 }
 
 RML_BEGIN_LABEL(System__lookupFunction)
@@ -4043,7 +4067,11 @@ RML_BEGIN_LABEL(System__setDebugShowDepth)
 }
 RML_END_LABEL
 
-#endif /* MINGW32 */
+#endif /* MINGW32 and Linux */
+
+/************************************************************************************************
+ * from here on down the functions are THE SAME for all platforms (mingw/msvc, linux, macos, etc)
+ ************************************************************************************************/
 
 inline modelica_integer alloc_ptr()
 {
@@ -4217,6 +4245,64 @@ void *generate_array(enum type_desc_e type, int curdim, int ndims,
   return Values__ARRAY(lst);
 }
 
+char* walk_path(void *p)
+{
+    char path[2000]; path[0] = '\0';
+    rml_uint_t phdr = RML_GETHDR(p);
+    if( RML_HDRISSTRING(phdr) )
+    {
+        return my_strdup(RML_STRINGDATA(p));
+    }
+    else if( RML_HDRISSTRUCT(phdr) )
+         {
+           rml_uint_t slots = RML_HDRSLOTS(phdr);
+           rml_uint_t constr = RML_HDRCTOR(phdr);
+           void **pp = NULL;
+           pp = RML_STRUCTDATA(p);
+           if (slots == 1 && constr == 1) /* Absyn__IDENT_3dBOX1 1 */
+           {
+             strcat(path, walk_path(*pp));
+           }
+           else if (slots == 1 && constr == 2) /* Absyn__FULLYQUALIFIED_3dBOX1 2 */
+           {
+             strcat(path, walk_path(*pp));
+           }
+           else if (slots == 2 && constr == 0) /* Absyn__QUALIFIED_3dBOX2 0 */
+           {
+             strcat(path, walk_path(*pp++));
+             strcat(path, ".");
+             strcat(path, walk_path(*pp++));
+           }
+        }
+    return my_strdup(path);
+}
+
+char *path_to_name(char* intermediate)
+{
+  char* tmp1 = NULL;
+  char* tmp2 = NULL;
+  if (strchr(intermediate, '_') != NULL)
+  {
+     tmp1 = _replace(intermediate, "_", "__");
+     if (strchr(tmp1, '.') != NULL)
+     {
+       tmp2 = _replace(tmp1, ".", "_");
+       free(tmp1); free(intermediate);
+       return tmp2;
+     }
+     free(intermediate);
+     return tmp1;
+  }
+
+  if (strchr(intermediate, '.') != NULL)
+  {
+    tmp1 = _replace(intermediate, ".", "_");
+    free(intermediate);
+    return tmp1;
+  }
+  return intermediate;
+}
+
 static int value_to_type_desc(void *value, type_description *desc)
 {
   init_type_description(desc);
@@ -4252,11 +4338,13 @@ static int value_to_type_desc(void *value, type_description *desc)
     }
   }; break;
   case Values__RECORD_3dBOX3: {
+    void *path = RML_STRUCTDATA(value)[0];
     void *data = RML_STRUCTDATA(value)[1];
     void *names = RML_STRUCTDATA(value)[2];
     desc->type = TYPE_DESC_RECORD;
-    while ((RML_GETHDR(names) != RML_NILHDR)
-           &&
+    //fprintf(stderr, "makepath: %s\n", path_to_name(path));
+    desc->data.record.record_name = path_to_name(walk_path(path));
+    while ((RML_GETHDR(names) != RML_NILHDR) &&
            (RML_GETHDR(data) != RML_NILHDR)) {
       type_description *elem;
       void *nptr;
@@ -4304,6 +4392,9 @@ static void *name_to_path(const char *name)
   char *tmp;
   void *ident = NULL;
   int need_replace = 0;
+
+  assert(name != NULL);
+
   while ((pos = strchr(last, '_')) != NULL) {
     if (pos[1] == '_') {
       last = pos + 2;
@@ -4607,15 +4698,16 @@ static int execute_function(void *in_arg, void **out_arg,
                             int (* func)(type_description *,
                                          type_description *))
 {
-  type_description arglst[RML_NUM_ARGS + 1], *arg = NULL;
-  type_description retarg;
+  type_description arglst[RML_NUM_ARGS + 1], crashbuf[50], *arg = NULL;
+  type_description crashbufretarg, retarg;
   void *v = NULL;
-  int retval;
+  int retval = 0;
+  int debugFlag = check_debug_flag("dynload");
   state mem_state;
 
   mem_state = get_memory_state();
 
-  /* fprintf(stderr, "input parameters:\n"); fflush(stderr); */
+  if (debugFlag) { fprintf(stderr, "input parameters:\n"); fflush(stderr); }
 
   v = in_arg;
   arg = arglst;
@@ -4624,17 +4716,22 @@ static int execute_function(void *in_arg, void **out_arg,
     void *val = RML_CAR(v);
     if (value_to_type_desc(val, arg)) {
       restore_memory_state(mem_state);
-       puttype(arg);
-       /* fprintf(stderr, "returning from execute function due to value_to_type_desc failure!\n"); fflush(stderr); */
+      if (debugFlag)
+      {
+        puttype(arg);
+        fprintf(stderr, "returning from execute function due to value_to_type_desc failure!\n"); fflush(stderr);
+      }
        return -1;
     }
-    /* puttype(arg); */
+    if (debugFlag) puttype(arg);
     ++arg;
     v = RML_CDR(v);
   }
 
   init_type_description(arg);
+  init_type_description(&crashbufretarg);
   init_type_description(&retarg);
+  init_type_description(&crashbuf[5]);
 
   retarg.retval = 1;
 
@@ -4657,7 +4754,8 @@ static int execute_function(void *in_arg, void **out_arg,
     /* out_arg doesn't seem to get freed, something we can do anything about?
      * adrpo: 2009-09. it shouldn't be freed!
      */
-    /* fprintf(stderr, "output results:\n"); fflush(stderr); puttype(&retarg); */
+    if (debugFlag) { fprintf(stderr, "output results:\n"); fflush(stderr); puttype(&retarg); }
+
     free_type_description(&retarg);
 
     if ((*out_arg) == NULL) {

@@ -704,6 +704,7 @@ public function cevalGenerateFunction "function: cevalGenerateFunction
   input Env.Env inEnv;
   input Absyn.Path inPath;
   output Env.Cache outCache;
+  output String functionName; 
 algorithm 
   outCache := inCache;
 end cevalGenerateFunction;
