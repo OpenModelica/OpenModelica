@@ -34,7 +34,7 @@
 */
 #include <iostream>
 #include <fstream>
-#include <string>
+// #include <string>
 
 
 
@@ -42,6 +42,8 @@ using namespace std;
 
 extern "C"
 {
+#include <string.h>
+#include <stdlib.h>
 #include "rml.h"  
 #include "Values.h"
 #include <stdio.h>

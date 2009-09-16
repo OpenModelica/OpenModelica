@@ -11,7 +11,7 @@ UnitParser* unitParser=0;
 stack<UnitParser*> rollbackStack;
 
 #include <iostream>
-#include <string>
+// #include <string>
 #include <stack>
 
 using namespace std;
@@ -22,6 +22,7 @@ extern "C"
 #include <assert.h>
 #include "rml.h"
 #include "../absyn_builder/yacclib.h"
+#include <string.h>
 
 
 void UnitParserExt_5finit(void)

@@ -21,7 +21,9 @@ RTOBJ   = $(srcdir)/runtime/systemimpl.o $(srcdir)/../c_runtime/libc_runtime.a \
 	$(srcdir)/runtime/printimpl.o $(srcdir)/runtime/ptolemyio.o \
 	$(srcdir)/runtime/errorext.o $(srcdir)/runtime/ErrorMessage.o \
 	$(srcdir)/runtime/daeext.o $(CORBAOBJ) \
-	$(srcdir)/modpar/libmodpar.a $(srcdir)/runtime/settingsimpl.o
+	$(srcdir)/modpar/libmodpar.a $(srcdir)/runtime/settingsimpl.o \
+	$(srcdir)/runtime/optmanager.o $(srcdir)/runtime/unitparser.o \
+	$(srcdir)/runtime/unitparserext.o
 
 # The MO sources
 SRCMO= Absyn.mo \
@@ -79,13 +81,12 @@ SRCMO= Absyn.mo \
 	InstanceHierarchy.mo \
 	UnitAbsyn.mo \
 	MMath.mo \
-	UnitParserExt.mo \
 	UnitAbsynBuilder.mo \
-	UnitChecker.mo
+	UnitChecker.mo 
 
 # These are externally defined MO modules
 ALLMO = $(SRCMO) DAEEXT.mo Print.mo RTOpts.mo System.mo Parser.mo \
-		TaskGraphExt.mo Corba.mo Socket.mo ErrorExt.mo Settings.mo OptManager.mo 
+		TaskGraphExt.mo Corba.mo Socket.mo ErrorExt.mo Settings.mo OptManager.mo UnitParserExt.mo
 
 SRCC=	$(SRCMO:.mo=.c)
 SRCH=	$(SRCMO:.mo=.h)
