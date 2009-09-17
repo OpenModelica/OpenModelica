@@ -1097,15 +1097,15 @@ algorithm
   end matchcontinue;
 end printDimensionStr;
 
-public function valuesToMods "function: valuesToMods
+public function valuesToMods 
+"function: valuesToMods
   author: PA
  
   This function takes a list of values and convert into a Modification.
    Used for record construction evaluation. PersonRecord(\"name\",45) has a value list 
   { \"name\",45 } that needs to be converted into a modifier for the record class
    PersonRecord (\"name,45)
-   FIXME: How about other value types, e.g. array, enum etc 
-"
+   FIXME: How about other value types, e.g. array, enum etc"
   input list<Values.Value> inValuesValueLst;
   input list<Ident> inIdentLst;
   output Mod outMod;
@@ -1113,18 +1113,26 @@ algorithm
   outMod:=
   matchcontinue (inValuesValueLst,inIdentLst)
     local
-      list<SubMod> res;
-      Integer i;
+      list<SubMod> res,arrRes;
+      Integer i,len;
       list<Values.Value> rest,vals;
       Ident id,s,cname_str,vs;
       list<Ident> ids,val_names;
       Real r;
       Boolean b;
-      Exp.Exp rec_call;
+      Exp.Exp rec_call, exp;
+      list<Exp.Exp> exps;
       list<Var> varlst;
       Absyn.Path cname;
       Values.Value v;
-    case ({},_) then MOD(false,Absyn.NON_EACH(),{},NONE); 
+      list<Ident> dummyIds;
+      Type ty;
+      Exp.ComponentRef cref;
+      
+   // adrpo: TODO! why not use typeOfValue everywhere here??!!
+      
+    case ({},_) then MOD(false,Absyn.NON_EACH(),{},NONE);
+       
     case ((Values.INTEGER(integer = i) :: rest),(id :: ids))
       equation 
         MOD(_,_,res,_) = valuesToMods(rest, ids);
@@ -1135,6 +1143,7 @@ algorithm
           SOME(
           TYPED(Exp.ICONST(i),SOME(Values.INTEGER(i)),
           PROP((T_INTEGER({}),NONE),C_VAR()))))) :: res),NONE);
+          
     case ((Values.REAL(real = r) :: rest),(id :: ids))
       equation 
         MOD(_,_,res,_) = valuesToMods(rest, ids);
@@ -1145,6 +1154,7 @@ algorithm
           SOME(
           TYPED(Exp.RCONST(r),SOME(Values.REAL(r)),
           PROP((T_REAL({}),NONE),C_VAR()))))) :: res),NONE);
+          
     case ((Values.STRING(string = s) :: rest),(id :: ids))
       equation 
         MOD(_,_,res,_) = valuesToMods(rest, ids);
@@ -1155,6 +1165,7 @@ algorithm
           SOME(
           TYPED(Exp.SCONST(s),SOME(Values.STRING(s)),
           PROP((T_STRING({}),NONE),C_VAR()))))) :: res),NONE);
+          
     case ((Values.BOOL(boolean = b) :: rest),(id :: ids))
       equation 
         MOD(_,_,res,_) = valuesToMods(rest, ids);
@@ -1165,6 +1176,7 @@ algorithm
           SOME(
           TYPED(Exp.BCONST(b),SOME(Values.BOOL(b)),
           PROP((T_BOOL({}),NONE),C_VAR()))))) :: res),NONE);
+          
     case ((Values.RECORD(record_ = cname,orderd = vals,comp = val_names) :: rest),(id :: ids))
       equation 
         MOD(_,_,res,_) = valuesToMods(rest, ids);
@@ -1179,9 +1191,31 @@ algorithm
           TYPED(rec_call,SOME(Values.RECORD(cname,vals,val_names)),
           PROP((T_COMPLEX(ClassInf.RECORD(cname_str),varlst,NONE,NONE),NONE),
           C_VAR()))))) :: res),NONE);
+          
+    case ((v as Values.ENUM(cref, _)) :: rest,(id :: ids))
+      equation 
+        MOD(_,_,res,_) = valuesToMods(rest, ids);
+      then
+        MOD(false,Absyn.NON_EACH(),
+          (NAMEMOD(id,
+          MOD(false,Absyn.NON_EACH(),{},
+          SOME(
+          TYPED(Exp.CREF(cref,Exp.ENUM()),SOME(v),
+          PROP((T_ENUM(),NONE),C_CONST()))))) :: res),NONE);
+                    
+    case ((v as Values.ARRAY(vals)) :: rest,(id :: ids))
+      equation 
+        exp = Static.valueExp(v);
+        ty = typeOfValue(v);
+        MOD(_,_,res,_) = valuesToMods(rest, ids);        
+      then
+        MOD(false,Absyn.NON_EACH(),
+          (NAMEMOD(id,MOD(false,Absyn.NON_EACH(),{},
+                   SOME(TYPED(exp, SOME(v),PROP(ty,C_CONST()))))) :: res),NONE);
+
     case ((v :: _),_)
       equation 
-        Debug.fprint("failtrace", "-values_to_mods failed for value: ");
+        Debug.fprint("failtrace", "Types.valuesToMods failed for value: ");
         vs = Values.valString(v);
         Debug.fprint("failtrace", vs);
         Debug.fprint("failtrace", "\n");
@@ -1190,11 +1224,10 @@ algorithm
   end matchcontinue;
 end valuesToMods;
 
-protected function valuesToRecordConstructorCall "function: valuesToRecordConstructorCall
-  
+protected function valuesToRecordConstructorCall 
+"function: valuesToRecordConstructorCall  
   This function transforms a list of values and an Absyn.Path to a function call
-  to a record constructor.
-"
+  to a record constructor."
   input Absyn.Path funcname;
   input list<Values.Value> values;
   output Exp.Exp outExp;

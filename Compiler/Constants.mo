@@ -39,11 +39,16 @@ package Constants
 
 // ************************ Modelica 1.x Annotations! *********************** //
 public constant String annotationsModelica_1_x = "
-Not implemented yet!
+
+package GraphicalAnnotationsProgram____ end GraphicalAnnotationsProgram____;
+
+// Not implemented yet!
 ";
 
 // ************************ Modelica 2.x Annotations! *********************** //
 public constant String annotationsModelica_2_x = "
+
+package GraphicalAnnotationsProgram____  end GraphicalAnnotationsProgram____;
 
 // Constants.diagramProgram:
 record GraphicItem
@@ -58,11 +63,11 @@ record Diagram
   CoordinateSystem coordinateSystem(extent={{-100.0,-100.0},{100.0,100.0}});
 end Diagram;
 
-type LinePattern= enumeration(None, Solid, Dash, Dot, DashDot, DashDot , DashDotDot );
-type Arrow= enumeration(None, Open, Filled, Filled , Half );
-type FillPattern= enumeration(None, Solid, Horizontal, Vertical, Cross, Forward, Backward, CrossDiag, HorizontalCylinder, VerticalCylinder, VerticalCylinder , Sphere );
-type BorderPattern= enumeration(None, Raised, Sunken, Sunken , Engraved );
-type TextStyle= enumeration(Bold, Italic, Italic , Underline );
+type LinePattern= enumeration(None, Solid, Dash, Dot, DashDot, DashDotDot );
+type Arrow= enumeration(None, Open, Filled , Half );
+type FillPattern= enumeration(None, Solid, Horizontal, Vertical, Cross, Forward, Backward, CrossDiag, HorizontalCylinder, VerticalCylinder, Sphere );
+type BorderPattern= enumeration(None, Raised, Sunken, Engraved );
+type TextStyle= enumeration(Bold, Italic, Underline );
   
 record Line
   Boolean visible=true;
@@ -159,10 +164,13 @@ record Placement
   Transformation transformation;
   Transformation iconTransformation;
 end Placement;
+
 ";
 
 // ************************ Modelica 3.x Annotations! *********************** //
 public constant String annotationsModelica_3_x = "
+
+package GraphicalAnnotationsProgram____ end     GraphicalAnnotationsProgram____;
 
 // type DrawingUnit = Real(final unit=\"mm\");
 // type Point = DrawingUnit[2] \"{x, y}\";

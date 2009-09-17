@@ -6053,7 +6053,8 @@ algorithm
     case INT() then "INT"; 
     case REAL() then "REAL"; 
     case BOOL() then "BOOL"; 
-    case STRING() then "STRING"; 
+    case STRING() then "STRING";
+    case ENUM() then "ENUM";
     case OTHER() then "OTHER"; 
     case (T_ARRAY(ty = t,arrayDimensions = dims))
       equation 
@@ -7203,7 +7204,7 @@ algorithm
         s_2 = Util.stringAppendList({"{",s,"}"});
       then
         s_2;
-    case (TUPLE(PR = es))
+    case (TUPLE(PR = es)) 
       equation 
         s = printListStr(es, printExpStr, ",");
         s_1 = stringAppend("(", s);
@@ -7333,7 +7334,11 @@ algorithm
       then
         s_2;
 
-    case (_) then "#UNKNOWN EXPRESSION# ----eee ";
+    case (e)
+      equation
+        //debug_print("unknown expression: ", e); 
+      then 
+        "#UNKNOWN EXPRESSION# ----eee ";
   end matchcontinue;
 end printExp2Str;
 

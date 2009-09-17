@@ -1210,14 +1210,13 @@ algorithm
   end matchcontinue;
 end elabCodeType;
 
-public function elabGraphicsExp "function elabGraphicsExp
- 
+public function elabGraphicsExp 
+"function elabGraphicsExp 
   This function is specially designed for elaboration of expressions when
   investigating Modelica 2.0 graphical annotations.
   These have an array of records representing graphical objects. These 
   elements can have different types, therefore elab_graphic_exp will allow
-  arrays with elements of varying types. 
-"
+  arrays with elements of varying types. "
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input Absyn.Exp inExp;
@@ -1269,8 +1268,7 @@ algorithm
     case (cache,env,Absyn.CREF(componentReg = cr),impl)
       equation 
         Debug.fprint("tcvt","before Static.elabCref in elabGraphicsExp\n");
-
-        (cache,exp,prop,_) = elabCref(cache,env, cr, impl,true/*perform vectorization*/);
+        (cache,exp,prop,_) = elabCref(cache,env, cr, impl,true /*perform vectorization*/);
         Debug.fprint("tcvt","after Static.elabCref in elabGraphicsExp\n");
       then
         (cache,exp,prop);
@@ -1768,12 +1766,11 @@ algorithm
   end matchcontinue;
 end elabArrayReal;
 
-protected function elabArrayFirstPropsReal "function: elabArrayFirstPropsReal
-  author: PA
- 
-  Pick the first type among the list of properties which has elementype
-  Real.
-"
+protected function elabArrayFirstPropsReal 
+"function: elabArrayFirstPropsReal
+  author: PA 
+  Pick the first type among the list of 
+  properties which has elementype Real."
   input list<Types.Properties> inTypesPropertiesLst;
   output Types.Type outType;
 algorithm 
@@ -1795,10 +1792,9 @@ algorithm
   end matchcontinue;
 end elabArrayFirstPropsReal;
 
-protected function elabArrayConst "function: elabArrayConst
- 
-  Constructs a const value from a list of properties, using const_and.
-"
+protected function elabArrayConst 
+"function: elabArrayConst 
+  Constructs a const value from a list of properties, using constAnd."
   input list<Types.Properties> inTypesPropertiesLst;
   output Types.Const outConst;
 algorithm 
@@ -1819,12 +1815,11 @@ algorithm
   end matchcontinue;
 end elabArrayConst;
 
-protected function elabArrayReal2 "function: elabArrayReal2
-  author: PA
-  
+protected function elabArrayReal2 
+"function: elabArrayReal2
+  author: PA  
   Applies type_convert to all expressions in a list to the type given
-  as argument.
-"
+  as argument."
   input list<Exp.Exp> inExpExpLst;
   input list<Types.Type> inTypesTypeLst;
   input Types.Type inType;
@@ -1871,10 +1866,9 @@ algorithm
   end matchcontinue;
 end elabArrayReal2;
 
-protected function elabArray2 "function: elabArray2
-  
-  Helper function to elab_array, checks that all elements are equivalent.
-"
+protected function elabArray2 
+"function: elabArray2  
+  Helper function to elabArray, checks that all elements are equivalent."
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
@@ -1937,10 +1931,9 @@ algorithm
   end matchcontinue;
 end elabArray2;
 
-protected function elabGraphicsArray "function: elabGraphicsArray
- 
-  This function elaborates array expressions for graphics elaboration.
-"
+protected function elabGraphicsArray 
+"function: elabGraphicsArray 
+  This function elaborates array expressions for graphics elaboration."
   input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
@@ -1976,7 +1969,7 @@ algorithm
         (cache,(e_1 :: es_1),Types.PROP(t1,c));
     case (_,_,_,impl)
       equation 
-        Error.addMessage(Error.INTERNAL_ERROR, {"elab_graphics_array failed\n"});
+        Error.addMessage(Error.INTERNAL_ERROR, {"Static.elabGraphicsArray failed\n"});
       then
         fail();
   end matchcontinue;
@@ -3993,9 +3986,9 @@ algorithm
   end matchcontinue;
 end elabBuiltinDelay;
 
-protected function elabBuiltinMod "function: elabBuiltinMod
-  This function elaborates on the builtin operator mod.
-"
+protected function elabBuiltinMod 
+"function: elabBuiltinMod
+  This function elaborates on the builtin operator mod."
   input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
@@ -4068,11 +4061,10 @@ algorithm
   end matchcontinue;
 end elabBuiltinRem;
 
-protected function elabBuiltinInteger "function: elabBuiltinInteger
- 
+protected function elabBuiltinInteger
+"function: elabBuiltinInteger 
   This function elaborates on the builtin operator integer, which extracts 
-  the Integer value of a Real value.
-"
+  the Integer value of a Real value."
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
@@ -5622,7 +5614,7 @@ end elabCallBuiltin;
 protected function elabCall 
 "function: elabCall 
   This function elaborates on a function call.  It converts the name
-  to a `Path\', and used the `elab_call_args\' to do the rest of the
+  to a Absyn.Path, and used the Static.elabCallArgs to do the rest of the
   work."
 	input Env.Cache inCache;
   input Env.Env inEnv;
@@ -7015,14 +7007,145 @@ algorithm
   end matchcontinue;
 end calculateConstantness;
 
-protected function elabCallArgs "function: elabCallArgs
- 
+public function filterComponents 
+"This function returns the components from a class"
+  input list<SCode.Element> elts;
+  output list<SCode.Element> compElts;
+  output list<String> compNames;
+algorithm 
+  (compElts,compNames) := matchcontinue (elts)
+    local
+      list<SCode.Element> rest, comps;
+      SCode.Element comp; String name;
+      list<String> names;
+    // handle the empty things
+    case ({}) then ({},{});
+    // collect components       
+    case (( comp as SCode.COMPONENT(component=name)) :: rest)
+      equation
+        (comps, names) = filterComponents(rest);  
+      then (comp::comps,name::names);
+    // ignore others
+    case (_ :: rest) 
+      equation
+        (comps, names) = filterComponents(rest);  
+      then (comps, names);
+  end matchcontinue;
+end filterComponents;
+
+public function getClassComponents
+"This function returns the components from a class"
+  input SCode.Class cl;
+  output list<SCode.Element> compElts;
+  output list<String> compNames;
+algorithm 
+  (compElts,compNames) := matchcontinue (cl)
+    local
+      list<SCode.Element> elts, comps;
+      list<String> names;
+             
+    case (SCode.CLASS(classDef = SCode.PARTS(elementLst = elts)))
+      equation
+        (comps, names) = filterComponents(elts);  
+      then (comps,names);
+    case (SCode.CLASS(classDef = SCode.CLASS_EXTENDS(elementLst = elts)))
+      equation
+        (comps, names) = filterComponents(elts);  
+      then (comps,names);
+  end matchcontinue;
+end getClassComponents;
+
+/*
+public function getComponentsWithUnkownArraySizes 
+"This function returns true if a class 
+ has unknown array sizes for a component"
+  input SCode.Class cl;
+  output list<SCode.Element> compElts;
+algorithm 
+  compElts := matchcontinue (cl)
+    local
+      list<SCode.Element> rest;
+      SCode.Element comp;
+    // handle the empty things
+    case ({}) then ({},{},{});
+    // collect components       
+    case (( comp as SCode.COMPONENT(component=_) ) :: rest) then comp::splitElts(rest);
+    // ignore others
+    case (_ :: rest) then splitElts(rest);
+  end matchcontinue;
+end getComponentsWithUnkownArraySizes;
+
+protected function transformFunctionArgumentsIntoModifications
+"@author: adrpo
+ This function transforms the arguments 
+ given to a function into a modification."
+  input Env.Cache cache;
+  input Env.Env env;
+  input Boolean impl;
+  input Option<Interactive.InteractiveSymbolTable> inSymTab; 
+  input SCode.Class inClass;
+  input list<Absyn.Exp> inPositionalArguments;
+  input list<Absyn.NamedArg> inNamedArguments;
+  output Option<Absyn.Modification> absynOptMod;
+algorithm
+  absynOptMod := matchcontinue (cache, env, impl, inSymTab, inClass, inPositionalArguments, inNamedArguments)
+    local
+      Option<Absyn.Modification> m;
+      list<Absyn.NamedArg> na;
+      
+    case (_, _, _, _, _,{},{}) then NONE();
+    case (cache,env,impl,inSymTab,_,{},inNamedArguments)
+      equation
+        m = transformToModification(cache,env,impl,inSymTab,inNamedArguments);
+      then m;
+    case (cache,env,impl,inSymTab,inClass,inPositionalArguments,inNamedArguments)
+      equation
+        // TODO! FIXME! transform positional to named!
+        //na = listAppend(inNamedArguments, transformPositionalToNamed(inClass, inPositionalArguments); 
+        m = transformToModification(cache,env,impl,inSymTab,inNamedArguments);
+      then m;        
+  end matchcontinue;
+end transformFunctionArgumentsIntoModifications;
+
+protected function transformFunctionArgumentsIntoModifications
+"@author: adrpo
+ This function transforms the arguments 
+ given to a function into a modification."
+  input Env.Cache cache;
+  input Env.Env env;
+  input Boolean impl;
+  input Option<Interactive.InteractiveSymbolTable> inSymTab; 
+  input SCode.Class inClass;
+  input list<Absyn.Exp> inPositionalArguments;
+  input list<Absyn.NamedArg> inNamedArguments;
+  output Option<Absyn.Modification> absynOptMod;
+algorithm
+  absynOptMod := matchcontinue (cache, env, impl, inSymTab, inClass, inPositionalArguments, inNamedArguments)
+    local
+      Option<Absyn.Modification> m;
+    case (_, _, _, _, _,{},{}) then NONE();
+    case (cache,env,impl,inSymTab,_,{},inNamedArguments)
+      equation
+        m = transformToModification(cache,env,impl,inSymTab,inNamedArguments);
+      then m;
+  end matchcontinue;
+end transformFunctionArgumentsIntoModifications;
+*/
+
+protected function createDummyFarg
+  input String name;
+  output Types.FuncArg farg;
+algorithm
+  farg := (name, (Types.T_NOTYPE(),NONE()));  
+end createDummyFarg;
+
+protected function elabCallArgs 
+"function: elabCallArgs 
   Given the name of a function and two lists of expression and 
   NamedArg respectively to be used 
   as actual arguments in a function call to that function, this
   function finds the function definition and matches the actual
-  arguments to the formal parameters.
-"
+  arguments to the formal parameters."
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input Absyn.Path inPath;
@@ -7060,24 +7183,59 @@ algorithm
       String s;
       Env.Cache cache;
       Exp.Type tp;
+      SCode.Mod mod;
+      Types.Mod tmod;
+      SCode.Class cl;
+      Option<Absyn.Modification> absynOptMod;
 
-      /* Record constructors, user defined or implicit*/ 
-    case (cache,env,fn,args,nargs,impl,st) 
-      equation 
+    /* Record constructors that might have come from Graphical expressions with unknown array sizes */
+    /* 
+     * adrpo: HACK! HACK! TODO! remove this case if records with unknown sizes can be instantiated
+     * this could be also fixed by transforming the function call arguments into modifications and
+     * send the modifications as an option in Lookup.lookup* functions! 
+     */ 
+    case (cache,env,fn,args,nargs,impl,st)
+      local list<SCode.Element> comps; list<String> names; 
+      equation        
+        (cache,cl as SCode.CLASS(_,_,_,SCode.R_PACKAGE(),_),_) = 
+           Lookup.lookupClass(cache, env, Absyn.IDENT("GraphicalAnnotationsProgram____"), false);                
+        (cache,cl as SCode.CLASS(_,_,_,SCode.R_RECORD(),_),env_1) = Lookup.lookupClass(cache, env, fn, false);
+        (cl,env_2) = Lookup.lookupRecordConstructorClass(env_1 /* env */, fn);
+        (comps,_::names) = getClassComponents(cl); // remove the fist one as it is the result! 
+        /*
         (cache,(t as (Types.T_FUNCTION(fargs,(outtype as (Types.T_COMPLEX(ClassInf.RECORD(_),_,_,_),_))),_)),env_1) 
-        	= Lookup.lookupType(cache,env, fn, true);
+        	= Lookup.lookupType(cache, env, fn, true);
+        */
+        fargs = Util.listMap(names, createDummyFarg);
+        slots = makeEmptySlots(fargs); 
+        (cache,args_1,newslots,constlist) = elabInputArgs(cache, env, args, nargs, slots, false /*checkTypes*/ ,impl);
+        const = calculateConstantness(constlist);
+        (cache,newslots2) = fillDefaultSlots(cache, newslots, cl, env_2, impl);
+        args_2 = expListFromSlots(newslots2);
+        tp = complexTypeFromSlots(newslots2);
+        //tyconst = elabConsts(outtype, const);
+        //prop = getProperties(outtype, tyconst);
+      then
+        (cache,Exp.CALL(fn,args_2,false,false,tp),Types.PROP((Types.T_NOTYPE(),NONE()),Types.C_CONST()));
+
+    /* Record constructors, user defined or implicit */ // try the hard stuff first 
+    case (cache,env,fn,args,nargs,impl,st) 
+      equation
+        (cache,(t as (Types.T_FUNCTION(fargs,(outtype as (Types.T_COMPLEX(ClassInf.RECORD(_),_,_,_),_))),_)),env_1) 
+        	= Lookup.lookupType(cache, env, fn, true);
         slots = makeEmptySlots(fargs);
-        (cache,args_1,newslots,constlist) = elabInputArgs(cache,env, args, nargs, slots, true /*checkTypes*/ ,impl);
+        (cache,args_1,newslots,constlist) = elabInputArgs(cache, env, args, nargs, slots, true /*checkTypes*/ ,impl);
         /* const = Util.listReduce(constlist, Types.constAnd); */
         const = calculateConstantness(constlist);
         tyconst = elabConsts(outtype, const);
         prop = getProperties(outtype, tyconst);
         (cl,env_2) = Lookup.lookupRecordConstructorClass(env_1 /* env */, fn);
-        (cache,newslots2) = fillDefaultSlots(cache,newslots, cl, env_2, impl);
+        (cache,newslots2) = fillDefaultSlots(cache, newslots, cl, env_2, impl);
         args_2 = expListFromSlots(newslots2);
         tp = complexTypeFromSlots(newslots2);
       then
         (cache,Exp.CALL(fn,args_2,false,false,tp),prop);
+        
     case (cache,env,fn,args,nargs,impl,st) /* ..Other functions */ 
       local Exp.Type tp;
         String str2;
@@ -7113,7 +7271,7 @@ algorithm
       then
         (cache,call_exp,prop_1);
         
-        /*case above failed. Also consider koening lookup.*/
+    /*case above failed. Also consider koening lookup.*/
     /*case (cache,env,fn,args,nargs,impl,st)
       equation 
         (cache,ktypelist) = getKoeningFunctionTypes(cache,env, fn, args, nargs, impl)  ;
@@ -7324,12 +7482,12 @@ algorithm
   end matchcontinue;
 end vectorizeCall;
 
-protected function vectorizeCallArray "function : vectorizeCallArray
+protected function vectorizeCallArray 
+"function : vectorizeCallArray
   author: PA
  
   Helper function to vectorize_call, vectoriezes ARRAY expression to
-  an array of array expressions.
-"
+  an array of array expressions."
   input Exp.Exp inExp;
   input Exp.Type inType;
   input Integer inInteger;
@@ -7355,11 +7513,10 @@ algorithm
   end matchcontinue;
 end vectorizeCallArray;
 
-protected function vectorizeCallArray2 "function: vectorizeCallArray2
-  author: PA
- 
-  Helper function to vectorize_call_array
-"
+protected function vectorizeCallArray2 
+"function: vectorizeCallArray2
+  author: PA 
+  Helper function to vectorizeCallArray"
   input list<Exp.Exp> inExpExpLst;
   input Exp.Type inType;
   input Integer inInteger;
@@ -7415,12 +7572,12 @@ algorithm
   end matchcontinue;
 end vectorizeCallArray3;
 
-protected function vectorizeCallScalar "function: vectorizeCallScalar
+protected function vectorizeCallScalar 
+"function: vectorizeCallScalar
   author: PA
  
-  Helper function to vectorize_call, vectorizes CALL expressions to 
-  array expressions.
-"
+  Helper function to vectorizeCall, vectorizes CALL expressions to 
+  array expressions."
   input Exp.Exp inExp;
   input Exp.Type inType;
   input Integer inInteger;
@@ -7446,18 +7603,18 @@ algorithm
         new_exp;
     case (_,_,_,_)
       equation 
-        Debug.fprint("failtrace", "-vectorize_call_scalar failed\n");
+        Debug.fprint("failtrace", "-Static.vectorizeCallScalar failed\n");
       then
         fail();
   end matchcontinue;
 end vectorizeCallScalar;
 
-protected function vectorizeCallScalar2 "function: vectorizeCallScalar2
+protected function vectorizeCallScalar2 
+"function: vectorizeCallScalar2
   author: PA
  
   Iterates through vectorized dimension an creates argument list according
-  to vectorized dimension in corresponding slot.
-"
+  to vectorized dimension in corresponding slot."
   input list<Exp.Exp> inExpExpLst1;
   input list<Slot> inSlotLst2;
   input Integer inInteger3;
@@ -7486,11 +7643,11 @@ algorithm
   end matchcontinue;
 end vectorizeCallScalar2;
 
-protected function vectorizeCallScalar3 "function: vectorizeCallScalar3
+protected function vectorizeCallScalar3 
+"function: vectorizeCallScalar3
   author: PA
- 
-  Helper function to vectorize_call_scalar_2
-"
+  
+  Helper function to vectorizeCallScalar2"
   input list<Exp.Exp> inExpExpLst;
   input list<Slot> inSlotLst;
   input Integer inInteger;
@@ -7519,12 +7676,12 @@ algorithm
   end matchcontinue;
 end vectorizeCallScalar3;
 
-protected function deoverloadFuncname "function: deoverloadFuncname
+protected function deoverloadFuncname 
+"function: deoverloadFuncname
  
   This function is used to deoverload function calls. It investigates the
   type of the function to see if it has the optional functionname set. If 
-  so this is returned. Otherwise return input.
-"
+  so this is returned. Otherwise return input."
   input Absyn.Path inPath;
   input Types.Type inType;
   output Absyn.Path outPath;
@@ -7537,10 +7694,9 @@ algorithm
   end matchcontinue;
 end deoverloadFuncname;
 
-protected function isTuple "function: isTuple
- 
-  Return true if Type is a Tuple type.
-"
+protected function isTuple 
+"function: isTuple 
+  Return true if Type is a Tuple type."
   input Types.Type inType;
   output Boolean outBoolean;
 algorithm 
@@ -7551,11 +7707,10 @@ algorithm
   end matchcontinue;
 end isTuple;
 
-protected function elabTypes "function: elabTypes 
- 
-  Elaborate input parameters to a function and select matching function 
-  type from a list of types.
-"
+protected function elabTypes 
+"function: elabTypes  
+  Elaborate input parameters to a function and 
+  select matching function type from a list of types."
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
@@ -7610,8 +7765,9 @@ algorithm
   end matchcontinue;
 end elabTypes;
 
-protected function createActualFunctype "Creates the actual function type of a CALL expression, used for error messages.
-This type is only created if checkTypes is false."
+protected function createActualFunctype 
+"Creates the actual function type of a CALL expression, used for error messages.
+ This type is only created if checkTypes is false."
   input Types.Type tp;
   input list<Slot> slots;
   input Boolean checkTypes;
@@ -7628,13 +7784,13 @@ algorithm
   end matchcontinue;  
 end createActualFunctype;
 
-protected function slotsVectorizable "function: slotsVectorizable
+protected function slotsVectorizable 
+"function: slotsVectorizable
   author: PA
  
   This function checks all vectorized array dimensions in the slots and
   confirms that they all are of same dimension,or no dimension, i.e. not
-  vectorized. The uniform vectorized array dimension is returned.
-"
+  vectorized. The uniform vectorized array dimension is returned."
   input list<Slot> inSlotLst;
   output list<Types.ArrayDim> outTypesArrayDimLst;
 algorithm 
@@ -7662,14 +7818,14 @@ algorithm
   end matchcontinue;
 end slotsVectorizable;
 
-protected function sameSlotsVectorizable "function: sameSlotsVectorizable
+protected function sameSlotsVectorizable 
+"function: sameSlotsVectorizable
   author: PA
   
   This function succeds if all slots in the list either has the array 
   dimension as given by the second argument or no array dimension at all.
   The array dimension must match both in dimension size and number of 
-  dimensions.
-"
+  dimensions."
   input list<Slot> inSlotLst;
   input list<Types.ArrayDim> inTypesArrayDimLst;
 algorithm 
@@ -7693,11 +7849,11 @@ algorithm
   end matchcontinue;
 end sameSlotsVectorizable;
 
-protected function sameArraydimLst "function: sameArraydimLst
+protected function sameArraydimLst 
+"function: sameArraydimLst
   author: PA
  
-   Helper function to same_slots_vectorizable. 
-"
+  Helper function to sameSlotsVectorizable. "
   input list<Types.ArrayDim> inTypesArrayDimLst1;
   input list<Types.ArrayDim> inTypesArrayDimLst2;
 algorithm 
@@ -7721,10 +7877,10 @@ algorithm
   end matchcontinue;
 end sameArraydimLst;
 
-protected function getProperties "function: getProperties
+protected function getProperties 
+"function: getProperties
   This function creates a Properties object from a Types.Type and a 
-  Types.TupleConst value.
-"
+  Types.TupleConst value."
   input Types.Type inType;
   input Types.TupleConst inTupleConst;
   output Types.Properties outProperties;
@@ -7754,15 +7910,15 @@ algorithm
   end matchcontinue;
 end getProperties;
 
-protected function buildTupleConst "function: buildTupleConst
+protected function buildTupleConst 
+"function: buildTupleConst
   author: LS
   
   Build a TUPLE_CONST (Types.TupleConst) for a PROP_TUPLE for a function call
   from a list of bools derived from arguments
  
   We should check functions actual arguments instead of their formal
-  parameters as done below
-"
+  parameters as done below"
   input list<Types.Const> blist;
   output Types.TupleConst outTupleConst;
   list<Types.TupleConst> clist;
@@ -7771,10 +7927,9 @@ algorithm
   outTupleConst := Types.TUPLE_CONST(clist);
 end buildTupleConst;
 
-protected function buildTupleConstList "function: buildTupleConstList
- 
-  Helper function to build_tuple_const
-"
+protected function buildTupleConstList 
+"function: buildTupleConstList 
+  Helper function to buildTupleConst"
   input list<Types.Const> inTypesConstLst;
   output list<Types.TupleConst> outTypesTupleConstLst;
 algorithm 
@@ -7826,12 +7981,11 @@ algorithm
   end matchcontinue;
 end elabConsts;
 
-protected function checkConsts "function: checkConsts
-  
+protected function checkConsts 
+"function: checkConsts  
   LS: Changed to take a Type list, which is the functions return type. Only
    for functions returning a tuple 
-  LS: Update: const is derived from the input arguments and sent here 
-"
+  LS: Update: const is derived from the input arguments and sent here "
   input list<Types.Type> inTypesTypeLst;
   input Types.Const inConst;
   output list<Types.TupleConst> outTypesTupleConstLst;
@@ -7899,9 +8053,7 @@ algorithm
       Types.TupleConst t_c;
     case ((Types.PROP(type_ = t,constFlag = c) :: props))
       equation 
-        (types,consts) = splitProps(props) "list_append(ts,t::{}) => t1 &
-	list_append(cs,Types.CONST(c)::{}) => t2 &
-" ;
+        (types,consts) = splitProps(props) "list_append(ts,t::{}) => t1 & list_append(cs,Types.CONST(c)::{}) => t2 & " ;
       then
         ((t :: types),(Types.CONST(c) :: consts));
     case ((Types.PROP_TUPLE(type_ = t,tupleConst = t_c) :: props))
@@ -7914,10 +8066,9 @@ algorithm
   end matchcontinue;
 end splitProps;
 
-protected function getTypes "function: getTypes
- 
-  This relatoin returns the types of a Types.FuncArg list.
-"
+protected function getTypes 
+"function: getTypes 
+  This relatoin returns the types of a Types.FuncArg list."
   input list<Types.FuncArg> inTypesFuncArgLst;
   output list<Types.Type> outTypesTypeLst;
 algorithm 
@@ -7937,15 +8088,14 @@ algorithm
   end matchcontinue;
 end getTypes;
 
-protected function functionParams "function: functionParams
- 
+protected function functionParams 
+"function: functionParams 
   A function definition is just a clas definition where all publi
   components are declared as either inpu or outpu.  This
   function_ find all those components and_ separates them into two
   separate lists.
 
-  LS: This can probably replaced by Types.get_input_vars and
-   Types.get_output_vars"
+  LS: This can probably replaced by Types.getInputVars and Types.getOutputVars"
   input list<Types.Var> inTypesVarLst;
   output list<Types.FuncArg> outTypesFuncArgLst1;
   output list<Types.FuncArg> outTypesFuncArgLst2;
@@ -7987,8 +8137,8 @@ algorithm
   end matchcontinue;
 end functionParams;
 
-protected function elabInputArgs "function_: elabInputArgs
- 
+protected function elabInputArgs 
+"function_: elabInputArgs 
   This function_ elaborates on a number of expressions and_ matches
   them to a number of `Types.Var\' objects, applying type_ conversions
   on the expressions when necessary to match the type_ of the
@@ -7997,8 +8147,7 @@ protected function elabInputArgs "function_: elabInputArgs
   PA: Positional arguments and named arguments are filled in the argument slots as:
  1. Positional arguments fill the first slots according to their position.
  2. Named arguments fill slots with the same name as the named argument.
- 3. Unfilled slots are checks so that they have default values, otherwise error.
-"
+ 3. Unfilled slots are checks so that they have default values, otherwise error."
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
@@ -8026,7 +8175,7 @@ algorithm
     case (cache,env,(exp as (_ :: _)),narg,slots,checkTypes,impl) /* impl const Fill slots with positional arguments */ 
       equation
         farg = funcargLstFromSlots(slots);
-        (cache,slots_1,clist1) = elabPositionalInputArgs(cache,env, exp, farg, slots, checkTypes,impl);
+        (cache,slots_1,clist1) = elabPositionalInputArgs(cache, env, exp, farg, slots, checkTypes,impl);
         (cache,_,newslots,clist2) = elabInputArgs(cache,env, {}, narg, slots_1, checkTypes, impl) "recursive call fills named arguments" ;
         clist = listAppend(clist1, clist2);
         explst = expListFromSlots(newslots);
@@ -8052,11 +8201,10 @@ algorithm
   end matchcontinue;
 end elabInputArgs;
 
-protected function makeEmptySlots "function: makeEmptySlots
- 
-  Helper function to elab_input_args.
-  Creates the slots to be filled with arguments. Intially they are empty.
-"
+protected function makeEmptySlots 
+"function: makeEmptySlots 
+  Helper function to elabInputArgs.
+  Creates the slots to be filled with arguments. Intially they are empty."
   input list<Types.FuncArg> inTypesFuncArgLst;
   output list<Slot> outSlotLst;
 algorithm 
@@ -8075,10 +8223,9 @@ algorithm
   end matchcontinue;
 end makeEmptySlots;
 
-protected function funcargLstFromSlots "function: funcargLstFromSlots
- 
-  Converts slots to Types.Funcarg
-"
+protected function funcargLstFromSlots 
+"function: funcargLstFromSlots 
+  Converts slots to Types.Funcarg"
   input list<Slot> inSlotLst;
   output list<Types.FuncArg> outTypesFuncArgLst;
 algorithm 
@@ -8097,8 +8244,9 @@ algorithm
   end matchcontinue;
 end funcargLstFromSlots;
 
-protected function complexTypeFromSlots "Creates an Exp.COMPLEX type from a list of slots. Used to create type
-of record constructors "
+protected function complexTypeFromSlots 
+"Creates an Exp.COMPLEX type from a list of slots. 
+ Used to create type of record constructors "
   input list<Slot> slots;
   output Exp.Type tp;
 algorithm
@@ -8114,10 +8262,9 @@ algorithm
   end matchcontinue;
 end complexTypeFromSlots;
 
-protected function expListFromSlots "function expListFromSlots
- 
-  Convers slots to expressions 
-"
+protected function expListFromSlots 
+"function expListFromSlots 
+  Convers slots to expressions "
   input list<Slot> inSlotLst;
   output list<Exp.Exp> outExpExpLst;
 algorithm 
@@ -8141,11 +8288,10 @@ algorithm
   end matchcontinue;
 end expListFromSlots;
 
-protected function fillDefaultSlots "function: fillDefaultSlots
- 
+protected function fillDefaultSlots 
+"function: fillDefaultSlots 
   This function takes a slot list and a class definition of a function 
-  and fills  default values into slots which have not been filled.
-"
+  and fills  default values into slots which have not been filled."
 	input Env.Cache inCache;
   input list<Slot> inSlotLst;
   input SCode.Class inClass;
@@ -8192,10 +8338,9 @@ algorithm
   end matchcontinue;
 end fillDefaultSlots;
 
-protected function printSlotsStr "function printSlotsStr
- 
-  prints the slots to a string
-"
+protected function printSlotsStr 
+"function printSlotsStr 
+  prints the slots to a string"
   input list<Slot> inSlotLst;
   output String outString;
 algorithm 
@@ -8259,7 +8404,7 @@ algorithm
       Ident id;
     case (cache,_,{},_,slots,checkTypes,impl) then (cache,slots,{});  /* impl const */ 
 
-      /* Exact match */      
+    /* Exact match */      
     case (cache,env,(e :: es),((farg as (_,vt)) :: vs),slots,checkTypes as true, impl)  
       equation 
         (cache,e_1,Types.PROP(t,c1),_) = elabExp(cache,env, e, impl, NONE,true);
@@ -8269,7 +8414,7 @@ algorithm
       then
         (cache,newslots,(c1 :: clist));
 
-        /* check if vectorized argument */         
+    /* check if vectorized argument */         
     case (cache,env,(e :: es),((farg as (_,vt)) :: vs),slots,checkTypes as true,impl) 
       equation
         (cache,e_1,Types.PROP(t,c1),_) = elabExp(cache,env, e, impl, NONE,true);
@@ -8279,7 +8424,7 @@ algorithm
       then
         (cache,newslots,(c1 :: clist));
 
-        /* Not checking type*/ 
+    /* Not checking type*/ 
     case (cache,env,(e :: es),((farg as (id,vt)) :: vs),slots,checkTypes as false, impl)
       equation 
         (cache,e_1,Types.PROP(t,c1),_) = elabExp(cache,env, e, impl, NONE,true);
@@ -8315,15 +8460,14 @@ algorithm
   end matchcontinue;
 end elabPositionalInputArgs;
 
-protected function elabNamedInputArgs "function elabNamedInputArgs
- 
+protected function elabNamedInputArgs 
+"function elabNamedInputArgs 
   This function takes an Env, a NamedArg list, a Types.FuncArg list and a 
   Slot list.
   It builds up a new slot list and a list of elaborated expressions.
   If a slot is filled twice the function fails. If a slot is not filled at 
   all and the 
-  value is not a parameter or a constant the function also fails.
-"
+  value is not a parameter or a constant the function also fails."
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.NamedArg> inAbsynNamedArgLst;
@@ -8354,16 +8498,16 @@ algorithm
       /* Check types */      
     case (cache,env,(Absyn.NAMEDARG(argName = id,argValue = e) :: nas),farg,slots,checkTypes as true,impl) 
       equation 
-        (cache,e_1,Types.PROP(t,c1),_) = elabExp(cache,env, e, impl, NONE,true);
+        (cache,e_1,Types.PROP(t,c1),_) = elabExp(cache, env, e, impl, NONE, true);
         vt = findNamedArgType(id, farg);
         (e_2,_) = Types.matchType(e_1, t, vt);
         slots_1 = fillSlot((id,vt), e_2, {}, slots,checkTypes);
-        (cache,newslots,clist) = elabNamedInputArgs(cache,env, nas, farg, slots_1, checkTypes,impl);
+        (cache,newslots,clist) = elabNamedInputArgs(cache, env, nas, farg, slots_1, checkTypes, impl);
       then
         (cache,newslots,(c1 :: clist));
 
-      /* Do not check types */      
-    case (cache,env,(Absyn.NAMEDARG(argName = id,argValue = e) :: nas),farg,slots,checkTypes as true,impl) 
+    /* Do not check types */
+    case (cache,env,(Absyn.NAMEDARG(argName = id,argValue = e) :: nas),farg,slots,checkTypes,impl) 
       equation 
         (cache,e_1,Types.PROP(t,c1),_) = elabExp(cache,env, e, impl, NONE,true);
         vt = findNamedArgType(id, farg);
@@ -8376,18 +8520,17 @@ algorithm
     case (cache,_,{},_,slots,checkTypes,impl) then (cache,slots,{}); 
     case (cache,env,narg,farg,_,checkTypes,impl)
       equation 
-        Debug.fprint("failtrace", "- elab_named_input_args failed\n");
+        Debug.fprint("failtrace", "Stati.elabNamedInputArgs failed\n");
       then
         fail();
   end matchcontinue;
 end elabNamedInputArgs;
 
-protected function findNamedArgType "function findNamedArgType
- 
+protected function findNamedArgType 
+"function findNamedArgType 
   This function takes an Ident and a FuncArg list, and returns the FuncArg
   which has  that identifier.
-  Used for instance when looking up named arguments from the function type.
-"
+  Used for instance when looking up named arguments from the function type."
   input Ident inIdent;
   input list<Types.FuncArg> inTypesFuncArgLst;
   output Types.Type outType;
@@ -8412,12 +8555,11 @@ algorithm
   end matchcontinue;
 end findNamedArgType;
 
-protected function fillSlot "function: fillSlot
- 
+protected function fillSlot 
+"function: fillSlot 
   This function takses a `FuncArg\' and an Exp.Exp and a Slot list and fills 
   the slot holding the FuncArg, by setting the boolean value of the slot 
-  and setting the expression. The function fails if the slot is allready set.
-"
+  and setting the expression. The function fails if the slot is allready set."
   input Types.FuncArg inFuncArg;
   input Exp.Exp inExp;
   input list<Types.ArrayDim> inTypesArrayDimLst;
@@ -11512,12 +11654,11 @@ algorithm
   end matchcontinue;
 end getKoeningOperatorTypes;
 
-protected function getKoeningOperatorTypesInScope "function: getKoeningOperatorTypesInScope
- 
-  This function is a help function to get_koening_operator_types
+protected function getKoeningOperatorTypesInScope 
+"function: getKoeningOperatorTypesInScope 
+  This function is a help function to getKoeningOperatorTypes
   and it will look for functions in the current scope of the passed
-  environment, according to the koening rule. 
-"
+  environment, according to the koening rule."
 	input Env.Cache inCache;
   input String inString;
   input Env.Env inEnv;
@@ -11537,8 +11678,8 @@ algorithm
       Env.Cache cache;
     case (cache,funcname,(f :: fs))
       equation 
-        (cache,_,(f_1 :: _)) = Lookup.lookupType(cache,{f}, Absyn.IDENT(funcname), false) "To make sure the function is implicitly instantiated." ;
-        (cache,tplst) = Lookup.lookupFunctionsInEnv(cache,{f_1}, Absyn.IDENT(funcname)) "TODO: Fix so lookup_functions_in_env also does instantiation to get type" ;
+        (cache,_,(f_1 :: _)) = Lookup.lookupType(cache, {f}, Absyn.IDENT(funcname), false) "To make sure the function is implicitly instantiated." ;
+        (cache,tplst) = Lookup.lookupFunctionsInEnv(cache, {f_1}, Absyn.IDENT(funcname)) "TODO: Fix so lookupFunctionsInEnv also does instantiation to get type" ;
         tplen = listLength(tplst);
         (cache,fullfuncname) = Inst.makeFullyQualified(cache,(f_1 :: fs), Absyn.IDENT(funcname));
         res = buildOperatorTypes(tplst, fullfuncname);
@@ -11547,11 +11688,10 @@ algorithm
   end matchcontinue;
 end getKoeningOperatorTypesInScope;
 
-protected function buildOperatorTypes "function: buildOperatorTypes
- 
+protected function buildOperatorTypes 
+"function: buildOperatorTypes 
   This function takes the types operator overloaded user functions and
-  builds  the type list structure suitable for the deoverload function. 
-"
+  builds  the type list structure suitable for the deoverload function."
   input list<Types.Type> inTypesTypeLst;
   input Absyn.Path inPath;
   output list<tuple<Exp.Operator, list<Types.Type>, Types.Type>> outTplExpOperatorTypesTypeLstTypesTypeLst;

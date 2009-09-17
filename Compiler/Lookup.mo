@@ -1675,12 +1675,10 @@ algorithm
   end matchcontinue;
 end lookupFunctionsInFrame;
 
-protected function lookupRecconstInEnv "function: lookupRecconstInEnv
-  
+protected function lookupRecconstInEnv 
+"function: lookupRecconstInEnv  
   Helper function to lookup_record_constructor_class. Searches
-  The environment for record constructors.
-  
-"
+  The environment for record constructors."
   input Env.Env inEnv;
   input Absyn.Path inPath;
   output SCode.Class outClass;
@@ -1710,11 +1708,10 @@ algorithm
   end matchcontinue;
 end lookupRecconstInEnv;
 
-protected function lookupRecconstInFrame "function: lookupRecconstInFrame
- 
+protected function lookupRecconstInFrame 
+"function: lookupRecconstInFrame 
   This function lookups the implicit record constructor class (function) 
-  of a record in a frame
-"
+  of a record in a frame"
   input Env.AvlTree inBinTree;
   input Env.Env inEnv;
   input SCode.Ident inIdent;
@@ -1743,11 +1740,11 @@ algorithm
   end matchcontinue;
 end lookupRecconstInFrame;
 
-protected function buildRecordConstructorClass "function: buildRecordConstructorClass
+protected function buildRecordConstructorClass 
+"function: buildRecordConstructorClass
   
   Creates the record constructor class, i.e. a function, from the record
-  class given as argument.
-"
+  class given as argument."
   input SCode.Class inClass;
   input Env.Env inEnv;
   output SCode.Class outClass;
@@ -1806,15 +1803,14 @@ algorithm
   end matchcontinue;
 end buildRecordConstructorClass2;
 
-protected function buildRecordConstructorElts "function: buildRecordConstructorElts
-  
+protected function buildRecordConstructorElts 
+"function: buildRecordConstructorElts  
   Helper function to build_record_constructor_class. Creates the elements
   of the function class.
   
   TODO: This function should be replaced by a proper instantiation using instClassIn instead, followed by a 
   traversal of the Types.Var changing direction to input.
-  Reason for not doing that now: records can contain arrays with unknown dimensions.  
-"
+  Reason for not doing that now: records can contain arrays with unknown dimensions."
   input list<SCode.Element> inSCodeElementLst;
   input Types.Mod mods;
   input Env.Env env;
@@ -1845,11 +1841,13 @@ algorithm
       Option<Absyn.ConstrainClass> cc;
     case (((comp as SCode.COMPONENT( id,io,fl,repl,prot,SCode.ATTR(d,f,st,ac,var,dir),tp,mod,bc,comment,cond,nfo,cc)) :: rest),mods,env)
       equation 
-        (_,mod_1) = Mod.elabMod(Env.emptyCache(),env, Prefix.NOPRE(), mod, false);
+        (_,mod_1) = Mod.elabMod(Env.emptyCache(), env, Prefix.NOPRE(), mod, false);
         mod_1 = Mod.merge(mods,mod_1,env,Prefix.NOPRE());
-        compMod = Mod.lookupModificationP(mod_1,Absyn.IDENT(id));
-        umod = Mod.unelabMod(compMod);
-        res = buildRecordConstructorElts(rest, mods,env);
+        // adrpo: this was wrong, you won't find any id modification there!!!
+        // compMod = Mod.lookupModificationP(mod_1,Absyn.IDENT(id));
+        // umod = Mod.unelabMod(compMod);
+        umod = Mod.unelabMod(mod_1);
+        res = buildRecordConstructorElts(rest, mods, env);
       then
         (SCode.COMPONENT(id,io,fl,repl,prot,SCode.ATTR(d,f,st,ac,var,Absyn.INPUT()),tp,
           umod,bc,comment,cond,nfo,cc) :: res);
@@ -1869,12 +1867,10 @@ algorithm
   end matchcontinue;
 end buildRecordConstructorElts;
 
-protected function buildRecordConstructorResultElt "function: buildRecordConstructorResultElt
-  
-  This function builds the result element of a record constructor function, 
-  i.e. the returned variable
-  
-"
+protected function buildRecordConstructorResultElt 
+"function: buildRecordConstructorResultElt  
+  This function builds the result element of a 
+  record constructor function, i.e. the returned variable"
   input list<SCode.Element> elts;
   input SCode.Ident id;
   input Env.Env env;
@@ -1891,16 +1887,15 @@ algorithm
           NONE,NONE,NONE,NONE,NONE);
 end buildRecordConstructorResultElt;
 
-protected function buildRecordConstructorResultMod "function: buildRecordConstructorResultMod
- 
+protected function buildRecordConstructorResultMod 
+"function: buildRecordConstructorResultMod 
   This function builds up the modification list for the output element of a record constructor.
   Example: 
     record foo
        Real x;
        String y;
        end foo;
-   => modifier list become \'x=x, y=y\'
-"
+   => modifier list become \'x=x, y=y\'"
   input list<SCode.Element> inSCodeElementLst;
   output list<SCode.SubMod> outSCodeSubModLst;
 algorithm 

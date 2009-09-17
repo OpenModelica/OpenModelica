@@ -1021,8 +1021,7 @@ algorithm
     case(cache,env,(e as Exp.CALL(path = funcpath,ty = Exp.COMPLEX(name=name, varLst=varLst))),vallst,msg,st)
       local 
         list<Exp.Var> varLst; list<String> varNames; String name;
-      equation        
-        //true = RTOpts.debugFlag("evalfunc");
+      equation
         varNames = Util.listMap(varLst,Exp.varName);
       then 
         (cache,Values.RECORD(Absyn.IDENT(name),vallst,varNames),st);
@@ -1037,7 +1036,7 @@ algorithm
         SCode.ClassDef cdef;
         list<DAE.Element> daeList;
       equation
-        //true = RTOpts.debugFlag("evalfunc"); 
+        false = RTOpts.debugFlag("noevalfunc"); 
         failure(cevalIsExternalObjectConstructor(cache,funcpath,env));
         (cache,sc as SCode.CLASS(_,false,_,SCode.R_FUNCTION(),cdef ),env1) = 
         Lookup.lookupClass(cache,env,funcpath,true);
