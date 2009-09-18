@@ -2,7 +2,7 @@
 #define INC_flat_modelica_lexer_hpp_
 
 #include <antlr/config.hpp>
-/* $ANTLR 2.7.5rc2 (20050108): "flat_modelica_lexer.g" -> "flat_modelica_lexer.hpp"$ */
+/* $ANTLR 2.7.7 (2006-11-01): "flat_modelica_lexer.g" -> "flat_modelica_lexer.hpp"$ */
 #include <antlr/CommonToken.hpp>
 #include <antlr/InputBuffer.hpp>
 #include <antlr/BitSet.hpp>
@@ -81,7 +81,7 @@ public:
 	protected: void mSESCAPE(bool _createToken);
 	protected: void mESC(bool _createToken);
 private:
-
+	
 	static const unsigned long _tokenSet_0_data_[];
 	static const ANTLR_USE_NAMESPACE(antlr)BitSet _tokenSet_0;
 	static const unsigned long _tokenSet_1_data_[];

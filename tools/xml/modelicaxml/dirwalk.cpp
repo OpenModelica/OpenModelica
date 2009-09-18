@@ -20,20 +20,20 @@
 #include <cstdlib>
 #include <fstream>
 
-
+#define PATH_MAX 2048
 
 //------------------------------------------------
 int getDirectoryStructure(char *_current, l_list &dirList, int _dlevel)
 //------------------------------------------------
 {
-	char            DirName[MAX_PATH];
-	static char     CurrDirName[MAX_PATH];
+	char            DirName[PATH_MAX];
+	static char     CurrDirName[PATH_MAX];
 	HANDLE          Hnd;
 	WIN32_FIND_DATA WFD;
 
 	if (!_dlevel)
 	{
-		GetCurrentDirectory( MAX_PATH, CurrDirName );
+		GetCurrentDirectory( PATH_MAX, CurrDirName );
 		//std::cout << "Get:" << CurrDirName << std::endl;
 	}
 
@@ -51,7 +51,7 @@ int getDirectoryStructure(char *_current, l_list &dirList, int _dlevel)
 
 	if (!_dlevel)
 	{
-		GetCurrentDirectory( MAX_PATH, DirName );
+		GetCurrentDirectory( PATH_MAX, DirName );
 		// add DirName to dirList
 		char *tmpDir = new char[sizeof(char)*strlen(DirName)+1];
 		strcpy(tmpDir, DirName);
@@ -70,7 +70,7 @@ int getDirectoryStructure(char *_current, l_list &dirList, int _dlevel)
 			)
 		{
 			//       Get the current directory
-			GetCurrentDirectory( MAX_PATH, DirName );
+			GetCurrentDirectory( PATH_MAX, DirName );
 
 			//       Put a "\" if necessary
 			if ( strncmp( &DirName[strlen(DirName)-1], PATH_SEPARATOR, 1 ) )
@@ -112,12 +112,12 @@ int getDirectoryStructure(char *_current, l_list &dirList, int _dlevel)
 int getFileList(char *currentDir, l_list &fileList, char* fileFilter)
 //-------------------------------------------------------------------------
 {
-	char            CurrDirName[MAX_PATH];
+	char            CurrDirName[PATH_MAX];
 	HANDLE          Hnd;
 	WIN32_FIND_DATA WFD;
 	int fileNo = 0;
 
-	GetCurrentDirectory( MAX_PATH, CurrDirName );
+	GetCurrentDirectory( PATH_MAX, CurrDirName );
 
 	//  Set the new current directory
 	SetCurrentDirectory( currentDir );
@@ -160,6 +160,16 @@ int getFileList(char *currentDir, l_list &fileList, char* fileFilter)
 	(void) FindClose( Hnd );
 	SetCurrentDirectory( CurrDirName );
 	return fileNo;
+}
+
+bool endsWith ( std::string str, std::string suffix )
+{
+  std::string::size_type i = str.rfind( suffix );
+  if (i == std::string::npos)
+    return false;
+  if (i == ( str.size() - suffix.size()))
+    return true;
+  return false;
 }
 
 #else /* Linux part! */

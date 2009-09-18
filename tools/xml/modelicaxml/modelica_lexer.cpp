@@ -1,4 +1,4 @@
-/* $ANTLR 2.7.5rc2 (20050108): "modelica_lexer.g" -> "modelica_lexer.cpp"$ */
+/* $ANTLR 2.7.7 (2006-11-01): "modelica_lexer.g" -> "modelica_lexer.cpp"$ */
 #include "modelica_lexer.hpp"
 #include <antlr/CharBuffer.hpp>
 #include <antlr/TokenStreamException.hpp>
@@ -35,6 +35,7 @@ void modelica_lexer::initLiterals()
 	literals["public"] = 48;
 	literals["initial"] = 34;
 	literals["annotation"] = 6;
+	literals["break"] = 63;
 	literals["while"] = 59;
 	literals["end"] = 19;
 	literals["equation"] = 21;
@@ -46,6 +47,7 @@ void modelica_lexer::initLiterals()
 	literals["outer"] = 40;
 	literals["not"] = 39;
 	literals["package"] = 44;
+	literals["return"] = 62;
 	literals["external"] = 25;
 	literals["replaceable"] = 51;
 	literals["protected"] = 47;
@@ -66,6 +68,7 @@ void modelica_lexer::initLiterals()
 	literals["or"] = 42;
 	literals["if"] = 31;
 	literals["record"] = 49;
+	literals["constrainedby"] = 61;
 	literals["connector"] = 11;
 	literals["connect"] = 10;
 	literals["results"] = 52;
@@ -86,6 +89,7 @@ void modelica_lexer::initLiterals()
 	literals["block"] = 7;
 	literals["true"] = 54;
 	literals["within"] = 60;
+	literals["stream"] = 64;
 	literals["algorithm"] = 4;
 }
 
@@ -140,9 +144,21 @@ ANTLR_USE_NAMESPACE(antlr)RefToken modelica_lexer::nextToken()
 				theRetToken=_returnToken;
 				break;
 			}
+			case 0x2d /* '-' */ :
+			{
+				mMINUS(true);
+				theRetToken=_returnToken;
+				break;
+			}
 			case 0x2a /* '*' */ :
 			{
 				mSTAR(true);
+				theRetToken=_returnToken;
+				break;
+			}
+			case 0x5e /* '^' */ :
+			{
+				mPOWER(true);
 				theRetToken=_returnToken;
 				break;
 			}
@@ -155,24 +171,6 @@ ANTLR_USE_NAMESPACE(antlr)RefToken modelica_lexer::nextToken()
 			case 0x3b /* ';' */ :
 			{
 				mSEMICOLON(true);
-				theRetToken=_returnToken;
-				break;
-			}
-			case 0x5e /* '^' */ :
-			{
-				mPOWER(true);
-				theRetToken=_returnToken;
-				break;
-			}
-			case 0x26 /* '&' */ :
-			{
-				mAMPERSAND(true);
-				theRetToken=_returnToken;
-				break;
-			}
-			case 0x7c /* '|' */ :
-			{
-				mPIPEBAR(true);
 				theRetToken=_returnToken;
 				break;
 			}
@@ -244,22 +242,6 @@ ANTLR_USE_NAMESPACE(antlr)RefToken modelica_lexer::nextToken()
 				theRetToken=_returnToken;
 				break;
 			}
-			case 0x2e /* '.' */ :
-			case 0x30 /* '0' */ :
-			case 0x31 /* '1' */ :
-			case 0x32 /* '2' */ :
-			case 0x33 /* '3' */ :
-			case 0x34 /* '4' */ :
-			case 0x35 /* '5' */ :
-			case 0x36 /* '6' */ :
-			case 0x37 /* '7' */ :
-			case 0x38 /* '8' */ :
-			case 0x39 /* '9' */ :
-			{
-				mUNSIGNED_INTEGER(true);
-				theRetToken=_returnToken;
-				break;
-			}
 			case 0x22 /* '\"' */ :
 			{
 				mSTRING(true);
@@ -269,6 +251,26 @@ ANTLR_USE_NAMESPACE(antlr)RefToken modelica_lexer::nextToken()
 			default:
 				if ((LA(1) == 0x3a /* ':' */ ) && (LA(2) == 0x3d /* '=' */ )) {
 					mASSIGN(true);
+					theRetToken=_returnToken;
+				}
+				else if ((LA(1) == 0x2e /* '.' */ ) && (LA(2) == 0x2b /* '+' */ )) {
+					mPLUS_EW(true);
+					theRetToken=_returnToken;
+				}
+				else if ((LA(1) == 0x2e /* '.' */ ) && (LA(2) == 0x2d /* '-' */ )) {
+					mMINUS_EW(true);
+					theRetToken=_returnToken;
+				}
+				else if ((LA(1) == 0x2e /* '.' */ ) && (LA(2) == 0x2a /* '*' */ )) {
+					mSTAR_EW(true);
+					theRetToken=_returnToken;
+				}
+				else if ((LA(1) == 0x2e /* '.' */ ) && (LA(2) == 0x2f /* '/' */ )) {
+					mSLASH_EW(true);
+					theRetToken=_returnToken;
+				}
+				else if ((LA(1) == 0x2e /* '.' */ ) && (LA(2) == 0x5e /* '^' */ )) {
+					mPOWER_EW(true);
 					theRetToken=_returnToken;
 				}
 				else if ((LA(1) == 0x3c /* '<' */ ) && (LA(2) == 0x3d /* '=' */ )) {
@@ -287,18 +289,6 @@ ANTLR_USE_NAMESPACE(antlr)RefToken modelica_lexer::nextToken()
 					mLESSGT(true);
 					theRetToken=_returnToken;
 				}
-				else if ((LA(1) == 0x3d /* '=' */ ) && (LA(2) == 0x3e /* '>' */ )) {
-					mYIELDS(true);
-					theRetToken=_returnToken;
-				}
-				else if ((LA(1) == 0x3a /* ':' */ ) && (LA(2) == 0x3a /* ':' */ )) {
-					mCOLONCOLON(true);
-					theRetToken=_returnToken;
-				}
-				else if ((LA(1) == 0x2d /* '-' */ ) && (LA(2) == 0x2d /* '-' */ )) {
-					mDASHES(true);
-					theRetToken=_returnToken;
-				}
 				else if ((LA(1) == 0x2f /* '/' */ ) && (LA(2) == 0x2a /* '*' */ )) {
 					mML_COMMENT(true);
 					theRetToken=_returnToken;
@@ -309,10 +299,6 @@ ANTLR_USE_NAMESPACE(antlr)RefToken modelica_lexer::nextToken()
 				}
 				else if ((LA(1) == 0x3d /* '=' */ ) && (true)) {
 					mEQUALS(true);
-					theRetToken=_returnToken;
-				}
-				else if ((LA(1) == 0x2d /* '-' */ ) && (true)) {
-					mMINUS(true);
 					theRetToken=_returnToken;
 				}
 				else if ((LA(1) == 0x2f /* '/' */ ) && (true)) {
@@ -329,6 +315,10 @@ ANTLR_USE_NAMESPACE(antlr)RefToken modelica_lexer::nextToken()
 				}
 				else if ((LA(1) == 0x3a /* ':' */ ) && (true)) {
 					mCOLON(true);
+					theRetToken=_returnToken;
+				}
+				else if ((_tokenSet_0.member(LA(1))) && (true)) {
+					mUNSIGNED_INTEGER(true);
 					theRetToken=_returnToken;
 				}
 			else {
@@ -364,7 +354,7 @@ void modelica_lexer::mLPAR(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; ANTLR_USE_NAMESPACE(std)string::size_type _begin = text.length();
 	_ttype = LPAR;
 	ANTLR_USE_NAMESPACE(std)string::size_type _saveIndex;
-
+	
 	match('(' /* charlit */ );
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
@@ -378,7 +368,7 @@ void modelica_lexer::mRPAR(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; ANTLR_USE_NAMESPACE(std)string::size_type _begin = text.length();
 	_ttype = RPAR;
 	ANTLR_USE_NAMESPACE(std)string::size_type _saveIndex;
-
+	
 	match(')' /* charlit */ );
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
@@ -392,7 +382,7 @@ void modelica_lexer::mLBRACK(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; ANTLR_USE_NAMESPACE(std)string::size_type _begin = text.length();
 	_ttype = LBRACK;
 	ANTLR_USE_NAMESPACE(std)string::size_type _saveIndex;
-
+	
 	match('[' /* charlit */ );
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
@@ -406,7 +396,7 @@ void modelica_lexer::mRBRACK(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; ANTLR_USE_NAMESPACE(std)string::size_type _begin = text.length();
 	_ttype = RBRACK;
 	ANTLR_USE_NAMESPACE(std)string::size_type _saveIndex;
-
+	
 	match(']' /* charlit */ );
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
@@ -420,7 +410,7 @@ void modelica_lexer::mLBRACE(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; ANTLR_USE_NAMESPACE(std)string::size_type _begin = text.length();
 	_ttype = LBRACE;
 	ANTLR_USE_NAMESPACE(std)string::size_type _saveIndex;
-
+	
 	match('{' /* charlit */ );
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
@@ -434,7 +424,7 @@ void modelica_lexer::mRBRACE(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; ANTLR_USE_NAMESPACE(std)string::size_type _begin = text.length();
 	_ttype = RBRACE;
 	ANTLR_USE_NAMESPACE(std)string::size_type _saveIndex;
-
+	
 	match('}' /* charlit */ );
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
@@ -448,7 +438,7 @@ void modelica_lexer::mEQUALS(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; ANTLR_USE_NAMESPACE(std)string::size_type _begin = text.length();
 	_ttype = EQUALS;
 	ANTLR_USE_NAMESPACE(std)string::size_type _saveIndex;
-
+	
 	match('=' /* charlit */ );
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
@@ -462,7 +452,7 @@ void modelica_lexer::mASSIGN(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; ANTLR_USE_NAMESPACE(std)string::size_type _begin = text.length();
 	_ttype = ASSIGN;
 	ANTLR_USE_NAMESPACE(std)string::size_type _saveIndex;
-
+	
 	match(":=");
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
@@ -476,7 +466,7 @@ void modelica_lexer::mPLUS(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; ANTLR_USE_NAMESPACE(std)string::size_type _begin = text.length();
 	_ttype = PLUS;
 	ANTLR_USE_NAMESPACE(std)string::size_type _saveIndex;
-
+	
 	match('+' /* charlit */ );
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
@@ -490,7 +480,7 @@ void modelica_lexer::mMINUS(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; ANTLR_USE_NAMESPACE(std)string::size_type _begin = text.length();
 	_ttype = MINUS;
 	ANTLR_USE_NAMESPACE(std)string::size_type _saveIndex;
-
+	
 	match('-' /* charlit */ );
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
@@ -504,7 +494,7 @@ void modelica_lexer::mSTAR(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; ANTLR_USE_NAMESPACE(std)string::size_type _begin = text.length();
 	_ttype = STAR;
 	ANTLR_USE_NAMESPACE(std)string::size_type _saveIndex;
-
+	
 	match('*' /* charlit */ );
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
@@ -518,8 +508,92 @@ void modelica_lexer::mSLASH(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; ANTLR_USE_NAMESPACE(std)string::size_type _begin = text.length();
 	_ttype = SLASH;
 	ANTLR_USE_NAMESPACE(std)string::size_type _saveIndex;
-
+	
 	match('/' /* charlit */ );
+	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
+	   _token = makeToken(_ttype);
+	   _token->setText(text.substr(_begin, text.length()-_begin));
+	}
+	_returnToken = _token;
+	_saveIndex=0;
+}
+
+void modelica_lexer::mPOWER(bool _createToken) {
+	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; ANTLR_USE_NAMESPACE(std)string::size_type _begin = text.length();
+	_ttype = POWER;
+	ANTLR_USE_NAMESPACE(std)string::size_type _saveIndex;
+	
+	match('^' /* charlit */ );
+	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
+	   _token = makeToken(_ttype);
+	   _token->setText(text.substr(_begin, text.length()-_begin));
+	}
+	_returnToken = _token;
+	_saveIndex=0;
+}
+
+void modelica_lexer::mPLUS_EW(bool _createToken) {
+	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; ANTLR_USE_NAMESPACE(std)string::size_type _begin = text.length();
+	_ttype = PLUS_EW;
+	ANTLR_USE_NAMESPACE(std)string::size_type _saveIndex;
+	
+	match(".+");
+	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
+	   _token = makeToken(_ttype);
+	   _token->setText(text.substr(_begin, text.length()-_begin));
+	}
+	_returnToken = _token;
+	_saveIndex=0;
+}
+
+void modelica_lexer::mMINUS_EW(bool _createToken) {
+	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; ANTLR_USE_NAMESPACE(std)string::size_type _begin = text.length();
+	_ttype = MINUS_EW;
+	ANTLR_USE_NAMESPACE(std)string::size_type _saveIndex;
+	
+	match(".-");
+	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
+	   _token = makeToken(_ttype);
+	   _token->setText(text.substr(_begin, text.length()-_begin));
+	}
+	_returnToken = _token;
+	_saveIndex=0;
+}
+
+void modelica_lexer::mSTAR_EW(bool _createToken) {
+	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; ANTLR_USE_NAMESPACE(std)string::size_type _begin = text.length();
+	_ttype = STAR_EW;
+	ANTLR_USE_NAMESPACE(std)string::size_type _saveIndex;
+	
+	match(".*");
+	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
+	   _token = makeToken(_ttype);
+	   _token->setText(text.substr(_begin, text.length()-_begin));
+	}
+	_returnToken = _token;
+	_saveIndex=0;
+}
+
+void modelica_lexer::mSLASH_EW(bool _createToken) {
+	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; ANTLR_USE_NAMESPACE(std)string::size_type _begin = text.length();
+	_ttype = SLASH_EW;
+	ANTLR_USE_NAMESPACE(std)string::size_type _saveIndex;
+	
+	match("./");
+	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
+	   _token = makeToken(_ttype);
+	   _token->setText(text.substr(_begin, text.length()-_begin));
+	}
+	_returnToken = _token;
+	_saveIndex=0;
+}
+
+void modelica_lexer::mPOWER_EW(bool _createToken) {
+	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; ANTLR_USE_NAMESPACE(std)string::size_type _begin = text.length();
+	_ttype = POWER_EW;
+	ANTLR_USE_NAMESPACE(std)string::size_type _saveIndex;
+	
+	match(".^");
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
 	   _token->setText(text.substr(_begin, text.length()-_begin));
@@ -532,7 +606,7 @@ void modelica_lexer::mCOMMA(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; ANTLR_USE_NAMESPACE(std)string::size_type _begin = text.length();
 	_ttype = COMMA;
 	ANTLR_USE_NAMESPACE(std)string::size_type _saveIndex;
-
+	
 	match(',' /* charlit */ );
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
@@ -546,7 +620,7 @@ void modelica_lexer::mLESS(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; ANTLR_USE_NAMESPACE(std)string::size_type _begin = text.length();
 	_ttype = LESS;
 	ANTLR_USE_NAMESPACE(std)string::size_type _saveIndex;
-
+	
 	match('<' /* charlit */ );
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
@@ -560,7 +634,7 @@ void modelica_lexer::mLESSEQ(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; ANTLR_USE_NAMESPACE(std)string::size_type _begin = text.length();
 	_ttype = LESSEQ;
 	ANTLR_USE_NAMESPACE(std)string::size_type _saveIndex;
-
+	
 	match("<=");
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
@@ -574,7 +648,7 @@ void modelica_lexer::mGREATER(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; ANTLR_USE_NAMESPACE(std)string::size_type _begin = text.length();
 	_ttype = GREATER;
 	ANTLR_USE_NAMESPACE(std)string::size_type _saveIndex;
-
+	
 	match('>' /* charlit */ );
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
@@ -588,7 +662,7 @@ void modelica_lexer::mGREATEREQ(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; ANTLR_USE_NAMESPACE(std)string::size_type _begin = text.length();
 	_ttype = GREATEREQ;
 	ANTLR_USE_NAMESPACE(std)string::size_type _saveIndex;
-
+	
 	match(">=");
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
@@ -602,7 +676,7 @@ void modelica_lexer::mEQEQ(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; ANTLR_USE_NAMESPACE(std)string::size_type _begin = text.length();
 	_ttype = EQEQ;
 	ANTLR_USE_NAMESPACE(std)string::size_type _saveIndex;
-
+	
 	match("==");
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
@@ -616,7 +690,7 @@ void modelica_lexer::mLESSGT(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; ANTLR_USE_NAMESPACE(std)string::size_type _begin = text.length();
 	_ttype = LESSGT;
 	ANTLR_USE_NAMESPACE(std)string::size_type _saveIndex;
-
+	
 	match("<>");
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
@@ -630,7 +704,7 @@ void modelica_lexer::mCOLON(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; ANTLR_USE_NAMESPACE(std)string::size_type _begin = text.length();
 	_ttype = COLON;
 	ANTLR_USE_NAMESPACE(std)string::size_type _saveIndex;
-
+	
 	match(':' /* charlit */ );
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
@@ -644,106 +718,8 @@ void modelica_lexer::mSEMICOLON(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; ANTLR_USE_NAMESPACE(std)string::size_type _begin = text.length();
 	_ttype = SEMICOLON;
 	ANTLR_USE_NAMESPACE(std)string::size_type _saveIndex;
-
+	
 	match(';' /* charlit */ );
-	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
-	   _token = makeToken(_ttype);
-	   _token->setText(text.substr(_begin, text.length()-_begin));
-	}
-	_returnToken = _token;
-	_saveIndex=0;
-}
-
-void modelica_lexer::mPOWER(bool _createToken) {
-	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; ANTLR_USE_NAMESPACE(std)string::size_type _begin = text.length();
-	_ttype = POWER;
-	ANTLR_USE_NAMESPACE(std)string::size_type _saveIndex;
-
-	match('^' /* charlit */ );
-	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
-	   _token = makeToken(_ttype);
-	   _token->setText(text.substr(_begin, text.length()-_begin));
-	}
-	_returnToken = _token;
-	_saveIndex=0;
-}
-
-void modelica_lexer::mYIELDS(bool _createToken) {
-	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; ANTLR_USE_NAMESPACE(std)string::size_type _begin = text.length();
-	_ttype = YIELDS;
-	ANTLR_USE_NAMESPACE(std)string::size_type _saveIndex;
-
-	match("=>");
-	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
-	   _token = makeToken(_ttype);
-	   _token->setText(text.substr(_begin, text.length()-_begin));
-	}
-	_returnToken = _token;
-	_saveIndex=0;
-}
-
-void modelica_lexer::mAMPERSAND(bool _createToken) {
-	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; ANTLR_USE_NAMESPACE(std)string::size_type _begin = text.length();
-	_ttype = AMPERSAND;
-	ANTLR_USE_NAMESPACE(std)string::size_type _saveIndex;
-
-	match("&");
-	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
-	   _token = makeToken(_ttype);
-	   _token->setText(text.substr(_begin, text.length()-_begin));
-	}
-	_returnToken = _token;
-	_saveIndex=0;
-}
-
-void modelica_lexer::mPIPEBAR(bool _createToken) {
-	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; ANTLR_USE_NAMESPACE(std)string::size_type _begin = text.length();
-	_ttype = PIPEBAR;
-	ANTLR_USE_NAMESPACE(std)string::size_type _saveIndex;
-
-	match("|");
-	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
-	   _token = makeToken(_ttype);
-	   _token->setText(text.substr(_begin, text.length()-_begin));
-	}
-	_returnToken = _token;
-	_saveIndex=0;
-}
-
-void modelica_lexer::mCOLONCOLON(bool _createToken) {
-	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; ANTLR_USE_NAMESPACE(std)string::size_type _begin = text.length();
-	_ttype = COLONCOLON;
-	ANTLR_USE_NAMESPACE(std)string::size_type _saveIndex;
-
-	match("::");
-	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
-	   _token = makeToken(_ttype);
-	   _token->setText(text.substr(_begin, text.length()-_begin));
-	}
-	_returnToken = _token;
-	_saveIndex=0;
-}
-
-void modelica_lexer::mDASHES(bool _createToken) {
-	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; ANTLR_USE_NAMESPACE(std)string::size_type _begin = text.length();
-	_ttype = DASHES;
-	ANTLR_USE_NAMESPACE(std)string::size_type _saveIndex;
-
-	match('-' /* charlit */ );
-	match('-' /* charlit */ );
-	match('-' /* charlit */ );
-	{ // ( ... )*
-	for (;;) {
-		if ((LA(1) == 0x2d /* '-' */ )) {
-			match('-' /* charlit */ );
-		}
-		else {
-			goto _loop29;
-		}
-
-	}
-	_loop29:;
-	} // ( ... )*
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
 	   _token->setText(text.substr(_begin, text.length()-_begin));
@@ -756,7 +732,7 @@ void modelica_lexer::mWS(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; ANTLR_USE_NAMESPACE(std)string::size_type _begin = text.length();
 	_ttype = WS;
 	ANTLR_USE_NAMESPACE(std)string::size_type _saveIndex;
-
+	
 	{
 	switch ( LA(1)) {
 	case 0x20 /* ' ' */ :
@@ -785,13 +761,11 @@ void modelica_lexer::mWS(bool _createToken) {
 		else {
 			throw ANTLR_USE_NAMESPACE(antlr)NoViableAltForCharException(LA(1), getFilename(), getLine(), getColumn());
 		}
-
+		
 		}
-		if ( inputState->guessing==0 ) {
-#line 117 "modelica_lexer.g"
-			newline();
-#line 794 "modelica_lexer.cpp"
-		}
+#line 121 "modelica_lexer.g"
+		newline();
+#line 769 "modelica_lexer.cpp"
 		break;
 	}
 	default:
@@ -800,11 +774,9 @@ void modelica_lexer::mWS(bool _createToken) {
 	}
 	}
 	}
-	if ( inputState->guessing==0 ) {
-#line 119 "modelica_lexer.g"
-		_ttype = antlr::Token::SKIP;
-#line 807 "modelica_lexer.cpp"
-	}
+#line 123 "modelica_lexer.g"
+	_ttype = antlr::Token::SKIP;
+#line 780 "modelica_lexer.cpp"
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
 	   _token->setText(text.substr(_begin, text.length()-_begin));
@@ -817,29 +789,27 @@ void modelica_lexer::mML_COMMENT(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; ANTLR_USE_NAMESPACE(std)string::size_type _begin = text.length();
 	_ttype = ML_COMMENT;
 	ANTLR_USE_NAMESPACE(std)string::size_type _saveIndex;
-
+	
 	match("/*");
 	{ // ( ... )*
 	for (;;) {
 		if (((LA(1) == 0x2a /* '*' */ ) && ((LA(2) >= 0x3 /* '\3' */  && LA(2) <= 0xff)))&&(LA(2)!='/')) {
 			match('*' /* charlit */ );
 		}
-		else if ((_tokenSet_0.member(LA(1)))) {
+		else if ((_tokenSet_1.member(LA(1)))) {
 			mML_COMMENT_CHAR(false);
 		}
 		else {
-			goto _loop35;
+			goto _loop33;
 		}
-
+		
 	}
-	_loop35:;
+	_loop33:;
 	} // ( ... )*
 	match("*/");
-	if ( inputState->guessing==0 ) {
-#line 126 "modelica_lexer.g"
-		_ttype = antlr::Token::SKIP;
-#line 842 "modelica_lexer.cpp"
-	}
+#line 130 "modelica_lexer.g"
+	_ttype = antlr::Token::SKIP;
+#line 813 "modelica_lexer.cpp"
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
 	   _token->setText(text.substr(_begin, text.length()-_begin));
@@ -852,7 +822,7 @@ void modelica_lexer::mML_COMMENT_CHAR(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; ANTLR_USE_NAMESPACE(std)string::size_type _begin = text.length();
 	_ttype = ML_COMMENT_CHAR;
 	ANTLR_USE_NAMESPACE(std)string::size_type _saveIndex;
-
+	
 	if ((LA(1) == 0xa /* '\n' */  || LA(1) == 0xd /* '\r' */ )) {
 		{
 		switch ( LA(1)) {
@@ -872,21 +842,19 @@ void modelica_lexer::mML_COMMENT_CHAR(bool _createToken) {
 		}
 		}
 		}
-		if ( inputState->guessing==0 ) {
-#line 130 "modelica_lexer.g"
-			newline();
-#line 879 "modelica_lexer.cpp"
-		}
+#line 134 "modelica_lexer.g"
+		newline();
+#line 848 "modelica_lexer.cpp"
 	}
-	else if ((_tokenSet_1.member(LA(1)))) {
+	else if ((_tokenSet_2.member(LA(1)))) {
 		{
-		match(_tokenSet_1);
+		match(_tokenSet_2);
 		}
 	}
 	else {
 		throw ANTLR_USE_NAMESPACE(antlr)NoViableAltForCharException(LA(1), getFilename(), getLine(), getColumn());
 	}
-
+	
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
 	   _token->setText(text.substr(_begin, text.length()-_begin));
@@ -899,27 +867,25 @@ void modelica_lexer::mSL_COMMENT(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; ANTLR_USE_NAMESPACE(std)string::size_type _begin = text.length();
 	_ttype = SL_COMMENT;
 	ANTLR_USE_NAMESPACE(std)string::size_type _saveIndex;
-
+	
 	match("//");
 	{ // ( ... )*
 	for (;;) {
-		if ((_tokenSet_2.member(LA(1)))) {
+		if ((_tokenSet_3.member(LA(1)))) {
 			{
-			match(_tokenSet_2);
+			match(_tokenSet_3);
 			}
 		}
 		else {
-			goto _loop42;
+			goto _loop40;
 		}
-
+		
 	}
-	_loop42:;
+	_loop40:;
 	} // ( ... )*
-	if ( inputState->guessing==0 ) {
-#line 136 "modelica_lexer.g"
-		_ttype = antlr::Token::SKIP;
-#line 922 "modelica_lexer.cpp"
-	}
+#line 140 "modelica_lexer.g"
+	_ttype = antlr::Token::SKIP;
+#line 889 "modelica_lexer.cpp"
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
 	   _token->setText(text.substr(_begin, text.length()-_begin));
@@ -932,7 +898,7 @@ void modelica_lexer::mIDENT(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; ANTLR_USE_NAMESPACE(std)string::size_type _begin = text.length();
 	_ttype = IDENT;
 	ANTLR_USE_NAMESPACE(std)string::size_type _saveIndex;
-
+	
 	switch ( LA(1)) {
 	case 0x41 /* 'A' */ :
 	case 0x42 /* 'B' */ :
@@ -1065,11 +1031,11 @@ void modelica_lexer::mIDENT(bool _createToken) {
 			}
 			default:
 			{
-				goto _loop45;
+				goto _loop43;
 			}
 			}
 		}
-		_loop45:;
+		_loop43:;
 		} // ( ... )*
 		break;
 	}
@@ -1096,7 +1062,7 @@ void modelica_lexer::mNONDIGIT(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; ANTLR_USE_NAMESPACE(std)string::size_type _begin = text.length();
 	_ttype = NONDIGIT;
 	ANTLR_USE_NAMESPACE(std)string::size_type _saveIndex;
-
+	
 	{
 	switch ( LA(1)) {
 	case 0x5f /* '_' */ :
@@ -1182,7 +1148,7 @@ void modelica_lexer::mDIGIT(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; ANTLR_USE_NAMESPACE(std)string::size_type _begin = text.length();
 	_ttype = DIGIT;
 	ANTLR_USE_NAMESPACE(std)string::size_type _saveIndex;
-
+	
 	matchRange('0','9');
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
@@ -1196,10 +1162,10 @@ void modelica_lexer::mQIDENT(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; ANTLR_USE_NAMESPACE(std)string::size_type _begin = text.length();
 	_ttype = QIDENT;
 	ANTLR_USE_NAMESPACE(std)string::size_type _saveIndex;
-
+	
 	match('\'' /* charlit */ );
 	{
-	if ((_tokenSet_3.member(LA(1)))) {
+	if ((_tokenSet_4.member(LA(1)))) {
 		mQCHAR(false);
 	}
 	else if ((LA(1) == 0x5c /* '\\' */ )) {
@@ -1208,22 +1174,22 @@ void modelica_lexer::mQIDENT(bool _createToken) {
 	else {
 		throw ANTLR_USE_NAMESPACE(antlr)NoViableAltForCharException(LA(1), getFilename(), getLine(), getColumn());
 	}
-
+	
 	}
 	{ // ( ... )*
 	for (;;) {
-		if ((_tokenSet_3.member(LA(1)))) {
+		if ((_tokenSet_4.member(LA(1)))) {
 			mQCHAR(false);
 		}
 		else if ((LA(1) == 0x5c /* '\\' */ )) {
 			mSESCAPE(false);
 		}
 		else {
-			goto _loop49;
+			goto _loop47;
 		}
-
+		
 	}
-	_loop49:;
+	_loop47:;
 	} // ( ... )*
 	match('\'' /* charlit */ );
 	_ttype = testLiteralsTable(text.substr(_begin, text.length()-_begin),_ttype);
@@ -1239,7 +1205,7 @@ void modelica_lexer::mQCHAR(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; ANTLR_USE_NAMESPACE(std)string::size_type _begin = text.length();
 	_ttype = QCHAR;
 	ANTLR_USE_NAMESPACE(std)string::size_type _saveIndex;
-
+	
 	switch ( LA(1)) {
 	case 0xa /* '\n' */ :
 	case 0xd /* '\r' */ :
@@ -1264,11 +1230,9 @@ void modelica_lexer::mQCHAR(bool _createToken) {
 		}
 		}
 		}
-		if ( inputState->guessing==0 ) {
-#line 180 "modelica_lexer.g"
-			newline();
-#line 1271 "modelica_lexer.cpp"
-		}
+#line 181 "modelica_lexer.g"
+		newline();
+#line 1236 "modelica_lexer.cpp"
 		break;
 	}
 	case 0x9 /* '\t' */ :
@@ -1277,9 +1241,9 @@ void modelica_lexer::mQCHAR(bool _createToken) {
 		break;
 	}
 	default:
-		if ((_tokenSet_4.member(LA(1)))) {
+		if ((_tokenSet_5.member(LA(1)))) {
 			{
-			match(_tokenSet_4);
+			match(_tokenSet_5);
 			}
 		}
 	else {
@@ -1298,7 +1262,7 @@ void modelica_lexer::mSESCAPE(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; ANTLR_USE_NAMESPACE(std)string::size_type _begin = text.length();
 	_ttype = SESCAPE;
 	ANTLR_USE_NAMESPACE(std)string::size_type _saveIndex;
-
+	
 	match('\\' /* charlit */ );
 	{
 	switch ( LA(1)) {
@@ -1375,7 +1339,7 @@ void modelica_lexer::mEXPONENT(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; ANTLR_USE_NAMESPACE(std)string::size_type _begin = text.length();
 	_ttype = EXPONENT;
 	ANTLR_USE_NAMESPACE(std)string::size_type _saveIndex;
-
+	
 	{
 	switch ( LA(1)) {
 	case 0x65 /* 'e' */ :
@@ -1426,18 +1390,18 @@ void modelica_lexer::mEXPONENT(bool _createToken) {
 	}
 	}
 	{ // ( ... )+
-	int _cnt57=0;
+	int _cnt55=0;
 	for (;;) {
 		if (((LA(1) >= 0x30 /* '0' */  && LA(1) <= 0x39 /* '9' */ ))) {
 			mDIGIT(false);
 		}
 		else {
-			if ( _cnt57>=1 ) { goto _loop57; } else {throw ANTLR_USE_NAMESPACE(antlr)NoViableAltForCharException(LA(1), getFilename(), getLine(), getColumn());}
+			if ( _cnt55>=1 ) { goto _loop55; } else {throw ANTLR_USE_NAMESPACE(antlr)NoViableAltForCharException(LA(1), getFilename(), getLine(), getColumn());}
 		}
-
-		_cnt57++;
+		
+		_cnt55++;
 	}
-	_loop57:;
+	_loop55:;
 	}  // ( ... )+
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
@@ -1451,75 +1415,54 @@ void modelica_lexer::mUNSIGNED_INTEGER(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; ANTLR_USE_NAMESPACE(std)string::size_type _begin = text.length();
 	_ttype = UNSIGNED_INTEGER;
 	ANTLR_USE_NAMESPACE(std)string::size_type _saveIndex;
-
-	bool synPredMatched66 = false;
-	if (((LA(1) == 0x2e /* '.' */ ) && ((LA(2) >= 0x30 /* '0' */  && LA(2) <= 0x39 /* '9' */ )))) {
-		int _m66 = mark();
-		synPredMatched66 = true;
-		inputState->guessing++;
-		try {
-			{
-			match('.' /* charlit */ );
-			mDIGIT(false);
-			}
-		}
-		catch (ANTLR_USE_NAMESPACE(antlr)RecognitionException& pe) {
-			synPredMatched66 = false;
-		}
-		rewind(_m66);
-		inputState->guessing--;
-	}
-	if ( synPredMatched66 ) {
+	
+	if ((LA(1) == 0x2e /* '.' */ ) && ((LA(2) >= 0x30 /* '0' */  && LA(2) <= 0x39 /* '9' */ ))) {
 		{
 		match('.' /* charlit */ );
 		{ // ( ... )+
-		int _cnt69=0;
+		int _cnt65=0;
 		for (;;) {
 			if (((LA(1) >= 0x30 /* '0' */  && LA(1) <= 0x39 /* '9' */ ))) {
 				mDIGIT(false);
 			}
 			else {
-				if ( _cnt69>=1 ) { goto _loop69; } else {throw ANTLR_USE_NAMESPACE(antlr)NoViableAltForCharException(LA(1), getFilename(), getLine(), getColumn());}
+				if ( _cnt65>=1 ) { goto _loop65; } else {throw ANTLR_USE_NAMESPACE(antlr)NoViableAltForCharException(LA(1), getFilename(), getLine(), getColumn());}
 			}
-
-			_cnt69++;
+			
+			_cnt65++;
 		}
-		_loop69:;
+		_loop65:;
 		}  // ( ... )+
-		if ( inputState->guessing==0 ) {
-#line 165 "modelica_lexer.g"
-			_ttype = UNSIGNED_REAL;
-#line 1493 "modelica_lexer.cpp"
-		}
+#line 168 "modelica_lexer.g"
+		_ttype = UNSIGNED_REAL;
+#line 1439 "modelica_lexer.cpp"
 		}
 		{
 		if ((LA(1) == 0x45 /* 'E' */  || LA(1) == 0x65 /* 'e' */ )) {
 			mEXPONENT(false);
-			if ( inputState->guessing==0 ) {
-#line 166 "modelica_lexer.g"
-				_ttype = UNSIGNED_REAL;
-#line 1502 "modelica_lexer.cpp"
-			}
+#line 168 "modelica_lexer.g"
+			_ttype = UNSIGNED_REAL;
+#line 1446 "modelica_lexer.cpp"
 		}
 		else {
 		}
-
+		
 		}
 	}
 	else if (((LA(1) >= 0x30 /* '0' */  && LA(1) <= 0x39 /* '9' */ ))) {
 		{ // ( ... )+
-		int _cnt60=0;
+		int _cnt58=0;
 		for (;;) {
 			if (((LA(1) >= 0x30 /* '0' */  && LA(1) <= 0x39 /* '9' */ ))) {
 				mDIGIT(false);
 			}
 			else {
-				if ( _cnt60>=1 ) { goto _loop60; } else {throw ANTLR_USE_NAMESPACE(antlr)NoViableAltForCharException(LA(1), getFilename(), getLine(), getColumn());}
+				if ( _cnt58>=1 ) { goto _loop58; } else {throw ANTLR_USE_NAMESPACE(antlr)NoViableAltForCharException(LA(1), getFilename(), getLine(), getColumn());}
 			}
-
-			_cnt60++;
+			
+			_cnt58++;
 		}
-		_loop60:;
+		_loop58:;
 		}  // ( ... )+
 		{
 		if ((LA(1) == 0x2e /* '.' */ )) {
@@ -1530,48 +1473,42 @@ void modelica_lexer::mUNSIGNED_INTEGER(bool _createToken) {
 					mDIGIT(false);
 				}
 				else {
-					goto _loop63;
+					goto _loop61;
 				}
-
+				
 			}
-			_loop63:;
+			_loop61:;
 			} // ( ... )*
-			if ( inputState->guessing==0 ) {
-#line 162 "modelica_lexer.g"
-				_ttype = UNSIGNED_REAL;
-#line 1543 "modelica_lexer.cpp"
-			}
+#line 166 "modelica_lexer.g"
+			_ttype = UNSIGNED_REAL;
+#line 1485 "modelica_lexer.cpp"
 		}
 		else {
 		}
-
+		
 		}
 		{
 		if ((LA(1) == 0x45 /* 'E' */  || LA(1) == 0x65 /* 'e' */ )) {
 			mEXPONENT(false);
-			if ( inputState->guessing==0 ) {
-#line 163 "modelica_lexer.g"
-				_ttype = UNSIGNED_REAL;
-#line 1556 "modelica_lexer.cpp"
-			}
+#line 167 "modelica_lexer.g"
+			_ttype = UNSIGNED_REAL;
+#line 1496 "modelica_lexer.cpp"
 		}
 		else {
 		}
-
+		
 		}
 	}
 	else if ((LA(1) == 0x2e /* '.' */ ) && (true)) {
 		match('.' /* charlit */ );
-		if ( inputState->guessing==0 ) {
-#line 168 "modelica_lexer.g"
-			_ttype = DOT;
-#line 1569 "modelica_lexer.cpp"
-		}
+#line 169 "modelica_lexer.g"
+		_ttype = DOT;
+#line 1507 "modelica_lexer.cpp"
 	}
 	else {
 		throw ANTLR_USE_NAMESPACE(antlr)NoViableAltForCharException(LA(1), getFilename(), getLine(), getColumn());
 	}
-
+	
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
 	   _token->setText(text.substr(_begin, text.length()-_begin));
@@ -1584,24 +1521,24 @@ void modelica_lexer::mSTRING(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; ANTLR_USE_NAMESPACE(std)string::size_type _begin = text.length();
 	_ttype = STRING;
 	ANTLR_USE_NAMESPACE(std)string::size_type _saveIndex;
-
+	
 	_saveIndex = text.length();
 	match('\"' /* charlit */ );
 	text.erase(_saveIndex);
 	{ // ( ... )*
 	for (;;) {
-		if ((_tokenSet_5.member(LA(1)))) {
+		if ((_tokenSet_6.member(LA(1)))) {
 			mSCHAR(false);
 		}
 		else if ((LA(1) == 0x5c /* '\\' */ )) {
 			mSESCAPE(false);
 		}
 		else {
-			goto _loop73;
+			goto _loop69;
 		}
-
+		
 	}
-	_loop73:;
+	_loop69:;
 	} // ( ... )*
 	_saveIndex = text.length();
 	match('\"' /* charlit */ );
@@ -1618,7 +1555,7 @@ void modelica_lexer::mSCHAR(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; ANTLR_USE_NAMESPACE(std)string::size_type _begin = text.length();
 	_ttype = SCHAR;
 	ANTLR_USE_NAMESPACE(std)string::size_type _saveIndex;
-
+	
 	switch ( LA(1)) {
 	case 0xa /* '\n' */ :
 	case 0xd /* '\r' */ :
@@ -1643,11 +1580,9 @@ void modelica_lexer::mSCHAR(bool _createToken) {
 		}
 		}
 		}
-		if ( inputState->guessing==0 ) {
-#line 175 "modelica_lexer.g"
-			newline();
-#line 1650 "modelica_lexer.cpp"
-		}
+#line 176 "modelica_lexer.g"
+		newline();
+#line 1586 "modelica_lexer.cpp"
 		break;
 	}
 	case 0x9 /* '\t' */ :
@@ -1656,9 +1591,9 @@ void modelica_lexer::mSCHAR(bool _createToken) {
 		break;
 	}
 	default:
-		if ((_tokenSet_6.member(LA(1)))) {
+		if ((_tokenSet_7.member(LA(1)))) {
 			{
-			match(_tokenSet_6);
+			match(_tokenSet_7);
 			}
 		}
 	else {
@@ -1677,7 +1612,7 @@ void modelica_lexer::mESC(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; ANTLR_USE_NAMESPACE(std)string::size_type _begin = text.length();
 	_ttype = ESC;
 	ANTLR_USE_NAMESPACE(std)string::size_type _saveIndex;
-
+	
 	match('\\' /* charlit */ );
 	{
 	switch ( LA(1)) {
@@ -1706,46 +1641,54 @@ void modelica_lexer::mESC(bool _createToken) {
 }
 
 
-const unsigned long modelica_lexer::_tokenSet_0_data_[] = { 4294967288UL, 4294966271UL, 4294967295UL, 4294967295UL, 4294967295UL, 4294967295UL, 4294967295UL, 4294967295UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL };
-// 0x3 0x4 0x5 0x6 0x7 0x8 0x9 0xa 0xb 0xc 0xd 0xe 0xf 0x10 0x11 0x12 0x13
-// 0x14 0x15 0x16 0x17 0x18 0x19 0x1a 0x1b 0x1c 0x1d 0x1e 0x1f   ! \" #
-// $ % & \' ( ) + , - . / 0 1 2 3 4 5 6 7 8 9 : ; < = > ? @ A B C D E F
-// G H I J K L M N O P Q R S T U V W X Y Z [ \\ ] ^ _ ` a b c d e f
-const ANTLR_USE_NAMESPACE(antlr)BitSet modelica_lexer::_tokenSet_0(_tokenSet_0_data_,16);
-const unsigned long modelica_lexer::_tokenSet_1_data_[] = { 4294958072UL, 4294966271UL, 4294967295UL, 4294967295UL, 4294967295UL, 4294967295UL, 4294967295UL, 4294967295UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL };
-// 0x3 0x4 0x5 0x6 0x7 0x8 0x9 0xb 0xc 0xe 0xf 0x10 0x11 0x12 0x13 0x14
-// 0x15 0x16 0x17 0x18 0x19 0x1a 0x1b 0x1c 0x1d 0x1e 0x1f   ! \" # $ %
-// & \' ( ) + , - . / 0 1 2 3 4 5 6 7 8 9 : ; < = > ? @ A B C D E F G H
-// I J K L M N O P Q R S T U V W X Y Z [ \\ ] ^ _ ` a b c d e f
+const unsigned long modelica_lexer::_tokenSet_0_data_[] = { 0UL, 67059712UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL };
+// . 0 1 2 3 4 5 6 7 8 9 
+const ANTLR_USE_NAMESPACE(antlr)BitSet modelica_lexer::_tokenSet_0(_tokenSet_0_data_,10);
+const unsigned long modelica_lexer::_tokenSet_1_data_[] = { 4294967288UL, 4294966271UL, 4294967295UL, 4294967295UL, 4294967295UL, 4294967295UL, 4294967295UL, 4294967295UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL };
+// 0x3 0x4 0x5 0x6 0x7 0x8 0x9 0xa 0xb 0xc 0xd 0xe 0xf 0x10 0x11 0x12 0x13 
+// 0x14 0x15 0x16 0x17 0x18 0x19 0x1a 0x1b 0x1c 0x1d 0x1e 0x1f   ! \" # 
+// $ % & \' ( ) + , - . / 0 1 2 3 4 5 6 7 8 9 : ; < = > ? @ A B C D E F 
+// G H I J K L M N O P Q R S T U V W X Y Z [ 0x5c ] ^ _ ` a b c d e f g 
+// h i j 
 const ANTLR_USE_NAMESPACE(antlr)BitSet modelica_lexer::_tokenSet_1(_tokenSet_1_data_,16);
-const unsigned long modelica_lexer::_tokenSet_2_data_[] = { 4294958072UL, 4294967295UL, 4294967295UL, 4294967295UL, 4294967295UL, 4294967295UL, 4294967295UL, 4294967295UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL };
-// 0x3 0x4 0x5 0x6 0x7 0x8 0x9 0xb 0xc 0xe 0xf 0x10 0x11 0x12 0x13 0x14
-// 0x15 0x16 0x17 0x18 0x19 0x1a 0x1b 0x1c 0x1d 0x1e 0x1f   ! \" # $ %
-// & \' ( ) * + , - . / 0 1 2 3 4 5 6 7 8 9 : ; < = > ? @ A B C D E F G
-// H I J K L M N O P Q R S T U V W X Y Z [ \\ ] ^ _ ` a b c d e f
+const unsigned long modelica_lexer::_tokenSet_2_data_[] = { 4294958072UL, 4294966271UL, 4294967295UL, 4294967295UL, 4294967295UL, 4294967295UL, 4294967295UL, 4294967295UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL };
+// 0x3 0x4 0x5 0x6 0x7 0x8 0x9 0xb 0xc 0xe 0xf 0x10 0x11 0x12 0x13 0x14 
+// 0x15 0x16 0x17 0x18 0x19 0x1a 0x1b 0x1c 0x1d 0x1e 0x1f   ! \" # $ % 
+// & \' ( ) + , - . / 0 1 2 3 4 5 6 7 8 9 : ; < = > ? @ A B C D E F G H 
+// I J K L M N O P Q R S T U V W X Y Z [ 0x5c ] ^ _ ` a b c d e f g h i 
+// j 
 const ANTLR_USE_NAMESPACE(antlr)BitSet modelica_lexer::_tokenSet_2(_tokenSet_2_data_,16);
-const unsigned long modelica_lexer::_tokenSet_3_data_[] = { 4294967288UL, 4294967167UL, 4026531839UL, 4294967295UL, 4294967295UL, 4294967295UL, 4294967295UL, 4294967295UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL };
-// 0x3 0x4 0x5 0x6 0x7 0x8 0x9 0xa 0xb 0xc 0xd 0xe 0xf 0x10 0x11 0x12 0x13
-// 0x14 0x15 0x16 0x17 0x18 0x19 0x1a 0x1b 0x1c 0x1d 0x1e 0x1f   ! \" #
-// $ % & ( ) * + , - . / 0 1 2 3 4 5 6 7 8 9 : ; < = > ? @ A B C D E F
-// G H I J K L M N O P Q R S T U V W X Y Z [ ] ^ _ ` a b c d e f
+const unsigned long modelica_lexer::_tokenSet_3_data_[] = { 4294958072UL, 4294967295UL, 4294967295UL, 4294967295UL, 4294967295UL, 4294967295UL, 4294967295UL, 4294967295UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL };
+// 0x3 0x4 0x5 0x6 0x7 0x8 0x9 0xb 0xc 0xe 0xf 0x10 0x11 0x12 0x13 0x14 
+// 0x15 0x16 0x17 0x18 0x19 0x1a 0x1b 0x1c 0x1d 0x1e 0x1f   ! \" # $ % 
+// & \' ( ) * + , - . / 0 1 2 3 4 5 6 7 8 9 : ; < = > ? @ A B C D E F G 
+// H I J K L M N O P Q R S T U V W X Y Z [ 0x5c ] ^ _ ` a b c d e f g h 
+// i j 
 const ANTLR_USE_NAMESPACE(antlr)BitSet modelica_lexer::_tokenSet_3(_tokenSet_3_data_,16);
-const unsigned long modelica_lexer::_tokenSet_4_data_[] = { 4294957560UL, 4294967167UL, 4026531839UL, 4294967295UL, 4294967295UL, 4294967295UL, 4294967295UL, 4294967295UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL };
-// 0x3 0x4 0x5 0x6 0x7 0x8 0xb 0xc 0xe 0xf 0x10 0x11 0x12 0x13 0x14 0x15
-// 0x16 0x17 0x18 0x19 0x1a 0x1b 0x1c 0x1d 0x1e 0x1f   ! \" # $ % & ( )
-// * + , - . / 0 1 2 3 4 5 6 7 8 9 : ; < = > ? @ A B C D E F G H I J K
-// L M N O P Q R S T U V W X Y Z [ ] ^ _ ` a b c d e f
+const unsigned long modelica_lexer::_tokenSet_4_data_[] = { 4294967288UL, 4294967167UL, 4026531839UL, 4294967295UL, 4294967295UL, 4294967295UL, 4294967295UL, 4294967295UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL };
+// 0x3 0x4 0x5 0x6 0x7 0x8 0x9 0xa 0xb 0xc 0xd 0xe 0xf 0x10 0x11 0x12 0x13 
+// 0x14 0x15 0x16 0x17 0x18 0x19 0x1a 0x1b 0x1c 0x1d 0x1e 0x1f   ! \" # 
+// $ % & ( ) * + , - . / 0 1 2 3 4 5 6 7 8 9 : ; < = > ? @ A B C D E F 
+// G H I J K L M N O P Q R S T U V W X Y Z [ ] ^ _ ` a b c d e f g h i 
+// j 
 const ANTLR_USE_NAMESPACE(antlr)BitSet modelica_lexer::_tokenSet_4(_tokenSet_4_data_,16);
-const unsigned long modelica_lexer::_tokenSet_5_data_[] = { 4294967288UL, 4294967291UL, 4026531839UL, 4294967295UL, 4294967295UL, 4294967295UL, 4294967295UL, 4294967295UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL };
-// 0x3 0x4 0x5 0x6 0x7 0x8 0x9 0xa 0xb 0xc 0xd 0xe 0xf 0x10 0x11 0x12 0x13
-// 0x14 0x15 0x16 0x17 0x18 0x19 0x1a 0x1b 0x1c 0x1d 0x1e 0x1f   ! # $
-// % & \' ( ) * + , - . / 0 1 2 3 4 5 6 7 8 9 : ; < = > ? @ A B C D E F
-// G H I J K L M N O P Q R S T U V W X Y Z [ ] ^ _ ` a b c d e f
+const unsigned long modelica_lexer::_tokenSet_5_data_[] = { 4294957560UL, 4294967167UL, 4026531839UL, 4294967295UL, 4294967295UL, 4294967295UL, 4294967295UL, 4294967295UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL };
+// 0x3 0x4 0x5 0x6 0x7 0x8 0xb 0xc 0xe 0xf 0x10 0x11 0x12 0x13 0x14 0x15 
+// 0x16 0x17 0x18 0x19 0x1a 0x1b 0x1c 0x1d 0x1e 0x1f   ! \" # $ % & ( ) 
+// * + , - . / 0 1 2 3 4 5 6 7 8 9 : ; < = > ? @ A B C D E F G H I J K 
+// L M N O P Q R S T U V W X Y Z [ ] ^ _ ` a b c d e f g h i j 
 const ANTLR_USE_NAMESPACE(antlr)BitSet modelica_lexer::_tokenSet_5(_tokenSet_5_data_,16);
-const unsigned long modelica_lexer::_tokenSet_6_data_[] = { 4294957560UL, 4294967291UL, 4026531839UL, 4294967295UL, 4294967295UL, 4294967295UL, 4294967295UL, 4294967295UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL };
-// 0x3 0x4 0x5 0x6 0x7 0x8 0xb 0xc 0xe 0xf 0x10 0x11 0x12 0x13 0x14 0x15
-// 0x16 0x17 0x18 0x19 0x1a 0x1b 0x1c 0x1d 0x1e 0x1f   ! # $ % & \' ( )
-// * + , - . / 0 1 2 3 4 5 6 7 8 9 : ; < = > ? @ A B C D E F G H I J K
-// L M N O P Q R S T U V W X Y Z [ ] ^ _ ` a b c d e f
+const unsigned long modelica_lexer::_tokenSet_6_data_[] = { 4294967288UL, 4294967291UL, 4026531839UL, 4294967295UL, 4294967295UL, 4294967295UL, 4294967295UL, 4294967295UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL };
+// 0x3 0x4 0x5 0x6 0x7 0x8 0x9 0xa 0xb 0xc 0xd 0xe 0xf 0x10 0x11 0x12 0x13 
+// 0x14 0x15 0x16 0x17 0x18 0x19 0x1a 0x1b 0x1c 0x1d 0x1e 0x1f   ! # $ 
+// % & \' ( ) * + , - . / 0 1 2 3 4 5 6 7 8 9 : ; < = > ? @ A B C D E F 
+// G H I J K L M N O P Q R S T U V W X Y Z [ ] ^ _ ` a b c d e f g h i 
+// j 
 const ANTLR_USE_NAMESPACE(antlr)BitSet modelica_lexer::_tokenSet_6(_tokenSet_6_data_,16);
+const unsigned long modelica_lexer::_tokenSet_7_data_[] = { 4294957560UL, 4294967291UL, 4026531839UL, 4294967295UL, 4294967295UL, 4294967295UL, 4294967295UL, 4294967295UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL };
+// 0x3 0x4 0x5 0x6 0x7 0x8 0xb 0xc 0xe 0xf 0x10 0x11 0x12 0x13 0x14 0x15 
+// 0x16 0x17 0x18 0x19 0x1a 0x1b 0x1c 0x1d 0x1e 0x1f   ! # $ % & \' ( ) 
+// * + , - . / 0 1 2 3 4 5 6 7 8 9 : ; < = > ? @ A B C D E F G H I J K 
+// L M N O P Q R S T U V W X Y Z [ ] ^ _ ` a b c d e f g h i j 
+const ANTLR_USE_NAMESPACE(antlr)BitSet modelica_lexer::_tokenSet_7(_tokenSet_7_data_,16);
 

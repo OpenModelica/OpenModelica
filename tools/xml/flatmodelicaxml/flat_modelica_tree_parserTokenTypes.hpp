@@ -1,7 +1,7 @@
 #ifndef INC_flat_modelica_tree_parserTokenTypes_hpp_
 #define INC_flat_modelica_tree_parserTokenTypes_hpp_
 
-/* $ANTLR 2.7.5rc2 (20050108): "walker.g" -> "flat_modelica_tree_parserTokenTypes.hpp"$ */
+/* $ANTLR 2.7.7 (2006-11-01): "walker.g" -> "flat_modelica_tree_parserTokenTypes.hpp"$ */
 
 #ifndef CUSTOM_API
 # define CUSTOM_API
@@ -167,6 +167,7 @@ struct CUSTOM_API flat_modelica_tree_parserTokenTypes {
 		INTERACTIVE_STMT = 156,
 		INTERACTIVE_ALG = 157,
 		INTERACTIVE_EXP = 158,
+		EXTERNAL_ANNOTATION = 159,
 		NULL_TREE_LOOKAHEAD = 3
 	};
 #ifdef __cplusplus

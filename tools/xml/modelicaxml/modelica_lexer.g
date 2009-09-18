@@ -32,7 +32,7 @@ tokens {
 	ELSE		= "else"	;
 	ELSEIF		= "elseif"	;
 	ELSEWHEN	= "elsewhen"	;
-  	END		= "end"		;
+  	END			= "end"		;
 	ENUMERATION	= "enumeration"	;
 	EQUATION	= "equation"	;
 	ENCAPSULATED	= "encapsulated";
@@ -74,6 +74,10 @@ tokens {
 	WHEN		= "when"	;
 	WHILE		= "while"	;
 	WITHIN		= "within" 	;
+	CONSTRAINEDBY = "constrainedby" ;
+	RETURN		= "return"  ;
+	BREAK		= "break"	;
+	STREAM		= "stream"	; /* for Modelica 3.1 stream connectors */	
 }
 
 
@@ -93,6 +97,13 @@ PLUS		: '+'	;
 MINUS		: '-'	;
 STAR		: '*'	;
 SLASH		: '/'	;
+POWER		: '^'	;
+/* element wise operators */
+PLUS_EW     : ".+"  ;
+MINUS_EW	: ".-"	;
+STAR_EW		: ".*"	;
+SLASH_EW	: "./"	;
+POWER_EW	: ".^"	;
 
 COMMA		: ','	;
 LESS		: '<'	;
@@ -103,13 +114,6 @@ EQEQ		: "=="	;
 LESSGT		: "<>"	;
 COLON		: ':'	;
 SEMICOLON	: ';'	;
-POWER		: '^'	;
-YIELDS          : "=>"  ;
-AMPERSAND       : "&"   ;
-PIPEBAR         : "|"   ;
-COLONCOLON      : "::"  ;
-DASHES          : '-' '-' '-' ( '-' )* ;
-
 
 WS :
 	(	' '
@@ -161,11 +165,8 @@ EXPONENT :
 UNSIGNED_INTEGER :
         (DIGIT)+ ('.' (DIGIT)* { $setType(UNSIGNED_REAL);} )?
         (EXPONENT { $setType(UNSIGNED_REAL); } )?
-    |
-        ('.' DIGIT) => ('.' (DIGIT)+ { $setType(UNSIGNED_REAL);})
-        (EXPONENT { $setType(UNSIGNED_REAL); } )?
-    |
-      '.' { $setType(DOT); }
+    |  ('.' (DIGIT)+ { $setType(UNSIGNED_REAL);}) (EXPONENT { $setType(UNSIGNED_REAL); } )?
+    |  '.' { $setType(DOT); }
 	;
 
 STRING : '"'! (SCHAR | SESCAPE)* '"'!;

@@ -2,7 +2,7 @@
 #define INC_modelica_lexer_hpp_
 
 #include <antlr/config.hpp>
-/* $ANTLR 2.7.5rc2 (20050108): "modelica_lexer.g" -> "modelica_lexer.hpp"$ */
+/* $ANTLR 2.7.7 (2006-11-01): "modelica_lexer.g" -> "modelica_lexer.hpp"$ */
 #include <antlr/CommonToken.hpp>
 #include <antlr/InputBuffer.hpp>
 #include <antlr/BitSet.hpp>
@@ -41,6 +41,12 @@ public:
 	public: void mMINUS(bool _createToken);
 	public: void mSTAR(bool _createToken);
 	public: void mSLASH(bool _createToken);
+	public: void mPOWER(bool _createToken);
+	public: void mPLUS_EW(bool _createToken);
+	public: void mMINUS_EW(bool _createToken);
+	public: void mSTAR_EW(bool _createToken);
+	public: void mSLASH_EW(bool _createToken);
+	public: void mPOWER_EW(bool _createToken);
 	public: void mCOMMA(bool _createToken);
 	public: void mLESS(bool _createToken);
 	public: void mLESSEQ(bool _createToken);
@@ -50,12 +56,6 @@ public:
 	public: void mLESSGT(bool _createToken);
 	public: void mCOLON(bool _createToken);
 	public: void mSEMICOLON(bool _createToken);
-	public: void mPOWER(bool _createToken);
-	public: void mYIELDS(bool _createToken);
-	public: void mAMPERSAND(bool _createToken);
-	public: void mPIPEBAR(bool _createToken);
-	public: void mCOLONCOLON(bool _createToken);
-	public: void mDASHES(bool _createToken);
 	public: void mWS(bool _createToken);
 	public: void mML_COMMENT(bool _createToken);
 	protected: void mML_COMMENT_CHAR(bool _createToken);
@@ -72,7 +72,7 @@ public:
 	protected: void mSCHAR(bool _createToken);
 	protected: void mESC(bool _createToken);
 private:
-
+	
 	static const unsigned long _tokenSet_0_data_[];
 	static const ANTLR_USE_NAMESPACE(antlr)BitSet _tokenSet_0;
 	static const unsigned long _tokenSet_1_data_[];
@@ -87,6 +87,8 @@ private:
 	static const ANTLR_USE_NAMESPACE(antlr)BitSet _tokenSet_5;
 	static const unsigned long _tokenSet_6_data_[];
 	static const ANTLR_USE_NAMESPACE(antlr)BitSet _tokenSet_6;
+	static const unsigned long _tokenSet_7_data_[];
+	static const ANTLR_USE_NAMESPACE(antlr)BitSet _tokenSet_7;
 };
 
 #endif /*INC_modelica_lexer_hpp_*/

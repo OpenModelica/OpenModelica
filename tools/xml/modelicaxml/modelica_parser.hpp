@@ -2,7 +2,7 @@
 #define INC_modelica_parser_hpp_
 
 #include <antlr/config.hpp>
-/* $ANTLR 2.7.5rc2 (20050108): "modelica_parser.g" -> "modelica_parser.hpp"$ */
+/* $ANTLR 2.7.7 (2006-11-01): "modelica_parser.g" -> "modelica_parser.hpp"$ */
 #include <antlr/TokenStream.hpp>
 #include <antlr/TokenBuffer.hpp>
 #include "modelica_parserTokenTypes.hpp"
@@ -105,7 +105,7 @@ public:
 	public: void component_declaration1();
 	public: void equation_annotation_list();
 	public: void equation();
-	public: void algorithm();
+	public: void algorithm_annotation_list();
 	public: void simple_expression();
 	public: void equality_equation();
 	public: void conditional_equation_e();
@@ -113,6 +113,7 @@ public:
 	public: void connect_clause();
 	public: void when_clause_e();
 	public: void function_call();
+	public: void algorithm();
 	public: void assign_clause_a();
 	public: void multi_assign_clause_a();
 	public: void conditional_equation_a();
@@ -161,19 +162,19 @@ public:
 	{
 		return ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST);
 	}
-
+	
 protected:
 	RefMyAST returnAST;
 private:
 	static const char* tokenNames[];
 #ifndef NO_STATIC_CONSTS
-	static const int NUM_TOKENS = 147;
+	static const int NUM_TOKENS = 153;
 #else
 	enum {
-		NUM_TOKENS = 147
+		NUM_TOKENS = 153
 	};
 #endif
-
+	
 	static const unsigned long _tokenSet_0_data_[];
 	static const ANTLR_USE_NAMESPACE(antlr)BitSet _tokenSet_0;
 	static const unsigned long _tokenSet_1_data_[];
@@ -248,40 +249,6 @@ private:
 	static const ANTLR_USE_NAMESPACE(antlr)BitSet _tokenSet_35;
 	static const unsigned long _tokenSet_36_data_[];
 	static const ANTLR_USE_NAMESPACE(antlr)BitSet _tokenSet_36;
-	static const unsigned long _tokenSet_37_data_[];
-	static const ANTLR_USE_NAMESPACE(antlr)BitSet _tokenSet_37;
-	static const unsigned long _tokenSet_38_data_[];
-	static const ANTLR_USE_NAMESPACE(antlr)BitSet _tokenSet_38;
-	static const unsigned long _tokenSet_39_data_[];
-	static const ANTLR_USE_NAMESPACE(antlr)BitSet _tokenSet_39;
-	static const unsigned long _tokenSet_40_data_[];
-	static const ANTLR_USE_NAMESPACE(antlr)BitSet _tokenSet_40;
-	static const unsigned long _tokenSet_41_data_[];
-	static const ANTLR_USE_NAMESPACE(antlr)BitSet _tokenSet_41;
-	static const unsigned long _tokenSet_42_data_[];
-	static const ANTLR_USE_NAMESPACE(antlr)BitSet _tokenSet_42;
-	static const unsigned long _tokenSet_43_data_[];
-	static const ANTLR_USE_NAMESPACE(antlr)BitSet _tokenSet_43;
-	static const unsigned long _tokenSet_44_data_[];
-	static const ANTLR_USE_NAMESPACE(antlr)BitSet _tokenSet_44;
-	static const unsigned long _tokenSet_45_data_[];
-	static const ANTLR_USE_NAMESPACE(antlr)BitSet _tokenSet_45;
-	static const unsigned long _tokenSet_46_data_[];
-	static const ANTLR_USE_NAMESPACE(antlr)BitSet _tokenSet_46;
-	static const unsigned long _tokenSet_47_data_[];
-	static const ANTLR_USE_NAMESPACE(antlr)BitSet _tokenSet_47;
-	static const unsigned long _tokenSet_48_data_[];
-	static const ANTLR_USE_NAMESPACE(antlr)BitSet _tokenSet_48;
-	static const unsigned long _tokenSet_49_data_[];
-	static const ANTLR_USE_NAMESPACE(antlr)BitSet _tokenSet_49;
-	static const unsigned long _tokenSet_50_data_[];
-	static const ANTLR_USE_NAMESPACE(antlr)BitSet _tokenSet_50;
-	static const unsigned long _tokenSet_51_data_[];
-	static const ANTLR_USE_NAMESPACE(antlr)BitSet _tokenSet_51;
-	static const unsigned long _tokenSet_52_data_[];
-	static const ANTLR_USE_NAMESPACE(antlr)BitSet _tokenSet_52;
-	static const unsigned long _tokenSet_53_data_[];
-	static const ANTLR_USE_NAMESPACE(antlr)BitSet _tokenSet_53;
 };
 
 #endif /*INC_modelica_parser_hpp_*/

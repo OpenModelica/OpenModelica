@@ -1,5 +1,10 @@
 header "pre_include_hpp"
 {
+  #define _CRT_SECURE_NO_WARNINGS
+  #if defined(_MSC_VER)
+    #define itoa _itoa
+  #endif
+
 // adrpo disabling warnings
 #pragma warning( disable : 4267)  // Disable warning messages C4267
 // disable: 'initializing' : conversion from 'size_t' to 'int', possible loss of data
@@ -20,7 +25,7 @@ Date:       2003-06-10
 Revised on 2003-10-26 17:58:42 (write the definition even if has no childs)
 Comments: we walk on the modelica tree, buil a XML DOM tree and serialize
 ************************************************************************/
-
+  
   #define null 0
 
   extern "C"
@@ -858,10 +863,8 @@ extends_clause[int iSwitch, DOMElement* parent] returns [DOMElement* ast]
 	void *mod = 0;
 }
 	:
-		(#(e:EXTENDS
-				path = name_path
-				( mod = class_modification)?
-			)
+	(
+		  #(e:EXTENDS path = name_path ( mod = class_modification)? )
 			{
 				DOMElement* pExtends = pModelicaXMLDoc->createElement(X("extends"));
 				setVisibility(iSwitch, pExtends);
@@ -874,7 +877,20 @@ extends_clause[int iSwitch, DOMElement* parent] returns [DOMElement* ast]
 				parent->appendChild(pExtends);
 				ast = parent;
 			}
-		)
+		| #(cb:CONSTRAINEDBY path = name_path ( mod = class_modification)? )
+			{
+				DOMElement* pExtends = pModelicaXMLDoc->createElement(X("constrainedby"));
+				setVisibility(iSwitch, pExtends);
+
+				pExtends->setAttribute(X("sline"), X(itoa(cb->getLine(),stmp,10)));
+				pExtends->setAttribute(X("scolumn"), X(itoa(cb->getColumn(),stmp,10)));
+
+				if (mod) pExtends = (DOMElement*)appendKidsFromStack((l_stack *)mod, pExtends);
+				if (path) pExtends->setAttribute(X("type"), X(((mstring*)path)->c_str()));
+				parent->appendChild(pExtends);
+				ast = parent;
+			}
+	)
 	;
 
 /*
@@ -910,12 +926,12 @@ component_clause[DOMElement* parent, DOMElement* attributes] returns [DOMElement
 
 type_prefix[DOMElement* parent]
 	:
-		(f:FLOW)?
+		(f:FLOW|s:STREAM)?
 		(d:DISCRETE | p:PARAMETER | c:CONSTANT)?
 		(i:INPUT | o:OUTPUT)?
 		{
 			if (f != NULL) { parent->setAttribute(X("flow"), X("true")); }
-			//else { parent->setAttribute(X("flow"), X("none")); }
+			if (s != NULL) { parent->setAttribute(X("stream"), X("true")); }
 			if (d != NULL) { parent->setAttribute(X("variability"), X("discrete")); }
 			else if (p != NULL) { parent->setAttribute(X("variability"), X("parameter")); }
 			else if (c != NULL) { parent->setAttribute(X("variability"), X("constant")); }
@@ -1075,7 +1091,7 @@ argument_list returns [void *stack]
 
 argument returns [DOMElement* ast]
 	:
-		#(em:ELEMENT_MODIFICATION ast = element_modification)
+		#(em:ELEMENT_MODIFICATION ast = element_modification_or_replaceable)
 		{
 			if (em)
 			{
@@ -1093,15 +1109,20 @@ argument returns [DOMElement* ast]
 		}
 	;
 
-element_modification returns [DOMElement* ast]
+element_modification_or_replaceable returns [DOMElement* ast]
+    :
+        (e:EACH)?
+		(f:FINAL)?
+        ( ast = element_modification[e!=NULL,f!=NULL] | ast = element_replaceable[e!=NULL,f!=NULL,false] )
+    ;
+
+element_modification [bool e, bool f] returns [DOMElement* ast]
 {
 	DOMElement* cref;
 	DOMElement* mod=0;
 	DOMElement* cmt=0;
 }
 	:
-		(e:EACH)?
-		(f:FINAL)?
 		cref = component_reference
 		(mod = modification)?
 		cmt = string_comment
@@ -1121,57 +1142,78 @@ element_redeclaration returns [DOMElement* ast]
 	DOMElement* class_def = 0;
 	DOMElement* e_spec = 0;
 	DOMElement* constr = 0;
-	DOMElement* final = 0;
-	DOMElement* each = 0;
 	class_def = pModelicaXMLDoc->createElement(X("definition"));
 }
 	:
-		(#(r:REDECLARE (e:EACH)? (f:FINAL)?
+	(#(r:REDECLARE (e:EACH)? (f:FINAL)?
+		(
 			(
-					(class_def = class_definition[false, class_def]
+				(class_def = class_definition[false, class_def]
 						{
 							DOMElement *pElementRedeclaration = pModelicaXMLDoc->createElement(X("element_redeclaration"));
 							if (class_def && class_def->hasChildNodes())
 								pElementRedeclaration->appendChild(class_def);
 							if (f) pElementRedeclaration->setAttribute(X("final"), X("true"));
-							if (each) pElementRedeclaration->setAttribute(X("each"), X("true"));
+							if (e) pElementRedeclaration->setAttribute(X("each"), X("true"));
 							ast = pElementRedeclaration;
 						}
-					|   { DOMElement *pElementRedeclaration = pModelicaXMLDoc->createElement(X("element_redeclaration")); }
+				|   { DOMElement *pElementRedeclaration = pModelicaXMLDoc->createElement(X("element_redeclaration")); }
 						pElementRedeclaration = component_clause1[pElementRedeclaration]
 						{
 							if (f) pElementRedeclaration->setAttribute(X("final"), X("true"));
-							if (each) pElementRedeclaration->setAttribute(X("each"), X("true"));
+							if (e) pElementRedeclaration->setAttribute(X("each"), X("true"));
 							ast = pElementRedeclaration;
 						}
-					)
-				   |
-					( re:REPLACEABLE
-					    { DOMElement *pElementRedeclaration = pModelicaXMLDoc->createElement(X("element_redeclaration")); }
-						(class_def = class_definition[false, class_def]
-						| pElementRedeclaration = component_clause1[pElementRedeclaration]
-						)
-						(constr = constraining_clause)?
-						{
-							if (f) pElementRedeclaration->setAttribute(X("final"), X("true"));
-							if (f) pElementRedeclaration->setAttribute(X("final"), X("true"));
-							if (re) pElementRedeclaration->setAttribute(X("replaceable"), X("true"));
-							if (class_def &&  class_def->hasChildNodes())
-							{
-								pElementRedeclaration->appendChild(class_def);
-								if (constr) pElementRedeclaration->appendChild(constr);
-							}
-							else
-							{
-								if (constr) pElementRedeclaration->appendChild(constr);
-							}
-							ast = pElementRedeclaration;
-						}
-					)
 				)
+			)
+			| (ast = element_replaceable[e!=NULL, f!=NULL, true /* has redeclare */] )
+			)
+		)
+	)
+	;
+	
+element_replaceable [bool eachB, bool finalB, bool redeclareB]  returns [DOMElement* ast]
+{
+	DOMElement* class_def = 0;
+	DOMElement* e_spec = 0;
+	DOMElement* constr = 0;
+	DOMElement* cmt = 0;
+	class_def = pModelicaXMLDoc->createElement(X("definition"));
+}
+	:
+
+		(#(REPLACEABLE
+		    { DOMElement *pElementRedeclaration = pModelicaXMLDoc->createElement(X("element_redeclaration")); }
+			  (class_def = class_definition[false, class_def]
+			| pElementRedeclaration = component_clause1[pElementRedeclaration]
+			)
+			(constr = constraining_clause cmt=comment)?
+				{
+					if (finalB) pElementRedeclaration->setAttribute(X("final"), X("true"));
+					if (true) pElementRedeclaration->setAttribute(X("replaceable"), X("true"));
+					if (class_def &&  class_def->hasChildNodes())
+					{
+						pElementRedeclaration->appendChild(class_def);	                
+						if (constr) 
+						{
+						   if (cmt) ((DOMElement*)constr)->appendChild(cmt);
+						   pElementRedeclaration->appendChild(constr);
+						}
+					}
+					else
+					{
+						if (constr) 
+						{
+						   if (cmt) ((DOMElement*)constr)->appendChild(cmt);
+						   pElementRedeclaration->appendChild(constr);
+						}
+					}
+					ast = pElementRedeclaration;
+				}
 			)
 		)
 	;
+
 
 component_clause1[DOMElement *parent] returns [DOMElement* ast]
 {
@@ -1280,14 +1322,13 @@ equation[DOMElement* definition] returns [DOMElement* ast]
 equation_funcall returns [DOMElement* ast]
 {
   DOMElement* fcall = 0;
+  DOMElement* cref = 0;
 }
 	:
-		i:IDENT fcall = function_call
+		cref = component_reference fcall = function_call
 		{
 			 DOMElement*  pEquCall = pModelicaXMLDoc->createElement(X("equ_call"));
-			 pEquCall->setAttribute(X("ident"), str2xml(i));
-			 pEquCall->setAttribute(X("sline"), X(itoa(i->getLine(),stmp,10)));
-			 pEquCall->setAttribute(X("scolumn"), X(itoa(i->getColumn(),stmp,10)));
+			 pEquCall->appendChild(cref);
 			 pEquCall->appendChild(fcall);
 			 ast = pEquCall;
 		}
@@ -1295,6 +1336,7 @@ equation_funcall returns [DOMElement* ast]
 
 algorithm[DOMElement *definition] returns [DOMElement* ast]
 {
+	DOMElement* expLeft;
 	DOMElement* cref;
 	DOMElement* expr;
 	DOMElement* tuple;
@@ -1304,7 +1346,7 @@ algorithm[DOMElement *definition] returns [DOMElement* ast]
 	:
 		#(as:ALGORITHM_STATEMENT
 			(#(az:ASSIGN
-					(cref = component_reference expr = expression
+					(expLeft = simple_expression expr = expression
 						{
 							DOMElement*  pAlgAssign = pModelicaXMLDoc->createElement(X("alg_assign"));
 							if (az)
@@ -1312,7 +1354,7 @@ algorithm[DOMElement *definition] returns [DOMElement* ast]
 								pAlgAssign->setAttribute(X("sline"), X(itoa(az->getLine(),stmp,10)));
 								pAlgAssign->setAttribute(X("scolumn"), X(itoa(az->getColumn(),stmp,10)));
 							}
-							pAlgAssign->appendChild(cref);
+							pAlgAssign->appendChild(expLeft);
 							pAlgAssign->appendChild(expr);
 							ast = pAlgAssign;
 						}
@@ -2071,10 +2113,8 @@ arithmetic_expression returns [DOMElement* ast]
 		|#(add:PLUS e1 = arithmetic_expression e2 = term)
 			{
 				DOMElement* pAdd = pModelicaXMLDoc->createElement(X("add"));
-
 				pAdd->setAttribute(X("sline"), X(itoa(add->getLine(),stmp,10)));
 				pAdd->setAttribute(X("scolumn"), X(itoa(add->getColumn(),stmp,10)));
-
 				pAdd->setAttribute(X("operation"), X("binary"));
 				pAdd->appendChild(e1);
 				pAdd->appendChild(e2);
@@ -2083,10 +2123,28 @@ arithmetic_expression returns [DOMElement* ast]
 		|#(sub:MINUS e1 = arithmetic_expression e2 = term)
 			{
 				DOMElement* pSub = pModelicaXMLDoc->createElement(X("sub"));
-
 				pSub->setAttribute(X("sline"), X(itoa(sub->getLine(),stmp,10)));
 				pSub->setAttribute(X("scolumn"), X(itoa(sub->getColumn(),stmp,10)));
-
+				pSub->setAttribute(X("operation"), X("binary"));
+				pSub->appendChild(e1);
+				pSub->appendChild(e2);
+				ast = pSub;
+			}
+		|#(add_ew:PLUS_EW e1 = arithmetic_expression e2 = term)
+			{
+				DOMElement* pAdd = pModelicaXMLDoc->createElement(X("add_element_wise"));
+				pAdd->setAttribute(X("sline"), X(itoa(add_ew->getLine(),stmp,10)));
+				pAdd->setAttribute(X("scolumn"), X(itoa(add_ew->getColumn(),stmp,10)));
+				pAdd->setAttribute(X("operation"), X("binary"));
+				pAdd->appendChild(e1);
+				pAdd->appendChild(e2);
+				ast = pAdd;
+			}
+		|#(sub_ew:MINUS_EW e1 = arithmetic_expression e2 = term)
+			{
+				DOMElement* pSub = pModelicaXMLDoc->createElement(X("sub_element_wise"));
+				pSub->setAttribute(X("sline"), X(itoa(sub_ew->getLine(),stmp,10)));
+				pSub->setAttribute(X("scolumn"), X(itoa(sub_ew->getColumn(),stmp,10)));
 				pSub->setAttribute(X("operation"), X("binary"));
 				pSub->appendChild(e1);
 				pSub->appendChild(e2);
@@ -2097,30 +2155,45 @@ arithmetic_expression returns [DOMElement* ast]
 
 unary_arithmetic_expression returns [DOMElement* ast]
 	:
-		(#(add:UNARY_PLUS ast = term)
-		{
-			DOMElement* pAdd = pModelicaXMLDoc->createElement(X("add"));
-
-			pAdd->setAttribute(X("sline"), X(itoa(add->getLine(),stmp,10)));
-			pAdd->setAttribute(X("scolumn"), X(itoa(add->getColumn(),stmp,10)));
-
-			pAdd->setAttribute(X("operation"), X("unary"));
-			pAdd->appendChild(ast);
-			ast = pAdd;
-		}
+	(
+		#(add:UNARY_PLUS ast = term)
+			{
+				DOMElement* pAdd = pModelicaXMLDoc->createElement(X("add"));
+				pAdd->setAttribute(X("sline"), X(itoa(add->getLine(),stmp,10)));
+				pAdd->setAttribute(X("scolumn"), X(itoa(add->getColumn(),stmp,10)));
+				pAdd->setAttribute(X("operation"), X("unary"));
+				pAdd->appendChild(ast);
+				ast = pAdd;
+			}
 		|#(sub:UNARY_MINUS ast = term)
-		{
-			DOMElement* pSub = pModelicaXMLDoc->createElement(X("sub"));
-
-			pSub->setAttribute(X("sline"), X(itoa(sub->getLine(),stmp,10)));
-			pSub->setAttribute(X("scolumn"), X(itoa(sub->getColumn(),stmp,10)));
-
-			pSub->setAttribute(X("operation"), X("unary"));
-			pSub->appendChild(ast);
-			ast = pSub;
-		}
+			{
+				DOMElement* pSub = pModelicaXMLDoc->createElement(X("sub"));
+				pSub->setAttribute(X("sline"), X(itoa(sub->getLine(),stmp,10)));
+				pSub->setAttribute(X("scolumn"), X(itoa(sub->getColumn(),stmp,10)));
+				pSub->setAttribute(X("operation"), X("unary"));
+				pSub->appendChild(ast);
+				ast = pSub;
+			}
+		|#(add_ew:UNARY_PLUS_EW ast = term)
+			{
+				DOMElement* pAdd = pModelicaXMLDoc->createElement(X("add_ement_wise"));
+				pAdd->setAttribute(X("sline"), X(itoa(add_ew->getLine(),stmp,10)));
+				pAdd->setAttribute(X("scolumn"), X(itoa(add_ew->getColumn(),stmp,10)));
+				pAdd->setAttribute(X("operation"), X("unary"));
+				pAdd->appendChild(ast);
+				ast = pAdd;
+			}
+		|#(sub_ew:UNARY_MINUS_EW ast = term)
+			{
+				DOMElement* pSub = pModelicaXMLDoc->createElement(X("sub_elwment_wise"));
+				pSub->setAttribute(X("sline"), X(itoa(sub_ew->getLine(),stmp,10)));
+				pSub->setAttribute(X("scolumn"), X(itoa(sub_ew->getColumn(),stmp,10)));
+				pSub->setAttribute(X("operation"), X("unary"));
+				pSub->appendChild(ast);
+				ast = pSub;
+			}
 		| ast = term
-		)
+	)
 	;
 
 term returns [DOMElement* ast]
@@ -2129,30 +2202,45 @@ term returns [DOMElement* ast]
 	DOMElement* e2;
 }
 	:
-		(ast = factor
-		|#(mul:STAR e1 = term e2 = factor)
+	(
+		  ast = factor
+		| #(mul:STAR e1 = term e2 = factor)
 			{
 				DOMElement* pMul = pModelicaXMLDoc->createElement(X("mul"));
-
 				pMul->setAttribute(X("sline"), X(itoa(mul->getLine(),stmp,10)));
 				pMul->setAttribute(X("scolumn"), X(itoa(mul->getColumn(),stmp,10)));
-
 				pMul->appendChild(e1);
 				pMul->appendChild(e2);
 				ast = pMul;
 			}
-		|#(div:SLASH e1 = term e2 = factor)
+		| #(div:SLASH e1 = term e2 = factor)
 			{
 				DOMElement* pDiv = pModelicaXMLDoc->createElement(X("div"));
-
 				pDiv->setAttribute(X("sline"), X(itoa(div->getLine(),stmp,10)));
 				pDiv->setAttribute(X("scolumn"), X(itoa(div->getColumn(),stmp,10)));
-
 				pDiv->appendChild(e1);
 				pDiv->appendChild(e2);
 				ast = pDiv;
 			}
-		)
+		| #(mul_ew:STAR_EW e1 = term e2 = factor)
+			{
+				DOMElement* pMul = pModelicaXMLDoc->createElement(X("mul_element_wise"));
+				pMul->setAttribute(X("sline"), X(itoa(mul_ew->getLine(),stmp,10)));
+				pMul->setAttribute(X("scolumn"), X(itoa(mul_ew->getColumn(),stmp,10)));
+				pMul->appendChild(e1);
+				pMul->appendChild(e2);
+				ast = pMul;
+			}
+		| #(div_ew:SLASH_EW e1 = term e2 = factor)
+			{
+				DOMElement* pDiv = pModelicaXMLDoc->createElement(X("div_element_wise"));
+				pDiv->setAttribute(X("sline"), X(itoa(div_ew->getLine(),stmp,10)));
+				pDiv->setAttribute(X("scolumn"), X(itoa(div_ew->getColumn(),stmp,10)));
+				pDiv->appendChild(e1);
+				pDiv->appendChild(e2);
+				ast = pDiv;
+			}
+	)
 	;
 
 factor returns [DOMElement* ast]
@@ -2161,8 +2249,9 @@ factor returns [DOMElement* ast]
 	DOMElement* e2;
 }
 	:
-		(ast = primary
-		|#(pw:POWER e1 = primary e2 = primary)
+	(
+		  ast = primary
+		| #(pw:POWER e1 = primary e2 = primary)
 			{
 				DOMElement* pPow = pModelicaXMLDoc->createElement(X("pow"));
 
@@ -2173,7 +2262,18 @@ factor returns [DOMElement* ast]
 				pPow->appendChild(e2);
 				ast = pPow;
 			}
-		)
+		| #(pw_ew:POWER_EW e1 = primary e2 = primary)
+			{
+				DOMElement* pPow = pModelicaXMLDoc->createElement(X("pow_element_wise"));
+
+				pPow->setAttribute(X("sline"), X(itoa(pw_ew->getLine(),stmp,10)));
+				pPow->setAttribute(X("scolumn"), X(itoa(pw_ew->getColumn(),stmp,10)));
+
+				pPow->appendChild(e1);
+				pPow->appendChild(e2);
+				ast = pPow;
+			}
+	)
 	;
 
 primary returns [DOMElement* ast]

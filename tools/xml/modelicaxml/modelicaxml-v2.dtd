@@ -1,23 +1,35 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!--Adrian Pop 2003-07-01 adrpo@ida.liu.se-->
-<!--modelica.dtd version 0.1 conform with Modelica Language Specification 2.0/2.1 -->
-<!--   Copyright PELAB, Linkoping University
-
-   This file is part of Open Source Modelica (OSM).
-
-    OSM is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    OSM is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with Foobar; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA-->
+<!--Adrian Pop 2008-12-13 adrpo@ida.liu.se-->
+<!--modelica.dtd version 2 conform with Modelica Language Specification 2.0/2.1/2.2/3.0 -->
+<!--   
+ * This file is part of OpenModelica.
+ *
+ * Copyright (c) 1998-2008, Linkopings University,
+ * Department of Computer and Information Science,
+ * SE-58183 Linkoping, Sweden.
+ *
+ * All rights reserved.
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC
+ * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF
+ * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC
+ * PUBLIC LICENSE.
+ *
+ * The OpenModelica software and the Open Source Modelica
+ * Consortium (OSMC) Public License (OSMC-PL) are obtained
+ * from Linkopings University, either from the above address,
+ * from the URL: http://www.ida.liu.se/projects/OpenModelica
+ * and in the OpenModelica distribution.
+ *
+ * This program is distributed  WITHOUT ANY WARRANTY; without
+ * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
+ * OF OSMC-PL.
+ *
+ * See the full OSMC Public License conditions for more details.
+ *
+ * -->
 <!-- A DTD for Modelica, an XML representation of Modelica Source Code (AST) -->
 <!--http://www.ida.liu.se/~adrpo/modelica/xml-->
 <!-- we use location to make the mapping between xml elements and the location of the elements in the source representation -->
@@ -35,17 +47,23 @@
 <!ENTITY % composition "( ( ( %elements; )* | annotation* | equation* | algorithm* )* , external? )">
 <!-- a class can be either a composition, can be derived (using =) or can be an enumeration -->
 <!ENTITY % class_specifier "( (%composition;) | (derived, constrain?) | enumeration )">
-<!-- type prefix can be flow, variability, direction -->
+<!-- type prefix can be flow, stream, variability, direction -->
 <!ENTITY % type_prefix "flow (true) #IMPLIED
-                                        variability (discrete | parameter | constant) #IMPLIED
-                                        direction (input | output | bidirectional) #IMPLIED">
+                        stream (true) #IMPLIED
+                        variability (discrete | parameter | constant) #IMPLIED
+                        direction (input | output | bidirectional) #IMPLIED">
 <!-- enumeration_list is used in the class definitions -->
 <!ENTITY % enum_list "(enumeration_literal+)">
 <!-- class modifications states what modifications are made to a class when it is used -->
 <!ENTITY % class_modification "( ( ( element_modification | element_redeclaration)+ )? )">
 <!-- a modification states the modifications are made to the components of a class or to the class itself -->
 <!ENTITY % modification "(modification_arguments | modification_equals | modification_assign)">
-<!ENTITY % exp "( if | range | or | and | not | lt | lte | gt |  gte | eq | ne | add | sub  | mul | div | pow | integer_literal | real_literal | string_literal | bool_literal  | component_reference  | call | output_expression_list | concat | array | end )">
+<!ENTITY % exp "( if | range | 
+                  or | and | not | 
+                  lt | lte | gt |  gte | eq | ne | 
+                  add | sub  | mul | div | pow | add_element_wise | sub_element_wise | mul_element_wise | div_element_wise | pow_element_wise | 
+                  integer_literal | real_literal | string_literal | bool_literal | 
+                  component_reference  | call | output_expression_list | concat | array | end )" >
 
 <!ENTITY % equation_list "(equation*)">
 <!ENTITY % algorithm_list "(algorithm*)">
@@ -195,7 +213,15 @@
 	visibility (public | protected) #IMPLIED
 	%location;
 >
-<!ELEMENT constrain (extends, comment?)?>
+
+<!ELEMENT constrainedby (%class_modification;)>
+<!ATTLIST extends
+	type CDATA #REQUIRED
+	visibility (public | protected) #IMPLIED
+	%location;
+>
+
+<!ELEMENT constrain ((extends | constrainedby), comment?)?>
 <!ATTLIST constrain
 	%location;
 >
@@ -269,9 +295,8 @@ equation_list
 <!ATTLIST equ_elsewhen
 	%location;
 >
-<!ELEMENT equ_call (function_arguments)>
+<!ELEMENT equ_call (component_reference, function_arguments)>
 <!ATTLIST equ_call
-	ident CDATA #REQUIRED
 	%location;
 >
 <!ELEMENT equ_connect (component_reference, component_reference)>
@@ -286,7 +311,7 @@ Algorithm
 	initial (true) #IMPLIED
 	%location;
 >
-<!ELEMENT alg_assign ((component_reference, %exp;) | (output_expression_list, call))>
+<!ELEMENT alg_assign ((%exp;, %exp;) | (output_expression_list, call))>
 <!ATTLIST alg_assign
 	%location;
 >

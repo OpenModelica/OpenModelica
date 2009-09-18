@@ -55,7 +55,8 @@ private:
   DOMDocumentType* pDoctype;
   DOMDocument* pModelicaXMLDoc;
   DOMElement* pRootElementModelica;
-  DOMWriter* domWriter;
+  DOMLSSerializer* domSerializer;
+  DOMLSOutput    * theOutputDesc;
   int serializeXMLDocumentToFile(mstring xmlFileName);
   DOMElement* createModelicaXMLDOMElement(const char *fileName);
   l_list &sortMoFiles(l_list &fileList);
@@ -203,21 +204,21 @@ int main( int argc, char* argv[] )
     {
       for (unsigned int i = 0; i < filesToConvert.size(); i++)
       {
-	pModelicaXML->serializeMoFileToXML((char*)filesToConvert.front()->c_str());
-	filesToConvert.pop_front();
-	somethingToDo = true;
+        pModelicaXML->serializeMoFileToXML((char*)filesToConvert.front()->c_str());
+        filesToConvert.pop_front();
+        somethingToDo = true;
       }
       if (!serializedFile && directoryToConvert)
       {
-	pModelicaXML->serializeEachMoFileInDirectory((char*)directoryToConvert->c_str());
-	somethingToDo = true;
+        pModelicaXML->serializeEachMoFileInDirectory((char*)directoryToConvert->c_str());
+        somethingToDo = true;
       }
       if (serializedFile && directoryToConvert)
       {
-	pModelicaXML->serializeAllMoFilesInDirectoryInXMLFile(
-							      (char*)directoryToConvert->c_str(),
-							      (char*)serializedFile->c_str());
-	somethingToDo = true;
+        pModelicaXML->serializeAllMoFilesInDirectoryInXMLFile(
+          (char*)directoryToConvert->c_str(),
+          (char*)serializedFile->c_str());
+        somethingToDo = true;
       }
       if (!somethingToDo) usageModelicaXML();
     }
@@ -260,16 +261,28 @@ ModelicaXML::ModelicaXML(char* dtdURL)
   pRootElementModelica = pModelicaXMLDoc->getDocumentElement();
 
   // create the writer
-  domWriter = pDOMImpl->createDOMWriter();
-  // set the pretty print feature
+  // get a serializer, an instance of DOMLSSerializer
+  XMLCh tempStr[3] = {chLatin_L, chLatin_S, chNull};
+  DOMImplementation *impl = DOMImplementationRegistry::getDOMImplementation(tempStr);
+  // create the writer            
+  domSerializer = ((DOMImplementationLS*)impl)->createLSSerializer();
+  theOutputDesc = ((DOMImplementationLS*)impl)->createLSOutput();
+  static XMLCh*                   gOutputEncoding        = 0;
+  // set user specified output encoding
+  theOutputDesc->setEncoding(gOutputEncoding);            
 
-  if (domWriter->canSetFeature(XMLUni::fgDOMWRTFormatPrettyPrint, true))
-    domWriter->setFeature(XMLUni::fgDOMWRTFormatPrettyPrint, true);
+  DOMConfiguration* serializerConfig=domSerializer->getDomConfig();
+	// set the pretty print feature
+	if (serializerConfig->canSetParameter(XMLUni::fgDOMWRTFormatPrettyPrint, true))
+	  serializerConfig->setParameter(XMLUni::fgDOMWRTFormatPrettyPrint, true);
 }
 
 ModelicaXML::~ModelicaXML()
 {
-  domWriter->release();
+  // release the output decription
+  theOutputDesc->release();
+  // release the serializer
+  domSerializer->release();
   // release the document
   pModelicaXMLDoc->release();
   // terminate the XML framework
@@ -295,7 +308,7 @@ int ModelicaXML::serializeEachMoFileInDirectory(char *directoryName)
     for(itFileList=fileList.begin(); itFileList!=fileList.end(); ++itFileList)
     {
       filename = mstring(*itFileList);
-      cout << " [" << filename << "]";
+      cout << " [" << filename << "]" << endl;
       DOMElement* pModelicaXML = createModelicaXMLDOMElement(filename.c_str());
       // if is not NULL append it to the <modelica></modelica> element
       if (pModelicaXML) pRootElementModelica->appendChild(pModelicaXML);
@@ -329,13 +342,13 @@ int ModelicaXML::serializeAllMoFilesInDirectoryInXMLFile(char *directoryName, ch
     for(itFileList=fileList.begin(); itFileList!=fileList.end(); ++itFileList)
     {
       filename = mstring(*itFileList);
-      cout << " [" << *itFileList << "]";
+      cout << " [" << *itFileList << "]" << endl;
       DOMElement* pModelicaXML = createModelicaXMLDOMElement(filename.c_str());
       // if is not NULL append it to the <modelica></modelica> element
       if (pModelicaXML)
       {
-	pRootElementModelica->appendChild(pModelicaXML);
-	i++;
+        pRootElementModelica->appendChild(pModelicaXML);
+        i++;
       }
     }
     if (fileList.size()) cout << endl;
@@ -367,27 +380,32 @@ DOMElement* ModelicaXML::createModelicaXMLDOMElement(const char* fileName)
     return NULL;
   }
 
+  modelica_lexer *lexer = 0;
+  modelica_parser *parser = 0;
+  modelica_tree_parser *walker = 0;
+  antlr::ASTFactory *my_factory = 0;
+
   try
   {
-    antlr::ASTFactory my_factory("MyAST", MyAST::factory);
-    modelica_lexer lexer(file);
-    lexer.setFilename(fileName);
-    modelica_parser parser(lexer);
-    parser.initializeASTFactory(my_factory);
-    parser.setASTFactory(&my_factory);
-    parser.stored_definition();
+    my_factory = new antlr::ASTFactory("MyAST", MyAST::factory);
+    lexer = new modelica_lexer(file);
+    lexer->setFilename(fileName);
+    parser = new modelica_parser(*lexer);
+    parser->initializeASTFactory(*my_factory);
+    parser->setASTFactory(&(*my_factory));
+    parser->stored_definition();
     //wfile.open("output.txt");
     //wfile << parser.getAST()->toStringList() << std::endl;
-    antlr::RefAST ast = parser.getAST();
+    antlr::RefAST ast = parser->getAST();
     //parse_tree_dumper dumper(std::cout);
     //std::cout << std::flush;
     if (ast)
     {
       //dumper.dump(ast);
-      modelica_tree_parser walker;
-      walker.initializeASTFactory(my_factory);
-      walker.setASTFactory(&my_factory);
-      pRootElementModelicaXML = walker.stored_definition(RefMyAST(ast), fileName, pModelicaXMLDoc);
+      walker = new modelica_tree_parser();
+      walker->initializeASTFactory(*my_factory);
+      walker->setASTFactory(&(*my_factory));
+      pRootElementModelicaXML = walker->stored_definition(RefMyAST(ast), fileName, pModelicaXMLDoc);
     }
     else
     {
@@ -415,24 +433,29 @@ DOMElement* ModelicaXML::createModelicaXMLDOMElement(const char* fileName)
   //std::cout << "SUCCESS! File:" << fileName << std::endl;
   //wfile << std::endl << "SUCCESS! File:" << fileName << std::endl;
   //wfile.close();
+  // delete the lexer, parser and walker
+
+  if (lexer) delete lexer;
+  if (parser) delete parser;
+  if (walker) delete walker;
+  if (my_factory) delete my_factory;
+
   return pRootElementModelicaXML;
 }
 
 int ModelicaXML::serializeXMLDocumentToFile(mstring xmlFileName)
 {
-  // fix the file
-  XMLFormatTarget *myFormatTarget = new LocalFileFormatTarget(X(xmlFileName.c_str()));
-  //XMLFormatTarget *myOutFormatTarget = new StdOutFormatTarget;
+	// fix the file
+	XMLFormatTarget *myFormatTarget = new LocalFileFormatTarget(X(xmlFileName.c_str()));
+  theOutputDesc->setByteStream(myFormatTarget);
 
-  // serialize a DOMNode to the local file "
-  domWriter->writeNode(myFormatTarget, *pModelicaXMLDoc);
-  //domWriter->writeNode(myOutFormatTarget, *pModelicaXMLDoc);
+	// serialize a DOMNode to the local file "
+	domSerializer->write(pModelicaXMLDoc, theOutputDesc);
 
-  myFormatTarget->flush();
-  //myOutFormatTarget->flush();
+	myFormatTarget->flush();
 
   delete myFormatTarget;
-  // delete myOutFormatTarget;
+
   return 0;
 }
 
@@ -446,7 +469,7 @@ int ModelicaXML::serializeMoFileToXML(char* fileName)
   xmlFile += ".xml";
   serializeXMLDocumentToFile(xmlFile);
 
-  unsigned int elementCount = pModelicaXMLDoc->getElementsByTagName(X("*"))->getLength();
+  XMLSize_t elementCount = pModelicaXMLDoc->getElementsByTagName(X("*"))->getLength();
   std::cout << std::endl;
   std::cout << "The tree serialized contains: " << elementCount << " elements." << std::endl;
 
@@ -470,6 +493,7 @@ l_list &ModelicaXML::sortMoFiles(l_list &fileList)
       bPackageExists = true;
       str_package = filename;
       fileList.erase(itFileList);
+      if (fileList.size() == 0) break;
       itFileList=fileList.begin();
     }
     if (endsWith(filename, "Example.mo"))
@@ -477,16 +501,17 @@ l_list &ModelicaXML::sortMoFiles(l_list &fileList)
       bExampleExists = true;
       fileList.erase(itFileList);
       str_example = filename;
+      if (fileList.size() == 0) break;
       itFileList=fileList.begin();
     }
   }
   if (bPackageExists)
   {
-    fileList.push_front((char*)str_package.c_str());
+    fileList.push_front(strdup((char*)str_package.c_str()));
   }
   if (bExampleExists)
   {
-    fileList.push_back((char*)str_example.c_str());
+    fileList.push_back(strdup((char*)str_example.c_str()));
   }
   return fileList;
 }
