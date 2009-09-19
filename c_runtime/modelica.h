@@ -91,7 +91,6 @@ typedef modelica_real arctan_rettype;
 
 
 /* Special Modelica builtin functions*/
-typedef modelica_boolean change_rettype;
 typedef modelica_real    pre_rettype;
 typedef modelica_real    edge_rettype;
 typedef modelica_real    initial_rettype;
@@ -101,6 +100,7 @@ typedef modelica_real    ceil_rettype;
 typedef modelica_real    sample_rettype;
 #define smooth(P,EXP)    (EXP)
 typedef modelica_real    smooth_rettype;
+typedef modelica_boolean change_rettype;
 typedef modelica_integer integer_rettype;
 
 #if defined(__cplusplus)

@@ -1768,6 +1768,24 @@ algorithm start:= matchcontinue (inVariableAttributesOption)
   end matchcontinue;
 end getStartAttrFail;
 
+public function setVariableAttributes "sets the attributes of a DAE.Element that is VAR"
+  input Element var;
+  input Option<VariableAttributes> varOpt;
+  output Element outVar;
+algorithm
+  outVar := matchcontinue(var,varOpt)
+  local  Exp.ComponentRef cr; VarKind k;
+    VarDirection d ;    VarProtection p;
+    Type ty ;   Option<Exp.Exp> b; 
+    InstDims  dims ;    Flow fl;
+    Stream st;    list<Absyn.Path> cls;
+    Option<Absyn.Comment> cmt;  Absyn.InnerOuter io; 
+    Types.Type tp;
+    
+    case(VAR(cr,k,d,p,ty,b,dims,fl,st,cls,_,cmt,io,tp),varOpt) then VAR(cr,k,d,p,ty,b,dims,fl,st,cls,varOpt,cmt,io,tp);
+  end matchcontinue;
+end setVariableAttributes;
+
 public function setStartAttr " 
   sets the start attribute. If NONE, assumes Real attributes.
 "
@@ -1798,6 +1816,29 @@ algorithm
       then SOME(VAR_ATTR_REAL(NONE,NONE,NONE,(NONE,NONE),SOME(start),NONE,NONE,NONE,NONE,NONE,NONE)); 
   end matchcontinue;
 end setStartAttr;
+
+public function setUnitAttr " 
+  sets the unit attribute. .
+"
+  input Option<VariableAttributes> attr;
+  input Exp.Exp unit;
+  output Option<VariableAttributes> outAttr;  
+algorithm 
+  outAttr:=
+  matchcontinue (attr,unit)
+    local
+      Option<Exp.Exp> q,u,du,i,f,n,s;
+      tuple<Option<Exp.Exp>, Option<Exp.Exp>> minMax;
+      Option<StateSelect> ss;
+      Exp.Exp r;
+      Option<Exp.Exp> eb;
+      Option<Boolean> ip,fn;
+    case (SOME(VAR_ATTR_REAL(q,u,du,minMax,s,f,n,ss,eb,ip,fn)),unit) 
+    then SOME(VAR_ATTR_REAL(q,SOME(unit),du,minMax,s,f,n,ss,eb,ip,fn));
+    case (NONE,unit) 
+      then SOME(VAR_ATTR_REAL(NONE,SOME(unit),NONE,(NONE,NONE),NONE,NONE,NONE,NONE,NONE,NONE,NONE)); 
+  end matchcontinue;
+end setUnitAttr;
 
 public function setProtectedAttr " 
   sets the start attribute. If NONE, assumes Real attributes.

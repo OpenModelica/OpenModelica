@@ -66,6 +66,7 @@ protected import CevalScript;
 protected import Env;
 protected import Settings;
 protected import InstanceHierarchy;
+protected import ClassLoader;
 
 protected function serverLoop
 "function: serverLoop
@@ -370,6 +371,99 @@ algorithm
  end matchcontinue;
 end showErrors;
 
+protected function createPathFromStringList
+ input list<String> inStringLst; 
+ output Absyn.Path path;
+algorithm
+ path := matchcontinue(inStringLst)
+   local
+     String strID;
+     list<String> rest;
+     Absyn.Path p, pDepth;
+   
+   // we cannot have an empty list!
+   case ({}) then fail(); 
+     
+   // last element in the list
+   case ({strID}) then Absyn.IDENT(strID);
+     
+   // we have some more elements          
+   case (strID::rest)
+     equation
+       pDepth = createPathFromStringList(rest);
+       p = Absyn.QUALIFIED(strID, pDepth);
+     then
+       p;
+  end matchcontinue;
+end createPathFromStringList;
+
+protected function parsePathFromString
+ input String inString; 
+ output Absyn.Path path;
+algorithm
+ path := matchcontinue(inString)
+   local
+     String str;
+     list<String> strLst;
+     Absyn.Path p;
+     
+   case (str)
+     equation
+        strLst = Util.stringSplitAtChar(str, ".");
+        p = createPathFromStringList(strLst);
+     then p;
+               
+   case (str)
+     equation
+       failure(strLst = Util.stringSplitAtChar(str, "."));
+       // no "." present in the string, say is a path!
+     then
+       Absyn.IDENT(str);
+  end matchcontinue;
+end parsePathFromString;
+
+protected function loadLibs
+ input list<String> inLibs;
+ input Interactive.InteractiveSymbolTable inSymTab;
+ output Interactive.InteractiveSymbolTable outSymTab;
+algorithm
+ outSymTab := matchcontinue(inLibs, inSymTab)
+   local
+     String lib, mp;
+     list<String> rest;
+     Absyn.Program pnew, p, p_1;
+     list<Interactive.InstantiatedClass> ic;
+     list<Interactive.InteractiveVariable> iv;
+     list<Interactive.CompiledCFunction> cf;
+     list<SCode.Class> sp;
+     list<Interactive.LoadedFile> lf;
+     AbsynDep.Depends aDep;
+     Interactive.InteractiveSymbolTable st, newst;
+     Absyn.Path path;
+          
+   // no libs or end, return!
+   case ({}, st) then st; 
+   // some libs present
+   case (lib::rest, st as Interactive.SYMBOLTABLE(p,aDep,sp,ic,iv,cf,lf))
+     equation
+       path = parsePathFromString(lib);
+       mp = Settings.getModelicaPath();
+       pnew = ClassLoader.loadClass(path, mp);
+       pnew = Interactive.updateProgram(pnew, p);
+       newst = Interactive.SYMBOLTABLE(pnew,aDep,sp,ic,iv,cf,lf);
+       newst = loadLibs(rest, newst); // load the remaining
+     then
+       newst;
+   // problem with the libs, ignore!
+   case (lib::rest, st)
+     equation
+       Print.printErrorBuf("Failed to load library: " +& lib +& " ... ignoring!\n");
+       newst = loadLibs(rest, st); // load the remaining
+     then
+       newst;
+  end matchcontinue;
+end loadLibs;
+
 protected function translateFile 
 "function: translateFile
   This function invokes the translator on a source file.  The
@@ -379,48 +473,56 @@ algorithm
   _:=
   matchcontinue (inStringLst)
     local
-      Absyn.Program p;
-      list<SCode.Class> p_1;
+      Absyn.Program p, pLibs;
+      list<SCode.Class> scode;
       DAE.DAElist d_2,d_1,d;
       String s,str,f,res;
-      list<String> lst;
+      list<String> lst, libs;
       Absyn.Path cname;
       Boolean silent,notsilent;
       Interactive.InteractiveStmts stmts;
-      Interactive.InteractiveSymbolTable newst;
+      Interactive.InteractiveSymbolTable newst, st;
+      
       /* Version requested using --version*/
     case (_) // try first to see if we had a version request among flags.
       equation
         versionRequest();
         print(Settings.getVersionNr());
       then ();
-       
-    case {f} /* A Modelica file .mo */ 
-      local String s;
+        
+    case (f::{}) /* A Modelica file .mo  */ 
+      local 
+        String s, lastClassName;
+        Absyn.Path lastClassPath;
         AbsynDep.Depends dep;
-      equation         
+        list<Absyn.Class> cls;
+      equation
         Debug.fcall("execstat",print, "*** Main -> entering at time: " +& realString(clock()) +& "\n" );
-        isModelicaFile(f);
+        isModelicaFile(f);        
+        // parse our file!
         p = Parser.parse(f);
         // show parse errors if there are any
         showErrors(Print.getErrorString(), ErrorExt.printMessagesStr());
-
+        
         Debug.fprint("dump", "\n--------------- Parsed program ---------------\n");
         Debug.fcall("dumpgraphviz", DumpGraphviz.dump, p);
         Debug.fcall("dump", Dump.dump, p);
         s = Print.getString();
         Debug.fcall("dump",print,s);
-        p = transformFlatProgram(p,f);  
-        p = Interactive.getTotalProgramLastClass(p);
+        
+        p = transformFlatProgram(p,f);
+        p = Interactive.getTotalProgramLastClass(p);        
         
         Debug.fprint("info", "\n------------------------------------------------------------ \n");
         Debug.fprint("info", "---elaborating\n");
-        p_1 = SCode.elaborate(p);
+        scode = SCode.elaborate(p);
         Debug.fprint("info", "\n------------------------------------------------------------ \n");
         Debug.fprint("info", "---instantiating\n");
         //print(" Inst.Instantiate " +& realString(clock()) +&"\n");
         Debug.fcall("execstat",print, "*** Main -> To instantiate at time: " +& realString(clock()) +& "\n" );
-        (_,_,d_1) = Inst.instantiate(Env.emptyCache(),InstanceHierarchy.emptyInstanceHierarchy,p_1);
+        (_,_,d_1) = Inst.instantiate(Env.emptyCache(),
+                                            InstanceHierarchy.emptyInstanceHierarchy,
+                                            scode);
         d_1 = DAE.transformIfEqToExpr(d_1);
         Debug.fcall("execstat",print, "*** Main -> done instantiation at time: " +& realString(clock()) +& "\n" );
         //print(" Inst.Instantiate " +& realString(clock()) +&" DONE\n");
@@ -447,31 +549,111 @@ algorithm
         notsilent = boolNot(silent);
         Debug.bcall(notsilent, print, str);
         Debug.fcall("execstat",print, "*** Main -> To optimizedae at time: " +& realString(clock()) +& "\n" );
-        optimizeDae(p_1, p, d, d, cname);
+        optimizeDae(scode, p, d, d, cname);
+      then
+        ();        
+       
+    case (f::(libs as _::_)) /* A Modelica file .mo possibly followed by a list of libraries to load! */ 
+      local 
+        String s, lastClassName;
+        Absyn.Path lastClassPath;
+        AbsynDep.Depends dep;
+        list<Absyn.Class> cls;
+      equation
+        Debug.fcall("execstat",print, "*** Main -> entering at time: " +& realString(clock()) +& "\n" );
+        isModelicaFile(f);        
+        // loading possible libraries given at the command line
+        Interactive.SYMBOLTABLE(ast = pLibs) = loadLibs(libs, Interactive.emptySymboltable);
+        // parse our file!
+        (p as Absyn.PROGRAM(cls, _, _)) = Parser.parse(f);
+        // show parse errors if there are any
+        showErrors(Print.getErrorString(), ErrorExt.printMessagesStr());
+
+        // get the name of the last class in the program
+        Absyn.CLASS(name=lastClassName) = Util.listLast(cls);
+        lastClassPath = Absyn.IDENT(lastClassName);
+
+        p = Interactive.updateProgram(p, pLibs); // merge our program with possible libs
+
+        Debug.fprint("dump", "\n--------------- Parsed program ---------------\n");
+        Debug.fcall("dumpgraphviz", DumpGraphviz.dump, p);
+        Debug.fcall("dump", Dump.dump, p);
+        s = Print.getString();
+        Debug.fcall("dump",print,s);
+        p = transformFlatProgram(p,f);
+                
+        p = Interactive.getTotalProgram(lastClassPath, p);        
+        
+        Debug.fprint("info", "\n------------------------------------------------------------ \n");
+        Debug.fprint("info", "---elaborating\n");
+        scode = SCode.elaborate(p);
+        Debug.fprint("info", "\n------------------------------------------------------------ \n");
+        Debug.fprint("info", "---instantiating\n");
+        //print(" Inst.Instantiate " +& realString(clock()) +&"\n");
+        Debug.fcall("execstat",print, "*** Main -> To instantiate at time: " +& realString(clock()) +& "\n" );
+        (_,_,_,d_1) = Inst.instantiateClass(Env.emptyCache(),
+                                            InstanceHierarchy.emptyInstanceHierarchy,
+                                            scode,
+                                            lastClassPath);
+        d_1 = DAE.transformIfEqToExpr(d_1);
+        Debug.fcall("execstat",print, "*** Main -> done instantiation at time: " +& realString(clock()) +& "\n" );
+        //print(" Inst.Instantiate " +& realString(clock()) +&" DONE\n");
+        Debug.fprint("beforefixmodout", "Explicit part:\n");
+        Debug.fcall("beforefixmodout", DAE.dumpDebug, d_1);
+        d = fixModelicaOutput(d_1);
+        Print.clearBuf();
+        Debug.fprint("info", "---dumping\n");
+        Debug.fcall("execstat",print, "*** Main -> dumping dae: " +& realString(clock()) +& "\n" );
+        s = Debug.fcallret("flatmodelica", DAE.dumpStr, d, "");
+        Debug.fcall("execstat",print, "*** Main -> done dumping dae: " +& realString(clock()) +& "\n" );
+        Debug.fcall("flatmodelica", Print.printBuf, s);
+        Debug.fcall("execstat",print, "*** Main -> dumping dae2 : " +& realString(clock()) +& "\n" );
+        s = Debug.fcallret("none", DAE.dumpStr, d, "");
+        Debug.fcall("execstat",print, "*** Main -> done dumping dae2 : " +& realString(clock()) +& "\n" );        
+        Debug.fcall("none", Print.printBuf, s);
+        Debug.fcall("daedump", DAE.dump, d);
+        Debug.fcall("daedump2", DAE.dump2, d);
+        Debug.fcall("daedumpdebug", DAE.dumpDebug, d);
+        Debug.fcall("daedumpgraphv", DAE.dumpGraphviz, d);
+        cname = Absyn.lastClassname(p);
+        str = Print.getString();
+        silent = RTOpts.silent();
+        notsilent = boolNot(silent);
+        Debug.bcall(notsilent, print, str);
+        Debug.fcall("execstat",print, "*** Main -> To optimizedae at time: " +& realString(clock()) +& "\n" );
+        optimizeDae(scode, p, d, d, cname);
       then
         ();
-    case {f} /* Modelica script file .mos */ 
+        
+    /* Modelica script file .mos */
+    case (f::libs)  
       equation 
         isModelicaScriptFile(f);
+        // loading possible libraries given at the command line
+        st = loadLibs(libs, Interactive.emptySymboltable);
+        // parse our algorithm given in the script        
         stmts = Parser.parseexp(f);
         // are there any errors?
         // show errors if there are any
         showErrors(Print.getErrorString(), ErrorExt.printMessagesStr());
-        (res,newst) = Interactive.evaluate(stmts, Interactive.emptySymboltable, true);
+        (res,newst) = Interactive.evaluate(stmts, st, true);
         print(res);
       then
         ();
-    case {f}
+        
+    // deal with problems 
+    case (f::_)
       local Integer r;
       equation
         r = System.regularFileExists(f);
-        (r > 0) = true;  //could not found file
+        (r > 0) = true;  //could not find file
         print("File does not exist: "); print(f); print("\n");
         // show errors if there are any
         showErrors(Print.getErrorString(), ErrorExt.printMessagesStr());
       then
         fail();
-    case {f}  
+        
+    case (f::_)
       local Integer r;
       equation
         r = System.regularFileExists(f);
@@ -479,17 +661,6 @@ algorithm
         print("Error processing file: "); print(f); print("\n");
         // show errors if there are any
         showErrors(Print.getErrorString(), ErrorExt.printMessagesStr());
-      then
-        fail();
-    case (_ :: (_ :: _))
-      equation 
-        Print.printErrorBuf("# Too many arguments\n");
-      then
-        fail();
-    case {}
-      equation 
-        print("not enough arguments given to omc!\n"); 
-        printUsage();
       then
         fail();
   end matchcontinue;
@@ -868,8 +1039,6 @@ algorithm
       then
        outSymbolTable;
   end matchcontinue;
-
-
 end readSettings;
 
 
@@ -909,9 +1078,11 @@ end readSettingsFile;
 function printUsage
 algorithm
   print("OpenModelica Compiler version: "); print(Settings.getVersionNr()); print("\n");
-  print("http://www.ida.liu.se/labs/pelab/modelica/OpenModelica.html\n");
+  print("http://www.OpenModelica.org\n");
   print("Please check the System Guide for full information about flags.\n");
-  print("Usage: omc [-runtimeOptions +omcOptions] Model.mo|Model.mof|Script.mos\n");
+  print("Usage: omc [-runtimeOptions +omcOptions] (Model.mo | Model.mof | Script.mos) [Libraries] \n");
+  print("* Libraries: Fully qualified names of libraries to load before processing Model or Script.\n");
+  print("*            The libraries should be separated by spaces: Lib1 Lib2 ... LibN.\n");
   print("* runtimeOptions: call omc -help for seeing runtime options\n");
   print("* omcOptions:\n");
   print("\t++v|+version               will print the version and exit\n");
@@ -928,22 +1099,30 @@ algorithm
   print("\t+s                         generate simulation code\n");
   print("\t+annotationVersion=1.x     what annotation version should we use\n");
   print("\t                           accept 1.x or 2.x (default) or 3.x\n"); 
+  print("\t+noSimplify                do not simplify expressions (default is to simplify)\n");
   print("\t+q                         run in quiet mode, ouput nothing\n");
   print("\t+metaModelica              accept MetaModelica grammar and semantics\n");
   print("\t+showErrorMessages         show error messages while they happen; default to no. \n");  
   print("\t+d=flags                   set debug flags: \n");  
   print("\t+d=bltdump                 dump the blt form\n");
-  print("\t+d=failtrace               print what function fail\n");  
+  print("\t+d=failtrace               prints a lot of error messages; use if your model fails; see also below.\n");
   print("\t+d=parsedump               dump the parsing tree\n");
-  print("\t+d=parseonly               will only parse the givn file and exit\n");    
+  print("\t+d=parseonly               will only parse the given file and exit\n");    
   print("\t+d=dynload                 display debug information about dynamic loading of compiled functions\n");
+  print("\t+d=nogen                   do not use the dynamic loading.\n");
+  print("\t+d=usedep                  use dependency analysis to speed up the compilation. [experimental].\n");
+  print("\t                           default is to not use the dependency analysis.\n");
+  print("\t+d=noevalfunc              do not use the function interpreter, uses dynamic loading instead.\n");
+  print("\t                           default is to use the function interpreter.\n"); 
   print("* Examples:\n");
-  print("\tomc Model.mo         will produce flattened Model on standard output\n");
-  print("\tomc Model.mof        will produce flattened Model on standard output\n");
-  print("\tomc Script.mos       will run the commands from Script.mos\n");
+  print("\tomc Model.mo               will produce flattened Model on standard output\n");  
+  print("\tomc Model.mof              will produce flattened Model on standard output\n");
+  print("\tomc Script.mos             will run the commands from Script.mos\n");
+  print("\tomc Model.mo Modelica      will first load the Modelica library and then produce \n");
+  print("\t                           flattened Model on standard output\n");  
   print("\t*.mo (Modelica files) \n");
   print("\t*.mof (Flat Modelica files) \n");
-  print("\t*.mos (Modelica Script files) \n");  
+  print("\t*.mos (Modelica Script files) \n");
 end printUsage;
 
 public function main 
@@ -967,6 +1146,10 @@ algorithm
     case args
       equation 
         args_1 = RTOpts.args(args);
+        
+        // we need this as we get the arguments in reverse from RTOpts.args 
+        args_1 = listReverse(args_1); 
+        
         //Env.globalCache = fill(Env.emptyCache,1);
         symbolTable = readSettings(args);
         ismode = RTOpts.debugFlag("interactive");

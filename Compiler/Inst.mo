@@ -147,6 +147,7 @@ protected import ModUtil;
 protected import VarTransform;
 protected import OptManager;
 protected import HashTable5;
+protected import HashTable;
 protected import MMath;
 protected import UnitAbsynBuilder;
 protected import UnitChecker;
@@ -1018,6 +1019,7 @@ algorithm
 				//str = Absyn.pathString(fq_class); print("------------------- CLASS makeFullyQualified instClass-----------------\n");print(n); print("  ");print(str);print("\n===============================================\n");
         dae1_1 = DAE.setComponentType(dae1, fq_class);
         callscope_1 = isTopCall(callscope);              
+        reportUnitConsistency(callscope_1,store);
         //print("in class ");print(n);print(" generate equations for sets:");print(Connect.printSetsStr(csets_1));print("\n");
         checkMissingInnerDecl(dae1_1,callscope_1);
         (csets_1,_) = retrieveOuterConnections(cache,env_3,ih,pre,csets_1,callscope_1);
@@ -1028,6 +1030,7 @@ algorithm
         ty = mktype(fq_class, ci_state_1, tys, bc_ty, equalityConstraint) ;        
         //print("\n---- DAE ----\n"); DAE.printDAE(DAE.DAE(dae));  //Print out flat modelica
         dae = renameUniqueVarsInTopScope(callscope_1,dae);
+         dae = updateDeducedUnits(callscope_1,store,dae);
       then 
         (cache,env_3,ih,store,dae,Connect.SETS({},crs,dc,oc),ty,ci_state_1,oDA,graph);
 
@@ -1038,6 +1041,56 @@ algorithm
         fail();
   end matchcontinue; 
 end instClass;
+
+protected function updateDeducedUnits "updates the deduced units in each DAE.VAR"
+  input Boolean callScope;
+  input UnitAbsyn.InstStore store;
+  input list<DAE.Element> dae;
+  output list<DAE.Element> outDae;
+algorithm
+  outDae := matchcontinue(callScope,store,dae)
+  local UnitAbsyn.Store st; HashTable.HashTable ht; Integer indx;
+    Option<UnitAbsyn.Unit>[:] vec;
+    String unitStr;
+    UnitAbsyn.Unit unit;
+    Option<DAE.VariableAttributes> varOpt;
+    DAE.Element elt,v;
+    case(false,_,dae) then dae;
+    
+      /* Only traverse on top scope */
+    case(true,store as UnitAbsyn.INSTSTORE(UnitAbsyn.STORE(vec,_),ht,_),(v as DAE.VAR(variableAttributesOption=varOpt as SOME(DAE.VAR_ATTR_REAL(unit = NONE))))::dae) equation
+      indx = HashTable.get(DAE.varCref(v),ht);
+      SOME(unit) = vec[indx];
+      unitStr = UnitAbsynBuilder.unit2str(unit);
+      varOpt = DAE.setUnitAttr(varOpt,Exp.SCONST(unitStr));
+      v = DAE.setVariableAttributes(v,varOpt);
+      dae = updateDeducedUnits(true,store,dae);
+      then v::dae;
+    case(true,store,elt::dae) equation
+      dae = updateDeducedUnits(true,store,dae);
+    then elt::dae;
+    case(true,store,{}) then {};
+      
+  end matchcontinue;
+end updateDeducedUnits;
+
+protected function reportUnitConsistency "reports CONSISTENT or INCOMPLETE error message depending on content of store"
+  input Boolean topScope;
+  input UnitAbsyn.InstStore store;
+algorithm
+  _ := matchcontinue(topScope,store)
+  local Boolean complete; UnitAbsyn.Store st;
+    case(_,_) equation
+      false = OptManager.getOption("unitChecking");
+    then ();
+    case(true,UnitAbsyn.INSTSTORE(st,_,SOME(UnitAbsyn.CONSISTENT()))) equation
+      (complete,_) = UnitChecker.isComplete(st);
+      Error.addMessage(Util.if_(complete,Error.CONSISTENT_UNITS,Error.INCOMPLETE_UNITS),{});          
+    then();
+    case(_,_) then ();
+      
+  end matchcontinue;
+end reportUnitConsistency;
 
 protected function instClassBasictype 
 "function: instClassBasictype
@@ -1852,7 +1905,7 @@ algorithm
       InstanceHierarchy ih;
       UnitAbsyn.UnitTerms ut;
       UnitAbsyn.Store utstore;
-      UnitChecker.UnitCheckResult res;
+      UnitAbsyn.UnitCheckResult res;
       UnitAbsyn.Store st2;
       UnitAbsyn.Store st3;
       UnitAbsyn.Unit u1;
@@ -2014,9 +2067,7 @@ algorithm
         UnitAbsynBuilder.registerUnitWeights(cache,env,dae1);
         
         // perform the check
-        (res,st3) = UnitChecker.check(ut,UnitAbsynBuilder.instGetStore(store));
-        // updates store so higher up in instance hierarchy can use the results
-        store = UnitAbsynBuilder.updateInstStore(store,st3);                     
+        store = UnitChecker.check(ut,store);                           
        
         //print("store for "+&className+&"\n");
         //UnitAbsynBuilder.printInstStore(store);
@@ -9546,7 +9597,7 @@ algorithm
       then
         (cache,env,ih,{DAE.TERMINATE(e1_2)},csets,ci_state,graph);
 
-        /* reinit statement */
+    /* reinit statement */
     case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_REINIT(cref = cr,expReinit = e2),initial_,impl,graph)
       local  list<DAE.Element> trDae;
         Exp.ComponentRef cr_2; Exp.Type t; Types.Properties tprop1,tprop2;

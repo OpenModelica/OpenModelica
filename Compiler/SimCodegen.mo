@@ -6182,7 +6182,7 @@ algorithm
   end matchcontinue;
 end generateExternalObjectInclude;
 
-protected function generateFunctions2 
+public function generateFunctions2 
 "function: generateFunctions2
   author: PA
   Helper function to generateFunctions."
@@ -8788,7 +8788,7 @@ algorithm
   end matchcontinue;
 end crefModelicaStr;
 
-protected function getCalledFunctions 
+public function getCalledFunctions 
 "function: getCalledFunctions
   Goes through the DAELow structure, finds all function 
   calls and returns them in a list. Removes duplicates."

@@ -42,6 +42,28 @@ modelica_integer integer_get(integer_array_t *a, size_t i)
     return ((modelica_integer *) a->data)[i];
 }
 
+/* Indexing 2 dimensions */
+modelica_integer integer_get_2D(integer_array_t *a, size_t i, size_t j)
+{
+  modelica_integer value = integer_get(a, i * a->dim_size[1] + j);
+  return value;
+}
+
+/* Indexing 3 dimensions */
+modelica_integer integer_get_3D(integer_array_t *a, size_t i, size_t j, size_t k)
+{
+  modelica_integer value = integer_get(a, i * a->dim_size[1] + j * a->dim_size[2] + k);
+  return value;
+}
+
+/* Indexing 4 dimensions */
+modelica_integer integer_get_4D(integer_array_t *a, size_t i, size_t j, size_t k, size_t l)
+{
+  modelica_integer value = integer_get(a, i * a->dim_size[1] + j * a->dim_size[2] + k * a->dim_size[3] + l);
+  return value;
+}
+
+
 static inline modelica_integer *integer_ptrget(integer_array_t *a, size_t i)
 {
     return ((modelica_integer *) a->data) + i;

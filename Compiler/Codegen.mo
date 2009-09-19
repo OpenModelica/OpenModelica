@@ -3883,10 +3883,9 @@ algorithm
   end matchcontinue;
 end generateWhenConditionExpression;
 
-public function generateExpressions "function: generateExpressions
-
-  Generates code for a list of expressions.
-"
+public function generateExpressions 
+"function: generateExpressions
+  Generates code for a list of expressions."
   input list<Exp.Exp> inExpExpLst;
   input Integer inInteger;
   input Context inContext;
@@ -3936,7 +3935,7 @@ algorithm
       Lib istr,rstr,sstr,s,var,var1,decl,tvar,b_stmt,if_begin,var2,var3,ret_type,fn_name,tdecl,args_str,underscore,stmt,var_not_bi,typestr,nvars_str,array_type_str,short_type_str,scalar,scalar_ref,scalar_delimit,type_string,var_1,msg;
       Lib tvar1, tvar2, tvar3, decl1, decl2, decl3, decl4;
       Lib assign_str;
-      Integer i,tnr,tnr_1,tnr1,tnr1_1,tnr2,tnr3,nvars,maxn,tnr4,tnr5,tnr6;
+      Integer i,j,tnr,tnr_1,tnr1,tnr1_1,tnr2,tnr3,nvars,maxn,tnr4,tnr5,tnr6;
       Context context;
       Real r;
       Boolean b,builtin,a;
@@ -4081,8 +4080,7 @@ algorithm
         cfn2 = cAddVariables(cfn1, {tdecl});
         typestr = expTypeStr(ty, true);
         (cfn3,var2,tnr3) = generateExpression(dim, tnr2, context);
-        stmt = Util.stringAppendList(
-          {tvar," = size_of_dimension_",typestr,"(",var1,",",var2,");"});
+        stmt = Util.stringAppendList({tvar," = size_of_dimension_",typestr,"(",var1,",",var2,");"});
         cfn4 = cMergeFn(cfn2, cfn3);
         cfn = cAddStatements(cfn4, {stmt});
       then
@@ -4091,8 +4089,7 @@ algorithm
     case (Exp.SIZE(exp = cr,sz = NONE),tnr,context)
       local Exp.Exp cr;
       equation
-        Debug.fprint("failtrace",
-          "#-- Codegen.generate_expression: size(X) not implemented");
+        Debug.fprint("failtrace", "#-- Codegen.generate_expression: size(X) not implemented");
       then
         fail();
         /* Special case for empty arrays, create null pointer*/
@@ -4105,8 +4102,7 @@ algorithm
         scalar = Util.if_(a, "scalar_", "");
         scalar_ref = Util.if_(a, "", "&");
         scalar_delimit = stringAppend(", ", scalar_ref);
-        stmt = Util.stringAppendList(
-          {"array_alloc_",scalar,array_type_str,"(&",tvar,", 0, ",scalar_ref,",0);"});
+        stmt = Util.stringAppendList({"array_alloc_",scalar,array_type_str,"(&",tvar,", 0, ",scalar_ref,",0);"});
         cfn_1 = cAddVariables(cEmptyFunction, {tdecl});
         cfn = cAddStatements(cfn_1, {stmt});
       then
@@ -4125,33 +4121,31 @@ algorithm
         scalar_ref = Util.if_(a, "", "&");
         scalar_delimit = stringAppend(", ", scalar_ref);
         args_str = Util.stringDelimitList(vars1, scalar_delimit);
-        stmt = Util.stringAppendList(
-          {"array_alloc_",scalar,array_type_str,"(&",tvar,", ",
-          nvars_str,", ",scalar_ref,args_str,");"});
+        stmt = Util.stringAppendList({"array_alloc_",scalar,array_type_str,"(&",tvar,", ",nvars_str,", ",scalar_ref,args_str,");"});
         cfn_1 = cAddVariables(cfn1, {tdecl});
         cfn = cAddStatements(cfn_1, {stmt});
       then
         (cfn,tvar,tnr2);
+    /* matrix */
     case (e as Exp.MATRIX(ty = t,integer = maxn,scalar = ell),tnr,context)
       equation
         (cfn,var,tnr_1) = generateMatrix(t, maxn, ell, tnr, context);
       then
         (cfn,var,tnr_1);
-
+    /* range with no expression */
     case (Exp.RANGE(ty = t,exp = e1,expOption = NONE,range = e2),tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
         type_string = expTypeStr(t, true);
         (tdecl,tvar,tnr3) = generateTempDecl(type_string, tnr2);
-        stmt = Util.stringAppendList(
-          {"range_alloc_",type_string,"(",var1,", ",var2,", 1, &",
-          tvar,");"});
+        stmt = Util.stringAppendList({"range_alloc_",type_string,"(",var1,", ",var2,", 1, &", tvar,");"});
         cfn1_1 = cAddVariables(cfn1, {tdecl});
         cfn2_1 = cAddStatements(cfn2, {stmt});
         cfn = cMergeFns({cfn1_1,cfn2_1});
       then
         (cfn,tvar,tnr3);
+    /* range with expression */
     case (Exp.RANGE(ty = t,exp = e1,expOption = SOME(e2),range = e3),tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
@@ -4159,32 +4153,33 @@ algorithm
         (cfn3,var3,tnr3) = generateExpression(e3, tnr1, context);
         type_string = expTypeStr(t, true);
         (tdecl,tvar,tnr4) = generateTempDecl(type_string, tnr3);
-        stmt = Util.stringAppendList(
-          {"range_alloc_",type_string,"(",var1,", ",var3,", ",var2,
-          ", &",tvar,");"});
+        stmt = Util.stringAppendList({"range_alloc_",type_string,"(",var1,", ",var3,", ",var2,", &",tvar,");"});
         cfn1_1 = cAddVariables(cfn1, {tdecl});
         cfn2_1 = cAddStatements(cfn2, {stmt});
         cfn = cMergeFns({cfn1_1,cfn2_1});
       then
         (cfn,tvar,tnr4);
+    /* tuple */
     case (Exp.TUPLE(PR = _),_,_)
       equation
-        Debug.fprint("failtrace",
-          "# Codegen.generate_expression: tuple not implemented\n");
+        Debug.fprint("failtrace", "# Codegen.generate_expression: tuple not implemented\n");
       then
         fail();
+    /* cast to int */
     case (Exp.CAST(ty = Exp.INT(),exp = e),tnr,context)
       equation
         (cfn,var,tnr_1) = generateExpression(e, tnr, context);
         var_1 = Util.stringAppendList({"((modelica_int)",var,")"});
       then
         (cfn,var_1,tnr_1);
+    /* cast to float */
     case (Exp.CAST(ty = Exp.REAL(),exp = e),tnr,context)
       equation
         (cfn,var,tnr_1) = generateExpression(e, tnr, context);
         var_1 = Util.stringAppendList({"((modelica_real)",var,")"});
       then
         (cfn,var_1,tnr_1);
+    /* valueblock */
     case (Exp.VALUEBLOCK(ty,localDecls = ld,body = b,
       		result = res),tnr,context)
       local
@@ -4198,20 +4193,14 @@ algorithm
         // Convert back to DAE uniontypes from Exp uniontypes, part of a work-around
         ld2 = Convert.fromExpElemsToDAEElems(ld,{});
         b2 = Convert.fromExpElemToDAEElem(b);
-
         (cfn,tnr_1) = generateVars(ld2, isVarQ, tnr, funContext);
-
         (cfn1,tnr2) = generateAlgorithms(Util.listCreate(b2), tnr_1, context);
-
         (cfn1_2,var,tnr3) = generateExpression(res, tnr2, context);
-
         cfn1_2 = cMergeFns({cfn,cfn1,cfn1_2});
-
         cfn1_2 = cMoveDeclsAndInitsToStatements(cfn1_2);
         //-----
         (cfn1_2,tnr4,var) = addValueblockRetVar(ty,cfn1_2,tnr3,var,context);
         //-----
-
         cfn1_2 = cAddBlockAroundStatements(cfn1_2);
       then (cfn1_2,var,tnr4);
 
@@ -4240,6 +4229,104 @@ algorithm
       then
         (cfn,tvar2,tnr2);
      
+    /* handle the 4D indexing  */
+    case (Exp.ASUB(Exp.ASUB(Exp.ASUB(Exp.ASUB(e, {Exp.ICONST(i)}), {Exp.ICONST(j)}), {Exp.ICONST(k)}), {Exp.ICONST(l)}),tnr,context)
+      local 
+        String mem_decl, mem_var, get_mem_stmt, rest_mem_stmt, tShort, jstr, kstr, lstr;
+        Integer tnr_mem, k, l;
+        CFunction mem_fn;
+      equation
+        (mem_decl,mem_var,tnr_mem) = generateTempDecl("state", tnr);
+        get_mem_stmt = Util.stringAppendList({mem_var," = get_memory_state();"});
+        rest_mem_stmt = Util.stringAppendList({"restore_memory_state(",mem_var,");"});
+        (cfn1,var1,tnr1) = generateExpression(e, tnr_mem, context);
+        t = Exp.typeof(e);
+        type_string = expTypeStr(t, false);
+        tShort = expShortTypeStr(t);
+        (tdecl,tvar2,tnr2) = generateTempDecl(type_string, tnr1);
+        istr = intString(i-1); // indexing is from 0 in C
+        jstr = intString(j-1); // indexing is from 0 in C
+        kstr = intString(k-1); // indexing is from 0 in C
+        lstr = intString(l-1); // indexing is from 0 in C
+        stmt = Util.stringAppendList({tvar2, " = ", tShort, "_get_4D(&", var1, ", ", istr, ", ", jstr, ", ", kstr, ", ", lstr, ");"});
+        cfn = cAddVariables(cfn1, {mem_decl,tdecl});
+        cfn = cPrependStatements(cfn, {get_mem_stmt});
+        cfn = cAddStatements(cfn, {stmt, rest_mem_stmt});
+      then
+        (cfn,tvar2,tnr2);
+
+    /* handle the 3D indexing  */
+    case (Exp.ASUB(Exp.ASUB(Exp.ASUB(e, {Exp.ICONST(i)}), {Exp.ICONST(j)}), {Exp.ICONST(k)}),tnr,context)
+      local 
+        String mem_decl, mem_var, get_mem_stmt, rest_mem_stmt, tShort, jstr, kstr, lstr;
+        Integer tnr_mem, k, l;
+        CFunction mem_fn;
+      equation
+        (mem_decl,mem_var,tnr_mem) = generateTempDecl("state", tnr);
+        get_mem_stmt = Util.stringAppendList({mem_var," = get_memory_state();"});
+        rest_mem_stmt = Util.stringAppendList({"restore_memory_state(",mem_var,");"});
+        (cfn1,var1,tnr1) = generateExpression(e, tnr_mem, context);
+        t = Exp.typeof(e);
+        type_string = expTypeStr(t, false);
+        tShort = expShortTypeStr(t);
+        (tdecl,tvar2,tnr2) = generateTempDecl(type_string, tnr1);
+        istr = intString(i-1); // indexing is from 0 in C
+        jstr = intString(j-1); // indexing is from 0 in C
+        kstr = intString(k-1); // indexing is from 0 in C
+        stmt = Util.stringAppendList({tvar2, " = ", tShort, "_get_3D(&", var1, ", ", istr, ", ", jstr, ", ", kstr, ");"});
+        cfn = cAddVariables(cfn1, {mem_decl,tdecl});
+        cfn = cPrependStatements(cfn, {get_mem_stmt});
+        cfn = cAddStatements(cfn, {stmt, rest_mem_stmt});
+      then
+        (cfn,tvar2,tnr2);
+
+    /* handle the 2D indexing  */
+    case (Exp.ASUB(exp = Exp.ASUB(e, sub={Exp.ICONST(i)}), sub={Exp.ICONST(j)}),tnr,context)
+      local 
+        String mem_decl, mem_var, get_mem_stmt, rest_mem_stmt, tShort, jstr;
+        Integer tnr_mem;
+        CFunction mem_fn;
+      equation
+        (mem_decl,mem_var,tnr_mem) = generateTempDecl("state", tnr);
+        get_mem_stmt = Util.stringAppendList({mem_var," = get_memory_state();"});
+        rest_mem_stmt = Util.stringAppendList({"restore_memory_state(",mem_var,");"});
+        (cfn1,var1,tnr1) = generateExpression(e, tnr_mem, context);
+        t = Exp.typeof(e);
+        type_string = expTypeStr(t, false);
+        tShort = expShortTypeStr(t);
+        (tdecl,tvar2,tnr2) = generateTempDecl(type_string, tnr1);
+        istr = intString(i-1); // indexing is from 0 in C
+        jstr = intString(j-1); // indexing is from 0 in C
+        stmt = Util.stringAppendList({tvar2, " = ", tShort, "_get_2D(&", var1, ", ", istr, ", ", jstr, ");"});
+        cfn = cAddVariables(cfn1, {mem_decl,tdecl});
+        cfn = cPrependStatements(cfn, {get_mem_stmt});
+        cfn = cAddStatements(cfn, {stmt, rest_mem_stmt});
+      then
+        (cfn,tvar2,tnr2);
+
+    /* handle the indexing assuming expression e is an array */
+    case (Exp.ASUB(exp = e, sub={Exp.ICONST(i)}),tnr,context)
+      local 
+        String mem_decl, mem_var, get_mem_stmt, rest_mem_stmt, tShort;
+        Integer tnr_mem;
+        CFunction mem_fn;
+      equation
+        (mem_decl,mem_var,tnr_mem) = generateTempDecl("state", tnr);
+        get_mem_stmt = Util.stringAppendList({mem_var," = get_memory_state();"});
+        rest_mem_stmt = Util.stringAppendList({"restore_memory_state(",mem_var,");"});
+        (cfn1,var1,tnr1) = generateExpression(e, tnr_mem, context);
+        t = Exp.typeof(e);
+        type_string = expTypeStr(t, false);
+        tShort = expShortTypeStr(t);
+        (tdecl,tvar2,tnr2) = generateTempDecl(type_string, tnr1);
+        istr = intString(i-1); // indexing is from 0 in C
+        stmt = Util.stringAppendList({tvar2, " = ", tShort, "_get(&", var1, ", ", istr, ");"});
+        cfn = cAddVariables(cfn1, {mem_decl,tdecl});
+        cfn = cPrependStatements(cfn, {get_mem_stmt});
+        cfn = cAddStatements(cfn, {stmt, rest_mem_stmt});
+      then
+        (cfn,tvar2,tnr2);
+
     // cref[x, y] - try to transform it into a cref 
     case (Exp.ASUB(exp = e as Exp.CREF(cref,t), sub=subs),tnr,context)
       local 
@@ -4250,12 +4337,12 @@ algorithm
         (cfn,var,tnr_1) = generateRhsCref(crefBuild, t, tnr, context);
       then
         (cfn,var,tnr_1);
-    
+
     case (Exp.ASUB(exp = _),tnr,context)
       equation
         Debug.fprint("failtrace", "# Codegen.generate_expression: asub not implemented: " +& Exp.printExp2Str(inExp) +& "\n");
       then
-        fail();
+        fail();     
 
      //---------------------------------------------
      // MetaModelica extension
@@ -4490,7 +4577,33 @@ algorithm
         (cfn1,var2,tnr2) = generateExpression(s2, tnr1, context);
         (tdecl,tvar,tnr3) = generateTempDecl(tp_str, tnr2);
         cfn2 = cAddVariables(cfn1, {tdecl});
-        stmt = Util.stringAppendList({tvar," = max(",var1,",",var2,");"});
+        stmt = Util.stringAppendList({tvar," = max(((modelica_real)(",var1,")),((modelica_real)(",var2,")));"});
+        cfn = cAddStatements(cfn2, {stmt});
+      then
+        (cfn,tvar,tnr3);
+      /* min */
+    case (Exp.CALL(path = Absyn.IDENT(name = "min"),expLst = {arg},tuple_ = false,builtin = true),tnr,context) /* min(v), v is vector */
+      equation
+        tp = Exp.typeof(arg);
+        tp_str = expTypeStr(tp, true);
+        tp_str2 = expTypeStr(tp, false);
+        (cfn1,var1,tnr1) = generateExpression(arg, tnr, context);
+        fn_name = stringAppend("min_", tp_str);
+        (tdecl,tvar,tnr2) = generateTempDecl(tp_str2, tnr1);
+        cfn2 = cAddVariables(cfn1, {tdecl});
+        stmt = Util.stringAppendList({tvar," = ",fn_name,"(&",var1,");"});
+        cfn = cAddStatements(cfn2, {stmt});
+      then
+        (cfn,tvar,tnr2);
+    case (Exp.CALL(path = Absyn.IDENT(name = "min"),expLst = {s1,s2},tuple_ = false,builtin = true),tnr,context) /* min (a,b) a, b scalars */
+      equation
+        tp = Exp.typeof(s1);
+        tp_str = expTypeStr(tp, false);
+        (cfn1,var1,tnr1) = generateExpression(s1, tnr, context);
+        (cfn1,var2,tnr2) = generateExpression(s2, tnr1, context);
+        (tdecl,tvar,tnr3) = generateTempDecl(tp_str, tnr2);
+        cfn2 = cAddVariables(cfn1, {tdecl});
+        stmt = Util.stringAppendList({tvar," = min(((modelica_real)(",var1,")),((modelica_real)(",var2,")));"});
         cfn = cAddStatements(cfn2, {stmt});
       then
         (cfn,tvar,tnr3);
@@ -5015,10 +5128,9 @@ algorithm
   end matchcontinue;
 end generateBinary;
 
-protected function generateTempDecl "function: generateTempDecl
-
-  Generates code for the declaration of a temporary variable.
-"
+protected function generateTempDecl 
+"function: generateTempDecl
+  Generates code for the declaration of a temporary variable."
   input String inString;
   input Integer inInteger;
   output String outString1;
@@ -5041,10 +5153,9 @@ algorithm
   end matchcontinue;
 end generateTempDecl;
 
-protected function generateScalarLhsCref "function: generateScalarLhsCref
-
-  Helper function to generate_algorithm_statement.
-"
+protected function generateScalarLhsCref 
+"function: generateScalarLhsCref
+  Helper function to generateAlgorithmStatement."
   input Exp.Type inType;
   input Exp.ComponentRef inComponentRef;
   input Integer inInteger;
@@ -5076,7 +5187,7 @@ algorithm
       then
         (cfn,var,tnr_1);
 
-        /* two special cases rules for 1 and 2 dimensions for faster code (no vararg) */
+    /* two special cases rules for 1 and 2 dimensions for faster code (no vararg) */
     case (t,Exp.CREF_IDENT(ident = id,subscriptLst = idx),tnr,context)
       equation
         Debug.fprintln("gcge", "generating cref ccode");
@@ -5907,10 +6018,9 @@ algorithm
   end matchcontinue;
 end generateRelation;
 
-protected function generateMatrix "function: generateMatrix
-
-  Generates code for matrix expressions.
-"
+protected function generateMatrix 
+"function: generateMatrix
+  Generates code for matrix expressions."
   input Exp.Type inType1;
   input Integer inInteger2;
   input list<list<tuple<Exp.Exp, Boolean>>> inTplExpExpBooleanLstLst3;
@@ -5936,8 +6046,7 @@ algorithm
         array_type_str = expTypeStr(typ, true);
         (tdecl,tvar,tnr1) = generateTempDecl(array_type_str, tnr);
         /* Create dimensional array Real[0,1]; */
-        stmt = Util.stringAppendList(
-          {"alloc_",array_type_str,"(&",tvar,",2,0,1);"});
+        stmt = Util.stringAppendList({"alloc_",array_type_str,"(&",tvar,",2,0,1);"});
         cfn_1 = cAddVariables(cEmptyFunction, {tdecl});
         cfn_2 = cAddStatements(cfn_1, {stmt});
     then (cfn_2,tvar,tnr1);
@@ -5945,8 +6054,7 @@ algorithm
    case (typ,maxn,{},tnr,context) equation
         array_type_str = expTypeStr(typ, true);
         (tdecl,tvar,tnr1) = generateTempDecl(array_type_str, tnr);
-        stmt = Util.stringAppendList(
-          {"alloc_",array_type_str,"(&",tvar,",2,0,1);"});
+        stmt = Util.stringAppendList({"alloc_",array_type_str,"(&",tvar,",2,0,1);"});
         cfn_1 = cAddVariables(cEmptyFunction, {tdecl});
         cfn_2 = cAddStatements(cfn_1, {stmt});
    then (cfn_2,tvar,tnr1);
@@ -5960,9 +6068,7 @@ algorithm
         n = listLength(vars2);
         n_str = intString(n);
         (tdecl,tvar,tnr3) = generateTempDecl(array_type_str, tnr2);
-        stmt = Util.stringAppendList(
-          {"cat_alloc_",array_type_str,"(1, &",tvar,", ",n_str,", &",
-          args_str,");"});
+        stmt = Util.stringAppendList({"cat_alloc_",array_type_str,"(1, &",tvar,", ",n_str,", &",args_str,");"});
         cfn_1 = cAddVariables(cfn2, {tdecl});
         cfn_2 = cAddStatements(cfn_1, {stmt});
         cfn = cMergeFn(cfn1, cfn_2) "

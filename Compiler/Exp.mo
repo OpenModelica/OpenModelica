@@ -2091,14 +2091,24 @@ public function simplify
   Simplifies expressions"
   input Exp inExp;
   output Exp outExp;
-algorithm 
-  //print("enter Simplify with exp:");print(printExpStr(inExp));print("\n");
-  outExp:= simplify1(inExp); // Basic local simplifications 
-  //print("simplify1 to exp:");print(printExpStr(outExp));print("\n");
-  outExp:= simplify2(outExp); // Advanced (global) simplifications
-  //dumpSimplifiedExp(inExp,outExp); 
-  //print("leaving simplify with exp:");print(printExpStr(outExp));print("\n");
- end simplify;
+algorithm
+  outExp := matchcontinue(inExp)
+    local Exp e, eNew;
+    case (e)
+      equation
+        true = RTOpts.getNoSimplify();
+        eNew = simplify1(e);
+      then eNew;
+    case (e)
+      equation	      
+        // Debug.fprintln("simplify","SIMPLIFY BEFORE->" +& printExpStr(e));
+        eNew = simplify1(e); // Basic local simplifications
+        // Debug.fprintln("simplify","SIMPLIFY INTERMEDIATE->" +& printExpStr(eNew));
+        eNew = simplify2(eNew); // Advanced (global) simplifications
+        // Debug.fprintln("simplify","SIMPLIFY FINAL->" +& printExpStr(eNew));
+      then eNew;
+  end matchcontinue;
+end simplify; 
 
 public function simplify1 
 "function: simplify1 
@@ -7681,6 +7691,17 @@ algorithm
     case (_,_) then false; 
   end matchcontinue;
 end expEqual;
+
+public function operatorDivOrMul "returns true if operator is division or multiplication"
+  input  Operator op;
+  output Boolean res;
+algorithm
+  res := matchcontinue(op)
+    case(MUL(_)) then true;
+    case(DIV(_)) then true;
+    case (_) then false;
+  end matchcontinue;
+end operatorDivOrMul;  
 
 protected function operatorEqual 
 "function: operatorEqual 

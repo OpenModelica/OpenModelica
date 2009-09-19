@@ -61,25 +61,69 @@ algorithm
   end matchcontinue;   
 end retrieveUnitsFromEnv;
 
+
 protected function registerUnitWeightDefineunits "help function to registerUnitWeightForClass"
+  input list<SCode.Element> du;
+algorithm 
+   _ := matchcontinue(du)
+   local String n; Real w;
+     /* No defineunits found, for backward compatibility, use default implementation: 
+     SI system ,with lower cost on Hz and Bq */
+     case({}) equation 
+       registerUnitWeightDefineunits2({
+       SCode.DEFINEUNIT("m",NONE,NONE),
+       SCode.DEFINEUNIT("kg",NONE,NONE),
+       SCode.DEFINEUNIT("s",NONE,NONE),
+       SCode.DEFINEUNIT("A",NONE,NONE),
+       SCode.DEFINEUNIT("k",NONE,NONE),
+       SCode.DEFINEUNIT("mol",NONE,NONE),
+       SCode.DEFINEUNIT("cd",NONE,NONE),
+       SCode.DEFINEUNIT("rad",SOME("m/m"),NONE),
+       SCode.DEFINEUNIT("sr",SOME("m2/m2"),NONE),            
+       SCode.DEFINEUNIT("Hz",SOME("s-1"),SOME(0.8)),
+       SCode.DEFINEUNIT("N",SOME("m.kg.s-2"),NONE),
+       SCode.DEFINEUNIT("Pa",SOME("N/m2"),NONE),
+       SCode.DEFINEUNIT("W",SOME("J/s"),NONE),
+       SCode.DEFINEUNIT("J",SOME("N.m"),NONE),
+       SCode.DEFINEUNIT("C",SOME("s.A"),NONE),
+       SCode.DEFINEUNIT("V",SOME("W/A"),NONE),
+       SCode.DEFINEUNIT("F",SOME("C/V"),NONE),
+       SCode.DEFINEUNIT("Ohm",SOME("V/A"),NONE),
+       SCode.DEFINEUNIT("S",SOME("A/V"),NONE),
+       SCode.DEFINEUNIT("Wb",SOME("V.s"),NONE),
+       SCode.DEFINEUNIT("T",SOME("Wb/m2"),NONE),
+       SCode.DEFINEUNIT("H",SOME("Wb/A"),NONE),
+       SCode.DEFINEUNIT("lm",SOME("cd.sr"),NONE),
+       SCode.DEFINEUNIT("lx",SOME("lm/m2"),NONE),
+       SCode.DEFINEUNIT("Bq",SOME("s-1"),SOME(0.8)),
+       SCode.DEFINEUNIT("Gy",SOME("J/kg"),NONE),
+       SCode.DEFINEUNIT("Sv",SOME("cd.sr"),NONE),
+       SCode.DEFINEUNIT("kat",SOME("s-1.mol"),NONE)
+       });   then ();     
+     case(du) equation registerUnitWeightDefineunits2(du); then ();    
+  end matchcontinue;
+end registerUnitWeightDefineunits;
+
+
+protected function registerUnitWeightDefineunits2 "help function to registerUnitWeightDefineunits"
   input list<SCode.Element> du;
 algorithm 
    _ := matchcontinue(du)
    local String n; Real w; 
      case(SCode.DEFINEUNIT(name=n,weight = SOME(w))::du) equation
        UnitParserExt.registerWeight(n,w);
-       registerUnitWeightDefineunits(du);
+       registerUnitWeightDefineunits2(du);
      then ();
      case(SCode.DEFINEUNIT(name=n,weight = NONE)::du) equation
-       registerUnitWeightDefineunits(du);
+       registerUnitWeightDefineunits2(du);
      then ();
      case(_::du) equation
-       registerUnitWeightDefineunits(du);
+       registerUnitWeightDefineunits2(du);
      then ();
      case({}) then ();   
     
   end matchcontinue;
-end registerUnitWeightDefineunits;
+end registerUnitWeightDefineunits2;
 
 public function registerUnits "traverses the Absyn.Program and registers all defineunits.
 Note: this requires that instantiation is done on a 'total program', so only defineunits that 
@@ -116,6 +160,52 @@ algorithm
    _ := matchcontinue(elts) 
    local String name; list<Absyn.NamedArg> args; Absyn.Element du;
      String exp; Real weight;
+     case({}) 
+     equation registerDefineunits2({
+       Absyn.DEFINEUNIT("m",{}),
+       Absyn.DEFINEUNIT("kg",{}),
+       Absyn.DEFINEUNIT("s",{}),
+       Absyn.DEFINEUNIT("A",{}),
+       Absyn.DEFINEUNIT("k",{}),
+       Absyn.DEFINEUNIT("mol",{}),
+       Absyn.DEFINEUNIT("cd",{}),
+       Absyn.DEFINEUNIT("rad",{Absyn.NAMEDARG("exp",Absyn.STRING("m/m"))}),
+       Absyn.DEFINEUNIT("sr",{Absyn.NAMEDARG("exp",Absyn.STRING("m2/m2"))}),            
+       Absyn.DEFINEUNIT("Hz",{Absyn.NAMEDARG("exp",Absyn.STRING("s-1")),Absyn.NAMEDARG("weight",Absyn.REAL(0.8))}),
+       Absyn.DEFINEUNIT("N",{Absyn.NAMEDARG("exp",Absyn.STRING("m.kg.s-2"))}),
+       Absyn.DEFINEUNIT("Pa",{Absyn.NAMEDARG("exp",Absyn.STRING("N/m2"))}),
+       Absyn.DEFINEUNIT("W",{Absyn.NAMEDARG("exp",Absyn.STRING("J/s"))}),
+       Absyn.DEFINEUNIT("J",{Absyn.NAMEDARG("exp",Absyn.STRING("N.m"))}),
+       Absyn.DEFINEUNIT("C",{Absyn.NAMEDARG("exp",Absyn.STRING("s.A"))}),
+       Absyn.DEFINEUNIT("V",{Absyn.NAMEDARG("exp",Absyn.STRING("W/A"))}),
+       Absyn.DEFINEUNIT("F",{Absyn.NAMEDARG("exp",Absyn.STRING("C/V"))}),
+       Absyn.DEFINEUNIT("Ohm",{Absyn.NAMEDARG("exp",Absyn.STRING("V/A"))}),
+       Absyn.DEFINEUNIT("S",{Absyn.NAMEDARG("exp",Absyn.STRING("A/V"))}),
+       Absyn.DEFINEUNIT("Wb",{Absyn.NAMEDARG("exp",Absyn.STRING("V.s"))}),
+       Absyn.DEFINEUNIT("T",{Absyn.NAMEDARG("exp",Absyn.STRING("Wb/m2"))}),
+       Absyn.DEFINEUNIT("H",{Absyn.NAMEDARG("exp",Absyn.STRING("Wb/A"))}),
+       Absyn.DEFINEUNIT("lm",{Absyn.NAMEDARG("exp",Absyn.STRING("cd.sr"))}),
+       Absyn.DEFINEUNIT("lx",{Absyn.NAMEDARG("exp",Absyn.STRING("lm/m2"))}),
+       Absyn.DEFINEUNIT("Bq",{Absyn.NAMEDARG("exp",Absyn.STRING("s-1")),Absyn.NAMEDARG("weight",Absyn.REAL(0.8))}),
+       Absyn.DEFINEUNIT("Gy",{Absyn.NAMEDARG("exp",Absyn.STRING("J/kg"))}),
+       Absyn.DEFINEUNIT("Sv",{Absyn.NAMEDARG("exp",Absyn.STRING("cd.sr"))}),
+       Absyn.DEFINEUNIT("kat",{Absyn.NAMEDARG("exp",Absyn.STRING("s-1.mol"))})
+       });  
+     then ();
+    
+     case(elts) equation
+       registerDefineunits2(elts);
+     then ();
+              
+  end matchcontinue;
+end registerDefineunits;       
+
+protected function registerDefineunits2 "help function to registerUnitInClass"
+  input list<Absyn.Element> elts;
+algorithm
+   _ := matchcontinue(elts) 
+   local String name; list<Absyn.NamedArg> args; Absyn.Element du;
+     String exp; Real weight;
      case({}) then ();
      /* Derived unit with weigth */
      /*case((du as Absyn.DEFINEUNIT(name=_))::elts) equation
@@ -128,21 +218,21 @@ algorithm
      case((du as Absyn.DEFINEUNIT(name=_))::elts) equation
        {SCode.DEFINEUNIT(name,SOME(exp),_)} = SCode.elabElement(du,false);
        UnitParserExt.addDerived(name,exp);
-       registerDefineunits(elts);
+       registerDefineunits2(elts);
      then ();
             
        /* base unit does not not have weight*/
      case((du as Absyn.DEFINEUNIT(name=_))::elts) equation
        {SCode.DEFINEUNIT(name,NONE,_)} = SCode.elabElement(du,false);
        UnitParserExt.addBase(name);
-       registerDefineunits(elts);
+       registerDefineunits2(elts);
      then ();
      
      case(_) equation
        print("registerDefineunits failed\n");
      then fail();
   end matchcontinue;
-end registerDefineunits; 
+end registerDefineunits2; 
 
 public function add "Adds a unit to the UnitAbsyn.Store"
   input UnitAbsyn.Unit unit; 
@@ -170,8 +260,8 @@ public function updateInstStore "  "
   output UnitAbsyn.InstStore outStore;
 algorithm
   outStore := matchcontinue(store,st)
-  local HashTable.HashTable ht;
-    case(UnitAbsyn.INSTSTORE(_,ht),st) then UnitAbsyn.INSTSTORE(st,ht);
+  local HashTable.HashTable ht; Option<UnitAbsyn.UnitCheckResult> res;
+    case(UnitAbsyn.INSTSTORE(_,ht,res),st) then UnitAbsyn.INSTSTORE(st,ht,res);
     case(UnitAbsyn.NOSTORE(),st) then UnitAbsyn.NOSTORE();
   end matchcontinue;
 end updateInstStore; 
@@ -233,7 +323,7 @@ public function instGetStore "Retrives the Store from an InstStore"
   output UnitAbsyn.Store st;
 algorithm
   st := matchcontinue(store)
-    case(UnitAbsyn.INSTSTORE(st,_)) then st;
+    case(UnitAbsyn.INSTSTORE(st,_,_)) then st;
     case(UnitAbsyn.NOSTORE()) then emptyStore();
   end matchcontinue;
 end instGetStore;
@@ -246,7 +336,7 @@ protected
 algorithm
   s := emptyStore();
   ht := HashTable.emptyHashTable();
-  st := UnitAbsyn.INSTSTORE(s,ht);
+  st := UnitAbsyn.INSTSTORE(s,ht,NONE);
 end emptyInstStore;
 
 public function emptyStore "Returns an empty store with 10 empty array elements"
@@ -391,7 +481,7 @@ input UnitAbsyn.InstStore st;
 algorithm
   _ := matchcontinue(st) 
   local UnitAbsyn.Store s; HashTable.HashTable h;
-    case(UnitAbsyn.INSTSTORE(s,h)) equation
+    case(UnitAbsyn.INSTSTORE(s,h,_)) equation
       print("instStore, s:");
       printStore(s);
       print("\nht:");
@@ -562,11 +652,12 @@ variable names to store locations."
 algorithm
   (outStore,terms) := matchcontinue(env,dae,compDae,store)
   local UnitAbsyn.Store st; HashTable.HashTable ht; UnitAbsyn.UnitTerms terms2;
+    Option<UnitAbsyn.UnitCheckResult> res;
     case(env,dae,compDae,store) equation
       false = OptManager.getOption("unitChecking");
     then(UnitAbsyn.noStore,{});
     case(env,dae,compDae,UnitAbsyn.NOSTORE()) then  (UnitAbsyn.NOSTORE(),{});     
-    case(env,dae,compDae,UnitAbsyn.INSTSTORE(st,ht)) equation  
+    case(env,dae,compDae,UnitAbsyn.INSTSTORE(st,ht,res)) equation  
      (terms,st) = buildTerms(env,dae,ht,st);
      (terms2,st) = buildTerms(env,compDae,ht,st) "to get bindings of scalar variables";
      terms = listAppend(terms,terms2);
@@ -575,7 +666,7 @@ algorithm
       st = createTypeParameterLocations(st);
      // print("built type param, store :"); printStore(st);
      terms = listReverse(terms);
-     then (UnitAbsyn.INSTSTORE(st,ht),terms);
+     then (UnitAbsyn.INSTSTORE(st,ht,res),terms);
     case(_,_,_,_) equation
       print("instBuildUnitTerms failed!!\n");
     then fail();       
@@ -607,24 +698,27 @@ algorithm
     UnitAbsyn.Unit unit; Integer indx;
     Option<Absyn.Path> optPath;
     list<Types.Var> vs;
+    Option<UnitAbsyn.UnitCheckResult> res;
+    
     case(store,_,_) equation
       false = OptManager.getOption("unitChecking");
     then UnitAbsyn.noStore;
       
-    case(UnitAbsyn.INSTSTORE(st,ht),(Types.T_REAL(Types.VAR(name="unit",binding = Types.EQBOUND(exp=Exp.SCONST(unitStr)))::_),_),cr) equation
+    case(UnitAbsyn.INSTSTORE(st,ht,res),(Types.T_REAL(Types.VAR(name="unit",binding = Types.EQBOUND(exp=Exp.SCONST(unitStr)))::_),_),cr) equation
       unit = str2unit(unitStr,NONE);
+      unit = Util.if_(0 == System.strcmp(unitStr,""),UnitAbsyn.UNSPECIFIED(),unit);
       (st,indx) = add(unit,st);
        ht = HashTable.add((cr,indx),ht);       
-    then UnitAbsyn.INSTSTORE(st,ht);     
+    then UnitAbsyn.INSTSTORE(st,ht,res);     
     case(store,(Types.T_REAL(_::vs),optPath),cr) equation
      then instAddStore(store,(Types.T_REAL(vs),optPath),cr);
 
       /* No unit available. */
-    case(UnitAbsyn.INSTSTORE(st,ht),(Types.T_REAL({}),_),cr) equation
+    case(UnitAbsyn.INSTSTORE(st,ht,res),(Types.T_REAL({}),_),cr) equation
 
       (st,indx) = add(UnitAbsyn.UNSPECIFIED(),st);
        ht = HashTable.add((cr,indx),ht);       
-    then UnitAbsyn.INSTSTORE(st,ht);
+    then UnitAbsyn.INSTSTORE(st,ht,res);
 
     case(store,(Types.T_COMPLEX(complexTypeOption=SOME(tp)),_),cr) equation
        store = instAddStore(store,tp,cr); 
@@ -778,30 +872,30 @@ algorithm
       list<DAE.Element> dae1;
     case(env,{},ht,store) then ({},store);
     case(env,DAE.EQUATION(e1,e2)::dae,ht,store) equation
-      (ut1,terms1,store) = buildTermExp(env,e1,ht,store);      
-      (ut2,terms2,store) = buildTermExp(env,e2,ht,store);
+      (ut1,terms1,store) = buildTermExp(env,e1,false,ht,store);      
+      (ut2,terms2,store) = buildTermExp(env,e2,false,ht,store);
       (terms,store) = buildTerms(env,dae,ht,store);
       terms = listAppend(terms1,listAppend(terms2,terms));
     then  (UnitAbsyn.EQN(ut1,ut2,Exp.BINARY(e1,Exp.SUB(Exp.REAL()),e2))::terms,store);
       
     case(env,DAE.EQUEQUATION(cr1,cr2)::dae,ht,store) equation
-      (ut1,terms1,store) = buildTermExp(env,Exp.CREF(cr1,Exp.OTHER()),ht,store);
-      (ut2,terms2,store) = buildTermExp(env,Exp.CREF(cr2,Exp.OTHER()),ht,store);
+      (ut1,terms1,store) = buildTermExp(env,Exp.CREF(cr1,Exp.OTHER()),false,ht,store);
+      (ut2,terms2,store) = buildTermExp(env,Exp.CREF(cr2,Exp.OTHER()),false,ht,store);
       (terms,store) = buildTerms(env,dae,ht,store);
       terms = listAppend(terms1,listAppend(terms2,terms));
     then  (UnitAbsyn.EQN(ut1,ut2,Exp.BINARY(Exp.CREF(cr1,Exp.OTHER()),Exp.SUB(Exp.REAL()),Exp.CREF(cr2,Exp.OTHER())))::terms,store);
            
       /* Only consider variables with binding from this instance level, not furhter down */
     case(env,DAE.VAR(componentRef=cr1 as Exp.CREF_IDENT(_,_,_),binding = SOME(e1))::dae,ht,store) equation      
-      (ut1,terms1,store) = buildTermExp(env,Exp.CREF(cr1,Exp.OTHER()),ht,store);
-      (ut2,terms2,store) = buildTermExp(env,e1,ht,store);
+      (ut1,terms1,store) = buildTermExp(env,Exp.CREF(cr1,Exp.OTHER()),false,ht,store);
+      (ut2,terms2,store) = buildTermExp(env,e1,false,ht,store);
       (terms,store) = buildTerms(env,dae,ht,store);
       terms = listAppend(terms1,listAppend(terms2,terms));    
     then  (UnitAbsyn.EQN(ut1,ut2,Exp.BINARY(Exp.CREF(cr1,Exp.OTHER()),Exp.SUB(Exp.REAL()),e1))::terms,store);
             
     case(env,DAE.DEFINE(cr1,e1)::dae,ht,store) equation
-      (ut1,terms1,store) = buildTermExp(env,Exp.CREF(cr1,Exp.OTHER()),ht,store);
-      (ut2,terms2,store) = buildTermExp(env,e1,ht,store);
+      (ut1,terms1,store) = buildTermExp(env,Exp.CREF(cr1,Exp.OTHER()),false,ht,store);
+      (ut2,terms2,store) = buildTermExp(env,e1,false,ht,store);
       (terms,store) = buildTerms(env,dae,ht,store);
       terms = listAppend(terms1,listAppend(terms2,terms));
     then  (UnitAbsyn.EQN(ut1,ut2,Exp.BINARY(Exp.CREF(cr1,Exp.OTHER()),Exp.SUB(Exp.REAL()),e1))::terms,store);
@@ -815,121 +909,172 @@ end buildTerms;
 protected function buildTermExp "help function to buildTerms, handles expressions"
   input Env.Env env;
   input Exp.Exp exp;
+  input Boolean divOrMul "is true if surrounding expression is division or multiplication. In that case 
+   the constant will be treated as dimensionless, otherwise it will be treated as unspecified 
+  ";
   input HashTable.HashTable ht;
   input UnitAbsyn.Store store;
   output UnitAbsyn.UnitTerm ut;
   output list<UnitAbsyn.UnitTerm> extraTerms "additional terms from e.g. function calls";
   output UnitAbsyn.Store outStore;    
 algorithm
-  (ut,extraTerms,outStore) := matchcontinue(env,exp,ht,store)
+  (ut,extraTerms,outStore) := matchcontinue(env,exp,divOrMul,ht,store)
   local Real r; Exp.Operator op; Integer indx; UnitAbsyn.UnitTerm ut,ut1,ut2; String s1,crStr;
     Exp.ComponentRef cr;
     Exp.Exp e,e1,e2;
     Absyn.Path path;
     list<UnitAbsyn.UnitTerm> terms1,terms2,terms;
     list<Exp.Exp> expl;
+    UnitAbsyn.Unit u;
     
     /*case(env,e as Exp.RCONST(r),ht,store) equation
       s1 = realString(r);
       indx = HashTable.get(Exp.CREF_IDENT(s1,Exp.OTHER(),{}),ht);
     then (UnitAbsyn.LOC(indx,e),{},store);*/
     
-    case(env,e as Exp.ICONST(i),ht,store) local Integer i; equation
+    case(env,e as Exp.ICONST(i),divOrMul,ht,store) local Integer i; equation      
       s1 = "$"+&intString(tick())+&"_"+&intString(i);
-      (store,indx) = add(UnitAbsyn.UNSPECIFIED(),store);
+      u = Util.if_(divOrMul,str2unit("1",NONE),UnitAbsyn.UNSPECIFIED());            
+      (store,indx) = add(u,store);
        ht = HashTable.add((Exp.CREF_IDENT(s1,Exp.OTHER(),{}),indx),ht);
     then (UnitAbsyn.LOC(indx,e),{},store);
     
     /* for each constant, add new unspecified unit*/
-    case(env,e as Exp.RCONST(r),ht,store)equation
+    case(env,e as Exp.RCONST(r),divOrMul,ht,store)equation
       s1 = "$"+&intString(tick())+&"_"+&realString(r);
-      (store,indx) = add(UnitAbsyn.UNSPECIFIED(),store);
+      u = Util.if_(divOrMul,str2unit("1",NONE),UnitAbsyn.UNSPECIFIED());
+      (store,indx) = add(u,store);
        ht = HashTable.add((Exp.CREF_IDENT(s1,Exp.OTHER(),{}),indx),ht);
     then (UnitAbsyn.LOC(indx,e),{},store);
     
-    case(env,Exp.CAST(_,e1),ht,store) equation
-      (ut,terms,store) = buildTermExp(env,e1,ht,store);
+    case(env,Exp.CAST(_,e1),divOrMul,ht,store) equation
+      (ut,terms,store) = buildTermExp(env,e1,divOrMul,ht,store);
     then (ut,terms,store);
       
-    case(env,e as Exp.CREF(cr,_),ht,store) equation
+    case(env,e as Exp.CREF(cr,_),divOrMul,ht,store) equation
      indx = HashTable.get(cr,ht);
     then (UnitAbsyn.LOC(indx,e),{},store);
     
     /* special case for pow */
-    case(env,e as Exp.BINARY(e1,Exp.POW(_),e2 as Exp.ICONST(i)),ht,store) local Integer i;
+    case(env,e as Exp.BINARY(e1,Exp.POW(_),e2 as Exp.ICONST(i)),divOrMul,ht,store) local Integer i;
       equation
-        (ut1,terms1,store) = buildTermExp(env,e1,ht,store);
-        (ut2,terms2,store) = buildTermExp(env,e2,ht,store);
+        (ut1,terms1,store) = buildTermExp(env,e1,divOrMul,ht,store);
+        (ut2,terms2,store) = buildTermExp(env,e2,divOrMul,ht,store);
         terms = listAppend(terms1,terms2);
         ut = UnitAbsyn.POW(ut1,MMath.RATIONAL(i,1),e);
     then (ut,terms,store);
     
-    case(env,e as Exp.BINARY(e1,Exp.POW(_),e2 as Exp.RCONST(r)),ht,store) local Integer i; Real r;
+    case(env,e as Exp.BINARY(e1,Exp.POW(_),e2 as Exp.RCONST(r)),divOrMul,ht,store) local Integer i; Real r;
       equation
-        (ut1,terms1,store) = buildTermExp(env,e1,ht,store);
-        (ut2,terms2,store) = buildTermExp(env,e2,ht,store);
+        (ut1,terms1,store) = buildTermExp(env,e1,divOrMul,ht,store);
+        (ut2,terms2,store) = buildTermExp(env,e2,divOrMul,ht,store);
         terms = listAppend(terms1,terms2);
         i = realInt(r);
         true = intReal(i) -. r ==. 0.0;
         ut = UnitAbsyn.POW(ut1,MMath.RATIONAL(i,1),e);
     then (ut,terms,store);  
       
-    case(env,e as Exp.BINARY(e1,op,e2),ht,store) equation
-      (ut1,terms1,store) = buildTermExp(env,e1,ht,store);
-      (ut2,terms2,store) = buildTermExp(env,e2,ht,store);
+    case(env,e as Exp.BINARY(e1,op,e2),divOrMul,ht,store) equation
+      divOrMul = Exp.operatorDivOrMul(op);
+      (ut1,terms1,store) = buildTermExp(env,e1,divOrMul,ht,store);
+      (ut2,terms2,store) = buildTermExp(env,e2,divOrMul,ht,store);
       terms = listAppend(terms1,terms2);
       ut = buildTermOp(ut1,ut2,op,e);
     then (ut,terms,store);
       
       /* failed to build term for e2, use e1*/
-    case(env,Exp.BINARY(e1,op,e2),ht,store) equation
-      (ut,terms,store) = buildTermExp(env,e1,ht,store);
-      failure((_,_,_) = buildTermExp(env,e1,ht,store));  
+    case(env,Exp.BINARY(e1,op,e2),divOrMul,ht,store) equation
+      divOrMul = Exp.operatorDivOrMul(op);
+      (ut,terms,store) = buildTermExp(env,e1,divOrMul,ht,store);
+      failure((_,_,_) = buildTermExp(env,e1,divOrMul,ht,store));  
     then (ut,terms,store);
 
       /* failed to build term for e1, use e2*/
-    case(env,Exp.BINARY(e1,op,e2),ht,store) equation
-      failure((_,_,_) = buildTermExp(env,e1,ht,store));
-      (ut,terms,store) = buildTermExp(env,e2,ht,store);  
+    case(env,Exp.BINARY(e1,op,e2),divOrMul,ht,store) equation
+      divOrMul = Exp.operatorDivOrMul(op);
+      failure((_,_,_) = buildTermExp(env,e1,divOrMul,ht,store));
+      (ut,terms,store) = buildTermExp(env,e2,divOrMul,ht,store);  
     then (ut,terms,store);
       
-    case(env,Exp.UNARY(_,e1),ht,store) equation
-      (ut,terms,store) = buildTermExp(env,e1,ht,store);
+    case(env,Exp.UNARY(op,e1),divOrMul,ht,store) equation
+      (ut,terms,store) = buildTermExp(env,e1,divOrMul,ht,store);
     then (ut,terms,store);
       
-    case(env,e as Exp.IFEXP(_,e1,e2),ht,store) equation
-      (ut1,terms1,store) = buildTermExp(env,e1,ht,store);
-      (ut2,terms2,store) = buildTermExp(env,e2,ht,store);
+    case(env,e as Exp.IFEXP(_,e1,e2),divOrMul,ht,store) equation
+      divOrMul = false;
+      (ut1,terms1,store) = buildTermExp(env,e1,divOrMul,ht,store);
+      (ut2,terms2,store) = buildTermExp(env,e2,divOrMul,ht,store);
       terms = listAppend(terms1,terms2);     
     then (UnitAbsyn.EQN(ut1,ut2,e),terms,store);
     
     /* function call */
-    case(env,e as Exp.CALL(path=path,expLst=expl),ht,store) equation
-      (ut,terms,store) = buildTermCall(env,path,e,expl,ht,store);       
+    case(env,e as Exp.CALL(path=path,expLst=expl),divOrMul,ht,store) equation
+      divOrMul = false;
+      (ut,terms,store) = buildTermCall(env,path,e,expl,divOrMul,ht,store);       
     then  (ut,terms,store);
-        
-    case(env,e as Exp.CALL(path=_),ht,store) equation
+
+    /* Array, all elements must be of same dimension, since an array with different units in different positions
+    can not be declared in Modelica, since modifiers on arrays must affect the whole array */      
+    case(env,e as Exp.ARRAY(_,_,expl),divOrMul,ht,store) 
+      local list<UnitAbsyn.UnitTerm> uts; list<Exp.Exp> expl; UnitAbsyn.UnitTerm ut;
+      equation
+        print("vector ="+&Exp.printExpStr(e)+&"\n");
+      (uts,terms,store) = buildTermExpList(env,expl,ht,store);
+      ut::uts = buildArrayElementTerms(uts,expl);
+      terms = listAppend(terms,uts);
+    then (ut,terms,store);    
+  
+    case(env,e as Exp.MATRIX(_,_,mexpl),divOrMul,ht,store) 
+      local  list<list<tuple<Exp.Exp, Boolean>>> mexpl; list<UnitAbsyn.UnitTerm> uts;
+      equation 
+        print("Matrix ="+&Exp.printExpStr(e)+&"\n");
+        expl = Util.listFlatten(Util.listListMap(mexpl,Util.tuple21));
+        (uts,terms,store) = buildTermExpList(env,expl,ht,store);
+        ut::uts = buildArrayElementTerms(uts,expl);
+        terms = listAppend(terms,uts);
+      then (ut,terms,store);    
+  
+    case(env,e as Exp.CALL(path=_),divOrMul,ht,store) equation
       print("buildTermExp CALL failed exp: "+&Exp.printExpStr(e)+&"\n");
-    then (UnitAbsyn.LOC(0,e),{},store);            
+    then fail();            
   end matchcontinue;
 end buildTermExp;
+
+protected function buildArrayElementTerms "help function to buildTermExp. For each two terms from an array expression, it create
+and EQN to make the constraint that they must have the same unit"
+  input list<UnitAbsyn.UnitTerm> uts;
+  input list<Exp.Exp> expl;
+  output list<UnitAbsyn.UnitTerm> outUts;
+algorithm
+  outUts := matchcontinue(uts,expl)
+  local UnitAbsyn.UnitTerm ut1,ut2;  Exp.Type ty; Exp.Exp e1,e2;
+    case({},_) then  {};
+    case(uts as {_},_) then uts;    
+    case(ut1::ut2::uts,e1::e2::expl) equation
+      uts = buildArrayElementTerms(uts,expl);
+      ty = Exp.typeof(e1);
+      uts = listAppend(uts,{UnitAbsyn.EQN(ut1,ut2,Exp.ARRAY(ty,true,{e1,e2}))});
+    then uts;                     
+  end matchcontinue;
+end  buildArrayElementTerms;
 
 protected function buildTermCall "builds a term and additional terms from a function call"
   input Env.Env env;
   input Absyn.Path path;
   input Exp.Exp funcCallExp;
   input list<Exp.Exp> expl;
+  input Boolean divOrMul;
   input HashTable.HashTable ht;
   input UnitAbsyn.Store store;
   output UnitAbsyn.UnitTerm ut;
   output list<UnitAbsyn.UnitTerm> extraTerms "additional terms from e.g. function calls";
   output UnitAbsyn.Store outStore;
 algorithm
-  (ut,extraTerms,outStore) := matchcontinue(env,path,funcCallExp,expl,ht,store)
+  (ut,extraTerms,outStore) := matchcontinue(env,path,funcCallExp,expl,divOrMul,ht,store)
     local list<Integer> formalParamIndxs; Integer resIndx;
       list<UnitAbsyn.UnitTerm> actTermLst,terms,terms2,extraTerms2; Types.Type functp;
        Integer funcInstId;
-    case(env,path,funcCallExp,expl,ht,store) equation
+    case(env,path,funcCallExp,expl,divOrMul,ht,store) equation
        (_,functp,_) = Lookup.lookupType(Env.emptyCache(),env,path,false);
        funcInstId=tick();
        (store,formalParamIndxs) = buildFuncTypeStores(functp,funcInstId,store);
@@ -952,15 +1097,20 @@ new locations"
   output UnitAbsyn.Store outStore;
 algorithm
   (terms,outStore) := matchcontinue(functp,funcInstId,funcCallExp,store)
-  local String unitStr; UnitAbsyn.Unit unit; Integer indx,indx2;
+  local String unitStr; UnitAbsyn.Unit unit; Integer indx,indx2; Boolean unspec;
     list<Types.Type> typeLst;
     /* Real */
     case((Types.T_FUNCTION(_,functp),_),funcInstId,funcCallExp,store) equation
       unitStr = getUnitStr(functp);
+      //print("Got unit='"+&unitStr+&"'\n");
+      unspec = 0 == System.strcmp(unitStr,"");
+      
       unit = str2unit(unitStr,SOME(funcInstId));
+      unit = Util.if_(unspec,UnitAbsyn.UNSPECIFIED(),unit);
      (store,indx) = add(unit,store);
      (store,indx2) = add(UnitAbsyn.UNSPECIFIED(),store);
       then ({UnitAbsyn.LOC(indx2,funcCallExp)},{UnitAbsyn.EQN(UnitAbsyn.LOC(indx2,funcCallExp),UnitAbsyn.LOC(indx,funcCallExp),funcCallExp)},store);
+      
     /* Tuple */
     case((Types.T_FUNCTION(_,(Types.T_TUPLE(typeLst),_)),_),funcInstId,funcCallExp,store) equation
       (terms,extraTerms,store) = buildTupleResultTerms(typeLst,funcInstId,funcCallExp,store);
@@ -1006,7 +1156,7 @@ algorithm
     list<UnitAbsyn.UnitTerm> eterms1,eterms2; UnitAbsyn.UnitTerm ut;
     case(env,{},ht,store) then ({},{},store);
     case(env,e::expl,ht,store) equation
-      (ut,eterms1,store) =  buildTermExp(env,e,ht,store);
+      (ut,eterms1,store) =  buildTermExp(env,e,false,ht,store);
       (terms,eterms2,store) = buildTermExpList(env,expl,ht,store);
       extraTerms = listAppend(eterms1,eterms2);
     then (ut::terms,extraTerms,store);  
@@ -1047,7 +1197,9 @@ algorithm
     case({},funcInstId,store) then (store,{});
     case((_,tp)::fargs,funcInstId,store) equation
       unitStr = getUnitStr(tp);
+      
       unit = str2unit(unitStr,SOME(funcInstId));
+      unit = Util.if_(0 == System.strcmp(unitStr,""),UnitAbsyn.UNSPECIFIED(),unit);
       (store,indx) = add(unit,store);
       (store,indxs) = buildFuncTypeStores2(fargs,funcInstId,store);
     then (store,indx::indxs);
@@ -1066,6 +1218,8 @@ algorithm
       then str;
     case((Types.T_REAL(_::varLst),optPath)) then getUnitStr((Types.T_REAL(varLst),optPath));
     case((Types.T_REAL({}),_)) then "";
+    case((Types.T_INTEGER(_),_)) then "";
+    case((Types.T_ARRAY(arrayType=tp),_)) then getUnitStr(tp);
     case(tp) equation print("getUnitStr for type "+&Types.unparseType(tp)+&" failed\n"); then fail();
   end matchcontinue;  
 end getUnitStr;

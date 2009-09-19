@@ -330,7 +330,7 @@ void System_5finit(void)
    * Visual Studio then use the SSE instructions,
    * not the normal i387 FPU
    */
-  set_cflags("-Wall -msse2 -mfpmath=sse ${MODELICAUSERCFLAGS}");
+  set_cflags("-msse2 -mfpmath=sse ${MODELICAUSERCFLAGS}");
 #else
   set_cflags("${MODELICAUSERCFLAGS}");
 #endif
@@ -415,8 +415,8 @@ RML_BEGIN_LABEL(System__strtok)
   free(str);
 
   /* adrpo changed 2004-10-29
-  rml_prim_once(RML__list_5freverse);
-  RML_TAILCALLK(rmlSC);
+  * rml_prim_once(RML__list_5freverse);
+  * RML_TAILCALLK(rmlSC);
   */
   RML_TAILCALLQ(RML__list_5freverse,1);
 }
@@ -2204,7 +2204,7 @@ void System_5finit(void)
    * if we are on i386 or x86_64 then use the
    * SSE instructions, not the normal i387 FPU
    */
-  set_cflags("-Wall -msse2 -mfpmath=sse ${MODELICAUSERCFLAGS}");
+  set_cflags("-msse2 -mfpmath=sse ${MODELICAUSERCFLAGS}");
 #else
 	set_cflags("${MODELICAUSERCFLAGS}");
 #endif
@@ -4247,8 +4247,9 @@ void *generate_array(enum type_desc_e type, int curdim, int ndims,
 
 char* walk_path(void *p)
 {
-    char path[2000]; path[0] = '\0';
+    char path[2000]; 
     rml_uint_t phdr = RML_GETHDR(p);
+    path[0] = '\0';
     if( RML_HDRISSTRING(phdr) )
     {
         return my_strdup(RML_STRINGDATA(p));

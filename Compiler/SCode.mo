@@ -1695,14 +1695,14 @@ algorithm
     case {NAMEMOD(ident = n,A = mod)}
       equation 
         s = printModStr(mod);
-        res = stringAppend(n, s);
+        res = n +& " " +& s;
       then
         res;
     case (NAMEMOD(ident = n,A = mod) :: subs)
       equation 
         mod_str = printModStr(mod);
         str = printSubsStr(subs);
-        res = Util.stringAppendList({n, mod_str, ", ", str});
+        res = Util.stringAppendList({n, " ", mod_str, ", ", str});
       then
         res;
     case {IDXMOD(subscriptLst = ss,an = mod)}

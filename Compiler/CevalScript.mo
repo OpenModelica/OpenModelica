@@ -128,8 +128,10 @@ algorithm
       DAELow.MultiDimEquation[:] ae;
       list<Integer>[:] m,mt;
       Option<list<tuple<Integer, Integer, DAELow.Equation>>> jac;
-      Values.Value ret_val,simValue,size_value,value,v;
-      Exp.Exp filenameprefix,exp,starttime,stoptime,interval,tolerance,method,size_expression,funcref,bool_exp,storeInTemp,noClean,options,asInSimulationCode;
+      Values.Value ret_val,simValue,size_value,value,v;      
+      Exp.Exp filenameprefix,exp,starttime,stoptime,tolerance,interval,method,size_expression,
+             funcref,bool_exp,storeInTemp,noClean,options, asInSimulationCode,addOriginalIncidenceMatrix,
+             addSolvingInfo,addMathMLCode,dumpResiduals;
       Absyn.ComponentRef cr_1;
       Integer size,length,rest;
       list<String> vars_1,vars_2,args;
@@ -517,6 +519,26 @@ algorithm
       then
         (cache,Values.ARRAY({Values.STRING(executable),Values.STRING(initfilename)}),st);
 
+    /* adrpo: see if the model exists before simulation! */
+    case (cache,env,(exp as
+      Exp.CALL(path = Absyn.IDENT(name = "simulate"),
+        expLst = {Exp.CODE(Absyn.C_TYPENAME(className),_),starttime,stoptime,interval,tolerance,method,filenameprefix,
+        storeInTemp,noClean,options})),
+      (st_1 as Interactive.SYMBOLTABLE(
+        ast = p, explodedAst = sp, instClsLst = ic, lstVarVal = iv, compiledFunctions = cf)),msg)
+      local
+        Absyn.ComponentRef crefCName;
+        String errMsg;
+      equation
+        crefCName = Absyn.pathToCref(className);
+        false = Interactive.existClass(crefCName, p);
+        errMsg = "Simulation Failed. Model: " +& Absyn.pathString(className) +& " does not exists! Please load it first before simulation.";
+        simValue = Values.RECORD(Absyn.IDENT("SimulationResult"),
+                                 {Values.STRING(errMsg)},
+                                 {"resultFile"});
+      then
+        (cache,simValue,st_1);
+
     case (cache,env,(exp as 
       Exp.CALL(
         path = Absyn.IDENT(name = "simulate"),
@@ -538,7 +560,7 @@ algorithm
         lstVarVal = iv,
         compiledFunctions = cf)),msg)
         local String s1; Absyn.ComponentRef cr_name;
-      equation 
+      equation         
         (cache,executable,method_str,st,_) = buildModel(cache,env, exp, st_1, msg) "Build and simulate model" ;
         cit = winCitation();
         pwd = System.pwd();
@@ -2056,6 +2078,10 @@ algorithm
         expLst =
         {Exp.CODE(Absyn.C_TYPENAME(className),_),
          asInSimulationCode,
+         addOriginalIncidenceMatrix,
+         addSolvingInfo,         
+         addMathMLCode,
+         dumpResiduals,
          filenameprefix,
          storeInTemp})),
       (st_1 as Interactive.SYMBOLTABLE(
@@ -2078,6 +2104,10 @@ algorithm
         {
         Exp.CODE(Absyn.C_TYPENAME(className),_),
         asInSimulationCode,
+        addOriginalIncidenceMatrix,
+        addSolvingInfo,        
+        addMathMLCode,
+        dumpResiduals,
         filenameprefix,
         storeInTemp})),
       (st_1 as Interactive.SYMBOLTABLE(
@@ -3538,7 +3568,6 @@ algorithm
       Boolean cdToTemp,asInSimulationCode;
       Real starttime_r,stoptime_r,interval_r,tolerance_r;
       String file_dir,cname_str,init_filename,method_str,filenameprefix,makefilename,oldDir,tempDir;
-      list<String> libs;
       list<SCode.Class> sp;
       list<Interactive.InstantiatedClass> ic;
       list<Interactive.InteractiveVariable> iv;
@@ -3548,13 +3577,13 @@ algorithm
       Absyn.Program p;
       DAELow.DAELow indexed_dlow_1;
       Env.Cache cache;
-      Exp.Exp exp,fileprefix,storeInTemp;
+      Exp.Exp exp,fileprefix,storeInTemp,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals;
       Exp.ComponentRef cr;
       Interactive.InteractiveSymbolTable st,st_1;
       Ceval.Msg msg;
       Values.Value ret_val;
     case (cache,env,(exp as Exp.CALL(path = Absyn.IDENT(name = _),
-      expLst = {Exp.CODE(Absyn.C_TYPENAME(classname),_),Exp.BCONST(bool=true),fileprefix,storeInTemp})),
+      expLst = {Exp.CODE(Absyn.C_TYPENAME(classname),_),Exp.BCONST(bool=true),addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals,fileprefix,storeInTemp})),
       (st_1 as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       local
         Boolean x;
@@ -3566,6 +3595,8 @@ algorithm
         list<Interactive.InstantiatedClass> ic_1,ic;
         list<SCode.Class> p_1,sp;
         list<list<Integer>> comps;
+        list<Absyn.Path> funcpaths; 
+        list<DAE.Element> funcelems;
       equation
         //asInSimulationCode==true => it's necessary to do all the translation's steps before dumping with xml
         _ = Error.getMessagesStr() "Clear messages";
@@ -3575,8 +3606,7 @@ algorithm
         (cache,filenameprefix) = extractFilePrefix(cache,env, fileprefix, st, msg);
         cname_str = Absyn.pathString(classname);
         p_1 = SCode.elaborate(p);
-        (cache,env,_,dae_1) = 
-        Inst.instantiateClass(cache,InstanceHierarchy.emptyInstanceHierarchy, p_1, classname);
+        (cache,env,_,dae_1) = Inst.instantiateClass(cache, InstanceHierarchy.emptyInstanceHierarchy, p_1, classname);
         ((dae as DAE.DAE(dael))) = DAE.transformIfEqToExpr(dae_1);
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(classname,dael,env));
         dlow = DAELow.lower(dae, true, true);
@@ -3584,18 +3614,21 @@ algorithm
         mT = DAELow.transposeMatrix(m);
         (ass1,ass2,dlow_1,m,mT) = DAELow.matchingAlgorithm(dlow, m, mT, (DAELow.INDEX_REDUCTION(),DAELow.EXACT(), DAELow.REMOVE_SIMPLE_EQN()));
         (comps) = DAELow.strongComponents(m, mT, ass1, ass2);
-        indexed_dlow = DAELow.translateDae(dlow_1,NONE);
+        indexed_dlow = DAELow.translateDae(dlow_1,NONE());
         indexed_dlow_1 = DAELow.calculateValues(indexed_dlow);
         xml_filename = Util.stringAppendList({filenameprefix,".xml"});
+        funcpaths = SimCodegen.getCalledFunctions(dae, indexed_dlow_1);
+        funcelems = SimCodegen.generateFunctions2(p_1, funcpaths);
         Print.clearBuf();
-        XMLDump.dumpDAELow(indexed_dlow_1);
+        XMLDump.dumpDAELow(indexed_dlow_1,funcpaths,funcelems,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals);
         xml_contents = Print.getString();
         Print.clearBuf();
         System.writeFile(xml_filename,xml_contents);
       then
         (cache,st,xml_contents,stringAppend("The model has been dumped to xml file: ",xml_filename));
+        
     case (cache,env,(exp as Exp.CALL(path = Absyn.IDENT(name = _),
-      expLst = {Exp.CODE(Absyn.C_TYPENAME(classname),_),Exp.BCONST(bool=false),fileprefix,storeInTemp})),
+      expLst = {Exp.CODE(Absyn.C_TYPENAME(classname),_),Exp.BCONST(bool=false),addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals,fileprefix,storeInTemp})),
       (st_1 as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       local
         Boolean x;
@@ -3605,6 +3638,8 @@ algorithm
         list<DAE.Element> dael;
         list<Interactive.InstantiatedClass> ic_1,ic;
         list<SCode.Class> p_1,sp;
+        list<Absyn.Path> funcpaths;
+        list<DAE.Element> funcelems;
       equation
         //asInSimulationCode==false => it's NOT necessary to do all the translation's steps before dumping with xml
         _ = Error.getMessagesStr() "Clear messages";
@@ -3614,8 +3649,7 @@ algorithm
         (cache,filenameprefix) = extractFilePrefix(cache,env, fileprefix, st, msg);
         cname_str = Absyn.pathString(classname);
         p_1 = SCode.elaborate(p);
-        (cache,env,_,dae_1) = 
-        Inst.instantiateClass(cache,InstanceHierarchy.emptyInstanceHierarchy,p_1, classname);
+        (cache,env,_,dae_1) = Inst.instantiateClass(cache, InstanceHierarchy.emptyInstanceHierarchy, p_1, classname);
         ((dae as DAE.DAE(dael))) = DAE.transformIfEqToExpr(dae_1);
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(classname,dael,env));
         dlow = DAELow.lower(dae, true, true);
@@ -3623,8 +3657,10 @@ algorithm
         mT = DAELow.transposeMatrix(m);
         (_,_,dlow_1,m,mT) = DAELow.matchingAlgorithm(dlow, m, mT, (DAELow.INDEX_REDUCTION(),DAELow.EXACT(), DAELow.REMOVE_SIMPLE_EQN()));
         xml_filename = Util.stringAppendList({filenameprefix,".xml"});
+        funcpaths = SimCodegen.getCalledFunctions(dae, dlow_1);
+        funcelems = SimCodegen.generateFunctions2(p_1, funcpaths);
         Print.clearBuf();
-        XMLDump.dumpDAELow(dlow_1);
+        XMLDump.dumpDAELow(dlow_1,funcpaths,funcelems,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals);        
         xml_contents = Print.getString();
         Print.clearBuf();
         System.writeFile(xml_filename,xml_contents);

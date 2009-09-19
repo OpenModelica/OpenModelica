@@ -46,50 +46,46 @@ public import UnitAbsynBuilder;
 protected import Debug;
 protected import Error;
 protected import OptManager;
+protected import HashTable;
 
-public uniontype UnitCheckResult
-  record CONSISTENT end CONSISTENT;  // May be complete or incomplete
-  record INCONSISTENT 
-     UnitAbsyn.SpecUnit u1;  //Left unit    
-     UnitAbsyn.SpecUnit u2;  //Right unit    
-  end INCONSISTENT;
-end UnitCheckResult;
+
 
 
 public function check "Check if a list of unit terms are consistent"
   input UnitAbsyn.UnitTerms tms; 
-  input UnitAbsyn.Store st;
-  output UnitCheckResult result;
-  output UnitAbsyn.Store outSt;
+  input UnitAbsyn.InstStore st;
+  output UnitAbsyn.InstStore outSt;
 algorithm
-   (result,outSt) := matchcontinue(tms,st)
+   (outSt) := matchcontinue(tms,st)
    local
      UnitAbsyn.Store st1,st2,st3;
      UnitAbsyn.UnitTerms rest1;
      UnitAbsyn.UnitTerm tm1;
-     UnitCheckResult res1;
+     Option<UnitAbsyn.UnitCheckResult> res;
      UnitAbsyn.SpecUnit su1,su2;
      String s1,s2,s3;
-     case(_,st1) equation
+     HashTable.HashTable ht;
+     
+     case(_,st) equation
        false = OptManager.getOption("unitChecking");       
-     then (CONSISTENT,st1);
+     then (st);
 
      //No more terms?
-     case({},st1) 
-       then (CONSISTENT,st1);
+     case({},UnitAbsyn.INSTSTORE(st1,ht,res)) 
+     then UnitAbsyn.INSTSTORE(st1,ht,SOME(UnitAbsyn.CONSISTENT()));
      //Is consistent?
-     case(tm1::rest1,st1) equation
-       (CONSISTENT,_,st2) = checkTerm(tm1,st1);
-       (res1,st3) = check(rest1,st2);
-       then(res1,st3);
+     case(tm1::rest1,UnitAbsyn.INSTSTORE(st1,ht,res)) equation
+       (UnitAbsyn.CONSISTENT,_,st2) = checkTerm(tm1,st1);
+       (st) = check(rest1,UnitAbsyn.INSTSTORE(st2,ht,SOME(UnitAbsyn.CONSISTENT())));
+       then(st);
      //Is inconsistent?       
-     case(tm1::rest1,st1) equation
-       (INCONSISTENT(su1,su2),_,st2) = checkTerm(tm1,st1);
+     case(tm1::rest1,UnitAbsyn.INSTSTORE(st1,ht,res)) equation
+       (UnitAbsyn.INCONSISTENT(su1,su2),_,st2) = checkTerm(tm1,st1);
        s1 = UnitAbsynBuilder.printTermsStr({tm1});
        s2 = UnitAbsynBuilder.unit2str(UnitAbsyn.SPECIFIED(su1));
        s3 = UnitAbsynBuilder.unit2str(UnitAbsyn.SPECIFIED(su2));
        Error.addMessage(Error.INCONSISTENT_UNITS,{s1,s2,s3});    
-       then(INCONSISTENT(su1,su2),st2);
+       then UnitAbsyn.INSTSTORE(st1,ht,SOME(UnitAbsyn.INCONSISTENT(su1,su2)));
      case(_,_) equation
        Debug.fprint("failtrace", "UnitChecker::check() failed\n");
        print("check failed\n");
@@ -132,6 +128,10 @@ algorithm
       false = unitHasUnknown(u2);
       (comp1,st4) = completeCheck(lst,indx+1,st3);
     then(comp1,st3);
+    case(SOME(u1)::lst,indx,st2) equation
+      (u2,st3) = normalize(indx,st2);
+      true = unitHasUnknown(u2);
+    then(false,st2);
     case(NONE::_,_,st2) then (true,st2);            
   end matchcontinue;
 end completeCheck;
@@ -139,14 +139,14 @@ end completeCheck;
 public function checkTerm "check if one term is ok"
   input UnitAbsyn.UnitTerm tm; 
   input UnitAbsyn.Store st;
-  output UnitCheckResult result;
+  output UnitAbsyn.UnitCheckResult result;
   output UnitAbsyn.SpecUnit outUnit;           
   output UnitAbsyn.Store outSt;
 algorithm
    (result,outFailingTm,outUnit,outSt) := matchcontinue(tm,st)
    local
      UnitAbsyn.Store st1,st2,st3,st4;
-     UnitCheckResult res1,res2,res3,res4;
+     UnitAbsyn.UnitCheckResult res1,res2,res3,res4;
      UnitAbsyn.Store st1,st2,st3,st4;
      UnitAbsyn.UnitTerm ut1,ut2;
      UnitAbsyn.SpecUnit su1,su2,su3;
@@ -168,13 +168,13 @@ algorithm
        (res1,su1,st2) = checkTerm(ut1,st1);
        (res2,su2,st3) = checkTerm(ut2,st2);
        su3 = mulSpecUnit(su1,su2);
-       res4 = chooseResult(res1,res2,CONSISTENT);
+       res4 = chooseResult(res1,res2,UnitAbsyn.CONSISTENT);
        then(res4,su3,st3);
      case(UnitAbsyn.DIV(ut1,ut2,_),st1) equation
        (res1,su1,st2) = checkTerm(ut1,st1);
        (res2,su2,st3) = checkTerm(ut2,st2);
        su3 = divSpecUnit(su1,su2);
-       res4 = chooseResult(res1,res2,CONSISTENT);
+       res4 = chooseResult(res1,res2,UnitAbsyn.CONSISTENT);
        then(res4,su3,st3);
      case(UnitAbsyn.EQN(ut1,ut2,_),st1) equation
        (res1,su1,st2) = checkTerm(ut1,st1);
@@ -184,10 +184,10 @@ algorithm
        then(res4,su1,st4);
      case(UnitAbsyn.LOC(loc,_),st1) equation
        (UnitAbsyn.UNSPECIFIED) = UnitAbsynBuilder.find(loc,st1);
-       then(CONSISTENT,UnitAbsyn.SPECUNIT((MMath.RATIONAL(1,1),UnitAbsyn.TYPEPARAMETER("",loc))::{},{}),st1);
+       then(UnitAbsyn.CONSISTENT,UnitAbsyn.SPECUNIT((MMath.RATIONAL(1,1),UnitAbsyn.TYPEPARAMETER("",loc))::{},{}),st1);
      case(UnitAbsyn.LOC(loc,_),st1) equation
        (UnitAbsyn.SPECIFIED(su1)) = UnitAbsynBuilder.find(loc,st1);
-       then(CONSISTENT,su1,st1);
+       then(UnitAbsyn.CONSISTENT,su1,st1);
      case(UnitAbsyn.POW(ut1,expo1,_),st1) equation
        (res1,su1,st2) = checkTerm(ut1,st1);
        su2 = powSpecUnit(su1,expo1);
@@ -199,18 +199,18 @@ algorithm
 end checkTerm;
  
 
-protected function chooseResult "Returns the first result that is INCONSISTENT. If not, CONISTENT will be returned"
-  input UnitCheckResult res1;
-  input UnitCheckResult res2;
-  input UnitCheckResult res3;
-  output UnitCheckResult resout;
+protected function chooseResult "Returns the first result that is UnitAbsyn.INCONSISTENT. If not, CONISTENT will be returned"
+  input UnitAbsyn.UnitCheckResult res1;
+  input UnitAbsyn.UnitCheckResult res2;
+  input UnitAbsyn.UnitCheckResult res3;
+  output UnitAbsyn.UnitCheckResult resout;
 protected
-  UnitCheckResult incon;
+  UnitAbsyn.UnitCheckResult incon;
 algorithm  
   resout := matchcontinue(res1,res2,res3)
-    case(CONSISTENT,CONSISTENT,CONSISTENT) then CONSISTENT;
-    case(CONSISTENT,CONSISTENT,incon) then incon;
-    case(CONSISTENT,incon,_) then incon;
+    case(UnitAbsyn.CONSISTENT,UnitAbsyn.CONSISTENT,UnitAbsyn.CONSISTENT) then UnitAbsyn.CONSISTENT;
+    case(UnitAbsyn.CONSISTENT,UnitAbsyn.CONSISTENT,incon) then incon;
+    case(UnitAbsyn.CONSISTENT,incon,_) then incon;
     case(incon,_,_) then incon;
     case(_,_,_) equation
       Debug.fprint("failtrace", "UnitChecker::chooseResult() failed\n");       
@@ -222,7 +222,7 @@ protected function unify
   input UnitAbsyn.SpecUnit insu1;           
   input UnitAbsyn.SpecUnit insu2;           
   input UnitAbsyn.Store st;
-  output UnitCheckResult outresult;
+  output UnitAbsyn.UnitCheckResult outresult;
   output UnitAbsyn.Store outSt;
 protected
   UnitAbsyn.SpecUnit su1,su2;
@@ -268,7 +268,7 @@ protected function unifyunits
   input UnitAbsyn.SpecUnit insu1;           
   input UnitAbsyn.SpecUnit insu2;           
   input UnitAbsyn.Store st;
-  output UnitCheckResult outresult;
+  output UnitAbsyn.UnitCheckResult outresult;
   output UnitAbsyn.Store outSt;
 algorithm
   (outresult,outSt) := matchcontinue(insu1,insu2,st)
@@ -281,21 +281,21 @@ algorithm
       false = hasUnknown(su1);
       false = hasUnknown(su2);
       true = isSpecUnitEq(su1,su2);
-      then(CONSISTENT,st1);
+      then(UnitAbsyn.CONSISTENT,st1);
     //No unknown, but different on the sides
     case(su1,su2,st1) equation
       false = hasUnknown(su1);
       false = hasUnknown(su2);
-      then(INCONSISTENT(su1,su2),st1);
+      then(UnitAbsyn.INCONSISTENT(su1,su2),st1);
     //Move the unknown to left side and substitute
     case(su1,su2,st1) equation
       su3 = divSpecUnit(su2,su1);
       (loc1,su4) = getUnknown(su3);
       st2 = UnitAbsynBuilder.update(UnitAbsyn.SPECIFIED(su4),loc1,st1);
-      then(CONSISTENT,st2);
+      then(UnitAbsyn.CONSISTENT,st2);
     //Unknowns are cancelling each other out
     case(_,_,st1) 
-      then(CONSISTENT,st1);
+      then(UnitAbsyn.CONSISTENT,st1);
   end matchcontinue;        
 end unifyunits;
 
@@ -759,16 +759,16 @@ end testUnitOp;
 
 
 public function printResult "Print out the result from the unit check"
-  input UnitCheckResult res;
+  input UnitAbsyn.UnitCheckResult res;
 algorithm
   _ := matchcontinue(res)
   local
     UnitAbsyn.SpecUnit u1,u2;      
     String str1,str2;
-    case (CONSISTENT) equation
+    case (UnitAbsyn.CONSISTENT) equation
       print("\n---\nThe system of units is consistent.\n---\n");
       then ();
-    case (INCONSISTENT(u1,u2)) equation
+    case (UnitAbsyn.INCONSISTENT(u1,u2)) equation
       print("\n---\nThe system of units is inconsistent. \"");
       str1 = UnitAbsynBuilder.unit2str(UnitAbsyn.SPECIFIED(u1));
       print(str1);

@@ -2471,7 +2471,7 @@ algorithm
         Print.printBuf(printFunctionArgsStr(fargs));
         Print.printBuf(")");
       then
-        ();        
+        ();
     case (Absyn.EQ_CONNECT(connector1 = e1,connector2 = e2))
       local Absyn.ComponentRef e1,e2;
       equation

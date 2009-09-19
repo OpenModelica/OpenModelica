@@ -219,6 +219,8 @@ public constant ErrorID UNUSED_MODIFIER=515;
 public constant ErrorID SELECTED_STATES=515;
 public constant ErrorID MULTIPLE_MODIFIER=516;
 public constant ErrorID INCONSISTENT_UNITS=517;
+public constant ErrorID CONSISTENT_UNITS=518;
+public constant ErrorID INCOMPLETE_UNITS=519;
 
 
 public constant ErrorID INDEX_REDUCTION_NOTIFICATION=1000;
@@ -488,6 +490,8 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (CIRCULAR_EQUATION, TRANSLATION(),ERROR(), " Equation : '%s'  has circular references for variable %s."),
           (SELECTED_STATES,TRANSLATION(),NOTIFICATION(), "The following variables are selected as states: %s"),
           (INCONSISTENT_UNITS, TRANSLATION(),WARNING(),"The system of units is inconsistent in term %s with the units %s and %s respectively."),
+          (CONSISTENT_UNITS, TRANSLATION(),NOTIFICATION(),"The system of units is consistent."),
+          (INCOMPLETE_UNITS, TRANSLATION(),NOTIFICATION(),"The system of units is incomplete. Please provide unit information to the model by e.g. using types from the SIunits package."),
           (IF_EQUATION_NO_ELSE, TRANSLATION(),ERROR(),"In equation %s. If-equation with conditions that are not parameter expressions must have an else branch, in equation."),
           (IF_EQUATION_UNBALANCED, TRANSLATION(),ERROR(),"In equation %s. If-equation with conditions that are not parameter expressions must have the same number of equations in each branch, equation count is %s for each respective branch."),
           (LINSPACE_ILLEGAL_SIZE_ARG,TRANSLATION(),ERROR(),"In expression %s, third argument to linspace must be >= 2")

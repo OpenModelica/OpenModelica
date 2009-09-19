@@ -5854,7 +5854,7 @@ algorithm
         (cache,numberOfIntervals) = getOptionalNamedArg(cache,env, SOME(st), impl, "numberOfIntervals", 
           (Types.T_INTEGER({}),NONE), args, Exp.ICONST(500));
         (cache,tolerance) = getOptionalNamedArg(cache,env, SOME(st), impl, "tolerance", (Types.T_REAL({}),NONE), 
-          args, Exp.RCONST(1e-6));  
+          args, Exp.RCONST(1e-4));  
         (cache,method) = getOptionalNamedArg(cache,env, SOME(st), impl, "method", (Types.T_STRING({}),NONE), 
           args, Exp.SCONST("dassl"));
         (cache,options) = getOptionalNamedArg(cache,env, SOME(st), impl, "options", (Types.T_STRING({}),NONE), 
@@ -5884,7 +5884,7 @@ algorithm
         (cache,numberOfIntervals) = getOptionalNamedArg(cache,env, SOME(st), impl, "numberOfIntervals", 
           (Types.T_INTEGER({}),NONE), args, Exp.ICONST(500));
         (cache,tolerance) = getOptionalNamedArg(cache,env, SOME(st), impl, "tolerance", (Types.T_REAL({}),NONE), 
-          args, Exp.RCONST(1e-6));  
+          args, Exp.RCONST(1e-4));  
         (cache,method) = getOptionalNamedArg(cache,env, SOME(st), impl, "method", (Types.T_STRING({}),NONE), 
           args, Exp.SCONST("dassl"));
         (cache,options) = getOptionalNamedArg(cache,env, SOME(st), impl, "options", (Types.T_STRING({}),NONE), 
@@ -5915,7 +5915,7 @@ algorithm
         (cache,numberOfIntervals) = getOptionalNamedArg(cache,env, SOME(st), impl, "numberOfIntervals", 
           (Types.T_INTEGER({}),NONE), args, Exp.ICONST(500));
         (cache,tolerance) = getOptionalNamedArg(cache,env, SOME(st), impl, "tolerance", (Types.T_REAL({}),NONE), 
-          args, Exp.RCONST(1e-6));  
+          args, Exp.RCONST(1e-4));  
         (cache,method) = getOptionalNamedArg(cache,env, SOME(st), impl, "method", (Types.T_STRING({}),NONE), 
           args, Exp.SCONST("dassl"));
         classname = componentRefToPath(cr_1) "this extracts the fileNamePrefix which is used when generating code and init-file" ;
@@ -6581,19 +6581,27 @@ algorithm
     then (cache,Exp.CALL(Absyn.IDENT("checkExamplePackages"),{},false,true,Exp.STRING()),Types.PROP((Types.T_BOOL({}),NONE),Types.C_CONST()),SOME(st));
         
 case (cache,env,Absyn.CREF_IDENT(name = "dumpXMLDAE"),{Absyn.CREF(componentReg = cr)},args,impl,SOME(st))
-      local Absyn.Path className; Exp.Exp storeInTemp,asInSimulationCode;
+      local Absyn.Path className; Exp.Exp storeInTemp,asInSimulationCode,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals;
       equation
         className = Absyn.crefToPath(cr);
         cname_str = Absyn.pathString(className);
         (cache,asInSimulationCode) = getOptionalNamedArg(cache,env, SOME(st), impl, "asInSimulationCode",
           (Types.T_BOOL({}),NONE), args, Exp.BCONST(false));
+        (cache,addOriginalIncidenceMatrix) = getOptionalNamedArg(cache,env, SOME(st), impl, "addOriginalIncidenceMatrix",
+          (Types.T_BOOL({}),NONE), args, Exp.BCONST(false));          
+        (cache,addSolvingInfo) = getOptionalNamedArg(cache,env, SOME(st), impl, "addSolvingInfo",
+          (Types.T_BOOL({}),NONE), args, Exp.BCONST(false));          
+        (cache,addMathMLCode) = getOptionalNamedArg(cache,env, SOME(st), impl, "addMathMLCode",
+          (Types.T_BOOL({}),NONE), args, Exp.BCONST(false));
+        (cache,dumpResiduals) = getOptionalNamedArg(cache,env, SOME(st), impl, "dumpResiduals",
+          (Types.T_BOOL({}),NONE), args, Exp.BCONST(false));          
         (cache,filenameprefix) = getOptionalNamedArg(cache,env, SOME(st), impl, "fileNamePrefix",
           (Types.T_STRING({}),NONE), args, Exp.SCONST(cname_str));
         (cache,storeInTemp) = getOptionalNamedArg(cache,env, SOME(st), impl, "storeInTemp",
           (Types.T_BOOL({}),NONE), args, Exp.BCONST(false));
       then
         (cache,Exp.CALL(Absyn.IDENT("dumpXMLDAE"),
-          {Exp.CODE(Absyn.C_TYPENAME(className),Exp.OTHER()),asInSimulationCode,filenameprefix,storeInTemp},false,true,Exp.OTHER()),Types.PROP(
+          {Exp.CODE(Absyn.C_TYPENAME(className),Exp.OTHER()),asInSimulationCode,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals,filenameprefix,storeInTemp},false,true,Exp.OTHER()),Types.PROP(
           (
           Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_STRING({}),NONE)),NONE),Types.C_VAR()),SOME(st));
   end matchcontinue;

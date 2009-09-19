@@ -70,6 +70,12 @@ char* simulation_code_target = "gcc";
 int acceptedGrammar = GRAMMAR_MODELICA;
 
 /*
+ * adrpo 2008-12-13
+ * flag for turning of expression simplification!
+ */
+int noSimplify = 0;
+
+/*
  * @author adrpo
  * @date 2007-02-08
  * This variable is defined in corbaimpl.cpp and set
@@ -107,6 +113,7 @@ void RTOpts_5finit(void)
   acceptedGrammar = GRAMMAR_MODELICA;
   annotation_version = "2.x";
   showErrorMessages = 0;
+  noSimplify = 0;
 }
 
 /*
@@ -255,6 +262,7 @@ int check_debug_flag(char const* strdata)
 #define TARGET              "+target"
 #define METAMODELICA        "+g"
 #define SHOW_ERROR_MESSAGES "+showErrorMessages"
+#define NO_SIMPLIFY         "+noSimplify"
 
 RML_BEGIN_LABEL(RTOpts__args)
 {
@@ -265,6 +273,7 @@ RML_BEGIN_LABEL(RTOpts__args)
   int strLen_ANNNOTATION_VERSION = strlen(ANNOTATION_VERSION);
   int strLen_SHOW_ERROR_MESSAGES = strlen(SHOW_ERROR_MESSAGES);
 
+  int strLen_NO_SIMPLIFY = strlen(NO_SIMPLIFY);
   debug_none = 1;
 
   while (RML_GETHDR(args) != RML_NILHDR)
@@ -320,6 +329,16 @@ RML_BEGIN_LABEL(RTOpts__args)
         else
         {
           fprintf(stderr, "# Wrong option: usage: omc [+showErrorMessages], default to not show them.\n");
+          RML_TAILCALLK(rmlFC);
+        }
+    }
+    else if(strncmp(arg,NO_SIMPLIFY,strLen_NO_SIMPLIFY) == 0)
+    {
+        if (strlen(arg) == strLen_NO_SIMPLIFY)
+            noSimplify = 1;
+        else
+        {
+          fprintf(stderr, "# Wrong option: usage: omc [+noSimplify], by default is to simplify.\n");
           RML_TAILCALLK(rmlFC);
         }
     }
@@ -607,5 +626,27 @@ RML_BEGIN_LABEL(RTOpts__setAnnotationVersion)
     RML_TAILCALLK(rmlSC);
   }
   RML_TAILCALLK(rmlFC);
+}
+RML_END_LABEL
+
+
+/*
+ * adrpo 2008-12-13
+ */
+RML_BEGIN_LABEL(RTOpts__setNoSimplify)
+{
+  noSimplify = RML_UNTAGFIXNUM(rmlA0);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+
+/*
+ * adrpo 2008-12-13
+ */
+RML_BEGIN_LABEL(RTOpts__getNoSimplify)
+{
+  rmlA0 = noSimplify?RML_TRUE:RML_FALSE;
+  RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL

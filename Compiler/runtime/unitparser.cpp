@@ -687,6 +687,7 @@ string UnitParser::unit2str(Unit unit)
 
 UnitRes UnitParser::str2unit(const string unitstr, Unit& unit)
 {
+	if (unitstr == string("")) {return UnitRes(UnitRes::UNIT_OK);}
 	Scanner scan(unitstr);
 	UnitRes res = parseExpression(scan, unit);
 	if(!res.Ok()) return res;

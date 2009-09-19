@@ -40,8 +40,14 @@ typedef int modelica_integer;
 
 typedef base_array_t integer_array_t;
 
-/* indexing */
+/* Indexing 1 dimensions */
 modelica_integer integer_get(integer_array_t *a, size_t i);
+/* Indexing 2 dimensions */
+modelica_integer integer_get_2D(integer_array_t *a, size_t i, size_t j);
+/* Indexing 3 dimensions */
+modelica_integer integer_get_3D(integer_array_t *a, size_t i, size_t j, size_t k);
+/* Indexing 4 dimensions */
+modelica_integer integer_get_4D(integer_array_t *a, size_t i, size_t j, size_t k, size_t l);
 
 /* Settings the fields of a integer_array */
 void integer_array_create(integer_array_t *dst, modelica_integer *data,

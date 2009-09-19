@@ -61,6 +61,7 @@
 //IAEX headers
 #include "sendData.h"
 #include <sstream>
+#include <stdexcept>
 
 #if defined(_MSC_VER) || defined(__MINGW32__)
 #define _CRT_SECURE_NO_WARNINGS
@@ -94,18 +95,25 @@ Connection::~Connection()
 
 const char* Connection::getExternalViewerFileName()
 {
-  char* omdir = getenv("OPENMODELICAHOME");
-  QString path(omdir);
+  char* viewerPath = NULL;
+  string path( getenv( "OPENMODELICAHOME" ) );
+	if( path.empty() )
+		throw runtime_error( "Could not find environment variable OPENMODELICAHOME" );
+  /*
   if(path.endsWith("/") || path.endsWith("\\"))
     path += "bin/ext";
   else
     path += "/bin/ext";
+  */
+  path += "/bin/ext";
 #ifdef WIN32
   path += ".exe";
 #elif defined(__APPLE_CC__)
   path += ".app";
 #endif
-  return path.toStdString().c_str();
+  viewerPath = strdup(path.c_str());
+  // fprintf(stderr, "ViewerPath: %s", viewerPath);
+  return viewerPath;
 }
 
 
@@ -132,7 +140,11 @@ bool Connection::startExternalViewer()
     while (1)
     {
       ticks++;
+#if defined(WIN32)
+      if( plotViewerProcess->waitForStarted(500) ) break;
+#else
       if( plotViewerProcess->waitForStarted(-1) ) break;
+#endif
       else
       {
         cerr << "simulation runtime: the plot viewer could not start: " << path.toStdString().c_str();
@@ -188,7 +200,7 @@ QTcpSocket* Connection::newConnection(bool graphics)
       socket->connectToHost(QHostAddress::LocalHost, graphics?7779:7778);
       if (socket->state() != QAbstractSocket::ConnectedState)
       {
-        if(socket->waitForConnected(-1))
+        if(socket->waitForConnected(5000))
         {
           return socket;
         }
@@ -373,7 +385,7 @@ bool ellipse(double x0, double y0, double x1, double y1, const char* color, int 
     out << (quint32)(block.size() - sizeof(quint32));
     //		socket->write(block);
     //		socket->flush();
-    //		socket->waitForBytesWritten(-1);
+    //		socket->waitForBytesWritten(5000);
     Static::socket2.write(block);
     Static::socket2.flush();
     Static::socket2.waitForBytesWritten(-1);

@@ -8,6 +8,14 @@ public import MMath;
 public import HashTable;
 public import Exp;
 
+public uniontype UnitCheckResult
+  record CONSISTENT end CONSISTENT;  // May be complete or incomplete
+  record INCONSISTENT 
+     SpecUnit u1;  //Left unit    
+     SpecUnit u2;  //Right unit    
+  end INCONSISTENT;
+end UnitCheckResult;
+
 public   
 uniontype SpecUnit   
   record SPECUNIT " "
@@ -99,6 +107,7 @@ requires a mapping from variable names to locations. Unit checking can be turned
   record INSTSTORE 
     Store store;
     HashTable.HashTable ht;
+    Option<UnitCheckResult> checkResult "when a check is done the result is stored here";
   end INSTSTORE;
   
   record NOSTORE "used to skip unit checking" end NOSTORE;            
