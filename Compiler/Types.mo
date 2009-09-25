@@ -2271,10 +2271,14 @@ algorithm (s,s2) := matchcontinue(t)
     Option<Type> bc;
     Option<Absyn.Path> op;
     list<String> varNames;
-  case((T_COMPLEX(complexClassType = (st as ClassInf.CONNECTOR(connectorName)),complexVarLst = vars,complexTypeOption = bc),op))
+    Boolean isExpandable;
+    String isExpandableStr;
+    
+  case((T_COMPLEX(complexClassType = (st as ClassInf.CONNECTOR(connectorName,isExpandable)),complexVarLst = vars,complexTypeOption = bc),op))
     equation
       varNames = Util.listMap(vars,varName);
-      s = connectorName ;
+      isExpandableStr = Util.if_(isExpandable,"/* expandable */ ", ""); 
+      s = isExpandableStr +& connectorName;
       s2 = "{" +& Util.stringDelimitList(varNames,", ") +& "}";
       then
         (s,s2);
