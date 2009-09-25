@@ -5996,7 +5996,8 @@ algorithm
       equation 
         s = Dump.printSubscriptsStr({e});
         str = Util.stringAppendList({"#Error converting subscript: ",s," to Exp.\n"});
-        Print.printErrorBuf(str);
+        //print("#Error converting subscript: " +& s +& " to Exp.\n");
+        //Print.printErrorBuf(str);
         xs_1 = toExpCrefSubs(xs);
       then
         xs_1;
@@ -7023,8 +7024,7 @@ algorithm
   end matchcontinue;
 end printListStr;
 
-public function printSubscriptStr
-"function: printSubscriptStr
+public function printSubscriptStr "
   Print a Subscript into a String."
   input Subscript inSubscript;
   output String outString;
@@ -11152,9 +11152,9 @@ algorithm ostr := matchcontinue(inCref)
 end matchcontinue;
 end replaceExpCrefRecursive;
 
-public function debugPrintComponentRefExp "Function debugPrintComponentRefTypeStr 
+public function debugPrintComponentRefExp "
 This function takes an exp and tries to print ComponentReferences.
-Uses debugPrintComponentRefTypeStr, which gives type information to stdout.
+Uses debugPrint.ComponentRefTypeStr, which gives type information to stdout.
 NOTE Only used for debugging.
 "
   input Exp inExp;

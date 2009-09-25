@@ -801,6 +801,15 @@ algorithm
   end matchcontinue;
 end dump;
 
+public function dump2str ""
+input DAElist inDAElist;
+output String str;
+algorithm 
+  dump2(inDAElist);
+  str := Print.getString();
+  Print.clearBuf();
+end dump2str;
+
 public function dump2 "function: dump2
  
   Helper function to dump. Prints the DAE using module Print.
@@ -810,7 +819,7 @@ algorithm
   _:=
   matchcontinue (inDAElist)
     local
-      Ident comment_str,ident,str,extdeclstr;
+      Ident comment_str,ident,str,extdeclstr,s1;
       Exp.ComponentRef cr;
       Exp.Exp e,e1,e2;
       InstDims dims;
@@ -829,6 +838,14 @@ algorithm
       equation 
         Print.printBuf("VAR(");
         Exp.printComponentRef(cr);
+        
+        /* //include type of var 
+        
+        s1 = Exp.debugPrintComponentRefTypeStr(cr); 
+        s1 = Util.stringReplaceChar(s1,"\n","");
+        Print.printBuf("((" +& s1);        
+        Print.printBuf("))");
+        */
         Print.printBuf("=");
         Exp.printExp(e);
         Print.printBuf(",dims=");
@@ -846,6 +863,12 @@ algorithm
       equation 
         Print.printBuf("VAR(");
         Exp.printComponentRef(cr);
+        /* // include type in dump
+        s1 = Exp.debugPrintComponentRefTypeStr(cr); 
+        s1 = Util.stringReplaceChar(s1,"\n","");
+        Print.printBuf("((" +& s1);
+        Print.printBuf("))");
+        */
         comment_str = Dump.unparseCommentOption(comment) "	dump_start_value start &" ;
         print("  comment:");
         print(comment_str);
@@ -4697,6 +4720,34 @@ algorithm
         (ASSERT(e_1,e_2) :: elts_1);
   end matchcontinue;
 end toModelicaFormElts;
+
+public function replaceCrefInVar "
+Author BZ 
+ Function for updating the Component Ref of the Var
+"
+input Exp.ComponentRef newCr;
+input Element inelem;
+output Element outelem;
+algorithm outelem := matchcontinue(newCr, inelem)
+  local
+    Exp.ComponentRef a1;
+    VarKind a2;
+    VarDirection a3;
+    VarProtection a4;
+    Type a5;
+    Option<Exp.Exp> a6; 
+    InstDims a7;
+    Flow a8;
+    Stream a9;
+    list<Absyn.Path> a10;
+    Option<VariableAttributes> a11;
+    Option<Absyn.Comment> a12;
+    Absyn.InnerOuter a13;
+    Types.Type a14;
+  case(newCr, VAR(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14))
+    then VAR(newCr,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14);
+  end matchcontinue;
+end replaceCrefInVar;
 
 protected function toModelicaFormExpOpt "function: toModelicaFormExpOpt
  

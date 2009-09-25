@@ -10086,7 +10086,7 @@ algorithm
       tuple<Types.TType, Option<Absyn.Path>> t;
       Absyn.Exp e;
     case ((Types.T_INTEGER(varLstInt = _),_),_,sub) then Exp.INDEX(sub); 
-    case ((Types.T_ENUM(),_),_,sub) then Exp.INDEX(sub);      
+    case ((Types.T_ENUM(),_),_,sub) then Exp.INDEX(sub);
     case ((Types.T_ARRAY(arrayType = (Types.T_INTEGER(varLstInt = _),_)),_),_,sub) then Exp.SLICE(sub); 
     case (t,e,_)
       equation 
@@ -10098,8 +10098,8 @@ algorithm
   end matchcontinue;
 end elabSubscriptType;
 
-protected function subscriptCrefType "function: subscriptCrefType
- 
+protected function subscriptCrefType 
+"function: subscriptCrefType 
   If a component of an array type is subscripted, the type of the
   component reference is of lower dimensionality than the
   component.  This function shows the function between the component
@@ -10550,7 +10550,7 @@ algorithm
       equation 
         (cache,_,t,_,_,_) = Lookup.lookupVar(cache,env, Exp.CREF_IDENT(n,Exp.OTHER(),{}));
         ty2 = Types.elabType(t);
-        sl = Types.getDimensionSizes(t);
+        sl = Types.getDimensionSizes(t); 
         (cache,ss_1) = Ceval.cevalSubscripts(cache,env, ss, sl, impl, Ceval.MSG());
        (cache,c_1) = canonCref2(cache,env, c, Exp.CREF_IDENT(n,ty2,ss), impl);
       then

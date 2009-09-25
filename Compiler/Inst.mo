@@ -1000,6 +1000,46 @@ algorithm
       then
         fail();
          
+         
+         /* TEMP DUMMY **/
+         /*
+             case (cache,env,store,mod,pre,csets,
+          (c as SCode.CLASS(name = n,encapsulatedPrefix = encflag,restriction = r, partialPrefix = false)),
+          inst_dims,impl,callscope,graph)
+      local 
+        Types.EqualityConstraint equalityConstraint;
+      equation 
+        //print("---- CLASS: "); print(n);print(" ----\n"); print(SCode.printClassStr(c)); //Print out the input SCode class
+        //str = SCode.printClassStr(c); print("------------------- CLASS instClass-----------------\n");print(str);print("\n===============================================\n");
+        env_1 = Env.openScope(env, encflag, SOME(n));
+        ci_state = ClassInf.start(r, n);
+        (cache,dae1,env_3,store,(csets_1 as Connect.SETS(_,crs,dc,oc)),ci_state_1,tys,bc_ty,oDA,equalityConstraint, graph) 
+        			= instClassIn(cache,env_1, store, mod, pre, csets, ci_state, c, false, inst_dims, impl, graph,NONE) ;
+        (cache,fq_class) = makeFullyQualified(cache,env, Absyn.IDENT(n));
+				//str = Absyn.pathString(fq_class); print("------------------- CLASS makeFullyQualified instClass-----------------\n");print(n); print("  ");print(str);print("\n===============================================\n");
+        dae1_1 = DAE.setComponentType(dae1, fq_class);
+        true = isTopCall(callscope);
+        callscope_1 = true;
+        //print(" Top scope?: " +& Util.boolString(callscope_1) +& " \n");
+        //print("in class ");print(n);print(" generate equations for sets:");print(Connect.printSetsStr(csets_1));print("\n");
+        checkMissingInnerDecl(dae1_1,callscope_1);
+        (csets_1,_) = retrieveOuterConnections(cache,env_3,pre,csets_1,callscope_1);
+        //print(" sets: \n" +& Connect.printSetsStr(csets_1) +& "\n");
+        //print("updated sets: ");print(Connect.printSetsStr(csets_1));print("\n");        
+        dae2 = Connect.equations(csets_1,pre);
+        //print("connected: " +& DAE.dumpElementsStr(dae2));
+        
+        (cache,dae3) = Connect.unconnectedFlowEquations(cache,csets_1, dae1, env_3, pre,callscope_1,{});
+        dae1_1 = updateTypesInUnconnectedConnectors(dae3,dae1_1);
+        //print("Unconnected: " +& DAE.dumpElementsStr(dae3));
+        dae = Util.listFlatten({dae1_1,dae2,dae3});
+        //dae = updateTypesInUnconnectedConnectors(dae3,dae);
+        ty = mktype(fq_class, ci_state_1, tys, bc_ty, equalityConstraint) ;        
+//print("\n---- DAE ----\n"); DAE.printDAE(DAE.DAE(dae));  //Print out flat modelica
+         dae = renameUniqueVarsInTopScope(callscope_1,dae); 
+      then
+        (cache,dae,env_3,store,Connect.SETS({},crs,dc,oc),ty,ci_state_1,oDA,graph);
+         */
     /* Instantiation of a class. Create new scope and call instClassIn.
      *  Then generate equations from connects.
      */
@@ -1026,6 +1066,7 @@ algorithm
         //print("updated sets: ");print(Connect.printSetsStr(csets_1));print("\n");        
         dae2 = Connect.equations(csets_1,pre);
         (cache,dae3) = Connect.unconnectedFlowEquations(cache,csets_1, dae1, env_3, pre,callscope_1,{});
+        dae1_1 = updateTypesInUnconnectedConnectors(dae3,dae1_1);
         dae = Util.listFlatten({dae1_1,dae2,dae3});          
         ty = mktype(fq_class, ci_state_1, tys, bc_ty, equalityConstraint) ;        
         //print("\n---- DAE ----\n"); DAE.printDAE(DAE.DAE(dae));  //Print out flat modelica
@@ -1091,6 +1132,143 @@ algorithm
       
   end matchcontinue;
 end reportUnitConsistency;
+
+protected function extractConnectorPrefix ""
+input Exp.ComponentRef connectorRef;
+output Exp.ComponentRef prefixCon;
+algorithm prefixCon := matchcontinue(connectorRef)
+  local
+    Exp.ComponentRef child;
+    String name; 
+    list<Exp.Subscript> subs;
+    Exp.Type ty;
+  case(Exp.CREF_IDENT(name,_,_)) // If the bottom var is a connector, then it is not an outside connector. (spec 0.1.2)
+    /*equation print(name +& " is not a outside connector \n");*/
+    then fail();
+  case(Exp.CREF_QUAL(name,(ty as Exp.COMPLEX(complexClassType=ClassInf.CONNECTOR(_))),subs,_))
+    then Exp.CREF_IDENT(name,ty,subs);
+  case(Exp.CREF_QUAL(name,ty,subs,child))
+    equation
+      child = extractConnectorPrefix(child); 
+    then 
+      Exp.CREF_QUAL(name,ty,subs,child);
+end matchcontinue;
+end extractConnectorPrefix;
+
+protected function updateTypesInUnconnectedConnectors ""
+  input list<DAE.Element> zeroEqns;
+  input list<DAE.Element> fullDae;
+  output list<DAE.Element> outdae;
+algorithm outdae := matchcontinue(zeroEqns,fullDae)
+  local
+    DAE.Element ze;
+    Exp.Exp e;
+    Exp.ComponentRef cr;
+  case({},fullDae) then fullDae;
+  case(_, {}) equation print(" error in updateTypesInUnconnectedConnectors\n"); then fail();
+  case((ze as DAE.EQUATION(exp = (e as Exp.CREF(cr,_))))::zeroEqns, fullDae)
+    equation
+      //print(Exp.printComponentRefStr(cr));
+      cr = extractConnectorPrefix(cr);
+      //print(" ===> " +& Exp.printComponentRefStr(cr) +& "\n");
+      fullDae = updateTypesInUnconnectedConnectors2(cr,fullDae);
+      fullDae = updateTypesInUnconnectedConnectors(zeroEqns,fullDae);
+    then
+      fullDae;
+  case((ze as DAE.EQUATION(scalar = (e as Exp.CREF(cr,_))))::zeroEqns, fullDae)
+    equation
+      //print(Exp.printComponentRefStr(cr));
+      cr = extractConnectorPrefix(cr); 
+      //print(" ===> " +& Exp.printComponentRefStr(cr) +& "\n");
+      fullDae = updateTypesInUnconnectedConnectors2(cr,fullDae);
+      fullDae = updateTypesInUnconnectedConnectors(zeroEqns,fullDae);
+    then
+      fullDae;
+  case((ze as DAE.EQUATION(exp = (e as Exp.CREF(cr,_))))::zeroEqns, fullDae)
+    equation
+      failure(cr = extractConnectorPrefix(cr));
+      //print("Var is not a outside connector: " +& Exp.printComponentRefStr(cr));
+      fullDae = updateTypesInUnconnectedConnectors(zeroEqns,fullDae);
+    then
+      fullDae;
+  case((ze as DAE.EQUATION(scalar = (e as Exp.CREF(cr,_))))::zeroEqns, fullDae)
+    equation
+      failure(cr = extractConnectorPrefix(cr)); 
+      //print("Var is not a outside connector: " +& Exp.printComponentRefStr(cr));
+      fullDae = updateTypesInUnconnectedConnectors(zeroEqns,fullDae);
+    then
+      fullDae;
+  case(_,_) equation print(" ERROR -- updateTypesInUnconnectedConnectors\n"); then fail();
+  end matchcontinue;
+end updateTypesInUnconnectedConnectors;
+
+protected function updateTypesInUnconnectedConnectors2 ""
+input Exp.ComponentRef inCr;
+input list<DAE.Element> elems; 
+output list<DAE.Element> outelems;
+algorithm outelems := matchcontinue(inCr, elems)
+  local
+    Exp.ComponentRef cr1,cr2;
+    DAE.Element elem,elem2;
+  case(cr1,{})
+    equation 
+      //print("error updateTypesInUnconnectedConnectors2 updateTypesInUnconnectedConnectors2\n");
+      //print(" no match for: " +& Exp.printComponentRefStr(cr1) +& "\n"); 
+    then 
+      {};
+  case(inCr,(elem2 as DAE.VAR(componentRef = cr2))::elems)
+    equation
+      //true = Exp.crefEqual(cr1,cr2);
+      true = Exp.crefPrefixOf(inCr,cr2);
+      
+               //print(" Found: " +& Exp.printComponentRefStr(cr2) +& "\n");
+               cr1 = updateCrefTypesWithConnectorPrefix(inCr,cr2);
+      elem = DAE.replaceCrefInVar(cr1,elem2);
+               //print(" to repl\n");
+               //print(" replaced to: " );
+               //print(DAE.dump2str(DAE.DAE({elem})));
+               //print("\n");
+               
+               elems = updateTypesInUnconnectedConnectors2(inCr, elems);      
+    then
+      elem::elems;
+  case(cr1,elem2::elems)
+    equation
+      elems = updateTypesInUnconnectedConnectors2(cr1, elems);
+    then
+      elem2::elems;
+  case(_,_) equation print(" ERROR updateTypesInUnconnectedConnectors2\n"); then fail();
+  end matchcontinue;
+end updateTypesInUnconnectedConnectors2;
+
+protected function updateCrefTypesWithConnectorPrefix ""
+input Exp.ComponentRef cr1,cr2;
+output Exp.ComponentRef outCref;
+algorithm outCref := matchcontinue(cr1,cr2)
+  local
+    String name,name2;
+    Exp.ComponentRef child,child2;
+    Exp.Type ty;
+    list<Exp.Subscript> subs;
+  case(Exp.CREF_IDENT(name,ty,subs),Exp.CREF_QUAL(name2,_,_,child2))
+    equation
+      true = stringEqual(name,name2);
+    then
+      Exp.CREF_QUAL(name,ty,subs,child2);
+      
+  case(Exp.CREF_QUAL(name,ty,subs,child),Exp.CREF_QUAL(name2,_,_,child2))
+    equation
+      true = stringEqual(name,name2);
+      outCref = updateCrefTypesWithConnectorPrefix(child,child2);
+    then
+      Exp.CREF_QUAL(name,ty,subs,outCref);
+  case(cr1,cr2)
+    equation
+      print(" ***** FAILURE with " +& Exp.printComponentRefStr(cr1) +& " _and_ " +& Exp.printComponentRefStr(cr2) +& "\n");
+      then
+        fail();
+  end matchcontinue;
+end updateCrefTypesWithConnectorPrefix;
 
 protected function instClassBasictype 
 "function: instClassBasictype
@@ -4449,6 +4627,7 @@ algorithm
         (env_2, ih) = addClassdefsToEnv2(env_1, ih, xs, impl,redeclareMod);
       then
         (env_2,ih);
+        
     case (env,ih,(SCode.IMPORT(imp = imp) :: xs),impl,redeclareMod)
       equation 
         env_1 = Env.extendFrameI(env, imp);
@@ -11076,8 +11255,7 @@ algorithm
   end matchcontinue;
 end instElseifs;
 
-protected function instConnect 
-"function: instConnect  
+protected function instConnect "
   Generates connectionsets for connections.
   Parameters and constants in connectors should generate appropriate assert statements.
   Hence, a DAE.Element list is returned as well."
@@ -11120,18 +11298,16 @@ algorithm
       InstanceHierarchy ih;
       
     case (cache,env,ih,sets,pre,c1,c2,impl,graph) /* impl */ 
-      equation        
+      equation
         (cache,Exp.CREF(c1_1,t1),prop1,acc) = Static.elabCref(cache,env, c1, impl,false);
-        (cache,Exp.CREF(c2_1,t2),prop2,acc) = Static.elabCref(cache,env, c2, impl,false);        
+        (cache,Exp.CREF(c2_1,t2),prop2,acc) = Static.elabCref(cache,env, c2, impl,false);
         (cache,c1_2) = Static.canonCref(cache,env, c1_1, impl);
         (cache,c2_2) = Static.canonCref(cache,env, c2_1, impl);
         (cache,attr1 as Types.ATTR(flow1,_,_,vt1,_,io1),ty1) = Lookup.lookupConnectorVar(cache,env,c1_2);
         (cache,attr2 as Types.ATTR(_,_,_,vt2,_,io2),ty2) = Lookup.lookupConnectorVar(cache,env,c2_2);
-        /*(cache,(attr1 as Types.ATTR(flow1,_,vt1,_,io1)),ty1,_) = Lookup.lookupVarLocal(cache,env, c1_2);
-        (cache,attr2 as Types.ATTR(_,_,vt2,_,io2),ty2,_,_,_) = Lookup.lookupVar(cache,env, c2_2);*/
-        validConnector(ty1) "Check that the types of the connectors are good." ;
+        validConnector(ty1) "Check that the type of the connectors are good." ;
         validConnector(ty2);
-        checkConnectTypes(env,ih,c1_2, ty1, attr1, c2_2, ty2, attr2);
+        checkConnectTypes(env,ih,c1_2, ty1, attr1, c2_2, ty2, attr2, io1, io2);
         f1 = componentFace(env,ih,c1_2);
         f2 = componentFace(env,ih,c2_2);        
         sets_1 = updateConnectionSetTypes(sets,c1_1);
@@ -11146,6 +11322,30 @@ algorithm
         
     /* adrpo: FIXME! handle expandable connectors! */
     
+    // Case to display error for non constant subscripts in connectors
+    case (cache,env,ih,sets,pre,c1,c2,impl,graph) 
+      local
+        list<Absyn.Subscript> subs1,subs2;
+        list<Absyn.ComponentRef> crefs1,crefs2; 
+        list<Types.Properties> props1,props2;
+        Types.Const const;    
+        Boolean b1,b2;
+        String s1,s2,s3,s4;
+      equation 
+        subs1 = Absyn.getSubsFromCref(c1);
+        crefs1 = Absyn.getCrefsFromSubs(subs1);
+        subs2 = Absyn.getSubsFromCref(c2);
+        crefs2 = Absyn.getCrefsFromSubs(subs2);
+        //print("Crefs in " +& Dump.printComponentRefStr(c1) +& ": " +& Util.stringDelimitList(Util.listMap(crefs1,Dump.printComponentRefStr),", ") +& "\n");
+        //print("Crefs in " +& Dump.printComponentRefStr(c2) +& ": " +& Util.stringDelimitList(Util.listMap(crefs2,Dump.printComponentRefStr),", ") +& "\n");
+        s1 = Dump.printComponentRefStr(c1);
+        s2 = Dump.printComponentRefStr(c2);
+        s1 = "connect("+&s1+&", "+&s2+&")";
+        checkConstantVariability(crefs1,cache,env,s1);
+        checkConstantVariability(crefs2,cache,env,s1);
+      then
+        fail();
+        
     case (cache,env,ih,sets,pre,c1,c2,impl,_)
       equation 
         Debug.fprintln("failtrace", "- Inst.instConnect failed");
@@ -11153,6 +11353,43 @@ algorithm
         fail();
   end matchcontinue;
 end instConnect;
+
+protected function checkConstantVariability "
+Author BZ, 2009-09
+  Helper function for instConnect, prints error message for the case with non constant(or parameter) subscript(/s) 
+"
+  input list<Absyn.ComponentRef> inrefs;
+  input Env.Cache cache;
+  input Env.Env env;
+  input String affectedConnector;
+algorithm props := matchcontinue(inrefs,cache,env,affectedConnector)
+  local
+    Absyn.ComponentRef cr;
+    Boolean b2;
+    Types.Properties prop;
+    Types.Const const;
+  case({},_,_,_) then ();
+  case(cr::inrefs,cache,env,affectedConnector)
+    equation
+      (_,_,prop,_) = Static.elabCref(cache,env,cr,false,false);
+      const = Types.elabTypePropToConst({prop});
+      true = Types.isParameterOrConstant(const);
+      checkConstantVariability(inrefs,cache,env,affectedConnector);
+    then
+      ();
+  case(cr::inrefs,cache,env,affectedConnector)
+    local String s1;
+    equation
+      (_,_,prop,_) = Static.elabCref(cache,env,cr,false,false);
+      const = Types.elabTypePropToConst({prop});
+      false = Types.isParameterOrConstant(const);
+      //print(" error for: " +& affectedConnector +& " subscript: " +& Dump.printComponentRefStr(cr) +& " non constant \n");
+      s1 = Dump.printComponentRefStr(cr);
+      Error.addMessage(Error.CONNECTOR_ARRAY_NONCONSTANT, {affectedConnector,s1});
+    then 
+      ();
+end matchcontinue;
+end checkConstantVariability;
 
 protected function getVectorizedCref 
 "for a vectorized cref, return the originial cref without vector subscripts"
@@ -11220,16 +11457,18 @@ protected function checkConnectTypes
   input Exp.ComponentRef inComponentRef4;
   input Types.Type inType5;
   input Types.Attributes inAttributes6;
+  input Absyn.InnerOuter io1;
+  input Absyn.InnerOuter io2;
 algorithm 
-  _ := matchcontinue (env,inIH,inComponentRef1,inType2,inAttributes3,inComponentRef4,inType5,inAttributes6)
+  _ := matchcontinue (env,inIH,inComponentRef1,inType2,inAttributes3,inComponentRef4,inType5,inAttributes6,io1,io2)
     local
       String c1_str,c2_str;
       Exp.ComponentRef c1,c2;
       tuple<Types.TType, Option<Absyn.Path>> t1,t2;
-      Boolean flow1,flow2,stream1,stream2;
+      Boolean flow1,flow2,stream1,stream2,outer1,outer2;
       InstanceHierarchy ih;
     /* If two input connectors are connected they must have different faces */
-    case (env,ih,c1,_,Types.ATTR(direction = Absyn.INPUT()),c2,_,Types.ATTR(direction = Absyn.INPUT()))
+    case (env,ih,c1,_,Types.ATTR(direction = Absyn.INPUT()),c2,_,Types.ATTR(direction = Absyn.INPUT()),io1,io2)
       equation 
         assertDifferentFaces(env, ih, c1, c2);
         c1_str = Exp.printComponentRefStr(c1);
@@ -11239,7 +11478,7 @@ algorithm
         fail();
 
     /* If two output connectors are connected they must have different faces */
-    case (env,ih,c1,_,Types.ATTR(direction = Absyn.OUTPUT()),c2,_,Types.ATTR(direction = Absyn.OUTPUT()))
+    case (env,ih,c1,_,Types.ATTR(direction = Absyn.OUTPUT()),c2,_,Types.ATTR(direction = Absyn.OUTPUT()),io1,io2)
       equation 
         assertDifferentFaces(env, ih, c1, c2);
         c1_str = Exp.printComponentRefStr(c1);
@@ -11249,22 +11488,35 @@ algorithm
         fail();
 
     /* The type must be identical and flow of connected variables must be same */
-    case (env,ih,_,t1,Types.ATTR(flowPrefix = flow1),_,t2,Types.ATTR(flowPrefix = flow2))
+    case (env,ih,_,t1,Types.ATTR(flowPrefix = flow1),_,t2,Types.ATTR(flowPrefix = flow2),io1,io2)
       equation 
         equality(flow1 = flow2);
-        true = Types.equivtypes(t1, t2);
+        true = Types.equivtypes(t1, t2) "we do not check arrays here";
+        outer1 = ModUtil.isPureOuter(io1);
+        outer2 = ModUtil.isPureOuter(io2);
+        false = boolAnd(outer2,outer1) "outer to outer illegal";
       then
         ();
 
-    case (env,ih,c1,_,Types.ATTR(flowPrefix = true),c2,_,Types.ATTR(flowPrefix = false))
+    case (_,_,c1,_,_,c2,_,_,io1,io2)
       equation 
+        true = ModUtil.isPureOuter(io1);
+        true = ModUtil.isPureOuter(io2);
+        c1_str = Exp.printComponentRefStr(c1);
+        c2_str = Exp.printComponentRefStr(c2);
+        Error.addMessage(Error.CONNECT_OUTER_OUTER, {c1_str,c2_str});
+      then
+        fail();
+        
+    case (env,c1,_,Types.ATTR(flowPrefix = true),c2,_,Types.ATTR(flowPrefix = false),io1,io2)
+      equation
         c1_str = Exp.printComponentRefStr(c1);
         c2_str = Exp.printComponentRefStr(c2);
         Error.addMessage(Error.CONNECT_FLOW_TO_NONFLOW, {c1_str,c2_str});
       then
         fail();
         
-    case (env,ih,c1,_,Types.ATTR(flowPrefix = false),c2,_,Types.ATTR(flowPrefix = true))
+    case (env,ih,c1,_,Types.ATTR(flowPrefix = false),c2,_,Types.ATTR(flowPrefix = true),io1,io2)
       equation 
         c1_str = Exp.printComponentRefStr(c1);
         c2_str = Exp.printComponentRefStr(c2);
@@ -11272,15 +11524,14 @@ algorithm
       then
         fail();
         
-    /* adrpo: streams cannot be flow also! all checks are done with flowPrefix = flase */
-    case (env,ih,_,t1,Types.ATTR(streamPrefix = stream1, flowPrefix = false),_,t2,Types.ATTR(streamPrefix = stream2, flowPrefix = false))
+    case (env,ih,_,t1,Types.ATTR(streamPrefix = stream1, flowPrefix = false),_,t2,Types.ATTR(streamPrefix = stream2, flowPrefix = false),io1,io2)
       equation
         equality(stream1 = stream2);
         true = Types.equivtypes(t1, t2);
       then
         ();
         
-    case (env,ih,c1,_,Types.ATTR(streamPrefix = true, flowPrefix = false),c2,_,Types.ATTR(streamPrefix = false, flowPrefix = false))
+    case (env,ih,c1,_,Types.ATTR(streamPrefix = true, flowPrefix = false),c2,_,Types.ATTR(streamPrefix = false, flowPrefix = false),io1,io2)
       equation
         c1_str = Exp.printComponentRefStr(c1);
         c2_str = Exp.printComponentRefStr(c2);
@@ -11288,15 +11539,45 @@ algorithm
       then
         fail();
         
-    case (env,ih,c1,_,Types.ATTR(streamPrefix = false, flowPrefix = false),c2,_,Types.ATTR(streamPrefix = true, flowPrefix = false))
+    case (env,ih,c1,_,Types.ATTR(streamPrefix = false, flowPrefix = false),c2,_,Types.ATTR(streamPrefix = true, flowPrefix = false),io1,io2)
       equation
         c1_str = Exp.printComponentRefStr(c1);
         c2_str = Exp.printComponentRefStr(c2);
         Error.addMessage(Error.CONNECT_STREAM_TO_NONSTREAM, {c2_str,c1_str});
       then
         fail(); 
-
-    case (env,ih,c1,_,_,c2,_,_)
+    /* The type is not identical hence error */
+    case (env,ih,c1,t1,Types.ATTR(flowPrefix = flow1),c2,t2,Types.ATTR(flowPrefix = flow2),io1,io2)
+      local String s1,s2,s3,s4,s1_1,s2_2;
+      equation
+        (t1,_) = Types.flattenArrayType(t1);
+        (t2,_) = Types.flattenArrayType(t2);
+        false = Types.equivtypes(t1, t2) "we do not check arrays here";        
+        (s1,s1_1) = Types.printConnectorTypeStr(t1);
+        (s2,s2_2) = Types.printConnectorTypeStr(t2);
+        s3 = Exp.printComponentRefStr(c1);
+        s4 = Exp.printComponentRefStr(c2);
+        Error.addMessage(Error.CONNECT_INCOMPATIBLE_TYPES, {s3,s4,s3,s1_1,s4,s2_2});
+      then
+        fail();
+        
+    /* Different dimensionality */
+    case (env,ih,c1,t1,Types.ATTR(flowPrefix = flow1),c2,t2,Types.ATTR(flowPrefix = flow2),io1,io2)
+      local 
+        String s1,s2,s3,s4,s1_1,s2_2;
+        list<Integer> iLst1,iLst2;
+      equation
+        (t1,iLst1) = Types.flattenArrayType(t1);
+        (t2,iLst2) = Types.flattenArrayType(t2);
+        false = Util.isListEqualWithCompareFunc(iLst1,iLst2,intEq);
+        false = (listLength(iLst1)+listLength(iLst2) ==0);
+        s1 = Exp.printComponentRefStr(c1);
+        s2 = Exp.printComponentRefStr(c2);
+        Error.addMessage(Error.CONNECTOR_ARRAY_DIFFERENT, {s1,s2});
+      then
+        fail();
+        
+    case (env,c1,_,_,c2,_,_,io1,io2)
       equation
         Debug.fprintln("failtrace", "- Inst.checkConnectTypes(" +& 
           Exp.printComponentRefStr(c1) +& " <-> " +& 
@@ -11304,7 +11585,7 @@ algorithm
       then
         fail();
 
-    case (env,ih,c1,t1,Types.ATTR(flowPrefix = flow1),c2,t2,Types.ATTR(flowPrefix = flow2))
+    case (env,ih,c1,t1,Types.ATTR(flowPrefix = flow1),c2,t2,Types.ATTR(flowPrefix = flow2),io1,io2)
       local Types.Type t1,t2; Boolean flow1,flow2,b0; String s0,s1,s2;
       equation 
         b0 = Types.equivtypes(t1, t2);
@@ -11356,8 +11637,7 @@ algorithm
   end matchcontinue;
 end assertDifferentFaces;
 
-protected function connectComponents
-"function: connectComponents 
+protected function connectComponents " 
   This function connects two components and generates connection
   sets along the way.  For simple components (of type Real) it
   adds the components to the set, and for complex types it traverses
@@ -11421,7 +11701,7 @@ algorithm
         c2_1 = Util.if_(c2outer,c2,c2_1);
         sets = Connect.addOuterConnection(pre,sets,c1_1,c2_1,io1,io2,f1,f2);
       then (cache,env,ih,sets,{},graph);
-        
+         
     /* flow - with a subtype of Real */ 
     case (cache,env,ih,sets,pre,c1,f1,(Types.T_REAL(varLstReal = _),_),vt1,c2,f2,(Types.T_REAL(varLstReal = _),_),vt2,true,io1,io2,graph) 
       equation 
@@ -11747,7 +12027,7 @@ algorithm
         ty_2 = Types.elabType(ty1);
         c1_1 = Exp.extendCref(c1, ty_2, n, {});
         c2_1 = Exp.extendCref(c2, ty_2, n, {});
-        checkConnectTypes(env,ih, c1_1, ty1, attr1, c2_1, ty2, attr2);
+        checkConnectTypes(env,ih, c1_1, ty1, attr1, c2_1, ty2, attr2,io1,io2);
         (cache,_,ih,sets_1,dae,graph) = connectComponents(cache,env,ih,sets, Prefix.NOPRE(), c1_1, f1, ty1,vta, c2_1, f2, ty2,vtb,flow1,io1,io2,graph);
         (cache,_,ih,sets_2,dae2,graph) = connectVars(cache,env,ih,sets_1, c1, f1, xs1,vt1, c2, f2, xs2,vt2,io1,io2,graph);
         dae_1 = listAppend(dae, dae2);

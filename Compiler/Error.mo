@@ -198,8 +198,13 @@ public constant ErrorID STRUCT_SINGULAR_SYSTEM_INITIALIZATION=111;
 public constant ErrorID CIRCULAR_EQUATION=112;
 public constant ErrorID IF_EQUATION_NO_ELSE=113;
 public constant ErrorID IF_EQUATION_UNBALANCED=114;
-public constant ErrorID LINSPACE_ILLEGAL_SIZE_ARG=115
-;
+public constant ErrorID LINSPACE_ILLEGAL_SIZE_ARG=115;
+public constant ErrorID STRUCT_SINGULAR_SYSTEM_CONNECTORS=116;
+public constant ErrorID CONNECT_INCOMPATIBLE_TYPES=117;
+public constant ErrorID CONNECT_OUTER_OUTER=118;
+public constant ErrorID CONNECTOR_ARRAY_NONCONSTANT=119;
+public constant ErrorID CONNECTOR_ARRAY_DIFFERENT=120;
+
 public constant ErrorID UNBOUND_PARAMETER_WARNING=500;
 public constant ErrorID BUILTIN_FUNCTION_SUM_HAS_SCALAR_PARAMETER=501;
 public constant ErrorID BUILTIN_FUNCTION_PRODUCT_HAS_SCALAR_PARAMETER=502;
@@ -295,6 +300,8 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           "Too many equations, overdetermined system. The model has %s equation(s) and %s variable(s)"),
           (STRUCT_SINGULAR_SYSTEM,SYMBOLIC(),ERROR(),
           "Model is structurally singular, error found sorting equations %s for variables %s"),
+          (STRUCT_SINGULAR_SYSTEM_CONNECTORS,SYMBOLIC(),ERROR(),  
+          "Model is structurally singular, the following connectors are not connected from the outside: %s"),
           (NON_EXISTING_DERIVATIVE,SYMBOLIC(),ERROR(),
           "Derivative of expression %s is non-existent"),
           (NO_CLASSES_LOADED,TRANSLATION(),ERROR(),
@@ -325,6 +332,15 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           "Cannot connect two output variables while connecting %s to %s unless one of them is inside and the other outside connector."),
           (CONNECT_FLOW_TO_NONFLOW,TRANSLATION(),ERROR(),
           "Cannot connect flow component %s to non-flow component %s"),
+          (CONNECT_INCOMPATIBLE_TYPES,TRANSLATION(),ERROR(),
+          "Incompatible components in connect statement: connect(%s, %s)\n- %s has components %s\n- %s has components %s"),
+          (CONNECT_OUTER_OUTER,TRANSLATION(),ERROR(),
+          "Illegal connecting two outer connectors in statement connect(%s, %s)"),
+          (CONNECTOR_ARRAY_NONCONSTANT,TRANSLATION(),ERROR(),
+          "in statement %s, subscript %s is not a parameter or constant"),
+          
+          (CONNECTOR_ARRAY_DIFFERENT,TRANSLATION(),ERROR(),
+          "Unmatched dimension in equation connect(%s, %s)"),
            /*
           (CONNECT_STREAM_TO_NONSTREAM,TRANSLATION(),ERROR(),
           "Cannot connect stream component %s to non-stream component %s"),
@@ -611,6 +627,14 @@ public function printMessagesStr "Relations for pretty printing.
 algorithm 
   res := ErrorExt.printMessagesStr();
 end printMessagesStr;
+
+public function printErrorsNoWarning "
+  Prints errors only to a string.
+"
+  output String res;
+algorithm 
+  res := ErrorExt.printErrorsNoWarning(); 
+end printErrorsNoWarning;
 
 public function printMessagesStrLst "function: print_messages_str
  

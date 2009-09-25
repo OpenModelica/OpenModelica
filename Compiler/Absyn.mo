@@ -1789,6 +1789,7 @@ algorithm crefs := matchcontinue(subs)
     list<ComponentRef> crefs1;
     Exp exp;
     case({}) then {};
+      case(NOSUB::subs) then getCrefsFromSubs(subs);
     case(SUBSCRIPT(exp)::subs)
       equation
         crefs1 = getCrefsFromSubs(subs);
@@ -2149,6 +2150,27 @@ algorithm
         res;
   end matchcontinue;
 end crefLastSubs;
+
+public function getSubsFromCref "
+Author: BZ, 2009-09
+ Extract subscripts of crefs.
+"
+  input ComponentRef cr;
+  output list<Subscript> subscripts;
+  
+algorithm subscripts := matchcontinue(cr)
+  local
+    list<Subscript> subs2;
+    ComponentRef child;    
+  case(CREF_IDENT(_,subs2)) then subs2;
+  case(CREF_QUAL(_,subs2,child))
+    equation
+      subscripts = getSubsFromCref(child);
+      subscripts = Util.listUnionOnTrue(subscripts,subs2, subscriptEqual);
+    then
+      subscripts;
+end matchcontinue; 
+end getSubsFromCref;
 
 public function crefStripLastSubs "function: crefStripLastSubs
   Strips the last subscripts of a ComponentRef"

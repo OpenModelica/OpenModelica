@@ -121,8 +121,12 @@ public function delCheckpoint
   external "C" ;
 end delCheckpoint;
 
-public function rollBack
+public function printErrorsNoWarning
+  output String outString;
+  external "C" ;
+end printErrorsNoWarning;
 
+public function rollBack
   external "C" ;
 end rollBack;
 

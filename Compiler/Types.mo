@@ -434,6 +434,17 @@ algorithm
   end matchcontinue;
 end externalObjectType;
 
+public function varName "
+Author BZ, 2009-09
+Function for getting the name of a Types.Var
+"
+input Var v;
+output String s;
+algorithm s := matchcontinue(v)
+  case(VAR(name =s)) then s;
+  end matchcontinue;
+end varName;
+
 public function externalObjectConstructorType "author: PA
   
   Succeeds if type is ExternalObject constructor function
@@ -2245,6 +2256,32 @@ algorithm
   end matchcontinue;
 end printTypeStr;
 
+public function printConnectorTypeStr "
+Author BZ, 2009-09
+  Print the connector-type-name 
+"
+input Type t;
+output String s "Connector type";
+output String s2 "Components of connector";
+algorithm (s,s2) := matchcontinue(t)
+  local
+    ClassInf.State st;
+    String connectorName;
+    list<Var> vars;
+    Option<Type> bc;
+    Option<Absyn.Path> op;
+    list<String> varNames;
+  case((T_COMPLEX(complexClassType = (st as ClassInf.CONNECTOR(connectorName)),complexVarLst = vars,complexTypeOption = bc),op))
+    equation
+      varNames = Util.listMap(vars,varName);
+      s = connectorName ;
+      s2 = "{" +& Util.stringDelimitList(varNames,", ") +& "}";
+      then
+        (s,s2);
+  case(_) then ("","");
+  end matchcontinue;
+end printConnectorTypeStr;
+
 public function printArraydimStr " Prints ArrayDim to a string"
   input ArrayDim inArrayDim;
   output String outString;
@@ -4028,12 +4065,14 @@ algorithm
     case ((VAR(name = id,attributes = ATTR(flowPrefix = true),type_ = ty) :: vs),cr)
       equation 
         ty2 = elabType(ty);
+         
         cr_1 = Exp.joinCrefs(cr, Exp.CREF_IDENT(id,ty2,{}));
+        //print("\n created: " +& Exp.debugPrintComponentRefTypeStr(cr_1) +& "\n"); 
         res = flowVariables(vs, cr);
       then
         (cr_1 :: res);
     case ((_ :: vs),cr)
-      equation 
+      equation
         res = flowVariables(vs, cr);
       then
         res;

@@ -429,6 +429,15 @@ public function isOuter "Returns true if InnerOuter specification is outer or in
 	  end matchcontinue;
 end isOuter;
 
+public function isPureOuter ""
+  input Absyn.InnerOuter io;
+  output Boolean res;
+algorithm res := matchcontinue(io)
+  case(Absyn.OUTER()) then true;
+  case(_) then false;	  
+end matchcontinue;
+end isPureOuter;
+
 public function isInner "Returns true if InnerOuter specification is inner or innerouter"
 	input Absyn.InnerOuter io;
 	output Boolean res;

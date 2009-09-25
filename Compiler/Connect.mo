@@ -1087,9 +1087,9 @@ algorithm
 				vars = listAppend(v1, listAppend(v2,v3));
 				*/
 				
-				//print(" v1: " +& Util.stringDelimitList(Util.listMap(v1,Exp.printComponentRefStr),", ") +& "\n");
-				//print(" v2: " +& Util.stringDelimitList(Util.listMap(v2,Exp.printComponentRefStr),", ") +& "\n");
-				
+				//print("Outside connectors, v1: " +& Util.stringDelimitList(Util.listMap(v1,Exp.printComponentRefStr),", ") +& "\n");
+				//print(" Inside connectors, v2: " +& Util.stringDelimitList(Util.listMap(v2,Exp.printComponentRefStr),", ") +& "\n");
+				 
         vars = listAppend(v1, v2);
         vars2 = getInnerFlowVariables(csets);     
         vars3 = getOuterConnectFlowVariables(csets,vars,prefix);
@@ -1369,6 +1369,7 @@ algorithm
         false = Types.isArray(tp); // scalar
         (cache,res) = generateZeroflowEquations(cache,xs,env,prefix,deletedComponents);
         cr2 = Prefix.prefixCref(prefix,cr);
+        //print(" Generated flow equation for: " +& Exp.printComponentRefStr(cr2) +& "\n");
       then
         (cache,DAE.EQUATION(Exp.CREF(cr2,Exp.REAL()),Exp.RCONST(0.0)) :: res);
   end matchcontinue;
