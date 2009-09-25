@@ -1142,16 +1142,20 @@ algorithm prefixCon := matchcontinue(connectorRef)
     String name; 
     list<Exp.Subscript> subs;
     Exp.Type ty;
+    
   case(Exp.CREF_IDENT(name,_,_)) // If the bottom var is a connector, then it is not an outside connector. (spec 0.1.2)
     /*equation print(name +& " is not a outside connector \n");*/
     then fail();
-  case(Exp.CREF_QUAL(name,(ty as Exp.COMPLEX(complexClassType=ClassInf.CONNECTOR(_))),subs,_))
+      
+  case(Exp.CREF_QUAL(name,(ty as Exp.COMPLEX(complexClassType=ClassInf.CONNECTOR(_,_))),subs,_))
     then Exp.CREF_IDENT(name,ty,subs);
+      
   case(Exp.CREF_QUAL(name,ty,subs,child))
     equation
       child = extractConnectorPrefix(child); 
     then 
       Exp.CREF_QUAL(name,ty,subs,child);
+      
 end matchcontinue;
 end extractConnectorPrefix;
 
@@ -11508,7 +11512,7 @@ algorithm
       then
         fail();
         
-    case (env,c1,_,Types.ATTR(flowPrefix = true),c2,_,Types.ATTR(flowPrefix = false),io1,io2)
+    case (env,ih,c1,_,Types.ATTR(flowPrefix = true),c2,_,Types.ATTR(flowPrefix = false),io1,io2)
       equation
         c1_str = Exp.printComponentRefStr(c1);
         c2_str = Exp.printComponentRefStr(c2);
@@ -11577,7 +11581,7 @@ algorithm
       then
         fail();
         
-    case (env,c1,_,_,c2,_,_,io1,io2)
+    case (env,_,c1,_,_,c2,_,_,io1,io2)
       equation
         Debug.fprintln("failtrace", "- Inst.checkConnectTypes(" +& 
           Exp.printComponentRefStr(c1) +& " <-> " +& 

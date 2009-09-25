@@ -1576,7 +1576,9 @@ algorithm
         (_,false) = Inst.innerOuterBooleans(io);
         //lst2 = Types.flowVariables(vars, Exp.CREF_QUAL(oid,Exp.COMPLEX(name,{},ClassInf.CONNECTOR(name)),{},Exp.CREF_IDENT(id,Exp.COMPLEX(name,{},ClassInf.CONNECTOR(name)),{})));
         // We set type unknown for inside connectors for the check of "unconnected connectors".
-        lst2 = Types.flowVariables(vars, Exp.CREF_QUAL(oid,Exp.COMPLEX(name,{},ClassInf.UNKNOWN("unk")),{},Exp.CREF_IDENT(id,Exp.COMPLEX(name,{},ClassInf.CONNECTOR(name)),{})));
+        lst2 = Types.flowVariables(vars, Exp.CREF_QUAL(oid,Exp.COMPLEX(name,{},ClassInf.UNKNOWN("unk")),{},
+                                                           Exp.CREF_IDENT(id,Exp.COMPLEX(name,{},
+                                                           ClassInf.CONNECTOR(name,isExpandable)),{})));
         res = listAppend(lst1, lst2);
       then
         res;
@@ -1619,7 +1621,10 @@ algorithm
         (_,false) = Inst.innerOuterBooleans(io);
         //lst2 = Types.flowVariables(vars, Exp.CREF_QUAL(oid,Exp.COMPLEX(name,{},ClassInf.CONNECTOR(name)),s,Exp.CREF_IDENT(id,Exp.COMPLEX(name,{},ClassInf.CONNECTOR(name)),{})));
         // We set type unknown for inside connectors for the check of "unconnected connectors".
-        lst2 = Types.flowVariables(vars, Exp.CREF_QUAL(oid,Exp.COMPLEX(name,{},ClassInf.UNKNOWN("unk")),s,Exp.CREF_IDENT(id,Exp.COMPLEX(name,{},ClassInf.CONNECTOR(name)),{})));
+        lst2 = Types.flowVariables(vars, Exp.CREF_QUAL(oid,Exp.COMPLEX(name,{},
+                                                           ClassInf.UNKNOWN("unk")),s,
+                                         Exp.CREF_IDENT(id,Exp.COMPLEX(name,{},
+                                                           ClassInf.CONNECTOR(name,isExpandable)),{})));
         res = Util.listFlatten({lst1, lst2,lst3});
       then
         res;
