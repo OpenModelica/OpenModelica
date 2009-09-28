@@ -275,8 +275,8 @@ public function instantiateImplicit
   Implicit instantiation of a program can be used for e.g. code generation
   of functions, since a function must be implicitly instantiated in order to
   generate code from it."
-	input Env.Cache inCache;
-	input InstanceHierarchy inIH;
+  input Env.Cache inCache;
+  input InstanceHierarchy inIH;
   input SCode.Program inProgram;
   output Env.Cache outCache;
   output InstanceHierarchy outIH;
@@ -371,8 +371,8 @@ public function instantiatePartialClass
  This is a function for instantiating partial 'top' classes.
  It does so by converting the partial class into a non partial class.
  Currently used by: MathCore.modelEquations, CevalScript.checkModel"
-	input Env.Cache inCache;
-	input InstanceHierarchy inIH;
+  input Env.Cache inCache;
+  input InstanceHierarchy inIH;
   input SCode.Program inProgram;
   input SCode.Path inPath;
   output Env.Cache outCache;
@@ -9540,6 +9540,8 @@ algorithm
       Absyn.ForIterators rangeIdList;
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
+      list<tuple<Absyn.ComponentRef, Integer>> lst;
+      tuple<Absyn.ComponentRef, Integer> tpl;
        
     /* connect statements */
     case (cache,env,ih,mods,pre,csets,ci_state,SCode.EQ_CONNECT(crefLeft = c1,crefRight = c2),initial_,impl,graph) 
@@ -9736,6 +9738,30 @@ algorithm
         = Lookup.lookupVar(cache,env_1, Exp.CREF_IDENT(i,Exp.OTHER(),{})) "	//Debug.fprintln (\"insti\", \"loop-variable added to scope\") &" ;
         vals = Ceval.cevalRange(1,1,len);
         (cache,dae,csets_1,graph) = unroll(cache,env_1, mod, pre, csets, ci_state, i, Values.ARRAY(vals), el, initial_, impl,graph) "	//Debug.fprintln (\"insti\", \"for expression evaluated\") &" ;
+        ci_state_1 = instEquationCommonCiTrans(ci_state, initial_) "	//Debug.fprintln (\"insti\", \"for expression unrolled\") & 	& //Debug.fprintln (\"insttr\", \"inst_equation_common_eqfor_1 succeeded\")" ;
+      then
+        (cache,env,ih,dae,csets_1,ci_state_1,graph);
+
+    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_FOR(index = i,range = Absyn.END(),eEquationLst = el),initial_,impl,graph) // Implicit range  
+      equation 
+        lst=SCode.findIteratorInEEquationLst(i,el);
+        equality(lst={});
+        Error.addMessage(Error.IMPLICIT_ITERATOR_NOT_FOUND_IN_LOOP_BODY,{i});        
+      then
+        fail();
+        
+    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_FOR(index = i,range = Absyn.END(),eEquationLst = el),initial_,impl,graph) 
+      equation 
+        lst=SCode.findIteratorInEEquationLst(i,el);
+        failure(equality(lst={}));
+        tpl=Util.listFirst(lst);
+        e=rangeExpression(tpl);
+        (cache,e_1,Types.PROP((Types.T_ARRAY(Types.DIM(_),id_t),_),_),_) = Static.elabExp(cache,env, e, impl, NONE,true) "//Debug.fprintln (\"insttr\", \"inst_equation_common_eqfor_1\") &" ;
+        env_1 = addForLoopScope(env, i, id_t) "//Debug.fprintln (\"insti\", \"for expression elaborated\") &" ;
+        (cache,Types.ATTR(false,false,SCode.RW(),SCode.VAR(),_,_),(Types.T_INTEGER(_),_),Types.UNBOUND(),_,_) 
+        = Lookup.lookupVar(cache,env_1, Exp.CREF_IDENT(i,Exp.OTHER(),{})) "	//Debug.fprintln (\"insti\", \"loop-variable added to scope\") &" ;
+        (cache,v,_) = Ceval.ceval(cache,env, e_1, impl, NONE, NONE, Ceval.MSG()) "	//Debug.fprintln (\"insti\", \"loop variable looked up\") & FIXME: Check bounds" ;
+        (cache,dae,csets_1,graph) = unroll(cache,env_1, mod, pre, csets, ci_state, i, v, el, initial_, impl,graph) "	//Debug.fprintln (\"insti\", \"for expression evaluated\") &" ;
         ci_state_1 = instEquationCommonCiTrans(ci_state, initial_) "	//Debug.fprintln (\"insti\", \"for expression unrolled\") & 	& //Debug.fprintln (\"insttr\", \"inst_equation_common_eqfor_1 succeeded\")" ;
       then
         (cache,env,ih,dae,csets_1,ci_state_1,graph);
@@ -11062,7 +11088,7 @@ algorithm
         stmt = Algorithm.makeFor(i, e_2, prop, sl_1);
       then
         (cache,stmt);
-    case (cache,env,pre,{(i,NONE)},sl,initial_,impl)
+/*  case (cache,env,pre,{(i,NONE)},sl,initial_,impl)
       equation 
         lst=Absyn.findIteratorInAlgorithmItemLst(i,sl);
 //        len=listLength(lst);
@@ -11071,7 +11097,7 @@ algorithm
         equality(lst={});
         Error.addMessage(Error.IMPLICIT_ITERATOR_NOT_FOUND_IN_LOOP_BODY,{i});        
       then
-        fail();
+        fail();*/
     case (cache,env,pre,(i,NONE)::restIterators,sl,initial_,impl)
       equation 
         lst=Absyn.findIteratorInAlgorithmItemLst(i,sl);
@@ -11911,7 +11937,7 @@ protected function connectArrayComponents "
  Help functino to connectComponents 
 Traverses arrays of complex connectors and calls connectComponents for each index
 "
-	input Env.Cache inCache;
+  input Env.Cache inCache;
   input Env inEnv;
   input InstanceHierarchy inIH;	
   input Connect.Sets inSets;
@@ -14996,7 +15022,7 @@ algorithm
                
     /* 
      * adrpo 2009-05-15: also T_COMPLEX that is NOT record but TYPE should be allowed
-                         as is used in Modelica.Mechanics.MultiBody (Orientation type)
+     *                   as is used in Modelica.Mechanics.MultiBody (Orientation type)
      */
     case(lhs,rhs,tp,initial_) equation 
       // adrpo: TODO! check if T_COMPLEX(ClassInf.TYPE)!     

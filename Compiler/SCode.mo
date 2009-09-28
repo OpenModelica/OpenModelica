@@ -1204,6 +1204,7 @@ algorithm
       String i;
       Absyn.ComponentRef fname;
       Absyn.FunctionArgs fargs;
+      list<Absyn.ForIterator> restIterators;
     case Absyn.EQ_IF(ifExp = e,equationTrueItems = tb,elseIfBranches = {},equationElseItems = fb)
       equation 
         tb_1 = elabEEquations(tb);
@@ -1244,11 +1245,26 @@ algorithm
         EQ_WHEN(cond,tb_1,{});
     case Absyn.EQ_EQUALS(leftSide = e1,rightSide = e2) then EQ_EQUALS(e1,e2); 
     case Absyn.EQ_CONNECT(connector1 = c1,connector2 = c2) then EQ_CONNECT(c1,c2); 
-    case Absyn.EQ_FOR(iterators = {(i,SOME(e))},forEquations = l)
+    case Absyn.EQ_FOR(iterators = {(i,SOME(e))},forEquations = l) /* for loop with a single iterator with explicit range */
       equation 
         l_1 = elabEEquations(l);
       then
         EQ_FOR(i,e,l_1);
+    case Absyn.EQ_FOR(iterators = {(i,NONE())},forEquations = l) /* for loop with a single iterator with implicit range */
+      equation 
+        l_1 = elabEEquations(l);
+      then
+        EQ_FOR(i,Absyn.END(),l_1);
+    case Absyn.EQ_FOR(iterators = (i,SOME(e))::(restIterators as _::_),forEquations = l) /* for loop with multiple iterators */
+      equation 
+        eq = elabEquation(Absyn.EQ_FOR(restIterators,l));
+      then
+        EQ_FOR(i,e,{eq});
+    case Absyn.EQ_FOR(iterators = (i,NONE())::(restIterators as _::_),forEquations = l) /* for loop with multiple iterators */
+      equation 
+        eq = elabEquation(Absyn.EQ_FOR(restIterators,l));
+      then
+        EQ_FOR(i,Absyn.END(),{eq});
     case Absyn.EQ_NORETCALL(functionName = Absyn.CREF_IDENT("assert", _),
                             functionArgs = Absyn.FUNCTIONARGS(args = {e1,e2},argNames = {})) 
       then EQ_ASSERT(e1,e2); 
@@ -2868,6 +2884,152 @@ algorithm
   end matchcontinue;
 end setClassRestriction;
 
+protected function findIteratorInEEquation  
+  input String inString;
+  input EEquation inEEq;               
+  output list<tuple<Absyn.ComponentRef, Integer>> outLst;
+algorithm
+    outLst:=matchcontinue(inString,inEEq)
+    local 
+      String id, id_1;
+      list<tuple<Absyn.ComponentRef, Integer>> lst,lst_1,lst_2,lst_3,lst_4;
+      Absyn.Exp e_1,e_2;
+      list<Absyn.Exp> eLst;
+      Absyn.ComponentRef cr_1, cr_2;
+      list<EEquation> eeqLst;
+      list<list<EEquation>> eeqLstLst;
+      Absyn.FunctionArgs fArgs;
+      list<tuple<Absyn.Exp, list<EEquation>>> ew;
+      
+      case (id,EQ_IF(eLst,eeqLstLst,eeqLst))
+        equation
+          lst_1=Absyn.findIteratorInExpLst(id,eLst);  
+          lst_2=findIteratorInEEquationLstLst(id,eeqLstLst);
+          lst_3=findIteratorInEEquationLst(id,eeqLst);
+          lst=Util.listFlatten({lst_1,lst_2,lst_3});
+        then lst;
+      case (id,EQ_EQUALS(e_1,e_2))
+        equation
+          lst_1=Absyn.findIteratorInExp(id,e_1);  
+          lst_2=Absyn.findIteratorInExp(id,e_2);
+          lst=listAppend(lst_1,lst_2);
+        then lst;
+      case (id,EQ_CONNECT(cr_1,cr_2))
+        equation
+          lst_1=Absyn.findIteratorInCRef(id,cr_1);  
+          lst_2=Absyn.findIteratorInCRef(id,cr_2);
+          lst=listAppend(lst_1,lst_2);
+        then lst;
+      case (id,EQ_FOR(id_1,e_1,eeqLst))
+        equation
+          failure(equality(id=id_1));
+          lst_1=Absyn.findIteratorInExp(id,e_1);  
+          lst_2=findIteratorInEEquationLst(id,eeqLst);
+          lst=listAppend(lst_1,lst_2);
+        then lst;
+      case (id,EQ_FOR(id_1,e_1,eeqLst))
+        equation
+          equality(id=id_1);
+          lst=Absyn.findIteratorInExp(id,e_1);  
+        then lst;
+      case (id,EQ_WHEN(e_1,eeqLst,ew))
+        equation
+          lst_1=Absyn.findIteratorInExp(id,e_1);  
+          lst_2=findIteratorInEEquationLst(id,eeqLst);
+          lst_3=findIteratorInElsewhen(id,ew);
+          lst=Util.listFlatten({lst_1,lst_2,lst_3});
+        then lst;
+      case (id,EQ_ASSERT(e_1,e_2))
+        equation
+          lst_1=Absyn.findIteratorInExp(id,e_1);  
+          lst_2=Absyn.findIteratorInExp(id,e_2);
+          lst=listAppend(lst_1,lst_2);
+        then lst;
+      case (id,EQ_TERMINATE(e_1))
+        equation
+          lst=Absyn.findIteratorInExp(id,e_1);  
+        then lst;
+      case (id,EQ_REINIT(cr_1,e_2))
+        equation
+          lst_1=Absyn.findIteratorInCRef(id,cr_1);  
+          lst_2=Absyn.findIteratorInExp(id,e_2);
+          lst=listAppend(lst_1,lst_2);
+        then lst;
+      case (id,EQ_NORETCALL(_,fArgs))
+        equation
+          lst=Absyn.findIteratorInFunctionArgs(id,fArgs);
+        then lst;
+      
+  end matchcontinue;
+end findIteratorInEEquation;
+
+public function findIteratorInEEquationLst "Used by Inst.instEquationCommon for EQ_FOR with implicit range"
+//This function is not tail-recursive, and I don't know how to fix it -- alleb 
+  input String inString;
+  input list<EEquation> inEEqLst;
+  output list<tuple<Absyn.ComponentRef, Integer>> outLst;
+algorithm
+    outLst:=matchcontinue(inString,inEEqLst)
+    local 
+      list<tuple<Absyn.ComponentRef, Integer>> lst,lst_1,lst_2;
+      String id;
+      list<EEquation> rest;
+      EEquation eeq;
+      case (id,{}) then {};
+      case (id,eeq::rest)
+        equation
+          lst_1=findIteratorInEEquation(id,eeq);
+          lst_2=findIteratorInEEquationLst(id,rest);
+          lst=listAppend(lst_1,lst_2);
+        then lst;
+  end matchcontinue;
+end findIteratorInEEquationLst;
+
+protected function findIteratorInEEquationLstLst 
+//This function is not tail-recursive, and I don't know how to fix it -- alleb 
+  input String inString;
+  input list<list<EEquation>> inEEqLstLst;
+  output list<tuple<Absyn.ComponentRef, Integer>> outLst;
+algorithm
+    outLst:=matchcontinue(inString,inEEqLstLst)
+    local 
+      list<tuple<Absyn.ComponentRef, Integer>> lst,lst_1,lst_2;
+      String id;
+      list<list<EEquation>> rest;
+      list<EEquation> eeq;
+      case (id,{}) then {};
+      case (id,eeq::rest)
+        equation
+          lst_1=findIteratorInEEquationLst(id,eeq);
+          lst_2=findIteratorInEEquationLstLst(id,rest);
+          lst=listAppend(lst_1,lst_2);
+        then lst;
+  end matchcontinue;
+end findIteratorInEEquationLstLst;
+
+protected function findIteratorInElsewhen 
+//This function is not tail-recursive, and I don't know how to fix it -- alleb 
+  input String inString;
+  input list<tuple<Absyn.Exp, list<EEquation>>> inElsewhen;
+  output list<tuple<Absyn.ComponentRef, Integer>> outLst;
+algorithm
+    outLst:=matchcontinue(inString,inElsewhen)
+    local 
+      list<tuple<Absyn.ComponentRef, Integer>> lst,lst_1,lst_2,lst_3;
+      String id;
+      list<tuple<Absyn.Exp, list<EEquation>>> rest;
+      Absyn.Exp e;
+      list<EEquation> eeq;
+      case (id,{}) then {};
+      case (id,(e,eeq)::rest)
+        equation
+          lst_1=Absyn.findIteratorInExp(id,e);
+          lst_2=findIteratorInEEquationLst(id,eeq);
+          lst_3=findIteratorInElsewhen(id,rest);
+          lst=Util.listFlatten({lst_1,lst_2,lst_3});
+        then lst;
+  end matchcontinue;
+end findIteratorInElsewhen;
 
 end SCode;
 

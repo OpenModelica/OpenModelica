@@ -1789,7 +1789,7 @@ algorithm crefs := matchcontinue(subs)
     list<ComponentRef> crefs1;
     Exp exp;
     case({}) then {};
-      case(NOSUB::subs) then getCrefsFromSubs(subs);
+    case(NOSUB::subs) then getCrefsFromSubs(subs);
     case(SUBSCRIPT(exp)::subs)
       equation
         crefs1 = getCrefsFromSubs(subs);
@@ -2729,6 +2729,7 @@ algorithm
       list<ForIterator> forIterators;
       FunctionArgs funcArgs;
       AlgorithmItem algItem;
+      Boolean bool;
       
       case (id,ALG_ASSIGN(e_1,e_2))
         equation
@@ -2744,7 +2745,7 @@ algorithm
           lst_4=findIteratorInAlgorithmItemLst(id,algLst_2);
           lst=Util.listFlatten({lst_1,lst_2,lst_3,lst_4});
         then lst;
-      case (id, ALG_FOR(forIterators,algLst_1))
+/*      case (id, ALG_FOR(forIterators,algLst_1))
         equation
           true=iteratorPresentAmongIterators(id,forIterators);
           lst=findIteratorInForIteratorsBounds(id,forIterators);
@@ -2754,6 +2755,13 @@ algorithm
           false=iteratorPresentAmongIterators(id,forIterators);
           lst_1=findIteratorInAlgorithmItemLst(id,algLst_1);
           lst_2=findIteratorInForIteratorsBounds(id,forIterators);
+          lst=listAppend(lst_1,lst_2);
+        then lst; */
+      case (id, ALG_FOR(forIterators,algLst_1))
+        equation
+          lst_1=findIteratorInAlgorithmItemLst(id,algLst_1);
+          (bool,lst_2)=findIteratorInForIteratorsBounds2(id,forIterators);
+          lst_1=Util.if_(bool, {}, lst_1);
           lst=listAppend(lst_1,lst_2);
         then lst;
       case (id, ALG_WHILE(e_1,algLst_1))
@@ -2862,7 +2870,7 @@ algorithm
   end matchcontinue;
 end findIteratorInElseIfExpBranch; 
 
-protected function findIteratorInFunctionArgs           
+public function findIteratorInFunctionArgs           
   input String inString;
   input FunctionArgs inFunctionArgs;
   output list<tuple<ComponentRef, Integer>> outLst;
@@ -2875,13 +2883,14 @@ algorithm
       list<NamedArg> namedArgs;
       Exp exp;
       list<ForIterator> forIterators;
+      Boolean bool;
       case (id,FUNCTIONARGS(expLst,namedArgs))
         equation
           lst_1=findIteratorInExpLst(id,expLst);
           lst_2=findIteratorInNamedArgs(id,namedArgs);
           lst=listAppend(lst_1,lst_2);
         then lst;
-      case (id, FOR_ITER_FARG(exp,forIterators))
+/*      case (id, FOR_ITER_FARG(exp,forIterators))
         equation
           true=iteratorPresentAmongIterators(id,forIterators);
           lst=findIteratorInForIteratorsBounds(id,forIterators);
@@ -2892,11 +2901,18 @@ algorithm
           lst_1=findIteratorInExp(id,exp);
           lst_2=findIteratorInForIteratorsBounds(id,forIterators);
           lst=listAppend(lst_1,lst_2);
+        then lst;    */              
+      case (id, FOR_ITER_FARG(exp,forIterators))
+        equation
+          lst_1=findIteratorInExp(id,exp);
+          (bool,lst_2)=findIteratorInForIteratorsBounds2(id,forIterators);
+          lst_1=Util.if_(bool, {}, lst_1);
+          lst=listAppend(lst_1,lst_2);
         then lst;                  
   end matchcontinue;
 end findIteratorInFunctionArgs;
 
-protected function iteratorPresentAmongIterators
+/*protected function iteratorPresentAmongIterators
   input String inString;
   input list<ForIterator> inForIterators;
   output Boolean outBool;
@@ -2917,9 +2933,9 @@ algorithm
           bool=iteratorPresentAmongIterators(id,rest);
         then bool;
   end matchcontinue;
-end iteratorPresentAmongIterators;            
+end iteratorPresentAmongIterators;      */      
               
-protected function findIteratorInExpLst//This function is not tail-recursive, and I don't know how to fix it -- alleb 
+public function findIteratorInExpLst//This function is not tail-recursive, and I don't know how to fix it -- alleb 
   input String inString;
   input list<Exp> inExpLst;
   output list<tuple<ComponentRef, Integer>> outLst;
@@ -2982,7 +2998,7 @@ algorithm
   end matchcontinue;
 end findIteratorInNamedArgs;      
           
-protected function findIteratorInForIteratorsBounds  
+/*protected function findIteratorInForIteratorsBounds  
   input String inString;
   input list<ForIterator> inForIterators;
   output list<tuple<ComponentRef, Integer>> outLst;
@@ -3005,9 +3021,43 @@ algorithm
           lst=listAppend(lst_1,lst_2);
         then lst;
   end matchcontinue;
-end findIteratorInForIteratorsBounds;
+end findIteratorInForIteratorsBounds; */
 
-protected function findIteratorInExp      
+protected function findIteratorInForIteratorsBounds2 "
+This is a fixed version of the function; it stops looking for the iterator when it finds another iterator 
+with the same name. It also returns information about whether it has found such an iterator"  
+  input String inString;
+  input list<ForIterator> inForIterators;
+  output Boolean outBool;
+  output list<tuple<ComponentRef, Integer>> outLst;
+algorithm
+    (outBool,outLst):=matchcontinue(inString,inForIterators)
+    local 
+      list<tuple<ComponentRef, Integer>> lst,lst_1,lst_2;
+      Boolean bool;
+      String id, id_1;
+      list<ForIterator> rest;
+      Exp exp;
+      case (_,{}) then (false,{});
+      case (id,(id_1,_)::_)
+        equation
+          equality(id=id_1);
+        then
+          (true,{});    
+      case (id,(_,NONE)::rest)   
+        equation
+          (bool,lst)=findIteratorInForIteratorsBounds2(id,rest);
+        then (bool,lst);
+      case (id,(_,SOME(exp))::rest)
+        equation
+          lst_1=findIteratorInExp(id,exp);
+          (bool,lst_2)=findIteratorInForIteratorsBounds2(id,rest);
+          lst=listAppend(lst_1,lst_2);
+        then (bool,lst);
+  end matchcontinue;
+end findIteratorInForIteratorsBounds2;
+
+public function findIteratorInExp      
   input String inString;
   input Exp inExp;
   output list<tuple<ComponentRef, Integer>> outLst;
@@ -3111,7 +3161,7 @@ algorithm
   end matchcontinue;
 end findIteratorInExpOpt;
 
-protected function findIteratorInCRef "
+public function findIteratorInCRef "
 The most important among \"findIteratorIn...\" functions -- they all use this one in the end
 " 
   input String inString;
@@ -3208,8 +3258,8 @@ algorithm
           lst=qualifyCRefIntLst(name,subLst,rest);
         then (CREF_QUAL(name,subLst,cref),i)::lst;    
   end matchcontinue;
-end qualifyCRefIntLst;
-
+end qualifyCRefIntLst;                        
+          
 public function setBuildTimeInInfo
   input Real buildTime;
   input Info inInfo;
