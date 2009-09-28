@@ -36,6 +36,7 @@
 #include <string>
 #include <map>
 #include <list>
+#include <set>
 
 using namespace std;
 
@@ -62,7 +63,7 @@ public:
 
 };
 
- 
+
 
 struct UnitRes{
 	UnitRes() : result(UNIT_OK), charNo(0) {;}
@@ -141,7 +142,7 @@ public:
 
 	/* Exponent power on a unit vector */
 	static UnitRes pow(Unit u, const Rational e, Unit& ur);
-   
+
 	/** Checks if the unit is equal to another unit, without comparing weights */
 	bool equalNoWeight(const Unit& u);
 private:
@@ -280,6 +281,9 @@ private:
 	/** Mapping from unit symbol to unit definitions. Includes both base and derived units. */
 	map<string,Unit> _units;
 
+	/* Set to keep track of which derived units have already been visisted in the minimizeDerivedUnits method*/
+	set<int> _derivedUnitsVisited;
+
 	/** Parse */
 	UnitRes parseExpression(Scanner& scan, Unit& unit);
 	UnitRes parseNumerator(Scanner& scan, Unit& unit);
@@ -290,7 +294,13 @@ private:
 	UnitRes parseRational(Scanner& scan, Rational& q);
 
 	/* MIP */
-	Unit solveMIP(Unit);
+	Unit solveMIP(Unit,bool innerCall=false);
+
+	/* Help function to MIP */
+	Unit minimizeDerivedUnits(Unit unit,Unit origUnit,double factor);
+	void increaseNthUnitWeight(int indx,double factor);
+	void resetNthUnitWeight(int indx,double factor);
+	int actualNumDerived(Unit unit);
 };
 
 

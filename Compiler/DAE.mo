@@ -4961,10 +4961,32 @@ algorithm  leftSideCrefs := matchcontinue(inElems)
     // no need to check elseWhen, they are beein handled in a reverse order, from inst.mo.
   case(WHEN_EQUATION(_,elems1,_)::moreWhen) then verifyWhenEquationStatements(elems1);
     
-  case(elems1) then verifyWhenEquationStatements(elems1);
-  case(_) equation print("-verify_When_Equation FAILED\n"); then fail();
+  case(inElems) then verifyWhenEquationStatements(inElems);
+  case(inElems) 
+    equation 
+      print("-verify_When_Equation FAILED\n"); 
+      //print(dumpElementsStr(elems1) +& "\n\n");
+      then fail();
 end matchcontinue;
 end verifyWhenEquation;
+
+protected function verifyWhenEquationStatements2 ""
+input list<Exp.Exp> inExps;
+output list<Exp.ComponentRef> leftSideCrefs;
+algorithm leftSideCrefs := matchcontinue(inExps)
+  local
+    Exp.Exp e;
+    list<Exp.ComponentRef> crefs1,crefs2;
+  case({}) then {};
+  case(e::inExps)
+    equation
+      crefs1 = verifyWhenEquationStatements({EQUATION(e,e)});
+      crefs2 = verifyWhenEquationStatements2(inExps);
+      leftSideCrefs = listAppend(crefs1,crefs2);
+      then
+        leftSideCrefs;
+  end matchcontinue;
+end verifyWhenEquationStatements2;
 
 protected function verifyWhenEquationStatements "
 Author BZ, 2008-09
@@ -5020,6 +5042,13 @@ algorithm
       lhsCrefs = verifyWhenEquationStatements(rest);
       then
         cref::lhsCrefs;
+    case(EQUATION(exp = Exp.TUPLE(exps1))::rest)
+      equation
+        crefs1 = verifyWhenEquationStatements2(exps1);
+        lhsCrefs = verifyWhenEquationStatements(rest);
+        lhsCrefs = listAppend(crefs1,lhsCrefs);
+      then 
+        lhsCrefs;
     case(EQUEQUATION(cref,_)::rest)
       equation
         lhsCrefs = verifyWhenEquationStatements(rest);

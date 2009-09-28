@@ -122,7 +122,7 @@ uniontype Statement "There are four kinds of statements.  Assignments (`a := b;\
     Exp.Exp msg;
   end TERMINATE;
 
-  record REINIT
+  record REINIT 
     Exp.Exp var "Variable"; 
     Exp.Exp value "Value "; 
   end REINIT;
@@ -193,6 +193,34 @@ algorithm
     case(_) then false;
   end matchcontinue;
 end algorithmEmpty;
+
+public function splitReinits ""
+  input list<Algorithm> inAlgs;
+  output list<Algorithm> reinits; 
+  output list<Statement> rest;
+algorithm (reinits,rest) := matchcontinue(inAlgs)
+  local
+    Statement a;
+    list<Statement> al;
+  case({}) then ({},{});
+  case(ALGORITHM(al as {a as REINIT(var = _)})::inAlgs) 
+    equation
+      (reinits,rest) = splitReinits(inAlgs);
+    then
+      (ALGORITHM({a})::reinits,rest); 
+  case(ALGORITHM(al as {a})::inAlgs) 
+    equation
+      (reinits,rest) = splitReinits(inAlgs);
+    then
+      (reinits,a::rest);
+  case( ALGORITHM((a::al)):: inAlgs ) 
+    equation
+      inAlgs = listAppend({ALGORITHM({a}),ALGORITHM(al)},inAlgs);
+      (reinits,rest) = splitReinits(inAlgs);
+    then 
+      (reinits,rest);
+end matchcontinue;
+end splitReinits; 
 
 public function makeAssignment 
 "function: makeAssignment
