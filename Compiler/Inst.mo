@@ -4718,7 +4718,7 @@ algorithm
     case (_,{}) then false; 
     case (compname,(SCode.EQUATION(eEquation = SCode.EQ_IF(condition = conds)) :: _))
       equation 
-        crefs = Util.listFlatten(Util.listMap(conds,Absyn.getCrefFromExp));
+        crefs = Util.listFlatten(Util.listMap1(conds,Absyn.getCrefFromExp,false));
         true = memberCrefs(compname, crefs);
       then
         true;
@@ -6599,7 +6599,7 @@ algorithm
     case ((mod as SCode.MOD(subModLst = submods,absynExpOption = SOME((e,_))))) 
       equation 
         l1 = getCrefFromSubmods(submods);
-        l2 = Absyn.getCrefFromExp(e);
+        l2 = Absyn.getCrefFromExp(e,true);
         res = listAppend(l2, l1);
       then
         res;
@@ -6634,7 +6634,7 @@ algorithm
     case ((Absyn.SUBSCRIPT(subScript = exp) :: rest))
       equation 
         l1 = getCrefFromDim(rest);
-        l2 = Absyn.getCrefFromExp(exp);
+        l2 = Absyn.getCrefFromExp(exp,true);
         res = listAppend(l1, l2);
       then
         res;
@@ -15098,7 +15098,7 @@ algorithm
   crefs := matchcontinue(cond)
     local  Absyn.Exp e;
     case(NONE) then {};
-    case SOME(e) then Absyn.getCrefFromExp(e);
+    case SOME(e) then Absyn.getCrefFromExp(e,true);
   end matchcontinue;
 end getCrefFromCond;
 

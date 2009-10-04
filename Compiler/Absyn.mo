@@ -1793,21 +1793,23 @@ algorithm crefs := matchcontinue(subs)
     case(SUBSCRIPT(exp)::subs)
       equation
         crefs1 = getCrefsFromSubs(subs);
-        crefs = getCrefFromExp(exp);
+        crefs = getCrefFromExp(exp,true);
         crefs = listAppend(crefs,crefs1);
+        //crefs = Util.listUnionOnTrue(crefs,crefs1,crefEqual);
         then
           crefs;
 end matchcontinue;
 end getCrefsFromSubs;
 
-public function getCrefFromExp "function: getCrefFromExp
+public function getCrefFromExp "
   Returns a flattened list of the 
   component references in an expression"
   input Exp inExp;
+  input Boolean checkSubs;
   output list<ComponentRef> outComponentRefLst;
 algorithm 
   outComponentRefLst:=
-  matchcontinue (inExp)
+  matchcontinue (inExp,checkSubs)
     local
       ComponentRef cr;
       list<ComponentRef> l1,l2,res,res1,l3;
@@ -1818,88 +1820,100 @@ algorithm
       list<list<ComponentRef>> res2;
       list<ComponentCondition> expl;
       list<list<ComponentCondition>> expll;
-    case (INTEGER(value = _)) then {}; 
-    case (REAL(value = _)) then {}; 
-    case (STRING(value = _)) then {}; 
-    case (BOOL(value = _)) then {}; 
-    case (CREF(componentReg = cr)) then {cr}; 
-    case (BINARY(exp1 = e1,op = op,exp2 = e2))
+    case (INTEGER(value = _),checkSubs) then {}; 
+    case (REAL(value = _),checkSubs) then {}; 
+    case (STRING(value = _),checkSubs) then {}; 
+    case (BOOL(value = _),checkSubs) then {}; 
+    case (CREF(componentReg = cr),false) then {cr}; 
+    case (CREF(componentReg = (cr as WILD)),_) then {};
+      
+      case (CREF(componentReg = (cr)),true) 
+        local
+          list<Subscript> subs;
+        equation
+          subs = getSubsFromCref(cr);
+          l1 = getCrefsFromSubs(subs);          
+      then cr::l1;
+      
+    case (BINARY(exp1 = e1,op = op,exp2 = e2),checkSubs)
       equation 
-        l1 = getCrefFromExp(e1);
-        l2 = getCrefFromExp(e2);
+        l1 = getCrefFromExp(e1,checkSubs);
+        l2 = getCrefFromExp(e2,checkSubs);
         res = listAppend(l1, l2);
       then
         res;
-    case (UNARY(op = op,exp = e1))
+    case (UNARY(op = op,exp = e1),checkSubs)
       equation 
-        res = getCrefFromExp(e1);
+        res = getCrefFromExp(e1,checkSubs);
       then
         res;
-    case (LBINARY(exp1 = e1,op = op,exp2 = e2))
+    case (LBINARY(exp1 = e1,op = op,exp2 = e2),checkSubs)
       equation 
-        l1 = getCrefFromExp(e1);
-        l2 = getCrefFromExp(e2);
+        l1 = getCrefFromExp(e1,checkSubs);
+        l2 = getCrefFromExp(e2,checkSubs);
         res = listAppend(l1, l2);
       then
         res;
-    case (LUNARY(op = op,exp = e1))
+    case (LUNARY(op = op,exp = e1),checkSubs)
       equation 
-        res = getCrefFromExp(e1);
+        res = getCrefFromExp(e1,checkSubs);
       then
         res;
-    case (RELATION(exp1 = e1,op = op,exp2 = e2))
+    case (RELATION(exp1 = e1,op = op,exp2 = e2),checkSubs)
       equation 
-        l1 = getCrefFromExp(e1);
-        l2 = getCrefFromExp(e2);
+        l1 = getCrefFromExp(e1,checkSubs);
+        l2 = getCrefFromExp(e2,checkSubs);
         res = listAppend(l1, l2);
       then
         res;
-    case (IFEXP(ifExp = e1,trueBranch = e2,elseBranch = e3,elseIfBranch = e4))
+    case (IFEXP(ifExp = e1,trueBranch = e2,elseBranch = e3,elseIfBranch = e4),checkSubs)
       equation 
-        l1 = getCrefFromExp(e1);
-        l2 = getCrefFromExp(e2);
+        l1 = getCrefFromExp(e1,checkSubs);
+        l2 = getCrefFromExp(e2,checkSubs);
         res1 = listAppend(l1, l2);
-        l3 = getCrefFromExp(e3);
+        l3 = getCrefFromExp(e3,checkSubs);
         res = listAppend(res1, l3) "TODO elseif\'s e4" ;
       then
         res;
-    case (CALL(functionArgs = farg))
+    case (CALL(functionArgs = farg),checkSubs)
       equation 
-        res = getCrefFromFarg(farg) "res = Util.listMap(expl,get_cref_from_exp)" ;
+        res = getCrefFromFarg(farg,checkSubs) "res = Util.listMap(expl,get_cref_from_exp)" ;
       then
         res;
-    case (ARRAY(arrayExp = expl))
+    case (ARRAY(arrayExp = expl),checkSubs)
       local list<list<ComponentRef>> res1;
       equation 
-        res1 = Util.listMap(expl, getCrefFromExp);
+        res1 = Util.listMap1(expl, getCrefFromExp,checkSubs);
         res = Util.listFlatten(res1);
       then
         res;
-    case (MATRIX(matrix = expll))
+    case (MATRIX(matrix = expll),checkSubs)
       local list<list<list<ComponentRef>>> res1;
       equation 
-        res1 = Util.listListMap(expll, getCrefFromExp);
+        res1 = Util.listListMap1(expll, getCrefFromExp,checkSubs);
         res2 = Util.listFlatten(res1);
         res = Util.listFlatten(res2);
       then
         res;
-    case (RANGE(start = e1,step = SOME(e3),stop = e2))
+    case (RANGE(start = e1,step = SOME(e3),stop = e2),checkSubs)
       equation 
-        l1 = getCrefFromExp(e1);
-        l2 = getCrefFromExp(e2);
+        l1 = getCrefFromExp(e1,checkSubs);
+        l2 = getCrefFromExp(e2,checkSubs);
         res1 = listAppend(l1, l2);
-        l3 = getCrefFromExp(e3);
+        l3 = getCrefFromExp(e3,checkSubs);
         res = listAppend(res1, l3);
       then
         res;
-    case (RANGE(start = e1,step = NONE,stop = e2))
+    case (RANGE(start = e1,step = NONE,stop = e2),checkSubs)
       equation 
-        l1 = getCrefFromExp(e1);
-        l2 = getCrefFromExp(e2);
+        l1 = getCrefFromExp(e1,checkSubs);
+        l2 = getCrefFromExp(e2,checkSubs);
         res = listAppend(l1, l2);
       then
         res;
-    case (TUPLE(expressions = expl))
+    case (END,checkSubs) then {};
+        
+    case (TUPLE(expressions = expl),checkSubs)
       equation 
         print("#- Absyn.getCrefFromExp is not implemented yet for Abyn.TUPLE\n") 
         "res = Util.listMap(expl,getCrefFromExp)" ;
@@ -1912,20 +1926,19 @@ protected function getCrefFromFarg "function: getCrefFromFarg
   Returns the flattened list of all component references 
   present in a list of function arguments."
   input FunctionArgs inFunctionArgs;
+  input Boolean checkSubs;
   output list<ComponentRef> outComponentRefLst;
-algorithm 
-  outComponentRefLst:=
-  matchcontinue (inFunctionArgs)
+algorithm outComponentRefLst := matchcontinue (inFunctionArgs,checkSubs)
     local
       list<list<ComponentRef>> l1,l2;
       list<ComponentRef> fl1,fl2,res;
       list<ComponentCondition> expl;
       list<NamedArg> nargl;
-    case (FUNCTIONARGS(args = expl,argNames = nargl))
+    case (FUNCTIONARGS(args = expl,argNames = nargl),checkSubs)
       equation 
-        l1 = Util.listMap(expl, getCrefFromExp);
+        l1 = Util.listMap1(expl, getCrefFromExp,checkSubs);
         fl1 = Util.listFlatten(l1);
-        l2 = Util.listMap(nargl, getCrefFromNarg);
+        l2 = Util.listMap1(nargl, getCrefFromNarg,checkSubs);
         fl2 = Util.listFlatten(l2);
         res = listAppend(fl1, fl2);
       then
@@ -1937,16 +1950,15 @@ protected function getCrefFromNarg "function: getCrefFromNarg
   Returns the flattened list of all component references 
   present in a list of named function arguments."
   input NamedArg inNamedArg;
+  input Boolean checkSubs;
   output list<ComponentRef> outComponentRefLst;
-algorithm 
-  outComponentRefLst:=
-  matchcontinue (inNamedArg)
+algorithm outComponentRefLst := matchcontinue (inNamedArg,checkSubs)
     local
       list<ComponentRef> res;
       ComponentCondition exp;
-    case (NAMEDARG(argValue = exp))
+    case (NAMEDARG(argValue = exp),checkSubs)
       equation 
-        res = getCrefFromExp(exp);
+        res = getCrefFromExp(exp,checkSubs);
       then
         res;
   end matchcontinue;
@@ -2049,7 +2061,18 @@ algorithm (outPath1,outPath2) := matchcontinue(inPath)
   case(QUALIFIED(name=s1, path=qPath)) equation
     (curPath,identPath) = splitQualAndIdentPath(qPath);
   then (QUALIFIED(s1,curPath),identPath);
-end matchcontinue;
+  case(FULLYQUALIFIED(qPath)) 
+    equation
+    (curPath,identPath) = splitQualAndIdentPath(qPath);
+    then 
+       (curPath,identPath);
+  case(qPath)
+    equation
+      print(" Failure in: " +& pathString(qPath) +& "\n");
+    then
+      fail();
+  case(_) equation print(" failure in splitQualAndIdentPath\n"); then fail();
+end matchcontinue; 
 end splitQualAndIdentPath;
 
 public function stripFirst "function: stripFirst

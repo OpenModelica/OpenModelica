@@ -90,9 +90,8 @@ public function addDependency "add a dependency tha a class 'cl' uses another cl
    local 
      AvlTree uses, usedBy;
      case(DEPENDS(uses,usedBy),cl,usesClass) equation
-       //print("ADD "+&Absyn.pathString(cl)+&" -> {"+&Absyn.pathString(usesClass)+&"}\n");
          uses = avlTreeAdd(uses,cl,{usesClass});
-         usedBy = avlTreeAdd(usedBy,usesClass,{cl});      
+         usedBy = avlTreeAdd(usedBy,usesClass,{cl});
      then DEPENDS(uses,usedBy);
    end matchcontinue;
  end addDependency;
@@ -224,6 +223,24 @@ public function getUsedBy "returns the classes that uses the class 'cl' e.g. as 
    end matchcontinue;   
 end getUsedBy;
  
+public function getUsedBySub "
+Author BZ, 2009-10
+If inpu cl is 'A.B' it returns classes using A.B, but also classes that uses A.B.C.D and A.B.R, it returns all classes that equals or are a subpath of provided path.
+"
+  input Depends depends;
+  input Absyn.Path cl;
+  output AvlTree usedBy;
+algorithm
+  usedBy := matchcontinue(depends,cl)
+    local AvlValue v;     
+    case(DEPENDS(_,usedBy),cl) equation
+      v = avlTreeGetSubs(usedBy,cl);
+      //print("included: " +& Util.stringDelimitList(Util.listMap(v,Absyn.pathString),", ") +& "\n");
+      usedBy= avlAddUses(avlTreeNew(),v);     
+    then usedBy;
+  end matchcontinue;   
+end getUsedBySub;
+
  /*
  *
  *  Generic AVL tree implementation below (copied from Env) 
@@ -316,6 +333,7 @@ algorithm
       Option<AvlTree> left,right;     
       Integer rhval,h;
       AvlTree t_1,t,right_1,left_1,bt;
+      
       /* empty tree*/
     case (AVLTREENODE(value = NONE,height=h,left = NONE,right = NONE),key,value) 
     	then AVLTREENODE(SOME(AVLTREEVALUE(key,value)),1,NONE,NONE);  
@@ -614,6 +632,50 @@ algorithm
         res;
   end matchcontinue;
 end avlTreeGet;
+
+protected function avlTreeGetSubsopt
+  input Option<AvlTree> inAvlTree;
+  input AvlKey inKey;
+  output AvlValue outValue;
+  AvlTree item;
+  algorithm outValue := matchcontinue(inAvlTree,inKey)
+  case(NONE,_) then {};
+  case(SOME(item),inKey) then avlTreeGetSubs (item,inKey);
+end matchcontinue;
+end avlTreeGetSubsopt;
+
+public function avlTreeGetSubs "  Get values from the binary tree given a key.
+"
+  input AvlTree inAvlTree;
+  input AvlKey inKey;
+  output AvlValue outValue;
+algorithm outValue:= matchcontinue (inAvlTree,inKey)
+    local
+      AvlKey rkey,key;
+      AvlValue rval,res,res2;
+      Option<AvlTree> left,right;
+      Integer rhval;
+      Boolean b1,b2;      
+      String s1;
+      // end of tree case
+  case (AVLTREENODE(value = SOME(AVLTREEVALUE(rkey,rval)),left = NONE,right = NONE),key) 
+    equation 
+      b2 = Absyn.pathPrefixOf(key,rkey);
+      rval = Util.if_(b2,rval,{}); 
+    then
+      rval;
+      // Normal case, compare current node and search left+right      
+    case (AVLTREENODE(value = SOME(AVLTREEVALUE(rkey,rval)),left = left,right = right),key) 
+      equation 
+        b1 = Absyn.pathPrefixOf(key,rkey);
+        rval = Util.if_(b1,rval,{}); 
+        res = avlTreeGetSubsopt(left, key);
+        res2 = avlTreeGetSubsopt(right, key);
+        rval = listAppend(rval,listAppend(res,res2));
+      then
+        rval;
+  end matchcontinue;
+end avlTreeGetSubs;
 
 protected function getOptionStr "function getOptionStr
  

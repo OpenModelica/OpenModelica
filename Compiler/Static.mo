@@ -4230,8 +4230,8 @@ algorithm
       Env.Cache cache;
     case (cache,env,{s1,s2},_,impl) /* impl */ 
       equation 
-        cref_list1 = Absyn.getCrefFromExp(s1);
-        cref_list2 = Absyn.getCrefFromExp(s2);
+        cref_list1 = Absyn.getCrefFromExp(s1,true);
+        cref_list2 = Absyn.getCrefFromExp(s2,true);
         cref_list = listAppend(cref_list1, cref_list2);
         symbol_table = absynCrefListToInteractiveVarList(cref_list, Interactive.emptySymboltable, 
           (Types.T_REAL({}),NONE));
@@ -4278,7 +4278,7 @@ algorithm
       Env.Cache cache;
     case (cache,env,{s1,Absyn.STRING(value = "Real")},_,impl) /* impl */ 
       equation 
-        cref_list = Absyn.getCrefFromExp(s1);
+        cref_list = Absyn.getCrefFromExp(s1,true);
         symbol_table = absynCrefListToInteractiveVarList(cref_list, Interactive.emptySymboltable, 
           (Types.T_REAL({}),NONE));
         gen_env = Interactive.buildEnvFromSymboltable(symbol_table);
@@ -4287,7 +4287,7 @@ algorithm
         (cache,Exp.CALL(Absyn.IDENT("simplify"),{s1_1},false,true,Exp.REAL()),st);
     case (cache,env,{s1,Absyn.STRING(value = "Integer")},_,impl)
       equation 
-        cref_list = Absyn.getCrefFromExp(s1);
+        cref_list = Absyn.getCrefFromExp(s1,true);
         symbol_table = absynCrefListToInteractiveVarList(cref_list, Interactive.emptySymboltable, 
           (Types.T_INTEGER({}),NONE));
         gen_env = Interactive.buildEnvFromSymboltable(symbol_table);

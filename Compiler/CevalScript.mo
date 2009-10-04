@@ -3255,9 +3255,10 @@ algorithm
         Print.clearErrorBuf() "Clear error buffer";
         p_1 = SCode.elaborate(ptot); 
         
-        UnitParserExt.clear();
-        UnitAbsynBuilder.registerUnits(ptot);
-        UnitParserExt.commit();
+        //UnitParserExt.clear();
+        //UnitAbsynBuilder.registerUnits(ptot);
+        //UnitParserExt.commit();
+        
         (cache, env, _, dae as DAE.DAE(dael)) = 
         Inst.instantiateClass(inCache, InstanceHierarchy.emptyInstanceHierarchy, p_1, className);        
         ((dae as DAE.DAE(dael))) = DAE.transformIfEqToExpr(dae);
@@ -3290,9 +3291,9 @@ algorithm
         Print.clearErrorBuf() "Clear error buffer";        
         p_1 = SCode.elaborate(ptot);
         
-        UnitParserExt.clear();
-        UnitAbsynBuilder.registerUnits(ptot);
-        UnitParserExt.commit();
+        //UnitParserExt.clear();
+        //UnitAbsynBuilder.registerUnits(ptot);
+        //UnitParserExt.commit();
 
         (cache, env, _, dae as DAE.DAE(dael)) = 
         Inst.instantiateFunctionImplicit(inCache, InstanceHierarchy.emptyInstanceHierarchy, p_1, className);
