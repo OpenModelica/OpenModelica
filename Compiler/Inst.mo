@@ -1000,46 +1000,6 @@ algorithm
       then
         fail();
          
-         
-         /* TEMP DUMMY **/
-         /*
-             case (cache,env,store,mod,pre,csets,
-          (c as SCode.CLASS(name = n,encapsulatedPrefix = encflag,restriction = r, partialPrefix = false)),
-          inst_dims,impl,callscope,graph)
-      local 
-        Types.EqualityConstraint equalityConstraint;
-      equation 
-        //print("---- CLASS: "); print(n);print(" ----\n"); print(SCode.printClassStr(c)); //Print out the input SCode class
-        //str = SCode.printClassStr(c); print("------------------- CLASS instClass-----------------\n");print(str);print("\n===============================================\n");
-        env_1 = Env.openScope(env, encflag, SOME(n));
-        ci_state = ClassInf.start(r, n);
-        (cache,dae1,env_3,store,(csets_1 as Connect.SETS(_,crs,dc,oc)),ci_state_1,tys,bc_ty,oDA,equalityConstraint, graph) 
-        			= instClassIn(cache,env_1, store, mod, pre, csets, ci_state, c, false, inst_dims, impl, graph,NONE) ;
-        (cache,fq_class) = makeFullyQualified(cache,env, Absyn.IDENT(n));
-				//str = Absyn.pathString(fq_class); print("------------------- CLASS makeFullyQualified instClass-----------------\n");print(n); print("  ");print(str);print("\n===============================================\n");
-        dae1_1 = DAE.setComponentType(dae1, fq_class);
-        true = isTopCall(callscope);
-        callscope_1 = true;
-        //print(" Top scope?: " +& Util.boolString(callscope_1) +& " \n");
-        //print("in class ");print(n);print(" generate equations for sets:");print(Connect.printSetsStr(csets_1));print("\n");
-        checkMissingInnerDecl(dae1_1,callscope_1);
-        (csets_1,_) = retrieveOuterConnections(cache,env_3,pre,csets_1,callscope_1);
-        //print(" sets: \n" +& Connect.printSetsStr(csets_1) +& "\n");
-        //print("updated sets: ");print(Connect.printSetsStr(csets_1));print("\n");        
-        dae2 = Connect.equations(csets_1,pre);
-        //print("connected: " +& DAE.dumpElementsStr(dae2));
-        
-        (cache,dae3) = Connect.unconnectedFlowEquations(cache,csets_1, dae1, env_3, pre,callscope_1,{});
-        dae1_1 = updateTypesInUnconnectedConnectors(dae3,dae1_1);
-        //print("Unconnected: " +& DAE.dumpElementsStr(dae3));
-        dae = Util.listFlatten({dae1_1,dae2,dae3});
-        //dae = updateTypesInUnconnectedConnectors(dae3,dae);
-        ty = mktype(fq_class, ci_state_1, tys, bc_ty, equalityConstraint) ;        
-//print("\n---- DAE ----\n"); DAE.printDAE(DAE.DAE(dae));  //Print out flat modelica
-         dae = renameUniqueVarsInTopScope(callscope_1,dae); 
-      then
-        (cache,dae,env_3,store,Connect.SETS({},crs,dc,oc),ty,ci_state_1,oDA,graph);
-         */
     /* Instantiation of a class. Create new scope and call instClassIn.
      *  Then generate equations from connects.
      */
@@ -1133,7 +1093,10 @@ algorithm
   end matchcontinue;
 end reportUnitConsistency;
 
-protected function extractConnectorPrefix ""
+protected function extractConnectorPrefix "
+Author: BZ, 2009-09 
+Extract the part before the conector ex: a.b.c.connector_d.e would return a.b.c
+"
 input Exp.ComponentRef connectorRef;
 output Exp.ComponentRef prefixCon;
 algorithm prefixCon := matchcontinue(connectorRef)
@@ -1159,7 +1122,12 @@ algorithm prefixCon := matchcontinue(connectorRef)
 end matchcontinue;
 end extractConnectorPrefix;
 
-protected function updateTypesInUnconnectedConnectors ""
+protected function updateTypesInUnconnectedConnectors "
+Author: BZ, 2009-09
+Given a set of zeroequations (unconnected flow variables) and the subset dae containing flow-variable declaration:
+Set same type to variable as the equations have.
+Note: This is a hack to readd the typing of the variables. 
+"
   input list<DAE.Element> zeroEqns;
   input list<DAE.Element> fullDae;
   output list<DAE.Element> outdae;
@@ -1206,7 +1174,10 @@ algorithm outdae := matchcontinue(zeroEqns,fullDae)
   end matchcontinue;
 end updateTypesInUnconnectedConnectors;
 
-protected function updateTypesInUnconnectedConnectors2 ""
+protected function updateTypesInUnconnectedConnectors2 "
+Author: BZ, 2009-09
+Helper function for updateTypesInUnconnectedConnectors
+"
 input Exp.ComponentRef inCr;
 input list<DAE.Element> elems; 
 output list<DAE.Element> outelems;
@@ -1216,24 +1187,18 @@ algorithm outelems := matchcontinue(inCr, elems)
     DAE.Element elem,elem2;
   case(cr1,{})
     equation 
-      //print("error updateTypesInUnconnectedConnectors2 updateTypesInUnconnectedConnectors2\n");
+      //print("error updateTypesInUnconnectedConnectors2\n");
       //print(" no match for: " +& Exp.printComponentRefStr(cr1) +& "\n"); 
     then 
       {};
   case(inCr,(elem2 as DAE.VAR(componentRef = cr2))::elems)
     equation
-      //true = Exp.crefEqual(cr1,cr2);
       true = Exp.crefPrefixOf(inCr,cr2);
-      
-               //print(" Found: " +& Exp.printComponentRefStr(cr2) +& "\n");
-               cr1 = updateCrefTypesWithConnectorPrefix(inCr,cr2);
+      //print(" Found: " +& Exp.printComponentRefStr(cr2) +& "\n");
+      cr1 = updateCrefTypesWithConnectorPrefix(inCr,cr2);
       elem = DAE.replaceCrefInVar(cr1,elem2);
-               //print(" to repl\n");
-               //print(" replaced to: " );
-               //print(DAE.dump2str(DAE.DAE({elem})));
-               //print("\n");
-               
-               elems = updateTypesInUnconnectedConnectors2(inCr, elems);      
+      //print(" replaced to: " ); print(DAE.dump2str(DAE.DAE({elem}))); print("\n");
+      elems = updateTypesInUnconnectedConnectors2(inCr, elems);      
     then
       elem::elems;
   case(cr1,elem2::elems)
@@ -1245,7 +1210,10 @@ algorithm outelems := matchcontinue(inCr, elems)
   end matchcontinue;
 end updateTypesInUnconnectedConnectors2;
 
-protected function updateCrefTypesWithConnectorPrefix ""
+protected function updateCrefTypesWithConnectorPrefix "
+Author: BZ, 2009-09
+Helper function for updateTypesInUnconnectedConnectors2
+"
 input Exp.ComponentRef cr1,cr2;
 output Exp.ComponentRef outCref;
 algorithm outCref := matchcontinue(cr1,cr2)
@@ -5004,8 +4972,7 @@ algorithm
   end matchcontinue;
 end memberCrefs;
 
-public function instElement 
-"function: instElement 
+public function instElement " 
   This monster function instantiates an element of a class
   definition.  An element is either a class definition, a variable,
   or an extends clause.
@@ -14546,7 +14513,7 @@ algorithm
         cl2 = removeCrefFromCrefs(cl1, c1);
         (cache,c,cenv) = Lookup.lookupClass(cache,env, sty, true);
         (cache,dims) = elabArraydim(cache,cenv, c1, sty, ad, NONE, impl, NONE,true)  ;
-        (cache,compenv,ih,store,_,_,ty,_) = instVar(cache,cenv,ih, store,state, Types.NOMOD(), pre, csets, n, c, attr, prot, dims, {}, inst_dims, impl, NONE ,io,finalPrefix,info,ConnectionGraph.EMPTY);
+        (cache,compenv,ih,store,_,_,ty,_) = instVar(cache,cenv,ih, store,state, Types.NOMOD(), pre, csets, n, c, attr, prot, dims, {}, inst_dims, true, NONE ,io,finalPrefix,info,ConnectionGraph.EMPTY);
         new_var = Types.VAR(n,Types.ATTR(flowPrefix,streamPrefix,acc,param,dir,io),prot,ty,Types.UNBOUND());
         env = Env.updateFrameV(env, new_var, Env.VAR_TYPED(), compenv)  ;
       then
