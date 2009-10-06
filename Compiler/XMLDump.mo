@@ -878,7 +878,7 @@ algorithm
         Exp.ComponentRef cref_c;
         String cref;
       case {}  then ();
-      case ((crefIndex as DAELow.CREFINDEX(cref=SOME(cref_c),index=SOME(index_c))) :: crefIndexList)
+      case ((crefIndex as DAELow.CREFINDEX(cref=cref_c,index=index_c)) :: crefIndexList)
       equation
         cref=Exp.crefStr(cref_c);
         dumpStrOpenTagAttr(ELEMENT,ID,intString(index_c));
@@ -2865,7 +2865,7 @@ algorithm
         String str_s;
         Integer index_s;
       case {} then ();
-      case ((stringIndex as DAELow.STRINGINDEX(str=SOME(str_s),index=SOME(index_s))) :: stringIndexList)
+      case ((stringIndex as DAELow.STRINGINDEX(str=str_s,index=index_s)) :: stringIndexList)
         local Boolean ver;
       equation
         dumpStrOpenTagAttr(ELEMENT,ID,intString(index_s));
