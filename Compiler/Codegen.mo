@@ -51,37 +51,17 @@ public import Absyn;
 public import Convert;
 public import MetaUtil;
 
-public
+public 
 type Ident = String;
-
-public
 type ReturnType = String;
-
-public
 type FunctionName = String;
-
-public
 type ArgumentDeclaration = String;
-
-public
 type VariableDeclaration = String;
-
-public
 type InitStatement = String;
-
-public
 type Statement = String;
-
-public
 type CleanupStatement = String;
-
-public
 type ReturnTypeStruct = list<String>;
-
-public
 type Include = String;
-
-public
 type Lib = String;
 
 public
@@ -3963,6 +3943,7 @@ algorithm
       local String stmt,tvar_data; CFunction cfn;
       equation
         (decl,tvar,tnr1_1) = generateTempDecl("modelica_string", tnr);
+        s = Util.escapeModelicaStringToCString(s);
         stmt = Util.stringAppendList({"init_modelica_string(&",tvar,",\"",s,"\");"});
         cfn = cAddStatements(cEmptyFunction, {stmt});
         cfn = cAddVariables(cfn, {decl});

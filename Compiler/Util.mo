@@ -5041,5 +5041,21 @@ algorithm
         out;
   end matchcontinue;
 end listProduct_acc;
+
+public function escapeModelicaStringToCString
+  input String modelicaString;
+  output String cString;
+algorithm
+  cString := matchcontinue (modelicaString)
+    local 
+      String s, sOut;
+    case (s)
+      equation
+        sOut = System.stringReplace(s, "\n", "\\n");
+      then
+        sOut;
+  end matchcontinue;
+end escapeModelicaStringToCString;
+
 end Util;
 
