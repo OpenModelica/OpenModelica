@@ -765,6 +765,7 @@ algorithm
       local
         Integer res;
         list<Exp.Exp> vars;
+        String uniqueStr;
       equation 
         vars = Util.listMap(vars,Exp.CodeVarToCref);
         vars_1 = Util.listMap(vars, Exp.printExpStr) "plot2" ;
@@ -781,7 +782,8 @@ algorithm
         omhome_1 = System.trim(omhome, "\"");
         pd = System.pathDelimiter();
         plotCmd = Util.stringAppendList({cit,omhome_1,pd,"bin",pd,"doPlot",cit});
-        tmpPlotFile = Util.stringAppendList({pwd,pd,"tmpPlot.plt"});
+        uniqueStr = intString(tick());
+        tmpPlotFile = Util.stringAppendList({pwd,pd,"tmpPlot_",uniqueStr,".plt"});
         res = Values.writePtolemyplotDataset(tmpPlotFile, value, vars_2, "Plot by OpenModelica");
         call = Util.stringAppendList({cit,plotCmd," \"",tmpPlotFile,"\"",cit});
 
@@ -1511,6 +1513,7 @@ algorithm
       local
         Integer res;
         list<Exp.Exp> vars;
+        String uniqueStr;
       equation 
         vars = Util.listMap(vars,Exp.CodeVarToCref);
         vars_1 = Util.listMap(vars, Exp.printExpStr);
@@ -1525,7 +1528,8 @@ algorithm
         omhome_1 = System.trim(omhome, "\"");
         pd = System.pathDelimiter();
         plotCmd = Util.stringAppendList({cit,omhome_1,pd,"bin",pd,"doPlot",cit});
-        tmpPlotFile = Util.stringAppendList({pwd,pd,"tmpPlot.plt"});
+        uniqueStr = intString(tick());
+        tmpPlotFile = Util.stringAppendList({pwd,pd,"tmpPlot_",uniqueStr,".plt"});
         res = Values.writePtolemyplotDataset(tmpPlotFile, value, vars_1, "Plot by OpenModelica");
         call = Util.stringAppendList({cit,plotCmd," \"",tmpPlotFile,"\"",cit});
         _ = System.systemCall(call);
@@ -1606,8 +1610,8 @@ algorithm
         Integer res;
         Exp.Exp xRange, yRange;
         list<Exp.Exp> vars;
-        String interpolation, title, xLabel, yLabel;
-        Boolean legend, grid, logX, logY, points;
+        String interpolation, title, xLabel, yLabel, uniqueStr;
+        Boolean legend, grid, logX, logY, points;        
       equation
         vars = Util.listMap(vars,Exp.CodeVarToCref);
         vars_1 = Util.listMap(vars, Exp.printExpStr);
@@ -1623,8 +1627,9 @@ algorithm
         omhome_1 = System.trim(omhome, "\"");
         pd = System.pathDelimiter();
         plotCmd = Util.stringAppendList({cit,omhome_1,pd,"bin",pd,"doPlot",cit});
-        tmpPlotFile = Util.stringAppendList({pwd,pd,"tmpPlot.plt"});
-         res = Values.sendPtolemyplotDataset(value, vars_1, "Plot by OpenModelica", interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, Exp.printExpStr(xRange), Exp.printExpStr(yRange));
+        uniqueStr = intString(tick());
+        tmpPlotFile = Util.stringAppendList({pwd,pd,"tmpPlot_",uniqueStr,".plt"});
+        res = Values.sendPtolemyplotDataset(value, vars_1, "Plot by OpenModelica", interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, Exp.printExpStr(xRange), Exp.printExpStr(yRange));
       then
         (cache,Values.BOOL(true),st);
 
