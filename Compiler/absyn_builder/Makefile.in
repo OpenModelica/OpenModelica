@@ -70,7 +70,7 @@ flat_parser:
 	cd $(FLAT_PARSE_HOME)/src; $(MAKE) -f Makefile
 
 absyn_builder.a : $(OBJS)
-	ar -r $@ $(OBJS)
+	ar -sr $@ $(OBJS)
 
 #walker : $(OBJS)
 #	$(CXX) -o $@ $(OBJS) $(LINKFLAGS) $(LIBS)

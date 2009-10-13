@@ -62,8 +62,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                    tokens.push_back(std::string(ss.str())); \
                    add_source_message(2, \
                                       "SYNTAX", \
-                                      "ERROR", \
-                                      "error: %s, parsing resumed at token '%s' on line %s", \
+                                      "Error", \
+                                      "%s, parsing resumed at token '%s' on line %s", \
                                       tokens, \
                                       errorLine, \
                                       errorColumn, \

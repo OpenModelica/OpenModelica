@@ -47,12 +47,12 @@ options {
 class modelica_parser extends Parser;
 
 options {
+	buildAST = true;
     codeGenMakeSwitchThreshold = 2;
     codeGenBitsetTestThreshold = 3;
 	importVocab = modelica;
     defaultErrorHandler = false;
 	k = 2;
-	buildAST = true;
     ASTLabelType = "RefMyAST";
 }
 
@@ -130,8 +130,7 @@ stored_definition :
 			)*
 			EOF!
 			{
-				#stored_definition = #([STORED_DEFINITION,"STORED_DEFINITION"],
-				#stored_definition);
+				#stored_definition = #([STORED_DEFINITION,"STORED_DEFINITION"],#stored_definition);
 			}
 			;
 
@@ -293,6 +292,9 @@ element_list :
     		  	std::cout << (#e)->toString() << std::endl;
     		  	std::cout << s->getLine() << ":" << s->getColumn() << std::endl;
     		  	*/
+            /* adrpo: FIXME! check if needed! */
+    		RefMyAST(#e)->setLine((#e)->getLine());
+    		RefMyAST(#e)->setColumn((#e)->getColumn());
 			RefMyAST(#e)->setEndLine(s->getLine());
 			RefMyAST(#e)->setEndColumn(s->getColumn());
 		   	if (#e->getFirstChild())
@@ -301,6 +303,9 @@ element_list :
     		  	   std::cout << (#e->getFirstChild())->toString() << std::endl;
     		  	   std::cout << s->getLine() << ":" << s->getColumn() << std::endl;
     		  	   */
+               /* adrpo: FIXME! check if needed! */
+    		   RefMyAST(#e)->setLine((#e)->getLine());
+    		   RefMyAST(#e)->setColumn((#e)->getColumn());	   
 			   RefMyAST(#e->getFirstChild())->setEndLine(s->getLine());
 			   RefMyAST(#e->getFirstChild())->setEndColumn(s->getColumn());
 		        }
@@ -330,10 +335,16 @@ element_list :
 element :
 			ic:import_clause
 		|	ec:extends_clause
-		|	(REDECLARE)? (FINAL)? (INNER)? (OUTER)?
-			((class_definition | cc:component_clause)
-			|(REPLACEABLE ( class_definition | cc2:component_clause ) (constraining_clause comment)?)
-			)
+		|   defineunit_clause
+		|	(REDECLARE)?
+        (FINAL)?
+        (INNER)?
+        (OUTER)?
+		(	(class_definition | cc:component_clause)
+			|(REPLACEABLE ( class_definition | cc2:component_clause )
+				(constraining_clause comment)?
+			 )
+		)
 		{
 			if(#cc != null || #cc2 != null)
 			{
@@ -365,6 +376,9 @@ element :
 
 import_clause :
 		IMPORT^ (explicit_import_name | implicit_import_name) comment
+		;
+defineunit_clause :
+		DEFINEUNIT^ IDENT (LPAR! named_arguments RPAR!)?		
 		;
 
 explicit_import_name:
@@ -556,7 +570,40 @@ equation_annotation_list :
 
           AFTER_SYNC;
         }
+/*
+temptest :
+	e1:equation s1:SEMICOLON!
+	{
+		#temptest = #([EQUATION_STATEMENT,"EQUATION_STATEMENT"], #temptest);		
+ *******
+ * The problem here is to aquire the start line and column of 'e1'. 
+ * e1 will be a tree of some sort and we are interested in the leftmost tree's position.
+ * 1) the problem is that we can't get to that child from here and modification on MyAST.h 
+ * does not seem to work. If we locate where the functions are 'overwriten' we can do a  
+ * depth search and find the leftmost node and extract information from there. 
+ * 2) Another approach to the problem is the semi-implemented one here where we keep setting
+ * line and column information reversed-recursivly (bottoms up). 
+ * This works for all cases but the 'syntactic predicate': 
+ * ' 	equation : 
+ *		(   (simple_expression EQUALS) => tmp:equality_equation '
+ * then we lose track on the information. I did not find any information on how to extract 
+ * simple_expression part from this. 
+ *  
+ * BZ 2007-11-16
+ *
+ ******
+		std::cout << "Start temptest: " <<(#e1)->getLine() << ":" << (#e1)->getColumn() << std::endl;
+		std::cout << "End temptest: " <<(#s1)->getLine() << ":" << (#s1)->getColumn() << std::endl;
 
+		RefMyAST(#temptest)->setEndLine((#s1)->getLine());
+		RefMyAST(#temptest)->setEndColumn((#s1)->getColumn());
+/********
+		RefMyAST(#temptest)->setLine((#e1)->getLine());
+		RefMyAST(#temptest)->setColumn((#e1)->getColumn());
+
+	}
+	;
+*/	
 algorithm_clause :
 		ALGORITHM^
 		    algorithm_annotation_list
@@ -663,8 +710,19 @@ algorithm :
         }
 
 assign_clause_a :          		  
-		simple_expression ( ASSIGN^ expression )?  
+		simple_expression 
+        (   ASSIGN^ expression 
+          | i1:EQUALS expression 
+            {      
+               throw 
+        		ANTLR_USE_NAMESPACE(antlr)
+        		RecognitionException(
+        		"Algorithms can not contain equations ('='), use assignments (':=') instead", 
+        		modelicafilename, i1->getLine(), i1->getColumn());
+             }          
+        )?  
 		;
+
 
 equality_equation :		  
 		simple_expression ( EQUALS^ expression )? 		

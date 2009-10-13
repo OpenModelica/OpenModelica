@@ -31,9 +31,129 @@
 #include "read_write.h"
 #include <string.h>
 
+char *my_strdup(const char *s) {
+    char *p = malloc(strlen(s) + 1);
+    if(p) { strcpy(p, s); }
+    return p;
+}
+
+#if 1 /* only used for debug */
+void puttype(const type_description *desc)
+{
+  fprintf(stderr, "TYPE[%d] -> ", desc->type);
+  switch (desc->type) {
+  case TYPE_DESC_REAL:
+    fprintf(stderr, "REAL: %g\n", desc->data.real);
+    break;
+  case TYPE_DESC_INT:
+    fprintf(stderr, "INT: %d\n", desc->data.integer);
+    break;
+  case TYPE_DESC_BOOL:
+    fprintf(stderr, "BOOL: %c\n", desc->data.boolean ? 't' : 'f');
+    break;
+  case TYPE_DESC_STRING:
+    fprintf(stderr, "STR: '%s'\n", desc->data.string);
+    break;
+  case TYPE_DESC_TUPLE: {
+    size_t e;
+    fprintf(stderr, "TUPLE (%u):\n", desc->data.tuple.elements);
+    for (e = 0; e < desc->data.tuple.elements; ++e) {
+      fprintf(stderr, "\t");
+      puttype(desc->data.tuple.element + e);
+    }
+  }; break;
+  case TYPE_DESC_REAL_ARRAY: {
+    int d;
+    fprintf(stderr, "REAL ARRAY [%d] (", desc->data.real_array.ndims);
+    for (d = 0; d < desc->data.real_array.ndims; ++d)
+      fprintf(stderr, "%d, ", desc->data.real_array.dim_size[d]);
+    fprintf(stderr, ")\n");
+    if (desc->data.real_array.ndims == 1) {
+      int e;
+      fprintf(stderr, "\t[");
+      for (e = 0; e < desc->data.real_array.dim_size[0]; ++e)
+        fprintf(stderr, "%g, ",
+                ((modelica_real *) desc->data.real_array.data)[e]);
+      fprintf(stderr, "]\n");
+    }
+  }; break;
+  case TYPE_DESC_INT_ARRAY: {
+    int d;
+    fprintf(stderr, "INT ARRAY [%d] (", desc->data.int_array.ndims);
+    for (d = 0; d < desc->data.int_array.ndims; ++d)
+      fprintf(stderr, "%d, ", desc->data.int_array.dim_size[d]);
+    fprintf(stderr, ")\n");
+    if (desc->data.int_array.ndims == 1) {
+      int e;
+      fprintf(stderr, "\t[");
+      for (e = 0; e < desc->data.int_array.dim_size[0]; ++e)
+        fprintf(stderr, "%d, ",
+                ((modelica_integer *) desc->data.int_array.data)[e]);
+      fprintf(stderr, "]\n");
+    }
+  }; break;
+  case TYPE_DESC_BOOL_ARRAY: {
+    int d;
+    fprintf(stderr, "BOOL ARRAY [%d] (", desc->data.bool_array.ndims);
+    for (d = 0; d < desc->data.bool_array.ndims; ++d)
+      fprintf(stderr, "%d, ", desc->data.bool_array.dim_size[d]);
+    fprintf(stderr, ")\n");
+    if (desc->data.bool_array.ndims == 1) {
+      int e;
+      fprintf(stderr, "\t[");
+      for (e = 0; e < desc->data.bool_array.dim_size[0]; ++e)
+        fprintf(stderr, "%c, ",
+                ((modelica_boolean *) desc->data.bool_array.data)[e] ? 'T':'F');
+      fprintf(stderr, "]\n");
+    }
+  }; break;
+  case TYPE_DESC_STRING_ARRAY: {
+    int d;
+    fprintf(stderr, "STRING ARRAY [%d] (", desc->data.string_array.ndims);
+    for (d = 0; d < desc->data.string_array.ndims; ++d)
+      fprintf(stderr, "%d, ", desc->data.string_array.dim_size[d]);
+    fprintf(stderr, ")\n");
+    if (desc->data.string_array.ndims == 1) {
+      int e;
+      fprintf(stderr, "\t[");
+      for (e = 0; e < desc->data.string_array.dim_size[0]; ++e)
+        fprintf(stderr, "%s, ",
+                ((modelica_string_t *) desc->data.string_array.data)[e]);
+      fprintf(stderr, "]\n");
+    }
+  }; break;
+  case TYPE_DESC_COMPLEX:
+    fprintf(stderr, "COMPLEX\n");
+    break;
+  case TYPE_DESC_NONE:
+    fprintf(stderr, "NONE\n");
+    break;
+  case TYPE_DESC_RECORD:
+    {
+      int i;
+      fprintf(stderr, "RECORD: %s ", desc->data.record.record_name?desc->data.record.record_name:"[no name]");
+      if (!desc->data.record.elements)
+        fprintf(stderr, "has no members!?\n");
+      else
+        fprintf(stderr, "has the following members:\n");
+      for (i = 0; i < desc->data.record.elements; i++)
+      {
+        fprintf(stderr, "NAME: %s\n", desc->data.record.name[i]);
+        puttype(&(desc->data.record.element[i]));
+      }
+    }
+    break;
+  default:
+    fprintf(stderr, "UNKNOWN: Values.Value!\n");
+    break;
+  }
+  fflush(stderr);
+}
+#endif
+
 static void in_report(const char *str)
 {
-  fprintf(stderr, "input failed: %s\n", str);
+  fprintf(stderr, "input failed: %s\n", str); fflush(stderr);
 }
 
 static type_description *add_tuple_item(type_description *desc);
@@ -133,8 +253,8 @@ int read_modelica_real(type_description **descptr, modelica_real *data)
   default:
     break;
   }
-
   in_report("rs type");
+  fprintf(stderr, "Expected real scalar, got:"); puttype(desc); fflush(stderr);
   return -1;
 }
 
@@ -150,6 +270,7 @@ int read_modelica_integer(type_description **descptr, modelica_integer *data)
   }
 
   in_report("is type");
+  fprintf(stderr, "Expected integer scalar, got:"); puttype(desc); fflush(stderr);
   return -1;
 }
 
@@ -165,6 +286,7 @@ int read_modelica_boolean(type_description **descptr, modelica_boolean *data)
   }
 
   in_report("bs type");
+  fprintf(stderr, "Expected boolean scalar, got:"); puttype(desc); fflush(stderr);
   return -1;
 }
 
@@ -180,6 +302,7 @@ int read_real_array(type_description **descptr, real_array_t *arr)
   }
 
   in_report("ra type");
+  fprintf(stderr, "Expected real array, got:"); puttype(desc); fflush(stderr);
   return -1;
 }
 
@@ -209,6 +332,7 @@ int read_integer_array(type_description **descptr, integer_array_t *arr)
   }
 
   in_report("ia type");
+  fprintf(stderr, "Expected integer array, got:"); puttype(desc); fflush(stderr);
   return -1;
 }
 
@@ -238,6 +362,7 @@ int read_boolean_array(type_description **descptr, boolean_array_t *arr)
   }
 
   in_report("ba type");
+  fprintf(stderr, "Expected boolean array, got:"); puttype(desc); fflush(stderr);
   return -1;
 }
 
@@ -267,6 +392,7 @@ int read_string_array(type_description **descptr, string_array_t *arr)
   }
 
   in_report("sa type");
+  fprintf(stderr, "Expected string array, got:"); puttype(desc); fflush(stderr);
   return -1;
 }
 
@@ -533,7 +659,8 @@ void write_modelica_record(type_description *desc, const char *name, ...)
   if (desc->type != TYPE_DESC_NONE)
     desc = add_tuple_item(desc);
   desc->type = TYPE_DESC_RECORD;
-  desc->data.record.record_name = name;
+  assert(name != NULL);
+  desc->data.record.record_name = my_strdup(name);
   desc->data.record.elements = 0;
   desc->data.record.name = NULL;
   desc->data.record.element = NULL;
@@ -630,3 +757,5 @@ type_description *add_tuple_item(type_description *desc)
   ret->retval = desc->retval;
   return ret;
 }
+
+

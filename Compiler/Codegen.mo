@@ -51,37 +51,17 @@ public import Absyn;
 public import Convert;
 public import MetaUtil;
 
-public
+public 
 type Ident = String;
-
-public
 type ReturnType = String;
-
-public
 type FunctionName = String;
-
-public
 type ArgumentDeclaration = String;
-
-public
 type VariableDeclaration = String;
-
-public
 type InitStatement = String;
-
-public
 type Statement = String;
-
-public
 type CleanupStatement = String;
-
-public
 type ReturnTypeStruct = list<String>;
-
-public
 type Include = String;
-
-public
 type Lib = String;
 
 public
@@ -635,7 +615,7 @@ algorithm
                    cleanupStatementLst = cl)
       equation
         args_str = Util.stringDelimitList(ad, ", ");
-        stmt_str = Util.stringAppendList({rt," ",fn,"(",args_str,");"});
+        stmt_str = Util.stringAppendList({"DLLExport \n", rt," ",fn,"(",args_str,");"});
         i0 = 0;
         i1 = cPrintIndentedList(rts, i0);
         Print.printBuf("\n");
@@ -1250,13 +1230,15 @@ algorithm
     local
       DAE.Element var;
       list<DAE.Element> rest;
+      Absyn.Path path;
       String name, first_str, last_str;
       Types.Type ft;
       list<String> strs,rest_strs,decl_strs;
       list<String> rt, rt_1;
     case ({},rt) then ({},rt);
-    case (((var as DAE.VAR(ty = DAE.RECORD(name = name), fullType = ft)) :: rest),rt)
+    case (((var as DAE.VAR(ty = DAE.COMPLEX(name = path), fullType = ft)) :: rest),rt)
       equation
+        name = Absyn.pathString(path);
         failure(_ = Util.listGetMember(name,rt));
         first_str = Util.stringAppendList({"struct ",name," {"});
         decl_strs = generateRecordDeclarations(ft);
@@ -1392,8 +1374,8 @@ algorithm
       DAE.Type typ;
       Option<Exp.Exp> initopt;
       list<Exp.Subscript> inst_dims;
-      DAE.Flow flow_;
-      DAE.Stream stream_;
+      DAE.Flow flowPrefix;
+      DAE.Stream streamPrefix;
       list<Absyn.Path> class_;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<Absyn.Comment> comment;
@@ -1403,8 +1385,8 @@ algorithm
                           ty = typ,
                           binding = initopt,
                           dims = inst_dims,
-                          flow_ = flow_,
-                          stream_=stream_,
+                          flowPrefix = flowPrefix,
+                          streamPrefix=streamPrefix,
                           pathLst = class_,
                           variableAttributesOption = dae_var_attr,
                           absynCommentOption = comment)),i)
@@ -1449,8 +1431,8 @@ algorithm
                          direction = vd,
                          ty = ty,
                          dims = {},
-                         flow_ = fl,
-                         stream_ = st,
+                         flowPrefix = fl,
+                         streamPrefix = st,
                          pathLst = cl,
                          variableAttributesOption = dae_var_attr,
                          absynCommentOption = comment)))
@@ -1465,8 +1447,8 @@ algorithm
                          direction = vd,
                          ty = ty,
                          dims = (_ :: _),
-                         flow_ = fl,
-                         stream_ = st, 
+                         flowPrefix = fl,
+                         streamPrefix = st, 
                          pathLst = cl,
                          variableAttributesOption = dae_var_attr,
                          absynCommentOption = comment)))
@@ -1491,14 +1473,18 @@ protected function daeExpType
 algorithm
   outType:=
   matchcontinue (inType)
-    local String name;
+    local String name; Absyn.Path path; list<DAE.Var> varLst;
     case DAE.INT() then Exp.INT();
     case DAE.REAL() then Exp.REAL();
     case DAE.STRING() then Exp.STRING();
     case DAE.BOOL() then Exp.BOOL();
     case DAE.ENUM() then Exp.ENUM();
     case DAE.LIST() then Exp.T_LIST(Exp.OTHER()); // MetaModelica list
-    case DAE.RECORD(name = name) then Exp.T_RECORD(name);
+    case DAE.COMPLEX(path,varLst) 
+      equation 
+        name = Absyn.pathString(path); 
+      then /* TODO: translate vars */ 
+        Exp.COMPLEX(name,{},ClassInf.UNKNOWN(name));
     case DAE.METATUPLE() then Exp.T_METATUPLE({}); // MetaModelica tuple
     case DAE.METAOPTION() then Exp.T_METAOPTION(Exp.OTHER()); // MetaModelica tuple
     case _ then Exp.OTHER();
@@ -1540,7 +1526,7 @@ algorithm
         res = expShortTypeStr(t);
       then
         res;
-    case Exp.T_RECORD(name = name)
+    case Exp.COMPLEX(name = name)
       local String name;
       equation
         res = stringAppend("struct ", name);
@@ -1569,7 +1555,7 @@ algorithm
         str = "void*";
       then str;
 
-    case ((t as Exp.T_RECORD(_)),_)
+    case ((t as Exp.COMPLEX(_,_,_)),_)
       equation
         str = expShortTypeStr(t);
       then
@@ -1839,7 +1825,7 @@ protected function generateFunctionName
   input Absyn.Path fpath;
   output String fstr;
 algorithm
-  fstr := ModUtil.pathString2(fpath, "_");
+  fstr := ModUtil.pathStringReplaceDot(fpath, "_");
 end generateFunctionName;
 
 protected function generateExtFunctionArgs 
@@ -2201,8 +2187,8 @@ algorithm
       DAE.Type t;
       Option<Exp.Exp> e;
       list<Exp.Subscript> id;
-      DAE.Flow flow_;
-      DAE.Stream stream_;
+      DAE.Flow flowPrefix;
+      DAE.Stream streamPrefix;
       list<Absyn.Path> class_;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<Absyn.Comment> comment;
@@ -2222,8 +2208,8 @@ algorithm
                            ty = t,
                            binding = e,
                            dims = id,
-                           flow_ = flow_,
-                           stream_ = stream_,
+                           flowPrefix = flowPrefix,
+                           streamPrefix = streamPrefix,
                            pathLst = class_,
                            variableAttributesOption = dae_var_attr,
                            absynCommentOption = comment)) :: r),rd,rv,i,tnr,context)
@@ -2268,8 +2254,8 @@ algorithm
       DAE.Type typ;
       Option<Exp.Exp> e;
       list<Exp.Subscript> inst_dims;
-      DAE.Flow flow_;
-      DAE.Stream stream_;
+      DAE.Flow flowPrefix;
+      DAE.Stream streamPrefix;
       list<Absyn.Path> class_;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<Absyn.Comment> comment;
@@ -2282,8 +2268,8 @@ algorithm
                           ty = typ,
                           binding = e,
                           dims = inst_dims,
-                          flow_ = flow_,
-                          stream_ = stream_,
+                          flowPrefix = flowPrefix,
+                          streamPrefix = streamPrefix,
                           pathLst = class_,
                           variableAttributesOption = dae_var_attr,
                           absynCommentOption = comment)),prefix,i,tnr,context)
@@ -2341,8 +2327,8 @@ algorithm
       DAE.Type t;
       Option<Exp.Exp> e;
       list<Exp.Subscript> id;
-      DAE.Flow flow_;
-      DAE.Stream stream_;
+      DAE.Flow flowPrefix;
+      DAE.Stream streamPrefix;
       list<Absyn.Path> class_;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<Absyn.Comment> comment;
@@ -2356,8 +2342,8 @@ algorithm
                            ty = t,
                            binding = e,
                            dims = id,
-                           flow_ = flow_,
-                           stream_ = stream_,
+                           flowPrefix = flowPrefix,
+                           streamPrefix = streamPrefix,
                            pathLst = class_,
                            variableAttributesOption = dae_var_attr,
                            absynCommentOption = comment)) :: r),rv,i,tnr,extdecl)
@@ -2375,8 +2361,8 @@ algorithm
                            ty = t,
                            binding = e,
                            dims = id,
-                           flow_ = flow_,
-                           stream_ = stream_,
+                           flowPrefix = flowPrefix,
+                           streamPrefix = streamPrefix,
                            pathLst = class_,
                            variableAttributesOption = dae_var_attr,
                            absynCommentOption = comment)) :: r),rv,i,tnr,extdecl)
@@ -2422,8 +2408,8 @@ algorithm
       DAE.Type typ;
       Option<Exp.Exp> e;
       list<Exp.Subscript> inst_dims;
-      DAE.Flow flow_;
-      DAE.Stream stream_;
+      DAE.Flow flowPrefix;
+      DAE.Stream streamPrefix;
       list<Absyn.Path> class_;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<Absyn.Comment> comment;
@@ -2434,8 +2420,8 @@ algorithm
                           ty = typ,
                           binding = e,
                           dims = inst_dims,
-                          flow_ = flow_,
-                          stream_ = stream_,
+                          flowPrefix = flowPrefix,
+                          streamPrefix = streamPrefix,
                           pathLst = class_,
                           variableAttributesOption = dae_var_attr,
                           absynCommentOption = comment)),prefix,i,tnr)
@@ -2746,6 +2732,27 @@ algorithm
   end matchcontinue;
 end generateAlgorithmWhenStatement;
 
+protected function buildCrefFromAsub
+  input Exp.ComponentRef cref;
+  input list<Exp.Exp> subs;
+  output Exp.ComponentRef cRefOut;
+algorithm
+  cRefOut := matchcontinue(cref, subs)
+    local 
+      Exp.Exp sub; 
+      list<Exp.Exp> rest; 
+      Exp.ComponentRef crNew;
+      list<Exp.Subscript> indexes;
+    case (cref, {}) then cref;
+    case (cref, subs)
+      equation
+        indexes = Util.listMap(subs, Exp.makeIndexSubscript);
+        crNew = Exp.subscriptCref(cref, indexes); 
+      then
+        crNew;
+  end matchcontinue; 
+end buildCrefFromAsub;
+
 protected function generateAlgorithmStatement 
 "function : generateAlgorithmStatement
    returns: CFunction | Code 
@@ -2775,17 +2782,43 @@ algorithm
       Boolean a;
 
     // Part of ValueBlock implementation, special treatment of _ := VB case
-    case (Algorithm.ASSIGN(_,Exp.CREF_IDENT("WILDCARD__",{}),exp as Exp.VALUEBLOCK(_,_,_,_)),tnr,context)
+    case (Algorithm.ASSIGN(_,Exp.CREF(Exp.CREF_IDENT("WILDCARD__",_,{}),_),exp as Exp.VALUEBLOCK(_,_,_,_)),tnr,context)
       equation
         (cfn,_,tnr1) = generateExpression(exp, tnr, context);
      then (cfn,tnr1);
 
-    case (Algorithm.ASSIGN(type_ = typ,componentRef = cref,exp = exp),tnr,context)
+    case (Algorithm.ASSIGN(type_ = typ,exp1 = Exp.CREF(cref,_),exp = exp),tnr,context)
       equation
         Debug.fprintln("cgas", "generate_algorithm_statement");
         (cfn1,var1,tnr1) = generateExpression(exp, tnr, context);
         (cfn2,var2,tnr2) = generateScalarLhsCref(typ, cref, tnr1, context);
         stmt = Util.stringAppendList({var2," = ",var1,";"});
+        cfn_1 = cMergeFn(cfn1, cfn2);
+        cfn = cAddStatements(cfn_1, {stmt});
+      then
+        (cfn,tnr2);
+    
+    /* adrpo: handle ASUB on LHS */ 
+    case (Algorithm.ASSIGN(type_ = typ,exp1 = asub as Exp.ASUB(exp = Exp.CREF(cref,t), sub=subs),exp = exp),tnr,context)
+      local 
+        list<Exp.Exp> subs; Exp.Exp asub; Exp.ComponentRef crefBuild;
+      equation
+        Debug.fprintln("cgas", "generate_algorithm_statement");
+        (cfn1,var1,tnr1) = generateExpression(exp, tnr, context);
+        crefBuild = buildCrefFromAsub(cref,subs);
+        (cfn2,var2,tnr2) = generateScalarLhsCref(typ, crefBuild, tnr1, context);
+        stmt = Util.stringAppendList({var2," = ",var1,";"});
+        cfn_1 = cMergeFn(cfn1, cfn2);
+        cfn = cAddStatements(cfn_1, {stmt});
+      then
+        (cfn,tnr2);        
+
+    case (Algorithm.ASSIGN(type_ = typ,exp1 = e1,exp = exp),tnr,context)
+      equation
+        Debug.fprintln("cgas", "generate_algorithm_statement");
+        (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);        
+        (cfn2,var2,tnr2) = generateExpression(exp, tnr1, context);
+        stmt = Util.stringAppendList({var1," = ",var2,";"});
         cfn_1 = cMergeFn(cfn1, cfn2);
         cfn = cAddStatements(cfn_1, {stmt});
       then
@@ -3317,8 +3350,8 @@ algorithm
       DAE.VarDirection vd;
       DAE.Type typ;
       list<Exp.Subscript> inst_dims;
-      DAE.Flow flow_;
-      DAE.Stream stream_;
+      DAE.Flow flowPrefix;
+      DAE.Stream streamPrefix;
       list<Absyn.Path> class_;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<Absyn.Comment> comment;
@@ -3333,8 +3366,8 @@ algorithm
                           ty = typ,
                           binding = NONE,
                           dims = inst_dims,
-                          flow_ = flow_,
-                          stream_ = stream_,
+                          flowPrefix = flowPrefix,
+                          streamPrefix = streamPrefix,
                           pathLst = class_,
                           variableAttributesOption = dae_var_attr,
                           absynCommentOption = comment)),tnr,context)
@@ -3366,8 +3399,8 @@ algorithm
                           ty = typ,
                           binding = SOME(e),
                           dims = inst_dims,
-                          flow_ = flow_,
-                          stream_ = stream_,
+                          flowPrefix = flowPrefix,
+                          streamPrefix = streamPrefix,
                           pathLst = class_,
                           variableAttributesOption = dae_var_attr,
                           absynCommentOption = comment)),tnr,context)
@@ -3390,7 +3423,7 @@ algorithm
         cfn_2 = cAddInits(cfn_1, {alloc_str});
         cfn = Util.if_(is_a, cfn_2, cfn_1);
         etp = Exp.typeof(e);
-        (cfn2,tnr1) = generateAlgorithmStatement(Algorithm.ASSIGN(etp,id,e),tnr1,context);
+        (cfn2,tnr1) = generateAlgorithmStatement(Algorithm.ASSIGN(etp,Exp.CREF(id,etp),e),tnr1,context);
         cfn = cMergeFn(cfn,cfn2);
       then
         (cfn,tnr1);
@@ -3401,8 +3434,8 @@ algorithm
                           ty = typ,
                           binding = SOME(e),
                           dims = inst_dims,
-                          flow_ = flow_,
-                          stream_ = stream_,
+                          flowPrefix = flowPrefix,
+                          streamPrefix = streamPrefix,
                           pathLst = class_,
                           variableAttributesOption = dae_var_attr,
                           absynCommentOption = comment)),tnr,context)
@@ -3454,8 +3487,8 @@ algorithm
       DAE.VarDirection vd;
       DAE.Type typ;
       list<Exp.Subscript> inst_dims;
-      DAE.Flow flow_;
-      DAE.Stream stream_;
+      DAE.Flow flowPrefix;
+      DAE.Stream streamPrefix;
       list<Absyn.Path> class_;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<Absyn.Comment> comment;
@@ -3470,8 +3503,8 @@ algorithm
                           ty = typ,
                           binding = NONE,
                           dims = inst_dims,
-                          flow_ = flow_,
-                          stream_ = stream_,
+                          flowPrefix = flowPrefix,
+                          streamPrefix = streamPrefix,
                           pathLst = class_,
                           variableAttributesOption = dae_var_attr,
                           absynCommentOption = comment)),tnr,context)
@@ -3497,15 +3530,15 @@ algorithm
                           ty = typ,
                           binding = SOME(e),
                           dims = inst_dims,
-                          flow_ = flow_,
-                          stream_ = stream_,
+                          flowPrefix = flowPrefix,
+                          streamPrefix = streamPrefix,
                           pathLst = class_,
                           variableAttributesOption = dae_var_attr,
                           absynCommentOption = comment,
                           innerOuter=io,
                           fullType=tp)),tnr,context)
       equation
-        (cfn,tnr1) = generateVarDecl(DAE.VAR(id,vk,vd,prot,typ,NONE,inst_dims,flow_,stream_,class_,dae_var_attr,comment,io,tp), tnr, context);
+        (cfn,tnr1) = generateVarDecl(DAE.VAR(id,vk,vd,prot,typ,NONE,inst_dims,flowPrefix,streamPrefix,class_,dae_var_attr,comment,io,tp), tnr, context);
       then
         (cfn,tnr1);
         
@@ -3534,12 +3567,13 @@ algorithm
     local
       DAE.Element var;
       Exp.ComponentRef id,id_1,idstr;
+      Exp.Exp expstr;
       DAE.VarKind vk;
       DAE.VarDirection vd;
       DAE.Type typ;
       list<Exp.Subscript> inst_dims;
-      DAE.Flow flow_;
-      DAE.Stream stream_;
+      DAE.Flow flowPrefix;
+      DAE.Stream streamPrefix;
       list<Absyn.Path> class_;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<Absyn.Comment> comment;
@@ -3560,8 +3594,8 @@ algorithm
                           ty = typ,
                           binding = NONE,
                           dims = inst_dims,
-                          flow_ = flow_,
-                          stream_ = stream_,
+                          flowPrefix = flowPrefix,
+                          streamPrefix = streamPrefix,
                           pathLst = class_,
                           variableAttributesOption = dae_var_attr,
                           absynCommentOption = comment)),i,tnr,pre,context)
@@ -3574,8 +3608,8 @@ algorithm
                           ty = typ,
                           binding = SOME(e),
                           dims = inst_dims,
-                          flow_ = flow_,
-                          stream_ = stream_,
+                          flowPrefix = flowPrefix,
+                          streamPrefix = streamPrefix,
                           pathLst = class_,
                           variableAttributesOption = dae_var_attr,
                           absynCommentOption = comment)),i,tnr,pre,context)
@@ -3585,9 +3619,14 @@ algorithm
         emptyprep = stringEqual(pre, "");
         iStr = intString(i);
         id_1_str = Util.stringAppendList({"out.","targ",iStr});
-        idstr = Util.if_(emptyprep, id, Exp.CREF_IDENT(id_1_str,{}));
+        expstr = Util.if_(emptyprep, 
+                         Exp.CREF(id, Exp.OTHER()), 
+                         Exp.CREF(Exp.CREF_IDENT(id_1_str,Exp.OTHER(),{}),Exp.OTHER()));
+        idstr = Util.if_(emptyprep, 
+                         id, 
+                         Exp.CREF_IDENT(id_1_str,Exp.OTHER(),{}));
         exptype = daeExpType(typ);
-        scalarassign = Algorithm.ASSIGN(exptype,idstr,e);
+        scalarassign = Algorithm.ASSIGN(exptype,expstr,e);
         arrayassign = Algorithm.ASSIGN_ARR(exptype,idstr,e);
         assign = Util.if_(is_a, arrayassign, scalarassign);
         (cfn,tnr1) = generateAlgorithmStatement(assign, tnr, context);
@@ -3904,6 +3943,7 @@ algorithm
       local String stmt,tvar_data; CFunction cfn;
       equation
         (decl,tvar,tnr1_1) = generateTempDecl("modelica_string", tnr);
+        s = Util.escapeModelicaStringToCString(s);
         stmt = Util.stringAppendList({"init_modelica_string(&",tvar,",\"",s,"\");"});
         cfn = cAddStatements(cEmptyFunction, {stmt});
         cfn = cAddVariables(cfn, {decl});
@@ -4145,12 +4185,14 @@ algorithm
         cfn1_2 = cAddBlockAroundStatements(cfn1_2);
       then (cfn1_2,var,tnr4);
 
-    /* handle a index of a range */
-    case (Exp.ASUB(exp = e as Exp.RANGE(ty = t), sub=i),tnr,context)
+    /* handle the easy case */
+    /* range[x] */
+    case (Exp.ASUB(exp = e as Exp.RANGE(ty = t), sub={idx}),tnr,context)
       local 
         String mem_decl, mem_var, get_mem_stmt, rest_mem_stmt, tShort;
         Integer tnr_mem;
         CFunction mem_fn;
+        Exp.Exp idx;
       equation
         (mem_decl,mem_var,tnr_mem) = generateTempDecl("state", tnr);
         get_mem_stmt = Util.stringAppendList({mem_var," = get_memory_state();"});
@@ -4159,16 +4201,17 @@ algorithm
         type_string = expTypeStr(t, false);
         tShort = expShortTypeStr(t);
         (tdecl,tvar2,tnr2) = generateTempDecl(type_string, tnr1);
-        istr = intString(i-1); // indexing is from 0 in C
-        stmt = Util.stringAppendList({tvar2, " = ", tShort, "_get(&", var1, ", ", istr, ");"});
+        (cfn2,var2,tnr2) = generateExpression(idx, tnr2, context);
+        stmt = Util.stringAppendList({tvar2, " = ", tShort, "_get(&", var1, ", ", var2, ");"});
+        cfn1 = cMergeFn(cfn1, cfn2);
         cfn = cAddVariables(cfn1, {mem_decl,tdecl});
         cfn = cPrependStatements(cfn, {get_mem_stmt});
         cfn = cAddStatements(cfn, {stmt, rest_mem_stmt});
       then
         (cfn,tvar2,tnr2);
-
+     
     /* handle the 4D indexing  */
-    case (Exp.ASUB(Exp.ASUB(Exp.ASUB(Exp.ASUB(e, i), j), k), l),tnr,context)
+    case (Exp.ASUB(Exp.ASUB(Exp.ASUB(Exp.ASUB(e, {Exp.ICONST(i)}), {Exp.ICONST(j)}), {Exp.ICONST(k)}), {Exp.ICONST(l)}),tnr,context)
       local 
         String mem_decl, mem_var, get_mem_stmt, rest_mem_stmt, tShort, jstr, kstr, lstr;
         Integer tnr_mem, k, l;
@@ -4194,7 +4237,7 @@ algorithm
         (cfn,tvar2,tnr2);
 
     /* handle the 3D indexing  */
-    case (Exp.ASUB(Exp.ASUB(Exp.ASUB(e, i), j), k),tnr,context)
+    case (Exp.ASUB(Exp.ASUB(Exp.ASUB(e, {Exp.ICONST(i)}), {Exp.ICONST(j)}), {Exp.ICONST(k)}),tnr,context)
       local 
         String mem_decl, mem_var, get_mem_stmt, rest_mem_stmt, tShort, jstr, kstr, lstr;
         Integer tnr_mem, k, l;
@@ -4219,7 +4262,7 @@ algorithm
         (cfn,tvar2,tnr2);
 
     /* handle the 2D indexing  */
-    case (Exp.ASUB(exp = Exp.ASUB(e, sub=i), sub=j),tnr,context)
+    case (Exp.ASUB(exp = Exp.ASUB(e, sub={Exp.ICONST(i)}), sub={Exp.ICONST(j)}),tnr,context)
       local 
         String mem_decl, mem_var, get_mem_stmt, rest_mem_stmt, tShort, jstr;
         Integer tnr_mem;
@@ -4243,7 +4286,7 @@ algorithm
         (cfn,tvar2,tnr2);
 
     /* handle the indexing assuming expression e is an array */
-    case (Exp.ASUB(exp = e, sub=i),tnr,context)
+    case (Exp.ASUB(exp = e, sub={Exp.ICONST(i)}),tnr,context)
       local 
         String mem_decl, mem_var, get_mem_stmt, rest_mem_stmt, tShort;
         Integer tnr_mem;
@@ -4265,11 +4308,22 @@ algorithm
       then
         (cfn,tvar2,tnr2);
 
+    // cref[x, y] - try to transform it into a cref 
+    case (Exp.ASUB(exp = e as Exp.CREF(cref,t), sub=subs),tnr,context)
+      local 
+        list<Exp.Exp> subs;
+        Exp.ComponentRef cref, crefBuild;
+      equation
+        crefBuild = buildCrefFromAsub(cref, subs);
+        (cfn,var,tnr_1) = generateRhsCref(crefBuild, t, tnr, context);
+      then
+        (cfn,var,tnr_1);
+
     case (Exp.ASUB(exp = _),tnr,context)
       equation
         Debug.fprint("failtrace", "# Codegen.generate_expression: asub not implemented: " +& Exp.printExp2Str(inExp) +& "\n");
       then
-        fail();
+        fail();     
 
      //---------------------------------------------
      // MetaModelica extension
@@ -4718,7 +4772,7 @@ algorithm
     case (Exp.UMINUS(ty = Exp.REAL()),e,tnr,context)
       equation
         (cfn,var,tnr_1) = generateExpression(e, tnr, context);
-        var_1 = Util.stringAppendList({"(-",var,")"});
+        var_1 = Util.stringAppendList({"(-",var,")"});        
       then
         (cfn,var_1,tnr_1);
     case (Exp.UMINUS(ty = Exp.INT()),e,tnr,context)
@@ -4730,9 +4784,17 @@ algorithm
     case (Exp.UMINUS(ty = Exp.OTHER()),e,tnr,context)
       equation
         (cfn,var,tnr_1) = generateExpression(e, tnr, context);
-        var_1 = Util.stringAppendList({"(-",var,")"});
+        var_1 = Util.stringAppendList({"(-(",var,"))"});
       then
         (cfn,var_1,tnr_1);
+    case (Exp.UMINUS(ty = tp),e,tnr,context)
+      equation
+        (cfn,var,tnr_1) = generateExpression(e, tnr, context);
+        var_1 = Util.stringAppendList({"(-(",var,"))"});
+        //Debug.fprintln("codegen", "UMINUS("  +& Exp.typeString(tp) +& ")");
+        //Debug.fprintln("codegen", "Variable" +& var);
+      then
+        (cfn,var_1,tnr_1);        
     case (Exp.UPLUS_ARR(ty = Exp.REAL()),e,tnr,context)
       equation
         (cfn,var,tnr_1) = generateExpression(e, tnr, context);
@@ -6834,11 +6896,11 @@ algorithm
       equation
         DAE.EXTARGSIZE(componentRef = cr,attributes = attr,type_ = ty,exp = dim) = arg;
         Debug.fprintln("cgtr", "generate_extcall_vardecl_f77_5");
-        tmpname_1 = varNameArray(cr, attr,i);
+        tmpname_1 = varNameArray(cr, attr, i);
         tnrstr = intString(tnr);
         tnr_1 = tnr + 1;
         tmpstr = Util.stringAppendList({tmpname_1,"_size_",tnrstr});
-        tmpcref = Exp.CREF_IDENT(tmpstr,{});
+        tmpcref = Exp.CREF_IDENT(tmpstr,Exp.OTHER(),{});
         callstr = generateExtArraySizeCall(arg);
         declstr = Util.stringAppendList({"int ",tmpstr,";"});
         decl = cAddVariables(cEmptyFunction, {declstr});
@@ -7629,16 +7691,17 @@ algorithm
       Lib id_1,id,str;
       list<Exp.Subscript> subs;
       Exp.ComponentRef cref_1,cref;
-    case (Exp.CREF_IDENT(ident = id,subscriptLst = subs),str)
+      Exp.Type ty;
+    case (Exp.CREF_IDENT(ident = id,identType = ty,subscriptLst = subs),str)
       equation
         id_1 = stringAppend(id, str);
       then
-        Exp.CREF_IDENT(id_1,subs);
-    case (Exp.CREF_QUAL(ident = id,subscriptLst = subs,componentRef = cref),str)
+        Exp.CREF_IDENT(id_1,ty,subs);
+    case (Exp.CREF_QUAL(ident = id,identType = ty,subscriptLst = subs,componentRef = cref),str)
       equation
         cref_1 = suffixCref(cref, str);
       then
-        Exp.CREF_QUAL(id,subs,cref_1);
+        Exp.CREF_QUAL(id,ty,subs,cref_1);
   end matchcontinue;
 end suffixCref;
 
@@ -7781,7 +7844,7 @@ algorithm
     case (DAE.VAR(componentRef = id,
                   kind = vk,
                   direction = DAE.INPUT(),
-                  ty = DAE.RECORD(_),
+                  ty = DAE.COMPLEX(name=_),
                   dims = {},
                   fullType = rt) :: r)
       local
@@ -7919,7 +7982,7 @@ algorithm
     case ((Types.T_COMPLEX(complexClassType = ClassInf.RECORD(_), complexVarLst = varlst), SOME(path)),base_str)
       equation
         args = Util.listMap1(varlst, generateOutVar, base_str);
-        path_str = ModUtil.pathString2(path, "_");
+        path_str = ModUtil.pathStringReplaceDot(path, "_");
         path_str = Util.stringAppendList({"\"",path_str,"\""});
       then
         (path_str, args);
@@ -7955,7 +8018,7 @@ algorithm
     case (DAE.VAR(componentRef = id,
                   kind = vk,
                   direction = DAE.OUTPUT(),
-                  ty = (t as DAE.RECORD(_)),
+                  ty = (t as DAE.COMPLEX(name=_)),
                   dims = {},
                   fullType = rt) :: r,i)
       local

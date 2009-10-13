@@ -45,8 +45,8 @@ options {
     testLiterals = false;
     defaultErrorHandler = false;
     caseSensitive = true;
-    codeGenMakeSwitchThreshold=2;
-    codeGenBitsetTestThreshold=3;
+    //codeGenMakeSwitchThreshold=2;
+    //codeGenBitsetTestThreshold=3;
 }
 
 tokens {
@@ -61,6 +61,7 @@ tokens {
 	CONSTANT	= "constant"	;
 	DISCRETE	= "discrete"	;
     DER         = "der";
+    DEFINEUNIT  = "defineunit"  ;
 	EACH		= "each"	;
 	ELSE		= "else"	;
 	ELSEIF		= "elseif"	;

@@ -92,9 +92,9 @@ algorithm
 
     case (Absyn.CLASS(
       name = n,
-      partial_ = part,
-      final_ = f,
-      encapsulated_ = e,
+      partialPrefix = part,
+      finalPrefix = f,
+      encapsulatedPrefix = e,
       restriction = r,
       body = d,
       info = file_info),p,Absyn.IDENT(name = ""))
@@ -108,9 +108,9 @@ algorithm
 
     case (Absyn.CLASS(
       name = n,
-      partial_ = part,
-      final_ = f,
-      encapsulated_ = e,
+      partialPrefix = part,
+      finalPrefix = f,
+      encapsulatedPrefix = e,
       restriction = r,
       body = d,
       info = file_info),p,cPath)
@@ -433,7 +433,7 @@ algorithm
       Absyn.Path cPath;
       Env.Env env;
 
-    case(Absyn.ELEMENT(final_ = f, redeclareKeywords = rdk,
+    case(Absyn.ELEMENT(finalPrefix = f, redeclareKeywords = rdk,
       innerOuter = io, name = n, specification = es, info = i, constrainClass = cc),p,cPath,env)
 
       equation
@@ -700,7 +700,7 @@ algorithm
 
     case(cPath,path,p, env) // if it fails try the hard way
       equation
-        (_,fullPath) = Inst.makeFullyQualified(Env.emptyCache,env,path);
+        (_,fullPath) = Inst.makeFullyQualified(Env.emptyCache(),env,path);
     //    debug_print("getRestrictionFromPath: LookingUp:", Absyn.pathString(fullPath));
         cdef = Interactive.getPathedClassInProgram(fullPath,p);
         restriction = getRestrictionInClass(cdef);
@@ -1136,7 +1136,7 @@ algorithm
       equation
         //	p_1 = SCode.elaborate(p);
         //	(_,env) = Inst.makeSimpleEnvFromProgram(Env.emptyCache,p_1, Absyn.IDENT(""));
-        (_,fullPath) = Inst.makeFullyQualified(Env.emptyCache,env,path);
+        (_,fullPath) = Inst.makeFullyQualified(Env.emptyCache(),env,path);
         //	print("env:\n");print(Env.printEnvStr(env));
         //str = Absyn.pathString(cPath);
         //print("\npath = ");
@@ -1977,10 +1977,36 @@ algorithm
 
     case({},_) then {} ;
 
-    case(Absyn.MODIFICATION(componentReg = Absyn.CREF_IDENT(name = n), modification = SOME(Absyn.CLASSMOD(elementArgLst = args))) :: rest,context as ("Layer" :: c))
+      /* Special case for Line, need to add default color={0,0,255} if no color given */
+    case(Absyn.MODIFICATION(componentReg = Absyn.CREF_IDENT(name = "Line"), modification = SOME(Absyn.CLASSMOD(elementArgLst = args))) :: rest,context as ("Layer" :: c))
+      
+      equation 
+        c = addContext(context,"Line");			                    
+        argRes = transAnnLstToNamedArgs(args,c);
+        {} = Util.listSelect1(argRes, "color",nameArgWithName);
+				restRes = transAnnLstToCalls(rest,context);            				
+      then 
+        Absyn.CALL(Absyn.CREF_IDENT("Line",{}), Absyn.FUNCTIONARGS({},
+        Absyn.NAMEDARG("color",Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(255)}))::argRes)) :: restRes;		        
 
-      equation
-        c = addContext(context,n);
+      /* Special case for Rectangle Ellipse, Polygon, Text, need to add default lineColor={0,0,255} if no color given */
+    case(Absyn.MODIFICATION(componentReg = Absyn.CREF_IDENT(name = n), modification = SOME(Absyn.CLASSMOD(elementArgLst = args))) :: rest,context as ("Layer" :: c))
+      
+      equation 
+        c = addContext(context,n);			                    
+        true = isLinebasedGraphic(c);
+        argRes = transAnnLstToNamedArgs(args,c);
+        {} = Util.listSelect1(argRes, "lineColor",nameArgWithName);
+				restRes = transAnnLstToCalls(rest,context);            				
+      then 
+        Absyn.CALL(Absyn.CREF_IDENT(n,{}), Absyn.FUNCTIONARGS({},
+        Absyn.NAMEDARG("lineColor",Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(255)}))::argRes)) :: restRes;		        
+
+      
+    case(Absyn.MODIFICATION(componentReg = Absyn.CREF_IDENT(name = n), modification = SOME(Absyn.CLASSMOD(elementArgLst = args))) :: rest,context as ("Layer" :: c))
+      
+      equation 
+        c = addContext(context,n);			                    
         argRes = transAnnLstToNamedArgs(args,c);
 				restRes = transAnnLstToCalls(rest,context);
 
@@ -1994,10 +2020,23 @@ algorithm
         res = transAnnLstToCalls(rest,context);
 
       then res;
-
+        
   end matchcontinue;
-
+  
 end transAnnLstToCalls;
+
+protected function nameArgWithName 
+  input Absyn.NamedArg narg;
+  input String argName;
+  output Boolean res;
+algorithm
+  res := matchcontinue(narg,argName)
+  local String name;
+    case(Absyn.NAMEDARG(name,_),argName) equation
+      res = (name ==& argName);
+    then res;
+  end matchcontinue;
+end nameArgWithName;
 
 protected function transAnnLstToNamedArgs " function: transAnnLstToNamedArgs
 
@@ -2166,44 +2205,131 @@ algorithm
       then Absyn.NAMEDARG("font",exp) :: restRes;
 
     case(Absyn.MODIFICATION(componentReg = Absyn.CREF_IDENT(name = "string"), modification = SOME(Absyn.CLASSMOD(expOption =  SOME(exp)   ))) :: rest,context as ("Text" :: c))
-
-      equation
-
-        restRes = transAnnLstToNamedArgs(rest,context);
-
-      then Absyn.NAMEDARG("textString",exp) :: restRes;
-
+      
+      equation 
+        
+        restRes = transAnnLstToNamedArgs(rest,context);			
+        
+      then Absyn.NAMEDARG("textString",exp) :: restRes;	
+        
     case(Absyn.MODIFICATION(componentReg = Absyn.CREF_IDENT(name = "name"), modification = SOME(Absyn.CLASSMOD(expOption =  SOME(exp)   ))) :: rest,context as ("Bitmap" :: c))
-
-      equation
-
-        restRes = transAnnLstToNamedArgs(rest,context);
-
-      then Absyn.NAMEDARG("fileName",exp) :: restRes;
-
+      
+      equation 
+        
+        restRes = transAnnLstToNamedArgs(rest,context);			
+      
+      then Absyn.NAMEDARG("fileName",exp) :: restRes;	
+        
     case(Absyn.MODIFICATION(componentReg = Absyn.CREF_IDENT(name = "points"), modification = SOME(Absyn.CLASSMOD( expOption =  SOME(Absyn.MATRIX(matrix = expMatrix ))  ))) :: rest,context)
-
-      equation
-
+      
+      equation 
+                
         expLst = Util.listMap(expMatrix,matrixToArray);
         restRes = transAnnLstToNamedArgs(rest,context);
-
-      then Absyn.NAMEDARG("points",Absyn.ARRAY(expLst)) :: restRes;
-
+       
+      then Absyn.NAMEDARG("points",Absyn.ARRAY(expLst)) :: restRes;	
+        
     case(_ :: rest,context)
-
+      
       equation
-
+        
         res = transAnnLstToNamedArgs(rest,context);
-
+        
       then res;
-
+        
   end matchcontinue;
-
+  
 end transAnnLstToNamedArgs;
 
-
 protected function cleanStyleAttrs "function: cleanStyleAttrs
+
+	Helperfunction to the transform functions. The old style attribute and it's
+	contents needs to be adjusted according to priorities before beeing transformed.
+	See also cleanStyleAttrs2.
+"	
+  
+  input list<Absyn.ElementArg> inArgs;
+  input list<Absyn.ElementArg > resultList;
+  input Context inCon;
+  output list<Absyn.ElementArg> outArgs;
+  
+algorithm
+  outArgs := matchcontinue(inArgs,resultList,inCon)
+    local Context context;
+
+      /* If is Rectangle, Ellipse, Polygon or Text and no color attribute, set default to lineColor={0,0,255} */
+    case(inArgs,resultList, context) 
+      equation
+        true = isLinebasedGraphic(context);
+        {} = Util.listSelect(inArgs,isLineColorModifier);
+        outArgs = cleanStyleAttrs2(Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.CREF_IDENT("lineColor",{}),
+        SOME(Absyn.CLASSMOD({},SOME(Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(255)})))),NONE)::inArgs,resultList,context);
+        then outArgs;
+
+      /* If is Line and no color attribute, set default to color={0,0,255} */
+    case(inArgs,resultList, context) 
+      equation
+        true = isLineGraphic(context);
+        {} = Util.listSelect(inArgs,isLineColorModifier);
+        outArgs = cleanStyleAttrs2(Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.CREF_IDENT("color",{}),
+        SOME(Absyn.CLASSMOD({},SOME(Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(255)})))),NONE)::inArgs,resultList,context);
+        then outArgs;
+
+    case(inArgs,resultList, context) 
+      equation
+        outArgs = cleanStyleAttrs2(inArgs,resultList,context);
+        then outArgs;          
+  end matchcontinue;  
+end cleanStyleAttrs;
+
+protected function isLineColorModifier
+  input Absyn.ElementArg arg;
+  output Boolean res;
+algorithm
+  res := matchcontinue(arg)
+  local 
+    list<Absyn.ElementArg> eltargs;
+    case(Absyn.MODIFICATION(_,_,Absyn.CREF_IDENT("color",{}),SOME(Absyn.CLASSMOD(eltargs,_)),_))
+    then true; 
+    case(_) then false;     
+  end matchcontinue;
+end isLineColorModifier;
+
+protected function isStyleModifier
+  input Absyn.ElementArg arg;
+  output Boolean res;
+algorithm
+  res := matchcontinue(arg)
+    case(Absyn.MODIFICATION(_,_,Absyn.CREF_IDENT("style",{}),_,_)) then true;
+    case(_) then false;
+  end matchcontinue;
+end isStyleModifier;
+
+protected function isLinebasedGraphic "Returns true if context string is a line based graphic"
+  input Context context;
+  output Boolean res;
+algorithm
+  res := matchcontinue(context)
+    case("Rectangle"::_) then true;  
+    case("Ellipse"::_) then true;  
+    case("Polygon"::_) then true;        
+    case("Text"::_) then true;  
+    case(_) then false;
+  end matchcontinue;
+end isLinebasedGraphic;
+
+protected function isLineGraphic "Returns true if context string is a Line"
+  input Context context;
+  output Boolean res;
+algorithm
+  res := matchcontinue(context)
+    case("Line"::_) then true;  
+    case(_) then false;
+  end matchcontinue;
+end isLineGraphic;
+
+
+protected function cleanStyleAttrs2 "function: cleanStyleAttrs
 
 	Helperfunction to the transform functions. The old style attribute and it's
 	contents needs to be adjusted according to priorities before beeing transformed.
@@ -2236,7 +2362,7 @@ algorithm
       equation
 
         resultList = Util.listAppendElt(arg,resultList);
-        outList = cleanStyleAttrs(rest,resultList,context);
+        outList = cleanStyleAttrs2(rest,resultList,context);
 
       then outList;
 
@@ -2248,7 +2374,7 @@ algorithm
         false = isFillPatternInList(listAppend(rest,resultList));
         resultList = insertFillPatternInList(resultList);
         resultList = Util.listAppendElt(arg,resultList);
-        outList = cleanStyleAttrs(rest,resultList,context);
+        outList = cleanStyleAttrs2(rest,resultList,context);
 
       then outList;
 
@@ -2260,7 +2386,7 @@ algorithm
         false = isFillPatternInList(listAppend(rest,resultList));
         resultList = insertFillPatternInList(resultList);
         resultList = Util.listAppendElt(arg,resultList);
-        outList = cleanStyleAttrs(rest,resultList,context);
+        outList = cleanStyleAttrs2(rest,resultList,context);
 
       then outList;
 
@@ -2272,7 +2398,7 @@ algorithm
         false = isFillPatternInList(listAppend(rest,resultList));
         resultList = insertFillPatternInList(resultList);
         resultList = Util.listAppendElt(arg,resultList);
-        outList = cleanStyleAttrs(rest,resultList,context);
+        outList = cleanStyleAttrs2(rest,resultList,context);
 
       then outList;
 
@@ -2281,7 +2407,7 @@ algorithm
       equation
 
         resultList = Util.listAppendElt(arg,resultList);
-        outList = cleanStyleAttrs(rest,resultList,context);
+        outList = cleanStyleAttrs2(rest,resultList,context);
 
       then outList;
 
@@ -2290,7 +2416,7 @@ algorithm
       equation
 
         resultList = Util.listAppendElt(arg,resultList);
-        outList = cleanStyleAttrs(rest,resultList,context);
+        outList = cleanStyleAttrs2(rest,resultList,context);
 
       then outList;
 
@@ -2299,7 +2425,7 @@ algorithm
       equation
 
         resultList = Util.listAppendElt(arg,resultList);
-        outList = cleanStyleAttrs(rest,resultList,context);
+        outList = cleanStyleAttrs2(rest,resultList,context);
 
       then outList;
 
@@ -2308,7 +2434,7 @@ algorithm
       equation
 
         resultList = Util.listAppendElt(arg,resultList);
-        outList = cleanStyleAttrs(rest,resultList,context);
+        outList = cleanStyleAttrs2(rest,resultList,context);
 
       then outList;
 
@@ -2317,7 +2443,7 @@ algorithm
       equation
 
         resultList = Util.listAppendElt(arg,resultList);
-        outList = cleanStyleAttrs(rest,resultList,context);
+        outList = cleanStyleAttrs2(rest,resultList,context);
 
       then outList;
 
@@ -2326,7 +2452,7 @@ algorithm
       equation
 
         resultList = Util.listAppendElt(arg,resultList);
-        outList = cleanStyleAttrs(rest,resultList,context);
+        outList = cleanStyleAttrs2(rest,resultList,context);
 
       then outList;
 
@@ -2336,7 +2462,7 @@ algorithm
 
 
         resultList = Util.listAppendElt(arg,resultList);
-        outList = cleanStyleAttrs(rest,resultList,context);
+        outList = cleanStyleAttrs2(rest,resultList,context);
 
       then outList;
 
@@ -2345,7 +2471,7 @@ algorithm
       equation
 
         resultList = Util.listAppendElt(arg,resultList);
-        outList = cleanStyleAttrs(rest,resultList,context);
+        outList = cleanStyleAttrs2(rest,resultList,context);
 
       then outList;
 
@@ -2354,7 +2480,7 @@ algorithm
       equation
 
         resultList = Util.listAppendElt(arg,resultList);
-        outList = cleanStyleAttrs(rest,resultList,context);
+        outList = cleanStyleAttrs2(rest,resultList,context);
 
       then outList;
 
@@ -2363,7 +2489,7 @@ algorithm
       equation
 
         resultList = Util.listAppendElt(arg,resultList);
-        outList = cleanStyleAttrs(rest,resultList,context);
+        outList = cleanStyleAttrs2(rest,resultList,context);
 
       then outList;
 
@@ -2372,7 +2498,7 @@ algorithm
       equation
 
         //Filter away, bitmaps can have no thickness.
-        outList = cleanStyleAttrs(rest,resultList,context);
+        outList = cleanStyleAttrs2(rest,resultList,context);
 
       then outList;
 
@@ -2381,14 +2507,14 @@ algorithm
       equation
 
         resultList = Util.listAppendElt(arg,resultList);
-        outList = cleanStyleAttrs(rest,resultList,context);
+        outList = cleanStyleAttrs2(rest,resultList,context);
 
       then outList;
 
     case((arg as Absyn.MODIFICATION(finalItem = fi, each_ = e, componentReg = Absyn.CREF_IDENT(name = "gradient", subscripts = s), modification = SOME(Absyn.CLASSMOD(elementArgLst = args,expOption = SOME(Absyn.INTEGER(value = 0)))), comment = com)) :: rest, resultList,context)
       //Filter away
       equation
-        outList = cleanStyleAttrs(rest,resultList,context);
+        outList = cleanStyleAttrs2(rest,resultList,context);
 
       then outList;
 
@@ -2402,7 +2528,7 @@ algorithm
         resultList = setDefaultLineInList(resultList) /*If Gradient is set the line around the figure should be default*/;
         (rest,resultList) = setDefaultFillColor(rest,resultList) /*If gradient is specificed but no fillColor, fillColor needs to be set to it's default dymola value.*/;
         resultList = Util.listAppendElt(arg,resultList);
-        outList = cleanStyleAttrs(rest,resultList,context);
+        outList = cleanStyleAttrs2(rest,resultList,context);
 
       then outList;
 
@@ -2418,7 +2544,7 @@ algorithm
 
 
         resultList = Util.listAppendElt(arg,resultList);
-        outList = cleanStyleAttrs(rest,resultList,context);
+        outList = cleanStyleAttrs2(rest,resultList,context);
 
       then outList;
 
@@ -2427,7 +2553,7 @@ algorithm
       equation
 
         resultList = Util.listAppendElt(arg,resultList);
-        outList = cleanStyleAttrs(rest,resultList,context);
+        outList = cleanStyleAttrs2(rest,resultList,context);
 
       then outList;
 
@@ -2436,7 +2562,7 @@ algorithm
       equation
 
         resultList = Util.listAppendElt(arg,resultList);
-        outList = cleanStyleAttrs(rest,resultList,context);
+        outList = cleanStyleAttrs2(rest,resultList,context);
 
       then outList;
 
@@ -2445,7 +2571,7 @@ algorithm
       equation
 
         resultList = Util.listAppendElt(arg,resultList);
-        outList = cleanStyleAttrs(rest,resultList,context);
+        outList = cleanStyleAttrs2(rest,resultList,context);
 
       then outList;
 
@@ -2454,7 +2580,7 @@ algorithm
       equation
 
         resultList = Util.listAppendElt(arg,resultList);
-        outList = cleanStyleAttrs(rest,resultList,context);
+        outList = cleanStyleAttrs2(rest,resultList,context);
 
       then outList;
 
@@ -2463,7 +2589,7 @@ algorithm
       equation
 
         resultList = Util.listAppendElt(arg,resultList);
-        outList = cleanStyleAttrs(rest,resultList,context);
+        outList = cleanStyleAttrs2(rest,resultList,context);
 
       then outList;
 
@@ -2481,13 +2607,13 @@ algorithm
 
       equation
         //Filter away unwanted trash
-        outList = cleanStyleAttrs(rest,resultList,context);
+        outList = cleanStyleAttrs2(rest,resultList,context);
 
       then outList;
 
   end matchcontinue;
 
-end cleanStyleAttrs;
+end cleanStyleAttrs2;
 
 protected function insertFillPatternInList "function insertFillPatternInList
 

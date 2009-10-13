@@ -111,7 +111,7 @@ extern "C"
 		  tokens.push_back(std::string(filename));
 		  add_message(85, /* Error opening file,see Error.rml*/
 			      "TRANSLATION",
-			      "ERROR",
+			      "Error",
 			      "Error opening file %s",
 			      tokens);
 		  RML_TAILCALLK(rmlFC);
@@ -177,7 +177,7 @@ extern "C"
 		  tokens.push_back(std::string(currentLex->getText()));
 		  add_source_message(1, /* syntax error, see Error.rml */
 				     "SYNTAX",
-				     "ERROR",
+				     "Error",
 				     "Syntax error near: %s",
 				     tokens,
 				     currentLex->getLine(),
@@ -194,7 +194,7 @@ extern "C"
 		  tokens.push_back(std::string(e.getMessage()));
 		  add_source_message(2, /* Grammar error, see Error.rml */
 				     "GRAMMAR",
-				     "ERROR",
+				     "Error",
 				     "Parse error: %s",
 				     tokens,
 				     e.getLine(),
@@ -211,7 +211,7 @@ extern "C"
 		  tokens.push_back(std::string(e.getMessage()));
 		  add_source_message(2, /* Grammar error, see Error.rml */
 				     "GRAMMAR",
-				     "ERROR",
+				     "Error",
 				     "Parse error: %s",
 				     tokens,
 				     0,
@@ -229,7 +229,7 @@ extern "C"
 				   std::string(e.getMessage()));
 		  add_source_message(63, /* Internal error, see Error.rml */
 				     "TRANSLATION",
-				     "ERROR",
+				     "Error",
 				     "Internal error %s",
 				     tokens,
 				     0,
@@ -246,7 +246,7 @@ extern "C"
 		  tokens.push_back(std::string("while parsing:"));
 		  add_source_message(63, /* Internal error, see Error.rml */
 				     "TRANSLATION",
-				     "ERROR",
+				     "Error",
 				     "Internal error %s",
 				     tokens,
 				     0,
@@ -263,7 +263,7 @@ extern "C"
 		    tokens.push_back(std::string("while parsing:"));
 		    add_source_message(63, /* Internal error, see Error.rml */
 				       "TRANSLATION",
-				       "ERROR",
+				       "Error",
 				       "Internal error %s",
 				       tokens,
 				       0,
@@ -293,7 +293,7 @@ extern "C"
 
 			if (parseonly) /* only do the parsing, do not build the AST and return a null ast! */
 			{
-				rmlA0 = Absyn__PROGRAM(mk_nil(), Absyn__TOP);
+				rmlA0 = Absyn__PROGRAM(mk_nil(), Absyn__TOP, Absyn__TIMESTAMP(mk_rcon(0.0),mk_rcon(0.0)));
 				RML_TAILCALLK(rmlSC);
 			}
 
@@ -626,7 +626,7 @@ extern "C"
       tokens.push_back(std::string(filename));
       add_message(85, /* Error opening file,see Error.rml*/
             "TRANSLATION",
-            "ERROR",
+            "Error",
             "Error opening file %s",
             tokens);
       RML_TAILCALLK(rmlFC);
@@ -679,7 +679,7 @@ extern "C"
       std::list<std::string> tokens;
       tokens.push_back(std::string(lex.getText()));
       add_source_message(1, /* syntax error, see Error.rml */
-             "SYNTAX", "ERROR", "Syntax error near: %s",
+             "SYNTAX", "Error", "Syntax error near: %s",
              tokens,
              lex.getLine(), lex.getColumn(),
              lex.getLine(),lex.getColumn(),
@@ -690,7 +690,7 @@ extern "C"
       std::list<std::string> tokens;
       tokens.push_back(std::string(e.getMessage()));
       add_source_message(2, /* Grammar error, see Error.rml */
-             "GRAMMAR", "ERROR", "Parse error: %s",
+             "GRAMMAR", "Error", "Parse error: %s",
              tokens,
              e.getLine(), e.getColumn(),
              e.getLine(), e.getColumn(),
@@ -701,7 +701,7 @@ extern "C"
       std::list<std::string> tokens;
       tokens.push_back(std::string(e.getMessage()));
       add_source_message(2, /* Grammar error, see Error.rml */
-             "GRAMMAR", "ERROR", "Parse error: %s",
+             "GRAMMAR", "Error", "Parse error: %s",
              tokens,
              0, 0,
              0, 0,
@@ -713,7 +713,7 @@ extern "C"
       tokens.push_back(std::string("while parsing:")+
            std::string(e.getMessage()));
       add_source_message(63, /* Internal error, see Error.rml */
-             "TRANSLATION", "ERROR", "Internal error %s",
+             "TRANSLATION", "Error", "Internal error %s",
              tokens,
              0, 0,
              0, 0,
@@ -724,7 +724,7 @@ extern "C"
       std::list<std::string> tokens;
       tokens.push_back(std::string("while parsing:"));
       add_source_message(63, /* Internal error, see Error.rml */
-             "TRANSLATION", "ERROR", "Internal error %s",
+             "TRANSLATION", "Error", "Internal error %s",
              tokens,
              0, 0,
              0, 0,
@@ -735,7 +735,7 @@ extern "C"
       std::list<std::string> tokens;
       tokens.push_back(std::string("while parsing expression in file:"));
       add_source_message(63, /* Internal error, see Error.rml */
-             "TRANSLATION", "ERROR", "Internal error %s",
+             "TRANSLATION", "Error", "Internal error %s",
              tokens,
              0, 0,
              0, 0,

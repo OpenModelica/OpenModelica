@@ -43,8 +43,8 @@ static int version_request;
 
 /* Level of eliminations of equations.
  * 0 - None
- * 1 - Only aliases (a=b)
- * 2 - Full (default) (a=-b, a=b, a=constant)
+ * 1 - Only aliases (a=b) (default)
+ * 2 - Full (a=-b, a=b, a=constant)
  * 3 - Only constants (a = constant)
  * */
 static int elimination_level=2;
@@ -89,6 +89,12 @@ extern char* corbaSessionName;
  */
 char* annotation_version = "2.x";
 
+/*
+ * adrpo 2008-12-15
+ * flag +showErrorMessages for printing all messages comming to the error buffer
+ */
+int showErrorMessages = 0;
+
 void RTOpts_5finit(void)
 {
   type_info = 0;
@@ -106,6 +112,7 @@ void RTOpts_5finit(void)
   corbaSessionName = 0;
   acceptedGrammar = GRAMMAR_MODELICA;
   annotation_version = "2.x";
+  showErrorMessages = 0;
   noSimplify = 0;
 }
 
@@ -186,12 +193,43 @@ static int set_debug_flags(char *flagstr)
   */
   return 0;
 }
+static int set_debug_flag(char const* strdata, int value)
+{
+	int length=strlen(strdata),i;
+	for (i=0; i<debug_flagc; i++)
+	{
+		if (strcmp(debug_flags[i], strdata)==0)
+		{
+			if(value == 0 )
+			{
+				debug_flags[i] = "";
+				// TODO: realloc memory when count(empty_entries) > _const
+				return 0;
+			}
+			return 1;
+		}
+		length += strlen( debug_flags[i]);
+	}
+	if(value == 0)
+		return 0;
+	debug_flagc+=1;
+	debug_flags = (char**)realloc(debug_flags, debug_flagc * sizeof(char*));
+	debug_flags[debug_flagc-1] = (char*)strdata;
+	return 1;
+}
 
 int check_debug_flag(char const* strdata)
 {
   int flg=0;
   int i;
-  if (strcmp(strdata,"none")==0 && debug_none == 1) {
+  int containFailtrace = 0;
+  for (i=0; i<debug_flagc; i++) {
+    if (strcmp(debug_flags[i], "failtrace")==0) {
+      containFailtrace=1;
+      break;
+  	}
+  }
+  if (strcmp(strdata,"none")==0 && (debug_none == 1 || containFailtrace==0 ) ) {
     flg=1;
   }
   if (debug_all==1) {
@@ -218,18 +256,12 @@ int check_debug_flag(char const* strdata)
   return flg;
 }
 
-void printFlagError(char* givenFlag, char* correctFlag)
-{
-	fprintf(stderr, "# Error in flags!\n");
-	fprintf(stderr, "# User supplied flag: %s \n", givenFlag);
-	fprintf(stderr, "# The flag should be: %s \n", correctFlag);
-}
-
 #define VERSION_OPT1        "++v"
 #define VERSION_OPT2        "+version"
 #define ANNOTATION_VERSION  "+annotationVersion"
 #define TARGET              "+target"
 #define METAMODELICA        "+g"
+#define SHOW_ERROR_MESSAGES "+showErrorMessages"
 #define NO_SIMPLIFY         "+noSimplify"
 
 RML_BEGIN_LABEL(RTOpts__args)
@@ -239,6 +271,8 @@ RML_BEGIN_LABEL(RTOpts__args)
   int strLen_TARGET = strlen(TARGET);
   int strLen_METAMODELICA = strlen(METAMODELICA);
   int strLen_ANNNOTATION_VERSION = strlen(ANNOTATION_VERSION);
+  int strLen_SHOW_ERROR_MESSAGES = strlen(SHOW_ERROR_MESSAGES);
+
   int strLen_NO_SIMPLIFY = strlen(NO_SIMPLIFY);
   debug_none = 1;
 
@@ -288,6 +322,16 @@ RML_BEGIN_LABEL(RTOpts__args)
         RML_TAILCALLK(rmlFC);
       }
     }
+    else if(strncmp(arg,SHOW_ERROR_MESSAGES,strLen_SHOW_ERROR_MESSAGES) == 0)
+    {
+        if (strlen(arg) == strLen_SHOW_ERROR_MESSAGES)
+            showErrorMessages = 1;
+        else
+        {
+          fprintf(stderr, "# Wrong option: usage: omc [+showErrorMessages], default to not show them.\n");
+          RML_TAILCALLK(rmlFC);
+        }
+    }
     else if(strncmp(arg,NO_SIMPLIFY,strLen_NO_SIMPLIFY) == 0)
     {
         if (strlen(arg) == strLen_NO_SIMPLIFY)
@@ -300,132 +344,102 @@ RML_BEGIN_LABEL(RTOpts__args)
     }
     else if (arg[0] == '+')
     {
-    	if (strlen(arg) < 2)
-    	{
+      if (strlen(arg) < 2)
+      {
     		fprintf(stderr, "# Unknown option: %s \n", arg);
     		RML_TAILCALLK(rmlFC);
-    	}
-    	switch (arg[1])
-    	{
-    	case 't':
-    	if (arg[2]!='\0')
-    	{
-    		RML_TAILCALLK(rmlFC);
-    	}
-    	type_info = 1;
-    	break;
-    	case 'a':
-    	if (arg[2]!='\0')
-    	{
-    		printFlagError(arg, "+t");
-    		RML_TAILCALLK(rmlFC);
-    	}
-    	split_arrays = 0;
-    	type_info = 0;
-    	break;
-    	case 's':
-    	if (arg[2]!='\0')
-    	{
-    		printFlagError(arg, "+s");
-    		RML_TAILCALLK(rmlFC);
-    	}
-    	simulation_cg = 1;
-    	break;
-    	case 'm':
-    	if (arg[2]!='\0')
-    	{
-    		printFlagError(arg, "+m");
-    		RML_TAILCALLK(rmlFC);
-    	}
-    	modelica_output = 1;
-    	break;
-    	case 'p':
-    	if (arg[2]!='\0')
-    	{
-    		printFlagError(arg, "+p");
-    		RML_TAILCALLK(rmlFC);
-    	}
-    	params_struct = 1;
-    	break;
-    	case 'q':
-    	if (arg[2]!='\0')
-    	{
-    		printFlagError(arg, "+q");
-    		RML_TAILCALLK(rmlFC);
-    	}
-    	silent = 1;
-    	break;
-    	case 'c':
-    	if (arg[2]!='=' || setCorbaSessionName(&(arg[3])) != 0)
-    	{
-    		printFlagError(arg, "+c=corbaSessionName\n");
-    		RML_TAILCALLK(rmlFC);
-    	}
-    	break;
-    	case 'd':
-    	if (arg[2]=='d') {
-    		debug_flag_info = 1;
-    		break;
-    	}
-    	if (arg[2]!='=' ||
-    			set_debug_flags(&(arg[3])) != 0) {
-    		fprintf(stderr, "# Flag Usage:  +d=flg1,flg2,...\n") ;
-    		fprintf(stderr, "#              +dd for debug flag info\n");
-    		RML_TAILCALLK(rmlFC);
-    	}
-    	break;
-    	case 'n':
-    	if (arg[2] != '=') {
-    		fprintf(stderr, "# Flag Usage:  +n=<no. of proc>") ;
-    		RML_TAILCALLK(rmlFC);
-    	}
-    	nproc = atoi(&arg[3]);
-    	if (nproc == 0) {
-    		fprintf(stderr, "Error, integer value expected for number of processors.\n") ;
-    		RML_TAILCALLK(rmlFC);
-    	}
-    	break;
-    	case 'l':
-    	if (arg[2] != '=') {
-    		fprintf(stderr, "# Flag Usage:  +l=<latency value>") ;
-    		RML_TAILCALLK(rmlFC);
-    	}
-    	latency = (double)atoi(&arg[3]); /* ,NULL); */
-    	if (latency == 0.0) {
-    		fprintf(stderr, "Error, integer expected for latency.\n") ;
-    		RML_TAILCALLK(rmlFC);
-    	}
-    	break;
-    	case 'b':
-    	if (arg[2] != '=') {
-    		fprintf(stderr, "# Flag Usage:  +b=<bandwidth value>") ;
-    		RML_TAILCALLK(rmlFC);
-    	}
-    	bandwidth = (double)atoi(&arg[3]);
-    	if (bandwidth == 0.0) {
-    		fprintf(stderr, "Error, integer expected for bandwidth.\n") ;
-    		RML_TAILCALLK(rmlFC);
-    	}
-    	break;
-    	// Which level of algebraic elimination to use.
-    	case 'e':
-    	if (arg[2] != '=') {
-    		fprintf(stderr, "# Flag Usage:  +e=<algebraic_elimination_level 0, 1, 2(default) or 3>") ;
-    		RML_TAILCALLK(rmlFC);
-    	}
-    	elimination_level = (int)atoi(&arg[3]);
-    	if (elimination_level < 0 || elimination_level > 3) {
-    		elimination_level = 2;
-    		fprintf(stderr, "Warning, wrong value of elimination level, will use default = %d\n",elimination_level) ;
-    	}
-    	break;
-    	default:
-    		fprintf(stderr, "# Unknown option: %s\n", arg);
-    		RML_TAILCALLK(rmlFC);
-    	}
+      }
+      switch (arg[1]) {
+      case 't':
+	type_info = 1;
+	break;
+      case 'a':
+	split_arrays = 0;
+	type_info = 0;
+	break;
+      case 's':
+	simulation_cg = 1;
+	break;
+      case 'm':
+	modelica_output = 1;
+	break;
+      case 'p':
+	params_struct = 1;
+	break;
+      case 'q':
+	silent = 1;
+	break;
+	  case 'c':
+	if (arg[2]!='=' || setCorbaSessionName(&(arg[3])) != 0)
+	{
+	  fprintf(stderr, "# Flag Usage:  +c=corbaSessionName\n") ;
+	  RML_TAILCALLK(rmlFC);
+	}
+	break;
+      case 'd':
+	if (arg[2]=='d') {
+	  debug_flag_info = 1;
+	  break;
+	}
+	if (arg[2]!='=' ||
+	    set_debug_flags(&(arg[3])) != 0) {
+	  fprintf(stderr, "# Flag Usage:  +d=flg1,flg2,...\n") ;
+	  fprintf(stderr, "#              +dd for debug flag info\n");
+	  RML_TAILCALLK(rmlFC);
+	}
+	break;
+      case 'n':
+	if (arg[2] != '=') {
+	  fprintf(stderr, "# Flag Usage:  +n=<no. of proc>") ;
+	  RML_TAILCALLK(rmlFC);
+	}
+	nproc = atoi(&arg[3]);
+	if (nproc == 0) {
+	  fprintf(stderr, "Error, integer value expected for number of processors.\n") ;
+	  RML_TAILCALLK(rmlFC);
+	}
+	break;
+      case 'l':
+	if (arg[2] != '=') {
+	  fprintf(stderr, "# Flag Usage:  +l=<latency value>") ;
+	  RML_TAILCALLK(rmlFC);
+	}
+	latency = (double)atoi(&arg[3]); /* ,NULL); */
+	if (latency == 0.0) {
+	  fprintf(stderr, "Error, integer expected for latency.\n") ;
+	  RML_TAILCALLK(rmlFC);
+	}
+	break;
+      case 'b':
+	if (arg[2] != '=') {
+	  fprintf(stderr, "# Flag Usage:  +b=<bandwidth value>") ;
+	  RML_TAILCALLK(rmlFC);
+	}
+	bandwidth = (double)atoi(&arg[3]);
+	if (bandwidth == 0.0) {
+	  fprintf(stderr, "Error, integer expected for bandwidth.\n") ;
+	  RML_TAILCALLK(rmlFC);
+	}
+	break;
+	// Which level of algebraic elimination to use.
+	  case 'e':
+	if (arg[2] != '=') {
+	  fprintf(stderr, "# Flag Usage:  +e=<algebraic_elimination_level 0, 1, 2(default) or 3>") ;
+	  RML_TAILCALLK(rmlFC);
+	}
+	elimination_level = (int)atoi(&arg[3]);
+	if (elimination_level < 0 || elimination_level > 3) {
+		elimination_level = 2;
+	  fprintf(stderr, "Warning, wrong value of elimination level, will use default = %d\n",elimination_level) ;
+	}
+	break;
+      default:
+	fprintf(stderr, "# Unknown option: %s\n", arg);
+	RML_TAILCALLK(rmlFC);
+      }
     }
     else
-    	res = (void*)mk_cons(RML_CAR(args), res);
+      res = (void*)mk_cons(RML_CAR(args), res);
     args = RML_CDR(args);
   }
 
@@ -481,6 +495,18 @@ RML_BEGIN_LABEL(RTOpts__setEliminationLevel)
 	int level = (int)RML_IMMEDIATE(RML_UNTAGFIXNUM(rmlA0));
 	elimination_level = level;
 	RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(RTOpts__setDebugFlag)
+{
+  void *str = rmlA0;
+  //int level = 1;
+  int level = (int)RML_IMMEDIATE(RML_UNTAGFIXNUM(rmlA1));
+  char *strdata = RML_STRINGDATA(str);
+  level = set_debug_flag(strdata,level);
+  rmlA0 = RML_PRIM_MKBOOL(level);
+  RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 

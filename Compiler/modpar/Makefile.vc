@@ -1,0 +1,31 @@
+# Peter Aronsson, MathCore Engineering AB
+#
+srcdir= .
+top_builddir= ../..
+
+RMLINCLUDE = /I$(OMDEV)\include\rml-win32-msvc
+
+OBJECTS = TaskGraphExt_stub.obj
+
+CFLAGS=	/Ob2 /Ox /O2 /Ot /Oy $(RMLINCLUDE) /D "WIN32" /D "NDEBUG" /D "_CONSOLE"\
+	 /D "_MBCS" /FD /EHsc /MT /W3 /nologo /c /TP /wd4311 /wd4312 
+
+all: modparvc.lib
+
+.cpp.obj:
+	$(CC) $(CFLAGS) $<
+	
+
+modparvc.lib: $(OBJECTS)
+	LIB  /out:$@ $(OBJECTS)
+
+INCFLAGS =/I$(RMLINCLUDE) /I..\..\mosh\src
+
+
+CXXFLAGS = $(CFLAGS)
+
+
+clean:
+	del /f $(OBJECTS)
+
+reallyclean: clean

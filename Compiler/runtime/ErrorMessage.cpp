@@ -105,12 +105,12 @@ std::string ErrorMessage::getMessage()
   }
   std::stringstream str;
   str << "["<< filename_ << ":" << startLineNo_ << ":" << startColumnNo_ << "-" <<
-  endLineNo_ << ":" << endColumnNo_ << ":" << (isReadOnly_?"readonly":"writable") << "]: ";
+  endLineNo_ << ":" << endColumnNo_ << ":" << (isReadOnly_?"readonly":"writable") << "] " << severity_ << ": ";
   std::string positionInfo = str.str();
   if (filename_ == "" && startLineNo_ == 0 && startColumnNo_ == 0 &&
       endLineNo_ == 0 && endColumnNo_ == 0 /*&& isReadOnly_ == false*/)
   {
-    return fullMessage;
+    return severity_+": "+fullMessage;
   }
   else
   {

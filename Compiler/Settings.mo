@@ -42,6 +42,18 @@ public function getVersionNr "Returns the version number of this release"
 external "C";
 end getVersionNr;
 
+public function setCompilePath
+  input String inString;
+
+  external "C" ;
+end setCompilePath;
+
+public function getCompilePath
+  output String outString;
+
+  external "C" ;
+end getCompilePath;
+
 public function setCompileCommand
   input String inString;
 

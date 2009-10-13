@@ -78,8 +78,7 @@ algorithm
         fail();
     case (dae_equation,_)
       equation
-        DAELow.dumpDAELowEqnList({dae_equation},"differentiate_equation_time\n",false);
-        print("-differentiate_equation_time faile\n");
+        print("-differentiate_equation_time failed\n");
       then
         fail();
   end matchcontinue;
@@ -112,26 +111,31 @@ algorithm
       Exp.Exp e,e_1,e1_1,e2_1,e1,e2,e3_1,e3,d_e1,exp,e0;
       DAELow.Variables timevars,tv;
       Exp.Operator op,rel;
-      list<Exp.Exp> expl_1,expl;
+      list<Exp.Exp> expl_1,expl,sub;
       Absyn.Path a;
       Boolean b,c;
       Integer i;
       Absyn.Path fname;
+      Exp.Type ty;
+      
     case (Exp.ICONST(integer = _),_) then Exp.RCONST(0.0);
     case (Exp.RCONST(real = _),_) then Exp.RCONST(0.0);
     case (Exp.CREF(componentRef = Exp.CREF_IDENT(ident = "time",subscriptLst = {}),ty = tp),_) then Exp.RCONST(1.0);
     case ((e as Exp.CREF(componentRef = cr,ty = tp)),timevars) /* special rule for DUMMY_STATES, they become DUMMY_DER */
       equation
-        ({DAELow.VAR(cr,DAELow.DUMMY_STATE(),_,_,_,_,_,_,_,_,_,_,_,_)},_) = DAELow.getVar(cr, timevars);
+        ({DAELow.VAR(varKind=DAELow.DUMMY_STATE())},_) = DAELow.getVar(cr, timevars);
         cr_str = Exp.printComponentRefStr(cr);
+        ty = Exp.crefType(cr);
         cr_str_1 = SimCodegen.changeNameForDerivative(cr_str);
       then
-        Exp.CREF(Exp.CREF_IDENT(cr_str_1,{}),Exp.REAL());
+        Exp.CREF(Exp.CREF_IDENT(cr_str_1,ty,{}),Exp.REAL());
+        
     case ((e as Exp.CREF(componentRef = cr,ty = tp)),timevars)
       equation
         (_,_) = DAELow.getVar(cr, timevars);
       then
         Exp.CALL(Absyn.IDENT("der"),{e},false,true,Exp.REAL());
+        
     case (Exp.CALL(path = fname,expLst = {e}),timevars)
       equation
         isSin(fname);
@@ -298,11 +302,11 @@ algorithm
         e_1 = differentiateExpTime(e, tv);
       then
         Exp.CAST(tp,e_1);
-    case (Exp.ASUB(exp = e,sub = i),tv)
+    case (Exp.ASUB(exp = e,sub = sub),tv)
       equation
         e_1 = differentiateExpTime(e, tv);
       then
-        Exp.ASUB(e,i);
+        Exp.ASUB(e,sub);
     case (Exp.REDUCTION(path = a,expr = e1,ident = b,range = e2),tv)
       local String b;
       equation
@@ -347,12 +351,12 @@ algorithm
       Real rval;
       Exp.ComponentRef cr,crx,tv;
       Exp.Exp e,e1_1,e2_1,e1,e2,const_one,d_e1,d_e2,exp,e_1,exp_1,e3_1,e3,cond;
-      Exp.Type tp;
+      Exp.Type tp; 
       Absyn.Path a,fname;
       Boolean b,c;
       Exp.Operator op,rel;
       String e_str,s,s2,str;
-      list<Exp.Exp> expl_1,expl;
+      list<Exp.Exp> expl_1,expl,sub;
       Integer i;
     case (Exp.ICONST(integer = _),_,_) then Exp.RCONST(0.0);
 
@@ -658,11 +662,11 @@ algorithm
       then
         Exp.CAST(tp,e_1);
 
-    case (Exp.ASUB(exp = e,sub = i),tv,differentiateIfExp)
+    case (Exp.ASUB(exp = e,sub = sub),tv,differentiateIfExp)
       equation
         e_1 = differentiateExp(e, tv,differentiateIfExp);
       then
-        Exp.ASUB(e,i);
+        Exp.ASUB(e,sub);
 
     case (Exp.REDUCTION(path = a,expr = e1,ident = b,range = e2),tv,differentiateIfExp)
       local String b;

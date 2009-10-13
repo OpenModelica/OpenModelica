@@ -83,44 +83,49 @@ public function fromDAEElemToExpElem "function: fromDAEElemToExpElem
 	input DAE.Element daeElem;
 	output Exp.DAEElement outElem;
 algorithm
-  outElem :=
-  matchcontinue (daeElem)
-    case (DAE.VAR(compRef,varKind,varDirection,varProt,ty,binding,dims,flow_,stream_,pathLst,varAttr,absynComment,innerOut,fType))
-      local
-        Exp.ComponentRef compRef " The variable name";
-    		DAE.VarKind varKind "varible kind: variable, constant, parameter, etc." ;
-    		DAE.VarDirection varDirection "direction: input/output/bidirectional" ;
-    		DAE.VarProtection varProt "protected or not" ;
-    		DAE.Type ty "one of the builtin types" ;
-    		Option<Exp.Exp> binding "Binding expression e.g. for parameters, value of start attribute" ; 
-    		DAE.InstDims dims "dimensions"; 
-    		DAE.Flow flow_ "Flow of connector variable. Needed for unconnected flow variables" ;
-    		DAE.Stream stream_ "Stream connector variables." ;
-    		list<Absyn.Path> pathLst "class names" ;
-    		Option<DAE.VariableAttributes> varAttr;
-    		Option<Absyn.Comment> absynComment;
-    		Absyn.InnerOuter innerOut "inner/outer required to 'change' outer references";
-    		Types.Type fType "Full type information required to analyze inner/outer elements";
-     		Exp.DAEElement elem;
-     		Exp.VarKind varKind2;
-     		Exp.VarDirection varDirection2;
-     		Exp.VarProtection varProt2;
-     		Exp.TypeExp ty2;
-     		Exp.Flow flow_2;
-     		Exp.Stream stream_2;
-     		Option<Exp.VariableAttributes> varAttr2;
-     		Exp.TypeTypes fType2;
-     equation
-       varKind2 = varKindConvert(varKind);
-       varDirection2 = varDirConvert(varDirection);
-       varProt2 = varProtConvert(varProt);
-       ty2 = typeConvert(ty);
-       flow_2 = flowConvert(flow_);
-       stream_2 = streamConvert(stream_);
-       varAttr2 = varAttrConvert(varAttr);
-       fType2 = fromTypeToTypeTypes(fType);
-  	   elem = Exp.VAR(compRef,varKind2,varDirection2,varProt2,ty2,binding,dims,flow_2,stream_2,pathLst,varAttr2,absynComment,innerOut,fType2);
-     then elem;
+  outElem := matchcontinue (daeElem)
+    local
+      Exp.ComponentRef compRef " The variable name";
+      DAE.VarKind varKind "varible kind: variable, constant, parameter, etc." ;
+      DAE.VarDirection varDirection "direction: input/output/bidirectional" ;
+      DAE.VarProtection varProt "protected or not" ;
+      DAE.Type ty "one of the builtin types" ;
+      Option<Exp.Exp> binding "Binding expression e.g. for parameters, value of start attribute" ; 
+      DAE.InstDims dims "dimensions"; 
+      DAE.Flow flowPrefix "Flow of connector variable. Needed for unconnected flow variables" ;
+      DAE.Stream streamPrefix "Stream connector variables." ;
+      list<Absyn.Path> pathLst "class names" ;
+      Option<DAE.VariableAttributes> varAttr;
+      Option<Absyn.Comment> absynComment;
+      Absyn.InnerOuter innerOut "inner/outer required to 'change' outer references";
+      Types.Type fType "Full type information required to analyze inner/outer elements";
+      Exp.DAEElement elem;
+      Exp.VarKind varKind2;
+      Exp.VarDirection varDirection2;
+      Exp.VarProtection varProt2;
+      Exp.TypeExp ty2;
+      Exp.Flow flowPrefix2;
+      Exp.Stream streamPrefix2;
+      Option<Exp.VariableAttributes> varAttr2;
+      Exp.TypeTypes fType2;
+      list<Exp.Exp> e;
+      list<list<DAE.Element>> elemList1;
+      list<DAE.Element> elemList2;
+      list<list<Exp.DAEElement>> elems1;
+      list<Exp.DAEElement> elems2;
+      Exp.DAEElement elem;      
+    case (DAE.VAR(compRef,varKind,varDirection,varProt,ty,binding,dims,flowPrefix,streamPrefix,pathLst,varAttr,absynComment,innerOut,fType))
+      equation
+        varKind2 = varKindConvert(varKind);
+        varDirection2 = varDirConvert(varDirection);
+        varProt2 = varProtConvert(varProt);
+        ty2 = typeConvert(ty);
+        flowPrefix2 = flowConvert(flowPrefix);
+        streamPrefix2 = streamConvert(streamPrefix);
+        varAttr2 = varAttrConvert(varAttr);
+        fType2 = fromTypeToTypeTypes(fType);
+        elem = Exp.VAR(compRef,varKind2,varDirection2,varProt2,ty2,binding,dims,flowPrefix2,streamPrefix2,pathLst,varAttr2,absynComment,innerOut,fType2);
+      then elem;
     case (DAE.DEFINE(c,e))
       local
         Exp.ComponentRef c;
@@ -153,7 +158,7 @@ algorithm
       equation
         elem = Exp.ARRAY_EQUATION(intList,e1,e2);
       then elem;
-
+        
     case (DAE.WHEN_EQUATION(e,elemList,NONE()))
       local
         Exp.Exp e;
@@ -164,7 +169,7 @@ algorithm
         elemList2 = fromDAEElemsToExpElems(elemList,{});
         elem = Exp.WHEN_EQUATION(e,elemList2,NONE());
       then elem;
-
+        
     case (DAE.WHEN_EQUATION(e,elemList,SOME(elsewhen_)))
       local
         Exp.Exp e;
@@ -177,27 +182,17 @@ algorithm
         elsewhen2 = fromDAEElemToExpElem(elsewhen_);
         elem = Exp.WHEN_EQUATION(e,elemList2,SOME(elsewhen2));
       then elem;
-
+        
     case (DAE.IF_EQUATION(e,elemList1,elemList2))
-      local
-        Exp.Exp e;
-        list<DAE.Element> elemList1,elemList2;
-        list<Exp.DAEElement> elems1,elems2;
-        Exp.DAEElement elem;
       equation
-        elems1 = fromDAEElemsToExpElems(elemList1,{});
+        elems1 = Util.listMap1(elemList1, fromDAEElemsToExpElems, {});
         elems2 = fromDAEElemsToExpElems(elemList2,{});
         elem = Exp.IF_EQUATION(e,elems1,elems2);
       then elem;
 
     case (DAE.INITIAL_IF_EQUATION(e,elemList1,elemList2))
-      local
-        Exp.Exp e;
-        list<DAE.Element> elemList1,elemList2;
-        list<Exp.DAEElement> elems1,elems2;
-        Exp.DAEElement elem;
       equation
-        elems1 = fromDAEElemsToExpElems(elemList1,{});
+        elems1 = Util.listMap1(elemList1, fromDAEElemsToExpElems, {});
         elems2 = fromDAEElemsToExpElems(elemList2,{});
         elem = Exp.INITIAL_IF_EQUATION(e,elems1,elems2);
       then elem;
@@ -340,51 +335,50 @@ public function varAttrConvert "function: varAttrConvert
 	input Option<DAE.VariableAttributes> varAttr;
 	output Option<Exp.VariableAttributes> outVarAttr;
 algorithm
-  outVarAttr :=
-  matchcontinue (varAttr)
+  outVarAttr := matchcontinue (varAttr)
     local
-     	Option<Exp.VariableAttributes> elem;
+      Option<Exp.VariableAttributes> elem;
     case (NONE()) equation then NONE();
-    case (SOME(DAE.VAR_ATTR_REAL(quant,u,dUnit,min,init,f,nom,sSelectOption)))
-    local
-      Option<Exp.Exp> quant "quantity" ;
-    	Option<Exp.Exp> u "unit" ;
-    	Option<Exp.Exp> dUnit "displayUnit" ;
-    	tuple<Option<Exp.Exp>, Option<Exp.Exp>> min "min , max" ;
-    	Option<Exp.Exp> init "Initial value" ;
-    	Option<Exp.Exp> f;
-    	Option<Exp.Exp> nom "nominal" ;
-    	Option<DAE.StateSelect> sSelectOption;
-    	Option<Exp.StateSelect> sSelectOption2;
-    equation
-      sSelectOption2 = convertStateSelect(sSelectOption);
-      elem = SOME(Exp.VAR_ATTR_REAL(quant,u,dUnit,min,init,f,nom,sSelectOption2));
-    then elem;
-		case (SOME(DAE.VAR_ATTR_INT(quan,min,init,fixed)))
-		local
-			Option<Exp.Exp> quan "quantity" ;
-    	tuple<Option<Exp.Exp>, Option<Exp.Exp>> min "min , max" ;
-    	Option<Exp.Exp> init "Initial value" ;
-    	Option<Exp.Exp> fixed;
-    equation
-      elem = SOME(Exp.VAR_ATTR_INT(quan,min,init,fixed));
-    then elem;
-	  case (SOME(DAE.VAR_ATTR_BOOL(quan,init,f)))
-	  local
-	    Option<Exp.Exp> quan "quantity" ;
-    	Option<Exp.Exp> init "Initial value" ;
-    	Option<Exp.Exp> f;
-    equation
-      elem = SOME(Exp.VAR_ATTR_BOOL(quan,init,f));
+    case (SOME(DAE.VAR_ATTR_REAL(quant,u,dUnit,min,init,f,nom,sSelectOption,_,_,_)))
+      local
+        Option<Exp.Exp> quant "quantity" ;
+        Option<Exp.Exp> u "unit" ;
+        Option<Exp.Exp> dUnit "displayUnit" ;
+        tuple<Option<Exp.Exp>, Option<Exp.Exp>> min "min , max" ;
+        Option<Exp.Exp> init "Initial value" ;
+        Option<Exp.Exp> f;
+        Option<Exp.Exp> nom "nominal" ;
+        Option<DAE.StateSelect> sSelectOption;
+        Option<Exp.StateSelect> sSelectOption2;
+      equation
+        sSelectOption2 = convertStateSelect(sSelectOption);
+        elem = SOME(Exp.VAR_ATTR_REAL(quant,u,dUnit,min,init,f,nom,sSelectOption2));
       then elem;
-    case (SOME(DAE.VAR_ATTR_STRING(quan,init)))
-    local
-      Option<Exp.Exp> quan "quantity" ;
-    	Option<Exp.Exp> init "Initial value" ;
-   	equation
-   	  elem = SOME(Exp.VAR_ATTR_STRING(quan,init));
-   	  then elem;
-   end matchcontinue;
+    case (SOME(DAE.VAR_ATTR_INT(quan,min,init,fixed,_,_,_)))
+      local
+        Option<Exp.Exp> quan "quantity" ;
+        tuple<Option<Exp.Exp>, Option<Exp.Exp>> min "min , max" ;
+        Option<Exp.Exp> init "Initial value" ;
+        Option<Exp.Exp> fixed;
+      equation
+        elem = SOME(Exp.VAR_ATTR_INT(quan,min,init,fixed));
+      then elem;
+    case (SOME(DAE.VAR_ATTR_BOOL(quan,init,f,_,_,_)))
+      local
+        Option<Exp.Exp> quan "quantity" ;
+        Option<Exp.Exp> init "Initial value" ;
+        Option<Exp.Exp> f;
+      equation
+        elem = SOME(Exp.VAR_ATTR_BOOL(quan,init,f));
+      then elem;
+    case (SOME(DAE.VAR_ATTR_STRING(quan,init,_,_,_)))
+      local
+        Option<Exp.Exp> quan "quantity" ;
+        Option<Exp.Exp> init "Initial value" ;
+      equation
+        elem = SOME(Exp.VAR_ATTR_STRING(quan,init));
+      then elem;
+  end matchcontinue;
 end varAttrConvert;
 
 public function convertStateSelect "function: convertStateSelect
@@ -392,8 +386,7 @@ public function convertStateSelect "function: convertStateSelect
 	input Option<DAE.StateSelect> ss;
 	output Option<Exp.StateSelect> outSs;
 algorithm
-	outSs :=
-	matchcontinue (ss)
+	outSs := matchcontinue (ss)
 	  case (NONE()) equation then NONE();
 	  case (SOME(DAE.NEVER())) equation then SOME(Exp.NEVER());
 	  case (SOME(DAE.AVOID())) equation then SOME(Exp.AVOID());
@@ -424,7 +417,7 @@ algorithm
     	first2 = fromAlgStateToExpState(first);
     	localAccList = listAppend(localAccList,Util.listCreate(first2));
      	lst = fromAlgStatesToExpStates(rest,localAccList);
-    	then lst;
+  	then lst;
   end matchcontinue;
 end fromAlgStatesToExpStates;
 
@@ -433,16 +426,14 @@ public function fromAlgStateToExpState "function: fromAlgStateToExpState
 	input Algorithm.Statement algState;
 	output Exp.Statement outState;
 algorithm
-  outState :=
-  matchcontinue (algState)
-    case (Algorithm.ASSIGN(t,cRef,e))
+  outState := matchcontinue (algState)
+    case (Algorithm.ASSIGN(t,e1,e))
       local
     		Exp.Type t;
-    		Exp.ComponentRef cRef;
-    		Exp.Exp e;
+    		Exp.Exp e,e1;
     		Exp.Statement elem;
       equation
-        elem = Exp.ASSIGN(t,cRef,e);
+        elem = Exp.ASSIGN(t,e1,e);
       then elem;
     case (Algorithm.TUPLE_ASSIGN(t,expLst,e))
     	local
@@ -461,7 +452,7 @@ algorithm
          Exp.Statement elem;
        equation
          elem = Exp.ASSIGN_ARR(t,compRef,e);
-         then elem;
+       then elem;
     case (Algorithm.IF(e,sLst,else_))
       	local
       	  Exp.Exp e;
@@ -591,6 +582,14 @@ algorithm
 		  equation
 		    elem = Exp.LABEL(s);
 		  then elem;
+		/* Does not compile in release on win32
+		case (alg)
+		  local
+		    Algorithm.Statement alg;
+		  equation
+		    debug_print("fromAlgStateToExpState failed at:", alg);
+		  then fail();
+		*/
   end matchcontinue;
 end fromAlgStateToExpState;
 
@@ -664,44 +663,50 @@ public function fromExpElemToDAEElem
 	input Exp.DAEElement daeElem;
 	output DAE.Element outElem;
 algorithm
-  outElem :=
-  matchcontinue (daeElem)
-    case (Exp.VAR(compRef,var,varDirection,varProt,ty,binding,dims,flow_,stream_,pathLst,varAttr,absynComment,innerOut,fType))
-      local
-        Exp.ComponentRef compRef " The variable name";
-    		Exp.VarKind var "varible kind: variable, constant, parameter, etc." ;
-    		Exp.VarDirection varDirection " input/output/bidirectional ";
-    		Exp.VarProtection varProt "protected or not";
-    		Exp.TypeExp ty "one of the builtin types";
-    		Option<Exp.Exp> binding "Binding expression e.g. for parameters, i.e. value of start attribute";
-    		Exp.InstDims dims "dimensions"; 
-    		Exp.Flow flow_ "Flow of connector variable. Needed for unconnected flow variables";
-    		Exp.Stream stream_ "Stream variables" ;
-    		list<Absyn.Path> pathLst;
-    		Option<Exp.VariableAttributes> varAttr;
-    		Option<Absyn.Comment> absynComment;
-    		Absyn.InnerOuter innerOut "inner/outer required to 'change' outer references";
-    		Exp.TypeTypes fType "Full type information required to analyze inner/outer elements";
-     		DAE.Element elem;
-     		DAE.VarKind var2;
-     		DAE.VarDirection varDirection2;
-     		DAE.Type ty2;
-     		DAE.VarProtection varProt2;
-     		DAE.Flow flow_2;
-     		DAE.Stream stream_2;
-     		Option<DAE.VariableAttributes> varAttr2;
-     		Types.Type fType2;
-     equation
-       var2 = varKindConvert2(var);
-       varDirection2 = varDirConvert2(varDirection);
-       varProt2 = varProtConvert2(varProt);
-       ty2 = typeConvert2(ty);
-       varAttr2 = varAttrConvert2(varAttr);
-       fType2 = fromTypeTypesToType(fType);
-       flow_2 = flowConvert2(flow_);
-       stream_2 = streamConvert2(stream_);
-  	   elem = DAE.VAR(compRef,var2,varDirection2,varProt2,ty2,binding,dims,flow_2,stream_2,pathLst,varAttr2,absynComment,innerOut,fType2);
-     then elem;
+  outElem := matchcontinue (daeElem)
+    local
+      list<Exp.Exp> e;
+      list<list<Exp.DAEElement>> elemList1;
+      list<Exp.DAEElement> elemList2;
+      list<list<DAE.Element>> elems1;
+      list<DAE.Element> elems2;
+      DAE.Element elem;
+      Exp.ComponentRef compRef " The variable name";
+      Exp.VarKind var "varible kind: variable, constant, parameter, etc." ;
+      Exp.VarDirection varDirection " input/output/bidirectional ";
+      Exp.VarProtection varProt "protected or not";
+      Exp.TypeExp ty "one of the builtin types";
+      Option<Exp.Exp> binding "Binding expression e.g. for parameters, i.e. value of start attribute";
+      Exp.InstDims dims "dimensions"; 
+      Exp.Flow flowPrefix "Flow of connector variable. Needed for unconnected flow variables";
+      Exp.Stream streamPrefix "Stream variables" ;
+      list<Absyn.Path> pathLst;
+      Option<Exp.VariableAttributes> varAttr;
+      Option<Absyn.Comment> absynComment;
+      Absyn.InnerOuter innerOut "inner/outer required to 'change' outer references";
+      Exp.TypeTypes fType "Full type information required to analyze inner/outer elements";
+      DAE.Element elem;
+      DAE.VarKind var2;
+      DAE.VarDirection varDirection2;
+      DAE.Type ty2;
+      DAE.VarProtection varProt2;
+      DAE.Flow flowPrefix2;
+      DAE.Stream streamPrefix2;
+      Option<DAE.VariableAttributes> varAttr2;
+      Types.Type fType2;
+      
+    case (Exp.VAR(compRef,var,varDirection,varProt,ty,binding,dims,flowPrefix,streamPrefix,pathLst,varAttr,absynComment,innerOut,fType))
+      equation
+        var2 = varKindConvert2(var);
+        varDirection2 = varDirConvert2(varDirection);
+        varProt2 = varProtConvert2(varProt);
+        ty2 = typeConvert2(ty);
+        varAttr2 = varAttrConvert2(varAttr);
+        fType2 = fromTypeTypesToType(fType);
+        flowPrefix2 = flowConvert2(flowPrefix);
+        streamPrefix2 = streamConvert2(streamPrefix);
+        elem = DAE.VAR(compRef,var2,varDirection2,varProt2,ty2,binding,dims,flowPrefix2,streamPrefix2,pathLst,varAttr2,absynComment,innerOut,fType2);
+      then elem;
 
     case (Exp.DEFINE(c,e))
       local
@@ -711,6 +716,7 @@ algorithm
       equation
         elem = DAE.DEFINE(c,e);
       then elem;
+        
     case (Exp.INITIALDEFINE(c,e))
       local
         Exp.ComponentRef c;
@@ -763,25 +769,15 @@ algorithm
       then elem;
 
     case (Exp.IF_EQUATION(e,elemList1,elemList2))
-      local
-        Exp.Exp e;
-        list<Exp.DAEElement> elemList1,elemList2;
-        list<DAE.Element> elems1,elems2;
-        DAE.Element elem;
       equation
-        elems1 = fromExpElemsToDAEElems(elemList1,{});
+        elems1 = Util.listMap1(elemList1, fromExpElemsToDAEElems, {});
         elems2 = fromExpElemsToDAEElems(elemList2,{});
         elem = DAE.IF_EQUATION(e,elems1,elems2);
       then elem;
 
     case (Exp.INITIAL_IF_EQUATION(e,elemList1,elemList2))
-      local
-        Exp.Exp e;
-        list<Exp.DAEElement> elemList1,elemList2;
-        list<DAE.Element> elems1,elems2;
-        DAE.Element elem;
       equation
-        elems1 = fromExpElemsToDAEElems(elemList1,{});
+        elems1 = Util.listMap1(elemList1, fromExpElemsToDAEElems, {});
         elems2 = fromExpElemsToDAEElems(elemList2,{});
         elem = DAE.INITIAL_IF_EQUATION(e,elems1,elems2);
       then elem;
@@ -925,8 +921,7 @@ public function varAttrConvert2 "function: varAttrConvert2
 	input Option<Exp.VariableAttributes> varAttr;
 	output Option<DAE.VariableAttributes> outVarAttr;
 algorithm
-  outVarAttr :=
-  matchcontinue (varAttr)
+  outVarAttr := matchcontinue (varAttr)
     local
       Option<DAE.VariableAttributes> elem;
      	DAE.VariableAttributes temp;
@@ -944,7 +939,7 @@ algorithm
     	Option<DAE.StateSelect> sSelectOption2;
     equation
       sSelectOption2 = convertStateSelect2(s);
-      elem = SOME(DAE.VAR_ATTR_REAL(q,u,d,m,i,f,n,sSelectOption2));
+      elem = SOME(DAE.VAR_ATTR_REAL(q,u,d,m,i,f,n,sSelectOption2,NONE(),NONE(),NONE()));
     then elem;
    case (SOME(Exp.VAR_ATTR_INT(q,m,i,f)))
 		local
@@ -953,7 +948,7 @@ algorithm
     	Option<Exp.Exp> i "Initial value" ;
     	Option<Exp.Exp> f;
     equation
-      elem = SOME(DAE.VAR_ATTR_INT(q,m,i,f));
+      elem = SOME(DAE.VAR_ATTR_INT(q,m,i,f,NONE(),NONE(),NONE()));
     then elem;
 	  case (SOME(Exp.VAR_ATTR_BOOL(q,i,f)))
 	  local
@@ -961,14 +956,14 @@ algorithm
     	Option<Exp.Exp> i "Initial value" ;
     	Option<Exp.Exp> f;
     equation
-      elem = SOME(DAE.VAR_ATTR_BOOL(q,i,f));
+      elem = SOME(DAE.VAR_ATTR_BOOL(q,i,f,NONE(),NONE(),NONE()));
       then elem;
     case (SOME(Exp.VAR_ATTR_STRING(q,i)))
     local
       Option<Exp.Exp> q "quantity" ;
     	Option<Exp.Exp> i "Initial value" ;
    	equation
-   	  elem = SOME(DAE.VAR_ATTR_STRING(q,i));
+   	  elem = SOME(DAE.VAR_ATTR_STRING(q,i,NONE(),NONE(),NONE()));
    	then elem;
   case (SOME(Exp.VAR_ATTR_ENUMERATION(q,m,st,f)))
     local
@@ -977,7 +972,7 @@ algorithm
     Option<Exp.Exp> st "start" ;
     Option<Exp.Exp> f "fixed - true: default for parameter/constant, false - default for other variables" ;
     equation
-       elem = SOME(DAE.VAR_ATTR_ENUMERATION(q,m,st,f));
+       elem = SOME(DAE.VAR_ATTR_ENUMERATION(q,m,st,f,NONE(),NONE(),NONE()));
    	then elem;
   end matchcontinue;
 end varAttrConvert2;
@@ -1030,14 +1025,13 @@ public function fromExpStateToAlgState "function: fromExpStateToAlgState
 algorithm
   outState :=
   matchcontinue (algState)
-    case (Exp.ASSIGN(t,cRef,e))
+    case (Exp.ASSIGN(t,e1,e))
       local
     		Exp.Type t;
-    		Exp.ComponentRef cRef;
-    		Exp.Exp e;
+    		Exp.Exp e,e1;
     		Algorithm.Statement elem;
       equation
-        elem = Algorithm.ASSIGN(t,cRef,e);
+        elem = Algorithm.ASSIGN(t,e1,e);
       then elem;
     case (Exp.TUPLE_ASSIGN(t,expLst,e))
     	local
@@ -1340,7 +1334,7 @@ algorithm
     equation
       lst2 =fromVarTypesListToVarList(lst,{});
       cType2 = fromTypeTypesToType(cType);
-      ret = ((Types.T_COMPLEX(s,lst2,SOME(cType2)),p));
+      ret = ((Types.T_COMPLEX(s,lst2,SOME(cType2),NONE),p));
     then ret;
 
  	  case ((Exp.T_COMPLEXTYPES(s,lst,NONE()),p))
@@ -1350,7 +1344,7 @@ algorithm
       list<Types.Var> lst2;
 		equation
 		  lst2 = fromVarTypesListToVarList(lst,{});
-		  ret = ((Types.T_COMPLEX(s,lst2,NONE()),p));
+		  ret = ((Types.T_COMPLEX(s,lst2,NONE(),NONE),p));
 		then ret;
 
 	  case ((Exp.T_FUNCTIONTYPES(lst,fType),p))
@@ -1531,79 +1525,42 @@ public function fromValueTypesToValue "function: fromValueTypesToValue
 	input Exp.Value inVal;
 	output Values.Value outVal;
 algorithm
-	outVal :=
-	matchcontinue (inVal)
+	outVal := matchcontinue (inVal)
 	  local
 	    Values.Value ret;
-	  case (Exp.INTEGERVAL(i))
-	  local
-	    Integer i;
-	  equation
-	  	ret = Values.INTEGER(i);
-	  then ret;
-	  case (Exp.REALVAL(r))
-	    local
-	      Real r;
-	    equation
-	      ret = Values.REAL(r);
-	    then ret;
-	  case (Exp.STRINGVAL(s))
-	    local
-	      String s;
-	    equation
-	      ret = Values.STRING(s);
-	    then ret;
-	  case (Exp.BOOLVAL(b))
-	    local
-	      Boolean b;
-	    equation
-	      ret = Values.BOOL(b);
-	    then ret;
+	    Exp.ComponentRef cr;
+	    Integer i; Real r;
+	    String s; Boolean b;
+	    list<Exp.Value> vLst;
+	    list<Values.Value> vLst2;
+	    Absyn.Path p;
+	    list<Exp.Ident> lIdent;
+	    Absyn.CodeNode c;
+	  case (Exp.INTEGERVAL(i)) then Values.INTEGER(i);
+	  case (Exp.REALVAL(r)) then Values.REAL(r);
+	  case (Exp.STRINGVAL(s)) then Values.STRING(s);
+	  case (Exp.BOOLVAL(b)) then Values.BOOL(b);
+	  case (Exp.ENUMVAL(cr)) then Values.ENUM(cr,0);
+	  case (Exp.CODEVAL(c)) then Values.CODE(c);
 	  case (Exp.LISTVAL(vLst))
-	    local
-	      list<Exp.Value> vLst;
-	      list<Values.Value> vLst2;
 	    equation
 	      vLst2 = fromValueTypesLstToValueLst(vLst,{});
 	      ret = Values.LIST(vLst2);
 	    then ret;
-	  case (Exp.ENUMVAL(s))
-	    local
-	      String s;
-	    equation
-	      ret = Values.ENUM(s);
-	    then ret;
 	  case (Exp.ARRAYVAL(vLst))
-	    local
-	      list<Exp.Value> vLst;
-	      list<Values.Value> vLst2;
 	    equation
 	      vLst2 = fromValueTypesLstToValueLst(vLst,{});
 	      ret = Values.ARRAY(vLst2);
 	    then ret;
 	  case (Exp.TUPLEVAL(vLst))
-	    local
-	      list<Exp.Value> vLst;
-	      list<Values.Value> vLst2;
 	    equation
 	      vLst2 = fromValueTypesLstToValueLst(vLst,{});
 	      ret = Values.TUPLE(vLst2);
 	    then ret;
 	  case (Exp.RECORDVAL(p,vLst,lIdent))
-	    local
-	      Absyn.Path p;
-	      list<Exp.Value> vLst;
-	      list<Exp.Ident> lIdent;
-	      list<Values.Value> vLst2;
 	    equation
 	      vLst2 = fromValueTypesLstToValueLst(vLst,{});
 	      ret = Values.RECORD(p,vLst2,lIdent);
-	    then ret;
-	  case (Exp.CODEVAL(c))
-	    local
-	      Absyn.CodeNode c;
-	    equation
-	      ret = Values.CODE(c);
 	    then ret;
 	end matchcontinue;
 end fromValueTypesToValue;
@@ -1649,7 +1606,7 @@ algorithm
     	Absyn.Direction d;
     	Types.Attributes ret;
     equation
-      ret = Types.ATTR(f,s,acc,par,d);
+      ret = Types.ATTR(f,s,acc,par,d, Absyn.UNSPECIFIED());
     then ret;
   end matchcontinue;
 end fromAttributesTypesToAttributes;
@@ -1822,7 +1779,7 @@ algorithm
 	    ret = ((Exp.T_ARRAYTYPES(arrDim2,arrType2),p));
 	  then ret;
 
-	  case ((Types.T_COMPLEX(s,lst,SOME(cType)),p))
+	  case ((Types.T_COMPLEX(s,lst,SOME(cType),_),p))
 	  local
 		  ClassInf.State s;
       list<Types.Var> lst;
@@ -1835,7 +1792,7 @@ algorithm
       ret = ((Exp.T_COMPLEXTYPES(s,temp,SOME(cType2)),p));
     then ret;
 
- 	  case ((Types.T_COMPLEX(s,lst,NONE()),p))
+ 	  case ((Types.T_COMPLEX(s,lst,NONE(),_),p))
 	  local
 		  ClassInf.State s;
       list<Types.Var> lst;
@@ -2023,91 +1980,55 @@ public function fromValueToValueTypes "function: fromValueToValueTypes
 	input Values.Value inVal;
 	output Exp.Value outVal;
 algorithm
-	outVal :=
-	matchcontinue (inVal)
+	outVal := matchcontinue (inVal)
 	  local
-	    Exp.Value ret;
-	  case (Values.INTEGER(i))
-	  local
-		Integer i;
-	  equation
-	  	ret = Exp.INTEGERVAL(i);
-	  then ret;
-	  case (Values.REAL(r))
-	  local
-		Real r;
-	  equation
-	  	ret = Exp.REALVAL(r);
-	  then ret;
-	  case (Values.STRING(s))
-	  local
-		String s;
-	  equation
-	  ret = Exp.STRINGVAL(s);
-	  then ret;
-	  case (Values.BOOL(b))
-	  local
-		Boolean b;
-	  equation
-	  ret = Exp.BOOLVAL(b);
-	  then ret;
+	    Exp.Value ret; Integer i; Real r; String s;
+	    Boolean b; list<Values.Value> vLst; list<Exp.Value> vLst2;
+	    Absyn.Path p;
+	    list<Exp.Ident> lIdent;
+	    Absyn.CodeNode c;
+	    Exp.ComponentRef cr;
+	    	    
+	  case (Values.INTEGER(i)) then Exp.INTEGERVAL(i);
+	  case (Values.REAL(r)) then Exp.REALVAL(r);
+	  case (Values.STRING(s)) then Exp.STRINGVAL(s);
+	  case (Values.BOOL(b)) then Exp.BOOLVAL(b);
+	  case (Values.ENUM(cr,_)) then Exp.ENUMVAL(cr);
 	  case (Values.LIST(vLst))
-	  local
-	    list<Values.Value> vLst;
-	    list<Exp.Value> vLst2;
-	  equation
-	    vLst2 = fromValueLstToValueTypesLst(vLst,{});
-	    ret = Exp.LISTVAL(vLst2);
-	  then ret;
-	  case (Values.ENUM(s))
-	 	local
-			String s;
-	  equation
-	  	ret = Exp.ENUMVAL(s);
-	  then ret;
+	    equation
+	      vLst2 = fromValueLstToValueTypesLst(vLst,{});
+	      ret = Exp.LISTVAL(vLst2);
+	    then ret;
 	  case (Values.ARRAY(vLst))
-	  local
- 		list<Values.Value> vLst;
- 		list<Exp.Value> vLst2;
-	  equation
-	    vLst2 = fromValueLstToValueTypesLst(vLst,{});
-	  ret = Exp.ARRAYVAL(vLst2);
-	  then ret;
+	    equation
+	      vLst2 = fromValueLstToValueTypesLst(vLst,{});
+	      ret = Exp.ARRAYVAL(vLst2);
+	    then ret;
 	  case (Values.TUPLE(vLst))
-	  local
- 		list<Values.Value> vLst;
- 		list<Exp.Value> vLst2;
-	  equation
-	    vLst2 = fromValueLstToValueTypesLst(vLst,{});
-	  ret = Exp.TUPLEVAL(vLst2);
-	  then ret;
+	    equation
+	      vLst2 = fromValueLstToValueTypesLst(vLst,{});
+	      ret = Exp.TUPLEVAL(vLst2);
+	    then ret;
 	  case (Values.RECORD(p,vLst,lIdent))
-	  local
-    Absyn.Path p;
-    list<Values.Value> vLst;
-    list<Exp.Ident> lIdent;
-    list<Exp.Value> vLst2;
-	  equation
-	    vLst2 = fromValueLstToValueTypesLst(vLst,{});
-	  ret = Exp.RECORDVAL(p,vLst2,lIdent);
-	  then ret;
+	    equation
+	      vLst2 = fromValueLstToValueTypesLst(vLst,{});
+	      ret = Exp.RECORDVAL(p,vLst2,lIdent);
+	    then ret;
 	  case (Values.CODE(c))
-	  local
-		Absyn.CodeNode c;
-	  equation
-	  ret = Exp.CODEVAL(c);
-	  then ret;
+	    equation
+	      ret = Exp.CODEVAL(c);
+	    then ret;
   end matchcontinue;
 end fromValueToValueTypes;
 
-public function fromValueLstToValueTypesLst "function: fromValueLstToValueTypesLst
+public function fromValueLstToValueTypesLst 
+"function: fromValueLstToValueTypesLst
   Values.Value 'list => Exp.Value 'list"
 	input list<Values.Value> vLst;
 	input list<Exp.Value> accLst;
 	output list<Exp.Value> outLst;
 algorithm
-  outLst :=
-  matchcontinue (vLst,accLst)
+  outLst := matchcontinue (vLst,accLst)
     local
       list<Exp.Value> localAccList;
     case ({},localAccList) equation then localAccList;
@@ -2131,12 +2052,13 @@ public function fromAttributesToAttributesTypes "function: fromAttributesToAttri
 algorithm
   outType :=
   matchcontinue (attType)
-    case (Types.ATTR(f,s,acc,par,d))
+    case (Types.ATTR(f,s,acc,par,d,io))
     local
     	Boolean f,s;
     	SCode.Accessibility acc;
     	SCode.Variability par;
     	Absyn.Direction d;
+    	Absyn.InnerOuter io;
     	Exp.AttributesTypes ret;
     equation
       ret = Exp.ATTRTYPES(f,s,acc,par,d);
@@ -2265,26 +2187,20 @@ public function fromExpCrefToAbsynCref
   input Exp.ComponentRef cIn;
   output Absyn.ComponentRef cOut;
 algorithm
-  cOut :=
-  matchcontinue (cIn)
-    case (Exp.CREF_QUAL(id,subScriptList,cRef))
+  cOut := matchcontinue (cIn)
       local
         Exp.Ident id;
         list<Exp.Subscript> subScriptList;
         list<Absyn.Subscript> subScriptList2;
         Exp.ComponentRef cRef;
-        Absyn.ComponentRef elem,cRef2;
+        Absyn.ComponentRef elem,cRef2;  
+    case (Exp.CREF_QUAL(id,_,subScriptList,cRef))
       equation
         cRef2 = fromExpCrefToAbsynCref(cRef);
         subScriptList2 = fromExpSubsToAbsynSubs(subScriptList,{});
         elem = Absyn.CREF_QUAL(id,subScriptList2,cRef2);
       then elem;
-    case (Exp.CREF_IDENT(id,subScriptList))
-      local
-        Exp.Ident id;
-        list<Exp.Subscript> subScriptList;
-        list<Absyn.Subscript> subScriptList2;
-        Absyn.ComponentRef elem;
+    case (Exp.CREF_IDENT(id,_,subScriptList))
       equation
         subScriptList2 = fromExpSubsToAbsynSubs(subScriptList,{});
         elem = Absyn.CREF_IDENT(id,subScriptList2);

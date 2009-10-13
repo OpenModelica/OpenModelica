@@ -38,10 +38,10 @@ package Builtin
   This module defines the builtin types, variables and functions in
   Modelica.  The only exported functions are `initial_env\' and
   simple_initial_env.
-
+  
   There are several builtin attributes defined in the builtin types, such as
-  unit, start, etc.
-
+  unit, start, etc. 
+  
 "
 
 public import Absyn;
@@ -51,11 +51,14 @@ public import Env;
 /* protected imports */
 protected import Types;
 protected import ClassInf;
+protected import Exp;
+protected import Values;
+
 
 /*
-- The primitive types
+- The primitive types 
   These are the primitive types that are used to build the types
-  `Real\', `Integer\' etc.
+  `Real\', `Integer\' etc. 
 */
 public constant SCode.Class rlType=SCode.CLASS("RealType",false,false,SCode.R_PREDEFINED_REAL(),
           SCode.PARTS({},{},{},{},{},NONE)) " real type ";
@@ -74,67 +77,67 @@ protected constant SCode.Class enumType=SCode.CLASS("EnumType",false,false,SCode
 
 protected constant SCode.Element unit=SCode.COMPONENT("unit",Absyn.UNSPECIFIED(),true,false,false,
           SCode.ATTR({},false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR()),Absyn.TPATH(Absyn.IDENT("StringType"),NONE),
-          SCode.MOD(false,Absyn.NON_EACH(),{},SOME((Absyn.STRING(""),false))),NONE,NONE) "This `unit\' component is used in several places below, and it is
+          SCode.MOD(false,Absyn.NON_EACH(),{},SOME((Absyn.STRING(""),false))),NONE,NONE,NONE,NONE,NONE) "This `unit\' component is used in several places below, and it is
   declared once here to make the definitions below easier to read." ;
 
 protected constant SCode.Element quantity=SCode.COMPONENT("quantity",Absyn.UNSPECIFIED(),true,false,false,
           SCode.ATTR({},false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR()),Absyn.TPATH(Absyn.IDENT("StringType"),NONE),
-          SCode.MOD(false,Absyn.NON_EACH(),{},SOME((Absyn.STRING(""),false))),NONE,NONE);
+          SCode.MOD(false,Absyn.NON_EACH(),{},SOME((Absyn.STRING(""),false))),NONE,NONE,NONE,NONE,NONE);
 
 protected constant SCode.Element displayUnit=SCode.COMPONENT("displayUnit",Absyn.UNSPECIFIED(),true,false,false,
           SCode.ATTR({},false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR()),Absyn.TPATH(Absyn.IDENT("StringType"),NONE),
-          SCode.MOD(false,Absyn.NON_EACH(),{},SOME((Absyn.STRING(""),false))),NONE,NONE);
+          SCode.MOD(false,Absyn.NON_EACH(),{},SOME((Absyn.STRING(""),false))),NONE,NONE,NONE,NONE,NONE);
 
 protected constant SCode.Element min=SCode.COMPONENT("min",Absyn.UNSPECIFIED(),true,false,false,
           SCode.ATTR({},false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR()),Absyn.TPATH(Absyn.IDENT("RealType"),NONE),
-          SCode.MOD(false,Absyn.NON_EACH(),{},SOME((Absyn.REAL(-1e+099),false))),NONE,NONE);
+          SCode.MOD(false,Absyn.NON_EACH(),{},SOME((Absyn.REAL(-1e+099),false))),NONE,NONE,NONE,NONE,NONE);
 
 protected constant SCode.Element max=SCode.COMPONENT("max",Absyn.UNSPECIFIED(),true,false,false,
           SCode.ATTR({},false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR()),Absyn.TPATH(Absyn.IDENT("RealType"),NONE),
-          SCode.MOD(false,Absyn.NON_EACH(),{},SOME((Absyn.REAL(1e+099),false))),NONE,NONE);
+          SCode.MOD(false,Absyn.NON_EACH(),{},SOME((Absyn.REAL(1e+099),false))),NONE,NONE,NONE,NONE,NONE);
 
 protected constant SCode.Element realStart=SCode.COMPONENT("start",Absyn.UNSPECIFIED(),true,false,false,
           SCode.ATTR({},false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR()),Absyn.TPATH(Absyn.IDENT("RealType"),NONE),
-          SCode.MOD(false,Absyn.NON_EACH(),{},SOME((Absyn.REAL(0.0),false))),NONE,NONE);
+          SCode.MOD(false,Absyn.NON_EACH(),{},SOME((Absyn.REAL(0.0),false))),NONE,NONE,NONE,NONE,NONE);
 
 protected constant SCode.Element integerStart=SCode.COMPONENT("start",Absyn.UNSPECIFIED(),true,false,false,
           SCode.ATTR({},false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR()),Absyn.TPATH(Absyn.IDENT("IntegerType"),NONE),
-          SCode.MOD(false,Absyn.NON_EACH(),{},SOME((Absyn.INTEGER(0),false))),NONE,NONE);
+          SCode.MOD(false,Absyn.NON_EACH(),{},SOME((Absyn.INTEGER(0),false))),NONE,NONE,NONE,NONE,NONE);
 
 protected constant SCode.Element stringStart=SCode.COMPONENT("start",Absyn.UNSPECIFIED(),true,false,false,
           SCode.ATTR({},false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR()),Absyn.TPATH(Absyn.IDENT("StringType"),NONE),
-          SCode.MOD(false,Absyn.NON_EACH(),{},SOME((Absyn.STRING(""),false))),NONE,NONE);
+          SCode.MOD(false,Absyn.NON_EACH(),{},SOME((Absyn.STRING(""),false))),NONE,NONE,NONE,NONE,NONE);
 
 protected constant SCode.Element booleanStart=SCode.COMPONENT("start",Absyn.UNSPECIFIED(),true,false,false,
           SCode.ATTR({},false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR()),Absyn.TPATH(Absyn.IDENT("BooleanType"),NONE),
-          SCode.MOD(false,Absyn.NON_EACH(),{},SOME((Absyn.BOOL(false),false))),NONE,NONE);
+          SCode.MOD(false,Absyn.NON_EACH(),{},SOME((Absyn.BOOL(false),false))),NONE,NONE,NONE,NONE,NONE);
 
 protected constant SCode.Element fixed=SCode.COMPONENT("fixed",Absyn.UNSPECIFIED(),true,false,false,
           SCode.ATTR({},false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR()),Absyn.TPATH(Absyn.IDENT("BooleanType"),NONE),
-          SCode.MOD(false,Absyn.NON_EACH(),{},SOME((Absyn.BOOL(false),false))),NONE,NONE) "Should be true for variables" ;
+          SCode.MOD(false,Absyn.NON_EACH(),{},SOME((Absyn.BOOL(false),false))),NONE,NONE,NONE,NONE,NONE) "Should be true for variables" ;
 
 protected constant SCode.Element nominal=SCode.COMPONENT("nominal",Absyn.UNSPECIFIED(),true,false,false,
           SCode.ATTR({},false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR()),Absyn.TPATH(Absyn.IDENT("RealType"),NONE),
-          SCode.MOD(false,Absyn.NON_EACH(),{},NONE),NONE,NONE);
+          SCode.MOD(false,Absyn.NON_EACH(),{},NONE),NONE,NONE,NONE,NONE,NONE);
 
 protected constant SCode.Element stateSelect=SCode.COMPONENT("stateSelect",Absyn.UNSPECIFIED(),true,false,false,
           SCode.ATTR({},false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR()),Absyn.TPATH(Absyn.IDENT("StateSelect"),NONE),
           SCode.MOD(false,Absyn.NON_EACH(),{},
           SOME((
           Absyn.CREF(
-          Absyn.CREF_QUAL("StateSelect",{},Absyn.CREF_IDENT("default",{}))),false))),NONE,NONE);
+          Absyn.CREF_QUAL("StateSelect",{},Absyn.CREF_IDENT("default",{}))),false))),NONE,NONE,NONE,NONE,NONE);
 
 protected constant list<SCode.Element> stateSelectComps={
           SCode.COMPONENT("never",Absyn.UNSPECIFIED(),true,false,false,
-          SCode.ATTR({},false,false,SCode.RO(),SCode.CONST(),Absyn.BIDIR()),Absyn.TPATH(Absyn.IDENT("EnumType"),NONE),SCode.NOMOD(),NONE,NONE),
+          SCode.ATTR({},false,false,SCode.RO(),SCode.CONST(),Absyn.BIDIR()),Absyn.TPATH(Absyn.IDENT("EnumType"),NONE),SCode.NOMOD(),NONE,NONE,NONE,NONE,NONE),
           SCode.COMPONENT("avoid",Absyn.UNSPECIFIED(),true,false,false,
-          SCode.ATTR({},false,false,SCode.RO(),SCode.CONST(),Absyn.BIDIR()),Absyn.TPATH(Absyn.IDENT("EnumType"),NONE),SCode.NOMOD(),NONE,NONE),
+          SCode.ATTR({},false,false,SCode.RO(),SCode.CONST(),Absyn.BIDIR()),Absyn.TPATH(Absyn.IDENT("EnumType"),NONE),SCode.NOMOD(),NONE,NONE,NONE,NONE,NONE),
           SCode.COMPONENT("default",Absyn.UNSPECIFIED(),true,false,false,
-          SCode.ATTR({},false,false,SCode.RO(),SCode.CONST(),Absyn.BIDIR()),Absyn.TPATH(Absyn.IDENT("EnumType"),NONE),SCode.NOMOD(),NONE,NONE),
+          SCode.ATTR({},false,false,SCode.RO(),SCode.CONST(),Absyn.BIDIR()),Absyn.TPATH(Absyn.IDENT("EnumType"),NONE),SCode.NOMOD(),NONE,NONE,NONE,NONE,NONE),
           SCode.COMPONENT("prefer",Absyn.UNSPECIFIED(),true,false,false,
-          SCode.ATTR({},false,false,SCode.RO(),SCode.CONST(),Absyn.BIDIR()),Absyn.TPATH(Absyn.IDENT("EnumType"),NONE),SCode.NOMOD(),NONE,NONE),
+          SCode.ATTR({},false,false,SCode.RO(),SCode.CONST(),Absyn.BIDIR()),Absyn.TPATH(Absyn.IDENT("EnumType"),NONE),SCode.NOMOD(),NONE,NONE,NONE,NONE,NONE),
           SCode.COMPONENT("always",Absyn.UNSPECIFIED(),true,false,false,
-          SCode.ATTR({},false,false,SCode.RO(),SCode.CONST(),Absyn.BIDIR()),Absyn.TPATH(Absyn.IDENT("EnumType"),NONE),SCode.NOMOD(),NONE,NONE)} "The StateSelect enumeration" ;
+          SCode.ATTR({},false,false,SCode.RO(),SCode.CONST(),Absyn.BIDIR()),Absyn.TPATH(Absyn.IDENT("EnumType"),NONE),SCode.NOMOD(),NONE,NONE,NONE,NONE,NONE)} "The StateSelect enumeration" ;
 
 protected constant SCode.Class stateSelectType=SCode.CLASS("StateSelect",false,false,SCode.R_ENUMERATION(),
           SCode.PARTS(stateSelectComps,{},{},{},{},NONE)) "The State Select Type" ;
@@ -158,15 +161,15 @@ protected constant SCode.Class booleanType=SCode.CLASS("Boolean",false,false,SCo
           SCode.PARTS({quantity,booleanStart,fixed},{},{},{},{},NONE)) "- The `Boolean\' type" ;
 
 protected constant Types.Var timeVar=Types.VAR("time",
-          Types.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR()),false,(Types.T_REAL({}),NONE),Types.UNBOUND()) "- The `time\' variable" ;
+          Types.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,(Types.T_REAL({}),NONE),Types.UNBOUND()) "- The `time\' variable" ;
 
-protected
+protected 
 replaceable type Type_a subtypeof Any;
 constant tuple<Types.TType, Option<Type_a>> nil2real=(Types.T_FUNCTION({},(Types.T_REAL({}),NONE)),NONE) "- Some assorted function types" ;
 
 protected constant tuple<Types.TType, Option<Type_a>> nil2bool=(Types.T_FUNCTION({},(Types.T_REAL({}),NONE)),NONE);
 
-protected constant tuple<Types.TType, Option<Type_a>> record2str=(Types.T_FUNCTION({("x",(Types.T_COMPLEX(ClassInf.UNKNOWN(""),{},NONE()),NONE))},(Types.T_STRING({}),NONE)),NONE);
+protected constant tuple<Types.TType, Option<Type_a>> record2str=(Types.T_FUNCTION({("x",(Types.T_COMPLEX(ClassInf.UNKNOWN(""),{},NONE(),NONE),NONE))},(Types.T_STRING({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> strStr2bool=(Types.T_FUNCTION({("x",(Types.T_STRING({}),NONE)),("y",(Types.T_STRING({}),NONE))},(Types.T_BOOL({}),NONE)),NONE);
 
@@ -175,10 +178,104 @@ protected constant tuple<Types.TType, Option<Type_a>> real2string=(
 
 protected constant tuple<Types.TType, Option<Type_a>> int2string =(
           Types.T_FUNCTION({("x",(Types.T_INTEGER({}),NONE))},(Types.T_STRING({}),NONE)),NONE);
-
+          
 protected constant tuple<Types.TType, Option<Type_a>> bool2string =(
           Types.T_FUNCTION({("x",(Types.T_BOOL({}),NONE))},(Types.T_STRING({}),NONE)),NONE);
 
+/* type for builtin operator der has unit type parameter to be able to express that derivative of expression
+ means an addition of 1/s on the unit dimension */          
+protected constant tuple<Types.TType, Option<Type_a>> derType=(
+          Types.T_FUNCTION({("x",(Types.T_REAL(
+          {
+            Types.VAR(
+              "unit",
+              Types.ATTR(false,false,SCode.RW,SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
+              false,
+              (Types.T_STRING({}),NONE),
+              Types.EQBOUND(Exp.SCONST("'p"),SOME(Values.STRING("'p")),Types.C_CONST)
+              )          
+          }
+          ),NONE))},
+          /* Return type*/
+          (Types.T_REAL({
+            Types.VAR(
+              "unit",
+              Types.ATTR(false,false,SCode.RW,SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
+              false,
+              (Types.T_STRING({}),NONE),
+              Types.EQBOUND(Exp.SCONST("'p/s"),SOME(Values.STRING("'p/s")),Types.C_CONST)
+              )
+          }),NONE)),NONE);                    
+
+protected constant tuple<Types.TType, Option<Type_a>> dimesionlessReal2DimensionlessReal=(
+          Types.T_FUNCTION({("x",(Types.T_REAL(
+          {
+            Types.VAR(
+              "unit",
+              Types.ATTR(false,false,SCode.RW,SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
+              false,
+              (Types.T_STRING({}),NONE),
+              Types.EQBOUND(Exp.SCONST("1"),SOME(Values.STRING("1")),Types.C_CONST)
+              )          
+          }
+          ),NONE))},
+          /* Return type*/
+          (Types.T_REAL({
+            Types.VAR(
+              "unit",
+              Types.ATTR(false,false,SCode.RW,SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
+              false,
+              (Types.T_STRING({}),NONE),
+              Types.EQBOUND(Exp.SCONST("1"),SOME(Values.STRING("1")),Types.C_CONST)
+              )
+          }),NONE)),NONE);
+          
+protected constant tuple<Types.TType, Option<Type_a>> sqrtint2real=(
+          Types.T_FUNCTION({("x",(Types.T_INTEGER(
+          {
+            Types.VAR(
+              "unit",
+              Types.ATTR(false,false,SCode.RW,SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
+              false,
+              (Types.T_STRING({}),NONE),
+              Types.EQBOUND(Exp.SCONST("'p"),SOME(Values.STRING("'p")),Types.C_CONST)
+              )          
+          }
+          ),NONE))},
+          /* Return type*/
+          (Types.T_REAL({
+            Types.VAR(
+              "unit",
+              Types.ATTR(false,false,SCode.RW,SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
+              false,
+              (Types.T_STRING({}),NONE),
+              Types.EQBOUND(Exp.SCONST("'p(1/2)"),SOME(Values.STRING("'p(1/2)")),Types.C_CONST)
+              )
+          }),NONE)),NONE);
+
+protected constant tuple<Types.TType, Option<Type_a>> sqrtreal2real=(
+          Types.T_FUNCTION({("x",(Types.T_REAL(
+          {
+            Types.VAR(
+              "unit",
+              Types.ATTR(false,false,SCode.RW,SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
+              false,
+              (Types.T_STRING({}),NONE),
+              Types.EQBOUND(Exp.SCONST("'p"),SOME(Values.STRING("'p")),Types.C_CONST)
+              )          
+          }
+          ),NONE))},
+          /* Return type*/
+          (Types.T_REAL({
+            Types.VAR(
+              "unit",
+              Types.ATTR(false,false,SCode.RW,SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
+              false,
+              (Types.T_STRING({}),NONE),
+              Types.EQBOUND(Exp.SCONST("'p(1/2)"),SOME(Values.STRING("'p(1/2))")),Types.C_CONST)
+              )
+          }),NONE)),NONE);
+          
 protected constant tuple<Types.TType, Option<Type_a>> real2real=(
           Types.T_FUNCTION({("x",(Types.T_REAL({}),NONE))},(Types.T_REAL({}),NONE)),NONE);
 
@@ -222,11 +319,21 @@ protected constant tuple<Types.TType, Option<Type_a>> realRealReal2real=(
            ("z",(Types.T_REAL({}),NONE))},
           (Types.T_REAL({}),NONE)),NONE);
 
-protected constant tuple<Types.TType, Option<Type_a>> anyconnector2int=(
+protected constant tuple<Types.TType, Option<Type_a>> realRealReal2Real=(
+          Types.T_FUNCTION(
+          {("x",(Types.T_REAL({}),NONE)),("y",(Types.T_REAL({}),NONE)),("z",(Types.T_REAL({}),NONE))},(Types.T_REAL({}),NONE)),NONE);
+
+protected constant tuple<Types.TType, Option<Type_a>> anyNonExpandableConnector2int=(
           Types.T_FUNCTION(
           {
           ("x",
-          (Types.T_ANYTYPE(SOME(ClassInf.CONNECTOR("$dummy$"))),NONE))},(Types.T_INTEGER({}),NONE)),NONE);
+          (Types.T_ANYTYPE(SOME(ClassInf.CONNECTOR("$dummy$",false))),NONE))},(Types.T_INTEGER({}),NONE)),NONE);
+
+protected constant tuple<Types.TType, Option<Type_a>> anyExpandableConnector2int=(
+          Types.T_FUNCTION(
+          {
+          ("x",
+          (Types.T_ANYTYPE(SOME(ClassInf.CONNECTOR("$dummy$",true))),NONE))},(Types.T_INTEGER({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array1dimint2int=(
           Types.T_FUNCTION(
@@ -2128,6 +2235,14 @@ protected constant tuple<Types.TType, Option<Type_a>> intInt2vectorreal=(
           ("y",(Types.T_INTEGER({}),NONE))},
           (Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_REAL({}),NONE)),
           NONE)),NONE);
+          
+protected constant tuple<Types.TType, Option<Type_a>> realRealInt2vectorreal=(
+          Types.T_FUNCTION(
+          {("x",(Types.T_REAL({}),NONE)),
+          ("y",(Types.T_REAL({}),NONE)),
+          ("n",(Types.T_INTEGER({}),NONE))},
+          (Types.T_ARRAY(Types.DIM(NONE),(Types.T_REAL({}),NONE)),
+          NONE)),NONE);          
 
 protected constant tuple<Types.TType, Option<Type_a>> array1dimint2array3dimint=(
           Types.T_FUNCTION(
@@ -2469,21 +2584,230 @@ protected constant tuple<Types.TType, Option<Type_a>> array9dimbool2array1dimint
           (Types.T_ARRAY(Types.DIM(SOME(9)),(Types.T_BOOL({}),NONE)),
           NONE))},
           (
-              Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
 
 // MetaModelica extension. KS
 protected constant tuple<Types.TType, Option<Type_a>> list2list=(
           Types.T_FUNCTION({("x",(Types.T_LIST((Types.T_NOTYPE(),NONE)),NONE))},(Types.T_LIST((Types.T_NOTYPE(),NONE)),NONE)),NONE);
 
+
+
+
+
+
+
+
 protected constant tuple<Types.TType, Option<Type_a>> list2boolean=(
           Types.T_FUNCTION({("x",(Types.T_LIST((Types.T_NOTYPE(),NONE)),NONE))},(Types.T_BOOL({}),NONE)),NONE);
+
+
+
+
+
+
+
+
 
 protected constant tuple<Types.TType, Option<Type_a>> option2boolean=(
           Types.T_FUNCTION({("x",(Types.T_METAOPTION((Types.T_NOTYPE(),NONE)),NONE))},(Types.T_BOOL({}),NONE)),NONE);
 
+
+
+
+
+
+
+
+
 protected constant tuple<Types.TType, Option<Type_a>> anyInteger2any=(
           Types.T_FUNCTION({("x1",(Types.T_NOTYPE(),NONE)),("x2",(Types.T_INTEGER({}),NONE))},(Types.T_NOTYPE(),NONE)),NONE);
-//----
+
+protected constant tuple<Types.TType, Option<Type_a>> array1dimrealarray1dimrealarray1dimreal2real=(
+          Types.T_FUNCTION(
+          {
+          ("x",(Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_REAL({}),NONE)),NONE)),
+          ("y",(Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_REAL({}),NONE)),NONE)),
+          ("z",(Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_REAL({}),NONE)),NONE))
+          },
+          (Types.T_REAL({}),NONE)),NONE);
+protected constant tuple<Types.TType, Option<Type_a>> array1dimrealarray1dimrealarray1dimreal2array1dimreal=(
+          Types.T_FUNCTION(
+          {
+          ("x",(Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_REAL({}),NONE)),NONE)),
+          ("y",(Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_REAL({}),NONE)),NONE)),
+          ("z",(Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_REAL({}),NONE)),NONE))
+          },
+          (Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_REAL({}),NONE)),NONE)),NONE);          
+protected constant tuple<Types.TType, Option<Type_a>> realrealreal2real=(
+          Types.T_FUNCTION(
+          {
+          ("x",(Types.T_REAL({}),NONE)),
+          ("y",(Types.T_REAL({}),NONE)),
+          ("z",(Types.T_REAL({}),NONE))
+          },(Types.T_REAL({}),NONE)),NONE);
+protected constant tuple<Types.TType, Option<Type_a>> intintint2int =(
+          Types.T_FUNCTION(
+          {
+          ("x",(Types.T_INTEGER({}),NONE)),
+          ("y",(Types.T_INTEGER({}),NONE)),
+          ("z",(Types.T_INTEGER({}),NONE))
+          },(Types.T_INTEGER({}),NONE)),NONE);
+          
+public function isTanh
+  input Absyn.Path inPath;
+algorithm 
+  _:=
+  matchcontinue (inPath)
+    case (Absyn.IDENT(name = "tanh")) then (); 
+    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "tanh")))) then (); 
+    case (Absyn.FULLYQUALIFIED(inPath)) equation isTanh(inPath); then ();
+  end matchcontinue;
+end isTanh;
+
+public function isCosh
+  input Absyn.Path inPath;
+algorithm 
+  _:=
+  matchcontinue (inPath)
+    case (Absyn.IDENT(name = "cosh")) then (); 
+    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "cosh")))) then (); 
+    case (Absyn.FULLYQUALIFIED(inPath)) equation isCosh(inPath); then ();
+  end matchcontinue;
+end isCosh;
+
+public function isACos
+  input Absyn.Path inPath;
+algorithm 
+  _:=
+  matchcontinue (inPath)
+    case (Absyn.IDENT(name = "arccos")) then (); 
+    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "acos")))) then (); 
+    case (Absyn.FULLYQUALIFIED(inPath)) equation isACos(inPath); then ();
+  end matchcontinue;
+end isACos;
+
+public function isASin
+  input Absyn.Path inPath;
+algorithm 
+  _:=
+  matchcontinue (inPath)
+    case (Absyn.IDENT(name = "arcsin")) then (); 
+    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "asin")))) then (); 
+    case (Absyn.FULLYQUALIFIED(inPath)) equation isASin(inPath); then ();
+  end matchcontinue;
+end isASin;
+
+public function isATan
+  input Absyn.Path inPath;
+algorithm 
+  _:=
+  matchcontinue (inPath)
+    case (Absyn.IDENT(name = "arctan")) then (); 
+    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "atan")))) then (); 
+    case (Absyn.FULLYQUALIFIED(inPath)) equation isATan(inPath); then ();
+  end matchcontinue;
+end isATan;
+
+public function isATan2
+  input Absyn.Path inPath;
+algorithm 
+  _:=
+  matchcontinue (inPath)
+    case (Absyn.IDENT(name = "arctan2")) then (); 
+    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "atan2")))) then (); 
+    case (Absyn.FULLYQUALIFIED(inPath)) equation isATan2(inPath); then ();
+  end matchcontinue;
+end isATan2;
+
+public function isSinh
+  input Absyn.Path inPath;
+algorithm 
+  _:=
+  matchcontinue (inPath)
+    case (Absyn.IDENT(name = "sinh")) then (); 
+    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "sinh")))) then (); 
+    case (Absyn.FULLYQUALIFIED(inPath)) equation isSinh(inPath); then ();
+  end matchcontinue;
+end isSinh;
+
+public function isSin
+  input Absyn.Path inPath;
+algorithm 
+  _:=
+  matchcontinue (inPath)
+    case (Absyn.IDENT(name = "sin")) then (); 
+    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "sin")))) then (); 
+    case (Absyn.FULLYQUALIFIED(inPath)) equation isSin(inPath); then ();
+  end matchcontinue;
+end isSin;
+
+public function isCos ""
+  input Absyn.Path inPath;
+algorithm 
+  _:=
+  matchcontinue (inPath)
+    case (Absyn.IDENT(name = "cos")) then (); 
+    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "cos")))) then (); 
+    case (Absyn.FULLYQUALIFIED(inPath)) equation isCos(inPath); then ();
+  end matchcontinue;
+end isCos;
+
+public function isExp ""
+  input Absyn.Path inPath;
+algorithm 
+  _:=
+  matchcontinue (inPath) 
+    case (Absyn.IDENT(name = "exp")) then (); 
+    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "exp")))) then (); 
+    case (Absyn.FULLYQUALIFIED(inPath)) equation isExp(inPath);  then ();
+  end matchcontinue;
+end isExp;
+
+public function isLog ""
+  input Absyn.Path inPath;
+algorithm 
+  _:=
+  matchcontinue (inPath)
+    case (Absyn.IDENT(name = "log")) then (); 
+    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "log")))) then ();    
+    case (Absyn.FULLYQUALIFIED(inPath)) equation isLog(inPath); then ();  
+  end matchcontinue;
+end isLog;
+
+public function isLog10 ""
+  input Absyn.Path inPath;
+algorithm 
+  _:=
+  matchcontinue (inPath)
+    case (Absyn.IDENT(name = "log10")) then (); 
+    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "log10")))) then (); 
+    case (Absyn.FULLYQUALIFIED(inPath)) equation isLog10(inPath); then ();    
+  end matchcontinue;
+end isLog10;
+
+public function isSqrt ""
+  input Absyn.Path inPath;
+algorithm 
+  _:=
+  matchcontinue (inPath)
+    case (Absyn.IDENT(name = "sqrt")) then (); 
+    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "sqrt")))) then (); 
+    case (Absyn.FULLYQUALIFIED(inPath)) equation isSqrt(inPath); then ();
+  end matchcontinue;
+end isSqrt;
+
+public function isTan ""
+  input Absyn.Path inPath;
+algorithm 
+  _:=
+  matchcontinue (inPath)
+    case (Absyn.IDENT(name = "tan")) then (); 
+    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "tan")))) then (); 
+    case (Absyn.FULLYQUALIFIED(inPath)) equation isTan(inPath); then ();
+  end matchcontinue;
+end isTan;
+
+
 
 public function simpleInitialEnv "
 val array2array=  (Types.T_FUNCTION({(\"x\",(Types.T_ARRAY)},
@@ -2492,22 +2816,22 @@ val array_array2array=
 val int2array= (Types.T_FUNCTION(\"x\",(Types.T_ARRAY(1,_)),NONE)
   Specifierar en vector, array of dimension one
   zeroes, ones, fill?
-
+  
 val real_real_int2array
 val array2real
 val array_array2int
 
   - Initial environment
   function: simpleInitialEnv
-
+  
   The initial environment where instantiation takes place is built
   up using this function.  It creates an empty environment and adds
   all the built-in types to it.
-
+ 
   This only creates a minimal environment, useful for debugging purposes.
 "
   output list<Env.Frame> env;
-algorithm
+algorithm 
   env := Env.openScope(Env.emptyEnv, false, NONE) "Debug.fprint (\"insttr\",\"Creating initial env.\\n\") &" ;
   env := Env.extendFrameC(env, rlType);
   env := Env.extendFrameC(env, intType);
@@ -2522,8 +2846,8 @@ algorithm
   env := Env.extendFrameC(env, stateSelectType);
 end simpleInitialEnv;
 
-public function initialEnv 
-"function: initialEnv
+public function initialEnv "function: initialEnv
+  
   The initial environment where instantiation takes place is built
   up using this function.  It creates an empty environment and adds
   all the built-in definitions to it.
@@ -2532,24 +2856,24 @@ public function initialEnv
     the type system, since they e.g. have arbitrary arguments, etc.
 	- fill
 	- cat
-    These operators are catched in the elabBuiltinHandler, along with all
-    others."
+    These operators are catched in the elabBuiltinHandler, along with all 
+    others.
+"
   input Env.Cache inCache;
   output Env.Cache outCache;
   output list<Env.Frame> env;
   list<Env.Frame> envb;
   Env.Cache cache;
-algorithm
-  env := matchcontinue(cache)
-
+algorithm 
+  env := matchcontinue(cache) 
+  	
   	// First look for cached version
     case (cache) equation
       env = Env.getCachedInitialEnv(cache);
     then (cache,env);
     // if no cached version found create initial env.
     case (cache) equation
-      //print("creating initial env\n");
-      env = Env.openScope(Env.emptyEnv, false, NONE) "Debug.fprint (\"insttr\",\"Creating initial env.\\n\") &" ;
+      env = Env.openScope(Env.emptyEnv, false, NONE);
       env = Env.extendFrameC(env, rlType);
       env = Env.extendFrameC(env, intType);
       env = Env.extendFrameC(env, strType);
@@ -2577,28 +2901,42 @@ algorithm
       env = Env.extendFrameT(env, "switch", bool2bool);
       env = Env.extendFrameT(env, "timeEvent", realReal2bool);
       env = Env.extendFrameT(env, "sample", realReal2bool);
+      env = Env.extendFrameT(env, "semiLinear", realRealReal2Real);      
       env = Env.extendFrameT(env, "change", real2bool);
-      env = Env.extendFrameT(env, "der", real2real);
-      env = Env.extendFrameT(env, "cardinality", anyconnector2int);
+      env = Env.extendFrameT(env, "edge", bool2bool);
+      env = Env.extendFrameT(env, "der", derType);
+      /* Removed due to handling in static.mo
+      env = Env.extendFrameT(env, "delay", realReal2real);
+      env = Env.extendFrameT(env, "delay", realRealReal2Real);
+      */      
+      env = Env.extendFrameT(env, "cardinality", anyNonExpandableConnector2int);
+      env = Env.extendFrameT(env, "cardinality", anyExpandableConnector2int);
       env = Env.extendFrameT(env, "div", realReal2real) "non-differentiable functions" ;
+      env = Env.extendFrameT(env, "div", intInt2int) "non-differentiable functions" ;
       env = Env.extendFrameT(env, "rem", realReal2real);
-      env = Env.extendFrameT(env, "ceil", real2int);
+      env = Env.extendFrameT(env, "rem", intInt2int);
+      env = Env.extendFrameT(env, "ceil", real2real);
       envb = Env.extendFrameT(env, "floor", real2int);
       env = Env.extendFrameT(envb, "integer", real2int);
       env = Env.extendFrameT(env, "abs", real2real) "differentiable functions" ;
+      env = Env.extendFrameT(env, "abs", int2int) "differentiable functions" ;
       env = Env.extendFrameT(env, "sign", real2real);
       env = Env.extendFrameT(env, "sin", real2real) "Not in the report" ;
       env = Env.extendFrameT(env, "cos", real2real);
       env = Env.extendFrameT(env, "tan", real2real);
-      env = Env.extendFrameT(env, "tanh", real2real);
+      env = Env.extendFrameT(env, "tanh", real2real);      
       env = Env.extendFrameT(env, "sinh", real2real);
-      env = Env.extendFrameT(env, "cosh", real2real);
+      env = Env.extendFrameT(env, "cosh", real2real);      
       env = Env.extendFrameT(env, "arcsin", real2real);
       env = Env.extendFrameT(env, "arccos", real2real);
       env = Env.extendFrameT(env, "arctan", real2real);
-      env = Env.extendFrameT(env, "exp", real2real);
-      env = Env.extendFrameT(env, "log", real2real);
-      env = Env.extendFrameT(env, "log10", real2real);
+      env = Env.extendFrameT(env, "asin", real2real);
+      env = Env.extendFrameT(env, "acos", real2real);
+      env = Env.extendFrameT(env, "atan", real2real);
+      env = Env.extendFrameT(env, "exp", dimesionlessReal2DimensionlessReal);
+      env = Env.extendFrameT(env, "log", dimesionlessReal2DimensionlessReal);
+      env = Env.extendFrameT(env, "ln", dimesionlessReal2DimensionlessReal);      
+      env = Env.extendFrameT(env, "log10", dimesionlessReal2DimensionlessReal);
       env = Env.extendFrameT(env, "ndims", array1dimint2int) "PR. Add the built in array functions here. Also do it for real, string and bool" ;
       env = Env.extendFrameT(env, "ndims", array2dimint2int);
       env = Env.extendFrameT(env, "ndims", array3dimint2int);
@@ -2631,7 +2969,7 @@ algorithm
       env = Env.extendFrameT(env, "ndims", array6dimbool2int);
       env = Env.extendFrameT(env, "ndims", array7dimbool2int);
       env = Env.extendFrameT(env, "ndims", array8dimbool2int);
-      env = Env.extendFrameT(env, "size", array1dimintInt2int) "Debug. Print.printBuf \"\\n Just before the built in built in size.\" &	" ;
+      env = Env.extendFrameT(env, "size", array1dimintInt2int);
       env = Env.extendFrameT(env, "size", array2dimintInt2int);
       env = Env.extendFrameT(env, "size", array3dimintInt2int);
       env = Env.extendFrameT(env, "size", array4dimintInt2int);
@@ -2867,7 +3205,7 @@ algorithm
       env = Env.extendFrameT(env, "diagonal", array1dimreal2matrixreal);
       env = Env.extendFrameT(env, "diagonal", array1dimbool2matrixbool);
       env = Env.extendFrameT(env, "diagonal", array1dimstring2matrixstring);
-      env = Env.extendFrameT(env, "zeros", n1int2arrayint) "There is a problem to represents these functions where you do not
+      env = Env.extendFrameT(env, "zeros", n1int2arrayint) "There is a problem to represents these functions where you do not 
  know how many arguments they will take. In this implementation up to 8 arguments are supported." ;
       env = Env.extendFrameT(env, "zeros", n2int2arrayint);
       env = Env.extendFrameT(env, "zeros", n3int2arrayint);
@@ -2900,7 +3238,7 @@ algorithm
       env = Env.extendFrameT(env, "array", n6real2arrayreal);
       env = Env.extendFrameT(env, "array", n7real2arrayreal);
       env = Env.extendFrameT(env, "array", n8real2arrayreal);
-      env = Env.extendFrameT(env, "linspace", intInt2vectorreal);
+      env = Env.extendFrameT(env, "linspace", realRealInt2vectorreal);
       env = Env.extendFrameT(env, "min", intInt2int);
       env = Env.extendFrameT(env, "min", realReal2real);
       env = Env.extendFrameT(env, "min", array1dimint2int);
@@ -3010,12 +3348,17 @@ algorithm
       env = Env.extendFrameT(env, "cross", array1dimreal2array1dimreal);
       env = Env.extendFrameT(env, "skew", array1dimint2array3dimint);
       env = Env.extendFrameT(env, "skew", array1dimreal2array3dimreal);
-      env = Env.extendFrameT(env, "sqrt", int2real);
-      env = Env.extendFrameT(env, "sqrt", real2real);
+      env = Env.extendFrameT(env, "sqrt", sqrtint2real);
+      env = Env.extendFrameT(env, "sqrt", sqrtreal2real);
+      env = Env.extendFrameT(env, "mod", realReal2real);
+      env = Env.extendFrameT(env, "mod", intInt2int);
+      env = Env.extendFrameT(env, "constrain", realrealreal2real);
+      env = Env.extendFrameT(env, "constrain", array1dimrealarray1dimrealarray1dimreal2array1dimreal);
+      /*
       env = Env.extendFrameT(env, "semiLinear", realRealReal2real);
       env = Env.extendFrameT(env, "delay", realReal2real);
       env = Env.extendFrameT(env, "delay", realRealReal2real);
-      // "Debug.	Print.printBuf \"\\n Just AFTER the built in array functions part.\"" ;
+      */
       cache = Env.setCachedInitialEnv(cache,env);
     then (cache,env);
   end matchcontinue;

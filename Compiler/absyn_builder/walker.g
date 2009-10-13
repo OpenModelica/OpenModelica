@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2008, Linkopings University,
+ * Copyright (c) 1998-2009, Linkopings University,
  * Department of Computer and Information Science,
  * SE-58183 Linkoping, Sweden.
  *
@@ -48,6 +48,7 @@ header "post_include_hpp" {
 		#include "rml.h"
 		#include "../Absyn.h"
 		#include "../Interactive.h"
+		#include <time.h>
     }
 
 	#include <cstdlib>
@@ -85,6 +86,13 @@ tokens {
 
     typedef std::string mstring;
 
+    double getCurrentTime(void)
+    {             
+      time_t t;
+      double elapsedTime;             // the time elapsed as double
+      time( &t );
+      return difftime(t, 0);
+    }
 
     void* to_rml_str(RefMyAST &t)
     {
@@ -221,42 +229,11 @@ tokens {
 
 stored_definition returns [void *ast]
 {
-/*
-    void *restr = 0;
-    void *imp=0;
-    void *c=0;
-*/
     void *within = 0;    
     void *class_def = 0;
     l_stack el_stack;
 }
     :
-        /*
-        #(BEGIN_DEFINITION (e:ENCAPSULATED)? (p:PARTIAL)?
-            restr = class_restriction i:IDENT)
-        {
-            ast = Absyn__BEGIN_5fDEFINITION(Absyn__IDENT(to_rml_str(i)),
-                restr,
-                RML_PRIM_MKBOOL(p != 0),
-                RML_PRIM_MKBOOL(e != 0));
-        }
-        |
-        #(END_DEFINITION i2:IDENT)
-        {
-            ast = Absyn__END_5fDEFINITION(to_rml_str(i2));
-        }
-        |
-        #(COMPONENT_DEFINITION c=component_clause)
-        {
-            ast = Absyn__COMP_5fDEFINITION(c,mk_none());
-        }
-        |
-        #(IMPORT_DEFINITION imp=import_clause)
-        {
-            ast = Absyn__IMPORT_5fDEFINITION(imp,mk_none());
-        }
-        |
-        */
         #(STORED_DEFINITION
             ( within = within_clause )?
             ((f:FINAL )?
@@ -271,7 +248,7 @@ stored_definition returns [void *ast]
         )
         {
             if (within == 0) { within=Absyn__TOP; }
-            ast = Absyn__PROGRAM(make_rml_list_from_stack(el_stack),within);
+            ast = Absyn__PROGRAM(make_rml_list_from_stack(el_stack),within,Absyn__TIMESTAMP(mk_rcon(0.0),mk_rcon(getCurrentTime())));
         }
     ;
 
@@ -348,7 +325,10 @@ class_definition [bool final] returns [ void* ast ]
                   mk_icon(classDef?classDef->getLine():0),
                   mk_icon(classDef?classDef->getColumn():0),
                   mk_icon(classDef?classDef->getEndLine():0),
-                  mk_icon(classDef?classDef->getEndColumn():0)
+                  mk_icon(classDef?classDef->getEndColumn():0),
+                  Absyn__TIMESTAMP(
+                  mk_rcon(classDef?classDef->getLastBuildTime():0),
+                  mk_rcon(classDef?classDef->getLastEditTime():0))
                   )
             );
             if (name) free(name);
@@ -668,6 +648,7 @@ element returns [void* ast]
 	void* constr = 0;
     void* cmt = 0;
     void* keywords = 0;
+    void* na=0;
 
 }
 
@@ -681,9 +662,17 @@ element returns [void* ast]
                               mk_icon(i_clause->getLine()),
                               mk_icon(i_clause->getColumn()),
                               mk_icon(i_clause->getEndLine()),
-                              mk_icon(i_clause->getEndColumn())
+                              mk_icon(i_clause->getEndColumn()),
+                              Absyn__TIMESTAMP(
+                              mk_rcon(i_clause->getLastBuildTime()),
+                              mk_rcon(i_clause->getLastEditTime()))
                               ),mk_none());
 			}
+	    | #(DEFINEUNIT i2:IDENT (na = named_arguments)? )
+	      {
+	        if(!na) na = mk_nil();
+	        ast = Absyn__DEFINEUNIT(to_rml_str(i2),na);	      
+	      }
 		| e_spec = e_clause:extends_clause
 			{
 				ast = Absyn__ELEMENT(RML_FALSE,mk_none(),Absyn__UNSPECIFIED,mk_scon("extends"),
@@ -693,7 +682,10 @@ element returns [void* ast]
                               mk_icon(e_clause->getLine()),
                               mk_icon(e_clause->getColumn()),
                               mk_icon(e_clause->getEndLine()),
-                              mk_icon(e_clause->getEndColumn())
+                              mk_icon(e_clause->getEndColumn()),
+                              Absyn__TIMESTAMP(
+                              mk_rcon(e_clause->getLastBuildTime()),
+                              mk_rcon(e_clause->getLastEditTime()))
                               ),mk_none());
 			}
 		| #(decl:DECLARATION
@@ -714,7 +706,10 @@ element returns [void* ast]
 		                              mk_icon(decl->getLine()),
 		                              mk_icon(decl->getColumn()),
 		                              mk_icon(decl->getEndLine()),
-		                              mk_icon(decl->getEndColumn())
+		                              mk_icon(decl->getEndColumn()),
+		                              Absyn__TIMESTAMP(
+		                              mk_rcon(decl->getLastBuildTime()),
+		                              mk_rcon(decl->getLastEditTime()))
                                      ),mk_none());
 
 						}
@@ -733,7 +728,10 @@ element returns [void* ast]
 	                                mk_icon(decl->getLine()),
 	                                mk_icon(decl->getColumn()),
 	                                mk_icon(decl->getEndLine()),
-	                                mk_icon(decl->getEndColumn())
+	                                mk_icon(decl->getEndColumn()),
+	                                Absyn__TIMESTAMP(
+	                                mk_rcon(decl->getLastBuildTime()),
+		                            mk_rcon(decl->getLastEditTime()))
                                     ),
 								constr? mk_some(Absyn__CONSTRAINCLASS(constr, cmt? mk_some(cmt):mk_none())) : mk_none());
 						}
@@ -763,7 +761,10 @@ element returns [void* ast]
 	                               mk_icon(def->getLine()),
 	                               mk_icon(def->getColumn()),
 	                               mk_icon(def->getEndLine()),
-	                               mk_icon(def->getEndColumn())
+	                               mk_icon(def->getEndColumn()),
+	                               Absyn__TIMESTAMP(
+	                               mk_rcon(def->getLastBuildTime()),
+		                           mk_rcon(def->getLastEditTime()))
                                    ),mk_none());
 
 						}
@@ -788,7 +789,10 @@ element returns [void* ast]
                               mk_icon(def->getLine()),
                               mk_icon(def->getColumn()),
 	                      mk_icon(def->getEndLine()),
-	                      mk_icon(def->getEndColumn())
+	                          mk_icon(def->getEndColumn()),
+	                          Absyn__TIMESTAMP(
+	                          mk_rcon(def->getLastBuildTime()),
+	                          mk_rcon(def->getLastEditTime()))
                               ),
                                 constr ? mk_some(Absyn__CONSTRAINCLASS(constr,cmt ? mk_some(cmt):mk_none())) : mk_none());
 						}
@@ -863,29 +867,23 @@ extends_clause returns [void* ast]
 			)
 			{
 				if (!mod) mod = mk_nil();
-				if (!ann) ann = mk_none();
-				ast = Absyn__EXTENDS(path,mod,mk_some(ann));
+				ann = ann ? mk_some(ann) : mk_none();
+				ast = Absyn__EXTENDS(path,mod,ann);
 			}
 		)
 	;
 
-constraining_clause returns [void *ast]
-{
-	void* path;
-	void* mod = 0;
-}
-    :
-		  (ast = extends_clause)
-		| (#(e:CONSTRAINEDBY
-				path = name_path
-				( mod = class_modification )?
-			)
-			{
-				if (!mod) mod = mk_nil();
-				ast = Absyn__EXTENDS(path,mod,mk_none());
-			}
-		)
-	;
+constraining_clause returns [void *ast] 
+{ void* path=0; void* mod = 0; } :
+(
+  (#(EXTENDS path = name_path ( mod = class_modification )?)
+     { ast = Absyn__EXTENDS(path,mod?mod:mk_nil(),mk_none()); }
+  )  
+| (#(CONSTRAINEDBY path = name_path ( mod = class_modification )?)
+     { ast = Absyn__EXTENDS(path,mod?mod:mk_nil(),mk_none()); }
+  )  
+)
+;
 
 // returns datatype ElementSpec
 component_clause returns [void* ast]
@@ -1034,15 +1032,16 @@ component_declaration returns [void* ast]
 	void* cmt = 0;
 	void* dec = 0;
     void* cond = 0;
-
+    void* constr = 0;
 }
 	:
-		(dec = declaration) (cond = conditional_attribute)? (cmt = comment)?
+		(dec = declaration) (cond = conditional_attribute)? (/*constr = constraining_clause*/ cmt = comment)? /*SEMICOLON*/
 		{
-			ast = Absyn__COMPONENTITEM(
+			ast = Absyn__COMPONENTITEM(  
                 dec,
                 cond ? mk_some(cond): mk_none(),
-                cmt ? mk_some(cmt) : mk_none()
+                /*constr ? mk_some(Absyn__CONSTRAINCLASS(constr,cmt?mk_some(cmt):mk_none())) : mk_none(),*/
+                constr ? mk_none() : cmt ? mk_some(cmt) :mk_none()
             );
 		}
 	;

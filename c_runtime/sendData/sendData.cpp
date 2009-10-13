@@ -72,8 +72,6 @@
 #endif
 
 
-using namespace std;
-
 Connection::Connection()
 {
   //	app = 0;
@@ -1369,3 +1367,4 @@ void emulateStreamData2(const char *info, const char* data, int port)
 
   */
 }
+

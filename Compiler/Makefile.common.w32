@@ -1,11 +1,15 @@
 SRCMO= Absyn.mo \
+	AbsynDep.mo \
 	Algorithm.mo \
 	Builtin.mo \
 	Ceval.mo \
+	CevalScript.mo \
+	Cevalfunc.mo \
 	ClassInf.mo \
 	ClassLoader.mo \
 	Codegen.mo \
 	Connect.mo \
+	ConnectionGraph.mo \
 	Convert.mo \
 	DAE.mo \
 	DAELow.mo \
@@ -20,10 +24,17 @@ SRCMO= Absyn.mo \
 	Exp.mo \
 	SCode.mo \
 	Graphviz.mo \
+	HashTable.mo \
+	HashTable2.mo \
+	HashTable3.mo \
+	HashTable4.mo \
+	HashTable5.mo \
+	HashTableCG.mo \
 	Inst.mo \
 	Interactive.mo \
 	Lookup.mo \
 	Main.mo \
+	MMath.mo \
 	MetaUtil.mo \
 	Mod.mo \
 	ModUtil.mo \
@@ -33,12 +44,17 @@ SRCMO= Absyn.mo \
 	SimCodegen.mo \
 	Types.mo \
 	TaskGraph.mo \
+	UnitAbsyn.mo \
+	UnitAbsynBuilder.mo \
+	UnitChecker.mo \
 	Util.mo \
 	Values.mo \
 	VarTransform.mo \
-	Refactor.mo \
+	BackendVarTransform.mo \
 	DAEQuery.mo \
-	XMLDump.mo
+	XMLDump.mo \
+	Refactor.mo \
+	InstanceHierarchy.mo
 
 ALLMO = $(SRCMO) \
 	DAEEXT.mo \
@@ -50,7 +66,7 @@ ALLMO = $(SRCMO) \
 	Corba.mo \
 	Socket.mo \
 	ErrorExt.mo \
-	Settings.mo
-
+	Settings.mo \
+	OptManager.mo
 
 

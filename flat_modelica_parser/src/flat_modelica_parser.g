@@ -330,6 +330,7 @@ element_list :
 element :
 			ic:import_clause
 		|	ec:extends_clause
+		|   defineunit_clause
 		|	(REDECLARE)?
         (FINAL)?
         (INNER)?
@@ -371,6 +372,10 @@ element :
 import_clause :
 		IMPORT^ (explicit_import_name | implicit_import_name) comment
 		;
+		
+defineunit_clause :
+		DEFINEUNIT^ IDENT (LPAR! named_arguments RPAR!)?		
+		;		
 
 explicit_import_name:
 		IDENT EQUALS^ name_path

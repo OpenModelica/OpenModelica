@@ -98,22 +98,24 @@ public function unparseStr
 "function: unparseStr
   Prettyprints the Program, i.e. the whole AST, to a string."
   input Absyn.Program inProgram;
+  input Boolean inBoolean "Used by MathCore, and dependencies to other modules requires this to also be in OpenModelica. Contact peter.aronsson@mathcore.com for
+  explanation";
   output String outString;
 algorithm
-  outString := matchcontinue (inProgram)
+  outString := matchcontinue (inProgram,inBoolean)
     local
       Ident s1,s2,s3,str;
       list<Absyn.Class> cs;
       Absyn.Within w;
-    case Absyn.PROGRAM(classes = {}) then "";
-    case Absyn.PROGRAM(classes = cs,within_ = w)
+    case (Absyn.PROGRAM(classes = {}),_) then "";
+    case (Absyn.PROGRAM(classes = cs,within_ = w),_)
       equation
         s1 = unparseWithin(0, w);
         s2 = unparseClassList(0, cs);
         str = Util.stringAppendList({s1,s2,"\n"});
       then
         str;
-    case (_) then "unparsing failed\n";
+    case (_,_) then "unparsing failed\n";
   end matchcontinue;
 end unparseStr;
 
@@ -133,7 +135,7 @@ algorithm
     case (_,{}) then "";
     case (i,(c :: cs))
       equation
-        s1 = unparseClassStr(i, c, "", "", "");
+        s1 = unparseClassStr(i, c, "", ("",""), "");
         s2 = unparseClassList(i, cs);
         res = Util.stringAppendList({s1,";\n",s2});
       then
@@ -188,17 +190,20 @@ end dumpWithin;
 
 public function unparseClassStr 
 "function: unparseClassStr
-  Prettyprints a Class."
-  input Integer inInteger1;
-  input Absyn.Class inClass2;
-  input String inString3;
-  input String inString4;
-  input String inString5;
+  Prettyprints a Class.
+    // adrpo: BEWARE! the prefix keywords HAVE TO BE IN A SPECIFIC ORDER:
+    //  ([final] | [redeclare] [final] [inner] [outer]) [replaceable] [encapsulated] [partial] [restriction] name
+    // if the order is not the one above on re-parse will give errors!"
+  input Integer indent;
+  input Absyn.Class ourClass;
+  input String finalStr;
+  input tuple<String,String> redeclareKeywords;
+  input String innerouterStr;
   output String outString;
 algorithm
-  outString := matchcontinue (inInteger1,inClass2,inString3,inString4,inString5)
+  outString := matchcontinue (indent,ourClass,finalStr,redeclareKeywords,innerouterStr)
     local
-      Ident is,s1,s2,s2_1,s3,s4,s5,str,n,fi,re,io,s6,s7,s8,s9,name,baseClassName;
+      Ident is,s1,s2,s2_1,s3,s4,s5,str,n,fi,io,s6,s7,s8,s9,name,baseClassName;
       Integer i_1,i,indent;
       Boolean p,f,e;
       Absyn.Restriction r;
@@ -212,87 +217,103 @@ algorithm
       Absyn.EnumDef ENUM_COLON;
       Absyn.Path fname;
       list<Ident> vars;
-    case (i,Absyn.CLASS(name = n,partial_ = p,final_ = f,encapsulated_ = e,restriction = r,
+      tuple<String,String> re;
+      String redeclareStr, replaceableStr, partialStr, finalStr, encapsulatedStr, restrictionStr, prefixKeywords;
+    // adrpo: BEWARE! the prefix keywords HAVE TO BE IN A SPECIFIC ORDER:
+    //  ([final] | [redeclare] [final] [inner] [outer]) [replaceable] [encapsulated] [partial] [restriction] name
+    // if the order is not the one above the parser will give errors!
+    case (i,Absyn.CLASS(name = n,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
                         body = Absyn.PARTS(classParts = parts,comment = optcmt)),fi,re,io)
       equation
         is = indentStr(i);
-        s1 = selectString(p, "partial ", "");
-        s2 = selectString(f, "final ", "");
-        s2_1 = selectString(e, "encapsulated ", "");
-        s3 = unparseRestrictionStr(r);
+        encapsulatedStr = selectString(e, "encapsulated ", "");
+        partialStr = selectString(p, "partial ", "");
+        finalStr = selectString(f, "final ", fi);
+        restrictionStr = unparseRestrictionStr(r);
         i_1 = i + 1;
         s4 = unparseClassPartStrLst(i_1, parts, true);
         s5 = unparseStringCommentOption(optcmt);
-        str = Util.stringAppendList({is,s2_1,s1,s2,re,io,s3," ",n,s5,"\n",s4,is,"end ",n});
+        // the prefix keywords MUST be in the order below given below! See the function comment.
+        prefixKeywords = unparseElementPrefixKeywords(re, finalStr, innerouterStr, encapsulatedStr, partialStr);
+        str = Util.stringAppendList({is,prefixKeywords,restrictionStr," ",n,s5,"\n",s4,is,"end ",n});
       then
         str;
-    case (indent,Absyn.CLASS(name = n,partial_ = p,final_ = f,encapsulated_ = e,restriction = r,
+    case (indent,Absyn.CLASS(name = n,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
                              body = Absyn.DERIVED(typeSpec = tspec,attributes = attr,arguments = m,comment = optcmt)),fi,re,io)
       local Option<Absyn.Comment> optcmt;
       equation
-        is = indentStr(indent);
-        s1 = selectString(p, "partial ", "");
-        s2 = selectString(f, "final ", "");
-        s2_1 = selectString(e, "encapsulated ", "");
-        s3 = unparseRestrictionStr(r);
+        is = indentStr(indent);        
+        partialStr = selectString(p, "partial ", "");
+        finalStr = selectString(f, "final ", fi);
+        encapsulatedStr = selectString(e, "encapsulated ", "");
+        restrictionStr = unparseRestrictionStr(r);
         s4 = unparseElementattrStr(attr);
-        s5 = stringAppend(s1, s2);
         s6 = unparseTypeSpec(tspec);
         s8 = unparseMod1Str(m);
         s9 = unparseCommentOption(optcmt);
-        str = Util.stringAppendList({is,s2_1,s1,s2,re,io,s3," ",n," = ",s4,s5,s6,s8,s9});
+        // the prefix keywords MUST be in the order below given below! See the function comment.        
+        prefixKeywords = unparseElementPrefixKeywords(re, finalStr, innerouterStr, encapsulatedStr, partialStr);
+        str = Util.stringAppendList({is,prefixKeywords,restrictionStr," ",n," = ",s4,s6,s8,s9});
       then
         str;
-    case (i,Absyn.CLASS(name = n,partial_ = p,final_ = f,encapsulated_ = e,restriction = r,
+    case (i,Absyn.CLASS(name = n,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
                         body = Absyn.ENUMERATION(enumLiterals = Absyn.ENUMLITERALS(enumLiterals = l),comment = cmt)),fi,re,io)
       equation
-        is = indentStr(i);
-        s1 = selectString(p, "partial ", "");
-        s2 = selectString(f, "final ", "");
-        s2_1 = selectString(e, "encapsulated ", "");
-        s3 = unparseRestrictionStr(r);
+        is = indentStr(i);        
+        partialStr = selectString(p, "partial ", "");
+        finalStr = selectString(f, "final ", fi);
+        encapsulatedStr = selectString(e, "encapsulated ", "");
+        restrictionStr = unparseRestrictionStr(r);
         s4 = unparseEnumliterals(l);
         s5 = unparseCommentOption(cmt);
-        str = Util.stringAppendList({is,s2_1,s1,s2,re,io,s3," ",n," = enumeration(",s4,")",s5});
+        // the prefix keywords MUST be in the order below given below! See the function comment.        
+        prefixKeywords = unparseElementPrefixKeywords(re, finalStr, innerouterStr, encapsulatedStr, partialStr);        
+        str = Util.stringAppendList({is,prefixKeywords,restrictionStr," ",n," = enumeration(",s4,")",s5});
       then
         str;
-    case (i,Absyn.CLASS(name = n,partial_ = p,final_ = f,encapsulated_ = e,restriction = r,
+    case (i,Absyn.CLASS(name = n,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
                         body = Absyn.ENUMERATION(enumLiterals = ENUM_COLON,comment = cmt)),fi,re,io)
       equation
-        is = indentStr(i);
-        s1 = selectString(p, "partial ", "");
-        s2 = selectString(f, "final ", "");
-        s2_1 = selectString(e, "encapsulated ", "");
-        s3 = unparseRestrictionStr(r);
+        is = indentStr(i);        
+        partialStr = selectString(p, "partial ", "");
+        finalStr = selectString(f, "final ", fi);
+        encapsulatedStr = selectString(e, "encapsulated ", "");
+        restrictionStr = unparseRestrictionStr(r);
         s5 = unparseCommentOption(cmt);
-        str = Util.stringAppendList({is,s2_1,s1,s2,re,io,s3," ",n," = enumeration(:)",s5});
+        // the prefix keywords MUST be in the order below given below! See the function comment.        
+        prefixKeywords = unparseElementPrefixKeywords(re, finalStr, innerouterStr, encapsulatedStr, partialStr);
+        str = Util.stringAppendList({is,prefixKeywords,restrictionStr," ",n," = enumeration(:)",s5});
       then
         str;
-    case (i,Absyn.CLASS(name = n,partial_ = p,final_ = f,encapsulated_ = e,restriction = r,
+    case (i,Absyn.CLASS(name = n,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
                         body = Absyn.CLASS_EXTENDS(baseClassName = baseClassName,modifications = cmod,comment = optcmt,parts = parts)),fi,re,io)
       equation
-        is = indentStr(i);
-        s1 = selectString(p, "partial ", "");
-        s2 = selectString(f, "final ", "");
-        s2_1 = selectString(e, "encapsulated ", "");
-        s3 = unparseRestrictionStr(r);
+        is = indentStr(i);        
+        partialStr = selectString(p, "partial ", "");
+        finalStr = selectString(f, "final ", fi);
+        encapsulatedStr = selectString(e, "encapsulated ", "");
+        restrictionStr = unparseRestrictionStr(r);
         i_1 = i + 1;
         s4 = unparseClassPartStrLst(i_1, parts, true);
         s5 = unparseMod1Str(cmod);
         s6 = unparseStringCommentOption(optcmt);
-        str = Util.stringAppendList({is,s2_1,s1,s2,re,io,s3," extends ",baseClassName,s5,s6,"\n",s4,is,"end ",baseClassName});
+        // the prefix keywords MUST be in the order below given below! See the function comment.        
+        prefixKeywords = unparseElementPrefixKeywords(re, finalStr, innerouterStr, encapsulatedStr, partialStr);        
+        str = Util.stringAppendList({is,prefixKeywords,restrictionStr," extends ",baseClassName,s5,s6,"\n",s4,is,"end ",baseClassName});
       then
         str;
-    case (i,Absyn.CLASS(name = n,partial_ = p,final_ = f,encapsulated_ = e,restriction = r,body = Absyn.PDER(functionName = fname,vars = vars)),fi,re,io)
+    case (i,Absyn.CLASS(name = n,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
+          body = Absyn.PDER(functionName = fname,vars = vars)),fi,re,io)
       equation
-        is = indentStr(i);
-        s1 = selectString(p, "partial ", "");
-        s2 = selectString(f, "final ", "");
-        s2_1 = selectString(e, "encapsulated ", "");
-        s3 = unparseRestrictionStr(r);
+        is = indentStr(i);        
+        partialStr = selectString(p, "partial ", "");
+        finalStr = selectString(f, "final ", fi);
+        encapsulatedStr = selectString(e, "encapsulated ", "");
+        restrictionStr = unparseRestrictionStr(r);
         s4 = Absyn.pathString(fname);
         s5 = Util.stringDelimitList(vars, ", ");
-        str = Util.stringAppendList({is,s2_1,s1,s2,re,io,s3," ",n," = der(",s4,", ",s5,")"});
+        prefixKeywords = unparseElementPrefixKeywords(re, finalStr, innerouterStr, encapsulatedStr, partialStr);        
+        str = Util.stringAppendList({is,prefixKeywords,restrictionStr," ",n," = der(",s4,", ",s5,")"});
       then
         str;
   end matchcontinue;
@@ -320,7 +341,7 @@ algorithm
       Absyn.EnumDef ENUM_COLON;
       Absyn.Path fname;
       list<Ident> vars;
-    case (Absyn.CLASS(name = n,partial_ = p,final_ = f,encapsulated_ = e,restriction = r,body = _))
+    case (Absyn.CLASS(name = n,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,body = _))
       equation
         s1 = selectString(p, "partial ", "");
         s2 = selectString(f, "final ", "");
@@ -654,7 +675,7 @@ algorithm
       Absyn.Restriction r;
       Absyn.ClassDef cdef;
       Absyn.Info info;
-    case (Absyn.CLASS(name = n,partial_ = p,final_ = f,encapsulated_ = e,restriction = r,body = cdef,info = info))
+    case (Absyn.CLASS(name = n,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,body = cdef,info = info))
       equation
         Print.printBuf("Absyn.CLASS(\""); Print.printBuf(n);
         Print.printBuf("\", ");           printBool(p);
@@ -877,6 +898,8 @@ algorithm
       Absyn.RedeclareKeywords keywords;
       Absyn.ElementSpec spec;
       Option<Absyn.ConstrainClass> constr;
+      String redeclareStr, replaceableStr;
+      
     case (Absyn.MODIFICATION(finalItem = f,each_ = each_,componentReg = r,modification = optm,comment = optstr))
       equation
         s1 = unparseEachStr(each_);
@@ -891,10 +914,13 @@ algorithm
       equation
         s1 = unparseEachStr(each_);
         s2 = selectString(f, "final ", "");
-        s3 = unparseRedeclarekeywords(keywords);
-        s4 = unparseElementspecStr(0, spec, s2, "", "");
+        ((redeclareStr, replaceableStr)) = unparseRedeclarekeywords(keywords);
+        // append each after redeclare because we need this order:
+        // [redeclare] [each] [final] [replaceable]
+        redeclareStr = redeclareStr +& s1; 
+        s4 = unparseElementspecStr(0, spec, s2, (redeclareStr,replaceableStr), "");
         s5 = unparseConstrainclassOptStr(constr);
-        str = Util.stringAppendList({s3,s2,s1,s4," ",s5});
+        str = Util.stringAppendList({s4," ",s5});
       then
         str;
   end matchcontinue;
@@ -904,12 +930,12 @@ protected function unparseRedeclarekeywords
 "function: unparseRedeclarekeywords
   Prettyprints the redeclare keywords, i.e replaceable and redeclare"
   input Absyn.RedeclareKeywords inRedeclareKeywords;
-  output String outString;
+  output tuple<String,String> outTupleRedeclareReplaceable;
 algorithm
-  outString := matchcontinue (inRedeclareKeywords)
-    case Absyn.REDECLARE() then "redeclare ";
-    case Absyn.REPLACEABLE() then "replaceable ";
-    case Absyn.REDECLARE_REPLACEABLE() then "redeclare replaceable ";
+  outTupleRedeclareReplaceable := matchcontinue (inRedeclareKeywords)
+    case Absyn.REDECLARE() then (("redeclare ",""));
+    case Absyn.REPLACEABLE() then (("","replaceable "));
+    case Absyn.REDECLARE_REPLACEABLE() then (("redeclare ","replaceable "));
   end matchcontinue;
 end unparseRedeclarekeywords;
 
@@ -1272,7 +1298,7 @@ algorithm
   end matchcontinue;
 end printAnnotation;
 
-protected function unparseElementitemStrLst 
+public function unparseElementitemStrLst 
 "function: unparseElementitemStrLst
   Prettyprints a list of ElementItem to a string."
   input Integer inInteger;
@@ -1385,16 +1411,17 @@ algorithm
   _:=
   matchcontinue (inElement)
     local
-      Boolean final_;
+      Boolean finalPrefix;
       Option<Absyn.RedeclareKeywords> repl;
       Absyn.InnerOuter inout;
       Ident name,text;
       Absyn.ElementSpec spec;
       Absyn.Info info;
-    case (Absyn.ELEMENT(final_ = final_,redeclareKeywords = repl,innerOuter = inout,name = name,specification = spec,info = info,constrainClass = NONE))
+    case (Absyn.ELEMENT(finalPrefix = finalPrefix,redeclareKeywords = repl,innerOuter = inout,name = name,
+                        specification = spec,info = info,constrainClass = NONE))
       equation
         Print.printBuf("Absyn.ELEMENT(");
-        printBool(final_);
+        printBool(finalPrefix);
         Print.printBuf(", _");
         Print.printBuf(", ");
         printInnerouter(inout);
@@ -1407,10 +1434,11 @@ algorithm
         Print.printBuf("), NONE)");
       then
         ();
-    case (Absyn.ELEMENT(final_ = final_,redeclareKeywords = repl,innerOuter = inout,name = name,specification = spec,info = info,constrainClass = SOME(_)))
+    case (Absyn.ELEMENT(finalPrefix = finalPrefix,redeclareKeywords = repl,innerOuter = inout,name = name,
+                        specification = spec,info = info,constrainClass = SOME(_)))
       equation
         Print.printBuf("Absyn.ELEMENT(");
-        printBool(final_);
+        printBool(finalPrefix);
         Print.printBuf(", _");
         Print.printBuf(", ");
         printInnerouter(inout);
@@ -1464,31 +1492,43 @@ algorithm
     local
       Ident s1,s2,s3,s4,s5,str,name,text;
       Integer i;
-      Boolean final_;
+      Boolean finalPrefix;
       Absyn.RedeclareKeywords repl;
       Absyn.InnerOuter inout;
       Absyn.ElementSpec spec;
       Absyn.Info info;
       Option<Absyn.ConstrainClass> constr;
-    case (i,Absyn.ELEMENT(final_ = final_,redeclareKeywords = SOME(repl),innerOuter = inout,specification = spec,info = info,constrainClass = constr))
+      list<Absyn.NamedArg> nargs;
+      tuple<String,String> redeclareKeywords;
+      
+    case (i,Absyn.ELEMENT(finalPrefix = finalPrefix,redeclareKeywords = SOME(repl),innerOuter = inout,specification = spec,info = info,constrainClass = constr))
       equation
-        s1 = selectString(final_, "final ", "");
-        s2 = unparseRedeclarekeywords(repl);
+        s1 = selectString(finalPrefix, "final ", "");
+        redeclareKeywords = unparseRedeclarekeywords(repl);
         s3 = unparseInnerouterStr(inout);
-        s4 = unparseElementspecStr(i, spec, s1, s2, s3);
+        s4 = unparseElementspecStr(i, spec, s1, redeclareKeywords, s3);
         s5 = unparseConstrainclassOptStr(constr);
-        str = Util.stringAppendList({s4,s5,";"});
+        str = Util.stringAppendList({s4," ",s5,";"});
       then
         str;
-    case (i,Absyn.ELEMENT(final_ = final_,redeclareKeywords = NONE,innerOuter = inout,specification = spec,info = info,constrainClass = constr))
+    case (i,Absyn.ELEMENT(finalPrefix = finalPrefix,redeclareKeywords = NONE,innerOuter = inout,specification = spec,info = info,constrainClass = constr))
       equation
-        s1 = selectString(final_, "final ", "");
+        s1 = selectString(finalPrefix, "final ", "");
         s3 = unparseInnerouterStr(inout);
-        s4 = unparseElementspecStr(i, spec, s1, "", s3);
+        s4 = unparseElementspecStr(i, spec, s1, ("",""), s3);
         s5 = unparseConstrainclassOptStr(constr);
-        str = Util.stringAppendList({s4,s5,";"});
+        str = Util.stringAppendList({s4," ",s5,";"});
       then
         str;
+    case(i,Absyn.DEFINEUNIT(name,{})) equation
+      s1 = indentStr(i)+&"defineunit "+&name+&";";
+    then s1;
+        
+    case(i,Absyn.DEFINEUNIT(name,nargs)) equation
+      s1 = printListStr(nargs, printNamedArgStr, ", ");
+      s2 = indentStr(i)+&"defineunit "+&name+&" ("+&s1+&");"; 
+    then s2;
+      
     case (i,Absyn.TEXT(optName = SOME(name),string = text,info = info))
       equation
         s1 = unparseInfoStr(info);
@@ -1503,14 +1543,16 @@ algorithm
         str = Util.stringAppendList({"/* Absyn.TEXT(NONE, \"",text,"\", ",s1,"); */"});
       then
         str;
+    case(_,_) equation
+      print("unparseElementStr failed\n");
+    then fail();
   end matchcontinue;
 end unparseElementStr;
 
-protected function unparseConstrainclassOptStr "function: unparseConstrainclassOptStr
+protected function unparseConstrainclassOptStr 
+"function: unparseConstrainclassOptStr
   author: PA
-
-  This function prettyprints a ConstrainClass option to a string.
-"
+  This function prettyprints a ConstrainClass option to a string."
   input Option<Absyn.ConstrainClass> inAbsynConstrainClassOption;
   output String outString;
 algorithm
@@ -1528,11 +1570,10 @@ algorithm
   end matchcontinue;
 end unparseConstrainclassOptStr;
 
-protected function unparseConstrainclassStr "function: unparseConstrainclassStr
+protected function unparseConstrainclassStr 
+"function: unparseConstrainclassStr
   author: PA
-
-  This function prettyprints a ConstrainClass to a string.
-"
+  This function prettyprints a ConstrainClass to a string."
   input Absyn.ConstrainClass inConstrainClass;
   output String outString;
 algorithm
@@ -1544,7 +1585,7 @@ algorithm
       Option<Absyn.Comment> cmt;
     case (Absyn.CONSTRAINCLASS(elementSpec = spec,comment = cmt))
       equation
-        s1 = unparseElementspecStr(0, spec, "", "", "");
+        s1 = unparseElementspecStr(0, spec, "", ("",""), "");
         s2 = unparseCommentOption(cmt);
         res = stringAppend(s1, s2);
       then
@@ -1552,10 +1593,9 @@ algorithm
   end matchcontinue;
 end unparseConstrainclassStr;
 
-protected function printInnerouter "function: printInnerouter
-
-  Prints the inner or outer keyword to the Print buffer.
-"
+protected function printInnerouter 
+"function: printInnerouter
+  Prints the inner or outer keyword to the Print buffer."
   input Absyn.InnerOuter inInnerOuter;
 algorithm
   _:=
@@ -1583,7 +1623,7 @@ algorithm
   end matchcontinue;
 end printInnerouter;
 
-protected function unparseInnerouterStr "function: unparseInnerouterStr
+public function unparseInnerouterStr "function: unparseInnerouterStr
 
   Prettyprints the inner or outer keyword to a string.
 "
@@ -1599,10 +1639,29 @@ algorithm
   end matchcontinue;
 end unparseInnerouterStr;
 
-public function printElementspec "function: printElementspec
+function unparseElementPrefixKeywords
+"adrpo: BEWARE! the prefix keywords HAVE TO BE IN A SPECIFIC ORDER:
+ ([final] | [redeclare] [final] [inner] [outer]) [replaceable] followed by: 
+ - class:    [encapsulated] [partial] [restriction] name
+ - component
+ For the component give empty encapsulated and partial strings to this function. 
+ if the order is not the one above on re-parse will give errors!"
+  input tuple<String,String> redeclareKeywords;
+  input String finalStr;
+  input String innerouterStr;
+  input String encapsulatedStr;
+  input String partialStr;
+  output String prefixKeywords;
+  protected
+    String redeclareStr,replaceableStr;
+algorithm
+   (redeclareStr,replaceableStr) := redeclareKeywords; 
+   prefixKeywords := redeclareStr +& finalStr +& innerouterStr +& replaceableStr +& encapsulatedStr +& partialStr;
+end unparseElementPrefixKeywords;
 
-  Prints the ElementSpec to the Print buffer.
-"
+public function printElementspec 
+"function: printElementspec
+  Prints the ElementSpec to the Print buffer."
   input Absyn.ElementSpec inElementSpec;
 algorithm
   _:=
@@ -1617,6 +1676,8 @@ algorithm
       Absyn.TypeSpec t;
       list<Absyn.ComponentItem> cs;
       Absyn.Import i;
+      Absyn.Annotation ann;
+      
     case (Absyn.CLASSDEF(replaceable_ = repl,class_ = cl))
       equation
         Print.printBuf("Absyn.CLASSDEF(");
@@ -1626,7 +1687,17 @@ algorithm
         Print.printBuf(")");
       then
         ();
-    case (Absyn.EXTENDS(path = p,elementArg = l))
+    case (Absyn.EXTENDS(path = p,elementArg = l,annotationOpt=SOME(ann)))
+      equation
+        Print.printBuf("Absyn.EXTENDS(");
+        dumpPath(p);
+        Print.printBuf(", [");
+        printListDebug("print_elementspec", l, printElementArg, ",");
+        printAnnotation(ann);
+        Print.printBuf("])");
+      then
+        ();
+    case (Absyn.EXTENDS(path = p,elementArg = l,annotationOpt=NONE()))
       equation
         Print.printBuf("Absyn.EXTENDS(");
         dumpPath(p);
@@ -1634,7 +1705,7 @@ algorithm
         printListDebug("print_elementspec", l, printElementArg, ",");
         Print.printBuf("])");
       then
-        ();
+        ();        
     case (Absyn.COMPONENTS(attributes = attr,typeSpec = t,components = cs))
       equation
         Print.printBuf("Absyn.COMPONENTS(");
@@ -1662,21 +1733,21 @@ algorithm
   end matchcontinue;
 end printElementspec;
 
-protected function unparseElementspecStr "function: unparseElementspecStr
-
-  Prettyprints the ElementSpec to a string.
-"
-  input Integer inInteger1;
-  input Absyn.ElementSpec inElementSpec2;
-  input String inString3;
-  input String inString4;
-  input String inString5;
+protected function unparseElementspecStr 
+"function: unparseElementspecStr
+  Prettyprints the ElementSpec to a string."
+  input Integer indent "indent";
+  input Absyn.ElementSpec elementSpec "element specification";
+  input String finalStr;
+  input tuple<String,String> redeclareKeywords "redeclare replaceable";  
+  input String innerouterKeywords;
   output String outString;
 algorithm
   outString:=
-  matchcontinue (inInteger1,inElementSpec2,inString3,inString4,inString5)
+  matchcontinue (indent,elementSpec,finalStr,redeclareKeywords,innerouterKeywords)
     local
-      Ident str,f,r,io,s1,s2,is,s3,ad;
+      Ident str,f,io,s1,s2,is,s3,ad,s4;
+      tuple<String,String> r;
       Integer i,indent;
       Boolean repl;
       Absyn.Class cl;
@@ -1685,26 +1756,33 @@ algorithm
       Absyn.ElementAttributes attr;
       Absyn.TypeSpec t;
       list<Absyn.ComponentItem> cs;
+      String prefixKeywords;
+      Option<Absyn.Annotation> annOpt;
+      
     case (i,Absyn.CLASSDEF(replaceable_ = repl,class_ = cl),f,r,io) /* indent */
       equation
         str = unparseClassStr(i, cl, f, r, io);
       then
         str;
-    case (i,Absyn.EXTENDS(path = p,elementArg = {}),f,r,io)
+    case (i,Absyn.EXTENDS(path = p,elementArg = {},annotationOpt=annOpt),f,r,io)
       equation
         s1 = Absyn.pathString(p);
         s2 = stringAppend("extends ", s1);
         is = indentStr(i);
-        str = Util.stringAppendList({is,f,r,io,s2});
+        s3 = unparseAnnotationOption(0, annOpt);
+        // adrpo: NOTE final, replaceable/redeclare, inner/outer should NOT be used for extends!
+        str = Util.stringAppendList({is,s2,s3});
       then
         str;
-    case (i,Absyn.EXTENDS(path = p,elementArg = l),f,r,io)
+    case (i,Absyn.EXTENDS(path = p,elementArg = l,annotationOpt=annOpt),f,r,io)
       equation
         s1 = Absyn.pathString(p);
         s2 = stringAppend("extends ", s1);
         s3 = getStringList(l, unparseElementArgStr, ", ");
         is = indentStr(i);
-        str = Util.stringAppendList({is,f,r,io,s2,"(",s3,")"});
+        s4 = unparseAnnotationOption(0, annOpt);
+        // adrpo: NOTE final, replaceable/redeclare, inner/outer should NOT be used for extends!        
+        str = Util.stringAppendList({is,s2,"(",s3,")",s4});
       then
         str;
     case (i,Absyn.COMPONENTS(attributes = attr,typeSpec = t,components = cs),f,r,io)
@@ -1714,7 +1792,8 @@ algorithm
         ad = unparseArraydimInAttr(attr);
         s3 = getStringList(cs, unparseComponentitemStr, ",");
         is = indentStr(i);
-        str = Util.stringAppendList({is,f,r,io,s2,s1,ad," ",s3});
+        prefixKeywords = unparseElementPrefixKeywords(r, f, io, "", "");
+        str = Util.stringAppendList({is,prefixKeywords,s2,s1,ad," ",s3});
       then
         str;
     case (indent,Absyn.IMPORT(import_ = i),f,r,io)
@@ -1723,7 +1802,8 @@ algorithm
         s1 = unparseImportStr(i);
         s2 = stringAppend("import ", s1);
         is = indentStr(indent);
-        str = Util.stringAppendList({is,f,r,io,s2});
+        // adrpo: NOTE final, replaceable/redeclare, inner/outer should NOT be used for import!        
+        str = Util.stringAppendList({is,s2});
       then
         str;
     case (_,_,_,_,_)
@@ -1734,10 +1814,9 @@ algorithm
   end matchcontinue;
 end unparseElementspecStr;
 
-public function printImport "function: printImport
-
-  Prints an Import to the Print buffer.
-"
+public function printImport 
+"function: printImport
+  Prints an Import to the Print buffer."
   input Absyn.Import inImport;
 algorithm
   _:=
@@ -1811,7 +1890,7 @@ algorithm
       Absyn.Variability var;
       Absyn.Direction dir;
       list<Absyn.Subscript> adim;
-    case (Absyn.ATTR(flow_ = fl,stream_=st,variability = var,direction = dir,arrayDim = adim))
+    case (Absyn.ATTR(flowPrefix = fl,streamPrefix=st,variability = var,direction = dir,arrayDim = adim))
       equation
         Print.printBuf("Absyn.ATTR(");
         printBool(fl);
@@ -1851,7 +1930,7 @@ algorithm
       Absyn.Variability var;
       Absyn.Direction dir;
       list<Absyn.Subscript> adim;
-    case (Absyn.ATTR(flow_ = fl,stream_=st,variability = var,direction = dir,arrayDim = adim))
+    case (Absyn.ATTR(flowPrefix = fl,streamPrefix=st,variability = var,direction = dir,arrayDim = adim))
       equation
         fs = selectString(fl, "flow ", "");
         ss = selectString(st, "stream ", "");
@@ -2392,7 +2471,7 @@ algorithm
         Print.printBuf(printFunctionArgsStr(fargs));
         Print.printBuf(")");
       then
-        ();        
+        ();
     case (Absyn.EQ_CONNECT(connector1 = e1,connector2 = e2))
       local Absyn.ComponentRef e1,e2;
       equation
@@ -3912,7 +3991,6 @@ algorithm
   end matchcontinue;
 end expPriority;
 
-
 protected function parenthesize 
 "function: parenthesize
   Adds parentheisis to a string if expression 
@@ -3937,6 +4015,15 @@ algorithm
   end matchcontinue;
 end parenthesize;
 
+public function printExpLstStr "exp
+ 
+Prints a list of expressions to a string
+"
+  input list<Absyn.Exp> expl;
+  output String outString;
+algorithm 
+  outString := Util.stringDelimitList(Util.listMap(expl,printExpStr),", ");
+end printExpLstStr;
 
 public function printExpStr "function: print_exp
 
@@ -4161,6 +4248,12 @@ algorithm
         s = Util.stringAppendList({s1, " ", s2, s3, s4, s5, "\n\tend ", s1});
       then
         s;
+    case Absyn.VALUEBLOCK(_,_,result)
+    local Absyn.Exp result;
+      equation
+        s1 = printExpStr(result);
+        s = "valueblock(..., result=" +& s1 +& ")";
+      then s;         
     case (_) then "#UNKNOWN EXPRESSION#";
   end matchcontinue;
 end printExpStr;

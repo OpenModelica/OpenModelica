@@ -59,11 +59,27 @@ void base_array_create(base_array_t *dest, void *data, int ndims, va_list ap)
 int base_array_ok(base_array_t *a)
 {
     int i;
-    if (!a) return 0;
-    if (a->ndims < 0) return 0;
-    if (!a->dim_size) return 0;
+    if (!a)
+    {
+      fprintf(stderr, "base_array.c: array is NULL!\n"); fflush(stderr);
+      return 0;
+    }
+    if (a->ndims < 0)
+    {
+      fprintf(stderr, "base_array.c: the number of array dimensions are < 0!\n"); fflush(stderr);
+      return 0;
+    }
+    if (!a->dim_size)
+    {
+      fprintf(stderr, "base_array.c: array dimensions sizes are NULL!\n"); fflush(stderr);
+      return 0;
+    }
     for (i = 0; i < a->ndims; ++i) {
-        if (a->dim_size[i] < 0) return 0;
+        if (a->dim_size[i] < 0)
+        {
+          fprintf(stderr, "base_array.c: array dimension size for dimension %d is < 0!\n", a->dim_size[i]); fflush(stderr);
+          return 0;
+        }
     }
     return 1;
 }

@@ -35,16 +35,17 @@
 #include <iostream>
 #include <fstream>
 #include <string>
-#include <cstring>
-#include <cstdlib>
+
 
 
 using namespace std;
 
 extern "C"
 {
-#include "rml.h"
-#include "../Values.h"
+#include <string.h>
+#include <stdlib.h>
+#include "rml.h"  
+#include "Values.h"
 #include <stdio.h>
 void print_error_buf_impl(char*str);
 
@@ -57,9 +58,9 @@ void print_error_buf_impl(char*str);
     void *lst;
     void *olst;
     ifstream stream(filename);
-
+    
     if (!stream) {
-      cerr << "Error opening file" << endl;
+      cerr << "Error opening result file " << filename << endl;
       return NULL;
     }
 
@@ -70,7 +71,7 @@ void print_error_buf_impl(char*str);
     int equalPos=intervalText.find("=");
     int readIntervalSize = atoi(intervalText.substr(equalPos+1).c_str());
     // exit if intervals not compatible...
-    if (datasize == 0) {
+    if (datasize == 0) { 
       datasize = readIntervalSize;
     } else {
       if( readIntervalSize == 0) {
@@ -89,7 +90,7 @@ void print_error_buf_impl(char*str);
       string readstr;
       double val; char ch;
       string var(string("DataSet: ")+vars[i]);
-
+      
 
       stream.seekg(0); //Reset stream
       // Search to the correct position.
@@ -117,7 +118,7 @@ void print_error_buf_impl(char*str);
 	string values(buf);
 	int commapos=values.find(",");
 	val = atof(values.substr(commapos+1).c_str()); // Second value after comma
-
+	
 	lst = (void*)mk_cons(Values__REAL(mk_rcon(val)),lst);
 	j++;
       }
@@ -132,7 +133,7 @@ void print_error_buf_impl(char*str);
   {
     char buf[255];
     ifstream stream(filename);
-
+    
 
     if (!stream) {
       cerr << "Error opening file" << endl;

@@ -1,9 +1,9 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2008, LinkÃ¶pings University,
+ * Copyright (c) 1998-2008, Linköpings University,
  * Department of Computer and Information Science,
- * SE-58183 LinkÃ¶ping, Sweden.
+ * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
@@ -14,7 +14,7 @@
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from LinkÃ¶pings University, either from the above address,
+ * from Linköpings University, either from the above address,
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
  *
@@ -90,7 +90,8 @@ protected import Settings;
 protected import Algorithm;
 protected import Types;
 protected import Env;
-protected import Ceval;
+protected import CevalScript;
+protected import InstanceHierarchy;
 
 public function generateMakefile
 "function: generateMakefile
@@ -110,8 +111,9 @@ algorithm
       list<String> libs;
     case (filename,cname,libs,"") /* filename classname libs directory for mo-file */
       equation
-        MakefileHeader = Ceval.generateMakefileHeader();
+        MakefileHeader = CevalScript.generateMakefileHeader();
         cpp_file = Util.stringAppendList({cname,".cpp"});
+        libs = Util.listUnion(libs, libs); // un-double the libs
         libs_1 = Util.stringDelimitList(libs, " ");
         omhome_1 = Settings.getInstallationDirectoryPath();
         omhome = System.trim(omhome_1, "\"");
@@ -132,8 +134,9 @@ algorithm
         ();
     case (filename,cname,libs,file_dir)
       equation
-        MakefileHeader = Ceval.generateMakefileHeader();
+        MakefileHeader = CevalScript.generateMakefileHeader();
         cpp_file = Util.stringAppendList({cname,".cpp"});
+        libs = Util.listUnion(libs, libs); // un-double the libs        
         libs_1 = Util.stringDelimitList(libs, " ");
         omhome_1 = Settings.getInstallationDirectoryPath();
         omhome = System.trim(omhome_1, "\"");
@@ -222,7 +225,12 @@ algorithm
             "#include \"modelica.h\"\n",
             "#include \"assert.h\"\n",
             "#include \"string.h\"\n",
-            "#include \"simulation_runtime.h\"\n",
+            "#include \"simulation_runtime.h\"\n\n",
+            "#if defined(_MSC_VER) && !defined(_SIMULATION_RUNTIME_H)\n",
+            "  #define DLLExport   __declspec( dllexport ) \n",
+            "#else \n",
+            "  #define DLLExport /* nothing */\n",
+            "#endif \n\n",            
             "#include \"",funcfilename,"\"\n\n",
             extObjInclude,cglobal,coutput,in_str,out_str,
             cstate,czerocross,cwhen,c_ode,s_code,s_code2,
@@ -1302,7 +1310,8 @@ algorithm
         str_arr_2;
     case ((v :: vs),str_arr,nx,ny,np)
       equation
-        print("generate_fixed_vector3 failed\n");
+        print("generateAttrVectorDiscrete2 failed\n");
+        // debug_print("variable:", v);
       then
         fail();
   end matchcontinue;
@@ -1440,11 +1449,10 @@ algorithm
   end matchcontinue;
 end generateFixedVectorDefault2;
 
-protected function generateFixedVector3 "function: generateFixedVector3
+protected function generateFixedVector3 
+"function: generateFixedVector3
   author: PA
-
-  Helper function to generate_fixed_vector2
-"
+  Helper function to generate_fixed_vector2"
   input list<DAELow.Var> inDAELowVarLst1;
   input String[:] inStringArray2;
   input Integer inInteger3;
@@ -1452,8 +1460,7 @@ protected function generateFixedVector3 "function: generateFixedVector3
   input Integer inInteger5;
   output String[:] outStringArray;
 algorithm
-  outStringArray:=
-  matchcontinue (inDAELowVarLst1,inStringArray2,inInteger3,inInteger4,inInteger5)
+  outStringArray := matchcontinue (inDAELowVarLst1,inStringArray2,inInteger3,inInteger4,inInteger5)
     local
       String[:] str_arr,str_arr_1,str_arr_2;
       DAELow.Var v;
@@ -1487,6 +1494,7 @@ algorithm
     case ((v :: vs),str_arr,nx,ny,np)
       equation
         print("generate_fixed_vector3 failed\n");
+        // debug_print("variable:", v);
       then
         fail();
   end matchcontinue;
@@ -1861,8 +1869,8 @@ algorithm
       Option<Exp.Exp> value;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<Absyn.Comment> comment;
-      DAE.Flow flow_;
-      DAE.Stream stream_;
+      DAE.Flow flowPrefix;
+      DAE.Stream streamPrefix;
       list<DAELow.Var> vs;
       Integer num_stralg,num_strparam;
     case ({},state_str,stateComments,num_state,derivative_str,derivativeComments,num_derivative,
@@ -1877,7 +1885,7 @@ algorithm
              stralg_arr,stralg_comment_arr,num_stralg,strparam_arr,strparam_comment_arr,num_strparam,
              get_name_function_ifs,var_defines);
 
-    case (((var as DAELow.VAR(cr,kind,dir,_, _,_,_,indx,origname,_,dae_var_attr,comment,flow_,stream_)) :: vs),
+    case (((var as DAELow.VAR(cr,kind,dir,_, _,_,_,indx,origname,_,dae_var_attr,comment,flowPrefix,streamPrefix)) :: vs),
       	state_str,stateComments,num_state,derivative_str,derivativeComments,num_derivative,algvars_str,
       	algvarsComments,num_algvars,input_str,inputComments,num_input,output_str,outputComments,
       	num_output,param_str,paramComments,num_param,
@@ -2014,8 +2022,8 @@ algorithm
       DAE.VarDirection dir;
       Option<Exp.Exp> value;
       Option<DAE.VariableAttributes> dae_var_attr;
-      DAE.Flow flow_;
-      DAE.Stream stream_;
+      DAE.Flow flowPrefix;
+      DAE.Stream streamPrefix;
       list<String> name_arr,comment_arr,get_name_function_ifs,var_defines;
       DAE.Type tp;
     case ((var as DAELow.VAR(varName = cr,
@@ -2025,8 +2033,8 @@ algorithm
                              origVarName = origname,
                              values = dae_var_attr,
                              comment = comment,
-                             flow_ = flow_,
-                             stream_ =  stream_,
+                             flowPrefix = flowPrefix,
+                             streamPrefix =  streamPrefix,
                              varType = tp)),name_arr,comment_arr,n_vars,get_name_function_ifs,var_defines)
       /* the variable to checked the old number of variables generated
          get_name_function_ifs\' #define a$Pb x{1} name of the from \"a\"
@@ -2050,8 +2058,8 @@ algorithm
                              origVarName = origname,
                              values = dae_var_attr,
                              comment = comment,
-                             flow_ = flow_,
-                             stream_ = stream_)),name_arr,comment_arr,n_vars,get_name_function_ifs,var_defines)
+                             flowPrefix = flowPrefix,
+                             streamPrefix = streamPrefix)),name_arr,comment_arr,n_vars,get_name_function_ifs,var_defines)
       local Option<Absyn.Comment> comment;
       then
         (name_arr,comment_arr,n_vars,get_name_function_ifs,var_defines);
@@ -2085,8 +2093,8 @@ algorithm
       DAE.VarDirection dir;
       Option<Exp.Exp> value;
       Option<DAE.VariableAttributes> dae_var_attr;
-      DAE.Flow flow_;
-      DAE.Stream stream_;
+      DAE.Flow flowPrefix;
+      DAE.Stream streamPrefix;
       list<String> name_arr,comment_arr,get_name_function_ifs,var_defines;
       DAE.Type tp;
       
@@ -2098,8 +2106,8 @@ algorithm
                              values = dae_var_attr,
                              comment = comment,
                              varType=tp,
-                             flow_ = flow_,
-                             stream_ = stream_)),name_arr,comment_arr,n_vars,get_name_function_ifs,var_defines) /* the variable to checked the old number of variables generated name of the from \"a\" comment of the from \"a afhalk\" number of generated strings */
+                             flowPrefix = flowPrefix,
+                             streamPrefix = streamPrefix)),name_arr,comment_arr,n_vars,get_name_function_ifs,var_defines) /* the variable to checked the old number of variables generated name of the from \"a\" comment of the from \"a afhalk\" number of generated strings */
       equation
         true = DAELow.isVarOnTopLevelAndOutput(var);
         origname_str = Exp.printComponentRefStr(origname);
@@ -2118,8 +2126,8 @@ algorithm
                      origVarName = origname,
                      values = dae_var_attr,
                      comment = comment,
-                     flow_ = flow_,
-                     stream_ = stream_),name_arr,comment_arr,n_vars,get_name_function_ifs,var_defines)
+                     flowPrefix = flowPrefix,
+                     streamPrefix = streamPrefix),name_arr,comment_arr,n_vars,get_name_function_ifs,var_defines)
       local Option<Absyn.Comment> comment;
       then
         (name_arr,comment_arr,n_vars,get_name_function_ifs,var_defines);
@@ -2161,8 +2169,8 @@ algorithm
       list<Exp.Subscript> inst_dims;
       Option<Exp.Exp> value;
       Option<DAE.VariableAttributes> dae_var_attr;
-      DAE.Flow flow_;
-      DAE.Stream stream_;
+      DAE.Flow flowPrefix;
+      DAE.Stream streamPrefix;
       list<String> get_name_function_ifs,var_defines;
       DAE.Type typeVar;
       Integer num_stralg;
@@ -2176,8 +2184,8 @@ algorithm
                      origVarName = origname,
                      values = dae_var_attr,
                      comment = comment,
-                     flow_ = flow_,
-                     stream_ = stream_),name_arr,comment_arr,n_vars,stralg_arr,stralg_comment_arr,num_stralg,get_name_function_ifs,var_defines)
+                     flowPrefix = flowPrefix,
+                     streamPrefix = streamPrefix),name_arr,comment_arr,n_vars,stralg_arr,stralg_comment_arr,num_stralg,get_name_function_ifs,var_defines)
       equation
         kind_lst = {DAELow.VARIABLE(),DAELow.DISCRETE(),DAELow.DUMMY_DER(),DAELow.DUMMY_STATE()};
         _ = Util.listGetMember(kind, kind_lst);
@@ -2208,8 +2216,8 @@ algorithm
                      origVarName = origname,
                      values = dae_var_attr,
                      comment = comment,
-                     flow_ = flow_,
-                     stream_ = stream_),name_arr,comment_arr,n_vars,stralg_arr,stralg_comment_arr,num_stralg,get_name_function_ifs,var_defines)
+                     flowPrefix = flowPrefix,
+                     streamPrefix = streamPrefix),name_arr,comment_arr,n_vars,stralg_arr,stralg_comment_arr,num_stralg,get_name_function_ifs,var_defines)
       equation
         kind_lst = {DAELow.VARIABLE(),DAELow.DISCRETE(),DAELow.DUMMY_DER(),DAELow.DUMMY_STATE()};
         _ = Util.listGetMember(kind, kind_lst);
@@ -2239,8 +2247,8 @@ algorithm
                      origVarName = origname,
                      values = dae_var_attr,
                      comment = comment,
-                     flow_ = flow_,
-                     stream_ = stream_),name_arr,comment_arr,n_vars,stralg_arr,stralg_comment_arr,num_stralg,get_name_function_ifs,var_defines)
+                     flowPrefix = flowPrefix,
+                     streamPrefix = streamPrefix),name_arr,comment_arr,n_vars,stralg_arr,stralg_comment_arr,num_stralg,get_name_function_ifs,var_defines)
       local Option<Absyn.Comment> comment;
       then
         (name_arr,comment_arr,n_vars,stralg_arr,stralg_comment_arr,num_stralg,get_name_function_ifs,var_defines);
@@ -2334,8 +2342,8 @@ algorithm
       list<Exp.Subscript> inst_dims;
       Option<Exp.Exp> value;
       Option<DAE.VariableAttributes> dae_var_attr;
-      DAE.Flow flow_;
-      DAE.Stream stream_;
+      DAE.Flow flowPrefix;
+      DAE.Stream streamPrefix;
       list<String> get_name_function_ifs,var_defines;
       DAE.Type typeVar;
 
@@ -2349,8 +2357,8 @@ algorithm
                              origVarName = origname,
                              values = dae_var_attr,
                              comment = comment,
-                             flow_ = flow_,
-                             stream_ = stream_)),
+                             flowPrefix = flowPrefix,
+                             streamPrefix = streamPrefix)),
           name_arr,comment_arr,n_vars,strparam_arr,strparam_comment_arr,num_strparam,get_name_function_ifs,var_defines)
       equation
         true = DAELow.isParam(var);
@@ -2383,8 +2391,8 @@ algorithm
                              origVarName = origname,
                              values = dae_var_attr,
                              comment = comment,
-                             flow_ = flow_,
-                             stream_ = stream_)),
+                             flowPrefix = flowPrefix,
+                             streamPrefix = streamPrefix)),
           name_arr,comment_arr,n_vars,strparam_arr,strparam_comment_arr,num_strparam,get_name_function_ifs,var_defines)
       equation
         true = DAELow.isParam(var);
@@ -2442,8 +2450,8 @@ algorithm
       list<Exp.Subscript> inst_dims;
       Option<Exp.Exp> value;
       Option<DAE.VariableAttributes> dae_var_attr;
-      DAE.Flow flow_;
-      DAE.Stream stream_;
+      DAE.Flow flowPrefix;
+      DAE.Stream streamPrefix;
       list<String> get_name_function_ifs,var_defines;
       
     /* 
@@ -2458,8 +2466,8 @@ algorithm
                              origVarName = origname,
                              values = dae_var_attr,
                              comment = comment,
-                             flow_ = flow_,
-                             stream_ = stream_)),name_arr,comment_arr,n_vars,get_name_function_ifs,var_defines) 
+                             flowPrefix = flowPrefix,
+                             streamPrefix = streamPrefix)),name_arr,comment_arr,n_vars,get_name_function_ifs,var_defines) 
       local Option<Absyn.Comment> comment;
       equation
         true = DAELow.isExtObj(var);
@@ -2508,8 +2516,8 @@ algorithm
       list<Exp.Subscript> inst_dims;
       Option<Exp.Exp> value;
       Option<DAE.VariableAttributes> dae_var_attr;
-      DAE.Flow flow_;
-      DAE.Stream stream_;
+      DAE.Flow flowPrefix;
+      DAE.Stream streamPrefix;
       DAE.Type tp;
       
     /* the variable to checked name of the from \"a\" comment of the from \"a afhalk\" name of the 
@@ -2525,8 +2533,8 @@ algorithm
                              values = dae_var_attr,
                              comment = comment,
                              varType=tp,
-                             flow_ = flow_,
-                             stream_ = stream_)),
+                             flowPrefix = flowPrefix,
+                             streamPrefix = streamPrefix)),
           name_arr,comment_arr,name_arr_der,comment_arr_der,n_vars,get_name_function_ifs,var_defines) 
       equation
         true = DAELow.isStateVar(var);
@@ -2564,8 +2572,8 @@ algorithm
                      origVarName = origname,
                      values = dae_var_attr,
                      comment = comment,
-                     flow_ = flow_,
-                     stream_ = stream_),
+                     flowPrefix = flowPrefix,
+                     streamPrefix = streamPrefix),
           name_arr,comment_arr,name_arr_der,comment_arr_der,n_vars,get_name_function_ifs,var_defines)
       local Option<Absyn.Comment> comment;
       then
@@ -2597,9 +2605,9 @@ algorithm
         true = Exp.crefIsFirstArrayElt(cr);
         cr_1 = Exp.crefStripLastSubs(cr);
         cr_name = Exp.printComponentRefStr(cr_1);
-        cr_name_1 = Util.modelicaStringToCStr(cr_name);
+        cr_name_1 = Util.modelicaStringToCStr(cr_name,true);
         indx_str = intString(indx);
-        res = Util.stringAppendList({"#define $",cr_name_1," ",array,"[",indx_str,"]\n"});
+        res = Util.stringAppendList({"#define ",cr_name_1," ",array,"[",indx_str,"]\n"});
       then
         res;
     case (_,_,_,_) then "";
@@ -2619,7 +2627,10 @@ algorithm
     local
       String var_name,der_var_name_1,origname,prefix,ret_str,origname_1;
       list<String> origname_lst,origname_lst_1;
-    case (origname) /* catch the variable names a */
+    case (origname_1) /* print \"change_name_for_derivative FAILED\" */  
+      then "der("+& origname_1 +& ")";
+/*            
+    case (origname) // catch the variable names a 
       equation
         {var_name} = Util.stringSplitAtChar(origname, ".");
         der_var_name_1 = Util.stringAppendList({"der(",var_name,")"});
@@ -2635,7 +2646,9 @@ algorithm
         ret_str = Util.stringAppendList({prefix,".",der_var_name_1});
       then
         ret_str;
-    case (origname_1) /* print \"change_name_for_derivative FAILED\" */  then origname_1;
+    case (origname_1) // print \"change_name_for_derivative FAILED\"   
+      then origname_1;
+*/
   end matchcontinue;
 end changeNameForDerivative;
 
@@ -2715,8 +2728,8 @@ algorithm
       list<Absyn.Path> classes;
       Option<DAE.VariableAttributes> attr;
       Option<Absyn.Comment> comment;
-      DAE.Flow flow_;
-      DAE.Stream stream_;
+      DAE.Flow flowPrefix;
+      DAE.Stream streamPrefix;
       list<DAELow.Var> rest;
     case ({},int) then {};
     case (((var as DAELow.VAR(varName = cr,
@@ -2730,8 +2743,8 @@ algorithm
                               className = classes,
                               values = attr,
                               comment = comment,
-                              flow_ = flow_,
-                              stream_ = stream_)) :: rest),i)
+                              flowPrefix = flowPrefix,
+                              streamPrefix = streamPrefix)) :: rest),i)
       equation
         true = DAELow.isVarOnTopLevelAndInput(var);
         i_str = intString(i);
@@ -2813,8 +2826,8 @@ algorithm
       list<Absyn.Path> classes;
       Option<DAE.VariableAttributes> attr;
       Option<Absyn.Comment> comment;
-      DAE.Flow flow_;
-      DAE.Stream stream_;
+      DAE.Flow flowPrefix;
+      DAE.Stream streamPrefix;
       list<DAELow.Var> rest;
     case ({},int) then {};
     case (((var as DAELow.VAR(varName = cr,
@@ -2828,8 +2841,8 @@ algorithm
                               className = classes,
                               values = attr,
                               comment = comment,
-                              flow_ = flow_,
-                              stream_ = stream_)) :: rest),i)
+                              flowPrefix = flowPrefix,
+                              streamPrefix = streamPrefix)) :: rest),i)
       equation
         true = DAELow.isVarOnTopLevelAndOutput(var);
         i_str = intString(i);
@@ -3231,8 +3244,7 @@ algorithm
         cname = Absyn.pathString(class_);
         (blt_states,blt_no_states) = DAELow.generateStatePartition(comps, dlow, ass1, ass2, m, mt);
         (block_code,_,extra_funcs) = generateOdeBlocks(false,dlow,ass1, ass2, blt_states, 0);
-        func_1 = Codegen.cMakeFunction("int", "functionODE", {},
-          {""});
+        func_1 = Codegen.cMakeFunction("int", "functionODE", {}, {""});
         func_1 = addMemoryManagement(func_1);
         func = Codegen.cAddCleanups(func_1, {"return 0;"});
         func_1 = Codegen.cMergeFns({func,block_code});
@@ -4605,7 +4617,7 @@ algorithm
 
         eqn_lst = DAELow.equationList(eqn);
         var_lst = DAELow.varList(v);
-        crefs = Util.listMap(var_lst, DAELow.varCrefPrefixStates);// get varnames and prefix $derivative for states.
+        crefs = Util.listMap(var_lst, DAELow.varCrefPrefixStates);// get varnames and prefix $der for states.
         (s1,cg_id_1,f1) = generateOdeSystem2NonlinearResiduals(mixedEvent,crefs, eqn_lst,ae, cg_id);
       then
         (s1,cg_id_1,f1);
@@ -4613,7 +4625,7 @@ algorithm
       equation
         eqn_lst = DAELow.equationList(eqn);
         var_lst = DAELow.varList(v);
-        crefs = Util.listMap(var_lst, DAELow.varCrefPrefixStates); // get varnames and prefix $derivative for states.
+        crefs = Util.listMap(var_lst, DAELow.varCrefPrefixStates); // get varnames and prefix $der for states.
         (s1,cg_id_1,f1) = generateOdeSystem2NonlinearResiduals(mixedEvent,crefs, eqn_lst, ae, cg_id);
       then
         (s1,cg_id_1,f1);
@@ -4696,11 +4708,10 @@ algorithm
   end matchcontinue;
 end generateSingleAlgorithmCode;
 
-protected function generateSingleArrayEqnCode "function: generateSingleArrayEqnCode
+protected function generateSingleArrayEqnCode 
+"function: generateSingleArrayEqnCode
   author: PA
-
-  Generates code for a system consisting of a  single array equation.
-"
+  Generates code for a system consisting of a  single array equation."
   input DAELow.DAELow inDAELow;
   input Option<list<tuple<Integer, Integer, DAELow.Equation>>> inTplIntegerIntegerDAELowEquationLstOption;
   input Integer inInteger;
@@ -4739,8 +4750,8 @@ algorithm
         // We need to strip subs from origname since they are removed in cr.
         cr_1 = Exp.crefStripLastSubs(origname);
         // Since we use origname we need to replace '.' with '$P' manually.
-        cr_1_str = stringAppend("$",Util.modelicaStringToCStr(Exp.printComponentRefStr(cr_1)));
-        cr_1 = Exp.CREF_IDENT(cr_1_str,{});
+        cr_1_str = Util.modelicaStringToCStr(Exp.printComponentRefStr(cr_1),true); // stringAppend("$",Util.modelicaStringToCStr(Exp.printComponentRefStr(cr_1),true));
+        cr_1 = Exp.CREF_IDENT(cr_1_str,Exp.OTHER(),{});
         (e1,e2) = solveTrivialArrayEquation(cr_1,e1,e2);
         (s1,cg_id_1,f1) = generateSingleArrayEqnCode2(cr_1, cr_1, e1, e2, cg_id);
       then
@@ -5093,7 +5104,7 @@ algorithm
       equation
         pstr = intString(pos);
         str = Util.stringAppendList({"xloc[",pstr,"]"});
-        repl_1 = VarTransform.addReplacement(repl, cr, Exp.CREF(Exp.CREF_IDENT(str,{}),Exp.REAL()));
+        repl_1 = VarTransform.addReplacement(repl, cr, Exp.CREF(Exp.CREF_IDENT(str,Exp.REAL(),{}),Exp.REAL()));
         pos_1 = pos + 1;
         repl_2 = makeResidualReplacements2(repl_1, crs, pos_1);
       then
@@ -5837,8 +5848,8 @@ algorithm
       list<Absyn.Path> classes;
       Option<DAE.VariableAttributes> attr;
       Option<Absyn.Comment> comment;
-      DAE.Flow flow_;
-      DAE.Stream stream_;
+      DAE.Flow flowPrefix;
+      DAE.Stream streamPrefix;
       
     case (DAELow.VAR(varName = cr,
                      varKind = DAELow.STATE(),
@@ -5852,15 +5863,15 @@ algorithm
                      className = classes,
                        values = attr,
                        comment = comment,
-                       flow_ = flow_,
-                       stream_ = stream_))
+                       flowPrefix = flowPrefix,
+                       streamPrefix = streamPrefix))
       equation
         index_str = intString(index);
         name = Exp.printComponentRefStr(cr);
-        c_name = Util.modelicaStringToCStr(name);
+        c_name = name; // adrpo: 2009-09-07 this doubles $!! c_name = Util.modelicaStringToCStr(name,true);
         res = Util.stringAppendList({DAELow.derivativeNamePrefix,c_name}) "	Util.string_append_list({\"xd{\",index_str, \"}\"}) => res" ;
       then
-        DAELow.VAR(Exp.CREF_IDENT(res,{}),DAELow.STATE(),dir,tp,exp,v,dim,index,cr,classes,attr,comment,flow_,stream_);
+        DAELow.VAR(Exp.CREF_IDENT(res,Exp.REAL(),{}),DAELow.STATE(),dir,tp,exp,v,dim,index,cr,classes,attr,comment,flowPrefix,streamPrefix);
         
     case (v)
       local DAELow.Var v;
@@ -5898,6 +5909,11 @@ algorithm
         var = DAELow.getVarAt(vars, v);
       then
         (eqn,var);
+    case (e,eqns,vars,ass2) /* equation no. assignments2 */
+      equation
+        Debug.fprintln("failtrace", "SimCodegen.getEquationAndSolvedVar failed at index: " +& intString(e));
+      then
+        fail();        
   end matchcontinue;
 end getEquationAndSolvedVar;
 
@@ -5944,8 +5960,8 @@ algorithm
       DAELow.VarKind kind;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<Absyn.Comment> comment;
-      DAE.Flow flow_;
-      DAE.Stream stream_;
+      DAE.Flow flowPrefix;
+      DAE.Stream streamPrefix;
       Codegen.CFunction exp_func,res,cfunc;
       String var,cr_str,stmt,indxs,name,c_name,id,s1,s2,s;
       DAELow.Equation eqn;
@@ -5964,7 +5980,7 @@ algorithm
         
     case (genDiscrete,DAELow.DAELOW(orderedVars = vars,orderedEqs = eqns),ass1,ass2,e,cg_id)
       equation
-        (DAELow.EQUATION(e1,e2),(v as DAELow.VAR(cr,kind,_,_,_,_,_,_,origname,_,dae_var_attr,comment,flow_,stream_))) = 
+        (DAELow.EQUATION(e1,e2),(v as DAELow.VAR(cr,kind,_,_,_,_,_,_,origname,_,dae_var_attr,comment,flowPrefix,streamPrefix))) = 
         getEquationAndSolvedVar(e, eqns, vars, ass2) "Solving for non-states" ;
         isNonState(kind);
         varexp = Exp.CREF(cr,Exp.REAL());
@@ -5979,13 +5995,14 @@ algorithm
         
     case (genDiscrete,DAELow.DAELOW(orderedVars = vars,orderedEqs = eqns),ass1,ass2,e,cg_id)
       equation
-        (DAELow.EQUATION(e1,e2),DAELow.VAR(cr,DAELow.STATE(),_,_,_,_,_,indx,origname,_,dae_var_attr,comment,flow_,stream_))
+        (DAELow.EQUATION(e1,e2),DAELow.VAR(cr,DAELow.STATE(),_,_,_,_,_,indx,origname,_,dae_var_attr,comment,flowPrefix,streamPrefix))
         = getEquationAndSolvedVar(e, eqns, vars, ass2) "Solving the state s means solving for der(s)" ;
         indxs = intString(indx);
         name = Exp.printComponentRefStr(cr);
-        c_name = Util.modelicaStringToCStr(name);
-        id = Util.stringAppendList({DAELow.derivativeNamePrefix,c_name});
-        cr_1 = Exp.CREF_IDENT(id,{});
+        // c_name = Util.modelicaStringToCStr(name,true);
+        // id = Util.stringAppendList({DAELow.derivativeNamePrefix,c_name});
+        id = Util.stringAppendList({DAELow.derivativeNamePrefix, name});
+        cr_1 = Exp.CREF_IDENT(id,Exp.REAL(),{});
         varexp = Exp.CREF(cr_1,Exp.REAL());
         expr = Exp.solve(e1, e2, varexp);
         (exp_func,var,cg_id_1) = 
@@ -5999,13 +6016,13 @@ algorithm
     /* state nonlinear */
     case (genDiscrete,DAELow.DAELOW(orderedVars = vars,orderedEqs = eqns,arrayEqs = ae),ass1,ass2,e,cg_id)
       equation
-        ((eqn as DAELow.EQUATION(e1,e2)),DAELow.VAR(cr,DAELow.STATE(),_,_,_,_,_,indx,origname,_,dae_var_attr,comment,flow_,stream_)) = 
+        ((eqn as DAELow.EQUATION(e1,e2)),DAELow.VAR(cr,DAELow.STATE(),_,_,_,_,_,indx,origname,_,dae_var_attr,comment,flowPrefix,streamPrefix)) = 
         getEquationAndSolvedVar(e, eqns, vars, ass2);
         indxs = intString(indx);
         name = Exp.printComponentRefStr(cr) "	Util.string_append_list({\"xd{\",indxs,\"}\"}) => id &" ;
-        c_name = Util.modelicaStringToCStr(name);
+        c_name = name; // Util.modelicaStringToCStr(name,true);
         id = Util.stringAppendList({DAELow.derivativeNamePrefix,c_name});
-        cr_1 = Exp.CREF_IDENT(id,{});
+        cr_1 = Exp.CREF_IDENT(id,Exp.REAL(),{});
         varexp = Exp.CREF(cr_1,Exp.REAL());
         failure(_ = Exp.solve(e1, e2, varexp));
         (res,cg_id_1,f1) = generateOdeSystem2NonlinearResiduals(false,{cr_1}, {eqn},ae, cg_id);
@@ -6015,7 +6032,7 @@ algorithm
     /* non-state non-linear */
     case (genDiscrete,DAELow.DAELOW(orderedVars = vars,orderedEqs = eqns,arrayEqs = ae),ass1,ass2,e,cg_id)
       equation
-        ((eqn as DAELow.EQUATION(e1,e2)),DAELow.VAR(cr,kind,_,_,_,_,_,indx,origname,_,dae_var_attr,comment,flow_,stream_)) = 
+        ((eqn as DAELow.EQUATION(e1,e2)),DAELow.VAR(cr,kind,_,_,_,_,_,indx,origname,_,dae_var_attr,comment,flowPrefix,streamPrefix)) = 
         getEquationAndSolvedVar(e, eqns, vars, ass2);
         isNonState(kind);
         indxs = intString(indx);
@@ -6070,7 +6087,7 @@ algorithm
     case (genDiscrete,DAELow.DAELOW(orderedVars = vars,orderedEqs = eqns),ass1,ass2,e,cg_id)
       equation
         Debug.fprint("failtrace", "-SimCodegen.generateOdeEquation failed\n");
-        (eqn,DAELow.VAR(cr,_,_,_,_,_,_,indx,origname,_,dae_var_attr,comment,flow_,stream_)) = getEquationAndSolvedVar(e, eqns, vars, ass2);
+        (eqn,DAELow.VAR(cr,_,_,_,_,_,_,indx,origname,_,dae_var_attr,comment,flowPrefix,streamPrefix)) = getEquationAndSolvedVar(e, eqns, vars, ass2);
         s1 = DAELow.equationStr(eqn);
         s2 = Exp.printComponentRefStr(cr);
         s = Util.stringAppendList({"trying to solve ",s2," from eqn: ",s1,"\n"});
@@ -6127,7 +6144,7 @@ algorithm
   end matchcontinue;
 end generateFunctions;
 
-public function generateExternalObjectIncludes 
+protected function generateExternalObjectIncludes 
 "Generates the library paths for external objects"
 	input DAELow.DAELow daelow;
   output list<String> includes;
@@ -6199,7 +6216,7 @@ algorithm
       
     case (p,(path :: paths),allpaths)  local String s;
       equation
-        (_,fdae,_) = Inst.instantiateFunctionImplicit(Env.emptyCache,p, path);
+        (_,_,_,fdae) = Inst.instantiateFunctionImplicit(Env.emptyCache(), InstanceHierarchy.emptyInstanceHierarchy, p, path);
         DAE.DAE(elementLst = {DAE.FUNCTION(dAElist = dae,type_ = t)}) = fdae;
         patched_dae = DAE.DAE({DAE.FUNCTION(path,dae,t)});
         subfuncs = getCalledFunctionsInFunction(path, patched_dae);
@@ -6212,7 +6229,7 @@ algorithm
     case (p,(path :: paths),allpaths)
       local String s;
       equation
-        (_,fdae,_) = Inst.instantiateFunctionImplicit(Env.emptyCache,p, path);
+        (_,_,_,fdae) = Inst.instantiateFunctionImplicit(Env.emptyCache(), InstanceHierarchy.emptyInstanceHierarchy, p, path);
         DAE.DAE(elementLst = {DAE.EXTFUNCTION(dAElist = dae,type_ = t,externalDecl = extdecl)}) = fdae;
         patched_dae = DAE.DAE({DAE.EXTFUNCTION(path,dae,t,extdecl)});
         subfuncs = getCalledFunctionsInFunction(path, patched_dae);
@@ -6222,7 +6239,7 @@ algorithm
       then
         res;
         
-    case (_,_,_)
+    case (p,paths,allpaths)
       equation
         print("SimCodegen.generateFunctions3 failed\n");
       then
@@ -6279,9 +6296,9 @@ public function generateInitData
   input Real inReal7;
   input Real inTolerance;
   input String method;
+  input String options;
 algorithm
-  _:=
-  matchcontinue (inDAELow1,inPath2,inString3,inString4,inReal5,inReal6,inReal7,inTolerance,method)
+  _ := matchcontinue (inDAELow1,inPath2,inString3,inString4,inReal5,inReal6,inReal7,inTolerance,method,options)
     local
       Real delta_time,step,start,stop,intervals,tolerance;
       String start_str,stop_str,step_str,tolerance_str,nx_str,ny_str,np_str,init_str,str,exe,filename;
@@ -6290,7 +6307,7 @@ algorithm
       DAELow.DAELow dlow;
       Absyn.Path class_;
       
-    case (dlow,class_,exe,filename,start,stop,intervals,tolerance,method) /* classname executable file name filename start time stop time intervals */
+    case (dlow,class_,exe,filename,start,stop,intervals,tolerance,method,_) /* classname executable file name filename start time stop time íntervals */
       equation
         delta_time = stop -. start;
         step = delta_time/.intervals;
@@ -6321,7 +6338,7 @@ algorithm
       then
         ();
         
-    case (_,_,_,_,_,_,_,_,_)
+    case (_,_,_,_,_,_,_,_,_,_)
       equation
         print("-SimCodegen.generateInitData failed\n");
       then
@@ -6436,8 +6453,8 @@ algorithm
       Integer indx;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<Absyn.Comment> comment;
-      DAE.Flow flow_;
-      DAE.Stream stream_;
+      DAE.Flow flowPrefix;
+      DAE.Stream streamPrefix;
       list<DAELow.Var> rest;
       Exp.Exp e;
       
@@ -6453,8 +6470,8 @@ algorithm
                       origVarName = origname,
                       values = dae_var_attr,
                       comment = comment,
-                      flow_ = flow_,
-                      stream_ = stream_) :: rest),
+                      flowPrefix = flowPrefix,
+                      streamPrefix = streamPrefix) :: rest),
           nxarr,nxdarr,nyarr,nparr,nystrarr,npstrarr)
       equation
         e = DAE.getStartAttr(dae_var_attr);
@@ -6472,8 +6489,8 @@ algorithm
                       origVarName = origname,
                       values = dae_var_attr,
                       comment = comment,
-                      flow_ = flow_,
-                      stream_ = stream_) :: rest),
+                      flowPrefix = flowPrefix,
+                      streamPrefix = streamPrefix) :: rest),
           nxarr,nxdarr,nyarr,nparr,nystrarr,npstrarr)
       equation
         e = DAE.getStartAttr(dae_var_attr);
@@ -6491,8 +6508,8 @@ algorithm
                       origVarName = origname,
                       values = dae_var_attr,
                       comment = comment,
-                      flow_ = flow_,
-                      stream_ = stream_) :: rest),
+                      flowPrefix = flowPrefix,
+                      streamPrefix = streamPrefix) :: rest),
           nxarr,nxdarr,nyarr,nparr,nystrarr,npstrarr)
       equation
         e = DAE.getStartAttr(dae_var_attr);
@@ -6509,8 +6526,8 @@ algorithm
                       origVarName = origname,
                       values = dae_var_attr,
                       comment = comment,
-                      flow_ = flow_,
-                      stream_ = stream_) :: rest),
+                      flowPrefix = flowPrefix,
+                      streamPrefix = streamPrefix) :: rest),
           nxarr,nxdarr,nyarr,nparr,nystrarr,npstrarr)
       equation
         e = DAE.getStartAttr(dae_var_attr);
@@ -6527,8 +6544,8 @@ algorithm
                       origVarName = origname,
                       values = dae_var_attr,
                       comment = comment,
-                      flow_ = flow_,
-                      stream_ = stream_) :: rest),
+                      flowPrefix = flowPrefix,
+                      streamPrefix = streamPrefix) :: rest),
           nxarr,nxdarr,nyarr,nparr,nystrarr,npstrarr)
       equation
         e = DAE.getStartAttr(dae_var_attr);
@@ -6545,8 +6562,8 @@ algorithm
                       origVarName = origname,
                       values = dae_var_attr,
                       comment = comment,
-                      flow_ = flow_,
-                      stream_ = stream_) :: rest),
+                      flowPrefix = flowPrefix,
+                      streamPrefix = streamPrefix) :: rest),
           nxarr,nxdarr,nyarr,nparr,nystrarr,npstrarr)
       equation
         e = DAE.getStartAttr(dae_var_attr);
@@ -6620,8 +6637,8 @@ algorithm
       Exp.ComponentRef origname;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<Absyn.Comment> comment;
-      DAE.Flow flow_;
-      DAE.Stream stream_;
+      DAE.Flow flowPrefix;
+      DAE.Stream streamPrefix;
       list<DAELow.Var> rest,vs;
       Option<Exp.Exp> start;
       Exp.Exp e;
@@ -6636,8 +6653,8 @@ algorithm
                       origVarName = origname,
                       values = dae_var_attr,
                       comment = comment,
-                      flow_ = flow_,
-                      stream_ = stream_) :: rest),
+                      flowPrefix = flowPrefix,
+                      streamPrefix = streamPrefix) :: rest),
           nxarr,nxdarr,nyarr,nparr,nystrarr,npstrarr)
       equation
         v = Values.valString(value);
@@ -6655,8 +6672,8 @@ algorithm
                       origVarName = origname,
                       values = dae_var_attr,
                       comment = comment,
-                      flow_ = flow_,
-                      stream_ = stream_) :: rest),
+                      flowPrefix = flowPrefix,
+                      streamPrefix = streamPrefix) :: rest),
           nxarr,nxdarr,nyarr,nparr,nystrarr,npstrarr)
       equation
         v = Values.valString(value);
@@ -6674,8 +6691,8 @@ algorithm
                       origVarName = origname,
                       values = dae_var_attr,
                       comment = comment,
-                      flow_ = flow_,
-                      stream_ = stream_) :: rest),
+                      flowPrefix = flowPrefix,
+                      streamPrefix = streamPrefix) :: rest),
           nxarr,nxdarr,nyarr,nparr,nystrarr,npstrarr)
       equation
         e = DAE.getStartAttr(dae_var_attr);
@@ -6694,8 +6711,8 @@ algorithm
                       origVarName = origname,
                       values = dae_var_attr,
                       comment = comment,
-                      flow_ = flow_,
-                      stream_ = stream_) :: rest),
+                      flowPrefix = flowPrefix,
+                      streamPrefix = streamPrefix) :: rest),
           nxarr,nxdarr,nyarr,nparr,nystrarr,npstrarr)
       equation
         e = DAE.getStartAttr(dae_var_attr);
@@ -7428,8 +7445,8 @@ algorithm
       DAELow.VarKind kind;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<Absyn.Comment> comment;
-      DAE.Flow flow_;
-      DAE.Stream stream_;
+      DAE.Flow flowPrefix;
+      DAE.Stream streamPrefix;
       String assignedVar,origname_str,save_stmt;
       Codegen.CFunction cfn;
       DAE.DAElist dae;
@@ -7445,7 +7462,7 @@ algorithm
         (index == wc_ind) = true;
         v = ass2[e_1 + 1];
         v_1 = v - 1;
-        ((va as DAELow.VAR(cr,kind,_,_,_,_,_,_,origname,_,dae_var_attr,comment,flow_,stream_))) = DAELow.vararrayNth(vararr, v_1);
+        ((va as DAELow.VAR(cr,kind,_,_,_,_,_,_,origname,_,dae_var_attr,comment,flowPrefix,streamPrefix))) = DAELow.vararrayNth(vararr, v_1);
         assignedVar = Exp.printComponentRefStr(cr);
         origname_str = Exp.printComponentRefStr(origname);
         (cfn,cg_id_1) = buildAssignment(dae, cr, expr, origname_str, cg_id);
@@ -8024,8 +8041,8 @@ algorithm
       DAELow.VarKind kind;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<Absyn.Comment> comment;
-      DAE.Flow flow_;
-      DAE.Stream stream_;
+      DAE.Flow flowPrefix;
+      DAE.Stream streamPrefix;
       String origname_str;
       Codegen.CFunction cfn;
       DAE.DAElist dae;
@@ -8043,7 +8060,7 @@ algorithm
         DAELow.EQUATION(e1,e2) = DAELow.equationNth(eqns, e_1);
         v = ass2[e_1 + 1];
         v_1 = v - 1;
-        ((va as DAELow.VAR(cr,kind,_,_,_,_,_,_,origname,_,dae_var_attr,comment,flow_,stream_))) = DAELow.vararrayNth(vararr, v_1);
+        ((va as DAELow.VAR(cr,kind,_,_,_,_,_,_,origname,_,dae_var_attr,comment,flowPrefix,streamPrefix))) = DAELow.vararrayNth(vararr, v_1);
         true = DAELow.isNonState(kind);
         varexp = Exp.CREF(cr,Exp.REAL());
         expr = Exp.solve(e1, e2, varexp);
@@ -8059,7 +8076,7 @@ algorithm
         DAELow.EQUATION(e1,e2) = DAELow.equationNth(eqns, e_1);
         v = ass2[e_1 + 1];
         v_1 = v - 1 "v == variable no solved in this equation" ;
-        DAELow.VAR(cr,kind,_,_,_,_,_,indx,origname,_,dae_var_attr,comment,flow_,stream_) = DAELow.vararrayNth(vararr, v_1);
+        DAELow.VAR(cr,kind,_,_,_,_,_,indx,origname,_,dae_var_attr,comment,flowPrefix,streamPrefix) = DAELow.vararrayNth(vararr, v_1);
         new_varexp = Exp.CREF(cr,Exp.REAL());
         expr = Exp.solve(e1, e2, new_varexp);
         simplify_exp = Exp.simplify(expr);
@@ -8076,7 +8093,7 @@ algorithm
         DAELow.EQUATION(e1,e2) = DAELow.equationNth(eqns, e_1);
         v = ass2[e_1 + 1];
         v_1 = v - 1 "v==variable no solved in this equation" ;
-        DAELow.VAR(cr,_,_,_,_,_,_,_,origname,_,dae_var_attr,comment,flow_,stream_) = DAELow.vararrayNth(vararr, v_1);
+        DAELow.VAR(cr,_,_,_,_,_,_,_,origname,_,dae_var_attr,comment,flowPrefix,streamPrefix) = DAELow.vararrayNth(vararr, v_1);
         varexp = Exp.CREF(cr,Exp.REAL());
         failure(_ = Exp.solve(e1, e2, varexp));
         print("nonlinear equation not implemented yet\n");
@@ -8151,8 +8168,8 @@ algorithm
       DAELow.VarKind kind;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<Absyn.Comment> comment;
-      DAE.Flow flow_;
-      DAE.Stream stream_;
+      DAE.Flow flowPrefix;
+      DAE.Stream streamPrefix;
       String origname_str,indx_str,cr_str;
       Codegen.CFunction cfn;
       DAE.DAElist dae;
@@ -8176,7 +8193,7 @@ algorithm
         DAELow.EQUATION(e1,e2) = DAELow.equationNth(eqns, e_1);
         v = ass2[e_1 + 1];
         v_1 = v - 1;
-        ((va as DAELow.VAR(cr,kind,_,_,_,_,_,_,origname,_,dae_var_attr,comment,flow_,stream_))) = DAELow.vararrayNth(vararr, v_1);
+        ((va as DAELow.VAR(cr,kind,_,_,_,_,_,_,origname,_,dae_var_attr,comment,flowPrefix,streamPrefix))) = DAELow.vararrayNth(vararr, v_1);
         true = DAELow.isNonState(kind);
         varexp = Exp.CREF(cr,Exp.REAL()) "print \"Solving for non-states\\n\" &" ;
         expr = Exp.solve(e1, e2, varexp);
@@ -8193,12 +8210,12 @@ algorithm
         DAELow.EQUATION(e1,e2) = DAELow.equationNth(eqns, e_1);
         v = ass2[e_1 + 1];
         v_1 = v - 1;
-        DAELow.VAR(cr,kind,_,_,_,_,_,indx,origname,_,dae_var_attr,comment,flow_,stream_) = DAELow.vararrayNth(vararr, v_1);
+        DAELow.VAR(cr,kind,_,_,_,_,_,indx,origname,_,dae_var_attr,comment,flowPrefix,streamPrefix) = DAELow.vararrayNth(vararr, v_1);
         indx_str = intString(indx);
         exp = Exp.BINARY(e1,Exp.SUB(Exp.REAL()),e2);
         simplify_exp = Exp.simplify(exp);
         cr_str = Util.stringAppendList({"delta[",indx_str,"]"}) "Use array named \'delta\' for residuals" ;
-        new_cr = Exp.CREF_IDENT(cr_str,{});
+        new_cr = Exp.CREF_IDENT(cr_str,Exp.REAL(),{});
         origname_str = Exp.printComponentRefStr(origname);
         (cfn,cg_id_1) = buildAssignment(dae, new_cr, simplify_exp, origname_str, cg_id);
       then
@@ -8219,7 +8236,7 @@ algorithm
         DAELow.EQUATION(e1,e2) = DAELow.equationNth(eqns, e_1);
         v = ass2[e_1 + 1];
         v_1 = v - 1 "v==variable no solved in this equation" ;
-        DAELow.VAR(cr,_,_,_,_,_,_,_,origname,_,dae_var_attr,comment,flow_,stream_) = DAELow.vararrayNth(vararr, v_1);
+        DAELow.VAR(cr,_,_,_,_,_,_,_,origname,_,dae_var_attr,comment,flowPrefix,streamPrefix) = DAELow.vararrayNth(vararr, v_1);
         varexp = Exp.CREF(cr,Exp.REAL());
         failure(_ = Exp.solve(e1, e2, varexp));
         print("nonlinear equation not implemented yet\n");
@@ -8386,13 +8403,13 @@ algorithm
   matchcontinue (inExp,inInteger)
     local
       String s,s_1,s_2,res,sym,s1,s2,s3,s4,s_3,res_1,ifstr,thenstr,elsestr,s_4,slast,argstr,fs,s5,s_5,res2,crstr,dimstr,str,expstr,iterstr,id;
-      Integer x,pri2_1,pri2,pri3,pri1,ival,i;
+      Integer x,pri2_1,pri2,pri3,pri1,ival;
       Real two_1,two,rval;
       Exp.ComponentRef c;
       Exp.Exp e1,e2,e21,e22,e,t,f,start,stop,step,cr,dim,exp,iterexp;
       Exp.Operator op;
       Exp.Type ty,ty2,REAL;
-      list<Exp.Exp> args,es;
+      list<Exp.Exp> args,es,sub;
       Boolean builtin;
       Absyn.Path fcn;
       list<Exp.ComponentRef> cref_list;
@@ -8593,7 +8610,7 @@ algorithm
 
     case (Exp.CALL(path = fcn,expLst = args,builtin = (builtin as true)),_)
       equation
-        fs = Absyn.pathString2(fcn, "_");
+        fs = ModUtil.pathStringReplaceDot(fcn, "_");
         argstr = Exp.printListStr(args, printExpCppStr, ",");
         s = Util.stringAppendList({fs,"(",argstr,")"});
       then
@@ -8603,7 +8620,7 @@ algorithm
 	   underscore, to distringuish betweeen the lib function for external
 	   functions and the wrapper function. */
       equation
-        fs = Absyn.pathString2(fcn, "_");
+        fs = ModUtil.pathStringReplaceDot(fcn, "_");
         argstr = Exp.printListStr(args, printExpCppStr, ",");
         s = Util.stringAppendList({"_",fs,"(",argstr,").",fs,"_rettype_1"});
       then
@@ -8698,14 +8715,14 @@ algorithm
       then
         s;
 
-    case (Exp.ASUB(exp = e,sub = i),pri1)
+    case (Exp.ASUB(exp = e,sub = {e1}),pri1)
       equation
         pri2 = 51;
         cref_list = Exp.getCrefFromExp(e);
         (s1,pri3) = Exp.printLeftparStr(pri1, pri2);
         s2 = printExp2Str(e, pri3);
         s3 = Exp.printRightparStr(pri1, pri2);
-        s4 = intString(i);
+        s4 = printExp2Str(e1, pri1);
         s = stringAppend(s1, s2);
         s_1 = stringAppend(s, s3);
         s_2 = stringAppend(s_1, "[");
@@ -8836,6 +8853,8 @@ algorithm
         fcallexps_1 = Util.listSelect(fcallexps, isNotBuiltinCall);
         calledfuncs = Util.listMap(fcallexps_1, getCallPath);
         res1 = removeDuplicatePaths(calledfuncs);
+        // adrpo: 2009-09-10 remove our own function if there is a recursive call!
+        res1 = removePathFromList(res1, path);
         Debug.fprint("info", "Found called functions: ") "debug" ;
         debugpathstrs = Util.listMap(res1, Absyn.pathString) "debug" ;
         debugpathstr = Util.stringDelimitList(debugpathstrs, ", ") "debug" ;

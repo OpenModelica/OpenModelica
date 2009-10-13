@@ -1,0 +1,51 @@
+# Peter Aronsson MathCore Engineering AB
+# Peter.aronsson@mathcore.com
+
+USE_CORBA = /DUSE_CORBA
+CORBAHOME = $(OMDEV)
+RMLINCLUDE = $(OMDEV)\tools\rml\include\plain
+
+INCLUDES = $(INCP) /I. /I $(OMDEV)\tools\rml\include\plain /I..\..\c_runtime /I..\..\c_runtime\superlu\include /I..\ /I$(OMDEV)\include\mico-win32-msvc /Ilpsolve
+
+CFLAGS = /O2 /Ot $(INCLUDES) /D "WIN32" /D "NDEBUG" /D "_LIB"  /D "_MBCS" /FD /EHsc /MT /GS- /W2 /c /TC
+CXXFLAGS = /O2 /Ot $(INCLUDES) /D "WIN32" /D "NDEBUG" /D "_LIB"  /D "_MBCS" /FD /EHsc /MT /GS- /W2 /c /TP
+	 
+CORBASRC = omc_communication.cc omc_communication_impl.cpp corbaimpl.cpp
+CORBAINCL = -I$(CORBAHOME)/include/mico-msys-mingw/
+
+SHELL	= /bin/sh
+CC	= cl
+IDL	= $(OMDEV)\bin\mico\idl
+SRC	= rtopts.c socketimpl.c printimpl.c systemimpl.c settingsimpl.c
+CPPSRC  = ptolemyio.cpp daeext.cpp ErrorMessage.cpp errorext.cpp optmanager.cpp unitparser.cpp unitparserext.cpp $(CORBASRC)
+
+OBJ = rtopts.obj socketimpl.obj printimpl.obj systemimpl.obj settingsimpl.obj \
+ptolemyio.obj daeext.obj ErrorMessage.obj errorext.obj optmanager.obj \
+omc_communication.obj omc_communication_impl.obj corbaimpl.obj unitparser.obj unitparserext.obj 
+
+all: $(OBJ) runtimevc.lib
+
+runtimevc.lib: $(OBJ)
+	LIB /out:runtimevc.lib $(OBJ)
+
+.cpp.obj:
+	$(CC) $(CXXFLAGS) $<
+
+.c.obj:
+	$(CC) $(CFLAGS) $<
+	
+.cc.obj:
+	$(CC) $(CXXFLAGS) $<
+
+	
+
+omc_communication.cc omc_communication.h : omc_communication.idl
+	$(IDL) omc_communication.idl
+
+
+omc_communication.h: omc_communication_impl.cpp corbaimpl.cpp
+
+clean:
+	del  *.obj omc_communication.cc omc_communication.h
+
+

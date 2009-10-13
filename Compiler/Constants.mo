@@ -39,11 +39,16 @@ package Constants
 
 // ************************ Modelica 1.x Annotations! *********************** //
 public constant String annotationsModelica_1_x = "
-Not implemented yet!
+
+package GraphicalAnnotationsProgram____ end GraphicalAnnotationsProgram____;
+
+// Not implemented yet!
 ";
 
 // ************************ Modelica 2.x Annotations! *********************** //
 public constant String annotationsModelica_2_x = "
+
+package GraphicalAnnotationsProgram____  end GraphicalAnnotationsProgram____;
 
 // Constants.diagramProgram:
 record GraphicItem
@@ -58,11 +63,11 @@ record Diagram
   CoordinateSystem coordinateSystem(extent={{-100.0,-100.0},{100.0,100.0}});
 end Diagram;
 
-type LinePattern= enumeration(None, Solid, Dash, Dot, DashDot, DashDot , DashDotDot );
-type Arrow= enumeration(None, Open, Filled, Filled , Half );
-type FillPattern= enumeration(None, Solid, Horizontal, Vertical, Cross, Forward, Backward, CrossDiag, HorizontalCylinder, VerticalCylinder, VerticalCylinder , Sphere );
-type BorderPattern= enumeration(None, Raised, Sunken, Sunken , Engraved );
-type TextStyle= enumeration(Bold, Italic, Italic , Underline );
+type LinePattern= enumeration(None, Solid, Dash, Dot, DashDot, DashDotDot );
+type Arrow= enumeration(None, Open, Filled , Half );
+type FillPattern= enumeration(None, Solid, Horizontal, Vertical, Cross, Forward, Backward, CrossDiag, HorizontalCylinder, VerticalCylinder, Sphere );
+type BorderPattern= enumeration(None, Raised, Sunken, Engraved );
+type TextStyle= enumeration(Bold, Italic, Underline );
   
 record Line
   Boolean visible=true;
@@ -159,10 +164,13 @@ record Placement
   Transformation transformation;
   Transformation iconTransformation;
 end Placement;
+
 ";
 
 // ************************ Modelica 3.x Annotations! *********************** //
 public constant String annotationsModelica_3_x = "
+
+package GraphicalAnnotationsProgram____ end     GraphicalAnnotationsProgram____;
 
 // type DrawingUnit = Real(final unit=\"mm\");
 // type Point = DrawingUnit[2] \"{x, y}\";
@@ -179,9 +187,8 @@ record CoordinateSystem
   Real extent[2,2](final unit=\"mm\");
   Boolean preserveAspectRatio=true;
   Real initialScale = 0.1;
-  Real grid[2];
+  Real grid[2](final unit=\"mm\") = {1.0, 1.0};
 end CoordinateSystem;
-
 
 // example 
 // CoordinateSystem(extent = {{-10, -10}, {10, 10}});
@@ -189,12 +196,12 @@ end CoordinateSystem;
 
 record Icon \"Representation of the icon layer\"
   CoordinateSystem coordinateSystem(extent = {{-100, -100}, {100, 100}});
-  GraphicItem[:] graphics;
+  //GraphicItem[:] graphics;
 end Icon;
 
 record Diagram \"Representation of the diagram layer\"
   CoordinateSystem coordinateSystem(extent = {{-100, -100}, {100, 100}});
-  GraphicItem[:] graphics;
+  //GraphicItem[:] graphics;
 end Diagram;
 
 type Color = Integer[3](min=0, max=255) \"RGB representation\";
@@ -240,7 +247,12 @@ record DiagramMap
 end DiagramMap;
 
 record Line
-  extends GraphicItem;
+  //extends GraphicItem;
+  Boolean visible = true;
+  Real origin[2](final unit=\"mm\") = {0.0, 0.0};
+  Real rotation(quantity=\"angle\", unit=\"deg\")=0;  
+  // end GraphicItem
+  
   Real points[2,:](final unit=\"mm\");
   Integer color[3] = {0, 0, 0};
   LinePattern pattern = LinePattern.Solid;
@@ -251,23 +263,79 @@ record Line
 end Line;
 
 record Polygon
-  extends GraphicItem;
-  extends FilledShape;
+  //extends GraphicItem;
+  Boolean visible = true;
+  Real origin[2](final unit=\"mm\") = {0.0, 0.0};
+  Real rotation(quantity=\"angle\", unit=\"deg\")=0;
+  // end GraphicItem
+  
+  //extends FilledShape;
+  Integer lineColor[3] = {0, 0, 0} \"Color of border line\";
+  Integer fillColor[3] = {0, 0, 0} \"Interior fill color\";
+  LinePattern pattern = LinePattern.Solid \"Border line pattern\";
+  FillPattern fillPattern = FillPattern.None \"Interior fill pattern\";
+  Real lineThickness = 0.25 \"Line thickness\";
+  // end FilledShape
+    
   Real points[2,:](final unit=\"mm\");
   Smooth smooth = Smooth.None \"Spline outline\";
 end Polygon;
 
+record Rectangle
+  //extends GraphicItem;
+  Boolean visible = true;
+  Real origin[2](final unit=\"mm\") = {0.0, 0.0};
+  Real rotation(quantity=\"angle\", unit=\"deg\")=0;
+  // end GraphicItem
+  
+  //extends FilledShape;
+  Integer lineColor[3] = {0, 0, 0} \"Color of border line\";
+  Integer fillColor[3] = {0, 0, 0} \"Interior fill color\";
+  LinePattern pattern = LinePattern.Solid \"Border line pattern\";
+  FillPattern fillPattern = FillPattern.None \"Interior fill pattern\";
+  Real lineThickness = 0.25 \"Line thickness\";
+  // end FilledShape
+  
+  BorderPattern borderPattern = BorderPattern.None;
+  Real extent[2,2](final unit=\"mm\");
+  Real radius(final unit=\"mm\") = 0 \"Corner radius\";
+end Rectangle;
+
 record Ellipse
-  extends GraphicItem;
-  extends FilledShape;
+  //extends GraphicItem;
+  Boolean visible = true;
+  Real origin[2](final unit=\"mm\") = {0.0, 0.0};
+  Real rotation(quantity=\"angle\", unit=\"deg\")=0;
+  // end GraphicItem
+  
+  //extends FilledShape;
+  Integer lineColor[3] = {0, 0, 0} \"Color of border line\";
+  Integer fillColor[3] = {0, 0, 0} \"Interior fill color\";
+  LinePattern pattern = LinePattern.Solid \"Border line pattern\";
+  FillPattern fillPattern = FillPattern.None \"Interior fill pattern\";
+  Real lineThickness = 0.25 \"Line thickness\";
+  // end FilledShape  
+  
   Real extent[2,2](final unit=\"mm\");
   Real startAngle(quantity=\"angle\", unit=\"deg\")=0;
   Real endAngle(quantity=\"angle\", unit=\"deg\")=360;
 end Ellipse;
 
 record Text
-  extends GraphicItem;
-  extends FilledShape;
+  //extends GraphicItem;
+  Boolean visible = true;
+  Real origin[2](final unit=\"mm\") = {0.0, 0.0};
+  Real rotation(quantity=\"angle\", unit=\"deg\")=0;
+  // end GraphicItem
+  
+  //extends FilledShape;
+  Integer lineColor[3] = {0, 0, 0} \"Color of border line\";
+  Integer fillColor[3] = {0, 0, 0} \"Interior fill color\";
+  LinePattern pattern = LinePattern.Solid \"Border line pattern\";
+  FillPattern fillPattern = FillPattern.None \"Interior fill pattern\";
+  Real lineThickness = 0.25 \"Line thickness\";
+  // end FilledShape  
+  
   Real extent[2,2](final unit=\"mm\");
   String textString;
   Real fontSize = 0 \"unit pt\";
@@ -277,7 +345,12 @@ record Text
 end Text;
 
 record Bitmap
-  extends GraphicItem;
+  //extends GraphicItem;
+  Boolean visible = true;
+  Real origin[2](final unit=\"mm\") = {0.0, 0.0};
+  Real rotation(quantity=\"angle\", unit=\"deg\")=0;
+  // end GraphicItem
+  
   Real extent[2,2](final unit=\"mm\");
   String fileName \"Name of bitmap file\";
   String imageSource \"Base64 representation of bitmap\";

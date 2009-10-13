@@ -1,9 +1,9 @@
 /*
  * This file is a  part of OpenModelica.
  *
- * Copyright (c) 1998-2008, LinkÃ¶pings University,
+ * Copyright (c) 1998-2009, Linköpings University,
  * Department of Computer and Information Science,
- * SE-58183 LinkÃ¶ping, Sweden.
+ * SE-58183 Linköping, Sweden.
  *
  * This program is distributed  WITHOUT ANY WARRANTY; without
  * even the implied warranty of  MERCHANTABILITY or FITNESS
@@ -878,7 +878,7 @@ algorithm
         Exp.ComponentRef cref_c;
         String cref;
       case {}  then ();
-      case ((crefIndex as DAELow.CREFINDEX(cref=SOME(cref_c),index=SOME(index_c))) :: crefIndexList)
+      case ((crefIndex as DAELow.CREFINDEX(cref=cref_c,index=index_c)) :: crefIndexList)
       equation
         cref=Exp.crefStr(cref_c);
         dumpStrOpenTagAttr(ELEMENT,ID,intString(index_c));
@@ -1124,12 +1124,17 @@ sudh as:
        Option<Exp.Exp> fixed;
        Option<DAE.StateSelect> stateSel;
        Exp.Exp addMMLCode;
-   case (SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),NONE(),NONE(),NONE())),_,_) then ();
-   case (SOME(DAE.VAR_ATTR_INT(NONE(),(NONE(),NONE()),NONE(),NONE())),_,_) then ();
-   case (SOME(DAE.VAR_ATTR_BOOL(NONE(),NONE(),NONE())),_,_) then ();
-   case (SOME(DAE.VAR_ATTR_STRING(NONE(),NONE())),_,_) then ();
-   case (SOME(DAE.VAR_ATTR_ENUMERATION(NONE(),(NONE(),NONE()),NONE(),NONE())),_,_) then ();
-   case (SOME(DAE.VAR_ATTR_REAL(quant,unit,displayUnit,min_max,Initial,fixed,nominal,stateSel)),Content,addMMLCode)
+       Option<Exp.Exp> equationBound;
+       Option<Boolean> isProtected;
+       Option<Boolean> finalPrefix;       
+       
+   case (SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),NONE(),NONE(),NONE(),_,_,_)),_,_) then ();
+   case (SOME(DAE.VAR_ATTR_INT(NONE(),(NONE(),NONE()),NONE(),NONE(),_,_,_)),_,_) then ();
+   case (SOME(DAE.VAR_ATTR_BOOL(NONE(),NONE(),NONE(),_,_,_)),_,_) then ();
+   case (SOME(DAE.VAR_ATTR_STRING(NONE(),NONE(),_,_,_)),_,_) then ();
+   case (SOME(DAE.VAR_ATTR_ENUMERATION(NONE(),(NONE(),NONE()),NONE(),NONE(),_,_,_)),_,_) then ();
+   case (SOME(DAE.VAR_ATTR_REAL(quant,unit,displayUnit,min_max,Initial,fixed,nominal,stateSel,
+                                equationBound,isProtected,finalPrefix)),Content,addMMLCode)
       equation
         dumpStrOpenTag(Content);
         dumpOptExp(quant,VAR_ATTR_QUANTITY,addMMLCode);
@@ -1141,9 +1146,10 @@ sudh as:
         dumpOptExp(nominal,VAR_ATTR_NOMINAL,addMMLCode);
         dumpOptExp(Initial,VAR_ATTR_INITIALVALUE,addMMLCode);
         dumpOptExp(fixed,VAR_ATTR_FIXED,addMMLCode);
+        // adrpo: TODO! FIXME! add the new information about equationBound,isProtected,finalPrefix
         dumpStrCloseTag(Content);
       then();
-    case (SOME(DAE.VAR_ATTR_INT(quant,min_max,Initial,fixed)),Content,addMMLCode)
+    case (SOME(DAE.VAR_ATTR_INT(quant,min_max,Initial,fixed,equationBound,isProtected,finalPrefix)),Content,addMMLCode)
       equation
         dumpStrOpenTag(Content);
         dumpOptExp(quant,VAR_ATTR_QUANTITY,addMMLCode);
@@ -1153,7 +1159,7 @@ sudh as:
         dumpOptExp(fixed,VAR_ATTR_FIXED,addMMLCode);
         dumpStrCloseTag(Content);
       then();
-    case (SOME(DAE.VAR_ATTR_BOOL(quant,Initial,fixed)),Content,addMMLCode)
+    case (SOME(DAE.VAR_ATTR_BOOL(quant,Initial,fixed,equationBound,isProtected,finalPrefix)),Content,addMMLCode)
       equation
         dumpStrOpenTag(Content);
         dumpOptExp(quant,VAR_ATTR_QUANTITY,addMMLCode);
@@ -1161,14 +1167,14 @@ sudh as:
         dumpOptExp(fixed,VAR_ATTR_FIXED,addMMLCode);
         dumpStrCloseTag(Content);
       then();
-    case (SOME(DAE.VAR_ATTR_STRING(quant,Initial)),Content,addMMLCode)
+    case (SOME(DAE.VAR_ATTR_STRING(quant,Initial,_,_,_)),Content,addMMLCode)
       equation
         dumpStrOpenTag(Content);
         dumpOptExp(quant,VAR_ATTR_QUANTITY,addMMLCode);
         dumpOptExp(Initial,VAR_ATTR_INITIALVALUE,addMMLCode);
         dumpStrCloseTag(Content);
       then();
-    case (SOME(DAE.VAR_ATTR_ENUMERATION(quant,min_max,Initial,fixed)),Content,addMMLCode)
+    case (SOME(DAE.VAR_ATTR_ENUMERATION(quant,min_max,Initial,fixed,_,_,_)),Content,addMMLCode)
       equation
         dumpStrOpenTag(Content);
         dumpOptExp(quant,VAR_ATTR_QUANTITY,addMMLCode);
@@ -1803,12 +1809,12 @@ algorithm
         dumpStrCloseTag(MathMLOperator);
         dumpStrCloseTag(MathMLApply);
       then ();
-    case (e as Exp.ASUB(exp = e1,sub = i))
+    case (e as Exp.ASUB(exp = e1,sub = {e2}))
       equation
         dumpStrOpenTag(MathMLApply);
         dumpStrVoidTag(MathMLSelector);
         dumpExp2(e1);
-        dumpStrMathMLNumber(intString(i));
+        dumpExp2(e2);
         dumpStrCloseTag(MathMLApply);
       then ();
     case (Exp.SIZE(exp = cr,sz = SOME(dim)))
@@ -2055,7 +2061,7 @@ algorithm
       String s_path;
     equation
       s_path = Absyn.pathString(s);
-      fn_name_str = ModUtil.pathString2(s, "_");
+      fn_name_str = ModUtil.pathStringReplaceDot(s, "_");
       fn_name_str = stringAppend("_", fn_name_str);
       Print.printBuf("\n<");Print.printBuf(FUNCTION);
       Print.printBuf(" ");Print.printBuf(FUNCTION_ORIGNAME);Print.printBuf("=\"");Print.printBuf(s_path);Print.printBuf("\"");
@@ -2859,7 +2865,7 @@ algorithm
         String str_s;
         Integer index_s;
       case {} then ();
-      case ((stringIndex as DAELow.STRINGINDEX(str=SOME(str_s),index=SOME(index_s))) :: stringIndexList)
+      case ((stringIndex as DAELow.STRINGINDEX(str=str_s,index=index_s)) :: stringIndexList)
         local Boolean ver;
       equation
         dumpStrOpenTagAttr(ELEMENT,ID,intString(index_s));
@@ -3123,21 +3129,21 @@ content of a variable. In particular it takes:
 * varFixed: fixed attribute for variables (default fixed
   value is used if not found. Default is true for parameters
   (and constants) and false for variables)
-* flow_: tells if it's a flow variable or not
-* stream_: tells if it's a stream variable or not
+* flowPrefix: tells if it's a flow variable or not
+* streamPrefix: tells if it's a stream variable or not
 * comment: a comment associated to the variable.
 Please note that all the inputs must be passed as String variables.
 "
-  input String varno,cr,kind,dir,var_type,indx,old_name,varFixed,flow_,stream_,comment;
+  input String varno,cr,kind,dir,var_type,indx,old_name,varFixed,flowPrefix,streamPrefix,comment;
 algorithm
   _:=
-  matchcontinue (varno,cr,kind,dir,var_type,indx,old_name,varFixed,flow_,stream_,comment)
+  matchcontinue (varno,cr,kind,dir,var_type,indx,old_name,varFixed,flowPrefix,streamPrefix,comment)
       //local String str;
-    case (varno,cr,kind,dir,var_type,indx,old_name,varFixed,flow_,stream_,"")
+    case (varno,cr,kind,dir,var_type,indx,old_name,varFixed,flowPrefix,streamPrefix,"")
     equation
     /*
       str= Util.stringAppendList({"\n<Variable id=\"",varno,"\" name=\"",cr,"\" varKind=\"",kind,"\" varDirection=\"",dir,"\" varType=\"",var_type,"\" index=\"",indx,"\" origName=\"",
-            old_name,"\" fixed=\"",varFixed,"\" flow=\"",flow_,"\" stream=\"",stream_,"\">"});
+            old_name,"\" fixed=\"",varFixed,"\" flow=\"",flowPrefix,"\" stream=\"",streamPrefix,"\">"});
     then str;
     */
       Print.printBuf("\n<");Print.printBuf(VARIABLE);Print.printBuf(" ");Print.printBuf(VAR_ID);Print.printBuf("=\"");Print.printBuf(varno);
@@ -3148,11 +3154,11 @@ algorithm
       Print.printBuf("\" ");Print.printBuf(VAR_INDEX);Print.printBuf("=\"");Print.printBuf(indx);
       Print.printBuf("\" ");Print.printBuf(VAR_ORIGNAME);Print.printBuf("=\"");Print.printBuf(old_name);
       Print.printBuf("\" ");Print.printBuf(VAR_FIXED);Print.printBuf("=\"");Print.printBuf(varFixed);
-      Print.printBuf("\" ");Print.printBuf(VAR_FLOW);Print.printBuf("=\"");Print.printBuf(flow_);
-      Print.printBuf("\" ");Print.printBuf(VAR_STREAM);Print.printBuf("=\"");Print.printBuf(stream_);
+      Print.printBuf("\" ");Print.printBuf(VAR_FLOW);Print.printBuf("=\"");Print.printBuf(flowPrefix);
+      Print.printBuf("\" ");Print.printBuf(VAR_STREAM);Print.printBuf("=\"");Print.printBuf(streamPrefix);
       Print.printBuf("\">");
     then();
-    case (varno,cr,kind,dir,var_type,indx,old_name,varFixed,flow_,stream_,comment)
+    case (varno,cr,kind,dir,var_type,indx,old_name,varFixed,flowPrefix,streamPrefix,comment)
     equation
       Print.printBuf("\n<");Print.printBuf(VARIABLE);Print.printBuf(" ");Print.printBuf(VAR_ID);Print.printBuf("=\"");Print.printBuf(varno);
       Print.printBuf("\" ");Print.printBuf(VAR_NAME);Print.printBuf("=\"");Print.printBuf(cr);
@@ -3162,14 +3168,14 @@ algorithm
       Print.printBuf("\" ");Print.printBuf(VAR_INDEX);Print.printBuf("=\"");Print.printBuf(indx);
       Print.printBuf("\" ");Print.printBuf(VAR_ORIGNAME);Print.printBuf("=\"");Print.printBuf(old_name);
       Print.printBuf("\" ");Print.printBuf(VAR_FIXED);Print.printBuf("=\"");Print.printBuf(varFixed);
-      Print.printBuf("\" ");Print.printBuf(VAR_FLOW);Print.printBuf("=\"");Print.printBuf(flow_);
-      Print.printBuf("\" ");Print.printBuf(VAR_STREAM);Print.printBuf("=\"");Print.printBuf(stream_);
+      Print.printBuf("\" ");Print.printBuf(VAR_FLOW);Print.printBuf("=\"");Print.printBuf(flowPrefix);
+      Print.printBuf("\" ");Print.printBuf(VAR_STREAM);Print.printBuf("=\"");Print.printBuf(streamPrefix);
       Print.printBuf("\" ");Print.printBuf(VAR_COMMENT);Print.printBuf("=\"");Print.printBuf(comment);
       Print.printBuf("\">");
     then ();
       /*
       str= Util.stringAppendList({"\n<Variable id=\"",varno,"\" name=\"",cr,"\" varKind=\"",kind,"\" varDirection=\"",dir,"\" varType=\"",var_type,"\" index=\"",indx,"\" origName=\"",
-            old_name,"\" fixed=\"",varFixed,"\" flow=\"",flow_,"\"  stream=\"",stream_,"\" comment=\"",comment,"\">"});
+            old_name,"\" fixed=\"",varFixed,"\" flow=\"",flowPrefix,"\"  stream=\"",streamPrefix,"\" comment=\"",comment,"\">"});
     then str;
     */
   end matchcontinue;
@@ -3293,8 +3299,8 @@ algorithm
       list<Absyn.Path> paths;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<Absyn.Comment> comment;
-      DAE.Flow flow_;
-      DAE.Stream stream_;
+      DAE.Flow flowPrefix;
+      DAE.Stream streamPrefix;
       list<DAELow.Var> xs;
       DAE.Type var_type;
       DAE.InstDims arry_Dim;
@@ -3314,12 +3320,12 @@ algorithm
                             className = paths,
                             values = dae_var_attr,
                             comment = comment,
-                            flow_ = flow_,
-                            stream_ = stream_)) :: xs),varno,addMMLCode)
+                            flowPrefix = flowPrefix,
+                            streamPrefix = streamPrefix)) :: xs),varno,addMMLCode)
       equation
         dumpVariable(intString(varno),Exp.printComponentRefStr(cr),dumpKind(kind),dumpDirectionStr(dir),dumpTypeStr(var_type),
-                     intString(indx),Exp.crefStr(old_name),Util.boolString(DAELow.varFixed(v)),dumpFlowStr(flow_),
-                     dumpStreamStr(stream_),unparseCommentOptionNoAnnotation(comment));
+                     intString(indx),Exp.crefStr(old_name),Util.boolString(DAELow.varFixed(v)),dumpFlowStr(flowPrefix),
+                     dumpStreamStr(streamPrefix),unparseCommentOptionNoAnnotation(comment));
         dumpBindValueExpression(e,b,addMMLCode);
         //The command below adds information to the XML about the dimension of the
         //containing vector, in the casse the variable is an element of a vector.
@@ -3361,8 +3367,8 @@ algorithm
       list<Absyn.Path> paths;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<Absyn.Comment> comment;
-      DAE.Flow flow_;
-      DAE.Stream stream_;
+      DAE.Flow flowPrefix;
+      DAE.Stream streamPrefix;
       list<DAELow.Var> xs;
       DAE.Type var_type;
       DAE.InstDims arry_Dim;
@@ -3382,11 +3388,11 @@ algorithm
                             className = paths,
                             values = dae_var_attr,
                             comment = comment,
-                            flow_ = flow_,
-                            stream_ = stream_)) :: xs),crefIdxLstArr,strIdxLstArr,varno,addMMLCode)
+                            flowPrefix = flowPrefix,
+                            streamPrefix = streamPrefix)) :: xs),crefIdxLstArr,strIdxLstArr,varno,addMMLCode)
       equation
         dumpVariable(intString(varno),Exp.printComponentRefStr(cr),dumpKind(kind),dumpDirectionStr(dir),dumpTypeStr(var_type),intString(indx),
-                        Exp.crefStr(old_name),Util.boolString(DAELow.varFixed(v)),dumpFlowStr(flow_),dumpStreamStr(stream_),
+                        Exp.crefStr(old_name),Util.boolString(DAELow.varFixed(v)),dumpFlowStr(flowPrefix),dumpStreamStr(streamPrefix),
                         Dump.unparseCommentOption(comment));
         dumpBindValueExpression(e,b,addMMLCode);
         //The command below adds information to the XML about the dimension of the
@@ -3578,8 +3584,8 @@ algorithm
         p = Exp.expPriority(e);
         p1 = Exp.expPriority(e1);
         p2 = Exp.expPriority(e2);
-        s1_1 = Exp.parenthesize(s1, p1, p);
-        s2_1 = Exp.parenthesize(s2, p2, p);
+        s1_1 = Exp.parenthesize(s1, p1, p, false);
+        s2_1 = Exp.parenthesize(s2, p2, p, true);
         s = stringAppend(s1_1, sym);
         s_1 = stringAppend(s, s2_1);
       then
@@ -3590,7 +3596,7 @@ algorithm
         s = printExpStr(e1);
         p = Exp.expPriority(e);
         p1 = Exp.expPriority(e1);
-        s_1 = Exp.parenthesize(s, p1, p);
+        s_1 = Exp.parenthesize(s, p1, p, false);
         s_2 = stringAppend(sym, s_1);
       then
         s_2;
@@ -3602,8 +3608,8 @@ algorithm
         p = Exp.expPriority(e);
         p1 = Exp.expPriority(e1);
         p2 = Exp.expPriority(e2);
-        s1_1 = Exp.parenthesize(s1, p1, p);
-        s2_1 = Exp.parenthesize(s2, p2, p);
+        s1_1 = Exp.parenthesize(s1, p1, p, false);
+        s2_1 = Exp.parenthesize(s2, p2, p, true);
         s = stringAppend(s1_1, sym);
         s_1 = stringAppend(s, s2_1);
       then
@@ -3614,7 +3620,7 @@ algorithm
         s = printExpStr(e1);
         p = Exp.expPriority(e);
         p1 = Exp.expPriority(e1);
-        s_1 = Exp.parenthesize(s, p1, p);
+        s_1 = Exp.parenthesize(s, p1, p, false);
         s_2 = stringAppend(sym, s_1);
       then
         s_2;
@@ -3626,8 +3632,8 @@ algorithm
         p = Exp.expPriority(e);
         p1 = Exp.expPriority(e1);
         p2 = Exp.expPriority(e2);
-        s1_1 = Exp.parenthesize(s1, p1, p);
-        s2_1 = Exp.parenthesize(s2, p1, p);
+        s1_1 = Exp.parenthesize(s1, p1, p, false);
+        s2_1 = Exp.parenthesize(s2, p1, p, true);
         s = stringAppend(s1_1, sym);
         s_1 = stringAppend(s, s2_1);
       then
@@ -3641,9 +3647,9 @@ algorithm
         pc = Exp.expPriority(cond);
         pt = Exp.expPriority(tb);
         pf = Exp.expPriority(fb);
-        cs_1 = Exp.parenthesize(cs, pc, p);
-        ts_1 = Exp.parenthesize(ts, pt, p);
-        fs_1 = Exp.parenthesize(fs, pf, p);
+        cs_1 = Exp.parenthesize(cs, pc, p, false);
+        ts_1 = Exp.parenthesize(ts, pt, p, false);
+        fs_1 = Exp.parenthesize(fs, pf, p, false);
         str = Util.stringAppendList({"if ",cs_1," then ",ts_1," else ",fs_1});
       then
         str;
@@ -3687,8 +3693,8 @@ algorithm
         p = Exp.expPriority(e);
         pstart = Exp.expPriority(start);
         pstop = Exp.expPriority(stop);
-        s1_1 = Exp.parenthesize(s1, pstart, p);
-        s3_1 = Exp.parenthesize(s3, pstop, p);
+        s1_1 = Exp.parenthesize(s1, pstart, p, false);
+        s3_1 = Exp.parenthesize(s3, pstop, p, false);
         s = Util.stringAppendList({s1_1,":",s3_1});
       then
         s;
@@ -3701,9 +3707,9 @@ algorithm
         pstart = Exp.expPriority(start);
         pstop = Exp.expPriority(stop);
         pstep = Exp.expPriority(step);
-        s1_1 = Exp.parenthesize(s1, pstart, p);
-        s3_1 = Exp.parenthesize(s3, pstop, p);
-        s2_1 = Exp.parenthesize(s2, pstep, p);
+        s1_1 = Exp.parenthesize(s1, pstart, p, false);
+        s3_1 = Exp.parenthesize(s3, pstop, p, false);
+        s2_1 = Exp.parenthesize(s2, pstep, p, false);
         s = Util.stringAppendList({s1_1,":",s2_1,":",s3_1});
       then
         s;
@@ -3742,13 +3748,13 @@ algorithm
         res = Util.stringAppendList({"CAST(",str,", ",s,")"});
       then
         res;
-    case (e as Exp.ASUB(exp = e1,sub = i))
+    case (e as Exp.ASUB(exp = e1,sub = {e2}))
       equation
         p = Exp.expPriority(e);
         pe1 = Exp.expPriority(e1);
         s1 = printExp2Str(e1);
-        s1_1 = Exp.parenthesize(s1, pe1, p);
-        s4 = intString(i);
+        s1_1 = Exp.parenthesize(s1, pe1, p, false);
+        s4 = printExp2Str(e2);
         s_4 = Util.stringAppendList({s1_1,"[",s4,"]"});
       then
         s_4;

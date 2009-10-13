@@ -115,4 +115,6 @@ type_description *add_modelica_record_member(type_description *desc,
 
 type_description *add_tuple_member(type_description *desc);
 
+char *my_strdup(const char *s);
+
 #endif

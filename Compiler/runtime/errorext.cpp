@@ -31,6 +31,7 @@
 #include <iostream>
 #include <fstream>
 #include <queue>
+#include <stack>
 #include <list>
 
 using namespace std;
@@ -56,13 +57,23 @@ extern "C" {
     add_message(errorID,type,severity,message,tokens);
   }
 }
-
+struct absyn_info{
+	std::string fn;
+	bool wr;
+	int rs;
+	int re;
+	int cs;
+	int ce;
+};
 // if error_on is true, message is added, otherwise not.
 bool error_on=true;
 
 #include "ErrorMessage.hpp"
-
-  queue<ErrorMessage> errorMessageQueue; // Global variable of all error messages.
+  std::string currVariable("");
+  absyn_info finfo;
+  bool haveInfo(false);
+  stack<ErrorMessage*> errorMessageQueue; // Global variable of all error messages.
+  vector<int> checkPoints;
   /* Adds a message without file info. */
   void add_message(int errorID,
 		   char* type,
@@ -70,18 +81,50 @@ bool error_on=true;
 		   char* message,
 		   std::list<std::string> tokens)
   {
-    ErrorMessage msg((long)errorID,
-		     std::string(type ),
-		     std::string(severity),
-		     std::string(message),
-		     tokens);
-    if (errorMessageQueue.empty() ||
-	(!errorMessageQueue.empty() && errorMessageQueue.front().getFullMessage() != msg.getFullMessage())) {
-      //std::cerr << "inserting error message "<< msg.getFullMessage() << std::endl;
-      errorMessageQueue.push(msg);
+	  std::string tmp("");
+	  if(currVariable.length()>0){
+	  	tmp = "Variable "+currVariable+": " +message;
+	  }
+	  else{
+	  	tmp=message;
+	  }
+    if(!haveInfo){
+    	ErrorMessage *msg = new ErrorMessage((long)errorID, std::string(type ), std::string(severity), /*std::string(message),*/ tmp, tokens);
+    	if (errorMessageQueue.empty() ||
+	    (!errorMessageQueue.empty() && errorMessageQueue.top()->getFullMessage() != msg->getFullMessage())) {
+           /*std::cerr << "inserting error message "<< msg.getFullMessage() << " on variable "<< currVariable << std::endl;*/
+           errorMessageQueue.push(msg);
+        }
+    }
+    else{
+    	ErrorMessage *msg = new ErrorMessage((long)errorID, std::string(type ), std::string(severity), /*std::string(message),*/ tmp, tokens,
+    	    finfo.rs,finfo.cs,finfo.re,finfo.ce,finfo.wr/*not important?*/,finfo.fn);
+
+    	if (errorMessageQueue.empty() ||
+	    (!errorMessageQueue.empty() && errorMessageQueue.top()->getFullMessage() != msg->getFullMessage())) {
+           /*std::cerr << "inserting error message "<< msg.getFullMessage() << " on variable "<< currVariable << std::endl;
+           std::cerr << "values: " << finfo.rs << " " << finfo.ce << std::endl;*/
+           errorMessageQueue.push(msg);
+        }
     }
   }
-
+ /* sets the current_variable(which is beeing instantiated) */
+  void update_current_component(char* newVar,bool wr, char* fn, int rs, int re, int cs, int ce)
+  {
+	currVariable = std::string(newVar);
+	if( (rs+re+cs+ce) > 0)
+	{
+		finfo.wr = wr;
+		finfo.fn = fn;
+		finfo.rs = rs;
+		finfo.re = re;
+		finfo.cs = cs;
+		finfo.ce = ce;
+		haveInfo = true;
+	}
+	else
+	{haveInfo = false;}
+  }
   /* Adds a message with file information */
   void add_source_message(int errorID,
 			  char* type,
@@ -95,7 +138,7 @@ bool error_on=true;
 			  bool isReadOnly,
 			  char* filename)
   {
-    ErrorMessage msg((long)errorID,
+    ErrorMessage* msg = new ErrorMessage((long)errorID,
 		     std::string(type),
 		     std::string(severity),
 		     std::string(message),
@@ -107,8 +150,8 @@ bool error_on=true;
 		     isReadOnly,
 		     std::string(filename));
     if (errorMessageQueue.empty() ||
-	(!errorMessageQueue.empty() && errorMessageQueue.front().getFullMessage() != msg.getFullMessage())) {
-      //std::cerr << "inserting error message "<< msg.getFullMessage() << std::endl;
+	(!errorMessageQueue.empty() && errorMessageQueue.top()->getFullMessage() != msg->getFullMessage())) {
+      /*std::cerr << "inserting error message "<< msg.getFullMessage() << std::endl;*/
       errorMessageQueue.push(msg);
     }
 }
@@ -124,21 +167,80 @@ extern "C"
   void ErrorExt_5finit(void)
   {
     // empty the queue.
-    while(!errorMessageQueue.empty()) errorMessageQueue.pop();
+    while(!errorMessageQueue.empty()) {
+        delete errorMessageQueue.top();
+    	errorMessageQueue.pop();
+    }
   }
-
+  RML_BEGIN_LABEL(ErrorExt__setCheckpoint)
+  {
+	  checkPoints.push_back(errorMessageQueue.size());
+	  //printf(" ERROREXT: setting checkpoint: %d\n",errorMessageQueue.size());
+	  RML_TAILCALLK(rmlSC);
+  }
+  RML_END_LABEL
+  RML_BEGIN_LABEL(ErrorExt__delCheckpoint)
+  {
+	  if(checkPoints.size() > 0){
+		  //printf(" ERROREXT: deleting checkpoint: %d\n", checkPoints[checkPoints.size()-1]);
+		  checkPoints.pop_back();
+	  }
+	  else{
+		  //printf(" ERROREXT: nothing to delete\n");
+	  }
+	  RML_TAILCALLK(rmlSC);
+  }
+  RML_END_LABEL
+  RML_BEGIN_LABEL(ErrorExt__rollBack) 
+  { 
+	  if(checkPoints.size() > 0){
+		  //printf(" ERROREXT: rollback to: %d from %d\n",checkPoints.back(),errorMessageQueue.size());
+		  std::string res("");
+		  //printf(res.c_str());
+		  //printf(" rollback from: %d to: %d\n",errorMessageQueue.size(),checkPoints.back());
+		  while(errorMessageQueue.size() > checkPoints.back() && errorMessageQueue.size() > 0){
+			  //printf("*** %d deleted %d ***\n",errorMessageQueue.size(),checkPoints.back());
+			  /*if(!errorMessageQueue.empty()){
+				  res = res+errorMessageQueue.top()->getMessage()+string("\n");
+				  printf( (string("Deleted: ") + res).c_str());
+			  }*/
+			  errorMessageQueue.pop();
+		  }
+		  /*if(!errorMessageQueue.empty()){
+		  	res = res+errorMessageQueue.top()->getMessage()+string("\n");
+		    printf("(%d)new bottom message: %s\n",checkPoints.size(),res.c_str());
+		  }*/
+		  checkPoints.pop_back();
+	  }
+	  RML_TAILCALLK(rmlSC);
+  }
+  RML_END_LABEL
   RML_BEGIN_LABEL(ErrorExt__errorOn)
   {
     error_on = true;
     RML_TAILCALLK(rmlSC);
   }
-
+  RML_END_LABEL
   RML_BEGIN_LABEL(ErrorExt__errorOff)
   {
     error_on = false;
     RML_TAILCALLK(rmlSC);
   }
-
+  RML_END_LABEL
+  /* Function to give feedback to the user on which component the error is "on" */
+  RML_BEGIN_LABEL(ErrorExt__updateCurrentComponent)
+  {
+	char* newVar = RML_STRINGDATA(rmlA0);
+	bool write = RML_STRINGDATA(rmlA1);
+	char* fileName = RML_STRINGDATA(rmlA2);
+	int rs = RML_UNTAGFIXNUM(rmlA3);
+	int re = RML_UNTAGFIXNUM(rmlA4);
+	int cs = RML_UNTAGFIXNUM(rmlA5);
+	int ce = RML_UNTAGFIXNUM(rmlA6);
+	update_current_component(newVar,write,fileName,rs,re,cs,ce);
+	RML_TAILCALLK(rmlSC);
+  }
+  RML_END_LABEL
   RML_BEGIN_LABEL(ErrorExt__addMessage)
   {
 
@@ -154,6 +256,7 @@ extern "C"
 	tokenlst=RML_CDR(tokenlst);
       }
       add_message(errorID,tp,severity,message,tokens);
+      //printf(" Adding message, size: %d, %s\n",errorMessageQueue.size(),message);
     }
     RML_TAILCALLK(rmlSC);
   }
@@ -186,11 +289,36 @@ extern "C"
   }
   RML_END_LABEL
 
+  RML_BEGIN_LABEL(ErrorExt__getNumMessages)
+    {
+      rmlA0 = mk_icon((errorMessageQueue.size()));
+      RML_TAILCALLK(rmlSC);
+    }
+  RML_END_LABEL
+
+  RML_BEGIN_LABEL(ErrorExt__printErrorsNoWarning) 
+  {
+    std::string res("");
+    while(!errorMessageQueue.empty()) {
+      //if(strncmp(errorMessageQueue.top()->getSeverity(),"Error")==0){
+      if(errorMessageQueue.top()->getSeverity().compare(std::string("Error"))==0){
+    	  
+    	  res = errorMessageQueue.top()->getMessage()+string("\n")+res;
+      }
+      delete errorMessageQueue.top();
+      errorMessageQueue.pop();
+    }    
+    rmlA0 = mk_scon((char*)res.c_str());
+    RML_TAILCALLK(rmlSC);
+  }
+  RML_END_LABEL
+  
   RML_BEGIN_LABEL(ErrorExt__printMessagesStr)
   {
     std::string res("");
     while(!errorMessageQueue.empty()) {
-      res = res+errorMessageQueue.front().getMessage()+string("\n");
+      res = errorMessageQueue.top()->getMessage()+string("\n")+res;
+      delete errorMessageQueue.top();
       errorMessageQueue.pop();
     }
     rmlA0 = mk_scon((char*)res.c_str());
@@ -202,7 +330,8 @@ extern "C"
   {
     std::string res("{");
     while(!errorMessageQueue.empty()) {
-      res = res+errorMessageQueue.front().getFullMessage()+string("\n");
+      res = errorMessageQueue.top()->getFullMessage()+string("\n")+res;
+      delete errorMessageQueue.top();
       errorMessageQueue.pop();
     }
     res+=string("}");
@@ -211,5 +340,13 @@ extern "C"
   }
   RML_END_LABEL
 
-
+  RML_BEGIN_LABEL(ErrorExt__clearMessages)
+   {
+     while(!errorMessageQueue.empty()) {
+    	delete errorMessageQueue.top();
+    	errorMessageQueue.pop();
+     }
+     RML_TAILCALLK(rmlSC);
+   }
+   RML_END_LABEL
 } //extern "C"

@@ -36,44 +36,45 @@ package DumpGraphviz
  		           by the graphviz tool.
 
   RCS: $Id$
-  "
+ 
+"
 
 public import Absyn;
 public import Graphviz;
 
-public
+public 
 type Ident = String " An identifier is just a string " ;
 
-public
+public 
 type Node = Graphviz.Node;
 
 protected import Dump;
 
 public function dump "function: dump
-
+ 
   Dumps a Program to a Graphviz graph.
 "
   input Absyn.Program p;
   Graphviz.Node r;
-algorithm
+algorithm 
   r := buildGraphviz(p) "print \"> Beginning of rule dump\\n\" &" ;
   Graphviz.dump(r) "& print \"> End of rule dump\\n\"" ;
 end dump;
 
 protected function buildGraphviz "function: buildGraphviz
-
+ 
   Build the graphviz graph for a Program.
 "
   input Absyn.Program inProgram;
   output Node outNode;
-algorithm
+algorithm 
   outNode:=
   matchcontinue (inProgram)
     local
       list<Node> nl;
       list<Absyn.Class> cs;
     case (Absyn.PROGRAM(classes = cs))
-      equation
+      equation 
         nl = printClasses(cs) "print \"> Beginning of rule build_graphviz\\n\" & & print \"> End of rule build_graphviz\\n\"" ;
       then
         Graphviz.NODE("ROOT",{},nl);
@@ -81,12 +82,12 @@ algorithm
 end buildGraphviz;
 
 protected function printClasses "function: printClasses
-
+ 
   Creates Nodes from a Class list.
 "
   input list<Absyn.Class> inAbsynClassLst;
   output list<Node> outNodeLst;
-algorithm
+algorithm 
   outNodeLst:=
   matchcontinue (inAbsynClassLst)
     local
@@ -94,9 +95,9 @@ algorithm
       list<Node> nl;
       Absyn.Class c;
       list<Absyn.Class> cs;
-    case {} then {};
+    case {} then {}; 
     case (c :: cs)
-      equation
+      equation 
         node = printClass(c) "print \"> Beginning of rule print_classes\\n\" &" ;
         nl = printClasses(cs) "& print \"> End of rule print_classes\\n\"" ;
       then
@@ -105,12 +106,12 @@ algorithm
 end printClasses;
 
 protected function printClass "function: printClass
-
+ 
   Creates a Node for a Class.
 "
   input Absyn.Class inClass;
   output Node outNode;
-algorithm
+algorithm 
   outNode:=
   matchcontinue (inClass)
     local
@@ -119,8 +120,8 @@ algorithm
       Boolean p,f,e;
       Absyn.Restriction r;
       list<Absyn.ClassPart> parts;
-    case (Absyn.CLASS(name = n,partial_ = p,final_ = f,encapsulated_ = e,restriction = r,body = Absyn.PARTS(classParts = parts)))
-      equation
+    case (Absyn.CLASS(name = n,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,body = Absyn.PARTS(classParts = parts)))
+      equation 
         rs = Absyn.restrString(r) "print \"> Beginning of rule print_class\\n\" &" ;
         nl = printParts(parts) "& print \"> End of rule print_class\\n\"" ;
       then
@@ -129,12 +130,12 @@ algorithm
 end printClass;
 
 protected function printParts "function: printParts
-
+ 
   Creates a Node list from a ClassPart list.
 "
   input list<Absyn.ClassPart> inAbsynClassPartLst;
   output list<Node> outNodeLst;
-algorithm
+algorithm 
   outNodeLst:=
   matchcontinue (inAbsynClassPartLst)
     local
@@ -142,9 +143,9 @@ algorithm
       list<Node> nl;
       Absyn.ClassPart c;
       list<Absyn.ClassPart> cs;
-    case {} then {};
+    case {} then {}; 
     case (c :: cs)
-      equation
+      equation 
         node = printClassPart(c);
         nl = printParts(cs);
       then
@@ -153,12 +154,12 @@ algorithm
 end printParts;
 
 protected function printClassPart "function: printClassPart
-
+  
   Creates a Node from A ClassPart.
 "
   input Absyn.ClassPart inClassPart;
   output Node outNode;
-algorithm
+algorithm 
   outNode:=
   matchcontinue (inClassPart)
     local
@@ -166,28 +167,28 @@ algorithm
       list<Absyn.ElementItem> el;
       list<Absyn.EquationItem> eqs;
     case (Absyn.PUBLIC(contents = el))
-      equation
+      equation 
         nl = printElementitems(el);
       then
         Graphviz.NODE("PUBLIC",{},nl);
     case (Absyn.PROTECTED(contents = el))
-      equation
+      equation 
         nl = printElementitems(el);
       then
         Graphviz.NODE("PROTECTED",{},nl);
     case (Absyn.EQUATIONS(contents = eqs))
-      equation
+      equation 
         nl = printEquations(eqs);
       then
         Graphviz.NODE("EQUATIONS",{},nl);
     case (Absyn.ALGORITHMS(contents = eqs))
       local list<Absyn.AlgorithmItem> eqs;
-      equation
+      equation 
         nl = printAlgorithms(eqs);
       then
         Graphviz.NODE("ALGORITHMS",{},nl);
     case (_)
-      equation
+      equation 
         print("") "print \"> Error in print_class_part\\n\"" ;
       then
         Graphviz.NODE("PART_ERROR",{},{});
@@ -195,12 +196,12 @@ algorithm
 end printClassPart;
 
 protected function printElementitems "function: printElementitems
-
+ 
   Creates a Node list from ElementItem list.
 "
   input list<Absyn.ElementItem> inAbsynElementItemLst;
   output list<Node> outNodeLst;
-algorithm
+algorithm 
   outNodeLst:=
   matchcontinue (inAbsynElementItemLst)
     local
@@ -208,14 +209,14 @@ algorithm
       list<Absyn.ElementItem> el;
       Graphviz.Node node;
       Absyn.Element e;
-    case {} then {};
+    case {} then {}; 
     case ((Absyn.ANNOTATIONITEM(annotation_ = _) :: el))
-      equation
+      equation 
         nl = printElementitems(el);
       then
         nl;
     case ((Absyn.ELEMENTITEM(element = e) :: el))
-      equation
+      equation 
         node = printElement(e);
         nl = printElementitems(el);
       then
@@ -224,52 +225,52 @@ algorithm
 end printElementitems;
 
 protected function makeBoolAttr "function: makeBoolAttr
-
+ 
   Create an Attribute from a bool value and a description string.
 "
   input String str;
   input Boolean flag;
   output Graphviz.Attribute outAttribute;
   Ident s;
-algorithm
+algorithm 
   s := Dump.selectString(flag, "true", "false");
   outAttribute := Graphviz.ATTR(str,s);
 end makeBoolAttr;
 
 protected function makeLeaf "function: makeLeaf
-
+ 
   Create a leaf Node from a string an a list of attributes.
 "
   input String inString;
   input list<Graphviz.Attribute> inGraphvizAttributeLst;
   output Node outNode;
-algorithm
+algorithm 
   outNode:=
   matchcontinue (inString,inGraphvizAttributeLst)
     local
       Ident str;
       list<Graphviz.Attribute> al;
-    case (str,al) then Graphviz.NODE(str,al,{});
+    case (str,al) then Graphviz.NODE(str,al,{}); 
   end matchcontinue;
 end makeLeaf;
 
 protected function printElement "function: printElement
-
+ 
   Create a Node from an Element.
 "
   input Absyn.Element inElement;
   output Node outNode;
-algorithm
+algorithm 
   outNode:=
   matchcontinue (inElement)
     local
       Graphviz.Attribute fa;
       Graphviz.Node elsp;
-      Boolean final_;
+      Boolean finalPrefix;
       Absyn.ElementSpec spec;
-    case (Absyn.ELEMENT(final_ = final_,specification = spec))
-      equation
-        fa = makeBoolAttr("final", final_) "print \"> Beginning of rule print_element\\n\" &" ;
+    case (Absyn.ELEMENT(finalPrefix = finalPrefix,specification = spec))
+      equation 
+        fa = makeBoolAttr("final", finalPrefix) "print \"> Beginning of rule print_element\\n\" &" ;
         elsp = printElementspec(spec) "& print \"> End of rule print_element\\n\"" ;
       then
         Graphviz.NODE("ELEMENT",{fa},{elsp});
@@ -277,24 +278,24 @@ algorithm
 end printElement;
 
 protected function printPath "function printPath
-
+ 
   Create a Node from a Path.
 "
   input Absyn.Path p;
   output Node pn;
   Ident s;
-algorithm
+algorithm 
   s := Absyn.pathString(p);
   pn := makeLeaf(s, {});
 end printPath;
 
 protected function printElementspec "function: printElementspec
-
+ 
   Create a Node from an ElementSpec
 "
   input Absyn.ElementSpec inElementSpec;
   output Node outNode;
-algorithm
+algorithm 
   outNode:=
   matchcontinue (inElementSpec)
     local
@@ -306,29 +307,29 @@ algorithm
       list<Absyn.ElementArg> l;
       list<Node> cns;
       Absyn.ElementAttributes attr;
-      Absyn.TypeSpec tspec;
+      Absyn.TypeSpec tspec;      
       list<Absyn.ComponentItem> cs;
       String s;
     case (Absyn.CLASSDEF(replaceable_ = repl,class_ = cl))
-      equation
+      equation 
         nl = printClass(cl);
         ra = makeBoolAttr("replaceable", repl);
       then
         Graphviz.NODE("CLASSDEF",{ra},{});
     case (Absyn.EXTENDS(path = p,elementArg = l))
-      equation
+      equation 
         en = printPath(p);
       then
         Graphviz.NODE("EXTENDS",{},{en});
     case (Absyn.COMPONENTS(attributes = attr,typeSpec = tspec,components = cs))
-      equation
+      equation 
         s = Dump.unparseTypeSpec(tspec);
         pn = makeLeaf(s, {});
         cns = printComponents(cs);
       then
         Graphviz.NODE("COMPONENTS",{},(pn :: cns));
     case (_)
-      equation
+      equation 
         print("");
       then
         Graphviz.NODE("ELSPEC_ERROR",{},{});
@@ -336,12 +337,12 @@ algorithm
 end printElementspec;
 
 protected function printComponents "function: printComponents
-
+ 
   Create a Node list from a ComponentItem list.
 "
   input list<Absyn.ComponentItem> inAbsynComponentItemLst;
   output list<Node> outNodeLst;
-algorithm
+algorithm 
   outNodeLst:=
   matchcontinue (inAbsynComponentItemLst)
     local
@@ -349,9 +350,9 @@ algorithm
       list<Node> nl;
       Absyn.ComponentItem c;
       list<Absyn.ComponentItem> cs;
-    case {} then {};
+    case {} then {}; 
     case (c :: cs)
-      equation
+      equation 
         n = printComponentitem(c);
         nl = printComponents(cs);
       then
@@ -360,12 +361,12 @@ algorithm
 end printComponents;
 
 protected function printComponentitem "function: printComponentitem
-
+ 
   Create a Node from a ComponentItem.
 "
   input Absyn.ComponentItem inComponentItem;
   output Node outNode;
-algorithm
+algorithm 
   outNode:=
   matchcontinue (inComponentItem)
     local
@@ -374,7 +375,7 @@ algorithm
       list<Absyn.Subscript> a;
       Option<Absyn.Modification> m;
     case (Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = n,arrayDim = a,modification = m)))
-      equation
+      equation 
         print("");
         nn = Graphviz.NODE(n,{},{});
       then
@@ -383,12 +384,12 @@ algorithm
 end printComponentitem;
 
 protected function printEquations "function: printEquations
-
+  
   Create a Node list from an EquationItem list.
 "
   input list<Absyn.EquationItem> inAbsynEquationItemLst;
   output list<Node> outNodeLst;
-algorithm
+algorithm 
   outNodeLst:=
   matchcontinue (inAbsynEquationItemLst)
     local
@@ -397,9 +398,9 @@ algorithm
       Absyn.Equation eq;
       Option<Absyn.Comment> ann;
       list<Absyn.EquationItem> el;
-    case {} then {};
+    case {} then {}; 
     case (Absyn.EQUATIONITEM(equation_ = eq,comment = ann) :: el)
-      equation
+      equation 
         node = printEquation(eq);
         nl = printEquations(el);
       then
@@ -412,7 +413,7 @@ protected function printEquation
  Create a Node from an Equation."
   input Absyn.Equation inEquation;
   output Node outNode;
-algorithm
+algorithm 
   outNode:=
   matchcontinue (inEquation)
     local
@@ -423,7 +424,7 @@ algorithm
       list<Absyn.EquationItem> eqs;
       Absyn.ForIterators iterators;
     case (Absyn.EQ_EQUALS(leftSide = e1,rightSide = e2))
-      equation
+      equation 
         s1 = Dump.printExpStr(e1);
         s2 = Dump.printExpStr(e2);
         s = stringAppend(s1, " = ");
@@ -431,7 +432,7 @@ algorithm
       then
         Graphviz.LNODE("EQ_EQUALS",{s_1},{},{});
     case (Absyn.EQ_CONNECT(connector1 = c1,connector2 = c2))
-      equation
+      equation 
         s1 = Dump.printComponentRefStr(c1);
         s2 = Dump.printComponentRefStr(c2);
         s = stringAppend("connect(", s1);
@@ -440,22 +441,22 @@ algorithm
       then
         Graphviz.LNODE("EQ_CONNECT",{s_2},{},{});
     case (Absyn.EQ_FOR(iterators=iterators,forEquations = eqs))
-      equation
+      equation 
         eqn = printEquations(eqs);
         es = Dump.printIteratorsStr(iterators);
       then
         Graphviz.LNODE("EQ_FOR",{es},{},eqn);
-    case (_) then Graphviz.NODE("EQ_ERROR",{},{});
+    case (_) then Graphviz.NODE("EQ_ERROR",{},{}); 
   end matchcontinue;
 end printEquation;
 
 protected function printAlgorithms "function: printAlgorithms
-
+ 
   Create a Node list from an AlgorithmItem list.
 "
   input list<Absyn.AlgorithmItem> inAbsynAlgorithmItemLst;
   output list<Node> outNodeLst;
-algorithm
+algorithm 
   outNodeLst:=
   matchcontinue (inAbsynAlgorithmItemLst)
     local
@@ -463,9 +464,9 @@ algorithm
       list<Node> nl;
       Absyn.AlgorithmItem e;
       list<Absyn.AlgorithmItem> el;
-    case {} then {};
+    case {} then {}; 
     case (e :: el)
-      equation
+      equation 
         node = printAlgorithmitem(e);
         nl = printAlgorithms(el);
       then
@@ -474,45 +475,45 @@ algorithm
 end printAlgorithms;
 
 protected function printAlgorithmitem "function: printAlgorithmitem
-
+ 
   Create a Node from an AlgorithmItem.
 "
   input Absyn.AlgorithmItem inAlgorithmItem;
   output Node outNode;
-algorithm
+algorithm 
   outNode:=
   matchcontinue (inAlgorithmItem)
     local
       Graphviz.Node node;
       Absyn.Algorithm alg;
     case (Absyn.ALGORITHMITEM(algorithm_ = alg))
-      equation
+      equation 
         node = printAlgorithm(alg);
       then
         node;
-    case (_) then Graphviz.NODE("ALG_ERROR",{},{});
+    case (_) then Graphviz.NODE("ALG_ERROR",{},{}); 
   end matchcontinue;
 end printAlgorithmitem;
 
 protected function printAlgorithm "function: printAlgorithm
-
+ 
   Create a Node from an Algorithm.
 "
   input Absyn.Algorithm inAlgorithm;
   output Node outNode;
-algorithm
+algorithm 
   outNode:=
   matchcontinue (inAlgorithm)
     local
       Absyn.ComponentRef cr;
       Absyn.Exp e;
     case (Absyn.ALG_ASSIGN(assignComponent = _,value = e))
-      equation
+      equation 
         print("");
       then
         Graphviz.NODE("ALG_ASSIGN",{},{});
     case (_)
-      equation
+      equation 
         print("");
       then
         Graphviz.NODE("ALG_ERROR",{},{});
@@ -520,33 +521,33 @@ algorithm
 end printAlgorithm;
 
 protected function variabilitySymbol "function: variabilitySymbol
-
+ 
   Return Variability as a string.
 "
   input Absyn.Variability inVariability;
   output String outString;
-algorithm
+algorithm 
   outString:=
   matchcontinue (inVariability)
-    case (Absyn.VAR()) then "";
-    case (Absyn.DISCRETE()) then "DISCRETE";
-    case (Absyn.PARAM()) then "PARAM";
-    case (Absyn.CONST()) then "CONST";
+    case (Absyn.VAR()) then ""; 
+    case (Absyn.DISCRETE()) then "DISCRETE"; 
+    case (Absyn.PARAM()) then "PARAM"; 
+    case (Absyn.CONST()) then "CONST"; 
   end matchcontinue;
 end variabilitySymbol;
 
 protected function directionSymbol "function: directionSymbol
-
+ 
   Return direction as a string.
 "
   input Absyn.Direction inDirection;
   output String outString;
-algorithm
+algorithm 
   outString:=
   matchcontinue (inDirection)
-    case (Absyn.BIDIR()) then "";
-    case (Absyn.INPUT()) then "INPUT";
-    case (Absyn.OUTPUT()) then "OUTPUT";
+    case (Absyn.BIDIR()) then ""; 
+    case (Absyn.INPUT()) then "INPUT"; 
+    case (Absyn.OUTPUT()) then "OUTPUT"; 
   end matchcontinue;
 end directionSymbol;
 end DumpGraphviz;
