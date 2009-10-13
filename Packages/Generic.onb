@@ -1,17 +1,30 @@
 <!DOCTYPE OMNotebook>
 <Notebook>
- <GroupCell closed="false" >
   <GroupCell closed="false" >
-   <TextCell style="Title" >
-    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Arial; font-size:38pt; font-weight:600; color:#000000;">Generic Packages&lt;/p>&lt;/body>&lt;/html></Text>
-   </TextCell>
-   <TextCell style="Text" >
-    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />Generic packages are packages with some kind of formal parameter, e.g. a replaceable type. They are really a special case of &lt;a href="Generic/Parameterized.onb
-">&lt;span style=" text-decoration: underline; color:#0000ff;">Parameterized Generic Classes&lt;/span>&lt;/a>. Another way of regarding generic classes is as parameterized &lt;a href="PackasADTs.onb
-">&lt;span style=" text-decoration: underline; color:#0000ff;">Abstract Data Types&lt;/span>&lt;/a>, e.g. package &lt;span style=" font-family:Courier New;">GeneralStack&lt;/span> below, which is parameterized in terms of the type of the elements in the stack - the type parameter &lt;span style=" font-family:Courier New;">Element&lt;/span>. &lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
-   </TextCell>
-   <InputCell style="Input" closed="false" >
-    <Input>package GeneralStack
+    <GroupCell closed="false" >
+      <TextCell style="Title" >
+        <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:10px; margin-bottom:10px; margin-left:10px; margin-right:10px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Arial'; font-size:38pt; font-weight:600; color:#000000;">Generic Packages&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <TextCell style="Text" >
+        <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />Generic packages are packages with some kind of formal parameter, e.g. a replaceable type. They are really a special case of &lt;a href="../Generic/Parameterized.onb">&lt;span style=" text-decoration: underline; color:#0000ff;">Parametrized Generic Classes&lt;/span>&lt;/a>. Another way of regarding generic classes is as parameterized &lt;a href="PackasADTs.onb
+">&lt;span style=" text-decoration: underline; color:#0000ff;">Abstract Data Types&lt;/span>&lt;/a>, e.g. package &lt;span style=" font-family:'Courier New';">GeneralStack&lt;/span> below, which is parameterized in terms of the type of the elements in the stack - the type parameter &lt;span style=" font-family:'Courier New';">Element&lt;/span>. &lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+        <Input>package GeneralStack
 
   replaceable class Element
   end Element;
@@ -48,27 +61,49 @@
   end Top;
 
 end GeneralStack;</Input>
-    <Output>Ok</Output>
-   </InputCell>
-   <TextCell style="Text" >
-    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />By "instantiating" the package &lt;span style=" font-family:Courier New;">GeneralStack&lt;/span> with different values of the type parameter &lt;span style=" font-family:Courier New;">Element&lt;/span> we can create specialized stack packages containing elements of a specified type. In this case instantiation means the creation of a more &lt;span style=" font-style:italic;">specialized package&lt;/span>. For example, we have instantiated &lt;span style=" font-family:Courier New;">GeneralStack&lt;/span> below, with a type argument &lt;span style=" font-family:Courier New;">Integer&lt;/span> creating the specialized stack called &lt;span style=" font-family:Courier New;">IntegerStack&lt;/span>, and with &lt;span style=" font-family:Courier New;">Real&lt;/span> giving the stack &lt;span style=" font-family:Courier New;">RealStack&lt;/span>.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
-   </TextCell>
-   <InputCell style="Input" closed="false" >
-    <Input>package IntegerStack = GeneralStack(redeclare type Element = Integer);</Input>
-    <Output>Ok</Output>
-   </InputCell>
-   <TextCell style="Text" >
-    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
-   </TextCell>
-   <InputCell style="Input" closed="false" >
-    <Input>package RealStack = GeneralStack(redeclare type Element = Real);</Input>
-    <Output>Ok</Output>
-   </InputCell>
-   <TextCell style="Text" >
-    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />Finally the stack &lt;span style=" font-family:Courier New;">IntegerStack&lt;/span> is used in the class &lt;span style=" font-family:Courier New;">IntStackUser&lt;/span> into which it is imported.&lt;/p>&lt;/body>&lt;/html></Text>
-   </TextCell>
-   <InputCell style="Input" closed="false" >
-    <Input>class IntStackUser
+        <Output>{GeneralStack}</Output>
+      </GraphCell>
+      <TextCell style="Text" >
+        <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />By "instantiating" the package &lt;span style=" font-family:'Courier New';">GeneralStack&lt;/span> with different values of the type parameter &lt;span style=" font-family:'Courier New';">Element&lt;/span> we can create specialized stack packages containing elements of a specified type. In this case instantiation means the creation of a more &lt;span style=" font-style:italic;">specialized package&lt;/span>. For example, we have instantiated &lt;span style=" font-family:'Courier New';">GeneralStack&lt;/span> below, with a type argument &lt;span style=" font-family:'Courier New';">Integer&lt;/span> creating the specialized stack called &lt;span style=" font-family:'Courier New';">IntegerStack&lt;/span>, and with &lt;span style=" font-family:'Courier New';">Real&lt;/span> giving the stack &lt;span style=" font-family:'Courier New';">RealStack&lt;/span>.&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+        <Input>package IntegerStack = GeneralStack(redeclare type Element = Integer);</Input>
+        <Output>{IntegerStack}</Output>
+      </GraphCell>
+      <TextCell style="Text" >
+        <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+        <Input>package RealStack = GeneralStack(redeclare type Element = Real);</Input>
+        <Output>{RealStack}</Output>
+      </GraphCell>
+      <TextCell style="Text" >
+        <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />Finally the stack &lt;span style=" font-family:'Courier New';">IntegerStack&lt;/span> is used in the class &lt;span style=" font-family:'Courier New';">IntStackUser&lt;/span> into which it is imported.&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+        <Input>class IntStackUser
   import IS = IntegerStack;
   IS.Stack stk(maxsize = 200);
   Integer item;
@@ -79,8 +114,8 @@ algorithm
   item := IS.Top(stk);
   stk := IS.Pop(stk);
 end IntStackUser;</Input>
-    <Output>Ok</Output>
-   </InputCell>
+        <Output>{IntStackUser}</Output>
+      </GraphCell>
+    </GroupCell>
   </GroupCell>
- </GroupCell>
 </Notebook>

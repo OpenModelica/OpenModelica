@@ -1,66 +1,132 @@
 <!DOCTYPE OMNotebook>
 <Notebook>
- <GroupCell closed="false" >
   <GroupCell closed="false" >
-   <TextCell style="Title" >
-    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Arial; font-size:38pt; font-weight:600; color:#000000;">Exercise 2- Repetitive Equation Structures&lt;/p>&lt;/body>&lt;/html></Text>
-   </TextCell>
-   <GroupCell closed="false" >
-    <TextCell style="Section" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Using the for-Loop&lt;/p>&lt;/body>&lt;/html></Text>
-    </TextCell>
-    <TextCell style="Text" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">Write a class &lt;span style=" font-family:Courier New;">Repetitive&lt;/span>, with an array &lt;span style=" font-family:Courier New;">rep&lt;/span>, with 7 Integer values. The class should set all values in the array to 15, using a for-loop.&lt;/p>&lt;/body>&lt;/html></Text>
-    </TextCell>
-    <InputCell style="Input" closed="true" >
-     <Input></Input>
-     <Output></Output>
-    </InputCell>
-    <GroupCell closed="true" >
-     <TextCell style="Subsection" >
-      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:14pt; font-weight:600; color:#000000;">Answer&lt;/p>&lt;/body>&lt;/html></Text>
-     </TextCell>
-     <InputCell style="Input" closed="false" >
-      <Input>class Repetitive
+    <GroupCell closed="false" >
+      <TextCell style="Title" >
+        <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans'; font-size:10pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:10px; margin-bottom:10px; margin-left:10px; margin-right:10px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Arial'; font-size:38pt; font-weight:600; color:#000000;">Exercise 2- Repetitive Equation Structures&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <GroupCell closed="false" >
+        <TextCell style="Section" >
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans'; font-size:10pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Using the for-Loop&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text" >
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans'; font-size:10pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Write a class &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">Repetitive&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">, with an array &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">rep&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">, with 7 Integer values. The class should set all values in the array to 15, using a for-loop.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="true" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+          <Input></Input>
+          <Output></Output>
+        </GraphCell>
+        <GroupCell closed="false" >
+          <TextCell style="Subsection" >
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans'; font-size:10pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Answer&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+            <Input>class Repetitive
   Integer rep[7];
 equation
   for i in 1:7 loop
     rep[i] = 15;
   end for;
 end Repetitive;      </Input>
-      <Output>Ok</Output>
-     </InputCell>
-     <GroupCell closed="true" >
-      <TextCell style="Subsubsection" >
-       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:12pt; font-weight:600; color:#000000;">Simulation of Repetitive&lt;/p>&lt;/body>&lt;/html></Text>
-      </TextCell>
-      <InputCell style="Input" closed="false" >
-       <Input>simulate( Repetitive );</Input>
-       <Output>[done]</Output>
-      </InputCell>
-      <TextCell style="Output" >
-       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
-      </TextCell>
-     </GroupCell>
-    </GroupCell>
-   </GroupCell>
-   <GroupCell closed="false" >
-    <TextCell style="Section" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Exercise without using the for-Loop&lt;/p>&lt;/body>&lt;/html></Text>
-    </TextCell>
-    <TextCell style="Text" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">Write the class &lt;span style=" font-family:Courier New;">RepetitiveWithoutFor&lt;/span>, doing the same thing as &lt;span style=" font-family:Courier New;">Repetitive&lt;/span> above, though not using a for-loop.&lt;/p>&lt;/body>&lt;/html></Text>
-    </TextCell>
-    <InputCell style="Input" closed="true" >
-     <Input></Input>
-     <Output></Output>
-    </InputCell>
-    <GroupCell closed="true" >
-     <TextCell style="Subsection" >
-      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:14pt; font-weight:600; color:#000000;">Answer&lt;/p>&lt;/body>&lt;/html></Text>
-     </TextCell>
-     <InputCell style="Input" closed="false" >
-      <Input>class RepetitiveWithoutFor
+            <Output>{Repetitive}</Output>
+          </GraphCell>
+          <GroupCell closed="false" >
+            <TextCell style="Subsubsection" >
+              <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans'; font-size:10pt; font-weight:400; font-style:normal;">
+&lt;table style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:12pt; font-weight:600; color:#000000;">Simulation of Repetitive&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+            </TextCell>
+            <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+              <Input>simulate( Repetitive )</Input>
+              <Output>record SimulationResult
+    resultFile = "Repetitive_res.plt"
+end SimulationResult;</Output>
+            </GraphCell>
+            <TextCell style="Output" >
+              <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans'; font-size:10pt; font-weight:400; font-style:normal;">
+&lt;table style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Courier New'; font-size:11pt; color:#000000;">&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+            </TextCell>
+          </GroupCell>
+        </GroupCell>
+      </GroupCell>
+      <GroupCell closed="false" >
+        <TextCell style="Section" >
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans'; font-size:10pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Exercise without using the for-Loop&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text" >
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans'; font-size:10pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Write the class &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">RepetitiveWithoutFor&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">, doing the same thing as &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">Repetitive&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> above, though not using a for-loop.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="true" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+          <Input></Input>
+          <Output></Output>
+        </GraphCell>
+        <GroupCell closed="false" >
+          <TextCell style="Subsection" >
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans'; font-size:10pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Answer&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+            <Input>class RepetitiveWithoutFor
   Integer rep[7];
 equation
   rep[1] = 15;
@@ -71,85 +137,168 @@ equation
   rep[6] = 15;
   rep[7] = 15;
 end RepetitiveWithoutFor;</Input>
-      <Output>Ok</Output>
-     </InputCell>
-     <GroupCell closed="false" >
-      <TextCell style="Subsubsection" >
-       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:12pt; font-weight:600; color:#000000;">Simulation of RepetitiveWithoutFor&lt;/p>&lt;/body>&lt;/html></Text>
-      </TextCell>
-      <InputCell style="Input" closed="false" >
-       <Input>simulate( RepetitiveWithoutFor );</Input>
-       <Output>[done]</Output>
-      </InputCell>
-      <TextCell style="Output" >
-       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
-      </TextCell>
-     </GroupCell>
-    </GroupCell>
-   </GroupCell>
-   <GroupCell closed="false" >
-    <TextCell style="Section" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Another Exercise Using the for-Loop&lt;/p>&lt;/body>&lt;/html></Text>
-    </TextCell>
-    <TextCell style="Text" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">This time write a class &lt;span style=" font-family:Courier New;">Repeat&lt;/span>, with an array &lt;span style=" font-family:Courier New;">repeater&lt;/span> containing 4 Real values. The values in the array shall be set to 1, 4, 7, 10, using a for-loop.&lt;/p>&lt;/body>&lt;/html></Text>
-    </TextCell>
-    <InputCell style="Input" closed="true" >
-     <Input></Input>
-     <Output></Output>
-    </InputCell>
-    <GroupCell closed="true" >
-     <TextCell style="Subsection" >
-      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:14pt; font-weight:600; color:#000000;">Answer&lt;/p>&lt;/body>&lt;/html></Text>
-     </TextCell>
-     <InputCell style="Input" closed="false" >
-      <Input>class Repeat
+            <Output>{RepetitiveWithoutFor}</Output>
+          </GraphCell>
+          <GroupCell closed="false" >
+            <TextCell style="Subsubsection" >
+              <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans'; font-size:10pt; font-weight:400; font-style:normal;">
+&lt;table style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:12pt; font-weight:600; color:#000000;">Simulation of RepetitiveWithoutFor&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+            </TextCell>
+            <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+              <Input>simulate( RepetitiveWithoutFor )</Input>
+              <Output>record SimulationResult
+    resultFile = "RepetitiveWithoutFor_res.plt"
+end SimulationResult;</Output>
+            </GraphCell>
+            <TextCell style="Output" >
+              <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans'; font-size:10pt; font-weight:400; font-style:normal;">
+&lt;table style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Courier New'; font-size:11pt; color:#000000;">&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+            </TextCell>
+          </GroupCell>
+        </GroupCell>
+      </GroupCell>
+      <GroupCell closed="false" >
+        <TextCell style="Section" >
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans'; font-size:10pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Another Exercise Using the for-Loop&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text" >
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans'; font-size:10pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">This time write a class &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">Repeat&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">, with an array &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">repeater&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> containing 4 Real values. The values in the array shall be set to 1, 4, 7, 10, using a for-loop.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="true" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+          <Input></Input>
+          <Output></Output>
+        </GraphCell>
+        <GroupCell closed="false" >
+          <TextCell style="Subsection" >
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans'; font-size:10pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Answer&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+            <Input>class Repeat
   Integer repeater[4];
 equation
   for i in 1:4 loop
     repeater[i] = i + 3;
   end for;
 end Repeat;      </Input>
-      <Output>Ok</Output>
-     </InputCell>
-     <GroupCell closed="false" >
-      <TextCell style="Subsubsection" >
-       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:12pt; font-weight:600; color:#000000;">Simulation of Repeat&lt;/p>&lt;/body>&lt;/html></Text>
-      </TextCell>
-      <InputCell style="Input" closed="false" >
-       <Input>simulate( Repeat );</Input>
-       <Output>[done]</Output>
-      </InputCell>
-      <TextCell style="Output" >
-       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
-      </TextCell>
-     </GroupCell>
-    </GroupCell>
-   </GroupCell>
-   <GroupCell closed="false" >
-    <TextCell style="Section" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Function with for-loop&lt;/p>&lt;/body>&lt;/html></Text>
-    </TextCell>
-    <TextCell style="Text" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">Write a function, &lt;span style=" font-family:Courier New;">Rapper&lt;/span>, which calculates the sum of the values in the array.&lt;/p>&lt;/body>&lt;/html></Text>
-    </TextCell>
-    <InputCell style="Input" closed="true" >
-     <Input></Input>
-     <Output></Output>
-    </InputCell>
-    <TextCell style="Text" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br /> Write an instance, where the values of that array shall be set. Then simulate the instance class and plot the result.&lt;/p>&lt;/body>&lt;/html></Text>
-    </TextCell>
-    <InputCell style="Input" closed="true" >
-     <Input></Input>
-     <Output></Output>
-    </InputCell>
-    <GroupCell closed="true" >
-     <TextCell style="Subsection" >
-      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:14pt; font-weight:600; color:#000000;">Answer&lt;/p>&lt;/body>&lt;/html></Text>
-     </TextCell>
-     <InputCell style="Input" closed="false" >
-      <Input>function Rapper
+            <Output>{Repeat}</Output>
+          </GraphCell>
+          <GroupCell closed="false" >
+            <TextCell style="Subsubsection" >
+              <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans'; font-size:10pt; font-weight:400; font-style:normal;">
+&lt;table style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:12pt; font-weight:600; color:#000000;">Simulation of Repeat&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+            </TextCell>
+            <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+              <Input>simulate( Repeat )</Input>
+              <Output>record SimulationResult
+    resultFile = "Repeat_res.plt"
+end SimulationResult;</Output>
+            </GraphCell>
+            <TextCell style="Output" >
+              <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans'; font-size:10pt; font-weight:400; font-style:normal;">
+&lt;table style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Courier New'; font-size:11pt; color:#000000;">&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+            </TextCell>
+          </GroupCell>
+        </GroupCell>
+      </GroupCell>
+      <GroupCell closed="false" >
+        <TextCell style="Section" >
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans'; font-size:10pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Function with for-loop&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text" >
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans'; font-size:10pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Write a function, &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">Rapper&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">, which calculates the sum of the values in the array.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="true" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+          <Input></Input>
+          <Output></Output>
+        </GraphCell>
+        <TextCell style="Text" >
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans'; font-size:10pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br /> Write an instance, where the values of that array shall be set. Then simulate the instance class and plot the result.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="true" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+          <Input></Input>
+          <Output></Output>
+        </GraphCell>
+        <GroupCell closed="false" >
+          <TextCell style="Subsection" >
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans'; font-size:10pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Answer&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+            <Input>function Rapper
   input Integer rap[:];
   output Integer sum = 0;
 algorithm
@@ -157,60 +306,119 @@ algorithm
     sum := sum + rap[i];
   end for;
 end Rapper;    </Input>
-      <Output>Ok</Output>
-     </InputCell>
-     <TextCell style="Text" >
-      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;"> &lt;/p>&lt;/body>&lt;/html></Text>
-     </TextCell>
-     <InputCell style="Input" closed="false" >
-      <Input>class RapperInst
+            <Output>{Rapper}</Output>
+          </GraphCell>
+          <TextCell style="Text" >
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans'; font-size:10pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> &lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+            <Input>class RapperInst
   Integer x;
 equation
   x = Rapper({1, 2, 3, 4});
 end RapperInst;</Input>
-      <Output>Ok</Output>
-     </InputCell>
-     <GroupCell closed="false" >
-      <TextCell style="Subsubsection" >
-       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:12pt; font-weight:600; color:#000000;">Simulation of Rapper&lt;/p>&lt;/body>&lt;/html></Text>
-      </TextCell>
-      <InputCell style="Input" closed="false" >
-       <Input>simulate( RapperInst ) /??Error in implemenation of integer vectors</Input>
-       <Output>record
+            <Output>{RapperInst}</Output>
+          </GraphCell>
+          <GroupCell closed="false" >
+            <TextCell style="Subsubsection" >
+              <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans'; font-size:10pt; font-weight:400; font-style:normal;">
+&lt;table style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:12pt; font-weight:600; color:#000000;">Simulation of Rapper&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+            </TextCell>
+            <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+              <Input>simulate( RapperInst ) //??Error in implemenation of integer vectors</Input>
+              <Output>record SimulationResult
     resultFile = "RapperInst_res.plt"
-end record</Output>
-      </InputCell>
-      <TextCell style="Output" >
-       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
-      </TextCell>
-      <InputCell style="Input" closed="false" >
-       <Input>plot( x );</Input>
-       <Output>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;img src="file:///C:/OpenModelica1.4.3/bin/OMNoteboook_tempfiles/132.png" width="492" height="250" />&lt;/p>&lt;/body>&lt;/html></Output>
-       <Image name="file:///C:/OpenModelica1.4.3/bin/OMNoteboook_tempfiles/132.png" >AAAAAYlQTkcNChoKAAAADUlIRFIAAAHsAAAA+ggGAAAAY9J0UgAAAAlwSFlzAAAOxAAADsQBlSsOGwAACqZJREFUeJzt3WFyo7gaBVB41fsaL51Zmd4vdzM0CGFjomvOqUp1ArL4DGlfS4AzllLKAAB07X8/XQAAsE9gA0AAgQ0AAQQ2AAQQ2AAQQGADQACBDQABBDYABBDYABBAYANAAIENAAEENgAEENgAEEBgA0AAgQ0AAQQ2AAQQ2AAQQGADQIBfP10AHDGO4+ryUspfbebLWvuuPebVflu2u3T2No6Y17NWx976V7Z1pJ/lYz51XKA3Rth8ha0gv+rxZ2/3p+pZWtbRS11zpRRhzS0YYRNpbUS9Z2tkOF/eOlpba9e6rLWe+Yh/3s9ejbUR8Fo/tb6OaumzZR8fqW2rv5b90LoN6IERNrdw5khxLeDfsQyL1iBb23br82xpt1VHyxuFlvreqW1PrY+W/QY9EthEGsfx91dL26e90W/r9Gqtn/kIedn2DC2zA/PnUTvv31Lb8vnU2rTUt2yz1k/rc2jpY2net5E1SUyJ8xWOhOxyOvjVbb3bz6e23VLTp4Kqpb6znsPRmj65DbiCwCaSkdE1PnWu+6dtncuHnglsbuN5EdcZV5Sf+UK/vJ1sb+p5b9ufCNUjF/bt1Xf1c3AbGN9CYPP15uHQeo9x65XJy7bPbbX0s1VXrb4j227p6ywt+3jv+c7bvPMcan3MGVmTxkVn3MLeldhHAm0ZQmfWdWT51gVVrX21mp9zbmnXWsuR5370OdRq2VonwOndWMwLwak+eX+z/65wX0bY8CHCFTiTwIYTmVYFPsWUOAAEMMIGgAARt3WZZgTgar1NQEcE9jCcs+P2/t7xT1FXux5rGgZ1HdFjTcPQZ1091jQM96irx4GiKXEACCCwASCAwAaAALcK7GmafrqEVepq12NNw6CuI3qsaRj6rKvHmoZBXT/lVoENAKlirhIHgDhbV5u/cDX7bmDX/pDBkT9ysHW5/Sf+UAIAfJvqR5MuQ3b+c23dWj/DsB74LX2s3Q/37ecqALjO4/H4a1kt01rz78wR9lAOmDdfPnSrq+fytfVH+3jXNE2n9HM2dbXrsaZS1HVEjzWV0mddPdZUyj3q2sudWrYtGq5/veDjF50V09wA8LbmwG6Z8gaAOyilXP4RrS9fJf4sdvk9AHy75sw7MdCbRthb7yJKKaa8Abilqweru4F95MptAPh281y8MrSrU+LPItbulV4WOQ/11nn9Wh8A0KNlVl2VXdXA3itia/3W9Pkr2wAAfJY4AEQQ2AAQQGADQACBDQABBDYABBDYABBAYANAAIENAAEENgAEENgAEEBgA0AAgQ0AAQQ2AAQQ2AAQQGADQACBDQABBDYABBDYABBAYANAAIENAAEENgAEENgAEEBgA0AAgQ0AAQQ2AAQQ2AAQQGADQACBDQABBDYABBDYABBAYANAAIENAAEENgAEENgAEODXXoNxHH9/X0ppXvdKH3v9AMBdjaWSkOM4/idA5z/X1rX2UXvcso+laZqqjwGAVo/H469l3Q0gywHz5suHbnVVa9e6+YNlbpqm6ZR+zqaudj3WVIq6juixplL6rKvHmkq5R11n5c6ZdqfEP611Wh0A7qw5sGtT12tT1q3KwelxALijl68SL6UM4zi+FbLCGQDaNI2wt0JZ4ALANXZH2LWrv991Rh8AcAfVEfYzUNcuDHtOiS+XP9u3tKutAwD+qAb2XoBurV8ur/UjpAFgn48mBYAAAhsAAghsAAggsAEggMAGgAACGwACCGwACCCwASCAwAaAAAIbAAIIbAAIILABIIDABoAAAhsAAghsAAggsAEggMAGgAACGwACCGwACCCwASCAwAaAAAIbAAIIbAAIILABIIDABoAAAhsAAghsAAggsAEggMAGgAACGwACCGwACCCwASCAwAaAAGMppVQbjOPv75dNa+vO7GMcx2r/zWbbAuC7/DtNwz///HNKX6flzol+1VYuC57/XFt3dh/PdXPTNNVKX3XOYQSgV//+++9Lj3s8HucW8gnlgHnz5UO3uqq1e7WPV03TdEo/Z1NXux5rKkVdR/RYUyl91tVjTaXco66zcudMzmEDQIDmwD4yXQ0AnOvlEXYpZRjHscsT8wDwbaoXnT1thbKgBoBr7I6wa1d/AwDX2L2ta/7vMPwZVT+nxJfLn+1b2tXWAQB/VAN7L0C31i+X1/oR0gCwz21dABBAYANAAIENAAEENgAEENgAEEBgA0AAgQ0AAQQ2AAQQ2AAQQGADQACBDQABBDYABBDYABBAYANAAIENAAEENgAEENgAEEBgA0AAgQ0AAQQ2AAQQ2AAQQGADQACBDQABBDYABBDYABBAYANAAIENAAEENgAEENgAEEBgA0AAgQ0AAQQ2AAQQ2AAQQGADQIBfew3Gcfz9fSmled0rfez1AwB3NZZKQo7j+J8Anf9cW9faR+1xyz6WpmmqPgYAWj0ej7+WdTeALAfMmy8futVVrV3r5g+WuWmaplP6OZu62vVYUynqOqLHmkrps64eayrlHnWdlTtn2p0S/7TWaXUAuLPmwF5OXZdSDoft2tR2OTg9DgB39PIIu/Vc9DzYXwl5AKAxsN8d+QpmAHjP7n3Y74b12jR4yzoA4I/qCPsZqGvT2LXp7XnI19qZIgeANtXA3gvQrfXL5bV+hDQA7PPRpAAQQGADQACBDQABBDYABBDYABBAYANAAIENAAEENgAEENgAEEBgA0AAgQ0AAQQ2AAQQ2AAQQGADQACBDQABBDYABBDYABBAYANAAIENAAEENgAEENgAEEBgA0AAgQ0AAQQ2AAQQ2AAQQGADQIBfew3Gcfz9fSmled3ZfQDAnVUDexzH/4To/OfaurP7AIC7q06JC08A6INz2AAQYPcc9tNyurqUcvj887w9ANCuObCXWs8/z4N9GfIAQJumwH73YjDnwgHgPbvnsN8NayNqAHjf7m1d83+H4c9ouXYOex7ytXavnAcHgDsaS0BKro3Sp2m6vhAAvtLj8fhrWXfxWAKcVeY0Taf0czZ1teuxplLUdUSPNZXSZ1091lTKPerqMR7dhw0AAQQ2AASIOYd9Rpm9fla5utr1WNMwqOuIHmsahj7r6rGmYbhHXT0+RyNsAAggsAEggMAGgAAx57AB4Eq9xePLf/zjSr3tNAC4milxAAggsAEggMAGgAACGwACCGwACCCwASCAwAaAAAIbAAJEfHDKUfNPRqt96Epru7Mc2d6Vfymmx/3VY02vbO+q4/jK/tpr+xM19bKv1j5d0b7qp67nNlteR5++4QO4vi6wlwdx66C2tru6rue6q/S4v3qs6ZXtXXUcj9Z11Qt98jFcLvvksUzfV1fX9dxGS5ur6/o0U+Kd6fWXSk35ev3dmuuxvoT9did3Ph4CuzN3/UX8Nr2+qIzj+PurJz3WNAz9Hsc7u/Px+LopcT6vtxex5wt9TzX1qscpwnkdvdTUo1JK9+dke3zT9U0ENvF6e7HvpY6lHmsahn7r6k2v52TnbySWbyo4l8DmkF5eJHo3f9GyzzI5bu3sp2s4h02z3l7Aen0nX0r5/fX8uQe97i+y+b26zlh6eTU50dZ5nrUppbV2P13X1rKfrKuX+1KTjmFt+U/V1cO99CnHsLf/g7V2d6trrYZe6vqkrwxsAPg2psQBIIDABoAAAhsAAghsAAjwf7MWesY8pii3AAAAAElFTkSuQmCC</Image>
-      </InputCell>
-      <TextCell style="Text" >
-       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;span style=" color:#000000;">&lt;img src="file:///C:/OpenModelica1.4.3/bin/OMNoteboook_tempfiles/131.png" width="288" height="214" />&lt;/span>&lt;/p>&lt;/body>&lt;/html></Text>
-       <Image name="file:///C:/OpenModelica1.4.3/bin/OMNoteboook_tempfiles/131.png" >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</Image>
-      </TextCell>
-     </GroupCell>
+end SimulationResult;</Output>
+            </GraphCell>
+            <TextCell style="Output" >
+              <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans'; font-size:10pt; font-weight:400; font-style:normal;">
+&lt;table style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Courier New'; font-size:11pt; color:#000000;">&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+            </TextCell>
+            <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.0025" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="0.2" MajorY="0.005" closed="false" YLabel="" Area="AAAAAAAAAABAI//I7X/I7j/wCaM81nAKP5TpBkgcOAA=" ShowGraph="true" Grid="true" XLabel="time" Legend="true" >
+              <Data Id="0" Label="time" >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</Data>
+              <Data Id="0" Label="x" >AAAB9kAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAAQCQAAAAAAABAJAAAAAAAAEAkAAAAAAAA</Data>
+              <Graph Points="false" Line="true" X="time" Interpolation="Linear" Y="x" Color="#ff0000" />
+              <Input>plot( x );</Input>
+              <Output>[done]</Output>
+            </GraphCell>
+            <TextCell style="Text" >
+              <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans'; font-size:10pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;img src="file:////home/stefan/Desktop/jobb/OPENMODELICA_1_4_5/OMNotebook/OMNotebookQT4/OMNoteboook_tempfiles/46.png" width="288" height="214" />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+              <Image name="file:////home/stefan/Desktop/jobb/OPENMODELICA_1_4_5/OMNotebook/OMNotebookQT4/OMNoteboook_tempfiles/46.png" >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</Image>
+            </TextCell>
+          </GroupCell>
+        </GroupCell>
+      </GroupCell>
+      <GroupCell closed="false" >
+        <TextCell style="Section" >
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans'; font-size:10pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Question&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text" >
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans'; font-size:10pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Why is it better not to have the same name on the variable in the iteration expression as a variable inside the for-clause in an equation?&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GroupCell closed="true" >
+          <TextCell style="Subsection" >
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans'; font-size:10pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Answer&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <TextCell style="Text" >
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans'; font-size:10pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">It is not good from the programmers point of view. The variable inside the for-clause is hidden, which is all right, but they are by the programmer easily mixed together.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+        </GroupCell>
+      </GroupCell>
     </GroupCell>
-   </GroupCell>
-   <GroupCell closed="false" >
-    <TextCell style="Section" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Question&lt;/p>&lt;/body>&lt;/html></Text>
-    </TextCell>
-    <TextCell style="Text" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">Why is it better not to have the same name on the variable in the iteration expression as a variable inside the for-clause in an equation?&lt;/p>&lt;/body>&lt;/html></Text>
-    </TextCell>
-    <GroupCell closed="true" >
-     <TextCell style="Subsection" >
-      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:14pt; font-weight:600; color:#000000;">Answer&lt;/p>&lt;/body>&lt;/html></Text>
-     </TextCell>
-     <TextCell style="Text" >
-      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">It is not good from the programmers point of view. The variable inside the for-clause is hidden, which is all right, but they are by the programmer easily mixed together.&lt;/p>&lt;/body>&lt;/html></Text>
-     </TextCell>
-    </GroupCell>
-   </GroupCell>
   </GroupCell>
- </GroupCell>
 </Notebook>

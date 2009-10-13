@@ -1,19 +1,40 @@
 <!DOCTYPE OMNotebook>
 <Notebook>
- <GroupCell closed="false" >
   <GroupCell closed="false" >
-   <TextCell style="Title" >
-    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Arial; font-size:38pt; font-weight:600; color:#000000;">Order of evaluation&lt;/p>&lt;/body>&lt;/html></Text>
-   </TextCell>
-   <GroupCell closed="false" >
-    <TextCell style="Section" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">GuardTest&lt;/p>&lt;/body>&lt;/html></Text>
-    </TextCell>
-    <TextCell style="Text" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">Only constructs like &lt;span style=" font-family:Courier New;">if&lt;/span>-statements and &lt;span style=" font-family:Courier New;">if&lt;/span>-expressions can be used to guard expressions against evaluation since the bodies of these constructs are only evaluated if the corresponding condition is &lt;span style=" font-family:Courier New;">true&lt;/span>. &lt;br />&lt;br />The equation is correct since the use of an &lt;span style=" font-family:Courier New;">if&lt;/span>-expression guarantees that the condition &lt;span style=" font-family:Courier New;">(y&amp;gt;=1 and y&amp;lt;=n)&lt;/span> is always evaluated before &lt;span style=" font-family:Courier New;">then&lt;/span> or &lt;span style=" font-family:Courier New;">else&lt;/span>-parts of the &lt;span style=" font-family:Courier New;">if&lt;/span>-expression.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
-    </TextCell>
-    <InputCell style="Input" closed="false" >
-     <Input>class GuardTest
+    <GroupCell closed="false" >
+      <TextCell style="Title" >
+        <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans'; font-size:10pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:10px; margin-bottom:10px; margin-left:10px; margin-right:10px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Arial'; font-size:38pt; font-weight:600; color:#000000;">Order of evaluation&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <GroupCell closed="false" >
+        <TextCell style="Section" >
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans'; font-size:10pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">GuardTest&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text" >
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans'; font-size:10pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Only constructs like &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">if&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">-statements and &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">if&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">-expressions can be used to guard expressions against evaluation since the bodies of these constructs are only evaluated if the corresponding condition is &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">true&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">. &lt;br />&lt;br />The equation is correct since the use of an &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">if&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">-expression guarantees that the condition &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">(y&amp;gt;=1 and y&amp;lt;=n)&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> is always evaluated before &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">then&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> or &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">else&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">-parts of the &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">if&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">-expression.&lt;br />&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+          <Input>class GuardTest
   Boolean v[n] = fill(false,n);
   Boolean b;
   Integer y = 4;
@@ -21,33 +42,62 @@
 equation
   b = if (y>=1 and y&lt;= n) then v[y] else false;      // Correct
 end GuardTest;</Input>
-     <Output>Ok</Output>
-    </InputCell>
-   </GroupCell>
-   <GroupCell closed="false" >
-    <TextCell style="Section" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Simulation of GuardTest&lt;/p>&lt;/body>&lt;/html></Text>
-    </TextCell>
-    <InputCell style="Input" closed="false" >
-     <Input>simulate( GuardTest )  //?? Error - not yet implemented</Input>
-     <Output>record
+          <Output>Ok</Output>
+        </GraphCell>
+      </GroupCell>
+      <GroupCell closed="false" >
+        <TextCell style="Section" >
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans'; font-size:10pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Simulation of GuardTest&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+          <Input>simulate( GuardTest )  //?? Error - not yet implemented</Input>
+          <Output>record
     resultFile = "Simulation failed.
 "
 end record</Output>
-    </InputCell>
-    <TextCell style="Output" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
-    </TextCell>
-   </GroupCell>
-   <GroupCell closed="false" >
-    <TextCell style="Section" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">GuardTestInvalid&lt;/p>&lt;/body>&lt;/html></Text>
-    </TextCell>
-    <TextCell style="Text" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">Boolean operators such as &lt;span style=" font-family:Courier New;">and&lt;/span> cannot be used for evaluation protection. The equation in the class &lt;span style=" font-family:Courier New;">GuardTestInvalid&lt;/span> below can generate an error such as index out of bounds (if y is not in the interval 1 to 5), see the simulation below. Even if the boolean expression (&lt;span style=" font-family:Courier New;">y&amp;gt;=1&lt;/span> and &lt;span style=" font-family:Courier New;">y&amp;lt;=n)&lt;/span> evaluates to &lt;span style=" font-family:Courier New;">false&lt;/span>, the evaluation of &lt;span style=" font-family:Courier New;">v[y]&lt;/span> is not necessarily prevented.&lt;span style=" font-family:Courier New;"> &lt;br />&lt;/span>&lt;/p>&lt;/body>&lt;/html></Text>
-    </TextCell>
-    <InputCell style="Input" closed="false" >
-     <Input>class GuardTestInvalid
+        </GraphCell>
+        <TextCell style="Output" >
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans'; font-size:10pt; font-weight:400; font-style:normal;">
+&lt;table style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Courier New'; font-size:11pt; color:#000000;">&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+      </GroupCell>
+      <GroupCell closed="false" >
+        <TextCell style="Section" >
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans'; font-size:10pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">GuardTestInvalid&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text" >
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans'; font-size:10pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Boolean operators such as &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">and&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> cannot be used for evaluation protection. The equation in the class &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">GuardTestInvalid&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> below can generate an error such as index out of bounds (if y is not in the interval 1 to 5), see the simulation below. Even if the boolean expression (&lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">y&amp;gt;=1&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> and &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">y&amp;lt;=n)&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> evaluates to &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">false&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">, the evaluation of &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">v[y]&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> is not necessarily prevented.&lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;"> &lt;br />&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+          <Input>class GuardTestInvalid
   Boolean v[n] = fill(false,n);
   Boolean b;
   Integer y = 10;
@@ -55,118 +105,246 @@ end record</Output>
 equation
   b = v[y] and (y>=1 and y&lt;=n);            // Invalid!!
 end GuardTestInvalid;</Input>
-     <Output>Ok</Output>
-    </InputCell>
-   </GroupCell>
-   <GroupCell closed="false" >
-    <TextCell style="Section" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Simulation of GuardTestInvalid&lt;/p>&lt;/body>&lt;/html></Text>
-    </TextCell>
-    <InputCell style="Input" closed="false" >
-     <Input>simulate( GuardTestInvalid )</Input>
-     <Output>record
+          <Output>Ok</Output>
+        </GraphCell>
+      </GroupCell>
+      <GroupCell closed="false" >
+        <TextCell style="Section" >
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans'; font-size:10pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Simulation of GuardTestInvalid&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+          <Input>simulate( GuardTestInvalid )</Input>
+          <Output>record SimulationResult
     resultFile = "Simulation failed.
+Error building simulator. Buildlog: g++ -I"/home/stefan/Desktop/jobb/OPENMODELICA_1_4_5/build//include" -msse2 -mfpmath=sse  -I. -o GuardTestInvalid GuardTestInvalid.cpp -lsim -L"/home/stefan/Desktop/jobb/OPENMODELICA_1_4_5/build//lib" -lc_runtime -lf2c -lsendData -lQtNetwork -lQtCore -lQtGui 
+GuardTestInvalid.cpp:28: warning: deprecated conversion from string constant to âchar*â
+GuardTestInvalid.cpp:29: warning: deprecated conversion from string constant to âchar*â
+GuardTestInvalid.cpp:31: warning: deprecated conversion from string constant to âchar*â
+GuardTestInvalid.cpp:32: warning: deprecated conversion from string constant to âchar*â
+GuardTestInvalid.cpp:33: warning: deprecated conversion from string constant to âchar*â
+GuardTestInvalid.cpp:33: warning: deprecated conversion from string constant to âchar*â
+GuardTestInvalid.cpp:33: warning: deprecated conversion from string constant to âchar*â
+GuardTestInvalid.cpp:33: warning: deprecated conversion from string constant to âchar*â
+GuardTestInvalid.cpp:33: warning: deprecated conversion from string constant to âchar*â
+GuardTestInvalid.cpp:33: warning: deprecated conversion from string constant to âchar*â
+GuardTestInvalid.cpp:33: warning: deprecated conversion from string constant to âchar*â
+GuardTestInvalid.cpp:34: warning: deprecated conversion from string constant to âchar*â
+GuardTestInvalid.cpp:35: warning: deprecated conversion from string constant to âchar*â
+GuardTestInvalid.cpp:36: warning: deprecated conversion from string constant to âchar*â
+GuardTestInvalid.cpp:37: warning: deprecated conversion from string constant to âchar*â
+GuardTestInvalid.cpp:38: warning: deprecated conversion from string constant to âchar*â
+GuardTestInvalid.cpp:40: warning: deprecated conversion from string constant to âchar*â
+GuardTestInvalid.cpp:41: warning: deprecated conversion from string constant to âchar*â
+GuardTestInvalid.cpp:42: warning: deprecated conversion from string constant to âchar*â
+GuardTestInvalid.cpp:42: warning: deprecated conversion from string constant to âchar*â
+GuardTestInvalid.cpp:42: warning: deprecated conversion from string constant to âchar*â
+GuardTestInvalid.cpp:42: warning: deprecated conversion from string constant to âchar*â
+GuardTestInvalid.cpp:42: warning: deprecated conversion from string constant to âchar*â
+GuardTestInvalid.cpp:42: warning: deprecated conversion from string constant to âchar*â
+GuardTestInvalid.cpp:42: warning: deprecated conversion from string constant to âchar*â
+GuardTestInvalid.cpp:43: warning: deprecated conversion from string constant to âchar*â
+GuardTestInvalid.cpp:44: warning: deprecated conversion from string constant to âchar*â
+GuardTestInvalid.cpp:45: warning: deprecated conversion from string constant to âchar*â
+GuardTestInvalid.cpp:46: warning: deprecated conversion from string constant to âchar*â
+GuardTestInvalid.cpp:47: warning: deprecated conversion from string constant to âchar*â
+GuardTestInvalid.cpp: In function âchar* getName(double*)â:
+GuardTestInvalid.cpp:73: warning: deprecated conversion from string constant to âchar*â
+GuardTestInvalid.cpp: In function âint functionDAE_output2()â:
+GuardTestInvalid.cpp:378: error: âvâ was not declared in this scope
+GuardTestInvalid.cpp:378: error: âyâ was not declared in this scope
+GuardTestInvalid.cpp: In function âint function_updateDependents()â:
+GuardTestInvalid.cpp:464: error: âvâ was not declared in this scope
+GuardTestInvalid.cpp:464: error: âyâ was not declared in this scope
+make: *** [GuardTestInvalid] Error 1
+
+Error building simulator. Buildlog: command "/home/stefan/Desktop/jobb/OPENMODELICA_1_4_5/build//bin/Compile" not found. Check $OPENMODELICAHOME
 "
-end record</Output>
-    </InputCell>
-   </GroupCell>
-   <GroupCell closed="false" >
-    <TextCell style="Section" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Guards with Continuous-Time Conditions&lt;/p>&lt;/body>&lt;/html></Text>
-    </TextCell>
-    <TextCell style="Text" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">One problem with the iterative zero-crossing search is that &lt;span style=" font-family:Courier New;">if&lt;/span>-expressions in Modelica do not behave exactly as most people expect based on experience with conventional programming languages. During this iterative process small negative values of h can actually be supplied to the body of the &lt;span style=" font-family:Courier New;">if&lt;/span>-expression, e.g. &lt;span style=" font-family:Courier New;">-c*sqrt(h)&lt;/span> below, causing an attempt to compute the square root of a negative number, which is an error.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
-    </TextCell>
-    <InputCell style="Input" closed="true" >
-     <Input>class GuardContinuousVar
+end SimulationResult;</Output>
+        </GraphCell>
+      </GroupCell>
+      <GroupCell closed="false" >
+        <TextCell style="Section" >
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans'; font-size:10pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Guards with Continuous-Time Conditions&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text" >
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans'; font-size:10pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">One problem with the iterative zero-crossing search is that &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">if&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">-expressions in Modelica do not behave exactly as most people expect based on experience with conventional programming languages. During this iterative process small negative values of h can actually be supplied to the body of the &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">if&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">-expression, e.g. &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">-c*sqrt(h)&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> below, causing an attempt to compute the square root of a negative number, which is an error.&lt;br />&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+          <Input>class GuardContinuousVar
   Real h(start = 1);
   parameter Real c=1;
 equation
   der(h) = if h > 0 then -c*sqrt(h) else 0;          // Incorrect!!
 end GuardContinuousVar;</Input>
-     <Output></Output>
-    </InputCell>
-    <TextCell style="Text" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />The &lt;span style=" font-family:Courier New;">NoEvent&lt;/span> operator is used to avoid events from being generated by the expression it is applied to. The operator should be used if the expression is continuous during a discrete switch.&lt;/p>&lt;/body>&lt;/html></Text>
-    </TextCell>
-    <InputCell style="Input" closed="false" >
-     <Input>class GuardContinuousVarCorrect
+          <Output>Ok</Output>
+        </GraphCell>
+        <TextCell style="Text" >
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans'; font-size:10pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />The &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">NoEvent&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> operator is used to avoid events from being generated by the expression it is applied to. The operator should be used if the expression is continuous during a discrete switch.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+          <Input>class GuardContinuousVarCorrect
   Real h(start = 1);
   parameter Real c=1;
 equation
   der(h) = if noEvent(h > 0) then -c*sqrt(h) else 0;    // Correct!!
-end GuardContinuousVar;</Input>
-     <Output>Ok</Output>
-    </InputCell>
-   </GroupCell>
-   <GroupCell closed="false" >
-    <TextCell style="Section" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Simulation of GuardContinuousVar&lt;/p>&lt;/body>&lt;/html></Text>
-    </TextCell>
-    <TextCell style="Text" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">The simulation shows that the value of h decreases and at t=2 is becomes a small negative number.&lt;/p>&lt;/body>&lt;/html></Text>
-    </TextCell>
-    <InputCell style="Input" closed="false" >
-     <Input>simulate( GuardContinuousVar, stopTime = 5, /* outputInterval=1, */ numberOfIntervals=5 )   //?? Error - not yet implemented or error in model</Input>
-     <Output>record
+end GuardContinuousVarCorrect;</Input>
+          <Output>Ok</Output>
+        </GraphCell>
+      </GroupCell>
+      <GroupCell closed="false" >
+        <TextCell style="Section" >
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans'; font-size:10pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Simulation of GuardContinuousVar&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text" >
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans'; font-size:10pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">The simulation shows that the value of h decreases and at t=2 is becomes a small negative number.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+          <Input>simulate( GuardContinuousVar, stopTime = 5, /* outputInterval=1, */ numberOfIntervals=5 )   //?? Error - not yet implemented or error in model</Input>
+          <Output>record SimulationResult
     resultFile = "GuardContinuousVar_res.plt"
-end record</Output>
-    </InputCell>
-    <InputCell style="Input" closed="false" >
-     <Input>val(h,0.1)</Input>
-     <Output>"Error, check variable name and time variables"</Output>
-    </InputCell>
-    <TextCell style="Output" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
-    </TextCell>
-    <InputCell style="Input" closed="false" >
-     <Input>plot( h );  // plot( h, xrange={1,5} );  - ??Error in plotting</Input>
-     <Output>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">[Error] Unable to find plot image "C:/OpenModelica1.4.3/bin/omc_tmp_plot.png"&lt;/p>&lt;/body>&lt;/html></Output>
-    </InputCell>
-    <TextCell style="Text" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;span style=" color:#000000;">&lt;img src="file:///C:/OpenModelica1.4.3/bin/OMNoteboook_tempfiles/44.png" width="288" height="214" />&lt;/span>&lt;/p>&lt;/body>&lt;/html></Text>
-     <Image name="file:///C:/OpenModelica1.4.3/bin/OMNoteboook_tempfiles/44.png" >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</Image>
-    </TextCell>
-    <InputCell style="Input" closed="true" >
-     <Input>{h[2], h[4]}</Input>
-     <Output></Output>
-    </InputCell>
-    <InputCell style="Input" closed="true" >
-     <Input>!!dslog.txt</Input>
-     <Output></Output>
-    </InputCell>
-   </GroupCell>
-   <GroupCell closed="false" >
-    <TextCell style="Section" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Simulation of GuardContinuousVarCorrect&lt;/p>&lt;/body>&lt;/html></Text>
-    </TextCell>
-    <InputCell style="Input" closed="false" >
-     <Input>simulate( GuardContinuousVarCorrect, stopTime = 5, numberOfIntervals=5 ) </Input>
-     <Output>record
+end SimulationResult;</Output>
+        </GraphCell>
+        <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+          <Input>val(h,0.1)</Input>
+          <Output>0.925000000000601</Output>
+        </GraphCell>
+        <TextCell style="Output" >
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans'; font-size:10pt; font-weight:400; font-style:normal;">
+&lt;table style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Courier New'; font-size:11pt; color:#000000;">&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.5" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="0.2" closed="false" YLabel="" Area="v6ExNrF4csy/ilTYgLs+6EAUYdhXZkwZP/CpsQF2fc8=" ShowGraph="true" Grid="true" XLabel="time" Legend="true" >
+          <Data Id="0" Label="h" >AAAACj/wAAAAAAAAP/AAAAAAAAA/7//////4MD/QAAAAAcp0PUhev/8iCN67oIzEY9xgC7xA4bOF5qEhvEDhs4XmoSG8QOGzheahIbxA4bOF5qEh</Data>
+          <Data Id="0" Label="time" >AAAACgAAAAAAAAAAAAAAAAAAAAA9Tz//////9D/wAAAAAAAAQAAAAAAAAABAAAAABaK8NUAAAAAFosAqQAgAAAAAAABAEAAAAAAAAEAUAAAAAAAA</Data>
+          <Graph Points="false" Line="true" X="time" Interpolation="Linear" Y="h" Color="#ff0000" />
+          <Input>plot( h );  // plot( h, xrange={1,5} );  - ??Error in plotting</Input>
+          <Output>[done]</Output>
+        </GraphCell>
+        <TextCell style="Text" >
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans'; font-size:10pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;img src="file:////home/stefan/Desktop/jobb/OPENMODELICA_1_4_5/OMNotebook/OMNotebookQT4/OMNoteboook_tempfiles/15.png" width="288" height="214" />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          <Image name="file:////home/stefan/Desktop/jobb/OPENMODELICA_1_4_5/OMNotebook/OMNotebookQT4/OMNoteboook_tempfiles/15.png" >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</Image>
+        </TextCell>
+        <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+          <Input>{h[2], h[4]}</Input>
+          <Output>
+OMC-ERROR: 
+"Variable h[2] not found in scope &lt;global scope>
+Variable h[4] not found in scope &lt;global scope>
+"</Output>
+        </GraphCell>
+        <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+          <Input>!!dslog.txt</Input>
+          <Output>[1:1]: error: illegal token</Output>
+        </GraphCell>
+      </GroupCell>
+      <GroupCell closed="false" >
+        <TextCell style="Section" >
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans'; font-size:10pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Simulation of GuardContinuousVarCorrect&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+          <Input>simulate( GuardContinuousVarCorrect, stopTime = 5, numberOfIntervals=5 ) </Input>
+          <Output>record SimulationResult
     resultFile = "GuardContinuousVarCorrect_res.plt"
-end record</Output>
-    </InputCell>
-    <TextCell style="Output" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
-    </TextCell>
-    <InputCell style="Input" closed="false" >
-     <Input>plot( h );</Input>
-     <Output>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;img src="file:///C:/OpenModelica1.4.3/bin/OMNoteboook_tempfiles/46.png" width="492" height="250" />&lt;/p>&lt;/body>&lt;/html></Output>
-     <Image name="file:///C:/OpenModelica1.4.3/bin/OMNoteboook_tempfiles/46.png" >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</Image>
-    </InputCell>
-    <TextCell style="Text" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;span style=" color:#000000;">&lt;img src="file:///C:/OpenModelica1.4.3/bin/OMNoteboook_tempfiles/45.png" width="288" height="214" />&lt;/span>&lt;/p>&lt;/body>&lt;/html></Text>
-     <Image name="file:///C:/OpenModelica1.4.3/bin/OMNoteboook_tempfiles/45.png" >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</Image>
-    </TextCell>
-    <InputCell style="Input" closed="false" >
-     <Input>val(h,2.5)</Input>
-     <Output>1.81003769163172e-06</Output>
-    </InputCell>
-    <InputCell style="Input" closed="false" >
-     <Input>val(h,5.0)</Input>
-     <Output>-6.05997073020587e-06</Output>
-    </InputCell>
-   </GroupCell>
+end SimulationResult;</Output>
+        </GraphCell>
+        <TextCell style="Output" >
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans'; font-size:10pt; font-weight:400; font-style:normal;">
+&lt;table style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Courier New'; font-size:11pt; color:#000000;">&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+          <Input>plot( h );</Input>
+          <Output>￼</Output>
+          <Image name="file:////home/stefan/Desktop/jobb/OPENMODELICA_1_4_5/OMNotebook/OMNotebookQT4/OMNoteboook_tempfiles/16.png" >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</Image>
+        </GraphCell>
+        <TextCell style="Text" >
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans'; font-size:10pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;img src="file:////home/stefan/Desktop/jobb/OPENMODELICA_1_4_5/OMNotebook/OMNotebookQT4/OMNoteboook_tempfiles/17.png" width="288" height="214" />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          <Image name="file:////home/stefan/Desktop/jobb/OPENMODELICA_1_4_5/OMNotebook/OMNotebookQT4/OMNoteboook_tempfiles/17.png" >AAAAAYlQTkcNChoKAAAADUlIRFIAAAEgAAAA1ggDAAAARuGvAgAAAwBQTFRFAAAAAAD/2dnZAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAqOCPfgAAAAlwSFlzAAALEwAACxMBAJqcGAAAA7tJREFUeJzt3eGWmyAURWH0/R+6Xa1JjAEPV4GEe/f+0bFLJiv5BkxbnGla6bT07Sfw6wEkAkgEkAggEUAigEQAiQASASQCSASQCCARQCKARACJABIBJAJIBJAIIJEGSul4sDvyX8VLTbuPqfqzvFQDtE2Y9O8w7ZwiVHipy9Y2JD2GMoPyQ/ZAzKDjiL+L6rWu0tMqSIaXmrKH3rMA8TZPnwEkAkgEkAggEUAigEQAiQASASQCSASQCCARQCKARHmg1z/Th69gANAjgESnQAtCAmjgE/nVskDPDVSEzi8zACkgFhlAKgGEEEAigEQKKLwQQCIJFF0IIJEGCi4EkAggUQVQbCGARDVAoYUAElUBRRYCSASQqA4osBBAokqguEIvg/13qHzevABQyhzvp1dUoSxQ7vYXgHIziDVWv8SiCh2X1f5XgNb6t/k1qhBAIgNQTCGARACJLEAhhQASmYAiCgEksgEFFAJIBJDICBRPCCCRFSicEEAiM1A0IYBEAInsQMGEABJdAIolVNqb/9wXexUT6H3r+XDyUCSh/M6q+NEUAGX25t8KJFS/N78vItB+V14tsZhAppNxhAASXQSKIwSQ6CpQGCGARACJLgNFEQJIdB0oiBBAohtAMYQAEgEkugMUQggg0S2gCEIAie4BBRACSASQ6CaQfyGARPmbFwz/nap3odLNCwBtXdt63udcqHR3x7YFXfEIEYFWZtCz7M0Lj9sXqoCcC919m18B0rkWAkjUAsi1EEAigERNgDwLASRqA+RYCCBRIyC/QgCJABK1AnIrBJCoGZBXIYBE7YCcCgEkagjkU6gl0Lo4JGoK5HES5ffm1feslnMndH/r+ZC3ZVbYWb08g1Zvk6h0d8f/DwgVl9j7SWOehLJ78+n8p7/oHF2IGr/NP3Mj1AvIjVA3IC9C/YCcXIg6AvmYRF2BPAj1BXKwzDoDzT+JugPNLtQfaHKhAUBzX4hGAE09icYATSw0CGjeZTYKaNpJNA5oUqGBQHMKjQSa8kI0FGjGSTQYaD6h0UDTCQ0Hmu1CNB5oskn0DaCfFjq+5oZAlruql36PfW/04zvi6x7rYy/67MA2eun42FdHZ35XBErdW36nt1mTjlMqD1Rx0mvpfEbVnwwSQCIMRACJ2gHZ7tfrOdo2PJ2PbjiDTM/KNNw2ek3Wp3LjtKWef9rtyXk++FtA/Xw+/7Zw68G/t8Rso7tNT/XYzYBsXzfjF9l8kbYIDVtiPgNIBJAIIBFAIoBEAIkAEgEkAkgEkOgPS7bcVrpKVh0AAAAASUVORK5CYII=</Image>
+        </TextCell>
+        <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+          <Input>val(h,2.5)</Input>
+          <Output>-1.27803944270626e-11</Output>
+        </GraphCell>
+        <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+          <Input>val(h,5.0)</Input>
+          <Output>-2.57339489511299e-11</Output>
+        </GraphCell>
+      </GroupCell>
+    </GroupCell>
   </GroupCell>
- </GroupCell>
 </Notebook>

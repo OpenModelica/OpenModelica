@@ -1,15 +1,29 @@
 <!DOCTYPE OMNotebook>
 <Notebook>
- <GroupCell closed="false" >
   <GroupCell closed="false" >
-   <TextCell style="Title" >
-    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Arial; font-size:38pt; font-weight:600; color:#000000;">Local Packages&lt;/p>&lt;/body>&lt;/html></Text>
-   </TextCell>
-   <TextCell style="Text" >
-    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />A local package is simply a package that is declared directly inside a &lt;span style=" font-style:italic;">class&lt;/span> that is not a package. In the model &lt;span style=" font-family:Courier New;">MyCircuit&lt;/span> below we use a local specialized version of the package &lt;span style=" font-family:Courier New;">Electrical.Components&lt;/span> being replaced by the local type &lt;span style=" font-family:Courier New;">MyResistorModel&lt;/span>. Several classes from the local package &lt;span style=" font-family:Courier New;">MyComponents&lt;/span> are used for instantiating variables.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
-   </TextCell>
-   <InputCell style="Input" closed="false" >
-    <Input>model MyCircuit
+    <GroupCell closed="false" >
+      <TextCell style="Title" >
+        <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:10px; margin-bottom:10px; margin-left:10px; margin-right:10px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Arial'; font-size:38pt; font-weight:600; color:#000000;">Local Packages&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <TextCell style="Text" >
+        <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />A local package is simply a package that is declared directly inside a &lt;span style=" font-style:italic;">class&lt;/span> that is not a package. In the model &lt;span style=" font-family:'Courier New';">MyCircuit&lt;/span> below we use a local specialized version of the package &lt;span style=" font-family:'Courier New';">Electrical.Components&lt;/span> being replaced by the local type &lt;span style=" font-family:'Courier New';">MyResistorModel&lt;/span>. Several classes from the local package &lt;span style=" font-family:'Courier New';">MyComponents&lt;/span> are used for instantiating variables.&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+        <Input>model MyCircuit
 
   model MyResistorModel
     extends Electrical.Interfaces.ResistorModel;
@@ -23,14 +37,21 @@
   MyComponents.Transducer td2;
 
 end MyCircuit;</Input>
-    <Output>Ok</Output>
-   </InputCell>
-   <TextCell style="Text" >
-    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />The class &lt;span style=" font-family:Courier New;">DeQueueLocalUser&lt;/span> below uses the local package &lt;span style=" font-family:Courier New;">P&lt;/span> that is a version of the package &lt;span style=" font-family:Courier New;">DoubleEndedQueue&lt;/span> from the section &lt;a href="Inherited.onb
-">&lt;span style=" text-decoration: underline; color:#0000ff;">Inherited Packages&lt;/span>&lt;/a> parameterized by the local type &lt;span style=" font-family:Courier New;">VerySecret&lt;/span>.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
-   </TextCell>
-   <InputCell style="Input" closed="false" >
-    <Input>class DeQueueLocalUser
+        <Output>{MyCircuit}</Output>
+      </GraphCell>
+      <TextCell style="Text" >
+        <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />The class &lt;span style=" font-family:'Courier New';">DeQueueLocalUser&lt;/span> below uses the local package &lt;span style=" font-family:'Courier New';">P&lt;/span> that is a version of the package &lt;span style=" font-family:'Courier New';">DoubleEndedQueue&lt;/span> from the section &lt;a href="Inherited.onb
+">&lt;span style=" text-decoration: underline; color:#0000ff;">Inherited Packages&lt;/span>&lt;/a> parameterized by the local type &lt;span style=" font-family:'Courier New';">VerySecret&lt;/span>.&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+        <Input>class DeQueueLocalUser
   protected
     type VerySecret = Integer;
     package P = DoubleEndedQueue(redeclare type Element = VerySecret);
@@ -42,9 +63,9 @@ algorithm
     q := P.AddBottom(q, 455);  // Insert at the end of the queue
     item := P.Bottom(q);       // Get the end element, i.e. 455
     q := P.Pop(q);             // Remove the first element from the queue
-end DequeueLocalUser;</Input>
-    <Output>Ok</Output>
-   </InputCell>
+end DeQueueLocalUser;</Input>
+        <Output>{DeQueueLocalUser}</Output>
+      </GraphCell>
+    </GroupCell>
   </GroupCell>
- </GroupCell>
 </Notebook>

@@ -1,33 +1,61 @@
 <!DOCTYPE OMNotebook>
 <Notebook>
- <GroupCell closed="false" >
   <GroupCell closed="false" >
-   <TextCell style="Title" >
-    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Arial; font-size:38pt; font-weight:600; color:#000000;">Terminate&lt;/p>&lt;/body>&lt;/html></Text>
-   </TextCell>
-   <TextCell style="Text" >
-    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />The most common usage of &lt;span style=" font-family:Courier New;">terminate&lt;/span> is to give a more appropriate stopping criteria for terminating a simulation than a fixed point in time. The &lt;span style=" font-family:Courier New;">terminate&lt;/span> function takes a single argument of type &lt;span style=" font-family:Courier New;">String&lt;/span>, which is used to indicate the reason for a successful termination. This is exemplified in the &lt;span style=" font-family:Courier New;">terminate&lt;/span> statement within the &lt;span style=" font-family:Courier New;">when&lt;/span>-statement in &lt;span style=" font-family:Courier New;">MoonLanding&lt;/span>.&lt;/p>&lt;/body>&lt;/html></Text>
-   </TextCell>
-   <GroupCell closed="false" >
-    <TextCell style="Section" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Celestial Body&lt;/p>&lt;/body>&lt;/html></Text>
-    </TextCell>
-    <InputCell style="Input" closed="false" >
-     <Input>class CelestialBody
+    <GroupCell closed="false" >
+      <TextCell style="Title" >
+        <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:10px; margin-bottom:10px; margin-left:10px; margin-right:10px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Arial'; font-size:38pt; font-weight:600; color:#000000;">Terminate&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <TextCell style="Text" >
+        <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />The most common usage of &lt;span style=" font-family:'Courier New';">terminate&lt;/span> is to give a more appropriate stopping criteria for terminating a simulation than a fixed point in time. The &lt;span style=" font-family:'Courier New';">terminate&lt;/span> function takes a single argument of type &lt;span style=" font-family:'Courier New';">String&lt;/span>, which is used to indicate the reason for a successful termination. This is exemplified in the &lt;span style=" font-family:'Courier New';">terminate&lt;/span> statement within the &lt;span style=" font-family:'Courier New';">when&lt;/span>-statement in &lt;span style=" font-family:'Courier New';">MoonLanding&lt;/span>.&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <GroupCell closed="false" >
+        <TextCell style="Section" >
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Celestial Body&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+          <Input>class CelestialBody
   constant Real g = 6.672e-11;
   parameter Real radius;
   parameter String name;
   Real mass;
 end CelestialBody;</Input>
-     <Output>Ok</Output>
-    </InputCell>
-   </GroupCell>
-   <GroupCell closed="false" >
-    <TextCell style="Section" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Rocket&lt;/p>&lt;/body>&lt;/html></Text>
-    </TextCell>
-    <InputCell style="Input" closed="false" >
-     <Input>class Rocket
+          <Output>{CelestialBody}</Output>
+        </GraphCell>
+      </GroupCell>
+      <GroupCell closed="false" >
+        <TextCell style="Section" >
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Rocket&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+          <Input>class Rocket
   parameter String name;
   Real mass(start = 1038.358);
   Real altitude(start = 59404);
@@ -42,18 +70,32 @@ equation
   der(altitude) = velocity;
   der(velocity) = acceleration;
 end Rocket;  </Input>
-     <Output>Ok</Output>
-    </InputCell>
-   </GroupCell>
-   <GroupCell closed="false" >
-    <TextCell style="Section" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">MoonLanding&lt;/p>&lt;/body>&lt;/html></Text>
-    </TextCell>
-    <TextCell style="Text" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">When using this terminate condition the simulation stops when the moon lander touches the ground on the moon.&lt;/p>&lt;/body>&lt;/html></Text>
-    </TextCell>
-    <InputCell style="Input" closed="false" >
-     <Input>class MoonLanding
+          <Output>{Rocket}</Output>
+        </GraphCell>
+      </GroupCell>
+      <GroupCell closed="false" >
+        <TextCell style="Section" >
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">MoonLanding&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text" >
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">When using this terminate condition the simulation stops when the moon lander touches the ground on the moon.&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+          <Input>class MoonLanding
   parameter Real force1 = 36350;
   parameter Real force2 = 1308;
 protected
@@ -73,38 +115,64 @@ algorithm
   when apollo.altitude &lt; 0 then    // Termination condition
     terminate("The moon lander touches the ground of the moon");
   end when;
-end MoonLanding;
-</Input>
-     <Output>Ok</Output>
-    </InputCell>
-   </GroupCell>
-   <GroupCell closed="false" >
-    <TextCell style="Section" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">MoonLanding Simulation&lt;/p>&lt;/body>&lt;/html></Text>
-    </TextCell>
-    <TextCell style="Text" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">When we simulate the MoonLanding class from 0 to 230 we get a message that the simulation ended before reaching 230. In the dslog.txt file we see that the simulation is terminated at T = 218.&lt;/p>&lt;/body>&lt;/html></Text>
-    </TextCell>
-    <InputCell style="Input" closed="false" >
-     <Input>simulate( MoonLanding, stopTime=230 ) //?? Error</Input>
-     <Output>record
+end MoonLanding;</Input>
+          <Output>{MoonLanding}</Output>
+        </GraphCell>
+      </GroupCell>
+      <GroupCell closed="false" >
+        <TextCell style="Section" >
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">MoonLanding Simulation&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text" >
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">When we simulate the MoonLanding class from 0 to 230 we get a message that the simulation ended before reaching 230. In the dslog.txt file we see that the simulation is terminated at T = 218.&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+          <Input>simulate( MoonLanding, stopTime=230 ) //?? Error</Input>
+          <Output>record SimulationResult
     resultFile = "Simulation failed.
-Error occured while flattening model MoonLanding
 "
-end record</Output>
-    </InputCell>
-    <InputCell style="Input" closed="true" >
-     <Input>plot( { apollo.velocity, apollo.altitude }, xrange={0,208} ); //??xrange</Input>
-     <Output>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Output>
-    </InputCell>
-    <TextCell style="Text" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;span style=" color:#000000;">&lt;img src="file:///C:/OpenModelica1.4.3/bin/OMNoteboook_tempfiles/5.png" width="288" height="214" />&lt;/span>&lt;/p>&lt;/body>&lt;/html></Text>
-     <Image name="file:///C:/OpenModelica1.4.3/bin/OMNoteboook_tempfiles/5.png" >AAAAAYlQTkcNChoKAAAADUlIRFIAAAEgAAAA1ggDAAAARuGvAgAAAwBQTFRFAAAAAH8AAAD/2dnZAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAeTWsrgAAAAlwSFlzAAALEwAACxMBAJqcGAAABQpJREFUeJztnYF2mzAMRcX8//+8LZBgg+FJ2IBtvXs6moIM5lYoiWhXCeQUeXsCrUNBAAoCUBCAggAUBKAgAAUBKAhAQQAKAugEZaNE1uXhwMzW7arv12vs+T6fRTWVgyBR7OF0aPqFpA8bQTOVRcS/76tInDaSbP1Fy/ov3ToPnrcte5u3/HYkywG6FDSfQfQRC5JoT/I713RrtJtISUh21E0G/VlYY+YT1giKs+JE0PxpL6jXDFqvivBVEC1Dbim7rfGw6PCx6chYExiLdOWZJ2VetuubwPY0L3WfgNN06fhp3jMUBKAgAAUBKAhAQQAKAlAQgIIAFASgIIDtvVi6Mnr7fbT1eAfRO6/9moa+bcZ385nVR3vY9S0ksz1+1FXDLBOjbbn+Oj7h20QKSZs1nHSF+mm5TgtJjLajGG2V7Yp0J7I13XEG6Vuu+270L3z/EU1ijelWkK7luo9MLij59mJlHRwfRjurhzAW6Vtmvr+uehN0V8t1u/Owe/Q+DU2lTSgIQEEACgJQEICCABQEoCAABQEoCEBBAAoCRG/Uk5bEbvn81Npg08nINrUaa2E9S9wHDBS0R6IHJx/3dIJ6QCtoenGOr7K5xA6LNAWhOK+GKAhAQQAKAqgFeS3TakFeU4gZBKAggF6QU0MUBNAXaQpCcRSE4lwaoiCAoQZREIzzaMh0V8O5oGVx0rR3Lgjf1fAtSHNXw6Eh9W2fT5BnQcfleS3SvgVp4ijoOM6rIVsGURCKoyAU586QsQZREIqjIBBHQSjOmyEKAliLNAXBOGeGKAhAQQBzDaIgGOfLUHTi2t/V8CpIFC3XD04FqXrSH7wKmv/PlvO7Gh+cCgrqDPJlKCnSoirSbgWp4ygoF+fV0JUMoiAUR0EozpGhSzWIglAcBaE4P4YoCEBBgGtF2pGhixlEQSiOglCcF0NXaxAFoTh/gjQ/BhzjxNCFpv2CN0GBgrJI+lBzV+OLD0PXLzFvgsxF2p0ge5wLQ5dfKAYKwnEeDFEQgIIAJTXIhaGiDKIgGDe+IQoCUBCgrEg7MFSYQRQE40Y3REGA0hpEQTBucEMFDbMFL4LsLdcFL4JQ0/54F2MbkvSR5a7GFyeC5Ls0Z9DYhlZB1//4kQ9BJXEjGyp+ofhhYENVMoiCYNy4higIUKcGDWyoUgaFaVRDtQQNm0LVBI1qqKKgMQ3VKtJh1BSql0GDGqopaEhDdQUNaKhiDQpDGqqaQSMaKr+rkTKcoQpN+5TRDFUX9F/RSI7Ugix/LXyaxpF0QwbNjCIpuash5UU6ZQBJlZ/mM3SeSnVfKB7Sr6X7M2ilS0tPCvrP1JulpwV96MnSQzUoRx+WXsmgiOaT6W1BH1q21ISgmTY1NSRoZmrM04tF+ox2NDWXQQkNeGpb0ML0oqguBC1Mb4hqtAadMj1pqqcM2vGEqa4FrUxTLVnbE71V0JVB5QeaUmwHWhqr9vlI7mEXK6dzNoOuZJCY+NMZ/xxJnDaycVLrEvsdULm/dtk8XxcJir4RpdNqFrOgJD9vmlRLaAV5cpIwyOug+7hNUPzrZ8oB26VhkOVYtgPdJ2hZGAz9BhiGSbxQDcr84AE8wB3Ier7aEeGyINuxTAe6sbbYzrREkG1QlG8vCjKfaYEg2yCxze/eS8xQpDM/fnPPoMxvL5+G62biFwoCUBCAggAUBKAgAAUBKAhAQQAKAlAQgIIAFASgIAAFASgI8Bdc9cHM/ZTeiAAAAABJRU5ErkJggg==</Image>
-    </TextCell>
-    <TextCell style="" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;span style=" font-family:Times New Roman; font-size:12pt; color:#000000;">Vertical &lt;/span>&lt;span style=" font-family:Courier New; font-size:12pt; color:#000000;">velocity&lt;/span>&lt;span style=" font-family:Times New Roman; font-size:12pt; color:#000000;"> relative to the lunar surface and &lt;/span>&lt;span style=" font-family:Courier New; font-size:12pt; color:#000000;">Altitude&lt;/span>&lt;span style=" font-family:Times New Roman; font-size:12pt; color:#000000;"> of the Apollo rocket over the lunar surface.&lt;/span>&lt;/p>&lt;/body>&lt;/html></Text>
-    </TextCell>
-   </GroupCell>
+end SimulationResult;</Output>
+        </GraphCell>
+        <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="true" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+          <Input>plot( { apollo.velocity, apollo.altitude }, xrange={0,208} ); //??xrange</Input>
+          <Output></Output>
+        </GraphCell>
+        <TextCell style="Text" >
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;img src="file:///C:/Users/mohto/Develop/OpenModelica1.5.0/OMNotebook/DrModelica/OMNoteboook_tempfiles/45.png" width="288" height="214" />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          <Image name="file:///C:/Users/mohto/Develop/OpenModelica1.5.0/OMNotebook/DrModelica/OMNoteboook_tempfiles/45.png" >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</Image>
+        </TextCell>
+        <TextCell style="" >
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table style="-qt-table-type: root;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg'; font-size:8pt;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Vertical &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">velocity&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> relative to the lunar surface and &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">Altitude&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> of the Apollo rocket over the lunar surface.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+      </GroupCell>
+    </GroupCell>
   </GroupCell>
- </GroupCell>
 </Notebook>

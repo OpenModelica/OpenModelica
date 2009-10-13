@@ -1,56 +1,107 @@
 <!DOCTYPE OMNotebook>
 <Notebook>
- <GroupCell closed="false" >
   <GroupCell closed="false" >
-   <TextCell style="Title" >
-    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Arial; font-size:38pt; font-weight:600; color:#000000;">Modification Prefix Replaceable and Redeclare&lt;/p>&lt;/body>&lt;/html></Text>
-   </TextCell>
-   <GroupCell closed="false" >
-    <TextCell style="Section" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Replaceable&lt;/p>&lt;/body>&lt;/html></Text>
-    </TextCell>
-    <TextCell style="Text" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">A declared element of a class must have the prefix replaceable in oder to be redeclared, apart from redeclarations that only chnge the attribute value and/or restricts the variability and possibly the dimension sizes. The main motivation for this rule is that a class need to be &lt;span style=" font-style:italic;">designed&lt;/span> for inheritance that includes redeclaration. Otherwise unexpected errors may occur. &lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
-    </TextCell>
-    <InputCell style="Input" closed="false" >
-     <Input>class MicroCircuit
+    <GroupCell closed="false" >
+      <TextCell style="Title" >
+        <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans'; font-size:10pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:10px; margin-bottom:10px; margin-left:10px; margin-right:10px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Arial'; font-size:38pt; font-weight:600; color:#000000;">Modification Prefix Replaceable and Redeclare&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <GroupCell closed="false" >
+        <TextCell style="Section" >
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans'; font-size:10pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Replaceable&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text" >
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans'; font-size:10pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">A declared element of a class must have the prefix replaceable in order to be redeclared, apart from redeclarations that only change the attribute value and/or restricts the variability and possibly the dimension sizes. The main motivation for this rule is that a class needs to be &lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; font-style:italic; color:#000000;">designed&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> for inheritance that includes redeclaration. Otherwise unexpected errors may occur. &lt;br />&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+          <Input>class MicroCircuit
   replaceable Resistor R1;
 end MicroCircuit;</Input>
-     <Output>Ok</Output>
-    </InputCell>
-   </GroupCell>
-   <GroupCell closed="true" >
-    <TextCell style="Section" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Connector Classes&lt;/p>&lt;/body>&lt;/html></Text>
-    </TextCell>
-    <InputCell style="Input" closed="false" >
-     <Input>type Voltage = Real(unit = "V");</Input>
-     <Output>Ok</Output>
-    </InputCell>
-    <TextCell style="Text" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
-    </TextCell>
-    <InputCell style="Input" closed="false" >
-     <Input>type Current = Real(unit = "A");</Input>
-     <Output>Ok</Output>
-    </InputCell>
-    <TextCell style="Text" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
-    </TextCell>
-    <InputCell style="Input" closed="false" >
-     <Input>connector Pin
+          <Output>{MicroCircuit}</Output>
+        </GraphCell>
+      </GroupCell>
+      <GroupCell closed="false" >
+        <TextCell style="Section" >
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans'; font-size:10pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Connector Classes&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+          <Input>type Voltage = Real(unit = "V");</Input>
+          <Output>{Voltage}</Output>
+        </GraphCell>
+        <TextCell style="Text" >
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans'; font-size:10pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+          <Input>type Current = Real(unit = "A");</Input>
+          <Output>{Current}</Output>
+        </GraphCell>
+        <TextCell style="Text" >
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans'; font-size:10pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+          <Input>connector Pin
   Voltage     v;
   flow Current   i;
 end Pin;        </Input>
-     <Output>Ok</Output>
-    </InputCell>
-   </GroupCell>
-   <GroupCell closed="true" >
-    <TextCell style="Section" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Resistor and TempResistor&lt;/p>&lt;/body>&lt;/html></Text>
-    </TextCell>
-    <InputCell style="Input" closed="false" >
-     <Input>model Resistor
+          <Output>{Pin}</Output>
+        </GraphCell>
+      </GroupCell>
+      <GroupCell closed="false" >
+        <TextCell style="Section" >
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans'; font-size:10pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Resistor and TempResistor&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+          <Input>model Resistor
   Pin       p, n                "Positive and Negative Pins";
   Voltage     v;
   Current     i;
@@ -58,13 +109,21 @@ end Pin;        </Input>
 equation
   v = R*i;
 end Resistor;</Input>
-     <Output>Ok</Output>
-    </InputCell>
-    <TextCell style="Text" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
-    </TextCell>
-    <InputCell style="Input" closed="false" >
-     <Input>model TempResistor                  "Temperature dependent Resistor"
+          <Output>{Resistor}</Output>
+        </GraphCell>
+        <TextCell style="Text" >
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans'; font-size:10pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+          <Input>model TempResistor                  "Temperature dependent Resistor"
   Pin       p, n                "Positive and Negative Pins";
   Voltage     v;
   Current     i;
@@ -75,13 +134,21 @@ end Resistor;</Input>
 equation
   v = i*(R + RT*(Temp - Tref));
 end TempResistor;</Input>
-     <Output>Ok</Output>
-    </InputCell>
-    <TextCell style="Text" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
-    </TextCell>
-    <InputCell style="Input" closed="false" >
-     <Input>model SuperTempResistor                "Temperature dependent Resistor"
+          <Output>{TempResistor}</Output>
+        </GraphCell>
+        <TextCell style="Text" >
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans'; font-size:10pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+          <Input>model SuperTempResistor                "Temperature dependent Resistor"
   Pin       p, n                "Positive and Negative Pins";
   Voltage     v;
   Current     i;
@@ -92,50 +159,85 @@ end TempResistor;</Input>
   parameter Boolean Super         = true;
 equation
   v = i*(R + RT*(Temp - Tref));
-end TempResistor;</Input>
-     <Output>Ok</Output>
-    </InputCell>
-   </GroupCell>
-   <GroupCell closed="false" >
-    <TextCell style="Section" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Redeclare&lt;/p>&lt;/body>&lt;/html></Text>
-     <Rule name="CellTags" >Redeclare</Rule>
-    </TextCell>
-    <TextCell style="Text" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">The &lt;span style=" font-family:Courier New;">redeclare&lt;/span> prefix is used at the front of a modifier containing a new variable or type declaration&lt;span style=" font-family:TimesNewRoman;"> t&lt;/span>hat &lt;span style=" font-style:italic;">replaces&lt;/span> the original variable or type declaration element in the modified class.The reason for requiring a special keyword like &lt;span style=" font-family:Courier New;">redeclare&lt;/span> is to reduce the risk for accidental programming errors that otherwise might occur when whole declarations are replaced by declarations of different types. &lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
-    </TextCell>
-    <InputCell style="Input" closed="false" >
-     <Input>class TempMicroCiruit = MicroCircuit(redeclare TempResistor R1);</Input>
-     <Output>Ok</Output>
-    </InputCell>
-    <TextCell style="Text" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />In order to allow further redeclaration of a redeclared element the replaceable prefix should be present also in the modifier.&lt;/p>&lt;/body>&lt;/html></Text>
-    </TextCell>
-    <InputCell style="Input" closed="false" >
-     <Input>class TempMicroCiruit2 = MicroCircuit(redeclare replaceable TempResistor R1);</Input>
-     <Output>Ok</Output>
-    </InputCell>
-    <TextCell style="Text" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />In the class &lt;span style=" font-family:Courier New;">SuperTempMicroCircuit&lt;/span> the keyword &lt;span style=" font-family:Courier New;">replaceable&lt;/span> is left out, which means that no further redeclaration is possible.&lt;/p>&lt;/body>&lt;/html></Text>
-    </TextCell>
-    <InputCell style="Input" closed="false" >
-     <Input>class SuperTempMicroCiruit = TempMicroCiruit2(redeclare SuperTempResistor R1);</Input>
-     <Output>Ok</Output>
-    </InputCell>
-    <GroupCell closed="false" >
-     <TextCell style="Subsection" >
-      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:14pt; font-weight:600; color:#000000;">Flattening of MicroCircuit, TempMicroCiruit2&lt;/p>&lt;/body>&lt;/html></Text>
-     </TextCell>
-     <GroupCell closed="false" >
-      <InputCell style="Input" closed="false" >
-       <Input>instantiateModel(MicroCircuit)  //??Error - flows and units missing</Input>
-       <Output>"fclass MicroCircuit
-Real R1.p.v;
-Real R1.p.i;
-Real R1.n.v;
-Real R1.n.i;
-Real R1.v;
-Real R1.i;
+end SuperTempResistor;</Input>
+          <Output>{SuperTempResistor}</Output>
+        </GraphCell>
+      </GroupCell>
+      <GroupCell closed="false" >
+        <TextCell style="Section" >
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans'; font-size:10pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Redeclare&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          <Rule name="CellTags" >Redeclare</Rule>
+        </TextCell>
+        <TextCell style="Text" >
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans'; font-size:10pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">The &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">redeclare&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> prefix is used at the front of a modifier containing a new variable or type declaration&lt;/span>&lt;span style=" font-family:'TimesNewRoman'; font-size:12pt; color:#000000;"> t&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">hat &lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; font-style:italic; color:#000000;">replaces&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> the original variable or type declaration element in the modified class.The reason for requiring a special keyword like &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">redeclare&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> is to reduce the risk for accidental programming errors that otherwise might occur when whole declarations are replaced by declarations of different types. &lt;br />&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+          <Input>class TempMicroCiruit = MicroCircuit(redeclare TempResistor R1);</Input>
+          <Output>{TempMicroCiruit}</Output>
+        </GraphCell>
+        <TextCell style="Text" >
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans'; font-size:10pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />In order to allow further redeclaration of a redeclared element the replaceable prefix should be present also in the modifier.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+          <Input>class TempMicroCiruit2 = MicroCircuit(redeclare replaceable TempResistor R1);</Input>
+          <Output>{TempMicroCiruit2}</Output>
+        </GraphCell>
+        <TextCell style="Text" >
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans'; font-size:10pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />In the class &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">SuperTempMicroCircuit&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> the keyword &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">replaceable&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> is left out, which means that no further redeclaration is possible.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+          <Input>class SuperTempMicroCiruit = TempMicroCiruit2(redeclare SuperTempResistor R1);</Input>
+          <Output>{SuperTempMicroCiruit}</Output>
+        </GraphCell>
+        <GroupCell closed="false" >
+          <TextCell style="Subsection" >
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans'; font-size:10pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Flattening of MicroCircuit, TempMicroCiruit2&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <GroupCell closed="false" >
+            <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+              <Input>instantiateModel(MicroCircuit)  //??Error - flows and units missing</Input>
+              <Output>"fclass MicroCircuit
+Real R1.p.v(unit = "V");
+Real R1.p.i(unit = "A");
+Real R1.n.v(unit = "V");
+Real R1.n.i(unit = "A");
+Real R1.v(unit = "V");
+Real R1.i(unit = "A");
 parameter Real R1.R(unit = "Ohm") "Resistance";
 equation
   R1.v = R1.R * R1.i;
@@ -143,81 +245,100 @@ equation
   R1.p.i = 0.0;
 end MicroCircuit;
 "
-OMC-ERROR:
-"Warning, parameter R has no value
+OMC-ERROR: 
+"Warning: Parameter R has no value, and is fixed during initialization (fixed=true)
 "</Output>
-      </InputCell>
-      <TextCell style="Output" >
-       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">"model MicroCircuit\&lt;br />   Real(unit=\\"V\\") R1.p.v;\&lt;br />   flow Real(unit=\\"A\\") R1.p.i;\&lt;br />   Real(unit=\\"V\\") R1.n.v;\&lt;br />   flow Real(unit=\\"A\\") R1.n.i;\&lt;br />   Real(unit=\\"V\\") R1.v;\&lt;br />   Real(unit=\\"A\\") R1.i;\&lt;br />   parameter Real R1.R(unit=\\"Ohm\\") \\"Resistance\\";\&lt;br />   \&lt;br />equation\&lt;br />   R1.v = R1.R*R1.i ;\&lt;br />   \&lt;br />equation\&lt;br />   R1.p.i = 0;\&lt;br />   R1.n.i = 0 ;\&lt;br />end MicroCircuit;"&lt;/p>&lt;/body>&lt;/html></Text>
-       <Rule name="GeneratedCell" >False</Rule>
-       <Rule name="CellAutoOverwrite" >False</Rule>
-      </TextCell>
-     </GroupCell>
-     <GroupCell closed="false" >
-      <InputCell style="Input" closed="false" >
-       <Input>instantiateModel(TempMicroCiruit2)   //??Error - flows and units missing</Input>
-       <Output>"fclass TempMicroCiruit2
-Real R1.p.v;
-Real R1.p.i;
-Real R1.n.v;
-Real R1.n.i;
-Real R1.v;
-Real R1.i;
+            </GraphCell>
+            <TextCell style="Output" >
+              <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans'; font-size:10pt; font-weight:400; font-style:normal;">
+&lt;table style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Courier New'; font-size:11pt; color:#000000;">"model MicroCircuit\&lt;br />   Real(unit=\\"V\\") R1.p.v;\&lt;br />   flow Real(unit=\\"A\\") R1.p.i;\&lt;br />   Real(unit=\\"V\\") R1.n.v;\&lt;br />   flow Real(unit=\\"A\\") R1.n.i;\&lt;br />   Real(unit=\\"V\\") R1.v;\&lt;br />   Real(unit=\\"A\\") R1.i;\&lt;br />   parameter Real R1.R(unit=\\"Ohm\\") \\"Resistance\\";\&lt;br />   \&lt;br />equation\&lt;br />   R1.v = R1.R*R1.i ;\&lt;br />   \&lt;br />equation\&lt;br />   R1.p.i = 0;\&lt;br />   R1.n.i = 0 ;\&lt;br />end MicroCircuit;"&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+              <Rule name="GeneratedCell" >False</Rule>
+              <Rule name="CellAutoOverwrite" >False</Rule>
+            </TextCell>
+          </GroupCell>
+          <GroupCell closed="false" >
+            <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+              <Input>instantiateModel(TempMicroCiruit2)   //??Error - flows and units missing</Input>
+              <Output>"fclass TempMicroCiruit2
+Real R1.p.v(unit = "V");
+Real R1.p.i(unit = "A");
+Real R1.n.v(unit = "V");
+Real R1.n.i(unit = "A");
+Real R1.v(unit = "V");
+Real R1.i(unit = "A");
 parameter Real R1.R(unit = "Ohm") "Resistance at reference Temperature";
 parameter Real R1.RT(unit = "Ohm/degC") = 0 "Temperature dependent Resistance";
 parameter Real R1.Tref(unit = "degC") = 20 "Reference Temperature";
-Real R1.Temp "Actual Temperature";
+Real R1.Temp = 20.0 "Actual Temperature";
 equation
-  R1.Temp = 20.0;
   R1.v = R1.i * (R1.R + R1.RT * (R1.Temp - R1.Tref));
   R1.n.i = 0.0;
   R1.p.i = 0.0;
 end TempMicroCiruit2;
 "
-OMC-ERROR:
-"Warning, parameter R has no value
+OMC-ERROR: 
+"Warning: Parameter R has no value, and is fixed during initialization (fixed=true)
 "</Output>
-      </InputCell>
-      <TextCell style="Output" >
-       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">"model TempMicroCiruit2\&lt;br />   Real(unit=\\"V\\") R1.p.v;\&lt;br />   flow Real(unit=\\"A\\") R1.p.i;\&lt;br />   Real(unit=\\"V\\") R1.n.v;\&lt;br />   flow Real(unit=\\"A\\") R1.n.i;\&lt;br />   Real(unit=\\"V\\") R1.v;\&lt;br />   Real(unit=\\"A\\") R1.i;\&lt;br />   parameter Real R1.R(unit=\\"Ohm\\") \\"Resistance at reference Temperature\\";\&lt;br />   parameter Real R1.RT(unit=\\"Ohm/degC\\")=0 \\"Temperature dependent Resistance\\";\&lt;br />   parameter Real R1.Tref(unit=\\"degC\\")=20 \\"Reference Temperature\\";\&lt;br />   Real R1.Temp=20 \\"Actual Temperature\\";\&lt;br />   \&lt;br />equation\&lt;br />   R1.v = R1.i*(R1.R+R1.RT*(R1.Temp-R1.Tref)) ;\&lt;br />   \&lt;br />equation\&lt;br />   R1.p.i = 0;\&lt;br />   R1.n.i = 0 ;\&lt;br />end TempMicroCiruit2;"&lt;/p>&lt;/body>&lt;/html></Text>
-       <Rule name="GeneratedCell" >False</Rule>
-       <Rule name="CellAutoOverwrite" >False</Rule>
-      </TextCell>
-     </GroupCell>
-     <GroupCell closed="false" >
-      <InputCell style="Input" closed="false" >
-       <Input>instantiateModel(SuperTempMicroCiruit)  //??Error - flows and units missing</Input>
-       <Output>"fclass SuperTempMicroCiruit
-Real R1.p.v;
-Real R1.p.i;
-Real R1.n.v;
-Real R1.n.i;
-Real R1.v;
-Real R1.i;
+            </GraphCell>
+            <TextCell style="Output" >
+              <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans'; font-size:10pt; font-weight:400; font-style:normal;">
+&lt;table style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Courier New'; font-size:11pt; color:#000000;">"model TempMicroCiruit2\&lt;br />   Real(unit=\\"V\\") R1.p.v;\&lt;br />   flow Real(unit=\\"A\\") R1.p.i;\&lt;br />   Real(unit=\\"V\\") R1.n.v;\&lt;br />   flow Real(unit=\\"A\\") R1.n.i;\&lt;br />   Real(unit=\\"V\\") R1.v;\&lt;br />   Real(unit=\\"A\\") R1.i;\&lt;br />   parameter Real R1.R(unit=\\"Ohm\\") \\"Resistance at reference Temperature\\";\&lt;br />   parameter Real R1.RT(unit=\\"Ohm/degC\\")=0 \\"Temperature dependent Resistance\\";\&lt;br />   parameter Real R1.Tref(unit=\\"degC\\")=20 \\"Reference Temperature\\";\&lt;br />   Real R1.Temp=20 \\"Actual Temperature\\";\&lt;br />   \&lt;br />equation\&lt;br />   R1.v = R1.i*(R1.R+R1.RT*(R1.Temp-R1.Tref)) ;\&lt;br />   \&lt;br />equation\&lt;br />   R1.p.i = 0;\&lt;br />   R1.n.i = 0 ;\&lt;br />end TempMicroCiruit2;"&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+              <Rule name="GeneratedCell" >False</Rule>
+              <Rule name="CellAutoOverwrite" >False</Rule>
+            </TextCell>
+          </GroupCell>
+          <GroupCell closed="false" >
+            <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+              <Input>instantiateModel(SuperTempMicroCiruit)  //??Error - flows and units missing</Input>
+              <Output>"fclass SuperTempMicroCiruit
+Real R1.p.v(unit = "V");
+Real R1.p.i(unit = "A");
+Real R1.n.v(unit = "V");
+Real R1.n.i(unit = "A");
+Real R1.v(unit = "V");
+Real R1.i(unit = "A");
 parameter Real R1.R(unit = "Ohm") "Resistance at reference Temperature";
 parameter Real R1.RT(unit = "Ohm/degC") = 0 "Temperature dependent Resistance";
 parameter Real R1.Tref(unit = "degC") = 20 "Reference Temperature";
-Real R1.Temp "Actual Temperature";
+Real R1.Temp = 20.0 "Actual Temperature";
 parameter Boolean R1.Super = true;
 equation
-  R1.Temp = 20.0;
   R1.v = R1.i * (R1.R + R1.RT * (R1.Temp - R1.Tref));
   R1.n.i = 0.0;
   R1.p.i = 0.0;
 end SuperTempMicroCiruit;
 "
-OMC-ERROR:
-"Warning, parameter R has no value
+OMC-ERROR: 
+"Warning: Parameter R has no value, and is fixed during initialization (fixed=true)
 "</Output>
-      </InputCell>
-      <TextCell style="Output" >
-       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">"model SuperTempMicroCiruit\&lt;br />   Real(unit=\\"V\\") R1.p.v;\&lt;br />   flow Real(unit=\\"A\\") R1.p.i;\&lt;br />   Real(unit=\\"V\\") R1.n.v;\&lt;br />   flow Real(unit=\\"A\\") R1.n.i;\&lt;br />   Real(unit=\\"V\\") R1.v;\&lt;br />   Real(unit=\\"A\\") R1.i;\&lt;br />   parameter Real R1.R(unit=\\"Ohm\\") \\"Resistance at reference Temperature\\";\&lt;br />   parameter Real R1.RT(unit=\\"Ohm/degC\\")=0 \\"Temperature dependent Resistance\\";\&lt;br />   parameter Real R1.Tref(unit=\\"degC\\")=20 \\"Reference Temperature\\";\&lt;br />   Real R1.Temp=20 \\"Actual Temperature\\";\&lt;br />   parameter Boolean R1.Super=true;\&lt;br />   \&lt;br />equation\&lt;br />   R1.v = R1.i*(R1.R+R1.RT*(R1.Temp-R1.Tref)) ;\&lt;br />   \&lt;br />equation\&lt;br />   R1.p.i = 0;\&lt;br />   R1.n.i = 0 ;\&lt;br />end SuperTempMicroCiruit;"&lt;/p>&lt;/body>&lt;/html></Text>
-       <Rule name="GeneratedCell" >False</Rule>
-       <Rule name="CellAutoOverwrite" >False</Rule>
-      </TextCell>
-     </GroupCell>
+            </GraphCell>
+            <TextCell style="Output" >
+              <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans'; font-size:10pt; font-weight:400; font-style:normal;">
+&lt;table style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Courier New'; font-size:11pt; color:#000000;">"model SuperTempMicroCiruit\&lt;br />   Real(unit=\\"V\\") R1.p.v;\&lt;br />   flow Real(unit=\\"A\\") R1.p.i;\&lt;br />   Real(unit=\\"V\\") R1.n.v;\&lt;br />   flow Real(unit=\\"A\\") R1.n.i;\&lt;br />   Real(unit=\\"V\\") R1.v;\&lt;br />   Real(unit=\\"A\\") R1.i;\&lt;br />   parameter Real R1.R(unit=\\"Ohm\\") \\"Resistance at reference Temperature\\";\&lt;br />   parameter Real R1.RT(unit=\\"Ohm/degC\\")=0 \\"Temperature dependent Resistance\\";\&lt;br />   parameter Real R1.Tref(unit=\\"degC\\")=20 \\"Reference Temperature\\";\&lt;br />   Real R1.Temp=20 \\"Actual Temperature\\";\&lt;br />   parameter Boolean R1.Super=true;\&lt;br />   \&lt;br />equation\&lt;br />   R1.v = R1.i*(R1.R+R1.RT*(R1.Temp-R1.Tref)) ;\&lt;br />   \&lt;br />equation\&lt;br />   R1.p.i = 0;\&lt;br />   R1.n.i = 0 ;\&lt;br />end SuperTempMicroCiruit;"&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+              <Rule name="GeneratedCell" >False</Rule>
+              <Rule name="CellAutoOverwrite" >False</Rule>
+            </TextCell>
+          </GroupCell>
+        </GroupCell>
+      </GroupCell>
     </GroupCell>
-   </GroupCell>
   </GroupCell>
- </GroupCell>
 </Notebook>

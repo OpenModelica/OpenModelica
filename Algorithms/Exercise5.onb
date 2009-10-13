@@ -1,39 +1,88 @@
 <!DOCTYPE OMNotebook>
 <Notebook>
- <GroupCell closed="false" >
   <GroupCell closed="false" >
-   <TextCell style="Title" >
-    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Arial; font-size:38pt; font-weight:600; color:#000000;">Exercise 5&lt;/p>&lt;/body>&lt;/html></Text>
-   </TextCell>
-   <GroupCell closed="false" >
-    <TextCell style="Section" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">reinit&lt;/p>&lt;/body>&lt;/html></Text>
-    </TextCell>
-    <TextCell style="Text" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">Write a model &lt;span style=" font-family:Courier New;">BilliardBalls&lt;/span>, with two billiard balls that is rolling from opposite directions and bounces into each other. &lt;/p>&lt;/body>&lt;/html></Text>
-    </TextCell>
-    <InputCell style="Input" closed="true" >
-     <Input>//?? algorithm sections outside functions not yet implemented</Input>
-     <Output></Output>
-    </InputCell>
-    <GroupCell closed="true" >
-     <TextCell style="Subsection" >
-      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:14pt; font-weight:600; color:#000000;">Tip&lt;/p>&lt;/body>&lt;/html></Text>
-     </TextCell>
-     <TextCell style="Text" >
-      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;span style=" font-family:Courier New;">reinit(x, value)&lt;/span> is the sam thing as &lt;span style=" font-family:Courier New;">x := value&lt;/span>, but &lt;span style=" font-family:Courier New;">reinit&lt;/span> reinitializes the value of x at a specific time and the equations still holds.&lt;/p>&lt;/body>&lt;/html></Text>
-     </TextCell>
-    </GroupCell>
-    <GroupCell closed="true" >
-     <TextCell style="Subsection" >
-      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:14pt; font-weight:600; color:#000000;">Answer&lt;/p>&lt;/body>&lt;/html></Text>
-     </TextCell>
-     <GroupCell closed="false" >
-      <TextCell style="Subsubsection" >
-       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:12pt; font-weight:600; color:#000000;">BilliardBalls&lt;/p>&lt;/body>&lt;/html></Text>
+    <GroupCell closed="false" >
+      <TextCell style="Title" >
+        <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:10px; margin-bottom:10px; margin-left:10px; margin-right:10px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Arial'; font-size:38pt; font-weight:600; color:#000000;">Exercise 5&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
       </TextCell>
-      <InputCell style="Input" closed="true" >
-       <Input>model BilliardBalls
+      <GroupCell closed="false" >
+        <TextCell style="Section" >
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">reinit&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text" >
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">Write a model &lt;span style=" font-family:'Courier New';">BilliardBalls&lt;/span>, with two billiard balls that is rolling from opposite directions and bounces into each other. &lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="true" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+          <Input>//?? algorithm sections outside functions not yet implemented</Input>
+          <Output></Output>
+        </GraphCell>
+        <GroupCell closed="false" >
+          <TextCell style="Subsection" >
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Tip&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <TextCell style="Text" >
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;span style=" font-family:'Courier New';">reinit(x, value)&lt;/span> is the sam thing as &lt;span style=" font-family:'Courier New';">x := value&lt;/span>, but &lt;span style=" font-family:'Courier New';">reinit&lt;/span> reinitializes the value of x at a specific time and the equations still holds.&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+        </GroupCell>
+        <GroupCell closed="false" >
+          <TextCell style="Subsection" >
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Answer&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <GroupCell closed="false" >
+            <TextCell style="Subsubsection" >
+              <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times'; font-size:12pt; font-weight:600; color:#000000;">BilliardBalls&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+            </TextCell>
+            <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+              <Input>model BilliardBalls
   parameter Real c = 0.9;        // Elasticity constant of balls
   Real position1(start = 1);      // Position of ball 1
   Real position2(start = 10);      // Position of ball 2
@@ -50,31 +99,56 @@ algorithm
     reinit(velocity2, -c*velocity2);
   end when;
 end BilliardBalls;</Input>
-       <Output></Output>
-      </InputCell>
-     </GroupCell>
-     <GroupCell closed="true" >
-      <TextCell style="Subsubsection" >
-       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:12pt; font-weight:600; color:#000000;">Simulation of BilliardBalls&lt;/p>&lt;/body>&lt;/html></Text>
-      </TextCell>
-      <InputCell style="Input" closed="true" >
-       <Input>simulate( BilliardBalls );</Input>
-       <Output></Output>
-      </InputCell>
-      <TextCell style="Output" >
-       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
-      </TextCell>
-      <InputCell style="Input" closed="true" >
-       <Input>plot( { velocity1, velocity2, position1, position2 } );</Input>
-       <Output>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Output>
-      </InputCell>
-      <TextCell style="Text" >
-       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;span style=" color:#000000;">&lt;img src="file:///C:/OpenModelica1.4.3/bin/OMNoteboook_tempfiles/3.png" width="288" height="214" />&lt;/span>&lt;/p>&lt;/body>&lt;/html></Text>
-       <Image name="file:///C:/OpenModelica1.4.3/bin/OMNoteboook_tempfiles/3.png" >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</Image>
-      </TextCell>
-     </GroupCell>
+              <Output>{BilliardBalls}</Output>
+            </GraphCell>
+          </GroupCell>
+          <GroupCell closed="false" >
+            <TextCell style="Subsubsection" >
+              <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times'; font-size:12pt; font-weight:600; color:#000000;">Simulation of BilliardBalls&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+            </TextCell>
+            <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+              <Input>simulate( BilliardBalls )</Input>
+              <Output>record SimulationResult
+    resultFile = "Simulation failed.
+"
+end SimulationResult;</Output>
+            </GraphCell>
+            <TextCell style="Output" >
+              <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Courier New'; font-size:11pt; color:#000000;">&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+            </TextCell>
+            <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="true" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+              <Input>plot( { velocity1, velocity2, position1, position2 } )</Input>
+              <Output></Output>
+            </GraphCell>
+            <TextCell style="Text" >
+              <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;img src="file:///C:/Users/mohto/Develop/OpenModelica1.5.0/OMNotebook/DrModelica/OMNoteboook_tempfiles/40.png" width="288" height="214" />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+              <Image name="file:///C:/Users/mohto/Develop/OpenModelica1.5.0/OMNotebook/DrModelica/OMNoteboook_tempfiles/40.png" >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</Image>
+            </TextCell>
+          </GroupCell>
+        </GroupCell>
+      </GroupCell>
     </GroupCell>
-   </GroupCell>
   </GroupCell>
- </GroupCell>
 </Notebook>

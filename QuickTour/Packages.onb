@@ -1,19 +1,29 @@
 <!DOCTYPE OMNotebook>
 <Notebook>
- <GroupCell closed="false" >
   <GroupCell closed="false" >
-   <TextCell style="Title" >
-    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Arial; font-size:38pt; font-weight:600; color:#000000;">Packages&lt;/p>&lt;/body>&lt;/html></Text>
-   </TextCell>
-   <TextCell style="Text" >
-    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />Name conflicts is a major problem when developing reusable code, for example libraries of reusable Modelica classes and functions for various application domains. A package is simply a container or name space for names of classes, functions, constants, and other allowed definitions. The package name is prefixed to all definitions in the package using standard dot notation. An import language construct is provided for Modelica packages. &lt;span style=" font-family:Courier New;">An import&lt;/span> statement occur in one of the following four syntactic forms &lt;a href="Packages/PackAccess.onb#Qualified Import
-">&lt;span style=" text-decoration: underline; color:#0000ff;">qualified import&lt;/span>&lt;/a>, &lt;a href="Packages/PackAccess.onb#Single Definition Import
-">&lt;span style=" text-decoration: underline; color:#0000ff;">single definition import&lt;/span>&lt;/a>, &lt;a href="Packages/PackAccess.onb#Unqualified Import
-">&lt;span style=" text-decoration: underline; color:#0000ff;">unqualified import&lt;/span>&lt;/a> or &lt;a href="Packages/PackAccess.onb#Renaming Import
-">&lt;span style=" text-decoration: underline; color:#0000ff;">renaming import&lt;/span>&lt;/a>.&lt;br />&lt;br />The type name &lt;span style=" font-family:Courier New;">Voltage&lt;/span> together with all other definitions in Modelica.SIunits is imported in the example below, which makes it possible to use it without prefix for declaration of the variable v. By contrast, the declaration of the variable i uses the fully qualified name &lt;span style=" font-family:Courier New;">Modelica.SIunits.Ampere&lt;/span> of the type &lt;span style=" font-family:Courier New;">Ampere&lt;/span>, even though the short version also would have been possible. The fully qualified long name for &lt;span style=" font-family:Courier New;">Ampere&lt;/span> can be used since it is found using the standard nested lookup of the Modelica standard library placed in a conceptual top level package.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
-   </TextCell>
-   <InputCell style="Input" closed="false" >
-    <Input>package MyPack
+    <GroupCell closed="false" >
+      <TextCell style="Title" >
+        <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:10px; margin-bottom:10px; margin-left:10px; margin-right:10px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Arial'; font-size:38pt; font-weight:600; color:#000000;">Packages&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <TextCell style="Text" >
+        <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />Name conflicts is a major problem when developing reusable code, for example libraries of reusable Modelica classes and functions for various application domains. A package is simply a container or namespace for names of classes, functions, constants, and other allowed definitions. The package name is prefixed to all definitions in the package using standard dot notation. An import language construct is provided for Modelica packages. &lt;span style=" font-family:'Courier New';">An import&lt;/span> statement occur in one of the following four syntactic forms &lt;a href="../Packages/PackAccess.onb">&lt;span style=" text-decoration: underline; color:#0000ff;">qualified import&lt;/span>&lt;/a>, &lt;a href="../Packages/PackAccess.onb">&lt;span style=" text-decoration: underline; color:#0000ff;">single definition import&lt;/span>&lt;/a>, &lt;a href="../Packages/PackAccess.onb">&lt;span style=" text-decoration: underline; color:#0000ff;">unqualified import&lt;/span>&lt;/a> or &lt;a href="../Packages/PackAccess.onb">&lt;span style=" text-decoration: underline; color:#0000ff;">renaming import&lt;/span>&lt;/a>.&lt;br />&lt;br />The type name &lt;span style=" font-family:'Courier New';">Voltage&lt;/span> together with all other definitions in Modelica.SIunits is imported in the example below, which makes it possible to use it without prefix for declaration of the variable v. By contrast, the declaration of the variable i uses the fully qualified name &lt;span style=" font-family:'Courier New';">Modelica.SIunits.Ampere&lt;/span> of the type &lt;span style=" font-family:'Courier New';">Ampere&lt;/span>, even though the short version also would have been possible. The fully qualified long name for &lt;span style=" font-family:'Courier New';">Ampere&lt;/span> can be used since it is found using the standard nested lookup of the Modelica standard library placed in a conceptual top level package.&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+        <Input>package MyPack
   import Modelica.SIunits.*;
 
 class Foo
@@ -22,13 +32,20 @@ class Foo
 end Foo;
 
 end MyPack;</Input>
-    <Output>Ok</Output>
-   </InputCell>
-   <TextCell style="Text" >
-    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />Importing definitions from one package into another package as in the above example has the drawback that the introduction of new definitions into a package may cause name clashes with definitions in packages using that package. Instead, a well-designed package should state all its dependences explicitly through import statements which are easy to find. &lt;br />&lt;br />Such a package is created by adding the prefix &lt;span style=" font-family:Courier New;">encapsulated&lt;/span> in front of the package keyword. This prevents nested lookup outside the package boundary, insuring that all dependences on other packages outside the current package have to be explicitly stated as import statements.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
-   </TextCell>
-   <InputCell style="Input" closed="false" >
-    <Input>encapsulated package MyPack
+        <Output>Ok</Output>
+      </GraphCell>
+      <TextCell style="Text" >
+        <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />Importing definitions from one package into another package as in the above example has the drawback that the introduction of new definitions into a package may cause name clashes with definitions in packages using that package. Instead, a well-designed package should state all its dependences explicitly through import statements which are easy to find. &lt;br />&lt;br />Such a package is created by adding the prefix &lt;span style=" font-family:'Courier New';">encapsulated&lt;/span> in front of the package keyword. This prevents nested lookup outside the package boundary, insuring that all dependences on other packages outside the current package have to be explicitly stated as import statements.&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+        <Input>encapsulated package MyPack
   import SI = Modelica.SIunits;
   import Modelica;
 
@@ -38,8 +55,8 @@ class Foo
 end Foo;
 
 end MyPack;</Input>
-    <Output>Ok</Output>
-   </InputCell>
+        <Output>Ok</Output>
+      </GraphCell>
+    </GroupCell>
   </GroupCell>
- </GroupCell>
 </Notebook>

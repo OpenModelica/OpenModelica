@@ -1,28 +1,62 @@
 <!DOCTYPE OMNotebook>
 <Notebook>
- <GroupCell closed="false" >
   <GroupCell closed="false" >
-   <TextCell style="Title" >
-    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Arial; font-size:38pt; font-weight:600; color:#000000;">when-Statements&lt;/p>&lt;/body>&lt;/html></Text>
-   </TextCell>
-   <GroupCell closed="false" >
-    <TextCell style="Section" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">General Description&lt;/p>&lt;/body>&lt;/html></Text>
-    </TextCell>
-    <TextCell style="Text" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;span style=" font-style:italic;">When-statements &lt;/span>are used to express actions (statements) that are only executed at &lt;a href="/DrModelica.onb#Ch.13-eventhybrid
-">&lt;span style=" text-decoration: underline; color:#0000ff;">events&lt;/span>&lt;/a>, e.g. at discontinuities or when certain conditions become true. The executed statements&lt;span style=" font-style:italic;"> &lt;/span>contain &lt;span style=" font-style:italic;">discrete-time&lt;/span> expressions since they are computed only at event instants, even expressions that otherwise would be classified as continuous-time. &lt;br />&lt;br />When-statements are generally used to either reinitialize a continuous variable using the reinit operator or to change the value of a discrete variable. When-statements are closely related to when-equations, the obvious difference between them is that &lt;span style=" font-family:Courier New;">when&lt;/span>-statements are statements containing other statements and can only be used in algorithm sections whereas &lt;span style=" font-family:Courier New;">when&lt;/span>-equations are equations which are only allowed in equation sections. &lt;/p>&lt;/body>&lt;/html></Text>
-    </TextCell>
-   </GroupCell>
-   <GroupCell closed="false" >
-    <TextCell style="Section" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">WhenStat&lt;/p>&lt;/body>&lt;/html></Text>
-    </TextCell>
-    <TextCell style="Text" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">The when-statement below are executed at the event instant when the Boolean expression&lt;span style=" font-family:Courier New;"> x &amp;gt; 2&lt;/span> becomes true. We should note that this is different from an &lt;span style=" font-family:Courier New;">if&lt;/span>-statement with the same condition which executes its body each time when invoked provided that the condition of the &lt;span style=" font-family:Courier New;">if&lt;/span>-statement is true. This difference is easier to understand if we consider the definition of &lt;span style=" font-family:Courier New;">when&lt;/span>-statements in terms of &lt;span style=" font-family:Courier New;">if&lt;/span>-statements and the edge operator in the section below.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
-    </TextCell>
-    <InputCell style="Input" closed="true" >
-     <Input>class WhenStat
+    <GroupCell closed="false" >
+      <TextCell style="Title" >
+        <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:10px; margin-bottom:10px; margin-left:10px; margin-right:10px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Arial'; font-size:38pt; font-weight:600; color:#000000;">when-Statements&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <GroupCell closed="false" >
+        <TextCell style="Section" >
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">General Description&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text" >
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;span style=" font-style:italic;">When-statements &lt;/span>are used to express actions (statements) that are only executed at &lt;span style=" font-weight:600;">events&lt;/span>, e.g. at discontinuities or when certain conditions become true. The executed statements&lt;span style=" font-style:italic;"> &lt;/span>contain &lt;span style=" font-style:italic;">discrete-time&lt;/span> expressions since they are computed only at event instants, even expressions that otherwise would be classified as continuous-time. &lt;br />&lt;br />When-statements are generally used to either reinitialize a continuous variable using the reinit operator or to change the value of a discrete variable. When-statements are closely related to when-equations, the obvious difference between them is that &lt;span style=" font-family:'Courier New';">when&lt;/span>-statements are statements containing other statements and can only be used in algorithm sections whereas &lt;span style=" font-family:'Courier New';">when&lt;/span>-equations are equations which are only allowed in equation sections. &lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+      </GroupCell>
+      <GroupCell closed="false" >
+        <TextCell style="Section" >
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">WhenStat&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text" >
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">The when-statement below are executed at the event instant when the Boolean expression&lt;span style=" font-family:'Courier New';"> x &amp;gt; 2&lt;/span> becomes true. We should note that this is different from an &lt;span style=" font-family:'Courier New';">if&lt;/span>-statement with the same condition which executes its body each time when invoked provided that the condition of the &lt;span style=" font-family:'Courier New';">if&lt;/span>-statement is true. This difference is easier to understand if we consider the definition of &lt;span style=" font-family:'Courier New';">when&lt;/span>-statements in terms of &lt;span style=" font-family:'Courier New';">if&lt;/span>-statements and the edge operator in the section below.&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+          <Input>class WhenStat
   Real x(start=1);
   Real y1;
   parameter Real y2 = 5;
@@ -34,48 +68,73 @@ algorithm
   end when;
 equation
   der(x) = 2*x;
-end WhenStat;
-</Input>
-     <Output></Output>
-    </InputCell>
-   </GroupCell>
-   <GroupCell closed="false" >
-    <TextCell style="Section" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Simulation of WhenStat&lt;/p>&lt;/body>&lt;/html></Text>
-    </TextCell>
-    <InputCell style="Input" closed="true" >
-     <Input>simulate( WhenStat );  //?? algorithm sections outside functions not yet implemented</Input>
-     <Output></Output>
-    </InputCell>
-    <TextCell style="Output" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
-    </TextCell>
-    <InputCell style="Input" closed="true" >
-     <Input>plot( y1 );</Input>
-     <Output>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Output>
-    </InputCell>
-    <TextCell style="Text" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;span style=" color:#000000;">&lt;img src="file:///C:/OpenModelica1.4.3/bin/OMNoteboook_tempfiles/12.png" width="288" height="214" />&lt;/span>&lt;/p>&lt;/body>&lt;/html></Text>
-     <Image name="file:///C:/OpenModelica1.4.3/bin/OMNoteboook_tempfiles/12.png" >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</Image>
-    </TextCell>
-    <InputCell style="Input" closed="true" >
-     <Input>plot( y3 );</Input>
-     <Output>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Output>
-    </InputCell>
-    <TextCell style="Text" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;span style=" color:#000000;">&lt;img src="file:///C:/OpenModelica1.4.3/bin/OMNoteboook_tempfiles/13.png" width="288" height="214" />&lt;/span>&lt;/p>&lt;/body>&lt;/html></Text>
-     <Image name="file:///C:/OpenModelica1.4.3/bin/OMNoteboook_tempfiles/13.png" >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</Image>
-    </TextCell>
-   </GroupCell>
-   <GroupCell closed="false" >
-    <TextCell style="Section" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">WhenStat2&lt;/p>&lt;/body>&lt;/html></Text>
-    </TextCell>
-    <TextCell style="Text" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">If we use a &lt;span style=" font-family:Courier New;">Boolean&lt;/span> vector expression containing three elements as the &lt;span style=" font-style:italic;">conditions&lt;/span>, then the two statements will be executed at event instants when at least one of the three conditions:&lt;span style=" font-family:Courier New;"> x &amp;gt; 2&lt;/span>, &lt;span style=" font-family:Courier New;">sample(0, 2)&lt;/span> or &lt;span style=" font-family:Courier New;">x  becomes true. Typically each condition in the vector generates its own event instants.&lt;br />&lt;/span>&lt;/p>&lt;/body>&lt;/html></Text>
-    </TextCell>
-    <InputCell style="Input" closed="true" >
-     <Input>class WhenStat2
+end WhenStat;</Input>
+          <Output>{WhenStat}</Output>
+        </GraphCell>
+      </GroupCell>
+      <GroupCell closed="false" >
+        <TextCell style="Section" >
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Simulation of WhenStat&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+          <Input>simulate( WhenStat )  </Input>
+          <Output>record SimulationResult
+    resultFile = "WhenStat_res.plt"
+end SimulationResult;</Output>
+        </GraphCell>
+        <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.05" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="0.2" MajorY="0.1" closed="false" YLabel="" Area="AAAAAAAAAAC/qHkinNtoFz/wTS2287XEP++cd1/wu8g=" ShowGraph="true" Grid="true" XLabel="time" Legend="true" >
+          <Data Id="0" Label="time" >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</Data>
+          <Data Id="0" Label="y1" >AAAB+gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78=</Data>
+          <Graph Points="false" Line="true" X="time" Interpolation="Linear" Y="y1" Color="#ff0000" />
+          <Input>plot( y1 )</Input>
+          <Output>true</Output>
+        </GraphCell>
+        <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="true" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+          <Input>plot( y3 )</Input>
+          <Output></Output>
+        </GraphCell>
+        <TextCell style="Text" >
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;img src="file:///C:/Users/mohto/Develop/OpenModelica1.5.0/OMNotebook/DrModelica/OMNoteboook_tempfiles/38.png" width="288" height="214" />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          <Image name="file:///C:/Users/mohto/Develop/OpenModelica1.5.0/OMNotebook/DrModelica/OMNoteboook_tempfiles/38.png" >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</Image>
+        </TextCell>
+      </GroupCell>
+      <GroupCell closed="false" >
+        <TextCell style="Section" >
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">WhenStat2&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text" >
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">If we use a &lt;span style=" font-family:'Courier New';">Boolean&lt;/span> vector expression containing three elements as the &lt;span style=" font-style:italic;">conditions&lt;/span>, then the two statements will be executed at event instants when at least one of the three conditions:&lt;span style=" font-family:'Courier New';"> x &amp;gt; 2&lt;/span>, &lt;span style=" font-family:'Courier New';">sample(0, 2)&lt;/span> or &lt;span style=" font-family:'Courier New';">x  becomes true. Typically each condition in the vector generates its own event instants.&lt;br />&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+          <Input>class WhenStat2
   Real x(start = 1);
   Real y1;
   parameter Real y2 = 5;
@@ -87,131 +146,211 @@ algorithm
   end when;
 equation
   der(x) = 2*x;
-end WhenStat2;
-</Input>
-     <Output></Output>
-    </InputCell>
-   </GroupCell>
-   <GroupCell closed="false" >
-    <TextCell style="Section" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Simulation of WhenStat2&lt;/p>&lt;/body>&lt;/html></Text>
-    </TextCell>
-    <InputCell style="Input" closed="true" >
-     <Input>simulate( WhenStat2 );  //?? algorithm sections outside functions not yet implemented </Input>
-     <Output></Output>
-    </InputCell>
-    <TextCell style="Output" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
-    </TextCell>
-    <InputCell style="Input" closed="true" >
-     <Input>plot( y1 );</Input>
-     <Output>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Output>
-    </InputCell>
-    <TextCell style="Text" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;span style=" color:#000000;">&lt;img src="file:///C:/OpenModelica1.4.3/bin/OMNoteboook_tempfiles/14.png" width="288" height="214" />&lt;/span>&lt;/p>&lt;/body>&lt;/html></Text>
-     <Image name="file:///C:/OpenModelica1.4.3/bin/OMNoteboook_tempfiles/14.png" >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</Image>
-    </TextCell>
-    <InputCell style="Input" closed="true" >
-     <Input>plot( y3 );</Input>
-     <Output>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Output>
-    </InputCell>
-    <TextCell style="Text" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;span style=" color:#000000;">&lt;img src="file:///C:/OpenModelica1.4.3/bin/OMNoteboook_tempfiles/15.png" width="288" height="214" />&lt;/span>&lt;/p>&lt;/body>&lt;/html></Text>
-     <Image name="file:///C:/OpenModelica1.4.3/bin/OMNoteboook_tempfiles/15.png" >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</Image>
-    </TextCell>
-   </GroupCell>
-   <GroupCell closed="false" >
-    <TextCell style="Section" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">WhenStat&lt;/p>&lt;/body>&lt;/html></Text>
-    </TextCell>
-    <TextCell style="Text" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">The order between the statements in the body of the &lt;span style=" font-family:Courier New;">when&lt;/span>-statement is of cuorce significant. If you would put the assignment to &lt;span style=" font-family:Courier New;">y3&lt;/span> before the assignment of &lt;span style=" font-family:Courier New;">y1&lt;/span> you would get a different result and thus a different model behavior.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
-    </TextCell>
-    <InputCell style="Input" closed="true" >
-     <Input>class WhenStat3
+end WhenStat2;</Input>
+          <Output>{WhenStat2}</Output>
+        </GraphCell>
+      </GroupCell>
+      <GroupCell closed="false" >
+        <TextCell style="Section" >
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Simulation of WhenStat2&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+          <Input>simulate( WhenStat2 )  </Input>
+          <Output>record SimulationResult
+    resultFile = "WhenStat2_res.plt"
+end SimulationResult;</Output>
+        </GraphCell>
+        <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.005" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="0.2" MajorY="0.01" closed="false" YLabel="" Area="AAAAAAAAAAA/6tdkw7vD4z/wLzFP+PXJP7drGDIW35g=" ShowGraph="true" Grid="true" XLabel="time" Legend="true" >
+          <Data Id="0" Label="time" >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</Data>
+          <Data Id="0" Label="y1" >AAAB/z/q7VSPCQzyP+rtVI8JDPI/6u1UjwkM8j/q7VSPCQzyP+rtVI8JDPI/6u1UjwkM8j/q7VSPCQzyP+rtVI8JDPI/6u1UjwkM8j/q7VSPCQzyP+rtVI8JDPI/6u1UjwkM8j/q7VSPCQzyP+rtVI8JDPI/6u1UjwkM8j/q7VSPCQzyP+rtVI8JDPI/6u1UjwkM8j/q7VSPCQzyP+rtVI8JDPI/6u1UjwkM8j/q7VSPCQzyP+rtVI8JDPI/6u1UjwkM8j/q7VSPCQzyP+rtVI8JDPI/6u1UjwkM8j/q7VSPCQzyP+rtVI8JDPI/6u1UjwkM8j/q7VSPCQzyP+rtVI8JDPI/6u1UjwkM8j/q7VSPCQzyP+rtVI8JDPI/6u1UjwkM8j/q7VSPCQzyP+rtVI8JDPI/6u1UjwkM8j/q7VSPCQzyP+rtVI8JDPI/6u1UjwkM8j/q7VSPCQzyP+rtVI8JDPI/6u1UjwkM8j/q7VSPCQzyP+rtVI8JDPI/6u1UjwkM8j/q7VSPCQzyP+rtVI8JDPI/6u1UjwkM8j/q7VSPCQzyP+rtVI8JDPI/6u1UjwkM8j/q7VSPCQzyP+rtVI8JDPI/6u1UjwkM8j/q7VSPCQzyP+rtVI8JDPI/6u1UjwkM8j/q7VSPCQzyP+rtVI8JDPI/6u1UjwkM8j/q7VSPCQzyP+rtVI8JDPI/6u1UjwkM8j/q7VSPCQzyP+rtVI8JDPI/6u1UjwkM8j/q7VSPCQzyP+rtVI8JDPI/6u1UjwkM8j/q7VSPCQzyP+rtVI8JDPI/6u1UjwkM8j/q7VSPCQzyP+rtVI8JDPI/6u1UjwkM8j/q7VSPCQzyP+rtVI8JDPI/6u1UjwkM8j/q7VSPCQzyP+rtVI8JDPI/6u1UjwkM8j/q7VSPCQzyP+rtVI8JDPI/6u1UjwkM8j/q7VSPCQzyP+rtVI8JDPI/6u1UjwkM8j/q7VSPCQzyP+rtVI8JDPI/6u1UjwkM8j/q7VSPCQzyP+rtVI8JDPI/6u1UjwkM8j/q7VSPCQzyP+rtVI8JDPI/6u1UjwkM8j/q7VSPCQzyP+rtVI8JDPI/6u1UjwkM8j/q7VSPCQzyP+rtVI8JDPI/6u1UjwkM8j/q7VSPCQzyP+rtVI8JDPI/6u1UjwkM8j/q7VSPCQzyP+rtVI8JDPI/6u1UjwkM8j/q7VSPCQzyP+rtVI8JDPI/6u1UjwkM8j/q7VSPCQzyP+rtVI8JDPI/6u1UjwkM8j/q7VSPCQzyP+rtVI8JDPI/6u1UjwkM8j/q7VSPCQzyP+rtVI8JDPI/6u1UjwkM8j/q7VSPCQzyP+rtVI8JDPI/6u1UjwkM8j/q7VSPCQzyP+rtVI8JDPI/6u1UjwkM8j/q7VSPCQzyP+rtVI8JDPI/6u1UjwkM8j/q7VSPCQzyP+rtVI8JDPI/6u1UjwkM8j/q7VSPCQzyP+rtVI8JDPI/6u1UjwkM8j/q7VSPCQzyP+rtVI8JDPI/6u1UjwkM8j/q7VSPCQzyP+rtVI8JDPI/6u1UjwkM8j/q7VSPCQzyP+rtVI8JDPI/6u1UjwkM8j/q7VSPCQzyP+rtVI8JDPI/6u1UjwkM8j/q7VSPCQzyP+rtVI8JDPI/6u1UjwkM8j/q7VSPCQzyP+rtVI8JDPI/6u1UjwkM8j/q7VSPCQzyP+rtVI8JDPI/6u1UjwkM8j/q7VSPCQzyP+rtVI8JDPI/6u1UjwkM8j/q7VSPCQzyP+rtVI8JDPI/6u1UjwkM8j/q7VSPCQzyP+rtVI8JDPI/6u1UjwkM8j/q7VSPCQzyP+rtVI8JDPI/6u1UjwkM8j/q7VSPCQzyP+rtVI8JDPI/6u1UjwkM8j/q7VSPCQzyP+rtVI8JDPI/6u1UjwkM8j/q7VSPCQzyP+rtVI8JDPI/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/</Data>
+          <Graph Points="false" Line="true" X="time" Interpolation="Linear" Y="y1" Color="#ff0000" />
+          <Input>plot( y1 )</Input>
+          <Output>true</Output>
+        </GraphCell>
+        <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="true" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+          <Input>plot( y3 )</Input>
+          <Output></Output>
+        </GraphCell>
+        <TextCell style="Text" >
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;img src="file:///C:/Users/mohto/Develop/OpenModelica1.5.0/OMNotebook/DrModelica/OMNoteboook_tempfiles/39.png" width="288" height="214" />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          <Image name="file:///C:/Users/mohto/Develop/OpenModelica1.5.0/OMNotebook/DrModelica/OMNoteboook_tempfiles/39.png" >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</Image>
+        </TextCell>
+      </GroupCell>
+      <GroupCell closed="false" >
+        <TextCell style="Section" >
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">WhenStat&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text" >
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">The order between the statements in the body of the &lt;span style=" font-family:'Courier New';">when&lt;/span>-statement is of cuorce significant. If you would put the assignment to &lt;span style=" font-family:'Courier New';">y3&lt;/span> before the assignment of &lt;span style=" font-family:'Courier New';">y1&lt;/span> you would get a different result and thus a different model behavior.&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+          <Input>class WhenStat3
   Real x(start = 1);
   Real y1;
   Real y2;
   Real y3;
-
 algorithm
   when x > 2 then
     y1 := sin(x);
   end when;
-
 equation
   y2 = sin(y1);
-
 algorithm
   when x > 2 then
     y3 := 2*x + pre(y1) + y2;
   end when;
-
 equation
   der(x) = 2*x;
-
-end WhenStat3;
-</Input>
-     <Output></Output>
-    </InputCell>
-   </GroupCell>
-   <GroupCell closed="false" >
-    <TextCell style="Section" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Simulation of WhenStat3&lt;/p>&lt;/body>&lt;/html></Text>
-    </TextCell>
-    <InputCell style="Input" closed="true" >
-     <Input>simulate( WhenStat3 );  //?? algorithm sections outside functions not yet implemented</Input>
-     <Output></Output>
-    </InputCell>
-    <TextCell style="Output" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
-    </TextCell>
-    <InputCell style="Input" closed="true" >
-     <Input>plot( y1 );</Input>
-     <Output>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Output>
-    </InputCell>
-    <TextCell style="Text" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;span style=" color:#000000;">&lt;img src="file:///C:/OpenModelica1.4.3/bin/OMNoteboook_tempfiles/16.png" width="288" height="214" />&lt;/span>&lt;/p>&lt;/body>&lt;/html></Text>
-     <Image name="file:///C:/OpenModelica1.4.3/bin/OMNoteboook_tempfiles/16.png" >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</Image>
-    </TextCell>
-    <InputCell style="Input" closed="true" >
-     <Input>plot( y3 );</Input>
-     <Output>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Output>
-    </InputCell>
-    <TextCell style="Text" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;span style=" color:#000000;">&lt;img src="file:///C:/OpenModelica1.4.3/bin/OMNoteboook_tempfiles/17.png" width="288" height="214" />&lt;/span>&lt;/p>&lt;/body>&lt;/html></Text>
-     <Image name="file:///C:/OpenModelica1.4.3/bin/OMNoteboook_tempfiles/17.png" >AAAAAYlQTkcNChoKAAAADUlIRFIAAAEgAAAA1ggDAAAARuGvAgAAAwBQTFRFAAAAAAD/2dnZAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAqOCPfgAAAAlwSFlzAAALEwAACxMBAJqcGAAAAwVJREFUeJzt3NFW2kAUQNHR///o2oqVCeAZNFiKe780yxUwHK9eXcaOZz40/vUF3DuBgkBBoCBQECgIFAQKAgWBgkBBoCBQECgIFAQKAgWBgkBBoCBQWA80xvE/09EjW36R43DueH+QQK9nvEzK+NvmT6jflh77AC68yKeDwynvfUzQ2XPGyafYT5+gMyeNsT0W6Nw548LbH9XCi5zXuTXPRKAgUBAoCBQECgIFgYJAQaAgUDgJpNhMoCBQOA20f6Gn+3ZtoN37PMcl3DeBgkBBoCBQ+JYttvszfiMTFAQKAgWBgkBBoGDNBxMUBAoCBYGCQMEWCyYoCBSOb1q91b29DxJoPAt0xjg6EOiMo7ueD3+hYotNxvbYBM2mL9I3+guVRwl04Q1fJ1AQKDxYIFtsYoKCQEGgIFAQKAgUrPlggoJAQaAgUBAo2GLBBAWBgkBBoCBQsMWCCQoChaO7O8bmDbt5jEDu7jjPzQthbA9tsZlPseCLdLDmg0BBoOBnsWCCgkBBoCBQECgIFKz5YIKCQEGgIFAQKNhiwQQFgYJAQaAgULDFggkKAgW/WQ1+Nx9O7+7Y/308SKDDkS02G9sDEzR7DzT8F13nWPNBoCBQECj4YTWYoCBQECgIFAQKtlgwQUGgIFAQKAgUbLFggoJAQaAgUBAo2GLBBAWBgkDB/UHB7S9BoHAayJqfmKAw3R80ngXasuaDQEGg4IfVYIKCQEGgIFAQKNhiwQQFgYJAQaAgULDFggkKAgWBgkBBoGCLBRMUBAoCBYE2tq//y4EWzp8CXf0BuMEFfXD+22/gLz/d2P/46SvPc4sLuvzOPpygP/HG0w2M/8BRkPUJ+pE23wgKFAQKegSBwucDjXH+eOX8qx8wFh5w7QWtnfnpQMfrcLsa6/yXo4XXOz9g9wtafOpdAq08zdXXPz1gZYCmoOuv61sCXfsBHguv+Csjem8TtPIkm2vef+TuLdBhil/vrV7/Gvr2JzPXPWDl9OkdLH+K5TBb80GgIFAQKAgUBAoCBYHCLwG+20TOqKVfAAAAAElFTkSuQmCC</Image>
-    </TextCell>
-   </GroupCell>
-   <GroupCell closed="false" >
-    <TextCell style="Section" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Defining when-Statements by if-Statements&lt;/p>&lt;/body>&lt;/html></Text>
-    </TextCell>
-    <TextCell style="Text" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">A &lt;span style=" font-family:Courier New;">when&lt;/span>-statement can be defined as a combination of the following:&lt;/p>&lt;/body>&lt;/html></Text>
-    </TextCell>
-    <TextCell style="" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;"> &lt;span style=" font-family:Times New Roman; font-size:12pt; color:#000000;">- An &lt;/span>&lt;span style=" font-family:Courier New; font-size:12pt; color:#000000;">if&lt;/span>&lt;span style=" font-family:Times New Roman; font-size:12pt; color:#000000;">-statement&lt;/span>&lt;/p>&lt;/body>&lt;/html></Text>
-     <Rule name="TextAlignment" >Left</Rule>
-    </TextCell>
-    <TextCell style="" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;span style=" font-family:Times New Roman; font-size:12pt; color:#000000;">- Boolean variables with appropriate start values&lt;/span>&lt;/p>&lt;/body>&lt;/html></Text>
-     <Rule name="TextAlignment" >Left</Rule>
-    </TextCell>
-    <TextCell style="" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;span style=" font-family:Times New Roman; font-size:12pt; color:#000000;">- Calls to the edge operator in the conditional expressions of the &lt;/span>&lt;span style=" font-family:Courier New; font-size:12pt; color:#000000;">if&lt;/span>&lt;span style=" font-family:Times New Roman; font-size:12pt; color:#000000;">-statement&lt;/span>&lt;/p>&lt;/body>&lt;/html></Text>
-     <Rule name="TextAlignment" >Left</Rule>
-    </TextCell>
-   </GroupCell>
-   <GroupCell closed="false" >
-    <TextCell style="Section" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Avoiding Multiple-Definition Conflicts for when-Statements&lt;/p>&lt;/body>&lt;/html></Text>
-    </TextCell>
-    <TextCell style="Text" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">Two &lt;span style=" font-family:Courier New;">when&lt;/span>-statements in different algorithm sections or two &lt;span style=" font-family:Courier New;">when&lt;/span>-equations may not define the same variable. Without this rule a conflict between the assignment will  occur if both conditions would become true at the same time instant.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
-    </TextCell>
-    <InputCell style="Input" closed="true" >
-     <Input>model DoubleWhenConflict
+end WhenStat3;</Input>
+          <Output>{WhenStat3}</Output>
+        </GraphCell>
+      </GroupCell>
+      <GroupCell closed="false" >
+        <TextCell style="Section" >
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Simulation of WhenStat3&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+          <Input>simulate( WhenStat3 )  </Input>
+          <Output>record SimulationResult
+    resultFile = "WhenStat3_res.plt"
+end SimulationResult;</Output>
+        </GraphCell>
+        <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.05" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="0.2" MajorY="0.1" closed="false" YLabel="" Area="v2P3VpTKvqG/h38OMD6FDD/wVulaw+sAP+5ZclOmFoQ=" ShowGraph="true" Grid="true" XLabel="time" Legend="true" >
+          <Data Id="0" Label="time" >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</Data>
+          <Data Id="0" Label="y1" >AAAB+gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/7Rj26rm4DD/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78/7Rj26tGvvz/tGPbq0a+/P+0Y9urRr78=</Data>
+          <Graph Points="false" Line="true" X="time" Interpolation="Linear" Y="y1" Color="#ff0000" />
+          <Input>plot( y1 )</Input>
+          <Output>true</Output>
+        </GraphCell>
+        <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="true" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+          <Input>plot( y3 );</Input>
+          <Output></Output>
+        </GraphCell>
+        <TextCell style="Text" >
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;img src="file:///C:/Users/mohto/Develop/OpenModelica1.5.0/OMNotebook/DrModelica/OMNoteboook_tempfiles/41.png" width="288" height="214" />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          <Image name="file:///C:/Users/mohto/Develop/OpenModelica1.5.0/OMNotebook/DrModelica/OMNoteboook_tempfiles/41.png" >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</Image>
+        </TextCell>
+      </GroupCell>
+      <GroupCell closed="false" >
+        <TextCell style="Section" >
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Defining when-Statements by if-Statements&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text" >
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">A &lt;span style=" font-family:'Courier New';">when&lt;/span>-statement can be defined as a combination of the following:&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="" >
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table style="-qt-table-type: root;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg'; font-size:8pt;"> &lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">- An &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">if&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">-statement&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          <Rule name="TextAlignment" >Left</Rule>
+        </TextCell>
+        <TextCell style="" >
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table style="-qt-table-type: root;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg'; font-size:8pt;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">- Boolean variables with appropriate start values&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          <Rule name="TextAlignment" >Left</Rule>
+        </TextCell>
+        <TextCell style="" >
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table style="-qt-table-type: root;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg'; font-size:8pt;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">- Calls to the edge operator in the conditional expressions of the &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">if&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">-statement&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          <Rule name="TextAlignment" >Left</Rule>
+        </TextCell>
+      </GroupCell>
+      <GroupCell closed="false" >
+        <TextCell style="Section" >
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Avoiding Multiple-Definition Conflicts for when-Statements&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text" >
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">Two &lt;span style=" font-family:'Courier New';">when&lt;/span>-statements in different algorithm sections or two &lt;span style=" font-family:'Courier New';">when&lt;/span>-equations may not define the same variable. Without this rule a conflict between the assignment will  occur if both conditions would become true at the same time instant.&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+          <Input>model DoubleWhenConflict
   Boolean close;          // Erroneous model: close defined by two equations
   parameter Real x = 5;
 algorithm
@@ -223,19 +362,32 @@ algorithm
   when x &lt;= 5 then
     close := false;
   end when;
-end DoubleWhenConflict;
-</Input>
-     <Output></Output>
-    </InputCell>
-    <GroupCell closed="false" >
-     <TextCell style="Subsection" >
-      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:14pt; font-weight:600; color:#000000;">DoubleWhenSequential&lt;/p>&lt;/body>&lt;/html></Text>
-     </TextCell>
-     <TextCell style="Text" >
-      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">One possible way to resolve the conflict would be to put both &lt;span style=" font-family:Courier New;">when&lt;/span>-statements within the same algorithm section, as in the &lt;span style=" font-family:Courier New;">DoubleWhenSequential&lt;/span> model below. The sequential execution semantics of algorithm sections allow several assignments to the same variable. If there are several &lt;span style=" font-family:Courier New;">when&lt;/span>-statements with assignments active at the same time instant, they will be executed in sequential order and the result of the last assignment will prevail.&lt;br />&lt;br />However, this method is not recommended since the modeling style is less clear than the alternative method presented in the next section. Another disadvantage is the nondeclarative style of using &lt;span style=" font-family:Courier New;">when&lt;/span>-constructs by relying on multiple sequential assignments.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
-     </TextCell>
-     <InputCell style="Input" closed="true" >
-      <Input>model DoubleWhenSequential
+end DoubleWhenConflict;</Input>
+          <Output>{DoubleWhenConflict}</Output>
+        </GraphCell>
+        <GroupCell closed="false" >
+          <TextCell style="Subsection" >
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">DoubleWhenSequential&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <TextCell style="Text" >
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">One possible way to resolve the conflict would be to put both &lt;span style=" font-family:'Courier New';">when&lt;/span>-statements within the same algorithm section, as in the &lt;span style=" font-family:'Courier New';">DoubleWhenSequential&lt;/span> model below. The sequential execution semantics of algorithm sections allow several assignments to the same variable. If there are several &lt;span style=" font-family:'Courier New';">when&lt;/span>-statements with assignments active at the same time instant, they will be executed in sequential order and the result of the last assignment will prevail.&lt;br />&lt;br />However, this method is not recommended since the modeling style is less clear than the alternative method presented in the next section. Another disadvantage is the nondeclarative style of using &lt;span style=" font-family:'Courier New';">when&lt;/span>-constructs by relying on multiple sequential assignments.&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+            <Input>model DoubleWhenSequential
   Boolean close;         // Possible conflicting definitions resolved by
                          // sequential assignments in an algorithm section
 algorithm
@@ -247,31 +399,51 @@ algorithm
     close := false;
   end when;
 end DoubleWhenSequential;      </Input>
-      <Output></Output>
-     </InputCell>
-    </GroupCell>
-    <GroupCell closed="false" >
-     <TextCell style="Subsection" >
-      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:14pt; font-weight:600; color:#000000;">Simulation of DoubleWhenSequential&lt;/p>&lt;/body>&lt;/html></Text>
-     </TextCell>
-     <InputCell style="Input" closed="true" >
-      <Input>simulate( DoubleWhenSequential );  //??algorithm sections not yet implemented
+            <Output>{DoubleWhenSequential}</Output>
+          </GraphCell>
+        </GroupCell>
+        <GroupCell closed="false" >
+          <TextCell style="Subsection" >
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Simulation of DoubleWhenSequential&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+            <Input>simulate( DoubleWhenSequential )  
 </Input>
-      <Output></Output>
-     </InputCell>
-     <TextCell style="Output" >
-      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
-     </TextCell>
-    </GroupCell>
-    <GroupCell closed="false" >
-     <TextCell style="Subsection" >
-      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:14pt; font-weight:600; color:#000000;">WhenPriority&lt;/p>&lt;/body>&lt;/html></Text>
-     </TextCell>
-     <TextCell style="Text" >
-      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />A more explicit and therefore better way to resolve the conflict would be to give one of the two event handlers higher priority, which is possible using the &lt;span style=" font-family:Courier New;">elsewhen&lt;/span> construct. Here it is well defined what happens if both conditions become true at the same time instant since the first condition (&lt;span style=" font-family:Courier New;">x &amp;gt;= 5&lt;/span>) has higher priority than the second condition (&lt;span style=" font-family:Courier New;">x ).&lt;br />&lt;/span>&lt;/p>&lt;/body>&lt;/html></Text>
-     </TextCell>
-     <InputCell style="Input" closed="true" >
-      <Input>model WhenPriority
+            <Output>record SimulationResult
+    resultFile = "DoubleWhenSequential_res.plt"
+end SimulationResult;</Output>
+          </GraphCell>
+        </GroupCell>
+        <GroupCell closed="false" >
+          <TextCell style="Subsection" >
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">WhenPriority&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <TextCell style="Text" >
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />A more explicit and therefore better way to resolve the conflict would be to give one of the two event handlers higher priority, which is possible using the &lt;span style=" font-family:'Courier New';">elsewhen&lt;/span> construct. Here it is well defined what happens if both conditions become true at the same time instant since the first condition (&lt;span style=" font-family:'Courier New';">x &amp;gt;= 5&lt;/span>) has higher priority than the second condition (&lt;span style=" font-family:'Courier New';">x ).&lt;br />&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+            <Input>model WhenPriority
   Boolean close;
   parameter Real x = 5;
 algorithm
@@ -280,24 +452,44 @@ algorithm
   elsewhen x &lt;= 5 then
     close := false;
   end when;
-end WhenPriority;
-</Input>
-      <Output></Output>
-     </InputCell>
+end WhenPriority;</Input>
+            <Output>{WhenPriority}</Output>
+          </GraphCell>
+        </GroupCell>
+        <GroupCell closed="false" >
+          <TextCell style="Subsection" >
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Simulation of WhenPriority&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+            <Input>simulate( WhenPriority )  </Input>
+            <Output>record SimulationResult
+    resultFile = "WhenPriority_res.plt"
+end SimulationResult;</Output>
+          </GraphCell>
+          <TextCell style="Output" >
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Courier New'; font-size:11pt; color:#000000;">&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+        </GroupCell>
+      </GroupCell>
     </GroupCell>
-    <GroupCell closed="false" >
-     <TextCell style="Subsection" >
-      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:14pt; font-weight:600; color:#000000;">Simulation of WhenPriority&lt;/p>&lt;/body>&lt;/html></Text>
-     </TextCell>
-     <InputCell style="Input" closed="true" >
-      <Input>simulate( WhenPriority );  //??algorithm sections not yet implemented</Input>
-      <Output></Output>
-     </InputCell>
-     <TextCell style="Output" >
-      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
-     </TextCell>
-    </GroupCell>
-   </GroupCell>
   </GroupCell>
- </GroupCell>
 </Notebook>
