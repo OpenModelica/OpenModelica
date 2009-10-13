@@ -27,8 +27,7 @@ CORBAHOME = @CORBAHOME@
 
 ifdef USE_CORBA
   CORBAIMPL = -I$(top_builddir)/Compiler/runtime
-  CORBAOBJS = $(top_builddir)/Compiler/runtime/omc_communication.o \
-	$(top_builddir)/Compiler/runtime/omc_communication_impl.o
+  CORBAOBJS = $(top_builddir)/Compiler/runtime/omc_communication.o #$(top_builddir)/Compiler/runtime/omc_communication_impl.o
   CORBALIB = `mico-config --libs`
   CORBAINC = -I$(CORBAHOME)/include
 else

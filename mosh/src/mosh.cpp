@@ -76,8 +76,10 @@ void doSocketCommunication(const string*);
 char* historyfile = "mosh_history";
 int maxhistoryfileentries = 3000;
 
+/* none of these are needed!
 
 pthread_mutex_t lock;
+pthread_mutex_t clientlock;
 
 // Condition variable for keeping omc waiting for client requests
 pthread_cond_t omc_waitformsg;
@@ -88,6 +90,12 @@ bool omc_waiting=false;
 pthread_cond_t corba_waitformsg;
 pthread_mutex_t corba_waitlock;
 bool corba_waiting=false;
+
+// we need to define these too.
+char* omc_cmd_message;
+char* omc_reply_message;
+
+*/
 
 /* Main function, handles options: -noserv -corba
    and calls appropriate function. */
