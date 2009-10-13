@@ -1,3 +1,11 @@
+
+/* 
+ * Adrian Pop [adrpo@.ida.li.se]
+ * DO NOT USE THIS FILE at it was deprecated.
+ * all these functions are now part of RML/MMC.
+ */
+
+
 /*
  * This file is part of OpenModelica.
  *

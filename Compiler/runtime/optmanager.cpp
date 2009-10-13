@@ -53,7 +53,6 @@ char *undefined = "## UNDEFINED OPTION ##";
 extern "C"
 {
 #include "rml.h"
-#include "../absyn_builder/yacclib.h"
 
 	// For all options to be used, add an initial value here.
 	void OptManager_5finit(void)
