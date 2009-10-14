@@ -222,7 +222,10 @@ void free_type_description(type_description *desc)
     if (desc->data.tuple.elements > 0)
       free(desc->data.tuple.element);
   }; break;
+  case TYPE_DESC_FUNCTION:
+  case TYPE_DESC_MMC:
   case TYPE_DESC_COMPLEX:
+  case TYPE_DESC_NORETCALL:
     break;
   case TYPE_DESC_RECORD: {
     size_t i;
@@ -420,6 +423,11 @@ void write_modelica_boolean(type_description *desc, modelica_boolean *data)
   desc->data.boolean = *data;
 }
 
+void write_noretcall(type_description *desc)
+{
+  desc->type = TYPE_DESC_NORETCALL;
+}
+
 void write_real_array(type_description *desc, real_array_t *arr)
 {
   size_t nr_elements = 0;
@@ -571,56 +579,122 @@ void write_modelica_complex(type_description *desc, modelica_complex *data)
   desc->data.complex = *data;
 }
 
-int read_modelica_record(type_description **descptr, ...)
+/* function pointer functions - added by stefan */
+
+int read_modelica_fnptr(type_description **descptr, modelica_fnptr *fn)
+{
+  type_description *desc = (*descptr)++;
+  switch(desc->type) {
+  case TYPE_DESC_FUNCTION:
+    *fn = desc->data.function;
+    return 0;
+  default:
+    break;
+  }
+  
+  in_report("mc type");
+  return -1;
+}
+
+void write_modelica_fnptr(type_description *desc, modelica_fnptr *fn)
+{
+  if (desc->type != TYPE_DESC_NONE)
+    desc = add_tuple_item(desc);
+  desc->type = TYPE_DESC_FUNCTION;
+  desc->data.function = *fn;
+}
+
+int read_metamodelica_type(type_description **descptr, metamodelica_type *ut)
+{
+  type_description *desc = (*descptr)++;
+  switch(desc->type) {
+  case TYPE_DESC_INT:
+    *ut = mmc_mk_icon(desc->data.integer);
+    return 0;
+  case TYPE_DESC_REAL:
+    *ut = mmc_mk_rcon(desc->data.real);
+    return 0;
+  case TYPE_DESC_STRING:
+    *ut = mmc_mk_scon(desc->data.string);
+    return 0;
+  case TYPE_DESC_BOOL:
+    *ut = mmc_mk_icon(desc->data.boolean == 0 ? 0 : 1);
+    return 0;
+  case TYPE_DESC_MMC:
+    *ut = desc->data.mmc;
+    return 0;
+  default:
+    break;
+  }
+  
+  in_report("MMC type");
+  return -1;
+}
+
+void write_metamodelica_type(type_description *desc, metamodelica_type *ut)
+{
+  if (desc->type != TYPE_DESC_NONE)
+    desc = add_tuple_item(desc);
+  desc->type = TYPE_DESC_MMC;
+  desc->data.mmc = *ut;
+}
+
+int read_modelica_record_helper(type_description **descptr, va_list *arg)
 {
   type_description *desc = (*descptr)++;
   type_description *elem = NULL;
   size_t e;
-  va_list arg;
   switch (desc->type) {
   case TYPE_DESC_RECORD:
-    va_start(arg, descptr);
     elem = desc->data.record.element;
     for (e = 0; e < desc->data.record.elements; ++e) {
       switch (elem->type) {
       case TYPE_DESC_NONE:
-        return -1;
+        return -1;      
       case TYPE_DESC_REAL:
-        read_modelica_real(&elem, va_arg(arg, modelica_real *));
+        read_modelica_real(&elem, va_arg(*arg, modelica_real *));
         break;
       case TYPE_DESC_REAL_ARRAY:
-        read_real_array(&elem, va_arg(arg, real_array_t *));
+        read_real_array(&elem, va_arg(*arg, real_array_t *));
         break;
       case TYPE_DESC_INT:
-        read_modelica_integer(&elem, va_arg(arg, modelica_integer *));
+        read_modelica_integer(&elem, va_arg(*arg, modelica_integer *));
         break;
       case TYPE_DESC_INT_ARRAY:
-        read_integer_array(&elem, va_arg(arg, integer_array_t *));
+        read_integer_array(&elem, va_arg(*arg, integer_array_t *));
         break;
       case TYPE_DESC_BOOL:
-        read_modelica_boolean(&elem, va_arg(arg, modelica_boolean *));
+        read_modelica_boolean(&elem, va_arg(*arg, modelica_boolean *));
         break;
       case TYPE_DESC_BOOL_ARRAY:
-        read_boolean_array(&elem, va_arg(arg, boolean_array_t *));
+        read_boolean_array(&elem, va_arg(*arg, boolean_array_t *));
         break;
       case TYPE_DESC_STRING:
-        read_modelica_string(&elem, va_arg(arg, modelica_string_t *));
+        read_modelica_string(&elem, va_arg(*arg, modelica_string_t *));
         break;
       case TYPE_DESC_STRING_ARRAY:
-        read_string_array(&elem, va_arg(arg, string_array_t *));
+        read_string_array(&elem, va_arg(*arg, string_array_t *));
         break;
       case TYPE_DESC_TUPLE:
         in_report("tuple in record is unsupported.");
         return -1;
       case TYPE_DESC_COMPLEX:
-        read_modelica_complex(&elem, va_arg(arg, modelica_complex *));
+        read_modelica_complex(&elem, va_arg(*arg, modelica_complex *));
+        break;
+      case TYPE_DESC_MMC:
+        read_metamodelica_type(&elem, va_arg(*arg, void **));
         break;
       case TYPE_DESC_RECORD:
-        in_report("record in record is unsupported.");
+        read_modelica_record_helper(&elem, arg);
+        break;
+      case TYPE_DESC_FUNCTION:
+        in_report("function pointer in record is unsupported.");
+        return -1;
+      case TYPE_DESC_NORETCALL:
+        in_report("noretcall in record is invalid.");
         return -1;
       }
     }
-    va_end(arg);
     return 0;
   default:
     break;
@@ -628,6 +702,16 @@ int read_modelica_record(type_description **descptr, ...)
 
   in_report("mr type");
   return -1;
+}
+
+int read_modelica_record(type_description **descptr, ...)
+{
+  va_list arg;
+  int res;
+  va_start(arg, descptr);
+  res = read_modelica_record_helper(descptr,&arg);
+  va_end(arg);
+  return res;
 }
 
 type_description *add_modelica_record_member(type_description *desc,
@@ -652,25 +736,25 @@ type_description *add_modelica_record_member(type_description *desc,
   return elem;
 }
 
-void write_modelica_record(type_description *desc, const char *name, ...)
+/* Help write_modelica_record work recursively. sjoelund */
+void write_modelica_record_helper(type_description *desc, void* rec_desc_void, va_list* arg)
 {
-  va_list arg;
   enum type_desc_e type;
-  if (desc->type != TYPE_DESC_NONE)
+  struct record_description rec_desc = *((struct record_description*) rec_desc_void);
+  if (desc->type != TYPE_DESC_NONE) {
     desc = add_tuple_item(desc);
+  }
   desc->type = TYPE_DESC_RECORD;
-  assert(name != NULL);
-  desc->data.record.record_name = my_strdup(name);
+  desc->data.record.record_name = rec_desc.path;
   desc->data.record.elements = 0;
   desc->data.record.name = NULL;
   desc->data.record.element = NULL;
-  va_start(arg, name);
   /* atleast small enums gets casted to ints */
-  while ((type = (enum type_desc_e) va_arg(arg, int)) != TYPE_DESC_NONE) {
+  while ((type = (enum type_desc_e) va_arg(*arg, int)) != TYPE_DESC_NONE) {
     type_description *elem;
     const char *name;
     size_t nlen;
-    name = va_arg(arg, const char *);
+    name = rec_desc.fieldNames[desc->data.record.elements];
     nlen = strlen(name);
 
     elem = add_modelica_record_member(desc, name, nlen);
@@ -680,42 +764,61 @@ void write_modelica_record(type_description *desc, const char *name, ...)
     case TYPE_DESC_NONE:
       break;
     case TYPE_DESC_REAL:
-      write_modelica_real(elem, va_arg(arg, modelica_real *));
+      write_modelica_real(elem, va_arg(*arg, modelica_real *));
       break;
     case TYPE_DESC_REAL_ARRAY:
-      write_real_array(elem, va_arg(arg, real_array_t *));
+      write_real_array(elem, va_arg(*arg, real_array_t *));
       break;
     case TYPE_DESC_INT:
-      write_modelica_integer(elem, va_arg(arg, modelica_integer *));
+      write_modelica_integer(elem, va_arg(*arg, modelica_integer *));
       break;
     case TYPE_DESC_INT_ARRAY:
-      write_integer_array(elem, va_arg(arg, integer_array_t *));
+      write_integer_array(elem, va_arg(*arg, integer_array_t *));
       break;
     case TYPE_DESC_BOOL:
-      write_modelica_boolean(elem, va_arg(arg, modelica_boolean *));
+      write_modelica_boolean(elem, va_arg(*arg, modelica_boolean *));
       break;
     case TYPE_DESC_BOOL_ARRAY:
-      write_boolean_array(elem, va_arg(arg, boolean_array_t *));
+      write_boolean_array(elem, va_arg(*arg, boolean_array_t *));
       break;
     case TYPE_DESC_STRING:
-      write_modelica_string(elem, va_arg(arg, modelica_string_t *));
+      write_modelica_string(elem, va_arg(*arg, modelica_string_t *));
       break;
     case TYPE_DESC_STRING_ARRAY:
-      write_string_array(elem, va_arg(arg, string_array_t *));
+      write_string_array(elem, va_arg(*arg, string_array_t *));
       break;
     case TYPE_DESC_COMPLEX:
-      write_modelica_complex(elem, va_arg(arg, modelica_complex *));
+      write_modelica_complex(elem, va_arg(*arg, modelica_complex *));
+      break;
+    case TYPE_DESC_MMC:
+      write_metamodelica_type(elem, va_arg(*arg, void **));
       break;
     case TYPE_DESC_TUPLE:
       in_report("tuple in record is unsupported.");
       assert(0);
       return;
-    case TYPE_DESC_RECORD:
-      in_report("record in record is unsupported.");
+    case TYPE_DESC_RECORD: {
+      struct record_description* new_desc = va_arg(*arg, struct record_description*);
+      write_modelica_record_helper(elem, new_desc, arg);
+      break;
+    };
+    case TYPE_DESC_FUNCTION:
+      in_report("function pointer in record is unsupported.");
+      assert(0);
+      return;
+    case TYPE_DESC_NORETCALL:
+      in_report("noretcall in record is invalid.");
       assert(0);
       return;
     }
   }
+}
+
+void write_modelica_record(type_description *desc, void* rec_desc_void, ...)
+{
+  va_list arg;
+  va_start(arg, rec_desc_void);
+  write_modelica_record_helper(desc, rec_desc_void, &arg);
   va_end(arg);
 }
 

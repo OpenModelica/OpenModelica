@@ -52,7 +52,11 @@ enum type_desc_e {
   TYPE_DESC_STRING_ARRAY,
   TYPE_DESC_TUPLE,
   TYPE_DESC_COMPLEX,
-  TYPE_DESC_RECORD
+  TYPE_DESC_RECORD,
+  /* function pointer - added by stefan */
+  TYPE_DESC_FUNCTION,
+  TYPE_DESC_MMC,
+  TYPE_DESC_NORETCALL
 };
 
 struct type_desc_s {
@@ -78,6 +82,9 @@ struct type_desc_s {
       char **name;
       struct type_desc_s *element;
     } record;
+    /* function pointer - stefan */
+    modelica_fnptr function;
+    void* mmc;
   } data;
 };
 
@@ -107,8 +114,17 @@ void write_string_array(type_description *, string_array_t *);
 int read_modelica_complex(type_description **, modelica_complex *);
 void write_modelica_complex(type_description *, modelica_complex *);
 
+/* function pointer functions - added by stefan */
+int read_modelica_fnptr(type_description **, modelica_fnptr *);
+void write_modelica_fnptr(type_description *, modelica_fnptr *);
+
+int read_metamodelica_type(type_description **, metamodelica_type*);
+void write_metamodelica_type(type_description *, metamodelica_type*);
+
 int read_modelica_record(type_description **, ...);
-void write_modelica_record(type_description *, const char *name, ...);
+void write_modelica_record(type_description *, void *, ...);
+
+void write_noretcall(type_description *);
 
 type_description *add_modelica_record_member(type_description *desc,
                                              const char *name, size_t nlen);

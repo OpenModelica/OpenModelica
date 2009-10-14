@@ -41,6 +41,7 @@ typedef signed char modelica_boolean;
 
 typedef base_array_t boolean_array_t;
 
+
 /* Indexing 1 dimensions */
 modelica_boolean boolean_get(boolean_array_t *a, size_t i);
 /* Indexing 2 dimensions */
@@ -59,7 +60,7 @@ void simple_alloc_1d_boolean_array(boolean_array_t* dest, int n);
 /* Allocation of a matrix */
 void simple_alloc_2d_boolean_array(boolean_array_t *dest, int r, int c);
 
-void alloc_bool_array(boolean_array_t *dest, int ndims, ...);
+void alloc_boolean_array(boolean_array_t *dest, int ndims, ...);
 
 /* Allocation of boolean data */
 void alloc_boolean_array_data(boolean_array_t* a);

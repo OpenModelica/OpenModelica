@@ -1,0 +1,6 @@
+loadFile("meta_modelica.mo");
+getDefinitions();
+//abc.ABC(1,2,3);
+//TakesAny(1);
+//TakesAny(1.0);
+

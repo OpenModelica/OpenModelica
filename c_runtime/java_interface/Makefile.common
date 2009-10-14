@@ -1,0 +1,80 @@
+antlr = antlr-3.1.3.jar
+junit = junit-4.6.jar
+
+java_sources = \
+src/org/openmodelica/ModelicaArray.java \
+src/org/openmodelica/ModelicaAny.java \
+src/org/openmodelica/ModelicaFunctionReference.java \
+src/org/openmodelica/ModelicaHelper.java \
+src/org/openmodelica/ModelicaReal.java \
+src/org/openmodelica/ModelicaString.java \
+src/org/openmodelica/ModelicaBaseArray.java \
+src/org/openmodelica/ModelicaRecordException.java \
+src/org/openmodelica/corba/SmartProxy.java \
+src/org/openmodelica/corba/OmcCommunicationHelper.java \
+src/org/openmodelica/corba/Result.java \
+src/org/openmodelica/corba/OmcCommunicationOperations.java \
+src/org/openmodelica/corba/InvocationError.java \
+src/org/openmodelica/corba/OmcCommunication.java \
+src/org/openmodelica/corba/OMCProxy.java \
+src/org/openmodelica/corba/parser/OMCorbaParser.java \
+src/org/openmodelica/corba/parser/UniontypeDefinition.java \
+src/org/openmodelica/corba/parser/ComplexTypeDefinition.java \
+src/org/openmodelica/corba/parser/ParseException.java \
+src/org/openmodelica/corba/parser/DefinitionsCreator.java \
+src/org/openmodelica/corba/parser/FunctionDefinition.java \
+src/org/openmodelica/corba/parser/JarCreator.java \
+src/org/openmodelica/corba/parser/OMCorbaDefinitionsLexer.java \
+src/org/openmodelica/corba/parser/RecordDefinition.java \
+src/org/openmodelica/corba/parser/PackageDefinition.java \
+src/org/openmodelica/corba/parser/OMCorbaLexer.java \
+src/org/openmodelica/corba/parser/SymbolTable.java \
+src/org/openmodelica/corba/parser/OMCStringParser.java \
+src/org/openmodelica/corba/parser/VariableDefinition.java \
+src/org/openmodelica/corba/parser/OMCorbaDefinitionsParser.java \
+src/org/openmodelica/corba/ConnectException.java \
+src/org/openmodelica/corba/CommunicationException.java \
+src/org/openmodelica/corba/OmcCommunicationHolder.java \
+src/org/openmodelica/corba/CompilerException.java \
+src/org/openmodelica/corba/OmcCommunicationStub.java \
+src/org/openmodelica/ModelicaObjectException.java \
+src/org/openmodelica/ModelicaFunction.java \
+src/org/openmodelica/IModelicaRecord.java \
+src/org/openmodelica/OMCModelicaRecord.java \
+src/org/openmodelica/ModelicaInteger.java \
+src/org/openmodelica/ModelicaTuple.java \
+src/org/openmodelica/ModelicaVoid.java \
+src/org/openmodelica/ModelicaOption.java \
+src/org/openmodelica/ModelicaObject.java \
+src/org/openmodelica/ModelicaBoolean.java \
+src/org/openmodelica/ModelicaRecord.java
+
+java_targets = $(java_sources:src/%.java=bin/%.class)
+
+resources = \
+src/org/openmodelica/corba/parser/JavaDefinitions/myFQName.st \
+src/org/openmodelica/corba/parser/JavaDefinitions/uniontype.st \
+src/org/openmodelica/corba/parser/JavaDefinitions/record.st \
+src/org/openmodelica/corba/parser/JavaDefinitions/function.st \
+src/org/openmodelica/corba/parser/JavaDefinitions/header.st \
+src/org/openmodelica/corba/parser/OMCorba.g \
+src/org/openmodelica/corba/parser/OMCorba.tokens \
+src/org/openmodelica/corba/parser/OMCorbaDefinitions.g \
+src/org/openmodelica/corba/parser/OMCorbaDefinitions.tokens
+
+java_tests = \
+src/org/openmodelica/test/ABC_CONTAINER.java \
+src/org/openmodelica/test/abc.java \
+src/org/openmodelica/test/ABC_UT.java \
+src/org/openmodelica/test/TestDefinitionsParser.java \
+src/org/openmodelica/test/TestObjects.java \
+src/org/openmodelica/test/TestParser.java \
+src/org/openmodelica/test/TestRecord.java \
+src/org/openmodelica/test/TestSmartProxy.java
+
+junit_tests = \
+org.openmodelica.test.TestObjects \
+org.openmodelica.test.TestParser \
+org.openmodelica.test.TestRecord \
+org.openmodelica.test.TestSmartProxy \
+org.openmodelica.test.TestDefinitionsParser

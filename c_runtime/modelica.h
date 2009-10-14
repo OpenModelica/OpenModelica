@@ -42,6 +42,8 @@ extern "C" {
 #endif
 
 typedef void* modelica_complex; /* currently only External objects are represented using modelica_complex.*/
+typedef void* metamodelica_type; /* MetaModelica extension, added by sjoelund */
+typedef void(* modelica_fnptr) (void); /*MetaModelica extension, function pointer, added by stefan */
 
 #include <stdlib.h>
 
@@ -62,6 +64,7 @@ typedef void* modelica_complex; /* currently only External objects are represent
 #include "read_write.h"
 #include "matrix.h"
 #include "meta_modelica.h"
+#include "meta_modelica_builtin.h"
 
 
 typedef real_array_t real_array;

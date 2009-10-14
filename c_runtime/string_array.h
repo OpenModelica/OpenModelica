@@ -51,7 +51,7 @@ void simple_alloc_1d_string_array(string_array_t* dest, int n);
 /* Allocation of a matrix */
 void simple_alloc_2d_string_array(string_array_t *dest, int r, int c);
 
-void alloc_bool_array(string_array_t *dest, int ndims, ...);
+void alloc_string_array(string_array_t *dest, int ndims, ...);
 
 /* Allocation of string data */
 void alloc_string_array_data(string_array_t* a);
