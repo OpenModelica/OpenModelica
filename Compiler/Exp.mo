@@ -4162,6 +4162,13 @@ algorithm
      f1 = Util.listMap1(f1,makeProduct,e2);
      f1 = Util.listFlatten(Util.listMap(f1,allTerms));
    then f1;
+
+   /* terms( (b+c)/a) => {b/a, c/a} */
+   case (e as BINARY(e1,DIV(tp),e2)) equation
+     (f1 as _::_::_) = allTerms(e1);
+     f1 = Util.listMap1(f1,makeFraction,e2);
+     f1 = Util.listFlatten(Util.listMap(f1,allTerms));
+   then f1;      
    case ((e as BINARY(operator = MUL(ty = _)))) then {e}; 
    case ((e as BINARY(operator = DIV(ty = _)))) then {e}; 
    case ((e as BINARY(operator = POW(ty = _)))) then {e}; 
@@ -4452,6 +4459,27 @@ algorithm
         fail();
   end matchcontinue;
 end makeProductLst;
+
+public function makeFraction
+"function: makeFraction
+  author: Frenkel TUD
+  Makes a fraction of two expressions"
+  input Exp e1;
+  input Exp e2;
+  output Exp fraction;
+algorithm
+  fraction := matchcontinue(e1,e2)
+    local
+      Type etp;
+      Boolean scalar;
+      Operator op;
+    case(e1,e2) equation
+      etp = typeof(e1);
+      scalar = typeBuiltin(etp);
+      op = Util.if_(scalar,DIV(etp),DIV_ARRAY_SCALAR(etp));
+    then BINARY(e1,op,e2);
+  end matchcontinue; 
+end makeFraction;
 
 protected function checkIfOther 
 "Checks if a type is OTHER and in that case returns REAL instead.
