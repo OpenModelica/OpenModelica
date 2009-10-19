@@ -5701,12 +5701,11 @@ algorithm
 
         /* function pointer case - stefan */
     case (cref,Exp.T_FUNCTION_REFERENCE(),tnr,context)
-        local String fn_name;
+        local String fn_name; Absyn.Path path;
       equation
-        (cref_str,{}) = compRefCstr(cref);
-        fn_name = Util.stringReplaceChar(cref_str,".","_");
-        fn_name = stringAppend("_",fn_name);
-        cref_str = stringAppend("(modelica_fnptr)",fn_name);
+        path = Exp.crefToPath(cref);
+        fn_name = generateFunctionName(path);
+        cref_str = stringAppend("(modelica_fnptr)_",fn_name);
       then
         (cEmptyFunction,cref_str,tnr);
 
