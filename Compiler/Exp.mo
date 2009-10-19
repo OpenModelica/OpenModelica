@@ -85,7 +85,14 @@ uniontype Type "- Basic types
     list<Var> varLst; 
     ClassInf.State complexClassType;
   end COMPLEX;
+  
   record OTHER "e.g. complex types, etc." end OTHER;
+
+  /* Was previously replaced by COMPLEX. 2009-05-04 //sjoelund
+  record T_RECORD
+    Ident name;
+  end T_RECORD;
+  */
 
   record T_ARRAY
     Type ty;
@@ -104,6 +111,21 @@ uniontype Type "- Basic types
   record T_METAOPTION
     Type ty;
   end T_METAOPTION;
+  
+  record T_FUNCTION_REFERENCE "MetaModelica Partial Function. sjoelund"
+  end T_FUNCTION_REFERENCE;
+  
+  //MetaModelica Uniontype, MetaModelica extension, simbj
+  record T_UNIONTYPE
+  end T_UNIONTYPE;
+  
+  record T_BOXED "Tag for any boxed data type (useful for equality operations)"
+    Type ty;
+  end T_BOXED;
+
+  record T_POLYMORPHIC "Used in MetaModelica polymorphic functions" end T_POLYMORPHIC;
+
+  record T_NORETCALL "For functions not returning any values." end T_NORETCALL;
 
 end Type;
 
@@ -184,6 +206,12 @@ uniontype Exp "Expressions
     Boolean builtin "builtin Function call" ;
     Type ty "The type of the return value, if several return values this is undefined";
   end CALL;
+  
+  record PARTEVALFUNCTION
+    Absyn.Path path;
+    list<Exp> expList;
+    Type ty;
+  end PARTEVALFUNCTION;
 
   record ARRAY
     Type ty;
@@ -264,6 +292,19 @@ uniontype Exp "Expressions
   record META_OPTION
     Option<Exp> exp;
   end META_OPTION;
+  
+  /*
+  	Holds a metarecord call
+   	<metarecord>(<args>)
+  */
+  record METARECORDCALL //Metamodelica extension, simbj
+    Absyn.Path path;    
+    list<Exp> args;
+    list<String> fieldNames;
+    // SCode.Path name; //Name of the uniontype - removed 2009-09-18 /sjoelund
+    Integer index; //Index in the uniontype
+  end METARECORDCALL;
+  
   /* --- */
 
 end Exp;
@@ -530,6 +571,10 @@ uniontype TTypeTypes "-TType contains the actual type"
     TypeTypes listType "listType" ;
   end T_METAOPTIONTYPES;
 
+ record T_UNIONTYPETYPES
+    list<Absyn.Path> records;
+  end T_UNIONTYPETYPES;
+
   record T_ENUMTYPES end T_ENUMTYPES;
 
   record T_ENUMERATIONTYPES
@@ -631,6 +676,7 @@ uniontype Value
     Absyn.Path record_ "record name" ;
     list<Value> orderd "orderd set of values" ;
     list<Ident> comp "comp names for each value" ;
+    Integer index "-1 for regular records, 0..n-1 for uniontypes containing n records";
   end RECORDVAL;
 
   record CODEVAL
@@ -679,6 +725,8 @@ uniontype TypeExp
   record METATUPLEEXP end METATUPLEEXP;
 
   record METAOPTIONEXP end METAOPTIONEXP;
+    
+  record UNIONTYPEEXP end UNIONTYPEEXP;
 
   record ENUMEXP end ENUMEXP;
 
@@ -835,6 +883,11 @@ uniontype DAEElement
     ComponentRef componentRef;
     Exp exp;
   end REINIT;
+  
+  record DAENORETCALL
+    Absyn.Path fn;
+    list<Exp> explist;
+  end DAENORETCALL;
 
 end DAEElement;
 
@@ -1035,6 +1088,14 @@ uniontype Statement "There are four kinds of statements.  Assignments (`a := b;\
   record LABEL
     String labelName;
   end LABEL;
+
+  record MATCHCASES
+    list<Exp> caseStmt;
+  end MATCHCASES;
+  
+  record NORETCALL
+    Exp exp;
+  end NORETCALL;
 
 end Statement;
 
@@ -1596,7 +1657,7 @@ end isRange;
 
 public function isOne 
 "function: isOne 
-  Returns true íf an expression is constant 
+  Returns true if an expression is constant 
   and has the value one, otherwise false"
   input Exp inExp;
   output Boolean outBoolean;
@@ -1631,7 +1692,7 @@ end isOne;
 
 public function isZero 
 "function: isZero 
-  Returns true íf an expression is constant 
+  Returns true if an expression is constant 
   and has the value zero, otherwise false"
   input Exp inExp;
   output Boolean outBoolean;
@@ -1667,7 +1728,7 @@ end isZero;
 
 public function isConst 
 "function: isConst 
-  Returns true íf an expression 
+  Returns true if an expression 
   is constant otherwise false"
   input Exp inExp;
   output Boolean outBoolean;
@@ -2200,6 +2261,13 @@ algorithm
         exps_1 = Util.listMap(exps_1,simplify1);
       then
         CALL(path,exps_1,b,b2,t);
+        
+    case PARTEVALFUNCTION (path, exps_1, t)
+      local Absyn.Path path;
+      equation
+        exps_1 = Util.listMap(exps_1,simplify1);
+      then
+        PARTEVALFUNCTION(path,exps_1,t);
 
     /* Array and Matrix stuff */ 
     case ASUB(exp = e,sub = ((ae1 as ICONST(i))::{})) 
@@ -4179,6 +4247,7 @@ algorithm
    case ((e as UNARY(operator = _))) then {e}; 
    case ((e as IFEXP(expCond = _))) then {e}; 
    case ((e as CALL(path = _))) then {e}; 
+   case ((e as PARTEVALFUNCTION(path = _))) then {e};
    case ((e as ARRAY(ty = _))) then {e}; 
    case ((e as MATRIX(ty = _))) then {e}; 
    case ((e as RANGE(ty = _))) then {e}; 
@@ -4229,6 +4298,7 @@ algorithm
     case ((e as UNARY(operator = _))) then {e}; 
     case ((e as IFEXP(expCond = _))) then {e}; 
     case ((e as CALL(path = _))) then {e}; 
+    case ((e as PARTEVALFUNCTION(path = _))) then {e};
     case ((e as ARRAY(ty = _))) then {e}; 
     case ((e as MATRIX(ty = _))) then {e}; 
     case ((e as RANGE(ty = _))) then {e}; 
@@ -4309,6 +4379,7 @@ algorithm
     case ((e as UNARY(operator = _))) then {e}; 
     case ((e as IFEXP(expCond = _))) then {e}; 
     case ((e as CALL(path = _))) then {e}; 
+    case ((e as PARTEVALFUNCTION(path = _))) then {e};
     case ((e as ARRAY(ty = _))) then {e}; 
     case ((e as MATRIX(ty = _))) then {e}; 
     case ((e as RANGE(ty = _))) then {e}; 
@@ -4706,6 +4777,8 @@ algorithm
       Type tp;
       Operator op;
       Exp e1,e2,e3,e;
+      list<Exp> explist;
+      list<Type> tylist;
     case (ICONST(integer = _)) then INT(); 
     case (RCONST(real = _)) then REAL(); 
     case (SCONST(string = _)) then STRING(); 
@@ -4741,7 +4814,8 @@ algorithm
         tp = typeof(e2);
       then
         tp;
-    case (CALL(path = _,ty=tp)) then tp;  
+    case (CALL(path = _,ty=tp)) then tp;
+    case (PARTEVALFUNCTION(path = _,ty=tp)) then tp;  
     case (ARRAY(ty = tp)) then tp; 
     case (MATRIX(ty = tp)) then tp; 
     case (RANGE(ty = tp)) then tp; 
@@ -4762,9 +4836,19 @@ algorithm
     case (SIZE(_,SOME(_))) then T_ARRAY(INT(),{NONE});
 
     //MetaModelica extension
-    case (LIST(ty = tp)) then tp;
-    case (CONS(ty = tp)) then tp;
-
+    case (LIST(ty = tp)) then T_LIST(tp); // was tp, but the type of a LIST is a LIST
+    case (CONS(ty = tp)) then T_LIST(tp); // CONS creates lists
+    case (META_TUPLE(explist))
+      equation
+        tylist = Util.listMap(explist, typeof);
+      then T_METATUPLE(tylist);
+    case (META_OPTION(SOME(e)))
+      equation
+        tp = typeof(e);
+      then T_METAOPTION(tp);
+    case (META_OPTION(NONE)) then T_METAOPTION(OTHER());
+    case (METARECORDCALL(_,_,_,_)) then T_UNIONTYPE();
+        
   end matchcontinue;
 end typeof;
 
@@ -5529,7 +5613,13 @@ algorithm
     /* adrpo: 2009-03-03 -> pre is also needed here! */
     case (CALL(path = Absyn.IDENT(name = "pre"))) then false; 
     case (CALL(path = _,ty=T_ARRAY(_,_))) then true; 
-    case (CALL(path = _)) then false; 
+    case (CALL(path = _)) then false;
+    case (PARTEVALFUNCTION(path = _, expList = elst)) // stefan
+      equation
+        blst = Util.listMap(elst,containVectorFunctioncall);
+        res = Util.boolOrList(blst);
+      then
+        res;
     case (BINARY(exp1 = e1,exp2 = e2)) /* Binary */ 
       equation 
         true = containVectorFunctioncall(e1);
@@ -5657,6 +5747,12 @@ algorithm
     case (CALL(path = Absyn.IDENT(name = "der"))) then false;
     case (CALL(path = Absyn.IDENT(name = "pre"))) then false;   
     case (CALL(path = _)) then true; 
+    case (PARTEVALFUNCTION(path = _, expList = elst)) // stefan
+      equation
+        blst = Util.listMap(elst,containFunctioncall);
+        res = Util.boolOrList(blst);
+      then
+        res;
     case (BINARY(exp1 = e1,exp2 = e2)) /* Binary */ 
       equation 
         true = containFunctioncall(e1);
@@ -5841,6 +5937,13 @@ algorithm
       aexpl = Util.listMap(expl,unelabExp);
       acref = Absyn.pathToCref(path);
     then Absyn.CALL(acref,Absyn.FUNCTIONARGS(aexpl,{}));
+      
+    case(PARTEVALFUNCTION(path,expl,_))
+      equation
+        aexpl = Util.listMap(expl,unelabExp);
+        acref = Absyn.pathToCref(path);
+      then
+        Absyn.PARTEVALFUNCTION(acref,Absyn.FUNCTIONARGS(aexpl,{}));
 
     case (ARRAY(ty = tp,scalar = b,array = expl))
       equation 
@@ -6356,6 +6459,17 @@ algorithm
         Print.printBuf(")");
       then
         ();
+    case (PARTEVALFUNCTION(path = fcn, expList = args),_)
+      equation
+        fs = Absyn.pathString(fcn);
+        Print.printBuf("function ");
+        Print.printBuf(fs);
+        Print.printBuf("(");
+        printList(args, printExp, ",");
+        Print.printBuf(")");
+      then
+        ();
+      
     case (ARRAY(array = es),_)
       equation 
         Print.printBuf("{") 
@@ -6492,7 +6606,18 @@ algorithm
         Print.printBuf(")");
       then
         ();
-
+      
+      // MetaModelica Uniontype Constructor
+    case (METARECORDCALL(path = fcn, args=args),_)
+      equation
+        fs = Absyn.pathString(fcn);
+        Print.printBuf(fs);
+        Print.printBuf("(");
+        printList(args, printExp, ",");
+        Print.printBuf(")");
+      then
+        ();
+    
     case (_,_)
       equation 
         Print.printBuf("#UNKNOWN EXPRESSION# ----eee ");
@@ -7077,13 +7202,23 @@ algorithm
 end printSubscriptStr;
 
 public function printExpListStr
-"functionExpListStr
+"function: printExpListStr
  prints a list of expressions with commas between expressions."
   input list<Exp> expl;
   output String res;
 algorithm
   res := Util.stringDelimitList(Util.listMap(expl,printExpStr),", ");  
 end printExpListStr;
+
+// stefan
+public function printExpListStrNoSpace
+"function: printExpListStrNoSpace
+	same as printExpListStr, but the string will not have any spaces or commas between expressions"
+	input list<Exp> expl;
+	output String res;
+algorithm
+  res := Util.stringDelimitList(Util.listMap(expl,printExpStr),"");
+end printExpListStrNoSpace;
 
 public function printOptExpStr ""
 input Option<Exp> oexp;
@@ -7234,6 +7369,17 @@ algorithm
         s_2 = stringAppend(s_1, ")");
       then
         s_2;
+    
+    case (PARTEVALFUNCTION(path = fcn, expList = args))
+      equation
+        fs = Absyn.pathString(fcn);
+        argstr = printListStr(args, printExpStr, ",");
+        s = stringAppend("function ", fs);
+        s1 = stringAppend(s, "(");
+        s2 = stringAppend(s1, argstr);
+        s3 = stringAppend(s2, ")");
+      then
+        s3;
     case (ARRAY(array = es,ty=tp))
       local Type tp; String s3; 
       equation 
@@ -7353,6 +7499,14 @@ algorithm
       then
         str;
 
+    
+      // MetaModelica tuple
+    case (META_TUPLE(es))
+      equation 
+        s = printExp2Str(TUPLE(es));
+      then
+        s;
+    
       // MetaModelica list
     case (LIST(_,es))
       local list<Exp> es;
@@ -7371,6 +7525,28 @@ algorithm
         s_2 = Util.stringAppendList({"cons(",s1,",",s2,")"});
       then
         s_2;
+        
+        // MetaModelica Option
+    case (META_OPTION(NONE)) then "NONE";
+    case (META_OPTION(SOME(e1)))
+      equation
+        s1 = printExpStr(e1);
+        s_1 = Util.stringAppendList({"SOME(",s1,")"});
+      then
+        s_1;
+    
+     // MetaModelica Uniontype Constructor
+    case (METARECORDCALL(path = fcn, args=args))
+      equation
+        fs = Absyn.pathString(fcn);
+        argstr = printListStr(args, printExpStr, ",");
+        s = stringAppend(fs, "(");
+        s_1 = stringAppend(s, argstr);
+        s_2 = stringAppend(s_1, ")");
+      then
+        s_2;
+    
+    case (VALUEBLOCK(_,_,_,_)) then "#valueblock#";
 
     case (e)
       equation
@@ -7432,7 +7608,8 @@ algorithm
     case (ASUB(_,_)) then 0;
     case (END()) then 0; 
     case (CAST(_,_)) then 0;
-    case (CALL(path=_)) then 0; 
+    case (CALL(path=_)) then 0;
+    case (PARTEVALFUNCTION(path=_)) then 0;
     case (ARRAY(ty = _)) then 0; 
     case (MATRIX(ty= _)) then 0; 
     case (BINARY(operator = POW(_))) then 1; 
@@ -7624,6 +7801,13 @@ algorithm
       then
         res;
     case (CALL(path = path1,expLst = expl1),CALL(path = path2,expLst = expl2))
+      equation 
+        b1 = ModUtil.pathEqual(path1, path2);
+        bs = Util.listThreadMap(expl1, expl2, expEqual);
+        res = Util.boolAndList((b1 :: bs));
+      then
+        res;
+    case (PARTEVALFUNCTION(path = path1,expList = expl1),PARTEVALFUNCTION(path = path2,expList = expl2))
       equation 
         b1 = ModUtil.pathEqual(path1, path2);
         bs = Util.listThreadMap(expl1, expl2, expEqual);
@@ -7909,6 +8093,13 @@ algorithm
         cnt_1 = Util.listReduce(cnt, int_add);
       then
         (CALL(path,expl_1,t,c,tp),cnt_1);
+    case(PARTEVALFUNCTION(path = path, expList = expl, ty = tp),source,target)
+      local Type tp;
+      equation
+        (expl_1,cnt) = Util.listMap22(expl, replaceExp, source, target);
+        cnt_1 = Util.listReduce(cnt, int_add);
+      then
+        (PARTEVALFUNCTION(path,expl_1,tp),cnt_1);
     case (ARRAY(ty = tp,scalar = c,array = expl),source,target)
       local Boolean c;
       equation 
@@ -8185,6 +8376,12 @@ algorithm
         expl_1 = Util.listMap(expl, stringifyCrefs);
       then
         CALL(p,expl_1,t,b,tp);
+    case (PARTEVALFUNCTION(path = p, expList = expl, ty = tp))
+      local Type tp;
+      equation
+        expl_1 = Util.listMap(expl, stringifyCrefs);
+      then
+        PARTEVALFUNCTION(p,expl_1,tp);
     case (ARRAY(ty = t,scalar = b,array = expl))
       equation 
         expl_1 = Util.listMap(expl, stringifyCrefs);
@@ -8386,6 +8583,12 @@ algorithm
         argnodes = Util.listMap(args, dumpExpGraphviz);
       then
         Graphviz.LNODE("CALL",{fs},{},argnodes);
+    case(PARTEVALFUNCTION(path = fcn,expList = args))
+      equation
+        fs = Absyn.pathString(fcn);
+        argnodes = Util.listMap(args, dumpExpGraphviz);
+      then
+        Graphviz.NODE("PARTEVALFUNCTION",{},argnodes);
     case (ARRAY(array = es))
       equation 
         nodes = Util.listMap(es, dumpExpGraphviz);
@@ -8614,6 +8817,16 @@ algorithm
         res_str;
     case (CALL(path = fcn,expLst = args),level) /* Graphviz.LNODE(\"CALL\",{fs},{},argnodes) Graphviz.NODE(\"ARRAY\",{},nodes) */ 
       equation 
+        gen_str = genStringNTime("   |", level);
+        fs = Absyn.pathString(fcn);
+        new_level1 = level + 1;
+        argnodes = Util.listMap1(args, dumpExpStr, new_level1);
+        argnodes_1 = Util.stringAppendList(argnodes);
+        res_str = Util.stringAppendList({gen_str,"CALL ",fs,"\n",argnodes_1,""});
+      then
+        res_str;
+    case (PARTEVALFUNCTION(path = fcn,expList = args),level)
+      equation
         gen_str = genStringNTime("   |", level);
         fs = Absyn.pathString(fcn);
         new_level1 = level + 1;
@@ -9049,6 +9262,12 @@ algorithm
         res = Util.boolOrList(reslist);
       then
         res;
+    case (PARTEVALFUNCTION(path = fcn,expList = args),(cr as CREF(componentRef = _)))
+      equation
+        reslist = Util.listMap1(args, expContains, cr);
+        res = Util.boolOrList(reslist);
+      then
+        res;
     case (CAST(ty = REAL(),exp = ICONST(integer = i)),cr ) then false; 
     case (CAST(ty = REAL(),exp = e),cr )
       equation 
@@ -9139,6 +9358,13 @@ algorithm
         res2 = Util.listFlatten(res);
       then
         res2;
+    case(PARTEVALFUNCTION(expList = farg))
+      local list<list<ComponentRef>> res;
+      equation
+        res = Util.listMap(farg, getCrefFromExp);
+        res2 = Util.listFlatten(res);
+      then
+        res2;
     case (ARRAY(array = expl))
       local list<list<ComponentRef>> res1;
       equation 
@@ -9217,145 +9443,6 @@ algorithm
   end matchcontinue;
 end getCrefFromExp;
 
-public function getFunctionCallsList
-"function: getFunctionCallsList
-  calls getFunctionCalls for a list of exps"
-  input list<Exp> exps;
-  output list<Exp> res;
-  list<list<Exp>> explists;
-algorithm 
-  explists := Util.listMap(exps, getFunctionCalls);
-  res := Util.listFlatten(explists);
-end getFunctionCallsList;
-
-public function getFunctionCalls
-"function: getFunctionCalls
-  Return all exps that are function calls.
-  Inner call exps are returned separately but not 
-  extracted from the exp they are in, e.g. 
-    CALL(foo, {CALL(bar)}) will return
-    {CALL(foo, {CALL(bar)}), CALL(bar,{})}"
-  input Exp inExp;
-  output list<Exp> outExpLst;
-algorithm 
-  outExpLst:=
-  matchcontinue (inExp)
-    local
-      list<Exp> argexps,exps,args,a,b,res,elts,elst,elist;
-      Exp e,e1,e2,e3;
-      Absyn.Path path;
-      Boolean tuple_,builtin;
-      list<tuple<Exp, Boolean>> flatexplst;
-      list<list<tuple<Exp, Boolean>>> explst;
-      Option<Exp> optexp;
-    case ((e as CALL(path = path,expLst = args,tuple_ = tuple_,builtin = builtin)))
-      equation 
-        argexps = getFunctionCallsList(args);
-        exps = listAppend({e}, argexps);
-      then
-        exps;
-    case (BINARY(exp1 = e1,exp2 = e2)) /* Binary */ 
-      equation 
-        a = getFunctionCalls(e1);
-        b = getFunctionCalls(e2);
-        res = listAppend(a, b);
-      then
-        res;
-    case (UNARY(exp = e)) /* Unary */ 
-      equation 
-        res = getFunctionCalls(e);
-      then
-        res;
-    case (LBINARY(exp1 = e1,exp2 = e2)) /* LBinary */ 
-      equation 
-        a = getFunctionCalls(e1);
-        b = getFunctionCalls(e2);
-        res = listAppend(a, b);
-      then
-        res;
-    case (LUNARY(exp = e)) /* LUnary */ 
-      equation 
-        res = getFunctionCalls(e);
-      then
-        res;
-    case (RELATION(exp1 = e1,exp2 = e2)) /* Relation */ 
-      equation 
-        a = getFunctionCalls(e1);
-        b = getFunctionCalls(e2);
-        res = listAppend(a, b);
-      then
-        res;
-    case (IFEXP(expCond = e1,expThen = e2,expElse = e3))
-      equation 
-        res = getFunctionCallsList({e1,e2,e3});
-      then
-        res;
-    case (ARRAY(array = elts)) /* Array */ 
-      equation 
-        res = getFunctionCallsList(elts);
-      then
-        res;
-    case (MATRIX(scalar = explst)) /* Matrix */ 
-      equation 
-        flatexplst = Util.listFlatten(explst);
-        elst = Util.listMap(flatexplst, Util.tuple21);
-        res = getFunctionCallsList(elst);
-      then
-        res;
-    case (RANGE(exp = e1,expOption = optexp,range = e2)) /* Range */ 
-      local list<Exp> e3;
-      equation 
-        e3 = Util.optionToList(optexp);
-        elist = listAppend({e1,e2}, e3);
-        res = getFunctionCallsList(elist);
-      then
-        res;
-    case (TUPLE(PR = exps)) /* Tuple */ 
-      equation 
-        res = getFunctionCallsList(exps);
-      then
-        res;
-    case (CAST(exp = e))
-      equation 
-        res = getFunctionCalls(e);
-      then
-        res;
-    case (SIZE(exp = e1,sz = e2)) /* Size */ 
-      local Option<Exp> e2;
-      equation 
-        a = Util.optionToList(e2);
-        elist = listAppend(a, {e1});
-        res = getFunctionCallsList(elist);
-      then
-        res;
-
-        /* MetaModelica list */
-    case (CONS(_,e1,e2))
-      equation
-        elist = {e1,e2};
-        res = getFunctionCallsList(elist);
-      then res;
-
-    case  (LIST(_,elist))
-      equation
-        res = getFunctionCallsList(elist);
-      then res;
-
-/*    case (METATUPLE(elist))
-      equation
-        res = getFunctionCallsList(elist);
-      then res; */
-        /* --------------------- */
-
-    case(ASUB(exp = e1))
-      equation
-        res = getFunctionCalls(e1);
-        then
-          res;
-    case (_) then {}; 
-  end matchcontinue;
-end getFunctionCalls;
-
 public function nthArrayExp
 "function: nthArrayExp
   author: PA
@@ -9406,6 +9493,21 @@ algorithm
   outExp := BINARY(e1,MUL(tp),e2);
 end expMul;
 
+// For compiling function arguments - stefan
+public function isFunctionReference
+"function: isFunctionReference
+  return true if the Exp.Type is a function reference"
+  input Type inType;
+  output Boolean isFRef;
+algorithm
+  isRef :=
+  matchcontinue (inType)
+    local Type t;
+    case(T_FUNCTION_REFERENCE) then true;
+    case(t) then false;
+  end matchcontinue;
+end isFunctionReference;
+  
 public function makeCrefExp 
 "function makeCrefExp
   Makes an expression of a component reference, given also a type"
@@ -9531,6 +9633,13 @@ algorithm
       equation 
         ((expl_1,ext_arg_1)) = traverseExpList(expl, rel, ext_arg);
         ((e,ext_arg_2)) = rel((CALL(fn,expl_1,t,b,tp),ext_arg_1));
+      then
+        ((e,ext_arg_2));
+    case ((e as PARTEVALFUNCTION(path = fn, expList = expl, ty = tp)),rel,ext_arg)
+      local Type tp;
+      equation
+        ((expl_1,ext_arg_1)) = traverseExpList(expl, rel, ext_arg);
+        ((e,ext_arg_2)) = rel((PARTEVALFUNCTION(fn,expl_1,tp),ext_arg_1));
       then
         ((e,ext_arg_2));
     case ((e as ARRAY(ty = tp,scalar = scalar,array = expl)),rel,ext_arg)
@@ -9831,6 +9940,15 @@ algorithm
   end matchcontinue;   
 end varName;
 
+public function varType "Returns the type of a Var"
+  input Var v;
+  output Type tp;
+algorithm
+  tp := matchcontinue(v)
+    case(COMPLEX_VAR(_,tp)) then tp;
+  end matchcontinue;   
+end varType;
+
 public function countBinary "counts the number of binary operations in an expression"
   input Exp e;
   output Integer count;
@@ -9846,6 +9964,10 @@ algorithm
     case(CALL(expLst = expl)) equation
       count = Util.listReduce(Util.listMap(expl,countBinary),intAdd);
     then count;
+    case(PARTEVALFUNCTION(expList = expl))
+      equation
+        count = Util.listReduce(Util.listMap(expl,countBinary),intAdd);
+      then count;
     case(ARRAY(array = expl)) equation
       count = Util.listReduce(Util.listMap(expl,countBinary),intAdd);
     then count;
@@ -9884,6 +10006,9 @@ algorithm
       count =  countMulDiv(e2) + countMulDiv(e3);
     then count;
     case(CALL(expLst = expl)) equation
+      count = Util.listReduce(Util.listMap(expl,countMulDiv),intAdd);
+    then count;
+    case(PARTEVALFUNCTION(expList = expl)) equation
       count = Util.listReduce(Util.listMap(expl,countMulDiv),intAdd);
     then count;
     case(ARRAY(array = expl)) equation

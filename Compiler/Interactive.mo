@@ -536,7 +536,7 @@ algorithm
         ("",st_1);
         
 		 /* while-statement */
-    case (Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_WHILE(whileStmt = exp,whileBody = algitemlist)),st)
+    case (Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_WHILE(boolExpr = exp,whileBody = algitemlist)),st)
       equation
         (value,st_1) = evaluateExpr(exp, st);
         st_2 = evaluateWhileStmt(value, exp, algitemlist, st_1);
@@ -3373,13 +3373,13 @@ algorithm
         algs_1 = renameComponentInAlgorithms(algs, old_comp, new_comp);
       then
         Absyn.ALG_FOR({(id,SOME(exp_1))},algs_1);
-    case (Absyn.ALG_WHILE(whileStmt = exp,whileBody = algs),old_comp,new_comp)
+    case (Absyn.ALG_WHILE(boolExpr = exp,whileBody = algs),old_comp,new_comp)
       equation
         exp_1 = renameComponentInExp(exp, old_comp, new_comp);
         algs_1 = renameComponentInAlgorithms(algs, old_comp, new_comp);
       then
         Absyn.ALG_WHILE(exp_1,algs_1);
-    case (Absyn.ALG_WHEN_A(whenStmt = exp,whenBody = algs,elseWhenAlgorithmBranch = exp_algs_list),old_comp,new_comp)
+    case (Absyn.ALG_WHEN_A(boolExpr = exp,whenBody = algs,elseWhenAlgorithmBranch = exp_algs_list),old_comp,new_comp)
       equation
         exp_1 = renameComponentInExp(exp, old_comp, new_comp);
         algs_1 = renameComponentInAlgorithms(algs, old_comp, new_comp);
@@ -15954,7 +15954,7 @@ algorithm
     case (e)
       equation
         Print.printBuf("Interactive.recordConstructorToModification failed, exp=");
-        Absyn.printAbsynExp(e);
+        Dump.printExp(e);
         Print.printBuf("\n");
       then
         fail();

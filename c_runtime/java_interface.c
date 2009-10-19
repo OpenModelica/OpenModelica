@@ -287,6 +287,8 @@ JNIEnv* getJavaEnv()
   init_modelica_string(&openmodelicahome, openmodelicahome);
 
   classpathEnv = getenv("CLASSPATH");
+  if (classpathEnv == NULL)
+    classpathEnv = "";
 
   classPathLen = strlen(classpathFormatString) + 2*strlen(openmodelicahome) + strlen(classpathEnv) + 100;
   classPath = malloc(classPathLen);

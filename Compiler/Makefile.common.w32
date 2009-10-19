@@ -38,6 +38,7 @@ SRCMO= Absyn.mo \
 	MetaUtil.mo \
 	Mod.mo \
 	ModUtil.mo \
+	PartFn.mo \
 	Patternm.mo \
 	Prefix.mo \
 	Static.mo \
@@ -55,6 +56,8 @@ SRCMO= Absyn.mo \
 	XMLDump.mo \
 	Refactor.mo \
 	InstanceHierarchy.mo
+	DAEQuery.mo \
+	XMLDump.mo 
 
 ALLMO = $(SRCMO) \
 	DAEEXT.mo \

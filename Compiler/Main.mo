@@ -520,7 +520,7 @@ algorithm
         Debug.fprint("info", "---instantiating\n");
         //print(" Inst.Instantiate " +& realString(clock()) +&"\n");
         Debug.fcall("execstat",print, "*** Main -> To instantiate at time: " +& realString(clock()) +& "\n" );
-        (_,_,d_1) = Inst.instantiate(Env.emptyCache(),
+        (_,_,d_1,_) = Inst.instantiate(Env.emptyCache(),
                                             InstanceHierarchy.emptyInstanceHierarchy,
                                             scode);
         d_1 = DAE.transformIfEqToExpr(d_1);

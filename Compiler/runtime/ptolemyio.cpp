@@ -47,6 +47,8 @@ extern "C"
 #include "rml.h"  
 #include "Values.h"
 #include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 void print_error_buf_impl(char*str);
 
 

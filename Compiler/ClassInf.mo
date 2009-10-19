@@ -132,6 +132,18 @@ uniontype State "- Machine states, the string contains the classname."
   record META_OPTION
     String string;
   end META_OPTION;
+  
+  record META_RECORD
+    String string;
+  end META_RECORD;
+  
+  record UNIONTYPE
+    String string;
+  end UNIONTYPE;
+  
+  record META_POLYMORPHIC
+    String string;
+  end META_POLYMORPHIC;
   /*---------------------*/
 end State;
 
@@ -142,7 +154,7 @@ uniontype Event "- Events"
   record NEWDEF "A definition with elements, i.e. a long definition" end NEWDEF;
     
   record FOUND_COMPONENT " A Definition that contains components" end FOUND_COMPONENT;
-  
+
 end Event;
 
 protected import Print;
@@ -176,6 +188,13 @@ algorithm
     case IS_NEW(string = s) then "new def"; 
     case HAS_EQUATIONS(string = s) then "has eqn"; 
     case EXTERNAL_OBJ(_) then "ExternalObject"; 
+    case META_TUPLE(s) then "tuple";
+    case META_LIST(s) then "list";
+    case META_OPTION(s) then "Option";
+    case META_RECORD(s) then "meta_record";
+    case META_POLYMORPHIC(s) then "polymorphic";
+    case UNIONTYPE(s) then "uniontype";
+    case _ then "#printStateStr failed#";
   end matchcontinue;
 end printStateStr;
 
@@ -297,7 +316,14 @@ algorithm
     case TYPE_BOOL(string = s) then s; 
     case IS_NEW(string = s) then s; 
     case HAS_EQUATIONS(string = s) then s; 
-    case EXTERNAL_OBJ(path) then Absyn.pathString(path); 
+    case EXTERNAL_OBJ(path) then Absyn.pathString(path);
+    case META_TUPLE(s) then s;
+    case META_LIST(s) then s;
+    case META_OPTION(s) then s;
+    case META_RECORD(s) then s;
+    case META_POLYMORPHIC(s) then s;
+    case UNIONTYPE(s) then s;
+    case _ then "#getStateName failed#";
   end matchcontinue;
 end getStateName;
 
@@ -345,7 +371,9 @@ algorithm
     case (SCode.R_PREDEFINED_REAL(),s) then TYPE_REAL(s); 
     case (SCode.R_PREDEFINED_STRING(),s) then TYPE_STRING(s); 
     case (SCode.R_PREDEFINED_BOOL(),s) then TYPE_BOOL(s); 
-    case (SCode.R_PREDEFINED_ENUM(),s) then TYPE_ENUM(s); 
+    case (SCode.R_PREDEFINED_ENUM(),s) then TYPE_ENUM(s);
+    case (SCode.R_UNIONTYPE(),s) then UNIONTYPE(s); // Added 2009-05-11. sjoelund
+    case (SCode.R_METARECORD(_, _),s) then META_RECORD(s); // Added 2009-08-18. sjoelund
   end matchcontinue;
 end start;
 
@@ -379,7 +407,9 @@ algorithm
     case (TYPE_REAL(string = s),NEWDEF()) then TYPE_REAL(s); 
     case (TYPE_STRING(string = s),NEWDEF()) then TYPE_STRING(s); 
     case (TYPE_BOOL(string = s),NEWDEF()) then TYPE_BOOL(s); 
-    case (TYPE_ENUM(string = s),NEWDEF()) then TYPE_ENUM(s);  /* Event `FOUND_EQUATION\' */ 
+    case (TYPE_ENUM(string = s),NEWDEF()) then TYPE_ENUM(s);  /* Event `FOUND_EQUATION\' */
+    case (UNIONTYPE(string = s),NEWDEF()) then UNIONTYPE(s);  // Added 2009-05-11. sjoelund
+    case (META_RECORD(string = s),NEWDEF()) then META_RECORD(s);  // Added 2009-08-18. sjoelund
       
    /* Event 'FOUND_COMPONENT' */
     case (UNKNOWN(string = s),FOUND_COMPONENT()) then IS_NEW(s);  /* Event `NEWDEF\' */ 
@@ -403,6 +433,7 @@ algorithm
     case (TYPE_STRING(string = s),FOUND_COMPONENT()) then TYPE_STRING(s); 
     case (TYPE_BOOL(string = s),FOUND_COMPONENT()) then TYPE_BOOL(s); 
     case (TYPE_ENUM(string = s),FOUND_COMPONENT()) then TYPE_ENUM(s);  
+    case (META_RECORD(string = s),FOUND_COMPONENT()) then META_RECORD(s);  // Added 2009-08-19. sjoelund
       
    /* Event `FOUND_EQUATION\' */       
     case (UNKNOWN(string = s),FOUND_EQUATION()) then HAS_EQUATIONS(s); 
@@ -475,7 +506,13 @@ algorithm
     case (IS_NEW(string = s),SCode.R_PACKAGE()) then (); 
     case (PACKAGE(string = s),SCode.R_PACKAGE()) then (); 
     case (IS_NEW(string = s),SCode.R_FUNCTION()) then (); 
-    case (FUNCTION(string = s),SCode.R_FUNCTION()) then (); 
+    case (FUNCTION(string = s),SCode.R_FUNCTION()) then ();
+    case (META_TUPLE(s),SCode.R_TYPE()) then ();
+    case (META_LIST(s),SCode.R_TYPE()) then ();
+    case (META_OPTION(s),SCode.R_TYPE()) then ();
+    case (META_RECORD(s),SCode.R_TYPE()) then ();
+    case (UNIONTYPE(s),SCode.R_TYPE()) then ();
+    
   end matchcontinue;
 end valid;
 

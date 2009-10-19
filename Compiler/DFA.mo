@@ -43,6 +43,9 @@ public import Absyn;
 public import Env;
 public import Types;
 public import SCode;
+public import Debug;
+public import MetaUtil;
+public import Error;
 
 type Stamp = Integer;
 type ArcName = Absyn.Ident;
@@ -64,6 +67,10 @@ public uniontype Dfa
 end Dfa;
 
 public uniontype State
+  record SWITCHSTATE
+    list<Arc> outgoingArcs;
+  end SWITCHSTATE;
+
   record STATE
     Stamp stamp;
     Integer refCount; // Not in use
@@ -96,7 +103,7 @@ end Arc;
 public uniontype SimpleState
   record SIMPLESTATE
     Stamp stamp;
-    list<ArcName,Stamp> outgoingArcs; // Name of arc and the number of the state that the arc leads to
+    list<tuple<ArcName,Stamp>> outgoingArcs; // Name of arc and the number of the state that the arc leads to
     Integer caseNum; // This one is zero if it's not a final state
     Option<Absyn.Ident> varName; // The state variable
   end SIMPLESTATE;
@@ -119,27 +126,38 @@ public function addNewArc "function: addNewArc
 algorithm
   outState :=
   matchcontinue (firstState,arcName,newState,pat,caseNumbers)
+    local
+      State localFirstState;
+      ArcName localArcName;
+      State localNewState;
+      Stamp localStamp;
+      Integer localRefCount;
+      list<Arc> localOutArcs;
+      Option<RightHandSide> localRhSide;
+      Arc newArc;
+      Option<RenamedPat> localPat;
+      list<Integer> localCaseNumbers;
+    case (SWITCHSTATE(localOutArcs),localArcName,localNewState,localPat,localCaseNumbers)
+      equation
+        newArc = ARC(localNewState,localArcName,localPat,localCaseNumbers);
+        localOutArcs = listAppend(localOutArcs,(newArc :: {}));
+        localFirstState = SWITCHSTATE(localOutArcs);
+      then localFirstState;
     case (STATE(localStamp,localRefCount,localOutArcs,localRhSide),
         localArcName,localNewState,localPat,localCaseNumbers)
-      local
-        State localFirstState;
-        ArcName localArcName;
-        State localNewState;
-        Stamp localStamp;
-        Integer localRefCount;
-        list<Arc> localOutArcs;
-        Option<RightHandSide> localRhSide;
-        Arc newArc;
-        Option<RenamedPat> localPat;
-        list<Integer> localCaseNumbers;
       equation
         newArc = ARC(localNewState,localArcName,localPat,localCaseNumbers);
         localOutArcs = listAppend(localOutArcs,(newArc :: {}));
         localFirstState = STATE(localStamp,localRefCount,localOutArcs,localRhSide);
       then localFirstState;
+    case (_, _, _, _, _)
+      equation
+        Debug.fprintln("matchcase", "- DFA.addNewArc failed");
+      then fail();
   end matchcontinue;
 end addNewArc;
 
+/*
 public function fromDFAtoIfNodes "function: fromDFAtoIfNodes
 	author: KS
 	Main function for converting a DFA into a valueblock expression containing
@@ -276,7 +294,9 @@ algorithm
       then (localCache,exp);
   end matchcontinue;
 end fromDFAtoIfNodes;
+*/
 
+/*
 protected function generateAlgorithmBlock "function: generateAlgorithmBlock
 	author: KS
  Generate the algorithm statements in the value block from the DFA
@@ -334,7 +354,7 @@ algorithm
         //
         (localCache,algs,newVars) = fromStatetoAbsynCode(localStartState,NONE(),localCache,localEnv,dfaEnv,{},false);
         //------
-        algs = listAppend(algs,{Absyn.ALGORITHMITEM(Absyn.ALG_BREAK(),NONE())});
+        algs = listAppend(algs,{Absyn.ALGORITHMITEM(Absyn.ALG_THROW(),NONE())});
         algs2 = generateFinalStates(localRightHandList,{},localResVarList);
         algs = listAppend(algs,algs2);
         //------
@@ -417,7 +437,9 @@ algorithm
       then (localCache,algList,newVars);
   end matchcontinue;
 end generateAlgorithmBlock;
+*/
 
+/*
 protected function generateFinalStates "function: generateFinalStates
 Generates the final states.
         finalstate1:
@@ -537,8 +559,9 @@ algorithm
       then localAccList;
   end matchcontinue;
 end generateFinalStates;
+*/
 
-
+/*
 protected function fromStatetoAbsynCode "function: fromStatetoAbsynCode
  	author: KS
  	Takes a DFA state and recursively generates if-else nodes by investigating
@@ -665,7 +688,7 @@ algorithm
       then (localCache,algList,localAccNewVars);
   end matchcontinue;
 end fromStatetoAbsynCode;
-
+*/
 
 protected function generateLabelNode "function: generateLabelNode
 For a light version no states are generated. A light version
@@ -709,6 +732,10 @@ algorithm
   matchcontinue (lhsList,rhsList,accList)
     local
       list<Absyn.AlgorithmItem> localAccList;
+      Absyn.Exp firstLhs,firstRhs;
+      list<Absyn.Exp> restLhs,restRhs;
+      Absyn.AlgorithmItem elem;
+      String str;
     case ({},{},localAccList) then localAccList;
 
     /* The case: then fail(); */
@@ -720,22 +747,26 @@ algorithm
     /*------------------------*/
 
     /* The case: then (); */
-    case (_,Absyn.TUPLE({}) :: _,_)
-      local equation then {};
+    case (_,Absyn.TUPLE({}) :: _,_) then {};
+
+    /* The case: then ();
+     * A tuple of 0 elements isn't a tuple according to the parser?
+     * Handle wild := matchcontinue ... then (); // sjoelund */
+    case ({Absyn.CREF(Absyn.WILD)},{},_) then {};
 
     case (firstLhs :: restLhs,firstRhs :: restRhs,localAccList)
-      local
-        Absyn.Exp firstLhs,firstRhs;
-        list<Absyn.Exp> restLhs,restRhs;
-        Absyn.AlgorithmItem elem;
       equation
         elem = Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(firstLhs,firstRhs),NONE);
         localAccList = listAppend(localAccList,{elem});
         localAccList = createLastAssignments(restLhs,restRhs,localAccList);
       then localAccList;
+    
+    case (_,_,_)
+      equation
+        Debug.fprintln("matchcase", "- DFA.createLastAssignments failed");
+      then fail();
   end matchcontinue;
 end createLastAssignments;
-
 
 protected function generatePathVarDeclarations "function: generatePathVarDeclerations
 	author: KS
@@ -806,9 +837,9 @@ algorithm
         elem1 = listAppend(elem1,elem2);
 
         assign1 = Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(Absyn.CREF(Absyn.CREF_IDENT(firstPathVar,{})),
-          Absyn.CALL(Absyn.CREF_IDENT("listCar",{}),Absyn.FUNCTIONARGS({Absyn.CREF(Absyn.CREF_IDENT(pathVar,{}))},{}))),NONE());
+          Absyn.CALL(Absyn.CREF_IDENT("listGet",{}),Absyn.FUNCTIONARGS({Absyn.CREF(Absyn.CREF_IDENT(pathVar,{})),Absyn.INTEGER(1)},{}))),NONE());
         assign2 = Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(Absyn.CREF(Absyn.CREF_IDENT(secondPathVar,{})),
-          Absyn.CALL(Absyn.CREF_IDENT("listCdr",{}),Absyn.FUNCTIONARGS({Absyn.CREF(Absyn.CREF_IDENT(pathVar,{}))},{}))),NONE());
+          Absyn.CALL(Absyn.CREF_IDENT("listRest",{}),Absyn.FUNCTIONARGS({Absyn.CREF(Absyn.CREF_IDENT(pathVar,{}))},{}))),NONE());
 
         assignList = listAppend({assign1},{assign2});
       then (localCache,localDfaEnv,elem1,assignList);
@@ -903,9 +934,11 @@ algorithm
         assignList = createPathVarAssignments(pathVar,pathVarList,{},{},1);
         elemList = createPathVarDeclarations(pathVarList,fieldTypes,{});
       then (localCache,localDfaEnv,elemList,assignList);
+      
+    case (_,localCache,localEnv,localDfaEnv)
+      then (localCache,localDfaEnv,{},{});
   end matchcontinue;
 end generatePathVarDeclarations;
-
 
 public function extractFieldNamesAndTypes 
 "function: extractFieldNamesAndTypes
@@ -990,54 +1023,7 @@ algorithm
   end matchcontinue;
 end createPathVarDeclarations;
 
-protected function createPathVarAssignments 
-"function: createPathVarAssignments
-	author: KS
-	Used when we have a record constructor call in a pattern and need to
-	bind the path variables of the subpatterns of the record constructor
-	to values."
-  input Absyn.Ident recVarName;
-  input list<Absyn.Ident> pathVarList;
-  input list<Absyn.Ident> fieldNameList;
-  input list<Absyn.AlgorithmItem> accList;
-  input Integer fieldNum;
-  output list<Absyn.AlgorithmItem> outList;
-algorithm
-  outList := matchcontinue (recVarName,pathVarList,fieldNameList,accList,fieldNum)
-    local
-      list<Absyn.AlgorithmItem> localAccList;
-      Absyn.Ident localRecVarName,firstPathVar,firstFieldName;
-      list<Absyn.Ident> restVar,restFieldNames;
-      list<Absyn.AlgorithmItem> elem;
-      list<Absyn.Ident> restVar;
-      Integer n;
-    case (_,{},{},localAccList,_) then localAccList;
-    // When we are dealing with a function call the fieldNum var is 0, meaning
-    // that we should use fieldNames to create assignments.
-    // When we are dealing with a tuple constructor we use the fieldNum value
-    // in the call to the builtin function metaMGetField
-    case (localRecVarName,firstPathVar::restVar,firstFieldName::restFieldNames,localAccList,0)
-      equation
-        elem = {Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(
-          Absyn.CREF(Absyn.CREF_IDENT(firstPathVar,{})),
-          Absyn.CREF(Absyn.CREF_QUAL(localRecVarName,{},
-          Absyn.CREF_IDENT(firstFieldName,{})))),NONE())};
-        localAccList = listAppend(localAccList,elem);
-        localAccList = createPathVarAssignments(localRecVarName,restVar,restFieldNames,localAccList,0);
-      then localAccList;
-    // This case is for tuples when we simply call metaMGetField(x,num)
-    case (localRecVarName,firstPathVar :: restVar,_,localAccList,n)
-      equation
-        elem = {Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(
-          Absyn.CREF(Absyn.CREF_IDENT(firstPathVar,{})),
-          Absyn.CALL(Absyn.CREF_IDENT("metaMGetField",{}),
-          Absyn.FUNCTIONARGS({Absyn.CREF(Absyn.CREF_IDENT(localRecVarName,{})),Absyn.INTEGER(n)},{}))),NONE())};
-        localAccList = listAppend(localAccList,elem);
-        localAccList = createPathVarAssignments(localRecVarName,restVar,{},localAccList,n+1);
-      then localAccList;
-  end matchcontinue;
-end createPathVarAssignments;
-
+/*
 protected function generateIfElseifAndElse 
 "function: generateIfElseifAndElse
 	author: KS
@@ -1066,8 +1052,8 @@ algorithm
       RenamedPat pat;
       Absyn.Exp localTrueStatement,branchCheck;
       list<Absyn.AlgorithmItem> localTrueBranch,localElseBranch,algList;
-      list<Absyn.Exp,list<Absyn.AlgorithmItem>> localElseIfBranch;
-      list<Absyn.Exp,list<Absyn.AlgorithmItem>> eeElseIfBranch;
+      list<tuple<Absyn.Exp,list<Absyn.AlgorithmItem>>> localElseIfBranch;
+      list<tuple<Absyn.Exp,list<Absyn.AlgorithmItem>>> eeElseIfBranch;
       Env.Cache localCache;
       Env.Env localEnv;
       list<tuple<Absyn.Ident,Absyn.TypeSpec>> localDfaEnv;
@@ -1118,7 +1104,7 @@ algorithm
       equation
         (localCache,localTrueBranch,localAccNewVars) = fromStatetoAbsynCode(localState,SOME(pat),localCache,localEnv,localDfaEnv,localAccNewVars,localLightVs);
         branchCheck = generateBranchCheck(caseNumbers,Absyn.BOOL(true),localLightVs);
-        exp = Absyn.LBINARY(branchCheck,Absyn.AND(),Absyn.LUNARY(Absyn.NOT(),Absyn.CALL(Absyn.CREF_IDENT("emptyListTest",{}),
+        exp = Absyn.LBINARY(branchCheck,Absyn.AND(),Absyn.LUNARY(Absyn.NOT(),Absyn.CALL(Absyn.CREF_IDENT("listEmpty",{}),
           Absyn.FUNCTIONARGS({Absyn.CREF(Absyn.CREF_IDENT(localStateVar,{}))},{}))));
         (localCache,algList,localAccNewVars) = generateIfElseifAndElse(rest,localStateVar,false,exp,localTrueBranch,{},localCache,localEnv,localDfaEnv,localAccNewVars,localLightVs);
       then (localCache,algList,localAccNewVars);
@@ -1136,7 +1122,7 @@ algorithm
       equation
         (localCache,localTrueBranch,localAccNewVars) = fromStatetoAbsynCode(localState,SOME(pat),localCache,localEnv,localDfaEnv,localAccNewVars,localLightVs);
         branchCheck = generateBranchCheck(caseNumbers,Absyn.BOOL(true),localLightVs);
-        exp = Absyn.LBINARY(branchCheck,Absyn.AND(),Absyn.LUNARY(Absyn.NOT(),Absyn.CALL(Absyn.CREF_IDENT("emptyOptionTest",{}),
+        exp = Absyn.LBINARY(branchCheck,Absyn.AND(),Absyn.LUNARY(Absyn.NOT(),Absyn.CALL(Absyn.CREF_IDENT("optionNone",{}),
           Absyn.FUNCTIONARGS({Absyn.CREF(Absyn.CREF_IDENT(localStateVar,{}))},{}))));
         (localCache,algList,localAccNewVars) = generateIfElseifAndElse(rest,localStateVar,false,exp,localTrueBranch,{},localCache,localEnv,localDfaEnv,localAccNewVars,localLightVs);
       then (localCache,algList,localAccNewVars);
@@ -1181,7 +1167,7 @@ algorithm
       equation
         (localCache,eIfBranch,localAccNewVars) = fromStatetoAbsynCode(localState,SOME(pat),localCache,localEnv,localDfaEnv,localAccNewVars,localLightVs);
         branchCheck = generateBranchCheck(caseNumbers,Absyn.BOOL(true),localLightVs);
-        exp = Absyn.LBINARY(branchCheck,Absyn.AND(),Absyn.LUNARY(Absyn.NOT(),Absyn.CALL(Absyn.CREF_IDENT("emptyListTest",{}),
+        exp = Absyn.LBINARY(branchCheck,Absyn.AND(),Absyn.LUNARY(Absyn.NOT(),Absyn.CALL(Absyn.CREF_IDENT("listEmpty",{}),
           Absyn.FUNCTIONARGS({Absyn.CREF(Absyn.CREF_IDENT(localStateVar,{}))},{}))));
         tup = (exp,eIfBranch);
         localElseIfBranch = listAppend(localElseIfBranch,{tup});
@@ -1205,7 +1191,7 @@ algorithm
       equation
         (localCache,eIfBranch,localAccNewVars) = fromStatetoAbsynCode(localState,SOME(pat),localCache,localEnv,localDfaEnv,localAccNewVars,localLightVs);
         branchCheck = generateBranchCheck(caseNumbers,Absyn.BOOL(true),localLightVs);
-        exp = Absyn.LBINARY(branchCheck,Absyn.AND(),Absyn.LUNARY(Absyn.NOT(),Absyn.CALL(Absyn.CREF_IDENT("emptyOptionTest",{}),
+        exp = Absyn.LBINARY(branchCheck,Absyn.AND(),Absyn.LUNARY(Absyn.NOT(),Absyn.CALL(Absyn.CREF_IDENT("optionNone",{}),
           Absyn.FUNCTIONARGS({Absyn.CREF(Absyn.CREF_IDENT(localStateVar,{}))},{}))));
         tup = (exp,eIfBranch);
         localElseIfBranch = listAppend(localElseIfBranch,{tup});
@@ -1242,6 +1228,7 @@ algorithm
       then (localCache,algList,localAccNewVars);
   end matchcontinue;
 end generateIfElseifAndElse;
+*/
 
 protected function generateBranchCheck "function: generateBranchCheck"
   input list<Integer> inList;
@@ -1323,12 +1310,12 @@ algorithm
       then exp;
     case (Absyn.LIST({}),localStateVar)
       equation
-        exp = Absyn.CALL(Absyn.CREF_IDENT("emptyListTest",{}),
+        exp = Absyn.CALL(Absyn.CREF_IDENT("listEmpty",{}),
           Absyn.FUNCTIONARGS({Absyn.CREF(Absyn.CREF_IDENT(localStateVar,{}))},{}));
       then exp;
     case (Absyn.CREF(Absyn.CREF_IDENT("NONE",{})),localStateVar)
       equation
-        exp = Absyn.CALL(Absyn.CREF_IDENT("emptyOptionTest",{}),
+        exp = Absyn.CALL(Absyn.CREF_IDENT("optionNone",{}),
           Absyn.FUNCTIONARGS({Absyn.CREF(Absyn.CREF_IDENT(localStateVar,{}))},{}));
       then exp;
  end matchcontinue;
@@ -1413,6 +1400,7 @@ algorithm
     case (RP_EMPTYLIST(localPathVar)) equation then localPathVar;
     case (RP_NONE(localPathVar)) equation then localPathVar;
     case (RP_SOME(localPathVar,_)) equation then localPathVar;
+    case _ equation Debug.fprintln("matchcase", "- DFA.extractPathVar failed"); then fail();
   end matchcontinue;
 end extractPathVar;
 
@@ -1422,76 +1410,14 @@ protected function constructorOrNot "function: constructorOrNot"
 algorithm
   val :=
   matchcontinue (pat)
-    case (RP_CONS(_,_,_))
-      equation
-      then true;
-    case (RP_TUPLE(_,_))
-      equation
-      then true;
-    case (RP_CALL(_,_,_))
-      equation
-      then true;
+    case (RP_CONS(_,_,_)) then true;
+    case (RP_TUPLE(_,_)) then true;
+    case (RP_CALL(_,_,_)) then true;
     case (RP_SOME(_,_)) then true;
-    case (_)
-      equation
-      then false;
+    case (_) then false;
   end matchcontinue;
 end constructorOrNot;
 
-
-protected function typeConvert "function: typeConvert"
-  input Types.TType t;
-  output Absyn.TypeSpec outType;
-algorithm
-  outType :=
-  matchcontinue (t)
-    case (Types.T_INTEGER(_)) then Absyn.TPATH(Absyn.IDENT("Integer"),NONE());
-    case (Types.T_BOOL(_)) then Absyn.TPATH(Absyn.IDENT("Boolean"),NONE());
-    case (Types.T_STRING(_)) then Absyn.TPATH(Absyn.IDENT("String"),NONE());
-    case (Types.T_REAL(_)) then Absyn.TPATH(Absyn.IDENT("Real"),NONE());
-    /*case (Types.T_COMPLEX(ClassInf.RECORD(s), _, _)) local String s;
-      equation
-      then Absyn.TPATH(Absyn.IDENT(s),NONE()); */
-    case (Types.T_LIST((t,_)))
-      local
-        Absyn.TypeSpec tSpec;
-        Types.TType t;
-        list<Absyn.TypeSpec> tSpecList;
-      equation
-        tSpec = typeConvert(t);
-        tSpecList = {tSpec};
-      then Absyn.TCOMPLEX(Absyn.IDENT("list"),tSpecList,NONE());
-    case (Types.T_METAOPTION((t,_)))
-      local
-        Absyn.TypeSpec tSpec;
-        Types.TType t;
-        list<Absyn.TypeSpec> tSpecList;
-      equation
-        tSpec = typeConvert(t);
-        tSpecList = {tSpec};
-      then Absyn.TCOMPLEX(Absyn.IDENT("Option"),tSpecList,NONE());
-    case (Types.T_METATUPLE(tList))
-      local
-        Absyn.TypeSpec tSpec;
-        list<Types.Type> tList;
-        list<Types.TType> tList2;
-        list<Absyn.TypeSpec> tSpecList;
-      equation
-        tList2 = Util.listMap(tList,typeConvert2);
-        tSpecList = Util.listMap(tList2,typeConvert);
-      then Absyn.TCOMPLEX(Absyn.IDENT("tuple"),tSpecList,NONE());
-  end matchcontinue;
-end typeConvert;
-
-protected function typeConvert2 "function: typeConvert2"
-  input Types.Type a;
-  output Types.TType b;
-algorithm
-  b :=
-  matchcontinue (a)
-    case ((t,_)) local Types.TType t; equation then t;
-  end matchcontinue;
-end typeConvert2;
 
 protected function lookupTypeOfVar "function: lookupTypeOfVar"
   input list<tuple<Absyn.Ident,Absyn.TypeSpec>> dfaEnv;
@@ -1561,22 +1487,29 @@ algorithm
       list<tuple<Absyn.Ident,Absyn.TypeSpec>> localDfaEnv;
       Env.Cache localCache;
       Env.Env localEnv;
+      list<Absyn.Exp> restExps;
     case ({},localDfaEnv,localCache,_) then (localDfaEnv,localCache);
+    case (Absyn.CREF(Absyn.WILD) :: restExps,localDfaEnv,localCache,localEnv)
+      equation
+        (localDfaEnv,localCache) = addVarsToDfaEnv(restExps,localDfaEnv,localCache,localEnv);
+      then (localDfaEnv,localCache);
     case (Absyn.CREF(Absyn.CREF_IDENT(firstId,{})) :: restExps,localDfaEnv,localCache,localEnv)
       local
         Absyn.Ident firstId;
-        Types.TType t;
+        Types.Type t;
         Absyn.TypeSpec t2;
         list<tuple<Absyn.Ident,Absyn.TypeSpec>> dfaEnvElem;
-        list<Absyn.Exp> restExps;
       equation
-        (localCache,Types.VAR(_,_,_,(t,_),_),_,_) = Lookup.lookupIdent(localCache,localEnv,firstId);
-        t2 = typeConvert(t);
+        (localCache,Types.VAR(_,_,_,t,_),_,_) = Lookup.lookupIdent(localCache,localEnv,firstId);
+        t2 = MetaUtil.typeConvert(t);
         dfaEnvElem = {(firstId,t2)};
         localDfaEnv = listAppend(localDfaEnv,dfaEnvElem);
         (localDfaEnv,localCache) = addVarsToDfaEnv(restExps,localDfaEnv,localCache,localEnv);
       then (localDfaEnv,localCache);
-    case (_,_,_,_) then fail();
+    case (_,_,_,_)
+      equation
+        Debug.fprintln("matchcase", "- DFA.addVarsToDfaEnv failed");
+      then fail();
   end matchcontinue;
 end addVarsToDfaEnv;
 
@@ -1670,7 +1603,7 @@ algorithm
         list<Arc> arcs;
         Absyn.Ident varName;
         RenamedPat p;
-        list<ArcName,Stamp> simpleArcs;
+        list<tuple<ArcName,Stamp>> simpleArcs;
         SimpleState sState;
       equation
         varName = extractPathVar(p);
@@ -1684,13 +1617,13 @@ end simplifyState;
 
 public function simplifyArcs "function: simplifyArcs"
   input list<Arc> inArcs;
-  input  list<ArcName,Stamp> accArcs;
-  output  list<ArcName,Stamp> outArcs;
+  input  list<tuple<ArcName,Stamp>> accArcs;
+  output  list<tuple<ArcName,Stamp>> outArcs;
 algorithm
   outArcs :=
   matchcontinue (inArcs,accArcs)
     local
-      list<ArcName,Stamp> localAccArcs;
+      list<tuple<ArcName,Stamp>> localAccArcs;
     case ({},localAccArcs) then localAccArcs;
     case (ARC(DUMMIESTATE(),_,_,_) :: _,localAccArcs) then localAccArcs;
     case (ARC(GOTOSTATE(_,n),aName,_,_) :: restArcs,localAccArcs)
@@ -1788,7 +1721,7 @@ uniontype RightHandSide
 
   record RIGHTHANDSIDE
     list<Absyn.ElementItem> localDecls;
-    list<Absyn.AlgorithmItem> algs;
+    list<Absyn.EquationItem> equations;
     Absyn.Exp result;
     Integer numberOfCase;
   end RIGHTHANDSIDE;
@@ -1976,6 +1909,7 @@ algorithm
   end matchcontinue;
 end removeFirstRow;
 
+/*
 public function printMatrix "function: printMatrix
 	author: KS
 "
@@ -1994,6 +1928,7 @@ algorithm
       then ();
   end matchcontinue;
 end printMatrix;
+*/
 
 public function matrixFix "function: matrixFix
 	author: KS
@@ -2016,6 +1951,7 @@ algorithm
   end matchcontinue;
 end matrixFix;
 
+/*
 public function printList "function: printList
 	author: KS
 "
@@ -2034,84 +1970,54 @@ algorithm
         printList(rest);
       then ();
   end matchcontinue;
-end printList;
+end printList;*/
 
-public function printPattern "function: printPattern
-	author: KS
-"
+public function printPatternStr
   input RenamedPat inPat;
+  output String out;
 algorithm
-  _ :=
+  out :=
   matchcontinue (inPat)
+    local
+      String var, str;
     case(RP_INTEGER(var,value))
       local
-        Absyn.Ident var;
         Integer value;
       equation
-        print("Pathvar:");
-        print(var);
-        print(":");
-        print(intString(value));
-      then ();
-    case(RP_BOOL(var,value))
-      local
-        Absyn.Ident var;
-        Boolean value;
+        str = intString(value);
+        str = Util.stringAppendList({"Pathvar:", var, " :",str,"\n"});
+      then str;
+    case(RP_BOOL(var,_))
       equation
-        print("Pathvar:");
-        print(var);
-        print(":");
-        print("BOOL");
-      then ();
+        str = Util.stringAppendList({"Pathvar:", var, " BOOL","\n"});
+      then str;
     case(RP_STRING(var,value))
       local
-        Absyn.Ident var;
         String value;
       equation
-        print("Pathvar:");
-        print(var);
-        print(":");
-        print(value);
-        print("\n");
-      then ();
+        str = Util.stringAppendList({"Pathvar:", var, ":",value,"\n"});
+      then str;
     case(RP_CONS(var,head,rest))
       local
-        RenamedPat head;
-        RenamedPat rest;
-        Absyn.Ident var;
+        RenamedPat head; String headStr;
+        RenamedPat rest; String restStr;
       equation
-        print("Pathvar:");
-        print(var);
-        print(" CONS:");
-        printPattern(head);
-        print(",");
-        printPattern(rest);
-        print("\n");
-      then ();
+        headStr = printPatternStr(head);
+        restStr = printPatternStr(rest);
+        str = Util.stringAppendList({"Pathvar:", var, " CONS: ",headStr,",",restStr,"\n"});
+      then str;
     case(RP_WILDCARD(var))
-      local
-        Absyn.Ident var;
       equation
-        print("Pathvar:");
-        print(var);
-        print(" WILDCARD");
-        print("\n");
-      then ();
+        str = Util.stringAppendList({"Pathvar:", var, " WILDCARD","\n"});
+      then str;
     case(RP_EMPTYLIST(var))
-      local
-        Absyn.Ident var;
       equation
-        print("Pathvar:");
-        print(var);
-        print(" EMPTY LIST");
-        print("\n");
-      then ();
+        str = Util.stringAppendList({"Pathvar:", var, " EMPTY LIST","\n"});
+      then str;
     case (_)
-      equation
-        print("Printing of pattern not implemented");
-      then ();
+      then "Printing of pattern not implemented";
   end matchcontinue;
-end printPattern;
+end printPatternStr;
 
 public function getRightHandSideNumbers "function: getRightHandSideNumbers"
   input RightHandList inList;
@@ -2166,7 +2072,7 @@ algorithm
     case (SIMPLESTATE(st,oArcs,cN,NONE()))
       local
         Integer st,cN,i;
-        list<ArcName,Stamp> oArcs;
+        list<tuple<ArcName,Stamp>> oArcs;
       equation
         print("State, ");
         print(intString(st));
@@ -2181,7 +2087,7 @@ algorithm
     case (SIMPLESTATE(st,oArcs,cN,SOME(id)))
       local
         Integer st,cN,i;
-        list<ArcName,Stamp> oArcs;
+        list<tuple<ArcName,Stamp>> oArcs;
         Absyn.Ident id;
       equation
         print("State, ");
@@ -2200,7 +2106,7 @@ algorithm
 end printStateSimple;
 
 public function printSimpleArcs
-  input list<ArcName,Stamp> inList;
+  input list<tuple<ArcName,Stamp>> inList;
   output Integer y;
 algorithm
   y :=
@@ -2210,7 +2116,7 @@ algorithm
       local
         Stamp st;
         Absyn.Ident id;
-        list<ArcName,Stamp> rList;
+        list<tuple<ArcName,Stamp>> rList;
         Integer i;
       equation
         print(", Arc to ");
@@ -2221,5 +2127,627 @@ algorithm
       then 0;
   end matchcontinue;
 end printSimpleArcs;
+
+public function matchContinueToSwitch
+  input RenamedPatMatrix2 patMat;
+  input list<list<Absyn.ElementItem>> caseLocalDecls;
+  input list<Absyn.Exp> inputVarList; // matchcontinue (var1,var2,...)
+  input list<Absyn.ElementItem> declList;
+  input list<Absyn.Exp> resVarList;
+  input RightHandList rhlist;
+  input Env.Cache cache;
+  input Env.Env localEnv;
+  output Env.Cache outCache;
+  output Absyn.Exp expr;
+protected
+  list<Absyn.Exp> cases;
+  list<tuple<Absyn.Ident,Absyn.TypeSpec>> dfaEnv;
+  list<String> invalidDecls;
+  Absyn.Algorithm alg;
+  Absyn.AlgorithmItem algItem;
+algorithm
+  (dfaEnv, invalidDecls, cache) := getMatchContinueInvalidDeclsAndInitialEnv(inputVarList, resVarList, cache, localEnv);
+  checkShadowing(declList,invalidDecls);
+  (outCache, cases) := matchContinueToSwitch2(patMat, caseLocalDecls, inputVarList, resVarList, rhlist, cache, localEnv, invalidDecls, dfaEnv);
+  alg := Absyn.ALG_MATCHCASES(cases);
+  algItem := Absyn.ALGORITHMITEM(alg, NONE);
+  expr := Absyn.VALUEBLOCK(declList,Absyn.VALUEBLOCKALGORITHMS({algItem}),Absyn.BOOL(true));
+end matchContinueToSwitch;
+
+protected function matchContinueToSwitch2
+  input RenamedPatMatrix2 patMat;
+  input list<list<Absyn.ElementItem>> caseLocalDecls;
+  input list<Absyn.Exp> inputVarList;
+  input list<Absyn.Exp> resVarList;
+  input RightHandList rhlist;
+  input Env.Cache cache;
+  input Env.Env localEnv;
+  input list<String> invalidDecls;
+  input list<tuple<Absyn.Ident,Absyn.TypeSpec>> initialDfaEnv;
+  output Env.Cache outCache;
+  output list<Absyn.Exp> expr;
+algorithm
+  (outCache, expr) := matchcontinue (patMat, caseLocalDecls, inputVarList, resVarList, rhlist, cache, localEnv, invalidDecls, initialDfaEnv)
+    local
+      RenamedPatList firstCase;
+      RenamedPatMatrix2 restCase;
+      RightHandList restRh;
+      Absyn.Exp expr, result;
+      Env.Cache localCache;
+      Absyn.AlgorithmItem alg;
+      list<tuple<Absyn.Ident,Absyn.TypeSpec>> dfaEnv;
+      list<Absyn.ElementItem> localList, els, els2, firstDecls;
+      list<list<Absyn.ElementItem>> elsRes, restDecls;
+      list<Absyn.Exp> exp2;
+      list<Absyn.EquationItem> body;
+      list<Absyn.AlgorithmItem> algs, algs3;
+      tuple<Integer,list<Absyn.AlgorithmItem>> res;
+      list<list<Absyn.AlgorithmItem>> caseAlgs;
+      list<String> dfaEnvIdents;
+    case ({}, {}, _, _, {}, localCache, _, _, _) then (localCache, {});
+    case (firstCase :: restCase, firstDecls :: restDecls,inputVarList, resVarList, RIGHTHANDSIDE(localList,body,result,_) :: restRh, localCache, localEnv, invalidDecls, initialDfaEnv)
+      equation
+        dfaEnv = initialDfaEnv;
+        checkShadowing(firstDecls,invalidDecls);
+        
+        exp2 = createListFromExpression(result);
+
+        // Create the assignments that assign the return variables
+        algs3 = createLastAssignments(resVarList,exp2,{});
+        (localCache, dfaEnv, els, algs) = generatePathVarDeclarationsList(firstCase, inputVarList, localCache, localEnv, dfaEnv);
+        els = listAppend(els, firstDecls);
+        expr = Absyn.VALUEBLOCK(els,Absyn.VALUEBLOCKMATCHCASE(algs,body,algs3),Absyn.BOOL(true));
+        (cache, exp2) = matchContinueToSwitch2(restCase, restDecls, inputVarList, resVarList, restRh, localCache, localEnv, invalidDecls, initialDfaEnv);
+      then (cache, expr :: exp2);
+    case (_,_,_,_,_,_,_,_,_)
+      equation
+        Debug.fprintln("matchcase", "- DFA.matchContinueToSwitch2 failed");
+      then fail();
+  end matchcontinue;
+end matchContinueToSwitch2;
+
+protected function getMatchContinueInvalidDeclsAndInitialEnv
+  input list<Absyn.Exp> inputVarList;
+  input list<Absyn.Exp> resVarList;
+  input Env.Cache inCache;
+  input Env.Env localEnv;
+  output list<tuple<String,Absyn.TypeSpec>> dfaEnv;      
+  output list<String> invalidDecls;
+  output Env.Cache cache;
+protected
+  list<tuple<String,Absyn.TypeSpec>> dfaEnvRes;
+  list<String> envIdents, envIdents1, envIdents2;
+algorithm
+  (dfaEnvRes,cache) := addVarsToDfaEnv(resVarList,{},inCache,localEnv);
+  envIdents1 := Util.listMap(dfaEnvRes, Util.tuple21);
+  (dfaEnv,cache) := addVarsToDfaEnv(inputVarList,{},cache,localEnv);
+  envIdents2 := Util.listMap(dfaEnv, Util.tuple21);
+  invalidDecls := listAppend(envIdents1, envIdents2);
+end getMatchContinueInvalidDeclsAndInitialEnv;
+
+protected function checkShadowing
+  input list<Absyn.ElementItem> elItems;
+  input list<String> invalidDecls;
+algorithm
+  _ := matchcontinue (elItems, invalidDecls)
+    local
+      list<String> elIdents;
+      list<Boolean> boolList;
+      Absyn.Info info;
+      Absyn.ElementSpec spec;
+    case ({}, _) then ();
+    case (Absyn.ELEMENTITEM(Absyn.ELEMENT(info = info, specification = spec)) :: elItems, invalidDecls)
+      equation
+        elIdents = getElementSpecComponentNames(spec);
+        checkShadowing2(info, elIdents, invalidDecls);
+        checkShadowing(elItems, invalidDecls);
+      then ();
+  end matchcontinue;
+end checkShadowing;
+
+protected function checkShadowing2
+  input Absyn.Info info;
+  input list<String> elIdents;
+  input list<String> invalidDecls;
+algorithm
+  _ := matchcontinue (info, elIdents, invalidDecls)
+    local
+      String elIdent;
+    case (_, {}, _) then ();
+    case (info, elIdent::elIdents, invalidDecls)
+      equation
+        checkShadowing3(info,elIdent,invalidDecls);
+        checkShadowing2(info,elIdents,invalidDecls);
+      then ();
+  end matchcontinue;
+end checkShadowing2;
+
+protected function checkShadowing3
+  input Absyn.Info info;
+  input String elIdent;
+  input list<String> invalidDecls;
+algorithm
+  _ := matchcontinue (info, elIdent, invalidDecls)
+    case (_, elIdent, invalidDecls)
+      equation
+        false = listMember(elIdent, invalidDecls);
+      then ();
+    case (info, elIdent, _)
+      equation
+        Error.addSourceMessage(Error.MATCH_SHADOWING, {elIdent}, info);
+      then fail();
+  end matchcontinue;
+end checkShadowing3;
+
+protected function getElementSpecComponentNames
+  input Absyn.ElementSpec spec;
+  output list<String> out;
+algorithm
+  out := matchcontinue (spec)
+    local
+      list<String> strs;
+      list<Absyn.ComponentItem> comps;
+    case Absyn.COMPONENTS(components = comps)
+      equation
+        strs = Util.listMap(comps, getComponentName);
+      then strs;
+    case _
+      equation
+        Debug.fprintln("matchcase", "- DFA.getElementName failed");
+      then fail();
+  end matchcontinue;
+end getElementSpecComponentNames;
+
+protected function getComponentName
+  input Absyn.ComponentItem comp;
+  output String out;
+algorithm
+  out := matchcontinue (comp)
+    local
+      String name;
+    case Absyn.COMPONENTITEM(Absyn.COMPONENT(name = name),_,_) then name;
+  end matchcontinue;
+end getComponentName;
+
+function generatePathVarDeclarationsList
+  input list<RenamedPat> pats;
+  input list<Absyn.Exp> inputVarList;
+  input Env.Cache cache;
+  input Env.Env env;
+  input list<tuple<Absyn.Ident,Absyn.TypeSpec>> dfaEnv;
+  output Env.Cache outCache;
+  output list<tuple<Absyn.Ident,Absyn.TypeSpec>> outDfaEnv;
+  output list<Absyn.ElementItem> outEls;
+  output list<Absyn.AlgorithmItem> outAlgs;
+algorithm
+  (outCache,outDfaEnv,outEls,outAlgs) := matchcontinue(pats, inputVarList, cache, env, dfaEnv)
+    local
+      list<Absyn.ElementItem> outEls, outEls1, outEls2, matchDecls;
+      list<Absyn.AlgorithmItem> outAlgs, outAlgs1, outAlgs2, matchAlgs;
+      list<RenamedPat> rest;
+      RenamedPat pat;
+      list<Absyn.Exp> varList;
+      Absyn.Exp var;
+    case ({},{},cache,env,dfaEnv) then (cache,dfaEnv,{},{});
+    case (pat :: rest, var :: varList, cache, env, dfaEnv)
+      equation
+        (cache,dfaEnv,matchDecls,matchAlgs) = generatePathVarDeclarationsNew(pat, cache, env, dfaEnv);
+        (cache,dfaEnv,outEls,outAlgs) = generatePathVarDeclarationsList(rest,varList,cache,env,dfaEnv);
+        outAlgs = listAppend(matchAlgs, outAlgs);
+        outEls = listAppend(matchDecls, outEls);
+      then (cache,dfaEnv,outEls,outAlgs);
+    case (pat :: rest, var :: varList, cache, env, dfaEnv)
+      equation
+        outAlgs1 = getPatternComp(pat, var, true);
+        (cache,dfaEnv,outEls,outAlgs2) = generatePathVarDeclarationsList(rest,varList,cache,env,dfaEnv);
+        outAlgs = listAppend(outAlgs1, outAlgs2);
+      then (cache,dfaEnv,outEls,outAlgs);
+    case (pat :: _,_,_,_,_)
+      local String str;
+      equation
+        str = printPatternStr(pat);
+        Debug.fprintln("matchcase", "- generatePathVarDeclarationsList failed: " +& str);
+      then fail();
+  end matchcontinue;
+end generatePathVarDeclarationsList;
+
+protected function getPatternExp "function: getPatternExp"
+  input RenamedPat pat;
+  output Absyn.Exp val;
+algorithm
+  val := matchcontinue (pat)
+    case (RP_INTEGER(_,val))
+      local
+        Integer val;
+      equation
+      then Absyn.INTEGER(val);
+    case (RP_STRING(_,val))
+      local
+        String val;
+      equation
+      then Absyn.STRING(val);
+    case (RP_BOOL(_,val))
+      local
+        Boolean val;
+      equation
+      then Absyn.BOOL(val);
+    case (RP_REAL(_,val))
+      local
+        Real val;
+      equation
+      then Absyn.REAL(val);
+    case (RP_EMPTYLIST(_))
+      then Absyn.LIST({});
+    case (RP_NONE(_)) then Absyn.CREF(Absyn.CREF_IDENT("NONE",{}));
+  end matchcontinue;
+end getPatternExp;
+
+protected function getPatternComp "function: getPatternComp"
+  input RenamedPat pat;
+  input Absyn.Exp var;
+  input Boolean nequal;
+  output list<Absyn.AlgorithmItem> out;
+algorithm
+  out := matchcontinue (pat, var, nequal)
+    local
+      Absyn.Exp exp;
+      Absyn.AlgorithmItem alg;
+      Absyn.Operator op;
+    case (RP_EMPTYLIST(_), var, nequal) // Optimizes comparison with emptylist by not creating an empty list to compare with
+      equation
+        alg = Absyn.ALGORITHMITEM(Absyn.ALG_BREAK, NONE);
+        exp = Absyn.CALL(Absyn.CREF_IDENT("listEmpty",{}), Absyn.FUNCTIONARGS({var}, {}));
+        exp = Util.if_(nequal, Absyn.LUNARY(Absyn.NOT(), exp), exp);
+        alg = Absyn.ALGORITHMITEM(Absyn.ALG_IF(exp, {alg}, {}, {}),NONE);
+      then {alg};
+    case (RP_NONE(_), var, nequal) // Optimizes comparison with NONE by not creating an empty option to compare with
+      equation
+        alg = Absyn.ALGORITHMITEM(Absyn.ALG_BREAK, NONE);
+        exp = Absyn.CALL(Absyn.CREF_IDENT("optionNone",{}), Absyn.FUNCTIONARGS({var}, {}));
+        exp = Util.if_(nequal, Absyn.LUNARY(Absyn.NOT(), exp), exp);
+        alg = Absyn.ALGORITHMITEM(Absyn.ALG_IF(exp, {alg}, {}, {}),NONE);
+      then {alg};
+    case (pat, var, nequal)
+      equation
+        op = Util.if_(nequal, Absyn.NEQUAL, Absyn.EQUAL);
+        exp = getPatternExp(pat);
+        alg = Absyn.ALGORITHMITEM(Absyn.ALG_BREAK, NONE);
+        alg = Absyn.ALGORITHMITEM(Absyn.ALG_IF(Absyn.RELATION(var,op,exp), {alg}, {}, {}),NONE);
+      then {alg};
+    case (_, _, _) then {};
+  end matchcontinue;
+end getPatternComp;
+
+protected function uniontypeComp        
+  input Absyn.Ident pathVar;
+  input SCode.Restriction restriction;
+  input Integer numFields;
+  input Absyn.Ident classPathStr;
+  output list<Absyn.AlgorithmItem> out;
+algorithm
+  out := matchcontinue (pathVar,restriction,numFields,classPathStr)
+    local
+      Integer i;
+      Absyn.AlgorithmItem alg;
+      Absyn.Exp exp;
+      Absyn.FunctionArgs fargs;
+    case (_,SCode.R_RECORD(),_,_) then {};
+    case (pathVar,SCode.R_METARECORD(_,i),numFields,classPathStr)
+      equation
+        alg = Absyn.ALGORITHMITEM(Absyn.ALG_BREAK, NONE);
+        fargs = Absyn.FUNCTIONARGS({Absyn.CREF(Absyn.CREF_IDENT(pathVar,{})),Absyn.INTEGER(i),Absyn.INTEGER(numFields),Absyn.STRING(classPathStr)}, {});
+        exp = Absyn.CALL(Absyn.CREF_IDENT("mmc_uniontype_metarecord_typedef_equal",{}), fargs);
+        exp = Absyn.LUNARY(Absyn.NOT(), exp);
+        alg = Absyn.ALGORITHMITEM(Absyn.ALG_IF(exp, {alg}, {}, {}),NONE);
+      then {alg};
+  end matchcontinue;
+end uniontypeComp;
+
+protected function generatePathVarDeclarationsNew "function: generatePathVarDeclerations
+	author: KS
+	Used when we have a record constructor call in a pattern and we need to
+	create path variables of the subpatterns of the record constructor.
+"
+  input RenamedPat pat;
+  input Env.Cache cache;
+  input Env.Env env;
+  input list<tuple<Absyn.Ident,Absyn.TypeSpec>> dfaEnv;
+  output Env.Cache outCache;
+  output list<tuple<Absyn.Ident,Absyn.TypeSpec>> outDfaEnv;
+  output list<Absyn.ElementItem> outDecl;
+  output list<Absyn.AlgorithmItem> outAssigns;
+algorithm
+  (outCache,outDfaEnv,outDecl,outAssigns) :=
+  matchcontinue (pat,cache,env,dfaEnv)
+    local
+      Env.Cache localCache;
+      Env.Env localEnv;
+      list<tuple<Absyn.Ident,Absyn.TypeSpec>> localDfaEnv;
+      Absyn.Exp firstCref, secondCref, cref, cref2;
+      list<Absyn.AlgorithmItem> algs, algs1, algs2, algs3;
+      list<Absyn.ElementItem> elem,elem1,elem2;
+      list<Absyn.Exp> crefs;
+    case (RP_CONS(pathVar,first,second),localCache,localEnv,localDfaEnv)
+      local
+        Absyn.Ident pathVar;
+        RenamedPat first,second;
+        Absyn.Ident firstPathVar,secondPathVar;
+        Absyn.TypeSpec t;
+        Absyn.AlgorithmItem assign1,assign2;
+        list<tuple<Absyn.Ident,Absyn.TypeSpec>> dfaEnvElem1,dfaEnvElem2;
+      equation
+        //Example:
+        // if (x == CONS)    -- (This comparison will not occure)
+        // TYPE1 pathVar__1;
+        // list<TYPE1> pathVar__2;
+        // pathVar__1 = listCar(x,1);
+        // pathVar__2 = listCdr(x,2);
+
+        // The variable should be found in the DFA environment
+        Absyn.TCOMPLEX(Absyn.IDENT("list"),{t},NONE()) = lookupTypeOfVar(localDfaEnv,pathVar);
+
+        firstPathVar = extractPathVar(first);
+        secondPathVar = extractPathVar(second);
+        
+        firstCref = identToCrefExp(firstPathVar);
+        secondCref = identToCrefExp(secondPathVar);
+        
+        elem1 = {Absyn.ELEMENTITEM(Absyn.ELEMENT(
+          false,NONE(),Absyn.UNSPECIFIED(),"component",
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
+            t,
+            {Absyn.COMPONENTITEM(Absyn.COMPONENT(firstPathVar,{},NONE()),NONE(),NONE())}),
+            Absyn.INFO("f",false,0,0,0,0,Absyn.TIMESTAMP(0.0,0.0)),NONE()))};
+
+        elem2 = {Absyn.ELEMENTITEM(Absyn.ELEMENT(
+          false,NONE(),Absyn.UNSPECIFIED(),"component",
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
+            Absyn.TCOMPLEX(Absyn.IDENT("list"),{t},NONE()),
+            {Absyn.COMPONENTITEM(Absyn.COMPONENT(secondPathVar,{},NONE()),NONE(),NONE())}),
+            Absyn.INFO("f",false,0,0,0,0,Absyn.TIMESTAMP(0.0,0.0)),NONE()))};
+
+        // Add the new variables to the DFA environment
+        // For example, if we have a pattern:
+        // RP_CONS(x,RP_INTEGER(x__1,1),RP_CONS(x__2,RP_INTEGER(x__2__1,2),RP_EMPTYLIST(x__2__2)))
+        // Then we must know the type of x__2 when arriving to the second
+        // RP_CONS pattern
+        dfaEnvElem1 = {(firstPathVar,t)};
+        dfaEnvElem2 = {(secondPathVar,Absyn.TCOMPLEX(Absyn.IDENT("list"),{t},NONE()))};
+        localDfaEnv = listAppend(localDfaEnv,dfaEnvElem1);
+        localDfaEnv = listAppend(localDfaEnv,dfaEnvElem2);
+        elem = listAppend(elem1,elem2);
+
+        cref = identToCrefExp(pathVar);
+        assign1 = Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(firstCref,
+          Absyn.CALL(Absyn.CREF_IDENT("listGet",{}),Absyn.FUNCTIONARGS({cref,Absyn.INTEGER(1)},{}))),NONE());
+        assign2 = Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(secondCref,
+          Absyn.CALL(Absyn.CREF_IDENT("listRest",{}),Absyn.FUNCTIONARGS({cref},{}))),NONE());
+
+        (localCache, localDfaEnv, elem1, algs1) = generatePathVarDeclarationsList({first}, {firstCref}, localCache, localEnv, localDfaEnv);
+        (localCache, localDfaEnv, elem2, algs2) = generatePathVarDeclarationsList({second}, {secondCref}, localCache, localEnv, localDfaEnv);
+        // algs3 = getPatternComp(RP_EMPTYLIST("dummy"), cref, false);
+        
+        elem = listAppend(elem, elem1);
+        elem = listAppend(elem, elem2);
+        algs = listAppend(assign1::algs1,assign2::algs2);
+        // algs = listAppend(algs3, algs);
+      then (localCache,localDfaEnv,elem,algs);
+    case (RP_CALL(pathVar,cRef,argList),localCache,localEnv,localDfaEnv)
+      local
+        Absyn.Ident pathVar,recName,className,classPathStr;
+        list<Absyn.Ident> pathVarList,fieldNameList;
+        list<RenamedPat> argList;
+        SCode.Class sClass;
+        list<Absyn.TypeSpec> fieldTypeSpecs;
+        list<Types.Type> fieldTypes;
+        Absyn.Path pathName, classPath;
+        list<tuple<Absyn.Ident,Absyn.TypeSpec>> dfaEnvElem;
+        Absyn.ComponentRef cRef;
+        SCode.Restriction restriction;
+        Integer numFields;
+        Types.Type ty;
+        String tyStr;
+      equation
+        pathName = Absyn.crefToPath(cRef);
+        recName = Absyn.pathString(pathName);
+
+        // For instance if we have
+        // a record RECNAME{ TYPE1 field1, TYPE2 field2 } :
+        //
+        // if (getType(pathVar) = RECNAME)
+        // TYPE1 pathVar__1;
+        // TYPE2 pathVar__2;
+        // x__1 = pathVar.field1;
+        // x__2 = pathVar.field2;
+
+        pathVarList = Util.listMap(argList,extractPathVar);
+        // Get recordnames
+        (localCache,sClass as SCode.CLASS(name = className, restriction = restriction),localEnv) = Lookup.lookupClass(localCache,localEnv,pathName,true);
+        (localCache,ty,localEnv) = Lookup.lookupType(localCache,localEnv,pathName,true);
+        //tyStr = Types.unparseType(ty);
+        //Debug.fprintln("matchcase", "- Looked up record cons. func: " +& tyStr);
+        classPath = Env.joinEnvPath(localEnv,Absyn.IDENT(className));
+        classPathStr = Absyn.pathString(classPath);
+        (fieldNameList,fieldTypes) = MetaUtil.constructorCallTypeToNamesAndTypes(ty); // extractFieldNamesAndTypes(sClass);
+        fieldTypeSpecs = Util.listMap(fieldTypes, MetaUtil.typeConvert);
+
+        dfaEnvElem = mergeLists(pathVarList,fieldTypeSpecs,{});
+        localDfaEnv = listAppend(localDfaEnv,dfaEnvElem);
+
+        algs1 = createPathVarAssignmentsCall(pathVar,pathVarList,fieldNameList,{},restriction,cRef);
+        elem1 = createPathVarDeclarations(pathVarList,fieldTypeSpecs,{});
+
+        crefs = Util.listMap(pathVarList, identToCrefExp);
+        (localCache, localDfaEnv, elem2, algs2) = generatePathVarDeclarationsList(argList, crefs, localCache, localEnv, localDfaEnv);
+        elem = listAppend(elem1, elem2);
+        algs = listAppend(algs1,algs2);
+        
+        numFields = listLength(argList);
+        algs2 = uniontypeComp(pathVar, restriction, numFields, classPathStr);
+        algs = listAppend(algs2,algs);
+      then (localCache,localDfaEnv,elem,algs);
+    case (RP_TUPLE(pathVar,argList),localCache,localEnv,localDfaEnv)
+      local
+        Absyn.Ident pathVar;
+        list<RenamedPat> argList;
+        list<Absyn.TypeSpec> fieldTypes;
+        list<tuple<Absyn.Ident,Absyn.TypeSpec>> dfaEnvElem;
+        list<Absyn.Ident> pathVarList;
+      equation
+        //Example:
+        // if (x == TUPLE)    -- (This comparison will not occur)
+        // TYPE1 pathVar__1;
+        // TYPE2 pathVar__2;
+        // ...
+        // pathVar__1 = metaMGetField(x,1);
+        // pathVar__2 = metaMGetField(x,2);
+        // ...
+
+        // The variable should be found in the DFA environment
+        Absyn.TCOMPLEX(Absyn.IDENT("tuple"),fieldTypes,NONE()) = lookupTypeOfVar(localDfaEnv,pathVar);
+
+        pathVarList = Util.listMap(argList,extractPathVar);
+        dfaEnvElem = mergeLists(pathVarList,fieldTypes,{});
+        localDfaEnv = listAppend(localDfaEnv,dfaEnvElem);
+
+        algs1 = createPathVarAssignments(pathVar,pathVarList,{},{},1);
+        elem1 = createPathVarDeclarations(pathVarList,fieldTypes,{});
+        
+        crefs = Util.listMap(pathVarList, identToCrefExp);
+        (localCache, localDfaEnv, elem2, algs2) = generatePathVarDeclarationsList(argList, crefs, localCache, localEnv, localDfaEnv);        
+        elem = listAppend(elem1, elem2);
+        algs = listAppend(algs1,algs2);
+      then (localCache,localDfaEnv,elem,algs);
+
+    case (RP_SOME(pathVar,arg),localCache,localEnv,localDfaEnv)
+      local
+        Absyn.Ident pathVar,pathVar2;
+        RenamedPat arg;
+        list<Absyn.TypeSpec> fieldTypes;
+        list<tuple<Absyn.Ident,Absyn.TypeSpec>> dfaEnvElem;
+        list<Absyn.Ident> pathVarList;
+      equation
+        //Example:
+        // if (x != NONE)    -- Or we get segfaults
+        // TYPE1 pathVar__1;
+        // pathVar__1 = metaMGetField(x,1);
+
+        // The variable should be found in the DFA environment
+        Absyn.TCOMPLEX(Absyn.IDENT("Option"),fieldTypes,NONE()) = lookupTypeOfVar(localDfaEnv,pathVar);
+        pathVar2=extractPathVar(arg);
+        cref = identToCrefExp(pathVar);
+        cref2 = identToCrefExp(pathVar2);
+        
+        pathVarList = {pathVar2};
+        dfaEnvElem = mergeLists(pathVarList,fieldTypes,{});
+        localDfaEnv = listAppend(localDfaEnv,dfaEnvElem);
+
+        algs1 = createPathVarAssignments(pathVar,pathVarList,{},{},1);
+        elem1 = createPathVarDeclarations(pathVarList,fieldTypes,{});
+        
+        (localCache, localDfaEnv, elem2, algs2) = generatePathVarDeclarationsList({arg}, {cref2}, localCache, localEnv, localDfaEnv);
+        algs3 = getPatternComp(RP_NONE("dummy"), cref, false); // Check if it is, in fact, SOME
+        
+        algs = listAppend(algs1, algs2);
+        algs = listAppend(algs3, algs);
+        elem = listAppend(elem1, elem2);
+      then (localCache,localDfaEnv,elem,algs);
+  end matchcontinue;
+end generatePathVarDeclarationsNew;
+
+protected function identToCrefExp
+  input String id;
+  output Absyn.Exp out;
+algorithm
+  out := Absyn.CREF(Absyn.CREF_IDENT(id,{}));
+end identToCrefExp;
+
+protected function createPathVarAssignments 
+"function: createPathVarAssignments
+	author: KS
+	Used when we have a record constructor call in a pattern and need to
+	bind the path variables of the subpatterns of the record constructor
+	to values."
+  input Absyn.Ident recVarName;
+  input list<Absyn.Ident> pathVarList;
+  input list<Absyn.Ident> fieldNameList;
+  input list<Absyn.AlgorithmItem> accList;
+  input Integer fieldNum;
+  output list<Absyn.AlgorithmItem> outList;
+algorithm
+  outList := matchcontinue (recVarName,pathVarList,fieldNameList,accList,fieldNum)
+    local
+      list<Absyn.AlgorithmItem> localAccList;
+      Absyn.Ident localRecVarName,firstPathVar,firstFieldName;
+      list<Absyn.Ident> restVar,restFieldNames;
+      list<Absyn.AlgorithmItem> elem;
+      list<Absyn.Ident> restVar;
+      Integer n;
+    case (_,{},{},localAccList,_) then localAccList;
+    // This case is for tuples when we simply call metaMGetField(x,num)
+    case (localRecVarName,firstPathVar :: restVar,_,localAccList,n)
+      equation
+        elem = {Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(
+          Absyn.CREF(Absyn.CREF_IDENT(firstPathVar,{})),
+          Absyn.CALL(Absyn.CREF_IDENT("mmc_get_field",{}),
+          Absyn.FUNCTIONARGS({Absyn.CREF(Absyn.CREF_IDENT(localRecVarName,{})),Absyn.INTEGER(n)},{}))),NONE())};
+        localAccList = listAppend(localAccList,elem);
+        localAccList = createPathVarAssignments(localRecVarName,restVar,{},localAccList,n+1);
+      then localAccList;
+  end matchcontinue;
+end createPathVarAssignments;
+
+protected function createPathVarAssignmentsCall
+"function: createPathVarAssignments
+	author: KS
+	Used when we have a record constructor call in a pattern and need to
+	bind the path variables of the subpatterns of the record constructor
+	to values."
+  input Absyn.Ident recVarName;
+  input list<Absyn.Ident> pathVarList;
+  input list<Absyn.Ident> fieldNameList;
+  input list<Absyn.AlgorithmItem> accList;
+  input SCode.Restriction restriction;
+  input Absyn.ComponentRef cref;
+  output list<Absyn.AlgorithmItem> outList;
+algorithm
+  outList := matchcontinue (recVarName,pathVarList,fieldNameList,accList,restriction,cref)
+    local
+      list<Absyn.AlgorithmItem> localAccList;
+      Absyn.Ident localRecVarName,firstPathVar,firstFieldName;
+      list<Absyn.Ident> restVar,restFieldNames;
+      list<Absyn.AlgorithmItem> elem;
+      list<Absyn.Ident> restVar;
+      Integer n;
+    case (_,{},{},localAccList,_,_) then localAccList;
+    // We should use fieldNames to create assignments.
+    case (localRecVarName,firstPathVar::restVar,firstFieldName::restFieldNames,localAccList,SCode.R_RECORD(),cref)
+      equation
+        elem = {Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(
+          Absyn.CREF(Absyn.CREF_IDENT(firstPathVar,{})),
+          Absyn.CREF(Absyn.CREF_QUAL(localRecVarName,{},
+          Absyn.CREF_IDENT(firstFieldName,{})))),NONE())};
+        localAccList = listAppend(localAccList,elem);
+        localAccList = createPathVarAssignmentsCall(localRecVarName,restVar,restFieldNames,localAccList,restriction,cref);
+      then localAccList;
+    case (localRecVarName,firstPathVar::restVar,firstFieldName::restFieldNames,localAccList,SCode.R_METARECORD(utPath,utIndex),cref)
+      local
+        Absyn.Path utPath;
+        Absyn.Exp utCref;
+        Integer utIndex;
+      equation
+        elem = {Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(
+          Absyn.CREF(Absyn.CREF_IDENT(firstPathVar,{})),
+          Absyn.CALL(Absyn.CREF_IDENT("mmc_get_field",{}),
+          Absyn.FUNCTIONARGS({Absyn.CREF(Absyn.CREF_IDENT(localRecVarName,{})),Absyn.CREF(cref),Absyn.STRING(firstFieldName)},{}))),NONE())};
+        localAccList = listAppend(localAccList,elem);
+        localAccList = createPathVarAssignmentsCall(localRecVarName,restVar,restFieldNames,localAccList,restriction,cref);
+      then localAccList;
+    case (_,_,_,_,_,_)
+      equation
+        Debug.fprintln("matchcase", "- createPathVarAssignmentsCall failed");
+      then fail();
+  end matchcontinue;
+end createPathVarAssignmentsCall;
 
 end DFA;

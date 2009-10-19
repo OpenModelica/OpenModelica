@@ -230,14 +230,14 @@ arrayBooleanCreate_rettype arrayBooleanCreate(modelica_integer, modelica_boolean
 arrayStringCreate_rettype arrayStringCreate(modelica_integer, modelica_string_t);
 
 /* Misc Operations */
-typedef metamodelica_type if_exp_rettype;
+typedef metamodelica_type if__exp_rettype;
 typedef modelica_integer tick_rettype;
-typedef modelica_real mmc_clock_rettype;
+typedef modelica_real mmc__clock_rettype;
 
-if_exp_rettype if_exp(modelica_boolean, metamodelica_type, metamodelica_type);
+if__exp_rettype if__exp(modelica_boolean, metamodelica_type, metamodelica_type);
 void print(modelica_string_t);
 tick_rettype tick();
-mmc_clock_rettype mmc_clock();
+mmc__clock_rettype mmc__clock();
 void equality(metamodelica_type, metamodelica_type);
 
 #if defined(__cplusplus)

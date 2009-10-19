@@ -47,6 +47,7 @@ package Builtin
 public import Absyn;
 public import SCode;
 public import Env;
+public import RTOpts;
 
 /* protected imports */
 protected import Types;
@@ -298,11 +299,16 @@ protected constant tuple<Types.TType, Option<Type_a>> intInt2int=(
           {("x",(Types.T_INTEGER({}),NONE)),
           ("y",(Types.T_INTEGER({}),NONE))},(Types.T_INTEGER({}),NONE)),NONE);
 
+protected constant tuple<Types.TType, Option<Type_a>> intInt2bool=(
+          Types.T_FUNCTION(
+          {("x",(Types.T_INTEGER({}),NONE)),
+          ("y",(Types.T_INTEGER({}),NONE))},(Types.T_BOOL({}),NONE)),NONE);
+
 protected constant tuple<Types.TType, Option<Type_a>> bool2bool=(
           Types.T_FUNCTION({("x",(Types.T_BOOL({}),NONE))},(Types.T_BOOL({}),NONE)),NONE);
 
-protected constant tuple<Types.TType, Option<Type_a>> string2string=(
-          Types.T_FUNCTION({("x",(Types.T_STRING({}),NONE))},(Types.T_STRING({}),NONE)),NONE);
+protected constant tuple<Types.TType, Option<Type_a>> boolBool2bool=(
+          Types.T_FUNCTION({("x",(Types.T_BOOL({}),NONE)),("y",(Types.T_BOOL({}),NONE))},(Types.T_BOOL({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> real2bool=(
           Types.T_FUNCTION({("x",(Types.T_REAL({}),NONE))},(Types.T_BOOL({}),NONE)),NONE);
@@ -2586,41 +2592,134 @@ protected constant tuple<Types.TType, Option<Type_a>> array9dimbool2array1dimint
           (
           Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
 
+
 // MetaModelica extension. KS
-protected constant tuple<Types.TType, Option<Type_a>> list2list=(
-          Types.T_FUNCTION({("x",(Types.T_LIST((Types.T_NOTYPE(),NONE)),NONE))},(Types.T_LIST((Types.T_NOTYPE(),NONE)),NONE)),NONE);
+protected constant tuple<Types.TType, Option<Type_a>> listA2listA=(
+          Types.T_FUNCTION({("x",(Types.T_LIST(typeA),NONE))},(Types.T_LIST(typeA),NONE)),NONE);
 
+protected constant tuple<Types.TType, Option<Type_a>> listAListA2listA=(
+          Types.T_FUNCTION({("x1",(Types.T_LIST(typeA),NONE)),("x2",(Types.T_LIST(typeA),NONE))},(Types.T_LIST(typeA),NONE)),NONE);
 
+protected constant tuple<Types.TType, Option<Type_a>> listAInt2A=(
+          Types.T_FUNCTION({("lst",(Types.T_LIST(typeA),NONE)),("ix",(Types.T_INTEGER({}),NONE))},(typeA)),NONE);
 
+protected constant tuple<Types.TType, Option<Type_a>> listAint2listA=(
+          Types.T_FUNCTION({("lst",(Types.T_LIST(typeA),NONE)),("ix",(Types.T_INTEGER({}),NONE))},(Types.T_LIST(typeA),NONE)),NONE);
 
-
-
-
+protected constant tuple<Types.TType, Option<Type_a>> list2int=(
+          Types.T_FUNCTION({("x",(Types.T_LIST((Types.T_NOTYPE(),NONE)),NONE))},((Types.T_INTEGER({}),NONE))),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> list2boolean=(
           Types.T_FUNCTION({("x",(Types.T_LIST((Types.T_NOTYPE(),NONE)),NONE))},(Types.T_BOOL({}),NONE)),NONE);
 
+protected constant tuple<Types.TType, Option<Type_a>> listAA2boolean=(
+          Types.T_FUNCTION({("lst",(Types.T_LIST(typeA),NONE)),("el",(Types.T_POLYMORPHIC("Type_A"),NONE))},(Types.T_BOOL({}),NONE)),NONE);
 
-
-
-
-
-
-
+protected constant tuple<Types.TType, Option<Type_a>> boxed2any=(
+          Types.T_FUNCTION({("x",typeBoxedAny)},((Types.T_NOTYPE(),NONE))),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> option2boolean=(
-          Types.T_FUNCTION({("x",(Types.T_METAOPTION((Types.T_NOTYPE(),NONE)),NONE))},(Types.T_BOOL({}),NONE)),NONE);
-
-
-
-
-
-
-
-
+          Types.T_FUNCTION({("x",(Types.T_METAOPTION((Types.T_ANYTYPE(NONE),NONE)),NONE))},(Types.T_BOOL({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> anyInteger2any=(
           Types.T_FUNCTION({("x1",(Types.T_NOTYPE(),NONE)),("x2",(Types.T_INTEGER({}),NONE))},(Types.T_NOTYPE(),NONE)),NONE);
+
+protected constant tuple<Types.TType, Option<Type_a>> anyAnyString2any=(
+          Types.T_FUNCTION({("x1",(Types.T_NOTYPE(),NONE)),("x2",(Types.T_NOTYPE(),NONE)),("x3",(Types.T_STRING({}),NONE))},(Types.T_NOTYPE(),NONE)),NONE);
+
+protected constant tuple<Types.TType, Option<Type_a>> anyIntegerIntegerString2boolean=(
+          Types.T_FUNCTION({("x1",(Types.T_NOTYPE(),NONE)),("x2",(Types.T_INTEGER({}),NONE)),("x3",(Types.T_INTEGER({}),NONE)),("x4",(Types.T_STRING({}),NONE))},(Types.T_BOOL({}),NONE)),NONE);          
+
+protected constant tuple<Types.TType, Option<Type_a>> string2void =(
+          Types.T_FUNCTION({("x1",(Types.T_STRING({}),NONE))},(Types.T_NORETCALL(),NONE)),NONE);
+          
+protected constant tuple<Types.TType, Option<Type_a>> a2void =(
+          Types.T_FUNCTION({("any",(Types.T_POLYMORPHIC("Type_A"),NONE))},(Types.T_NORETCALL(),NONE)),NONE);
+          
+protected constant tuple<Types.TType, Option<Type_a>> void2int =(
+          Types.T_FUNCTION({},(Types.T_INTEGER({}),NONE)),NONE);
+
+protected constant tuple<Types.TType, Option<Type_a>> void2real =(
+          Types.T_FUNCTION({},(Types.T_REAL({}),NONE)),NONE);
+
+protected constant tuple<Types.TType, Option<Type_a>> typeBoxedAny = (Types.T_BOXED((Types.T_NOTYPE,NONE)),NONE);
+protected constant tuple<Types.TType, Option<Type_a>> typeA = (Types.T_POLYMORPHIC("Type_A"),NONE);
+
+protected constant tuple<Types.TType, Option<Type_a>> boolBoxedBoxed2boxed =(
+          Types.T_FUNCTION({("x1",(Types.T_BOOL({}),NONE)),("x2",typeBoxedAny),("x3",typeBoxedAny)},typeBoxedAny),NONE);
+
+protected constant tuple<Types.TType, Option<Type_a>> AA2void =(
+          Types.T_FUNCTION({("x1",typeA),("x2",typeA)},(Types.T_NORETCALL,NONE)),NONE);
+
+protected constant tuple<Types.TType, Option<Type_a>> AA2bool =(
+          Types.T_FUNCTION({("x1",typeA),("x2",typeA)},(Types.T_BOOL({}),NONE)),NONE);
+
+// MetaModelica Array Functions. sjoelund
+protected constant tuple<Types.TType, Option<Type_a>> array1d2int =(
+          Types.T_FUNCTION({("x1",(Types.T_ARRAY(Types.DIM(SOME(1)), (Types.T_NOTYPE(),NONE)),NONE))},(Types.T_INTEGER({}),NONE)),NONE);
+
+// arrayGet
+protected constant tuple<Types.TType, Option<Type_a>> array1dAnyInt2any =(
+          Types.T_FUNCTION({("x1",(Types.T_ARRAY(Types.DIM(SOME(1)), (Types.T_NOTYPE(),NONE)),NONE)),("x2",(Types.T_INTEGER({}),NONE))},(Types.T_NOTYPE(),NONE)),NONE);
+
+protected constant tuple<Types.TType, Option<Type_a>> array1dIntInt2int =(
+          Types.T_FUNCTION({("x1",(Types.T_ARRAY(Types.DIM(SOME(1)), (Types.T_INTEGER({}),NONE)),NONE)),("x2",(Types.T_INTEGER({}),NONE))},(Types.T_INTEGER({}),NONE)),NONE);
+
+protected constant tuple<Types.TType, Option<Type_a>> array1dRealInt2real =(
+          Types.T_FUNCTION({("x1",(Types.T_ARRAY(Types.DIM(SOME(1)), (Types.T_REAL({}),NONE)),NONE)),("x2",(Types.T_INTEGER({}),NONE))},(Types.T_REAL({}),NONE)),NONE);
+
+protected constant tuple<Types.TType, Option<Type_a>> array1dBoolInt2bool =(
+          Types.T_FUNCTION({("x1",(Types.T_ARRAY(Types.DIM(SOME(1)), (Types.T_BOOL({}),NONE)),NONE)),("x2",(Types.T_INTEGER({}),NONE))},(Types.T_BOOL({}),NONE)),NONE);
+
+protected constant tuple<Types.TType, Option<Type_a>> array1dStringInt2string =(
+          Types.T_FUNCTION({("x1",(Types.T_ARRAY(Types.DIM(SOME(1)), (Types.T_STRING({}),NONE)),NONE)),("x2",(Types.T_INTEGER({}),NONE))},(Types.T_STRING({}),NONE)),NONE);
+
+// arrayCreate
+protected constant tuple<Types.TType, Option<Type_a>> intAny2array1dAny =(
+          Types.T_FUNCTION({("x1",(Types.T_INTEGER({}),NONE)),("x2",(Types.T_NOTYPE(),NONE))},(Types.T_ARRAY(Types.DIM(SOME(1)), (Types.T_NOTYPE(),NONE)),NONE)),NONE);
+
+protected constant tuple<Types.TType, Option<Type_a>> intInt2array1dInt =(
+          Types.T_FUNCTION({("x1",(Types.T_INTEGER({}),NONE)),("x2",(Types.T_INTEGER({}),NONE))},(Types.T_ARRAY(Types.DIM(SOME(1)), (Types.T_INTEGER({}),NONE)),NONE)),NONE);
+
+protected constant tuple<Types.TType, Option<Type_a>> intReal2array1dReal =(
+          Types.T_FUNCTION({("x1",(Types.T_INTEGER({}),NONE)),("x2",(Types.T_REAL({}),NONE))},(Types.T_ARRAY(Types.DIM(SOME(1)), (Types.T_REAL({}),NONE)),NONE)),NONE);
+
+protected constant tuple<Types.TType, Option<Type_a>> intBool2array1dBool =(
+          Types.T_FUNCTION({("x1",(Types.T_INTEGER({}),NONE)),("x2",(Types.T_BOOL({}),NONE))},(Types.T_ARRAY(Types.DIM(SOME(1)), (Types.T_BOOL({}),NONE)),NONE)),NONE);
+
+protected constant tuple<Types.TType, Option<Type_a>> intString2array1dString =(
+          Types.T_FUNCTION({("x1",(Types.T_INTEGER({}),NONE)),("x2",(Types.T_STRING({}),NONE))},(Types.T_ARRAY(Types.DIM(SOME(1)), (Types.T_STRING({}),NONE)),NONE)),NONE);
+
+// String functions. sjoelund
+protected constant tuple<Types.TType, Option<Type_a>> string2string=(
+          Types.T_FUNCTION({("x",(Types.T_STRING({}),NONE))},(Types.T_STRING({}),NONE)),NONE);
+
+protected constant tuple<Types.TType, Option<Type_a>> stringString2string=(
+          Types.T_FUNCTION({("x1",(Types.T_STRING({}),NONE)),("x2",(Types.T_STRING({}),NONE))},(Types.T_STRING({}),NONE)),NONE);
+
+protected constant tuple<Types.TType, Option<Type_a>> stringInt2string=(
+          Types.T_FUNCTION({("x1",(Types.T_STRING({}),NONE)),("x2",(Types.T_INTEGER({}),NONE))},(Types.T_STRING({}),NONE)),NONE);
+
+protected constant tuple<Types.TType, Option<Type_a>> stringString2boolean=(
+          Types.T_FUNCTION({("x1",(Types.T_STRING({}),NONE)),("x2",(Types.T_STRING({}),NONE))},(Types.T_BOOL({}),NONE)),NONE);
+
+protected constant tuple<Types.TType, Option<Type_a>> stringString2int=(
+          Types.T_FUNCTION({("x1",(Types.T_STRING({}),NONE)),("x2",(Types.T_STRING({}),NONE))},(Types.T_INTEGER({}),NONE)),NONE);
+
+protected constant tuple<Types.TType, Option<Type_a>> stringStringInteger2string=(
+          Types.T_FUNCTION({("x1",(Types.T_STRING({}),NONE)),("x2",(Types.T_STRING({}),NONE)),("x3",(Types.T_INTEGER({}),NONE))},(Types.T_STRING({}),NONE)),NONE);
+
+protected constant tuple<Types.TType, Option<Type_a>> string2int=(
+          Types.T_FUNCTION({("x",(Types.T_STRING({}),NONE))},(Types.T_INTEGER({}),NONE)),NONE);
+
+protected constant tuple<Types.TType, Option<Type_a>> string2listOfString=(
+          Types.T_FUNCTION({("x",(Types.T_STRING({}),NONE))},(Types.T_LIST((Types.T_STRING({}),NONE)),NONE)),NONE);
+
+protected constant tuple<Types.TType, Option<Type_a>> listOfString2string=(
+          Types.T_FUNCTION({("x",(Types.T_LIST((Types.T_STRING({}),NONE)),NONE))},(Types.T_STRING({}),NONE)),NONE);
+
+
+
 
 protected constant tuple<Types.TType, Option<Type_a>> array1dimrealarray1dimrealarray1dimreal2real=(
           Types.T_FUNCTION(
@@ -2886,14 +2985,6 @@ algorithm
       env = Env.extendFrameC(env, booleanType);
       env = Env.extendFrameC(env, stateSelectType);
       env = Env.extendFrameV(env, timeVar, NONE, Env.VAR_UNTYPED(), {});
-
-      // MetaModelica extension
-      env = Env.extendFrameT(env, "listCar", list2list); // Should be list2any; easier this way. See also rule in Types.subType.
-      env = Env.extendFrameT(env, "listCdr", list2list);
-      env = Env.extendFrameT(env, "emptyListTest", list2boolean);
-      env = Env.extendFrameT(env, "emptyOptionTest", option2boolean);
-      env = Env.extendFrameT(env, "metaMGetField", anyInteger2any);
-      //----
 
       env = Env.extendFrameT(env, "initial", nil2real) "non-functions" ;
       env = Env.extendFrameT(env, "terminal", nil2real);
@@ -3359,9 +3450,144 @@ algorithm
       env = Env.extendFrameT(env, "delay", realReal2real);
       env = Env.extendFrameT(env, "delay", realRealReal2real);
       */
+      env = initialEnvMetaModelica(env);
       cache = Env.setCachedInitialEnv(cache,env);
     then (cache,env);
   end matchcontinue;
 end initialEnv;
+
+protected function initialEnvMetaModelica
+  input list<Env.Frame> inEnv;
+  output list<Env.Frame> outEnv;
+  
+algorithm
+  out := matchcontinue(inEnv)
+    local
+      list<Env.Frame> env;
+    case (env)
+      equation
+        true = RTOpts.acceptMetaModelicaGrammar();
+        env = Env.extendFrameT(env, "mmc_get_field", anyInteger2any);
+        env = Env.extendFrameT(env, "mmc_get_field", anyAnyString2any);
+        env = Env.extendFrameT(env, "mmc_uniontype_metarecord_typedef_equal", anyIntegerIntegerString2boolean);
+        env = Env.extendFrameT(env, "mmc_boxes_equal", AA2bool);
+        
+        // Boolean Operations
+        env = Env.extendFrameT(env, "boolAnd", boolBool2bool);
+        env = Env.extendFrameT(env, "boolOr", boolBool2bool);
+        env = Env.extendFrameT(env, "boolNot", bool2bool);
+        
+        // Integer Operations
+        env = Env.extendFrameT(env, "intAdd", intInt2int);
+        env = Env.extendFrameT(env, "intSub", intInt2int);
+        env = Env.extendFrameT(env, "intMul", intInt2int);
+        env = Env.extendFrameT(env, "intDiv", intInt2int);
+        env = Env.extendFrameT(env, "intMod", intInt2int);
+        env = Env.extendFrameT(env, "intMax", intInt2int);
+        env = Env.extendFrameT(env, "intMin", intInt2int);
+        
+        env = Env.extendFrameT(env, "intAbs", int2int);
+        env = Env.extendFrameT(env, "intNeg", int2int);
+        
+        env = Env.extendFrameT(env, "intLt", intInt2bool);
+        env = Env.extendFrameT(env, "intLe", intInt2bool);
+        env = Env.extendFrameT(env, "intEq", intInt2bool);
+        env = Env.extendFrameT(env, "intNe", intInt2bool);
+        env = Env.extendFrameT(env, "intGe", intInt2bool);
+        env = Env.extendFrameT(env, "intGt", intInt2bool);
+
+        env = Env.extendFrameT(env, "intReal", int2real);
+        env = Env.extendFrameT(env, "intString", int2string);
+        
+        // Real Operations
+        env = Env.extendFrameT(env, "realAdd", realReal2real);
+        env = Env.extendFrameT(env, "realSub", realReal2real);
+        env = Env.extendFrameT(env, "realMul", realReal2real);
+        env = Env.extendFrameT(env, "realDiv", realReal2real);
+        env = Env.extendFrameT(env, "realMod", realReal2real);
+        env = Env.extendFrameT(env, "realPow", realReal2real);
+        env = Env.extendFrameT(env, "realMax", realReal2real);
+        env = Env.extendFrameT(env, "realMin", realReal2real);
+        
+        env = Env.extendFrameT(env, "realAbs", real2real);
+        env = Env.extendFrameT(env, "realNeg", real2real);
+        env = Env.extendFrameT(env, "realCos", real2real);
+        env = Env.extendFrameT(env, "realSin", real2real);
+        env = Env.extendFrameT(env, "realAtan", real2real);
+        env = Env.extendFrameT(env, "realExp", real2real);
+        env = Env.extendFrameT(env, "realLn", real2real);
+        env = Env.extendFrameT(env, "realFloor", real2real);
+        env = Env.extendFrameT(env, "realSqrt", real2real);
+        
+        env = Env.extendFrameT(env, "realLt", realReal2bool);
+        env = Env.extendFrameT(env, "realLe", realReal2bool);
+        env = Env.extendFrameT(env, "realEq", realReal2bool);
+        env = Env.extendFrameT(env, "realNe", realReal2bool);
+        env = Env.extendFrameT(env, "realGe", realReal2bool);
+        env = Env.extendFrameT(env, "realGt", realReal2bool);
+
+        env = Env.extendFrameT(env, "realInt", real2int);
+        env = Env.extendFrameT(env, "realString", real2string);
+        
+        // String Character Conversion Operations
+        env = Env.extendFrameT(env, "stringCharInt", string2int);
+        env = Env.extendFrameT(env, "intStringChar", int2string);
+        
+        // String Operations
+        env = Env.extendFrameT(env, "stringInt", string2int);
+        env = Env.extendFrameT(env, "stringListStringChar", string2listOfString);
+        env = Env.extendFrameT(env, "listStringCharString", listOfString2string);
+        env = Env.extendFrameT(env, "stringAppendList", listOfString2string);
+        env = Env.extendFrameT(env, "stringLength", string2int);
+        env = Env.extendFrameT(env, "stringGetStringChar", stringInt2string);
+        env = Env.extendFrameT(env, "stringAppend", stringString2string);
+        env = Env.extendFrameT(env, "stringUpdateStringChar", stringStringInteger2string);
+        env = Env.extendFrameT(env, "stringEqual", stringString2boolean);
+        env = Env.extendFrameT(env, "stringCompare", stringString2int);        
+        
+        // List Operations
+        env = Env.extendFrameT(env, "listAppend", listAListA2listA);
+        env = Env.extendFrameT(env, "listReverse", listA2listA);
+        env = Env.extendFrameT(env, "listLength", list2int);
+        env = Env.extendFrameT(env, "listMember", listAA2boolean);
+        env = Env.extendFrameT(env, "listGet", listAInt2A);
+        env = Env.extendFrameT(env, "listNth", listAInt2A);
+        env = Env.extendFrameT(env, "listRest", listA2listA);
+        env = Env.extendFrameT(env, "listDelete", listAint2listA);
+        env = Env.extendFrameT(env, "listEmpty", list2boolean);
+        
+        // Array Operations
+        env = Env.extendFrameT(env, "arrayLength", array1d2int);
+
+        env = Env.extendFrameT(env, "arrayGet", array1dAnyInt2any);
+        env = Env.extendFrameT(env, "arrayIntegerGet", array1dIntInt2int);
+        env = Env.extendFrameT(env, "arrayRealGet", array1dRealInt2real);
+        env = Env.extendFrameT(env, "arrayBooleanGet", array1dBoolInt2bool);
+        env = Env.extendFrameT(env, "arrayStringGet", array1dStringInt2string);
+        
+        env = Env.extendFrameT(env, "arrayCreate", intAny2array1dAny);
+        env = Env.extendFrameT(env, "arrayIntegerCreate", intInt2array1dInt);
+        env = Env.extendFrameT(env, "arrayRealCreate", intReal2array1dReal);
+        env = Env.extendFrameT(env, "arrayBooleanCreate", intBool2array1dBool);
+        env = Env.extendFrameT(env, "arrayStringCreate", intString2array1dString);
+
+        // Option Operations
+        env = Env.extendFrameT(env, "optionNone", option2boolean);
+
+        // Misc Operations
+        env = Env.extendFrameT(env, "if_exp", boolBoxedBoxed2boxed);
+        env = Env.extendFrameT(env, "print", string2void);
+        env = Env.extendFrameT(env, "printAny", a2void);
+        env = Env.extendFrameT(env, "tick", void2int);
+        env = Env.extendFrameT(env, "equality", AA2void);
+        // There is a C function called clock which does not return a double...
+        env = Env.extendFrameT(env, "mmc_clock", void2real);
+        env = Env.extendFrameT(env, "clock", void2real);
+        
+      then env;
+    case env then env;
+  end matchcontinue;
+end initialEnvMetaModelica;
+
 end Builtin;
 

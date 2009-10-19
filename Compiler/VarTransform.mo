@@ -145,6 +145,7 @@ algorithm outDae := matchcontinue(inDae,repl,condExpFunc)
       list<Algorithm.Statement> stmts,stmts2;
       DAE.VarProtection prot;
       DAE.Stream st;
+      Boolean partialPrefix;
 
       // if no replacements, return dae, no need to traverse.
     case(dae,REPLACEMENTS(HashTable2.HASHTABLE(numberOfEntries=0),_),condExpFunc) then dae;
@@ -261,11 +262,11 @@ algorithm outDae := matchcontinue(inDae,repl,condExpFunc)
         dae2 = applyReplacementsDAE(dae,repl,condExpFunc);
       then DAE.COMP(id,DAE.DAE(elist))::dae2;
         
-     case(DAE.FUNCTION(path,DAE.DAE(elist),ftp)::dae,repl,condExpFunc) 
+     case(DAE.FUNCTION(path,DAE.DAE(elist),ftp,partialPrefix)::dae,repl,condExpFunc) 
       equation
         elist2 = applyReplacementsDAE(elist,repl,condExpFunc);
         dae2 = applyReplacementsDAE(dae,repl,condExpFunc);
-      then DAE.FUNCTION(path,DAE.DAE(elist2),ftp)::dae2;
+      then DAE.FUNCTION(path,DAE.DAE(elist2),ftp,partialPrefix)::dae2;
         
      case(DAE.EXTFUNCTION(path,DAE.DAE(elist),ftp,extDecl)::dae,repl,condExpFunc) 
       equation
@@ -550,13 +551,13 @@ algorithm
         xs_1 = replaceEquationsStmts(xs, repl,condExpFunc);
       then
         (Algorithm.REINIT(e_1,e_2) :: xs_1);
-    case (((x as Algorithm.NORETCALL(functionName = fnName, functionArgs = expl1)) :: xs),repl,condExpFunc)
+    case ((x as Algorithm.NORETCALL(e)) :: xs,repl,condExpFunc)
       local Absyn.Path fnName;
       equation 
-        expl2 = Util.listMap2(expl1, replaceExp, repl, condExpFunc);
+        e_1 = replaceExp(e, repl, condExpFunc); 
         xs_1 = replaceEquationsStmts(xs, repl,condExpFunc);
       then
-        (Algorithm.NORETCALL(fnName, expl1) :: xs_1);
+        (Algorithm.NORETCALL(e_1) :: xs_1);
     case (((x as Algorithm.RETURN()) :: xs),repl,condExpFunc)
       equation 
         xs_1 = replaceEquationsStmts(xs, repl,condExpFunc);

@@ -129,8 +129,7 @@ uniontype Statement "There are four kinds of statements.  Assignments (`a := b;\
   
   record NORETCALL "call with no return value, i.e. no equation. 
 		   Typically sideeffect call of external function."  
-    Absyn.Path functionName;
-    list<Exp.Exp> functionArgs;
+    Exp.Exp exp;
   end NORETCALL;    
   
   record RETURN
@@ -158,6 +157,11 @@ uniontype Statement "There are four kinds of statements.  Assignments (`a := b;\
   record LABEL
     String labelName;
   end LABEL;
+  
+  record MATCHCASES "matchcontinue helper"
+    list<Exp.Exp> caseStmt;
+  end MATCHCASES;
+  
   //-----
 
 end Statement;
@@ -415,8 +419,8 @@ algorithm
         bvals = Util.listMap(lhprops, Types.propAnyConst);
         Types.C_VAR() = Util.listReduce(bvals, Types.constOr);
         lhrtypes = Util.listMap(lhprops, Types.getPropType);
-        (rhs_1,_) = Types.matchTypeList(rhs, tpl, lhrtypes);
-         /* Don\'t use the new rhs\', since type conversions of several output args
+        Types.matchTypeTupleCall(rhs, tpl, lhrtypes);
+         /* Don\'t use new rhs\', since type conversions of several output args
 	 are not clearly defined. */ 
       then
         TUPLE_ASSIGN(Exp.OTHER(),expl,rhs);
@@ -457,7 +461,9 @@ algorithm
        then getTypeExpType(t);
     case ((Types.T_COMPLEX(_,_::_,_,_),_)) 
       equation 
-      print("Warning complex_varList not implemented for Array_assign\n");
+      // Commenting out this line because it prints a lot of warnings for
+      // record assignments (which actually work just fine). // sjoelund // 2009-05-07
+      //print("Warning complex_varList not implemented for Array_assign\n");
       then fail();
     case ((_,_)) then Exp.OTHER();  /* was fail but records must be handled somehow */ 
   end matchcontinue;
@@ -786,11 +792,23 @@ algorithm
     case ASSERT(cond = e1,msg= e2) then {e1,e2}; 
     case BREAK() then {};
     case RETURN() then {};
+    case THROW() then {};
+    case TRY(stmts)
+      equation
+        exps = getAllExpsStmts(stmts);
+      then
+        exps;
+    case CATCH(stmts)
+      equation
+        exps = getAllExpsStmts(stmts);
+      then
+        exps;
     
-    case(NORETCALL(functionName=fname,functionArgs=fargs))       
-    then {Exp.CALL(fname,fargs,false,false,Exp.OTHER())};
+    case NORETCALL(e1) then {e1};
 
     case(REINIT(e1,e2)) then {e1,e2};    
+      
+    case(MATCHCASES(exps)) then exps;
 
     case _
       equation 

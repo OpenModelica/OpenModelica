@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1998-2008, Linköpings University,
  * Department of Computer and Information Science,
- * SE-58183 Linköpings, Sweden.
+ * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
@@ -313,7 +313,7 @@ algorithm
       Types.Properties prop,prop_1,prop1,prop2,prop3;
       list<Env.Frame> env;
       Absyn.ComponentRef cr,fn;
-      tuple<Types.TType, Option<Absyn.Path>> t1,t2,arrtp,rtype,t,start_t,stop_t,step_t,t_1,t_2,tp;
+      Types.Type t1,t2,arrtp,rtype,t,start_t,stop_t,step_t,t_1,t_2,tp;
       Types.Const c1,c2,c,c_start,c_stop,const,c_step;
       list<tuple<Exp.Operator, list<tuple<Types.TType, Option<Absyn.Path>>>, tuple<Types.TType, Option<Absyn.Path>>>> ops;
       Exp.Operator op_1;
@@ -459,7 +459,8 @@ algorithm
       local Exp.Exp e;
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
-        (cache,e,Types.PROP(t,_),st_1) = elabExp(cache,env, e1, impl, st,doVect);
+        (cache,e,prop,st_1) = elabExp(cache,env, e1, impl, st,doVect);
+        t = Types.getPropType(prop);
         e = Exp.META_OPTION(SOME(e));
         prop1 = Types.PROP((Types.T_METAOPTION(t),NONE()),Types.C_VAR());
       then
@@ -511,10 +512,16 @@ algorithm
         Debug.fprintln("sei", "elab_exp CALL done");
       then
         (cache,e_1,prop_1,st_1);
-    case (cache,env,Absyn.TUPLE(expressions = (e as (e1 :: rest))),impl,st,doVect) /* PR. Get the properties for each expression in the tuple. 
+    // stefan
+    /*case (cache,env,e1 as Absyn.PARTEVALFUNCTION(function_ = fn,functionArgs = Absyn.FUNCTIONARGS(args = args,argNames = nargs)),impl,st,doVect)
+      local Exp.Exp e;
+      equation
+        true = RTOpts.acceptMetaModelicaGrammar();
+        (cache,e,prop,st_1) = elabPartEvalFunction(cache,env,e1,st,impl,doVect);
+      then
+        (cache,e,prop,st_1);*/
+    case (cache,env,Absyn.TUPLE(expressions = e),impl,st,doVect) /* PR. Get the properties for each expression in the tuple. 
     Each expression has its own constflag.
-    !!The output from functions does just have one const flag. 
-    Fix this!!
     */ 
       local
         list<Exp.Exp> e_1;
@@ -557,6 +564,13 @@ algorithm
       then
         (cache,exp_2,prop_1,st_3);
         
+     // Part of the MetaModelica extension. This eliminates elab_array failed failtraces when using the empty list. sjoelund
+   case (cache,env,Absyn.ARRAY({}),impl,st,doVect)
+     local equation
+       true = RTOpts.acceptMetaModelicaGrammar();
+       (cache,exp,prop,st) = elabExp(cache,env,Absyn.LIST({}),impl,st,doVect);
+     then (cache,exp,prop,st);
+
     case (cache,env,Absyn.ARRAY(arrayExp = es),impl,st,doVect)
       local Exp.Exp arrexp;
       equation 
@@ -601,9 +615,9 @@ algorithm
       then
         (cache,Exp.CODE(c,tp_1),Types.PROP(tp,Types.C_CONST()),st);
         
-    case (cache,env,Absyn.VALUEBLOCK(ld,Absyn.VALUEBLOCKALGORITHMS(
-      b),res),impl,st,doVect)
+    case (cache,env,Absyn.VALUEBLOCK(ld,body,res),impl,st,doVect)
       local 
+        Absyn.ValueblockBody body;
         list<Absyn.ElementItem> ld;
         list<SCode.Element> ld2;
         list<tuple<SCode.Element, Inst.Mod>> ld_mod;
@@ -642,6 +656,7 @@ algorithm
                                ClassInf.FUNCTION("dummieFunc"),
                                ld_mod,{},impl,ConnectionGraph.EMPTY);
         
+        (b,cache) = fromValueblockBodyToAlgs(body, cache, env2);
         //----------------------------------------------------------------------
         // The instantiation of the components may have produced some equations
         (b2,dae1_2) = Convert.fromDAEeqsToAbsynAlg(dae1,{},{});
@@ -649,11 +664,12 @@ algorithm
         //----------------------------------------------------------------------
         // Convert into Exp records
         dae2 = Convert.fromDAEElemsToExpElems(dae1_2,{});
-        // debug_print("before->Inst.instAlgorithmitems",b);        
+        // debug_print("before->Inst.instAlgorithmitems",b);
         (cache,b_alg) = Inst.instAlgorithmitems(cache,env2,Prefix.NOPRE(),b,SCode.NON_INITIAL(),true);
         // debug_print("after->Inst.instAlgorithmitems","");
         // Convert into Exp records
         b_alg_2 = Convert.fromAlgStatesToExpStates(b_alg,{});
+        // debug_print("after->Convert.fromAlgStatesToExpStates","");		    
         // debug_print("after->Convert.fromAlgStatesToExpStates","");		    
         b_alg_dae = Exp.ALGORITHM(Exp.ALGORITHM2(b_alg_2));
         // debug_print("before -> res",res);
@@ -662,73 +678,7 @@ algorithm
         tp_1 = Types.elabType(tp);
         // debug_print("end",tp_1);        
       then (cache,Exp.VALUEBLOCK(tp_1,dae2,b_alg_dae,res2),prop,st);
-        
-        //Equations must converted into Algorithm statements
-    case (cache,env,Absyn.VALUEBLOCK(ld,Absyn.VALUEBLOCKEQUATIONS(
-      b2),res),impl,st,doVect)
-      local 
-        list<Absyn.ElementItem> ld;
-        list<SCode.Element> ld2;
-        list<tuple<SCode.Element, Inst.Mod>> ld_mod;
-        
-        list<Absyn.EquationItem> b2;
-        list<Absyn.AlgorithmItem> b,b3;
-        list<Algorithm.Statement> b_alg;   
-        list<Exp.Statement> b_alg_2;
-        
-        list<DAE.Element> dae1,dae1_2;
-        list<Exp.DAEElement> dae2;
-        Exp.DAEElement b_alg_dae;
-        Absyn.Exp res;
-        Exp.Exp res2;
-        Env.Env env2;
-        
-        Types.Properties prop;
-      equation 
-        // debug_print("elabExp->VALUEBLOCKEQUATIONS", b2);
-        // Equations are transformed into algorithm assignments
-        b =  fromEquationsToAlgAssignments(b2,{});       
-        
-        env2 = Env.openScope(env, false, NONE());
-        
-        // Tranform declarations such as Real x,y; to Real x; Real y;
-        ld2 = SCode.elabEitemlist(ld,false);
-        
-        // Filter out the components (just to be sure)
-        ld2 = Inst.componentElts(ld2);
-        
-        // Transform the element list into a list of element,NOMOD
-        ld_mod = Inst.addNomod(ld2);
-        
-        (cache,env2,_) = Inst.addComponentsToEnv(cache, env2, InstanceHierarchy.emptyInstanceHierarchy, Types.NOMOD(), 
-                                           Prefix.NOPRE(), Connect.SETS({},{},{},{}), 
-                                           ClassInf.FUNCTION("dummieFunc"), ld_mod, {}, {}, {}, impl);    
-        
-        (cache,env2,_,_,dae1,_,_,_,_) = 
-          Inst.instElementList(cache,env2, InstanceHierarchy.emptyInstanceHierarchy, UnitAbsyn.noStore,
-                               Types.NOMOD(), Prefix.NOPRE(), Connect.SETS({},{},{},{}), ClassInf.FUNCTION("dummieFunc"),
-                               ld_mod,{},impl,ConnectionGraph.EMPTY);
-        
-        //----------------------------------------------------------------------
-        // The instantiation of the components may have produced some equations
-        (b3,dae1_2) = Convert.fromDAEeqsToAbsynAlg(dae1,{},{});
-        b = listAppend(b3,b);
-        //----------------------------------------------------------------------
-        // Convert into Exp records   
-       dae2 = Convert.fromDAEElemsToExpElems(dae1_2,{});
-        
-        (cache,b_alg) = Inst.instAlgorithmitems(cache,env2,Prefix.NOPRE(),b,SCode.NON_INITIAL(),true);	
-        
-        // Convert into Exp records
-        b_alg_2 = Convert.fromAlgStatesToExpStates(b_alg,{});
-        
-        b_alg_dae = Exp.ALGORITHM(Exp.ALGORITHM2(b_alg_2));
-        
-       (cache,res2,prop as Types.PROP(tp,_),st) = elabExp(cache,env2,res,impl,st,doVect);
-       tp_1 = Types.elabType(tp);
-        
-      then (cache,Exp.VALUEBLOCK(tp_1,dae2,b_alg_dae,res2),prop,st);
-        
+               
        //-------------------------------------
        // Part of the MetaModelica extension. KS
    case (cache,env,Absyn.ARRAY(es),impl,st,doVect)
@@ -737,33 +687,31 @@ algorithm
        (cache,exp,prop,st) = elabExp(cache,env,Absyn.LIST(es),impl,st,doVect);
      then (cache,exp,prop,st);
 
-   case (cache,env,Absyn.TUPLE(es),impl,st,doVect)
-     local list<Absyn.Exp> e; list<Types.Type> tList; list<Types.Properties> propList; equation
-       true = RTOpts.acceptMetaModelicaGrammar();
-       (cache,es_1,propList,st) = elabExpList(cache,env, es, impl, st,doVect);
-       tList = Util.listMap(propList,MetaUtil.getTypeFromProp);
-       prop = Types.PROP((Types.T_METATUPLE(tList),NONE()),Types.C_VAR());
-     then (cache,Exp.META_TUPLE(es_1),prop,st);
-
    case (cache,env,Absyn.CONS(e1,e2),impl,st,doVect)
      local
        Boolean correctTypes;
        Types.Type t;
      equation
-      (e1 :: _) = MetaUtil.transformArrayNodesToListNodes({e1},{});
-      (e2 :: _) = MetaUtil.transformArrayNodesToListNodes({e2},{});
+       (e1 :: _) = MetaUtil.transformArrayNodesToListNodes({e1},{});
+       (e2 :: _) = MetaUtil.transformArrayNodesToListNodes({e2},{});
 
-      (cache,e1_1,prop1 as Types.PROP(t,_),st_1) = elabExp(cache,env, e1, impl, st,doVect);
-       (cache,e2_1,prop2,st_1) = elabExp(cache,env, e2, impl, st,doVect);
-       correctTypes = MetaUtil.consMatch(prop1,prop2);
-       true = correctTypes;
-
+       (cache,e1_1,prop1,st_1) = elabExp(cache,env, e1, impl, st,doVect);
+       (cache,e2_1,Types.PROP((Types.T_LIST(t2),_),c2),st_1) = elabExp(cache,env, e2, impl, st,doVect);
+       
+       t1 = Types.getPropType(prop1);
+       c1 = Types.propAllConst(prop1);
+       t = Types.superType(t1,t2);
+       
+       (e1_1,_) = Types.matchType(e1_1, t1, t);
+       (e2_1,_) = Types.matchType(e2_1, t2, t);
+       
        // If the second expression is a Exp.LIST, then we can create a Exp.LIST
        // instead of Exp.CONS
        tp_1 = Types.elabType(t);
        exp = MetaUtil.simplifyListExp(tp_1,e1_1,e2_1);
 
-       prop = Types.PROP((Types.T_LIST(t),NONE()),Types.C_VAR());
+       c = Types.constAnd(c1,c2);
+       prop = Types.PROP((Types.T_LIST(t),NONE()),c);
 
      then (cache,exp,prop,st);
 
@@ -775,18 +723,20 @@ algorithm
       Boolean correctTypes;
       Types.Type t;
     equation
-      prop = Types.PROP((Types.T_LIST((Types.T_NOTYPE(),NONE())),NONE()),Types.C_VAR());
-    then (cache,Exp.LIST(Exp.OTHER(),{}),prop,st);
+      t = (Types.T_LIST((Types.T_NOTYPE,NONE)),NONE);
+      prop = Types.PROP(t,Types.C_VAR());
+    then (cache,Exp.LIST(Exp.T_LIST(Exp.OTHER()),{}),prop,st);
 
   case (cache,env,Absyn.LIST(es),impl,st,doVect)
     local
       list<Types.Properties> propList;
+      list<Types.Type> typeList;
       Boolean correctTypes;
       Types.Type t;
     equation
-      (cache,es_1,propList as (Types.PROP(t,_) :: _),st_2) = elabExpList(cache,env, es, impl, st,doVect);
-      correctTypes = MetaUtil.typeMatching(t,propList);
-      true = correctTypes;
+      (cache,es_1,propList,st_2) = elabExpList(cache,env, es, impl, st,doVect);
+      typeList = Util.listMap(propList, Types.getPropType);
+      (es_1, t, _) = Types.listMatchSuperType(es_1, typeList, {}, Types.matchTypeRegular);
       prop = Types.PROP((Types.T_LIST(t),NONE()),Types.C_VAR());
       tp_1 = Types.elabType(t);
     then (cache,Exp.LIST(tp_1,es_1),prop,st_2);
@@ -797,13 +747,13 @@ algorithm
         /* FAILTRACE REMOVE
          Debug.fprint("failtrace", "- elab_exp failed: ");
          
-         expstr = Debug.fcallret("failtrace", Dump.dumpExpStr, e, "");
+         expstr = Debug.fcallret("failtrace", Dump.printExpStr, e, "");
          Debug.fprintln("failtrace", expstr);
          
-         Debug.fprint("failtrace", "\n env : ");        
-         envstr = Debug.fcallret("failtrace", Env.printEnvStr, env, "");
-         Debug.fprintln("failtrace", envstr);
-         Debug.fprintln("failtrace", "\n----------------------- FINISHED ENV ------------------------\n");
+         //Debug.fprint("failtrace", "\n env : ");        
+         //envstr = Debug.fcallret("failtrace", Env.printEnvStr, env, "");
+         //Debug.fprintln("failtrace", envstr);
+         //Debug.fprintln("failtrace", "\n----------------------- FINISHED ENV ------------------------\n");
          */
       then
         fail();
@@ -837,24 +787,25 @@ algorithm
       Boolean impl,doVect;
       Option<Interactive.InteractiveSymbolTable> st;
       Types.Properties prop;
+      Types.Const c;
     case (cache,env,{},prop,_,st,_)
       then (cache,Exp.LIST(Exp.OTHER(),{}),prop,st);
-    case (cache,env,expList,prop as Types.PROP((Types.T_LIST(t),_),_),impl,st,doVect)
+    case (cache,env,expList,prop as Types.PROP((Types.T_LIST(t),_),c),impl,st,doVect)
       local
         list<Absyn.Exp> expList;
         list<Exp.Exp> expExpList;
         Types.Type t;
         list<Boolean> boolList;
         list<Types.Properties> propList;
-        Boolean correctTypes;
+        list<Types.Type> typeList;
         Exp.Type t2;
       equation
         (cache,expExpList,propList,st) = elabExpList(cache,env,expList,impl,st,doVect);
-        correctTypes = MetaUtil.typeMatching(t,propList);
-        true = correctTypes;
+        typeList = Util.listMap(propList, Types.getPropType);
+        (expExpList, t, _) = Types.listMatchSuperType(expExpList, typeList, {}, Types.matchTypeRegular);
         t2 = Types.elabType(t);
       then
-        (cache,Exp.LIST(t2,expExpList),prop,st);
+        (cache,Exp.LIST(t2,expExpList),Types.PROP((Types.T_LIST(t),NONE),c),st);
     case (_,_,_,_,_,_,_)
       equation
         Debug.fprint("failtrace", "- elabListExp failed, non-matching args in list constructor?");
@@ -864,48 +815,349 @@ algorithm
 end elabListExp;
 /* ------------------------------- */
 
-public function fromEquationsToAlgAssignments "function: fromEquationsToAlgAssignments
-  Converts equations to algorithm assignments"
-	input list<Absyn.EquationItem> eqsIn;
-	input list<Absyn.AlgorithmItem> accList;
-	output list<Absyn.AlgorithmItem> algsOut;
+public function fromValueblockBodyToAlgs
+  input Absyn.ValueblockBody body;
+  input Env.Cache cache;
+  input Env.Env env;
+  output list<Absyn.AlgorithmItem> outAlgs;
+  output Env.Cache outCache;
 algorithm
-	algOut :=
-	matchcontinue (eqsIn,accList)
-	  local
-	    list<Absyn.AlgorithmItem> localAccList;  
-	  case ({},localAccList) equation then localAccList;
-	  case (Absyn.EQUATIONITEM(first,_) :: rest,localAccList)      
-	  local
-	    Absyn.Equation first;
-	    list<Absyn.EquationItem> rest;
-	    Absyn.AlgorithmItem firstAlg;
-	    list<Absyn.AlgorithmItem> restAlgs;
-	  equation    
-	  	firstAlg = fromEquationToAlgAssignment(first);
-	  	localAccList = listAppend(localAccList,Util.listCreate(firstAlg));
-	  	restAlgs = fromEquationsToAlgAssignments(rest,localAccList);    
-	  then restAlgs;  
-	end matchcontinue;
+  (outAlgs,cache) := matchcontinue (body,cache,env)
+    local
+      list<Absyn.AlgorithmItem> algs1,algs2,eqAlgs,algs;
+      list<Absyn.EquationItem> eq1;
+    case (Absyn.VALUEBLOCKALGORITHMS(algs1),cache,_)
+      then (algs1,cache);
+    case (Absyn.VALUEBLOCKMATCHCASE(algs1,eq1,algs2),cache,env)
+      equation
+        (cache,eqAlgs) = fromEquationsToAlgAssignments(eq1,{},cache,env);
+        algs = listAppend(eqAlgs,algs2);
+        algs = listAppend(algs1,algs);
+      then (algs,cache);
+  end matchcontinue;
+end fromValueblockBodyToAlgs;
+
+protected function fromEquationsToAlgAssignments "function: fromEquationsToAlgAssignments
+ Converts equations to algorithm assignments.
+ Matchcontinue expressions may contain statements that you won't find
+ in a normal equation section. For instance:
+
+ case(...)
+ local
+ equation
+ 		(var1,_,MYREC(...)) = func(...);
+  	fail();
+ then 1;
+ "
+  input list<Absyn.EquationItem> eqsIn;
+  input list<Absyn.AlgorithmItem> accList;
+  input Env.Cache cache;
+  input Env.Env env;
+  output Env.Cache outCache;
+  output list<Absyn.AlgorithmItem> algsOut;
+algorithm
+  (outCache,algOut) :=
+  matchcontinue (eqsIn,accList,cache,env)
+    local
+      list<Absyn.AlgorithmItem> localAccList;
+      Env.Cache localCache;
+      Env.Env localEnv;
+    case ({},localAccList,localCache,localEnv) equation then (localCache,localAccList);
+    case (Absyn.EQUATIONITEM(first,_) :: rest,localAccList,localCache,localEnv)
+      local
+        Absyn.Equation first;
+        list<Absyn.EquationItem> rest;
+        list<Absyn.AlgorithmItem> firstAlg,restAlgs;
+      equation
+        (localCache,firstAlg) = fromEquationToAlgAssignment(first,localCache,localEnv);
+        localAccList = listAppend(localAccList,firstAlg);
+        (localCache,restAlgs) = fromEquationsToAlgAssignments(rest,localAccList,localCache,localEnv);
+      then (localCache,restAlgs);
+  end matchcontinue;
 end fromEquationsToAlgAssignments;
 
-public function fromEquationToAlgAssignment "function: fromEquationToAlgAssignment
-	 Converts an equation into an algorithm assignment"
+protected function fromEquationToAlgAssignment "function: fromEquationToAlgAssignment"
   input Absyn.Equation eq;
-  output Absyn.AlgorithmItem algStatement;
+  input Env.Cache cache;
+  input Env.Env env;
+  output Env.Cache outCache;
+  output list<Absyn.AlgorithmItem> algStatement;
 algorithm
-  algStatement :=
-  matchcontinue (eq)
-    case (Absyn.EQ_EQUALS(left,right))    
+  (outCache,algStatement) :=
+  matchcontinue (eq,cache,env)
+    local
+      Env.Cache localCache;
+      Env.Env localEnv;
+
+    case (Absyn.EQ_EQUALS(Absyn.BOOL(true),right),localCache,_)
       local
-		  Absyn.Exp left,right;
-		  Absyn.AlgorithmItem algItem;
-		equation
-		algItem = Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(left,right),NONE());  	
-		then algItem;
+        Absyn.Exp left,right;
+        list<Absyn.AlgorithmItem> algItem1,algItem2;
+      equation
+        /*
+        An equation such as ...
+
+        true = exp;
+
+        ... is transformed into ...
+
+        if (exp != true)
+        	throw();
+        	*/
+        algItem1 = {Absyn.ALGORITHMITEM(Absyn.ALG_THROW(),NONE())};
+        algItem2 = {Absyn.ALGORITHMITEM(Absyn.ALG_IF(Absyn.LUNARY(Absyn.NOT(),right),algItem1,{},{}),NONE())};
+      then (localCache,algItem2);
+
+    case (Absyn.EQ_EQUALS(Absyn.BOOL(false),right),localCache,_)
+      local
+        Absyn.Exp left,right;
+        list<Absyn.AlgorithmItem> algItem1,algItem2;
+      equation
+        algItem1 = {Absyn.ALGORITHMITEM(Absyn.ALG_THROW(),NONE())};
+        algItem2 = {Absyn.ALGORITHMITEM(Absyn.ALG_IF(right,algItem1,{},{}),NONE())};
+      then (localCache,algItem2);
+
+      // The syntax n>=0 = true; is also used
+    case (Absyn.EQ_EQUALS(left,Absyn.BOOL(true)),localCache,_)
+      local
+        Absyn.Exp left,right;
+        list<Absyn.AlgorithmItem> algItem1,algItem2;
+      equation
+        failure(Absyn.CREF(_) = left); // If lhs is a CREF, it should be an assignment
+        algItem1 = {Absyn.ALGORITHMITEM(Absyn.ALG_THROW(),NONE())};
+        algItem2 = {Absyn.ALGORITHMITEM(Absyn.ALG_IF(Absyn.LUNARY(Absyn.NOT(),left),algItem1,{},{}),NONE())};
+      then (localCache,algItem2);
+
+    case (Absyn.EQ_EQUALS(left,Absyn.BOOL(false)),localCache,_)
+      local
+        Absyn.Exp left,right;
+        list<Absyn.AlgorithmItem> algItem1,algItem2;
+      equation
+        failure(Absyn.CREF(_) = left); // If lhs is a CREF, it should be an assignment
+        algItem1 = {Absyn.ALGORITHMITEM(Absyn.ALG_THROW(),NONE())};
+        algItem2 = {Absyn.ALGORITHMITEM(Absyn.ALG_IF(left,algItem1,{},{}),NONE())};
+      then (localCache,algItem2);
+
+    case (Absyn.EQ_NORETCALL(Absyn.CREF_IDENT("fail",_),_),localCache,_)
+      local
+        list<Absyn.AlgorithmItem> algItem;
+      equation
+        algItem = {Absyn.ALGORITHMITEM(Absyn.ALG_THROW(),NONE())};
+      then (localCache,algItem);
+    
+    case (Absyn.EQ_NORETCALL(cref,fargs),localCache,_)
+      local
+        list<Absyn.AlgorithmItem> algItem;
+        Absyn.ComponentRef cref;
+        Absyn.FunctionArgs fargs;
+      equation
+        algItem = {Absyn.ALGORITHMITEM(Absyn.ALG_NORETCALL(cref,fargs),NONE())};
+      then (localCache,algItem);
+
+      /*
+      If we have an equation of the form (exp1,exp2,...,expN) = func(...),
+      we may have to transform it into a matchcontinue statement,
+      since the expressions should be "matched" against the return
+      values of the function */
+    case (Absyn.EQ_EQUALS(e,rhsExp),localCache,localEnv)
+      local
+        list<Absyn.Exp> expL,varList;
+        Absyn.Exp rhsExp,matchExp,e;
+        Absyn.ComponentRef cRef;
+        Absyn.Path p;
+        list<Absyn.AlgorithmItem> algItem,algItem2;
+        SCode.Element cl;
+        SCode.Class class_;
+        list<Absyn.ElementItem> elemList;
+        SCode.Class cl1;
+        Absyn.Exp lhsExp;
+        Types.Type ty, resType;
+        Types.Properties prop;
+      equation
+        // If we have a statement such as: ((a,b)) = func(...); this
+        // is not the same as (a,b) = func(...);
+        expL = extractListFromTuple(e,0);
+        false = onlyCrefExpressions(expL);
+
+      /*
+      _ :=
+      valueblock(
+      var1,...,varN;
+
+      (var1,...,varN) := func(...);
+      _ :=
+      valueblock(
+
+
+      )
+
+      */
+        // Builtin functions like listGet are polymorphic and need to be elaborated if we want
+        // to know what types the components should have.
+        // We also need to elaborate crefs in order to determine what type it has.
+        (localCache, _, prop, _) = elabExp(localCache, env, rhsExp, true, NONE, true);
+        ty = Util.if_(isTupleExp(rhsExp),MetaUtil.fixMetaTuple(prop),Types.getPropType(prop));
+        (elemList,varList) = extractOutputVarsType({ty},1,{},{});        
+
+        matchExp =
+        Absyn.MATCHEXP(Absyn.MATCHCONTINUE(),Absyn.TUPLE(varList),{},
+          Absyn.CASE(e,{},{},Absyn.TUPLE({}),NONE()) :: {},NONE());
+
+        lhsExp = createLhsExp(varList);
+
+        algItem2 = {Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(lhsExp,rhsExp),NONE()),
+          Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(Absyn.CREF(Absyn.WILD),matchExp),NONE())};
+
+        algItem = {Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(Absyn.CREF(Absyn.WILD),
+          Absyn.VALUEBLOCK(elemList,Absyn.VALUEBLOCKALGORITHMS(algItem2),Absyn.BOOL(true))),NONE())};
+
+      then (localCache,algItem);
+      /*---------------------------------------*/
+
+    case (Absyn.EQ_EQUALS(left,right),localCache,_)
+      local
+        Absyn.Exp left,right;
+        list<Absyn.AlgorithmItem> algItem;
+      equation
+        algItem = {Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(left,right),NONE())};
+      then (localCache,algItem);
+    
+    case (Absyn.EQ_FAILURE(Absyn.EQUATIONITEM(eq2,_)),cache,env)
+      local
+        Absyn.Equation eq2;
+        Absyn.AlgorithmItem brk,try,catchBreak,res,throw;
+        list<Absyn.AlgorithmItem> algItem;
+      equation
+        (cache,algItem) = fromEquationToAlgAssignment(eq2,cache,env);
+        try = Absyn.ALGORITHMITEM(Absyn.ALG_TRY(algItem),NONE);
+        brk = Absyn.ALGORITHMITEM(Absyn.ALG_BREAK(),NONE);
+        throw = Absyn.ALGORITHMITEM(Absyn.ALG_THROW(),NONE);
+        catchBreak = Absyn.ALGORITHMITEM(Absyn.ALG_CATCH({brk}),NONE);
+        res = Absyn.ALGORITHMITEM(Absyn.ALG_WHILE(Absyn.BOOL(true), {try,catchBreak,throw}),NONE);
+      then (cache,{res});
+    case (_,_,_)
+      equation
+        Debug.fprintln("matchcase", "Patternm.fromEquationToAlgAssignment failed");
+      then fail();
   end matchcontinue;
 end fromEquationToAlgAssignment;
 
+protected function extractListFromTuple "function: extractListFromTuple
+	author: KS
+ Given an Absyn.Exp, this function will extract the list of expressions if the
+ expression is a tuple, otherwise a list of length one is created"
+  input Absyn.Exp inExp;
+  input Integer numOfExps;
+  output list<Absyn.Exp> outList;
+algorithm
+  outList :=
+  matchcontinue (inExp,numOfExps)
+    case(Absyn.TUPLE(l),1)
+      local
+        list<Absyn.Exp> l;
+      equation
+      then {Absyn.TUPLE(l)};
+    case(Absyn.TUPLE(l),_)
+      local
+        list<Absyn.Exp> l;
+      equation
+      then l;
+    case(exp,_)
+      local
+        Absyn.Exp exp;
+      equation
+      then {exp};
+  end matchcontinue;
+end extractListFromTuple;
+
+protected function isTupleExp
+  input Absyn.Exp inExp;
+  output Boolean b;
+algorithm
+  b := matchcontinue (inExp)
+    case Absyn.TUPLE(_) then true;
+    case _ then false;
+  end matchcontinue;
+end isTupleExp;
+
+protected function onlyCrefExpressions "function: onlyCrefExpressions"
+  input list<Absyn.Exp> expList;
+  output Boolean boolVal;
+algorithm
+  boolVal :=
+  matchcontinue (expList)
+    case ({})
+      then true;
+    case (Absyn.CREF(Absyn.WILD()) :: _) then false;
+    case (Absyn.CREF(_) :: restList)
+      local
+        list<Absyn.Exp> restList;
+        Boolean b;
+      equation
+        b = onlyCrefExpressions(restList);
+      then b;
+    case (_) then false;
+  end matchcontinue;
+end onlyCrefExpressions;
+
+protected function createLhsExp "function: createLhsExp"
+  input list<Absyn.Exp> inList;
+  output Absyn.Exp outExp;
+algorithm
+  outExp :=
+  matchcontinue (inList)
+    case (firstExp :: {}) local Absyn.Exp firstExp; equation then firstExp;
+    case (lst) local list<Absyn.Exp> lst; equation then Absyn.TUPLE(lst);
+  end matchcontinue;
+end createLhsExp;
+
+protected function extractOutputVarsType 
+  input list<Types.Type> inList;
+  input Integer cnt;
+  input list<Absyn.ElementItem> accList1;
+  input list<Absyn.Exp> accList2;
+  output list<Absyn.ElementItem> outList1;
+  output list<Absyn.Exp> outList2;
+algorithm
+  (outList1,outList2) := matchcontinue (inList,cnt,accList1,accList2)
+    local
+      list<Absyn.ElementItem> localAccList1;
+      list<Types.Type> rest;
+      list<Absyn.Exp> localAccList2;
+      Integer localCnt;
+    case ({},localCnt,localAccList1,localAccList2)
+      then (localAccList1,localAccList2);
+    case ({(Types.T_TUPLE(rest),_)},1,{},{})
+      equation
+        (localAccList1,localAccList2) = extractOutputVarsType(rest,1,{},{});
+      then (localAccList1,localAccList2);
+    case (ty :: rest, localCnt,localAccList1,localAccList2)
+      local
+        Types.Type ty;
+        Absyn.TypeSpec tSpec;
+        Absyn.Ident n1,n2;
+        Absyn.ElementItem elem1;
+        Absyn.Exp elem2;
+      equation
+        tSpec = MetaUtil.typeConvert(ty);
+        n1 = "var";
+        n2 = stringAppend(n1,intString(localCnt));
+        elem1 = Absyn.ELEMENTITEM(Absyn.ELEMENT(
+          false,NONE(),Absyn.UNSPECIFIED(),"component",
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
+            tSpec,{Absyn.COMPONENTITEM(Absyn.COMPONENT(n2,{},NONE()),NONE(),NONE())}),
+            Absyn.INFO("f",false,0,0,0,0,Absyn.dummyTimeStamp),NONE()));
+        elem2 = Absyn.CREF(Absyn.CREF_IDENT(n2,{}));
+        localAccList1 = listAppend(localAccList1,{elem1});
+        localAccList2 = listAppend(localAccList2,{elem2});
+        (localAccList1,localAccList2) = extractOutputVarsType(rest,localCnt+1,localAccList1,localAccList2);
+      then (localAccList1,localAccList2);
+    case (_,_,_,_)
+      equation
+        Debug.fprintln("failtrace", "- Patternm.extractOutputVarsType failed");
+      then fail();
+  end matchcontinue;
+end extractOutputVarsType;
 
 protected function elabMatrixGetDimensions "function: elabMatrixGetDimensions
  
@@ -1579,6 +1831,250 @@ algorithm
   end matchcontinue;
 end elabTuple;
 
+// stefan
+// partially evaluted functions
+/*protected function elabPartEvalFunction
+"function: elabPartEvalFunction
+	This function elaborates partially evaluated functions.
+	Turns an Absyn.PARTEVALFUNCTION into an Exp.CREF pointing to the new class"
+	input Env.Cache inCache;
+	input Env.Env inEnv;
+	input Absyn.Exp inExp;
+	input Option<Interactive.InteractiveSymbolTable> inInteractiveSymbolTableOption;
+	input Boolean inBoolean;
+	input Boolean performVectorization;
+	output Env.Cache outCache;
+	output Exp.Exp outExp;
+	output Types.Properties outProperties;
+	output Option<Interactive.InteractiveSymbolTable> outInteractiveSymbolTableOption;
+algorithm
+  (outCache,outExp,outProperties,outInteractiveSymbolTableOption) :=
+  matchcontinue (inCache,inEnv,inExp,inInteractiveSymbolTableOption,inBoolean,performVectorization)
+    local
+      Env.Cache c;
+      Env.Env env;
+      Absyn.Exp ae;
+      Option<Interactive.InteractiveSymbolTable> st;
+      Boolean impl,pv;
+      Absyn.ComponentRef cref,cref_1;
+      Absyn.FunctionArgs fargs;
+    case(c,env,Absyn.PARTEVALFUNCTION(cref,fargs),st,impl,pv)
+      local
+        Exp.Exp e;
+        Types.Properties prop;
+        String s,s2,s_1,debug;
+        Absyn.Path p;
+      equation
+        s = Absyn.printComponentRefStr(cref);
+        s2 = MetaUtil.generateFuncNameSuffix(fargs);
+        s_1 = stringAppend(s,s2);
+        p = Absyn.makeIdentPathFromString(s_1);
+        cref_1 = Absyn.pathToCref(p);
+        debug = Env.printCacheStr(c);
+        print(debug);
+        (c,e,prop,_) = elabCref(c,env,cref_1,impl,pv);
+      then
+        (c,e,prop,st);
+  end matchcontinue;
+end elabPartEvalFunction;*/
+/*
+	input Env.Cache inCache;
+  input Env.Env inEnv;
+  input Absyn.ComponentRef inComponentRef;
+  input Boolean inBoolean "implicit instantiation";
+  input Boolean performVectorization "true => generates vectorized expressions, {v[1],v[2],...}";
+  output Env.Cache outCache;
+  output Exp.Exp outExp;
+  output Types.Properties outProperties;
+  output SCode.Accessibility outAccessibility;
+*/
+// stefan
+// partially evaluated functions
+/*protected function elabPartEvalFunction "function: elabPartEvalFunction
+
+  This function elaborates partially evaluated functions.
+  
+  It adds a new function to the environment each time one is passed as an argument"
+  
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input Absyn.Exp inAbsynExp;
+  input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Boolean inBoolean;
+  input Boolean performVectorization;
+  output Env.Cache outCache;
+  output Exp.Exp outExp;
+  output Types.Properties outProperties;
+  output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
+algorithm
+  (outCache,outExp,outProperties,outInteractiveSymbolTableOption) := 
+  matchcontinue (inCache,inEnv,inAbsynExp,inInteractiveInteractiveSymbolTableOption,inBoolean,performVectorization)
+    local
+      Env.Cache c;
+      Env.Env env,env_1;
+      Absyn.Exp e1;
+      Option<Interactive.InteractiveSymbolTable> st,st_1;
+      Absyn.FunctionArgs fargs;
+      Absyn.ComponentRef cref,cref_1;
+      Types.Properties prop;
+      Boolean ib,pv;
+      
+      //fargs = FUNCTIONARGS(args=e_args,argNames=names)
+    case(c,env,Absyn.PARTEVALFUNCTION(function_=cref,functionArgs=fargs),st,ib,pv)
+      local
+        Exp.Exp e;
+        Absyn.Path p,p_1;
+        String s1,s2,s3;
+        list<Absyn.ComponentRef> creflist;
+        list<String> argNameList;
+        SCode.Class cl;
+        list<Exp.Exp> elabArgList;
+        //Env.Env ie;
+      equation
+        // 
+        // TODO: Rethink the way new function names are generated!
+        //print("\nSTEFAN DEBUG\n");
+        p = Absyn.crefToPath(cref);
+        s1 = Absyn.pathString(p);
+        (c,cl,env_1) = Lookup.lookupClass(c,env,p,true);
+        cl = SCode.setComponentsToFuncArgs(cl,fargs);
+        (c,elabArgList,argNameList,st) = elabPartEvalFuncArgs(c,env,fargs,ib,st,pv);
+        s2 = generateFuncNameSuffix(argNameList,elabArgList);
+        s3 = stringAppend(s1,s2);
+        p_1 = Absyn.makeIdentPathFromString(s3);
+        cref_1 = Absyn.pathToCref(p_1);
+        cl = SCode.renameClass(s3,cl);
+        cl = SCode.parametrizeInputs(cl);
+        //env = Env.openScope(env,ib,SOME(s3));
+        //ie = Env.getCachedInitialEnv(c);
+        env = Env.extendFrameC(env_1,cl);
+        c = Env.cacheAdd(p_1,c,env);
+        //env = Env.updateEnvClasses(ie,env);
+        //c = Env.setCachedInitialEnv(c,env);
+        c = Env.addPathToCachePathList(p_1,c);
+        st_1 = Interactive.addClassToSymbolTable(cl,st);
+        //(e_args,n_args) = Absyn.extractArgs(fargs);
+        //(c,_,prop) = elabCallArgs(c,env,p_1,e_args,n_args,ib,st);
+        (c,e,prop,_) = elabCref(c,env,cref_1,ib,pv);
+        prop = Types.makePropsNotConst(prop);
+        //e = Exp.CREF(cref_1, Exp.T_FUNCTION_REFERENCE);
+      then
+        (c,e,prop,st_1);
+  end matchcontinue;
+end elabPartEvalFunction;*/
+
+// stefan
+protected function elabPartEvalFuncArgs
+"function: elabPartEvalFuncArgs
+	Helper function to elabPartEvalFunction
+	elaborates the arguments and performs constant evaluation where appropriate
+	Also gets the names of the named arguments"
+	input Env.Cache inCache;
+	input Env.Env inEnv;
+	input Absyn.FunctionArgs inAbsynFunctionArgs;
+	input Boolean inBoolean;
+	input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
+	input Boolean performVectorization;
+	output Env.Cache outCache;
+	output list<Exp.Exp> outExpExpList;
+	output list<String> outStringList;
+	output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
+	
+algorithm
+  (outCache,outExpExpList,outStringList,outInteractiveInteractiveSymbolTableOption) := 
+  matchcontinue (inCache,inEnv,inAbsynFunctionArgs,inBoolean,inInteractiveInteractiveSymbolTableOption,performVectorization)
+    local
+      Env.Cache c;
+      Env.Env env;
+      list<Absyn.NamedArg> n_args;
+      list<Absyn.Exp> e_args;
+      Boolean impl,doVect;
+      Option<Interactive.InteractiveSymbolTable> st;
+      
+    case (c,env,Absyn.FUNCTIONARGS(args=e_args,argNames=n_args),impl,st,doVect)
+      local
+        list<String> slst;
+        list<Absyn.Exp> elst,elst_1;
+        list<Exp.Exp> elabelst;
+        list<Types.Properties> plst;
+        list<Types.Const> clst;
+      equation
+        (slst,elst) = Absyn.getNamedFuncArgNamesAndValues(n_args);
+        elst_1 = listAppend(elst,e_args);
+        (c,elabelst,plst,st) = elabExpList(c,env,elst_1,impl,st,doVect);
+        clst = Types.getConstList(plst);
+        (c,elabelst,plst) = cevalExpListIfConstant(c,elabelst,plst,clst,impl,env);
+      then
+        (c,elabelst,slst,st);
+          
+  end matchcontinue;
+end elabPartEvalFuncArgs;
+
+// stefan
+protected function cevalExpListIfConstant
+"function: cevalExpListIfConstant
+	applies cevalIfConstant to a list of Exp.Exp"
+	input Env.Cache inCache;
+	input list<Exp.Exp> inExpList;
+	input list<Types.Properties> inPropertiesList;
+	input list<Types.Const> inConstList;
+	input Boolean inBoolean;
+	input Env.Env inEnv;
+	output Env.Cache outCache;
+	output list<Exp.Exp> outExpList;
+	output list<Types.Properties> outPropertiesList;
+algorithm
+  (outCache,outExpList,outPropertiesList) := 
+  matchcontinue(inCache,inExpList,inPropertiesList,inConstList,inBoolean,inEnv)
+    local
+      Env.Cache c;
+      list<Exp.Exp> ecdr;
+      list<Types.Properties> pcdr;
+      list<Types.Const> ccdr;
+      Boolean impl;
+      Env.Env env;
+      Exp.Exp e,e_1;
+      Types.Properties prop,prop_1;
+      Types.Const const;
+    case (c,{},{},{},impl,env) then (c,{},{});
+    case (c,e :: ecdr,prop :: pcdr, const :: ccdr,impl,env)
+      equation
+        (c,e_1,prop_1) = cevalIfConstant(c,e,prop,const,impl,env);
+        (c,ecdr,pcdr) = cevalExpListIfConstant(c,ecdr,pcdr,ccdr,impl,env);
+      then
+        (c, e_1 :: ecdr, prop_1 :: pcdr);
+  end matchcontinue;
+end cevalExpListIfConstant;
+
+// stefan
+// Use MetaUtil.generateFuncNameSuffix instead
+// Pass the unelaborated arguments to it as parameters
+/*protected function generateFuncNameSuffix
+"function: generateFuncNameSuffix
+	Generates a unique function name using the arg names and their values"
+	input list<String> inStringList;
+	input list<Exp.Exp> inExpExpList;
+	output String outString;
+algorithm
+  outString := matchcontinue (inStringList,inExpExpList)
+    local
+      String s;
+      list<String> scdr;
+      Exp.Exp e;
+      list<Exp.Exp> ecdr;
+    case ({},ecdr) then Exp.printExpListStrNoSpace(ecdr);
+    case (s :: scdr, e :: ecdr)
+      local
+        String s1,s2,s3;
+      equation
+        s1 = Exp.printExpStr(e);
+        s2 = stringAppend(s,s1);
+        s3 = generateFuncNameSuffix(scdr,ecdr);
+      then
+        stringAppend(s2,s3);
+  end matchcontinue;
+end generateFuncNameSuffix;*/
+
 protected function elabArray "function: elabArray 
  
   This function elaborates on array expressions.
@@ -1843,7 +2339,7 @@ algorithm
         ((e :: res),res_type);
     case ((e :: es),(t :: ts),to_type) /* type conversion */ 
       equation       
-        (e_1,res_type) = Types.typeConvert(e, t, to_type);         
+        (e_1,res_type) = Types.matchType(e, t, to_type);         
         (res,_) = elabArrayReal2(es, ts, to_type);
       then
         ((e_1 :: res),res_type);
@@ -1925,6 +2421,10 @@ algorithm
         fail();
     case (cache,_,expl,_,_,_)
       equation 
+        // We can't use this failtrace when elaborating lists since they may
+        // contain types that are not equivalent. This only happens when
+        // using MetaModelica grammar.
+        false = RTOpts.acceptMetaModelicaGrammar();
         Debug.fprint("failtrace", "elab_array failed\n");
       then
         fail();
@@ -3222,6 +3722,318 @@ algorithm
 
   end matchcontinue;
 end elabBuiltinPre2;
+
+protected function elabBuiltinMMCGetField "Fetches fields from a boxed datatype:
+Tuple: (a,b,c),2 => b
+Option: SOME(x),1 => x
+Metarecord: ut,0,\"field\" => ut[0].field - (first record in the record list of the uniontype - the field with the specified name)...
+"
+	input Env.Cache inCache;
+  input Env.Env inEnv;
+  input list<Absyn.Exp> inAbsynExpLst;
+  input list<Absyn.NamedArg> inNamedArg;  
+  input Boolean inBoolean;
+  output Env.Cache outCache;
+  output Exp.Exp outExp;
+  output Types.Properties outProperties;
+algorithm
+  (outCache,outExp,outProperties):=
+  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
+    local
+      Exp.Exp s1_1;
+      Exp.Type tp;
+      Types.Const c;
+      list<Env.Frame> env;
+      Absyn.Exp s1,s2;
+      Boolean impl;
+      Types.Type ty;
+      Env.Cache cache;
+      Types.Properties prop;
+      Types.Const c;
+      list<Exp.Exp> expList;
+      list<Types.Type> tys;
+      Integer i;
+    case (cache,env,{s1,Absyn.INTEGER(i)},{},impl) /* Tuple */ 
+      equation
+        (cache,s1_1,Types.PROP((Types.T_METATUPLE(tys),_),c),_) = elabExp(cache, env, s1, impl, NONE, true);
+        ty = listNth(tys,i-1);
+        tp = Types.elabType(ty);
+        s1_1 = Exp.CALL(Absyn.IDENT("mmc_get_field"), {s1_1, Exp.ICONST(i)}, false, true, tp);
+        ty = Util.if_(Types.isBoxedType(ty), ty, (Types.T_BOXED(ty),NONE));
+      then
+        (cache,s1_1,Types.PROP(ty,c));
+    case (cache,env,{s1,Absyn.INTEGER(1)},{},impl) /* Option */ 
+      equation
+        (cache,s1_1,Types.PROP((Types.T_METAOPTION(ty),_),c),_) = elabExp(cache, env, s1, impl, NONE, true);
+        tp = Types.elabType(ty);
+        s1_1 = Exp.CALL(Absyn.IDENT("mmc_get_field"), {s1_1, Exp.ICONST(1)}, false, true, tp);
+        ty = Util.if_(Types.isBoxedType(ty), ty, (Types.T_BOXED(ty),NONE));
+      then
+        (cache,s1_1,Types.PROP(ty,c));    
+    case (cache,env,{s1,Absyn.CREF(cref),Absyn.STRING(fieldName)},{},impl) /* Uniontype */ 
+      local
+        String fieldName, str, utStr;
+        Absyn.Path p, p2;
+        list<Types.Var> fields;
+        Types.Var var;
+        Integer fieldNum;
+        Absyn.ComponentRef cref;
+      equation
+        (cache,s1_1,Types.PROP((Types.T_UNIONTYPE(_),SOME(p)),c),_) = elabExp(cache, env, s1, impl, NONE, true);
+        p2 = Absyn.crefToPath(cref);
+        (cache,(Types.T_METARECORD(fields = fields),_),env) = Lookup.lookupType(cache,env,p2,true);
+        (var as Types.VAR(type_ = ty)) = Types.varlistLookup(fields, fieldName);        
+        fieldNum = Util.listPosition(var, fields)+2;
+        tp = Types.elabType(ty);
+        s1_1 = Exp.CALL(Absyn.IDENT("mmc_get_field"), {s1_1, Exp.ICONST(fieldNum)}, false, true, tp);
+        ty = Util.if_(Types.isBoxedType(ty), ty, (Types.T_BOXED(ty),NONE));
+      then
+        (cache,s1_1,Types.PROP(ty,c));
+    case (_,_,_,_,_)
+      equation
+        Debug.fprintln("failtrace", "- elabBuiltinMMCGetField failed");
+      then fail();
+  end matchcontinue;
+end elabBuiltinMMCGetField;
+
+protected function elabBuiltinIfExp "cond,x,y => if cond then x else y"
+	input Env.Cache inCache;
+  input Env.Env inEnv;
+  input list<Absyn.Exp> inAbsynExpLst;
+  input list<Absyn.NamedArg> inNamedArg;  
+  input Boolean inBoolean;
+  output Env.Cache outCache;
+  output Exp.Exp outExp;
+  output Types.Properties outProperties;
+algorithm
+  (outCache,outExp,outProperties):=
+  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
+    local
+      Exp.Exp s0_1,s1_1,s2_1;
+      Exp.Type tp;
+      Types.Const c;
+      list<Env.Frame> env;
+      Absyn.Exp s0,s1,s2;
+      Boolean impl;
+      Types.Type ty,t1,t2;
+      Env.Cache cache;
+      Types.Properties prop1,prop2;
+      Types.Const c1,c2,c0;
+      list<Exp.Exp> expList;
+      list<Types.Type> tys;
+      Integer i;
+    case (cache,env,{s0,s1,s2},{},impl)
+      equation
+        (cache,s0_1,Types.PROP((Types.T_BOOL(_),_),c0),_) = elabExp(cache, env, s0, impl, NONE, true);
+        (cache,s1_1,prop1,_) = elabExp(cache, env, s1, impl, NONE, impl);
+        (cache,s2_1,prop2,_) = elabExp(cache, env, s2, impl, NONE, impl);
+        t1 = Types.getPropType(prop1);
+        t2 = Types.getPropType(prop2);
+        (s1_1,t1) = Types.matchType(s1_1, t1, (Types.T_BOXED((Types.T_NOTYPE,NONE)),NONE));
+        (s2_1,t2) = Types.matchType(s2_1, t2, (Types.T_BOXED((Types.T_NOTYPE,NONE)),NONE));
+        t1 = Types.unboxedType(t1);
+        t2 = Types.unboxedType(t2);
+        ty = Types.superType(t1, t2);
+        tp = Types.elabType(ty);
+        ty = if_exp(Types.isBoxedType(ty), ty, (Types.T_BOXED(ty),NONE));
+        c1 = Types.propAllConst(prop1);
+        c2 = Types.propAllConst(prop2);
+        c = Types.constAnd(c1,c2);
+        c = Types.constAnd(c,c0);
+        s1_1 = Exp.CALL(Absyn.IDENT("if_exp"), {s0_1,s1_1,s2_1}, false, true, tp);
+      then
+        (cache,s1_1,Types.PROP(ty,c));
+    case (_,_,_,_,_)
+      equation
+        Debug.fprintln("failtrace", "- elabBuiltinIfExp failed");
+      then fail();
+  end matchcontinue;
+end elabBuiltinIfExp;
+
+protected function elabBuiltinMMC_Uniontype_MetaRecord_Typedefs_Equal "mmc_uniontype_metarecord_typedef_equal(x,1,REC1) => bool"
+	input Env.Cache inCache;
+  input Env.Env inEnv;
+  input list<Absyn.Exp> inAbsynExpLst;
+  input list<Absyn.NamedArg> inNamedArg;  
+  input Boolean inBoolean;
+  output Env.Cache outCache;
+  output Exp.Exp outExp;
+  output Types.Properties outProperties;
+algorithm
+  (outCache,outExp,outProperties):=
+  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
+    local
+      String s;
+      Exp.Exp s1_1;
+      Types.Const c;
+      list<Env.Frame> env;
+      Absyn.Exp s1;
+      Boolean impl;
+      Types.Type ty;
+      Env.Cache cache;
+      Types.Const c;
+      list<Exp.Exp> expList;
+      Integer i,numFields;
+    case (cache,env,{s1,Absyn.INTEGER(i),Absyn.INTEGER(numFields),Absyn.STRING(s)},{},impl)
+      equation
+        (cache,s1_1,Types.PROP((Types.T_UNIONTYPE(_),_),c),_) = elabExp(cache, env, s1, impl, NONE, true);
+        expList = {s1_1, Exp.ICONST(i), Exp.ICONST(numFields), Exp.SCONST(s)};
+        s1_1 = Exp.CALL(Absyn.IDENT("mmc_uniontype_metarecord_typedef_equal"), expList, false, true, Exp.BOOL);
+      then
+        (cache,s1_1,Types.PROP((Types.T_BOOL({}),NONE),c));
+    case (_,_,_,_,_)
+      equation
+        Debug.fprintln("failtrace", "- elabBuiltinMMC_Uniontype_MetaRecord_Typedefs_Equal failed");
+      then fail();
+  end matchcontinue;
+end elabBuiltinMMC_Uniontype_MetaRecord_Typedefs_Equal;
+
+protected function elabBuiltinArrayHelper "Deoverloads the function call - each type has its own C function"
+  input String baseNamePre;
+  input Types.Type ty;
+  input String baseNamePost;
+  output String out;
+algorithm
+  out := matchcontinue (baseNamePre,ty,baseNamePost)
+    local
+      String tyStr;
+    case (baseNamePre, (Types.T_INTEGER(_),_), baseNamePost)
+      then baseNamePre +& "Integer" +& baseNamePost;
+    case (baseNamePre, (Types.T_REAL(_),_), baseNamePost)
+      then baseNamePre +& "Real" +& baseNamePost;
+    case (baseNamePre, (Types.T_BOOL(_),_), baseNamePost)
+      then baseNamePre +& "Boolean" +& baseNamePost;
+    case (baseNamePre, (Types.T_STRING(_),_), baseNamePost)
+      then baseNamePre +& "String" +& baseNamePost;
+    case (_, ty, _)
+      equation
+        tyStr = Types.unparseType(ty);
+        Debug.fprintln("failtrace", "- Static.elabBuiltinArrayHelper failed for type " +& tyStr);
+      then fail();
+  end matchcontinue;
+end elabBuiltinArrayHelper;
+
+protected function elabBuiltinArrayGet "{x,y,z},1 => x"
+	input Env.Cache inCache;
+  input Env.Env inEnv;
+  input list<Absyn.Exp> inAbsynExpLst;
+  input list<Absyn.NamedArg> inNamedArg;  
+  input Boolean inBoolean;
+  output Env.Cache outCache;
+  output Exp.Exp outExp;
+  output Types.Properties outProperties;
+algorithm
+  (outCache,outExp,outProperties):=
+  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
+    local
+      Exp.Exp s1_1, s2_1;
+      Exp.Type tp;
+      Types.Const c;
+      list<Env.Frame> env;
+      Absyn.Exp s1,s2,s;
+      Boolean impl;
+      Types.Type ty;
+      Env.Cache cache;
+      Types.Properties prop;
+      Types.Const c, c1, c2;
+      list<Exp.Exp> expList;
+      String fnName;
+    case (cache,env,{s1, s2},{},impl)
+      equation
+        (cache,_,Types.PROP((Types.T_ARRAY(_,ty),_),_),_) = elabExp(cache, env, s1, impl, NONE, true);
+        fnName = elabBuiltinArrayHelper("array",ty,"Get");
+        s = Absyn.CALL(Absyn.CREF_IDENT(fnName, {}), Absyn.FUNCTIONARGS({s1,s2},{}));
+        (cache,s1_1,prop,_) = elabExp(cache, env, s, impl, NONE, true);
+      then
+        (cache,s1_1,prop);
+    
+    case (_,_,_,_,_)
+      equation
+        Debug.fprintln("failtrace", "- elabBuiltinArrayGet failed");
+      then fail();
+  end matchcontinue;
+end elabBuiltinArrayGet;
+
+protected function elabBuiltinArrayCreate "5,x => {x,x,x,x,x}"
+	input Env.Cache inCache;
+  input Env.Env inEnv;
+  input list<Absyn.Exp> inAbsynExpLst;
+  input list<Absyn.NamedArg> inNamedArg;  
+  input Boolean inBoolean;
+  output Env.Cache outCache;
+  output Exp.Exp outExp;
+  output Types.Properties outProperties;
+algorithm
+  (outCache,outExp,outProperties):=
+  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
+    local
+      Exp.Exp s1_1, s2_1;
+      Exp.Type tp;
+      Types.Const c;
+      list<Env.Frame> env;
+      Absyn.Exp s1,s2,s;
+      Boolean impl;
+      Types.Type ty;
+      Env.Cache cache;
+      Types.Properties prop;
+      Types.Const c, c1, c2;
+      list<Exp.Exp> expList;
+      String fnName;
+    case (cache,env,{s1, s2},{},impl)
+      equation
+        (cache,_,prop,_) = elabExp(cache, env, s2, impl, NONE, true);
+        ty = Types.getPropType(prop);
+        fnName = elabBuiltinArrayHelper("array",ty,"Create");
+        s = Absyn.CALL(Absyn.CREF_IDENT(fnName, {}), Absyn.FUNCTIONARGS({s1,s2},{}));
+        (cache,s1_1,prop,_) = elabExp(cache, env, s, impl, NONE, true);
+      then
+        (cache,s1_1,prop);
+    
+    case (_,_,_,_,_)
+      equation
+        Debug.fprintln("failtrace", "- elabBuiltinArrayCreate failed");
+      then fail();
+  end matchcontinue;
+end elabBuiltinArrayCreate;
+
+protected function elabBuiltinClock " => x"
+	input Env.Cache inCache;
+  input Env.Env inEnv;
+  input list<Absyn.Exp> inAbsynExpLst;
+  input list<Absyn.NamedArg> inNamedArg;  
+  input Boolean inBoolean;
+  output Env.Cache outCache;
+  output Exp.Exp outExp;
+  output Types.Properties outProperties;
+algorithm
+  (outCache,outExp,outProperties):=
+  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
+    local
+      Exp.Exp s1_1, s2_1;
+      Exp.Type tp;
+      Types.Const c;
+      list<Env.Frame> env;
+      Absyn.Exp s1,s2,s;
+      Boolean impl;
+      Types.Type ty;
+      Env.Cache cache;
+      Types.Properties prop;
+      Types.Const c, c1, c2;
+      list<Exp.Exp> expList;
+      String fnName;
+    case (cache,env,{},{},impl)
+      equation
+        s = Absyn.CALL(Absyn.CREF_IDENT("mmc_clock", {}), Absyn.FUNCTIONARGS({},{}));
+        (cache,s1_1,prop,_) = elabExp(cache, env, s, impl, NONE, true);
+      then
+        (cache,s1_1,prop);
+    
+    case (_,_,_,_,_)
+      equation
+        Debug.fprintln("failtrace", "- elabBuiltinClock failed");
+      then fail();
+  end matchcontinue;
+end elabBuiltinClock;
 
 protected function makePreLst 
 "function: makePreLst
@@ -5111,8 +5923,8 @@ algorithm
         slots = {SLOT(("x",tp),false,NONE,{}),
         				 SLOT(("minimumLength",(Types.T_INTEGER({}),NONE)),false,SOME(Exp.ICONST(0)),{}),
         				 SLOT(("leftJustified",(Types.T_BOOL({}),NONE)),false,SOME(Exp.BCONST(true)),{}),
-        				 SLOT(("significantDigits",(Types.T_INTEGER({}),NONE)),false,SOME(Exp.ICONST(6)),{})};        				 
-        (cache,args_1,newslots,constlist) = elabInputArgs(cache,env, args, nargs, slots, true/*checkTypes*/ ,impl);
+        				 SLOT(("significantDigits",(Types.T_INTEGER({}),NONE)),false,SOME(Exp.ICONST(6)),{})};
+        (cache,args_1,newslots,constlist,_) = elabInputArgs(cache,env, args, nargs, slots, true/*checkTypes*/ ,impl, {});
         c = Util.listReduce(constlist, Types.constAnd);         
       then
 				(cache, 
@@ -5492,6 +6304,12 @@ algorithm
     case "String" then elabBuiltinString;
     case "rooted" then elabBuiltinRooted;
     case "linspace" then elabBuiltinLinspace;
+    case "mmc_get_field" equation true = RTOpts.acceptMetaModelicaGrammar(); then elabBuiltinMMCGetField;
+    case "mmc_uniontype_metarecord_typedef_equal" equation true = RTOpts.acceptMetaModelicaGrammar(); then elabBuiltinMMC_Uniontype_MetaRecord_Typedefs_Equal;
+    case "if_exp" equation true = RTOpts.acceptMetaModelicaGrammar(); then elabBuiltinIfExp;
+    case "arrayGet" equation true = RTOpts.acceptMetaModelicaGrammar(); then elabBuiltinArrayGet;
+    case "arrayCreate" equation true = RTOpts.acceptMetaModelicaGrammar(); then elabBuiltinArrayCreate;
+    case "clock" equation true = RTOpts.acceptMetaModelicaGrammar(); then elabBuiltinClock;
   end matchcontinue;
 end elabBuiltinHandler;
 
@@ -5643,6 +6461,25 @@ algorithm
       Ident fnstr,argstr;
       list<Ident> argstrs;
       Env.Cache cache;
+    
+    case (cache,env,fn,args,nargs,impl,st) "Fixes record constructors in packages requiring
+    dot-notation (even in the same package) by looking up the record and replacing the path
+    with the dotted notation. // sjoelund 2009-05-07"
+      local Absyn.Path ep; list<Env.Frame> env_1; Absyn.ComponentRef fn_2; String lastId; SCode.Class cl; Boolean isRecordConstructor, isMetaRecordConstructor;
+      equation
+        fn_1 = Absyn.crefToPath(fn);
+        (_,cl,env_1) = Lookup.lookupClass2(cache /*Env.emptyCache*/,env,fn_1, false);
+        isRecordConstructor = MetaUtil.classHasRestriction(cl, SCode.R_RECORD());
+        isMetaRecordConstructor = MetaUtil.classHasMetaRestriction(cl);
+        true = isRecordConstructor or isMetaRecordConstructor;
+        lastId = Absyn.pathLastIdent(fn_1);
+        fn_1 = Env.joinEnvPath(env_1, Absyn.IDENT(lastId));
+        fnstr = Absyn.pathString(fn_1);
+        fn_2 = Absyn.pathToCref(fn_1);
+        false = Absyn.crefEqual(fn,fn_2);
+        (cache,e,prop,st) = elabCall(cache,env,fn_2,args,nargs,impl,st);
+      then (cache,e,prop,st);
+        
     case (cache,env,fn,args,nargs,impl,st) /* impl LS: Check if a builtin function call, e.g. size()
 	      and calculate if so */ 
       equation 
@@ -5671,6 +6508,7 @@ algorithm
     case (cache,env,fn,args,nargs,(impl as false),st) 
       equation
         false = hasBuiltInHandler(fn,args); 
+        false = hasBuiltInHandler(fn,args); 
         Debug.fprint("sei", "elab_call 4: ");
         fnstr = Dump.printComponentRefStr(fn);
         Debug.fprintln("sei", fnstr);
@@ -5684,7 +6522,7 @@ algorithm
         (cache,e,prop,st_1);
     case (cache,env,fn,args,nargs,impl,st)
       equation 
-        Debug.fprint("failtrace", "- elab_call failed\n");
+        Debug.fprint("failtrace", "- elabCall failed\n");
         Debug.fprint("failtrace", " function: ");
         fnstr = Dump.printComponentRefStr(fn);
         Debug.fprint("failtrace", fnstr);
@@ -5872,7 +6710,6 @@ algorithm
           numberOfIntervals,tolerance,method,filenameprefix,storeInTemp,noClean,options},false,true,Exp.OTHER()),Types.PROP(
           (
           Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_STRING({}),NONE)),NONE),Types.C_VAR()),SOME(st));
-
     case (cache,env,Absyn.CREF_IDENT(name = "buildModelBeast"),{Absyn.CREF(componentReg = cr)},args,impl,SOME(st))
       local Absyn.Path className; Exp.Exp storeInTemp; Exp.Exp noClean,tolerance;
       equation 
@@ -6393,6 +7230,8 @@ algorithm
         (cache,Exp.CALL(Absyn.IDENT("generateCode"),{Exp.CODE(Absyn.C_TYPENAME(className),Exp.OTHER())},
           false,true,Exp.BOOL()),Types.PROP((Types.T_BOOL({}),NONE),Types.C_VAR()),SOME(st));
 
+    case (cache,env,Absyn.CREF_IDENT(name = "setLinker"),{Absyn.STRING(value = str)},{},impl,SOME(st)) then (cache, Exp.CALL(Absyn.IDENT("setLinker"),{Exp.SCONST(str)},false,true,Exp.BOOL()),Types.PROP((Types.T_BOOL({}),NONE),Types.C_VAR()),SOME(st)); 
+    case (cache,env,Absyn.CREF_IDENT(name = "setLinkerFlags"),{Absyn.STRING(value = str)},{},impl,SOME(st)) then (cache, Exp.CALL(Absyn.IDENT("setLinkerFlags"),{Exp.SCONST(str)},false,true,Exp.BOOL()),Types.PROP((Types.T_BOOL({}),NONE),Types.C_VAR()),SOME(st)); 
     case (cache,env,Absyn.CREF_IDENT(name = "setCompiler"),{Absyn.STRING(value = str)},{},impl,SOME(st)) then (cache, Exp.CALL(Absyn.IDENT("setCompiler"),{Exp.SCONST(str)},false, true,Exp.BOOL()),Types.PROP((Types.T_BOOL({}),NONE),Types.C_VAR()),SOME(st));
       
       case (cache,env,Absyn.CREF_IDENT(name = "verifyCompiler"),{},{},impl,SOME(st)) then (cache, Exp.CALL(Absyn.IDENT("verifyCompiler"),{},false,
@@ -7144,7 +7983,7 @@ protected function createDummyFarg
   input String name;
   output Types.FuncArg farg;
 algorithm
-  farg := (name, (Types.T_NOTYPE(),NONE()));  
+  farg := (name, (Types.T_NOTYPE,NONE()));  
 end createDummyFarg;
 
 protected function elabCallArgs 
@@ -7188,13 +8027,14 @@ algorithm
       Exp.Exp call_exp;
       list<Ident> t_lst;
       Ident fn_str,types_str,scope;
-      String s;
+      String s,name;
       Env.Cache cache;
       Exp.Type tp;
       SCode.Mod mod;
       Types.Mod tmod;
       SCode.Class cl;
       Option<Absyn.Modification> absynOptMod;
+      ClassInf.State complexClassType;
 
     /* Record constructors that might have come from Graphical expressions with unknown array sizes */
     /* 
@@ -7204,35 +8044,47 @@ algorithm
      */ 
     case (cache,env,fn,args,nargs,impl,st)
       local list<SCode.Element> comps; list<String> names; 
-      equation        
+      equation
+        Debug.fprintln("xyz", "1");
         (cache,cl as SCode.CLASS(_,_,_,SCode.R_PACKAGE(),_),_) = 
            Lookup.lookupClass(cache, env, Absyn.IDENT("GraphicalAnnotationsProgram____"), false);                
-        (cache,cl as SCode.CLASS(_,_,_,SCode.R_RECORD(),_),env_1) = Lookup.lookupClass(cache, env, fn, false);
+        Debug.fprintln("xyz", "2");
+        (cache,cl as SCode.CLASS(name,_,_,SCode.R_RECORD(),_),env_1) = Lookup.lookupClass(cache, env, fn, false);
+        Debug.fprintln("xyz", "3");
         (cl,env_2) = Lookup.lookupRecordConstructorClass(env_1 /* env */, fn);
+        Debug.fprintln("xyz", "4");
         (comps,_::names) = getClassComponents(cl); // remove the fist one as it is the result! 
+        Debug.fprintln("xyz", "5");
         /*
-        (cache,(t as (Types.T_FUNCTION(fargs,(outtype as (Types.T_COMPLEX(ClassInf.RECORD(_),_,_,_),_))),_)),env_1) 
+        (cache,(t as (Types.T_FUNCTION(fargs,(outtype as (Types.T_COMPLEX(complexClassType as ClassInf.RECORD(name),_,_,_),_))),_)),env_1) 
         	= Lookup.lookupType(cache, env, fn, true);
         */
         fargs = Util.listMap(names, createDummyFarg);
+        Debug.fprintln("xyz", "6");
         slots = makeEmptySlots(fargs); 
-        (cache,args_1,newslots,constlist) = elabInputArgs(cache, env, args, nargs, slots, false /*checkTypes*/ ,impl);
+        Debug.fprintln("xyz", "7");
+        (cache,args_1,newslots,constlist,_) = elabInputArgs(cache, env, args, nargs, slots, false /*checkTypes*/ ,impl,{});
+        Debug.fprintln("xyz", "8");
         const = calculateConstantness(constlist);
+        Debug.fprintln("xyz", "9");
         (cache,newslots2) = fillDefaultSlots(cache, newslots, cl, env_2, impl);
+        Debug.fprintln("xyz", "10");
         args_2 = expListFromSlots(newslots2);
-        tp = complexTypeFromSlots(newslots2);
+        Debug.fprintln("xyz", "11");
+        tp = complexTypeFromSlots(newslots2,"",ClassInf.UNKNOWN(""));
+        Debug.fprintln("xyz", "12");
         //tyconst = elabConsts(outtype, const);
         //prop = getProperties(outtype, tyconst);
       then
         (cache,Exp.CALL(fn,args_2,false,false,tp),Types.PROP((Types.T_NOTYPE(),NONE()),Types.C_CONST()));
 
     /* Record constructors, user defined or implicit */ // try the hard stuff first 
-    case (cache,env,fn,args,nargs,impl,st) 
-      equation
-        (cache,(t as (Types.T_FUNCTION(fargs,(outtype as (Types.T_COMPLEX(ClassInf.RECORD(_),_,_,_),_))),_)),env_1) 
-        	= Lookup.lookupType(cache, env, fn, true);
+    case (cache,env,fn,args,nargs,impl,st)
+      equation 
+        (cache,(t as (Types.T_FUNCTION(fargs,(outtype as (Types.T_COMPLEX(complexClassType as ClassInf.RECORD(name),_,_,_),_))),_)),env_1) 
+        	= Lookup.lookupType(cache,env, fn, true);
         slots = makeEmptySlots(fargs);
-        (cache,args_1,newslots,constlist) = elabInputArgs(cache, env, args, nargs, slots, true /*checkTypes*/ ,impl);
+        (cache,args_1,newslots,constlist,_) = elabInputArgs(cache,env, args, nargs, slots, true /*checkTypes*/ ,impl, {});
         /* const = Util.listReduce(constlist, Types.constAnd); */
         const = calculateConstantness(constlist);
         tyconst = elabConsts(outtype, const);
@@ -7240,9 +8092,39 @@ algorithm
         (cl,env_2) = Lookup.lookupRecordConstructorClass(env_1 /* env */, fn);
         (cache,newslots2) = fillDefaultSlots(cache, newslots, cl, env_2, impl);
         args_2 = expListFromSlots(newslots2);
-        tp = complexTypeFromSlots(newslots2);
+        tp = complexTypeFromSlots(newslots2,name,complexClassType);
       then
         (cache,Exp.CALL(fn,args_2,false,false,tp),prop);
+        
+        /* ------ */
+    case (cache,env,fn,args,nargs,impl,st) /* Metamodelica extension, added by simbj */
+      local
+        SCode.Class c;
+        SCode.Restriction re;
+        SCode.Ident id;
+        Integer index;
+        list<String> fieldNames;
+        list<Types.Type> tys;
+        list<Types.Var> vars;
+        Absyn.Path fqPath;
+       equation
+        (cache,t as (Types.T_METARECORD(index,vars),_),env_1) = Lookup.lookupType(cache, env, fn, false);
+        (cache,c,env_1) = Lookup.lookupClass2(cache, env_1, fn, false);
+        // (_, _, _, _, (Types.T_COMPLEX(complexClassType = ClassInf.META_RECORD(_), complexVarLst = vars),_), _, _, _) = Inst.instClass(cache,env_1,Types.NOMOD(),Prefix.NOPRE(), Connect.emptySet,c,{},false,Inst.INNER_CALL(), ConnectionGraph.EMPTY);
+        fieldNames = Util.listMap(vars, Types.getVarName);
+        tys = Util.listMap(vars, Types.getVarType);
+        fargs = Util.listThreadTuple(fieldNames, tys);
+        slots = makeEmptySlots(fargs); 
+        (cache,args_1,newslots,constlist,_) = elabInputArgs(cache,env, args, nargs, slots, true /*checkTypes*/ ,impl,{});
+        const = Util.listReduce(constlist, Types.constAnd);
+        tyconst = elabConsts(t, const);
+        prop = getProperties(t, tyconst);
+        (cache,newslots2) = fillDefaultSlots(cache,newslots, c, env, impl);
+        args_2 = expListFromSlots(newslots2);
+        (cache, fqPath) = Inst.makeFullyQualified(cache, env_1, fn);
+      then
+        (cache,Exp.METARECORDCALL(fqPath,args_2,fieldNames,index),prop);   
+        /* ------ */
         
     case (cache,env,fn,args,nargs,impl,st) /* ..Other functions */ 
       local Exp.Type tp;
@@ -7275,7 +8157,7 @@ algorithm
  	    (cache,args_2,slots2) = addDefaultArgs(cache,env,args_1,fn,slots,impl);
          
         (call_exp,prop_1) = vectorizeCall(Exp.CALL(fn_1,args_2,tuple_,builtin,tp), restype, vect_dims, 
-          slots2, prop); 
+          slots2, prop);
       then
         (cache,call_exp,prop_1);
         
@@ -7749,12 +8631,16 @@ algorithm
       list<tuple<Types.TType, Option<Absyn.Path>>> trest;
       Boolean impl;
       Env.Cache cache;
+      Types.PolymorphicBindings polymorphicBindings;
+      Option<Absyn.Path> p;
       /*We found a match. */ 
-    case (cache,env,args,nargs,((t as (Types.T_FUNCTION(funcArg = params,funcResultType = restype),_)) :: trest),checkTypes,impl) 
+    case (cache,env,args,nargs,((t as (Types.T_FUNCTION(funcArg = params,funcResultType = restype),p)) :: trest),checkTypes,impl) 
       equation 
         slots = makeEmptySlots(params);
-        (cache,args_1,newslots,clist) = elabInputArgs(cache,env, args, nargs, slots, checkTypes,impl);
+        (cache,args_1,newslots,clist,polymorphicBindings) = elabInputArgs(cache,env, args, nargs, slots, checkTypes,impl,{});
         dims = slotsVectorizable(newslots);
+        restype = Types.fixPolymorphicRestype(restype, polymorphicBindings);
+        t = (Types.T_FUNCTION(params,restype),p);
         t = createActualFunctype(t,newslots,checkTypes) "only created when not checking types for error msg";
       then
         (cache,args_1,clist,restype,t,dims,newslots);
@@ -7767,7 +8653,7 @@ algorithm
         (cache,args_1,clist,restype,t,dims,slots);
     case (cache,env,_,_,_,_,_)
       equation 
-        Debug.fprintln("failtrace", "elabTypes failed.\n");
+        Debug.fprintln("failtrace", "- Static.elabTypes failed.");
       then
         fail();
   end matchcontinue;
@@ -8163,13 +9049,15 @@ protected function elabInputArgs
   input list<Slot> inSlotLst;
   input Boolean checkTypes "if true, check types";
   input Boolean inBoolean;
+  input Types.PolymorphicBindings polymorphicBindings;
   output Env.Cache outCache;
   output list<Exp.Exp> outExpExpLst;
   output list<Slot> outSlotLst;
   output list<Types.Const> outTypesConstLst;
+  output Types.PolymorphicBindings outPolymorphicBindings;
 algorithm 
-  (outCache,outExpExpLst,outSlotLst,outTypesConstLst):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inAbsynNamedArgLst,inSlotLst,checkTypes,inBoolean)
+  (outCache,outExpExpLst,outSlotLst,outTypesConstLst,outPolymorphicBindings):=
+  matchcontinue (inCache,inEnv,inAbsynExpLst,inAbsynNamedArgLst,inSlotLst,checkTypes,inBoolean,polymorphicBindings)
     local
       list<tuple<Ident, tuple<Types.TType, Option<Absyn.Path>>>> farg;
       list<Slot> slots_1,newslots,slots;
@@ -8180,31 +9068,31 @@ algorithm
       list<Absyn.NamedArg> narg;
       Boolean impl;
       Env.Cache cache;
-    case (cache,env,(exp as (_ :: _)),narg,slots,checkTypes,impl) /* impl const Fill slots with positional arguments */ 
+    case (cache,env,(exp as (_ :: _)),narg,slots,checkTypes,impl,polymorphicBindings) /* impl const Fill slots with positional arguments */ 
       equation
         farg = funcargLstFromSlots(slots);
-        (cache,slots_1,clist1) = elabPositionalInputArgs(cache, env, exp, farg, slots, checkTypes,impl);
-        (cache,_,newslots,clist2) = elabInputArgs(cache,env, {}, narg, slots_1, checkTypes, impl) "recursive call fills named arguments" ;
+        (cache,slots_1,clist1,polymorphicBindings) = elabPositionalInputArgs(cache,env, exp, farg, slots, checkTypes,impl,polymorphicBindings);
+        (cache,_,newslots,clist2,polymorphicBindings) = elabInputArgs(cache,env, {}, narg, slots_1, checkTypes, impl, polymorphicBindings) "recursive call fills named arguments" ;
         clist = listAppend(clist1, clist2);
         explst = expListFromSlots(newslots);
       then
-        (cache,explst,newslots,clist);
-    case (cache,env,{},narg as _::_,slots,checkTypes,impl) /* Fill slots with named arguments */ 
+        (cache,explst,newslots,clist,polymorphicBindings);
+    case (cache,env,{},narg as _::_,slots,checkTypes,impl,polymorphicBindings) /* Fill slots with named arguments */ 
        local String s;
       equation 
         farg = funcargLstFromSlots(slots);
         s = printSlotsStr(slots);
-        (cache,newslots,clist) = elabNamedInputArgs(cache,env, narg, farg, slots, checkTypes, impl);
+        (cache,newslots,clist,polymorphicBindings) = elabNamedInputArgs(cache,env, narg, farg, slots, checkTypes, impl, polymorphicBindings);
         newexp = expListFromSlots(newslots);
       then
-        (cache,newexp,newslots,clist);
+        (cache,newexp,newslots,clist,polymorphicBindings);
 
         /* Empty function call, e.g foo(), is always constant*/        
-    case (cache,env,{},{},slots,checkTypes,impl) equation
+    case (cache,env,{},{},slots,checkTypes,impl,polymorphicBindings) equation
         
-    then (cache,{},slots,{Types.C_CONST()}); 
+    then (cache,{},slots,{Types.C_CONST()},polymorphicBindings);
       
-    case (_,_,_,_,_,_,_) 
+    case (_,_,_,_,_,_,_,_) 
       /* FAILTRACE REMOVE equation Debug.fprint("failtrace","elabInputArgs failed\n"); */ then fail();
   end matchcontinue;
 end elabInputArgs;
@@ -8256,16 +9144,18 @@ protected function complexTypeFromSlots
 "Creates an Exp.COMPLEX type from a list of slots. 
  Used to create type of record constructors "
   input list<Slot> slots;
+  input String name;
+  input ClassInf.State complexClassType;
   output Exp.Type tp;
 algorithm
-  tp := matchcontinue(slots)
+  tp := matchcontinue(slots,name,complexClassType)
   local Exp.Type etp; Types.Type tp; String id;
     list<Exp.Var> vLst; String name;
     ClassInf.State ci;
-    case({}) then Exp.COMPLEX("",{},ClassInf.UNKNOWN(""));
-    case(SLOT(an = (id,tp))::slots) equation
+    case({},name,complexClassType) then Exp.COMPLEX(name,{},complexClassType);
+    case(SLOT(an = (id,tp))::slots,name,complexClassType) equation
       etp = Types.elabType(tp);
-      Exp.COMPLEX(name,vLst,ci) = complexTypeFromSlots(slots);
+      Exp.COMPLEX(name,vLst,ci) = complexTypeFromSlots(slots,name,complexClassType);
     then Exp.COMPLEX(name,Exp.COMPLEX_VAR(id,etp)::vLst,ci);
   end matchcontinue;
 end complexTypeFromSlots;
@@ -8389,12 +9279,14 @@ protected function elabPositionalInputArgs
   input list<Slot> inSlotLst;
   input Boolean checkTypes "if true, check types";
   input Boolean inBoolean;
+  input Types.PolymorphicBindings polymorphicBindings;
   output Env.Cache outCache;
   output list<Slot> outSlotLst;
   output list<Types.Const> outTypesConstLst;
+  output Types.PolymorphicBindings outPolymorphicBindings;
 algorithm 
-  (outCache,outSlotLst,outTypesConstLst):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inTypesFuncArgLst,inSlotLst,checkTypes,inBoolean)
+  (outCache,outSlotLst,outTypesConstLst,outPolymorphicBindings):=
+  matchcontinue (inCache,inEnv,inAbsynExpLst,inTypesFuncArgLst,inSlotLst,checkTypes,inBoolean,polymorphicBindings)
     local
       list<Slot> slots,slots_1,newslots;
       Boolean impl;
@@ -8410,39 +9302,46 @@ algorithm
       list<Types.ArrayDim> ds;
       Env.Cache cache;
       Ident id;
-    case (cache,_,{},_,slots,checkTypes,impl) then (cache,slots,{});  /* impl const */ 
-
-    /* Exact match */      
-    case (cache,env,(e :: es),((farg as (_,vt)) :: vs),slots,checkTypes as true, impl)  
+      Types.Properties props;
+    case (cache,_,{},_,slots,checkTypes,impl,polymorphicBindings) then (cache,slots,{},polymorphicBindings);  /* impl const */ 
+    
+      /* Exact match */
+    case (cache,env,(e :: es),((farg as (_,vt)) :: vs),slots,checkTypes as true, impl,polymorphicBindings)  
       equation 
-        (cache,e_1,Types.PROP(t,c1),_) = elabExp(cache,env, e, impl, NONE,true);
-        (e_2,_) = Types.matchType(e_1, t, vt);
-        (cache,slots_1,clist) = elabPositionalInputArgs(cache,env, es, vs, slots,checkTypes, impl);
+        (cache,e_1,props,_) = elabExp(cache,env, e, impl, NONE,true);
+        t = Types.getPropType(props);
+        c1 = Types.propAllConst(props);
+        (e_2,_,polymorphicBindings) = Types.matchTypePolymorphic(e_1, t, vt, polymorphicBindings);
+        (cache,slots_1,clist,polymorphicBindings) = elabPositionalInputArgs(cache,env, es, vs, slots,checkTypes, impl,polymorphicBindings);
         newslots = fillSlot(farg, e_2, {}, slots_1,checkTypes) "no vectorized dim" ;
       then
-        (cache,newslots,(c1 :: clist));
+        (cache,newslots,(c1 :: clist),polymorphicBindings);
 
     /* check if vectorized argument */         
-    case (cache,env,(e :: es),((farg as (_,vt)) :: vs),slots,checkTypes as true,impl) 
+    case (cache,env,(e :: es),((farg as (_,vt)) :: vs),slots,checkTypes as true,impl,polymorphicBindings) 
       equation
-        (cache,e_1,Types.PROP(t,c1),_) = elabExp(cache,env, e, impl, NONE,true);
-        (e_2,_,ds) = Types.vectorizableType(e_1, t, vt);
-        (cache,slots_1,clist) = elabPositionalInputArgs(cache,env, es, vs, slots,checkTypes, impl);
+        (cache,e_1,props,_) = elabExp(cache,env, e, impl, NONE,true);
+        t = Types.getPropType(props);
+        c1 = Types.propAllConst(props);
+        (e_2,_,ds,polymorphicBindings) = Types.vectorizableType(e_1, t, vt);
+        (cache,slots_1,clist,_) = elabPositionalInputArgs(cache,env, es, vs, slots,checkTypes, impl,polymorphicBindings);
         newslots = fillSlot(farg, e_2, ds, slots_1,checkTypes);
       then
-        (cache,newslots,(c1 :: clist));
+        (cache,newslots,(c1 :: clist),polymorphicBindings);
 
     /* Not checking type*/ 
-    case (cache,env,(e :: es),((farg as (id,vt)) :: vs),slots,checkTypes as false, impl)
+    case (cache,env,(e :: es),((farg as (id,vt)) :: vs),slots,checkTypes as false, impl,polymorphicBindings)
       equation 
-        (cache,e_1,Types.PROP(t,c1),_) = elabExp(cache,env, e, impl, NONE,true);
-        (cache,slots_1,clist) = elabPositionalInputArgs(cache,env, es, vs, slots,checkTypes, impl);
+        (cache,e_1,props,_) = elabExp(cache,env, e, impl, NONE,true);
+        t = Types.getPropType(props);
+        c1 = Types.propAllConst(props);
+        (cache,slots_1,clist,polymorphicBindings) = elabPositionalInputArgs(cache,env, es, vs, slots,checkTypes, impl,polymorphicBindings);
         /* fill slot with actual type for error message*/
         newslots = fillSlot((id,t), e_1, {}, slots_1,checkTypes);
       then
-        (cache,newslots,(c1 :: clist));  
+        (cache,newslots,(c1 :: clist),polymorphicBindings);  
 
-    case (cache,env,(e :: es),((farg as (_,vt)) :: vs),slots,checkTypes as true, impl)  
+    case (cache,env,(e :: es),((farg as (_,vt)) :: vs),slots,checkTypes as true, impl,polymorphicBindings)  
       equation 
         /* FAILTRACE REMOVE
         (cache,e_1,Types.PROP(t,c1),_) = elabExp(cache,env, e, impl, NONE,true);
@@ -8456,7 +9355,7 @@ algorithm
       then
         fail();
        
-    case (cache,env,es,_ ,slots,checkTypes , impl)
+    case (cache,env,es,_ ,slots,checkTypes , impl,polymorphicBindings)
       equation 
         /* FAILTRACE REMOVE
         Debug.fprint("failtrace", "elabPositionalInputArgs failed: expl:");
@@ -8483,12 +9382,14 @@ protected function elabNamedInputArgs
   input list<Slot> inSlotLst;
   input Boolean checkTypes "if true, check types";
   input Boolean inBoolean;
+  input Types.PolymorphicBindings polymorphicBindings;
   output Env.Cache outCache;
   output list<Slot> outSlotLst;
   output list<Types.Const> outTypesConstLst;
+  output Types.PolymorphicBindings outPolymorphicBindings;
 algorithm 
-  (outCache,outSlotLst,outTypesConstLst) :=
-  matchcontinue (inCache,inEnv,inAbsynNamedArgLst,inTypesFuncArgLst,inSlotLst,checkTypes,inBoolean)
+  (outCache,outSlotLst,outTypesConstLst,outPolymorphicBindings) :=
+  matchcontinue (inCache,inEnv,inAbsynNamedArgLst,inTypesFuncArgLst,inSlotLst,checkTypes,inBoolean,polymorphicBindings)
     local
       Exp.Exp e_1,e_2;
       tuple<Types.TType, Option<Absyn.Path>> t,vt;
@@ -8504,29 +9405,29 @@ algorithm
       Env.Cache cache;
 
       /* Check types */      
-    case (cache,env,(Absyn.NAMEDARG(argName = id,argValue = e) :: nas),farg,slots,checkTypes as true,impl) 
+    case (cache,env,(Absyn.NAMEDARG(argName = id,argValue = e) :: nas),farg,slots,checkTypes as true,impl,polymorphicBindings) 
       equation 
         (cache,e_1,Types.PROP(t,c1),_) = elabExp(cache, env, e, impl, NONE, true);
         vt = findNamedArgType(id, farg);
-        (e_2,_) = Types.matchType(e_1, t, vt);
+        (e_2,_,polymorphicBindings) = Types.matchTypePolymorphic(e_1, t, vt,polymorphicBindings);
         slots_1 = fillSlot((id,vt), e_2, {}, slots,checkTypes);
-        (cache,newslots,clist) = elabNamedInputArgs(cache, env, nas, farg, slots_1, checkTypes, impl);
+        (cache,newslots,clist,polymorphicBindings) = elabNamedInputArgs(cache,env, nas, farg, slots_1, checkTypes,impl,polymorphicBindings);
       then
-        (cache,newslots,(c1 :: clist));
+        (cache,newslots,(c1 :: clist),polymorphicBindings);
 
-    /* Do not check types */
-    case (cache,env,(Absyn.NAMEDARG(argName = id,argValue = e) :: nas),farg,slots,checkTypes,impl) 
+      /* Do not check types */      
+    case (cache,env,(Absyn.NAMEDARG(argName = id,argValue = e) :: nas),farg,slots,checkTypes as false,impl,polymorphicBindings) 
       equation 
         (cache,e_1,Types.PROP(t,c1),_) = elabExp(cache,env, e, impl, NONE,true);
         vt = findNamedArgType(id, farg);
         slots_1 = fillSlot((id,vt), e_1, {}, slots,checkTypes);
-        (cache,newslots,clist) = elabNamedInputArgs(cache,env, nas, farg, slots_1, checkTypes,impl);
+        (cache,newslots,clist,polymorphicBindings) = elabNamedInputArgs(cache,env, nas, farg, slots_1, checkTypes,impl,polymorphicBindings);
       then
-        (cache,newslots,(c1 :: clist));
+        (cache,newslots,(c1 :: clist),polymorphicBindings);
         
         
-    case (cache,_,{},_,slots,checkTypes,impl) then (cache,slots,{}); 
-    case (cache,env,narg,farg,_,checkTypes,impl)
+    case (cache,_,{},_,slots,checkTypes,impl,polymorphicBindings) then (cache,slots,{},polymorphicBindings); 
+    case (cache,env,narg,farg,_,checkTypes,impl,polymorphicBindings)
       equation 
         Debug.fprint("failtrace", "Stati.elabNamedInputArgs failed\n");
       then
@@ -8633,7 +9534,7 @@ public function elabCref "function: elabCref
   output Exp.Exp outExp;
   output Types.Properties outProperties;
   output SCode.Accessibility outAccessibility;
-algorithm 
+algorithm
   (outCache,outExp,outProperties,outAccessibility):=
   matchcontinue (inCache,inEnv,inComponentRef,inBoolean,performVectorization)
     local
@@ -8669,6 +9570,31 @@ algorithm
         exp = makeASUBArrayAdressing(c,cache,env,impl,exp,splicedExp);
       then
         (cache,exp,Types.PROP(t,const),acc_1); 
+    
+    case (cache,env,c,impl,doVect) /* MetaModelica Partial Function. sjoelund */ 
+      local String str;
+        Types.Properties props;
+        Option<Exp.Exp> splicedExp;
+        Absyn.Path path,fpath;
+        list<Types.Type> typelist;
+        list<String> typelistStr;
+        String typeStr;
+        Exp.ComponentRef expCref;
+        Exp.Type expType;
+      equation
+        true = RTOpts.acceptMetaModelicaGrammar();
+        path = Absyn.crefToPath(c);
+        (cache,typelist) = Lookup.lookupFunctionsInEnv(cache,env,path);
+        t :: _ = typelist;
+        (_, SOME(fpath)) = t;
+        c = Absyn.pathToCref(fpath);
+        expCref = Exp.toExpCref(c);
+        expType = Types.elabType(t);
+        exp = Exp.CREF(expCref,expType);
+      then
+        (cache,exp,Types.PROP(t,Types.C_CONST()),SCode.RO()); 
+        
+    
     case (cache,env,c,impl,doVect)
       equation 
         failure((_,_,_) = elabCrefSubs(cache,env, c, Prefix.NOPRE(),impl));
@@ -10377,8 +11303,10 @@ algorithm
       list<Exp.Exp> explist;
       tuple<Types.TType, Option<Absyn.Path>> vt;
       Exp.Type t;
+      Exp.Exp e;
       Values.Value v;
       list<Values.Value> xs,xs2,vallist;
+      list<Types.Type> typelist;
       Exp.ComponentRef cr;
       list<list<tuple<Exp.Exp, Boolean>>> mexpl;
       list<tuple<Exp.Exp, Boolean>> mexpl2;
@@ -10414,7 +11342,7 @@ algorithm
         failure(Values.ARRAY(valueLst = _) = x);
         dim = listLength(x::xs);
         explist = Util.listMap((x :: xs), valueExp);
-        vt = valueType(x);
+        vt = Types.typeOfValue(x);
         t = Types.elabType(vt);
         dim = listLength(x::xs);
         t = Exp.liftArrayR(t,SOME(dim));
@@ -10427,7 +11355,7 @@ algorithm
       local Values.Value x; Integer dim;
       equation 
         explist = Util.listMap((x :: xs), valueExp);
-        vt = valueType(x);
+        vt = Types.typeOfValue(x);
         t = Types.elabType(vt);
         dim = listLength(x::xs);
         t = Exp.liftArrayR(t,SOME(dim));
@@ -10441,7 +11369,7 @@ algorithm
       then
         Exp.TUPLE(explist);
 
-    case(Values.RECORD(path,vallist,namelst)) 
+    case(Values.RECORD(path,vallist,namelst,-1)) 
       local list<Exp.Exp> expl;
         list<Exp.Type> tpl;
         list<String> namelst;
@@ -10452,29 +11380,55 @@ algorithm
       tpl = Util.listMap(expl,Exp.typeof);
       varlst = Util.listThreadMap(namelst,tpl,Exp.makeVar);
       name = Absyn.pathString(path);
-    then Exp.CALL(path,expl,false,false,Exp.COMPLEX("",varlst,ClassInf.RECORD(name)));
+    then Exp.CALL(path,expl,false,false,Exp.COMPLEX(name,varlst,ClassInf.RECORD(name)));
     case(Values.ENUM(cr,x)) then Exp.CREF(cr,Exp.ENUM());
+    
+    case (Values.TUPLE(vallist))
+      equation
+        explist = Util.listMap(vallist, valueExp);
+      then Exp.TUPLE(explist);
+
+    /* MetaModelica types */
+    case (Values.OPTION(SOME(v)))
+      equation
+        e = valueExp(v);
+      then Exp.META_OPTION(SOME(e));
+    case (Values.OPTION(NONE)) then Exp.META_OPTION(NONE);
+    
+    case (Values.META_TUPLE(vallist))
+      equation
+        explist = Util.listMap(vallist, valueExp);
+      then Exp.META_TUPLE(explist);
+    
+    case Values.LIST(vallist)
+      equation
+        explist = Util.listMap(vallist, valueExp);
+        typelist = Util.listMap(vallist, Types.typeOfValue);
+        (explist,vt,_) = Types.listMatchSuperType(explist, typelist, {}, Types.matchTypeRegular);
+        t = Types.elabType(vt);
+      then Exp.LIST(t, explist);
+    
+      /* MetaRecord */
+    case(Values.RECORD(path,vallist,namelst,ix))
+      local
+        list<Exp.Exp> expl;
+        list<String> namelst;
+        Absyn.Path path;
+        Integer ix;
+      equation
+        true = ix >= 0;
+        expl=Util.listMap(vallist,valueExp);
+      then Exp.METARECORDCALL(path,expl,namelst,ix);
+
     case v
       equation 
-        print("value_exp failed for "+&Values.valString(v)+&"\n");
+        Debug.fprintln("failtrace", "Static.valueExp failed for "+&Values.valString(v)+&"\n");
         
-        Error.addMessage(Error.INTERNAL_ERROR, {"value_exp failed"});
+        Error.addMessage(Error.INTERNAL_ERROR, {"Static.valueExp failed"});
       then
         fail();
   end matchcontinue;
 end valueExp;
-
-protected function valueType "
-  function: valueType
-  This function investigates a Value and return the Type of this value.
-
-  LS: Removed. Using Types.typeOfValue instead
-"
-  input Values.Value v;
-  output Types.Type t;
-algorithm 
-  t := Types.typeOfValue(v);
-end valueType;
 
 protected function canonCref2 "function: canonCref2
  
@@ -10546,6 +11500,11 @@ algorithm
         ty2 = Types.elabType(t);
       then
         (cache,Exp.CREF_IDENT(n,ty2,ss_1));
+    case (cache,env,Exp.WILD,impl)
+      equation 
+        true = RTOpts.acceptMetaModelicaGrammar();
+      then
+        (cache,Exp.WILD);
     case (cache,env,Exp.CREF_QUAL(ident = n,subscriptLst = ss,componentRef = c),impl)
       equation 
         (cache,_,t,_,_,_) = Lookup.lookupVar(cache,env, Exp.CREF_IDENT(n,Exp.OTHER(),{}));
@@ -10557,7 +11516,7 @@ algorithm
         (cache,Exp.CREF_QUAL(n,ty2, ss_1,c_1));
     case (cache,env,cr,_)
       equation 
-        Debug.fprint("failtrace", "-canon_cref failed, cr: ");
+        Debug.fprint("failtrace", "- Static.canonCref failed, cr: ");
         Debug.fprint("failtrace", Exp.printComponentRefStr(cr));
         Debug.fprint("failtrace", "\n");
       then
@@ -10724,7 +11683,6 @@ algorithm
       list<Ident> exps_str,tps_str;
     case (((op,params,rtype) :: _),args,_)
       equation 
-        
         Debug.fprint("dovl", Util.stringDelimitList(Util.listMap(params, Types.printTypeStr),"\n"));
         Debug.fprint("dovl", "\n===\n");
         (args_1,types_1) = elabArglist(params, args);
@@ -11109,6 +12067,7 @@ algorithm
       Ident s;
       Absyn.Operator op;
       Env.Cache cache;
+      Exp.Type defaultExpType;
     case (cache,Absyn.ADD(),env,t1,t2) /* Arithmetical operators */ 
       equation 
         intarrtypes = arrayTypeList(9, (Types.T_INTEGER({}),NONE)) "The ADD operator" ;
@@ -11475,7 +12434,8 @@ algorithm
       then
         (cache,types);
     case (cache,Absyn.EQUAL(),env,t1,t2)
-      equation 
+      equation
+        defaultExpType = Util.if_(Types.isBoxedType(t1) and Types.isBoxedType(t2), Exp.T_BOXED(Exp.OTHER), Exp.ENUM());
         scalars = {
           (Exp.EQUAL(Exp.INT()),
           {(Types.T_INTEGER({}),NONE),(Types.T_INTEGER({}),NONE)},(Types.T_BOOL({}),NONE)),
@@ -11485,13 +12445,15 @@ algorithm
           {(Types.T_STRING({}),NONE),(Types.T_STRING({}),NONE)},(Types.T_BOOL({}),NONE)),
           (Exp.EQUAL(Exp.BOOL()),
           {(Types.T_BOOL({}),NONE),(Types.T_BOOL({}),NONE)},(Types.T_BOOL({}),NONE)),
-          (Exp.EQUAL(Exp.ENUM()),{t1,t2},(Types.T_BOOL({}),NONE))} "\'==\' operator" ;
+          (Exp.EQUAL(Exp.ENUM()),{t1,t2},(Types.T_BOOL({}),NONE)),          
+          (Exp.EQUAL(defaultExpType),{t1,t2},(Types.T_BOOL({}),NONE))} "\'==\' operator" ;
         /*(cache,userops) = getKoeningOperatorTypes(cache,"equal", env, t1, t2);*/
         types = Util.listFlatten({scalars/*,userops*/});
       then
         (cache,types);
     case (cache,Absyn.NEQUAL(),env,t1,t2)
       equation 
+        defaultExpType = Util.if_(Types.isBoxedType(t1) and Types.isBoxedType(t2), Exp.T_BOXED(Exp.OTHER), Exp.ENUM());
         scalars = {
           (Exp.NEQUAL(Exp.INT()),
           {(Types.T_INTEGER({}),NONE),(Types.T_INTEGER({}),NONE)},(Types.T_BOOL({}),NONE)),
@@ -11501,7 +12463,8 @@ algorithm
           {(Types.T_STRING({}),NONE),(Types.T_STRING({}),NONE)},(Types.T_BOOL({}),NONE)),
           (Exp.NEQUAL(Exp.BOOL()),
           {(Types.T_BOOL({}),NONE),(Types.T_BOOL({}),NONE)},(Types.T_BOOL({}),NONE)),
-          (Exp.NEQUAL(Exp.ENUM()),{t1,t2},(Types.T_BOOL({}),NONE))} "\'!=\' operator" ;
+          (Exp.NEQUAL(Exp.ENUM()),{t1,t2},(Types.T_BOOL({}),NONE)),
+          (Exp.NEQUAL(defaultExpType),{t1,t2},(Types.T_BOOL({}),NONE))} "\'!=\' operator" ;
         /*(cache,userops) = getKoeningOperatorTypes(cache,"notEqual", env, t1, t2);*/
         types = Util.listFlatten({scalars/*,userops*/});
       then

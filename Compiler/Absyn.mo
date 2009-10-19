@@ -42,8 +42,8 @@ package Absyn
   for printing the AST:
   
   * Abstract Syntax Tree (Close to Modelica)
-     – Complete Modelica 2.2 
-     – Including annotations and comments
+     ï¿½ Complete Modelica 2.2 
+     ï¿½ Including annotations and comments
   * Primary AST for e.g. the Interactive module
      - Model editor related representations (must use annotations)
   * Functions
@@ -515,10 +515,6 @@ uniontype Equation "Information on one (kind) of equation, different constructor
     EquationItem equ;
   end EQ_FAILURE;
 
-  record EQ_EQUALITY
-    EquationItem equ;
-  end EQ_EQUALITY;
-
 end Equation;
 
 public 
@@ -544,12 +540,12 @@ uniontype Algorithm "The Algorithm type describes one algorithm statement in an
   end ALG_FOR;
 
   record ALG_WHILE
-    Exp whileStmt "whileStmt" ;
+    Exp boolExpr "boolExpr" ;
     list<AlgorithmItem> whileBody "whileBody" ;
   end ALG_WHILE;
 
   record ALG_WHEN_A
-    Exp whenStmt "whenStmt" ;
+    Exp boolExpr "boolExpr" ;
     list<AlgorithmItem> whenBody "whenBody" ;
     list<tuple<Exp, list<AlgorithmItem>>> elseWhenAlgorithmBranch "elseWhenAlgorithmBranch" ;
   end ALG_WHEN_A;
@@ -558,14 +554,6 @@ uniontype Algorithm "The Algorithm type describes one algorithm statement in an
     ComponentRef functionCall "functionCall" ;
     FunctionArgs functionArgs "functionArgs; general fcalls without return value" ;
   end ALG_NORETCALL;
-
-  record ALG_FAILURE
-    AlgorithmItem equ;
-  end ALG_FAILURE;
-
-  record ALG_EQUALITY
-    AlgorithmItem equ;
-  end ALG_EQUALITY;
 
   record ALG_RETURN
   end ALG_RETURN;
@@ -584,6 +572,10 @@ uniontype Algorithm "The Algorithm type describes one algorithm statement in an
 
   record ALG_THROW
   end ALG_THROW;
+  
+  record ALG_MATCHCASES
+    list<Exp> switchCases;
+  end ALG_MATCHCASES;
 
   record ALG_GOTO
     String labelName;
@@ -755,6 +747,12 @@ uniontype Exp "The Exp uniontype is the container of a Modelica expression.
     ComponentRef function_ "function" ;
     FunctionArgs functionArgs ;
   end CALL;
+  
+  // stefan
+  record PARTEVALFUNCTION "Partially evaluated function"
+    ComponentRef function_ "function" ;
+    FunctionArgs functionArgs ;
+  end PARTEVALFUNCTION;
 
   record ARRAY   "Array construction using {, }, or array" 
     list<Exp> arrayExp ;
@@ -821,9 +819,11 @@ uniontype ValueblockBody "body of a valueblock"
       list<AlgorithmItem> algorithmBody "algorithm body";	
    end VALUEBLOCKALGORITHMS;
 
-   record VALUEBLOCKEQUATIONS
-      list<EquationItem> equationBody "equation body";
-   end VALUEBLOCKEQUATIONS;
+   record VALUEBLOCKMATCHCASE "a case in a {match,matchcontinue} expression"
+      list<AlgorithmItem> patternMatching "does pattern matching against the input variables";	
+      list<EquationItem>  equationBody "need to be translated from equations to algorithms";
+      list<AlgorithmItem> resultAssignments "assigns the result to the result variables";
+   end VALUEBLOCKMATCHCASE;
 end ValueblockBody;
 
 
@@ -1048,7 +1048,14 @@ uniontype Restriction "These constructors each correspond to a different kind of
   record R_PREDEFINED_ENUM end R_PREDEFINED_ENUM;
   
   record R_UNIONTYPE "MetaModelica uniontype" end R_UNIONTYPE;
-
+  
+  record R_METARECORD "Metamodelica record"  //MetaModelica extension, added by simbj
+    Path name; //Name of the uniontype
+    Integer index; //Index in the uniontype
+  end R_METARECORD; 
+  
+  record R_UNKNOWN "Helper restriction" end R_UNKNOWN; /* added by simbj */
+  
 end Restriction;
 
 public 
@@ -1086,7 +1093,6 @@ end ExternalDecl;
 /* "From here down, only Absyn helper functions should be present. 
  Thus, no actual absyn uniontype definitions." */
 
-protected import Debug;
 protected import Util;
 protected import Print;
 protected import ModUtil;
@@ -1123,6 +1129,331 @@ algorithm ots := matchcontinue(its,which)
       its;
 end matchcontinue;  
 end setTimeStampBool;
+
+// stefan
+public function traverseEquation
+"function: traverseEquation
+	Traverses all subequations of an equation
+	takes a function and an extra argument passed through the traversal"
+	input Equation inEquation;
+	input FuncTplToTpl inFunc;
+	input TypeA inTypeA;
+	output tuple<Equation, TypeA> outTpl;
+	partial function FuncTplToTpl
+	  input tuple<Equation, TypeA> inTpl;
+	  output tuple<Equation, TypeA> outTpl;
+	  replaceable type TypeA subtypeof Any;
+	end FuncTplToTpl;
+  replaceable type TypeA subtypeof Any;
+algorithm
+  outTpl := matchcontinue (inEquation,inFunc,inTypeA)
+    local
+      TypeA arg,arg_1,arg_2,arg_3,arg_4;
+      Equation eq,eq_1;
+      FuncTplToTpl rel;
+      Exp e,e_1;
+      list<EquationItem> eqilst,eqilst1,eqilst2,eqilst_1,eqilst1_1,eqilst2_1;
+      list<tuple<Exp, list<EquationItem>>> eeqitlst,eeqitlst_1;
+      ForIterators fis,fis_1;
+      EquationItem ei,ei_1;
+    case(eq as EQ_IF(e,eqilst1,eeqitlst,eqilst2),rel,arg)
+      equation
+        ((eqilst1_1,arg_1)) = traverseEquationItemList(eqilst1,rel,arg);
+        ((eeqitlst_1,arg_2)) = traverseExpEqItemTupleList(eeqitlst,rel,arg_1);
+        ((eqilst2_1,arg_3)) = traverseEquationItemList(eqilst2,rel,arg_2);
+        ((EQ_IF(e_1,_,_,_),arg_4)) = rel((eq,arg_3));
+      then
+        ((EQ_IF(e,eqilst1_1,eeqitlst_1,eqilst2_1),arg_4));
+    case(eq as EQ_FOR(fis,eqilst),rel,arg)
+      equation
+        ((eqilst_1,arg_1)) = traverseEquationItemList(eqilst,rel,arg);
+        ((EQ_FOR(fis_1,_),arg_2)) = rel((eq,arg_1));
+      then
+        ((EQ_FOR(fis_1,eqilst_1),arg_2));
+    case(eq as EQ_WHEN_E(e,eqilst,eeqitlst),rel,arg)
+      equation
+        ((eqilst_1,arg_1)) = traverseEquationItemList(eqilst,rel,arg);
+        ((eeqitlst_1,arg_2)) = traverseExpEqItemTupleList(eeqitlst,rel,arg_1);
+        ((EQ_WHEN_E(e_1,_,_),arg_3)) = rel((eq,arg_2));
+      then
+        ((EQ_WHEN_E(e_1,eqilst_1,eeqitlst_1),arg_3));
+    case(eq as EQ_FAILURE(ei),rel,arg)
+      equation
+        ((ei_1,arg_1)) = traverseEquationItem(ei,rel,arg);
+        ((EQ_FAILURE(_),arg_2)) = rel((eq,arg_1));
+      then
+        ((EQ_FAILURE(ei_1),arg_2));
+    case(eq,rel,arg)
+      equation
+        ((eq_1,arg_1)) = rel((eq,arg));
+      then
+        ((eq_1,arg_1));
+  end matchcontinue;
+end traverseEquation;
+
+// stefan
+protected function traverseEquationItem
+"function: traverseEquationItem
+	Traverses the equation inside an equationitem"
+	input EquationItem inEquationItem;
+	input FuncTplToTpl inFunc;
+	input TypeA inTypeA;
+	output tuple<EquationItem, TypeA> outTpl;
+	partial function FuncTplToTpl
+	  input tuple<Equation, TypeA> inTpl;
+	  output tuple<Equation, TypeA> outTpl;
+	  replaceable type TypeA subtypeof Any;
+	end FuncTplToTpl;
+	replaceable type TypeA subtypeof Any;
+algorithm
+  outTpl := matchcontinue (inEquationItem,inFunc,inTypeA)
+    local
+      EquationItem ei;
+      FuncTplToTpl rel;
+      TypeA arg,arg_1;
+      Equation eq,eq_1;
+      Option<Comment> oc;
+    case(EQUATIONITEM(eq,oc),rel,arg)
+      equation
+        ((eq_1,arg_1)) = traverseEquation(eq,rel,arg);
+      then
+        ((EQUATIONITEM(eq_1,oc),arg_1));
+    case(ei,rel,arg) then ((ei,arg));
+  end matchcontinue;
+end traverseEquationItem;
+
+// stefan
+public function traverseEquationItemList
+"function: traverseEquationItemList
+	calls traverseEquationItem on every element of the given list"
+	input list<EquationItem> inEquationItemList;
+	input FuncTplToTpl inFunc;
+	input TypeA inTypeA;
+	output tuple<list<EquationItem>, TypeA> outTpl;
+	partial function FuncTplToTpl
+	  input tuple<Equation, TypeA> inTpl;
+	  output tuple<Equation, TypeA> outTpl;
+	  replaceable type TypeA subtypeof Any;
+	end FuncTplToTpl;
+	replaceable type TypeA subtypeof Any;
+algorithm
+  outTpl := matchcontinue (inEquationItemList,inFunc,inTypeA)
+    local
+      list<EquationItem> cdr,cdr_1;
+      FuncTplToTpl rel;
+      TypeA arg,arg_1,arg_2;
+      EquationItem ei,ei_1;
+    case({},_,arg) then (({},arg));
+    case(ei :: cdr,rel,arg)
+      equation
+        ((ei_1,arg_1)) = traverseEquationItem(ei,rel,arg);
+        ((cdr_1,arg_2)) = traverseEquationItemList(cdr,rel,arg_1);
+      then
+        ((ei_1 :: cdr_1,arg_2));
+  end matchcontinue;
+end traverseEquationItemList;
+
+// stefan
+public function traverseExpEqItemTupleList
+"function: traverseExpEqItemTupleList
+	traverses a list of Exp * EquationItem list tuples
+	mostly used for else-if blocks"
+	input list<tuple<Exp, list<EquationItem>>> inList;
+	input FuncTplToTpl inFunc;
+	input TypeA inTypeA;
+	output tuple<list<tuple<Exp, list<EquationItem>>>, TypeA> outTpl;
+	partial function FuncTplToTpl
+	  input tuple<Equation, TypeA> inTpl;
+	  output tuple<Equation, TypeA> outTpl;
+	  replaceable type TypeA subtypeof Any;
+	end FuncTplToTpl;
+	replaceable type TypeA subtypeof Any;
+algorithm
+  outTpl := matchcontinue (inList,inFunc,inTypeA)
+    local
+      FuncTplToTpl rel;
+      TypeA arg,arg_1,arg_2;
+      list<tuple<Exp, list<EquationItem>>> cdr,cdr_1;
+      Exp e;
+      list<EquationItem> eilst,eilst_1;
+    case({},rel,arg) then (({},arg));
+    case((e,eilst) :: cdr,rel,arg)
+      equation
+        ((eilst_1,arg_1)) = traverseEquationItemList(eilst,rel,arg);
+        ((cdr_1,arg_2)) = traverseExpEqItemTupleList(cdr,rel,arg_1);
+      then
+        (((e,eilst_1) :: cdr_1,arg_2));
+  end matchcontinue;
+end traverseExpEqItemTupleList;
+
+// stefan
+public function traverseAlgorithm
+"function: traverseAlgorithm
+	Traverses all subalgorithms of an algorithm
+	Takes a function and an extra argument passed through the traversal"
+	input Algorithm inAlgorithm;
+	input FuncTplToTpl inFunc;
+	input TypeA inTypeA;
+	output tuple<Algorithm, TypeA> outTpl;
+	partial function FuncTplToTpl
+	  input tuple<Algorithm, TypeA> inTpl;
+	  output tuple<Algorithm, TypeA> outTpl;
+	  replaceable type TypeA subtypeof Any;
+	end FuncTplToTpl;
+	replaceable type TypeA subtypeof Any;
+algorithm
+  outTpl := matchcontinue (inAlgorithm,inFunc,inTypeA)
+    local
+      TypeA arg,arg_1,arg1_1,arg2_1,arg3_1;
+      Algorithm alg,alg_1,alg1_1,alg2_1,alg3_1;
+      list<AlgorithmItem> ailst,ailst1,ailst2,ailst_1,ailst1_1,ailst2_1;
+      list<tuple<Exp, list<AlgorithmItem>>> eaitlst,eaitlst_1;
+      FuncTplToTpl rel;
+      AlgorithmItem ai,ai_1;
+      Exp e,e_1;
+      ForIterators fis,fis_1;
+    case(alg as ALG_IF(e,ailst1,eaitlst,ailst2),rel,arg)
+      equation
+        ((ailst1_1,arg1_1)) = traverseAlgorithmItemList(ailst1,rel,arg);
+        ((eaitlst_1,arg2_1)) = traverseExpAlgItemTupleList(eaitlst,rel,arg1_1);
+        ((ailst2_1,arg3_1)) = traverseAlgorithmItemList(ailst2,rel,arg2_1);
+        ((ALG_IF(e_1,_,_,_),arg_1)) = rel((alg,arg3_1));
+      then
+        ((ALG_IF(e_1,ailst1_1,eaitlst_1,ailst2_1),arg_1));
+    case(alg as ALG_FOR(fis,ailst),rel,arg)
+      equation
+        ((ailst_1,arg1_1)) = traverseAlgorithmItemList(ailst,rel,arg);
+        ((ALG_FOR(fis_1,_),arg_1)) = rel((alg,arg1_1));
+      then
+        ((ALG_FOR(fis_1,ailst_1),arg_1));
+    case(alg as ALG_WHILE(e,ailst),rel,arg)
+      equation
+        ((ailst_1,arg1_1)) = traverseAlgorithmItemList(ailst,rel,arg);
+        ((ALG_WHILE(e_1,_),arg_1)) = rel((alg,arg1_1));
+      then
+        ((ALG_WHILE(e_1,ailst_1),arg_1));
+    case(alg as ALG_WHEN_A(e,ailst,eaitlst),rel,arg)
+      equation
+        ((ailst_1,arg1_1)) = traverseAlgorithmItemList(ailst,rel,arg);
+        ((eaitlst_1,arg2_1)) = traverseExpAlgItemTupleList(eaitlst,rel,arg1_1);
+        ((ALG_WHEN_A(e_1,_,_),arg_1)) = rel((alg,arg2_1));
+      then
+        ((ALG_WHEN_A(e_1,ailst_1,eaitlst_1),arg_1));
+    case(alg as ALG_TRY(ailst),rel,arg)
+      equation
+        ((ailst_1,arg1_1)) = traverseAlgorithmItemList(ailst,rel,arg);
+        ((ALG_TRY(_),arg_1)) = rel((alg,arg1_1));
+      then
+        ((ALG_TRY(ailst_1),arg_1));
+    case(alg as ALG_CATCH(ailst),rel,arg)
+      equation
+        ((ailst_1,arg1_1)) = traverseAlgorithmItemList(ailst,rel,arg);
+        ((ALG_CATCH(_),arg_1)) = rel((alg,arg1_1));
+      then
+        ((ALG_CATCH(ailst_1),arg_1));
+    case(alg,rel,arg)
+      equation
+        ((alg_1,arg_1)) = rel((alg,arg));
+      then
+        ((alg_1,arg_1));
+  end matchcontinue;
+end traverseAlgorithm;
+
+// stefan
+public function traverseAlgorithmItem
+"function: traverseAlgorithmItem
+	traverses the Algorithm contained in an AlgorithmItem, if any
+	see traverseAlgorithm"
+	input AlgorithmItem inAlgorithmItem;
+	input FuncTplToTpl inFunc;
+	input TypeA inTypeA;
+	output tuple<AlgorithmItem, TypeA> outTpl;
+	partial function FuncTplToTpl
+	  input tuple<Algorithm, TypeA> inTpl;
+	  output tuple<Algorithm, TypeA> outTpl;
+	  replaceable type TypeA subtypeof Any;
+	end FuncTplToTpl;
+	replaceable type TypeA subtypeof Any;
+algorithm
+  outTpl := matchcontinue (inAlgorithmItem,inFunc,inTypeA)
+    local
+      FuncTplToTpl rel;
+      TypeA arg,arg_1;
+      Algorithm alg,alg_1;
+      Option<Comment> oc;
+      AlgorithmItem ai;
+    case(ALGORITHMITEM(alg,oc),rel,arg)
+      equation
+        ((alg_1,arg_1)) = traverseAlgorithm(alg,rel,arg);
+      then
+        ((ALGORITHMITEM(alg_1,oc),arg_1));
+    case(ai,_,arg) then ((ai,arg));
+  end matchcontinue;
+end traverseAlgorithmItem;
+
+// stefan
+public function traverseAlgorithmItemList
+"function: traverseAlgorithmItemList
+	calls traverseAlgorithmItem on each item in a list of AlgorithmItems"
+	input list<AlgorithmItem> inAlgorithmItemList;
+	input FuncTplToTpl inFunc;
+	input TypeA inTypeA;
+	output tuple<list<AlgorithmItem>, TypeA> outTpl;
+	partial function FuncTplToTpl
+	  input tuple<Algorithm, TypeA> inTpl;
+	  output tuple<Algorithm, TypeA> outTpl;
+	  replaceable type TypeA subtypeof Any;
+	end FuncTplToTpl;
+	replaceable type TypeA subtypeof Any;
+algorithm
+  outTpl := matchcontinue (inAlgorithmItemList,inFunc,inTypeA)
+    local
+      FuncTplToTpl rel;
+      TypeA arg,arg_1,arg_2;
+      AlgorithmItem ai,ai_1;
+      list<AlgorithmItem> cdr,cdr_1;
+    case({},_,arg) then (({},arg));
+    case(ai :: cdr,rel,arg)
+      equation
+        ((ai_1,arg_1)) = traverseAlgorithmItem(ai,rel,arg);
+        ((cdr_1,arg_2)) = traverseAlgorithmItemList(cdr,rel,arg_1);
+      then
+        ((ai_1 :: cdr_1,arg_2));
+  end matchcontinue;
+end traverseAlgorithmItemList;
+
+// stefan
+public function traverseExpAlgItemTupleList
+"function: traverseExpAlgItemTupleList
+	traverses a list of Exp * AlgorithmItem list tuples
+	mostly used for else-if blocks"
+	input list<tuple<Exp, list<AlgorithmItem>>> inList;
+	input FuncTplToTpl inFunc;
+	input TypeA inTypeA;
+	output tuple<list<tuple<Exp, list<AlgorithmItem>>>, TypeA> outTpl;
+	partial function FuncTplToTpl
+	  input tuple<Algorithm, TypeA> inTpl;
+	  output tuple<Algorithm, TypeA> outTpl;
+	  replaceable type TypeA subtypeof Any;
+	end FuncTplToTpl;
+	replaceable type TypeA subtypeof Any;
+algorithm
+  outTpl := matchcontinue (inList,inFunc,inTypeA)
+    local
+      FuncTplToTpl rel;
+      TypeA arg,arg_1,arg_2;
+      list<tuple<Exp, list<AlgorithmItem>>> cdr,cdr_1;
+      Exp e;
+      list<AlgorithmItem> ailst,ailst_1;
+    case({},rel,arg) then (({},arg));
+    case((e,ailst) :: cdr,rel,arg)
+      equation
+        ((ailst_1,arg_1)) = traverseAlgorithmItemList(ailst,rel,arg);
+        ((cdr_1,arg_2)) = traverseExpAlgItemTupleList(cdr,rel,arg_1);
+      then
+        (((e,ailst_1) :: cdr_1,arg_2));
+  end matchcontinue;
+end traverseExpAlgItemTupleList;
 
 public function traverseExp 
 " Traverses all subexpressions of an Exp expression.
@@ -1197,12 +1528,24 @@ algorithm
         ((IFEXP(e1_1,e2_1,e3_1,elseIfBranch1),ext_arg_4));
    
     case ((e as CALL(cfn,fargs)),rel,ext_arg)
-      local FunctionArgs fargs,fargs1; ComponentRef cfn,cfn_1;
+      local FunctionArgs fargs,fargs1,fargs2; ComponentRef cfn,cfn_1; Exp e_temp;
       equation 
         ((fargs1,ext_arg_1)) = traverseExpFunctionArgs(fargs, rel, ext_arg);
-        ((CALL(cfn_1,_),ext_arg_2)) = rel((e,ext_arg_1));
+        e_temp = CALL(cfn,fargs1);
+        ((CALL(cfn_1,fargs2),ext_arg_2)) = rel((e_temp,ext_arg_1));
       then
-        ((CALL(cfn_1,fargs1),ext_arg_2)); 
+        ((CALL(cfn_1,fargs2),ext_arg_2));
+        
+    //stefan
+    case ((e as PARTEVALFUNCTION(cfn,fargs)),rel,ext_arg)
+      local
+        FunctionArgs fargs,fargs1;
+        ComponentRef cfn,cfn_1;
+      equation
+        ((fargs1,ext_arg_1)) = traverseExpFunctionArgs(fargs,rel,ext_arg);
+        ((PARTEVALFUNCTION(cfn_1,_),ext_arg_2)) = rel((e,ext_arg_1));
+      then
+        ((PARTEVALFUNCTION(cfn_1,fargs1),ext_arg_2));
         
     case ((e as ARRAY(expl)),rel,ext_arg)
       equation 
@@ -1247,6 +1590,37 @@ algorithm
         ((e_1,ext_arg_1));
   end matchcontinue;
 end traverseExp;
+
+// stefan
+public function traverseExpList
+"function: traverseExpList
+	calls traverseExp on each element in the given list"
+  input list<Exp> inExpList;
+	input FuncTplToTpl inFunc;
+	input TypeA inTypeA;
+	output tuple<list<Exp>, TypeA> outTpl;
+	partial function FuncTplToTpl
+	  input tuple<Exp, TypeA> inTpl;
+	  output tuple<Exp, TypeA> outTpl;
+	  replaceable type TypeA subtypeof Any;
+	end FuncTplToTpl;
+	replaceable type TypeA subtypeof Any;
+algorithm
+  outTpl := matchcontinue (inExpList,inFunc,inTypeA)
+    local
+      FuncTplToTpl rel;
+      TypeA arg,arg_1,arg_2;
+      Exp e,e_1;
+      list<Exp> cdr,cdr_1;
+    case({},_,arg) then (({},arg));
+    case(e :: cdr,rel,arg)
+      equation
+        ((e_1,arg_1)) = traverseExp(e,rel,arg);
+        ((cdr_1,arg_2)) = traverseExpList(cdr,rel,arg_1);
+      then
+        ((e_1 :: cdr_1,arg_2));
+  end matchcontinue;
+end traverseExpList;
 
 public function traverseExpElseIfBranch  
 "function traverseExpElseIfBranch
@@ -1537,7 +1911,6 @@ algorithm s := matchcontinue(tp)
   case(TPATH(path = p)) then pathString(p);
 end matchcontinue;
 end typeSpecPathString;
-
 
 public function pathString "function: pathString
   This function simply converts a Path to a string."
@@ -1880,6 +2253,11 @@ algorithm
         res = getCrefFromFarg(farg,checkSubs) "res = Util.listMap(expl,get_cref_from_exp)" ;
       then
         res;
+    case (PARTEVALFUNCTION(functionArgs = farg),checkSubs)
+      equation
+        res = getCrefFromFarg(farg,checkSubs);
+      then
+        res;
     case (ARRAY(arrayExp = expl),checkSubs)
       local list<list<ComponentRef>> res1;
       equation 
@@ -1914,15 +2292,16 @@ algorithm
     case (END,checkSubs) then {};
         
     case (TUPLE(expressions = expl),checkSubs)
+      local list<list<ComponentRef>> crefll;
       equation 
-        print("#- Absyn.getCrefFromExp is not implemented yet for Abyn.TUPLE\n") 
-        "res = Util.listMap(expl,getCrefFromExp)" ;
+        crefll = Util.listMap1(expl,getCrefFromExp,checkSubs);
+        res = Util.listFlatten(crefll);
       then
-        {};
+        res;
   end matchcontinue;
 end getCrefFromExp;
 
-protected function getCrefFromFarg "function: getCrefFromFarg
+public function getCrefFromFarg "function: getCrefFromFarg
   Returns the flattened list of all component references 
   present in a list of function arguments."
   input FunctionArgs inFunctionArgs;
@@ -1945,6 +2324,308 @@ algorithm outComponentRefLst := matchcontinue (inFunctionArgs,checkSubs)
         res;
   end matchcontinue;
 end getCrefFromFarg;
+
+// stefan
+public function appendFunctionArgs
+"function: appendFunctionArgs
+	appends 2 function args into one
+	does not work for FOR_ITER_FARG"
+	input FunctionArgs inFunctionArgs1;
+	input FunctionArgs inFunctionArgs2;
+	output FunctionArgs outFunctionArgs;
+algorithm
+  outFunctionArgs := matchcontinue(inFunctionArgs1,inFunctionArgs2)
+    local
+      list<Exp> eargs1,eargs2,eargs;
+      list<NamedArg> nargs1,nargs2,nargs;
+      FunctionArgs res;
+    case(FUNCTIONARGS(eargs1,nargs1),FUNCTIONARGS(eargs2,nargs2))
+      equation
+        eargs = listAppend(eargs1,eargs2);
+        nargs = listAppend(nargs1,nargs2);
+        res = FUNCTIONARGS(eargs,nargs);
+      then
+        res;
+    case(_,_) then fail();
+  end matchcontinue;
+end appendFunctionArgs;
+
+// stefan
+public function getClassByName
+"function: getClassByName
+	searches through a list of Classes and returns the one with the given name
+	fails if list is empty (no class found)"
+	input Ident inIdent;
+	input list<Class> inClassList;
+	output Class outClass;
+algorithm
+  outClass := matchcontinue(inIdent,inClassList)
+    local
+      list<Class> cdr;
+      Ident name,n;
+      Class cl;
+    case(name,(cl as CLASS(n,_,_,_,_,_,_)) :: _)
+      equation
+        true = n ==& name;
+      then cl;
+    case(name,cl :: cdr) then getClassByName(name,cdr);
+    case (_,{}) then fail();
+  end matchcontinue;
+end getClassByName;
+
+// stefan
+public function renameClass
+"function: renameClass
+	returns the same class with a new name"
+	input Ident inIdent;
+	input Class inClass;
+	output Class outClass;
+algorithm
+  outClass := matchcontinue(inIdent,inClass)
+    local
+      Class c;
+      Ident name,n;
+      Boolean pp,fp,ep;
+      Restriction r;
+      ClassDef cd;
+      Info i;
+    case(name,CLASS(n,pp,fp,ep,r,cd,i))
+      equation
+        c = CLASS(name,pp,fp,ep,r,cd,i);
+      then
+        c;
+  end matchcontinue;
+end renameClass;
+
+// stefan
+public function getClassParts
+"function: getClassParts
+	returns the classparts of a class definition"
+	input Class inClass;
+	output list<ClassPart> outClassPartList;
+algorithm
+  outClassPartList := matchcontinue(inClass)
+    local
+      list<ClassPart> parts;
+    case(CLASS(_,_,_,_,_,PARTS(parts,_),_)) then parts;
+    case(_) then {};
+  end matchcontinue;
+end getClassParts;
+
+// stefan
+public function setClassParts
+"function: setClassParts
+	sets the classparts of a class to the given ones"
+	input list<ClassPart> inClassPartList;
+	input Class inClass;
+	output Class outClass;
+algorithm
+  outClass := matchcontinue(inClassPartList,inClass)
+    local
+      list<ClassPart> parts;
+      Ident n;
+      Boolean pp,fp,ep;
+      Restriction r;
+      Info i;
+      Option<String> c;
+      Class cl;
+    case(parts,CLASS(n,pp,fp,ep,r,PARTS(_,c),i))
+      equation
+        cl = CLASS(n,pp,fp,ep,r,PARTS(parts,c),i);
+      then
+        cl;
+  end matchcontinue;
+end setClassParts;
+
+// stefan
+public function getPublicElementsFromClassParts
+"function: getPublicElementsFromClassParts
+	returns the element list from a public class part"
+	input list<ClassPart> inClassPartList;
+	output list<ElementItem> outElementItemList;
+algorithm
+  outElementItemList := matchcontinue(inClassPartList)
+    local
+      list<ElementItem> elts,elts_1,elts_2;
+      list<ClassPart> cdr;
+    case({}) then {};
+    case(PUBLIC(elts) :: cdr)
+      equation
+        elts_1 = getPublicElementsFromClassParts(cdr);
+        elts_2 = listAppend(elts,elts_1);
+      then
+        elts_2;
+    case(_ :: cdr)
+      equation
+        elts = getPublicElementsFromClassParts(cdr);
+      then
+        elts;
+  end matchcontinue;
+end getPublicElementsFromClassParts;
+
+// stefan
+public function getAlgorithmItems
+"function: getAlgorithmItems
+	retreives a list of AlgorithmItems from a given Class"
+	input Class inClass;
+	output list<AlgorithmItem> outAlgorithmItemList;
+algorithm
+  outAlgorithmItemList := matchcontinue (inClass)
+    local
+      Class cl;
+    case(cl)
+      local
+        list<AlgorithmItem> algs;
+        list<ClassPart> parts;
+      equation
+        parts = getClassParts(cl);
+        algs = getAlgorithmItems2(parts);
+      then
+        algs;
+    case(_) then {};
+  end matchcontinue;
+end getAlgorithmItems;
+
+// stefan
+protected function getAlgorithmItems2
+"function: getAlgorithmItems2
+	helper function to getAlgorithmItems"
+	input list<ClassPart> inClassPartList;
+	output list<AlgorithmItem> outAlgorithmItemList;
+algorithm
+  outAlgorithmItemList := matchcontinue (inClassPartList)
+    local
+      list<ClassPart> cdr;
+      list<AlgorithmItem> algs;
+    case({}) then {};
+    case(ALGORITHMS(contents=algs) :: cdr)
+      local
+        list<AlgorithmItem> algs2;
+      equation
+        algs2 = getAlgorithmItems2(cdr);
+      then
+        listAppend(algs,algs2);
+    case(_ :: cdr) then getAlgorithmItems2(cdr);
+  end matchcontinue;
+end getAlgorithmItems2;
+
+// stefan
+public function setAlgorithmItems
+"function: setAlgorithmItems
+	sets the algorithm part of a class to the input list of algorithm items"
+	input list<AlgorithmItem> inAlgorithmItemList;
+	input Class inClass;
+	output Class outClass;
+algorithm
+  outClass := matchcontinue (inAlgorithmItemList,inClass)
+    local
+      Class oc;
+      list<AlgorithmItem> algs;
+      list<ClassPart> parts,parts_1;
+      Ident n;
+      Boolean pp,fp,ep;
+      Restriction r;
+      ClassDef cd,cd_1;
+      Info i;
+      Option<String> c;
+    case(algs,CLASS(n,pp,fp,ep,r,cd as PARTS(parts,c),i))
+      equation
+        parts_1 = setAlgorithmItems2(algs,parts);
+        cd_1 = PARTS(parts_1,c);
+        oc = CLASS(n,pp,fp,ep,r,cd_1,i);
+      then oc;
+    case(_,_) then inClass;
+  end matchcontinue;
+end setAlgorithmItems;
+
+// stefan
+protected function setAlgorithmItems2
+"function: setAlgorithmItems2
+	helper function to setAlgorithmItems"
+	input list<AlgorithmItem> inAlgorithmItemList;
+	input list<ClassPart> inClassPartList;
+	output list<ClassPart> outClassPartList;
+algorithm
+  outClassPartList := matchcontinue (inAlgorithmItemList,inClassPartList)
+    local
+      list<AlgorithmItem> algs,prev;
+      ClassPart part;
+      list<ClassPart> cdr,cdr_1;
+    case(_,{}) then {};
+    case(algs,(part as PUBLIC(_)) :: cdr)
+      equation
+        cdr_1 = setAlgorithmItems2(algs,cdr);
+      then part :: cdr_1;
+    case(algs,(part as PROTECTED(_)) :: cdr)
+      equation
+        cdr_1 = setAlgorithmItems2(algs,cdr);
+      then part :: cdr_1;
+    case(algs,(part as EQUATIONS(_)) :: cdr)
+      equation
+        cdr_1 = setAlgorithmItems2(algs,cdr);
+      then part :: cdr_1;
+    case(algs,(part as INITIALEQUATIONS(_)) :: cdr)
+      equation
+        cdr_1 = setAlgorithmItems2(algs,cdr);
+      then part :: cdr_1;
+    case(algs,(part as INITIALALGORITHMS(_)) :: cdr)
+      equation
+        cdr_1 = setAlgorithmItems2(algs,cdr);
+      then part :: cdr_1;
+    case(algs,(part as EXTERNAL(_,_)) :: cdr)
+      equation
+        cdr_1 = setAlgorithmItems2(algs,cdr);
+      then part :: cdr_1;
+    case(algs,(part as ALGORITHMS(contents=prev)) :: cdr)
+      local
+        ClassPart part_1;
+      equation
+        part_1 = ALGORITHMS(algs);
+        cdr_1 = setAlgorithmItems2(algs,cdr);
+      then part_1 :: cdr_1;
+  end matchcontinue;
+end setAlgorithmItems2;      
+
+// stefan
+public function extractArgs
+"function: extractArgs
+	retrieves the positional and named arguments from a FunctionArgs"
+	input FunctionArgs inFunctionArgs;
+	output list<Exp> outArgs;
+	output list<NamedArg> outNamedArgs;
+algorithm
+  (outArgs,outNamedArgs) := matchcontinue(inFunctionArgs)
+    local
+      list<Exp> expl;
+      list<NamedArg> nargl;
+    case(FUNCTIONARGS(args = expl,argNames = nargl)) then (expl, nargl);
+  end matchcontinue;
+end extractArgs;
+
+// stefan
+public function getNamedFuncArgNamesAndValues
+"function: getNamedFuncArgNames
+	returns the names from a list of NamedArgs as a string list"
+	input list<NamedArg> inNamedArgList;
+	output list<String> outStringList;
+	output list<Exp> outExpList;
+algorithm
+  (outStringList,outExpList) := matchcontinue ( inNamedArgList )
+    local
+      list<NamedArg> cdr;
+      String s;
+      Exp e;
+    case ({})  then ({},{});
+    case (NAMEDARG(argName=s,argValue=e) :: cdr)
+      local
+        list<String> slst;
+        list<Exp> elst;
+      equation
+        (slst,elst) = getNamedFuncArgNamesAndValues(cdr);
+      then
+        (s :: slst, e :: elst);
+  end matchcontinue;
+end getNamedFuncArgNamesAndValues;
 
 protected function getCrefFromNarg "function: getCrefFromNarg
   Returns the flattened list of all component references 
@@ -2195,6 +2876,108 @@ algorithm subscripts := matchcontinue(cr)
 end matchcontinue; 
 end getSubsFromCref;
 
+// stefan
+public function buildExpFromCref
+"function: buildExpFromCref
+	Creates a CREF expression from a ComponentRef"
+	input ComponentRef inComponentRef;
+	output Exp outExp;
+algorithm
+  outExp := CREF(inComponentRef);
+end buildExpFromCref;
+
+// stefan
+public function buildNamedArgList
+"function: buildNamedArgList
+	builds a list of NamedArg from a list of arg names and args"
+	input list<Ident> inIdentList;
+	input list<Exp> inExpList;
+	output list<NamedArg> outNamedArgList;
+algorithm
+  outNamedArgList := matchcontinue(inIdentList,inExpList)
+    local
+      list<Ident> icdr;
+      list<Exp> ecdr;
+      Ident i;
+      Exp e;
+      list<NamedArg> ncdr;
+      NamedArg n;
+    case({},_) then {};
+    case(_,{}) then {};
+    case(i :: icdr,e :: ecdr)
+      equation
+        n = NAMEDARG(i,e);
+        ncdr = buildNamedArgList(icdr,ecdr);
+      then
+        n :: ncdr;
+  end matchcontinue;
+end buildNamedArgList;
+
+// stefan
+public function getExpListFromNamedArgList
+"function: getExpListFromNamedArgList
+	returns the expressions in the named arguments without the argument names"
+	input list<NamedArg> inNamedArgList;
+	output list<Exp> outExpList;
+algorithm
+  outExpList := matchcontinue(inNamedArgList)
+    local
+      list<NamedArg> cdr;
+      Exp e;
+      list<Exp> res;
+    case({}) then {};
+    case(NAMEDARG(_,e) :: cdr)
+      equation
+        res = getExpListFromNamedArgList(cdr);
+      then
+        e :: res;
+  end matchcontinue;
+end getExpListFromNamedArgList;
+
+// stefan
+public function crefGetLastIdent
+"function: crefGetLastIdent
+	Gets the last ident in a ComponentRef"
+	input ComponentRef inComponentRef;
+	output ComponentRef outComponentRef;
+algorithm
+  outComponentRef := matchcontinue (inComponentRef)
+    local
+      ComponentRef cref,cref_1;
+      Ident id;
+      list<Subscript> subs;
+    case(CREF_IDENT(id,subs)) then CREF_IDENT(id,subs);
+    case(CREF_QUAL(id,subs,cref))
+      equation
+        cref_1 = crefGetLastIdent(cref);
+      then
+        cref_1;
+  end matchcontinue;
+end crefGetLastIdent;
+
+// stefan
+public function crefSetLastIdent
+"function: crefSetLastIdent
+	Sets the last ident in a ComponentRef to the given ComponentRef"
+	input ComponentRef inComponentRef; // cref to change
+	input ComponentRef inNewIdent; // ident to replace the old one
+	output ComponentRef outComponentRef;
+algorithm
+  outComponentRef := matchcontinue (inNewIdent,inComponentRef)
+    local
+      ComponentRef cref,cref1,cref2,cref_1;
+      Ident id;
+      list<Subscript> subs;
+    case(CREF_IDENT(id,subs),cref) then cref;
+    case(CREF_QUAL(id,subs,cref1),cref2)
+      equation
+        cref = crefSetLastIdent(cref1,cref2);
+        cref_1 = CREF_QUAL(id,subs,cref);
+      then
+        cref_1;
+  end matchcontinue;
+end crefSetLastIdent;
+
 public function crefStripLastSubs "function: crefStripLastSubs
   Strips the last subscripts of a ComponentRef"
   input ComponentRef inComponentRef;
@@ -2374,6 +3157,8 @@ algorithm
   end matchcontinue;
 end setClassName;
 
+// Use Dump.printExpStr instead
+/*
 public function printAbsynExp "function: printAbsynExp 
   Prints an Exp"
   input Exp inExp;
@@ -2400,7 +3185,7 @@ algorithm
       then
         ();
   end matchcontinue;
-end printAbsynExp;
+end printAbsynExp;*/
 
 public function crefEqual "function: crefEqual
   Checks if the name of a ComponentRef is 
@@ -2804,14 +3589,6 @@ algorithm
         equation        
           lst=findIteratorInFunctionArgs(id,funcArgs);
         then lst;
-      case (id,ALG_FAILURE(algItem))          
-        equation        
-          lst=findIteratorInAlgorithmItem(id,algItem);
-        then lst;
-      case (id,ALG_EQUALITY(algItem))          
-        equation        
-          lst=findIteratorInAlgorithmItem(id,algItem);
-        then lst;
       case (id,ALG_TRY(algLst_1))
         equation        
           lst=findIteratorInAlgorithmItemLst(id,algLst_1);
@@ -3139,6 +3916,11 @@ algorithm
         equation        
           lst=findIteratorInFunctionArgs(id,funcArgs);
         then lst;
+      // stefan
+      case (id, PARTEVALFUNCTION(_,funcArgs))
+        equation
+          lst=findIteratorInFunctionArgs(id,funcArgs);
+        then lst;
       case (id, ARRAY(expLst))          
         equation        
           lst=findIteratorInExpLst(id,expLst);
@@ -3283,6 +4065,19 @@ algorithm
   end matchcontinue;
 end qualifyCRefIntLst;                        
           
+public function pathReplaceIdent
+  input Path path;
+  input String last;
+  output Path out;
+algorithm
+  out := matchcontinue (path,last)
+    local Path p; String n,s;
+    case (FULLYQUALIFIED(p),s) equation p = pathReplaceIdent(p,s); then FULLYQUALIFIED(p);
+    case (QUALIFIED(n,p),s) equation p = pathReplaceIdent(p,s); then QUALIFIED(n,p);
+    case (IDENT(_),s) then IDENT(s);
+  end matchcontinue;
+end pathReplaceIdent;
+
 public function setBuildTimeInInfo
   input Real buildTime;
   input Info inInfo;

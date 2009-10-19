@@ -42,7 +42,8 @@ public import Absyn;
 public import DFA;
 public import Env;
 public import SCode;
-//public import Types;
+public import Debug;
+public import Dump;
 
 protected import Lookup;
 protected import Util;
@@ -57,7 +58,7 @@ type RightHandVector = DFA.RightHandVector;
 type RightHandList = DFA.RightHandList;
 type RightHandSide = DFA.RightHandSide;
 type IndexVector = DFA.IndexVector;
-type AsList = list<Absyn.AlgorithmItem>;
+type AsList = list<Absyn.EquationItem>;
 type AsArray = AsList[:];
 type ArcName = Absyn.Ident;
 
@@ -115,10 +116,10 @@ algorithm
                                                                  // to the right hand-sides.
 
       then (localCache,varList,declList,rhsList,rhsListLight,patMat,elseRhSide);
-    case (exp,_,_) local Absyn.Exp exp;
+    case (exp,_,_) local Absyn.Exp exp; String expStr;
       equation
-        // Debug.fprint("failtrace", "- ASTtoMatrixForm failed, non-matching patterns in matchcase or zero input variables\n");
-       // Debug.fcall("failtrace", Dump.printExp, exp);
+        expStr = Dump.printExpStr(exp);
+        Debug.fprintln("matchcase", "- Patternm.ASTtoMatrixForm failed, non-matching patterns in matchcase or zero input variables: " +& expStr);
       then fail();
   end matchcontinue;
 end ASTtoMatrixForm;
@@ -184,6 +185,10 @@ algorithm
         rhsList = addAsBindings(rest1,rest2);
         rhsList = listAppend({first1},rhsList);
       then rhsList;
+    case (_, _)
+      equation
+        Debug.fprintln("matchcase", "- Patternm.addAsBindings failed");
+      then fail();
   end matchcontinue;
 end addAsBindings;
 
@@ -201,17 +206,17 @@ algorithm
         RightHandSide localRhSide;
       equation
       then localRhSide;
-    case (DFA.RIGHTHANDSIDE(localDecls,algs,result,cNumber),localAsList)
+    case (DFA.RIGHTHANDSIDE(localDecls,eqs,result,cNumber),localAsList)
       local
         list<Absyn.ElementItem> localDecls;
-        list<Absyn.AlgorithmItem> algs;
+        list<Absyn.EquationItem> eqs;
         Absyn.Exp result;
         RightHandSide rhS;
         AsList localAsList;
         Integer cNumber;
       equation
-        algs = listAppend(localAsList,algs);
-        rhS = DFA.RIGHTHANDSIDE(localDecls,algs,result,cNumber);
+        eqs = listAppend(localAsList,eqs);
+        rhS = DFA.RIGHTHANDSIDE(localDecls,eqs,result,cNumber);
       then rhS;
   end matchcontinue;
 end addAsBindingsHelper;
@@ -242,7 +247,6 @@ algorithm
       Absyn.Exp localPat,localRes;
       list<Absyn.ElementItem> localDecl;
       list<Absyn.EquationItem> localEq;
-      list<Absyn.AlgorithmItem> localAlg;
       Env.Cache localCache,var1;
       Env.Env localEnv;
 
@@ -255,17 +259,20 @@ algorithm
     case (Absyn.CASE(localPat,localDecl,localEq,localRes,_) :: rest,
       localRhListIn,localRhLightList,localPatListIn,localCaseNum,localCache,localEnv)
       equation
-        (localCache,localAlg) = fromEquationsToAlgAssignments(localEq,{},localCache,localEnv);
         localPatListIn = listAppend(localPatListIn,{localPat});
-        localRhListIn = listAppend(localRhListIn,{DFA.RIGHTHANDSIDE(localDecl,localAlg,localRes,localCaseNum)});
+        localRhListIn = listAppend(localRhListIn,{DFA.RIGHTHANDSIDE(localDecl,localEq,localRes,localCaseNum)});
         localRhLightList = listAppend(localRhLightList,{DFA.RIGHTHANDLIGHT(localCaseNum)});
         localCaseNum = localCaseNum + 1;
         (var1,var2,var3,var4,var5) = extractFromMatchAST(rest,localRhListIn,localRhLightList,localPatListIn,localCaseNum,localCache,localEnv);
       then (var1,var2,var3,var4,var5);
     case (Absyn.ELSE(localDecl,localEq,localRes,_) :: {},localRhListIn,localRhLightList,localPatListIn,_,localCache,localEnv)
+      then (localCache,localRhListIn,localRhLightList,localPatListIn,SOME(DFA.RIGHTHANDSIDE(localDecl,localEq,localRes,0)));
+    case (cas :: _,_,_,_,_,_,_)
+      local Absyn.Case cas; String casStr;
       equation
-        (localCache,localAlg) = fromEquationsToAlgAssignments(localEq,{},localCache,localEnv);
-      then (localCache,localRhListIn,localRhLightList,localPatListIn,SOME(DFA.RIGHTHANDSIDE(localDecl,localAlg,localRes,0)));
+        casStr = Dump.printCaseStr(cas);
+        Debug.fprintln("matchcase", "- Patternm.extractFromMatchAST failed: " +& casStr);
+      then fail();
   end matchcontinue;
 end extractFromMatchAST;
 
@@ -282,11 +289,11 @@ protected function fillMatrix "function: fillMatrix
   input RenamedPatMatrix patMat; // The matrix containg the renamed patterns
   input Env.Cache cache;
   input Env.Env env;
-  input tuple<Integer,list<Absyn.Ident,Integer>> inConstTagEnv;
+  input tuple<Integer,list<tuple<Absyn.Ident,Integer>>> inConstTagEnv;
   output Env.Cache outCache;
   output RenamedPatMatrix outPatMat;
   output AsArray outAsBindings;
-  output tuple<Integer,list<Absyn.Ident,Integer>> outConstTagEnv;
+  output tuple<Integer,list<tuple<Absyn.Ident,Integer>>> outConstTagEnv;
 algorithm
   (outCache,outPatMat,outAsBindings,outConstTagEnv) :=
   matchcontinue (rowNum,inAsBindings,varList,patList,patMat,cache,env,inConstTagEnv)
@@ -296,7 +303,7 @@ algorithm
       list<Absyn.Exp> first,rest,localVarList;
       AsArray localAsBindings;
       Integer localRowNum;
-      tuple<Integer,list<Absyn.Ident,Integer>> localConstTagEnv;
+      tuple<Integer,list<tuple<Absyn.Ident,Integer>>> localConstTagEnv;
     case (_,localAsBindings,_,{},localPatMat,localCache,_,localConstTagEnv)
       local
         Env.Cache localCache;
@@ -335,10 +342,10 @@ algorithm
         fillMatrix(localRowNum+1,localAsBindings,localVarList,rest,localPatMat,
           localCache,localEnv,localConstTagEnv);
       then (localCache,temp2,temp4,localConstTagEnv);
-    case (_,_,_,e :: _,_,_,_,_)  local Absyn.Exp e;
+    case (_,_,_,e :: _,_,_,_,_)  local Absyn.Exp e; String str;
       equation
-       // Debug.fprint("failtrace", "- fillMatrix failed, wrong number of patterns in case?\n");
-      //  Debug.fcall("failtrace", Dump.printExp, e);
+        str = Dump.printExpStr(e);
+        Debug.fprintln("matchcase", "- fillMatrix failed: " +& str);
       then fail();
   end matchcontinue;
 end fillMatrix;
@@ -355,11 +362,11 @@ protected function addRow "function: addRow
   input RenamedPatMatrix patMat;
   input Env.Cache cache;
   input Env.Env env;
-  input tuple<Integer,list<Absyn.Ident,Integer>> inConstTagEnv;
+  input tuple<Integer,list<tuple<Absyn.Ident,Integer>>> inConstTagEnv;
   output Env.Cache outCache;
   output RenamedPatMatrix outPatMat;
   output AsList outAsBinds;
-  output tuple<Integer,list<Absyn.Ident,Integer>> outConstTagEnv;
+  output tuple<Integer,list<tuple<Absyn.Ident,Integer>>> outConstTagEnv;
 algorithm
   (outCache,outPatMat,outAsBinds,outConstTagEnv) :=
   matchcontinue (asBindings,varList,pivot,pats,patMat,cache,env,inConstTagEnv)
@@ -369,12 +376,12 @@ algorithm
       list<Absyn.Exp> restPat,restVar;
       RenamedPatMatrix localPatMat;
       Absyn.Ident firstVar;
-      list<Absyn.Ident,Absyn.Ident> localVars;
+      list<tuple<Absyn.Ident,Absyn.Ident>> localVars;
       Integer localRowNum;
       AsList localAsBindings;
       Env.Cache localCache;
       Env.Env localEnv;
-      tuple<Integer,list<Absyn.Ident,Integer>> localConstTagEnv;
+      tuple<Integer,list<tuple<Absyn.Ident,Integer>>> localConstTagEnv;
     case (localAsBindings,_,_,{},localPatMat,localCache,_,localConstTagEnv)
       equation
       then (localCache,localPatMat,localAsBindings,localConstTagEnv);
@@ -408,6 +415,10 @@ algorithm
         (localCache,temp2,temp4,localConstTagEnv) = addRow(localAsBindings,restVar,localPivot+1,restPat,
         localPatMat,localCache,localEnv,localConstTagEnv);
       then (localCache,temp2,temp4,localConstTagEnv);
+    case (_,_,_,_,_,_,_,_)
+      equation
+        Debug.fprintln("matchcase", "- Patternm.addRow failed");
+      then fail();
   end matchcontinue;
 end addRow;
 
@@ -423,22 +434,22 @@ protected function renameMain "function: renameMain
   input AsList inAsBinds;
   input Env.Cache cache;
   input Env.Env env;
-  input tuple<Integer,list<Absyn.Ident,Integer>> inConstTagEnv;
+  input tuple<Integer,list<tuple<Absyn.Ident,Integer>>> inConstTagEnv;
   output Env.Cache outCache;
   output RenamedPat renamedPat;
   output AsList outAsBinds; // New as-bindings are added in the as-pattern case
-  output tuple<Integer,list<Absyn.Ident,Integer>> outConstTagEnv;
+  output tuple<Integer,list<tuple<Absyn.Ident,Integer>>> outConstTagEnv;
 algorithm
   (outCache,renamedPat,outAsBinds,outConstTagEnv) :=
   matchcontinue (pat,rootVar,inAsBinds,cache,env,inConstTagEnv)
     local
       Absyn.Exp localPat;
       Absyn.Ident localVar,localVar2;
-      list<Absyn.Ident,Absyn.Ident> localVars;
+      list<tuple<Absyn.Ident,Absyn.Ident>> localVars;
       AsList localAsBinds,localAsBinds2;
       Env.Cache localCache;
       Env.Env localEnv;
-      tuple<Integer,list<Absyn.Ident,Integer>> localConstTagEnv;
+      tuple<Integer,list<tuple<Absyn.Ident,Integer>>> localConstTagEnv;
       // INTEGER EXPRESSION
     case (Absyn.INTEGER(val),localVar,localAsBinds,localCache,_,localConstTagEnv)
       local
@@ -483,15 +494,16 @@ algorithm
         // added to the correspond righthand side.
     case (Absyn.AS(var,expr),localVar,localAsBinds,localCache,localEnv,localConstTagEnv)
       local
-        Absyn.Exp expr;
+        Absyn.Exp expr,lhs,rhs;
         Absyn.Ident var;
 
         // Temp variables
         RenamedPat temp1;
         AsList temp3;
       equation
-        localAsBinds2 = {Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(Absyn.CREF(Absyn.CREF_IDENT(var,{})),
-          Absyn.CREF(Absyn.CREF_IDENT(localVar,{}))),NONE())};
+        lhs = Absyn.CREF(Absyn.CREF_IDENT(var,{}));
+        rhs = Absyn.CREF(Absyn.CREF_IDENT(localVar,{}));
+        localAsBinds2 = {Absyn.EQUATIONITEM(Absyn.EQ_EQUALS(lhs,rhs),NONE())};
         localAsBinds = listAppend(localAsBinds,localAsBinds2);
 
         (localCache,temp1,temp3,localConstTagEnv) = renameMain(expr,localVar,localAsBinds,localCache,localEnv,localConstTagEnv);
@@ -510,9 +522,10 @@ algorithm
         Absyn.Ident var;
         RenamedPat pat;
         Absyn.ComponentRef cr;
+        Absyn.Exp rhs;
       equation
-        localAsBinds2 = {Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(Absyn.CREF(cr),
-          Absyn.CREF(Absyn.CREF_IDENT(localVar,{}))),NONE())};
+        rhs = Absyn.CREF(Absyn.CREF_IDENT(localVar,{}));
+        localAsBinds2 = {Absyn.EQUATIONITEM(Absyn.EQ_EQUALS(Absyn.CREF(cr),rhs),NONE())};
         localAsBinds = listAppend(localAsBinds,localAsBinds2);
 
         pat = DFA.RP_WILDCARD(localVar);
@@ -589,37 +602,12 @@ algorithm
 
       then (localCache,pat,listAppend(localAsBinds,localAsBinds2),localConstTagEnv);
 
-        // CALL EXPRESSION
-        // This is a builtin functioncall, all the function arguments are renamed
-        // We also must transform named function arguments into positional function
-        // arguments.
-    case (Absyn.CALL(compRef,Absyn.FUNCTIONARGS(funcArgs,{})),localVar,
-        localAsBinds,localCache,localEnv,localConstTagEnv)
-      local
-        Absyn.ComponentRef compRef;
-        Absyn.Path recName;
-        list<Absyn.Exp> funcArgs;
-        RenamedPatList renamedPatList;
-        RenamedPat pat;
-        AsList localAsBinds2;
-        Integer constTag;
-      equation
-        recName = Absyn.crefToPath(compRef);
-
-        (constTag,localConstTagEnv) = getUniqueConstTag(recName,localConstTagEnv);
-        localVar2 = stringAppend(localVar,"_");
-        localVar2 = stringAppend(localVar2,intString(constTag));
-
-        (localCache,renamedPatList,localAsBinds2,localConstTagEnv) = renamePatList(funcArgs
-          ,localVar2,1,{},{},localCache,localEnv,localConstTagEnv);
-        pat = DFA.RP_CALL(localVar,compRef,renamedPatList);
-
-      then (localCache,pat,listAppend(localAsBinds,localAsBinds2),localConstTagEnv);
-        // CALL EXPRESSION
-    case (Absyn.CALL(compRef,Absyn.FUNCTIONARGS({},namedArgList)),
+        // CALL EXPRESSION - translates pos/named args into only pos ones
+    case (Absyn.CALL(compRef,Absyn.FUNCTIONARGS(funcArgs,namedArgList)),
         localVar,localAsBinds,localCache,localEnv,localConstTagEnv)
       local
         Absyn.ComponentRef compRef;
+        list<Absyn.Exp> funcArgs;
         list<Absyn.NamedArg> namedArgList;
         RenamedPatList renamedPatList;
         RenamedPat pat;
@@ -627,9 +615,9 @@ algorithm
         Absyn.Path recName;
         SCode.Class sClass;
         Absyn.Path pathName;
-        list<Absyn.Ident> fieldNameList;
-        list<Absyn.Exp> funcArgs;
-        Integer constTag;
+        list<Absyn.Ident> fieldNameList, fieldNamesPos, fieldNamesNamed;
+        list<Absyn.Exp> funcArgs, funcArgsNamedFixed;
+        Integer constTag, numPosArgs;
       equation
         recName = Absyn.crefToPath(compRef);
 
@@ -640,9 +628,13 @@ algorithm
         // Fetch the names of the fields
         (localCache,sClass,_) = Lookup.lookupClass(localCache,localEnv,recName,true);
         (fieldNameList,_) = DFA.extractFieldNamesAndTypes(sClass);
+        
+        numPosArgs = listLength(funcArgs);
+        (_,fieldNamesNamed) = Util.listSplit(fieldNameList, numPosArgs);
 
         //Sorting of named arguments
-        funcArgs = generatePositionalArgs(fieldNameList,namedArgList,{});
+        funcArgsNamedFixed = generatePositionalArgs(fieldNamesNamed,namedArgList,{});
+        funcArgs = listAppend(funcArgs,funcArgsNamedFixed);
 
         (localCache,renamedPatList,localAsBinds2,localConstTagEnv) = renamePatList(funcArgs
           ,localVar2,1,{},{},localCache,localEnv,localConstTagEnv);
@@ -666,10 +658,10 @@ algorithm
         (localCache,pat,localAsBinds,localConstTagEnv) =
         renameMain(exp,localVar,localAsBinds,localCache,localEnv,localConstTagEnv);
       then (localCache,pat,localAsBinds,localConstTagEnv);
-    case (e,_,_,_,_,_)  local Absyn.Exp e;
+    case (e,_,_,_,_,_)  local Absyn.Exp e; String str;
       equation
-      //  Debug.fprint("failtrace", "- renameMain failed, invalid pattern\n");
-      //  Debug.fcall("failtrace", Dump.printExp, e);
+        str = Dump.printExpStr(e);
+        Debug.fprintln("matchcase", "- Patternm.renameMain failed, invalid pattern " +& str);
       then fail();
   end matchcontinue;
 end renameMain;
@@ -711,11 +703,11 @@ protected function renamePatList "function: renamePatList
   input AsList asBindings;
   input Env.Cache cache;
   input Env.Env env;
-  input tuple<Integer,list<Absyn.Ident,Integer>> inConstTagEnv;
+  input tuple<Integer,list<tuple<Absyn.Ident,Integer>>> inConstTagEnv;
   output Env.Cache outCache;
   output list<RenamedPat> renamedPatList;
   output AsList outAsBindings;
-  output tuple<Integer,list<Absyn.Ident,Integer>> outConstTagEnv;
+  output tuple<Integer,list<tuple<Absyn.Ident,Integer>>> outConstTagEnv;
 algorithm
   (outCache,renamedPatList,outAsBindings,outConstTagEnv) :=
   matchcontinue (patList,var,pivot,accRenamedPatList,asBindings,cache,env,inConstTagEnv)
@@ -724,7 +716,7 @@ algorithm
       AsList localAsBindings;
       Env.Cache localCache;
       Env.Env localEnv;
-      tuple<Integer,list<Absyn.Ident,Integer>> localConstTagEnv;
+      tuple<Integer,list<tuple<Absyn.Ident,Integer>>> localConstTagEnv;
     case ({},_,_,localAccRenamedPatList,localAsBindings,localCache,_,localConstTagEnv)
       equation then (localCache,localAccRenamedPatList,localAsBindings,localConstTagEnv);
     case (first :: rest,localVar,localPivot,localAccRenamedPatList,localAsBindings,
@@ -754,6 +746,10 @@ algorithm
         	localAccRenamedPatList,
         	listAppend(localAsBindings,localAsBindings2),localCache,localEnv,localConstTagEnv);
       	then (localCache,temp1,temp3,localConstTagEnv);
+    case (_,_,_,_,_,_,_,_)
+      equation
+        Debug.fprintln("matchcase", "- Patternm.renamePatList failed");
+      then fail();
   end matchcontinue;
 end renamePatList;
 
@@ -774,6 +770,57 @@ public function matchMain "function: matchMain
 algorithm
   (outCache,outExpr) :=
   matchcontinue (matchCont,resultVarList,cache,env)
+    case (localMatchCont,localResultVarList,localCache,localEnv)
+      local
+        RightHandList rhList,rhList2; // Light version and normal version
+        RenamedPatMatrix patMat;
+        list<Absyn.ElementItem> declList;
+        list<list<Absyn.ElementItem>> caseLocalDeclList;
+        list<Absyn.Exp> localResultVarList,inputVarList;
+        list<Absyn.Case> cases;
+        Option<RightHandSide> elseRhSide;
+        Integer stampTemp,context;
+        DFA.State dfaState;
+        DFA.Dfa dfaRec;
+        Absyn.Exp localMatchCont,expr;
+        RenamedPatMatrix2 patMat2;
+        Env.Cache localCache;
+        Env.Env localEnv;
+        Integer nCases;
+        Boolean lightVs;
+      equation
+        // Get the pattern matrix, etc.
+        (localCache,inputVarList,declList,rhList2,rhList,patMat,elseRhSide) = ASTtoMatrixForm(localMatchCont,localCache,localEnv);
+        Absyn.MATCHEXP(cases=cases) = localMatchCont;
+        caseLocalDeclList = Util.listMap(cases, getCaseDecls);
+        patMat2 = arrayList(patMat);
+
+        // A small fix.
+        patMat2 = DFA.matrixFix(patMat2);
+
+        // -------------------
+        // ---Type Checking---
+        // -------------------
+        // Two sorts of type checkings are performed:
+        // - The type of the input variables are looked up
+        //   and matched against the patterns in each case clause
+        // - The type of the return variables are looked up
+        //   and matched against the return expression of each case clause
+        // Check to make sure that the number of patterns in each case-clause
+        // equals the number of input variables is done in the function fillMatrix
+        // -------------
+        //typeCheck1(localCache,localEnv,patMat2,inputVarList);
+        //typeCheck2(localCache,localEnv,rhList2,localResultVarList);
+        // -------------
+
+        // Start the pattern matching
+        // The rhList version is a "light" version of the rightHandSides so that
+        // we do not have to carry around a lot of extra code in the pattern match algorithm
+        patMat2 = Util.listlistTranspose(patMat2);
+        (localCache, expr) = DFA.matchContinueToSwitch(patMat2,caseLocalDeclList,inputVarList,declList,localResultVarList,rhList2,localCache,localEnv);
+      then (localCache, expr);
+    /*
+    
     case (localMatchCont,localResultVarList,localCache,localEnv)
       local
         RightHandList rhList,rhList2; // Light version and normal version
@@ -817,7 +864,7 @@ algorithm
         // Start the pattern matching
         // The rhList version is a "light" version of the rightHandSides so that
         // we do not have to carry around a lot of extra code in the pattern match algorithm
-        (dfaState,stampTemp,_) = matchFuncHelper(patMat2,rhList,DFA.STATE(1,0,{},NONE()),1,{});
+        (dfaState,stampTemp,_) = matchFuncHelper(patMat2,rhList,DFA.STATE({}),1,{});
         //print("Done with the matching");
         nCases = listLength(rhList);
         dfaRec = DFA.DFArec(declList,{},NONE(),dfaState,stampTemp,nCases);
@@ -834,12 +881,15 @@ algorithm
         (localCache,expr) =
         DFA.fromDFAtoIfNodes(dfaRec,inputVarList,localResultVarList,localCache,localEnv,rhList2,lightVs);
       then (localCache,expr);
+    */
     case (exp,_,_,_)
       local
         Absyn.Exp exp;
+        String str;
       equation
-      //  Debug.fprint("failtrace", "- matchMain failed\n");
-      //  Debug.fcall("failtrace", Dump.printExp, exp);
+        str = Dump.printExpStr(exp);
+        str = "- Patternm.matchMain failed: " +& str;
+        Debug.fprintln("matchcase", str);
       then fail();
   end matchcontinue;
 end matchMain;
@@ -1087,6 +1137,10 @@ algorithm
         //---------------------------
 
       then (localState,localCnt,localSavedStates);
+    case (_, _, _, _, _)
+      equation
+        Debug.fprintln("matchcase", "- Patternm.matchFuncHelper failed");
+      then fail();
   end matchcontinue;
 end matchFuncHelper;
 
@@ -1115,7 +1169,7 @@ algorithm
         RightHandList localRhList;
         DFA.State localState,newState;
         Integer localCnt,ind,oldCnt,oldCnt2;
-        list<Absyn.Ident,Boolean> listOfConstructors;
+        list<tuple<Absyn.Ident,Boolean>> listOfConstructors;
         IndexVector indVec;
         RenamedPatList tempList;
         RenamedPat pat;
@@ -1382,20 +1436,20 @@ protected function findConstructors "function: findConstructors
 	this boolean.
 "
   input RenamedPatList patList;
-  input list<Absyn.Ident,Boolean> accList;
-  output list<Absyn.Ident,Boolean> outList;
+  input list<tuple<Absyn.Ident,Boolean>> accList;
+  output list<tuple<Absyn.Ident,Boolean>> outList;
 algorithm
   outList :=
   matchcontinue (patList,accList)
     local
-      list<Absyn.Ident,Boolean> localAccList;
+      list<tuple<Absyn.Ident,Boolean>> localAccList;
     case ({},localAccList) equation then localAccList;
     case (first :: rest,localAccList)
       local
         Absyn.Ident constructorName;
         RenamedPatList rest;
         RenamedPat first;
-        list<Absyn.Ident,Boolean> temp;
+        list<tuple<Absyn.Ident,Boolean>> temp;
       equation
         true = (constructorOrNot(first));
         constructorName = getConstructorName(first);
@@ -1548,7 +1602,7 @@ algorithm
         Integer localInd,localCnt;
         RenamedPatMatrix2 localPatMat;
         RightHandList localRhList;
-        list<Absyn.Ident,Boolean> listOfC; // The boolean tells wether it is a constant or constructor
+        list<tuple<Absyn.Ident,Boolean>> listOfC; // The boolean tells wether it is a constant or constructor
         RenamedPatList listTemp;
         list<DFA.SimpleState> localSavedStates;
       equation
@@ -1568,19 +1622,19 @@ protected function getNamesOfCs "function: getNamesOfCs
  	Each name is stored with a boolean indicating wheter it is constructor or not.
 "
   input RenamedPatList patList;
-  input list<Absyn.Ident,Boolean> accList;
-  output list<Absyn.Ident,Boolean> outList;
+  input list<tuple<Absyn.Ident,Boolean>> accList;
+  output list<tuple<Absyn.Ident,Boolean>> outList;
 algorithm
   outList :=
   matchcontinue (patList,accList)
     local
-      list<Absyn.Ident,Boolean> localAccList;
+      list<tuple<Absyn.Ident,Boolean>> localAccList;
     case ({},localAccList) equation then localAccList;
     case (first :: rest,localAccList)
       local
         RenamedPat first;
         RenamedPatList rest;
-        list<Absyn.Ident,Boolean> temp;
+        list<tuple<Absyn.Ident,Boolean>> temp;
       equation
         true = constructorOrNot(first);
         temp = Util.listCreate((getConstructorName(first),true));
@@ -1590,7 +1644,7 @@ algorithm
       local
         RenamedPat first;
         RenamedPatList rest;
-        list<Absyn.Ident,Boolean> temp;
+        list<tuple<Absyn.Ident,Boolean>> temp;
       equation
         true = constantOrNot(first);
         temp = Util.listCreate((getConstantName(first),false));
@@ -1622,7 +1676,7 @@ protected function addNewArcForEachCHelper "function: addNewArcForEachCHelper
 	patterns from all other columns in the matrix.
 	For a constructor we have to extract subpatterns from the constructor call as well.
 "
-  input list<Absyn.Ident,Boolean> listOfC;
+  input list<tuple<Absyn.Ident,Boolean>> listOfC;
   input DFA.State state;
   input Integer ind;
   input RenamedPatMatrix2 patMat;
@@ -1636,7 +1690,7 @@ algorithm
   (finalState,outCnt,outSavedStates) :=
   matchcontinue (listOfC,state,ind,patMat,rhList,stampCnt,savedStates)
     local
-      list<Absyn.Ident,Boolean> rest;
+      list<tuple<Absyn.Ident,Boolean>> rest;
       DFA.State localState,newState;
       Integer localInd,localCnt;
       RenamedPatMatrix2 localPatMat;
@@ -1699,7 +1753,7 @@ algorithm
         list<Absyn.Ident> varList;
         RenamedPatList patList;
         Absyn.Ident constructorName;
-        list<Absyn.Ident,Boolean> rest;
+        list<tuple<Absyn.Ident,Boolean>> rest;
         RightHandList newRhL;
         RenamedPat pat;
         ArcName arcName;
@@ -2307,7 +2361,7 @@ end printList;
 protected function printCList "function: printCList
 	author:KS
 "
-  input list<Absyn.Ident,Boolean> cList;
+  input list<tuple<Absyn.Ident,Boolean>> cList;
 algorithm
   _ :=
   matchcontinue (cList)
@@ -2315,7 +2369,7 @@ algorithm
     case ((first,_) :: rest)
       local
         Absyn.Ident first;
-        list<Absyn.Ident,Boolean> rest;
+        list<tuple<Absyn.Ident,Boolean>> rest;
       equation
         print(first);
         printCList(rest);
@@ -2390,14 +2444,14 @@ end selectRightHandSides;
 // been assigned are kept in an environment.
 protected function findConstTag "function: findConstTag"
   input String constName;
-  input list<Absyn.Ident,Integer> inList;
+  input list<tuple<Absyn.Ident,Integer>> inList;
   output Integer outTag;
 algorithm
   outTag :=
   matchcontinue (constName,inList)
     local
       String id;
-      list<Absyn.Ident,Integer> restList;
+      list<tuple<Absyn.Ident,Integer>> restList;
     case (_,{}) then 0;
     case (id,(firstName,firstNum) :: restList)
       local
@@ -2417,20 +2471,20 @@ end findConstTag;
 
 protected function getUniqueConstTag "function: getUniqueConstTag"
   input Absyn.Path constName;
-  input tuple<Integer,list<Absyn.Ident,Integer>> inEnv;
+  input tuple<Integer,list<tuple<Absyn.Ident,Integer>>> inEnv;
   output Integer outTag;
-  output tuple<Integer,list<Absyn.Ident,Integer>> outEnv;
+  output tuple<Integer,list<tuple<Absyn.Ident,Integer>>> outEnv;
 algorithm
   (outTag,outEnv) :=
   matchcontinue (constName,inEnv)
     local
       Absyn.Path localName;
       Integer i;
-      list<Absyn.Ident,Integer> tagList;
+      list<tuple<Absyn.Ident,Integer>> tagList;
       String s;
     case (localName,env as (i,tagList))
       local
-        tuple<Integer,list<Absyn.Ident,Integer>> env;
+        tuple<Integer,list<tuple<Absyn.Ident,Integer>>> env;
         Integer tagNum;
       equation
         s = Absyn.pathString(localName);
@@ -2441,7 +2495,7 @@ algorithm
         // Constructor not found
     case (localName,(i,tagList))
       local
-        tuple<Integer,list<Absyn.Ident,Integer>> newEnv;
+        tuple<Integer,list<tuple<Absyn.Ident,Integer>>> newEnv;
       equation
         s = Absyn.pathString(localName);
         tagList = listAppend(tagList,{(s,i)});
@@ -2488,6 +2542,10 @@ algorithm
         simpleState = DFA.simplifyState(localState);
         localNewSavedStates = DFA.addNewSimpleState(localNewSavedStates,localOldCnt,simpleState);
       then (localState,localNewCnt,localNewSavedStates);
+    case (_,_,_,_,_)
+      equation
+        Debug.fprintln("matchcase", "- Patternm.doOptimization failed");
+      then fail();
   end matchcontinue;
 end doOptimization;
 
@@ -2564,7 +2622,7 @@ algorithm
         DFA.RenamedPat p;
         Absyn.Ident stateVar,stateVar2;
         list<DFA.Arc> arcs1;
-        list<DFA.ArcName,DFA.Stamp> arcs2;
+        list<tuple<DFA.ArcName,DFA.Stamp>> arcs2;
         Integer n;
       equation
         stateVar2 = DFA.extractPathVar(p);
@@ -2583,7 +2641,7 @@ states.
 "
   input DFA.SimpleStateArray savedStates; // All saved states
   input list<DFA.Arc> arcs1;
-  input list<DFA.ArcName,DFA.Stamp> arcs2;
+  input list<tuple<DFA.ArcName,DFA.Stamp>> arcs2;
   output Integer outStamp;
 algorithm
   outStamp :=
@@ -2599,7 +2657,7 @@ algorithm
         DFA.Stamp nextState1,nextState2;
         DFA.ArcName patName1,patName2;
         list<DFA.Arc> rest1;
-        list<DFA.ArcName,DFA.Stamp> rest2;
+        list<tuple<DFA.ArcName,DFA.Stamp>> rest2;
         Integer n;
       equation
         true = stringEqual(patName1,patName2);
@@ -2613,7 +2671,7 @@ algorithm
         DFA.SimpleState state2;
         DFA.ArcName patName1,patName2;
         list<DFA.Arc> rest1;
-        list<DFA.ArcName,DFA.Stamp> rest2;
+        list<tuple<DFA.ArcName,DFA.Stamp>> rest2;
         DFA.SimpleStateArray localSavedStates;
         DFA.Stamp nextState;
         Integer n;
@@ -2628,239 +2686,6 @@ algorithm
   end matchcontinue;
 end matchArcs;
 //----------------
-
-protected function fromEquationsToAlgAssignments "function: fromEquationsToAlgAssignments
- Converts equations to algorithm assignments.
- Matchcontinue expressions may contain statements that you won't find
- in a normal equation section. For instance:
-
- case(...)
- local
- equation
- 		(var1,_,MYREC(...)) = func(...);
-  	fail();
- then 1;
- "
-  input list<Absyn.EquationItem> eqsIn;
-  input list<Absyn.AlgorithmItem> accList;
-  input Env.Cache cache;
-  input Env.Env env;
-  output Env.Cache outCache;
-  output list<Absyn.AlgorithmItem> algsOut;
-algorithm
-  (outCache,algOut) :=
-  matchcontinue (eqsIn,accList,cache,env)
-    local
-      list<Absyn.AlgorithmItem> localAccList;
-      Env.Cache localCache;
-      Env.Env localEnv;
-    case ({},localAccList,localCache,localEnv) equation then (localCache,localAccList);
-    case (Absyn.EQUATIONITEM(first,_) :: rest,localAccList,localCache,localEnv)
-      local
-        Absyn.Equation first;
-        list<Absyn.EquationItem> rest;
-        list<Absyn.AlgorithmItem> firstAlg,restAlgs;
-      equation
-        (localCache,firstAlg) = fromEquationToAlgAssignment(first,localCache,localEnv);
-        localAccList = listAppend(localAccList,firstAlg);
-        (localCache,restAlgs) = fromEquationsToAlgAssignments(rest,localAccList,localCache,localEnv);
-      then (localCache,restAlgs);
-  end matchcontinue;
-end fromEquationsToAlgAssignments;
-
-protected function fromEquationToAlgAssignment "function: fromEquationToAlgAssignment"
-  input Absyn.Equation eq;
-  input Env.Cache cache;
-  input Env.Env env;
-  output Env.Cache outCache;
-  output list<Absyn.AlgorithmItem> algStatement;
-algorithm
-  (outCache,algStatement) :=
-  matchcontinue (eq,cache,env)
-    local
-      Env.Cache localCache;
-      Env.Env localEnv;
-
-    case (Absyn.EQ_EQUALS(Absyn.BOOL(true),right),localCache,_)
-      local
-        Absyn.Exp left,right;
-        list<Absyn.AlgorithmItem> algItem1,algItem2;
-      equation
-        /*
-        An equation such as ...
-
-        true = exp;
-
-        ... is transformed into ...
-
-        if (exp != true)
-        	throw();
-        	*/
-        algItem1 = {Absyn.ALGORITHMITEM(Absyn.ALG_THROW(),NONE())};
-        algItem2 = {Absyn.ALGORITHMITEM(Absyn.ALG_IF(Absyn.LUNARY(Absyn.NOT(),right),algItem1,{},{}),NONE())};
-      then (localCache,algItem2);
-
-    case (Absyn.EQ_EQUALS(Absyn.BOOL(false),right),localCache,_)
-      local
-        Absyn.Exp left,right;
-        list<Absyn.AlgorithmItem> algItem1,algItem2;
-      equation
-        algItem1 = {Absyn.ALGORITHMITEM(Absyn.ALG_THROW(),NONE())};
-        algItem2 = {Absyn.ALGORITHMITEM(Absyn.ALG_IF(right,algItem1,{},{}),NONE())};
-      then (localCache,algItem2);
-
-    case (Absyn.EQ_NORETCALL(Absyn.CREF_IDENT("fail",_),_),localCache,_)
-      local
-        list<Absyn.AlgorithmItem> algItem;
-      equation
-        algItem = {Absyn.ALGORITHMITEM(Absyn.ALG_THROW(),NONE())};
-      then (localCache,algItem);
-
-      /*
-      If we have an equation of the form (exp1,exp2,...,expN) = func(...),
-      we may have to transform it into a matchcontinue statement,
-      since the expressions should be "matched" against the return
-      values of the function */
-
-    case (Absyn.EQ_EQUALS(e,funcCall as Absyn.CALL(cRef,_)),localCache,localEnv)
-      local
-        list<Absyn.Exp> expL,varList;
-        Absyn.Exp funcCall,matchExp,e;
-        Absyn.ComponentRef cRef;
-        Absyn.Path p;
-        list<Absyn.AlgorithmItem> algItem,algItem2;
-        SCode.Element cl;
-        list<SCode.Element> elemList;
-        list<Absyn.ElementItem> elemList2;
-        SCode.Class cl1;
-        Absyn.Exp lhsExp;
-      equation
-        // This one should be after we looked up the class for the function.
-        // If we have a statement such as: ((a,b)) = func(...); this
-        // is not the same as (a,b) = func(...);
-        expL = extractListFromTuple(e,0);
-        false = onlyCrefExpressions(expL);
-
-      /*
-      _ :=
-      valueblock(
-      var1,...,varN;
-
-      (var1,...,varN) := func(...);
-      _ :=
-      valueblock(
-
-
-      )
-
-      */
-
-        p = Absyn.crefToPath(cRef);
-        (localCache,SCode.CLASS(classDef=SCode.PARTS(elementLst = elemList)),localEnv)
-         = Lookup.lookupClass(localCache,localEnv, p, true);
-        (elemList2,varList) = extractOutputVars(elemList,1,{},{});
-
-        matchExp =
-        Absyn.MATCHEXP(Absyn.MATCHCONTINUE(),Absyn.TUPLE(varList),{},
-          Absyn.CASE(Absyn.TUPLE(expL),{},{},Absyn.BOOL(true),NONE()) :: {},NONE());
-
-        lhsExp = createLhsExp(varList);
-
-        algItem2 = {Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(lhsExp,funcCall),NONE()),
-          Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(Absyn.CREF(Absyn.CREF_IDENT("DUMMIE__",{})),
-            matchExp),NONE())};
-
-        algItem = {Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(Absyn.CREF(Absyn.CREF_IDENT("DUMMIE__",{})),
-        Absyn.VALUEBLOCK(elemList2,Absyn.VALUEBLOCKALGORITHMS(algItem2),Absyn.BOOL(true))),NONE())};
-
-      then (localCache,algItem);
-      /*---------------------------------------*/
-
-    case (Absyn.EQ_EQUALS(left,right),localCache,_)
-      local
-        Absyn.Exp left,right;
-        list<Absyn.AlgorithmItem> algItem;
-      equation
-        algItem = {Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(left,right),NONE())};
-      then (localCache,algItem);
-  end matchcontinue;
-end fromEquationToAlgAssignment;
-
-
-protected function createLhsExp "function: createLhsExp"
-  input list<Absyn.Exp> inList;
-  output Absyn.Exp outExp;
-algorithm
-  outExp :=
-  matchcontinue (inList)
-    case (firstExp :: {}) local Absyn.Exp firstExp; equation then firstExp;
-    case (lst) local list<Absyn.Exp> lst; equation then Absyn.TUPLE(lst);
-  end matchcontinue;
-end createLhsExp;
-
-protected function extractOutputVars 
-"function: extractOutputVars"
-  input list<SCode.Element> inList;
-  input Integer cnt;
-  input list<Absyn.ElementItem> accList1;
-  input list<Absyn.Exp> accList2;
-  output list<Absyn.ElementItem> outList1;
-  output list<Absyn.Exp> outList2;
-algorithm
-  (outList1,outList2) := matchcontinue (inList,cnt,accList1,accList2)
-    local
-      list<Absyn.ElementItem> localAccList1;
-      list<SCode.Element> rest;
-      list<Absyn.Exp> localAccList2;
-      Integer localCnt;
-    case ({},localCnt,localAccList1,localAccList2)
-    then (localAccList1,localAccList2);
-    case (SCode.COMPONENT(attributes = SCode.ATTR(direction = Absyn.OUTPUT()),typeSpec = tSpec) :: rest,
-      localCnt,localAccList1,localAccList2)
-      local
-        Absyn.TypeSpec tSpec;
-        Absyn.Ident n1,n2;
-        Absyn.ElementItem elem1;
-        Absyn.Exp elem2;
-      equation
-        n1 = "var";
-        n2 = stringAppend(n1,intString(localCnt));
-        elem1 = Absyn.ELEMENTITEM(Absyn.ELEMENT(
-          false,NONE(),Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
-            tSpec,{Absyn.COMPONENTITEM(Absyn.COMPONENT(n2,{},NONE()),NONE(),NONE())}),
-            Absyn.INFO("f",false,0,0,0,0,Absyn.dummyTimeStamp),NONE()));
-        elem2 = Absyn.CREF(Absyn.CREF_IDENT(n2,{}));
-        localAccList1 = listAppend(localAccList1,{elem1});
-        localAccList2 = listAppend(localAccList2,{elem2});
-        (localAccList1,localAccList2) = extractOutputVars(rest,localCnt+1,localAccList1,localAccList2);
-      then (localAccList1,localAccList2);
-    case (_ :: rest,localCnt,localAccList1,localAccList2)
-      equation
-        (localAccList1,localAccList2) = extractOutputVars(rest,localCnt,localAccList1,localAccList2);
-      then (localAccList1,localAccList2);
-  end matchcontinue;
-end extractOutputVars;
-
-protected function onlyCrefExpressions "function: onlyCrefExpressions"
-  input list<Absyn.Exp> expList;
-  output Boolean boolVal;
-algorithm
-  boolVal :=
-  matchcontinue (expList)
-    case ({})
-      then true;
-    case (Absyn.CREF(Absyn.WILD()) :: _) then false;
-    case (Absyn.CREF(_) :: restList)
-      local
-        list<Absyn.Exp> restList;
-        Boolean b;
-      equation
-        b = onlyCrefExpressions(restList);
-      then b;
-    case (_) then false;
-  end matchcontinue;
-end onlyCrefExpressions;
 
 //--------------------//
 // Some Type Checking //
@@ -3009,5 +2834,16 @@ algorithm
   end matchcontinue;
 end twoPatternMatch; */
 //------------------
+
+protected function getCaseDecls
+  input Absyn.Case cas;
+  output list<Absyn.ElementItem> els;
+algorithm
+  els := matchcontinue (cas)
+    local list<Absyn.ElementItem> els;
+    case Absyn.CASE(localDecls = els) then els;
+    case Absyn.ELSE(localDecls = els) then els;
+  end matchcontinue;
+end getCaseDecls;
 
 end Patternm;

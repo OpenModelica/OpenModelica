@@ -616,13 +616,13 @@ void print(char* str)
   fprintf(stdout, "%s", str);
 }
 
-mmc_clock_rettype mmc_clock()
+mmc__clock_rettype mmc__clock()
 {
   static double start_t = clock();
   return (clock()-start_t)/CLOCKS_PER_SEC;
 }
 
-if_exp_rettype if_exp(modelica_boolean cond, metamodelica_type in1, metamodelica_type in2)
+if__exp_rettype if__exp(modelica_boolean cond, metamodelica_type in1, metamodelica_type in2)
 {
   return cond ? in1 : in2;
 }

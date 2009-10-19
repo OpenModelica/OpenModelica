@@ -199,7 +199,7 @@ algorithm (oType) := matchcontinue(inExp, inVal)
     String pathName;
     list<Values.Value> vals;
     list<String> names;
-  case(Exp.CALL(recordName,_,_,_,ty), inVal as Values.RECORD(_,vals,names ))
+  case(Exp.CALL(recordName,_,_,_,ty), inVal as Values.RECORD(_,vals,names,-1))
     equation
       pathName = Absyn.pathString(recordName);
       (cty as (Types.T_COMPLEX(_,lv,_,_),_)) = Types.expTypetoTypesType(ty);
@@ -266,7 +266,7 @@ algorithm oType := matchcontinue(inVars,invarName,inValue)
   case((tv as Types.VAR(varName2,a,p,t,Types.VALBOUND(val))),{},{})
     then
       tv;
-  case(Types.VAR(varName3,a,p, (t as (Types.T_COMPLEX(complexVarLst = typeslst),_)) ,b) ,varName2::varNames, (val as Values.RECORD(_,vals,names ))::values)
+  case(Types.VAR(varName3,a,p, (t as (Types.T_COMPLEX(complexVarLst = typeslst),_)) ,b) ,varName2::varNames, (val as Values.RECORD(_,vals,names,-1))::values)
     local
       list<Types.Var> typeslst,lv2;
       list<Values.Value> vals;
@@ -443,7 +443,7 @@ algorithm
         then
           env1;
           //while case
-    case(env, Absyn.ALG_WHILE(whileStmt = ae1,whileBody = algitemlst))
+    case(env, Absyn.ALG_WHILE(boolExpr = ae1,whileBody = algitemlst))
       equation 
         value = evaluateSingleExpression(ae1,env,NONE);
         env1 = evaluateConditionalStatement(value, ae1, algitemlst,env);
@@ -783,7 +783,7 @@ algorithm outVal := matchcontinue(inVal,env,toAssign)
       Env.Env env1;
       String str; 
       Values.Value value,value2;
-  case(value as Values.RECORD(_,vals,names),env,Absyn.CREF(Absyn.CREF_IDENT(str,subs)))
+  case(value as Values.RECORD(_,vals,names,-1),env,Absyn.CREF(Absyn.CREF_IDENT(str,subs)))
     local 
       list<Absyn.Subscript> subs;
       list<Types.Var> typeslst,nlist;
@@ -1118,7 +1118,7 @@ algorithm oval := matchcontinue(inType)
     equation
       
       then
-        Values.RECORD(Absyn.IDENT(str),{},{}) ;
+        Values.RECORD(Absyn.IDENT(str),{},{},-1) ;
   case(_) 
     equation 
       Debug.fprint("failtrace", "- Cevalfunc.typeOfValue failed might not be complete implemented\n");

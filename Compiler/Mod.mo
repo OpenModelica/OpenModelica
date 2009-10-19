@@ -1021,7 +1021,7 @@ algorithm
 
     case(NONE,_,_,_) then Types.NOMOD();
 
-    case(SOME(Types.TYPED(e,SOME(Values.RECORD(_,values,names)),Types.PROP((Types.T_COMPLEX(complexVarLst = varLst),_),_))),n,finalPrefix,each_) equation
+    case(SOME(Types.TYPED(e,SOME(Values.RECORD(_,values,names,-1)),Types.PROP((Types.T_COMPLEX(complexVarLst = varLst),_),_))),n,finalPrefix,each_) equation
       mod = lookupComplexCompModification2(values,names,varLst,n,finalPrefix,each_);
     then mod;
 

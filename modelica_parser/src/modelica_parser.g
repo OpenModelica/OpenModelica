@@ -644,13 +644,13 @@ algorithm_annotation_list :
 
 
 equation :
-		(   equality_equation	 
+		( equality_equation	 
 		|	conditional_equation_e
 		|	for_clause_e
 		|	connect_clause
 		|	when_clause_e   
-		|   FAILURE^ LPAR! equation RPAR!
-		|   EQUALITY^ LPAR! equation RPAR!
+		| FAILURE^ LPAR! equation RPAR!
+		| EQUALITY^ LPAR! expression (EQUALS!|COMMA!) expression RPAR!
 		)
         {
             #equation = #([EQUATION_STATEMENT,"EQUATION_STATEMENT"], #equation);
@@ -684,7 +684,6 @@ algorithm :
 		|   BREAK
 		|   RETURN
 		|   FAILURE^ LPAR! algorithm RPAR!
-		|   EQUALITY^ LPAR! algorithm RPAR!
 		)
 		comment
         {
@@ -831,6 +830,7 @@ expression :
 		( if_expression
 		| simple_expression
 		| code_expression
+		| part_eval_function_expression
 		| (MATCHCONTINUE^ expression_or_empty
 		   local_clause
 		   cases
@@ -843,6 +843,10 @@ expression :
  	       )
 		)
 		;
+		
+part_eval_function_expression :
+	FUNCTION^ component_reference function_call
+	;
 
 expression_or_empty !:
 	e:expression
@@ -890,7 +894,7 @@ for_index:
 ;
 
 simple_expression :
-		  simple_expr (COLONCOLON^ simple_expr)*
+		  simple_expr (COLONCOLON^ simple_expression)?
 		| IDENT AS^ simple_expression
 		;
 
@@ -1014,7 +1018,7 @@ primary :
 		| FALSE
 		| TRUE
 		| component_reference__function_call
-        | DER^ function_call
+		| DER^ function_call
 		| LPAR^ expression_list RPAR!
 		| LBRACK^ expression_list (SEMICOLON! expression_list)* RBRACK!
 		| LBRACE^ for_or_expression_list RBRACE!
@@ -1068,6 +1072,7 @@ function_arguments :
 
 for_or_expression_list
     :
+		
 		(
 			{LA(1)==IDENT && LA(2) == EQUALS || LA(1) == RPAR || LA(1) == RBRACE}?
 		|

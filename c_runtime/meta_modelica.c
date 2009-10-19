@@ -336,14 +336,14 @@ int mmc_boxes_equal(void* lhs, void* rhs)
   abort();
 }
 
-mmc_uniontype_metarecord_typedef_equal_rettype
-mmc_uniontype_metarecord_typedef_equal(void* ut,int ex_ctor,int fieldNums,modelica_string pathString)
+mmc__uniontype__metarecord__typedef__equal_rettype
+mmc__uniontype__metarecord__typedef__equal(void* ut,int ex_ctor,int fieldNums,modelica_string pathString)
 {
   mmc_uint_t hdr;
   int numslots;
   unsigned ctor;
   struct record_description* desc;
-  mmc_uniontype_metarecord_typedef_equal_rettype res;
+  mmc__uniontype__metarecord__typedef__equal_rettype res;
 
   hdr = MMC_GETHDR(ut);
   numslots = MMC_HDRSLOTS(hdr);
@@ -443,20 +443,20 @@ void printAny(void* any) /* For debugging */
 }
 
 /* Unboxing */
-mmc_unbox_integer_rettype mmc_unbox_integer(metamodelica_type box)
+mmc__unbox__integer_rettype mmc__unbox__integer(metamodelica_type box)
 {
   assert(0 == (((int)box) & 1));  
   return MMC_UNTAGFIXNUM(box);
 }
 
-mmc_unbox_real_rettype mmc_unbox_real(metamodelica_type box)
+mmc__unbox__real_rettype mmc__unbox__real(metamodelica_type box)
 {
   assert(1 == (((int)box) & 1));  
   assert(MMC_REALHDR == MMC_GETHDR(box));
   return mmc_prim_get_real(box);
 }
 
-mmc_unbox_string_rettype mmc_unbox_string(metamodelica_type box)
+mmc__unbox__string_rettype mmc__unbox__string(metamodelica_type box)
 {
   assert(1 == (((int)box) & 1));  
   assert(MMC_HDRISSTRING(MMC_GETHDR(box)));

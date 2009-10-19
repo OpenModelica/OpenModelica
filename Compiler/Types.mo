@@ -135,6 +135,15 @@ uniontype TType "-TType contains the actual type"
     Type arrayType "arrayType" ;
   end T_ARRAY;
 
+  record T_NORETCALL "For functions not returning any values." end T_NORETCALL;
+
+  record T_NOTYPE "Used when type is not yet determined" end T_NOTYPE;
+
+  record T_ANYTYPE
+    Option<ClassInf.State> anyClassType "anyClassType - used for generic types. When class state present the type is assumed to be a complex type which has that restriction." ;
+  end T_ANYTYPE;
+  
+  // MetaModelica extensions
   record T_LIST "MetaModelica list type"
     Type listType "listType";
   end T_LIST;
@@ -147,6 +156,15 @@ uniontype TType "-TType contains the actual type"
     Type optionType;
   end T_METAOPTION;
 
+  record T_UNIONTYPE "MetaModelica Uniontype, added by simbj"
+    list <Absyn.Path> records;
+  end T_UNIONTYPE;
+  
+  record T_METARECORD "MetaModelica Record, used by Uniontypes. added by simbj"
+    Integer index; //The index in the uniontype
+    list<Var> fields;
+  end T_METARECORD;
+  
   record T_COMPLEX
     ClassInf.State complexClassType "complexClassType ; The type of. a class" ;
     list<Var> complexVarLst "complexVarLst ; The variables of a complex type" ;
@@ -163,12 +181,14 @@ uniontype TType "-TType contains the actual type"
     list<Type> tupleType "tupleType ; For functions returning multiple values."  ;
   end T_TUPLE;
 
-  record T_NOTYPE "Used when type is not yet determined" end T_NOTYPE;
-
-  record T_ANYTYPE
-    Option<ClassInf.State> anyClassType "anyClassType - used for generic types. When class state present the type is assumed to be a complex type which has that restriction." ;
-  end T_ANYTYPE;
-
+  record T_BOXED "Used for MetaModelica generic types"
+    Type ty;
+  end T_BOXED;
+  
+  record T_POLYMORPHIC
+    String name;
+  end T_POLYMORPHIC;
+  
 end TType;
 
 public 
@@ -288,15 +308,14 @@ uniontype Mod "Modification"
 
 end Mod;
 
+type PolymorphicBindings = list<tuple<String,Type>>;
+
 protected import Dump;
-
 protected import Debug;
-
 protected import Print;
-
 protected import Util;
-
 protected import Static;
+protected import RTOpts;
 
 public function discreteType "function: discreteType
   author: PA
@@ -338,6 +357,49 @@ algorithm outProp := matchcontinue(inProps)
       PROP(ty,c); 
 end matchcontinue;
 end propsAnd;
+
+// stefan
+public function makePropsNotConst
+"function: makePropsNotConst
+	returns the same Properties but with the const flag set to Var"
+	input Properties inProperties;
+	output Properties outProperties;
+algorithm outProperties := matchcontinue (inProperties)
+  local
+    Type t;
+  case(PROP(type_=t,constFlag=_)) then PROP(t,C_VAR());
+  end matchcontinue;
+end makePropsNotConst;
+    
+
+// stefan
+public function getConstList
+"function: getConstList
+	retrieves a list of Consts from a list of Properties"
+	input list<Properties> inPropertiesList;
+	output list<Const> outConstList;
+algorithm
+  outConstList := matchcontinue(inPropertiesList)
+    local
+      Const c;
+      list<Const> ccdr;
+      list<Properties> pcdr;
+      TupleConst tc;
+    case({}) then {};
+    case(PROP(type_=_,constFlag=c) :: pcdr)
+      equation
+        ccdr = getConstList(pcdr);
+      then
+        c :: ccdr;
+    case(PROP_TUPLE(type_=_,tupleConst=tc) :: pcdr)
+      equation
+        c = elabTypePropToConst2(tc);
+        ccdr = getConstList(pcdr);
+      then
+        c :: ccdr;
+  end matchcontinue;
+end getConstList;
+      
 
 public function elabTypePropToConst " function elabTypePropToConst
 this function elaborates on a Types.Properties and return the Types.Const value.
@@ -581,11 +643,22 @@ algorithm
         tvars = Util.listMap(evars, convertFromExpToTypesVar);
         ty = (T_COMPLEX(ClassInf.RECORD("____"),tvars,NONE,NONE),NONE); 
         then 
-          ty; 
+          ty;
+    case(Exp.T_BOXED(at))
+      local Exp.Type at;
+      equation
+        ty = expTypetoTypesType(at);
+        ty2 = (T_BOXED(ty),NONE);
+      then ty2;
+    case(Exp.T_LIST(at))
+      local Exp.Type at;
+      equation
+        ty = expTypetoTypesType(at);
+        ty2 = (T_LIST(ty),NONE);
+      then ty2;
     case(_)
       equation
-        print("Conversion of all Exp types not yet implemented\n");
-        Debug.fprint("failtrace", "-util.expTypetoTypesType Conversion of all Exp types not yet implemented\n");
+        Debug.fprint("failtrace", "-Types.expTypetoTypesType Conversion of all Exp types not yet implemented\n");
       then
         fail();      
   end matchcontinue;
@@ -668,6 +741,15 @@ algorithm
     case(VAR(type_ = tp)) then tp;
   end matchcontinue;
 end getVarType;
+
+public function getVarName "Return the name of a Var"
+  input Var v;
+  output String name;
+algorithm
+  name := matchcontinue(v)
+    case(VAR(name = name)) then name;
+  end matchcontinue;
+end getVarName;
 
 public function isReal "Returns true if type is Real"
 input Type tp;
@@ -1187,8 +1269,7 @@ algorithm
           SOME(
           TYPED(Exp.BCONST(b),SOME(Values.BOOL(b)),
           PROP((T_BOOL({}),NONE),C_VAR()))))) :: res),NONE);
-          
-    case ((Values.RECORD(record_ = cname,orderd = vals,comp = val_names) :: rest),(id :: ids))
+    case ((Values.RECORD(record_ = cname,orderd = vals,comp = val_names, index=i) :: rest),(id :: ids))
       equation 
         MOD(_,_,res,_) = valuesToMods(rest, ids);
         rec_call = valuesToRecordConstructorCall(cname, vals);
@@ -1199,7 +1280,7 @@ algorithm
           (NAMEMOD(id,
           MOD(false,Absyn.NON_EACH(),{},
           SOME(
-          TYPED(rec_call,SOME(Values.RECORD(cname,vals,val_names)),
+          TYPED(rec_call,SOME(Values.RECORD(cname,vals,val_names,i)),
           PROP((T_COMPLEX(ClassInf.RECORD(cname_str),varlst,NONE,NONE),NONE),
           C_VAR()))))) :: res),NONE);
           
@@ -1325,24 +1406,52 @@ algorithm
         ts = Util.listMap(vs, typeOfValue);
       then
         ((T_TUPLE(ts),NONE));
-    case Values.RECORD(record_ = cname,orderd = vl,comp = ids)
+    case Values.RECORD(record_ = cname,orderd = vl,comp = ids, index = -1)
       equation 
         vars = valuesToVars(vl, ids);
         cname_str = Absyn.pathString(cname);
       then
-        ((T_COMPLEX(ClassInf.RECORD(cname_str),vars,NONE,NONE),NONE));
+        ((T_COMPLEX(ClassInf.RECORD(cname_str),vars,NONE,NONE),SOME(cname)));
+
+      // MetaModelica Uniontype
+    case Values.RECORD(record_ = cname,orderd = vl,comp = ids, index = index)
+      local Integer index; String ident;
+      equation 
+        true = index >= 0;
+        vars = valuesToVars(vl, ids);
+      then
+        ((T_METARECORD(index, vars),SOME(cname)));
 
         // MetaModelica list type
-    case ((w as Values.LIST(valueLst = (v :: _))))
+    case Values.LIST(vl)
+      local
+        list<Exp.Exp> explist;
       equation
-        tp = typeOfValue(v);
+        explist = Util.listMap(vl, Static.valueExp);
+        ts = Util.listMap(vl, typeOfValue);
+        (_,tp,_) = listMatchSuperType(explist, ts, {}, matchTypeRegular);
       then
         ((T_LIST(tp),NONE));
+        
+    case Values.OPTION(NONE)
+      equation
+        tp = (T_METAOPTION((T_NOTYPE,NONE)),NONE);
+      then tp;
+    case Values.OPTION(SOME(v))
+      equation
+        tp = typeOfValue(v);
+        tp = (T_METAOPTION(tp),NONE);
+      then tp;
+    case Values.META_TUPLE(valueLst = vs)
+      equation
+        ts = Util.listMap(vs, typeOfValue);
+      then
+        ((T_METATUPLE(ts),NONE));
 
     case (v)
       local Ident vs;
       equation 
-        Debug.fprint("failtrace", "-typeOfValue failed: ");
+        Debug.fprint("failtrace", "- Types.typeOfValue failed: ");
         vs = Values.valString(v);
         Debug.fprintln("failtrace", vs);
       then
@@ -1571,19 +1680,65 @@ algorithm
     case ((T_LIST((T_NOTYPE(),_)),_),(T_LIST(_),_)) then true;   // The empty list is represented with NO_TYPE()
     case ((T_LIST(_),_),(T_LIST((T_NOTYPE(),_)),_)) then true;
     case ((T_LIST(t1),_),(T_LIST(t2),_)) then subtype(t1,t2);
-    case ((T_LIST((T_NOTYPE(),_)),_),_) then true; //Used by the function listCar
-    case (_,(T_LIST((T_NOTYPE(),_)),_)) then true; //Used by the function listCar
     case ((T_METATUPLE(tList1),_),(T_METATUPLE(tList2),_))
       local list<Type> tList1,tList2; Boolean ret; equation
         ret = subtypeTypelist(tList1,tList2);
       then ret;
     case ((T_METAOPTION((T_NOTYPE(),_)),_),(T_METAOPTION(_),_)) then true;
-    case ((T_METAOPTION(_),_),(T_METAOPTION((T_NOTYPE(),_)),_)) then true;
-    case ((T_METAOPTION(t1),_),(T_METAOPTION(t2),_)) then subtype(t1,t2);
+    //case ((T_METAOPTION(_),_),(T_METAOPTION((T_NOTYPE(),_)),_)) then true;
+    case ((T_METAOPTION(t1),_),(T_METAOPTION(t2),_))
+      equation
+        failure((T_NOTYPE(),_) = t2);
+      then subtype(t1,t2);
+    case ((T_BOXED(t1),_),(T_BOXED(t2),_)) then subtype(t1,t2);
+    case ((T_BOXED(t1),_),t2) equation true = isBoxedType(t2); then subtype(t1,t2);
+    case (t1,(T_BOXED(t2),_)) equation true = isBoxedType(t1); then subtype(t1,t2);
+
+    case ((T_POLYMORPHIC(l1),_),(T_POLYMORPHIC(l2),_)) then l1 ==& l2;
     case ((T_NOTYPE(),_),_) then true;
     case (_,(T_NOTYPE(),_)) then true;
-
-    case (t1,t2) then false;   
+    case ((T_NORETCALL(),_),(T_NORETCALL(),_)) then true;
+      
+    // MM Function Reference. sjoelund
+    case ((T_FUNCTION(farg1,t1),_),(T_FUNCTION(farg2,t2),_))
+      local list<FuncArg> farg1,farg2; list<Type> tList1,tList2;
+      equation
+        tList1 = Util.listMap(farg1, Util.tuple22);
+        tList2 = Util.listMap(farg2, Util.tuple22);
+        true = subtypeTypelist(tList1,tList2);
+        true = subtype(t1,t2);
+      then true;
+    
+        //Part of metamodelica extension, added by, simbj
+        // <uniontype> = <metarecord>
+    case((T_METARECORD(_,_),SOME(path)),(T_UNIONTYPE(lst),_))
+      local
+        list<Absyn.Path> lst;
+        Absyn.Path path;
+      equation
+        true = listMember(path, lst);
+      then true;
+    case(t1 as (T_METARECORD(_,_),_), t2 as (T_METARECORD(_,_),_))
+      equation
+        equality(t1 = t2);
+      then true;
+        // <uniontype> = <uniontype>
+    case((T_UNIONTYPE(lst1),_),(T_UNIONTYPE(lst2),_))
+      local
+        list<Absyn.Path> lst1,lst2;
+      equation
+        equality(lst1 = lst2);
+      then true; 
+        
+    case (t1,t2)
+      equation
+        /* Uncomment for debugging
+        l1 = unparseType(t1);
+        l2 = unparseType(t2);
+        l1 = Util.stringAppendList({"- Types.subtype failed:\n  t1=",l1,"\n  t2=",l2});
+        Debug.fprintln("failtrace", l1);
+        */
+      then false;
   end matchcontinue;
 end subtype;
 
@@ -1642,7 +1797,7 @@ algorithm
   end matchcontinue;
 end subtypeVarlist;
 
-protected function varlistLookup "function: varlistLookup
+public function varlistLookup "function: varlistLookup
  
   Given a list of `Var\' and a name, this function finds any `Var\'
   with the given name.
@@ -2089,21 +2244,71 @@ algorithm
         res = Util.stringAppendList({"(",tystr,")"});
       then
         res;
-
-        /* MetaModelica list */
-    case ((T_LIST(listType = ty),_))
-      local Type ty;
-      equation
-        tystrs = Util.listMap({ty}, unparseType);
-        tystr = Util.stringDelimitList(tystrs, ", ");
-        res = Util.stringAppendList({"list<",tystr,">"});
+    
+      /* MetaModelica tuple */
+    case ((T_METATUPLE(types = tys),_))
+      local list<Type> tys;
+      equation 
+        res = unparseType((T_TUPLE(tys),NONE));
       then
         res;
 
+        /* MetaModelica list */
+    case ((T_LIST(listType = ty),_))
+      equation
+        tystr = unparseType(ty);
+        res = Util.stringAppendList({"list<",tystr,">"});
+      then
+        res;
+        
+        /* MetaModelica list */
+    case ((T_POLYMORPHIC(tystr),_))
+      equation
+        res = Util.stringAppendList({"polymorphic<",tystr,">"});
+      then
+        res;
+
+        /* MetaModelica uniontype */
+    case ((T_UNIONTYPE(_),SOME(p)))
+      local Absyn.Path p;
+      equation
+        str = Absyn.pathString(p);
+        res = Util.stringAppendList({"#uniontype ",str,"#"});
+      then
+        res;
+        
+        /* MetaModelica uniontype (but we know which record in the UT it is) */
+    case ((T_METARECORD(_,vs),SOME(p)))
+      local Absyn.Path p;
+      equation
+        str = Absyn.pathString(p);
+        vars = Util.listMap(vs, unparseVar);
+        vstr = Util.stringAppendList(vars);
+        res = Util.stringAppendList({"metarecord ",str,"\n",vstr,"end ", str, ";"});        
+      then res;
+
+        /* MetaModelica boxed type */
+    case ((T_BOXED(ty),_))
+      equation
+        res = unparseType(ty);
+        res = Util.stringAppendList({"#boxed(",res,")#"});
+      then
+        res;
+
+        /* MetaModelica Option type */
+    case ((T_METAOPTION((T_NOTYPE(),_)),_)) then "Option<Any>";
+    case ((T_METAOPTION(ty),_))
+      equation
+        tystr = unparseType(ty);
+        res = Util.stringAppendList({"Option<",tystr,">"});
+      then
+        res;
+
+    case ((T_NORETCALL(),_)) then "#NORETCALL#";
     case ((T_NOTYPE(),_)) then "#NOTYPE#"; 
     case ((T_ANYTYPE(anyClassType = _),_)) then "#ANYTYPE#"; 
     case ((T_ENUM(),_)) then "#T_ENUM#";
-    case (ty) then "Internal error unparse_type: not implemented yet\n"; 
+    case (ty) then unparseType(ty); // "Internal error unparse_type: not implemented yet\n"; 
   end matchcontinue;
 end unparseType;
 
@@ -2235,12 +2440,35 @@ algorithm
       then
         str;
 
+        /* MetaModelica tuple */
+    case ((T_METATUPLE(types = tys),_))
+      equation 
+        str = printTypeStr((T_TUPLE(tys),NONE));
+      then
+        str;
         /* MetaModelica list */
     case ((T_LIST(listType = ty),_))
       local Type ty;
       equation
-        s1 = Util.stringDelimitList(Util.listMap({ty}, printTypeStr),", ");
+        s1 = printTypeStr(ty);
    			str = Util.stringAppendList({"list<",s1,">"});
+      then
+        str;
+
+        /* MetaModelica Option */
+    case ((T_METAOPTION(optionType = ty),_))
+      local Type ty;
+      equation
+        s1 = printTypeStr(ty);
+   			str = Util.stringAppendList({"Option<",s1,">"});
+      then
+        str;
+        
+    case ((T_BOXED(ty),_))
+      local Type ty;
+      equation
+        s1 = printTypeStr(ty);
+   			str = Util.stringAppendList({"boxed<",s1,">"});
       then
         str;
 
@@ -2838,7 +3066,7 @@ algorithm
       Var var;
       list<Type> tys;
       list<Var> vl;
-    case {} then ((T_NOTYPE(),NONE)); 
+    case {} then ((T_NORETCALL(),NONE)); 
     case {var}
       equation 
         ty = makeReturnTypeSingle(var);
@@ -3341,6 +3569,9 @@ algorithm
       equation
         t_1 = elabType(t);
       then Exp.T_LIST(t_1);
+    
+    case ((T_FUNCTION(_,_),_)) "Ceval.ceval might need more info? Don't know how that part of the compiler works. sjoelund"
+      then Exp.T_FUNCTION_REFERENCE();
 
     case ((T_METAOPTION(t),_))
       equation
@@ -3356,7 +3587,17 @@ algorithm
       equation
         t_l2 = Util.listMap(t_l,elabType);
       then Exp.T_METATUPLE(t_l2);
+    
+    case ((T_BOXED(t),_)) equation t_1 = elabType(t); then Exp.T_BOXED(t_1);
+      
+    case ((T_UNIONTYPE(_),_)) then Exp.T_UNIONTYPE();
+      
+    case ((T_METARECORD(_,_),_)) then Exp.T_UNIONTYPE();
+      
+    case ((T_POLYMORPHIC(_),_)) then Exp.T_POLYMORPHIC();
 
+    case ((T_NORETCALL(),_)) then Exp.T_NORETCALL();
+    
     case(    (T_COMPLEX(CIS,tcvl as _::_,_,_),_)   )
       local 
         list<Var> tcvl; 
@@ -3409,9 +3650,24 @@ algorithm
         c = constTupleAnd(c1, c2);
       then
         (e_1,PROP_TUPLE(t_1,c));
+        /* The problem with MetaModelica tuple is that it is a datatype (should use PROP instead of PROP_TUPLE)
+         * this case converts a TUPLE to META_TUPLE */
+    case (e,PROP_TUPLE(type_ = (gt as (T_TUPLE(_),_)),tupleConst = c1), PROP(type_ = (et as (T_METATUPLE(_),_)),constFlag = c2))
+      local TupleConst c1; Const c_1;
+      equation 
+        Debug.print("\nDebug: match prop (PROP META_TUPLE/TUPLE). ");
+        true = RTOpts.acceptMetaModelicaGrammar();
+        (e_1,t_1) = matchType(e, gt, et);
+        c_1 = propTupleAllConst(c1);
+        c = constAnd(c_1, c2);
+      then
+        (e_1,PROP(t_1,c));
+    
     case(e,inProperties2,inProperties3) 
       equation 
-        Debug.fprint("failtrace", " Failure in Types->match_Prop exp: "+& Exp.printExpStr(e)+& "\n");
+        Debug.fprint("failtrace", " Failure in Types->matchProp exp: "+& Exp.printExpStr(e)+& "\n");
+        Debug.fprint("failtrace", printPropStr(inProperties2) +& "\n");
+        Debug.fprint("failtrace", printPropStr(inProperties3) +& "\n");
         Debug.fprint("failtrace", printPropStr(inProperties2) +& "\n");
         Debug.fprint("failtrace", printPropStr(inProperties3) +& "\n");
         /*
@@ -3430,63 +3686,123 @@ public function matchType "function: matchType
   inputs : (exp: Exp.Exp, exp_type: Type, expected: Type)
   outputs: (Exp.Exp, Type)
 "
-  input Exp.Exp inExp1;
-  input Type inType2;
-  input Type inType3;
+  input Exp.Exp exp;
+  input Type expType;
+  input Type expectedType;
   output Exp.Exp outExp;
   output Type outType;
 algorithm 
-  (outExp,outType):=
-  matchcontinue (inExp1,inType2,inType3)
-    local
-      Exp.Exp e,e_1;
-      Type e_type,expected_type,e_type_1;
-    case (e,e_type,expected_type)
-      equation 
-        true = subtype(e_type, expected_type);
-      then
-        (e,e_type);
-    case (e,e_type,expected_type)
-      equation 
-        false = subtype(e_type, expected_type);
-        (e_1,e_type_1) = typeConvert(e, e_type, expected_type);          
-      then
-        (e_1,e_type_1);
-  end matchcontinue;
+  (outExp,outType,_) := matchTypeRegular(exp, expType, expectedType, {});
 end matchType;
 
-public function matchTypeList "function: matchTypeList
- 
-  This function matches a list of types, with a list of other types.
-  Type conversion is disredaded, but an expression is given 
-  (the rhs of a tuple assignment) if such conversions should be implemented
-"
+protected function matchTypeList
+  input list<Exp.Exp> exps;
+  input Type expType;
+  input Type expectedType;
+  input PolymorphicBindings polymorphicBindings;
+  input MatchTypeFunc matchFunc;
+  output list<Exp.Exp> outExp;
+  output list<Type> outTypeLst;
+  output PolymorphicBindings outBindings;
+	
+	partial function MatchTypeFunc
+	  input Exp.Exp inExp1;
+	  input Type inType2;
+	  input Type inType3;
+	  input PolymorphicBindings polymorphicBindings;
+	  output Exp.Exp outExp;
+	  output Type outType;
+	  output PolymorphicBindings outBindings;
+	end MatchTypeFunc;
+algorithm 
+  (outExp,outTypeLst,outBindings):=
+  matchcontinue (exps,expType,expectedType,polymorphicBindings,matchFunc)
+    local
+      Exp.Exp e,e_1,e_2;
+      list<Exp.Exp> e_2, rest;
+      Type tp,t1,t2;
+      list<Type> res;
+    case ({},_,_,polymorphicBindings,_) then ({},{},polymorphicBindings); 
+    case (e::rest,t1,t2,polymorphicBindings,matchFunc)
+      equation 
+        (e_1,tp,polymorphicBindings) = matchFunc(e, t1, t2, polymorphicBindings);
+        (e_2,res,polymorphicBindings) = matchTypeList(rest, t1, t2, polymorphicBindings, matchFunc);
+      then
+        (e_1::e_2,(tp :: res),polymorphicBindings);
+    case (_,_,_,_,_)
+      equation 
+        Debug.fprint("failtrace", "- matchTypeList failed\n");
+      then
+        fail();
+  end matchcontinue;
+end matchTypeList;
+
+protected function matchTypeTuple
+  input list<Exp.Exp> inExp1;
+  input list<Type> inTypeLst2;
+  input list<Type> inTypeLst3;
+  input PolymorphicBindings polymorphicBindings;
+  input MatchTypeFunc matchFunc;
+  output list<Exp.Exp> outExp;
+  output list<Type> outTypeLst;
+  output PolymorphicBindings outBindings;
+	
+	partial function MatchTypeFunc
+	  input Exp.Exp inExp1;
+	  input Type inType2;
+	  input Type inType3;
+	  input PolymorphicBindings polymorphicBindings;
+	  output Exp.Exp outExp;
+	  output Type outType;
+	  output PolymorphicBindings outBindings;
+	end MatchTypeFunc;
+algorithm 
+  (outExp,outTypeLst,outBindings):=
+  matchcontinue (inExp1,inTypeLst2,inTypeLst3,polymorphicBindings,matchFunc)
+    local
+      Exp.Exp e,e_1;
+      list<Exp.Exp> rest, e_2;
+      Type tp,t1,t2;
+      list<Type> res,ts1,ts2;
+    case ({},{},{},polymorphicBindings,_) then ({},{},polymorphicBindings); 
+    case (e::rest,(t1 :: ts1),(t2 :: ts2),polymorphicBindings,matchFunc)
+      equation 
+        (e_1,tp,polymorphicBindings) = matchFunc(e, t1, t2, polymorphicBindings);
+        (e_2,res,polymorphicBindings) = matchTypeTuple(rest, ts1, ts2, polymorphicBindings, matchFunc);
+      then
+        (e_1::e_2,(tp :: res),polymorphicBindings);
+    case (_,(t1 :: ts1),(t2 :: ts2),_,_)
+      equation 
+        Debug.fprint("failtrace", "- matchTypeTuple failed\n");
+      then
+        fail();
+  end matchcontinue;
+end matchTypeTuple;
+
+public function matchTypeTupleCall
   input Exp.Exp inExp1;
   input list<Type> inTypeLst2;
   input list<Type> inTypeLst3;
-  output Exp.Exp outExp;
-  output list<Type> outTypeLst;
 algorithm 
-  (outExp,outTypeLst):=
+  (outExp,outTypeLst) :=
   matchcontinue (inExp1,inTypeLst2,inTypeLst3)
     local
       Exp.Exp e,e_1,e_2;
       Type tp,t1,t2;
       list<Type> res,ts1,ts2;
-    case (e,{},{}) then (e,{}); 
+    case (_,{},{}) then ();
     case (e,(t1 :: ts1),(t2 :: ts2))
+      equation
+        (_,_) = matchType(e, t1, t2);
+        matchTypeTupleCall(e, ts1, ts2);
+      then ();
+    case (_,(t1 :: ts1),(t2 :: ts2))
       equation 
-        (e_1,tp) = matchType(e, t1, t2);
-        (e_2,res) = matchTypeList(e_1, ts1, ts2);
-      then
-        (e_1,(tp :: res));
-    case (e,(t1 :: ts1),(t2 :: ts2))
-      equation 
-        Debug.fprint("failtrace", "- match_type_list failed\n");
+        Debug.fprint("failtrace", "- matchTypeTupleCall failed\n");
       then
         fail();
   end matchcontinue;
-end matchTypeList;
+end matchTypeTupleCall;
 
 public function vectorizableType "function: vectorizableType
   author: PA
@@ -3502,30 +3818,32 @@ public function vectorizableType "function: vectorizableType
   output Exp.Exp outExp;
   output Type outType;
   output list<ArrayDim> outArrayDimLst;
+  output PolymorphicBindings outBindings;
 algorithm 
-  (outExp,outType,outArrayDimLst):=
+  (outExp,outType,outArrayDimLst,outBindings):=
   matchcontinue (inExp1,inType2,inType3)
     local
       Exp.Exp e_1,e;
       Type e_type_1,e_type,expected_type,e_type_elt;
       list<ArrayDim> ds;
       ArrayDim ad;
+      PolymorphicBindings polymorphicBindings;
     case (e,e_type,expected_type)
       equation 
-        (e_1,e_type_1) = matchType(e, e_type, expected_type);
+        (e_1,e_type_1,polymorphicBindings) = matchTypePolymorphic(e, e_type, expected_type, {});
       then
-        (e_1,e_type_1,{});
+        (e_1,e_type_1,{},polymorphicBindings);
     case (e,e_type,expected_type)
       equation 
         e_type_elt = unliftArray(e_type);
-        (e_1,e_type_1,ds) = vectorizableType(e, e_type_elt, expected_type);
+        (e_1,e_type_1,ds,polymorphicBindings) = vectorizableType(e, e_type_elt, expected_type);
         ad = typeArraydim(e_type);
       then
-        (e_1,e_type_1,(ad :: ds));
+        (e_1,e_type_1,(ad :: ds),polymorphicBindings);
   end matchcontinue;
 end vectorizableType;
 
-public function typeConvert "function: typeConvert
+protected function typeConvert "function: typeConvert
  
   This functions converts the expression in the first argument to
   the type specified in the third argument.  The current type of the
@@ -3536,11 +3854,24 @@ public function typeConvert "function: typeConvert
   input Exp.Exp inExp1;
   input Type inType2;
   input Type inType3;
+  input PolymorphicBindings polymorphicBindings;
+  input MatchTypeFunc matchFunc;
   output Exp.Exp outExp;
   output Type outType;
+  output PolymorphicBindings outBindings;
+
+	partial function MatchTypeFunc
+	  input Exp.Exp inExp1;
+	  input Type inType2;
+	  input Type inType3;
+	  input PolymorphicBindings polymorphicBindings;
+	  output Exp.Exp outExp;
+	  output Type outType;
+	  output PolymorphicBindings outBindings;
+	end MatchTypeFunc;
 algorithm 
-  (outExp,outType):=
-  matchcontinue (inExp1,inType2,inType3)
+  (outExp,outType,outBindings):=
+  matchcontinue (inExp1,inType2,inType3,polymorphicBindings,matchFunc)
     local
       list<Exp.Exp> elist_1,elist;
       Exp.Type at,t;
@@ -3557,157 +3888,294 @@ algorithm
 
       /* Array expressions: expression dimension [dim1], expected dimension [dim2] */
     case (Exp.ARRAY(array = elist),(T_ARRAY(arrayDim = DIM(integerOption = SOME(dim1)),arrayType = ty1),_),
-      		ty0 as (T_ARRAY(arrayDim = DIM(integerOption = SOME(dim2)),arrayType = ty2),p))
+      		ty0 as (T_ARRAY(arrayDim = DIM(integerOption = SOME(dim2)),arrayType = ty2),p),polymorphicBindings,matchFunc)
       equation 
         (dim1 == dim2) = true  ;
-        elist_1 = typeConvertArray(elist, ty1, ty2,SOME(dim1)); 
+        (elist_1,polymorphicBindings) = typeConvertArray(elist, ty1, ty2,SOME(dim1),polymorphicBindings,matchFunc);
         at = elabType(ty0);
         a = isArray(ty2);
         sc = boolNot(a);
       then
-        (Exp.ARRAY(at,sc,elist_1),(T_ARRAY(DIM(SOME(dim1)),ty2),p));
+        (Exp.ARRAY(at,sc,elist_1),(T_ARRAY(DIM(SOME(dim1)),ty2),p),polymorphicBindings);
 
      /* Array expressions: expression dimension [:], expected dimension [dim2] */
     case (Exp.ARRAY(array = elist),(T_ARRAY(arrayDim = DIM(integerOption = NONE),arrayType = ty1),_),
-      	ty0 as (T_ARRAY(arrayDim = DIM(integerOption = SOME(dim2)),arrayType = ty2),p2))
+      	ty0 as (T_ARRAY(arrayDim = DIM(integerOption = SOME(dim2)),arrayType = ty2),p2),polymorphicBindings,matchFunc)
       equation 
-        (elist_1) = typeConvertArray(elist, ty1, ty2,SOME(dim2))  ;
+        (elist_1,polymorphicBindings) = typeConvertArray(elist, ty1, ty2,SOME(dim2),polymorphicBindings,matchFunc);
         at = elabType(ty0);
         a = isArray(ty2);
         sc = boolNot(a);
       then
-        (Exp.ARRAY(at,sc,elist_1),(T_ARRAY(DIM(NONE),ty2),p2));
+        (Exp.ARRAY(at,sc,elist_1),(T_ARRAY(DIM(NONE),ty2),p2),polymorphicBindings);
 
         /* Array expressions: expression dimension [dim1], expected dimension [:] */
     case (Exp.ARRAY(array = elist),(T_ARRAY(arrayDim = DIM(integerOption = SOME(dim1)),arrayType = ty1),_),
-      	ty0 as (T_ARRAY(arrayDim = DIM(integerOption = NONE),arrayType = ty2),p2))
+      	ty0 as (T_ARRAY(arrayDim = DIM(integerOption = NONE),arrayType = ty2),p2),polymorphicBindings,matchFunc)
       	local
       	  Exp.Type ety1;
       equation 
-        (elist_1) = typeConvertArray(elist, ty1, ty2,SOME(dim1));
+        (elist_1,polymorphicBindings) = typeConvertArray(elist, ty1, ty2,SOME(dim1),polymorphicBindings,matchFunc);
         ety1 = elabType(ty2);
         at = elabType(ty0);
         a = isArray(ty2);
         sc = boolNot(a);
         //TODO: Verify correctness of return value.
       then
-        (Exp.ARRAY(Exp.T_ARRAY(ety1,{SOME(dim1)}),sc,elist_1),(T_ARRAY(DIM(SOME(dim1)),ty2),p2));
+        (Exp.ARRAY(Exp.T_ARRAY(ety1,{SOME(dim1)}),sc,elist_1),(T_ARRAY(DIM(SOME(dim1)),ty2),p2),polymorphicBindings);
         //(Exp.ARRAY(at,sc,elist_1),(T_ARRAY(DIM(SOME(dim1)),ty2),p2));
         
         /* Range expressions, e.g. 1:2:10 */
     case (Exp.RANGE(ty = t,exp = begin,expOption = SOME(step),range = stop),(T_ARRAY(arrayDim = DIM(integerOption = SOME(dim1)),arrayType = ty1),_),
-      ty0 as (T_ARRAY(arrayDim = DIM(integerOption = SOME(dim2)),arrayType = ty2),p))
+      ty0 as (T_ARRAY(arrayDim = DIM(integerOption = SOME(dim2)),arrayType = ty2),p),polymorphicBindings,matchFunc)
       equation 
-        (dim1 == dim2) = true   ;
-        (begin_1,_) = typeConvert(begin, ty1, ty2);
-        (step_1,_) = typeConvert(step, ty1, ty2);
-        (stop_1,_) = typeConvert(stop, ty1, ty2);
+        (dim1 == dim2) = true;
+        (begin_1,_,polymorphicBindings) = typeConvert(begin, ty1, ty2, polymorphicBindings, matchFunc);
+        (step_1,_,polymorphicBindings) = typeConvert(step, ty1, ty2, polymorphicBindings, matchFunc);
+        (stop_1,_,polymorphicBindings) = typeConvert(stop, ty1, ty2, polymorphicBindings, matchFunc);
         at = elabType(ty0);
       then
-        (Exp.RANGE(at,begin_1,SOME(step_1),stop_1),(T_ARRAY(DIM(SOME(dim1)),ty2),p));
+        (Exp.RANGE(at,begin_1,SOME(step_1),stop_1),(T_ARRAY(DIM(SOME(dim1)),ty2),p),polymorphicBindings);
 
         /* Range expressions, e.g. 1:10 */
     case (Exp.RANGE(ty = t,exp = begin,expOption = NONE,range = stop),(T_ARRAY(arrayDim = DIM(integerOption = SOME(dim1)),arrayType = ty1),_),
-      ty0 as (T_ARRAY(arrayDim = DIM(integerOption = SOME(dim2)),arrayType = ty2),p))
+      ty0 as (T_ARRAY(arrayDim = DIM(integerOption = SOME(dim2)),arrayType = ty2),p),polymorphicBindings,matchFunc)
       equation 
         (dim1 == dim2) = true  ;
-        (begin_1,_) = typeConvert(begin, ty1, ty2);
-        (stop_1,_) = typeConvert(stop, ty1, ty2);
+        (begin_1,_,polymorphicBindings) = typeConvert(begin, ty1, ty2, polymorphicBindings, matchFunc);
+        (stop_1,_,polymorphicBindings) = typeConvert(stop, ty1, ty2, polymorphicBindings, matchFunc);
         at = elabType(ty0);
       then
-        (Exp.RANGE(at,begin_1,NONE,stop_1),(T_ARRAY(DIM(SOME(dim1)),ty2),p));
+        (Exp.RANGE(at,begin_1,NONE,stop_1),(T_ARRAY(DIM(SOME(dim1)),ty2),p),polymorphicBindings);
 
         /* Matrix expressions: expression dimension [dim1,dim11], expected dimension [dim2,dim22] */
     case (Exp.MATRIX(integer = nmax,scalar = ell),(T_ARRAY(arrayDim = DIM(integerOption = SOME(dim1)),arrayType = (T_ARRAY(arrayDim = DIM(integerOption = SOME(dim11)),arrayType = t1),_)),_),
-      ty0 as (T_ARRAY(arrayDim = DIM(integerOption = SOME(dim2)),arrayType = (T_ARRAY(arrayDim = DIM(integerOption = SOME(dim22)),arrayType = t2),p1)),p2))
+      ty0 as (T_ARRAY(arrayDim = DIM(integerOption = SOME(dim2)),arrayType = (T_ARRAY(arrayDim = DIM(integerOption = SOME(dim22)),arrayType = t2),p1)),p2),polymorphicBindings, matchFunc)
       equation 
         (dim1 == dim2) = true  ;
         (dim11 == dim22) = true;
-        ell_1 = typeConvertMatrix(ell, t1, t2,SOME(dim1),SOME(dim2));
+        (ell_1,polymorphicBindings) = typeConvertMatrix(ell, t1, t2,SOME(dim1),SOME(dim2),polymorphicBindings,matchFunc);
         at = elabType(ty0);
       then
         (Exp.MATRIX(at,nmax,ell_1),(T_ARRAY(DIM(SOME(dim1)),(T_ARRAY(DIM(SOME(dim11)),t2),p1)),
-          p2));
+          p2),polymorphicBindings);
           
         /* Matrix expressions: expression dimension [dim1,dim11] expected dimension [:,dim22] */
     case (Exp.MATRIX(integer = nmax,scalar = ell),(T_ARRAY(arrayDim = DIM(integerOption = SOME(dim1)),arrayType = (T_ARRAY(arrayDim = DIM(integerOption = SOME(dim11)),arrayType = t1),_)),_),
-      ty0 as (T_ARRAY(arrayDim = DIM(integerOption = NONE),arrayType = (T_ARRAY(arrayDim = DIM(integerOption = SOME(dim22)),arrayType = t2),p1)),p2))
+      ty0 as (T_ARRAY(arrayDim = DIM(integerOption = NONE),arrayType = (T_ARRAY(arrayDim = DIM(integerOption = SOME(dim22)),arrayType = t2),p1)),p2),polymorphicBindings,matchFunc)
       equation 
         (dim11 == dim22) = true;
-        ell_1 = typeConvertMatrix(ell, t1, t2,SOME(dim1),SOME(dim11));
+        (ell_1,polymorphicBindings) = typeConvertMatrix(ell, t1, t2,SOME(dim1),SOME(dim11),polymorphicBindings,matchFunc);
         at = elabType(ty0);
       then
         (Exp.MATRIX(at,nmax,ell_1),(T_ARRAY(DIM(SOME(dim1)),(T_ARRAY(DIM(SOME(dim11)),t2),p1)),
-          p2));
+          p2),polymorphicBindings);
     
         /* Arbitrary expressions, expression dimension [dim1], expected dimension [dim2] */
     case (e,(T_ARRAY(arrayDim = DIM(integerOption = SOME(dim1)),arrayType = ty1),_),
-      	ty0 as (T_ARRAY(arrayDim = DIM(integerOption = SOME(dim2)),arrayType = ty2),p2))
+      	ty0 as (T_ARRAY(arrayDim = DIM(integerOption = SOME(dim2)),arrayType = ty2),p2),polymorphicBindings,matchFunc)
       equation 
         (dim1 == dim2) = true ;
-        (e_1,t_1) = typeConvert(e, ty1, ty2);
+        (e_1,t_1,polymorphicBindings) = typeConvert(e, ty1, ty2, polymorphicBindings, matchFunc);
         e_1 = liftExpType(e_1,SOME(dim1));
       then
-        (e_1,(T_ARRAY(DIM(SOME(dim2)),t_1),p2));
+        (e_1,(T_ARRAY(DIM(SOME(dim2)),t_1),p2),polymorphicBindings);
 
         /* Arbitrary expressions,  expression dimension [:],  expected dimension [dim2]*/
     case (e,(T_ARRAY(arrayDim = DIM(integerOption = NONE),arrayType = ty1),_),
-      	(T_ARRAY(arrayDim = DIM(integerOption = SOME(dim2)),arrayType = ty2),p2))
+      	(T_ARRAY(arrayDim = DIM(integerOption = SOME(dim2)),arrayType = ty2),p2),polymorphicBindings,matchFunc)
       equation 
-        (e_1,t_1) = typeConvert(e, ty1, ty2) ;
+        (e_1,t_1,polymorphicBindings) = typeConvert(e, ty1, ty2, polymorphicBindings, matchFunc);
         e_1 = liftExpType(e_1,NONE);
       then
-        (e_1,(T_ARRAY(DIM(NONE),t_1),p2));
+        (e_1,(T_ARRAY(DIM(NONE),t_1),p2),polymorphicBindings);
         
         /* Arbitrary expressions, expression dimension [:] expected dimension [:] */
     case (e,(T_ARRAY(arrayDim = DIM(integerOption = NONE),arrayType = ty1),_),
-      (T_ARRAY(arrayDim = DIM(integerOption = NONE),arrayType = ty2),p2))
+      (T_ARRAY(arrayDim = DIM(integerOption = NONE),arrayType = ty2),p2),polymorphicBindings,matchFunc)
       equation 
-        (e_1,t_1) = typeConvert(e, ty1, ty2) ;
+        (e_1,t_1,polymorphicBindings) = typeConvert(e, ty1, ty2, polymorphicBindings, matchFunc);
         e_1 = liftExpType(e_1,NONE);
       then
-        (e_1,(T_ARRAY(DIM(NONE),t_1),p2));
+        (e_1,(T_ARRAY(DIM(NONE),t_1),p2),polymorphicBindings);
         
         /* Arbitrary expression, expression dimension [dim1] expected dimension [:]*/
     case (e,(T_ARRAY(arrayDim = DIM(integerOption = SOME(dim1)),arrayType = ty1),_),
-      	(T_ARRAY(arrayDim = DIM(integerOption = NONE),arrayType = ty2),p2))
+      	(T_ARRAY(arrayDim = DIM(integerOption = NONE),arrayType = ty2),p2),polymorphicBindings,matchFunc)
       equation 
-        (e_1,t_1) = typeConvert(e, ty1, ty2)  ;
+        (e_1,t_1,polymorphicBindings) = typeConvert(e, ty1, ty2, polymorphicBindings, matchFunc);
         e_1 = liftExpType(e_1,SOME(dim1));
       then
-        (e_1,(T_ARRAY(DIM(SOME(dim1)),t_1),p2));
+        (e_1,(T_ARRAY(DIM(SOME(dim1)),t_1),p2),polymorphicBindings);
         
         /* Tuple */
-    case (Exp.TUPLE(PR = elist),(T_TUPLE(tupleType = tys1),_),(T_TUPLE(tupleType = tys2),p2))
+    case (Exp.TUPLE(PR = elist),(T_TUPLE(tupleType = tys1),_),(T_TUPLE(tupleType = tys2),p2),polymorphicBindings,matchFunc)
       equation 
-        (elist_1,tys_1) = typeConvertList(elist, tys1, tys2);
+        (elist_1,tys_1,polymorphicBindings) = typeConvertList(elist, tys1, tys2, polymorphicBindings, matchFunc);
       then
-        (Exp.TUPLE(elist_1),(T_TUPLE(tys_1),p2));
+        (Exp.TUPLE(elist_1),(T_TUPLE(tys_1),p2),polymorphicBindings);
         
         /* Enumeration */
-    case (exp,(T_ENUM(),_),(T_ENUMERATION(names = l,varLst = v),p2)) then (exp,(T_ENUMERATION(l,v),p2)); 
+    case (exp,(T_ENUM(),_),(T_ENUMERATION(names = l,varLst = v),p2),polymorphicBindings,matchFunc)
+      then (exp,(T_ENUMERATION(l,v),p2),polymorphicBindings);
 
         /* Implicit conversion from Integer to Real */        
-    case (e,(T_INTEGER(varLstInt = v),_),(T_REAL(varLstReal = _),p)) then (Exp.CAST(Exp.REAL(),e),(T_REAL(v),p)); 
+    case (e,(T_INTEGER(varLstInt = v),_),(T_REAL(varLstReal = _),p),polymorphicBindings,matchFunc)
+      then (Exp.CAST(Exp.REAL(),e),(T_REAL(v),p),polymorphicBindings);
               
     /* Complex type inheriting primitive type */        
-    case (e, (T_COMPLEX(complexTypeOption = SOME(t1)),_),t2) equation
-      (e_1,t_1) = typeConvert(e,t1,t2);
-    then (e_1,t_1);
-    case (e, t1,(T_COMPLEX(complexTypeOption = SOME(t2)),_)) equation
-      (e_1,t_1) = typeConvert(e,t1,t2);
-    then (e_1,t_1); 
+    case (e, (T_COMPLEX(complexTypeOption = SOME(t1)),_),t2,polymorphicBindings,matchFunc) equation
+      (e_1,t_1,polymorphicBindings) = typeConvert(e,t1,t2,polymorphicBindings,matchFunc);
+    then (e_1,t_1,polymorphicBindings);
+    case (e, t1,(T_COMPLEX(complexTypeOption = SOME(t2)),_),polymorphicBindings,matchFunc) equation
+      (e_1,t_1,polymorphicBindings) = typeConvert(e,t1,t2,polymorphicBindings,matchFunc);
+    then (e_1,t_1,polymorphicBindings);
       
-    case (exp,t1,t2)
+        /* MetaModelica Option */
+    case (Exp.META_OPTION(SOME(e)),(T_METAOPTION(t1),_),(T_METAOPTION(t2),p2),polymorphicBindings,matchFunc)
+      equation 
+        true = RTOpts.acceptMetaModelicaGrammar();
+        (e_1, t_1, polymorphicBindings) = matchFunc(e, t1, t2, polymorphicBindings);
+      then
+        (Exp.META_OPTION(SOME(e_1)),(T_METAOPTION(t_1),p2),polymorphicBindings);
+    case (Exp.META_OPTION(NONE),_,(T_METAOPTION(t2),p2),polymorphicBindings,matchFunc)
+      equation 
+        true = RTOpts.acceptMetaModelicaGrammar();
+      then
+        (Exp.META_OPTION(NONE),(T_METAOPTION(t2),p2),polymorphicBindings);
+
+        /* MetaModelica Tuple */
+    case (Exp.TUPLE(elist),(T_TUPLE(tupleType = tys1),_),(T_METATUPLE(tys2),p2),polymorphicBindings,matchFunc)
+      equation 
+        true = RTOpts.acceptMetaModelicaGrammar();
+        (elist_1,tys_1,polymorphicBindings) = matchTypeTuple(elist, tys1, tys2, polymorphicBindings, matchFunc);
+      then
+        (Exp.META_TUPLE(elist_1),(T_METATUPLE(tys_1),p2),polymorphicBindings);
+    case (Exp.META_TUPLE(elist),(T_METATUPLE(tys1),_),(T_METATUPLE(tys2),p2),polymorphicBindings,matchFunc)
+      equation 
+        (elist_1,tys_1,polymorphicBindings) = matchTypeTuple(elist, tys1, tys2, polymorphicBindings, matchFunc);
+      then
+        (Exp.META_TUPLE(elist_1),(T_METATUPLE(tys_1),p2),polymorphicBindings);
+      /*
+         The automatic type conversion will convert any array that can be
+         const-eval'ed to an Exp.ARRAY or Exp.MATRIX into a list of the same
+         type. The reason is that the syntax for the array and list constructor
+         is the same. However, the compiler can't distinguish between the two
+         cases below because a is expanded earlier in the compilation process:
+           Integer[3] a;
+           someListFunction(a); // Is expanded to the line below
+           someListFunction({a[1],a[2],a[3]});
+         / sjoelund 2009-08-13
+       */
+    case (e as Exp.ARRAY(Exp.T_ARRAY(ty = t),_,elist),(T_ARRAY(arrayType=t1),_),(T_LIST(t2),p2),polymorphicBindings,matchFunc)
+      equation
+        true = RTOpts.acceptMetaModelicaGrammar();
+        (elist_1, tys1, polymorphicBindings) = matchTypeList(elist, t1, t2, polymorphicBindings, matchFunc);
+        (elist_1, t2, polymorphicBindings) = listMatchSuperType(elist_1, tys1, polymorphicBindings, matchFunc);
+        t = elabType(t2);
+        e_1 = Exp.LIST(t,elist_1);
+        t2 = (T_LIST(t2),NONE);
+      then (e_1, t2, polymorphicBindings);
+    case (e as Exp.ARRAY(Exp.T_ARRAY(ty = t),_,elist),(T_ARRAY(arrayType=t1),_),(T_BOXED(t2),p2),polymorphicBindings,matchFunc)
+      equation
+        true = RTOpts.acceptMetaModelicaGrammar();
+        (elist_1, tys1, polymorphicBindings) = matchTypeList(elist, t1, t2, polymorphicBindings, matchFunc);
+        (elist_1, t2, polymorphicBindings) = listMatchSuperType(elist_1, tys1, polymorphicBindings, matchFunc);
+        t = elabType(t2);
+        e_1 = Exp.LIST(t,elist_1);
+        t2 = (T_LIST(t2),NONE);
+      then (e_1, t2, polymorphicBindings);
+    case (e as Exp.MATRIX(Exp.T_ARRAY(ty = t),_,melist),t1,t2,polymorphicBindings,matchFunc)
+      local
+        list<list<tuple<Exp.Exp,Boolean>>> melist;
+        list<list<Exp.Exp>> elist_big, elist_big_1;
+      equation
+        true = RTOpts.acceptMetaModelicaGrammar();
+        elist_big = Util.listListMap(melist, Util.tuple21);
+        (elist,ty2,polymorphicBindings) = typeConvertMatrixToList(elist_big,t1,t2,polymorphicBindings,matchFunc);
+        t = elabType(ty2);
+        e_1 = Exp.LIST(t,elist);
+      then (e_1,ty2,polymorphicBindings);
+    case (e as Exp.LIST(_,elist),(T_LIST(t1),_),(T_LIST(t2),p2),polymorphicBindings,matchFunc)
+      equation
+        true = RTOpts.acceptMetaModelicaGrammar();
+        (elist_1, tys1, polymorphicBindings) = matchTypeList(elist, t1, t2, polymorphicBindings, matchFunc);
+        (elist_1, t2, polymorphicBindings) = listMatchSuperType(elist_1, tys1, polymorphicBindings, matchFunc);
+        t = elabType(t2);
+        e_1 = Exp.LIST(t,elist_1);
+        t2 = (T_LIST(t2),NONE);
+      then (e_1, t2, polymorphicBindings);
+        
+    case (e,(T_LIST(t1),_),(T_LIST(t2),p2),polymorphicBindings,matchFunc)
+      equation
+        true = RTOpts.acceptMetaModelicaGrammar();
+        (_, ty2, polymorphicBindings) = matchFunc(e, t1, t2, polymorphicBindings);
+      then (e, (T_LIST(ty2),p2), polymorphicBindings);
+    
+    case (e, t1 as (T_INTEGER({}),_), (T_BOXED(t2),_),polymorphicBindings,matchFunc)
+      equation
+        true = subtype(t1,t2);
+        t2 = (T_BOXED(t1),NONE);
+        t = elabType(t2);
+      then (Exp.CALL(Absyn.IDENT("mmc_mk_icon"),{e},false,true,t),t2,polymorphicBindings);
+      
+    case (e, t1 as (T_BOOL({}),_), (T_BOXED(t2),_), polymorphicBindings, matchFunc)
+      equation
+        true = subtype(t1,t2);
+        t2 = (T_BOXED(t1),NONE);
+        t = elabType(t2);
+      then (Exp.CALL(Absyn.IDENT("mmc_mk_icon"),{e},false,true,t),t2,polymorphicBindings);
+
+    case (e, t1 as (T_REAL({}),_), (T_BOXED(t2),_),polymorphicBindings,matchFunc)
+      equation
+        true = subtype(t1,t2);
+        t2 = (T_BOXED(t1),NONE);
+        t = elabType(t2);
+      then (Exp.CALL(Absyn.IDENT("mmc_mk_rcon"),{e},false,true,t),t2,polymorphicBindings);
+
+    case (e, t1 as (T_STRING({}),_), (T_BOXED(t2),_), polymorphicBindings, matchFunc)
+      equation
+        true = subtype(t1,t2);
+        t2 = (T_BOXED(t1),NONE);
+        t = elabType(t2);
+      then (Exp.CALL(Absyn.IDENT("mmc_mk_scon"),{e},false,true,t),t2,polymorphicBindings);
+
+    case (e, (T_COMPLEX(complexClassType = ClassInf.RECORD(_)),_), t1 as (T_BOXED((T_COMPLEX(complexClassType = ClassInf.RECORD(_)),_)),_),polymorphicBindings,matchFunc)
+      equation
+        Debug.fprintln("failtrace", "- Type conversion from record to boxed record not yet implemented");
+      then fail();
+
+    case (e,(T_BOXED(t1),_),t2 as (T_INTEGER(_),_),polymorphicBindings,matchFunc)
+      equation
+        (e_1,_,polymorphicBindings) = matchFunc(e, t1, t2, polymorphicBindings);
+      then
+        (Exp.CALL(Absyn.IDENT("mmc_unbox_integer"),{e_1},false,true,Exp.INT),t2,polymorphicBindings);
+    case (e,(T_BOXED(t1),_),t2 as (T_REAL(_),_),polymorphicBindings,matchFunc)
+      equation
+        (e_1,_,polymorphicBindings) = matchFunc(e, t1, t2, polymorphicBindings);
+      then
+        (Exp.CALL(Absyn.IDENT("mmc_unbox_real"),{e_1},false,true,Exp.REAL),t2,polymorphicBindings);
+    case (e,(T_BOXED(t1),_),t2 as (T_BOOL(_),_),polymorphicBindings,matchFunc)
+      equation
+        (e_1,_,polymorphicBindings) = matchFunc(e, t1, t2, polymorphicBindings);
+      then
+        (Exp.CALL(Absyn.IDENT("mmc_unbox_integer"),{e_1},false,true,Exp.BOOL),t2,polymorphicBindings);
+    case (e,(T_BOXED(t1),_),t2 as (T_STRING(_),_),polymorphicBindings,matchFunc)
+      equation
+        (e_1,_,polymorphicBindings) = matchFunc(e, t1, t2, polymorphicBindings);
+      then
+        (Exp.CALL(Absyn.IDENT("mmc_unbox_string"),{e_1},false,true,Exp.STRING),t2,polymorphicBindings);
+    
+    case (exp,t1,t2,polymorphicBindings,matchFunc)
       equation 
         Debug.fprint("tcvt", "- type conversion failed: ");
-         str = Exp.printExpStr(exp);
+        str = Exp.printExpStr(exp);
         Debug.fprint("tcvt", str);
         Debug.fprint("tcvt", "  ");
-        str = printTypeStr(t1);
+        str = unparseType(t1);
         Debug.fprint("tcvt", str);
         Debug.fprint("tcvt", ", ");
-        str = printTypeStr(t1);
+        str = unparseType(t2);
         Debug.fprint("tcvt", str);        
         Debug.fprint("tcvt", "\n");
       then
@@ -3742,22 +4210,35 @@ public function typeConvertArray "function: typeConvertArray
   input Type inType2;
   input Type inType3;
   input Option<Integer> dim;
+  input PolymorphicBindings polymorphicBindings;
+  input MatchTypeFunc matchFunc;
   output list<Exp.Exp> outExpExpLst;
+  output PolymorphicBindings outBindings;
+
+	partial function MatchTypeFunc
+	  input Exp.Exp inExp1;
+	  input Type inType2;
+	  input Type inType3;
+	  input PolymorphicBindings polymorphicBindings;
+	  output Exp.Exp outExp;
+	  output Type outType;
+	  output PolymorphicBindings outBindings;
+	end MatchTypeFunc;
 algorithm 
-  outExpExpLst:=
-  matchcontinue (inExpExpLst1,inType2,inType3,dim)
+  (outExpExpLst,outBindings) :=
+  matchcontinue (inExpExpLst1,inType2,inType3,dim,polymorphicBindings,matchFunc)
     local
       list<Exp.Exp> rest_1,rest;
       Exp.Exp first_1,first;
       Type ty1,ty2;
-    case ({},_,_,_) then {}; 
-    case ((first :: rest),ty1,ty2,dim) 
+    case ({},_,_,_,polymorphicBindings,_) then ({},polymorphicBindings); 
+    case ((first :: rest),ty1,ty2,dim,polymorphicBindings,matchFunc)
       equation 
-        rest_1 = typeConvertArray(rest, ty1, ty2,dim);
-        (first_1,_) = typeConvert(first, ty1, ty2);
+        (rest_1,polymorphicBindings) = typeConvertArray(rest,ty1,ty2,dim,polymorphicBindings,matchFunc);
+        (first_1,_,polymorphicBindings) = typeConvert(first,ty1,ty2,polymorphicBindings,matchFunc);
          //first_1 = liftExpType(first_1,dim);
       then
-        (first_1 :: rest_1);
+        ((first_1 :: rest_1),polymorphicBindings);
   end matchcontinue;
 end typeConvertArray;
 
@@ -3770,21 +4251,34 @@ protected function typeConvertMatrix "function: typeConvertMatrix
   input Type inType3;
   input Option<Integer> dim1;
   input Option<Integer> dim2;
+  input PolymorphicBindings polymorphicBindings;
+  input MatchTypeFunc matchFunc;
   output list<list<tuple<Exp.Exp, Boolean>>> outTplExpExpBooleanLstLst;
+  output PolymorphicBindings outBindings;
+	
+	partial function MatchTypeFunc
+	  input Exp.Exp inExp1;
+	  input Type inType2;
+	  input Type inType3;
+	  input PolymorphicBindings polymorphicBindings;
+	  output Exp.Exp outExp;
+	  output Type outType;
+	  output PolymorphicBindings outBindings;
+	end MatchTypeFunc;
 algorithm 
-  outTplExpExpBooleanLstLst:=
-  matchcontinue (inTplExpExpBooleanLstLst1,inType2,inType3,dim1,dim2)
+  (outTplExpExpBooleanLstLst,outBindings) :=
+  matchcontinue (inTplExpExpBooleanLstLst1,inType2,inType3,dim1,dim2,polymorphicBindings,matchFunc)
     local
       list<list<tuple<Exp.Exp, Boolean>>> rest_1,rest;
       list<tuple<Exp.Exp, Boolean>> first_1,first;
       Type ty1,ty2;
-    case ({},_,_,_,_) then {}; 
-    case ((first :: rest),ty1,ty2,dim1,dim2)
+    case ({},_,_,_,_,polymorphicBindings,_) then ({},polymorphicBindings); 
+    case ((first :: rest),ty1,ty2,dim1,dim2,polymorphicBindings,matchFunc)
       equation 
-        rest_1 = typeConvertMatrix(rest, ty1, ty2,dim1,dim2);
-        first_1 = typeConvertMatrixRow(first, ty1, ty2,dim1,dim2);
+        (rest_1,polymorphicBindings) = typeConvertMatrix(rest, ty1, ty2,dim1,dim2,polymorphicBindings,matchFunc);
+        (first_1,polymorphicBindings) = typeConvertMatrixRow(first, ty1, ty2,dim1,dim2,polymorphicBindings,matchFunc);
       then
-        (first_1 :: rest_1);
+        ((first_1 :: rest_1),polymorphicBindings);
   end matchcontinue;
 end typeConvertMatrix;
 
@@ -3797,26 +4291,39 @@ protected function typeConvertMatrixRow "function: typeConvertMatrixRow
   input Type inType3;
   input Option<Integer> dim1;
   input Option<Integer> dim2;
+  input PolymorphicBindings polymorphicBindings;
+  input MatchTypeFunc matchFunc;
   output list<tuple<Exp.Exp, Boolean>> outTplExpExpBooleanLst;
+  output PolymorphicBindings outBindings;
+	
+	partial function MatchTypeFunc
+	  input Exp.Exp inExp1;
+	  input Type inType2;
+	  input Type inType3;
+	  input PolymorphicBindings polymorphicBindings;
+	  output Exp.Exp outExp;
+	  output Type outType;
+	  output PolymorphicBindings outBindings;
+	end MatchTypeFunc;
 algorithm 
-  outTplExpExpBooleanLst:=
-  matchcontinue (inTplExpExpBooleanLst1,inType2,inType3,dim1,dim2)
+  (outTplExpExpBooleanLst,outBindings) :=
+  matchcontinue (inTplExpExpBooleanLst1,inType2,inType3,dim1,dim2,polymorphicBindings,matchFunc)
     local
       list<tuple<Exp.Exp, Boolean>> rest;
       Exp.Exp exp_1,exp;
       Type newt,t1,t2;
       Boolean a,sc;
-    case ({},_,_,_,_) then {}; 
-    case (((exp,_) :: rest),t1,t2,dim1,dim2)
+    case ({},_,_,_,_,polymorphicBindings,_) then ({},polymorphicBindings); 
+    case (((exp,_) :: rest),t1,t2,dim1,dim2,polymorphicBindings,matchFunc)
       equation 
-        rest = typeConvertMatrixRow(rest, t1, t2,dim1,dim2);
-        (exp_1,newt) = typeConvert(exp, t1, t2);
+        (rest,polymorphicBindings) = typeConvertMatrixRow(rest, t1, t2,dim1,dim2,polymorphicBindings,matchFunc);
+        (exp_1,newt,polymorphicBindings) = typeConvert(exp, t1, t2,polymorphicBindings,matchFunc);
         //exp_1 = liftExpType(exp_1,dim1);
         //exp_1 = liftExpType(exp_1,dim2);
         a = isArray(t2);
         sc = boolNot(a);
       then
-        ((exp_1,sc) :: rest);
+        (((exp_1,sc) :: rest),polymorphicBindings);
   end matchcontinue;
 end typeConvertMatrixRow;
 
@@ -3827,25 +4334,110 @@ protected function typeConvertList "function: typeConvertList
   input list<Exp.Exp> inExpExpLst1;
   input list<Type> inTypeLst2;
   input list<Type> inTypeLst3;
+  input PolymorphicBindings polymorphicBindings;
+  input MatchTypeFunc matchFunc;
   output list<Exp.Exp> outExpExpLst;
   output list<Type> outTypeLst;
+  output PolymorphicBindings outBindings;
+	
+	partial function MatchTypeFunc
+	  input Exp.Exp inExp1;
+	  input Type inType2;
+	  input Type inType3;
+	  input PolymorphicBindings polymorphicBindings;
+	  output Exp.Exp outExp;
+	  output Type outType;
+	  output PolymorphicBindings outBindings;
+	end MatchTypeFunc;
 algorithm 
-  (outExpExpLst,outTypeLst):=
-  matchcontinue (inExpExpLst1,inTypeLst2,inTypeLst3)
+  (outExpExpLst,outTypeLst,outBindings):=
+  matchcontinue (inExpExpLst1,inTypeLst2,inTypeLst3,polymorphicBindings,matchFunc)
     local
       list<Exp.Exp> rest_1,rest;
       list<Type> tyrest_1,ty1rest,ty2rest;
       Exp.Exp first_1,first;
       Type ty_1,ty1,ty2;
-    case ({},_,_) then ({},{}); 
-    case ((first :: rest),(ty1 :: ty1rest),(ty2 :: ty2rest))
+    case ({},_,_,polymorphicBindings,_) then ({},{},polymorphicBindings); 
+    case ((first :: rest),(ty1 :: ty1rest),(ty2 :: ty2rest),polymorphicBindings,matchFunc)
       equation 
-        (rest_1,tyrest_1) = typeConvertList(rest, ty1rest, ty2rest);
-        (first_1,ty_1) = typeConvert(first, ty1, ty2);
+        (rest_1,tyrest_1,polymorphicBindings) = typeConvertList(rest, ty1rest, ty2rest,polymorphicBindings,matchFunc);
+        (first_1,ty_1,polymorphicBindings) = typeConvert(first, ty1, ty2, polymorphicBindings,matchFunc);
       then
-        ((first_1 :: rest_1),(ty_1 :: tyrest_1));
+        ((first_1 :: rest_1),(ty_1 :: tyrest_1),polymorphicBindings);
   end matchcontinue;
 end typeConvertList;
+
+protected function typeConvertMatrixToList
+  input list<list<Exp.Exp>> melist;
+  input Type inType;
+  input Type outType;
+	input PolymorphicBindings polymorphicBindings;
+	input MatchTypeFunc matchFunc;
+  output list<Exp.Exp> outExp;
+  output Type outType;
+  output PolymorphicBindings outBindings;
+	
+	partial function MatchTypeFunc
+	  input Exp.Exp inExp1;
+	  input Type inType2;
+	  input Type inType3;
+	  input PolymorphicBindings polymorphicBindings;
+	  output Exp.Exp outExp;
+	  output Type outType;
+	  output PolymorphicBindings outBindings;
+	end MatchTypeFunc;
+algorithm
+  (outExp,outType,outBindings) := matchcontinue (melist, inType, outType, polymorphicBindings, matchFunc)
+    local
+      list<Exp.Exp> expl;
+      list<list<Exp.Exp>> rest, elist, elist_1;
+      Exp.Type t;
+      list<Exp.Type> tlist;
+      Type t1,t2,t_1;
+      list<Type> tys1;
+      Option<Absyn.Path> p2;
+      Exp.Exp e,e_1;
+    case ({},_,_,polymorphicBindings,_) then ({},(T_NOTYPE,NONE),polymorphicBindings);
+    case (expl::rest, (T_ARRAY(arrayType=(T_ARRAY(arrayType=t1),_)),_), (T_LIST((T_LIST(t2),_)),p2),polymorphicBindings,matchFunc)
+      equation
+        (e,t1,polymorphicBindings) = typeConvertMatrixRowToList(expl, t1, t2, polymorphicBindings, matchFunc);
+        t = elabType(t1);
+        (expl,_,polymorphicBindings) = typeConvertMatrixToList(rest, inType, outType, polymorphicBindings, matchFunc);
+      then (e::expl,(T_LIST(t1),NONE),polymorphicBindings);
+    case (_, _, _, _, _)
+      equation
+        Debug.fprintln("tcvt", "- typeConvertMatrixToList failed");
+      then fail();
+  end matchcontinue;
+end typeConvertMatrixToList;
+
+protected function typeConvertMatrixRowToList
+  input list<Exp.Exp> elist;
+  input Type inType;
+  input Type outType;
+  input PolymorphicBindings polymorphicBindings;
+  input MatchTypeFunc matchFunc;
+  output Exp.Exp out;
+  output Type t1;
+  output PolymorphicBindings outBindings;
+	partial function MatchTypeFunc
+	  input Exp.Exp inExp1;
+	  input Type inType2;
+	  input Type inType3;
+	  input PolymorphicBindings polymorphicBindings;
+	  output Exp.Exp outExp;
+	  output Type outType;
+	  output PolymorphicBindings outBindings;
+	end MatchTypeFunc;
+  Exp.Exp exp;
+  list<Exp.Exp> elist_1;
+  Exp.Type t;
+algorithm
+  (elist_1,t1::_,outBindings) := matchTypeList(elist, inType, outType, polymorphicBindings, matchFunc);
+  t := elabType(t1);
+  out := Exp.LIST(t, elist_1);
+  t1 := (T_LIST(t1),NONE);
+end typeConvertMatrixRowToList;
 
 public function matchWithPromote "function: matchWithPromote
  
@@ -4196,7 +4788,7 @@ algorithm
         exps;
     case T_FUNCTION(funcArg = fargs,funcResultType = ty)
       equation 
-        tys = Util.listMap(fargs, getFuncargType);
+        tys = Util.listMap(fargs, Util.tuple22);
         explists = Util.listMap(tys, getAllExps);
         tyexps = getAllExps(ty);
         exps = Util.listFlatten((tyexps :: explists));
@@ -4208,11 +4800,29 @@ algorithm
         exps = Util.listFlatten(explist);
       then
         exps;
+    case T_METATUPLE(types = tys)
+      equation 
+        exps = getAllExpsTt(T_TUPLE(tys));
+      then
+        exps;
+    case T_UNIONTYPE(_) then {};
+    case T_METAOPTION(ty)
+      equation 
+        exps = getAllExps(ty);
+      then
+        exps;
+    case T_LIST(ty)
+      equation
+        exps = getAllExps(ty);
+      then exps;
+    case T_POLYMORPHIC(_) then {};
+
     case(T_NOTYPE()) then {};
+    case(T_NORETCALL()) then {};
 
     case _
       equation 
-        Debug.fprintln("failtrace", "-- get_all_exps_tt failed");
+        Debug.fprintln("failtrace", "-- Types.getAllExpsTt failed");
       then
         fail();
   end matchcontinue;
@@ -4280,20 +4890,297 @@ algorithm
   end matchcontinue;
 end getAllExpsBinding;
 
-protected function getFuncargType "function: getFuncargType
- 
-  Retrieve the type from a function argument.
-"
-  input FuncArg inFuncArg;
-  output Type outType;
-algorithm 
-  outType:=
-  matchcontinue (inFuncArg)
-    local
-      Ident id;
-      Type ty;
-    case ((id,ty)) then ty; 
+public function isBoxedType
+  input Type ty;
+  output Boolean b;
+algorithm
+  b := matchcontinue (ty)
+    case ((T_METAOPTION(_),_)) then true;
+    case ((T_LIST(_),_)) then true;
+    case ((T_METATUPLE(_),_)) then true;
+    case ((T_UNIONTYPE(_),_)) then true;
+    case ((T_BOXED(_),_)) then true;
+    case _ then false;
   end matchcontinue;
-end getFuncargType;
+end isBoxedType;
+
+public function unboxedType
+  input Type ty;
+  output Type out;
+algorithm
+  out := matchcontinue (ty)
+    case ((T_METAOPTION(_),_)) then ty;
+    case ((T_LIST(_),_)) then ty;
+    case ((T_METATUPLE(_),_)) then ty;
+    case ((T_UNIONTYPE(_),_)) then ty;
+    case ((T_BOXED(ty),_)) then ty;
+    case _ equation Debug.fprintln("failtrace", "- Types.unboxedType failed"); then fail();
+  end matchcontinue;
+end unboxedType;
+
+public function listMatchSuperType "Takes lists of Exp,Type and calculates the
+supertype of the list, then converts the expressions to this type. /sjoelund
+"
+  input list<Exp.Exp> elist;
+  input list<Type> typeList;
+  input PolymorphicBindings polymorphicBindings;
+  input MatchTypeFunc matchFunc;
+  output list<Exp.Exp> out;
+  output Type t;
+  output PolymorphicBindings outBindings;
+	partial function MatchTypeFunc
+	  input Exp.Exp inExp1;
+	  input Type inType2;
+	  input Type inType3;
+	  input PolymorphicBindings polymorphicBindings;
+	  output Exp.Exp outExp;
+	  output Type outType;
+	  output PolymorphicBindings outBindings;
+	end MatchTypeFunc;
+algorithm
+  (out, t, outBindings) := matchcontinue (elist, typeList, polymorphicBindings, matchFunc)
+    local
+      Exp.Exp e;
+      Type ty, superType;
+    case ({},{},polymorphicBindings,_) then ({}, (T_NOTYPE,NONE), polymorphicBindings);
+    case (e :: _, ty :: _, polymorphicBindings, matchFunc)
+      equation
+        superType = Util.listReduce(typeList, superType);
+        (elist,polymorphicBindings) = listMatchSuperType2(elist, typeList, superType, polymorphicBindings, matchFunc);
+      then (elist, superType, polymorphicBindings);
+    case (_, _, _, _)
+      equation
+        Debug.fprintln("failtrace", "- Types.listMatchSuperType failed");
+      then fail();
+  end matchcontinue;
+end listMatchSuperType;
+
+protected function listMatchSuperType2
+  input list<Exp.Exp> elist;
+  input list<Type> typeList;
+  input Type superType;
+  input PolymorphicBindings polymorphicBindings;
+  input MatchTypeFunc matchFunc;
+  output list<Exp.Exp> out;
+  output PolymorphicBindings outBindings;
+	partial function MatchTypeFunc
+	  input Exp.Exp inExp1;
+	  input Type inType2;
+	  input Type inType3;
+	  input PolymorphicBindings polymorphicBindings;
+	  output Exp.Exp outExp;
+	  output Type outType;
+	  output PolymorphicBindings outBindings;
+	end MatchTypeFunc;
+algorithm
+  (out,outBindings) := matchcontinue (elist, typeList, superType, polymorphicBindings, matchFunc)
+    local
+      Exp.Exp e;
+      list<Exp.Exp> erest;
+      Type t;
+      list<Type> trest;
+    case ({},{},_,polymorphicBindings,_) then ({},polymorphicBindings);
+    case (e::erest, t::trest, superType, polymorphicBindings, matchFunc)
+      equation
+        (e,t,polymorphicBindings) = matchFunc(e,t,superType,polymorphicBindings);
+        (erest,polymorphicBindings) = listMatchSuperType2(erest,trest,superType,polymorphicBindings,matchFunc);
+      then (e::erest,polymorphicBindings);
+    case (e::_, _, _, _, _)
+      local String str;
+      equation
+        str = Exp.printExpStr(e);
+        Debug.fprintln("failtrace", "- Types.listMatchSuperType2 failed: " +& str);
+      then fail();
+  end matchcontinue;
+end listMatchSuperType2;
+
+public function superType "find the supertype of the two types"
+  input Type inType1;
+  input Type inType2;
+  output Type out;
+algorithm 
+  out :=
+  matchcontinue (inType1,inType2)
+    local
+      Type t1,t2,tp,tp2,tp1;
+      list<Type> type_list1,type_list2;
+    case ((T_ANYTYPE(_),_),t2) then t2; 
+    case (t1,(T_ANYTYPE(_),_)) then t1;
+    case ((T_NOTYPE(),_),t2) then t2;
+    case (t1,(T_NOTYPE(),_)) then t1;
+    case (t1,t2 as (T_POLYMORPHIC(_),_)) then t2;
+    
+    case ((T_TUPLE(type_list1),_),(T_TUPLE(type_list2),_))
+      equation
+        type_list1 = Util.listThreadMap(type_list1,type_list2,superType);
+      then ((T_TUPLE(type_list1),NONE));
+    case ((T_TUPLE(type_list1),_),(T_METATUPLE(type_list2),_))
+      equation
+        type_list1 = Util.listThreadMap(type_list1,type_list2,superType);
+      then ((T_METATUPLE(type_list1),NONE));
+    case ((T_METATUPLE(type_list1),_),(T_TUPLE(type_list2),_))
+      equation
+        type_list1 = Util.listThreadMap(type_list1,type_list2,superType);
+      then ((T_METATUPLE(type_list1),NONE));
+    case ((T_METATUPLE(type_list1),_),(T_METATUPLE(type_list2),_))
+      equation
+        type_list1 = Util.listThreadMap(type_list1,type_list2,superType);
+      then ((T_METATUPLE(type_list1),NONE));
+        
+    case ((T_LIST(t1),_),(T_LIST(t2),_))
+      equation
+        tp = superType(t1,t2);
+      then ((T_LIST(tp),NONE));
+    case ((T_METAOPTION(t1),_),(T_METAOPTION(t2),_))
+      equation
+        tp = superType(t1,t2);
+      then ((T_METAOPTION(tp),NONE));
+
+    case (t1,t2)
+      equation
+        true = subtype(t1,t2);
+      then t2;
+    
+    case (t1,t2)
+      equation
+        true = subtype(t2,t1);
+      then t1;
+    
+  end matchcontinue;
+end superType;
+
+public function matchTypePolymorphic "Like matchType, except we also
+bind polymorphic variabled. Used when elaborating calls.
+TODO: We should probably just match types and then walk the type to
+detect and verify any polymorphism."
+  input Exp.Exp inExp1;
+  input Type inType2;
+  input Type inType3;
+  input PolymorphicBindings polymorphicBindings;
+  output Exp.Exp outExp;
+  output Type outType;
+  output PolymorphicBindings outBindings;
+algorithm 
+  (outExp,outType,outBindings):=
+  matchcontinue (inExp1,inType2,inType3,polymorphicBindings)
+    local
+      Exp.Exp e,e_1;
+      Exp.Type et;
+      Type e_type,expected_type,e_type_1;
+      String id;
+    case (e,e_type,(T_POLYMORPHIC(id),_),polymorphicBindings)
+      equation
+        (e_1,e_type_1) = matchType(e,e_type,(T_BOXED((T_NOTYPE,NONE)),NONE));
+      then (e_1,e_type_1,(id,e_type_1)::polymorphicBindings);
+    case (e,e_type,expected_type,polymorphicBindings)
+      equation 
+        true = subtype(e_type, expected_type);
+      then
+        (e,e_type,polymorphicBindings);
+    case (e,e_type,expected_type,polymorphicBindings)
+      equation 
+        false = subtype(e_type, expected_type);
+        (e_1,e_type_1,polymorphicBindings) = typeConvert(e, e_type, expected_type, polymorphicBindings, matchTypePolymorphic);
+      then
+        (e_1,e_type_1,polymorphicBindings);
+    case (_,_,_,_)
+      equation
+        Debug.fprintln("failtrace", "- Types.matchTypePolymorphic failed");
+      then fail();
+  end matchcontinue;
+end matchTypePolymorphic;
+
+public function matchTypeRegular "function: matchType
+ 
+  This function matches an expression with an expected type, and
+  converts the expression to the expected type if necessary.
+  inputs : (exp: Exp.Exp, exp_type: Type, expected: Type)
+  outputs: (Exp.Exp, Type)"
+  input Exp.Exp inExp1;
+  input Type inType2;
+  input Type inType3;
+  input PolymorphicBindings polymorphicBindings;
+  output Exp.Exp outExp;
+  output Type outType;
+  output PolymorphicBindings outBindings;
+algorithm 
+  (outExp,outType,polymorphicBindings):=
+  matchcontinue (inExp1,inType2,inType3,polymorphicBindings)
+    local
+      Exp.Exp e,e_1;
+      Exp.Type et;
+      Type e_type,expected_type,e_type_1;
+    case (e,e_type,expected_type,polymorphicBindings)
+      equation 
+        true = subtype(e_type, expected_type);
+      then
+        (e,e_type,polymorphicBindings);
+    case (e,e_type,expected_type,polymorphicBindings)
+      equation 
+        false = subtype(e_type, expected_type);
+        (e_1,e_type_1,polymorphicBindings) = typeConvert(e, e_type, expected_type, polymorphicBindings, matchTypeRegular);
+      then
+        (e_1,e_type_1,polymorphicBindings);
+    case (_,_,_,_)
+      equation
+        Debug.fprintln("failtrace", "- Types.matchTypeRegular failed");
+      then fail();
+  end matchcontinue;
+end matchTypeRegular;
+
+public function fixPolymorphicRestype "TODO: This needs to be more generic so for example list<polymorphic<X>> is also translated"
+  input Type ty;
+  input PolymorphicBindings bindings;
+  output Type resType;
+algorithm
+  resType := matchcontinue (ty, bindings)
+    local
+      String id;
+      Type t1,t2;
+      list<Type> tys;
+    case ((T_POLYMORPHIC(id),_),bindings)
+      then polymorphicBindingsLookup(id, bindings);
+    case ((T_LIST(t1),_),bindings)
+      equation
+        t2 = fixPolymorphicRestype(t1, bindings);
+        t2 = unboxedType(t2);
+      then ((T_LIST(t2),NONE));
+    case ((T_METAOPTION(t1),_),bindings)
+      equation
+        t2 = fixPolymorphicRestype(t1, bindings);
+        t2 = unboxedType(t2);
+      then ((T_METAOPTION(t2),NONE));
+    case ((T_METATUPLE(tys),_),bindings)
+      equation
+        tys = Util.listMap1(tys, fixPolymorphicRestype, bindings);
+        tys = Util.listMap(tys, unboxedType);        
+      then ((T_METATUPLE(tys),NONE));
+    // Add Uniontype, Function reference(?)
+    case (ty, bindings) then ty;
+  end matchcontinue;
+end fixPolymorphicRestype;
+
+public function polymorphicBindingsLookup
+  input String id;
+  input PolymorphicBindings bindings;
+  output Type resType;
+algorithm
+  resType := matchcontinue (id, bindings)
+    local
+      String id,id2;
+      Type ty;
+      PolymorphicBindings rest;
+    case (id, (id2,ty)::_)
+      equation
+        true = id ==& id2;
+        ty = Util.if_(isBoxedType(ty),ty,(T_BOXED(ty),NONE));
+      then ty;
+    case (id, _::rest)
+      equation
+        ty = polymorphicBindingsLookup(id,rest);
+      then ty;
+  end matchcontinue;
+end polymorphicBindingsLookup;
+
 end Types;
 

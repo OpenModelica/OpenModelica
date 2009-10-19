@@ -219,6 +219,7 @@ public constant ErrorID ERROR_BUILTIN_DELAY=510;
 public constant ErrorID When_With_IF=511;
 public constant ErrorID OUTER_MODIFICATION=512;
 public constant ErrorID REDUNDANT_GUESS=513 "Used by MathCore in Backend";
+
 public constant ErrorID DERIVATIVE_NON_REAL=514;
 public constant ErrorID UNUSED_MODIFIER=515;
 public constant ErrorID SELECTED_STATES=515;
@@ -227,9 +228,12 @@ public constant ErrorID INCONSISTENT_UNITS=517;
 public constant ErrorID CONSISTENT_UNITS=518;
 public constant ErrorID INCOMPLETE_UNITS=519;
 
-
 public constant ErrorID INDEX_REDUCTION_NOTIFICATION=1000;
 public constant ErrorID SELECTED_STATE_DUE_TO_START_NOTIFICATION = 1001;
+public constant ErrorID INTERACTIVE_ASSIGN=5000;
+public constant ErrorID MATCH_SHADOWING=5001;
+public constant ErrorID META_POLYMORPHIC=5002;
+
 protected constant list<tuple<Integer, MessageType, Severity, String>> errorTable={(SYNTAX_ERROR,SYNTAX(),ERROR(),"Syntax error near: %s"),
           (GRAMMATIC_ERROR,GRAMMAR(),ERROR(),"%s"),
           (LOOKUP_ERROR,TRANSLATION(),ERROR(),
@@ -495,6 +499,8 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           "No corresponding 'inner' declaration found for component %s declared as '%s'."),
           (DERIVATIVE_NON_REAL,TRANSLATION(),ERROR(),  
           "Illegal derivative. der(%s) where %s is of type %s, which is not a subtype of Real"),
+          (DERIVATIVE_NON_REAL,TRANSLATION(),ERROR(),  
+          "Illegal derivative. der(%s) where %s is of type %s, which is not a subtype of Real"),
           (IMPLICIT_ITERATOR_NOT_FOUND_IN_LOOP_BODY,TRANSLATION(),ERROR(),
           "Identificator %s of implicit for iterator must be present as array subscript in the loop body."),
           
@@ -510,8 +516,10 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (INCOMPLETE_UNITS, TRANSLATION(),NOTIFICATION(),"The system of units is incomplete. Please provide unit information to the model by e.g. using types from the SIunits package."),
           (IF_EQUATION_NO_ELSE, TRANSLATION(),ERROR(),"In equation %s. If-equation with conditions that are not parameter expressions must have an else branch, in equation."),
           (IF_EQUATION_UNBALANCED, TRANSLATION(),ERROR(),"In equation %s. If-equation with conditions that are not parameter expressions must have the same number of equations in each branch, equation count is %s for each respective branch."),
-          (LINSPACE_ILLEGAL_SIZE_ARG,TRANSLATION(),ERROR(),"In expression %s, third argument to linspace must be >= 2")
-           
+          (LINSPACE_ILLEGAL_SIZE_ARG,TRANSLATION(),ERROR(),"In expression %s, third argument to linspace must be >= 2"),
+          (INTERACTIVE_ASSIGN, SCRIPTING(),ERROR(), "Interactive assignment of %s failed for expression %s."),
+          (MATCH_SHADOWING, TRANSLATION(),ERROR(), " Local variable '%s' shadows input or result variables in a {match,matchcontinue} expression."),
+          (META_POLYMORPHIC, TRANSLATION(),ERROR(), " %s uses invalid subtypeof syntax. Only subtypeof Any is supported.")
           };
           
 protected import ErrorExt;

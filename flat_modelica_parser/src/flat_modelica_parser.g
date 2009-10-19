@@ -613,13 +613,13 @@ algorithm_annotation_list :
         }
 
 equation :
-		(   equality_equation
+		( equality_equation
 		|	conditional_equation_e
 		|	for_clause_e
 		|	connect_clause
 		|	when_clause_e
-		|   FAILURE^ LPAR! equation RPAR!
-		|   EQUALITY^ LPAR! equation RPAR!
+		| FAILURE^ LPAR! equation RPAR!
+		| EQUALITY^ LPAR! expression (EQUALS!|COMMA!) expression RPAR!
 		)
         {
             #equation = #([EQUATION_STATEMENT,"EQUATION_STATEMENT"], #equation);
@@ -653,7 +653,6 @@ algorithm :
 		|   BREAK
 		|   RETURN
 		|   FAILURE^ LPAR! algorithm RPAR!
-		|   EQUALITY^ LPAR! algorithm RPAR!
 		)
 		comment
         {
@@ -972,7 +971,7 @@ primary :
 		| FALSE
 		| TRUE
 		| component_reference__function_call
-        | DER^ function_call
+		| DER^ function_call
 		| LPAR^ expression_list RPAR!
 		| LBRACK^ expression_list (SEMICOLON! expression_list)* RBRACK!
 		| LBRACE^ for_or_expression_list RBRACE!

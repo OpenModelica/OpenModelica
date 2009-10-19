@@ -47,6 +47,7 @@ public import Absyn;
 public import Util;
 public import SCode;
 public import ClassInf;
+public import Debug;
 type Ident = String;
 
 //---------------------------------------------------------
@@ -241,6 +242,18 @@ algorithm
       equation
         elem = Exp.REINIT(c,e);
       then elem;
+    case (DAE.NORETCALL(fn,explist))
+      local
+        Absyn.Path fn;
+        list<Exp.Exp> explist;
+      then Exp.DAENORETCALL(fn,explist);
+    case daeElem
+      local
+        String str;
+      equation
+        str = DAE.dumpElementsStr({daeElem});
+        Debug.fprintln("failtrace", "- Convert.fromDAEElemToExpElem failed" +& str);
+      then fail();
   end matchcontinue;
 end fromDAEElemToExpElem;
 
@@ -300,7 +313,9 @@ algorithm
     case (DAE.LIST()) equation then Exp.LISTEXP();
     case (DAE.METATUPLE()) equation then Exp.METATUPLEEXP();
     case (DAE.METAOPTION()) equation then Exp.METAOPTIONEXP();
+    case (DAE.UNIONTYPE()) then Exp.UNIONTYPEEXP();
     case (DAE.EXT_OBJECT(p)) equation then Exp.EXT_OBJECTEXP(p);
+    case _ equation Debug.fprintln("failtrace", "- Convert.typeConvert failed"); then fail();
   end matchcontinue;
 end typeConvert;
 
@@ -582,14 +597,21 @@ algorithm
 		  equation
 		    elem = Exp.LABEL(s);
 		  then elem;
-		/* Does not compile in release on win32
+	  case (Algorithm.MATCHCASES(exps)) // matchcontinue helper
+      local
+        list<Exp.Exp> exps;
+      then Exp.MATCHCASES(exps);
+	  case (Algorithm.NORETCALL(exp))
+	    local
+	      Exp.Exp exp;
+	    then Exp.NORETCALL(exp);
+	    
 		case (alg)
 		  local
 		    Algorithm.Statement alg;
 		  equation
-		    debug_print("fromAlgStateToExpState failed at:", alg);
+		    Debug.fprintln("failtrace", "- Convert.fromAlgStateToExpState failed");
 		  then fail();
-		*/
   end matchcontinue;
 end fromAlgStateToExpState;
 
@@ -828,7 +850,19 @@ algorithm
       equation
         elem = DAE.REINIT(c,e);
       then elem;
-  end matchcontinue;
+    
+    case (Exp.DAENORETCALL(fn,explist))
+      local
+        Absyn.Path fn;
+        list<Exp.Exp> explist;
+      then DAE.NORETCALL(fn,explist);
+    
+    case _
+      equation
+        Debug.fprintln("failtrace", "- Convert.fromExpElemToDAEElem failed");
+      then fail();
+
+  end matchcontinue;  
 end fromExpElemToDAEElem;
 
 public function varProtConvert2 "function: varProtConvert2
@@ -886,7 +920,9 @@ algorithm
     case (Exp.LISTEXP()) equation then DAE.LIST();
     case (Exp.METATUPLEEXP()) equation then DAE.METATUPLE();
     case (Exp.METAOPTIONEXP()) equation then DAE.METAOPTION();
+    case (Exp.UNIONTYPEEXP()) then DAE.UNIONTYPE();
     case (Exp.EXT_OBJECTEXP(p)) equation then DAE.EXT_OBJECT(p);
+    case _ equation Debug.fprintln("failtrace", "- Convert.typeConvert2 failed"); then fail();
   end matchcontinue;
 end typeConvert2;
 
@@ -1180,6 +1216,18 @@ algorithm
 		  equation
 		    elem = Algorithm.LABEL(s);
 		  then elem;
+	  case (Exp.MATCHCASES(exps)) // matchcontinue helper
+      local
+        list<Exp.Exp> exps;
+      then Algorithm.MATCHCASES(exps);
+	  case (Exp.NORETCALL(exp))
+	    local
+	      Exp.Exp exp;
+	    then Algorithm.NORETCALL(exp);
+	  case _
+	    equation
+	      Debug.fprintln("failtrace", "- Convert.fromExpStateToAlgState failed");
+	    then fail();
   end matchcontinue;
 end fromExpStateToAlgState;
 
@@ -1296,6 +1344,13 @@ algorithm
       lType2 = Util.listMap(lType,fromTypeTypesToType);
     	ret = ((Types.T_METATUPLE(lType2),p));
     then ret;
+      
+   	case ((Exp.T_UNIONTYPETYPES(records),p))
+   	  local
+   	    list<Absyn.Path> records;
+   	  equation
+   	    ret = ((Types.T_UNIONTYPE(records),p));
+   	  then ret;
 
 	  case ((Exp.T_ENUMTYPES(),p))
     equation
@@ -1370,6 +1425,11 @@ algorithm
 	  equation
 	  	ret = ((Types.T_ANYTYPE(s),p));
 	  then ret;
+	  
+	  case _
+	    equation
+	      Debug.fprintln("failtrace", "- Convert.fromTypeTypesToType failed");
+	    then fail();
 	end matchcontinue;
 end fromTypeTypesToType;
 
@@ -1557,10 +1617,10 @@ algorithm
 	      vLst2 = fromValueTypesLstToValueLst(vLst,{});
 	      ret = Values.TUPLE(vLst2);
 	    then ret;
-	  case (Exp.RECORDVAL(p,vLst,lIdent))
+	  case (Exp.RECORDVAL(p,vLst,lIdent,i))
 	    equation
 	      vLst2 = fromValueTypesLstToValueLst(vLst,{});
-	      ret = Values.RECORD(p,vLst2,lIdent);
+	      ret = Values.RECORD(p,vLst2,lIdent,i);
 	    then ret;
 	end matchcontinue;
 end fromValueTypesToValue;
@@ -1751,6 +1811,13 @@ algorithm
     	ret = ((Exp.T_METATUPLETYPES(lType2),p));
     then ret;
 
+	  case ((Types.T_UNIONTYPE(records),p))
+	    local
+	      list<Absyn.Path> records;
+	    equation
+	      ret = (Exp.T_UNIONTYPETYPES(records),p);
+	    then ret;
+	    
 	  case ((Types.T_ENUM(),p))
 	  local
     equation
@@ -1825,6 +1892,14 @@ algorithm
 	  equation
 	  	ret = ((Exp.T_ANYTYPETYPES(s),p));
 	  then ret;
+	    
+	  case inType
+	    local
+	      String str;
+	    equation
+	      str = Types.unparseType(inType);
+	      Debug.fprintln("failtrace", "- Convert.fromTypeToTypeTypes " +& str);
+	    then fail();
 	end matchcontinue;
 end fromTypeToTypeTypes;
 
@@ -2009,15 +2084,19 @@ algorithm
 	      vLst2 = fromValueLstToValueTypesLst(vLst,{});
 	      ret = Exp.TUPLEVAL(vLst2);
 	    then ret;
-	  case (Values.RECORD(p,vLst,lIdent))
+	  case (Values.RECORD(p,vLst,lIdent,i))
 	    equation
 	      vLst2 = fromValueLstToValueTypesLst(vLst,{});
-	      ret = Exp.RECORDVAL(p,vLst2,lIdent);
+	      ret = Exp.RECORDVAL(p,vLst2,lIdent,i);
 	    then ret;
 	  case (Values.CODE(c))
 	    equation
 	      ret = Exp.CODEVAL(c);
 	    then ret;
+	  case _
+	    equation
+	      print("- Convert.fromValueToValueTypes failed\n");
+	    then fail();
   end matchcontinue;
 end fromValueToValueTypes;
 

@@ -43,6 +43,8 @@ package SCode
   The SCode representation is used as input to the Inst module"
 
 public import Absyn;
+protected import MetaUtil;
+public import PartFn;
 
 public 
 type Ident = Absyn.Ident "Some definitions are borrowed from `Absyn\'" ;
@@ -58,6 +60,12 @@ uniontype Restriction
   record R_CLASS end R_CLASS;
   record R_MODEL end R_MODEL;
   record R_RECORD end R_RECORD;
+    
+  record R_METARECORD "Metamodelica extension" 
+    Absyn.Path name; //Name of the uniontype
+    Integer index; //Index in the uniontype
+  end R_METARECORD; /* added by x07simbj */ 
+  
   record R_BLOCK end R_BLOCK;
   record R_CONNECTOR
     Boolean isExpandable;  
@@ -72,6 +80,7 @@ uniontype Restriction
   record R_PREDEFINED_STRING end R_PREDEFINED_STRING;
   record R_PREDEFINED_BOOL end R_PREDEFINED_BOOL;
   record R_PREDEFINED_ENUM end R_PREDEFINED_ENUM;
+  record R_UNIONTYPE "Metamodelica extension" end R_UNIONTYPE; /* added by simbj */
 end Restriction;
 
 public 
@@ -361,6 +370,22 @@ protected import ModUtil;
 public function elaborate 
 "function: elaborate 
   This function takes an Absyn.Program 
+  and constructs a SCode.Program from it.
+  This particular version of elaborate tries to fix any uniontypes
+  in the inProgram before elaborating further. This should probably
+  be moved into Parser.parse since you have to modify the tree every
+  single time you elaborate..."
+  input Absyn.Program inProgram;
+  output Program outProgram;
+algorithm 
+  inProgram := MetaUtil.createMetaClassesInProgram(inProgram);
+  inProgram := PartFn.createPartEvalFunctionClasses(inProgram);
+  outProgram := elaborate2(inProgram);
+end elaborate;
+
+protected function elaborate2
+"function: elaborate2
+  This function takes an Absyn.Program 
   and constructs a SCode.Program from it."
   input Absyn.Program inProgram;
   output Program outProgram;
@@ -370,7 +395,7 @@ algorithm
       Class c_1;
       Program cs_1;
       Absyn.Class c;
-      list<Absyn.Class> cs;
+      list<Absyn.Class> cs,cs2;
       Absyn.Within w;
       Absyn.Program p;
       Absyn.TimeStamp ts;
@@ -378,7 +403,13 @@ algorithm
     case (Absyn.PROGRAM(classes = (c :: cs),within_ = w,globalBuildTimes=ts))
       equation 
         c_1 = elabClass(c);
-        cs_1 = elaborate(Absyn.PROGRAM(cs,w,ts));
+        /* MetaModelica extension. x07simbj */
+        //cs2 = MetaUtil.createMetaClasses(c); /*Find the records in the union type and extend the ast
+                                                //with the records as metarecords.
+                                            //  */
+        //cs = listAppend(cs2,cs);
+        /* */
+        cs_1 = elaborate2(Absyn.PROGRAM(cs,w,ts));
       then
         (c_1 :: cs_1);
     case (p)
@@ -387,7 +418,7 @@ algorithm
       then
         fail();
   end matchcontinue;
-end elaborate;
+end elaborate2;
 
 public function elabClass 
 "function: elabClass 
@@ -420,7 +451,8 @@ algorithm
   end matchcontinue;
 end elabClass;
 
-protected function elabRestriction 
+// Changed to public! krsta
+public function elabRestriction 
 "function: elabRestriction
   Convert a class restriction."
   input Absyn.Class inClass;
@@ -442,6 +474,11 @@ algorithm
     case (_,Absyn.R_CLASS()) then R_CLASS(); 
     case (_,Absyn.R_MODEL()) then R_MODEL(); 
     case (_,Absyn.R_RECORD()) then R_RECORD(); 
+    case (_,Absyn.R_METARECORD(name,index)) //MetaModelica extension, added by x07simbj
+      local
+        Absyn.Path name;
+        Integer index; 
+      then R_METARECORD(name,index); 
     case (_,Absyn.R_BLOCK()) then R_BLOCK(); 
     case (_,Absyn.R_CONNECTOR()) then R_CONNECTOR(false); 
     case (_,Absyn.R_EXP_CONNECTOR()) then R_CONNECTOR(true);  /* fixme */ 
@@ -452,7 +489,8 @@ algorithm
     case (_,Absyn.R_PREDEFINED_REAL()) then R_PREDEFINED_REAL(); 
     case (_,Absyn.R_PREDEFINED_STRING()) then R_PREDEFINED_STRING(); 
     case (_,Absyn.R_PREDEFINED_BOOL()) then R_PREDEFINED_BOOL(); 
-    case (_,Absyn.R_PREDEFINED_ENUM()) then R_PREDEFINED_ENUM(); 
+    case (_,Absyn.R_PREDEFINED_ENUM()) then R_PREDEFINED_ENUM();
+    case (_,Absyn.R_UNIONTYPE()) then R_UNIONTYPE(); /*MetaModelica extension added by x07simbj */
   end matchcontinue;
 end elabRestriction;
 
@@ -961,7 +999,7 @@ algorithm
       Boolean finalPrefix,prot,rp,pa,fi,e,repl_1,fl,st;
       Option<Absyn.RedeclareKeywords> repl;
       Absyn.Class cl;
-      String n,ns;
+      String n,ns,str;
       Absyn.Restriction re;
       Absyn.ClassDef de;
       Absyn.Info file_info;
@@ -985,6 +1023,7 @@ algorithm
       equation 
         Debug.fprintln("elab", "elaborating local class: " +& n);
         re_1 = elabRestriction(cl, re); // uniontype will not get elaborated!
+        
         de_1 = elabClassdef(de);
       then
         {CLASSDEF(n,finalPrefix,rp,CLASS(n,pa,e,re_1,de_1),NONE,cc)};
@@ -1956,7 +1995,7 @@ algorithm
   end matchcontinue;
 end printClassStr;
 
-protected function printClassdefStr
+public function printClassdefStr
 "function printClassdefStr
   prints the class definition to a string"
   input ClassDef inClassDef;
@@ -2175,6 +2214,8 @@ algorithm
         res = componentNamesFromElts(rest);
       then
         (id :: res);
+    case _ :: rest
+      then componentNamesFromElts(rest);
   end matchcontinue;
 end componentNamesFromElts;
 

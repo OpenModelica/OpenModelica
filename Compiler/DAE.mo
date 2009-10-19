@@ -51,6 +51,7 @@ public import Algorithm;
 public import Types;
 public import Values;
 public import ClassInf;
+public import Env;
 
 public 
 type Ident = String;
@@ -94,6 +95,14 @@ uniontype Type
 
   record METAOPTION end METAOPTION;  // MetaModelica option. KS
 
+  record UNIONTYPE end UNIONTYPE; // MetaModelica UnionType. added by simbj
+  
+  record METARECORD end METARECORD; //MetaModelica extension, added by simbj
+  
+  record POLYMORPHIC end POLYMORPHIC; // Used in MetaModelica polymorphic function. sjoelund
+  
+  record FUNCTION_REFERENCE end FUNCTION_REFERENCE; // MetaModelica Partial Function. sjoelund
+  
   record ENUMERATION
     list<String> stringLst;
   end ENUMERATION;
@@ -252,6 +261,7 @@ uniontype Element
     Absyn.Path path;
     DAElist dAElist;
     Types.Type type_;
+    Boolean partialPrefix "MetaModelica extension";
   end FUNCTION;
 
   record EXTFUNCTION "An external function"
@@ -459,7 +469,6 @@ protected import ModUtil;
 protected import Debug;
 protected import Error;
 protected import SCode;
-protected import Env;
 protected import System;
 
 public function removeEquations "Removes all equations and algorithms, from the dae"
@@ -851,9 +860,9 @@ algorithm
         Print.printBuf(",dims=");
         Dump.printList(dims, Exp.printSubscript, ", ");
         comment_str = Dump.unparseCommentOption(comment) "	dump_start_value start &" ;
-        print("  comment:");
-        print(comment_str);
-        print(",\n ");
+        Print.printBuf("  comment:");
+        Print.printBuf(comment_str);
+        Print.printBuf(", ");
         dumpVariableAttributes(dae_var_attr);
         Print.printBuf(")\n");
         dump2(DAE(xs));
@@ -870,9 +879,9 @@ algorithm
         Print.printBuf("))");
         */
         comment_str = Dump.unparseCommentOption(comment) "	dump_start_value start &" ;
-        print("  comment:");
-        print(comment_str);
-        print(",\n ");
+        Print.printBuf("  comment:");
+        Print.printBuf(comment_str);
+        Print.printBuf(", ");
         dumpVariableAttributes(dae_var_attr);
         Print.printBuf(")\n");
         dump2(DAE(xs));
@@ -969,7 +978,7 @@ algorithm
         ();
     case (DAE(elementLst = {})) then (); 
     case (_)
-      equation 
+      equation
         Print.printBuf("dump2 failed\n");
       then
         ();
@@ -3112,15 +3121,11 @@ algorithm
       then
         str;
 
-    case (Algorithm.NORETCALL(fname,fargs),i)
-      local Absyn.Path fname; 
-        list<Exp.Exp> fargs;
-        String fnameStr,fargsStr;
+    case (Algorithm.NORETCALL(e),i)
       equation 
         s1 = indentStr(i);
-        fnameStr = Absyn.pathString(fname);
-        fargsStr = Exp.printExpListStr(fargs);
-        str = Util.stringAppendList({s1,fnameStr,"(",fargsStr,");\n"});
+        s2 = Exp.printExpStr(e);
+        str = Util.stringAppendList({s1,s2,"\n"});
       then
         str;
 
@@ -3690,6 +3695,19 @@ algorithm
   end matchcontinue;
 end isVar;
 
+public function isFunctionRefVar 
+"function: isFunctionRefVar
+  return true if the element is a function reference variable"
+  input Element inElem;
+  output Boolean outBoolean;
+algorithm
+  outBoolean:=
+  matchcontinue (inElem)
+    case VAR(ty = FUNCTION_REFERENCE()) then true;
+    case _ then false;
+  end matchcontinue;
+end isFunctionRefVar;
+
 public function isAlgorithm "function: isAlgorithm
   author: LS
  
@@ -3828,12 +3846,12 @@ algorithm
         Exp.printComponentRef(cr);
         Print.printBuf(", ");
         dumpKind(vk);
-        Print.printBuf(", ");
+        Print.printBuf(", binding: ");
+        Exp.printExp(e);
         comment_str = Dump.unparseCommentOption(comment);
         Print.printBuf("  comment:");
         Print.printBuf(comment_str);
-        tmp_str = dumpVariableAttributesStr(dae_var_attr);
-        Exp.printExp(e);
+        tmp_str = dumpVariableAttributesStr(dae_var_attr);        
         Print.printBuf(tmp_str);
         Print.printBuf(")");
       then
@@ -4490,15 +4508,16 @@ public function daeToRecordValue "function: daeToRecordValue
   Transforms a list of elements into a record value.
   TODO: This does not work for records inside records. 
   For a general approach we need to build an environment from the DAE and then
-  instead investigate the variables and lookup their values from the created environment.
-"
+  instead investigate the variables and lookup their values from the created environment."
+  input Env.Cache inCache;
+  input Env.Env inEnv;
   input Absyn.Path inPath;
   input list<Element> inElementLst;
   input Boolean inBoolean;
+  output Env.Cache outCache;
   output Values.Value outValue;
 algorithm 
-  outValue:=
-  matchcontinue (inPath,inElementLst,inBoolean)
+  (outCache, outValue) := matchcontinue (inCache,inEnv,inPath,inElementLst,inBoolean)
     local
       Absyn.Path cname;
       Values.Value value,res;
@@ -4509,22 +4528,34 @@ algorithm
       Exp.Exp rhs;
       list<Element> rest;
       Boolean impl;
-    case (cname,{},_) then Values.RECORD(cname,{},{});  /* impl */ 
-    case (cname,(EQUATION(exp = Exp.CREF(componentRef = cr),scalar = rhs) :: rest),impl)
+      Integer ix;
+      Element el;
+      Env.Cache cache;
+      Env.Env env;
+      
+    case (cache,env,cname,{},_) then (cache,Values.RECORD(cname,{},{},-1));  /* impl */
+    case (cache,env,cname,VAR(componentRef = cr, binding = SOME(rhs)) :: rest, impl)
+      equation
+        Debug.fprintln("failtrace", "- DAE.daeToRecordValue typeOfRHS: " +& Exp.typeOfString(rhs));        
+        (cache, value,_) = Ceval.ceval(cache, env, rhs, impl, NONE, NONE, Ceval.MSG());
+        (cache, Values.RECORD(cname,vals,names,ix)) = daeToRecordValue(cache, env, cname, rest, impl);
+        cr_str = Exp.printComponentRefStr(cr);        
+      then
+        (cache,Values.RECORD(cname,(value :: vals),(cr_str :: names),ix));
+    /*    
+    case (cache,env,cname,(EQUATION(exp = Exp.CREF(componentRef = cr),scalar = rhs) :: rest),impl)
       equation 
-        (_,value,_) = Ceval.ceval(Env.emptyCache(),{}, rhs, impl, NONE, NONE, Ceval.MSG());
-        Values.RECORD(cname,vals,names) = daeToRecordValue(cname, rest, impl);
+        (cache, value,_) = Ceval.ceval(Env.emptyCache(),{}, rhs, impl, NONE, NONE, Ceval.MSG());
+        (cache, Values.RECORD(cname,vals,names,ix)) = daeToRecordValue(cache, env, cname, rest, impl);
         cr_str = Exp.printComponentRefStr(cr);
       then
-        Values.RECORD(cname,(value :: vals),(cr_str :: names));
-    case (cname,(_ :: rest),impl)
-      equation 
-        res = daeToRecordValue(cname, rest, impl);
-      then
-        res;
-    case (_,_,_)
-      equation 
-        Debug.fprint("failtrace", "-dae_to_record_value failed\n");
+        (cache,Values.RECORD(cname,(value :: vals),(cr_str :: names),ix));
+    */
+    case (cache,env,_,el::_,_)
+      local String str;
+      equation
+        str = dumpDebugDAE(DAE({el}));
+        Debug.fprintln("failtrace", "- DAE.daeToRecordValue failed on: " +& str);
       then
         fail();
   end matchcontinue;
@@ -4583,6 +4614,7 @@ algorithm
       list<list<Element>> trueBranches, trueBranches_1;
       list<Element> eelts;
       VarProtection prot;
+      Boolean partialPrefix;
     case ({}) then {}; 
     case ((VAR(componentRef = cr,
                kind = a,
@@ -4697,12 +4729,12 @@ algorithm
         elts_1 = toModelicaFormElts(elts);
       then
         (COMP(id,dae_1) :: elts_1);
-    case ((FUNCTION(path = p,dAElist = dae,type_ = t) :: elts))
+    case ((FUNCTION(path = p,dAElist = dae,type_ = t,partialPrefix = partialPrefix) :: elts))
       equation 
         dae_1 = toModelicaForm(dae);
         elts_1 = toModelicaFormElts(elts);
       then
-        (FUNCTION(p,dae_1,t) :: elts_1);
+        (FUNCTION(p,dae_1,t,partialPrefix) :: elts_1);
     case ((EXTFUNCTION(path = p,dAElist = dae,type_ = t,externalDecl = d) :: elts))
       local ExternalDecl d;
       equation 
@@ -5780,8 +5812,9 @@ algorithm (traversedDaeList,Type_a) := matchcontinue(daeList,func,extraArg)
     list<Algorithm.Statement> stmts,stmts2;
     VarProtection prot;
     list<list<Element>> tbs,tbs_1;
-    list<Exp.Exp> conds,conds_1; 
+    list<Exp.Exp> conds,conds_1, args; 
     Stream st;
+    Boolean partialPrefix;
     Absyn.Path path; 
     list<Exp.Exp> expl;
   case({},_,extraArg) then ({},extraArg);
@@ -5863,11 +5896,11 @@ algorithm (traversedDaeList,Type_a) := matchcontinue(daeList,func,extraArg)
       (dae2,extraArg) = traverseDAE(dae,func,extraArg);
     then (COMP(id,DAE(elist))::dae2,extraArg);
       
-  case(FUNCTION(path,DAE(elist),ftp)::dae,func,extraArg) 
+  case(FUNCTION(path,DAE(elist),ftp,partialPrefix)::dae,func,extraArg) 
     equation
       (elist2,extraArg) = traverseDAE(elist,func,extraArg);
       (dae2,extraArg) = traverseDAE(dae,func,extraArg);
-    then (FUNCTION(path,DAE(elist2),ftp)::dae2,extraArg);
+    then (FUNCTION(path,DAE(elist2),ftp,partialPrefix)::dae2,extraArg);
       
   case(EXTFUNCTION(path,DAE(elist),ftp,extDecl)::dae,func,extraArg) 
     equation
@@ -5894,6 +5927,12 @@ algorithm (traversedDaeList,Type_a) := matchcontinue(daeList,func,extraArg)
       (dae2,extraArg) = traverseDAE(dae,func,extraArg);
     then (TERMINATE(e11)::dae2,extraArg);    
   
+  case(NORETCALL(path,expl)::dae,func,extraArg) 
+    equation
+      (expl,extraArg) = traverseDAEExpList(expl,func,extraArg);
+      (dae2,extraArg) = traverseDAE(dae,func,extraArg);
+    then (NORETCALL(path,expl)::dae2,extraArg);
+                
   case(NORETCALL(path,expl)::dae,func,extraArg) 
     equation
       (expl,extraArg) = traverseDAEExpList(expl,func,extraArg);
@@ -5934,6 +5973,11 @@ algorithm (traversedDaeList,Type_a) := matchcontinue(daeList,func,extraArg)
       (elist22,extraArg) = traverseDAE(elist2,func,extraArg); 
       (dae2,extraArg) = traverseDAE(dae,func,extraArg);
     then (INITIAL_IF_EQUATION(conds_1,tbs_1,elist22)::dae2,extraArg);
+  // Empty function call - stefan
+  case(NORETCALL(_, _)::dae,func,extraArg)
+    equation
+      Error.addMessage(Error.UNSUPPORTED_LANGUAGE_FEATURE, {"Empty function call in equations", "Move the function calls to appropriate algorithm section"});
+      then fail();
 
   case(elt::_,_,_)
     equation print(" failure in DAE.traverseDAE\n"); dumpElements({elt}); then fail();
@@ -6035,12 +6079,12 @@ algorithm(outStmts,oextraArg) := matchcontinue(inStmts,func,extraArg)
       (xs_1, extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
     then (Algorithm.REINIT(e_1,e_2) :: xs_1,extraArg);
       
-  case (((x as Algorithm.NORETCALL(functionName = fnName, functionArgs = expl1)) :: xs),func,extraArg)
+  case (((x as Algorithm.NORETCALL(e)) :: xs),func,extraArg)
     local Absyn.Path fnName;
-    equation 
-      (expl2, extraArg) = traverseDAEExpList(expl1, func, extraArg);
+    equation
+      (e_1, extraArg) = func(e, extraArg);
       (xs_1, extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
-    then (Algorithm.NORETCALL(fnName, expl1) :: xs_1,extraArg);
+    then (Algorithm.NORETCALL(e_1) :: xs_1,extraArg);
       
   case (((x as Algorithm.RETURN()) :: xs),func,extraArg)
     equation 

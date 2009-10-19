@@ -231,10 +231,11 @@ public function instantiate
   output Env.Cache outCache;
   output InstanceHierarchy outIH;
   output DAE.DAElist outDAElist;
+  output SCode.Program outProgram;
 algorithm 
   (outCache,outIH,outDAElist) := matchcontinue (inCache,inIH,inProgram)
     local
-      list<SCode.Class> pnofunc,pfunc,p;
+      list<SCode.Class> pnofunc,pfunc,p,p_1;
       list<Env.Frame> env,envimpl,envimpl_1;
       list<String> pfuncnames,pnofuncnames;
       String str1,str2;
@@ -260,8 +261,9 @@ algorithm
         //Debug.fprintln("insttr", str2);
         (cache, oIH2, lnofunc) = instProgram(cache, envimpl_1, oIH1, pnofunc);
         l = listAppend(lfunc, lnofunc);
+        // p_1 = addElaboratedFuncsToProgram(cache,env,p); // stefan
       then
-        (cache,oIH2,DAE.DAE(l));
+        (cache,oIH2,DAE.DAE(l),p);
     case (_,_,_)
       equation 
         //Debug.fprintln("failtrace", "Inst.instantiate failed");
@@ -990,16 +992,45 @@ algorithm
       Option<Absyn.ElementAttributes> oDA;
       String str;
       list<Exp.ComponentRef> dc;
-      ConnectionGraph.ConnectionGraph graph;
+      ConnectionGraph.ConnectionGraph graph; 
       InstanceHierarchy ih;
-      
+      Types.EqualityConstraint equalityConstraint;
+
+      /* MetaModelica Partial Function. sjoelund */
+    case (cache,env,ih,store,mod,pre,csets,
+          (c as SCode.CLASS(name = n,encapsulatedPrefix = encflag,restriction = r as SCode.R_FUNCTION(), partialPrefix = true)),
+          inst_dims,impl,callscope,graph)
+      equation
+        true = RTOpts.acceptMetaModelicaGrammar();
+        
+        env_1 = Env.openScope(env, encflag, SOME(n));
+        ci_state = ClassInf.start(r, n);
+        (cache,env_3,ih,store,dae1,(csets_1 as Connect.SETS(_,crs,dc,oc)),ci_state_1,tys,bc_ty,oDA,equalityConstraint, graph) 
+        			= instClassIn(cache, env_1, ih, store, mod, pre, csets, ci_state, c, false, inst_dims, impl, graph,NONE) ;
+        (cache,fq_class) = makeFullyQualified(cache,env, Absyn.IDENT(n));
+        
+        dae1_1 = DAE.setComponentType(dae1, fq_class);
+        callscope_1 = isTopCall(callscope);              
+        
+        checkMissingInnerDecl(dae1_1,callscope_1);
+        (csets_1,_) = retrieveOuterConnections(cache,env_3,ih,pre,csets_1,callscope_1);
+        
+        dae2 = Connect.equations(csets_1,pre);
+        (cache,dae3) = Connect.unconnectedFlowEquations(cache,csets_1, dae1, env_3, pre,callscope_1,{});
+        dae = Util.listFlatten({dae1_1,dae2,dae3});
+        ty = mktype(fq_class, ci_state_1, tys, bc_ty, equalityConstraint) ;
+        
+        dae = renameUniqueVarsInTopScope(callscope_1,dae);
+      then
+        (cache,env_3,ih,store,dae,Connect.SETS({},crs,dc,oc),ty,ci_state_1,oDA,graph);
+        
       /*  Classes with the keyword partial can not be instantiated. They can only be inherited */ 
     case (cache,env,ih,store,mod,pre,csets,SCode.CLASS(name = n,partialPrefix = (partialPrefix as true)),_,(impl as false),_,graph)
       equation 
         Error.addMessage(Error.INST_PARTIAL_CLASS, {n});        
       then
         fail();
-         
+        
     /* Instantiation of a class. Create new scope and call instClassIn.
      *  Then generate equations from connects.
      */
@@ -1032,6 +1063,10 @@ algorithm
         //print("\n---- DAE ----\n"); DAE.printDAE(DAE.DAE(dae));  //Print out flat modelica
         dae = renameUniqueVarsInTopScope(callscope_1,dae);
          dae = updateDeducedUnits(callscope_1,store,dae);
+         
+         /* Fix the problems with fixing MetaModelica Uniontypes right by the source. sjoelund */
+         ty = MetaUtil.createUnionType(c,ty);
+         /* ---------------------------------------------------------------------------------- */
       then 
         (cache,env_3,ih,store,dae,Connect.SETS({},crs,dc,oc),ty,ci_state_1,oDA,graph);
 
@@ -1886,6 +1921,101 @@ algorithm
   end matchcontinue;
 end partialInstClassIn;
 
+/*
+// stefan
+protected function addElaboratedFuncsToProgram
+"function: addElaboratedFuncsToProgram
+	This function is necessary for partially evaluated functions to work.
+	After static elaboration, this function will search through the environment
+	for the new functions that have been generated, and add them to the program
+	so that code may be generated for them"
+	input Env.Cache inCache;
+	input Env.Env inEnv;
+	input SCode.Program inProgram;
+	output SCode.Program outProgram;
+algorithm
+  outProgram := matchcontinue(inCache,inEnv,inProgram)
+    local
+      Env.Cache c;
+      Env.Env env;
+      SCode.Program p,p_1;
+    case(c,env,p)
+      local
+        Option<list<Absyn.Path>> pl;
+      equation
+        pl = Env.getPathListFromCache(c);
+        p_1 = addElaboratedFuncsToProgram2(c,env,pl,p);
+      then
+        p_1;
+  end matchcontinue;
+end addElaboratedFuncsToProgram;
+
+// stefan
+protected function addElaboratedFuncsToProgram2
+"function: addElaboratedFuncsToProgram2
+	helper function to addElaboratedFuncsToProgram"
+	input Env.Cache inCache;
+	input Env.Env inEnv;
+	input Option<list<Absyn.Path>> inPathListOption;
+	input SCode.Program inProgram;
+	output SCode.Program outProgram;
+algorithm
+  outProgram := matchcontinue(inCache,inEnv,inPathListOption,inProgram)
+    local
+      Env.Cache c;
+      Env.Env env;
+      list<Absyn.Path> pl;
+      SCode.Program p,p_1;
+    case(_,_,NONE,p) then p;
+    case(c,env,SOME(pl),p)
+      equation
+        p_1 = addElaboratedFuncsToProgram3(c,env,pl,p);
+      then
+        p_1;
+  end matchcontinue;
+end addElaboratedFuncsToProgram2;
+
+// stefan
+protected function addElaboratedFuncsToProgram3
+"function: addElaboratedFuncsToProgram3
+	helper function to addElaboratedFuncsToProgram2"
+	input Env.Cache inCache;
+	input Env.Env inEnv;
+	input list<Absyn.Path> inPathList;
+	input SCode.Program inProgram;
+	output SCode.Program outProgram;
+algorithm
+  outProgram := matchcontinue(inCache,inEnv,inPathList,inProgram)
+    local
+      Env.Cache c;
+      Env.Env env;
+      Absyn.Path path;
+      list<Absyn.Path> pl;
+      SCode.Program p;
+    case(_,_,{},p) then p;
+    case(c,env,path :: pl,p)
+      local
+        SCode.Program p_1,p_2;
+        SCode.Class cl;
+        Env.Env ie;
+        String debugstr,dstr2,dstr3;
+      equation
+        ie = Env.getCachedInitialEnv(c);
+        debugstr = Env.printCacheStr(c);
+        print(debugstr);
+        dstr2 = Env.printEnvStr(env);
+        dstr3 = Env.printEnvStr(ie);
+        print(dstr2);
+        print(dstr3);
+        (c,cl,env) = Lookup.lookupClass(c,env,path,true);
+        p_1 = cl :: p;
+        p_2 = addElaboratedFuncsToProgram3(c,env,pl,p_1);
+      then
+        p_2;
+  end matchcontinue;
+end addElaboratedFuncsToProgram3;
+*/      
+
 protected function addCachedEnv
 "function: addCachedEnv
   add a new class in the environment obtaining a new environment"
@@ -2050,7 +2180,7 @@ algorithm
       list<Exp.ComponentRef> crs;
       Option<Absyn.ElementAttributes> oDA;
       list<Connect.OuterConnect> oc;
-      Types.EqualityConstraint equalityConstraint;
+      Types.EqualityConstraint eqConstraint;
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
       UnitAbsyn.UnitTerms ut;
@@ -2081,9 +2211,9 @@ algorithm
         mods = Types.removeFirstSubsRedecl(mods);
         (cache,ih,store,bc,tys)= instBasictypeBaseclass(cache, env3, ih, store, extendselts, compelts, mods, inst_dims);
         // Search for equalityConstraint
-        equalityConstraint = equalityConstraint(cache, env, els);
+        eqConstraint = equalityConstraint(cache, env, els);
       then
-        (cache,env,ih,store,{},Connect.SETS({},crs,dc,oc),ci_state,tys,bc,NONE,equalityConstraint,graph);
+        (cache,env,ih,store,{},Connect.SETS({},crs,dc,oc),ci_state,tys,bc,NONE,eqConstraint,graph);
 
     /* This case instantiates external objects. An external object inherits from ExternalOBject
      * and have two local functions: constructor and destructor (and no other elements). 
@@ -2158,6 +2288,7 @@ algorithm
         (env2,ih) = addConnectionSetToEnv(csets_filtered, pre, env2,ih);
         id = Env.printEnvPathStr(env);        
 
+
         //Add variables to env, wihtout type and binding, which will be added 
         //later in inst_element_list (where update_variable is called)" 
         (cache,env3,ih) = addComponentsToEnv(cache,env2,ih, emods, pre, csets, ci_state, compelts_1, compelts_1, eqs_1, inst_dims, impl);
@@ -2200,9 +2331,6 @@ algorithm
         //Change outer references to corresponding inner reference
         (dae,csets5) = changeOuterReferences(dae,csets5);
       
-        // Search for equalityConstraint
-        equalityConstraint = equalityConstraint(cache, env, els);
-       
         // Perform unit checking/dimensional analysis	               
         daetemp = Connect.equations(csets5,pre); // ToDO. calculation of connect eqns done twice. remove in future.          
         // equations from components (dae1) not considered, they are checked in resp recursive call
@@ -2224,8 +2352,11 @@ algorithm
         //print("dae1="+&DAE.dumpDebugDAE(DAE.DAE(dae1))+&"\n");
         UnitParserExt.rollback();
         //print("rollback for "+&className+&"\n");
+      
+        // Search for equalityConstraint
+        eqConstraint = equalityConstraint(cache, env, els);
       then
-        (cache,env5,ih,store,dae,csets5,ci_state6,tys,NONE/* no basictype bc*/,NONE,equalityConstraint,graph);
+        (cache,env5,ih,store,dae,csets5,ci_state6,tys,NONE/* no basictype bc*/,NONE,eqConstraint,graph);
    
       
     /* This rule describes how to instantiate a derived class definition */ 
@@ -2254,12 +2385,12 @@ algorithm
         (cache,dims) = elabArraydimOpt(cache,cenv_2, Absyn.CREF_IDENT("",{}),cn, ad, eq, impl, NONE,true) "owncref not valid here" ;
         inst_dims2 = instDimExpLst(dims, impl);
         inst_dims_1 = Util.listListAppendLast(inst_dims, inst_dims2);
-        (cache,env_2,ih,store,dae,csets_1,ci_state_1,tys,bc,oDA,equalityConstraint,graph) = instClassIn(cache,cenv_2,ih,store,mods_1, pre, csets, new_ci_state, c, prot, 
+        (cache,env_2,ih,store,dae,csets_1,ci_state_1,tys,bc,oDA,eqConstraint,graph) = instClassIn(cache,cenv_2,ih,store,mods_1, pre, csets, new_ci_state, c, prot, 
                     inst_dims_1, impl, graph, instSingleCref) "instantiate class in opened scope. " ;
         ClassInf.assertValid(ci_state_1, re) "Check for restriction violations" ;
         oDA = Absyn.mergeElementAttributes(DA,oDA);        
       then
-        (cache,env_2,ih,store,dae,csets_1,ci_state_1,tys,bc,oDA,equalityConstraint,graph);
+        (cache,env_2,ih,store,dae,csets_1,ci_state_1,tys,bc,oDA,eqConstraint,graph);
         
     /* MetaModelica extension */
     case (cache,env,ih,store,mods,pre,csets,ci_state,className,
@@ -2304,6 +2435,27 @@ algorithm
         bc = SOME((Types.T_METATUPLE(tys),NONE));
         oDA = Absyn.mergeElementAttributes(DA,oDA);
       then (cache,env,ih,store,{},csets,ClassInf.META_TUPLE(""),{},bc,oDA,NONE,graph);
+
+    case (cache,env,ih,store,mods,pre,csets,ci_state,className,
+          SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT("polymorphic"),{Absyn.TPATH(Absyn.IDENT("Any"),NONE)},_),modifications = mod, attributes=DA),
+          re,prot,inst_dims,impl,graph,instSingleCref)
+      local 
+        list<Absyn.TypeSpec> tSpecs; list<Types.Type> tys; Types.Type ty;
+        Absyn.ElementAttributes DA;
+      equation
+        true = RTOpts.acceptMetaModelicaGrammar();
+        (cache,cenv,ih,tys,csets,oDA) = instClassDefHelper(cache,env,ih,{},pre,inst_dims,impl,{},csets);
+        bc = SOME((Types.T_POLYMORPHIC(className),NONE));
+        oDA = Absyn.mergeElementAttributes(DA,oDA);
+      then (cache,env,ih,store,{},csets,ClassInf.META_POLYMORPHIC(className),{},bc,oDA,NONE,graph);
+    
+    case (cache,env,ih,store,mods,pre,csets,ci_state,className,
+          SCode.DERIVED(typeSpec=Absyn.TCOMPLEX(path=Absyn.IDENT("polymorphic"))),
+          re,prot,inst_dims,impl,graph,instSingleCref)
+      equation
+        true = RTOpts.acceptMetaModelicaGrammar();
+        Error.addMessage(Error.META_POLYMORPHIC, {className});
+      then fail();
     /* ----------------------- */
 
     /* If the class is derived from a class that can not be found in the environment, this rule prints an error message. */    
@@ -4315,6 +4467,11 @@ algorithm
         mm = Mod.lookupCompModification(mods, n);
         */
 
+/*
+classmod = Mod.lookupModificationP(mods, t);
+mm = Mod.lookupCompModification(mods, n);
+*/
+
         // A frequent used debugging line 
         //print("Instantiating element: " +& str +& " in scope " +& Env.getScopeName(env) +& ", elements to go: " +& intString(listLength(els)) +& " \n");// +& "\t mods: " +& Mod.printModStr(mod) +&  "\n");
         
@@ -5061,6 +5218,7 @@ algorithm
       local
         Option<Absyn.ConstrainClass> cc;
       equation 
+        
         //Redeclare of class definition, replaceable is true
         ((classmod as Types.REDECL(finalPrefix,{(SCode.CLASSDEF(n2,f2,repl2,cls2,_,cc),_)}))) = Mod.lookupModificationP(mods, Absyn.IDENT(n))  ;
         //print(" to strp redecl?\n");
@@ -5230,6 +5388,7 @@ algorithm
       then 
         fail();
 */
+
     //------------------------------------------------------------------------
     // MetaModelica Complex Types. Part of MetaModelica extension.
     //------------------------------------------------------------------------
@@ -5245,20 +5404,20 @@ algorithm
         //checkRecursiveDefinition(env,t);
         vn = Prefix.prefixCref(pre, Exp.CREF_IDENT(n,Exp.OTHER(),{}));
         // Debug.fprint(\"insttr\", \"Instantiating component \") &
-				// Debug.fprint(\"insttr\", n) & //Debug.fprint(\"insttr\", \"\\n\") &"
+        // Debug.fprint(\"insttr\", n) & //Debug.fprint(\"insttr\", \"\\n\") &"
 
-				// The class definition is fetched from the environment. Then the set of modifications
-				// is calculated. The modificions is the result of merging the modifications from
-				// several sources. The modification stored with the class definition is put in the
-				// variable `classmod\', the modification passed to the function_ is extracted and put
-				// in the variable `mm\', and the modification that is included in the variable declaration
-				// is in the variable `m\'.  All of these are merged so that the correct precedence
-				// rules are followed."
+        // The class definition is fetched from the environment. Then the set of modifications
+        // is calculated. The modificions is the result of merging the modifications from
+        // several sources. The modification stored with the class definition is put in the
+        // variable `classmod\', the modification passed to the function_ is extracted and put
+        // in the variable `mm\', and the modification that is included in the variable declaration
+        // is in the variable `m\'.  All of these are merged so that the correct precedence
+        // rules are followed."
         // classmod = Mod.lookupModificationP(mods, t) ;
         // mm = Mod.lookupCompModification(mods, n);
 
         // The types in the environment does not have correct Binding.
-	   		// We must update those variables that is found in m into a new environment.
+        // We must update those variables that is found in m into a new environment.
         owncref = Absyn.CREF_IDENT(n,{})  ;
         // crefs = getCrefFromMod(m);
         // crefs2 = getCrefFromDim(ad);
@@ -5266,12 +5425,12 @@ algorithm
         // crefs_2 = removeCrefFromCrefs(crefs_1, owncref);
         // (cache,env) = getDerivedEnv(cache,env, bc);
         //(cache,env2,csets) = updateComponentsInEnv(cache,mods, crefs_2, env, ci_state, csets, impl);
-				// Update the untyped modifiers to typed ones, and extract class and
-				// component modifiers again.
+        // Update the untyped modifiers to typed ones, and extract class and
+        // component modifiers again.
         // (cache,mods_1) = Mod.updateMod(cache,env2, pre, mods, impl) ;
 
         // Refetch the component from environment, since attributes, etc.
-		  	// might have changed.. comp used in redeclare_type below...
+        // might have changed.. comp used in redeclare_type below...
         // (cache,_,SOME((comp,_)),_,_) = Lookup.lookupIdentLocal(cache,env2, n);
         // classmod_1 = Mod.lookupModificationP(mods_1, t);
         // mm_1 = Mod.lookupCompModification(mods_1, n);
@@ -5281,7 +5440,7 @@ algorithm
         // mod1 = Mod.merge(mod, m_1, env2, pre);
         // mod1_1 = Mod.merge(cmod, mod1, env2, pre);
 
-				/* Apply redeclaration modifier to component */
+        /* Apply redeclaration modifier to component */
         // (cache,env2,ih,SCode.COMPONENT(n,io,finalPrefix,repl,prot,(attr as SCode.ATTR(ad,flowPrefix,streamPrefix,acc,param,dir)),_,m,bc,comment),mod_1,env2_1,csets)
         // = redeclareType(cache,env,ih,mod1_1, comp, env2, pre, ci_state, csets, impl);
         (cache,env_1,ih) = getDerivedEnv(cache,env,ih, bc);
@@ -5292,12 +5451,12 @@ algorithm
                          SCode.DERIVED(tSpec,SCode.NOMOD(),Absyn.ATTR(flowPrefix, streamPrefix,Absyn.VAR(),Absyn.BIDIR(),ad)));
         // (cache,cl,cenv) = Lookup.lookupClass(cache,env_1, Absyn.IDENT("Integer"), true);
 
-				// If the element is protected, and an external modification
-				// is applied, it is an error.
+        // If the element is protected, and an external modification
+        // is applied, it is an error.
         // checkProt(prot, mm_1, vn) ;
         // eq = Mod.modEquation(mod);
 
-				// The variable declaration and the (optional) equation modification are inspected for array dimensions.
+        // The variable declaration and the (optional) equation modification are inspected for array dimensions.
         // Gather all the dimensions
         // (Absyn.IDENT("Integer") is used as a dummie)
         (cache,dims) = elabArraydim(cache,env, owncref, Absyn.IDENT("Integer"),ad, NONE, impl, NONE,true)  ;
@@ -5305,7 +5464,7 @@ algorithm
         // Instantiate the component
         (cache,compenv,ih,store,dae,csets_1,ty,graph) = instVar(cache,env, ih, store,ci_state, Types.NOMOD(), pre, csets, n, cl, attr, prot, dims, {}, inst_dims, impl, comment,io,finalPrefix,aInfo,graph);
 
-				// The environment is extended (updated) with the new variable binding.
+        // The environment is extended (updated) with the new variable binding.
         (cache,binding) = makeBinding(cache,env, attr, Types.NOMOD(), ty) ;
 
         // true in update_frame means the variable is now instantiated.
@@ -6452,6 +6611,8 @@ algorithm
     case (cache,_,_,_,cl as SCode.CLASS(name = "Integer"),_,_) then (cache,{},cl); 
     case (cache,_,_,_,cl as SCode.CLASS(name = "String"),_,_) then (cache,{},cl); 
     case (cache,_,_,_,cl as SCode.CLASS(name = "Boolean"),_,_) then (cache,{},cl);
+      
+    case (cache,_,_,_,cl as SCode.CLASS(restriction = SCode.R_RECORD(), classDef = SCode.PARTS(_,_,_,_,_,_)),_,_) then (cache,{},cl);
 
     /*------------------------*/
     /* MetaModelica extension */
@@ -6473,7 +6634,7 @@ algorithm
         (cache,dim1) = elabArraydim(cache,env, owncref, Absyn.IDENT("Integer"), ad_1, NONE, impl, NONE,true);
       then (cache,dim1,cl);
 
-    case (cache,env,_,_,cl as SCode.CLASS(name = id,classDef = SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT("option"),_,arrayDim = ad),modifications = mod)),dims,impl)
+    case (cache,env,_,_,cl as SCode.CLASS(name = id,classDef = SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT("Option"),_,arrayDim = ad),modifications = mod)),dims,impl)
       equation
         true =RTOpts.acceptMetaModelicaGrammar();
         owncref = Absyn.CREF_IDENT(id,{});
@@ -6481,6 +6642,21 @@ algorithm
         // Absyn.IDENT("Integer") used as a dummie
         (cache,dim1) = elabArraydim(cache,env, owncref, Absyn.IDENT("Integer"), ad_1, NONE, impl, NONE,true);
       then (cache,dim1,cl);
+    
+    case (cache,env,_,_,cl as SCode.CLASS(name = id,classDef = SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT("polymorphic"),_,arrayDim = ad),modifications = mod)),dims,impl)
+      equation
+        true=RTOpts.acceptMetaModelicaGrammar();
+        owncref = Absyn.CREF_IDENT(id,{});
+        ad_1 = getOptionArraydim(ad);
+        // Absyn.IDENT("Integer") used as a dummie
+        (cache,dim1) = elabArraydim(cache,env, owncref, Absyn.IDENT("Integer"), ad_1, NONE, impl, NONE,true);
+      then (cache,dim1,cl);
+    
+    // Partial function definitions with no output - stefan
+    case (cache,env,_,_,cl as SCode.CLASS(name = id,restriction = SCode.R_FUNCTION(),partialPrefix = true),_,_) then (cache,{},cl);
+      
+      // MetaModelica Uniontype. Added 2009-05-11 sjoelund
+    case (cache,env,_,_,cl as SCode.CLASS(name = id,restriction = SCode.R_UNIONTYPE()),_,_) then (cache,{},cl);
       /*----------------------*/
 
     /* Derived classes with restriction type, e.g. type Point = Real[3]; */ 
@@ -6517,6 +6693,12 @@ algorithm
         
     case (cache,_,_,_,cl as SCode.CLASS(name = _),_,_) 
       then (cache,{},cl);
+    
+    case (_,_,_,_,SCode.CLASS(name = id),_,_)
+      equation
+        id = SCode.printClassStr(inClass);
+        Debug.fprintl("failtrace", {"Inst.getUsertypeDimensions failed: ", id, "\n"});
+      then fail();
   end matchcontinue;
 end getUsertypeDimensions;
 
@@ -7526,14 +7708,16 @@ algorithm
       String e_str,t_str,dim_str;
       Env.Cache cache;
       Boolean doVect;
+      Types.Properties prop;
     case (cache,env,cref,path,ad,NONE,impl,st,doVect) /* impl */ 
       equation 
         (cache,dim) = elabArraydimDecl(cache,env, cref, ad, impl, st,doVect);
         dim_1 = completeArraydim(dim);
       then
         (cache,dim_1);
-    case (cache,env,cref,path,ad,SOME(Types.TYPED(e,_,Types.PROP(t,_))),impl,st,doVect) /* Untyped expressions must be elaborated. */ 
-      equation 
+    case (cache,env,cref,path,ad,SOME(Types.TYPED(e,_,prop)),impl,st,doVect) /* Untyped expressions must be elaborated. */ 
+      equation
+        t = Types.getPropType(prop);
         (cache,dim1) = elabArraydimDecl(cache,env, cref, ad, impl, st,doVect);
         dim2 = elabArraydimType(t, ad,e,path);
         dim3 = compatibleArraydim(dim1, dim2);
@@ -7542,7 +7726,8 @@ algorithm
     case (cache,env,cref,path,ad,SOME(Types.UNTYPED(e)),impl,st,doVect)
       local Absyn.Exp e;
       equation 
-        (cache,e_1,Types.PROP(t,_),_) = Static.elabExp(cache,env, e, impl, st,doVect);
+        (cache,e_1,prop,_) = Static.elabExp(cache,env, e, impl, st,doVect);
+        t = Types.getPropType(prop);
         (cache,dim1) = elabArraydimDecl(cache,env, cref, ad, impl, st,doVect);
         dim2 = elabArraydimType(t, ad,e_1,path);
         dim3 = compatibleArraydim(dim1, dim2);
@@ -8073,6 +8258,7 @@ algorithm
     case (cache,_,path as Absyn.IDENT("list")) equation true=RTOpts.acceptMetaModelicaGrammar(); then (cache,path);
     case (cache,_,path as Absyn.IDENT("Option")) equation true=RTOpts.acceptMetaModelicaGrammar(); then (cache,path);
     case (cache,_,path as Absyn.IDENT("tuple")) equation true=RTOpts.acceptMetaModelicaGrammar(); then (cache,path);
+    case (cache,_,path as Absyn.IDENT("polymorphic")) equation true=RTOpts.acceptMetaModelicaGrammar(); then (cache,path);
     /*-------------------------*/    
                      
     /* To make a class fully qualified, the class path is looked up in the environment.
@@ -8157,7 +8343,7 @@ algorithm
       SCode.Class c;
       String n, s;
       InstDims inst_dims;
-      Boolean prot;
+      Boolean prot,partialPrefix;
       DAE.ExternalDecl extdecl;
       SCode.Restriction restr;
       SCode.ClassDef parts;
@@ -8175,15 +8361,16 @@ algorithm
       then (cache,env,ih,dae);
       
     /* normal functions */
-    case (cache,env,ih,mod,pre,csets,(c as SCode.CLASS(name = n,restriction = SCode.R_FUNCTION())),inst_dims)
+    case (cache,env,ih,mod,pre,csets,(c as SCode.CLASS(name = n, partialPrefix = partialPrefix, restriction = SCode.R_FUNCTION())),inst_dims)
       equation 
         (cache,cenv,ih,_,dae,csets_1,ty,st,_,_) = instClass(cache,env, ih, UnitAbsynBuilder.emptyInstStore(),mod, pre, csets, c, inst_dims, true, INNER_CALL(), ConnectionGraph.EMPTY);
         env_1 = Env.extendFrameC(env,c);
         (cache,fpath) = makeFullyQualified(cache,env_1, Absyn.IDENT(n));
         ty1 = setFullyQualifiedTypename(ty,fpath);
-        env_1 = Env.extendFrameT(env_1, n, ty1); 
+        env_1 = Env.extendFrameT(env_1, n, ty1);
+        dae = {DAE.FUNCTION(fpath,DAE.DAE(dae),ty1,partialPrefix)};
       then
-        (cache,env_1,ih,{DAE.FUNCTION(fpath,DAE.DAE(dae),ty1)});
+        (cache,env_1,ih,dae);
 
     /* External functions should also have their type in env, but no dae. */ 
     case (cache,env,ih,mod,pre,csets,(c as SCode.CLASS(name = n,restriction = (restr as SCode.R_EXT_FUNCTION()),
@@ -8323,13 +8510,14 @@ algorithm
       list<Absyn.Path> fns;
       Env.Cache cache;
       InstanceHierarchy ih;
+      Boolean partialPrefix;
       
     case (cache,env,ih,_,{}) then (cache,env,ih,{});
 
     /* Instantiate each function, add its FQ name to the type, needed when deoverloading */ 
     case (cache,env,ih,overloadname,(fn :: fns))  
       equation 
-        (cache,(c as SCode.CLASS(id,_,encflag,SCode.R_FUNCTION(),_)),cenv) = Lookup.lookupClass(cache,env, fn, true);
+        (cache,(c as SCode.CLASS(id,partialPrefix,encflag,SCode.R_FUNCTION(),_)),cenv) = Lookup.lookupClass(cache,env, fn, true);
         (cache,_,ih,_,dae,_,(Types.T_FUNCTION(args,tp),_),st,_,_) = 
            instClass(cache,cenv,ih,UnitAbsynBuilder.emptyInstStore(), Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, c, {}, true, INNER_CALL(), ConnectionGraph.EMPTY);
         (cache,fpath) = makeFullyQualified(cache,env, Absyn.IDENT(overloadname));
@@ -8338,7 +8526,7 @@ algorithm
         env_1 = Env.extendFrameT(env, overloadname, ty);
         (cache,env_2,ih,dae1) = instOverloadedFunctions(cache,env_1,ih, overloadname, fns);
       then
-        (cache,env_2,ih,(DAE.FUNCTION(fpath,DAE.DAE(dae),ty) :: dae1));
+        (cache,env_2,ih,(DAE.FUNCTION(fpath,DAE.DAE(dae),ty,partialPrefix) :: dae1));
 
     case (_,env,ih,_,_)
       equation 
@@ -9179,6 +9367,26 @@ algorithm
         finst_dims = Util.listFlatten(inst_dims);
         dae_var_attr = DAE.setFinalAttr(dae_var_attr,finalPrefix);
       then {DAE.VAR(vn,kind,dir,prot,DAE.METAOPTION(),e,finst_dims,fl,st,{},dae_var_attr,comment,io,ty)};
+    case (vn,ty as(Types.T_UNIONTYPE(_),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars)
+      equation
+        finst_dims = Util.listFlatten(inst_dims);
+        dae_var_attr = DAE.setFinalAttr(dae_var_attr,finalPrefix);
+      then {DAE.VAR(vn,kind,dir,prot,DAE.UNIONTYPE(),e,finst_dims,fl,st,{},dae_var_attr,comment,io,ty)};
+    case (vn,ty as(Types.T_POLYMORPHIC(_),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars)
+      equation
+        finst_dims = Util.listFlatten(inst_dims);
+        dae_var_attr = DAE.setFinalAttr(dae_var_attr,finalPrefix);
+      then {DAE.VAR(vn,kind,dir,prot,DAE.POLYMORPHIC(),e,finst_dims,fl,st,{},dae_var_attr,comment,io,ty)};
+    case (vn,(tty as Types.T_FUNCTION(_,_),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars)
+      local
+        Types.TType tty;
+        Absyn.Path path;
+      equation
+        finst_dims = Util.listFlatten(inst_dims);
+        dae_var_attr = DAE.setFinalAttr(dae_var_attr,finalPrefix);
+        path = Exp.crefToPath(vn);
+        ty = (tty,SOME(path));
+      then {DAE.VAR(vn,kind,dir,prot,DAE.FUNCTION_REFERENCE(),e,finst_dims,fl,st,{},dae_var_attr,comment,io,ty)};
     /*----------------------------*/
     
     /* We should not declare each enumeration value of an enumeration when instantiating,
@@ -10714,7 +10922,7 @@ algorithm
 
         // _ := { ... }, this will be handled in Codegen.algorithmStatement
         stmt = Algorithm.ASSIGN(Exp.BOOL(),
-                                Exp.CREF(Exp.CREF_IDENT("WILDCARD__",Exp.OTHER(),{}),Exp.OTHER()),
+                                Exp.CREF(Exp.WILD,Exp.OTHER()),
                                 vb2);
       then
         (cache,stmt);
@@ -10751,15 +10959,6 @@ algorithm
         (cache,stmt) = instStatement(cache,env,pre,absynStmt,initial_,impl);
       then
         (cache,stmt);
-
-    // MetaModelica Matchcontinue
-    case (cache,env,pre,e as Absyn.ALG_ASSIGN(_,Absyn.MATCHEXP(_,_,_,_,_)),initial_,impl)
-      local
-        Absyn.Algorithm e;
-      equation
-        true = RTOpts.acceptMetaModelicaGrammar();
-        (cache,stmt) = createMatchStatement(cache,env,pre,e,impl);
-      then (cache,stmt);
 
     /* v := expr; */       
     case (cache,env,pre,Absyn.ALG_ASSIGN(assignComponent = Absyn.CREF(cr),value = e),initial_,impl) 
@@ -10809,6 +11008,15 @@ algorithm
       then
         (cache,stmt);
 
+      // MetaModelica Matchcontinue - should come before the error message about tuple assignment
+    case (cache,env,pre,e as Absyn.ALG_ASSIGN(_,Absyn.MATCHEXP(_,_,_,_,_)),initial_,impl)
+      local
+        Absyn.Algorithm e;
+      equation
+        true = RTOpts.acceptMetaModelicaGrammar();
+        (cache,stmt) = createMatchStatement(cache,env,pre,e,impl);
+      then (cache,stmt);
+
     /* Tuple with rhs constant */
     case (cache,env,pre,Absyn.ALG_ASSIGN(assignComponent = Absyn.TUPLE(expressions = expl),value = e),initial_,impl)
       local Exp.Exp unvectorisedExpl;
@@ -10855,7 +11063,7 @@ algorithm
         (cache,stmt);
         
     /* While loop */
-    case (cache,env,pre,Absyn.ALG_WHILE(whileStmt = e,whileBody = sl),initial_,impl)
+    case (cache,env,pre,Absyn.ALG_WHILE(boolExpr = e,whileBody = sl),initial_,impl)
       equation 
         (cache,e_1,prop,_) = Static.elabExp(cache,env, e, impl, NONE,true);
         (cache,e_2) = Prefix.prefixExp(cache,env, e_1, pre);        
@@ -10865,7 +11073,7 @@ algorithm
         (cache,stmt);
 
     /* When clause without elsewhen */
-    case (cache,env,pre,Absyn.ALG_WHEN_A(whenStmt = e,whenBody = sl,elseWhenAlgorithmBranch = {}),initial_,impl)
+    case (cache,env,pre,Absyn.ALG_WHEN_A(boolExpr = e,whenBody = sl,elseWhenAlgorithmBranch = {}),initial_,impl)
       equation 
         (cache,e_1,prop,_) = Static.elabExp(cache,env, e, impl, NONE,true);
         (cache,e_2) = Prefix.prefixExp(cache,env, e_1, pre);
@@ -10875,7 +11083,7 @@ algorithm
         (cache,stmt);
         
     /* When clause with elsewhen branch */
-    case (cache,env,pre,Absyn.ALG_WHEN_A(whenStmt = e,whenBody = sl,
+    case (cache,env,pre,Absyn.ALG_WHEN_A(boolExpr = e,whenBody = sl,
           elseWhenAlgorithmBranch = (elseWhenC,elseWhenSt)::elseWhenRest),initial_,impl)
       equation 
         (cache,stmt1) = instStatement(cache,env,pre,Absyn.ALG_WHEN_A(elseWhenC,elseWhenSt,elseWhenRest),initial_,impl);
@@ -10928,11 +11136,13 @@ algorithm
         Absyn.Exp aea;
         list<Exp.Exp> eexpl;
         Absyn.Path ap;
+        Boolean tuple_, builtin;
+        Exp.Type tp;
       equation 
-        (cache,Exp.CALL(ap,eexpl,_,_,_),varprop,_) = Static.elabExp(cache,env, Absyn.CALL(callFunc,callArgs), impl, NONE,true);
+        (cache,Exp.CALL(ap,eexpl,tuple_,builtin,tp),varprop,_) = Static.elabExp(cache,env, Absyn.CALL(callFunc,callArgs), impl, NONE,true);
         ap = Prefix.prefixPath(ap,pre);
       then
-        (cache,Algorithm.NORETCALL(ap,eexpl));
+        (cache,Algorithm.NORETCALL(Exp.CALL(ap,eexpl,tuple_,builtin,tp)));
 	       
     /* break */
     case (cache,env,pre,Absyn.ALG_BREAK,initial_,impl)
@@ -10990,15 +11200,25 @@ algorithm
         stmt = Algorithm.LABEL(s);
       then
         (cache,stmt);
+    
+      // Helper statement for matchcontinue
+    case (cache,env,pre,Absyn.ALG_MATCHCASES(absynExpList),_,impl)
+      local
+        list<Absyn.Exp> absynExpList;
+        list<Exp.Exp> expExpList;
+      equation
+        (cache,expExpList,_,_) = Static.elabExpList(cache,env, absynExpList, impl, NONE,true);        
+      then (cache,Algorithm.MATCHCASES(expExpList));
+
     //------------------------------------------
         
     case (cache,env,pre,alg,initial_,impl)
       local String str;
       equation 
         str = Dump.unparseAlgorithmStr(0,Absyn.ALGORITHMITEM(alg,NONE()));
-        Debug.fprint("failtrace", "- inst_statement failed: " +& str +& "\n");
+        Debug.fprintln("failtrace", "- Inst.instStatement failed: " +& str);
         //Debug.fcall("failtrace", Dump.printAlgorithm, alg);
-        Debug.fprint("failtrace", "\n");
+        //Debug.fprint("failtrace", "\n");
       then
         fail();
   end matchcontinue;
@@ -11166,7 +11386,7 @@ algorithm
         (localCache,e_2) = Prefix.prefixExp(localCache,localEnv, e_1, localPre);
         stmt = Algorithm.ASSIGN(
                   Exp.OTHER(),
-                  Exp.CREF(Exp.CREF_IDENT("WILDCARD__",Exp.OTHER(),{}),Exp.OTHER()),
+                  Exp.CREF(Exp.WILD,Exp.OTHER()),
                   e_2);
       then (localCache,stmt);
 
@@ -11184,7 +11404,7 @@ algorithm
         //stmt = Algorithm.makeAssignment(Exp.CREF(ce,t), cprop, e_2, eprop, acc);
         stmt = Algorithm.ASSIGN(
                   Exp.OTHER(),
-                  Exp.CREF(Exp.CREF_IDENT("WILDCARD__",Exp.OTHER(),{}),Exp.OTHER()),
+                  Exp.CREF(Exp.WILD,Exp.OTHER()),
                   e_2);
       then
         (localCache,stmt);
@@ -11202,10 +11422,14 @@ algorithm
         (localCache,e_2) = Prefix.prefixExp(localCache,localEnv, e_1, localPre);        
         stmt = Algorithm.ASSIGN(
                  Exp.OTHER(),
-                 Exp.CREF(Exp.CREF_IDENT("WILDCARD__",Exp.OTHER(),{}),Exp.OTHER()),
+                 Exp.CREF(Exp.WILD,Exp.OTHER()),
                  e_2);
       then
         (localCache,stmt);
+    case (_,_,_,_,_)
+      equation
+        Debug.fprintln("matchcase", "- Inst.createMatchStatement failed");
+      then fail();
   end matchcontinue;
 end createMatchStatement;
 
@@ -12096,6 +12320,7 @@ algorithm
     case (p,ClassInf.META_TUPLE(_),_,SOME(bc2),_)local Types.Type bc2; equation then bc2;
     case (p,ClassInf.META_OPTION(_),_,SOME(bc2),_) local Types.Type bc2; equation then bc2;
     case (p,ClassInf.META_LIST(_),_,SOME(bc2),_) local Types.Type bc2; equation then bc2;
+    case (p,ClassInf.META_POLYMORPHIC(_),_,SOME(bc2),_) local Types.Type bc2; equation then bc2;
     /*------------------------*/
 
     case (p,st,l,bc,equalityConstraint)
@@ -12400,7 +12625,7 @@ end instBinding;
 protected function bindingExp 
 "help function to instBinding, returns the expression of a binding"
 input Types.Binding bind;
-output option<Exp.Exp> exp;
+output Option<Exp.Exp> exp;
 algorithm
   exp := matchcontinue(bind)
   local Exp.Exp e; Values.Value v;
@@ -12908,6 +13133,7 @@ algorithm
       Types.Const c;
       String e_tp_str,tp_str,e_str,e_str_1;
       Env.Cache cache;
+      Types.Properties prop;
     case (cache,_,_,Types.NOMOD(),tp) then (cache,Types.UNBOUND()); 
     case (cache,_,_,Types.REDECL(finalPrefix = _),tp) then (cache,Types.UNBOUND()); 
     case (cache,_,_,Types.MOD(eqModOption = NONE),tp) then (cache,Types.UNBOUND());
@@ -12919,19 +13145,25 @@ algorithm
       then
         (cache,Types.VALBOUND(v));
     */
-    case (cache,_,_,Types.MOD(eqModOption = SOME(Types.TYPED(e,e_val,Types.PROP(e_tp,c)))),tp) /* default */ 
+    case (cache,_,_,Types.MOD(eqModOption = SOME(Types.TYPED(e,e_val,prop))),tp) /* default */ 
       equation 
+        e_tp = Types.getPropType(prop);
+        c = Types.propAllConst(prop);
         (e_1,_) = Types.matchType(e, e_tp, tp);
         e_1 = Exp.simplify(e_1);
       then
         (cache,Types.EQBOUND(e_1,e_val,c));
-    case (cache,_,_,Types.MOD(eqModOption = SOME(Types.TYPED(e,e_val,Types.PROP(e_tp,c)))),tp)
+    case (cache,_,_,Types.MOD(eqModOption = SOME(Types.TYPED(e,e_val,prop))),tp)
       equation 
+        e_tp = Types.getPropType(prop);
+        c = Types.propAllConst(prop);
         (e_1,_) = Types.matchType(e, e_tp, tp);
       then
         (cache,Types.EQBOUND(e_1,e_val,c));
-    case (cache,_,_,Types.MOD(eqModOption = SOME(Types.TYPED(e,e_val,Types.PROP(e_tp,c)))),tp)
+    case (cache,_,_,Types.MOD(eqModOption = SOME(Types.TYPED(e,e_val,prop))),tp)
       equation 
+        e_tp = Types.getPropType(prop);
+        c = Types.propAllConst(prop);
         failure((_,_) = Types.matchType(e, e_tp, tp));
         e_tp_str = Types.unparseType(e_tp);
         tp_str = Types.unparseType(tp);
@@ -12943,7 +13175,7 @@ algorithm
         fail();
     case (_,_,_,_,_)
       equation 
-        Debug.fprint("failtrace", "-Inst.makeBinding failed\n");
+        Debug.fprint("failtrace", "- Inst.makeBinding failed\n");
       then
         fail();
   end matchcontinue;
@@ -13024,11 +13256,11 @@ algorithm
       then
         done_2;
         
-    case (done,(DAE.FUNCTION(path = fpath,dAElist = DAE.DAE(elementLst = dae),type_ = ty) :: rest))
-      local tuple<Types.TType, Option<Absyn.Path>> ty;
+    case (done,(DAE.FUNCTION(path = fpath,dAElist = DAE.DAE(elementLst = dae),type_ = ty,partialPrefix = partialPrefix) :: rest))
+      local tuple<Types.TType, Option<Absyn.Path>> ty; Boolean partialPrefix;
       equation 
         dae_1 = initVarsModelicaOutput(dae);
-        done_1 = listAppend(done, {DAE.FUNCTION(fpath,DAE.DAE(dae_1),ty)});
+        done_1 = listAppend(done, {DAE.FUNCTION(fpath,DAE.DAE(dae_1),ty,partialPrefix)});
         done_2 = initVarsModelicaOutput1(done_1, rest);
       then
         done_2;
@@ -15271,6 +15503,10 @@ algorithm
     case((Types.T_COMPLEX(ClassInf.RECORD(name),varLst,_,_),_)) equation
       daeVarLst = Util.listMap(varLst,daeDeclareComplexVar);    
     then  DAE.COMPLEX(Absyn.IDENT(name),daeVarLst);
+    case((Types.T_UNIONTYPE(_),_)) then DAE.UNIONTYPE();
+    case(_) equation
+      print("Warning: Inst.daeDeclareComplexVarType failed!");
+    then fail();
   end matchcontinue;
 end daeDeclareComplexVarType;
 

@@ -763,6 +763,28 @@ algorithm
   end matchcontinue;
 end getEnvPath;
 
+public function joinEnvPath "function: joinEnvPath 
+  Used to join an Env with an Absyn.Path (probably an IDENT)
+"
+  input Env inEnv;
+  input Absyn.Path inPath;
+  output Absyn.Path outPath;
+algorithm
+  outPath := matchcontinue(inEnv,inPath)
+    local
+      Absyn.Path envPath;
+    case (inEnv,inPath)
+      equation
+        SOME(envPath) = getEnvPath(inEnv);
+        envPath = Absyn.joinPaths(envPath,inPath);
+      then envPath;
+    case (inEnv,inPath)
+      equation
+        NONE() = getEnvPath(inEnv);
+      then inPath;
+  end matchcontinue;      
+end joinEnvPath;
+
 public function printEnvPathStr "function: printEnvPathStr
  
   Retrive the environment path as a string, see get_env_path.

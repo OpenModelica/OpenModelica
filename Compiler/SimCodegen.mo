@@ -210,7 +210,7 @@ algorithm
         n_h = listLength(helpVarInfo);
         (s_code2,nres) = generateInitialValueCode2(dlow2,ass1,ass2);
         (s_code3) = generateInitialBoundParameterCode(dlow2);
-        cglobal = generateGlobalData(class_, dlow2, n_o, n_i, n_h, nres,fileDir);
+        cglobal = generateGlobalData(class_, dlow2, n_o, n_i, n_h, nres,fileDir); // CHANGED!!!
         coutput = generateComputeOutput(cname, dae, dlow2, ass1, ass2,m,mt, blt_no_states);
         cstate = generateComputeResidualState(cname, dae, dlow2, ass1, ass2, blt_states);
         c_ode = generateOdeCode(dlow2, blt_states, ass1, ass2, m, mt, class_);
@@ -6112,7 +6112,7 @@ algorithm
   outStringLst:=
   matchcontinue (inProgram,inDAElist,inDAELow,inPath,inString)
     local
-      list<Absyn.Path> funcpaths;
+      list<Absyn.Path> funcpaths, fnrefs, fnpaths, fns;
       list<String> debugpathstrs,libs1,libs2,includes;
       String debugpathstr,debugstr,filename;
       list<DAE.Element> funcelems,elements;
@@ -6123,6 +6123,9 @@ algorithm
     case (p,(dae as DAE.DAE(elementLst = elements)),dlow,path,filename) /* Needed to instantiate functions libs */
       equation
         funcpaths = getCalledFunctions(dae, dlow);
+        //fnrefs = getReferencedFunctions(dae, dlow); // For function arguments - stefan
+        //fnpaths = listAppend(funcpaths, fnrefs);
+        //fns = removeDuplicatePaths(fnpaths);
         Debug.fprint("info", "Found called functions: ") "debug" ;
         debugpathstrs = Util.listMap(funcpaths, Absyn.pathString) "debug" ;
         debugpathstr = Util.stringDelimitList(debugpathstrs, ", ") "debug" ;
@@ -6132,7 +6135,7 @@ algorithm
         Print.clearBuf();
         Debug.fprintln("info", "Generating functions, call Codegen.\n") "debug" ;
 				(_,libs1) = generateExternalObjectIncludes(dlow);
-        libs2 = Codegen.generateFunctions(DAE.DAE(funcelems));
+        (libs2,_) = Codegen.generateFunctions(DAE.DAE(funcelems),{});
         Print.writeBuf(filename);
       then
         Util.listUnion(libs1,libs2);
@@ -6214,15 +6217,15 @@ algorithm
       
     case (_,{},allpaths) then {};  /* iterated over complete list */
       
-    case (p,(path :: paths),allpaths)  local String s;
+    case (p,(path :: paths),allpaths)  local String s; Boolean partialPrefix;
       equation
         (_,_,_,fdae) = Inst.instantiateFunctionImplicit(Env.emptyCache(), InstanceHierarchy.emptyInstanceHierarchy, p, path);
-        DAE.DAE(elementLst = {DAE.FUNCTION(dAElist = dae,type_ = t)}) = fdae;
-        patched_dae = DAE.DAE({DAE.FUNCTION(path,dae,t)});
-        subfuncs = getCalledFunctionsInFunction(path, patched_dae);
+        DAE.DAE(elementLst = {DAE.FUNCTION(dAElist = dae,type_ = t,partialPrefix = partialPrefix)}) = fdae;
+        patched_dae = DAE.DAE({DAE.FUNCTION(path,dae,t,partialPrefix)});
+        subfuncs = getCalledFunctionsInFunction(path, {}, patched_dae);
         (allpaths_1,paths_1) = appendNonpresentPaths(subfuncs, allpaths, paths);
         elts = generateFunctions3(p, paths_1, allpaths_1);
-        res = listAppend(elts, {DAE.FUNCTION(path,dae,t)});
+        res = listAppend(elts, {DAE.FUNCTION(path,dae,t,partialPrefix)});
       then
         res;
         
@@ -6232,16 +6235,19 @@ algorithm
         (_,_,_,fdae) = Inst.instantiateFunctionImplicit(Env.emptyCache(), InstanceHierarchy.emptyInstanceHierarchy, p, path);
         DAE.DAE(elementLst = {DAE.EXTFUNCTION(dAElist = dae,type_ = t,externalDecl = extdecl)}) = fdae;
         patched_dae = DAE.DAE({DAE.EXTFUNCTION(path,dae,t,extdecl)});
-        subfuncs = getCalledFunctionsInFunction(path, patched_dae);
+        subfuncs = getCalledFunctionsInFunction(path, {}, patched_dae);
         (allpaths_1,paths_1) = appendNonpresentPaths(subfuncs, allpaths, paths);
         elts = generateFunctions3(p, paths_1, allpaths_1);
         res = listAppend(elts, {DAE.EXTFUNCTION(path,dae,t,extdecl)});
       then
         res;
         
-    case (p,paths,allpaths)
+    case (_,(path :: paths),_)
+      local String s;
       equation
-        print("SimCodegen.generateFunctions3 failed\n");
+        s = Absyn.pathString(path);
+        s = "SimCodegen.generateFunctions3 failed: " +& s +& "\n";
+        print(s);
       then
         fail();
   end matchcontinue;
@@ -6307,7 +6313,7 @@ algorithm
       DAELow.DAELow dlow;
       Absyn.Path class_;
       
-    case (dlow,class_,exe,filename,start,stop,intervals,tolerance,method,_) /* classname executable file name filename start time stop time íntervals */
+    case (dlow,class_,exe,filename,start,stop,intervals,tolerance,method,_) /* classname executable file name filename start time stop time intervals */
       equation
         delta_time = stop -. start;
         step = delta_time/.intervals;
@@ -8788,6 +8794,51 @@ algorithm
   end matchcontinue;
 end crefModelicaStr;
 
+// For compiling function references - stefan
+protected function getReferencedFunctions
+"function getReferencedFunctions
+	Goes through the DAELow structure, finds all function
+	references and returns them in a list. Removes duplicates."
+	input DAE.DAElist dae;
+	input DAELow.DAELow dlow;
+	output list<Absyn.Path> res;
+	list<Exp.Exp> explist, fnrefs;
+	list<Absyn.ComponentRef> crefs;
+	list<Absyn.Path> referencedFuncs;
+algorithm
+  explist := DAELow.getAllExps(dlow);
+  fnrefs := Codegen.getFunctionReferenceList(explist);
+  crefs := Util.listMap(fnrefs, getCrefFromExp);
+  referencedFuncs := Util.listMap(crefs, Absyn.crefToPath);
+  res := removeDuplicatePaths(referencedFuncs);
+end getReferencedFunctions;
+
+// For compiling function references - stefan
+protected function getCrefFromExp
+"function getCrefFromExp
+  Assume input Exp is CREF, return the ComponentRef
+  fail otherwise"
+  input Exp.Exp e;
+  output Absyn.ComponentRef c;
+algorithm
+  c :=
+  matchcontinue(e)
+    local
+      Exp.ComponentRef crefe;
+      Absyn.ComponentRef crefa;
+    case(Exp.CREF(componentRef = crefe))
+      equation
+        crefa = Exp.unelabCref(crefe);
+      then
+        crefa;
+    case(e) 
+      equation
+        print("SimCodegen.getCrefFromExp failed: input was not of Exp.CREF type");
+      then 
+        fail();
+  end matchcontinue;
+end getCrefFromExp;
+
 public function getCalledFunctions 
 "function: getCalledFunctions
   Goes through the DAELow structure, finds all function 
@@ -8799,7 +8850,7 @@ public function getCalledFunctions
   list<Absyn.Path> calledfuncs;
 algorithm
   explist := DAELow.getAllExps(dlow);
-  fcallexps := Exp.getFunctionCallsList(explist);
+  fcallexps := Codegen.getFunctionCallsList(explist, false);
   fcallexps_1 := Util.listSelect(fcallexps, isNotBuiltinCall);
   calledfuncs := Util.listMap(fcallexps_1, getCallPath);
   res := removeDuplicatePaths(calledfuncs);
@@ -8810,12 +8861,22 @@ public function getCalledFunctionsInFunctions
   Goes through the given DAE, finds the given functions and collects 
   the names of the functions called from within those functions"
   input list<Absyn.Path> paths;
+  input list<Absyn.Path> accumulated;
   input DAE.DAElist dae;
   output list<Absyn.Path> res;
   list<list<Absyn.Path>> pathslist;
 algorithm
-  pathslist := Util.listMap1(paths, getCalledFunctionsInFunction, dae);
-  res := Util.listFlatten(pathslist);
+  res := matchcontinue(paths,accumulated,dae)
+    local
+      list<Absyn.Path> res,acc,rest;
+      Absyn.Path path;
+    case ({},accumulated,dae) then accumulated;
+    case (path::rest,accumulated,dae)
+      equation
+        acc = getCalledFunctionsInFunction(path, accumulated, dae);
+        res = getCalledFunctionsInFunctions(rest, acc, dae);
+      then res;
+  end matchcontinue;
 end getCalledFunctionsInFunctions;
 
 public function getCalledFunctionsInFunction 
@@ -8823,46 +8884,78 @@ public function getCalledFunctionsInFunction
   Goes through the given DAE, finds the given function and collects 
   the names of the functions called from within those functions"
   input Absyn.Path inPath;
+  input list<Absyn.Path> accumulated;
   input DAE.DAElist inDAElist;
   output list<Absyn.Path> outAbsynPathLst;
 algorithm
   outAbsynPathLst:=
-  matchcontinue (inPath,inDAElist)
+  matchcontinue (inPath,accumulated,inDAElist)
     local
       String pathstr,debugpathstr;
       Absyn.Path path;
       list<DAE.Element> elements,funcelems;
-      list<Exp.Exp> explist,fcallexps,fcallexps_1;
-      list<Absyn.Path> calledfuncs,res1,res2,res;
+      list<Exp.Exp> explist,fcallexps,fcallexps_1, fnrefs;
+      list<Absyn.ComponentRef> crefs;
+      list<Absyn.Path> calledfuncs,res1,res2,res,acc;
       list<String> debugpathstrs;
       DAE.DAElist dae;
       
-    case (path,DAE.DAE(elementLst = elements)) /* Don\'t fail here, ceval will generate the function later */
+    case (path,acc,DAE.DAE(elementLst = elements)) /* Don\'t fail here, ceval will generate the function later */
       equation
         {} = DAE.getNamedFunction(path, elements);
         pathstr = Absyn.pathString(path);
         Error.addMessage(Error.LOOKUP_ERROR, {pathstr,"global scope"});
       then
-        {};
+        path::acc;
         
-    case (path,(dae as DAE.DAE(elementLst = elements)))
+    case (path,acc,(dae as DAE.DAE(elementLst = elements)))
+      local
+        list<DAE.Element> varlist;
+        list<list<DAE.Element>> varlistlist;
+        list<Absyn.Path> varfuncs, fnpaths, fns, referencedFuncs, reffuncs;
       equation
+        false = listMember(path,acc);
         funcelems = DAE.getNamedFunction(path, elements);
         explist = DAE.getAllExps(funcelems);
-        fcallexps = Exp.getFunctionCallsList(explist);
+        fcallexps = Codegen.getFunctionCallsList(explist, false);
         fcallexps_1 = Util.listSelect(fcallexps, isNotBuiltinCall);
         calledfuncs = Util.listMap(fcallexps_1, getCallPath);
+        
+        /*-- MetaModelica Partial Function. sjoelund --*/
+        
+        // stefan - get all arguments of constant T_FUNCTION type and add to list
+        fnrefs = Codegen.getFunctionReferenceList(explist);
+        crefs = Util.listMap(fnrefs, getCrefFromExp);
+        reffuncs = Util.listMap(crefs, Absyn.crefToPath);
+        
+        //fns = removeDuplicatePaths(fnpaths);
+        calledfuncs = listAppend(reffuncs, calledfuncs);
+        
+        varlistlist = Util.listMap(funcelems, getFunctionElementsList);
+        varlist = Util.listFlatten(varlistlist);
+        varlist = Util.listSelect(varlist, DAE.isFunctionRefVar);
+        varfuncs = Util.listMap(varlist, getFunctionRefVarPath);
+        calledfuncs = Util.listSetDifference(calledfuncs, varfuncs) "Filter out function reference calls";
+        /*--                                           --*/ 
+        
         res1 = removeDuplicatePaths(calledfuncs);
-        // adrpo: 2009-09-10 remove our own function if there is a recursive call!
-        res1 = removePathFromList(res1, path);
+        res = getCalledFunctionsInFunctions(res1, path::acc, dae);
         Debug.fprint("info", "Found called functions: ") "debug" ;
-        debugpathstrs = Util.listMap(res1, Absyn.pathString) "debug" ;
+        debugpathstrs = Util.listMap(res, Absyn.pathString) "debug" ;
         debugpathstr = Util.stringDelimitList(debugpathstrs, ", ") "debug" ;
         Debug.fprintln("info", debugpathstr) "debug" ;
-        res2 = getCalledFunctionsInFunctions(res1, dae);
-        res = listAppend(res1, res2);
       then
         res;
+    
+    case (path,acc,_)
+      equation
+        true = listMember(path,acc);
+      then acc;
+    
+    case(_,_,_)
+      equation
+        Debug.fprint("failtrace", "SimCodegen.getCalledFunctionsInFunction failed\n");
+      then fail();
   end matchcontinue;
 end getCalledFunctionsInFunction;
 
@@ -8899,6 +8992,33 @@ algorithm
     case Exp.CALL(path = path) then path;
   end matchcontinue;
 end getCallPath;
+
+public function getFunctionRefVarPath 
+"function: getFunctionRefVarFunctionPath
+  Retrive the function name from a function variable."
+  input DAE.Element inElem;
+  output Absyn.Path outPath;
+algorithm
+  outPath:=
+  matchcontinue (inElem)
+    local Absyn.Path path;
+    case DAE.VAR(ty = DAE.FUNCTION_REFERENCE(), fullType = (_,SOME(path))) then path;
+  end matchcontinue;
+end getFunctionRefVarPath;
+
+protected function getFunctionElementsList
+"function: getFunctionElementsList
+  Retrives the dAEList of function (or external function)"
+  input DAE.Element inElem;
+  output list<DAE.Element> out;
+algorithm
+  outPath:=
+  matchcontinue (inElem)
+    local Absyn.Path path;
+    case DAE.FUNCTION(dAElist = DAE.DAE(out)) then out;
+    case DAE.EXTFUNCTION(dAElist = DAE.DAE(out)) then out;
+  end matchcontinue;
+end getFunctionElementsList;
 
 protected function removeDuplicatePaths 
 "function: removeDuplicatePaths

@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1998-2008, Linköpings University,
  * Department of Computer and Information Science,
- * SE-58183 Linköpings, Sweden.
+ * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
@@ -535,7 +535,7 @@ algorithm
         errMsg = "Simulation Failed. Model: " +& Absyn.pathString(className) +& " does not exists! Please load it first before simulation.";
         simValue = Values.RECORD(Absyn.IDENT("SimulationResult"),
                                  {Values.STRING(errMsg)},
-                                 {"resultFile"});
+                                 {"resultFile"},-1);
       then
         (cache,simValue,st_1);
 
@@ -578,7 +578,7 @@ algorithm
         result_file = Util.stringAppendList({executable,"_res.plt"});
         simValue = Values.RECORD(Absyn.IDENT("SimulationResult"),
                                  {Values.STRING(result_file)},
-                                 {"resultFile"});
+                                 {"resultFile"},-1);
         simType = (Types.T_COMPLEX(ClassInf.RECORD("SimulationResult"),
                                    {Types.VAR("resultFile",
                                     Types.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
@@ -616,7 +616,7 @@ algorithm
         res = Util.stringAppendList({"Simulation failed.\n",errorStr});
         simValue = Values.RECORD(Absyn.IDENT("SimulationResult"),
                                  {Values.STRING(res)},
-                                 {"resultFile"});
+                                 {"resultFile"},-1);
       then
         (cache,simValue,st);
 
@@ -626,7 +626,7 @@ algorithm
       equation 
         simValue = Values.RECORD(Absyn.IDENT("SimulationResult"),
                    {Values.STRING("Simulation Failed. Environment variable OPENMODELICAHOME not set.")},
-                   {"resultFile"});
+                   {"resultFile"},-1);
       then
         (cache,simValue,st);
 
@@ -772,7 +772,7 @@ algorithm
         vars_2 = Util.listUnionElt("time", vars_1);
         
     
-        (cache,Values.RECORD(_,{Values.STRING(filename)},_),_) = Ceval.ceval(cache,env, 
+        (cache,Values.RECORD(orderd={Values.STRING(filename)}),_) = Ceval.ceval(cache,env, 
           Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.OTHER(),{}),Exp.OTHER()), true, SOME(st), NONE, msg);
         value = System.readPtolemyplotDataset(filename, vars_2, 0);
         pwd = System.pwd();
@@ -804,7 +804,7 @@ algorithm
         vars = Util.listMap(vars,Exp.CodeVarToCref);
         vars_1 = Util.listMap(vars, Exp.printExpStr) "Catch error reading simulation file." ;
         vars_2 = Util.listUnionElt("time", vars_1);
-        (cache,Values.RECORD(_,{Values.STRING(filename)},_),_) = Ceval.ceval(cache,env, 
+        (cache,Values.RECORD(orderd={Values.STRING(filename)}),_) = Ceval.ceval(cache,env, 
           Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.OTHER(),{}),Exp.OTHER()), true, SOME(st), NONE, msg);
         failure(_ = System.readPtolemyplotDataset(filename, vars_2, 0));
       then
@@ -946,7 +946,7 @@ algorithm
         Boolean legend, grid, logX, logY, points;
       equation
 
-         (cache,Values.RECORD(_,{Values.STRING(filename)},_),_) = Ceval.ceval(cache,env,
+         (cache,Values.RECORD(orderd={Values.STRING(filename)}),_) = Ceval.ceval(cache,env,
           Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.OTHER(),{}),Exp.OTHER()), true, SOME(st), NONE, msg);
         failure(_ = System.getVariableNames(filename));
 //        vars_2 = Util.stringSplitAtChar(str, " ");
@@ -976,9 +976,8 @@ algorithm
         String interpolation, title, xLabel, yLabel, str;//, filename2;
         Boolean legend, grid, logX, logY, points;
       equation
-
-                (cache,Values.RECORD(_,{Values.STRING(filename)},_),_) = Ceval.ceval(cache,env,
-          Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.OTHER(),{}),Exp.OTHER()), true, SOME(st), NONE, msg);
+        (cache,Values.RECORD(orderd={Values.STRING(filename)}),_) = Ceval.ceval(cache,env,
+        Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.OTHER(),{}),Exp.OTHER()), true, SOME(st), NONE, msg);
         str = System.getVariableNames(filename);
         vars_2 = Util.stringSplitAtChar(str, " ");
         value = System.readPtolemyplotDataset(filename, vars_2, 0);
@@ -1077,7 +1076,7 @@ algorithm
         vars = Util.listMap(vars,Exp.CodeVarToCref);
         vars_1 = Util.listMap(vars, Exp.printExpStr) "plot" ;
         vars_2 = Util.listUnionElt("time", vars_1);
-        (cache,Values.RECORD(_,{Values.STRING(filename)},_),_) = Ceval.ceval(cache,env,
+        (cache,Values.RECORD(orderd={Values.STRING(filename)}),_) = Ceval.ceval(cache,env,
           Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.OTHER(),{}),Exp.OTHER()), true, SOME(st), NONE, msg);
         value = System.readPtolemyplotDataset(filename, vars_2, 0);
         res = Values.sendPtolemyplotDataset(value, vars_2, "Plot by OpenModelica", interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, Exp.printExpStr(xRange), Exp.printExpStr(yRange));
@@ -1107,7 +1106,7 @@ algorithm
         vars = Util.listMap(vars,Exp.CodeVarToCref);
         vars_1 = Util.listMap(vars, Exp.printExpStr) "Catch error reading simulation file." ;
         vars_2 = Util.listUnionElt("time", vars_1);
-        (cache,Values.RECORD(_,{Values.STRING(filename)},_),_) = Ceval.ceval(cache,env,
+        (cache,Values.RECORD(orderd={Values.STRING(filename)}),_) = Ceval.ceval(cache,env,
           Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.OTHER(),{}),Exp.OTHER()), true, SOME(st), NONE, msg);
         failure(_ = System.readPtolemyplotDataset(filename, vars_2, 0));
       then
@@ -1259,7 +1258,7 @@ algorithm
         vars_2 = Util.listUnionElt("time", vars_1);
 //        listMap(vars_2, print);
         print(Util.stringAppendList(vars_2));
-        (cache,Values.RECORD(_,{Values.STRING(filename)},_),_) = Ceval.ceval(cache,env,
+        (cache,Values.RECORD(orderd={Values.STRING(filename)}),_) = Ceval.ceval(cache,env,
           Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.OTHER(),{}),Exp.OTHER()), true, SOME(st), NONE, msg);
         print("tjo\n");
         value = System.readPtolemyplotDataset(filename, vars_2, 0);
@@ -1290,7 +1289,7 @@ algorithm
         vars = Util.listMap(vars,Exp.CodeVarToCref);
         vars_1 = Util.listMap(vars, Exp.printExpStr) "Catch error reading simulation file." ;
         vars_2 = Util.listUnionElt("time", vars_1);
-        (cache,Values.RECORD(_,{Values.STRING(filename)},_),_) = Ceval.ceval(cache,env,
+        (cache,Values.RECORD(orderd={Values.STRING(filename)}),_) = Ceval.ceval(cache,env,
           Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.OTHER(),{}),Exp.OTHER()), true, SOME(st), NONE, msg);
         failure(_ = System.readPtolemyplotDataset(filename, vars_2, 0));
       then
@@ -1367,7 +1366,7 @@ algorithm
 
         (cache,Values.REAL(timeStamp),SOME(st)) = Ceval.ceval(cache,env, varTimeStamp, true, SOME(st), NONE, msg);
 
-        (cache,Values.RECORD(_,{Values.STRING(filename)},_),_) = Ceval.ceval(cache,env,
+        (cache,Values.RECORD(orderd={Values.STRING(filename)}),_) = Ceval.ceval(cache,env,
         Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.OTHER(),{}),Exp.OTHER()), true, SOME(st), NONE, msg);
 
         Values.ARRAY({Values.ARRAY(varValues)}) = System.readPtolemyplotDataset(filename, vars_1, 0);
@@ -1404,7 +1403,7 @@ algorithm
 
         (cache,Values.INTEGER(timeStamp),SOME(st)) = Ceval.ceval(cache,env, varTimeStamp, true, SOME(st), NONE, msg);
 
-        (cache,Values.RECORD(_,{Values.STRING(filename)},_),_) = Ceval.ceval(cache,env,
+        (cache,Values.RECORD(orderd={Values.STRING(filename)}),_) = Ceval.ceval(cache,env,
         Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.OTHER(),{}),Exp.OTHER()), true, SOME(st), NONE, msg);
 
         Values.ARRAY({Values.ARRAY(varValues)}) = System.readPtolemyplotDataset(filename, vars_1, 0);
@@ -1519,7 +1518,7 @@ algorithm
         vars_1 = Util.listMap(vars, Exp.printExpStr);
         length = listLength(vars_1);
         (length > 1) = true;
-        (cache,Values.RECORD(_,{Values.STRING(filename)},_),_) = Ceval.ceval(cache,env, 
+        (cache,Values.RECORD(orderd={Values.STRING(filename)}),_) = Ceval.ceval(cache,env, 
           Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.OTHER(),{}),Exp.OTHER()), true, SOME(st), NONE, msg);
         value = System.readPtolemyplotDataset(filename, vars_1, 0);
         pwd = System.pwd();
@@ -1562,7 +1561,7 @@ algorithm
       equation
         vars = Util.listMap(vars,Exp.CodeVarToCref);
         vars_1 = Util.listMap(vars, Exp.printExpStr) "Catch error reading simulation file." ;
-        (cache,Values.RECORD(_,{Values.STRING(filename)},_),_) = Ceval.ceval(cache,env,
+        (cache,Values.RECORD(orderd={Values.STRING(filename)}),_) = Ceval.ceval(cache,env,
           Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.OTHER(),{}),Exp.OTHER()), true, SOME(st), NONE, msg) "Util.list_union_elt(\"time\",vars\') => vars\'\' &" ;
         failure(_ = System.readPtolemyplotDataset(filename, vars_1, 0));
       then
@@ -1656,7 +1655,7 @@ algorithm
         vars_1 = Util.listMap(vars, Exp.printExpStr);
         length = listLength(vars_1);
         (length > 1) = true;
-        (cache,Values.RECORD(_,{Values.STRING(filename)},_),_) = Ceval.ceval(cache,env,
+        (cache,Values.RECORD(orderd={Values.STRING(filename)}),_) = Ceval.ceval(cache,env,
           Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.OTHER(),{}),Exp.OTHER()), true, SOME(st), NONE, msg);
          value = System.readPtolemyplotDataset(filename, vars_1, 0);
          res = Values.sendPtolemyplotDataset(value, vars_1, "Plot by OpenModelica", interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, Exp.printExpStr(xRange), Exp.printExpStr(yRange));
@@ -1706,7 +1705,7 @@ algorithm
       equation 
         vars = Util.listMap(vars,Exp.CodeVarToCref);
         vars_1 = Util.listMap(vars, Exp.printExpStr) "Catch error reading simulation file." ;
-        (cache,Values.RECORD(_,{Values.STRING(filename)},_),_) = Ceval.ceval(cache,env, 
+        (cache,Values.RECORD(orderd={Values.STRING(filename)}),_) = Ceval.ceval(cache,env, 
           Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.OTHER(),{}),Exp.OTHER()), true, SOME(st), NONE, msg) "Util.list_union_elt(\"time\",vars\') => vars\'\' &" ;
         failure(_ = System.readPtolemyplotDataset(filename, vars_1, 0));
       then
@@ -1791,6 +1790,18 @@ algorithm
     case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "setCompilerFlags"),expLst = {Exp.SCONST(string = str)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       equation 
         System.setCFlags(str);
+      then
+        (cache,Values.BOOL(true),st);
+
+     case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "setLinker"),expLst = {Exp.SCONST(string = str)}),st,msg)
+      equation 
+        System.setLinker(str);
+      then
+        (cache,Values.BOOL(true),st);
+
+    case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "setLinkerFlags"),expLst = {Exp.SCONST(string = str)}),st,msg)
+      equation 
+        System.setLDFlags(str);
       then
         (cache,Values.BOOL(true),st);
 
@@ -2178,7 +2189,7 @@ algorithm
     Interactive.InteractiveSymbolTable st;
     String filename;
     case(cache,env,SOME(st),timeStamp,varName) equation            
-      (cache,Values.RECORD(_,{Values.STRING(filename)},_),_) = Ceval.ceval(cache,env, 
+      (cache,Values.RECORD(orderd={Values.STRING(filename)}),_) = Ceval.ceval(cache,env, 
         Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.OTHER(),{}),Exp.OTHER()), true, SOME(st), NONE, Ceval.NO_MSG());
       
       Values.ARRAY({Values.ARRAY(varValues)}) = System.readPtolemyplotDataset(filename, {varName}, 0);
@@ -4064,7 +4075,7 @@ algorithm
         (cache,false) = Static.isExternalObjectFunction(cache,env,path); //ext objs functions not possible to Ceval.ceval.
         pathstr = generateFunctionName(path); 
         Debug.fprintln("ceval", "/*- Ceval.cevalGenerateFunction starting*/");        
-        (cache,gencodestr,_,libs) = cevalGenerateFunctionStr(cache, path, env, {});
+        (cache,gencodestr,_,libs,_) = cevalGenerateFunctionStr(cache, path, env, {}, {});
         cfilename = stringAppend(pathstr, ".c");
         str = Util.stringAppendList(
           {"#include \"modelica.h\"\n#include <stdio.h>\n#include <stdlib.h>\n#include <errno.h>\n\n",
@@ -4114,52 +4125,56 @@ end cevalGenerateFunction;
 
 protected function cevalGenerateFunctionStr "function: cevalGenerateFunctionStr
   Generates a function with the given path, and all functions that are called
-  within that function. The string list contains names of functions already
-  generated, which won\'t be generated again."
+  within that function. The two string lists contains names of functions and
+  records already generated, which won\'t be generated again."
  	input Env.Cache inCache;
   input Absyn.Path inPath;
   input Env.Env inEnv;
   input list<Absyn.Path> inAbsynPathLst;
+  input list<String> inRecordTypes;
   output Env.Cache outCache;
   output String outString;
   output list<Absyn.Path> outAbsynPathLst;
   output list<String> outLibs;
+  output list<String> outRecordTypes;
 algorithm 
-  (outCache,outString,outAbsynPathLst,outLibs):=
-  matchcontinue (inCache,inPath,inEnv,inAbsynPathLst)
+  (outCache,outString,outAbsynPathLst,outLibs,outRecordTypes):=
+  matchcontinue (inCache,inPath,inEnv,inAbsynPathLst,inRecordTypes)
     local
       Absyn.Path gfmember,path;
       list<Env.Frame> env,env_1,env_2;
       list<Absyn.Path> gflist,calledfuncs,gflist_1;
       SCode.Class cls;
       list<DAE.Element> d;
-      list<String> debugfuncs,calledfuncsstrs,libs,libs_2,calledfuncsstrs_1;
+      list<String> debugfuncs,calledfuncsstrs,libs,libs_2,calledfuncsstrs_1,rt,rt_1,rt_2;
       String debugfuncsstr,funcname,funccom,thisfuncstr,resstr;
       DAE.DAElist d_1;
       Env.Cache cache;
-    case (cache,path,env,gflist) /* If getmember succeeds, path is in generated functions list, so do nothing */ 
+    case (cache,path,env,gflist,rt) /* If getmember succeeds, path is in generated functions list, so do nothing */ 
       equation 
         gfmember = Util.listGetMemberOnTrue(path, gflist, ModUtil.pathEqual);
       then
-        (cache,"",gflist,{});
-    case (cache,path,env,gflist) /* If getmember fails, path is not in generated functions list, hence generate it */ 
+        (cache,"",gflist,{},rt);
+    case (cache,path,env,gflist,rt) /* If getmember fails, path is not in generated functions list, hence generate it */ 
       equation 
         false = RTOpts.debugFlag("nogen");
         failure(_ = Util.listGetMemberOnTrue(path, gflist, ModUtil.pathEqual));
         Debug.fprintln("ceval", "/*- Ceval.cevalGenerateFunctionStr starting*/");
         (cache,cls,env_1) = Lookup.lookupClass(cache,env, path, false);
-        Debug.fprintln("ceval", "/*- ceval_generate_function_str instantiating*/");
+        Debug.fprintln("ceval", "/*- Ceval.cevalGenerateFunctionStr instantiating*/");
         (cache,env_2,_,d) = 
         Inst.implicitFunctionInstantiation(
            cache, env_1, InstanceHierarchy.emptyInstanceHierarchy,
            Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cls, {});
         Debug.fprint("ceval", "/*- Ceval.cevalGenerateFunctionStr getting functions: ");
-        calledfuncs = SimCodegen.getCalledFunctionsInFunction(path, DAE.DAE(d));
+        calledfuncs = SimCodegen.getCalledFunctionsInFunction(path, gflist, DAE.DAE(d));
+        gflist = path :: gflist; // In case the function is recursive
+        calledfuncs = Util.listSetDifference(calledfuncs, gflist); // Filter out things we already know will be ignored...
         debugfuncs = Util.listMap(calledfuncs, Absyn.pathString);
         debugfuncsstr = Util.stringDelimitList(debugfuncs, ", ");
         Debug.fprint("ceval", debugfuncsstr);
         Debug.fprintln("ceval", "*/");
-        (cache,calledfuncsstrs,gflist_1,libs_2) = cevalGenerateFunctionStrList(cache,calledfuncs, env, gflist);
+        (cache,calledfuncsstrs,gflist,libs_2, rt_1) = cevalGenerateFunctionStrList(cache,calledfuncs, env, gflist, rt);
         Debug.fprint("ceval", "/*- Ceval.cevalGenerateFunctionStr prefixing dae */");
         d_1 = ModUtil.stringPrefixParams(DAE.DAE(d));
         Print.clearBuf();
@@ -4167,14 +4182,14 @@ algorithm
         funccom = Util.stringAppendList({"/*---FUNC: ",funcname," ---*/\n\n"});
         Print.printBuf(funccom);
         Debug.fprintln("ceval", "/*- Ceval.cevalGenerateFunctionStr generating functions */");
-        libs = Codegen.generateFunctions(d_1);
+        (libs,rt_2) = Codegen.generateFunctions(d_1,rt_1);
         thisfuncstr = Print.getString();
         calledfuncsstrs_1 = Util.listAppendElt(thisfuncstr, calledfuncsstrs);
         resstr = Util.stringDelimitList(calledfuncsstrs_1, "\n\n");
         libs = listAppend(libs, libs_2);
       then
-        (cache,resstr,(path :: gflist),libs);
-    case (_,path,env,_)
+        (cache,resstr,(path :: gflist),libs,rt_2);
+    case (_,path,env,_,_)
       local String ss1;
       equation 
         true = RTOpts.debugFlag("nogen");
@@ -4183,7 +4198,7 @@ algorithm
         Debug.fprint("failtrace", ss1);
       then
         fail();
-    case (_,path,env,_)
+    case (_,path,env,_,_)
       local String ss1;
       equation 
         false = RTOpts.debugFlag("nogen");
@@ -4201,29 +4216,31 @@ protected function cevalGenerateFunctionStrList "function: cevalGenerateFunction
   input list<Absyn.Path> inAbsynPathLst1;
   input Env.Env inEnv2;
   input list<Absyn.Path> inAbsynPathLst3;
+  input list<String> inRecordTypes;
   output Env.Cache outCache;
   output list<String> outStringLst;
   output list<Absyn.Path> outAbsynPathLst;
   output list<String> outLibs;
+  output list<String> outRecordTypes;
 algorithm 
-  (outCache,outStringLst,outAbsynPathLst,outLibs):=
-  matchcontinue (inCache,inAbsynPathLst1,inEnv2,inAbsynPathLst3)
+  (outCache,outStringLst,outAbsynPathLst,outLibs,outRecordTypes):=
+  matchcontinue (inCache,inAbsynPathLst1,inEnv2,inAbsynPathLst3,inRecordTypes)
     local
       list<Env.Frame> env;
       list<Absyn.Path> gflist,gflist_1,gflist_2,rest;
       String firststr;
-      list<String> reststr;
+      list<String> reststr, rt, rt_1, rt_2;
       Absyn.Path first;
       Env.Cache cache;
       list<String> libs_1,libs_2;
-    case (cache,{},env,gflist) then (cache,{},gflist,{});
-    case (cache,(first :: rest),env,gflist)
+    case (cache,{},env,gflist,rt) then (cache,{},gflist,{},rt);
+    case (cache,(first :: rest),env,gflist,rt)
       equation
-        (cache,firststr,gflist_1,libs_1) = cevalGenerateFunctionStr(cache,first, env, gflist);
-        (cache,reststr,gflist_2,libs_2) = cevalGenerateFunctionStrList(cache,rest, env, gflist_1);
+        (cache,firststr,gflist_1,libs_1,rt_1) = cevalGenerateFunctionStr(cache,first, env, gflist,rt);
+        (cache,reststr,gflist_2,libs_2,rt_2) = cevalGenerateFunctionStrList(cache,rest, env, gflist_1,rt_1);
         libs_1 = listAppend(libs_1, libs_2);
       then
-        (cache,(firststr :: reststr),gflist_2,libs_1);
+        (cache,(firststr :: reststr),gflist_2,libs_1,rt_2);
   end matchcontinue;
 end cevalGenerateFunctionStrList;
 

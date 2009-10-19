@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1998-2008, Linköpings University,
  * Department of Computer and Information Science,
- * SE-58183 Linköpings, Sweden.
+ * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
@@ -77,17 +77,16 @@ protected import System;
 protected import SCode;
 protected import Inst;
 protected import Lookup;
-protected import DAE;
 protected import Debug;
 protected import Util;
 protected import RTOpts;
-protected import Prefix;
 protected import Derive;
-protected import Connect;
 protected import Error;
-protected import Cevalfunc;
 protected import CevalScript;
 protected import Dump;
+protected import DAE;
+protected import Prefix;
+protected import Connect;
 
 public function ceval 
 "function: ceval
@@ -194,6 +193,50 @@ algorithm
       then
         (cache,Values.ARRAY(elts),st);
 
+      /* MetaModelica List. sjoelund */
+    case (cache,env,Exp.LIST(valList = expl),impl,st,_,msg)
+      equation 
+        (cache,es_1) = cevalList(cache,env, expl, impl, st, msg);
+      then
+        (cache,Values.LIST(es_1),st);
+
+    /* MetaModelica Partial Function. sjoelund */
+    case (cache,env,Exp.CREF(componentRef = c, ty = Exp.T_FUNCTION_REFERENCE()),impl,st,_,msg)
+      local
+        Exp.ComponentRef c;
+      equation
+        Debug.fprintln("failtrace", "Ceval.ceval not working for function references");
+      then
+        fail();
+        
+    /* MetaModelica Uniontype Constructor. sjoelund 2009-05-18 */
+    case (cache,env,inExp as Exp.METARECORDCALL(path=funcpath,args=expl,fieldNames=fieldNames,index=index),impl,st,_,msg)
+      local
+        list<String> fieldNames; Integer index;
+      equation
+        (cache,vallst) = cevalList(cache,env, expl, impl, st, msg);
+      then (cache,Values.RECORD(funcpath,vallst,fieldNames,index),st);
+    
+    /* MetaModelica Option type. sjoelund 2009-07-01 */
+    case (cache,env,Exp.META_OPTION(NONE),impl,st,_,msg)
+      then (cache,Values.OPTION(NONE),st);
+    case (cache,env,Exp.META_OPTION(SOME(inExp)),impl,st,_,msg)
+      equation
+        (cache,value,st) = ceval(cache,env,inExp,impl,st,NONE,msg);
+      then (cache,Values.OPTION(SOME(value)),st);
+        
+    /* MetaModelica Tuple. sjoelund 2009-07-02 */
+    case (cache,env,Exp.META_TUPLE(expl),impl,st,_,msg)
+      equation
+        true = RTOpts.acceptMetaModelicaGrammar();
+        (cache,vallst) = cevalList(cache, env, expl, impl, st, msg);
+      then (cache,Values.META_TUPLE(vallst),st);
+    case (cache,env,Exp.TUPLE(expl),impl,st,_,msg)
+      equation
+        true = RTOpts.acceptMetaModelicaGrammar();
+        (cache,vallst) = cevalList(cache, env, expl, impl, st, msg);
+      then (cache,Values.META_TUPLE(vallst),st);        
+    
     case (cache,env,Exp.CREF(componentRef = c),(impl as false),SOME(st),_,msg)
       local
         Exp.ComponentRef c;
@@ -958,6 +1001,25 @@ algorithm
     case "promote" then cevalBuiltinPromote; 
     case "String" then cevalBuiltinString;
     case "linspace" then cevalBuiltinLinspace;
+    case "print" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalBuiltinPrint;
+    // MetaModelica type conversions
+    case "intReal" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalIntReal;
+    case "intString" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalIntString;
+    case "realInt" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalRealInt;
+    case "realString" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalRealString;
+    case "stringCharInt" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalStringCharInt;
+    case "intStringChar" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalIntStringChar;
+    case "stringInt" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalStringInt;
+    case "stringListStringChar" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalStringListStringChar;
+    case "listStringCharString" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalListStringCharString;
+    // Box/Unbox
+    case "mmc_mk_icon" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalNoBoxUnbox;
+    case "mmc_mk_rcon" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalNoBoxUnbox;
+    case "mmc_mk_scon" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalNoBoxUnbox;
+    case "mmc_unbox_integer" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalNoBoxUnbox;
+    case "mmc_unbox_real" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalNoBoxUnbox;
+    case "mmc_unbox_string" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalNoBoxUnbox;
+    
     //case "semiLinear" then cevalBuiltinSemiLinear;
     //case "delay" then cevalBuiltinDelay;
     case id
@@ -1017,15 +1079,23 @@ algorithm
       then 
         fail();
 
-    /* Record constructors */
-    case(cache,env,(e as Exp.CALL(path = funcpath,ty = Exp.COMPLEX(name=name, varLst=varLst))),vallst,msg,st)
-      local 
-        list<Exp.Var> varLst; list<String> varNames; String name;
+        /* Record constructors */
+        /*
+    case(cache,env,(e as Exp.CALL(path = funcpath,ty = Exp.COMPLEX(name = "", varLst=varLst))),vallst,msg,st)
+      local
+        list<Exp.Var> varLst; list<String> varNames; String complexName, lastIdent;
       equation
         varNames = Util.listMap(varLst,Exp.varName);
-      then 
-        (cache,Values.RECORD(Absyn.IDENT(name),vallst,varNames),st);
-
+      then (cache,Values.RECORD(funcpath,vallst,varNames),st);
+      
+    case(cache,env,(e as Exp.CALL(path = funcpath,ty = Exp.COMPLEX(name = complexName, varLst=varLst))),vallst,msg,st)
+      local
+        list<Exp.Var> varLst; list<String> varNames; String complexName, lastIdent;
+      equation
+        true = complexName ==& Absyn.pathLastIdent(funcpath);
+        varNames = Util.listMap(varLst,Exp.varName);
+      then (cache,Values.RECORD(funcpath,vallst,varNames),st);
+      
     case (cache,env,(e as Exp.CALL(path = funcpath,expLst = expl,builtin = builtin)),vallst,msg,st)
       local
         Absyn.Path p2;
@@ -1053,7 +1123,8 @@ algorithm
         newval = Cevalfunc.cevalUserFunc(env1,e,vallst,sc,daeList);
         //print("ret value(/s): "); print(Values.printValStr(newval));print("\n"); 
       then
-        (cache,newval,st);
+        (cache,newval,st);*/      
+
 
 /*     This match-rule is commented out due to a new constant evaluation algorithm in 
      Cevalfunc.mo.
@@ -1329,16 +1400,17 @@ algorithm
       Msg msg;
       String s;
       Env.Cache cache;
-      
-    case (cache,env,funcname,vallst,impl,msg) /* For record constructors */ 
+      Env.Env env_2;
+      // Not working properly ! /sjoelund
+    case (cache,env,funcname,vallst,impl,msg) "For record constructors"
       equation 
         (_,_) = Lookup.lookupRecordConstructorClass(env, funcname);
         (cache,c,env_1) = Lookup.lookupClass(cache,env, funcname, false);
         compnames = SCode.componentNames(c);
         mod = Types.valuesToMods(vallst, compnames);
-        (cache,_,_,_,dae,_,_,_,_,_) = Inst.instClass(cache,env_1,InstanceHierarchy.emptyInstanceHierarchy,UnitAbsyn.noStore, mod, Prefix.NOPRE(), Connect.emptySet, c, {}, impl, 
+        (cache,env_2,_,_,dae,_,_,_,_,_) = Inst.instClass(cache,env_1,InstanceHierarchy.emptyInstanceHierarchy,UnitAbsyn.noStore, mod, Prefix.NOPRE(), Connect.emptySet, c, {}, impl, 
           Inst.TOP_CALL(),ConnectionGraph.EMPTY);
-        value = DAE.daeToRecordValue(funcname, dae, impl);
+        (cache, value) = DAE.daeToRecordValue(cache, env_2, funcname, dae, impl) "adrpo: We need the env here as we need to do variable Lookup!"; 
       then
         (cache,value);
         
@@ -2160,6 +2232,382 @@ algorithm
     then Values.REAL(r)::valLst;      
   end matchcontinue;
 end cevalBuiltinLinspace2;
+
+protected function cevalBuiltinPrint "
+  author: sjoelund
+  Prints a String"
+	input Env.Cache inCache;
+  input Env.Env inEnv;
+  input list<Exp.Exp> inExpExpLst;
+  input Boolean inBoolean;
+  input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Msg inMsg;
+  output Env.Cache outCache;
+  output Values.Value outValue;
+  output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
+algorithm 
+  (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
+  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+    local
+      list<Env.Frame> env;
+      Exp.Exp exp;
+      Boolean impl;
+      Option<Interactive.InteractiveSymbolTable> st;
+      Msg msg;
+      Env.Cache cache;
+      String str;
+    case (cache,env,{exp},impl,st,msg)
+      equation
+        (cache,Values.STRING(str),st) = ceval(cache,env, exp, impl, st, NONE, msg);
+				print(str);
+      then
+        (cache,Values.NORETCALL,st);
+  end matchcontinue;
+end cevalBuiltinPrint;
+
+protected function cevalIntReal
+	input Env.Cache inCache;
+  input Env.Env inEnv;
+  input list<Exp.Exp> inExpExpLst;
+  input Boolean inBoolean;
+  input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Msg inMsg;
+  output Env.Cache outCache;
+  output Values.Value outValue;
+  output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
+algorithm 
+  (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
+  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+    local
+      list<Env.Frame> env;
+      Exp.Exp exp;
+      Boolean impl;
+      Option<Interactive.InteractiveSymbolTable> st;
+      Msg msg;
+      Env.Cache cache;
+      String str;
+      Integer i;
+      Real r;
+    case (cache,env,{exp},impl,st,msg)
+      equation
+        (cache,Values.INTEGER(i),_) = ceval(cache,env, exp, impl, st, NONE, msg);
+        r = intReal(i);
+      then
+        (cache,Values.REAL(r),st);
+  end matchcontinue;
+end cevalIntReal;
+
+protected function cevalIntString
+	input Env.Cache inCache;
+  input Env.Env inEnv;
+  input list<Exp.Exp> inExpExpLst;
+  input Boolean inBoolean;
+  input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Msg inMsg;
+  output Env.Cache outCache;
+  output Values.Value outValue;
+  output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
+algorithm 
+  (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
+  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+    local
+      list<Env.Frame> env;
+      Exp.Exp exp;
+      Boolean impl;
+      Option<Interactive.InteractiveSymbolTable> st;
+      Msg msg;
+      Env.Cache cache;
+      String str;
+      Integer i;
+      Real r;
+    case (cache,env,{exp},impl,st,msg)
+      equation
+        (cache,Values.INTEGER(i),st) = ceval(cache,env, exp, impl, st, NONE, msg);
+        str = intString(i);
+      then
+        (cache,Values.STRING(str),st);
+  end matchcontinue;
+end cevalIntString;
+
+protected function cevalRealInt
+	input Env.Cache inCache;
+  input Env.Env inEnv;
+  input list<Exp.Exp> inExpExpLst;
+  input Boolean inBoolean;
+  input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Msg inMsg;
+  output Env.Cache outCache;
+  output Values.Value outValue;
+  output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
+algorithm 
+  (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
+  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+    local
+      list<Env.Frame> env;
+      Exp.Exp exp;
+      Boolean impl;
+      Option<Interactive.InteractiveSymbolTable> st;
+      Msg msg;
+      Env.Cache cache;
+      String str;
+      Integer i;
+      Real r;
+    case (cache,env,{exp},impl,st,msg)
+      equation
+        (cache,Values.REAL(r),st) = ceval(cache,env, exp, impl, st, NONE, msg);
+        i = realInt(r);
+      then
+        (cache,Values.INTEGER(i),st);
+  end matchcontinue;
+end cevalRealInt;
+
+protected function cevalRealString
+	input Env.Cache inCache;
+  input Env.Env inEnv;
+  input list<Exp.Exp> inExpExpLst;
+  input Boolean inBoolean;
+  input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Msg inMsg;
+  output Env.Cache outCache;
+  output Values.Value outValue;
+  output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
+algorithm 
+  (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
+  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+    local
+      list<Env.Frame> env;
+      Exp.Exp exp;
+      Boolean impl;
+      Option<Interactive.InteractiveSymbolTable> st;
+      Msg msg;
+      Env.Cache cache;
+      String str;
+      Integer i;
+      Real r;
+    case (cache,env,{exp},impl,st,msg)
+      equation
+        (cache,Values.REAL(r),st) = ceval(cache,env, exp, impl, st, NONE, msg);
+        str = realString(r);
+      then
+        (cache,Values.STRING(str),st);
+  end matchcontinue;
+end cevalRealString;
+
+protected function cevalStringCharInt
+	input Env.Cache inCache;
+  input Env.Env inEnv;
+  input list<Exp.Exp> inExpExpLst;
+  input Boolean inBoolean;
+  input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Msg inMsg;
+  output Env.Cache outCache;
+  output Values.Value outValue;
+  output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
+algorithm 
+  (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
+  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+    local
+      list<Env.Frame> env;
+      Exp.Exp exp;
+      Boolean impl;
+      Option<Interactive.InteractiveSymbolTable> st;
+      Msg msg;
+      Env.Cache cache;
+      String str;
+      Integer i;
+      Real r;
+    case (cache,env,{exp},impl,st,msg)
+      equation
+        (cache,Values.STRING(str),_) = ceval(cache,env, exp, impl, st, NONE, msg);
+        i = stringCharInt(str);
+      then
+        (cache,Values.INTEGER(i),st);
+  end matchcontinue;
+end cevalStringCharInt;
+
+protected function cevalIntStringChar
+	input Env.Cache inCache;
+  input Env.Env inEnv;
+  input list<Exp.Exp> inExpExpLst;
+  input Boolean inBoolean;
+  input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Msg inMsg;
+  output Env.Cache outCache;
+  output Values.Value outValue;
+  output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
+algorithm 
+  (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
+  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+    local
+      list<Env.Frame> env;
+      Exp.Exp exp;
+      Boolean impl;
+      Option<Interactive.InteractiveSymbolTable> st;
+      Msg msg;
+      Env.Cache cache;
+      String str;
+      Integer i;
+      Real r;
+    case (cache,env,{exp},impl,st,msg)
+      equation
+        (cache,Values.INTEGER(i),st) = ceval(cache,env, exp, impl, st, NONE, msg);
+        str = intStringChar(i);
+      then
+        (cache,Values.STRING(str),st);
+  end matchcontinue;
+end cevalIntStringChar;
+
+protected function cevalStringInt
+	input Env.Cache inCache;
+  input Env.Env inEnv;
+  input list<Exp.Exp> inExpExpLst;
+  input Boolean inBoolean;
+  input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Msg inMsg;
+  output Env.Cache outCache;
+  output Values.Value outValue;
+  output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
+algorithm 
+  (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
+  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+    local
+      list<Env.Frame> env;
+      Exp.Exp exp;
+      Boolean impl;
+      Option<Interactive.InteractiveSymbolTable> st;
+      Msg msg;
+      Env.Cache cache;
+      String str;
+      Integer i;
+      Real r;
+    case (cache,env,{exp},impl,st,msg)
+      equation
+        (cache,Values.STRING(str),st) = ceval(cache,env, exp, impl, st, NONE, msg);
+        i = stringInt(str);
+      then
+        (cache,Values.INTEGER(i),st);
+  end matchcontinue;
+end cevalStringInt;
+
+protected function cevalStringListStringChar
+	input Env.Cache inCache;
+  input Env.Env inEnv;
+  input list<Exp.Exp> inExpExpLst;
+  input Boolean inBoolean;
+  input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Msg inMsg;
+  output Env.Cache outCache;
+  output Values.Value outValue;
+  output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
+algorithm 
+  (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
+  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+    local
+      list<Env.Frame> env;
+      Exp.Exp exp;
+      Boolean impl;
+      Option<Interactive.InteractiveSymbolTable> st;
+      Msg msg;
+      Env.Cache cache;
+      String str;
+      Integer i;
+      Real r;
+      list<String> chList;
+      list<Values.Value> valList;
+    case (cache,env,{exp},impl,st,msg)
+      equation
+        (cache,Values.STRING(str),st) = ceval(cache,env, exp, impl, st, NONE, msg);
+        chList = stringListStringChar(str);
+        valList = Util.listMap(chList, generateValueString);
+      then
+        (cache,Values.LIST(valList),st);
+  end matchcontinue;
+end cevalStringListStringChar;
+
+protected function generateValueString
+  input String str;
+  output Values.Value val;
+algorithm
+  val := Values.STRING(str);
+end generateValueString;
+
+protected function cevalListStringCharString
+	input Env.Cache inCache;
+  input Env.Env inEnv;
+  input list<Exp.Exp> inExpExpLst;
+  input Boolean inBoolean;
+  input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Msg inMsg;
+  output Env.Cache outCache;
+  output Values.Value outValue;
+  output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
+algorithm 
+  (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
+  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+    local
+      list<Env.Frame> env;
+      Exp.Exp exp;
+      Boolean impl;
+      Option<Interactive.InteractiveSymbolTable> st;
+      Msg msg;
+      Env.Cache cache;
+      String str;
+      Integer i;
+      Real r;
+      list<String> chList;
+      list<Values.Value> valList;
+    case (cache,env,{exp},impl,st,msg)
+      equation
+        (cache,Values.LIST(valList),st) = ceval(cache,env, exp, impl, st, NONE, msg);
+        // Note that the RML version of the function has a weird name, but is also not implemented yet!
+        // The work-around is to check that each String has length 1 and append all the Strings together
+        // WARNING: This can be very, very slow for long lists - it grows as O(n^2)
+        // TODO: When implemented, use listStringCharString (OMC name) or stringCharListString (RML name) directly
+        chList = Util.listMap(valList, extractValueStringChar);
+        str = Util.stringAppendList(chList);
+      then
+        (cache,Values.STRING(str),st);
+  end matchcontinue;
+end cevalListStringCharString;
+
+protected function extractValueStringChar
+  input Values.Value val;
+  output String str;
+algorithm
+  str := matchcontinue (val)
+    local String str;
+    case Values.STRING(str) equation 1 = stringLength(str); then str;
+  end matchcontinue;
+end extractValueStringChar;
+
+protected function cevalNoBoxUnbox
+	input Env.Cache inCache;
+  input Env.Env inEnv;
+  input list<Exp.Exp> inExpExpLst;
+  input Boolean inBoolean;
+  input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Msg inMsg;
+  output Env.Cache outCache;
+  output Values.Value outValue;
+  output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
+algorithm 
+  (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
+  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+    local
+      list<Env.Frame> env;
+      Exp.Exp exp;
+      Boolean impl;
+      Option<Interactive.InteractiveSymbolTable> st;
+      Msg msg;
+      Env.Cache cache;
+      Values.Value val;
+    case (cache,env,{exp},impl,st,msg)
+      equation
+        (cache,val,st) = ceval(cache,env, exp, impl, st, NONE, msg);
+      then
+        (cache,val,st);
+  end matchcontinue;
+end cevalNoBoxUnbox;
 
 protected function cevalCat "function: cevalCat
   evaluates the cat operator given a list of 
@@ -3898,13 +4346,21 @@ algorithm
       Msg msg;
       String scope_str,str;
       Env.Cache cache;
+      Exp.Type expTy;
+    
+    /* Special rule for enumerations, the cr does not have a value since it -is- a value.
+     * This is ONLY used when we don't have an environment. 
+     */
+    case (cache,env as {},c as Exp.CREF_QUAL(_,expTy as Exp.ENUM(),_,_),impl,msg)  
+      then
+        (cache,Values.ENUM(c, 0));
     
     /* Search in env for binding, special rule for enumerations, the cr does not have a value since it -is- a value. */
     case (cache,env,c,impl,msg)  
       equation 
         (cache,attr,ty as (Types.T_ENUM(),_),binding,_,_) = Lookup.lookupVar(cache, env, c);
       then
-        (cache,Values.ENUM(c, 0));  
+        (cache,Values.ENUM(c, 0));
     
     /* Search in env for binding. */
     case (cache,env,c,impl,msg)  

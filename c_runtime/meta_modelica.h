@@ -101,6 +101,12 @@ struct mmc_string {
     char data[1];	/* `bytes' elements + terminating '\0' */
 };
 
+#define mmc__mk__icon_rettype mmc_mk_icon_rettype
+#define mmc__mk__icon(X) mmc_mk_icon(X)
+#define mmc__mk__rcon_rettype mmc_mk_rcon_rettype
+#define mmc__mk__rcon(X) mmc_mk_rcon(X)
+#define mmc__mk__scon_rettype mmc_mk_scon_rettype
+#define mmc__mk__scon(X) mmc_mk_scon(X)
 typedef metamodelica_type mmc_mk_icon_rettype;
 typedef metamodelica_type mmc_mk_rcon_rettype;
 typedef metamodelica_type mmc_mk_scon_rettype;
@@ -129,10 +135,10 @@ void *mmc_mk_box(int slots, unsigned ctor, ...);
 void *mmc_mk_box_arr(int slots, unsigned ctor, void**);
 
 int mmc_boxes_equal(void*, void*);
-void mmc_unbox(metamodelica_type box, void* res);
+void mmc__unbox(metamodelica_type box, void* res);
 
-typedef modelica_boolean mmc_uniontype_metarecord_typedef_equal_rettype;
-mmc_uniontype_metarecord_typedef_equal_rettype mmc_uniontype_metarecord_typedef_equal(void*,int,int,modelica_string_t);
+typedef modelica_boolean mmc__uniontype__metarecord__typedef__equal_rettype;
+mmc__uniontype__metarecord__typedef__equal_rettype mmc__uniontype__metarecord__typedef__equal(void*,int,int,modelica_string_t);
 
 void printAny(void*); /* For debugging */
 
@@ -151,13 +157,13 @@ struct record_description {
 };
 
 /* Unboxing */
-typedef modelica_integer mmc_unbox_integer_rettype;
-typedef modelica_real mmc_unbox_real_rettype;
-typedef modelica_string_t mmc_unbox_string_rettype;
+typedef modelica_integer  mmc__unbox__integer_rettype;
+typedef modelica_real     mmc__unbox__real_rettype;
+typedef modelica_string_t mmc__unbox__string_rettype;
 
-mmc_unbox_integer_rettype mmc_unbox_integer(metamodelica_type);
-mmc_unbox_real_rettype mmc_unbox_real(metamodelica_type);
-mmc_unbox_string_rettype mmc_unbox_string(metamodelica_type);
+mmc__unbox__integer_rettype mmc__unbox__integer(metamodelica_type);
+mmc__unbox__real_rettype mmc__unbox__real(metamodelica_type);
+mmc__unbox__string_rettype mmc__unbox__string(metamodelica_type);
 
 #if defined(__cplusplus)
 }

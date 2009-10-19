@@ -366,7 +366,9 @@ class_specifier [void** nameEnd] returns [void* ast]
 		| #(SUBTYPEOF typeSpecifier = type_specifier)
 			{
 				// adrpo: ignore the type_specifier here
-				ast = Absyn__PARTS(mk_nil(), mk_none());
+        typeSpecifier = Absyn__TCOMPLEX(Absyn__IDENT(mk_scon("polymorphic")),mk_cons(typeSpecifier,mk_nil()),mk_nil());
+				ast = Absyn__DERIVED(typeSpecifier,
+                Absyn__ATTR(mk_icon(0),mk_icon(0),Absyn__VAR,Absyn__BIDIR,mk_nil()),mk_nil(),mk_none());
 			}
 		| #(EQUALS  ( ast = derived_class
 	            	| ast = enumeration
@@ -1373,6 +1375,8 @@ algorithm_clause returns [void* ast]
 equation returns [void* ast]
 {
 	void *cmt = 0;
+  void *eq1 = 0;
+  void *eq2 = 0;
 }
 	:
 		#(i:EQUATION_STATEMENT
@@ -1383,17 +1387,19 @@ equation returns [void* ast]
 			|	ast = connect_clause
 			|	ast = equation_funcall
 			|   #(FAILURE  ast = fa:equation)
-			|   #(EQUALITY ast = eq:equation)
+			|   #(EQUALITY eq1 = expression eq2 = expression)
 			)
 			(cmt = comment)?
 			{
-				if (fa)
+        if (fa)
 				{
 					ast = Absyn__EQUATIONITEM(Absyn__EQ_5fFAILURE(ast),cmt ? mk_some(cmt) : mk_none());
 				}
-				else if (eq)
+				else if (eq1 && eq2)
 				{
-					ast = Absyn__EQUATIONITEM(Absyn__EQ_5fEQUALITY(ast),cmt ? mk_some(cmt) : mk_none());
+          ast = mk_cons(eq2,mk_nil());
+					ast = Absyn__FUNCTIONARGS(mk_cons(eq1,ast),mk_nil());
+					ast = Absyn__EQUATIONITEM(Absyn__EQ_5fNORETCALL(Absyn__CREF_5fIDENT(mk_scon("equality"),mk_nil()),ast),cmt ? mk_some(cmt) : mk_none());
 				}
 				else
 				{
@@ -1435,24 +1441,21 @@ algorithm returns [void* ast]
 			| ast = when_clause_a
 			| BREAK  { ast = Absyn__ALG_5fBREAK; }
 			| RETURN { ast = Absyn__ALG_5fRETURN; }
-			| #(FAILURE  ast = fa:algorithm)
-			| #(EQUALITY ast = eq:algorithm)
+			/* | #(FAILURE  ast = fa:algorithm)
+			| #(EQUALITY ast = eq:algorithm) */
 			)
 			(cmt = comment)?
 	  		{
-				if (fa)
+				/* if (fa) // Commented out because we don't use failure or equality in algorithms!
 				{
 					ast = Absyn__ALGORITHMITEM(Absyn__ALG_5fFAILURE(ast),cmt ? mk_some(cmt) : mk_none());
 				}
 				else if (eq)
 				{
 					ast = Absyn__ALGORITHMITEM(Absyn__ALG_5fEQUALITY(ast),cmt ? mk_some(cmt) : mk_none());
+				} */
+				ast = Absyn__ALGORITHMITEM(ast,cmt ? mk_some(cmt) : mk_none());
 				}
-				else
-				{
-					ast = Absyn__ALGORITHMITEM(ast,cmt ? mk_some(cmt) : mk_none());
-				}
-	  		}
 		)
 	;
 
@@ -1730,6 +1733,18 @@ connector_ref_2 returns [void* ast]
 			ast = Absyn__CREF_5fIDENT(id,as);
 		}
 	;
+	
+part_eval_function_expression returns [void* ast]
+{
+	void *cref = 0;
+	void *alist = 0;
+}
+	:
+		#(FUNCTION cref = component_reference alist = function_call)
+		{
+			ast = Absyn__PARTEVALFUNCTION(cref, alist);
+		}
+	;
 
 expression returns [void* ast]
 {
@@ -1741,6 +1756,7 @@ expression returns [void* ast]
 		(	ast = simple_expression
 		|	ast = if_expression
 		|   ast = code_expression
+		|   ast = part_eval_function_expression
 		|   #(MATCHCONTINUE inputs=imc:expression_or_empty local=local_clause cas=cases
 			{
 				ast = Absyn__MATCHEXP(Absyn__MATCHCONTINUE, inputs, local, cas, mk_none());
@@ -1896,13 +1912,14 @@ simple_expression returns [void* ast]
 	void* e1  = 0;
 	void* e2  = 0;
 	void* exp = 0;
+	l_stack el_stack;
 }
 :
 		  ast = simple_expr
-		| #(COLONCOLON e1 = simple_expression e2 = simple_expr)
-			{
-				ast = Absyn__CONS(e1, e2);
-			}
+		| #(COLONCOLON e1 = simple_expr e2 = simple_expression)
+		   {
+		     ast = Absyn__CONS(e1, e2); 
+		   }
 		| #(AS i:IDENT exp = simple_expression)
 			{
 				ast = Absyn__AS(to_rml_str(i),exp);

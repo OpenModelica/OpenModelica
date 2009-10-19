@@ -2491,13 +2491,6 @@ algorithm
         Print.printBuf("}");
       then
         ();
-    case Absyn.EQ_EQUALITY(equItem)
-      equation
-        Print.printBuf("EQUALITY(");
-        printEquationitem(equItem);
-        Print.printBuf(")");
-      then
-        ();
     case Absyn.EQ_FAILURE(equItem)
       equation
         Print.printBuf("FAILURE(");
@@ -2619,13 +2612,6 @@ algorithm
         is = indentStr(i);
         s4 = unparseEqElsewhenStrLst(i_1, eqlelse);
         str = Util.stringAppendList({is,"when ",s1," then\n",is,s2,is,s4,"\n",is,"end when"});
-      then
-        str;
-    case (i,Absyn.EQ_EQUALITY(equItem))
-      equation        
-        s1 = unparseEquationitemStr(0, equItem);
-        is = indentStr(i);
-        str = Util.stringAppendList({is,"equality(",s1,")"});
       then
         str;
     case (i,Absyn.EQ_FAILURE(equItem))
@@ -2871,7 +2857,7 @@ algorithm
         Print.printBuf("}");
       then
         ();
-    case Absyn.ALG_WHILE(whileStmt = e,whileBody = al)
+    case Absyn.ALG_WHILE(boolExpr = e,whileBody = al)
       equation
         Print.printBuf("WHILE ");
         printExp(e);
@@ -2880,7 +2866,7 @@ algorithm
         Print.printBuf("}");
       then
         ();
-    case Absyn.ALG_WHEN_A(whenStmt = e,whenBody = al,elseWhenAlgorithmBranch = el) /* rule	Print.print_buf \"WHEN_E \" & print_exp(e) &
+    case Absyn.ALG_WHEN_A(boolExpr = e,whenBody = al,elseWhenAlgorithmBranch = el) /* rule	Print.print_buf \"WHEN_E \" & print_exp(e) &
 	Print.print_buf \" {\" & print_list_debug(\"print_algorithm\",al, print_algorithmitem, \";\") & Print.print_buf \"}\"
 	 ----------------------------------------------------------
 	print_algorithm Absyn.ALG_WHEN_E(e,al)
@@ -2902,20 +2888,6 @@ algorithm
     case Absyn.ALG_BREAK()
       equation
         Print.printBuf("BREAK()");
-      then
-        ();
-    case Absyn.ALG_EQUALITY(algItem)
-      equation
-        Print.printBuf("EQUALITY(");
-        printAlgorithmitem(algItem);
-        Print.printBuf(")");
-      then
-        ();
-    case Absyn.ALG_FAILURE(algItem)
-      equation
-        Print.printBuf("FAILURE(");
-        printAlgorithmitem(algItem);
-        Print.printBuf(")");
       then
         ();
     case (_)
@@ -2952,6 +2924,30 @@ algorithm
         res;
   end matchcontinue;
 end unparseAlgorithmStrLst;
+
+protected function unparseAlgorithmStrLstLst
+  input Integer inInteger;
+  input list<list<Absyn.AlgorithmItem>> inAbsynAlgorithmItemLst;
+  input String inString;
+  output list<String> outString;
+algorithm
+  outString:=
+  matchcontinue (inInteger,inAbsynAlgorithmItemLst,inString)
+    local
+      Ident s1,sep;
+      list<Ident> s2;
+      Integer i;
+      list<Absyn.AlgorithmItem> x;
+      list<list<Absyn.AlgorithmItem>> xs;
+    case (_,{},_) then {};
+    case (i,(x :: xs),sep)
+      equation
+        s1 = unparseAlgorithmStrLst(i, x, sep);
+        s2 = unparseAlgorithmStrLstLst(i, xs, sep);
+      then
+        s1::s2;
+  end matchcontinue;
+end unparseAlgorithmStrLstLst;
 
 public function unparseAlgorithmStr "function: unparseAlgorithmStr
 
@@ -3011,7 +3007,7 @@ algorithm
           ";"});
       then
         str;
-    case (i,Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_WHILE(whileStmt = e,whileBody = al),comment = optcmt)) /* ALG_WHILE */
+    case (i,Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_WHILE(boolExpr = e,whileBody = al),comment = optcmt)) /* ALG_WHILE */
       equation
         s1 = printExpStr(e);
         i_1 = i + 1;
@@ -3022,7 +3018,7 @@ algorithm
           {is,"while (",s1,") loop\n",is,s2,"\n",is,"end while",s3,";"});
       then
         str;
-    case (i,Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_WHEN_A(whenStmt = e,whenBody = al,elseWhenAlgorithmBranch = al2),comment = optcmt)) /* ALG_WHEN_A */
+    case (i,Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_WHEN_A(boolExpr = e,whenBody = al,elseWhenAlgorithmBranch = al2),comment = optcmt)) /* ALG_WHEN_A */
       equation
         s1 = printExpStr(e);
         i_1 = i + 1;
@@ -3059,23 +3055,48 @@ algorithm
     case (i,Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_BREAK(),comment = optcmt)) /* ALG_BREAK */
       equation
         s3 = unparseCommentOption(optcmt);
-        str = "break" +& s3 +& ";";
+        is = indentStr(i);
+        str = is +& "break" +& s3 +& ";";
       then
         str;
-    case (i,Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_EQUALITY(algItem), comment = optcmt))
+    case (i,Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_MATCHCASES(explist), comment = optcmt))
+      local
+        list<Absyn.Exp> explist;
+        list<String> strlist;
       equation
-        str = unparseAlgorithmStr(i, algItem);
         s3 = unparseCommentOption(optcmt);
-        str_1 = "equality(" +& str +& ")" +& s3 +& ";";
+        strlist = Util.listMap(explist, printExpStr);
+        strlist = Util.listMap1r(strlist, stringAppend, "\ncase:\n    ");
+        s2 = Util.stringAppendList(strlist);
+        str_1 = "matchcases { " +& s2 +& " } "+& s3 +&";";
       then
         str_1;
-    case (i,Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_FAILURE(algItem), comment = optcmt))
+    case (i,Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_TRY(al),comment = optcmt)) /* ALG_TRY */
       equation
-        str = unparseAlgorithmStr(i, algItem);
+        i_1 = i + 1;
+        s2 = unparseAlgorithmStrLst(i_1, al, "\n");
         s3 = unparseCommentOption(optcmt);
-        str_1 = "failure(" +& str +& ")" +& s3 +& ";";
+        is = indentStr(i);
+        str = Util.stringAppendList(
+          {is,"try\n",is,s2,is,"end try",s3,";"});
       then
-        str_1;
+        str;
+    case (i,Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_THROW,comment = optcmt)) /* ALG_THROW */
+      equation
+        is = indentStr(i);
+        str = is +& "throw;";
+      then
+        str;
+    case (i,Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_CATCH(al),comment = optcmt)) /* ALG_CATCH */
+      equation
+        i_1 = i + 1;
+        s2 = unparseAlgorithmStrLst(i_1, al, "\n");
+        s3 = unparseCommentOption(optcmt);
+        is = indentStr(i);
+        str = Util.stringAppendList(
+          {is,"catch\n",is,s2,is,"end catch",s3,";"});
+      then
+        str;
     case (_,_)
       equation
         Print.printErrorBuf("#Error, unparse_algorithm_str failed\n");
@@ -3602,6 +3623,15 @@ algorithm
         Print.printBuf(")");
       then
         ();
+    case (Absyn.PARTEVALFUNCTION(function_ = fcn, functionArgs = args))
+      equation
+        Print.printBuf("Absyn.PARTEVALFUNCTION(");
+        printComponentRef(fcn);
+        Print.printBuf(", ");
+        printFunctionArgs(args);
+        Print.printBuf(")");
+      then
+        ();
     case Absyn.ARRAY(arrayExp = es)
       equation
         Print.printBuf("Absyn.ARRAY([");
@@ -3652,6 +3682,13 @@ algorithm
         ();
 
     /* MetaModelica expressions! */
+    case Absyn.LIST(es)
+      equation
+        Print.printBuf("Absyn.LIST([");
+        printListDebug("print_exp", es, printExp, ",");
+        Print.printBuf("])");
+      then
+        ();
     case Absyn.CONS(head, rest)
       equation
         Print.printBuf("Absyn.CONS(");
@@ -3955,6 +3992,7 @@ algorithm
     case (Absyn.CREF(componentReg = _)) then 0;
     case (Absyn.END()) then 0;
     case (Absyn.CALL(function_ = _)) then 0;
+    case (Absyn.PARTEVALFUNCTION(function_= _)) then 0;
     case (Absyn.ARRAY(arrayExp = _)) then 0;
     case (Absyn.MATRIX(matrix = _)) then 0;
     /* arithmetic operators */
@@ -4035,7 +4073,7 @@ algorithm
   outString:=
   matchcontinue (inExp)
     local
-      String s,s_1,s_2,sym,s1,s2,s1_1,s2_1,cs,ts,fs,cs_1,ts_1,fs_1,el,str,argsstr,s3,s3_1,res,res_1;
+      String s,s_1,s_2,s_3,sym,s1,s2,s1_1,s2_1,cs,ts,fs,cs_1,ts_1,fs_1,el,str,argsstr,s3,s3_1,res,res_1;
       String s4, s5, s6;
       Integer x,p,p1,p2,pc,pt,pf,pstart,pstop,pstep;
       Absyn.ComponentRef c,fcn;
@@ -4166,6 +4204,16 @@ algorithm
         s_2 = stringAppend(s_1, ")");
       then
         s_2;
+    case (Absyn.PARTEVALFUNCTION(function_ = fcn,functionArgs = args))
+      equation
+        fs = printComponentRefStr(fcn);
+        argsstr = printFunctionArgsStr(args);
+        s = stringAppend("function ", fs);
+        s_1 = stringAppend(s, "(");
+        s_2 = stringAppend(s_1, argsstr);
+        s_3 = stringAppend(s_2, ")");
+      then
+        s_3;
     case Absyn.ARRAY(arrayExp = es)
       equation
         s = printListStr(es, printExpStr, ",") "Does not need parentheses" ;
@@ -4248,12 +4296,21 @@ algorithm
         s = Util.stringAppendList({s1, " ", s2, s3, s4, s5, "\n\tend ", s1});
       then
         s;
-    case Absyn.VALUEBLOCK(_,_,result)
-    local Absyn.Exp result;
+    case Absyn.VALUEBLOCK(els,_ /*Absyn.VALUEBLOCKALGORITHMS(algs)*/,result)
+    local Absyn.Exp result; list<Absyn.ElementItem> els; list<Absyn.AlgorithmItem> algs;
       equation
         s1 = printExpStr(result);
-        s = "valueblock(..., result=" +& s1 +& ")";
-      then s;         
+        s = "valueblock(...)";
+        /*
+        s2 = Print.getString();
+        Print.clearBuf();
+        printElementitems(els);
+        Util.listMap0(algs, printAlgorithmitem);
+        s3 = Print.getString();
+        Print.printBuf(s2);
+        s = "valueblock(" +& s3 +& ", result=" +& s1 +& ")";
+        */
+      then s;
     case (_) then "#UNKNOWN EXPRESSION#";
   end matchcontinue;
 end printExpStr;

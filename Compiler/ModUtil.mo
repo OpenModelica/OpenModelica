@@ -358,14 +358,15 @@ algorithm
         dae_1 = stringPrefixElements(str, dae, dae);
       then
         DAE.COMP(n,DAE.DAE(dae_1));
-    case (str,dae1,DAE.FUNCTION(path = n,dAElist = DAE.DAE(elementLst = dae),type_ = ty))
+    case (str,dae1,DAE.FUNCTION(path = n,dAElist = DAE.DAE(elementLst = dae),type_ = ty,partialPrefix = partialPrefix))
       local
         Absyn.Path n;
         tuple<Types.TType, Option<Absyn.Path>> ty;
+        Boolean partialPrefix;
       equation 
         dae_1 = stringPrefixElements(str, dae, dae);
       then
-        DAE.FUNCTION(n,DAE.DAE(dae_1),ty);
+        DAE.FUNCTION(n,DAE.DAE(dae_1),ty,partialPrefix);
     case (str,dae1,DAE.EXTFUNCTION(path = n,dAElist = DAE.DAE(elementLst = dae),type_ = ty,externalDecl = decl))
       local
         Absyn.Path n;

@@ -45,6 +45,7 @@ package Values
 
 public import Exp;
 public import Absyn;
+public import Debug;
 
 public 
 uniontype Value 
@@ -77,19 +78,31 @@ uniontype Value
     list<Value> valueLst;
   end LIST;
 
-  record TUPLE
+  record TUPLE "Modelica Tuple"
     list<Value> valueLst;
   end TUPLE;
+
+  record META_TUPLE "MetaModelica Tuple"
+    list<Value> valueLst;
+  end META_TUPLE;
 
   record RECORD
     Absyn.Path record_ "record name" ;
     list<Value> orderd "orderd set of values" ;
     list<Exp.Ident> comp "comp names for each value" ;
+    Integer index "-1 for regular records, 0..n-1 for uniontypes containing n records";
   end RECORD;
-
+  
+  record OPTION
+    Option<Value> some;
+  end OPTION;
+  
   record CODE
     Absyn.CodeNode A "A record consist of value  Ident pairs" ;
   end CODE;
+  
+  record NORETCALL
+  end NORETCALL;
 
 end Value;
 
@@ -168,6 +181,7 @@ algorithm
     case (STRING(string = _)) then false; 
     case (BOOL(boolean = _)) then false; 
     case (TUPLE(valueLst = _)) then false; 
+    case (META_TUPLE(valueLst = _)) then false; 
     case (ARRAY(valueLst = _)) then true; 
     case (LIST(_)) then false; //MetaModelica list
   end matchcontinue;
@@ -237,6 +251,13 @@ algorithm
       list<Value> lst,xs;
       Integer i;
     case ((TUPLE(valueLst = lst) :: xs))
+      equation 
+        s1 = unparseValueNumbers(lst);
+        s2 = unparseValueNumbers(xs);
+        res = stringAppend(s1, s2);
+      then
+        res;
+    case ((META_TUPLE(valueLst = lst) :: xs))
       equation 
         s1 = unparseValueNumbers(lst);
         s2 = unparseValueNumbers(xs);
@@ -1748,6 +1769,13 @@ algorithm
         s_2 = stringAppend(s_1, ")");
       then
         s_2;
+    case META_TUPLE(valueLst = vs)
+      equation 
+        s = valListString(vs);
+        s_1 = stringAppend("(", s);
+        s_2 = stringAppend(s_1, ")");
+      then
+        s_2;
     case ((r as RECORD(record_ = recordPath)))
       local Absyn.Path recordPath; String recordName;
       equation
@@ -1756,6 +1784,15 @@ algorithm
         res = Util.stringAppendList({"record ", recordName, "\n", s,"end ", recordName, ";"});
       then
         res;
+    case ((OPTION(SOME(r))))
+      equation
+        s = valString(r);
+        res = Util.stringAppendList({"SOME(", s, ")"});
+      then
+        res;
+    case ((OPTION(NONE())))
+      then
+        "NONE()";
         
     case (CODE(A = c))
       equation 
@@ -1775,9 +1812,10 @@ algorithm
     case(ENUM(cr,_)) equation
       s = Exp.printComponentRefStr(cr);
     then s;
+    case(NORETCALL) then "";
     case _
       equation 
-       //print("- val_string failed\n");
+        Debug.fprintln("failtrace", "- Values.valString failed");
       then
         fail();
   end matchcontinue;
@@ -1798,18 +1836,19 @@ algorithm
       Value x;
       list<Value> xs;
       list<String> ids;
+      Integer ix;
     case (RECORD(record_ = cname,orderd = {},comp = {})) then ""; 
-    case (RECORD(record_ = cname,orderd = (x :: (xs as (_ :: _))),comp = (id :: (ids as (_ :: _)))))
+    case (RECORD(record_ = cname,orderd = (x :: (xs as (_ :: _))),comp = (id :: (ids as (_ :: _))),index=ix))
       equation 
         s1 = valString(x);
-        s2 = valRecordString(RECORD(cname,xs,ids));
+        s2 = valRecordString(RECORD(cname,xs,ids,ix));
         res = Util.stringAppendList({"    ",id," = ",s1,",\n",s2});
       then
         res;
-    case (RECORD(record_ = cname,orderd = (x :: xs),comp = (id :: ids)))
+    case (RECORD(record_ = cname,orderd = (x :: xs),comp = (id :: ids),index=ix))
       equation 
         s1 = valString(x);
-        s2 = valRecordString(RECORD(cname,xs,ids));
+        s2 = valRecordString(RECORD(cname,xs,ids,ix));
         res = Util.stringAppendList({"    ",id," = ",s1,"\n",s2});
       then
         res;
@@ -1850,7 +1889,7 @@ algorithm
         s_3;
     case _
       equation 
-        Print.printBuf("- val_list_string failed\n");
+        Debug.fprintln("failtrace", "- Values.valListString failed\n");
       then
         fail();
   end matchcontinue;

@@ -127,6 +127,30 @@ algorithm
       then
         (cache,t,env_2);
 
+    /* Metamodelica extension, Uniontypes, simbj-ex07 */  
+    case (cache,env,path,msg) 
+      local String s,ident;
+        SCode.Restriction restr;
+        Absyn.Path name;
+        Integer index;
+        list<Types.Var> varlst;
+        list<SCode.Element> els;
+        list<tuple<SCode.Element,Types.Mod>> elsModList;
+      equation 
+        (cache,(c as SCode.CLASS(id,_,encflag,SCode.R_METARECORD(name,index),SCode.PARTS(elementLst = els))),env_1) = lookupClass2(cache,env, path, false);
+        //true = SCode.isFunctionOrExtFunction(restr);
+        //(cache,env_2) = Inst.implicitFunctionTypeInstantiation(cache,env_1, c);
+        ident = Absyn.pathLastIdent(path);
+        (cache,path) = Inst.makeFullyQualified(cache,env_1, Absyn.IDENT(ident));
+        elsModList = Util.listMap1(els, Util.makeTuple2, Types.NOMOD);
+        (cache,env_2,_,_,_,_,_,varlst,_) = Inst.instElementList(
+            cache,env_1,InstanceHierarchy.emptyInstanceHierarchy, UnitAbsyn.noStore,
+            Types.NOMOD,Prefix.NOPRE, Connect.emptySet, ClassInf.FUNCTION(""), elsModList, {}, false, ConnectionGraph.EMPTY);
+        //(cache,t,env3) = lookupTypeInEnv(cache,env, Absyn.IDENT(ident));
+        t = (Types.T_METARECORD(index,varlst),SOME(path));
+      then
+        (cache,t,env_2);
+        
   /*If we find a class definition
 	   that is a function or external function with the same name then we implicitly instantiate that
 	  function, look up the type. */
@@ -1622,12 +1646,18 @@ algorithm
       list<Types.Var> varlst;
       Absyn.Path fpath;
       tuple<Types.TType, Option<Absyn.Path>> ftype,t;
+      Types.TType tty;
       Env.Cache cache;
     case (cache,ht,httypes,env,id) /* Classes and vars Types */ 
       equation 
         Env.TYPE(tps) = Env.avlTreeGet(httypes, id);
       then
         (cache,tps);
+    case (cache,ht,httypes,env,id) /* MetaModelica Partial Function. sjoelund */
+      equation
+        Env.VAR(instantiated = Types.VAR(type_ = (tty as Types.T_FUNCTION(_,_),_))) = Env.avlTreeGet(ht, id);
+      then
+        (cache,{(tty, SOME(Absyn.IDENT(id)))});
     case (cache,ht,httypes,env,id)
       equation 
         Env.VAR(_,_,_,_) = Env.avlTreeGet(ht, id);
@@ -1759,17 +1789,36 @@ algorithm
       SCode.Restriction restr;
       list<Env.Frame> env;
     case (cl as SCode.CLASS(name=id),env) /* record class function class */ 
+      local
+        list<SCode.Algorithm> initStmts;
+        list<Absyn.Algorithm> initAbsynStmts;
       equation 
         (funcelts,elts) = buildRecordConstructorClass2(cl,Types.NOMOD(),env);
         reselt = buildRecordConstructorResultElt(funcelts, id, env);
+        initAbsynStmts = Util.listMap1(funcelts,buildRecordConstructorClassAssignCopy,reselt);
+        initStmts = {SCode.ALGORITHM(initAbsynStmts,NONE())};
       then
         SCode.CLASS(id,false,false,SCode.R_FUNCTION(),
-          SCode.PARTS((reselt :: funcelts),{},{},{},{},NONE));
+          SCode.PARTS((reselt :: funcelts),{},{},initStmts,{},NONE));
     case (cl,env) equation
       print("buildRecordConstructorClass failed\n");
       then fail();
   end matchcontinue;
 end buildRecordConstructorClass;
+
+protected function buildRecordConstructorClassAssignCopy
+  input SCode.Element elArg;
+  input SCode.Element elRec;
+  output Absyn.Algorithm out;
+algorithm
+  out := matchcontinue(elArg,elRec)
+    local
+      String argId,recId;
+    case (SCode.COMPONENT(component = argId),SCode.COMPONENT(component = recId))
+      then Absyn.ALG_ASSIGN(Absyn.CREF(Absyn.CREF_QUAL(recId,{},Absyn.CREF_IDENT(argId,{}))),
+                           Absyn.CREF(Absyn.CREF_IDENT(argId,{})));
+  end matchcontinue;
+end buildRecordConstructorClassAssignCopy;
 
 protected function buildRecordConstructorClass2 "help function to buildRecordConstructorClass"
   input SCode.Class cl;
@@ -1880,10 +1929,12 @@ algorithm
   submodlst := buildRecordConstructorResultMod(elts);
   //print(" creating element of type: " +& id +& "\n"); 
   //print(" with generated mods:" +& SCode.printSubs1Str(submodlst) +& "\n");
+  //print(" creating element of type: " +& id +& "\n"); 
+  //print(" with generated mods:" +& SCode.printSubs1Str(submodlst) +& "\n");
   outElement := SCode.COMPONENT("result",Absyn.UNSPECIFIED(),false,false,false,
           SCode.ATTR({},false,false,SCode.RW(),SCode.VAR(),Absyn.OUTPUT()),
           Absyn.TPATH(Absyn.IDENT(id),NONE),
-          SCode.MOD(false,Absyn.NON_EACH(),submodlst,NONE),
+          SCode.MOD(false,Absyn.NON_EACH(),submodlst,NONE), // doesn't work for records containing uniontype fields. Built into initial algorithm instead. // sjoelund
           NONE,NONE,NONE,NONE,NONE);
 end buildRecordConstructorResultElt;
 
@@ -1986,9 +2037,12 @@ algorithm
         (cache,Types.VAR("result",
           Types.ATTR(false,false,SCode.RW(),SCode.VAR(),Absyn.OUTPUT(),Absyn.UNSPECIFIED()),false,ty,Types.UNBOUND()) :: inputvarlst);
           
-    case (_,_,_)
-      equation 
-        Debug.fprint("failtrace", "buildRecordConstructorVarlst failed\n");
+    case (_,cl,_)
+      local
+        String str;
+      equation
+        str = SCode.printClassStr(cl); 
+        Debug.fprintln("failtrace", "buildRecordConstructorVarlst failed" +& str);
       then
         fail();
   end matchcontinue;
