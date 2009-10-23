@@ -233,6 +233,7 @@ public constant ErrorID SELECTED_STATE_DUE_TO_START_NOTIFICATION = 1001;
 public constant ErrorID INTERACTIVE_ASSIGN=5000;
 public constant ErrorID MATCH_SHADOWING=5001;
 public constant ErrorID META_POLYMORPHIC=5002;
+public constant ErrorID META_FUNCTION_TYPE_NO_PARTIAL_PREFIX=5003;
 
 protected constant list<tuple<Integer, MessageType, Severity, String>> errorTable={(SYNTAX_ERROR,SYNTAX(),ERROR(),"Syntax error near: %s"),
           (GRAMMATIC_ERROR,GRAMMAR(),ERROR(),"%s"),
@@ -519,7 +520,8 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (LINSPACE_ILLEGAL_SIZE_ARG,TRANSLATION(),ERROR(),"In expression %s, third argument to linspace must be >= 2"),
           (INTERACTIVE_ASSIGN, SCRIPTING(),ERROR(), "Interactive assignment of %s failed for expression %s."),
           (MATCH_SHADOWING, TRANSLATION(),ERROR(), " Local variable '%s' shadows input or result variables in a {match,matchcontinue} expression."),
-          (META_POLYMORPHIC, TRANSLATION(),ERROR(), " %s uses invalid subtypeof syntax. Only subtypeof Any is supported.")
+          (META_POLYMORPHIC, TRANSLATION(),ERROR(), " %s uses invalid subtypeof syntax. Only subtypeof Any is supported."),
+          (META_FUNCTION_TYPE_NO_PARTIAL_PREFIX, TRANSLATION(),ERROR(), "%s is used as a function reference, but doesn't specify the partial prefix.")
           };
           
 protected import ErrorExt;

@@ -1222,7 +1222,7 @@ algorithm
       Type ty;
       Exp.ComponentRef cref;
       
-   // adrpo: TODO! why not use typeOfValue everywhere here??!!
+    // adrpo: TODO! why not use typeOfValue everywhere here??!!
       
     case ({},_) then MOD(false,Absyn.NON_EACH(),{},NONE);
        
@@ -1269,20 +1269,16 @@ algorithm
           SOME(
           TYPED(Exp.BCONST(b),SOME(Values.BOOL(b)),
           PROP((T_BOOL({}),NONE),C_VAR()))))) :: res),NONE);
-    case ((Values.RECORD(record_ = cname,orderd = vals,comp = val_names, index=i) :: rest),(id :: ids))
+    case (((v as Values.RECORD(index=_)) :: rest),(id :: ids))
       equation 
+        ty = typeOfValue(v);
+        exp = Static.valueExp(v);
         MOD(_,_,res,_) = valuesToMods(rest, ids);
-        rec_call = valuesToRecordConstructorCall(cname, vals);
-        varlst = valuesToVars(vals, val_names);
-        cname_str = Absyn.pathString(cname);
       then
         MOD(false,Absyn.NON_EACH(),
           (NAMEMOD(id,
           MOD(false,Absyn.NON_EACH(),{},
-          SOME(
-          TYPED(rec_call,SOME(Values.RECORD(cname,vals,val_names,i)),
-          PROP((T_COMPLEX(ClassInf.RECORD(cname_str),varlst,NONE,NONE),NONE),
-          C_VAR()))))) :: res),NONE);
+          SOME(TYPED(exp,SOME(v),PROP(ty,C_VAR()))))) :: res),NONE);
           
     case ((v as Values.ENUM(cref, _)) :: rest,(id :: ids))
       equation 
@@ -1315,19 +1311,6 @@ algorithm
         fail();
   end matchcontinue;
 end valuesToMods;
-
-protected function valuesToRecordConstructorCall 
-"function: valuesToRecordConstructorCall  
-  This function transforms a list of values and an Absyn.Path to a function call
-  to a record constructor."
-  input Absyn.Path funcname;
-  input list<Values.Value> values;
-  output Exp.Exp outExp;
-  list<Exp.Exp> expl;
-algorithm 
-  expl := Util.listMap(values, Static.valueExp);
-  outExp := Exp.CALL(funcname,expl,false,false,Exp.OTHER());
-end valuesToRecordConstructorCall;
 
 public function valuesToVars "function valuesToVars
   
@@ -1709,15 +1692,6 @@ algorithm
         true = subtype(t1,t2);
       then true;
     
-        //Part of metamodelica extension, added by, simbj
-        // <uniontype> = <metarecord>
-    case((T_METARECORD(_,_),SOME(path)),(T_UNIONTYPE(lst),_))
-      local
-        list<Absyn.Path> lst;
-        Absyn.Path path;
-      equation
-        true = listMember(path, lst);
-      then true;
     case(t1 as (T_METARECORD(_,_),_), t2 as (T_METARECORD(_,_),_))
       equation
         equality(t1 = t2);
@@ -2479,6 +2453,16 @@ algorithm
       equation 
       then
         "ANYTYPE";
+        
+       /* Uniontype, Metarecord */
+    case ((_,SOME(path)))
+      local Absyn.Path path;
+      equation
+   			s1 = Absyn.pathString(path);
+   			str = "#" +& s1 +& "#";
+      then
+        str;
+    
     case ((_,_))
     then "printTypeStr failed";
   end matchcontinue;
@@ -4044,6 +4028,16 @@ algorithm
       then
         (Exp.META_OPTION(NONE),(T_METAOPTION(t2),p2),polymorphicBindings);
 
+        //Part of metamodelica extension, added by, simbj
+        // <uniontype> = <metarecord>
+    case(e,(T_METARECORD(_,_),SOME(path)),t2 as (T_UNIONTYPE(lst),_),polymorphicBindings,matchFunc)
+      local
+        list<Absyn.Path> lst;
+        Absyn.Path path;
+      equation
+        true = listMember(path, lst);
+      then (e,t2,polymorphicBindings);
+        
         /* MetaModelica Tuple */
     case (Exp.TUPLE(elist),(T_TUPLE(tupleType = tys1),_),(T_METATUPLE(tys2),p2),polymorphicBindings,matchFunc)
       equation 
@@ -4165,6 +4159,24 @@ algorithm
         (e_1,_,polymorphicBindings) = matchFunc(e, t1, t2, polymorphicBindings);
       then
         (Exp.CALL(Absyn.IDENT("mmc_unbox_string"),{e_1},false,true,Exp.STRING),t2,polymorphicBindings);
+    
+    // MM Function Reference. sjoelund
+    case (e as Exp.CREF(_,_),(T_FUNCTION(farg1,t1),p1),(T_FUNCTION(farg2,t2),_),polymorphicBindings,matchFunc)
+      local
+        list<FuncArg> farg,farg1,farg2;
+        list<Type> tList1,tList2;
+        list<Ident> fargId1;
+        list<Exp.Exp> exps;
+      equation
+        tList1 = Util.listMap(farg1, Util.tuple22);
+        tList2 = Util.listMap(farg2, Util.tuple22);
+        fargId1 = Util.listMap(farg1, Util.tuple21);
+        exps = Util.listFill(e, listLength(farg1));
+        (_,tys1,polymorphicBindings) = matchTypeTuple(exps,tList1,tList2,polymorphicBindings,matchFunc);
+        (_,ty1,polymorphicBindings) = matchFunc(e,t1,t2,polymorphicBindings);
+        farg = Util.listThreadMap(fargId1,tys1,Util.makeTuple2);
+        ty2 = (T_FUNCTION(farg,ty1),p1);
+      then (e,ty2,polymorphicBindings);
     
     case (exp,t1,t2,polymorphicBindings,matchFunc)
       equation 
@@ -4914,7 +4926,12 @@ algorithm
     case ((T_METATUPLE(_),_)) then ty;
     case ((T_UNIONTYPE(_),_)) then ty;
     case ((T_BOXED(ty),_)) then ty;
-    case _ equation Debug.fprintln("failtrace", "- Types.unboxedType failed"); then fail();
+    case ty
+      local String str;
+      equation
+        str = unparseType(ty);
+        Debug.fprintln("failtrace", "- Types.unboxedType failed " +& str);
+      then fail();
   end matchcontinue;
 end unboxedType;
 

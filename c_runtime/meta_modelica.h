@@ -69,7 +69,7 @@ typedef int mmc_sint_t;
 #define MMC_NILTEST(x)  (MMC_GETHDR(x) == MMC_NILHDR)
 #define MMC_IMMEDIATE(i)	((void*)(i))
 #define MMC_TAGFIXNUM(i)	((i) << 1)
-#define MMC_UNTAGFIXNUM(X)	(((int) X) >> 1)
+#define MMC_UNTAGFIXNUM(X)	(((mmc_sint_t) X) >> 1)
 #define MMC_REALHDR		(((MMC_SIZE_DBL/MMC_SIZE_INT) << 10) + 9)
 #define MMC_REALDATA(x) (((struct mmc_real*)MMC_UNTAGPTR(x))->data)
 #define MMC_STRINGHDR(nbytes)	(((nbytes)<<(10-MMC_LOG2_SIZE_INT))+((1<<10)+5))

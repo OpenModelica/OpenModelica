@@ -575,6 +575,10 @@ uniontype TTypeTypes "-TType contains the actual type"
     list<Absyn.Path> records;
   end T_UNIONTYPETYPES;
 
+  record T_POLYMORPHICTYPES
+    String id;
+  end T_POLYMORPHICTYPES;
+
   record T_ENUMTYPES end T_ENUMTYPES;
 
   record T_ENUMERATIONTYPES
@@ -727,6 +731,8 @@ uniontype TypeExp
   record METAOPTIONEXP end METAOPTIONEXP;
     
   record UNIONTYPEEXP end UNIONTYPEEXP;
+
+  record POLYMORPHICEXP end POLYMORPHICEXP;
 
   record ENUMEXP end ENUMEXP;
 
@@ -4848,7 +4854,10 @@ algorithm
       then T_METAOPTION(tp);
     case (META_OPTION(NONE)) then T_METAOPTION(OTHER());
     case (METARECORDCALL(_,_,_,_)) then T_UNIONTYPE();
-        
+    case e
+      equation
+        Debug.fprintln("failtrace", "- Exp.typeof failed for " +& printExpStr(e));
+      then fail();
   end matchcontinue;
 end typeof;
 
@@ -6212,6 +6221,7 @@ algorithm
       equation
         s = "COMPLEX(" +& typeVarsStr(vars) +& "):" +& ClassInf.printStateStr(ci); 
       then s;
+    case(_) then "#Exp.typeString failed#";
   end matchcontinue;
 end typeString;
 

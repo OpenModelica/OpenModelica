@@ -5705,6 +5705,7 @@ algorithm
       equation
         path = Exp.crefToPath(cref);
         fn_name = generateFunctionName(path);
+        fn_name = Util.stringReplaceChar(fn_name,".","_");
         cref_str = stringAppend("(modelica_fnptr)_",fn_name);
       then
         (cEmptyFunction,cref_str,tnr);

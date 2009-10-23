@@ -1921,101 +1921,6 @@ algorithm
   end matchcontinue;
 end partialInstClassIn;
 
-/*
-// stefan
-protected function addElaboratedFuncsToProgram
-"function: addElaboratedFuncsToProgram
-	This function is necessary for partially evaluated functions to work.
-	After static elaboration, this function will search through the environment
-	for the new functions that have been generated, and add them to the program
-	so that code may be generated for them"
-	input Env.Cache inCache;
-	input Env.Env inEnv;
-	input SCode.Program inProgram;
-	output SCode.Program outProgram;
-algorithm
-  outProgram := matchcontinue(inCache,inEnv,inProgram)
-    local
-      Env.Cache c;
-      Env.Env env;
-      SCode.Program p,p_1;
-    case(c,env,p)
-      local
-        Option<list<Absyn.Path>> pl;
-      equation
-        pl = Env.getPathListFromCache(c);
-        p_1 = addElaboratedFuncsToProgram2(c,env,pl,p);
-      then
-        p_1;
-  end matchcontinue;
-end addElaboratedFuncsToProgram;
-
-// stefan
-protected function addElaboratedFuncsToProgram2
-"function: addElaboratedFuncsToProgram2
-	helper function to addElaboratedFuncsToProgram"
-	input Env.Cache inCache;
-	input Env.Env inEnv;
-	input Option<list<Absyn.Path>> inPathListOption;
-	input SCode.Program inProgram;
-	output SCode.Program outProgram;
-algorithm
-  outProgram := matchcontinue(inCache,inEnv,inPathListOption,inProgram)
-    local
-      Env.Cache c;
-      Env.Env env;
-      list<Absyn.Path> pl;
-      SCode.Program p,p_1;
-    case(_,_,NONE,p) then p;
-    case(c,env,SOME(pl),p)
-      equation
-        p_1 = addElaboratedFuncsToProgram3(c,env,pl,p);
-      then
-        p_1;
-  end matchcontinue;
-end addElaboratedFuncsToProgram2;
-
-// stefan
-protected function addElaboratedFuncsToProgram3
-"function: addElaboratedFuncsToProgram3
-	helper function to addElaboratedFuncsToProgram2"
-	input Env.Cache inCache;
-	input Env.Env inEnv;
-	input list<Absyn.Path> inPathList;
-	input SCode.Program inProgram;
-	output SCode.Program outProgram;
-algorithm
-  outProgram := matchcontinue(inCache,inEnv,inPathList,inProgram)
-    local
-      Env.Cache c;
-      Env.Env env;
-      Absyn.Path path;
-      list<Absyn.Path> pl;
-      SCode.Program p;
-    case(_,_,{},p) then p;
-    case(c,env,path :: pl,p)
-      local
-        SCode.Program p_1,p_2;
-        SCode.Class cl;
-        Env.Env ie;
-        String debugstr,dstr2,dstr3;
-      equation
-        ie = Env.getCachedInitialEnv(c);
-        debugstr = Env.printCacheStr(c);
-        print(debugstr);
-        dstr2 = Env.printEnvStr(env);
-        dstr3 = Env.printEnvStr(ie);
-        print(dstr2);
-        print(dstr3);
-        (c,cl,env) = Lookup.lookupClass(c,env,path,true);
-        p_1 = cl :: p;
-        p_2 = addElaboratedFuncsToProgram3(c,env,pl,p_1);
-      then
-        p_2;
-  end matchcontinue;
-end addElaboratedFuncsToProgram3;
-*/      
-
 protected function addCachedEnv
 "function: addCachedEnv
   add a new class in the environment obtaining a new environment"
@@ -4920,7 +4825,7 @@ algorithm
       
     /* implicit inst. */
     case (cache,env,ih,_,_,_,_,{},_,_,_,_) then (cache,env,ih);
-    /* A component */ 
+    /* A TPATH component */ 
     case (cache,env,ih,mod,pre,csets,cistate,
         (((comp as SCode.COMPONENT(component = n,
                                    innerOuter=io,
@@ -4930,7 +4835,7 @@ algorithm
                                    attributes = (attr as SCode.ATTR(arrayDims = ad,flowPrefix = flowPrefix,
                                                                     streamPrefix = streamPrefix,accesibility = acc,
                                                                     variability = param,direction = dir)),
-                                   typeSpec = ( tss as Absyn.TPATH(tpp, _)),
+                                   typeSpec = (tss as Absyn.TPATH(tpp, _)),
                                    modifications = m,
                                    baseClassPath = bc,
                                    comment = comment,
@@ -4943,7 +4848,7 @@ algorithm
           SCode.Element selem;
           Types.Mod smod,compModLocal; 
       equation 
-        //print(" adding comp: " +& n +& " " +& Mod.printModStr(mod) +& "\n");
+        // print(" adding comp: " +& n +& " " +& Mod.printModStr(mod) +& "\n");
         compModLocal = Mod.lookupModificationP(mod, tpp);
         m = traverseModAddFinal(m, finalPrefix);
         
@@ -4956,6 +4861,29 @@ algorithm
       then
         (cache,env_2,ih);
                 
+    /* A TCOMPLEX component */ 
+    case (cache,env,ih,Types.NOMOD(),pre,csets,cistate,
+        (((comp as SCode.COMPONENT(component = n,
+                                   innerOuter=io,
+                                   finalPrefix = finalPrefix,
+                                   replaceablePrefix = repl,
+                                   protectedPrefix = prot,
+                                   attributes = (attr as SCode.ATTR(arrayDims = ad,flowPrefix = flowPrefix,
+                                                                    streamPrefix = streamPrefix,accesibility = acc,
+                                                                    variability = param,direction = dir)),
+                                   typeSpec = (t as Absyn.TCOMPLEX(_,_,_)),
+                                   modifications = SCode.NOMOD(),
+                                   baseClassPath = bc,
+                                   comment = comment,
+                                   condition = aExp, 
+                                   info = aInfo,cc=cc)),cmod as Types.NOMOD()) :: xs),
+        allcomps,eqns,instdims,impl) 
+      equation 
+        (cache,env_1,ih) = addComponentsToEnv2(cache, env, ih, Types.NOMOD(), pre, csets, cistate, {(comp,cmod)}, instdims, impl);
+        (cache,env_2,ih) = addComponentsToEnv(cache, env_1, ih, Types.NOMOD(), pre, csets, cistate, xs, allcomps, eqns, instdims, impl);
+      then
+        (cache,env_2,ih);
+
     /* Import statement */
     case (cache,env,ih,mod,pre,csets,cistate,((SCode.IMPORT(_),_) :: xs),allcomps,eqns,instdims,impl)
       equation 
@@ -6654,6 +6582,10 @@ algorithm
     
     // Partial function definitions with no output - stefan
     case (cache,env,_,_,cl as SCode.CLASS(name = id,restriction = SCode.R_FUNCTION(),partialPrefix = true),_,_) then (cache,{},cl);
+    case (cache,env,_,_,SCode.CLASS(name = id,restriction = SCode.R_FUNCTION(),partialPrefix = false),_,_)
+      equation
+        Error.addMessage(Error.META_FUNCTION_TYPE_NO_PARTIAL_PREFIX, {id});
+      then fail();
       
       // MetaModelica Uniontype. Added 2009-05-11 sjoelund
     case (cache,env,_,_,cl as SCode.CLASS(name = id,restriction = SCode.R_UNIONTYPE()),_,_) then (cache,{},cl);
@@ -10260,7 +10192,7 @@ algorithm
 	  rule can match in that case.
 	 This rule is matched first, if it fail the next rule is matched.
 	 If it fails then this rule is matched. 
-	 BZ(2007-05-30): Not so strange it checks for eighter exp1 or exp2 to be from expected type.*/ 
+	 BZ(2007-05-30): Not so strange it checks for eihter exp1 or exp2 to be from expected type.*/ 
       equation 
         (e1_1,Types.PROP(t_1,_)) = Types.matchProp(e1, p1, p2) "Debug.print(\"\\ninst_eq_equation (match e1) PROP, PROP\") &" ;
         dae = instEqEquation2(e1_1, e2, t_1, initial_);
@@ -10269,7 +10201,7 @@ algorithm
     case (e1,(p1 as Types.PROP(type_ = t1)),e2,(p2 as Types.PROP(type_ = t2)),initial_,impl) /* If it fails then this rule is matched. */ 
       equation 
         (e2_1,Types.PROP(t_1,_)) = Types.matchProp(e2, p2, p1) "Debug.print(\"\\ninst_eq_equation (match e2) PROP, PROP\") &" ;
-        dae = instEqEquation2(e1, e2_1, t_1, initial_) "	Debug.print(\"\\n Second rule of function_ inst_eq_equation \") & 	& Debug.print(\"\\n Second rule complete. \")" ;
+        dae = instEqEquation2(e1, e2_1, t_1, initial_) "  Debug.print(\"\\n Second rule of function_ inst_eq_equation \") &   & Debug.print(\"\\n Second rule complete. \")" ;
       then
         dae;
     case (e1,(p1 as Types.PROP_TUPLE(type_ = t1)),e2,(p2 as Types.PROP_TUPLE(type_ = t2)),initial_,impl) /* PR. */ 
@@ -10403,8 +10335,23 @@ algorithm
       then
         {dae};
 
-    /* MetaModelica lists */
+    /* MetaModelica types */
     case (e1,e2,(Types.T_LIST(_),_),initial_)
+      equation
+        dae = makeDaeEquation(e1, e2, initial_);
+      then
+        {dae};
+    case (e1,e2,(Types.T_METATUPLE(_),_),initial_)
+      equation
+        dae = makeDaeEquation(e1, e2, initial_);
+      then
+        {dae};
+    case (e1,e2,(Types.T_METAOPTION(_),_),initial_)
+      equation
+        dae = makeDaeEquation(e1, e2, initial_);
+      then
+        {dae};
+    case (e1,e2,(Types.T_UNIONTYPE(_),_),initial_)
       equation
         dae = makeDaeEquation(e1, e2, initial_);
       then
@@ -10450,13 +10397,7 @@ algorithm
     case (e1,e2,t,initial_)
       local tuple<Types.TType, Option<Absyn.Path>> t;
       equation 
-        //Debug.fprint("failtrace", "- inst_eq_equation_2 failed\n exp1=");
-        Debug.fcall("failtrace", Exp.printExp, e1);
-        //Debug.fprint("failtrace", " exp2=");
-        Debug.fcall("failtrace", Exp.printExp, e2);
-        //Debug.fprint("failtrace", " type =");
-        Debug.fprint("failtrace", Types.printTypeStr(t));
-        //Debug.fprint("failtrace", "\n");
+        Debug.fprintln("failtrace", "- Inst.instEqEquation2 failed");
       then
         fail();
   end matchcontinue;

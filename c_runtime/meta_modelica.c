@@ -268,7 +268,7 @@ int mmc_boxes_equal(void* lhs, void* rhs)
   void *lhs_data, *rhs_data;
   struct record_description *lhs_desc,*rhs_desc;
 
-  if ((0 == ((int)lhs & 1)) && (0 == ((int)rhs & 1))) {
+  if ((0 == ((mmc_sint_t)lhs & 1)) && (0 == ((mmc_sint_t)rhs & 1))) {
     return lhs == rhs;
   }
   
@@ -367,8 +367,8 @@ void printAny(void* any) /* For debugging */
   void *data;
   struct record_description *desc;
 
-  if ((0 == ((int)any & 1))) {
-    printf("%d", ((int)any)>>1);
+  if ((0 == ((mmc_sint_t)any & 1))) {
+    printf("%d", (int) ((mmc_sint_t)any)>>1);
     return;
   }
   
@@ -380,7 +380,7 @@ void printAny(void* any) /* For debugging */
   }
 
   if (hdr == MMC_REALHDR) {
-    printf("%f", mmc_prim_get_real(MMC_REALDATA(any)));
+    printf("%.7g", (double) mmc_prim_get_real(any));
     return;
   }
   if (MMC_HDRISSTRING(hdr)) {
@@ -445,20 +445,20 @@ void printAny(void* any) /* For debugging */
 /* Unboxing */
 mmc__unbox__integer_rettype mmc__unbox__integer(metamodelica_type box)
 {
-  assert(0 == (((int)box) & 1));  
+  assert(0 == (((mmc_sint_t)box) & 1));  
   return MMC_UNTAGFIXNUM(box);
 }
 
 mmc__unbox__real_rettype mmc__unbox__real(metamodelica_type box)
 {
-  assert(1 == (((int)box) & 1));  
+  assert(1 == (((mmc_sint_t)box) & 1));  
   assert(MMC_REALHDR == MMC_GETHDR(box));
   return mmc_prim_get_real(box);
 }
 
 mmc__unbox__string_rettype mmc__unbox__string(metamodelica_type box)
 {
-  assert(1 == (((int)box) & 1));  
+  assert(1 == (((mmc_sint_t)box) & 1));  
   assert(MMC_HDRISSTRING(MMC_GETHDR(box)));
   return MMC_STRINGDATA(box);
 }

@@ -46,9 +46,7 @@ public import Absyn;
 public import SCode;
 public import DAE;
 public import RTOpts;
-public import Values;
 public import ClassInf;
-protected import Dump;
 
 public function isList "function: isList
 	author: KS
@@ -1510,6 +1508,11 @@ algorithm
         tSpecList = Util.listMap(tList,typeConvert);
       then Absyn.TCOMPLEX(Absyn.IDENT("tuple"),tSpecList,NONE());
     
+    case ((Types.T_POLYMORPHIC(id),_))
+      local
+        String id;
+      then Absyn.TPATH(Absyn.IDENT(id),NONE);
+    
     case ((_,SOME(p)))
       local
         Absyn.Path p;
@@ -1518,7 +1521,7 @@ algorithm
       local String str;
       equation
         str = Types.unparseType(t);
-        Debug.fprintln("matchcase", "- DFA.typeConvert failed: " +& str);
+        Debug.fprintln("matchcase", "- MetaUtil.typeConvert failed: " +& str);
       then fail();
   end matchcontinue;
 end typeConvert;

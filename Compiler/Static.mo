@@ -1832,138 +1832,6 @@ algorithm
 end elabTuple;
 
 // stefan
-// partially evaluted functions
-/*protected function elabPartEvalFunction
-"function: elabPartEvalFunction
-	This function elaborates partially evaluated functions.
-	Turns an Absyn.PARTEVALFUNCTION into an Exp.CREF pointing to the new class"
-	input Env.Cache inCache;
-	input Env.Env inEnv;
-	input Absyn.Exp inExp;
-	input Option<Interactive.InteractiveSymbolTable> inInteractiveSymbolTableOption;
-	input Boolean inBoolean;
-	input Boolean performVectorization;
-	output Env.Cache outCache;
-	output Exp.Exp outExp;
-	output Types.Properties outProperties;
-	output Option<Interactive.InteractiveSymbolTable> outInteractiveSymbolTableOption;
-algorithm
-  (outCache,outExp,outProperties,outInteractiveSymbolTableOption) :=
-  matchcontinue (inCache,inEnv,inExp,inInteractiveSymbolTableOption,inBoolean,performVectorization)
-    local
-      Env.Cache c;
-      Env.Env env;
-      Absyn.Exp ae;
-      Option<Interactive.InteractiveSymbolTable> st;
-      Boolean impl,pv;
-      Absyn.ComponentRef cref,cref_1;
-      Absyn.FunctionArgs fargs;
-    case(c,env,Absyn.PARTEVALFUNCTION(cref,fargs),st,impl,pv)
-      local
-        Exp.Exp e;
-        Types.Properties prop;
-        String s,s2,s_1,debug;
-        Absyn.Path p;
-      equation
-        s = Absyn.printComponentRefStr(cref);
-        s2 = MetaUtil.generateFuncNameSuffix(fargs);
-        s_1 = stringAppend(s,s2);
-        p = Absyn.makeIdentPathFromString(s_1);
-        cref_1 = Absyn.pathToCref(p);
-        debug = Env.printCacheStr(c);
-        print(debug);
-        (c,e,prop,_) = elabCref(c,env,cref_1,impl,pv);
-      then
-        (c,e,prop,st);
-  end matchcontinue;
-end elabPartEvalFunction;*/
-/*
-	input Env.Cache inCache;
-  input Env.Env inEnv;
-  input Absyn.ComponentRef inComponentRef;
-  input Boolean inBoolean "implicit instantiation";
-  input Boolean performVectorization "true => generates vectorized expressions, {v[1],v[2],...}";
-  output Env.Cache outCache;
-  output Exp.Exp outExp;
-  output Types.Properties outProperties;
-  output SCode.Accessibility outAccessibility;
-*/
-// stefan
-// partially evaluated functions
-/*protected function elabPartEvalFunction "function: elabPartEvalFunction
-
-  This function elaborates partially evaluated functions.
-  
-  It adds a new function to the environment each time one is passed as an argument"
-  
-  input Env.Cache inCache;
-  input Env.Env inEnv;
-  input Absyn.Exp inAbsynExp;
-  input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Boolean inBoolean;
-  input Boolean performVectorization;
-  output Env.Cache outCache;
-  output Exp.Exp outExp;
-  output Types.Properties outProperties;
-  output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
-algorithm
-  (outCache,outExp,outProperties,outInteractiveSymbolTableOption) := 
-  matchcontinue (inCache,inEnv,inAbsynExp,inInteractiveInteractiveSymbolTableOption,inBoolean,performVectorization)
-    local
-      Env.Cache c;
-      Env.Env env,env_1;
-      Absyn.Exp e1;
-      Option<Interactive.InteractiveSymbolTable> st,st_1;
-      Absyn.FunctionArgs fargs;
-      Absyn.ComponentRef cref,cref_1;
-      Types.Properties prop;
-      Boolean ib,pv;
-      
-      //fargs = FUNCTIONARGS(args=e_args,argNames=names)
-    case(c,env,Absyn.PARTEVALFUNCTION(function_=cref,functionArgs=fargs),st,ib,pv)
-      local
-        Exp.Exp e;
-        Absyn.Path p,p_1;
-        String s1,s2,s3;
-        list<Absyn.ComponentRef> creflist;
-        list<String> argNameList;
-        SCode.Class cl;
-        list<Exp.Exp> elabArgList;
-        //Env.Env ie;
-      equation
-        // 
-        // TODO: Rethink the way new function names are generated!
-        //print("\nSTEFAN DEBUG\n");
-        p = Absyn.crefToPath(cref);
-        s1 = Absyn.pathString(p);
-        (c,cl,env_1) = Lookup.lookupClass(c,env,p,true);
-        cl = SCode.setComponentsToFuncArgs(cl,fargs);
-        (c,elabArgList,argNameList,st) = elabPartEvalFuncArgs(c,env,fargs,ib,st,pv);
-        s2 = generateFuncNameSuffix(argNameList,elabArgList);
-        s3 = stringAppend(s1,s2);
-        p_1 = Absyn.makeIdentPathFromString(s3);
-        cref_1 = Absyn.pathToCref(p_1);
-        cl = SCode.renameClass(s3,cl);
-        cl = SCode.parametrizeInputs(cl);
-        //env = Env.openScope(env,ib,SOME(s3));
-        //ie = Env.getCachedInitialEnv(c);
-        env = Env.extendFrameC(env_1,cl);
-        c = Env.cacheAdd(p_1,c,env);
-        //env = Env.updateEnvClasses(ie,env);
-        //c = Env.setCachedInitialEnv(c,env);
-        c = Env.addPathToCachePathList(p_1,c);
-        st_1 = Interactive.addClassToSymbolTable(cl,st);
-        //(e_args,n_args) = Absyn.extractArgs(fargs);
-        //(c,_,prop) = elabCallArgs(c,env,p_1,e_args,n_args,ib,st);
-        (c,e,prop,_) = elabCref(c,env,cref_1,ib,pv);
-        prop = Types.makePropsNotConst(prop);
-        //e = Exp.CREF(cref_1, Exp.T_FUNCTION_REFERENCE);
-      then
-        (c,e,prop,st_1);
-  end matchcontinue;
-end elabPartEvalFunction;*/
-
-// stefan
 protected function elabPartEvalFuncArgs
 "function: elabPartEvalFuncArgs
 	Helper function to elabPartEvalFunction
@@ -8045,34 +7913,22 @@ algorithm
     case (cache,env,fn,args,nargs,impl,st)
       local list<SCode.Element> comps; list<String> names; 
       equation
-        Debug.fprintln("xyz", "1");
         (cache,cl as SCode.CLASS(_,_,_,SCode.R_PACKAGE(),_),_) = 
            Lookup.lookupClass(cache, env, Absyn.IDENT("GraphicalAnnotationsProgram____"), false);                
-        Debug.fprintln("xyz", "2");
         (cache,cl as SCode.CLASS(name,_,_,SCode.R_RECORD(),_),env_1) = Lookup.lookupClass(cache, env, fn, false);
-        Debug.fprintln("xyz", "3");
         (cl,env_2) = Lookup.lookupRecordConstructorClass(env_1 /* env */, fn);
-        Debug.fprintln("xyz", "4");
         (comps,_::names) = getClassComponents(cl); // remove the fist one as it is the result! 
-        Debug.fprintln("xyz", "5");
         /*
         (cache,(t as (Types.T_FUNCTION(fargs,(outtype as (Types.T_COMPLEX(complexClassType as ClassInf.RECORD(name),_,_,_),_))),_)),env_1) 
         	= Lookup.lookupType(cache, env, fn, true);
         */
         fargs = Util.listMap(names, createDummyFarg);
-        Debug.fprintln("xyz", "6");
         slots = makeEmptySlots(fargs); 
-        Debug.fprintln("xyz", "7");
         (cache,args_1,newslots,constlist,_) = elabInputArgs(cache, env, args, nargs, slots, false /*checkTypes*/ ,impl,{});
-        Debug.fprintln("xyz", "8");
         const = calculateConstantness(constlist);
-        Debug.fprintln("xyz", "9");
         (cache,newslots2) = fillDefaultSlots(cache, newslots, cl, env_2, impl);
-        Debug.fprintln("xyz", "10");
         args_2 = expListFromSlots(newslots2);
-        Debug.fprintln("xyz", "11");
         tp = complexTypeFromSlots(newslots2,"",ClassInf.UNKNOWN(""));
-        Debug.fprintln("xyz", "12");
         //tyconst = elabConsts(outtype, const);
         //prop = getProperties(outtype, tyconst);
       then

@@ -266,8 +266,16 @@ realString_rettype realString(modelica_real r)
    * Add safety margin. */
   static char buffer[32];
   modelica_string_t res;
-  sprintf(buffer, "%.16g", r);
-  init_modelica_string(&res, buffer);
+  if (isinf(r) && r < 0)
+    init_modelica_string(&res, "-inf");
+  else if (isinf(r))
+    init_modelica_string(&res, "inf");
+  else if (isnan(r))
+    init_modelica_string(&res, "NaN");
+  else if (snprintf(buffer, 32, "%.16g", r) <= 0)
+    throw 1;
+  else
+    init_modelica_string(&res, buffer);
   return res;
 }
 

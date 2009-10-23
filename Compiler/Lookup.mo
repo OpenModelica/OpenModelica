@@ -1934,7 +1934,7 @@ algorithm
   outElement := SCode.COMPONENT("result",Absyn.UNSPECIFIED(),false,false,false,
           SCode.ATTR({},false,false,SCode.RW(),SCode.VAR(),Absyn.OUTPUT()),
           Absyn.TPATH(Absyn.IDENT(id),NONE),
-          SCode.MOD(false,Absyn.NON_EACH(),submodlst,NONE), // doesn't work for records containing uniontype fields. Built into initial algorithm instead. // sjoelund
+          SCode.MOD(false,Absyn.NON_EACH(),submodlst,NONE),
           NONE,NONE,NONE,NONE,NONE);
 end buildRecordConstructorResultElt;
 

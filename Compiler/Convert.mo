@@ -315,6 +315,7 @@ algorithm
     case (DAE.METAOPTION()) equation then Exp.METAOPTIONEXP();
     case (DAE.UNIONTYPE()) then Exp.UNIONTYPEEXP();
     case (DAE.EXT_OBJECT(p)) equation then Exp.EXT_OBJECTEXP(p);
+    case (DAE.POLYMORPHIC()) then Exp.POLYMORPHICEXP();    
     case _ equation Debug.fprintln("failtrace", "- Convert.typeConvert failed"); then fail();
   end matchcontinue;
 end typeConvert;
@@ -921,6 +922,7 @@ algorithm
     case (Exp.METATUPLEEXP()) equation then DAE.METATUPLE();
     case (Exp.METAOPTIONEXP()) equation then DAE.METAOPTION();
     case (Exp.UNIONTYPEEXP()) then DAE.UNIONTYPE();
+    case (Exp.POLYMORPHICEXP()) then DAE.POLYMORPHIC();
     case (Exp.EXT_OBJECTEXP(p)) equation then DAE.EXT_OBJECT(p);
     case _ equation Debug.fprintln("failtrace", "- Convert.typeConvert2 failed"); then fail();
   end matchcontinue;
@@ -1414,6 +1416,13 @@ algorithm
 	    ret = ((Types.T_FUNCTION(lst2,fType2),p));
 	  then ret;
 
+   	case ((Exp.T_POLYMORPHICTYPES(id),p))
+   	  local
+   	    String id;
+   	  equation
+   	    ret = ((Types.T_POLYMORPHIC(id),p));
+   	  then ret;
+
 	  case ((Exp.T_NOTYPETYPES(),p))
 	  equation
 	    ret = ((Types.T_NOTYPE(),p));
@@ -1880,6 +1889,13 @@ algorithm
 	    fType2 = fromTypeToTypeTypes(fType);
 	    ret = ((Exp.T_FUNCTIONTYPES(lst2,fType2),p));
 	  then ret;
+	    
+	  case ((Types.T_POLYMORPHIC(id),p))
+	    local
+	      String id;
+	    equation
+	      ret = (Exp.T_POLYMORPHICTYPES(id),p);
+	    then ret;
 
 	  case ((Types.T_NOTYPE(),p))
 	  equation
