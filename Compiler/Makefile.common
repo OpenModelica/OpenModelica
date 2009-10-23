@@ -92,5 +92,6 @@ ALLMO = $(SRCMO) DAEEXT.mo Print.mo RTOpts.mo System.mo Parser.mo \
 SRCC=	$(SRCMO:.mo=.c)
 SRCH=	$(SRCMO:.mo=.h)
 SRCSIG=	$(ALLMO:.mo=.sig)
+SRCSIGX=	$(ALLMO:.mo=.sigx)
 SRCO=	$(SRCC:.c=.o)
 

@@ -57,7 +57,7 @@ RMLCFLAGS = -Wr,-ftrace
 
 SUBDIRS	= $(srcdir)/runtime $(srcdir)/absyn_builder $(srcdir)/modpar
 
-all : $(ALLMO) $(SRCSIG) subdirs $(PROG)
+all : $(ALLMO) $(SRCSIGX) subdirs $(PROG)
 
 
 .SUFFIXES:
@@ -81,8 +81,9 @@ $(SRCHSRCDIR) : $(srcdir)/%.h : %.h
 $(SRCH): %.h : %.mo
 	$(RMLC) $(RMLCFLAGS) -c $<
 
-$(SRCSIG): %.sig : %.mo
+$(SRCSIGX): %.sigx : %.mo
 	$(srcdir)/rml2sig/rmldep-new.sh $<
+	@touch $@
 
 vctarget: $(SRCC) absyn_subdir
 
