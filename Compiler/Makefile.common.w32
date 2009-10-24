@@ -55,8 +55,7 @@ SRCMO= Absyn.mo \
 	DAEQuery.mo \
 	XMLDump.mo \
 	Refactor.mo \
-	InstanceHierarchy.mo
-	DAEQuery.mo \
+	InstanceHierarchy.mo \
 	XMLDump.mo 
 
 ALLMO = $(SRCMO) \

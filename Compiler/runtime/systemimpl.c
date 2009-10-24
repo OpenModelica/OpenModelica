@@ -4378,6 +4378,10 @@ void *mmc_list_reverse(void* data) {
 int mmc_to_value(void* mmc, void** res)
 {
   mmc_uint_t hdr;
+  int numslots;
+  unsigned ctor;
+  int i;
+  void* t;
   if (0 == ((int)mmc & 1)) {
     *res = Values__INTEGER(mmc);
     return 0;
@@ -4396,10 +4400,9 @@ int mmc_to_value(void* mmc, void** res)
     return 0;
   }
 
-  int numslots = RML_HDRSLOTS(hdr);
-  unsigned ctor = 255 & (hdr >> 2);
-  int i;
-  void* t;
+  numslots = RML_HDRSLOTS(hdr);
+  ctor = 255 & (hdr >> 2);
+
 
   if (numslots>0 && ctor > 1) { /* RECORD */
     void *namelst = (void *) mk_nil();
@@ -4440,8 +4443,9 @@ int mmc_to_value(void* mmc, void** res)
 
   if (numslots==2 && ctor==1) { /* CONS-PAIR */
     /* Transform list by first reversing it to preserve the order */
+	void *varlst;
     mmc = mmc_list_reverse(mmc);
-    void *varlst = (void *) mk_nil();
+    varlst = (void *) mk_nil();
     while (!MMC_NILTEST(mmc)) {
       assert(0 == mmc_to_value(MMC_CAR(mmc),&t));
       varlst = mk_cons(t, varlst);
