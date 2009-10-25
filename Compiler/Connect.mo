@@ -1087,7 +1087,7 @@ algorithm
 				vars = listAppend(v1, listAppend(v2,v3));
 				*/
 				
-				//print("Outside connectors, v1: " +& Util.stringDelimitList(Util.listMap(v1,Exp.printComponentRefStr),", ") +& "\n");
+				//print("\n Outside connectors, v1: " +& Util.stringDelimitList(Util.listMap(v1,Exp.printComponentRefStr),", ") +& "\n");
 				//print(" Inside connectors, v2: " +& Util.stringDelimitList(Util.listMap(v2,Exp.printComponentRefStr),", ") +& "\n");
 				 
         vars = listAppend(v1, v2);

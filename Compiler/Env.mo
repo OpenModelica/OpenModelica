@@ -1596,7 +1596,6 @@ algorithm
       equation 
         lst1 = localInsideConnectorFlowvars3(xs, oid);
         (_,false) = Inst.innerOuterBooleans(io);
-        //lst2 = Types.flowVariables(vars, Exp.CREF_QUAL(oid,Exp.COMPLEX(name,{},ClassInf.CONNECTOR(name)),{},Exp.CREF_IDENT(id,Exp.COMPLEX(name,{},ClassInf.CONNECTOR(name)),{})));
         // We set type unknown for inside connectors for the check of "unconnected connectors".
         lst2 = Types.flowVariables(vars, Exp.CREF_QUAL(oid,Exp.COMPLEX(name,{},ClassInf.UNKNOWN("unk")),{},
                                                            Exp.CREF_IDENT(id,Exp.COMPLEX(name,{},
@@ -1604,6 +1603,28 @@ algorithm
         res = listAppend(lst1, lst2);
       then
         res;
+    case ((Types.VAR(name = id,attributes=Types.ATTR(innerOuter=io),type_ = (tmpty as (Types.T_ARRAY(ad,_),_))) :: xs),oid)
+      local
+        Types.ArrayDim ad;
+        list<Integer> adims;
+        list<Types.Var> tvars;
+        Types.Type tmpty,flatArrayType;
+        list<list<Exp.Subscript>> indexSubscriptLists;
+        Exp.ComponentRef connectorRef;
+        Boolean isExpandable;
+        
+      equation 
+        ((flatArrayType as (Types.T_COMPLEX(ClassInf.CONNECTOR(string = name, isExpandable=isExpandable),tvars,_,_),_)),adims) = Types.flattenArrayType(tmpty);
+        (_,false) = Inst.innerOuterBooleans(io); 
+        true = Types.isComplexConnector(flatArrayType);
+        indexSubscriptLists = createSubs(adims);
+        lst1 = localInsideConnectorFlowvars3_2(tvars, id, indexSubscriptLists);
+        connectorRef = Exp.CREF_QUAL(oid,Exp.COMPLEX(name,{},ClassInf.UNKNOWN("unk")),{},
+                                     Exp.CREF_IDENT(id,Exp.COMPLEX(name,{},ClassInf.CONNECTOR(name,isExpandable)),{}));
+        lst1 = localInsideConnectorFlowvars3_3(tvars,connectorRef,indexSubscriptLists);
+        //print(" Array refs: " +& Util.stringDelimitList(Util.listMap(lst1,Exp.printComponentRefStr),", ") +& "\n");
+      then lst1;
+        
     case ((_ :: xs),oid)
       equation 
         res = localInsideConnectorFlowvars3(xs, oid);
@@ -1611,6 +1632,31 @@ algorithm
         res;
   end matchcontinue;
 end localInsideConnectorFlowvars3;
+
+protected function localInsideConnectorFlowvars3_3 "
+Author BZ, 2009-10
+Helper function for localInsideConnectorFlowvars3, handles the case with inside array connectors
+" 
+input list<Types.Var> connectorSubs;
+input Exp.ComponentRef baseRef;
+input list<list<Exp.Subscript>> ssubs;
+output list<Exp.ComponentRef> outRefs;
+algorithm outRefs := matchcontinue(connectorSubs,baseRef,ssubs)
+  local
+    list<Exp.Subscript> s;
+    list<Exp.ComponentRef> lst1,lst2;
+  case({},_,_) then {};
+  case(_,_,{}) then {};
+  case(connectorSubs,baseRef,s::ssubs)
+    equation
+      lst1 = localInsideConnectorFlowvars3_3(connectorSubs,baseRef,ssubs);
+      baseRef = Exp.subscriptCref(baseRef,s);
+      lst2 = Types.flowVariables(connectorSubs, baseRef);
+      outRefs = listAppend(lst1,lst2);
+      then
+        outRefs;
+  end matchcontinue;
+end localInsideConnectorFlowvars3_3;
 
 protected function localInsideConnectorFlowvars3_2 "
 Author: BZ, 2009-05
