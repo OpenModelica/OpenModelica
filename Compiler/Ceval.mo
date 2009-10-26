@@ -87,6 +87,7 @@ protected import Dump;
 protected import DAE;
 protected import Prefix;
 protected import Connect;
+protected import ClassInf;
 
 public function ceval 
 "function: ceval
@@ -1080,14 +1081,14 @@ algorithm
         fail();
 
         /* Record constructors */
-        /*
-    case(cache,env,(e as Exp.CALL(path = funcpath,ty = Exp.COMPLEX(name = "", varLst=varLst))),vallst,msg,st)
+    case(cache,env,(e as Exp.CALL(path = funcpath,ty = Exp.COMPLEX(complexClassType = ClassInf.RECORD(_), varLst=varLst))),vallst,msg,st)
       local
         list<Exp.Var> varLst; list<String> varNames; String complexName, lastIdent;
       equation
         varNames = Util.listMap(varLst,Exp.varName);
-      then (cache,Values.RECORD(funcpath,vallst,varNames),st);
+      then (cache,Values.RECORD(funcpath,vallst,varNames,-1),st);
       
+      /*
     case(cache,env,(e as Exp.CALL(path = funcpath,ty = Exp.COMPLEX(name = complexName, varLst=varLst))),vallst,msg,st)
       local
         list<Exp.Var> varLst; list<String> varNames; String complexName, lastIdent;
@@ -1095,7 +1096,9 @@ algorithm
         true = complexName ==& Absyn.pathLastIdent(funcpath);
         varNames = Util.listMap(varLst,Exp.varName);
       then (cache,Values.RECORD(funcpath,vallst,varNames),st);
+      */
       
+        /*
     case (cache,env,(e as Exp.CALL(path = funcpath,expLst = expl,builtin = builtin)),vallst,msg,st)
       local
         Absyn.Path p2;
@@ -1401,7 +1404,8 @@ algorithm
       String s;
       Env.Cache cache;
       Env.Env env_2;
-      // Not working properly ! /sjoelund
+      // Not working properly (only non-nested records)! /sjoelund
+      /*
     case (cache,env,funcname,vallst,impl,msg) "For record constructors"
       equation 
         (_,_) = Lookup.lookupRecordConstructorClass(env, funcname);
@@ -1413,12 +1417,13 @@ algorithm
         (cache, value) = DAE.daeToRecordValue(cache, env_2, funcname, dae, impl) "adrpo: We need the env here as we need to do variable Lookup!"; 
       then
         (cache,value);
+      */
         
     case (cache,env,funcname,vallst,(impl as true),msg)
       equation 
-        Debug.fprint("failtrace", "- Ceval.cevalFunction: Don't know what to do. impl was always false before:");
+        /*Debug.fprint("failtrace", "- Ceval.cevalFunction: Don't know what to do. impl was always false before:");
         s = Absyn.pathString(funcname);
-        Debug.fprintln("failtrace", s);
+        Debug.fprintln("failtrace", s);*/
       then
         fail();
   end matchcontinue;
