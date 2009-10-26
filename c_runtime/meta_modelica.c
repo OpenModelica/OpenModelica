@@ -39,25 +39,25 @@ union mmc_double_as_words {
 
 void *mmc_alloc_bytes(unsigned nbytes)
 {
-    void *p;
-    if( (p = malloc(nbytes)) == 0 ) {
-	fprintf(stderr, "malloc(%u) failed: %s\n", nbytes, strerror(errno));
-	exit(1);
-    }
-    return p;
+  void *p;
+  if( (p = malloc(nbytes)) == 0 ) {
+    fprintf(stderr, "malloc(%u) failed: %s\n", nbytes, strerror(errno));
+    exit(1);
+  }
+  return p;
 }
 
 void *mmc_alloc_words(unsigned nwords)
 {
-    return mmc_alloc_bytes(nwords * sizeof(void*));
+  return mmc_alloc_bytes(nwords * sizeof(void*));
 }
 
 void mmc_prim_set_real(struct mmc_real *p, double d)
 {
-    union mmc_double_as_words u;
-    u.d = d;
-    p->data[0] = u.data[0];
-    p->data[1] = u.data[1];
+  union mmc_double_as_words u;
+  u.d = d;
+  p->data[0] = u.data[0];
+  p->data[1] = u.data[1];
 }
 
 double mmc_prim_get_real(void *p)
@@ -333,7 +333,7 @@ int mmc_boxes_equal(void* lhs, void* rhs)
   }
 
   fprintf(stderr, "%s:%d: %d slots; ctor %d - FAILED to detect the type\n", __FILE__, __LINE__, numslots, ctor);
-  abort();
+  exit(1);
 }
 
 mmc__uniontype__metarecord__typedef__equal_rettype
@@ -439,7 +439,7 @@ void printAny(void* any) /* For debugging */
   }
 
   fprintf(stderr, "%s:%d: %d slots; ctor %d - FAILED to detect the type\n", __FILE__, __LINE__, numslots, ctor);
-  abort();
+  exit(1);
 }
 
 /* Unboxing */

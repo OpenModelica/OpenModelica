@@ -4,13 +4,17 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 import java.util.Vector;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
 
+import javax.lang.model.SourceVersion;
 import javax.tools.Tool;
 import javax.tools.ToolProvider;
 
@@ -64,11 +68,16 @@ public class JarCreator {
   }
   private static void compileSources(File basePath, List<File> sourceFiles) {
     Tool javac = ToolProvider.getSystemJavaCompiler();
-    if (javac == null)
-      throw new Error("Fatal Error: Couldn't find a Java compiler");
+    if (javac == null) {
+      String message = "The Java implementation couldn't find a Java compiler.";
+      if (System.getProperty("os.name").startsWith("Windows"))
+        message += "\nNote that Sun Java has a bug that causes getSystemJavaCompiler to return null if you run the JRE instead of JDK (which it does by default since the JRE java version is installed in system32).\n" +
+                   "Call JDK_HOME/bin/java.exe instead of java.exe.";
+      throw new Error(message);
+    }
     
     for (File sourceFile : sourceFiles) {
-      if (javac.run(null, null, null, "-sourcepath", basePath.getAbsolutePath(), sourceFile.getAbsolutePath()) != 0)
+      if (javac.run(null, null, null, "-classpath", System.getenv("OPENMODELICAHOME") + "share/java/modelica_java.jar","-sourcepath", basePath.getAbsolutePath(), sourceFile.getAbsolutePath()) != 0)
         throw new RuntimeException("Failed to compile " + sourceFile);
     }
   }
@@ -85,7 +94,10 @@ public class JarCreator {
     compileSources(basePath, sourceFiles);
     archiveFile.delete();
     FileOutputStream stream = new FileOutputStream(archiveFile);
-    JarOutputStream out = new JarOutputStream(stream, new Manifest());
+    Manifest m = new Manifest();
+    m.getMainAttributes().putValue("Manifest-Version", "1.0");
+    m.getMainAttributes().putValue("Created-By", JarCreator.class.getName());
+    JarOutputStream out = new JarOutputStream(stream, m);
 
     
     List<File> allFiles = getFileListing(basePath);

@@ -158,19 +158,19 @@ void loadJNI()
 
     if (libVM == NULL) {
       fprintf(stderr, "Failed to dynamically load JVM\nEnvironment JAVA_HOME = '%s'\nWindows Registry JAVA_HOME = '%s'\n", java_home_env, java_home_registry);
-      abort();
+      exit(EXIT_CODE_JAVA_ERROR);
     }
 
     OMC_GetCreatedJavaVMs = (GetCreatedJavaVMsFunc) GetProcAddress(libVM, "JNI_GetCreatedJavaVMs");
     if (OMC_GetCreatedJavaVMs == NULL) {
       fprintf(stderr, "GetProcAddress(JNI_GetCreatedJavaVMs) failed\n");
-      abort();
+      exit(EXIT_CODE_JAVA_ERROR);
     }
 
     OMC_CreateJavaVM = (CreateJavaVMFunc) GetProcAddress(libVM, "JNI_CreateJavaVM");
     if (OMC_CreateJavaVM == NULL) {
       fprintf(stderr, "GetProcAddress(JNI_CreateJavaVM)  failed\n");
-      abort();
+      exit(EXIT_CODE_JAVA_ERROR);
     }
   }
 }
@@ -218,7 +218,7 @@ void loadJNI()
 
     if (libVM == NULL) {
       fprintf(stderr, "Failed to dynamically load JVM\nEnvironment JAVA_HOME = '%s'\nDefault JAVA_HOME '%s'\n", java_home, default_java_home);
-      abort();
+      exit(EXIT_CODE_JAVA_ERROR);
     }
 
     /*
@@ -227,17 +227,17 @@ void loadJNI()
      */
     if (libVM == NULL) {
       fprintf(stderr, "dlopen failed: %s\n", dlerror());
-      abort();
+      exit(EXIT_CODE_JAVA_ERROR);
     }
     *(void **) (&OMC_CreateJavaVM) = dlsym(libVM, "JNI_CreateJavaVM");
     if (OMC_CreateJavaVM == NULL) {
       fprintf(stderr, "dlsym(JNI_CreateJavaVM) failed: %s\n", dlerror());
-      abort();
+      exit(EXIT_CODE_JAVA_ERROR);
     }
     *(void **) (&OMC_GetCreatedJavaVMs) = dlsym(libVM, "JNI_GetCreatedJavaVMs");
     if (OMC_GetCreatedJavaVMs == NULL) {
       fprintf(stderr, "dlsym(JNI_GetCreatedJavaVMs) failed: %s\n", dlerror());
-      abort();
+      exit(EXIT_CODE_JAVA_ERROR);
     }
   }
 }
@@ -268,7 +268,7 @@ JNIEnv* getJavaEnv()
 
   if (OMC_GetCreatedJavaVMs(&jvm, 1, &nVMs)) {
     fprintf(stderr, "JNI_GetCreatedJavaVMs returned error\n");
-    abort();
+    exit(EXIT_CODE_JAVA_ERROR);
   }
 
   if (nVMs == 1) {
@@ -282,7 +282,7 @@ JNIEnv* getJavaEnv()
   openmodelicahome = getenv("OPENMODELICAHOME");
   if (openmodelicahome == NULL) {
     fprintf(stderr, "getenv(OPENMODELICAHOME) failed - Java subsystem can't find the Java runtime...\n");
-    abort();
+    exit(EXIT_CODE_JAVA_ERROR);
   }
   init_modelica_string(&openmodelicahome, openmodelicahome);
 
@@ -294,7 +294,7 @@ JNIEnv* getJavaEnv()
   classPath = malloc(classPathLen);
   if (classPath == NULL) {
     fprintf(stderr, "%s:%d malloc failed\n", __FILE__, __LINE__);
-    abort();
+    exit(EXIT_CODE_JAVA_ERROR);
   }
 
   classPathIx = sprintf(classPath, classpathFormatString, openmodelicahome, openmodelicahome, classpathEnv);
@@ -327,7 +327,7 @@ JNIEnv* getJavaEnv()
     env = NULL;
 
     fprintf(stderr, "%s:%d JNI_CreateJavaVM failed\n", __FILE__, __LINE__);
-    abort();
+    exit(EXIT_CODE_JAVA_ERROR);
   }
 
   /* Check that the system works */
@@ -733,7 +733,7 @@ jobject mmc_to_jobject(JNIEnv* env, void* mmc)
   
   fprintf(stderr, "%s:%s: %d slots; ctor %d - FAILED to detect the type\n",
           __FILE__, __FUNCTION__, numslots, ctor);
-  abort();
+  exit(EXIT_CODE_JAVA_ERROR);
 }
 
 char* jobjectToString(JNIEnv* env, jobject obj)
@@ -756,14 +756,14 @@ char* copyJstring(JNIEnv* env, jobject jstr)
   char* str;
   if (jstr == NULL) {
     fprintf(stderr, "%s: Java String was NULL\n", __FUNCTION__);
-    abort();
+    exit(EXIT_CODE_JAVA_ERROR);
   }
   CHECK_FOR_JAVA_EXCEPTION(env);
   str_tmp = (*env)->GetStringUTFChars(env, jstr, NULL);
   CHECK_FOR_JAVA_EXCEPTION(env);
   if (str_tmp == NULL) {
     fprintf(stderr, "%s: GetStringUTFChars failed\n", __FUNCTION__);
-    abort();
+    exit(EXIT_CODE_JAVA_ERROR);
   }
 
   init_modelica_string(&str, str_tmp);
@@ -959,7 +959,7 @@ void* jobject_to_mmc(JNIEnv* env, jobject o)
   
   fprintf(stderr, "%s:%s: Failed to parse object: %s\n",
           __FILE__, __FUNCTION__, jobjectToString(env, o));
-  abort();
+  exit(EXIT_CODE_JAVA_ERROR);
 }
 
 jint GetJavaInteger(JNIEnv* env, jobject obj) {

@@ -126,6 +126,8 @@ public class OMCProxy
 		try
 		{
 			stringifiedObjectReference = br.readLine();
+	    br.close();
+	    fr.close();
 		}
 		catch(IOException e)
 		{
@@ -248,10 +250,13 @@ public class OMCProxy
 		
   public void stopServer() {
     if (hasInitialized) {
-      File f = new File(getPathToObject());
-      f.delete();
-      if (serverProc != null)
+      if (serverProc != null) {
         serverProc.destroy();
+      }
+      File f = new File(getPathToObject());
+      if (!f.delete()) {
+        throw new Error("Failed to delete file: " + f);
+      }
       hasInitialized = false;
     }
 	}
@@ -294,7 +299,7 @@ public class OMCProxy
 		{
 			e.printStackTrace();
 			logOMCStatus("Error running command " + e.getMessage());
-			logOMCStatus("Unable to start OMC, giving up."); 
+			logOMCStatus("Unable to start OMC, giving up.");
 			throw new ConnectException
 				("Unable to start the OpenModelica Compiler. ");
 		}			

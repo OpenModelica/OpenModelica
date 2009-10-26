@@ -44,6 +44,7 @@
 #include "jni.h"
 #endif
 
+#define EXIT_CODE_JAVA_ERROR 17
 JNIEnv* getJavaEnv();
 
 /* ModelicaArray<T> -> set firstDim and dims so the Java application can
@@ -110,7 +111,7 @@ const char* __CheckForJavaException(JNIEnv* env);
   const char* msg = __CheckForJavaException(env); \
   if (msg != NULL) { \
     fprintf(stderr, "Error: External Java Exception Thrown but can't assert in C-mode\nLocation: %s (%s:%d)\nThe exception message was:\n%s\n", __FUNCTION__, __FILE__, __LINE__, msg); \
-    abort(); \
+    exit(EXIT_CODE_JAVA_ERROR); \
   } \
 } while (0)
 #endif

@@ -60,6 +60,7 @@ protected import HashTable2;
 protected import UnitAbsyn;
 protected import InstanceHierarchy;
 protected import ErrorExt;
+protected import MetaUtil;
 
 /*
 ** CompiledCFunction
@@ -1478,6 +1479,17 @@ algorithm
         (top_names_str, newst) = loadFileInteractiveQualified(name, st);
       then
         (top_names_str,newst);
+        
+            
+    case (ISTMTS(interactiveStmtLst =
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getDefinitions"),
+      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.BOOL(addFunctions)},argNames = {})))}),
+      st as SYMBOLTABLE(ast = p, explodedAst = s)) /* sjoelund.se added 2009-03-10 */
+      local Boolean addFunctions;
+      equation
+        (top_names_str) = getDefinitions(p, addFunctions);
+      then
+        (top_names_str, st);
         
     /* adrpo added 2008-11-28 deal with the annotation versions */        
     case (ISTMTS(interactiveStmtLst =
@@ -17432,6 +17444,306 @@ algorithm
         (topNamesStr, SYMBOLTABLE(newP,aDep,eAst,ic,iv,cf,lf));
   end matchcontinue;
 end loadFileInteractiveQualified;
+
+/* Start getDefinitions */
+
+protected function getDefinitions
+"@author sjoelund.se
+ This function dumps the defined packages, classes and functions to a string.
+ The function is used by org.openmodelica.corba.parser.DefinitionsCreator."
+  input  Absyn.Program ast "The AST to dump";
+  input  Boolean addFunctions;
+  output String res "An easily parsed string containing all definitions";
+algorithm
+  res := matchcontinue (ast,addFunctions)
+  local
+    list<Absyn.Class> classes;
+    String old, res;
+    list<String> toPrint;
+    case (ast,addFunctions)
+      equation
+        Absyn.PROGRAM(classes = classes) = MetaUtil.createMetaClassesInProgram(ast);
+        old = Print.getString();
+        Print.clearBuf();
+        Print.printBuf("\"(\n");
+        toPrint = getDefinitions2(classes,addFunctions);
+        Util.listMap0(toPrint, printWithNewline);
+        Print.printBuf("\n)\"");
+        res = Print.getString();
+        Print.clearBuf();
+        Print.printBuf(old);
+      then res;
+  end matchcontinue;
+end getDefinitions;
+
+protected function printWithNewline
+  input String s;
+algorithm
+  Print.printBuf(s);
+  Print.printBuf("\n");
+end printWithNewline;
+
+protected function getDefinitions2
+  input  list<Absyn.Class> classes;
+  input  Boolean addFunctions;
+  output list<String> res;
+algorithm
+  res := matchcontinue (classes,addFunctions)
+    local
+      list<Absyn.Class> rest;
+      Absyn.Class class_;
+      String str;
+      list<String> res;
+    case ({},_) then {};
+    case (class_::rest,addFunctions) equation
+      str = getDefinitionsClass(class_, addFunctions);
+      res = getDefinitions2(rest, addFunctions);
+    then str::res;
+  end matchcontinue;
+end getDefinitions2;
+
+protected function getDefinitionsClass
+  input Absyn.Class class_;
+  input Boolean addFunctions;
+  output String res;
+algorithm
+  res := matchcontinue (class_,addFunctions)
+  local
+    list<Absyn.Class> rest;
+    list<Absyn.ClassPart> parts;
+    String ident, baseIdent, tyStr;
+    list<String> enumList, res;
+    Absyn.TypeSpec ts;
+    Absyn.ElementAttributes attr;
+    list<Absyn.EnumLiteral> el;
+    Integer numDim;
+    case (Absyn.CLASS(name = ident, body = Absyn.PARTS(classParts = parts), restriction = Absyn.R_PACKAGE()),addFunctions)
+      equation
+        ident = "(package " +& ident;
+        res = getDefinitionParts(parts, addFunctions);
+        res =  ident :: res;
+      then Util.stringDelimitList(res, "\n");
+    case (Absyn.CLASS(partialPrefix = true, name = ident, body = Absyn.PARTS(classParts = parts), restriction = Absyn.R_FUNCTION()),_)
+      equation
+        res = {"(partial function", ident, ")"};
+      then Util.stringDelimitList(res, " ");
+    case (Absyn.CLASS(partialPrefix = false, name = ident, body = Absyn.PARTS(classParts = parts), restriction = Absyn.R_FUNCTION()),true)
+      equation
+        res = getDefinitionParts(parts, true);
+        res = "(function" :: ident :: res;
+      then Util.stringDelimitList(res, " ");
+    case (Absyn.CLASS(name = ident, body = Absyn.PARTS(classParts = parts), restriction = Absyn.R_UNIONTYPE()),_)
+      equation
+        res = {"(uniontype", ident, ")"};
+      then Util.stringDelimitList(res, " ");
+    case (Absyn.CLASS(name = ident, body = Absyn.PARTS(classParts = parts), restriction = Absyn.R_RECORD()),_)
+      equation
+        res = getDefinitionParts(parts, false);
+        res = "(record" :: ident :: res;
+      then Util.stringDelimitList(res, " ");
+    case (Absyn.CLASS(name = ident, body = Absyn.PARTS(classParts = parts), restriction = Absyn.R_METARECORD(name = path, index = index)),_)
+      local
+        Integer index;
+        Absyn.Path path;
+        String indexArg, pathArg;
+      equation
+        indexArg = intString(index);
+        pathArg = Absyn.pathLastIdent(path);
+        res = getDefinitionParts(parts, false);
+        res = "(metarecord" :: ident :: indexArg :: pathArg :: res;
+      then Util.stringDelimitList(res, " ");
+    case (Absyn.CLASS(name = ident, body = Absyn.DERIVED(typeSpec = ts, attributes = attr)),_)
+      equation
+        numDim = getDefinitionDimensions(ts,attr);
+        tyStr = Util.if_(numDim == 0, "", "[" +& intString(numDim)) +& getDefinitionTypeSpecPathString(ts);
+        res = {"(type", ident, tyStr, ")"};
+      then Util.stringDelimitList(res, " ");
+    // Do enumerations really work properly in OMC?
+    //case Absyn.CLASS(name = ident, body = Absyn.ENUMERATION(enumLiterals = Absyn.ENUMLITERALS(el))) equation
+    //  enumList = Util.listMap(el, getEnumerationLiterals);
+    //then "enumeration " +& ident +& "(" +& Util.stringDelimitList(enumList, ",") +& ")";
+    case (_,_) then "";
+  end matchcontinue;
+end getDefinitionsClass;
+
+protected function getDefinitionsReplaceableClass
+  input Absyn.Class class_;
+  output String res;
+algorithm
+  res := matchcontinue (class_)
+  local
+    list<Absyn.ClassPart> parts;
+    String ident, baseIdent;
+    case Absyn.CLASS(name = ident, body = Absyn.DERIVED(typeSpec = Absyn.TCOMPLEX(Absyn.IDENT("polymorphic"),{Absyn.TPATH(Absyn.IDENT("Any"),NONE)},NONE)), restriction = Absyn.R_TYPE())
+    then "(replaceable type " +& ident +& ")";
+  end matchcontinue;
+end getDefinitionsReplaceableClass;
+
+protected function getEnumerationLiterals
+  input Absyn.EnumLiteral el;
+  output String out;
+algorithm
+  out := matchcontinue el
+  local
+    String out;
+    case Absyn.ENUMLITERAL(literal = out) then out;
+  end matchcontinue;
+end getEnumerationLiterals;
+
+protected function getDefinitionPathString
+  input Absyn.Path path;
+  output String out;
+algorithm
+  out := matchcontinue (path)
+  local
+    Absyn.Path path;
+    // Doesn't work because we only know the AST after parsing... case (Absyn.FULLYQUALIFIED(path)) then "#" +& Absyn.pathString(path);
+    // Thus, scope/lookup is done by the application recieving this information
+    case path then Absyn.pathString(path);
+  end matchcontinue;
+end getDefinitionPathString;
+
+public function getDefinitionTypeSpecPathString
+  input Absyn.TypeSpec tp;
+  output String s;
+algorithm s := matchcontinue(tp)  
+  local
+    Absyn.Path p;
+    list<Absyn.TypeSpec> tspecs;
+    list<String> tspecsStr;
+  case(Absyn.TCOMPLEX(path = p, typeSpecs = {})) equation
+  then getDefinitionPathString(p);
+  case(Absyn.TCOMPLEX(path = p, typeSpecs = tspecs)) equation
+    tspecsStr = Util.listMap(tspecs, getDefinitionTypeSpecPathString);
+  then getDefinitionPathString(p) +& "<" +& Util.stringDelimitList(tspecsStr,",") +& ">";
+  case(Absyn.TPATH(path = p)) then getDefinitionPathString(p);
+end matchcontinue;
+end getDefinitionTypeSpecPathString;
+
+protected function getDefinitionDimensions
+  input Absyn.TypeSpec ts;
+  input Absyn.ElementAttributes attr;
+  output Integer out;
+algorithm
+  out := matchcontinue(ts,attr)
+  local
+    list<Absyn.Subscript> l1,l2;
+    case (Absyn.TPATH(arrayDim = SOME(l1)), Absyn.ATTR(arrayDim = l2)) then listLength(l1)+listLength(l2);
+    case (Absyn.TCOMPLEX(arrayDim = SOME(l1)), Absyn.ATTR(arrayDim = l2)) then listLength(l1)+listLength(l2);
+    case (Absyn.TPATH(arrayDim = NONE()), Absyn.ATTR(arrayDim = l2)) then listLength(l2);
+    case (Absyn.TCOMPLEX(arrayDim = NONE()), Absyn.ATTR(arrayDim = l2)) then listLength(l2);
+    case (_, _) then 0;
+  end matchcontinue;
+end getDefinitionDimensions;
+
+protected function getDefinitionParts
+  input  list<Absyn.ClassPart> parts;
+  input  Boolean isFunction;
+  output list<String> res;
+algorithm
+  res := matchcontinue (parts, isFunction)
+  local
+    list<Absyn.ClassPart> rest;
+    list<Absyn.ElementItem> contents;
+    case ({},_) then {")"};
+    case (Absyn.PUBLIC(contents)::rest,isFunction)
+    then listAppend(getDefinitionContent(contents,isFunction,true), getDefinitionParts(rest,isFunction));
+    case (Absyn.PROTECTED(contents)::rest,isFunction)
+    then listAppend(getDefinitionContent(contents,isFunction,false), getDefinitionParts(rest,isFunction));
+    case (_::rest,isFunction) then getDefinitionParts(rest,isFunction);
+  end matchcontinue;
+end getDefinitionParts;
+
+protected function getDefinitionContent
+  input list<Absyn.ElementItem> contents;
+  input Boolean addFunctions;
+  input Boolean isPublic;
+  output list<String> res;
+algorithm
+  res := matchcontinue (contents,addFunctions,isPublic)
+  local
+    list<Absyn.ElementItem> rest;
+    String ident, typeStr, dirStr, varStr, str;
+    Absyn.Class class_;
+    Absyn.Path path;
+    list<Absyn.ComponentItem> components;
+    Absyn.Direction direction;
+    Absyn.TypeSpec ts;
+    Absyn.Variability variability;
+    Absyn.ElementAttributes attr;
+    list<String> res,res2;
+    
+    case ({},_,_) then {};
+    case (Absyn.ELEMENTITEM(Absyn.ELEMENT(specification = Absyn.CLASSDEF(replaceable_ = false, class_ = class_)))::rest,addFunctions,isPublic)
+      equation
+        res = getDefinitionContent(rest,addFunctions,isPublic);
+        str = getDefinitionsClass(class_,addFunctions);
+      then str::res;
+    case (Absyn.ELEMENTITEM(Absyn.ELEMENT(specification = Absyn.CLASSDEF(replaceable_ = true, class_ = class_)))::rest,addFunctions,isPublic)
+      equation
+        res = getDefinitionContent(rest,addFunctions,isPublic);
+        ident = getDefinitionsReplaceableClass(class_);
+      then ident :: res;
+    case (Absyn.ELEMENTITEM(Absyn.ELEMENT(specification = Absyn.COMPONENTS(typeSpec = ts,components = components, attributes = (attr as Absyn.ATTR(direction = direction, variability = variability)))))::rest,addFunctions,true)
+      equation
+        typeStr = getDefinitionTypeSpecPathString(ts);
+        dirStr = getDefinitionDirString(direction, variability, addFunctions);
+        res = getDefinitionComponents(typeStr, dirStr, getDefinitionDimensions(ts,attr), components);
+        res2 = getDefinitionContent(rest,addFunctions,isPublic);
+      then listAppend(res,res2);
+    case (Absyn.ELEMENTITEM(Absyn.ELEMENT(specification = Absyn.EXTENDS(path = path)))::rest,false,true)
+      equation
+        typeStr = "(extends " +& getDefinitionPathString(path) +& ")";
+        res = getDefinitionContent(rest,addFunctions,isPublic);
+      then typeStr :: res;
+    case (_::rest,addFunctions,isPublic)
+      then getDefinitionContent(rest,addFunctions,isPublic);
+  end matchcontinue;
+end getDefinitionContent;
+
+protected function getDefinitionDirString
+  input Absyn.Direction dir;
+  input Absyn.Variability variability;
+  input Boolean isFunction;
+  output String res;
+algorithm
+  res := matchcontinue (dir, variability, isFunction)
+    case (Absyn.INPUT(),_,true) then "input ";
+    case (Absyn.OUTPUT(),_,true) then "output ";
+    case (_, variability,false)
+      equation
+        failure(Absyn.CONST() = variability);
+      then "";
+  end matchcontinue;
+end getDefinitionDirString;
+
+protected function getDefinitionComponents
+  input String typeStr;
+  input String dirStr;
+  input Integer numDim;
+  input list<Absyn.ComponentItem> components;
+  output list<String> res;
+algorithm
+  res := matchcontinue (typeStr,dirStr,numDim,components)
+  local
+    list<Absyn.ComponentItem> rest;
+    String ident;
+    list<String> res;
+    list<Absyn.Subscript> l;
+    Integer sumDim;
+    
+    case (_,_,_,{}) then {};
+    case (typeStr,dirStr,numDim,Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = ident, arrayDim = l))::rest) equation
+      sumDim = numDim + listLength(l);
+      ident = (dirStr +& Util.if_(numDim == 0, "", "[" +& intString(sumDim)) +& typeStr +& " " +& ident);
+      ident = "(" +& ident +& ")";
+      res = getDefinitionComponents(typeStr,dirStr,numDim,rest);
+    then ident :: res;
+    case (typeStr,dirStr,numDim,_::rest) then getDefinitionComponents(typeStr,dirStr,numDim,rest);
+  end matchcontinue;
+end getDefinitionComponents;
+
+/* End getDefinitions */
 
 protected function parseFile
 "@author adrpo

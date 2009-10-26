@@ -234,7 +234,7 @@ public class DefinitionsCreator {
       baos.flush();
       baos.writeTo(out);
       out.println(toolUsage);
-      throw new Error(ex.getMessage());
+      throw new Error(ex);
     } finally {
       System.setOut(out);
     }
