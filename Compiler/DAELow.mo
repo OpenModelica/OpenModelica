@@ -1441,6 +1441,9 @@ algorithm
         res = isKindDiscrete(kind);
       then
         res;
+        /* enumerations */
+    case (Exp.CREF(Exp.CREF_IDENT(_, Exp.ENUM(), _),_),vars,knvars) then true;
+              
     case (Exp.BINARY(exp1 = e1,operator = op,exp2 = e2),vars,knvars)
       equation
         b1 = isDiscreteExp(e1, vars,knvars);
@@ -12825,15 +12828,34 @@ algorithm
   (outVarLst1,outVarLst2,outVarLst3):=
   matchcontinue (inVarLst1,inVarLst2,inVarLst3)
     local
-      list<Var> vars_1,knvars_1,extvars_1,extvars,vars,knvars;
+      list<Var> vars_2,knvars_2,extvars_2,extvars,vars,knvars;
+      list< tuple<Var,Integer> > vars_1,knvars_1,extvars_1;
+      list< tuple<Var,Integer,Integer> > vars_map,knvars_map,extvars_map,all_map,all_map1,noScalar_map,noScalar_map1,scalar_map,all_map2,mergedvar_map,sort_map,sort_map1;
       Value x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType;
     case (vars,knvars,extvars)
       equation
-        (vars_1,x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType) = calculateIndexes2(vars, 0, 0, 0, 0, 0,0,0,0,0,0,0);
-        (knvars_1,_,_,_,_,_,_,x_strType,xd_strType,y_strType,p_strType,dummy_strType) = calculateIndexes2(knvars, x, xd, y, p, dummy,0,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
-        (extvars_1,_,_,_,_,_,_,x_strType,xd_strType,y_strType,p_strType,dummy_strType) = calculateIndexes2(extvars, x, xd, y, p, dummy,0,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
+//        (vars_1,x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType) = calculateIndexes2(vars, 0, 0, 0, 0, 0,0,0,0,0,0,0);
+//        (knvars_1,_,_,_,_,_,_,x_strType,xd_strType,y_strType,p_strType,dummy_strType) = calculateIndexes2(knvars, x, xd, y, p, dummy,0,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
+//        (extvars_1,_,_,_,_,_,_,x_strType,xd_strType,y_strType,p_strType,dummy_strType) = calculateIndexes2(extvars, x, xd, y, p, dummy,0,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
+
+        vars_map = fillListConst(vars,0,0);
+        knvars_map = fillListConst(knvars,1,0);
+        extvars_map = fillListConst(extvars,2,0);
+        all_map = listAppend(vars_map,knvars_map);
+        all_map1 = listAppend(all_map,extvars_map);
+        (noScalar_map,scalar_map) = getNoScalarVars(all_map1);
+        noScalar_map1 = getAllElements(noScalar_map);
+        sort_map = sortNoScalarList(noScalar_map1);
+        mergedvar_map = listAppend(scalar_map,sort_map);
+        (all_map2,x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType) = calculateIndexes2(mergedvar_map, 0, 0, 0, 0, 0,0,0,0,0,0,0);
+        vars_1 = getListConst(all_map2,0);
+        vars_2 = sortList(vars_1,0);
+        knvars_1 = getListConst(all_map2,1);
+        knvars_2 = sortList(knvars_1,0);
+        extvars_1 =  getListConst(all_map2,2);
+        extvars_2 =  sortList(extvars_1,0);
       then
-        (vars_1,knvars_1,extvars_1);
+        (vars_2,knvars_2,extvars_2);
     case (_,_,_)
       equation
         print("-calculate_indexes failed\n");
@@ -12841,6 +12863,506 @@ algorithm
         fail();
   end matchcontinue;
 end calculateIndexes;
+
+protected function fillListConst
+"function: fillListConst"
+  input list<Type_a> inTypeALst;
+  input Integer inType;
+  input Integer inPlace;
+  output list< tuple<Type_a,Integer,Integer> > outTypeALst;
+  replaceable type Type_a subtypeof Any;
+algorithm
+  outlist :=
+  matchcontinue (inTypeALst,inType,inPlace)
+    local
+      list<Type_a> rest;
+      Type_a item;
+      Integer value,place;
+      list< tuple<Type_a,Integer,Integer> > out_lst,val_lst;
+    case ({},value,place) then {};
+    case (item::rest,value,place)
+      equation
+        /* recursive */
+        val_lst = fillListConst(rest,value,place+1);
+        /* fill  */
+        out_lst = listAppend({(item,value,place)},val_lst);
+      then
+        out_lst;
+  end matchcontinue;     
+end fillListConst;
+
+protected function getListConst
+"function: getListConst"
+  input list< tuple<Type_a,Integer,Integer> > inTypeALst;
+  input Integer inValue;
+  output list<Type_a,Integer> outTypeALst;
+  replaceable type Type_a subtypeof Any;
+algorithm
+  outTypeALst :=
+  matchcontinue (inTypeALst,inValue)
+    local
+      list<Type_a,Integer,Integer> rest;
+      Type_a item;
+      Integer value, itemvalue,place;
+      list<Type_a,Integer> out_lst,val_lst,val_lst1;
+    case ({},value) then {};
+    case ((item,itemvalue,place)::rest,value)
+      equation
+        /* recursive */
+        val_lst = getListConst(rest,value);
+        /* fill  */
+        val_lst1 = Util.if_(itemvalue == value,{(item,place)},{});
+        out_lst = listAppend(val_lst1,val_lst);
+      then
+        out_lst;
+  end matchcontinue;     
+end getListConst;
+
+protected function sortList
+"function: sortList"
+  input list< tuple<Type_a,Integer> > inTypeALst;
+  input Integer inPlace;
+  output list<Type_a> outTypeALst;
+  replaceable type Type_a subtypeof Any;
+algorithm
+  outTypeALst :=
+  matchcontinue (inTypeALst,inPlace)
+    local
+      list<Type_a,Integer> itemlst,rest;
+      Type_a item,outitem;
+      Integer place,itemplace;
+      list<Type_a> out_lst,val_lst;
+    case ({},place) then {};
+    case (itemlst,place)
+      equation
+        /* get item */
+        (outitem,rest) = sortList1(itemlst,place);
+        /* recursive */
+        val_lst = sortList(rest,place+1);
+        /* append  */
+        out_lst = listAppend({outitem},val_lst);
+      then
+        out_lst;
+  end matchcontinue;     
+end sortList;
+
+protected function sortList1
+"function: sortList1
+  helper for sortList"
+  input list< tuple<Type_a,Integer> > inTypeALst;
+  input Integer inPlace;
+  output Type_a outType;
+  output list< tuple<Type_a,Integer> > outTypeALst;
+  replaceable type Type_a subtypeof Any;
+algorithm
+  (outType,outTypeALst) :=
+  matchcontinue (inTypeALst,inPlace)
+    local
+      list<Type_a,Integer> rest,out_itemlst;
+      Type_a item;
+      Integer place,itemplace;
+      Type_a out_item;
+    case ({},_)
+      equation
+        print("-sortList1 failed\n");
+      then
+        fail();      
+    case ((item,itemplace)::rest,place)
+      equation
+        /* compare */
+        (place == itemplace) = true;
+        /* ok */
+        then
+          (item,rest);
+    case ((item,itemplace)::rest,place)
+      equation
+        /* recursive */
+        (out_item,out_itemlst) = sortList1(rest,place);
+      then
+        (out_item,(item,itemplace)::out_itemlst);
+  end matchcontinue;     
+end sortList1;
+
+protected function printList
+  input list<Var> inlist;
+algorithm
+  _:=
+  matchcontinue (inlist)
+    local
+      list< Var> rest;
+      Var var;
+      Exp.Ident origName1;
+    case {} then (); 
+    case ((var as VAR(Exp.CREF_IDENT(origName1,_,_),_,_,_,_,_,_,_,_,_,_,_,_,_))::{})
+      equation
+        print(origName1);
+        print("\n");
+      then
+        ();
+    case ((var as VAR(Exp.CREF_IDENT(origName1,_,_),_,_,_,_,_,_,_,_,_,_,_,_,_))::rest)
+      equation
+        print(origName1);
+        print("\n");
+        printList(rest); 
+      then
+        ();
+  end matchcontinue;     
+end printList;
+
+protected function printMap
+  input list< tuple<Var,Integer,Integer> > inlist;
+algorithm
+  _:=
+  matchcontinue (inlist)
+    local
+      list< tuple<Var,Integer,Integer> > rest;
+      Var var;
+      Integer value;
+      Exp.Ident origName1;
+    case {} then (); 
+    case ((var as VAR(Exp.CREF_IDENT(origName1,_,_),_,_,_,_,_,_,_,_,_,_,_,_,_),value,_)::{})
+      equation
+        print(origName1);
+        print("\n");
+      then
+        ();
+    case ((var as VAR(Exp.CREF_IDENT(origName1,_,_),_,_,_,_,_,_,_,_,_,_,_,_,_),value,_)::rest)
+      equation
+        print(origName1);
+        print("\n");
+        printMap(rest); 
+      then
+        ();
+  end matchcontinue;     
+end printMap;
+
+protected function getNoScalarVars
+"function: getNoScalarVars
+  Takes a List of vars and looks for
+  all vars whos are vectors or matrix"
+  input list< tuple<Var,Integer,Integer> > inlist;
+  output list< tuple<Var,Integer,Integer> > outnoScalarlist;
+  output list< tuple<Var,Integer,Integer> > outScalarlist;
+algorithm
+  (outnoScalarlist,outScalarlist) :=
+  matchcontinue (inlist)
+    local
+      list< tuple<Var,Integer,Integer> > noScalarlst,scalarlst,rest,noScalarlst1,scalarlst1,noScalarlst2,scalarlst2;
+      Var var,var1;
+      Integer typ,place;
+    case {} then ({},{});
+    case ((var,typ,place) :: rest)
+      equation
+        /* recursive */
+        (noScalarlst,scalarlst) = getNoScalarVars(rest);
+        /* check  */
+        (noScalarlst1,scalarlst1) = checkVarisNoScalar(var,typ,place);
+        noScalarlst2 = listAppend(noScalarlst1,noScalarlst);
+        scalarlst2 = listAppend(scalarlst1,scalarlst);
+      then
+        (noScalarlst2,scalarlst2);
+    case (_)
+      equation
+        print("getNoScalarVars fails\n");
+      then
+        fail();          
+  end matchcontinue;  
+end getNoScalarVars;
+
+protected function checkVarisNoScalar
+"function: checkVarisNoScalar
+  Takes a vars and looks for
+  are vector or matrix"
+  input Var invar;
+  input Integer inTyp;
+  input Integer inPlace;
+  output list< tuple<Var,Integer,Integer> > outlist;
+  output list< tuple<Var,Integer,Integer> > outlist1;
+algorithm
+  (outlist,outlist1) :=
+  matchcontinue (invar,inTyp,inPlace)
+    local
+      DAE.InstDims dimlist;
+      Var var;
+      Integer typ,place;
+    case (var as (VAR(_,_,_,_,_,_,{},_,_,_,_,_,_,_)),typ,place) then ({},{(var,typ,place)});
+    case (var as (VAR(_,_,_,_,_,_,dimlist,_,_,_,_,_,_,_)),typ,place) then ({(var,typ,place)},{});
+  end matchcontinue;  
+end checkVarisNoScalar;
+
+protected function getAllElements
+"function: getAllElements
+  Takes a list of unsortet noScalarVars
+  and returns a sorte list"
+  input list<tuple<Var,Integer,Integer> > inlist;
+  output list<tuple<Var,Integer,Integer> > outlist;
+algorithm  
+  outlist:=
+  matchcontinue (inlist)
+    local
+      list<tuple<Var,Integer,Integer>> rest,var_lst,var_lst1,var_lst2,out_lst;
+      Var var,var1;
+      Boolean ins;
+      Integer typ,place;
+    case {} then {};
+    case ((var,typ,place) :: rest)
+      equation
+        (var_lst,var_lst1) = getAllElements1((var,typ,place),rest);
+        var_lst2 = getAllElements(var_lst1); 
+        out_lst = listAppend(var_lst,var_lst2);
+      then
+        out_lst;
+  end matchcontinue;  
+end getAllElements;
+
+protected function getAllElements1
+"function: getAllElements1
+  Takes a list of unsortet noScalarVars
+  and returns a sorte list"
+  input tuple<Var,Integer,Integer>  invar;
+  input list<tuple<Var,Integer,Integer> > inlist;
+  output list<tuple<Var,Integer,Integer> > outlist;
+  output list<tuple<Var,Integer,Integer> > outlist1;
+algorithm
+  (outlist,outlist1):=
+  matchcontinue (var,inlist)
+    local
+      list<tuple<Var,Integer,Integer>> rest,var_lst,var_lst1,var_lst2,var_lst3,out_lst;
+      Exp.Ident origName1,origName2;
+      Var var,var1;
+      Boolean ins;
+      Integer typ,typ1,place,place1;
+    case ((var,typ,place),{}) then ({(var,typ,place)},{});
+    case ((var as VAR(Exp.CREF_IDENT(origName1,_,_),_,_,_,_,_,_,_,_,_,_,_,_,_),typ,place), (var1 as VAR(Exp.CREF_IDENT(origName2,_,_),_,_,_,_,_,_,_,_,_,_,_,_,_),typ1,place1) :: rest)
+      equation
+        (var_lst,var_lst1) = getAllElements1((var,typ,place),rest);
+        var_lst2 = listAppendTyp(origName1 ==& origName2,(var1,typ1,place1),var_lst);
+        var_lst3 = listAppendTyp(boolNot(origName1 ==& origName2),(var1,typ1,place1),var_lst1);
+      then
+        (var_lst2,var_lst3);
+  end matchcontinue;  
+end getAllElements1;
+
+protected function sortNoScalarList
+"function: sortNoScalarList
+  Takes a list of unsortet noScalarVars
+  and returns a sorte list"
+  input list<tuple<Var,Integer,Integer> > inlist;
+  output list<tuple<Var,Integer,Integer> > outlist;
+algorithm
+  outlist:=
+  matchcontinue (inlist)
+    local
+      list<tuple<Var,Integer,Integer>> rest,var_lst,var_lst1,out_lst;
+      Var var,var1;
+      Boolean ins;
+      Integer typ,place;
+    case {} then {};
+    case ((var,typ,place) :: rest)
+      equation
+        var_lst = sortNoScalarList(rest);
+        (var_lst1,ins) = sortNoScalarList1((var,typ,place),var_lst);
+        out_lst = listAppendTyp(boolNot(ins),(var,typ,place),var_lst1);
+      then
+        out_lst;
+  end matchcontinue;  
+end sortNoScalarList;
+
+protected function listAppendTyp
+"function: listAppendTyp
+  Takes a list of unsortet noScalarVars
+  and returns a sorte list"
+  input Boolean append;
+  input Type_a  invar;
+  input list<Type_a > inlist;
+  output list<Type_a > outlist;
+  replaceable type Type_a subtypeof Any;
+algorithm
+  (outlist):=
+  matchcontinue (append,invar,inlist)
+    local
+      list<Type_a > var_lst;
+      Type_a var;
+    case (false,_,var_lst) then inlist;
+    case (true,var,var_lst)
+      local
+       list<Type_a > out_lst;  
+      equation
+        out_lst = listAppend({var},var_lst);
+      then
+        out_lst;
+  end matchcontinue;  
+end listAppendTyp;
+
+protected function sortNoScalarList1
+"function: sortNoScalarList1"
+  input tuple<Var,Integer,Integer>  invar;
+  input list<tuple<Var,Integer,Integer> > inlist;
+  output list<tuple<Var,Integer,Integer> > outlist;
+  output Boolean insert;
+algorithm
+  (outlist,insert):=
+  matchcontinue (invar,inlist)
+    local
+      list<tuple<Var,Integer,Integer>> rest,var_lst,var_lst1,var_lst2;
+      Var var,var1;
+      Boolean ins,ins1,ins2;
+      Integer typ,typ1,place,place1;
+    case (_,{}) then ({},false);
+    case ((var,typ,place),(var1,typ1,place1)::rest)
+      equation
+        (var_lst,ins) = sortNoScalarList1((var,typ,place),rest);
+        (var_lst1,ins1) = sortNoScalarList2(ins,(var,typ,place),(var1,typ1,place1),var_lst);
+      then
+        (var_lst1,ins1);
+  end matchcontinue;  
+end sortNoScalarList1;
+
+protected function sortNoScalarList2
+"function: sortNoScalarList2
+  Takes a list of unsortet noScalarVars
+  and returns a sorte list"
+  input Boolean ininsert;
+  input tuple<Var,Integer,Integer>  invar;
+  input tuple<Var,Integer,Integer>  invar1;
+  input list< tuple<Var,Integer,Integer> > inlist;
+  output list< tuple<Var,Integer,Integer> > outlist;
+  output Boolean outinsert;
+algorithm
+  (outlist,outinsert):=
+  matchcontinue (ininsert,invar,invar1,inlist)
+    local
+      list< tuple<Var,Integer,Integer> > var_lst,var_lst1,var_lst2,out_lst;
+      Var var,var1;
+      Integer typ,typ1,place,place1;
+      Boolean ins;
+    case (false,(var,typ,place),(var1,typ1,place1),var_lst)
+      equation
+        ins = comparingNonScalars(var,var1);
+        var_lst1 = Util.if_(ins,{(var1,typ1,place1),(var,typ,place)},{(var1,typ1,place1)});
+        var_lst2 = listAppend(var_lst1,var_lst);
+      then
+        (var_lst2,ins);
+    case (true,(var,typ,place),(var1,typ1,place1),var_lst)
+      equation
+        var_lst1 = listAppend({(var1,typ1,place1)},var_lst);
+      then
+        (var_lst1,true);
+  end matchcontinue;  
+end sortNoScalarList2;
+
+protected function comparingNonScalars 
+"function: comparingNonScalars
+  Takes two NonScalars an returns
+  it in right order 
+  Example1:  A[2,2],A[1,1] -> {A[1,1],A[2,2]}
+  Example2:  A[2,2],B[1,1] -> {A[2,2],B[1,1]}"
+  input Var invar1;
+  input Var invar2;
+  output Boolean outval;
+algorithm
+  outval:=
+  matchcontinue (invar1,invar2)
+    local
+      Var var1,var2;
+      Exp.Ident origName1,origName2;
+      list<Exp.Subscript> arryDim, arryDim1; 
+      list<Exp.Subscript> subscriptLst, subscriptLst1; 
+      Boolean out_val;
+    case (var1 as VAR(Exp.CREF_IDENT(origName1,_,subscriptLst),_,_,_,_,_,arryDim,_,_,_,_,_,_,_),var2 as VAR(Exp.CREF_IDENT(origName2,_,subscriptLst1),_,_,_,_,_,arryDim1,_,_,_,_,_,_,_))
+      equation
+        (origName1 ==& origName2) = true;
+        out_val = comparingNonScalars1(subscriptLst,subscriptLst1,arryDim,arryDim1);
+      then
+        out_val;
+    case (_,_) then false;   
+  end matchcontinue;
+end comparingNonScalars;
+
+protected function comparingNonScalars1 
+"function: comparingNonScalars1
+  Helper for comparingNonScalars"
+  input list<Exp.Subscript> inlist;
+  input list<Exp.Subscript> inlist1;
+  input list<Exp.Subscript> inarryDim;
+  input list<Exp.Subscript> inarryDim1;
+  output Boolean outval;
+algorithm
+  outval:=
+  matchcontinue (inlist, inlist1, inarryDim, inarryDim1)
+    local
+      list<Exp.Subscript> arryDim, arryDim1;
+      list<Exp.Subscript> subscriptLst, subscriptLst1; 
+      list<Integer> dim_lst,dim_lst1;
+      list<Integer> index,index1;
+      Integer val1,val2;
+      Boolean ret;
+    case (subscriptLst,subscriptLst1,arryDim,arryDim1)
+      equation
+        dim_lst = getArrayDim(arryDim);
+        dim_lst1 = getArrayDim(arryDim1);
+        index = getArrayDim(subscriptLst);
+        index1 = getArrayDim(subscriptLst1);
+        val1 = calcPlace(index,dim_lst);
+        val2 = calcPlace(index1,dim_lst1);
+        (val1 > val2) = true;
+      then
+       true;
+    case (_,_,_,_) then false;   
+  end matchcontinue;
+end comparingNonScalars1;
+
+protected function calcPlace
+"function: calcPlace
+  Helper for comparingNonScalars1"
+  input list<Integer> inindex;
+  input list<Integer> dimlist;
+  output Integer value;
+algorithm
+  value:=
+  matchcontinue (inindex,dimlist)
+    local
+      list<Integer> index_lst,dim_lst;
+      Integer value,value1,index,dim,dim1;
+    case ({},{}) then 0;      
+    case (index::{},_) then index;      
+    case (index::index_lst,dim::dim1::dim_lst)
+      equation
+        value = calcPlace(index_lst,dim_lst);
+        value1 = value + (index*dim1);
+      then
+        value1;
+     case (_,_)
+      equation
+        print("-calcPlace failed\n");
+      then
+        fail();       
+  end matchcontinue;  
+end calcPlace;
+
+protected function getArrayDim
+"function: getArrayDim
+  Helper for comparingNonScalars1"
+  input list<Exp.Subscript> inarryDim;
+  output list<Integer> dimlist;
+algorithm
+  dimlist:=
+  matchcontinue (inarryDim)
+    local
+      list<Exp.Subscript> arryDim_lst,rest;
+      Exp.Subscript arryDim;
+      list<Integer> dim_lst,dim_lst1;
+      Integer dim;
+    case {} then {};      
+    case ((arryDim as Exp.INDEX(Exp.ICONST(dim)))::rest)
+      equation
+        dim_lst = getArrayDim(rest);
+        dim_lst1 = listAppend({dim},dim_lst);
+      then
+        dim_lst1;
+  end matchcontinue;  
+end getArrayDim;
+
 
 protected function transformVariables "function: transformVariables
   author: PA
@@ -12971,7 +13493,7 @@ protected function transformVariableAttr "Helper function to transformVariables"
 algorithm
   varAttrOut := matchcontinue(varAttr,s,t)
     local 
-      Option<Exp.Exp> quantity,unit,displayUnit,min,max,initial_,fixed,nominal;
+      Option<Exp.Exp> quantity,unit,displayUnit,min,max,start,initial_,fixed,nominal;
       Option<DAE.StateSelect> stateSelect;
       Option<Exp.Exp> eqBound;
       Option<Boolean> prot;
@@ -13020,6 +13542,17 @@ algorithm
           (eqBound,_) = Exp.replaceExpListOpt(eqBound,s,t);
         then 
           SOME(DAE.VAR_ATTR_STRING(quantity,initial_,eqBound,prot,fin));
+          
+      case(SOME(DAE.VAR_ATTR_ENUMERATION(quantity,(min,max),start,fixed,eqBound,prot,fin)),s,t)
+        equation
+          (quantity,_) = Exp.replaceExpListOpt(quantity,s,t);
+          (min,_) = Exp.replaceExpListOpt(min,s,t);
+          (max,_) = Exp.replaceExpListOpt(max,s,t);  
+          (start,_) = Exp.replaceExpListOpt(start,s,t);
+          (fixed,_) = Exp.replaceExpListOpt(fixed,s,t);  
+          (eqBound,_) = Exp.replaceExpListOpt(eqBound,s,t);    
+        then
+          SOME(DAE.VAR_ATTR_ENUMERATION(quantity,(min,max),start,fixed,eqBound,prot,fin)); 
 
       case (NONE(),s,t) then NONE();
         
@@ -13058,7 +13591,7 @@ protected function calculateIndexes2
 "function: calculateIndexes2
   author: PA
   Helper function to calculateIndexes"
-  input list<Var> inVarLst1;
+  input list< tuple<Var,Integer,Integer> > inVarLst1;
   input Integer inInteger2; //X
   input Integer inInteger3; //xd
   input Integer inInteger4; //y
@@ -13072,7 +13605,7 @@ protected function calculateIndexes2
   input Integer inInteger11; //p_str
   input Integer inInteger12; //dummy_str
 
-  output list<Var> outVarLst1;
+  output list<tuple<Var,Integer,Integer> > outVarLst1;
   output Integer outInteger2;
   output Integer outInteger3;
   output Integer outInteger4;
@@ -13091,7 +13624,7 @@ algorithm
     local
       Value x,xd,y,p,dummy,y_1,x1,xd1,y1,p1,dummy1,x_1,p_1,ext,ext_1,x_strType,xd_strType,y_strType,p_strType,dummy_strType,y_1_strType,x_1_strType,p_1_strType;
       Value x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1;
-      list<Var> vars_1,vs;
+      list< tuple<Var,Integer,Integer> > vars_1,vs;
       Exp.ComponentRef cr,name;
       DAE.VarDirection d;
       DAE.Type tp;
@@ -13103,11 +13636,11 @@ algorithm
       Option<Absyn.Comment> comment;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
-      
+      Integer typ,place;
     case ({},x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType)
       then ({},x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
 
-    case ((VAR(varName = cr,
+    case (((VAR(varName = cr,
                varKind = VARIABLE(),
                varDirection = d,
                varType = DAE.STRING(),
@@ -13119,16 +13652,16 @@ algorithm
                values = dae_var_attr,
                comment = comment,
                flowPrefix = flowPrefix,
-               streamPrefix = streamPrefix) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType)
+               streamPrefix = streamPrefix),typ,place) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType)
       equation
         y_1_strType = y_strType + 1;
         (vars_1,x1,xd1,y1,p1,dummy1,ext,x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1) = 
            calculateIndexes2(vs, x, xd, y, p, dummy,ext,x_strType,xd_strType,y_1_strType,p_strType,dummy_strType);
       then
-        ((VAR(cr,VARIABLE(),d,DAE.STRING(),b,value,dim,y_strType,name,cl,dae_var_attr,comment,flowPrefix,streamPrefix) :: vars_1),
+        (((VAR(cr,VARIABLE(),d,DAE.STRING(),b,value,dim,y_strType,name,cl,dae_var_attr,comment,flowPrefix,streamPrefix),typ,place) :: vars_1),
           x1,xd1,y1,p1,dummy1,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
           
-    case ((VAR(varName = cr,
+    case (((VAR(varName = cr,
                varKind = VARIABLE(),
                varDirection = d,
                varType = tp,
@@ -13140,16 +13673,16 @@ algorithm
                values = dae_var_attr,
                comment = comment,
                flowPrefix = flowPrefix,
-               streamPrefix = streamPrefix) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType)
+               streamPrefix = streamPrefix),typ,place) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType)
       equation
         y_1 = y + 1;
         (vars_1,x1,xd1,y1,p1,dummy1,ext,x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1) = 
            calculateIndexes2(vs, x, xd, y_1, p, dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
       then
-        ((VAR(cr,VARIABLE(),d,tp,b,value,dim,y,name,cl,dae_var_attr,comment,flowPrefix,streamPrefix) :: vars_1),
+        (((VAR(cr,VARIABLE(),d,tp,b,value,dim,y,name,cl,dae_var_attr,comment,flowPrefix,streamPrefix),typ,place) :: vars_1),
           x1,xd1,y1,p1,dummy1,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
 
-    case ((VAR(varName = cr,
+    case (((VAR(varName = cr,
                varKind = STATE(),
                varDirection = d,
                varType = DAE.STRING(),
@@ -13161,16 +13694,16 @@ algorithm
                values = dae_var_attr,
                comment = comment,
                flowPrefix = flowPrefix,
-               streamPrefix = streamPrefix) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType)
+               streamPrefix = streamPrefix),typ,place) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType)
       equation
         x_1_strType = x_strType + 1;
         (vars_1,x1,xd1,y1,p1,dummy1,ext,x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1) = 
            calculateIndexes2(vs, x, xd, y, p, dummy,ext,x_1_strType,xd_strType,y_strType,p_strType,dummy_strType);
       then
-        ((VAR(cr,STATE(),d,DAE.STRING(),b,value,dim,x_strType,name,cl,dae_var_attr,comment,flowPrefix,streamPrefix) :: vars_1),
+        (((VAR(cr,STATE(),d,DAE.STRING(),b,value,dim,x_strType,name,cl,dae_var_attr,comment,flowPrefix,streamPrefix),typ,place) :: vars_1),
           x1,xd1,y1,p1,dummy1,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
         
-    case ((VAR(varName = cr,
+    case (((VAR(varName = cr,
                varKind = STATE(),
                varDirection = d,
                varType = tp,
@@ -13182,16 +13715,16 @@ algorithm
                values = dae_var_attr,
                comment = comment,
                flowPrefix = flowPrefix,
-               streamPrefix = streamPrefix) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType)
+               streamPrefix = streamPrefix),typ,place) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType)
       equation
         x_1 = x + 1;
         (vars_1,x1,xd1,y1,p1,dummy1,ext,x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1) = 
            calculateIndexes2(vs, x_1, xd, y, p, dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
       then
-        ((VAR(cr,STATE(),d,tp,b,value,dim,x,name,cl,dae_var_attr,comment,flowPrefix,streamPrefix) :: vars_1),
+        (((VAR(cr,STATE(),d,tp,b,value,dim,x,name,cl,dae_var_attr,comment,flowPrefix,streamPrefix),typ,place) :: vars_1),
           x1,xd1,y1,p1,dummy1,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
 
-    case ((VAR(varName = cr,
+    case (((VAR(varName = cr,
                varKind = DUMMY_DER(),
                varDirection = d,
                varType = DAE.STRING(),
@@ -13203,16 +13736,16 @@ algorithm
                values = dae_var_attr,
                comment = comment,
                flowPrefix = flowPrefix,
-               streamPrefix = streamPrefix) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType)
+               streamPrefix = streamPrefix),typ,place) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType)
       equation
         y_1_strType = y_strType + 1 "Dummy derivatives become algebraic variables" ;
         (vars_1,x1,xd1,y1,p1,dummy1,ext,x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1) = 
            calculateIndexes2(vs, x, xd, y, p, dummy,ext,x_strType,xd_strType,y_1_strType,p_strType,dummy_strType);
       then
-        ((VAR(cr,DUMMY_DER(),d,DAE.STRING(),b,value,dim,y_strType,name,cl,dae_var_attr,comment,flowPrefix,streamPrefix) :: vars_1),
+        (((VAR(cr,DUMMY_DER(),d,DAE.STRING(),b,value,dim,y_strType,name,cl,dae_var_attr,comment,flowPrefix,streamPrefix),typ,place) :: vars_1),
           x1,xd1,y1,p1,dummy1,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
           
-    case ((VAR(varName = cr,
+    case (((VAR(varName = cr,
                varKind = DUMMY_DER(),
                varDirection = d,
                varType = tp,
@@ -13224,16 +13757,16 @@ algorithm
                values = dae_var_attr,
                comment = comment,
                flowPrefix = flowPrefix,
-               streamPrefix = streamPrefix) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType)
+               streamPrefix = streamPrefix),typ,place) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType)
       equation
         y_1 = y + 1 "Dummy derivatives become algebraic variables" ;
         (vars_1,x1,xd1,y1,p1,dummy1,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType) = 
            calculateIndexes2(vs, x, xd, y_1, p, dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
       then
-        ((VAR(cr,DUMMY_DER(),d,tp,b,value,dim,y,name,cl,dae_var_attr,comment,flowPrefix,streamPrefix) :: vars_1),
+        (((VAR(cr,DUMMY_DER(),d,tp,b,value,dim,y,name,cl,dae_var_attr,comment,flowPrefix,streamPrefix),typ,place) :: vars_1),
           x1,xd1,y1,p1,dummy1,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
 
-    case ((VAR(varName = cr,
+    case (((VAR(varName = cr,
                varKind = DUMMY_STATE(),
                varDirection = d,
                varType = DAE.STRING(),
@@ -13245,16 +13778,16 @@ algorithm
                values = dae_var_attr,
                comment = comment,
                flowPrefix = flowPrefix,
-               streamPrefix = streamPrefix) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType)
+               streamPrefix = streamPrefix),typ,place) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType)
       equation
         y_1_strType = y_strType + 1 "Dummy state become algebraic variables" ;
         (vars_1,x1,xd1,y1,p1,dummy1,ext,x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1) = 
            calculateIndexes2(vs, x, xd, y, p, dummy,ext,x_strType,xd_strType,y_1_strType,p_strType,dummy_strType);
       then
-        ((VAR(cr,DUMMY_STATE(),d,DAE.STRING(),b,value,dim,y_strType,name,cl,dae_var_attr,comment,flowPrefix,streamPrefix) :: vars_1),
+        (((VAR(cr,DUMMY_STATE(),d,DAE.STRING(),b,value,dim,y_strType,name,cl,dae_var_attr,comment,flowPrefix,streamPrefix),typ,place) :: vars_1),
           x1,xd1,y1,p1,dummy1,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
           
-    case ((VAR(varName = cr,
+    case (((VAR(varName = cr,
                varKind = DUMMY_STATE(),
                varDirection = d,
                varType = tp,
@@ -13266,16 +13799,16 @@ algorithm
                values = dae_var_attr,
                comment = comment,
                flowPrefix = flowPrefix,
-               streamPrefix = streamPrefix) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType)
+               streamPrefix = streamPrefix),typ,place) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType)
       equation
         y_1 = y + 1 "Dummy state become algebraic variables" ;
         (vars_1,x1,xd1,y1,p1,dummy1,ext,x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1) = 
            calculateIndexes2(vs, x, xd, y_1, p, dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
       then
-        ((VAR(cr,DUMMY_STATE(),d,tp,b,value,dim,y,name,cl,dae_var_attr,comment,flowPrefix,streamPrefix) :: vars_1),
+        (((VAR(cr,DUMMY_STATE(),d,tp,b,value,dim,y,name,cl,dae_var_attr,comment,flowPrefix,streamPrefix),typ,place) :: vars_1),
           x1,xd1,y1,p1,dummy1,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
 
-    case ((VAR(varName = cr,
+    case (((VAR(varName = cr,
                varKind = DISCRETE(),
                varDirection = d,
                varType = DAE.STRING(),
@@ -13287,16 +13820,16 @@ algorithm
                values = dae_var_attr,
                comment = comment,
                flowPrefix = flowPrefix,
-               streamPrefix = streamPrefix) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType)
+               streamPrefix = streamPrefix),typ,place) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType)
       equation
         y_1_strType = y_strType + 1;
         (vars_1,x1,xd1,y1,p1,dummy1,ext,x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1) = 
            calculateIndexes2(vs, x, xd, y, p, dummy,ext,x_strType,xd_strType,y_1_strType,p_strType,dummy_strType);
       then
-        ((VAR(cr,DISCRETE(),d,DAE.STRING(),b,value,dim,y_strType,name,cl,dae_var_attr,comment,flowPrefix,streamPrefix) :: vars_1),
+        (((VAR(cr,DISCRETE(),d,DAE.STRING(),b,value,dim,y_strType,name,cl,dae_var_attr,comment,flowPrefix,streamPrefix),typ,place) :: vars_1),
           x1,xd1,y1,p1,dummy1,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
           
-    case ((VAR(varName = cr,
+    case (((VAR(varName = cr,
                varKind = DISCRETE(),
                varDirection = d,
                varType = tp,
@@ -13308,16 +13841,16 @@ algorithm
                values = dae_var_attr,
                comment = comment,
                flowPrefix = flowPrefix,
-               streamPrefix = streamPrefix) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType)
+               streamPrefix = streamPrefix),typ,place) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType)
       equation
         y_1 = y + 1;
         (vars_1,x1,xd1,y1,p1,dummy1,ext,x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1) = 
            calculateIndexes2(vs, x, xd, y_1, p, dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
       then
-        ((VAR(cr,DISCRETE(),d,tp,b,value,dim,y,name,cl,dae_var_attr,comment,flowPrefix,streamPrefix) :: vars_1),
+        (((VAR(cr,DISCRETE(),d,tp,b,value,dim,y,name,cl,dae_var_attr,comment,flowPrefix,streamPrefix),typ,place) :: vars_1),
           x1,xd1,y1,p1,dummy1,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
 
-    case ((VAR(varName = cr,
+    case (((VAR(varName = cr,
                varKind = PARAM(),
                varDirection = d,
                varType = DAE.STRING(),
@@ -13329,16 +13862,16 @@ algorithm
                values = dae_var_attr,
                comment = comment,
                flowPrefix = flowPrefix,
-               streamPrefix = streamPrefix) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType)
+               streamPrefix = streamPrefix),typ,place) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType)
       equation
         p_1_strType = p_strType + 1;
         (vars_1,x1,xd1,y1,p1,dummy1,ext,x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1) = 
            calculateIndexes2(vs, x, xd, y, p, dummy,ext,x_strType,xd_strType,y_strType,p_1_strType,dummy_strType);
       then
-        ((VAR(cr,PARAM(),d,DAE.STRING(),b,value,dim,p_strType,name,cl,dae_var_attr,comment,flowPrefix,streamPrefix) :: vars_1),
+        (((VAR(cr,PARAM(),d,DAE.STRING(),b,value,dim,p_strType,name,cl,dae_var_attr,comment,flowPrefix,streamPrefix),typ,place) :: vars_1),
           x1,xd1,y1,p1,dummy1,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
           
-    case ((VAR(varName = cr,
+    case (((VAR(varName = cr,
                varKind = PARAM(),
                varDirection = d,
                varType = tp,
@@ -13350,16 +13883,16 @@ algorithm
                values = dae_var_attr,
                comment = comment,
                flowPrefix = flowPrefix,
-               streamPrefix = streamPrefix) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType)
+               streamPrefix = streamPrefix),typ,place) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType)
       equation
         p_1 = p + 1;
         (vars_1,x1,xd1,y1,p1,dummy1,ext,x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1) = 
            calculateIndexes2(vs, x, xd, y, p_1, dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
       then
-        ((VAR(cr,PARAM(),d,tp,b,value,dim,p,name,cl,dae_var_attr,comment,flowPrefix,streamPrefix) :: vars_1),
+        (((VAR(cr,PARAM(),d,tp,b,value,dim,p,name,cl,dae_var_attr,comment,flowPrefix,streamPrefix),typ,place) :: vars_1),
           x1,xd1,y1,p1,dummy1,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
 
-    case ((VAR(varName = cr,
+    case (((VAR(varName = cr,
                varKind = CONST(),
                varDirection = d,
                varType = tp,
@@ -13371,17 +13904,17 @@ algorithm
                values = dae_var_attr,
                comment = comment,
                flowPrefix = flowPrefix,
-               streamPrefix = streamPrefix) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType)
+               streamPrefix = streamPrefix),typ,place) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType)
       equation
          //IS THIS A BUG??
          // THE INDEX FOR const IS SET TO p (=last parameter index)
         (vars_1,x1,xd1,y1,p1,dummy1,ext,x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1) = 
            calculateIndexes2(vs, x, xd, y, p, dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
       then
-        ((VAR(cr,CONST(),d,tp,b,value,dim,p,name,cl,dae_var_attr,comment,flowPrefix,streamPrefix) :: vars_1),
+        (((VAR(cr,CONST(),d,tp,b,value,dim,p,name,cl,dae_var_attr,comment,flowPrefix,streamPrefix),typ,place) :: vars_1),
           x1,xd1,y1,p1,dummy1,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
 
-    case ((VAR(varName = cr,
+    case (((VAR(varName = cr,
                varKind = EXTOBJ(path),
                varDirection = d,
                varType = tp,
@@ -13393,14 +13926,14 @@ algorithm
                values = dae_var_attr,
                comment = comment,
                flowPrefix = flowPrefix,
-               streamPrefix = streamPrefix) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType)
+               streamPrefix = streamPrefix),typ,place) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType)
       local Absyn.Path path;
       equation
         ext_1 = ext+1;
         (vars_1,x1,xd1,y1,p1,dummy,ext_1,x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1) = 
            calculateIndexes2(vs, x, xd, y, p, dummy,ext_1,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
       then
-        ((VAR(cr,EXTOBJ(path),d,tp,b,value,dim,p,name,cl,dae_var_attr,comment,flowPrefix,streamPrefix) :: vars_1),
+        (((VAR(cr,EXTOBJ(path),d,tp,b,value,dim,p,name,cl,dae_var_attr,comment,flowPrefix,streamPrefix),typ,place) :: vars_1),
           x1,xd1,y1,p1,dummy,ext_1,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
   end matchcontinue;
 end calculateIndexes2;
