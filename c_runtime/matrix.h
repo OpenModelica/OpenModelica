@@ -95,7 +95,7 @@ void * hybrj_(void(*) (int *,double*,double*,double *,int*, int*),
     	    nls_diag,&mode,&factor,&nprint,&info,&nfev,nls_fjac,&ldfjac, \
         nls_r,&lr,nls_qtf,nls_wa1,nls_wa2,nls_wa3,nls_wa4); \
     	if (info == 0) { \
-    	    printf("improper input parameters to nonlinear eq. syst.\n"); \
+    	    printf("improper input parameters to nonlinear eq. syst %s:%d.\n", __FILE__, __LINE__); \
     	} \
         if ((info == 4 || info == 5 )&& retries < 3) { /* first try to decrease factor*/ \
     		retries++; giveUp = 0; \
@@ -137,7 +137,7 @@ void * hybrj_(void(*) (int *,double*,double*,double *,int*, int*),
     	    nls_diag,&mode,&factor,&nprint,&info,&nfev,nls_fjac,&ldfjac, \
         nls_r,&lr,nls_qtf,nls_wa1,nls_wa2,nls_wa3,nls_wa4); \
     	if (info == 0) { \
-    	    printf("improper input parameters to nonlinear eq. syst.\n"); \
+    	    printf("improper input parameters to nonlinear eq. syst %s:%d.\n", __FILE__, __LINE__); \
     	} \
         if ((info == 4 || info == 5 )&& retries < 3) { /* first try to decrease factor*/ \
     		retries++; giveUp = 0; \
@@ -178,7 +178,7 @@ void * hybrj_(void(*) (int *,double*,double*,double *,int*, int*),
     	    nls_diag,&mode,&factor,&nprint,&info,&nfev,&njev, \
         nls_r,&lr,nls_qtf,nls_wa1,nls_wa2,nls_wa3,nls_wa4); \
     	if (info == 0) { \
-    	    printf("improper input parameters to nonlinear eq. syst.\n"); \
+    	    printf("improper input parameters to nonlinear eq. syst %s:%d.\n", __FILE__, __LINE__); \
     	} \
     	if ((info == 4 || info == 5 )&& retries < 3) { /* First try to decrease factor*/ \
     		retries++; giveUp = 0; \
@@ -215,13 +215,13 @@ for (int i=0;i<nelts;i++) v[i]=0.0;
 #define set_vector_elt(v,i,value) v[i]=value
 #define get_vector_elt(v,i) v[i]
 
-#define solve_linear_equation_system(A,b,size,id) do { long int n=size; \
-long int nrhs=1; /* number of righthand sides*/\
-long int lda=n /* Leading dimension of A */; long int ldb=n; /* Leading dimension of b*/\
-long int * ipiv=new long int[n]; /* Pivott indices */ \
+#define solve_linear_equation_system(A,b,size,id) do { integer n=size; \
+integer nrhs=1; /* number of righthand sides*/\
+integer lda=n /* Leading dimension of A */; integer ldb=n; /* Leading dimension of b*/\
+integer * ipiv=new integer[n]; /* Pivott indices */ \
 assert(ipiv != 0); \
 for(int i=0; i<n; i++) ipiv[i] = 0; \
-long int info; /* output */ \
+integer info; /* output */ \
 dgesv_(&n,&nrhs,&A[0],&lda,ipiv,&b[0],&ldb,&info); \
  if (info < 0) { \
    printf("Error solving linear system of equations (no. %d) at time %f. Argument %d illegal.\n",id,localData->timeValue,info); \
@@ -232,13 +232,13 @@ dgesv_(&n,&nrhs,&A[0],&lda,ipiv,&b[0],&ldb,&info); \
 delete [] ipiv; \
 } while (0) /* (no trailing ; ) */
 
-#define solve_linear_equation_system_mixed(A,b,size,id) do { long int n=size; \
-long int nrhs=1; /* number of righthand sides*/\
-long int lda=n /* Leading dimension of A */; long int ldb=n; /* Leading dimension of b*/\
-long int * ipiv=new long int[n]; /* Pivott indices */ \
+#define solve_linear_equation_system_mixed(A,b,size,id) do { integer n=size; \
+integer nrhs=1; /* number of righthand sides*/\
+integer lda=n /* Leading dimension of A */; integer ldb=n; /* Leading dimension of b*/\
+integer * ipiv=new integer[n]; /* Pivott indices */ \
 assert(ipiv != 0); \
 for(int i=0; i<n; i++) ipiv[i] = 0; \
-long int info; /* output */ \
+integer info; /* output */ \
 dgesv_(&n,&nrhs,&A[0],&lda,ipiv,&b[0],&ldb,&info); \
  if (info < 0) { \
    printf("Error solving linear system of equations (no. %d) at time %f. Argument %d illegal.\n",id,localData->timeValue,info); \

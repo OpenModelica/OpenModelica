@@ -1,4 +1,4 @@
-/* daux.f -- translated by f2c (version 20041007).
+/* daux.f -- translated by f2c (version 20061008).
    You must link the resulting object file with libf2c:
 	on Microsoft Windows system, link with libf2c.lib;
 	on Linux or Unix systems, link with .../path/to/libf2c.a -lm
@@ -41,8 +41,8 @@ L10:
 /* ----------------------- END OF FUNCTION D1MACH ------------------------ */
 } /* d1mach_ */
 
-/* Subroutine */ int xerrwv_(char *msg, integer *nmes, integer *nerr, integer
-	*level, integer *ni, integer *i1, integer *i2, integer *nr,
+/* Subroutine */ int xerrwv_(char *msg, integer *nmes, integer *nerr, integer 
+	*level, integer *ni, integer *i1, integer *i2, integer *nr, 
 	doublereal *r1, doublereal *r2, ftnlen msg_len)
 {
     /* Format strings */
@@ -176,7 +176,7 @@ integer i1mach_(integer *i__)
     static integer sanity = 987;
     static struct {
 	integer e_1[16];
-	} equiv_0 = { 5, 6, 7, 6, 32, 4, 2, 31, 2147483647, 2, 24, -125, 128,
+	} equiv_0 = { 5, 6, 7, 6, 32, 4, 2, 31, 2147483647, 2, 24, -125, 128, 
 		53, -1021, 1024 };
 
 

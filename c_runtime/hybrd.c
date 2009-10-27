@@ -1,4 +1,4 @@
-/* hybrd.f -- translated by f2c (version 20041007).
+/* hybrd.f -- translated by f2c (version 20061008).
    You must link the resulting object file with libf2c:
 	on Microsoft Windows system, link with libf2c.lib;
 	on Linux or Unix systems, link with .../path/to/libf2c.a -lm
@@ -18,10 +18,10 @@ static integer c__1 = 1;
 static logical c_false = FALSE_;
 
 /* Subroutine */ int hybrd_(S_fp fcn, integer *n, doublereal *x, doublereal *
-	fvec, doublereal *xtol, integer *maxfev, integer *ml, integer *mu,
+	fvec, doublereal *xtol, integer *maxfev, integer *ml, integer *mu, 
 	doublereal *epsfcn, doublereal *diag, integer *mode, doublereal *
 	factor, integer *nprint, integer *info, integer *nfev, doublereal *
-	fjac, integer *ldfjac, doublereal *r__, integer *lr, doublereal *qtf,
+	fjac, integer *ldfjac, doublereal *r__, integer *lr, doublereal *qtf, 
 	doublereal *wa1, doublereal *wa2, doublereal *wa3, doublereal *wa4)
 {
     /* Initialized data */
@@ -45,27 +45,27 @@ static logical c_false = FALSE_;
     static doublereal temp;
     static integer msum, iflag;
     static doublereal delta;
-    extern /* Subroutine */ int qrfac_(integer *, integer *, doublereal *,
-	    integer *, logical *, integer *, integer *, doublereal *,
+    extern /* Subroutine */ int qrfac_(integer *, integer *, doublereal *, 
+	    integer *, logical *, integer *, integer *, doublereal *, 
 	    doublereal *, doublereal *);
     static logical jeval;
     static integer ncsuc;
     static doublereal ratio;
     extern doublereal enorm_(integer *, doublereal *);
     static doublereal fnorm;
-    extern /* Subroutine */ int qform_(integer *, integer *, doublereal *,
-	    integer *, doublereal *), fdjac1_(S_fp, integer *, doublereal *,
-	    doublereal *, doublereal *, integer *, integer *, integer *,
+    extern /* Subroutine */ int qform_(integer *, integer *, doublereal *, 
+	    integer *, doublereal *), fdjac1_(S_fp, integer *, doublereal *, 
+	    doublereal *, doublereal *, integer *, integer *, integer *, 
 	    integer *, doublereal *, doublereal *, doublereal *);
     static doublereal pnorm, xnorm, fnorm1;
-    extern /* Subroutine */ int r1updt_(integer *, integer *, doublereal *,
+    extern /* Subroutine */ int r1updt_(integer *, integer *, doublereal *, 
 	    integer *, doublereal *, doublereal *, doublereal *, logical *);
     static integer nslow1, nslow2;
-    extern /* Subroutine */ int r1mpyq_(integer *, integer *, doublereal *,
+    extern /* Subroutine */ int r1mpyq_(integer *, integer *, doublereal *, 
 	    integer *, doublereal *, doublereal *);
     static integer ncfail;
-    extern /* Subroutine */ int dogleg_(integer *, doublereal *, integer *,
-	    doublereal *, doublereal *, doublereal *, doublereal *,
+    extern /* Subroutine */ int dogleg_(integer *, doublereal *, integer *, 
+	    doublereal *, doublereal *, doublereal *, doublereal *, 
 	    doublereal *, doublereal *);
     static doublereal actred, epsmch, prered;
     extern doublereal dpmpar_(integer *);
