@@ -64,10 +64,10 @@ std::ostringstream objref_file;
 
 using namespace std;
 
-HANDLE lock;
+CRITICAL_SECTION lock;
 HANDLE omc_client_request_event;
 HANDLE omc_return_value_ready;
-HANDLE clientlock;
+CRITICAL_SECTION clientlock;
 
 char * omc_cmd_message = "";
 char * omc_reply_message = "";
@@ -131,8 +131,6 @@ RML_BEGIN_LABEL(Corba__initialize)
   int argc=4;
   string omc_client_request_event_name 	= "omc_client_request_event";
   string omc_return_value_ready_name   	= "omc_return_value_ready";
-  string lock_name 						= "omc_lock";
-  string clientlock_name 				= "omc_clientlock";
   DWORD lastError = 0;
   char* errorMessage = "OpenModelica OMC could not be started.\nAnother OMC is already running.\n\n\
 Please stop or kill the other OMC process first!\nOpenModelica OMC will now exit.\n\nCorba.initialize()";
@@ -142,8 +140,6 @@ Please stop or kill the other OMC process first!\nOpenModelica OMC will now exit
   {
   	omc_client_request_event_name 	+= corbaSessionName;
   	omc_return_value_ready_name   	+= corbaSessionName;
-  	lock_name 				      	+= corbaSessionName;
-  	clientlock_name 				+= corbaSessionName;
   }
   omc_client_request_event = CreateEvent(NULL,FALSE,FALSE,omc_client_request_event_name.c_str());
   lastError = GetLastError();
@@ -161,22 +157,8 @@ Please stop or kill the other OMC process first!\nOpenModelica OMC will now exit
   	fprintf(stderr, "CreateEvent '%s' error: %d\n", omc_return_value_ready_name.c_str(), lastError);		
 	RML_TAILCALLK(rmlFC);
   }
-  lock = CreateMutex(NULL, FALSE, lock_name.c_str());
-  lastError = GetLastError();  
-  if (lock == NULL || (lock != NULL && lastError == ERROR_ALREADY_EXISTS))
-  {
-  	display_omc_error(lastError, errorMessage);
-    fprintf(stderr, "CreateMutex '%s' error: %d\n", lock_name.c_str(), GetLastError());
-	RML_TAILCALLK(rmlFC);    
-  }  
-  clientlock = CreateMutex(NULL, FALSE, clientlock_name.c_str());
-  lastError = GetLastError();    
-  if (clientlock == NULL || (clientlock != NULL && lastError == ERROR_ALREADY_EXISTS))
-  {
-  	display_omc_error(lastError, errorMessage);
-    fprintf(stderr, "CreateMutex '%s' error: %d\n", clientlock_name.c_str(), GetLastError());
-	RML_TAILCALLK(rmlFC);    
-  }  
+  InitializeCriticalSection(&lock);
+  InitializeCriticalSection(&clientlock);
   
 #if defined(USE_OMNIORB)
   orb = CORBA::ORB_init(argc, dummyArgv, "omniORB4");
@@ -236,7 +218,6 @@ Please stop or kill the other OMC process first!\nOpenModelica OMC will now exit
   std::cout << "Created server." << std::endl;
   std::cout << "Dumped Corba IOR in file: " << objref_file.str().c_str() << std::endl;
   std::cout << "Started the Corba ORB thread with id: " << orb_thr_id << std::endl;
-  std::cout << "Created Mutexes: " << lock_name.c_str() << ", " << clientlock_name.c_str() << std::endl;
   std::cout << "Created Events: " << omc_client_request_event_name.c_str() << ", " << omc_return_value_ready_name.c_str() << std::endl;      
 #endif //NOMICO
   RML_TAILCALLK(rmlSC);
@@ -271,8 +252,7 @@ RML_BEGIN_LABEL(Corba__waitForCommand)
     fprintf(stderr, "Corba.mo (corbaimpl.cpp): received cmd: %s\n", omc_cmd_message);
   rmlA0=mk_scon(omc_cmd_message);
   
-  WaitForSingleObject(lock,INFINITE); // Lock so no other tread can talk to omc.
-
+  EnterCriticalSection(&lock); // Lock so no other tread can talk to omc.
 #endif // NOMICO
 
   RML_TAILCALLK(rmlSC);
@@ -288,7 +268,7 @@ RML_BEGIN_LABEL(Corba__sendreply)
   omc_reply_message = msg;
   SetEvent(omc_return_value_ready);
 
-  ReleaseMutex(lock); // Unlock, so other threads can ask omc stuff.
+  LeaveCriticalSection(&lock); // Unlock, so other threads can ask omc stuff.
 #endif // NOMICO
 
   RML_TAILCALLK(rmlSC);
