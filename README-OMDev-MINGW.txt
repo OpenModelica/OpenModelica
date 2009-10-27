@@ -1,6 +1,10 @@
+/*
+ * RCS: $Id$
+ */
+
 Compiling OMC using OMDev package
 ========================================
-Adrian Pop, adrpo@ida.liu.se, 2006-04-06
+Adrian Pop, adrpo@ida.liu.se, date above.
 
 
 1. Get the OMDev package from:
@@ -65,7 +69,6 @@ Adrian Pop, adrpo@ida.liu.se, 2006-04-06
       independent (static) omc.exe.
 
 11. To run the OpenModelica testsuite you have to:
-    Copy OMDev/tools/mingw to OpenModelica/build/MinGW
     If you don't have an OpenModelicaX.Y.Z release installed
      then create a directory called OpenModelica/build/ModelicaLibrary
     in which you unpack the Modelica Standard Library you
