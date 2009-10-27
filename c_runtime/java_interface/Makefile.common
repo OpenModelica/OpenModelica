@@ -103,7 +103,7 @@ antlr_compile = @"$(JAVA)" -jar $(antlr) -fo src/org/openmodelica/corba/parser
 default: showtarget $(TARGET)
 showtarget:
 ifeq ($(TARGET),install)
-	@echo "* No JDK (javac) detected. Using the previosuly compiles jar-file."
+	@echo "* No JDK (javac) detected. Using the previosuly compiled jar-file."
 	@echo "* To compile, set JAVA_HOME to a JDK or add javac to the PATH."
 endif
 
