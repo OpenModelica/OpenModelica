@@ -1,9 +1,9 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2008, Linköpings University,
+ * Copyright (c) 1998-2008, Linkï¿½pings University,
  * Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
+ * SE-58183 Linkï¿½ping, Sweden.
  *
  * All rights reserved.
  *
@@ -14,7 +14,7 @@
  *
  * The OpenModelica software and the Open Source 	Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköpings University, either from the above address,
+ * from Linkï¿½pings University, either from the above address,
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
  *
@@ -6540,7 +6540,7 @@ algorithm
     case (cache,_,_,_,cl as SCode.CLASS(name = "String"),_,_) then (cache,{},cl); 
     case (cache,_,_,_,cl as SCode.CLASS(name = "Boolean"),_,_) then (cache,{},cl);
       
-    case (cache,_,_,_,cl as SCode.CLASS(restriction = SCode.R_RECORD(), classDef = SCode.PARTS(_,_,_,_,_,_)),_,_) then (cache,{},cl);
+    case (cache,_,_,_,cl as SCode.CLASS(restriction = SCode.R_RECORD(), classDef = SCode.PARTS(_,_,_,_,_,_,_)),_,_) then (cache,{},cl);
 
     /*------------------------*/
     /* MetaModelica extension */
@@ -6611,7 +6611,7 @@ algorithm
 
     /* extended classes type Y = Real[3]; class X extends Y; */   
     case (cache,env,mods,pre,SCode.CLASS(name = id,restriction = _,
-                                         classDef = SCode.PARTS(els,{},{},{},{},_)),
+                                         classDef = SCode.PARTS(els,{},{},{},{},{},_)),
           dims,impl) 
       local list<SCode.Element> els, extendsels; SCode.Path path;
       equation 
@@ -7808,7 +7808,7 @@ algorithm
       equation 
         typePath = Absyn.crefToPath(cr);
         /* make sure is an enumeration! */
-        (_, SCode.CLASS(_, _, _, SCode.R_ENUMERATION(), SCode.PARTS(elementLst, {}, {}, {}, {}, NONE())), _) = 
+        (_, SCode.CLASS(_, _, _, SCode.R_ENUMERATION(), SCode.PARTS(elementLst, {}, {}, {}, {}, {}, NONE())), _) = 
              Lookup.lookupClass(cache, env, typePath, false);
         i = listLength(elementLst);
         (cache,l) = elabArraydimDecl(cache,env, cref, ds, impl, st,doVect);
@@ -8382,7 +8382,7 @@ algorithm
     case (cache,env,ih,SCode.CLASS(name = id,partialPrefix = p,encapsulatedPrefix = e,restriction = r,
                                    classDef = SCode.PARTS(elementLst = elts,externalDecl=extDecl))) 
       equation 
-        stripped_class = SCode.CLASS(id,p,e,r,SCode.PARTS(elts,{},{},{},{},extDecl));
+        stripped_class = SCode.CLASS(id,p,e,r,SCode.PARTS(elts,{},{},{},{},{},extDecl));
         (cache,env_1,ih,_) = implicitFunctionInstantiation(cache,env,ih, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, stripped_class, {});
       then
         (cache,env_1,ih);
@@ -8996,7 +8996,7 @@ protected function instEnumeration
   list<SCode.Element> comp;
 algorithm 
   comp := makeEnumComponents(l);
-  outClass := SCode.CLASS(n,false,false,SCode.R_ENUMERATION(),SCode.PARTS(comp,{},{},{},{},NONE));
+  outClass := SCode.CLASS(n,false,false,SCode.R_ENUMERATION(),SCode.PARTS(comp,{},{},{},{},{},NONE));
 end instEnumeration;
 
 
@@ -9837,7 +9837,7 @@ algorithm
         
         typePath = Absyn.crefToPath(cr);
         /* make sure is an enumeration! */
-        (_, SCode.CLASS(_, _, _, SCode.R_ENUMERATION(), SCode.PARTS(elementLst, {}, {}, {}, {}, NONE())), _) = 
+        (_, SCode.CLASS(_, _, _, SCode.R_ENUMERATION(), SCode.PARTS(elementLst, {}, {}, {}, {}, {}, NONE())), _) = 
              Lookup.lookupClass(cache, env, typePath, false);
         len = listLength(elementLst);        
         env_1 = addForLoopScope(env, i, (Types.T_INTEGER({}),NONE())) "//Debug.fprintln (\"insti\", \"for expression elaborated\") &" ;

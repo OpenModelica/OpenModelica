@@ -1,9 +1,9 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2008, Linköpings University,
+ * Copyright (c) 1998-2008, Linkï¿½pings University,
  * Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
+ * SE-58183 Linkï¿½ping, Sweden.
  *
  * All rights reserved.
  *
@@ -14,7 +14,7 @@
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköpings University, either from the above address,
+ * from Linkï¿½pings University, either from the above address,
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
  *
@@ -1799,7 +1799,7 @@ algorithm
         initStmts = {SCode.ALGORITHM(initAbsynStmts,NONE())};
       then
         SCode.CLASS(id,false,false,SCode.R_FUNCTION(),
-          SCode.PARTS((reselt :: funcelts),{},{},initStmts,{},NONE));
+          SCode.PARTS((reselt :: funcelts),{},{},{},initStmts,{},NONE));
     case (cl,env) equation
       print("buildRecordConstructorClass failed\n");
       then fail();

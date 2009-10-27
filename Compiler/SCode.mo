@@ -1,9 +1,9 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2008, Linköpings University,
+ * Copyright (c) 1998-2008, Linkï¿½pings University,
  * Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
+ * SE-58183 Linkï¿½ping, Sweden.
  *
  * All rights reserved.
  *
@@ -14,7 +14,7 @@
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköpings University, either from the above address,
+ * from Linkï¿½pings University, either from the above address,
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
  *
@@ -158,6 +158,7 @@ uniontype ClassDef
   end A;"
   record PARTS "a class made of parts"
     list<Element>              elementLst          "the list of elements";
+    list<Annotation>           annotationLst       "the list of annotations";
     list<Equation>             normalEquationLst   "the list of equations";
     list<Equation>             initialEquationLst  "the list of initial equations";
     list<Algorithm>            normalAlgorithmLst  "the list of algorithms";
@@ -183,6 +184,7 @@ uniontype ClassDef
     Ident            baseClassName       "the name of the base class we have to extend";
     Mod              modifications       "the modifications that need to be applied to the base class";
     list<Element>    elementLst          "the list of elements";
+    list<Annotation> annotationLst       "the list of annotations";
     list<Equation>   normalEquationLst   "the list of equations";
     list<Equation>   initialEquationLst  "the list of initial equations";
     list<Algorithm>  normalAlgorithmLst  "the list of algorithms";
@@ -195,6 +197,16 @@ uniontype ClassDef
   end PDER;
 
 end ClassDef;
+
+// stefan
+public
+uniontype Annotation
+  
+  record ANNOTATION
+    Mod modification;
+  end ANNOTATION;
+  
+end Annotation;
 
 public 
 uniontype Equation "- Equations"
@@ -550,6 +562,7 @@ algorithm
       Option<Absyn.Comment> cmt;
       Option<String> cmtString;
       list<Element> els;
+      list<Annotation> anns;
       list<Equation> eqs,initeqs;
       list<Algorithm> als,initals;
       Option<Absyn.ExternalDecl> decl;
@@ -570,6 +583,7 @@ algorithm
         Debug.fprintln("elab", "elaborating class parts");
         //debug_print("elaborating-parts:", Dump.unparseClassPartStrLst(1, parts, true));
         els = elabClassdefElements(parts);
+        anns = elabClassdefAnnotations(parts);
         eqs = elabClassdefEquations(parts);
         initeqs = elabClassdefInitialequations(parts);
         als = elabClassdefAlgorithms(parts);
@@ -577,7 +591,7 @@ algorithm
         decl = elabClassdefExternaldecls(parts);
         decl = elabAlternativeExternalAnnotation(decl,parts);
       then
-        PARTS(els,eqs,initeqs,als,initals,decl);
+        PARTS(els,anns,eqs,initeqs,als,initals,decl);
     case (Absyn.ENUMERATION(enumLiterals = Absyn.ENUMLITERALS(enumLiterals = lst)))
       equation 
         Debug.fprintln("elab", "elaborating enumerations");
@@ -598,13 +612,14 @@ algorithm
       equation 
         Debug.fprintln("elab", "elaborating model extends " +& name +& " ... end " +& name +& ";");
         els = elabClassdefElements(parts);
+        anns = elabClassdefAnnotations(parts);
         eqs = elabClassdefEquations(parts);
         initeqs = elabClassdefInitialequations(parts);
         als = elabClassdefAlgorithms(parts);
         initals = elabClassdefInitialalgorithms(parts);
         mod = buildMod(SOME(Absyn.CLASSMOD(cmod,NONE)), false, Absyn.NON_EACH());
       then
-        CLASS_EXTENDS(name,mod,els,eqs,initeqs,als,initals);
+        CLASS_EXTENDS(name,mod,els,anns,eqs,initeqs,als,initals);
     case (Absyn.PDER(functionName = path,vars = vars)) 
       equation
         Debug.fprintln("elab", "elaborating pder( " +& Absyn.pathString(path) +& ", vars)");       
@@ -718,6 +733,41 @@ algorithm
       then elabClassdefElements(rest);
   end matchcontinue;
 end elabClassdefElements;
+
+// stefan
+protected function elabClassdefAnnotations
+"function: elabClassdefAnnotations
+	turns a list of Absyn.ClassPart into a list of Annotations"
+	input list<Absyn.ClassPart> inClassPartList;
+	output list<Annotation> outAnnotationList;
+algorithm
+  outAnnotationList := matchcontinue(inClassPartList)
+    local
+      list<Annotation> anns,anns1,anns2;
+      list<Absyn.ElementItem> eilst;
+      list<Absyn.ClassPart> cdr;
+    case({}) then {};
+    case(Absyn.PUBLIC(eilst) :: cdr)
+      equation
+        anns = elabAnnotations(eilst);
+        anns1 = elabClassdefAnnotations(cdr);
+        anns2 = listAppend(anns,anns1);
+      then
+        anns2;
+    case(Absyn.PROTECTED(eilst) :: cdr)
+      equation
+        anns = elabAnnotations(eilst);
+        anns1 = elabClassdefAnnotations(cdr);
+        anns2 = listAppend(anns,anns1);
+      then
+        anns2;
+    case(_ :: cdr)
+      equation
+        anns = elabClassdefAnnotations(cdr);
+      then
+        anns;
+  end matchcontinue;
+end elabClassdefAnnotations;
 
 protected function elabClassdefEquations 
 "function: elabClassdefEquations 
@@ -909,7 +959,62 @@ algorithm
         l;
   end matchcontinue;
 end elabEitemlist;
-  
+
+// stefan
+protected function elabAnnotations
+"function: elabAnnotations
+	turns a list of Absyn.ElementItem into a list of Annotations"
+	input list<Absyn.ElementItem> inElementItemList;
+	output list<Annotation> outAnnotationList;
+algorithm
+  outAnnotationList := matchcontinue(inElementItemList)
+    local
+      list<Absyn.ElementItem> cdr;
+      Absyn.Annotation ann;
+      Annotation res;
+      list<Annotation> anns,anns_1;
+    case({}) then {};
+    case(Absyn.ANNOTATIONITEM(ann) :: cdr)
+      equation
+        res = elabAnnotation(ann);
+        anns = elabAnnotations(cdr);
+        anns_1 = res :: anns;
+      then
+        anns_1;
+    case(_ :: cdr)
+      equation
+        anns = elabAnnotations(cdr);
+      then
+        anns;
+    case(_)
+      equation
+        Debug.fprintln("failtrace","SCode.elabAnnotations failed");
+      then
+        fail();
+  end matchcontinue;
+end elabAnnotations;
+
+// stefan
+protected function elabAnnotation
+"function: elabAnnotation
+	translates an Absyn.Annotation into an SCode.Annotation"
+	input Absyn.Annotation inAnnotation;
+	output Annotation outAnnotation;
+algorithm
+  outAnnotation := matchcontinue(inAnnotation)
+    local
+      list<Absyn.ElementArg> args;
+      Annotation res;
+      Mod m;
+    case(Absyn.ANNOTATION(args))
+      equation
+        m = buildMod(SOME(Absyn.CLASSMOD(args,NONE)), false, Absyn.NON_EACH());
+        res = ANNOTATION(m);
+      then
+        res;
+  end matchcontinue;
+end elabAnnotation;
+
 public function elabElement 
 "function: elabElement
   This function converts an Absyn.Element to a list of SCode.Element.  
@@ -2320,6 +2425,27 @@ public function elementEqual
    end matchcontinue;
  end elementEqual;
  
+// stefan
+public function annotationEqual
+"function: annotationEqual
+	returns true if 2 annotations are equal"
+	input Annotation annotation1;
+	input Annotation annotation2;
+	output Boolean equal;
+algorithm
+  equal := matchcontinue(annotation1,annotation2)
+    local
+      Mod mod1,mod2;
+      Boolean res;
+    case(ANNOTATION(mod1),ANNOTATION(mod2))
+      equation
+        res = modEqual(mod1,mod2);
+      then
+        res;
+    case(_,_) then false;
+  end matchcontinue;
+end annotationEqual;
+
 protected function classEqual 
 "function classEqual
   returns true if two classes are equal"
@@ -2381,25 +2507,27 @@ protected function classDefEqual
    equal := matchcontinue(cdef1,cdef2)
        local  
          list<Element> elts1,elts2;
+         list<Annotation> anns1,anns2;
          list<Equation> eqns1,eqns2;
          list<Equation> ieqns1,ieqns2;
          list<Algorithm> algs1,algs2;
          list<Algorithm> ialgs1,ialgs2; 
-         list<Boolean> blst1,blst2,blst3,blst4,blst5,blst;
+         list<Boolean> blst1,blst2,blst3,blst4,blst5,blst6,blst;
          Absyn.ElementAttributes attr1,attr2;
          Absyn.TypeSpec tySpec1, tySpec2;
          Mod mod1,mod2;
          Boolean b1,b2,b3;
          list<Ident> ilst1,ilst2;
          list<Boolean> blst;
-     case(PARTS(elts1,eqns1,ieqns1,algs1,ialgs1,_),PARTS(elts2,eqns2,ieqns2,algs2,ialgs2,_))
+     case(PARTS(elts1,anns1,eqns1,ieqns1,algs1,ialgs1,_),PARTS(elts2,anns2,eqns2,ieqns2,algs2,ialgs2,_))
        equation
          blst1 = Util.listThreadMap(elts1,elts2,elementEqual);
          blst2 = Util.listThreadMap(eqns1,eqns2,equationEqual);
          blst3 = Util.listThreadMap(ieqns1,ieqns2,equationEqual);
          blst4 = Util.listThreadMap(algs1,algs2,algorithmEqual);
          blst5 = Util.listThreadMap(ialgs1,ialgs2,algorithmEqual);
-         blst = Util.listFlatten({blst1,blst2,blst3,blst4,blst5});
+         blst6 = Util.listThreadMap(anns1,anns2,annotationEqual);
+         blst = Util.listFlatten({blst1,blst2,blst3,blst4,blst5,blst6});
          equal = Util.boolAndList(blst);
        then equal;
      case (DERIVED(tySpec1,mod1,attr1),DERIVED(tySpec2,mod2,attr2))
@@ -2414,11 +2542,11 @@ protected function classDefEqual
          blst = Util.listThreadMap(ilst1,ilst2,stringEqual);
          equal = Util.boolAndList(blst);
        then equal;
-    case (cdef1 as CLASS_EXTENDS(_,_,_,_,_,_,_),cdef2 as CLASS_EXTENDS(_,_,_,_,_,_,_))
+    case (cdef1 as CLASS_EXTENDS(_,_,_,_,_,_,_,_),cdef2 as CLASS_EXTENDS(_,_,_,_,_,_,_,_))
       equation
         equality(cdef1=cdef2);
       then true;
-    case (cdef1 as CLASS_EXTENDS(_,_,_,_,_,_,_),cdef2 as CLASS_EXTENDS(_,_,_,_,_,_,_))
+    case (cdef1 as CLASS_EXTENDS(_,_,_,_,_,_,_,_),cdef2 as CLASS_EXTENDS(_,_,_,_,_,_,_,_))
       equation
         failure(equality(cdef1=cdef2));
       then true;

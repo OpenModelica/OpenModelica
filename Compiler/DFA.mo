@@ -1,9 +1,9 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2008, Linköpings University,
+ * Copyright (c) 1998-2008, Linkï¿½pings University,
  * Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
+ * SE-58183 Linkï¿½ping, Sweden.
  *
  * All rights reserved.
  *
@@ -14,7 +14,7 @@
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköpings University, either from the above address,
+ * from Linkï¿½pings University, either from the above address,
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
  *
@@ -952,13 +952,13 @@ algorithm
       list<Absyn.Ident> fNameList;
       list<Absyn.TypeSpec> fTypes;
       list<SCode.Element> elemList;
-    case (SCode.CLASS(_,_,_,_,SCode.PARTS(elemList,_,_,_,_,_)))
+    case (SCode.CLASS(_,_,_,_,SCode.PARTS(elemList,_,_,_,_,_,_)))
       equation
         fNameList = Util.listMap(elemList,extractFieldName);
         fTypes = Util.listMap(elemList,extractFieldType);
       then (fNameList,fTypes);
     /* adrpo: handle also the case model extends X end X; */
-    case (SCode.CLASS(_,_,_,_,SCode.CLASS_EXTENDS(_,_,elemList,_,_,_,_)))
+    case (SCode.CLASS(_,_,_,_,SCode.CLASS_EXTENDS(_,_,elemList,_,_,_,_,_)))
       equation
         fNameList = Util.listMap(elemList,extractFieldName);
         fTypes = Util.listMap(elemList,extractFieldType);

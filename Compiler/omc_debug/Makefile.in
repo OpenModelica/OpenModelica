@@ -107,7 +107,7 @@ clean:
 	$(RM) -f $(SRCO) $(SRCC) $(SRCH) $(PROG)$(EXEXT) *~ $(ALLMO:.mo=.srz) $(ALLMO:.mo=.sig)
 
 reallyclean: clean
-	$(RM) -f $(ALLMO) $(ALLMO:.mo=.sig) $(PROG)$(EXEEXT) $(ALLMO:.mo=.srz)
+	$(RM) -f $(ALLMO) $(ALLMO:.mo=.sig) $(ALLMO:.mo=.sigx) $(PROG)$(EXEEXT) $(ALLMO:.mo=.srz)
 
 # don't remove these files after intermediate build steps
 .PRECIOUS: Makefile $(ALLMO)

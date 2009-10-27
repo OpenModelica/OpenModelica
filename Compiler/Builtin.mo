@@ -1,9 +1,9 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2008, Linköpings University,
+ * Copyright (c) 1998-2008, Linkï¿½pings University,
  * Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
+ * SE-58183 Linkï¿½ping, Sweden.
  *
  * All rights reserved.
  *
@@ -14,7 +14,7 @@
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköpings University, either from the above address,
+ * from Linkï¿½pings University, either from the above address,
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
  *
@@ -62,19 +62,19 @@ protected import Values;
   `Real\', `Integer\' etc. 
 */
 public constant SCode.Class rlType=SCode.CLASS("RealType",false,false,SCode.R_PREDEFINED_REAL(),
-          SCode.PARTS({},{},{},{},{},NONE)) " real type ";
+          SCode.PARTS({},{},{},{},{},{},NONE)) " real type ";
 
 public constant SCode.Class intType=SCode.CLASS("IntegerType",false,false,SCode.R_PREDEFINED_INT(),
-          SCode.PARTS({},{},{},{},{},NONE));
+          SCode.PARTS({},{},{},{},{},{},NONE));
 
 public constant SCode.Class strType=SCode.CLASS("StringType",false,false,SCode.R_PREDEFINED_STRING(),
-          SCode.PARTS({},{},{},{},{},NONE));
+          SCode.PARTS({},{},{},{},{},{},NONE));
 
 public constant SCode.Class boolType=SCode.CLASS("BooleanType",false,false,SCode.R_PREDEFINED_BOOL(),
-          SCode.PARTS({},{},{},{},{},NONE));
+          SCode.PARTS({},{},{},{},{},{},NONE));
 
 protected constant SCode.Class enumType=SCode.CLASS("EnumType",false,false,SCode.R_PREDEFINED_ENUM(),
-          SCode.PARTS({},{},{},{},{},NONE));
+          SCode.PARTS({},{},{},{},{},{},NONE));
 
 protected constant SCode.Element unit=SCode.COMPONENT("unit",Absyn.UNSPECIFIED(),true,false,false,
           SCode.ATTR({},false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR()),Absyn.TPATH(Absyn.IDENT("StringType"),NONE),
@@ -141,25 +141,25 @@ protected constant list<SCode.Element> stateSelectComps={
           SCode.ATTR({},false,false,SCode.RO(),SCode.CONST(),Absyn.BIDIR()),Absyn.TPATH(Absyn.IDENT("EnumType"),NONE),SCode.NOMOD(),NONE,NONE,NONE,NONE,NONE)} "The StateSelect enumeration" ;
 
 protected constant SCode.Class stateSelectType=SCode.CLASS("StateSelect",false,false,SCode.R_ENUMERATION(),
-          SCode.PARTS(stateSelectComps,{},{},{},{},NONE)) "The State Select Type" ;
+          SCode.PARTS(stateSelectComps,{},{},{},{},{},NONE)) "The State Select Type" ;
 
 public constant SCode.Class ExternalObjectType=SCode.CLASS("ExternalObject",false,false,SCode.R_CLASS(),
           SCode.PARTS(
-          {},{},{},{},{},NONE)) "ExternalObject type" ;
+          {},{},{},{},{},{},NONE)) "ExternalObject type" ;
 
 public constant SCode.Class realType=SCode.CLASS("Real",false,false,SCode.R_PREDEFINED_REAL(),
           SCode.PARTS(
           {unit,quantity,displayUnit,min,max,realStart,fixed,nominal,
-          stateSelect},{},{},{},{},NONE)) "- The `Real\' type" ;
+          stateSelect},{},{},{},{},{},NONE)) "- The `Real\' type" ;
 
 protected constant SCode.Class integerType=SCode.CLASS("Integer",false,false,SCode.R_PREDEFINED_INT(),
-          SCode.PARTS({quantity,min,max,integerStart,fixed},{},{},{},{},NONE)) "- The `Integer\' type" ;
+          SCode.PARTS({quantity,min,max,integerStart,fixed},{},{},{},{},{},NONE)) "- The `Integer\' type" ;
 
 protected constant SCode.Class stringType=SCode.CLASS("String",false,false,SCode.R_PREDEFINED_STRING(),
-          SCode.PARTS({quantity,stringStart},{},{},{},{},NONE)) "- The `String\' type" ;
+          SCode.PARTS({quantity,stringStart},{},{},{},{},{},NONE)) "- The `String\' type" ;
 
 protected constant SCode.Class booleanType=SCode.CLASS("Boolean",false,false,SCode.R_PREDEFINED_BOOL(),
-          SCode.PARTS({quantity,booleanStart,fixed},{},{},{},{},NONE)) "- The `Boolean\' type" ;
+          SCode.PARTS({quantity,booleanStart,fixed},{},{},{},{},{},NONE)) "- The `Boolean\' type" ;
 
 protected constant Types.Var timeVar=Types.VAR("time",
           Types.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,(Types.T_REAL({}),NONE),Types.UNBOUND()) "- The `time\' variable" ;
