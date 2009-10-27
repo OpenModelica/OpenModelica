@@ -18,7 +18,7 @@ public class ModelicaOption<T extends ModelicaObject> implements ModelicaObject 
 
   @Override
   public boolean equals(Object o) {
-    if (o instanceof ModelicaOption) {
+    if (o instanceof ModelicaOption<?>) {
       ModelicaObject o1 = this.o;
       ModelicaObject o2 = ((ModelicaOption<?>)o).o;
       if (o1 == null && o2 == null)

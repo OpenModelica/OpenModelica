@@ -114,7 +114,7 @@ public class ModelicaArray<T extends ModelicaObject> extends ModelicaBaseArray<T
       return;
     ModelicaArray<ModelicaObject> res = new ModelicaArray<ModelicaObject>();
     for (ModelicaObject o : this) {
-      if (o instanceof ModelicaArray) {
+      if (o instanceof ModelicaArray<?>) {
         ModelicaArray<?> a = (ModelicaArray<?>) o;
         a.flattenModelicaArray();
         res.addAll(a);

@@ -1,3 +1,13 @@
+ifdef JAVA_HOME
+JAVAC=$(JAVA_HOME)/bin/javac
+JAVA=$(JAVA_HOME)/bin/java
+JAR=$(JAVA_HOME)/bin/jar
+else
+JAVAC=javac
+JAVA=java
+JAR=jar
+endif
+
 antlr = antlr-3.1.3.jar
 junit = junit-4.6.jar
 
@@ -78,3 +88,21 @@ org.openmodelica.test.TestParser \
 org.openmodelica.test.TestRecord \
 org.openmodelica.test.TestSmartProxy \
 org.openmodelica.test.TestDefinitionsParser
+
+antlr_compile = @"$(JAVA)" -jar $(antlr) -fo src/org/openmodelica/corba/parser
+
+default: install
+
+%Lexer.java: %.g
+	$(antlr_compile) $<
+%Parser.java: %.g
+	$(antlr_compile) $<
+%.tokens: %.g
+	$(antlr_compile) $<
+  
+%Lexer.java: %.g
+	$(antlr_compile) $<
+%Parser.java: %.g
+	$(antlr_compile) $<
+%.tokens: %.g
+	$(antlr_compile) $<

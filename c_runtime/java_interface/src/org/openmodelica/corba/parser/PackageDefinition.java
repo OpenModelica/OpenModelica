@@ -1,7 +1,6 @@
 package org.openmodelica.corba.parser;
 
 import java.util.HashMap;
-import java.util.Vector;
 
 class PackageDefinition {
   public String name;
