@@ -2,10 +2,19 @@ ifdef JAVA_HOME
 JAVAC=$(JAVA_HOME)/bin/javac
 JAVA=$(JAVA_HOME)/bin/java
 JAR=$(JAVA_HOME)/bin/jar
+TARGET=build
+else
+ifeq ($(shell javac -version 2>log.txt | echo "OK"),"OK")
+JAVAC=javac
+JAVA=java
+JAR=jar
+TARGET=build
 else
 JAVAC=javac
 JAVA=java
 JAR=jar
+TARGET=install
+endif
 endif
 
 antlr = antlr-3.1.3.jar
@@ -91,7 +100,12 @@ org.openmodelica.test.TestDefinitionsParser
 
 antlr_compile = @"$(JAVA)" -jar $(antlr) -fo src/org/openmodelica/corba/parser
 
-default: install
+default: showtarget $(TARGET)
+showtarget:
+ifeq ($(TARGET),install)
+	@echo "* No JDK (javac) detected. Using the previosuly compiles jar-file."
+	@echo "* To compile, set JAVA_HOME to a JDK or add javac to the PATH."
+endif
 
 %Lexer.java: %.g
 	$(antlr_compile) $<
