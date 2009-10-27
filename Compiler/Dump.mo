@@ -2819,7 +2819,8 @@ algorithm
       Ident i;
       Absyn.AlgorithmItem algItem;
       Absyn.ComponentRef cref;
-      Absyn.FunctionArgs fargs;      
+      Absyn.FunctionArgs fargs;
+         
     case (Absyn.ALG_ASSIGN(assignComponent = assignComp,value = exp))
       equation
         Print.printBuf("ALG_ASSIGN(");
@@ -2866,11 +2867,12 @@ algorithm
         Print.printBuf("}");
       then
         ();
-    case Absyn.ALG_WHEN_A(boolExpr = e,whenBody = al,elseWhenAlgorithmBranch = el) /* rule	Print.print_buf \"WHEN_E \" & print_exp(e) &
-	Print.print_buf \" {\" & print_list_debug(\"print_algorithm\",al, print_algorithmitem, \";\") & Print.print_buf \"}\"
-	 ----------------------------------------------------------
-	print_algorithm Absyn.ALG_WHEN_E(e,al)
- */
+    case Absyn.ALG_WHEN_A(boolExpr = e,whenBody = al,elseWhenAlgorithmBranch = el) 
+      /* rule	Print.print_buf \"WHEN_E \" & print_exp(e) &
+	       Print.print_buf \" {\" & print_list_debug(\"print_algorithm\",al, print_algorithmitem, \";\") & Print.print_buf \"}\"
+	       ----------------------------------------------------------
+	       print_algorithm Absyn.ALG_WHEN_E(e,al)
+      */
       local list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> el;
       equation
         Print.printBuf("WHEN_A ");
@@ -2890,6 +2892,13 @@ algorithm
         Print.printBuf("BREAK()");
       then
         ();
+    case Absyn.ALG_FAILURE(algItem)
+      equation
+        Print.printBuf("FAILURE(");
+        printAlgorithmitem(algItem);
+        Print.printBuf(")");
+      then
+        ();        
     case (_)
       equation
         Print.printBuf(" ** UNKNOWN ALGORITHM CLAUSE ** ");
@@ -2971,6 +2980,7 @@ algorithm
       Absyn.Annotation ann;
       Absyn.ForIterators iterators;
       Absyn.AlgorithmItem algItem;
+      
     case (i,Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_ASSIGN(assignComponent = assignComp,value = exp),comment = optcmt)) /* ALG_ASSIGN */
       equation
         s1 = printExpStr(assignComp);
@@ -3059,6 +3069,14 @@ algorithm
         str = is +& "break" +& s3 +& ";";
       then
         str;
+    case (i,Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_FAILURE(algItem),comment = optcmt)) /* ALG_FAILURE */
+      equation
+        s1 = unparseAlgorithmStr(0, algItem); 
+        s3 = unparseCommentOption(optcmt);
+        is = indentStr(i);
+        str = is +& "failure(" +& s1 +& ")" +& s3 +& ";";
+      then
+        str;        
     case (i,Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_MATCHCASES(explist), comment = optcmt))
       local
         list<Absyn.Exp> explist;

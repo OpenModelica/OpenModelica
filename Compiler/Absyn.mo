@@ -584,6 +584,10 @@ uniontype Algorithm "The Algorithm type describes one algorithm statement in an
   record ALG_LABEL
     String labelName;
   end ALG_LABEL;
+
+  record ALG_FAILURE
+    AlgorithmItem equ;
+  end ALG_FAILURE;
   //-------------------------------
 
 end Algorithm;

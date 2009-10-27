@@ -9317,12 +9317,13 @@ algorithm
   matchcontinue (inPath1,inPath2,inProgram3)
     local
       Absyn.Class inmodeldef,cdef;
-      Absyn.Path newpath,path,inmodel,innewpath,respath,inpath;
+      Absyn.Path newpath,path,inmodel,innewpath,respath;
       Absyn.Program p;
       String s1,s2;
       Absyn.TimeStamp ts;
     case (path,inmodel,p as Absyn.PROGRAM(globalBuildTimes=ts))
       equation
+        //Debug.fprintln("inter", "Interactive.lookupClassdef 1 Looking for: " +& Absyn.pathString(path) +& " in: " +& Absyn.pathString(inmodel));  
         // remove self reference, otherwise we go into an infinite loop!        
         path = Inst.removeSelfReference(Absyn.pathLastIdent(inmodel),path);        
         inmodeldef = getPathedClassInProgram(inmodel, p) "Look first inside \'inmodel\'" ;
@@ -9332,12 +9333,14 @@ algorithm
         (cdef,newpath);
     case (path,inmodel,p) /* Then look inside next level */
       equation
+        //Debug.fprintln("inter", "Interactive.lookupClassdef 2 Looking for: " +& Absyn.pathString(path) +& " in: " +& Absyn.pathString(inmodel));
         innewpath = Absyn.stripLast(inmodel);
         (cdef,respath) = lookupClassdef(path, innewpath, p);
       then
         (cdef,respath);
-    case (path,_,p)
+    case (path,inmodel,p)
       equation
+        //Debug.fprintln("inter", "Interactive.lookupClassdef 3 Looking for: " +& Absyn.pathString(path) +& " in: " +& Absyn.pathString(inmodel));
         cdef = getPathedClassInProgram(path, p) "Finally look in top level" ;
       then
         (cdef,path);
@@ -9349,10 +9352,11 @@ algorithm
           Absyn.PARTS({},NONE),Absyn.dummyInfo),Absyn.IDENT("String"));
     case (Absyn.IDENT(name = "Boolean"),_,_) then (Absyn.CLASS("Boolean",false,false,false,Absyn.R_PREDEFINED_BOOL(),
           Absyn.PARTS({},NONE),Absyn.dummyInfo),Absyn.IDENT("Boolean"));
-    case (path,inpath,_)
+    case (path,inmodel,_)
       equation
+        //Debug.fprintln("inter", "Interactive.lookupClassdef 8 Looking for: " +& Absyn.pathString(path) +& " in: " +& Absyn.pathString(inmodel));
         s1 = Absyn.pathString(path);
-        s2 = Absyn.pathString(inpath);
+        s2 = Absyn.pathString(inmodel);
         Error.addMessage(Error.LOOKUP_ERROR, {s1,s2});
       then
         fail();
@@ -11610,8 +11614,11 @@ algorithm
      /* a derived class */
     case (inmodel,p,Absyn.CLASS(body = Absyn.DERIVED(typeSpec=Absyn.TPATH(path,_))))
       equation
+        /* adrpo: 2009-10-27 we shouldn't look into derived!
         (cdef,newpath) = lookupClassdef(path, inmodel, p);
         res = getPackagesInClass(newpath, p, cdef);
+        */
+        res = "";
       then
         res;
   end matchcontinue;
@@ -11870,8 +11877,11 @@ algorithm
     /* a derived class */
     case (inmodel,p,Absyn.CLASS(body = Absyn.DERIVED(typeSpec=Absyn.TPATH(path, _))))
       equation
+        /* adrpo 2009-10-27: we sholdn't dive into derived classes! 
         (cdef,newpath) = lookupClassdef(path, inmodel, p);
         res = getClassnamesInClass(newpath, p, cdef);
+        */
+        res = "";
       then
         res;
   end matchcontinue;
@@ -15644,9 +15654,12 @@ algorithm
         res;
     case (modelpath,p,Absyn.CLASS(body = Absyn.DERIVED(typeSpec = Absyn.TPATH(path,_))))
       equation
-        // print("Looking up -> lookupClassdef(" +& Absyn.pathString(path) +& ", " +& Absyn.pathString(modelpath) +& ")\n"); 
+        // print("Looking up -> lookupClassdef(" +& Absyn.pathString(path) +& ", " +& Absyn.pathString(modelpath) +& ")\n");
+        /* adrpo 2009-10-27: do not dive into derived classes!
         (cdef,newpath) = lookupClassdef(path, modelpath, p);
         res = getClassesInClass(newpath, p, cdef);
+        */
+        res = {};
       then
         res;
   end matchcontinue;
