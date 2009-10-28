@@ -107,6 +107,9 @@ typedef modelica_boolean change_rettype;
 typedef modelica_integer integer_rettype;
 typedef modelica_real    sign_rettype;
 
+/* sign function */
+#define sign(v) (v>0?1:(v<0?-1:0))
+
 
 #if defined(__cplusplus)
 }

@@ -49,9 +49,3 @@ int in_range_real(modelica_real i,
 }
 
 
-/* sign function */
-inline modelica_real sign(modelica_real v)
-{
-  return v > 0 ? 1 : (v < 0 ? -1 : 0);
-}
-
