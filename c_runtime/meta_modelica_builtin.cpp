@@ -386,7 +386,12 @@ stringLength_rettype stringLength(modelica_string_t str)
 
 stringCompare_rettype stringCompare(modelica_string_t str1, modelica_string_t str2)
 {
-  return strcmp(str1,str2);
+  stringCompare_rettype res = strcmp(str1,str2);
+  if (res < 0)
+    return -1;
+  if (res > 0)
+    return 1;
+  return 0;
 }
 
 stringEqual_rettype stringEqual(modelica_string_t str1, modelica_string_t str2)
