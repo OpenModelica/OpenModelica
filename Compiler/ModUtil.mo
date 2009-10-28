@@ -109,7 +109,7 @@ algorithm
       Exp.Operator op;
       list<Exp.Exp> el_1,el;
       Absyn.Path p;
-      Boolean b,bi,a;
+      Boolean b,bi,a,inl;
       list<list<Boolean>> bl;
       list<list<tuple<Exp.Exp, Boolean>>> ell_1,ell;
       Integer i;
@@ -159,12 +159,12 @@ algorithm
         e3_1 = stringPrefixComponentRef(str, r, rarg, e3);
       then
         Exp.IFEXP(e1_1,e2_1,e3_1);
-    case (str,r,rarg,Exp.CALL(path = p,expLst = el,tuple_ = b,builtin = bi,ty = tp))
+    case (str,r,rarg,Exp.CALL(path = p,expLst = el,tuple_ = b,builtin = bi,ty = tp,inline = inl))
       local Exp.Type tp;
       equation 
         el_1 = stringPrefixComponentRefs(str, r, rarg, el);
       then 
-        Exp.CALL(p,el_1,b,bi,tp);
+        Exp.CALL(p,el_1,b,bi,tp,inl);
     case (str,r,rarg,Exp.ARRAY(ty = t,scalar = a,array = el))
       equation 
         el_1 = stringPrefixComponentRefs(str, r, rarg, el);

@@ -199,7 +199,7 @@ algorithm (oType) := matchcontinue(inExp, inVal)
     String pathName;
     list<Values.Value> vals;
     list<String> names;
-  case(Exp.CALL(recordName,_,_,_,ty), inVal as Values.RECORD(_,vals,names,-1))
+  case(Exp.CALL(recordName,_,_,_,ty,_), inVal as Values.RECORD(_,vals,names,-1))
     equation
       pathName = Absyn.pathString(recordName);
       (cty as (Types.T_COMPLEX(_,lv,_,_),_)) = Types.expTypetoTypesType(ty);

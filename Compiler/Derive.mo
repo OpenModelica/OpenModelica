@@ -113,7 +113,7 @@ algorithm
       Exp.Operator op,rel;
       list<Exp.Exp> expl_1,expl,sub;
       Absyn.Path a;
-      Boolean b,c;
+      Boolean b,c,inl;
       Integer i;
       Absyn.Path fname;
       Exp.Type ty;
@@ -134,7 +134,7 @@ algorithm
       equation
         (_,_) = DAELow.getVar(cr, timevars);
       then
-        Exp.CALL(Absyn.IDENT("der"),{e},false,true,Exp.REAL());
+        Exp.CALL(Absyn.IDENT("der"),{e},false,true,Exp.REAL(),false);
         
     case (Exp.CALL(path = fname,expLst = {e}),timevars)
       equation
@@ -142,7 +142,7 @@ algorithm
         e_1 = differentiateExpTime(e, timevars) "der(sin(x)) = der(x)cos(x)" ;
       then
         Exp.BINARY(e_1,Exp.MUL(Exp.REAL()),
-          Exp.CALL(Absyn.IDENT("cos"),{e},false,true,Exp.REAL()));
+          Exp.CALL(Absyn.IDENT("cos"),{e},false,true,Exp.REAL(),false));
 
     case (Exp.CALL(path = fname,expLst = {e}),timevars)
       equation
@@ -150,7 +150,7 @@ algorithm
         e_1 = differentiateExpTime(e, timevars) "der(cos(x)) = -der(x)sin(x)" ;
       then
         Exp.UNARY(Exp.UMINUS(Exp.REAL()),Exp.BINARY(e_1,Exp.MUL(Exp.REAL()),
-          Exp.CALL(Absyn.IDENT("sin"),{e},false,true,Exp.REAL())));
+          Exp.CALL(Absyn.IDENT("sin"),{e},false,true,Exp.REAL(),false)));
 
         // der(arccos(x)) = -der(x)/sqrt(1-x^2)
     case (Exp.CALL(path = fname,expLst = {e}),timevars)
@@ -159,7 +159,7 @@ algorithm
         e_1 = differentiateExpTime(e, timevars)  ;
       then
         Exp.UNARY(Exp.UMINUS(Exp.REAL()),Exp.BINARY(e_1,Exp.DIV(Exp.REAL()),
-          Exp.CALL(Absyn.IDENT("sqrt"),{Exp.BINARY(Exp.RCONST(1.0),Exp.SUB(Exp.REAL()),Exp.BINARY(e,Exp.MUL(Exp.REAL()),e))},false,true,Exp.REAL())));
+          Exp.CALL(Absyn.IDENT("sqrt"),{Exp.BINARY(Exp.RCONST(1.0),Exp.SUB(Exp.REAL()),Exp.BINARY(e,Exp.MUL(Exp.REAL()),e))},false,true,Exp.REAL(),false)));
 
         // der(arcsin(x)) = der(x)/sqrt(1-x^2)
       case (Exp.CALL(path = fname,expLst = {e}),timevars)
@@ -168,7 +168,7 @@ algorithm
         e_1 = differentiateExpTime(e, timevars)  ;
       then
        Exp.BINARY(e_1,Exp.DIV(Exp.REAL()),
-          Exp.CALL(Absyn.IDENT("sqrt"),{Exp.BINARY(Exp.RCONST(1.0),Exp.SUB(Exp.REAL()),Exp.BINARY(e,Exp.MUL(Exp.REAL()),e))},false,true,Exp.REAL()));
+          Exp.CALL(Absyn.IDENT("sqrt"),{Exp.BINARY(Exp.RCONST(1.0),Exp.SUB(Exp.REAL()),Exp.BINARY(e,Exp.MUL(Exp.REAL()),e))},false,true,Exp.REAL(),false));
 
         // der(arctan(x)) = der(x)/1+x^2
       case (Exp.CALL(path = fname,expLst = {e}),timevars)
@@ -184,7 +184,7 @@ algorithm
         e_1 = differentiateExpTime(e, timevars) "der(exp(x)) = der(x)exp(x)" ;
       then
         Exp.BINARY(e_1,Exp.MUL(Exp.REAL()),
-          Exp.CALL(fname,{e},false,true,Exp.REAL()));
+          Exp.CALL(fname,{e},false,true,Exp.REAL(),false));
 
         case (Exp.CALL(path = fname,expLst = {e}),timevars)
       equation
@@ -267,12 +267,12 @@ algorithm
         e3_1 = differentiateExpTime(e3, tv);
       then
         Exp.IFEXP(e1,e2_1,e3_1);
-    case (Exp.CALL(path = (a as Absyn.IDENT(name = "der")),expLst = expl,tuple_ = b,builtin = c,ty=tp),tv)
+    case (Exp.CALL(path = (a as Absyn.IDENT(name = "der")),expLst = expl,tuple_ = b,builtin = c,ty=tp,inline=inl),tv)
       local Exp.Type tp;
       equation
         expl_1 = Util.listMap1(expl, differentiateExpTime, tv);
       then
-        Exp.CALL(a,expl_1,b,c,tp);
+        Exp.CALL(a,expl_1,b,c,tp,inl);
     case (Exp.CALL(path = a,expLst = expl,tuple_ = b,builtin = c),tv)
       equation
         str = Absyn.pathString(a);
@@ -353,7 +353,7 @@ algorithm
       Exp.Exp e,e1_1,e2_1,e1,e2,const_one,d_e1,d_e2,exp,e_1,exp_1,e3_1,e3,cond;
       Exp.Type tp; 
       Absyn.Path a,fname;
-      Boolean b,c;
+      Boolean b,c,inl;
       Exp.Operator op,rel;
       String e_str,s,s2,str;
       list<Exp.Exp> expl_1,expl,sub;
@@ -415,13 +415,13 @@ algorithm
         true  = Exp.expContains(e2,Exp.CREF(tv,tp));
         d_e2 = differentiateExp(e2, tv,differentiateIfExp);
         exp = Exp.BINARY(d_e2,Exp.MUL(tp),
-	        Exp.BINARY(e,Exp.MUL(tp),Exp.CALL(Absyn.IDENT("log"),{e1},false,true,tp))
+	        Exp.BINARY(e,Exp.MUL(tp),Exp.CALL(Absyn.IDENT("log"),{e1},false,true,tp,false))
           );
       then
         exp;
 
         /* ax^(a-1) */
-    case (Exp.BINARY(exp1 = (e1 as Exp.CALL(path = (a as Absyn.IDENT(name = "der")),expLst = {(exp as Exp.CREF(componentRef = cr))},tuple_ = b,builtin = c,ty=ctp)),operator = Exp.POW(ty = tp),exp2 = e2),tv,differentiateIfExp)
+    case (Exp.BINARY(exp1 = (e1 as Exp.CALL(path = (a as Absyn.IDENT(name = "der")),expLst = {(exp as Exp.CREF(componentRef = cr))},tuple_ = b,builtin = c,ty=ctp,inline=inl)),operator = Exp.POW(ty = tp),exp2 = e2),tv,differentiateIfExp)
       local Exp.Type ctp;
       equation
         true = Exp.crefEqual(cr, tv) "der(e)^x => xder(e,2)der(e)^(x-1)" ;
@@ -429,7 +429,7 @@ algorithm
         const_one = differentiateExp(Exp.CREF(tv,tp), tv,differentiateIfExp);
       then
         Exp.BINARY(
-          Exp.BINARY(Exp.CALL(a,{exp,Exp.ICONST(2)},b,c,ctp),Exp.MUL(tp),e2),Exp.MUL(tp),
+          Exp.BINARY(Exp.CALL(a,{exp,Exp.ICONST(2)},b,c,ctp,inl),Exp.MUL(tp),e2),Exp.MUL(tp),
           Exp.BINARY(e1,Exp.POW(tp),Exp.BINARY(e2,Exp.SUB(tp),const_one)));
 
         /* f\'g + fg\' */
@@ -462,7 +462,7 @@ algorithm
         Exp.UNARY(op,e_1);
 
         /* der(tanh(x)) = der(x) / cosh(x) */
-    case (Exp.CALL(path = fname,expLst = (exp :: {}),tuple_ = b,builtin = c,ty=tp),tv,differentiateIfExp)
+    case (Exp.CALL(path = fname,expLst = (exp :: {}),tuple_ = b,builtin = c,ty=tp,inline=inl),tv,differentiateIfExp)
      local  Exp.Type tp;
       equation
         isTanh(fname);
@@ -470,10 +470,10 @@ algorithm
         exp_1 = differentiateExp(exp, tv,differentiateIfExp);
       then
         Exp.BINARY(exp_1,Exp.DIV(Exp.REAL()),
-          Exp.CALL(Absyn.IDENT("cosh"),{exp},b,c,tp));
+          Exp.CALL(Absyn.IDENT("cosh"),{exp},b,c,tp,inl));
 
         /* der(cosh(x)) => der(x)sinh(x) */
-    case (Exp.CALL(path = fname,expLst = (exp :: {}),tuple_ = b,builtin = c,ty=tp),tv,differentiateIfExp)
+    case (Exp.CALL(path = fname,expLst = (exp :: {}),tuple_ = b,builtin = c,ty=tp,inline=inl),tv,differentiateIfExp)
       local Exp.Type tp;
       equation
         isCosh(fname);
@@ -481,10 +481,10 @@ algorithm
         exp_1 = differentiateExp(exp, tv,differentiateIfExp);
       then
         Exp.BINARY(exp_1,Exp.MUL(Exp.REAL()),
-          Exp.CALL(Absyn.IDENT("sinh"),{exp},b,c,tp));
+          Exp.CALL(Absyn.IDENT("sinh"),{exp},b,c,tp,inl));
 
         /* der(sinh(x)) => der(x)sinh(x) */
-    case (Exp.CALL(path = fname,expLst = (exp :: {}),tuple_ = b,builtin = c,ty=tp),tv,differentiateIfExp)
+    case (Exp.CALL(path = fname,expLst = (exp :: {}),tuple_ = b,builtin = c,ty=tp,inline=inl),tv,differentiateIfExp)
       local Exp.Type tp;
       equation
         isSinh(fname);
@@ -492,20 +492,20 @@ algorithm
         exp_1 = differentiateExp(exp, tv,differentiateIfExp);
       then
         Exp.BINARY(exp_1,Exp.MUL(Exp.REAL()),
-          Exp.CALL(Absyn.IDENT("cosh"),{exp},b,c,tp));
+          Exp.CALL(Absyn.IDENT("cosh"),{exp},b,c,tp,inl));
 
         /* sin(x) */
-    case (Exp.CALL(path = fname,expLst = (exp :: {}),tuple_ = b,builtin = c,ty=tp),tv,differentiateIfExp)
+    case (Exp.CALL(path = fname,expLst = (exp :: {}),tuple_ = b,builtin = c,ty=tp,inline=inl),tv,differentiateIfExp)
       local Exp.Type tp;
       equation
         isSin(fname);
         true = Exp.expContains(exp, Exp.CREF(tv,Exp.REAL()));
         exp_1 = differentiateExp(exp, tv,differentiateIfExp);
       then
-        Exp.BINARY(Exp.CALL(Absyn.IDENT("cos"),{exp},b,c,tp),Exp.MUL(Exp.REAL()),
+        Exp.BINARY(Exp.CALL(Absyn.IDENT("cos"),{exp},b,c,tp,inl),Exp.MUL(Exp.REAL()),
           exp_1);
 
-    case (Exp.CALL(path = fname,expLst = (exp :: {}),tuple_ = b,builtin = c,ty=tp),tv,differentiateIfExp)
+    case (Exp.CALL(path = fname,expLst = (exp :: {}),tuple_ = b,builtin = c,ty=tp,inline=inl),tv,differentiateIfExp)
       local Exp.Type tp;
       equation
         isCos(fname);
@@ -514,7 +514,7 @@ algorithm
       then
         Exp.BINARY(
           Exp.UNARY(Exp.UMINUS(Exp.REAL()),
-          Exp.CALL(Absyn.IDENT("sin"),{exp},b,c,tp)),Exp.MUL(Exp.REAL()),exp_1);
+          Exp.CALL(Absyn.IDENT("sin"),{exp},b,c,tp,inl)),Exp.MUL(Exp.REAL()),exp_1);
 
        // der(arccos(x)) = -der(x)/sqrt(1-x^2)
     case (Exp.CALL(path = fname,expLst = {e}),tv,differentiateIfExp)
@@ -524,7 +524,7 @@ algorithm
         e_1 = differentiateExp(e, tv,differentiateIfExp)  ;
       then
         Exp.UNARY(Exp.UMINUS(Exp.REAL()),Exp.BINARY(e_1,Exp.DIV(Exp.REAL()),
-          Exp.CALL(Absyn.IDENT("sqrt"),{Exp.BINARY(Exp.RCONST(1.0),Exp.SUB(Exp.REAL()),Exp.BINARY(e,Exp.MUL(Exp.REAL()),e))},false,true,Exp.REAL())));
+          Exp.CALL(Absyn.IDENT("sqrt"),{Exp.BINARY(Exp.RCONST(1.0),Exp.SUB(Exp.REAL()),Exp.BINARY(e,Exp.MUL(Exp.REAL()),e))},false,true,Exp.REAL(),false)));
 
         // der(arcsin(x)) = der(x)/sqrt(1-x^2)
       case (Exp.CALL(path = fname,expLst = {e}),tv,differentiateIfExp)
@@ -534,7 +534,7 @@ algorithm
         e_1 = differentiateExp(e, tv,differentiateIfExp)  ;
       then
        Exp.BINARY(e_1,Exp.DIV(Exp.REAL()),
-          Exp.CALL(Absyn.IDENT("sqrt"),{Exp.BINARY(Exp.RCONST(1.0),Exp.SUB(Exp.REAL()),Exp.BINARY(e,Exp.MUL(Exp.REAL()),e))},false,true,Exp.REAL()));
+          Exp.CALL(Absyn.IDENT("sqrt"),{Exp.BINARY(Exp.RCONST(1.0),Exp.SUB(Exp.REAL()),Exp.BINARY(e,Exp.MUL(Exp.REAL()),e))},false,true,Exp.REAL(),false));
 
         // der(arctan(x)) = der(x)/1+x^2
       case (Exp.CALL(path = fname,expLst = {e}),tv,differentiateIfExp)
@@ -545,14 +545,14 @@ algorithm
       then
        Exp.BINARY(e_1,Exp.DIV(Exp.REAL()),Exp.BINARY(Exp.RCONST(1.0),Exp.ADD(Exp.REAL()),Exp.BINARY(e,Exp.MUL(Exp.REAL()),e)));
 
-    case (Exp.CALL(path = fname,expLst = (exp :: {}),tuple_ = b,builtin = c,ty=tp),tv,differentiateIfExp)
+    case (Exp.CALL(path = fname,expLst = (exp :: {}),tuple_ = b,builtin = c,ty=tp,inline=inl),tv,differentiateIfExp)
       local Exp.Type tp;
       equation
         isExp(fname) "exp(x) => x\'  exp(x)" ;
         true = Exp.expContains(exp, Exp.CREF(tv,Exp.REAL()));
         exp_1 = differentiateExp(exp, tv,differentiateIfExp);
       then
-        Exp.BINARY(Exp.CALL(fname,(exp :: {}),b,c,tp),Exp.MUL(Exp.REAL()),exp_1);
+        Exp.BINARY(Exp.CALL(fname,(exp :: {}),b,c,tp,inl),Exp.MUL(Exp.REAL()),exp_1);
 
     case (Exp.CALL(path = fname,expLst = (exp :: {}),tuple_ = b,builtin = c),tv,differentiateIfExp)
       equation
@@ -563,7 +563,7 @@ algorithm
         Exp.BINARY(exp_1,Exp.MUL(Exp.REAL()),
           Exp.BINARY(Exp.RCONST(1.0),Exp.DIV(Exp.REAL()),exp));
 
-    case (Exp.CALL(path = fname,expLst = (exp :: {}),tuple_ = b,builtin = c,ty=tp),tv,differentiateIfExp)
+    case (Exp.CALL(path = fname,expLst = (exp :: {}),tuple_ = b,builtin = c,ty=tp,inline=inl),tv,differentiateIfExp)
       local Exp.Type tp;
       equation
         isLog10(fname) "log10(x) => x\'1/(xlog(10))" ;
@@ -573,9 +573,9 @@ algorithm
         Exp.BINARY(exp_1,Exp.MUL(Exp.REAL()),
           Exp.BINARY(Exp.RCONST(1.0),Exp.DIV(Exp.REAL()),
           Exp.BINARY(exp,Exp.MUL(Exp.REAL()),
-          Exp.CALL(Absyn.IDENT("log"),{Exp.RCONST(10.0)},b,c,tp))));
+          Exp.CALL(Absyn.IDENT("log"),{Exp.RCONST(10.0)},b,c,tp,inl))));
 
-    case (Exp.CALL(path = fname,expLst = (exp :: {}),tuple_ = b,builtin = c,ty=tp),tv,differentiateIfExp)
+    case (Exp.CALL(path = fname,expLst = (exp :: {}),tuple_ = b,builtin = c,ty=tp,inline=inl),tv,differentiateIfExp)
       local Exp.Type tp;
       equation
         isSqrt(fname) "sqrt(x) => 1(2  sqrt(x))  der(x)" ;
@@ -585,9 +585,9 @@ algorithm
         Exp.BINARY(
           Exp.BINARY(Exp.RCONST(1.0),Exp.DIV(Exp.REAL()),
           Exp.BINARY(Exp.RCONST(2.0),Exp.MUL(Exp.REAL()),
-          Exp.CALL(Absyn.IDENT("sqrt"),(exp :: {}),b,c,tp))),Exp.MUL(Exp.REAL()),exp_1);
+          Exp.CALL(Absyn.IDENT("sqrt"),(exp :: {}),b,c,tp,inl))),Exp.MUL(Exp.REAL()),exp_1);
 
-    case (Exp.CALL(path = fname,expLst = (exp :: {}),tuple_ = b,builtin = c,ty=tp),tv,differentiateIfExp)
+    case (Exp.CALL(path = fname,expLst = (exp :: {}),tuple_ = b,builtin = c,ty=tp,inline=inl),tv,differentiateIfExp)
       local Exp.Type tp;
       equation
         isTan(fname) "tan x => 1/((cos x)^2)" ;
@@ -596,11 +596,11 @@ algorithm
       then
         Exp.BINARY(
           Exp.BINARY(Exp.RCONST(1.0),Exp.DIV(Exp.REAL()),
-          Exp.BINARY(Exp.CALL(Absyn.IDENT("cos"),{exp},b,c,tp),Exp.POW(Exp.REAL()),
+          Exp.BINARY(Exp.CALL(Absyn.IDENT("cos"),{exp},b,c,tp,inl),Exp.POW(Exp.REAL()),
           Exp.RCONST(2.0))),Exp.MUL(Exp.REAL()),exp_1);
 
        // derivative of arbitrary function, not dependent of variable, i.e. constant
-		case (Exp.CALL(fname,expl,b,c,tp),tv,differentiateIfExp)
+		case (Exp.CALL(fname,expl,b,c,tp,inl),tv,differentiateIfExp)
 		  local list<Boolean> bLst; Exp.Type tp;
       equation
         bLst = Util.listMap1(expl,Exp.expContains, Exp.CREF(tv,Exp.REAL()));
@@ -629,19 +629,19 @@ algorithm
         Exp.RELATION(e1_1,rel,e2_1);
 
         /* der(x) */
-    case (Exp.CALL(path = (a as Absyn.IDENT(name = "der")),expLst = {(exp as Exp.CREF(componentRef = cr))},tuple_ = b,builtin = c,ty=tp),tv,differentiateIfExp)
+    case (Exp.CALL(path = (a as Absyn.IDENT(name = "der")),expLst = {(exp as Exp.CREF(componentRef = cr))},tuple_ = b,builtin = c,ty=tp,inline=inl),tv,differentiateIfExp)
       local Exp.Type tp;
       equation
         true = Exp.crefEqual(cr, tv);
       then
-        Exp.CALL(a,{exp,Exp.ICONST(2)},b,c,tp);
+        Exp.CALL(a,{exp,Exp.ICONST(2)},b,c,tp,inl);
 
         /* der(abs(x)) = sign(x)der(x) */
     case (Exp.CALL(path = (a as Absyn.IDENT(name = "abs")),expLst = {exp},tuple_ = b,builtin = c),tv,differentiateIfExp)
       equation
         exp_1 = differentiateExp(exp, tv,differentiateIfExp);
       then
-        Exp.BINARY(Exp.CALL(Absyn.IDENT("sign"),{exp_1},false,true,Exp.INT()),
+        Exp.BINARY(Exp.CALL(Absyn.IDENT("sign"),{exp_1},false,true,Exp.INT(),false),
           Exp.MUL(Exp.REAL()),exp_1);
 
     case (Exp.ARRAY(ty = tp,scalar = b,array = expl),tv,differentiateIfExp)

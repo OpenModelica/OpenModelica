@@ -1018,7 +1018,7 @@ algorithm
          *          
          * adrpo: after a bit of talk with Francesco Casella & Peter Aronsson we will add der($dummy) = 0; 
          */
-        (vars_1,(EQUATION(Exp.CALL(Absyn.IDENT("der"),{Exp.CREF(Exp.CREF_IDENT("$dummy",Exp.REAL(),{}),Exp.REAL())},false,true,Exp.REAL()),
+        (vars_1,(EQUATION(Exp.CALL(Absyn.IDENT("der"),{Exp.CREF(Exp.CREF_IDENT("$dummy",Exp.REAL(),{}),Exp.REAL())},false,true,Exp.REAL(),false),
                           Exp.RCONST(0.0))  :: eqns));
 
   end matchcontinue;
@@ -3170,7 +3170,7 @@ algorithm
       then
         ((
           Exp.CALL(Absyn.IDENT("der"),{Exp.CREF(Exp.CREF_IDENT(id_1,ty,s),tp)},
-          false,true,Exp.REAL()),str));
+          false,true,Exp.REAL(),false),str));
     case ((e,str)) then ((e,str));
   end matchcontinue;
 end renameDerivativesExp;
@@ -8389,7 +8389,7 @@ algorithm
       WhenEquation elsepart;
     case (st,dummyder,EQUATION(exp = e1,scalar = e2))
       equation
-        dercall = Exp.CALL(Absyn.IDENT("der"),{Exp.CREF(st,Exp.REAL())},false,true,Exp.REAL()) "scalar equation" ;
+        dercall = Exp.CALL(Absyn.IDENT("der"),{Exp.CREF(st,Exp.REAL())},false,true,Exp.REAL(),false) "scalar equation" ;
         (e1_1,_) = Exp.replaceExp(e1, dercall, Exp.CREF(dummyder,Exp.REAL()));
         (e2_1,_) = Exp.replaceExp(e2, dercall, Exp.CREF(dummyder,Exp.REAL()));
       then
@@ -8400,14 +8400,14 @@ algorithm
       then ALGORITHM(indx,in_,out);  /* Algorithms */
     case (st,dummyder,WHEN_EQUATION(whenEquation = WHEN_EQ(index = i,left = cr,right = e1,elsewhenPart=NONE)))
       equation
-        dercall = Exp.CALL(Absyn.IDENT("der"),{Exp.CREF(st,Exp.REAL())},false,true,Exp.REAL());
+        dercall = Exp.CALL(Absyn.IDENT("der"),{Exp.CREF(st,Exp.REAL())},false,true,Exp.REAL(),false);
         (e1_1,_) = Exp.replaceExp(e1, dercall, Exp.CREF(dummyder,Exp.REAL()));
         res = WHEN_EQUATION(WHEN_EQ(i,cr,e1_1,NONE));
       then
         res;
     case (st,dummyder,WHEN_EQUATION(whenEquation = WHEN_EQ(index = i,left = cr,right = e1,elsewhenPart=SOME(elsepart))))
       equation
-        dercall = Exp.CALL(Absyn.IDENT("der"),{Exp.CREF(st,Exp.REAL())},false,true,Exp.REAL());
+        dercall = Exp.CALL(Absyn.IDENT("der"),{Exp.CREF(st,Exp.REAL())},false,true,Exp.REAL(),false);
         (e1_1,_) = Exp.replaceExp(e1, dercall, Exp.CREF(dummyder,Exp.REAL()));
         WHEN_EQUATION(elsepartRes) = replaceDummyDer2(st,dummyder, WHEN_EQUATION(elsepart));
         res = WHEN_EQUATION(WHEN_EQ(i,cr,e1_1,SOME(elsepartRes)));
@@ -11313,6 +11313,7 @@ algorithm
       list<Exp.Exp> expl2;
       Boolean tpl ;
       Boolean b;
+      Boolean i;
       Exp.Type ty;
     case({},vars) then {};
     case(Exp.IFEXP(cond,t,f)::expl,vars) equation
@@ -11334,11 +11335,11 @@ algorithm
       expl = ifBranchesFreeFromVar(expl,vars);
     then (Exp.UNARY(op,e1)::expl);
 
-    case(Exp.CALL(path,expl2,tpl,b,ty)::expl,vars) equation
+    case(Exp.CALL(path,expl2,tpl,b,ty,i)::expl,vars) equation
       repl = makeZeroReplacements(vars);
       (expl2 as _::_) = ifBranchesFreeFromVar(expl2,vars);
       expl = ifBranchesFreeFromVar(expl,vars);
-    then (Exp.CALL(path,expl2,tpl,b,ty)::expl);
+    then (Exp.CALL(path,expl2,tpl,b,ty,i)::expl);
 
   case(_::expl,vars) equation
       expl = ifBranchesFreeFromVar(expl,vars);
@@ -12770,7 +12771,7 @@ algorithm
         newid = Util.stringAppendList({derivativeNamePrefix, c_name}); // "$",c_name})  ;
         // Derivatives are always or REAL type
       then
-        ((Exp.CALL(Absyn.IDENT("der"),{Exp.CREF(s,Exp.REAL())},false,true,Exp.REAL()) :: s1),
+        ((Exp.CALL(Absyn.IDENT("der"),{Exp.CREF(s,Exp.REAL())},false,true,Exp.REAL(),false) :: s1),
         (Exp.CREF(Exp.CREF_IDENT(newid,Exp.REAL(),{}),Exp.REAL()) :: t1));
     case (_)
       equation

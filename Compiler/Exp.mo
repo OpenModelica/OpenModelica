@@ -205,6 +205,7 @@ uniontype Exp "Expressions
     Boolean tuple_ "tuple" ;
     Boolean builtin "builtin Function call" ;
     Type ty "The type of the return value, if several return values this is undefined";
+    Boolean inline;
   end CALL;
   
   record PARTEVALFUNCTION
@@ -2203,8 +2204,8 @@ algorithm
       Real time1,time2;
       
       /* noEvent propagated to relations */
-    case(CALL(Absyn.IDENT("noEvent"),{e},tpl,builtin,tp))
-      local Boolean tpl,builtin; Type tp;      
+    case(CALL(Absyn.IDENT("noEvent"),{e},tpl,builtin,tp,inline))
+      local Boolean tpl,builtin,inline; Type tp;      
        equation
          e1 = simplify1(stripNoEvent(e));
          e2 = addNoEventToRelations(e1);
@@ -2261,12 +2262,12 @@ algorithm
       then
         e1;
 
-    case CALL( path, exps_1, b,b2, t)
-    local Boolean b2; Absyn.Path path;
+    case CALL( path, exps_1, b,b2, t,b3)
+    local Boolean b2,b3; Absyn.Path path;
       equation
         exps_1 = Util.listMap(exps_1,simplify1);
       then
-        CALL(path,exps_1,b,b2,t);
+        CALL(path,exps_1,b,b2,t,b3);
         
     case PARTEVALFUNCTION (path, exps_1, t)
       local Absyn.Path path;
@@ -2461,7 +2462,7 @@ traversal function for addNoEventToRelations"
 algorithm
   outTpl := matchcontinue(inTpl)
   local Exp e; Integer i;
-    case((e as RELATION(exp1=_),i)) then ((CALL(Absyn.IDENT("noEvent"),{e},false,true,BOOL()),i));
+    case((e as RELATION(exp1=_),i)) then ((CALL(Absyn.IDENT("noEvent"),{e},false,true,BOOL(),false),i));
     case((e,i)) then ((e,i));
   end matchcontinue;
 end addNoEventToRelationExp;
@@ -5942,7 +5943,7 @@ algorithm
       ae3 = unelabExp(e3);
     then Absyn.IFEXP(ae1,ae2,ae3,{});
 
-    case(CALL(path,expl,_,_,_)) equation
+    case(CALL(path,expl,_,_,_,_)) equation
       aexpl = Util.listMap(expl,unelabExp);
       acref = Absyn.pathToCref(path);
     then Absyn.CALL(acref,Absyn.FUNCTIONARGS(aexpl,{}));
@@ -8096,13 +8097,13 @@ algorithm
         c = Util.listReduce({c1,c2,c3}, int_add);
       then
         (IFEXP(e1_1,e2_1,e3_1),c);
-    case (CALL(path = path,expLst = expl,tuple_ = t,builtin = c,ty=tp),source,target)
-      local Boolean c; Type tp;
+    case (CALL(path = path,expLst = expl,tuple_ = t,builtin = c,ty=tp,inline=i),source,target)
+      local Boolean c,i; Type tp;
       equation 
         (expl_1,cnt) = Util.listMap22(expl, replaceExp, source, target);
         cnt_1 = Util.listReduce(cnt, int_add);
       then
-        (CALL(path,expl_1,t,c,tp),cnt_1);
+        (CALL(path,expl_1,t,c,tp,i),cnt_1);
     case(PARTEVALFUNCTION(path = path, expList = expl, ty = tp),source,target)
       local Type tp;
       equation
@@ -8380,12 +8381,12 @@ algorithm
         e3_1 = stringifyCrefs(e3);
       then
         IFEXP(e1_1,e2_1,e3_1);
-    case (CALL(path = p,expLst = expl,tuple_ = t,builtin = b,ty=tp))
-      local Boolean t; Type tp;
+    case (CALL(path = p,expLst = expl,tuple_ = t,builtin = b,ty=tp,inline=i))
+      local Boolean t,i; Type tp;
       equation 
         expl_1 = Util.listMap(expl, stringifyCrefs);
       then
-        CALL(p,expl_1,t,b,tp);
+        CALL(p,expl_1,t,b,tp,i);
     case (PARTEVALFUNCTION(path = p, expList = expl, ty = tp))
       local Type tp;
       equation
@@ -9638,11 +9639,11 @@ algorithm
         ((e,ext_arg_4)) = rel((IFEXP(e1_1,e2_1,e3_1),ext_arg_3));
       then
         ((e,ext_arg_4));
-    case ((e as CALL(path = fn,expLst = expl,tuple_ = t,builtin = b,ty=tp)),rel,ext_arg)
-      local Type tp,tp_1;
+    case ((e as CALL(path = fn,expLst = expl,tuple_ = t,builtin = b,ty=tp,inline = i)),rel,ext_arg)
+      local Type tp,tp_1; Boolean i;
       equation 
         ((expl_1,ext_arg_1)) = traverseExpList(expl, rel, ext_arg);
-        ((e,ext_arg_2)) = rel((CALL(fn,expl_1,t,b,tp),ext_arg_1));
+        ((e,ext_arg_2)) = rel((CALL(fn,expl_1,t,b,tp,i),ext_arg_1));
       then
         ((e,ext_arg_2));
     case ((e as PARTEVALFUNCTION(path = fn, expList = expl, ty = tp)),rel,ext_arg)
@@ -10617,7 +10618,7 @@ public function makeNoEvent " adds a noEvent call around an expression"
 input Exp e1;
 output Exp res;
 algorithm
-  res := CALL(Absyn.IDENT("noEvent"),{e1},false,true,BOOL());
+  res := CALL(Absyn.IDENT("noEvent"),{e1},false,true,BOOL(),false);
 end makeNoEvent;
 
 public function makeNestedIf "creates a nested if expression given a list of conditions and 
@@ -11178,7 +11179,7 @@ public function expLn
   Type tp;
 algorithm 
   tp := typeof(e1);
-  outExp := CALL(Absyn.IDENT("log"),{e1},false,true,tp);
+  outExp := CALL(Absyn.IDENT("log"),{e1},false,true,tp,false);
 end expLn;
 
 public function extractCrefsFromExp "

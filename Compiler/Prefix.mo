@@ -340,7 +340,7 @@ algorithm
       Exp.Operator o;
       list<Exp.Exp> es_1,es,el,el_1;
       Absyn.Path f,fcn;
-      Boolean b,bi,a;
+      Boolean b,bi,a,inl;
       list<Boolean> bl;
       list<tuple<Exp.Exp, Boolean>> x_1,x;
       list<list<tuple<Exp.Exp, Boolean>>> xs_1,xs;
@@ -435,12 +435,12 @@ algorithm
         (cache,cref_1) = prefixExp(cache,env, cref, p);
       then
         (cache,Exp.SIZE(cref_1,NONE));
-    case (cache,env,Exp.CALL(path = f,expLst = es,tuple_ = b,builtin = bi,ty = tp),p)
+    case (cache,env,Exp.CALL(path = f,expLst = es,tuple_ = b,builtin = bi,ty = tp,inline = inl),p)
       local Prefix p; Exp.Type tp;
       equation 
         (cache,es_1) = prefixExpList(cache,env, es, p);
       then
-        (cache,Exp.CALL(f,es_1,b,bi,tp)); 
+        (cache,Exp.CALL(f,es_1,b,bi,tp,inl)); 
     case (cache,env,Exp.ARRAY(ty = t,scalar = a,array = {}),p)
       local Prefix p;
       then

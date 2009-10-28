@@ -10923,7 +10923,7 @@ algorithm
         Exp.Exp e2_2,e2_2_2; 
       equation 
         (cache,_,cprop,acc) = Static.elabCref(cache,env, cr, impl,false);
-        (cache,(e2_2 as Exp.CALL(_,_,_,_,_)),_,_) = Static.elabExp(cache,env, e2, impl, NONE,true);
+        (cache,(e2_2 as Exp.CALL(_,_,_,_,_,_)),_,_) = Static.elabExp(cache,env, e2, impl, NONE,true);
          (cache,e2_2_2) = Prefix.prefixExp(cache,env, e2_2, pre);
         (cache,e_1,eprop,_) = Static.elabExp(cache,env, e, impl, NONE,true);
         (cache,e_2) = Prefix.prefixExp(cache,env, e_1, pre);                
@@ -10944,7 +10944,7 @@ algorithm
     // (v1,v2,..,vn) := func(...)
     case (cache,env,pre,Absyn.ALG_ASSIGN(assignComponent = Absyn.TUPLE(expressions = expl),value = e),initial_,impl)
       equation 
-        (cache,(e_1 as Exp.CALL(_,_,_,_,_)),eprop,_) = Static.elabExp(cache,env, e, impl, NONE,true);
+        (cache,(e_1 as Exp.CALL(_,_,_,_,_,_)),eprop,_) = Static.elabExp(cache,env, e, impl, NONE,true);
          (cache,e_2) = Prefix.prefixExp(cache,env, e_1, pre);
         (cache,expl_1,cprops,_) = Static.elabExpList(cache,env, expl, impl, NONE,false);
         (cache,expl_2) = Prefix.prefixExpList(cache,env,expl_1,pre);        
@@ -11080,13 +11080,13 @@ algorithm
         Absyn.Exp aea;
         list<Exp.Exp> eexpl;
         Absyn.Path ap;
-        Boolean tuple_, builtin;
+        Boolean tuple_, builtin,inline;
         Exp.Type tp;
       equation 
-        (cache,Exp.CALL(ap,eexpl,tuple_,builtin,tp),varprop,_) = Static.elabExp(cache,env, Absyn.CALL(callFunc,callArgs), impl, NONE,true);
+        (cache,Exp.CALL(ap,eexpl,tuple_,builtin,tp,inline),varprop,_) = Static.elabExp(cache,env, Absyn.CALL(callFunc,callArgs), impl, NONE,true);
         ap = Prefix.prefixPath(ap,pre);
       then
-        (cache,Algorithm.NORETCALL(Exp.CALL(ap,eexpl,tuple_,builtin,tp)));
+        (cache,Algorithm.NORETCALL(Exp.CALL(ap,eexpl,tuple_,builtin,tp,inline)));
 	       
     /* break */
     case (cache,env,pre,Absyn.ALG_BREAK,initial_,impl)
@@ -12017,7 +12017,7 @@ algorithm
           zeroVector, 
           Exp.CALL(fpath1, 
           {Exp.CREF(c1_1, Exp.OTHER()), Exp.CREF(c2_1, Exp.OTHER())}, 
-          false, false, Exp.REAL)
+          false, false, Exp.REAL,false)
           )});
       then
         (cache,env,ih,sets,{},graph);        

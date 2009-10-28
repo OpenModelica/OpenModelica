@@ -4874,12 +4874,12 @@ algorithm
         e3_1 = toModelicaFormExp(e3);
       then
         Exp.IFEXP(e1_1,e2_1,e3_1);
-    case (Exp.CALL(path = f,expLst = expl,tuple_ = t,builtin = b,ty=tp))
-      local Boolean t; Exp.Type tp;
+    case (Exp.CALL(path = f,expLst = expl,tuple_ = t,builtin = b,ty=tp,inline=i))
+      local Boolean t,i; Exp.Type tp;
       equation 
         expl_1 = Util.listMap(expl, toModelicaFormExp);
       then
-        Exp.CALL(f,expl_1,t,b,tp);
+        Exp.CALL(f,expl_1,t,b,tp,i);
     case (Exp.ARRAY(ty = t,scalar = b,array = expl))
       equation 
         expl_1 = Util.listMap(expl, toModelicaFormExp);
@@ -5344,7 +5344,7 @@ algorithm
     case NORETCALL(fname,fargs) 
     local Absyn.Path fname;
       list<Exp.Exp> fargs;
-    then {Exp.CALL(fname,fargs,false,false,Exp.OTHER())};      
+    then {Exp.CALL(fname,fargs,false,false,Exp.OTHER(),false)};      
       
     case _
       equation 
