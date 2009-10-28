@@ -12813,10 +12813,15 @@ algorithm
 end getIndex;
 
 protected function calculateIndexes "function: calculateIndexes
-  author: PA
+  author: PA modified by Frenkel TUD
 
   Helper function to translate_dae. Calculates the indexes for each variable
   in one of the arrays. x, xd, y and extobjs.
+  To ensure that arrays(matrix,vector) are in a continuous memory block 
+  the indexes from vars, knvars and extvars has to be calculate at the same time.
+  To seperate them after that they are stored in a list with
+  the information about the type(vars=0,knvars=1,extvars=2) and the place at the
+  original list. 
 "
   input list<Var> inVarLst1;
   input list<Var> inVarLst2;
@@ -12838,22 +12843,29 @@ algorithm
 //        (vars_1,x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType) = calculateIndexes2(vars, 0, 0, 0, 0, 0,0,0,0,0,0,0);
 //        (knvars_1,_,_,_,_,_,_,x_strType,xd_strType,y_strType,p_strType,dummy_strType) = calculateIndexes2(knvars, x, xd, y, p, dummy,0,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
 //        (extvars_1,_,_,_,_,_,_,x_strType,xd_strType,y_strType,p_strType,dummy_strType) = calculateIndexes2(extvars, x, xd, y, p, dummy,0,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
-
+        // store vars,knvars,extvars in the list 
         vars_map = fillListConst(vars,0,0);
         knvars_map = fillListConst(knvars,1,0);
         extvars_map = fillListConst(extvars,2,0);
+        // connect the lists
         all_map = listAppend(vars_map,knvars_map);
         all_map1 = listAppend(all_map,extvars_map);
+        // seperate scalars and non scalars
         (noScalar_map,scalar_map) = getNoScalarVars(all_map1);
+        
         noScalar_map1 = getAllElements(noScalar_map);
         sort_map = sortNoScalarList(noScalar_map1);
+        // connect scalars and sortet non scalars
         mergedvar_map = listAppend(scalar_map,sort_map);
+        // calculate indexes
         (all_map2,x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType) = calculateIndexes2(mergedvar_map, 0, 0, 0, 0, 0,0,0,0,0,0,0);
+        // seperate vars,knvars,extvas
         vars_1 = getListConst(all_map2,0);
-        vars_2 = sortList(vars_1,0);
         knvars_1 = getListConst(all_map2,1);
-        knvars_2 = sortList(knvars_1,0);
         extvars_1 =  getListConst(all_map2,2);
+        // arrange lists in original order
+        vars_2 = sortList(vars_1,0);
+        knvars_2 = sortList(knvars_1,0);
         extvars_2 =  sortList(extvars_1,0);
       then
         (vars_2,knvars_2,extvars_2);
@@ -12866,7 +12878,11 @@ algorithm
 end calculateIndexes;
 
 protected function fillListConst
-"function: fillListConst"
+"function: fillListConst 
+author: Frenkel TUD
+  Helper function for calculateIndexes.
+  Get a list, a type value an a start place and store all elements
+  of the list in a list of tuples (element,type,place)"
   input list<Type_a> inTypeALst;
   input Integer inType;
   input Integer inPlace;
@@ -12893,7 +12909,12 @@ algorithm
 end fillListConst;
 
 protected function getListConst
-"function: getListConst"
+"function: getListConst
+  author: Frenkel TUD
+  Helper function for calculateIndexes.
+  Get a list of tuples (element,type,place) and a type value 
+  and pitch on all elements with the same type value.
+  The output is a list of tuples (element,place)."
   input list< tuple<Type_a,Integer,Integer> > inTypeALst;
   input Integer inValue;
   output list<Type_a,Integer> outTypeALst;
@@ -12920,7 +12941,11 @@ algorithm
 end getListConst;
 
 protected function sortList
-"function: sortList"
+"function: sortList
+  author: Frenkel TUD
+  Helper function for calculateIndexes.
+  Get a list of tuples (element,place)and generate a
+  list of elements with the order given by the place value."
   input list< tuple<Type_a,Integer> > inTypeALst;
   input Integer inPlace;
   output list<Type_a> outTypeALst;
@@ -12949,7 +12974,8 @@ end sortList;
 
 protected function sortList1
 "function: sortList1
-  helper for sortList"
+  author: Frenkel TUD
+  Helper function for sortList"
   input list< tuple<Type_a,Integer> > inTypeALst;
   input Integer inPlace;
   output Type_a outType;
@@ -12984,63 +13010,12 @@ algorithm
   end matchcontinue;     
 end sortList1;
 
-protected function printList
-  input list<Var> inlist;
-algorithm
-  _:=
-  matchcontinue (inlist)
-    local
-      list< Var> rest;
-      Var var;
-      Exp.Ident origName1;
-    case {} then (); 
-    case ((var as VAR(Exp.CREF_IDENT(origName1,_,_),_,_,_,_,_,_,_,_,_,_,_,_,_))::{})
-      equation
-        print(origName1);
-        print("\n");
-      then
-        ();
-    case ((var as VAR(Exp.CREF_IDENT(origName1,_,_),_,_,_,_,_,_,_,_,_,_,_,_,_))::rest)
-      equation
-        print(origName1);
-        print("\n");
-        printList(rest); 
-      then
-        ();
-  end matchcontinue;     
-end printList;
-
-protected function printMap
-  input list< tuple<Var,Integer,Integer> > inlist;
-algorithm
-  _:=
-  matchcontinue (inlist)
-    local
-      list< tuple<Var,Integer,Integer> > rest;
-      Var var;
-      Integer value;
-      Exp.Ident origName1;
-    case {} then (); 
-    case ((var as VAR(Exp.CREF_IDENT(origName1,_,_),_,_,_,_,_,_,_,_,_,_,_,_,_),value,_)::{})
-      equation
-        print(origName1);
-        print("\n");
-      then
-        ();
-    case ((var as VAR(Exp.CREF_IDENT(origName1,_,_),_,_,_,_,_,_,_,_,_,_,_,_,_),value,_)::rest)
-      equation
-        print(origName1);
-        print("\n");
-        printMap(rest); 
-      then
-        ();
-  end matchcontinue;     
-end printMap;
-
 protected function getNoScalarVars
 "function: getNoScalarVars
-  Takes a List of vars and looks for
-  all vars whos are vectors or matrix"
+  author: Frenkel TUD
+  Helper function for calculateIndexes.
+  Get a List of variables and seperate them
+  in two lists. One for scalars and one for non scalars"
   input list< tuple<Var,Integer,Integer> > inlist;
   output list< tuple<Var,Integer,Integer> > outnoScalarlist;
   output list< tuple<Var,Integer,Integer> > outScalarlist;
@@ -13072,8 +13047,10 @@ end getNoScalarVars;
 
 protected function checkVarisNoScalar
 "function: checkVarisNoScalar
-  Takes a vars and looks for
-  are vector or matrix"
+  author: Frenkel TUD
+  Helper function for getNoScalarVars.
+  Take a variable and push them in a list
+  for scalars ore non scalars"
   input Var invar;
   input Integer inTyp;
   input Integer inPlace;
@@ -13093,6 +13070,7 @@ end checkVarisNoScalar;
 
 protected function getAllElements
 "function: getAllElements
+  author: Frenkel TUD
   Takes a list of unsortet noScalarVars
   and returns a sorte list"
   input list<tuple<Var,Integer,Integer> > inlist;
@@ -13118,8 +13096,8 @@ end getAllElements;
 
 protected function getAllElements1
 "function: getAllElements1
-  Takes a list of unsortet noScalarVars
-  and returns a sorte list"
+  author: Frenkel TUD
+  Helper function for getAllElements."
   input tuple<Var,Integer,Integer>  invar;
   input list<tuple<Var,Integer,Integer> > inlist;
   output list<tuple<Var,Integer,Integer> > outlist;
@@ -13146,8 +13124,9 @@ end getAllElements1;
 
 protected function sortNoScalarList
 "function: sortNoScalarList
+  author: Frenkel TUD
   Takes a list of unsortet noScalarVars
-  and returns a sorte list"
+  and returns a sorted list"
   input list<tuple<Var,Integer,Integer> > inlist;
   output list<tuple<Var,Integer,Integer> > outlist;
 algorithm
@@ -13171,8 +13150,9 @@ end sortNoScalarList;
 
 protected function listAppendTyp
 "function: listAppendTyp
+  author: Frenkel TUD
   Takes a list of unsortet noScalarVars
-  and returns a sorte list"
+  and returns a sorted list"
   input Boolean append;
   input Type_a  invar;
   input list<Type_a > inlist;
@@ -13196,7 +13176,9 @@ algorithm
 end listAppendTyp;
 
 protected function sortNoScalarList1
-"function: sortNoScalarList1"
+"function: sortNoScalarList1
+  author: Frenkel TUD
+  Helper function for sortNoScalarList"
   input tuple<Var,Integer,Integer>  invar;
   input list<tuple<Var,Integer,Integer> > inlist;
   output list<tuple<Var,Integer,Integer> > outlist;
@@ -13221,6 +13203,8 @@ end sortNoScalarList1;
 
 protected function sortNoScalarList2
 "function: sortNoScalarList2
+  author: Frenkel TUD
+  Helper function for sortNoScalarList
   Takes a list of unsortet noScalarVars
   and returns a sorte list"
   input Boolean ininsert;
@@ -13254,6 +13238,8 @@ end sortNoScalarList2;
 
 protected function comparingNonScalars 
 "function: comparingNonScalars
+  author: Frenkel TUD
+  Helper function for sortNoScalarList2
   Takes two NonScalars an returns
   it in right order 
   Example1:  A[2,2],A[1,1] -> {A[1,1],A[2,2]}
@@ -13282,7 +13268,11 @@ end comparingNonScalars;
 
 protected function comparingNonScalars1 
 "function: comparingNonScalars1
-  Helper for comparingNonScalars"
+  author: Frenkel TUD
+  Helper function for comparingNonScalars.
+  Check if a element of a non scalar has his place
+  before or after another element in a one
+  dimensional array."
   input list<Exp.Subscript> inlist;
   input list<Exp.Subscript> inlist1;
   input list<Exp.Subscript> inarryDim;
@@ -13315,7 +13305,11 @@ end comparingNonScalars1;
 
 protected function calcPlace
 "function: calcPlace
-  Helper for comparingNonScalars1"
+  author: Frenkel TUD
+  Helper function for comparingNonScalars1.
+  Calculate based on the dimensions and the 
+  indexes the place of the element in a one
+  dimensional array."
   input list<Integer> inindex;
   input list<Integer> dimlist;
   output Integer value;
@@ -13343,7 +13337,9 @@ end calcPlace;
 
 protected function getArrayDim
 "function: getArrayDim
-  Helper for comparingNonScalars1"
+  author: Frenkel TUD
+  Helper function for comparingNonScalars1.
+  Return the dimension of an array in a list."
   input list<Exp.Subscript> inarryDim;
   output list<Integer> dimlist;
 algorithm
