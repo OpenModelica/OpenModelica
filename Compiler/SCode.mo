@@ -215,6 +215,11 @@ uniontype Equation "- Equations"
     Option<Absyn.Path> baseClassPath 
     "the baseClassPath is present if the equation originates from a base class" ;
   end EQUATION;
+  
+  // stefan
+  record EQUATIONANN
+    Annotation ann;
+  end EQUATIONANN;
 
 end Equation;
 
@@ -897,7 +902,7 @@ algorithm
         res = elabClassdefAlgorithmitems(rest);
       then
         (alg :: res);
-    case ((_ :: rest))
+    case (_ :: rest)
       equation 
         res = elabClassdefAlgorithmitems(rest);
       then
@@ -1208,6 +1213,8 @@ algorithm
       list<Equation> es_1;
       Absyn.Equation e;
       list<Absyn.EquationItem> es;
+      Absyn.Annotation ann;
+      Annotation ann_1;
     case {} then {}; 
     case (Absyn.EQUATIONITEM(equation_ = e) :: es)
       equation 
@@ -1216,11 +1223,12 @@ algorithm
         es_1 = elabEquations(es);
       then
         (EQUATION(e_1,NONE) :: es_1);
-    case (Absyn.EQUATIONITEMANN(annotation_ = _) :: es)
+    case (Absyn.EQUATIONITEMANN(annotation_ = ann) :: es)
       equation 
+        ann_1 = elabAnnotation(ann);
         es_1 = elabEquations(es);
       then
-        es_1;
+        EQUATIONANN(ann_1) :: es_1;
   end matchcontinue;
 end elabEquations;
 
