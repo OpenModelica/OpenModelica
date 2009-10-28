@@ -4051,6 +4051,27 @@ algorithm
   functionName := ModUtil.pathStringReplaceDot(functionPath, "_");
 end generateFunctionName;
 
+protected constant String constCfileHeader =
+"#include \"modelica.h\"
+#include <stdio.h>
+#include <stdlib.h>
+#include <errno.h>
+
+#if defined(_MSC_VER)
+  #define DLLExport   __declspec( dllexport )
+#else \n
+  #define DLLExport /* nothing */
+#endif
+
+#if !defined(MODELICA_ASSERT)
+  #define MODELICA_ASSERT(cond,msg) { if (!(cond)) fprintf(stderr,\"Modelica Assert: %s!\\n\", msg); }
+#endif
+#if !defined(MODELICA_TERMINATE)
+  #define MODELICA_TERMINATE(msg) { fprintf(stderr,\"Modelica Terminate: %s!\\n\", msg); fflush(stderr); }
+#endif
+
+";
+
 public function cevalGenerateFunction "function: cevalGenerateFunction
   Generates code for a given function name."
 	input Env.Cache inCache;
@@ -4068,6 +4089,7 @@ algorithm
       Env.Cache cache;
       String MakefileHeader;
       list<String> libs;
+      list<DAE.Element> d;
 
     case (cache, env, path)
       equation 
@@ -4075,23 +4097,16 @@ algorithm
         (cache,false) = Static.isExternalObjectFunction(cache,env,path); //ext objs functions not possible to Ceval.ceval.
         pathstr = generateFunctionName(path); 
         Debug.fprintln("ceval", "/*- Ceval.cevalGenerateFunction starting*/");        
-        (cache,gencodestr,_,libs,_) = cevalGenerateFunctionStr(cache, path, env, {}, {});
-        cfilename = stringAppend(pathstr, ".c");
-        str = Util.stringAppendList(
-          {"#include \"modelica.h\"\n#include <stdio.h>\n#include <stdlib.h>\n#include <errno.h>\n\n",
-           "#if defined(_MSC_VER)\n",
-           "  #define DLLExport   __declspec( dllexport ) \n",
-           "#else \n",
-           "  #define DLLExport /* nothing */\n",
-           "#endif \n\n",
-           "#if !defined(MODELICA_ASSERT)\n",
-           "  #define MODELICA_ASSERT(cond,msg) { if (!(cond)) fprintf(stderr,\"Modelica Assert: %s!\\n\", msg); }\n",
-           "#endif\n",
-           "#if !defined(MODELICA_TERMINATE)\n",
-           "  #define MODELICA_TERMINATE(msg) { fprintf(stderr,\"Modelica Terminate: %s!\\n\", msg); fflush(stderr); }\n",
-           "#endif\n\n\n",
-           gencodestr});
-        System.writeFile(cfilename, str);
+        (cache,d,_) = cevalGenerateFunctionDAEs(cache, path, env, {});
+        
+        cfilename = stringAppend(pathstr, ".c");        
+        Print.clearBuf();
+        Debug.fprintln("ceval", "/*- Ceval.cevalGenerateFunction generating function string */");
+        Print.printBuf(constCfileHeader);
+        libs = Codegen.generateFunctions(DAE.DAE(d));
+        Print.writeBuf(cfilename);
+        Print.clearBuf();
+        
         Debug.fprintln("dynload", "cevalGenerateFunction: generating makefile for " +& pathstr);
         makefilename = generateMakefilename(pathstr);
         omhome = Settings.getInstallationDirectoryPath();
@@ -4123,7 +4138,7 @@ algorithm
   end matchcontinue;
 end cevalGenerateFunction;
 
-protected function cevalGenerateFunctionStr "function: cevalGenerateFunctionStr
+protected function cevalGenerateFunctionDAEs "function: cevalGenerateFunctionStr
   Generates a function with the given path, and all functions that are called
   within that function. The two string lists contains names of functions and
   records already generated, which won\'t be generated again."
@@ -4131,65 +4146,52 @@ protected function cevalGenerateFunctionStr "function: cevalGenerateFunctionStr
   input Absyn.Path inPath;
   input Env.Env inEnv;
   input list<Absyn.Path> inAbsynPathLst;
-  input list<String> inRecordTypes;
   output Env.Cache outCache;
-  output String outString;
+  output list<DAE.Element> outDAE;
   output list<Absyn.Path> outAbsynPathLst;
-  output list<String> outLibs;
-  output list<String> outRecordTypes;
 algorithm 
-  (outCache,outString,outAbsynPathLst,outLibs,outRecordTypes):=
-  matchcontinue (inCache,inPath,inEnv,inAbsynPathLst,inRecordTypes)
+  (outCache,outDAE,outAbsynPathLst):=
+  matchcontinue (inCache,inPath,inEnv,inAbsynPathLst)
     local
       Absyn.Path gfmember,path;
       list<Env.Frame> env,env_1,env_2;
       list<Absyn.Path> gflist,calledfuncs,gflist_1;
       SCode.Class cls;
-      list<DAE.Element> d;
+      list<DAE.Element> d,d1,d2,d_1;
       list<String> debugfuncs,calledfuncsstrs,libs,libs_2,calledfuncsstrs_1,rt,rt_1,rt_2;
       String debugfuncsstr,funcname,funccom,thisfuncstr,resstr;
-      DAE.DAElist d_1;
       Env.Cache cache;
-    case (cache,path,env,gflist,rt) /* If getmember succeeds, path is in generated functions list, so do nothing */ 
+    case (cache,path,env,gflist) /* If getmember succeeds, path is in generated functions list, so do nothing */ 
       equation 
         gfmember = Util.listGetMemberOnTrue(path, gflist, ModUtil.pathEqual);
       then
-        (cache,"",gflist,{},rt);
-    case (cache,path,env,gflist,rt) /* If getmember fails, path is not in generated functions list, hence generate it */ 
+        (cache,{},gflist);
+    case (cache,path,env,gflist) /* If getmember fails, path is not in generated functions list, hence generate it */ 
       equation 
         false = RTOpts.debugFlag("nogen");
         failure(_ = Util.listGetMemberOnTrue(path, gflist, ModUtil.pathEqual));
         Debug.fprintln("ceval", "/*- Ceval.cevalGenerateFunctionStr starting*/");
         (cache,cls,env_1) = Lookup.lookupClass(cache,env, path, false);
         Debug.fprintln("ceval", "/*- Ceval.cevalGenerateFunctionStr instantiating*/");
-        (cache,env_2,_,d) = 
+        (cache,env_2,_,d1) = 
         Inst.implicitFunctionInstantiation(
            cache, env_1, InstanceHierarchy.emptyInstanceHierarchy,
            Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cls, {});
         Debug.fprint("ceval", "/*- Ceval.cevalGenerateFunctionStr getting functions: ");
-        calledfuncs = SimCodegen.getCalledFunctionsInFunction(path, gflist, DAE.DAE(d));
+        calledfuncs = SimCodegen.getCalledFunctionsInFunction(path, gflist, DAE.DAE(d1));
         gflist = path :: gflist; // In case the function is recursive
         calledfuncs = Util.listSetDifference(calledfuncs, gflist); // Filter out things we already know will be ignored...
         debugfuncs = Util.listMap(calledfuncs, Absyn.pathString);
         debugfuncsstr = Util.stringDelimitList(debugfuncs, ", ");
         Debug.fprint("ceval", debugfuncsstr);
         Debug.fprintln("ceval", "*/");
-        (cache,calledfuncsstrs,gflist,libs_2, rt_1) = cevalGenerateFunctionStrList(cache,calledfuncs, env, gflist, rt);
+        (cache,d2,gflist) = cevalGenerateFunctionDAEsList(cache,calledfuncs,env,gflist);
         Debug.fprint("ceval", "/*- Ceval.cevalGenerateFunctionStr prefixing dae */");
-        d_1 = ModUtil.stringPrefixParams(DAE.DAE(d));
-        Print.clearBuf();
-        funcname = Absyn.pathString(path);
-        funccom = Util.stringAppendList({"/*---FUNC: ",funcname," ---*/\n\n"});
-        Print.printBuf(funccom);
-        Debug.fprintln("ceval", "/*- Ceval.cevalGenerateFunctionStr generating functions */");
-        (libs,rt_2) = Codegen.generateFunctions(d_1,rt_1);
-        thisfuncstr = Print.getString();
-        calledfuncsstrs_1 = Util.listAppendElt(thisfuncstr, calledfuncsstrs);
-        resstr = Util.stringDelimitList(calledfuncsstrs_1, "\n\n");
-        libs = listAppend(libs, libs_2);
+        DAE.DAE(d_1) = ModUtil.stringPrefixParams(DAE.DAE(d1));
+        d = listAppend(d_1,d2);
       then
-        (cache,resstr,(path :: gflist),libs,rt_2);
-    case (_,path,env,_,_)
+        (cache,d,(path :: gflist));
+    case (_,path,env,_)
       local String ss1;
       equation 
         true = RTOpts.debugFlag("nogen");
@@ -4198,7 +4200,7 @@ algorithm
         Debug.fprint("failtrace", ss1);
       then
         fail();
-    case (_,path,env,_,_)
+    case (_,path,env,_)
       local String ss1;
       equation 
         false = RTOpts.debugFlag("nogen");
@@ -4208,23 +4210,20 @@ algorithm
       then
         fail();
   end matchcontinue;
-end cevalGenerateFunctionStr;
+end cevalGenerateFunctionDAEs;
 
-protected function cevalGenerateFunctionStrList "function: cevalGenerateFunctionStrList
+protected function cevalGenerateFunctionDAEsList "function: cevalGenerateFunctionStrList
   Generates code for several functions."
 	input Env.Cache inCache;
   input list<Absyn.Path> inAbsynPathLst1;
   input Env.Env inEnv2;
   input list<Absyn.Path> inAbsynPathLst3;
-  input list<String> inRecordTypes;
   output Env.Cache outCache;
-  output list<String> outStringLst;
+  output list<DAE.Element> outDAE;
   output list<Absyn.Path> outAbsynPathLst;
-  output list<String> outLibs;
-  output list<String> outRecordTypes;
 algorithm 
-  (outCache,outStringLst,outAbsynPathLst,outLibs,outRecordTypes):=
-  matchcontinue (inCache,inAbsynPathLst1,inEnv2,inAbsynPathLst3,inRecordTypes)
+  (outCache,outDAE,outAbsynPathLst):=
+  matchcontinue (inCache,inAbsynPathLst1,inEnv2,inAbsynPathLst3)
     local
       list<Env.Frame> env;
       list<Absyn.Path> gflist,gflist_1,gflist_2,rest;
@@ -4233,15 +4232,16 @@ algorithm
       Absyn.Path first;
       Env.Cache cache;
       list<String> libs_1,libs_2;
-    case (cache,{},env,gflist,rt) then (cache,{},gflist,{},rt);
-    case (cache,(first :: rest),env,gflist,rt)
+      list<DAE.Element> d,d1,d2;
+    case (cache,{},env,gflist) then (cache,{},gflist);
+    case (cache,(first :: rest),env,gflist)
       equation
-        (cache,firststr,gflist_1,libs_1,rt_1) = cevalGenerateFunctionStr(cache,first, env, gflist,rt);
-        (cache,reststr,gflist_2,libs_2,rt_2) = cevalGenerateFunctionStrList(cache,rest, env, gflist_1,rt_1);
-        libs_1 = listAppend(libs_1, libs_2);
+        (cache,d1,gflist_1) = cevalGenerateFunctionDAEs(cache,first,env,gflist);
+        (cache,d2,gflist_2) = cevalGenerateFunctionDAEsList(cache,rest,env,gflist_1);
+        d = listAppend(d1,d2);
       then
-        (cache,(firststr :: reststr),gflist_2,libs_1,rt_2);
+        (cache,d,gflist_2);
   end matchcontinue;
-end cevalGenerateFunctionStrList;
+end cevalGenerateFunctionDAEsList;
 
 end CevalScript;

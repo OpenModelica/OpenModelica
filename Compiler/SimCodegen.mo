@@ -6135,7 +6135,7 @@ algorithm
         Print.clearBuf();
         Debug.fprintln("info", "Generating functions, call Codegen.\n") "debug" ;
 				(_,libs1) = generateExternalObjectIncludes(dlow);
-        (libs2,_) = Codegen.generateFunctions(DAE.DAE(funcelems),{});
+        libs2 = Codegen.generateFunctions(DAE.DAE(funcelems));
         Print.writeBuf(filename);
       then
         Util.listUnion(libs1,libs2);

@@ -860,34 +860,32 @@ public function generateFunctions
   Generates code for all functions in a DAE and prints on Print buffer. 
   A list of libs for the external functions is returned."
   input DAE.DAElist inDAElist;
-  input list<String> inRecordTypes;
   output list<String> outStringLst;
-  output list<String> outRecordTypes;
 algorithm
   outStringLst:=
-  matchcontinue (inDAElist,inRecordTypes)
+  matchcontinue (inDAElist)
     local
       list<Lib> libs;
       DAE.DAElist dae;
       list<DAE.Element> elist;
       list<String> rt,rt_1;
       
-    case ((dae as DAE.DAE(elementLst = elist)),rt) /* libs */
+    case ((dae as DAE.DAE(elementLst = elist))) /* libs */
       local String s;
       equation
         Print.printBuf("#ifdef __cplusplus\n");
         Print.printBuf("extern \"C\" {\n");
         Print.printBuf("#endif\n");
-        (libs,rt_1) = generateFunctionHeaders(dae,rt);
+        libs = generateFunctionHeaders(dae);
         generateFunctionBodies(dae);
         Print.printBuf("\n");
         Print.printBuf("#ifdef __cplusplus\n");
         Print.printBuf("}\n");
         Print.printBuf("#endif\n");
       then
-        (libs,rt_1);
+        libs;
         
-    case (_,_)
+    case _
       equation
         Debug.fprint("failtrace", "# Codegen.generateFunctions failed\n");
       then
@@ -932,38 +930,35 @@ public function generateFunctionHeaders
 "function: generateFunctionHeaders
   Generates the headers of the functions in a DAE list."
   input DAE.DAElist inDAElist;
-  input list<String> inRecordTypes;
   output list<String> outStringLst;
-  output list<String> outRecordTypes;
 algorithm
   outStringLst:=
-  matchcontinue (inDAElist,inRecordTypes)
+  matchcontinue (inDAElist)
     local
       list<CFunction> cfns;
       list<Lib> libs, funcRef;
       list<DAE.Element> elist;
-      list<String> rt, rt_1;
       
-    case (DAE.DAE(elementLst = elist),rt)
+    case (DAE.DAE(elementLst = elist))
       equation
         Debug.fprintln("cgtr", "generate_function_headers");
-        (cfns as (_::_),rt_1) = generateFunctionsElist(elist, rt);
+        (cfns as (_::_),_) = generateFunctionsElist(elist, {});
         Print.printBuf("/* header part */\n");
         libs = cPrintFunctionIncludes(cfns) ;
         cPrintFunctionHeaders(cfns);
         Print.printBuf("/* End of header part */\n");
       then
-        (libs,rt_1);
+        libs;
         
-    case (DAE.DAE(elementLst = elist),rt)
+    case (DAE.DAE(elementLst = elist))
       equation
         Debug.fprintln("cgtr", "generate_function_headers (function reference)");
         ({},funcRef) = generateFunctionsElist(elist, {});
         _ = cPrintIndentedList(funcRef, 0);
       then
-        ({},rt);
+        {};
     
-    case (_,_)
+    case _
       equation
         Debug.fprint("failtrace", "# Codegen.generateFunctionHeaders failed\n");
       then
