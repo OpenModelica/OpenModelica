@@ -1955,6 +1955,43 @@ algorithm
   end matchcontinue;
 end makeArray;
 
+public function makeArraySubscripts "function: makeArray
+   This function makes an array type given a Type and a list of Exp.Subscript
+"
+  input Type inType;
+  input list<Exp.Subscript> lst;
+  output Type outType;
+algorithm 
+  outType:=
+  matchcontinue (inType,lst)
+    local
+      Type t;
+      Integer i;
+      Exp.Exp e;
+    case (t,{}) then t; 
+    case (t,Exp.WHOLEDIM::lst)
+      equation 
+        t = makeArraySubscripts((T_ARRAY(DIM(NONE),t),NONE),lst);
+      then
+        t;
+    case (t,Exp.SLICE(e)::lst)
+      equation 
+        t = makeArraySubscripts((T_ARRAY(DIM(NONE),t),NONE),lst);
+      then
+        t;
+      
+    case (t,Exp.INDEX(Exp.ICONST(i))::lst)
+      equation 
+        t = makeArraySubscripts((T_ARRAY(DIM(SOME(i)),t),NONE),lst);
+      then
+        t;
+     case (t,Exp.INDEX(_)::lst)
+      equation 
+        t = makeArraySubscripts((T_ARRAY(DIM(NONE),t),NONE),lst);
+      then
+        t;
+  end matchcontinue;
+end makeArraySubscripts;
 
 public function dimensionsEqual "Returns true if two dimensions are 'equal', i.e. if both
 are specified, return comparison of dimension size,

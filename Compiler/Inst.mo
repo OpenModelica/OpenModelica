@@ -9031,7 +9031,10 @@ protected function daeDeclare
 "function: daeDeclare 
   Given a global component name, a type, and a set of attributes, this function declares a component for the DAE result.  
   Altough this function returns a list of DAE.Element, only one component is actually declared.
-  The functions daeDeclare2 and daeDeclare3 below are helper functions that perform parts of the task."
+  The functions daeDeclare2 and daeDeclare3 below are helper functions that perform parts of the task.
+  Note: Currently, this function can only declare scalar variables, i.e. the element type of an array type is used. To indicate that the variable
+  is an array, the InstDims attribute is used. This will need to be redesigned in the futurue, when array variables should not be flattened out in the frontend. 
+  "
   input Exp.ComponentRef inComponentRef;
   input ClassInf.State inState;
   input Types.Type inType;

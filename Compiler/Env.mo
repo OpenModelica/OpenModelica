@@ -1523,7 +1523,7 @@ algorithm
         ((flatArrayType as (Types.T_COMPLEX(_,tvars,_,_),_)),adims) = Types.flattenArrayType(tmpty);
         false = Types.isComplexConnector(flatArrayType);
         
-        indexSubscriptLists = createSubs(adims);
+        indexSubscriptLists = createSubs(listReverse(adims));
         
         lst1 = localInsideConnectorFlowvars3_2(tvars, id, indexSubscriptLists);
         lst2 = localInsideConnectorFlowvars2(l);

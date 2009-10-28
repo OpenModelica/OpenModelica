@@ -450,7 +450,7 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (ASSERT_CONSTANT_FALSE_ERROR,SYMBOLIC(),ERROR(),
           "assert triggered during translation: %s"),
           (SETTING_FIXED_ATTRIBUTE,TRANSLATION(),WARNING(),
-          "No variable has fixed=false but model contains initial equations. Setting fixed=false to the following variables: %s"),
+          "Using overdeterimed solver for initialization. Setting fixed=false to the following variables: %s"),
           (PROPAGATE_START_VALUE,TRANSLATION(),WARNING(),
           "Failed to propagate the start value from variable dummy state %s to state %s. Provide a start value for the selected state instead"),  
           (SEMI_SUPPORTED_FUNCTION,TRANSLATION(),WARNING(),
