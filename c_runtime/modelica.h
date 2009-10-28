@@ -105,6 +105,13 @@ typedef modelica_real    sample_rettype;
 typedef modelica_real    smooth_rettype;
 typedef modelica_boolean change_rettype;
 typedef modelica_integer integer_rettype;
+typedef modelica_real    sign_rettype;
+
+/* sign function */
+inline modelica_real sign(modelica_real v)
+{
+  return v > 0 ? 1 : (v < 0 ? -1 : 0);
+}
 
 #if defined(__cplusplus)
 }
