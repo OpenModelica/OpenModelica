@@ -47,3 +47,11 @@ int in_range_real(modelica_real i,
   if (start > stop) if ((i >= stop) && (i <= start)) return 1;
   return 0;
 }
+
+
+/* sign function */
+inline modelica_real sign(modelica_real v)
+{
+  return v > 0 ? 1 : (v < 0 ? -1 : 0);
+}
+

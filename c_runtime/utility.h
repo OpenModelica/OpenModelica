@@ -28,6 +28,10 @@
  *
  */
 
+
+#ifndef UTILITY_H
+#define UTILITY_H
+
 #include "modelica.h"
 
 int in_range_integer(modelica_integer i,
@@ -38,3 +42,7 @@ int in_range_real(modelica_real i,
 		  modelica_real start,
 		  modelica_real stop);
 
+
+modelica_real sign(modelica_real v);
+
+#endif
