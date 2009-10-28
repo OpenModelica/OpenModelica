@@ -216,10 +216,12 @@ uniontype Equation "- Equations"
     "the baseClassPath is present if the equation originates from a base class" ;
   end EQUATION;
   
+  /* adrpo: this should not be here! it should be part of the class, i.e. PARTS(annotationList) or CLASS_EXTENDS(annoationList) 
   // stefan
   record EQUATIONANN
     Annotation ann;
   end EQUATIONANN;
+  */
 
 end Equation;
 
@@ -228,6 +230,7 @@ uniontype EEquation
 "These represent equations and are almost identical to their Absyn versions.  
  In EQ_IF the elseif branches are represented as normal else branches with 
  a single if statement in them."
+
   record EQ_IF
     list<Absyn.Exp> condition "conditional" ;
     list<list<EEquation>> thenBranch "the true (then) branch" ;
@@ -1225,10 +1228,10 @@ algorithm
         (EQUATION(e_1,NONE) :: es_1);
     case (Absyn.EQUATIONITEMANN(annotation_ = ann) :: es)
       equation 
-        ann_1 = elabAnnotation(ann);
+        /* ann_1 = elabAnnotation(ann); */
         es_1 = elabEquations(es);
       then
-        EQUATIONANN(ann_1) :: es_1;
+        /* EQUATIONANN(ann_1) :: */ es_1;
   end matchcontinue;
 end elabEquations;
 
