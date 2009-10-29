@@ -160,10 +160,11 @@ struct record_description {
 typedef modelica_integer  mmc__unbox__integer_rettype;
 typedef modelica_real     mmc__unbox__real_rettype;
 typedef modelica_string_t mmc__unbox__string_rettype;
+modelica_real mmc_prim_get_real(void *p);
 
-mmc__unbox__integer_rettype mmc__unbox__integer(metamodelica_type);
-mmc__unbox__real_rettype mmc__unbox__real(metamodelica_type);
-mmc__unbox__string_rettype mmc__unbox__string(metamodelica_type);
+#define mmc__unbox__integer(X) MMC_UNTAGFIXNUM(X)
+#define mmc__unbox__real(X) mmc_prim_get_real(X)
+#define mmc__unbox__string(X) MMC_STRINGDATA(X)
 
 #if defined(__cplusplus)
 }

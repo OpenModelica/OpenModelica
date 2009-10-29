@@ -5236,5 +5236,106 @@ algorithm
   end matchcontinue;
 end polymorphicBindingsLookup;
 
-end Types;
+public function getAllInnerTypesOfType
+"Traverses all the types the input Type contains, checks if
+they are of the type the given function specifies, then returns
+a list of all those types."
+  input Type inType;
+  input TypeFn inFn;
+  output list<Type> outTypes;
+  partial function TypeFn
+    input Type fnInType;
+  end TypeFn;
+algorithm
+  outTypes := getAllInnerTypes(inType);
+  outTypes := inType :: outTypes;
+  outTypes := Util.listFilter(outTypes, inFn);
+end getAllInnerTypesOfType;
 
+public function getAllInnerTypes
+"Traverses all the types the input Type contains."
+  input Type inType;
+  output list<Type> outTypes;
+algorithm
+  outTypes := matchcontinue inType
+    local
+      Type ty;
+      list<Type> tys,res,res1,res2;
+      list<list<Type>> resMap;
+      list<Var> fields;
+      list<FuncArg> funcArgs;
+    case ((T_ARRAY(arrayType = ty),_)) equation res = getAllInnerTypes(ty); then inType::res;
+    case ((T_LIST(ty),_)) equation res = getAllInnerTypes(ty); then inType::res;
+    case ((T_BOXED(ty),_)) equation res = getAllInnerTypes(ty); then inType::res;
+    case ((T_METAOPTION(ty),_)) equation res = getAllInnerTypes(ty); then inType::res;
+    
+    case ((T_TUPLE(tys),_))
+      equation
+        resMap = Util.listMap(tys, getAllInnerTypes);
+        res = Util.listFlatten(resMap);
+        res = inType::res;
+      then res;
+    case ((T_METATUPLE(tys),_))
+      equation
+        resMap = Util.listMap(tys, getAllInnerTypes);
+        res = Util.listFlatten(resMap);
+        res = inType::res;
+      then res;
+    
+    case ((T_METARECORD(fields = fields),_))
+      equation
+        tys = Util.listMap(fields, getVarType);
+        resMap = Util.listMap(tys, getAllInnerTypes);
+        res = Util.listFlatten(resMap);
+        res = inType::res;
+      then res;
+    case ((T_COMPLEX(complexClassType = ClassInf.RECORD(_),complexVarLst = fields),_))
+     equation
+        tys = Util.listMap(fields, getVarType);
+        resMap = Util.listMap(tys, getAllInnerTypes);
+        res = Util.listFlatten(resMap);
+        res = inType::res;
+      then res;
+    
+    case ((T_FUNCTION(funcArgs, ty),_))
+      equation
+        tys = Util.listMap(funcArgs, Util.tuple22);
+        resMap = Util.listMap(tys, getAllInnerTypes);
+        res1 = Util.listFlatten(resMap);
+        res1 = inType::res1;
+        res2 = getAllInnerTypes(ty);
+        res = listAppend(res1, ty::res2);
+      then res;
+    
+    case ty then {ty};
+  end matchcontinue;
+end getAllInnerTypes;
+
+public function uniontypeFilter
+  input Type ty;
+algorithm
+  _ := matchcontinue ty
+    case ((T_UNIONTYPE(_),_)) then ();
+  end matchcontinue;
+end uniontypeFilter;
+
+public function metarecordFilter
+  input Type ty;
+algorithm
+  _ := matchcontinue ty
+    case ((T_METARECORD(_,_),_)) then ();
+  end matchcontinue;
+end metarecordFilter;
+
+public function getUniontypePaths
+  input Type ty;
+  output list<Absyn.Path> outPaths;
+algorithm
+  outPaths := matchcontinue ty
+    local
+      list<Absyn.Path> paths;
+    case ((T_UNIONTYPE(paths),_)) then paths;
+  end matchcontinue;
+end getUniontypePaths;
+
+end Types;

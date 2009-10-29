@@ -51,6 +51,7 @@ public import Absyn;
 public import Convert;
 public import MetaUtil;
 public import RTOpts;
+public import Types;
 
 public 
 type Ident = String;
@@ -123,7 +124,6 @@ protected import Debug;
 protected import Algorithm;
 protected import ClassInf;
 protected import ModUtil;
-protected import Types;
 protected import Util;
 protected import Inst;
 protected import Interactive;
@@ -860,23 +860,25 @@ public function generateFunctions
   Generates code for all functions in a DAE and prints on Print buffer. 
   A list of libs for the external functions is returned."
   input DAE.DAElist inDAElist;
+  input list<Types.Type> metarecordTypes;
   output list<String> outStringLst;
 algorithm
   outStringLst:=
-  matchcontinue (inDAElist)
+  matchcontinue (inDAElist,metarecordTypes)
     local
       list<Lib> libs;
       DAE.DAElist dae;
       list<DAE.Element> elist;
-      list<String> rt,rt_1;
+      list<String> rt;
       
-    case ((dae as DAE.DAE(elementLst = elist))) /* libs */
+    case ((dae as DAE.DAE(elementLst = elist)),metarecordTypes) /* libs */
       local String s;
       equation
         Print.printBuf("#ifdef __cplusplus\n");
         Print.printBuf("extern \"C\" {\n");
         Print.printBuf("#endif\n");
-        libs = generateFunctionHeaders(dae);
+        (libs,rt) = generateFunctionHeaders(dae);
+        generateRecordDeclarationsPrintList(metarecordTypes,rt);
         generateFunctionBodies(dae);
         Print.printBuf("\n");
         Print.printBuf("#ifdef __cplusplus\n");
@@ -885,7 +887,7 @@ algorithm
       then
         libs;
         
-    case _
+    case (_,_)
       equation
         Debug.fprint("failtrace", "# Codegen.generateFunctions failed\n");
       then
@@ -931,8 +933,9 @@ public function generateFunctionHeaders
   Generates the headers of the functions in a DAE list."
   input DAE.DAElist inDAElist;
   output list<String> outStringLst;
+  output list<String> outRecordLst;
 algorithm
-  outStringLst:=
+  (outStringLst,outRecordLst) :=
   matchcontinue (inDAElist)
     local
       list<CFunction> cfns;
@@ -942,13 +945,13 @@ algorithm
     case (DAE.DAE(elementLst = elist))
       equation
         Debug.fprintln("cgtr", "generate_function_headers");
-        (cfns as (_::_),_) = generateFunctionsElist(elist, {});
+        (cfns as (_::_),outRecordLst) = generateFunctionsElist(elist, {});
         Print.printBuf("/* header part */\n");
         libs = cPrintFunctionIncludes(cfns) ;
         cPrintFunctionHeaders(cfns);
         Print.printBuf("/* End of header part */\n");
       then
-        libs;
+        (libs,outRecordLst);
         
     case (DAE.DAE(elementLst = elist))
       equation
@@ -956,7 +959,7 @@ algorithm
         ({},funcRef) = generateFunctionsElist(elist, {});
         _ = cPrintIndentedList(funcRef, 0);
       then
-        {};
+        ({},funcRef);
     
     case _
       equation
@@ -1422,9 +1425,40 @@ algorithm
       then (res,rt_2);
     case ((Types.T_COMPLEX(complexClassType = ClassInf.RECORD(string = name), complexVarLst = varlst),_),rt)
       then ({},rt);
+    case ((Types.T_METARECORD(fields = varlst), SOME(path)),rt)
+      equation
+        name = ModUtil.pathStringReplaceDot(path, "_");
+        failure(_ = Util.listGetMember(name,rt));
+        fieldNames = Util.listMap(varlst, generateVarName);
+        rt_1 = name::rt;
+        strs = generateRecordDefinition(path,fieldNames);
+        (rest_strs,rt_2) = generateNestedRecordDeclarations(varlst, rt_1);
+        strs = listAppend(rest_strs,strs);
+      then (strs,rt_2);
+    case ((Types.T_METARECORD(_, _), SOME(path)),rt) then ({},rt);
     case ((_,_),rt) then ({ "/* An odd record this. */" },rt);
   end matchcontinue;
 end generateRecordDeclarations;
+
+protected function generateRecordDeclarationsPrintList 
+  input list<Types.Type> inRecordType;
+  input list<String> inReturnTypes;
+algorithm
+  _ :=
+  matchcontinue (inRecordType,inReturnTypes)
+    local
+      list<String> res,restRes,rt,rt_1,rt_2;
+      list<Types.Type> rest;
+      Types.Type ty;
+    case ({},rt) then (); 
+    case (ty::rest,rt)
+      equation
+        (res,rt_1) = generateRecordDeclarations(ty,rt);
+        _ = cPrintIndentedList(res,0);
+        generateRecordDeclarationsPrintList(rest,rt_1);
+      then ();
+  end matchcontinue;
+end generateRecordDeclarationsPrintList;
 
 protected function generateRecordDefinition "Used by uniontypes as well as records"
   input Absyn.Path path;
@@ -1512,16 +1546,6 @@ algorithm
         strs = listAppend(strs, rest_strs);
       then
         (strs,rt_2);
-    case ((DAE.ALGORITHM(algorithm_ = algorithm_) :: rest),rt)
-      local
-        Algorithm.Algorithm algorithm_;
-        list<Exp.Exp> expl;
-      equation
-        expl = Algorithm.getAllExps(algorithm_);
-        expl = getFunctionCallsList(expl, true);
-        (strs,rt_2) = generateStructsForMetarecords(expl, rt);
-      then
-        (strs,rt_2);
     case ((_ :: rest),rt)
       equation
         (strs,rt_1) = generateStructsForRecords(rest,rt);
@@ -1529,35 +1553,6 @@ algorithm
         (strs,rt_1);
   end matchcontinue;
 end generateStructsForRecords;
-
-protected function generateStructsForMetarecords
-  input list<Exp.Exp> inExpl;
-  input list<String> inReturnTypes;
-  output list<String> outStrs;
-  output list<String> outReturnTypes;
-algorithm
-  (outStrs,outReturnTypes) := matchcontinue(inExpl,inReturnTypes)
-    local
-      list<String> rt,rt_1,rt_2,strs,rest_strs,fieldNames;
-      list<Exp.Exp> rest;
-      String name;
-      Absyn.Path path;
-    case ({},rt) then ({},rt);
-    case (Exp.METARECORDCALL(path=path,fieldNames=fieldNames)::rest,rt)
-      equation
-        name = ModUtil.pathStringReplaceDot(path, "_");
-        failure(_ = Util.listGetMember(name,rt));
-        strs = generateRecordDefinition(path,fieldNames);
-        rt_1 = name::rt;
-        (rest_strs,rt_2) = generateStructsForMetarecords(rest,rt_1);
-        strs = listAppend(strs, rest_strs);
-      then (strs,rt_2);
-    case (_::rest,rt)
-      equation
-        (rest_strs,rt_2) = generateStructsForMetarecords(rest,rt);
-      then (rest_strs,rt_2);
-  end matchcontinue;
-end generateStructsForMetarecords;
 
 protected function generateResultStruct 
 "function generate_results_struct
@@ -9351,321 +9346,247 @@ algorithm
   end matchcontinue;
 end getJniCallFunc;
 
-// For compiling function arguments - stefan
-public function getFunctionReferenceList
-"function: getFunctionReferenceList
-	calls getFunctionRefs for a list of exps"
-	input list<Exp.Exp> exps;
-	output list<Exp.Exp> res;
-	list<list<Exp.Exp>> explists;
+public function matchFnRefs
+"Used together with getMatchingExps"
+  input Exp.Exp inExpr;
+  output list<Exp.Exp> outExprLst;
 algorithm
-  explists := Util.listMap(exps, getFunctionRefs);
-  res := Util.listFlatten(explists);
-end getFunctionReferenceList;
-
-public function getFunctionCallsList
-"function: getFunctionCallsList
-  calls getFunctionCalls for a list of exps"
-  input list<Exp.Exp> exps;
-  input Boolean findMetaRecordCalls;
-  output list<Exp.Exp> res;
-  list<list<Exp.Exp>> explists;
-algorithm 
-  explists := Util.listMap1(exps, getFunctionCalls, findMetaRecordCalls);
-  res := Util.listFlatten(explists);
-end getFunctionCallsList;
-
-// For compiling function arguments - stefan
-public function getFunctionRefs
-"function: getFunctionRefs
-	get all exps that are function references"
-	input Exp.Exp inExp;
-	output list<Exp.Exp> outExpLst;
-algorithm
-  outExpList :=
-  matchcontinue (inExp)
-    local
-      list<Exp.Exp> res, a, b, elts, elist, exps;
-      Exp.Exp e, e1, e2, e3;
-      Exp.ComponentRef c;
-      Exp.Type t;
-      list<list<tuple<Exp.Exp, Boolean>>> explst;
-      list<tuple<Exp.Exp, Boolean>> flatexplst;
-      Option<Exp.Exp> optexp;
-    case((e as Exp.CREF(componentRef = c, ty = t)))
+  outExprLst := matchcontinue (inExpr)
+    local Exp.Exp e; Exp.Type t;
+    case((e as Exp.CREF(ty = t)))
       equation
         true = Exp.isFunctionReference(t);
-        res = {e};
       then
-        res;
-    case (Exp.BINARY(exp1 = e1,exp2 = e2))
-      equation 
-        a = getFunctionRefs(e1);
-        b = getFunctionRefs(e2);
-        res = listAppend(a, b);
-      then
-        res;
-    case (Exp.UNARY(exp = e))
-      equation 
-        res = getFunctionRefs(e);
-      then
-        res;
-    case (Exp.LBINARY(exp1 = e1,exp2 = e2))
-      equation 
-        a = getFunctionRefs(e1);
-        b = getFunctionRefs(e2);
-        res = listAppend(a, b);
-      then
-        res;
-    case (Exp.LUNARY(exp = e))
-      equation 
-        res = getFunctionRefs(e);
-      then
-        res;
-    case (Exp.RELATION(exp1 = e1,exp2 = e2))
-      equation 
-        a = getFunctionRefs(e1);
-        b = getFunctionRefs(e2);
-        res = listAppend(a, b);
-      then
-        res;
-    case (Exp.IFEXP(expCond = e1,expThen = e2,expElse = e3))
-      equation 
-        res = getFunctionReferenceList({e1,e2,e3});
-      then
-        res;
-    case (Exp.ARRAY(array = elts))
-      equation 
-        res = getFunctionReferenceList(elts);
-      then
-        res;
-    case (Exp.MATRIX(scalar = explst))
-      equation 
-        flatexplst = Util.listFlatten(explst);
-        elts = Util.listMap(flatexplst, Util.tuple21);
-        res = getFunctionReferenceList(elts);
-      then
-        res;
-    case (Exp.RANGE(exp = e1,expOption = optexp,range = e2))
-      local list<Exp.Exp> e3;
-      equation 
-        e3 = Util.optionToList(optexp);
-        elist = listAppend({e1,e2}, e3);
-        res = getFunctionReferenceList(elist);
-      then
-        res;
-    case (Exp.TUPLE(PR = exps))
-      equation 
-        res = getFunctionReferenceList(exps);
-      then
-        res;
-    case (Exp.CAST(exp = e))
-      equation 
-        res = getFunctionRefs(e);
-      then
-        res;
-    case (Exp.SIZE(exp = e1,sz = e2)) /* Size */ 
-      local Option<Exp.Exp> e2;
-      equation 
-        a = Util.optionToList(e2);
-        elist = listAppend(a, {e1});
-        res = getFunctionReferenceList(elist);
-      then
-        res;
+        {e};
+  end matchcontinue;
+end matchFnRefs;
 
-        /* MetaModelica list */
-    case (Exp.CONS(_,e1,e2))
-      equation
-        elist = {e1,e2};
-        res = getFunctionReferenceList(elist);
-      then res;
-
-    case  (Exp.LIST(_,elist))
-      equation
-        res = getFunctionReferenceList(elist);
-      then res;
-
-    case(Exp.ASUB(exp = e1))
-      equation
-        res = getFunctionRefs(e1);
-        then
-          res;
-    case(Exp.CALL(expLst = exps))
-      equation
-        res = getFunctionReferenceList(exps);
+public function matchCalls
+"Used together with getMatchingExps"
+  input Exp.Exp inExpr;
+  output list<Exp.Exp> outExprLst;
+algorithm
+  outExprLst := matchcontinue (inExpr)
+    local list<Exp.Exp> args, exps; Exp.Exp e;
+    case (e as Exp.CALL(expLst = args))
+      equation 
+        exps = getMatchingExpsList(args,matchCalls);
       then
-        res;
-    case(Exp.PARTEVALFUNCTION(expList = exps))
-      equation
-        res = getFunctionReferenceList(exps);
+        e::exps;
+  end matchcontinue;
+end matchCalls;
+
+public function matchMetarecordCalls
+"Used together with getMatchingExps"
+  input Exp.Exp inExpr;
+  output list<Exp.Exp> outExprLst;
+algorithm
+  outExprLst := matchcontinue (inExpr)
+    local list<Exp.Exp> args, exps; Exp.Exp e;
+    case (e as Exp.METARECORDCALL(args = args))
+      equation 
+        exps = getMatchingExpsList(args,matchMetarecordCalls);
       then
-        res;
-    case (Exp.VALUEBLOCK(localDecls = ld,body = body,result = e))
+        e::exps;
+  end matchcontinue;
+end matchMetarecordCalls;
+
+public function matchValueblock
+"Used together with getMatchingExps"
+  input Exp.Exp inExpr;
+  output list<Exp.Exp> outExprLst;
+algorithm
+  outExprLst := matchcontinue (inExpr)
+    local list<Exp.Exp> res, exps; Exp.Exp e,resE;
+    case e as Exp.VALUEBLOCK(localDecls = ld,body = body,result = resE)
       local
         list<Exp.DAEElement> ld;
     		Exp.DAEElement body;
     		list<DAE.Element> ld2;
     		DAE.Element body2;
-        list<Algorithm.Statement> b3;
       equation
         // Convert back to DAE uniontypes from Exp uniontypes, part of a work-around
         ld2 = Convert.fromExpElemsToDAEElems(ld,{});
         body2 = Convert.fromExpElemToDAEElem(body);
         ld2 = body2 :: ld2;
-        a = getFunctionRefs(e);
         exps = DAE.getAllExps(ld2);
-        b = getFunctionReferenceList(exps);
-        res = listAppend(a,b);
-      then res;
-
-    case (_) then {};
+        res = getMatchingExpsList(resE::exps,matchValueblock);
+      then e::res;
   end matchcontinue;
-end getFunctionRefs;
+end matchValueblock;
 
-public function getFunctionCalls
-"function: getFunctionCalls
-  Return all exps that are function calls.
-  Inner call exps are returned separately but not 
+public function getMatchingExpsList
+  input list<Exp.Exp> inExps;
+  input MatchFn inFn;
+  output list<Exp.Exp> outExpLst;
+  partial function MatchFn
+    input Exp.Exp inExpr;
+    output list<Exp.Exp> outExprLst;
+  end MatchFn;
+  list<list<Exp.Exp>> explists;
+algorithm 
+  explists := Util.listMap1(inExps, getMatchingExps, inFn);
+  outExpLst := Util.listFlatten(explists);
+end getMatchingExpsList;
+
+public function getMatchingExps
+"function: getMatchingExps
+  Return all exps that match the given function.
+  Inner exps may be returned separately but not 
   extracted from the exp they are in, e.g. 
     CALL(foo, {CALL(bar)}) will return
-    {CALL(foo, {CALL(bar)}), CALL(bar,{})}"
+    {CALL(foo, {CALL(bar)}), CALL(bar,{})}
+Implementation note: Exp.Exp contains VALUEBLOCKS,
+  which can't be processed in Exp due to circular dependencies with DAE.
+  In the future, this function should be moved to Exp."
   input Exp.Exp inExp;
-  input Boolean findMetaRecordCalls; // Find METARECORDCALL instead of CALL
+  input MatchFn inFn;
   output list<Exp.Exp> outExpLst;
+  partial function MatchFn
+    input Exp.Exp inExpr;
+    output list<Exp.Exp> outExprLst;
+  end MatchFn;
 algorithm 
   outExpLst:=
-  matchcontinue (inExp,findMetaRecordCalls)
+  matchcontinue (inExp,inFn)
     local
-      list<Exp.Exp> argexps,exps,args,a,b,res,elts,elst,elist;
+      list<Exp.Exp> exps,args,a,b,res,elts,elst,elist;
       Exp.Exp e,e1,e2,e3;
       Absyn.Path path;
       Boolean tuple_,builtin;
       list<tuple<Exp.Exp, Boolean>> flatexplst;
       list<list<tuple<Exp.Exp, Boolean>>> explst;
       Option<Exp.Exp> optexp;
-    case ((e as Exp.CALL(path = path,expLst = args,tuple_ = tuple_,builtin = builtin)),findMetaRecordCalls)
+      MatchFn fn;
+    
+    // First we check if the function matches
+    case (e, fn)
+      equation
+        res = fn(e);
+      then res;
+    
+    // Else: Traverse all Exps
+    case ((e as Exp.CALL(path = path,expLst = args,tuple_ = tuple_,builtin = builtin)),fn)
       equation 
-        argexps = getFunctionCallsList(args,findMetaRecordCalls);
-        exps = Util.if_(findMetaRecordCalls, argexps, listAppend({e}, argexps));
+        exps = getMatchingExpsList(args,fn);
       then
         exps;
-    case (Exp.PARTEVALFUNCTION(expList = args),findMetaRecordCalls)
+    case (Exp.PARTEVALFUNCTION(expList = args),fn)
       equation
-        res = getFunctionCallsList(args,findMetaRecordCalls);
+        res = getMatchingExpsList(args,fn);
       then
         res;
-    case (Exp.BINARY(exp1 = e1,exp2 = e2),findMetaRecordCalls) /* Binary */ 
+    case (Exp.BINARY(exp1 = e1,exp2 = e2),fn) /* Binary */ 
       equation 
-        a = getFunctionCalls(e1,findMetaRecordCalls);
-        b = getFunctionCalls(e2,findMetaRecordCalls);
+        a = getMatchingExps(e1,fn);
+        b = getMatchingExps(e2,fn);
         res = listAppend(a, b);
       then
         res;
-    case (Exp.UNARY(exp = e),findMetaRecordCalls) /* Unary */ 
+    case (Exp.UNARY(exp = e),fn) /* Unary */ 
       equation 
-        res = getFunctionCalls(e,findMetaRecordCalls);
+        res = getMatchingExps(e,fn);
       then
         res;
-    case (Exp.LBINARY(exp1 = e1,exp2 = e2),findMetaRecordCalls) /* LBinary */ 
+    case (Exp.LBINARY(exp1 = e1,exp2 = e2),fn) /* LBinary */ 
       equation 
-        a = getFunctionCalls(e1,findMetaRecordCalls);
-        b = getFunctionCalls(e2,findMetaRecordCalls);
+        a = getMatchingExps(e1,fn);
+        b = getMatchingExps(e2,fn);
         res = listAppend(a, b);
       then
         res;
-    case (Exp.LUNARY(exp = e),findMetaRecordCalls) /* LUnary */ 
+    case (Exp.LUNARY(exp = e),fn) /* LUnary */ 
       equation 
-        res = getFunctionCalls(e,findMetaRecordCalls);
+        res = getMatchingExps(e,fn);
       then
         res;
-    case (Exp.RELATION(exp1 = e1,exp2 = e2),findMetaRecordCalls) /* Relation */ 
+    case (Exp.RELATION(exp1 = e1,exp2 = e2),fn) /* Relation */ 
       equation 
-        a = getFunctionCalls(e1,findMetaRecordCalls);
-        b = getFunctionCalls(e2,findMetaRecordCalls);
+        a = getMatchingExps(e1,fn);
+        b = getMatchingExps(e2,fn);
         res = listAppend(a, b);
       then
         res;
-    case (Exp.IFEXP(expCond = e1,expThen = e2,expElse = e3),findMetaRecordCalls)
+    case (Exp.IFEXP(expCond = e1,expThen = e2,expElse = e3),fn)
       equation 
-        res = getFunctionCallsList({e1,e2,e3},findMetaRecordCalls);
+        res = getMatchingExpsList({e1,e2,e3},fn);
       then
         res;
-    case (Exp.ARRAY(array = elts),findMetaRecordCalls) /* Array */ 
+    case (Exp.ARRAY(array = elts),fn) /* Array */ 
       equation 
-        res = getFunctionCallsList(elts,findMetaRecordCalls);
+        res = getMatchingExpsList(elts,fn);
       then
         res;
-    case (Exp.MATRIX(scalar = explst),findMetaRecordCalls) /* Matrix */ 
+    case (Exp.MATRIX(scalar = explst),fn) /* Matrix */ 
       equation 
         flatexplst = Util.listFlatten(explst);
         elst = Util.listMap(flatexplst, Util.tuple21);
-        res = getFunctionCallsList(elst,findMetaRecordCalls);
+        res = getMatchingExpsList(elst,fn);
       then
         res;
-    case (Exp.RANGE(exp = e1,expOption = optexp,range = e2),findMetaRecordCalls) /* Range */ 
+    case (Exp.RANGE(exp = e1,expOption = optexp,range = e2),fn) /* Range */ 
       local list<Exp.Exp> e3;
       equation 
         e3 = Util.optionToList(optexp);
         elist = listAppend({e1,e2}, e3);
-        res = getFunctionCallsList(elist,findMetaRecordCalls);
+        res = getMatchingExpsList(elist,fn);
       then
         res;
-    case (Exp.TUPLE(PR = exps),findMetaRecordCalls) /* Tuple */ 
+    case (Exp.TUPLE(PR = exps),fn) /* Tuple */ 
       equation 
-        res = getFunctionCallsList(exps,findMetaRecordCalls);
+        res = getMatchingExpsList(exps,fn);
       then
         res;
-    case (Exp.CAST(exp = e),findMetaRecordCalls)
+    case (Exp.CAST(exp = e),fn)
       equation 
-        res = getFunctionCalls(e,findMetaRecordCalls);
+        res = getMatchingExps(e,fn);
       then
         res;
-    case (Exp.SIZE(exp = e1,sz = e2),findMetaRecordCalls) /* Size */ 
+    case (Exp.SIZE(exp = e1,sz = e2),fn) /* Size */ 
       local Option<Exp.Exp> e2;
       equation 
         a = Util.optionToList(e2);
-        elist = listAppend(a, {e1});
-        res = getFunctionCallsList(elist,findMetaRecordCalls);
+        elist = e1 :: a;
+        res = getMatchingExpsList(elist,fn);
       then
         res;
 
         /* MetaModelica list */
-    case (Exp.CONS(_,e1,e2),findMetaRecordCalls)
+    case (Exp.CONS(_,e1,e2),fn)
       equation
         elist = {e1,e2};
-        res = getFunctionCallsList(elist,findMetaRecordCalls);
+        res = getMatchingExpsList(elist,fn);
       then res;
 
-    case  (Exp.LIST(_,elist),findMetaRecordCalls)
+    case  (Exp.LIST(_,elist),fn)
       equation
-        res = getFunctionCallsList(elist,findMetaRecordCalls);
+        res = getMatchingExpsList(elist,fn);
       then res;
     
-    case (e as Exp.METARECORDCALL(args = elist),findMetaRecordCalls)
+    case (e as Exp.METARECORDCALL(args = elist),fn)
       equation
-        res = getFunctionCallsList(elist,findMetaRecordCalls);
-        res = Util.if_(findMetaRecordCalls, e::res, res);
+        res = getMatchingExpsList(elist,fn);
       then res;
 
-    case (Exp.META_TUPLE(elist), findMetaRecordCalls)
+    case (Exp.META_TUPLE(elist), fn)
       equation
-        res = getFunctionCallsList(elist, findMetaRecordCalls);
+        res = getMatchingExpsList(elist, fn);
       then res;
 
-   case (Exp.META_OPTION(SOME(e1)), findMetaRecordCalls)
+   case (Exp.META_OPTION(SOME(e1)), fn)
       equation
-        res = getFunctionCalls(e1, findMetaRecordCalls);
+        res = getMatchingExps(e1, fn);
       then res;
 
-    case(Exp.ASUB(exp = e1),findMetaRecordCalls)
+    case(Exp.ASUB(exp = e1),fn)
       equation
-        res = getFunctionCalls(e1,findMetaRecordCalls);
+        res = getMatchingExps(e1,fn);
         then
           res;
     
     case(Exp.CREF(_,_),_) then {};
     
-    case (Exp.VALUEBLOCK(localDecls = ld,body = body,result = e),findMetaRecordCalls)
+    case (Exp.VALUEBLOCK(localDecls = ld,body = body,result = e),fn)
       local
         list<Exp.DAEElement> ld;
     		Exp.DAEElement body;
@@ -9677,15 +9598,107 @@ algorithm
         ld2 = Convert.fromExpElemsToDAEElems(ld,{});
         body2 = Convert.fromExpElemToDAEElem(body);
         ld2 = body2 :: ld2;
-        a = getFunctionCalls(e,findMetaRecordCalls);
         exps = DAE.getAllExps(ld2);
-        b = getFunctionCallsList(exps, findMetaRecordCalls);
-        res = listAppend(a,b);
+        res = getMatchingExpsList(e::exps,fn);
       then res;
-    
-    case (_,_) then {}; 
-    
+        
+    case (Exp.ICONST(_),_) then {};
+    case (Exp.RCONST(_),_) then {};
+    case (Exp.BCONST(_),_) then {};
+    case (Exp.SCONST(_),_) then {};
+    case (Exp.CODE(_,_),_) then {};
+    case (Exp.END(),_) then {};
+    case (Exp.META_OPTION(NONE),_) then {};
+        
+    case (e,_)
+      equation
+        Debug.fprintln("failtrace", "- Codegen.getMatchingExps failed: " +& Exp.printExpStr(e));
+      then fail();
+        
   end matchcontinue;
-end getFunctionCalls;
+end getMatchingExps;
+
+public function getUniontypePaths
+"Traverses DAE elements to find all Uniontypes, and return the paths
+of all of their records"
+  input list<DAE.Element> elements;
+  output list<Absyn.Path> outPaths;
+algorithm
+  outPaths := matchcontinue elements
+    local
+      list<Absyn.Path> paths1;
+      list<Absyn.Path> paths2;
+      list<Exp.Exp> exps;
+      list<DAE.Element> els;
+    case elements
+      equation
+        true = RTOpts.acceptMetaModelicaGrammar();
+        paths1 = getUniontypePaths2(elements);
+        exps = DAE.getAllExps(elements);
+        exps = getMatchingExpsList(exps, matchValueblock);
+        els = getDAEDeclsFromValueblocks(exps);
+        paths2 = getUniontypePaths2(els);
+        outPaths = listAppend(paths1, paths2);
+        outPaths = Util.listUnion(outPaths, outPaths); // Remove duplicates
+      then outPaths;
+    case _
+      equation
+        false = RTOpts.acceptMetaModelicaGrammar();
+      then {};
+    case _
+      equation
+        Debug.fprintln("failtrace", "- Codegen.getMetarecordPaths failed");
+      then fail();
+  end matchcontinue;
+end getUniontypePaths;
+
+protected function getUniontypePaths2
+  input list<DAE.Element> elements;
+  output list<Absyn.Path> outPaths;
+algorithm
+  outPaths := matchcontinue elements
+    local
+      list<Absyn.Path> paths,paths1,paths2;
+      list<list<Absyn.Path>> listPaths;
+      list<DAE.Element> els,rest;
+      list<Types.Type> tys;
+      Types.Type ft;
+    case {} then {};
+    case DAE.FUNCTION(dAElist = DAE.DAE(els))::rest
+      equation
+        paths1 = getUniontypePaths2(els);
+        paths2 = getUniontypePaths2(rest);
+        paths = listAppend(paths1,paths2);
+      then paths;
+    case DAE.VAR(fullType = ft)::rest
+      equation
+        tys = Types.getAllInnerTypesOfType(ft, Types.uniontypeFilter);
+        listPaths = Util.listMap(tys, Types.getUniontypePaths);
+        paths1 = getUniontypePaths2(rest);
+        listPaths = paths1::listPaths;
+        paths = Util.listFlatten(listPaths);
+      then paths;
+    case _::rest then getUniontypePaths2(rest);
+  end matchcontinue;
+end getUniontypePaths2;
+
+protected function getDAEDeclsFromValueblocks
+  input list<Exp.Exp> exps;
+  output list<DAE.Element> outEls;
+algorithm
+  outEls := matchcontinue (exps)
+    local
+      list<Exp.Exp> rest;
+      list<Exp.DAEElement> localDecls;
+      list<DAE.Element> els1,els2;
+    case {} then {};
+    case Exp.VALUEBLOCK(localDecls = localDecls)::rest
+      equation
+        els1 = Util.listMap(localDecls, Convert.fromExpElemToDAEElem);
+        els2 = getDAEDeclsFromValueblocks(rest);
+      then listAppend(els1,els2);
+    case _::rest then getDAEDeclsFromValueblocks(rest);
+  end matchcontinue;
+end getDAEDeclsFromValueblocks;
 
 end Codegen;

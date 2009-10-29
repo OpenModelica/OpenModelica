@@ -442,24 +442,3 @@ void printAny(void* any) /* For debugging */
   exit(1);
 }
 
-/* Unboxing */
-mmc__unbox__integer_rettype mmc__unbox__integer(metamodelica_type box)
-{
-  assert(0 == (((mmc_sint_t)box) & 1));  
-  return MMC_UNTAGFIXNUM(box);
-}
-
-mmc__unbox__real_rettype mmc__unbox__real(metamodelica_type box)
-{
-  assert(1 == (((mmc_sint_t)box) & 1));  
-  assert(MMC_REALHDR == MMC_GETHDR(box));
-  return mmc_prim_get_real(box);
-}
-
-mmc__unbox__string_rettype mmc__unbox__string(metamodelica_type box)
-{
-  assert(1 == (((mmc_sint_t)box) & 1));  
-  assert(MMC_HDRISSTRING(MMC_GETHDR(box)));
-  return MMC_STRINGDATA(box);
-}
-

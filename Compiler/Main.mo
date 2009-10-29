@@ -483,6 +483,8 @@ algorithm
       Boolean silent,notsilent;
       Interactive.InteractiveStmts stmts;
       Interactive.InteractiveSymbolTable newst, st;
+      Env.Cache cache;
+      Env.Env env;
       
       /* Version requested using --version*/
     case (_) // try first to see if we had a version request among flags.
@@ -521,7 +523,7 @@ algorithm
         Debug.fprint("info", "---instantiating\n");
         //print(" Inst.Instantiate " +& realString(clock()) +&"\n");
         Debug.fcall("execstat",print, "*** Main -> To instantiate at time: " +& realString(clock()) +& "\n" );
-        (_,_,d_1,_) = Inst.instantiate(Env.emptyCache(),
+        (cache,_,d_1,_) = Inst.instantiate(Env.emptyCache(),
                                             InstanceHierarchy.emptyInstanceHierarchy,
                                             scode);
         d_1 = DAE.transformIfEqToExpr(d_1);
@@ -550,7 +552,7 @@ algorithm
         notsilent = boolNot(silent);
         Debug.bcall(notsilent, print, str);
         Debug.fcall("execstat",print, "*** Main -> To optimizedae at time: " +& realString(clock()) +& "\n" );
-        optimizeDae(scode, p, d, d, cname);
+        optimizeDae(cache, Env.emptyEnv, scode, p, d, d, cname);
       then
         ();        
        
@@ -592,7 +594,7 @@ algorithm
         Debug.fprint("info", "---instantiating\n");
         //print(" Inst.Instantiate " +& realString(clock()) +&"\n");
         Debug.fcall("execstat",print, "*** Main -> To instantiate at time: " +& realString(clock()) +& "\n" );
-        (_,_,_,d_1) = Inst.instantiateClass(Env.emptyCache(),
+        (cache,env,_,d_1) = Inst.instantiateClass(Env.emptyCache(),
                                             InstanceHierarchy.emptyInstanceHierarchy,
                                             scode,
                                             lastClassPath);
@@ -622,7 +624,7 @@ algorithm
         notsilent = boolNot(silent);
         Debug.bcall(notsilent, print, str);
         Debug.fcall("execstat",print, "*** Main -> To optimizedae at time: " +& realString(clock()) +& "\n" );
-        optimizeDae(scode, p, d, d, cname);
+        optimizeDae(cache, env, scode, p, d, d, cname);
       then
         ();
         
@@ -703,6 +705,8 @@ end runBackendQ;
 protected function optimizeDae
 "function: optimizeDae
   Run the backend. Used for both parallization and for normal execution."
+  input Env.Cache inCache;
+  input Env.Env inEnv;  
   input SCode.Program inProgram1;
   input Absyn.Program inProgram2;
   input DAE.DAElist inDAElist3;
@@ -710,7 +714,7 @@ protected function optimizeDae
   input Absyn.Path inPath5;
 algorithm 
   _:=
-  matchcontinue (inProgram1,inProgram2,inDAElist3,inDAElist4,inPath5)
+  matchcontinue (inCache,inEnv,inProgram1,inProgram2,inDAElist3,inDAElist4,inPath5)
     local
       DAELow.DAELow dlow,dlow_1;
       list<Integer>[:] m,mT;
@@ -720,7 +724,9 @@ algorithm
       Absyn.Program ap;
       DAE.DAElist dae,daeimpl;
       Absyn.Path classname;
-    case (p,ap,dae,daeimpl,classname)
+      Env.Cache cache;
+      Env.Env env;
+    case (cache,env,p,ap,dae,daeimpl,classname)
       local String str;
       equation 
         true = runBackendQ();
@@ -752,15 +758,15 @@ algorithm
 				Debug.fcall("dumpcompgraph",print,str);
         modpar(dlow_1, v1, v2, comps);
         Debug.fcall("execstat",print, "*** Main -> To simcodegen at time: " +& realString(clock()) +& "\n" );
-        simcodegen(classname, p, ap, daeimpl, dlow_1, v1, v2, m, mT, comps);
+        simcodegen(cache,env,classname, p, ap, daeimpl, dlow_1, v1, v2, m, mT, comps);
       then
         ();
-    case (_,_,_,_,_)
+    case (_,_,_,_,_,_,_)
       equation 
         true = runBackendQ() "so main can print error messages" ;
       then
         fail();
-    case (_,_,_,_,_) /* If not running backend. */ 
+    case (_,_,_,_,_,_,_) /* If not running backend. */ 
       equation 
         false = runBackendQ();
       then
@@ -830,6 +836,8 @@ end modpar;
 protected function simcodegen
 "function simcodegen
   Genereates simulation code using the SimCodegen module"
+  input Env.Cache inCache;
+  input Env.Env inEnv;
   input Absyn.Path inPath1;
   input SCode.Program inProgram2;
   input Absyn.Program inProgram3;
@@ -842,7 +850,7 @@ protected function simcodegen
   input list<list<Integer>> inIntegerLstLst10;
 algorithm 
   _:=
-  matchcontinue (inPath1,inProgram2,inProgram3,inDAElist4,inDAELow5,inIntegerArray6,inIntegerArray7,inIncidenceMatrix8,inIncidenceMatrixT9,inIntegerLstLst10)
+  matchcontinue (inCache,inEnv,inPath1,inProgram2,inProgram3,inDAElist4,inDAELow5,inIntegerArray6,inIntegerArray7,inIncidenceMatrix8,inIncidenceMatrixT9,inIntegerLstLst10)
     local
       DAELow.DAELow indexed_dlow,indexed_dlow_1,dlow;
       String cname_str,filename,funcfilename,init_filename,makefilename,file_dir;
@@ -855,7 +863,9 @@ algorithm
       Integer[:] ass1,ass2;
       list<Integer>[:] m,mt;
       list<list<Integer>> comps;
-    case (classname,p,ap,dae,dlow,ass1,ass2,m,mt,comps) /* classname ass1 ass2 blocks */ 
+      Env.Cache cache;
+      Env.Env env;
+    case (cache,env,classname,p,ap,dae,dlow,ass1,ass2,m,mt,comps) /* classname ass1 ass2 blocks */ 
       equation 
         Debug.fcall("execstat",print, "*** Main -> entering simcodgen: " +& realString(clock()) +& "\n" );
         true = RTOpts.simulationCg();
@@ -873,18 +883,18 @@ algorithm
         a_cref = Absyn.pathToCref(classname);
         file_dir = CevalScript.getFileDir(a_cref, ap);
         Debug.fcall("execstat",print, "*** Main -> simcodgen -> generateFunctions: " +& realString(clock()) +& "\n" );
-        libs = SimCodegen.generateFunctions(p, dae, indexed_dlow_1, classname, funcfilename);
+        (cache,libs) = SimCodegen.generateFunctions(cache, env, p, dae, indexed_dlow_1, classname, funcfilename);
         SimCodegen.generateSimulationCode(dae, indexed_dlow_1, ass1, ass2, m, mt, comps, classname, filename, funcfilename,file_dir);
         SimCodegen.generateInitData(indexed_dlow_1, classname, cname_str, init_filename, 0.0, 1.0, 500.0,1e-6,"dassl","");
         SimCodegen.generateMakefile(makefilename, cname_str, libs, file_dir);
       then
         ();
-    case (_,_,_,_,_,_,_,_,_,_) /* If something above failed. fail so Main can print errors */ 
+    case (_,_,_,_,_,_,_,_,_,_,_,_) /* If something above failed. fail so Main can print errors */ 
       equation 
         true = RTOpts.simulationCg();
       then
         fail();
-    case (_,_,_,_,_,_,_,_,_,_) /* If not generating simulation code */ 
+    case (_,_,_,_,_,_,_,_,_,_,_,_) /* If not generating simulation code */ 
       equation 
         false = RTOpts.simulationCg();
       then

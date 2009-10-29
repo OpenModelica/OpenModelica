@@ -1,9 +1,9 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2008, Linkï¿½pings University,
+ * Copyright (c) 1998-2008, Linköpings University,
  * Department of Computer and Information Science,
- * SE-58183 Linkï¿½ping, Sweden.
+ * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
@@ -14,7 +14,7 @@
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linkï¿½pings University, either from the above address,
+ * from Linköpings University, either from the above address,
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
  *
@@ -74,8 +74,8 @@ protected import InstanceHierarchy;
  
  */
  
-public function lookupType "  
-  This function finds a specified type in the environment. 
+public function lookupType
+" This function finds a specified type in the environment. 
   If it finds a function instead, this will be implicitly instantiated 
   and lookup will start over. 
  
@@ -200,7 +200,78 @@ algorithm
   end matchcontinue;
 end lookupType;
 
-public function isPrimitive "function: isPrimitive
+protected function lookupTypeList
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input list<Absyn.Path> paths;
+  input Boolean bool;
+  output Env.Cache outCache;
+  output list<Types.Type> types;
+algorithm
+  (outCache,types) := matchcontinue (inCache, inEnv, paths, bool)
+    local
+      Env.Cache cache;
+      Env.Env env;
+      Absyn.Path first;
+      list<Absyn.Path> rest;
+      Types.Type ty;
+      list<Types.Type> tys;
+    case (cache, env, {}, _) then (cache,{});
+    case (cache, env, first::rest, bool)
+      equation
+        (cache, ty, _) = lookupType(cache, env, first, bool);
+        (cache, tys) = lookupTypeList(cache, env, rest, bool);
+      then (cache,ty::tys);
+  end matchcontinue;
+end lookupTypeList;
+
+public function lookupMetarecordsRecursive
+"Takes a list of paths to Uniontypes. Use this list to create a list of T_METARECORD.
+The function is guarded against recursive definitions by accumulating all paths it
+starts to traverse."
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input list<Absyn.Path> inUniontypePaths;
+  input list<Absyn.Path> inAcc;
+  output Env.Cache outCache;
+  output list<Types.Type> outMetarecordTypes;
+algorithm
+  (outCache,outMetarecordTypes) := matchcontinue (inCache, inEnv, inUniontypePaths, inAcc)
+    local
+      Env.Cache cache;
+      Env.Env env;
+      Absyn.Path first;
+      list<Absyn.Path> metarecordPaths, rest, acc;
+      list<Types.Type> metarecordTypes, metarecordTypes1, metarecordTypes2, uniontypeTypes, innerTypes;
+      list<list<Absyn.Path>> uniontypePaths;
+      Types.Type ty;
+    case (cache, _, {}, _) then (cache, {});
+    case (cache, env, first::rest, acc)
+      equation
+        false = listMember(first, acc);
+	      acc = first::acc;
+        (cache, ty, _) = lookupType(cache, env, first, true);
+	      innerTypes = Types.getAllInnerTypes(ty);
+        uniontypeTypes = Util.listFilter(innerTypes, Types.uniontypeFilter);
+	      uniontypePaths =  Util.listMap(uniontypeTypes, Types.getUniontypePaths);
+	      rest = Util.listFlatten(rest :: uniontypePaths);
+        (cache, metarecordTypes2) = lookupMetarecordsRecursive(cache, env, rest, acc);
+	      metarecordTypes = ty :: metarecordTypes2;
+	    then (cache, metarecordTypes);
+    case (cache, env, first::rest, acc)
+      equation
+        true = listMember(first, acc);
+        (cache, metarecordTypes) = lookupMetarecordsRecursive(cache, env, rest, acc);
+      then (cache, metarecordTypes);
+    case (_, _, _, _)
+      equation
+        Debug.fprintln("failtrace", "- Lookup.lookupMetarecordsRecursive failed");
+      then fail();
+  end matchcontinue;
+end lookupMetarecordsRecursive;
+
+public function isPrimitive
+"function: isPrimitive
   author: PA
  
   Returns true if classname is any of the builtin classes:
@@ -220,7 +291,8 @@ algorithm
   end matchcontinue;
 end isPrimitive;
 
-public function lookupClass "Tries to find a specified class in an environment
+public function lookupClass
+"Tries to find a specified class in an environment
   
   Arg1: The enviroment where to look
   Arg2: The path for the class

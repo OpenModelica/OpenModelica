@@ -51,6 +51,7 @@ public import DAELow;
 public import Absyn;
 public import Exp;
 public import SCode;
+public import Env;
 
 public type HelpVarInfo = tuple<Integer, Exp.Exp, Integer>; // helpvarindex, expression, whenclause index
 
@@ -89,9 +90,9 @@ protected import Error;
 protected import Settings;
 protected import Algorithm;
 protected import Types;
-protected import Env;
 protected import CevalScript;
 protected import InstanceHierarchy;
+protected import Lookup;
 
 public function generateMakefile
 "function: generateMakefile
@@ -6102,44 +6103,45 @@ public function generateFunctions
 "function generateFunctions
   Finds the called functions in daelow and generates code for them from 
   the given DAE. Hence, the functions must exist in the DAE.Element list."
+  input Env.Cache inCache;
+  input Env.Env inEnv;
   input SCode.Program inProgram;
   input DAE.DAElist inDAElist;
   input DAELow.DAELow inDAELow;
   input Absyn.Path inPath;
   input String inString;
-  output list<String> outStringLst;
+  output Env.Cache outCache;
+  output list<String> outStringLst;  
 algorithm
-  outStringLst:=
-  matchcontinue (inProgram,inDAElist,inDAELow,inPath,inString)
+  (outCache,outStringLst):=
+  matchcontinue (inCache,inEnv,inProgram,inDAElist,inDAELow,inPath,inString)
     local
-      list<Absyn.Path> funcpaths, fnrefs, fnpaths, fns;
+      list<Absyn.Path> funcpaths, fnrefs, fnpaths, fns, uniontypePaths;
       list<String> debugpathstrs,libs1,libs2,includes;
       String debugpathstr,debugstr,filename;
       list<DAE.Element> funcelems,elements;
       list<SCode.Class> p;
+      list<Types.Type> metarecordTypes;
+      Env.Cache cache;
+      Env.Env env;
       DAE.DAElist dae;
       DAELow.DAELow dlow;
       Absyn.Path path;
-    case (p,(dae as DAE.DAE(elementLst = elements)),dlow,path,filename) /* Needed to instantiate functions libs */
+    case (cache,env,p,(dae as DAE.DAE(elementLst = elements)),dlow,path,filename) /* Needed to instantiate functions libs */
       equation
         funcpaths = getCalledFunctions(dae, dlow);
-        //fnrefs = getReferencedFunctions(dae, dlow); // For function arguments - stefan
-        //fnpaths = listAppend(funcpaths, fnrefs);
-        //fns = removeDuplicatePaths(fnpaths);
-        Debug.fprint("info", "Found called functions: ") "debug" ;
-        debugpathstrs = Util.listMap(funcpaths, Absyn.pathString) "debug" ;
-        debugpathstr = Util.stringDelimitList(debugpathstrs, ", ") "debug" ;
-        Debug.fprintln("info", debugpathstr) "debug" ;
         funcelems = generateFunctions2(p, funcpaths);
-        debugstr = Print.getString();
         Print.clearBuf();
         Debug.fprintln("info", "Generating functions, call Codegen.\n") "debug" ;
 				(_,libs1) = generateExternalObjectIncludes(dlow);
-        libs2 = Codegen.generateFunctions(DAE.DAE(funcelems));
+        uniontypePaths = Codegen.getUniontypePaths(funcelems);
+        (cache,metarecordTypes) = Lookup.lookupMetarecordsRecursive(cache, env, uniontypePaths, {});
+        
+        libs2 = Codegen.generateFunctions(DAE.DAE(funcelems),metarecordTypes);
         Print.writeBuf(filename);
       then
-        Util.listUnion(libs1,libs2);
-    case (_,_,_,_,_)
+        (cache,Util.listUnion(libs1,libs2));
+    case (_,_,_,_,_,_,_)
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"Code generation of Modelica functions failed. "});
       then
@@ -8807,7 +8809,7 @@ protected function getReferencedFunctions
 	list<Absyn.Path> referencedFuncs;
 algorithm
   explist := DAELow.getAllExps(dlow);
-  fnrefs := Codegen.getFunctionReferenceList(explist);
+  fnrefs := Codegen.getMatchingExpsList(explist, Codegen.matchFnRefs);
   crefs := Util.listMap(fnrefs, getCrefFromExp);
   referencedFuncs := Util.listMap(crefs, Absyn.crefToPath);
   res := removeDuplicatePaths(referencedFuncs);
@@ -8850,7 +8852,7 @@ public function getCalledFunctions
   list<Absyn.Path> calledfuncs;
 algorithm
   explist := DAELow.getAllExps(dlow);
-  fcallexps := Codegen.getFunctionCallsList(explist, false);
+  fcallexps := Codegen.getMatchingExpsList(explist, Codegen.matchCalls);
   fcallexps_1 := Util.listSelect(fcallexps, isNotBuiltinCall);
   calledfuncs := Util.listMap(fcallexps_1, getCallPath);
   res := removeDuplicatePaths(calledfuncs);
@@ -8917,14 +8919,14 @@ algorithm
         false = listMember(path,acc);
         funcelems = DAE.getNamedFunction(path, elements);
         explist = DAE.getAllExps(funcelems);
-        fcallexps = Codegen.getFunctionCallsList(explist, false);
+        fcallexps = Codegen.getMatchingExpsList(explist, Codegen.matchCalls);
         fcallexps_1 = Util.listSelect(fcallexps, isNotBuiltinCall);
         calledfuncs = Util.listMap(fcallexps_1, getCallPath);
         
         /*-- MetaModelica Partial Function. sjoelund --*/
         
         // stefan - get all arguments of constant T_FUNCTION type and add to list
-        fnrefs = Codegen.getFunctionReferenceList(explist);
+        fnrefs = Codegen.getMatchingExpsList(explist, Codegen.matchFnRefs);
         crefs = Util.listMap(fnrefs, getCrefFromExp);
         reffuncs = Util.listMap(crefs, Absyn.crefToPath);
         

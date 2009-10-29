@@ -2342,7 +2342,7 @@ algorithm
         makefilename = generateMakefilename(filenameprefix);
         a_cref = Absyn.pathToCref(className);
         file_dir = getFileDir(a_cref, p);
-        libs = SimCodegen.generateFunctions(p_1, dae, indexed_dlow_1, className, funcfilename);
+        (cache,libs) = SimCodegen.generateFunctions(cache, env, p_1, dae, indexed_dlow_1, className, funcfilename);
         SimCodegen.generateSimulationCode(dae, /* dlow_1,*/ indexed_dlow_1, ass1, ass2, m, mT, comps, className, filename, funcfilename,file_dir);
         SimCodegen.generateMakefile(makefilename, filenameprefix, libs, file_dir);
         /* 
@@ -4059,7 +4059,7 @@ protected constant String constCfileHeader =
 
 #if defined(_MSC_VER)
   #define DLLExport   __declspec( dllexport )
-#else \n
+#else
   #define DLLExport /* nothing */
 #endif
 
@@ -4069,6 +4069,7 @@ protected constant String constCfileHeader =
 #if !defined(MODELICA_TERMINATE)
   #define MODELICA_TERMINATE(msg) { fprintf(stderr,\"Modelica Terminate: %s!\\n\", msg); fflush(stderr); }
 #endif
+
 
 ";
 
@@ -4090,7 +4091,8 @@ algorithm
       String MakefileHeader;
       list<String> libs;
       list<DAE.Element> d;
-
+      list<Absyn.Path> uniontypePaths;
+      list<Types.Type> metarecordTypes;
     case (cache, env, path)
       equation 
         false = RTOpts.debugFlag("nogen");
@@ -4098,12 +4100,14 @@ algorithm
         pathstr = generateFunctionName(path); 
         Debug.fprintln("ceval", "/*- Ceval.cevalGenerateFunction starting*/");        
         (cache,d,_) = cevalGenerateFunctionDAEs(cache, path, env, {});
+        uniontypePaths = Codegen.getUniontypePaths(d);
+        (cache,metarecordTypes) = Lookup.lookupMetarecordsRecursive(cache, env, uniontypePaths, {});
         
         cfilename = stringAppend(pathstr, ".c");        
         Print.clearBuf();
         Debug.fprintln("ceval", "/*- Ceval.cevalGenerateFunction generating function string */");
         Print.printBuf(constCfileHeader);
-        libs = Codegen.generateFunctions(DAE.DAE(d));
+        libs = Codegen.generateFunctions(DAE.DAE(d),metarecordTypes);
         Print.writeBuf(cfilename);
         Print.clearBuf();
         
