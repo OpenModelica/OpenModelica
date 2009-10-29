@@ -67,6 +67,7 @@ protected import Env;
 protected import Settings;
 protected import InstanceHierarchy;
 protected import ClassLoader;
+protected import Inline;
 
 protected function serverLoop
 "function: serverLoop

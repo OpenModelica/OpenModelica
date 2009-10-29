@@ -9699,7 +9699,7 @@ algorithm
     /* v = array(For-constructor)  */
     case (cache,env,ih,mods,pre,csets,ci_state,SCode.EQ_EQUALS(Absyn.CREF(arrName),
      //  Absyn.CALL(Absyn.CREF_IDENT("array",{}),Absyn.FOR_ITER_FARG(itExp,id,e2))),initial_,impl)
-         Absyn.CALL(Absyn.CREF_IDENT("array",{}),Absyn.FOR_ITER_FARG(itExp,rangeIdList))),initial_,impl,graph)
+         Absyn.CALL(Absyn.CREF_IDENT("array",{}),Absyn.FOR_ITER_FARG(itExp,rangeIdList)),_),initial_,impl,graph)
       equation
         // rangeIdList = {(id,e2)};
         idList = extractLoopVars(rangeIdList,{});
@@ -9799,7 +9799,7 @@ algorithm
         (cache,env_1,ih,dae1,_,_,graph) = instList(cache,env,ih, mod, pre, csets, ci_state, instEEquation, el, impl, graph);
         lhsCrefs = DAE.verifyWhenEquation(dae1);
         (cache,env_2,ih,(dae3 as (dae2 :: _)),_,ci_state_1,graph) = instEquationCommon(cache,env_1,ih, mod, pre, csets, ci_state, 
-          SCode.EQ_WHEN(ee,eel,eex), initial_, impl, graph);
+          SCode.EQ_WHEN(ee,eel,eex,NONE), initial_, impl, graph);
         lhsCrefsRec = DAE.verifyWhenEquation(dae3);
         i1 = listLength(lhsCrefs);
         lhsCrefs = Util.listUnionOnTrue(lhsCrefs,lhsCrefsRec,Exp.crefEqual);
@@ -9936,7 +9936,7 @@ algorithm
         
     case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_NORETCALL(
               Absyn.CREF_QUAL("Connections", {}, Absyn.CREF_IDENT("root", {})),
-              Absyn.FUNCTIONARGS({Absyn.CREF(cr)}, {})),initial_,impl,graph)
+              Absyn.FUNCTIONARGS({Absyn.CREF(cr)}, {}),_),initial_,impl,graph)
       local Absyn.ComponentRef cr; Exp.ComponentRef cr_; Exp.Type t; 
       equation 
         (cache,Exp.CREF(cr_,t),_,_) = Static.elabCref(cache,env, cr, false /* ??? */,false);
@@ -9947,7 +9947,7 @@ algorithm
             
     case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_NORETCALL(
               Absyn.CREF_QUAL("Connections", {}, Absyn.CREF_IDENT("potentialRoot", {})),
-              Absyn.FUNCTIONARGS({Absyn.CREF(cr)}, {})),initial_,impl,graph)
+              Absyn.FUNCTIONARGS({Absyn.CREF(cr)}, {}),_),initial_,impl,graph)
       local Absyn.ComponentRef cr; Exp.ComponentRef cr_; Exp.Type t; 
       equation 
         (cache,Exp.CREF(cr_,t),_,_) = Static.elabCref(cache,env, cr, false /* ??? */,false);
@@ -9958,7 +9958,7 @@ algorithm
          
     case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_NORETCALL(
               Absyn.CREF_QUAL("Connections", {}, Absyn.CREF_IDENT("potentialRoot", {})),
-              Absyn.FUNCTIONARGS({Absyn.CREF(cr)}, {Absyn.NAMEDARG("priority", Absyn.REAL(priority))})),initial_,impl,graph)
+              Absyn.FUNCTIONARGS({Absyn.CREF(cr)}, {Absyn.NAMEDARG("priority", Absyn.REAL(priority))}),_),initial_,impl,graph)
       local Absyn.ComponentRef cr; Exp.ComponentRef cr_; Exp.Type t; Real priority;
       equation 
         (cache,Exp.CREF(cr_,t),_,_) = Static.elabCref(cache,env, cr, false /* ??? */,false);
@@ -9969,7 +9969,7 @@ algorithm
             
     case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_NORETCALL(
               Absyn.CREF_QUAL("Connections", {}, Absyn.CREF_IDENT("branch", {})),
-              Absyn.FUNCTIONARGS({Absyn.CREF(cr1), Absyn.CREF(cr2)}, {})),initial_,impl,graph)
+              Absyn.FUNCTIONARGS({Absyn.CREF(cr1), Absyn.CREF(cr2)}, {}),_),initial_,impl,graph)
       local Absyn.ComponentRef cr1, cr2; Exp.ComponentRef cr1_, cr2_; Exp.Type t; 
       equation 
         (cache,Exp.CREF(cr1_,t),_,_) = Static.elabCref(cache,env, cr1, false /* ??? */,false);
@@ -9980,7 +9980,7 @@ algorithm
       then
         (cache,env,ih,{},csets,ci_state,graph);     
         
-    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_NORETCALL(cr,fargs),initial_,impl,graph)
+    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_NORETCALL(cr,fargs,_),initial_,impl,graph)
       local Exp.ComponentRef cr_2; Exp.Type t; Absyn.Path path; list<Exp.Exp> expl; Absyn.FunctionArgs fargs;
         Exp.Exp exp;
       equation 
@@ -13387,9 +13387,9 @@ algorithm
       equation
         subList = createArrayIndexing(localIdList,{});
         arrayRef = createArrayReference(localArrayId,subList);
-        eq1 = SCode.EQ_EQUALS(arrayRef,localIterExp);
+        eq1 = SCode.EQ_EQUALS(arrayRef,localIterExp,NONE);
         eqList = {eq1};
-        eq2 = SCode.EQ_FOR(id,rangeExp,eqList);
+        eq2 = SCode.EQ_FOR(id,rangeExp,eqList,NONE);
       then eq2;
     case (localIterExp,(id,SOME(rangeExp)) :: rest,localIdList,localArrayId)
       local
@@ -13399,7 +13399,7 @@ algorithm
       equation
         eq1 = createForIteratorEquations(localIterExp,rest,localIdList,localArrayId);
         eqList = {eq1};
-        eq2 = SCode.EQ_FOR(id,rangeExp,eqList);
+        eq2 = SCode.EQ_FOR(id,rangeExp,eqList,NONE);
       then eq2;
   end matchcontinue;
 end createForIteratorEquations;
