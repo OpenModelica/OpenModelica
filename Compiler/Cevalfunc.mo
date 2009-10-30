@@ -119,7 +119,7 @@ algorithm
       list<Types.Var> typeslst;
       Option<Types.Type> cto; // for complex env construction, to here
     case(env,{},_,_) then env;
-    case(env, (ele1 as SCode.EXTENDS(_,_))::eles1, vals1,restExps)
+    case(env, (ele1 as SCode.EXTENDS(_,_,_))::eles1, vals1,restExps)
       equation
         env1 = extendEnvWithInputArgs(env,eles1,vals1,restExps);
         then

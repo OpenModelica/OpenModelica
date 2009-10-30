@@ -4892,7 +4892,7 @@ algorithm
         (cache,env_2,ih);
         
     /* Extends elements */ 
-    case (cache,env,ih,mod,pre,csets,cistate,((SCode.EXTENDS(_,_),_) :: xs),allcomps,eqns,instdims,impl)
+    case (cache,env,ih,mod,pre,csets,cistate,((SCode.EXTENDS(_,_,_),_) :: xs),allcomps,eqns,instdims,impl)
       equation 
         (cache,env_2,ih) = addComponentsToEnv(cache,env, ih, mod, pre, csets, cistate, xs, allcomps, eqns, instdims, impl);
       then
@@ -6615,7 +6615,7 @@ algorithm
           dims,impl) 
       local list<SCode.Element> els, extendsels; SCode.Path path;
       equation 
-        (_,{SCode.EXTENDS(path, mod)},{}) = splitElts(els); // ONLY ONE extends!
+        (_,{SCode.EXTENDS(path, mod,_)},{}) = splitElts(els); // ONLY ONE extends!
         (cache,mod_1) = Mod.elabMod(cache,env, pre, mod, impl);
         mods_2 = Mod.merge(mods, mod_1, env, pre);
         (cache,cl,cenv) = Lookup.lookupClass(cache,env, path, true);
@@ -14279,7 +14279,7 @@ algorithm
       Absyn.Import imp;
       Option<Absyn.Info> info;
       
-  case(SCode.EXTENDS(path,_)) 
+  case(SCode.EXTENDS(path,_,_)) 
     equation ret = Absyn.pathString(path); 
     then (ret,NONE);
   case(SCode.CLASSDEF(name = name_)) 
@@ -14477,11 +14477,11 @@ algorithm oltuple := matchcontinue(ltuple)
     equation
       rest = traverseModAddFinal3(rest);
     then ele::rest;
-  case(SCode.EXTENDS(p,mod)::rest) 
-    local Absyn.Path p;
+  case(SCode.EXTENDS(p,mod,ann)::rest) 
+    local Absyn.Path p;Option<SCode.Annotation> ann;
     equation
        mod = traverseModAddFinal2(mod);
-    then SCode.EXTENDS(p,mod)::rest;
+    then SCode.EXTENDS(p,mod,ann)::rest;
   case(_) equation print(" we failed with traverseModAddFinal3\n"); then fail();
 end matchcontinue;
 end traverseModAddFinal3;
@@ -15204,7 +15204,7 @@ algorithm cref := matchcontinue(inEle)
   local String crefName;
   case(SCode.CLASSDEF(name=crefName)) then {Absyn.CREF_IDENT(crefName,{})};
   case(SCode.COMPONENT(component=crefName)) then {Absyn.CREF_IDENT(crefName,{})};
-  case(SCode.EXTENDS(_,_)) 
+  case(SCode.EXTENDS(_,_,_)) 
     equation Debug.fprint("inst", "-Inst.get_Cref_From_Comp not implemented for SCode.EXTENDS(_,_)\n"); then {};
   case(SCode.IMPORT(_)) 
     equation Debug.fprint("inst", "-Inst.get_Cref_From_Comp not implemented for SCode.IMPORT(_,_)\n"); then {};

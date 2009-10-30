@@ -1973,7 +1973,7 @@ algorithm
         (SCode.COMPONENT(id,io,fl,repl,prot,SCode.ATTR(d,f,st,ac,var,Absyn.INPUT()),tp,
           umod,bc,comment,cond,nfo,cc) :: res);
 
-    case (SCode.EXTENDS(path,mod) :: rest,mods,env)
+    case (SCode.EXTENDS(path,mod,_) :: rest,mods,env)
       equation 
         (_,mod_1) = Mod.elabMod(Env.emptyCache(),env, Prefix.NOPRE(), mod, false);
         mod_1 = Mod.merge(mods,mod_1,env,Prefix.NOPRE());
@@ -2157,7 +2157,7 @@ algorithm
       then
         (cache,var :: vars);
 
-    case (cache,((SCode.EXTENDS(path,mod)) :: rest),mods,env)
+    case (cache,((SCode.EXTENDS(path,mod,_)) :: rest),mods,env)
       equation 
         (_,cl,env_1) = lookupClass(cache,env, path, false);
         (cache,mod2) = Mod.elabMod(cache,env_1, Prefix.NOPRE(), mod, false);

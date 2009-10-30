@@ -152,7 +152,7 @@ algorithm
       then 
         i::ihrest;
         
-    case (SCode.EXTENDS(path, _)::rest,containedIn,cache,env)
+    case (SCode.EXTENDS(path, _, _)::rest,containedIn,cache,env)
       equation
         (cache,cl,env) = Lookup.lookupClass(cache, env, path, true);
         i = createInstance(cl, "_EXTENDS_", containedIn, path, cache, env); 

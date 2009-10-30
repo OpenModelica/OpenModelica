@@ -318,6 +318,7 @@ uniontype Element "- Elements
   record EXTENDS "the extends element"
     Path baseClassPath "the extends path";
     Mod modifications  "the modifications applied to the base class";
+    Option<Annotation> annotation_;
   end EXTENDS;
 
   record CLASSDEF "a local class definition"
@@ -1153,14 +1154,24 @@ algorithm
       then
         {CLASSDEF(n,finalPrefix,rp,CLASS(n,pa,e,re_1,de_1),NONE,cc)};
 
-    case (cc,finalPrefix,_,repl,prot,Absyn.EXTENDS(path = n,elementArg = args),info)
+    case (cc,finalPrefix,_,repl,prot,Absyn.EXTENDS(path = n,elementArg = args,annotationOpt = NONE),info)
       local Absyn.Path n;
       equation 
         Debug.fprintln("elab", "elaborating extends: " +& Absyn.pathString(n));        
         mod = buildMod(SOME(Absyn.CLASSMOD(args,NONE)), false, Absyn.NON_EACH());
         ns = Absyn.pathString(n);
       then
-        {EXTENDS(n,mod)};
+        {EXTENDS(n,mod,NONE)};
+    
+    case (cc,finalPrefix,_,repl,prot,Absyn.EXTENDS(path = n,elementArg = args,annotationOpt = SOME(absann)),info)
+      local Absyn.Path n; Absyn.Annotation absann; Annotation ann;
+      equation 
+        Debug.fprintln("elab", "elaborating extends: " +& Absyn.pathString(n));        
+        mod = buildMod(SOME(Absyn.CLASSMOD(args,NONE)), false, Absyn.NON_EACH());
+        ns = Absyn.pathString(n);
+        ann = elabAnnotation(absann);
+      then
+        {EXTENDS(n,mod,SOME(ann))};
 
     case (cc,_,_,_,_,Absyn.COMPONENTS(components = {}),info) then {};
  
