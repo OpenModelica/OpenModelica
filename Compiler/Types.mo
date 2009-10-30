@@ -5090,6 +5090,14 @@ algorithm
         tp = superType(t1,t2);
       then ((T_METAOPTION(tp),NONE));
 
+    case (t1 as (T_UNIONTYPE(lst),_),(T_METARECORD(_,_),SOME(path)))
+      local
+        list<Absyn.Path> lst;
+        Absyn.Path path;
+      equation
+        true = listMember(path, lst);
+      then t1;
+
     case (t1,t2)
       equation
         true = subtype(t1,t2);
