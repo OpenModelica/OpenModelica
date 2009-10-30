@@ -161,7 +161,7 @@ algorithm
 	  list<SCode.Element> elts;
 	  SCode.Ident cn,cn2,compname; 
 	  Option<Absyn.Path> bc;
-	  Option<Absyn.Comment> cmt;
+	  Option<SCode.Comment> cmt;
 	  SCode.Restriction restr;
 	  Absyn.TypeSpec tp,tp1;
 	  Types.Mod emod;
@@ -1388,7 +1388,7 @@ algorithm
       Absyn.TypeSpec tp;
       SCode.Mod m1,m2;
       Option<Absyn.Path> bc,bc2;
-      Option<Absyn.Comment> comment,comment2;
+      Option<SCode.Comment> comment,comment2;
       list<Env.Frame> env;
       Prefix.Prefix pre;
       list<tuple<SCode.Element, Types.Mod>> els;

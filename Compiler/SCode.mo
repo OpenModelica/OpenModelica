@@ -344,7 +344,7 @@ uniontype Element "- Elements
     Absyn.TypeSpec typeSpec       "the type specification" ;
     Mod modifications             "the modifications to be applied to the component";
     Option<Path> baseClassPath    "the base class path if this component originates from a base class" ;
-    Option<Absyn.Comment> comment "this if for extraction of comments and annotations from Absyn" ;
+    Option<Comment> comment "this if for extraction of comments and annotations from Absyn" ;
     Option<Absyn.Exp> condition   "the conditional declaration of a component";
     Option<Absyn.Info> info       "this is for line and column numbers, also file name.";
     Option<Absyn.ConstrainClass> cc "The constraining class for the component"; 
@@ -1139,6 +1139,7 @@ algorithm
       Absyn.TypeSpec t;
       Option<Absyn.Modification> m;
       Option<Absyn.Comment> comment;
+      Option<Comment> comment_1;
       list<Absyn.ComponentItem> xs;
       Absyn.Import imp;
       Option<Absyn.Exp> cond;
@@ -1186,8 +1187,9 @@ algorithm
         pa_1 = elabVariability(pa) "PR. This adds the arraydimension that may be specified together with the type of the component." ;
         tot_dim = listAppend(d, ad);
         repl_1 = elabRedeclarekeywords(repl);
+        comment_1 = elabComment(comment);
       then
-        (COMPONENT(n,io,finalPrefix,repl_1,prot,ATTR(tot_dim,fl,st,RW(),pa_1,di),t,mod,NONE,comment,cond,info,cc) :: xs_1);
+        (COMPONENT(n,io,finalPrefix,repl_1,prot,ATTR(tot_dim,fl,st,RW(),pa_1,di),t,mod,NONE,comment_1,cond,info,cc) :: xs_1);
 
     case (cc,finalPrefix,_,repl,prot,Absyn.IMPORT(import_ = imp),_) 
       equation
@@ -2049,7 +2051,7 @@ algorithm
       Class cl;
       Variability var;
       Absyn.TypeSpec tySpec;
-      Option<Absyn.Comment> comment;
+      Option<Comment> comment;
       Attributes attr;
       String modStr;
       Absyn.Path path;
@@ -2109,7 +2111,7 @@ algorithm
       Boolean finalPrefix,repl,prot;
       Class cl;
       Variability var;
-      Option<Absyn.Comment> comment;
+      Option<Comment> comment;
       Attributes attr;
       Absyn.Path path;
       Absyn.Import imp;
@@ -3060,7 +3062,7 @@ algorithm
       Absyn.TypeSpec a7;
       Mod a8;
       Option<Path> a9;
-      Option<Absyn.Comment> a10;
+      Option<Comment> a10;
       Option<Absyn.Exp> a11;
       Option<Absyn.Info> a12;
       Option<Absyn.ConstrainClass> a13;

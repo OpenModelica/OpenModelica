@@ -46,6 +46,7 @@ package ModUtil
 public import Absyn;
 public import DAE;
 public import Exp;
+public import SCode;
 
 protected import RTOpts;
 protected import Util;
@@ -313,7 +314,7 @@ algorithm
       DAE.Stream streamPrefix;
       list<Absyn.Path> cl;
       Option<DAE.VariableAttributes> dae_var_attr;
-      Option<Absyn.Comment> comment;
+      Option<SCode.Comment> comment;
       Algorithm.Algorithm alg;
       DAE.ExternalDecl decl;
       DAE.Element e;

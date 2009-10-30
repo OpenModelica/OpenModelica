@@ -97,7 +97,7 @@ algorithm
       DAE.Stream streamPrefix "Stream connector variables." ;
       list<Absyn.Path> pathLst "class names" ;
       Option<DAE.VariableAttributes> varAttr;
-      Option<Absyn.Comment> absynComment;
+      Option<SCode.Comment> absynComment;
       Absyn.InnerOuter innerOut "inner/outer required to 'change' outer references";
       Types.Type fType "Full type information required to analyze inner/outer elements";
       Exp.DAEElement elem;
@@ -705,7 +705,7 @@ algorithm
       Exp.Stream streamPrefix "Stream variables" ;
       list<Absyn.Path> pathLst;
       Option<Exp.VariableAttributes> varAttr;
-      Option<Absyn.Comment> absynComment;
+      Option<SCode.Comment> absynComment;
       Absyn.InnerOuter innerOut "inner/outer required to 'change' outer references";
       Exp.TypeTypes fType "Full type information required to analyze inner/outer elements";
       DAE.Element elem;

@@ -611,7 +611,7 @@ algorithm
     	Exp.Stream streamPrefix "stream or no strem" ;
     	list<Absyn.Path> f "the list of classes";
     	Option<Exp.VariableAttributes> vAttr;
-    	Option<Absyn.Comment> com "comment";
+    	Option<SCode.Comment> com "comment";
     	Absyn.InnerOuter inOut "inner/outer required to 'change' outer references";
     	Exp.TypeTypes fType "Full type information required to analyze inner/outer elements";
     	list<Exp.DAEElement> rest,temp;

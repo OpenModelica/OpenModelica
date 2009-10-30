@@ -43,6 +43,7 @@ public import DAE;
 public import Algorithm;
 public import HashTable2;
 public import HashTable3;
+public import SCode;
 
 public 
 uniontype VariableReplacements "
@@ -135,7 +136,7 @@ algorithm outDae := matchcontinue(inDae,repl,condExpFunc)
       DAE.Flow fl;
       list<Absyn.Path> clsLst;
       Option<DAE.VariableAttributes> attr;
-      Option<Absyn.Comment> cmt;
+      Option<SCode.Comment> cmt;
       Absyn.InnerOuter io;
       Types.Type ftp;
       list<Integer> idims;

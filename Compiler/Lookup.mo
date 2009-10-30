@@ -1951,7 +1951,7 @@ algorithm
       Absyn.TypeSpec tp;
       SCode.Mod mod;
       Option<Absyn.Path> bc;
-      Option<Absyn.Comment> comment;
+      Option<SCode.Comment> comment;
       list<Env.Frame> env_1;
       Option<Absyn.Exp> cond; 
       SCode.Class cl;

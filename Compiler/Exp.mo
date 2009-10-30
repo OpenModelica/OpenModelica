@@ -798,7 +798,7 @@ uniontype DAEElement
     Stream streamPrefix "Stream variables in connectors" ;    
     list<Absyn.Path> pathLst " " ;
     Option<VariableAttributes> variableAttributesOption;
-    Option<Absyn.Comment> absynCommentOption;
+    Option<SCode.Comment> absynCommentOption;
     Absyn.InnerOuter innerOuter "inner/outer required to 'change' outer references";
     TypeTypes fullType "Full type information required to analyze inner/outer elements";
   end VAR;

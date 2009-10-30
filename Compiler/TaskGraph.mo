@@ -46,6 +46,7 @@ package TaskGraph
 
 public import Exp;
 public import DAELow;
+public import SCode;
 
 protected import TaskGraphExt;
 protected import Util;
@@ -135,7 +136,7 @@ algorithm
       Integer indx;
       Exp.ComponentRef origname;
       Option<DAE.VariableAttributes> dae_var_attr;
-      Option<Absyn.Comment> comment;
+      Option<SCode.Comment> comment;
       DAE.Flow flowPrefix;
       list<DAELow.Var> rest;
       Exp.Exp e;
@@ -321,7 +322,7 @@ algorithm
       Exp.ComponentRef cr,origname,cr_1;
       DAELow.VarKind kind;
       Option<DAE.VariableAttributes> dae_var_attr;
-      Option<Absyn.Comment> comment;
+      Option<SCode.Comment> comment;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
       String origname_str,indxs,name,c_name,id;
@@ -715,7 +716,7 @@ algorithm
       DAELow.Var v;
       Exp.ComponentRef cr,origname;
       Option<DAE.VariableAttributes> dae_var_attr;
-      Option<Absyn.Comment> comment;
+      Option<SCode.Comment> comment;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
       list<Exp.ComponentRef> cr1,cr2,crs,crs_1;
@@ -761,7 +762,7 @@ algorithm
       String cfs,name_str;
       Exp.ComponentRef cf,name;
       Option<DAE.VariableAttributes> dae_var_attr;
-      Option<Absyn.Comment> comment;
+      Option<SCode.Comment> comment;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
       Integer start;

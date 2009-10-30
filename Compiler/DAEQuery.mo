@@ -37,6 +37,7 @@ package DAEQuery
 
 public
 import DAELow;
+import SCode;
 
 protected
 import System;
@@ -379,7 +380,7 @@ algorithm
       Option<Exp.Exp> e;
       list<Absyn.Path> paths;
       Option<DAE.VariableAttributes> dae_var_attr;
-      Option<Absyn.Comment> comment;
+      Option<SCode.Comment> comment;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
       list<DAELow.Var> xs;

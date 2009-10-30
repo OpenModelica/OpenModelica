@@ -52,6 +52,7 @@ public import Exp;
 public import Values;
 public import Absyn;
 public import Algorithm;
+public import SCode;
 
 public
 uniontype VarKind "- Variabile kind"
@@ -79,7 +80,7 @@ uniontype Var "- Variables"
     Exp.ComponentRef origVarName "origVarName ; original variable name" ;
     list<Absyn.Path> className "className ; classname variable belongs to" ;
     Option<DAE.VariableAttributes> values "values ; values on builtin attributes" ;
-    Option<Absyn.Comment> comment "comment ; this contains the comment and annotation from Absyn" ;
+    Option<SCode.Comment> comment "comment ; this contains the comment and annotation from Absyn" ;
     DAE.Flow flowPrefix "flow ; if the variable is a flow" ;
     DAE.Stream streamPrefix "stream ; if the variable is a stream variable. Modelica 3.1 specs" ;
   end VAR;
@@ -375,7 +376,6 @@ protected import Env;
 protected import Builtin;
 protected import Ceval;
 protected import Types;
-protected import SCode;
 protected import Dump;
 protected import System;
 protected import VarTransform;
@@ -958,7 +958,7 @@ algorithm
       Value ind;
       list<Absyn.Path> clname;
       Option<DAE.VariableAttributes> attr;
-      Option<Absyn.Comment> comment;
+      Option<SCode.Comment> comment;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
       Exp.ComponentRef cr;
@@ -1399,7 +1399,7 @@ algorithm
       Value ind;
       list<Absyn.Path> clname;
       Option<DAE.VariableAttributes> attr;
-      Option<Absyn.Comment> comment;
+      Option<SCode.Comment> comment;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
       Boolean res,b1,b2,b3;
@@ -1675,7 +1675,7 @@ algorithm
       Value ind;
       list<Absyn.Path> clname;
       Option<DAE.VariableAttributes> attr;
-      Option<Absyn.Comment> comment;
+      Option<SCode.Comment> comment;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
       list<Equation> xs;
@@ -2523,7 +2523,7 @@ algorithm
       tuple<Option<Exp.Exp>, Option<Exp.Exp>> o;
       Option<Exp.Exp> p,q;
       Option<DAE.StateSelect> r;
-      Option<Absyn.Comment> s;
+      Option<SCode.Comment> s;
       DAE.Flow t;
       DAE.Stream streamPrefix;
       Boolean fixed;
@@ -2567,7 +2567,7 @@ algorithm
       local
         tuple<Option<Exp.Exp>, Option<Exp.Exp>> m;
         Option<Exp.Exp> n;
-        Option<Absyn.Comment> o;
+        Option<SCode.Comment> o;
       then
         VAR(a,b,c,d,e,f,g,i,j,k,
             SOME(DAE.VAR_ATTR_INT(l,m,n,SOME(Exp.BCONST(fixed)),equationBound,isProtected,finalPrefix)),
@@ -2589,7 +2589,7 @@ algorithm
               streamPrefix = streamPrefix),fixed)
       local
         Option<Exp.Exp> m;
-        Option<Absyn.Comment> n;
+        Option<SCode.Comment> n;
       then
         VAR(a,b,c,d,e,f,g,i,j,k,
             SOME(DAE.VAR_ATTR_BOOL(l,m,SOME(Exp.BCONST(fixed)),equationBound,isProtected,finalPrefix)),
@@ -2612,7 +2612,7 @@ algorithm
       local
         tuple<Option<Exp.Exp>, Option<Exp.Exp>> m;
         Option<Exp.Exp> n;
-        Option<Absyn.Comment> o;
+        Option<SCode.Comment> o;
       then
         VAR(a,b,c,d,e,f,g,i,j,k,
             SOME(DAE.VAR_ATTR_ENUMERATION(l,m,n,SOME(Exp.BCONST(fixed)),equationBound,isProtected,finalPrefix)),
@@ -2639,7 +2639,7 @@ algorithm
         Value j;
         Exp.ComponentRef k;
         list<Absyn.Path> l;
-        Option<Absyn.Comment> m;
+        Option<SCode.Comment> m;
       then
         VAR(a,b,c,DAE.REAL(),f,g,h,j,k,l,
             SOME(DAE.VAR_ATTR_REAL(NONE,NONE,NONE,(NONE,NONE),NONE,SOME(Exp.BCONST(fixed)),NONE,NONE,NONE,NONE,NONE)),
@@ -2666,7 +2666,7 @@ algorithm
         Value j;
         Exp.ComponentRef k;
         list<Absyn.Path> l;
-        Option<Absyn.Comment> m;
+        Option<SCode.Comment> m;
       then
         VAR(a,b,c,DAE.REAL(),f,g,h,j,k,l,
             SOME(DAE.VAR_ATTR_INT(NONE,(NONE,NONE),NONE,SOME(Exp.BCONST(fixed)),NONE,NONE,NONE)),
@@ -2693,7 +2693,7 @@ algorithm
         Value j;
         Exp.ComponentRef k;
         list<Absyn.Path> l;
-        Option<Absyn.Comment> m;
+        Option<SCode.Comment> m;
       then
         VAR(a,b,c,DAE.REAL(),f,g,h,j,k,l,
             SOME(DAE.VAR_ATTR_BOOL(NONE,NONE,SOME(Exp.BCONST(fixed)),NONE,NONE,NONE)),
@@ -2720,7 +2720,7 @@ algorithm
         Value j;
         Exp.ComponentRef k;
         list<Absyn.Path> l;
-        Option<Absyn.Comment> m;
+        Option<SCode.Comment> m;
       then
         VAR(a,b,c,DAE.REAL(),f,g,h,j,k,l,
             SOME(DAE.VAR_ATTR_ENUMERATION(NONE,(NONE,NONE),NONE,SOME(Exp.BCONST(fixed)),NONE,NONE,NONE)),
@@ -3845,7 +3845,7 @@ algorithm
       Exp.Exp e;
       list<Absyn.Path> paths;
       Option<DAE.VariableAttributes> dae_var_attr;
-      Option<Absyn.Comment> comment;
+      Option<SCode.Comment> comment;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
       list<Var> xs;
@@ -3880,7 +3880,7 @@ algorithm
         dumpKind(kind);
         paths_lst = Util.listMap(paths, Absyn.pathString);
         path_str = Util.stringDelimitList(paths_lst, ", ");
-        comment_str = Dump.unparseCommentOption(comment);
+        comment_str = DAE.dumpCommentOptionStr(comment);
         print("= ");
         s = Exp.printExpStr(e);
         print(s);
@@ -3921,7 +3921,7 @@ algorithm
         str = Exp.printComponentRefStr(cr);
         path_strs = Util.listMap(paths, Absyn.pathString);
         path_str = Util.stringDelimitList(path_strs, ", ");
-        comment_str = Dump.unparseCommentOption(comment);
+        comment_str = DAE.dumpCommentOptionStr(comment);
         print(str);
         print(":");
         dumpKind(kind);
@@ -5401,7 +5401,7 @@ algorithm
       DAE.Stream streamPrefix;
       list<Absyn.Path> class_;
       Option<DAE.VariableAttributes> dae_var_attr;
-      Option<Absyn.Comment> comment;
+      Option<SCode.Comment> comment;
       BinTree states;
       Exp.Type ty;
       
@@ -5469,7 +5469,7 @@ algorithm
       DAE.Stream streamPrefix;
       list<Absyn.Path> class_;
       Option<DAE.VariableAttributes> dae_var_attr;
-      Option<Absyn.Comment> comment;
+      Option<SCode.Comment> comment;
       Exp.Type ty;
       
     case (DAE.VAR(componentRef = name,
@@ -5523,7 +5523,7 @@ algorithm
       DAE.Stream streamPrefix;
       list<Absyn.Path> class_;
       Option<DAE.VariableAttributes> dae_var_attr;
-      Option<Absyn.Comment> comment;
+      Option<SCode.Comment> comment;
       Exp.Type ty;
     case (DAE.VAR(componentRef = name,
                   kind = kind,
@@ -6826,7 +6826,7 @@ algorithm
       Value i;
       list<Absyn.Path> classes;
       Option<DAE.VariableAttributes> attr;
-      Option<Absyn.Comment> comment;
+      Option<SCode.Comment> comment;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
       
@@ -8213,7 +8213,7 @@ algorithm
       Value idx;
       list<Absyn.Path> class_;
       Option<DAE.VariableAttributes> dae_var_attr;
-      Option<Absyn.Comment> comment;
+      Option<SCode.Comment> comment;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
       Var v;
@@ -8271,7 +8271,7 @@ algorithm
       Value idx;
       list<Absyn.Path> class_;
       Option<DAE.VariableAttributes> dae_var_attr;
-      Option<Absyn.Comment> comment;
+      Option<SCode.Comment> comment;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
       list<Value> indx;
@@ -8522,7 +8522,7 @@ algorithm
       Exp.ComponentRef h,dummyder,dummyder_1,cr;
       list<Absyn.Path> i;
       Option<DAE.VariableAttributes> dae_var_attr;
-      Option<Absyn.Comment> comment;
+      Option<SCode.Comment> comment;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
       
@@ -8698,7 +8698,7 @@ algorithm
       Exp.ComponentRef name,dummyvar_cr,var;
       list<Absyn.Path> class_;
       Option<DAE.VariableAttributes> dae_var_attr;
-      Option<Absyn.Comment> comment;
+      Option<SCode.Comment> comment;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
       Variables vars_1,vars,kv,ev;
@@ -9758,7 +9758,7 @@ algorithm
       Value g;
       list<Absyn.Path> i;
       Option<DAE.VariableAttributes> dae_var_attr;
-      Option<Absyn.Comment> comment;
+      Option<SCode.Comment> comment;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
     case {} then {};
@@ -12284,7 +12284,7 @@ algorithm
       Exp.ComponentRef h,cr;
       list<Absyn.Path> i;
       Option<DAE.VariableAttributes> dae_var_attr;
-      Option<Absyn.Comment> comment;
+      Option<SCode.Comment> comment;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
       list<Var> rest;
@@ -12374,7 +12374,7 @@ algorithm
       Value g;
       list<Absyn.Path> i;
       Option<DAE.VariableAttributes> dae_var_attr;
-      Option<Absyn.Comment> comment;
+      Option<SCode.Comment> comment;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
       list<Env.Frame> env;
@@ -12614,7 +12614,7 @@ algorithm
       Exp.ComponentRef cr;
       Value indx;
       Option<DAE.VariableAttributes> dae_var_attr;
-      Option<Absyn.Comment> comment;
+      Option<SCode.Comment> comment;
       DAE.Flow flowPrefix;
       list<Var> vs;
       Exp.Type etp;
@@ -12660,7 +12660,7 @@ algorithm
       list<Exp.Subscript> instdims;
       Value indx;
       Option<DAE.VariableAttributes> dae_var_attr;
-      Option<Absyn.Comment> comment;
+      Option<SCode.Comment> comment;
       DAE.Flow flowPrefix;
       list<Var> vs;
       DAE.Type tp;
@@ -12796,7 +12796,7 @@ algorithm
       Exp.ComponentRef cr1,cr2;
       Value indx;
       Option<DAE.VariableAttributes> dae_var_attr;
-      Option<Absyn.Comment> comment;
+      Option<SCode.Comment> comment;
       DAE.Flow flowPrefix;
       list<Var> vs;
     case (cr1,(VAR(varName = cr2,index = indx,values = dae_var_attr,comment = comment,flowPrefix = flowPrefix) :: _))
@@ -13385,7 +13385,7 @@ algorithm
       Value i;
       list<Absyn.Path> j;
       Option<DAE.VariableAttributes> dae_var_attr,dae_var_attr2;
-      Option<Absyn.Comment> comment;
+      Option<SCode.Comment> comment;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
       list<Exp.Exp> s,t;
@@ -13630,7 +13630,7 @@ algorithm
       list<Exp.Subscript> dim;
       list<Absyn.Path> cl;
       Option<DAE.VariableAttributes> dae_var_attr;
-      Option<Absyn.Comment> comment;
+      Option<SCode.Comment> comment;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
       Integer typ,place;
@@ -14578,7 +14578,7 @@ algorithm
       Var variable;
       Value indx;
       Option<DAE.VariableAttributes> dae_var_attr;
-      Option<Absyn.Comment> comment;
+      Option<SCode.Comment> comment;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
       list<Var> rest;
@@ -14714,7 +14714,7 @@ algorithm
       Value ind;
       list<Absyn.Path> clsnames;
       Option<DAE.VariableAttributes> dae_var_attr;
-      Option<Absyn.Comment> comment;
+      Option<SCode.Comment> comment;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
     case VAR(varName = cref,

@@ -148,7 +148,6 @@ protected import VarTransform;
 protected import OptManager;
 protected import HashTable5;
 protected import HashTable;
-protected import MMath;
 protected import UnitAbsynBuilder;
 protected import UnitChecker;
 protected import UnitParserExt;
@@ -4039,7 +4038,7 @@ algorithm
       Absyn.TypeSpec f;
       Absyn.Path tp;
       SCode.Mod g;
-      Option<Absyn.Comment> comment;
+      Option<SCode.Comment> comment;
       SCode.Element x;
       Absyn.InnerOuter io;
       Option<Absyn.Exp> cond;
@@ -4813,7 +4812,7 @@ algorithm
       Absyn.TypeSpec t;
       SCode.Mod m;
       Option<Absyn.Path> bc;
-      Option<Absyn.Comment> comment;
+      Option<SCode.Comment> comment;
       list<tuple<SCode.Element, Mod>> xs,allcomps,comps;
       list<SCode.Equation> eqns;
       InstDims instdims;
@@ -4952,7 +4951,7 @@ algorithm
       Absyn.TypeSpec t;
       SCode.Mod m;
       Option<Absyn.Path> bc;
-      Option<Absyn.Comment> comment;
+      Option<SCode.Comment> comment;
       list<tuple<SCode.Element, Mod>> xs,comps;
       InstDims inst_dims;
       Option<Absyn.Info> info;
@@ -5112,7 +5111,7 @@ algorithm
       Absyn.Path t;
       SCode.Mod m;
       Option<Absyn.Path> bc;
-      Option<Absyn.Comment> comment;
+      Option<SCode.Comment> comment;
       Option<Types.EqMod> eq;
       list<DimExp> dims;
       tuple<Types.TType, Option<Absyn.Path>> ty;
@@ -5815,7 +5814,7 @@ algorithm
       Absyn.TypeSpec t,t2;
       SCode.Mod mod,old_mod;
       Option<Absyn.Path> bc;
-      Option<Absyn.Comment> comment,comment2;
+      Option<SCode.Comment> comment,comment2;
       list<tuple<SCode.Element, Mod>> rest;
       Prefix.Prefix pre;
       ClassInf.State ci_state;
@@ -6053,7 +6052,7 @@ protected function instVar
   input list<Integer> inIntegerLst;
   input InstDims inInstDims;
   input Boolean inBoolean;
-  input Option<Absyn.Comment> inAbsynCommentOption;
+  input Option<SCode.Comment> inSCodeCommentOption;
   input Absyn.InnerOuter io;
   input Boolean finalPrefix;
   input Option<Absyn.Info> info;
@@ -6067,7 +6066,7 @@ protected function instVar
   output Types.Type outType;
   output ConnectionGraph.ConnectionGraph outGraph;
 algorithm (outCache,outEnv,outIH,outStore,outDAEElementLst,outSets,outType,outGraph):=
-  matchcontinue (outCache,inEnv,inIH,store,inState,inMod,inPrefix,inSets,inIdent,inClass,inAttributes,protection,inDimExpLst,inIntegerLst,inInstDims,inBoolean,inAbsynCommentOption,io,finalPrefix,info,inGraph)
+  matchcontinue (outCache,inEnv,inIH,store,inState,inMod,inPrefix,inSets,inIdent,inClass,inAttributes,protection,inDimExpLst,inIntegerLst,inInstDims,inBoolean,inSCodeCommentOption,io,finalPrefix,info,inGraph)
     local
       list<DimExp> dims_1,dims;
       list<Env.Frame> compenv,env;
@@ -6083,7 +6082,7 @@ algorithm (outCache,outEnv,outIH,outStore,outDAEElementLst,outSets,outType,outGr
       list<Integer> idxs;
       InstDims inst_dims;
       Boolean impl;
-      Option<Absyn.Comment> comment;
+      Option<SCode.Comment> comment;
       Env.Cache cache;
       Boolean prot;
       Absyn.Path p1;
@@ -6152,7 +6151,7 @@ protected function instVar2
   input list<Integer> inIntegerLst;
   input InstDims inInstDims;
   input Boolean inBoolean;
-  input Option<Absyn.Comment> inAbsynCommentOption;
+  input Option<SCode.Comment> inSCodeCommentOption;
   input Absyn.InnerOuter io;
   input Boolean finalPrefix;
   input ConnectionGraph.ConnectionGraph inGraph;
@@ -6166,7 +6165,7 @@ protected function instVar2
   output ConnectionGraph.ConnectionGraph outGraph;
 algorithm 
   (outCache,outEnv,outIH,outStore,outDAEElementLst,outSets,outType,finalPrefix,outGraph):=
-  matchcontinue (inCache,inEnv,inIH,store,inState,inMod,inPrefix,inSets,inIdent,inClass,inAttributes,protection,inDimExpLst,inIntegerLst,inInstDims,inBoolean,inAbsynCommentOption,io,finalPrefix,inGraph)
+  matchcontinue (inCache,inEnv,inIH,store,inState,inMod,inPrefix,inSets,inIdent,inClass,inAttributes,protection,inDimExpLst,inIntegerLst,inInstDims,inBoolean,inSCodeCommentOption,io,finalPrefix,inGraph)
     local
       InstDims inst_dims,inst_dims_1;
       list<Exp.Subscript> dims_1,subs;
@@ -6188,7 +6187,7 @@ algorithm
       list<DimExp> dims;
       list<Integer> idxs,idxs_1;
       Boolean impl,flowPrefix,streamPrefix;
-      Option<Absyn.Comment> comment;
+      Option<SCode.Comment> comment;
       Option<DAE.VariableAttributes> dae_var_attr;
       SCode.Accessibility acc;
       SCode.Variability vt;
@@ -6817,7 +6816,7 @@ algorithm
       Absyn.Path t;
       SCode.Mod m;
       Option<Absyn.Path> bc;
-      Option<Absyn.Comment> comment;
+      Option<SCode.Comment> comment;
       Types.Mod cmod,m_1,classmod,mm,mod,mod_1,mod_2,mod_3,mods;
       SCode.Class cl;
       list<Env.Frame> cenv,env2,compenv,env2_1,env_1;
@@ -7092,7 +7091,7 @@ algorithm
       DAE.Stream streamPrefix;
       list<Absyn.Path> class_;
       Option<DAE.VariableAttributes> dae_var_attr;
-      Option<Absyn.Comment> comment;
+      Option<SCode.Comment> comment;
       Absyn.Direction dir;
       String s1,s2;
       DAE.Element x;
@@ -7203,7 +7202,7 @@ protected function propagateInnerOuter
       DAE.Stream streamPrefix;
       list<Absyn.Path> class_;
       Option<DAE.VariableAttributes> dae_var_attr;
-      Option<Absyn.Comment> comment;
+      Option<SCode.Comment> comment;
       DAE.VarDirection dir;
       String s1,s2;
       DAE.Element x;
@@ -7298,7 +7297,7 @@ protected function instArray
   input list<Integer> inIntegerLst;
   input InstDims inInstDims;
   input Boolean inBoolean;
-  input Option<Absyn.Comment> inAbsynCommentOption;
+  input Option<SCode.Comment> inAbsynCommentOption;
   input Absyn.InnerOuter io;
   input Boolean finalPrefix;
   input ConnectionGraph.ConnectionGraph inGraph;
@@ -7333,7 +7332,7 @@ algorithm
       list<Integer> idxs;
       InstDims inst_dims;
       Boolean impl,b;
-      Option<Absyn.Comment> comment;
+      Option<SCode.Comment> comment;
       list<DAE.Element> dae1,dae2,daeLst;
       SCode.Initial eqn_place;
       Boolean prot;
@@ -7501,7 +7500,7 @@ algorithm
       Absyn.Direction dir;
       SCode.Mod m,m_1;
       Option<Absyn.Path> bc;
-      Option<Absyn.Comment> comment;
+      Option<SCode.Comment> comment;
       Types.Mod cmod,cmod_1,m_2,mod_2;
       Types.EqMod eq;
       list<DimExp> dims;
@@ -8655,7 +8654,7 @@ algorithm
       list<Absyn.Subscript> dims;
       Absyn.TypeSpec path;
       SCode.Mod mod;
-      Option<Absyn.Comment> comment;
+      Option<SCode.Comment> comment;
 
     case SCode.COMPONENT(component = id,finalPrefix = fi,replaceablePrefix = re,protectedPrefix = pr,
                          attributes = SCode.ATTR(arrayDims = dims),typeSpec = path,
@@ -9046,7 +9045,7 @@ protected function daeDeclare
   input InstDims inInstDims;
   input DAE.StartValue inStartValue;
   input Option<DAE.VariableAttributes> inDAEVariableAttributesOption;
-  input Option<Absyn.Comment> inAbsynCommentOption;
+  input Option<SCode.Comment> inAbsynCommentOption;
   input Absyn.InnerOuter io;
   input Boolean finalPrefix;
   input Boolean declareComplexVars "if true, declare variables for complex variables, e.g. record vars in functions";  
@@ -9067,7 +9066,7 @@ algorithm
       Option<Exp.Exp> e,start;
       InstDims inst_dims;
       Option<DAE.VariableAttributes> dae_var_attr;
-      Option<Absyn.Comment> comment;
+      Option<SCode.Comment> comment;
     case (vn,ci_state,ty,
           SCode.ATTR(flowPrefix = flowPrefix,
                      streamPrefix = streamPrefix,
@@ -9101,7 +9100,7 @@ protected function daeDeclare2
   input InstDims inInstDims;
   input DAE.StartValue inStartValue;
   input Option<DAE.VariableAttributes> inDAEVariableAttributesOption;
-  input Option<Absyn.Comment> inAbsynCommentOption;
+  input Option<SCode.Comment> inAbsynCommentOption;
 	input Absyn.InnerOuter io;
 	input Boolean finalPrefix;
 	input Boolean declareComplexVars;
@@ -9120,7 +9119,7 @@ algorithm
       Option<Exp.Exp> e,start;
       InstDims inst_dims;
       Option<DAE.VariableAttributes> dae_var_attr;
-      Option<Absyn.Comment> comment;
+      Option<SCode.Comment> comment;
       Boolean prot;
       
     case (vn,ty,flowPrefix,streamPrefix,SCode.VAR(),dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars)
@@ -9165,7 +9164,7 @@ protected function daeDeclare3
   input InstDims inInstDims;
   input DAE.StartValue inStartValue;
   input Option<DAE.VariableAttributes> inDAEVariableAttributesOption;
-  input Option<Absyn.Comment> inAbsynCommentOption;
+  input Option<SCode.Comment> inAbsynCommentOption;
   input Absyn.InnerOuter io;
   input Boolean finalPrefix;
   input Boolean declareComplexVars;
@@ -9183,7 +9182,7 @@ algorithm
       Option<Exp.Exp> e,start;
       InstDims inst_dims;
       Option<DAE.VariableAttributes> dae_var_attr;
-      Option<Absyn.Comment> comment;
+      Option<SCode.Comment> comment;
       Boolean prot;
       DAE.VarProtection prot1;
     case (vn,ty,fl,st,vk,Absyn.INPUT(),prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars)
@@ -9234,7 +9233,7 @@ protected function daeDeclare4
   input InstDims inInstDims;
   input DAE.StartValue inStartValue;
   input Option<DAE.VariableAttributes> inDAEVariableAttributesOption;
-  input Option<Absyn.Comment> inAbsynCommentOption;
+  input Option<SCode.Comment> inAbsynCommentOption;
   input Absyn.InnerOuter io;
   input Boolean finalPrefix;
   input Boolean declareComplexVars;
@@ -9251,7 +9250,7 @@ algorithm
       Option<Exp.Exp> e,start;
       InstDims inst_dims;
       Option<DAE.VariableAttributes> dae_var_attr;
-      Option<Absyn.Comment> comment;
+      Option<SCode.Comment> comment;
       list<String> l;
       list<DAE.Element> dae;
       ClassInf.State ci;
@@ -13164,7 +13163,7 @@ algorithm
       DAE.Stream streamPrefix;
       list<Absyn.Path> class_;
       Option<DAE.VariableAttributes> dae_var_attr;
-      Option<Absyn.Comment> comment;
+      Option<SCode.Comment> comment;
       String n;
       Absyn.Path fpath;
       Absyn.InnerOuter io;
@@ -13297,7 +13296,7 @@ algorithm
       Absyn.Path t;
       SCode.Mod mod;
       Option<Absyn.Path> bc;
-      Option<Absyn.Comment> comment;
+      Option<SCode.Comment> comment;
       SCode.Element elt;
       Env.Cache cache;
       Absyn.InnerOuter io;
@@ -14463,7 +14462,7 @@ algorithm oltuple := matchcontinue(ltuple)
       Absyn.InnerOuter c2;
       Boolean c3,c4,c5;
       Option<Absyn.Path> c9;
-      Option<Absyn.Comment> c10;
+      Option<SCode.Comment> c10;
       Option<Absyn.Exp> c11;
       Option<Absyn.Info> c12;
     equation
@@ -15269,7 +15268,7 @@ protected function propagateVariability " help function to propagateAttributes, 
       DAE.Stream streamPrefix;
       list<Absyn.Path> class_;
       Option<DAE.VariableAttributes> dae_var_attr;
-      Option<Absyn.Comment> comment;
+      Option<SCode.Comment> comment;
       DAE.VarDirection dir;
       String s1,s2;
       DAE.Element x;
@@ -15478,7 +15477,7 @@ algorithm
     DAE.Stream streamPrefix;
     list<Absyn.Path> pathLst;
     Option<DAE.VariableAttributes> variableAttributesOption;
-    Option<Absyn.Comment> absynCommentOption;
+    Option<SCode.Comment> absynCommentOption;
     Absyn.InnerOuter innerOuter;
     Types.Type fullType;
     

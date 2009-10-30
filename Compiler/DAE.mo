@@ -52,6 +52,7 @@ public import Types;
 public import Values;
 public import ClassInf;
 public import Env;
+public import SCode;
 
 public 
 type Ident = String;
@@ -177,7 +178,7 @@ uniontype Element
     Stream streamPrefix "Stream variables in connectors" ;
     list<Absyn.Path> pathLst " " ;
     Option<VariableAttributes> variableAttributesOption;
-    Option<Absyn.Comment> absynCommentOption;
+    Option<SCode.Comment> absynCommentOption;
     Absyn.InnerOuter innerOuter "inner/outer required to 'change' outer references";
     Types.Type fullType "Full type information required to analyze inner/outer elements";
   end VAR;
@@ -468,7 +469,6 @@ protected import Ceval;
 protected import ModUtil;
 protected import Debug;
 protected import Error;
-protected import SCode;
 protected import System;
 
 public function removeEquations "Removes all equations and algorithms, from the dae"
@@ -622,7 +622,7 @@ algorithm
     			Flow flow_;
    			  list<Absyn.Path> cls;
     			Option<VariableAttributes> attr;
-   			  Option<Absyn.Comment> cmt;
+   			  Option<SCode.Comment> cmt;
     			Absyn.InnerOuter io,io2;
    			  Types.Type ftp;
    			  VarProtection prot;
@@ -833,7 +833,7 @@ algorithm
       Exp.Exp e,e1,e2;
       InstDims dims;
       Option<VariableAttributes> dae_var_attr;
-      Option<Absyn.Comment> comment;
+      Option<SCode.Comment> comment;
       list<Element> xs;
       DAElist lst,dae;
       Absyn.Path path;
@@ -859,7 +859,7 @@ algorithm
         Exp.printExp(e);
         Print.printBuf(",dims=");
         Dump.printList(dims, Exp.printSubscript, ", ");
-        comment_str = Dump.unparseCommentOption(comment) "	dump_start_value start &" ;
+        comment_str = dumpCommentOptionStr(comment) "	dump_start_value start &" ;
         Print.printBuf("  comment:");
         Print.printBuf(comment_str);
         Print.printBuf(", ");
@@ -878,7 +878,7 @@ algorithm
         Print.printBuf("((" +& s1);
         Print.printBuf("))");
         */
-        comment_str = Dump.unparseCommentOption(comment) "	dump_start_value start &" ;
+        comment_str = dumpCommentOptionStr(comment) "	dump_start_value start &" ;
         Print.printBuf("  comment:");
         Print.printBuf(comment_str);
         Print.printBuf(", ");
@@ -1811,7 +1811,7 @@ algorithm
     Type ty ;   Option<Exp.Exp> b; 
     InstDims  dims ;    Flow fl;
     Stream st;    list<Absyn.Path> cls;
-    Option<Absyn.Comment> cmt;  Absyn.InnerOuter io; 
+    Option<SCode.Comment> cmt;  Absyn.InnerOuter io; 
     Types.Type tp;
     
     case(VAR(cr,k,d,p,ty,b,dims,fl,st,cls,_,cmt,io,tp),varOpt) then VAR(cr,k,d,p,ty,b,dims,fl,st,cls,varOpt,cmt,io,tp);
@@ -2255,7 +2255,7 @@ algorithm
       Stream streamPrefix;
       list<Absyn.Path> classlst,class_;
       Option<VariableAttributes> dae_var_attr;
-      Option<Absyn.Comment> comment;
+      Option<SCode.Comment> comment;
       Exp.Exp e;
     case VAR(componentRef = id,
              kind = kind,
@@ -2325,7 +2325,7 @@ algorithm
       Stream streamPrefix;
       list<Absyn.Path> classlst;
       Option<VariableAttributes> dae_var_attr;
-      Option<Absyn.Comment> comment;
+      Option<SCode.Comment> comment;
       Exp.Exp e;
       VarProtection prot;
     case VAR(componentRef = id,
@@ -2392,21 +2392,21 @@ public function dumpCommentOptionStr "function: dumpCommentOptionStr
  
   Dump Comment option to a string.
 "
-  input Option<Absyn.Comment> inAbsynCommentOption;
+  input Option<SCode.Comment> inAbsynCommentOption;
   output String outString;
 algorithm 
   outString:=
   matchcontinue (inAbsynCommentOption)
     local
       Ident str,cmt;
-      Option<Absyn.Annotation> annopt;
+      Option<SCode.Annotation> annopt;
     case (NONE) then ""; 
-    case (SOME(Absyn.COMMENT(annopt,SOME(cmt))))
+    case (SOME(SCode.COMMENT(annopt,SOME(cmt))))
       equation 
         str = Util.stringAppendList({" \"",cmt,"\""});
       then
         str;
-    case (SOME(Absyn.COMMENT(annopt,NONE))) then ""; 
+    case (SOME(SCode.COMMENT(annopt,NONE))) then ""; 
   end matchcontinue;
 end dumpCommentOptionStr;
 
@@ -2414,7 +2414,7 @@ protected function dumpCommentOption "function: dumpCommentOption_str
  
   Dump Comment option.
 "
-  input Option<Absyn.Comment> comment;
+  input Option<SCode.Comment> comment;
   Ident str;
 algorithm 
   str := dumpCommentOptionStr(comment);
@@ -3545,7 +3545,7 @@ algorithm
       Stream streamPrefix;
       list<Absyn.Path> lst;
       Option<VariableAttributes> dae_var_attr;
-      Option<Absyn.Comment> comment;
+      Option<SCode.Comment> comment;
       Absyn.Path newtype;
       Element x;
 			Absyn.InnerOuter io;
@@ -3809,7 +3809,7 @@ algorithm
       VarDirection vd;
       Type ty;
       Option<VariableAttributes> dae_var_attr;
-      Option<Absyn.Comment> comment;
+      Option<SCode.Comment> comment;
       Exp.Exp e,exp,e1,e2;
       DAElist l;
       Absyn.Path fpath;
@@ -3826,7 +3826,7 @@ algorithm
         Exp.printComponentRef(cr);
         Print.printBuf(", ");
         dumpKind(vk); 
-        comment_str = Dump.unparseCommentOption(comment);
+        comment_str = dumpCommentOptionStr(comment);
         Print.printBuf("  comment:");
         Print.printBuf(comment_str);
         tmp_str = dumpVariableAttributesStr(dae_var_attr);
@@ -3848,7 +3848,7 @@ algorithm
         dumpKind(vk);
         Print.printBuf(", binding: ");
         Exp.printExp(e);
-        comment_str = Dump.unparseCommentOption(comment);
+        comment_str = dumpCommentOptionStr(comment);
         Print.printBuf("  comment:");
         Print.printBuf(comment_str);
         tmp_str = dumpVariableAttributesStr(dae_var_attr);        
@@ -4269,7 +4269,7 @@ algorithm
       Flow h;
       list<Absyn.Path> i;
       Option<VariableAttributes> dae_var_attr;
-      Option<Absyn.Comment> comment;
+      Option<SCode.Comment> comment;
       Absyn.InnerOuter io;
       Types.Type tp;
             
@@ -4602,7 +4602,7 @@ algorithm
       Stream s;
       list<Absyn.Path> h;
       Option<VariableAttributes> dae_var_attr;
-      Option<Absyn.Comment> comment;
+      Option<SCode.Comment> comment;
       Exp.Exp e_1,e1_1,e2_1,e1,e2;
       Element elt_1,elt;
       DAElist dae_1,dae;
@@ -4773,7 +4773,7 @@ algorithm outelem := matchcontinue(newCr, inelem)
     Stream a9;
     list<Absyn.Path> a10;
     Option<VariableAttributes> a11;
-    Option<Absyn.Comment> a12;
+    Option<SCode.Comment> a12;
     Absyn.InnerOuter a13;
     Types.Type a14;
   case(newCr, VAR(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14))
@@ -5044,7 +5044,7 @@ algorithm
       Flow flowPrefix;
       list<Absyn.Path> pathlist;
       Option<VariableAttributes> dae_var_attr;
-      Option<Absyn.Comment> comment;
+      Option<SCode.Comment> comment;
       list<Element> ellist,elements,eqs,eqsfalseb,rest;
       list<list<Element>> eqstrueb;
       list<Exp.ComponentRef> lhsCrefs,crefs1,crefs2,crefs3;
@@ -5230,7 +5230,7 @@ algorithm
       Stream streamPrefix;
       list<Absyn.Path> pathlist;
       Option<VariableAttributes> dae_var_attr;
-      Option<Absyn.Comment> comment;
+      Option<SCode.Comment> comment;
       list<Element> ellist,elements,eqs,eqsfalseb;
       list<list<Element>> eqstrueb;
       Option<Element> elsewhenopt;
@@ -5801,7 +5801,7 @@ algorithm (traversedDaeList,Type_a) := matchcontinue(daeList,func,extraArg)
     Flow fl;
     list<Absyn.Path> clsLst;
     Option<VariableAttributes> attr;
-    Option<Absyn.Comment> cmt;
+    Option<SCode.Comment> cmt;
     Option<Exp.Exp> optExp;
     Absyn.InnerOuter io;
     Types.Type ftp;

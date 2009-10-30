@@ -94,6 +94,7 @@ package XMLDump
   public import Static;
   public import Util;
   public import Values;
+  public import SCode;
 
 
 
@@ -3298,7 +3299,7 @@ algorithm
       Option<Exp.Exp> e;
       list<Absyn.Path> paths;
       Option<DAE.VariableAttributes> dae_var_attr;
-      Option<Absyn.Comment> comment;
+      Option<SCode.Comment> comment;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
       list<DAELow.Var> xs;
@@ -3366,7 +3367,7 @@ algorithm
       Option<Exp.Exp> e;
       list<Absyn.Path> paths;
       Option<DAE.VariableAttributes> dae_var_attr;
-      Option<Absyn.Comment> comment;
+      Option<SCode.Comment> comment;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
       list<DAELow.Var> xs;
@@ -3393,7 +3394,7 @@ algorithm
       equation
         dumpVariable(intString(varno),Exp.printComponentRefStr(cr),dumpKind(kind),dumpDirectionStr(dir),dumpTypeStr(var_type),intString(indx),
                         Exp.crefStr(old_name),Util.boolString(DAELow.varFixed(v)),dumpFlowStr(flowPrefix),dumpStreamStr(streamPrefix),
-                        Dump.unparseCommentOption(comment));
+                        DAE.dumpCommentOptionStr(comment));
         dumpBindValueExpression(e,b,addMMLCode);
         //The command below adds information to the XML about the dimension of the
         //containing vector, in the casse the variable is an element of a vector.
@@ -4039,13 +4040,13 @@ function: unparseCommentOptionNoAnnotation
 
   Prettyprints a Comment without printing the annotation part.
 "
-  input Option<Absyn.Comment> inAbsynCommentOption;
+  input Option<SCode.Comment> inAbsynCommentOption;
   output String outString;
 algorithm
   outString:=
   matchcontinue (inAbsynCommentOption)
     local Dump.Ident str,cmt;
-    case (SOME(Absyn.COMMENT(_,SOME(cmt))))
+    case (SOME(SCode.COMMENT(_,SOME(cmt))))
       equation
         //str = Util.stringAppendList({" \"",cmt,"\""});
         str = cmt;

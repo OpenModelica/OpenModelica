@@ -1869,7 +1869,7 @@ algorithm
       DAE.VarDirection dir;
       Option<Exp.Exp> value;
       Option<DAE.VariableAttributes> dae_var_attr;
-      Option<Absyn.Comment> comment;
+      Option<SCode.Comment> comment;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
       list<DAELow.Var> vs;
@@ -2045,7 +2045,7 @@ algorithm
         true = DAELow.isVarOnTopLevelAndInput(var);
         origname_str = Exp.printComponentRefStr(origname);
         name_1 = Util.stringAppendList({"\"",origname_str,"\""});
-        comment = Dump.unparseCommentOptionNoAnnotation(comment);
+        comment = DAE.dumpCommentOptionStr(comment);
         n_vars_1 = n_vars + 1;
         comment_1 = generateEmptyString(comment);
         if_str = generateGetnameFunctionIf(cr,tp, n_vars, inputNames) "no defines because the outputvars is a subset of algvars" ;
@@ -2061,7 +2061,7 @@ algorithm
                              comment = comment,
                              flowPrefix = flowPrefix,
                              streamPrefix = streamPrefix)),name_arr,comment_arr,n_vars,get_name_function_ifs,var_defines)
-      local Option<Absyn.Comment> comment;
+      local Option<SCode.Comment> comment;
       then
         (name_arr,comment_arr,n_vars,get_name_function_ifs,var_defines);
   end matchcontinue;
@@ -2113,7 +2113,7 @@ algorithm
         true = DAELow.isVarOnTopLevelAndOutput(var);
         origname_str = Exp.printComponentRefStr(origname);
         name_1 = Util.stringAppendList({"\"",origname_str,"\""});
-        comment = Dump.unparseCommentOptionNoAnnotation(comment);
+        comment = DAE.dumpCommentOptionStr(comment);
         n_vars_1 = n_vars + 1;
         comment_1 = generateEmptyString(comment);
         if_str = generateGetnameFunctionIf(cr, tp,n_vars, outputNames) "no defines because the outputvars is a subset of algvars" ;
@@ -2129,7 +2129,7 @@ algorithm
                      comment = comment,
                      flowPrefix = flowPrefix,
                      streamPrefix = streamPrefix),name_arr,comment_arr,n_vars,get_name_function_ifs,var_defines)
-      local Option<Absyn.Comment> comment;
+      local Option<SCode.Comment> comment;
       then
         (name_arr,comment_arr,n_vars,get_name_function_ifs,var_defines);
   end matchcontinue;
@@ -2192,7 +2192,7 @@ algorithm
         _ = Util.listGetMember(kind, kind_lst);
         origname_str = Exp.printComponentRefStr(origname) "if this fails then the var is not added to list" ;
         name_1 = Util.stringAppendList({"\"",origname_str,"\""});
-        comment = Dump.unparseCommentOptionNoAnnotation(comment);
+        comment = DAE.dumpCommentOptionStr(comment);
         num_stralg = num_stralg + 1;
         comment_1 = generateEmptyString(comment);
         stralg_arr = arrayUpdate(stralg_arr, indx + 1, name_1);
@@ -2224,7 +2224,7 @@ algorithm
         _ = Util.listGetMember(kind, kind_lst);
         origname_str = Exp.printComponentRefStr(origname) "if this fails then the var is not added to list" ;
         name_1 = Util.stringAppendList({"\"",origname_str,"\""});
-        comment = Dump.unparseCommentOptionNoAnnotation(comment);
+        comment = DAE.dumpCommentOptionStr(comment);
         n_vars_1 = n_vars + 1;
         comment_1 = generateEmptyString(comment);
         name_arr_1 = arrayUpdate(name_arr, indx + 1, name_1);
@@ -2250,7 +2250,7 @@ algorithm
                      comment = comment,
                      flowPrefix = flowPrefix,
                      streamPrefix = streamPrefix),name_arr,comment_arr,n_vars,stralg_arr,stralg_comment_arr,num_stralg,get_name_function_ifs,var_defines)
-      local Option<Absyn.Comment> comment;
+      local Option<SCode.Comment> comment;
       then
         (name_arr,comment_arr,n_vars,stralg_arr,stralg_comment_arr,num_stralg,get_name_function_ifs,var_defines);
   end matchcontinue;
@@ -2365,7 +2365,7 @@ algorithm
         true = DAELow.isParam(var);
         origname_str = Exp.printComponentRefStr(origname);
         name_1 = Util.stringAppendList({"\"",origname_str,"\""});
-        comment = Dump.unparseCommentOptionNoAnnotation(comment);
+        comment = DAE.dumpCommentOptionStr(comment);
         num_strparam = num_strparam + 1;
         comment_1 = generateEmptyString(comment);
         strparam_arr = arrayUpdate(strparam_arr, indx + 1, name_1);
@@ -2399,7 +2399,7 @@ algorithm
         true = DAELow.isParam(var);
         origname_str = Exp.printComponentRefStr(origname);
         name_1 = Util.stringAppendList({"\"",origname_str,"\""});
-        comment = Dump.unparseCommentOptionNoAnnotation(comment);
+        comment = DAE.dumpCommentOptionStr(comment);
         n_vars_1 = n_vars + 1;
         comment_1 = generateEmptyString(comment);
         name_arr_1 = arrayUpdate(name_arr, indx + 1, name_1);
@@ -2469,7 +2469,7 @@ algorithm
                              comment = comment,
                              flowPrefix = flowPrefix,
                              streamPrefix = streamPrefix)),name_arr,comment_arr,n_vars,get_name_function_ifs,var_defines) 
-      local Option<Absyn.Comment> comment;
+      local Option<SCode.Comment> comment;
       equation
         true = DAELow.isExtObj(var);
         is = intString(indx);
@@ -2543,7 +2543,7 @@ algorithm
         name_1 = Util.stringAppendList({"\"",origname_str,"\""});
         der_origname_1 = changeNameForDerivative(origname_str);
         der_name_1 = Util.stringAppendList({"\"",der_origname_1,"\""});
-        comment = Dump.unparseCommentOptionNoAnnotation(comment);
+        comment = DAE.dumpCommentOptionStr(comment);
         n_vars_1 = n_vars + 1;
         comment_1 = generateEmptyString(comment);
         name_arr_1 = arrayUpdate(name_arr, indx + 1, name_1);
@@ -2576,7 +2576,7 @@ algorithm
                      flowPrefix = flowPrefix,
                      streamPrefix = streamPrefix),
           name_arr,comment_arr,name_arr_der,comment_arr_der,n_vars,get_name_function_ifs,var_defines)
-      local Option<Absyn.Comment> comment;
+      local Option<SCode.Comment> comment;
       then
         (name_arr,comment_arr,name_arr_der,comment_arr_der,n_vars,get_name_function_ifs,var_defines);
   end matchcontinue;
@@ -2728,7 +2728,7 @@ algorithm
       list<Exp.Subscript> dim;
       list<Absyn.Path> classes;
       Option<DAE.VariableAttributes> attr;
-      Option<Absyn.Comment> comment;
+      Option<SCode.Comment> comment;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
       list<DAELow.Var> rest;
@@ -2826,7 +2826,7 @@ algorithm
       list<Exp.Subscript> dim;
       list<Absyn.Path> classes;
       Option<DAE.VariableAttributes> attr;
-      Option<Absyn.Comment> comment;
+      Option<SCode.Comment> comment;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
       list<DAELow.Var> rest;
@@ -5848,7 +5848,7 @@ algorithm
       Integer index;
       list<Absyn.Path> classes;
       Option<DAE.VariableAttributes> attr;
-      Option<Absyn.Comment> comment;
+      Option<SCode.Comment> comment;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
       
@@ -5960,7 +5960,7 @@ algorithm
       Exp.ComponentRef cr,origname,cr_1;
       DAELow.VarKind kind;
       Option<DAE.VariableAttributes> dae_var_attr;
-      Option<Absyn.Comment> comment;
+      Option<SCode.Comment> comment;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
       Codegen.CFunction exp_func,res,cfunc;
@@ -6460,7 +6460,7 @@ algorithm
       Option<Exp.Exp> start;
       Integer indx;
       Option<DAE.VariableAttributes> dae_var_attr;
-      Option<Absyn.Comment> comment;
+      Option<SCode.Comment> comment;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
       list<DAELow.Var> rest;
@@ -6644,7 +6644,7 @@ algorithm
       Integer indx;
       Exp.ComponentRef origname;
       Option<DAE.VariableAttributes> dae_var_attr;
-      Option<Absyn.Comment> comment;
+      Option<SCode.Comment> comment;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
       list<DAELow.Var> rest,vs;
@@ -7452,7 +7452,7 @@ algorithm
       DAELow.Var va;
       DAELow.VarKind kind;
       Option<DAE.VariableAttributes> dae_var_attr;
-      Option<Absyn.Comment> comment;
+      Option<SCode.Comment> comment;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
       String assignedVar,origname_str,save_stmt;
@@ -8048,7 +8048,7 @@ algorithm
       Exp.ComponentRef cr,origname;
       DAELow.VarKind kind;
       Option<DAE.VariableAttributes> dae_var_attr;
-      Option<Absyn.Comment> comment;
+      Option<SCode.Comment> comment;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
       String origname_str;
@@ -8175,7 +8175,7 @@ algorithm
       Exp.ComponentRef cr,origname,new_cr;
       DAELow.VarKind kind;
       Option<DAE.VariableAttributes> dae_var_attr;
-      Option<Absyn.Comment> comment;
+      Option<SCode.Comment> comment;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
       String origname_str,indx_str,cr_str;

@@ -52,6 +52,7 @@ public import Convert;
 public import MetaUtil;
 public import RTOpts;
 public import Types;
+public import SCode;
 
 public 
 type Ident = String;
@@ -1676,7 +1677,7 @@ algorithm
       DAE.Stream streamPrefix;
       list<Absyn.Path> class_;
       Option<DAE.VariableAttributes> dae_var_attr;
-      Option<Absyn.Comment> comment;
+      Option<SCode.Comment> comment;
     case ((var as DAE.VAR(componentRef = id,
                           kind = DAE.VARIABLE(),
                           direction = DAE.OUTPUT(),
@@ -1723,7 +1724,7 @@ algorithm
       DAE.Stream st;
       list<Absyn.Path> cl;
       Option<DAE.VariableAttributes> dae_var_attr;
-      Option<Absyn.Comment> comment;
+      Option<SCode.Comment> comment;
     case ((el as DAE.VAR(componentRef = cr,
                          kind = vk,
                          direction = vd,
@@ -2529,7 +2530,7 @@ algorithm
       DAE.Stream streamPrefix;
       list<Absyn.Path> class_;
       Option<DAE.VariableAttributes> dae_var_attr;
-      Option<Absyn.Comment> comment;
+      Option<SCode.Comment> comment;
       list<DAE.Element> r;
       
     case ({},"",rv,i,tnr,context) then (cEmptyFunction,tnr);
@@ -2596,7 +2597,7 @@ algorithm
       DAE.Stream streamPrefix;
       list<Absyn.Path> class_;
       Option<DAE.VariableAttributes> dae_var_attr;
-      Option<Absyn.Comment> comment;
+      Option<SCode.Comment> comment;
       Context context;
       String iStr;
       
@@ -2669,7 +2670,7 @@ algorithm
       DAE.Stream streamPrefix;
       list<Absyn.Path> class_;
       Option<DAE.VariableAttributes> dae_var_attr;
-      Option<Absyn.Comment> comment;
+      Option<SCode.Comment> comment;
       list<DAE.Element> r;
       
     case ({},rv,i,tnr,extdecl) then (cEmptyFunction,tnr);
@@ -2751,7 +2752,7 @@ algorithm
       DAE.Stream streamPrefix;
       list<Absyn.Path> class_;
       Option<DAE.VariableAttributes> dae_var_attr;
-      Option<Absyn.Comment> comment;
+      Option<SCode.Comment> comment;
       
     case ((var as DAE.VAR(componentRef = id,
                           kind = vk,
@@ -3737,7 +3738,7 @@ algorithm
       DAE.Stream streamPrefix;
       list<Absyn.Path> class_;
       Option<DAE.VariableAttributes> dae_var_attr;
-      Option<Absyn.Comment> comment;
+      Option<SCode.Comment> comment;
       Context context;
       Exp.Exp e;
       Exp.Type etp;
@@ -3874,7 +3875,7 @@ algorithm
       DAE.Stream streamPrefix;
       list<Absyn.Path> class_;
       Option<DAE.VariableAttributes> dae_var_attr;
-      Option<Absyn.Comment> comment;
+      Option<SCode.Comment> comment;
       Context context;
       Exp.Exp e;
       Types.Type tp;
@@ -3959,7 +3960,7 @@ algorithm
       DAE.Stream streamPrefix;
       list<Absyn.Path> class_;
       Option<DAE.VariableAttributes> dae_var_attr;
-      Option<Absyn.Comment> comment;
+      Option<SCode.Comment> comment;
       Integer tnr,tnr1;
       Lib pre;
       Context context;
