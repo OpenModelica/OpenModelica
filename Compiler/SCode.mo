@@ -767,6 +767,7 @@ algorithm
       list<Annotation> anns,anns1,anns2;
       list<Absyn.ElementItem> eilst;
       list<Absyn.ClassPart> cdr;
+      list<Absyn.EquationItem> eqilst;
     case({}) then {};
     case(Absyn.PUBLIC(eilst) :: cdr)
       equation
@@ -778,6 +779,20 @@ algorithm
     case(Absyn.PROTECTED(eilst) :: cdr)
       equation
         anns = elabAnnotations(eilst);
+        anns1 = elabClassdefAnnotations(cdr);
+        anns2 = listAppend(anns,anns1);
+      then
+        anns2;
+    case(Absyn.EQUATIONS(eqilst) :: cdr)
+      equation
+        anns = elabAnnotationsEq(eqilst);
+        anns1 = elabClassdefAnnotations(cdr);
+        anns2 = listAppend(anns,anns1);
+      then
+        anns2;
+    case(Absyn.INITIALEQUATIONS(eqilst) :: cdr)
+      equation
+        anns = elabAnnotationsEq(eqilst);
         anns1 = elabClassdefAnnotations(cdr);
         anns2 = listAppend(anns,anns1);
       then
@@ -1014,6 +1029,40 @@ algorithm
         fail();
   end matchcontinue;
 end elabAnnotations;
+
+// stefan
+protected function elabAnnotationsEq
+"function: elabAnnotations
+	turns a list of Absyn.EquationItem into a list of Annotations"
+	input list<Absyn.EquationItem> inEquationItemList;
+	output list<Annotation> outAnnotationList;
+algorithm
+  outAnnotationList := matchcontinue(inEquationItemList)
+    local
+      list<Absyn.EquationItem> cdr;
+      Absyn.Annotation ann;
+      Annotation res;
+      list<Annotation> anns,anns_1;
+    case({}) then {};
+    case(Absyn.EQUATIONITEMANN(ann) :: cdr)
+      equation
+        res = elabAnnotation(ann);
+        anns = elabAnnotationsEq(cdr);
+        anns_1 = res :: anns;
+      then
+        anns_1;
+    case(_ :: cdr)
+      equation
+        anns = elabAnnotationsEq(cdr);
+      then
+        anns;
+    case(_)
+      equation
+        Debug.fprintln("failtrace","SCode.elabAnnotationsEq failed");
+      then
+        fail();
+  end matchcontinue;
+end elabAnnotationsEq;
 
 // stefan
 protected function elabAnnotation
