@@ -4862,7 +4862,7 @@ algorithm
         (cache,env_2,ih);
                 
     /* A TCOMPLEX component */ 
-    case (cache,env,ih,Types.NOMOD(),pre,csets,cistate,
+    case (cache,env,ih,mod,pre,csets,cistate,
         (((comp as SCode.COMPONENT(component = n,
                                    innerOuter=io,
                                    finalPrefix = finalPrefix,
@@ -4872,15 +4872,17 @@ algorithm
                                                                     streamPrefix = streamPrefix,accesibility = acc,
                                                                     variability = param,direction = dir)),
                                    typeSpec = (t as Absyn.TCOMPLEX(_,_,_)),
-                                   modifications = SCode.NOMOD(),
+                                   modifications = m,
                                    baseClassPath = bc,
                                    comment = comment,
                                    condition = aExp, 
                                    info = aInfo,cc=cc)),cmod as Types.NOMOD()) :: xs),
         allcomps,eqns,instdims,impl) 
-      equation 
-        (cache,env_1,ih) = addComponentsToEnv2(cache, env, ih, Types.NOMOD(), pre, csets, cistate, {(comp,cmod)}, instdims, impl);
-        (cache,env_2,ih) = addComponentsToEnv(cache, env_1, ih, Types.NOMOD(), pre, csets, cistate, xs, allcomps, eqns, instdims, impl);
+      equation
+        m = traverseModAddFinal(m, finalPrefix);
+        comp = SCode.COMPONENT(n,io,finalPrefix,repl,prot,attr,t,m,bc,comment, aExp, aInfo, cc);
+        (cache,env_1,ih) = addComponentsToEnv2(cache, env, ih, mod, pre, csets, cistate, {(comp,cmod)}, instdims, impl);
+        (cache,env_2,ih) = addComponentsToEnv(cache, env_1, ih, mod, pre, csets, cistate, xs, allcomps, eqns, instdims, impl);
       then
         (cache,env_2,ih);
 
@@ -5363,7 +5365,7 @@ algorithm
         // classmod_1 = Mod.lookupModificationP(mods_1, t);
         // mm_1 = Mod.lookupCompModification(mods_1, n);
         // (cache,m) = removeSelfModReference(cache,n,m); // Remove self-reference i.e. A a(x=a.y);
-        // (cache,m_1) = Mod.elabMod(cache,env2, pre, m, impl);
+        (cache,m_1) = Mod.elabMod(cache, env, pre, m, impl); // In case we want to EQBOUND a complex type, e.g. when declaring constants. /sjoelund 2009-10-30
         // mod = Mod.merge(classmod_1, mm_1, env2, pre);
         // mod1 = Mod.merge(mod, m_1, env2, pre);
         // mod1_1 = Mod.merge(cmod, mod1, env2, pre);
@@ -5390,10 +5392,10 @@ algorithm
         (cache,dims) = elabArraydim(cache,env, owncref, Absyn.IDENT("Integer"),ad, NONE, impl, NONE,true)  ;
 
         // Instantiate the component
-        (cache,compenv,ih,store,dae,csets_1,ty,graph) = instVar(cache,env, ih, store,ci_state, Types.NOMOD(), pre, csets, n, cl, attr, prot, dims, {}, inst_dims, impl, comment,io,finalPrefix,aInfo,graph);
+        (cache,compenv,ih,store,dae,csets_1,ty,graph) = instVar(cache,env, ih, store,ci_state, m_1, pre, csets, n, cl, attr, prot, dims, {}, inst_dims, impl, comment,io,finalPrefix,aInfo,graph);
 
         // The environment is extended (updated) with the new variable binding.
-        (cache,binding) = makeBinding(cache,env, attr, Types.NOMOD(), ty) ;
+        (cache,binding) = makeBinding(cache,env, attr, m_1, ty) ;
 
         // true in update_frame means the variable is now instantiated.
         new_var = Types.VAR(n,Types.ATTR(flowPrefix,streamPrefix,acc,param,dir,io),prot,ty,binding) ;
