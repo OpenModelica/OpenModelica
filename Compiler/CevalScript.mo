@@ -4098,20 +4098,20 @@ algorithm
         false = RTOpts.debugFlag("nogen");
         (cache,false) = Static.isExternalObjectFunction(cache,env,path); //ext objs functions not possible to Ceval.ceval.
         pathstr = generateFunctionName(path); 
-        Debug.fprintln("ceval", "/*- Ceval.cevalGenerateFunction starting*/");        
+        Debug.fprintln("ceval", "/*- CevalScript.cevalGenerateFunction starting " +& pathstr +& " */");        
         (cache,d,_) = cevalGenerateFunctionDAEs(cache, path, env, {});
         uniontypePaths = Codegen.getUniontypePaths(d);
         (cache,metarecordTypes) = Lookup.lookupMetarecordsRecursive(cache, env, uniontypePaths, {});
         
         cfilename = stringAppend(pathstr, ".c");        
         Print.clearBuf();
-        Debug.fprintln("ceval", "/*- Ceval.cevalGenerateFunction generating function string */");
+        Debug.fprintln("ceval", "/*- CevalScript.cevalGenerateFunction generating function string */");
         Print.printBuf(constCfileHeader);
         libs = Codegen.generateFunctions(DAE.DAE(d),metarecordTypes);
         Print.writeBuf(cfilename);
         Print.clearBuf();
         
-        Debug.fprintln("dynload", "cevalGenerateFunction: generating makefile for " +& pathstr);
+        Debug.fprintln("dynload", "CevalScript.cevalGenerateFunction: generating makefile for " +& pathstr);
         makefilename = generateMakefilename(pathstr);
         omhome = Settings.getInstallationDirectoryPath();
         omhome = System.trim(omhome, "\""); //Remove any quotation marks from omhome.
@@ -4134,7 +4134,7 @@ algorithm
         false = RTOpts.debugFlag("nogen");      
         (cache,false) = Static.isExternalObjectFunction(cache,env,path);    
         pathstr = generateFunctionName(path);
-        pathstr = stringAppend("/*- Ceval.cevalGenerateFunction failed(", pathstr);
+        pathstr = stringAppend("/*- CevalScript.cevalGenerateFunction failed(", pathstr);
         pathstr = stringAppend(pathstr,")*/\n");
         Debug.fprint("failtrace", pathstr);
       then
@@ -4174,14 +4174,14 @@ algorithm
       equation 
         false = RTOpts.debugFlag("nogen");
         failure(_ = Util.listGetMemberOnTrue(path, gflist, ModUtil.pathEqual));
-        Debug.fprintln("ceval", "/*- Ceval.cevalGenerateFunctionStr starting*/");
+        Debug.fprintln("ceval", "/*- CevalScript.cevalGenerateFunctionDAEs starting*/");
         (cache,cls,env_1) = Lookup.lookupClass(cache,env, path, false);
-        Debug.fprintln("ceval", "/*- Ceval.cevalGenerateFunctionStr instantiating*/");
+        Debug.fprintln("ceval", "/*- CevalScript.cevalGenerateFunctionDAEs instantiating*/");
         (cache,env_2,_,d1) = 
         Inst.implicitFunctionInstantiation(
            cache, env_1, InstanceHierarchy.emptyInstanceHierarchy,
            Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cls, {});
-        Debug.fprint("ceval", "/*- Ceval.cevalGenerateFunctionStr getting functions: ");
+        Debug.fprint("ceval", "/*- CevalScript.cevalGenerateFunctionDAEs getting functions: ");
         calledfuncs = SimCodegen.getCalledFunctionsInFunction(path, gflist, DAE.DAE(d1));
         gflist = path :: gflist; // In case the function is recursive
         calledfuncs = Util.listSetDifference(calledfuncs, gflist); // Filter out things we already know will be ignored...
@@ -4190,7 +4190,7 @@ algorithm
         Debug.fprint("ceval", debugfuncsstr);
         Debug.fprintln("ceval", "*/");
         (cache,d2,gflist) = cevalGenerateFunctionDAEsList(cache,calledfuncs,env,gflist);
-        Debug.fprint("ceval", "/*- Ceval.cevalGenerateFunctionStr prefixing dae */");
+        Debug.fprint("ceval", "/*- CevalScript.cevalGenerateFunctionDAEs prefixing dae */");
         DAE.DAE(d_1) = ModUtil.stringPrefixParams(DAE.DAE(d1));
         d = listAppend(d_1,d2);
       then
@@ -4200,7 +4200,7 @@ algorithm
       equation 
         true = RTOpts.debugFlag("nogen");
         ss1 = Absyn.pathString(path);
-        ss1 = Util.stringAppendList({"/*- Ceval.cevalGenerateFunctionStr failed( ",ss1," ) set \"nogen\" flag to false */\n"});
+        ss1 = Util.stringAppendList({"/*- CevalScript.cevalGenerateFunctionDAEs failed( ",ss1," ) set \"nogen\" flag to false */\n"});
         Debug.fprint("failtrace", ss1);
       then
         fail();
@@ -4209,7 +4209,7 @@ algorithm
       equation 
         false = RTOpts.debugFlag("nogen");
         ss1 = Absyn.pathString(path);
-        ss1 = Util.stringAppendList({"/*- Ceval.cevalGenerateFunctionStr failed( ",ss1," )*/\n"});
+        ss1 = Util.stringAppendList({"/*- CevalScript.cevalGenerateFunctionDAEs failed( ",ss1," )*/\n"});
         Debug.fprint("failtrace", ss1);
       then
         fail();

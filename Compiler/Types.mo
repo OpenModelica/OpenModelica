@@ -4948,6 +4948,7 @@ algorithm
     case ((T_LIST(_),_)) then true;
     case ((T_METATUPLE(_),_)) then true;
     case ((T_UNIONTYPE(_),_)) then true;
+    case ((T_POLYMORPHIC(_),_)) then true;
     case ((T_BOXED(_),_)) then true;
     case _ then false;
   end matchcontinue;
@@ -4962,6 +4963,7 @@ algorithm
     case ((T_LIST(_),_)) then ty;
     case ((T_METATUPLE(_),_)) then ty;
     case ((T_UNIONTYPE(_),_)) then ty;
+    case ((T_POLYMORPHIC(_),_)) then ty;
     case ((T_BOXED(ty),_)) then ty;
     case ty
       local String str;

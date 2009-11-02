@@ -315,7 +315,8 @@ algorithm
     case (DAE.METAOPTION()) equation then Exp.METAOPTIONEXP();
     case (DAE.UNIONTYPE()) then Exp.UNIONTYPEEXP();
     case (DAE.EXT_OBJECT(p)) equation then Exp.EXT_OBJECTEXP(p);
-    case (DAE.POLYMORPHIC()) then Exp.POLYMORPHICEXP();    
+    case (DAE.POLYMORPHIC()) then Exp.POLYMORPHICEXP(); 
+    case (DAE.FUNCTION_REFERENCE()) then Exp.FUNCTION_REFERENCEEXP();   
     case _ equation Debug.fprintln("failtrace", "- Convert.typeConvert failed"); then fail();
   end matchcontinue;
 end typeConvert;
@@ -914,16 +915,17 @@ algorithm
   matchcontinue (t)
     local
       Absyn.Path p;
-    case (Exp.REALEXP()) equation then DAE.REAL();
- 		case (Exp.INTEXP()) equation then DAE.INT();
-    case (Exp.BOOLEXP()) equation then DAE.BOOL();
-    case (Exp.STRINGEXP()) equation then DAE.STRING();
-    case (Exp.LISTEXP()) equation then DAE.LIST();
-    case (Exp.METATUPLEEXP()) equation then DAE.METATUPLE();
-    case (Exp.METAOPTIONEXP()) equation then DAE.METAOPTION();
+    case (Exp.REALEXP()) then DAE.REAL();
+ 		case (Exp.INTEXP()) then DAE.INT();
+    case (Exp.BOOLEXP()) then DAE.BOOL();
+    case (Exp.STRINGEXP()) then DAE.STRING();
+    case (Exp.LISTEXP()) then DAE.LIST();
+    case (Exp.METATUPLEEXP()) then DAE.METATUPLE();
+    case (Exp.METAOPTIONEXP()) then DAE.METAOPTION();
     case (Exp.UNIONTYPEEXP()) then DAE.UNIONTYPE();
     case (Exp.POLYMORPHICEXP()) then DAE.POLYMORPHIC();
-    case (Exp.EXT_OBJECTEXP(p)) equation then DAE.EXT_OBJECT(p);
+    case (Exp.EXT_OBJECTEXP(p)) then DAE.EXT_OBJECT(p);
+    case (Exp.FUNCTION_REFERENCEEXP()) then DAE.FUNCTION_REFERENCE();
     case _ equation Debug.fprintln("failtrace", "- Convert.typeConvert2 failed"); then fail();
   end matchcontinue;
 end typeConvert2;

@@ -8932,6 +8932,7 @@ algorithm
         
         //fns = removeDuplicatePaths(fnpaths);
         calledfuncs = listAppend(reffuncs, calledfuncs);
+        calledfuncs = removeDuplicatePaths(calledfuncs);
         
         varlistlist = Util.listMap(funcelems, getFunctionElementsList);
         varlist = Util.listFlatten(varlistlist);
@@ -8940,8 +8941,12 @@ algorithm
         calledfuncs = Util.listSetDifference(calledfuncs, varfuncs) "Filter out function reference calls";
         /*--                                           --*/ 
         
-        res1 = removeDuplicatePaths(calledfuncs);
-        res = getCalledFunctionsInFunctions(res1, path::acc, dae);
+        res = getCalledFunctionsInFunctions(calledfuncs, path::acc, dae);
+        
+        Debug.fprint("info", "Found variable function refs to ignore: ") "debug" ;
+        debugpathstrs = Util.listMap(varfuncs, Absyn.pathString) "debug" ;
+        debugpathstr = Util.stringDelimitList(debugpathstrs, ", ") "debug" ;
+        Debug.fprintln("info", debugpathstr) "debug" ;
         Debug.fprint("info", "Found called functions: ") "debug" ;
         debugpathstrs = Util.listMap(res, Absyn.pathString) "debug" ;
         debugpathstr = Util.stringDelimitList(debugpathstrs, ", ") "debug" ;

@@ -430,7 +430,10 @@ void printAny(void* any) /* For debugging */
 
   if (numslots==2 && ctor==1) { /* CONS-PAIR */
     printf("{");
+    printAny(MMC_CAR(any));
+    any = MMC_CDR(any);
     while (!MMC_NILTEST(any)) {
+      printf(", ");
       printAny(MMC_CAR(any));
       any = MMC_CDR(any);
     }
