@@ -93,6 +93,7 @@ protected import Types;
 protected import CevalScript;
 protected import InstanceHierarchy;
 protected import Lookup;
+protected import Inline;
 
 public function generateMakefile
 "function: generateMakefile
@@ -6112,6 +6113,9 @@ public function generateFunctions
   input String inString;
   output Env.Cache outCache;
   output list<String> outStringLst;  
+  output list<DAE.Element> outDAEElementList;
+  output DAELow.DAELow outDAELow;
+  output DAE.DAElist outDAE;
 algorithm
   (outCache,outStringLst):=
   matchcontinue (inCache,inEnv,inProgram,inDAElist,inDAELow,inPath,inString)
@@ -6119,7 +6123,7 @@ algorithm
       list<Absyn.Path> funcpaths, fnrefs, fnpaths, fns, uniontypePaths;
       list<String> debugpathstrs,libs1,libs2,includes;
       String debugpathstr,debugstr,filename;
-      list<DAE.Element> funcelems,elements;
+      list<DAE.Element> funcelems,funcelems_1,elements;
       list<SCode.Class> p;
       list<Types.Type> metarecordTypes;
       Env.Cache cache;
@@ -6131,16 +6135,16 @@ algorithm
       equation
         funcpaths = getCalledFunctions(dae, dlow);
         funcelems = generateFunctions2(p, funcpaths);
+        funcelems_1 = Inline.inlineCallsInFunctions(funcelems);
         Print.clearBuf();
         Debug.fprintln("info", "Generating functions, call Codegen.\n") "debug" ;
 				(_,libs1) = generateExternalObjectIncludes(dlow);
-        uniontypePaths = Codegen.getUniontypePaths(funcelems);
+        uniontypePaths = Codegen.getUniontypePaths(funcelems_1);
         (cache,metarecordTypes) = Lookup.lookupMetarecordsRecursive(cache, env, uniontypePaths, {});
-        
-        libs2 = Codegen.generateFunctions(DAE.DAE(funcelems),metarecordTypes);
+        libs2 = Codegen.generateFunctions(DAE.DAE(funcelems_1),metarecordTypes);
         Print.writeBuf(filename);
       then
-        (cache,Util.listUnion(libs1,libs2));
+        (cache,Util.listUnion(libs1,libs2),funcelems,dlow,dae);
     case (_,_,_,_,_,_,_)
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"Code generation of Modelica functions failed. "});

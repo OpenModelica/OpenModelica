@@ -88,6 +88,7 @@ protected import ConnectionGraph;
 protected import UnitAbsyn;
 protected import UnitParserExt;
 protected import UnitAbsynBuilder;
+protected import Inline;
 
 public function cevalInteractiveFunctions 
 "function cevalInteractiveFunctions
@@ -2312,6 +2313,7 @@ algorithm
       Exp.Exp fileprefix;
       Env.Cache cache;
       String MakefileHeader;
+      list<DAE.Element> funcelems;
     case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg,fileprefix,addDummy) /* mo file directory */ 
       equation 
         (cache,filenameprefix) = extractFilePrefix(cache,env, fileprefix, st, msg);
@@ -2342,7 +2344,8 @@ algorithm
         makefilename = generateMakefilename(filenameprefix);
         a_cref = Absyn.pathToCref(className);
         file_dir = getFileDir(a_cref, p);
-        (cache,libs) = SimCodegen.generateFunctions(cache, env, p_1, dae, indexed_dlow_1, className, funcfilename);
+        (cache,libs,funcelems,indexed_dlow_1,dae) = SimCodegen.generateFunctions(cache, env, p_1, dae, indexed_dlow_1, className, funcfilename);
+        indexed_dlow_1 = Inline.inlineCalls(funcelems,indexed_dlow_1);
         SimCodegen.generateSimulationCode(dae, /* dlow_1,*/ indexed_dlow_1, ass1, ass2, m, mT, comps, className, filename, funcfilename,file_dir);
         SimCodegen.generateMakefile(makefilename, filenameprefix, libs, file_dir);
         /* 
