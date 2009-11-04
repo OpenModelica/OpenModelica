@@ -5440,14 +5440,14 @@ algorithm
       then
         result;
     case (DAE(elementLst = (el :: rest)))
-      equation 
-        DAE(res2) = transformIfEqToExpr(DAE(rest));
+      equation
         res1 = ifEqToExpr(el);
+        DAE(res2) = transformIfEqToExpr(DAE(rest));
         res = listAppend(res1, res2);
       then
         DAE(res);
     case (DAE(elementLst = (el :: rest)))
-      equation 
+      equation
         DAE(res) = transformIfEqToExpr(DAE(rest));
       then
         DAE((el :: res));
@@ -5486,7 +5486,11 @@ algorithm
         equations = makeEquationsFromIf(cond, true_branch, false_branch);
       then
         equations;
-    case (_) then fail(); 
+    case (elt)
+      equation
+        elt_str = dumpElementsStr({elt});
+        Debug.fprintln("failtrace", "- DAE.ifEqToExpr failed " +& elt_str);
+      then fail();
   end matchcontinue;
 end ifEqToExpr;
 
@@ -5515,16 +5519,18 @@ protected function makeEquationsFromIf
 algorithm 
   outElementLst:=
   matchcontinue (inExp1,inElementLst2,inElementLst3)
-      
-    case (_,{{}},{}) then {}; 
+    local 
+      list<list<Element>> tbs,rest1,tbsRest,tbsFirstL;
+      list<Element> tbsFirst,fbs,rest_res;
+      Element fb,eq;
+      list<Exp.Exp> conds,tbsexp; 
+      Exp.Exp fbexp,ifexp;
+    case (_,tbs,{})
+      equation
+        Util.listMap0(tbs, Util.assertListEmpty);
+      then {}; 
 
     case (conds,tbs,fb::fbs)
-      local 
-        list<list<Element>> tbs,rest1,tbsRest,tbsFirstL;
-        list<Element> tbsFirst,fbs,rest_res;
-        Element fb,eq;
-        list<Exp.Exp> conds,tbsexp; 
-        Exp.Exp fbexp,ifexp;
       equation 
         tbsRest = Util.listMap(tbs,Util.listRest);
         rest_res = makeEquationsFromIf(conds, tbsRest, fbs);
@@ -5543,14 +5549,16 @@ end makeEquationsFromIf;
 protected function makeEquationToResidualExp ""
   input Element eq;
   output Exp.Exp oExp;
-algorithm oExp := matchcontinue(eq)
-  local Exp.Exp e1,e2;
-  case(EQUATION(e1,e2))
-    equation
-      oExp = Exp.BINARY(e1,Exp.SUB(Exp.REAL()),e2);
-    then 
-      oExp;
-end matchcontinue;
+algorithm
+  oExp := matchcontinue(eq)
+    local
+      Exp.Exp e1,e2;
+    case(EQUATION(e1,e2))
+      equation
+        oExp = Exp.BINARY(e1,Exp.SUB(Exp.REAL()),e2);
+      then 
+        oExp;
+  end matchcontinue;
 end makeEquationToResidualExp;
 
 public function dumpFlow "

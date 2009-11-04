@@ -3697,17 +3697,10 @@ algorithm
     
     case(e,inProperties2,inProperties3) 
       equation 
-        Debug.fprint("failtrace", " Failure in Types->matchProp exp: "+& Exp.printExpStr(e)+& "\n");
+        Debug.fprint("failtrace", " Failure in Types.matchProp exp: "+& Exp.printExpStr(e)+& "\n");
         Debug.fprint("failtrace", printPropStr(inProperties2) +& "\n");
         Debug.fprint("failtrace", printPropStr(inProperties3) +& "\n");
-        Debug.fprint("failtrace", printPropStr(inProperties2) +& "\n");
-        Debug.fprint("failtrace", printPropStr(inProperties3) +& "\n");
-        /*
-        print("\nExp:" +& Exp.printExpStr(e) +& "\n");
-        print(" 1: " +& printPropStr(inProperties2) +& "\n");
-        print(" 2: " +& printPropStr(inProperties3) +& "\n");
-        */
-        then fail();
+      then fail();
   end matchcontinue;
 end matchProp;
 
@@ -4191,6 +4184,7 @@ algorithm
         equality(path1 = path2);
         t2 = (T_BOXED(t1),NONE);
         l = Util.listMap(v, getVarName);
+        // TODO: Convert all expressions as well!
         e_1 = Exp.METARECORDCALL(path1, elist, l, 0);
       then (e_1,t2,polymorphicBindings);
 

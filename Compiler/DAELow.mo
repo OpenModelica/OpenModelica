@@ -4721,11 +4721,6 @@ algorithm
       then
         fail();
         
-    case (_,_,vars,knvars,extVars,_)
-      equation
-        print("-DAELow.lower2 failed\n");
-      then
-        fail();
   end matchcontinue;
 end lower2;
 
@@ -7424,7 +7419,7 @@ algorithm
         fail();
     case (_,_)
       equation
-        Debug.fprint("failtrace", "-check_matching failed\n");
+        Debug.fprint("failtrace", "- DAELow.checkMatching failed\n");
       then
         fail();
   end matchcontinue;
@@ -7452,7 +7447,7 @@ algorithm
         vec;
     case (_)
       equation
-        print("-assignments_vector failed\n");
+        print("- DAELow.assignmentsVector failed\n");
       then
         fail();
   end matchcontinue;

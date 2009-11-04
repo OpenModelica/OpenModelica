@@ -263,6 +263,14 @@ algorithm isempty := matchcontinue(input1)
   end matchcontinue;
 end isListNotEmpty;
 
+public function assertListEmpty
+  input list<Type_a> input1;
+algorithm
+  _ := matchcontinue(input1)
+    case({}) then ();
+  end matchcontinue;
+end assertListEmpty;
+
 public function listFindWithCompareFunc "
 Author BZ 2009-04
 Search list for a provided element using the provided function.
