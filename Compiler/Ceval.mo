@@ -202,7 +202,7 @@ algorithm
         (cache,Values.LIST(es_1),st);
 
     /* MetaModelica Partial Function. sjoelund */
-    case (cache,env,Exp.CREF(componentRef = c, ty = Exp.T_FUNCTION_REFERENCE()),impl,st,_,msg)
+    case (cache,env,Exp.CREF(componentRef = c, ty = Exp.T_FUNCTION_REFERENCE_VAR()),impl,st,_,msg)
       local
         Exp.ComponentRef c;
       equation
@@ -210,6 +210,14 @@ algorithm
       then
         fail();
         
+    case (cache,env,Exp.CREF(componentRef = c, ty = Exp.T_FUNCTION_REFERENCE_FUNC()),impl,st,_,msg)
+      local
+        Exp.ComponentRef c;
+      equation
+        Debug.fprintln("failtrace", "Ceval.ceval not working for function references");
+      then
+        fail();
+
     /* MetaModelica Uniontype Constructor. sjoelund 2009-05-18 */
     case (cache,env,inExp as Exp.METARECORDCALL(path=funcpath,args=expl,fieldNames=fieldNames,index=index),impl,st,_,msg)
       local

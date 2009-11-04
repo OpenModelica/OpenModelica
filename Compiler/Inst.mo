@@ -1018,6 +1018,8 @@ algorithm
         (cache,dae3) = Connect.unconnectedFlowEquations(cache,csets_1, dae1, env_3, pre,callscope_1,{});
         dae = Util.listFlatten({dae1_1,dae2,dae3});
         ty = mktype(fq_class, ci_state_1, tys, bc_ty, equalityConstraint) ;
+        // A single special set of function pointers makes everything a lot simpler
+        ty = Types.makeFunctionPolymorphicReference(ty);
         
         dae = renameUniqueVarsInTopScope(callscope_1,dae);
       then

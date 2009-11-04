@@ -1043,7 +1043,7 @@ algorithm
       DAE.ExtArg extretarg;
       Option<Absyn.Annotation> ann;
       DAE.ExternalDecl extdecl;
-      list<CFunction> cfns;
+      list<CFunction> cfns,wrapper_body;
       DAE.Element comp;
       list<String> rt, rt_1, struct_funrefs, struct_funrefs_int;
       list<Absyn.Path> funrefPaths;
@@ -1051,7 +1051,7 @@ algorithm
     /* Modelica functions External functions */
     case (DAE.FUNCTION(path = fpath,
                        dAElist = DAE.DAE(elementLst = dae),
-                       type_ = (Types.T_FUNCTION(funcArg = args,funcResultType = restype),_),
+                       type_ = tp as (Types.T_FUNCTION(funcArg = args,funcResultType = restype),_),
                        partialPrefix = false),rt) 
       equation
         fn_name_str = generateFunctionName(fpath);
@@ -1072,10 +1072,11 @@ algorithm
         arg_strs = Util.listMap(args, generateFunctionArg);
         head_cfn = cMakeFunction(retstr, fn_name_str, struct_strs, arg_strs);
         body_cfn = generateFunctionBody(fpath, dae, restype, struct_funrefs);
+        wrapper_body = generateFunctionReferenceWrapperBody(fpath, tp);
         cfn = cMergeFn(head_cfn, body_cfn);
         rcw_fn = generateReadCallWrite(fn_name_str, outvars, retstr, invars);
       then
-        ({cfn,rcw_fn},rt_1);
+        (cfn::rcw_fn::wrapper_body,rt_1);
     
     /* MetaModelica Partial Function. sjoelund */    
     case (DAE.FUNCTION(path = fpath,
@@ -1143,7 +1144,8 @@ algorithm
         rcw_fn = generateReadCallWriteExternal(fn_name_str, outvars, retstructtype, invars, extdecl, bivars);
         ext_decl = generateExternalWrapperCall(fn_name_str, outvars, retstructtype, invars, extdecl, bivars, tp);
         func_decl = cMakeFunctionDecl(retstr, extfnname_1, struct_strs, arg_strs, includes, libs);
-        cfns = {func_decl, rcw_fn, ext_decl};
+        wrapper_body = generateFunctionReferenceWrapperBody(fpath, tp);
+        cfns = func_decl :: rcw_fn :: ext_decl :: wrapper_body;
       then
         (cfns,rt_1);
         
@@ -1266,13 +1268,14 @@ algorithm
     local
       list<Types.Type> rest;
       Types.Type ty;
-      String defineTarg, defineField;
+      String defineTarg, defineField,istr;
       list<String> defs, fields;
     case (_,_,{}) then ({},{});
     case (fn_name, i, ty::rest)
       equation
         defineTarg = "#define "+&fn_name+&"_"+&intString(i)+&" targ"+&intString(i);
-        defineField = generateSimpleType(ty) +& " targ1;";
+        istr = intString(i);
+        defineField = generateSimpleType(ty) +& " targ"+&istr+&";";
         (defs,fields) = generateFunctionRefReturnStructFields(fn_name, i+1, rest);
       then
         (defineTarg::defs,defineField::fields);
@@ -1790,7 +1793,7 @@ algorithm
     case DAE.METATUPLE() then Exp.T_METATUPLE({}); // MetaModelica tuple
     case DAE.METAOPTION() then Exp.T_METAOPTION(Exp.OTHER()); // MetaModelica tuple
     case DAE.UNIONTYPE() then Exp.T_UNIONTYPE(); //MetaModelica uniontype, added by simbj
-    case DAE.FUNCTION_REFERENCE() then Exp.T_FUNCTION_REFERENCE(); // MetaModelica Partial Function
+    case DAE.FUNCTION_REFERENCE() then Exp.T_FUNCTION_REFERENCE_VAR(); // MetaModelica Partial Function
     case DAE.POLYMORPHIC() then Exp.T_POLYMORPHIC(); // MetaModelica extension. sjoelund
     case _ then Exp.OTHER();
   end matchcontinue;
@@ -1842,7 +1845,8 @@ algorithm
     case Exp.BOOL() then "boolean";
     case Exp.OTHER() then "complex"; // Only use is currently for external objects. Perhaps in future also records.
     case Exp.ENUM() then "ENUM_NOT_IMPLEMENTED";
-    case Exp.T_FUNCTION_REFERENCE() then "fnptr";
+    case Exp.T_FUNCTION_REFERENCE_VAR() then "fnptr";
+    case Exp.T_FUNCTION_REFERENCE_FUNC() then "fnptr";
     case Exp.T_ARRAY(ty = t)
       equation
         res = expShortTypeStr(t);
@@ -2124,6 +2128,7 @@ algorithm
     case ((Types.T_METAOPTION(_),_)) then "metamodelica_type"; // MetaModelica option
     case ((Types.T_UNIONTYPE(_),_)) then "metamodelica_type"; //MetaModelica uniontypes, added by simbj
     case ((Types.T_POLYMORPHIC(_),_)) then "metamodelica_type"; //MetaModelica polymorphic type
+    case ((Types.T_BOXED(_),_)) then "metamodelica_type"; //MetaModelica boxed type
     case ((Types.T_FUNCTION(_,_),_)) then "modelica_fnptr";
     
     case (ty)
@@ -2499,6 +2504,104 @@ algorithm
   cfn := cAddCleanups(cfn_3, {mem_stmt2,ret_stmt});
 end generateFunctionBody;
 
+protected function generateFunctionReferenceWrapperBody 
+  input Absyn.Path fpath;
+  input Types.Type inType;
+  output list<CFunction> outCfns;
+algorithm
+  outCfns := matchcontinue (fpath,inType)
+    local
+      CFunction cfn, callCfn, convertCfn;
+      Integer tnr;
+      String fn_name_str, ret_stmt, ret_type_str, ret_type_str_box, ret_decl, ret_decl_box, ret_var, ret_var_box, callVar, tmp;
+      Types.Type ty1,ty2,retType1,retType2;
+      list<String> funcArgNames, funcArgTypeNames, funcArgVars, stringList, recordFields, recordFieldsBox, structStrs;
+      list<Types.Type> funcArgTypes1, funcArgTypes2, retTypeList1, retTypeList2;
+      list<Exp.Exp> funcArgExps1, funcArgExps2, funcArgExps3, funcArgExps4, funcArgExps5;
+      list<Types.FuncArg> funcArgs1, funcArgs2;
+      list<Integer> intList;
+      Exp.Exp callExp;
+      list<Algorithm.Statement> stmtList;
+      Boolean isTuple;
+      Exp.ComponentRef resCref;
+      Integer i;
+      // Only generate these functions if we use MetaModelica grammar
+    case (fpath,ty1)
+      equation
+        false = RTOpts.acceptMetaModelicaGrammar();
+      then {};
+    case (fpath,ty1)
+      equation
+        failure(_ = Types.makeFunctionPolymorphicReference(ty1));
+      then {};
+    case (fpath,ty1)
+      equation
+        (Types.T_FUNCTION(funcArgs1,retType1),_) = ty1;
+        (ty2 as (Types.T_FUNCTION(funcArgs2,retType2),_)) = Types.makeFunctionPolymorphicReference(ty1);
+        tnr = 1;
+        ret_type_str = generateReturnType(fpath);
+        ret_type_str_box = ret_type_str +& "boxed";
+        (ret_decl_box,ret_var_box,tnr) = generateTempDecl(ret_type_str_box, tnr);
+        ret_stmt = Util.stringAppendList({"return ",ret_var_box,";"});
+        fn_name_str = generateFunctionName(fpath);
+        fn_name_str = "boxptr_" +& fn_name_str;
+        funcArgNames = Util.listMap(funcArgs2, Util.tuple21);
+        funcArgTypes2 = Util.listMap(funcArgs2, Util.tuple22);
+        funcArgTypes1 = Util.listMap(funcArgs1, Util.tuple22);
+        funcArgTypeNames = Util.listMap(funcArgTypes2, generateType);
+        funcArgTypeNames = Util.listMap1(funcArgTypeNames, stringAppend, " ");
+        funcArgVars = Util.listThreadMap(funcArgTypeNames, funcArgNames, stringAppend);
+        funcArgExps1 = Util.listMap(funcArgNames, makeCrefExpFromString);
+        // Unbox input args so we can call the regular function
+        (funcArgExps2,_,_) = Types.matchTypeTuple(funcArgExps1, funcArgTypes2, funcArgTypes1, {}, Types.matchTypeRegular);
+        isTuple = Types.isTuple(retType1);
+        // Call the regular function
+        (callCfn,callVar,tnr) = generateExpression(Exp.CALL(fpath,funcArgExps2,isTuple,false,Exp.OTHER,false),tnr,funContext);
+        resCref = Exp.CREF_IDENT(callVar,Exp.OTHER,{});
+        // Fix crefs for regular struct
+        retTypeList1 = Types.resTypeToListTypes(retType1);
+        i = listLength(retTypeList1);
+        intList = Util.if_(i > 0, Util.listIntRange(i), {});
+        stringList = Util.listMap(intList, intString);
+        tmp = callVar +& "." +& ret_type_str +& "_";
+        recordFields = Util.listMap1r(stringList,stringAppend,tmp);
+        recordFields = Util.if_(isTuple or i == 0, recordFields, {callVar}); // Tuple calls return tmpX; regular calls return tmpX.X_rettype_1
+        // Fix crefs for boxed struct
+        retTypeList2 = Types.resTypeToListTypes(retType2);
+        tmp = ret_var_box +& "." +& ret_type_str_box +& "_";
+        recordFieldsBox = Util.listMap1r(stringList,stringAppend,tmp);
+        
+        // recordBoxedFields = Util.listMap1r(stringList,stringAppend,ret_type_str_box +& "_");
+        funcArgExps3 = Util.listMap(recordFields, makeCrefExpFromString);
+        // Convert unboxed result of regular function to boxed types
+        (funcArgExps4,_,_) = Types.matchTypeTuple(funcArgExps3, retTypeList1, retTypeList2, {}, Types.matchTypeRegular);
+        // Create assignments
+        funcArgExps5 = Util.listMap(recordFieldsBox, makeCrefExpFromString);
+        stmtList = Util.listThreadMap(funcArgExps5,funcArgExps4,makeAssignmentNoCheck);        
+        // Assign boxed result
+        (convertCfn,tnr) = generateAlgorithmStatements(stmtList,tnr,funContext);
+        
+        structStrs = generateFunctionRefReturnStruct1(retTypeList2, ret_type_str_box);
+        cfn = cMakeFunction(ret_type_str_box, fn_name_str, structStrs, funcArgVars);
+        cfn = cAddVariables(cfn, {ret_decl_box});
+        // TODO: Fix memory state !!!!!!!! /sjoelund
+        cfn = cMergeFns({cfn,callCfn,convertCfn});
+        cfn = cAddStatements(cfn, {ret_stmt});
+      then {cfn};
+    case (_,_)
+      equation
+        Debug.fprintln("failtrace", "- Codegen.generateFunctionReferenceWrapperBody failed");
+      then fail();
+  end matchcontinue;
+end generateFunctionReferenceWrapperBody;
+
+protected function makeAssignmentNoCheck
+  input Exp.Exp lhs;
+  input Exp.Exp rhs;
+  output Algorithm.Statement stmt;
+algorithm
+  stmt := Algorithm.ASSIGN(Exp.OTHER,lhs,rhs);
+end makeAssignmentNoCheck;
 
 protected function generateAllocOutvars 
 "function: generateAllocOutvars
@@ -5137,18 +5240,58 @@ algorithm
       then
         (cfn,tvar,tnr2);
 
-    case (Exp.CALL(path = Absyn.IDENT(name = "mmc_unbox"),expLst = {s1},tuple_ = false,builtin = true, ty = tp),tnr,context)
-      local Types.Type t;
+      // Unboxing a record is done as a sequence of unboxing operations. This
+      // code cannot be easily generated by C macros, so we generate the
+      // statements manually. /sjoelund 2009-11-04
+    case (Exp.CALL(path = Absyn.IDENT(name = "mmc_unbox_record"),expLst = {s1},tuple_ = false,builtin = true, ty = tp),tnr,context)
+      local
+        Types.Type t;
+        list<Types.Var> v;
+        list<Types.Type> tys1,tys2;
+        String baseStr,name,tmp;
+        Integer i;
+        list<Integer> intList;
+        list<String> stringList, fetchStrs, tmpDecls, tmpRefs, tmpAssignments, conversionStmts, recordFields;
+        list<Exp.Exp> tmpExps, recordFieldExps;
+        list<Algorithm.Statement> stmtList;
+        CFunction cfnConversion;
       equation
-        (cfn1,var1,tnr1) = generateExpression(s1, tnr, context);
+        (cfn1,var1,tnr) = generateExpression(s1, tnr, context);
         t = Types.expTypetoTypesType(tp);
-        (tdecl,tvar,tnr2) = generateTempDecl(generateType(t), tnr1);
-        cfn = cAddVariables(cEmptyFunction, {tdecl});
-        stmt = Util.stringAppendList({"mmc_unbox((metamodelica_type)",var1,",&",tvar,");"});
-        cfn = cAddStatements(cfn, {stmt});
-        cfn = cMergeFns({cfn1,cfn});
+        (Types.T_COMPLEX(complexClassType = ClassInf.RECORD(name), complexVarLst = v),_) = t;
+        tys1 = Util.listMap(v, Types.getVarType);
+        tys2 = Util.listMap(tys1, Types.boxIfUnboxedType);
+        i = listLength(tys1);
+        intList = Util.if_(i == 0, {}, Util.listIntRange(i));
+        stringList = Util.listMap(intList, intString);
+        // Unbox every field
+        (tmpDecls,tmpRefs,tnr) = generateTempDeclList("metamodelica_type",tnr,listLength(intList));
+        baseStr = " = (MMC_OFFSET(MMC_UNTAGPTR(" +& var1 +& "),";
+        fetchStrs = Util.listMap1r(stringList, stringAppend, baseStr);
+        fetchStrs = Util.listMap1(fetchStrs, stringAppend, "));");
+        tmpAssignments = Util.listThreadMap(tmpRefs,fetchStrs,stringAppend);
+        tmpExps = Util.listMap(tmpRefs, makeCrefExpFromString);
+        (tmpExps,_,_) = Types.matchTypeTuple(tmpExps,tys2,tys1,{},Types.matchTypeRegular);
+        // Generate assignments to regular record
+        (tdecl,tvar,tnr) = generateTempDecl(generateType(t), tnr);
+        tmp = tvar +& ".";
+        stringList = Util.listMap(v, Types.getVarName);
+        recordFields = Util.listMap1r(stringList,stringAppend,tmp);
+        recordFieldExps = Util.listMap(recordFields, makeCrefExpFromString);
+        stmtList = Util.listThreadMap(recordFieldExps,tmpExps,makeAssignmentNoCheck);
+        (cfnConversion,tnr) = generateAlgorithmStatements(stmtList,tnr,funContext);
+        // Generate the CFunction
+        cfn = cEmptyFunction;
+        cfn = cAddVariables(cfn, tmpDecls);
+        cfn = cAddVariables(cfn, {tdecl});
+        tmp = "/* Start unboxing record " +& name +& " */";
+        cfn = cAddStatements(cfn, {tmp});
+        cfn = cAddStatements(cfn, tmpAssignments);
+        cfn = cMergeFns({cfn1,cfn,cfnConversion});
+        tmp = "/* Finished unboxing record " +& name +& " */";
+        cfn = cAddStatements(cfn, {tmp});
       then
-        (cfn,tvar,tnr2);
+        (cfn,tvar,tnr);
 
         //----
   end matchcontinue;
@@ -5528,14 +5671,14 @@ end generateBinary;
 protected function generateTempDecl 
 "function: generateTempDecl
   Generates code for the declaration of a temporary variable."
-  input String inString;
+  input String inStringType;
   input Integer inInteger;
-  output String outString1;
-  output String outString2;
+  output String outStringDecl;
+  output String outStringRef;
   output Integer outInteger3;
 algorithm
-  (outString1,outString2,outInteger3):=
-  matchcontinue (inString,inInteger)
+  (outStringDecl,outStringRef,outInteger3):=
+  matchcontinue (inStringType,inInteger)
     local
       Lib tnr_str,tmp_name,t_1,t;
       Integer tnr_1,tnr;
@@ -5549,6 +5692,32 @@ algorithm
         (t_1,tmp_name,tnr_1);
   end matchcontinue;
 end generateTempDecl;
+
+protected function generateTempDeclList 
+"function: generateTempDeclList
+  Generates code for the declaration of temporary variables."
+  input String inString;
+  input Integer inInteger;
+  input Integer numberOfDecls;
+  output list<String> outStringDecls;
+  output list<String> outStringRefs;
+  output Integer outInteger;
+algorithm
+  (outStringDecls,outStringRefs,outInteger):=
+  matchcontinue (inString,inInteger,numberOfDecls)
+    local
+      list<String> decls,refs;
+      String decl,ref,t;
+      Integer tnr,i;
+    case (_,tnr,0) then ({},{},tnr); 
+    case (t,tnr,i)
+      equation
+        (decl,ref,tnr) = generateTempDecl(t,tnr);
+        (decls,refs,tnr) = generateTempDeclList(t,tnr,i-1);
+      then
+        (decl::decls,ref::refs,tnr);
+  end matchcontinue;
+end generateTempDeclList;
 
 protected function generateScalarLhsCref 
 "function: generateScalarLhsCref
@@ -5690,14 +5859,24 @@ algorithm
       then
         (cEmptyFunction,cref_str,tnr);
 
-        /* function pointer case - stefan */
-    case (cref,Exp.T_FUNCTION_REFERENCE(),tnr,context)
+        /* function pointer variable reference - stefan */
+    case (cref,Exp.T_FUNCTION_REFERENCE_VAR(),tnr,context)
         local String fn_name; Absyn.Path path;
       equation
         path = Exp.crefToPath(cref);
         fn_name = generateFunctionName(path);
         fn_name = Util.stringReplaceChar(fn_name,".","_");
-        cref_str = stringAppend("(modelica_fnptr)_",fn_name);
+      then
+        (cEmptyFunction,fn_name,tnr);
+    
+       /* function pointer direct reference - sjoelund */
+    case (cref,Exp.T_FUNCTION_REFERENCE_FUNC(),tnr,context)
+        local String fn_name; Absyn.Path path;
+      equation
+        path = Exp.crefToPath(cref);
+        fn_name = generateFunctionName(path);
+        fn_name = Util.stringReplaceChar(fn_name,".","_");
+        cref_str = stringAppend("(modelica_fnptr)boxptr_",fn_name);
       then
         (cEmptyFunction,cref_str,tnr);
 
@@ -9354,11 +9533,7 @@ public function matchFnRefs
 algorithm
   outExprLst := matchcontinue (inExpr)
     local Exp.Exp e; Exp.Type t;
-    case((e as Exp.CREF(ty = t)))
-      equation
-        true = Exp.isFunctionReference(t);
-      then
-        {e};
+    case((e as Exp.CREF(ty = Exp.T_FUNCTION_REFERENCE_FUNC()))) then {e};
   end matchcontinue;
 end matchFnRefs;
 
@@ -9701,5 +9876,17 @@ algorithm
     case _::rest then getDAEDeclsFromValueblocks(rest);
   end matchcontinue;
 end getDAEDeclsFromValueblocks;
+
+protected function makeCrefExpFromString
+  input String str;
+  output Exp.Exp exp;
+protected
+  Absyn.Path path;
+  Exp.ComponentRef cref;
+algorithm
+  path := Absyn.makeIdentPathFromString(str);
+  cref := Exp.pathToCref(path);
+  exp  := Exp.makeCrefExp(cref, Exp.OTHER);
+end makeCrefExpFromString;
 
 end Codegen;

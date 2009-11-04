@@ -60,6 +60,7 @@ uniontype State "- Machine states, the string contains the classname."
   end MODEL;
 
   record RECORD
+    /* TODO: Change this to a path so the C structs have fully-qualified names /sjoelund 2009-11-04 */
     String string;
   end RECORD;
 

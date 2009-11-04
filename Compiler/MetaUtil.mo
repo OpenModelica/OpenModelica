@@ -44,7 +44,6 @@ public import Debug;
 public import Env;
 public import Absyn;
 public import SCode;
-public import DAE;
 public import RTOpts;
 public import ClassInf;
 

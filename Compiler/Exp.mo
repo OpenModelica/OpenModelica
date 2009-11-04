@@ -112,12 +112,13 @@ uniontype Type "- Basic types
     Type ty;
   end T_METAOPTION;
   
-  record T_FUNCTION_REFERENCE "MetaModelica Partial Function. sjoelund"
-  end T_FUNCTION_REFERENCE;
+  record T_FUNCTION_REFERENCE_VAR "MetaModelica Function Reference that is a variable"
+  end T_FUNCTION_REFERENCE_VAR;
+  record T_FUNCTION_REFERENCE_FUNC "MetaModelica Function Reference that is a direct reference to a function"
+  end T_FUNCTION_REFERENCE_FUNC;
   
   //MetaModelica Uniontype, MetaModelica extension, simbj
-  record T_UNIONTYPE
-  end T_UNIONTYPE;
+  record T_UNIONTYPE end T_UNIONTYPE;
   
   record T_BOXED "Tag for any boxed data type (useful for equality operations)"
     Type ty;
@@ -9506,21 +9507,6 @@ algorithm
   outExp := BINARY(e1,MUL(tp),e2);
 end expMul;
 
-// For compiling function arguments - stefan
-public function isFunctionReference
-"function: isFunctionReference
-  return true if the Exp.Type is a function reference"
-  input Type inType;
-  output Boolean isFRef;
-algorithm
-  isRef :=
-  matchcontinue (inType)
-    local Type t;
-    case(T_FUNCTION_REFERENCE) then true;
-    case(t) then false;
-  end matchcontinue;
-end isFunctionReference;
-  
 public function makeCrefExp 
 "function makeCrefExp
   Makes an expression of a component reference, given also a type"

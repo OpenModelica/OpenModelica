@@ -9544,11 +9544,11 @@ algorithm
         path = Absyn.crefToPath(c);
         (cache,typelist) = Lookup.lookupFunctionsInEnv(cache,env,path);
         t :: _ = typelist;
-        (_, SOME(fpath)) = t;
+        (_,SOME(fpath)) = t;
+        t = Types.makeFunctionPolymorphicReference(t);
         c = Absyn.pathToCref(fpath);
         expCref = Exp.toExpCref(c);
-        expType = Types.elabType(t);
-        exp = Exp.CREF(expCref,expType);
+        exp = Exp.CREF(expCref,Exp.T_FUNCTION_REFERENCE_FUNC());
       then
         (cache,exp,Types.PROP(t,Types.C_CONST()),SCode.RO()); 
         

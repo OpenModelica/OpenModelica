@@ -635,15 +635,17 @@ algorithm
           ty2 = (tty,NONE);
           then
             ty2;
-    case(Exp.COMPLEX(varLst = evars)) //record COMPLEX "Complex types, currently only used for records " 
-    local
-      list<Exp.Var> evars;
-      list<Var> tvars;
+    case(Exp.COMPLEX(complexClassType = complexClassType, varLst = evars)) //record COMPLEX "Complex types, currently only used for records " 
+	    local
+	      list<Exp.Var> evars;
+	      list<Var> tvars;
+	      ClassInf.State complexClassType;
       equation 
         tvars = Util.listMap(evars, convertFromExpToTypesVar);
-        ty = (T_COMPLEX(ClassInf.RECORD("____"),tvars,NONE,NONE),NONE); 
-        then 
-          ty;
+        ty = (T_COMPLEX(complexClassType,tvars,NONE,NONE),NONE); 
+      then 
+        ty;
+    case(Exp.T_UNIONTYPE()) then ((T_UNIONTYPE({}),NONE));
     case(Exp.T_BOXED(at))
       local Exp.Type at;
       equation
@@ -707,6 +709,16 @@ local
     then fail();
 end matchcontinue;
 end convertFromTypesToExpVar;
+
+public function isTuple "Returns true if type is TUPLE"
+  input Type tp;
+  output Boolean b;
+algorithm
+  b := matchcontinue(tp) 
+    case((T_TUPLE(_),_)) then true;
+    case(_) then false;
+  end matchcontinue;
+end isTuple;
 
 public function isRecord "Returns true if type is COMPLEX and a record (ClassInf)"
   input Type tp;
@@ -2216,9 +2228,10 @@ algorithm
         res = Util.stringAppendList({tys,"[",dims,"]"});
       then
         res;
-    case (((t as T_COMPLEX(complexClassType = ClassInf.RECORD(string = name),complexVarLst = vs,complexTypeOption = bc)),_))
-      local TType t;
-      equation 
+    case (((t as T_COMPLEX(complexClassType = ClassInf.RECORD(_),complexVarLst = vs,complexTypeOption = bc)),SOME(path)))
+      local TType t; Absyn.Path path;
+      equation
+        name = Absyn.pathString(path);
         vars = Util.listMap(vs, unparseVar);
         vstr = Util.stringAppendList(vars);
         res = Util.stringAppendList({"record ",name,"\n",vstr,"end ", name, ";"});
@@ -2319,7 +2332,7 @@ algorithm
     case ((T_NOTYPE(),_)) then "#NOTYPE#"; 
     case ((T_ANYTYPE(anyClassType = _),_)) then "#ANYTYPE#"; 
     case ((T_ENUM(),_)) then "#T_ENUM#";
-    case (ty) then unparseType(ty); // "Internal error unparse_type: not implemented yet\n"; 
+    case (ty) then "Internal error unparse_type: not implemented yet\n"; 
   end matchcontinue;
 end unparseType;
 
@@ -3592,7 +3605,7 @@ algorithm
       then Exp.T_LIST(t_1);
     
     case ((T_FUNCTION(_,_),_)) "Ceval.ceval might need more info? Don't know how that part of the compiler works. sjoelund"
-      then Exp.T_FUNCTION_REFERENCE();
+      then Exp.T_FUNCTION_REFERENCE_VAR();
 
     case ((T_METAOPTION(t),_))
       equation
@@ -3603,8 +3616,6 @@ algorithm
       local
         list<Exp.Type> t_l2;
         list<Type> t_l;
-
-
       equation
         t_l2 = Util.listMap(t_l,elabType);
       then Exp.T_METATUPLE(t_l2);
@@ -3619,7 +3630,7 @@ algorithm
 
     case ((T_NORETCALL(),_)) then Exp.T_NORETCALL();
     
-    case(    (T_COMPLEX(CIS,tcvl as _::_,_,_),_)   )
+    case ((T_COMPLEX(CIS,tcvl as _::_,_,_),_))
       local 
         list<Var> tcvl; 
         ClassInf.State CIS; 
@@ -3758,7 +3769,9 @@ algorithm
   end matchcontinue;
 end matchTypeList;
 
-protected function matchTypeTuple
+public function matchTypeTuple
+"Transforms a list of expressions and types into a list of expressions
+of the expected types."
   input list<Exp.Exp> inExp1;
   input list<Type> inTypeLst2;
   input list<Type> inTypeLst3;
@@ -4171,10 +4184,40 @@ algorithm
         t = elabType(t2);
       then (Exp.CALL(Absyn.IDENT("mmc_mk_scon"),{e},false,true,t,false),t2,polymorphicBindings);
 
-    case (e, (T_COMPLEX(complexClassType = ClassInf.RECORD(_)),_), t1 as (T_BOXED((T_COMPLEX(complexClassType = ClassInf.RECORD(_)),_)),_),polymorphicBindings,matchFunc)
+    case (e as Exp.CALL(path = path1, expLst = elist), t1 as (T_COMPLEX(complexClassType = ClassInf.RECORD(_), complexVarLst = v),SOME(path2)), (T_BOXED(t2),_),polymorphicBindings,matchFunc)
+      local Absyn.Path path1,path2;
       equation
-        Debug.fprintln("failtrace", "- Type conversion from record to boxed record not yet implemented");
+        true = subtype(t1,t2);
+        equality(path1 = path2);
+        t2 = (T_BOXED(t1),NONE);
+        l = Util.listMap(v, getVarName);
+        e_1 = Exp.METARECORDCALL(path1, elist, l, 0);
+      then (e_1,t2,polymorphicBindings);
+
+    case (e as Exp.CALL(path = _), t1 as (T_COMPLEX(complexClassType = ClassInf.RECORD(_), complexVarLst = v),_), (T_BOXED(t2),_),polymorphicBindings,matchFunc)
+      equation
+        Debug.fprintln("failtrace", "- Not yet implemented: Converting record calls (not constructor) into boxed records");
       then fail();
+
+    case (e as Exp.CREF(cref,_), t1 as (T_COMPLEX(complexClassType = ClassInf.RECORD(_), complexVarLst = v),SOME(path)), (T_BOXED(t2),_),polymorphicBindings,matchFunc)
+      local
+        Absyn.Path path;
+        list<Absyn.Path> pathList;
+        Exp.ComponentRef cref;
+        list<Exp.ComponentRef> crefList;
+        list<Exp.Type> expTypes;
+      equation
+        true = subtype(t1,t2);
+        t2 = (T_BOXED(t1),NONE);
+        l = Util.listMap(v, getVarName);
+        tys1 = Util.listMap(v, getVarType);
+        expTypes = Util.listMap(tys1, elabType);
+        pathList = Util.listMap(l, Absyn.makeIdentPathFromString);
+        crefList = Util.listMap(pathList, Exp.pathToCref);
+        crefList = Util.listMap1r(crefList, Exp.joinCrefs, cref);
+        elist = Util.listThreadMap(crefList, expTypes, Exp.makeCrefExp);
+        e_1 = Exp.METARECORDCALL(path, elist, l, 0);
+      then (e_1,t2,polymorphicBindings);
 
     case (e,(T_BOXED(t1),_),t2 as (T_INTEGER(_),_),polymorphicBindings,matchFunc)
       equation
@@ -4196,6 +4239,12 @@ algorithm
         (e_1,_,polymorphicBindings) = matchFunc(e, t1, t2, polymorphicBindings);
       then
         (Exp.CALL(Absyn.IDENT("mmc_unbox_string"),{e_1},false,true,Exp.STRING,false),t2,polymorphicBindings);
+    case (e,(T_BOXED(t1),_),t2 as (T_COMPLEX(complexClassType = ClassInf.RECORD(_), complexVarLst = v),_),polymorphicBindings,matchFunc)
+      equation
+        (e_1,t2,polymorphicBindings) = matchFunc(e, t1, t2, polymorphicBindings);
+        t = elabType(t2);
+      then
+        (Exp.CALL(Absyn.IDENT("mmc_unbox_record"),{e_1},false,true,t,false),t2,polymorphicBindings);
     
     // MM Function Reference. sjoelund
     case (e as Exp.CREF(_,_),(T_FUNCTION(farg1,t1),p1),(T_FUNCTION(farg2,t2),_),polymorphicBindings,matchFunc)
@@ -4864,14 +4913,22 @@ algorithm
       equation
         exps = getAllExps(ty);
       then exps;
+    case T_BOXED(ty)
+      equation
+        exps = getAllExps(ty);
+      then exps;
     case T_POLYMORPHIC(_) then {};
 
     case(T_NOTYPE()) then {};
     case(T_NORETCALL()) then {};
 
-    case _
+    case tty
+      local
+        TType tty;
+        String str;
       equation 
-        Debug.fprintln("failtrace", "-- Types.getAllExpsTt failed");
+        str = unparseType((tty,NONE));
+        Debug.fprintln("failtrace", "-- Types.getAllExpsTt failed " +& str);
       then
         fail();
   end matchcontinue;
@@ -4949,10 +5006,18 @@ algorithm
     case ((T_METATUPLE(_),_)) then true;
     case ((T_UNIONTYPE(_),_)) then true;
     case ((T_POLYMORPHIC(_),_)) then true;
+    case ((T_FUNCTION(_,_),_)) then true;
     case ((T_BOXED(_),_)) then true;
     case _ then false;
   end matchcontinue;
 end isBoxedType;
+
+public function boxIfUnboxedType
+  input Type ty;
+  output Type outType;
+algorithm
+  outType := Util.if_(isBoxedType(ty), ty, (T_BOXED(ty),NONE));
+end boxIfUnboxedType;
 
 public function unboxedType
   input Type ty;
@@ -5347,5 +5412,105 @@ algorithm
     case ((T_UNIONTYPE(paths),_)) then paths;
   end matchcontinue;
 end getUniontypePaths;
+
+public function makeFunctionPolymorphicReference
+"Takes a function reference. If it contains any types that are not boxed, we
+return a reference to the function that does take boxed types. Else, we
+return a reference to the regular function."
+  input Type inType;
+  output Type outType;
+algorithm
+  outType := matchcontinue (inType)
+    local
+      list<FuncArg> funcArgs1,funcArgs2;
+      list<String> funcArgNames;
+      list<Type> funcArgTypes1, funcArgTypes2, dummyBoxedTypeList;
+      list<Exp.Exp> dummyExpList;
+      Type ty1,ty2,resType1,resType2;
+      TType tty1,tty2;
+      Absyn.Path path;
+    case (((tty1 as T_FUNCTION(funcArgs1,resType1)),SOME(path)))
+      equation
+        funcArgNames = Util.listMap(funcArgs1, Util.tuple21);
+        funcArgTypes1 = Util.listMap(funcArgs1, Util.tuple22);
+        (dummyExpList,dummyBoxedTypeList) = makeDummyExpAndTypeLists(funcArgTypes1);
+        (_,funcArgTypes2,_) = matchTypeTuple(dummyExpList, funcArgTypes1, dummyBoxedTypeList, {}, matchTypeRegular);
+        funcArgs2 = Util.listThreadTuple(funcArgNames,funcArgTypes2);
+        resType2 = makeFunctionPolymorphicReferenceResType(resType1);
+        tty2 = T_FUNCTION(funcArgs2,resType2);
+        ty2 = (tty2,SOME(path));
+      then ty2;
+      /* Maybe add this case when standard Modelica gets function references?
+    case (ty1 as (tty1 as T_FUNCTION(funcArgs1,resType),SOME(path)))
+      local
+        list<Boolean> boolList;
+      equation
+        funcArgTypes1 = Util.listMap(funcArgs1, Util.tuple22);
+        boolList = Util.listMap(funcArgTypes1, isBoxedType);
+        true = Util.listReduce(boolList, boolAnd);
+      then ty1; */
+    case _
+      equation
+        Debug.fprintln("failtrace", "- Types.makeFunctionPolymorphicReference failed");
+      then fail();
+  end matchcontinue;
+end makeFunctionPolymorphicReference;
+
+protected function makeFunctionPolymorphicReferenceResType
+  input Type inType;
+  output Type outType;
+algorithm
+  outType := matchcontinue (inType)
+    local
+      Option<Absyn.Path> optPath;
+      Exp.Exp e;
+      Type ty,ty1,ty2;
+      list<Type> tys, dummyBoxedTypeList;
+      list<Exp.Exp> dummyExpList;
+    case ((T_TUPLE(tys),optPath))
+      equation
+        (dummyExpList,dummyBoxedTypeList) = makeDummyExpAndTypeLists(tys);
+        (_,tys,_) = matchTypeTuple(dummyExpList, tys, dummyBoxedTypeList, {}, matchTypeRegular);
+      then ((T_TUPLE(tys),optPath));
+    case (ty as (T_NORETCALL,_)) then ty;
+    case ty1
+      equation
+        ({e},{ty2}) = makeDummyExpAndTypeLists({ty1});
+        (_,ty) = matchType(e, ty1, ty2);
+      then ty;
+  end matchcontinue;
+end makeFunctionPolymorphicReferenceResType;
+
+protected function makeDummyExpAndTypeLists
+  input list<Type> lst;
+  output list<Exp.Exp> outExps;
+  output list<Type> outTypes;
+algorithm
+  (outExps,outTypes) := matchcontinue (lst)
+    local
+      list<Exp.Exp> restExp;
+      list<Type> restType, rest;
+    case {} then ({},{});
+    case _::rest
+      equation
+        (restExp,restType) = makeDummyExpAndTypeLists(rest);
+      then (Exp.CREF(Exp.CREF_IDENT("#DummyExp#",Exp.OTHER,{}),Exp.OTHER)::restExp,(T_BOXED((T_NOTYPE,NONE)),NONE)::restType);
+  end matchcontinue;
+end makeDummyExpAndTypeLists;
+
+public function resTypeToListTypes
+"Transforms a T_TUPLE to a list of types. Other types return the same type (as a list)"
+  input Type inType;
+  output list<Type> outType;
+algorithm
+  outType := matchcontinue (inType)
+    local
+      list<Type> tys;
+      Type ty;
+    case ((T_TUPLE(tys),_)) then tys;
+    case ((T_NORETCALL,_)) then {};
+    case ty then {ty};
+  end matchcontinue;
+end resTypeToListTypes;
 
 end Types;
