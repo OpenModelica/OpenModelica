@@ -5262,13 +5262,13 @@ algorithm
         tys1 = Util.listMap(v, Types.getVarType);
         tys2 = Util.listMap(tys1, Types.boxIfUnboxedType);
         i = listLength(tys1);
-        intList = Util.if_(i == 0, {}, Util.listIntRange(i));
+        intList = Util.if_(i == 0, {}, Util.listIntRange2(2,i+1));
         stringList = Util.listMap(intList, intString);
         // Unbox every field
         (tmpDecls,tmpRefs,tnr) = generateTempDeclList("metamodelica_type",tnr,listLength(intList));
-        baseStr = " = (MMC_OFFSET(MMC_UNTAGPTR(" +& var1 +& "),";
+        baseStr = " = (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(" +& var1 +& "),";
         fetchStrs = Util.listMap1r(stringList, stringAppend, baseStr);
-        fetchStrs = Util.listMap1(fetchStrs, stringAppend, "));");
+        fetchStrs = Util.listMap1(fetchStrs, stringAppend, ")));");
         tmpAssignments = Util.listThreadMap(tmpRefs,fetchStrs,stringAppend);
         tmpExps = Util.listMap(tmpRefs, makeCrefExpFromString);
         (tmpExps,_,_) = Types.matchTypeTuple(tmpExps,tys2,tys1,{},Types.matchTypeRegular);

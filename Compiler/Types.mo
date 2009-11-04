@@ -4184,7 +4184,9 @@ algorithm
         equality(path1 = path2);
         t2 = (T_BOXED(t1),NONE);
         l = Util.listMap(v, getVarName);
-        // TODO: Convert all expressions as well!
+        tys1 = Util.listMap(v, getVarType);
+        tys2 = Util.listMap(tys1, boxIfUnboxedType);
+        (elist,_,polymorphicBindings) = matchTypeTuple(elist, tys1, tys2, polymorphicBindings, matchFunc);
         e_1 = Exp.METARECORDCALL(path1, elist, l, 0);
       then (e_1,t2,polymorphicBindings);
 
@@ -4205,11 +4207,13 @@ algorithm
         t2 = (T_BOXED(t1),NONE);
         l = Util.listMap(v, getVarName);
         tys1 = Util.listMap(v, getVarType);
+        tys2 = Util.listMap(tys1, boxIfUnboxedType);
         expTypes = Util.listMap(tys1, elabType);
         pathList = Util.listMap(l, Absyn.makeIdentPathFromString);
         crefList = Util.listMap(pathList, Exp.pathToCref);
         crefList = Util.listMap1r(crefList, Exp.joinCrefs, cref);
         elist = Util.listThreadMap(crefList, expTypes, Exp.makeCrefExp);
+        (elist,_,polymorphicBindings) = matchTypeTuple(elist, tys1, tys2, polymorphicBindings, matchFunc);
         e_1 = Exp.METARECORDCALL(path, elist, l, 0);
       then (e_1,t2,polymorphicBindings);
 
