@@ -489,8 +489,9 @@ algorithm
       list<tuple<Exp.Exp, Types.Properties, list<Statement>>> eib;
       Ident e_str,t_str;
       tuple<Types.TType, Option<Absyn.Path>> t;
-    case (e,Types.PROP(type_ = (Types.T_BOOL(varLstBool = _),_)),tb,eib,fb)
-      equation 
+    case (e,Types.PROP(type_ = t),tb,eib,fb)
+      equation
+        (e,_) = Types.matchType(e,t,(Types.T_BOOL({}),NONE));
         else_ = makeElse(eib, fb);
       then
         IF(e,tb,else_);
@@ -521,8 +522,9 @@ algorithm
       tuple<Types.TType, Option<Absyn.Path>> t;
     case ({},{}) then NOELSE();  /* This removes empty else branches */ 
     case ({},fb) then ELSE(fb); 
-    case (((e,Types.PROP(type_ = (Types.T_BOOL(varLstBool = _),_)),b) :: xs),fb)
+    case (((e,Types.PROP(type_ = t),b) :: xs),fb)
       equation 
+        (e,_) = Types.matchType(e,t,(Types.T_BOOL({}),NONE));
         else_ = makeElse(xs, fb);
       then
         ELSEIF(e,b,else_);

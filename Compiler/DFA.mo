@@ -53,6 +53,7 @@ type SimpleStateArray = SimpleState[:];
 
 protected import Lookup;
 protected import Util;
+protected import Dump;
 
 public uniontype Dfa
   record DFArec
@@ -1488,6 +1489,8 @@ algorithm
       Env.Cache localCache;
       Env.Env localEnv;
       list<Absyn.Exp> restExps;
+      Absyn.Exp e;
+      String str;
     case ({},localDfaEnv,localCache,_) then (localDfaEnv,localCache);
     case (Absyn.CREF(Absyn.WILD) :: restExps,localDfaEnv,localCache,localEnv)
       equation
@@ -1506,9 +1509,10 @@ algorithm
         localDfaEnv = listAppend(localDfaEnv,dfaEnvElem);
         (localDfaEnv,localCache) = addVarsToDfaEnv(restExps,localDfaEnv,localCache,localEnv);
       then (localDfaEnv,localCache);
-    case (_,_,_,_)
+    case (e::_,_,_,_)
       equation
-        Debug.fprintln("matchcase", "- DFA.addVarsToDfaEnv failed");
+        str = Dump.printExpStr(e);
+        Debug.fprintln("matchcase", "- DFA.addVarsToDfaEnv failed " +& str);
       then fail();
   end matchcontinue;
 end addVarsToDfaEnv;

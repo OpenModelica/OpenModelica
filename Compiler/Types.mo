@@ -4219,26 +4219,31 @@ algorithm
 
     case (e,(T_BOXED(t1),_),t2 as (T_INTEGER(_),_),polymorphicBindings,matchFunc)
       equation
+        true = subtype(t1,t2);
         (e_1,_,polymorphicBindings) = matchFunc(e, t1, t2, polymorphicBindings);
       then
         (Exp.CALL(Absyn.IDENT("mmc_unbox_integer"),{e_1},false,true,Exp.INT,false),t2,polymorphicBindings);
     case (e,(T_BOXED(t1),_),t2 as (T_REAL(_),_),polymorphicBindings,matchFunc)
       equation
+        true = subtype(t1,t2);
         (e_1,_,polymorphicBindings) = matchFunc(e, t1, t2, polymorphicBindings);
       then
         (Exp.CALL(Absyn.IDENT("mmc_unbox_real"),{e_1},false,true,Exp.REAL,false),t2,polymorphicBindings);
     case (e,(T_BOXED(t1),_),t2 as (T_BOOL(_),_),polymorphicBindings,matchFunc)
       equation
+        true = subtype(t1,t2);
         (e_1,_,polymorphicBindings) = matchFunc(e, t1, t2, polymorphicBindings);
       then
         (Exp.CALL(Absyn.IDENT("mmc_unbox_integer"),{e_1},false,true,Exp.BOOL,false),t2,polymorphicBindings);
     case (e,(T_BOXED(t1),_),t2 as (T_STRING(_),_),polymorphicBindings,matchFunc)
       equation
+        true = subtype(t1,t2);
         (e_1,_,polymorphicBindings) = matchFunc(e, t1, t2, polymorphicBindings);
       then
         (Exp.CALL(Absyn.IDENT("mmc_unbox_string"),{e_1},false,true,Exp.STRING,false),t2,polymorphicBindings);
     case (e,(T_BOXED(t1),_),t2 as (T_COMPLEX(complexClassType = ClassInf.RECORD(_), complexVarLst = v),_),polymorphicBindings,matchFunc)
       equation
+        true = subtype(t1,t2);
         (e_1,t2,polymorphicBindings) = matchFunc(e, t1, t2, polymorphicBindings);
         t = elabType(t2);
       then
