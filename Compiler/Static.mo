@@ -520,6 +520,12 @@ algorithm
         (cache,e,prop,st_1) = elabPartEvalFunction(cache,env,e1,st,impl,doVect);
       then
         (cache,e,prop,st_1);*/
+    case (cache,env,e1 as Absyn.PARTEVALFUNCTION(function_ = _),impl,st,doVect)
+      local Exp.Exp e;
+      equation
+        (cache,e,prop,st_1) = elabPartEvalFunction(cache,env,e1,st,impl,doVect);
+      then
+        (cache,e,prop,st_1);
     case (cache,env,Absyn.TUPLE(expressions = e),impl,st,doVect) /* PR. Get the properties for each expression in the tuple. 
     Each expression has its own constflag.
     */ 
@@ -1832,116 +1838,46 @@ algorithm
 end elabTuple;
 
 // stefan
-protected function elabPartEvalFuncArgs
-"function: elabPartEvalFuncArgs
-	Helper function to elabPartEvalFunction
-	elaborates the arguments and performs constant evaluation where appropriate
-	Also gets the names of the named arguments"
+protected function elabPartEvalFunction
+"function: elabPartEvalFunction
+	turns an Absyn.PARTEVALFUNCTION into an Exp.PARTEVALFUNCTION"
 	input Env.Cache inCache;
 	input Env.Env inEnv;
-	input Absyn.FunctionArgs inAbsynFunctionArgs;
-	input Boolean inBoolean;
-	input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
-	input Boolean performVectorization;
+	input Absyn.Exp inExp;
+	input Option<Interactive.InteractiveSymbolTable> inSymbolTableOption;
+	input Boolean inImpl;
+	input Boolean inVect;
 	output Env.Cache outCache;
-	output list<Exp.Exp> outExpExpList;
-	output list<String> outStringList;
-	output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
-	
+	output Exp.Exp outExp;
+	output Types.Properties outProperties;
+	output Option<Interactive.InteractiveSymbolTable> outSymbolTableOption;
 algorithm
-  (outCache,outExpExpList,outStringList,outInteractiveInteractiveSymbolTableOption) := 
-  matchcontinue (inCache,inEnv,inAbsynFunctionArgs,inBoolean,inInteractiveInteractiveSymbolTableOption,performVectorization)
+  (outCache,outExp,outProperties,outSymbolTableOption) := matchcontinue(inCache,inEnv,inExp,inSymbolTableOption,inImpl,inVect)
     local
       Env.Cache c;
       Env.Env env;
-      list<Absyn.NamedArg> n_args;
-      list<Absyn.Exp> e_args;
-      Boolean impl,doVect;
+      Absyn.ComponentRef cref;
+      list<Absyn.Exp> posArgs;
+      list<Absyn.NamedArg> namedArgs;
       Option<Interactive.InteractiveSymbolTable> st;
-      
-    case (c,env,Absyn.FUNCTIONARGS(args=e_args,argNames=n_args),impl,st,doVect)
-      local
-        list<String> slst;
-        list<Absyn.Exp> elst,elst_1;
-        list<Exp.Exp> elabelst;
-        list<Types.Properties> plst;
-        list<Types.Const> clst;
+      Boolean impl,doVect;
+      Absyn.Path p;
+      list<Exp.Exp> args;
+      Exp.Type ty;
+      Types.Properties prop;
+    case(c,env,Absyn.PARTEVALFUNCTION(cref,Absyn.FUNCTIONARGS(posArgs,namedArgs)),st,impl,doVect)
       equation
-        (slst,elst) = Absyn.getNamedFuncArgNamesAndValues(n_args);
-        elst_1 = listAppend(elst,e_args);
-        (c,elabelst,plst,st) = elabExpList(c,env,elst_1,impl,st,doVect);
-        clst = Types.getConstList(plst);
-        (c,elabelst,plst) = cevalExpListIfConstant(c,elabelst,plst,clst,impl,env);
+        p = Absyn.crefToPath(cref);
+        (c,Exp.CALL(p,args,_,_,ty,_),prop) = elabCallArgs(c,env,p,posArgs,namedArgs,impl,st);
       then
-        (c,elabelst,slst,st);
-          
-  end matchcontinue;
-end elabPartEvalFuncArgs;
-
-// stefan
-protected function cevalExpListIfConstant
-"function: cevalExpListIfConstant
-	applies cevalIfConstant to a list of Exp.Exp"
-	input Env.Cache inCache;
-	input list<Exp.Exp> inExpList;
-	input list<Types.Properties> inPropertiesList;
-	input list<Types.Const> inConstList;
-	input Boolean inBoolean;
-	input Env.Env inEnv;
-	output Env.Cache outCache;
-	output list<Exp.Exp> outExpList;
-	output list<Types.Properties> outPropertiesList;
-algorithm
-  (outCache,outExpList,outPropertiesList) := 
-  matchcontinue(inCache,inExpList,inPropertiesList,inConstList,inBoolean,inEnv)
-    local
-      Env.Cache c;
-      list<Exp.Exp> ecdr;
-      list<Types.Properties> pcdr;
-      list<Types.Const> ccdr;
-      Boolean impl;
-      Env.Env env;
-      Exp.Exp e,e_1;
-      Types.Properties prop,prop_1;
-      Types.Const const;
-    case (c,{},{},{},impl,env) then (c,{},{});
-    case (c,e :: ecdr,prop :: pcdr, const :: ccdr,impl,env)
+        (c,Exp.PARTEVALFUNCTION(p,args,ty),prop,st);
+    case(_,_,_,_,_,_)
       equation
-        (c,e_1,prop_1) = cevalIfConstant(c,e,prop,const,impl,env);
-        (c,ecdr,pcdr) = cevalExpListIfConstant(c,ecdr,pcdr,ccdr,impl,env);
+        Debug.fprintln("failtrace","Static.elabPartEvalFunction failed");
       then
-        (c, e_1 :: ecdr, prop_1 :: pcdr);
+        fail();
   end matchcontinue;
-end cevalExpListIfConstant;
-
-// stefan
-// Use MetaUtil.generateFuncNameSuffix instead
-// Pass the unelaborated arguments to it as parameters
-/*protected function generateFuncNameSuffix
-"function: generateFuncNameSuffix
-	Generates a unique function name using the arg names and their values"
-	input list<String> inStringList;
-	input list<Exp.Exp> inExpExpList;
-	output String outString;
-algorithm
-  outString := matchcontinue (inStringList,inExpExpList)
-    local
-      String s;
-      list<String> scdr;
-      Exp.Exp e;
-      list<Exp.Exp> ecdr;
-    case ({},ecdr) then Exp.printExpListStrNoSpace(ecdr);
-    case (s :: scdr, e :: ecdr)
-      local
-        String s1,s2,s3;
-      equation
-        s1 = Exp.printExpStr(e);
-        s2 = stringAppend(s,s1);
-        s3 = generateFuncNameSuffix(scdr,ecdr);
-      then
-        stringAppend(s2,s3);
-  end matchcontinue;
-end generateFuncNameSuffix;*/
+end elabPartEvalFunction;
 
 protected function elabArray "function: elabArray 
  
