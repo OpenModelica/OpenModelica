@@ -49,6 +49,7 @@ public import SCode;
 public import Util;
 public import Algorithm;
 public import Types;
+public import Values;
 
 type Ident = String;
 
@@ -61,8 +62,337 @@ public function inlineCalls
 	input DAELow.DAELow inDAELow;
   output DAELow.DAELow outDAELow;
 algorithm
-  outDAELow := inDAELow;
+  outDAELow := matchcontinue(inElementList,inDAELow)
+    local
+      list<DAE.Element> fns;
+      DAELow.Variables orderedVars;
+      DAELow.Variables knownVars;
+      DAELow.Variables externalObjects;
+      DAELow.EquationArray orderedEqs;
+      DAELow.EquationArray removedEqs;
+      DAELow.EquationArray initialEqs;
+      DAELow.MultiDimEquation[:] arrayEqs;
+      list<DAELow.MultiDimEquation> mdelst;
+      Algorithm.Algorithm[:] algorithms;
+      list<Algorithm.Algorithm> alglst;
+      DAELow.EventInfo eventInfo;
+      DAELow.ExternalObjectClasses extObjClasses;
+    case(fns,DAELow.DAELOW(orderedVars,knownVars,externalObjects,orderedEqs,removedEqs,initialEqs,arrayEqs,algorithms,eventInfo,extObjClasses))
+      equation
+        orderedVars = inlineVariables(orderedVars,fns);
+        knownVars = inlineVariables(knownVars,fns);
+        externalObjects = inlineVariables(externalObjects,fns);
+        orderedEqs = inlineEquationArray(orderedEqs,fns);
+        removedEqs = inlineEquationArray(removedEqs,fns);
+        initialEqs = inlineEquationArray(initialEqs,fns);
+        mdelst = Util.listMap1(arrayList(arrayEqs),inlineMultiDimEqs,fns);
+        arrayEqs = listArray(mdelst);
+        alglst = Util.listMap1(arrayList(algorithms),inlineAlgorithm,fns);
+        algorithms = listArray(alglst);
+        eventInfo = inlineEventInfo(eventInfo,fns);
+        extObjClasses = inlineExtObjClasses(extObjClasses,fns);
+      then
+        DAELow.DAELOW(orderedVars,knownVars,externalObjects,orderedEqs,removedEqs,initialEqs,arrayEqs,algorithms,eventInfo,extObjClasses);
+    case(_,_)
+      equation
+        Debug.fprintln("failtrace","Inline.inlineCalls failed");
+      then
+        fail();
+  end matchcontinue;
 end inlineCalls;
+
+protected function inlineEquationArray
+"function: inlineEquationArray
+	inlines function calls in an equation array"
+	input DAELow.EquationArray inEquationArray;
+	input list<DAE.Element> inElementList;
+	output DAELow.EquationArray outEquationArray;
+algorithm
+  outEquationArray := matchcontinue(inEquationArray,inElementList)
+    local
+      list<DAE.Element> fns;
+      Integer i1,i2;
+      Option<DAELow.Equation>[:] eqarr,eqarr_1;
+      list<Option<DAELow.Equation>> eqlst,eqlst_1;
+    case(DAELow.EQUATION_ARRAY(i1,i2,eqarr),fns)
+      equation
+        eqlst = arrayList(eqarr);
+        eqlst_1 = Util.listMap1(eqlst,inlineEqOpt,fns);
+        eqarr_1 = listArray(eqlst_1);
+      then
+        DAELow.EQUATION_ARRAY(i1,i2,eqarr_1);
+  end matchcontinue;
+end inlineEquationArray;
+
+protected function inlineEqOpt
+"function: inlineEqOpt
+	inlines function calls in equations"
+	input Option<DAELow.Equation> inEquationOption;
+	input list<DAE.Element> inElementList;
+	output Option<DAELow.Equation> outEquationOption;
+algorithm
+  outEquationOption := matchcontinue(inEquationOption,inElementList)
+    local
+      list<DAE.Element> fns;
+      Exp.Exp e,e_1,e1,e1_1,e2,e2_1;
+      Integer i;
+      list<Exp.Exp> explst,explst_1,explst1,explst1_1,explst2,explst2_1;
+      Exp.ComponentRef cref;
+      DAELow.WhenEquation weq,weq_1;
+    case(NONE,_) then NONE;
+    case(SOME(DAELow.EQUATION(e1,e2)),fns)
+      equation
+        e1_1 = inlineExp(e1,fns);
+        e2_1 = inlineExp(e2,fns);
+      then
+        SOME(DAELow.EQUATION(e1_1,e2_1));
+    case(SOME(DAELow.ARRAY_EQUATION(i,explst)),fns)
+      equation
+        explst_1 = Util.listMap1(explst,inlineExp,fns);
+      then
+        SOME(DAELow.ARRAY_EQUATION(i,explst_1));
+    case(SOME(DAELow.SOLVED_EQUATION(cref,e)),fns)
+      equation
+        e_1 = inlineExp(e,fns);
+      then
+        SOME(DAELow.SOLVED_EQUATION(cref,e_1));
+    case(SOME(DAELow.RESIDUAL_EQUATION(e)),fns)
+      equation
+        e_1 = inlineExp(e,fns);
+      then
+        SOME(DAELow.RESIDUAL_EQUATION(e_1));
+    case(SOME(DAELow.ALGORITHM(i,explst1,explst2)),fns)
+      equation
+        explst1_1 = Util.listMap1(explst1,inlineExp,fns);
+        explst2_1 = Util.listMap1(explst2,inlineExp,fns);
+      then
+        SOME(DAELow.ALGORITHM(i,explst1_1,explst2_1));
+    case(SOME(DAELow.WHEN_EQUATION(weq)),fns)
+      equation
+        weq_1 = inlineWhenEq(weq,fns);
+      then
+        SOME(DAELow.WHEN_EQUATION(weq_1));
+  end matchcontinue;
+end inlineEqOpt;
+
+protected function inlineWhenEq
+"function: inlineWhenEq
+	inlines function calls in when equations"
+	input DAELow.WhenEquation inWhenEquation;
+	input list<DAE.Element> inElementList;
+	output DAELow.WhenEquation outWhenEquation;
+algorithm
+  outWhenEquation := matchcontinue(inWhenEquation,inElementList)
+    local
+      list<DAE.Element> fns;
+      Integer i;
+      Exp.ComponentRef cref;
+      Exp.Exp e,e_1;
+      DAELow.WhenEquation weq,weq_1;
+    case(DAELow.WHEN_EQ(i,cref,e,NONE),fns)
+      equation
+        e_1 = inlineExp(e,fns);
+      then
+        DAELow.WHEN_EQ(i,cref,e_1,NONE);
+    case(DAELow.WHEN_EQ(i,cref,e,SOME(weq)),fns)
+      equation
+        e_1 = inlineExp(e,fns);
+        weq_1 = inlineWhenEq(weq,fns);
+      then
+        DAELow.WHEN_EQ(i,cref,e_1,SOME(weq_1));
+  end matchcontinue;
+end inlineWhenEq;
+
+protected function inlineVariables
+"function: inlineVariables
+	inlines function calls in variables"
+	input DAELow.Variables inVariables;
+	input list<DAE.Element> inElementList;
+	output DAELow.Variables outVariables;
+algorithm
+  outVariables := matchcontinue(inVariables,inElementList)
+    local
+      list<DAE.Element> fns;
+      list<DAELow.CrefIndex>[:] crefind;
+      list<DAELow.StringIndex>[:] strind;
+      Integer i1,i2,i3,i4;
+      Option<DAELow.Var>[:] vararr,vararr_1;
+      list<Option<DAELow.Var>> varlst,varlst_1;
+    case(DAELow.VARIABLES(crefind,strind,DAELow.VARIABLE_ARRAY(i3,i4,vararr),i1,i2),fns)
+      equation
+        varlst = arrayList(vararr);
+        varlst_1 = Util.listMap1(varlst,inlineVarOpt,fns);
+        vararr_1 = listArray(varlst_1);
+      then
+        DAELow.VARIABLES(crefind,strind,DAELow.VARIABLE_ARRAY(i3,i4,vararr_1),i1,i2);
+  end matchcontinue;
+end inlineVariables;
+
+protected function inlineVarOpt
+"functio: inlineVarOpt
+	inlines calls in a variable option"
+	input Option<DAELow.Var> inVarOption;
+	input list<DAE.Element> inElementList;
+	output Option<DAELow.Var> outVarOption;
+algorithm
+  outVarOption := matchcontinue(inVarOption,inElementList)
+    local
+      list<DAE.Element> fns;
+      Exp.ComponentRef varName;
+      DAELow.VarKind varKind;
+      DAE.VarDirection varDirection;
+      DAE.Type varType;
+      Exp.Exp e,e_1;
+      Option<Values.Value> bindValue;
+      DAE.InstDims arrayDim;
+      Integer index;
+      Exp.ComponentRef origVarName;
+      list<Absyn.Path> className;
+      Option<DAE.VariableAttributes> values;
+      Option<SCode.Comment> comment;
+      DAE.Flow flowPrefix;
+      DAE.Stream streamPrefix;
+      Option<DAELow.Var> var;
+    case(NONE,_) then NONE;
+    case(SOME(DAELow.VAR(varName,varKind,varDirection,varType,SOME(e),bindValue,arrayDim,index,origVarName,className,values,comment,flowPrefix,streamPrefix)),fns)
+      equation
+        e_1 = inlineExp(e,fns);
+      then
+        SOME(DAELow.VAR(varName,varKind,varDirection,varType,SOME(e_1),bindValue,arrayDim,index,origVarName,className,values,comment,flowPrefix,streamPrefix));
+    case(var,_) then var;
+  end matchcontinue;
+end inlineVarOpt;
+
+protected function inlineMultiDimEqs
+"function: inlineMultiDimEqs
+	inlines function calls in multi dim equations"
+	input DAELow.MultiDimEquation inMultiDimEquation;
+	input list<DAE.Element> inElementList;
+	output DAELow.MultiDimEquation outMultiDimEquation;
+algorithm
+  outMultiDimEquation := matchcontinue(inMultiDimEquation,inElementList)
+    local
+      list<DAE.Element> fns;
+      list<Integer> ilst;
+      Exp.Exp e1,e1_1,e2,e2_1;
+    case(DAELow.MULTIDIM_EQUATION(ilst,e1,e2),fns)
+      equation
+        e1_1 = inlineExp(e1,fns);
+        e2_1 = inlineExp(e2,fns);
+      then
+        DAELow.MULTIDIM_EQUATION(ilst,e1_1,e2_1);
+  end matchcontinue;
+end inlineMultiDimEqs;
+
+protected function inlineEventInfo
+"function: inlineEventInfo
+	inlines function calls in event info"
+	input DAELow.EventInfo inEventInfo;
+	input list<DAE.Element> inElementList;
+	output DAELow.EventInfo outEventInfo;
+algorithm
+  outEventInfo := matchcontinue(inEventInfo,inElementList)
+    local
+      list<DAE.Element> fns;
+      list<DAELow.WhenClause> wclst,wclst_1;
+      list<DAELow.ZeroCrossing> zclst,zclst_1;
+    case(DAELow.EVENT_INFO(wclst,zclst),fns)
+      equation
+        wclst_1 = Util.listMap1(wclst,inlineWhenClause,fns);
+        zclst_1 = Util.listMap1(zclst,inlineZeroCrossing,fns);
+      then
+        DAELow.EVENT_INFO(wclst_1,zclst_1);
+  end matchcontinue;
+end inlineEventInfo;
+
+protected function inlineZeroCrossing
+"function: inlineZeroCrossing
+	inlines function calls in a zero crossing"
+	input DAELow.ZeroCrossing inZeroCrossing;
+	input list<DAE.Element> inElementList;
+	output DAELow.ZeroCrossing outZeroCrossing;
+algorithm
+  outZeroCrossing := matchcontinue(inZeroCrossing,inElementList)
+    local
+      list<DAE.Element> fns;
+      Exp.Exp e,e_1;
+      list<Integer> ilst1,ilst2;
+    case(DAELow.ZERO_CROSSING(e,ilst1,ilst2),fns)
+      equation
+        e_1 = inlineExp(e,fns);
+      then
+        DAELow.ZERO_CROSSING(e_1,ilst1,ilst2);
+  end matchcontinue;
+end inlineZeroCrossing;
+
+protected function inlineWhenClause
+"function: inlineWhenClause
+	inlines function calls in a when clause"
+	input DAELow.WhenClause inWhenClause;
+	input list<DAE.Element> inElementList;
+	output DAELow.WhenClause outWhenClause;
+algorithm
+  outWhenClause := matchcontinue(inWhenClause,inElementList)
+    local
+      list<DAE.Element> fns;
+      Exp.Exp e,e_1;
+      list<DAELow.ReinitStatement> rslst,rslst_1;
+      Option<Integer> io;
+    case(DAELow.WHEN_CLAUSE(e,rslst,io),fns)
+      equation
+        e_1 = inlineExp(e,fns);
+        rslst_1 = Util.listMap1(rslst,inlineReinitStmt,fns);
+      then
+        DAELow.WHEN_CLAUSE(e_1,rslst_1,io);
+  end matchcontinue;
+end inlineWhenClause;
+
+protected function inlineReinitStmt
+"function: inlineReinitStmt
+	inlines function calls in a reinit statement"
+	input DAELow.ReinitStatement inReinitStatement;
+	input list<DAE.Element> inElementList;
+	output DAELow.ReinitStatement outReinitStatement;
+algorithm
+  outReinitStatement := matchcontinue(inReinitStatement,inElementList)
+    local
+      list<DAE.Element> fns;
+      Exp.ComponentRef cref;
+      Exp.Exp e,e_1;
+      DAELow.ReinitStatement rs;
+    case(DAELow.REINIT(cref,e),fns)
+      equation
+        e_1 = inlineExp(e,fns);
+      then
+        DAELow.REINIT(cref,e_1);
+    case(rs,_) then rs;
+  end matchcontinue;
+end inlineReinitStmt;
+
+protected function inlineExtObjClasses
+"function: inlineExtObjClasses
+	inlines function calls in external object classes"
+	input DAELow.ExternalObjectClasses inExtObjClasses;
+	input list<DAE.Element> inElementList;
+	output DAELow.ExternalObjectClasses outExtObjClasses;
+algorithm
+  outExtObjClasses := matchcontinue(inExtObjClasses,inElementList)
+    local
+      list<DAE.Element> fns;
+      DAELow.ExternalObjectClasses cdr,cdr_1;
+      DAELow.ExternalObjectClass res;
+      Absyn.Path p;
+      DAE.Element e1,e1_1,e2,e2_1;
+    case({},_) then {};
+    case(DAELow.EXTOBJCLASS(p,e1,e2) :: cdr,fns)
+      equation
+        {e1_1,e2_1} = inlineDAEElements({e1,e2},fns);
+        res = DAELow.EXTOBJCLASS(p,e1_1,e2_1);
+        cdr_1 = inlineExtObjClasses(cdr,fns);
+      then
+        res :: cdr_1;
+  end matchcontinue;
+end inlineExtObjClasses;
 
 public function inlineCallsInFunctions
 "function: inlineCallsInFunctions
