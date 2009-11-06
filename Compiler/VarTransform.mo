@@ -1060,12 +1060,13 @@ algorithm
   outComponentRef:=
   matchcontinue (inVariableReplacements,inComponentRef)
     local
-      Exp.ComponentRef src;
+      Exp.ComponentRef src,src1;
       Exp.Exp dst;
       HashTable2.HashTable ht;
     case (REPLACEMENTS(hashTable=ht),src)
       equation 
-        dst = HashTable2.get(src,ht);        
+        src1 = Exp.convertEnumCref(src);
+        dst = HashTable2.get(src1,ht);        
       then
         dst;
   end matchcontinue;

@@ -54,6 +54,10 @@ void modelica_integer_to_modelica_string(modelica_string_t* dest,modelica_intege
 void modelica_boolean_to_modelica_string(modelica_string_t* dest,modelica_boolean b,
 modelica_integer minLen, modelica_boolean leftJustified, modelica_integer signDigits);
 
+void modelica_enumeration_to_modelica_string(modelica_string_t* dest,modelica_string_t* e,
+modelica_integer minLen, modelica_boolean leftJustified, modelica_integer signDigits);
+
+
 /* Frees memory*/
 void free_modelica_string(modelica_string_t*);
 

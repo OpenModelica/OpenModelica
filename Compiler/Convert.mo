@@ -309,7 +309,8 @@ algorithm
  		case (DAE.INT()) equation then Exp.INTEXP();
     case (DAE.BOOL()) equation then Exp.BOOLEXP();
     case (DAE.STRING()) equation then Exp.STRINGEXP();
-    case (DAE.ENUM()) equation then Exp.ENUMEXP();
+    case (DAE.ENUMERATION(_)) equation then Exp.ENUMEXP();
+//    case (DAE.ENUM()) equation then Exp.ENUMEXP();
     case (DAE.LIST()) equation then Exp.LISTEXP();
     case (DAE.METATUPLE()) equation then Exp.METATUPLEEXP();
     case (DAE.METAOPTION()) equation then Exp.METAOPTIONEXP();
@@ -1356,19 +1357,22 @@ algorithm
    	    ret = ((Types.T_UNIONTYPE(records),p));
    	  then ret;
 
-	  case ((Exp.T_ENUMTYPES(),p))
-    equation
-      ret = ((Types.T_ENUM(),p));
-    then ret;
+//	  case ((Exp.T_ENUMTYPES(),p))
+//    equation
+//      ret = ((Types.T_ENUMERATION(SOME(0),Absyn.IDENT(""),{},{}),p));
+//      ret = ((Types.T_ENUM(),p));
+//    then ret;
 
-	  case ((Exp.T_ENUMERATIONTYPES(lst1,lst2),p))
+	  case ((Exp.T_ENUMERATIONTYPES(idx,pp,lst1,lst2),p))
 	  local
+	    Option<Integer> idx;
+	    Absyn.Path pp;
 	    list<String> lst1 "names" ;
     	list<Exp.VarTypes> lst2 "varLst" ;
     	list<Types.Var> lst3;
     equation
       lst3 = fromVarTypesListToVarList(lst2,{});
-      ret = ((Types.T_ENUMERATION(lst1,lst3),p));
+      ret = ((Types.T_ENUMERATION(idx,pp,lst1,lst3),p));
     then ret;
 
 	  case ((Exp.T_ARRAYTYPES(arrDim,arrType),p))
@@ -1829,20 +1833,17 @@ algorithm
 	      ret = (Exp.T_UNIONTYPETYPES(records),p);
 	    then ret;
 	    
-	  case ((Types.T_ENUM(),p))
+	  case ((Types.T_ENUMERATION(idx,tp,lst1,lst2),p))
+//	  case ((Types.T_ENUM(),p))
 	  local
-    equation
-      ret = ((Exp.T_ENUMTYPES(),p));
-    then ret;
-
-	  case ((Types.T_ENUMERATION(lst1,lst2),p))
-	  local
+	    Option<Integer> idx;
+    	Absyn.Path tp;
 	    list<String> lst1 "names" ;
     	list<Types.Var> lst2 "varLst" ;
     	list<Exp.VarTypes> temp;
     equation
       temp = fromVarListToVarTypesList(lst2,{});
-      ret = ((Exp.T_ENUMERATIONTYPES(lst1,temp),p));
+      ret = ((Exp.T_ENUMERATIONTYPES(idx,tp,lst1,temp),p));
     then ret;
 
 	  case ((Types.T_ARRAY(arrDim,arrType),p))

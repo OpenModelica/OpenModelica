@@ -946,86 +946,29 @@ end listMap_2;
 function listMap_2_tail
 "@author adrpo
  this will work in O(2n) due to listReverse"
-
-
-
-
-
-
-
   replaceable type Type_a subtypeof Any;
-
-
-
-
-
-
   replaceable type Type_b subtypeof Any;
   replaceable type Type_c subtypeof Any;
   input  list<Type_a> inLst;
   input FuncTypeType_aToType_bType_c fn;
   input  list<Type_b> accumulator1;
   input  list<Type_c> accumulator2;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   output list<Type_b> outTypeBLst;
   output list<Type_c> outTypeCLst;
-
-
-
   partial function FuncTypeType_aToType_bType_c
     input Type_a inTypeA;
-
     output Type_b outTypeB;
     output Type_c outTypeC;
-
     replaceable type Type_b subtypeof Any;
     replaceable type Type_c subtypeof Any;
   end FuncTypeType_aToType_bType_c;
-
-
-
 algorithm
   outLst := matchcontinue(inLst, fn, accumulator1, accumulator2)
-
     local
       Type_a hd; Type_b hdChanged1; Type_c hdChanged2;
       list<Type_a> rest;  list<Type_b> l1, result1; list<Type_c> l2, result2;
     case ({}, _, l1, l2) then (listReverse(l1), listReverse(l2));
     case (hd::rest, fn, l1, l2)
-
-
-
-
-
-
-
       equation
         (hdChanged1, hdChanged2) = fn(hd);
         l1 = hdChanged1::l1;

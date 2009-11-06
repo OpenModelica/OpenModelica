@@ -4127,29 +4127,34 @@ algorithm
     case (Values.BOOL(boolean = _),Exp.LESS(ty = Exp.BOOL()),Values.BOOL(boolean = _)) then Values.BOOL(false); 
 
     /* Enumerations */
-    case (Values.ENUM(cr1,i1),Exp.LESS(ty = Exp.ENUM()),Values.ENUM(cr2,i2)) 
+    case (Values.ENUM(cr1,i1),Exp.LESS(ty = Exp.ENUMERATION(index = SOME(_))),Values.ENUM(cr2,i2)) 
+//    case (Values.ENUM(cr1,i1),Exp.LESS(ty = Exp.ENUM()),Values.ENUM(cr2,i2)) 
       equation         
         b = (i1 < i2);
       then
         Values.BOOL(b);
-    case (Values.ENUM(cr1,i1),Exp.LESSEQ(ty = Exp.ENUM()),Values.ENUM(cr2,i2))
+    case (Values.ENUM(cr1,i1),Exp.LESSEQ(ty = Exp.ENUMERATION(index = SOME(_))),Values.ENUM(cr2,i2))
+//    case (Values.ENUM(cr1,i1),Exp.LESSEQ(ty = Exp.ENUM()),Values.ENUM(cr2,i2))
       equation 
         b = (i1 <= i2);
       then
         Values.BOOL(b);
-    case (Values.ENUM(cr1,i1),Exp.GREATEREQ(ty = Exp.ENUM()),Values.ENUM(cr2,i2))
+    case (Values.ENUM(cr1,i1),Exp.GREATEREQ(ty = Exp.ENUMERATION(index = SOME(_))),Values.ENUM(cr2,i2))
+//    case (Values.ENUM(cr1,i1),Exp.GREATEREQ(ty = Exp.ENUM()),Values.ENUM(cr2,i2))
       equation 
         b = (i1 >= i2);
       then
         Values.BOOL(b);
-    case (Values.ENUM(cr1,i1),Exp.EQUAL(ty = Exp.ENUM()),Values.ENUM(cr2,i2))
+    case (Values.ENUM(cr1,i1),Exp.EQUAL(ty = Exp.ENUMERATION(index = SOME(_))),Values.ENUM(cr2,i2))
+//    case (Values.ENUM(cr1,i1),Exp.EQUAL(ty = Exp.ENUM()),Values.ENUM(cr2,i2))
       equation 
         ba = Exp.crefEqual(cr1, cr2); 
         bb = (i1 == i2);
         b = boolAnd(ba, bb);
       then
         Values.BOOL(b);
-    case (Values.ENUM(cr1,i1),Exp.NEQUAL(ty = Exp.ENUM()),Values.ENUM(cr2,i2))
+    case (Values.ENUM(cr1,i1),Exp.NEQUAL(ty = Exp.ENUMERATION(index = SOME(_))),Values.ENUM(cr2,i2))
+//    case (Values.ENUM(cr1,i1),Exp.NEQUAL(ty = Exp.ENUM()),Values.ENUM(cr2,i2))
       equation
         ba = boolNot(Exp.crefEqual(cr1, cr2));
         bb = (i1 <> i2);
@@ -4364,17 +4369,22 @@ algorithm
     /* Special rule for enumerations, the cr does not have a value since it -is- a value.
      * This is ONLY used when we don't have an environment. 
      */
-    case (cache,env as {},c as Exp.CREF_QUAL(_,expTy as Exp.ENUM(),_,_),impl,msg)  
+    case (cache,env as {},c as Exp.CREF_QUAL(_,expTy as Exp.ENUMERATION(_,_,_,_),_,Exp.CREF_IDENT(_,Exp.ENUMERATION(SOME(index),_,_,_),_)),impl,msg)
+      local Integer index;          
+//    case (cache,env as {},c as Exp.CREF_QUAL(_,expTy as Exp.ENUM(),_,_),impl,msg)  
       then
-        (cache,Values.ENUM(c, 0));
-    
-    /* Search in env for binding, special rule for enumerations, the cr does not have a value since it -is- a value. */
-    case (cache,env,c,impl,msg)  
-      equation 
-        (cache,attr,ty as (Types.T_ENUM(),_),binding,_,_) = Lookup.lookupVar(cache, env, c);
+        (cache,Values.ENUM(c, index));
+    case (cache,env as {},c as Exp.CREF_IDENT(_,Exp.ENUMERATION(SOME(index),_,_,_),_),impl,msg)
+      local Integer index;
+//    case (cache,env as {},c as Exp.CREF_QUAL(_,expTy as Exp.ENUM(),_,_),impl,msg)  
       then
-        (cache,Values.ENUM(c, 0));
-    
+        (cache,Values.ENUM(c, index));    
+    /* Enumerationtyp -> no lookup necesery */
+    case (cache,env,c as Exp.CREF_QUAL(_,expTy as Exp.ENUMERATION(_,_,_,_),_,Exp.CREF_IDENT(_,Exp.ENUMERATION(SOME(index),_,_,_),_)),impl,msg)
+      local Integer index;  
+      then
+        (cache,Values.ENUM(c, index));
+   
     /* Search in env for binding. */
     case (cache,env,c,impl,msg)  
       equation 

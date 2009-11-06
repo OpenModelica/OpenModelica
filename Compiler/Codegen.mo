@@ -1775,12 +1775,13 @@ protected function daeExpType
 algorithm
   outType:=
   matchcontinue (inType)
-    local String name; Absyn.Path path; list<DAE.Var> varLst;
+    local String name; Absyn.Path path; list<DAE.Var> varLst; list<String> strLst;
     case DAE.INT() then Exp.INT();
     case DAE.REAL() then Exp.REAL();
     case DAE.STRING() then Exp.STRING();
     case DAE.BOOL() then Exp.BOOL();
-    case DAE.ENUM() then Exp.ENUM();
+    case DAE.ENUMERATION(strLst) then Exp.ENUMERATION(NONE(),Absyn.IDENT(""),strLst,{});
+//    case DAE.ENUM() then Exp.ENUM();
     case DAE.LIST() then Exp.T_LIST(Exp.OTHER()); // MetaModelica list
     case DAE.COMPLEX(path,varLst)
       local
@@ -1844,7 +1845,8 @@ algorithm
     case Exp.STRING() then "string";
     case Exp.BOOL() then "boolean";
     case Exp.OTHER() then "complex"; // Only use is currently for external objects. Perhaps in future also records.
-    case Exp.ENUM() then "ENUM_NOT_IMPLEMENTED";
+    case Exp.ENUMERATION(_,_,_,_) then "enumeration";
+//    case Exp.ENUM() then "ENUM_NOT_IMPLEMENTED";
     case Exp.T_FUNCTION_REFERENCE_VAR() then "fnptr";
     case Exp.T_FUNCTION_REFERENCE_FUNC() then "fnptr";
     case Exp.T_ARRAY(ty = t)
@@ -2022,7 +2024,7 @@ algorithm
     case ((Types.T_REAL(varLstReal = _),_)) then "real";
     case ((Types.T_STRING(varLstString = _),_)) then "string";
     case ((Types.T_BOOL(varLstBool = _),_)) then "boolean";
-    case ((Types.T_ENUM(),_)) then "T_ENUM_NOT_IMPLEMENTED";
+//    case ((Types.T_ENUM(),_)) then "T_ENUM_NOT_IMPLEMENTED";
   end matchcontinue;
 end generateTypeInternalNamepart;
 
@@ -6277,6 +6279,19 @@ algorithm
       Lib id,cref_str,cref_str_1;
       list<Exp.Subscript> subs,cref_subs,subs_1;
       Exp.ComponentRef cref;
+    case Exp.CREF_IDENT(ident = id, identType =  Exp.ENUMERATION(_,_,_,_), subscriptLst = subs)
+      local list<String> strlst, strlst1; 
+      equation
+        // no dots
+        cref_str_1 = Util.stringReplaceChar(id, ".", "_");
+        then
+          (cref_str_1,subs);      
+    case Exp.CREF_QUAL(id, _, {}, Exp.CREF_IDENT(id1, Exp.ENUMERATION(_,_,_,_), {}))
+      local Lib id1;
+      equation
+        cref_str = Util.stringAppendList({id, "_",id1});
+        then
+          (cref_str,{});        
     case Exp.CREF_IDENT(ident = id,subscriptLst = subs) then (id,subs);
     case Exp.CREF_QUAL(ident = id,subscriptLst = subs,componentRef = cref)
       equation
@@ -6455,6 +6470,14 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);
+    case (e1,Exp.LESS(ty = Exp.ENUMERATION(_,_,_,_)),e2,tnr,context)
+      equation
+        (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
+        (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
+        var = Util.stringAppendList({"(",var1," < ",var2,")"});
+        cfn = cMergeFn(cfn1, cfn2);
+      then
+        (cfn,var,tnr2);        
     case (e1,Exp.GREATER(ty = Exp.BOOL()),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
@@ -6484,6 +6507,14 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);
+    case (e1,Exp.GREATER(ty = Exp.ENUMERATION(_,_,_,_)),e2,tnr,context)
+      equation
+        (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
+        (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
+        var = Util.stringAppendList({"(",var1," > ",var2,")"});
+        cfn = cMergeFn(cfn1, cfn2);
+      then
+        (cfn,var,tnr2);        
     case (e1,Exp.LESSEQ(ty = Exp.BOOL()),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
@@ -6513,6 +6544,14 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);
+    case (e1,Exp.LESSEQ(ty = Exp.ENUMERATION(_,_,_,_)),e2,tnr,context)
+      equation
+        (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
+        (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
+        var = Util.stringAppendList({"(",var1," <= ",var2,")"});
+        cfn = cMergeFn(cfn1, cfn2);
+      then
+        (cfn,var,tnr2);        
     case (e1,Exp.GREATEREQ(ty = Exp.BOOL()),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
@@ -6542,6 +6581,14 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);
+    case (e1,Exp.GREATEREQ(ty = Exp.ENUMERATION(_,_,_,_)),e2,tnr,context)
+      equation
+        (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
+        (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
+        var = Util.stringAppendList({"(",var1," >= ",var2,")"});
+        cfn = cMergeFn(cfn1, cfn2);
+      then
+        (cfn,var,tnr2);        
     case (e1,Exp.EQUAL(ty = Exp.BOOL()),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
@@ -6588,6 +6635,15 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);
+    case (e1,Exp.EQUAL(ty = Exp.ENUMERATION(_,_,_,_)),e2,tnr,context)
+//    case (e1,Exp.EQUAL(ty = Exp.ENUM()),e2,tnr,context)
+      equation
+        (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
+        (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
+        var = Util.stringAppendList({"(",var1," == ",var2,")"});
+        cfn = cMergeFn(cfn1, cfn2);
+      then
+        (cfn,var,tnr2);         
     case (e1,Exp.NEQUAL(ty = Exp.BOOL()),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
@@ -6634,6 +6690,15 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);
+    case (e1,Exp.NEQUAL(ty = Exp.ENUMERATION(_,_,_,_)),e2,tnr,context)
+      equation
+        true = RTOpts.acceptMetaModelicaGrammar();
+        (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
+        (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
+        var = Util.stringAppendList({"(",var1," != ",var2,")"});
+        cfn = cMergeFn(cfn1, cfn2);
+      then
+        (cfn,var,tnr);        
     case (_,_,_,_,_)
       equation
         Debug.fprint("failtrace", "# generate_relation failed\n");

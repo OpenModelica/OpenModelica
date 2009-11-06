@@ -1442,7 +1442,8 @@ algorithm
       then
         res;
         /* enumerations */
-    case (Exp.CREF(Exp.CREF_IDENT(_, Exp.ENUM(), _),_),vars,knvars) then true;
+    case (Exp.CREF(Exp.CREF_IDENT(_, Exp.ENUMERATION(_,_,_,_), _),_),vars,knvars) then true;
+//    case (Exp.CREF(Exp.CREF_IDENT(_, Exp.ENUM(), _),_),vars,knvars) then true;
               
     case (Exp.BINARY(exp1 = e1,operator = op,exp2 = e2),vars,knvars)
       equation
@@ -2702,7 +2703,8 @@ algorithm
     case (VAR(varName = a,
               varKind = b,
               varDirection = c,
-              varType = DAE.ENUM(),
+              varType = DAE.ENUMERATION(_),
+//              varType = DAE.ENUM(),
               bindExp = f,
               bindValue = g,
               arryDim = h,
@@ -6536,7 +6538,7 @@ algorithm
       Value hval,hashindx,indx,indx_1,bsize,n;
       list<CrefIndex> indexes;
       Var v;
-      Exp.ComponentRef cr2,cr;
+      Exp.ComponentRef cr3, cr2,cr;
       DAE.Flow flowPrefix;
       list<CrefIndex>[:] hashvec;
       list<StringIndex>[:] oldhashvec;
@@ -6544,15 +6546,16 @@ algorithm
       String str;
     case (cr,VARIABLES(crefIdxLstArr = hashvec,strIdxLstArr = oldhashvec,varArr = varr,bucketSize = bsize,numberOfVars = n))
       equation
-        hval = hashComponentRef(cr);
+        cr3 = Exp.convertEnumCref(cr);
+        hval = hashComponentRef(cr3);
         hashindx = intMod(hval, bsize);
         indexes = hashvec[hashindx + 1];
-        indx = getVar3(cr, indexes);
+        indx = getVar3(cr3, indexes);
         ((v as VAR(cr2,_,_,_,_,_,_,_,_,_,_,_,flowPrefix,_))) = vararrayNth(varr, indx);
-        true = Exp.crefEqual(cr, cr2);
+        true = Exp.crefEqual(cr3, cr2);
         indx_1 = indx + 1;
       then
-        (v,indx_1);
+        (v,indx_1);       
   end matchcontinue;
 end getVar2;
 
@@ -12582,8 +12585,11 @@ algorithm
     case(DAE.INT()) then Exp.INT();
     case(DAE.BOOL()) then Exp.BOOL();
     case(DAE.STRING()) then Exp.STRING();
-    case(DAE.ENUM()) then Exp.ENUM();
-    case(DAE.ENUMERATION(_)) then Exp.OTHER();
+    case(DAE.ENUMERATION(strLst)) 
+      local list<String> strLst;
+     then Exp.ENUMERATION(NONE(),Absyn.IDENT(""),strLst,{});
+//    case(DAE.ENUM()) then Exp.ENUM();
+//    case(DAE.ENUMERATION(_)) then Exp.OTHER();
     case(DAE.EXT_OBJECT(_)) then Exp.OTHER();
   end matchcontinue;
 end makeExpType;
@@ -14091,17 +14097,21 @@ algorithm
       String rkeystr,keystr;
       Option<BinTree> left,right;
       BinTree t_1,t,right_1,left_1;
-    case (TREENODE(value = NONE,leftSubTree = NONE,rightSubTree = NONE),key,value) then TREENODE(SOME(TREEVALUE(key,value)),NONE,NONE);
+    case (TREENODE(value = NONE,leftSubTree = NONE,rightSubTree = NONE),key,value)
+      local Exp.ComponentRef nkey;
+      equation
+        nkey = Exp.convertEnumCref(key);
+      then TREENODE(SOME(TREEVALUE(nkey,value)),NONE,NONE);
     case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),leftSubTree = left,rightSubTree = right),key,value)
       equation
         rkeystr = Exp.printComponentRefStr(rkey) "Replace this node" ;
-        keystr = Exp.printComponentRefStr(key);
+        keystr = Exp.printComponentRefStr(Exp.convertEnumCref(key));
         0 = System.strcmp(rkeystr, keystr);
       then
         TREENODE(SOME(TREEVALUE(rkey,value)),left,right);
     case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),leftSubTree = left,rightSubTree = (right as SOME(t))),key,value)
       equation
-        keystr = Exp.printComponentRefStr(key) "Insert to right subtree" ;
+        keystr = Exp.printComponentRefStr(Exp.convertEnumCref(key)) "Insert to right subtree" ;
         rkeystr = Exp.printComponentRefStr(rkey);
         cmpval = System.strcmp(rkeystr, keystr);
         (cmpval > 0) = true;
@@ -14110,7 +14120,7 @@ algorithm
         TREENODE(SOME(TREEVALUE(rkey,rval)),left,SOME(t_1));
     case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),leftSubTree = left,rightSubTree = (right as NONE)),key,value)
       equation
-        keystr = Exp.printComponentRefStr(key) "Insert to right node" ;
+        keystr = Exp.printComponentRefStr(Exp.convertEnumCref(key)) "Insert to right node" ;
         rkeystr = Exp.printComponentRefStr(rkey);
         cmpval = System.strcmp(rkeystr, keystr);
         (cmpval > 0) = true;
@@ -14119,7 +14129,7 @@ algorithm
         TREENODE(SOME(TREEVALUE(rkey,rval)),left,SOME(right_1));
     case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),leftSubTree = (left as SOME(t)),rightSubTree = right),key,value)
       equation
-        keystr = Exp.printComponentRefStr(key) "Insert to left subtree" ;
+        keystr = Exp.printComponentRefStr(Exp.convertEnumCref(key)) "Insert to left subtree" ;
         rkeystr = Exp.printComponentRefStr(rkey);
         cmpval = System.strcmp(rkeystr, keystr);
         (cmpval > 0) = false;
@@ -14128,7 +14138,7 @@ algorithm
         TREENODE(SOME(TREEVALUE(rkey,rval)),SOME(t_1),right);
     case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),leftSubTree = (left as NONE),rightSubTree = right),key,value)
       equation
-        keystr = Exp.printComponentRefStr(key) "Insert to left node" ;
+        keystr = Exp.printComponentRefStr(Exp.convertEnumCref(key)) "Insert to left node" ;
         rkeystr = Exp.printComponentRefStr(rkey);
         cmpval = System.strcmp(rkeystr, keystr);
         (cmpval > 0) = false;

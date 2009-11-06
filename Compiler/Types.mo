@@ -123,11 +123,13 @@ uniontype TType "-TType contains the actual type"
     list<Var> varLstBool "varLstBool" ;
   end T_BOOL;
 
-  record T_ENUM end T_ENUM;
+//  record T_ENUM end T_ENUM;
 
   record T_ENUMERATION
+    Option<Integer> index "the enumeration value index, SOME for element, NONE for type" ;
+    Absyn.Path path "enumeration path" ;
     list<String> names "names" ;
-    list<Var> varLst "varLst" ;
+    list<Var> varLst "varLst, empty for elements" ;
   end T_ENUMERATION;
 
   record T_ARRAY
@@ -596,9 +598,18 @@ algorithm
       equation 
         ty = (T_STRING({}),NONE);
         then ty;
-    case(Exp.ENUM) 
+    case(Exp.ENUMERATION(index,path,names,evars)) 
+      local
+        Option<Integer> index;
+        Absyn.Path path;
+        list<String> names;
+        list<Exp.Var> evars;
+        list<Var> tvars;
+//    case(Exp.ENUM) 
       equation 
-        ty = (T_ENUM,NONE);
+        tvars = Util.listMap(evars, convertFromExpToTypesVar);
+        ty = (T_ENUMERATION(index,path,names,tvars),NONE());
+//        ty = (T_ENUM,NONE);
         then ty;
     case(Exp.T_ARRAY(at,SOME(dim)::ad))
       local Exp.Type at;
@@ -1291,8 +1302,13 @@ algorithm
           (NAMEMOD(id,
           MOD(false,Absyn.NON_EACH(),{},
           SOME(TYPED(exp,SOME(v),PROP(ty,C_VAR()))))) :: res),NONE);
-          
-    case ((v as Values.ENUM(cref, _)) :: rest,(id :: ids))
+
+    case ((v as Values.ENUM(cref as Exp.CREF_IDENT(_, t as Exp.ENUMERATION(oi,cname,names,_), _), i)) :: rest,(id :: ids))
+      local 
+        Exp.Type t;
+        Option<Integer> oi;
+        list<String> names;
+//    case ((v as Values.ENUM(cref , i)) :: rest,(id :: ids))
       equation 
         MOD(_,_,res,_) = valuesToMods(rest, ids);
       then
@@ -1300,8 +1316,28 @@ algorithm
           (NAMEMOD(id,
           MOD(false,Absyn.NON_EACH(),{},
           SOME(
-          TYPED(Exp.CREF(cref,Exp.ENUM()),SOME(v),
-          PROP((T_ENUM(),NONE),C_CONST()))))) :: res),NONE);
+          TYPED(Exp.CREF(cref,t),SOME(v),
+//          TYPED(Exp.CREF(cref,Exp.ENUM()),SOME(v),
+          PROP((T_ENUMERATION(oi,cname,names,{}),NONE),C_CONST()))))) :: res),NONE); 
+//          PROP((T_ENUM(),NONE),C_CONST()))))) :: res),NONE);
+          
+    case ((v as Values.ENUM(cref as Exp.CREF_QUAL(_, t as Exp.ENUMERATION(oi,cname,names,_), _, _), i)) :: rest,(id :: ids))
+      local 
+        Exp.Type t;
+        Option<Integer> oi;
+        list<String> names;
+//    case ((v as Values.ENUM(cref , i)) :: rest,(id :: ids))
+      equation 
+        MOD(_,_,res,_) = valuesToMods(rest, ids);
+      then
+        MOD(false,Absyn.NON_EACH(),
+          (NAMEMOD(id,
+          MOD(false,Absyn.NON_EACH(),{},
+          SOME(
+          TYPED(Exp.CREF(cref,t),SOME(v),
+//          TYPED(Exp.CREF(cref,Exp.ENUM()),SOME(v),
+          PROP((T_ENUMERATION(oi,cname,names,{}),NONE),C_CONST()))))) :: res),NONE);
+//          PROP((T_ENUM(),NONE),C_CONST()))))) :: res),NONE);
                     
     case ((v as Values.ARRAY(vals)) :: rest,(id :: ids))
       equation 
@@ -1385,7 +1421,8 @@ algorithm
     case (Values.REAL(real = _)) then ((T_REAL({}),NONE)); 
     case (Values.STRING(string = _)) then ((T_STRING({}),NONE)); 
     case (Values.BOOL(boolean = _)) then ((T_BOOL({}),NONE)); 
-    case (Values.ENUM(value = _)) then ((T_ENUM(),NONE)); 
+    case (Values.ENUM(value = _)) then ((T_ENUMERATION(SOME(0),Absyn.IDENT(""),{},{}),NONE)); 
+//    case (Values.ENUM(value = _)) then ((T_ENUM(),NONE)); 
     case ((w as Values.ARRAY(valueLst = (v :: vs))))
       equation 
         tp = typeOfValue(v);
@@ -1467,7 +1504,8 @@ algorithm
     case ((T_REAL(varLstReal = _),_)) then true; 
     case ((T_STRING(varLstString = _),_)) then true; 
     case ((T_BOOL(varLstBool = _),_)) then true; 
-    case ((T_ENUM(),_)) then true; 
+    case ((T_ENUMERATION(index = SOME(_)),_)) then true; 
+//    case ((T_ENUM(),_)) then true; 
     case ((T_ARRAY(arrayDim = _),_)) then false; 
     case ((T_COMPLEX(complexClassType = _),_)) then false; 
     case ((T_ENUMERATION(names = _),_)) then false; 
@@ -1614,12 +1652,16 @@ algorithm
     case ((T_REAL(varLstReal = _),_),(T_REAL(varLstReal = _),_)) then true; 
     case ((T_STRING(varLstString = _),_),(T_STRING(varLstString = _),_)) then true; 
     case ((T_BOOL(varLstBool = _),_),(T_BOOL(varLstBool = _),_)) then true; 
-    case ((T_ENUM(),_),(T_ENUM(),_)) then true; 
-    case ((T_ENUMERATION(names = (l1 :: rest1),varLst = vl1),p1),(T_ENUMERATION(names = (l2 :: rest2),varLst = vl2),p2))
+    /* TODO JKF check if this is correct */
+//    case ((T_ENUM(),_),(T_ENUM(),_)) then true; 
+    case ((T_ENUMERATION(index=oi,path=tp,names = (l1 :: rest1),varLst = vl1),p1),(T_ENUMERATION(index=oi_1,path=tp_1,names = (l2 :: rest2),varLst = vl2),p2))
+      local 
+        Option<Integer> oi,oi_1;
+        Absyn.Path tp,tp_1;
       equation 
         equality(l2 = l1);
-        res = subtype((T_ENUMERATION(rest1,vl1),p1), 
-          (T_ENUMERATION(rest2,vl2),p2));
+        res = subtype((T_ENUMERATION(oi,tp,rest1,vl1),p1), 
+          (T_ENUMERATION(oi_1,tp_1,rest2,vl2),p2));
       then
         res;
     case ((T_ENUMERATION(names = {}),_),(T_ENUMERATION(names = _),_)) then true; 
@@ -1897,23 +1939,41 @@ algorithm
         v = lookupComponent2(cs, id);
       then
         v;
-    case ((T_ENUM(),_),"quantity") then VAR("quantity",
+   case ((T_ENUMERATION(SOME(_),_,_,_),_),"quantity") then VAR("quantity",
           ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,(T_STRING({}),NONE),VALBOUND(Values.STRING("")));  
 
-    case ((T_ENUM(),_),"min") then VAR("min",ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
-          false,(T_ENUM(),NONE),UNBOUND());  /* Should be bound to the first element of
+    case ((T_ENUMERATION(SOME(_),_,_,_),_),"min") then VAR("min",ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
+          false,(T_ENUMERATION(SOME(1),Absyn.IDENT(""),{"min,max"},{}),NONE),UNBOUND());  /* Should be bound to the first element of
   T_ENUMERATION list higher up in the call chain */ 
-    case ((T_ENUM(),_),"max") then VAR("max",ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
-          false,(T_ENUM(),NONE),UNBOUND());  /* Should be bound to the last element of 
+    case ((T_ENUMERATION(SOME(_),_,_,_),_),"max") then VAR("max",ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
+          false,(T_ENUMERATION(SOME(2),Absyn.IDENT(""),{"min,max"},{}),NONE),UNBOUND());  /* Should be bound to the last element of 
   T_ENUMERATION list higher up in the call chain */ 
-    case ((T_ENUM(),_),"start") then VAR("start",ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
+    case ((T_ENUMERATION(SOME(_),_,_,_),_),"start") then VAR("start",ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
           false,(T_BOOL({}),NONE),UNBOUND());  /* Should be bound to the last element of 
   T_ENUMERATION list higher up in the call chain */ 
-    case ((T_ENUM(),_),"fixed") then VAR("fixed",ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
+    case ((T_ENUMERATION(SOME(_),_,_,_),_),"fixed") then VAR("fixed",ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
           false,(T_BOOL({}),NONE),UNBOUND());  /* Needs to be set to true/false higher up the call chain
   depending on variability of instance */ 
-    case ((T_ENUM(),_),"enable") then VAR("enable",
+    case ((T_ENUMERATION(SOME(_),_,_,_),_),"enable") then VAR("enable",
           ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,(T_BOOL({}),NONE),VALBOUND(Values.BOOL(true))); 
+        
+//    case ((T_ENUM(),_),"quantity") then VAR("quantity",
+//          ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,(T_STRING({}),NONE),VALBOUND(Values.STRING("")));  
+
+//    case ((T_ENUM(),_),"min") then VAR("min",ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
+//          false,(T_ENUM(),NONE),UNBOUND());  /* Should be bound to the first element of
+//  T_ENUMERATION list higher up in the call chain */ 
+//    case ((T_ENUM(),_),"max") then VAR("max",ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
+//          false,(T_ENUM(),NONE),UNBOUND());  /* Should be bound to the last element of 
+//  T_ENUMERATION list higher up in the call chain */ 
+//    case ((T_ENUM(),_),"start") then VAR("start",ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
+//          false,(T_BOOL({}),NONE),UNBOUND());  /* Should be bound to the last element of 
+//  T_ENUMERATION list higher up in the call chain */ 
+//    case ((T_ENUM(),_),"fixed") then VAR("fixed",ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
+//          false,(T_BOOL({}),NONE),UNBOUND());  /* Needs to be set to true/false higher up the call chain
+//  depending on variability of instance */ 
+//    case ((T_ENUM(),_),"enable") then VAR("enable",
+//          ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,(T_BOOL({}),NONE),VALBOUND(Values.BOOL(true))); 
   end matchcontinue;
 end lookupInBuiltin;
 
@@ -2211,6 +2271,20 @@ algorithm
       s1 = Util.stringDelimitList(Util.listMap(vs, unparseVarAttr),", ");
       s2 = "Boolean(" +& s1 +& ")";
     then s2;   
+        /* Enumeration Element */
+    case ((T_ENUMERATION(index = SOME(idx),path=p,names = l,varLst=vs),_))
+      local String s2;
+        Integer idx;
+        Absyn.Path p;
+      equation 
+        /* path */
+        s1 = Absyn.pathString(p);
+        /* element */ 
+        s2 = "element"; 
+        str = Util.stringAppendList({s1,".",s2});
+      then
+        "#T_ENUM#";
+      /* Enumeration Type */
     case ((T_ENUMERATION(names = l,varLst=vs),_))
       local String s2;
       equation 
@@ -2331,7 +2405,7 @@ algorithm
     case ((T_NORETCALL(),_)) then "#NORETCALL#";
     case ((T_NOTYPE(),_)) then "#NOTYPE#"; 
     case ((T_ANYTYPE(anyClassType = _),_)) then "#ANYTYPE#"; 
-    case ((T_ENUM(),_)) then "#T_ENUM#";
+//    case ((T_ENUM(),_)) then "#T_ENUM#";
     case (ty) then "Internal error unparse_type: not implemented yet\n"; 
   end matchcontinue;
 end unparseType;
@@ -2425,7 +2499,8 @@ algorithm
         str = Util.stringAppendList({"Boolean(",s1,")"});
       then
        str;
-    case ((T_ENUM(),_))
+//    case ((T_ENUM(),_))
+    case ((T_ENUMERATION(index = SOME(_)),_))
       then
         "EnumType";
     case ((T_ENUMERATION(names = l,varLst = vars),_))
@@ -2800,15 +2875,16 @@ algorithm
   matchcontinue (inPath,inVarLst)
     local
       list<Ident> strs;
-      Absyn.Path p;
+      Absyn.Path p,tp;
       Ident name;
       list<Var> xs;
     case (p,(VAR(name = name) :: xs))
       equation 
-        ((T_ENUMERATION(strs,{}),_)) = makeEnumerationType(p, xs);
+        ((T_ENUMERATION(_,_,strs,{}),_)) = makeEnumerationType(p, xs);
       then
-        ((T_ENUMERATION((name :: strs),{}),SOME(p)));
-    case (p,{}) then ((T_ENUMERATION({},{}),SOME(p))); 
+//        ((T_ENUMERATION(NONE(),Absyn.IDENT(""),(name :: strs),{}),SOME(p)));
+        ((T_ENUMERATION(NONE(),p,(name :: strs),{}),SOME(p)));
+    case (p,{}) then ((T_ENUMERATION(NONE(),Absyn.IDENT(""),{},{}),SOME(p))); 
   end matchcontinue;
 end makeEnumerationType;
 
@@ -3586,7 +3662,18 @@ algorithm
     case ((T_REAL(varLstReal = _),_)) then Exp.REAL(); 
     case ((T_BOOL(varLstBool = _),_)) then Exp.BOOL(); 
     case ((T_STRING(varLstString = _),_)) then Exp.STRING(); 
-    case ((T_ENUM(),_)) then Exp.ENUM(); 
+    case ((T_ENUMERATION(index,path,names,varLst),_)) 
+      local
+        Option<Integer> index;
+        Absyn.Path path;
+        list<String> names;
+        list<Var> varLst;
+        list<Exp.Var> ecvl;
+      equation
+        ecvl = Util.listMap(varLst,convertFromTypesToExpVar);
+      then
+        Exp.ENUMERATION(index,path,names,ecvl);
+//    case ((T_ENUM(),_)) then Exp.ENUM(); 
     case ((t as (T_ARRAY(arrayDim = _),_)))
       equation 
         et = arrayElementType(t);
@@ -4043,8 +4130,12 @@ algorithm
         (Exp.TUPLE(elist_1),(T_TUPLE(tys_1),p2),polymorphicBindings);
         
         /* Enumeration */
-    case (exp,(T_ENUM(),_),(T_ENUMERATION(names = l,varLst = v),p2),polymorphicBindings,matchFunc)
-      then (exp,(T_ENUMERATION(l,v),p2),polymorphicBindings);
+    case (exp,(T_ENUMERATION(index=SOME(_)),_),(T_ENUMERATION(index=oi,path=tp,names = l,varLst = v),p2),polymorphicBindings,matchFunc)
+//    case (exp,(T_ENUM(),_),(T_ENUMERATION(names = l,varLst = v),p2),polymorphicBindings,matchFunc)
+      local 
+        Option<Integer> oi;
+        Absyn.Path tp;
+      then (exp,(T_ENUMERATION(oi,tp,l,v),p2),polymorphicBindings);
 
         /* Implicit conversion from Integer to Real */        
     case (e,(T_INTEGER(varLstInt = v),_),(T_REAL(varLstReal = _),p),polymorphicBindings,matchFunc)

@@ -3097,7 +3097,7 @@ algorithm
     case DAE.REAL()   then VARTYPE_REAL;
     case DAE.BOOL()   then VARTYPE_BOOLEAN;
     case DAE.STRING() then VARTYPE_STRING;
-    case DAE.ENUM()   then VARTYPE_ENUMERATION;
+//    case DAE.ENUM()   then VARTYPE_ENUMERATION;
 /*
     case RECORD(name = s1)
       equation
@@ -4056,5 +4056,21 @@ algorithm
   end matchcontinue;
 end unparseCommentOptionNoAnnotation;
 
+public function relopSymbolXML 
+"function: relopSymbol 
+  Return string representation of function operator."
+  input Exp.Operator inOperator;
+  output String outString;
+algorithm 
+  outString:=
+  matchcontinue (inOperator)
+    case (Exp.LESS(ty = _)) then " &lt "; 
+    case (Exp.LESSEQ(ty = _)) then " &le "; 
+    case (Exp.GREATER(ty = _)) then " &gt "; 
+    case (Exp.GREATEREQ(ty = _)) then " &ge "; 
+    case (Exp.EQUAL(ty = _)) then " == "; 
+    case (Exp.NEQUAL(ty = _)) then " &ne "; 
+  end matchcontinue;
+end relopSymbolXML;
 
 end XMLDump;

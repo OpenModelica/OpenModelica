@@ -55,6 +55,8 @@ public import Env;
 
 public type HelpVarInfo = tuple<Integer, Exp.Exp, Integer>; // helpvarindex, expression, whenclause index
 
+protected type EnumerationLst = list<tuple<String,list<String>>>; // List of Enumerations
+
 protected type CFunction = Codegen.CFunction;
 protected constant String TAB="    ";
 protected constant String stateNames="state_names" "TAB is four whitespaces" ;
@@ -184,7 +186,7 @@ algorithm
   _:=
   matchcontinue (inDAElist1,inDAELow2,inIntegerArray3,inIntegerArray4,inIncidenceMatrix5,inIncidenceMatrixT6,inIntegerLstLst7,inPath8,inString9,inString10,inString11)
     local
-      String cname,out_str,in_str,c_eventchecking,s_code2,s_code3,cglobal,coutput,cstate,c_ode,s_code,cwhen,
+      String cname,out_str,in_str,c_eventchecking,s_code2,s_code3,cglobal,cenum,coutput,cstate,c_ode,s_code,cwhen,
       	czerocross,res,filename,funcfilename,fileDir;
       String extObjInclude; list<String> extObjIncludes;
       list<list<Integer>> blt_states,blt_no_states,comps;
@@ -213,6 +215,7 @@ algorithm
         (s_code2,nres) = generateInitialValueCode2(dlow2,ass1,ass2);
         (s_code3) = generateInitialBoundParameterCode(dlow2);
         cglobal = generateGlobalData(class_, dlow2, n_o, n_i, n_h, nres,fileDir); // CHANGED!!!
+        cenum = generateEnumDefinitions(dlow2);
         coutput = generateComputeOutput(cname, dae, dlow2, ass1, ass2,m,mt, blt_no_states);
         cstate = generateComputeResidualState(cname, dae, dlow2, ass1, ass2, blt_states);
         c_ode = generateOdeCode(dlow2, blt_states, ass1, ass2, m, mt, class_);
@@ -234,7 +237,7 @@ algorithm
             "  #define DLLExport /* nothing */\n",
             "#endif \n\n",            
             "#include \"",funcfilename,"\"\n\n",
-            extObjInclude,cglobal,coutput,in_str,out_str,
+            extObjInclude,cenum,cglobal,coutput,in_str,out_str,
             cstate,czerocross,cwhen,c_ode,s_code,s_code2,
             s_code3,c_eventchecking});
         System.writeFile(filename, res);
@@ -547,6 +550,338 @@ algorithm
         fail();
   end matchcontinue;
 end generateGlobalData;
+
+protected function generateEnumDefinitions"
+autor: Frenkel TUD
+   intterat throw all vars and equations and collecte enumerations"
+   input DAELow.DAELow inDAELow;
+   output String outString;
+algorithm
+  outString := matchcontinue(inDAELow)
+    local
+      DAELow.DAELow dae;
+      DAELow.Variables var, knvar;
+      EnumerationLst enum, enum1, enum2, enum3, enum4;  
+      String outstr;
+      DAELow.EquationArray ordeqn, remeqn, initeqn;
+      list<DAELow.Var> varlst, knvarlst;
+      list<DAELow.Equation> ordeqnlst, remeqnlst, initeqnlst; 
+    case  DAELow.DAELOW(var, knvar, _, ordeqn, remeqn, initeqn, _, _, _, _)
+      equation
+        // convert Vars
+        varlst = DAELow.varList(var);
+        knvarlst = DAELow.varList(knvar);
+        // convert Eqn
+        ordeqnlst = DAELow.equationList(ordeqn);
+        remeqnlst = DAELow.equationList(remeqn);
+        initeqnlst = DAELow.equationList(initeqn);
+        // get Enumerations from Vart
+        enum = getEnumerationsFromVar(varlst,{});
+        enum1 = getEnumerationsFromVar(knvarlst,enum);
+        // get Enumerations from Eqn
+        enum2 = getEnumerationsFromEqn(ordeqnlst,enum1);
+        enum3 = getEnumerationsFromEqn(remeqnlst,enum2);
+        enum4 = getEnumerationsFromEqn(initeqnlst,enum3);
+        // generate C-Enums
+        outstr = generateEnumDefinitions1(enum4);
+      then
+        outstr;
+    case DAELow.DAELOW(var, knvar, _, _, _, _, _, _, _, _)
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR, {"generate_enumerations failed"});
+      then
+        fail();      
+   end matchcontinue;
+end generateEnumDefinitions;     
+
+protected function generateEnumDefinitions1"
+autor: Frenkel TUD
+   generate c-code for enumerations"
+   input EnumerationLst inEnumLst;
+   output String outString;
+algorithm
+  outString := matchcontinue(inEnumLst)
+    local
+      EnumerationLst rest;
+      String enumname, firstelem, outstr, outstr1, outstr2, outstr3, namestr, elementstr;
+      list<String> enumelements;
+    case {} then "";
+    case  ((_,{}) :: rest)
+      equation
+        outstr2 = generateEnumDefinitions1(rest);
+      then 
+        outstr2;
+     case  ((enumname,_) :: rest)
+      equation
+        firstelem = "";
+        equality(firstelem = enumname);
+        outstr2 = generateEnumDefinitions1(rest);
+      then
+        outstr2;       
+    case  ((enumname,firstelem :: enumelements) :: rest)
+      equation
+        // enum Color { Color_green , Color_blue, Color_red };
+        namestr = Util.stringAppendList({", " , enumname, "_"});
+        elementstr = Util.stringDelimitList(enumelements, namestr);
+        outstr = Util.stringAppendList({enumname, "_", firstelem, "=1,",enumname, "_", elementstr});
+        outstr1 = Util.stringAppendList({"enum E_",enumname," { ", outstr," };\n" });
+        outstr2 = generateEnumDefinitions1(rest);
+        outstr3 = Util.stringAppendList({outstr1,outstr2});
+      then
+        outstr3;
+   end matchcontinue;
+end generateEnumDefinitions1; 
+
+protected function getEnumerationsFromVar "
+autor: Frenkel TUD
+    extract all enumerations from variables"
+   input list<DAELow.Var> inVarLst;
+   input EnumerationLst inEnumLst;
+   output EnumerationLst outEnumLst;
+algorithm
+  outEnumLst := matchcontinue(inVarLst,inEnumLst)
+    local
+      list<DAELow.Var> rest;
+      Exp.ComponentRef cref;
+      EnumerationLst lst,lst1,lst2,lst3;
+    case ({},lst) then lst;
+    case  (DAELow.VAR(origVarName = cref) :: rest,lst)
+      equation 
+        // get from Cref
+        lst2 = getEnumerationsFromCRef({cref},lst);
+        // recursive
+        lst1 = getEnumerationsFromVar(rest,lst2);
+      then
+        lst1;
+    case (_ :: rest,lst)
+      equation
+        // recursive
+        lst1 = getEnumerationsFromVar(rest,lst);
+      then
+        lst1;   
+  end matchcontinue;
+end getEnumerationsFromVar;
+
+protected function getEnumerationsFromEqn
+   input list<DAELow.Equation> inEqnLst;
+   input EnumerationLst inEnumLst;
+   output EnumerationLst outEnumLst;
+algorithm
+  outEnumLst := matchcontinue(inEqnLst,inEnumLst)
+    local
+      list<DAELow.Equation> rest;
+      EnumerationLst lst,lst1,lst2;
+      Exp.ComponentRef cref;
+      list<Exp.ComponentRef> creflst,creflst1, creflst2;
+      list<list<Exp.ComponentRef>> creflstlst, creflstlst1;
+      Exp.Exp e1, e2;
+      list<Exp.Exp> elst, elst1;
+    case ({},lst) then lst;
+    case  (DAELow.EQUATION(e1,e2) :: rest,lst)
+      equation
+        // get Crefs
+        creflst1 = Exp.getCrefFromExp(e1);
+        creflst2 = Exp.getCrefFromExp(e2);
+        creflst = listAppend(creflst1,creflst2);
+        // get enumerations
+        lst1 = getEnumerationsFromCRef(creflst,lst);
+        // recursive
+        lst2 = getEnumerationsFromEqn(rest,lst1);
+      then
+        lst2;   
+    case  (DAELow.ARRAY_EQUATION(_,elst) :: rest,lst)
+      equation
+        // get Crefs
+        creflstlst = Util.listMap(elst, Exp.getCrefFromExp);
+        creflst = Util.listFlatten(creflstlst);
+        // get enumerations
+        lst1 = getEnumerationsFromCRef(creflst,lst);
+        // recursive
+        lst2 = getEnumerationsFromEqn(rest,lst1);
+      then
+        lst2; 
+    case  (DAELow.SOLVED_EQUATION(cref,e1) :: rest,lst)
+      equation
+         // get Crefs
+        creflst1 = Exp.getCrefFromExp(e1);
+        creflst = listAppend({cref},creflst1);
+        // get enumerations
+        lst1 = getEnumerationsFromCRef(creflst,lst);
+        // recursive
+        lst2 = getEnumerationsFromEqn(rest,lst1);
+      then
+        lst2;    
+    case  (DAELow.RESIDUAL_EQUATION(e1) :: rest,lst)
+      equation
+         // get Crefs
+        creflst = Exp.getCrefFromExp(e1);
+        // get enumerations
+        lst1 = getEnumerationsFromCRef(creflst,lst);
+        // recursive
+        lst2 = getEnumerationsFromEqn(rest,lst1);
+      then
+        lst2; 
+    case  (DAELow.ALGORITHM(_,elst,elst1) :: rest,lst)
+      equation
+        // get Crefs
+        creflstlst = Util.listMap(elst, Exp.getCrefFromExp);
+        creflstlst1 = Util.listMap(elst1, Exp.getCrefFromExp);
+        creflst1 = Util.listFlatten(creflstlst);
+        creflst2 = Util.listFlatten(creflstlst1);
+        creflst = listAppend(creflst1,creflst2);
+        // get enumerations
+        lst1 = getEnumerationsFromCRef(creflst,lst);
+        // recursive
+        lst2 = getEnumerationsFromEqn(rest,lst1);
+      then
+        lst2;
+    case  (DAELow.WHEN_EQUATION(wheneqn) :: rest,lst)
+      local DAELow.WhenEquation wheneqn;
+      equation
+        // get enumerations
+        lst1 = getEnumerationsFromWhenEqn(wheneqn,lst);
+        // recursive
+        lst2 = getEnumerationsFromEqn(rest,lst1);
+      then
+        lst2;                                      
+    case (_,lst) then lst;         
+  end matchcontinue;
+end getEnumerationsFromEqn;
+
+protected function getEnumerationsFromWhenEqn
+   input DAELow.WhenEquation inWhenEqn;
+   input EnumerationLst inEnumLst;
+   output EnumerationLst outEnumLst;
+algorithm
+  outEnumLst := matchcontinue(inWhenEqn,inEnumLst)
+    local
+      DAELow.WhenEquation wheneqn;
+      EnumerationLst lst,lst1,lst2;
+      list<Exp.ComponentRef> creflst,creflst1, creflst2;
+      Exp.ComponentRef cref;
+      Exp.Exp e1;
+      list<Exp.Exp> elst, elst1;
+    case  (DAELow.WHEN_EQ(_,cref,e1,NONE()),lst)
+      equation
+         // get Crefs
+        creflst1 = Exp.getCrefFromExp(e1);
+        creflst = listAppend({cref},creflst1);
+        // get enumerations
+        lst1 = getEnumerationsFromCRef(creflst,lst);
+      then
+        lst1;  
+    case  (DAELow.WHEN_EQ(_,cref,e1,SOME(wheneqn)),lst)
+      equation
+         // get Crefs
+        creflst1 = Exp.getCrefFromExp(e1);
+        creflst = listAppend({cref},creflst1);
+        // get enumerations
+        lst1 = getEnumerationsFromCRef(creflst,lst);
+        // recursive
+        lst2 = getEnumerationsFromWhenEqn(wheneqn,lst1);
+      then
+        lst2;                                             
+    case (_,lst) then lst;         
+  end matchcontinue;
+end getEnumerationsFromWhenEqn;
+
+protected function EnumerationLstEqual
+   input tuple<String,list<String>> inEnum1; 
+   input tuple<String,list<String>> inEnum2;
+   output Boolean outEqual;
+algorithm
+   outEqual := matchcontinue(inEnum1,inEnum2)
+   local
+     tuple<String,list<String>> enum1,enum2;
+     String id1, id2;
+     case ((id1,_),(id2,_))
+       equation
+         equality(id1=id2);
+       then 
+         true;
+     case (_,_) then false;
+   end matchcontinue;
+end EnumerationLstEqual;
+  
+protected function getLastIdentFromPath
+   input Absyn.Path inPath;
+   output Absyn.Ident outIdent;
+algorithm
+  outIdent := matchcontinue(inPath)
+    local
+      Absyn.Path p;
+      Absyn.Ident i;
+    case (Absyn.IDENT(i)) then i;
+    case (Absyn.QUALIFIED(_,p))
+      equation
+        i = getLastIdentFromPath(p);
+      then i;  
+    case (Absyn.FULLYQUALIFIED(p))
+      equation
+        i = getLastIdentFromPath(p);
+      then i;  
+  end matchcontinue; 
+end getLastIdentFromPath;  
+  
+protected function getEnumerationsFromCRef
+   input list<Exp.ComponentRef> inCrefLst;
+   input EnumerationLst inEnumLst;
+   output EnumerationLst outEnumLst;
+algorithm
+  outEnumLst := matchcontinue(inCrefLst,inEnumLst)
+    local
+      Exp.ComponentRef cref;
+      list<Exp.ComponentRef> rest;
+      EnumerationLst lst,lst1,lst2,lst3,outlst;
+      list<String> enumelements;
+      Exp.Ident ident;
+      Absyn.Path p;
+      tuple<String,list<String>> enum;
+      Boolean inlist;
+    case ({},lst) then lst;
+    case (Exp.CREF_IDENT(_,Exp.ENUMERATION(_,p,{},_),_) :: rest,lst)
+      equation
+        outlst = getEnumerationsFromCRef(rest,lst);
+      then outlst;      
+    case (Exp.CREF_IDENT(_,Exp.ENUMERATION(_,p,enumelements,_),_) :: rest,lst)
+      equation
+        ident = getLastIdentFromPath(p);
+        // check equation
+        enum = (ident,enumelements);
+        // check is exist
+        inlist = Util.listContainsWithCompareFunc(enum,lst,EnumerationLstEqual);
+        // append
+        lst2 = listAppend({enum},lst);
+        lst1 = Util.if_(inlist,lst,lst2);
+        outlst = getEnumerationsFromCRef(rest,lst1);
+      then
+        outlst;   
+    case (Exp.CREF_QUAL(_,Exp.ENUMERATION(_,p,{},_),_,cref) :: rest,lst)
+      equation
+        lst3 = getEnumerationsFromCRef({cref},lst);
+        outlst = getEnumerationsFromCRef(rest,lst3);
+      then
+        outlst; 
+    case (Exp.CREF_QUAL(_,Exp.ENUMERATION(_,p,enumelements,_),_,cref) :: rest,lst)
+      equation
+        ident = getLastIdentFromPath(p);
+        // check equation
+        enum = (ident,enumelements);
+        // check is exist
+        inlist = Util.listContainsWithCompareFunc(enum,lst,EnumerationLstEqual);
+        // append
+        lst2 = listAppend({enum},lst);
+        lst1 = Util.if_(inlist,lst,lst2);
+        lst3 = getEnumerationsFromCRef({cref},lst1);
+        outlst = getEnumerationsFromCRef(rest,lst3);
+      then
+        outlst;   
+    case (_::rest,lst)
+      equation
+        outlst = getEnumerationsFromCRef(rest,lst);
+      then outlst;
+  end matchcontinue;
+end getEnumerationsFromCRef;
 
 protected function generateExternalObjectDestructorCalls "generate destructor calls for external objects"
 	input Integer cg_in;
@@ -1211,7 +1546,8 @@ algorithm
 	  	case DAE.STRING() then 2;
 	  	case DAE.INT() then 4;
 	  	case DAE.BOOL() then 8;
-  		case DAE.ENUM() then 0;
+//  		case DAE.ENUM() then 0;
+  		case DAE.ENUMERATION(_) then 4;
 	  end matchcontinue;
 end vartypeAttrInt;
 
@@ -1229,7 +1565,8 @@ algorithm
 	  	case (_,DAELow.DISCRETE()) then 16;
 	  	case (DAE.INT(),_) then 16;
 	  	case (DAE.BOOL(),_) then 16;
-  		case (DAE.ENUM(),_) then 16;
+  		case (DAE.ENUMERATION(_),_) then 16;
+//  		case (DAE.ENUM(),_) then 16;
   		case (_,_) then 0;
 	  end matchcontinue;
 end varDiscreteAttrInt;
@@ -2290,16 +2627,18 @@ algorithm
        str = Util.stringAppendList({"stringVariables",".",baseArrayName});
     then
        str;
-    case (baseArrayName,DAE.ENUM())
-    equation
-       str = Util.stringAppendList({baseArrayName,""});
-    then
-       str;
+//    case (baseArrayName,DAE.ENUM())
+//    equation
+//       str = Util.stringAppendList({baseArrayName,""});
+//    then
+//       str;
     case (baseArrayName,DAE.ENUMERATION(stringLst = l))
       equation
-       print("generateNameDependentOnType - Enumeration not implemented yet\n");
+//       print("generateNameDependentOnType - Enumeration not implemented yet\n");
+       str = Util.stringAppendList({baseArrayName,""});
       then
-       fail();
+//       fail();
+       str;
     case (baseArrayName,DAE.EXT_OBJECT(_) )
     equation
        str = Util.stringAppendList({baseArrayName,""});
@@ -8455,6 +8794,14 @@ algorithm
     case (Exp.BCONST(bool = false),_) then "false";
 
     case (Exp.BCONST(bool = true),_) then "true";
+
+
+    case (Exp.CREF(componentRef = c, ty = Exp.ENUMERATION(_,_,_,_)),_)
+      equation
+        res = Exp.printComponentRefStr(c);
+        res = Util.stringReplaceChar(res, ".", "_");
+      then
+        res;
 
     case (Exp.CREF(componentRef = c),_)
       equation

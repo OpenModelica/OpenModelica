@@ -1579,12 +1579,17 @@ algorithm
     case(cache,env,Types.MOD(f,e,Types.NAMEMOD("stateSelect",Types.MOD(_,_,_,SOME(Types.TYPED(exp,optVal,p))))::submods,eqmod),pre) 
       equation
         varLst = instRealClass(cache,env,Types.MOD(f,e,submods,eqmod),pre);
-        v = instBuiltinAttribute(cache,env,"stateSelect",optVal,exp,(Types.T_ENUMERATION({"never","avoid","default","prefer","always"},
-          {Types.VAR("never",Types.ATTR(false,false,SCode.RO(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,(Types.T_ENUM(),NONE),Types.UNBOUND()),
-          Types.VAR("avoid",Types.ATTR(false,false,SCode.RO(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,(Types.T_ENUM(),NONE),Types.UNBOUND()),
-          Types.VAR("default",Types.ATTR(false,false,SCode.RO(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,(Types.T_ENUM(),NONE),Types.UNBOUND()),
-          Types.VAR("prefer",Types.ATTR(false,false,SCode.RO(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,(Types.T_ENUM(),NONE),Types.UNBOUND()),
-          Types.VAR("always",Types.ATTR(false,false,SCode.RO(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,(Types.T_ENUM(),NONE),Types.UNBOUND())
+        v = instBuiltinAttribute(cache,env,"stateSelect",optVal,exp,(Types.T_ENUMERATION(NONE(),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},
+          {Types.VAR("never",Types.ATTR(false,false,SCode.RO(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,(Types.T_ENUMERATION(SOME(1),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},{}),NONE),Types.UNBOUND()),
+          Types.VAR("avoid",Types.ATTR(false,false,SCode.RO(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,(Types.T_ENUMERATION(SOME(2),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},{}),NONE),Types.UNBOUND()),
+          Types.VAR("default",Types.ATTR(false,false,SCode.RO(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,(Types.T_ENUMERATION(SOME(3),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},{}),NONE),Types.UNBOUND()),
+          Types.VAR("prefer",Types.ATTR(false,false,SCode.RO(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,(Types.T_ENUMERATION(SOME(4),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},{}),NONE),Types.UNBOUND()),
+          Types.VAR("always",Types.ATTR(false,false,SCode.RO(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,(Types.T_ENUMERATION(SOME(5),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},{}),NONE),Types.UNBOUND())
+//          {Types.VAR("never",Types.ATTR(false,false,SCode.RO(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,(Types.T_ENUM(),NONE),Types.UNBOUND()),
+//          Types.VAR("avoid",Types.ATTR(false,false,SCode.RO(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,(Types.T_ENUM(),NONE),Types.UNBOUND()),
+//          Types.VAR("default",Types.ATTR(false,false,SCode.RO(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,(Types.T_ENUM(),NONE),Types.UNBOUND()),
+//          Types.VAR("prefer",Types.ATTR(false,false,SCode.RO(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,(Types.T_ENUM(),NONE),Types.UNBOUND()),
+//          Types.VAR("always",Types.ATTR(false,false,SCode.RO(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,(Types.T_ENUM(),NONE),Types.UNBOUND())
           }),NONE),p);
       then v::varLst;   
     case(cache,env,( mym as Types.MOD(f,e,smod::submods,eqmod)),pre)
@@ -9287,7 +9292,8 @@ algorithm
         dae_var_attr = DAE.setFinalAttr(dae_var_attr,finalPrefix);
       then {DAE.VAR(vn,kind,dir,prot,DAE.STRING(),e,finst_dims,fl,st,{},dae_var_attr,comment,io,ty)};
          
-    case (vn,ty as(Types.T_ENUM(),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars) then {}; 
+    case (vn,ty as(Types.T_ENUMERATION(SOME(_),_,_,_),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars) then {}; 
+//    case (vn,ty as(Types.T_ENUM(),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars) then {}; 
 
     /* MetaModelica extensions */
     case (vn,ty as(Types.T_LIST(_),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars)
@@ -10227,15 +10233,15 @@ algorithm
         dae = instEqEquation2(e1, e2_1, t_1, initial_) "	Debug.print(\"\\n Second rule of function_ inst_eq_equation \") & 	& Debug.print(\"\\n Second rule complete. \")" ;
       then
         dae;
-    case ((e1 as Exp.CREF(componentRef = _)),Types.PROP(type_ = (Types.T_ENUMERATION(names = _),_)),e2,Types.PROP(type_ = (t as (Types.T_ENUM(),_))),initial_,impl) /* 
-	    An assignment to a varaible of T_ENUMERATION type is an explicit 
-	    assignment to the value componnent of the enumeration, i.e. having 
-	    a type T_ENUM
-	 */ 
-      equation 
-        dae = instEqEquation2(e1, e2, t, initial_) "//Debug.fprint (\"insttr\", \"Found assignment to T_ENUMERATION type. Rhs type must be T_ENUM or T_ENUMERATION.\\n\") &" ;
-      then
-        dae;
+//    case ((e1 as Exp.CREF(componentRef = _)),Types.PROP(type_ = (Types.T_ENUMERATION(names = _),_)),e2,Types.PROP(type_ = (t as (Types.T_ENUM(),_))),initial_,impl) /* 
+//	    An assignment to a varaible of T_ENUMERATION type is an explicit 
+//	    assignment to the value componnent of the enumeration, i.e. having 
+//	    a type T_ENUM
+//	 */ 
+//      equation 
+//        dae = instEqEquation2(e1, e2, t, initial_) "//Debug.fprint (\"insttr\", \"Found assignment to T_ENUMERATION type. Rhs type must be T_ENUM or T_ENUMERATION.\\n\") &" ;
+//      then
+//        dae;
     case ((e1 as Exp.CREF(componentRef = _)),Types.PROP(type_ = (Types.T_ENUMERATION(names = _),_)),e2,Types.PROP(type_ = (t as (Types.T_ENUMERATION(names = _),_))),initial_,impl)
       equation 
         dae = instEqEquation2(e1, e2, t, initial_) "//Debug.fprint (\"insttr\", \"Found assignment to T_ENUMERATION type. Rhs type must be T_ENUM or T_ENUMERATION.\\n\") &" ;
@@ -10302,11 +10308,11 @@ algorithm
         dae = makeDaeEquation(e1, e2, initial_);
       then
         {dae};
-    case (Exp.CREF(componentRef = cr,ty = t),e2,(Types.T_ENUM(),_),initial_)
-      equation 
-        dae = makeDaeDefine(cr, e2, initial_);
-      then
-        {dae};
+//    case (Exp.CREF(componentRef = cr,ty = t),e2,(Types.T_ENUM(),_),initial_)
+//      equation 
+//        dae = makeDaeDefine(cr, e2, initial_);
+//      then
+//        {dae};
     case (Exp.CREF(componentRef = cr,ty = t),e2,(Types.T_ENUMERATION(names = _),_),initial_)
       equation 
         dae = makeDaeDefine(cr, e2, initial_);
@@ -12251,7 +12257,8 @@ algorithm
       equation 
         somep = getOptPath(p);
       then
-        ((Types.T_ENUM(),somep));
+        ((Types.T_ENUMERATION(SOME(0),Absyn.IDENT(""),{},{}),somep));
+//        ((Types.T_ENUM(),somep));
     /* Insert function type construction here after checking input/output arguments? see Types.mo T_FUNCTION */        
     case (p,(st as ClassInf.FUNCTION(string = name)),vl,_,_) 
       equation 
@@ -12332,7 +12339,8 @@ algorithm
       equation 
         somep = getOptPath(p);
       then
-        ((Types.T_ENUM(),somep));
+        ((Types.T_ENUMERATION(SOME(0),p,{},{}),somep));
+//        ((Types.T_ENUM(),somep));
     /* Insert function type construction here after checking input/output arguments? see Types.mo T_FUNCTION */ 
     case (p,(st as ClassInf.FUNCTION(string = name)),vl,_)
       equation 
@@ -12958,7 +12966,7 @@ algorithm
       Env.Cache cache;
     case (cache,env,mod,varLst,index_list,bind_name,useConstValue)
       equation 
-        result = instBinding(mod, varLst, (Types.T_ENUMERATION({},{}),NONE), index_list, bind_name,useConstValue);
+        result = instBinding(mod, varLst, (Types.T_ENUMERATION(NONE(),Absyn.IDENT(""),{},{}),NONE), index_list, bind_name,useConstValue);
       then
         (cache,result);
     case (cache,env,mod,varLst,index_list,bind_name,useConstValue)
@@ -12978,11 +12986,16 @@ protected function getStateSelectFromExpOption
 algorithm 
   outDAEStateSelectOption:=
   matchcontinue (inExpExpOption)
-    case (SOME(Exp.CREF(Exp.CREF_QUAL("StateSelect",_,{},Exp.CREF_IDENT("never",_,{})),Exp.ENUM()))) then SOME(DAE.NEVER()); 
-    case (SOME(Exp.CREF(Exp.CREF_QUAL("StateSelect",_,{},Exp.CREF_IDENT("avoid",_,{})),Exp.ENUM()))) then SOME(DAE.AVOID()); 
-    case (SOME(Exp.CREF(Exp.CREF_QUAL("StateSelect",_,{},Exp.CREF_IDENT("default",_,{})),Exp.ENUM()))) then SOME(DAE.DEFAULT()); 
-    case (SOME(Exp.CREF(Exp.CREF_QUAL("StateSelect",_,{},Exp.CREF_IDENT("prefer",_,{})),Exp.ENUM()))) then SOME(DAE.PREFER()); 
-    case (SOME(Exp.CREF(Exp.CREF_QUAL("StateSelect",_,{},Exp.CREF_IDENT("always",_,{})),Exp.ENUM()))) then SOME(DAE.ALWAYS()); 
+    case (SOME(Exp.CREF(Exp.CREF_QUAL("StateSelect",_,{},Exp.CREF_IDENT("never",Exp.ENUMERATION(SOME(_),_,_,_),{})),_))) then SOME(DAE.NEVER()); 
+    case (SOME(Exp.CREF(Exp.CREF_QUAL("StateSelect",_,{},Exp.CREF_IDENT("avoid",Exp.ENUMERATION(SOME(_),_,_,_),{})),_))) then SOME(DAE.AVOID()); 
+    case (SOME(Exp.CREF(Exp.CREF_QUAL("StateSelect",_,{},Exp.CREF_IDENT("default",Exp.ENUMERATION(SOME(_),_,_,_),{})),_))) then SOME(DAE.DEFAULT()); 
+    case (SOME(Exp.CREF(Exp.CREF_QUAL("StateSelect",_,{},Exp.CREF_IDENT("prefer",Exp.ENUMERATION(SOME(_),_,_,_),{})),_))) then SOME(DAE.PREFER()); 
+    case (SOME(Exp.CREF(Exp.CREF_QUAL("StateSelect",_,{},Exp.CREF_IDENT("always",Exp.ENUMERATION(SOME(_),_,_,_),{})),_))) then SOME(DAE.ALWAYS()); 
+//    case (SOME(Exp.CREF(Exp.CREF_QUAL("StateSelect",_,{},Exp.CREF_IDENT("never",_,{})),Exp.ENUM()))) then SOME(DAE.NEVER()); 
+//    case (SOME(Exp.CREF(Exp.CREF_QUAL("StateSelect",_,{},Exp.CREF_IDENT("avoid",_,{})),Exp.ENUM()))) then SOME(DAE.AVOID()); 
+//    case (SOME(Exp.CREF(Exp.CREF_QUAL("StateSelect",_,{},Exp.CREF_IDENT("default",_,{})),Exp.ENUM()))) then SOME(DAE.DEFAULT()); 
+//    case (SOME(Exp.CREF(Exp.CREF_QUAL("StateSelect",_,{},Exp.CREF_IDENT("prefer",_,{})),Exp.ENUM()))) then SOME(DAE.PREFER()); 
+//    case (SOME(Exp.CREF(Exp.CREF_QUAL("StateSelect",_,{},Exp.CREF_IDENT("always",_,{})),Exp.ENUM()))) then SOME(DAE.ALWAYS()); 
     case (NONE) then NONE; 
     case (_) then NONE; 
   end matchcontinue;
@@ -13661,7 +13674,8 @@ algorithm
     case ((Types.T_REAL(_),_)) then Absyn.IDENT("Real");
     case ((Types.T_STRING(_),_)) then Absyn.IDENT("String");
     case ((Types.T_BOOL(_),_)) then Absyn.IDENT("Boolean");
-    case ((Types.T_ENUM(),_)) then Absyn.IDENT("Enum");
+    case ((Types.T_ENUMERATION(SOME(_),_,_,_),_)) then Absyn.IDENT("Enum");
+//    case ((Types.T_ENUM(),_)) then Absyn.IDENT("Enum");
     /* 
     case ((Types.T_COMPLEX(ClassInf.MODEL(s),_,_),_)) then Absyn.IDENT(s);
     case ((Types.T_COMPLEX(ClassInf.RECORD(s),_,_),_)) then Absyn.IDENT(s);
@@ -15444,8 +15458,8 @@ algorithm
     case((Types.T_REAL(_),_)) then DAE.REAL();
     case((Types.T_STRING(_),_)) then DAE.STRING();
     case((Types.T_BOOL(_),_)) then DAE.BOOL();
-    case((Types.T_ENUM(),_)) then DAE.ENUM();
-    case((Types.T_ENUMERATION(names=lst),_)) then DAE.ENUMERATION(lst);
+//    case((Types.T_ENUM(),_)) then DAE.ENUM();
+    case((Types.T_ENUMERATION(index=SOME(_),names=lst),_)) then DAE.ENUMERATION(lst);
     case((Types.T_COMPLEX(complexTypeOption=SOME(tp)),_)) then daeDeclareComplexVarType(tp);
     case((Types.T_COMPLEX(ClassInf.RECORD(name),varLst,_,_),_)) equation
       daeVarLst = Util.listMap(varLst,daeDeclareComplexVar);    

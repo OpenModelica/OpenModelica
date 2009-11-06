@@ -88,7 +88,7 @@ uniontype Type
 
   record STRING end STRING;
 
-  record ENUM end ENUM;
+//  record ENUM end ENUM;
 
   record LIST end LIST; // MetaModelica list. KS
   
@@ -2183,11 +2183,11 @@ algorithm
       then
         ();
         
-    case ENUM()
-      equation 
-        Print.printBuf("Enum ");
-      then
-        ();
+//    case ENUM()
+//      equation 
+//        Print.printBuf("Enum ");
+//      then
+//        ();
     case ENUMERATION(stringLst = l)
       equation 
         Print.printBuf("Enumeration(");
@@ -2224,7 +2224,7 @@ algorithm
     case REAL() then "Real "; 
     case BOOL() then "Boolean "; 
     case STRING() then "String "; 
-    case ENUM() then "Enum "; 
+//    case ENUM() then "Enum "; 
 
     case ENUMERATION(stringLst = l)
       equation 
@@ -3496,10 +3496,12 @@ public function generateDaeType "function generateDaeType
 algorithm 
   outType:=
   matchcontinue (inType)
+    local list<String> strlst;
     case (REAL()) then ((Types.T_REAL({}),NONE)); 
     case (INT()) then ((Types.T_INTEGER({}),NONE)); 
     case (BOOL()) then ((Types.T_BOOL({}),NONE)); 
     case (STRING()) then ((Types.T_STRING({}),NONE)); 
+    case (ENUMERATION(strlst)) then ((Types.T_ENUMERATION(SOME(0),Absyn.IDENT(""),strlst, {}),NONE));
   end matchcontinue;
 end generateDaeType;
 

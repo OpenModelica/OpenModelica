@@ -78,7 +78,14 @@ uniontype Type "- Basic types
 
   record STRING end STRING;
 
-  record ENUM end ENUM;
+ // record ENUM end ENUM;
+ 
+  record ENUMERATION
+    Option<Integer> index "the enumeration value index, SOME for element, NONE for type" ;
+    Absyn.Path path "enumeration path" ;
+    list<String> names "names" ;
+    list<Var> varLst "varLst, empty for elements" ;
+  end ENUMERATION;
 
   record COMPLEX "Complex types" 
     String name;
@@ -581,9 +588,11 @@ uniontype TTypeTypes "-TType contains the actual type"
     String id;
   end T_POLYMORPHICTYPES;
 
-  record T_ENUMTYPES end T_ENUMTYPES;
+//  record T_ENUMTYPES end T_ENUMTYPES;
 
   record T_ENUMERATIONTYPES
+    Option<Integer> index "index" ;
+    Absyn.Path path "path" ;    
     list<String> names "names" ;
     list<VarTypes> varLst "varLst" ;
   end T_ENUMERATIONTYPES;
@@ -1774,6 +1783,7 @@ algorithm
         res = boolAnd(b1,b2);
       then
         res;
+    case (CREF(_,ENUMERATION(index = SOME(_)))) then true;
     case (_) then false; 
   end matchcontinue;
 end isConst;
@@ -1919,6 +1929,16 @@ algorithm
         true = subscriptEqual(idx1, idx2);
       then
         true;
+    // Enumeration 
+    case (cr1 as CREF_IDENT(ident = n1,subscriptLst = idx1),cr2 as CREF_IDENT(ident = n2,subscriptLst = idx2))
+      local list<Subscript> idx1_1,idx2_1;
+      equation 
+        equality(n1 = n2);
+        (CREF_IDENT(_,_,idx1_1)) = convertEnumCref(cr1);
+        (CREF_IDENT(_,_,idx2_1)) = convertEnumCref(cr2);
+        true = subscriptEqual(idx1_1, idx2_1);
+      then
+        true;        
     case (CREF_QUAL(ident = n1,subscriptLst = idx1,componentRef = cr1),CREF_QUAL(ident = n2,subscriptLst = idx2,componentRef = cr2))
       equation 
         equality(n1 = n2);
@@ -6209,7 +6229,8 @@ algorithm
     case REAL() then "REAL"; 
     case BOOL() then "BOOL"; 
     case STRING() then "STRING";
-    case ENUM() then "ENUM";
+    case ENUMERATION(index=SOME(_)) then "ENUM";
+//    case ENUM() then "ENUM";
     case OTHER() then "OTHER"; 
     case (T_ARRAY(ty = t,arrayDimensions = dims))
       equation 
@@ -11017,6 +11038,7 @@ algorithm otype := matchcontinue(inRef)
   local Type ty; ComponentRef cr;
   case(CREF_IDENT(_, ty,_)) then ty;
   case(CREF_QUAL(_,COMPLEX(varLst=_),_,cr)) then elaborateCrefQualType(cr);
+  case(CREF_QUAL(_,ENUMERATION(index=NONE()),_,cr)) then elaborateCrefQualType(cr);
   case(CREF_QUAL(id,OTHER(),_,cr)) 
     local String id,s;
     equation 
@@ -11374,6 +11396,31 @@ algorithm
     case WILD() then "_\n";
   end matchcontinue;
 end debugPrintComponentRefTypeStr;
+
+public function convertEnumCref "function: convertEnumCref
+ 
+  Converts an Enumeration Cref into a Normal Cref
+  Example x[Color.green] -> x[1].
+"
+  input ComponentRef inComponentRef;
+  output ComponentRef outComponentRef;
+algorithm 
+  outComponentRef:=
+  matchcontinue (inComponentRef)
+      local
+        ComponentRef src;
+    /* enumeration */
+    case (src  as CREF_IDENT(ident, identType, {INDEX(CREF(CREF_QUAL(_,_,_,CREF_IDENT(_,ENUMERATION(SOME(idx),_,_,_),_)),_))}))
+      local
+        Integer idx;
+        Ident ident;
+        Type identType;        
+        ComponentRef src1;
+      then 
+        CREF_IDENT(ident, identType , {INDEX(ICONST(idx))});
+    case (src) then src;
+  end matchcontinue;
+end convertEnumCref;
 
 end Exp;
 

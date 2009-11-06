@@ -1809,8 +1809,11 @@ algorithm
         s_2 = stringAppend(s_1, "}");
       then
         s_2;
-    case(ENUM(cr,_)) equation
-      s = Exp.printComponentRefStr(cr);
+    /* Until is it no able to get from an string Enumeration the C-Enumeration use the index value */
+    /* Example: This is yet not possible Enum.e1 \\ PEnum   ->  1 \\ PEnum  with enum Enum(e1,e2), Enum PEnum; */
+    case(ENUM(cr,n)) equation
+//      s = Exp.printComponentRefStr(cr);
+      s = intString(n);
     then s;
     case(NORETCALL) then "";
     case _

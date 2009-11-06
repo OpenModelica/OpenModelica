@@ -7209,7 +7209,7 @@ algorithm
         (cache,Exp.CALL(Absyn.IDENT("getStateSelect"),
           {Exp.CREF(cr_1,Exp.OTHER()),Exp.CREF(cr2_1,Exp.OTHER())},false,true,Exp.STRING(),false),Types.PROP(
           (
-          Types.T_ENUMERATION({"never","avoid","default","prefer","always"},{}),NONE),Types.C_VAR()),SOME(st));
+          Types.T_ENUMERATION(NONE(),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},{}),NONE),Types.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "echo"),{bool_exp},{},impl,SOME(st))
       equation 
@@ -9890,7 +9890,8 @@ algorithm
       then
         (cache,e_1,Types.C_VAR(),acc);
     /* Enum constants does not have a value expression */
-    case (cache,env,cr,acc,_,io,(tt as (Types.T_ENUM(),_)),_,doVect,_) 
+    case (cache,env,cr,acc,_,io,(tt as (Types.T_ENUMERATION(SOME(_),_,_,_),_)),_,doVect,_) 
+//    case (cache,env,cr,acc,_,io,(tt as (Types.T_ENUM(),_)),_,doVect,_) 
       local Exp.Type t;
       equation 
         t = Types.elabType(tt);
@@ -10657,25 +10658,27 @@ algorithm
       Exp.Type ty;
       list<Exp.Subscript> ss_1;
       Absyn.ComponentRef subs;
+      Exp.ComponentRef esubs;
       Env.Cache cache;
       list<Integer> indexes;
       SCode.Variability vt;
     case( cache,env, Absyn.WILD(),_,impl)
     then
       (cache,Exp.WILD(),Types.C_VAR());
-      
       /* IDENT */
     case (cache,env,Absyn.CREF_IDENT(name = id,subscripts = ss),crefPrefix,impl)  
       equation 
         cr = Prefix.prefixCref(crefPrefix,Exp.CREF_IDENT(id,Exp.OTHER(),{}));
         (cache,_,t,_,_,_) = Lookup.lookupVar(cache,env,cr);
         ty = Types.elabType(t);
+        // only for enumerations change ty
+        ty = elabTypeEnum(cache,env,ty,t,id,cr);
         sl = Types.getDimensions(t);
         /*Constant evaluate subscripts on form x[1,p,q] where p,q are constants or parameters*/
         (cache,ss_1,const) = elabSubscriptsDims(cache,env, ss, sl, impl); 
       then       
         (cache,Exp.CREF_IDENT(id,ty,ss_1),const); 
-        
+
         /* QUAL,with no subscripts => looking for var */
     case (cache,env,cr as Absyn.CREF_QUAL(name = id,subScripts = {},componentRef = subs),crefPrefix,impl)
       equation    
@@ -10687,9 +10690,18 @@ algorithm
         (cache,cr,const) = elabCrefSubs(cache,env, subs,crefPrefix,impl);
       then
         (cache,Exp.CREF_QUAL(id,ty,{},cr),const);
-        /* QUAL,with no subscripts second case => look for class */
+       /* QUAL,with no subscripts second case => look for class */
     case (cache,env,cr as Absyn.CREF_QUAL(name = id,subScripts = {},componentRef = subs),crefPrefix,impl)
-      local Absyn.Path path;
+      local SCode.Class sclass; list<SCode.Element> eLst; list<String> names;
+      equation    
+        (_,sclass as SCode.CLASS(_,_,_,SCode.R_ENUMERATION(),SCode.PARTS(eLst,_,_,_,_,_,_)),_) = Lookup.lookupClass(cache,env,Absyn.IDENT(id),true);
+        names = Util.listMap(eLst, getEnumNames);
+        crefPrefix = Prefix.prefixAdd(id,{},crefPrefix,SCode.VAR()); // variability doesn't matter      
+        (cache,cr,const) = elabCrefSubs(cache,env, subs,crefPrefix,impl);
+      then
+        (cache,Exp.CREF_QUAL(id,Exp.ENUMERATION(NONE(),Absyn.IDENT(""),names,{}),{},cr),const);
+       /* QUAL,with no subscripts second case => look for class */
+    case (cache,env,cr as Absyn.CREF_QUAL(name = id,subScripts = {},componentRef = subs),crefPrefix,impl)
       equation    
         crefPrefix = Prefix.prefixAdd(id,{},crefPrefix,SCode.VAR()); // variability doesn't matter      
         (cache,cr,const) = elabCrefSubs(cache,env, subs,crefPrefix,impl);
@@ -10724,6 +10736,109 @@ algorithm
   end matchcontinue;
 end elabCrefSubs;
 
+public function elabTypeEnum
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input Exp.Type in_Ty;
+  input tuple<Types.TType, Option<Absyn.Path>> in_T;
+  input Ident in_Id;
+  input Exp.ComponentRef in_CR;
+  output Exp.Type out_Ty;
+algorithm
+  out_Ty:=
+  matchcontinue (inCache,inEnv,in_Ty,in_T,in_Id,in_CR)
+    local
+      Env.Cache cache;
+      Env.Env env;      
+      Exp.Type ty;
+      tuple<Types.TType, Option<Absyn.Path>> t;
+      Exp.ComponentRef cr;
+//    case (cache,env,ty,t,id,Exp.CREF_QUAL(ident=enumname))
+    case (cache,env,ty,t as (Types.T_ENUMERATION(SOME(_),_,_,_),_),id,Exp.CREF_QUAL(ident=enumname))
+      local 
+        SCode.Class sclass;
+        list<SCode.Element> eLst;
+        list<String> names;
+        Ident id, enumname;
+        Integer idx;
+      equation
+        // get Enum SCode
+        (_,sclass as SCode.CLASS(_,_,_,SCode.R_ENUMERATION(),SCode.PARTS(eLst,_,_,_,_,_,_)),_) = Lookup.lookupClass(cache,env,Absyn.IDENT(enumname),true);
+        // get Enumerationelements
+        names = Util.listMap(eLst, getEnumNames);
+        // get Enum Value 
+        idx = getEnumComponent(eLst,id,1);         
+      then 
+        Exp.ENUMERATION(SOME(idx),Absyn.IDENT(enumname),names,{});
+    case (_,_,ty,_,_,_) then ty;
+  end matchcontinue;
+end elabTypeEnum;
+
+public function getEnumNames
+  input SCode.Element in_Elem;
+  output String out_Name;
+algorithm
+  out_Name:=
+  matchcontinue (in_Elem)
+    local
+      String name;
+    case (SCode.COMPONENT(name,_,_,_,_,_,_,_,_,_,_,_,_)) then name;
+    case (_) then "";
+  end matchcontinue;
+end getEnumNames; 
+
+public function elabCrefEnum
+	input SCode.Class in_Class;
+  input Exp.ComponentRef in_CompRef;
+  output Integer out_Idx;
+algorithm 
+  out_Idx:=
+  matchcontinue (in_Class,in_CompRef)
+    local
+      Integer idx;
+      list<SCode.Element> complist;
+      Ident name;
+    case (SCode.CLASS(_,_,_,SCode.R_ENUMERATION,SCode.PARTS(complist,_,_,_,_,_,NONE())),Exp.CREF_IDENT(name,_,{}))
+      equation 
+        // get Component ID
+        idx = getEnumComponent(complist,name,1);
+      then
+        idx;
+    case (_,_) then 0;
+  end matchcontinue;
+end elabCrefEnum;     
+
+public function getEnumComponent
+	input list<SCode.Element> in_Complist;
+  input Ident in_Name;
+  input Integer in_Idx;
+  output Integer out_Idx;
+algorithm 
+  (out_Idx,out_Found):=
+  matchcontinue (in_Complist,in_Name,in_Idx)
+    local
+      Integer idx, id;
+      list<SCode.Element> complist;
+      SCode.Ident comp;
+      Ident name;
+    case (SCode.COMPONENT(comp,_,_,_,_,_,_,_,_,_,_,_,_) :: complist,name,idx)
+      equation 
+        // get Component ID
+        equality(comp = name); 
+      then
+        idx;
+    case (SCode.COMPONENT(comp,_,_,_,_,_,_,_,_,_,_,_,_) :: complist,name,idx)
+      local Integer id;
+      equation 
+        // recursive
+        id = idx + 1;
+        idx = getEnumComponent(complist,name,id);
+      then
+        idx;
+    case ({},_,_) then 0;
+  end matchcontinue;
+end getEnumComponent;
+      
 public function elabSubscripts "function: elabSubscripts
  
   This function converts a list of `Absyn.Subscript\' to a list of
@@ -10906,7 +11021,8 @@ algorithm
       tuple<Types.TType, Option<Absyn.Path>> t;
       Absyn.Exp e;
     case ((Types.T_INTEGER(varLstInt = _),_),_,sub) then Exp.INDEX(sub); 
-    case ((Types.T_ENUM(),_),_,sub) then Exp.INDEX(sub);
+    case ((Types.T_ENUMERATION(SOME(_),_,_,_),_),_,sub) then Exp.INDEX(sub);
+//    case ((Types.T_ENUM(),_),_,sub) then Exp.INDEX(sub);
     case ((Types.T_ARRAY(arrayType = (Types.T_INTEGER(varLstInt = _),_)),_),_,sub) then Exp.SLICE(sub); 
     case (t,e,_)
       equation 
@@ -11275,7 +11391,9 @@ algorithm
       varlst = Util.listThreadMap(namelst,tpl,Exp.makeVar);
       name = Absyn.pathString(path);
     then Exp.CALL(path,expl,false,false,Exp.COMPLEX(name,varlst,ClassInf.RECORD(name)),false);
-    case(Values.ENUM(cr,x)) then Exp.CREF(cr,Exp.ENUM());
+    case(Values.ENUM(cr as Exp.CREF_IDENT(_, t, _),x)) then Exp.CREF(cr,t);
+    case(Values.ENUM(cr as Exp.CREF_QUAL(_, t, _, _),x)) then Exp.CREF(cr,t);
+//    case(Values.ENUM(cr,x)) then Exp.CREF(cr,Exp.ENUM());
     
     case (Values.TUPLE(vallist))
       equation
@@ -12280,7 +12398,8 @@ algorithm
           {(Types.T_REAL({}),NONE),(Types.T_REAL({}),NONE)},(Types.T_BOOL({}),NONE)),
           (Exp.LESS(Exp.STRING()),
           {(Types.T_STRING({}),NONE),(Types.T_STRING({}),NONE)},(Types.T_BOOL({}),NONE)),
-          (Exp.LESS(Exp.ENUM()),{t1,t2},(Types.T_BOOL({}),NONE))} "\'<\' operator" ;
+          (Exp.LESS(Exp.ENUMERATION(SOME(0),Absyn.IDENT(""),{},{})),{t1,t2},(Types.T_BOOL({}),NONE))} "\'<\' operator" ;
+//          (Exp.LESS(Exp.ENUM()),{t1,t2},(Types.T_BOOL({}),NONE))} "\'<\' operator" ;
         /*(cache,userops) = getKoeningOperatorTypes(cache,"less", env, t1, t2);*/
         types = Util.listFlatten({scalars/*,userops*/});
       then
@@ -12294,7 +12413,8 @@ algorithm
           {(Types.T_REAL({}),NONE),(Types.T_REAL({}),NONE)},(Types.T_BOOL({}),NONE)),
           (Exp.LESSEQ(Exp.STRING()),
           {(Types.T_STRING({}),NONE),(Types.T_STRING({}),NONE)},(Types.T_BOOL({}),NONE)),
-          (Exp.LESSEQ(Exp.ENUM()),{t1,t2},(Types.T_BOOL({}),NONE))} "\'<=\' operator" ;
+          (Exp.LESSEQ(Exp.ENUMERATION(SOME(0),Absyn.IDENT(""),{},{})),{t1,t2},(Types.T_BOOL({}),NONE))} "\'<=\' operator" ;
+//          (Exp.LESSEQ(Exp.ENUM()),{t1,t2},(Types.T_BOOL({}),NONE))} "\'<=\' operator" ;
         /*(cache,userops) = getKoeningOperatorTypes(cache,"lessEqual", env, t1, t2);*/
         types = Util.listFlatten({scalars/*,userops*/});
       then
@@ -12308,7 +12428,8 @@ algorithm
           {(Types.T_REAL({}),NONE),(Types.T_REAL({}),NONE)},(Types.T_BOOL({}),NONE)),
           (Exp.GREATER(Exp.STRING()),
           {(Types.T_STRING({}),NONE),(Types.T_STRING({}),NONE)},(Types.T_BOOL({}),NONE)),
-          (Exp.GREATER(Exp.ENUM()),{t1,t2},(Types.T_BOOL({}),NONE))} "\'>\' operator" ;
+          (Exp.GREATER(Exp.ENUMERATION(SOME(0),Absyn.IDENT(""),{},{})),{t1,t2},(Types.T_BOOL({}),NONE))} "\'>\' operator" ;
+//          (Exp.GREATER(Exp.ENUM()),{t1,t2},(Types.T_BOOL({}),NONE))} "\'>\' operator" ;
         /*(cache,userops) = getKoeningOperatorTypes(cache,"greater", env, t1, t2);*/
         types = Util.listFlatten({scalars/*,userops*/});
       then
@@ -12322,14 +12443,16 @@ algorithm
           {(Types.T_REAL({}),NONE),(Types.T_REAL({}),NONE)},(Types.T_BOOL({}),NONE)),
           (Exp.GREATEREQ(Exp.STRING()),
           {(Types.T_STRING({}),NONE),(Types.T_STRING({}),NONE)},(Types.T_BOOL({}),NONE)),
-          (Exp.GREATEREQ(Exp.ENUM()),{t1,t2},(Types.T_BOOL({}),NONE))} "\'>=\' operator" ;
+          (Exp.GREATEREQ(Exp.ENUMERATION(SOME(0),Absyn.IDENT(""),{},{})),{t1,t2},(Types.T_BOOL({}),NONE))} "\'>=\' operator" ;
+//          (Exp.GREATEREQ(Exp.ENUM()),{t1,t2},(Types.T_BOOL({}),NONE))} "\'>=\' operator" ;
         /*(cache,userops) = getKoeningOperatorTypes(cache,"greaterEqual", env, t1, t2);*/
         types = Util.listFlatten({scalars/*,userops*/});
       then
         (cache,types);
     case (cache,Absyn.EQUAL(),env,t1,t2)
       equation
-        defaultExpType = Util.if_(Types.isBoxedType(t1) and Types.isBoxedType(t2), Exp.T_BOXED(Exp.OTHER), Exp.ENUM());
+        defaultExpType = Util.if_(Types.isBoxedType(t1) and Types.isBoxedType(t2), Exp.T_BOXED(Exp.OTHER), Exp.ENUMERATION(SOME(0),Absyn.IDENT(""),{},{}));
+//        defaultExpType = Util.if_(Types.isBoxedType(t1) and Types.isBoxedType(t2), Exp.T_BOXED(Exp.OTHER), Exp.ENUM());
         scalars = {
           (Exp.EQUAL(Exp.INT()),
           {(Types.T_INTEGER({}),NONE),(Types.T_INTEGER({}),NONE)},(Types.T_BOOL({}),NONE)),
@@ -12339,7 +12462,8 @@ algorithm
           {(Types.T_STRING({}),NONE),(Types.T_STRING({}),NONE)},(Types.T_BOOL({}),NONE)),
           (Exp.EQUAL(Exp.BOOL()),
           {(Types.T_BOOL({}),NONE),(Types.T_BOOL({}),NONE)},(Types.T_BOOL({}),NONE)),
-          (Exp.EQUAL(Exp.ENUM()),{t1,t2},(Types.T_BOOL({}),NONE)),          
+          (Exp.EQUAL(Exp.ENUMERATION(SOME(0),Absyn.IDENT(""),{},{})),{t1,t2},(Types.T_BOOL({}),NONE)),          
+//          (Exp.EQUAL(Exp.ENUM()),{t1,t2},(Types.T_BOOL({}),NONE)),          
           (Exp.EQUAL(defaultExpType),{t1,t2},(Types.T_BOOL({}),NONE))} "\'==\' operator" ;
         /*(cache,userops) = getKoeningOperatorTypes(cache,"equal", env, t1, t2);*/
         types = Util.listFlatten({scalars/*,userops*/});
@@ -12347,7 +12471,8 @@ algorithm
         (cache,types);
     case (cache,Absyn.NEQUAL(),env,t1,t2)
       equation 
-        defaultExpType = Util.if_(Types.isBoxedType(t1) and Types.isBoxedType(t2), Exp.T_BOXED(Exp.OTHER), Exp.ENUM());
+        defaultExpType = Util.if_(Types.isBoxedType(t1) and Types.isBoxedType(t2), Exp.T_BOXED(Exp.OTHER), Exp.ENUMERATION(SOME(0),Absyn.IDENT(""),{},{}));
+//        defaultExpType = Util.if_(Types.isBoxedType(t1) and Types.isBoxedType(t2), Exp.T_BOXED(Exp.OTHER), Exp.ENUM());
         scalars = {
           (Exp.NEQUAL(Exp.INT()),
           {(Types.T_INTEGER({}),NONE),(Types.T_INTEGER({}),NONE)},(Types.T_BOOL({}),NONE)),
@@ -12357,7 +12482,8 @@ algorithm
           {(Types.T_STRING({}),NONE),(Types.T_STRING({}),NONE)},(Types.T_BOOL({}),NONE)),
           (Exp.NEQUAL(Exp.BOOL()),
           {(Types.T_BOOL({}),NONE),(Types.T_BOOL({}),NONE)},(Types.T_BOOL({}),NONE)),
-          (Exp.NEQUAL(Exp.ENUM()),{t1,t2},(Types.T_BOOL({}),NONE)),
+          (Exp.NEQUAL(Exp.ENUMERATION(SOME(0),Absyn.IDENT(""),{},{})),{t1,t2},(Types.T_BOOL({}),NONE)),
+//          (Exp.NEQUAL(Exp.ENUM()),{t1,t2},(Types.T_BOOL({}),NONE)),
           (Exp.NEQUAL(defaultExpType),{t1,t2},(Types.T_BOOL({}),NONE))} "\'!=\' operator" ;
         /*(cache,userops) = getKoeningOperatorTypes(cache,"notEqual", env, t1, t2);*/
         types = Util.listFlatten({scalars/*,userops*/});
