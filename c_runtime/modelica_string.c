@@ -92,9 +92,8 @@ void modelica_boolean_to_modelica_string(modelica_string_t* dest,modelica_boolea
 
 void modelica_enumeration_to_modelica_string(modelica_string_t* dest,modelica_string_t* e,modelica_integer minLen, modelica_boolean leftJustified, modelica_integer signDigits)
 {
-	modelica_string_t dummy = "String(Enumeration) not yet implemented\n";
 	modelica_string_t* pdummy=0;
-	init_modelica_string(pdummy,&dummy);
+	init_modelica_string(pdummy,"String(Enumeration) not yet implemented\n");
 	/* free dest  */
 	if (dest != 0) free_modelica_string(dest);
 	/* copy  */
