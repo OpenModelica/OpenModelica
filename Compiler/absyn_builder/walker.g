@@ -298,15 +298,13 @@ class_definition [bool final] returns [ void* ast ]
     :
         #(cd:CLASS_DEFINITION
             (e:ENCAPSULATED )?
-            (p:PARTIAL )?
-            (ex:EXPANDABLE)?
+            (p:PARTIAL )?            
             restr = class_restriction
             (name = flat_name_path)?
             class_spec = class_specifier[&nameEnd]           
         )
         {
             classDef = cd;
-            if (ex && restr == Absyn__R_5fCONNECTOR ) { restr = Absyn__R_5fEXP_5fCONNECTOR; }
             ast = Absyn__CLASS(
                 /*
                  * adrpo: 
@@ -341,6 +339,7 @@ class_restriction returns [void* ast]
         | MODEL     { ast = Absyn__R_5fMODEL; }
         | RECORD    { ast = Absyn__R_5fRECORD; }
         | BLOCK     { ast = Absyn__R_5fBLOCK; }
+        | EXPANDABLE CONNECTOR { ast = Absyn__R_5fEXP_5fCONNECTOR; }
         | CONNECTOR { ast = Absyn__R_5fCONNECTOR; }
         | TYPE      { ast = Absyn__R_5fTYPE; }
         | PACKAGE   { ast = Absyn__R_5fPACKAGE; }
