@@ -272,6 +272,11 @@ uniontype Element
     ExternalDecl externalDecl;
   end EXTFUNCTION;
   
+  record RECORD_CONSTRUCTOR "A Modelica record constructor. The function can be generated from the Path and Type alone."
+    Absyn.Path path;
+    Types.Type type_;
+  end RECORD_CONSTRUCTOR;
+
   record EXTOBJECTCLASS "The 'class' of an external object"
     Absyn.Path path "className of external object";
     Element constructor "constructor is an EXTFUNCTION";
@@ -548,6 +553,9 @@ algorithm
 	  case((e as EXTFUNCTION(path=_))::elts2) equation
 	    (elts22,elts3) = removeEquations(elts2);
     then (e::elts22,elts3);  
+	  case((e as RECORD_CONSTRUCTOR(path=_))::elts2) equation
+	    (elts22,elts3) = removeEquations(elts2);
+    then (e::elts22,elts3);
 	  case((e as EXTOBJECTCLASS(path=_))::elts2) equation
 	    (elts22,elts3) = removeEquations(elts2);
     then (e::elts22,elts3);	            
@@ -963,6 +971,12 @@ algorithm
         extdeclstr = dumpExtDeclStr(extdecl);
         Print.printBuf(extdeclstr);
         Print.printBuf(")\n");
+        dump2(DAE(xs));
+      then
+        ();
+    case (DAE(elementLst = (RECORD_CONSTRUCTOR(path = _) :: xs)))
+      equation 
+        Print.printBuf("RECORD_CONSTRUCTOR(...)\n");
         dump2(DAE(xs));
       then
         ();
@@ -2733,6 +2747,18 @@ algorithm
         Print.printBuf(str);
       then
         ();
+    case RECORD_CONSTRUCTOR(path = fpath)
+      equation 
+        Print.printBuf("record ");
+        fstr = Absyn.pathString(fpath);
+        Print.printBuf(fstr);
+        Print.printBuf("\n");
+        Print.printBuf("...\n");
+        Print.printBuf("end ");
+        Print.printBuf(fstr);
+        Print.printBuf(";\n\n");
+      then
+        ();
     case _ then (); 
   end matchcontinue;
 end dumpFunction;
@@ -2762,6 +2788,12 @@ algorithm
         fstr = Absyn.pathString(fpath);
         daestr = dumpElementsStr(dae);
         str = Util.stringAppendList({"function ",fstr,"\n",daestr,"\nexternal \"C\";\nend ",fstr,";\n\n"});
+      then
+        str;
+    case RECORD_CONSTRUCTOR(path = fpath)
+      equation 
+        fstr = Absyn.pathString(fpath);
+        str = Util.stringAppendList({"record ",fstr,"\n...\nend ",fstr,";\n\n"});
       then
         str;
     case _ then ""; 
@@ -3734,6 +3766,7 @@ algorithm
   matchcontinue (inElement)
     case FUNCTION(path = _) then (); 
     case EXTFUNCTION(path = _) then (); 
+    case RECORD_CONSTRUCTOR(path = _) then (); 
   end matchcontinue;
 end isFunction;
 
@@ -3932,6 +3965,16 @@ algorithm
         Print.printBuf(Types.printTypeStr(t));
         Print.printBuf(",");
         dumpDebug(l);
+        Print.printBuf(")");
+      then
+        ();
+    case RECORD_CONSTRUCTOR(path = fpath,type_ = t)
+      equation 
+        Print.printBuf("RECORD_CONSTRUCTOR(");
+        fstr = Absyn.pathString(fpath);
+        Print.printBuf(fstr);
+        Print.printBuf(",");
+        Print.printBuf(Types.printTypeStr(t));
         Print.printBuf(")");
       then
         ();
@@ -4232,6 +4275,11 @@ algorithm
         fstr = Absyn.pathString(fpath);
       then
         Graphviz.LNODE("FUNCTION",{fstr},{},{node});
+    case RECORD_CONSTRUCTOR(path = fpath)
+      equation 
+        fstr = Absyn.pathString(fpath);
+      then
+        Graphviz.LNODE("RECORD_CONSTRUCTOR",{fstr},{},{});
   end matchcontinue;
 end buildGrElement;
 
@@ -4744,6 +4792,11 @@ algorithm
         dae_1 = toModelicaForm(dae);
       then
         (EXTFUNCTION(p,dae,t,d) :: elts_1);
+    case ((RECORD_CONSTRUCTOR(path = p,type_ = t) :: elts))
+      equation 
+        elts_1 = toModelicaFormElts(elts);
+      then
+        (RECORD_CONSTRUCTOR(p,t) :: elts_1);
     case ((ASSERT(condition = e1,message=e2) :: elts))
       local Exp.Exp e1,e2,e_1,e_2;
       equation 
@@ -4936,6 +4989,11 @@ algorithm
       then
         {el};
     case (path,((el as EXTFUNCTION(path = elpath)) :: rest))
+      equation 
+        true = ModUtil.pathEqual(path, elpath);
+      then
+        {el};
+    case (path,((el as RECORD_CONSTRUCTOR(path = elpath)) :: rest))
       equation 
         true = ModUtil.pathEqual(path, elpath);
       then
@@ -5144,14 +5202,19 @@ algorithm
       then
         /*cref::*/lhsCrefs;
        
-    case(FUNCTION(path = path,dAElist = DAE(elementLst = elements),type_ = ty)::rest)
-      local tuple<Types.TType, Option<Absyn.Path>> ty;
-      equation print("FUNCTION not allowed inside when equation\n");
+    case(FUNCTION(path = path)::rest)
+      equation
+        print("FUNCTION not allowed inside when equation\n");
       then 
         fail();  
-    case(EXTFUNCTION(path = path,dAElist = DAE(elementLst = elements),type_ = ty,externalDecl = EXTERNALDECL(ident = fname,external_ = args,parameters = retarg,returnType = lang,language = ann))::rest)
-      local tuple<Types.TType, Option<Absyn.Path>> ty;
-      equation print("EXTFUNCTION not allowed inside when equation\n");
+    case(EXTFUNCTION(path = path)::rest)
+      equation
+        print("EXTFUNCTION not allowed inside when equation\n");
+      then 
+        fail();  
+    case(RECORD_CONSTRUCTOR(path = path)::rest)
+      equation
+        print("RECORD_CONSTRUCTOR not allowed inside when equation\n");
       then 
         fail();  
     case(INITIAL_IF_EQUATION(condition1 = _)::rest)
@@ -5178,7 +5241,7 @@ algorithm
         fail();
     case(_)
       equation 
-        Debug.fprintln("failtrace", "-- get_all_exps_element failed");
+        Debug.fprintln("failtrace", "- DAE.verifyWhenEquationStatements failed");
       then
         fail();
   end matchcontinue;
@@ -5342,6 +5405,7 @@ algorithm
         exps = Util.listFlatten(expslist);
       then
         exps;
+    case RECORD_CONSTRUCTOR(path = path) then {};
     case ASSERT(condition=e1,message=e2) local Exp.Exp e1,e2; then {e1,e2}; 
     case NORETCALL(fname,fargs) 
     local Absyn.Path fname;
@@ -5917,6 +5981,11 @@ algorithm (traversedDaeList,Type_a) := matchcontinue(daeList,func,extraArg)
       (elist2,extraArg) = traverseDAE(elist,func,extraArg);
       (dae2,extraArg) = traverseDAE(dae,func,extraArg);
     then (EXTFUNCTION(path,DAE(elist2),ftp,extDecl)::dae2,extraArg);
+      
+  case(RECORD_CONSTRUCTOR(path,ftp)::dae,func,extraArg) 
+    equation
+      (dae2,extraArg) = traverseDAE(dae,func,extraArg);
+    then (RECORD_CONSTRUCTOR(path,ftp)::dae2,extraArg);
       
   case(EXTOBJECTCLASS(path,elt1,elt2)::dae,func,extraArg) 
     equation

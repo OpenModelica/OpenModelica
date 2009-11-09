@@ -948,11 +948,12 @@ algorithm
   matchcontinue (inEnv,inPath)
     local
       SCode.Class c;
-      list<Env.Frame> env_1,env;
+      list<Env.Frame> env,env_1,env_2,env_3;
       Absyn.Path path;
+      String name;
     case (env,path)
       equation 
-        (_,c as SCode.CLASS(restriction=SCode.R_RECORD()) ,env_1) = lookupClass2(Env.emptyCache(),env, path, false);
+        (_,c as SCode.CLASS(name = name, restriction=SCode.R_RECORD()) ,env_1) = lookupClass2(Env.emptyCache(),env, path, false);
         c = buildRecordConstructorClass(c, env_1);
       then
         (c,env_1);
@@ -1867,30 +1868,14 @@ algorithm
       equation 
         (funcelts,elts) = buildRecordConstructorClass2(cl,Types.NOMOD(),env);
         reselt = buildRecordConstructorResultElt(funcelts, id, env);
-        initAbsynStmts = Util.listMap1(funcelts,buildRecordConstructorClassAssignCopy,reselt);
-        initStmts = {SCode.ALGORITHM(initAbsynStmts,NONE())};
       then
         SCode.CLASS(id,false,false,SCode.R_FUNCTION(),
-          SCode.PARTS((reselt :: funcelts),{},{},{},initStmts,{},NONE));
+          SCode.PARTS((reselt :: funcelts),{},{},{},{},{},NONE));
     case (cl,env) equation
       print("buildRecordConstructorClass failed\n");
       then fail();
   end matchcontinue;
 end buildRecordConstructorClass;
-
-protected function buildRecordConstructorClassAssignCopy
-  input SCode.Element elArg;
-  input SCode.Element elRec;
-  output Absyn.Algorithm out;
-algorithm
-  out := matchcontinue(elArg,elRec)
-    local
-      String argId,recId;
-    case (SCode.COMPONENT(component = argId),SCode.COMPONENT(component = recId))
-      then Absyn.ALG_ASSIGN(Absyn.CREF(Absyn.CREF_QUAL(recId,{},Absyn.CREF_IDENT(argId,{}))),
-                           Absyn.CREF(Absyn.CREF_IDENT(argId,{})));
-  end matchcontinue;
-end buildRecordConstructorClassAssignCopy;
 
 protected function buildRecordConstructorClass2 "help function to buildRecordConstructorClass"
   input SCode.Class cl;
@@ -1969,8 +1954,11 @@ algorithm
         // umod = Mod.unelabMod(compMod);
         umod = Mod.unelabMod(mod_1);
         res = buildRecordConstructorElts(rest, mods, env);
+        // - Prefixes (constant, parameter, final, discrete, input, output, ...) of the remaining record components are removed.
+        var = SCode.VAR();
+        dir = Absyn.INPUT();
       then
-        (SCode.COMPONENT(id,io,fl,repl,prot,SCode.ATTR(d,f,st,ac,var,Absyn.INPUT()),tp,
+        (SCode.COMPONENT(id,io,fl,repl,prot,SCode.ATTR(d,f,st,ac,SCode.VAR,Absyn.INPUT()),tp,
           umod,bc,comment,cond,nfo,cc) :: res);
 
     case (SCode.EXTENDS(path,mod,_) :: rest,mods,env)
@@ -1998,7 +1986,6 @@ protected function buildRecordConstructorResultElt
   output SCode.Element outElement;
   list<SCode.SubMod> submodlst;
 algorithm 
-  submodlst := buildRecordConstructorResultMod(elts);
   //print(" creating element of type: " +& id +& "\n"); 
   //print(" with generated mods:" +& SCode.printSubs1Str(submodlst) +& "\n");
   //print(" creating element of type: " +& id +& "\n"); 
@@ -2006,59 +1993,9 @@ algorithm
   outElement := SCode.COMPONENT("result",Absyn.UNSPECIFIED(),false,false,false,
           SCode.ATTR({},false,false,SCode.RW(),SCode.VAR(),Absyn.OUTPUT()),
           Absyn.TPATH(Absyn.IDENT(id),NONE),
-          SCode.MOD(false,Absyn.NON_EACH(),submodlst,NONE),
+          SCode.NOMOD,
           NONE,NONE,NONE,NONE,NONE);
 end buildRecordConstructorResultElt;
-
-protected function buildRecordConstructorResultMod 
-"function: buildRecordConstructorResultMod 
-  This function builds up the modification list for the output element of a record constructor.
-  Example: 
-    record foo
-       Real x;
-       String y;
-       end foo;
-   => modifier list become \'x=x, y=y\'"
-  input list<SCode.Element> inSCodeElementLst;
-  output list<SCode.SubMod> outSCodeSubModLst;
-algorithm 
-  outSCodeSubModLst:=
-  matchcontinue (inSCodeElementLst)
-    local
-      list<SCode.SubMod> restmod;
-      String id;
-      list<SCode.Element> rest;
-      /* Component*/      
-    case ({}) then {}; 
-   
-    case(inSCodeElementLst)
-      equation 
-        restmod = buildRecordConstructorResultMod2(inSCodeElementLst);
-      then
-        restmod;        
-    case(_) equation then fail();
-  end matchcontinue;
-end buildRecordConstructorResultMod;
-
-protected function buildRecordConstructorResultMod2 "
-"
-  input list<SCode.Element> inElems;
-  output list<SCode.SubMod> outMods;
-algorithm outMods := matchcontinue (inElems)
-  local
-    SCode.SubMod localMod;
-    String id;
-  case ({}) then {};
-  case ((SCode.COMPONENT(component = id) :: inElems))
-    equation
-      localMod = SCode.NAMEMOD(id, SCode.MOD(false,Absyn.NON_EACH(),{},
-        SOME((Absyn.CREF(Absyn.CREF_IDENT(id,{})),false)))); 
-      outMods = buildRecordConstructorResultMod2(inElems);      
-    then
-      localMod::outMods;
-  case(_) equation print("buildRecordConstructorResultMod2 failed\n"); then fail();
-end matchcontinue;
-end buildRecordConstructorResultMod2;
 
 protected function buildRecordConstructorVarlst 
 "function: buildRecordConstructorVarlst 

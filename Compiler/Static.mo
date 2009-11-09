@@ -11386,11 +11386,11 @@ algorithm
         list<Exp.Var> varlst;
         Absyn.Path path; String name;
       equation
-      expl=Util.listMap(vallist,valueExp);
-      tpl = Util.listMap(expl,Exp.typeof);
-      varlst = Util.listThreadMap(namelst,tpl,Exp.makeVar);
-      name = Absyn.pathString(path);
-    then Exp.CALL(path,expl,false,false,Exp.COMPLEX(name,varlst,ClassInf.RECORD(name)),false);
+        expl=Util.listMap(vallist,valueExp);
+        tpl = Util.listMap(expl,Exp.typeof);
+        varlst = Util.listThreadMap(namelst,tpl,Exp.makeVar);
+        name = Absyn.pathLastIdent(path);
+      then Exp.CALL(path,expl,false,false,Exp.COMPLEX(name,varlst,ClassInf.RECORD(name)),false);
     case(Values.ENUM(cr as Exp.CREF_IDENT(_, t, _),x)) then Exp.CREF(cr,t);
     case(Values.ENUM(cr as Exp.CREF_QUAL(_, t, _, _),x)) then Exp.CREF(cr,t);
 //    case(Values.ENUM(cr,x)) then Exp.CREF(cr,Exp.ENUM());

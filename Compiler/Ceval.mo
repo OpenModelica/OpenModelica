@@ -1089,22 +1089,13 @@ algorithm
         fail();
 
         /* Record constructors */
-    case(cache,env,(e as Exp.CALL(path = funcpath,ty = Exp.COMPLEX(complexClassType = ClassInf.RECORD(_), varLst=varLst))),vallst,msg,st)
+    case(cache,env,(e as Exp.CALL(path = funcpath,ty = Exp.COMPLEX(complexClassType = ClassInf.RECORD(complexName), varLst=varLst))),vallst,msg,st)
       local
         list<Exp.Var> varLst; list<String> varNames; String complexName, lastIdent;
       equation
+        true = complexName ==& Absyn.pathLastIdent(funcpath); // TODO: ClassInf should contain a Path, or Exp.CALL a Types.Type...
         varNames = Util.listMap(varLst,Exp.varName);
       then (cache,Values.RECORD(funcpath,vallst,varNames,-1),st);
-      
-      /*
-    case(cache,env,(e as Exp.CALL(path = funcpath,ty = Exp.COMPLEX(name = complexName, varLst=varLst))),vallst,msg,st)
-      local
-        list<Exp.Var> varLst; list<String> varNames; String complexName, lastIdent;
-      equation
-        true = complexName ==& Absyn.pathLastIdent(funcpath);
-        varNames = Util.listMap(varLst,Exp.varName);
-      then (cache,Values.RECORD(funcpath,vallst,varNames),st);
-      */
       
         /*
     case (cache,env,(e as Exp.CALL(path = funcpath,expLst = expl,builtin = builtin)),vallst,msg,st)

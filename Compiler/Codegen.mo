@@ -1078,6 +1078,48 @@ algorithm
       then
         (cfn::rcw_fn::wrapper_body,rt_1);
     
+      /* Modelica Record Constructor. We would like to use this as a C macro, but this is not possible. */
+    case (DAE.RECORD_CONSTRUCTOR(path = fpath, type_ = tp as (Types.T_FUNCTION(funcArg = args,funcResultType = restype as (Types.T_COMPLEX(complexClassType = ClassInf.RECORD(name)),_)),_)),rt)
+      local
+        String name, defhead, head, foot, body, decl1, decl2, assign_res, ret_var, record_var, record_var_dot, return_stmt;
+        Exp.Type expType;
+        list<String> arg_names, arg_tmp1, arg_tmp2, arg_assignments;
+        Integer tnr;
+      equation
+        fn_name_str = generateFunctionName(fpath);
+        fn_name_str = stringAppend("_", fn_name_str);
+        retstr = generateReturnType(fpath);
+        tnr = 1;
+        (decl1,ret_var,tnr) = generateTempDecl(retstr, tnr);
+        (decl2,record_var,tnr) = generateTempDecl("struct " +& name, tnr);
+        (struct_strs,rt_1) = generateRecordDeclarations(restype, rt);
+
+        expType = Types.elabType(restype);
+        defhead = "#define " +& retstr +& "_1 targ1";
+        head = "typedef struct " +& retstr +& "_s {";
+        body = "struct " +& name +& " targ1;";
+        foot = "} "+&retstr+&";";
+        struct_strs = listAppend(struct_strs, {defhead, head, body, foot});
+        arg_names = Util.listMap(args, Util.tuple21);
+        arg_tmp1 = Util.listMap1(arg_names, stringAppend, " = ");
+        arg_tmp2 = Util.listMap1(arg_names, stringAppend, ";");
+        arg_tmp1 = Util.listThreadMap(arg_tmp1, arg_tmp2, stringAppend);
+        record_var_dot = record_var +& ".";
+        arg_assignments = Util.listMap1r(arg_tmp1, stringAppend, record_var_dot);
+        assign_res = ret_var +& ".targ1 = " +& record_var +& ";";
+        return_stmt = "return "+&ret_var+&";";
+        
+        arg_strs = Util.listMap(args, generateFunctionArg);
+        head_cfn = cMakeFunction(retstr, fn_name_str, struct_strs, arg_strs);
+        body_cfn = cEmptyFunction;
+        body_cfn = cAddVariables(body_cfn, {decl1,decl2});
+        body_cfn = cAddStatements(body_cfn, arg_assignments);
+        body_cfn = cAddCleanups(body_cfn, {assign_res,return_stmt});
+        wrapper_body = generateFunctionReferenceWrapperBody(fpath, tp);
+        cfn = cMergeFn(head_cfn, body_cfn);
+      then
+        (cfn::wrapper_body,rt_1);
+    
     /* MetaModelica Partial Function. sjoelund */    
     case (DAE.FUNCTION(path = fpath,
                        dAElist = DAE.DAE(elementLst = dae),
@@ -2515,7 +2557,7 @@ algorithm
     local
       CFunction cfn, callCfn, convertCfn;
       Integer tnr;
-      String fn_name_str, ret_stmt, ret_type_str, ret_type_str_box, ret_decl, ret_decl_box, ret_var, ret_var_box, callVar, tmp;
+      String fn_name_str, ret_stmt, ret_type_str, ret_type_str_box, ret_decl, ret_decl_box, ret_var, ret_var_box, callVar, tmp, mem_var, mem_decl, mem_stmt1, mem_stmt2;
       Types.Type ty1,ty2,retType1,retType2;
       list<String> funcArgNames, funcArgTypeNames, funcArgVars, stringList, recordFields, recordFieldsBox, structStrs;
       list<Types.Type> funcArgTypes1, funcArgTypes2, retTypeList1, retTypeList2;
@@ -2586,9 +2628,15 @@ algorithm
         structStrs = generateFunctionRefReturnStruct1(retTypeList2, ret_type_str_box);
         cfn = cMakeFunction(ret_type_str_box, fn_name_str, structStrs, funcArgVars);
         cfn = cAddVariables(cfn, {ret_decl_box});
-        // TODO: Fix memory state !!!!!!!! /sjoelund
+        
+        (mem_decl,mem_var,tnr) = generateTempDecl("state", tnr);
+        mem_stmt1 = Util.stringAppendList({mem_var," = get_memory_state();"});
+        mem_stmt2 = Util.stringAppendList({"restore_memory_state(",mem_var,");"});
+        
+        cfn = cAddVariables(cfn, {mem_decl});
+        cfn = cAddInits(cfn, {mem_stmt1});
         cfn = cMergeFns({cfn,callCfn,convertCfn});
-        cfn = cAddStatements(cfn, {ret_stmt});
+        cfn = cAddCleanups(cfn, {mem_stmt2,ret_stmt});
       then {cfn};
     case (_,_)
       equation

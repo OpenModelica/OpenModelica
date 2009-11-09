@@ -6587,6 +6587,18 @@ algorithm
       then
         res;
         
+    case (p,(path :: paths),allpaths)  local String s; Boolean partialPrefix;
+      equation
+        (_,_,_,fdae) = Inst.instantiateFunctionImplicit(Env.emptyCache(), InstanceHierarchy.emptyInstanceHierarchy, p, path);
+        DAE.DAE(elementLst = {DAE.RECORD_CONSTRUCTOR(type_ = t)}) = fdae;
+        patched_dae = DAE.DAE({DAE.RECORD_CONSTRUCTOR(path,t)});
+        subfuncs = getCalledFunctionsInFunction(path, {}, patched_dae);
+        (allpaths_1,paths_1) = appendNonpresentPaths(subfuncs, allpaths, paths);
+        elts = generateFunctions3(p, paths_1, allpaths_1);
+        res = listAppend(elts, {DAE.RECORD_CONSTRUCTOR(path,t)});
+      then
+        res;
+        
     case (_,(path :: paths),_)
       local String s;
       equation
@@ -9280,7 +9292,6 @@ algorithm
         fnrefs = Codegen.getMatchingExpsList(explist, Codegen.matchFnRefs);
         crefs = Util.listMap(fnrefs, getCrefFromExp);
         reffuncs = Util.listMap(crefs, Absyn.crefToPath);
-        
         //fns = removeDuplicatePaths(fnpaths);
         calledfuncs = listAppend(reffuncs, calledfuncs);
         calledfuncs = removeDuplicatePaths(calledfuncs);
@@ -9291,7 +9302,6 @@ algorithm
         varfuncs = Util.listMap(varlist, getFunctionRefVarPath);
         calledfuncs = Util.listSetDifference(calledfuncs, varfuncs) "Filter out function reference calls";
         /*--                                           --*/ 
-        
         res = getCalledFunctionsInFunctions(calledfuncs, path::acc, dae);
         
         Debug.fprint("info", "Found variable function refs to ignore: ") "debug" ;
@@ -9375,6 +9385,7 @@ algorithm
     local Absyn.Path path;
     case DAE.FUNCTION(dAElist = DAE.DAE(out)) then out;
     case DAE.EXTFUNCTION(dAElist = DAE.DAE(out)) then out;
+    case DAE.RECORD_CONSTRUCTOR(path = _) then {};
   end matchcontinue;
 end getFunctionElementsList;
 

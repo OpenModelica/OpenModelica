@@ -6221,7 +6221,7 @@ algorithm
 	  // input Real x[:]; component environement The class is instantiated 
 	  // with the calculated modification, and an extended prefix. 
     //     
-    case (cache,env,ih,store,ci_state,mod,pre,csets,n,cl,attr,prot,dims,idxs,inst_dims,impl,comment,io,finalPrefix,graph) 
+    case (cache,env,ih,store,ci_state,mod,pre,csets,n,cl,attr,prot,dims,idxs,inst_dims,impl,comment,io,finalPrefix,graph)
       equation 
         ClassInf.isFunction(ci_state);
         
@@ -8297,8 +8297,8 @@ algorithm
         //print(" lookup record: " +& n +& "\n");
         (c,cenv) = Lookup.lookupRecordConstructorClass(env,Absyn.IDENT(n));
         //print(" modifications: " +&  Mod.printModStr(mod) +& "\n");
-        (cache,env,ih,dae) = implicitFunctionInstantiation(cache,cenv,ih,mod,pre,csets,c,inst_dims);
-      then (cache,env,ih,dae);
+        (cache,env,ih,{DAE.FUNCTION(fpath,_,ty1,false)}) = implicitFunctionInstantiation(cache,cenv,ih,mod,pre,csets,c,inst_dims);
+      then (cache,env,ih,{DAE.RECORD_CONSTRUCTOR(fpath,ty1)});
       
     /* normal functions */
     case (cache,env,ih,mod,pre,csets,(c as SCode.CLASS(name = n, partialPrefix = partialPrefix, restriction = SCode.R_FUNCTION())),inst_dims)
@@ -13327,7 +13327,12 @@ algorithm
                           typeSpec = Absyn.TPATH(t, _),modifications = mod,
                           baseClassPath = bc,comment = comment,innerOuter=io,
                           finalPrefix = finalPrefix,cc=cc),outerMod,impl)
-      equation 
+      equation
+        // - Prefixes (constant, parameter, final, discrete, input, output, ...) of the remaining record components are removed.
+        var = SCode.VAR();
+        dir = Absyn.INPUT();
+        attr = SCode.ATTR(dim,f,s,acc,var,dir);
+
         //Debug.fprint("recconst", "inst_record_constructor_elt called\n");
         (cache,cl,cenv) = Lookup.lookupClass(cache,env, t, true);
         //Debug.fprint("recconst", "looked up class\n");
@@ -13344,7 +13349,7 @@ algorithm
         Debug.fcall("recconst", Mod.printMod, mod_1);
         (cache,bind) = makeBinding(cache,env, attr, mod_1, tp_1);
       then
-        (cache,ih,Types.VAR(id,Types.ATTR(f,s,acc,var,Absyn.INPUT(),Absyn.UNSPECIFIED()),prot,tp_1,bind));
+        (cache,ih,Types.VAR(id,Types.ATTR(f,s,acc,var,dir,Absyn.UNSPECIFIED()),prot,tp_1,bind));
         
     case (cache,env,ih,elt,outerMod,impl)
       equation 
