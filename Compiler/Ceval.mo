@@ -88,6 +88,7 @@ protected import DAE;
 protected import Prefix;
 protected import Connect;
 protected import ClassInf;
+protected import DynLoad;
 
 public function ceval 
 "function: ceval
@@ -300,7 +301,7 @@ algorithm
         (cache,vallst) = cevalList(cache,env, expl, impl, st, msg);
         funcstr = ModUtil.pathStringReplaceDot(func, "_");
         Debug.fprintln("dynload", "CALL: About to execute function present in CF list: " +& funcstr);
-        newval = System.executeFunction(funcHandle, vallst);
+        newval = DynLoad.executeFunction(funcHandle, vallst);
       then
         (cache,newval,st);
     /* adrpo: TODO! this needs more work as if we don't have a symtab we run into unloading of dlls problem */
@@ -330,7 +331,7 @@ algorithm
         (cache,vallst) = cevalList(cache,env, expl, impl, st, msg);        
         funcstr = ModUtil.pathStringReplaceDot(func, "_")        ;
         Debug.fprintln("dynload", "CALL: About to execute function present in CF list: " +& funcstr);
-        newval = System.executeFunction(funcHandle, vallst);
+        newval = DynLoad.executeFunction(funcHandle, vallst);
       then
         (cache,newval,st);
     /* adrpo: TODO! this needs more work as if we don't have a symtab we run into unloading of dlls problem */
@@ -1172,7 +1173,7 @@ algorithm
         Debug.fprintln("dynload", "cevalCallFunction: about to execute " +& funcstr);
         libHandle = System.loadLibrary(funcstr);
         funcHandle = System.lookupFunction(libHandle, stringAppend("in_", funcstr));
-        newval = System.executeFunction(funcHandle, vallst);
+        newval = DynLoad.executeFunction(funcHandle, vallst);
         System.freeLibrary(libHandle);
         buildTime = System.getCurrentTime();        
         // adrpo: TODO! this needs more work as if we don't have a symtab we run into unloading of dlls problem
@@ -1204,7 +1205,7 @@ algorithm
         Debug.fprintln("dynload", "cevalCallFunction: about to execute " +& funcstr);
         libHandle = System.loadLibrary(funcstr);
         funcHandle = System.lookupFunction(libHandle, stringAppend("in_", funcstr));
-        newval = System.executeFunction(funcHandle, vallst);
+        newval = DynLoad.executeFunction(funcHandle, vallst);
         System.freeFunction(funcHandle);
         System.freeLibrary(libHandle);
       then

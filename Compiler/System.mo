@@ -212,14 +212,6 @@ public function freeLibrary
   external "C" ;
 end freeLibrary;
 
-public function executeFunction
-  input Integer inFuncHandle;
-  input list<Values.Value> inValLst;
-  output Values.Value outVal;
-
-  external "C" ;
-end executeFunction;
-
 public function sendData
   input String inString1;
   input String inString2; //interpolation
@@ -576,14 +568,6 @@ public function readFileNoNumeric
 
   external "C" ;
 end readFileNoNumeric;
-
-public function readValuesFromFile
-  input String inString;
-  output Values.Value outValue;
-
-  external "C" ;
-end readValuesFromFile;
-
 
 end System;
 
