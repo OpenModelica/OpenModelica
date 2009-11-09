@@ -1,9 +1,9 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2008, LinkÃ¶pings University,
+ * Copyright (c) 1998-2008, Linköpings University,
  * Department of Computer and Information Science,
- * SE-58183 LinkÃ¶ping, Sweden.
+ * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
@@ -29,15 +29,16 @@
  */
 
 #include "modelica.h"
-typedef int (*function_t)(void*, void*);
-typedef struct modelica_ptr_s *modelica_ptr_t;
 
 char* _replace(const char* source_str,
                const char* search_str,
                const char* replace_str);
-modelica_ptr_t lookup_ptr(modelica_integer index);
+
+typedef int (*function_t)(type_description*, type_description*);
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
+ #define WIN32_LEAN_AND_MEAN
+ #include <Windows.h>
 struct modelica_ptr_s {
   union {
     struct {
@@ -60,4 +61,8 @@ struct modelica_ptr_s {
   unsigned int cnt;
 };
 #endif
+
+typedef struct modelica_ptr_s *modelica_ptr_t;
+modelica_ptr_t lookup_ptr(modelica_integer index);
+
 
