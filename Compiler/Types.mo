@@ -1421,7 +1421,14 @@ algorithm
     case (Values.REAL(real = _)) then ((T_REAL({}),NONE)); 
     case (Values.STRING(string = _)) then ((T_STRING({}),NONE)); 
     case (Values.BOOL(boolean = _)) then ((T_BOOL({}),NONE)); 
-    case (Values.ENUM(value = _)) then ((T_ENUMERATION(SOME(0),Absyn.IDENT(""),{},{}),NONE)); 
+    case (Values.ENUM(Exp.CREF_IDENT(_, Exp.ENUMERATION(index, path, names, _), _),_))
+      local Option<Integer> index; Absyn.Path path; list<String> names;
+       then ((T_ENUMERATION(index,path,names,{}),NONE));
+    case (Values.ENUM(Exp.CREF_QUAL(_, _, _, cref), val))
+      local Exp.ComponentRef cref; Integer val;
+        equation
+          tp = typeOfValue(Values.ENUM(cref,val));
+       then tp;       
 //    case (Values.ENUM(value = _)) then ((T_ENUM(),NONE)); 
     case ((w as Values.ARRAY(valueLst = (v :: vs))))
       equation 
@@ -2883,7 +2890,7 @@ algorithm
         ((T_ENUMERATION(_,_,strs,{}),_)) = makeEnumerationType(p, xs);
       then
 //        ((T_ENUMERATION(NONE(),Absyn.IDENT(""),(name :: strs),{}),SOME(p)));
-        ((T_ENUMERATION(NONE(),p,(name :: strs),{}),SOME(p)));
+        ((T_ENUMERATION(NONE(),Absyn.IDENT(""),(name :: strs),{}),SOME(p)));
     case (p,{}) then ((T_ENUMERATION(NONE(),Absyn.IDENT(""),{},{}),SOME(p))); 
   end matchcontinue;
 end makeEnumerationType;

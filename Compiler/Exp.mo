@@ -7109,8 +7109,7 @@ algorithm
       Ident s,str,strrest,str_1,str_2;
       list<Subscript> subs;
       ComponentRef cr;
-      Type ty;
-        
+      Type ty;      
     case (CREF_IDENT(ident = s,identType = ty,subscriptLst = {})) 
       then s; /* optimize */ 
     case CREF_IDENT(ident = s,identType = ty, subscriptLst = subs)

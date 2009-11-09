@@ -215,7 +215,7 @@ algorithm
         (s_code2,nres) = generateInitialValueCode2(dlow2,ass1,ass2);
         (s_code3) = generateInitialBoundParameterCode(dlow2);
         cglobal = generateGlobalData(class_, dlow2, n_o, n_i, n_h, nres,fileDir); // CHANGED!!!
-        cenum = generateEnumDefinitions(dlow2);
+        cenum = ""; //generateEnumDefinitions(dlow2);
         coutput = generateComputeOutput(cname, dae, dlow2, ass1, ass2,m,mt, blt_no_states);
         cstate = generateComputeResidualState(cname, dae, dlow2, ass1, ass2, blt_states);
         c_ode = generateOdeCode(dlow2, blt_states, ass1, ass2, m, mt, class_);
@@ -8807,14 +8807,14 @@ algorithm
 
     case (Exp.BCONST(bool = true),_) then "true";
 
-
-    case (Exp.CREF(componentRef = c, ty = Exp.ENUMERATION(_,_,_,_)),_)
-      equation
-        res = Exp.printComponentRefStr(c);
-        res = Util.stringReplaceChar(res, ".", "_");
+    case (Exp.CREF(Exp.CREF_IDENT(_,Exp.ENUMERATION(SOME(idx),_,_,_),_),_),_)
+      local Integer idx; 
+        then intString(idx);
+    case (Exp.CREF(Exp.CREF_QUAL(_,ty as Exp.ENUMERATION(_,_,_,_),_,c),_),pri1)
+      equation 
+        res = printExp2Str(Exp.CREF(c, ty),pri1);
       then
-        res;
-
+        res;        
     case (Exp.CREF(componentRef = c),_)
       equation
         res = Exp.printComponentRefStr(c);
