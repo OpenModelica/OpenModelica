@@ -28,10 +28,6 @@
  *
  */
 
-#include "java_interface.h"
-#include <stdlib.h>
-#include <string.h>
-#include <stdarg.h>
 
 #if defined(__MINGW32__) || defined(_MSC_VER) /* Windows/MinGW */
 
@@ -40,6 +36,12 @@
 #define MAXPATHLEN 1024
 #include <winreg.h>
 #include <winerror.h>
+
+#include <stdlib.h>
+#include <string.h>
+#include <stdarg.h>
+#include "java_interface.h"
+
 typedef __declspec(dllimport) jint (__stdcall * GetCreatedJavaVMsFunc)(JavaVM **, jsize, jsize *);
 typedef __declspec(dllimport) jint (__stdcall * CreateJavaVMFunc)(JavaVM**,void**,void*);
 
@@ -47,6 +49,12 @@ typedef __declspec(dllimport) jint (__stdcall * CreateJavaVMFunc)(JavaVM**,void*
 
 #include <unistd.h>
 #include <dlfcn.h>
+
+#include <stdlib.h>
+#include <string.h>
+#include <stdarg.h>
+#include "java_interface.h"
+
 typedef jint (*GetCreatedJavaVMsFunc)(JavaVM **, jsize, jsize *);
 typedef jint (*CreateJavaVMFunc)(JavaVM**,void**,void*);
 
