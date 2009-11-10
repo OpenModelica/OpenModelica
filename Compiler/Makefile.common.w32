@@ -12,6 +12,7 @@ SRCMO= Absyn.mo \
 	ConnectionGraph.mo \
 	Convert.mo \
 	DAE.mo \
+	DAEUtil.mo \
 	DAELow.mo \
 	Derive.mo \
 	Debug.mo \

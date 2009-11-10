@@ -33,7 +33,12 @@ VC7\Release\main.obj: main.obj
 	copy /B /Y main.obj VC7\Release\main.obj
 
 clean:
-	del /Q /F $(OBJS) $(SRCC) $(SRCH) $(SIGS) $(SRZS) VC7\Release\main.obj VC7\Release\omcrml.lib
+	del /Q /F $(OBJS) 
+	del /Q /F $(SRCC) 
+	del /Q /F $(SRCH) 
+	del /Q /F $(SIGS) 
+	del /Q /F $(SRZS) 
+	del /Q /F VC7\Release\main.obj VC7\Release\omcrml.lib
 
 
 Absyn.obj: Absyn.mo Util.sig ModUtil.sig Debug.sig Print.sig

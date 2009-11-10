@@ -134,8 +134,8 @@ void *generate_array(enum type_desc_e type, int curdim, int ndims,
 
 char* path_to_name(void* path, char del)
 {
-  char* buf;
-  char* bufstart;
+  char* buf = 0;
+  char* bufstart = 0;
   void* tmpPath;
   int length = 0;
 
@@ -157,7 +157,7 @@ char* path_to_name(void* path, char del)
       break;
     };
     default:
-      free(buf);
+      /* free(buf); */
       return "path_to_name: failed to parse";
     }
   }
@@ -600,7 +600,7 @@ void *type_desc_to_value(type_description *desc)
                           desc->data.string_array.dim_size, &ptr);
   };
   case TYPE_DESC_MMC: {
-    void* t;
+    void* t = 0;
     assert(0 == mmc_to_value(desc->data.mmc, &t));
     return t;
   };

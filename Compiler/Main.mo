@@ -527,7 +527,6 @@ algorithm
         (cache,_,d_1,_) = Inst.instantiate(Env.emptyCache(),
                                             InstanceHierarchy.emptyInstanceHierarchy,
                                             scode);
-        d_1 = DAEUtil.transformIfEqToExpr(d_1);
         Debug.fcall("execstat",print, "*** Main -> done instantiation at time: " +& realString(clock()) +& "\n" );
         //print(" Inst.Instantiate " +& realString(clock()) +&" DONE\n");
         Debug.fprint("beforefixmodout", "Explicit part:\n");
@@ -547,6 +546,8 @@ algorithm
         Debug.fcall("daedump2", DAEUtil.dump2, d);
         Debug.fcall("daedumpdebug", DAEUtil.dumpDebug, d);
         Debug.fcall("daedumpgraphv", DAEUtil.dumpGraphviz, d);
+        // transform if equations to if expression before going into code generation
+        d = DAEUtil.transformIfEqToExpr(d);
         cname = Absyn.lastClassname(p);
         str = Print.getString();
         silent = RTOpts.silent();
@@ -599,7 +600,6 @@ algorithm
                                             InstanceHierarchy.emptyInstanceHierarchy,
                                             scode,
                                             lastClassPath);
-        d_1 = DAEUtil.transformIfEqToExpr(d_1);
         Debug.fcall("execstat",print, "*** Main -> done instantiation at time: " +& realString(clock()) +& "\n" );
         //print(" Inst.Instantiate " +& realString(clock()) +&" DONE\n");
         Debug.fprint("beforefixmodout", "Explicit part:\n");
@@ -619,6 +619,8 @@ algorithm
         Debug.fcall("daedump2", DAEUtil.dump2, d);
         Debug.fcall("daedumpdebug", DAEUtil.dumpDebug, d);
         Debug.fcall("daedumpgraphv", DAEUtil.dumpGraphviz, d);
+        // transform if equations to if expression before going into code generation
+        d = DAEUtil.transformIfEqToExpr(d);
         cname = Absyn.lastClassname(p);
         str = Print.getString();
         silent = RTOpts.silent();
