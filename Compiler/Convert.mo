@@ -48,6 +48,7 @@ public import Util;
 public import SCode;
 public import ClassInf;
 public import Debug;
+protected import DAEUtil;
 type Ident = String;
 
 //---------------------------------------------------------
@@ -251,7 +252,7 @@ algorithm
       local
         String str;
       equation
-        str = DAE.dumpElementsStr({daeElem});
+        str = DAEUtil.dumpElementsStr({daeElem});
         Debug.fprintln("failtrace", "- Convert.fromDAEElemToExpElem failed" +& str);
       then fail();
   end matchcontinue;

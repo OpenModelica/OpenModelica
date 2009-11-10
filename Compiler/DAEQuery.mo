@@ -45,6 +45,7 @@ import Util;
 import Exp;
 import Absyn;
 import DAE;
+import DAEUtil;
 import Algorithm;
 import RTOpts;
 
@@ -401,7 +402,7 @@ algorithm
                             streamPrefix = streamPrefix)) :: {}),varno)
       equation
         varnostr = intString(varno);
-        dirstr = DAE.dumpDirectionStr(dir);
+        dirstr = DAEUtil.dumpDirectionStr(dir);
         str1 = Exp.printComponentRefStr(cr);
         /*
         paths_lst = Util.listMap(paths, Absyn.pathString);
@@ -413,7 +414,7 @@ algorithm
         print(" ");
         print(path_str);
         indx_str = intString(indx);
-        str = DAE.dumpTypeStr(var_type);print( " type: "); print(str);
+        str = DAEUtil.dumpTypeStr(var_type);print( " type: "); print(str);
 
         print(" indx = ");
         print(indx_str);
@@ -439,7 +440,7 @@ algorithm
                               streamPrefix = streamPrefix)) :: xs),varno)
       equation
         varnostr = intString(varno);
-        dirstr = DAE.dumpDirectionStr(dir);
+        dirstr = DAEUtil.dumpDirectionStr(dir);
         str1 = Exp.printComponentRefStr(cr);
         /*
         paths_lst = Util.listMap(paths, Absyn.pathString);
@@ -451,7 +452,7 @@ algorithm
         print(" ");
         print(path_str);
         indx_str = intString(indx);
-        str = DAE.dumpTypeStr(var_type);print( " type: "); print(str);
+        str = DAEUtil.dumpTypeStr(var_type);print( " type: "); print(str);
 
         print(" indx = ");
         print(indx_str);

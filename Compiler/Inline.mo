@@ -54,6 +54,7 @@ public import Values;
 type Ident = String;
 
 protected import Debug;
+protected import DAEUtil;
 
 public function inlineCalls
 "function: inlineCalls
@@ -809,7 +810,7 @@ algorithm
       Exp.Exp newExp;
     case((Exp.CALL(p,args,tup,built,t,true),fns))
       equation
-        DAE.FUNCTION(_,DAE.DAE(fn),_,_) :: _ = DAE.getNamedFunction(p,fns);
+        DAE.FUNCTION(_,DAE.DAE(fn),_,_) :: _ = DAEUtil.getNamedFunction(p,fns);
         crefs = Util.listMap(fn,getInputCrefs);
         crefs = Util.listSelect(crefs,removeWilds);
         argmap = Util.listThreadTuple(crefs,args);

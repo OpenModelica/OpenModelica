@@ -44,17 +44,18 @@ package TaskGraph
   The package uses TaskGraphExt for the task graph datastructure itself, which
   is implemented using Boost Graph Library in C++"
 
-public import Exp;
 public import DAELow;
+public import Exp;
 public import SCode;
 
-protected import TaskGraphExt;
-protected import Util;
 protected import Absyn;
 protected import DAE;
+protected import DAEUtil;
+protected import SimCodegen;
+protected import TaskGraphExt;
+protected import Util;
 protected import Values;
 protected import VarTransform;
-protected import SimCodegen;
 
 public function buildTaskgraph ""
   input DAELow.DAELow inDAELow1;
@@ -143,7 +144,7 @@ algorithm
     case ({}) then ();
     case ((DAELow.VAR(varKind = DAELow.VARIABLE(),index = indx,origVarName = origname,values = dae_var_attr,comment = comment,flowPrefix = flowPrefix) :: rest))
       equation
-        e = DAE.getStartAttr(dae_var_attr);
+        e = DAEUtil.getStartAttr(dae_var_attr);
         v = Exp.printExpStr(e);
         origname_str = Exp.printComponentRefStr(origname);
         TaskGraphExt.addInitVar(indx, v, origname_str);
@@ -159,7 +160,7 @@ algorithm
         ();
     case ((DAELow.VAR(varKind = DAELow.STATE(),index = indx,origVarName = origname,values = dae_var_attr,comment = comment,flowPrefix = flowPrefix) :: rest))
       equation
-        e = DAE.getStartAttr(dae_var_attr);
+        e = DAEUtil.getStartAttr(dae_var_attr);
         v = Exp.printExpStr(e);
         origname_str = Exp.printComponentRefStr(origname);
         TaskGraphExt.addInitState(indx, v, origname_str);
@@ -175,7 +176,7 @@ algorithm
         ();
     case ((DAELow.VAR(varKind = DAELow.DUMMY_DER(),index = indx,origVarName = origname,values = dae_var_attr,comment = comment,flowPrefix = flowPrefix) :: rest))
       equation
-        e = DAE.getStartAttr(dae_var_attr);
+        e = DAEUtil.getStartAttr(dae_var_attr);
         v = Exp.printExpStr(e);
         origname_str = Exp.printComponentRefStr(origname);
         TaskGraphExt.addInitVar(indx, v, origname_str);
@@ -191,7 +192,7 @@ algorithm
         ();
     case ((DAELow.VAR(varKind = DAELow.DUMMY_STATE(),index = indx,origVarName = origname,values = dae_var_attr,comment = comment,flowPrefix = flowPrefix) :: rest))
       equation
-         e = DAE.getStartAttr(dae_var_attr);
+        e = DAEUtil.getStartAttr(dae_var_attr);
         v = Exp.printExpStr(e);
         origname_str = Exp.printComponentRefStr(origname);
         TaskGraphExt.addInitVar(indx, v, origname_str);

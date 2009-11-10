@@ -42,6 +42,7 @@ SRCMO= Absyn.mo \
 	Convert.mo \
 	DAE.mo \
 	DAELow.mo \
+	DAEUtil.mo \
 	Derive.mo \
 	Debug.mo \
 	DFA.mo \

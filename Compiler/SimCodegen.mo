@@ -77,25 +77,25 @@ protected constant String stringParamComments="string_param_comments";
 protected constant String stringAlgComments="string_alg_comments";
 protected constant String paramInGetNameFunction="ptr";
 
-protected import Util;
-protected import RTOpts;
-protected import Debug;
-protected import System;
-protected import Values;
-protected import Codegen;
-protected import Print;
-protected import ModUtil;
-protected import VarTransform;
-protected import Dump;
-protected import Inst;
-protected import Error;
-protected import Settings;
 protected import Algorithm;
-protected import Types;
 protected import CevalScript;
+protected import Codegen;
+protected import DAEUtil;
+protected import Debug;
+protected import Error;
+protected import Inline;
+protected import Inst;
 protected import InstanceHierarchy;
 protected import Lookup;
-protected import Inline;
+protected import ModUtil;
+protected import RTOpts;
+protected import Print;
+protected import Settings;
+protected import System;
+protected import Types;
+protected import Util;
+protected import Values;
+protected import VarTransform;
 
 public function generateMakefile
 "function: generateMakefile
@@ -2383,12 +2383,12 @@ algorithm
         true = DAELow.isVarOnTopLevelAndInput(var);
         origname_str = Exp.printComponentRefStr(origname);
         name_1 = Util.stringAppendList({"\"",origname_str,"\""});
-        comment = DAE.dumpCommentOptionStr(comment);
+        comment = DAEUtil.dumpCommentOptionStr(comment);
         n_vars_1 = n_vars + 1;
         comment_1 = generateEmptyString(comment);
         if_str = generateGetnameFunctionIf(cr,tp, n_vars, inputNames) "no defines because the outputvars is a subset of algvars" ;
       then
-        ((name_1 :: name_arr),(comment :: comment_arr),n_vars_1,(if_str :: get_name_function_ifs),var_defines);
+        ((name_1 :: name_arr),(comment_1 :: comment_arr),n_vars_1,(if_str :: get_name_function_ifs),var_defines);
         
     case ((var as DAELow.VAR(varName = cr,
                              varKind = kind,
@@ -2451,7 +2451,7 @@ algorithm
         true = DAELow.isVarOnTopLevelAndOutput(var);
         origname_str = Exp.printComponentRefStr(origname);
         name_1 = Util.stringAppendList({"\"",origname_str,"\""});
-        comment = DAE.dumpCommentOptionStr(comment);
+        comment = DAEUtil.dumpCommentOptionStr(comment);
         n_vars_1 = n_vars + 1;
         comment_1 = generateEmptyString(comment);
         if_str = generateGetnameFunctionIf(cr, tp,n_vars, outputNames) "no defines because the outputvars is a subset of algvars" ;
@@ -2530,7 +2530,7 @@ algorithm
         _ = Util.listGetMember(kind, kind_lst);
         origname_str = Exp.printComponentRefStr(origname) "if this fails then the var is not added to list" ;
         name_1 = Util.stringAppendList({"\"",origname_str,"\""});
-        comment = DAE.dumpCommentOptionStr(comment);
+        comment = DAEUtil.dumpCommentOptionStr(comment);
         num_stralg = num_stralg + 1;
         comment_1 = generateEmptyString(comment);
         stralg_arr = arrayUpdate(stralg_arr, indx + 1, name_1);
@@ -2562,7 +2562,7 @@ algorithm
         _ = Util.listGetMember(kind, kind_lst);
         origname_str = Exp.printComponentRefStr(origname) "if this fails then the var is not added to list" ;
         name_1 = Util.stringAppendList({"\"",origname_str,"\""});
-        comment = DAE.dumpCommentOptionStr(comment);
+        comment = DAEUtil.dumpCommentOptionStr(comment);
         n_vars_1 = n_vars + 1;
         comment_1 = generateEmptyString(comment);
         name_arr_1 = arrayUpdate(name_arr, indx + 1, name_1);
@@ -2705,7 +2705,7 @@ algorithm
         true = DAELow.isParam(var);
         origname_str = Exp.printComponentRefStr(origname);
         name_1 = Util.stringAppendList({"\"",origname_str,"\""});
-        comment = DAE.dumpCommentOptionStr(comment);
+        comment = DAEUtil.dumpCommentOptionStr(comment);
         num_strparam = num_strparam + 1;
         comment_1 = generateEmptyString(comment);
         strparam_arr = arrayUpdate(strparam_arr, indx + 1, name_1);
@@ -2739,7 +2739,7 @@ algorithm
         true = DAELow.isParam(var);
         origname_str = Exp.printComponentRefStr(origname);
         name_1 = Util.stringAppendList({"\"",origname_str,"\""});
-        comment = DAE.dumpCommentOptionStr(comment);
+        comment = DAEUtil.dumpCommentOptionStr(comment);
         n_vars_1 = n_vars + 1;
         comment_1 = generateEmptyString(comment);
         name_arr_1 = arrayUpdate(name_arr, indx + 1, name_1);
@@ -2883,7 +2883,7 @@ algorithm
         name_1 = Util.stringAppendList({"\"",origname_str,"\""});
         der_origname_1 = changeNameForDerivative(origname_str);
         der_name_1 = Util.stringAppendList({"\"",der_origname_1,"\""});
-        comment = DAE.dumpCommentOptionStr(comment);
+        comment = DAEUtil.dumpCommentOptionStr(comment);
         n_vars_1 = n_vars + 1;
         comment_1 = generateEmptyString(comment);
         name_arr_1 = arrayUpdate(name_arr, indx + 1, name_1);
@@ -3494,8 +3494,8 @@ algorithm
     case (((v as DAELow.VAR(varName = cr,varKind = kind,values = attr)) :: vars)) /* add equations for variables with fixed = true */
       equation
         true = DAELow.varFixed(v);
-        true = DAE.hasStartAttr(attr);
-        startv = DAE.getStartAttr(attr);
+        true = DAEUtil.hasStartAttr(attr);
+        startv = DAEUtil.getStartAttr(attr);
         eqns = generateInitialEquationsFromStart(vars);
       then
         (DAELow.EQUATION(Exp.CREF(cr,Exp.OTHER()),startv) :: eqns);
@@ -3534,7 +3534,7 @@ algorithm
 	   file, since the initial calc. will override those entries!
 	 */
       equation
-        startv = DAE.getStartAttr(attr);
+        startv = DAEUtil.getStartAttr(attr);
         false = Exp.isConst(startv);
         (func,cg_id_1) = generateInitialAssignmentsFromStart(vars, cg_id);
         origname_str = Exp.printComponentRefStr(origname);
@@ -5032,7 +5032,7 @@ algorithm
 
         // The variables solved for and the output variables of the algorithm must be the same.
         false = Util.listSetEqualOnTrue(solvedVars,algOutVars,Exp.crefEqual);
-        algStr =	DAE.dumpAlgorithmsStr({DAE.ALGORITHM(alg)});
+        algStr =	DAEUtil.dumpAlgorithmsStr({DAE.ALGORITHM(alg)});
         message = Util.stringAppendList({"Inverse Algorithm needs to be solved for in ",algStr,
           ". This is not implemented yet.\n"});
         Error.addMessage(Error.INTERNAL_ERROR,
@@ -6420,7 +6420,7 @@ algorithm
 				// We need to solve an inverse problem of an algorithm section.
         false = Exp.crefEqual(DAELow.varCref(v),varOutput);
         alg = alg[indx + 1];
-        algStr =	DAE.dumpAlgorithmsStr({DAE.ALGORITHM(alg)});
+        algStr =	DAEUtil.dumpAlgorithmsStr({DAE.ALGORITHM(alg)});
         message = Util.stringAppendList({"Inverse Algorithm needs to be solved for in ",algStr,". This is not implemented yet.\n"});
         Error.addMessage(Error.INTERNAL_ERROR,{message});
       then fail();
@@ -6837,7 +6837,7 @@ algorithm
                       streamPrefix = streamPrefix) :: rest),
           nxarr,nxdarr,nyarr,nparr,nystrarr,npstrarr)
       equation
-        e = DAE.getStartAttr(dae_var_attr);
+        e = DAEUtil.getStartAttr(dae_var_attr);
         v = printExpOptStrIfConst(SOME(e));
         origname_str = Exp.printComponentRefStr(origname);
         str = Util.stringAppendList({v," // ",origname_str});
@@ -6856,7 +6856,7 @@ algorithm
                       streamPrefix = streamPrefix) :: rest),
           nxarr,nxdarr,nyarr,nparr,nystrarr,npstrarr)
       equation
-        e = DAE.getStartAttr(dae_var_attr);
+        e = DAEUtil.getStartAttr(dae_var_attr);
         v = printExpOptStrIfConst(SOME(e)) "algebraic variables" ;
         origname_str = Exp.printComponentRefStr(origname);
         str = Util.stringAppendList({v," // ",origname_str});
@@ -6875,7 +6875,7 @@ algorithm
                       streamPrefix = streamPrefix) :: rest),
           nxarr,nxdarr,nyarr,nparr,nystrarr,npstrarr)
       equation
-        e = DAE.getStartAttr(dae_var_attr);
+        e = DAEUtil.getStartAttr(dae_var_attr);
         v = printExpOptStrIfConst(SOME(e)) "algebraic variables" ;
         origname_str = Exp.printComponentRefStr(origname);
         str = Util.stringAppendList({v," // ",origname_str});
@@ -6893,7 +6893,7 @@ algorithm
                       streamPrefix = streamPrefix) :: rest),
           nxarr,nxdarr,nyarr,nparr,nystrarr,npstrarr)
       equation
-        e = DAE.getStartAttr(dae_var_attr);
+        e = DAEUtil.getStartAttr(dae_var_attr);
         v = printExpOptStrIfConst(SOME(e)) "State variables" ;
         origname_str = Exp.printComponentRefStr(origname);
         str = Util.stringAppendList({v," // ",origname_str});
@@ -6911,7 +6911,7 @@ algorithm
                       streamPrefix = streamPrefix) :: rest),
           nxarr,nxdarr,nyarr,nparr,nystrarr,npstrarr)
       equation
-        e = DAE.getStartAttr(dae_var_attr);
+        e = DAEUtil.getStartAttr(dae_var_attr);
         v = printExpOptStrIfConst(SOME(e)) "dummy derivatives => algebraic variables" ;
         origname_str = Exp.printComponentRefStr(origname);
         str = Util.stringAppendList({v," // ",origname_str});
@@ -6929,7 +6929,7 @@ algorithm
                       streamPrefix = streamPrefix) :: rest),
           nxarr,nxdarr,nyarr,nparr,nystrarr,npstrarr)
       equation
-        e = DAE.getStartAttr(dae_var_attr);
+        e = DAEUtil.getStartAttr(dae_var_attr);
         v = printExpOptStrIfConst(SOME(e)) "Dummy states => algebraic variables" ;
         origname_str = Exp.printComponentRefStr(origname);
         str = Util.stringAppendList({v," // ",origname_str});
@@ -7058,7 +7058,7 @@ algorithm
                       streamPrefix = streamPrefix) :: rest),
           nxarr,nxdarr,nyarr,nparr,nystrarr,npstrarr)
       equation
-        e = DAE.getStartAttr(dae_var_attr);
+        e = DAEUtil.getStartAttr(dae_var_attr);
         v = printExpOptStrIfConst(SOME(e))  ;
         origname_str = Exp.printComponentRefStr(origname);
         str = Util.stringAppendList({v," // ",origname_str});
@@ -7078,7 +7078,7 @@ algorithm
                       streamPrefix = streamPrefix) :: rest),
           nxarr,nxdarr,nyarr,nparr,nystrarr,npstrarr)
       equation
-        e = DAE.getStartAttr(dae_var_attr);
+        e = DAEUtil.getStartAttr(dae_var_attr);
         v = printExpOptStrIfConst(SOME(e))  ;
         origname_str = Exp.printComponentRefStr(origname);
         str = Util.stringAppendList({v," // ",origname_str});
@@ -9267,7 +9267,7 @@ algorithm
       
     case (path,acc,DAE.DAE(elementLst = elements)) /* Don\'t fail here, ceval will generate the function later */
       equation
-        {} = DAE.getNamedFunction(path, elements);
+        {} = DAEUtil.getNamedFunction(path, elements);
         pathstr = Absyn.pathString(path);
         Error.addMessage(Error.LOOKUP_ERROR, {pathstr,"global scope"});
       then
@@ -9280,8 +9280,8 @@ algorithm
         list<Absyn.Path> varfuncs, fnpaths, fns, referencedFuncs, reffuncs;
       equation
         false = listMember(path,acc);
-        funcelems = DAE.getNamedFunction(path, elements);
-        explist = DAE.getAllExps(funcelems);
+        funcelems = DAEUtil.getNamedFunction(path, elements);
+        explist = DAEUtil.getAllExps(funcelems);
         fcallexps = Codegen.getMatchingExpsList(explist, Codegen.matchCalls);
         fcallexps_1 = Util.listSelect(fcallexps, isNotBuiltinCall);
         calledfuncs = Util.listMap(fcallexps_1, getCallPath);
@@ -9298,7 +9298,7 @@ algorithm
         
         varlistlist = Util.listMap(funcelems, getFunctionElementsList);
         varlist = Util.listFlatten(varlistlist);
-        varlist = Util.listSelect(varlist, DAE.isFunctionRefVar);
+        varlist = Util.listSelect(varlist, DAEUtil.isFunctionRefVar);
         varfuncs = Util.listMap(varlist, getFunctionRefVarPath);
         calledfuncs = Util.listSetDifference(calledfuncs, varfuncs) "Filter out function reference calls";
         /*--                                           --*/ 

@@ -16,13 +16,14 @@ public import Types;
 public import Exp;
 public import Absyn;
 
-protected import Util;
-protected import UnitParserExt;
-protected import Lookup;
-protected import System;
-protected import OptManager;
+protected import DAEUtil;
 protected import Interactive;
+protected import Lookup;
+protected import OptManager;
 protected import SCode;
+protected import System;
+protected import UnitParserExt;
+protected import Util;
 
 public function registerUnitWeights "traverses all dae variables and adjusts weights depending on defineunits defined
 in the scopes of the classLst for each variable"
@@ -39,7 +40,7 @@ algorithm
    case(cache,env,dae) equation
      /* TODO: This is very unefficient. It increases instantiationtime by factor 2 for 
     	 instantiation of largeTests/TestNandTotal.mo */
-       paths = Util.listListUnion(Util.listMap(dae,DAE.getClassList));
+       paths = Util.listListUnion(Util.listMap(dae,DAEUtil.getClassList));
        du = Util.listListUnion(Util.listMap1(paths,retrieveUnitsFromEnv,(cache,env)));
        registerUnitWeightDefineunits(du);
    then ();
@@ -1288,7 +1289,7 @@ algorithm
     Exp.Exp e1,e2;
     case({},store,ht) then (store,ht);
     case(DAE.VAR(componentRef=cr,variableAttributesOption=attropt)::dae,store,ht) equation
-      Exp.SCONST(unitStr) = DAE.getUnitAttr(attropt);
+      Exp.SCONST(unitStr) = DAEUtil.getUnitAttr(attropt);
       unit = str2unit(unitStr,NONE); /* Scale and offset not used yet*/
       (store,indx) = add(unit,store);
       ht = HashTable.add((cr,indx),ht);

@@ -131,26 +131,27 @@ uniontype DimExp
 
 end DimExp;
 
-protected import Debug;
-protected import Interactive;
-protected import Util;
 protected import Builtin;
-protected import Dump;
-protected import Lookup;
-protected import Static;
-protected import Values;
 protected import Ceval;
+protected import DAEUtil;
+protected import Debug;
+protected import Dump;
 protected import Error;
 protected import ErrorExt;
-protected import System;
-protected import ModUtil;
-protected import VarTransform;
-protected import OptManager;
-protected import HashTable5;
 protected import HashTable;
+protected import HashTable5;
+protected import Interactive;
+protected import Lookup;
+protected import ModUtil;
+protected import OptManager;
+protected import Static;
 protected import UnitAbsynBuilder;
 protected import UnitChecker;
 protected import UnitParserExt;
+protected import Util;
+protected import Values;
+protected import VarTransform;
+protected import System;
 
 public import UnitAbsyn;
 
@@ -1008,7 +1009,7 @@ algorithm
         			= instClassIn(cache, env_1, ih, store, mod, pre, csets, ci_state, c, false, inst_dims, impl, graph,NONE) ;
         (cache,fq_class) = makeFullyQualified(cache,env, Absyn.IDENT(n));
         
-        dae1_1 = DAE.setComponentType(dae1, fq_class);
+        dae1_1 = DAEUtil.setComponentType(dae1, fq_class);
         callscope_1 = isTopCall(callscope);              
         
         checkMissingInnerDecl(dae1_1,callscope_1);
@@ -1049,7 +1050,7 @@ algorithm
         			= instClassIn(cache, env_1, ih, store, mod, pre, csets, ci_state, c, false, inst_dims, impl, graph,NONE) ;
         (cache,fq_class) = makeFullyQualified(cache,env, Absyn.IDENT(n));
 				//str = Absyn.pathString(fq_class); print("------------------- CLASS makeFullyQualified instClass-----------------\n");print(n); print("  ");print(str);print("\n===============================================\n");
-        dae1_1 = DAE.setComponentType(dae1, fq_class);
+        dae1_1 = DAEUtil.setComponentType(dae1, fq_class);
         callscope_1 = isTopCall(callscope);              
         reportUnitConsistency(callscope_1,store);
         //print("in class ");print(n);print(" generate equations for sets:");print(Connect.printSetsStr(csets_1));print("\n");
@@ -1096,11 +1097,11 @@ algorithm
     
       /* Only traverse on top scope */
     case(true,store as UnitAbsyn.INSTSTORE(UnitAbsyn.STORE(vec,_),ht,_),(v as DAE.VAR(variableAttributesOption=varOpt as SOME(DAE.VAR_ATTR_REAL(unit = NONE))))::dae) equation
-      indx = HashTable.get(DAE.varCref(v),ht);
+      indx = HashTable.get(DAEUtil.varCref(v),ht);
       SOME(unit) = vec[indx];
       unitStr = UnitAbsynBuilder.unit2str(unit);
-      varOpt = DAE.setUnitAttr(varOpt,Exp.SCONST(unitStr));
-      v = DAE.setVariableAttributes(v,varOpt);
+      varOpt = DAEUtil.setUnitAttr(varOpt,Exp.SCONST(unitStr));
+      v = DAEUtil.setVariableAttributes(v,varOpt);
       dae = updateDeducedUnits(true,store,dae);
       then v::dae;
     case(true,store,elt::dae) equation
@@ -1232,7 +1233,7 @@ algorithm outelems := matchcontinue(inCr, elems)
       true = Exp.crefPrefixOf(inCr,cr2);
       //print(" Found: " +& Exp.printComponentRefStr(cr2) +& "\n");
       cr1 = updateCrefTypesWithConnectorPrefix(inCr,cr2);
-      elem = DAE.replaceCrefInVar(cr1,elem2);
+      elem = DAEUtil.replaceCrefInVar(cr1,elem2);
       //print(" replaced to: " ); print(DAE.dump2str(DAE.DAE({elem}))); print("\n");
       elems = updateTypesInUnconnectedConnectors2(inCr, elems);      
     then
@@ -1341,7 +1342,7 @@ algorithm
         (cache,env_3,ih,store,dae1,(csets_1 as Connect.SETS(_,crs,dc,oc)),ci_state_1,tys,bc_ty,_,_,_) 
         = instClassIn(cache,env_1,ih,store, mod, pre, csets, ci_state, c_1, false, inst_dims, impl, ConnectionGraph.EMPTY,NONE);
         (cache,fq_class) = makeFullyQualified(cache,env_3, Absyn.IDENT(n));
-        dae1_1 = DAE.setComponentType(dae1, fq_class);
+        dae1_1 = DAEUtil.setComponentType(dae1, fq_class);
         callscope_1 = isTopCall(callscope);
         dae2 = Connect.equations(csets_1,pre);
         (cache,dae3) = Connect.unconnectedFlowEquations(cache,csets_1, dae1, env_3, pre,callscope_1,{});
@@ -2676,14 +2677,14 @@ algorithm (ocsets,outDae) := matchcontinue(inDae,csets)
   local
   case(inDae,csets)
     equation
-      innerVars = DAE.getAllMatchingElements(inDae,DAE.isInnerVar);
-      outerVars = DAE.getAllMatchingElements(inDae,DAE.isOuterVar);  
+      innerVars = DAEUtil.getAllMatchingElements(inDae,DAEUtil.isInnerVar);
+      outerVars = DAEUtil.getAllMatchingElements(inDae,DAEUtil.isOuterVar);  
       repl = buildInnerOuterRepl(innerVars,outerVars,VarTransform.emptyReplacements());
 
       srcs = VarTransform.replacementSources(repl);
       targets = VarTransform.replacementTargets(repl);
-      inDae = DAE.removeVariables(inDae,srcs);
-      inDae = DAE.removeInnerAttrs(inDae,targets); 
+      inDae = DAEUtil.removeVariables(inDae,srcs);
+      inDae = DAEUtil.removeInnerAttrs(inDae,targets); 
       outDae = VarTransform.applyReplacementsDAE(inDae,repl,NONE);
       ocsets = changeOuterReferences2(repl,csets);
     then
@@ -2793,7 +2794,7 @@ algorithm outCr := matchcontinue(inCr,src,dst)
       true = Exp.crefPrefixOf(inCr,s);
       cr1 = extractCommonPart(inCr,d);
       false = Exp.crefIsIdent(cr1); // an ident can not be the inner part of an innerouter.
-      outCr = DAE.nameInnerouterUniqueCref(cr1);     
+      outCr = DAEUtil.nameInnerouterUniqueCref(cr1);     
       then
         outCr;
   case(inCr,s::src,d::dst)
@@ -2867,14 +2868,14 @@ algorithm
 	    Exp.ComponentRef cr; VarTransform.VariableReplacements repl;
 	  case(DAE.VAR(componentRef = cr, innerOuter = Absyn.INNEROUTER()),outerVars,repl) 
 	    equation
-        outerCrs = Util.listMap(outerVars,DAE.varCref);
+        outerCrs = Util.listMap(outerVars,DAEUtil.varCref);
 	      ourOuterCrs = Util.listSelect1(outerCrs,cr,isInnerOuterMatch);
-	      cr = DAE.nameInnerouterUniqueCref(cr);
+	      cr = DAEUtil.nameInnerouterUniqueCref(cr);
         repl = Util.listFold_2r(ourOuterCrs,VarTransform.addReplacement,repl,Exp.CREF(cr,Exp.OTHER()));
 	    then repl;
 	  case(DAE.VAR(componentRef = cr),outerVars,repl) 
 	    equation
-	      outerCrs = Util.listMap(outerVars,DAE.varCref);
+	      outerCrs = Util.listMap(outerVars,DAEUtil.varCref);
 	      ourOuterCrs = Util.listSelect1(outerCrs,cr,isInnerOuterMatch);
 	      repl = Util.listFold_2r(ourOuterCrs,VarTransform.addReplacement,repl,Exp.CREF(cr,Exp.OTHER()));
 	    then repl;
@@ -6348,7 +6349,7 @@ algorithm
         false = modificationOnOuter(cr,mod,io); 
         dae3 = daeDeclare(cr, ci_state, ty, SCode.ATTR({},flowPrefix,streamPrefix,acc,vt,dir),prot, eOpt,
           inst_dims, start, dae_var_attr, comment,io,finalPrefix,false);
-        dae3 = DAE.setComponentTypeOpt(dae3, Types.getClassnameOpt(ty));
+        dae3 = DAEUtil.setComponentTypeOpt(dae3, Types.getClassnameOpt(ty));
         dae2 = Util.if_(Types.isComplexType(ty), dae2,{});
         dae3 = listAppend(dae2,dae3);
         dae = listAppend(dae1_1, dae3);
@@ -9080,8 +9081,8 @@ algorithm
                      variability = par,direction = dir),
           prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars )
       equation 
-        flowPrefix1 = DAE.toFlow(flowPrefix, ci_state);
-        streamPrefix1 = DAE.toStream(streamPrefix, ci_state);
+        flowPrefix1 = DAEUtil.toFlow(flowPrefix, ci_state);
+        streamPrefix1 = DAEUtil.toStream(streamPrefix, ci_state);
         dae = daeDeclare2(vn, ty, flowPrefix1, streamPrefix1, par, dir,prot, e, inst_dims, start, dae_var_attr, comment,io,finalPrefix,declareComplexVars );
       then
         dae;
@@ -9271,25 +9272,25 @@ algorithm
     case (vn,ty as(Types.T_INTEGER(varLstInt = _),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars) 
       equation 
         finst_dims = Util.listFlatten(inst_dims);
-        dae_var_attr = DAE.setFinalAttr(dae_var_attr,finalPrefix);
+        dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,finalPrefix);
       then {DAE.VAR(vn,kind,dir,prot,DAE.INT(),e,finst_dims,fl,st,{},dae_var_attr,comment,io,ty)};
          
     case (vn,ty as(Types.T_REAL(varLstReal = _),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars)
       equation 
         finst_dims = Util.listFlatten(inst_dims);
-        dae_var_attr = DAE.setFinalAttr(dae_var_attr,finalPrefix);
+        dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,finalPrefix);
       then {DAE.VAR(vn,kind,dir,prot,DAE.REAL(),e,finst_dims,fl,st,{},dae_var_attr,comment,io,ty)};
          
     case (vn,ty as(Types.T_BOOL(varLstBool = _),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars) 
       equation 
         finst_dims = Util.listFlatten(inst_dims);
-        dae_var_attr = DAE.setFinalAttr(dae_var_attr,finalPrefix);
+        dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,finalPrefix);
       then {DAE.VAR(vn,kind,dir,prot,DAE.BOOL(),e,finst_dims,fl,st,{},dae_var_attr,comment,io,ty)};
          
     case (vn,ty as(Types.T_STRING(varLstString = _),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars) 
       equation 
         finst_dims = Util.listFlatten(inst_dims);
-        dae_var_attr = DAE.setFinalAttr(dae_var_attr,finalPrefix);
+        dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,finalPrefix);
       then {DAE.VAR(vn,kind,dir,prot,DAE.STRING(),e,finst_dims,fl,st,{},dae_var_attr,comment,io,ty)};
          
     case (vn,ty as(Types.T_ENUMERATION(SOME(_),_,_,_),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars) then {}; 
@@ -9299,27 +9300,27 @@ algorithm
     case (vn,ty as(Types.T_LIST(_),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars)
       equation
         finst_dims = Util.listFlatten(inst_dims);
-        dae_var_attr = DAE.setFinalAttr(dae_var_attr,finalPrefix);      
+        dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,finalPrefix);      
       then {DAE.VAR(vn,kind,dir,prot,DAE.LIST(),e,finst_dims,fl,st,{},dae_var_attr,comment,io,ty)};
     case (vn,ty as(Types.T_METATUPLE(_),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars)
       equation
         finst_dims = Util.listFlatten(inst_dims);
-        dae_var_attr = DAE.setFinalAttr(dae_var_attr,finalPrefix);
+        dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,finalPrefix);
       then {DAE.VAR(vn,kind,dir,prot,DAE.METATUPLE(),e,finst_dims,fl,st,{},dae_var_attr,comment,io,ty)};
     case (vn,ty as(Types.T_METAOPTION(_),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars)
       equation
         finst_dims = Util.listFlatten(inst_dims);
-        dae_var_attr = DAE.setFinalAttr(dae_var_attr,finalPrefix);
+        dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,finalPrefix);
       then {DAE.VAR(vn,kind,dir,prot,DAE.METAOPTION(),e,finst_dims,fl,st,{},dae_var_attr,comment,io,ty)};
     case (vn,ty as(Types.T_UNIONTYPE(_),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars)
       equation
         finst_dims = Util.listFlatten(inst_dims);
-        dae_var_attr = DAE.setFinalAttr(dae_var_attr,finalPrefix);
+        dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,finalPrefix);
       then {DAE.VAR(vn,kind,dir,prot,DAE.UNIONTYPE(),e,finst_dims,fl,st,{},dae_var_attr,comment,io,ty)};
     case (vn,ty as(Types.T_POLYMORPHIC(_),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars)
       equation
         finst_dims = Util.listFlatten(inst_dims);
-        dae_var_attr = DAE.setFinalAttr(dae_var_attr,finalPrefix);
+        dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,finalPrefix);
       then {DAE.VAR(vn,kind,dir,prot,DAE.POLYMORPHIC(),e,finst_dims,fl,st,{},dae_var_attr,comment,io,ty)};
     case (vn,(tty as Types.T_FUNCTION(_,_),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars)
       local
@@ -9327,7 +9328,7 @@ algorithm
         Absyn.Path path;
       equation
         finst_dims = Util.listFlatten(inst_dims);
-        dae_var_attr = DAE.setFinalAttr(dae_var_attr,finalPrefix);
+        dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,finalPrefix);
         path = Exp.crefToPath(vn);
         ty = (tty,SOME(path));
       then {DAE.VAR(vn,kind,dir,prot,DAE.FUNCTION_REFERENCE(),e,finst_dims,fl,st,{},dae_var_attr,comment,io,ty)};
@@ -9340,14 +9341,14 @@ algorithm
     case (vn,ty as(Types.T_ENUMERATION(names = l),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars)
       equation 
         finst_dims = Util.listFlatten(inst_dims);
-        dae_var_attr = DAE.setFinalAttr(dae_var_attr,finalPrefix);
+        dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,finalPrefix);
       then {DAE.VAR(vn,kind,dir,prot,DAE.ENUMERATION(l),e,finst_dims,fl,st,{}, dae_var_attr,comment,io,ty)};  
 
     /* Complex type that is Record*/
 /*    case (vn, ty as (Types.T_COMPLEX(complexClassType = ClassInf.RECORD(string = s)),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars)
       equation
         finst_dims = Util.listFlatten(inst_dims);
-        dae_var_attr = DAE.setFinalAttr(dae_var_attr,finalPrefix);
+        dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,finalPrefix);
       then {DAE.VAR(vn,kind,dir,prot,DAE.RECORD(s),e,finst_dims,fl,st,{},dae_var_attr,comment,io,ty)};
 */
           /* Complex type that is ExternalObject*/
@@ -9355,14 +9356,14 @@ algorithm
        local Absyn.Path path;
        equation 
          finst_dims = Util.listFlatten(inst_dims);
-         dae_var_attr = DAE.setFinalAttr(dae_var_attr,finalPrefix);
+         dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,finalPrefix);
        then {DAE.VAR(vn,kind,dir,prot,DAE.EXT_OBJECT(path),e,finst_dims,fl,st,{},dae_var_attr,comment,io,ty)};
             
       /* instantiation of complex type extending from basic type */ 
     case (vn,(Types.T_COMPLEX(complexClassType = ci,complexTypeOption = SOME(tp)),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars)
       equation
         (_,dae_var_attr) = instDaeVariableAttributes(Env.emptyCache(),Env.emptyEnv, Types.NOMOD(), tp, {});
-        dae_var_attr = DAE.setFinalAttr(dae_var_attr,finalPrefix);
+        dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,finalPrefix);
         dae = daeDeclare4(vn,tp,fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars);
     then dae;
 		
@@ -9806,10 +9807,10 @@ algorithm
         (cache,e_2) = Prefix.prefixExp(cache,env, e_1, pre);
         
         (cache,env_1,ih,dae1,_,_,graph) = instList(cache,env,ih, mod, pre, csets, ci_state, instEEquation, el, impl, graph);
-        lhsCrefs = DAE.verifyWhenEquation(dae1);
+        lhsCrefs = DAEUtil.verifyWhenEquation(dae1);
         (cache,env_2,ih,(dae3 as (dae2 :: _)),_,ci_state_1,graph) = instEquationCommon(cache,env_1,ih, mod, pre, csets, ci_state, 
           SCode.EQ_WHEN(ee,eel,eex,NONE), initial_, impl, graph);
-        lhsCrefsRec = DAE.verifyWhenEquation(dae3);
+        lhsCrefsRec = DAEUtil.verifyWhenEquation(dae3);
         i1 = listLength(lhsCrefs);
         lhsCrefs = Util.listUnionOnTrue(lhsCrefs,lhsCrefsRec,Exp.crefEqual);
 //TODO: fix error reporting print(" listLength pre:" +& intString(i1) +& " post: " +& intString(listLength(lhsCrefs)) +& "\n");
@@ -9824,7 +9825,7 @@ algorithm
         (cache,e_1,_,_) = Static.elabExp(cache,env, e, impl, NONE,true);
         (cache,e_2) = Prefix.prefixExp(cache,env, e_1, pre);
         (cache,env_1,ih,dae1,_,_,graph) = instList(cache,env,ih, mod, pre, csets, ci_state, instEEquation, el, impl, graph);
-        lhsCrefs = DAE.verifyWhenEquation(dae1);
+        lhsCrefs = DAEUtil.verifyWhenEquation(dae1);
 //TODO: fix error reporting, print(" exps: " +& Util.stringDelimitList(Util.listMap(lhsCrefs,Exp.printComponentRefStr),", ") +& "\n");
         ci_state_1 = instEquationCommonCiTrans(ci_state, initial_);
       then
@@ -13887,7 +13888,7 @@ algorithm
   odae := matchcontinue(isTopScope,dae)
     case(true,dae)
       equation
-        odae = DAE.renameUniqueOuterVars(dae);
+        odae = DAEUtil.renameUniqueOuterVars(dae);
       then
         odae;
     case(false,dae) then dae;
@@ -13988,8 +13989,8 @@ algorithm
         false = boolOr(b3,b4); 
         f1 = componentFaceType(cr1);
         f2 = componentFaceType(cr2);
-        cr1 = DAE.unNameInnerouterUniqueCref(cr1,DAE.UNIQUEIO);
-        cr2 = DAE.unNameInnerouterUniqueCref(cr2,DAE.UNIQUEIO);
+        cr1 = DAEUtil.unNameInnerouterUniqueCref(cr1,DAE.UNIQUEIO);
+        cr2 = DAEUtil.unNameInnerouterUniqueCref(cr2,DAE.UNIQUEIO);
         io1 = convertInnerOuterInnerToOuter(io1); // we need to change from inner to outer to be able to join sets in: addOuterConnectToSets 
         io2 = convertInnerOuterInnerToOuter(io2);
         (setLst,crs,added) = Connect.addOuterConnectToSets(cr1,cr2,io1,io2,f1,f2,setLst,crs);
@@ -14221,8 +14222,8 @@ algorithm
   _ := matchcontinue(inDae,callScope)  
     case(inDae,true) 
       equation
-        innerVars = DAE.getAllMatchingElements(inDae,DAE.isInnerVar);
-        outerVars = DAE.getAllMatchingElements(inDae,DAE.isOuterVar);
+        innerVars = DAEUtil.getAllMatchingElements(inDae,DAEUtil.isInnerVar);
+        outerVars = DAEUtil.getAllMatchingElements(inDae,DAEUtil.isOuterVar);
         checkMissingInnerDecl1(innerVars,outerVars);  
       then ();
     case(inDae,false) 
@@ -14253,13 +14254,13 @@ algorithm
       
     case(DAE.VAR(componentRef=cr),innerVars) 
       equation
-        crs = Util.listMap(innerVars,DAE.varCref);
+        crs = Util.listMap(innerVars,DAEUtil.varCref);
         {_} = Util.listSelect1(crs, cr,isInnerOuterMatch);
       then ();
     case(DAE.VAR(componentRef=cr, innerOuter = io),innerVars)  
       equation
         str2 = Dump.unparseInnerouterStr(io);
-        crs = Util.listMap(innerVars,DAE.varCref);
+        crs = Util.listMap(innerVars,DAEUtil.varCref);
         {} = Util.listSelect1(crs, cr,isInnerOuterMatch);
         str = Exp.printComponentRefStr(cr);
         failExceptForCheck();
@@ -14268,7 +14269,7 @@ algorithm
       local Absyn.InnerOuter io;
       equation
         str2 = Dump.unparseInnerouterStr(io);
-        crs = Util.listMap(innerVars,DAE.varCref);
+        crs = Util.listMap(innerVars,DAEUtil.varCref);
         {} = Util.listSelect1(crs, cr,isInnerOuterMatch);
         str = Exp.printComponentRefStr(cr);
         Error.addMessage(Error.MISSING_INNER_PREFIX,{str,str2});
@@ -14554,13 +14555,13 @@ algorithm
     local list<DAE.Element> dae1,dae2;
     case(Absyn.OUTER(),dae) 
       equation
-        (odae,_) = DAE.removeEquations(dae);
+        (odae,_) = DAEUtil.removeEquations(dae);
       then
         odae;
     case(Absyn.INNEROUTER(),dae)
       equation
-        (dae1,dae2) = DAE.removeEquations(dae);
-        dae2 = DAE.nameUniqueOuterVars(dae2);
+        (dae1,dae2) = DAEUtil.removeEquations(dae);
+        dae2 = DAEUtil.nameUniqueOuterVars(dae2);
         dae = listAppend(dae1,dae2);
       then
         dae;

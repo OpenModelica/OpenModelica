@@ -130,6 +130,7 @@ protected import Inst;
 protected import Interactive;
 protected import System;
 protected import Error;
+protected import DAEUtil;
 
 public constant CFunction cEmptyFunction=CFUNCTION("","",{},{},{},{},{},{}) " empty function ";
 
@@ -981,8 +982,8 @@ protected function generateFunctionsElist
 algorithm
   Debug.fprintln("cgtr", "generate_functions_elist");
   Debug.fprintln("cgtrdumpdae", "Dumping DAE:");
-  Debug.fcall("cgtrdumpdae", DAE.dump2, DAE.DAE(els));
-  fns := Util.listFilter(els, DAE.isFunction);
+  Debug.fcall("cgtrdumpdae", DAEUtil.dump2, DAE.DAE(els));
+  fns := Util.listFilter(els, DAEUtil.isFunction);
   (cfns,rt_1) := generateFunctionsElist2(fns,rt);
 end generateFunctionsElist;
 
@@ -1058,14 +1059,14 @@ algorithm
         fn_name_str = stringAppend("_", fn_name_str);
         Debug.fprintl("cgtr", {"generating function ",fn_name_str,"\n"});
         Debug.fprintln("cgtrdumpdae3", "Dumping DAE:");
-        Debug.fcall("cgtrdumpdae3", DAE.dump2, DAE.DAE(dae));
-        outvars = DAE.getOutputVars(dae);
-        invars = DAE.getInputVars(dae);
+        Debug.fcall("cgtrdumpdae3", DAEUtil.dump2, DAE.DAE(dae));
+        outvars = DAEUtil.getOutputVars(dae);
+        invars = DAEUtil.getInputVars(dae);
         (struct_strs,rt_1) = generateStructsForRecords(dae, rt);
         struct_strs_1 = generateResultStruct(outvars, fpath);
         struct_strs = listAppend(struct_strs, struct_strs_1);
         /*-- MetaModelica Partial Function. sjoelund --*/
-        funrefs = Util.listSelect(invars, DAE.isFunctionRefVar);
+        funrefs = Util.listSelect(invars, DAEUtil.isFunctionRefVar);
         struct_funrefs = Util.listFlatten(Util.listMap(funrefs, generateFunctionRefReturnStruct));
         /*--                                           --*/
         retstr = generateReturnType(fpath);
@@ -1139,9 +1140,9 @@ algorithm
         fn_name_str = stringAppend("_", fn_name_str);
         DAE.EXTERNALDECL(ident = extfnname, external_ = extargs,parameters = extretarg, returnType = lang, language = ann) = extdecl;
         dae = Inst.initVarsModelicaOutput(orgdae);
-        outvars = DAE.getOutputVars(dae);
-        invars = DAE.getInputVars(dae);
-        bivars = DAE.getBidirVars(dae);
+        outvars = DAEUtil.getOutputVars(dae);
+        invars = DAEUtil.getInputVars(dae);
+        bivars = DAEUtil.getBidirVars(dae);
         (struct_strs,rt_1) = generateStructsForRecords(dae,rt);
         struct_strs_1 = generateResultStruct(outvars, fpath);
         struct_strs = listAppend(struct_strs, struct_strs_1);
@@ -1166,13 +1167,13 @@ algorithm
         Debug.fprintl("cgtr", {"generating external function ",fn_name_str,"\n"});
         DAE.EXTERNALDECL(ident = extfnname,external_ = extargs,parameters = extretarg,returnType = lang,language = ann) = extdecl;
         Debug.fprintln("cgtrdumpdae1", "Dumping DAE:");
-        Debug.fcall("cgtrdumpdae1", DAE.dump2, DAE.DAE(orgdae));
+        Debug.fcall("cgtrdumpdae1", DAEUtil.dump2, DAE.DAE(orgdae));
         dae = Inst.initVarsModelicaOutput(orgdae);
         Debug.fprintln("cgtrdumpdae2", "Dumping DAE:");
-        Debug.fcall("cgtrdumpdae2", DAE.dump2, DAE.DAE(dae));
-        outvars = DAE.getOutputVars(dae);
-        invars = DAE.getInputVars(dae);
-        bivars = DAE.getBidirVars(dae);
+        Debug.fcall("cgtrdumpdae2", DAEUtil.dump2, DAE.DAE(dae));
+        outvars = DAEUtil.getOutputVars(dae);
+        invars = DAEUtil.getInputVars(dae);
+        bivars = DAEUtil.getBidirVars(dae);
         (struct_strs,rt_1) = generateStructsForRecords(dae, rt);
         struct_strs_1 = generateResultStruct(outvars, fpath);
         struct_strs = listAppend(struct_strs, struct_strs_1);
@@ -1782,7 +1783,7 @@ algorithm
                          absynCommentOption = comment)))
 
       equation
-        Debug.fcall("isarrdb", DAE.dump2, DAE.DAE({el}));
+        Debug.fcall("isarrdb", DAEUtil.dump2, DAE.DAE({el}));
       then
         false;
         
@@ -1797,13 +1798,13 @@ algorithm
                          variableAttributesOption = dae_var_attr,
                          absynCommentOption = comment)))
       equation
-        Debug.fcall("isarrdb", DAE.dump2, DAE.DAE({el}));
+        Debug.fcall("isarrdb", DAEUtil.dump2, DAE.DAE({el}));
       then
         true;
         
     case el
       equation
-        Debug.fprint("failtrace", "-Codegen.isArray failed\n");
+        Debug.fprint("failtrace", "- Codegen.isArray failed\n");
       then
         fail();
   end matchcontinue;
@@ -2530,7 +2531,7 @@ algorithm
   ret_type_str := generateReturnType(fpath);
   (ret_decl,ret_var,tnr_ret_1) := generateTempDecl(ret_type_str, tnr);
   ret_stmt := Util.stringAppendList({"return ",ret_var,";"});
-  outvars := DAE.getOutputVars(dae);
+  outvars := DAEUtil.getOutputVars(dae);
   (out_fn,tnr_ret) := generateAllocOutvars(outvars, ret_decl, ret_var, 1,tnr_ret_1, funContext);
   (mem_decl,mem_var,tnr_mem) := generateTempDecl("state", tnr_ret);
   mem_stmt1 := Util.stringAppendList({mem_var," = get_memory_state();"});
@@ -2787,7 +2788,7 @@ algorithm
     case (e,_,_,tnr,context)
       local DAE.Element e;
       equation
-        failure(DAE.isVar(e));
+        failure(DAEUtil.isVar(e));
       then
         (cEmptyFunction,tnr);
         
@@ -2940,7 +2941,7 @@ algorithm
     case (e,_,_,tnr)
       local DAE.Element e;
       equation
-        failure(DAE.isVar(e));
+        failure(DAEUtil.isVar(e));
       then
         (cEmptyFunction,tnr);
         
@@ -3047,7 +3048,7 @@ algorithm
       Context context;
     case (els,tnr,context)
       equation
-        algs = Util.listFilter(els, DAE.isAlgorithm);
+        algs = Util.listFilter(els, DAEUtil.isAlgorithm);
         (cfn,tnr_1) = generateAlgorithms2(algs, tnr, context);
       then
         (cfn,tnr_1);
@@ -7185,8 +7186,8 @@ algorithm
       Option<Absyn.Annotation> ann;
     case (vars,(extdecl as DAE.EXTERNALDECL(ident = n,external_ = arglist,parameters = retarg,returnType = lang,language = ann)),tnr)
       equation
-        Debug.fcall("cgtrdumpdaeextcall", DAE.dump2, DAE.DAE(vars));
-        extdeclstr = DAE.dumpExtDeclStr(extdecl);
+        Debug.fcall("cgtrdumpdaeextcall", DAEUtil.dump2, DAE.DAE(vars));
+        extdeclstr = DAEUtil.dumpExtDeclStr(extdecl);
         Debug.fprintln("cgtrdumpdaeextcall", extdeclstr);
         (argdecls,arglist_1,tnr_1) = generateExtcallVardecls(vars, arglist, retarg, lang, 1,tnr);
         lang2 = getJavaCallMappingFromAnn(lang, ann);
@@ -7296,7 +7297,7 @@ algorithm
     case ((var :: rest),i,tnr)
       equation
         Debug.fprint("cgtr", "#--Ignoring: ");
-        Debug.fcall("cgtr", DAE.dump2, DAE.DAE({var}));
+        Debug.fcall("cgtr", DAEUtil.dump2, DAE.DAE({var}));
         Debug.fprintln("cgtr", "");
         (fn,tnr_1) = generateExtcallCopydeclsF77(rest,i, tnr);
       then
@@ -8992,7 +8993,7 @@ algorithm
       local
         DAE.Element el;
       equation
-        failure(DAE.isVar(el));
+        failure(DAEUtil.isVar(el));
         cfn = generateWriteOutvars(r,i);
       then
         cfn;
@@ -9009,7 +9010,7 @@ protected function isOutput "Returns true if variable is output"
 algorithm
   isOutput := matchcontinue(e)
     case(e) equation
-      DAE.isOutputVar(e);
+      DAEUtil.isOutputVar(e);
     then true;
     case(_) then false;
   end matchcontinue;
@@ -9020,8 +9021,8 @@ protected function isRcwOutput "function: isRcwOutput
 "
   input DAE.Element e;
 algorithm
-  DAE.isVar(e);
-  DAE.isOutputVar(e);
+  DAEUtil.isVar(e);
+  DAEUtil.isOutputVar(e);
 end isRcwOutput;
 
 protected function isRcwInput "function: isRcwInput
@@ -9029,8 +9030,8 @@ protected function isRcwInput "function: isRcwInput
 "
   input DAE.Element e;
 algorithm
-  DAE.isVar(e);
-  DAE.isInputVar(e);
+  DAEUtil.isVar(e);
+  DAEUtil.isInputVar(e);
 end isRcwInput;
 
 protected function isRcwBidir "function: isRcwBidir
@@ -9038,8 +9039,8 @@ protected function isRcwBidir "function: isRcwBidir
 "
   input DAE.Element e;
 algorithm
-  DAE.isVar(e);
-  DAE.isBidirVar(e);
+  DAEUtil.isVar(e);
+  DAEUtil.isBidirVar(e);
 end isRcwBidir;
 
 protected function generateJavaSignature
@@ -9704,7 +9705,7 @@ algorithm
         ld2 = Convert.fromExpElemsToDAEElems(ld,{});
         body2 = Convert.fromExpElemToDAEElem(body);
         ld2 = body2 :: ld2;
-        exps = DAE.getAllExps(ld2);
+        exps = DAEUtil.getAllExps(ld2);
         res = getMatchingExpsList(resE::exps,matchValueblock);
       then e::res;
   end matchcontinue;
@@ -9893,7 +9894,7 @@ algorithm
         ld2 = Convert.fromExpElemsToDAEElems(ld,{});
         body2 = Convert.fromExpElemToDAEElem(body);
         ld2 = body2 :: ld2;
-        exps = DAE.getAllExps(ld2);
+        exps = DAEUtil.getAllExps(ld2);
         res = getMatchingExpsList(e::exps,fn);
       then res;
         
@@ -9929,7 +9930,7 @@ algorithm
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
         paths1 = getUniontypePaths2(elements);
-        exps = DAE.getAllExps(elements);
+        exps = DAEUtil.getAllExps(elements);
         exps = getMatchingExpsList(exps, matchValueblock);
         els = getDAEDeclsFromValueblocks(exps);
         paths2 = getUniontypePaths2(els);

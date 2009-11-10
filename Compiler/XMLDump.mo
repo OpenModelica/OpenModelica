@@ -86,6 +86,7 @@ package XMLDump
   public import DAE;
   public import DAEEXT;
   public import DAELow;
+  public import DAEUtil;
   public import Dump;
   public import Exp;
   public import ModUtil;  
@@ -528,7 +529,7 @@ algorithm
       local Integer algNo_1;
       equation
         dumpStrOpenTagAttr(ALGORITHM, LABEL, stringAppend(stringAppend(ALGORITHM_REF,"_"),intString(algNo)));
-        Print.printBuf(DAE.dumpAlgorithmStr(DAE.ALGORITHM(Algorithm.ALGORITHM(stmts))));
+        Print.printBuf(DAEUtil.dumpAlgorithmStr(DAE.ALGORITHM(Algorithm.ALGORITHM(stmts))));
         dumpStrCloseTag(ALGORITHM);
         algNo_1=algNo+1;
         dumpAlgorithms2(algs,algNo_1);
@@ -1921,8 +1922,8 @@ algorithm
       equation
         dumpStrOpenTag(c);
         Print.printBuf("class ");Print.printBuf(Absyn.pathString(path));Print.printBuf("\n  extends ExternalObject");
-        Print.printBuf(DAE.dumpFunctionStr(constr));Print.printBuf("\n");
-        Print.printBuf(DAE.dumpFunctionStr(destr));
+        Print.printBuf(DAEUtil.dumpFunctionStr(constr));Print.printBuf("\n");
+        Print.printBuf(DAEUtil.dumpFunctionStr(destr));
         Print.printBuf("end");Print.printBuf(Absyn.pathString(path));
         dumpStrCloseTag(c);
         dumpExtObjCls2(xs,c);
@@ -2009,14 +2010,14 @@ algorithm
       equation
       Print.printBuf("\n<");Print.printBuf(FUNCTION);
       Print.printBuf(" ");Print.printBuf(FUNCTION_NAME);Print.printBuf("=\"");Print.printBuf(Absyn.pathString(name));Print.printBuf("\"");
-      Print.printBuf(" ");Print.printBuf(MODELICA_IMPLEMENTATION);Print.printBuf("=\"");Print.printBuf(DAE.dumpFunctionStr(fun));
+      Print.printBuf(" ");Print.printBuf(MODELICA_IMPLEMENTATION);Print.printBuf("=\"");Print.printBuf(DAEUtil.dumpFunctionStr(fun));
       Print.printBuf("\"/>");
     then();
     case (_,_) then();      
 /*
         dumpStrOpenTag(Function)
         dumpAttribute(name= Absyn.pathString(name));
-        dumpAttribute(Modelica implementation = DAE.dumpFunctionStr(fun));
+        dumpAttribute(Modelica implementation = DAEUtil.dumpFunctionStr(fun));
         dumpStrCloseTag(Function)
 */        
    end matchcontinue;
@@ -2089,7 +2090,7 @@ algorithm
       list<DAE.Element> rem;
       //case (_) then ();
       case {}  then "";
-      case (el::rem)  then stringAppend(DAE.dumpFunctionStr(el),dumpFunctionsStr(rem));
+      case (el::rem)  then stringAppend(DAEUtil.dumpFunctionStr(el),dumpFunctionsStr(rem));
   end matchcontinue;
 end dumpFunctionsStr;
 
@@ -3394,7 +3395,7 @@ algorithm
       equation
         dumpVariable(intString(varno),Exp.printComponentRefStr(cr),dumpKind(kind),dumpDirectionStr(dir),dumpTypeStr(var_type),intString(indx),
                         Exp.crefStr(old_name),Util.boolString(DAELow.varFixed(v)),dumpFlowStr(flowPrefix),dumpStreamStr(streamPrefix),
-                        DAE.dumpCommentOptionStr(comment));
+                        DAEUtil.dumpCommentOptionStr(comment));
         dumpBindValueExpression(e,b,addMMLCode);
         //The command below adds information to the XML about the dimension of the
         //containing vector, in the casse the variable is an element of a vector.

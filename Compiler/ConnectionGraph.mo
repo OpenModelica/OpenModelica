@@ -55,11 +55,12 @@ package ConnectionGraph
   that the model is valid. 
  "
       
-public import HashTableCG;
-public import Exp;
-public import Util;
-public import DAE;
 public import Absyn;
+public import DAE;
+public import Exp;
+public import HashTableCG;
+public import Util;
+public import DAEUtil;
 
 /* A list of edges 
  */
@@ -80,6 +81,13 @@ uniontype ConnectionGraph
       DaeEdges connections "Edges defined with connect statement";
     end GRAPH;
 end ConnectionGraph;
+
+/* Initial connection graph with no edges in it.
+ */
+public constant ConnectionGraph EMPTY = GRAPH( true, {}, {}, {}, {} );
+/* Initial connection graph with updateGraph set to false.
+ */
+public constant ConnectionGraph NOUPDATE_EMPTY = GRAPH( false, {}, {}, {}, {} );
 
 function printEdges
   "Prints a list of edges to stdout."
@@ -146,13 +154,6 @@ algorithm
     then ();
   end matchcontinue;
 end printConnectionGraph;
-
-/* Initial connection graph with no edges in it.
- */
-constant ConnectionGraph EMPTY = GRAPH( true, {}, {}, {}, {} );
-/* Initial connection graph with updateGraph set to false.
- */
-constant ConnectionGraph NOUPDATE_EMPTY = GRAPH( false, {}, {}, {}, {} );
 
 function getDefiniteRoots
   "Accessor for ConnectionGraph.definititeRoots."
@@ -588,7 +589,7 @@ function evalIsRoot
   input list<DAE.Element> inDae;
   output list<DAE.Element> outDae;
 algorithm
-  (outDae, _) := DAE.traverseDAE(inDae, evalIsRootHelper, inRoots);
+  (outDae, _) := DAEUtil.traverseDAE(inDae, evalIsRootHelper, inRoots);
 end evalIsRoot;
 
 function evalIsRootHelper

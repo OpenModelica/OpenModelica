@@ -366,6 +366,7 @@ end EquationReduction;
 public
 type MatchingOptions = tuple<IndexReduction, EquationConstraints, EquationReduction> "- Matching Options" ;
 
+protected import DAEUtil;
 protected import Util;
 protected import RTOpts;
 protected import DAEEXT;
@@ -376,7 +377,6 @@ protected import Env;
 protected import Builtin;
 protected import Ceval;
 protected import Types;
-protected import Dump;
 protected import System;
 protected import VarTransform;
 protected import BackendVarTransform;
@@ -2296,7 +2296,7 @@ algorithm
     local list<Algorithm.Statement> stmts;
     case({}) then ();
     case(Algorithm.ALGORITHM(stmts)::algs) equation
-      print(DAE.dumpAlgorithmStr(DAE.ALGORITHM(Algorithm.ALGORITHM(stmts))));
+      print(DAEUtil.dumpAlgorithmStr(DAE.ALGORITHM(Algorithm.ALGORITHM(stmts))));
       dumpAlgorithms(algs);
     then ();
   end matchcontinue;
@@ -2770,10 +2770,12 @@ public function varStartValue
   output Exp.Exp sv;
 algorithm
   sv := matchcontinue(v)
-    local Option<DAE.VariableAttributes> attr;
-       case (VAR(values = attr)) equation
-       sv=DAE.getStartAttr(attr);
-     then sv;
+    local
+      Option<DAE.VariableAttributes> attr;
+    case (VAR(values = attr))
+      equation
+        sv=DAEUtil.getStartAttr(attr);
+      then sv;
    end matchcontinue;
 end varStartValue;
 
@@ -3812,9 +3814,9 @@ algorithm
           print("class ");
           print(Absyn.pathString(path));
           print("\n  extends ExternalObject");
-          print(DAE.dumpFunctionStr(constr));
+          print(DAEUtil.dumpFunctionStr(constr));
           print("\n");
-          print(DAE.dumpFunctionStr(destr));
+          print(DAEUtil.dumpFunctionStr(destr));
           print("end ");print(Absyn.pathString(path));
         then ();
   end matchcontinue;
@@ -3873,7 +3875,7 @@ algorithm
         varnostr = intString(varno);
         print(varnostr);
         print(": ");
-        dirstr = DAE.dumpDirectionStr(dir);
+        dirstr = DAEUtil.dumpDirectionStr(dir);
         print(dirstr);
         print(" ");
         str = Exp.printComponentRefStr(cr);
@@ -3882,21 +3884,21 @@ algorithm
         dumpKind(kind);
         paths_lst = Util.listMap(paths, Absyn.pathString);
         path_str = Util.stringDelimitList(paths_lst, ", ");
-        comment_str = DAE.dumpCommentOptionStr(comment);
+        comment_str = DAEUtil.dumpCommentOptionStr(comment);
         print("= ");
         s = Exp.printExpStr(e);
         print(s);
         print(" ");
         print(path_str);
         indx_str = intString(indx) "print \"  \" & print comment_str & print \" former: \" & print old_name &" ;
-        str = DAE.dumpTypeStr(var_type);print( " type: "); print(str);
+        str = DAEUtil.dumpTypeStr(var_type);print( " type: "); print(str);
         print(Exp.printComponentRef2Str("", arrayDim));
         print(" indx = ");
         print(indx_str);
         varno_1 = varno + 1;
         print(" fixed:");print(Util.boolString(varFixed(v)));
         print("\n");
-        dumpVars2(xs, varno_1) "DAE.dump_variable_attributes(dae_var_attr) &" ;
+        dumpVars2(xs, varno_1) "DAEUtil.dump_variable_attributes(dae_var_attr) &" ;
       then
         ();
         
@@ -3917,20 +3919,20 @@ algorithm
         varnostr = intString(varno);
         print(varnostr);
         print(": ");
-        dirstr = DAE.dumpDirectionStr(dir);
+        dirstr = DAEUtil.dumpDirectionStr(dir);
         print(dirstr);
         print(" ");
         str = Exp.printComponentRefStr(cr);
         path_strs = Util.listMap(paths, Absyn.pathString);
         path_str = Util.stringDelimitList(path_strs, ", ");
-        comment_str = DAE.dumpCommentOptionStr(comment);
+        comment_str = DAEUtil.dumpCommentOptionStr(comment);
         print(str);
         print(":");
         dumpKind(kind);
         print(" ");
         print(path_str);
         indx_str = intString(indx) "print \" former: \" & print old_name &" ;
-        str = DAE.dumpTypeStr(var_type);print( " type: "); print(str);
+        str = DAEUtil.dumpTypeStr(var_type);print( " type: "); print(str);
         print(Exp.printComponentRef2Str("", arrayDim));        
         print(" indx = ");
         print(indx_str);
@@ -4717,8 +4719,8 @@ algorithm
     case (DAE.DAE(elementLst = (ddl :: xs)),_,vars,knvars,extVars,_)
       local DAE.Element ddl; String s3;
       equation
-        print("-DAELow.lower2 failed\n");
-        s3 = DAE.dumpElementsStr({ddl});
+        print("- DAELow.lower2 failed\n");
+        s3 = DAEUtil.dumpElementsStr({ddl});
         print(s3 +& "\n");
       then
         fail();
@@ -12301,7 +12303,7 @@ algorithm
                flowPrefix = flowPrefix,
                streamPrefix = streamPrefix) :: rest),env)
       equation
-        t_1 = DAE.generateDaeType(t) "Some of the attributes added to env here does not matter, defaults are used" ;
+        t_1 = DAEUtil.generateDaeType(t) "Some of the attributes added to env here does not matter, defaults are used" ;
         env_1 = Env.extendFrameV(env,
           Types.VAR(crn,
           Types.ATTR(false,false,SCode.RW(),SCode.CONST(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,
@@ -12324,7 +12326,7 @@ algorithm
                flowPrefix = flowPrefix,
                streamPrefix = streamPrefix) :: rest),env)
       equation
-        t_1 = DAE.generateDaeType(t) "Some of the attributes added to env here does not matter, defaults are used" ;
+        t_1 = DAEUtil.generateDaeType(t) "Some of the attributes added to env here does not matter, defaults are used" ;
         env_1 = Env.extendFrameV(env,
           Types.VAR(crn,
           Types.ATTR(false,false,SCode.RW(),SCode.CONST(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,
