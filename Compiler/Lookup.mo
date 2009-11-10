@@ -78,9 +78,6 @@ public function lookupType
 " This function finds a specified type in the environment. 
   If it finds a function instead, this will be implicitly instantiated 
   and lookup will start over. 
- 
-  Arg1: Env.Env is the environment which to perform the lookup in
-  Arg2: Absyn.Path is the type to look for
 "
   input Env.Cache inCache;
   input Env.Env inEnv "environment to search in";
@@ -93,102 +90,38 @@ algorithm
   (outCache,outType,outEnv):=
   matchcontinue (inCache,inEnv,inPath,inBoolean)
     local
-      tuple<Types.TType, Option<Absyn.Path>> t,c_1;
-      list<Env.Frame> env_1,env,env_2,env3,env2,env_3;
-      Absyn.Path path,p;
-      Boolean msg,encflag;
+      Types.Type t;
+      list<Env.Frame> env_1,env,env_2;
+      Absyn.Path path;
       SCode.Class c;
-      String id,pack,classname,scope;
-      SCode.Restriction restr;
-      ClassInf.State ci_state,cistate1;
+      Boolean msg;
+      String classname,scope;
       Env.Cache cache;
       
-      /*For simple names */
-    case (cache,env,(path as Absyn.IDENT(name = _)),msg/* message flag*/) 
+      // For simple names
+    case (cache,env,(path as Absyn.IDENT(name = _)),msg) 
       equation 
-        (cache,t,env_1) = lookupTypeInEnv(cache,env, path);
+        (cache,t,env_1) = lookupTypeInEnv(cache,env,path);
       then
         (cache,t,env_1);
     
-        /* Classes that are external objects. Implicityly instantiate to get type */
-    case (cache,env,path ,msg) local String ident,s;
+      // Special classes (function, record, metarecord, external object)
+    case (cache,env,path,msg) local String ident,s;
       equation 
-        (cache,c ,env_1) = lookupClass2(cache,env, path, false);
-        true = Inst.classIsExternalObject(c);
-        (cache,_::env_1,_,_,_,_,_,_,_,_) = 
-        Inst.instClass(
-          cache,env_1,InstanceHierarchy.emptyInstanceHierarchy, UnitAbsyn.noStore,
-          Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, c, 
-          {}, false, Inst.TOP_CALL(), ConnectionGraph.EMPTY);
-          
-        ident = Absyn.pathLastIdent(path); /* Once class has instantiated we only need to look up the last
-        	part of the name as a type */
-        (cache,t,env_2) = lookupTypeInEnv(cache,env_1, Absyn.IDENT(ident));
+        (cache,c,env_1) = lookupClass2(cache,env,path,false);
+        (cache,t,env_2) = lookupType2(cache,env_1,path,c);
       then
         (cache,t,env_2);
-
-    /* Metamodelica extension, Uniontypes, simbj-ex07 */  
-    case (cache,env,path,msg) 
-      local String s,ident;
-        SCode.Restriction restr;
-        Absyn.Path name;
-        Integer index;
-        list<Types.Var> varlst;
-        list<SCode.Element> els;
-        list<tuple<SCode.Element,Types.Mod>> elsModList;
-      equation 
-        (cache,(c as SCode.CLASS(id,_,encflag,SCode.R_METARECORD(name,index),SCode.PARTS(elementLst = els))),env_1) = lookupClass2(cache,env, path, false);
-        //true = SCode.isFunctionOrExtFunction(restr);
-        //(cache,env_2) = Inst.implicitFunctionTypeInstantiation(cache,env_1, c);
-        ident = Absyn.pathLastIdent(path);
-        (cache,path) = Inst.makeFullyQualified(cache,env_1, Absyn.IDENT(ident));
-        elsModList = Util.listMap1(els, Util.makeTuple2, Types.NOMOD);
-        (cache,env_2,_,_,_,_,_,varlst,_) = Inst.instElementList(
-            cache,env_1,InstanceHierarchy.emptyInstanceHierarchy, UnitAbsyn.noStore,
-            Types.NOMOD,Prefix.NOPRE, Connect.emptySet, ClassInf.FUNCTION(""), elsModList, {}, false, ConnectionGraph.EMPTY);
-        //(cache,t,env3) = lookupTypeInEnv(cache,env, Absyn.IDENT(ident));
-        t = (Types.T_METARECORD(index,varlst),SOME(path));
-      then
-        (cache,t,env_2);
-        
-  /*If we find a class definition
-	   that is a function or external function with the same name then we implicitly instantiate that
-	  function, look up the type. */
-    case (cache,env,path,msg) 
-      local String s,ident;
-      SCode.Restriction restr;
-      equation 
-        (cache,(c as SCode.CLASS(id,_,encflag,restr,_)),env_1) = lookupClass2(cache,env, path, false);
-        true = SCode.isFunctionOrExtFunction(restr);
-        (cache,env_2,_) = 
-        Inst.implicitFunctionTypeInstantiation(cache,env_1,InstanceHierarchy.emptyInstanceHierarchy,c);
-        ident = Absyn.pathLastIdent(path);
-        (cache,t,env3) = lookupTypeInEnv(cache,env_2, Absyn.IDENT(ident));
-      then
-        (cache,t,env3);
-
-        /* Record constructors */        
-    case (cache,env,path,msg) 
-      local Absyn.Path fpath; Types.Type ftype; Absyn.Ident n;
-        list<Types.Var> varlst;
-      equation
-      (cache,(c as SCode.CLASS(name=n,restriction=SCode.R_RECORD())),env_1) = lookupClass2(cache,env, path, false);
-      (cache,fpath) = Inst.makeFullyQualified(cache,env_1, Absyn.IDENT(n));
-      (cache,varlst) = buildRecordConstructorVarlst(cache,c, env_1);
-      ftype = Types.makeFunctionType(fpath, varlst);
-      then 
-        (cache,ftype,env_1);      
     
-    /* Special handling for Connections.isRoot */
+      // Special handling for Connections.isRoot
     case (cache,env,Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")),msg)
-      local Types.Type ftype;
       equation 
-        ftype = (Types.T_FUNCTION({("x", (Types.T_ANYTYPE(NONE), NONE))}, 
+        t = (Types.T_FUNCTION({("x", (Types.T_ANYTYPE(NONE), NONE))}, 
           (Types.T_BOOL({}), NONE)), NONE);
       then
-        (cache, ftype, env);        
+        (cache, t, env);        
             
-   	/* Error for type not found */
+   	  // Error for type not found
     case (cache,env,path,true)
       equation 
         classname = Absyn.pathString(path);
@@ -199,6 +132,87 @@ algorithm
         fail();
   end matchcontinue;
 end lookupType;
+
+protected function lookupType2
+" This function handles the case when we looked up a class, but need to
+check if it is function, record, metarecord, etc.
+"
+  input Env.Cache inCache;
+  input Env.Env inEnv "environment to search in";
+  input Absyn.Path inPath "type to look for";
+  input SCode.Class inClass "the class lookupType found";
+  output Env.Cache outCache;
+  output Types.Type outType "the found type";
+  output Env.Env outEnv "The environment the type was found in";
+algorithm 
+  (outCache,outType,outEnv):=
+  matchcontinue (inCache,inEnv,inPath,inClass)
+    local
+      Types.Type t;
+      list<Env.Frame> env_1,env_2,env_3;
+      Absyn.Path path;
+      SCode.Class c;
+      String id;
+      SCode.Restriction restr;
+      Env.Cache cache;
+      list<Types.Var> varlst;
+      
+      // Classes that are external objects. Implicityly instantiate to get type
+    case (cache,env_1,path,c)
+      local
+      equation
+        true = Inst.classIsExternalObject(c);
+        (cache,_::env_1,_,_,_,_,_,_,_,_) = 
+        Inst.instClass(
+          cache,env_1,InstanceHierarchy.emptyInstanceHierarchy, UnitAbsyn.noStore,
+          Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, c, 
+          {}, false, Inst.TOP_CALL(), ConnectionGraph.EMPTY);
+        SCode.CLASS(name=id) = c;
+        (cache,t,env_2) = lookupTypeInEnv(cache,env_1,Absyn.IDENT(id));
+      then
+        (cache,t,env_2);
+
+      // Metamodelica extension, Uniontypes
+    case (cache,env_1,path,c) 
+      local
+        Integer index;
+        list<SCode.Element> els;
+        list<tuple<SCode.Element,Types.Mod>> elsModList;
+      equation 
+        SCode.CLASS(id,_,_,SCode.R_METARECORD(_,index),SCode.PARTS(elementLst = els)) = c;
+        (cache,path) = Inst.makeFullyQualified(cache,env_1,Absyn.IDENT(id));
+        elsModList = Util.listMap1(els,Util.makeTuple2,Types.NOMOD);
+        (cache,env_2,_,_,_,_,_,varlst,_) = Inst.instElementList(
+            cache,env_1,InstanceHierarchy.emptyInstanceHierarchy, UnitAbsyn.noStore,
+            Types.NOMOD,Prefix.NOPRE, Connect.emptySet, ClassInf.FUNCTION(""), elsModList, {}, false, ConnectionGraph.EMPTY);
+        t = (Types.T_METARECORD(index,varlst),SOME(path));
+      then
+        (cache,t,env_2);
+        
+     // If we find a class definition that is a function or external function
+     // with the same name then we implicitly instantiate that function, look
+     // up the type.
+    case (cache,env_1,path,c)
+      equation 
+        SCode.CLASS(name = id,restriction=restr) = c;
+        true = SCode.isFunctionOrExtFunction(restr);
+        (cache,env_2,_) = 
+        Inst.implicitFunctionTypeInstantiation(cache,env_1,InstanceHierarchy.emptyInstanceHierarchy,c);
+        (cache,t,env_3) = lookupTypeInEnv(cache,env_2,Absyn.IDENT(id));
+      then
+        (cache,t,env_3);
+
+      // Record constructors        
+    case (cache,env_1,path,c)
+      equation
+        SCode.CLASS(name=id,restriction=SCode.R_RECORD()) = c;
+        (cache,path) = Inst.makeFullyQualified(cache,env_1,Absyn.IDENT(id));
+        (cache,varlst) = buildRecordConstructorVarlst(cache,c,env_1);
+        t = Types.makeFunctionType(path, varlst);
+      then 
+        (cache,t,env_1);      
+  end matchcontinue;
+end lookupType2;
 
 protected function lookupTypeList
   input Env.Cache inCache;
