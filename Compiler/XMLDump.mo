@@ -3628,6 +3628,9 @@ algorithm
    case ((e as Exp.RELATION(e1,op,e2)))
       equation
         sym = Exp.relopSymbol(op);
+        // replace < and > with W3C standart &lt; and &gt; 
+        sym = Util.stringReplaceChar(sym,"<","&lt;");
+        sym = Util.stringReplaceChar(sym,">","&gt;");
         s1 = printExpStr(e1);
         s2 = printExpStr(e2);
         p = Exp.expPriority(e);
@@ -4055,22 +4058,5 @@ algorithm
     case (_) then "";
   end matchcontinue;
 end unparseCommentOptionNoAnnotation;
-
-public function relopSymbolXML 
-"function: relopSymbol 
-  Return string representation of function operator."
-  input Exp.Operator inOperator;
-  output String outString;
-algorithm 
-  outString:=
-  matchcontinue (inOperator)
-    case (Exp.LESS(ty = _)) then " &lt "; 
-    case (Exp.LESSEQ(ty = _)) then " &le "; 
-    case (Exp.GREATER(ty = _)) then " &gt "; 
-    case (Exp.GREATEREQ(ty = _)) then " &ge "; 
-    case (Exp.EQUAL(ty = _)) then " == "; 
-    case (Exp.NEQUAL(ty = _)) then " &ne "; 
-  end matchcontinue;
-end relopSymbolXML;
 
 end XMLDump;
