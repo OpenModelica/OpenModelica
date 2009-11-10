@@ -4,11 +4,10 @@
 
 
              Last update 2005-09-26 David Broman
-             Last update 2008-10-02 Adrian Pop
+             Last update 2009-11-10 Adrian Pop
 
 The following step-by-step guides explain how to compile the
 Open Modelica Compiler using:
-- rml-mmc
 - Microsoft Visual Studio 2008
 under Windows XP.
 See the file:
@@ -18,6 +17,11 @@ See the file:
    for a general overview and how to compile it on windows using
    OMDev:http://www.ida.liu.se/~adrpo/omc/omdev/mingw/
    which contains the gcc compiler, mico, antlr, rml packed togheter.
+
+Checkout the sources from Subversion:
+   https://openmodelica.ida.liu.se/svn/OpenModelica/trunk -> trunk
+   user: anonymous
+   pass: none      <- write none here
 
 ------------------------------------------------------------------------------------------------
        Compiling OMC using  Microsoft Visual Studio 2008
@@ -35,23 +39,31 @@ See the file:
     Create the following environment variable:
      CLASSPATH=$(OMDEV)\bin\antlr\antlr.jar
 
-4.  Open the visual studio solution located at path:
+4.  Checkout the VC7 directory from Subversion:
+      https://openmodelica.ida.liu.se/svn/OpenModelica/installers/VC7
+    into directory:
+      trunk\Compiler\VC7
+    IMPORTANT: VC7 HAS TO BE CHECKOUT into trunk\Compiler\VC7
+               as the Visual Studio projects are based on 
+               relative paths.
+
+5.  Open the visual studio solution located at path:
     trunk\Compiler\VC7\omc\omc.sln
     - VS 2008 Express will not be able to build the Setup project
       as there are no deployment projects available in this version.
 
-5. In the VS development environment, select from the menu:
+6. In the VS development environment, select from the menu:
     Build->Configuration Manager and select "Release" as the active
     solution configuration.
 
-6. Press Ctrl-Shift-B to build the whole project.
+7. Press Ctrl-Shift-B to build the whole project.
    If something failed hit Ctrl-Shift-B as it might work the secod time.
 
-7. The compiled libraries and executables are now located under:
+8. The compiled libraries and executables are now located under:
     C:\code\omc\trunk\Compiler\VC7\Release and
     C:\code\omc\trunk\build\bin
 
-8. To test omc.exe follow the step 11 in README-OMDev-MINGW.txt
+9. To test omc.exe follow the step 11 in README-OMDev-MINGW.txt
 
 ---------------------------------------------------------------------------
                 Compiling .mo files and executing .mos scripts

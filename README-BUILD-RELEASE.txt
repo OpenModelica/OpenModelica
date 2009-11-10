@@ -3,11 +3,24 @@
 ---------------------------------------------------------------------------
 
 
-             Last update 2008-10-02 Adrian Pop, adrpo@ida.liu.se
+             Last update 2009-11-10 Adrian Pop, adrpo@ida.liu.se
 
 The following step-by-step guides explain how to
 build the OpenModelica release .msi file on Windows
 using the Microsoft Visual Studio .NET 2008
+
+-1. Checkout the sources from Subversion:
+     https://openmodelica.ida.liu.se/svn/OpenModelica/trunk -> trunk
+     user: anonymous
+     pass: none      <- write none here
+
+    Checkout the VC7 directory from Subversion:
+      https://openmodelica.ida.liu.se/svn/OpenModelica/installers/VC7
+    into directory:
+      trunk\Compiler\VC7
+    IMPORTANT: VC7 HAS TO BE CHECKOUT into trunk\Compiler\VC7
+               as the Visual Studio projects are based on 
+               relative paths.
 
 00. Update the version number:
     in trunk/Compiler/runtime/settings.c to "x.y.z"
@@ -57,13 +70,6 @@ using the Microsoft Visual Studio .NET 2008
 
 10. You get a Setup.msi into trunk\Compiler\VC7\Setup\Release
 
-11. DO NOT FORGET THIS FOR WINDOWS VISTA IF YOU BUILD THE RELEASE
-    WITH MSVC less than 2008!
-    For Windows Vista release you have to edit the Setup.msi with Orca.exe:
-    http://msdn2.microsoft.com/en-us/library/Aa370557.aspx
-    http://download.microsoft.com/download/platformsdk/sdk/update/win98mexp/en-us/3790.0/msisdk-common.3.0.cab
-    Go to CustomAction Table and change the action type from 1042 to 3090.
-    This elevates the privileges for the custom action and allows it to run.
 
 That's it,
 Cheers,
