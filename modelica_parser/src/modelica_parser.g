@@ -684,7 +684,7 @@ algorithm :
 		|   BREAK
 		|   RETURN
 		|   FAILURE^ LPAR! algorithm RPAR!
-		|   EQUALITY^ LPAR! expression (EQUALS!|COMMA!) expression RPAR!
+		|   EQUALITY^ LPAR! expression (ASSIGN!|COMMA!|EQUALS!) expression RPAR!
 		)
 		comment
         {
