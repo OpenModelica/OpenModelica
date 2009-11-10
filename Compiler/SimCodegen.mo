@@ -2388,7 +2388,7 @@ algorithm
         comment_1 = generateEmptyString(comment);
         if_str = generateGetnameFunctionIf(cr,tp, n_vars, inputNames) "no defines because the outputvars is a subset of algvars" ;
       then
-        ((name_1 :: name_arr),(comment_1 :: comment_arr),n_vars,(if_str :: get_name_function_ifs),var_defines);
+        ((name_1 :: name_arr),(comment :: comment_arr),n_vars_1,(if_str :: get_name_function_ifs),var_defines);
         
     case ((var as DAELow.VAR(varName = cr,
                              varKind = kind,
