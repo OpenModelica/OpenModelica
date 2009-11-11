@@ -2163,6 +2163,8 @@ algorithm
     local
       Exp.Exp e1,e2,e;
       Exp.ComponentRef c;
+      list<DAE.Element> xs,xs1,xs2;
+      list<list<DAE.Element>> trueBranches;
     case (DAE.INITIALEQUATION(exp1 = e1,exp2 = e2))
       equation 
         Print.printBuf("  ");
@@ -2179,6 +2181,31 @@ algorithm
         Print.printBuf(" ::= ");
         Exp.printExp(e);
         Print.printBuf(";\n");
+      then
+        ();
+    case (DAE.INITIAL_COMPLEX_EQUATION(lhs = e1,rhs = e2))
+      equation
+        Print.printBuf("  ");
+        Exp.printExp(e1);
+        Print.printBuf(" = ");
+        Exp.printExp(e2);
+        Print.printBuf(";\n");
+      then
+        ();
+    case (DAE.INITIAL_IF_EQUATION(condition1 = (c::conds),equations2 = (xs1::trueBranches),equations3 = xs2))
+      local
+        Exp.Exp c;
+        list<Exp.Exp> conds;
+        String ss11;
+      equation
+        Print.printBuf("  if ");
+        Exp.printExp(c);
+        Print.printBuf(" then\n");
+        Util.listMap0(xs1,dumpInitialequation);
+        Print.printBuf(dumpIfEquationsStr(conds,trueBranches));
+        Print.printBuf("  else\n");
+        Util.listMap0(xs2,dumpInitialequation);
+        Print.printBuf("end if;\n");
       then
         ();
     case _ then (); 
@@ -5630,6 +5657,13 @@ algorithm (traversedDaeList,Type_a) := matchcontinue(daeList,func,extraArg)
       (dae2,extraArg) = traverseDAE(dae,func,extraArg);
     then (DAE.INITIALEQUATION(e11,e22)::dae2,extraArg);
       
+  case(DAE.INITIAL_COMPLEX_EQUATION(e1,e2)::dae,func,extraArg) 
+    equation
+      (e11,extraArg) = func(e1, extraArg);
+      (e22,extraArg) = func(e2, extraArg);
+      (dae2,extraArg) = traverseDAE(dae,func,extraArg);
+    then (DAE.INITIAL_COMPLEX_EQUATION(e11,e22)::dae2,extraArg);
+      
   case(DAE.COMP(id,DAE.DAE(elist))::dae,func,extraArg) 
     equation
       (elist2,extraArg) = traverseDAE(elist,func,extraArg);
@@ -5722,10 +5756,16 @@ algorithm (traversedDaeList,Type_a) := matchcontinue(daeList,func,extraArg)
   case(DAE.NORETCALL(_, _)::dae,func,extraArg)
     equation
       Error.addMessage(Error.UNSUPPORTED_LANGUAGE_FEATURE, {"Empty function call in equations", "Move the function calls to appropriate algorithm section"});
-      then fail();
+    then fail();
 
   case(elt::_,_,_)
-    equation print(" failure in DAE.traverseDAE\n"); dumpElements({elt}); then fail();
+    local
+      String str;
+    equation
+      print(" failure in DAE.traverseDAE\n");
+      str = dumpElementsStr({elt});
+      print(str);
+    then fail();
 end matchcontinue;
 end traverseDAE;
 

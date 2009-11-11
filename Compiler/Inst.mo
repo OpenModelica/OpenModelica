@@ -13023,7 +13023,11 @@ algorithm
       Exp.Exp e;
       Types.Properties prop2;
       Boolean impl;
-    case (cr,ty1,(mod as Types.MOD(eqModOption = SOME(Types.TYPED(e,_,prop2)))),impl) /* impl */ 
+      // Record constructors are different
+      // If it's a constant binding, all fields will already be bound correctly. Don't return a DAE.
+    case (cr,(Types.T_COMPLEX(complexClassType = ClassInf.RECORD(_)),_),(Types.MOD(eqModOption = SOME(Types.TYPED(e,_,Types.PROP(_,Types.C_CONST()))))),impl) then {};
+     // Regular cases
+    case (cr,ty1,(mod as Types.MOD(eqModOption = SOME(Types.TYPED(e,_,prop2)))),impl)
       equation 
         t = Types.elabType(ty1);
         dae = instEqEquation(Exp.CREF(cr,t), Types.PROP(ty1,Types.C_VAR()), e, prop2, SCode.NON_INITIAL(), impl);
@@ -14862,8 +14866,9 @@ algorithm
       SCode.Variability vt;
     
     /* If classprefix is variable, keep component variability*/
-    case(attr,Prefix.PREFIX(_,Prefix.CLASSPRE(SCode.VAR()))) 
-      then attr;
+    case(attr,Prefix.PREFIX(_,Prefix.CLASSPRE(SCode.VAR()))) then attr;
+    /* If variability is constant, do not override it! */
+    case(attr as SCode.ATTR(variability = SCode.CONST()),_) then attr;
     /* If classprefix is parameter or constant, override component variabilty */
     case(SCode.ATTR(ad,fl,st,acc,_,dir),Prefix.PREFIX(_,Prefix.CLASSPRE(vt))) 
       then SCode.ATTR(ad,fl,st,acc,vt,dir);
@@ -15279,7 +15284,7 @@ protected function propagateVariability " help function to propagateAttributes, 
   matchcontinue (inDae,vt)
     local
       list<DAE.Element> lst,r_1,r,lst_1;
-      DAE.Element v;
+      DAE.Element v,x;
       DAE.VarDirection dir_1;
       Exp.ComponentRef cr;
       DAE.VarKind vk;
@@ -15293,7 +15298,6 @@ protected function propagateVariability " help function to propagateAttributes, 
       Option<SCode.Comment> comment;
       DAE.VarDirection dir;
       String s1,s2;
-      DAE.Element x;
       Types.Type tp;
       Absyn.InnerOuter io;
       DAE.VarProtection prot;
@@ -15302,6 +15306,13 @@ protected function propagateVariability " help function to propagateAttributes, 
       
     case ({},_) then {}; 
       
+      /* the most restrictive variability is preserved (a const may not become PARAM) */
+    case ((x as DAE.VAR(cr,DAE.CONST(),dir,prot,t,e,id,flowPrefix,streamPrefix,class_,dae_var_attr,comment,io,tp)) :: r,SCode.PARAM()) 
+      equation
+        r_1 = propagateVariability(r, vt);
+      then
+        x :: r_1;
+
       /* parameter */
     case ((DAE.VAR(cr,vk,dir,prot,t,e,id,flowPrefix,streamPrefix,class_,dae_var_attr,comment,io,tp) :: r),SCode.PARAM()) 
       equation 

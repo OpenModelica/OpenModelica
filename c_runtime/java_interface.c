@@ -683,7 +683,7 @@ jobject mmc_to_jobject(JNIEnv* env, void* mmc)
   unsigned ctor;
   int i;
 
-  if (0 == ((int)mmc & 1)) /* INTEGER */
+  if (0 == ((long)mmc & 1)) /* INTEGER */
     return NewJavaInteger(env,MMC_UNTAGFIXNUM(mmc));
   hdr = MMC_GETHDR(mmc);
   if (hdr == MMC_REALHDR) /* REAL */
