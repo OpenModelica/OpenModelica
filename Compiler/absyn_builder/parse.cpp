@@ -273,6 +273,7 @@ extern "C"
 				       false,
 				       filename);
 		    ast = mk_nil();
+        modelicafilename=string("");
 		}
 
 		//Parsing complete
