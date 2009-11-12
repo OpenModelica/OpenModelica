@@ -596,14 +596,14 @@ algorithm
       
     case (localCache,_,{},localAccList,_) then (localCache,localAccList);
     case (localCache,localEnv,Exp.VAR(cRef,v1,v2,prot,ty,binding,dims,
-      											flowPrefix,streamPrefix,f,vAttr,com,inOut,fType)
+      											flowPrefix,streamPrefix,f,vAttr,com,inOut)
        :: rest,localAccList,pre)
     local
       Exp.ComponentRef cRef;
     	Exp.VarKind v1 "varible kind variable, constant, parameter, etc." ;
     	Exp.VarDirection v2 "input, output or bidir" ;
     	Exp.VarProtection prot "if protected or public";
-    	Exp.TypeExp ty "the type" ;
+    	Exp.TypeTypes ty "the type" ;
     	Option<Exp.Exp> binding "binding" ;
     	Exp.InstDims dims "Binding expression e.g. for parameters" ;
     	//Exp.StartValue dim "dimension of original component" ;
@@ -613,12 +613,11 @@ algorithm
     	Option<Exp.VariableAttributes> vAttr;
     	Option<SCode.Comment> com "comment";
     	Absyn.InnerOuter inOut "inner/outer required to 'change' outer references";
-    	Exp.TypeTypes fType "Full type information required to analyze inner/outer elements";
     	list<Exp.DAEElement> rest,temp;
     	Exp.DAEElement elem;
     equation
       cRef = prefixCref(pre,cRef);  
-      elem = Exp.VAR(cRef,v1,v2,prot,ty,binding,dims,flowPrefix,streamPrefix,f,vAttr,com,inOut,fType);  
+      elem = Exp.VAR(cRef,v1,v2,prot,ty,binding,dims,flowPrefix,streamPrefix,f,vAttr,com,inOut);  
       localAccList = listAppend(localAccList,Util.listCreate(elem));
       (localCache,temp) = prefixDecls(localCache,localEnv,rest,localAccList,pre);  
     then (localCache,temp);

@@ -68,52 +68,6 @@ public uniontype VarKind
 
 end VarKind;
 
-public uniontype Type
-  record REAL end REAL;
-
-  record INT end INT;
-
-  record BOOL end BOOL;
-
-  record STRING end STRING;
-
-//  record ENUM end ENUM;
-
-  record LIST end LIST; // MetaModelica list. KS
-  
-  record METATUPLE end METATUPLE;  // MetaModelica tuple. KS
-
-  record METAOPTION end METAOPTION;  // MetaModelica option. KS
-
-  record UNIONTYPE end UNIONTYPE; // MetaModelica UnionType. added by simbj
-  
-  record METARECORD end METARECORD; //MetaModelica extension, added by simbj
-  
-  record POLYMORPHIC end POLYMORPHIC; // Used in MetaModelica polymorphic function. sjoelund
-  
-  record FUNCTION_REFERENCE end FUNCTION_REFERENCE; // MetaModelica Partial Function. sjoelund
-  
-  record ENUMERATION
-    list<String> stringLst;
-  end ENUMERATION;
-  
-  record EXT_OBJECT
-    Absyn.Path fullClassName;
-  end EXT_OBJECT;  
-  
-  record COMPLEX
-    Absyn.Path name;
-    list<Var> varLst;
-  end COMPLEX;
-end Type;
-
-public uniontype Var "a variable in a complex type"
-  record TVAR 
-    String name;
-    Type tp;
-  end TVAR;
-end Var;
-
 public uniontype Flow "The Flow of a variable indicates if it is a Flow variable or not, or if
    it is not a connector variable at all."
   record FLOW end FLOW;
@@ -155,7 +109,7 @@ public uniontype Element
     VarKind kind "varible kind: variable, constant, parameter, discrete etc." ;
     VarDirection direction "input, output or bidir" ;
     VarProtection protection "if protected or public";
-    Type ty "one of the builtin types" ;
+    Types.Type ty "Full type information required";
     Option<Exp.Exp> binding "Binding expression e.g. for parameters ; value of start attribute" ; 
     InstDims  dims "dimensions";
     Flow flowPrefix "Flow of connector variable. Needed for unconnected flow variables" ;
@@ -164,7 +118,6 @@ public uniontype Element
     Option<VariableAttributes> variableAttributesOption;
     Option<SCode.Comment> absynCommentOption;
     Absyn.InnerOuter innerOuter "inner/outer required to 'change' outer references";
-    Types.Type fullType "Full type information required to analyze inner/outer elements";
   end VAR;
 
   record DEFINE "A solved equation"

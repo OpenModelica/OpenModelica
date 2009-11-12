@@ -7092,7 +7092,7 @@ algorithm
       DAE.VarDirection dir_1;
       Exp.ComponentRef cr;
       DAE.VarKind vk;
-      DAE.Type t;
+      Types.Type t;
       Option<Exp.Exp> e;
       list<Exp.Subscript> id;
       DAE.Flow flowPrefix;
@@ -7103,7 +7103,6 @@ algorithm
       Absyn.Direction dir;
       String s1,s2;
       DAE.Element x;
-      Types.Type tp;
       Absyn.InnerOuter io;
       DAE.VarProtection prot;
       String idName;
@@ -7125,13 +7124,12 @@ algorithm
                    pathLst = class_,
                    variableAttributesOption = dae_var_attr,
                    absynCommentOption = comment,
-                   innerOuter=io,
-                   fullType=tp) :: r),dir)  
+                   innerOuter=io) :: r),dir)  
       equation 
         dir_1 = absynDirToDaeDir(dir);
         r_1 = propagateDirection(r, dir);
       then
-        (DAE.VAR(cr,vk,dir_1,prot,t,e,id,flowPrefix,streamPrefix,class_,dae_var_attr,comment,io,tp) :: r_1);
+        (DAE.VAR(cr,vk,dir_1,prot,t,e,id,flowPrefix,streamPrefix,class_,dae_var_attr,comment,io) :: r_1);
 
    /* Error, component declared as input or output  when containing variable that has prefix input. */
     case ((DAE.VAR(componentRef = cr,
@@ -7146,8 +7144,7 @@ algorithm
                    pathLst = class_,
                    variableAttributesOption = dae_var_attr,
                    absynCommentOption = comment,
-                   innerOuter=io,
-                   fullType=tp) :: r),dir)  
+                   innerOuter=io) :: r),dir)  
       equation 
         s1 = Dump.directionSymbol(dir);
         s2 = Exp.printComponentRefStr(cr);
@@ -7203,7 +7200,7 @@ protected function propagateInnerOuter
       DAE.VarDirection dir_1;
       Exp.ComponentRef cr;
       DAE.VarKind vk;
-      DAE.Type t;
+      Types.Type t;
       Option<Exp.Exp> e;
       list<Exp.Subscript> id;
       DAE.Flow flowPrefix;
@@ -7214,7 +7211,6 @@ protected function propagateInnerOuter
       DAE.VarDirection dir;
       String s1,s2;
       DAE.Element x;
-      Types.Type tp;
       Absyn.InnerOuter io;
       DAE.VarProtection prot;
       String idName;
@@ -7237,13 +7233,12 @@ protected function propagateInnerOuter
                    pathLst = class_,
                    variableAttributesOption = dae_var_attr,
                    absynCommentOption = comment,
-                   innerOuter=Absyn.UNSPECIFIED(),
-                   fullType=tp) :: r),io) 
+                   innerOuter=Absyn.UNSPECIFIED()) :: r),io) 
       equation 
 				false = ModUtil.isUnspecified(io);
         r_1 = propagateInnerOuter(r, io);
       then
-        (DAE.VAR(cr,vk,dir,prot,t,e,id,flowPrefix,streamPrefix,class_,dae_var_attr,comment,io,tp) :: r_1);
+        (DAE.VAR(cr,vk,dir,prot,t,e,id,flowPrefix,streamPrefix,class_,dae_var_attr,comment,io) :: r_1);
 
 			/* If var already have inner/outer, keep it. */
     case ( (v as DAE.VAR(componentRef = _)) :: r,io) 
@@ -9273,25 +9268,25 @@ algorithm
       equation 
         finst_dims = Util.listFlatten(inst_dims);
         dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,finalPrefix);
-      then {DAE.VAR(vn,kind,dir,prot,DAE.INT(),e,finst_dims,fl,st,{},dae_var_attr,comment,io,ty)};
+      then {DAE.VAR(vn,kind,dir,prot,(Types.T_INTEGER({}),NONE),e,finst_dims,fl,st,{},dae_var_attr,comment,io)};
          
     case (vn,ty as(Types.T_REAL(varLstReal = _),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars)
       equation 
         finst_dims = Util.listFlatten(inst_dims);
         dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,finalPrefix);
-      then {DAE.VAR(vn,kind,dir,prot,DAE.REAL(),e,finst_dims,fl,st,{},dae_var_attr,comment,io,ty)};
+      then {DAE.VAR(vn,kind,dir,prot,(Types.T_REAL({}),NONE),e,finst_dims,fl,st,{},dae_var_attr,comment,io)};
          
     case (vn,ty as(Types.T_BOOL(varLstBool = _),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars) 
       equation 
         finst_dims = Util.listFlatten(inst_dims);
         dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,finalPrefix);
-      then {DAE.VAR(vn,kind,dir,prot,DAE.BOOL(),e,finst_dims,fl,st,{},dae_var_attr,comment,io,ty)};
+      then {DAE.VAR(vn,kind,dir,prot,(Types.T_BOOL({}),NONE),e,finst_dims,fl,st,{},dae_var_attr,comment,io)};
          
     case (vn,ty as(Types.T_STRING(varLstString = _),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars) 
       equation 
         finst_dims = Util.listFlatten(inst_dims);
         dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,finalPrefix);
-      then {DAE.VAR(vn,kind,dir,prot,DAE.STRING(),e,finst_dims,fl,st,{},dae_var_attr,comment,io,ty)};
+      then {DAE.VAR(vn,kind,dir,prot,(Types.T_STRING({}),NONE),e,finst_dims,fl,st,{},dae_var_attr,comment,io)};
          
     case (vn,ty as(Types.T_ENUMERATION(SOME(_),_,_,_),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars) then {}; 
 //    case (vn,ty as(Types.T_ENUM(),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars) then {}; 
@@ -9301,27 +9296,27 @@ algorithm
       equation
         finst_dims = Util.listFlatten(inst_dims);
         dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,finalPrefix);      
-      then {DAE.VAR(vn,kind,dir,prot,DAE.LIST(),e,finst_dims,fl,st,{},dae_var_attr,comment,io,ty)};
+      then {DAE.VAR(vn,kind,dir,prot,ty,e,finst_dims,fl,st,{},dae_var_attr,comment,io)};
     case (vn,ty as(Types.T_METATUPLE(_),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars)
       equation
         finst_dims = Util.listFlatten(inst_dims);
         dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,finalPrefix);
-      then {DAE.VAR(vn,kind,dir,prot,DAE.METATUPLE(),e,finst_dims,fl,st,{},dae_var_attr,comment,io,ty)};
+      then {DAE.VAR(vn,kind,dir,prot,ty,e,finst_dims,fl,st,{},dae_var_attr,comment,io)};
     case (vn,ty as(Types.T_METAOPTION(_),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars)
       equation
         finst_dims = Util.listFlatten(inst_dims);
         dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,finalPrefix);
-      then {DAE.VAR(vn,kind,dir,prot,DAE.METAOPTION(),e,finst_dims,fl,st,{},dae_var_attr,comment,io,ty)};
+      then {DAE.VAR(vn,kind,dir,prot,ty,e,finst_dims,fl,st,{},dae_var_attr,comment,io)};
     case (vn,ty as(Types.T_UNIONTYPE(_),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars)
       equation
         finst_dims = Util.listFlatten(inst_dims);
         dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,finalPrefix);
-      then {DAE.VAR(vn,kind,dir,prot,DAE.UNIONTYPE(),e,finst_dims,fl,st,{},dae_var_attr,comment,io,ty)};
+      then {DAE.VAR(vn,kind,dir,prot,ty,e,finst_dims,fl,st,{},dae_var_attr,comment,io)};
     case (vn,ty as(Types.T_POLYMORPHIC(_),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars)
       equation
         finst_dims = Util.listFlatten(inst_dims);
         dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,finalPrefix);
-      then {DAE.VAR(vn,kind,dir,prot,DAE.POLYMORPHIC(),e,finst_dims,fl,st,{},dae_var_attr,comment,io,ty)};
+      then {DAE.VAR(vn,kind,dir,prot,ty,e,finst_dims,fl,st,{},dae_var_attr,comment,io)};
     case (vn,(tty as Types.T_FUNCTION(_,_),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars)
       local
         Types.TType tty;
@@ -9331,7 +9326,7 @@ algorithm
         dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,finalPrefix);
         path = Exp.crefToPath(vn);
         ty = (tty,SOME(path));
-      then {DAE.VAR(vn,kind,dir,prot,DAE.FUNCTION_REFERENCE(),e,finst_dims,fl,st,{},dae_var_attr,comment,io,ty)};
+      then {DAE.VAR(vn,kind,dir,prot,ty,e,finst_dims,fl,st,{},dae_var_attr,comment,io)};
     /*----------------------------*/
     
     /* We should not declare each enumeration value of an enumeration when instantiating,
@@ -9342,22 +9337,15 @@ algorithm
       equation 
         finst_dims = Util.listFlatten(inst_dims);
         dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,finalPrefix);
-      then {DAE.VAR(vn,kind,dir,prot,DAE.ENUMERATION(l),e,finst_dims,fl,st,{}, dae_var_attr,comment,io,ty)};  
+      then {DAE.VAR(vn,kind,dir,prot,ty,e,finst_dims,fl,st,{}, dae_var_attr,comment,io)};  
 
-    /* Complex type that is Record*/
-/*    case (vn, ty as (Types.T_COMPLEX(complexClassType = ClassInf.RECORD(string = s)),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars)
-      equation
-        finst_dims = Util.listFlatten(inst_dims);
-        dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,finalPrefix);
-      then {DAE.VAR(vn,kind,dir,prot,DAE.RECORD(s),e,finst_dims,fl,st,{},dae_var_attr,comment,io,ty)};
-*/
           /* Complex type that is ExternalObject*/
      case (vn, ty as (Types.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(path)),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars)
        local Absyn.Path path;
        equation 
          finst_dims = Util.listFlatten(inst_dims);
          dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,finalPrefix);
-       then {DAE.VAR(vn,kind,dir,prot,DAE.EXT_OBJECT(path),e,finst_dims,fl,st,{},dae_var_attr,comment,io,ty)};
+       then {DAE.VAR(vn,kind,dir,prot,ty,e,finst_dims,fl,st,{},dae_var_attr,comment,io)};
             
       /* instantiation of complex type extending from basic type */ 
     case (vn,(Types.T_COMPLEX(complexClassType = ci,complexTypeOption = SOME(tp)),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars)
@@ -9382,12 +9370,10 @@ algorithm
         fail();
         
         /* Complex/Record components, only if declareComplexVars is true */
-    case(vn,ty as (Types.T_COMPLEX(ClassInf.RECORD(name),varLst,_,_),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,true)
-      local String name; list<Types.Var> varLst; list<DAE.Var> daeVarLst;
+    case(vn,ty as (Types.T_COMPLEX(complexClassType = ClassInf.RECORD(_)),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,true)
       equation
         finst_dims = Util.listFlatten(inst_dims);
-        daeVarLst = Util.listMap(varLst,daeDeclareComplexVar);
-      then {DAE.VAR(vn,kind,dir,prot,DAE.COMPLEX(Absyn.IDENT(name),daeVarLst),e,finst_dims,fl,st,{},dae_var_attr,comment,io,ty)};
+      then {DAE.VAR(vn,kind,dir,prot,ty,e,finst_dims,fl,st,{},dae_var_attr,comment,io)};
      
     case (c,ty,_,_,_,_,_,_,_,_,_,_,_,_,_) then {}; 
   end matchcontinue;
@@ -13177,7 +13163,7 @@ algorithm
       Exp.ComponentRef cr;
       DAE.VarKind vk;
       DAE.VarDirection vd;
-      DAE.Type ty;
+      Types.Type ty;
       list<Exp.Subscript> inst_dims;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
@@ -13187,7 +13173,6 @@ algorithm
       String n;
       Absyn.Path fpath;
       Absyn.InnerOuter io;
-      Types.Type ftp;
       DAE.VarProtection prot;
       
     case (done,{}) then done; 
@@ -13203,12 +13188,11 @@ algorithm
                               pathLst = class_,
                               variableAttributesOption = dae_var_attr,
                               absynCommentOption = comment,
-                              innerOuter=io,
-                              fullType=ftp)) :: todorest))
+                              innerOuter=io)) :: todorest))
       equation 
         (exp_1,done_1) = initVarsModelicaOutput2(cr, exp, done);
         (exp_2,todorest_1) = initVarsModelicaOutput2(cr, exp_1, todorest);
-        done_2 = listAppend(done_1,{DAE.VAR(cr,vk,vd,prot,ty,exp_2,inst_dims,flowPrefix,streamPrefix,class_,dae_var_attr,comment,io,ftp)});
+        done_2 = listAppend(done_1,{DAE.VAR(cr,vk,vd,prot,ty,exp_2,inst_dims,flowPrefix,streamPrefix,class_,dae_var_attr,comment,io)});
         done_3 = initVarsModelicaOutput1(done_2, todorest_1);
       then
         done_3;
@@ -15288,7 +15272,7 @@ protected function propagateVariability " help function to propagateAttributes, 
       DAE.VarDirection dir_1;
       Exp.ComponentRef cr;
       DAE.VarKind vk;
-      DAE.Type t;
+      Types.Type t;
       Option<Exp.Exp> e;
       list<Exp.Subscript> id;
       DAE.Flow flowPrefix;
@@ -15298,7 +15282,6 @@ protected function propagateVariability " help function to propagateAttributes, 
       Option<SCode.Comment> comment;
       DAE.VarDirection dir;
       String s1,s2;
-      Types.Type tp;
       Absyn.InnerOuter io;
       DAE.VarProtection prot;
       /* Component that is VAR does not change variablity of subcomponents */ 
@@ -15307,25 +15290,25 @@ protected function propagateVariability " help function to propagateAttributes, 
     case ({},_) then {}; 
       
       /* the most restrictive variability is preserved (a const may not become PARAM) */
-    case ((x as DAE.VAR(cr,DAE.CONST(),dir,prot,t,e,id,flowPrefix,streamPrefix,class_,dae_var_attr,comment,io,tp)) :: r,SCode.PARAM()) 
+    case ((x as DAE.VAR(cr,DAE.CONST(),dir,prot,t,e,id,flowPrefix,streamPrefix,class_,dae_var_attr,comment,io)) :: r,SCode.PARAM()) 
       equation
         r_1 = propagateVariability(r, vt);
       then
         x :: r_1;
 
       /* parameter */
-    case ((DAE.VAR(cr,vk,dir,prot,t,e,id,flowPrefix,streamPrefix,class_,dae_var_attr,comment,io,tp) :: r),SCode.PARAM()) 
+    case ((DAE.VAR(cr,vk,dir,prot,t,e,id,flowPrefix,streamPrefix,class_,dae_var_attr,comment,io) :: r),SCode.PARAM()) 
       equation 
         r_1 = propagateVariability(r, vt);
       then
-        (DAE.VAR(cr,DAE.PARAM(),dir,prot,t,e,id,flowPrefix,streamPrefix,class_,dae_var_attr,comment,io,tp) :: r_1);
+        (DAE.VAR(cr,DAE.PARAM(),dir,prot,t,e,id,flowPrefix,streamPrefix,class_,dae_var_attr,comment,io) :: r_1);
 
       /* constant */
-    case ((DAE.VAR(cr,vk,dir,prot,t,e,id,flowPrefix,streamPrefix,class_,dae_var_attr,comment,io,tp) :: r),SCode.CONST()) 
+    case ((DAE.VAR(cr,vk,dir,prot,t,e,id,flowPrefix,streamPrefix,class_,dae_var_attr,comment,io) :: r),SCode.CONST()) 
       equation 
         r_1 = propagateVariability(r, vt);
       then
-        (DAE.VAR(cr,DAE.CONST(),dir,prot,t,e,id,flowPrefix,streamPrefix,class_,dae_var_attr,comment,io,tp) :: r_1);
+        (DAE.VAR(cr,DAE.CONST(),dir,prot,t,e,id,flowPrefix,streamPrefix,class_,dae_var_attr,comment,io) :: r_1);
 
 
 			/* Traverse components */
@@ -15451,43 +15434,6 @@ algorithm
   end matchcontinue;
 end makeFullyQualified2;
 
-protected function daeDeclareComplexVar 
-"help function to daeDeclare4,
- translates a Types.Var to a DAE.Var, used in complex variables such as records."
-  input Types.Var var;
-  output DAE.Var daeVar;
-algorithm  
-  daeVar := matchcontinue(var)
-  local DAE.Type daeTp; String name; Types.Type tp;
-    case(Types.VAR(name=name,type_=tp)) equation
-      daeTp = daeDeclareComplexVarType(tp);
-    then DAE.TVAR(name,daeTp);
-  end matchcontinue;
-end daeDeclareComplexVar;
-
-protected function daeDeclareComplexVarType "Help function to daeDeclareComplexVar"
-input Types.Type tp;
-output DAE.Type daeTp;
-algorithm
-  daeTp := matchcontinue(tp)
-  local list<String> lst; list<DAE.Var> daeVarLst; String name; list<Types.Var> varLst;
-    case((Types.T_INTEGER(_),_)) then DAE.INT();
-    case((Types.T_REAL(_),_)) then DAE.REAL();
-    case((Types.T_STRING(_),_)) then DAE.STRING();
-    case((Types.T_BOOL(_),_)) then DAE.BOOL();
-//    case((Types.T_ENUM(),_)) then DAE.ENUM();
-    case((Types.T_ENUMERATION(index=SOME(_),names=lst),_)) then DAE.ENUMERATION(lst);
-    case((Types.T_COMPLEX(complexTypeOption=SOME(tp)),_)) then daeDeclareComplexVarType(tp);
-    case((Types.T_COMPLEX(ClassInf.RECORD(name),varLst,_,_),_)) equation
-      daeVarLst = Util.listMap(varLst,daeDeclareComplexVar);    
-    then  DAE.COMPLEX(Absyn.IDENT(name),daeVarLst);
-    case((Types.T_UNIONTYPE(_),_)) then DAE.UNIONTYPE();
-    case(_) equation
-      print("Warning: Inst.daeDeclareComplexVarType failed!");
-    then fail();
-  end matchcontinue;
-end daeDeclareComplexVarType;
-
 protected function propagateBinding "
 This function modifies equations into bindings for parameters"
   input list<DAE.Element> inVars;
@@ -15503,7 +15449,7 @@ algorithm
     DAE.VarKind kind;
     DAE.VarDirection direction;
     DAE.VarProtection protection;
-    DAE.Type ty;
+    Types.Type ty;
     Option<Exp.Exp> binding; 
     DAE.InstDims  dims;
     DAE.Flow flowPrefix;
@@ -15512,16 +15458,15 @@ algorithm
     Option<DAE.VariableAttributes> variableAttributesOption;
     Option<SCode.Comment> absynCommentOption;
     Absyn.InnerOuter innerOuter;
-    Types.Type fullType;
     
     case (vars,{}) then vars;
     case ({},_) then {};  
-    case (DAE.VAR(componentRef,kind,direction,protection,ty,NONE(),dims,flowPrefix,streamPrefix,pathLst,variableAttributesOption,absynCommentOption,innerOuter,fullType)::vars, equations)    
+    case (DAE.VAR(componentRef,kind,direction,protection,ty,NONE(),dims,flowPrefix,streamPrefix,pathLst,variableAttributesOption,absynCommentOption,innerOuter)::vars, equations)
       equation
         SOME(e)=findCorrespondingBinding(componentRef, equations);
         vars1=propagateBinding(vars,equations);
       then  
-        DAE.VAR(componentRef,kind,direction,protection,ty,SOME(e),dims,flowPrefix,streamPrefix,pathLst,variableAttributesOption,absynCommentOption,innerOuter,fullType)::vars1;
+        DAE.VAR(componentRef,kind,direction,protection,ty,SOME(e),dims,flowPrefix,streamPrefix,pathLst,variableAttributesOption,absynCommentOption,innerOuter)::vars1;
     case (var::vars, equations)
       equation        
         vars1=propagateBinding(vars,equations);

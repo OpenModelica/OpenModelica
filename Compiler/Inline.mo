@@ -242,7 +242,7 @@ algorithm
       Exp.ComponentRef varName;
       DAELow.VarKind varKind;
       DAE.VarDirection varDirection;
-      DAE.Type varType;
+      DAELow.Type varType;
       Exp.Exp e,e_1;
       Option<Values.Value> bindValue;
       DAE.InstDims arrayDim;
@@ -420,7 +420,7 @@ algorithm
       DAE.VarKind kind;
       DAE.VarDirection direction;
       DAE.VarProtection protection;
-      DAE.Type ty;
+      Types.Type ty,t;
       Exp.Exp binding,binding_1,exp,exp_1,exp1,exp1_1,exp2,exp2_1; 
       DAE.InstDims dims;
       DAE.Flow flowPrefix;
@@ -429,7 +429,6 @@ algorithm
       Option<DAE.VariableAttributes> variableAttributesOption;
       Option<SCode.Comment> absynCommentOption;
       Absyn.InnerOuter innerOuter;
-      Types.Type fullType,t;
       list<Integer> dimension;
       Algorithm.Algorithm alg,alg_1;
       Ident i;
@@ -438,10 +437,10 @@ algorithm
       DAE.ExternalDecl ext;
       list<Exp.Exp> explst,explst_1;
     case({},_) then {};
-    case(DAE.VAR(componentRef,kind,direction,protection,ty,SOME(binding),dims,flowPrefix,streamPrefix,pathLst,variableAttributesOption,absynCommentOption,innerOuter,fullType) :: cdr,fns)
+    case(DAE.VAR(componentRef,kind,direction,protection,ty,SOME(binding),dims,flowPrefix,streamPrefix,pathLst,variableAttributesOption,absynCommentOption,innerOuter) :: cdr,fns)
       equation
         binding_1 = inlineExp(binding,fns);
-        res = DAE.VAR(componentRef,kind,direction,protection,ty,SOME(binding_1),dims,flowPrefix,streamPrefix,pathLst,variableAttributesOption,absynCommentOption,innerOuter,fullType);
+        res = DAE.VAR(componentRef,kind,direction,protection,ty,SOME(binding_1),dims,flowPrefix,streamPrefix,pathLst,variableAttributesOption,absynCommentOption,innerOuter);
         cdr_1 = inlineDAEElements(cdr,fns);
       then
         res :: cdr_1;

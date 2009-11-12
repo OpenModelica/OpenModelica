@@ -385,7 +385,7 @@ algorithm
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
       list<DAELow.Var> xs;
-      DAE.Type var_type;
+      DAELow.Type var_type;
       
     case ({},_) then "";
     case (((v as DAELow.VAR(varName = cr,

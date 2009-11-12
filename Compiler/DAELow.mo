@@ -53,6 +53,28 @@ public import Values;
 public import Absyn;
 public import Algorithm;
 public import SCode;
+public import Types;
+
+public uniontype Type "
+Once we are in DAELow, the Type can be only basic types or enumeration.
+We cannot do this in DAE because functions may contain many more types.
+"
+  record REAL end REAL;
+
+  record INT end INT;
+
+  record BOOL end BOOL;
+
+  record STRING end STRING;
+    
+  record ENUMERATION
+    list<String> stringLst;
+  end ENUMERATION;
+
+  record EXT_OBJECT
+    Absyn.Path fullClassName;
+  end EXT_OBJECT;
+end Type;
 
 public
 uniontype VarKind "- Variabile kind"
@@ -72,7 +94,7 @@ uniontype Var "- Variables"
     Exp.ComponentRef varName "varName ; variable name" ;
     VarKind varKind "varKind ; Kind of variable" ;
     DAE.VarDirection varDirection "varDirection ; input, output or bidirectional" ;
-    DAE.Type varType "varType ; builtin type or enumeration" ;
+    Type varType "varType ; builtin type or enumeration" ;
     Option<Exp.Exp> bindExp "bindExp ; Binding expression e.g. for parameters" ;
     Option<Values.Value> bindValue "bindValue ; binding value for parameters" ;
     DAE.InstDims arryDim "arryDim ; array dimensions on nonexpanded var" ;
@@ -376,12 +398,12 @@ protected import Debug;
 protected import Env;
 protected import Builtin;
 protected import Ceval;
-protected import Types;
 protected import System;
 protected import VarTransform;
 protected import BackendVarTransform;
 protected import Error;
 protected import SimCodegen;
+protected import ClassInf;
 
 protected constant BinTree emptyBintree=TREENODE(NONE,NONE,NONE) " Empty binary tree " ;
 
@@ -951,7 +973,7 @@ algorithm
       Exp.ComponentRef cr1,orig;
       VarKind kind;
       DAE.VarDirection dir;
-      DAE.Type vartype;
+      Type vartype;
       Option<Exp.Exp> bind;
       Option<Values.Value> value;
       list<Exp.Subscript> dims;
@@ -999,7 +1021,7 @@ algorithm
     case (v,e,false) then (v,e);
     case (vars,eqns,true) /* TODO::The dummy variable must be fixed */
       equation
-        vars_1 = addVar(VAR(Exp.CREF_IDENT("$dummy",Exp.REAL(),{}), STATE(),DAE.BIDIR(),DAE.REAL(),NONE,NONE,{},-1,Exp.CREF_IDENT("$dummy",Exp.REAL(),{}),{},
+        vars_1 = addVar(VAR(Exp.CREF_IDENT("$dummy",Exp.REAL(),{}), STATE(),DAE.BIDIR(),REAL(),NONE,NONE,{},-1,Exp.CREF_IDENT("$dummy",Exp.REAL(),{}),{},
                             SOME(DAE.VAR_ATTR_REAL(NONE,NONE,NONE,(NONE,NONE),NONE,SOME(Exp.BCONST(true)),NONE,NONE,NONE,NONE,NONE)),
                             NONE,DAE.NON_CONNECTOR(),DAE.NON_STREAM()), vars);
       then
@@ -1392,7 +1414,7 @@ algorithm
       Exp.ComponentRef cr,orig;
       VarKind kind;
       DAE.VarDirection dir;
-      DAE.Type vartype;
+      Type vartype;
       Option<Exp.Exp> bind;
       Option<Values.Value> value;
       list<Exp.Subscript> dims;
@@ -1669,7 +1691,7 @@ algorithm
       Variables v,v_1,v_2;
       Exp.ComponentRef cr,orig;
       DAE.VarDirection dir;
-      DAE.Type vartype;
+      Type vartype;
       Option<Exp.Exp> bind;
       Option<Values.Value> value;
       list<Exp.Subscript> dims;
@@ -2425,11 +2447,11 @@ public function varType "function: varType
   extracts the type of a variable.
 "
   input Var inVar;
-  output DAE.Type outType;
+  output Type outType;
 algorithm
   outType:=
   matchcontinue (inVar)
-    local DAE.Type tp;
+    local Type tp;
     case (VAR(varType = tp)) then tp;
   end matchcontinue;
 end varType;
@@ -2514,7 +2536,7 @@ algorithm
       Exp.ComponentRef a,j;
       VarKind b;
       DAE.VarDirection c;
-      DAE.Type d;
+      Type d;
       Option<Exp.Exp> e,h;
       Option<Values.Value> f;
       list<Exp.Subscript> g;
@@ -2622,7 +2644,7 @@ algorithm
     case (VAR(varName = a,
               varKind = b,
               varDirection = c,
-              varType = DAE.REAL(),
+              varType = REAL(),
               bindExp = f,
               bindValue = g,
               arryDim = h,
@@ -2642,14 +2664,14 @@ algorithm
         list<Absyn.Path> l;
         Option<SCode.Comment> m;
       then
-        VAR(a,b,c,DAE.REAL(),f,g,h,j,k,l,
+        VAR(a,b,c,REAL(),f,g,h,j,k,l,
             SOME(DAE.VAR_ATTR_REAL(NONE,NONE,NONE,(NONE,NONE),NONE,SOME(Exp.BCONST(fixed)),NONE,NONE,NONE,NONE,NONE)),
             m,t,streamPrefix);
         
     case (VAR(varName = a,
               varKind = b,
               varDirection = c,
-              varType = DAE.INT(),
+              varType = INT(),
               bindExp = f,
               bindValue = g,
               arryDim = h,
@@ -2669,14 +2691,14 @@ algorithm
         list<Absyn.Path> l;
         Option<SCode.Comment> m;
       then
-        VAR(a,b,c,DAE.REAL(),f,g,h,j,k,l,
+        VAR(a,b,c,REAL(),f,g,h,j,k,l,
             SOME(DAE.VAR_ATTR_INT(NONE,(NONE,NONE),NONE,SOME(Exp.BCONST(fixed)),NONE,NONE,NONE)),
             m,t,streamPrefix);
         
     case (VAR(varName = a,
               varKind = b,
               varDirection = c,
-              varType = DAE.BOOL(),
+              varType = BOOL(),
               bindExp = f,
               bindValue = g,
               arryDim = h,
@@ -2696,15 +2718,14 @@ algorithm
         list<Absyn.Path> l;
         Option<SCode.Comment> m;
       then
-        VAR(a,b,c,DAE.REAL(),f,g,h,j,k,l,
+        VAR(a,b,c,REAL(),f,g,h,j,k,l,
             SOME(DAE.VAR_ATTR_BOOL(NONE,NONE,SOME(Exp.BCONST(fixed)),NONE,NONE,NONE)),
             m,t,streamPrefix);
         
     case (VAR(varName = a,
               varKind = b,
               varDirection = c,
-              varType = DAE.ENUMERATION(_),
-//              varType = DAE.ENUM(),
+              varType = ENUMERATION(_),
               bindExp = f,
               bindValue = g,
               arryDim = h,
@@ -2724,7 +2745,7 @@ algorithm
         list<Absyn.Path> l;
         Option<SCode.Comment> m;
       then
-        VAR(a,b,c,DAE.REAL(),f,g,h,j,k,l,
+        VAR(a,b,c,REAL(),f,g,h,j,k,l,
             SOME(DAE.VAR_ATTR_ENUMERATION(NONE,(NONE,NONE),NONE,SOME(Exp.BCONST(fixed)),NONE,NONE,NONE)),
             m,t,streamPrefix);
   end matchcontinue;
@@ -3853,7 +3874,7 @@ algorithm
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
       list<Var> xs;
-      DAE.Type var_type;
+      Type var_type;
       DAE.InstDims arrayDim;
       
     case ({},_) then ();
@@ -3891,7 +3912,7 @@ algorithm
         print(" ");
         print(path_str);
         indx_str = intString(indx) "print \"  \" & print comment_str & print \" former: \" & print old_name &" ;
-        str = DAEUtil.dumpTypeStr(var_type);print( " type: "); print(str);
+        str = dumpTypeStr(var_type);print( " type: "); print(str);
         print(Exp.printComponentRef2Str("", arrayDim));
         print(" indx = ");
         print(indx_str);
@@ -3932,7 +3953,7 @@ algorithm
         print(" ");
         print(path_str);
         indx_str = intString(indx) "print \" former: \" & print old_name &" ;
-        str = DAEUtil.dumpTypeStr(var_type);print( " type: "); print(str);
+        str = dumpTypeStr(var_type);print( " type: "); print(str);
         print(Exp.printComponentRef2Str("", arrayDim));        
         print(" indx = ");
         print(indx_str);
@@ -5395,7 +5416,7 @@ algorithm
       Option<Exp.Exp> bind_1,bind;
       DAE.VarKind kind;
       DAE.VarDirection dir;
-      DAE.Type tp;
+      Type tp;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
       list<Absyn.Path> class_;
@@ -5403,11 +5424,12 @@ algorithm
       Option<SCode.Comment> comment;
       BinTree states;
       Exp.Type ty;
+      Types.Type t;
       
     case (DAE.VAR(componentRef = name,
                   kind = kind,
                   direction = dir,
-                  ty = tp,
+                  ty = t,
                   binding = bind,
                   dims = dims,
                   flowPrefix = flowPrefix,
@@ -5421,8 +5443,9 @@ algorithm
         ty = Exp.crefType(name);
         origname = Exp.printComponentRefStr(name_1);
         newname = Exp.CREF_IDENT(origname,ty,subs);
-        kind_1 = lowerVarkind(kind, tp, newname, dir, flowPrefix, streamPrefix, states, dae_var_attr);
+        kind_1 = lowerVarkind(kind, t, newname, dir, flowPrefix, streamPrefix, states, dae_var_attr);
         bind_1 = lowerBinding(bind);
+        tp = lowerType(t);
       then
         (VAR(newname,kind_1,dir,tp,NONE,NONE,dims,-1,name,class_,dae_var_attr,comment,flowPrefix,streamPrefix), bind_1);
   end matchcontinue;
@@ -5463,18 +5486,19 @@ algorithm
       Option<Exp.Exp> bind_1,bind;
       DAE.VarKind kind;
       DAE.VarDirection dir;
-      DAE.Type tp;
+      Type tp;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
       list<Absyn.Path> class_;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
       Exp.Type ty;
+      Types.Type t;
       
     case (DAE.VAR(componentRef = name,
                   kind = kind,
                   direction = dir,
-                  ty = tp,
+                  ty = t,
                   binding = bind,
                   dims = dims,
                   flowPrefix = flowPrefix,
@@ -5490,6 +5514,7 @@ algorithm
         newname = Exp.CREF_IDENT(origname,ty,subs);
         kind_1 = lowerKnownVarkind(kind, name, dir, flowPrefix);
         bind_1 = lowerBinding(bind);
+        tp = lowerType(t);
       then
         VAR(newname,kind_1,dir,tp,bind_1,NONE,dims,-1,name,class_,dae_var_attr,comment,flowPrefix,streamPrefix);
         
@@ -5517,17 +5542,18 @@ algorithm
       Option<Exp.Exp> bind_1,bind;
       DAE.VarKind kind;
       DAE.VarDirection dir;
-      DAE.Type tp;
+      Type tp;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
       list<Absyn.Path> class_;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
       Exp.Type ty;
+      Types.Type t;
     case (DAE.VAR(componentRef = name,
                   kind = kind,
                   direction = dir,
-                  ty = tp,
+                  ty = t,
                   binding = bind,
                   dims = dims,
                   flowPrefix = flowPrefix,
@@ -5541,8 +5567,9 @@ algorithm
         ty = Exp.crefType(name);
         origname = Exp.printComponentRefStr(name_1);
         newname = Exp.CREF_IDENT(origname,ty,subs);
-        kind_1 = lowerExtObjVarkind(tp);
+        kind_1 = lowerExtObjVarkind(t);
         bind_1 = lowerBinding(bind);
+        tp = lowerType(t);
       then
         VAR(newname,kind_1,dir,tp,bind_1,NONE,dims,-1,name,class_,dae_var_attr,comment,flowPrefix,streamPrefix);
   end matchcontinue;
@@ -5552,7 +5579,7 @@ protected function lowerVarkind
 "function: lowerVarkind
   Helper function to lowerVar.
   inputs: (DAE.VarKind,
-           DAE.Type,
+           Type,
            Exp.ComponentRef,
            DAE.VarDirection, /* input/output/bidir */
            DAE.Flow,
@@ -5562,7 +5589,7 @@ protected function lowerVarkind
   NOTE: Fails for not states that are not algebraic 
         variables, e.g. parameters and constants"
   input DAE.VarKind inVarKind;
-  input DAE.Type inType;
+  input Types.Type inType;
   input Exp.ComponentRef inComponentRef;
   input DAE.VarDirection inVarDirection;
   input DAE.Flow inFlow;
@@ -5588,25 +5615,25 @@ algorithm
     case (DAE.VARIABLE(),_,v,_,_,_,states,SOME(DAE.VAR_ATTR_REAL(_,_,_,_,_,_,_,SOME(DAE.ALWAYS()),_,_,_)))
     then STATE();
 
-    case (DAE.VARIABLE(),DAE.BOOL(),cr,dir,flowPrefix,_,_,_)
+    case (DAE.VARIABLE(),(Types.T_BOOL(_),_),cr,dir,flowPrefix,_,_,_)
       equation
         failure(topLevelInput(cr, dir, flowPrefix));
       then
         DISCRETE();
     
-    case (DAE.DISCRETE(),DAE.BOOL(),cr,dir,flowPrefix,_,_,_)
+    case (DAE.DISCRETE(),(Types.T_BOOL(_),_),cr,dir,flowPrefix,_,_,_)
       equation
         failure(topLevelInput(cr, dir, flowPrefix));
       then
         DISCRETE();
     
-    case (DAE.VARIABLE(),DAE.INT(),cr,dir,flowPrefix,_,_,_)
+    case (DAE.VARIABLE(),(Types.T_INTEGER(_),_),cr,dir,flowPrefix,_,_,_)
       equation
         failure(topLevelInput(cr, dir, flowPrefix));
       then
         DISCRETE();
     
-    case (DAE.DISCRETE(),DAE.INT(),cr,dir,flowPrefix,_,_,_)
+    case (DAE.DISCRETE(),(Types.T_INTEGER(_),_),cr,dir,flowPrefix,_,_,_)
       equation
         failure(topLevelInput(cr, dir, flowPrefix));
       then
@@ -5737,13 +5764,13 @@ end lowerKnownVarkind;
 protected function lowerExtObjVarkind "  Helper function to lowerExtObjVar.
   NOTE: Fails for everything but External objects
 "
-  input DAE.Type inType;
+  input Types.Type inType;
   output VarKind outVarKind;
 algorithm
   outVarKind:=
   matchcontinue (inType)
     local Absyn.Path path;
-    case (DAE.EXT_OBJECT(path)) then EXTOBJ(path);
+    case ((Types.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(path)),_)) then EXTOBJ(path);
   end matchcontinue;
 end lowerExtObjVarkind;
 
@@ -6819,7 +6846,7 @@ algorithm
       Exp.ComponentRef cr,origname;
       VarKind kind,new_kind;
       DAE.VarDirection dir;
-      DAE.Type tp;
+      Type tp;
       Option<Exp.Exp> bind,st;
       Option<Values.Value> v;
       list<Exp.Subscript> dim;
@@ -8206,7 +8233,7 @@ algorithm
       list<Var> vs_1,vs;
       Exp.ComponentRef cr,name;
       DAE.VarDirection d;
-      DAE.Type t;
+      Type t;
       Option<Exp.Exp> b;
       Option<Values.Value> value;
       list<Exp.Subscript> dim;
@@ -8264,7 +8291,7 @@ algorithm
       Exp.ComponentRef cr,name;
       VarKind kind;
       DAE.VarDirection d;
-      DAE.Type t;
+      Type t;
       Option<Exp.Exp> b;
       Option<Values.Value> value;
       list<Exp.Subscript> dim;
@@ -8515,7 +8542,7 @@ algorithm
       Variables vars,vars1,vars2,vars3,vars_1;
       Exp.Operator op;
       DAE.VarDirection a;
-      DAE.Type b;
+      Type b;
       Option<Exp.Exp> c,f;
       Option<Values.Value> d;
       Value g;
@@ -8690,7 +8717,7 @@ algorithm
     local
       VarKind kind;
       DAE.VarDirection dir;
-      DAE.Type tp;
+      Type tp;
       Option<Exp.Exp> bind;
       Option<Values.Value> value;
       list<Exp.Subscript> dim;
@@ -9751,7 +9778,7 @@ algorithm
       list<Var> res,vs;
       Exp.ComponentRef cr,h;
       DAE.VarDirection a;
-      DAE.Type b;
+      Type b;
       Option<Exp.Exp> c,f;
       Option<Values.Value> d;
       list<Exp.Subscript> e;
@@ -12062,7 +12089,7 @@ algorithm
       DAE.Flow flowPrefix;
       list<Var> vs;
     case ({},nx,ny,ny_string) then (nx,ny,ny_string);
-    case ((VAR(varKind = VARIABLE(),varType= DAE.STRING(),flowPrefix = flowPrefix) :: vs),nx,ny,ny_string)
+    case ((VAR(varKind = VARIABLE(),varType=STRING(),flowPrefix = flowPrefix) :: vs),nx,ny,ny_string)
       equation
         ny_1_string = ny_string + 1;
         (nx_2,ny_2,ny_2_string) = calculateVarSizes(vs, nx, ny, ny_1_string);
@@ -12076,7 +12103,7 @@ algorithm
         (nx_2,ny_2,ny_2_string);
 
 
-     case ((VAR(varKind = DISCRETE(),varType= DAE.STRING(),flowPrefix = flowPrefix) :: vs),nx,ny,ny_string)
+     case ((VAR(varKind = DISCRETE(),varType=STRING(),flowPrefix = flowPrefix) :: vs),nx,ny,ny_string)
       equation
         ny_1_string = ny_string + 1;
         (nx_2,ny_2,ny_2_string) = calculateVarSizes(vs, nx, ny,ny_1_string);
@@ -12096,7 +12123,7 @@ algorithm
       then
         (nx_2,ny_2,ny_2_string);
 
-    case ((VAR(varKind = DUMMY_STATE(),varType= DAE.STRING(),flowPrefix = flowPrefix) :: vs),nx,ny,ny_string) /* A dummy state is an algebraic variable */
+    case ((VAR(varKind = DUMMY_STATE(),varType=STRING(),flowPrefix = flowPrefix) :: vs),nx,ny,ny_string) /* A dummy state is an algebraic variable */
       equation
         ny_1_string = ny_string + 1;
         (nx_2,ny_2,ny_2_string) = calculateVarSizes(vs, nx, ny,ny_1_string);
@@ -12109,7 +12136,7 @@ algorithm
       then
         (nx_2,ny_2,ny_2_string);
 
-    case ((VAR(varKind = DUMMY_DER(),varType= DAE.STRING(),flowPrefix = flowPrefix) :: vs),nx,ny,ny_string)
+    case ((VAR(varKind = DUMMY_DER(),varType=STRING(),flowPrefix = flowPrefix) :: vs),nx,ny,ny_string)
       equation
         ny_1_string = ny_string + 1;
         (nx_2,ny_2,ny_2_string) = calculateVarSizes(vs, nx, ny,ny_1_string);
@@ -12131,15 +12158,13 @@ algorithm
 
     case (_,_,_,_)
       equation
-        print("-calculate_var_sizes failed\n");
+        print("- DAELow.calculateVarSizes failed\n");
       then
         fail();
   end matchcontinue;
 end calculateVarSizes;
 
-protected function replaceVariables "function: replaceVariables
-  author: PA
-
+protected function replaceVariables "
   Transforms the equations (incl. algorithms and array eqns),
   given two lists with source and target expressions
 
@@ -12272,11 +12297,10 @@ algorithm
   matchcontinue (inVarLst,inEnv)
     local
       list<Env.Frame> env,env_1,env_2;
-      tuple<Types.TType, Option<Absyn.Path>> t_1;
       String crn;
       VarKind a;
       DAE.VarDirection b;
-      DAE.Type t;
+      Type t;
       Exp.Exp e;
       list<Exp.Subscript> d;
       Option<Exp.Exp> f;
@@ -12288,6 +12312,7 @@ algorithm
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
       list<Var> rest;
+      Types.Type t_1;
     case ({},env) then env;
     case ((VAR(varName = Exp.CREF_IDENT(ident = crn),
                varKind = a,
@@ -12303,7 +12328,7 @@ algorithm
                flowPrefix = flowPrefix,
                streamPrefix = streamPrefix) :: rest),env)
       equation
-        t_1 = DAEUtil.generateDaeType(t) "Some of the attributes added to env here does not matter, defaults are used" ;
+        t_1 = generateDaeType(t);
         env_1 = Env.extendFrameV(env,
           Types.VAR(crn,
           Types.ATTR(false,false,SCode.RW(),SCode.CONST(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,
@@ -12326,7 +12351,7 @@ algorithm
                flowPrefix = flowPrefix,
                streamPrefix = streamPrefix) :: rest),env)
       equation
-        t_1 = DAEUtil.generateDaeType(t) "Some of the attributes added to env here does not matter, defaults are used" ;
+        t_1 = generateDaeType(t);
         env_1 = Env.extendFrameV(env,
           Types.VAR(crn,
           Types.ATTR(false,false,SCode.RW(),SCode.CONST(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,
@@ -12367,7 +12392,7 @@ algorithm
       Exp.ComponentRef cr,h;
       VarKind a;
       DAE.VarDirection b;
-      DAE.Type c;
+      Type c;
       Exp.Exp e;
       list<Exp.Subscript> d;
       Option<Exp.Exp> f;
@@ -12540,15 +12565,15 @@ algorithm
       Exp.ComponentRef cr;
       list<Var> vs;
       Exp.Type etp;
-      DAE.Type tp;
+      Type tp;
     case ({}) then ({},{});
     case ((VAR(varName = (cr as Exp.CREF_IDENT(ident = str,subscriptLst = {})),varType=tp,varKind = STATE()) :: vs)) /* Special case for states, add %xd{indx} too . */
       equation
         (s,t) = variableReplacementsRemoveDollar(vs);
         etp = makeExpType(tp);
-        ("%" :: rest) = string_list_string_char(str) "print str & print \"<++++++++++++\\n\" & #\"x\"::" ;
+        ("%" :: rest) = stringListStringChar(str);
         name = string_char_list_string(rest);
-        xd_t = stringAppend(derivativeNamePrefix, name) "print name & print \"<++++++++++++\\n\" & 	string_append(\"x\",str\') => str\'\' &" ;
+        xd_t = stringAppend(derivativeNamePrefix, name);
         xd_s = stringAppend("%derivative", name);
       then
         ((Exp.CREF(cr,etp) :: 
@@ -12578,25 +12603,6 @@ algorithm
   end matchcontinue;
 end variableReplacementsRemoveDollar;
 
-protected function makeExpType "Transforms a DAE.Type to Exp.Type"
-  input DAE.Type inType;
-  output Exp.Type expType;
-algorithm
-  expType := matchcontinue(inType)
-    case(DAE.REAL()) then Exp.REAL();
-    case(DAE.INT()) then Exp.INT();
-    case(DAE.BOOL()) then Exp.BOOL();
-    case(DAE.STRING()) then Exp.STRING();
-    case(DAE.ENUMERATION(strLst)) 
-      local list<String> strLst;
-     then Exp.ENUMERATION(NONE(),Absyn.IDENT(""),strLst,{});
-//    case(DAE.ENUM()) then Exp.ENUM();
-//    case(DAE.ENUMERATION(_)) then Exp.OTHER();
-    case(DAE.EXT_OBJECT(_)) then Exp.OTHER();
-  end matchcontinue;
-end makeExpType;
-
-
 protected function algVariableReplacements "function: algVariableReplacements
   author: PA
 
@@ -12621,7 +12627,7 @@ algorithm
       DAE.Flow flowPrefix;
       list<Var> vs;
       Exp.Type etp;
-      DAE.Type tp;
+      Type tp;
     case ({}) then ({},{});
     case ((VAR(varName = cr,varType=tp,index = indx,values = dae_var_attr,comment = comment,flowPrefix = flowPrefix) :: vs))
       equation
@@ -12666,7 +12672,7 @@ algorithm
       Option<SCode.Comment> comment;
       DAE.Flow flowPrefix;
       list<Var> vs;
-      DAE.Type tp;
+      Type tp;
       Exp.Type etp;
     case ({}) then ({},{});
     case ((VAR(varName = cr,varType = tp,arryDim = (instdims as (_ :: _)),index = indx,values = dae_var_attr,comment = comment,flowPrefix = flowPrefix) :: vs))
@@ -13382,7 +13388,7 @@ algorithm
       Exp.Exp e_1,e;
       VarKind kind;
       DAE.VarDirection a;
-      DAE.Type b;
+      Type b;
       Option<Values.Value> c;
       list<Exp.Subscript> d;
       Value i;
@@ -13627,7 +13633,7 @@ algorithm
       list< tuple<Var,Integer,Integer> > vars_1,vs;
       Exp.ComponentRef cr,name;
       DAE.VarDirection d;
-      DAE.Type tp;
+      Type tp;
       Option<Exp.Exp> b;
       Option<Values.Value> value;
       list<Exp.Subscript> dim;
@@ -13643,7 +13649,7 @@ algorithm
     case (((VAR(varName = cr,
                varKind = VARIABLE(),
                varDirection = d,
-               varType = DAE.STRING(),
+               varType = tp as STRING(),
                bindExp = b,
                bindValue = value,
                arryDim = dim,
@@ -13658,7 +13664,7 @@ algorithm
         (vars_1,x1,xd1,y1,p1,dummy1,ext,x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1) = 
            calculateIndexes2(vs, x, xd, y, p, dummy,ext,x_strType,xd_strType,y_1_strType,p_strType,dummy_strType);
       then
-        (((VAR(cr,VARIABLE(),d,DAE.STRING(),b,value,dim,y_strType,name,cl,dae_var_attr,comment,flowPrefix,streamPrefix),typ,place) :: vars_1),
+        (((VAR(cr,VARIABLE(),d,tp,b,value,dim,y_strType,name,cl,dae_var_attr,comment,flowPrefix,streamPrefix),typ,place) :: vars_1),
           x1,xd1,y1,p1,dummy1,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
           
     case (((VAR(varName = cr,
@@ -13685,7 +13691,7 @@ algorithm
     case (((VAR(varName = cr,
                varKind = STATE(),
                varDirection = d,
-               varType = DAE.STRING(),
+               varType = tp as STRING(),
                bindExp = b,
                bindValue = value,
                arryDim = dim,
@@ -13700,7 +13706,7 @@ algorithm
         (vars_1,x1,xd1,y1,p1,dummy1,ext,x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1) = 
            calculateIndexes2(vs, x, xd, y, p, dummy,ext,x_1_strType,xd_strType,y_strType,p_strType,dummy_strType);
       then
-        (((VAR(cr,STATE(),d,DAE.STRING(),b,value,dim,x_strType,name,cl,dae_var_attr,comment,flowPrefix,streamPrefix),typ,place) :: vars_1),
+        (((VAR(cr,STATE(),d,tp,b,value,dim,x_strType,name,cl,dae_var_attr,comment,flowPrefix,streamPrefix),typ,place) :: vars_1),
           x1,xd1,y1,p1,dummy1,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
         
     case (((VAR(varName = cr,
@@ -13727,7 +13733,7 @@ algorithm
     case (((VAR(varName = cr,
                varKind = DUMMY_DER(),
                varDirection = d,
-               varType = DAE.STRING(),
+               varType = tp as STRING(),
                bindExp = b,
                bindValue = value,
                arryDim = dim,
@@ -13742,7 +13748,7 @@ algorithm
         (vars_1,x1,xd1,y1,p1,dummy1,ext,x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1) = 
            calculateIndexes2(vs, x, xd, y, p, dummy,ext,x_strType,xd_strType,y_1_strType,p_strType,dummy_strType);
       then
-        (((VAR(cr,DUMMY_DER(),d,DAE.STRING(),b,value,dim,y_strType,name,cl,dae_var_attr,comment,flowPrefix,streamPrefix),typ,place) :: vars_1),
+        (((VAR(cr,DUMMY_DER(),d,tp,b,value,dim,y_strType,name,cl,dae_var_attr,comment,flowPrefix,streamPrefix),typ,place) :: vars_1),
           x1,xd1,y1,p1,dummy1,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
           
     case (((VAR(varName = cr,
@@ -13769,7 +13775,7 @@ algorithm
     case (((VAR(varName = cr,
                varKind = DUMMY_STATE(),
                varDirection = d,
-               varType = DAE.STRING(),
+               varType = tp as STRING(),
                bindExp = b,
                bindValue = value,
                arryDim = dim,
@@ -13784,7 +13790,7 @@ algorithm
         (vars_1,x1,xd1,y1,p1,dummy1,ext,x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1) = 
            calculateIndexes2(vs, x, xd, y, p, dummy,ext,x_strType,xd_strType,y_1_strType,p_strType,dummy_strType);
       then
-        (((VAR(cr,DUMMY_STATE(),d,DAE.STRING(),b,value,dim,y_strType,name,cl,dae_var_attr,comment,flowPrefix,streamPrefix),typ,place) :: vars_1),
+        (((VAR(cr,DUMMY_STATE(),d,tp,b,value,dim,y_strType,name,cl,dae_var_attr,comment,flowPrefix,streamPrefix),typ,place) :: vars_1),
           x1,xd1,y1,p1,dummy1,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
           
     case (((VAR(varName = cr,
@@ -13811,7 +13817,7 @@ algorithm
     case (((VAR(varName = cr,
                varKind = DISCRETE(),
                varDirection = d,
-               varType = DAE.STRING(),
+               varType = tp as STRING(),
                bindExp = b,
                bindValue = value,
                arryDim = dim,
@@ -13826,7 +13832,7 @@ algorithm
         (vars_1,x1,xd1,y1,p1,dummy1,ext,x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1) = 
            calculateIndexes2(vs, x, xd, y, p, dummy,ext,x_strType,xd_strType,y_1_strType,p_strType,dummy_strType);
       then
-        (((VAR(cr,DISCRETE(),d,DAE.STRING(),b,value,dim,y_strType,name,cl,dae_var_attr,comment,flowPrefix,streamPrefix),typ,place) :: vars_1),
+        (((VAR(cr,DISCRETE(),d,tp,b,value,dim,y_strType,name,cl,dae_var_attr,comment,flowPrefix,streamPrefix),typ,place) :: vars_1),
           x1,xd1,y1,p1,dummy1,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
           
     case (((VAR(varName = cr,
@@ -13853,7 +13859,7 @@ algorithm
     case (((VAR(varName = cr,
                varKind = PARAM(),
                varDirection = d,
-               varType = DAE.STRING(),
+               varType = tp as STRING(),
                bindExp = b,
                bindValue = value,
                arryDim = dim,
@@ -13868,7 +13874,7 @@ algorithm
         (vars_1,x1,xd1,y1,p1,dummy1,ext,x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1) = 
            calculateIndexes2(vs, x, xd, y, p, dummy,ext,x_strType,xd_strType,y_strType,p_1_strType,dummy_strType);
       then
-        (((VAR(cr,PARAM(),d,DAE.STRING(),b,value,dim,p_strType,name,cl,dae_var_attr,comment,flowPrefix,streamPrefix),typ,place) :: vars_1),
+        (((VAR(cr,PARAM(),d,tp,b,value,dim,p_strType,name,cl,dae_var_attr,comment,flowPrefix,streamPrefix),typ,place) :: vars_1),
           x1,xd1,y1,p1,dummy1,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
           
     case (((VAR(varName = cr,
@@ -14551,17 +14557,13 @@ algorithm
         true = isAlgebraic(stop);
       then
         true;
-    case (Exp.CAST(ty = REAL,exp = Exp.ICONST(integer = ival))) then true;
-    case (Exp.CAST(ty = REAL,exp = Exp.UNARY(operator = Exp.UMINUS(ty = _),exp = Exp.ICONST(integer = ival)))) then true;
-    case (Exp.CAST(ty = Exp.REAL(),exp = e)) then true;
     case (Exp.CAST(ty = Exp.REAL(),exp = e)) then true;
     case (Exp.ASUB(exp = e,sub = sub))
       equation
         true = isAlgebraic(e);
       then
         true;
-    case (Exp.SIZE(exp = cr,sz = SOME(dim))) then true;
-    case (Exp.SIZE(exp = cr,sz = NONE)) then true;
+    case (Exp.SIZE(exp = cr)) then true;
     case (Exp.REDUCTION(path = fcn,expr = exp,ident = id,range = iterexp)) then true;
     case (_) then true;
   end matchcontinue;
@@ -14714,7 +14716,6 @@ algorithm
       Exp.ComponentRef cref,orgname;
       VarKind vk;
       DAE.VarDirection vd;
-      DAE.Type ty;
       Option<Exp.Exp> bndexp;
       Option<Values.Value> bndval;
       list<Exp.Subscript> instdims;
@@ -14727,7 +14728,6 @@ algorithm
     case VAR(varName = cref,
              varKind = vk,
              varDirection = vd,
-             varType = ty,
              bindExp = bndexp,
              bindValue = bndval,
              arryDim = instdims,
@@ -14856,7 +14856,7 @@ public function isStringParam
 algorithm
   outBoolean:=
   matchcontinue (inVar)
-    case (VAR(varKind = PARAM(),varType = DAE.STRING())) then true;
+    case (VAR(varKind = PARAM(),varType = STRING())) then true;
     case (_) then false;
   end matchcontinue;
 end isStringParam;
@@ -14880,9 +14880,8 @@ public function isRealParam
   input Var inVar;
   output Boolean outBoolean;
 algorithm
-  outBoolean:=
-  matchcontinue (inVar)
-    case (VAR(varKind = PARAM(),varType = DAE.REAL())) then true;
+  outBoolean := matchcontinue (inVar)
+    case (VAR(varKind = PARAM(),varType = REAL())) then true;
     case (_) then false;
   end matchcontinue;
 end isRealParam;
@@ -14893,12 +14892,7 @@ public function isNonRealParam
   input Var inVar;
   output Boolean outBoolean;
 algorithm
-  outBoolean:=
-  matchcontinue (inVar)
-    case (VAR(varKind = PARAM(),varType = DAE.REAL())) then false;
-    case (VAR(varKind = PARAM())) then true;
-    case (_) then false;
-  end matchcontinue;
+  outBoolean := not isRealParam(inVar);
 end isNonRealParam;
 
 public function isOutput 
@@ -15014,6 +15008,90 @@ algorithm
       then vars1;
   end matchcontinue;
 end daeVars;
+
+protected function makeExpType
+"Transforms a Type to Exp.Type
+"
+  input  Type inType;
+  output Exp.Type outType;
+algorithm
+  outType := matchcontinue(inType)
+    local
+      list<String> strLst;
+    case REAL() then Exp.REAL();
+    case INT() then Exp.INT();
+    case BOOL() then Exp.BOOL();
+    case STRING() then Exp.STRING();
+    case ENUMERATION(strLst) then Exp.ENUMERATION(NONE(),Absyn.IDENT(""),strLst,{});
+    case EXT_OBJECT(_) then Exp.OTHER();
+  end matchcontinue;
+end makeExpType;
+
+protected function generateDaeType
+"Transforms a Type to Types.Type
+"
+  input  Type inType;
+  output Types.Type outType;
+algorithm
+  outType := matchcontinue(inType)
+    local
+      list<String> strLst;
+      Absyn.Path path;
+    case REAL() then ((Types.T_REAL({}),NONE));
+    case INT() then ((Types.T_INTEGER({}),NONE));
+    case BOOL() then ((Types.T_BOOL({}),NONE));
+    case STRING() then ((Types.T_STRING({}),NONE));
+    case ENUMERATION(strLst) then ((Types.T_ENUMERATION(NONE,Absyn.IDENT(""),strLst,{}),NONE));
+    case EXT_OBJECT(path) then ((Types.T_COMPLEX(ClassInf.EXTERNAL_OBJ(path),{},NONE,NONE),NONE));
+  end matchcontinue;
+end generateDaeType;
+
+protected function lowerType
+"Transforms a Types.Type to Type
+"
+  input  Types.Type inType;
+  output Type outType;
+algorithm
+  outType := matchcontinue(inType)
+    local
+      list<String> strLst;
+      Absyn.Path path;
+    case ((Types.T_REAL(_),_)) then REAL();
+    case ((Types.T_INTEGER(_),_)) then INT();
+    case ((Types.T_BOOL(_),_)) then BOOL();
+    case ((Types.T_STRING(_),_)) then STRING();
+    case ((Types.T_ENUMERATION(names = strLst),_)) then ENUMERATION(strLst);
+    case ((Types.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(path)),_)) then EXT_OBJECT(path);
+  end matchcontinue;
+end lowerType;
+
+public function dumpTypeStr
+" Dump Type to a string.
+"
+  input Type inType;
+  output String outString;
+algorithm 
+  outString:=
+  matchcontinue (inType)
+    local
+      String s1,s2,str;
+      list<String> l;
+      Absyn.Path path;
+    case INT() then "Integer "; 
+    case REAL() then "Real "; 
+    case BOOL() then "Boolean "; 
+    case STRING() then "String "; 
+
+    case ENUMERATION(stringLst = l)
+      equation 
+        s1 = Util.stringDelimitList(l, ", ");
+        s2 = stringAppend("enumeration(", s1);
+        str = stringAppend(s2, ")");
+      then
+        str;
+    case EXT_OBJECT(_) then "ExternalObject ";
+  end matchcontinue;
+end dumpTypeStr;
 
 end DAELow;
 

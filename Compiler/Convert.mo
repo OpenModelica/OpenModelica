@@ -91,7 +91,7 @@ algorithm
       DAE.VarKind varKind "varible kind: variable, constant, parameter, etc." ;
       DAE.VarDirection varDirection "direction: input/output/bidirectional" ;
       DAE.VarProtection varProt "protected or not" ;
-      DAE.Type ty "one of the builtin types" ;
+      Types.Type ty;
       Option<Exp.Exp> binding "Binding expression e.g. for parameters, value of start attribute" ; 
       DAE.InstDims dims "dimensions"; 
       DAE.Flow flowPrefix "Flow of connector variable. Needed for unconnected flow variables" ;
@@ -100,12 +100,11 @@ algorithm
       Option<DAE.VariableAttributes> varAttr;
       Option<SCode.Comment> absynComment;
       Absyn.InnerOuter innerOut "inner/outer required to 'change' outer references";
-      Types.Type fType "Full type information required to analyze inner/outer elements";
       Exp.DAEElement elem;
       Exp.VarKind varKind2;
       Exp.VarDirection varDirection2;
       Exp.VarProtection varProt2;
-      Exp.TypeExp ty2;
+      Exp.TypeTypes ty2;
       Exp.Flow flowPrefix2;
       Exp.Stream streamPrefix2;
       Option<Exp.VariableAttributes> varAttr2;
@@ -116,17 +115,16 @@ algorithm
       list<list<Exp.DAEElement>> elems1;
       list<Exp.DAEElement> elems2;
       Exp.DAEElement elem;      
-    case (DAE.VAR(compRef,varKind,varDirection,varProt,ty,binding,dims,flowPrefix,streamPrefix,pathLst,varAttr,absynComment,innerOut,fType))
+    case (DAE.VAR(compRef,varKind,varDirection,varProt,ty,binding,dims,flowPrefix,streamPrefix,pathLst,varAttr,absynComment,innerOut))
       equation
         varKind2 = varKindConvert(varKind);
         varDirection2 = varDirConvert(varDirection);
         varProt2 = varProtConvert(varProt);
-        ty2 = typeConvert(ty);
+        ty2 = fromTypeToTypeTypes(ty);
         flowPrefix2 = flowConvert(flowPrefix);
         streamPrefix2 = streamConvert(streamPrefix);
         varAttr2 = varAttrConvert(varAttr);
-        fType2 = fromTypeToTypeTypes(fType);
-        elem = Exp.VAR(compRef,varKind2,varDirection2,varProt2,ty2,binding,dims,flowPrefix2,streamPrefix2,pathLst,varAttr2,absynComment,innerOut,fType2);
+        elem = Exp.VAR(compRef,varKind2,varDirection2,varProt2,ty2,binding,dims,flowPrefix2,streamPrefix2,pathLst,varAttr2,absynComment,innerOut);
       then elem;
     case (DAE.DEFINE(c,e))
       local
@@ -296,32 +294,6 @@ algorithm
     case (DAE.BIDIR()) equation then Exp.BIDIR();
   end matchcontinue;
 end varDirConvert;
-
-public function typeConvert "function: typeConvert
-  DAE.Type => Exp.TypeExp"
-	input DAE.Type t;
-	output Exp.TypeExp t2;
-algorithm
-  t2 :=
-  matchcontinue (t)
-    local
-      Absyn.Path p;
-    case (DAE.REAL()) equation then Exp.REALEXP();
- 		case (DAE.INT()) equation then Exp.INTEXP();
-    case (DAE.BOOL()) equation then Exp.BOOLEXP();
-    case (DAE.STRING()) equation then Exp.STRINGEXP();
-    case (DAE.ENUMERATION(_)) equation then Exp.ENUMEXP();
-//    case (DAE.ENUM()) equation then Exp.ENUMEXP();
-    case (DAE.LIST()) equation then Exp.LISTEXP();
-    case (DAE.METATUPLE()) equation then Exp.METATUPLEEXP();
-    case (DAE.METAOPTION()) equation then Exp.METAOPTIONEXP();
-    case (DAE.UNIONTYPE()) then Exp.UNIONTYPEEXP();
-    case (DAE.EXT_OBJECT(p)) equation then Exp.EXT_OBJECTEXP(p);
-    case (DAE.POLYMORPHIC()) then Exp.POLYMORPHICEXP(); 
-    case (DAE.FUNCTION_REFERENCE()) then Exp.FUNCTION_REFERENCEEXP();   
-    case _ equation Debug.fprintln("failtrace", "- Convert.typeConvert failed"); then fail();
-  end matchcontinue;
-end typeConvert;
 
 public function flowConvert "function: flowConvert
   DAE.Flow => Exp.Flow"
@@ -701,7 +673,7 @@ algorithm
       Exp.VarKind var "varible kind: variable, constant, parameter, etc." ;
       Exp.VarDirection varDirection " input/output/bidirectional ";
       Exp.VarProtection varProt "protected or not";
-      Exp.TypeExp ty "one of the builtin types";
+      Exp.TypeTypes ty;
       Option<Exp.Exp> binding "Binding expression e.g. for parameters, i.e. value of start attribute";
       Exp.InstDims dims "dimensions"; 
       Exp.Flow flowPrefix "Flow of connector variable. Needed for unconnected flow variables";
@@ -710,28 +682,26 @@ algorithm
       Option<Exp.VariableAttributes> varAttr;
       Option<SCode.Comment> absynComment;
       Absyn.InnerOuter innerOut "inner/outer required to 'change' outer references";
-      Exp.TypeTypes fType "Full type information required to analyze inner/outer elements";
       DAE.Element elem;
       DAE.VarKind var2;
       DAE.VarDirection varDirection2;
-      DAE.Type ty2;
+      Types.Type ty2;
       DAE.VarProtection varProt2;
       DAE.Flow flowPrefix2;
       DAE.Stream streamPrefix2;
       Option<DAE.VariableAttributes> varAttr2;
       Types.Type fType2;
       
-    case (Exp.VAR(compRef,var,varDirection,varProt,ty,binding,dims,flowPrefix,streamPrefix,pathLst,varAttr,absynComment,innerOut,fType))
+    case (Exp.VAR(compRef,var,varDirection,varProt,ty,binding,dims,flowPrefix,streamPrefix,pathLst,varAttr,absynComment,innerOut))
       equation
         var2 = varKindConvert2(var);
         varDirection2 = varDirConvert2(varDirection);
         varProt2 = varProtConvert2(varProt);
-        ty2 = typeConvert2(ty);
         varAttr2 = varAttrConvert2(varAttr);
-        fType2 = fromTypeTypesToType(fType);
+        ty2 = fromTypeTypesToType(ty);
         flowPrefix2 = flowConvert2(flowPrefix);
         streamPrefix2 = streamConvert2(streamPrefix);
-        elem = DAE.VAR(compRef,var2,varDirection2,varProt2,ty2,binding,dims,flowPrefix2,streamPrefix2,pathLst,varAttr2,absynComment,innerOut,fType2);
+        elem = DAE.VAR(compRef,var2,varDirection2,varProt2,ty2,binding,dims,flowPrefix2,streamPrefix2,pathLst,varAttr2,absynComment,innerOut);
       then elem;
 
     case (Exp.DEFINE(c,e))
@@ -907,30 +877,6 @@ algorithm
     case (Exp.BIDIR()) equation then DAE.BIDIR();
   end matchcontinue;
 end varDirConvert2;
-
-public function typeConvert2 "function: typeConvert2
-  Exp.TypeExp => DAE.Type"
-	input Exp.TypeExp t;
-	output DAE.Type t2;
-algorithm
-  t2 :=
-  matchcontinue (t)
-    local
-      Absyn.Path p;
-    case (Exp.REALEXP()) then DAE.REAL();
- 		case (Exp.INTEXP()) then DAE.INT();
-    case (Exp.BOOLEXP()) then DAE.BOOL();
-    case (Exp.STRINGEXP()) then DAE.STRING();
-    case (Exp.LISTEXP()) then DAE.LIST();
-    case (Exp.METATUPLEEXP()) then DAE.METATUPLE();
-    case (Exp.METAOPTIONEXP()) then DAE.METAOPTION();
-    case (Exp.UNIONTYPEEXP()) then DAE.UNIONTYPE();
-    case (Exp.POLYMORPHICEXP()) then DAE.POLYMORPHIC();
-    case (Exp.EXT_OBJECTEXP(p)) then DAE.EXT_OBJECT(p);
-    case (Exp.FUNCTION_REFERENCEEXP()) then DAE.FUNCTION_REFERENCE();
-    case _ equation Debug.fprintln("failtrace", "- Convert.typeConvert2 failed"); then fail();
-  end matchcontinue;
-end typeConvert2;
 
 public function flowConvert2 "function: flowConvert2
   Exp.Flow => DAE.Flow"

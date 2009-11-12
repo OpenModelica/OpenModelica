@@ -2295,9 +2295,10 @@ algorithm
     case ((T_ENUMERATION(names = l,varLst=vs),_))
       local String s2;
       equation 
-        s1 = Util.stringDelimitList(l, ",");
+        s1 = Util.stringDelimitList(l, ", ");
         s2 = Util.stringAppendList(Util.listMap(vs, unparseVar));
-        str = Util.stringAppendList({"enumeration(",s1,")(",s2,")"});
+        s2 = Util.if_(s2 ==& "", "", "(" +& s2 +& ")");
+        str = Util.stringAppendList({"enumeration(",s1,")"});
       then
         str;
     case ((t as (T_ARRAY(arrayDim = _),_)))

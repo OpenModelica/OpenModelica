@@ -97,7 +97,7 @@ public uniontype Context
 	  	ExpContext expContext "The context expressions are generated in, either normal or external calls";
 	  	LoopContext loopContext = LoopContext.NO_LOOP "The chain of loops containing the generated statement";
 	end CONTEXT;
-	end Context;
+end Context;
 
 public
 uniontype CodeContext "Which context is the code generated in."
@@ -1237,14 +1237,14 @@ algorithm
       Absyn.Path path,fullPath;
       Types.Type ty;
       list<Types.FuncArg> args;
-    case (DAE.VAR(ty = DAE.FUNCTION_REFERENCE(), fullType = (Types.T_FUNCTION(args, (Types.T_TUPLE(tys),_)),SOME(path))))
+    case (DAE.VAR(ty = (Types.T_FUNCTION(args, (Types.T_TUPLE(tys),_)),SOME(path))))
       equation
         fn_name = generateReturnType(path);
         str = generateFunctionRefFnPtr(args, path);
         out = generateFunctionRefReturnStruct1(tys,fn_name);
       then listAppend(out,{str});
       // Function reference with no output -  stefan
-    case (DAE.VAR(ty = DAE.FUNCTION_REFERENCE(), fullType = (Types.T_FUNCTION(args, (Types.T_NORETCALL(),_)),SOME(path))))
+    case (DAE.VAR(ty = (Types.T_FUNCTION(args, (Types.T_NORETCALL(),_)),SOME(path))))
       local String tmpstr;
       equation
         fn_name = generateReturnType(path);
@@ -1252,7 +1252,7 @@ algorithm
         tmpstr = "typedef void " +& fn_name +& ";";
         out = {tmpstr};
       then listAppend(out,{str});
-    case (DAE.VAR(ty = DAE.FUNCTION_REFERENCE(), fullType = (Types.T_FUNCTION(args, ty),SOME(path))))
+    case (DAE.VAR(ty = (Types.T_FUNCTION(args, ty),SOME(path))))
       equation
         fn_name = generateReturnType(path);
         str = generateFunctionRefFnPtr(args, path);
@@ -1426,7 +1426,7 @@ algorithm
       String type_str, decl_str;
     case Types.VAR(name = name, type_ = t)
       equation
-        type_str = generateType(t);
+        type_str = generateSimpleType(t);
         decl_str = Util.stringAppendList({type_str," ",name,";"});
       then
         decl_str;
@@ -1586,7 +1586,7 @@ algorithm
       Types.Type ft;
       list<String> strs, rest_strs, rt, rt_1, rt_2;
     case ({},rt) then ({},rt);
-    case (((var as DAE.VAR(ty = DAE.COMPLEX(name = _), fullType = ft)) :: rest),rt)
+    case (((var as DAE.VAR(ty = ft as (Types.T_COMPLEX(complexClassType = ClassInf.RECORD(_)),_))) :: rest),rt)
       equation
         (strs,rt_1) = generateRecordDeclarations(ft,rt);
         (rest_strs,rt_2) = generateStructsForRecords(rest,rt_1);
@@ -1716,7 +1716,7 @@ algorithm
       list<Lib> dim_strs;
       DAE.Element var;
       Exp.ComponentRef id;
-      DAE.Type typ;
+      Types.Type typ;
       Option<Exp.Exp> initopt;
       list<Exp.Subscript> inst_dims;
       DAE.Flow flowPrefix;
@@ -1737,7 +1737,7 @@ algorithm
                           absynCommentOption = comment)),i)
       equation
         is_a = isArray(var);
-        typ_str = daeTypeStr(typ, is_a);
+        typ_str = generateType(typ, is_a);
         iStr = intString(i);
         id_str = Util.stringAppendList({"targ",iStr});
         dim_strs = Util.listMap(inst_dims, dimString);
@@ -1764,7 +1764,6 @@ algorithm
       Exp.ComponentRef cr;
       DAE.VarKind vk;
       DAE.VarDirection vd;
-      DAE.Type ty;
       Option<Exp.Exp> st;
       DAE.Flow fl;
       DAE.Stream st;
@@ -1774,7 +1773,6 @@ algorithm
     case ((el as DAE.VAR(componentRef = cr,
                          kind = vk,
                          direction = vd,
-                         ty = ty,
                          dims = {},
                          flowPrefix = fl,
                          streamPrefix = st,
@@ -1790,7 +1788,6 @@ algorithm
     case ((el as DAE.VAR(componentRef = cr,
                          kind = vk,
                          direction = vd,
-                         ty = ty,
                          dims = (_ :: _),
                          flowPrefix = fl,
                          streamPrefix = st, 
@@ -1809,68 +1806,6 @@ algorithm
         fail();
   end matchcontinue;
 end isArray;
-
-protected function daeExpType 
-"function: daeExpType
-  Translates a DAE.Type to an Exp.Type."
-  input DAE.Type inType;
-  output Exp.Type outType;
-algorithm
-  outType:=
-  matchcontinue (inType)
-    local String name; Absyn.Path path; list<DAE.Var> varLst; list<String> strLst;
-    case DAE.INT() then Exp.INT();
-    case DAE.REAL() then Exp.REAL();
-    case DAE.STRING() then Exp.STRING();
-    case DAE.BOOL() then Exp.BOOL();
-    case DAE.ENUMERATION(strLst) then Exp.ENUMERATION(NONE(),Absyn.IDENT(""),strLst,{});
-//    case DAE.ENUM() then Exp.ENUM();
-    case DAE.LIST() then Exp.T_LIST(Exp.OTHER()); // MetaModelica list
-    case DAE.COMPLEX(path,varLst)
-      local
-        list<Exp.Var> expVarLst;
-      equation
-        name = Absyn.pathString(path);
-        expVarLst = Util.listMap(varLst, daeExpVar);
-      then
-        Exp.COMPLEX(name,expVarLst,ClassInf.UNKNOWN(name));
-    case DAE.METATUPLE() then Exp.T_METATUPLE({}); // MetaModelica tuple
-    case DAE.METAOPTION() then Exp.T_METAOPTION(Exp.OTHER()); // MetaModelica tuple
-    case DAE.UNIONTYPE() then Exp.T_UNIONTYPE(); //MetaModelica uniontype, added by simbj
-    case DAE.FUNCTION_REFERENCE() then Exp.T_FUNCTION_REFERENCE_VAR(); // MetaModelica Partial Function
-    case DAE.POLYMORPHIC() then Exp.T_POLYMORPHIC(); // MetaModelica extension. sjoelund
-    case _ then Exp.OTHER();
-  end matchcontinue;
-end daeExpType;
-
-protected function daeExpVar
-  input DAE.Var daeVar;
-  output Exp.Var expVar;
-algorithm
-  expVar := matchcontinue(daeVar)
-    local
-      String name;
-      Exp.Type expType;
-      DAE.Type daeType;
-    case (DAE.TVAR(name,daeType))
-      equation
-        expType = daeExpType(daeType);
-      then Exp.COMPLEX_VAR(name,expType);
-  end matchcontinue;
-end daeExpVar;
-
-protected function daeTypeStr 
-"function: daeTypeStr
-  Convert a DAE.Type to a string. 
-  The boolean indicates whether the type is an array or not."
-  input DAE.Type t;
-  input Boolean a;
-  output String str;
-  Exp.Type t_1;
-algorithm
-  t_1 := daeExpType(t);
-  str := expTypeStr(t_1, a);
-end daeTypeStr;
 
 protected function expShortTypeStr 
 "function: expShortTypeStr
@@ -1903,6 +1838,16 @@ algorithm
         res = stringAppend("struct ", name);
       then
         res;
+    case (Exp.T_LIST(_)) then "metamodelica_type";
+
+    case (Exp.T_METATUPLE(_)) then "metamodelica_type";
+
+    case (Exp.T_METAOPTION(_)) then "metamodelica_type";
+    
+    case (Exp.T_UNIONTYPE()) then "metamodelica_type";
+    
+    case (Exp.T_POLYMORPHIC()) then "metamodelica_type";
+
   end matchcontinue;
 end expShortTypeStr;
 
@@ -1926,16 +1871,6 @@ algorithm
       then
         str;
 
-    case (Exp.T_LIST(_),_) then "metamodelica_type";
-
-    case (Exp.T_METATUPLE(_),_) then "metamodelica_type";
-
-    case (Exp.T_METAOPTION(_),_) then "metamodelica_type";
-    
-    case (Exp.T_UNIONTYPE(),_) then "metamodelica_type";
-    
-    case (Exp.T_POLYMORPHIC(),_) then "metamodelica_type";
-
     // ---
     case (t,false) /* array */
       equation
@@ -1954,59 +1889,30 @@ algorithm
 end expTypeStr;
 
 protected function generateType 
-"function: generateType
-  Generates code for a Type."
+"Generates code for a Type. If it is an array of the type, or the boolean
+flag is set, its array type is produced instead.
+"
   input Types.Type inType;
+  input Boolean isArray;
   output String outString;
 algorithm
-  outString:=
-  matchcontinue (inType)
+  outString := matchcontinue (inType,isArray)
     local
       Lib ty_str;
       list<Types.Type> tys;
       Types.Type arrayty,ty;
       list<Integer> dims;
       
-    case ((Types.T_TUPLE(tupleType = tys),_))
+    case ((Types.T_TUPLE(tupleType = tys),_),false)
       equation
-        Debug.fprintln("cgtr", "generate_type");
         ty_str = generateTupleType(tys);
       then
         ty_str;
+    
+    case (ty,false) then generateSimpleType(ty);
         
-    case ((tys as (Types.T_ARRAY(arrayDim = _),_)))
-      local Types.Type tys;
-      equation
-        Debug.fprintln("cgtr", "generate_type");
-        (arrayty,dims) = Types.flattenArrayType(tys);
-        ty_str = generateArrayType(arrayty, dims);
-      then
-        ty_str;
-        
-    case ((Types.T_INTEGER(varLstInt = _),_)) then "modelica_integer";
-    case ((Types.T_REAL(varLstReal = _),_)) then "modelica_real";
-    case ((Types.T_STRING(varLstString = _),_)) then "modelica_string";
-    case ((Types.T_BOOL(varLstBool = _),_)) then "modelica_boolean";
-    case ((Types.T_COMPLEX(complexClassType = ClassInf.RECORD(name)),_))
-      local String name;
-      equation
-        ty_str = stringAppend("struct ", name);
-      then
-        ty_str;
-        
-    case ((Types.T_LIST(_),_)) then "metamodelica_type";  // MetaModelica list
-    case ((Types.T_METATUPLE(_),_)) then "metamodelica_type"; // MetaModelica tuple
-    case ((Types.T_METAOPTION(_),_)) then "metamodelica_type"; // MetaModelica tuple
-    case ((Types.T_FUNCTION(_,_),_)) then "modelica_fnptr";
-    case ((Types.T_UNIONTYPE(_),_)) then "metamodelica_type";
-    case ((Types.T_POLYMORPHIC(_),_)) then "metamodelica_type";
-    case ((Types.T_BOXED(ty),_)) then "metamodelica_type";
+    case (ty,true) then generateSimpleType((Types.T_ARRAY(Types.DIM(NONE),ty),NONE));
 
-    case (ty)
-      equation
-        Debug.fprint("failtrace", "#-- Codegen.generateType failed\n");
-      then
-        fail();
   end matchcontinue;
 end generateType;
 
@@ -2033,11 +1939,12 @@ algorithm
       then
         str;
 
-    case ((Types.T_LIST(_),_)) then "metamodelica_type";  // MetaModelica list
-    case ((Types.T_METATUPLE(_),_)) then "metamodelica_type"; // MetaModelica tuple
-    case ((Types.T_METAOPTION(_),_)) then "metamodelica_type"; // MetaModelica option
-    case ((Types.T_UNIONTYPE(_),_)) then "metamodelica_type"; // MetaModelica uniontype
-    case ((Types.T_POLYMORPHIC(_),_)) then "metamodelica_type";
+    // MetaModelica Types
+    case ((Types.T_LIST(_),_)) then "void*";
+    case ((Types.T_METATUPLE(_),_)) then "void*";
+    case ((Types.T_METAOPTION(_),_)) then "void*";
+    case ((Types.T_UNIONTYPE(_),_)) then "void*";
+    case ((Types.T_POLYMORPHIC(_),_)) then "void*";
     
     case ((Types.T_ARRAY(arrayDim = dim,arrayType = ty),_))
       equation
@@ -2082,28 +1989,7 @@ algorithm
   res := stringAppend(fstr, "_rettype");
 end generateReturnType;
 
-protected function generateArrayType 
-"function: generateArrayType
-  Generates code for the array type given a  basic type and a list of dimensions."
-  input Types.Type ty;
-  input list<Integer> dims;
-  output String str;
-algorithm
-  str := arrayTypeString(ty);
-end generateArrayType;
-
-protected function generateArrayReturnType 
-"function: generate_array_type
-  Generates code for an array type  as return type 
-  given a  basic type and a list of dimensions."
-  input Types.Type ty;
-  input list<Integer> dims;
-  output String ty_str;
-algorithm
-  ty_str := arrayTypeString(ty);
-end generateArrayReturnType;
-
-protected function generateTupleType 
+protected function generateTupleType
 "function: generateTupleType
   Generate code for a tuple type."
   input list<Types.Type> inTypesTypeLst;
@@ -2117,13 +2003,11 @@ algorithm
       list<Types.Type> tys;
     case {ty}
       equation
-        Debug.fprintln("cgtr", "Codegen.generateTupleType - case 1");
         str = generateSimpleType(ty);
       then
         str;
     case (ty :: tys)
       equation
-        Debug.fprintln("cgtr", "Codegen.generateTupleType - case 2");
         str = generateSimpleType(ty);
         str_1 = generateTupleType(tys);
         str_2 = stringAppend(str, str_1);
@@ -2143,24 +2027,29 @@ algorithm
   outString:=
   matchcontinue (inType)
     local
-      Lib t_str;
+      String t_str,name;
       Types.Type t_1,t,ty;
+    
     case ((Types.T_INTEGER(varLstInt = _),_)) then "modelica_integer";
     case ((Types.T_REAL(varLstReal = _),_)) then "modelica_real";
     case ((Types.T_STRING(varLstString = _),_)) then "modelica_string";
     case ((Types.T_BOOL(varLstBool = _),_)) then "modelica_boolean";
-      
     case ((Types.T_COMPLEX(complexClassType = ClassInf.RECORD(name)),_))
-      local String name;
       equation
         t_str = stringAppend("struct ", name);
       then
         t_str;
         
-    case ((Types.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(_)),_))
-      then
-        "void *";
-        
+    case ((Types.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(_)),_)) then "modelica_complex";
+
+    case ((Types.T_LIST(_),_)) then "metamodelica_type";  // MetaModelica list
+    case ((Types.T_METATUPLE(_),_)) then "metamodelica_type"; // MetaModelica tuple
+    case ((Types.T_METAOPTION(_),_)) then "metamodelica_type"; // MetaModelica tuple
+    case ((Types.T_FUNCTION(_,_),_)) then "modelica_fnptr";
+    case ((Types.T_UNIONTYPE(_),_)) then "metamodelica_type";
+    case ((Types.T_POLYMORPHIC(_),_)) then "metamodelica_type";
+    case ((Types.T_BOXED(ty),_)) then "metamodelica_type";
+            
     case ((t as (Types.T_ARRAY(arrayDim = _),_)))
       equation
         t_1 = Types.arrayElementType(t);
@@ -2593,7 +2482,7 @@ algorithm
         funcArgNames = Util.listMap(funcArgs2, Util.tuple21);
         funcArgTypes2 = Util.listMap(funcArgs2, Util.tuple22);
         funcArgTypes1 = Util.listMap(funcArgs1, Util.tuple22);
-        funcArgTypeNames = Util.listMap(funcArgTypes2, generateType);
+        funcArgTypeNames = Util.listMap(funcArgTypes2, generateSimpleType);
         funcArgTypeNames = Util.listMap1(funcArgTypeNames, stringAppend, " ");
         funcArgVars = Util.listThreadMap(funcArgTypeNames, funcArgNames, stringAppend);
         funcArgExps1 = Util.listMap(funcArgNames, makeCrefExpFromString);
@@ -2677,7 +2566,6 @@ algorithm
       Exp.ComponentRef cr;
       DAE.VarKind vk;
       DAE.VarDirection vd;
-      DAE.Type t;
       Option<Exp.Exp> e;
       list<Exp.Subscript> id;
       DAE.Flow flowPrefix;
@@ -2698,7 +2586,6 @@ algorithm
     case (((var as DAE.VAR(componentRef = cr,
                            kind = vk,
                            direction = vd,
-                           ty = t,
                            binding = e,
                            dims = id,
                            flowPrefix = flowPrefix,
@@ -2744,7 +2631,7 @@ algorithm
       Exp.ComponentRef id;
       DAE.VarKind vk;
       DAE.VarDirection vd;
-      DAE.Type typ;
+      Types.Type typ;
       Option<Exp.Exp> e;
       list<Exp.Subscript> inst_dims;
       DAE.Flow flowPrefix;
@@ -2769,7 +2656,7 @@ algorithm
       equation
         is_a = isArray(var);
         iStr = intString(i);
-        typ_str = daeTypeStr(typ, is_a);
+        typ_str = generateType(typ,is_a);
         (cref_str1,_) = compRefCstr(id);
         cref_str2 = Util.stringAppendList({prefix,".","targ",iStr});
         emptypre = Util.isEmptyString(prefix);
@@ -2817,7 +2704,6 @@ algorithm
       Exp.ComponentRef cr;
       DAE.VarKind vk;
       DAE.VarDirection vd;
-      DAE.Type t;
       Option<Exp.Exp> e;
       list<Exp.Subscript> id;
       DAE.Flow flowPrefix;
@@ -2832,7 +2718,6 @@ algorithm
     case (((var as DAE.VAR(componentRef = cr,
                            kind = vk,
                            direction = vd,
-                           ty = t,
                            binding = e,
                            dims = id,
                            flowPrefix = flowPrefix,
@@ -2852,7 +2737,6 @@ algorithm
     case (((var as DAE.VAR(componentRef = cr,
                            kind = vk,
                            direction = vd,
-                           ty = t,
                            binding = e,
                            dims = id,
                            flowPrefix = flowPrefix,
@@ -2899,7 +2783,7 @@ algorithm
       Exp.ComponentRef id;
       DAE.VarKind vk;
       DAE.VarDirection vd;
-      DAE.Type typ;
+      Types.Type typ;
       Option<Exp.Exp> e;
       list<Exp.Subscript> inst_dims;
       DAE.Flow flowPrefix;
@@ -2921,7 +2805,7 @@ algorithm
                           absynCommentOption = comment)),prefix,i,tnr)
       equation
         is_a = isArray(var);
-        typ_str = daeTypeStr(typ, is_a);
+        typ_str = generateType(typ,is_a);
         emptypre = stringEqual(prefix, "");
         (cref_str1,_) = compRefCstr(id);
 				iStr = intString(i);
@@ -3014,7 +2898,7 @@ algorithm
         tnr = tick();
         (cfn1,dim_strs,tnr1) = generateSizeSubscripts(crefstr, dimsubs, tnr, funContext);
         cfn1_1 = cMoveStatementsToInits(cfn1);
-        typ_str = generateType(ty);
+        typ_str = generateSimpleType(ty);
         ndims = listLength(dim_strs);
         ndims_str = intString(ndims);
         dims_str = Util.stringDelimitList(dim_strs, ", ");
@@ -3878,7 +3762,7 @@ algorithm
   matchcontinue (inElement,inInteger,inContext)
     local
       Boolean is_a;
-      Lib typ_str,cref_str,dimvars_str,dims_str,dim_comment,dim_comment_1,ndims_str,decl_str,alloc_str,init_stmt;
+      Lib typ_str,cref_str,dimvars_str,dims_str,dim_comment,dim_comment_1,ndims_str,decl_str,alloc_str,init_stmt,var_str;
       CFunction cfn1_1,cfn1,cfn_1,cfn_2,cfn,cfn2;
       list<Lib> vars1,dim_strs;
       Integer tnr1,ndims,tnr;
@@ -3886,7 +3770,7 @@ algorithm
       Exp.ComponentRef id;
       DAE.VarKind vk;
       DAE.VarDirection vd;
-      DAE.Type typ;
+      Types.Type typ;
       list<Exp.Subscript> inst_dims;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
@@ -3911,7 +3795,7 @@ algorithm
                           absynCommentOption = comment)),tnr,context)
       equation
         is_a = isArray(var);
-        typ_str = daeTypeStr(typ, is_a);
+        typ_str = generateType(typ,is_a);
         (cref_str,_) = compRefCstr(id);
         (cfn1_1,vars1,tnr1) = generateSizeSubscripts(cref_str, inst_dims, tnr, context);
         cfn1 = cMoveStatementsToInits(cfn1_1);
@@ -3944,7 +3828,7 @@ algorithm
                           absynCommentOption = comment)),tnr,context)
       equation
         is_a = isArray(var);
-        typ_str = daeTypeStr(typ, is_a);
+        typ_str = generateType(typ,is_a);
         (cref_str,_) = compRefCstr(id);
         (cfn1_1,vars1,tnr1) = generateSizeSubscripts(cref_str, inst_dims, tnr, context);
         cfn1 = cMoveStatementsToInits(cfn1_1);
@@ -3977,15 +3861,14 @@ algorithm
                           pathLst = class_,
                           variableAttributesOption = dae_var_attr,
                           absynCommentOption = comment)),tnr,context)
-      local Lib var;
       equation
         is_a = isArray(var);
-        typ_str = daeTypeStr(typ, is_a);
+        typ_str = generateType(typ,is_a);
         (cref_str,_) = compRefCstr(id);
         decl_str = Util.stringAppendList({typ_str," ",cref_str,";"});
-        (cfn,var,tnr1) = generateExpression(e, tnr, context);
+        (cfn,var_str,tnr1) = generateExpression(e, tnr, context);
         cfn_1 = cAddVariables(cfn, {decl_str});
-        init_stmt = Util.stringAppendList({cref_str," = ",var,";"});
+        init_stmt = Util.stringAppendList({cref_str," = ",var_str,";"});
         cfn_2 = cAddInits(cfn_1, {init_stmt});
         Print.printBuf("# default value not implemented yet: ");
         Exp.printExp(e);
@@ -4023,7 +3906,7 @@ algorithm
       Exp.ComponentRef id;
       DAE.VarKind vk;
       DAE.VarDirection vd;
-      DAE.Type typ;
+      Types.Type typ;
       list<Exp.Subscript> inst_dims;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
@@ -4048,7 +3931,7 @@ algorithm
                           absynCommentOption = comment)),tnr,context)
       equation
         is_a = isArray(var);
-        typ_str = daeTypeStr(typ, is_a);
+        typ_str = generateType(typ,is_a);
         (cref_str,_) = compRefCstr(id);
         dim_strs = Util.listMap(inst_dims, dimString);
         dims_str = Util.stringDelimitList(dim_strs, ", ");
@@ -4073,10 +3956,9 @@ algorithm
                           pathLst = class_,
                           variableAttributesOption = dae_var_attr,
                           absynCommentOption = comment,
-                          innerOuter=io,
-                          fullType=tp)),tnr,context)
+                          innerOuter=io)),tnr,context)
       equation
-        (cfn,tnr1) = generateVarDecl(DAE.VAR(id,vk,vd,prot,typ,NONE,inst_dims,flowPrefix,streamPrefix,class_,dae_var_attr,comment,io,tp), tnr, context);
+        (cfn,tnr1) = generateVarDecl(DAE.VAR(id,vk,vd,prot,typ,NONE,inst_dims,flowPrefix,streamPrefix,class_,dae_var_attr,comment,io), tnr, context);
       then
         (cfn,tnr1);
         
@@ -4108,7 +3990,7 @@ algorithm
       Exp.Exp expstr;
       DAE.VarKind vk;
       DAE.VarDirection vd;
-      DAE.Type typ;
+      Types.Type typ;
       list<Exp.Subscript> inst_dims;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
@@ -4163,7 +4045,7 @@ algorithm
         idstr = Util.if_(emptyprep, 
                          id, 
                          Exp.CREF_IDENT(id_1_str,Exp.OTHER(),{}));
-        exptype = daeExpType(typ);
+        exptype = Types.elabType(typ);
         scalarassign = Algorithm.ASSIGN(exptype,expstr,e);
         arrayassign = Algorithm.ASSIGN_ARR(exptype,idstr,e);
         assign = Util.if_(is_a, arrayassign, scalarassign);
@@ -4300,14 +4182,13 @@ protected function generateResultVar
   output CFunction outCFunction;
   output Integer outInteger;
 algorithm
-  (outCFunction,outInteger):=
-  matchcontinue (inElement,inString,i,inInteger,inContext)
+  (outCFunction,outInteger) := matchcontinue (inElement,inString,i,inInteger,inContext)
     local
       Lib cref_str1,cref_str2,stmt,varname,typ_str;
       CFunction cfn;
       DAE.Element var;
       Exp.ComponentRef id;
-      DAE.Type typ;
+      Types.Type typ;
       Integer tnr;
       Context context;
       
@@ -4326,7 +4207,7 @@ algorithm
     case ((var as DAE.VAR(componentRef = id,kind = DAE.VARIABLE(),direction = DAE.OUTPUT(),ty = typ)),varname,i,tnr,context)
       equation
         true = isArray(var);
-        typ_str = daeTypeStr(typ, true);
+        typ_str = generateType(typ,true);
         (cref_str1,_) = compRefCstr(id);
         cref_str2 = stringAppend("targ",intString(i));
         stmt = Util.stringAppendList({"copy_",typ_str,"_data(&",cref_str1,", &",varname,".",cref_str2,");"});
@@ -5324,7 +5205,7 @@ algorithm
         tmpExps = Util.listMap(tmpRefs, makeCrefExpFromString);
         (tmpExps,_,_) = Types.matchTypeTuple(tmpExps,tys2,tys1,{},Types.matchTypeRegular);
         // Generate assignments to regular record
-        (tdecl,tvar,tnr) = generateTempDecl(generateType(t), tnr);
+        (tdecl,tvar,tnr) = generateTempDecl(generateSimpleType(t), tnr);
         tmp = tvar +& ".";
         stringList = Util.listMap(v, Types.getVarName);
         recordFields = Util.listMap1r(stringList,stringAppend,tmp);
@@ -7269,26 +7150,25 @@ algorithm
       Exp.ComponentRef cref,cref_1;
       DAE.VarKind vk;
       DAE.VarDirection vd;
-      DAE.Type ty;
+      Types.Type ty;
       Option<Exp.Exp> value;
       list<Exp.Subscript> dims,dims_1;
       DAE.Element extvar,var;
       CFunction fn,restfn,resfn;
       list<DAE.Element> rest;
-      Types.Type tp;
       Boolean b_isOutput;
       Integer i1;
       DAE.VarProtection prot;
     case ({},i,tnr) then (cEmptyFunction,tnr);
     case ((var :: rest),i,tnr)
       equation
-        DAE.VAR(componentRef = cref,kind = vk,direction = vd,protection=prot,ty = ty,binding = value,dims = dims,fullType=tp) = var;
+        DAE.VAR(componentRef = cref,kind = vk,direction = vd,protection=prot,ty = ty,binding = value,dims = dims) = var;
         true = isArray(var);
         b_isOutput = isOutput(var);
         i1 = Util.if_(b_isOutput,i+1,i);
         cref_1 = varNameExternalCref(cref);
         dims_1 = listReverse(dims);
-        extvar = DAE.VAR(cref_1,vk,vd,prot,ty,value,dims_1,DAE.NON_FLOW(),DAE.NON_STREAM(),{},NONE,NONE,Absyn.UNSPECIFIED(),tp);
+        extvar = DAE.VAR(cref_1,vk,vd,prot,ty,value,dims_1,DAE.NON_FLOW(),DAE.NON_STREAM(),{},NONE,NONE,Absyn.UNSPECIFIED());
         (fn,tnr_1) = generateVarDecl(extvar, tnr, funContext);
         (restfn,tnr_3) = generateExtcallCopydeclsF77(rest, i1,tnr_1);
         resfn = cMergeFn(fn, restfn);
@@ -7591,7 +7471,7 @@ algorithm
         Debug.fprintln("cgtr", "generate_extcall_vardecl_f77_2");
         true = Types.isInputAttr(attr);
         true = Types.isArray(ty);
-        tystr = generateType(ty);
+        tystr = generateSimpleType(ty);
         name = varNameExternal(cref);
         (orgname,_) = compRefCstr(cref);
         converter = generateCToF77Converter(ty);
@@ -7618,7 +7498,7 @@ algorithm
         Debug.fprintln("cgtr", "generate_extcall_vardecl_f77_4");
         true = Types.isArray(ty);
         true = Types.isOutputAttr(attr);
-        tystr = generateType(ty);
+        tystr = generateSimpleType(ty);
         name = varNameExternal(cref);
         iStr = stringAppend("targ",intString(i));
         converter = generateCToF77Converter(ty);
@@ -7633,7 +7513,7 @@ algorithm
         DAE.EXTARG(componentRef = cref,attributes = attr,type_ = ty) = arg;
         true = Types.isArray(ty);
         Debug.fprintln("cgtr", "generate_extcall_vardecl_f77_41");
-        tystr = generateType(ty);
+        tystr = generateSimpleType(ty);
         name = varNameExternal(cref);
         (orgname,_) = compRefCstr(cref);
          iStr = stringAppend("targ",intString(i));
@@ -8377,8 +8257,8 @@ algorithm
         false = Types.isArray(ty);
         true = Types.isOutputAttr(attr);
         name = varNameExternal(cref);
-		iStr = intString(i);
-        typcast = generateType(ty);
+        iStr = intString(i);
+        typcast = generateSimpleType(ty);
         str = Util.stringAppendList({"out.","targ",iStr," = (",typcast,")",name,";"});
         res = cAddStatements(cEmptyFunction, {str});
       then
@@ -8433,8 +8313,8 @@ algorithm
         false = Types.isArray(ty);
         true = Types.isOutputAttr(attr);
         name = varNameExternal(cref);
-		iStr = intString(i);
-        typcast = generateType(ty);
+        iStr = intString(i);
+        typcast = generateSimpleType(ty);
         str = Util.stringAppendList({"out.","targ",iStr," = (",typcast,")",name,";"});
         res = cAddStatements(cEmptyFunction, {str});
       then
@@ -8444,7 +8324,7 @@ algorithm
         DAE.EXTARG(componentRef = cref,attributes = attr,type_ = ty) = extarg;
         true = Types.isArray(ty);
         true = Types.isOutputAttr(attr);
-        tystr = generateType(ty);
+        tystr = generateSimpleType(ty);
         name = varNameExternal(cref);
        	iStr = intString(i);
         converter = generateF77ToCConverter(ty);
@@ -8457,7 +8337,7 @@ algorithm
         DAE.EXTARG(componentRef = cref,attributes = attr,type_ = ty) = extarg;
         true = Types.isArray(ty);
         true = Types.isBidirAttr(attr);
-        tystr = generateType(ty);
+        tystr = generateSimpleType(ty);
         name = varNameExternal(cref);
         (orgname,_) = compRefCstr(cref);
         converter = generateF77ToCConverter(ty);
@@ -8489,10 +8369,9 @@ algorithm
       list<Lib> r_1,cfn;
       Exp.ComponentRef id;
       DAE.VarKind vk;
-      DAE.Type t;
       list<DAE.Element> r;
     case {} then {};
-    case (DAE.VAR(componentRef = id,kind = vk,direction = DAE.INPUT(),ty = t) :: r)
+    case (DAE.VAR(componentRef = id,kind = vk,direction = DAE.INPUT()) :: r)
       equation
         (cref_str,_) = compRefCstr(id);
         r_1 = invarNames(r);
@@ -8606,16 +8485,15 @@ algorithm
       list<Lib> r_1,cfn;
       Exp.ComponentRef id;
       DAE.VarKind vk;
-      DAE.Type t;
       list<DAE.Element> r;
     case {} then {};
-    case (DAE.VAR(componentRef = id,kind = vk,direction = DAE.INPUT(),ty = t) :: r)
+    case (DAE.VAR(componentRef = id,kind = vk,direction = DAE.INPUT()) :: r)
       equation
         cref_str = varNameExternal(id);
         r_1 = varArgNamesExternal(r);
       then
         (cref_str :: r_1);
-    case (DAE.VAR(componentRef = id,kind = vk,direction = DAE.OUTPUT(),ty = t) :: r)
+    case (DAE.VAR(componentRef = id,kind = vk,direction = DAE.OUTPUT()) :: r)
       equation
         cref_str = varNameExternal(id);
         cref_str2 = stringAppend("&", cref_str);
@@ -8721,22 +8599,22 @@ algorithm
       CFunction cfn1,cfn2,cfn;
       Exp.ComponentRef id;
       DAE.VarKind vk;
-      DAE.Type t;
+      Types.Type t;
       list<DAE.Element> r;
+      DAE.Element var;
+      Boolean is_a;
     case {} then cEmptyFunction;
     case (DAE.VAR(componentRef = id,
                   kind = vk,
                   direction = DAE.INPUT(),
-                  ty = DAE.COMPLEX(name=_),
-                  dims = {},
-                  fullType = rt) :: r)
+                  ty = t as (Types.T_COMPLEX(complexClassType = ClassInf.RECORD(_)),_),
+                  dims = {}) :: r)
       local
         list<String> args;
         String arg_str;
-        Types.Type rt;
       equation
         (cref_str,_) = compRefCstr(id);
-        args = generateRecordMembers(rt);
+        args = generateRecordMembers(t);
         args = Util.listMap1(args,makeRecordRef,cref_str);
         args = Util.listMap1r(args,stringAppend,",");
         arg_str = Util.stringAppendList(args);
@@ -8747,33 +8625,16 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         cfn;
-    case (DAE.VAR(componentRef = id,
+    case ((var as DAE.VAR(componentRef = id,
                   kind = vk,
                   direction = DAE.INPUT(),
-                  ty = t,
-                  dims = {}) :: r)
+                  ty = t)) :: r)
       equation
+        is_a = isArray(var);
+        type_string = generateType(t,is_a);
         (cref_str,_) = compRefCstr(id);
-        type_string = daeTypeStr(t, false);
         stmt = Util.stringAppendList(
-          {"if(read_",type_string,"(&inArgs, &",cref_str,
-          ")) return 1;"});
-        cfn1 = cAddInits(cEmptyFunction, {stmt});
-        cfn2 = generateRead(r);
-        cfn = cMergeFn(cfn1, cfn2);
-      then
-        cfn;
-    case (DAE.VAR(componentRef = id,
-                  kind = vk,
-                  direction = DAE.INPUT(),
-                  ty = t,
-                  dims = (_ :: _)) :: r)
-      equation
-        (cref_str,_) = compRefCstr(id);
-        type_string = daeTypeStr(t, true);
-        stmt = Util.stringAppendList(
-          {"if(read_",type_string,"(&inArgs, &",cref_str,
-          ")) return 1;"});
+          {"if(read_",type_string,"(&inArgs, &",cref_str,")) return 1;"});
         cfn1 = cAddInits(cEmptyFunction, {stmt});
         cfn2 = generateRead(r);
         cfn = cMergeFn(cfn1, cfn2);
@@ -8913,8 +8774,7 @@ algorithm
   end matchcontinue;
 end generateOutRecordMembers;
 
-protected function generateWriteOutvars "function: generateWriteOutvars
-
+protected function generateWriteOutvars "
  generates code for writing output variables in return struct to file.
 "
   input list<DAE.Element> inDAEElementLst;
@@ -8924,13 +8784,14 @@ algorithm
   outCFunction:=
   matchcontinue (inDAEElementLst,i)
     local
-      Lib cref_str,type_string,stmt;
+      String cref_str,type_string,stmt,iStr;
       CFunction cfn1,cfn2,cfn;
       Exp.ComponentRef id;
       DAE.VarKind vk;
-      DAE.Type t;
+      Types.Type t;
       list<DAE.Element> r;
-      String iStr;
+      DAE.Element var;
+      Boolean is_a;
     case ({},1) /* NORETCALL function */
       equation
         cfn = cAddStatements(cEmptyFunction, {"write_noretcall(outVar);"});
@@ -8939,18 +8800,16 @@ algorithm
     case (DAE.VAR(componentRef = id,
                   kind = vk,
                   direction = DAE.OUTPUT(),
-                  ty = (t as DAE.COMPLEX(name=_)),
-                  dims = {},
-                  fullType = rt) :: r,i)
+                  ty = t as (Types.T_COMPLEX(complexClassType = ClassInf.RECORD(_)),_),
+                  dims = {}) :: r,i)
       local
-        Types.Type rt;
         list<String> args;
         String arg_str, base_str, path_str;
       equation
         iStr = intString(i);
         base_str = stringAppend("out.targ",iStr);
 
-        (path_str,args) = generateOutRecordMembers(rt,base_str);
+        (path_str,args) = generateOutRecordMembers(t,base_str);
         args = listAppend(args, {"TYPE_DESC_NONE"});
         arg_str = Util.stringDelimitList(args,",");
 
@@ -8961,28 +8820,14 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         cfn;
-    case (DAE.VAR(componentRef = id,
+    case ((var as DAE.VAR(componentRef = id,
                   kind = vk,
                   direction = DAE.OUTPUT(),
-                  ty = t,
-                  dims = {}) :: r,i)
+                  ty = t)) :: r,i)
       equation
         iStr = intString(i);
-        type_string = daeTypeStr(t, false);
-        stmt = Util.stringAppendList({"write_",type_string,"(outVar, &out.","targ",iStr,");"});
-        cfn1 = cAddStatements(cEmptyFunction, {stmt});
-        cfn2 = generateWriteOutvars(r,i+1);
-        cfn = cMergeFn(cfn1, cfn2);
-      then
-        cfn;
-    case (DAE.VAR(componentRef = id,
-                  kind = vk,
-                  direction = DAE.OUTPUT(),
-                  ty = t,
-                  dims = (_ :: _)) :: r,i)
-      equation
-        iStr = intString(i);
-        type_string = daeTypeStr(t, true);
+        is_a = isArray(var);
+        type_string = generateType(t,is_a);
         stmt = Util.stringAppendList({"write_",type_string,"(outVar, &out.","targ",iStr,");"});
         cfn1 = cAddStatements(cEmptyFunction, {stmt});
         cfn2 = generateWriteOutvars(r,i+1);
@@ -9966,7 +9811,7 @@ algorithm
         paths2 = getUniontypePaths2(rest);
         paths = listAppend(paths1,paths2);
       then paths;
-    case DAE.VAR(fullType = ft)::rest
+    case DAE.VAR(ty = ft)::rest
       equation
         tys = Types.getAllInnerTypesOfType(ft, Types.uniontypeFilter);
         listPaths = Util.listMap(tys, Types.getUniontypePaths);

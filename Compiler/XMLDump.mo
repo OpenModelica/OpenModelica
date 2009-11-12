@@ -3086,7 +3086,7 @@ This function output the Type of a variable, it could be:
  - String
  - Enum
  "
-  input DAE.Type inType;
+  input DAELow.Type inType;
   output String outString;
 algorithm
   outString:=
@@ -3094,26 +3094,18 @@ algorithm
     local
       DAE.Ident s1,s2,str;
       list<DAE.Ident> l;
-    case DAE.INT()    then VARTYPE_INTEGER;
-    case DAE.REAL()   then VARTYPE_REAL;
-    case DAE.BOOL()   then VARTYPE_BOOLEAN;
-    case DAE.STRING() then VARTYPE_STRING;
-//    case DAE.ENUM()   then VARTYPE_ENUMERATION;
-/*
-    case RECORD(name = s1)
-      equation
-        s2 = stringAppend("Record ", s1);
-      then
-        s2;
-*/
-    case DAE.ENUMERATION(stringLst = l)
+    case DAELow.INT()    then VARTYPE_INTEGER;
+    case DAELow.REAL()   then VARTYPE_REAL;
+    case DAELow.BOOL()   then VARTYPE_BOOLEAN;
+    case DAELow.STRING() then VARTYPE_STRING;
+    case DAELow.ENUMERATION(stringLst = l)
       equation
         s1 = Util.stringDelimitList(l, ", ");
         s2 = stringAppend(VARTYPE_ENUMERATION,stringAppend("(", s1));
         str = stringAppend(s2, ")");
       then
         str;
-    case DAE.EXT_OBJECT(_) then VARTYPE_EXTERNALOBJECT;
+    case DAELow.EXT_OBJECT(_) then VARTYPE_EXTERNALOBJECT;
   end matchcontinue;
 end dumpTypeStr;
 
@@ -3304,7 +3296,7 @@ algorithm
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
       list<DAELow.Var> xs;
-      DAE.Type var_type;
+      DAELow.Type var_type;
       DAE.InstDims arry_Dim;
       Option<Values.Value> b;
       Integer var_1;
@@ -3372,7 +3364,7 @@ algorithm
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
       list<DAELow.Var> xs;
-      DAE.Type var_type;
+      DAELow.Type var_type;
       DAE.InstDims arry_Dim;
       Option<Values.Value> b;
       Integer var_1;

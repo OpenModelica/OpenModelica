@@ -307,7 +307,7 @@ algorithm
       Exp.ComponentRef cr;
       DAE.VarKind vk;
       DAE.VarDirection vd;
-      DAE.Type ty;
+      Types.Type ty;
       list<Exp.Subscript> inst_dims;
       Option<Exp.Exp> start;
       DAE.Flow flowPrefix;
@@ -333,12 +333,11 @@ algorithm
                           pathLst = cl,
                           variableAttributesOption = dae_var_attr,
                           absynCommentOption = comment,
-                          innerOuter=io,
-                          fullType=ftp))
+                          innerOuter=io))
       equation 
         exp_1 = stringPrefixComponentRef(str, isParameterDaelist, dae, exp);
       then
-        DAE.VAR(cr,vk,vd,prot,ty,SOME(exp_1),inst_dims,flowPrefix,streamPrefix,cl,dae_var_attr,comment,io,ftp);
+        DAE.VAR(cr,vk,vd,prot,ty,SOME(exp_1),inst_dims,flowPrefix,streamPrefix,cl,dae_var_attr,comment,io);
     case (str,dae,DAE.DEFINE(componentRef = cr,exp = exp))
       equation 
         exp_1 = stringPrefixComponentRef(str, isParameterDaelist, dae, exp);
@@ -389,14 +388,12 @@ algorithm
     local
       Exp.ComponentRef cr,crv;
       DAE.VarDirection vd;
-      DAE.Type ty;
       Option<Exp.Exp> e;
       list<DAE.Element> rest;
       DAE.VarKind vk;
     case (cr,(DAE.VAR(componentRef = crv,
                       kind = DAE.PARAM(),
                       direction = vd,
-                      ty = ty,
                       binding = e) :: rest))
       equation 
         true = Exp.crefEqual(cr, crv);
@@ -405,7 +402,6 @@ algorithm
     case (cr,(DAE.VAR(componentRef = crv,
                       kind = vk,
                       direction = vd,
-                      ty = ty,
                       binding = e) :: rest))
       equation 
         true = Exp.crefEqual(cr, crv);

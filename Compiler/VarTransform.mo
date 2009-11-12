@@ -129,7 +129,7 @@ algorithm outDae := matchcontinue(inDae,repl,condExpFunc)
       DAE.Element elt,elt2,elt22,elt1,elt11;
       DAE.VarKind kind;
       DAE.VarDirection dir;
-      DAE.Type tp;
+      Types.Type tp,ftp;
       Exp.Exp bindExp,bindExp2,e,e2,e22,e1,e11;
       DAE.InstDims dims;
       DAE.StartValue start;
@@ -138,7 +138,6 @@ algorithm outDae := matchcontinue(inDae,repl,condExpFunc)
       Option<DAE.VariableAttributes> attr;
       Option<SCode.Comment> cmt;
       Absyn.InnerOuter io;
-      Types.Type ftp;
       list<Integer> idims;
       DAE.ExternalDecl extDecl;
       DAE.Ident id;
@@ -153,18 +152,18 @@ algorithm outDae := matchcontinue(inDae,repl,condExpFunc)
 
     case({},repl,condExpFunc) then {};
       
-    case(DAE.VAR(cr,kind,dir,prot,tp,SOME(bindExp),dims,fl,st,clsLst,attr,cmt,io,ftp)::dae,repl,condExpFunc) 
+    case(DAE.VAR(cr,kind,dir,prot,tp,SOME(bindExp),dims,fl,st,clsLst,attr,cmt,io)::dae,repl,condExpFunc) 
       equation
         (bindExp2) = replaceExp(bindExp, repl, condExpFunc);
   			dae2 = applyReplacementsDAE(dae,repl,condExpFunc);
         attr = applyReplacementsVarAttr(attr,repl,condExpFunc);
-      then DAE.VAR(cr,kind,dir,prot,tp,SOME(bindExp2),dims,fl,st,clsLst,attr,cmt,io,ftp)::dae2;
+      then DAE.VAR(cr,kind,dir,prot,tp,SOME(bindExp2),dims,fl,st,clsLst,attr,cmt,io)::dae2;
 
-    case(DAE.VAR(cr,kind,dir,prot,tp,NONE,dims,fl,st,clsLst,attr,cmt,io,ftp)::dae,repl,condExpFunc) 
+    case(DAE.VAR(cr,kind,dir,prot,tp,NONE,dims,fl,st,clsLst,attr,cmt,io)::dae,repl,condExpFunc) 
       equation
         dae2 = applyReplacementsDAE(dae,repl,condExpFunc);
         attr = applyReplacementsVarAttr(attr,repl,condExpFunc);
-  	then DAE.VAR(cr,kind,dir,prot,tp,NONE,dims,fl,st,clsLst,attr,cmt,io,ftp)::dae2;
+  	then DAE.VAR(cr,kind,dir,prot,tp,NONE,dims,fl,st,clsLst,attr,cmt,io)::dae2;
 
     case(DAE.DEFINE(cr,e)::dae,repl,condExpFunc) 
       equation

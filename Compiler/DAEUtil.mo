@@ -256,7 +256,7 @@ algorithm
    			  Exp.ComponentRef cr;
    			  DAE.VarKind kind;
    			  DAE.VarDirection dir;
-    			DAE.Type tp;
+    			Types.Type tp;
    			  Option<Exp.Exp> bind;
    			  DAE.InstDims dim;
     			DAE.Flow flow_;
@@ -264,7 +264,6 @@ algorithm
     			Option<DAE.VariableAttributes> attr;
    			  Option<SCode.Comment> cmt;
     			Absyn.InnerOuter io,io2;
-   			  Types.Type ftp;
    			  DAE.VarProtection prot;
    			  DAE.Stream st;
      case(var,{}) then {};
@@ -272,21 +271,21 @@ algorithm
         Since we can not handle this with current instantiation procedure, we create temporary variables in the dae.
         These are named uniqly and renamed later in "instClass" 
      */ 
-     case(var,DAE.VAR(oldVar,kind,dir,prot,tp,bind,dim,flow_,st,cls,attr,cmt,(io as Absyn.INNEROUTER()),ftp)::dae) equation
+     case(var,DAE.VAR(oldVar,kind,dir,prot,tp,bind,dim,flow_,st,cls,attr,cmt,(io as Absyn.INNEROUTER()))::dae) equation
        true = compareUniquedVarWithNonUnique(var,oldVar);
        newVar = nameInnerouterUniqueCref(oldVar);
-       o = DAE.VAR(oldVar,kind,dir,prot,tp,NONE,dim,flow_,st,cls,attr,cmt,Absyn.OUTER(),ftp) "intact";
-       u = DAE.VAR(newVar,kind,dir,prot,tp,bind,dim,flow_,st,cls,attr,cmt,Absyn.UNSPECIFIED(),ftp) " unique'ified";
+       o = DAE.VAR(oldVar,kind,dir,prot,tp,NONE,dim,flow_,st,cls,attr,cmt,Absyn.OUTER()) "intact";
+       u = DAE.VAR(newVar,kind,dir,prot,tp,bind,dim,flow_,st,cls,attr,cmt,Absyn.UNSPECIFIED()) " unique'ified";
        elist3 = u::{o};
        dae = listAppend(elist3,dae);
      then 
        dae;
          
-     case(var,DAE.VAR(cr,kind,dir,prot,tp,bind,dim,flow_,st,cls,attr,cmt,io,ftp)::dae) equation
+     case(var,DAE.VAR(cr,kind,dir,prot,tp,bind,dim,flow_,st,cls,attr,cmt,io)::dae) equation
        true = Exp.crefEqual(var,cr);
        io2 = removeInnerAttribute(io);
      then 
-       DAE.VAR(cr,kind,dir,prot,tp,bind,dim,flow_,st,cls,attr,cmt,io2,ftp)::dae;
+       DAE.VAR(cr,kind,dir,prot,tp,bind,dim,flow_,st,cls,attr,cmt,io2)::dae;
        
      case(var,DAE.COMP(id,DAE.DAE(elist))::dae) equation
        elist2=removeInnerAttr(var,elist);
@@ -1375,7 +1374,7 @@ public function getStartAttrEmpty "
   Return the start attribute.
 "
   input Option<DAE.VariableAttributes> inVariableAttributesOption;
-  input DAE.Type tp;
+  input Types.Type tp;
   output Exp.Exp start;
 algorithm 
   start:=
@@ -1386,10 +1385,10 @@ algorithm
     case (SOME(DAE.VAR_ATTR_INT(initial_ = SOME(r))),_) then r;
     case (SOME(DAE.VAR_ATTR_BOOL(initial_ = SOME(r))),_) then r;
     case (SOME(DAE.VAR_ATTR_STRING(initial_ = SOME(r))),_) then r;
-    case (_,DAE.REAL()) then Exp.RCONST(0.0);
-    case (_,DAE.INT()) then Exp.ICONST(0);
-    case (_,DAE.BOOL()) then Exp.BCONST(false);
-    case (_,DAE.STRING()) then Exp.SCONST("");
+    case (_,(Types.T_REAL(_),_)) then Exp.RCONST(0.0);
+    case (_,(Types.T_INTEGER(_),_)) then Exp.ICONST(0);
+    case (_,(Types.T_BOOL(_),_)) then Exp.BCONST(false);
+    case (_,(Types.T_STRING(_),_)) then Exp.SCONST("");
     case(_,_) then Exp.RCONST(0.0);
   end matchcontinue;
 end getStartAttrEmpty;
@@ -1461,7 +1460,7 @@ algorithm
       DAE.VarKind k;
       DAE.VarDirection d ;
       DAE.VarProtection p;
-      DAE.Type ty ;
+      Types.Type ty ;
       Option<Exp.Exp> b; 
       DAE.InstDims  dims ;
       DAE.Flow fl;
@@ -1469,9 +1468,8 @@ algorithm
       list<Absyn.Path> cls;
       Option<SCode.Comment> cmt;
       Absyn.InnerOuter io; 
-      Types.Type tp;
     
-    case(DAE.VAR(cr,k,d,p,ty,b,dims,fl,st,cls,_,cmt,io,tp),varOpt) then DAE.VAR(cr,k,d,p,ty,b,dims,fl,st,cls,varOpt,cmt,io,tp);
+    case(DAE.VAR(cr,k,d,p,ty,b,dims,fl,st,cls,_,cmt,io),varOpt) then DAE.VAR(cr,k,d,p,ty,b,dims,fl,st,cls,varOpt,cmt,io);
   end matchcontinue;
 end setVariableAttributes;
 
@@ -1811,93 +1809,7 @@ algorithm
   end matchcontinue;
 end dumpVariableAttributesStr;
 
-public function dumpType "function: dumpType
- 
-  Dump Type.
-"
-  input DAE.Type inType;
-algorithm 
-  _:=
-  matchcontinue (inType)
-    local list<String> l; Absyn.Path path;
-    case DAE.INT()
-      equation 
-        Print.printBuf("Integer ");
-      then
-        ();
-    case DAE.REAL()
-      equation 
-        Print.printBuf("Real    ");
-      then
-        ();
-    case DAE.BOOL()
-      equation 
-        Print.printBuf("Boolean ");
-      then
-        ();
-    case DAE.STRING()
-      equation 
-        Print.printBuf("String  ");
-      then
-        ();
-        
-//    case ENUM()
-//      equation 
-//        Print.printBuf("Enum ");
-//      then
-//        ();
-    case DAE.ENUMERATION(stringLst = l)
-      equation 
-        Print.printBuf("Enumeration(");
-        Dump.printList(l, print, ",");
-        Print.printBuf(") ");
-      then
-        ();
-     case DAE.EXT_OBJECT(_)
-      equation 
-        Print.printBuf("ExternalObject   ");
-      then
-        ();
-     case DAE.COMPLEX(name=path)
-       equation
-         Print.printBuf(Absyn.pathString(path));
-       then ();
-  end matchcontinue;
-end dumpType;
-
-public function dumpTypeStr "function: dumpTypeStr
- 
-  Dump Type to a string.
-"
-  input DAE.Type inType;
-  output String outString;
-algorithm 
-  outString:=
-  matchcontinue (inType)
-    local
-      String s1,s2,str;
-      list<String> l;
-      Absyn.Path path;
-    case DAE.INT() then "Integer "; 
-    case DAE.REAL() then "Real "; 
-    case DAE.BOOL() then "Boolean "; 
-    case DAE.STRING() then "String "; 
-//    case ENUM() then "Enum "; 
-
-    case DAE.ENUMERATION(stringLst = l)
-      equation 
-        s1 = Util.stringDelimitList(l, ", ");
-        s2 = stringAppend("enumeration(", s1);
-        str = stringAppend(s2, ")");
-      then
-        str;
-    case DAE.EXT_OBJECT(_) then "ExternalObject ";
-    case DAE.COMPLEX(name=path) then Absyn.pathString(path)+& " ";
-  end matchcontinue;
-end dumpTypeStr;
-
-protected function dumpVar "function: dumpVar
- 
+protected function dumpVar "
   Dump Var.
 "
   input DAE.Element inElement;
@@ -1908,7 +1820,7 @@ algorithm
       Exp.ComponentRef id;
       DAE.VarKind kind;
       DAE.VarDirection dir;
-      DAE.Type typ;
+      Types.Type typ;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
       list<Absyn.Path> classlst,class_;
@@ -1928,15 +1840,12 @@ algorithm
       equation 
         dumpKind(kind);
         dumpDirection(dir);
-        dumpType(typ);
+        Print.printBuf(Types.unparseType(typ));
+        Print.printBuf(" ");
         Exp.printComponentRef(id);
         dumpCommentOption(comment) "	dump_start_value start &" ;
         dumpVariableAttributes(dae_var_attr);
-        Print.printBuf(";\n") "	Util.list_map(classlst,Absyn.path_string) => classstrlst & 
-	Util.string_delimit_list(classstrlst, \", \") => classstr &
-	Print.printBuf \" \"{\" &
-	Print.printBuf classstr &
-	Print.printBuf \"}\" \" &" ;
+        Print.printBuf(";\n");
       then
         ();
     case DAE.VAR(componentRef = id,
@@ -1952,9 +1861,10 @@ algorithm
       equation 
         dumpKind(kind);
         dumpDirection(dir);
-        dumpType(typ);
+        Print.printBuf(Types.unparseType(typ));
+        Print.printBuf(" ");
         Exp.printComponentRef(id);
-        dumpVariableAttributes(dae_var_attr) "	dump_start_value start &" ;
+        dumpVariableAttributes(dae_var_attr);
         Print.printBuf(" = ");
         Exp.printExp(e);
         Print.printBuf(";\n");
@@ -1978,7 +1888,7 @@ algorithm
       Exp.ComponentRef id;
       DAE.VarKind kind;
       DAE.VarDirection dir;
-      DAE.Type typ;
+      Types.Type typ;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
       list<Absyn.Path> classlst;
@@ -2000,13 +1910,12 @@ algorithm
       equation 
         s1 = dumpKindStr(kind);
         s2 = dumpDirectionStr(dir);
-        s3 = dumpTypeStr(typ);
+        s3 = Types.unparseType(typ);
         s4 = Exp.printComponentRefStr(id);
         s7 = dumpVarProtectionStr(prot);
-        comment_str = dumpCommentOptionStr(comment) "	dump_start_value_str start => s5 &" ;
+        comment_str = dumpCommentOptionStr(comment);
         s5 = dumpVariableAttributesStr(dae_var_attr);
-        str = Util.stringAppendList({s7,s1,s2,s3,s4,s5,comment_str,";\n"}) "	Util.list_map(classlst,Absyn.path_string) => classstrlst & 
-	Util.string_delimit_list(classstrlst, \", \") => classstr &" ;
+        str = Util.stringAppendList({s7,s1,s2,s3," ",s4,s5,comment_str,";\n"});
       then
         str;
     case DAE.VAR(componentRef = id,
@@ -2023,13 +1932,13 @@ algorithm
       equation 
         s1 = dumpKindStr(kind);
         s2 = dumpDirectionStr(dir);
-        s3 = dumpTypeStr(typ);
+        s3 = Types.unparseType(typ);
         s4 = Exp.printComponentRefStr(id);
         s5 = Exp.printExpStr(e);
-        comment_str = dumpCommentOptionStr(comment) "	dump_start_value_str start => s6 &" ;
+        comment_str = dumpCommentOptionStr(comment);
         s6 = dumpVariableAttributesStr(dae_var_attr);
         s7 = dumpVarProtectionStr(prot);
-        str = Util.stringAppendList({s7,s1,s2,s3,s4,s6," = ",s5,comment_str,";\n"})  ;
+        str = Util.stringAppendList({s7,s1,s2,s3," ",s4,s6," = ",s5,comment_str,";\n"})  ;
       then
         str;
     case (_) then ""; 
@@ -3178,9 +3087,7 @@ algorithm
   vl_1 := getMatchingElements(vl, isBidirVar);
 end getBidirVars;
 
-public function getInputVars "function getInputVars
-  author: HJ 
- 
+public function getInputVars "
   Retrieve all input variables from an Element list.
 "
   input list<DAE.Element> vl;
@@ -3189,26 +3096,6 @@ public function getInputVars "function getInputVars
 algorithm 
   vl_1 := getMatchingElements(vl, isInput);
 end getInputVars;
-
-public function generateDaeType "function generateDaeType
- 
-  Generate a Types.Type from a DAE.Type
-  Is needed when investigating the DAE and want to e.g. evaluate expressions.
-"
-  input DAE.Type inType;
-  output Types.Type outType;
-algorithm 
-  outType:=
-  matchcontinue (inType)
-    local
-      list<String> strlst;
-    case (DAE.REAL()) then ((Types.T_REAL({}),NONE)); 
-    case (DAE.INT()) then ((Types.T_INTEGER({}),NONE)); 
-    case (DAE.BOOL()) then ((Types.T_BOOL({}),NONE)); 
-    case (DAE.STRING()) then ((Types.T_STRING({}),NONE)); 
-    case (DAE.ENUMERATION(strlst)) then ((Types.T_ENUMERATION(SOME(0),Absyn.IDENT(""),strlst, {}),NONE));
-  end matchcontinue;
-end generateDaeType;
 
 public function setComponentTypeOpt "
   
@@ -3228,8 +3115,7 @@ algorithm
   end matchcontinue;
 end setComponentTypeOpt;
 
-public function setComponentType "function: setComponentType
-  
+public function setComponentType "
   This function takes a dae element list and a type name and 
   inserts the type name into each Var (variable) of the dae.
   This type name is the origin of the variable.
@@ -3245,7 +3131,7 @@ algorithm
       Exp.ComponentRef cr;
       DAE.VarKind kind;
       DAE.VarDirection dir;
-      DAE.Type tp;
+      Types.Type tp;
       DAE.InstDims dim;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
@@ -3257,7 +3143,6 @@ algorithm
       Option<SCode.Comment> comment;
       Absyn.Path newtype;
       Absyn.InnerOuter io;
-			Types.Type ftp;
     case ({},_) then {}; 
     case ((DAE.VAR(componentRef = cr,
                kind = kind,
@@ -3271,12 +3156,11 @@ algorithm
                pathLst = lst,
                variableAttributesOption = dae_var_attr,
                absynCommentOption = comment,
-               innerOuter=io,
-               fullType=ftp) :: xs),newtype)
+               innerOuter=io) :: xs),newtype)
       equation 
         xs_1 = setComponentType(xs, newtype);
       then
-        (DAE.VAR(cr,kind,dir,prot,tp,bind,dim,flowPrefix,streamPrefix,(newtype :: lst),dae_var_attr,comment,io,ftp) :: xs_1);
+        (DAE.VAR(cr,kind,dir,prot,tp,bind,dim,flowPrefix,streamPrefix,(newtype :: lst),dae_var_attr,comment,io) :: xs_1);
         
     case ((x :: xs),newtype)
       equation 
@@ -3287,101 +3171,64 @@ algorithm
 end setComponentType;
 
 public function isOutputVar 
-"function: isOutputVar 
-  author: LS  
-  Succeeds if Element is an output variable."
+"Succeeds if Element is an output variable."
   input DAE.Element inElement;
 algorithm 
   _ := matchcontinue (inElement)
-    local
-      Exp.ComponentRef n;
-      DAE.Type ty;
-    case DAE.VAR(componentRef = n,kind = DAE.VARIABLE(),direction = DAE.OUTPUT(),ty = ty) then ();
+    case DAE.VAR(kind = DAE.VARIABLE(),direction = DAE.OUTPUT()) then ();
   end matchcontinue;
 end isOutputVar;
 
 public function isProtectedVar 
-"function isProtectedVar
- author: PA 
- Succeeds if Element is a protected variable."
+"Succeeds if Element is a protected variable."
   input DAE.Element inElement;
 algorithm 
-  _:=
-  matchcontinue (inElement)
-    local
-      Exp.ComponentRef n;
-      DAE.Type ty;
+  _ := matchcontinue (inElement)
     case DAE.VAR(protection=DAE.PROTECTED()) then (); 
   end matchcontinue;
 end isProtectedVar;
 
 public function isPublicVar "
-  author: PA 
- 
   Succeeds if Element is a public variable.
 "
   input DAE.Element inElement;
 algorithm 
-  _:=
-  matchcontinue (inElement)
-    local
-      Exp.ComponentRef n;
-      DAE.Type ty;
+  _ := matchcontinue (inElement)
     case DAE.VAR(protection=DAE.PUBLIC()) then (); 
   end matchcontinue;
 end isPublicVar;
 
-public function isBidirVar "function: isBidirVar 
-  author: LS 
- 
+public function isBidirVar "
   Succeeds if Element is a bidirectional variable.
 "
   input DAE.Element inElement;
 algorithm 
-  _:=
-  matchcontinue (inElement)
-    local
-      Exp.ComponentRef n;
-      DAE.Type ty;
-    case DAE.VAR(componentRef = n,kind = DAE.VARIABLE(),direction = DAE.BIDIR(),ty = ty) then ();
+  _ := matchcontinue (inElement)
+    case DAE.VAR(kind = DAE.VARIABLE(),direction = DAE.BIDIR()) then ();
   end matchcontinue;
 end isBidirVar;
 
-public function isInputVar "function: isInputVar 
-  author: HJ
- 
+public function isInputVar "
   Succeeds if Element is an input variable.
 "
   input DAE.Element inElement;
 algorithm 
-  _:=
-  matchcontinue (inElement)
-    local
-      Exp.ComponentRef n;
-      DAE.Type ty;
-    case DAE.VAR(componentRef = n,kind = DAE.VARIABLE(),direction = DAE.INPUT(),ty = ty) then ();
+  _ := matchcontinue (inElement)
+    case DAE.VAR(kind = DAE.VARIABLE(),direction = DAE.INPUT()) then ();
   end matchcontinue;
 end isInputVar;
 
-public function isInput "function: isInputVar 
-  author: PA
- 
+public function isInput "
   Succeeds if Element is an input .
 "
   input DAE.Element inElement;
 algorithm 
-  _:=
-  matchcontinue (inElement)
-    local
-      Exp.ComponentRef n;
-      DAE.Type ty;
+  _ := matchcontinue (inElement)
     case DAE.VAR(direction = DAE.INPUT()) then ();
   end matchcontinue;
 end isInput;
 
-protected function isNotVar "function: isNotVar 
-  author: LS
- 
+protected function isNotVar "
   Succeeds if Element is not a variable.
 "
   input DAE.Element e;
@@ -3389,9 +3236,7 @@ algorithm
   failure(isVar(e));
 end isNotVar;
 
-public function isVar "function: isVar 
-  author: LS
- 
+public function isVar "
   Succeeds if Element is a variable.
 "
   input DAE.Element inElement;
@@ -3402,15 +3247,14 @@ algorithm
   end matchcontinue;
 end isVar;
 
-public function isFunctionRefVar 
-"function: isFunctionRefVar
-  return true if the element is a function reference variable"
+public function isFunctionRefVar "
+  return true if the element is a function reference variable
+"
   input DAE.Element inElem;
   output Boolean outBoolean;
 algorithm
-  outBoolean:=
-  matchcontinue (inElem)
-    case DAE.VAR(ty = DAE.FUNCTION_REFERENCE()) then true;
+  outBoolean := matchcontinue (inElem)
+    case DAE.VAR(ty = (Types.T_FUNCTION(_,_),_)) then true;
     case _ then false;
   end matchcontinue;
 end isFunctionRefVar;
@@ -3515,17 +3359,15 @@ algorithm
       Exp.ComponentRef cr,cr1,cr2;
       DAE.VarKind vk;
       DAE.VarDirection vd;
-      DAE.Type ty;
+      Types.Type t;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
       Exp.Exp e,exp,e1,e2;
       DAE.DAElist l;
       Absyn.Path fpath;
-      Types.Type t;
     case DAE.VAR(componentRef = cr,
              kind = vk,
              direction = vd,
-             ty = ty,
              binding = NONE,
              variableAttributesOption = dae_var_attr,
              absynCommentOption = comment)
@@ -3545,7 +3387,6 @@ algorithm
     case DAE.VAR(componentRef = cr,
              kind = vk,
              direction = vd,
-             ty = ty,
              binding = SOME(e),
              variableAttributesOption = dae_var_attr,
              absynCommentOption = comment)
@@ -3875,25 +3716,23 @@ protected function buildGrElement "function: buildGrElement
   input DAE.Element inElement;
   output Graphviz.Node outNode;
 algorithm 
-  outNode:=
-  matchcontinue (inElement)
+  outNode := matchcontinue (inElement)
     local
       String crstr,vkstr,expstr,expstr_1,e1str,e2str,n,fstr;
       Exp.ComponentRef cr,cr1,cr2;
       DAE.VarKind vk;
       DAE.VarDirection vd;
-      DAE.Type ty;
       Exp.Exp exp,e1,e2;
       Graphviz.Node node;
       DAE.DAElist dae;
       Absyn.Path fpath;
-    case DAE.VAR(componentRef = cr,kind = vk,direction = vd,ty = ty,binding = NONE)
+    case DAE.VAR(componentRef = cr,kind = vk,direction = vd,binding = NONE)
       equation 
         crstr = Exp.printComponentRefStr(cr);
         vkstr = dumpKindStr(vk);
       then
         Graphviz.LNODE("VAR",{crstr,vkstr},{},{});
-    case DAE.VAR(componentRef = cr,kind = vk,direction = vd,ty = ty,binding = SOME(exp))
+    case DAE.VAR(componentRef = cr,kind = vk,direction = vd,binding = SOME(exp))
       equation 
         crstr = Exp.printComponentRefStr(cr);
         vkstr = dumpKindStr(vk);
@@ -3940,9 +3779,7 @@ algorithm
         node = buildGraphviz(dae);
       then
         Graphviz.LNODE("COMP",{n},{},{node});
-    case DAE.FUNCTION(path = fpath,dAElist = dae,type_ = ty)
-      local
-        Types.Type ty;
+    case DAE.FUNCTION(path = fpath,dAElist = dae)
       equation 
         node = buildGraphviz(dae);
         fstr = Absyn.pathString(fpath);
@@ -3981,29 +3818,16 @@ algorithm
   matchcontinue (inElementLst)
     local
       list<DAE.Element> res,lst;
-      Exp.ComponentRef a;
-      DAE.VarKind b;
       DAE.Element x;    
-      DAE.VarDirection c;
-      DAE.VarProtection prot;
-      DAE.Type d;
-      DAE.InstDims f;
-      DAE.Flow h;
-      Option<Exp.Exp> e,g;
-      list<Absyn.Path> i;
-      Option<DAE.VariableAttributes> dae_var_attr;
-      Option<SCode.Comment> comment;
-      Absyn.InnerOuter io;
-      Types.Type tp;
             
     /* adrpo: filter out records! */
-    case ((x as DAE.VAR(ty = DAE.COMPLEX(_,_))) :: lst)
+    case ((x as DAE.VAR(ty = (Types.T_COMPLEX(complexClassType = ClassInf.RECORD(_)),_))) :: lst)
       equation
         res = getVariableList(lst);
       then
         (res);   
               
-    case ((x as DAE.VAR(_,_,_,_,_,_,_,_,_,_,_,_,_,_)) :: lst)
+    case ((x as DAE.VAR(_,_,_,_,_,_,_,_,_,_,_,_,_)) :: lst)
       equation 
         res = getVariableList(lst);
       then
@@ -4320,7 +4144,7 @@ algorithm
       Exp.ComponentRef cr,cr_1;
       DAE.VarKind a;
       DAE.VarDirection b;
-      DAE.Type c;
+      Types.Type t;
       DAE.InstDims e;
       DAE.Flow g;
       DAE.Stream streamPrefix;
@@ -4333,8 +4157,6 @@ algorithm
       Option<SCode.Comment> comment;
       Exp.Exp e_1,e1_1,e2_1,e1,e2;
       Absyn.Path p;
-      tuple<Types.TType, Option<Absyn.Path>> t;
-      Types.Type tp;
       Absyn.InnerOuter io;
       list<Exp.Exp> conds, conds_1;
       list<list<DAE.Element>> trueBranches, trueBranches_1;
@@ -4345,7 +4167,7 @@ algorithm
                kind = a,
                direction = b,
                protection = prot,
-               ty = c,
+               ty = t,
                binding = d,
                dims = e,
                flowPrefix = g,
@@ -4353,8 +4175,7 @@ algorithm
                pathLst = h,
                variableAttributesOption = dae_var_attr,
                absynCommentOption = comment,
-               innerOuter=io,
-               fullType=tp) :: elts))
+               innerOuter=io) :: elts))
       local
         Exp.Type ty;
       equation 
@@ -4364,8 +4185,8 @@ algorithm
         d_1 = toModelicaFormExpOpt(d);
         ty = Exp.crefType(cr); 
       then
-        (DAE.VAR(Exp.CREF_IDENT(str_1,ty,{}),a,b,prot,c,d_1,e,g,streamPrefix,h,dae_var_attr,
-          comment,io,tp) :: elts_1);
+        (DAE.VAR(Exp.CREF_IDENT(str_1,ty,{}),a,b,prot,t,d_1,e,g,streamPrefix,h,dae_var_attr,
+          comment,io) :: elts_1);
     case ((DAE.DEFINE(componentRef = cr,exp = e) :: elts))
       local
         Exp.Exp e;
@@ -4505,7 +4326,7 @@ algorithm
       DAE.VarKind a2;
       DAE.VarDirection a3;
       DAE.VarProtection a4;
-      DAE.Type a5;
+      Types.Type a5;
       DAE.InstDims a7;
       DAE.Flow a8;
       DAE.Stream a9;
@@ -4514,9 +4335,8 @@ algorithm
       Option<DAE.VariableAttributes> a11;
       Option<SCode.Comment> a12;
       Absyn.InnerOuter a13;
-      Types.Type a14;
-    case(newCr, DAE.VAR(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14))
-      then DAE.VAR(newCr,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14);
+    case(newCr, DAE.VAR(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13))
+      then DAE.VAR(newCr,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13);
   end matchcontinue;
 end replaceCrefInVar;
 
@@ -4783,7 +4603,6 @@ algorithm
       Exp.ComponentRef cref;
       DAE.VarKind vk;
       DAE.VarDirection vd;
-      DAE.Type ty;
       DAE.InstDims instdims;
       DAE.Flow flowPrefix;
       DAE.Element el;
@@ -4973,7 +4792,7 @@ algorithm
       Exp.ComponentRef cref;
       DAE.VarKind vk;
       DAE.VarDirection vd;
-      DAE.Type ty;
+      Types.Type ty;
       Option<Exp.Exp> bndexp,startvalexp;
       DAE.InstDims instdims;
       DAE.Flow flowPrefix;
@@ -5561,7 +5380,7 @@ algorithm (traversedDaeList,Type_a) := matchcontinue(daeList,func,extraArg)
     DAE.Element elt,elt2,elt22,elt1,elt11;
     DAE.VarKind kind;
     DAE.VarDirection dir;
-    DAE.Type tp;
+    Types.Type tp;
     DAE.InstDims dims;
     DAE.StartValue start;
     DAE.Flow fl;
@@ -5574,7 +5393,6 @@ algorithm (traversedDaeList,Type_a) := matchcontinue(daeList,func,extraArg)
     Option<SCode.Comment> cmt;
     Option<Exp.Exp> optExp;
     Absyn.InnerOuter io;
-    Types.Type ftp;
     list<Integer> idims;
     String id;
     Absyn.Path path;
@@ -5585,13 +5403,13 @@ algorithm (traversedDaeList,Type_a) := matchcontinue(daeList,func,extraArg)
     Absyn.Path path; 
     list<Exp.Exp> expl;
   case({},_,extraArg) then ({},extraArg);
-  case(DAE.VAR(cr,kind,dir,prot,tp,optExp,dims,fl,st,clsLst,attr,cmt,io,ftp)::dae,func,extraArg) 
+  case(DAE.VAR(cr,kind,dir,prot,tp,optExp,dims,fl,st,clsLst,attr,cmt,io)::dae,func,extraArg) 
     equation
       (Exp.CREF(cr2,_),extraArg) = func(Exp.CREF(cr,Exp.REAL()), extraArg);
       (optExp,extraArg) = traverseDAEOptExp(optExp,func,extraArg);      
       (attr,extraArg) = traverseDAEVarAttr(attr,func,extraArg);
       (dae2,extraArg) = traverseDAE(dae,func,extraArg);
-    then (DAE.VAR(cr2,kind,dir,prot,tp,optExp,dims,fl,st,clsLst,attr,cmt,io,ftp)::dae2,extraArg);
+    then (DAE.VAR(cr2,kind,dir,prot,tp,optExp,dims,fl,st,clsLst,attr,cmt,io)::dae2,extraArg);
       
   case(DAE.DEFINE(cr,e)::dae,func,extraArg)
     equation
@@ -5670,22 +5488,22 @@ algorithm (traversedDaeList,Type_a) := matchcontinue(daeList,func,extraArg)
       (dae2,extraArg) = traverseDAE(dae,func,extraArg);
     then (DAE.COMP(id,DAE.DAE(elist))::dae2,extraArg);
       
-  case(DAE.FUNCTION(path,DAE.DAE(elist),ftp,partialPrefix)::dae,func,extraArg) 
+  case(DAE.FUNCTION(path,DAE.DAE(elist),tp,partialPrefix)::dae,func,extraArg) 
     equation
       (elist2,extraArg) = traverseDAE(elist,func,extraArg);
       (dae2,extraArg) = traverseDAE(dae,func,extraArg);
-    then (DAE.FUNCTION(path,DAE.DAE(elist2),ftp,partialPrefix)::dae2,extraArg);
+    then (DAE.FUNCTION(path,DAE.DAE(elist2),tp,partialPrefix)::dae2,extraArg);
       
-  case(DAE.EXTFUNCTION(path,DAE.DAE(elist),ftp,extDecl)::dae,func,extraArg) 
+  case(DAE.EXTFUNCTION(path,DAE.DAE(elist),tp,extDecl)::dae,func,extraArg) 
     equation
       (elist2,extraArg) = traverseDAE(elist,func,extraArg);
       (dae2,extraArg) = traverseDAE(dae,func,extraArg);
-    then (DAE.EXTFUNCTION(path,DAE.DAE(elist2),ftp,extDecl)::dae2,extraArg);
+    then (DAE.EXTFUNCTION(path,DAE.DAE(elist2),tp,extDecl)::dae2,extraArg);
       
-  case(DAE.RECORD_CONSTRUCTOR(path,ftp)::dae,func,extraArg) 
+  case(DAE.RECORD_CONSTRUCTOR(path,tp)::dae,func,extraArg) 
     equation
       (dae2,extraArg) = traverseDAE(dae,func,extraArg);
-    then (DAE.RECORD_CONSTRUCTOR(path,ftp)::dae2,extraArg);
+    then (DAE.RECORD_CONSTRUCTOR(path,tp)::dae2,extraArg);
       
   case(DAE.EXTOBJECTCLASS(path,elt1,elt2)::dae,func,extraArg) 
     equation

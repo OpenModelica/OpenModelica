@@ -1501,7 +1501,7 @@ algorithm
       list<DAELow.Var> vs;
       Integer nx,ny,np,indx,off,indx_1,varTypeInt;
       DAELow.VarKind kind;
-      DAE.Type varType;
+      DAELow.Type varType;
       String value,name;
     case ({},str_arr,_,_,_) then str_arr;  /* nx ny np */
     case ((v :: vs),str_arr,nx,ny,np) /* skip constants */
@@ -1538,16 +1538,15 @@ protected function vartypeAttrInt
 "function vartypeAttrInt 
   helper function to generateAttrVectorType2
   calculates the int value of the type of a variable (1 .. 8)"
-input DAE.Type tp;
+input DAELow.Type tp;
 output Integer res;
 algorithm
   res := matchcontinue (tp)
-		  case DAE.REAL() then 1;
-	  	case DAE.STRING() then 2;
-	  	case DAE.INT() then 4;
-	  	case DAE.BOOL() then 8;
-//  		case DAE.ENUM() then 0;
-  		case DAE.ENUMERATION(_) then 4;
+		  case DAELow.REAL() then 1;
+	  	case DAELow.STRING() then 2;
+	  	case DAELow.INT() then 4;
+	  	case DAELow.BOOL() then 8;
+  		case DAELow.ENUMERATION(_) then 4;
 	  end matchcontinue;
 end vartypeAttrInt;
 
@@ -1556,17 +1555,16 @@ protected function varDiscreteAttrInt
  calculates the int value of the variability of a variable.
   0 - continuous time variable
  16 - discrete time variable."
-input DAE.Type tp;
+input DAELow.Type tp;
 input DAELow.VarKind kind;
 output Integer res;
 algorithm
   res := matchcontinue (tp,kind)
-	  	case (DAE.REAL(),DAELow.DISCRETE()) then 16;
+	  	case (DAELow.REAL(),DAELow.DISCRETE()) then 16;
 	  	case (_,DAELow.DISCRETE()) then 16;
-	  	case (DAE.INT(),_) then 16;
-	  	case (DAE.BOOL(),_) then 16;
-  		case (DAE.ENUMERATION(_),_) then 16;
-//  		case (DAE.ENUM(),_) then 16;
+	  	case (DAELow.INT(),_) then 16;
+	  	case (DAELow.BOOL(),_) then 16;
+  		case (DAELow.ENUMERATION(_),_) then 16;
   		case (_,_) then 0;
 	  end matchcontinue;
 end varDiscreteAttrInt;
@@ -1619,7 +1617,7 @@ algorithm
       list<DAELow.Var> vs;
       Integer nx,ny,np,indx,off,indx_1,varTypeInt;
       DAELow.VarKind kind;
-      DAE.Type varType;
+      DAELow.Type varType;
       DAELow.VarKind varKind;
       String value,name,oldVal;
     case ({},str_arr,_,_,_) then str_arr;  /* nx ny np */
@@ -2294,7 +2292,7 @@ end generateVarNamesAndComments2;
 
 protected function generateGetnameFunctionIf
   input Exp.ComponentRef cr;
-  input DAE.Type tp;
+  input DAELow.Type tp;
   input Integer index;
   input String c_array_name;
   output String ret_str;
@@ -2302,7 +2300,7 @@ protected function generateGetnameFunctionIf
 algorithm
   ret_str := matchcontinue(cr,tp,index,c_array_name)
   	// Strings require an extra cast.
-    case (cr,DAE.STRING(),index,c_array_name)
+    case (cr,DAELow.STRING(),index,c_array_name)
       equation
         cr_str = Exp.printComponentRefStr(cr);
         index_str = intString(index);
@@ -2364,7 +2362,7 @@ algorithm
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
       list<String> name_arr,comment_arr,get_name_function_ifs,var_defines;
-      DAE.Type tp;
+      DAELow.Type tp;
     case ((var as DAELow.VAR(varName = cr,
                              varKind = kind,
                              varDirection = dir,
@@ -2435,7 +2433,7 @@ algorithm
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
       list<String> name_arr,comment_arr,get_name_function_ifs,var_defines;
-      DAE.Type tp;
+      DAELow.Type tp;
       
     case ((var as DAELow.VAR(varName = cr,
                              varKind = kind,
@@ -2511,13 +2509,13 @@ algorithm
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
       list<String> get_name_function_ifs,var_defines;
-      DAE.Type typeVar;
+      DAELow.Type typeVar;
       Integer num_stralg;
     /* String variables*/
     case (DAELow.VAR(varName = cr,
                      varKind = kind,
                      varDirection = dir,
-                     varType = typeVar as DAE.STRING(),
+                     varType = typeVar as DAELow.STRING(),
                      arryDim = inst_dims,
                      index = indx,
                      origVarName = origname,
@@ -2598,7 +2596,7 @@ protected function generateNameDependentOnType
 "function: generateAlgebraicNameDependentOnType
   generates the name of the algebraic variable depending on type"
   input String baseName;
-  input DAE.Type inType;
+  input DAELow.Type inType;
   output String outString;
 algorithm
   outString:=
@@ -2607,22 +2605,22 @@ algorithm
       String str;
       list<String> l;
       String baseArrayName;
-    case (baseArrayName,DAE.INT())
+    case (baseArrayName,DAELow.INT())
     equation
        str = Util.stringAppendList({baseArrayName,""});
     then
        str;
-    case (baseArrayName,DAE.REAL() )
+    case (baseArrayName,DAELow.REAL() )
     equation
        str = Util.stringAppendList({baseArrayName,""});
     then
        str;
-    case (baseArrayName,DAE.BOOL())
+    case (baseArrayName,DAELow.BOOL())
     equation
        str = Util.stringAppendList({baseArrayName,""});
     then
        str;
-    case (baseArrayName,DAE.STRING())
+    case (baseArrayName,DAELow.STRING())
     equation
        str = Util.stringAppendList({"stringVariables",".",baseArrayName});
     then
@@ -2632,14 +2630,14 @@ algorithm
 //       str = Util.stringAppendList({baseArrayName,""});
 //    then
 //       str;
-    case (baseArrayName,DAE.ENUMERATION(stringLst = l))
+    case (baseArrayName,DAELow.ENUMERATION(stringLst = l))
       equation
 //       print("generateNameDependentOnType - Enumeration not implemented yet\n");
        str = Util.stringAppendList({baseArrayName,""});
       then
 //       fail();
        str;
-    case (baseArrayName,DAE.EXT_OBJECT(_) )
+    case (baseArrayName,DAELow.EXT_OBJECT(_) )
     equation
        str = Util.stringAppendList({baseArrayName,""});
     then
@@ -2686,13 +2684,13 @@ algorithm
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
       list<String> get_name_function_ifs,var_defines;
-      DAE.Type typeVar;
+      DAELow.Type typeVar;
 
       /* String parameters */
     case ((var as DAELow.VAR(varName = cr,
                              varKind = kind,
                              varDirection = dir,
-                             varType = typeVar as DAE.STRING(),
+                             varType = typeVar as DAELow.STRING(),
                              arryDim = inst_dims,
                              index = indx,
                              origVarName = origname,
@@ -2762,10 +2760,9 @@ algorithm
   end matchcontinue;
 end generateVarNamesAndCommentsParams;
 
-protected function generateVarNamesAndCommentsExtObjs 
-"function generateVarNamesAndCommentsExtObjs
-  author: PA
-  Checks and generates a comment and input for a external object variable"
+protected function generateVarNamesAndCommentsExtObjs "
+  Checks and generates a comment and input for a external object variable
+"
   input DAELow.Var inVar1;
   input String[:] inStringArray2;
   input String[:] inStringArray3;
@@ -2859,7 +2856,7 @@ algorithm
       Option<DAE.VariableAttributes> dae_var_attr;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
-      DAE.Type tp;
+      DAELow.Type tp;
       
     /* the variable to checked name of the from \"a\" comment of the from \"a afhalk\" name of the 
        from \"der(a)\" comment of the from \"a afhalk\" the old number of variables generated name 
@@ -3053,8 +3050,7 @@ protected function generateInputFunctionCode2
   input Integer inInteger;
   output list<String> outStringLst;
 algorithm
-  outStringLst:=
-  matchcontinue (inDAELowVarLst,inInteger)
+  outStringLst := matchcontinue (inDAELowVarLst,inInteger)
     local
       Integer int,i_1,index,i;
       String i_str,cr_str,assign_str;
@@ -3062,7 +3058,7 @@ algorithm
       DAELow.Var var;
       Exp.ComponentRef cr,name;
       DAE.VarDirection dir;
-      DAE.Type tp;
+      DAELow.Type tp;
       Option<Exp.Exp> exp,st;
       Option<Values.Value> v;
       list<Exp.Subscript> dim;
@@ -3160,7 +3156,7 @@ algorithm
       DAELow.Var var;
       Exp.ComponentRef cr,name;
       DAE.VarDirection dir;
-      DAE.Type tp;
+      DAELow.Type tp;
       Option<Exp.Exp> exp,st;
       Option<Values.Value> v;
       list<Exp.Subscript> dim;
@@ -4548,13 +4544,13 @@ algorithm
     case (_,{},cg_id) then ({},{});  /* discrete vars cg var_id values value dimension */
     case (rels,(v :: vs),cg_id) /* booleans, generate true (1.0) and false (0.0) */
       equation
-        DAE.BOOL() = DAELow.varType(v);
+        DAELow.BOOL() = DAELow.varType(v);
         (values,dims) = generateMixedDiscretePossibleValues2(rels, vs, cg_id);
       then
         (({"1.0","0.0"} :: values),(2 :: dims));
     case (rels,(v :: vs),_)
       equation
-        DAE.INT() = DAELow.varType(v);
+        DAELow.INT() = DAELow.varType(v);
         Error.addMessage(Error.INTERNAL_ERROR,
           {
           "Mixed system of equations with dicrete variables of type Integer not supported. Try to rewrite using Boolean variables."});
@@ -4818,9 +4814,7 @@ algorithm
   end matchcontinue;
 end isMixedSystem;
 
-protected function hasDiscreteVar "function: hasDiscreteVar
-  author: PA
-
+protected function hasDiscreteVar "
   Helper function to is_mixed_system. Returns true if var list contains
   discrete time variable.
 "
@@ -4835,8 +4829,8 @@ algorithm
       DAELow.Var v;
       list<DAELow.Var> vs;
     case ((DAELow.VAR(varName = cr,varKind = DAELow.DISCRETE()) :: _)) then true;
-    case ((DAELow.VAR(varName = cr,varType = DAE.INT()) :: _)) then true;
-    case ((DAELow.VAR(varName = cr,varType = DAE.BOOL()) :: _)) then true;
+    case ((DAELow.VAR(varName = cr,varType = DAELow.INT()) :: _)) then true;
+    case ((DAELow.VAR(varName = cr,varType = DAELow.BOOL()) :: _)) then true;
     case ((v :: vs))
       equation
         res = hasDiscreteVar(vs);
@@ -6181,7 +6175,7 @@ algorithm
       String index_str,name,c_name,res;
       Exp.ComponentRef cr;
       DAE.VarDirection dir;
-      DAE.Type tp;
+      DAELow.Type tp;
       Option<Exp.Exp> exp,st;
       Option<Values.Value> v;
       list<Exp.Subscript> dim;
@@ -6828,7 +6822,7 @@ algorithm
     /* Strings handled separately */
     case ((DAELow.VAR(varName = cr,
                       varKind = DAELow.VARIABLE(),
-                      varType = DAE.STRING(),
+                      varType = DAELow.STRING(),
                       index = indx,
                       origVarName = origname,
                       values = dae_var_attr,
@@ -7010,7 +7004,7 @@ algorithm
       
 		/* String-Parameters handled separately*/
     case ((DAELow.VAR(varKind = DAELow.PARAM(),
-                      varType = DAE.STRING(),
+                      varType = DAELow.STRING(),
                       bindValue = SOME(value),
                       index = indx,
                       origVarName = origname,
@@ -9370,7 +9364,7 @@ algorithm
   outPath:=
   matchcontinue (inElem)
     local Absyn.Path path;
-    case DAE.VAR(ty = DAE.FUNCTION_REFERENCE(), fullType = (_,SOME(path))) then path;
+    case DAE.VAR(ty = ((Types.T_FUNCTION(_,_)),SOME(path))) then path;
   end matchcontinue;
 end getFunctionRefVarPath;
 
