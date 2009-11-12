@@ -5225,6 +5225,12 @@ algorithm
       then
         (cfn,tvar,tnr);
 
+    case (Exp.CALL(path = Absyn.IDENT(name = "mmc_unbox_record"),expLst = {s1},tuple_ = false,builtin = true, ty = tp),tnr,context)
+      equation
+        tvar = "/* mmc_unbox_record failed: " +& Exp.typeString(tp) +& "*/";
+      then
+        (cEmptyFunction,tvar,tnr);
+
         //----
   end matchcontinue;
 end generateBuiltinFunction;

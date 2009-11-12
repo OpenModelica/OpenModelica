@@ -3725,7 +3725,7 @@ algorithm
 
     case ((T_NORETCALL(),_)) then Exp.T_NORETCALL();
     
-    case ((T_COMPLEX(CIS,tcvl as _::_,_,_),_))
+    case ((T_COMPLEX(CIS,tcvl,_,_),_))
       local 
         list<Var> tcvl; 
         ClassInf.State CIS; 
@@ -3738,7 +3738,14 @@ algorithm
       then
         t_1;         
         /* This is the case when the type is currently UNTYPED */
-    case ((_,_)) /* equation print(" untyped \n"); */ then Exp.OTHER(); 
+    case ((_,_))
+      equation
+        /*
+        print(" untyped ");
+        print(unparseType(inType));
+        print("\n");
+        */
+      then Exp.OTHER(); 
   end matchcontinue;
 end elabType;
 
