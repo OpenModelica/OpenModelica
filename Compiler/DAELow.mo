@@ -766,9 +766,9 @@ protected function expandDerOperatorAlg
 algorithm
   (outAlg,outVars) := matchcontinue(alg,vars)
   local list<Algorithm.Statement> stmts;
-    case(Algorithm.ALGORITHM(stmts),vars) equation
+    case(DAE.ALGORITHM_STMTS(stmts),vars) equation
       (stmts,vars)  = expandDerOperatorStmts(stmts,vars);
-    then (Algorithm.ALGORITHM(stmts),vars);
+    then (DAE.ALGORITHM_STMTS(stmts),vars);
   end matchcontinue;
 end expandDerOperatorAlg;
 
@@ -806,60 +806,60 @@ algorithm
       Exp.Exp e1,e2;
       Algorithm.Else elseB;
 
-    case(Algorithm.ASSIGN(tp,e2,e1),vars) equation
+    case(DAE.STMT_ASSIGN(tp,e2,e1),vars) equation
       ((e1,vars)) = Exp.traverseExp(e1,expandDerExp,vars);
       ((e2,vars)) = Exp.traverseExp(e2,expandDerExp,vars);
-    then (Algorithm.ASSIGN(tp,e2,e1),vars);
+    then (DAE.STMT_ASSIGN(tp,e2,e1),vars);
 
-    case(Algorithm.TUPLE_ASSIGN(tp,expl,e1),vars) equation
+    case(DAE.STMT_TUPLE_ASSIGN(tp,expl,e1),vars) equation
       ((e1,vars)) = Exp.traverseExp(e1,expandDerExp,vars);
       (expl,vars) = expandDerExps(expl,vars);
-    then (Algorithm.TUPLE_ASSIGN(tp,expl,e1),vars);
+    then (DAE.STMT_TUPLE_ASSIGN(tp,expl,e1),vars);
 
-    case(Algorithm.ASSIGN_ARR(tp,cr,e1),vars) equation
+    case(DAE.STMT_ASSIGN_ARR(tp,cr,e1),vars) equation
       ((e1,vars)) = Exp.traverseExp(e1,expandDerExp,vars);
-    then (Algorithm.ASSIGN_ARR(tp,cr,e1),vars);
+    then (DAE.STMT_ASSIGN_ARR(tp,cr,e1),vars);
 
-    case(Algorithm.IF(e1,stmts,elseB),vars) equation
+    case(DAE.STMT_IF(e1,stmts,elseB),vars) equation
       ((e1,vars)) = Exp.traverseExp(e1,expandDerExp,vars);
       (stmts,vars) = expandDerOperatorStmts(stmts,vars);
       (elseB,vars) = expandDerOperatorElseBranch(elseB,vars);
-    then (Algorithm.IF(e1,stmts,elseB),vars);
+    then (DAE.STMT_IF(e1,stmts,elseB),vars);
 
-    case(Algorithm.FOR(tp,b,id,e1,stmts),vars) equation
+    case(DAE.STMT_FOR(tp,b,id,e1,stmts),vars) equation
       (stmts,vars) = expandDerOperatorStmts(stmts,vars);
       ((e1,vars)) = Exp.traverseExp(e1,expandDerExp,vars);
-    then (Algorithm.FOR(tp,b,id,e1,stmts),vars);
+    then (DAE.STMT_FOR(tp,b,id,e1,stmts),vars);
 
-    case(Algorithm.WHILE(e1,stmts),vars) equation
+    case(DAE.STMT_WHILE(e1,stmts),vars) equation
       (stmts,vars) = expandDerOperatorStmts(stmts,vars);
       ((e1,vars)) = Exp.traverseExp(e1,expandDerExp,vars);
-    then (Algorithm.WHILE(e1,stmts),vars);
+    then (DAE.STMT_WHILE(e1,stmts),vars);
 
-    case(Algorithm.WHEN(e1,stmts,SOME(stmt),hv),vars) equation
+    case(DAE.STMT_WHEN(e1,stmts,SOME(stmt),hv),vars) equation
       (stmts,vars) = expandDerOperatorStmts(stmts,vars);
       (stmt,vars) = expandDerOperatorStmt(stmt,vars);
       ((e1,vars)) = Exp.traverseExp(e1,expandDerExp,vars);
-    then (Algorithm.WHEN(e1,stmts,SOME(stmt),hv),vars);
+    then (DAE.STMT_WHEN(e1,stmts,SOME(stmt),hv),vars);
 
-    case(Algorithm.WHEN(e1,stmts,NONE,hv),vars) equation
+    case(DAE.STMT_WHEN(e1,stmts,NONE,hv),vars) equation
       (stmts,vars) = expandDerOperatorStmts(stmts,vars);
       ((e1,vars)) = Exp.traverseExp(e1,expandDerExp,vars);
-    then (Algorithm.WHEN(e1,stmts,NONE,hv),vars);
+    then (DAE.STMT_WHEN(e1,stmts,NONE,hv),vars);
 
-    case(Algorithm.ASSERT(e1,e2),vars) equation
+    case(DAE.STMT_ASSERT(e1,e2),vars) equation
       ((e1,vars)) = Exp.traverseExp(e1,expandDerExp,vars);
       ((e2,vars)) = Exp.traverseExp(e2,expandDerExp,vars);
-    then (Algorithm.ASSERT(e1,e2),vars);
+    then (DAE.STMT_ASSERT(e1,e2),vars);
 
-    case(Algorithm.TERMINATE(e1),vars) equation
+    case(DAE.STMT_TERMINATE(e1),vars) equation
       ((e1,vars)) = Exp.traverseExp(e1,expandDerExp,vars);
-    then (Algorithm.TERMINATE(e1),vars);
+    then (DAE.STMT_TERMINATE(e1),vars);
 
-    case(Algorithm.REINIT(e1,e2),vars) equation
+    case(DAE.STMT_REINIT(e1,e2),vars) equation
       ((e1,vars)) = Exp.traverseExp(e1,expandDerExp,vars);
       ((e1,vars)) = Exp.traverseExp(e2,expandDerExp,vars);
-    then (Algorithm.REINIT(e1,e2),vars);
+    then (DAE.STMT_REINIT(e1,e2),vars);
 
     case(stmt,vars)      then (stmt,vars);
 
@@ -878,13 +878,13 @@ algorithm
       list<Algorithm.Statement> stmts;
       Algorithm.Else elseB;
 
-    case(Algorithm.NOELSE(),vars) then (Algorithm.NOELSE(),vars);
+    case(DAE.NOELSE(),vars) then (DAE.NOELSE(),vars);
 
-    case(Algorithm.ELSEIF(e1,stmts,elseB),vars) equation
+    case(DAE.ELSEIF(e1,stmts,elseB),vars) equation
       ((e1,vars)) = Exp.traverseExp(e1,expandDerExp,vars);
       (stmts,vars) = expandDerOperatorStmts(stmts,vars);
       (elseB,vars) = expandDerOperatorElseBranch(elseB,vars);
-    then (Algorithm.ELSEIF(e1,stmts,elseB),vars);
+    then (DAE.ELSEIF(e1,stmts,elseB),vars);
   end matchcontinue;
 end expandDerOperatorElseBranch;
 
@@ -1299,7 +1299,7 @@ algorithm
       equation
         eq_count_1 = eq_count + 1;
         zc1 = findZeroCrossings2(v, knvars,xs, eq_count_1, {}, 0,algs);
-        Algorithm.ALGORITHM(stmts) = listNth(algs,ind);
+        DAE.ALGORITHM_STMTS(stmts) = listNth(algs,ind);
         rel = Algorithm.getAllExpsStmts(stmts);
         rellst1 = Util.listFlatten(Util.listMap2(rel,findZeroCrossings3, v,knvars));
         zc2 = makeZeroCrossings(rellst1, {eq_count}, {});
@@ -2317,8 +2317,8 @@ algorithm
   _ := matchcontinue(algs)
     local list<Algorithm.Statement> stmts;
     case({}) then ();
-    case(Algorithm.ALGORITHM(stmts)::algs) equation
-      print(DAEUtil.dumpAlgorithmStr(DAE.ALGORITHM(Algorithm.ALGORITHM(stmts))));
+    case(DAE.ALGORITHM_STMTS(stmts)::algs) equation
+      print(DAEUtil.dumpAlgorithmStr(DAE.ALGORITHM(DAE.ALGORITHM_STMTS(stmts))));
       dumpAlgorithms(algs);
     then ();
   end matchcontinue;
@@ -4714,7 +4714,7 @@ algorithm
         checkAssertCondition(cond,msg);
         (v,kv,extVars,e,re,ie,ae,al,whenclauses_1,extObjCls) = lower2(DAE.DAE(xs), states,vars,knvars,extVars,whenclauses);
       then
-        (v,kv,extVars,e,re,ie,ae,Algorithm.ALGORITHM({Algorithm.ASSERT(cond,msg)})::al,whenclauses_1,extObjCls);
+        (v,kv,extVars,e,re,ie,ae,DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(cond,msg)})::al,whenclauses_1,extObjCls);
 
     /* terminate in equation section is converted to ALGORITHM */
     case (DAE.DAE(elementLst = (DAE.TERMINATE(msg) :: xs)),states,vars,knvars,extVars,whenclauses)
@@ -4725,7 +4725,7 @@ algorithm
       equation
         (v,kv,extVars,e,re,ie,ae,al,whenclauses_1,extObjCls) = lower2(DAE.DAE(xs), states, vars,knvars,extVars, whenclauses) ;
       then
-        (v,kv,extVars,e,re,ie,ae,Algorithm.ALGORITHM({Algorithm.TERMINATE(msg)})::al,whenclauses_1,extObjCls);
+        (v,kv,extVars,e,re,ie,ae,DAE.ALGORITHM_STMTS({DAE.STMT_TERMINATE(msg)})::al,whenclauses_1,extObjCls);
 
     case (DAE.DAE(elementLst = (DAE.INITIALALGORITHM(_) :: xs)),states,vars,knvars,extVars,whenclauses)
       local
@@ -4780,10 +4780,10 @@ algorithm
       list<Exp.Exp> expl;
       /* Only succeds for tuple equations, i.e. (a,b,c) = foo(x,y,z) or foo(x,y,z) = (a,b,c) */
     case(DAE.EQUATION(Exp.TUPLE(expl),e2 as Exp.CALL(path =_)))
-    then Algorithm.ALGORITHM({Algorithm.TUPLE_ASSIGN(Exp.OTHER(),expl,e2)});
+    then DAE.ALGORITHM_STMTS({DAE.STMT_TUPLE_ASSIGN(Exp.OTHER(),expl,e2)});
 
     case(DAE.EQUATION(e2 as Exp.CALL(path =_),Exp.TUPLE(expl)))
-    then Algorithm.ALGORITHM({Algorithm.TUPLE_ASSIGN(Exp.OTHER(),expl,e2)});
+    then DAE.ALGORITHM_STMTS({DAE.STMT_TUPLE_ASSIGN(Exp.OTHER(),expl,e2)});
   end matchcontinue;
 end lowerTupleEquation;
 
@@ -5025,11 +5025,11 @@ algorithm
       Variables vars;
       Algorithm.Statement s;
       list<Algorithm.Statement> ss;
-    case (_,Algorithm.ALGORITHM(statementLst = {})) then ({},{});
-    case (vars,Algorithm.ALGORITHM(statementLst = (s :: ss)))
+    case (_,DAE.ALGORITHM_STMTS(statementLst = {})) then ({},{});
+    case (vars,DAE.ALGORITHM_STMTS(statementLst = (s :: ss)))
       equation
         (inputs1,outputs1) = lowerStatementInputsOutputs(vars, s);
-        (inputs2,outputs2) = lowerAlgorithmInputsOutputs(vars, Algorithm.ALGORITHM(ss));
+        (inputs2,outputs2) = lowerAlgorithmInputsOutputs(vars, DAE.ALGORITHM_STMTS(ss));
         inputs = Util.listUnionOnTrue(inputs1, inputs2, Exp.expEqual);
         outputs = Util.listUnionOnTrue(outputs1, outputs2, Exp.expEqual);
       then
@@ -5075,27 +5075,27 @@ algorithm
       list<Exp.ComponentRef> crefs;
       Exp.Exp exp1;
 			// a := expr;
-    case (vars,Algorithm.ASSIGN(type_ = tp,exp1 = exp1,exp = e))
+    case (vars,DAE.STMT_ASSIGN(type_ = tp,exp1 = exp1,exp = e))
       equation
         inputs = statesAndVarsExp(e, vars);
       then
         (inputs,{exp1});
-    case (vars,Algorithm.WHEN(exp = e,statementLst = statements,elseWhen = NONE))
+    case (vars,DAE.STMT_WHEN(exp = e,statementLst = statements,elseWhen = NONE))
       equation
-        (inputs,outputs) = lowerAlgorithmInputsOutputs(vars,Algorithm.ALGORITHM(statements));
+        (inputs,outputs) = lowerAlgorithmInputsOutputs(vars,DAE.ALGORITHM_STMTS(statements));
         inputs2 = list_append(statesAndVarsExp(e, vars),inputs);
       then
         (inputs2,outputs);
-    case (vars,Algorithm.WHEN(exp = e,statementLst = statements,elseWhen = SOME(stmt)))
+    case (vars,DAE.STMT_WHEN(exp = e,statementLst = statements,elseWhen = SOME(stmt)))
       equation
 				(inputs1, outputs1) = lowerStatementInputsOutputs(vars,stmt);
-        (inputs,outputs) = lowerAlgorithmInputsOutputs(vars,Algorithm.ALGORITHM(statements));
+        (inputs,outputs) = lowerAlgorithmInputsOutputs(vars,DAE.ALGORITHM_STMTS(statements));
         inputs2 = list_append(statesAndVarsExp(e, vars),inputs);
         outputs2 = list_append(outputs, outputs1);
       then
         (inputs2,outputs2);
 			// (a,b,c) := foo(...)
-    case (vars,Algorithm.TUPLE_ASSIGN(tp,expl,e))
+    case (vars,DAE.STMT_TUPLE_ASSIGN(tp,expl,e))
       equation
         inputs = statesAndVarsExp(e,vars);
         crefs = Util.listFlatten(Util.listMap(expl,Exp.getCrefFromExp));
@@ -5103,21 +5103,21 @@ algorithm
       then
         (inputs,outputs);
         // v := expr   where v is array.
-    case (vars,Algorithm.ASSIGN_ARR(tp,cr,e))
+    case (vars,DAE.STMT_ASSIGN_ARR(tp,cr,e))
       equation
         inputs = statesAndVarsExp(e,vars);
       then (inputs,{Exp.CREF(cr,tp)});
 
-    case(vars,Algorithm.IF(e,stmts,elsebranch))
+    case(vars,DAE.STMT_IF(e,stmts,elsebranch))
       equation
-        (inputs1,outputs1) = lowerAlgorithmInputsOutputs(vars,Algorithm.ALGORITHM(stmts));
+        (inputs1,outputs1) = lowerAlgorithmInputsOutputs(vars,DAE.ALGORITHM_STMTS(stmts));
         (inputs2,outputs2) = lowerElseAlgorithmInputsOutputs(vars,elsebranch);
         inputs3 = statesAndVarsExp(e,vars);
         inputs = Util.listListUnionOnTrue({inputs1, inputs2,inputs3}, Exp.expEqual);
         outputs = Util.listUnionOnTrue(outputs1, outputs2, Exp.expEqual);
       then (inputs,outputs);
 
-    case(vars,Algorithm.ASSERT(cond = e1,msg=e2))
+    case(vars,DAE.STMT_ASSERT(cond = e1,msg=e2))
       local Exp.Exp e1,e2;
       equation
         inputs1 = statesAndVarsExp(e1,vars);
@@ -5126,11 +5126,11 @@ algorithm
      then (inputs,{});
 
 			// Features not yet supported.
-    case(vars,Algorithm.FOR(type_=_))
+    case(vars,DAE.STMT_FOR(type_=_))
       equation
         Error.addMessage(Error.INTERNAL_ERROR,{"For statements in algorithms not supported yet. Suggested workaround: place for statement in a Modelica function"});
      then fail();
-    case(vars,Algorithm.WHILE(exp=_))
+    case(vars,DAE.STMT_WHILE(exp=_))
       equation
         Error.addMessage(Error.INTERNAL_ERROR,{"While statements in algorithms not supported yet. Suggested workaround: place while statement in a Modelica function"});
      then fail();
@@ -5149,20 +5149,20 @@ algorithm
         list<Algorithm.Statement> stmts;
         list<Exp.Exp> inputs1,inputs2,inputs3,outputs1,outputs2;
         Exp.Exp e;
-    case(vars,Algorithm.NOELSE()) then ({},{});
+    case(vars,DAE.NOELSE()) then ({},{});
 
-    case(vars,Algorithm.ELSEIF(e,stmts,elseBranch))
+    case(vars,DAE.ELSEIF(e,stmts,elseBranch))
        equation
       (inputs1, outputs1) = lowerElseAlgorithmInputsOutputs(vars,elseBranch);
-      (inputs2, outputs2) = lowerAlgorithmInputsOutputs(vars,Algorithm.ALGORITHM(stmts));
+      (inputs2, outputs2) = lowerAlgorithmInputsOutputs(vars,DAE.ALGORITHM_STMTS(stmts));
       inputs3 = statesAndVarsExp(e,vars);
       inputs = Util.listListUnionOnTrue({inputs1, inputs2, inputs3}, Exp.expEqual);
       outputs = Util.listUnionOnTrue(outputs1, outputs2, Exp.expEqual);
     then (inputs,outputs);
 
-      case(vars,Algorithm.ELSE(stmts))
+      case(vars,DAE.ELSE(stmts))
         equation
-          (inputs, outputs) = lowerAlgorithmInputsOutputs(vars,Algorithm.ALGORITHM(stmts));
+          (inputs, outputs) = lowerAlgorithmInputsOutputs(vars,DAE.ALGORITHM_STMTS(stmts));
         then (inputs,outputs);
   end matchcontinue;
 end lowerElseAlgorithmInputsOutputs;
@@ -5945,7 +5945,7 @@ algorithm
       list<Exp.Exp> expl;
       Algorithm.Else else_;
     case ({},_) then {};
-    case ((Algorithm.ASSIGN(type_ = tp,exp1 = e1,exp = e) :: rest),vars)
+    case ((DAE.STMT_ASSIGN(type_ = tp,exp1 = e1,exp = e) :: rest),vars)
       equation
         lst1 = incidenceRowStmts(rest, vars);
         lst2 = incidenceRowExp(e, vars);
@@ -5953,7 +5953,7 @@ algorithm
         res = Util.listFlatten({lst1,lst2,lst3});
       then
         res;
-    case ((Algorithm.TUPLE_ASSIGN(type_ = tp,expExpLst = expl,exp = e) :: rest),vars)
+    case ((DAE.STMT_TUPLE_ASSIGN(type_ = tp,expExpLst = expl,exp = e) :: rest),vars)
       local list<list<Value>> lst3;
       equation
         lst1 = incidenceRowStmts(rest, vars);
@@ -5963,7 +5963,7 @@ algorithm
         res = Util.listFlatten({lst1,lst2,lst3_1});
       then
         res;
-    case ((Algorithm.ASSIGN_ARR(type_ = tp,componentRef = cr,exp = e) :: rest),vars)
+    case ((DAE.STMT_ASSIGN_ARR(type_ = tp,componentRef = cr,exp = e) :: rest),vars)
       equation
         lst1 = incidenceRowStmts(rest, vars);
         lst2 = incidenceRowExp(e, vars);
@@ -5971,27 +5971,27 @@ algorithm
         res = Util.listFlatten({lst1,lst2,lst3});
       then
         res;
-    case ((Algorithm.IF(exp = e,statementLst = stmts,else_ = else_) :: rest),vars)
+    case ((DAE.STMT_IF(exp = e,statementLst = stmts,else_ = else_) :: rest),vars)
       equation
         print("incidence_row_stmts on IF not implemented\n");
       then
         {};
-    case ((Algorithm.FOR(type_ = _) :: rest),vars)
+    case ((DAE.STMT_FOR(type_ = _) :: rest),vars)
       equation
         print("incidence_row_stmts on FOR not implemented\n");
       then
         {};
-    case ((Algorithm.WHILE(exp = _) :: rest),vars)
+    case ((DAE.STMT_WHILE(exp = _) :: rest),vars)
       equation
         print("incidence_row_stmts on WHILE not implemented\n");
       then
         {};
-    case ((Algorithm.WHEN(exp = e) :: rest),vars)
+    case ((DAE.STMT_WHEN(exp = e) :: rest),vars)
       equation
         print("incidence_row_stmts on WHEN not implemented\n");
       then
         {};
-    case ((Algorithm.ASSERT(cond = _) :: rest),vars)
+    case ((DAE.STMT_ASSERT(cond = _) :: rest),vars)
       equation
         print("incidence_row_stmts on ASSERT not implemented\n");
       then
@@ -11046,12 +11046,12 @@ algorithm
       list<Algorithm.Statement> stmts_1,stmts;
       list<Exp.Exp> s,t;
     case ({},_,_) then {};
-    case ((Algorithm.ALGORITHM(statementLst = stmts) :: algs),s,t)
+    case ((DAE.ALGORITHM_STMTS(statementLst = stmts) :: algs),s,t)
       equation
         algs_1 = replaceVariablesInAlg2(algs, s, t);
         stmts_1 = replaceVariablesInStmts(stmts, s, t);
       then
-        (Algorithm.ALGORITHM(stmts_1) :: algs_1);
+        (DAE.ALGORITHM_STMTS(stmts_1) :: algs_1);
   end matchcontinue;
 end replaceVariablesInAlg2;
 
@@ -11114,61 +11114,61 @@ algorithm
       String id;
       Algorithm.Statement a, stmt1, stmt;
       list<Integer> helpVarLst;
-    case (Algorithm.ASSIGN(type_ = tp,exp1 = exp1,exp = e),s,t)
+    case (DAE.STMT_ASSIGN(type_ = tp,exp1 = exp1,exp = e),s,t)
       equation
         (e2,_) = Exp.replaceExpList(e, s, t);
         (e1,_) = Exp.replaceExpList(exp1, s, t);
       then
-        Algorithm.ASSIGN(tp,e1,e2);
-    case (Algorithm.TUPLE_ASSIGN(type_ = tp,expExpLst = expl,exp = exp),s,t)
+        DAE.STMT_ASSIGN(tp,e1,e2);
+    case (DAE.STMT_TUPLE_ASSIGN(type_ = tp,expExpLst = expl,exp = exp),s,t)
       equation
         (expl_1,_) = Util.listMap22(expl, Exp.replaceExpList, s, t);
         (exp_1,_) = Exp.replaceExpList(exp, s, t);
       then
-        Algorithm.TUPLE_ASSIGN(tp,expl_1,exp_1);
-    case (Algorithm.ASSIGN_ARR(type_ = tp,componentRef = cr,exp = e),s,t)
+        DAE.STMT_TUPLE_ASSIGN(tp,expl_1,exp_1);
+    case (DAE.STMT_ASSIGN_ARR(type_ = tp,componentRef = cr,exp = e),s,t)
       equation
         (e_1,_) = Exp.replaceExpList(e, s, t);
       then
-        Algorithm.ASSIGN_ARR(tp,cr,e);
-    case (Algorithm.IF(exp = e,statementLst = stmts,else_ = else_branch),s,t)
+        DAE.STMT_ASSIGN_ARR(tp,cr,e);
+    case (DAE.STMT_IF(exp = e,statementLst = stmts,else_ = else_branch),s,t)
       equation
         (e_1,_) = Exp.replaceExpList(e, s, t);
         stmts_1 = replaceVariablesInStmts(stmts, s, t);
         else_branch_1 = replaceVariablesInElseBranch(else_branch, s, t);
       then
-        Algorithm.IF(e_1,stmts_1,else_branch_1);
-    case (Algorithm.FOR(type_ = tp,boolean = b,ident = id,exp = e,statementLst = stmts),s,t)
+        DAE.STMT_IF(e_1,stmts_1,else_branch_1);
+    case (DAE.STMT_FOR(type_ = tp,boolean = b,ident = id,exp = e,statementLst = stmts),s,t)
       equation
         (e_1,_) = Exp.replaceExpList(e, s, t);
         stmts_1 = replaceVariablesInStmts(stmts, s, t);
       then
-        Algorithm.FOR(tp,b,id,e_1,stmts_1);
-    case (Algorithm.WHILE(exp = e,statementLst = stmts),s,t)
+        DAE.STMT_FOR(tp,b,id,e_1,stmts_1);
+    case (DAE.STMT_WHILE(exp = e,statementLst = stmts),s,t)
       equation
         (e_1,_) = Exp.replaceExpList(e, s, t);
         stmts_1 = replaceVariablesInStmts(stmts, s, t);
       then
-        Algorithm.WHILE(e_1,stmts_1);
-    case (Algorithm.WHEN(exp = e,statementLst = stmts,elseWhen = NONE,helpVarIndices=helpVarLst),s,t)
+        DAE.STMT_WHILE(e_1,stmts_1);
+    case (DAE.STMT_WHEN(exp = e,statementLst = stmts,elseWhen = NONE,helpVarIndices=helpVarLst),s,t)
       equation
         (e_1,_) = Exp.replaceExpList(e, s, t);
         stmts_1 = replaceVariablesInStmts(stmts, s, t);
       then
-        Algorithm.WHEN(e_1,stmts_1,NONE,helpVarLst);
-    case (Algorithm.WHEN(exp = e,statementLst = stmts,elseWhen = SOME(stmt),helpVarIndices=helpVarLst),s,t)
+        DAE.STMT_WHEN(e_1,stmts_1,NONE,helpVarLst);
+    case (DAE.STMT_WHEN(exp = e,statementLst = stmts,elseWhen = SOME(stmt),helpVarIndices=helpVarLst),s,t)
       equation
         stmt1 = replaceVariablesInStmt(stmt,s,t);
         (e_1,_) = Exp.replaceExpList(e, s, t);
         stmts_1 = replaceVariablesInStmts(stmts, s, t);
       then
-        Algorithm.WHEN(e_1,stmts_1,SOME(stmt1),helpVarLst);
-    case (Algorithm.ASSERT(cond = e1,msg = e2),s,t)
+        DAE.STMT_WHEN(e_1,stmts_1,SOME(stmt1),helpVarLst);
+    case (DAE.STMT_ASSERT(cond = e1,msg = e2),s,t)
       equation
         (e1_1,_) = Exp.replaceExpList(e1, s, t);
         (e2_1,_) = Exp.replaceExpList(e2, s, t);
       then
-        Algorithm.ASSERT(e1_1,e2_1);
+        DAE.STMT_ASSERT(e1_1,e2_1);
     case (a,_,_)
       equation
         print("Warning, fallthrough in replace_variables_in_stmts\n");
@@ -11200,19 +11200,19 @@ algorithm
       Exp.Exp e_1,e;
       list<Algorithm.Statement> stmts_1,stmts;
       list<Exp.Exp> s,t;
-    case (Algorithm.NOELSE(),_,_) then Algorithm.NOELSE();
-    case (Algorithm.ELSEIF(exp = e,statementLst = stmts,else_ = else_branch),s,t)
+    case (DAE.NOELSE(),_,_) then DAE.NOELSE();
+    case (DAE.ELSEIF(exp = e,statementLst = stmts,else_ = else_branch),s,t)
       equation
         else_branch_1 = replaceVariablesInElseBranch(else_branch, s, t);
         (e_1,_) = Exp.replaceExpList(e, s, t);
         stmts_1 = replaceVariablesInStmts(stmts, s, t);
       then
-        Algorithm.ELSEIF(e_1,stmts_1,else_branch_1);
-    case (Algorithm.ELSE(statementLst = stmts),s,t)
+        DAE.ELSEIF(e_1,stmts_1,else_branch_1);
+    case (DAE.ELSE(statementLst = stmts),s,t)
       equation
         stmts_1 = replaceVariablesInStmts(stmts, s, t);
       then
-        Algorithm.ELSE(stmts_1);
+        DAE.ELSE(stmts_1);
   end matchcontinue;
 end replaceVariablesInElseBranch;
 

@@ -525,11 +525,11 @@ algorithm
       list<Algorithm.Statement> stmts;
       Integer algNo;
     case({},_) then ();
-    case(Algorithm.ALGORITHM(stmts)::algs,algNo)
+    case(DAE.ALGORITHM_STMTS(stmts)::algs,algNo)
       local Integer algNo_1;
       equation
         dumpStrOpenTagAttr(ALGORITHM, LABEL, stringAppend(stringAppend(ALGORITHM_REF,"_"),intString(algNo)));
-        Print.printBuf(DAEUtil.dumpAlgorithmStr(DAE.ALGORITHM(Algorithm.ALGORITHM(stmts))));
+        Print.printBuf(DAEUtil.dumpAlgorithmStr(DAE.ALGORITHM(DAE.ALGORITHM_STMTS(stmts))));
         dumpStrCloseTag(ALGORITHM);
         algNo_1=algNo+1;
         dumpAlgorithms2(algs,algNo_1);

@@ -206,7 +206,7 @@ algorithm
         elem = Exp.INITIALEQUATION(e1,e2);
       then elem;
 
-    case (DAE.ALGORITHM(Algorithm.ALGORITHM(alg)))
+    case (DAE.ALGORITHM(DAE.ALGORITHM_STMTS(alg)))
     local
       list<Algorithm.Statement> alg;
       Exp.DAEElement elem;
@@ -418,7 +418,7 @@ public function fromAlgStateToExpState "function: fromAlgStateToExpState
 	output Exp.Statement outState;
 algorithm
   outState := matchcontinue (algState)
-    case (Algorithm.ASSIGN(t,e1,e))
+    case (DAE.STMT_ASSIGN(t,e1,e))
       local
     		Exp.Type t;
     		Exp.Exp e,e1;
@@ -426,7 +426,7 @@ algorithm
       equation
         elem = Exp.ASSIGN(t,e1,e);
       then elem;
-    case (Algorithm.TUPLE_ASSIGN(t,expLst,e))
+    case (DAE.STMT_TUPLE_ASSIGN(t,expLst,e))
     	local
     		Exp.Type t;
     		list<Exp.Exp> expLst;
@@ -435,7 +435,7 @@ algorithm
     	equation
     	  elem = Exp.TUPLE_ASSIGN(t,expLst,e);
     	then elem;
-    case (Algorithm.ASSIGN_ARR(t,compRef,e))
+    case (DAE.STMT_ASSIGN_ARR(t,compRef,e))
        local
          Exp.Type t;
     		 Exp.ComponentRef compRef;
@@ -444,7 +444,7 @@ algorithm
        equation
          elem = Exp.ASSIGN_ARR(t,compRef,e);
        then elem;
-    case (Algorithm.IF(e,sLst,else_))
+    case (DAE.STMT_IF(e,sLst,else_))
       	local
       	  Exp.Exp e;
       	  list<Algorithm.Statement> sLst;
@@ -457,7 +457,7 @@ algorithm
     		  else_2 = fromAlgElseToExpElse(else_);
     		  elem = Exp.IF(e,sLst2,else_2);
     		  then elem;
-    case (Algorithm.FOR(t,bool,i,e,sLst))
+    case (DAE.STMT_FOR(t,bool,i,e,sLst))
 				local
 		    	Exp.Type t;
     			Boolean bool;
@@ -470,7 +470,7 @@ algorithm
     		  sLst2 = fromAlgStatesToExpStates(sLst,{});
     		  elem = Exp.FOR(t,bool,i,e,sLst2);
     		then elem;
-    case (Algorithm.WHILE(e,sLst))
+    case (DAE.STMT_WHILE(e,sLst))
     		local
     			Exp.Exp e;
     			list<Algorithm.Statement> sLst;
@@ -480,7 +480,7 @@ algorithm
     		  sLst2 = fromAlgStatesToExpStates(sLst,{});
     		  elem = Exp.WHILE(e,sLst2);
     		then elem;
-    case (Algorithm.WHEN(e,sLst,SOME(eWhen),helpVar))
+    case (DAE.STMT_WHEN(e,sLst,SOME(eWhen),helpVar))
     		local
     			Exp.Exp e;
     			list<Algorithm.Statement> sLst;
@@ -494,7 +494,7 @@ algorithm
     		  eWhen2 = fromAlgStateToExpState(eWhen);
     		  elem = Exp.WHEN(e,sLst2,SOME(eWhen2),helpVar);
     		then elem;
-   case (Algorithm.WHEN(e,sLst,NONE(),helpVar))
+   case (DAE.STMT_WHEN(e,sLst,NONE(),helpVar))
     		local
     			Exp.Exp e;
     			list<Algorithm.Statement> sLst;
@@ -506,7 +506,7 @@ algorithm
     		  sLst2 = fromAlgStatesToExpStates(sLst,{});
     		  elem = Exp.WHEN(e,sLst2,NONE(),helpVar);
     		then elem;
-    case (Algorithm.ASSERT(e1,e2))
+    case (DAE.STMT_ASSERT(e1,e2))
       local
 		    Exp.Exp e1;
     		Exp.Exp e2;
@@ -514,7 +514,7 @@ algorithm
 			equation
 			  elem = Exp.ASSERTSTMT(e1,e2);
 			  then elem;
-    case (Algorithm.REINIT(var,value))
+    case (DAE.STMT_REINIT(var,value))
       local
         Exp.Exp var "Variable";
     		Exp.Exp value "Value ";
@@ -522,20 +522,20 @@ algorithm
       equation
         elem = Exp.REINITSTMT(var,value);
         then elem;
-    case (Algorithm.RETURN())
+    case (DAE.STMT_RETURN())
     local
       Exp.Statement elem;
     equation
       elem = Exp.RETURN();
       then elem;
-	  case (Algorithm.BREAK())
+	  case (DAE.STMT_BREAK())
     local
       Exp.Statement elem;
     equation
       elem = Exp.BREAK();
     then elem;
 	// Part of MetaModelica extension
-	  case (Algorithm.TRY(b))
+	  case (DAE.STMT_TRY(b))
 		  local
     		list<Algorithm.Statement> b;
     		Exp.Statement elem;
@@ -544,7 +544,7 @@ algorithm
     	  b2 = fromAlgStatesToExpStates(b,{});
     		elem = Exp.TRY(b2);
     	then elem;
-		case (Algorithm.CATCH(b))
+		case (DAE.STMT_CATCH(b))
     	local
 	    	list<Algorithm.Statement> b;
 	    	Exp.Statement elem;
@@ -553,31 +553,31 @@ algorithm
 	      b2 = fromAlgStatesToExpStates(b,{});
 	      elem = Exp.CATCH(b2);
 	      then elem;
-		case (Algorithm.THROW())
+		case (DAE.STMT_THROW())
 		  local
       Exp.Statement elem;
     equation
       elem = Exp.THROW();
     then elem;
-		case (Algorithm.GOTO(s))
+		case (DAE.STMT_GOTO(s))
 		  local
 		    Exp.Statement elem;
 		    String s;
 		  equation
 		    elem = Exp.GOTO(s);
 		  then elem;
-		case (Algorithm.LABEL(s))
+		case (DAE.STMT_LABEL(s))
 		  local
 		    Exp.Statement elem;
 		    String s;
 		  equation
 		    elem = Exp.LABEL(s);
 		  then elem;
-	  case (Algorithm.MATCHCASES(exps)) // matchcontinue helper
+	  case (DAE.STMT_MATCHCASES(exps)) // matchcontinue helper
       local
         list<Exp.Exp> exps;
       then Exp.MATCHCASES(exps);
-	  case (Algorithm.NORETCALL(exp))
+	  case (DAE.STMT_NORETCALL(exp))
 	    local
 	      Exp.Exp exp;
 	    then Exp.NORETCALL(exp);
@@ -598,9 +598,9 @@ public function fromAlgElseToExpElse "function: fromAlgElseToExpElse
 algorithm
 	elseOut :=
 	matchcontinue (elseIn)
-	  case (Algorithm.NOELSE())
+	  case (DAE.NOELSE())
 	    equation then Exp.NOELSE();
-	  case (Algorithm.ELSEIF(e,sLst,else_))
+	  case (DAE.ELSEIF(e,sLst,else_))
 	   local
 	     Exp.Exp e;
 	     list<Algorithm.Statement> sLst;
@@ -613,7 +613,7 @@ algorithm
       else_2 = fromAlgElseToExpElse(else_);
       elem = Exp.ELSEIF(e,sLst2,else_2);
 	  then elem;
-	  case (Algorithm.ELSE(sLst))
+	  case (DAE.ELSE(sLst))
 	   local
 	     list<Algorithm.Statement> sLst;
 	     Exp.Else elem;
@@ -794,7 +794,7 @@ algorithm
       list<Algorithm.Statement> alg2;
     equation
       alg2 = fromExpStatesToAlgStates(alg,{});
-      elem = DAE.ALGORITHM(Algorithm.ALGORITHM(alg2));
+      elem = DAE.ALGORITHM(DAE.ALGORITHM_STMTS(alg2));
     then elem;
 
       // MISSING record COMP, record FUNCTION, record EXTFUNCTION
@@ -1019,7 +1019,7 @@ algorithm
     		Exp.Exp e,e1;
     		Algorithm.Statement elem;
       equation
-        elem = Algorithm.ASSIGN(t,e1,e);
+        elem = DAE.STMT_ASSIGN(t,e1,e);
       then elem;
     case (Exp.TUPLE_ASSIGN(t,expLst,e))
     	local
@@ -1028,7 +1028,7 @@ algorithm
     		Exp.Exp e;
     		Algorithm.Statement elem;
     	equation
-    	  elem = Algorithm.TUPLE_ASSIGN(t,expLst,e);
+    	  elem = DAE.STMT_TUPLE_ASSIGN(t,expLst,e);
     	then elem;
     case (Exp.ASSIGN_ARR(t,compRef,e))
        local
@@ -1037,7 +1037,7 @@ algorithm
          Exp.Exp e;
          Algorithm.Statement elem;
        equation
-         elem = Algorithm.ASSIGN_ARR(t,compRef,e);
+         elem = DAE.STMT_ASSIGN_ARR(t,compRef,e);
          then elem;
     case (Exp.IF(e,sLst,else_))
       	local
@@ -1050,7 +1050,7 @@ algorithm
     		equation
     		  sLst2 = fromExpStatesToAlgStates(sLst,{});
     		  else_2 = fromExpElseToAlgElse(else_);
-    		  elem = Algorithm.IF(e,sLst2,else_2);
+    		  elem = DAE.STMT_IF(e,sLst2,else_2);
     		  then elem;
     case (Exp.FOR(t,bool,i,e,sLst))
 				local
@@ -1063,7 +1063,7 @@ algorithm
     			list<Algorithm.Statement> sLst2;
     		equation
     		  sLst2 = fromExpStatesToAlgStates(sLst,{});
-    		  elem = Algorithm.FOR(t,bool,i,e,sLst2);
+    		  elem = DAE.STMT_FOR(t,bool,i,e,sLst2);
     		then elem;
     case (Exp.WHILE(e,sLst))
     		local
@@ -1073,7 +1073,7 @@ algorithm
     			list<Algorithm.Statement> sLst2;
     		equation
     		  sLst2 = fromExpStatesToAlgStates(sLst,{});
-    		  elem = Algorithm.WHILE(e,sLst2);
+    		  elem = DAE.STMT_WHILE(e,sLst2);
     		then elem;
     case (Exp.WHEN(e,sLst,NONE(),helpVar))
     		local
@@ -1085,7 +1085,7 @@ algorithm
     			list<Algorithm.Statement> sLst2;
     		equation
     		  sLst2 = fromExpStatesToAlgStates(sLst,{});
-    		  elem = Algorithm.WHEN(e,sLst2,NONE(),helpVar);
+    		  elem = DAE.STMT_WHEN(e,sLst2,NONE(),helpVar);
     		then elem;
     case (Exp.WHEN(e,sLst,SOME(eWhen),helpVar))
     		local
@@ -1099,7 +1099,7 @@ algorithm
     		equation
     		  sLst2 = fromExpStatesToAlgStates(sLst,{});
     		  eWhen2 = fromExpStateToAlgState(eWhen);
-    		  elem = Algorithm.WHEN(e,sLst2,SOME(eWhen2),helpVar);
+    		  elem = DAE.STMT_WHEN(e,sLst2,SOME(eWhen2),helpVar);
     		then elem;
     case (Exp.ASSERTSTMT(e1,e2))
       local
@@ -1107,7 +1107,7 @@ algorithm
     		Exp.Exp e2;
     		Algorithm.Statement elem;
 			equation
-			  elem = Algorithm.ASSERT(e1,e2);
+			  elem = DAE.STMT_ASSERT(e1,e2);
 			  then elem;
     case (Exp.REINITSTMT(var,value))
       local
@@ -1115,19 +1115,19 @@ algorithm
     		Exp.Exp value "Value ";
         Algorithm.Statement elem;
       equation
-        elem = Algorithm.REINIT(var,value);
+        elem = DAE.STMT_REINIT(var,value);
         then elem;
     case (Exp.RETURN())
     local
       Algorithm.Statement elem;
     equation
-      elem = Algorithm.RETURN();
+      elem = DAE.STMT_RETURN();
       then elem;
 	  case (Exp.BREAK())
     local
       Algorithm.Statement elem;
     equation
-      elem = Algorithm.BREAK();
+      elem = DAE.STMT_BREAK();
     then elem;
 	// Part of MetaModelica extension
 	  case (Exp.TRY(b))
@@ -1137,7 +1137,7 @@ algorithm
     		list<Algorithm.Statement> b2;
     	equation
     	  b2 = fromExpStatesToAlgStates(b,{});
-    		elem = Algorithm.TRY(b2);
+    		elem = DAE.STMT_TRY(b2);
     	then elem;
 		case (Exp.CATCH(b))
     	local
@@ -1146,36 +1146,36 @@ algorithm
     		list<Algorithm.Statement> b2;
 	    equation
 	      b2 = fromExpStatesToAlgStates(b,{});
-	      elem = Algorithm.CATCH(b2);
+	      elem = DAE.STMT_CATCH(b2);
 	      then elem;
 		case (Exp.THROW())
 		  local
 		    Algorithm.Statement elem;
 		  equation
-		    elem = Algorithm.THROW();
+		    elem = DAE.STMT_THROW();
 		  then elem;
 		case (Exp.GOTO(s))
 		  local
 		    Algorithm.Statement elem;
 		    String s;
 		  equation
-		    elem = Algorithm.GOTO(s);
+		    elem = DAE.STMT_GOTO(s);
 		  then elem;
 		case (Exp.LABEL(s))
 		  local
 		    String s;
 		    Algorithm.Statement elem;
 		  equation
-		    elem = Algorithm.LABEL(s);
+		    elem = DAE.STMT_LABEL(s);
 		  then elem;
 	  case (Exp.MATCHCASES(exps)) // matchcontinue helper
       local
         list<Exp.Exp> exps;
-      then Algorithm.MATCHCASES(exps);
+      then DAE.STMT_MATCHCASES(exps);
 	  case (Exp.NORETCALL(exp))
 	    local
 	      Exp.Exp exp;
-	    then Algorithm.NORETCALL(exp);
+	    then DAE.STMT_NORETCALL(exp);
 	  case _
 	    equation
 	      Debug.fprintln("failtrace", "- Convert.fromExpStateToAlgState failed");
@@ -1192,7 +1192,7 @@ algorithm
 	elseOut :=
 	matchcontinue (elseIn)
 	  case (Exp.NOELSE())
-	    equation then Algorithm.NOELSE();
+	    equation then DAE.NOELSE();
 	  case (Exp.ELSEIF(e,sLst,else_))
 	   local
 	     Exp.Exp e;
@@ -1204,7 +1204,7 @@ algorithm
     equation
       sLst2 = fromExpStatesToAlgStates(sLst,{});
       else_2 = fromExpElseToAlgElse(else_);
-      elem = Algorithm.ELSEIF(e,sLst2,else_2);
+      elem = DAE.ELSEIF(e,sLst2,else_2);
 	  then elem;
 	  case (Exp.ELSE(sLst))
 	   local
@@ -1213,7 +1213,7 @@ algorithm
 	     list<Algorithm.Statement> sLst2;
     equation
       sLst2 = fromExpStatesToAlgStates(sLst,{});
-      elem = Algorithm.ELSE(sLst2);
+      elem = DAE.ELSE(sLst2);
 	  then elem;
 	end matchcontinue;
 end fromExpElseToAlgElse;

@@ -302,12 +302,12 @@ algorithm
       list<Algorithm.Algorithm> rest,rest2;
       list<HelpVarInfo> helpvars1,helpvars2,helpvars;
     case (nextInd, {}) then ({},{},nextInd);
-    case (nextInd, (Algorithm.ALGORITHM(stmts))::rest)
+    case (nextInd, (DAE.ALGORITHM_STMTS(stmts))::rest)
       equation
         (helpvars1,rest2,nextInd2) = generateHelpVarsInAlgorithms(nextInd,rest);
         (helpvars2,stmts2,nextInd3) = generateHelpVarsInStatements(nextInd2,stmts);
         helpvars = listAppend(helpvars1,helpvars2);
-      then (helpvars,Algorithm.ALGORITHM(stmts2)::rest2,nextInd3);
+      then (helpvars,DAE.ALGORITHM_STMTS(stmts2)::rest2,nextInd3);
     case (_,_)
       equation
         Error.addMessage(Error.INTERNAL_ERROR,
@@ -372,30 +372,30 @@ algorithm
       Exp.Type ty;
       Boolean scalar;
       list<Integer> helpVarIndices1,helpVarIndices;
-    case (nextInd, Algorithm.WHEN(Exp.ARRAY(ty,scalar,el),statementLst,NONE,_))
+    case (nextInd, DAE.STMT_WHEN(Exp.ARRAY(ty,scalar,el),statementLst,NONE,_))
       equation
 				(helpvars1,el1,nextInd1) = generateHelpVarsInArrayCondition(nextInd,el);
 				helpVarIndices1 = Util.listIntRange(nextInd1-nextInd);
 				helpVarIndices = Util.listMap1(helpVarIndices1,intAdd,nextInd-1);
-      then (helpvars1,Algorithm.WHEN(Exp.ARRAY(ty,scalar,el1), statementLst,NONE,helpVarIndices),nextInd1);
+      then (helpvars1,DAE.STMT_WHEN(Exp.ARRAY(ty,scalar,el1), statementLst,NONE,helpVarIndices),nextInd1);
 
-    case (nextInd, Algorithm.WHEN(condition,statementLst,NONE,_))
-      then ({(nextInd,condition,-1)},Algorithm.WHEN(condition, statementLst,NONE,{nextInd}),nextInd+1);
+    case (nextInd, DAE.STMT_WHEN(condition,statementLst,NONE,_))
+      then ({(nextInd,condition,-1)},DAE.STMT_WHEN(condition, statementLst,NONE,{nextInd}),nextInd+1);
 
-    case (nextInd, Algorithm.WHEN(Exp.ARRAY(ty,scalar,el),statementLst,SOME(elseWhen),_))
+    case (nextInd, DAE.STMT_WHEN(Exp.ARRAY(ty,scalar,el),statementLst,SOME(elseWhen),_))
       equation
 				(helpvars1,el1,nextInd1) = generateHelpVarsInArrayCondition(nextInd,el);
 				helpVarIndices1 = Util.listIntRange(nextInd1-nextInd);
 				helpVarIndices = Util.listMap1(helpVarIndices1,intAdd,nextInd-1);
         (helpvars2,statement,nextInd2) = generateHelpVarsInStatement(nextInd1,elseWhen);
         helpvars = listAppend(helpvars1,helpvars2);
-      then (helpvars,Algorithm.WHEN(Exp.ARRAY(ty,scalar,el1), statementLst,SOME(statement),helpVarIndices),nextInd1);
+      then (helpvars,DAE.STMT_WHEN(Exp.ARRAY(ty,scalar,el1), statementLst,SOME(statement),helpVarIndices),nextInd1);
 
-    case (nextInd, Algorithm.WHEN(condition,statementLst,SOME(elseWhen),_))
+    case (nextInd, DAE.STMT_WHEN(condition,statementLst,SOME(elseWhen),_))
       equation
         (helpvars1,statement,nextInd1) = generateHelpVarsInStatement(nextInd+1,elseWhen);
       then ((nextInd,condition,-1)::helpvars1,
-        Algorithm.WHEN(condition, statementLst,SOME(statement),{nextInd}),nextInd1);
+        DAE.STMT_WHEN(condition, statementLst,SOME(statement),{nextInd}),nextInd1);
 
     case (nextInd, statement) then ({},statement,nextInd);
 
@@ -8087,7 +8087,7 @@ algorithm
       
     case ({},cg_id) then (Codegen.cEmptyFunction,cg_id);
       
-    case((a as Algorithm.ALGORITHM({Algorithm.ASSERT(cond =_)}))::algs,cg_id) 
+    case((a as DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(cond =_)}))::algs,cg_id) 
       equation
         (cfunc1,cg_id) = Codegen.generateAlgorithm(DAE.ALGORITHM(a),cg_id,Codegen.simContext);
         (cfunc2,cg_id) = generateAlgorithmAsserts2(algs,cg_id);

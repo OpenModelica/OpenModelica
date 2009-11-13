@@ -20,7 +20,7 @@
  *
  * This program is distributed  WITHOUT ANY WARRANTY; without
  * even the implied warranty of  MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * DAE.STMT_FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET DAE.STMT_FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
  * OF OSMC-PL.
  *
@@ -47,6 +47,7 @@ package Algorithm
   
 "
 
+public import DAE;
 public import Exp;
 public import Types;
 public import SCode;
@@ -55,133 +56,9 @@ public import Absyn;
 public 
 type Ident = String;
 
-public 
-uniontype Algorithm "The `Algorithm\' type corresponds to a whole algorithm section.
-  It is simple a list of algorithm statements."
-  record ALGORITHM
-    list<Statement> statementLst;
-  end ALGORITHM;
-
-end Algorithm;
-
-public 
-uniontype Statement "There are four kinds of statements.  Assignments (`a := b;\'),
-    if statements (`if A then B; elseif C; else D;\'), for loops
-    (`for i in 1:10 loop ...; end for;\') and when statements
-    (`when E do S; end when;\')."
-  record ASSIGN
-    Exp.Type type_;
-    Exp.Exp exp1;
-    Exp.Exp exp;
-  end ASSIGN;
-
-  record TUPLE_ASSIGN
-    Exp.Type type_;
-    list<Exp.Exp> expExpLst;
-    Exp.Exp exp;
-  end TUPLE_ASSIGN;
-
-  record ASSIGN_ARR
-    Exp.Type type_;
-    Exp.ComponentRef componentRef;
-    Exp.Exp exp;
-  end ASSIGN_ARR;
-
-  record IF
-    Exp.Exp exp;
-    list<Statement> statementLst;
-    Else else_;
-  end IF;
-
-  record FOR
-    Exp.Type type_;
-    Boolean boolean;
-    Ident ident;
-    Exp.Exp exp;
-    list<Statement> statementLst;
-  end FOR;
-
-  record WHILE
-    Exp.Exp exp;
-    list<Statement> statementLst;
-  end WHILE;
-
-  record WHEN
-    Exp.Exp exp;
-    list<Statement> statementLst;
-    Option<Statement> elseWhen;
-    list<Integer> helpVarIndices;
-  end WHEN;
-
-  record ASSERT "assert(cond,msg)"
-    Exp.Exp cond;
-    Exp.Exp msg;
-  end ASSERT;
-  
-  record TERMINATE "terminate(msg)"
-    Exp.Exp msg;
-  end TERMINATE;
-
-  record REINIT 
-    Exp.Exp var "Variable"; 
-    Exp.Exp value "Value "; 
-  end REINIT;
-  
-  record NORETCALL "call with no return value, i.e. no equation. 
-		   Typically sideeffect call of external function."  
-    Exp.Exp exp;
-  end NORETCALL;    
-  
-  record RETURN
-  end RETURN;
-  
-  record BREAK
-  end BREAK;
-
-  // MetaModelica extension. KS
-  record TRY
-    list<Statement> tryBody;
-  end TRY;
-
-  record CATCH
-    list<Statement> catchBody;
-  end CATCH;
-
-  record THROW
-  end THROW;
-
-  record GOTO
-    String labelName;
-  end GOTO;
-
-  record LABEL
-    String labelName;
-  end LABEL;
-  
-  record MATCHCASES "matchcontinue helper"
-    list<Exp.Exp> caseStmt;
-  end MATCHCASES;
-  
-  //-----
-
-end Statement;
-
-public 
-uniontype Else "An if statements can one or more `elseif\' branches and an
-    optional `else\' branch."
-  record NOELSE end NOELSE;
-
-  record ELSEIF
-    Exp.Exp exp;
-    list<Statement> statementLst;
-    Else else_;
-  end ELSEIF;
-
-  record ELSE
-    list<Statement> statementLst;
-  end ELSE;
-
-end Else;
+public type Algorithm = DAE.Algorithm;
+public type Statement = DAE.Statement;
+public type Else = DAE.Else;
 
 protected import Util;
 protected import Print;
@@ -193,7 +70,7 @@ public function algorithmEmpty "Returns true if algorithm is empty, i.e. no stat
   output Boolean empty;
 algorithm
   empty := matchcontinue(alg)
-    case(ALGORITHM({})) then true;
+    case(DAE.ALGORITHM_STMTS({})) then true;
     case(_) then false;
   end matchcontinue;
 end algorithmEmpty;
@@ -207,19 +84,19 @@ algorithm (reinits,rest) := matchcontinue(inAlgs)
     Statement a;
     list<Statement> al;
   case({}) then ({},{});
-  case(ALGORITHM(al as {a as REINIT(var = _)})::inAlgs) 
+  case(DAE.ALGORITHM_STMTS(al as {a as DAE.STMT_REINIT(var = _)})::inAlgs) 
     equation
       (reinits,rest) = splitReinits(inAlgs);
     then
-      (ALGORITHM({a})::reinits,rest); 
-  case(ALGORITHM(al as {a})::inAlgs) 
+      (DAE.ALGORITHM_STMTS({a})::reinits,rest); 
+  case(DAE.ALGORITHM_STMTS(al as {a})::inAlgs) 
     equation
       (reinits,rest) = splitReinits(inAlgs);
     then
       (reinits,a::rest);
-  case( ALGORITHM((a::al)):: inAlgs ) 
+  case( DAE.ALGORITHM_STMTS((a::al)):: inAlgs ) 
     equation
-      inAlgs = listAppend({ALGORITHM({a}),ALGORITHM(al)},inAlgs);
+      inAlgs = listAppend({DAE.ALGORITHM_STMTS({a}),DAE.ALGORITHM_STMTS(al)},inAlgs);
       (reinits,rest) = splitReinits(inAlgs);
     then 
       (reinits,rest);
@@ -228,7 +105,7 @@ end splitReinits;
 
 public function makeAssignment 
 "function: makeAssignment
-  This function creates an `ASSIGN\' construct, and checks that the
+  This function creates an `DAE.STMT_ASSIGN\' construct, and checks that the
   assignment is semantically valid, which means that the component
   being assigned is not constant, and that the types match.
   LS: Added call to getPropType and isPropAnyConst instead of
@@ -340,7 +217,7 @@ algorithm
         false = Types.isPropArray(lhprop);
         t = getPropExpType(lhprop);
       then
-        ASSIGN(t,Exp.CREF(c,crt),rhs_1);
+        DAE.STMT_ASSIGN(t,Exp.CREF(c,crt),rhs_1);
         /* TODO: Use this when we have fixed states in DAELow.lower(...)
         case (e1 as Exp.CALL(Absyn.IDENT("der"),{Exp.CREF(_,_)},_,_,_),lhprop,rhs,rhprop)
       equation 
@@ -348,7 +225,7 @@ algorithm
         false = Types.isPropArray(lhprop);
         t = getPropExpType(lhprop);
       then
-        ASSIGN(t,e1,rhs_1);
+        DAE.STMT_ASSIGN(t,e1,rhs_1);
       */
     case (Exp.CREF(componentRef = c,ty = crt),lhprop,rhs,rhprop)
       equation 
@@ -356,7 +233,7 @@ algorithm
         true = Types.isPropArray(lhprop);
         t = getPropExpType(lhprop);
       then
-        ASSIGN_ARR(t,c,rhs_1);
+        DAE.STMT_ASSIGN_ARR(t,c,rhs_1);
         
     case(e3 as Exp.ASUB(e1,ea2),lhprop,rhs,rhprop)
       local list<Exp.Exp> ea2;
@@ -365,12 +242,12 @@ algorithm
         //false = Types.isPropArray(lhprop); 
         t = getPropExpType(lhprop);        
       then     
-        ASSIGN(t,e3,rhs_1);
+        DAE.STMT_ASSIGN(t,e3,rhs_1);
   end matchcontinue;
 end makeAssignment2;
 
 public function makeTupleAssignment "function: makeTupleAssignment 
-  This function creates an `TUPLE_ASSIGN\' construct, and checks that the
+  This function creates an `DAE.STMT_TUPLE_ASSIGN\' construct, and checks that the
   assignment is semantically valid, which means that the component
   being assigned is not constant, and that the types match."
   input list<Exp.Exp> inExpExpLst;
@@ -423,7 +300,7 @@ algorithm
          /* Don\'t use new rhs\', since type conversions of several output args
 	 are not clearly defined. */ 
       then
-        TUPLE_ASSIGN(Exp.OTHER(),expl,rhs);
+        DAE.STMT_TUPLE_ASSIGN(Exp.OTHER(),expl,rhs);
     case (lhs,lprop,rhs,rprop,_)
       equation 
         Debug.fprint("failtrace", "- Algorithm.makeTupleAssignment failed\n");
@@ -470,7 +347,7 @@ algorithm
 end getTypeExpType;
 
 public function makeIf "function: makeIf
-  This function creates an `IF\' construct, checking that the types
+  This function creates an `DAE.STMT_IF\' construct, checking that the types
   of the parts are correct. Else part is generated using the makeElse
   function."
   input Exp.Exp inExp1;
@@ -494,7 +371,7 @@ algorithm
         (e,_) = Types.matchType(e,t,(Types.T_BOOL({}),NONE));
         else_ = makeElse(eib, fb);
       then
-        IF(e,tb,else_);
+        DAE.STMT_IF(e,tb,else_);
     case (e,Types.PROP(type_ = t),_,_,_)
       equation 
         e_str = Exp.printExpStr(e);
@@ -506,7 +383,7 @@ algorithm
 end makeIf;
 
 protected function makeElse "function: makeElse
-  This function creates the ELSE part of the IF and checks if is correct."
+  This function creates the ELSE part of the DAE.STMT_IF and checks if is correct."
   input list<tuple<Exp.Exp, Types.Properties, list<Statement>>> inTplExpExpTypesPropertiesStatementLstLst;
   input list<Statement> inStatementLst;
   output Else outElse;
@@ -520,14 +397,14 @@ algorithm
       list<tuple<Exp.Exp, Types.Properties, list<Statement>>> xs;
       Ident e_str,t_str;
       tuple<Types.TType, Option<Absyn.Path>> t;
-    case ({},{}) then NOELSE();  /* This removes empty else branches */ 
-    case ({},fb) then ELSE(fb); 
+    case ({},{}) then DAE.NOELSE();  /* This removes empty else branches */ 
+    case ({},fb) then DAE.ELSE(fb); 
     case (((e,Types.PROP(type_ = t),b) :: xs),fb)
       equation 
         (e,_) = Types.matchType(e,t,(Types.T_BOOL({}),NONE));
         else_ = makeElse(xs, fb);
       then
-        ELSEIF(e,b,else_);
+        DAE.ELSEIF(e,b,else_);
     case (((e,Types.PROP(type_ = t),_) :: _),_)
       equation 
         e_str = Exp.printExpStr(e);
@@ -539,7 +416,7 @@ algorithm
 end makeElse;
 
 public function makeFor "function: makeFor
-  This function creates a FOR construct, checking 
+  This function creates a DAE.STMT_FOR construct, checking 
   that the types of the parts are correct."
   input Ident inIdent;
   input Exp.Exp inExp;
@@ -561,7 +438,7 @@ algorithm
         array = Types.isArray(t);
         et = Types.elabType(t);
       then
-        FOR(et,array,i,e,stmts);
+        DAE.STMT_FOR(et,array,i,e,stmts);
     case (_,e,Types.PROP(type_ = t),_)
       equation 
         e_str = Exp.printExpStr(e);
@@ -573,7 +450,7 @@ algorithm
 end makeFor;
 
 public function makeWhile "function: makeWhile 
-  This function creates a WHILE construct, checking that the types
+  This function creates a DAE.STMT_WHILE construct, checking that the types
   of the parts are correct."
   input Exp.Exp inExp;
   input Types.Properties inProperties;
@@ -587,7 +464,7 @@ algorithm
       list<Statement> stmts;
       Ident e_str,t_str;
       tuple<Types.TType, Option<Absyn.Path>> t;
-    case (e,Types.PROP(type_ = (Types.T_BOOL(varLstBool = _),_)),stmts) then WHILE(e,stmts); 
+    case (e,Types.PROP(type_ = (Types.T_BOOL(varLstBool = _),_)),stmts) then DAE.STMT_WHILE(e,stmts); 
     case (e,Types.PROP(type_ = t),_)
       equation 
         e_str = Exp.printExpStr(e);
@@ -599,7 +476,7 @@ algorithm
 end makeWhile;
 
 public function makeWhenA "function: makeWhenA
-  This function creates a WHEN algorithm construct, 
+  This function creates a DAE.STMT_WHEN algorithm construct, 
   checking that the types of the parts are correct."
   input Exp.Exp inExp;
   input Types.Properties inProperties;
@@ -615,8 +492,8 @@ algorithm
       Option<Statement> elsew;
       Ident e_str,t_str;
       tuple<Types.TType, Option<Absyn.Path>> t;
-    case (e,Types.PROP(type_ = (Types.T_BOOL(varLstBool = _),_)),stmts,elsew) then WHEN(e,stmts,elsew,{}); 
-    case (e,Types.PROP(type_ = (Types.T_ARRAY(arrayType = (Types.T_BOOL(varLstBool = _),_)),_)),stmts,elsew) then WHEN(e,stmts,elsew,{}); 
+    case (e,Types.PROP(type_ = (Types.T_BOOL(varLstBool = _),_)),stmts,elsew) then DAE.STMT_WHEN(e,stmts,elsew,{}); 
+    case (e,Types.PROP(type_ = (Types.T_ARRAY(arrayType = (Types.T_BOOL(varLstBool = _),_)),_)),stmts,elsew) then DAE.STMT_WHEN(e,stmts,elsew,{}); 
     case (e,Types.PROP(type_ = t),_,_)
       equation 
         e_str = Exp.printExpStr(e);
@@ -643,7 +520,7 @@ algorithm
     case (var as Exp.CREF(_,_),val,Types.PROP(tp1,_),Types.PROP(tp2,_))  equation
      (val_1,_) = Types.matchType(val,tp2,(Types.T_REAL({}),NONE()));
       (var_1,_) = Types.matchType(var,tp1,(Types.T_REAL({}),NONE()));
-    then REINIT(var_1,val_1);  
+    then DAE.STMT_REINIT(var_1,val_1);  
   
    case (_,_,prop1,prop2)  equation
 			Error.addMessage(Error.INTERNAL_ERROR(),{"reinit called with wrong args"});
@@ -665,7 +542,7 @@ algorithm
   outStatement:=
   matchcontinue (inExp1,inExp2,inProperties3,inProperties4)
     local Exp.Exp cond,msg;
-    case (cond,msg,Types.PROP(type_ = (Types.T_BOOL(varLstBool = _),_)),Types.PROP(type_ = (Types.T_STRING(varLstString = _),_))) then ASSERT(cond,msg);  
+    case (cond,msg,Types.PROP(type_ = (Types.T_BOOL(varLstBool = _),_)),Types.PROP(type_ = (Types.T_STRING(varLstString = _),_))) then DAE.STMT_ASSERT(cond,msg);  
   end matchcontinue;
 end makeAssert;
 
@@ -679,7 +556,7 @@ algorithm
   outStatement:=
   matchcontinue (inExp1,inProperties3)
     local Exp.Exp cond,msg;
-    case (msg,Types.PROP(type_ = (Types.T_STRING(varLstString = _),_))) then TERMINATE(msg);  
+    case (msg,Types.PROP(type_ = (Types.T_STRING(varLstString = _),_))) then DAE.STMT_TERMINATE(msg);  
   end matchcontinue;
 end makeTerminate;
 
@@ -704,7 +581,7 @@ algorithm
     local
       list<Exp.Exp> exps;
       list<Statement> stmts;
-    case ALGORITHM(statementLst = stmts)
+    case DAE.ALGORITHM_STMTS(statementLst = stmts)
       equation 
         exps = getAllExpsStmts(stmts);
       then
@@ -743,74 +620,74 @@ algorithm
       Ident id;
       Statement elsew;
       Absyn.Path fname;
-    case ASSIGN(type_ = expty,exp1 = (e2 as Exp.CREF(cr,_)),exp = exp)
+    case DAE.STMT_ASSIGN(type_ = expty,exp1 = (e2 as Exp.CREF(cr,_)),exp = exp)
       equation 
         crexp = crefToExp(cr);
       then
         {crexp,exp};
-    case ASSIGN(type_ = expty,exp1 = (e2 as Exp.ASUB(e1,ea2)),exp = exp)
+    case DAE.STMT_ASSIGN(type_ = expty,exp1 = (e2 as Exp.ASUB(e1,ea2)),exp = exp)
       local list<Exp.Exp> ea2;
       equation 
       then
         {e2,exp};
-    case TUPLE_ASSIGN(type_ = expty,expExpLst = explist,exp = exp)
+    case DAE.STMT_TUPLE_ASSIGN(type_ = expty,expExpLst = explist,exp = exp)
       equation 
         exps = listAppend(explist, {exp});
       then
         exps;
-    case ASSIGN_ARR(type_ = expty,componentRef = cr,exp = exp)
+    case DAE.STMT_ASSIGN_ARR(type_ = expty,componentRef = cr,exp = exp)
       equation 
         crexp = crefToExp(cr);
       then
         {crexp,exp};
-    case IF(exp = exp,statementLst = stmts,else_ = else_)
+    case DAE.STMT_IF(exp = exp,statementLst = stmts,else_ = else_)
       equation 
         exps1 = getAllExpsStmts(stmts);
         elseexps = getAllExpsElse(else_);
         exps = listAppend(exps1, elseexps);
       then
         (exp :: exps);
-    case FOR(type_ = expty,boolean = flag,ident = id,exp = exp,statementLst = stmts)
+    case DAE.STMT_FOR(type_ = expty,boolean = flag,ident = id,exp = exp,statementLst = stmts)
       equation 
         exps = getAllExpsStmts(stmts);
       then
         (exp :: exps);
-    case WHILE(exp = exp,statementLst = stmts)
+    case DAE.STMT_WHILE(exp = exp,statementLst = stmts)
       equation 
         exps = getAllExpsStmts(stmts);
       then
         (exp :: exps);
-    case WHEN(exp = exp,statementLst = stmts, elseWhen=SOME(elsew))
+    case DAE.STMT_WHEN(exp = exp,statementLst = stmts, elseWhen=SOME(elsew))
       equation 
 				exps1 = getAllExpsStmt(elsew);
         exps = list_append(getAllExpsStmts(stmts),exps1);
       then
         (exp :: exps);
-    case WHEN(exp = exp,statementLst = stmts)
+    case DAE.STMT_WHEN(exp = exp,statementLst = stmts)
       equation 
         exps = getAllExpsStmts(stmts);
       then
         (exp :: exps);
-    case ASSERT(cond = e1,msg= e2) then {e1,e2}; 
-    case BREAK() then {};
-    case RETURN() then {};
-    case THROW() then {};
-    case TRY(stmts)
+    case DAE.STMT_ASSERT(cond = e1,msg= e2) then {e1,e2}; 
+    case DAE.STMT_BREAK() then {};
+    case DAE.STMT_RETURN() then {};
+    case DAE.STMT_THROW() then {};
+    case DAE.STMT_TRY(stmts)
       equation
         exps = getAllExpsStmts(stmts);
       then
         exps;
-    case CATCH(stmts)
+    case DAE.STMT_CATCH(stmts)
       equation
         exps = getAllExpsStmts(stmts);
       then
         exps;
     
-    case NORETCALL(e1) then {e1};
+    case DAE.STMT_NORETCALL(e1) then {e1};
 
-    case(REINIT(e1,e2)) then {e1,e2};    
+    case(DAE.STMT_REINIT(e1,e2)) then {e1,e2};    
       
-    case(MATCHCASES(exps)) then exps;
+    case(DAE.STMT_MATCHCASES(exps)) then exps;
 
     case _
       equation 
@@ -832,15 +709,15 @@ algorithm
       Exp.Exp exp;
       list<Statement> stmts;
       Else else_;
-    case NOELSE() then {}; 
-    case ELSEIF(exp = exp,statementLst = stmts,else_ = else_)
+    case DAE.NOELSE() then {}; 
+    case DAE.ELSEIF(exp = exp,statementLst = stmts,else_ = else_)
       equation 
         exps1 = getAllExpsStmts(stmts);
         elseexps = getAllExpsElse(else_);
         exps = listAppend(exps1, elseexps);
       then
         (exp :: exps);
-    case ELSE(statementLst = stmts)
+    case DAE.ELSE(statementLst = stmts)
       equation 
         exps = getAllExpsStmts(stmts);
       then

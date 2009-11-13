@@ -10711,7 +10711,7 @@ algorithm
         (cache,env_1,ih) = getDerivedEnv(cache,env,ih, bc) "If algorithm is inherited, find base class environment" ;
         (cache,statements_1) = instStatements(cache,env_1,pre, statements, SCode.NON_INITIAL(),impl);
       then
-        (cache,env,ih,{DAE.ALGORITHM(Algorithm.ALGORITHM(statements_1))},csets,ci_state,graph);
+        (cache,env,ih,{DAE.ALGORITHM(DAE.ALGORITHM_STMTS(statements_1))},csets,ci_state,graph);
     case (_,_,_,_,_,_,_,algSCode,_,_)
       equation 
         Debug.fprintln("failtrace", "- Inst.instAlgorithm failed");
@@ -10763,7 +10763,7 @@ algorithm
         (cache,env_1,ih) = getDerivedEnv(cache,env,ih, bc);
         (cache,statements_1) = instStatements(cache,env, pre,statements, SCode.INITIAL(), impl);
       then
-        (cache,env,ih,{DAE.INITIALALGORITHM(Algorithm.ALGORITHM(statements_1))},csets,ci_state,graph);
+        (cache,env,ih,{DAE.INITIALALGORITHM(DAE.ALGORITHM_STMTS(statements_1))},csets,ci_state,graph);
     case (_,_,_,_,_,_,_,_,_,_)
       equation 
         Debug.fprintln("failtrace", "- Inst.instInitialAlgorithm failed");
@@ -10935,7 +10935,7 @@ algorithm
         (cache,vb2,_,_) = Static.elabExp(cache,env,vb,impl,NONE,true);
 
         // _ := { ... }, this will be handled in Codegen.algorithmStatement
-        stmt = Algorithm.ASSIGN(Exp.BOOL(),
+        stmt = DAE.STMT_ASSIGN(Exp.BOOL(),
                                 Exp.CREF(Exp.WILD,Exp.OTHER()),
                                 vb2);
       then
@@ -11156,19 +11156,19 @@ algorithm
         (cache,Exp.CALL(ap,eexpl,tuple_,builtin,tp,inline),varprop,_) = Static.elabExp(cache,env, Absyn.CALL(callFunc,callArgs), impl, NONE,true);
         ap = Prefix.prefixPath(ap,pre);
       then
-        (cache,Algorithm.NORETCALL(Exp.CALL(ap,eexpl,tuple_,builtin,tp,inline)));
+        (cache,DAE.STMT_NORETCALL(Exp.CALL(ap,eexpl,tuple_,builtin,tp,inline)));
 	       
     /* break */
     case (cache,env,pre,Absyn.ALG_BREAK,initial_,impl)
       equation 
-        stmt = Algorithm.BREAK();
+        stmt = DAE.STMT_BREAK();
       then
         (cache,stmt);
         
     /* return */
     case (cache,env,pre,Absyn.ALG_RETURN,initial_,impl)
       equation 
-        stmt = Algorithm.RETURN();
+        stmt = DAE.STMT_RETURN();
       then
         (cache,stmt);
         
@@ -11179,7 +11179,7 @@ algorithm
     case (cache,env,pre,Absyn.ALG_TRY(sl),initial_,impl)
       equation
         (cache,sl_1) = instAlgorithmitems(cache, env, pre, sl, initial_, impl);
-        stmt = Algorithm.TRY(sl_1);
+        stmt = DAE.STMT_TRY(sl_1);
       then
         (cache,stmt);
         
@@ -11187,14 +11187,14 @@ algorithm
     case (cache,env,pre,Absyn.ALG_CATCH(sl),initial_,impl)
       equation
         (cache,sl_1) = instAlgorithmitems(cache, env, pre, sl, initial_, impl);
-        stmt = Algorithm.CATCH(sl_1);
+        stmt = DAE.STMT_CATCH(sl_1);
       then
         (cache,stmt);
 
     /* throw */
     case (cache,env,pre,Absyn.ALG_THROW(),initial_,impl)
       equation
-        stmt = Algorithm.THROW();
+        stmt = DAE.STMT_THROW();
       then
         (cache,stmt);
 
@@ -11203,7 +11203,7 @@ algorithm
       local
         String s;
       equation
-        stmt = Algorithm.GOTO(s);
+        stmt = DAE.STMT_GOTO(s);
       then
         (cache,stmt);
 
@@ -11211,7 +11211,7 @@ algorithm
       local
         String s;
       equation
-        stmt = Algorithm.LABEL(s);
+        stmt = DAE.STMT_LABEL(s);
       then
         (cache,stmt);
     
@@ -11222,7 +11222,7 @@ algorithm
         list<Exp.Exp> expExpList;
       equation
         (cache,expExpList,_,_) = Static.elabExpList(cache,env, absynExpList, impl, NONE,true);        
-      then (cache,Algorithm.MATCHCASES(expExpList));
+      then (cache,DAE.STMT_MATCHCASES(expExpList));
 
     //------------------------------------------
         
@@ -11398,7 +11398,7 @@ algorithm
         (localCache,e) = Patternm.matchMain(e,expl,localCache,localEnv);
         (localCache,e_1,eprop,_) = Static.elabExp(localCache,localEnv, e, impl, NONE,true);
         (localCache,e_2) = Prefix.prefixExp(localCache,localEnv, e_1, localPre);
-        stmt = Algorithm.ASSIGN(
+        stmt = DAE.STMT_ASSIGN(
                   Exp.OTHER(),
                   Exp.CREF(Exp.WILD,Exp.OTHER()),
                   e_2);
@@ -11416,7 +11416,7 @@ algorithm
         (localCache,e_1,eprop,_) = Static.elabExp(localCache,localEnv, e, impl, NONE,true);
         (localCache,e_2) = Prefix.prefixExp(localCache,localEnv, e_1, localPre);        
         //stmt = Algorithm.makeAssignment(Exp.CREF(ce,t), cprop, e_2, eprop, acc);
-        stmt = Algorithm.ASSIGN(
+        stmt = DAE.STMT_ASSIGN(
                   Exp.OTHER(),
                   Exp.CREF(Exp.WILD,Exp.OTHER()),
                   e_2);
@@ -11434,7 +11434,7 @@ algorithm
         (localCache,e) = Patternm.matchMain(e,expl,localCache,localEnv);
         (localCache,e_1,eprop,_) = Static.elabExp(localCache,localEnv, e, impl, NONE,true);
         (localCache,e_2) = Prefix.prefixExp(localCache,localEnv, e_1, localPre);        
-        stmt = Algorithm.ASSIGN(
+        stmt = DAE.STMT_ASSIGN(
                  Exp.OTHER(),
                  Exp.CREF(Exp.WILD,Exp.OTHER()),
                  e_2);

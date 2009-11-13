@@ -244,17 +244,17 @@ algorithm outDae := matchcontinue(inDae,repl,condExpFunc)
         dae2 = applyReplacementsDAE(dae,repl,condExpFunc);
       then DAE.INITIALEQUATION(e11,e22)::dae2;
         
-     case(DAE.ALGORITHM(Algorithm.ALGORITHM(stmts))::dae,repl,condExpFunc) 
+     case(DAE.ALGORITHM(DAE.ALGORITHM_STMTS(stmts))::dae,repl,condExpFunc) 
       equation
         stmts2 = replaceEquationsStmts(stmts,repl,condExpFunc);
         dae2 = applyReplacementsDAE(dae,repl,condExpFunc);
-      then DAE.ALGORITHM(Algorithm.ALGORITHM(stmts2))::dae2;
+      then DAE.ALGORITHM(DAE.ALGORITHM_STMTS(stmts2))::dae2;
 
-     case(DAE.INITIALALGORITHM(Algorithm.ALGORITHM(stmts))::dae,repl,condExpFunc) 
+     case(DAE.INITIALALGORITHM(DAE.ALGORITHM_STMTS(stmts))::dae,repl,condExpFunc) 
       equation
         stmts2 = replaceEquationsStmts(stmts,repl,condExpFunc);
         dae2 = applyReplacementsDAE(dae,repl,condExpFunc);
-      then DAE.INITIALALGORITHM(Algorithm.ALGORITHM(stmts2))::dae2;
+      then DAE.INITIALALGORITHM(DAE.ALGORITHM_STMTS(stmts2))::dae2;
         
      case(DAE.COMP(id,DAE.DAE(elist))::dae,repl,condExpFunc) 
       equation
@@ -478,28 +478,28 @@ algorithm
       Boolean b1;
       Algorithm.Ident id1;
     case ({},_,_) then {}; 
-    case ((Algorithm.ASSIGN(type_ = tp,exp1 = e2,exp = e) :: xs),repl,condExpFunc)
+    case ((DAE.STMT_ASSIGN(type_ = tp,exp1 = e2,exp = e) :: xs),repl,condExpFunc)
       equation 
         e_1 = replaceExp(e, repl, condExpFunc);
         e_2 = replaceExp(e2, repl, condExpFunc);
         xs_1 = replaceEquationsStmts(xs, repl,condExpFunc);
       then
-        (Algorithm.ASSIGN(tp,e_2,e_1) :: xs_1);
-    case ((Algorithm.TUPLE_ASSIGN(type_ = tp,expExpLst = expl1, exp = e) :: xs),repl,condExpFunc)
+        (DAE.STMT_ASSIGN(tp,e_2,e_1) :: xs_1);
+    case ((DAE.STMT_TUPLE_ASSIGN(type_ = tp,expExpLst = expl1, exp = e) :: xs),repl,condExpFunc)
       equation 
         e_1 = replaceExp(e, repl, condExpFunc); 
         expl2 = Util.listMap2(expl1, replaceExp, repl, condExpFunc);
         xs_1 = replaceEquationsStmts(xs, repl,condExpFunc);
       then
-        (Algorithm.TUPLE_ASSIGN(tp,expl2,e_1) :: xs_1);
-    case ((Algorithm.ASSIGN_ARR(type_ = tp,componentRef = cr, exp = e) :: xs),repl,condExpFunc)
+        (DAE.STMT_TUPLE_ASSIGN(tp,expl2,e_1) :: xs_1);
+    case ((DAE.STMT_ASSIGN_ARR(type_ = tp,componentRef = cr, exp = e) :: xs),repl,condExpFunc)
       equation 
         e_1 = replaceExp(e, repl, condExpFunc); 
         (e_2 as Exp.CREF(cr_1,_)) = replaceExp(Exp.CREF(cr,Exp.OTHER()), repl, condExpFunc); 
         xs_1 = replaceEquationsStmts(xs, repl,condExpFunc);
       then
-        (Algorithm.ASSIGN_ARR(tp,cr_1,e_1) :: xs_1);
-    case (((x as Algorithm.IF(exp=e,statementLst=stmts,else_ = el)) :: xs),repl,condExpFunc)
+        (DAE.STMT_ASSIGN_ARR(tp,cr_1,e_1) :: xs_1);
+    case (((x as DAE.STMT_IF(exp=e,statementLst=stmts,else_ = el)) :: xs),repl,condExpFunc)
       local Algorithm.Else el,el_1;
       equation 
         el_1 = replaceEquationsElse(el,repl,condExpFunc);
@@ -507,22 +507,22 @@ algorithm
         e_1 = replaceExp(e, repl, condExpFunc); 
         xs_1 = replaceEquationsStmts(xs, repl,condExpFunc);
       then
-        (Algorithm.IF(e_1,stmts2,el_1) :: xs_1);
-    case (((x as Algorithm.FOR(type_=tp,boolean=b1,ident=id1,exp=e,statementLst=stmts)) :: xs),repl,condExpFunc)
+        (DAE.STMT_IF(e_1,stmts2,el_1) :: xs_1);
+    case (((x as DAE.STMT_FOR(type_=tp,boolean=b1,ident=id1,exp=e,statementLst=stmts)) :: xs),repl,condExpFunc)
       equation 
         stmts2 = replaceEquationsStmts(stmts,repl,condExpFunc);
         e_1 = replaceExp(e, repl, condExpFunc); 
         xs_1 = replaceEquationsStmts(xs, repl,condExpFunc);
       then
-        (Algorithm.FOR(tp,b1,id1,e_1,stmts2) :: xs_1);
-    case (((x as Algorithm.WHILE(exp = e,statementLst=stmts)) :: xs),repl,condExpFunc)
+        (DAE.STMT_FOR(tp,b1,id1,e_1,stmts2) :: xs_1);
+    case (((x as DAE.STMT_WHILE(exp = e,statementLst=stmts)) :: xs),repl,condExpFunc)
       equation 
         stmts2 = replaceEquationsStmts(stmts,repl,condExpFunc);
         e_1 = replaceExp(e, repl, condExpFunc); 
         xs_1 = replaceEquationsStmts(xs, repl,condExpFunc);
       then
-        (Algorithm.WHILE(e_1,stmts2) :: xs_1);
-    case (((x as Algorithm.WHEN(exp = e,statementLst=stmts,elseWhen=ew,helpVarIndices=li)) :: xs),repl,condExpFunc)
+        (DAE.STMT_WHILE(e_1,stmts2) :: xs_1);
+    case (((x as DAE.STMT_WHEN(exp = e,statementLst=stmts,elseWhen=ew,helpVarIndices=li)) :: xs),repl,condExpFunc)
       local Option<Algorithm.Statement> ew,ew_1; list<Integer> li;
       equation 
         ew_1 = replaceOptEquationsStmts(ew,repl,condExpFunc);
@@ -530,41 +530,41 @@ algorithm
         e_1 = replaceExp(e, repl, condExpFunc); 
         xs_1 = replaceEquationsStmts(xs, repl,condExpFunc);
       then
-        (Algorithm.WHEN(e_1,stmts2,ew_1,li) :: xs_1);
-    case (((x as Algorithm.ASSERT(cond = e, msg=e2)) :: xs),repl,condExpFunc)
+        (DAE.STMT_WHEN(e_1,stmts2,ew_1,li) :: xs_1);
+    case (((x as DAE.STMT_ASSERT(cond = e, msg=e2)) :: xs),repl,condExpFunc)
       equation 
         e_1 = replaceExp(e, repl, condExpFunc); 
         e_2 = replaceExp(e2, repl, condExpFunc); 
         xs_1 = replaceEquationsStmts(xs, repl,condExpFunc);
       then
-        (Algorithm.ASSERT(e_1,e_2) :: xs_1);
-    case (((x as Algorithm.TERMINATE(msg = e)) :: xs),repl,condExpFunc)
+        (DAE.STMT_ASSERT(e_1,e_2) :: xs_1);
+    case (((x as DAE.STMT_TERMINATE(msg = e)) :: xs),repl,condExpFunc)
       equation 
         e_1 = replaceExp(e, repl, condExpFunc);
         xs_1 = replaceEquationsStmts(xs, repl,condExpFunc);
       then
-        (Algorithm.TERMINATE(e_1) :: xs_1);
-    case (((x as Algorithm.REINIT(var = e,value=e2)) :: xs),repl,condExpFunc)
+        (DAE.STMT_TERMINATE(e_1) :: xs_1);
+    case (((x as DAE.STMT_REINIT(var = e,value=e2)) :: xs),repl,condExpFunc)
       equation 
         e_1 = replaceExp(e, repl, condExpFunc); 
         e_2 = replaceExp(e2, repl, condExpFunc); 
         xs_1 = replaceEquationsStmts(xs, repl,condExpFunc);
       then
-        (Algorithm.REINIT(e_1,e_2) :: xs_1);
-    case ((x as Algorithm.NORETCALL(e)) :: xs,repl,condExpFunc)
+        (DAE.STMT_REINIT(e_1,e_2) :: xs_1);
+    case ((x as DAE.STMT_NORETCALL(e)) :: xs,repl,condExpFunc)
       local Absyn.Path fnName;
       equation 
         e_1 = replaceExp(e, repl, condExpFunc); 
         xs_1 = replaceEquationsStmts(xs, repl,condExpFunc);
       then
-        (Algorithm.NORETCALL(e_1) :: xs_1);
-    case (((x as Algorithm.RETURN()) :: xs),repl,condExpFunc)
+        (DAE.STMT_NORETCALL(e_1) :: xs_1);
+    case (((x as DAE.STMT_RETURN()) :: xs),repl,condExpFunc)
       equation 
         xs_1 = replaceEquationsStmts(xs, repl,condExpFunc);
       then
         (x :: xs_1);   
         
-    case (((x as Algorithm.BREAK()) :: xs),repl,condExpFunc)
+    case (((x as DAE.STMT_BREAK()) :: xs),repl,condExpFunc)
       equation 
         xs_1 = replaceEquationsStmts(xs, repl,condExpFunc);
       then
@@ -594,17 +594,17 @@ algorithm outElse := matchcontinue(inElse,repl,condExpFunc)
     Exp.Exp e,e_1;
     list<Algorithm.Statement> st,st_1;
     Algorithm.Else el,el_1;
-  case(Algorithm.NOELSE(),_,_) then Algorithm.NOELSE;
-  case(Algorithm.ELSEIF(e,st,el),repl,condExpFunc)
+  case(DAE.NOELSE(),_,_) then DAE.NOELSE;
+  case(DAE.ELSEIF(e,st,el),repl,condExpFunc)
     equation
       el_1 = replaceEquationsElse(el,repl,condExpFunc);
       st_1 = replaceEquationsStmts(st,repl,condExpFunc);
       e_1 = replaceExp(e, repl, condExpFunc); 
-    then Algorithm.ELSEIF(e_1,st_1,el_1);
-  case(Algorithm.ELSE(st),repl,condExpFunc)
+    then DAE.ELSEIF(e_1,st_1,el_1);
+  case(DAE.ELSE(st),repl,condExpFunc)
     equation
       st_1 = replaceEquationsStmts(st,repl,condExpFunc);
-    then Algorithm.ELSE(st_1);      
+    then DAE.ELSE(st_1);      
 end matchcontinue;
 end replaceEquationsElse;
 

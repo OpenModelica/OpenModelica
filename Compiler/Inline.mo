@@ -624,11 +624,11 @@ algorithm
     local
       list<Algorithm.Statement> stmts,stmts_1;
       list<DAE.Element> fns;
-    case(Algorithm.ALGORITHM(stmts),fns)
+    case(DAE.ALGORITHM_STMTS(stmts),fns)
       equation
         stmts_1 = Util.listMap1(stmts,inlineStatement,fns);
       then
-        Algorithm.ALGORITHM(stmts_1);
+        DAE.ALGORITHM_STMTS(stmts_1);
   end matchcontinue;
 end inlineAlgorithm;
 
@@ -652,92 +652,92 @@ algorithm
       Boolean b;
       Ident i;
       list<Integer> ilst;
-    case(Algorithm.ASSIGN(t,e1,e2),fns)
+    case(DAE.STMT_ASSIGN(t,e1,e2),fns)
       equation
         e1_1 = inlineExp(e1,fns);
         e2_1 = inlineExp(e2,fns);
       then
-        Algorithm.ASSIGN(t,e1_1,e2_1);
-    case(Algorithm.TUPLE_ASSIGN(t,explst,e),fns)
+        DAE.STMT_ASSIGN(t,e1_1,e2_1);
+    case(DAE.STMT_TUPLE_ASSIGN(t,explst,e),fns)
       equation
         explst_1 = Util.listMap1(explst,inlineExp,fns);
         e_1 = inlineExp(e,fns);
       then
-        Algorithm.TUPLE_ASSIGN(t,explst_1,e_1);
-    case(Algorithm.ASSIGN_ARR(t,cref,e),fns)
+        DAE.STMT_TUPLE_ASSIGN(t,explst_1,e_1);
+    case(DAE.STMT_ASSIGN_ARR(t,cref,e),fns)
       equation
         e_1 = inlineExp(e,fns);
       then
-        Algorithm.ASSIGN_ARR(t,cref,e_1);
-    case(Algorithm.IF(e,stmts,a_else),fns)
+        DAE.STMT_ASSIGN_ARR(t,cref,e_1);
+    case(DAE.STMT_IF(e,stmts,a_else),fns)
       equation
         e_1 = inlineExp(e,fns);
         stmts_1 = Util.listMap1(stmts,inlineStatement,fns);
         a_else_1 = inlineElse(a_else,fns);
       then
-        Algorithm.IF(e_1,stmts_1,a_else_1);
-    case(Algorithm.FOR(t,b,i,e,stmts),fns)
+        DAE.STMT_IF(e_1,stmts_1,a_else_1);
+    case(DAE.STMT_FOR(t,b,i,e,stmts),fns)
       equation
         e_1 = inlineExp(e,fns);
         stmts_1 = Util.listMap1(stmts,inlineStatement,fns);
       then
-        Algorithm.FOR(t,b,i,e_1,stmts_1);
-    case(Algorithm.WHILE(e,stmts),fns)
+        DAE.STMT_FOR(t,b,i,e_1,stmts_1);
+    case(DAE.STMT_WHILE(e,stmts),fns)
       equation
         e_1 = inlineExp(e,fns);
         stmts_1 = Util.listMap1(stmts,inlineStatement,fns);
       then
-        Algorithm.WHILE(e_1,stmts_1);
-    case(Algorithm.WHEN(e,stmts,SOME(stmt),ilst),fns)
+        DAE.STMT_WHILE(e_1,stmts_1);
+    case(DAE.STMT_WHEN(e,stmts,SOME(stmt),ilst),fns)
       equation
         e_1 = inlineExp(e,fns);
         stmts_1 = Util.listMap1(stmts,inlineStatement,fns);
         stmt_1 = inlineStatement(stmt,fns);
       then
-        Algorithm.WHEN(e_1,stmts_1,SOME(stmt_1),ilst);
-    case(Algorithm.WHEN(e,stmts,NONE,ilst),fns)
+        DAE.STMT_WHEN(e_1,stmts_1,SOME(stmt_1),ilst);
+    case(DAE.STMT_WHEN(e,stmts,NONE,ilst),fns)
       equation
         e_1 = inlineExp(e,fns);
         stmts_1 = Util.listMap1(stmts,inlineStatement,fns);
       then
-        Algorithm.WHEN(e_1,stmts_1,NONE,ilst);
-    case(Algorithm.ASSERT(e1,e2),fns)
+        DAE.STMT_WHEN(e_1,stmts_1,NONE,ilst);
+    case(DAE.STMT_ASSERT(e1,e2),fns)
       equation
         e1_1 = inlineExp(e1,fns);
         e2_1 = inlineExp(e2,fns);
       then
-        Algorithm.ASSERT(e1_1,e2_1);
-    case(Algorithm.TERMINATE(e),fns)
+        DAE.STMT_ASSERT(e1_1,e2_1);
+    case(DAE.STMT_TERMINATE(e),fns)
       equation
         e_1 = inlineExp(e,fns);
       then
-        Algorithm.TERMINATE(e_1);
-    case(Algorithm.REINIT(e1,e2),fns)
+        DAE.STMT_TERMINATE(e_1);
+    case(DAE.STMT_REINIT(e1,e2),fns)
       equation
         e1_1 = inlineExp(e1,fns);
         e2_1 = inlineExp(e2,fns);
       then
-        Algorithm.REINIT(e1_1,e2_1);
-    case(Algorithm.NORETCALL(e),fns)
+        DAE.STMT_REINIT(e1_1,e2_1);
+    case(DAE.STMT_NORETCALL(e),fns)
       equation
         e_1 = inlineExp(e,fns);
       then
-        Algorithm.NORETCALL(e_1);
-    case(Algorithm.TRY(stmts),fns)
+        DAE.STMT_NORETCALL(e_1);
+    case(DAE.STMT_TRY(stmts),fns)
       equation
         stmts_1 = Util.listMap1(stmts,inlineStatement,fns);
       then
-        Algorithm.TRY(stmts_1);
-    case(Algorithm.CATCH(stmts),fns)
+        DAE.STMT_TRY(stmts_1);
+    case(DAE.STMT_CATCH(stmts),fns)
       equation
         stmts_1 = Util.listMap1(stmts,inlineStatement,fns);
       then
-        Algorithm.CATCH(stmts_1);
-    case(Algorithm.MATCHCASES(explst),fns)
+        DAE.STMT_CATCH(stmts_1);
+    case(DAE.STMT_MATCHCASES(explst),fns)
       equation
         explst_1 = Util.listMap1(explst,inlineExp,fns);
       then
-        Algorithm.MATCHCASES(explst_1);
+        DAE.STMT_MATCHCASES(explst_1);
     case(stmt,_) then stmt;
   end matchcontinue;
 end inlineStatement;
@@ -755,18 +755,18 @@ algorithm
       Algorithm.Else a_else,a_else_1;
       Exp.Exp e,e_1;
       list<Algorithm.Statement> stmts,stmts_1;
-    case(Algorithm.ELSEIF(e,stmts,a_else),fns)
+    case(DAE.ELSEIF(e,stmts,a_else),fns)
       equation
         e_1 = inlineExp(e,fns);
         stmts_1 = Util.listMap1(stmts,inlineStatement,fns);
         a_else_1 = inlineElse(a_else,fns);
       then
-        Algorithm.ELSEIF(e_1,stmts_1,a_else_1);
-    case(Algorithm.ELSE(stmts),fns)
+        DAE.ELSEIF(e_1,stmts_1,a_else_1);
+    case(DAE.ELSE(stmts),fns)
       equation
         stmts_1 = Util.listMap1(stmts,inlineStatement,fns);
       then
-        Algorithm.ELSE(stmts_1);
+        DAE.ELSE(stmts_1);
     case(a_else,fns) then a_else;
   end matchcontinue;
 end inlineElse;
@@ -836,9 +836,9 @@ algorithm
         Debug.fprintln("failtrace","Inline.getRhsExp failed - cannot inline such a function");
       then
         fail();
-    case(DAE.ALGORITHM(Algorithm.ALGORITHM({Algorithm.ASSIGN(_,_,res)})) :: _) then res;
-    case(DAE.ALGORITHM(Algorithm.ALGORITHM({Algorithm.TUPLE_ASSIGN(_,_,res)})):: _) then res;
-    case(DAE.ALGORITHM(Algorithm.ALGORITHM({Algorithm.ASSIGN_ARR(_,_,res)})) :: _) then res;
+    case(DAE.ALGORITHM(DAE.ALGORITHM_STMTS({DAE.STMT_ASSIGN(_,_,res)})) :: _) then res;
+    case(DAE.ALGORITHM(DAE.ALGORITHM_STMTS({DAE.STMT_TUPLE_ASSIGN(_,_,res)})):: _) then res;
+    case(DAE.ALGORITHM(DAE.ALGORITHM_STMTS({DAE.STMT_ASSIGN_ARR(_,_,res)})) :: _) then res;
     case(_ :: cdr)
       equation
         res = getRhsExp(cdr);

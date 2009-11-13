@@ -2540,7 +2540,7 @@ protected function makeAssignmentNoCheck
   input Exp.Exp rhs;
   output Algorithm.Statement stmt;
 algorithm
-  stmt := Algorithm.ASSIGN(Exp.OTHER,lhs,rhs);
+  stmt := DAE.STMT_ASSIGN(Exp.OTHER,lhs,rhs);
 end makeAssignmentNoCheck;
 
 protected function generateAllocOutvars 
@@ -2988,7 +2988,7 @@ algorithm
       list<Algorithm.Statement> stmts;
       Context context;
       
-    case (DAE.ALGORITHM(algorithm_ = Algorithm.ALGORITHM(statementLst = stmts)),tnr,context)
+    case (DAE.ALGORITHM(algorithm_ = DAE.ALGORITHM_STMTS(statementLst = stmts)),tnr,context)
       equation
         (cfn,tnr_1) = generateAlgorithmStatements(stmts, tnr, context);
       then
@@ -3058,7 +3058,7 @@ algorithm
 			list<Integer> helpVarIndices;
 			Integer helpInd;
 			
-    case (Algorithm.WHEN(exp = e as Exp.ARRAY(array = el),statementLst = stmts, elseWhen=SOME(algStmt),helpVarIndices=helpVarIndices), tnr, context)
+    case (DAE.STMT_WHEN(exp = e as Exp.ARRAY(array = el),statementLst = stmts, elseWhen=SOME(algStmt),helpVarIndices=helpVarIndices), tnr, context)
       equation
         // First generate code for updating the help variables in helpVarIndices
         // and the condition expression substitute the condition expression with a call to
@@ -3074,7 +3074,7 @@ algorithm
         cfn  = cMergeFns({cfn2, elseBlock1});
       then (cfn,cfn4,tnr4);
         
-    case (Algorithm.WHEN(exp = e,statementLst = stmts, elseWhen=SOME(algStmt), helpVarIndices=helpInd::_), tnr, context)
+    case (DAE.STMT_WHEN(exp = e,statementLst = stmts, elseWhen=SOME(algStmt), helpVarIndices=helpInd::_), tnr, context)
       equation
         (cfn2,var2,tnr2) = generateWhenConditionExpression(helpInd, e, tnr, context);
         crit_stmt = Util.stringAppendList({"if (",var2,") {"});
@@ -3086,7 +3086,7 @@ algorithm
         cfn  = cMergeFns({cfn2, elseBlock1});
       then (cfn,cfn4,tnr4);
         
-    case (Algorithm.WHEN(exp = e as Exp.ARRAY(array = el),statementLst = stmts, elseWhen=NONE,helpVarIndices=helpVarIndices), tnr, context)
+    case (DAE.STMT_WHEN(exp = e as Exp.ARRAY(array = el),statementLst = stmts, elseWhen=NONE,helpVarIndices=helpVarIndices), tnr, context)
       equation
         (cfn2, vars, tnr2) = generateWhenConditionExpressions(helpVarIndices,el,tnr,context);
 				var1 = Util.stringDelimitList(vars," || ");
@@ -3097,7 +3097,7 @@ algorithm
         cfn4 = cMergeFns({cfn3, cfn5});
       then (cfn2,cfn4,tnr3);
         
-    case (Algorithm.WHEN(exp = e,statementLst = stmts, elseWhen=NONE,helpVarIndices=helpInd::_), tnr, context)
+    case (DAE.STMT_WHEN(exp = e,statementLst = stmts, elseWhen=NONE,helpVarIndices=helpInd::_), tnr, context)
       equation
         (cfn2,var2,tnr2) = generateWhenConditionExpression(helpInd, e, tnr, context);
         crit_stmt = Util.stringAppendList({"if (",var2,") {"});
@@ -3165,12 +3165,12 @@ algorithm
       LoopContext loopContext;
 
     // Part of ValueBlock implementation, special treatment of _ := VB case
-    case (Algorithm.ASSIGN(_,Exp.CREF(Exp.WILD,_),exp as Exp.VALUEBLOCK(_,_,_,_)),tnr,context)
+    case (DAE.STMT_ASSIGN(_,Exp.CREF(Exp.WILD,_),exp as Exp.VALUEBLOCK(_,_,_,_)),tnr,context)
       equation
         (cfn,_,tnr1) = generateExpression(exp, tnr, context);
      then (cfn,tnr1);
 
-    case (Algorithm.ASSIGN(type_ = typ,exp1 = Exp.CREF(cref,_),exp = exp),tnr,context)
+    case (DAE.STMT_ASSIGN(type_ = typ,exp1 = Exp.CREF(cref,_),exp = exp),tnr,context)
       equation
         Debug.fprintln("cgas", "generate_algorithm_statement");
         (cfn1,var1,tnr1) = generateExpression(exp, tnr, context);
@@ -3182,7 +3182,7 @@ algorithm
         (cfn,tnr2);
     
     /* adrpo: handle ASUB on LHS */ 
-    case (Algorithm.ASSIGN(type_ = typ,exp1 = asub as Exp.ASUB(exp = Exp.CREF(cref,t), sub=subs),exp = exp),tnr,context)
+    case (DAE.STMT_ASSIGN(type_ = typ,exp1 = asub as Exp.ASUB(exp = Exp.CREF(cref,t), sub=subs),exp = exp),tnr,context)
       local 
         list<Exp.Exp> subs; Exp.Exp asub; Exp.ComponentRef crefBuild;
       equation
@@ -3196,7 +3196,7 @@ algorithm
       then
         (cfn,tnr2);        
 
-    case (Algorithm.ASSIGN(type_ = typ,exp1 = e1,exp = exp),tnr,context)
+    case (DAE.STMT_ASSIGN(type_ = typ,exp1 = e1,exp = exp),tnr,context)
       equation
         Debug.fprintln("cgas", "generate_algorithm_statement");
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);        
@@ -3207,7 +3207,7 @@ algorithm
       then
         (cfn,tnr2);
         
-    case (Algorithm.ASSIGN_ARR(type_ = typ,componentRef = cref,exp = exp),tnr,context)
+    case (DAE.STMT_ASSIGN_ARR(type_ = typ,componentRef = cref,exp = exp),tnr,context)
       local
         Boolean sim;
         String memStr;
@@ -3222,7 +3222,7 @@ algorithm
       then
         (cfn2,tnr1);
         
-    case (Algorithm.ASSIGN_ARR(type_ = typ,componentRef = cref,exp = exp),tnr,context)
+    case (DAE.STMT_ASSIGN_ARR(type_ = typ,componentRef = cref,exp = exp),tnr,context)
       equation
         (cref_str,(subs as (_ :: _))) = compRefCstr(cref);
         (cfn1,var1,tnr1) = generateExpression(exp, tnr, context);
@@ -3234,7 +3234,7 @@ algorithm
       then
         (cfn,tnr2);
         
-    case (Algorithm.IF(exp = e,statementLst = then_,else_ = else_),tnr,context)
+    case (DAE.STMT_IF(exp = e,statementLst = then_,else_ = else_),tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e, tnr, context);
         if_begin = Util.stringAppendList({"if (",var1,") {"});
@@ -3246,7 +3246,7 @@ algorithm
       then
         (cfn,tnr3);
         
-    case (Algorithm.FOR(type_ = t,boolean = a,ident = i,exp = e,statementLst = stmts),tnr,
+    case (DAE.STMT_FOR(type_ = t,boolean = a,ident = i,exp = e,statementLst = stmts),tnr,
                         context as CONTEXT(codeContext,expContext,loopContext))
       equation
         true = Exp.isRange(e);
@@ -3273,7 +3273,7 @@ algorithm
       then
         (cfn,tnr4);
         
-    case (Algorithm.FOR(type_ = t,boolean = a,ident = i,exp = e,statementLst = stmts),tnr,
+    case (DAE.STMT_FOR(type_ = t,boolean = a,ident = i,exp = e,statementLst = stmts),tnr,
                         context as CONTEXT(codeContext,expContext,loopContext))
       equation
         (sdecl,svar,tnr_1) = generateTempDecl("state", tnr);
@@ -3300,7 +3300,7 @@ algorithm
       then
         (cfn,tnr4);
         
-    case (Algorithm.WHILE(exp = e,statementLst = stmts),tnr,
+    case (DAE.STMT_WHILE(exp = e,statementLst = stmts),tnr,
                         context as CONTEXT(codeContext,expContext,loopContext))
       equation
         cfn1 = cAddStatements(cEmptyFunction, {"while (1) {"});
@@ -3313,17 +3313,17 @@ algorithm
       then
         (cfn,tnr3);
         
-    case (algStmt as Algorithm.WHEN(exp = _),tnr,context as CONTEXT(SIMULATION(true),_,_))
+    case (algStmt as DAE.STMT_WHEN(exp = _),tnr,context as CONTEXT(SIMULATION(true),_,_))
       equation
         (cfn1,cfn2,tnr1) = generateAlgorithmWhenStatement(algStmt,tnr,context);
         cfn = cMergeFns({cfn1,cfn2});
       then
         (cfn,tnr1);
         
-    case (algStmt as Algorithm.WHEN(exp = _),tnr,CONTEXT(SIMULATION(false),_,_))
+    case (algStmt as DAE.STMT_WHEN(exp = _),tnr,CONTEXT(SIMULATION(false),_,_))
     then (cEmptyFunction,tnr);
 
-    case (Algorithm.TUPLE_ASSIGN(t,expl,e as Exp.CALL(path=_)),tnr,context)
+    case (DAE.STMT_TUPLE_ASSIGN(t,expl,e as Exp.CALL(path=_)),tnr,context)
       local Context context;
         list<Exp.Exp> args,expl; Absyn.Path fn;
         list<String> lhsVars,vars1;
@@ -3335,7 +3335,7 @@ algorithm
       then
         (cfn,tnr2);
 
-    case (Algorithm.ASSERT(cond = e1,msg = e2),tnr,CONTEXT(codeContext,_,loopContext))
+    case (DAE.STMT_ASSERT(cond = e1,msg = e2),tnr,CONTEXT(codeContext,_,loopContext))
       local CodeContext codeContext;
             LoopContext loopContext;
       equation
@@ -3347,20 +3347,20 @@ algorithm
       then
         (cfn,tnr2);
         
-    case (Algorithm.RETURN(),tnr,_)
+    case (DAE.STMT_RETURN(),tnr,_)
       local Lib retStmt;
       equation
         cfn = cAddStatements(cEmptyFunction, {"goto _return;"});
       then
         (cfn,tnr);
         
-    case (Algorithm.BREAK(),tnr,CONTEXT(_,_,NO_LOOP()))
+    case (DAE.STMT_BREAK(),tnr,CONTEXT(_,_,NO_LOOP()))
       equation
         Error.addMessage(Error.BREAK_OUT_OF_LOOP, {});
       then
         fail(); // We need to force a failure if we are going to see that error message !
         
-    case (Algorithm.BREAK(),tnr,_)
+    case (DAE.STMT_BREAK(),tnr,_)
       equation
         cfn = cAddStatements(cEmptyFunction, {"break;"});
       then
@@ -3368,7 +3368,7 @@ algorithm
 
     // Part of MetaModelica Extension. KS
     //--------------------------------
-    case (Algorithm.TRY(stmts),tnr,context)
+    case (DAE.STMT_TRY(stmts),tnr,context)
       equation
         cfn1 = cAddStatements(cEmptyFunction, {"try {"}); // try
         (cfn2,tnr2) = generateAlgorithmStatements(stmts, tnr,
@@ -3378,7 +3378,7 @@ algorithm
       then
         (cfn,tnr2);
 
-    case (Algorithm.CATCH(stmts),tnr,context)
+    case (DAE.STMT_CATCH(stmts),tnr,context)
       equation
         cfn1 = cAddStatements(cEmptyFunction, {"catch(int i) {"}); //catch(int i)
         (cfn2,tnr2) = generateAlgorithmStatements(stmts, tnr,
@@ -3388,12 +3388,12 @@ algorithm
       then
         (cfn,tnr);
 
-    case (Algorithm.THROW(),tnr,context)
+    case (DAE.STMT_THROW(),tnr,context)
       equation
         cfn = cAddStatements(cEmptyFunction, {"throw 1;"});
       then (cfn,tnr);
 
-    case (Algorithm.GOTO(s),tnr,context)
+    case (DAE.STMT_GOTO(s),tnr,context)
       local
         String s,s2;
       equation
@@ -3402,7 +3402,7 @@ algorithm
         cfn = cAddStatements(cEmptyFunction, {s2});
       then (cfn,tnr);
 
-    case (Algorithm.LABEL(s),tnr,context)
+    case (DAE.STMT_LABEL(s),tnr,context)
       local
         String s,s2;
       equation
@@ -3411,12 +3411,12 @@ algorithm
       then (cfn,tnr);
         
     // Calling a function with no output - stefan
-    case (Algorithm.NORETCALL(exp),tnr,context)
+    case (DAE.STMT_NORETCALL(exp),tnr,context)
       equation
         (cfn,_,tnr) = generateExpression(exp,tnr,context);
       then (cfn, tnr);
         
-	  case (Algorithm.MATCHCASES(exps), tnr, CONTEXT(codeContext,expContext,loopContext)) // matchcontinue helper
+	  case (DAE.STMT_MATCHCASES(exps), tnr, CONTEXT(codeContext,expContext,loopContext)) // matchcontinue helper
       local
         list<Integer> il;
         list<Exp.Exp> exps;
@@ -3575,8 +3575,8 @@ algorithm
       list<Algorithm.Statement> stmts;
       Algorithm.Else else_;
       Context context;
-    case (Algorithm.NOELSE(),tnr,_) then (cEmptyFunction,tnr);
-    case (Algorithm.ELSEIF(exp = e,statementLst = stmts,else_ = else_),tnr,context)
+    case (DAE.NOELSE(),tnr,_) then (cEmptyFunction,tnr);
+    case (DAE.ELSEIF(exp = e,statementLst = stmts,else_ = else_),tnr,context)
       equation
         cfn1 = cAddStatements(cEmptyFunction, {"else {"});
         (cfn2,var2,tnr2) = generateExpression(e, tnr, context);
@@ -3589,7 +3589,7 @@ algorithm
         cfn = cMergeFns({cfn1,cfn2_1,cfn3_1,cfn4_1});
       then
         (cfn,tnr4);
-    case (Algorithm.ELSE(statementLst = stmts),tnr,context)
+    case (DAE.ELSE(statementLst = stmts),tnr,context)
       equation
         cfn1 = cAddStatements(cEmptyFunction, {"else {"});
         (cfn2,tnr2) = generateAlgorithmStatements(stmts, tnr, context);
@@ -3845,7 +3845,7 @@ algorithm
         cfn_2 = cAddInits(cfn_1, {alloc_str});
         cfn = Util.if_(is_a, cfn_2, cfn_1);
         etp = Exp.typeof(e);
-        (cfn2,tnr1) = generateAlgorithmStatement(Algorithm.ASSIGN(etp,Exp.CREF(id,etp),e),tnr1,context);
+        (cfn2,tnr1) = generateAlgorithmStatement(DAE.STMT_ASSIGN(etp,Exp.CREF(id,etp),e),tnr1,context);
         cfn = cMergeFn(cfn,cfn2);
       then
         (cfn,tnr1);
@@ -4046,8 +4046,8 @@ algorithm
                          id, 
                          Exp.CREF_IDENT(id_1_str,Exp.OTHER(),{}));
         exptype = Types.elabType(typ);
-        scalarassign = Algorithm.ASSIGN(exptype,expstr,e);
-        arrayassign = Algorithm.ASSIGN_ARR(exptype,idstr,e);
+        scalarassign = DAE.STMT_ASSIGN(exptype,expstr,e);
+        arrayassign = DAE.STMT_ASSIGN_ARR(exptype,idstr,e);
         assign = Util.if_(is_a, arrayassign, scalarassign);
         (cfn,tnr1) = generateAlgorithmStatement(assign, tnr, context);
       then

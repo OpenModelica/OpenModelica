@@ -43,7 +43,6 @@ package DAE
 
 public import Absyn;
 public import Exp;
-public import Algorithm;
 public import Types;
 public import SCode;
 
@@ -181,11 +180,11 @@ public uniontype Element
   end INITIALEQUATION;
 
   record ALGORITHM " An algorithm section"
-    Algorithm.Algorithm algorithm_;
+    Algorithm algorithm_;
   end ALGORITHM;
 
   record INITIALALGORITHM " An initial algorithm section"
-    Algorithm.Algorithm algorithm_;
+    Algorithm algorithm_;
   end INITIALALGORITHM;
 
   record COMP
@@ -347,6 +346,136 @@ public uniontype DAElist "A DAElist is a list of Elements. Variables, equations,
     list<Element> elementLst;
   end DAE;
 end DAElist;
+
+/* -- Algorithm.mo -- */
+public 
+uniontype Algorithm "The `Algorithm\' type corresponds to a whole algorithm section.
+  It is simple a list of algorithm statements."
+  record ALGORITHM_STMTS
+    list<Statement> statementLst;
+  end ALGORITHM_STMTS;
+
+end Algorithm;
+
+public 
+uniontype Statement "There are four kinds of statements.  Assignments (`a := b;\'),
+    if statements (`if A then B; elseif C; else D;\'), for loops
+    (`for i in 1:10 loop ...; end for;\') and when statements
+    (`when E do S; end when;\')."
+  record STMT_ASSIGN
+    Exp.Type type_;
+    Exp.Exp exp1;
+    Exp.Exp exp;
+  end STMT_ASSIGN;
+
+  record STMT_TUPLE_ASSIGN
+    Exp.Type type_;
+    list<Exp.Exp> expExpLst;
+    Exp.Exp exp;
+  end STMT_TUPLE_ASSIGN;
+
+  record STMT_ASSIGN_ARR
+    Exp.Type type_;
+    Exp.ComponentRef componentRef;
+    Exp.Exp exp;
+  end STMT_ASSIGN_ARR;
+
+  record STMT_IF
+    Exp.Exp exp;
+    list<Statement> statementLst;
+    Else else_;
+  end STMT_IF;
+
+  record STMT_FOR
+    Exp.Type type_;
+    Boolean boolean;
+    Ident ident;
+    Exp.Exp exp;
+    list<Statement> statementLst;
+  end STMT_FOR;
+
+  record STMT_WHILE
+    Exp.Exp exp;
+    list<Statement> statementLst;
+  end STMT_WHILE;
+
+  record STMT_WHEN
+    Exp.Exp exp;
+    list<Statement> statementLst;
+    Option<Statement> elseWhen;
+    list<Integer> helpVarIndices;
+  end STMT_WHEN;
+
+  record STMT_ASSERT "assert(cond,msg)"
+    Exp.Exp cond;
+    Exp.Exp msg;
+  end STMT_ASSERT;
+  
+  record STMT_TERMINATE "terminate(msg)"
+    Exp.Exp msg;
+  end STMT_TERMINATE;
+
+  record STMT_REINIT 
+    Exp.Exp var "Variable"; 
+    Exp.Exp value "Value "; 
+  end STMT_REINIT;
+  
+  record STMT_NORETCALL "call with no return value, i.e. no equation. 
+		   Typically sideeffect call of external function."  
+    Exp.Exp exp;
+  end STMT_NORETCALL;    
+  
+  record STMT_RETURN
+  end STMT_RETURN;
+  
+  record STMT_BREAK
+  end STMT_BREAK;
+
+  // MetaModelica extension. KS
+  record STMT_TRY
+    list<Statement> tryBody;
+  end STMT_TRY;
+
+  record STMT_CATCH
+    list<Statement> catchBody;
+  end STMT_CATCH;
+
+  record STMT_THROW
+  end STMT_THROW;
+
+  record STMT_GOTO
+    String labelName;
+  end STMT_GOTO;
+
+  record STMT_LABEL
+    String labelName;
+  end STMT_LABEL;
+  
+  record STMT_MATCHCASES "matchcontinue helper"
+    list<Exp.Exp> caseStmt;
+  end STMT_MATCHCASES;
+  
+  //-----
+
+end Statement;
+
+public 
+uniontype Else "An if statements can one or more `elseif\' branches and an
+    optional `else\' branch."
+  record NOELSE end NOELSE;
+
+  record ELSEIF
+    Exp.Exp exp;
+    list<Statement> statementLst;
+    Else else_;
+  end ELSEIF;
+
+  record ELSE
+    list<Statement> statementLst;
+  end ELSE;
+
+end Else;
+/* -- End Algorithm.mo -- */
 
 end DAE;
 

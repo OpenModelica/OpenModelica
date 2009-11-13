@@ -638,7 +638,7 @@ algorithm
       list<Exp.Exp> expl;
       Algorithm.Else else_;
     case ({},_) then {};
-    case ((Algorithm.ASSIGN(type_ = tp,exp1 = e1,exp = e) :: rest),vars)
+    case ((DAE.STMT_ASSIGN(type_ = tp,exp1 = e1,exp = e) :: rest),vars)
       equation
         lst1 = incidenceRowStmts(rest, vars);
         lst2 = incidenceRowExp(e, vars);
@@ -646,7 +646,7 @@ algorithm
         res = Util.listFlatten({lst1,lst2,lst3});
       then
         res;
-    case ((Algorithm.TUPLE_ASSIGN(type_ = tp,expExpLst = expl,exp = e) :: rest),vars)
+    case ((DAE.STMT_TUPLE_ASSIGN(type_ = tp,expExpLst = expl,exp = e) :: rest),vars)
       local list<list<String>> lst3;
       equation
         lst1 = incidenceRowStmts(rest, vars);
@@ -656,7 +656,7 @@ algorithm
         res = Util.listFlatten({lst1,lst2,lst3_1});
       then
         res;
-    case ((Algorithm.ASSIGN_ARR(type_ = tp,componentRef = cr,exp = e) :: rest),vars)
+    case ((DAE.STMT_ASSIGN_ARR(type_ = tp,componentRef = cr,exp = e) :: rest),vars)
       equation
         lst1 = incidenceRowStmts(rest, vars);
         lst2 = incidenceRowExp(e, vars);
@@ -664,27 +664,27 @@ algorithm
         res = Util.listFlatten({lst1,lst2,lst3});
       then
         res;
-    case ((Algorithm.IF(exp = e,statementLst = stmts,else_ = else_) :: rest),vars)
+    case ((DAE.STMT_IF(exp = e,statementLst = stmts,else_ = else_) :: rest),vars)
       equation
         print("incidence_row_stmts on IF not implemented\n");
       then
         {};
-    case ((Algorithm.FOR(type_ = _) :: rest),vars)
+    case ((DAE.STMT_FOR(type_ = _) :: rest),vars)
       equation
         print("incidence_row_stmts on FOR not implemented\n");
       then
         {};
-    case ((Algorithm.WHILE(exp = _) :: rest),vars)
+    case ((DAE.STMT_WHILE(exp = _) :: rest),vars)
       equation
         print("incidence_row_stmts on WHILE not implemented\n");
       then
         {};
-    case ((Algorithm.WHEN(exp = e) :: rest),vars)
+    case ((DAE.STMT_WHEN(exp = e) :: rest),vars)
       equation
         print("incidence_row_stmts on WHEN not implemented\n");
       then
         {};
-    case ((Algorithm.ASSERT(cond = _) :: rest),vars)
+    case ((DAE.STMT_ASSERT(cond = _) :: rest),vars)
       equation
         print("incidence_row_stmts on ASSERT not implemented\n");
       then

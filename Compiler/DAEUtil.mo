@@ -906,7 +906,7 @@ algorithm
       String s1,s2,s3,str;
       list<Algorithm.Statement> stmts;
       list<DAE.Element> xs;
-    case ((DAE.ALGORITHM(algorithm_ = Algorithm.ALGORITHM(statementLst = stmts)) :: xs))
+    case ((DAE.ALGORITHM(algorithm_ = DAE.ALGORITHM_STMTS(statementLst = stmts)) :: xs))
       equation 
         s1 = Dump.getStringList(stmts, ppStatementStr, "");
         s2 = stringAppend("algorithm\n", s1);
@@ -936,7 +936,7 @@ algorithm
       String s1,s2,s3,str;
       list<Algorithm.Statement> stmts;
       list<DAE.Element> xs;
-    case ((DAE.INITIALALGORITHM(algorithm_ = Algorithm.ALGORITHM(statementLst = stmts)) :: xs))
+    case ((DAE.INITIALALGORITHM(algorithm_ = DAE.ALGORITHM_STMTS(statementLst = stmts)) :: xs))
       equation 
         s1 = Dump.getStringList(stmts, ppStatementStr, "");
         s2 = stringAppend("algorithm\n", s1);
@@ -2196,7 +2196,7 @@ algorithm
   _:=
   matchcontinue (inElement)
     local list<Algorithm.Statement> stmts;
-    case DAE.ALGORITHM(algorithm_ = Algorithm.ALGORITHM(statementLst = stmts))
+    case DAE.ALGORITHM(algorithm_ = DAE.ALGORITHM_STMTS(statementLst = stmts))
       equation 
         Print.printBuf("algorithm\n");
         Dump.printList(stmts, ppStatement, "");
@@ -2215,7 +2215,7 @@ algorithm
   _:=
   matchcontinue (inElement)
     local list<Algorithm.Statement> stmts;
-    case DAE.INITIALALGORITHM(algorithm_ = Algorithm.ALGORITHM(statementLst = stmts))
+    case DAE.INITIALALGORITHM(algorithm_ = DAE.ALGORITHM_STMTS(statementLst = stmts))
       equation 
         Print.printBuf("initial algorithm\n");
         Dump.printList(stmts, ppStatement, "");
@@ -2235,7 +2235,7 @@ algorithm
     local
       String s1,str;
       list<Algorithm.Statement> stmts;
-    case (DAE.ALGORITHM(algorithm_ = Algorithm.ALGORITHM(statementLst = stmts)))
+    case (DAE.ALGORITHM(algorithm_ = DAE.ALGORITHM_STMTS(statementLst = stmts)))
       equation 
         s1 = Dump.getStringList(stmts, ppStatementStr, "");
         str = stringAppend("algorithm\n", s1);
@@ -2256,7 +2256,7 @@ algorithm
     local
       String s1,str;
       list<Algorithm.Statement> stmts;
-    case DAE.INITIALALGORITHM(algorithm_ = Algorithm.ALGORITHM(statementLst = stmts))
+    case DAE.INITIALALGORITHM(algorithm_ = DAE.ALGORITHM_STMTS(statementLst = stmts))
       equation 
         s1 = Dump.getStringList(stmts, ppStatementStr, "");
         str = stringAppend("initial algorithm\n", s1);
@@ -2440,7 +2440,7 @@ algorithm
       list<Algorithm.Statement> then_,stmts;
       Algorithm.Statement stmt;
       Algorithm.Else else_;
-    case (Algorithm.ASSIGN(exp1 = e2 as Exp.ASUB(_,_),exp = e),i) local Exp.Exp ae1,ae2;
+    case (DAE.STMT_ASSIGN(exp1 = e2 as Exp.ASUB(_,_),exp = e),i) local Exp.Exp ae1,ae2;
       equation 
         indent(i);
         Exp.printExp(e2);
@@ -2449,7 +2449,7 @@ algorithm
         Print.printBuf(";\n");
       then
         ();
-    case (Algorithm.ASSIGN(exp1 = e2 as Exp.CREF(c,_),exp = e),i) 
+    case (DAE.STMT_ASSIGN(exp1 = e2 as Exp.CREF(c,_),exp = e),i) 
       equation 
         indent(i);
         Exp.printComponentRef(c);
@@ -2458,7 +2458,7 @@ algorithm
         Print.printBuf(";\n");
       then
         (); 
-    case (Algorithm.ASSIGN_ARR(componentRef = c,exp = e),i)
+    case (DAE.STMT_ASSIGN_ARR(componentRef = c,exp = e),i)
       equation 
         indent(i);
         Exp.printComponentRef(c);
@@ -2467,7 +2467,7 @@ algorithm
         Print.printBuf(";\n");
       then
         ();
-    case (Algorithm.TUPLE_ASSIGN(expExpLst = expl,exp = e),i)
+    case (DAE.STMT_TUPLE_ASSIGN(expExpLst = expl,exp = e),i)
       equation 
         s1 = indentStr(i);
         s2 = Exp.printExpStr(e);
@@ -2477,7 +2477,7 @@ algorithm
         Print.printBuf(str);
       then
         ();
-    case (Algorithm.IF(exp = e,statementLst = then_,else_ = else_),i)
+    case (DAE.STMT_IF(exp = e,statementLst = then_,else_ = else_),i)
       equation 
         indent(i);
         Print.printBuf("if ");
@@ -2490,7 +2490,7 @@ algorithm
         Print.printBuf("end if;\n");
       then
         ();
-    case (Algorithm.FOR(ident = id,exp = e,statementLst = stmts),i)
+    case (DAE.STMT_FOR(ident = id,exp = e,statementLst = stmts),i)
       equation 
         indent(i);
         Print.printBuf("for ");
@@ -2504,7 +2504,7 @@ algorithm
         Print.printBuf("end for;\n");
       then
         ();
-    case (Algorithm.WHILE(exp = e,statementLst = stmts),i)
+    case (DAE.STMT_WHILE(exp = e,statementLst = stmts),i)
       equation 
         indent(i);
         Print.printBuf("while ");
@@ -2516,13 +2516,13 @@ algorithm
         Print.printBuf("end while;\n");
       then
         ();
-    case (stmt as Algorithm.WHEN(exp = _),i)
+    case (stmt as DAE.STMT_WHEN(exp = _),i)
       equation 
         indent(i);
         Print.printBuf(ppWhenStmtStr(stmt,1));
       then
         ();
-    case (Algorithm.ASSERT(cond = cond,msg = msg),i)
+    case (DAE.STMT_ASSERT(cond = cond,msg = msg),i)
       equation 
         indent(i);
         Print.printBuf("assert( ");
@@ -2532,13 +2532,13 @@ algorithm
         Print.printBuf(");\n");
       then
         ();
-    case (Algorithm.BREAK(),i)
+    case (DAE.STMT_BREAK(),i)
       equation 
         indent(i);
         Print.printBuf("break;\n");
       then
         ();
-    case (Algorithm.REINIT(e1,e2),i)
+    case (DAE.STMT_REINIT(e1,e2),i)
            local Exp.Exp e1,e2;
       equation 
         indent(i);
@@ -2576,7 +2576,7 @@ algorithm
       list<Algorithm.Statement> then_,stmts;
       Algorithm.Statement stmt;
       Algorithm.Else else_;
-    case (Algorithm.WHEN(exp = e,statementLst = stmts, elseWhen=NONE),i)
+    case (DAE.STMT_WHEN(exp = e,statementLst = stmts, elseWhen=NONE),i)
       equation 
         s3 = stringAppend("when ",Exp.printExpStr(e));
         s5 = stringAppend(s3, " then\n");
@@ -2588,7 +2588,7 @@ algorithm
         str = stringAppend(s9, "end when;\n");
       then
         str;
-    case (Algorithm.WHEN(exp = e,statementLst = stmts, elseWhen=SOME(stmt)),i)
+    case (DAE.STMT_WHEN(exp = e,statementLst = stmts, elseWhen=SOME(stmt)),i)
       equation 
         s3 = Exp.printExpStr(e);
         s4 = stringAppend("when ", s3);
@@ -2625,7 +2625,7 @@ algorithm
       list<Algorithm.Statement> then_,stmts;
       Algorithm.Statement stmt;
       Algorithm.Else else_;
-    case (Algorithm.ASSIGN(exp1 = e2 as Exp.CREF(c,_),exp = e),i)
+    case (DAE.STMT_ASSIGN(exp1 = e2 as Exp.CREF(c,_),exp = e),i)
       equation 
         s1 = indentStr(i);
         s2 = Exp.printComponentRefStr(c);
@@ -2636,7 +2636,7 @@ algorithm
         str = stringAppend(s6, ";\n");
       then
         str;
-    case (Algorithm.ASSIGN(exp1 = e2 as Exp.ASUB(_,_),exp = e),i) local Exp.Exp ae1,ae2;
+    case (DAE.STMT_ASSIGN(exp1 = e2 as Exp.ASUB(_,_),exp = e),i) local Exp.Exp ae1,ae2;
       equation 
         s1 = indentStr(i);
         s2 = Exp.printExpStr(e2);
@@ -2648,7 +2648,7 @@ algorithm
       then
         str;
     
-    case (Algorithm.ASSIGN_ARR(componentRef = c,exp = e),i)
+    case (DAE.STMT_ASSIGN_ARR(componentRef = c,exp = e),i)
       equation 
         s1 = indentStr(i);
         s2 = Exp.printComponentRefStr(c);
@@ -2659,7 +2659,7 @@ algorithm
         str = stringAppend(s6, ";\n");
       then
         str;
-    case (Algorithm.TUPLE_ASSIGN(expExpLst = expl,exp = e),i)
+    case (DAE.STMT_TUPLE_ASSIGN(expExpLst = expl,exp = e),i)
       equation 
         s1 = indentStr(i);
         s2 = Exp.printExpStr(e);
@@ -2668,7 +2668,7 @@ algorithm
         str = Util.stringAppendList({s1,"(",s3,") := ",s2,";\n"});
       then
         str;
-    case (Algorithm.IF(exp = e,statementLst = then_,else_ = else_),i)
+    case (DAE.STMT_IF(exp = e,statementLst = then_,else_ = else_),i)
       equation 
         s1 = indentStr(i);
         s2 = stringAppend(s1, "if ");
@@ -2685,7 +2685,7 @@ algorithm
         str = stringAppend(s11, "end if;\n");
       then
         str;
-    case (Algorithm.FOR(ident = id,exp = e,statementLst = stmts),i)
+    case (DAE.STMT_FOR(ident = id,exp = e,statementLst = stmts),i)
       equation 
         s1 = indentStr(i);
         s2 = stringAppend(s1, "for ");
@@ -2702,7 +2702,7 @@ algorithm
         str = stringAppend(s11, "end for;\n");
       then
         str;
-    case (Algorithm.WHILE(exp = e,statementLst = stmts),i)
+    case (DAE.STMT_WHILE(exp = e,statementLst = stmts),i)
       equation 
         s1 = indentStr(i);
         s2 = stringAppend(s1, "while ");
@@ -2717,14 +2717,14 @@ algorithm
         str = stringAppend(s9, "end while;\n");
       then
         str;
-    case (stmt as Algorithm.WHEN(exp = _),i)
+    case (stmt as DAE.STMT_WHEN(exp = _),i)
       equation 
         s1 = indentStr(i);
         s2 = ppWhenStmtStr(stmt,i);
         str = stringAppend(s1,s2);
       then
         str;
-    case (Algorithm.ASSERT(cond = cond,msg = msg),i)
+    case (DAE.STMT_ASSERT(cond = cond,msg = msg),i)
       equation 
         s1 = indentStr(i);
         cond_str = Exp.printExpStr(cond);
@@ -2733,7 +2733,7 @@ algorithm
       then
         str;
 
-    case (Algorithm.NORETCALL(e),i)
+    case (DAE.STMT_NORETCALL(e),i)
       equation 
         s1 = indentStr(i);
         s2 = Exp.printExpStr(e);
@@ -2741,13 +2741,13 @@ algorithm
       then
         str;
 
-    case (Algorithm.BREAK(),i)
+    case (DAE.STMT_BREAK(),i)
       equation 
         s1 = indentStr(i);
         str = stringAppend(s1, "break;\n");
       then
         str;
-    case (Algorithm.REINIT(e1,e2),i)
+    case (DAE.STMT_REINIT(e1,e2),i)
       local Exp.Exp e1,e2; String e1_str,e2_str;
         equation
           s1 = indentStr(i);
@@ -2827,8 +2827,8 @@ algorithm
       Exp.Exp e;
       list<Algorithm.Statement> then_,stmts;
       Algorithm.Else else_;
-    case (Algorithm.NOELSE(),_) then (); 
-    case (Algorithm.ELSEIF(exp = e,statementLst = then_,else_ = else_),i)
+    case (DAE.NOELSE(),_) then (); 
+    case (DAE.ELSEIF(exp = e,statementLst = then_,else_ = else_),i)
       equation 
         indent(i);
         Print.printBuf("elseif ");
@@ -2839,7 +2839,7 @@ algorithm
         ppElse(else_, i);
       then
         ();
-    case (Algorithm.ELSE(statementLst = stmts),i)
+    case (DAE.ELSE(statementLst = stmts),i)
       equation 
         indent(i);
         Print.printBuf("else\n");
@@ -2866,8 +2866,8 @@ algorithm
       Exp.Exp e;
       list<Algorithm.Statement> then_,stmts;
       Algorithm.Else else_;
-    case (Algorithm.NOELSE(),_) then ""; 
-    case (Algorithm.ELSEIF(exp = e,statementLst = then_,else_ = else_),i)
+    case (DAE.NOELSE(),_) then ""; 
+    case (DAE.ELSEIF(exp = e,statementLst = then_,else_ = else_),i)
       equation 
         s1 = indentStr(i);
         s2 = stringAppend(s1, "elseif ");
@@ -2881,7 +2881,7 @@ algorithm
         str = stringAppend(s7, s8);
       then
         str;
-    case (Algorithm.ELSE(statementLst = stmts),i)
+    case (DAE.ELSE(statementLst = stmts),i)
       equation 
         s1 = indentStr(i);
         s2 = stringAppend(s1, "else\n");
@@ -5543,17 +5543,17 @@ algorithm (traversedDaeList,Type_a) := matchcontinue(daeList,func,extraArg)
       (dae2,extraArg) = traverseDAE(dae,func,extraArg);
     then (DAE.REINIT(cr2,e11)::dae2,extraArg);
       
-  case(DAE.ALGORITHM(Algorithm.ALGORITHM(stmts))::dae,func,extraArg) 
+  case(DAE.ALGORITHM(DAE.ALGORITHM_STMTS(stmts))::dae,func,extraArg) 
     equation
       (stmts2,extraArg) = traverseDAEEquationsStmts(stmts,func,extraArg);
       (dae2,extraArg) = traverseDAE(dae,func,extraArg);
-    then (DAE.ALGORITHM(Algorithm.ALGORITHM(stmts2))::dae2,extraArg);
+    then (DAE.ALGORITHM(DAE.ALGORITHM_STMTS(stmts2))::dae2,extraArg);
       
-  case(DAE.INITIALALGORITHM(Algorithm.ALGORITHM(stmts))::dae,func,extraArg) 
+  case(DAE.INITIALALGORITHM(DAE.ALGORITHM_STMTS(stmts))::dae,func,extraArg) 
     equation
       (stmts2,extraArg) = traverseDAEEquationsStmts(stmts,func,extraArg);
       (dae2,extraArg) = traverseDAE(dae,func,extraArg);
-    then (DAE.INITIALALGORITHM(Algorithm.ALGORITHM(stmts2))::dae2,extraArg);
+    then (DAE.INITIALALGORITHM(DAE.ALGORITHM_STMTS(stmts2))::dae2,extraArg);
       
   case(DAE.IF_EQUATION(conds,tbs,elist2)::dae,func,extraArg)
     equation
@@ -5612,101 +5612,101 @@ algorithm(outStmts,oextraArg) := matchcontinue(inStmts,func,extraArg)
       list<Integer> li;
   case ({},_,extraArg) then ({},extraArg);
       
-  case ((Algorithm.ASSIGN(type_ = tp,exp1 = e2,exp = e) :: xs),func,extraArg)
+  case ((DAE.STMT_ASSIGN(type_ = tp,exp1 = e2,exp = e) :: xs),func,extraArg)
     equation 
       (e_1,extraArg) = func(e, extraArg);
       (e_2,extraArg) = func(e2, extraArg);
       (xs_1,extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
-    then (Algorithm.ASSIGN(tp,e_2,e_1) :: xs_1,extraArg);
+    then (DAE.STMT_ASSIGN(tp,e_2,e_1) :: xs_1,extraArg);
       
-  case ((Algorithm.TUPLE_ASSIGN(type_ = tp,expExpLst = expl1, exp = e) :: xs),func,extraArg)
+  case ((DAE.STMT_TUPLE_ASSIGN(type_ = tp,expExpLst = expl1, exp = e) :: xs),func,extraArg)
     equation 
       (e_1, extraArg) = func(e, extraArg);
       (expl2, extraArg) = traverseDAEExpList(expl1,func,extraArg);
       (xs_1, extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
-    then ((Algorithm.TUPLE_ASSIGN(tp,expl2,e_1) :: xs_1),extraArg);
+    then ((DAE.STMT_TUPLE_ASSIGN(tp,expl2,e_1) :: xs_1),extraArg);
       
-  case ((Algorithm.ASSIGN_ARR(type_ = tp,componentRef = cr, exp = e) :: xs),func,extraArg)
+  case ((DAE.STMT_ASSIGN_ARR(type_ = tp,componentRef = cr, exp = e) :: xs),func,extraArg)
     equation 
       (e_1, extraArg) = func(e, extraArg); 
       (e_2 as Exp.CREF(cr_1,_), extraArg) = func(Exp.CREF(cr,Exp.OTHER()), extraArg); 
       (xs_1, extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
-    then (Algorithm.ASSIGN_ARR(tp,cr_1,e_1) :: xs_1,extraArg);
+    then (DAE.STMT_ASSIGN_ARR(tp,cr_1,e_1) :: xs_1,extraArg);
       
-  case (((x as Algorithm.FOR(type_=tp,boolean=b1,ident=id1,exp=e,statementLst=stmts)) :: xs),func,extraArg)
+  case (((x as DAE.STMT_FOR(type_=tp,boolean=b1,ident=id1,exp=e,statementLst=stmts)) :: xs),func,extraArg)
     equation 
       (stmts2, extraArg) = traverseDAEEquationsStmts(stmts,func,extraArg);
       (e_1, extraArg) = func(e, extraArg); 
       (xs_1, extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
-    then (Algorithm.FOR(tp,b1,id1,e_1,stmts2) :: xs_1,extraArg);
+    then (DAE.STMT_FOR(tp,b1,id1,e_1,stmts2) :: xs_1,extraArg);
       
-  case (((x as Algorithm.WHILE(exp = e,statementLst=stmts)) :: xs),func,extraArg)
+  case (((x as DAE.STMT_WHILE(exp = e,statementLst=stmts)) :: xs),func,extraArg)
     equation 
       (stmts2, extraArg) = traverseDAEEquationsStmts(stmts,func,extraArg);
       (e_1, extraArg) = func(e, extraArg); 
       (xs_1, extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
-    then (Algorithm.WHILE(e_1,stmts2) :: xs_1,extraArg);
+    then (DAE.STMT_WHILE(e_1,stmts2) :: xs_1,extraArg);
       
-  case (((x as Algorithm.WHEN(exp = e,statementLst=stmts,elseWhen=NONE,helpVarIndices=li)) :: xs),func,extraArg)
+  case (((x as DAE.STMT_WHEN(exp = e,statementLst=stmts,elseWhen=NONE,helpVarIndices=li)) :: xs),func,extraArg)
     equation 
       (stmts2, extraArg) = traverseDAEEquationsStmts(stmts,func,extraArg);
       (e_1, extraArg) = func(e, extraArg); 
       (xs_1, extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
-    then (Algorithm.WHEN(e_1,stmts2,NONE,li) :: xs_1,extraArg);
+    then (DAE.STMT_WHEN(e_1,stmts2,NONE,li) :: xs_1,extraArg);
       
-  case (((x as Algorithm.WHEN(exp = e,statementLst=stmts,elseWhen=SOME(ew),helpVarIndices=li)) :: xs),func,extraArg)
+  case (((x as DAE.STMT_WHEN(exp = e,statementLst=stmts,elseWhen=SOME(ew),helpVarIndices=li)) :: xs),func,extraArg)
     equation 
       ({ew_1}, extraArg) = traverseDAEEquationsStmts({ew},func,extraArg);
       (stmts2, extraArg) = traverseDAEEquationsStmts(stmts,func,extraArg);
       (e_1, extraArg) = func(e, extraArg); 
       (xs_1, extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
-    then (Algorithm.WHEN(e_1,stmts2,SOME(ew),li) :: xs_1,extraArg);
+    then (DAE.STMT_WHEN(e_1,stmts2,SOME(ew),li) :: xs_1,extraArg);
       
-  case (((x as Algorithm.ASSERT(cond = e, msg=e2)) :: xs),func,extraArg)
+  case (((x as DAE.STMT_ASSERT(cond = e, msg=e2)) :: xs),func,extraArg)
     equation 
       (e_1, extraArg) = func(e, extraArg); 
       (e_2, extraArg) = func(e2, extraArg); 
       (xs_1, extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
-    then (Algorithm.ASSERT(e_1,e_2) :: xs_1,extraArg);
+    then (DAE.STMT_ASSERT(e_1,e_2) :: xs_1,extraArg);
       
-  case (((x as Algorithm.TERMINATE(msg = e)) :: xs),func,extraArg)
+  case (((x as DAE.STMT_TERMINATE(msg = e)) :: xs),func,extraArg)
     equation 
       (e_1, extraArg) = func(e, extraArg);
       (xs_1, extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
-    then (Algorithm.TERMINATE(e_1) :: xs_1,extraArg);
+    then (DAE.STMT_TERMINATE(e_1) :: xs_1,extraArg);
       
-  case (((x as Algorithm.REINIT(var = e,value=e2)) :: xs),func,extraArg)
+  case (((x as DAE.STMT_REINIT(var = e,value=e2)) :: xs),func,extraArg)
     equation 
       (e_1, extraArg) = func(e, extraArg); 
       (e_2, extraArg) = func(e2, extraArg); 
       (xs_1, extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
-    then (Algorithm.REINIT(e_1,e_2) :: xs_1,extraArg);
+    then (DAE.STMT_REINIT(e_1,e_2) :: xs_1,extraArg);
       
-  case (((x as Algorithm.NORETCALL(e)) :: xs),func,extraArg)
+  case (((x as DAE.STMT_NORETCALL(e)) :: xs),func,extraArg)
     local Absyn.Path fnName;
     equation
       (e_1, extraArg) = func(e, extraArg);
       (xs_1, extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
-    then (Algorithm.NORETCALL(e_1) :: xs_1,extraArg);
+    then (DAE.STMT_NORETCALL(e_1) :: xs_1,extraArg);
       
-  case (((x as Algorithm.RETURN()) :: xs),func,extraArg)
+  case (((x as DAE.STMT_RETURN()) :: xs),func,extraArg)
     equation 
       (xs_1, extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
     then (x :: xs_1,extraArg);   
       
-  case (((x as Algorithm.BREAK()) :: xs),func,extraArg)
+  case (((x as DAE.STMT_BREAK()) :: xs),func,extraArg)
     equation 
       (xs_1, extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
     then (x :: xs_1,extraArg);
       
-  case (((x as Algorithm.IF(exp=e,statementLst=stmts,else_ = el)) :: xs),func,extraArg)
+  case (((x as DAE.STMT_IF(exp=e,statementLst=stmts,else_ = el)) :: xs),func,extraArg)
     local Algorithm.Else el,el_1;
     equation 
       (el_1,extraArg) = traverseDAEEquationsStmtsElse(el,func,extraArg);
       (stmts2,extraArg) = traverseDAEEquationsStmts(stmts,func,extraArg);
       (e_1,extraArg) = func(e, extraArg); 
       (xs_1,extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
-    then (Algorithm.IF(e_1,stmts2,el_1) :: xs_1,extraArg);
+    then (DAE.STMT_IF(e_1,stmts2,el_1) :: xs_1,extraArg);
       
   case ((x :: xs),func,extraArg)
     equation 
@@ -5732,17 +5732,17 @@ algorithm (outElse,extraArg) := matchcontinue(inElse,func,extraArg)
     Exp.Exp e,e_1;
     list<Algorithm.Statement> st,st_1;
     Algorithm.Else el,el_1;
-  case(Algorithm.NOELSE(),_,extraArg) then (Algorithm.NOELSE,extraArg);
-  case(Algorithm.ELSEIF(e,st,el),func,extraArg)
+  case(DAE.NOELSE(),_,extraArg) then (DAE.NOELSE,extraArg);
+  case(DAE.ELSEIF(e,st,el),func,extraArg)
     equation
       (el_1,extraArg) = traverseDAEEquationsStmtsElse(el,func,extraArg);
       (st_1,extraArg) = traverseDAEEquationsStmts(st,func,extraArg);
       (e_1,extraArg) = func(e, extraArg); 
-    then (Algorithm.ELSEIF(e_1,st_1,el_1),extraArg);
-  case(Algorithm.ELSE(st),func,extraArg)
+    then (DAE.ELSEIF(e_1,st_1,el_1),extraArg);
+  case(DAE.ELSE(st),func,extraArg)
     equation
       (st_1,extraArg) = traverseDAEEquationsStmts(st,func,extraArg);
-    then (Algorithm.ELSE(st_1),extraArg);      
+    then (DAE.ELSE(st_1),extraArg);      
 end matchcontinue;
 end traverseDAEEquationsStmtsElse;
 
