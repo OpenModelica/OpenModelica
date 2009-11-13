@@ -10671,8 +10671,6 @@ algorithm
         cr = Prefix.prefixCref(crefPrefix,Exp.CREF_IDENT(id,Exp.OTHER(),{}));
         (cache,_,t,_,_,_) = Lookup.lookupVar(cache,env,cr);
         ty = Types.elabType(t);
-        // only for enumerations change ty
-        ty = elabTypeEnum(cache,env,ty,t,id,cr);
         sl = Types.getDimensions(t);
         /*Constant evaluate subscripts on form x[1,p,q] where p,q are constants or parameters*/
         (cache,ss_1,const) = elabSubscriptsDims(cache,env, ss, sl, impl); 
@@ -10690,16 +10688,6 @@ algorithm
         (cache,cr,const) = elabCrefSubs(cache,env, subs,crefPrefix,impl);
       then
         (cache,Exp.CREF_QUAL(id,ty,{},cr),const);
-       /* QUAL,with no subscripts second case => look for class */
-    case (cache,env,cr as Absyn.CREF_QUAL(name = id,subScripts = {},componentRef = subs),crefPrefix,impl)
-      local SCode.Class sclass; list<SCode.Element> eLst; list<String> names;
-      equation    
-        (_,sclass as SCode.CLASS(_,_,_,SCode.R_ENUMERATION(),SCode.PARTS(eLst,_,_,_,_,_,_)),_) = Lookup.lookupClass(cache,env,Absyn.IDENT(id),true);
-        names = Util.listMap(eLst, getEnumNames);
-        crefPrefix = Prefix.prefixAdd(id,{},crefPrefix,SCode.VAR()); // variability doesn't matter      
-        (cache,cr,const) = elabCrefSubs(cache,env, subs,crefPrefix,impl);
-      then
-        (cache,Exp.CREF_QUAL(id,Exp.ENUMERATION(NONE(),Absyn.IDENT(""),names,{}),{},cr),const);
        /* QUAL,with no subscripts second case => look for class */
     case (cache,env,cr as Absyn.CREF_QUAL(name = id,subScripts = {},componentRef = subs),crefPrefix,impl)
       equation    
@@ -10735,109 +10723,6 @@ algorithm
         fail();
   end matchcontinue;
 end elabCrefSubs;
-
-public function elabTypeEnum
-  input Env.Cache inCache;
-  input Env.Env inEnv;
-  input Exp.Type in_Ty;
-  input tuple<Types.TType, Option<Absyn.Path>> in_T;
-  input Ident in_Id;
-  input Exp.ComponentRef in_CR;
-  output Exp.Type out_Ty;
-algorithm
-  out_Ty:=
-  matchcontinue (inCache,inEnv,in_Ty,in_T,in_Id,in_CR)
-    local
-      Env.Cache cache;
-      Env.Env env;      
-      Exp.Type ty;
-      tuple<Types.TType, Option<Absyn.Path>> t;
-      Exp.ComponentRef cr;
-//    case (cache,env,ty,t,id,Exp.CREF_QUAL(ident=enumname))
-    case (cache,env,ty,t as (Types.T_ENUMERATION(SOME(_),_,_,_),_),id,Exp.CREF_QUAL(ident=enumname))
-      local 
-        SCode.Class sclass;
-        list<SCode.Element> eLst;
-        list<String> names;
-        Ident id, enumname;
-        Integer idx;
-      equation
-        // get Enum SCode
-        (_,sclass as SCode.CLASS(_,_,_,SCode.R_ENUMERATION(),SCode.PARTS(eLst,_,_,_,_,_,_)),_) = Lookup.lookupClass(cache,env,Absyn.IDENT(enumname),true);
-        // get Enumerationelements
-        names = Util.listMap(eLst, getEnumNames);
-        // get Enum Value 
-        idx = getEnumComponent(eLst,id,1);         
-      then 
-        Exp.ENUMERATION(SOME(idx),Absyn.IDENT(enumname),names,{});
-    case (_,_,ty,_,_,_) then ty;
-  end matchcontinue;
-end elabTypeEnum;
-
-public function getEnumNames
-  input SCode.Element in_Elem;
-  output String out_Name;
-algorithm
-  out_Name:=
-  matchcontinue (in_Elem)
-    local
-      String name;
-    case (SCode.COMPONENT(name,_,_,_,_,_,_,_,_,_,_,_,_)) then name;
-    case (_) then "";
-  end matchcontinue;
-end getEnumNames; 
-
-public function elabCrefEnum
-	input SCode.Class in_Class;
-  input Exp.ComponentRef in_CompRef;
-  output Integer out_Idx;
-algorithm 
-  out_Idx:=
-  matchcontinue (in_Class,in_CompRef)
-    local
-      Integer idx;
-      list<SCode.Element> complist;
-      Ident name;
-    case (SCode.CLASS(_,_,_,SCode.R_ENUMERATION,SCode.PARTS(complist,_,_,_,_,_,NONE())),Exp.CREF_IDENT(name,_,{}))
-      equation 
-        // get Component ID
-        idx = getEnumComponent(complist,name,1);
-      then
-        idx;
-    case (_,_) then 0;
-  end matchcontinue;
-end elabCrefEnum;     
-
-public function getEnumComponent
-	input list<SCode.Element> in_Complist;
-  input Ident in_Name;
-  input Integer in_Idx;
-  output Integer out_Idx;
-algorithm 
-  (out_Idx,out_Found):=
-  matchcontinue (in_Complist,in_Name,in_Idx)
-    local
-      Integer idx, id;
-      list<SCode.Element> complist;
-      SCode.Ident comp;
-      Ident name;
-    case (SCode.COMPONENT(comp,_,_,_,_,_,_,_,_,_,_,_,_) :: complist,name,idx)
-      equation 
-        // get Component ID
-        equality(comp = name); 
-      then
-        idx;
-    case (SCode.COMPONENT(comp,_,_,_,_,_,_,_,_,_,_,_,_) :: complist,name,idx)
-      local Integer id;
-      equation 
-        // recursive
-        id = idx + 1;
-        idx = getEnumComponent(complist,name,id);
-      then
-        idx;
-    case ({},_,_) then 0;
-  end matchcontinue;
-end getEnumComponent;
       
 public function elabSubscripts "function: elabSubscripts
  

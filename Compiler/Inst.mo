@@ -969,7 +969,7 @@ algorithm
   (outCache,outEnv,outIH,outStore,outDAEElementLst,outSets,outType,outState,optDerAttr,outGraph):=
   matchcontinue (inCache,inEnv,inIH,store,inMod,inPrefix,inSets,inClass,inInstDims,inBoolean,inCallingScope,inGraph)
     local
-      list<Env.Frame> env,env_1,env_3;
+      list<Env.Frame> env,env_1,env_3,env_4;
       Types.Mod mod;
       Prefix.Prefix pre;
       Connect.Sets csets,csets_1;
@@ -1061,7 +1061,9 @@ algorithm
         (cache,dae3) = Connect.unconnectedFlowEquations(cache,csets_1, dae1, env_3, pre,callscope_1,{});
         dae1_1 = updateTypesInUnconnectedConnectors(dae3,dae1_1);
         dae = Util.listFlatten({dae1_1,dae2,dae3});          
-        ty = mktype(fq_class, ci_state_1, tys, bc_ty, equalityConstraint) ;        
+        ty = mktype(fq_class, ci_state_1, tys, bc_ty, equalityConstraint) ; 
+        // update Enumerationtypes in environment
+        (cache,env_4) = updateEnumerationEnvironment(cache,env_3,ty,c,ci_state_1);      
         //print("\n---- DAE ----\n"); DAE.printDAE(DAE.DAE(dae));  //Print out flat modelica
         dae = renameUniqueVarsInTopScope(callscope_1,dae);
          dae = updateDeducedUnits(callscope_1,store,dae);
@@ -1070,7 +1072,7 @@ algorithm
          ty = MetaUtil.createUnionType(c,ty);
          /* ---------------------------------------------------------------------------------- */
       then 
-        (cache,env_3,ih,store,dae,Connect.SETS({},crs,dc,oc),ty,ci_state_1,oDA,graph);
+        (cache,env_4,ih,store,dae,Connect.SETS({},crs,dc,oc),ty,ci_state_1,oDA,graph);
 
     case (_,_,ih,_,_,_,_,SCode.CLASS(name = n),_,impl,_,graph)
       equation 
@@ -1079,6 +1081,77 @@ algorithm
         fail();
   end matchcontinue; 
 end instClass;
+
+protected function updateEnumerationEnvironment
+	input Env.Cache inCache;
+  input Env inEnv;
+  input tuple<Types.TType, Option<Absyn.Path>> inType;
+  input SCode.Class inClass;
+  input ClassInf.State inCi_State;
+	output Env.Cache outCache;
+  output Env outEnv;
+algorithm
+  (outCache,outEnv) := matchcontinue(inCache,inEnv,inType,inClass,inCi_State)
+  local
+    Env.Cache cache;
+    Env env,env_1;
+    tuple<Types.TType, Option<Absyn.Path>> ty;
+    SCode.Class c;
+    ClassInf.State ci_state;
+    String name;
+    list<String> names;
+    list<Types.Var> vars;
+    Absyn.Path p;
+    case (cache,env,ty as ((Types.T_ENUMERATION(NONE(),_,names,vars)),SOME(p)),c,ClassInf.ENUMERATION(name)) 
+      equation
+        (cache,env_1) = updateEnumerationEnvironment1(cache,env,name,names,vars,p);
+      then
+       (cache,env_1);
+    case (cache,env,ty,c,_) then (cache,env);
+  end matchcontinue;  
+end updateEnumerationEnvironment;
+
+protected function updateEnumerationEnvironment1
+	input Env.Cache inCache;
+  input Env inEnv;
+  input String inName;
+  input list<String> inNames;
+  input list<Types.Var> inVars;
+  input Absyn.Path inPath;
+	output Env.Cache outCache;
+  output Env outEnv;
+algorithm
+  (outCache,outEnv) := matchcontinue(inCache,inEnv,inName,inNames,inVars,inPath)
+  local
+    Env.Cache cache;
+    Env env,env_1,env_2,env_3,compenv;
+    String name,n,nn;
+    list<String> names;
+    list<Types.Var> vars;
+    Types.Var var, outVar, new_var;
+    Types.Type ty;
+    Option<tuple<SCode.Element, Types.Mod>> outTplSCodeElementTypesModOption;
+    Env.InstStatus instStatus;
+    Absyn.Path p;
+    Types.Ident name;
+    Types.Attributes attributes;
+    Boolean protected_;
+    Types.Binding binding;
+    case (cache,env,name,nn::names,(var as Types.VAR(_,_,_,ty,_))::vars,p) 
+      equation
+        // get Var
+        (cache,Types.VAR(name,attributes,protected_,_,binding),outTplSCodeElementTypesModOption,instStatus,compenv)  = Lookup.lookupIdentLocal(cache,env, nn);
+        // change type
+        new_var = Types.VAR(name,attributes,protected_,ty,binding);
+        // update
+         env_1 = Env.updateFrameV(env, new_var, Env.VAR_DAE(), compenv)  ;
+        // next
+        (cache,env_2) = updateEnumerationEnvironment1(cache,env_1,name,names,vars,p); 
+      then
+       (cache,env_2);
+    case (cache,env,_,{},_,_) then (cache,env);
+  end matchcontinue;  
+end updateEnumerationEnvironment1;
 
 protected function updateDeducedUnits "updates the deduced units in each DAE.VAR"
   input Boolean callScope;
@@ -8145,7 +8218,7 @@ algorithm
       SCode.Restriction restr;
       SCode.ClassDef parts;
       list<SCode.Element> els;
-      list<String> l;
+      list<SCode.Ident> l;
       Env.Cache cache;
       InstanceHierarchy ih;
 
@@ -8995,7 +9068,7 @@ protected function instEnumeration
   author: PA
   This function takes an Ident and list of strings, and returns an enumeration class."
   input SCode.Ident n;
-  input list<String> l;
+  input list<SCode.Ident> l;
   output SCode.Class outClass;
   list<SCode.Element> comp;
 algorithm 
@@ -9009,14 +9082,15 @@ protected function makeEnumComponents
   author: PA
   This function takes a list of strings and returns the elements of 
   type EnumType each corresponding to one of the enumeration values."
-  input list<String> inStringLst;
+  input list<SCode.Ident> inStringLst;
   output list<SCode.Element> outSCodeElementLst;
 algorithm 
   outSCodeElementLst:= matchcontinue (inStringLst)
     local
       String str;
+      Integer idx;
       list<SCode.Element> els;
-      list<String> x;
+      list<SCode.Ident> x;
     case ({str}) 
       then {SCode.COMPONENT(str,Absyn.UNSPECIFIED(),true,false,false,
             SCode.ATTR({},false,false,SCode.RO(),SCode.CONST(),Absyn.BIDIR()),
@@ -12241,7 +12315,10 @@ algorithm
       then
         ((Types.T_BOOL(v),somep));
     case (p,ClassInf.TYPE_ENUM(string = _),_,_,_)
+//        local SCode.Class sclass; list<SCode.Element> eLst; list<String> names;
       equation 
+        
+//       (_,sclass as SCode.CLASS(_,_,_,SCode.R_ENUMERATION(),SCode.PARTS(eLst,_,_,_,_,_,_)),_) = Lookup.lookupClass(cache,env,Absyn.IDENT(id),true);
         somep = getOptPath(p);
       then
         ((Types.T_ENUMERATION(SOME(0),Absyn.IDENT(""),{},{}),somep));

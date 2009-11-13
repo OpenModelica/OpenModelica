@@ -588,7 +588,7 @@ algorithm
       list<Algorithm> als,initals;
       Option<Absyn.ExternalDecl> decl;
       list<Absyn.ClassPart> parts;
-      list<String> lst_1,vars;
+      list<String> vars;
       list<Absyn.EnumLiteral> lst;
       String name;
       Absyn.Path path;
@@ -614,6 +614,7 @@ algorithm
       then
         PARTS(els,anns,eqs,initeqs,als,initals,decl);
     case (Absyn.ENUMERATION(enumLiterals = Absyn.ENUMLITERALS(enumLiterals = lst)))
+      local list<Integer> intlst; list<Ident> lst_1;
       equation 
         Debug.fprintln("elab", "elaborating enumerations");
         lst_1 = elabEnumlist(lst);
@@ -711,7 +712,7 @@ protected function elabEnumlist
 algorithm 
   outIdentLst := matchcontinue (inAbsynEnumLiteralLst)
     local
-      list<String> res;
+      list<Ident> res;
       String id;
       list<Absyn.EnumLiteral> rest;
     case ({}) then {}; 

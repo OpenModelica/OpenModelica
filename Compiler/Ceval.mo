@@ -4358,25 +4358,13 @@ algorithm
       Env.Cache cache;
       Exp.Type expTy;
     
-    /* Special rule for enumerations, the cr does not have a value since it -is- a value.
-     * This is ONLY used when we don't have an environment. 
-     */
-    case (cache,env as {},c as Exp.CREF_QUAL(_,expTy as Exp.ENUMERATION(_,_,_,_),_,Exp.CREF_IDENT(_,Exp.ENUMERATION(SOME(index),_,_,_),_)),impl,msg)
-      local Integer index;          
-//    case (cache,env as {},c as Exp.CREF_QUAL(_,expTy as Exp.ENUM(),_,_),impl,msg)  
-      then
-        (cache,Values.ENUM(c, index));
-    case (cache,env as {},c as Exp.CREF_IDENT(_,Exp.ENUMERATION(SOME(index),_,_,_),_),impl,msg)
-      local Integer index;
-//    case (cache,env as {},c as Exp.CREF_QUAL(_,expTy as Exp.ENUM(),_,_),impl,msg)  
-      then
-        (cache,Values.ENUM(c, index));    
     /* Enumerationtyp -> no lookup necesery */
-    case (cache,env,c as Exp.CREF_QUAL(_,expTy as Exp.ENUMERATION(_,_,_,_),_,Exp.CREF_IDENT(_,Exp.ENUMERATION(SOME(index),_,_,_),_)),impl,msg)
-      local Integer index;  
+    case (cache,env,c,impl,msg)
+      local Integer idx;
+      equation
+         idx = Exp.getEnumIndexfromCref(c);
       then
-        (cache,Values.ENUM(c, index));
-   
+        (cache,Values.ENUM(c,idx));
     /* Search in env for binding. */
     case (cache,env,c,impl,msg)  
       equation 
@@ -4385,7 +4373,6 @@ algorithm
         (cache,v) = cevalCrefBinding(cache,env, c, binding, impl, msg);
       then
         (cache,v);
-        
     case (cache,env,c,(impl as false),MSG())
       equation 
         failure((_,_,_,_,_,_) = Lookup.lookupVar(cache,env, c));

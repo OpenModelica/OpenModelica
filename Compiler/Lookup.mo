@@ -1174,12 +1174,14 @@ algorithm
         (cache,(c as SCode.CLASS(n,_,encflag,(r as SCode.R_ENUMERATION()),_)),env2) 
         	= lookupClass2(cache,env, Absyn.IDENT(id1), false) "Special case for looking up enumerations" ;
         env3 = Env.openScope(env2, encflag, SOME(n));
-        ci_state = ClassInf.start(r, n);
-        (cache,env5,_,_,_,_,_,types,_,_,_,_) = 
-        Inst.instClassIn(
-          cache,env3,InstanceHierarchy.emptyInstanceHierarchy,UnitAbsyn.noStore, 
-          Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
-          ci_state, c, false, {}, false, ConnectionGraph.EMPTY,NONE);
+//        ci_state = ClassInf.start(r, n);
+//        (cache,env5,_,_,_,_,_,types,_,_,_,_) = 
+//        Inst.instClassIn(
+//          cache,env3,InstanceHierarchy.emptyInstanceHierarchy,UnitAbsyn.noStore, 
+//          Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
+//          ci_state, c, false, {}, false, ConnectionGraph.EMPTY,NONE);
+        (cache,env5,_,_,_,_,_,_,_,_) = 
+        Inst.instClass(cache,env3,InstanceHierarchy.emptyInstanceHierarchy,UnitAbsyn.noStore,Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, c,{},false, Inst.TOP_CALL() ,ConnectionGraph.EMPTY);
         (cache,p_env,attr,ty,bind) = lookupVarInPackages(cache,env5, id2);
       then
         (cache,p_env,attr,ty,bind);

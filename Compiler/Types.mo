@@ -1303,13 +1303,12 @@ algorithm
           MOD(false,Absyn.NON_EACH(),{},
           SOME(TYPED(exp,SOME(v),PROP(ty,C_VAR()))))) :: res),NONE);
 
-    case ((v as Values.ENUM(cref as Exp.CREF_IDENT(_, t as Exp.ENUMERATION(oi,cname,names,_), _), i)) :: rest,(id :: ids))
+    case ((v as Values.ENUM(cref, i)) :: rest,(id :: ids))
       local 
         Exp.Type t;
-        Option<Integer> oi;
-        list<String> names;
-//    case ((v as Values.ENUM(cref , i)) :: rest,(id :: ids))
       equation 
+        t = Exp.getEnumTypefromCref(cref);
+        ty = expTypetoTypesType(t);
         MOD(_,_,res,_) = valuesToMods(rest, ids);
       then
         MOD(false,Absyn.NON_EACH(),
@@ -1318,25 +1317,7 @@ algorithm
           SOME(
           TYPED(Exp.CREF(cref,t),SOME(v),
 //          TYPED(Exp.CREF(cref,Exp.ENUM()),SOME(v),
-          PROP((T_ENUMERATION(oi,cname,names,{}),NONE),C_CONST()))))) :: res),NONE); 
-//          PROP((T_ENUM(),NONE),C_CONST()))))) :: res),NONE);
-          
-    case ((v as Values.ENUM(cref as Exp.CREF_QUAL(_, t as Exp.ENUMERATION(oi,cname,names,_), _, _), i)) :: rest,(id :: ids))
-      local 
-        Exp.Type t;
-        Option<Integer> oi;
-        list<String> names;
-//    case ((v as Values.ENUM(cref , i)) :: rest,(id :: ids))
-      equation 
-        MOD(_,_,res,_) = valuesToMods(rest, ids);
-      then
-        MOD(false,Absyn.NON_EACH(),
-          (NAMEMOD(id,
-          MOD(false,Absyn.NON_EACH(),{},
-          SOME(
-          TYPED(Exp.CREF(cref,t),SOME(v),
-//          TYPED(Exp.CREF(cref,Exp.ENUM()),SOME(v),
-          PROP((T_ENUMERATION(oi,cname,names,{}),NONE),C_CONST()))))) :: res),NONE);
+          PROP(ty,C_CONST()))))) :: res),NONE);
 //          PROP((T_ENUM(),NONE),C_CONST()))))) :: res),NONE);
                     
     case ((v as Values.ARRAY(vals)) :: rest,(id :: ids))
@@ -2882,19 +2863,53 @@ algorithm
   outType:=
   matchcontinue (inPath,inVarLst)
     local
-      list<Ident> strs;
-      Absyn.Path p,tp;
-      Ident name;
-      list<Var> xs;
-    case (p,(VAR(name = name) :: xs))
-      equation 
-        ((T_ENUMERATION(_,_,strs,{}),_)) = makeEnumerationType(p, xs);
-      then
-//        ((T_ENUMERATION(NONE(),Absyn.IDENT(""),(name :: strs),{}),SOME(p)));
-        ((T_ENUMERATION(NONE(),Absyn.IDENT(""),(name :: strs),{}),SOME(p)));
+      list<Ident> names;
+      Absyn.Path p;
+      list<Var> vars,vars_1;
     case (p,{}) then ((T_ENUMERATION(NONE(),Absyn.IDENT(""),{},{}),SOME(p))); 
+    case (p,vars)
+      equation 
+        // Var names
+        names = Util.listMap(vars,getVarName);
+        vars_1 = makeEnumerationType1(p,vars,names,1);
+      then
+        ((T_ENUMERATION(NONE(),Absyn.IDENT(""),names,vars_1),SOME(p)));
   end matchcontinue;
 end makeEnumerationType;
+
+public function makeEnumerationType1 "function: makeEnumerationType1
+ 
+  Creates an enumeration type from a name and a list of variables.
+"
+  input Absyn.Path inPath;
+  input list<Var> inVarLst;
+  input list<Ident> inNames;
+  input Integer inIdx;
+  output list<Var> outVarLst;
+algorithm 
+  outVarLst:=
+  matchcontinue (inPath,inVarLst,inNames,inIdx)
+    local
+      list<Ident> names;
+      Absyn.Path p;
+      Ident name;
+      list<Var> xs,vars;
+      Type t;
+      Integer idx;
+      Attributes attributes;
+      Boolean protected_;
+      Binding binding;
+      Var var;
+    case (p,VAR(name,attributes,protected_,_,binding) :: xs,names,idx)
+      equation 
+        vars = makeEnumerationType1(p, xs, names, idx+1);
+        t = (T_ENUMERATION(SOME(idx),Absyn.IDENT(""),names,{}),SOME(p));
+        var = VAR(name,attributes,protected_,t,binding);
+      then
+        (var :: vars);
+    case (p,{},names,_) then {}; 
+  end matchcontinue;
+end makeEnumerationType1;
 
 public function printFarg "function: printFarg
  

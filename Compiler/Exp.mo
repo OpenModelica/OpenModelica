@@ -11361,6 +11361,51 @@ algorithm
   end matchcontinue;
 end debugPrintComponentRefTypeStr;
 
+public function getEnumIndexfromCref "function: getEnumIndexfromCref
+  Evaluates ComponentRef, i.e. variables, by 
+  looking up variables in the environment."
+  input ComponentRef inComponentRef;
+  output Integer outEnumIndex;
+algorithm 
+  outEnumIndex :=
+  matchcontinue (inComponentRef)
+    local
+      ComponentRef c;
+      Integer idx;
+    case (CREF_IDENT(_,ENUMERATION(SOME(idx),_,_,_),_))
+      local Integer index;
+      then
+        idx;    
+    case (CREF_QUAL(_,_,_,c))
+      equation
+         idx = getEnumIndexfromCref(c);
+      then
+        idx;
+    case (_) then fail();
+    end matchcontinue;
+end getEnumIndexfromCref;
+
+public function getEnumTypefromCref "function: getEnumIndexfromCref
+  Evaluates ComponentRef, i.e. variables, by 
+  looking up variables in the environment."
+  input ComponentRef inComponentRef;
+  output Type outEnumType;
+algorithm 
+  outEnumType :=
+  matchcontinue (inComponentRef)
+    local
+      ComponentRef c;
+      Type t;
+    case (CREF_IDENT(_,t,_)) then t;    
+    case (CREF_QUAL(_,_,_,c))
+      equation
+         t = getEnumTypefromCref(c);
+      then
+        t;
+    case (_) then fail();
+    end matchcontinue;
+end getEnumTypefromCref;
+
 public function convertEnumCref "function: convertEnumCref
  
   Converts an Enumeration Cref into a Normal Cref
@@ -11372,19 +11417,21 @@ algorithm
   outComponentRef:=
   matchcontinue (inComponentRef)
       local
-        ComponentRef src;
-    /* enumeration */
-    case (src  as CREF_IDENT(ident, identType, {INDEX(CREF(CREF_QUAL(_,_,_,CREF_IDENT(_,ENUMERATION(SOME(idx),_,_,_),_)),_))}))
-      local
         Integer idx;
         Ident ident;
         Type identType;        
-        ComponentRef src1;
+        ComponentRef c;
+    /* enumeration */
+    case (CREF_IDENT(ident, identType, {INDEX(CREF(c,_))}))
+      equation
+        idx = getEnumIndexfromCref(c);
       then 
         CREF_IDENT(ident, identType , {INDEX(ICONST(idx))});
-    case (src) then src;
+    case (c) then c;
   end matchcontinue;
 end convertEnumCref;
+
+
 
 end Exp;
 

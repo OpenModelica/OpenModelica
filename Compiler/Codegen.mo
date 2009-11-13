@@ -5818,11 +5818,12 @@ algorithm
       then
         (cEmptyFunction,cref_str,tnr);
 
-    case (cref as Exp.CREF_IDENT(_, Exp.ENUMERATION(SOME(idx), _, names, _), _),Exp.ENUMERATION(_,_,_,_),tnr,context)
-        local Integer idx; list<String> names; String name;
-          equation
-            cref_str = intString(idx);
-        then (cEmptyFunction,cref_str,tnr);        
+    case (cref,Exp.ENUMERATION(_,_,_,_),tnr,context)
+      local Integer idx;
+      equation
+        idx = Exp.getEnumIndexfromCref(cref);
+        cref_str = intString(idx);
+      then (cEmptyFunction,cref_str,tnr);        
     case (cref,crt,tnr,context)
       equation
         (cref_str,{}) = compRefCstr(cref);
@@ -6220,20 +6221,14 @@ algorithm
       Lib id,cref_str,cref_str_1;
       list<Exp.Subscript> subs,cref_subs,subs_1;
       Exp.ComponentRef cref;
-    case Exp.CREF_IDENT(ident = id, identType =  Exp.ENUMERATION(SOME(idx),_,_,_), subscriptLst = subs)
+    case cref 
       local Integer idx; 
       equation
+        idx = Exp.getEnumIndexfromCref(cref);
         // no dots
         cref_str_1 = intString(idx);
         then
-          (cref_str_1,subs);      
-    case Exp.CREF_QUAL(id, Exp.ENUMERATION(_,_,_,_), subs, cref)
-      local Lib id1;
-      equation
-        (cref_str,cref_subs) = compRefCstr(cref);
-        subs_1 = Util.listFlatten({subs,cref_subs});
-        then
-          (cref_str,subs_1);        
+          (cref_str_1,{});      
     case Exp.CREF_IDENT(ident = id,subscriptLst = subs) then (id,subs);
     case Exp.CREF_QUAL(ident = id,subscriptLst = subs,componentRef = cref)
       equation

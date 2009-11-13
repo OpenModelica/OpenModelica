@@ -372,7 +372,7 @@ algorithm
   print("* runtimeOptions: call omc -help for seeing runtime options\n");
   print("* omcOptions:\n");
   print("\t++v|+version               will print the version and exit\n");
-  print("\t+q                         run in quiet mode, ouput nothing\n");
+  print("\t+q                         run in quiet mode, output nothing\n");
   print("\t+showErrorMessages         show error messages while they happen; default to no. \n");  
   print("\t+d=flags                   set debug flags: \n");  
   print("\t+d=failtrace               print what function fail\n");  
