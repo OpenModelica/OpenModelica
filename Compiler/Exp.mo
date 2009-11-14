@@ -11385,6 +11385,30 @@ algorithm
     end matchcontinue;
 end getEnumIndexfromCref;
 
+public function printEnumLiteralArray "function: printEnumLiteralArray
+  Evaluates ComponentRef, i.e. variables, by 
+  looking up variables in the environment."
+  input Type inType;
+  output String outString;
+  output Boolean outIsEnum;
+algorithm 
+  (outString,outIsEnum) :=
+  matchcontinue (inType)
+    local
+      list<Ident> names;
+      String namestr,nn;
+    case ENUMERATION(_,_,names,_)
+      local String index;
+      equation
+         nn = Util.stringDelimitList(names,"\",\"");
+         namestr = Util.stringAppendList({"{\"",nn,"\"}"});   
+      then
+        (namestr,true);    
+    case (_) then ("",false);
+    end matchcontinue;
+end printEnumLiteralArray;
+
+
 public function getEnumTypefromCref "function: getEnumIndexfromCref
   Evaluates ComponentRef, i.e. variables, by 
   looking up variables in the environment."

@@ -90,15 +90,15 @@ void modelica_boolean_to_modelica_string(modelica_string_t* dest,modelica_boolea
 
 /* Convert a modelica_enumeration to a modelica_string, used in String(b) */
 
-void modelica_enumeration_to_modelica_string(modelica_string_t* dest,modelica_string_t* e,modelica_integer minLen, modelica_boolean leftJustified, modelica_integer signDigits)
+void modelica_enumeration_to_modelica_string(modelica_string_t* dest,modelica_integer nr,modelica_string_t e[],modelica_integer minLen, modelica_boolean leftJustified, modelica_integer signDigits)
 {
-	modelica_string_t* pdummy=0;
-	init_modelica_string(pdummy,"String(Enumeration) not yet implemented\n");
-	/* free dest  */
-	if (dest != 0) free_modelica_string(dest);
-	/* copy  */
-/* 	copy_modelica_string(e,dest); */
-	copy_modelica_string(pdummy ,dest);
+	int i;
+    int length = strlen(e[nr-1]);
+    alloc_modelica_string(dest, length);
+    for (i = 0; i<length; ++i) {
+        (*dest)[i] = e[nr-1][i];
+    }
+    (*dest)[i]=0;
 }
 
 

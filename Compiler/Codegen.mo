@@ -5142,8 +5142,8 @@ algorithm
         (cfn,tvar,tnr2);
 
     case (Exp.CALL(path = Absyn.IDENT(name = "String"),expLst = {s,minlen,leftjust,signdig},tuple_ = false,builtin = true),tnr,context) /* max(v), v is vector */
-      local String cref_str; Exp.Exp s,minlen,leftjust,signdig; Boolean needCast; String var1,var2,var3,var4;
-        CFunction cfn3,cfn4;
+      local String cref_str; Exp.Exp s,minlen,leftjust,signdig; Boolean needCast; String var3,var4,var5,var6,var7,edecl,evar;
+        CFunction cfn3,cfn4; Boolean isenum; list<Lib> tedcllst;
       equation
         tp = Exp.typeof(s);
         tp_str = expTypeStr(tp, false);
@@ -5152,8 +5152,13 @@ algorithm
         (cfn2,var2,tnr1) = generateExpression(minlen, tnr1, context);
         (cfn3,var3,tnr1) = generateExpression(leftjust, tnr1, context);
         (cfn4,var4,tnr1) = generateExpression(signdig, tnr1, context);
-        cfn = cAddVariables(cEmptyFunction, {tdecl});
-        stmt = Util.stringAppendList({tp_str,"_to_modelica_string(&",tvar,",",var1,",",var2,",",var3,",",var4,");"});
+        (var5,isenum) = Exp.printEnumLiteralArray(tp);
+        (edecl,evar,tnr1) = generateTempDeclWithAssignment("modelica_string", tnr1,"[]",var5);
+        var6 = Util.stringAppendList({var1,",",evar});
+        var7 = Util.if_(isenum, var6, var1);
+        tedcllst = Util.if_(isenum, {tdecl,edecl}, {tdecl});
+        cfn = cAddVariables(cEmptyFunction, tedcllst);
+        stmt = Util.stringAppendList({tp_str,"_to_modelica_string(&",tvar,",",var7,",",var2,",",var3,",",var4,");"});
         cfn = cAddStatements(cfn, {stmt});
         cfn = cMergeFns({cfn1,cfn2,cfn3,cfn4,cfn});
       then
@@ -5630,6 +5635,33 @@ algorithm
         (t_1,tmp_name,tnr_1);
   end matchcontinue;
 end generateTempDecl;
+
+protected function generateTempDeclWithAssignment 
+"function: generateTempDecl
+  Generates code for the declaration of a temporary variable."
+  input String inStringType;
+  input Integer inInteger;
+  input String inStringType1;
+  input String inStringAssignment;
+  output String outStringDecl;
+  output String outStringRef;
+  output Integer outInteger3;
+algorithm
+  (outStringDecl,outStringRef,outInteger3):=
+  matchcontinue (inStringType,inInteger,inStringType1,inStringAssignment)
+    local
+      Lib tnr_str,tmp_name,t_1,t,a,t_2;
+      Integer tnr_1,tnr;
+    case (t,tnr,t_2,a)
+      equation
+        tnr_str = intString(tnr);
+        tnr_1 = tnr + 1;
+        tmp_name = stringAppend("tmp", tnr_str);
+        t_1 = Util.stringAppendList({t," ",tmp_name,t_2,"=",a,";"});
+      then
+        (t_1,tmp_name,tnr_1);
+  end matchcontinue;
+end generateTempDeclWithAssignment;
 
 protected function generateTempDeclList 
 "function: generateTempDeclList

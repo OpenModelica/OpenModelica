@@ -1510,6 +1510,12 @@ algorithm
         str_arr_1 = generateAttrVectorType2(vs, str_arr, nx, ny, np);
       then
         str_arr_1;
+    case ((v :: vs),str_arr,nx,ny,np) /* skip strings */
+      equation
+        DAELow.STRING() = DAELow.varType(v);
+        str_arr_1 = generateAttrVectorType2(vs, str_arr, nx, ny, np);
+      then
+        str_arr_1;        
     case ((v :: vs),str_arr,nx,ny,np)
       equation
         kind = DAELow.varKind(v);
@@ -1627,6 +1633,12 @@ algorithm
         str_arr_1 = generateAttrVectorType2(vs, str_arr, nx, ny, np);
       then
         str_arr_1;
+    case ((v :: vs),str_arr,nx,ny,np) /* skip strings */
+      equation
+        DAELow.STRING() = DAELow.varType(v);
+        str_arr_1 = generateAttrVectorType2(vs, str_arr, nx, ny, np);
+      then
+        str_arr_1;        
     case ((v :: vs),str_arr,nx,ny,np)
       equation
         kind = DAELow.varKind(v);
@@ -1813,6 +1825,12 @@ algorithm
         str_arr_1 = generateFixedVector3(vs, str_arr, nx, ny, np);
       then
         str_arr_1;
+    case ((v :: vs),str_arr,nx,ny,np) /* skip strings */
+      equation
+        DAELow.STRING() = DAELow.varType(v);
+        str_arr_1 = generateFixedVector3(vs, str_arr, nx, ny, np);
+      then
+        str_arr_1;        
     case ((v :: vs),str_arr,nx,ny,np)
       equation
         kind = DAELow.varKind(v);
@@ -1950,7 +1968,7 @@ algorithm
       list<DAELow.Var> var_lst,knvar_lst,extvar_lst;
       String[:] state_arr,derivative_arr,algvar_arr,param_arr,state_comment_arr,derivative_comment_arr,algvar_comment_arr,param_comment_arr,strparam_arr,strparam_comment_arr,stralg_arr,stralg_comment_arr;
       Integer num_state_2,num_derivative_2,num_algvars_2,num_input_2,num_output_2,num_param_2;
-      Integer num_var_names,num_var_names_1,nx,ny,ni,no,np,next,num_stralg,num_strparam;
+      Integer num_var_names,num_var_names_1,nx,ny,ni,no,np,nys,nps,next,num_stralg,num_strparam;
       list<String> input_arr,input_comment_arr,output_arr,output_comment_arr,get_name_function_ifs,var_defines,var_defines_1,state_str_1,derivative_str_1,algvars_str_1,param_str_1,state_comment_str_1,derivative_comment_str_1,algvars_comment_str_1,param_comment_str_1;
       list<String> stralg_str_1,strparam_str_1,stralg_comment_str_1,strparam_comment_str_1;
       String get_name_function_ifs_1,state_str_2,derivative_str_2,algvars_str_2,input_str_2,output_str_2,param_str_2,state_comment_str_2,derivative_comment_str_2,algvars_comment_str_2,input_comment_str_2,output_comment_str_2,param_comment_str_2,var_names,var_names_1,state_str_3,der_str_3,algvar_str_3,inputvar_str_3,outputvar_str_3,paramvar_str_3,res,state_comment_lst_1,der_comment_lst_1,algvar_comment_lst_1,inputvar_comment_lst_1,outputvar_comment_lst_1,paramvar_comment_lst_1,res2,get_name_function,var_defines_str;
@@ -1958,7 +1976,7 @@ algorithm
       String strparam_comment_lst_1,stralg_comment_lst_1;
       DAELow.Variables vars,knvars,extvars;
     case (DAELow.DAELOW(orderedVars = vars,knownVars = knvars,externalObjects = extvars),
-      nx,ny,ni,no,np,next,num_stralg,num_strparam)
+      nx,ny,ni,no,np,next,nys,nps)
       equation
         var_lst = DAELow.varList(vars);
         knvar_lst = DAELow.varList(knvars);
@@ -1972,10 +1990,10 @@ algorithm
         derivative_comment_arr = fill("\" ERROR\"", nx);
         algvar_comment_arr = fill("\" ERROR\"", ny);
         param_comment_arr = fill("\" ERROR\"", np);
-        stralg_arr = fill("\" stringalg ERROR\"", num_stralg);
-        stralg_comment_arr = fill("\" ERROR\"", num_stralg);
-        strparam_arr = fill("\" stringalg ERROR\"", num_strparam);
-        strparam_comment_arr = fill("\" ERROR\"", num_strparam);
+        stralg_arr = fill("\" stringalg ERROR\"", nys);
+        stralg_comment_arr = fill("\" ERROR\"", nys);
+        strparam_arr = fill("\" stringparam ERROR\"", nps);
+        strparam_comment_arr = fill("\" ERROR\"", nps);
 
         /* Variable list*/
         (state_arr,state_comment_arr,num_state_2,derivative_arr,derivative_comment_arr,
@@ -1986,7 +2004,7 @@ algorithm
             = generateVarNamesAndComments2(var_lst, state_arr, state_comment_arr, 0, derivative_arr,
           		derivative_comment_arr, 0, algvar_arr, algvar_comment_arr, 0, {}, {}, 0, {}, {}, 0,
          		 param_arr, param_comment_arr, 0,
-         		 stralg_arr,stralg_comment_arr,num_stralg,strparam_arr,strparam_comment_arr,num_strparam,
+         		 stralg_arr,stralg_comment_arr,0,strparam_arr,strparam_comment_arr,0,
          		 {}, {})  ;
 
       /* Known variable list*/
@@ -2024,6 +2042,8 @@ algorithm
         num_output_2 = no;
         num_input_2 = ni;
         num_param_2 = np;
+        num_stralg = nys;
+        num_strparam = nps;
 
 				// Generate array of variable names
 
@@ -2050,7 +2070,7 @@ algorithm
         outputvar_str_3 = generateCDeclForStringArray(outputNames, output_str_2, num_output_2);
         paramvar_str_3 = generateCDeclForStringArray(paramNames, param_str_2, num_param_2);
         stralg_str_3 = generateCDeclForStringArray(stringAlgNames, stralg_str_2, num_stralg);
-        strparam_str_3 = generateCDeclForStringArray(stringParamNames, stralg_str_2, num_stralg);
+        strparam_str_3 = generateCDeclForStringArray(stringParamNames, strparam_str_2, num_strparam);
 
         res = Util.stringAppendList(
           {state_str_3,der_str_3,algvar_str_3,inputvar_str_3,
@@ -2082,8 +2102,8 @@ algorithm
         inputvar_comment_lst_1 = generateCDeclForStringArray(inputComments, input_comment_str_2, num_input_2);
         outputvar_comment_lst_1 = generateCDeclForStringArray(outputComments, output_comment_str_2, num_output_2);
         paramvar_comment_lst_1 = generateCDeclForStringArray(paramComments, param_comment_str_2, num_param_2);
-        strparam_comment_lst_1 = generateCDeclForStringArray(stringParamComments, param_comment_str_2, num_param_2);
-        stralg_comment_lst_1 = generateCDeclForStringArray(stringAlgComments, param_comment_str_2, num_param_2);
+        strparam_comment_lst_1 = generateCDeclForStringArray(stringParamComments, strparam_comment_str_2, num_strparam);
+        stralg_comment_lst_1 = generateCDeclForStringArray(stringAlgComments, stralg_comment_str_2, num_stralg);
 
 				res2 = Util.stringAppendList(
           {state_comment_lst_1,der_comment_lst_1,algvar_comment_lst_1,
