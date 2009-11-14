@@ -370,9 +370,11 @@ RML_BEGIN_LABEL(Corba__initialize)
   /* get temp dir */
   char tmpDir[1024];
   strcpy(tmpDir, "/tmp");
+#ifndef __APPLE_CC__
   if (getenv("TMPDIR") != 0) {
     strcpy(tmpDir, getenv("TMPDIR"));
   }
+#endif
 
   /* get the user name */
   char *user = getenv("USER");
