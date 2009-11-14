@@ -1995,16 +1995,14 @@ void System_5finit(void)
   set_cxx("g++");
 #if defined(__sparc__)
   set_linker("gcc -G");
+#elif defined(__APPLE_CC__)
+  set_linker("gcc -single_module -dynamiclib -flat_namespace");
 #elif defined(__x86_64__)
   /* -fPIC needed on x86_64! */
   set_linker("gcc -shared -export-dynamic -fPIC");
 #else
-#ifdef __APPLE_CC__
-  set_linker("gcc -single_module -dynamiclib -flat_namespace");
-#else
   set_linker("gcc -shared -export-dynamic");
 #endif
-#endif /* __sparc__ */
 
 #if defined(__i386__) || defined(__x86_64__)
   /*
@@ -2020,7 +2018,7 @@ void System_5finit(void)
 	qthome = getenv("QTHOME");
 	if (qthome && strlen(qthome)) {
 #ifdef __APPLE_CC__
-		putenv("SENDDATALIBS=-lsendData -lQtNetwork -lQtCore -lQtGui -lz -framework Carbon");
+		putenv("SENDDATALIBS=-lsendData -framework QtNetwork -framework QtCore -framework QtGui -lz -framework Carbon");
 #else
 		putenv("SENDDATALIBS=-lsendData -lQtNetwork -lQtCore -lQtGui");
 #endif
