@@ -2553,7 +2553,7 @@ algorithm
         comment_1 = generateEmptyString(comment);
         stralg_arr = arrayUpdate(stralg_arr, indx + 1, name_1);
         stralg_comment_arr = arrayUpdate(stralg_comment_arr, indx + 1, comment_1);
-        if_str = generateGetnameFunctionIf(cr, typeVar,indx, algvarsNames);
+        if_str = generateGetnameFunctionIf(cr, typeVar,indx, stringAlgNames);
         is = intString(indx);
         name = Exp.printComponentRefStr(cr);
         define_str = generateNameDependentOnType("algebraics",typeVar);
@@ -2728,7 +2728,7 @@ algorithm
         comment_1 = generateEmptyString(comment);
         strparam_arr = arrayUpdate(strparam_arr, indx + 1, name_1);
         strparam_comment_arr = arrayUpdate(strparam_comment_arr, indx + 1, comment_1);
-        if_str = generateGetnameFunctionIf(cr, typeVar, indx, paramNames);
+        if_str = generateGetnameFunctionIf(cr, typeVar, indx, stringParamNames);
         is = intString(indx);
         name = Exp.printComponentRefStr(cr);
 
