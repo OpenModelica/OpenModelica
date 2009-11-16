@@ -6693,7 +6693,12 @@ algorithm
 
     /* extended classes type Y = Real[3]; class X extends Y; */   
     case (cache,env,mods,pre,SCode.CLASS(name = id,restriction = _,
-                                         classDef = SCode.PARTS(els,{},{},{},{},{},_)),
+                                         classDef = SCode.PARTS(elementLst=els,
+                                                                normalEquationLst={},
+                                                                initialEquationLst={},
+                                                                normalAlgorithmLst={},
+                                                                initialAlgorithmLst={},
+                                                                externalDecl=_)),
           dims,impl) 
       local list<SCode.Element> els, extendsels; SCode.Path path;
       equation 
