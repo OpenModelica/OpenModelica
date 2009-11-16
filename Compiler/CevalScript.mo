@@ -90,6 +90,7 @@ protected import UnitAbsyn;
 protected import UnitParserExt;
 protected import UnitAbsynBuilder;
 protected import Inline;
+protected import SimulationResults;
 
 public function cevalInteractiveFunctions 
 "function cevalInteractiveFunctions
@@ -710,7 +711,7 @@ algorithm
         pwd = System.pwd();
         pd = System.pathDelimiter();
         filename_1 = Util.stringAppendList({pwd,pd,filename});
-        value = System.readPtolemyplotDataset(filename_1, vars_1, size);
+        value = SimulationResults.readPtolemyplotDataset(filename_1, vars_1, size);
       then
         (cache,value,st);
 
@@ -739,7 +740,7 @@ algorithm
         pwd = System.pwd();
         pd = System.pathDelimiter();
         filename_1 = Util.stringAppendList({pwd,pd,filename});
-        value = System.readPtolemyplotDatasetSize(filename_1);
+        value = SimulationResults.readPtolemyplotDatasetSize(filename_1);
       then
         (cache,value,st);
 
@@ -776,7 +777,7 @@ algorithm
     
         (cache,Values.RECORD(orderd={Values.STRING(filename)}),_) = Ceval.ceval(cache,env, 
           Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.OTHER(),{}),Exp.OTHER()), true, SOME(st), NONE, msg);
-        value = System.readPtolemyplotDataset(filename, vars_2, 0);
+        value = SimulationResults.readPtolemyplotDataset(filename, vars_2, 0);
         pwd = System.pwd();
         cit = winCitation();
 
@@ -808,7 +809,7 @@ algorithm
         vars_2 = Util.listUnionElt("time", vars_1);
         (cache,Values.RECORD(orderd={Values.STRING(filename)}),_) = Ceval.ceval(cache,env, 
           Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.OTHER(),{}),Exp.OTHER()), true, SOME(st), NONE, msg);
-        failure(_ = System.readPtolemyplotDataset(filename, vars_2, 0));
+        failure(_ = SimulationResults.readPtolemyplotDataset(filename, vars_2, 0));
       then
         (cache,Values.STRING("Error reading the simulation result."),st);
 
@@ -875,10 +876,10 @@ algorithm
 //        vars_2 =
 
 
-       // value = System.readPtolemyplotDataset(filename2, vars_2, 0);
+       // value = SimulationResults.readPtolemyplotDataset(filename2, vars_2, 0);
 
 
- //       failure(_ = System.readPtolemyplotDataset(filename2, vars_2, 0));
+ //       failure(_ = SimulationResults.readPtolemyplotDataset(filename2, vars_2, 0));
 
       then
 					(cache,Values.STRING("Error reading the simulation result."),st);
@@ -920,7 +921,7 @@ algorithm
 //        vars_2 =
 
 
-        value = System.readPtolemyplotDataset(filename2, vars_2, 0);
+        value = SimulationResults.readPtolemyplotDataset(filename2, vars_2, 0);
 
         res = Values.sendPtolemyplotDataset(value, vars_2, "Plot by OpenModelica", interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, Exp.printExpStr(xRange), Exp.printExpStr(yRange));
 
@@ -953,7 +954,7 @@ algorithm
         failure(_ = System.getVariableNames(filename));
 //        vars_2 = Util.stringSplitAtChar(str, " ");
 
-//        failure(_ = System.readPtolemyplotDataset(filename, vars_2, 0));
+//        failure(_ = SimulationResults.readPtolemyplotDataset(filename, vars_2, 0));
 
       then
 					(cache,Values.STRING("Error reading the simulation result."),st);
@@ -982,7 +983,7 @@ algorithm
         Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.OTHER(),{}),Exp.OTHER()), true, SOME(st), NONE, msg);
         str = System.getVariableNames(filename);
         vars_2 = Util.stringSplitAtChar(str, " ");
-        value = System.readPtolemyplotDataset(filename, vars_2, 0);
+        value = SimulationResults.readPtolemyplotDataset(filename, vars_2, 0);
 
         res = Values.sendPtolemyplotDataset(value, vars_2, "Plot by OpenModelica", interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, Exp.printExpStr(xRange), Exp.printExpStr(yRange));
 
@@ -1018,7 +1019,7 @@ algorithm
 				filename = Absyn.pathString(className);
 				filename = Util.stringAppendList({filename, "_res.plt"});
 
-        value = System.readPtolemyplotDataset(filename, vars_2, 0);
+        value = SimulationResults.readPtolemyplotDataset(filename, vars_2, 0);
 
         res = Values.sendPtolemyplotDataset(value, vars_2, "Plot by OpenModelica", interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, Exp.printExpStr(xRange), Exp.printExpStr(yRange));
 
@@ -1052,7 +1053,7 @@ algorithm
  				filename = Absyn.pathString(className);
 				filename = Util.stringAppendList({filename, "_res.plt"});
 
-        failure(_ = System.readPtolemyplotDataset(filename, vars_2, 0));
+        failure(_ = SimulationResults.readPtolemyplotDataset(filename, vars_2, 0));
 
       then
 					(cache,Values.STRING("Error reading the simulation result."),st);
@@ -1080,7 +1081,7 @@ algorithm
         vars_2 = Util.listUnionElt("time", vars_1);
         (cache,Values.RECORD(orderd={Values.STRING(filename)}),_) = Ceval.ceval(cache,env,
           Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.OTHER(),{}),Exp.OTHER()), true, SOME(st), NONE, msg);
-        value = System.readPtolemyplotDataset(filename, vars_2, 0);
+        value = SimulationResults.readPtolemyplotDataset(filename, vars_2, 0);
         res = Values.sendPtolemyplotDataset(value, vars_2, "Plot by OpenModelica", interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, Exp.printExpStr(xRange), Exp.printExpStr(yRange));
 
       then
@@ -1110,7 +1111,7 @@ algorithm
         vars_2 = Util.listUnionElt("time", vars_1);
         (cache,Values.RECORD(orderd={Values.STRING(filename)}),_) = Ceval.ceval(cache,env,
           Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.OTHER(),{}),Exp.OTHER()), true, SOME(st), NONE, msg);
-        failure(_ = System.readPtolemyplotDataset(filename, vars_2, 0));
+        failure(_ = SimulationResults.readPtolemyplotDataset(filename, vars_2, 0));
       then
         (cache,Values.STRING("Error reading the simulation result."),st);
 
@@ -1197,11 +1198,11 @@ algorithm
 				filename = Util.stringAppendList({filename, "_res.plt"});
 				//print("filename: ");
 				//print(filename);
-				vars = System.readPtolemyplotVariables(filename, visvar_str);
+				vars = SimulationResults.readPtolemyplotVariables(filename, visvar_str);
         vars_2 = Util.listUnionElt("time", vars);
   		  //print(Util.stringAppendList(vars_2));
         //print(Util.stringDelimitList(vars_2, ", "));
-        value = System.readPtolemyplotDataset(filename, vars_2, 0);
+        value = SimulationResults.readPtolemyplotDataset(filename, vars_2, 0);
         res = Values.sendPtolemyplotDataset2(value, vars_2, visvar_str, "Plot by OpenModelica");
 
       then
@@ -1230,9 +1231,9 @@ algorithm
         //vars_2 = Util.listUnionElt("time", vars_1);
  				filename = Absyn.pathString(className);
 				filename = Util.stringAppendList({filename, "_res.plt"});
-				vars = System.readPtolemyplotVariables(filename);
+				vars = SimulationResults.readPtolemyplotVariables(filename);
 
-        failure(_ = System.readPtolemyplotDataset(filename, vars, 0));
+        failure(_ = SimulationResults.readPtolemyplotDataset(filename, vars, 0));
 
       then
 					(cache,Values.STRING("Error reading the simulation result."),st);*/
@@ -1263,7 +1264,7 @@ algorithm
         (cache,Values.RECORD(orderd={Values.STRING(filename)}),_) = Ceval.ceval(cache,env,
           Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.OTHER(),{}),Exp.OTHER()), true, SOME(st), NONE, msg);
         print("tjo\n");
-        value = System.readPtolemyplotDataset(filename, vars_2, 0);
+        value = SimulationResults.readPtolemyplotDataset(filename, vars_2, 0);
         print("value = " +& Values.valString(value));
         res = Values.sendPtolemyplotDataset(value, vars_2, "Plot by OpenModelica", interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, title, title);
 
@@ -1293,7 +1294,7 @@ algorithm
         vars_2 = Util.listUnionElt("time", vars_1);
         (cache,Values.RECORD(orderd={Values.STRING(filename)}),_) = Ceval.ceval(cache,env,
           Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.OTHER(),{}),Exp.OTHER()), true, SOME(st), NONE, msg);
-        failure(_ = System.readPtolemyplotDataset(filename, vars_2, 0));
+        failure(_ = SimulationResults.readPtolemyplotDataset(filename, vars_2, 0));
       then
         (cache,Values.STRING("Error reading the simulation result."),st);
 
@@ -1371,8 +1372,8 @@ algorithm
         (cache,Values.RECORD(orderd={Values.STRING(filename)}),_) = Ceval.ceval(cache,env,
         Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.OTHER(),{}),Exp.OTHER()), true, SOME(st), NONE, msg);
 
-        Values.ARRAY({Values.ARRAY(varValues)}) = System.readPtolemyplotDataset(filename, vars_1, 0);
-        Values.ARRAY({Values.ARRAY(timeValues)}) = System.readPtolemyplotDataset(filename, {"time"}, 0);
+        Values.ARRAY({Values.ARRAY(varValues)}) = SimulationResults.readPtolemyplotDataset(filename, vars_1, 0);
+        Values.ARRAY({Values.ARRAY(timeValues)}) = SimulationResults.readPtolemyplotDataset(filename, {"time"}, 0);
 
 
         tV = Values.valueReals(timeValues);
@@ -1408,8 +1409,8 @@ algorithm
         (cache,Values.RECORD(orderd={Values.STRING(filename)}),_) = Ceval.ceval(cache,env,
         Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.OTHER(),{}),Exp.OTHER()), true, SOME(st), NONE, msg);
 
-        Values.ARRAY({Values.ARRAY(varValues)}) = System.readPtolemyplotDataset(filename, vars_1, 0);
-        Values.ARRAY({Values.ARRAY(timeValues)}) = System.readPtolemyplotDataset(filename, {"time"}, 0);
+        Values.ARRAY({Values.ARRAY(varValues)}) = SimulationResults.readPtolemyplotDataset(filename, vars_1, 0);
+        Values.ARRAY({Values.ARRAY(timeValues)}) = SimulationResults.readPtolemyplotDataset(filename, {"time"}, 0);
 
 
         tV = Values.valueReals(timeValues);
@@ -1522,7 +1523,7 @@ algorithm
         (length > 1) = true;
         (cache,Values.RECORD(orderd={Values.STRING(filename)}),_) = Ceval.ceval(cache,env, 
           Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.OTHER(),{}),Exp.OTHER()), true, SOME(st), NONE, msg);
-        value = System.readPtolemyplotDataset(filename, vars_1, 0);
+        value = SimulationResults.readPtolemyplotDataset(filename, vars_1, 0);
         pwd = System.pwd();
         cit = winCitation();
         omhome = Settings.getInstallationDirectoryPath();
@@ -1565,7 +1566,7 @@ algorithm
         vars_1 = Util.listMap(vars, Exp.printExpStr) "Catch error reading simulation file." ;
         (cache,Values.RECORD(orderd={Values.STRING(filename)}),_) = Ceval.ceval(cache,env,
           Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.OTHER(),{}),Exp.OTHER()), true, SOME(st), NONE, msg) "Util.list_union_elt(\"time\",vars\') => vars\'\' &" ;
-        failure(_ = System.readPtolemyplotDataset(filename, vars_1, 0));
+        failure(_ = SimulationResults.readPtolemyplotDataset(filename, vars_1, 0));
       then
         (cache,Values.STRING("Error reading the simulation result."),st);
 
@@ -1621,7 +1622,7 @@ algorithm
 				filename = Absyn.pathString(className);
 				filename = Util.stringAppendList({filename, "_res.plt"});
 
-        value = System.readPtolemyplotDataset(filename, vars_1, 0);
+        value = SimulationResults.readPtolemyplotDataset(filename, vars_1, 0);
         pwd = System.pwd();
         cit = winCitation();
         omhome = Settings.getInstallationDirectoryPath();
@@ -1659,7 +1660,7 @@ algorithm
         (length > 1) = true;
         (cache,Values.RECORD(orderd={Values.STRING(filename)}),_) = Ceval.ceval(cache,env,
           Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.OTHER(),{}),Exp.OTHER()), true, SOME(st), NONE, msg);
-         value = System.readPtolemyplotDataset(filename, vars_1, 0);
+         value = SimulationResults.readPtolemyplotDataset(filename, vars_1, 0);
          res = Values.sendPtolemyplotDataset(value, vars_1, "Plot by OpenModelica", interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, Exp.printExpStr(xRange), Exp.printExpStr(yRange));
 
       then
@@ -1709,7 +1710,7 @@ algorithm
         vars_1 = Util.listMap(vars, Exp.printExpStr) "Catch error reading simulation file." ;
         (cache,Values.RECORD(orderd={Values.STRING(filename)}),_) = Ceval.ceval(cache,env, 
           Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.OTHER(),{}),Exp.OTHER()), true, SOME(st), NONE, msg) "Util.list_union_elt(\"time\",vars\') => vars\'\' &" ;
-        failure(_ = System.readPtolemyplotDataset(filename, vars_1, 0));
+        failure(_ = SimulationResults.readPtolemyplotDataset(filename, vars_1, 0));
       then
         (cache,Values.STRING("Error reading the simulation result."),st);
 
@@ -2194,8 +2195,8 @@ algorithm
       (cache,Values.RECORD(orderd={Values.STRING(filename)}),_) = Ceval.ceval(cache,env, 
         Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.OTHER(),{}),Exp.OTHER()), true, SOME(st), NONE, Ceval.NO_MSG());
       
-      Values.ARRAY({Values.ARRAY(varValues)}) = System.readPtolemyplotDataset(filename, {varName}, 0);
-      Values.ARRAY({Values.ARRAY(timeValues)}) = System.readPtolemyplotDataset(filename, {"time"}, 0); 
+      Values.ARRAY({Values.ARRAY(varValues)}) = SimulationResults.readPtolemyplotDataset(filename, {varName}, 0);
+      Values.ARRAY({Values.ARRAY(timeValues)}) = SimulationResults.readPtolemyplotDataset(filename, {"time"}, 0); 
       
       tV = Values.valueReals(timeValues);
       vV = Values.valueReals(varValues);  

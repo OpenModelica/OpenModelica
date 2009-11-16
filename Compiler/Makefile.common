@@ -24,7 +24,7 @@ RTOBJ   = $(srcdir)/runtime/systemimpl.o $(srcdir)/runtime/dynload.o \
 	$(srcdir)/runtime/daeext.o $(CORBAOBJ) \
 	$(srcdir)/modpar/libmodpar.a $(srcdir)/runtime/settingsimpl.o \
 	$(srcdir)/runtime/optmanager.o $(srcdir)/runtime/unitparser.o \
-	$(srcdir)/runtime/unitparserext.o
+	$(srcdir)/runtime/unitparserext.o $(srcdir)/runtime/SimulationResults.o
 
 # The MO sources
 SRCMO= Absyn.mo \
@@ -90,7 +90,8 @@ SRCMO= Absyn.mo \
 
 # These are externally defined MO modules
 ALLMO = $(SRCMO) DAEEXT.mo DynLoad.mo Print.mo RTOpts.mo System.mo Parser.mo \
-		TaskGraphExt.mo Corba.mo Socket.mo ErrorExt.mo Settings.mo OptManager.mo UnitParserExt.mo
+		TaskGraphExt.mo Corba.mo Socket.mo ErrorExt.mo Settings.mo \
+		OptManager.mo UnitParserExt.mo SimulationResults.mo
 
 SRCC=	$(SRCMO:.mo=.c)
 SRCH=	$(SRCMO:.mo=.h)

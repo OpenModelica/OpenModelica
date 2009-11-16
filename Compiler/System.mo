@@ -38,8 +38,6 @@ package System
   This module contain a set of system calls, for e.g. compiling and
   executing stuff, reading and writing files and so on."
 
-public import Values;
-
 public function removeFirstAndLastChar
   input String inString;
   output String outString;
@@ -251,14 +249,6 @@ public function sendData2
   external "C" ;
 end sendData2;
 
-public function readPtolemyplotVariables
-  input String inString;
-  input String inVisVars;
-  output list<String> outStringLst;
-
-  external "C" ;
-end readPtolemyplotVariables;
-
 public function writeFile
   input String inString1;
   input String inString2;
@@ -273,28 +263,12 @@ public function readFile
   external "C" ;
 end readFile;
 
-public function readPtolemyplotDataset
-  input String inString;
-  input list<String> inStringLst;
-  input Integer inInteger;
-  output Values.Value outValue;
-
-  external "C" ;
-end readPtolemyplotDataset;
-
 public function getVariableNames
   input String modelname;
   output String variables;
 
   external "C";
 end getVariableNames;
-
-public function readPtolemyplotDatasetSize
-  input String inString;
-  output Values.Value outValue;
-
-  external "C" ;
-end readPtolemyplotDatasetSize;
 
 public function systemCall
   input String inString;

@@ -76,7 +76,6 @@
 #include <string.h>
 #include "systemimpl.h"
 #include "rml.h"
-#include "Values.h"
 
 /* use this one to output messages depending on flags! */
 int check_debug_flag(char const* strdata);
@@ -86,10 +85,6 @@ static char * cxx=NULL;
 static char * linker=NULL;
 static char * cflags=NULL;
 static char * ldflags=NULL;
-
-void * read_ptolemy_dataset(char*filename, int size,char**vars,
-                            int datasize);
-int read_ptolemy_dataset_size(char*filename);
 
 #define MAX_PTR_INDEX 10000
 
@@ -1220,79 +1215,6 @@ RML_BEGIN_LABEL(System__getVariableNames)
 	RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
-
-RML_BEGIN_LABEL(System__readPtolemyplotDataset)
-{
-  rml_sint_t i,size;
-  char **vars;
-  char* filename = RML_STRINGDATA(rmlA0);
-  void *lst = rmlA1;
-  rml_sint_t datasize = RML_UNTAGFIXNUM(rmlA2);
-  void* p;
-  rmlA0 = lst;
-  rml_prim_once(RML__list_5flength);
-  size = RML_UNTAGFIXNUM(rmlA0);
-
-  vars = (char**)malloc(sizeof(char*)*size);
-  for (i=0,p=lst;i<size;i++) {
-    vars[i]=RML_STRINGDATA(RML_CAR(p));
-    p=RML_CDR(p);
-  }
-  rmlA0 = (void*)read_ptolemy_dataset(filename,size,vars,datasize);
-  if (rmlA0 == NULL) {
-    RML_TAILCALLK(rmlFC);
-  }
-
-  rml_prim_once(Values__reverseMatrix);
-
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
-
-RML_BEGIN_LABEL(System__readPtolemyplotVariables)
-{
-  rml_sint_t i,size;
-  char* filename = RML_STRINGDATA(rmlA0);
-  char* visvars = RML_STRINGDATA(rmlA1);
-  void* p;
-
-  rmlA0 = (void*)read_ptolemy_variables(filename, visvars);
-  if (rmlA0 == NULL) {
-    RML_TAILCALLK(rmlFC);
-  }
-
-//  rml_prim_once(Values__reverseMatrix);
-
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
-
-RML_BEGIN_LABEL(System__readPtolemyplotDatasetSize)
-{
-  int size;
-  char* filename = RML_STRINGDATA(rmlA0);
-  void* p;
-
-  size=read_ptolemy_dataset_size(filename);
-
-  rmlA0 = (void*)Values__INTEGER(mk_icon(size));
-  if (rmlA0 == NULL) {
-    RML_TAILCALLK(rmlFC);
-  }
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
-
-RML_BEGIN_LABEL(System__writePtolemyplotDataset)
-{
-  char *filename = RML_STRINGDATA(rmlA0);
-  void *value = rmlA1;
-
-
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
-
 
 RML_BEGIN_LABEL(System__time)
 {
@@ -3103,79 +3025,6 @@ RML_BEGIN_LABEL(System__getVariableNames)
 	RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
-
-RML_BEGIN_LABEL(System__readPtolemyplotDataset)
-{
-  rml_sint_t i,size;
-  char **vars;
-  char* filename = RML_STRINGDATA(rmlA0);
-  void *lst = rmlA1;
-  rml_sint_t datasize = RML_UNTAGFIXNUM(rmlA2);
-  void* p = NULL;
-  rmlA0 = lst;
-  rml_prim_once(RML__list_5flength);
-  size = RML_UNTAGFIXNUM(rmlA0);
-
-  vars = (char**)malloc(sizeof(char*)*size);
-  for (i=0,p=lst;i<size;i++) {
-    vars[i]=RML_STRINGDATA(RML_CAR(p));
-    p=RML_CDR(p);
-  }
-  rmlA0 = (void*)read_ptolemy_dataset(filename,size,vars,datasize);
-  if (rmlA0 == NULL) {
-    RML_TAILCALLK(rmlFC);
-  }
-
-  rml_prim_once(Values__reverseMatrix);
-
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
-
-RML_BEGIN_LABEL(System__readPtolemyplotVariables)
-{
-  rml_sint_t i,size;
-  char* filename = RML_STRINGDATA(rmlA0);
-  char* visvars = RML_STRINGDATA(rmlA1);
-  void* p;
-
-  rmlA0 = (void*)read_ptolemy_variables(filename, visvars);
-  if (rmlA0 == NULL) {
-    RML_TAILCALLK(rmlFC);
-  }
-
-//  rml_prim_once(Values__reverseMatrix);
-
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
-
-RML_BEGIN_LABEL(System__readPtolemyplotDatasetSize)
-{
-  int size;
-  char* filename = RML_STRINGDATA(rmlA0);
-  void* p;
-
-  size=read_ptolemy_dataset_size(filename);
-
-  rmlA0 = (void*)Values__INTEGER(mk_icon(size));
-  if (rmlA0 == NULL) {
-    RML_TAILCALLK(rmlFC);
-  }
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
-
-RML_BEGIN_LABEL(System__writePtolemyplotDataset)
-{
-  char *filename = RML_STRINGDATA(rmlA0);
-  void *value = rmlA1;
-
-
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
-
 
 RML_BEGIN_LABEL(System__time)
 {
