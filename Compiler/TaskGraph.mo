@@ -55,6 +55,7 @@ protected import SimCodegen;
 protected import TaskGraphExt;
 protected import Util;
 protected import Values;
+protected import ValuesUtil;
 protected import VarTransform;
 
 public function buildTaskgraph ""
@@ -209,7 +210,7 @@ algorithm
     case ((DAELow.VAR(varKind = DAELow.PARAM(),bindValue = SOME(value),index = indx,origVarName = origname,values = dae_var_attr,comment = comment,flowPrefix = flowPrefix) :: rest))
       local Values.Value value;
       equation
-        v = Values.valString(value);
+        v = ValuesUtil.valString(value);
         origname_str = Exp.printComponentRefStr(origname);
         TaskGraphExt.addInitParam(indx, v, origname_str);
         buildInits2(rest);
@@ -225,7 +226,7 @@ algorithm
     case ((DAELow.VAR(varKind = DAELow.CONST(),bindValue = SOME(value),index = indx,origVarName = origname,values = dae_var_attr,comment = comment,flowPrefix = flowPrefix) :: rest))
       local Values.Value value;
       equation
-        v = Values.valString(value);
+        v = ValuesUtil.valString(value);
         origname_str = Exp.printComponentRefStr(origname);
         TaskGraphExt.addInitParam(indx, v, origname_str);
         buildInits2(rest);

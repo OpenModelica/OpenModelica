@@ -91,6 +91,7 @@ protected import UnitParserExt;
 protected import UnitAbsynBuilder;
 protected import Inline;
 protected import SimulationResults;
+protected import ValuesUtil;
 
 public function cevalInteractiveFunctions 
 "function cevalInteractiveFunctions
@@ -787,7 +788,7 @@ algorithm
         plotCmd = Util.stringAppendList({cit,omhome_1,pd,"bin",pd,"doPlot",cit});
         uniqueStr = intString(tick());
         tmpPlotFile = Util.stringAppendList({pwd,pd,"tmpPlot_",uniqueStr,".plt"});
-        res = Values.writePtolemyplotDataset(tmpPlotFile, value, vars_2, "Plot by OpenModelica");
+        res = ValuesUtil.writePtolemyplotDataset(tmpPlotFile, value, vars_2, "Plot by OpenModelica");
         call = Util.stringAppendList({cit,plotCmd," \"",tmpPlotFile,"\"",cit});
 
         _ = System.systemCall(call);
@@ -883,7 +884,7 @@ algorithm
 
       then
 					(cache,Values.STRING("Error reading the simulation result."),st);
-//        res = Values.sendPtolemyplotDataset(value, vars_2, "Plot by OpenModelica", interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, Exp.printExpStr(xRange), Exp.printExpStr(yRange));
+//        res = ValuesUtil.sendPtolemyplotDataset(value, vars_2, "Plot by OpenModelica", interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, Exp.printExpStr(xRange), Exp.printExpStr(yRange));
 
 //      then
  //       (cache,Values.BOOL(true),st);
@@ -923,7 +924,7 @@ algorithm
 
         value = SimulationResults.readPtolemyplotDataset(filename2, vars_2, 0);
 
-        res = Values.sendPtolemyplotDataset(value, vars_2, "Plot by OpenModelica", interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, Exp.printExpStr(xRange), Exp.printExpStr(yRange));
+        res = ValuesUtil.sendPtolemyplotDataset(value, vars_2, "Plot by OpenModelica", interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, Exp.printExpStr(xRange), Exp.printExpStr(yRange));
 
       then
         (cache,Values.BOOL(true),st);
@@ -985,7 +986,7 @@ algorithm
         vars_2 = Util.stringSplitAtChar(str, " ");
         value = SimulationResults.readPtolemyplotDataset(filename, vars_2, 0);
 
-        res = Values.sendPtolemyplotDataset(value, vars_2, "Plot by OpenModelica", interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, Exp.printExpStr(xRange), Exp.printExpStr(yRange));
+        res = ValuesUtil.sendPtolemyplotDataset(value, vars_2, "Plot by OpenModelica", interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, Exp.printExpStr(xRange), Exp.printExpStr(yRange));
 
       then
         (cache,Values.BOOL(true),st);
@@ -1021,7 +1022,7 @@ algorithm
 
         value = SimulationResults.readPtolemyplotDataset(filename, vars_2, 0);
 
-        res = Values.sendPtolemyplotDataset(value, vars_2, "Plot by OpenModelica", interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, Exp.printExpStr(xRange), Exp.printExpStr(yRange));
+        res = ValuesUtil.sendPtolemyplotDataset(value, vars_2, "Plot by OpenModelica", interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, Exp.printExpStr(xRange), Exp.printExpStr(yRange));
 
       then
         (cache,Values.BOOL(true),st);
@@ -1082,7 +1083,7 @@ algorithm
         (cache,Values.RECORD(orderd={Values.STRING(filename)}),_) = Ceval.ceval(cache,env,
           Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.OTHER(),{}),Exp.OTHER()), true, SOME(st), NONE, msg);
         value = SimulationResults.readPtolemyplotDataset(filename, vars_2, 0);
-        res = Values.sendPtolemyplotDataset(value, vars_2, "Plot by OpenModelica", interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, Exp.printExpStr(xRange), Exp.printExpStr(yRange));
+        res = ValuesUtil.sendPtolemyplotDataset(value, vars_2, "Plot by OpenModelica", interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, Exp.printExpStr(xRange), Exp.printExpStr(yRange));
 
       then
         (cache,Values.BOOL(true),st);
@@ -1203,7 +1204,7 @@ algorithm
   		  //print(Util.stringAppendList(vars_2));
         //print(Util.stringDelimitList(vars_2, ", "));
         value = SimulationResults.readPtolemyplotDataset(filename, vars_2, 0);
-        res = Values.sendPtolemyplotDataset2(value, vars_2, visvar_str, "Plot by OpenModelica");
+        res = ValuesUtil.sendPtolemyplotDataset2(value, vars_2, visvar_str, "Plot by OpenModelica");
 
       then
         (cache,Values.BOOL(true),st);
@@ -1265,8 +1266,8 @@ algorithm
           Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.OTHER(),{}),Exp.OTHER()), true, SOME(st), NONE, msg);
         print("tjo\n");
         value = SimulationResults.readPtolemyplotDataset(filename, vars_2, 0);
-        print("value = " +& Values.valString(value));
-        res = Values.sendPtolemyplotDataset(value, vars_2, "Plot by OpenModelica", interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, title, title);
+        print("value = " +& ValuesUtil.valString(value));
+        res = ValuesUtil.sendPtolemyplotDataset(value, vars_2, "Plot by OpenModelica", interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, title, title);
 
       then
         (cache,Values.BOOL(true),st);
@@ -1376,8 +1377,8 @@ algorithm
         Values.ARRAY({Values.ARRAY(timeValues)}) = SimulationResults.readPtolemyplotDataset(filename, {"time"}, 0);
 
 
-        tV = Values.valueReals(timeValues);
-        vV = Values.valueReals(varValues);
+        tV = ValuesUtil.valueReals(timeValues);
+        vV = ValuesUtil.valueReals(varValues);
         val = System.getVariableValue(timeStamp, tV, vV);
       then
         (cache,Values.REAL(val),st);
@@ -1413,8 +1414,8 @@ algorithm
         Values.ARRAY({Values.ARRAY(timeValues)}) = SimulationResults.readPtolemyplotDataset(filename, {"time"}, 0);
 
 
-        tV = Values.valueReals(timeValues);
-        vV = Values.valueReals(varValues);
+        tV = ValuesUtil.valueReals(timeValues);
+        vV = ValuesUtil.valueReals(varValues);
         val = System.getVariableValue(intReal(timeStamp), tV, vV);
       then
         (cache,Values.REAL(val),st);
@@ -1484,7 +1485,7 @@ algorithm
         varName = Exp.CodeVarToCref(varName);
         varNameStr = Exp.printExpStr(varName);        
         (cache,Values.ARRAY(vals),SOME(st)) = Ceval.ceval(cache,env, varTimeStamp, true, SOME(st), NONE, msg);               
-         timeStamps = Util.listMap(vals,Values.valueReal);
+         timeStamps = Util.listMap(vals,ValuesUtil.valueReal);
         (cache,val) = cevalValArray(cache,env,SOME(st),timeStamps,varNameStr);                       
       then
         (cache,val,st);        
@@ -1532,7 +1533,7 @@ algorithm
         plotCmd = Util.stringAppendList({cit,omhome_1,pd,"bin",pd,"doPlot",cit});
         uniqueStr = intString(tick());
         tmpPlotFile = Util.stringAppendList({pwd,pd,"tmpPlot_",uniqueStr,".plt"});
-        res = Values.writePtolemyplotDataset(tmpPlotFile, value, vars_1, "Plot by OpenModelica");
+        res = ValuesUtil.writePtolemyplotDataset(tmpPlotFile, value, vars_1, "Plot by OpenModelica");
         call = Util.stringAppendList({cit,plotCmd," \"",tmpPlotFile,"\"",cit});
         _ = System.systemCall(call);
       then
@@ -1631,7 +1632,7 @@ algorithm
         plotCmd = Util.stringAppendList({cit,omhome_1,pd,"bin",pd,"doPlot",cit});
         uniqueStr = intString(tick());
         tmpPlotFile = Util.stringAppendList({pwd,pd,"tmpPlot_",uniqueStr,".plt"});
-        res = Values.sendPtolemyplotDataset(value, vars_1, "Plot by OpenModelica", interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, Exp.printExpStr(xRange), Exp.printExpStr(yRange));
+        res = ValuesUtil.sendPtolemyplotDataset(value, vars_1, "Plot by OpenModelica", interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, Exp.printExpStr(xRange), Exp.printExpStr(yRange));
       then
         (cache,Values.BOOL(true),st);
 
@@ -1661,7 +1662,7 @@ algorithm
         (cache,Values.RECORD(orderd={Values.STRING(filename)}),_) = Ceval.ceval(cache,env,
           Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.OTHER(),{}),Exp.OTHER()), true, SOME(st), NONE, msg);
          value = SimulationResults.readPtolemyplotDataset(filename, vars_1, 0);
-         res = Values.sendPtolemyplotDataset(value, vars_1, "Plot by OpenModelica", interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, Exp.printExpStr(xRange), Exp.printExpStr(yRange));
+         res = ValuesUtil.sendPtolemyplotDataset(value, vars_1, "Plot by OpenModelica", interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, Exp.printExpStr(xRange), Exp.printExpStr(yRange));
 
       then
         (cache,Values.BOOL(true),st);
@@ -1770,7 +1771,7 @@ algorithm
 //        print("setVariableFilter\n");
 //        print(Util.stringAppendList(vars_1));
  //       print("\n");
-//        _ = Values.setVariableFilter(vars_1);
+//        _ = ValuesUtil.setVariableFilter(vars_1);
         _=System.setVariableFilter(Util.stringAppendList(vars_1));
       then
         (cache,Values.BOOL(true),st);
@@ -2198,8 +2199,8 @@ algorithm
       Values.ARRAY({Values.ARRAY(varValues)}) = SimulationResults.readPtolemyplotDataset(filename, {varName}, 0);
       Values.ARRAY({Values.ARRAY(timeValues)}) = SimulationResults.readPtolemyplotDataset(filename, {"time"}, 0); 
       
-      tV = Values.valueReals(timeValues);
-      vV = Values.valueReals(varValues);  
+      tV = ValuesUtil.valueReals(timeValues);
+      vV = ValuesUtil.valueReals(varValues);  
       val = System.getVariableValue(timeStamp, tV, vV);                
       then (cache,val);       
   end matchcontinue;
@@ -2474,10 +2475,10 @@ algorithm
         (cache,tolerance_v,SOME(st)) = Ceval.ceval(cache,env, toleranceExp, true, SOME(st), NONE, msg);
         (cache,Values.STRING(method_str),SOME(st)) = Ceval.ceval(cache,env, method, true, SOME(st), NONE, msg);
         (cache,Values.STRING(options_str),SOME(st)) = Ceval.ceval(cache,env, options, true, SOME(st), NONE, msg);
-        starttime_r = Values.valueReal(starttime_v);
-        stoptime_r = Values.valueReal(stoptime_v);
+        starttime_r = ValuesUtil.valueReal(starttime_v);
+        stoptime_r = ValuesUtil.valueReal(stoptime_v);
         interval_r = intReal(interval_i);
-        tolerance_r = Values.valueReal(tolerance_v);
+        tolerance_r = ValuesUtil.valueReal(tolerance_v);
         init_filename = Util.stringAppendList({prefix_str,"_init.txt"});
       then
         (cache,init_filename,starttime_r,stoptime_r,interval_r,tolerance_r,method_str,options_str);
@@ -4002,7 +4003,7 @@ algorithm ostring := matchcontinue( e1)
       String ret;
     equation
       (_,val,_) = Ceval.ceval(Env.emptyCache(),Env.emptyEnv, e1,true,NONE,NONE,Ceval.MSG());
-      ret = Values.printValStr(val);
+      ret = ValuesUtil.printValStr(val);
     then
       ret;
       

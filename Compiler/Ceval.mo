@@ -69,26 +69,27 @@ uniontype Msg
   record NO_MSG "Do not give error message" end NO_MSG;
 end Msg;
 
-protected import UnitAbsyn;
-protected import Static;
-protected import Print;
-protected import ModUtil;
-protected import System;
-protected import SCode;
+protected import CevalScript;
+protected import ClassInf;
+protected import Connect;
+protected import DAE;
+protected import Debug;
+protected import Derive;
+protected import Dump;
+protected import DynLoad;
+protected import Error;
 protected import Inst;
 protected import Lookup;
-protected import Debug;
-protected import Util;
+protected import ModUtil;
 protected import RTOpts;
-protected import Derive;
-protected import Error;
-protected import CevalScript;
-protected import Dump;
-protected import DAE;
 protected import Prefix;
-protected import Connect;
-protected import ClassInf;
-protected import DynLoad;
+protected import Print;
+protected import SCode;
+protected import Static;
+protected import System;
+protected import UnitAbsyn;
+protected import Util;
+protected import ValuesUtil;
 
 public function ceval 
 "function: ceval
@@ -378,7 +379,7 @@ algorithm
       equation 
         (cache,Values.ARRAY(vlst1),st_1) = ceval(cache,env, lh, impl, st, dim, msg);
         (cache,Values.ARRAY(vlst2),st_2) = ceval(cache,env, rh, impl, st_1, dim, msg);
-        reslst = Values.addElementwiseArrayelt(vlst1, vlst2);
+        reslst = ValuesUtil.addElementwiseArrayelt(vlst1, vlst2);
       then
         (cache,Values.ARRAY(reslst),st_2);
 
@@ -387,7 +388,7 @@ algorithm
       equation 
         (cache,Values.ARRAY(vlst1),st_1) = ceval(cache,env, lh, impl, st, dim, msg);
         (cache,Values.ARRAY(vlst2),st_2) = ceval(cache,env, rh, impl, st_1, dim, msg);
-        reslst = Values.subElementwiseArrayelt(vlst1, vlst2);
+        reslst = ValuesUtil.subElementwiseArrayelt(vlst1, vlst2);
       then
         (cache,Values.ARRAY(reslst),st_2);
 
@@ -396,7 +397,7 @@ algorithm
       equation 
         (cache,Values.ARRAY(vlst1),st_1) = ceval(cache,env, lh, impl, st, dim, msg);
         (cache,Values.ARRAY(vlst2),st_2) = ceval(cache,env, rh, impl, st_1, dim, msg);
-        reslst = Values.mulElementwiseArrayelt(vlst1, vlst2);
+        reslst = ValuesUtil.mulElementwiseArrayelt(vlst1, vlst2);
       then
         (cache,Values.ARRAY(reslst),st_2);
 
@@ -405,7 +406,7 @@ algorithm
       equation 
         (cache,Values.ARRAY(vlst1),st_1) = ceval(cache,env, lh, impl, st, dim, msg);
         (cache,Values.ARRAY(vlst2),st_2) = ceval(cache,env, rh, impl, st_1, dim, msg);
-        reslst = Values.divElementwiseArrayelt(vlst1, vlst2);
+        reslst = ValuesUtil.divElementwiseArrayelt(vlst1, vlst2);
       then
         (cache,Values.ARRAY(reslst),st_2);
 
@@ -414,7 +415,7 @@ algorithm
       equation 
         (cache,Values.ARRAY(vlst1),st_1) = ceval(cache,env, lh, impl, st, dim, msg);
         (cache,Values.ARRAY(vlst2),st_2) = ceval(cache,env, rh, impl, st_1, dim, msg);
-        reslst = Values.powElementwiseArrayelt(vlst1, vlst2);
+        reslst = ValuesUtil.powElementwiseArrayelt(vlst1, vlst2);
       then
         (cache,Values.ARRAY(reslst),st_2);
 
@@ -423,7 +424,7 @@ algorithm
       equation 
         (cache,sval,st_1) = ceval(cache,env, lh, impl, st, dim, msg);
         (cache,Values.ARRAY(aval),st_2) = ceval(cache,env, rh, impl, st_1, dim, msg);
-        reslst = Values.multScalarArrayelt(sval, aval);
+        reslst = ValuesUtil.multScalarArrayelt(sval, aval);
       then
         (cache,Values.ARRAY(reslst),st_2);
 
@@ -432,7 +433,7 @@ algorithm
       equation 
         (cache,sval,st_1) = ceval(cache,env, rh, impl, st, dim, msg);
         (cache,Values.ARRAY(aval),st_2) = ceval(cache,env, lh, impl, st_1, dim, msg);
-        reslst = Values.multScalarArrayelt(sval, aval);
+        reslst = ValuesUtil.multScalarArrayelt(sval, aval);
       then
         (cache,Values.ARRAY(reslst),st_2);
 
@@ -441,7 +442,7 @@ algorithm
       equation 
         (cache,sval,st_1) = ceval(cache,env, lh, impl, st, dim, msg);
         (cache,Values.ARRAY(aval),st_2) = ceval(cache,env, rh, impl, st_1, dim, msg);
-        reslst = Values.addScalarArrayelt(sval, aval);
+        reslst = ValuesUtil.addScalarArrayelt(sval, aval);
       then
         (cache,Values.ARRAY(reslst),st_2);
 
@@ -450,7 +451,7 @@ algorithm
       equation 
         (cache,sval,st_1) = ceval(cache,env, rh, impl, st, dim, msg);
         (cache,Values.ARRAY(aval),st_2) = ceval(cache,env, lh, impl, st_1, dim, msg);
-        reslst = Values.addScalarArrayelt(sval, aval);
+        reslst = ValuesUtil.addScalarArrayelt(sval, aval);
       then
         (cache,Values.ARRAY(reslst),st_2);
 
@@ -459,7 +460,7 @@ algorithm
       equation 
         (cache,sval,st_1) = ceval(cache,env, lh, impl, st, dim, msg);
         (cache,Values.ARRAY(aval),st_2) = ceval(cache,env, rh, impl, st_1, dim, msg);
-        reslst = Values.subScalarArrayelt(sval, aval);
+        reslst = ValuesUtil.subScalarArrayelt(sval, aval);
       then
         (cache,Values.ARRAY(reslst),st_2);
 
@@ -468,7 +469,7 @@ algorithm
       equation 
         (cache,sval,st_1) = ceval(cache,env, rh, impl, st, dim, msg);
         (cache,Values.ARRAY(aval),st_2) = ceval(cache,env, lh, impl, st_1, dim, msg);
-        reslst = Values.subArrayeltScalar(sval, aval);
+        reslst = ValuesUtil.subArrayeltScalar(sval, aval);
       then
         (cache,Values.ARRAY(reslst),st_2);
 
@@ -477,7 +478,7 @@ algorithm
       equation 
         (cache,sval,st_1) = ceval(cache,env, lh, impl, st, dim, msg);
         (cache,Values.ARRAY(aval),st_2) = ceval(cache,env, rh, impl, st_1, dim, msg);
-        reslst = Values.powScalarArrayelt(sval, aval);
+        reslst = ValuesUtil.powScalarArrayelt(sval, aval);
       then
         (cache,Values.ARRAY(reslst),st_2);
 
@@ -486,7 +487,7 @@ algorithm
       equation 
         (cache,sval,st_1) = ceval(cache,env, rh, impl, st, dim, msg);
         (cache,Values.ARRAY(aval),st_2) = ceval(cache,env, lh, impl, st_1, dim, msg);
-        reslst = Values.powArrayeltScalar(sval, aval);
+        reslst = ValuesUtil.powArrayeltScalar(sval, aval);
       then
         (cache,Values.ARRAY(reslst),st_2);
 
@@ -495,7 +496,7 @@ algorithm
       equation 
         (cache,sval,st_1) = ceval(cache,env, lh, impl, st, dim, msg);
         (cache,Values.ARRAY(aval),st_2) = ceval(cache,env, rh, impl, st_1, dim, msg);
-        reslst = Values.divScalarArrayelt(sval, aval);
+        reslst = ValuesUtil.divScalarArrayelt(sval, aval);
       then
         (cache,Values.ARRAY(reslst),st_2);
 
@@ -504,7 +505,7 @@ algorithm
       equation 
         (cache,sval,st_1) = ceval(cache,env, rh, impl, st, dim, msg);
         (cache,Values.ARRAY(aval),st_2) = ceval(cache,env, lh, impl, st_1, dim, msg);
-        reslst = Values.divArrayeltScalar(sval, aval);
+        reslst = ValuesUtil.divArrayeltScalar(sval, aval);
       then
         (cache,Values.ARRAY(reslst),st_2);
 
@@ -515,7 +516,7 @@ algorithm
       equation 
         (cache,Values.ARRAY(rhvals),st_1) = ceval(cache,env, rh, impl, st, dim, msg);
         (cache,Values.ARRAY(lhvals),st_2) = ceval(cache,env, lh, impl, st_1, dim, msg);
-        res = Values.multScalarProduct(rhvals, lhvals);
+        res = ValuesUtil.multScalarProduct(rhvals, lhvals);
       then
         (cache,res,st_2);
 
@@ -526,9 +527,9 @@ algorithm
       equation 
         (cache,Values.ARRAY((lhvals as (elt1 :: _))),st_1) = ceval(cache,env, lh, impl, st, dim, msg) "{{..}..{..}}  {...}" ;
         (cache,Values.ARRAY((rhvals as (elt2 :: _))),st_2) = ceval(cache,env, rh, impl, st_1, dim, msg);
-        true = Values.isArray(elt1);
-        false = Values.isArray(elt2);
-        res = Values.multScalarProduct(lhvals, rhvals);
+        true = ValuesUtil.isArray(elt1);
+        false = ValuesUtil.isArray(elt2);
+        res = ValuesUtil.multScalarProduct(lhvals, rhvals);
       then
         (cache,res,st_2);
 
@@ -539,9 +540,9 @@ algorithm
       equation 
         (cache,Values.ARRAY((rhvals as (elt1 :: _))),st_1) = ceval(cache,env, rh, impl, st, dim, msg) "{...}  {{..}..{..}}" ;
         (cache,Values.ARRAY((lhvals as (elt2 :: _))),st_2) = ceval(cache,env, lh, impl, st_1, dim, msg);
-        true = Values.isArray(elt1);
-        false = Values.isArray(elt2);
-        res = Values.multScalarProduct(lhvals, rhvals);
+        true = ValuesUtil.isArray(elt1);
+        false = ValuesUtil.isArray(elt2);
+        res = ValuesUtil.multScalarProduct(lhvals, rhvals);
       then
         (cache,res,st_2);
 
@@ -552,9 +553,9 @@ algorithm
       equation 
         (cache,Values.ARRAY((rhvals as (elt1 :: _))),st_1) = ceval(cache,env, rh, impl, st, dim, msg) "{{..}..{..}}  {{..}..{..}}" ;
         (cache,Values.ARRAY((lhvals as (elt2 :: _))),st_2) = ceval(cache,env, lh, impl, st_1, dim, msg);
-        true = Values.isArray(elt1);
-        true = Values.isArray(elt2);
-        res = Values.multMatrix(lhvals, rhvals);
+        true = ValuesUtil.isArray(elt1);
+        true = ValuesUtil.isArray(elt2);
+        res = ValuesUtil.multMatrix(lhvals, rhvals);
       then
         (cache,Values.ARRAY(res),st_2);
 
@@ -566,7 +567,7 @@ algorithm
       equation
         (cache,res1,st_1) = ceval(cache,env, lh, impl, st, dim, msg);
         (cache,res2,st_2) = ceval(cache,env, rh, impl, st_1, dim, msg);        
-				res3 = Values.safeIntRealOp(res1, res2, Values.POWOP);
+				res3 = ValuesUtil.safeIntRealOp(res1, res2, Values.POWOP);
       then 
         (cache,res3,st_2);
 
@@ -578,7 +579,7 @@ algorithm
       equation
         (cache,res1,st_1) = ceval(cache,env, lh, impl, st, dim, msg);
         (cache,res2,st_2) = ceval(cache,env, rh, impl, st_1, dim, msg);        
-				res3 = Values.safeIntRealOp(res1, res2, Values.MULOP);
+				res3 = ValuesUtil.safeIntRealOp(res1, res2, Values.MULOP);
       then
         (cache,res3,st_2);
 
@@ -590,7 +591,7 @@ algorithm
       equation
         (cache,res1,st_1) = ceval(cache,env, lh, impl, st, dim, msg);
         (cache,res2,st_2) = ceval(cache,env, rh, impl, st_1, dim, msg);        
-				res3 = Values.safeIntRealOp(res1, res2, Values.DIVOP);
+				res3 = ValuesUtil.safeIntRealOp(res1, res2, Values.DIVOP);
       then
         (cache,res3,st_2);
 
@@ -602,7 +603,7 @@ algorithm
         Values.Value res1;
       equation 
          (cache,res1,st_1) = ceval(cache,env, rh, impl, st, dim, msg);
-         true = Values.isZero(res1);
+         true = ValuesUtil.isZero(res1);
         lh_str = Exp.printExpStr(lh);
         rh_str = Exp.printExpStr(rh);
         Error.addMessage(Error.DIVISION_BY_ZERO, {lh_str,rh_str});
@@ -617,7 +618,7 @@ algorithm
       equation
         (cache,res1,st_1) = ceval(cache,env, lh, impl, st, dim, msg);
         (cache,res2,st_2) = ceval(cache,env, rh, impl, st_1, dim, msg);        
-				res3 = Values.safeIntRealOp(res1, res2, Values.ADDOP);
+				res3 = ValuesUtil.safeIntRealOp(res1, res2, Values.ADDOP);
       then
         (cache,res3,st_2);
 
@@ -629,7 +630,7 @@ algorithm
       equation
         (cache,res1,st_1) = ceval(cache,env, lh, impl, st, dim, msg);
         (cache,res2,st_2) = ceval(cache,env, rh, impl, st_1, dim, msg);        
-				res3 = Values.safeIntRealOp(res1, res2, Values.SUBOP);
+				res3 = ValuesUtil.safeIntRealOp(res1, res2, Values.SUBOP);
       then
         (cache,res3,st_2);
 
@@ -640,7 +641,7 @@ algorithm
         Option<Integer> dim;
       equation 
         (cache,Values.ARRAY(arr),st_1) = ceval(cache,env, exp, impl, st, dim, msg);
-        arr_1 = Util.listMap(arr, Values.valueNeg);
+        arr_1 = Util.listMap(arr, ValuesUtil.valueNeg);
       then
         (cache,Values.ARRAY(arr_1),st_1);
 
@@ -650,7 +651,7 @@ algorithm
         Option<Integer> dim;
       equation 
         (cache,v,st_1) = ceval(cache,env, exp, impl, st, dim, msg);
-        v_1 = Values.valueNeg(v);
+        v_1 = ValuesUtil.valueNeg(v);
       then
         (cache,v_1,st_1);
 
@@ -786,7 +787,7 @@ algorithm
       local Option<Integer> dim;
       equation 
         (cache,Values.ARRAY(ivals),st_1) = ceval(cache,env, e, impl, st, dim, msg);
-        rvals = Values.typeConvert(Exp.INT(), Exp.REAL(), ivals);
+        rvals = ValuesUtil.typeConvert(Exp.INT(), Exp.REAL(), ivals);
       then
         (cache,Values.ARRAY(rvals),st_1);
 
@@ -794,7 +795,7 @@ algorithm
       local Option<Integer> dim;
       equation 
         (cache,Values.ARRAY(vallst),st_1) = ceval(cache,env, e, impl, st, dim, msg);
-        vallst_1 = Values.typeConvert(Exp.INT(), Exp.REAL(), vallst);
+        vallst_1 = ValuesUtil.typeConvert(Exp.INT(), Exp.REAL(), vallst);
       then
         (cache,Values.ARRAY(vallst_1),st_1);
 
@@ -802,7 +803,7 @@ algorithm
       local Option<Integer> dim;
       equation 
         (cache,Values.ARRAY(vallst),st_1) = ceval(cache,env, e, impl, st, dim, msg);
-        vallst_1 = Values.typeConvert(Exp.INT(), Exp.REAL(), vallst);
+        vallst_1 = ValuesUtil.typeConvert(Exp.INT(), Exp.REAL(), vallst);
       then
         (cache,Values.ARRAY(vallst_1),st_1);
 
@@ -810,7 +811,7 @@ algorithm
       local Option<Integer> dim;
       equation 
         (cache,Values.ARRAY(vallst),st_1) = ceval(cache,env, e, impl, st, dim, msg);
-        vallst_1 = Values.typeConvert(Exp.INT(), Exp.REAL(), vallst);
+        vallst_1 = ValuesUtil.typeConvert(Exp.INT(), Exp.REAL(), vallst);
       then
         (cache,Values.ARRAY(vallst_1),st_1);
 
@@ -848,7 +849,7 @@ algorithm
         (cache,Values.ARRAY(vals),st_1) = ceval(cache,env, e, impl, st, dim, msg) "asub" ;
         (cache,es_1) = cevalList(cache,env, expl, impl, st_1, msg) "asub exp" ;
         v = Util.listFirst(es_1);
-        v = Values.nthnthArrayelt(es_1,Values.ARRAY(vals),v);
+        v = ValuesUtil.nthnthArrayelt(es_1,Values.ARRAY(vals),v);
       then
         (cache,v,st_1);
     case (cache,env,Exp.REDUCTION(path = p,expr = exp,ident = iter,range = iterexp),impl,st,dim, MSG()) /* (v,st) */ 
@@ -1124,7 +1125,7 @@ algorithm
           sc, 
           {}) ;
         newval = Cevalfunc.cevalUserFunc(env1,e,vallst,sc,daeList);
-        //print("ret value(/s): "); print(Values.printValStr(newval));print("\n"); 
+        //print("ret value(/s): "); print(ValuesUtil.printValStr(newval));print("\n"); 
       then
         (cache,newval,st);*/      
 
@@ -2641,16 +2642,16 @@ algorithm
       Integer dim_1,len,dim;
     case (vlst,1) /* base case for first dimension */ 
       equation 
-        vlst_lst = Util.listMap(vlst, Values.arrayValues);
+        vlst_lst = Util.listMap(vlst, ValuesUtil.arrayValues);
         v_lst_1 = Util.listFlatten(vlst_lst);
       then
         v_lst_1;
     case (vlst,dim) /* higher dimensions */ 
       equation 
-        v_lst_lst = Util.listMap(vlst, Values.arrayValues);
+        v_lst_lst = Util.listMap(vlst, ValuesUtil.arrayValues);
         dim_1 = dim - 1;
         v_lst_lst_1 = catDimension2(v_lst_lst, dim_1);
-        v_lst_1 = Util.listMap(v_lst_lst_1, Values.makeArray);
+        v_lst_1 = Util.listMap(v_lst_lst_1, ValuesUtil.makeArray);
         (Values.ARRAY(valueLst = vlst2) :: _) = v_lst_1;
         len = listLength(vlst2);
         v_lst_1 = cevalBuiltinTranspose2(v_lst_1, 1, len);
@@ -3921,7 +3922,7 @@ algorithm
     case (vlst,indx,dim1)
       equation 
         (indx <= dim1) = true;
-        transposed_row = Util.listMap1(vlst, Values.nthArrayelt, indx);
+        transposed_row = Util.listMap1(vlst, ValuesUtil.nthArrayelt, indx);
         indx_1 = indx + 1;
         rest = cevalBuiltinTranspose2(vlst, indx_1, dim1);
       then
@@ -3961,7 +3962,7 @@ algorithm
       equation 
         (cache,attr,tp,bind,_,_) = Lookup.lookupVar(cache,env, cr);
         sizelst = Types.getDimensionSizes(tp);
-        v = Values.intlistToValue(sizelst);
+        v = ValuesUtil.intlistToValue(sizelst);
       then
         (cache,v,st);
     case (cache,env,exp,impl,st,msg)
@@ -3969,7 +3970,7 @@ algorithm
         (cache,v,st_1) = ceval(cache,env, exp, impl, st, NONE, msg);
         tp = Types.typeOfValue(v);
         sizelst = Types.getDimensionSizes(tp);
-        v = Values.intlistToValue(sizelst);
+        v = ValuesUtil.intlistToValue(sizelst);
       then
         (cache,v,st);
   end matchcontinue;
@@ -4119,40 +4120,41 @@ algorithm
     case (Values.BOOL(boolean = _),Exp.LESS(ty = Exp.BOOL()),Values.BOOL(boolean = _)) then Values.BOOL(false); 
 
     /* Enumerations */
-    case (Values.ENUM(cr1,i1),Exp.LESS(ty = Exp.ENUMERATION(index = SOME(_))),Values.ENUM(cr2,i2)) 
+    case (Values.ENUM(index = i1),Exp.LESS(ty = Exp.ENUMERATION(index = SOME(_))),Values.ENUM(index = i2)) 
 //    case (Values.ENUM(cr1,i1),Exp.LESS(ty = Exp.ENUM()),Values.ENUM(cr2,i2)) 
       equation         
         b = (i1 < i2);
       then
         Values.BOOL(b);
-    case (Values.ENUM(cr1,i1),Exp.LESSEQ(ty = Exp.ENUMERATION(index = SOME(_))),Values.ENUM(cr2,i2))
+    case (Values.ENUM(index = i1),Exp.LESSEQ(ty = Exp.ENUMERATION(index = SOME(_))),Values.ENUM(index = i2))
 //    case (Values.ENUM(cr1,i1),Exp.LESSEQ(ty = Exp.ENUM()),Values.ENUM(cr2,i2))
       equation 
         b = (i1 <= i2);
       then
         Values.BOOL(b);
-    case (Values.ENUM(cr1,i1),Exp.GREATEREQ(ty = Exp.ENUMERATION(index = SOME(_))),Values.ENUM(cr2,i2))
+    case (Values.ENUM(index = i1),Exp.GREATEREQ(ty = Exp.ENUMERATION(index = SOME(_))),Values.ENUM(index = i2))
 //    case (Values.ENUM(cr1,i1),Exp.GREATEREQ(ty = Exp.ENUM()),Values.ENUM(cr2,i2))
       equation 
         b = (i1 >= i2);
       then
         Values.BOOL(b);
-    case (Values.ENUM(cr1,i1),Exp.EQUAL(ty = Exp.ENUMERATION(index = SOME(_))),Values.ENUM(cr2,i2))
+    case (Values.ENUM(index = i1),Exp.EQUAL(ty = Exp.ENUMERATION(index = SOME(_))),Values.ENUM(index = i2))
 //    case (Values.ENUM(cr1,i1),Exp.EQUAL(ty = Exp.ENUM()),Values.ENUM(cr2,i2))
-      equation 
-        ba = Exp.crefEqual(cr1, cr2); 
+      equation
+        // Why is this not performed for less or grater?
+        // ba = Exp.crefEqual(cr1, cr2); 
         bb = (i1 == i2);
-        b = boolAnd(ba, bb);
+        // b = boolAnd(ba, bb);
       then
-        Values.BOOL(b);
-    case (Values.ENUM(cr1,i1),Exp.NEQUAL(ty = Exp.ENUMERATION(index = SOME(_))),Values.ENUM(cr2,i2))
+        Values.BOOL(bb);
+    case (Values.ENUM(index = i1),Exp.NEQUAL(ty = Exp.ENUMERATION(index = SOME(_))),Values.ENUM(index = i2))
 //    case (Values.ENUM(cr1,i1),Exp.NEQUAL(ty = Exp.ENUM()),Values.ENUM(cr2,i2))
       equation
-        ba = boolNot(Exp.crefEqual(cr1, cr2));
+        // ba = boolNot(Exp.crefEqual(cr1, cr2));
         bb = (i1 <> i2);
-        b = boolAnd(ba, bb);
+        // b = boolAnd(ba, bb);
       then
-        Values.BOOL(b);
+        Values.BOOL(bb);
         
     case (_,_,_)
       equation 
@@ -4360,11 +4362,15 @@ algorithm
     
     /* Enumerationtyp -> no lookup necesery */
     case (cache,env,c,impl,msg)
-      local Integer idx;
+      local
+        Absyn.Path path;
+        Integer idx;
+        list<String> names;
       equation
-         idx = Exp.getEnumIndexfromCref(c);
+         Exp.ENUMERATION(SOME(idx), _, names, {}) = Exp.getEnumTypefromCref(c);
+         path = Exp.crefToPath(c);
       then
-        (cache,Values.ENUM(c,idx));
+        (cache,Values.ENUM(idx,path,names));
     /* Search in env for binding. */
     case (cache,env,c,impl,msg)  
       equation 
@@ -4643,7 +4649,7 @@ algorithm
     /* indexing using enum! */
     case (cache,env,Exp.INDEX(exp = e1),dim,impl,msg)
       equation 
-        (cache,v1 as Values.ENUM(_,indx),_) = ceval(cache,env, e1, impl, NONE, SOME(dim), msg);
+        (cache,v1 as Values.ENUM(index = indx),_) = ceval(cache,env, e1, impl, NONE, SOME(dim), msg);
         e1_1 = Static.valueExp(v1);
         true = indx <= dim;
       then
@@ -4676,7 +4682,7 @@ algorithm ostring := matchcontinue( e1)
       String ret;
     equation
       (_,val,_) = ceval(Env.emptyCache(),Env.emptyEnv, e1,true,NONE,NONE,MSG());
-      ret = Values.printValStr(val);
+      ret = ValuesUtil.printValStr(val);
     then
       ret;
       

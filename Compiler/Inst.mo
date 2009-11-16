@@ -150,6 +150,7 @@ protected import UnitChecker;
 protected import UnitParserExt;
 protected import Util;
 protected import Values;
+protected import ValuesUtil;
 protected import VarTransform;
 protected import System;
 
@@ -9820,7 +9821,7 @@ algorithm
         (cache, expl1,props,_) = Static.elabExpList(cache,env, conditions, impl, NONE,true);
         (Types.PROP((Types.T_BOOL(_),_),_)) = Types.propsAnd(props);
         (cache,valList) = Ceval.cevalList(cache,env, expl1, impl, NONE, Ceval.NO_MSG());
-        blist = Util.listMap(valList,Values.valueBool);
+        blist = Util.listMap(valList,ValuesUtil.valueBool);
         b = selectList(blist, tb, fb);
         (cache,env_1,ih,dae,csets_1,ci_state_1,graph) = instList(cache,env,ih, mod, pre, csets, ci_state, instEEquation, b, impl, graph);
       then
@@ -9833,7 +9834,7 @@ algorithm
         (cache, expl1,props,_) = Static.elabExpList(cache,env, conditions, impl, NONE,true);
         (Types.PROP((Types.T_BOOL(_),_),_)) = Types.propsAnd(props);
         (cache,valList) = Ceval.cevalList(cache,env, expl1, impl, NONE, Ceval.NO_MSG());
-        blist = Util.listMap(valList,Values.valueBool);
+        blist = Util.listMap(valList,ValuesUtil.valueBool);
         b = selectList(blist, tb, fb);
         (cache,env_1,ih,dae,csets_1,ci_state_1,graph) = instList(cache,env,ih, mod, pre, csets, ci_state, instEInitialequation, b, impl,graph);
       then
@@ -10665,7 +10666,7 @@ algorithm
     case (_,_,_,_,_,_,_,v,_,_,_,_)
       equation 
         Debug.fprint("failtrace", "- Inst.unroll ");
-        Debug.fcall("failtrace", Values.printVal, v);
+        Debug.fcall("failtrace", ValuesUtil.printVal, v);
         Debug.fprint("failtrace", " failed\n");
       then
         fail();

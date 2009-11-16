@@ -318,6 +318,7 @@ protected import Print;
 protected import Util;
 protected import Static;
 protected import RTOpts;
+protected import ValuesUtil;
 
 public function discreteType "function: discreteType
   author: PA
@@ -1303,22 +1304,18 @@ algorithm
           MOD(false,Absyn.NON_EACH(),{},
           SOME(TYPED(exp,SOME(v),PROP(ty,C_VAR()))))) :: res),NONE);
 
-    case ((v as Values.ENUM(cref, i)) :: rest,(id :: ids))
-      local 
-        Exp.Type t;
-      equation 
-        t = Exp.getEnumTypefromCref(cref);
-        ty = expTypetoTypesType(t);
+    case ((v as Values.ENUM(index = _)) :: rest,(id :: ids))
+      equation
+        ty = typeOfValue(v);
+        exp = Static.valueExp(v);
         MOD(_,_,res,_) = valuesToMods(rest, ids);
       then
         MOD(false,Absyn.NON_EACH(),
           (NAMEMOD(id,
           MOD(false,Absyn.NON_EACH(),{},
           SOME(
-          TYPED(Exp.CREF(cref,t),SOME(v),
-//          TYPED(Exp.CREF(cref,Exp.ENUM()),SOME(v),
+          TYPED(exp,SOME(v),
           PROP(ty,C_CONST()))))) :: res),NONE);
-//          PROP((T_ENUM(),NONE),C_CONST()))))) :: res),NONE);
                     
     case ((v as Values.ARRAY(vals)) :: rest,(id :: ids))
       equation 
@@ -1333,7 +1330,7 @@ algorithm
     case ((v :: _),_)
       equation 
         Debug.fprint("failtrace", "Types.valuesToMods failed for value: ");
-        vs = Values.valString(v);
+        vs = ValuesUtil.valString(v);
         Debug.fprint("failtrace", vs);
         Debug.fprint("failtrace", "\n");
       then
@@ -1402,14 +1399,12 @@ algorithm
     case (Values.REAL(real = _)) then ((T_REAL({}),NONE)); 
     case (Values.STRING(string = _)) then ((T_STRING({}),NONE)); 
     case (Values.BOOL(boolean = _)) then ((T_BOOL({}),NONE)); 
-    case (Values.ENUM(Exp.CREF_IDENT(_, Exp.ENUMERATION(index, path, names, _), _),_))
-      local Option<Integer> index; Absyn.Path path; list<String> names;
-       then ((T_ENUMERATION(index,path,names,{}),NONE));
-    case (Values.ENUM(Exp.CREF_QUAL(_, _, _, cref), val))
-      local Exp.ComponentRef cref; Integer val;
-        equation
-          tp = typeOfValue(Values.ENUM(cref,val));
-       then tp;       
+    case (Values.ENUM(index,path,names))
+      local
+        Integer index;
+        Absyn.Path path;
+        list<String> names;
+      then ((T_ENUMERATION(SOME(index),path,names,{}),NONE));
 //    case (Values.ENUM(value = _)) then ((T_ENUM(),NONE)); 
     case ((w as Values.ARRAY(valueLst = (v :: vs))))
       equation 
@@ -1472,7 +1467,7 @@ algorithm
       local Ident vs;
       equation 
         Debug.fprint("failtrace", "- Types.typeOfValue failed: ");
-        vs = Values.valString(v);
+        vs = ValuesUtil.valString(v);
         Debug.fprintln("failtrace", vs);
       then
         fail();
@@ -2700,7 +2695,7 @@ algorithm
         res;
     case VAR(name = n,attributes = attr,protected_ = prot,type_ = typ,binding = VALBOUND(value))
       equation 
-        valStr = Values.valString(value);
+        valStr = ValuesUtil.valString(value);
         res = Util.stringAppendList({n,"=",valStr});
       then
         res;    
@@ -2811,13 +2806,13 @@ algorithm
       equation 
         str = Exp.printExpStr(exp);
         str2 = unparseConst(f);
-        v_str = Values.valString(v);
+        v_str = ValuesUtil.valString(v);
         res = Util.stringAppendList({"EQBOUND(",str,",SOME(",v_str,"), ",str2,")"});
       then
         res;
     case VALBOUND(valBound = v)
       equation 
-        s = Values.unparseValues({v});
+        s = ValuesUtil.unparseValues({v});
         res = Util.stringAppendList({"VALBOUND(",s,")"});
       then
         res;

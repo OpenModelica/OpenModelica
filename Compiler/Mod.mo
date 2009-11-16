@@ -58,12 +58,12 @@ protected import Dump;
 protected import Debug;
 protected import Inst;
 protected import Static;
-protected import Values;
 protected import Util;
 protected import Ceval;
 protected import Error;
 protected import Print;
-//protected import Interactive;
+protected import Values;
+protected import ValuesUtil;
 
 public function elabMod "
   This function elaborates on the expressions in a modification and
@@ -1282,7 +1282,7 @@ algorithm
         t_1 = Types.unliftArray(t);
         exp2 = Exp.ICONST(x);
         exp = Exp.simplify(Exp.ASUB(e,{exp2}));
-        e_val_1 = Values.nthArrayelt(e_val, x);
+        e_val_1 = ValuesUtil.nthArrayelt(e_val, x);
         e = indexEqmod(SOME(Types.TYPED(exp,SOME(e_val_1),Types.PROP(t_1,c))), xs);
       then
         e;
@@ -2066,7 +2066,7 @@ algorithm
       equation 
         str = Exp.printExpStr(e);
         str2 = Types.printPropStr(prop);
-        e_val_str = Values.valString(e_val);
+        e_val_str = ValuesUtil.valString(e_val);
         res = Util.stringAppendList({" = (typed)",str,str2,", E_VALUE:",e_val_str});
       then
         res;

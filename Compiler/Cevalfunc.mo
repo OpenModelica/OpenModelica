@@ -30,6 +30,7 @@ protected import Static;
 protected import Inst;
 protected import InstanceHierarchy;
 protected import UnitAbsyn;
+protected import ValuesUtil;
 
 protected constant String forScopeName="$for loop scope$";
 
@@ -669,16 +670,16 @@ algorithm oenv:= matchcontinue(env,varName,statements,start,step,stop)
     Env.Env env1,env2,env3;   
   case(env,varName,statements,start,step,stop) 
     equation
-      true = Values.safeLessEq(start,stop);
+      true = ValuesUtil.safeLessEq(start,stop);
       env1 = setValue(start,env,Absyn.CREF(Absyn.CREF_IDENT(varName,{})));
       env2 = evaluateConditionalStatement2(statements,env1);
-      newVal = Values.safeIntRealOp(start,step,Values.ADDOP);
+      newVal = ValuesUtil.safeIntRealOp(start,step,Values.ADDOP);
       env3 = evaluateForLoopRange(env2,varName,statements,newVal,step,stop);
     then
       env3;
   case(env,_,_,start,step,stop) 
     equation
-      false = Values.safeLessEq(start,stop);
+      false = ValuesUtil.safeLessEq(start,stop);
     then env;
 end matchcontinue;
 end evaluateForLoopRange;
@@ -1115,7 +1116,7 @@ algorithm oval := matchcontinue(inType)
       Integer idx;
       Absyn.Path path;
       list<String> names;    
-    then Values.ENUM(Exp.CREF_IDENT("",Exp.ENUMERATION(SOME(idx),path,names,{}),{}),0); 
+    then Values.ENUM(idx,path,names); 
 //       then Values.ENUM(Exp.CREF_IDENT("",Exp.ENUM(),{}),0); 
 //  case((Types.T_ENUM,_)) then Values.ENUM(Exp.CREF_IDENT("",Exp.ENUM(),{}),0); 
   case((Types.T_COMPLEX(ClassInf.RECORD(str), typesVar,_,_),_))

@@ -79,6 +79,7 @@ protected import Print;
 protected import System;
 protected import Error;
 protected import Static;
+protected import ValuesUtil;
 
 public function cevalInteractiveFunctions 
 "function cevalInteractiveFunctions
@@ -653,7 +654,7 @@ algorithm ostring := matchcontinue( e1)
       String ret;
     equation
       (_,val,_) = Ceval.ceval(Env.emptyCache,Env.emptyEnv, e1,true,NONE,NONE,Ceval.MSG());
-      ret = Values.printValStr(val);
+      ret = ValuesUtil.printValStr(val);
     then
       ret;
       

@@ -59,6 +59,7 @@ public import Absyn;
 public import Graphviz;
 public import SCode;
 public import ClassInf;
+public import Values;
 
 public 
 type Ident = String "- Identifiers 
@@ -536,11 +537,11 @@ uniontype BindingTypes "- Binding"
   record UNBOUND end UNBOUND;
   record EQBOUND
     Exp exp "exp" ;
-    Option<Value> evaluatedExp "evaluatedExp; evaluated exp" ;
+    Option<Values.Value> evaluatedExp "evaluatedExp; evaluated exp" ;
     ConstTypes constant_ "constant" ;
   end EQBOUND;
   record VALBOUND
-    Value valBound "valBound" ;
+    Values.Value valBound "valBound" ;
   end VALBOUND;
 end BindingTypes;
 
@@ -648,59 +649,6 @@ uniontype ConstTypes "The degree of constantness of an expression is determined 
 end ConstTypes;
 
 // Some aditional uniontypes from Types.mo may have to be added here
-
-//--------------------------------------
-//Values, from values.mo. Part of a work-around to avoid circular dependencies
-//                 (used by the valueblock expression)
-//--------------------------------------
-public 
-uniontype Value
-  record INTEGERVAL
-    Integer integer;
-  end INTEGERVAL;
-
-  record REALVAL
-    Real real;
-  end REALVAL;
-
-  record STRINGVAL
-    String string;
-  end STRINGVAL;
-
-  record BOOLVAL
-    Boolean boolean;
-  end BOOLVAL;
-
-  record LISTVAL
-    list<Value> valueLst;
-  end LISTVAL;
-
-  record ENUMVAL
-    ComponentRef value;
-  end ENUMVAL;
-
-  record ARRAYVAL
-    list<Value> valueLst;
-  end ARRAYVAL;
-
-  record TUPLEVAL
-    list<Value> valueLst;
-  end TUPLEVAL;
-
-  record RECORDVAL
-    Absyn.Path record_ "record name" ;
-    list<Value> orderd "orderd set of values" ;
-    list<Ident> comp "comp names for each value" ;
-    Integer index "-1 for regular records, 0..n-1 for uniontypes containing n records";
-  end RECORDVAL;
-
-  record CODEVAL
-    Absyn.CodeNode A "A record consist of value  Ident pairs" ;
-  end CODEVAL;
-
-end Value;
-// ------------
-
 
 //---------------------------------------------------
 // From DAE.mo Part of a work-around to avoid circular dependencies

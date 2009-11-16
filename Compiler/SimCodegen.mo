@@ -95,6 +95,7 @@ protected import System;
 protected import Types;
 protected import Util;
 protected import Values;
+protected import ValuesUtil;
 protected import VarTransform;
 
 public function generateMakefile
@@ -7034,7 +7035,7 @@ algorithm
                       streamPrefix = streamPrefix) :: rest),
           nxarr,nxdarr,nyarr,nparr,nystrarr,npstrarr)
       equation
-        v = Values.valString(value);
+        v = ValuesUtil.valString(value);
         origname_str = Exp.printComponentRefStr(origname);
         str = Util.stringAppendList({v," // ",origname_str});
         npstrarr = arrayUpdate(npstrarr, indx + 1, str);
@@ -7053,7 +7054,7 @@ algorithm
                       streamPrefix = streamPrefix) :: rest),
           nxarr,nxdarr,nyarr,nparr,nystrarr,npstrarr)
       equation
-        v = Values.valString(value);
+        v = ValuesUtil.valString(value);
         origname_str = Exp.printComponentRefStr(origname);
         str = Util.stringAppendList({v," // ",origname_str});
         nparr = arrayUpdate(nparr, indx + 1, str);

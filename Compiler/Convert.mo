@@ -1459,17 +1459,15 @@ algorithm
 
   	case (Exp.VARTYPES(n,attType,pro,tt,Exp.EQBOUND(e,SOME(val),Exp.C_CONST())))
   	  local
-        Exp.Value val;
+        Values.Value val;
         Exp.Exp e;
         Types.Attributes attType2;
         Types.Type tt2;
-        Values.Value val2;
       equation
         attType2 =fromAttributesTypesToAttributes(attType);
         tt2 = fromTypeTypesToType(tt);
-        val2 = fromValueTypesToValue(val);
-       ret = Types.VAR(n,attType2,pro,
-             tt2,Types.EQBOUND(e,SOME(val2),Types.C_CONST()));
+        ret = Types.VAR(n,attType2,pro,
+          tt2,Types.EQBOUND(e,SOME(val),Types.C_CONST()));
       then ret;
 
   case (Exp.VARTYPES(n,attType,pro,tt,Exp.EQBOUND(e,NONE(),Exp.C_PARAM())))
@@ -1486,23 +1484,21 @@ algorithm
 
   	case (Exp.VARTYPES(n,attType,pro,tt,Exp.EQBOUND(e,SOME(val),Exp.C_PARAM())))
   	  local
-        Exp.Value val;
+        Values.Value val;
         Exp.Exp e;
         Types.Attributes attType2;
         Types.Type tt2;
-        Values.Value val2;
       equation
         attType2 =fromAttributesTypesToAttributes(attType);
         tt2 = fromTypeTypesToType(tt);
-        val2 = fromValueTypesToValue(val);
         ret = Types.VAR(n,attType2,pro,
-        tt2,Types.EQBOUND(e,SOME(val2),Types.C_PARAM()));
+        tt2,Types.EQBOUND(e,SOME(val),Types.C_PARAM()));
       then ret;
 
     case (Exp.VARTYPES(n,attType,pro,tt,Exp.EQBOUND(e,NONE(),Exp.C_VAR())))
       local
         Exp.Exp e;
-         Types.Attributes attType2;
+        Types.Attributes attType2;
         Types.Type tt2;
       equation
         attType2 = fromAttributesTypesToAttributes(attType);
@@ -1513,105 +1509,29 @@ algorithm
 
     case (Exp.VARTYPES(n,attType,pro,tt,Exp.EQBOUND(e,SOME(val),Exp.C_VAR())))
       local
-        Exp.Value val;
+        Values.Value val;
         Exp.Exp e;
-         Types.Attributes attType2;
+        Types.Attributes attType2;
         Types.Type tt2;
-        Values.Value val2;
       equation
         attType2 = fromAttributesTypesToAttributes(attType);
         tt2 = fromTypeTypesToType(tt);
-        val2 = fromValueTypesToValue(val);
       ret = Types.VAR(n,attType2,pro,
-           tt2,Types.EQBOUND(e,SOME(val2),Types.C_VAR()));
+           tt2,Types.EQBOUND(e,SOME(val),Types.C_VAR()));
       then ret;
 
     case (Exp.VARTYPES(n,attType,pro,tt,Exp.VALBOUND(val)))
       local
-        Exp.Value val;
+        Values.Value val;
         Types.Attributes attType2;
         Types.Type tt2;
-        Values.Value val2;
       equation
         attType2 =fromAttributesTypesToAttributes(attType);
         tt2 = fromTypeTypesToType(tt);
-        val2 = fromValueTypesToValue(val);
-     	ret = Types.VAR(n,attType2,pro,
-           tt2,Types.VALBOUND(val2));
+        ret = Types.VAR(n,attType2,pro,tt2,Types.VALBOUND(val));
       then ret;
   end matchcontinue;
 end fromVarTypesToVar;
-
-public function fromValueTypesToValue "function: fromValueTypesToValue
-  Exp.Value => Values.Value"
-	input Exp.Value inVal;
-	output Values.Value outVal;
-algorithm
-	outVal := matchcontinue (inVal)
-	  local
-	    Values.Value ret;
-	    Exp.ComponentRef cr;
-	    Integer i; Real r;
-	    String s; Boolean b;
-	    list<Exp.Value> vLst;
-	    list<Values.Value> vLst2;
-	    Absyn.Path p;
-	    list<Exp.Ident> lIdent;
-	    Absyn.CodeNode c;
-	  case (Exp.INTEGERVAL(i)) then Values.INTEGER(i);
-	  case (Exp.REALVAL(r)) then Values.REAL(r);
-	  case (Exp.STRINGVAL(s)) then Values.STRING(s);
-	  case (Exp.BOOLVAL(b)) then Values.BOOL(b);
-	  case (Exp.ENUMVAL(cr)) then Values.ENUM(cr,0);
-	  case (Exp.CODEVAL(c)) then Values.CODE(c);
-	  case (Exp.LISTVAL(vLst))
-	    equation
-	      vLst2 = fromValueTypesLstToValueLst(vLst,{});
-	      ret = Values.LIST(vLst2);
-	    then ret;
-	  case (Exp.ARRAYVAL(vLst))
-	    equation
-	      vLst2 = fromValueTypesLstToValueLst(vLst,{});
-	      ret = Values.ARRAY(vLst2);
-	    then ret;
-	  case (Exp.TUPLEVAL(vLst))
-	    equation
-	      vLst2 = fromValueTypesLstToValueLst(vLst,{});
-	      ret = Values.TUPLE(vLst2);
-	    then ret;
-	  case (Exp.RECORDVAL(p,vLst,lIdent,i))
-	    equation
-	      vLst2 = fromValueTypesLstToValueLst(vLst,{});
-	      ret = Values.RECORD(p,vLst2,lIdent,i);
-	    then ret;
-	end matchcontinue;
-end fromValueTypesToValue;
-
-public function fromValueTypesLstToValueLst "function: fromValueTypesLstToValueLst
-  Exp.Value 'list => Values.Value 'list"
-	input list<Exp.Value> vLst;
-	input list<Values.Value> accLst;
-	output list<Values.Value> outLst;
-algorithm
-  outLst :=
-  matchcontinue (vLst,accLst)
-    local
-      list<Values.Value> localAccList;
-    case ({},localAccList) equation then localAccList;
-    case (first :: rest,localAccList)
-    local
-      list<Exp.Value> rest;
-      Exp.Value first;
-      list<Values.Value> first2;
-      list<Values.Value> lst;
-    equation
-      first2 = Util.listCreate(fromValueTypesToValue(first));
-    	localAccList = listAppend(localAccList,first2);
-     	lst = fromValueTypesLstToValueLst(rest,localAccList);
-    	then lst;
- end matchcontinue;
-end fromValueTypesLstToValueLst;
-
 
 public function fromAttributesTypesToAttributes "function: fromAttributesTypesToAttributes
   Exp.AttributesTypes => Types.Attributes"
@@ -1921,7 +1841,6 @@ algorithm
         Exp.Exp e;
         Exp.AttributesTypes attType2;
         Exp.TypeTypes tt2;
-        Exp.Value val2;
       equation
         attType2 = fromAttributesToAttributesTypes(attType);
         tt2 = fromTypeToTypeTypes(tt);
@@ -1935,13 +1854,10 @@ algorithm
         Exp.Exp e;
         Exp.AttributesTypes attType2;
         Exp.TypeTypes tt2;
-        Exp.Value val2;
       equation
         attType2 = fromAttributesToAttributesTypes(attType);
         tt2 = fromTypeToTypeTypes(tt);
-        val2 = fromValueToValueTypes(val);
-       ret = Exp.VARTYPES(n,attType2,pro,
-             tt2,Exp.EQBOUND(e,SOME(val2),Exp.C_CONST()));
+        ret = Exp.VARTYPES(n,attType2,pro,tt2,Exp.EQBOUND(e,SOME(val),Exp.C_CONST()));
       then ret;
 
   	case (Types.VAR(n,attType,pro,tt,Types.EQBOUND(e,NONE(),Types.C_PARAM())))
@@ -1963,13 +1879,11 @@ algorithm
         Exp.Exp e;
         Exp.AttributesTypes attType2;
         Exp.TypeTypes tt2;
-        Exp.Value val2;
       equation
         attType2 = fromAttributesToAttributesTypes(attType);
         tt2 = fromTypeToTypeTypes(tt);
-        val2 = fromValueToValueTypes(val);
         ret = Exp.VARTYPES(n,attType2,pro,
-        tt2,Exp.EQBOUND(e,SOME(val2),Exp.C_PARAM()));
+        tt2,Exp.EQBOUND(e,SOME(val),Exp.C_PARAM()));
       then ret;
 
    case (Types.VAR(n,attType,pro,tt,Types.EQBOUND(e,NONE(),Types.C_VAR())))
@@ -1990,13 +1904,11 @@ algorithm
         Exp.Exp e;
         Exp.AttributesTypes attType2;
         Exp.TypeTypes tt2;
-        Exp.Value val2;
       equation
         attType2 =fromAttributesToAttributesTypes(attType);
         tt2 = fromTypeToTypeTypes(tt);
-        val2 = fromValueToValueTypes(val);
-      ret = Exp.VARTYPES(n,attType2,pro,
-           tt2,Exp.EQBOUND(e,SOME(val2),Exp.C_VAR()));
+        ret = Exp.VARTYPES(n,attType2,pro,
+          tt2,Exp.EQBOUND(e,SOME(val),Exp.C_VAR()));
       then ret;
 
     case (Types.VAR(n,attType,pro,tt,Types.VALBOUND(val)))
@@ -2004,91 +1916,13 @@ algorithm
         Values.Value val;
         Exp.AttributesTypes attType2;
         Exp.TypeTypes tt2;
-        Exp.Value val2;
       equation
         attType2 = fromAttributesToAttributesTypes(attType);
         tt2 = fromTypeToTypeTypes(tt);
-        val2 = fromValueToValueTypes(val);
-     		ret = Exp.VARTYPES(n,attType2,pro,
-        	   tt2,Exp.VALBOUND(val2));
+     		ret = Exp.VARTYPES(n,attType2,pro,tt2,Exp.VALBOUND(val));
       then ret;
   end matchcontinue;
 end fromVarToVarTypes;
-
-
-public function fromValueToValueTypes "function: fromValueToValueTypes
-  Values.Value => Exp.Value"
-	input Values.Value inVal;
-	output Exp.Value outVal;
-algorithm
-	outVal := matchcontinue (inVal)
-	  local
-	    Exp.Value ret; Integer i; Real r; String s;
-	    Boolean b; list<Values.Value> vLst; list<Exp.Value> vLst2;
-	    Absyn.Path p;
-	    list<Exp.Ident> lIdent;
-	    Absyn.CodeNode c;
-	    Exp.ComponentRef cr;
-	    	    
-	  case (Values.INTEGER(i)) then Exp.INTEGERVAL(i);
-	  case (Values.REAL(r)) then Exp.REALVAL(r);
-	  case (Values.STRING(s)) then Exp.STRINGVAL(s);
-	  case (Values.BOOL(b)) then Exp.BOOLVAL(b);
-	  case (Values.ENUM(cr,_)) then Exp.ENUMVAL(cr);
-	  case (Values.LIST(vLst))
-	    equation
-	      vLst2 = fromValueLstToValueTypesLst(vLst,{});
-	      ret = Exp.LISTVAL(vLst2);
-	    then ret;
-	  case (Values.ARRAY(vLst))
-	    equation
-	      vLst2 = fromValueLstToValueTypesLst(vLst,{});
-	      ret = Exp.ARRAYVAL(vLst2);
-	    then ret;
-	  case (Values.TUPLE(vLst))
-	    equation
-	      vLst2 = fromValueLstToValueTypesLst(vLst,{});
-	      ret = Exp.TUPLEVAL(vLst2);
-	    then ret;
-	  case (Values.RECORD(p,vLst,lIdent,i))
-	    equation
-	      vLst2 = fromValueLstToValueTypesLst(vLst,{});
-	      ret = Exp.RECORDVAL(p,vLst2,lIdent,i);
-	    then ret;
-	  case (Values.CODE(c))
-	    equation
-	      ret = Exp.CODEVAL(c);
-	    then ret;
-	  case _
-	    equation
-	      print("- Convert.fromValueToValueTypes failed\n");
-	    then fail();
-  end matchcontinue;
-end fromValueToValueTypes;
-
-public function fromValueLstToValueTypesLst 
-"function: fromValueLstToValueTypesLst
-  Values.Value 'list => Exp.Value 'list"
-	input list<Values.Value> vLst;
-	input list<Exp.Value> accLst;
-	output list<Exp.Value> outLst;
-algorithm
-  outLst := matchcontinue (vLst,accLst)
-    local
-      list<Exp.Value> localAccList;
-    case ({},localAccList) equation then localAccList;
-    case (first :: rest,localAccList)
-    local
-      list<Values.Value> rest;
-      Values.Value first;
-      list<Exp.Value> first2,lst;
-    equation
-      first2 = Util.listCreate(fromValueToValueTypes(first));
-    	localAccList = listAppend(localAccList,first2);
-     	lst = fromValueLstToValueTypesLst(rest,localAccList);
-    	then lst;
- end matchcontinue;
-end fromValueLstToValueTypesLst;
 
 public function fromAttributesToAttributesTypes "function: fromAttributesToAttributesTypes
   Types.Attributes => Exp.AttributesTypes"

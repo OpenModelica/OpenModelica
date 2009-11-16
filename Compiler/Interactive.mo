@@ -51,10 +51,10 @@ public import OptManager;
 public import SCode;
 public import DAE;
 public import Types;
-public import Values;
 public import Env;
 public import Settings;
 public import ConnectionGraph;
+public import Values;
 
 protected import DAEUtil;
 protected import ErrorExt;
@@ -62,6 +62,7 @@ protected import HashTable2;
 protected import InstanceHierarchy;
 protected import MetaUtil;
 protected import UnitAbsyn;
+protected import ValuesUtil;
 
 /*
 ** CompiledCFunction
@@ -502,7 +503,7 @@ algorithm
         env = buildEnvFromSymboltable(st);
         (cache,sexp,Types.PROP(t,_),SOME(st_1)) = Static.elabExp(Env.emptyCache(),env, exp, true, SOME(st),true);
         (_,value,SOME(st_2)) = Ceval.ceval(cache,env, sexp, true, SOME(st_1), NONE, Ceval.MSG());
-        str = Values.valString(value);
+        str = ValuesUtil.valString(value);
         newst = addVarToSymboltable(ident, value, t, st_2);
       then
         (str,newst);
@@ -641,12 +642,12 @@ algorithm
       Boolean startIsLess;
     case (iter, startv, stepv, stopv, algItems, st1)
     equation
-      startIsLess = Values.safeLessEq(startv, stopv);
+      startIsLess = ValuesUtil.safeLessEq(startv, stopv);
       equality(startIsLess = true);
       st2 = appendVarToSymboltable(iter, startv, Types.typeOfValue(startv), st1);
 			st3 = evaluateAlgStmtLst(algItems, st2);
 			st4 = deleteVarFromSymboltable(iter, st3);
-			nextv = Values.safeIntRealOp(startv, stepv, Values.ADDOP);
+			nextv = ValuesUtil.safeIntRealOp(startv, stepv, Values.ADDOP);
 			st5 = evaluateForStmtRangeOpt(iter, nextv, stepv, stopv, algItems, st4);
 		then
 			st5;
@@ -876,7 +877,7 @@ algorithm
     case (exp,st)
       equation
         (value,st_1) = evaluateExpr(exp, st);
-        str = Values.valString(value);
+        str = ValuesUtil.valString(value);
       then
         (str,st_1);
     case (_,st) then ("",st);

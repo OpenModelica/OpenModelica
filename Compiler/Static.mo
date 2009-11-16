@@ -96,9 +96,6 @@ protected import Print;
 protected import Lookup;
 protected import Debug;
 protected import Inst;
-/*
-protected import Codegen;
-*/
 protected import ModUtil;
 protected import DAE;
 protected import Util;
@@ -112,6 +109,7 @@ protected import System;
 protected import ErrorExt;
 protected import AbsynDep;
 protected import InstanceHierarchy;
+protected import ValuesUtil;
 
 public function elabExpList "Expression elaboration of Absyn.Exp list, i.e. lists of expressions."
 	input Env.Cache inCache;
@@ -11276,8 +11274,19 @@ algorithm
         varlst = Util.listThreadMap(namelst,tpl,Exp.makeVar);
         name = Absyn.pathLastIdent(path);
       then Exp.CALL(path,expl,false,false,Exp.COMPLEX(name,varlst,ClassInf.RECORD(name)),false);
-    case(Values.ENUM(cr as Exp.CREF_IDENT(_, t, _),x)) then Exp.CREF(cr,t);
-    case(Values.ENUM(cr as Exp.CREF_QUAL(_, t, _, _),x)) then Exp.CREF(cr,t);
+    case(Values.ENUM(ix,path,names))
+      local
+        Integer ix;
+        Absyn.Path path;
+        list<String> names;
+        String str;
+      equation
+        t = Exp.ENUMERATION(SOME(ix),Absyn.IDENT(""),names,{});
+        cr = Exp.pathToCref(path);
+        cr = Exp.crefSetLastType(cr,t);
+      then Exp.CREF(cr,t);
+    // case(Values.ENUM(cr as Exp.CREF_IDENT(_, t, _),x)) then Exp.CREF(cr,t);
+    // case(Values.ENUM(cr as Exp.CREF_QUAL(_, t, _, _),x)) then Exp.CREF(cr,t);
 //    case(Values.ENUM(cr,x)) then Exp.CREF(cr,Exp.ENUM());
     
     case (Values.TUPLE(vallist))
@@ -11319,7 +11328,7 @@ algorithm
 
     case v
       equation 
-        Debug.fprintln("failtrace", "Static.valueExp failed for "+&Values.valString(v)+&"\n");
+        Debug.fprintln("failtrace", "Static.valueExp failed for "+&ValuesUtil.valString(v)+&"\n");
         
         Error.addMessage(Error.INTERNAL_ERROR, {"Static.valueExp failed"});
       then
