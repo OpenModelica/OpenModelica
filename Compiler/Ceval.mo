@@ -1012,6 +1012,7 @@ algorithm
     case "promote" then cevalBuiltinPromote; 
     case "String" then cevalBuiltinString;
     case "linspace" then cevalBuiltinLinspace;
+    case "Integer" then cevalBuiltinIntegerEnumeration;
     case "print" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalBuiltinPrint;
     // MetaModelica type conversions
     case "intReal" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalIntReal;
@@ -3715,6 +3716,39 @@ algorithm
         (cache,Values.INTEGER(ri),st);
   end matchcontinue;
 end cevalBuiltinInteger;
+
+
+protected function cevalBuiltinIntegerEnumeration "function cevalBuiltinIntegerEnumeration
+  author: LP
+  Evaluates the builtin Integer operator"
+	input Env.Cache inCache;
+  input Env.Env inEnv;
+  input list<Exp.Exp> inExpExpLst;
+  input Boolean inBoolean;
+  input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Msg inMsg;
+  output Env.Cache outCache;
+  output Values.Value outValue;
+  output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
+algorithm 
+  (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
+  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+    local
+      Real rv;
+      Integer ri;
+      list<Env.Frame> env;
+      Exp.Exp exp;
+      Boolean impl;
+      Option<Interactive.InteractiveSymbolTable> st;
+      Msg msg;
+      Env.Cache cache;
+    case (cache,env,{exp},impl,st,msg)
+      equation 
+        (cache,Values.ENUM(ri,_,_),_) = ceval(cache,env, exp, impl, st, NONE, msg);
+      then
+        (cache,Values.INTEGER(ri),st);
+  end matchcontinue;
+end cevalBuiltinIntegerEnumeration;
 
 protected function cevalBuiltinDiagonal "function cevalBuiltinDiagonal
   This function generates a matrix{n,n} (A) of the vector {a,b,...,n}

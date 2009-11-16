@@ -294,6 +294,10 @@ protected constant tuple<Types.TType, Option<Type_a>> int2int=(
           DAE.T_FUNCTION({("x",(DAE.T_INTEGER({}),NONE))},
           (DAE.T_INTEGER({}),NONE)),NONE);
 
+protected constant tuple<Types.TType, Option<Type_a>> enumeration2int=(
+          DAE.T_FUNCTION({("x",(DAE.T_ENUMERATION(NONE, Absyn.IDENT(""), {}, {}),NONE))},
+          (DAE.T_INTEGER({}),NONE)),NONE);
+
 protected constant tuple<Types.TType, Option<Type_a>> intInt2int=(
           DAE.T_FUNCTION(
           {("x",(DAE.T_INTEGER({}),NONE)),
@@ -3009,6 +3013,7 @@ algorithm
       env = Env.extendFrameT(env, "ceil", real2real);
       envb = Env.extendFrameT(env, "floor", real2int);
       env = Env.extendFrameT(envb, "integer", real2int);
+      env = Env.extendFrameT(env, "Integer", enumeration2int);
       env = Env.extendFrameT(env, "abs", real2real) "differentiable functions" ;
       env = Env.extendFrameT(env, "abs", int2int) "differentiable functions" ;
       env = Env.extendFrameT(env, "sign", real2real);

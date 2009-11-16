@@ -656,6 +656,20 @@ algorithm
   end matchcontinue;
 end isString;
 
+public function isEnumeration "function: isEnumeration
+ 
+  Return true if Type is the builtin String type.
+"
+  input Type inType;
+  output Boolean outBoolean;
+algorithm 
+  outBoolean:=
+  matchcontinue (inType)
+    case ((DAE.T_ENUMERATION(_, _, _, _),_)) then true; 
+    case ((_,_)) then false; 
+  end matchcontinue;
+end isEnumeration;
+
 public function isArrayOrString "function: isArrayOrString
  
   Return true if Type is array or the builtin String type.

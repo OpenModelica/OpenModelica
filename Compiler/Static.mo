@@ -4706,6 +4706,37 @@ algorithm
   end matchcontinue;
 end elabBuiltinInteger;
 
+protected function elabBuiltinIntegerEnum
+"function: elabBuiltinIntegerEnum 
+  This function elaborates on the builtin operator Integer for Enumerations, which extracts 
+  the Integer value of a Enumeration element."
+	input Env.Cache inCache;
+  input Env.Env inEnv;
+  input list<Absyn.Exp> inAbsynExpLst;
+  input list<Absyn.NamedArg> inNamedArg;  
+  input Boolean inBoolean;
+  output Env.Cache outCache;
+  output Exp.Exp outExp;
+  output Types.Properties outProperties;
+algorithm 
+  (outCache,outExp,outProperties):=
+  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
+    local
+      Exp.Exp s1_1;
+      Types.Const c;
+      list<Env.Frame> env;
+      Absyn.Exp s1;
+      Boolean impl;
+      Env.Cache cache;
+            Types.Properties prop;
+    case (cache,env,{s1},_,impl) 
+      equation 
+        (cache,s1_1,prop) = verifyBuiltInHandlerType(cache,env,{s1},impl,Types.isEnumeration,"Integer");
+      then
+        (cache,s1_1,prop);
+  end matchcontinue;
+end elabBuiltinIntegerEnum;
+
 protected function elabBuiltinDiagonal "function: elabBuiltinDiagonal
  
   This function elaborates on the builtin operator diagonal, creating a
@@ -6106,6 +6137,7 @@ algorithm
     case "String" then elabBuiltinString;
     case "rooted" then elabBuiltinRooted;
     case "linspace" then elabBuiltinLinspace;
+    case "Integer" then elabBuiltinIntegerEnum;
     case "mmc_get_field" equation true = RTOpts.acceptMetaModelicaGrammar(); then elabBuiltinMMCGetField;
     case "mmc_uniontype_metarecord_typedef_equal" equation true = RTOpts.acceptMetaModelicaGrammar(); then elabBuiltinMMC_Uniontype_MetaRecord_Typedefs_Equal;
     case "if_exp" equation true = RTOpts.acceptMetaModelicaGrammar(); then elabBuiltinIfExp;
