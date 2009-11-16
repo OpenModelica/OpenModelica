@@ -127,12 +127,12 @@ algorithm
           env1;          
     case(env, ((ele1 as SCode.COMPONENT(component = varName, typeSpec = Absyn.TPATH(path = apath), modifications=mod1, attributes = SCode.ATTR(direction = Absyn.INPUT() ) ))::eles1), (val1::vals1),((e1 as Exp.CALL(path = _))::restExps))
       equation
-        (tty as (Types.T_COMPLEX(recordconst,typeslst,cto,_),_)) = makeComplexForEnv(e1, val1); //Types.expTypetoTypesType(ety);
+        (tty as (DAE.T_COMPLEX(recordconst,typeslst,cto,_),_)) = makeComplexForEnv(e1, val1); //Types.expTypetoTypesType(ety);
         complexEnv = Env.newFrame(false); 
         complexEnv = makeComplexEnv({complexEnv},typeslst);
         env1 = Env.extendFrameV(env,
-          Types.VAR(varName,Types.ATTR(false,false,SCode.RW(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
-            false,tty,Types.VALBOUND(val1)), NONE, Env.VAR_TYPED(), complexEnv);
+          DAE.TYPES_VAR(varName,DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
+            false,tty,DAE.VALBOUND(val1)), NONE, Env.VAR_TYPED(), complexEnv);
         env2 = extendEnvWithInputArgs(env1,eles1,vals1,restExps);
       then
         env2;
@@ -140,8 +140,8 @@ algorithm
       equation
         tty = Types.typeOfValue(val1);
         env1 = Env.extendFrameV(env,
-          Types.VAR(varName,Types.ATTR(false,false,SCode.RW(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
-            false,tty,Types.VALBOUND(val1)), NONE, Env.VAR_TYPED(), {});
+          DAE.TYPES_VAR(varName,DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
+            false,tty,DAE.VALBOUND(val1)), NONE, Env.VAR_TYPED(), {});
         env2 = extendEnvWithInputArgs(env1,eles1,vals1,restExps);
       then
         env2;
@@ -155,10 +155,10 @@ algorithm
         /*************** FUNCTION VARIABLE BEGINS ******************/
     case(env, ((ele1 as SCode.COMPONENT(component=varName,attributes = SCode.ATTR(arrayDims=adim, direction = Absyn.BIDIR()), typeSpec = Absyn.TPATH(path = apath), modifications = mod1)) ::eles1), (vals1),restExps)
       equation
-        (tty as (Types.T_COMPLEX(_,typeslst,_,_),_) )= getTypeFromName(apath,env);
+        (tty as (DAE.T_COMPLEX(_,typeslst,_,_),_) )= getTypeFromName(apath,env);
         binding = makeBinding(mod1,env,tty); 
         env1 = Env.extendFrameV(env, 
-          Types.VAR(varName,Types.ATTR(false,false,SCode.RW(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
+          DAE.TYPES_VAR(varName,DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
             false,tty,binding), NONE, Env.VAR_TYPED(), {});
         env2 = extendEnvWithInputArgs(env1,eles1,vals1,restExps);
       then
@@ -169,9 +169,9 @@ algorithm
       equation
         tty = getTypeFromName(apath,env);
         tty = addDims(tty,adim,env);
-        (binding as Types.VALBOUND(vv)) = makeBinding(mod1,env,tty); 
+        (binding as DAE.VALBOUND(vv)) = makeBinding(mod1,env,tty); 
         env1 = Env.extendFrameV(env, 
-          Types.VAR(varName,Types.ATTR(false,false,SCode.RW(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
+          DAE.TYPES_VAR(varName,DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
             false,tty,binding), NONE, Env.VAR_TYPED(), {});
         env2 = extendEnvWithInputArgs(env1,eles1,vals1,restExps);
       then
@@ -203,9 +203,9 @@ algorithm (oType) := matchcontinue(inExp, inVal)
   case(Exp.CALL(recordName,_,_,_,ty,_), inVal as Values.RECORD(_,vals,names,-1))
     equation
       pathName = Absyn.pathString(recordName);
-      (cty as (Types.T_COMPLEX(_,lv,_,_),_)) = Types.expTypetoTypesType(ty);
+      (cty as (DAE.T_COMPLEX(_,lv,_,_),_)) = Types.expTypetoTypesType(ty);
       lv2 = setValuesInRecord(lv,names,vals);
-      cty2 = (Types.T_COMPLEX(ClassInf.RECORD(pathName) ,lv2 , NONE, NONE),NONE); 
+      cty2 = (DAE.T_COMPLEX(ClassInf.RECORD(pathName) ,lv2 , NONE, NONE),NONE); 
     then
       cty2;
 end matchcontinue;
@@ -258,16 +258,16 @@ algorithm oType := matchcontinue(inVars,invarName,inValue)
     list<Values.Value> values;
     Types.Var tv,tv1;
     list<Types.Var> tvs,rest;
-  case(Types.VAR(varName2,a,p,t,Types.UNBOUND),{},{})
+  case(DAE.TYPES_VAR(varName2,a,p,t,DAE.UNBOUND),{},{})
     equation
       val = typeOfValue(t);
-      tv = Types.VAR(varName2,a,p,t,Types.VALBOUND(val));
+      tv = DAE.TYPES_VAR(varName2,a,p,t,DAE.VALBOUND(val));
     then
       tv;
-  case((tv as Types.VAR(varName2,a,p,t,Types.VALBOUND(val))),{},{})
+  case((tv as DAE.TYPES_VAR(varName2,a,p,t,DAE.VALBOUND(val))),{},{})
     then
       tv;
-  case(Types.VAR(varName3,a,p, (t as (Types.T_COMPLEX(complexVarLst = typeslst),_)) ,b) ,varName2::varNames, (val as Values.RECORD(_,vals,names,-1))::values)
+  case(DAE.TYPES_VAR(varName3,a,p, (t as (DAE.T_COMPLEX(complexVarLst = typeslst),_)) ,b) ,varName2::varNames, (val as Values.RECORD(_,vals,names,-1))::values)
     local
       list<Types.Var> typeslst,lv2;
       list<Values.Value> vals;
@@ -275,13 +275,13 @@ algorithm oType := matchcontinue(inVars,invarName,inValue)
     equation 
       equality(varName3 = varName2);
       lv2 = setValuesInRecord(typeslst,names,vals);
-      ty2 = (Types.T_COMPLEX(ClassInf.RECORD(varName2) ,lv2 , NONE, NONE),NONE);
-      tv = Types.VAR(varName3,a,p,ty2,Types.VALBOUND(val));
+      ty2 = (DAE.T_COMPLEX(ClassInf.RECORD(varName2) ,lv2 , NONE, NONE),NONE);
+      tv = DAE.TYPES_VAR(varName3,a,p,ty2,DAE.VALBOUND(val));
     then tv;
-  case(Types.VAR(varName3,a,p,t,b) ,varName2::varNames, val::values)
+  case(DAE.TYPES_VAR(varName3,a,p,t,b) ,varName2::varNames, val::values)
     equation 
       equality(varName3 = varName2);
-      tv = Types.VAR(varName3,a,p,t,Types.VALBOUND(val));
+      tv = DAE.TYPES_VAR(varName3,a,p,t,DAE.VALBOUND(val));
     then tv;      
   case(tv1,varName3::varNames, val::values)
     equation
@@ -311,20 +311,20 @@ local
   Types.Var tv;
   Env.Env env1,env2,complexEnv;
   case(env,{}) then env;
-  case(env, (tv as Types.VAR(name,attr,prot,ty,bind ))::vars)
+  case(env, (tv as DAE.TYPES_VAR(name,attr,prot,ty,bind ))::vars)
     equation
       Types.simpleType(ty);
       env1 = Env.extendFrameV(env, tv, NONE, Env.VAR_TYPED(), {});
       env2 = makeComplexEnv(env1, vars);
       then 
         env2;
-  case(env, (tv as Types.VAR(name,attr,prot,(ty as (Types.T_COMPLEX(_,typeslst,_,_),_)) , _))::vars)
+  case(env, (tv as DAE.TYPES_VAR(name,attr,prot,(ty as (DAE.T_COMPLEX(_,typeslst,_,_),_)) , _))::vars)
     equation
        complexEnv = Env.newFrame(false); 
        complexEnv = makeComplexEnv({complexEnv},typeslst);
         env1 = Env.extendFrameV(env,
-        Types.VAR(name,Types.ATTR(false,false,SCode.RW(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
-        false,ty,Types.UNBOUND), NONE, Env.VAR_TYPED(), complexEnv);
+        DAE.TYPES_VAR(name,DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
+        false,ty,DAE.UNBOUND), NONE, Env.VAR_TYPED(), complexEnv);
       env2 = makeComplexEnv(env1, vars);
       then 
         env2;
@@ -430,7 +430,7 @@ algorithm
         // assign, tuple assign
     case(env, Absyn.ALG_ASSIGN(ae1 as Absyn.CREF(_), ae2))
       equation
-       (_,e1,Types.PROP(t,_),_) = Static.elabExp(Env.emptyCache(),env,ae2,true,NONE,false); 
+       (_,e1,DAE.PROP(t,_),_) = Static.elabExp(Env.emptyCache(),env,ae2,true,NONE,false); 
         (_,value,_) = Ceval.ceval(Env.emptyCache(),env, e1, true, NONE, NONE, Ceval.MSG());
         env1 = setValue(value, env, ae1);
       then
@@ -438,7 +438,7 @@ algorithm
     case(env, Absyn.ALG_ASSIGN(assignComponent = Absyn.TUPLE(expressions = crefexps),value = ae1))
       equation
         (_,resExp,prop,_) = Static.elabExp(Env.emptyCache(),env, ae1, true, NONE,true);
-        ((Types.T_TUPLE(types),_)) = Types.getPropType(prop);
+        ((DAE.T_TUPLE(types),_)) = Types.getPropType(prop);
         (_,Values.TUPLE(values),_) = Ceval.ceval(Env.emptyCache(),env, resExp, true, NONE, NONE, Ceval.MSG());
         env1 = setValues(crefexps,types,values,env);
         then
@@ -613,7 +613,7 @@ algorithm oval := matchcontinue(inExp,env,expectedType)
   case(inExp,env,SOME(ty))
     local Types.Type ty,ty2;
     equation      
-      (_,e1,Types.PROP(ty2,_),_) = Static.elabExp(Env.emptyCache(),env,inExp,true,NONE,false); 
+      (_,e1,DAE.PROP(ty2,_),_) = Static.elabExp(Env.emptyCache(),env,inExp,true,NONE,false); 
       (e2,_) = Types.matchType(e1,ty2,ty);
       (_,value,_) = Ceval.ceval(Env.emptyCache(),env, e2, true, NONE, NONE, Ceval.MSG());
     then 
@@ -793,20 +793,20 @@ algorithm outVal := matchcontinue(inVal,env,toAssign)
       list<Values.Value> vals;
       list<String> names;
     equation
-      (_,_,t as (Types.T_COMPLEX(_,typeslst,_,_),_),_,_,_) = Lookup.lookupVar(Env.emptyCache(),env, Exp.CREF_IDENT(str,Exp.OTHER(),{}));
+      (_,_,t as (DAE.T_COMPLEX(_,typeslst,_,_),_),_,_,_) = Lookup.lookupVar(Env.emptyCache(),env, Exp.CREF_IDENT(str,Exp.OTHER(),{}));
       nlist = setValuesInRecord(typeslst,names,vals);
       fr = Env.newFrame(false); 
       complexEnv = makeComplexEnv({fr},nlist);
       env1 = Env.updateFrameV(env,
-          Types.VAR(str,Types.ATTR(false,false,SCode.RW(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
-            false,t,Types.VALBOUND(value)), Env.VAR_TYPED(), complexEnv);
+          DAE.TYPES_VAR(str,DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
+            false,t,DAE.VALBOUND(value)), Env.VAR_TYPED(), complexEnv);
     then
       env1;
     case(value,env,Absyn.CREF(Absyn.CREF_IDENT(str,subs)))
       local 
         list<Absyn.Subscript> subs;
       equation
-        (_,_,t,Types.VALBOUND(value2),_,_) = Lookup.lookupVar(Env.emptyCache(),env, Exp.CREF_IDENT(str,Exp.OTHER(),{}));
+        (_,_,t,DAE.VALBOUND(value2),_,_) = Lookup.lookupVar(Env.emptyCache(),env, Exp.CREF_IDENT(str,Exp.OTHER(),{}));
         value = mergeValues(value2,value,subs,env,t); 
         env1 = updateVarinEnv(env,str,value,t);
       then
@@ -819,7 +819,7 @@ algorithm outVal := matchcontinue(inVal,env,toAssign)
         Exp.ComponentRef eme;
         String str2;
       equation 
-        (_,_,t,Types.VALBOUND(value2),_,_) = Lookup.lookupVar(Env.emptyCache(),env, Exp.CREF_IDENT(str,Exp.OTHER(),{}));
+        (_,_,t,DAE.VALBOUND(value2),_,_) = Lookup.lookupVar(Env.emptyCache(),env, Exp.CREF_IDENT(str,Exp.OTHER(),{}));
         env1 = setQualValue(env,value,Absyn.CREF_QUAL(str,subs,child));
       then
         env1;
@@ -847,8 +847,8 @@ algorithm
   baseValue := typeOfValue(typ);
   env_1 := Env.openScope(env, false, SOME(forScopeName));
   env_2 := Env.extendFrameV(env_1, 
-          Types.VAR(i,Types.ATTR(false,false,SCode.RW(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
-          false,typ,Types.VALBOUND(baseValue)), NONE, Env.VAR_UNTYPED(), {}) "comp env" ;
+          DAE.TYPES_VAR(i,DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
+          false,typ,DAE.VALBOUND(baseValue)), NONE, Env.VAR_UNTYPED(), {}) "comp env" ;
 end addForLoopScope;
 
 protected function setQualValue "Function: setQualValue
@@ -971,8 +971,8 @@ algorithm
       equation
         (_,_,_,_,_,_) = Lookup.lookupVar(Env.emptyCache(), env,Exp.CREF_IDENT(varName,Exp.OTHER(),{}));
         env1 = Env.updateFrameV(env, 
-          Types.VAR(varName,Types.ATTR(false,false,SCode.RW(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
-            false,ty,Types.VALBOUND(newVal)), Env.VAR_TYPED(), {}); 
+          DAE.TYPES_VAR(varName,DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
+            false,ty,DAE.VALBOUND(newVal)), Env.VAR_TYPED(), {}); 
       then
         env1;
     case(_,_,_,_) equation 
@@ -983,7 +983,7 @@ end updateVarinEnv;
 
 protected function makeBinding "Function: makeBinding
 This function will evaluate possible mods(input) and if a bindingvalue is found it will 
-return a Types.VALBOUND otherwise a Types.UNBOUND
+return a DAE.VALBOUND otherwise a DAE.UNBOUND
 "
   input SCode.Mod inMod;
   input Env.Env env;
@@ -1004,24 +1004,24 @@ algorithm
         ae1 = Util.tuple21(absynExp);
         value = evaluateSingleExpression(ae1,env,SOME(ty));        
       then 
-        Types.VALBOUND(value);
+        DAE.VALBOUND(value);
     case(SCode.MOD(absynExpOption = SOME(absynExp), eachPrefix = Absyn.EACH) ,env,ty ) 
       equation        
         ae1 = Util.tuple21(absynExp);
         value = evaluateSingleExpression(ae1,env,SOME(ty));
         value2 = instFunctionArray(ty,SOME(value));
       then 
-        Types.VALBOUND(value2);
+        DAE.VALBOUND(value2);
     case(SCode.MOD(absynExpOption = NONE),_,ty)
       equation 
         baseValue = instFunctionArray(ty,NONE);
       then 
-        Types.VALBOUND(baseValue);
+        DAE.VALBOUND(baseValue);
     case(SCode.NOMOD,_,ty)
       equation 
         baseValue = instFunctionArray(ty,NONE);
       then 
-        Types.VALBOUND(baseValue);        
+        DAE.VALBOUND(baseValue);        
     case(SCode.MOD(absynExpOption = SOME(absynExp)),_,_)
       equation
         Debug.fprint("failtrace", "- Cevalfunc.makeBinding failed not fully implemented\n");        
@@ -1107,19 +1107,19 @@ protected function typeOfValue ""
 input Types.Type inType;
 output Values.Value oval;
 algorithm oval := matchcontinue(inType)
-  case((Types.T_INTEGER(_),_)) then Values.INTEGER(0);
-  case((Types.T_REAL(_),_)) then Values.REAL(0.0);
-  case((Types.T_STRING(_),_)) then Values.STRING("");
-  case((Types.T_BOOL(_),_)) then Values.BOOL(false);
-  case((Types.T_ENUMERATION(SOME(idx),path,names,_),_))
+  case((DAE.T_INTEGER(_),_)) then Values.INTEGER(0);
+  case((DAE.T_REAL(_),_)) then Values.REAL(0.0);
+  case((DAE.T_STRING(_),_)) then Values.STRING("");
+  case((DAE.T_BOOL(_),_)) then Values.BOOL(false);
+  case((DAE.T_ENUMERATION(SOME(idx),path,names,_),_))
     local
       Integer idx;
       Absyn.Path path;
       list<String> names;    
     then Values.ENUM(idx,path,names); 
 //       then Values.ENUM(Exp.CREF_IDENT("",Exp.ENUM(),{}),0); 
-//  case((Types.T_ENUM,_)) then Values.ENUM(Exp.CREF_IDENT("",Exp.ENUM(),{}),0); 
-  case((Types.T_COMPLEX(ClassInf.RECORD(str), typesVar,_,_),_))
+//  case((DAE.T_ENUM,_)) then Values.ENUM(Exp.CREF_IDENT("",Exp.ENUM(),{}),0); 
+  case((DAE.T_COMPLEX(ClassInf.RECORD(str), typesVar,_,_),_))
     local 
       list<Types.Var> typesVar;
       String str;
@@ -1175,7 +1175,7 @@ algorithm
       equation
         (_,typeClass as SCode.CLASS(name=className),env1) = Lookup.lookupClass(Env.emptyCache(), env, p, false);
         (_,env2,_,_,_,_,ty,_,_,_) = Inst.instClass(
-          Env.emptyCache(),env1,InstanceHierarchy.emptyInstanceHierarchy,UnitAbsyn.noStore,Types.NOMOD(),Prefix.NOPRE(),Connect.emptySet,typeClass,{}, true, Inst.INNER_CALL, ConnectionGraph.EMPTY);
+          Env.emptyCache(),env1,InstanceHierarchy.emptyInstanceHierarchy,UnitAbsyn.noStore,DAE.NOMOD(),Prefix.NOPRE(),Connect.emptySet,typeClass,{}, true, Inst.INNER_CALL, ConnectionGraph.EMPTY);
       then
         ty;
     case (_,_) 
@@ -1196,10 +1196,10 @@ algorithm
     local
       String nonBuiltin;
       SCode.Class typeClass;
-    case ("Integer") then ((Types.T_INTEGER({}),NONE));
-    case ("Real") then ((Types.T_REAL({}),NONE));
-    case ("String") then ((Types.T_STRING({}),NONE));
-    case ("Boolean") then ((Types.T_BOOL({}),NONE));
+    case ("Integer") then ((DAE.T_INTEGER({}),NONE));
+    case ("Real") then ((DAE.T_REAL({}),NONE));
+    case ("String") then ((DAE.T_STRING({}),NONE));
+    case ("Boolean") then ((DAE.T_BOOL({}),NONE));
 
   end matchcontinue;
 end getBuiltInTypeFromName;
@@ -1224,7 +1224,7 @@ algorithm
     case({},_) then {};
     case(((ele1 as SCode.COMPONENT(component = varName, attributes = SCode.ATTR(direction = Absyn.OUTPUT() ) ))::eles1),env)
       equation
-        (_,_,_,Types.VALBOUND(value),_,_) = Lookup.lookupVar(Env.emptyCache(),env, Exp.CREF_IDENT(varName,Exp.OTHER(),{}));
+        (_,_,_,DAE.VALBOUND(value),_,_) = Lookup.lookupVar(Env.emptyCache(),env, Exp.CREF_IDENT(varName,Exp.OTHER(),{}));
         lval = getOutputVarValues(eles1,env);
       then
        value::lval; 
@@ -1333,24 +1333,24 @@ algorithm outVal := matchcontinue(val,ty)
     Values.Value val1,val2;
     Integer ix;
     Real rx;
-  case(Values.ARRAY(vals1), ty as (Types.T_REAL(_),_)) 
+  case(Values.ARRAY(vals1), ty as (DAE.T_REAL(_),_)) 
     equation 
       vals2 = Util.listMap1(vals1,checkValueTypes,ty) ;
       val1 = Values.ARRAY(vals2); 
     then
       val1;
-  case(Values.ARRAY(vals1), ty as (Types.T_INTEGER(_),_)) 
+  case(Values.ARRAY(vals1), ty as (DAE.T_INTEGER(_),_)) 
     equation 
       vals2 = Util.listMap1(vals1,checkValueTypes,ty);
       val1 = Values.ARRAY(vals2); 
     then
       val1;
-  case(Values.INTEGER(ix), ty as (Types.T_REAL(_),_))
+  case(Values.INTEGER(ix), ty as (DAE.T_REAL(_),_))
     equation 
     rx = intReal(ix);
       then
         Values.REAL(rx);
-  case(Values.REAL(rx), ty as (Types.T_INTEGER(_),_))
+  case(Values.REAL(rx), ty as (DAE.T_INTEGER(_),_))
     equation 
     ix = realInt(rx);
     //print("WARNING unsafe conversion from real to integer\n"); 

@@ -5615,25 +5615,25 @@ algorithm
     case (DAE.VARIABLE(),_,v,_,_,_,states,SOME(DAE.VAR_ATTR_REAL(_,_,_,_,_,_,_,SOME(DAE.ALWAYS()),_,_,_)))
     then STATE();
 
-    case (DAE.VARIABLE(),(Types.T_BOOL(_),_),cr,dir,flowPrefix,_,_,_)
+    case (DAE.VARIABLE(),(DAE.T_BOOL(_),_),cr,dir,flowPrefix,_,_,_)
       equation
         failure(topLevelInput(cr, dir, flowPrefix));
       then
         DISCRETE();
     
-    case (DAE.DISCRETE(),(Types.T_BOOL(_),_),cr,dir,flowPrefix,_,_,_)
+    case (DAE.DISCRETE(),(DAE.T_BOOL(_),_),cr,dir,flowPrefix,_,_,_)
       equation
         failure(topLevelInput(cr, dir, flowPrefix));
       then
         DISCRETE();
     
-    case (DAE.VARIABLE(),(Types.T_INTEGER(_),_),cr,dir,flowPrefix,_,_,_)
+    case (DAE.VARIABLE(),(DAE.T_INTEGER(_),_),cr,dir,flowPrefix,_,_,_)
       equation
         failure(topLevelInput(cr, dir, flowPrefix));
       then
         DISCRETE();
     
-    case (DAE.DISCRETE(),(Types.T_INTEGER(_),_),cr,dir,flowPrefix,_,_,_)
+    case (DAE.DISCRETE(),(DAE.T_INTEGER(_),_),cr,dir,flowPrefix,_,_,_)
       equation
         failure(topLevelInput(cr, dir, flowPrefix));
       then
@@ -5770,7 +5770,7 @@ algorithm
   outVarKind:=
   matchcontinue (inType)
     local Absyn.Path path;
-    case ((Types.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(path)),_)) then EXTOBJ(path);
+    case ((DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(path)),_)) then EXTOBJ(path);
   end matchcontinue;
 end lowerExtObjVarkind;
 
@@ -12330,9 +12330,9 @@ algorithm
       equation
         t_1 = generateDaeType(t);
         env_1 = Env.extendFrameV(env,
-          Types.VAR(crn,
-          Types.ATTR(false,false,SCode.RW(),SCode.CONST(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,
-                     t_1,Types.EQBOUND(e,NONE,Types.C_CONST())), 
+          DAE.TYPES_VAR(crn,
+          DAE.ATTR(false,false,SCode.RW(),SCode.CONST(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,
+                     t_1,DAE.EQBOUND(e,NONE,DAE.C_CONST())), 
                      NONE, Env.VAR_UNTYPED(), {});
         env_2 = addVariablesToEnv(rest, env_1);
       then
@@ -12353,9 +12353,9 @@ algorithm
       equation
         t_1 = generateDaeType(t);
         env_1 = Env.extendFrameV(env,
-          Types.VAR(crn,
-          Types.ATTR(false,false,SCode.RW(),SCode.CONST(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,
-                     t_1,Types.UNBOUND()), NONE, Env.VAR_UNTYPED(), {});
+          DAE.TYPES_VAR(crn,
+          DAE.ATTR(false,false,SCode.RW(),SCode.CONST(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,
+                     t_1,DAE.UNBOUND()), NONE, Env.VAR_UNTYPED(), {});
         env_2 = addVariablesToEnv(rest, env_1);
       then
         env_2;
@@ -15037,12 +15037,12 @@ algorithm
     local
       list<String> strLst;
       Absyn.Path path;
-    case REAL() then ((Types.T_REAL({}),NONE));
-    case INT() then ((Types.T_INTEGER({}),NONE));
-    case BOOL() then ((Types.T_BOOL({}),NONE));
-    case STRING() then ((Types.T_STRING({}),NONE));
-    case ENUMERATION(strLst) then ((Types.T_ENUMERATION(NONE,Absyn.IDENT(""),strLst,{}),NONE));
-    case EXT_OBJECT(path) then ((Types.T_COMPLEX(ClassInf.EXTERNAL_OBJ(path),{},NONE,NONE),NONE));
+    case REAL() then ((DAE.T_REAL({}),NONE));
+    case INT() then ((DAE.T_INTEGER({}),NONE));
+    case BOOL() then ((DAE.T_BOOL({}),NONE));
+    case STRING() then ((DAE.T_STRING({}),NONE));
+    case ENUMERATION(strLst) then ((DAE.T_ENUMERATION(NONE,Absyn.IDENT(""),strLst,{}),NONE));
+    case EXT_OBJECT(path) then ((DAE.T_COMPLEX(ClassInf.EXTERNAL_OBJ(path),{},NONE,NONE),NONE));
   end matchcontinue;
 end generateDaeType;
 
@@ -15056,12 +15056,12 @@ algorithm
     local
       list<String> strLst;
       Absyn.Path path;
-    case ((Types.T_REAL(_),_)) then REAL();
-    case ((Types.T_INTEGER(_),_)) then INT();
-    case ((Types.T_BOOL(_),_)) then BOOL();
-    case ((Types.T_STRING(_),_)) then STRING();
-    case ((Types.T_ENUMERATION(names = strLst),_)) then ENUMERATION(strLst);
-    case ((Types.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(path)),_)) then EXT_OBJECT(path);
+    case ((DAE.T_REAL(_),_)) then REAL();
+    case ((DAE.T_INTEGER(_),_)) then INT();
+    case ((DAE.T_BOOL(_),_)) then BOOL();
+    case ((DAE.T_STRING(_),_)) then STRING();
+    case ((DAE.T_ENUMERATION(names = strLst),_)) then ENUMERATION(strLst);
+    case ((DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(path)),_)) then EXT_OBJECT(path);
   end matchcontinue;
 end lowerType;
 

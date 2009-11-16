@@ -42,14 +42,14 @@ package DAE
 "
 
 public import Absyn;
+public import ClassInf;
 public import Exp;
-public import Types;
 public import SCode;
+public import Values;
 
 public type Ident = String;
 
-public 
-type InstDims = list<Exp.Subscript>;
+public type InstDims = list<Exp.Subscript>;
 
 public type StartValue = Option<Exp.Exp>;
   
@@ -108,7 +108,7 @@ public uniontype Element
     VarKind kind "varible kind: variable, constant, parameter, discrete etc." ;
     VarDirection direction "input, output or bidir" ;
     VarProtection protection "if protected or public";
-    Types.Type ty "Full type information required";
+    Type ty "Full type information required";
     Option<Exp.Exp> binding "Binding expression e.g. for parameters ; value of start attribute" ; 
     InstDims  dims "dimensions";
     Flow flowPrefix "Flow of connector variable. Needed for unconnected flow variables" ;
@@ -197,20 +197,20 @@ public uniontype Element
   record FUNCTION " A Modelica function"
     Absyn.Path path;
     DAElist dAElist;
-    Types.Type type_;
+    Type type_;
     Boolean partialPrefix "MetaModelica extension";
   end FUNCTION;
 
   record EXTFUNCTION "An external function"
     Absyn.Path path;
     DAElist dAElist;
-    Types.Type type_;
+    Type type_;
     ExternalDecl externalDecl;
   end EXTFUNCTION;
   
   record RECORD_CONSTRUCTOR "A Modelica record constructor. The function can be generated from the Path and Type alone."
     Absyn.Path path;
-    Types.Type type_;
+    Type type_;
   end RECORD_CONSTRUCTOR;
 
   record EXTOBJECTCLASS "The 'class' of an external object"
@@ -310,19 +310,19 @@ end StateSelect;
 public uniontype ExtArg
   record EXTARG
     Exp.ComponentRef componentRef;
-    Types.Attributes attributes;
-    Types.Type type_;
+    Attributes attributes;
+    Type type_;
   end EXTARG;
 
   record EXTARGEXP
     Exp.Exp exp;
-    Types.Type type_;
+    Type type_;
   end EXTARGEXP;
 
   record EXTARGSIZE
     Exp.ComponentRef componentRef;
-    Types.Attributes attributes;
-    Types.Type type_;
+    Attributes attributes;
+    Type type_;
     Exp.Exp exp;
   end EXTARGSIZE;
 
@@ -476,6 +476,264 @@ uniontype Else "An if statements can one or more `elseif\' branches and an
 
 end Else;
 /* -- End Algorithm.mo -- */
+
+/* -- Start Types.mo -- */
+public 
+uniontype Var "- Variables"
+  record TYPES_VAR
+    Ident name "name" ;
+    Attributes attributes "attributes" ;
+    Boolean protected_ "protected" ;
+    Type type_ "type" ;
+    Binding binding "binding ; equation modification" ;
+  end TYPES_VAR;
+
+end Var;
+
+public 
+uniontype Attributes "- Attributes"
+  record ATTR
+    Boolean flowPrefix "flow" ;
+    Boolean streamPrefix "stream" ;
+    SCode.Accessibility accessibility "accessibility" ;
+    SCode.Variability parameter_ "parameter" ;
+    Absyn.Direction direction "direction" ;
+    Absyn.InnerOuter innerOuter "inner, outer,  inner outer or unspecified";
+  end ATTR;
+
+end Attributes;
+
+public 
+uniontype Binding "- Binding"
+  record UNBOUND end UNBOUND;
+
+  record EQBOUND
+    Exp.Exp exp "exp" ;
+    Option<Values.Value> evaluatedExp "evaluatedExp; evaluated exp" ;
+    Const constant_ "constant" ;
+  end EQBOUND;
+
+  record VALBOUND
+    Values.Value valBound "valBound" ;
+  end VALBOUND;
+
+end Binding;
+
+public type Type = tuple<TType, Option<Absyn.Path>> "
+     A Type is a tuple of a TType (containing the actual type) and a optional classname
+     for the class where the type originates from.
+
+- Type";
+
+public
+type EqualityConstraint = Option<tuple<Absyn.Path, Integer>>;
+ 
+public 
+uniontype TType "-TType contains the actual type"
+  record T_INTEGER
+    list<Var> varLstInt "varLstInt" ;
+  end T_INTEGER;
+
+  record T_REAL
+    list<Var> varLstReal "varLstReal" ;
+  end T_REAL;
+
+  record T_STRING
+    list<Var> varLstString "varLstString" ;
+  end T_STRING;
+
+  record T_BOOL
+    list<Var> varLstBool "varLstBool" ;
+  end T_BOOL;
+
+//  record T_ENUM end T_ENUM;
+
+  record T_ENUMERATION
+    Option<Integer> index "the enumeration value index, SOME for element, NONE for type" ;
+    Absyn.Path path "enumeration path" ;
+    list<String> names "names" ;
+    list<Var> varLst "varLst, empty for elements" ;
+  end T_ENUMERATION;
+
+  record T_ARRAY
+    ArrayDim arrayDim "arrayDim" ;
+    Type arrayType "arrayType" ;
+  end T_ARRAY;
+
+  record T_NORETCALL "For functions not returning any values." end T_NORETCALL;
+
+  record T_NOTYPE "Used when type is not yet determined" end T_NOTYPE;
+
+  record T_ANYTYPE
+    Option<ClassInf.State> anyClassType "anyClassType - used for generic types. When class state present the type is assumed to be a complex type which has that restriction." ;
+  end T_ANYTYPE;
+  
+  // MetaModelica extensions
+  record T_LIST "MetaModelica list type"
+    Type listType "listType";
+  end T_LIST;
+
+  record T_METATUPLE "MetaModelica tuple type"
+    list<Type> types;
+  end T_METATUPLE;
+
+  record T_METAOPTION "MetaModelica option type"
+    Type optionType;
+  end T_METAOPTION;
+
+  record T_UNIONTYPE "MetaModelica Uniontype, added by simbj"
+    list <Absyn.Path> records;
+  end T_UNIONTYPE;
+  
+  record T_METARECORD "MetaModelica Record, used by Uniontypes. added by simbj"
+    Integer index; //The index in the uniontype
+    list<Var> fields;
+  end T_METARECORD;
+  
+  record T_COMPLEX
+    ClassInf.State complexClassType "complexClassType ; The type of. a class" ;
+    list<Var> complexVarLst "complexVarLst ; The variables of a complex type" ;
+    Option<Type> complexTypeOption "complexTypeOption ; A complex type can be a subtype of another (primitive) type (through extends). In that case the varlist is empty" ;
+    EqualityConstraint equalityConstraint;
+  end T_COMPLEX;
+
+  record T_FUNCTION
+    list<FuncArg> funcArg "funcArg" ;
+    Type funcResultType "funcResultType ; Only single-result" ;
+  end T_FUNCTION;
+
+  record T_TUPLE
+    list<Type> tupleType "tupleType ; For functions returning multiple values."  ;
+  end T_TUPLE;
+
+  record T_BOXED "Used for MetaModelica generic types"
+    Type ty;
+  end T_BOXED;
+  
+  record T_POLYMORPHIC
+    String name;
+  end T_POLYMORPHIC;
+  
+end TType;
+
+public 
+uniontype ArrayDim "- Array Dimensions"
+  record DIM
+    Option<Integer> integerOption;
+  end DIM;
+
+end ArrayDim;
+
+public 
+type FuncArg = tuple<Ident, Type> "- Function Argument" ;
+
+public 
+uniontype Const "The degree of constantness of an expression is determined by the Const 
+    datatype. Variables declared as \'constant\' will get C_CONST constantness.
+    Variables declared as \'parameter\' will get C_PARAM constantness and
+    all other variables are not constant and will get C_VAR constantness.
+
+  - Variable properties"
+  record C_CONST end C_CONST;
+
+  record C_PARAM "\'constant\'s, should always be evaluated" end C_PARAM;
+
+  record C_VAR "\'parameter\'s, evaluated if structural not constants, never evaluated" end C_VAR;
+
+end Const;
+
+public 
+uniontype TupleConst "A tuple is added to the Types. This is used by functions whom returns multiple arguments.
+  Used by split_props
+  - Tuple constants"
+  record SINGLE_CONST
+    Const const;
+  end SINGLE_CONST;
+
+  record TUPLE_CONST
+    list<TupleConst> tupleConstLst "tupleConstLst" ;
+  end TUPLE_CONST;
+
+end TupleConst;
+
+public 
+uniontype Properties "P.R 1.1 for multiple return arguments from functions, 
+    one constant flag for each return argument. 
+
+  The datatype `Properties\' contain information about an
+    expression.  The properties are created by analyzing the
+    expressions.
+  - Expression properties"
+  record PROP 
+    Type type_ "type" ;
+    Const constFlag "constFlag; if the type is a tuple, each element 
+				          have a const flag." ;
+  end PROP;
+
+  record PROP_TUPLE
+    Type type_;
+    TupleConst tupleConst "tupleConst; The elements might be 
+							    tuple themselfs." ;
+  end PROP_TUPLE;
+
+end Properties;
+
+public 
+uniontype EqMod "To generate the correct set of equations, the translator has to
+  differentiate between the primitive types `Real\', `Integer\',
+  `String\', `Boolean\' and types directly derived from then from
+  other, complex types.  For arrays and matrices the type
+  `T_ARRAY\' is used, with the first argument being the number of
+  dimensions, and the second being the type of the objects in the
+  array.  The `Type\' type is used to store
+  information about whether a class is derived from a primitive
+  type, and whether a variable is of one of these types.
+  - Modification datatype, was originally in Mod"
+  record TYPED
+    Exp.Exp modifierAsExp "modifierAsExp ; modifier as expression" ;
+    Option<Values.Value> modifierAsValue "modifierAsValue ; modifier as Value option" ;
+    Properties properties "properties" ;
+  end TYPED;
+
+  record UNTYPED
+    Absyn.Exp exp;
+  end UNTYPED;
+
+end EqMod;
+
+public 
+uniontype SubMod "-Sub Modification"
+  record NAMEMOD
+    Ident ident;
+    Mod mod;
+  end NAMEMOD;
+
+  record IDXMOD
+    list<Integer> integerLst;
+    Mod mod;
+  end IDXMOD;
+
+end SubMod;
+
+public 
+uniontype Mod "Modification"
+  record MOD
+    Boolean finalPrefix "final" ;
+    Absyn.Each each_;
+    list<SubMod> subModLst;
+    Option<EqMod> eqModOption;
+  end MOD;
+
+  record REDECL
+    Boolean finalPrefix "final" ;
+    list<tuple<SCode.Element, Mod>> tplSCodeElementModLst;
+  end REDECL;
+
+  record NOMOD end NOMOD;
+
+end Mod;
+
+/* -- End Types.mo -- */
 
 end DAE;
 

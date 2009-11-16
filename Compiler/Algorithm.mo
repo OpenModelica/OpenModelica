@@ -132,7 +132,7 @@ algorithm
     /* It is not allowed to assign to a constant */
     case (lhs,lprop,rhs,rprop,_,initial_)
       equation 
-        Types.C_CONST() = Types.propAnyConst(lprop);
+        DAE.C_CONST() = Types.propAnyConst(lprop);
         lhs_str = Exp.printExpStr(lhs);
         rhs_str = Exp.printExpStr(rhs);
         Error.addMessage(Error.ASSIGN_CONSTANT_ERROR, {lhs_str,rhs_str});
@@ -142,7 +142,7 @@ algorithm
     /* assign to parameter in algorithm produce error */
     case (lhs,lprop,rhs,rprop,_,SCode.NON_INITIAL())
       equation 
-        Types.C_PARAM() = Types.propAnyConst(lprop);
+        DAE.C_PARAM() = Types.propAnyConst(lprop);
         lhs_str = Exp.printExpStr(lhs);
         rhs_str = Exp.printExpStr(rhs);
         Error.addMessage(Error.ASSIGN_PARAM_ERROR, {lhs_str,rhs_str});
@@ -160,13 +160,13 @@ algorithm
     /* assignment to parameter ok in initial algorithm */        
     case (lhs,lhprop,rhs,rhprop,_,SCode.INITIAL())
       equation 
-        Types.C_PARAM() = Types.propAnyConst(lhprop);
+        DAE.C_PARAM() = Types.propAnyConst(lhprop);
         outStatement = makeAssignment2(lhs,lhprop,rhs,rhprop);
       then outStatement;
 
     case (lhs,lhprop,rhs,rhprop,_,_)
       equation 
-        Types.C_VAR() = Types.propAnyConst(lhprop);
+        DAE.C_VAR() = Types.propAnyConst(lhprop);
         outStatement = makeAssignment2(lhs,lhprop,rhs,rhprop);
       then outStatement;
 
@@ -272,7 +272,7 @@ algorithm
     case (lhs,lprop,rhs,rprop,initial_)
       equation 
         bvals = Util.listMap(lprop, Types.propAnyConst);
-        Types.C_CONST() = Util.listReduce(bvals, Types.constOr);
+        DAE.C_CONST() = Util.listReduce(bvals, Types.constOr);
         sl = Util.listMap(lhs, Exp.printExpStr);
         s = Util.stringDelimitList(sl, ", ");
         lhs_str = Util.stringAppendList({"(",s,")"});
@@ -283,7 +283,7 @@ algorithm
     case (lhs,lprop,rhs,rprop,SCode.NON_INITIAL())
       equation 
         bvals = Util.listMap(lprop, Types.propAnyConst);
-        Types.C_PARAM() = Util.listReduce(bvals, Types.constOr);
+        DAE.C_PARAM() = Util.listReduce(bvals, Types.constOr);
         sl = Util.listMap(lhs, Exp.printExpStr);
         s = Util.stringDelimitList(sl, ", ");
         lhs_str = Util.stringAppendList({"(",s,")"});
@@ -291,10 +291,10 @@ algorithm
         Error.addMessage(Error.ASSIGN_PARAM_ERROR, {lhs_str,rhs_str});
       then
         fail();
-    case (expl,lhprops,rhs,Types.PROP_TUPLE(type_ = (Types.T_TUPLE(tupleType = tpl),_),tupleConst = Types.TUPLE_CONST(tupleConstLst = clist)),_)
+    case (expl,lhprops,rhs,DAE.PROP_TUPLE(type_ = (DAE.T_TUPLE(tupleType = tpl),_),tupleConst = DAE.TUPLE_CONST(tupleConstLst = clist)),_)
       equation 
         bvals = Util.listMap(lhprops, Types.propAnyConst);
-        Types.C_VAR() = Util.listReduce(bvals, Types.constOr);
+        DAE.C_VAR() = Util.listReduce(bvals, Types.constOr);
         lhrtypes = Util.listMap(lhprops, Types.getPropType);
         Types.matchTypeTupleCall(rhs, tpl, lhrtypes);
          /* Don\'t use new rhs\', since type conversions of several output args
@@ -329,14 +329,14 @@ algorithm
   outType:=
   matchcontinue (inType)
     local tuple<Types.TType, Option<Absyn.Path>> t;
-    case ((Types.T_INTEGER(varLstInt = _),_)) then Exp.INT(); 
-    case ((Types.T_REAL(varLstReal = _),_)) then Exp.REAL(); 
-    case ((Types.T_STRING(varLstString = _),_)) then Exp.STRING(); 
-    case ((Types.T_BOOL(varLstBool = _),_)) then Exp.BOOL(); 
-    case ((Types.T_ARRAY(arrayType = t),_)) then getTypeExpType(t);
-    case ((Types.T_COMPLEX(_,{},SOME(t),_),_))
+    case ((DAE.T_INTEGER(varLstInt = _),_)) then Exp.INT(); 
+    case ((DAE.T_REAL(varLstReal = _),_)) then Exp.REAL(); 
+    case ((DAE.T_STRING(varLstString = _),_)) then Exp.STRING(); 
+    case ((DAE.T_BOOL(varLstBool = _),_)) then Exp.BOOL(); 
+    case ((DAE.T_ARRAY(arrayType = t),_)) then getTypeExpType(t);
+    case ((DAE.T_COMPLEX(_,{},SOME(t),_),_))
        then getTypeExpType(t);
-    case ((Types.T_COMPLEX(_,_::_,_,_),_)) 
+    case ((DAE.T_COMPLEX(_,_::_,_,_),_)) 
       equation 
       // Commenting out this line because it prints a lot of warnings for
       // record assignments (which actually work just fine). // sjoelund // 2009-05-07
@@ -366,13 +366,13 @@ algorithm
       list<tuple<Exp.Exp, Types.Properties, list<Statement>>> eib;
       Ident e_str,t_str;
       tuple<Types.TType, Option<Absyn.Path>> t;
-    case (e,Types.PROP(type_ = t),tb,eib,fb)
+    case (e,DAE.PROP(type_ = t),tb,eib,fb)
       equation
-        (e,_) = Types.matchType(e,t,(Types.T_BOOL({}),NONE));
+        (e,_) = Types.matchType(e,t,(DAE.T_BOOL({}),NONE));
         else_ = makeElse(eib, fb);
       then
         DAE.STMT_IF(e,tb,else_);
-    case (e,Types.PROP(type_ = t),_,_,_)
+    case (e,DAE.PROP(type_ = t),_,_,_)
       equation 
         e_str = Exp.printExpStr(e);
         t_str = Types.unparseType(t);
@@ -399,13 +399,13 @@ algorithm
       tuple<Types.TType, Option<Absyn.Path>> t;
     case ({},{}) then DAE.NOELSE();  /* This removes empty else branches */ 
     case ({},fb) then DAE.ELSE(fb); 
-    case (((e,Types.PROP(type_ = t),b) :: xs),fb)
+    case (((e,DAE.PROP(type_ = t),b) :: xs),fb)
       equation 
-        (e,_) = Types.matchType(e,t,(Types.T_BOOL({}),NONE));
+        (e,_) = Types.matchType(e,t,(DAE.T_BOOL({}),NONE));
         else_ = makeElse(xs, fb);
       then
         DAE.ELSEIF(e,b,else_);
-    case (((e,Types.PROP(type_ = t),_) :: _),_)
+    case (((e,DAE.PROP(type_ = t),_) :: _),_)
       equation 
         e_str = Exp.printExpStr(e);
         t_str = Types.unparseType(t);
@@ -433,13 +433,13 @@ algorithm
       Exp.Exp e;
       tuple<Types.TType, Option<Absyn.Path>> t;
       list<Statement> stmts;
-    case (i,e,Types.PROP(type_ = (Types.T_ARRAY(arrayType = t),_)),stmts)
+    case (i,e,DAE.PROP(type_ = (DAE.T_ARRAY(arrayType = t),_)),stmts)
       equation 
         array = Types.isArray(t);
         et = Types.elabType(t);
       then
         DAE.STMT_FOR(et,array,i,e,stmts);
-    case (_,e,Types.PROP(type_ = t),_)
+    case (_,e,DAE.PROP(type_ = t),_)
       equation 
         e_str = Exp.printExpStr(e);
         t_str = Types.unparseType(t);
@@ -464,8 +464,8 @@ algorithm
       list<Statement> stmts;
       Ident e_str,t_str;
       tuple<Types.TType, Option<Absyn.Path>> t;
-    case (e,Types.PROP(type_ = (Types.T_BOOL(varLstBool = _),_)),stmts) then DAE.STMT_WHILE(e,stmts); 
-    case (e,Types.PROP(type_ = t),_)
+    case (e,DAE.PROP(type_ = (DAE.T_BOOL(varLstBool = _),_)),stmts) then DAE.STMT_WHILE(e,stmts); 
+    case (e,DAE.PROP(type_ = t),_)
       equation 
         e_str = Exp.printExpStr(e);
         t_str = Types.unparseType(t);
@@ -492,9 +492,9 @@ algorithm
       Option<Statement> elsew;
       Ident e_str,t_str;
       tuple<Types.TType, Option<Absyn.Path>> t;
-    case (e,Types.PROP(type_ = (Types.T_BOOL(varLstBool = _),_)),stmts,elsew) then DAE.STMT_WHEN(e,stmts,elsew,{}); 
-    case (e,Types.PROP(type_ = (Types.T_ARRAY(arrayType = (Types.T_BOOL(varLstBool = _),_)),_)),stmts,elsew) then DAE.STMT_WHEN(e,stmts,elsew,{}); 
-    case (e,Types.PROP(type_ = t),_,_)
+    case (e,DAE.PROP(type_ = (DAE.T_BOOL(varLstBool = _),_)),stmts,elsew) then DAE.STMT_WHEN(e,stmts,elsew,{}); 
+    case (e,DAE.PROP(type_ = (DAE.T_ARRAY(arrayType = (DAE.T_BOOL(varLstBool = _),_)),_)),stmts,elsew) then DAE.STMT_WHEN(e,stmts,elsew,{}); 
+    case (e,DAE.PROP(type_ = t),_,_)
       equation 
         e_str = Exp.printExpStr(e);
         t_str = Types.unparseType(t);
@@ -517,9 +517,9 @@ algorithm
   matchcontinue (inExp1,inExp2,inProperties3,inProperties4)
     local Exp.Exp var,val,var_1,val_1; Types.Properties prop1,prop2;
       Types.Type tp1,tp2;
-    case (var as Exp.CREF(_,_),val,Types.PROP(tp1,_),Types.PROP(tp2,_))  equation
-     (val_1,_) = Types.matchType(val,tp2,(Types.T_REAL({}),NONE()));
-      (var_1,_) = Types.matchType(var,tp1,(Types.T_REAL({}),NONE()));
+    case (var as Exp.CREF(_,_),val,DAE.PROP(tp1,_),DAE.PROP(tp2,_))  equation
+     (val_1,_) = Types.matchType(val,tp2,(DAE.T_REAL({}),NONE()));
+      (var_1,_) = Types.matchType(var,tp1,(DAE.T_REAL({}),NONE()));
     then DAE.STMT_REINIT(var_1,val_1);  
   
    case (_,_,prop1,prop2)  equation
@@ -542,7 +542,7 @@ algorithm
   outStatement:=
   matchcontinue (inExp1,inExp2,inProperties3,inProperties4)
     local Exp.Exp cond,msg;
-    case (cond,msg,Types.PROP(type_ = (Types.T_BOOL(varLstBool = _),_)),Types.PROP(type_ = (Types.T_STRING(varLstString = _),_))) then DAE.STMT_ASSERT(cond,msg);  
+    case (cond,msg,DAE.PROP(type_ = (DAE.T_BOOL(varLstBool = _),_)),DAE.PROP(type_ = (DAE.T_STRING(varLstString = _),_))) then DAE.STMT_ASSERT(cond,msg);  
   end matchcontinue;
 end makeAssert;
 
@@ -556,7 +556,7 @@ algorithm
   outStatement:=
   matchcontinue (inExp1,inProperties3)
     local Exp.Exp cond,msg;
-    case (msg,Types.PROP(type_ = (Types.T_STRING(varLstString = _),_))) then DAE.STMT_TERMINATE(msg);  
+    case (msg,DAE.PROP(type_ = (DAE.T_STRING(varLstString = _),_))) then DAE.STMT_TERMINATE(msg);  
   end matchcontinue;
 end makeTerminate;
 

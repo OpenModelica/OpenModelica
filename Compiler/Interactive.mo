@@ -354,7 +354,7 @@ algorithm
         scode_class = SCode.elabClass(absyn_class);
         (_,env_1,_,d) = 
           Inst.implicitFunctionInstantiation(Env.emptyCache(),env,InstanceHierarchy.emptyInstanceHierarchy, 
-                                             Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, scode_class, {});
+                                             DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, scode_class, {});
       then
         ();
     case (Absyn.PROGRAM(classes = (class_list as (cls :: morecls)), within_ = w, globalBuildTimes=ts),st) /* Recursively go through all classes */
@@ -501,7 +501,7 @@ algorithm
         (st as SYMBOLTABLE(ast = p)))
       equation
         env = buildEnvFromSymboltable(st);
-        (cache,sexp,Types.PROP(t,_),SOME(st_1)) = Static.elabExp(Env.emptyCache(),env, exp, true, SOME(st),true);
+        (cache,sexp,DAE.PROP(t,_),SOME(st_1)) = Static.elabExp(Env.emptyCache(),env, exp, true, SOME(st),true);
         (_,value,SOME(st_2)) = Ceval.ceval(cache,env, sexp, true, SOME(st_1), NONE, Ceval.MSG());
         str = ValuesUtil.valString(value);
         newst = addVarToSymboltable(ident, value, t, st_2);
@@ -516,7 +516,7 @@ algorithm
       equation
         env = buildEnvFromSymboltable(st);
         (cache,srexp,rprop,SOME(st_1)) = Static.elabExp(Env.emptyCache(),env, rexp, true, SOME(st),true);
-        ((Types.T_TUPLE(types),_)) = Types.getPropType(rprop);
+        ((DAE.T_TUPLE(types),_)) = Types.getPropType(rprop);
         idents = Util.listMap(crefexps, getIdentFromTupleCrefexp);
         (_,Values.TUPLE(values),SOME(st_2)) = Ceval.ceval(cache, env, srexp, true, SOME(st_1), NONE, Ceval.MSG());
         newst = addVarsToSymboltable(idents, values, types, st_2);
@@ -1223,8 +1223,8 @@ algorithm
       equation
         (_,_,_,_,_,_) = Lookup.lookupVar(Env.emptyCache(),env, Exp.CREF_IDENT(id,Exp.OTHER(),{}));
         env_1 = Env.updateFrameV(env,
-          Types.VAR(id,Types.ATTR(false,false,SCode.RW(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
-          false,tp,Types.VALBOUND(v)), Env.VAR_TYPED(), {});
+          DAE.TYPES_VAR(id,DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
+          false,tp,DAE.VALBOUND(v)), Env.VAR_TYPED(), {});
         env_2 = addVarsToEnv(rest, env_1);
       then
         env_2;
@@ -1232,8 +1232,8 @@ algorithm
       equation
         failure((_,_,_,_,_,_) = Lookup.lookupVar(Env.emptyCache(),env, Exp.CREF_IDENT(id,Exp.OTHER(),{})));
         env_1 = Env.extendFrameV(env,
-          Types.VAR(id,Types.ATTR(false,false,SCode.RW(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
-          false,tp,Types.VALBOUND(v)), NONE, Env.VAR_UNTYPED(), {});
+          DAE.TYPES_VAR(id,DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
+          false,tp,DAE.VALBOUND(v)), NONE, Env.VAR_UNTYPED(), {});
         env_2 = addVarsToEnv(rest, env_1);
       then
         env_2;
@@ -4771,7 +4771,7 @@ algorithm
         ci_state = ClassInf.start(restr, id);
         (_,env_2,_,_) = 
           Inst.partialInstClassIn(cache,env2,InstanceHierarchy.emptyInstanceHierarchy,
-                                  Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, ci_state, cl, false, {});
+                                  DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, ci_state, cl, false, {});
       then env_2;
     case (p,p_class) then {};
   end matchcontinue;
@@ -9058,7 +9058,7 @@ algorithm
       Types.Type t;
       Integer funcHandle;
     case (_,{}) then {};
-      //t as (Types.T_FUNCTION(fargs,(outtype as (Types.T_COMPLEX(ClassInf.RECORD(_),_,_),_))),_)),env_1)
+      //t as (DAE.T_FUNCTION(fargs,(outtype as (DAE.T_COMPLEX(ClassInf.RECORD(_),_,_),_))),_)),env_1)
     case (p1,(CFunction(p2,t,funcHandle,_,_) :: rest))
       local String tmp;
       equation
@@ -9215,14 +9215,14 @@ algorithm
         newscope = Absyn.joinPaths(path, Absyn.IDENT(id));
         newscope_1 = Values.CODE(Absyn.C_TYPENAME(newscope));
         vars_1 = addVarToVarlist("scope", newscope_1,
-          (Types.T_COMPLEX(ClassInf.UNKNOWN("TypeName"),{},NONE),NONE), vars);
+          (DAE.T_COMPLEX(ClassInf.UNKNOWN("TypeName"),{},NONE),NONE), vars);
       then
         vars_1;
     case (Absyn.BEGIN_DEFINITION(path = Absyn.IDENT(name = id)),vars)
       equation
         newscope_1 = Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT(id))) "If top scope" ;
         vars_1 = addVarToVarlist("scope", newscope_1,
-          (Types.T_COMPLEX(ClassInf.UNKNOWN("TypeName"),{},NONE),NONE), vars);
+          (DAE.T_COMPLEX(ClassInf.UNKNOWN("TypeName"),{},NONE),NONE), vars);
       then
         vars_1;
     case (Absyn.END_DEFINITION(name = id1),vars)
@@ -9234,7 +9234,7 @@ algorithm
         newscope_1 = Values.CODE(Absyn.C_TYPENAME(newscope));
         path_1 = Absyn.stripLast(path);
         vars_1 = addVarToVarlist("scope", newscope_1,
-          (Types.T_COMPLEX(ClassInf.UNKNOWN("TypeName"),{},NONE),NONE), vars);
+          (DAE.T_COMPLEX(ClassInf.UNKNOWN("TypeName"),{},NONE),NONE), vars);
       then
         vars_1;
     case (Absyn.END_DEFINITION(name = id1),vars)
@@ -10269,7 +10269,7 @@ algorithm
         ci_state = ClassInf.start(restr, id);
         (_,env_2,_,_) = 
           Inst.partialInstClassIn(Env.emptyCache(),env2,InstanceHierarchy.emptyInstanceHierarchy, 
-                                  Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, ci_state, c, false, {});
+                                  DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, ci_state, c, false, {});
         lst = getBaseClasses(cdef, env_2);
         n_1 = n - 1;
         cref = listNth(lst, n_1);
@@ -10464,7 +10464,7 @@ algorithm
         ci_state = ClassInf.start(restr, id);
         (_,env_2,_,_) = 
           Inst.partialInstClassIn(Env.emptyCache(),env2,InstanceHierarchy.emptyInstanceHierarchy,
-                                  Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
+                                  DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
                                   ci_state, c, false, {});
         comp = getNthComponentInClass(cdef, n);
         {s1} = getComponentInfoOld(comp, env_2);
@@ -10515,7 +10515,7 @@ algorithm
         env2 = Env.openScope(env_1, encflag, SOME(id));
         ci_state = ClassInf.start(restr, id);
         (_,env_2,_,_) = 
-          Inst.partialInstClassIn(cache, env2, InstanceHierarchy.emptyInstanceHierarchy, Types.NOMOD(), 
+          Inst.partialInstClassIn(cache, env2, InstanceHierarchy.emptyInstanceHierarchy, DAE.NOMOD(), 
                                   Prefix.NOPRE(), Connect.emptySet, ci_state, c, false, {});
         comps1 = getPublicComponentsInClass(cdef);
         s1 = getComponentsInfo(comps1, "\"public\"", env_2);
@@ -18743,7 +18743,7 @@ algorithm
       env2 = Env.openScope(env_1, encflag, SOME(id));
       ci_state = ClassInf.start(restr, id);
       (cache,env_2,_,_) = Inst.partialInstClassIn(cache, env2, InstanceHierarchy.emptyInstanceHierarchy, 
-                                                  Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
+                                                  DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
                                                   ci_state, cl, false, {});
     then env_2;
     case(p,p_class,env) equation
@@ -18751,7 +18751,7 @@ algorithm
       env2 = Env.openScope(env_1, encflag, SOME(id));
       ci_state = ClassInf.start(restr, id);
       (cache,env_2,_,_,_,_,_,_,_,_,_,_) = Inst.instClassIn(cache,env2, InstanceHierarchy.emptyInstanceHierarchy, 
-                                                       UnitAbsyn.noStore,Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
+                                                       UnitAbsyn.noStore,DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
                                                        ci_state, cl, false, {},false, ConnectionGraph.EMPTY,NONE);
     then env_2;
     end matchcontinue;

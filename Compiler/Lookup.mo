@@ -44,12 +44,13 @@ package Lookup
   lookupType - to find types (e.g. functions, types, etc.)
   lookupVar - to find a variable in the instance hierarchy."
 
-public import ClassInf;
-public import Types;
 public import Absyn;
-public import Exp;
+public import ClassInf;
+public import DAE;
 public import Env;
+public import Exp;
 public import SCode;
+public import Types;
 
 protected import Debug;
 protected import Inst;
@@ -116,8 +117,8 @@ algorithm
       // Special handling for Connections.isRoot
     case (cache,env,Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")),msg)
       equation 
-        t = (Types.T_FUNCTION({("x", (Types.T_ANYTYPE(NONE), NONE))}, 
-          (Types.T_BOOL({}), NONE)), NONE);
+        t = (DAE.T_FUNCTION({("x", (DAE.T_ANYTYPE(NONE), NONE))}, 
+          (DAE.T_BOOL({}), NONE)), NONE);
       then
         (cache, t, env);        
             
@@ -165,7 +166,7 @@ algorithm
         (cache,_::env_1,_,_,_,_,_,_,_,_) = 
         Inst.instClass(
           cache,env_1,InstanceHierarchy.emptyInstanceHierarchy, UnitAbsyn.noStore,
-          Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, c, 
+          DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, c, 
           {}, false, Inst.TOP_CALL(), ConnectionGraph.EMPTY);
         SCode.CLASS(name=id) = c;
         (cache,t,env_2) = lookupTypeInEnv(cache,env_1,Absyn.IDENT(id));
@@ -181,11 +182,11 @@ algorithm
       equation 
         SCode.CLASS(id,_,_,SCode.R_METARECORD(_,index),SCode.PARTS(elementLst = els)) = c;
         (cache,path) = Inst.makeFullyQualified(cache,env_1,Absyn.IDENT(id));
-        elsModList = Util.listMap1(els,Util.makeTuple2,Types.NOMOD);
+        elsModList = Util.listMap1(els,Util.makeTuple2,DAE.NOMOD);
         (cache,env_2,_,_,_,_,_,varlst,_) = Inst.instElementList(
             cache,env_1,InstanceHierarchy.emptyInstanceHierarchy, UnitAbsyn.noStore,
-            Types.NOMOD,Prefix.NOPRE, Connect.emptySet, ClassInf.FUNCTION(""), elsModList, {}, false, ConnectionGraph.EMPTY);
-        t = (Types.T_METARECORD(index,varlst),SOME(path));
+            DAE.NOMOD,Prefix.NOPRE, Connect.emptySet, ClassInf.FUNCTION(""), elsModList, {}, false, ConnectionGraph.EMPTY);
+        t = (DAE.T_METARECORD(index,varlst),SOME(path));
       then
         (cache,t,env_2);
         
@@ -408,7 +409,7 @@ algorithm
         (cache,env4,_,cistate1) = 
         Inst.partialInstClassIn(
           cache,env2,InstanceHierarchy.emptyInstanceHierarchy, 
-          Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
+          DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
           ci_state, c, false, {}); 
          ClassInf.valid(cistate1, SCode.R_PACKAGE());
         (cache,c_1,env5) = lookupClass2(cache,env4, path, msgflag) "Has NOT to do additional check for encapsulated classes, see rule above" ;
@@ -425,7 +426,7 @@ algorithm
         (cache,env_2,_,cistate1) = 
         Inst.partialInstClassIn(
           cache,env2,InstanceHierarchy.emptyInstanceHierarchy,
-          Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
+          DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
           ci_state, c, false, {}); 
         failure(ClassInf.valid(cistate1, SCode.R_PACKAGE()));
         (cache,c_1,env_3) = lookupClass2(cache,env_2, path, msgflag) "Has to do additional check for encapsulated classes, see rule below" ;
@@ -651,7 +652,7 @@ algorithm
          (cache,(f :: _),_,_) = 
          Inst.partialInstClassIn(
            cache,env2,InstanceHierarchy.emptyInstanceHierarchy,
-           Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
+           DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
            ci_state, c, false, {}); 
         (cache,_,_,_,_) = lookupVarInPackages(cache,{f}, Exp.CREF_IDENT(ident,Exp.OTHER(),{}));
       then
@@ -724,7 +725,7 @@ algorithm
         (cache,(f :: _),_,_,_,_,_,_,_,_,_,_) = 
         Inst.instClassIn(
           cache,env2,InstanceHierarchy.emptyInstanceHierarchy, UnitAbsyn.noStore,
-          Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
+          DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
           ci_state, c, false, {}, false, ConnectionGraph.EMPTY,NONE);
         (cache,p_env,attr,ty,bind) = lookupVarInPackages(cache,{f}, Exp.CREF_IDENT(ident,Exp.OTHER(),{}));
         (cache,more) = moreLookupUnqualifiedImportedVarInFrame(cache,fs, env, ident);
@@ -870,7 +871,7 @@ algorithm
        (cache,(f :: _),_,_) = 
        Inst.partialInstClassIn(
           cache,env2,InstanceHierarchy.emptyInstanceHierarchy,
-          Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
+          DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
           ci_state, c, false, {});
         (cache,_,_) = lookupClass2(cache,{f}, Absyn.IDENT(ident), false);
       then
@@ -932,7 +933,7 @@ algorithm
         (cache,(f :: fs_1),_,cistate1) = 
         Inst.partialInstClassIn(
           cache,env2,InstanceHierarchy.emptyInstanceHierarchy,
-          Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
+          DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
           ci_state, c, false, {}); 
         // Restrict import to the imported scope only, not its parents, thus {f} below
         (cache,c_1,(f_1 :: _)) = lookupClass2(cache,{f}, Absyn.IDENT(ident), false) "Restrict import to the imported scope only, not its parents..." ;
@@ -995,11 +996,11 @@ algorithm
       (cache,attr1,ty1,_) = lookupVarLocal(cache,env,cr);
     then (cache,attr1,ty1);
     case(cache,env,cr as Exp.CREF_QUAL(ident=_)) equation
-       (cache,attr1 as Types.ATTR(f,streamPrefix,acc,var,dir,_),ty1,_) = lookupVarLocal(cache,env,cr);
+       (cache,attr1 as DAE.ATTR(f,streamPrefix,acc,var,dir,_),ty1,_) = lookupVarLocal(cache,env,cr);
       cr1 = Exp.crefStripLastIdent(cr);
       /* Find innerOuter attribute from "parent" */
-      (cache,Types.ATTR(innerOuter=io),_,_) = lookupVarLocal(cache,env,cr1);
-    then (cache,Types.ATTR(f,streamPrefix,acc,var,dir,io),ty1);
+      (cache,DAE.ATTR(innerOuter=io),_,_) = lookupVarLocal(cache,env,cr1);
+    then (cache,DAE.ATTR(f,streamPrefix,acc,var,dir,io),ty1);
   end matchcontinue;
 end lookupConnectorVar;
 
@@ -1076,7 +1077,7 @@ if variable is not constant."
 algorithm
    _ := matchcontinue(env,attr,tp,cref)
    local Absyn.Path path;
-     case (env, Types.ATTR(parameter_= SCode.CONST()),_,cref)
+     case (env, DAE.ATTR(parameter_= SCode.CONST()),_,cref)
        then ();
      case (env,attr,tp,cref) local String s1,s2;
        equation
@@ -1178,10 +1179,10 @@ algorithm
 //        (cache,env5,_,_,_,_,_,types,_,_,_,_) = 
 //        Inst.instClassIn(
 //          cache,env3,InstanceHierarchy.emptyInstanceHierarchy,UnitAbsyn.noStore, 
-//          Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
+//          DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
 //          ci_state, c, false, {}, false, ConnectionGraph.EMPTY,NONE);
         (cache,env5,_,_,_,_,_,_,_,_) = 
-        Inst.instClass(cache,env3,InstanceHierarchy.emptyInstanceHierarchy,UnitAbsyn.noStore,Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, c,{},false, Inst.TOP_CALL() ,ConnectionGraph.EMPTY);
+        Inst.instClass(cache,env3,InstanceHierarchy.emptyInstanceHierarchy,UnitAbsyn.noStore,DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, c,{},false, Inst.TOP_CALL() ,ConnectionGraph.EMPTY);
         (cache,p_env,attr,ty,bind) = lookupVarInPackages(cache,env5, id2);
       then
         (cache,p_env,attr,ty,bind);
@@ -1227,7 +1228,7 @@ algorithm
         (cache,env5,_,_,_,_,_,types,_,_,_,_) = 
         Inst.instClassIn(
           cache,env3,InstanceHierarchy.emptyInstanceHierarchy,UnitAbsyn.noStore, 
-          Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
+          DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
           ci_state, c, false, {}, /*true*/false, ConnectionGraph.EMPTY,filterCref);
         (cache,p_env,attr,ty,bind) = lookupVarInPackages(cache,env5, cref);
       then
@@ -1410,7 +1411,7 @@ algorithm
         (cache,classEnv,_,_) = 
         Inst.partialInstClassIn(
           cache,cenv_2,InstanceHierarchy.emptyInstanceHierarchy,
-          Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
+          DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
           new_ci_state, c, false, {});
       then (cache,classEnv);
     case(cache,env,path,msg)
@@ -1534,12 +1535,12 @@ algorithm
         env2 = Env.openScope(env_1, encflag, SOME(id));
         ci_state = ClassInf.start(restr, id);
         
-        //(cache,_,env_2,_,_,_,_,_,_) = Inst.instClassIn(cache,env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
+        //(cache,_,env_2,_,_,_,_,_,_) = Inst.instClassIn(cache,env2, DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
         //   ci_state, c, false/*FIXME:prot*/, {}, false, ConnectionGraph.EMPTY);
         (cache,env_2,_,cistate1) = 
         Inst.partialInstClassIn(
           cache,env2,InstanceHierarchy.emptyInstanceHierarchy,
-          Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
+          DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
           ci_state, c, false, {});
         (cache,reslist) = lookupFunctionsInEnv(cache,env_2, path);
       then 
@@ -1576,10 +1577,10 @@ algorithm
     local list<Env.Frame> env;
     /* function_name cardinality */
     case (env,"cardinality") 
-      then {(Types.T_FUNCTION({("x",(Types.T_COMPLEX(ClassInf.CONNECTOR("$$",false),{},NONE,NONE),NONE))},
-                              (Types.T_INTEGER({}),NONE)),NONE),
-            (Types.T_FUNCTION({("x",(Types.T_COMPLEX(ClassInf.CONNECTOR("$$",true),{},NONE,NONE),NONE))},
-                              (Types.T_INTEGER({}),NONE)),NONE)};  
+      then {(DAE.T_FUNCTION({("x",(DAE.T_COMPLEX(ClassInf.CONNECTOR("$$",false),{},NONE,NONE),NONE))},
+                              (DAE.T_INTEGER({}),NONE)),NONE),
+            (DAE.T_FUNCTION({("x",(DAE.T_COMPLEX(ClassInf.CONNECTOR("$$",true),{},NONE,NONE),NONE))},
+                              (DAE.T_INTEGER({}),NONE)),NONE)};  
                              
   end matchcontinue;
 end createGenericBuiltinFunctions; 
@@ -1702,7 +1703,7 @@ algorithm
         (cache,env_1,_,_) = 
         Inst.implicitFunctionInstantiation(
           cache,cenv,InstanceHierarchy.emptyInstanceHierarchy,
-          Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cdef, {});
+          DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cdef, {});
         (cache,ty,env_3) = lookupTypeInEnv(cache,env_1, Absyn.IDENT(id));
       then 
         (cache,ty,env_3);
@@ -1744,7 +1745,7 @@ algorithm
         (cache,tps);
     case (cache,ht,httypes,env,id) /* MetaModelica Partial Function. sjoelund */
       equation
-        Env.VAR(instantiated = Types.VAR(type_ = (tty as Types.T_FUNCTION(_,_),_))) = Env.avlTreeGet(ht, id);
+        Env.VAR(instantiated = DAE.TYPES_VAR(type_ = (tty as DAE.T_FUNCTION(_,_),_))) = Env.avlTreeGet(ht, id);
       then
         (cache,{(tty, SOME(Absyn.IDENT(id)))});
     case (cache,ht,httypes,env,id)
@@ -1784,7 +1785,7 @@ algorithm
 	        (cache,env_1,_,_,_,_,t,_,_,_) = 
 	        Inst.instClass(
 	          cache,cenv,InstanceHierarchy.emptyInstanceHierarchy,UnitAbsyn.noStore,
-	          Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cdef, 
+	          DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cdef, 
          	  {}, false, Inst.TOP_CALL(), ConnectionGraph.EMPTY);
           (cache,t,_) = lookupTypeInEnv(cache,env_1, Absyn.IDENT(id));
            //s = Types.unparseType(t);
@@ -1882,7 +1883,7 @@ algorithm
         list<SCode.Algorithm> initStmts;
         list<Absyn.Algorithm> initAbsynStmts;
       equation 
-        (funcelts,elts) = buildRecordConstructorClass2(cl,Types.NOMOD(),env);
+        (funcelts,elts) = buildRecordConstructorClass2(cl,DAE.NOMOD(),env);
         reselt = buildRecordConstructorResultElt(funcelts, id, env);
       then
         SCode.CLASS(id,false,false,SCode.R_FUNCTION(),
@@ -2037,30 +2038,30 @@ algorithm
       equation 
         (cdefelts,restElts) = Inst.classdefAndImpElts(elts);
         (env1,_) = Inst.addClassdefsToEnv(env,InstanceHierarchy.emptyInstanceHierarchy,cdefelts,false,NONE);
-        (cache,inputvarlst) = buildVarlstFromElts(cache,restElts, Types.NOMOD(),env1);        
+        (cache,inputvarlst) = buildVarlstFromElts(cache,restElts, DAE.NOMOD(),env1);        
         (cache,_,_,_,_,_,ty,_,_,_) = 
         Inst.instClass(
           cache,env1,InstanceHierarchy.emptyInstanceHierarchy,UnitAbsyn.noStore,
-          Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cl, 
+          DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cl, 
           {}, true, Inst.TOP_CALL(), ConnectionGraph.EMPTY) "FIXME: impl" ;
       then
-        (cache,Types.VAR("result",
-          Types.ATTR(false,false,SCode.RW(),SCode.VAR(),Absyn.OUTPUT(),Absyn.UNSPECIFIED()),false,ty,Types.UNBOUND()) :: inputvarlst);
+        (cache,DAE.TYPES_VAR("result",
+          DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),Absyn.OUTPUT(),Absyn.UNSPECIFIED()),false,ty,DAE.UNBOUND()) :: inputvarlst);
 
      /* adrpo: TODO! handle also the case model extends x end x; */          
     case (cache,(cl as SCode.CLASS(classDef = SCode.CLASS_EXTENDS(elementLst = elts))),env)
       equation 
         (cdefelts,restElts) = Inst.classdefAndImpElts(elts);
         (env1,_) = Inst.addClassdefsToEnv(env,InstanceHierarchy.emptyInstanceHierarchy,cdefelts,false,NONE);
-        (cache,inputvarlst) = buildVarlstFromElts(cache,restElts, Types.NOMOD(),env1);        
+        (cache,inputvarlst) = buildVarlstFromElts(cache,restElts, DAE.NOMOD(),env1);        
         (cache,_,_,_,_,_,ty,_,_,_) = 
         Inst.instClass(
           cache,env1,InstanceHierarchy.emptyInstanceHierarchy,UnitAbsyn.noStore,
-          Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cl, 
+          DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cl, 
           {}, true, Inst.TOP_CALL(), ConnectionGraph.EMPTY) "FIXME: impl" ;
       then
-        (cache,Types.VAR("result",
-          Types.ATTR(false,false,SCode.RW(),SCode.VAR(),Absyn.OUTPUT(),Absyn.UNSPECIFIED()),false,ty,Types.UNBOUND()) :: inputvarlst);
+        (cache,DAE.TYPES_VAR("result",
+          DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),Absyn.OUTPUT(),Absyn.UNSPECIFIED()),false,ty,DAE.UNBOUND()) :: inputvarlst);
           
     case (_,cl,_)
       local
@@ -2323,7 +2324,7 @@ algorithm
  local String id;
     case(Env.CLASS(class_=c)) then c;
   /* Searching for class, found component*/
-    case(Env.VAR(Types.VAR(name=id),_,_,_)) equation
+    case(Env.VAR(DAE.TYPES_VAR(name=id),_,_,_)) equation
       Error.addMessage(Error.LOOKUP_TYPE_FOUND_COMP, {id});      
     then fail();    
   end matchcontinue;
@@ -2394,12 +2395,12 @@ algorithm
       Integer sz,ind;
       list<Exp.Exp> se;
     case (t,{}) then t; 
-    case ((Types.T_ARRAY(arrayDim = dim,arrayType = t),p),(Exp.WHOLEDIM() :: ys))
+    case ((DAE.T_ARRAY(arrayDim = dim,arrayType = t),p),(Exp.WHOLEDIM() :: ys))
       equation 
         t_1 = checkSubscripts(t, ys);
       then
-        ((Types.T_ARRAY(dim,t_1),p));
-    case ((Types.T_ARRAY(arrayDim = Types.DIM(integerOption = SOME(sz)),arrayType = t),p),(Exp.SLICE(exp = Exp.ARRAY(array = se)) :: ys))
+        ((DAE.T_ARRAY(dim,t_1),p));
+    case ((DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(sz)),arrayType = t),p),(Exp.SLICE(exp = Exp.ARRAY(array = se)) :: ys))
       local Integer dim;
       equation 
         t_1 = checkSubscripts(t, ys);
@@ -2407,32 +2408,32 @@ algorithm
         true = (dim <= sz);
         true = checkSubscriptsRange(se,sz);        
       then
-        ((Types.T_ARRAY(Types.DIM(SOME(dim)),t_1),p));
-    case ((Types.T_ARRAY(arrayDim = Types.DIM(integerOption = SOME(sz)),arrayType = t),_),(Exp.INDEX(exp = Exp.ICONST(integer = ind)) :: ys))
+        ((DAE.T_ARRAY(DAE.DIM(SOME(dim)),t_1),p));
+    case ((DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(sz)),arrayType = t),_),(Exp.INDEX(exp = Exp.ICONST(integer = ind)) :: ys))
       equation 
         (ind > 0) = true;
         (ind <= sz) = true;
         t_1 = checkSubscripts(t, ys);
       then
         t_1;
-    case ((Types.T_ARRAY(arrayDim = Types.DIM(integerOption = SOME(sz)),arrayType = t),_),(Exp.INDEX(exp = e) :: ys)) /* HJ: Subscrits needn\'t be constant. No range-checking can
+    case ((DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(sz)),arrayType = t),_),(Exp.INDEX(exp = e) :: ys)) /* HJ: Subscrits needn\'t be constant. No range-checking can
 	       be done */ 
 	       local Exp.Exp e;
       equation 
         t_1 = checkSubscripts(t, ys);
       then
         t_1;
-    case ((Types.T_ARRAY(arrayDim = Types.DIM(integerOption = NONE),arrayType = t),_),(Exp.INDEX(exp = _) :: ys))
+    case ((DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = NONE),arrayType = t),_),(Exp.INDEX(exp = _) :: ys))
       equation 
         t_1 = checkSubscripts(t, ys);
       then
         t_1;
-    case ((Types.T_ARRAY(arrayDim = Types.DIM(integerOption = SOME(sz)),arrayType = t),_),(Exp.WHOLEDIM() :: ys))
+    case ((DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(sz)),arrayType = t),_),(Exp.WHOLEDIM() :: ys))
       equation 
         t_1 = checkSubscripts(t, ys);
       then
         t_1;
-    case ((Types.T_ARRAY(arrayDim = Types.DIM(integerOption = NONE),arrayType = t),_),(Exp.WHOLEDIM() :: ys))
+    case ((DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = NONE),arrayType = t),_),(Exp.WHOLEDIM() :: ys))
       equation 
         t_1 = checkSubscripts(t, ys);
       then
@@ -2440,7 +2441,7 @@ algorithm
         
         // If slicing with integer array of VAR variability, i.e. index changing during runtime. 
         // => resulting ARRAY type has no specified dimension size.
-    case ((Types.T_ARRAY(arrayDim = Types.DIM(integerOption = SOME(sz)),arrayType = t),p),(Exp.SLICE(exp = e) :: ys))
+    case ((DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(sz)),arrayType = t),p),(Exp.SLICE(exp = e) :: ys))
       local Exp.Exp e;
       equation 
         sz = 5;
@@ -2449,16 +2450,16 @@ algorithm
         
         t_1 = checkSubscripts(t, ys);
       then
-       ((Types.T_ARRAY(Types.DIM(NONE),t_1),p));
-    case ((Types.T_ARRAY(arrayDim = Types.DIM(integerOption = NONE),arrayType = t),p),(Exp.SLICE(exp = _) :: ys))
+       ((DAE.T_ARRAY(DAE.DIM(NONE),t_1),p));
+    case ((DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = NONE),arrayType = t),p),(Exp.SLICE(exp = _) :: ys))
       equation 
         t_1 = checkSubscripts(t, ys);
       then
-        ((Types.T_ARRAY(Types.DIM(NONE),t_1),p));
+        ((DAE.T_ARRAY(DAE.DIM(NONE),t_1),p));
         
-    case ((Types.T_COMPLEX(_,_,SOME(t),_),_),ys)
+    case ((DAE.T_COMPLEX(_,_,SOME(t),_),_),ys)
       then checkSubscripts(t,ys); 
-    case(t as (Types.T_NOTYPE(),_),_) then t;
+    case(t as (DAE.T_NOTYPE(),_),_) then t;
     case (t,s)
       equation 
         Debug.fprint("failtrace", "- check_subscripts failed (tp: ");
@@ -2578,20 +2579,20 @@ algorithm
         Exp.Type tty;
         Absyn.InnerOuter io;        
       equation 
-        (cache,Types.VAR(n,Types.ATTR(f,streamPrefix,acc,vt,di,io),_,ty,bind),_,_,_) = lookupVar2(cache,ht, id);
+        (cache,DAE.TYPES_VAR(n,DAE.ATTR(f,streamPrefix,acc,vt,di,io),_,ty,bind),_,_,_) = lookupVar2(cache,ht, id);
         ty_1 = checkSubscripts(ty, ss);
         ss = addArrayDimensions(ty,ty_1,ss);
         tty = Types.elabType(ty_1);     
         ty2_2 = Types.elabType(ty);
         splicedExp = Exp.CREF(Exp.CREF_IDENT(id,ty2_2, ss),tty);
       then
-        (cache,Types.ATTR(f,streamPrefix,acc,vt,di,io),ty_1,bind,SOME(splicedExp));
+        (cache,DAE.ATTR(f,streamPrefix,acc,vt,di,io),ty_1,bind,SOME(splicedExp));
     
     /* Qualified variables looked up through component environment with a spliced exp */
     case (cache,ht,xCref as (Exp.CREF_QUAL(ident = id,subscriptLst = ss,componentRef = ids)))  
       local        
       equation 
-        (cache,Types.VAR(n,Types.ATTR(f,streamPrefix,acc,vt,di,io),_,ty2,bind),_,_,compenv) = lookupVar2(cache,ht, id);
+        (cache,DAE.TYPES_VAR(n,DAE.ATTR(f,streamPrefix,acc,vt,di,io),_,ty2,bind),_,_,compenv) = lookupVar2(cache,ht, id);
         (cache,attr,ty,binding,texp,_) = lookupVar(cache,compenv, ids);
         (tCref::ltCref) = elabComponentRecursive((texp)); 
         ty1 = checkSubscripts(ty2, ss);
@@ -2607,7 +2608,7 @@ algorithm
         /* Qualified componentname without spliced exp.*/
     case (cache,ht,xCref as (Exp.CREF_QUAL(ident = id,subscriptLst = ss,componentRef = ids)))      
       equation 
-        (cache,Types.VAR(n,Types.ATTR(f,streamPrefix,acc,vt,di,io),_,ty2,bind),_,_,compenv) = lookupVar2(cache,ht, id);
+        (cache,DAE.TYPES_VAR(n,DAE.ATTR(f,streamPrefix,acc,vt,di,io),_,ty2,bind),_,_,compenv) = lookupVar2(cache,ht, id);
         (cache,attr,ty,binding,texp,_) = lookupVar(cache,compenv, ids);
         {} = elabComponentRecursive((texp));
       then

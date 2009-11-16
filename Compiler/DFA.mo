@@ -41,11 +41,12 @@ package DFA
 
 public import Absyn;
 public import Env;
-public import Types;
-public import SCode;
+public import DAE;
 public import Debug;
-public import MetaUtil;
 public import Error;
+public import MetaUtil;
+public import SCode;
+public import Types;
 
 type Stamp = Integer;
 type ArcName = Absyn.Ident;
@@ -1503,7 +1504,7 @@ algorithm
         Absyn.TypeSpec t2;
         list<tuple<Absyn.Ident,Absyn.TypeSpec>> dfaEnvElem;
       equation
-        (localCache,Types.VAR(_,_,_,t,_),_,_) = Lookup.lookupIdent(localCache,localEnv,firstId);
+        (localCache,DAE.TYPES_VAR(_,_,_,t,_),_,_) = Lookup.lookupIdent(localCache,localEnv,firstId);
         t2 = MetaUtil.typeConvert(t);
         dfaEnvElem = {(firstId,t2)};
         localDfaEnv = listAppend(localDfaEnv,dfaEnvElem);

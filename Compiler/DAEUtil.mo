@@ -720,7 +720,7 @@ algorithm
       Exp.Exp exp,dim;
       Types.Attributes attr;
     case DAE.NOEXTARG() then "void"; 
-    case DAE.EXTARG(componentRef = cr,attributes = Types.ATTR(flowPrefix = fl,streamPrefix=st,accessibility = acc,parameter_ = var,direction = dir),type_ = ty)
+    case DAE.EXTARG(componentRef = cr,attributes = DAE.ATTR(flowPrefix = fl,streamPrefix=st,accessibility = acc,parameter_ = var,direction = dir),type_ = ty)
       equation 
         crstr = Exp.printComponentRefStr(cr);
         dirstr = Dump.directionSymbol(dir);
@@ -1385,10 +1385,10 @@ algorithm
     case (SOME(DAE.VAR_ATTR_INT(initial_ = SOME(r))),_) then r;
     case (SOME(DAE.VAR_ATTR_BOOL(initial_ = SOME(r))),_) then r;
     case (SOME(DAE.VAR_ATTR_STRING(initial_ = SOME(r))),_) then r;
-    case (_,(Types.T_REAL(_),_)) then Exp.RCONST(0.0);
-    case (_,(Types.T_INTEGER(_),_)) then Exp.ICONST(0);
-    case (_,(Types.T_BOOL(_),_)) then Exp.BCONST(false);
-    case (_,(Types.T_STRING(_),_)) then Exp.SCONST("");
+    case (_,(DAE.T_REAL(_),_)) then Exp.RCONST(0.0);
+    case (_,(DAE.T_INTEGER(_),_)) then Exp.ICONST(0);
+    case (_,(DAE.T_BOOL(_),_)) then Exp.BCONST(false);
+    case (_,(DAE.T_STRING(_),_)) then Exp.SCONST("");
     case(_,_) then Exp.RCONST(0.0);
   end matchcontinue;
 end getStartAttrEmpty;
@@ -3254,7 +3254,7 @@ public function isFunctionRefVar "
   output Boolean outBoolean;
 algorithm
   outBoolean := matchcontinue (inElem)
-    case DAE.VAR(ty = (Types.T_FUNCTION(_,_),_)) then true;
+    case DAE.VAR(ty = (DAE.T_FUNCTION(_,_),_)) then true;
     case _ then false;
   end matchcontinue;
 end isFunctionRefVar;
@@ -3821,7 +3821,7 @@ algorithm
       DAE.Element x;    
             
     /* adrpo: filter out records! */
-    case ((x as DAE.VAR(ty = (Types.T_COMPLEX(complexClassType = ClassInf.RECORD(_)),_))) :: lst)
+    case ((x as DAE.VAR(ty = (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_)),_))) :: lst)
       equation
         res = getVariableList(lst);
       then

@@ -1052,7 +1052,7 @@ algorithm
     /* Modelica functions External functions */
     case (DAE.FUNCTION(path = fpath,
                        dAElist = DAE.DAE(elementLst = dae),
-                       type_ = tp as (Types.T_FUNCTION(funcArg = args,funcResultType = restype),_),
+                       type_ = tp as (DAE.T_FUNCTION(funcArg = args,funcResultType = restype),_),
                        partialPrefix = false),rt) 
       equation
         fn_name_str = generateFunctionName(fpath);
@@ -1080,7 +1080,7 @@ algorithm
         (cfn::rcw_fn::wrapper_body,rt_1);
     
       /* Modelica Record Constructor. We would like to use this as a C macro, but this is not possible. */
-    case (DAE.RECORD_CONSTRUCTOR(path = fpath, type_ = tp as (Types.T_FUNCTION(funcArg = args,funcResultType = restype as (Types.T_COMPLEX(complexClassType = ClassInf.RECORD(name)),_)),_)),rt)
+    case (DAE.RECORD_CONSTRUCTOR(path = fpath, type_ = tp as (DAE.T_FUNCTION(funcArg = args,funcResultType = restype as (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(name)),_)),_)),rt)
       local
         String name, defhead, head, foot, body, decl1, decl2, assign_res, ret_var, record_var, record_var_dot, return_stmt;
         Exp.Type expType;
@@ -1124,7 +1124,7 @@ algorithm
     /* MetaModelica Partial Function. sjoelund */    
     case (DAE.FUNCTION(path = fpath,
                        dAElist = DAE.DAE(elementLst = dae),
-                       type_ = (Types.T_FUNCTION(funcArg = args,funcResultType = restype),_),
+                       type_ = (DAE.T_FUNCTION(funcArg = args,funcResultType = restype),_),
                        partialPrefix = true),rt) 
       then
         ({},{});
@@ -1132,7 +1132,7 @@ algorithm
     /* Builtin functions - stefan */
     case (DAE.EXTFUNCTION(path = fpath,
                           dAElist = DAE.DAE(elementLst = orgdae),
-                          type_ = (tp as (Types.T_FUNCTION(funcArg = args,funcResultType = restype),_)),
+                          type_ = (tp as (DAE.T_FUNCTION(funcArg = args,funcResultType = restype),_)),
                           externalDecl = extdecl),rt)
       equation
         true = isBuiltinFunction(fpath);
@@ -1159,7 +1159,7 @@ algorithm
     /* External functions */
     case (DAE.EXTFUNCTION(path = fpath,
                           dAElist = DAE.DAE(elementLst = orgdae),
-                          type_ = (tp as (Types.T_FUNCTION(funcArg = args,funcResultType = restype),_)),
+                          type_ = (tp as (DAE.T_FUNCTION(funcArg = args,funcResultType = restype),_)),
                           externalDecl = extdecl),rt) 
       equation
         fn_name_str = generateFunctionName(fpath);
@@ -1237,14 +1237,14 @@ algorithm
       Absyn.Path path,fullPath;
       Types.Type ty;
       list<Types.FuncArg> args;
-    case (DAE.VAR(ty = (Types.T_FUNCTION(args, (Types.T_TUPLE(tys),_)),SOME(path))))
+    case (DAE.VAR(ty = (DAE.T_FUNCTION(args, (DAE.T_TUPLE(tys),_)),SOME(path))))
       equation
         fn_name = generateReturnType(path);
         str = generateFunctionRefFnPtr(args, path);
         out = generateFunctionRefReturnStruct1(tys,fn_name);
       then listAppend(out,{str});
       // Function reference with no output -  stefan
-    case (DAE.VAR(ty = (Types.T_FUNCTION(args, (Types.T_NORETCALL(),_)),SOME(path))))
+    case (DAE.VAR(ty = (DAE.T_FUNCTION(args, (DAE.T_NORETCALL(),_)),SOME(path))))
       local String tmpstr;
       equation
         fn_name = generateReturnType(path);
@@ -1252,7 +1252,7 @@ algorithm
         tmpstr = "typedef void " +& fn_name +& ";";
         out = {tmpstr};
       then listAppend(out,{str});
-    case (DAE.VAR(ty = (Types.T_FUNCTION(args, ty),SOME(path))))
+    case (DAE.VAR(ty = (DAE.T_FUNCTION(args, ty),SOME(path))))
       equation
         fn_name = generateReturnType(path);
         str = generateFunctionRefFnPtr(args, path);
@@ -1424,13 +1424,13 @@ algorithm
       Types.Ident name;
       Types.Type t;
       String type_str, decl_str;
-    case Types.VAR(name = name, type_ = t)
+    case DAE.TYPES_VAR(name = name, type_ = t)
       equation
         type_str = generateSimpleType(t);
         decl_str = Util.stringAppendList({type_str," ",name,";"});
       then
         decl_str;
-    case Types.VAR(name = name)
+    case DAE.TYPES_VAR(name = name)
       equation
         decl_str = Util.stringAppendList({"/* ",name," is an odd member. */"});
       then decl_str;
@@ -1454,7 +1454,7 @@ algorithm
       list<Types.Var> varlst;
       String name, first_str, last_str, path_str;
       list<String> res,strs,rest_strs,decl_strs,rt,rt_1,rt_2,record_definition,fieldNames;
-    case ((Types.T_COMPLEX(complexClassType = ClassInf.RECORD(string = name), complexVarLst = varlst),SOME(path)),rt)
+    case ((DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(string = name), complexVarLst = varlst),SOME(path)),rt)
       equation
         failure(_ = Util.listGetMember(name,rt));
         
@@ -1470,9 +1470,9 @@ algorithm
         (rest_strs,rt_2) = generateNestedRecordDeclarations(varlst, rt_1);
         res = listAppend(rest_strs,strs);
       then (res,rt_2);
-    case ((Types.T_COMPLEX(complexClassType = ClassInf.RECORD(string = name), complexVarLst = varlst),_),rt)
+    case ((DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(string = name), complexVarLst = varlst),_),rt)
       then ({},rt);
-    case ((Types.T_METARECORD(fields = varlst), SOME(path)),rt)
+    case ((DAE.T_METARECORD(fields = varlst), SOME(path)),rt)
       equation
         name = ModUtil.pathStringReplaceDot(path, "_");
         failure(_ = Util.listGetMember(name,rt));
@@ -1482,7 +1482,7 @@ algorithm
         (rest_strs,rt_2) = generateNestedRecordDeclarations(varlst, rt_1);
         strs = listAppend(rest_strs,strs);
       then (strs,rt_2);
-    case ((Types.T_METARECORD(_, _), SOME(path)),rt) then ({},rt);
+    case ((DAE.T_METARECORD(_, _), SOME(path)),rt) then ({},rt);
     case ((_,_),rt) then ({ "/* An odd record this. */" },rt);
   end matchcontinue;
 end generateRecordDeclarations;
@@ -1555,7 +1555,7 @@ algorithm
       list<String> res,strs,strs_rest,rt,rt_1,rt_2;
     case ({},rt)
       then ({},rt);
-    case (Types.VAR(type_ = (ty as (Types.T_COMPLEX(complexClassType = ClassInf.RECORD(_)),_)))::rest,rt)
+    case (DAE.TYPES_VAR(type_ = (ty as (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_)),_)))::rest,rt)
       equation
         (strs,rt_1) = generateRecordDeclarations(ty,rt);
         (strs_rest,rt_2) = generateNestedRecordDeclarations(rest,rt_1);
@@ -1586,7 +1586,7 @@ algorithm
       Types.Type ft;
       list<String> strs, rest_strs, rt, rt_1, rt_2;
     case ({},rt) then ({},rt);
-    case (((var as DAE.VAR(ty = ft as (Types.T_COMPLEX(complexClassType = ClassInf.RECORD(_)),_))) :: rest),rt)
+    case (((var as DAE.VAR(ty = ft as (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_)),_))) :: rest),rt)
       equation
         (strs,rt_1) = generateRecordDeclarations(ft,rt);
         (rest_strs,rt_2) = generateStructsForRecords(rest,rt_1);
@@ -1903,7 +1903,7 @@ algorithm
       Types.Type arrayty,ty;
       list<Integer> dims;
       
-    case ((Types.T_TUPLE(tupleType = tys),_),false)
+    case ((DAE.T_TUPLE(tupleType = tys),_),false)
       equation
         ty_str = generateTupleType(tys);
       then
@@ -1911,7 +1911,7 @@ algorithm
     
     case (ty,false) then generateSimpleType(ty);
         
-    case (ty,true) then generateSimpleType((Types.T_ARRAY(Types.DIM(NONE),ty),NONE));
+    case (ty,true) then generateSimpleType((DAE.T_ARRAY(DAE.DIM(NONE),ty),NONE));
 
   end matchcontinue;
 end generateType;
@@ -1928,11 +1928,11 @@ algorithm
       Lib str;
       Types.ArrayDim dim;
       tuple<Types.TType, Option<Absyn.Path>> ty;
-    case ((Types.T_INTEGER(varLstInt = _),_)) then "int";
-    case ((Types.T_REAL(varLstReal = _),_)) then "double";
-    case ((Types.T_STRING(varLstString = _),_)) then "const char*";
-    case ((Types.T_BOOL(varLstBool = _),_)) then "int";
-    case ((Types.T_COMPLEX(complexClassType = ClassInf.RECORD(name)),_))
+    case ((DAE.T_INTEGER(varLstInt = _),_)) then "int";
+    case ((DAE.T_REAL(varLstReal = _),_)) then "double";
+    case ((DAE.T_STRING(varLstString = _),_)) then "const char*";
+    case ((DAE.T_BOOL(varLstBool = _),_)) then "int";
+    case ((DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(name)),_))
       local String name;
       equation
         str = stringAppend("struct ", name);
@@ -1940,20 +1940,20 @@ algorithm
         str;
 
     // MetaModelica Types
-    case ((Types.T_LIST(_),_)) then "void*";
-    case ((Types.T_METATUPLE(_),_)) then "void*";
-    case ((Types.T_METAOPTION(_),_)) then "void*";
-    case ((Types.T_UNIONTYPE(_),_)) then "void*";
-    case ((Types.T_POLYMORPHIC(_),_)) then "void*";
+    case ((DAE.T_LIST(_),_)) then "void*";
+    case ((DAE.T_METATUPLE(_),_)) then "void*";
+    case ((DAE.T_METAOPTION(_),_)) then "void*";
+    case ((DAE.T_UNIONTYPE(_),_)) then "void*";
+    case ((DAE.T_POLYMORPHIC(_),_)) then "void*";
     
-    case ((Types.T_ARRAY(arrayDim = dim,arrayType = ty),_))
+    case ((DAE.T_ARRAY(arrayDim = dim,arrayType = ty),_))
       equation
         str = generateTypeExternal(ty);
       then
         str;
 
     // External objects are stored in void pointer
-    case ((Types.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(_)),_)) then "void *";
+    case ((DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(_)),_)) then "void *";
     case ty
       equation
         Debug.fprint("failtrace", "#-- Codegen.generateTypeExternal failed\n");
@@ -1970,11 +1970,11 @@ protected function generateTypeInternalNamepart
 algorithm
   outString:=
   matchcontinue (inType)
-    case ((Types.T_INTEGER(varLstInt = _),_)) then "integer";
-    case ((Types.T_REAL(varLstReal = _),_)) then "real";
-    case ((Types.T_STRING(varLstString = _),_)) then "string";
-    case ((Types.T_BOOL(varLstBool = _),_)) then "boolean";
-//    case ((Types.T_ENUM(),_)) then "T_ENUM_NOT_IMPLEMENTED";
+    case ((DAE.T_INTEGER(varLstInt = _),_)) then "integer";
+    case ((DAE.T_REAL(varLstReal = _),_)) then "real";
+    case ((DAE.T_STRING(varLstString = _),_)) then "string";
+    case ((DAE.T_BOOL(varLstBool = _),_)) then "boolean";
+//    case ((DAE.T_ENUM(),_)) then "T_ENUM_NOT_IMPLEMENTED";
   end matchcontinue;
 end generateTypeInternalNamepart;
 
@@ -2030,40 +2030,40 @@ algorithm
       String t_str,name;
       Types.Type t_1,t,ty;
     
-    case ((Types.T_INTEGER(varLstInt = _),_)) then "modelica_integer";
-    case ((Types.T_REAL(varLstReal = _),_)) then "modelica_real";
-    case ((Types.T_STRING(varLstString = _),_)) then "modelica_string";
-    case ((Types.T_BOOL(varLstBool = _),_)) then "modelica_boolean";
-    case ((Types.T_COMPLEX(complexClassType = ClassInf.RECORD(name)),_))
+    case ((DAE.T_INTEGER(varLstInt = _),_)) then "modelica_integer";
+    case ((DAE.T_REAL(varLstReal = _),_)) then "modelica_real";
+    case ((DAE.T_STRING(varLstString = _),_)) then "modelica_string";
+    case ((DAE.T_BOOL(varLstBool = _),_)) then "modelica_boolean";
+    case ((DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(name)),_))
       equation
         t_str = stringAppend("struct ", name);
       then
         t_str;
         
-    case ((Types.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(_)),_)) then "modelica_complex";
+    case ((DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(_)),_)) then "modelica_complex";
 
-    case ((Types.T_LIST(_),_)) then "metamodelica_type";  // MetaModelica list
-    case ((Types.T_METATUPLE(_),_)) then "metamodelica_type"; // MetaModelica tuple
-    case ((Types.T_METAOPTION(_),_)) then "metamodelica_type"; // MetaModelica tuple
-    case ((Types.T_FUNCTION(_,_),_)) then "modelica_fnptr";
-    case ((Types.T_UNIONTYPE(_),_)) then "metamodelica_type";
-    case ((Types.T_POLYMORPHIC(_),_)) then "metamodelica_type";
-    case ((Types.T_BOXED(ty),_)) then "metamodelica_type";
+    case ((DAE.T_LIST(_),_)) then "metamodelica_type";  // MetaModelica list
+    case ((DAE.T_METATUPLE(_),_)) then "metamodelica_type"; // MetaModelica tuple
+    case ((DAE.T_METAOPTION(_),_)) then "metamodelica_type"; // MetaModelica tuple
+    case ((DAE.T_FUNCTION(_,_),_)) then "modelica_fnptr";
+    case ((DAE.T_UNIONTYPE(_),_)) then "metamodelica_type";
+    case ((DAE.T_POLYMORPHIC(_),_)) then "metamodelica_type";
+    case ((DAE.T_BOXED(ty),_)) then "metamodelica_type";
             
-    case ((t as (Types.T_ARRAY(arrayDim = _),_)))
+    case ((t as (DAE.T_ARRAY(arrayDim = _),_)))
       equation
         t_1 = Types.arrayElementType(t);
         t_str = arrayTypeString(t_1);
       then
         t_str;
 
-    case ((Types.T_LIST(_),_)) then "metamodelica_type"; // MetaModelica list
-    case ((Types.T_METATUPLE(_),_)) then "metamodelica_type"; // MetaModelica tuple
-    case ((Types.T_METAOPTION(_),_)) then "metamodelica_type"; // MetaModelica option
-    case ((Types.T_UNIONTYPE(_),_)) then "metamodelica_type"; //MetaModelica uniontypes, added by simbj
-    case ((Types.T_POLYMORPHIC(_),_)) then "metamodelica_type"; //MetaModelica polymorphic type
-    case ((Types.T_BOXED(_),_)) then "metamodelica_type"; //MetaModelica boxed type
-    case ((Types.T_FUNCTION(_,_),_)) then "modelica_fnptr";
+    case ((DAE.T_LIST(_),_)) then "metamodelica_type"; // MetaModelica list
+    case ((DAE.T_METATUPLE(_),_)) then "metamodelica_type"; // MetaModelica tuple
+    case ((DAE.T_METAOPTION(_),_)) then "metamodelica_type"; // MetaModelica option
+    case ((DAE.T_UNIONTYPE(_),_)) then "metamodelica_type"; //MetaModelica uniontypes, added by simbj
+    case ((DAE.T_POLYMORPHIC(_),_)) then "metamodelica_type"; //MetaModelica polymorphic type
+    case ((DAE.T_BOXED(_),_)) then "metamodelica_type"; //MetaModelica boxed type
+    case ((DAE.T_FUNCTION(_,_),_)) then "modelica_fnptr";
     
     case (ty)
       equation
@@ -2083,10 +2083,10 @@ protected function arrayTypeString
 algorithm
   outString:=
   matchcontinue (inType)
-    case ((Types.T_INTEGER(varLstInt = _),_)) then "integer_array";
-    case ((Types.T_REAL(varLstReal = _),_)) then "real_array";
-    case ((Types.T_STRING(varLstString = _),_)) then "string_array";
-    case ((Types.T_BOOL(varLstBool = _),_)) then "boolean_array";
+    case ((DAE.T_INTEGER(varLstInt = _),_)) then "integer_array";
+    case ((DAE.T_REAL(varLstReal = _),_)) then "real_array";
+    case ((DAE.T_STRING(varLstString = _),_)) then "string_array";
+    case ((DAE.T_BOOL(varLstBool = _),_)) then "boolean_array";
   end matchcontinue;
 end arrayTypeString;
 
@@ -2171,23 +2171,23 @@ algorithm
       Lib str,resstr,tystr;
       tuple<Types.TType, Option<Absyn.Path>> ty;
       
-    case (Types.ATTR(direction = Absyn.INPUT()),ty)
+    case (DAE.ATTR(direction = Absyn.INPUT()),ty)
       equation
         false = Types.isArray(ty);
         str = generateTypeExternal(ty);
       then
         str;
         
-    case (Types.ATTR(direction = Absyn.INPUT()),ty)
+    case (DAE.ATTR(direction = Absyn.INPUT()),ty)
       equation
         true = Types.isArray(ty);
-        ((Types.T_STRING(_),_)) = Types.arrayElementType(ty);
+        ((DAE.T_STRING(_),_)) = Types.arrayElementType(ty);
         str = generateTypeExternal(ty);
         resstr = Util.stringAppendList({str," const *"});
       then
         resstr;
         
-    case (Types.ATTR(direction = Absyn.INPUT()),ty)
+    case (DAE.ATTR(direction = Absyn.INPUT()),ty)
       equation
         true = Types.isArray(ty);
         str = generateTypeExternal(ty);
@@ -2195,14 +2195,14 @@ algorithm
       then
         resstr;
         
-    case (Types.ATTR(direction = Absyn.OUTPUT()),ty)
+    case (DAE.ATTR(direction = Absyn.OUTPUT()),ty)
       equation
         tystr = generateTypeExternal(ty);
         str = stringAppend(tystr, "*");
       then
         str;
         
-    case (Types.ATTR(direction = Absyn.BIDIR()),ty)
+    case (DAE.ATTR(direction = Absyn.BIDIR()),ty)
       equation
         tystr = generateTypeExternal(ty);
         str = stringAppend(tystr, "*");
@@ -2285,27 +2285,27 @@ algorithm
       tuple<Types.TType, Option<Absyn.Path>> ty;
       Types.Attributes attr;
 
-    case (Types.ATTR(direction = Absyn.INPUT()),ty)
+    case (DAE.ATTR(direction = Absyn.INPUT()),ty)
       equation
         str = generateTypeExternal(ty);
         resstr = Util.stringAppendList({"const ",str," *"});
       then
         resstr;
 
-    case (Types.ATTR(direction = Absyn.OUTPUT()),ty)
+    case (DAE.ATTR(direction = Absyn.OUTPUT()),ty)
       equation
         tystr = generateTypeExternal(ty);
         str = stringAppend(tystr, "*");
       then
         str;
 
-    case ((attr as Types.ATTR(direction = Absyn.BIDIR())),ty)
+    case ((attr as DAE.ATTR(direction = Absyn.BIDIR())),ty)
       equation
         str = generateExtArgType(attr, ty);
       then
         str;
 
-    case ((attr as Types.ATTR(direction = Absyn.BIDIR())),ty)
+    case ((attr as DAE.ATTR(direction = Absyn.BIDIR())),ty)
       equation
         str = generateExtArgType(attr, ty);
       then
@@ -2470,8 +2470,8 @@ algorithm
       then {};
     case (fpath,ty1)
       equation
-        (Types.T_FUNCTION(funcArgs1,retType1),_) = ty1;
-        (ty2 as (Types.T_FUNCTION(funcArgs2,retType2),_)) = Types.makeFunctionPolymorphicReference(ty1);
+        (DAE.T_FUNCTION(funcArgs1,retType1),_) = ty1;
+        (ty2 as (DAE.T_FUNCTION(funcArgs2,retType2),_)) = Types.makeFunctionPolymorphicReference(ty1);
         tnr = 1;
         ret_type_str = generateReturnType(fpath);
         ret_type_str_box = ret_type_str +& "boxed";
@@ -5195,7 +5195,7 @@ algorithm
       equation
         (cfn1,var1,tnr) = generateExpression(s1, tnr, context);
         t = Types.expTypetoTypesType(tp);
-        (Types.T_COMPLEX(complexClassType = ClassInf.RECORD(name), complexVarLst = v),_) = t;
+        (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(name), complexVarLst = v),_) = t;
         tys1 = Util.listMap(v, Types.getVarType);
         tys2 = Util.listMap(tys1, Types.boxIfUnboxedType);
         i = listLength(tys1);
@@ -6982,7 +6982,7 @@ algorithm
       Option<Absyn.Annotation> ann;
       list<tuple<Lib, tuple<Types.TType, Option<Absyn.Path>>>> args;
       tuple<Types.TType, Option<Absyn.Path>> restype;
-    case (fnname,outvars,retstr,invars,(extdecl as DAE.EXTERNALDECL(ident = extfnname,external_ = extargs,parameters = extretarg,returnType = lang,language = ann)),bivars,(Types.T_FUNCTION(funcArg = args,funcResultType = restype),_)) /* function name output variables return type input variables external declaration bidirectional vars function type */
+    case (fnname,outvars,retstr,invars,(extdecl as DAE.EXTERNALDECL(ident = extfnname,external_ = extargs,parameters = extretarg,returnType = lang,language = ann)),bivars,(DAE.T_FUNCTION(funcArg = args,funcResultType = restype),_)) /* function name output variables return type input variables external declaration bidirectional vars function type */
       equation
         tnr = 1;
         arg_strs = Util.listMap(args, generateFunctionArg);
@@ -7311,7 +7311,7 @@ algorithm
       /* INPUT NON-ARRAY */
     case (arg,i)
       equation
-        DAE.EXTARG(componentRef = cref,attributes = Types.ATTR(direction = Absyn.INPUT()),type_ = ty) = arg;
+        DAE.EXTARG(componentRef = cref,attributes = DAE.ATTR(direction = Absyn.INPUT()),type_ = ty) = arg;
         false = Types.isArray(ty);
         false = Types.isString(ty);
         tystr = generateTypeExternal(ty);
@@ -7323,7 +7323,7 @@ algorithm
         /* INPUT NON-ARRAY STRING do nothing INPUT ARRAY */
     case (arg,i)
       equation
-        DAE.EXTARG(componentRef = cref,attributes = Types.ATTR(direction = Absyn.INPUT()),type_ = ty) = arg;
+        DAE.EXTARG(componentRef = cref,attributes = DAE.ATTR(direction = Absyn.INPUT()),type_ = ty) = arg;
         true = Types.isArray(ty);
       then
         cEmptyFunction;
@@ -7331,7 +7331,7 @@ algorithm
         /* OUTPUT NON-ARRAY */
     case (arg, i)
       equation
-        DAE.EXTARG(componentRef = cref,attributes = Types.ATTR(direction = Absyn.OUTPUT()),type_ = ty) = arg;
+        DAE.EXTARG(componentRef = cref,attributes = DAE.ATTR(direction = Absyn.OUTPUT()),type_ = ty) = arg;
         false = Types.isArray(ty);
         tystr = generateTypeExternal(ty);
         name = varNameExternal(cref);
@@ -7342,7 +7342,7 @@ algorithm
         /* OUTPUT ARRAY */
     case (arg, i)
       equation
-        DAE.EXTARG(componentRef = cref,attributes = Types.ATTR(direction = Absyn.OUTPUT()),type_ = ty) = arg;
+        DAE.EXTARG(componentRef = cref,attributes = DAE.ATTR(direction = Absyn.OUTPUT()),type_ = ty) = arg;
         true = Types.isArray(ty);
       then
         cEmptyFunction;
@@ -7409,7 +7409,7 @@ algorithm
     local
       tuple<Types.TType, Option<Absyn.Path>> elty,ty;
       Lib eltystr,str;
-    case ((ty as (Types.T_ARRAY(arrayDim = _),_)))
+    case ((ty as (DAE.T_ARRAY(arrayDim = _),_)))
       equation
         elty = Types.arrayElementType(ty);
         eltystr = generateTypeInternalNamepart(elty);
@@ -7435,7 +7435,7 @@ algorithm
     local
       tuple<Types.TType, Option<Absyn.Path>> elty,ty;
       Lib eltystr,str;
-    case ((ty as (Types.T_ARRAY(arrayDim = _),_)))
+    case ((ty as (DAE.T_ARRAY(arrayDim = _),_)))
       equation
         elty = Types.arrayElementType(ty);
         eltystr = generateTypeInternalNamepart(elty);
@@ -8013,25 +8013,25 @@ algorithm
       Types.Type ty;
     case (name, ty)
       equation
-        ((Types.T_INTEGER(_),_)) = Types.arrayElementType(ty);
+        ((DAE.T_INTEGER(_),_)) = Types.arrayElementType(ty);
         str = Util.stringAppendList({"data_of_integer_array(&(",name,"))"});
       then
         str;
     case (name, ty)
       equation
-        ((Types.T_REAL(_),_)) = Types.arrayElementType(ty);
+        ((DAE.T_REAL(_),_)) = Types.arrayElementType(ty);
         str = Util.stringAppendList({"data_of_real_array(&(",name,"))"});
       then
         str;
     case (name, ty)
       equation
-        ((Types.T_BOOL(_),_)) = Types.arrayElementType(ty);
+        ((DAE.T_BOOL(_),_)) = Types.arrayElementType(ty);
         str = Util.stringAppendList({"data_of_boolean_array(&(",name,"))"});
       then
         str;
     case (name, ty)
       equation
-        ((Types.T_STRING(_),_)) = Types.arrayElementType(ty);
+        ((DAE.T_STRING(_),_)) = Types.arrayElementType(ty);
         str = Util.stringAppendList({"data_of_string_array(&(",name,"))"});
       then
         str;
@@ -8060,7 +8060,7 @@ algorithm
       Exp.Exp dim;
     case DAE.EXTARGSIZE(componentRef = cr,attributes = attr,type_ = ty,exp = dim)
       equation
-        ((Types.T_INTEGER(_),_)) = Types.arrayElementType(ty);
+        ((DAE.T_INTEGER(_),_)) = Types.arrayElementType(ty);
         /* 1 is dummy since can not be output*/
         crstr = varNameArray(cr, attr,1);
         dimstr = Exp.printExpStr(dim);
@@ -8069,7 +8069,7 @@ algorithm
         str;
     case DAE.EXTARGSIZE(componentRef = cr,attributes = attr,type_ = ty,exp = dim)
       equation
-        ((Types.T_REAL(_),_)) = Types.arrayElementType(ty);
+        ((DAE.T_REAL(_),_)) = Types.arrayElementType(ty);
         /* 1 is dummy since can not be output*/
         crstr = varNameArray(cr, attr,1);
         dimstr = Exp.printExpStr(dim);
@@ -8078,7 +8078,7 @@ algorithm
         str;
     case DAE.EXTARGSIZE(componentRef = cr,attributes = attr,type_ = ty,exp = dim)
       equation
-        ((Types.T_BOOL(_),_)) = Types.arrayElementType(ty);
+        ((DAE.T_BOOL(_),_)) = Types.arrayElementType(ty);
         /* 1 is dummy since can not be output*/
         crstr = varNameArray(cr, attr,1);
         dimstr = Exp.printExpStr(dim);
@@ -8087,7 +8087,7 @@ algorithm
         str;
     case DAE.EXTARGSIZE(componentRef = cr,attributes = attr,type_ = ty,exp = dim)
       equation
-        ((Types.T_STRING(_),_)) = Types.arrayElementType(ty);
+        ((DAE.T_STRING(_),_)) = Types.arrayElementType(ty);
         /* 1 is dummy since can not be output*/
         crstr = varNameArray(cr, attr,1);
         dimstr = Exp.printExpStr(dim);
@@ -8119,7 +8119,7 @@ algorithm
       Exp.Exp dim;
     case DAE.EXTARGSIZE(componentRef = cr,attributes = attr,type_ = ty,exp = dim)
       equation
-        ((Types.T_INTEGER(_),_)) = Types.arrayElementType(ty);
+        ((DAE.T_INTEGER(_),_)) = Types.arrayElementType(ty);
         /* 1 is dummy since can not be output*/
         crstr = varNameArray(cr, attr,1);
         dimstr = Exp.printExpStr(dim);
@@ -8128,7 +8128,7 @@ algorithm
         str;
     case DAE.EXTARGSIZE(componentRef = cr,attributes = attr,type_ = ty,exp = dim)
       equation
-        ((Types.T_REAL(_),_)) = Types.arrayElementType(ty);
+        ((DAE.T_REAL(_),_)) = Types.arrayElementType(ty);
         /* 1 is dummy since can not be output*/
         crstr = varNameArray(cr, attr,1);
         dimstr = Exp.printExpStr(dim);
@@ -8137,7 +8137,7 @@ algorithm
         str;
     case DAE.EXTARGSIZE(componentRef = cr,attributes = attr,type_ = ty,exp = dim)
       equation
-        ((Types.T_BOOL(_),_)) = Types.arrayElementType(ty);
+        ((DAE.T_BOOL(_),_)) = Types.arrayElementType(ty);
         /* 1 is dummy since can not be output*/
         crstr = varNameArray(cr, attr,1);
         dimstr = Exp.printExpStr(dim);
@@ -8146,7 +8146,7 @@ algorithm
         str;
     case DAE.EXTARGSIZE(componentRef = cr,attributes = attr,type_ = ty,exp = dim)
       equation
-        ((Types.T_STRING(_),_)) = Types.arrayElementType(ty);
+        ((DAE.T_STRING(_),_)) = Types.arrayElementType(ty);
         /* 1 is dummy since can not be output*/
         crstr = varNameArray(cr, attr,1);
         dimstr = Exp.printExpStr(dim);
@@ -8170,7 +8170,7 @@ protected function isExtargOutput "function:  isExtargOutput
 algorithm
   _:=
   matchcontinue (inExtArg)
-    case DAE.EXTARG(attributes = Types.ATTR(direction = Absyn.OUTPUT())) then ();
+    case DAE.EXTARG(attributes = DAE.ATTR(direction = Absyn.OUTPUT())) then ();
   end matchcontinue;
 end isExtargOutput;
 
@@ -8182,7 +8182,7 @@ protected function isExtargBidir "function:  is_extarg_output
 algorithm
   _:=
   matchcontinue (inExtArg)
-    case DAE.EXTARG(attributes = Types.ATTR(direction = Absyn.BIDIR())) then ();
+    case DAE.EXTARG(attributes = DAE.ATTR(direction = Absyn.BIDIR())) then ();
   end matchcontinue;
 end isExtargBidir;
 
@@ -8561,7 +8561,7 @@ algorithm
   matchcontinue (inVar)
     local
       Types.Ident name;
-    case Types.VAR(name = name)
+    case DAE.TYPES_VAR(name = name)
       then name;
     case (_)
       then "NULL";
@@ -8581,14 +8581,14 @@ algorithm
       list<Types.Var> varlst;
       list<String> nameList;
       list<list<String>> namesList;
-    case Types.VAR(name = name, type_ = (Types.T_COMPLEX(complexClassType = ClassInf.RECORD(_), complexVarLst = varlst),_))
+    case DAE.TYPES_VAR(name = name, type_ = (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_), complexVarLst = varlst),_))
       equation
         namesList = Util.listMap(varlst, generateRecordVarNames);
         nameList = Util.listFlatten(namesList);
         name = name +& ".";
         nameList = Util.listMap1r(nameList, stringAppend, name);
       then nameList;
-    case Types.VAR(name = name)
+    case DAE.TYPES_VAR(name = name)
       then {name};
     case (_)
       equation
@@ -8609,7 +8609,7 @@ algorithm
       list<Types.Var> varlst;
       list<String> names;
       list<list<String>> nameList;
-    case ((Types.T_COMPLEX(complexClassType = ClassInf.RECORD(_), complexVarLst = varlst),_))
+    case ((DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_), complexVarLst = varlst),_))
       equation
         nameList = Util.listMap(varlst, generateRecordVarNames);
         names = Util.listFlatten(nameList);
@@ -8640,7 +8640,7 @@ algorithm
     case (DAE.VAR(componentRef = id,
                   kind = vk,
                   direction = DAE.INPUT(),
-                  ty = t as (Types.T_COMPLEX(complexClassType = ClassInf.RECORD(_)),_),
+                  ty = t as (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_)),_),
                   dims = {}) :: r)
       local
         list<String> args;
@@ -8689,11 +8689,11 @@ protected function generateRWType "function: generateRWType
 algorithm
   outType :=
   matchcontinue (inType)
-    case ((Types.T_INTEGER(_), _)) then "TYPE_DESC_INT";
-    case ((Types.T_REAL(_), _)) then "TYPE_DESC_REAL";
-    case ((Types.T_STRING(_), _)) then "TYPE_DESC_STRING";
-    case ((Types.T_BOOL(_), _)) then "TYPE_DESC_BOOL";
-    case ((Types.T_ARRAY(arrayType = t), _))
+    case ((DAE.T_INTEGER(_), _)) then "TYPE_DESC_INT";
+    case ((DAE.T_REAL(_), _)) then "TYPE_DESC_REAL";
+    case ((DAE.T_STRING(_), _)) then "TYPE_DESC_STRING";
+    case ((DAE.T_BOOL(_), _)) then "TYPE_DESC_BOOL";
+    case ((DAE.T_ARRAY(arrayType = t), _))
       local
         Types.Type t;
         String ret;
@@ -8702,12 +8702,12 @@ algorithm
         ret = stringAppend(ret, "_ARRAY");
       then
         ret;
-    case ((Types.T_TUPLE(_), _)) then "TYPE_DESC_TUPLE";
-    case ((Types.T_COMPLEX(complexClassType = ClassInf.RECORD(_)), _)) then "TYPE_DESC_RECORD";
-    case ((Types.T_UNIONTYPE(_), _)) then "TYPE_DESC_MMC";
-    case ((Types.T_METATUPLE(_), _)) then "TYPE_DESC_MMC";
-    case ((Types.T_POLYMORPHIC(_), _)) then "TYPE_DESC_MMC";
-    case ((Types.T_LIST(_), _)) then "TYPE_DESC_MMC";
+    case ((DAE.T_TUPLE(_), _)) then "TYPE_DESC_TUPLE";
+    case ((DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_)), _)) then "TYPE_DESC_RECORD";
+    case ((DAE.T_UNIONTYPE(_), _)) then "TYPE_DESC_MMC";
+    case ((DAE.T_METATUPLE(_), _)) then "TYPE_DESC_MMC";
+    case ((DAE.T_POLYMORPHIC(_), _)) then "TYPE_DESC_MMC";
+    case ((DAE.T_LIST(_), _)) then "TYPE_DESC_MMC";
     case (_) then "TYPE_DESC_COMPLEX";
   end matchcontinue;
 end generateRWType;
@@ -8723,7 +8723,7 @@ algorithm
     local
       Types.Type t;
       String ret;
-    case (Types.VAR(type_ = t))
+    case (DAE.TYPES_VAR(type_ = t))
       equation
         ret = generateRWType(t);
       then
@@ -8746,7 +8746,7 @@ algorithm
       list<Types.Var> complexVarLst;
       list<String> args;
       /* Records can be nested and require recursively constructing the type_description */
-    case (Types.VAR(name = name, type_ = ty as (Types.T_COMPLEX(complexVarLst = complexVarLst, complexClassType = ClassInf.RECORD(_)),_)),inRecordBase)
+    case (DAE.TYPES_VAR(name = name, type_ = ty as (DAE.T_COMPLEX(complexVarLst = complexVarLst, complexClassType = ClassInf.RECORD(_)),_)),inRecordBase)
       equation
         type_arg = generateVarType(inVar);
         base_str = inRecordBase +& "." +& name;
@@ -8759,7 +8759,7 @@ algorithm
       then
         outArgs;
         /* Not records */
-    case (Types.VAR(name = name, type_ = ty),inRecordBase)
+    case (DAE.TYPES_VAR(name = name, type_ = ty),inRecordBase)
       equation
         type_arg = generateVarType(inVar);
         ref_arg = makeRecordRef(name,inRecordBase);
@@ -8784,7 +8784,7 @@ algorithm
       list<String> args;
       String base_str, path_str;
       Absyn.Path path;
-    case ((Types.T_COMPLEX(complexClassType = ClassInf.RECORD(_), complexVarLst = varlst), SOME(path)),base_str)
+    case ((DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_), complexVarLst = varlst), SOME(path)),base_str)
       equation
         args = Util.listMap1(varlst, generateOutVar, base_str);
         path_str = ModUtil.pathStringReplaceDot(path, "_");
@@ -8796,7 +8796,7 @@ algorithm
         Debug.fprintln("failtrace", "- Codegen.generateOutRecordMembers failed");
       then fail();
     /*
-    case ((Types.T_COMPLEX(complexClassType = ClassInf.RECORD(_), complexVarLst = varlst), _),base_str)
+    case ((DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_), complexVarLst = varlst), _),base_str)
       equation
         args = Util.listMap1(varlst, generateOutVar, base_str);
       then
@@ -8833,7 +8833,7 @@ algorithm
     case (DAE.VAR(componentRef = id,
                   kind = vk,
                   direction = DAE.OUTPUT(),
-                  ty = t as (Types.T_COMPLEX(complexClassType = ClassInf.RECORD(_)),_),
+                  ty = t as (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_)),_),
                   dims = {}) :: r,i)
       local
         list<String> args;
@@ -8947,16 +8947,16 @@ protected function argToJavaSigType
 algorithm
   sig := matchcontinue arg
     case DAE.NOEXTARG() then "V"; /* Void return */
-    case DAE.EXTARG(type_ = (Types.T_INTEGER(_),_)) then "Lorg/openmodelica/ModelicaInteger;";
-    case DAE.EXTARG(type_ = (Types.T_REAL(_),_)) then "Lorg/openmodelica/ModelicaReal;";
-    case DAE.EXTARG(type_ = (Types.T_BOOL(_),_)) then "Lorg/openmodelica/ModelicaBoolean;";
-    case DAE.EXTARG(type_ = (Types.T_STRING(_),_)) then "Lorg/openmodelica/ModelicaString;";
-    case DAE.EXTARG(type_ = (Types.T_ARRAY(_,_),_)) then "Lorg/openmodelica/ModelicaArray;";
-    case DAE.EXTARG(type_ = (Types.T_COMPLEX(complexClassType = ClassInf.RECORD(_)),_)) then "Lorg/openmodelica/ModelicaRecord;";
-    case DAE.EXTARG(type_ = (Types.T_UNIONTYPE(_),_)) then "Lorg/openmodelica/IModelicaRecord;";
-    case DAE.EXTARG(type_ = (Types.T_METATUPLE(_),_)) then "Lorg/openmodelica/ModelicaTuple;";
-    case DAE.EXTARG(type_ = (Types.T_LIST(_),_)) then "Lorg/openmodelica/ModelicaArray;";
-    case DAE.EXTARG(type_ = (Types.T_METAOPTION(_),_)) then "Lorg/openmodelica/ModelicaOption;";
+    case DAE.EXTARG(type_ = (DAE.T_INTEGER(_),_)) then "Lorg/openmodelica/ModelicaInteger;";
+    case DAE.EXTARG(type_ = (DAE.T_REAL(_),_)) then "Lorg/openmodelica/ModelicaReal;";
+    case DAE.EXTARG(type_ = (DAE.T_BOOL(_),_)) then "Lorg/openmodelica/ModelicaBoolean;";
+    case DAE.EXTARG(type_ = (DAE.T_STRING(_),_)) then "Lorg/openmodelica/ModelicaString;";
+    case DAE.EXTARG(type_ = (DAE.T_ARRAY(_,_),_)) then "Lorg/openmodelica/ModelicaArray;";
+    case DAE.EXTARG(type_ = (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_)),_)) then "Lorg/openmodelica/ModelicaRecord;";
+    case DAE.EXTARG(type_ = (DAE.T_UNIONTYPE(_),_)) then "Lorg/openmodelica/IModelicaRecord;";
+    case DAE.EXTARG(type_ = (DAE.T_METATUPLE(_),_)) then "Lorg/openmodelica/ModelicaTuple;";
+    case DAE.EXTARG(type_ = (DAE.T_LIST(_),_)) then "Lorg/openmodelica/ModelicaArray;";
+    case DAE.EXTARG(type_ = (DAE.T_METAOPTION(_),_)) then "Lorg/openmodelica/ModelicaOption;";
     case _
       equation
         print("Warning: Codegen.argToJavaSigType: Unknown type - defaulting to ModelicaObject\n");
@@ -8972,10 +8972,10 @@ protected function argToSimpleJavaSigType
 algorithm
   sig := matchcontinue arg
     case DAE.NOEXTARG() then "V"; /* Void return */
-    case DAE.EXTARG(type_ = (Types.T_INTEGER(_),_)) then "I";
-    case DAE.EXTARG(type_ = (Types.T_REAL(_),_)) then "D";
-    case DAE.EXTARG(type_ = (Types.T_BOOL(_),_)) then "Z";
-    case DAE.EXTARG(type_ = (Types.T_STRING(_),_)) then "Ljava/lang/String;";
+    case DAE.EXTARG(type_ = (DAE.T_INTEGER(_),_)) then "I";
+    case DAE.EXTARG(type_ = (DAE.T_REAL(_),_)) then "D";
+    case DAE.EXTARG(type_ = (DAE.T_BOOL(_),_)) then "Z";
+    case DAE.EXTARG(type_ = (DAE.T_STRING(_),_)) then "Ljava/lang/String;";
     case _ then "Lnot/a/simple/type;";
   end matchcontinue;
 end argToSimpleJavaSigType;
@@ -9160,10 +9160,10 @@ algorithm
     String name, nameJavaRes, nameJavaMap, addToMap, readBack;
     Types.Type type_;
   case (_, _, _, {}) then ({},{},{});
-  case (cref, nameJava, isOut, Types.VAR(protected_ = true)::rest) equation
+  case (cref, nameJava, isOut, DAE.TYPES_VAR(protected_ = true)::rest) equation
     (init,clean,varNames) = javaExtRecordFields(cref, nameJava, isOut, rest);
   then (init,clean,varNames);
-  case (cref, nameJava, isOut, Types.VAR(name = name, type_ = type_)::rest) equation
+  case (cref, nameJava, isOut, DAE.TYPES_VAR(name = name, type_ = type_)::rest) equation
     (init,clean,varNames) = javaExtRecordFields(cref, nameJava, isOut, rest);
     nameJavaMap = nameJava +& "_temp_map";
     cref = cref +& "." +& name;
@@ -9204,7 +9204,7 @@ algorithm
     Types.Type arrayty,ty;
     Absyn.Path path_;
     
-    case (name,nameArr,((Types.T_INTEGER(_),_)),isOut) equation
+    case (name,nameArr,((DAE.T_INTEGER(_),_)),isOut) equation
       nameJava = Util.stringReplaceChar(name, ".", "_") +& "_java";
       nameIn = Util.if_(isOut, "0", name); // Out variables are not initialized...
       init = Util.stringAppendList({nameJava, " = NewJavaInteger(__env, ", nameIn, ");"});
@@ -9213,7 +9213,7 @@ algorithm
       clean = Util.if_(isOut, {readBack,cleanUp}, {cleanUp});
       nameJava = Util.stringAppendList({"jobject ",nameJava,";"});
     then ({init},clean,{nameJava});
-    case (name,nameArr,((Types.T_REAL(_),_)),isOut) equation
+    case (name,nameArr,((DAE.T_REAL(_),_)),isOut) equation
       nameJava = Util.stringReplaceChar(name, ".", "_") +& "_java";
       nameIn = Util.if_(isOut, "0", name); // Out variables are not initialized...
       init = Util.stringAppendList({nameJava, " = NewJavaDouble(__env, ", nameIn, ");"});
@@ -9222,7 +9222,7 @@ algorithm
       clean = Util.if_(isOut, {readBack,cleanUp}, {cleanUp});
       nameJava = Util.stringAppendList({"jobject ",nameJava,";"});
     then ({init},clean,{nameJava});
-    case (name,nameArr,((Types.T_STRING(_),_)),isOut) equation
+    case (name,nameArr,((DAE.T_STRING(_),_)),isOut) equation
       nameJava = Util.stringReplaceChar(name, ".", "_") +& "_java";
       nameIn = Util.if_(isOut, "NULL", name); // Out variables are not initialized...
       init = Util.stringAppendList({nameJava, " = NewJavaString(__env, ", nameIn, ");"});
@@ -9231,7 +9231,7 @@ algorithm
       clean = Util.if_(isOut, {readBack,cleanUp}, {cleanUp});
       nameJava = Util.stringAppendList({"jobject ",nameJava,";"});
     then ({init},clean,{nameJava});
-    case (name,nameArr,((Types.T_BOOL(_),_)),isOut) equation
+    case (name,nameArr,((DAE.T_BOOL(_),_)),isOut) equation
       nameJava = Util.stringReplaceChar(name, ".", "_") +& "_java";
       nameIn = Util.if_(isOut, "JNI_FALSE", name); // Out variables are not initialized...
       init = Util.stringAppendList({nameJava, " = NewJavaBoolean(__env, ", nameIn, ");"});
@@ -9240,7 +9240,7 @@ algorithm
       clean = Util.if_(isOut, {readBack,cleanUp}, {cleanUp});
       nameJava = Util.stringAppendList({"jobject ",nameJava,";"});
     then ({init},clean,{nameJava});
-    case (name,nameArr,((Types.T_UNIONTYPE(_),_)),isOut) equation
+    case (name,nameArr,((DAE.T_UNIONTYPE(_),_)),isOut) equation
       /* The other MetaModelica types should probably use the same function */
       nameJava = Util.stringReplaceChar(name, ".", "_") +& "_java";
       nameIn = Util.if_(isOut, "mmc_mk_box1(2, NULL)", name); // Out variables are not initialized...
@@ -9250,7 +9250,7 @@ algorithm
       clean = Util.if_(isOut, {readBack,cleanUp}, {cleanUp});
       nameJava = Util.stringAppendList({"jobject ",nameJava,";"});
     then ({init},clean,{nameJava});
-    case (name,nameArr,ty as ((Types.T_ARRAY(_,_),_)), isOut) equation
+    case (name,nameArr,ty as ((DAE.T_ARRAY(_,_),_)), isOut) equation
        (arrayty,_) = Types.flattenArrayType(ty);
        ndim = Types.ndims(ty);
        
@@ -9275,7 +9275,7 @@ algorithm
        clean = Util.if_(isOut, {flattenArray,readBack,cleanUp}, {cleanUp});
        nameJava = Util.stringAppendList({"jobject ",nameJava,";"});
     then (initList,clean,{nameJava});
-    case (name,nameArr,((Types.T_COMPLEX(complexVarLst = varLst, complexClassType = ClassInf.RECORD(_)),SOME(path_))), isOut) equation
+    case (name,nameArr,((DAE.T_COMPLEX(complexVarLst = varLst, complexClassType = ClassInf.RECORD(_)),SOME(path_))), isOut) equation
       nameJava = Util.stringReplaceChar(name, ".", "_") +& "_java";
       nameJavaMap = Util.stringReplaceChar(name, ".", "_") +& "_java_temp_map";
       
@@ -9320,28 +9320,28 @@ algorithm
     Types.Type arrayty,ty;
     Absyn.Path path_;
     
-    case (name,((Types.T_INTEGER(_),_)),isOut) equation
+    case (name,((DAE.T_INTEGER(_),_)),isOut) equation
       nameJava = Util.stringReplaceChar(name, ".", "_") +& "_java";
       init = Util.stringAppendList({nameJava, " = ", name, ";"});
       readBack = Util.stringAppendList({name, " = ", nameJava,";"});
       clean = Util.if_(isOut, {readBack}, {});
       nameJava = Util.stringAppendList({"jint ",nameJava,";"});
     then ({init},clean,{nameJava});
-    case (name,((Types.T_REAL(_),_)),isOut) equation
+    case (name,((DAE.T_REAL(_),_)),isOut) equation
       nameJava = Util.stringReplaceChar(name, ".", "_") +& "_java";
       init = Util.stringAppendList({nameJava, " = ", name, ";"});
       readBack = Util.stringAppendList({name, " = ", nameJava,";"});
       clean = Util.if_(isOut, {readBack}, {});
       nameJava = Util.stringAppendList({"jdouble ",nameJava,";"});
     then ({init},clean,{nameJava});
-    case (name,((Types.T_BOOL(_),_)),isOut) equation
+    case (name,((DAE.T_BOOL(_),_)),isOut) equation
       nameJava = Util.stringReplaceChar(name, ".", "_") +& "_java";
       init = Util.stringAppendList({nameJava, " = (", name, " != 0 ? JNI_TRUE : JNI_FALSE);"});
       readBack = Util.stringAppendList({name, " = ", nameJava,";"});
       clean = Util.if_(isOut, {readBack}, {});
       nameJava = Util.stringAppendList({"jboolean ",nameJava,";"});
     then ({init},clean,{nameJava});
-    case (name,((Types.T_STRING(_),_)),isOut) equation
+    case (name,((DAE.T_STRING(_),_)),isOut) equation
       nameJava = Util.stringReplaceChar(name, ".", "_") +& "_java";
       init = Util.stringAppendList({nameJava, " = (*__env)->NewStringUTF(__env,",name,");"});
       readBack = Util.stringAppendList({name, " = copyJstring(__env, ", nameJava,");"});
@@ -9359,13 +9359,13 @@ protected function generateJavaArrayConstructor
   output String out;
 algorithm
   out := matchcontinue(ty)
-    case ((Types.T_INTEGER(_),_)) equation
+    case ((DAE.T_INTEGER(_),_)) equation
     then "NewFlatJavaIntegerArray";
-    case ((Types.T_REAL(_),_)) equation
+    case ((DAE.T_REAL(_),_)) equation
     then "NewFlatJavaDoubleArray";
-    case ((Types.T_STRING(_),_)) equation
+    case ((DAE.T_STRING(_),_)) equation
     then "NewFlatJavaStringArray";
-    case ((Types.T_BOOL(_),_)) equation
+    case ((DAE.T_BOOL(_),_)) equation
     then "NewFlatJavaBooleanArray";
     case (_) equation
       Debug.fprint("failtrace", "#-- generateJavaArrayConstructor failed\n");
@@ -9378,13 +9378,13 @@ protected function generateJavaArrayAccessor
   output String out;
 algorithm
   out := matchcontinue(ty)
-    case ((Types.T_INTEGER(_),_)) equation
+    case ((DAE.T_INTEGER(_),_)) equation
     then "GetFlatJavaIntegerArray";
-    case ((Types.T_REAL(_),_)) equation
+    case ((DAE.T_REAL(_),_)) equation
     then "GetFlatJavaDoubleArray";
-    case ((Types.T_STRING(_),_)) equation
+    case ((DAE.T_STRING(_),_)) equation
     then "GetFlatJavaStringArray";
-    case ((Types.T_BOOL(_),_)) equation
+    case ((DAE.T_BOOL(_),_)) equation
     then "GetFlatJavaBooleanArray";
     case (_) equation
       Debug.fprint("failtrace", "#-- generateJavaArrayAccessor failed\n");
@@ -9408,7 +9408,7 @@ algorithm
       then {};
     case (name, ty, lastDim)
       equation
-        ((Types.T_INTEGER(_),_)) = Types.arrayElementType(ty);
+        ((DAE.T_INTEGER(_),_)) = Types.arrayElementType(ty);
         thisDimStr = intString(lastDim);
         str = Util.stringAppendList({"size_of_dimension_integer_array(",name,",",thisDimStr,")"});
         res = generateArraySizeCallJava(name, ty, lastDim-1);
@@ -9416,7 +9416,7 @@ algorithm
         str :: res;
     case (name, ty, lastDim)
       equation
-        ((Types.T_REAL(_),_)) = Types.arrayElementType(ty);
+        ((DAE.T_REAL(_),_)) = Types.arrayElementType(ty);
         thisDimStr = intString(lastDim);
         str = Util.stringAppendList({"size_of_dimension_real_array(",name,",",thisDimStr,")"});
         res = generateArraySizeCallJava(name, ty, lastDim-1);
@@ -9424,7 +9424,7 @@ algorithm
         str :: res;
     case (name, ty, lastDim)
       equation
-        ((Types.T_BOOL(_),_)) = Types.arrayElementType(ty);
+        ((DAE.T_BOOL(_),_)) = Types.arrayElementType(ty);
         thisDimStr = intString(lastDim);
         str = Util.stringAppendList({"size_of_dimension_boolean_array(",name,",",thisDimStr,")"});
         res = generateArraySizeCallJava(name, ty, lastDim-1);
@@ -9432,7 +9432,7 @@ algorithm
         str :: res;
     case (name, ty, lastDim)
       equation
-        ((Types.T_STRING(_),_)) = Types.arrayElementType(ty);
+        ((DAE.T_STRING(_),_)) = Types.arrayElementType(ty);
         thisDimStr = intString(lastDim);
         str = Util.stringAppendList({"size_of_dimension_string_array(",name,",",thisDimStr,")"});
         res = generateArraySizeCallJava(name, ty, lastDim-1);
@@ -9517,9 +9517,9 @@ protected function getJniCallFunc
 algorithm
   res := matchcontinue (ty, isJavaSimpleCallMethod)
     case (_, false) then "CallStaticObjectMethod";
-    case ((Types.T_INTEGER(_),_), _) then "CallStaticIntMethod";
-    case ((Types.T_REAL(_),_), _) then "CallStaticDoubleMethod";
-    case ((Types.T_BOOL(_),_), _) then "CallStaticBooleanMethod";
+    case ((DAE.T_INTEGER(_),_), _) then "CallStaticIntMethod";
+    case ((DAE.T_REAL(_),_), _) then "CallStaticDoubleMethod";
+    case ((DAE.T_BOOL(_),_), _) then "CallStaticBooleanMethod";
     case (_, _) then "CallStaticObjectMethod";
   end matchcontinue;
 end getJniCallFunc;

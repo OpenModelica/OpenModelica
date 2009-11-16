@@ -583,11 +583,11 @@ algorithm
         simValue = Values.RECORD(Absyn.IDENT("SimulationResult"),
                                  {Values.STRING(result_file)},
                                  {"resultFile"},-1);
-        simType = (Types.T_COMPLEX(ClassInf.RECORD("SimulationResult"),
-                                   {Types.VAR("resultFile",
-                                    Types.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
-                                    false,(Types.T_STRING({}),NONE),
-                                    Types.UNBOUND())},
+        simType = (DAE.T_COMPLEX(ClassInf.RECORD("SimulationResult"),
+                                   {DAE.TYPES_VAR("resultFile",
+                                    DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
+                                    false,(DAE.T_STRING({}),NONE),
+                                    DAE.UNBOUND())},
                                     NONE,NONE),NONE);
         newst = Interactive.addVarToSymboltable("currentSimulationResult", simValue, simType, st);
       then
@@ -3406,7 +3406,7 @@ algorithm
         classname_1 = Static.componentRefToPath(classname) "Check cached instantiated class" ;
         Interactive.INSTCLASS(_,dae,env) = Interactive.getInstantiatedClass(ic, classname_1);
         cref_1 = Exp.joinCrefs(cref, Exp.CREF_IDENT("stateSelect",Exp.OTHER(),{}));
-        (cache,attr,ty,Types.EQBOUND(exp,_,_),_,_) = Lookup.lookupVar(cache,env, cref_1); 
+        (cache,attr,ty,DAE.EQBOUND(exp,_,_),_,_) = Lookup.lookupVar(cache,env, cref_1); 
         str = Exp.printExpStr(exp);
       then
         (cache,Values.STRING(str),st);
@@ -3428,10 +3428,10 @@ algorithm
         (cache,(c as SCode.CLASS(n,_,encflag,r,_)),env_1) = Lookup.lookupClass(cache,env, classname_1, true);
         env3 = Env.openScope(env_1, encflag, SOME(n));
         ci_state = ClassInf.start(r, n);
-        (cache,env4,_,_,dae1,csets_1,ci_state_1,tys,_,_,_,_) = Inst.instClassIn(cache,env3, InstanceHierarchy.emptyInstanceHierarchy,UnitAbsyn.noStore,Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
+        (cache,env4,_,_,dae1,csets_1,ci_state_1,tys,_,_,_,_) = Inst.instClassIn(cache,env3, InstanceHierarchy.emptyInstanceHierarchy,UnitAbsyn.noStore,DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
           ci_state, c, false, {}, false, ConnectionGraph.EMPTY,NONE);
         cref_1 = Exp.joinCrefs(cref, Exp.CREF_IDENT("stateSelect",Exp.OTHER(),{}));
-        (cache,attr,ty,Types.EQBOUND(exp,_,_),_,_) = Lookup.lookupVar(cache,env4, cref_1);
+        (cache,attr,ty,DAE.EQBOUND(exp,_,_),_,_) = Lookup.lookupVar(cache,env4, cref_1);
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(classname_1,dae1,env4));
         str = Exp.printExpStr(exp);
       then
@@ -3448,7 +3448,7 @@ algorithm
         classname_1 = Static.componentRefToPath(classname);
         Interactive.INSTCLASS(_,dae,env) = Interactive.getInstantiatedClass(ic, classname_1);
         cref_1 = Exp.joinCrefs(cref, Exp.CREF_IDENT(attribute,Exp.OTHER(),{}));
-        (cache,attr,ty,Types.VALBOUND(v),_,_) = Lookup.lookupVar(cache,env, cref_1);
+        (cache,attr,ty,DAE.VALBOUND(v),_,_) = Lookup.lookupVar(cache,env, cref_1);
       then
         (cache,v,st);
         
@@ -3469,10 +3469,10 @@ algorithm
         (cache,(c as SCode.CLASS(n,_,encflag,r,_)),env_1) = Lookup.lookupClass(cache,env, classname_1, true);
         env3 = Env.openScope(env_1, encflag, SOME(n));
         ci_state = ClassInf.start(r, n);
-        (cache,env4,_,_,dae1,csets_1,ci_state_1,tys,_,_,_,_) = Inst.instClassIn(cache,env3, InstanceHierarchy.emptyInstanceHierarchy, UnitAbsyn.noStore,Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
+        (cache,env4,_,_,dae1,csets_1,ci_state_1,tys,_,_,_,_) = Inst.instClassIn(cache,env3, InstanceHierarchy.emptyInstanceHierarchy, UnitAbsyn.noStore,DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
           ci_state, c, false, {}, false, ConnectionGraph.EMPTY,NONE);
         cref_1 = Exp.joinCrefs(cref, Exp.CREF_IDENT(attribute,Exp.OTHER(),{}));
-        (cache,attr,ty,Types.VALBOUND(v),_,_) = Lookup.lookupVar(cache,env4, cref_1);
+        (cache,attr,ty,DAE.VALBOUND(v),_,_) = Lookup.lookupVar(cache,env4, cref_1);
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(classname_1,dae1,env4));
       then
         (cache,v,Interactive.SYMBOLTABLE(p,aDep,sp,ic_1,vars,cf,lf));
@@ -4186,7 +4186,7 @@ algorithm
         (cache,env_2,_,d1) = 
         Inst.implicitFunctionInstantiation(
            cache, env_1, InstanceHierarchy.emptyInstanceHierarchy,
-           Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cls, {});
+           DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cls, {});
         Debug.fprint("ceval", "/*- CevalScript.cevalGenerateFunctionDAEs getting functions: ");
         calledfuncs = SimCodegen.getCalledFunctionsInFunction(path, gflist, DAE.DAE(d1));
         gflist = path :: gflist; // In case the function is recursive

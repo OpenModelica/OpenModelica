@@ -705,23 +705,23 @@ algorithm
       false = OptManager.getOption("unitChecking");
     then UnitAbsyn.noStore;
       
-    case(UnitAbsyn.INSTSTORE(st,ht,res),(Types.T_REAL(Types.VAR(name="unit",binding = Types.EQBOUND(exp=Exp.SCONST(unitStr)))::_),_),cr) equation
+    case(UnitAbsyn.INSTSTORE(st,ht,res),(DAE.T_REAL(DAE.TYPES_VAR(name="unit",binding = DAE.EQBOUND(exp=Exp.SCONST(unitStr)))::_),_),cr) equation
       unit = str2unit(unitStr,NONE);
       unit = Util.if_(0 == System.strcmp(unitStr,""),UnitAbsyn.UNSPECIFIED(),unit);
       (st,indx) = add(unit,st);
        ht = HashTable.add((cr,indx),ht);       
     then UnitAbsyn.INSTSTORE(st,ht,res);     
-    case(store,(Types.T_REAL(_::vs),optPath),cr) equation
-     then instAddStore(store,(Types.T_REAL(vs),optPath),cr);
+    case(store,(DAE.T_REAL(_::vs),optPath),cr) equation
+     then instAddStore(store,(DAE.T_REAL(vs),optPath),cr);
 
       /* No unit available. */
-    case(UnitAbsyn.INSTSTORE(st,ht,res),(Types.T_REAL({}),_),cr) equation
+    case(UnitAbsyn.INSTSTORE(st,ht,res),(DAE.T_REAL({}),_),cr) equation
 
       (st,indx) = add(UnitAbsyn.UNSPECIFIED(),st);
        ht = HashTable.add((cr,indx),ht);       
     then UnitAbsyn.INSTSTORE(st,ht,res);
 
-    case(store,(Types.T_COMPLEX(complexTypeOption=SOME(tp)),_),cr) equation
+    case(store,(DAE.T_COMPLEX(complexTypeOption=SOME(tp)),_),cr) equation
        store = instAddStore(store,tp,cr); 
     then store; 
     case(store,_,cr) then store;                 
@@ -1101,7 +1101,7 @@ algorithm
   local String unitStr; UnitAbsyn.Unit unit; Integer indx,indx2; Boolean unspec;
     list<Types.Type> typeLst;
     /* Real */
-    case((Types.T_FUNCTION(_,functp),_),funcInstId,funcCallExp,store) equation
+    case((DAE.T_FUNCTION(_,functp),_),funcInstId,funcCallExp,store) equation
       unitStr = getUnitStr(functp);
       //print("Got unit='"+&unitStr+&"'\n");
       unspec = 0 == System.strcmp(unitStr,"");
@@ -1113,7 +1113,7 @@ algorithm
       then ({UnitAbsyn.LOC(indx2,funcCallExp)},{UnitAbsyn.EQN(UnitAbsyn.LOC(indx2,funcCallExp),UnitAbsyn.LOC(indx,funcCallExp),funcCallExp)},store);
       
     /* Tuple */
-    case((Types.T_FUNCTION(_,(Types.T_TUPLE(typeLst),_)),_),funcInstId,funcCallExp,store) equation
+    case((DAE.T_FUNCTION(_,(DAE.T_TUPLE(typeLst),_)),_),funcInstId,funcCallExp,store) equation
       (terms,extraTerms,store) = buildTupleResultTerms(typeLst,funcInstId,funcCallExp,store);
      then (terms,extraTerms,store);
     case(_,_,_,_) equation
@@ -1177,7 +1177,7 @@ protected function buildFuncTypeStores "help function to buildTermCall"
 algorithm
   (outStore,indxs) := matchcontinue(funcType,funcInstId,store)
   local list<Types.FuncArg>  args; Types.Type tp;
-    case((Types.T_FUNCTION(args,_),_),funcInstId,store) equation
+    case((DAE.T_FUNCTION(args,_),_),funcInstId,store) equation
       (store,indxs) = buildFuncTypeStores2(args,funcInstId,store);
     then (store,indxs);
     case(tp,_,_) equation
@@ -1215,12 +1215,12 @@ algorithm
   str := matchcontinue(tp)
   local list<Types.Var> varLst;
     Option<Absyn.Path> optPath;
-    case((Types.T_REAL(Types.VAR(name="unit",binding=Types.EQBOUND(exp=Exp.SCONST(str)))::_),_))
+    case((DAE.T_REAL(DAE.TYPES_VAR(name="unit",binding=DAE.EQBOUND(exp=Exp.SCONST(str)))::_),_))
       then str;
-    case((Types.T_REAL(_::varLst),optPath)) then getUnitStr((Types.T_REAL(varLst),optPath));
-    case((Types.T_REAL({}),_)) then "";
-    case((Types.T_INTEGER(_),_)) then "";
-    case((Types.T_ARRAY(arrayType=tp),_)) then getUnitStr(tp);
+    case((DAE.T_REAL(_::varLst),optPath)) then getUnitStr((DAE.T_REAL(varLst),optPath));
+    case((DAE.T_REAL({}),_)) then "";
+    case((DAE.T_INTEGER(_),_)) then "";
+    case((DAE.T_ARRAY(arrayType=tp),_)) then getUnitStr(tp);
     case(tp) equation print("getUnitStr for type "+&Types.unparseType(tp)+&" failed\n"); then fail();
   end matchcontinue;  
 end getUnitStr;

@@ -2748,16 +2748,16 @@ protected function fromTypeToRenamedPat "function: fromTypeToRenamedPat"
 algorithm
   rp :=
   matchcontinue (t)
-    case ((Types.T_INTEGER(_),_))
+    case ((DAE.T_INTEGER(_),_))
     then DFA.RP_INTEGER("a",1);
 
-    case ((Types.T_STRING(_),_))
+    case ((DAE.T_STRING(_),_))
     then DFA.RP_STRING("a","a");
 
-    case ((Types.T_BOOL(_),_))
+    case ((DAE.T_BOOL(_),_))
     then DFA.RP_BOOL("a",true);
 
-    case ((Types.T_LIST(_),_))
+    case ((DAE.T_LIST(_),_))
     then DFA.RP_CONS("a",DFA.RP_WILDCARD("a"),DFA.RP_WILDCARD("a"));
   end matchcontinue;
 end fromTypeToRenamedPat;

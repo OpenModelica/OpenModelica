@@ -1240,7 +1240,7 @@ algorithm
     	list<Types.Var> lst2;
     equation
       lst2 = fromVarTypesListToVarList(lst,{});
-    	ret = ((Types.T_INTEGER(lst2),p));
+    	ret = ((DAE.T_INTEGER(lst2),p));
     then ret;
 
    case ((Exp.T_REALTYPES(lst),p))
@@ -1249,7 +1249,7 @@ algorithm
     	list<Types.Var> lst2;
     equation
       lst2 = fromVarTypesListToVarList(lst,{});
-    	ret = ((Types.T_REAL(lst2),p));
+    	ret = ((DAE.T_REAL(lst2),p));
     then ret;
 
     case ((Exp.T_STRINGTYPES(lst),p))
@@ -1258,7 +1258,7 @@ algorithm
     	list<Types.Var> lst2;
     equation
       lst2 = fromVarTypesListToVarList(lst,{});
-    	ret = ((Types.T_STRING(lst2),p));
+    	ret = ((DAE.T_STRING(lst2),p));
     then ret;
 
    	case ((Exp.T_BOOLTYPES(lst),p))
@@ -1267,7 +1267,7 @@ algorithm
     	list<Types.Var> lst2;
     equation
       lst2 = fromVarTypesListToVarList(lst,{});
-    	ret = ((Types.T_BOOL(lst2),p));
+    	ret = ((DAE.T_BOOL(lst2),p));
     then ret;
 
    	case ((Exp.T_LISTTYPES(lType),p))
@@ -1276,7 +1276,7 @@ algorithm
     	Types.Type lType2;
     equation
       lType2 = fromTypeTypesToType(lType);
-    	ret = ((Types.T_LIST(lType2),p));
+    	ret = ((DAE.T_LIST(lType2),p));
     then ret;
 
    	case ((Exp.T_METAOPTIONTYPES(lType),p))
@@ -1285,7 +1285,7 @@ algorithm
     	Types.Type lType2;
     equation
       lType2 = fromTypeTypesToType(lType);
-    	ret = ((Types.T_METAOPTION(lType2),p));
+    	ret = ((DAE.T_METAOPTION(lType2),p));
     then ret;
 
    	case ((Exp.T_METATUPLETYPES(lType),p))
@@ -1294,20 +1294,20 @@ algorithm
     	list<Types.Type> lType2;
     equation
       lType2 = Util.listMap(lType,fromTypeTypesToType);
-    	ret = ((Types.T_METATUPLE(lType2),p));
+    	ret = ((DAE.T_METATUPLE(lType2),p));
     then ret;
       
    	case ((Exp.T_UNIONTYPETYPES(records),p))
    	  local
    	    list<Absyn.Path> records;
    	  equation
-   	    ret = ((Types.T_UNIONTYPE(records),p));
+   	    ret = ((DAE.T_UNIONTYPE(records),p));
    	  then ret;
 
 //	  case ((Exp.T_ENUMTYPES(),p))
 //    equation
-//      ret = ((Types.T_ENUMERATION(SOME(0),Absyn.IDENT(""),{},{}),p));
-//      ret = ((Types.T_ENUM(),p));
+//      ret = ((DAE.T_ENUMERATION(SOME(0),Absyn.IDENT(""),{},{}),p));
+//      ret = ((DAE.T_ENUM(),p));
 //    then ret;
 
 	  case ((Exp.T_ENUMERATIONTYPES(idx,pp,lst1,lst2),p))
@@ -1319,7 +1319,7 @@ algorithm
     	list<Types.Var> lst3;
     equation
       lst3 = fromVarTypesListToVarList(lst2,{});
-      ret = ((Types.T_ENUMERATION(idx,pp,lst1,lst3),p));
+      ret = ((DAE.T_ENUMERATION(idx,pp,lst1,lst3),p));
     then ret;
 
 	  case ((Exp.T_ARRAYTYPES(arrDim,arrType),p))
@@ -1331,7 +1331,7 @@ algorithm
 	  equation
 	    arrDim2 =fromArrayDimTypesToArrayDim(arrDim);
 	    arrType2 = fromTypeTypesToType(arrType);
-	    ret = ((Types.T_ARRAY(arrDim2,arrType2),p));
+	    ret = ((DAE.T_ARRAY(arrDim2,arrType2),p));
 	  then ret;
 
 	  case ((Exp.T_COMPLEXTYPES(s,lst,SOME(cType)),p))
@@ -1344,7 +1344,7 @@ algorithm
     equation
       lst2 =fromVarTypesListToVarList(lst,{});
       cType2 = fromTypeTypesToType(cType);
-      ret = ((Types.T_COMPLEX(s,lst2,SOME(cType2),NONE),p));
+      ret = ((DAE.T_COMPLEX(s,lst2,SOME(cType2),NONE),p));
     then ret;
 
  	  case ((Exp.T_COMPLEXTYPES(s,lst,NONE()),p))
@@ -1354,7 +1354,7 @@ algorithm
       list<Types.Var> lst2;
 		equation
 		  lst2 = fromVarTypesListToVarList(lst,{});
-		  ret = ((Types.T_COMPLEX(s,lst2,NONE(),NONE),p));
+		  ret = ((DAE.T_COMPLEX(s,lst2,NONE(),NONE),p));
 		then ret;
 
 	  case ((Exp.T_FUNCTIONTYPES(lst,fType),p))
@@ -1366,26 +1366,26 @@ algorithm
 	  equation
 	    lst2 = fromFuncArgTypesListToFuncArgList(lst,{});
 	    fType2 = fromTypeTypesToType(fType);
-	    ret = ((Types.T_FUNCTION(lst2,fType2),p));
+	    ret = ((DAE.T_FUNCTION(lst2,fType2),p));
 	  then ret;
 
    	case ((Exp.T_POLYMORPHICTYPES(id),p))
    	  local
    	    String id;
    	  equation
-   	    ret = ((Types.T_POLYMORPHIC(id),p));
+   	    ret = ((DAE.T_POLYMORPHIC(id),p));
    	  then ret;
 
 	  case ((Exp.T_NOTYPETYPES(),p))
 	  equation
-	    ret = ((Types.T_NOTYPE(),p));
+	    ret = ((DAE.T_NOTYPE(),p));
 	  then ret;
 
 	  case ((Exp.T_ANYTYPETYPES(s),p))
 	  local
 	    Option<ClassInf.State> s;
 	  equation
-	  	ret = ((Types.T_ANYTYPE(s),p));
+	  	ret = ((DAE.T_ANYTYPE(s),p));
 	  then ret;
 	  
 	  case _
@@ -1440,8 +1440,8 @@ algorithm
       equation
         attType2 =fromAttributesTypesToAttributes(attType);
         tt2 = fromTypeTypesToType(tt);
-        ret = Types.VAR(n,attType2,pro,
-        			tt2,Types.UNBOUND());
+        ret = DAE.TYPES_VAR(n,attType2,pro,
+        			tt2,DAE.UNBOUND());
       then ret;
 
    case (Exp.VARTYPES(n,attType,pro,tt,Exp.EQBOUND(e,NONE(),Exp.C_CONST())))
@@ -1452,8 +1452,8 @@ algorithm
       equation
         attType2 =fromAttributesTypesToAttributes(attType);
         tt2 = fromTypeTypesToType(tt);
-       ret = Types.VAR(n,attType2,pro,
-             tt2,Types.EQBOUND(e,NONE(),Types.C_CONST()));
+       ret = DAE.TYPES_VAR(n,attType2,pro,
+             tt2,DAE.EQBOUND(e,NONE(),DAE.C_CONST()));
       then ret;
 
 
@@ -1466,8 +1466,8 @@ algorithm
       equation
         attType2 =fromAttributesTypesToAttributes(attType);
         tt2 = fromTypeTypesToType(tt);
-        ret = Types.VAR(n,attType2,pro,
-          tt2,Types.EQBOUND(e,SOME(val),Types.C_CONST()));
+        ret = DAE.TYPES_VAR(n,attType2,pro,
+          tt2,DAE.EQBOUND(e,SOME(val),DAE.C_CONST()));
       then ret;
 
   case (Exp.VARTYPES(n,attType,pro,tt,Exp.EQBOUND(e,NONE(),Exp.C_PARAM())))
@@ -1478,8 +1478,8 @@ algorithm
       equation
         attType2 =fromAttributesTypesToAttributes(attType);
         tt2 = fromTypeTypesToType(tt);
-        ret = Types.VAR(n,attType2,pro,
-        tt2,Types.EQBOUND(e,NONE(),Types.C_PARAM()));
+        ret = DAE.TYPES_VAR(n,attType2,pro,
+        tt2,DAE.EQBOUND(e,NONE(),DAE.C_PARAM()));
       then ret;
 
   	case (Exp.VARTYPES(n,attType,pro,tt,Exp.EQBOUND(e,SOME(val),Exp.C_PARAM())))
@@ -1491,8 +1491,8 @@ algorithm
       equation
         attType2 =fromAttributesTypesToAttributes(attType);
         tt2 = fromTypeTypesToType(tt);
-        ret = Types.VAR(n,attType2,pro,
-        tt2,Types.EQBOUND(e,SOME(val),Types.C_PARAM()));
+        ret = DAE.TYPES_VAR(n,attType2,pro,
+        tt2,DAE.EQBOUND(e,SOME(val),DAE.C_PARAM()));
       then ret;
 
     case (Exp.VARTYPES(n,attType,pro,tt,Exp.EQBOUND(e,NONE(),Exp.C_VAR())))
@@ -1503,8 +1503,8 @@ algorithm
       equation
         attType2 = fromAttributesTypesToAttributes(attType);
         tt2 = fromTypeTypesToType(tt);
-      ret = Types.VAR(n,attType2,pro,
-           tt2,Types.EQBOUND(e,NONE(),Types.C_VAR()));
+      ret = DAE.TYPES_VAR(n,attType2,pro,
+           tt2,DAE.EQBOUND(e,NONE(),DAE.C_VAR()));
       then ret;
 
     case (Exp.VARTYPES(n,attType,pro,tt,Exp.EQBOUND(e,SOME(val),Exp.C_VAR())))
@@ -1516,8 +1516,8 @@ algorithm
       equation
         attType2 = fromAttributesTypesToAttributes(attType);
         tt2 = fromTypeTypesToType(tt);
-      ret = Types.VAR(n,attType2,pro,
-           tt2,Types.EQBOUND(e,SOME(val),Types.C_VAR()));
+      ret = DAE.TYPES_VAR(n,attType2,pro,
+           tt2,DAE.EQBOUND(e,SOME(val),DAE.C_VAR()));
       then ret;
 
     case (Exp.VARTYPES(n,attType,pro,tt,Exp.VALBOUND(val)))
@@ -1528,7 +1528,7 @@ algorithm
       equation
         attType2 =fromAttributesTypesToAttributes(attType);
         tt2 = fromTypeTypesToType(tt);
-        ret = Types.VAR(n,attType2,pro,tt2,Types.VALBOUND(val));
+        ret = DAE.TYPES_VAR(n,attType2,pro,tt2,DAE.VALBOUND(val));
       then ret;
   end matchcontinue;
 end fromVarTypesToVar;
@@ -1548,7 +1548,7 @@ algorithm
     	Absyn.Direction d;
     	Types.Attributes ret;
     equation
-      ret = Types.ATTR(f,s,acc,par,d, Absyn.UNSPECIFIED());
+      ret = DAE.ATTR(f,s,acc,par,d, Absyn.UNSPECIFIED());
     then ret;
   end matchcontinue;
 end fromAttributesTypesToAttributes;
@@ -1565,7 +1565,7 @@ algorithm
       Types.ArrayDim ret;
       Option<Integer> arg;
       equation
-      ret = Types.DIM(arg);
+      ret = DAE.DIM(arg);
     then ret;
   end matchcontinue;
 end fromArrayDimTypesToArrayDim;
@@ -1630,7 +1630,7 @@ algorithm
 	  local
 	    Option<Absyn.Path> p;
 	    Exp.TypeTypes ret;
-	  case ((Types.T_INTEGER(lst),p))
+	  case ((DAE.T_INTEGER(lst),p))
 	  local
     	list<Types.Var> lst "varLstInt" ;
     	list<Exp.VarTypes> temp;
@@ -1639,7 +1639,7 @@ algorithm
     	ret = ((Exp.T_INTEGERTYPES(temp),p));
     then ret;
 
-	  case ((Types.T_REAL(lst),p))
+	  case ((DAE.T_REAL(lst),p))
 	  local
     	list<Types.Var> lst "varLstInt" ;
     	list<Exp.VarTypes> temp;
@@ -1648,7 +1648,7 @@ algorithm
     	ret = ((Exp.T_REALTYPES(temp),p));
     then ret;
 
-    case ((Types.T_STRING(lst),p))
+    case ((DAE.T_STRING(lst),p))
 	  local
     	list<Types.Var> lst "varLstInt" ;
     	list<Exp.VarTypes> temp;
@@ -1657,7 +1657,7 @@ algorithm
     	ret = ((Exp.T_STRINGTYPES(temp),p));
     then ret;
 
-    case ((Types.T_BOOL(lst),p))
+    case ((DAE.T_BOOL(lst),p))
 	  local
     	list<Types.Var> lst "varLstInt" ;
     	list<Exp.VarTypes> temp;
@@ -1666,7 +1666,7 @@ algorithm
     	ret = ((Exp.T_BOOLTYPES(temp),p));
     then ret;
 
-    case ((Types.T_LIST(lType),p))
+    case ((DAE.T_LIST(lType),p))
 	  local
     	Exp.TypeTypes lType2;
     	Types.Type lType;
@@ -1675,7 +1675,7 @@ algorithm
     	ret = ((Exp.T_LISTTYPES(lType2),p));
     then ret;
 
-    case ((Types.T_METAOPTION(lType),p))
+    case ((DAE.T_METAOPTION(lType),p))
 	  local
     	Exp.TypeTypes lType2;
     	Types.Type lType;
@@ -1684,7 +1684,7 @@ algorithm
     	ret = ((Exp.T_METAOPTIONTYPES(lType2),p));
     then ret;
 
-    case ((Types.T_METATUPLE(lType),p))
+    case ((DAE.T_METATUPLE(lType),p))
 	  local
     	list<Exp.TypeTypes> lType2;
     	list<Types.Type> lType;
@@ -1693,15 +1693,15 @@ algorithm
     	ret = ((Exp.T_METATUPLETYPES(lType2),p));
     then ret;
 
-	  case ((Types.T_UNIONTYPE(records),p))
+	  case ((DAE.T_UNIONTYPE(records),p))
 	    local
 	      list<Absyn.Path> records;
 	    equation
 	      ret = (Exp.T_UNIONTYPETYPES(records),p);
 	    then ret;
 	    
-	  case ((Types.T_ENUMERATION(idx,tp,lst1,lst2),p))
-//	  case ((Types.T_ENUM(),p))
+	  case ((DAE.T_ENUMERATION(idx,tp,lst1,lst2),p))
+//	  case ((DAE.T_ENUM(),p))
 	  local
 	    Option<Integer> idx;
     	Absyn.Path tp;
@@ -1713,7 +1713,7 @@ algorithm
       ret = ((Exp.T_ENUMERATIONTYPES(idx,tp,lst1,temp),p));
     then ret;
 
-	  case ((Types.T_ARRAY(arrDim,arrType),p))
+	  case ((DAE.T_ARRAY(arrDim,arrType),p))
 	  local
 	    Types.ArrayDim arrDim "arrayDim" ;
       Types.Type arrType "arrayType" ;
@@ -1725,7 +1725,7 @@ algorithm
 	    ret = ((Exp.T_ARRAYTYPES(arrDim2,arrType2),p));
 	  then ret;
 
-	  case ((Types.T_COMPLEX(s,lst,SOME(cType),_),p))
+	  case ((DAE.T_COMPLEX(s,lst,SOME(cType),_),p))
 	  local
 		  ClassInf.State s;
       list<Types.Var> lst;
@@ -1738,7 +1738,7 @@ algorithm
       ret = ((Exp.T_COMPLEXTYPES(s,temp,SOME(cType2)),p));
     then ret;
 
- 	  case ((Types.T_COMPLEX(s,lst,NONE(),_),p))
+ 	  case ((DAE.T_COMPLEX(s,lst,NONE(),_),p))
 	  local
 		  ClassInf.State s;
       list<Types.Var> lst;
@@ -1748,7 +1748,7 @@ algorithm
 		  ret = ((Exp.T_COMPLEXTYPES(s,temp,NONE()),p));
 		then ret;
 
-	  case ((Types.T_FUNCTION(lst,fType),p))
+	  case ((DAE.T_FUNCTION(lst,fType),p))
 	  local
       list<Types.FuncArg> lst;
       Types.Type fType;
@@ -1760,19 +1760,19 @@ algorithm
 	    ret = ((Exp.T_FUNCTIONTYPES(lst2,fType2),p));
 	  then ret;
 	    
-	  case ((Types.T_POLYMORPHIC(id),p))
+	  case ((DAE.T_POLYMORPHIC(id),p))
 	    local
 	      String id;
 	    equation
 	      ret = (Exp.T_POLYMORPHICTYPES(id),p);
 	    then ret;
 
-	  case ((Types.T_NOTYPE(),p))
+	  case ((DAE.T_NOTYPE(),p))
 	  equation
 	    ret = ((Exp.T_NOTYPETYPES(),p));
 	  then ret;
 
-	  case ((Types.T_ANYTYPE(s),p))
+	  case ((DAE.T_ANYTYPE(s),p))
 	  local
 	    Option<ClassInf.State> s;
 	  equation
@@ -1826,7 +1826,7 @@ algorithm
       Boolean pro;
       Types.Type tt;
       Exp.VarTypes ret;
-    case (Types.VAR(n,attType,pro,tt,Types.UNBOUND()))
+    case (DAE.TYPES_VAR(n,attType,pro,tt,DAE.UNBOUND()))
       local
         Exp.AttributesTypes attType2;
         Exp.TypeTypes tt2;
@@ -1836,7 +1836,7 @@ algorithm
         ret = Exp.VARTYPES(n,attType2,pro,
         			tt2,Exp.UNBOUND());
       then ret;
-    case (Types.VAR(n,attType,pro,tt,Types.EQBOUND(e,NONE(),Types.C_CONST())))
+    case (DAE.TYPES_VAR(n,attType,pro,tt,DAE.EQBOUND(e,NONE(),DAE.C_CONST())))
   	  local
         Exp.Exp e;
         Exp.AttributesTypes attType2;
@@ -1848,7 +1848,7 @@ algorithm
              tt2,Exp.EQBOUND(e,NONE(),Exp.C_CONST()));
       then ret;
 
-  	case (Types.VAR(n,attType,pro,tt,Types.EQBOUND(e,SOME(val),Types.C_CONST())))
+  	case (DAE.TYPES_VAR(n,attType,pro,tt,DAE.EQBOUND(e,SOME(val),DAE.C_CONST())))
   	  local
         Values.Value val;
         Exp.Exp e;
@@ -1860,7 +1860,7 @@ algorithm
         ret = Exp.VARTYPES(n,attType2,pro,tt2,Exp.EQBOUND(e,SOME(val),Exp.C_CONST()));
       then ret;
 
-  	case (Types.VAR(n,attType,pro,tt,Types.EQBOUND(e,NONE(),Types.C_PARAM())))
+  	case (DAE.TYPES_VAR(n,attType,pro,tt,DAE.EQBOUND(e,NONE(),DAE.C_PARAM())))
   	  local
         Values.Value val;
         Exp.Exp e;
@@ -1873,7 +1873,7 @@ algorithm
         tt2,Exp.EQBOUND(e,NONE(),Exp.C_PARAM()));
       then ret;
 
-  	case (Types.VAR(n,attType,pro,tt,Types.EQBOUND(e,SOME(val),Types.C_PARAM())))
+  	case (DAE.TYPES_VAR(n,attType,pro,tt,DAE.EQBOUND(e,SOME(val),DAE.C_PARAM())))
   	  local
         Values.Value val;
         Exp.Exp e;
@@ -1886,7 +1886,7 @@ algorithm
         tt2,Exp.EQBOUND(e,SOME(val),Exp.C_PARAM()));
       then ret;
 
-   case (Types.VAR(n,attType,pro,tt,Types.EQBOUND(e,NONE(),Types.C_VAR())))
+   case (DAE.TYPES_VAR(n,attType,pro,tt,DAE.EQBOUND(e,NONE(),DAE.C_VAR())))
       local
         Exp.Exp e;
         Exp.AttributesTypes attType2;
@@ -1898,7 +1898,7 @@ algorithm
            tt2,Exp.EQBOUND(e,NONE(),Exp.C_VAR()));
       then ret;
 
-    case (Types.VAR(n,attType,pro,tt,Types.EQBOUND(e,SOME(val),Types.C_VAR())))
+    case (DAE.TYPES_VAR(n,attType,pro,tt,DAE.EQBOUND(e,SOME(val),DAE.C_VAR())))
       local
         Values.Value val;
         Exp.Exp e;
@@ -1911,7 +1911,7 @@ algorithm
           tt2,Exp.EQBOUND(e,SOME(val),Exp.C_VAR()));
       then ret;
 
-    case (Types.VAR(n,attType,pro,tt,Types.VALBOUND(val)))
+    case (DAE.TYPES_VAR(n,attType,pro,tt,DAE.VALBOUND(val)))
       local
         Values.Value val;
         Exp.AttributesTypes attType2;
@@ -1931,7 +1931,7 @@ public function fromAttributesToAttributesTypes "function: fromAttributesToAttri
 algorithm
   outType :=
   matchcontinue (attType)
-    case (Types.ATTR(f,s,acc,par,d,io))
+    case (DAE.ATTR(f,s,acc,par,d,io))
     local
     	Boolean f,s;
     	SCode.Accessibility acc;
@@ -1952,7 +1952,7 @@ public function fromArrayDimToArrayDimTypes "function: fromArrayDimToArrayDimTyp
 algorithm
   outDim :=
   matchcontinue (arrDim)
-    case (Types.DIM(arg))
+    case (DAE.DIM(arg))
       local
       Exp.ArrayDimTypes ret;
       Option<Integer> arg;

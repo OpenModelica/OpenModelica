@@ -1119,7 +1119,7 @@ algorithm
           cache, 
           env1,
           InstanceHierarchy.emptyInstanceHierarchy,
-          Types.NOMOD(), 
+          DAE.NOMOD(), 
           Prefix.NOPRE(), 
           Connect.emptySet, 
           sc, 
@@ -1188,7 +1188,7 @@ algorithm
         f = Absyn.getFileNameFromInfo(info);
       then
         (cache,newval,SOME(Interactive.SYMBOLTABLE(p, aDep, a, b, c, 
-          Interactive.CFunction(funcpath,(Types.T_NOTYPE(),SOME(funcpath)),funcHandle,buildTime,f)::newCF, lf)));
+          Interactive.CFunction(funcpath,(DAE.T_NOTYPE(),SOME(funcpath)),funcHandle,buildTime,f)::newCF, lf)));
 
     case (cache,env,(e as Exp.CALL(path = funcpath,expLst = expl,builtin = builtin)),vallst,msg,NONE()) // crap! we have no symboltable!
       local
@@ -1601,7 +1601,7 @@ algorithm
     case (cache,env,(exp as Exp.CREF(componentRef = cr,ty = crtp)),dim,(impl as false),st,MSG())
       local Exp.Exp dim;
       equation 
-        (cache,attr,tp,Types.UNBOUND(),_,_) = Lookup.lookupVar(cache,env, cr) "For crefs without value binding" ;
+        (cache,attr,tp,DAE.UNBOUND(),_,_) = Lookup.lookupVar(cache,env, cr) "For crefs without value binding" ;
         expstr = Exp.printExpStr(exp);
         Error.addMessage(Error.UNBOUND_VALUE, {expstr});
       then
@@ -1609,13 +1609,13 @@ algorithm
     case (cache,env,(exp as Exp.CREF(componentRef = cr,ty = crtp)),dim,(impl as false),st,NO_MSG())
       local Exp.Exp dim;
       equation 
-        (cache,attr,tp,Types.UNBOUND(),_,_) = Lookup.lookupVar(cache,env, cr);
+        (cache,attr,tp,DAE.UNBOUND(),_,_) = Lookup.lookupVar(cache,env, cr);
       then
         fail();
     case (cache,env,(exp as Exp.CREF(componentRef = cr,ty = crtp)),dim,(impl as true),st,msg)
       local Exp.Exp dim;
       equation 
-        (cache,attr,tp,Types.UNBOUND(),_,_) = Lookup.lookupVar(cache,env, cr) "For crefs without value binding. If impl=true just silently fail" ;
+        (cache,attr,tp,DAE.UNBOUND(),_,_) = Lookup.lookupVar(cache,env, cr) "For crefs without value binding. If impl=true just silently fail" ;
       then
         fail();
                
@@ -4428,9 +4428,9 @@ algorithm
       String rfn,iter,id,expstr,s1,s2,str;
       Exp.Exp elexp,iterexp,exp;
       Env.Cache cache;
-    case (cache,env,cr,Types.VALBOUND(valBound = v),impl,msg) /* Exp.CREF_IDENT(id,subsc) */ 
+    case (cache,env,cr,DAE.VALBOUND(valBound = v),impl,msg) /* Exp.CREF_IDENT(id,subsc) */ 
       equation 
-        Debug.fprint("tcvt", "+++++++ Ceval.cevalCrefBinding Types.VALBOUND\n");
+        Debug.fprint("tcvt", "+++++++ Ceval.cevalCrefBinding DAE.VALBOUND\n");
         cr_1 = Exp.crefStripLastSubs(cr) "lookup without subscripts, so dimension sizes can be determined." ;
         subsc = Exp.crefLastSubs(cr);
         (cache,_,tp,_,_,_) = Lookup.lookupVar(cache,env, cr_1) "Exp.CREF_IDENT(id,{})" ;
@@ -4438,16 +4438,16 @@ algorithm
         (cache,res) = cevalSubscriptValue(cache,env, subsc, v, sizelst, impl, msg);
       then
         (cache,res);
-    case (cache,env,_,Types.UNBOUND(),(impl as false),MSG())
+    case (cache,env,_,DAE.UNBOUND(),(impl as false),MSG())
       then fail();
-    case (cache,env,_,Types.UNBOUND(),(impl as true),MSG())
+    case (cache,env,_,DAE.UNBOUND(),(impl as true),MSG())
       equation 
         Debug.fprint("ceval", "#- Ceval.cevalCrefBinding: Ignoring unbound when implicit");
       then
         fail();
 
         /* REDUCTION bindings */ 
-    case (cache,env,Exp.CREF_IDENT(ident = id,subscriptLst = subsc),Types.EQBOUND(exp = exp,constant_ = Types.C_CONST()),impl,MSG()) 
+    case (cache,env,Exp.CREF_IDENT(ident = id,subscriptLst = subsc),DAE.EQBOUND(exp = exp,constant_ = DAE.C_CONST()),impl,MSG()) 
       equation 
         Exp.REDUCTION(path = Absyn.IDENT(name = rfn),expr = elexp,ident = iter,range = iterexp) = exp;
         equality(rfn = "array");
@@ -4456,7 +4456,7 @@ algorithm
         fail();
 
         /* REDUCTION bindings Exp.CREF_IDENT(id,subsc) */ 
-    case (cache,env,cr,Types.EQBOUND(exp = exp,constant_ = Types.C_CONST()),impl,msg) 
+    case (cache,env,cr,DAE.EQBOUND(exp = exp,constant_ = DAE.C_CONST()),impl,msg) 
       equation 
         Exp.REDUCTION(path = Absyn.IDENT(name = rfn),expr = elexp,ident = iter,range = iterexp) = exp;
         failure(equality(rfn = "array"));
@@ -4470,7 +4470,7 @@ algorithm
         (cache,res);
         
         /* arbitrary expressions, C_VAR, value exists. Exp.CREF_IDENT(id,subsc) */ 
-    case (cache,env,cr,Types.EQBOUND(exp = exp,evaluatedExp = SOME(e_val),constant_ = Types.C_VAR()),impl,msg) 
+    case (cache,env,cr,DAE.EQBOUND(exp = exp,evaluatedExp = SOME(e_val),constant_ = DAE.C_VAR()),impl,msg) 
       equation 
         cr_1 = Exp.crefStripLastSubs(cr) "lookup without subscripts, so dimension sizes can be determined." ;
         subsc = Exp.crefLastSubs(cr);
@@ -4481,7 +4481,7 @@ algorithm
         (cache,res);
 
         /* arbitrary expressions, C_PARAM, value exists. Exp.CREF_IDENT(id,subsc) */ 
-    case (cache,env,cr,Types.EQBOUND(exp = exp,evaluatedExp = SOME(e_val),constant_ = Types.C_PARAM()),impl,msg) 
+    case (cache,env,cr,DAE.EQBOUND(exp = exp,evaluatedExp = SOME(e_val),constant_ = DAE.C_PARAM()),impl,msg) 
       equation 
         cr_1 = Exp.crefStripLastSubs(cr) "lookup without subscripts, so dimension sizes can be determined." ;
         subsc = Exp.crefLastSubs(cr);
@@ -4492,7 +4492,7 @@ algorithm
         (cache,res);
 
         /* arbitrary expressions. When binding has optional value. Exp.CREF_IDENT(id,subsc) */
-    case (cache,env,cr,Types.EQBOUND(exp = exp,constant_ = Types.C_CONST()),impl,msg)  
+    case (cache,env,cr,DAE.EQBOUND(exp = exp,constant_ = DAE.C_CONST()),impl,msg)  
       equation 
         cr_1 = Exp.crefStripLastSubs(cr) "lookup without subscripts, so dimension sizes can be determined." ;
         subsc = Exp.crefLastSubs(cr);
@@ -4504,7 +4504,7 @@ algorithm
         (cache,res);
 
         /* arbitrary expressions. When binding has optional value. Exp.CREF_IDENT(id,subsc) */ 
-    case (cache,env,cr,Types.EQBOUND(exp = exp,constant_ = Types.C_PARAM()),impl,msg) 
+    case (cache,env,cr,DAE.EQBOUND(exp = exp,constant_ = DAE.C_PARAM()),impl,msg) 
       equation 
         cr_1 = Exp.crefStripLastSubs(cr) "lookup without subscripts, so dimension sizes can be determined." ;
         subsc = Exp.crefLastSubs(cr);
@@ -4514,7 +4514,7 @@ algorithm
         (cache,res)= cevalSubscriptValue(cache,env, subsc, v, sizelst, impl, msg);
       then
         (cache,res);
-    case (cache,env,_,Types.EQBOUND(exp = exp,constant_ = Types.C_VAR()),impl,MSG())
+    case (cache,env,_,DAE.EQBOUND(exp = exp,constant_ = DAE.C_VAR()),impl,MSG())
       equation 
         Debug.fprint("ceval", "#- Ceval.cevalCrefBinding failed (nonconstant EQBOUND(");
         expstr = Exp.printExpStr(exp);
@@ -4522,7 +4522,7 @@ algorithm
         Debug.fprintln("ceval", "))");
       then
         fail();
-    case (cache,_,e1,Types.EQBOUND(exp = exp),_,_)
+    case (cache,_,e1,DAE.EQBOUND(exp = exp),_,_)
       equation 
         /* FAILTRACE REMOVE
         s1 = Exp.printComponentRefStr(e1);
@@ -4714,7 +4714,7 @@ protected function crefEqualValue ""
   input Types.Binding v;
   output Boolean outBoolean;
 algorithm outBoolean := matchcontinue(c,v)
-  case(c,(v as Types.EQBOUND(Exp.CREF(c2,_),NONE,_)))
+  case(c,(v as DAE.EQBOUND(Exp.CREF(c2,_),NONE,_)))
     local Exp.ComponentRef c2;
     equation
       true = Exp.crefEqual(c,c2);

@@ -81,10 +81,11 @@ package Env
   uniform lookup mechanism "
 
 public import Absyn;
+public import ClassInf;
+public import DAE;
+public import Exp;
 public import SCode;
 public import Types;
-public import ClassInf;
-public import Exp;
 
 public 
 type Ident = String " An identifier is just a string " ;
@@ -484,7 +485,7 @@ algorithm
       Ident n;
       Option<tuple<SCode.Element, Types.Mod>> c;
       list<SCode.Element> defineUnits;
-    case ((FRAME(id,ht,httypes,imps,bcframes,crs,encflag,defineUnits) :: fs),(v as Types.VAR(name = n)),c,i,env) /* environment of component */ 
+    case ((FRAME(id,ht,httypes,imps,bcframes,crs,encflag,defineUnits) :: fs),(v as DAE.TYPES_VAR(name = n)),c,i,env) /* environment of component */ 
       equation 
         //failure((_)= avlTreeGet(ht, n)); 
         (ht_1) = avlTreeAdd(ht, n, VAR(v,c,i,env));
@@ -493,7 +494,7 @@ algorithm
 
         // Variable already added, perhaps from baseclass
     case (remember as (FRAME(id,ht,httypes,imps,bcframes,crs,encflag,defineUnits) :: fs),
-          (v as Types.VAR(name = n)),c,i,env) /* environment of component */ 
+          (v as DAE.TYPES_VAR(name = n)),c,i,env) /* environment of component */ 
       equation 
         (_)= avlTreeGet(ht, n); 
       then
@@ -529,18 +530,18 @@ algorithm
       Ident n,id;
       list<SCode.Element> defineUnits;
     case ({},_,i,_) then {};  /* fully instantiated env of component */ 
-    case ((FRAME(sid,ht,httypes,imps,bcframes,crs,encflag,defineUnits) :: fs),(v as Types.VAR(name = n)),i,env)
+    case ((FRAME(sid,ht,httypes,imps,bcframes,crs,encflag,defineUnits) :: fs),(v as DAE.TYPES_VAR(name = n)),i,env)
       equation 
         VAR(_,c,_,_) = avlTreeGet(ht, n);
         (ht_1) = avlTreeAdd(ht, n, VAR(v,c,i,env));
       then
         (FRAME(sid,ht_1,httypes,imps,bcframes,crs,encflag,defineUnits) :: fs);
-    case ((FRAME(sid,ht,httypes,imps,bcframes,crs,encflag,defineUnits) :: fs),(v as Types.VAR(name = n)),i,env) /* Also check frames above, e.g. when variable is in base class */ 
+    case ((FRAME(sid,ht,httypes,imps,bcframes,crs,encflag,defineUnits) :: fs),(v as DAE.TYPES_VAR(name = n)),i,env) /* Also check frames above, e.g. when variable is in base class */ 
       equation 
         frames = updateFrameV(fs, v, i, env);
       then
         (FRAME(sid,ht,httypes,imps,bcframes,crs,encflag,defineUnits) :: frames);
-    case ((FRAME(sid,ht, httypes,imps,bcframes,crs,encflag,defineUnits) :: fs),Types.VAR(name = n),_,_)
+    case ((FRAME(sid,ht, httypes,imps,bcframes,crs,encflag,defineUnits) :: fs),DAE.TYPES_VAR(name = n),_,_)
       equation 
         /*Print.printBuf("- update_frame_v, variable ");
         Print.printBuf(n);
@@ -549,7 +550,7 @@ algorithm
         Print.printBuf("\n");*/
       then
         (FRAME(sid,ht,httypes,imps,bcframes,crs,encflag,defineUnits) :: fs);
-    case (_,(v as Types.VAR(name = id)),_,_)
+    case (_,(v as DAE.TYPES_VAR(name = id)),_,_)
       equation 
         print("- update_frame_v failed\n");
         print("  - variable: ");
@@ -1019,7 +1020,7 @@ algorithm
       Integer len;
       list<tuple<Types.TType, Option<Absyn.Path>>> lst;
       Absyn.Import imp;
-    case ((n,VAR(instantiated = (tv as Types.VAR(attributes = Types.ATTR(parameter_ = var),type_ = tp,binding = bind)),declaration = SOME((elt,_)),instStatus = i,env = (compframe :: _))))
+    case ((n,VAR(instantiated = (tv as DAE.TYPES_VAR(attributes = DAE.ATTR(parameter_ = var),type_ = tp,binding = bind)),declaration = SOME((elt,_)),instStatus = i,env = (compframe :: _))))
       equation 
         s = SCode.variabilityString(var);
         elt_str = SCode.printElementStr(elt);
@@ -1032,7 +1033,7 @@ algorithm
           "}, binding:",bind_str});
       then
         res;
-    case ((n,VAR(instantiated = (tv as Types.VAR(attributes = Types.ATTR(parameter_ = var),type_ = tp)),declaration = SOME((elt,_)),instStatus = i,env = {})))
+    case ((n,VAR(instantiated = (tv as DAE.TYPES_VAR(attributes = DAE.ATTR(parameter_ = var),type_ = tp)),declaration = SOME((elt,_)),instStatus = i,env = {})))
       equation 
         s = SCode.variabilityString(var);
         elt_str = SCode.printElementStr(elt);
@@ -1043,7 +1044,7 @@ algorithm
           "}, compframe: []"});
       then
         res;
-    case ((n,VAR(instantiated = Types.VAR(binding = bnd),declaration = NONE,instStatus = i,env = env)))
+    case ((n,VAR(instantiated = DAE.TYPES_VAR(binding = bnd),declaration = NONE,instStatus = i,env = env)))
       equation 
         res = Util.stringAppendList({"v:",n,"\n"});
       then
@@ -1443,8 +1444,8 @@ algorithm
       Option<AvlTree> l,r;
       Absyn.InnerOuter io;
     case (NONE) then {}; 
-    case (SOME(AVLTREENODE(SOME(AVLTREEVALUE(_,VAR(Types.VAR(id,Types.ATTR(innerOuter=io),_,
-          (Types.T_COMPLEX(ClassInf.CONNECTOR(_,_),vars,_,_),_),_),_,_,_))),_,l,r)))
+    case (SOME(AVLTREENODE(SOME(AVLTREEVALUE(_,VAR(DAE.TYPES_VAR(id,DAE.ATTR(innerOuter=io),_,
+          (DAE.T_COMPLEX(ClassInf.CONNECTOR(_,_),vars,_,_),_),_),_,_,_))),_,l,r)))
       equation 
         lst1 = localOutsideConnectorFlowvars2(l);
         lst2 = localOutsideConnectorFlowvars2(r);
@@ -1505,8 +1506,8 @@ algorithm
     
     
          /* Case where we have an array, assumed indexed which contains complex types. */
-    case (SOME(AVLTREENODE(SOME(AVLTREEVALUE(_,VAR(Types.VAR(id,(tatr as Types.ATTR(innerOuter=io)),b3,
-          (tmpty as (Types.T_ARRAY(ad,at),_)),bind),_,_,_))),_,l,r)))
+    case (SOME(AVLTREENODE(SOME(AVLTREEVALUE(_,VAR(DAE.TYPES_VAR(id,(tatr as DAE.ATTR(innerOuter=io)),b3,
+          (tmpty as (DAE.T_ARRAY(ad,at),_)),bind),_,_,_))),_,l,r)))
       local
         Types.ArrayDim ad;
         Types.Type at,tmpty,flatArrayType;
@@ -1520,7 +1521,7 @@ algorithm
         //list<Exp.ComponentRef> arrayComplex;
       equation 
         (_,false) = Inst.innerOuterBooleans(io); 
-        ((flatArrayType as (Types.T_COMPLEX(_,tvars,_,_),_)),adims) = Types.flattenArrayType(tmpty);
+        ((flatArrayType as (DAE.T_COMPLEX(_,tvars,_,_),_)),adims) = Types.flattenArrayType(tmpty);
         false = Types.isComplexConnector(flatArrayType);
         
         indexSubscriptLists = createSubs(listReverse(adims));
@@ -1534,8 +1535,8 @@ algorithm
         res;   
         
     /* If CONNECTOR then  outside and not inside, skip.. */
-    case (SOME(AVLTREENODE(SOME(AVLTREEVALUE(_,VAR(Types.VAR(id,_,_,
-          (Types.T_COMPLEX(ClassInf.CONNECTOR(_,_),_,_,_),_),_),_,_,_))),_,l,r)))  
+    case (SOME(AVLTREENODE(SOME(AVLTREEVALUE(_,VAR(DAE.TYPES_VAR(id,_,_,
+          (DAE.T_COMPLEX(ClassInf.CONNECTOR(_,_),_,_,_),_),_),_,_,_))),_,l,r)))  
       equation 
         lst1 = localInsideConnectorFlowvars2(l);
         lst2 = localInsideConnectorFlowvars2(r);
@@ -1544,8 +1545,8 @@ algorithm
         res;
         
      /* If OUTER, skip.. */
-    case (SOME(AVLTREENODE(SOME(AVLTREEVALUE(_,VAR(Types.VAR(id,Types.ATTR(innerOuter=io),_,
-          (Types.T_COMPLEX(_,vars,_,_),_),_),_,_,_))),_,l,r)))  
+    case (SOME(AVLTREENODE(SOME(AVLTREEVALUE(_,VAR(DAE.TYPES_VAR(id,DAE.ATTR(innerOuter=io),_,
+          (DAE.T_COMPLEX(_,vars,_,_),_),_),_,_,_))),_,l,r)))  
       equation
         (_,true) = Inst.innerOuterBooleans(io); 
         lst1 = localInsideConnectorFlowvars2(l);
@@ -1554,8 +1555,8 @@ algorithm
       then
         res;   
     /* ... else retrieve connectors as subcomponents */
-    case (SOME(AVLTREENODE(SOME(AVLTREEVALUE(_,VAR(Types.VAR(id,_,_,
-          (Types.T_COMPLEX(_,vars,_,_),_),_),_,_,_))),_,l,r)))  
+    case (SOME(AVLTREENODE(SOME(AVLTREEVALUE(_,VAR(DAE.TYPES_VAR(id,_,_,
+          (DAE.T_COMPLEX(_,vars,_,_),_),_),_,_,_))),_,l,r)))  
       equation 
         lst1 = localInsideConnectorFlowvars3(vars, id);
         lst2 = localInsideConnectorFlowvars2(l);
@@ -1590,8 +1591,8 @@ algorithm
       Absyn.InnerOuter io;
       Boolean isExpandable;
     case ({},_) then {}; 
-    case ((Types.VAR(name = id,attributes=Types.ATTR(innerOuter=io),
-           type_ = (Types.T_COMPLEX(complexClassType = ClassInf.CONNECTOR(string = name, isExpandable = isExpandable),
+    case ((DAE.TYPES_VAR(name = id,attributes=DAE.ATTR(innerOuter=io),
+           type_ = (DAE.T_COMPLEX(complexClassType = ClassInf.CONNECTOR(string = name, isExpandable = isExpandable),
                     complexVarLst = vars),_)) :: xs),oid)
       equation 
         lst1 = localInsideConnectorFlowvars3(xs, oid);
@@ -1603,7 +1604,7 @@ algorithm
         res = listAppend(lst1, lst2);
       then
         res;
-    case ((Types.VAR(name = id,attributes=Types.ATTR(innerOuter=io),type_ = (tmpty as (Types.T_ARRAY(ad,_),_))) :: xs),oid)
+    case ((DAE.TYPES_VAR(name = id,attributes=DAE.ATTR(innerOuter=io),type_ = (tmpty as (DAE.T_ARRAY(ad,_),_))) :: xs),oid)
       local
         Types.ArrayDim ad;
         list<Integer> adims;
@@ -1614,7 +1615,7 @@ algorithm
         Boolean isExpandable;
         
       equation 
-        ((flatArrayType as (Types.T_COMPLEX(ClassInf.CONNECTOR(string = name, isExpandable=isExpandable),tvars,_,_),_)),adims) = Types.flattenArrayType(tmpty);
+        ((flatArrayType as (DAE.T_COMPLEX(ClassInf.CONNECTOR(string = name, isExpandable=isExpandable),tvars,_,_),_)),adims) = Types.flattenArrayType(tmpty);
         (_,false) = Inst.innerOuterBooleans(io); 
         true = Types.isComplexConnector(flatArrayType);
         indexSubscriptLists = createSubs(adims);
@@ -1680,8 +1681,8 @@ algorithm
       Boolean isExpandable;
     case ({},_,_) then {}; 
     case (_,_,{}) then {};
-    case (((tv as Types.VAR(name = id,attributes=Types.ATTR(innerOuter=io),type_ = 
-           (Types.T_COMPLEX(complexClassType = ClassInf.CONNECTOR(string = name, isExpandable = isExpandable),
+    case (((tv as DAE.TYPES_VAR(name = id,attributes=DAE.ATTR(innerOuter=io),type_ = 
+           (DAE.T_COMPLEX(complexClassType = ClassInf.CONNECTOR(string = name, isExpandable = isExpandable),
                             complexVarLst = vars),_))) :: xs),oid,s::ssubs)
       equation 
         lst3 = localInsideConnectorFlowvars3_2({tv},oid,ssubs);
@@ -1819,7 +1820,7 @@ output String str;
 algorithm
   str := matchcontinue(v)
   local String name; Types.Type tp; Absyn.Import imp;
-    case(VAR(instantiated=Types.VAR(name=name,type_=tp))) equation
+    case(VAR(instantiated=DAE.TYPES_VAR(name=name,type_=tp))) equation
       str = "v: " +& name +& " " +& Types.unparseType(tp);
     then str;
     case(CLASS(class_=SCode.CLASS(name=name))) equation

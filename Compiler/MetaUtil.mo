@@ -36,16 +36,17 @@ package MetaUtil
   RCS: $Id$
 
   "
-public import Types;
-public import Exp;
-public import Util;
-public import Lookup;
+public import Absyn;
+public import ClassInf;
+public import DAE;
 public import Debug;
 public import Env;
-public import Absyn;
-public import SCode;
+public import Exp;
+public import Lookup;
 public import RTOpts;
-public import ClassInf;
+public import SCode;
+public import Types;
+public import Util;
 
 public function isList "function: isList
 	author: KS
@@ -56,7 +57,7 @@ public function isList "function: isList
 algorithm
   bool :=
   matchcontinue (prop)
-    case (Types.PROP((Types.T_LIST(_),_),_)) then true;
+    case (DAE.PROP((DAE.T_LIST(_),_),_)) then true;
     case (_) then false;
   end matchcontinue;
 end isList;
@@ -272,7 +273,7 @@ algorithm
   outList :=
   matchcontinue(inElem)
     case ({}) then {};
-    case ((Types.T_FUNCTION(typeList,_),_) :: {})
+    case ((DAE.T_FUNCTION(typeList,_),_) :: {})
       local
         list<Types.FuncArg> typeList;
       equation
@@ -325,7 +326,7 @@ algorithm
       equation
         Debug.fprint("failtrace", "- wrong number of arguments in function call?.");
       then fail();
-    case ((_,(Types.T_LIST(_),_)) :: restTypes,Absyn.ARRAY(expList) :: restArgs,localAccList)
+    case ((_,(DAE.T_LIST(_),_)) :: restTypes,Absyn.ARRAY(expList) :: restArgs,localAccList)
       local
         list<Absyn.Exp> expList,restArgs;
         list<Types.FuncArg> restTypes;
@@ -394,7 +395,7 @@ algorithm
         list<Types.FuncArg> argTypes;
         list<Absyn.NamedArg> restArgs;
       equation
-        ((Types.T_LIST(_),_)) = findArgType(id,argTypes);
+        ((DAE.T_LIST(_),_)) = findArgType(id,argTypes);
         expList = transformArrayNodesToListNodes(expList,{});
         localAccList = listAppend(localAccList,{Absyn.NAMEDARG(id,Absyn.LIST(expList))});
         localAccList = fixListConstructorsInArgs3Helper(argTypes,restArgs,localAccList);
@@ -424,7 +425,7 @@ algorithm
   matchcontinue (id,argTypes)
     local
       Absyn.Ident localId;
-    case (localId,{}) then ((Types.T_INTEGER({}),NONE())); // Return DUMMIE (this case should not happend)
+    case (localId,{}) then ((DAE.T_INTEGER({}),NONE())); // Return DUMMIE (this case should not happend)
     case (localId,(localId2,t) :: _)
       local
         Types.Type t;
@@ -493,7 +494,7 @@ algorithm
         Integer n;
         Types.Type t;
       equation
-        t = (Types.T_LIST(localT),NONE());
+        t = (DAE.T_LIST(localT),NONE());
         t = createListType(t,n-1);
       then t;
   end matchcontinue;
@@ -507,7 +508,7 @@ public function getTypeFromProp "function: getTypeFromProp"
 algorithm
   outType :=
   matchcontinue (inProp)
-    case (Types.PROP(t,_))
+    case (DAE.PROP(t,_))
       local Types.Type t; equation then t;
   end matchcontinue;
 end getTypeFromProp;
@@ -525,36 +526,36 @@ algorithm
       Types.Type tLocal;
       list<Types.Properties> restList;
     case (_,{}) then true;
-    case (tLocal as (Types.T_INTEGER(_),_),Types.PROP((Types.T_INTEGER(_),_),_) :: restList)
+    case (tLocal as (DAE.T_INTEGER(_),_),DAE.PROP((DAE.T_INTEGER(_),_),_) :: restList)
       equation
         b = typeMatching(tLocal,restList);
       then b;
-    case (tLocal as (Types.T_REAL(_),_),Types.PROP((Types.T_REAL(_),_),_) :: restList)
+    case (tLocal as (DAE.T_REAL(_),_),DAE.PROP((DAE.T_REAL(_),_),_) :: restList)
       equation
         b = typeMatching(tLocal,restList);
       then b;
-    case (tLocal as (Types.T_STRING(_),_),Types.PROP((Types.T_STRING(_),_),_) :: restList)
+    case (tLocal as (DAE.T_STRING(_),_),DAE.PROP((DAE.T_STRING(_),_),_) :: restList)
      equation
         b = typeMatching(tLocal,restList);
       then b;
-    case (tLocal as (Types.T_BOOL(_),_),Types.PROP((Types.T_BOOL(_),_),_) :: restList)
+    case (tLocal as (DAE.T_BOOL(_),_),DAE.PROP((DAE.T_BOOL(_),_),_) :: restList)
      equation
         b = typeMatching(tLocal,restList);
       then b;
-    case (tLocal as (Types.T_NOTYPE(),_),Types.PROP((Types.T_NOTYPE(),_),_) :: restList)
+    case (tLocal as (DAE.T_NOTYPE(),_),DAE.PROP((DAE.T_NOTYPE(),_),_) :: restList)
      equation
         b = typeMatching(tLocal,restList);
       then b;
-    case (tLocal as (Types.T_COMPLEX(ClassInf.RECORD(s1),_,_),_),
-      Types.PROP((Types.T_COMPLEX(ClassInf.RECORD(s2),_,_),_),_) :: restList)
+    case (tLocal as (DAE.T_COMPLEX(ClassInf.RECORD(s1),_,_),_),
+      DAE.PROP((DAE.T_COMPLEX(ClassInf.RECORD(s2),_,_),_),_) :: restList)
       local String s1,s2;
       equation
         true = (s1 ==& s2);
         b = typeMatching(tLocal,restList);
       then b;
 
-    case (tLocal as (Types.T_LIST(t1),_),
-      Types.PROP((Types.T_LIST(t2),_),_) :: restList)
+    case (tLocal as (DAE.T_LIST(t1),_),
+      DAE.PROP((DAE.T_LIST(t2),_),_) :: restList)
       local String s1,s2;
       equation
         true = (s1 ==& s2);
@@ -594,7 +595,7 @@ algorithm
         Types.TType t;
         Absyn.TypeSpec t2;
       equation
-        (localCache,Types.VAR(_,_,_,(t,_),_),_,_) = Lookup.lookupIdent(localCache,localEnv,c);
+        (localCache,DAE.TYPES_VAR(_,_,_,(t,_),_),_,_) = Lookup.lookupIdent(localCache,localEnv,c);
         t2 = typeConvert(t);
         varName = stringAppend("RES__",intString(n));
 
@@ -638,7 +639,7 @@ algorithm
         true = RTOpts.acceptMetaModelicaGrammar();
         slst = getListOfStrings(els);
         pathLst = Util.listMap1r(slst, Absyn.pathReplaceIdent, p);
-        t = (Types.T_UNIONTYPE(pathLst),SOME(p));
+        t = (DAE.T_UNIONTYPE(pathLst),SOME(p));
       then t;
     case (_,t) then t;
   end matchcontinue;
@@ -936,7 +937,7 @@ algorithm
    case(SCode.COMPONENT(component = name,typeSpec = Absyn.TPATH(path = path))::rest,cache,env)
      equation
        (cache,cl as SCode.CLASS(restriction = SCode.R_RECORD()),_) = Lookup.lookupClass(cache,env,path,true);
-       (cache,(Types.T_FUNCTION(_,t),_),env_1) = Lookup.lookupType(cache, env, path, false);
+       (cache,(DAE.T_FUNCTION(_,t),_),env_1) = Lookup.lookupType(cache, env, path, false);
        fargs = createFunctionArgsList2(rest,cache,env);
      then (name,t)::fargs;
    case(SCode.COMPONENT(component = name,typeSpec = Absyn.TPATH(path = path))::rest,cache,env)
@@ -972,19 +973,19 @@ algorithm
       Types.Type t;
     case(Absyn.IDENT("Integer")) 
       equation
-        t = (Types.T_INTEGER({}),NONE());
+        t = (DAE.T_INTEGER({}),NONE());
     then t;
     case(Absyn.IDENT("Real"))
       equation
-        t = (Types.T_REAL({}),NONE());
+        t = (DAE.T_REAL({}),NONE());
         then t;
     case(Absyn.IDENT("String"))
       equation
-        t = (Types.T_STRING({}),NONE());
+        t = (DAE.T_STRING({}),NONE());
         then t;
     case(Absyn.IDENT("Boolean"))
       equation
-        t = (Types.T_BOOL({}),NONE());
+        t = (DAE.T_BOOL({}),NONE());
         then t;
   end matchcontinue;
 end reparseType;
@@ -1343,11 +1344,11 @@ algorithm
       Option<Absyn.Path> path;
       list<Types.Type> tys;
       Types.Type ty;
-    case Types.PROP_TUPLE((Types.T_TUPLE(tys),path),_)
+    case DAE.PROP_TUPLE((DAE.T_TUPLE(tys),path),_)
       equation
-        ty = (Types.T_METATUPLE(tys),path);
+        ty = (DAE.T_METATUPLE(tys),path);
       then ty;
-    case Types.PROP(ty,_) then ty;
+    case DAE.PROP(ty,_) then ty;
   end matchcontinue;
 end fixMetaTuple;
 
@@ -1363,12 +1364,12 @@ algorithm
       list<Types.Type> types;
       list<Types.FuncArg> fargs;
       list<Types.Var> fields;
-    case ((Types.T_METARECORD(fields = fields),_))
+    case ((DAE.T_METARECORD(fields = fields),_))
       equation
         names = Util.listMap(fields, Types.getVarName);
         types = Util.listMap(fields, Types.getVarType);
       then (names,types);
-    case ((Types.T_FUNCTION(fargs, (Types.T_COMPLEX(complexClassType = ClassInf.RECORD(_)),_)),_))
+    case ((DAE.T_FUNCTION(fargs, (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_)),_)),_))
       equation
         names = Util.listMap(fargs, Util.tuple21);
         types = Util.listMap(fargs, Util.tuple22);
@@ -1382,14 +1383,14 @@ public function typeConvert "function: typeConvert"
 algorithm
   outType :=
   matchcontinue (t)
-    case ((Types.T_INTEGER(_),_)) then Absyn.TPATH(Absyn.IDENT("Integer"),NONE());
-    case ((Types.T_BOOL(_),_)) then Absyn.TPATH(Absyn.IDENT("Boolean"),NONE());
-    case ((Types.T_STRING(_),_)) then Absyn.TPATH(Absyn.IDENT("String"),NONE());
-    case ((Types.T_REAL(_),_)) then Absyn.TPATH(Absyn.IDENT("Real"),NONE());
-    /*case (Types.T_COMPLEX(ClassInf.RECORD(s), _, _)) local String s;
+    case ((DAE.T_INTEGER(_),_)) then Absyn.TPATH(Absyn.IDENT("Integer"),NONE());
+    case ((DAE.T_BOOL(_),_)) then Absyn.TPATH(Absyn.IDENT("Boolean"),NONE());
+    case ((DAE.T_STRING(_),_)) then Absyn.TPATH(Absyn.IDENT("String"),NONE());
+    case ((DAE.T_REAL(_),_)) then Absyn.TPATH(Absyn.IDENT("Real"),NONE());
+    /*case (DAE.T_COMPLEX(ClassInf.RECORD(s), _, _)) local String s;
       equation
       then Absyn.TPATH(Absyn.IDENT(s),NONE()); */
-    case ((Types.T_LIST(t),_))
+    case ((DAE.T_LIST(t),_))
       local
         Absyn.TypeSpec tSpec;
         list<Absyn.TypeSpec> tSpecList;
@@ -1397,7 +1398,7 @@ algorithm
         tSpec = typeConvert(t);
         tSpecList = {tSpec};
       then Absyn.TCOMPLEX(Absyn.IDENT("list"),tSpecList,NONE());
-    case ((Types.T_METAOPTION(t),_))
+    case ((DAE.T_METAOPTION(t),_))
       local
         Absyn.TypeSpec tSpec;
         Types.Type t;
@@ -1406,7 +1407,7 @@ algorithm
         tSpec = typeConvert(t);
         tSpecList = {tSpec};
       then Absyn.TCOMPLEX(Absyn.IDENT("Option"),tSpecList,NONE());
-    case ((Types.T_METATUPLE(tList),_))
+    case ((DAE.T_METATUPLE(tList),_))
       local
         Absyn.TypeSpec tSpec;
         list<Types.Type> tList;
@@ -1415,7 +1416,7 @@ algorithm
         tSpecList = Util.listMap(tList,typeConvert);
       then Absyn.TCOMPLEX(Absyn.IDENT("tuple"),tSpecList,NONE());
     
-    case ((Types.T_POLYMORPHIC(id),_))
+    case ((DAE.T_POLYMORPHIC(id),_))
       local
         String id;
       then Absyn.TPATH(Absyn.IDENT(id),NONE);

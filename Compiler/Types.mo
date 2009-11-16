@@ -47,270 +47,27 @@ package Types
 
 public import ClassInf;
 public import Absyn;
+public import DAE;
 public import Exp;
 public import Values;
 public import SCode;
 
-public 
-type Ident = String "- Identifiers" ;
-
-public 
-uniontype Var "- Variables"
-  record VAR
-    Ident name "name" ;
-    Attributes attributes "attributes" ;
-    Boolean protected_ "protected" ;
-    Type type_ "type" ;
-    Binding binding "binding ; equation modification" ;
-  end VAR;
-
-end Var;
-
-public 
-uniontype Attributes "- Attributes"
-  record ATTR
-    Boolean flowPrefix "flow" ;
-    Boolean streamPrefix "stream" ;
-    SCode.Accessibility accessibility "accessibility" ;
-    SCode.Variability parameter_ "parameter" ;
-    Absyn.Direction direction "direction" ;
-    Absyn.InnerOuter innerOuter "inner, outer,  inner outer or unspecified";
-  end ATTR;
-
-end Attributes;
-
-public 
-uniontype Binding "- Binding"
-  record UNBOUND end UNBOUND;
-
-  record EQBOUND
-    Exp.Exp exp "exp" ;
-    Option<Values.Value> evaluatedExp "evaluatedExp; evaluated exp" ;
-    Const constant_ "constant" ;
-  end EQBOUND;
-
-  record VALBOUND
-    Values.Value valBound "valBound" ;
-  end VALBOUND;
-
-end Binding;
-
-public 
-type Type = tuple<TType, Option<Absyn.Path>> "
-     A Type is a tuple of a TType (containing the actual type) and a optional classname
-     for the class where the type originates from.
-
-- Type" ;
-
-public
-type EqualityConstraint = Option<tuple<Absyn.Path, Integer>>;
- 
-public 
-uniontype TType "-TType contains the actual type"
-  record T_INTEGER
-    list<Var> varLstInt "varLstInt" ;
-  end T_INTEGER;
-
-  record T_REAL
-    list<Var> varLstReal "varLstReal" ;
-  end T_REAL;
-
-  record T_STRING
-    list<Var> varLstString "varLstString" ;
-  end T_STRING;
-
-  record T_BOOL
-    list<Var> varLstBool "varLstBool" ;
-  end T_BOOL;
-
-//  record T_ENUM end T_ENUM;
-
-  record T_ENUMERATION
-    Option<Integer> index "the enumeration value index, SOME for element, NONE for type" ;
-    Absyn.Path path "enumeration path" ;
-    list<String> names "names" ;
-    list<Var> varLst "varLst, empty for elements" ;
-  end T_ENUMERATION;
-
-  record T_ARRAY
-    ArrayDim arrayDim "arrayDim" ;
-    Type arrayType "arrayType" ;
-  end T_ARRAY;
-
-  record T_NORETCALL "For functions not returning any values." end T_NORETCALL;
-
-  record T_NOTYPE "Used when type is not yet determined" end T_NOTYPE;
-
-  record T_ANYTYPE
-    Option<ClassInf.State> anyClassType "anyClassType - used for generic types. When class state present the type is assumed to be a complex type which has that restriction." ;
-  end T_ANYTYPE;
-  
-  // MetaModelica extensions
-  record T_LIST "MetaModelica list type"
-    Type listType "listType";
-  end T_LIST;
-
-  record T_METATUPLE "MetaModelica tuple type"
-    list<Type> types;
-  end T_METATUPLE;
-
-  record T_METAOPTION "MetaModelica option type"
-    Type optionType;
-  end T_METAOPTION;
-
-  record T_UNIONTYPE "MetaModelica Uniontype, added by simbj"
-    list <Absyn.Path> records;
-  end T_UNIONTYPE;
-  
-  record T_METARECORD "MetaModelica Record, used by Uniontypes. added by simbj"
-    Integer index; //The index in the uniontype
-    list<Var> fields;
-  end T_METARECORD;
-  
-  record T_COMPLEX
-    ClassInf.State complexClassType "complexClassType ; The type of. a class" ;
-    list<Var> complexVarLst "complexVarLst ; The variables of a complex type" ;
-    Option<Type> complexTypeOption "complexTypeOption ; A complex type can be a subtype of another (primitive) type (through extends). In that case the varlist is empty" ;
-    EqualityConstraint equalityConstraint;
-  end T_COMPLEX;
-
-  record T_FUNCTION
-    list<FuncArg> funcArg "funcArg" ;
-    Type funcResultType "funcResultType ; Only single-result" ;
-  end T_FUNCTION;
-
-  record T_TUPLE
-    list<Type> tupleType "tupleType ; For functions returning multiple values."  ;
-  end T_TUPLE;
-
-  record T_BOXED "Used for MetaModelica generic types"
-    Type ty;
-  end T_BOXED;
-  
-  record T_POLYMORPHIC
-    String name;
-  end T_POLYMORPHIC;
-  
-end TType;
-
-public 
-uniontype ArrayDim "- Array Dimensions"
-  record DIM
-    Option<Integer> integerOption;
-  end DIM;
-
-end ArrayDim;
-
-public 
-type FuncArg = tuple<Ident, Type> "- Function Argument" ;
-
-public 
-uniontype Const "The degree of constantness of an expression is determined by the Const 
-    datatype. Variables declared as \'constant\' will get C_CONST constantness.
-    Variables declared as \'parameter\' will get C_PARAM constantness and
-    all other variables are not constant and will get C_VAR constantness.
-
-  - Variable properties"
-  record C_CONST end C_CONST;
-
-  record C_PARAM "\'constant\'s, should always be evaluated" end C_PARAM;
-
-  record C_VAR "\'parameter\'s, evaluated if structural not constants, never evaluated" end C_VAR;
-
-end Const;
-
-public 
-uniontype TupleConst "A tuple is added to the Types. This is used by functions whom returns multiple arguments.
-  Used by split_props
-  - Tuple constants"
-  record CONST
-    Const const;
-  end CONST;
-
-  record TUPLE_CONST
-    list<TupleConst> tupleConstLst "tupleConstLst" ;
-  end TUPLE_CONST;
-
-end TupleConst;
-
-public 
-uniontype Properties "P.R 1.1 for multiple return arguments from functions, 
-    one constant flag for each return argument. 
-
-  The datatype `Properties\' contain information about an
-    expression.  The properties are created by analyzing the
-    expressions.
-  - Expression properties"
-  record PROP 
-    Type type_ "type" ;
-    Const constFlag "constFlag; if the type is a tuple, each element 
-				          have a const flag." ;
-  end PROP;
-
-  record PROP_TUPLE
-    Type type_;
-    TupleConst tupleConst "tupleConst; The elements might be 
-							    tuple themselfs." ;
-  end PROP_TUPLE;
-
-end Properties;
-
-public 
-uniontype EqMod "To generate the correct set of equations, the translator has to
-  differentiate between the primitive types `Real\', `Integer\',
-  `String\', `Boolean\' and types directly derived from then from
-  other, complex types.  For arrays and matrices the type
-  `T_ARRAY\' is used, with the first argument being the number of
-  dimensions, and the second being the type of the objects in the
-  array.  The `Type\' type is used to store
-  information about whether a class is derived from a primitive
-  type, and whether a variable is of one of these types.
-  - Modification datatype, was originally in Mod"
-  record TYPED
-    Exp.Exp modifierAsExp "modifierAsExp ; modifier as expression" ;
-    Option<Values.Value> modifierAsValue "modifierAsValue ; modifier as Value option" ;
-    Properties properties "properties" ;
-  end TYPED;
-
-  record UNTYPED
-    Absyn.Exp exp;
-  end UNTYPED;
-
-end EqMod;
-
-public 
-uniontype SubMod "-Sub Modification"
-  record NAMEMOD
-    Ident ident;
-    Mod mod;
-  end NAMEMOD;
-
-  record IDXMOD
-    list<Integer> integerLst;
-    Mod mod;
-  end IDXMOD;
-
-end SubMod;
-
-public 
-uniontype Mod "Modification"
-  record MOD
-    Boolean finalPrefix "final" ;
-    Absyn.Each each_;
-    list<SubMod> subModLst;
-    Option<EqMod> eqModOption;
-  end MOD;
-
-  record REDECL
-    Boolean finalPrefix "final" ;
-    list<tuple<SCode.Element, Mod>> tplSCodeElementModLst;
-  end REDECL;
-
-  record NOMOD end NOMOD;
-
-end Mod;
-
-type PolymorphicBindings = list<tuple<String,Type>>;
+public type ArrayDim = DAE.ArrayDim;
+public type Attributes = DAE.Attributes;
+public type Binding = DAE.Binding;
+public type Const = DAE.Const;
+public type EqualityConstraint = DAE.EqualityConstraint;
+public type EqMod = DAE.EqMod;
+public type FuncArg = DAE.FuncArg;
+public type Ident = String;
+public type Mod = DAE.Mod;
+public type PolymorphicBindings = list<tuple<String,Type>>;
+public type Properties = DAE.Properties;
+public type SubMod = DAE.SubMod;
+public type TType = DAE.TType;
+public type TupleConst = DAE.TupleConst;
+public type Type = DAE.Type;
+public type Var = DAE.Var;
 
 protected import Dump;
 protected import Debug;
@@ -330,16 +87,16 @@ public function discreteType "function: discreteType
 algorithm 
   _:=
   matchcontinue (inType)
-    case ((T_INTEGER(varLstInt = _),_)) then (); 
-    case ((T_STRING(varLstString = _),_)) then (); 
-    case ((T_BOOL(varLstBool = _),_)) then (); 
-    case ((T_ENUMERATION(names = _),_)) then (); 
+    case ((DAE.T_INTEGER(varLstInt = _),_)) then (); 
+    case ((DAE.T_STRING(varLstString = _),_)) then (); 
+    case ((DAE.T_BOOL(varLstBool = _),_)) then (); 
+    case ((DAE.T_ENUMERATION(names = _),_)) then (); 
   end matchcontinue;
 end discreteType;
 
 public function propsAnd "
 Author BZ, 2008-09
-Function for merging a list of properties, currently only working on PROP() and not TUPLE_PROP().
+Function for merging a list of properties, currently only working on DAE.PROP() and not TUPLE_DAE.PROP().
 "
 input list<Properties> inProps;
 output Properties outProp;
@@ -351,13 +108,13 @@ algorithm outProp := matchcontinue(inProps)
   case(prop::{})
     then 
       prop;
-  case((prop as PROP(ty,c))::inProps)
+  case((prop as DAE.PROP(ty,c))::inProps)
     equation      
-      (prop2 as PROP(ty2,c2)) = propsAnd(inProps);
+      (prop2 as DAE.PROP(ty2,c2)) = propsAnd(inProps);
       c = constAnd(c,c2);
       true = equivtypes(ty,ty2);
     then 
-      PROP(ty,c); 
+      DAE.PROP(ty,c); 
 end matchcontinue;
 end propsAnd;
 
@@ -370,7 +127,7 @@ public function makePropsNotConst
 algorithm outProperties := matchcontinue (inProperties)
   local
     Type t;
-  case(PROP(type_=t,constFlag=_)) then PROP(t,C_VAR());
+  case(DAE.PROP(type_=t,constFlag=_)) then DAE.PROP(t,DAE.C_VAR());
   end matchcontinue;
 end makePropsNotConst;
     
@@ -389,12 +146,12 @@ algorithm
       list<Properties> pcdr;
       TupleConst tc;
     case({}) then {};
-    case(PROP(type_=_,constFlag=c) :: pcdr)
+    case(DAE.PROP(type_=_,constFlag=c) :: pcdr)
       equation
         ccdr = getConstList(pcdr);
       then
         c :: ccdr;
-    case(PROP_TUPLE(type_=_,tupleConst=tc) :: pcdr)
+    case(DAE.PROP_TUPLE(type_=_,tupleConst=tc) :: pcdr)
       equation
         c = elabTypePropToConst2(tc);
         ccdr = getConstList(pcdr);
@@ -417,14 +174,14 @@ algorithm
         list<Properties> pps;
         Const c1,c2;
         TupleConst tc1;
-    case({}) then C_CONST();
-    case ((p1 as PROP(_,c1))::pps)
+    case({}) then DAE.C_CONST();
+    case ((p1 as DAE.PROP(_,c1))::pps)
       equation
         c2 = elabTypePropToConst(pps);
         c1 = constAnd(c1, c2);
       then
         c1; 
-    case((p1 as PROP_TUPLE(_,tc1))::pps)
+    case((p1 as DAE.PROP_TUPLE(_,tc1))::pps)
       equation
         c1 = elabTypePropToConst2(tc1);
         c2 = elabTypePropToConst(pps);
@@ -446,10 +203,10 @@ algorithm
         list<TupleConst> tcxl;
         TupleConst tc1;
 
-    case (p1 as CONST(c1))
+    case (p1 as DAE.SINGLE_CONST(c1))
       then
         c1;         
-      case(p1 as TUPLE_CONST(tc1::tcxl)) 
+      case(p1 as DAE.TUPLE_CONST(tc1::tcxl)) 
         equation
           c1 = elabTypePropToConst2(tc1);
           c2 = elabTypePropToConst3(tcxl);
@@ -470,14 +227,14 @@ algorithm
         Const c1,c2;
         list<TupleConst> tcxl;
         TupleConst tc1;
-    case({}) then C_CONST();
-    case((p1 as CONST(c1))::tcxl)
+    case({}) then DAE.C_CONST();
+    case((p1 as DAE.SINGLE_CONST(c1))::tcxl)
       equation 
         c2 = elabTypePropToConst3(tcxl);
         c1 = constAnd(c1, c2);
       then
         c1;         
-      case((p1 as TUPLE_CONST(_))::tcxl) 
+      case((p1 as DAE.TUPLE_CONST(_))::tcxl) 
         equation
           c1 = elabTypePropToConst2(p1);
           c2 = elabTypePropToConst3(tcxl);
@@ -495,7 +252,7 @@ public function externalObjectType "author: PA
 algorithm 
   _:=
   matchcontinue (inType)
-    case ((T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(_)),_)) then (); 
+    case ((DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(_)),_)) then (); 
   end matchcontinue;
 end externalObjectType;
 
@@ -506,7 +263,7 @@ Function for getting the name of a Types.Var
 input Var v;
 output String s;
 algorithm s := matchcontinue(v)
-  case(VAR(name =s)) then s;
+  case(DAE.TYPES_VAR(name =s)) then s;
   end matchcontinue;
 end varName;
 
@@ -518,7 +275,7 @@ public function externalObjectConstructorType "author: PA
 algorithm 
   _:=
   matchcontinue (inType)
-    case ((T_FUNCTION(funcResultType = tp),_)) 
+    case ((DAE.T_FUNCTION(funcResultType = tp),_)) 
       local Type tp;
       equation
         externalObjectType(tp);
@@ -536,10 +293,10 @@ public function simpleType "function: simpleType
 algorithm 
   _:=
   matchcontinue (inType)
-    case ((T_REAL(varLstReal = _),_)) then (); 
-    case ((T_INTEGER(varLstInt = _),_)) then (); 
-    case ((T_STRING(varLstString = _),_)) then (); 
-    case ((T_BOOL(varLstBool = _),_)) then (); 
+    case ((DAE.T_REAL(varLstReal = _),_)) then (); 
+    case ((DAE.T_INTEGER(varLstInt = _),_)) then (); 
+    case ((DAE.T_STRING(varLstString = _),_)) then (); 
+    case ((DAE.T_BOOL(varLstBool = _),_)) then (); 
   end matchcontinue;
 end simpleType;
 
@@ -547,7 +304,7 @@ public function isComplexConnector ""
 input Type t;
 output Boolean b;
 algorithm b := matchcontinue(t)
-  case((T_COMPLEX(ClassInf.CONNECTOR(_,_),_,_,_),_)) then true;
+  case((DAE.T_COMPLEX(ClassInf.CONNECTOR(_,_),_,_,_),_)) then true;
   case(_) then false;
   end matchcontinue;
 end isComplexConnector;
@@ -559,7 +316,7 @@ This function checks wheter a type is complex AND not extending a base type.
 input Type ty;
 output Boolean b;
 algorithm b := matchcontinue(ty)
-  case((T_COMPLEX(_,_::_,_,_),_)) then true; // not derived from baseclass   
+  case((DAE.T_COMPLEX(_,_::_,_,_),_)) then true; // not derived from baseclass   
   case(_) then false;
   end matchcontinue;
 end isComplexType;
@@ -569,7 +326,7 @@ public function isExternalObject "Returns true if type is COMPLEX and external o
   output Boolean b;
 algorithm
   b := matchcontinue(tp) 
-    case((T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(_)),_)) then true;
+    case((DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(_)),_)) then true;
     case(_) then false;
   end matchcontinue;
 end isExternalObject;
@@ -585,19 +342,19 @@ algorithm
   local Type ty,ty2;
     case(Exp.INT)
       equation
-        ty = (T_INTEGER({}),NONE);
+        ty = (DAE.T_INTEGER({}),NONE);
         then ty;
     case(Exp.REAL) 
       equation 
-        ty = (T_REAL({}),NONE);
+        ty = (DAE.T_REAL({}),NONE);
         then ty;
     case(Exp.BOOL) 
       equation 
-        ty = (T_BOOL({}),NONE);
+        ty = (DAE.T_BOOL({}),NONE);
         then ty;
     case(Exp.STRING) 
       equation 
-        ty = (T_STRING({}),NONE);
+        ty = (DAE.T_STRING({}),NONE);
         then ty;
     case(Exp.ENUMERATION(index,path,names,evars)) 
       local
@@ -609,8 +366,8 @@ algorithm
 //    case(Exp.ENUM) 
       equation 
         tvars = Util.listMap(evars, convertFromExpToTypesVar);
-        ty = (T_ENUMERATION(index,path,names,tvars),NONE());
-//        ty = (T_ENUM,NONE);
+        ty = (DAE.T_ENUMERATION(index,path,names,tvars),NONE());
+//        ty = (DAE.T_ENUM,NONE);
         then ty;
     case(Exp.T_ARRAY(at,SOME(dim)::ad))
       local Exp.Type at;
@@ -624,8 +381,8 @@ algorithm
           ll = listLength(ad);
           true = (ll == 0);
           ty = expTypetoTypesType(at);
-          ard = DIM(SOME(dim));
-          tty = T_ARRAY(ard,ty);
+          ard = DAE.DIM(SOME(dim));
+          tty = DAE.T_ARRAY(ard,ty);
           ty2 = (tty,NONE);
           then
             ty2;
@@ -641,9 +398,9 @@ algorithm
           ll = listLength(ad);
           true = (ll > 0);
           ty = expTypetoTypesType(Exp.T_ARRAY(at,ad));
-          ard = DIM(SOME(dim));
+          ard = DAE.DIM(SOME(dim));
           
-          tty = T_ARRAY(ard,ty);
+          tty = DAE.T_ARRAY(ard,ty);
           ty2 = (tty,NONE);
           then
             ty2;
@@ -654,21 +411,21 @@ algorithm
 	      ClassInf.State complexClassType;
       equation 
         tvars = Util.listMap(evars, convertFromExpToTypesVar);
-        ty = (T_COMPLEX(complexClassType,tvars,NONE,NONE),NONE); 
+        ty = (DAE.T_COMPLEX(complexClassType,tvars,NONE,NONE),NONE); 
       then 
         ty;
-    case(Exp.T_UNIONTYPE()) then ((T_UNIONTYPE({}),NONE));
+    case(Exp.T_UNIONTYPE()) then ((DAE.T_UNIONTYPE({}),NONE));
     case(Exp.T_BOXED(at))
       local Exp.Type at;
       equation
         ty = expTypetoTypesType(at);
-        ty2 = (T_BOXED(ty),NONE);
+        ty2 = (DAE.T_BOXED(ty),NONE);
       then ty2;
     case(Exp.T_LIST(at))
       local Exp.Type at;
       equation
         ty = expTypetoTypesType(at);
-        ty2 = (T_LIST(ty),NONE);
+        ty2 = (DAE.T_LIST(ty),NONE);
       then ty2;
     case(_)
       equation
@@ -691,7 +448,7 @@ local
   case(ev as Exp.COMPLEX_VAR(name,tp))
     equation
       ty = expTypetoTypesType(tp);
-      tv = VAR(name,ATTR(false,false,SCode.RW, SCode.VAR, Absyn.BIDIR, Absyn.UNSPECIFIED),false,ty,UNBOUND);
+      tv = DAE.TYPES_VAR(name,DAE.ATTR(false,false,SCode.RW, SCode.VAR, Absyn.BIDIR, Absyn.UNSPECIFIED),false,ty,DAE.UNBOUND());
       then
         tv;
   case(_) equation print("error in convertFromExpToTypesVar\n"); then fail();
@@ -708,7 +465,7 @@ local
   Type ty;
   Var ev;
   Exp.Var tv;
-  case(ev as VAR(name=tname,type_=ty))
+  case(ev as DAE.TYPES_VAR(name=tname,type_=ty))
     equation
       tp = elabType(ty);
       tv = Exp.COMPLEX_VAR(tname,tp);
@@ -727,7 +484,7 @@ public function isTuple "Returns true if type is TUPLE"
   output Boolean b;
 algorithm
   b := matchcontinue(tp) 
-    case((T_TUPLE(_),_)) then true;
+    case((DAE.T_TUPLE(_),_)) then true;
     case(_) then false;
   end matchcontinue;
 end isTuple;
@@ -737,7 +494,7 @@ public function isRecord "Returns true if type is COMPLEX and a record (ClassInf
   output Boolean b;
 algorithm
   b := matchcontinue(tp) 
-    case((T_COMPLEX(complexClassType = ClassInf.RECORD(_)),_)) then true;
+    case((DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_)),_)) then true;
     case(_) then false;
   end matchcontinue;
 end isRecord;
@@ -749,7 +506,7 @@ algorithm
   b := matchcontinue(tp)
   local list<Boolean> bLst;
     list<Var> varLst;
-    case((T_COMPLEX(ClassInf.RECORD(_),varLst,_,_),_)) equation
+    case((DAE.T_COMPLEX(ClassInf.RECORD(_),varLst,_,_),_)) equation
         bLst = Util.listMap(Util.listMap(varLst,getVarType),isReal);
         b = Util.boolAndList(bLst);      
     then b;
@@ -762,7 +519,7 @@ public function getVarType "Return the Type of a Var"
   output Type tp;
 algorithm
   tp := matchcontinue(v)
-    case(VAR(type_ = tp)) then tp;
+    case(DAE.TYPES_VAR(type_ = tp)) then tp;
   end matchcontinue;
 end getVarType;
 
@@ -771,7 +528,7 @@ public function getVarName "Return the name of a Var"
   output String name;
 algorithm
   name := matchcontinue(v)
-    case(VAR(name = name)) then name;
+    case(DAE.TYPES_VAR(name = name)) then name;
   end matchcontinue;
 end getVarName;
 
@@ -781,7 +538,7 @@ output Boolean res;
 algorithm
  res := matchcontinue(tp)
    case(tp) equation
-      ((T_REAL(_),_)) = arrayElementType(tp);
+      ((DAE.T_REAL(_),_)) = arrayElementType(tp);
      then true; 
    case(_) then false;
  end matchcontinue;
@@ -798,8 +555,8 @@ algorithm b := matchcontinue(inType)
   case(ty)
     equation
       lb1 = isReal(ty);
-      lb2 = subtype(ty, (T_REAL({}),NONE));
-      lb3 = subtype((T_REAL({}),NONE),ty);
+      lb2 = subtype(ty, (DAE.T_REAL({}),NONE));
+      lb3 = subtype((DAE.T_REAL({}),NONE),ty);
       lb1 = boolOr(lb1,boolAnd(lb2,lb3));
       //lb1 = boolOr(lb1,lb2);  
     then lb1;
@@ -818,8 +575,8 @@ algorithm b := matchcontinue(inType)
   case(ty)
     equation
       lb1 = isInteger(ty);
-      lb2 = subtype(ty, (T_INTEGER({}),NONE));
-      lb3 = subtype((T_INTEGER({}),NONE),ty);
+      lb2 = subtype(ty, (DAE.T_INTEGER({}),NONE));
+      lb3 = subtype((DAE.T_INTEGER({}),NONE),ty);
       lb1 = boolOr(lb1,boolAnd(lb2,lb3)); 
       //lb1 = boolOr(lb1,lb2); 
     then lb1;
@@ -833,7 +590,7 @@ output Boolean res;
 algorithm
  res := matchcontinue(tp)
    case(tp) equation
-      ((T_INTEGER(_),_)) = arrayElementType(tp);
+      ((DAE.T_INTEGER(_),_)) = arrayElementType(tp);
      then true; 
    case(_) then false;
  end matchcontinue;
@@ -845,7 +602,7 @@ output Boolean res;
 algorithm
  res := matchcontinue(tp)
    case(tp) equation
-      ((T_BOOL(_),_)) = arrayElementType(tp);
+      ((DAE.T_BOOL(_),_)) = arrayElementType(tp);
      then true; 
    case(_) then false;
  end matchcontinue;
@@ -861,9 +618,9 @@ algorithm
   _:=
   matchcontinue (inType)
       local Type tp;
-    case ((T_REAL(varLstReal = _),_)) then (); 
-    case ((T_INTEGER(varLstInt = _),_)) then ();
-    case ((T_COMPLEX( complexTypeOption=SOME(tp)),_)) 
+    case ((DAE.T_REAL(varLstReal = _),_)) then (); 
+    case ((DAE.T_INTEGER(varLstInt = _),_)) then ();
+    case ((DAE.T_COMPLEX( complexTypeOption=SOME(tp)),_)) 
       equation integerOrReal(tp);
     then ();      
   end matchcontinue;
@@ -879,8 +636,8 @@ algorithm
   outBoolean:=
   matchcontinue (inType)
       local Type t;
-    case ((T_ARRAY(arrayDim = _),_)) then true; 
-    case ((T_COMPLEX(_,_,SOME(t),_),_)) then isArray(t);      
+    case ((DAE.T_ARRAY(arrayDim = _),_)) then true; 
+    case ((DAE.T_COMPLEX(_,_,SOME(t),_),_)) then isArray(t);      
     case ((_,_)) then false; 
   end matchcontinue;
 end isArray;
@@ -894,7 +651,7 @@ public function isString "function: isString
 algorithm 
   outBoolean:=
   matchcontinue (inType)
-    case ((T_STRING(varLstString = _),_)) then true; 
+    case ((DAE.T_STRING(varLstString = _),_)) then true; 
     case ((_,_)) then false; 
   end matchcontinue;
 end isString;
@@ -935,12 +692,12 @@ algorithm
     local
       Integer n;
       Type t;
-    case ((T_ARRAY(arrayType = t),_))
+    case ((DAE.T_ARRAY(arrayType = t),_))
       equation 
         n = ndims(t);
       then
         n + 1;
-    case ((T_COMPLEX(_,_,SOME(t),_),_)) equation
+    case ((DAE.T_COMPLEX(_,_,SOME(t),_),_)) equation
         n = ndims(t);
     then n;
     case ((_,_)) then 0; 
@@ -986,7 +743,7 @@ algorithm
       list<SubMod> subs;
       Option<EqMod> eq;
       Mod m;
-    case (MOD(finalPrefix = f,each_ = each_,subModLst = subs,eqModOption = eq)) then MOD(f,each_,{},eq); 
+    case (DAE.MOD(finalPrefix = f,each_ = each_,subModLst = subs,eqModOption = eq)) then DAE.MOD(f,each_,{},eq); 
     case (m) then m; 
   end matchcontinue;
 end stripSubmod;
@@ -1006,17 +763,17 @@ algorithm
       list<SubMod> subs;
       Option<EqMod> eq;
       Mod m;
-    case (MOD(finalPrefix = f,each_ = each_,subModLst = {},eqModOption = eq)) then MOD(f,each_,{},eq); 
-    case (MOD(finalPrefix = f,each_ = each_,subModLst = subs,eqModOption = NONE))
+    case (DAE.MOD(finalPrefix = f,each_ = each_,subModLst = {},eqModOption = eq)) then DAE.MOD(f,each_,{},eq); 
+    case (DAE.MOD(finalPrefix = f,each_ = each_,subModLst = subs,eqModOption = NONE))
       equation
          {} = removeRedecl(subs);
       then 
-        NOMOD(); 
-    case (MOD(finalPrefix = f,each_ = each_,subModLst = subs,eqModOption = eq))
+        DAE.NOMOD(); 
+    case (DAE.MOD(finalPrefix = f,each_ = each_,subModLst = subs,eqModOption = eq))
       equation
          subs = removeRedecl(subs);
       then 
-        MOD(f,each_,subs,eq); 
+        DAE.MOD(f,each_,subs,eq); 
     case (m) then m; 
   end matchcontinue;
 end removeFirstSubsRedecl;
@@ -1032,7 +789,7 @@ algorithm osubs := matchcontinue(subs)
     SubMod sm;
     String s;
   case({}) then {};
-  case(NAMEMOD(s,REDECL(_,_))::subs)
+  case(DAE.NAMEMOD(s,DAE.REDECL(_,_))::subs)
     equation
        then removeRedecl(subs);
   case(sm::subs) 
@@ -1075,19 +832,19 @@ algorithm outmod := matchcontinue(inmod,componentModified)
     list<SubMod> subs;
     Option<EqMod> oem;
     list<tuple<SCode.Element, Mod>> redecls;
-  case(NOMOD,_) then NOMOD;
-  case((inmod as REDECL(b,redecls)),componentModified) 
+  case(DAE.NOMOD(),_) then DAE.NOMOD();
+  case((inmod as DAE.REDECL(b,redecls)),componentModified) 
     equation
       redecls = removeRedeclareMods(redecls,componentModified);
-      outmod = Util.if_(listLength(redecls) > 0,REDECL(b,redecls), NOMOD); 
+      outmod = Util.if_(listLength(redecls) > 0,DAE.REDECL(b,redecls), DAE.NOMOD()); 
     then 
       outmod;
     
-  case(MOD(b,e,subs,oem),componentModified)
+  case(DAE.MOD(b,e,subs,oem),componentModified)
     equation
       subs = removeModInSubs(subs,componentModified);
     then
-      MOD(b,e,subs,oem);
+      DAE.MOD(b,e,subs,oem);
 end matchcontinue; 
 end removeMod;
 
@@ -1132,14 +889,14 @@ algorithm outsubs := matchcontinue(insubs,componentName)
     String s1;
     SubMod sub;
   case({},_) then {};
-  case((sub as NAMEMOD(s1,m1))::insubs,componentName)
+  case((sub as DAE.NAMEMOD(s1,m1))::insubs,componentName)
     equation
-      subs1 = Util.if_(stringEqual(s1,componentName),{},{NAMEMOD(s1,m1)});
+      subs1 = Util.if_(stringEqual(s1,componentName),{},{DAE.NAMEMOD(s1,m1)});
       subs2 = removeModInSubs(insubs,componentName) "check for multiple mod on same comp";
       outsubs = listAppend(subs1,subs2); 
     then
       outsubs;
-  case((sub as IDXMOD(_,m1))::insubs,componentName)
+  case((sub as DAE.IDXMOD(_,m1))::insubs,componentName)
     equation
       //TODO: implement check for idxmod? 
       subs2 = removeModInSubs(insubs,componentName);       
@@ -1161,12 +918,12 @@ algorithm
       list<Integer> res;
       Integer i;
       Type tp;
-    case ((T_ARRAY(arrayDim = DIM(integerOption = SOME(i)),arrayType = tp),_))
+    case ((DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(i)),arrayType = tp),_))
       equation 
         res = getDimensionSizes(tp);
       then
         (i :: res);
-    case ((T_COMPLEX(_,_,SOME(tp),_),_))
+    case ((DAE.T_COMPLEX(_,_,SOME(tp),_),_))
       then getDimensionSizes(tp);        
     case ((_,_)) then {}; 
   end matchcontinue;
@@ -1185,12 +942,12 @@ algorithm
       list<Option<Integer>> res;
       Option<Integer> dimopt;
       Type tp;
-    case ((T_ARRAY(arrayDim = DIM(integerOption = dimopt),arrayType = tp),_))
+    case ((DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = dimopt),arrayType = tp),_))
       equation 
         res = getDimensions(tp);
       then
         (dimopt :: res);
-    case ((T_COMPLEX(_,_,SOME(tp),_),_))
+    case ((DAE.T_COMPLEX(_,_,SOME(tp),_),_))
       then getDimensions(tp);        
     case ((_,_)) then {}; 
   end matchcontinue;
@@ -1248,84 +1005,84 @@ algorithm
       
     // adrpo: TODO! why not use typeOfValue everywhere here??!!
       
-    case ({},_) then MOD(false,Absyn.NON_EACH(),{},NONE);
+    case ({},_) then DAE.MOD(false,Absyn.NON_EACH(),{},NONE);
        
     case ((Values.INTEGER(integer = i) :: rest),(id :: ids))
       equation 
-        MOD(_,_,res,_) = valuesToMods(rest, ids);
+        DAE.MOD(_,_,res,_) = valuesToMods(rest, ids);
       then
-        MOD(false,Absyn.NON_EACH(),
-          (NAMEMOD(id,
-          MOD(false,Absyn.NON_EACH(),{},
+        DAE.MOD(false,Absyn.NON_EACH(),
+          (DAE.NAMEMOD(id,
+          DAE.MOD(false,Absyn.NON_EACH(),{},
           SOME(
-          TYPED(Exp.ICONST(i),SOME(Values.INTEGER(i)),
-          PROP((T_INTEGER({}),NONE),C_VAR()))))) :: res),NONE);
+          DAE.TYPED(Exp.ICONST(i),SOME(Values.INTEGER(i)),
+          DAE.PROP((DAE.T_INTEGER({}),NONE),DAE.C_VAR()))))) :: res),NONE);
           
     case ((Values.REAL(real = r) :: rest),(id :: ids))
       equation 
-        MOD(_,_,res,_) = valuesToMods(rest, ids);
+        DAE.MOD(_,_,res,_) = valuesToMods(rest, ids);
       then
-        MOD(false,Absyn.NON_EACH(),
-          (NAMEMOD(id,
-          MOD(false,Absyn.NON_EACH(),{},
+        DAE.MOD(false,Absyn.NON_EACH(),
+          (DAE.NAMEMOD(id,
+          DAE.MOD(false,Absyn.NON_EACH(),{},
           SOME(
-          TYPED(Exp.RCONST(r),SOME(Values.REAL(r)),
-          PROP((T_REAL({}),NONE),C_VAR()))))) :: res),NONE);
+          DAE.TYPED(Exp.RCONST(r),SOME(Values.REAL(r)),
+          DAE.PROP((DAE.T_REAL({}),NONE),DAE.C_VAR()))))) :: res),NONE);
           
     case ((Values.STRING(string = s) :: rest),(id :: ids))
       equation 
-        MOD(_,_,res,_) = valuesToMods(rest, ids);
+        DAE.MOD(_,_,res,_) = valuesToMods(rest, ids);
       then
-        MOD(false,Absyn.NON_EACH(),
-          (NAMEMOD(id,
-          MOD(false,Absyn.NON_EACH(),{},
+        DAE.MOD(false,Absyn.NON_EACH(),
+          (DAE.NAMEMOD(id,
+          DAE.MOD(false,Absyn.NON_EACH(),{},
           SOME(
-          TYPED(Exp.SCONST(s),SOME(Values.STRING(s)),
-          PROP((T_STRING({}),NONE),C_VAR()))))) :: res),NONE);
+          DAE.TYPED(Exp.SCONST(s),SOME(Values.STRING(s)),
+          DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_VAR()))))) :: res),NONE);
           
     case ((Values.BOOL(boolean = b) :: rest),(id :: ids))
       equation 
-        MOD(_,_,res,_) = valuesToMods(rest, ids);
+        DAE.MOD(_,_,res,_) = valuesToMods(rest, ids);
       then
-        MOD(false,Absyn.NON_EACH(),
-          (NAMEMOD(id,
-          MOD(false,Absyn.NON_EACH(),{},
+        DAE.MOD(false,Absyn.NON_EACH(),
+          (DAE.NAMEMOD(id,
+          DAE.MOD(false,Absyn.NON_EACH(),{},
           SOME(
-          TYPED(Exp.BCONST(b),SOME(Values.BOOL(b)),
-          PROP((T_BOOL({}),NONE),C_VAR()))))) :: res),NONE);
+          DAE.TYPED(Exp.BCONST(b),SOME(Values.BOOL(b)),
+          DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()))))) :: res),NONE);
     case (((v as Values.RECORD(index=_)) :: rest),(id :: ids))
       equation 
         ty = typeOfValue(v);
         exp = Static.valueExp(v);
-        MOD(_,_,res,_) = valuesToMods(rest, ids);
+        DAE.MOD(_,_,res,_) = valuesToMods(rest, ids);
       then
-        MOD(false,Absyn.NON_EACH(),
-          (NAMEMOD(id,
-          MOD(false,Absyn.NON_EACH(),{},
-          SOME(TYPED(exp,SOME(v),PROP(ty,C_VAR()))))) :: res),NONE);
+        DAE.MOD(false,Absyn.NON_EACH(),
+          (DAE.NAMEMOD(id,
+          DAE.MOD(false,Absyn.NON_EACH(),{},
+          SOME(DAE.TYPED(exp,SOME(v),DAE.PROP(ty,DAE.C_VAR()))))) :: res),NONE);
 
     case ((v as Values.ENUM(index = _)) :: rest,(id :: ids))
       equation
         ty = typeOfValue(v);
         exp = Static.valueExp(v);
-        MOD(_,_,res,_) = valuesToMods(rest, ids);
+        DAE.MOD(_,_,res,_) = valuesToMods(rest, ids);
       then
-        MOD(false,Absyn.NON_EACH(),
-          (NAMEMOD(id,
-          MOD(false,Absyn.NON_EACH(),{},
+        DAE.MOD(false,Absyn.NON_EACH(),
+          (DAE.NAMEMOD(id,
+          DAE.MOD(false,Absyn.NON_EACH(),{},
           SOME(
-          TYPED(exp,SOME(v),
-          PROP(ty,C_CONST()))))) :: res),NONE);
+          DAE.TYPED(exp,SOME(v),
+          DAE.PROP(ty,DAE.C_CONST()))))) :: res),NONE);
                     
     case ((v as Values.ARRAY(vals)) :: rest,(id :: ids))
       equation 
         exp = Static.valueExp(v);
         ty = typeOfValue(v);
-        MOD(_,_,res,_) = valuesToMods(rest, ids);        
+        DAE.MOD(_,_,res,_) = valuesToMods(rest, ids);        
       then
-        MOD(false,Absyn.NON_EACH(),
-          (NAMEMOD(id,MOD(false,Absyn.NON_EACH(),{},
-                   SOME(TYPED(exp, SOME(v),PROP(ty,C_CONST()))))) :: res),NONE);
+        DAE.MOD(false,Absyn.NON_EACH(),
+          (DAE.NAMEMOD(id,DAE.MOD(false,Absyn.NON_EACH(),{},
+                   SOME(DAE.TYPED(exp, SOME(v),DAE.PROP(ty,DAE.C_CONST()))))) :: res),NONE);
 
     case ((v :: _),_)
       equation 
@@ -1363,8 +1120,8 @@ algorithm
         tp = typeOfValue(v);
         rest = valuesToVars(vs, ids);
       then
-        (VAR(id,ATTR(false,false,SCode.RW(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,
-          tp,UNBOUND()) :: rest);
+        (DAE.TYPES_VAR(id,DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,
+          tp,DAE.UNBOUND()) :: rest);
     case (_,_)
       equation 
         Debug.fprint("failtrace", "-values_to_vars failed\n");
@@ -1395,38 +1152,38 @@ algorithm
       Ident cname_str;
       Absyn.Path cname;
       list<Ident> ids;
-    case (Values.INTEGER(integer = _)) then ((T_INTEGER({}),NONE)); 
-    case (Values.REAL(real = _)) then ((T_REAL({}),NONE)); 
-    case (Values.STRING(string = _)) then ((T_STRING({}),NONE)); 
-    case (Values.BOOL(boolean = _)) then ((T_BOOL({}),NONE)); 
+    case (Values.INTEGER(integer = _)) then ((DAE.T_INTEGER({}),NONE)); 
+    case (Values.REAL(real = _)) then ((DAE.T_REAL({}),NONE)); 
+    case (Values.STRING(string = _)) then ((DAE.T_STRING({}),NONE)); 
+    case (Values.BOOL(boolean = _)) then ((DAE.T_BOOL({}),NONE)); 
     case (Values.ENUM(index,path,names))
       local
         Integer index;
         Absyn.Path path;
         list<String> names;
-      then ((T_ENUMERATION(SOME(index),path,names,{}),NONE));
-//    case (Values.ENUM(value = _)) then ((T_ENUM(),NONE)); 
+      then ((DAE.T_ENUMERATION(SOME(index),path,names,{}),NONE));
+//    case (Values.ENUM(value = _)) then ((DAE.T_ENUM(),NONE)); 
     case ((w as Values.ARRAY(valueLst = (v :: vs))))
       equation 
         tp = typeOfValue(v);
         dim1 = listLength((v :: vs));
       then
-        ((T_ARRAY(DIM(SOME(dim1)),tp),NONE));
+        ((DAE.T_ARRAY(DAE.DIM(SOME(dim1)),tp),NONE));
     case ((w as Values.ARRAY(valueLst = ({}))))
       equation 
       then
-        ((T_ARRAY(DIM(SOME(0)),(T_NOTYPE(),NONE)),NONE));        
+        ((DAE.T_ARRAY(DAE.DIM(SOME(0)),(DAE.T_NOTYPE(),NONE)),NONE));        
     case ((w as Values.TUPLE(valueLst = vs)))
       equation 
         ts = Util.listMap(vs, typeOfValue);
       then
-        ((T_TUPLE(ts),NONE));
+        ((DAE.T_TUPLE(ts),NONE));
     case Values.RECORD(record_ = cname,orderd = vl,comp = ids, index = -1)
       equation 
         vars = valuesToVars(vl, ids);
         cname_str = Absyn.pathString(cname);
       then
-        ((T_COMPLEX(ClassInf.RECORD(cname_str),vars,NONE,NONE),SOME(cname)));
+        ((DAE.T_COMPLEX(ClassInf.RECORD(cname_str),vars,NONE,NONE),SOME(cname)));
 
       // MetaModelica Uniontype
     case Values.RECORD(record_ = cname,orderd = vl,comp = ids, index = index)
@@ -1435,7 +1192,7 @@ algorithm
         true = index >= 0;
         vars = valuesToVars(vl, ids);
       then
-        ((T_METARECORD(index, vars),SOME(cname)));
+        ((DAE.T_METARECORD(index, vars),SOME(cname)));
 
         // MetaModelica list type
     case Values.LIST(vl)
@@ -1446,22 +1203,22 @@ algorithm
         ts = Util.listMap(vl, typeOfValue);
         (_,tp,_) = listMatchSuperType(explist, ts, {}, matchTypeRegular);
       then
-        ((T_LIST(tp),NONE));
+        ((DAE.T_LIST(tp),NONE));
         
     case Values.OPTION(NONE)
       equation
-        tp = (T_METAOPTION((T_NOTYPE,NONE)),NONE);
+        tp = (DAE.T_METAOPTION((DAE.T_NOTYPE,NONE)),NONE);
       then tp;
     case Values.OPTION(SOME(v))
       equation
         tp = typeOfValue(v);
-        tp = (T_METAOPTION(tp),NONE);
+        tp = (DAE.T_METAOPTION(tp),NONE);
       then tp;
     case Values.META_TUPLE(valueLst = vs)
       equation
         ts = Util.listMap(vs, typeOfValue);
       then
-        ((T_METATUPLE(ts),NONE));
+        ((DAE.T_METATUPLE(ts),NONE));
 
     case (v)
       local Ident vs;
@@ -1483,18 +1240,18 @@ public function basicType "function: basicType
 algorithm 
   outBoolean:=
   matchcontinue (inType)
-    case ((T_INTEGER(varLstInt = _),_)) then true; 
-    case ((T_REAL(varLstReal = _),_)) then true; 
-    case ((T_STRING(varLstString = _),_)) then true; 
-    case ((T_BOOL(varLstBool = _),_)) then true; 
-    case ((T_ENUMERATION(index = SOME(_)),_)) then true; 
-//    case ((T_ENUM(),_)) then true; 
-    case ((T_ARRAY(arrayDim = _),_)) then false; 
-    case ((T_COMPLEX(complexClassType = _),_)) then false; 
-    case ((T_ENUMERATION(names = _),_)) then false; 
-    case ((T_LIST(_),_)) then false;  // MetaModelica list type
-    case ((T_METAOPTION(_),_)) then false;  // MetaModelica option type
-    case ((T_METATUPLE(_),_)) then false;  // MetaModelica tuple type
+    case ((DAE.T_INTEGER(varLstInt = _),_)) then true; 
+    case ((DAE.T_REAL(varLstReal = _),_)) then true; 
+    case ((DAE.T_STRING(varLstString = _),_)) then true; 
+    case ((DAE.T_BOOL(varLstBool = _),_)) then true; 
+    case ((DAE.T_ENUMERATION(index = SOME(_)),_)) then true; 
+//    case ((DAE.T_ENUM(),_)) then true; 
+    case ((DAE.T_ARRAY(arrayDim = _),_)) then false; 
+    case ((DAE.T_COMPLEX(complexClassType = _),_)) then false; 
+    case ((DAE.T_ENUMERATION(names = _),_)) then false; 
+    case ((DAE.T_LIST(_),_)) then false;  // MetaModelica list type
+    case ((DAE.T_METAOPTION(_),_)) then false;  // MetaModelica option type
+    case ((DAE.T_METATUPLE(_),_)) then false;  // MetaModelica tuple type
   end matchcontinue;
 end basicType;
 
@@ -1507,7 +1264,7 @@ public function extendsBasicType "function: basicType
 algorithm 
   outBoolean:=
   matchcontinue (inType)
-    case ((T_COMPLEX(complexTypeOption=SOME(_)),_)) then true;
+    case ((DAE.T_COMPLEX(complexTypeOption=SOME(_)),_)) then true;
     case (_) then false; 
   end matchcontinue;
 end extendsBasicType;
@@ -1521,7 +1278,7 @@ public function arrayType "function: arrayType
 algorithm 
   outBoolean:=
   matchcontinue (inType)
-    case ((T_ARRAY(arrayDim = _),_)) then true; 
+    case ((DAE.T_ARRAY(arrayDim = _),_)) then true; 
     case (_) then false; 
   end matchcontinue;
 end arrayType;
@@ -1539,7 +1296,7 @@ algorithm
     SCode.Variability v;
     Absyn.InnerOuter io;
     
-    case( VAR(name,ATTR(f,streamPrefix,a,v,_,io),p,tp,bind)) then VAR(name,ATTR(f,streamPrefix,a,v,Absyn.INPUT(),io),p,tp,bind);
+    case( DAE.TYPES_VAR(name,DAE.ATTR(f,streamPrefix,a,v,_,io),p,tp,bind)) then DAE.TYPES_VAR(name,DAE.ATTR(f,streamPrefix,a,v,Absyn.INPUT(),io),p,tp,bind);
   end matchcontinue;
 end setVarInput;
 
@@ -1629,37 +1386,37 @@ algorithm
       ClassInf.State st1,st2;
       Option<Type> bc1,bc2;
       list<Type> type_list1,type_list2;
-    case ((T_ANYTYPE(_),_),(_,_)) then true; 
-    case ((_,_),(T_ANYTYPE(_),_)) then true;
-    case ((T_INTEGER(varLstInt = _),_),(T_INTEGER(varLstInt = _),_)) then true; 
-    case ((T_REAL(varLstReal = _),_),(T_REAL(varLstReal = _),_)) then true; 
-    case ((T_STRING(varLstString = _),_),(T_STRING(varLstString = _),_)) then true; 
-    case ((T_BOOL(varLstBool = _),_),(T_BOOL(varLstBool = _),_)) then true; 
+    case ((DAE.T_ANYTYPE(_),_),(_,_)) then true; 
+    case ((_,_),(DAE.T_ANYTYPE(_),_)) then true;
+    case ((DAE.T_INTEGER(varLstInt = _),_),(DAE.T_INTEGER(varLstInt = _),_)) then true; 
+    case ((DAE.T_REAL(varLstReal = _),_),(DAE.T_REAL(varLstReal = _),_)) then true; 
+    case ((DAE.T_STRING(varLstString = _),_),(DAE.T_STRING(varLstString = _),_)) then true; 
+    case ((DAE.T_BOOL(varLstBool = _),_),(DAE.T_BOOL(varLstBool = _),_)) then true; 
     /* TODO JKF check if this is correct */
-//    case ((T_ENUM(),_),(T_ENUM(),_)) then true; 
-    case ((T_ENUMERATION(index=oi,path=tp,names = (l1 :: rest1),varLst = vl1),p1),(T_ENUMERATION(index=oi_1,path=tp_1,names = (l2 :: rest2),varLst = vl2),p2))
+//    case ((DAE.T_ENUM(),_),(DAE.T_ENUM(),_)) then true; 
+    case ((DAE.T_ENUMERATION(index=oi,path=tp,names = (l1 :: rest1),varLst = vl1),p1),(DAE.T_ENUMERATION(index=oi_1,path=tp_1,names = (l2 :: rest2),varLst = vl2),p2))
       local 
         Option<Integer> oi,oi_1;
         Absyn.Path tp,tp_1;
       equation 
         equality(l2 = l1);
-        res = subtype((T_ENUMERATION(oi,tp,rest1,vl1),p1), 
-          (T_ENUMERATION(oi_1,tp_1,rest2,vl2),p2));
+        res = subtype((DAE.T_ENUMERATION(oi,tp,rest1,vl1),p1), 
+          (DAE.T_ENUMERATION(oi_1,tp_1,rest2,vl2),p2));
       then
         res;
-    case ((T_ENUMERATION(names = {}),_),(T_ENUMERATION(names = _),_)) then true; 
-    case ((T_ARRAY(arrayType = t1),_),(T_ARRAY(arrayDim = DIM(integerOption = NONE),arrayType = t2),_))
+    case ((DAE.T_ENUMERATION(names = {}),_),(DAE.T_ENUMERATION(names = _),_)) then true; 
+    case ((DAE.T_ARRAY(arrayType = t1),_),(DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = NONE),arrayType = t2),_))
       equation 
         true = subtype(t1, t2);
       then
         true;
-    case ((T_ARRAY(arrayDim = DIM(integerOption = NONE),arrayType = t1),_),(T_ARRAY(arrayType = t2),_))
+    case ((DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = NONE),arrayType = t1),_),(DAE.T_ARRAY(arrayType = t2),_))
       equation 
         true = subtype(t1, t2);
       then
         true;
         /* Array */
-    case ((T_ARRAY(arrayDim = DIM(integerOption = SOME(i1)),arrayType = t1),_),(T_ARRAY(arrayDim = DIM(integerOption = SOME(i2)),arrayType = t2),_))
+    case ((DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(i1)),arrayType = t1),_),(DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(i2)),arrayType = t2),_))
       equation 
         equality(i1 = i2);
         true = subtype(t1, t2);
@@ -1667,7 +1424,7 @@ algorithm
         true;
 
         /* Complex type */        
-    case ((T_COMPLEX(complexClassType = st1,complexVarLst = els1,complexTypeOption = bc1),_),(T_COMPLEX(complexClassType = st2,complexVarLst = els2,complexTypeOption = bc2),_))
+    case ((DAE.T_COMPLEX(complexClassType = st1,complexVarLst = els1,complexTypeOption = bc1),_),(DAE.T_COMPLEX(complexClassType = st2,complexVarLst = els2,complexTypeOption = bc2),_))
       equation 
         true = subtypeVarlist(els1, els2);
       then
@@ -1675,14 +1432,14 @@ algorithm
 
         /* A complex type that extends a basic type is checked 
 		    against the baseclass basic type */         
-    case ((T_COMPLEX(complexClassType = st1,complexVarLst = els1,complexTypeOption = SOME(tp)),_),tp2) 
+    case ((DAE.T_COMPLEX(complexClassType = st1,complexVarLst = els1,complexTypeOption = SOME(tp)),_),tp2) 
       equation 
         res = subtype(tp, tp2);
       then
         res;
         /* A complex type that extends a basic type is checked 
 		    against the baseclass basic type */         
-    case (tp1,(T_COMPLEX(complexClassType = st1,complexVarLst = els1,complexTypeOption = SOME(tp2)),_)) 
+    case (tp1,(DAE.T_COMPLEX(complexClassType = st1,complexVarLst = els1,complexTypeOption = SOME(tp2)),_)) 
       equation 
         res = subtype(tp1, tp2);
       then
@@ -1690,37 +1447,37 @@ algorithm
 
         /* Check of tuples, similar to complex. Just that
 	     identifier name do not have to be checked. Only types are checked. */ 
-    case ((T_TUPLE(tupleType = type_list1),_),(T_TUPLE(tupleType = type_list2),_)) 
+    case ((DAE.T_TUPLE(tupleType = type_list1),_),(DAE.T_TUPLE(tupleType = type_list2),_)) 
       equation 
         true = subtypeTypelist(type_list1, type_list2);
       then
         true;
         
         /* Part of MetaModelica extension. KS */
-    case ((T_LIST((T_NOTYPE(),_)),_),(T_LIST(_),_)) then true;   // The empty list is represented with NO_TYPE()
-    case ((T_LIST(_),_),(T_LIST((T_NOTYPE(),_)),_)) then true;
-    case ((T_LIST(t1),_),(T_LIST(t2),_)) then subtype(t1,t2);
-    case ((T_METATUPLE(tList1),_),(T_METATUPLE(tList2),_))
+    case ((DAE.T_LIST((DAE.T_NOTYPE(),_)),_),(DAE.T_LIST(_),_)) then true;   // The empty list is represented with NO_TYPE()
+    case ((DAE.T_LIST(_),_),(DAE.T_LIST((DAE.T_NOTYPE(),_)),_)) then true;
+    case ((DAE.T_LIST(t1),_),(DAE.T_LIST(t2),_)) then subtype(t1,t2);
+    case ((DAE.T_METATUPLE(tList1),_),(DAE.T_METATUPLE(tList2),_))
       local list<Type> tList1,tList2; Boolean ret; equation
         ret = subtypeTypelist(tList1,tList2);
       then ret;
-    case ((T_METAOPTION((T_NOTYPE(),_)),_),(T_METAOPTION(_),_)) then true;
-    //case ((T_METAOPTION(_),_),(T_METAOPTION((T_NOTYPE(),_)),_)) then true;
-    case ((T_METAOPTION(t1),_),(T_METAOPTION(t2),_))
+    case ((DAE.T_METAOPTION((DAE.T_NOTYPE(),_)),_),(DAE.T_METAOPTION(_),_)) then true;
+    //case ((DAE.T_METAOPTION(_),_),(DAE.T_METAOPTION((DAE.T_NOTYPE(),_)),_)) then true;
+    case ((DAE.T_METAOPTION(t1),_),(DAE.T_METAOPTION(t2),_))
       equation
-        failure((T_NOTYPE(),_) = t2);
+        failure((DAE.T_NOTYPE(),_) = t2);
       then subtype(t1,t2);
-    case ((T_BOXED(t1),_),(T_BOXED(t2),_)) then subtype(t1,t2);
-    case ((T_BOXED(t1),_),t2) equation true = isBoxedType(t2); then subtype(t1,t2);
-    case (t1,(T_BOXED(t2),_)) equation true = isBoxedType(t1); then subtype(t1,t2);
+    case ((DAE.T_BOXED(t1),_),(DAE.T_BOXED(t2),_)) then subtype(t1,t2);
+    case ((DAE.T_BOXED(t1),_),t2) equation true = isBoxedType(t2); then subtype(t1,t2);
+    case (t1,(DAE.T_BOXED(t2),_)) equation true = isBoxedType(t1); then subtype(t1,t2);
 
-    case ((T_POLYMORPHIC(l1),_),(T_POLYMORPHIC(l2),_)) then l1 ==& l2;
-    case ((T_NOTYPE(),_),_) then true;
-    case (_,(T_NOTYPE(),_)) then true;
-    case ((T_NORETCALL(),_),(T_NORETCALL(),_)) then true;
+    case ((DAE.T_POLYMORPHIC(l1),_),(DAE.T_POLYMORPHIC(l2),_)) then l1 ==& l2;
+    case ((DAE.T_NOTYPE(),_),_) then true;
+    case (_,(DAE.T_NOTYPE(),_)) then true;
+    case ((DAE.T_NORETCALL(),_),(DAE.T_NORETCALL(),_)) then true;
       
     // MM Function Reference. sjoelund
-    case ((T_FUNCTION(farg1,t1),_),(T_FUNCTION(farg2,t2),_))
+    case ((DAE.T_FUNCTION(farg1,t1),_),(DAE.T_FUNCTION(farg2,t2),_))
       local list<FuncArg> farg1,farg2; list<Type> tList1,tList2;
       equation
         tList1 = Util.listMap(farg1, Util.tuple22);
@@ -1729,12 +1486,12 @@ algorithm
         true = subtype(t1,t2);
       then true;
     
-    case(t1 as (T_METARECORD(_,_),_), t2 as (T_METARECORD(_,_),_))
+    case(t1 as (DAE.T_METARECORD(_,_),_), t2 as (DAE.T_METARECORD(_,_),_))
       equation
         equality(t1 = t2);
       then true;
         // <uniontype> = <uniontype>
-    case((T_UNIONTYPE(lst1),_),(T_UNIONTYPE(lst2),_))
+    case((DAE.T_UNIONTYPE(lst1),_),(DAE.T_UNIONTYPE(lst2),_))
       local
         list<Absyn.Path> lst1,lst2;
       equation
@@ -1797,9 +1554,9 @@ algorithm
       list<Var> l,vs;
       Ident n;
     case (_,{}) then true; 
-    case (l,(VAR(name = n,type_ = t2) :: vs))
+    case (l,(DAE.TYPES_VAR(name = n,type_ = t2) :: vs))
       equation 
-        VAR(_,_,_,t1,_) = varlistLookup(l, n);
+        DAE.TYPES_VAR(_,_,_,t1,_) = varlistLookup(l, n);
         true = subtype(t1, t2);
         true = subtypeVarlist(l, vs);
       then
@@ -1823,7 +1580,7 @@ algorithm
       Var v;
       Ident n,name;
       list<Var> vs;
-    case (((v as VAR(name = n)) :: _),name)
+    case (((v as DAE.TYPES_VAR(name = n)) :: _),name)
       equation 
         equality(n = name);
       then
@@ -1863,17 +1620,17 @@ algorithm
         v = lookupInBuiltin(t, n);
       then
         v;
-    case ((T_COMPLEX(complexClassType = st,complexVarLst = cs,complexTypeOption = bc),_),id)
+    case ((DAE.T_COMPLEX(complexClassType = st,complexVarLst = cs,complexTypeOption = bc),_),id)
       equation 
         v = lookupComponent2(cs, id);
       then
         v;
-    case ((T_ARRAY(arrayDim = dim,arrayType = (T_COMPLEX(complexClassType = st,complexVarLst = cs,complexTypeOption = bc),_)),_),id)
+    case ((DAE.T_ARRAY(arrayDim = dim,arrayType = (DAE.T_COMPLEX(complexClassType = st,complexVarLst = cs,complexTypeOption = bc),_)),_),id)
       equation 
-        VAR(n,attr,prot,ty,bnd) = lookupComponent2(cs, id);
-        ty_1 = (T_ARRAY(dim,ty),NONE);
+        DAE.TYPES_VAR(n,attr,prot,ty,bnd) = lookupComponent2(cs, id);
+        ty_1 = (DAE.T_ARRAY(dim,ty),NONE);
       then
-        VAR(n,attr,prot,ty_1,bnd);
+        DAE.TYPES_VAR(n,attr,prot,ty_1,bnd);
     case (_,id) /* Print.print_buf \"- Looking up \" &
 	Print.print_buf id &
 	Print.print_buf \" in noncomplex type\\n\" */  then fail(); 
@@ -1882,13 +1639,13 @@ end lookupComponent;
 
 protected function lookupInBuiltin "function: lookupInBuiltin
  
-  Since builtin types are not represented as T_COMPLEX, special care
+  Since builtin types are not represented as DAE.T_COMPLEX, special care
   is needed to be able to lookup the attributes (`start\' etc) in
   them.
  
   This is not a complete solution.  The current way of mapping the
   both the Modelica type `Real\' and the simple type `RealType\' to
-  `T_REAL\' is a bit problematic, since it doesn\'t make a
+  `DAE.T_REAL\' is a bit problematic, since it doesn\'t make a
   difference between `Real\' and `RealType\', which makes the
   translator accept things like `x.start.start.start\'.
 "
@@ -1902,61 +1659,61 @@ algorithm
       Var v;
       list<Var> cs;
       Ident id;
-    case ((T_REAL(varLstReal = cs),_),id) /* Real */ 
+    case ((DAE.T_REAL(varLstReal = cs),_),id) /* Real */ 
       equation 
         v = lookupComponent2(cs, id);
       then
         v;
-    case ((T_INTEGER(varLstInt = cs),_),id)
+    case ((DAE.T_INTEGER(varLstInt = cs),_),id)
       equation 
         v = lookupComponent2(cs, id);
       then
         v;
-    case ((T_STRING(varLstString = cs),_),id)
+    case ((DAE.T_STRING(varLstString = cs),_),id)
       equation 
         v = lookupComponent2(cs, id);
       then
         v;
-    case ((T_BOOL(varLstBool = cs),_),id)
+    case ((DAE.T_BOOL(varLstBool = cs),_),id)
       equation 
         v = lookupComponent2(cs, id);
       then
         v;
-   case ((T_ENUMERATION(SOME(_),_,_,_),_),"quantity") then VAR("quantity",
-          ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,(T_STRING({}),NONE),VALBOUND(Values.STRING("")));  
+   case ((DAE.T_ENUMERATION(SOME(_),_,_,_),_),"quantity") then DAE.TYPES_VAR("quantity",
+          DAE.ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,(DAE.T_STRING({}),NONE),DAE.VALBOUND(Values.STRING("")));  
 
-    case ((T_ENUMERATION(SOME(_),_,_,_),_),"min") then VAR("min",ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
-          false,(T_ENUMERATION(SOME(1),Absyn.IDENT(""),{"min,max"},{}),NONE),UNBOUND());  /* Should be bound to the first element of
-  T_ENUMERATION list higher up in the call chain */ 
-    case ((T_ENUMERATION(SOME(_),_,_,_),_),"max") then VAR("max",ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
-          false,(T_ENUMERATION(SOME(2),Absyn.IDENT(""),{"min,max"},{}),NONE),UNBOUND());  /* Should be bound to the last element of 
-  T_ENUMERATION list higher up in the call chain */ 
-    case ((T_ENUMERATION(SOME(_),_,_,_),_),"start") then VAR("start",ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
-          false,(T_BOOL({}),NONE),UNBOUND());  /* Should be bound to the last element of 
-  T_ENUMERATION list higher up in the call chain */ 
-    case ((T_ENUMERATION(SOME(_),_,_,_),_),"fixed") then VAR("fixed",ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
-          false,(T_BOOL({}),NONE),UNBOUND());  /* Needs to be set to true/false higher up the call chain
+    case ((DAE.T_ENUMERATION(SOME(_),_,_,_),_),"min") then DAE.TYPES_VAR("min",DAE.ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
+          false,(DAE.T_ENUMERATION(SOME(1),Absyn.IDENT(""),{"min,max"},{}),NONE),DAE.UNBOUND());  /* Should be bound to the first element of
+  DAE.T_ENUMERATION list higher up in the call chain */ 
+    case ((DAE.T_ENUMERATION(SOME(_),_,_,_),_),"max") then DAE.TYPES_VAR("max",DAE.ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
+          false,(DAE.T_ENUMERATION(SOME(2),Absyn.IDENT(""),{"min,max"},{}),NONE),DAE.UNBOUND());  /* Should be bound to the last element of 
+  DAE.T_ENUMERATION list higher up in the call chain */ 
+    case ((DAE.T_ENUMERATION(SOME(_),_,_,_),_),"start") then DAE.TYPES_VAR("start",DAE.ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
+          false,(DAE.T_BOOL({}),NONE),DAE.UNBOUND());  /* Should be bound to the last element of 
+  DAE.T_ENUMERATION list higher up in the call chain */ 
+    case ((DAE.T_ENUMERATION(SOME(_),_,_,_),_),"fixed") then DAE.TYPES_VAR("fixed",DAE.ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
+          false,(DAE.T_BOOL({}),NONE),DAE.UNBOUND());  /* Needs to be set to true/false higher up the call chain
   depending on variability of instance */ 
-    case ((T_ENUMERATION(SOME(_),_,_,_),_),"enable") then VAR("enable",
-          ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,(T_BOOL({}),NONE),VALBOUND(Values.BOOL(true))); 
+    case ((DAE.T_ENUMERATION(SOME(_),_,_,_),_),"enable") then DAE.TYPES_VAR("enable",
+          DAE.ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,(DAE.T_BOOL({}),NONE),DAE.VALBOUND(Values.BOOL(true))); 
         
-//    case ((T_ENUM(),_),"quantity") then VAR("quantity",
-//          ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,(T_STRING({}),NONE),VALBOUND(Values.STRING("")));  
+//    case ((DAE.T_ENUM(),_),"quantity") then DAE.TYPES_VAR("quantity",
+//          DAE.ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,(DAE.T_STRING({}),NONE),DAE.VALBOUND(Values.STRING("")));  
 
-//    case ((T_ENUM(),_),"min") then VAR("min",ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
-//          false,(T_ENUM(),NONE),UNBOUND());  /* Should be bound to the first element of
-//  T_ENUMERATION list higher up in the call chain */ 
-//    case ((T_ENUM(),_),"max") then VAR("max",ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
-//          false,(T_ENUM(),NONE),UNBOUND());  /* Should be bound to the last element of 
-//  T_ENUMERATION list higher up in the call chain */ 
-//    case ((T_ENUM(),_),"start") then VAR("start",ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
-//          false,(T_BOOL({}),NONE),UNBOUND());  /* Should be bound to the last element of 
-//  T_ENUMERATION list higher up in the call chain */ 
-//    case ((T_ENUM(),_),"fixed") then VAR("fixed",ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
-//          false,(T_BOOL({}),NONE),UNBOUND());  /* Needs to be set to true/false higher up the call chain
+//    case ((DAE.T_ENUM(),_),"min") then DAE.TYPES_VAR("min",DAE.ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
+//          false,(DAE.T_ENUM(),NONE),DAE.UNBOUND());  /* Should be bound to the first element of
+//  DAE.T_ENUMERATION list higher up in the call chain */ 
+//    case ((DAE.T_ENUM(),_),"max") then DAE.TYPES_VAR("max",DAE.ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
+//          false,(DAE.T_ENUM(),NONE),DAE.UNBOUND());  /* Should be bound to the last element of 
+//  DAE.T_ENUMERATION list higher up in the call chain */ 
+//    case ((DAE.T_ENUM(),_),"start") then DAE.TYPES_VAR("start",DAE.ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
+//          false,(DAE.T_BOOL({}),NONE),DAE.UNBOUND());  /* Should be bound to the last element of 
+//  DAE.T_ENUMERATION list higher up in the call chain */ 
+//    case ((DAE.T_ENUM(),_),"fixed") then DAE.TYPES_VAR("fixed",DAE.ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
+//          false,(DAE.T_BOOL({}),NONE),DAE.UNBOUND());  /* Needs to be set to true/false higher up the call chain
 //  depending on variability of instance */ 
-//    case ((T_ENUM(),_),"enable") then VAR("enable",
-//          ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,(T_BOOL({}),NONE),VALBOUND(Values.BOOL(true))); 
+//    case ((DAE.T_ENUM(),_),"enable") then DAE.TYPES_VAR("enable",
+//          DAE.ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,(DAE.T_BOOL({}),NONE),DAE.VALBOUND(Values.BOOL(true))); 
   end matchcontinue;
 end lookupInBuiltin;
 
@@ -1975,7 +1732,7 @@ algorithm
       Var v;
       Ident n,m;
       list<Var> vs;
-    case (((v as VAR(name = n)) :: _),m)
+    case (((v as DAE.TYPES_VAR(name = n)) :: _),m)
       equation 
         equality(n = m);
       then
@@ -2006,7 +1763,7 @@ algorithm
       equation 
         len = listLength(l);
       then
-        ((T_ARRAY(DIM(SOME(len)),t),NONE));
+        ((DAE.T_ARRAY(DAE.DIM(SOME(len)),t),NONE));
   end matchcontinue;
 end makeArray;
 
@@ -2026,23 +1783,23 @@ algorithm
     case (t,{}) then t; 
     case (t,Exp.WHOLEDIM::lst)
       equation 
-        t = makeArraySubscripts((T_ARRAY(DIM(NONE),t),NONE),lst);
+        t = makeArraySubscripts((DAE.T_ARRAY(DAE.DIM(NONE),t),NONE),lst);
       then
         t;
     case (t,Exp.SLICE(e)::lst)
       equation 
-        t = makeArraySubscripts((T_ARRAY(DIM(NONE),t),NONE),lst);
+        t = makeArraySubscripts((DAE.T_ARRAY(DAE.DIM(NONE),t),NONE),lst);
       then
         t;
       
     case (t,Exp.INDEX(Exp.ICONST(i))::lst)
       equation 
-        t = makeArraySubscripts((T_ARRAY(DIM(SOME(i)),t),NONE),lst);
+        t = makeArraySubscripts((DAE.T_ARRAY(DAE.DIM(SOME(i)),t),NONE),lst);
       then
         t;
      case (t,Exp.INDEX(_)::lst)
       equation 
-        t = makeArraySubscripts((T_ARRAY(DIM(NONE),t),NONE),lst);
+        t = makeArraySubscripts((DAE.T_ARRAY(DAE.DIM(NONE),t),NONE),lst);
       then
         t;
   end matchcontinue;
@@ -2110,7 +1867,7 @@ algorithm
       Option<Integer> i;
     case (ty,i) /* print(\"\\nDebug: lifts the array.\") */  
     
-    then ((T_ARRAY(DIM(i),ty),NONE));  /* PR  axiom	lift_array (ty,i) => T_ARRAY(DIM(i),ty) */ 
+    then ((DAE.T_ARRAY(DAE.DIM(i),ty),NONE));  /* PR  axiom	lift_array (ty,i) => DAE.T_ARRAY(DAE.DIM(i),ty) */ 
   end matchcontinue;
 end liftArray;
 
@@ -2132,19 +1889,19 @@ algorithm
       ClassInf.State ci;
       list<Var> varlst;
       EqualityConstraint ec;
-    case ((T_ARRAY(arrayDim = dim,arrayType = ty),path),i)
+    case ((DAE.T_ARRAY(arrayDim = dim,arrayType = ty),path),i)
       equation 
         ty_1 = liftArrayRight(ty, i);
       then
-        ((T_ARRAY(dim,ty_1),path));
-    case((T_COMPLEX(ci,varlst,SOME(ty),ec),path),i)
+        ((DAE.T_ARRAY(dim,ty_1),path));
+    case((DAE.T_COMPLEX(ci,varlst,SOME(ty),ec),path),i)
       equation
         ty_1 = liftArrayRight(ty,i);
-        then ((T_COMPLEX(ci,varlst,SOME(ty_1),ec),path));          
+        then ((DAE.T_COMPLEX(ci,varlst,SOME(ty_1),ec),path));          
     case ((ty,path),i)
       local TType ty;
       then
-        ((T_ARRAY(DIM(i),(ty,NONE)),path));
+        ((DAE.T_ARRAY(DAE.DIM(i),(ty,NONE)),path));
   end matchcontinue;
 end liftArrayRight;
 
@@ -2158,10 +1915,10 @@ algorithm
   outType:=
   matchcontinue (inType)
     local Type ty;
-    case ((T_ARRAY(arrayDim = DIM(integerOption = _),arrayType = ty),_)) then ty; 
-    case ((T_COMPLEX(_,_,SOME(ty),_),_)) then unliftArray(ty);
+    case ((DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = _),arrayType = ty),_)) then ty; 
+    case ((DAE.T_COMPLEX(_,_,SOME(ty),_),_)) then unliftArray(ty);
     /* adrpo: handle also functions returning arrays! */
-    case ((T_FUNCTION(_,ty),_)) then unliftArray(ty);      
+    case ((DAE.T_FUNCTION(_,ty),_)) then unliftArray(ty);      
   end matchcontinue;
 end unliftArray;
 
@@ -2175,7 +1932,7 @@ algorithm
   outArrayDim:=
   matchcontinue (inType)
     local ArrayDim dim;
-    case ((T_ARRAY(arrayDim = dim),_)) then dim; 
+    case ((DAE.T_ARRAY(arrayDim = dim),_)) then dim; 
   end matchcontinue;
 end typeArraydim;
 
@@ -2190,7 +1947,7 @@ algorithm
   outType:=
   matchcontinue (inType)
     local Type ty_1,ty,t;
-    case ((T_ARRAY(arrayDim = DIM(integerOption = _),arrayType = ty),_))
+    case ((DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = _),arrayType = ty),_))
       equation 
         ty_1 = arrayElementType(ty);
       then
@@ -2205,10 +1962,10 @@ public function unparseEqMod "prints eqmod to a string"
 algorithm
   str := matchcontinue(eq)
   local Exp.Exp e; Absyn.Exp e2;
-    case(TYPED(e,_,_)) equation
+    case(DAE.TYPED(e,_,_)) equation
       str =Exp.printExpStr(e);
     then str;
-    case(UNTYPED(e2)) equation
+    case(DAE.UNTYPED(e2)) equation
       str = Dump.printExpStr(e2);
     then str;
   end matchcontinue;
@@ -2233,29 +1990,29 @@ algorithm
       ClassInf.State ci_state;
       list<FuncArg> params;
       
-    case ((T_INTEGER(varLstInt = {}),_)) then "Integer"; 
-    case ((T_REAL(varLstReal = {}),_)) then "Real"; 
-    case ((T_STRING(varLstString = {}),_)) then "String"; 
-    case ((T_BOOL(varLstBool = {}),_)) then "Boolean"; 
+    case ((DAE.T_INTEGER(varLstInt = {}),_)) then "Integer"; 
+    case ((DAE.T_REAL(varLstReal = {}),_)) then "Real"; 
+    case ((DAE.T_STRING(varLstString = {}),_)) then "String"; 
+    case ((DAE.T_BOOL(varLstBool = {}),_)) then "Boolean"; 
       
-    case ((T_INTEGER(varLstInt = vs),_)) equation
+    case ((DAE.T_INTEGER(varLstInt = vs),_)) equation
       s1 = Util.stringDelimitList(Util.listMap(vs, unparseVarAttr),", ");
       s2 = "Integer(" +& s1 +& ")";
     then s2; 
-    case ((T_REAL(varLstReal = vs),_)) equation
+    case ((DAE.T_REAL(varLstReal = vs),_)) equation
       s1 = Util.stringDelimitList(Util.listMap(vs, unparseVarAttr),", ");
       s2 = "Real(" +& s1 +& ")";
     then s2;
-      case ((T_STRING(varLstString = vs),_)) equation
+      case ((DAE.T_STRING(varLstString = vs),_)) equation
       s1 = Util.stringDelimitList(Util.listMap(vs, unparseVarAttr),", ");
       s2 = "String(" +& s1 +& ")";
       then s2;
-      case ((T_BOOL(varLstBool = vs),_)) equation
+      case ((DAE.T_BOOL(varLstBool = vs),_)) equation
       s1 = Util.stringDelimitList(Util.listMap(vs, unparseVarAttr),", ");
       s2 = "Boolean(" +& s1 +& ")";
     then s2;   
         /* Enumeration Element */
-    case ((T_ENUMERATION(index = SOME(idx),path=p,names = l,varLst=vs),_))
+    case ((DAE.T_ENUMERATION(index = SOME(idx),path=p,names = l,varLst=vs),_))
       local String s2;
         Integer idx;
         Absyn.Path p;
@@ -2266,9 +2023,9 @@ algorithm
         s2 = "element"; 
         str = Util.stringAppendList({s1,".",s2});
       then
-        "#T_ENUM#";
+        "#DAE.T_ENUM#";
       /* Enumeration Type */
-    case ((T_ENUMERATION(names = l,varLst=vs),_))
+    case ((DAE.T_ENUMERATION(names = l,varLst=vs),_))
       local String s2;
       equation 
         s1 = Util.stringDelimitList(l, ", ");
@@ -2277,7 +2034,7 @@ algorithm
         str = Util.stringAppendList({"enumeration(",s1,")"});
       then
         str;
-    case ((t as (T_ARRAY(arrayDim = _),_)))
+    case ((t as (DAE.T_ARRAY(arrayDim = _),_)))
       equation 
         (ty,dimlst) = flattenArrayTypeOpt(t);
         dimlststr = Util.listMap2(dimlst, Dump.getOptionStrDefault, int_string, ":");
@@ -2286,7 +2043,7 @@ algorithm
         res = Util.stringAppendList({tys,"[",dims,"]"});
       then
         res;
-    case (((t as T_COMPLEX(complexClassType = ClassInf.RECORD(_),complexVarLst = vs,complexTypeOption = bc)),SOME(path)))
+    case (((t as DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_),complexVarLst = vs,complexTypeOption = bc)),SOME(path)))
       local TType t; Absyn.Path path;
       equation
         name = Absyn.pathString(path);
@@ -2295,7 +2052,7 @@ algorithm
         res = Util.stringAppendList({"record ",name,"\n",vstr,"end ", name, ";"});
       then
         res;
-    case ((T_COMPLEX(complexClassType = ci_state,complexVarLst = vs,complexTypeOption = SOME(bc_tp)),_))
+    case ((DAE.T_COMPLEX(complexClassType = ci_state,complexVarLst = vs,complexTypeOption = SOME(bc_tp)),_))
       equation 
         res = ClassInf.getStateName(ci_state);
         st_str = ClassInf.printStateStr(ci_state);
@@ -2303,14 +2060,14 @@ algorithm
         res = Util.stringAppendList({"(",res," ",st_str," bc:",bc_tp_str,")"});
       then
         res;
-    case ((T_COMPLEX(complexClassType = ci_state,complexVarLst = vs,complexTypeOption = NONE),_))
+    case ((DAE.T_COMPLEX(complexClassType = ci_state,complexVarLst = vs,complexTypeOption = NONE),_))
       equation 
         res = ClassInf.getStateName(ci_state);
         st_str = ClassInf.printStateStr(ci_state);
         res = Util.stringAppendList({res," ",st_str});
       then
         res;
-    case ((T_FUNCTION(funcArg = params,funcResultType = restype),_))
+    case ((DAE.T_FUNCTION(funcArg = params,funcResultType = restype),_))
       equation 
         paramstrs = Util.listMap(params, unparseParam);
         paramstr = Util.stringDelimitList(paramstrs, ", ");
@@ -2318,7 +2075,7 @@ algorithm
         res = Util.stringAppendList({"function(",paramstr,") => ",restypestr});
       then
         res;
-    case ((T_TUPLE(tupleType = tys),_))
+    case ((DAE.T_TUPLE(tupleType = tys),_))
       local list<Type> tys;
       equation 
         tystrs = Util.listMap(tys, unparseType);
@@ -2328,15 +2085,15 @@ algorithm
         res;
     
       /* MetaModelica tuple */
-    case ((T_METATUPLE(types = tys),_))
+    case ((DAE.T_METATUPLE(types = tys),_))
       local list<Type> tys;
       equation 
-        res = unparseType((T_TUPLE(tys),NONE));
+        res = unparseType((DAE.T_TUPLE(tys),NONE));
       then
         res;
 
         /* MetaModelica list */
-    case ((T_LIST(listType = ty),_))
+    case ((DAE.T_LIST(listType = ty),_))
       equation
         tystr = unparseType(ty);
         res = Util.stringAppendList({"list<",tystr,">"});
@@ -2344,14 +2101,14 @@ algorithm
         res;
         
         /* MetaModelica list */
-    case ((T_POLYMORPHIC(tystr),_))
+    case ((DAE.T_POLYMORPHIC(tystr),_))
       equation
         res = Util.stringAppendList({"polymorphic<",tystr,">"});
       then
         res;
 
         /* MetaModelica uniontype */
-    case ((T_UNIONTYPE(_),SOME(p)))
+    case ((DAE.T_UNIONTYPE(_),SOME(p)))
       local Absyn.Path p;
       equation
         str = Absyn.pathString(p);
@@ -2360,7 +2117,7 @@ algorithm
         res;
         
         /* MetaModelica uniontype (but we know which record in the UT it is) */
-    case ((T_METARECORD(_,vs),SOME(p)))
+    case ((DAE.T_METARECORD(_,vs),SOME(p)))
       local Absyn.Path p;
       equation
         str = Absyn.pathString(p);
@@ -2370,7 +2127,7 @@ algorithm
       then res;
 
         /* MetaModelica boxed type */
-    case ((T_BOXED(ty),_))
+    case ((DAE.T_BOXED(ty),_))
       equation
         res = unparseType(ty);
         res = Util.stringAppendList({"#boxed(",res,")#"});
@@ -2378,18 +2135,18 @@ algorithm
         res;
 
         /* MetaModelica Option type */
-    case ((T_METAOPTION((T_NOTYPE(),_)),_)) then "Option<Any>";
-    case ((T_METAOPTION(ty),_))
+    case ((DAE.T_METAOPTION((DAE.T_NOTYPE(),_)),_)) then "Option<Any>";
+    case ((DAE.T_METAOPTION(ty),_))
       equation
         tystr = unparseType(ty);
         res = Util.stringAppendList({"Option<",tystr,">"});
       then
         res;
 
-    case ((T_NORETCALL(),_)) then "#NORETCALL#";
-    case ((T_NOTYPE(),_)) then "#NOTYPE#"; 
-    case ((T_ANYTYPE(anyClassType = _),_)) then "#ANYTYPE#"; 
-//    case ((T_ENUM(),_)) then "#T_ENUM#";
+    case ((DAE.T_NORETCALL(),_)) then "#NORETCALL#";
+    case ((DAE.T_NOTYPE(),_)) then "#NOTYPE#"; 
+    case ((DAE.T_ANYTYPE(anyClassType = _),_)) then "#ANYTYPE#"; 
+//    case ((DAE.T_ENUM(),_)) then "#DAE.T_ENUM#";
     case (ty) then "Internal error unparse_type: not implemented yet\n"; 
   end matchcontinue;
 end unparseType;
@@ -2403,9 +2160,9 @@ public function unparseConst "function: unparseConst
 algorithm 
   outString:=
   matchcontinue (inConst)
-    case C_CONST() then "C_CONST"; 
-    case C_PARAM() then "C_PARAM"; 
-    case C_VAR() then "C_VAR"; 
+    case DAE.C_CONST() then "C_CONST"; 
+    case DAE.C_PARAM() then "C_PARAM"; 
+    case DAE.C_VAR() then "C_VAR"; 
   end matchcontinue;
 end unparseConst;
 
@@ -2423,12 +2180,12 @@ algorithm
       Const c;
       list<Ident> strlist;
       list<TupleConst> constlist;
-    case CONST(const = c)
+    case DAE.SINGLE_CONST(const = c)
       equation 
         cstr = unparseConst(c);
       then
         cstr;
-    case TUPLE_CONST(tupleConstLst = constlist)
+    case DAE.TUPLE_CONST(tupleConstLst = constlist)
       equation 
         strlist = Util.listMap(constlist, unparseTupleconst);
         res = Util.stringDelimitList(strlist, ", ");
@@ -2459,41 +2216,41 @@ algorithm
       list<FuncArg> params;
       list<Type> tys;
       String s1,s2;
-    case ((T_INTEGER(varLstInt = vars),_))
+    case ((DAE.T_INTEGER(varLstInt = vars),_))
       equation 
         s1 = Util.stringDelimitList(Util.listMap(vars, printVarStr),", ");
         str = Util.stringAppendList({"Integer(",s1,")"});
       then
         str;
-    case ((T_REAL(varLstReal = vars),_))
+    case ((DAE.T_REAL(varLstReal = vars),_))
       equation 
         s1 = Util.stringDelimitList(Util.listMap(vars, printVarStr),", ");
         str = Util.stringAppendList({"Real(",s1,")"});
       then
         str;
-    case ((T_STRING(varLstString = vars),_))
+    case ((DAE.T_STRING(varLstString = vars),_))
       equation 
       s1 = Util.stringDelimitList(Util.listMap(vars, printVarStr),", ");
       str = Util.stringAppendList({"String(",s1,")"});
       then
         str;
-    case ((T_BOOL(varLstBool = vars),_))
+    case ((DAE.T_BOOL(varLstBool = vars),_))
       equation 
         s1 = Util.stringDelimitList(Util.listMap(vars, printVarStr),", ");
         str = Util.stringAppendList({"Boolean(",s1,")"});
       then
        str;
-//    case ((T_ENUM(),_))
-    case ((T_ENUMERATION(index = SOME(_)),_))
+//    case ((DAE.T_ENUM(),_))
+    case ((DAE.T_ENUMERATION(index = SOME(_)),_))
       then
         "EnumType";
-    case ((T_ENUMERATION(names = l,varLst = vars),_))
+    case ((DAE.T_ENUMERATION(names = l,varLst = vars),_))
       equation 
        s1 = Util.stringDelimitList(Util.listMap(vars, printVarStr),", ");
        str = Util.stringAppendList({"Enumeration(",s1,")"});  
       then
         str;
-    case ((T_COMPLEX(complexClassType = st,complexVarLst = vars,complexTypeOption = bc),_))
+    case ((DAE.T_COMPLEX(complexClassType = st,complexVarLst = vars,complexTypeOption = bc),_))
       local String compType;
       equation 
         compType = Util.stringDelimitList( Util.listMap(Util.genericOption(bc),printTypeStr), ", ");
@@ -2502,21 +2259,21 @@ algorithm
        str = Util.stringAppendList({"composite(",s1,") ", compType});  
       then
         str;
-    case ((T_ARRAY(arrayDim = dim,arrayType = t),_))
+    case ((DAE.T_ARRAY(arrayDim = dim,arrayType = t),_))
       equation 
         s1 = printArraydimStr(dim);
         s2 = printTypeStr(t);
         str = Util.stringAppendList({"array[", s1,", of type ",s2,"]"});
       then
         str;
-    case ((T_FUNCTION(funcArg = params,funcResultType = restype),_))
+    case ((DAE.T_FUNCTION(funcArg = params,funcResultType = restype),_))
       equation 
         s1 = printParamsStr(params);
         s2 = printTypeStr(restype);
         str = Util.stringAppendList({"function(", s1,") => ",s2});        
       then
         str;
-    case ((T_TUPLE(tupleType = tys),_))
+    case ((DAE.T_TUPLE(tupleType = tys),_))
       equation 
         s1 = Util.stringDelimitList(Util.listMap(tys, printTypeStr),", ");
    			str = Util.stringAppendList({"(",s1,")"});        
@@ -2524,13 +2281,13 @@ algorithm
         str;
 
         /* MetaModelica tuple */
-    case ((T_METATUPLE(types = tys),_))
+    case ((DAE.T_METATUPLE(types = tys),_))
       equation 
-        str = printTypeStr((T_TUPLE(tys),NONE));
+        str = printTypeStr((DAE.T_TUPLE(tys),NONE));
       then
         str;
         /* MetaModelica list */
-    case ((T_LIST(listType = ty),_))
+    case ((DAE.T_LIST(listType = ty),_))
       local Type ty;
       equation
         s1 = printTypeStr(ty);
@@ -2539,7 +2296,7 @@ algorithm
         str;
 
         /* MetaModelica Option */
-    case ((T_METAOPTION(optionType = ty),_))
+    case ((DAE.T_METAOPTION(optionType = ty),_))
       local Type ty;
       equation
         s1 = printTypeStr(ty);
@@ -2547,7 +2304,7 @@ algorithm
       then
         str;
         
-    case ((T_BOXED(ty),_))
+    case ((DAE.T_BOXED(ty),_))
       local Type ty;
       equation
         s1 = printTypeStr(ty);
@@ -2555,10 +2312,10 @@ algorithm
       then
         str;
 
-    case ((T_NOTYPE(),_))
+    case ((DAE.T_NOTYPE(),_))
       then
         "NOTYPE";
-    case ((T_ANYTYPE(anyClassType = _),_))
+    case ((DAE.T_ANYTYPE(anyClassType = _),_))
       equation 
       then
         "ANYTYPE";
@@ -2595,7 +2352,7 @@ algorithm (s,s2) := matchcontinue(t)
     Boolean isExpandable;
     String isExpandableStr;
     
-  case((T_COMPLEX(complexClassType = (st as ClassInf.CONNECTOR(connectorName,isExpandable)),complexVarLst = vars,complexTypeOption = bc),op))
+  case((DAE.T_COMPLEX(complexClassType = (st as ClassInf.CONNECTOR(connectorName,isExpandable)),complexVarLst = vars,complexTypeOption = bc),op))
     equation
       varNames = Util.listMap(vars,varName);
       isExpandableStr = Util.if_(isExpandable,"/* expandable */ ", ""); 
@@ -2616,8 +2373,8 @@ algorithm
     local
       Ident s;
       Integer i;
-    case DIM(integerOption = NONE) then ":"; 
-    case DIM(integerOption = SOME(i))
+    case DAE.DIM(integerOption = NONE) then ":"; 
+    case DAE.DIM(integerOption = SOME(i))
       equation 
         s = intString(i);
       then
@@ -2636,7 +2393,7 @@ algorithm
   outInteger:=
   matchcontinue (inArrayDim)
     local Integer i;
-    case DIM(integerOption = SOME(i)) then i; 
+    case DAE.DIM(integerOption = SOME(i)) then i; 
   end matchcontinue;
 end arraydimInt;
 
@@ -2687,13 +2444,13 @@ algorithm
       Binding bind;
       Values.Value value;
       Exp.Exp e;
-    case VAR(name = n,attributes = attr,protected_ = prot,type_ = typ,binding = EQBOUND(exp=e))
+    case DAE.TYPES_VAR(name = n,attributes = attr,protected_ = prot,type_ = typ,binding = DAE.EQBOUND(exp=e))
       equation 
         bindStr = Exp.printExpStr(e);
         res = Util.stringAppendList({n,"=",bindStr});
       then
         res;
-    case VAR(name = n,attributes = attr,protected_ = prot,type_ = typ,binding = VALBOUND(value))
+    case DAE.TYPES_VAR(name = n,attributes = attr,protected_ = prot,type_ = typ,binding = DAE.VALBOUND(value))
       equation 
         valStr = ValuesUtil.valString(value);
         res = Util.stringAppendList({n,"=",valStr});
@@ -2717,7 +2474,7 @@ algorithm
       Boolean prot;
       Type typ;
       Binding bind;
-    case VAR(name = n,attributes = attr,protected_ = prot,type_ = typ,binding = bind)
+    case DAE.TYPES_VAR(name = n,attributes = attr,protected_ = prot,type_ = typ,binding = bind)
       equation 
         t = unparseType(typ);
         res = Util.stringAppendList({t," ",n,";\n"});
@@ -2764,7 +2521,7 @@ algorithm
       Type typ;
       Binding bind;
       String s1,s2,s3;
-    case VAR(name = n,attributes = ATTR(parameter_ = var),protected_ = prot,type_ = typ,binding = bind)
+    case DAE.TYPES_VAR(name = n,attributes = DAE.ATTR(parameter_ = var),protected_ = prot,type_ = typ,binding = bind)
       equation 
         s1 = printTypeStr(typ);
         vs = SCode.variabilityString(var);
@@ -2772,7 +2529,7 @@ algorithm
         str = Util.stringAppendList({s1," ",n," ",vs," ",s2});
       then
         str;
- 	case VAR(name = n,attributes = ATTR(parameter_ = var),protected_ = prot,type_ = typ,binding = bind)
+ 	case DAE.TYPES_VAR(name = n,attributes = DAE.ATTR(parameter_ = var),protected_ = prot,type_ = typ,binding = bind)
       equation 
       str = Util.stringAppendList({n});
       then
@@ -2794,26 +2551,26 @@ algorithm
       Exp.Exp exp;
       Const f;
       Values.Value v;
-    case UNBOUND() then "UNBOUND"; 
-    case EQBOUND(exp = exp,evaluatedExp = NONE,constant_ = f)
+    case DAE.UNBOUND() then "UNBOUND"; 
+    case DAE.EQBOUND(exp = exp,evaluatedExp = NONE,constant_ = f)
       equation 
         str = Exp.printExpStr(exp);
         str2 = unparseConst(f);
-        res = Util.stringAppendList({"EQBOUND(",str,",NONE ",str2,")"});
+        res = Util.stringAppendList({"DAE.EQBOUND(",str,",NONE ",str2,")"});
       then
         res;
-    case EQBOUND(exp = exp,evaluatedExp = SOME(v),constant_ = f)
+    case DAE.EQBOUND(exp = exp,evaluatedExp = SOME(v),constant_ = f)
       equation 
         str = Exp.printExpStr(exp);
         str2 = unparseConst(f);
         v_str = ValuesUtil.valString(v);
-        res = Util.stringAppendList({"EQBOUND(",str,",SOME(",v_str,"), ",str2,")"});
+        res = Util.stringAppendList({"DAE.EQBOUND(",str,",SOME(",v_str,"), ",str2,")"});
       then
         res;
-    case VALBOUND(valBound = v)
+    case DAE.VALBOUND(valBound = v)
       equation 
         s = ValuesUtil.unparseValues({v});
-        res = Util.stringAppendList({"VALBOUND(",s,")"});
+        res = Util.stringAppendList({"DAE.VALBOUND(",s,")"});
       then
         res;
     case(_) then "";
@@ -2844,7 +2601,7 @@ algorithm
 	Debug.fcall (\"ft\", print_type, rettype) &
 	Debug.fprint (\"ft\", \" >\")
 " ;
-  outType := (T_FUNCTION(fargs,rettype),SOME(p));
+  outType := (DAE.T_FUNCTION(fargs,rettype),SOME(p));
 end makeFunctionType;
 
 public function makeEnumerationType "function: makeEnumerationType
@@ -2861,14 +2618,14 @@ algorithm
       list<Ident> names;
       Absyn.Path p;
       list<Var> vars,vars_1;
-    case (p,{}) then ((T_ENUMERATION(NONE(),Absyn.IDENT(""),{},{}),SOME(p))); 
+    case (p,{}) then ((DAE.T_ENUMERATION(NONE(),Absyn.IDENT(""),{},{}),SOME(p))); 
     case (p,vars)
       equation 
         // Var names
         names = Util.listMap(vars,getVarName);
         vars_1 = makeEnumerationType1(p,vars,names,1);
       then
-        ((T_ENUMERATION(NONE(),Absyn.IDENT(""),names,vars_1),SOME(p)));
+        ((DAE.T_ENUMERATION(NONE(),Absyn.IDENT(""),names,vars_1),SOME(p)));
   end matchcontinue;
 end makeEnumerationType;
 
@@ -2895,11 +2652,11 @@ algorithm
       Boolean protected_;
       Binding binding;
       Var var;
-    case (p,VAR(name,attributes,protected_,_,binding) :: xs,names,idx)
+    case (p,DAE.TYPES_VAR(name,attributes,protected_,_,binding) :: xs,names,idx)
       equation 
         vars = makeEnumerationType1(p, xs, names, idx+1);
-        t = (T_ENUMERATION(SOME(idx),Absyn.IDENT(""),names,{}),SOME(p));
-        var = VAR(name,attributes,protected_,t,binding);
+        t = (DAE.T_ENUMERATION(SOME(idx),Absyn.IDENT(""),names,{}),SOME(p));
+        var = DAE.TYPES_VAR(name,attributes,protected_,t,binding);
       then
         (var :: vars);
     case (p,{},names,_) then {}; 
@@ -2978,25 +2735,25 @@ public function getFixedVarAttribute "Returns the value of the fixed attribute o
 algorithm
   fixed :=  matchcontinue(tp)
   local list<Var> vars;
-    case((T_REAL(VAR("fixed",binding = VALBOUND(Values.BOOL(fixed)))::_),_)) then fixed;
-    case((T_REAL(VAR("fixed",binding = EQBOUND(evaluatedExp = SOME(Values.BOOL(fixed))))::_),_)) then fixed;
-    case((T_REAL(VAR("fixed",binding = EQBOUND(exp = Exp.BCONST(fixed)))::_),_)) then fixed; 
-    case((T_REAL(_::vars),_)) equation
-      fixed = getFixedVarAttribute((T_REAL(vars),NONE));
+    case((DAE.T_REAL(DAE.TYPES_VAR("fixed",binding = DAE.VALBOUND(Values.BOOL(fixed)))::_),_)) then fixed;
+    case((DAE.T_REAL(DAE.TYPES_VAR("fixed",binding = DAE.EQBOUND(evaluatedExp = SOME(Values.BOOL(fixed))))::_),_)) then fixed;
+    case((DAE.T_REAL(DAE.TYPES_VAR("fixed",binding = DAE.EQBOUND(exp = Exp.BCONST(fixed)))::_),_)) then fixed; 
+    case((DAE.T_REAL(_::vars),_)) equation
+      fixed = getFixedVarAttribute((DAE.T_REAL(vars),NONE));
     then fixed;
 
-    case((T_INTEGER(VAR("fixed",binding = VALBOUND(Values.BOOL(fixed)))::_),_)) then fixed;
-    case((T_INTEGER(VAR("fixed",binding = EQBOUND(evaluatedExp = SOME(Values.BOOL(fixed))))::_),_)) then fixed;
-    case((T_INTEGER(VAR("fixed",binding = EQBOUND(exp = Exp.BCONST(fixed)))::_),_)) then fixed; 
-    case((T_INTEGER(_::vars),_)) equation
-      fixed = getFixedVarAttribute((T_INTEGER(vars),NONE));
+    case((DAE.T_INTEGER(DAE.TYPES_VAR("fixed",binding = DAE.VALBOUND(Values.BOOL(fixed)))::_),_)) then fixed;
+    case((DAE.T_INTEGER(DAE.TYPES_VAR("fixed",binding = DAE.EQBOUND(evaluatedExp = SOME(Values.BOOL(fixed))))::_),_)) then fixed;
+    case((DAE.T_INTEGER(DAE.TYPES_VAR("fixed",binding = DAE.EQBOUND(exp = Exp.BCONST(fixed)))::_),_)) then fixed; 
+    case((DAE.T_INTEGER(_::vars),_)) equation
+      fixed = getFixedVarAttribute((DAE.T_INTEGER(vars),NONE));
     then fixed;
       
-    case((T_BOOL(VAR("fixed",binding = VALBOUND(Values.BOOL(fixed)))::_),_)) then fixed;
-    case((T_BOOL(VAR("fixed",binding = EQBOUND(evaluatedExp = SOME(Values.BOOL(fixed))))::_),_)) then fixed;
-    case((T_BOOL(VAR("fixed",binding = EQBOUND(exp = Exp.BCONST(fixed)))::_),_)) then fixed; 
-    case((T_BOOL(_::vars),_)) equation
-      fixed = getFixedVarAttribute((T_BOOL(vars),NONE));
+    case((DAE.T_BOOL(DAE.TYPES_VAR("fixed",binding = DAE.VALBOUND(Values.BOOL(fixed)))::_),_)) then fixed;
+    case((DAE.T_BOOL(DAE.TYPES_VAR("fixed",binding = DAE.EQBOUND(evaluatedExp = SOME(Values.BOOL(fixed))))::_),_)) then fixed;
+    case((DAE.T_BOOL(DAE.TYPES_VAR("fixed",binding = DAE.EQBOUND(exp = Exp.BCONST(fixed)))::_),_)) then fixed; 
+    case((DAE.T_BOOL(_::vars),_)) equation
+      fixed = getFixedVarAttribute((DAE.T_BOOL(vars),NONE));
     then fixed;            
   end matchcontinue;
 end getFixedVarAttribute;
@@ -3078,7 +2835,7 @@ algorithm
       Attributes attr;
       Type ty;
       Binding bnd;
-    case VAR(name = n,attributes = attr,protected_ = false,type_ = ty,binding = bnd) /* LS: false means not protected, hence we ignore protected variables */ 
+    case DAE.TYPES_VAR(name = n,attributes = attr,protected_ = false,type_ = ty,binding = bnd) /* LS: false means not protected, hence we ignore protected variables */ 
       equation 
         true = isInputAttr(attr);
       then
@@ -3100,7 +2857,7 @@ algorithm
       Attributes attr;
       Type ty;
       Binding bnd;
-    case VAR(name = n,attributes = attr,protected_ = false,type_ = ty,binding = bnd) /* LS: false means not protected, hence we ignore protected variables */ 
+    case DAE.TYPES_VAR(name = n,attributes = attr,protected_ = false,type_ = ty,binding = bnd) /* LS: false means not protected, hence we ignore protected variables */ 
       equation 
         true = isOutputAttr(attr);
       then
@@ -3118,7 +2875,7 @@ public function isInputAttr "function: isInputAttr
 algorithm 
   outBoolean:=
   matchcontinue (inAttributes)
-    case ATTR(direction = Absyn.INPUT()) then true; 
+    case DAE.ATTR(direction = Absyn.INPUT()) then true; 
   end matchcontinue;
 end isInputAttr;
 
@@ -3132,7 +2889,7 @@ public function isOutputAttr "function: isOutputAttr
 algorithm 
   outBoolean:=
   matchcontinue (inAttributes)
-    case ATTR(direction = Absyn.OUTPUT()) then true; 
+    case DAE.ATTR(direction = Absyn.OUTPUT()) then true; 
   end matchcontinue;
 end isOutputAttr;
 
@@ -3146,7 +2903,7 @@ public function isBidirAttr "function: isBidirAttr
 algorithm 
   outBoolean:=
   matchcontinue (inAttributes)
-    case ATTR(direction = Absyn.BIDIR()) then true; 
+    case DAE.ATTR(direction = Absyn.BIDIR()) then true; 
   end matchcontinue;
 end isBidirAttr;
 
@@ -3169,7 +2926,7 @@ algorithm
       Binding bnd;
       list<Var> vl;
     case {} then {}; 
-    case ((VAR(name = n,attributes = attr,protected_ = pr,type_ = ty,binding = bnd) :: vl))
+    case ((DAE.TYPES_VAR(name = n,attributes = attr,protected_ = pr,type_ = ty,binding = bnd) :: vl))
       equation 
         fargl = makeFargsList(vl);
       then
@@ -3194,7 +2951,7 @@ algorithm
       Var var;
       list<Type> tys;
       list<Var> vl;
-    case {} then ((T_NORETCALL(),NONE)); 
+    case {} then ((DAE.T_NORETCALL(),NONE)); 
     case {var}
       equation 
         ty = makeReturnTypeSingle(var);
@@ -3204,7 +2961,7 @@ algorithm
       equation 
         tys = makeReturnTypeTuple(vl);
       then
-        ((T_TUPLE(tys),NONE));
+        ((DAE.T_TUPLE(tys),NONE));
   end matchcontinue;
 end makeReturnType;
 
@@ -3224,7 +2981,7 @@ algorithm
       Boolean pr;
       Type ty;
       Binding bnd;
-    case VAR(name = n,attributes = attr,protected_ = pr,type_ = ty,binding = bnd) then ty; 
+    case DAE.TYPES_VAR(name = n,attributes = attr,protected_ = pr,type_ = ty,binding = bnd) then ty; 
   end matchcontinue;
 end makeReturnTypeSingle;
 
@@ -3248,7 +3005,7 @@ algorithm
       Binding bnd;
       list<Var> vl;
     case {} then {}; 
-    case (VAR(name = n,attributes = attr,protected_ = pr,type_ = ty,binding = bnd) :: vl)
+    case (DAE.TYPES_VAR(name = n,attributes = attr,protected_ = pr,type_ = ty,binding = bnd) :: vl)
       equation 
         tys = makeReturnTypeTuple(vl);
       then
@@ -3272,8 +3029,8 @@ algorithm
       Absyn.Direction dir;
       Type ty;
       Binding bnd;
-    case VAR(name = n,
-             attributes = ATTR(flowPrefix = fl,streamPrefix=st,accessibility = ac,parameter_ = SCode.PARAM(),direction = dir),
+    case DAE.TYPES_VAR(name = n,
+             attributes = DAE.ATTR(flowPrefix = fl,streamPrefix=st,accessibility = ac,parameter_ = SCode.PARAM(),direction = dir),
              protected_ = false,type_ = ty,binding = bnd) 
     then ();  /* LS: false means not protected, hence we ignore protected variables */
   end matchcontinue;
@@ -3284,8 +3041,8 @@ public function isParameterOrConstant "returns true if Const is PARAM or CONST"
   output Boolean b;
 algorithm
   b := matchcontinue(c)
-    case(C_CONST()) then true;
-    case(C_PARAM()) then true;
+    case(DAE.C_CONST()) then true;
+    case(DAE.C_PARAM()) then true;
     case(_) then false;    
   end matchcontinue;
 end isParameterOrConstant;
@@ -3304,7 +3061,7 @@ algorithm
       ArrayDim d;
       Type tp;
       list<Type> xs;
-    case (((T_ARRAY(arrayDim = d,arrayType = tp),_) :: xs))
+    case (((DAE.T_ARRAY(arrayDim = d,arrayType = tp),_) :: xs))
       equation 
         r1 = containReal({tp});
         r2 = containReal(xs);
@@ -3312,14 +3069,14 @@ algorithm
       then
         res;
         
-    case ((T_COMPLEX(_,_,SOME(tp),_),_)::xs) 
+    case ((DAE.T_COMPLEX(_,_,SOME(tp),_),_)::xs) 
       equation
         r1 = containReal({tp});
         r2 = containReal(xs);
         res = boolOr(r1,r2);
       then res;
         
-    case (((T_REAL(varLstReal = _),_) :: _)) then true; 
+    case (((DAE.T_REAL(varLstReal = _),_) :: _)) then true; 
     case ((_ :: xs))
       equation 
         res = containReal(xs);
@@ -3344,19 +3101,19 @@ algorithm
       Type ty_1,ty;
       list<Integer> dimlist_1,dimlist;
       Integer dim;
-    case ((T_ARRAY(arrayDim = DIM(integerOption = NONE),arrayType = ty),_))
+    case ((DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = NONE),arrayType = ty),_))
       equation 
         (ty_1,dimlist_1) = flattenArrayType(ty);
       then
         (ty_1,dimlist_1);
-    case ((T_ARRAY(arrayDim = DIM(integerOption = SOME(dim)),arrayType = ty),_))
+    case ((DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(dim)),arrayType = ty),_))
       equation 
         (ty_1,dimlist) = flattenArrayType(ty);
         dimlist_1 = listAppend(dimlist, {dim});
       then
         (ty_1,dimlist_1);
         // Complex type extending basetype.
-    case ((T_COMPLEX(_,_,SOME(ty),_),_)) equation
+    case ((DAE.T_COMPLEX(_,_,SOME(ty),_),_)) equation
       (ty_1,dimlist) = flattenArrayType(ty);
     then (ty_1,dimlist);
     case ty then (ty,{}); 
@@ -3378,12 +3135,12 @@ algorithm
       Type ty_1,ty;
       list<Option<Integer>> dimlist_1,dimlist;
       Integer dim;
-    case ((T_ARRAY(arrayDim = DIM(integerOption = NONE),arrayType = ty),_))
+    case ((DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = NONE),arrayType = ty),_))
       equation 
         (ty_1,dimlist_1) = flattenArrayTypeOpt(ty);
       then
         (ty_1,(NONE :: dimlist_1));
-    case ((T_ARRAY(arrayDim = DIM(integerOption = SOME(dim)),arrayType = ty),_))
+    case ((DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(dim)),arrayType = ty),_))
       equation 
         (ty_1,dimlist) = flattenArrayTypeOpt(ty);
         dimlist_1 = SOME(dim)::dimlist;
@@ -3391,7 +3148,7 @@ algorithm
         (ty_1,dimlist_1);
         
         // Complex type extending basetype.
-    case ((T_COMPLEX(_,_,SOME(ty),_),_)) equation
+    case ((DAE.T_COMPLEX(_,_,SOME(ty),_),_)) equation
       (ty_1,dimlist) = flattenArrayTypeOpt(ty);
       then (ty_1,dimlist);
 
@@ -3415,16 +3172,16 @@ algorithm
       Type ty,arrayty;
       list<Integer> dims;
       list<Ident> dimstrs;
-    case ((T_INTEGER(varLstInt = _),_)) then "Integer"; 
-    case ((T_REAL(varLstReal = _),_)) then "Real"; 
-    case ((T_STRING(varLstString = _),_)) then "String"; 
-    case ((T_BOOL(varLstBool = _),_)) then "Boolean"; 
-    case ((T_COMPLEX(complexClassType = st),_))
+    case ((DAE.T_INTEGER(varLstInt = _),_)) then "Integer"; 
+    case ((DAE.T_REAL(varLstReal = _),_)) then "Real"; 
+    case ((DAE.T_STRING(varLstString = _),_)) then "String"; 
+    case ((DAE.T_BOOL(varLstBool = _),_)) then "Boolean"; 
+    case ((DAE.T_COMPLEX(complexClassType = st),_))
       equation 
         n = ClassInf.getStateName(st);
       then
         n;
-    case ((arrayty as (T_ARRAY(arrayDim = _),_)))
+    case ((arrayty as (DAE.T_ARRAY(arrayDim = _),_)))
       equation 
         (ty,dims) = flattenArrayType(arrayty);
         dimstrs = Util.listMap(dims, int_string);
@@ -3435,7 +3192,7 @@ algorithm
         str;
 
         /* MetaModelica type */
-    case ((T_LIST(ty),_))
+    case ((DAE.T_LIST(ty),_))
       equation
         n = getTypeName(ty);
       then
@@ -3460,8 +3217,8 @@ algorithm
       TupleConst constant_;
       Ident str;
       Properties prop;
-    case PROP(constFlag = c) then c; 
-    case PROP_TUPLE(tupleConst = constant_)
+    case DAE.PROP(constFlag = c) then c; 
+    case DAE.PROP_TUPLE(tupleConst = constant_)
       equation 
         res = propTupleAllConst(constant_);
       then
@@ -3490,8 +3247,8 @@ algorithm
       Const constant_,res;
       Ident str;
       Properties prop;
-    case PROP(constFlag = constant_) then constant_; 
-    case PROP_TUPLE(tupleConst = constant_)
+    case DAE.PROP(constFlag = constant_) then constant_; 
+    case DAE.PROP_TUPLE(tupleConst = constant_)
       local TupleConst constant_;
       equation 
         res = propTupleAnyConst(constant_);
@@ -3522,32 +3279,32 @@ algorithm
       TupleConst first,const;
       list<TupleConst> rest;
       Ident str;
-    case CONST(const = c) then c; 
-    case TUPLE_CONST(tupleConstLst = (first :: rest))
+    case DAE.SINGLE_CONST(const = c) then c; 
+    case DAE.TUPLE_CONST(tupleConstLst = (first :: rest))
       equation 
-        C_CONST() = propTupleAnyConst(first);
+        DAE.C_CONST() = propTupleAnyConst(first);
       then
-        C_CONST();
-    case TUPLE_CONST(tupleConstLst = (first :: {}))
+        DAE.C_CONST();
+    case DAE.TUPLE_CONST(tupleConstLst = (first :: {}))
       equation 
-        C_PARAM() = propTupleAnyConst(first);
+        DAE.C_PARAM() = propTupleAnyConst(first);
       then
-        C_PARAM();
-    case TUPLE_CONST(tupleConstLst = (first :: {}))
+        DAE.C_PARAM();
+    case DAE.TUPLE_CONST(tupleConstLst = (first :: {}))
       equation 
-        C_VAR() = propTupleAnyConst(first);
+        DAE.C_VAR() = propTupleAnyConst(first);
       then
-        C_VAR();
-    case TUPLE_CONST(tupleConstLst = (first :: rest))
+        DAE.C_VAR();
+    case DAE.TUPLE_CONST(tupleConstLst = (first :: rest))
       equation 
-        C_PARAM() = propTupleAnyConst(first);
-        res = propTupleAnyConst(TUPLE_CONST(rest));
+        DAE.C_PARAM() = propTupleAnyConst(first);
+        res = propTupleAnyConst(DAE.TUPLE_CONST(rest));
       then
         res;
-    case TUPLE_CONST(tupleConstLst = (first :: rest))
+    case DAE.TUPLE_CONST(tupleConstLst = (first :: rest))
       equation 
-        C_VAR() = propTupleAnyConst(first);
-        res = propTupleAnyConst(TUPLE_CONST(rest));
+        DAE.C_VAR() = propTupleAnyConst(first);
+        res = propTupleAnyConst(DAE.TUPLE_CONST(rest));
       then
         res;
     case const
@@ -3575,26 +3332,26 @@ algorithm
       TupleConst first,const;
       list<TupleConst> rest;
       Ident str;
-    case CONST(const = c) then c; 
-    case TUPLE_CONST(tupleConstLst = (first :: rest))
+    case DAE.SINGLE_CONST(const = c) then c; 
+    case DAE.TUPLE_CONST(tupleConstLst = (first :: rest))
       equation 
-        C_PARAM() = propTupleAllConst(first);
+        DAE.C_PARAM() = propTupleAllConst(first);
       then
-        C_PARAM();
-    case TUPLE_CONST(tupleConstLst = (first :: rest))
+        DAE.C_PARAM();
+    case DAE.TUPLE_CONST(tupleConstLst = (first :: rest))
       equation 
-        C_VAR() = propTupleAllConst(first);
+        DAE.C_VAR() = propTupleAllConst(first);
       then
-        C_VAR();
-    case TUPLE_CONST(tupleConstLst = (first :: {}))
+        DAE.C_VAR();
+    case DAE.TUPLE_CONST(tupleConstLst = (first :: {}))
       equation 
-        C_CONST() = propTupleAllConst(first);
+        DAE.C_CONST() = propTupleAllConst(first);
       then
-        C_CONST();
-    case TUPLE_CONST(tupleConstLst = (first :: rest))
+        DAE.C_CONST();
+    case DAE.TUPLE_CONST(tupleConstLst = (first :: rest))
       equation 
-        C_CONST() = propTupleAllConst(first);
-        res = propTupleAllConst(TUPLE_CONST(rest));
+        DAE.C_CONST() = propTupleAllConst(first);
+        res = propTupleAllConst(DAE.TUPLE_CONST(rest));
       then
         res;
     case const
@@ -3629,7 +3386,7 @@ algorithm
   b := matchcontinue (p)
     case(p)
       equation
-        (( T_TUPLE(_),_)) = getPropType(p);
+        (( DAE.T_TUPLE(_),_)) = getPropType(p);
       then
         true;
     case(_) then false;
@@ -3659,8 +3416,8 @@ algorithm
   outType:=
   matchcontinue (inProperties)
     local Type ty;
-    case PROP(type_ = ty) then ty; 
-    case PROP_TUPLE(type_ = ty) then ty; 
+    case DAE.PROP(type_ = ty) then ty; 
+    case DAE.PROP_TUPLE(type_ = ty) then ty; 
   end matchcontinue;
 end getPropType;
 
@@ -3676,11 +3433,11 @@ algorithm
       Type et,t;
       Exp.Type t_1;
       list<Option<Integer>> dims;
-    case ((T_INTEGER(varLstInt = _),_)) then Exp.INT(); 
-    case ((T_REAL(varLstReal = _),_)) then Exp.REAL(); 
-    case ((T_BOOL(varLstBool = _),_)) then Exp.BOOL(); 
-    case ((T_STRING(varLstString = _),_)) then Exp.STRING(); 
-    case ((T_ENUMERATION(index,path,names,varLst),_)) 
+    case ((DAE.T_INTEGER(varLstInt = _),_)) then Exp.INT(); 
+    case ((DAE.T_REAL(varLstReal = _),_)) then Exp.REAL(); 
+    case ((DAE.T_BOOL(varLstBool = _),_)) then Exp.BOOL(); 
+    case ((DAE.T_STRING(varLstString = _),_)) then Exp.STRING(); 
+    case ((DAE.T_ENUMERATION(index,path,names,varLst),_)) 
       local
         Option<Integer> index;
         Absyn.Path path;
@@ -3691,8 +3448,8 @@ algorithm
         ecvl = Util.listMap(varLst,convertFromTypesToExpVar);
       then
         Exp.ENUMERATION(index,path,names,ecvl);
-//    case ((T_ENUM(),_)) then Exp.ENUM(); 
-    case ((t as (T_ARRAY(arrayDim = _),_)))
+//    case ((DAE.T_ENUM(),_)) then Exp.ENUM(); 
+    case ((t as (DAE.T_ARRAY(arrayDim = _),_)))
       equation 
         et = arrayElementType(t);
         t_1 = elabType(et);
@@ -3700,24 +3457,24 @@ algorithm
       then
         Exp.T_ARRAY(t_1,dims);
         
-    case ( (T_COMPLEX(_,_,SOME(t),_),_)) 
+    case ( (DAE.T_COMPLEX(_,_,SOME(t),_),_)) 
       then elabType(t);
         
         // MetaModelica extension
-    case ((T_LIST(t),_))
+    case ((DAE.T_LIST(t),_))
       equation
         t_1 = elabType(t);
       then Exp.T_LIST(t_1);
     
-    case ((T_FUNCTION(_,_),_)) "Ceval.ceval might need more info? Don't know how that part of the compiler works. sjoelund"
+    case ((DAE.T_FUNCTION(_,_),_)) "Ceval.ceval might need more info? Don't know how that part of the compiler works. sjoelund"
       then Exp.T_FUNCTION_REFERENCE_VAR();
 
-    case ((T_METAOPTION(t),_))
+    case ((DAE.T_METAOPTION(t),_))
       equation
         t_1 = elabType(t);
       then Exp.T_METAOPTION(t_1);
 
-    case ((T_METATUPLE(t_l),_))
+    case ((DAE.T_METATUPLE(t_l),_))
       local
         list<Exp.Type> t_l2;
         list<Type> t_l;
@@ -3725,17 +3482,17 @@ algorithm
         t_l2 = Util.listMap(t_l,elabType);
       then Exp.T_METATUPLE(t_l2);
     
-    case ((T_BOXED(t),_)) equation t_1 = elabType(t); then Exp.T_BOXED(t_1);
+    case ((DAE.T_BOXED(t),_)) equation t_1 = elabType(t); then Exp.T_BOXED(t_1);
       
-    case ((T_UNIONTYPE(_),_)) then Exp.T_UNIONTYPE();
+    case ((DAE.T_UNIONTYPE(_),_)) then Exp.T_UNIONTYPE();
       
-    case ((T_METARECORD(_,_),_)) then Exp.T_UNIONTYPE();
+    case ((DAE.T_METARECORD(_,_),_)) then Exp.T_UNIONTYPE();
       
-    case ((T_POLYMORPHIC(_),_)) then Exp.T_POLYMORPHIC();
+    case ((DAE.T_POLYMORPHIC(_),_)) then Exp.T_POLYMORPHIC();
 
-    case ((T_NORETCALL(),_)) then Exp.T_NORETCALL();
+    case ((DAE.T_NORETCALL(),_)) then Exp.T_NORETCALL();
     
-    case ((T_COMPLEX(CIS,tcvl,_,_),_))
+    case ((DAE.T_COMPLEX(CIS,tcvl,_,_),_))
       local 
         list<Var> tcvl; 
         ClassInf.State CIS; 
@@ -3779,24 +3536,24 @@ algorithm
       Exp.Exp e_1,e;
       Type t_1,gt,et;
       Const c,c1,c2;
-    case (e,PROP(type_ = gt,constFlag = c1),PROP(type_ = et,constFlag = c2))
+    case (e,DAE.PROP(type_ = gt,constFlag = c1),DAE.PROP(type_ = et,constFlag = c2))
       equation 
         Debug.print("Debug: match prop.");
         (e_1,t_1) = matchType(e, gt, et);
         c = constAnd(c1, c2);
       then
-        (e_1,PROP(t_1,c));
-    case (e,PROP_TUPLE(type_ = gt,tupleConst = c1),PROP_TUPLE(type_ = et,tupleConst = c2))
+        (e_1,DAE.PROP(t_1,c));
+    case (e,DAE.PROP_TUPLE(type_ = gt,tupleConst = c1),DAE.PROP_TUPLE(type_ = et,tupleConst = c2))
       local TupleConst c,c1,c2;
       equation 
         Debug.print("\nDebug: match prop (PROP TUPLE). ");
         (e_1,t_1) = matchType(e, gt, et);
         c = constTupleAnd(c1, c2);
       then
-        (e_1,PROP_TUPLE(t_1,c));
+        (e_1,DAE.PROP_TUPLE(t_1,c));
         /* The problem with MetaModelica tuple is that it is a datatype (should use PROP instead of PROP_TUPLE)
          * this case converts a TUPLE to META_TUPLE */
-    case (e,PROP_TUPLE(type_ = (gt as (T_TUPLE(_),_)),tupleConst = c1), PROP(type_ = (et as (T_METATUPLE(_),_)),constFlag = c2))
+    case (e,DAE.PROP_TUPLE(type_ = (gt as (DAE.T_TUPLE(_),_)),tupleConst = c1), DAE.PROP(type_ = (et as (DAE.T_METATUPLE(_),_)),constFlag = c2))
       local TupleConst c1; Const c_1;
       equation 
         Debug.print("\nDebug: match prop (PROP META_TUPLE/TUPLE). ");
@@ -3805,7 +3562,7 @@ algorithm
         c_1 = propTupleAllConst(c1);
         c = constAnd(c_1, c2);
       then
-        (e_1,PROP(t_1,c));
+        (e_1,DAE.PROP(t_1,c));
     
     case(e,inProperties2,inProperties3) 
       equation 
@@ -4026,8 +3783,8 @@ algorithm
       String str;
 
       /* Array expressions: expression dimension [dim1], expected dimension [dim2] */
-    case (Exp.ARRAY(array = elist),(T_ARRAY(arrayDim = DIM(integerOption = SOME(dim1)),arrayType = ty1),_),
-      		ty0 as (T_ARRAY(arrayDim = DIM(integerOption = SOME(dim2)),arrayType = ty2),p),polymorphicBindings,matchFunc)
+    case (Exp.ARRAY(array = elist),(DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(dim1)),arrayType = ty1),_),
+      		ty0 as (DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(dim2)),arrayType = ty2),p),polymorphicBindings,matchFunc)
       equation 
         (dim1 == dim2) = true  ;
         (elist_1,polymorphicBindings) = typeConvertArray(elist, ty1, ty2,SOME(dim1),polymorphicBindings,matchFunc);
@@ -4035,22 +3792,22 @@ algorithm
         a = isArray(ty2);
         sc = boolNot(a);
       then
-        (Exp.ARRAY(at,sc,elist_1),(T_ARRAY(DIM(SOME(dim1)),ty2),p),polymorphicBindings);
+        (Exp.ARRAY(at,sc,elist_1),(DAE.T_ARRAY(DAE.DIM(SOME(dim1)),ty2),p),polymorphicBindings);
 
      /* Array expressions: expression dimension [:], expected dimension [dim2] */
-    case (Exp.ARRAY(array = elist),(T_ARRAY(arrayDim = DIM(integerOption = NONE),arrayType = ty1),_),
-      	ty0 as (T_ARRAY(arrayDim = DIM(integerOption = SOME(dim2)),arrayType = ty2),p2),polymorphicBindings,matchFunc)
+    case (Exp.ARRAY(array = elist),(DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = NONE),arrayType = ty1),_),
+      	ty0 as (DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(dim2)),arrayType = ty2),p2),polymorphicBindings,matchFunc)
       equation 
         (elist_1,polymorphicBindings) = typeConvertArray(elist, ty1, ty2,SOME(dim2),polymorphicBindings,matchFunc);
         at = elabType(ty0);
         a = isArray(ty2);
         sc = boolNot(a);
       then
-        (Exp.ARRAY(at,sc,elist_1),(T_ARRAY(DIM(NONE),ty2),p2),polymorphicBindings);
+        (Exp.ARRAY(at,sc,elist_1),(DAE.T_ARRAY(DAE.DIM(NONE),ty2),p2),polymorphicBindings);
 
         /* Array expressions: expression dimension [dim1], expected dimension [:] */
-    case (Exp.ARRAY(array = elist),(T_ARRAY(arrayDim = DIM(integerOption = SOME(dim1)),arrayType = ty1),_),
-      	ty0 as (T_ARRAY(arrayDim = DIM(integerOption = NONE),arrayType = ty2),p2),polymorphicBindings,matchFunc)
+    case (Exp.ARRAY(array = elist),(DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(dim1)),arrayType = ty1),_),
+      	ty0 as (DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = NONE),arrayType = ty2),p2),polymorphicBindings,matchFunc)
       	local
       	  Exp.Type ety1;
       equation 
@@ -4061,12 +3818,12 @@ algorithm
         sc = boolNot(a);
         //TODO: Verify correctness of return value.
       then
-        (Exp.ARRAY(Exp.T_ARRAY(ety1,{SOME(dim1)}),sc,elist_1),(T_ARRAY(DIM(SOME(dim1)),ty2),p2),polymorphicBindings);
-        //(Exp.ARRAY(at,sc,elist_1),(T_ARRAY(DIM(SOME(dim1)),ty2),p2));
+        (Exp.ARRAY(Exp.T_ARRAY(ety1,{SOME(dim1)}),sc,elist_1),(DAE.T_ARRAY(DAE.DIM(SOME(dim1)),ty2),p2),polymorphicBindings);
+        //(Exp.ARRAY(at,sc,elist_1),(DAE.T_ARRAY(DAE.DIM(SOME(dim1)),ty2),p2));
         
         /* Range expressions, e.g. 1:2:10 */
-    case (Exp.RANGE(ty = t,exp = begin,expOption = SOME(step),range = stop),(T_ARRAY(arrayDim = DIM(integerOption = SOME(dim1)),arrayType = ty1),_),
-      ty0 as (T_ARRAY(arrayDim = DIM(integerOption = SOME(dim2)),arrayType = ty2),p),polymorphicBindings,matchFunc)
+    case (Exp.RANGE(ty = t,exp = begin,expOption = SOME(step),range = stop),(DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(dim1)),arrayType = ty1),_),
+      ty0 as (DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(dim2)),arrayType = ty2),p),polymorphicBindings,matchFunc)
       equation 
         (dim1 == dim2) = true;
         (begin_1,_,polymorphicBindings) = typeConvert(begin, ty1, ty2, polymorphicBindings, matchFunc);
@@ -4074,122 +3831,122 @@ algorithm
         (stop_1,_,polymorphicBindings) = typeConvert(stop, ty1, ty2, polymorphicBindings, matchFunc);
         at = elabType(ty0);
       then
-        (Exp.RANGE(at,begin_1,SOME(step_1),stop_1),(T_ARRAY(DIM(SOME(dim1)),ty2),p),polymorphicBindings);
+        (Exp.RANGE(at,begin_1,SOME(step_1),stop_1),(DAE.T_ARRAY(DAE.DIM(SOME(dim1)),ty2),p),polymorphicBindings);
 
         /* Range expressions, e.g. 1:10 */
-    case (Exp.RANGE(ty = t,exp = begin,expOption = NONE,range = stop),(T_ARRAY(arrayDim = DIM(integerOption = SOME(dim1)),arrayType = ty1),_),
-      ty0 as (T_ARRAY(arrayDim = DIM(integerOption = SOME(dim2)),arrayType = ty2),p),polymorphicBindings,matchFunc)
+    case (Exp.RANGE(ty = t,exp = begin,expOption = NONE,range = stop),(DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(dim1)),arrayType = ty1),_),
+      ty0 as (DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(dim2)),arrayType = ty2),p),polymorphicBindings,matchFunc)
       equation 
         (dim1 == dim2) = true  ;
         (begin_1,_,polymorphicBindings) = typeConvert(begin, ty1, ty2, polymorphicBindings, matchFunc);
         (stop_1,_,polymorphicBindings) = typeConvert(stop, ty1, ty2, polymorphicBindings, matchFunc);
         at = elabType(ty0);
       then
-        (Exp.RANGE(at,begin_1,NONE,stop_1),(T_ARRAY(DIM(SOME(dim1)),ty2),p),polymorphicBindings);
+        (Exp.RANGE(at,begin_1,NONE,stop_1),(DAE.T_ARRAY(DAE.DIM(SOME(dim1)),ty2),p),polymorphicBindings);
 
         /* Matrix expressions: expression dimension [dim1,dim11], expected dimension [dim2,dim22] */
-    case (Exp.MATRIX(integer = nmax,scalar = ell),(T_ARRAY(arrayDim = DIM(integerOption = SOME(dim1)),arrayType = (T_ARRAY(arrayDim = DIM(integerOption = SOME(dim11)),arrayType = t1),_)),_),
-      ty0 as (T_ARRAY(arrayDim = DIM(integerOption = SOME(dim2)),arrayType = (T_ARRAY(arrayDim = DIM(integerOption = SOME(dim22)),arrayType = t2),p1)),p2),polymorphicBindings, matchFunc)
+    case (Exp.MATRIX(integer = nmax,scalar = ell),(DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(dim1)),arrayType = (DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(dim11)),arrayType = t1),_)),_),
+      ty0 as (DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(dim2)),arrayType = (DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(dim22)),arrayType = t2),p1)),p2),polymorphicBindings, matchFunc)
       equation 
         (dim1 == dim2) = true  ;
         (dim11 == dim22) = true;
         (ell_1,polymorphicBindings) = typeConvertMatrix(ell, t1, t2,SOME(dim1),SOME(dim2),polymorphicBindings,matchFunc);
         at = elabType(ty0);
       then
-        (Exp.MATRIX(at,nmax,ell_1),(T_ARRAY(DIM(SOME(dim1)),(T_ARRAY(DIM(SOME(dim11)),t2),p1)),
+        (Exp.MATRIX(at,nmax,ell_1),(DAE.T_ARRAY(DAE.DIM(SOME(dim1)),(DAE.T_ARRAY(DAE.DIM(SOME(dim11)),t2),p1)),
           p2),polymorphicBindings);
           
         /* Matrix expressions: expression dimension [dim1,dim11] expected dimension [:,dim22] */
-    case (Exp.MATRIX(integer = nmax,scalar = ell),(T_ARRAY(arrayDim = DIM(integerOption = SOME(dim1)),arrayType = (T_ARRAY(arrayDim = DIM(integerOption = SOME(dim11)),arrayType = t1),_)),_),
-      ty0 as (T_ARRAY(arrayDim = DIM(integerOption = NONE),arrayType = (T_ARRAY(arrayDim = DIM(integerOption = SOME(dim22)),arrayType = t2),p1)),p2),polymorphicBindings,matchFunc)
+    case (Exp.MATRIX(integer = nmax,scalar = ell),(DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(dim1)),arrayType = (DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(dim11)),arrayType = t1),_)),_),
+      ty0 as (DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = NONE),arrayType = (DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(dim22)),arrayType = t2),p1)),p2),polymorphicBindings,matchFunc)
       equation 
         (dim11 == dim22) = true;
         (ell_1,polymorphicBindings) = typeConvertMatrix(ell, t1, t2,SOME(dim1),SOME(dim11),polymorphicBindings,matchFunc);
         at = elabType(ty0);
       then
-        (Exp.MATRIX(at,nmax,ell_1),(T_ARRAY(DIM(SOME(dim1)),(T_ARRAY(DIM(SOME(dim11)),t2),p1)),
+        (Exp.MATRIX(at,nmax,ell_1),(DAE.T_ARRAY(DAE.DIM(SOME(dim1)),(DAE.T_ARRAY(DAE.DIM(SOME(dim11)),t2),p1)),
           p2),polymorphicBindings);
     
         /* Arbitrary expressions, expression dimension [dim1], expected dimension [dim2] */
-    case (e,(T_ARRAY(arrayDim = DIM(integerOption = SOME(dim1)),arrayType = ty1),_),
-      	ty0 as (T_ARRAY(arrayDim = DIM(integerOption = SOME(dim2)),arrayType = ty2),p2),polymorphicBindings,matchFunc)
+    case (e,(DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(dim1)),arrayType = ty1),_),
+      	ty0 as (DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(dim2)),arrayType = ty2),p2),polymorphicBindings,matchFunc)
       equation 
         (dim1 == dim2) = true ;
         (e_1,t_1,polymorphicBindings) = typeConvert(e, ty1, ty2, polymorphicBindings, matchFunc);
         e_1 = liftExpType(e_1,SOME(dim1));
       then
-        (e_1,(T_ARRAY(DIM(SOME(dim2)),t_1),p2),polymorphicBindings);
+        (e_1,(DAE.T_ARRAY(DAE.DIM(SOME(dim2)),t_1),p2),polymorphicBindings);
 
         /* Arbitrary expressions,  expression dimension [:],  expected dimension [dim2]*/
-    case (e,(T_ARRAY(arrayDim = DIM(integerOption = NONE),arrayType = ty1),_),
-      	(T_ARRAY(arrayDim = DIM(integerOption = SOME(dim2)),arrayType = ty2),p2),polymorphicBindings,matchFunc)
+    case (e,(DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = NONE),arrayType = ty1),_),
+      	(DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(dim2)),arrayType = ty2),p2),polymorphicBindings,matchFunc)
       equation 
         (e_1,t_1,polymorphicBindings) = typeConvert(e, ty1, ty2, polymorphicBindings, matchFunc);
         e_1 = liftExpType(e_1,NONE);
       then
-        (e_1,(T_ARRAY(DIM(NONE),t_1),p2),polymorphicBindings);
+        (e_1,(DAE.T_ARRAY(DAE.DIM(NONE),t_1),p2),polymorphicBindings);
         
         /* Arbitrary expressions, expression dimension [:] expected dimension [:] */
-    case (e,(T_ARRAY(arrayDim = DIM(integerOption = NONE),arrayType = ty1),_),
-      (T_ARRAY(arrayDim = DIM(integerOption = NONE),arrayType = ty2),p2),polymorphicBindings,matchFunc)
+    case (e,(DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = NONE),arrayType = ty1),_),
+      (DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = NONE),arrayType = ty2),p2),polymorphicBindings,matchFunc)
       equation 
         (e_1,t_1,polymorphicBindings) = typeConvert(e, ty1, ty2, polymorphicBindings, matchFunc);
         e_1 = liftExpType(e_1,NONE);
       then
-        (e_1,(T_ARRAY(DIM(NONE),t_1),p2),polymorphicBindings);
+        (e_1,(DAE.T_ARRAY(DAE.DIM(NONE),t_1),p2),polymorphicBindings);
         
         /* Arbitrary expression, expression dimension [dim1] expected dimension [:]*/
-    case (e,(T_ARRAY(arrayDim = DIM(integerOption = SOME(dim1)),arrayType = ty1),_),
-      	(T_ARRAY(arrayDim = DIM(integerOption = NONE),arrayType = ty2),p2),polymorphicBindings,matchFunc)
+    case (e,(DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(dim1)),arrayType = ty1),_),
+      	(DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = NONE),arrayType = ty2),p2),polymorphicBindings,matchFunc)
       equation 
         (e_1,t_1,polymorphicBindings) = typeConvert(e, ty1, ty2, polymorphicBindings, matchFunc);
         e_1 = liftExpType(e_1,SOME(dim1));
       then
-        (e_1,(T_ARRAY(DIM(SOME(dim1)),t_1),p2),polymorphicBindings);
+        (e_1,(DAE.T_ARRAY(DAE.DIM(SOME(dim1)),t_1),p2),polymorphicBindings);
         
         /* Tuple */
-    case (Exp.TUPLE(PR = elist),(T_TUPLE(tupleType = tys1),_),(T_TUPLE(tupleType = tys2),p2),polymorphicBindings,matchFunc)
+    case (Exp.TUPLE(PR = elist),(DAE.T_TUPLE(tupleType = tys1),_),(DAE.T_TUPLE(tupleType = tys2),p2),polymorphicBindings,matchFunc)
       equation 
         (elist_1,tys_1,polymorphicBindings) = typeConvertList(elist, tys1, tys2, polymorphicBindings, matchFunc);
       then
-        (Exp.TUPLE(elist_1),(T_TUPLE(tys_1),p2),polymorphicBindings);
+        (Exp.TUPLE(elist_1),(DAE.T_TUPLE(tys_1),p2),polymorphicBindings);
         
         /* Enumeration */
-    case (exp,(T_ENUMERATION(index=SOME(_)),_),(T_ENUMERATION(index=oi,path=tp,names = l,varLst = v),p2),polymorphicBindings,matchFunc)
-//    case (exp,(T_ENUM(),_),(T_ENUMERATION(names = l,varLst = v),p2),polymorphicBindings,matchFunc)
+    case (exp,(DAE.T_ENUMERATION(index=SOME(_)),_),(DAE.T_ENUMERATION(index=oi,path=tp,names = l,varLst = v),p2),polymorphicBindings,matchFunc)
+//    case (exp,(DAE.T_ENUM(),_),(DAE.T_ENUMERATION(names = l,varLst = v),p2),polymorphicBindings,matchFunc)
       local 
         Option<Integer> oi;
         Absyn.Path tp;
-      then (exp,(T_ENUMERATION(oi,tp,l,v),p2),polymorphicBindings);
+      then (exp,(DAE.T_ENUMERATION(oi,tp,l,v),p2),polymorphicBindings);
 
         /* Implicit conversion from Integer to Real */        
-    case (e,(T_INTEGER(varLstInt = v),_),(T_REAL(varLstReal = _),p),polymorphicBindings,matchFunc)
-      then (Exp.CAST(Exp.REAL(),e),(T_REAL(v),p),polymorphicBindings);
+    case (e,(DAE.T_INTEGER(varLstInt = v),_),(DAE.T_REAL(varLstReal = _),p),polymorphicBindings,matchFunc)
+      then (Exp.CAST(Exp.REAL(),e),(DAE.T_REAL(v),p),polymorphicBindings);
               
     /* Complex type inheriting primitive type */        
-    case (e, (T_COMPLEX(complexTypeOption = SOME(t1)),_),t2,polymorphicBindings,matchFunc) equation
+    case (e, (DAE.T_COMPLEX(complexTypeOption = SOME(t1)),_),t2,polymorphicBindings,matchFunc) equation
       (e_1,t_1,polymorphicBindings) = typeConvert(e,t1,t2,polymorphicBindings,matchFunc);
     then (e_1,t_1,polymorphicBindings);
-    case (e, t1,(T_COMPLEX(complexTypeOption = SOME(t2)),_),polymorphicBindings,matchFunc) equation
+    case (e, t1,(DAE.T_COMPLEX(complexTypeOption = SOME(t2)),_),polymorphicBindings,matchFunc) equation
       (e_1,t_1,polymorphicBindings) = typeConvert(e,t1,t2,polymorphicBindings,matchFunc);
     then (e_1,t_1,polymorphicBindings);
       
         /* MetaModelica Option */
-    case (Exp.META_OPTION(SOME(e)),(T_METAOPTION(t1),_),(T_METAOPTION(t2),p2),polymorphicBindings,matchFunc)
+    case (Exp.META_OPTION(SOME(e)),(DAE.T_METAOPTION(t1),_),(DAE.T_METAOPTION(t2),p2),polymorphicBindings,matchFunc)
       equation 
         true = RTOpts.acceptMetaModelicaGrammar();
         (e_1, t_1, polymorphicBindings) = matchFunc(e, t1, t2, polymorphicBindings);
       then
-        (Exp.META_OPTION(SOME(e_1)),(T_METAOPTION(t_1),p2),polymorphicBindings);
-    case (Exp.META_OPTION(NONE),_,(T_METAOPTION(t2),p2),polymorphicBindings,matchFunc)
+        (Exp.META_OPTION(SOME(e_1)),(DAE.T_METAOPTION(t_1),p2),polymorphicBindings);
+    case (Exp.META_OPTION(NONE),_,(DAE.T_METAOPTION(t2),p2),polymorphicBindings,matchFunc)
       equation 
         true = RTOpts.acceptMetaModelicaGrammar();
       then
-        (Exp.META_OPTION(NONE),(T_METAOPTION(t2),p2),polymorphicBindings);
+        (Exp.META_OPTION(NONE),(DAE.T_METAOPTION(t2),p2),polymorphicBindings);
 
         //Part of metamodelica extension, added by, simbj
         // <uniontype> = <metarecord>
-    case(e,(T_METARECORD(_,_),SOME(path)),t2 as (T_UNIONTYPE(lst),_),polymorphicBindings,matchFunc)
+    case(e,(DAE.T_METARECORD(_,_),SOME(path)),t2 as (DAE.T_UNIONTYPE(lst),_),polymorphicBindings,matchFunc)
       local
         list<Absyn.Path> lst;
         Absyn.Path path;
@@ -4198,17 +3955,17 @@ algorithm
       then (e,t2,polymorphicBindings);
         
         /* MetaModelica Tuple */
-    case (Exp.TUPLE(elist),(T_TUPLE(tupleType = tys1),_),(T_METATUPLE(tys2),p2),polymorphicBindings,matchFunc)
+    case (Exp.TUPLE(elist),(DAE.T_TUPLE(tupleType = tys1),_),(DAE.T_METATUPLE(tys2),p2),polymorphicBindings,matchFunc)
       equation 
         true = RTOpts.acceptMetaModelicaGrammar();
         (elist_1,tys_1,polymorphicBindings) = matchTypeTuple(elist, tys1, tys2, polymorphicBindings, matchFunc);
       then
-        (Exp.META_TUPLE(elist_1),(T_METATUPLE(tys_1),p2),polymorphicBindings);
-    case (Exp.META_TUPLE(elist),(T_METATUPLE(tys1),_),(T_METATUPLE(tys2),p2),polymorphicBindings,matchFunc)
+        (Exp.META_TUPLE(elist_1),(DAE.T_METATUPLE(tys_1),p2),polymorphicBindings);
+    case (Exp.META_TUPLE(elist),(DAE.T_METATUPLE(tys1),_),(DAE.T_METATUPLE(tys2),p2),polymorphicBindings,matchFunc)
       equation 
         (elist_1,tys_1,polymorphicBindings) = matchTypeTuple(elist, tys1, tys2, polymorphicBindings, matchFunc);
       then
-        (Exp.META_TUPLE(elist_1),(T_METATUPLE(tys_1),p2),polymorphicBindings);
+        (Exp.META_TUPLE(elist_1),(DAE.T_METATUPLE(tys_1),p2),polymorphicBindings);
       /*
          The automatic type conversion will convert any array that can be
          const-eval'ed to an Exp.ARRAY or Exp.MATRIX into a list of the same
@@ -4220,23 +3977,23 @@ algorithm
            someListFunction({a[1],a[2],a[3]});
          / sjoelund 2009-08-13
        */
-    case (e as Exp.ARRAY(Exp.T_ARRAY(ty = t),_,elist),(T_ARRAY(arrayType=t1),_),(T_LIST(t2),p2),polymorphicBindings,matchFunc)
+    case (e as Exp.ARRAY(Exp.T_ARRAY(ty = t),_,elist),(DAE.T_ARRAY(arrayType=t1),_),(DAE.T_LIST(t2),p2),polymorphicBindings,matchFunc)
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
         (elist_1, tys1, polymorphicBindings) = matchTypeList(elist, t1, t2, polymorphicBindings, matchFunc);
         (elist_1, t2, polymorphicBindings) = listMatchSuperType(elist_1, tys1, polymorphicBindings, matchFunc);
         t = elabType(t2);
         e_1 = Exp.LIST(t,elist_1);
-        t2 = (T_LIST(t2),NONE);
+        t2 = (DAE.T_LIST(t2),NONE);
       then (e_1, t2, polymorphicBindings);
-    case (e as Exp.ARRAY(Exp.T_ARRAY(ty = t),_,elist),(T_ARRAY(arrayType=t1),_),(T_BOXED(t2),p2),polymorphicBindings,matchFunc)
+    case (e as Exp.ARRAY(Exp.T_ARRAY(ty = t),_,elist),(DAE.T_ARRAY(arrayType=t1),_),(DAE.T_BOXED(t2),p2),polymorphicBindings,matchFunc)
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
         (elist_1, tys1, polymorphicBindings) = matchTypeList(elist, t1, t2, polymorphicBindings, matchFunc);
         (elist_1, t2, polymorphicBindings) = listMatchSuperType(elist_1, tys1, polymorphicBindings, matchFunc);
         t = elabType(t2);
         e_1 = Exp.LIST(t,elist_1);
-        t2 = (T_LIST(t2),NONE);
+        t2 = (DAE.T_LIST(t2),NONE);
       then (e_1, t2, polymorphicBindings);
     case (e as Exp.MATRIX(Exp.T_ARRAY(ty = t),_,melist),t1,t2,polymorphicBindings,matchFunc)
       local
@@ -4249,56 +4006,56 @@ algorithm
         t = elabType(ty2);
         e_1 = Exp.LIST(t,elist);
       then (e_1,ty2,polymorphicBindings);
-    case (e as Exp.LIST(_,elist),(T_LIST(t1),_),(T_LIST(t2),p2),polymorphicBindings,matchFunc)
+    case (e as Exp.LIST(_,elist),(DAE.T_LIST(t1),_),(DAE.T_LIST(t2),p2),polymorphicBindings,matchFunc)
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
         (elist_1, tys1, polymorphicBindings) = matchTypeList(elist, t1, t2, polymorphicBindings, matchFunc);
         (elist_1, t2, polymorphicBindings) = listMatchSuperType(elist_1, tys1, polymorphicBindings, matchFunc);
         t = elabType(t2);
         e_1 = Exp.LIST(t,elist_1);
-        t2 = (T_LIST(t2),NONE);
+        t2 = (DAE.T_LIST(t2),NONE);
       then (e_1, t2, polymorphicBindings);
         
-    case (e,(T_LIST(t1),_),(T_LIST(t2),p2),polymorphicBindings,matchFunc)
+    case (e,(DAE.T_LIST(t1),_),(DAE.T_LIST(t2),p2),polymorphicBindings,matchFunc)
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
         (_, ty2, polymorphicBindings) = matchFunc(e, t1, t2, polymorphicBindings);
-      then (e, (T_LIST(ty2),p2), polymorphicBindings);
+      then (e, (DAE.T_LIST(ty2),p2), polymorphicBindings);
     
-    case (e, t1 as (T_INTEGER({}),_), (T_BOXED(t2),_),polymorphicBindings,matchFunc)
+    case (e, t1 as (DAE.T_INTEGER({}),_), (DAE.T_BOXED(t2),_),polymorphicBindings,matchFunc)
       equation
         true = subtype(t1,t2);
-        t2 = (T_BOXED(t1),NONE);
+        t2 = (DAE.T_BOXED(t1),NONE);
         t = elabType(t2);
       then (Exp.CALL(Absyn.IDENT("mmc_mk_icon"),{e},false,true,t,false),t2,polymorphicBindings);
       
-    case (e, t1 as (T_BOOL({}),_), (T_BOXED(t2),_), polymorphicBindings, matchFunc)
+    case (e, t1 as (DAE.T_BOOL({}),_), (DAE.T_BOXED(t2),_), polymorphicBindings, matchFunc)
       equation
         true = subtype(t1,t2);
-        t2 = (T_BOXED(t1),NONE);
+        t2 = (DAE.T_BOXED(t1),NONE);
         t = elabType(t2);
       then (Exp.CALL(Absyn.IDENT("mmc_mk_icon"),{e},false,true,t,false),t2,polymorphicBindings);
 
-    case (e, t1 as (T_REAL({}),_), (T_BOXED(t2),_),polymorphicBindings,matchFunc)
+    case (e, t1 as (DAE.T_REAL({}),_), (DAE.T_BOXED(t2),_),polymorphicBindings,matchFunc)
       equation
         true = subtype(t1,t2);
-        t2 = (T_BOXED(t1),NONE);
+        t2 = (DAE.T_BOXED(t1),NONE);
         t = elabType(t2);
       then (Exp.CALL(Absyn.IDENT("mmc_mk_rcon"),{e},false,true,t,false),t2,polymorphicBindings);
 
-    case (e, t1 as (T_STRING({}),_), (T_BOXED(t2),_), polymorphicBindings, matchFunc)
+    case (e, t1 as (DAE.T_STRING({}),_), (DAE.T_BOXED(t2),_), polymorphicBindings, matchFunc)
       equation
         true = subtype(t1,t2);
-        t2 = (T_BOXED(t1),NONE);
+        t2 = (DAE.T_BOXED(t1),NONE);
         t = elabType(t2);
       then (Exp.CALL(Absyn.IDENT("mmc_mk_scon"),{e},false,true,t,false),t2,polymorphicBindings);
 
-    case (e as Exp.CALL(path = path1, expLst = elist), t1 as (T_COMPLEX(complexClassType = ClassInf.RECORD(_), complexVarLst = v),SOME(path2)), (T_BOXED(t2),_),polymorphicBindings,matchFunc)
+    case (e as Exp.CALL(path = path1, expLst = elist), t1 as (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_), complexVarLst = v),SOME(path2)), (DAE.T_BOXED(t2),_),polymorphicBindings,matchFunc)
       local Absyn.Path path1,path2;
       equation
         true = subtype(t1,t2);
         equality(path1 = path2);
-        t2 = (T_BOXED(t1),NONE);
+        t2 = (DAE.T_BOXED(t1),NONE);
         l = Util.listMap(v, getVarName);
         tys1 = Util.listMap(v, getVarType);
         tys2 = Util.listMap(tys1, boxIfUnboxedType);
@@ -4306,12 +4063,12 @@ algorithm
         e_1 = Exp.METARECORDCALL(path1, elist, l, 0);
       then (e_1,t2,polymorphicBindings);
 
-    case (e as Exp.CALL(path = _), t1 as (T_COMPLEX(complexClassType = ClassInf.RECORD(_), complexVarLst = v),_), (T_BOXED(t2),_),polymorphicBindings,matchFunc)
+    case (e as Exp.CALL(path = _), t1 as (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_), complexVarLst = v),_), (DAE.T_BOXED(t2),_),polymorphicBindings,matchFunc)
       equation
         Debug.fprintln("failtrace", "- Not yet implemented: Converting record calls (not constructor) into boxed records");
       then fail();
 
-    case (e as Exp.CREF(cref,_), t1 as (T_COMPLEX(complexClassType = ClassInf.RECORD(_), complexVarLst = v),SOME(path)), (T_BOXED(t2),_),polymorphicBindings,matchFunc)
+    case (e as Exp.CREF(cref,_), t1 as (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_), complexVarLst = v),SOME(path)), (DAE.T_BOXED(t2),_),polymorphicBindings,matchFunc)
       local
         Absyn.Path path;
         list<Absyn.Path> pathList;
@@ -4320,7 +4077,7 @@ algorithm
         list<Exp.Type> expTypes;
       equation
         true = subtype(t1,t2);
-        t2 = (T_BOXED(t1),NONE);
+        t2 = (DAE.T_BOXED(t1),NONE);
         l = Util.listMap(v, getVarName);
         tys1 = Util.listMap(v, getVarType);
         tys2 = Util.listMap(tys1, boxIfUnboxedType);
@@ -4333,31 +4090,31 @@ algorithm
         e_1 = Exp.METARECORDCALL(path, elist, l, 0);
       then (e_1,t2,polymorphicBindings);
 
-    case (e,(T_BOXED(t1),_),t2 as (T_INTEGER(_),_),polymorphicBindings,matchFunc)
+    case (e,(DAE.T_BOXED(t1),_),t2 as (DAE.T_INTEGER(_),_),polymorphicBindings,matchFunc)
       equation
         true = subtype(t1,t2);
         (e_1,_,polymorphicBindings) = matchFunc(e, t1, t2, polymorphicBindings);
       then
         (Exp.CALL(Absyn.IDENT("mmc_unbox_integer"),{e_1},false,true,Exp.INT,false),t2,polymorphicBindings);
-    case (e,(T_BOXED(t1),_),t2 as (T_REAL(_),_),polymorphicBindings,matchFunc)
+    case (e,(DAE.T_BOXED(t1),_),t2 as (DAE.T_REAL(_),_),polymorphicBindings,matchFunc)
       equation
         true = subtype(t1,t2);
         (e_1,_,polymorphicBindings) = matchFunc(e, t1, t2, polymorphicBindings);
       then
         (Exp.CALL(Absyn.IDENT("mmc_unbox_real"),{e_1},false,true,Exp.REAL,false),t2,polymorphicBindings);
-    case (e,(T_BOXED(t1),_),t2 as (T_BOOL(_),_),polymorphicBindings,matchFunc)
+    case (e,(DAE.T_BOXED(t1),_),t2 as (DAE.T_BOOL(_),_),polymorphicBindings,matchFunc)
       equation
         true = subtype(t1,t2);
         (e_1,_,polymorphicBindings) = matchFunc(e, t1, t2, polymorphicBindings);
       then
         (Exp.CALL(Absyn.IDENT("mmc_unbox_integer"),{e_1},false,true,Exp.BOOL,false),t2,polymorphicBindings);
-    case (e,(T_BOXED(t1),_),t2 as (T_STRING(_),_),polymorphicBindings,matchFunc)
+    case (e,(DAE.T_BOXED(t1),_),t2 as (DAE.T_STRING(_),_),polymorphicBindings,matchFunc)
       equation
         true = subtype(t1,t2);
         (e_1,_,polymorphicBindings) = matchFunc(e, t1, t2, polymorphicBindings);
       then
         (Exp.CALL(Absyn.IDENT("mmc_unbox_string"),{e_1},false,true,Exp.STRING,false),t2,polymorphicBindings);
-    case (e,(T_BOXED(t1),_),t2 as (T_COMPLEX(complexClassType = ClassInf.RECORD(_), complexVarLst = v),_),polymorphicBindings,matchFunc)
+    case (e,(DAE.T_BOXED(t1),_),t2 as (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_), complexVarLst = v),_),polymorphicBindings,matchFunc)
       equation
         true = subtype(t1,t2);
         (e_1,t2,polymorphicBindings) = matchFunc(e, t1, t2, polymorphicBindings);
@@ -4366,7 +4123,7 @@ algorithm
         (Exp.CALL(Absyn.IDENT("mmc_unbox_record"),{e_1},false,true,t,false),t2,polymorphicBindings);
     
     // MM Function Reference. sjoelund
-    case (e as Exp.CREF(_,_),(T_FUNCTION(farg1,t1),p1),(T_FUNCTION(farg2,t2),_),polymorphicBindings,matchFunc)
+    case (e as Exp.CREF(_,_),(DAE.T_FUNCTION(farg1,t1),p1),(DAE.T_FUNCTION(farg2,t2),_),polymorphicBindings,matchFunc)
       local
         list<FuncArg> farg,farg1,farg2;
         list<Type> tList1,tList2;
@@ -4380,7 +4137,7 @@ algorithm
         (_,tys1,polymorphicBindings) = matchTypeTuple(exps,tList1,tList2,polymorphicBindings,matchFunc);
         (_,ty1,polymorphicBindings) = matchFunc(e,t1,t2,polymorphicBindings);
         farg = Util.listThreadMap(fargId1,tys1,Util.makeTuple2);
-        ty2 = (T_FUNCTION(farg,ty1),p1);
+        ty2 = (DAE.T_FUNCTION(farg,ty1),p1);
       then (e,ty2,polymorphicBindings);
     
     case (exp,t1,t2,polymorphicBindings,matchFunc)
@@ -4614,13 +4371,13 @@ algorithm
       list<Type> tys1;
       Option<Absyn.Path> p2;
       Exp.Exp e,e_1;
-    case ({},_,_,polymorphicBindings,_) then ({},(T_NOTYPE,NONE),polymorphicBindings);
-    case (expl::rest, (T_ARRAY(arrayType=(T_ARRAY(arrayType=t1),_)),_), (T_LIST((T_LIST(t2),_)),p2),polymorphicBindings,matchFunc)
+    case ({},_,_,polymorphicBindings,_) then ({},(DAE.T_NOTYPE,NONE),polymorphicBindings);
+    case (expl::rest, (DAE.T_ARRAY(arrayType=(DAE.T_ARRAY(arrayType=t1),_)),_), (DAE.T_LIST((DAE.T_LIST(t2),_)),p2),polymorphicBindings,matchFunc)
       equation
         (e,t1,polymorphicBindings) = typeConvertMatrixRowToList(expl, t1, t2, polymorphicBindings, matchFunc);
         t = elabType(t1);
         (expl,_,polymorphicBindings) = typeConvertMatrixToList(rest, inType, outType, polymorphicBindings, matchFunc);
-      then (e::expl,(T_LIST(t1),NONE),polymorphicBindings);
+      then (e::expl,(DAE.T_LIST(t1),NONE),polymorphicBindings);
     case (_, _, _, _, _)
       equation
         Debug.fprintln("tcvt", "- typeConvertMatrixToList failed");
@@ -4653,7 +4410,7 @@ algorithm
   (elist_1,t1::_,outBindings) := matchTypeList(elist, inType, outType, polymorphicBindings, matchFunc);
   t := elabType(t1);
   out := Exp.LIST(t, elist_1);
-  t1 := (T_LIST(t1),NONE);
+  t1 := (DAE.T_LIST(t1),NONE);
 end typeConvertMatrixRowToList;
 
 public function matchWithPromote "function: matchWithPromote
@@ -4681,32 +4438,32 @@ algorithm
       Boolean havereal;
       list<Var> v;
 
-    case (PROP((T_COMPLEX(_,_,SOME(t1),_),_),c1),PROP(t2,c2),havereal) 
-    then matchWithPromote(PROP(t1,c1),PROP(t2,c2),havereal);
+    case (DAE.PROP((DAE.T_COMPLEX(_,_,SOME(t1),_),_),c1),DAE.PROP(t2,c2),havereal) 
+    then matchWithPromote(DAE.PROP(t1,c1),DAE.PROP(t2,c2),havereal);
 
-    case (PROP(t1,c1),PROP((T_COMPLEX(_,_,SOME(t2),_),_),c2),havereal)
-    then matchWithPromote(PROP(t1,c1),PROP(t2,c2),havereal);
+    case (DAE.PROP(t1,c1),DAE.PROP((DAE.T_COMPLEX(_,_,SOME(t2),_),_),c2),havereal)
+    then matchWithPromote(DAE.PROP(t1,c1),DAE.PROP(t2,c2),havereal);
 
      
-    case (PROP(type_ = (T_ARRAY(arrayDim = dim1,arrayType = t1),_),constFlag = c1),PROP(type_ = (T_ARRAY(arrayDim = dim2,arrayType = t2),p2),constFlag = c2),havereal) /* Allow Integer => Real */ 
+    case (DAE.PROP(type_ = (DAE.T_ARRAY(arrayDim = dim1,arrayType = t1),_),constFlag = c1),DAE.PROP(type_ = (DAE.T_ARRAY(arrayDim = dim2,arrayType = t2),p2),constFlag = c2),havereal) /* Allow Integer => Real */ 
       equation 
-        PROP(t,c) = matchWithPromote(PROP(t1,c1), PROP(t2,c2), havereal);
+        DAE.PROP(t,c) = matchWithPromote(DAE.PROP(t1,c1), DAE.PROP(t2,c2), havereal);
         dim = dim1;
       then
-        PROP((T_ARRAY(dim,t),p2),c);
-    case (PROP(type_ = t1,constFlag = c1),PROP(type_ = (T_ARRAY(arrayDim = DIM(integerOption = SOME(1)),arrayType = t2),p2),constFlag = c2),havereal)
+        DAE.PROP((DAE.T_ARRAY(dim,t),p2),c);
+    case (DAE.PROP(type_ = t1,constFlag = c1),DAE.PROP(type_ = (DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(1)),arrayType = t2),p2),constFlag = c2),havereal)
       equation 
         false = isArray(t1);
-        PROP(t,c) = matchWithPromote(PROP(t1,c1), PROP(t2,c2), havereal);
+        DAE.PROP(t,c) = matchWithPromote(DAE.PROP(t1,c1), DAE.PROP(t2,c2), havereal);
       then
-        PROP((T_ARRAY(DIM(SOME(1)),t),p2),c);
-    case (PROP(type_ = (T_ARRAY(arrayDim = DIM(integerOption = SOME(1)),arrayType = t1),p),constFlag = c1),PROP(type_ = t2,constFlag = c2),havereal)
+        DAE.PROP((DAE.T_ARRAY(DAE.DIM(SOME(1)),t),p2),c);
+    case (DAE.PROP(type_ = (DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(1)),arrayType = t1),p),constFlag = c1),DAE.PROP(type_ = t2,constFlag = c2),havereal)
       equation 
         false = isArray(t2);
-        PROP(t,c) = matchWithPromote(PROP(t1,c1), PROP(t2,c2), havereal);
+        DAE.PROP(t,c) = matchWithPromote(DAE.PROP(t1,c1), DAE.PROP(t2,c2), havereal);
       then
-        PROP((T_ARRAY(DIM(SOME(1)),t),p),c);
-    case (PROP(type_ = t1,constFlag = c1),PROP(type_ = t2,constFlag = c2),false)
+        DAE.PROP((DAE.T_ARRAY(DAE.DIM(SOME(1)),t),p),c);
+    case (DAE.PROP(type_ = t1,constFlag = c1),DAE.PROP(type_ = t2,constFlag = c2),false)
       equation 
         false = isArray(t1);
         false = isArray(t2);
@@ -4714,27 +4471,27 @@ algorithm
         t = t1;
         c = constAnd(c1, c2);
       then
-        PROP(t,c);
-    case (PROP(type_ = (T_REAL(varLstReal = v),_),constFlag = c1),PROP(type_ = (T_REAL(varLstReal = _),p2),constFlag = c2),true)
+        DAE.PROP(t,c);
+    case (DAE.PROP(type_ = (DAE.T_REAL(varLstReal = v),_),constFlag = c1),DAE.PROP(type_ = (DAE.T_REAL(varLstReal = _),p2),constFlag = c2),true)
       equation 
         c = constAnd(c1, c2) "Have real and both Real" ;
       then
-        PROP((T_REAL(v),p2),c);
-    case (PROP(type_ = (T_INTEGER(varLstInt = _),_),constFlag = c1),PROP(type_ = (T_REAL(varLstReal = v),p2),constFlag = c2),true)
+        DAE.PROP((DAE.T_REAL(v),p2),c);
+    case (DAE.PROP(type_ = (DAE.T_INTEGER(varLstInt = _),_),constFlag = c1),DAE.PROP(type_ = (DAE.T_REAL(varLstReal = v),p2),constFlag = c2),true)
       equation 
         c = constAnd(c1, c2) "Have real and first Integer" ;
       then
-        PROP((T_REAL(v),p2),c);
-    case (PROP(type_ = (T_REAL(varLstReal = v),_),constFlag = c1),PROP(type_ = (T_INTEGER(varLstInt = _),p2),constFlag = c2),true)
+        DAE.PROP((DAE.T_REAL(v),p2),c);
+    case (DAE.PROP(type_ = (DAE.T_REAL(varLstReal = v),_),constFlag = c1),DAE.PROP(type_ = (DAE.T_INTEGER(varLstInt = _),p2),constFlag = c2),true)
       equation 
         c = constAnd(c1, c2) "Have real and second Integer" ;
       then
-        PROP((T_REAL(v),p2),c);
-    case (PROP(type_ = (T_INTEGER(varLstInt = _),_),constFlag = c1),PROP(type_ = (T_INTEGER(varLstInt = _),p2),constFlag = c2),true)
+        DAE.PROP((DAE.T_REAL(v),p2),c);
+    case (DAE.PROP(type_ = (DAE.T_INTEGER(varLstInt = _),_),constFlag = c1),DAE.PROP(type_ = (DAE.T_INTEGER(varLstInt = _),p2),constFlag = c2),true)
       equation 
         c = constAnd(c1, c2) "Have real and both Integer" ;
       then
-        PROP((T_REAL({}),p2),c);
+        DAE.PROP((DAE.T_REAL({}),p2),c);
     case(_,_,_) equation
       Debug.fprint("failtrace","-matchWithPromote failed\n");
     then fail();
@@ -4753,11 +4510,11 @@ public function constAnd "function: constAnd
 algorithm 
   outConst:=
   matchcontinue (inConst1,inConst2) 
-    case (C_CONST(),C_CONST()) then C_CONST(); 
-    case (C_CONST(),C_PARAM()) then C_PARAM(); 
-    case (C_PARAM(),C_CONST()) then C_PARAM(); 
-    case (C_PARAM(),C_PARAM()) then C_PARAM(); 
-    case (_,_) then C_VAR(); 
+    case (DAE.C_CONST(),DAE.C_CONST()) then DAE.C_CONST(); 
+    case (DAE.C_CONST(),DAE.C_PARAM()) then DAE.C_PARAM(); 
+    case (DAE.C_PARAM(),DAE.C_CONST()) then DAE.C_PARAM(); 
+    case (DAE.C_PARAM(),DAE.C_PARAM()) then DAE.C_PARAM(); 
+    case (_,_) then DAE.C_VAR(); 
   end matchcontinue;
 end constAnd;
 
@@ -4789,11 +4546,11 @@ public function constOr "function: constOr
 algorithm 
   outConst:=
   matchcontinue (inConst1,inConst2)
-    case (C_CONST(),_) then C_CONST(); 
-    case (_,C_CONST()) then C_CONST(); 
-    case (C_PARAM(),_) then C_PARAM(); 
-    case (_,C_PARAM()) then C_PARAM(); 
-    case (_,_) then C_VAR(); 
+    case (DAE.C_CONST(),_) then DAE.C_CONST(); 
+    case (_,DAE.C_CONST()) then DAE.C_CONST(); 
+    case (DAE.C_PARAM(),_) then DAE.C_PARAM(); 
+    case (_,DAE.C_PARAM()) then DAE.C_PARAM(); 
+    case (_,_) then DAE.C_VAR(); 
   end matchcontinue;
 end constOr;
 
@@ -4809,8 +4566,8 @@ public function boolConst "function: boolConst
 algorithm 
   outConst:=
   matchcontinue (inBoolean)
-    case (false) then C_VAR(); 
-    case (true) then C_CONST(); 
+    case (false) then DAE.C_VAR(); 
+    case (true) then DAE.C_CONST(); 
   end matchcontinue;
 end boolConst;
 
@@ -4827,19 +4584,19 @@ algorithm
       Ident ty_str,const_str,res;
       Type ty;
       Const const;
-    case PROP(type_ = ty,constFlag = const)
+    case DAE.PROP(type_ = ty,constFlag = const)
       equation 
         ty_str = unparseType(ty);
         const_str = unparseConst(const);
-        res = Util.stringAppendList({"PROP(",ty_str,", ",const_str,")"});
+        res = Util.stringAppendList({"DAE.PROP(",ty_str,", ",const_str,")"});
       then
         res;
-    case PROP_TUPLE(type_ = ty,tupleConst = const)
+    case DAE.PROP_TUPLE(type_ = ty,tupleConst = const)
       local TupleConst const;
       equation 
         ty_str = unparseType(ty);
         const_str = unparseTupleconst(const);
-        res = Util.stringAppendList({"PROP_TUPLE(",ty_str,", ",const_str,")"});
+        res = Util.stringAppendList({"DAE.PROP_TUPLE(",ty_str,", ",const_str,")"});
       then
         res;
   end matchcontinue;
@@ -4875,7 +4632,7 @@ algorithm
       Exp.Type ty2;
       Type ty;
     case ({},_) then {}; 
-    case ((VAR(name = id,attributes = ATTR(flowPrefix = true),type_ = ty) :: vs),cr)
+    case ((DAE.TYPES_VAR(name = id,attributes = DAE.ATTR(flowPrefix = true),type_ = ty) :: vs),cr)
       equation 
         ty2 = elabType(ty);
          
@@ -4910,7 +4667,7 @@ algorithm
       Type ty;
       
     case ({},_) then {};
-    case ((VAR(name = id,attributes = ATTR(streamPrefix = true),type_ = ty) :: vs),cr)
+    case ((DAE.TYPES_VAR(name = id,attributes = DAE.ATTR(streamPrefix = true),type_ = ty) :: vs),cr)
       equation
         ty2 = elabType(ty);
         cr_1 = Exp.joinCrefs(cr, Exp.CREF_IDENT(id,ty2,{}));
@@ -4968,42 +4725,42 @@ algorithm
       list<Type> tys;
       list<list<Exp.Exp>> explists,explist;
       list<FuncArg> fargs;
-    case T_INTEGER(varLstInt = vars)
+    case DAE.T_INTEGER(varLstInt = vars)
       equation 
         exps = getAllExpsVars(vars);
       then
         exps;
-    case T_REAL(varLstReal = vars)
+    case DAE.T_REAL(varLstReal = vars)
       equation 
         exps = getAllExpsVars(vars);
       then
         exps;
-    case T_STRING(varLstString = vars)
+    case DAE.T_STRING(varLstString = vars)
       equation 
         exps = getAllExpsVars(vars);
       then
         exps;
-    case T_BOOL(varLstBool = vars)
+    case DAE.T_BOOL(varLstBool = vars)
       equation 
         exps = getAllExpsVars(vars);
       then
         exps;
-    case T_ENUMERATION(names = strs,varLst = vars)
+    case DAE.T_ENUMERATION(names = strs,varLst = vars)
       equation 
         exps = getAllExpsVars(vars);
       then
         exps;
-    case T_ARRAY(arrayDim = dim,arrayType = ty)
+    case DAE.T_ARRAY(arrayDim = dim,arrayType = ty)
       equation 
         exps = getAllExps(ty);
       then
         exps;
-    case T_COMPLEX(complexClassType = cinf,complexVarLst = vars,complexTypeOption = bc)
+    case DAE.T_COMPLEX(complexClassType = cinf,complexVarLst = vars,complexTypeOption = bc)
       equation 
         exps = getAllExpsVars(vars);
       then
         exps;
-    case T_FUNCTION(funcArg = fargs,funcResultType = ty)
+    case DAE.T_FUNCTION(funcArg = fargs,funcResultType = ty)
       equation 
         tys = Util.listMap(fargs, Util.tuple22);
         explists = Util.listMap(tys, getAllExps);
@@ -5011,35 +4768,35 @@ algorithm
         exps = Util.listFlatten((tyexps :: explists));
       then
         exps;
-    case T_TUPLE(tupleType = tys)
+    case DAE.T_TUPLE(tupleType = tys)
       equation 
         explist = Util.listMap(tys, getAllExps);
         exps = Util.listFlatten(explist);
       then
         exps;
-    case T_METATUPLE(types = tys)
+    case DAE.T_METATUPLE(types = tys)
       equation 
-        exps = getAllExpsTt(T_TUPLE(tys));
+        exps = getAllExpsTt(DAE.T_TUPLE(tys));
       then
         exps;
-    case T_UNIONTYPE(_) then {};
-    case T_METAOPTION(ty)
+    case DAE.T_UNIONTYPE(_) then {};
+    case DAE.T_METAOPTION(ty)
       equation 
         exps = getAllExps(ty);
       then
         exps;
-    case T_LIST(ty)
+    case DAE.T_LIST(ty)
       equation
         exps = getAllExps(ty);
       then exps;
-    case T_BOXED(ty)
+    case DAE.T_BOXED(ty)
       equation
         exps = getAllExps(ty);
       then exps;
-    case T_POLYMORPHIC(_) then {};
+    case DAE.T_POLYMORPHIC(_) then {};
 
-    case(T_NOTYPE()) then {};
-    case(T_NORETCALL()) then {};
+    case(DAE.T_NOTYPE()) then {};
+    case(DAE.T_NORETCALL()) then {};
 
     case tty
       local
@@ -5081,7 +4838,7 @@ algorithm
       Boolean prot;
       Type ty;
       Binding bnd;
-    case VAR(name = id,attributes = attr,protected_ = prot,type_ = ty,binding = bnd)
+    case DAE.TYPES_VAR(name = id,attributes = attr,protected_ = prot,type_ = ty,binding = bnd)
       equation 
         tyexps = getAllExps(ty);
         bndexp = getAllExpsBinding(bnd);
@@ -5104,12 +4861,12 @@ algorithm
       Exp.Exp exp;
       Const cnst;
       Values.Value v;
-    case EQBOUND(exp = exp,constant_ = cnst) then {exp}; 
-    case UNBOUND() then {}; 
-    case VALBOUND(valBound = v) then {}; 
+    case DAE.EQBOUND(exp = exp,constant_ = cnst) then {exp}; 
+    case DAE.UNBOUND() then {}; 
+    case DAE.VALBOUND(valBound = v) then {}; 
     case _
       equation 
-        Debug.fprintln("failtrace", "-- get_all_exps_binding failed");
+        Debug.fprintln("failtrace", "-- Types.getAllExpsBinding failed");
       then
         fail();
   end matchcontinue;
@@ -5120,13 +4877,13 @@ public function isBoxedType
   output Boolean b;
 algorithm
   b := matchcontinue (ty)
-    case ((T_METAOPTION(_),_)) then true;
-    case ((T_LIST(_),_)) then true;
-    case ((T_METATUPLE(_),_)) then true;
-    case ((T_UNIONTYPE(_),_)) then true;
-    case ((T_POLYMORPHIC(_),_)) then true;
-    case ((T_FUNCTION(_,_),_)) then true;
-    case ((T_BOXED(_),_)) then true;
+    case ((DAE.T_METAOPTION(_),_)) then true;
+    case ((DAE.T_LIST(_),_)) then true;
+    case ((DAE.T_METATUPLE(_),_)) then true;
+    case ((DAE.T_UNIONTYPE(_),_)) then true;
+    case ((DAE.T_POLYMORPHIC(_),_)) then true;
+    case ((DAE.T_FUNCTION(_,_),_)) then true;
+    case ((DAE.T_BOXED(_),_)) then true;
     case _ then false;
   end matchcontinue;
 end isBoxedType;
@@ -5135,7 +4892,7 @@ public function boxIfUnboxedType
   input Type ty;
   output Type outType;
 algorithm
-  outType := Util.if_(isBoxedType(ty), ty, (T_BOXED(ty),NONE));
+  outType := Util.if_(isBoxedType(ty), ty, (DAE.T_BOXED(ty),NONE));
 end boxIfUnboxedType;
 
 public function unboxedType
@@ -5143,12 +4900,12 @@ public function unboxedType
   output Type out;
 algorithm
   out := matchcontinue (ty)
-    case ((T_METAOPTION(_),_)) then ty;
-    case ((T_LIST(_),_)) then ty;
-    case ((T_METATUPLE(_),_)) then ty;
-    case ((T_UNIONTYPE(_),_)) then ty;
-    case ((T_POLYMORPHIC(_),_)) then ty;
-    case ((T_BOXED(ty),_)) then ty;
+    case ((DAE.T_METAOPTION(_),_)) then ty;
+    case ((DAE.T_LIST(_),_)) then ty;
+    case ((DAE.T_METATUPLE(_),_)) then ty;
+    case ((DAE.T_UNIONTYPE(_),_)) then ty;
+    case ((DAE.T_POLYMORPHIC(_),_)) then ty;
+    case ((DAE.T_BOXED(ty),_)) then ty;
     case ty
       local String str;
       equation
@@ -5182,7 +4939,7 @@ algorithm
     local
       Exp.Exp e;
       Type ty, superType;
-    case ({},{},polymorphicBindings,_) then ({}, (T_NOTYPE,NONE), polymorphicBindings);
+    case ({},{},polymorphicBindings,_) then ({}, (DAE.T_NOTYPE,NONE), polymorphicBindings);
     case (e :: _, ty :: _, polymorphicBindings, matchFunc)
       equation
         superType = Util.listReduce(typeList, superType);
@@ -5244,39 +5001,39 @@ algorithm
     local
       Type t1,t2,tp,tp2,tp1;
       list<Type> type_list1,type_list2;
-    case ((T_ANYTYPE(_),_),t2) then t2; 
-    case (t1,(T_ANYTYPE(_),_)) then t1;
-    case ((T_NOTYPE(),_),t2) then t2;
-    case (t1,(T_NOTYPE(),_)) then t1;
-    case (t1,t2 as (T_POLYMORPHIC(_),_)) then t2;
+    case ((DAE.T_ANYTYPE(_),_),t2) then t2; 
+    case (t1,(DAE.T_ANYTYPE(_),_)) then t1;
+    case ((DAE.T_NOTYPE(),_),t2) then t2;
+    case (t1,(DAE.T_NOTYPE(),_)) then t1;
+    case (t1,t2 as (DAE.T_POLYMORPHIC(_),_)) then t2;
     
-    case ((T_TUPLE(type_list1),_),(T_TUPLE(type_list2),_))
+    case ((DAE.T_TUPLE(type_list1),_),(DAE.T_TUPLE(type_list2),_))
       equation
         type_list1 = Util.listThreadMap(type_list1,type_list2,superType);
-      then ((T_TUPLE(type_list1),NONE));
-    case ((T_TUPLE(type_list1),_),(T_METATUPLE(type_list2),_))
+      then ((DAE.T_TUPLE(type_list1),NONE));
+    case ((DAE.T_TUPLE(type_list1),_),(DAE.T_METATUPLE(type_list2),_))
       equation
         type_list1 = Util.listThreadMap(type_list1,type_list2,superType);
-      then ((T_METATUPLE(type_list1),NONE));
-    case ((T_METATUPLE(type_list1),_),(T_TUPLE(type_list2),_))
+      then ((DAE.T_METATUPLE(type_list1),NONE));
+    case ((DAE.T_METATUPLE(type_list1),_),(DAE.T_TUPLE(type_list2),_))
       equation
         type_list1 = Util.listThreadMap(type_list1,type_list2,superType);
-      then ((T_METATUPLE(type_list1),NONE));
-    case ((T_METATUPLE(type_list1),_),(T_METATUPLE(type_list2),_))
+      then ((DAE.T_METATUPLE(type_list1),NONE));
+    case ((DAE.T_METATUPLE(type_list1),_),(DAE.T_METATUPLE(type_list2),_))
       equation
         type_list1 = Util.listThreadMap(type_list1,type_list2,superType);
-      then ((T_METATUPLE(type_list1),NONE));
+      then ((DAE.T_METATUPLE(type_list1),NONE));
         
-    case ((T_LIST(t1),_),(T_LIST(t2),_))
+    case ((DAE.T_LIST(t1),_),(DAE.T_LIST(t2),_))
       equation
         tp = superType(t1,t2);
-      then ((T_LIST(tp),NONE));
-    case ((T_METAOPTION(t1),_),(T_METAOPTION(t2),_))
+      then ((DAE.T_LIST(tp),NONE));
+    case ((DAE.T_METAOPTION(t1),_),(DAE.T_METAOPTION(t2),_))
       equation
         tp = superType(t1,t2);
-      then ((T_METAOPTION(tp),NONE));
+      then ((DAE.T_METAOPTION(tp),NONE));
 
-    case (t1 as (T_UNIONTYPE(lst),_),(T_METARECORD(_,_),SOME(path)))
+    case (t1 as (DAE.T_UNIONTYPE(lst),_),(DAE.T_METARECORD(_,_),SOME(path)))
       local
         list<Absyn.Path> lst;
         Absyn.Path path;
@@ -5316,9 +5073,9 @@ algorithm
       Exp.Type et;
       Type e_type,expected_type,e_type_1;
       String id;
-    case (e,e_type,(T_POLYMORPHIC(id),_),polymorphicBindings)
+    case (e,e_type,(DAE.T_POLYMORPHIC(id),_),polymorphicBindings)
       equation
-        (e_1,e_type_1) = matchType(e,e_type,(T_BOXED((T_NOTYPE,NONE)),NONE));
+        (e_1,e_type_1) = matchType(e,e_type,(DAE.T_BOXED((DAE.T_NOTYPE,NONE)),NONE));
       then (e_1,e_type_1,(id,e_type_1)::polymorphicBindings);
     case (e,e_type,expected_type,polymorphicBindings)
       equation 
@@ -5386,23 +5143,23 @@ algorithm
       String id;
       Type t1,t2;
       list<Type> tys;
-    case ((T_POLYMORPHIC(id),_),bindings)
+    case ((DAE.T_POLYMORPHIC(id),_),bindings)
       then polymorphicBindingsLookup(id, bindings);
-    case ((T_LIST(t1),_),bindings)
+    case ((DAE.T_LIST(t1),_),bindings)
       equation
         t2 = fixPolymorphicRestype(t1, bindings);
         t2 = unboxedType(t2);
-      then ((T_LIST(t2),NONE));
-    case ((T_METAOPTION(t1),_),bindings)
+      then ((DAE.T_LIST(t2),NONE));
+    case ((DAE.T_METAOPTION(t1),_),bindings)
       equation
         t2 = fixPolymorphicRestype(t1, bindings);
         t2 = unboxedType(t2);
-      then ((T_METAOPTION(t2),NONE));
-    case ((T_METATUPLE(tys),_),bindings)
+      then ((DAE.T_METAOPTION(t2),NONE));
+    case ((DAE.T_METATUPLE(tys),_),bindings)
       equation
         tys = Util.listMap1(tys, fixPolymorphicRestype, bindings);
         tys = Util.listMap(tys, unboxedType);        
-      then ((T_METATUPLE(tys),NONE));
+      then ((DAE.T_METATUPLE(tys),NONE));
     // Add Uniontype, Function reference(?)
     case (ty, bindings) then ty;
   end matchcontinue;
@@ -5421,7 +5178,7 @@ algorithm
     case (id, (id2,ty)::_)
       equation
         true = id ==& id2;
-        ty = Util.if_(isBoxedType(ty),ty,(T_BOXED(ty),NONE));
+        ty = Util.if_(isBoxedType(ty),ty,(DAE.T_BOXED(ty),NONE));
       then ty;
     case (id, _::rest)
       equation
@@ -5458,32 +5215,32 @@ algorithm
       list<list<Type>> resMap;
       list<Var> fields;
       list<FuncArg> funcArgs;
-    case ((T_ARRAY(arrayType = ty),_)) equation res = getAllInnerTypes(ty); then inType::res;
-    case ((T_LIST(ty),_)) equation res = getAllInnerTypes(ty); then inType::res;
-    case ((T_BOXED(ty),_)) equation res = getAllInnerTypes(ty); then inType::res;
-    case ((T_METAOPTION(ty),_)) equation res = getAllInnerTypes(ty); then inType::res;
+    case ((DAE.T_ARRAY(arrayType = ty),_)) equation res = getAllInnerTypes(ty); then inType::res;
+    case ((DAE.T_LIST(ty),_)) equation res = getAllInnerTypes(ty); then inType::res;
+    case ((DAE.T_BOXED(ty),_)) equation res = getAllInnerTypes(ty); then inType::res;
+    case ((DAE.T_METAOPTION(ty),_)) equation res = getAllInnerTypes(ty); then inType::res;
     
-    case ((T_TUPLE(tys),_))
+    case ((DAE.T_TUPLE(tys),_))
       equation
         resMap = Util.listMap(tys, getAllInnerTypes);
         res = Util.listFlatten(resMap);
         res = inType::res;
       then res;
-    case ((T_METATUPLE(tys),_))
+    case ((DAE.T_METATUPLE(tys),_))
       equation
         resMap = Util.listMap(tys, getAllInnerTypes);
         res = Util.listFlatten(resMap);
         res = inType::res;
       then res;
     
-    case ((T_METARECORD(fields = fields),_))
+    case ((DAE.T_METARECORD(fields = fields),_))
       equation
         tys = Util.listMap(fields, getVarType);
         resMap = Util.listMap(tys, getAllInnerTypes);
         res = Util.listFlatten(resMap);
         res = inType::res;
       then res;
-    case ((T_COMPLEX(complexClassType = ClassInf.RECORD(_),complexVarLst = fields),_))
+    case ((DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_),complexVarLst = fields),_))
      equation
         tys = Util.listMap(fields, getVarType);
         resMap = Util.listMap(tys, getAllInnerTypes);
@@ -5491,7 +5248,7 @@ algorithm
         res = inType::res;
       then res;
     
-    case ((T_FUNCTION(funcArgs, ty),_))
+    case ((DAE.T_FUNCTION(funcArgs, ty),_))
       equation
         tys = Util.listMap(funcArgs, Util.tuple22);
         resMap = Util.listMap(tys, getAllInnerTypes);
@@ -5509,7 +5266,7 @@ public function uniontypeFilter
   input Type ty;
 algorithm
   _ := matchcontinue ty
-    case ((T_UNIONTYPE(_),_)) then ();
+    case ((DAE.T_UNIONTYPE(_),_)) then ();
   end matchcontinue;
 end uniontypeFilter;
 
@@ -5517,7 +5274,7 @@ public function metarecordFilter
   input Type ty;
 algorithm
   _ := matchcontinue ty
-    case ((T_METARECORD(_,_),_)) then ();
+    case ((DAE.T_METARECORD(_,_),_)) then ();
   end matchcontinue;
 end metarecordFilter;
 
@@ -5528,7 +5285,7 @@ algorithm
   outPaths := matchcontinue ty
     local
       list<Absyn.Path> paths;
-    case ((T_UNIONTYPE(paths),_)) then paths;
+    case ((DAE.T_UNIONTYPE(paths),_)) then paths;
   end matchcontinue;
 end getUniontypePaths;
 
@@ -5548,7 +5305,7 @@ algorithm
       Type ty1,ty2,resType1,resType2;
       TType tty1,tty2;
       Absyn.Path path;
-    case (((tty1 as T_FUNCTION(funcArgs1,resType1)),SOME(path)))
+    case (((tty1 as DAE.T_FUNCTION(funcArgs1,resType1)),SOME(path)))
       equation
         funcArgNames = Util.listMap(funcArgs1, Util.tuple21);
         funcArgTypes1 = Util.listMap(funcArgs1, Util.tuple22);
@@ -5556,11 +5313,11 @@ algorithm
         (_,funcArgTypes2,_) = matchTypeTuple(dummyExpList, funcArgTypes1, dummyBoxedTypeList, {}, matchTypeRegular);
         funcArgs2 = Util.listThreadTuple(funcArgNames,funcArgTypes2);
         resType2 = makeFunctionPolymorphicReferenceResType(resType1);
-        tty2 = T_FUNCTION(funcArgs2,resType2);
+        tty2 = DAE.T_FUNCTION(funcArgs2,resType2);
         ty2 = (tty2,SOME(path));
       then ty2;
       /* Maybe add this case when standard Modelica gets function references?
-    case (ty1 as (tty1 as T_FUNCTION(funcArgs1,resType),SOME(path)))
+    case (ty1 as (tty1 as DAE.T_FUNCTION(funcArgs1,resType),SOME(path)))
       local
         list<Boolean> boolList;
       equation
@@ -5586,12 +5343,12 @@ algorithm
       Type ty,ty1,ty2;
       list<Type> tys, dummyBoxedTypeList;
       list<Exp.Exp> dummyExpList;
-    case ((T_TUPLE(tys),optPath))
+    case ((DAE.T_TUPLE(tys),optPath))
       equation
         (dummyExpList,dummyBoxedTypeList) = makeDummyExpAndTypeLists(tys);
         (_,tys,_) = matchTypeTuple(dummyExpList, tys, dummyBoxedTypeList, {}, matchTypeRegular);
-      then ((T_TUPLE(tys),optPath));
-    case (ty as (T_NORETCALL,_)) then ty;
+      then ((DAE.T_TUPLE(tys),optPath));
+    case (ty as (DAE.T_NORETCALL,_)) then ty;
     case ty1
       equation
         ({e},{ty2}) = makeDummyExpAndTypeLists({ty1});
@@ -5613,12 +5370,12 @@ algorithm
     case _::rest
       equation
         (restExp,restType) = makeDummyExpAndTypeLists(rest);
-      then (Exp.CREF(Exp.CREF_IDENT("#DummyExp#",Exp.OTHER,{}),Exp.OTHER)::restExp,(T_BOXED((T_NOTYPE,NONE)),NONE)::restType);
+      then (Exp.CREF(Exp.CREF_IDENT("#DummyExp#",Exp.OTHER,{}),Exp.OTHER)::restExp,(DAE.T_BOXED((DAE.T_NOTYPE,NONE)),NONE)::restType);
   end matchcontinue;
 end makeDummyExpAndTypeLists;
 
 public function resTypeToListTypes
-"Transforms a T_TUPLE to a list of types. Other types return the same type (as a list)"
+"Transforms a DAE.T_TUPLE to a list of types. Other types return the same type (as a list)"
   input Type inType;
   output list<Type> outType;
 algorithm
@@ -5626,8 +5383,8 @@ algorithm
     local
       list<Type> tys;
       Type ty;
-    case ((T_TUPLE(tys),_)) then tys;
-    case ((T_NORETCALL,_)) then {};
+    case ((DAE.T_TUPLE(tys),_)) then tys;
+    case ((DAE.T_NORETCALL,_)) then {};
     case ty then {ty};
   end matchcontinue;
 end resTypeToListTypes;

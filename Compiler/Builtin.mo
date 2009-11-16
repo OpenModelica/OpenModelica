@@ -50,7 +50,7 @@ public import Env;
 public import RTOpts;
 
 /* protected imports */
-protected import Types;
+protected import DAE;
 protected import ClassInf;
 protected import Exp;
 protected import Values;
@@ -161,2596 +161,2596 @@ protected constant SCode.Class stringType=SCode.CLASS("String",false,false,SCode
 protected constant SCode.Class booleanType=SCode.CLASS("Boolean",false,false,SCode.R_PREDEFINED_BOOL(),
           SCode.PARTS({quantity,booleanStart,fixed},{},{},{},{},{},NONE)) "- The `Boolean\' type" ;
 
-protected constant Types.Var timeVar=Types.VAR("time",
-          Types.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,(Types.T_REAL({}),NONE),Types.UNBOUND()) "- The `time\' variable" ;
+protected constant Types.Var timeVar=DAE.TYPES_VAR("time",
+          DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,(DAE.T_REAL({}),NONE),DAE.UNBOUND()) "- The `time\' variable" ;
 
 protected 
 replaceable type Type_a subtypeof Any;
-constant tuple<Types.TType, Option<Type_a>> nil2real=(Types.T_FUNCTION({},(Types.T_REAL({}),NONE)),NONE) "- Some assorted function types" ;
+constant tuple<Types.TType, Option<Type_a>> nil2real=(DAE.T_FUNCTION({},(DAE.T_REAL({}),NONE)),NONE) "- Some assorted function types" ;
 
-protected constant tuple<Types.TType, Option<Type_a>> nil2bool=(Types.T_FUNCTION({},(Types.T_REAL({}),NONE)),NONE);
+protected constant tuple<Types.TType, Option<Type_a>> nil2bool=(DAE.T_FUNCTION({},(DAE.T_REAL({}),NONE)),NONE);
 
-protected constant tuple<Types.TType, Option<Type_a>> record2str=(Types.T_FUNCTION({("x",(Types.T_COMPLEX(ClassInf.UNKNOWN(""),{},NONE(),NONE),NONE))},(Types.T_STRING({}),NONE)),NONE);
+protected constant tuple<Types.TType, Option<Type_a>> record2str=(DAE.T_FUNCTION({("x",(DAE.T_COMPLEX(ClassInf.UNKNOWN(""),{},NONE(),NONE),NONE))},(DAE.T_STRING({}),NONE)),NONE);
 
-protected constant tuple<Types.TType, Option<Type_a>> strStr2bool=(Types.T_FUNCTION({("x",(Types.T_STRING({}),NONE)),("y",(Types.T_STRING({}),NONE))},(Types.T_BOOL({}),NONE)),NONE);
+protected constant tuple<Types.TType, Option<Type_a>> strStr2bool=(DAE.T_FUNCTION({("x",(DAE.T_STRING({}),NONE)),("y",(DAE.T_STRING({}),NONE))},(DAE.T_BOOL({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> real2string=(
-          Types.T_FUNCTION({("x",(Types.T_REAL({}),NONE))},(Types.T_STRING({}),NONE)),NONE);
+          DAE.T_FUNCTION({("x",(DAE.T_REAL({}),NONE))},(DAE.T_STRING({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> int2string =(
-          Types.T_FUNCTION({("x",(Types.T_INTEGER({}),NONE))},(Types.T_STRING({}),NONE)),NONE);
+          DAE.T_FUNCTION({("x",(DAE.T_INTEGER({}),NONE))},(DAE.T_STRING({}),NONE)),NONE);
           
 protected constant tuple<Types.TType, Option<Type_a>> bool2string =(
-          Types.T_FUNCTION({("x",(Types.T_BOOL({}),NONE))},(Types.T_STRING({}),NONE)),NONE);
+          DAE.T_FUNCTION({("x",(DAE.T_BOOL({}),NONE))},(DAE.T_STRING({}),NONE)),NONE);
 
 /* type for builtin operator der has unit type parameter to be able to express that derivative of expression
  means an addition of 1/s on the unit dimension */          
 protected constant tuple<Types.TType, Option<Type_a>> derType=(
-          Types.T_FUNCTION({("x",(Types.T_REAL(
+          DAE.T_FUNCTION({("x",(DAE.T_REAL(
           {
-            Types.VAR(
+            DAE.TYPES_VAR(
               "unit",
-              Types.ATTR(false,false,SCode.RW,SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
+              DAE.ATTR(false,false,SCode.RW,SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
               false,
-              (Types.T_STRING({}),NONE),
-              Types.EQBOUND(Exp.SCONST("'p"),SOME(Values.STRING("'p")),Types.C_CONST)
+              (DAE.T_STRING({}),NONE),
+              DAE.EQBOUND(Exp.SCONST("'p"),SOME(Values.STRING("'p")),DAE.C_CONST)
               )          
           }
           ),NONE))},
           /* Return type*/
-          (Types.T_REAL({
-            Types.VAR(
+          (DAE.T_REAL({
+            DAE.TYPES_VAR(
               "unit",
-              Types.ATTR(false,false,SCode.RW,SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
+              DAE.ATTR(false,false,SCode.RW,SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
               false,
-              (Types.T_STRING({}),NONE),
-              Types.EQBOUND(Exp.SCONST("'p/s"),SOME(Values.STRING("'p/s")),Types.C_CONST)
+              (DAE.T_STRING({}),NONE),
+              DAE.EQBOUND(Exp.SCONST("'p/s"),SOME(Values.STRING("'p/s")),DAE.C_CONST)
               )
           }),NONE)),NONE);                    
 
 protected constant tuple<Types.TType, Option<Type_a>> dimesionlessReal2DimensionlessReal=(
-          Types.T_FUNCTION({("x",(Types.T_REAL(
+          DAE.T_FUNCTION({("x",(DAE.T_REAL(
           {
-            Types.VAR(
+            DAE.TYPES_VAR(
               "unit",
-              Types.ATTR(false,false,SCode.RW,SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
+              DAE.ATTR(false,false,SCode.RW,SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
               false,
-              (Types.T_STRING({}),NONE),
-              Types.EQBOUND(Exp.SCONST("1"),SOME(Values.STRING("1")),Types.C_CONST)
+              (DAE.T_STRING({}),NONE),
+              DAE.EQBOUND(Exp.SCONST("1"),SOME(Values.STRING("1")),DAE.C_CONST)
               )          
           }
           ),NONE))},
           /* Return type*/
-          (Types.T_REAL({
-            Types.VAR(
+          (DAE.T_REAL({
+            DAE.TYPES_VAR(
               "unit",
-              Types.ATTR(false,false,SCode.RW,SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
+              DAE.ATTR(false,false,SCode.RW,SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
               false,
-              (Types.T_STRING({}),NONE),
-              Types.EQBOUND(Exp.SCONST("1"),SOME(Values.STRING("1")),Types.C_CONST)
+              (DAE.T_STRING({}),NONE),
+              DAE.EQBOUND(Exp.SCONST("1"),SOME(Values.STRING("1")),DAE.C_CONST)
               )
           }),NONE)),NONE);
           
 protected constant tuple<Types.TType, Option<Type_a>> sqrtint2real=(
-          Types.T_FUNCTION({("x",(Types.T_INTEGER(
+          DAE.T_FUNCTION({("x",(DAE.T_INTEGER(
           {
-            Types.VAR(
+            DAE.TYPES_VAR(
               "unit",
-              Types.ATTR(false,false,SCode.RW,SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
+              DAE.ATTR(false,false,SCode.RW,SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
               false,
-              (Types.T_STRING({}),NONE),
-              Types.EQBOUND(Exp.SCONST("'p"),SOME(Values.STRING("'p")),Types.C_CONST)
+              (DAE.T_STRING({}),NONE),
+              DAE.EQBOUND(Exp.SCONST("'p"),SOME(Values.STRING("'p")),DAE.C_CONST)
               )          
           }
           ),NONE))},
           /* Return type*/
-          (Types.T_REAL({
-            Types.VAR(
+          (DAE.T_REAL({
+            DAE.TYPES_VAR(
               "unit",
-              Types.ATTR(false,false,SCode.RW,SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
+              DAE.ATTR(false,false,SCode.RW,SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
               false,
-              (Types.T_STRING({}),NONE),
-              Types.EQBOUND(Exp.SCONST("'p(1/2)"),SOME(Values.STRING("'p(1/2)")),Types.C_CONST)
+              (DAE.T_STRING({}),NONE),
+              DAE.EQBOUND(Exp.SCONST("'p(1/2)"),SOME(Values.STRING("'p(1/2)")),DAE.C_CONST)
               )
           }),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> sqrtreal2real=(
-          Types.T_FUNCTION({("x",(Types.T_REAL(
+          DAE.T_FUNCTION({("x",(DAE.T_REAL(
           {
-            Types.VAR(
+            DAE.TYPES_VAR(
               "unit",
-              Types.ATTR(false,false,SCode.RW,SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
+              DAE.ATTR(false,false,SCode.RW,SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
               false,
-              (Types.T_STRING({}),NONE),
-              Types.EQBOUND(Exp.SCONST("'p"),SOME(Values.STRING("'p")),Types.C_CONST)
+              (DAE.T_STRING({}),NONE),
+              DAE.EQBOUND(Exp.SCONST("'p"),SOME(Values.STRING("'p")),DAE.C_CONST)
               )          
           }
           ),NONE))},
           /* Return type*/
-          (Types.T_REAL({
-            Types.VAR(
+          (DAE.T_REAL({
+            DAE.TYPES_VAR(
               "unit",
-              Types.ATTR(false,false,SCode.RW,SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
+              DAE.ATTR(false,false,SCode.RW,SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
               false,
-              (Types.T_STRING({}),NONE),
-              Types.EQBOUND(Exp.SCONST("'p(1/2)"),SOME(Values.STRING("'p(1/2))")),Types.C_CONST)
+              (DAE.T_STRING({}),NONE),
+              DAE.EQBOUND(Exp.SCONST("'p(1/2)"),SOME(Values.STRING("'p(1/2))")),DAE.C_CONST)
               )
           }),NONE)),NONE);
           
 protected constant tuple<Types.TType, Option<Type_a>> real2real=(
-          Types.T_FUNCTION({("x",(Types.T_REAL({}),NONE))},(Types.T_REAL({}),NONE)),NONE);
+          DAE.T_FUNCTION({("x",(DAE.T_REAL({}),NONE))},(DAE.T_REAL({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> real2int=(
-          Types.T_FUNCTION({("x",(Types.T_REAL({}),NONE))},(Types.T_INTEGER({}),NONE)),NONE);
+          DAE.T_FUNCTION({("x",(DAE.T_REAL({}),NONE))},(DAE.T_INTEGER({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> int2real=(
-          Types.T_FUNCTION({("x",(Types.T_INTEGER({}),NONE))},(Types.T_REAL({}),NONE)),NONE);
+          DAE.T_FUNCTION({("x",(DAE.T_INTEGER({}),NONE))},(DAE.T_REAL({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> realReal2real=(
-          Types.T_FUNCTION(
-          {("x",(Types.T_REAL({}),NONE)),("y",(Types.T_REAL({}),NONE))},(Types.T_REAL({}),NONE)),NONE);
+          DAE.T_FUNCTION(
+          {("x",(DAE.T_REAL({}),NONE)),("y",(DAE.T_REAL({}),NONE))},(DAE.T_REAL({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> int2int=(
-          Types.T_FUNCTION({("x",(Types.T_INTEGER({}),NONE))},
-          (Types.T_INTEGER({}),NONE)),NONE);
+          DAE.T_FUNCTION({("x",(DAE.T_INTEGER({}),NONE))},
+          (DAE.T_INTEGER({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> intInt2int=(
-          Types.T_FUNCTION(
-          {("x",(Types.T_INTEGER({}),NONE)),
-          ("y",(Types.T_INTEGER({}),NONE))},(Types.T_INTEGER({}),NONE)),NONE);
+          DAE.T_FUNCTION(
+          {("x",(DAE.T_INTEGER({}),NONE)),
+          ("y",(DAE.T_INTEGER({}),NONE))},(DAE.T_INTEGER({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> intInt2bool=(
-          Types.T_FUNCTION(
-          {("x",(Types.T_INTEGER({}),NONE)),
-          ("y",(Types.T_INTEGER({}),NONE))},(Types.T_BOOL({}),NONE)),NONE);
+          DAE.T_FUNCTION(
+          {("x",(DAE.T_INTEGER({}),NONE)),
+          ("y",(DAE.T_INTEGER({}),NONE))},(DAE.T_BOOL({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> bool2bool=(
-          Types.T_FUNCTION({("x",(Types.T_BOOL({}),NONE))},(Types.T_BOOL({}),NONE)),NONE);
+          DAE.T_FUNCTION({("x",(DAE.T_BOOL({}),NONE))},(DAE.T_BOOL({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> boolBool2bool=(
-          Types.T_FUNCTION({("x",(Types.T_BOOL({}),NONE)),("y",(Types.T_BOOL({}),NONE))},(Types.T_BOOL({}),NONE)),NONE);
+          DAE.T_FUNCTION({("x",(DAE.T_BOOL({}),NONE)),("y",(DAE.T_BOOL({}),NONE))},(DAE.T_BOOL({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> real2bool=(
-          Types.T_FUNCTION({("x",(Types.T_REAL({}),NONE))},(Types.T_BOOL({}),NONE)),NONE);
+          DAE.T_FUNCTION({("x",(DAE.T_REAL({}),NONE))},(DAE.T_BOOL({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> realReal2bool=(
-          Types.T_FUNCTION(
-          {("x",(Types.T_REAL({}),NONE)),("y",(Types.T_REAL({}),NONE))},(Types.T_BOOL({}),NONE)),NONE);
+          DAE.T_FUNCTION(
+          {("x",(DAE.T_REAL({}),NONE)),("y",(DAE.T_REAL({}),NONE))},(DAE.T_BOOL({}),NONE)),NONE);
 
 // for semiLinear and delay
 protected constant tuple<Types.TType, Option<Type_a>> realRealReal2real=(
-          Types.T_FUNCTION(
-          {("x",(Types.T_REAL({}),NONE)),
-           ("y",(Types.T_REAL({}),NONE)),
-           ("z",(Types.T_REAL({}),NONE))},
-          (Types.T_REAL({}),NONE)),NONE);
+          DAE.T_FUNCTION(
+          {("x",(DAE.T_REAL({}),NONE)),
+           ("y",(DAE.T_REAL({}),NONE)),
+           ("z",(DAE.T_REAL({}),NONE))},
+          (DAE.T_REAL({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> realRealReal2Real=(
-          Types.T_FUNCTION(
-          {("x",(Types.T_REAL({}),NONE)),("y",(Types.T_REAL({}),NONE)),("z",(Types.T_REAL({}),NONE))},(Types.T_REAL({}),NONE)),NONE);
+          DAE.T_FUNCTION(
+          {("x",(DAE.T_REAL({}),NONE)),("y",(DAE.T_REAL({}),NONE)),("z",(DAE.T_REAL({}),NONE))},(DAE.T_REAL({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> anyNonExpandableConnector2int=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ANYTYPE(SOME(ClassInf.CONNECTOR("$dummy$",false))),NONE))},(Types.T_INTEGER({}),NONE)),NONE);
+          (DAE.T_ANYTYPE(SOME(ClassInf.CONNECTOR("$dummy$",false))),NONE))},(DAE.T_INTEGER({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> anyExpandableConnector2int=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ANYTYPE(SOME(ClassInf.CONNECTOR("$dummy$",true))),NONE))},(Types.T_INTEGER({}),NONE)),NONE);
+          (DAE.T_ANYTYPE(SOME(ClassInf.CONNECTOR("$dummy$",true))),NONE))},(DAE.T_INTEGER({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array1dimint2int=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER({}),NONE)),NONE))},(Types.T_INTEGER({}),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_INTEGER({}),NONE)),NONE))},(DAE.T_INTEGER({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array2dimint2int=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_INTEGER({}),NONE)),NONE))},(Types.T_INTEGER({}),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_INTEGER({}),NONE)),NONE))},(DAE.T_INTEGER({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array3dimint2int=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(3)),(Types.T_INTEGER({}),NONE)),NONE))},(Types.T_INTEGER({}),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(3)),(DAE.T_INTEGER({}),NONE)),NONE))},(DAE.T_INTEGER({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array4dimint2int=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(4)),(Types.T_INTEGER({}),NONE)),NONE))},(Types.T_INTEGER({}),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(4)),(DAE.T_INTEGER({}),NONE)),NONE))},(DAE.T_INTEGER({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array5dimint2int=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(5)),(Types.T_INTEGER({}),NONE)),NONE))},(Types.T_INTEGER({}),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(5)),(DAE.T_INTEGER({}),NONE)),NONE))},(DAE.T_INTEGER({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array6dimint2int=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(6)),(Types.T_INTEGER({}),NONE)),NONE))},(Types.T_INTEGER({}),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(6)),(DAE.T_INTEGER({}),NONE)),NONE))},(DAE.T_INTEGER({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array7dimint2int=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(7)),(Types.T_INTEGER({}),NONE)),NONE))},(Types.T_INTEGER({}),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(7)),(DAE.T_INTEGER({}),NONE)),NONE))},(DAE.T_INTEGER({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array8dimint2int=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(8)),(Types.T_INTEGER({}),NONE)),NONE))},(Types.T_INTEGER({}),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(8)),(DAE.T_INTEGER({}),NONE)),NONE))},(DAE.T_INTEGER({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array1dimreal2int=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_REAL({}),NONE)),
-          NONE))},(Types.T_INTEGER({}),NONE)),NONE);
+          (DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_REAL({}),NONE)),
+          NONE))},(DAE.T_INTEGER({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array2dimreal2int=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_REAL({}),NONE)),
-          NONE))},(Types.T_INTEGER({}),NONE)),NONE);
+          (DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_REAL({}),NONE)),
+          NONE))},(DAE.T_INTEGER({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array3dimreal2int=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(3)),(Types.T_REAL({}),NONE)),
-          NONE))},(Types.T_INTEGER({}),NONE)),NONE);
+          (DAE.T_ARRAY(DAE.DIM(SOME(3)),(DAE.T_REAL({}),NONE)),
+          NONE))},(DAE.T_INTEGER({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array4dimreal2int=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(4)),(Types.T_REAL({}),NONE)),
-          NONE))},(Types.T_INTEGER({}),NONE)),NONE);
+          (DAE.T_ARRAY(DAE.DIM(SOME(4)),(DAE.T_REAL({}),NONE)),
+          NONE))},(DAE.T_INTEGER({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array5dimreal2int=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(5)),(Types.T_REAL({}),NONE)),
-          NONE))},(Types.T_INTEGER({}),NONE)),NONE);
+          (DAE.T_ARRAY(DAE.DIM(SOME(5)),(DAE.T_REAL({}),NONE)),
+          NONE))},(DAE.T_INTEGER({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array6dimreal2int=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(6)),(Types.T_REAL({}),NONE)),
-          NONE))},(Types.T_INTEGER({}),NONE)),NONE);
+          (DAE.T_ARRAY(DAE.DIM(SOME(6)),(DAE.T_REAL({}),NONE)),
+          NONE))},(DAE.T_INTEGER({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array7dimreal2int=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(7)),(Types.T_REAL({}),NONE)),
-          NONE))},(Types.T_INTEGER({}),NONE)),NONE);
+          (DAE.T_ARRAY(DAE.DIM(SOME(7)),(DAE.T_REAL({}),NONE)),
+          NONE))},(DAE.T_INTEGER({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array8dimreal2int=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(8)),(Types.T_REAL({}),NONE)),
-          NONE))},(Types.T_INTEGER({}),NONE)),NONE);
+          (DAE.T_ARRAY(DAE.DIM(SOME(8)),(DAE.T_REAL({}),NONE)),
+          NONE))},(DAE.T_INTEGER({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array1dimreal2real=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_REAL({}),NONE)),
-          NONE))},(Types.T_REAL({}),NONE)),NONE);
+          (DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_REAL({}),NONE)),
+          NONE))},(DAE.T_REAL({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array2dimreal2real=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_REAL({}),NONE)),
-          NONE))},(Types.T_REAL({}),NONE)),NONE);
+          (DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_REAL({}),NONE)),
+          NONE))},(DAE.T_REAL({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array3dimreal2real=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(3)),(Types.T_REAL({}),NONE)),
-          NONE))},(Types.T_REAL({}),NONE)),NONE);
+          (DAE.T_ARRAY(DAE.DIM(SOME(3)),(DAE.T_REAL({}),NONE)),
+          NONE))},(DAE.T_REAL({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array4dimreal2real=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(4)),(Types.T_REAL({}),NONE)),
-          NONE))},(Types.T_REAL({}),NONE)),NONE);
+          (DAE.T_ARRAY(DAE.DIM(SOME(4)),(DAE.T_REAL({}),NONE)),
+          NONE))},(DAE.T_REAL({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array5dimreal2real=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(5)),(Types.T_REAL({}),NONE)),
-          NONE))},(Types.T_REAL({}),NONE)),NONE);
+          (DAE.T_ARRAY(DAE.DIM(SOME(5)),(DAE.T_REAL({}),NONE)),
+          NONE))},(DAE.T_REAL({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array6dimreal2real=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(6)),(Types.T_REAL({}),NONE)),
-          NONE))},(Types.T_REAL({}),NONE)),NONE);
+          (DAE.T_ARRAY(DAE.DIM(SOME(6)),(DAE.T_REAL({}),NONE)),
+          NONE))},(DAE.T_REAL({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array7dimreal2real=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(7)),(Types.T_REAL({}),NONE)),
-          NONE))},(Types.T_REAL({}),NONE)),NONE);
+          (DAE.T_ARRAY(DAE.DIM(SOME(7)),(DAE.T_REAL({}),NONE)),
+          NONE))},(DAE.T_REAL({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array8dimreal2real=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(8)),(Types.T_REAL({}),NONE)),
-          NONE))},(Types.T_REAL({}),NONE)),NONE);
+          (DAE.T_ARRAY(DAE.DIM(SOME(8)),(DAE.T_REAL({}),NONE)),
+          NONE))},(DAE.T_REAL({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array1dimstring2int=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_STRING({}),NONE)),NONE))},(Types.T_INTEGER({}),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_STRING({}),NONE)),NONE))},(DAE.T_INTEGER({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array2dimstring2int=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_STRING({}),NONE)),NONE))},(Types.T_INTEGER({}),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_STRING({}),NONE)),NONE))},(DAE.T_INTEGER({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array3dimstring2int=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(3)),(Types.T_STRING({}),NONE)),NONE))},(Types.T_INTEGER({}),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(3)),(DAE.T_STRING({}),NONE)),NONE))},(DAE.T_INTEGER({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array4dimstring2int=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(4)),(Types.T_STRING({}),NONE)),NONE))},(Types.T_INTEGER({}),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(4)),(DAE.T_STRING({}),NONE)),NONE))},(DAE.T_INTEGER({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array5dimstring2int=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(5)),(Types.T_STRING({}),NONE)),NONE))},(Types.T_INTEGER({}),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(5)),(DAE.T_STRING({}),NONE)),NONE))},(DAE.T_INTEGER({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array6dimstring2int=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(6)),(Types.T_STRING({}),NONE)),NONE))},(Types.T_INTEGER({}),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(6)),(DAE.T_STRING({}),NONE)),NONE))},(DAE.T_INTEGER({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array7dimstring2int=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(7)),(Types.T_STRING({}),NONE)),NONE))},(Types.T_INTEGER({}),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(7)),(DAE.T_STRING({}),NONE)),NONE))},(DAE.T_INTEGER({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array8dimstring2int=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(8)),(Types.T_STRING({}),NONE)),NONE))},(Types.T_INTEGER({}),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(8)),(DAE.T_STRING({}),NONE)),NONE))},(DAE.T_INTEGER({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array1dimstring2string=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_STRING({}),NONE)),NONE))},(Types.T_STRING({}),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_STRING({}),NONE)),NONE))},(DAE.T_STRING({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array2dimstring2string=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_STRING({}),NONE)),NONE))},(Types.T_STRING({}),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_STRING({}),NONE)),NONE))},(DAE.T_STRING({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array3dimstring2string=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(3)),(Types.T_STRING({}),NONE)),NONE))},(Types.T_STRING({}),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(3)),(DAE.T_STRING({}),NONE)),NONE))},(DAE.T_STRING({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array4dimstring2string=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(4)),(Types.T_STRING({}),NONE)),NONE))},(Types.T_STRING({}),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(4)),(DAE.T_STRING({}),NONE)),NONE))},(DAE.T_STRING({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array5dimstring2string=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(5)),(Types.T_STRING({}),NONE)),NONE))},(Types.T_STRING({}),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(5)),(DAE.T_STRING({}),NONE)),NONE))},(DAE.T_STRING({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array6dimstring2string=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(6)),(Types.T_STRING({}),NONE)),NONE))},(Types.T_STRING({}),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(6)),(DAE.T_STRING({}),NONE)),NONE))},(DAE.T_STRING({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array7dimstring2string=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(7)),(Types.T_STRING({}),NONE)),NONE))},(Types.T_STRING({}),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(7)),(DAE.T_STRING({}),NONE)),NONE))},(DAE.T_STRING({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array8dimstring2string=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(8)),(Types.T_STRING({}),NONE)),NONE))},(Types.T_STRING({}),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(8)),(DAE.T_STRING({}),NONE)),NONE))},(DAE.T_STRING({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array1dimbool2int=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_BOOL({}),NONE)),
-          NONE))},(Types.T_INTEGER({}),NONE)),NONE);
+          (DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_BOOL({}),NONE)),
+          NONE))},(DAE.T_INTEGER({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array2dimbool2int=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_BOOL({}),NONE)),
-          NONE))},(Types.T_INTEGER({}),NONE)),NONE);
+          (DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_BOOL({}),NONE)),
+          NONE))},(DAE.T_INTEGER({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array3dimbool2int=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(3)),(Types.T_BOOL({}),NONE)),
-          NONE))},(Types.T_INTEGER({}),NONE)),NONE);
+          (DAE.T_ARRAY(DAE.DIM(SOME(3)),(DAE.T_BOOL({}),NONE)),
+          NONE))},(DAE.T_INTEGER({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array4dimbool2int=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(4)),(Types.T_BOOL({}),NONE)),
-          NONE))},(Types.T_INTEGER({}),NONE)),NONE);
+          (DAE.T_ARRAY(DAE.DIM(SOME(4)),(DAE.T_BOOL({}),NONE)),
+          NONE))},(DAE.T_INTEGER({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array5dimbool2int=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(5)),(Types.T_BOOL({}),NONE)),
-          NONE))},(Types.T_INTEGER({}),NONE)),NONE);
+          (DAE.T_ARRAY(DAE.DIM(SOME(5)),(DAE.T_BOOL({}),NONE)),
+          NONE))},(DAE.T_INTEGER({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array6dimbool2int=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(6)),(Types.T_BOOL({}),NONE)),
-          NONE))},(Types.T_INTEGER({}),NONE)),NONE);
+          (DAE.T_ARRAY(DAE.DIM(SOME(6)),(DAE.T_BOOL({}),NONE)),
+          NONE))},(DAE.T_INTEGER({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array7dimbool2int=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(7)),(Types.T_BOOL({}),NONE)),
-          NONE))},(Types.T_INTEGER({}),NONE)),NONE);
+          (DAE.T_ARRAY(DAE.DIM(SOME(7)),(DAE.T_BOOL({}),NONE)),
+          NONE))},(DAE.T_INTEGER({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array8dimbool2int=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(8)),(Types.T_BOOL({}),NONE)),
-          NONE))},(Types.T_INTEGER({}),NONE)),NONE);
+          (DAE.T_ARRAY(DAE.DIM(SOME(8)),(DAE.T_BOOL({}),NONE)),
+          NONE))},(DAE.T_INTEGER({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array1dimbool2bool=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_BOOL({}),NONE)),
-          NONE))},(Types.T_BOOL({}),NONE)),NONE);
+          (DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_BOOL({}),NONE)),
+          NONE))},(DAE.T_BOOL({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array2dimbool2bool=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_BOOL({}),NONE)),
-          NONE))},(Types.T_BOOL({}),NONE)),NONE);
+          (DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_BOOL({}),NONE)),
+          NONE))},(DAE.T_BOOL({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array3dimbool2bool=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(3)),(Types.T_BOOL({}),NONE)),
-          NONE))},(Types.T_BOOL({}),NONE)),NONE);
+          (DAE.T_ARRAY(DAE.DIM(SOME(3)),(DAE.T_BOOL({}),NONE)),
+          NONE))},(DAE.T_BOOL({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array4dimbool2bool=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(4)),(Types.T_BOOL({}),NONE)),
-          NONE))},(Types.T_BOOL({}),NONE)),NONE);
+          (DAE.T_ARRAY(DAE.DIM(SOME(4)),(DAE.T_BOOL({}),NONE)),
+          NONE))},(DAE.T_BOOL({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array5dimbool2bool=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(5)),(Types.T_BOOL({}),NONE)),
-          NONE))},(Types.T_BOOL({}),NONE)),NONE);
+          (DAE.T_ARRAY(DAE.DIM(SOME(5)),(DAE.T_BOOL({}),NONE)),
+          NONE))},(DAE.T_BOOL({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array6dimbool2bool=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(6)),(Types.T_BOOL({}),NONE)),
-          NONE))},(Types.T_BOOL({}),NONE)),NONE);
+          (DAE.T_ARRAY(DAE.DIM(SOME(6)),(DAE.T_BOOL({}),NONE)),
+          NONE))},(DAE.T_BOOL({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array7dimbool2bool=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(7)),(Types.T_BOOL({}),NONE)),
-          NONE))},(Types.T_BOOL({}),NONE)),NONE);
+          (DAE.T_ARRAY(DAE.DIM(SOME(7)),(DAE.T_BOOL({}),NONE)),
+          NONE))},(DAE.T_BOOL({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array8dimbool2bool=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(8)),(Types.T_BOOL({}),NONE)),
-          NONE))},(Types.T_BOOL({}),NONE)),NONE);
+          (DAE.T_ARRAY(DAE.DIM(SOME(8)),(DAE.T_BOOL({}),NONE)),
+          NONE))},(DAE.T_BOOL({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array1dimintInt2int=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER({}),NONE)),NONE)),("y",(Types.T_INTEGER({}),NONE))},(Types.T_INTEGER({}),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_INTEGER({}),NONE)),NONE)),("y",(DAE.T_INTEGER({}),NONE))},(DAE.T_INTEGER({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array2dimintInt2int=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_INTEGER({}),NONE)),NONE)),("y",(Types.T_INTEGER({}),NONE))},(Types.T_INTEGER({}),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_INTEGER({}),NONE)),NONE)),("y",(DAE.T_INTEGER({}),NONE))},(DAE.T_INTEGER({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array3dimintInt2int=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(3)),(Types.T_INTEGER({}),NONE)),NONE)),("y",(Types.T_INTEGER({}),NONE))},(Types.T_INTEGER({}),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(3)),(DAE.T_INTEGER({}),NONE)),NONE)),("y",(DAE.T_INTEGER({}),NONE))},(DAE.T_INTEGER({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array4dimintInt2int=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(4)),(Types.T_INTEGER({}),NONE)),NONE)),("y",(Types.T_INTEGER({}),NONE))},(Types.T_INTEGER({}),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(4)),(DAE.T_INTEGER({}),NONE)),NONE)),("y",(DAE.T_INTEGER({}),NONE))},(DAE.T_INTEGER({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array5dimintInt2int=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(5)),(Types.T_INTEGER({}),NONE)),NONE)),("y",(Types.T_INTEGER({}),NONE))},(Types.T_INTEGER({}),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(5)),(DAE.T_INTEGER({}),NONE)),NONE)),("y",(DAE.T_INTEGER({}),NONE))},(DAE.T_INTEGER({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array6dimintInt2int=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(6)),(Types.T_INTEGER({}),NONE)),NONE)),("y",(Types.T_INTEGER({}),NONE))},(Types.T_INTEGER({}),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(6)),(DAE.T_INTEGER({}),NONE)),NONE)),("y",(DAE.T_INTEGER({}),NONE))},(DAE.T_INTEGER({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array7dimintInt2int=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(7)),(Types.T_INTEGER({}),NONE)),NONE)),("y",(Types.T_INTEGER({}),NONE))},(Types.T_INTEGER({}),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(7)),(DAE.T_INTEGER({}),NONE)),NONE)),("y",(DAE.T_INTEGER({}),NONE))},(DAE.T_INTEGER({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array8dimintInt2int=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(8)),(Types.T_INTEGER({}),NONE)),NONE)),("y",(Types.T_INTEGER({}),NONE))},(Types.T_INTEGER({}),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(8)),(DAE.T_INTEGER({}),NONE)),NONE)),("y",(DAE.T_INTEGER({}),NONE))},(DAE.T_INTEGER({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array1dimrealInt2int=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_REAL({}),NONE)),
-          NONE)),("y",(Types.T_INTEGER({}),NONE))},(Types.T_INTEGER({}),NONE)),NONE);
+          (DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_REAL({}),NONE)),
+          NONE)),("y",(DAE.T_INTEGER({}),NONE))},(DAE.T_INTEGER({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array2dimrealInt2int=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_REAL({}),NONE)),
-          NONE)),("y",(Types.T_INTEGER({}),NONE))},(Types.T_INTEGER({}),NONE)),NONE);
+          (DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_REAL({}),NONE)),
+          NONE)),("y",(DAE.T_INTEGER({}),NONE))},(DAE.T_INTEGER({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array3dimrealInt2int=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(3)),(Types.T_REAL({}),NONE)),
-          NONE)),("y",(Types.T_INTEGER({}),NONE))},(Types.T_INTEGER({}),NONE)),NONE);
+          (DAE.T_ARRAY(DAE.DIM(SOME(3)),(DAE.T_REAL({}),NONE)),
+          NONE)),("y",(DAE.T_INTEGER({}),NONE))},(DAE.T_INTEGER({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array4dimrealInt2int=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(4)),(Types.T_REAL({}),NONE)),
-          NONE)),("y",(Types.T_INTEGER({}),NONE))},(Types.T_INTEGER({}),NONE)),NONE);
+          (DAE.T_ARRAY(DAE.DIM(SOME(4)),(DAE.T_REAL({}),NONE)),
+          NONE)),("y",(DAE.T_INTEGER({}),NONE))},(DAE.T_INTEGER({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array5dimrealInt2int=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(5)),(Types.T_REAL({}),NONE)),
-          NONE)),("y",(Types.T_INTEGER({}),NONE))},(Types.T_INTEGER({}),NONE)),NONE);
+          (DAE.T_ARRAY(DAE.DIM(SOME(5)),(DAE.T_REAL({}),NONE)),
+          NONE)),("y",(DAE.T_INTEGER({}),NONE))},(DAE.T_INTEGER({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array6dimrealInt2int=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(6)),(Types.T_REAL({}),NONE)),
-          NONE)),("y",(Types.T_INTEGER({}),NONE))},(Types.T_INTEGER({}),NONE)),NONE);
+          (DAE.T_ARRAY(DAE.DIM(SOME(6)),(DAE.T_REAL({}),NONE)),
+          NONE)),("y",(DAE.T_INTEGER({}),NONE))},(DAE.T_INTEGER({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array7dimrealInt2int=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(7)),(Types.T_REAL({}),NONE)),
-          NONE)),("y",(Types.T_INTEGER({}),NONE))},(Types.T_INTEGER({}),NONE)),NONE);
+          (DAE.T_ARRAY(DAE.DIM(SOME(7)),(DAE.T_REAL({}),NONE)),
+          NONE)),("y",(DAE.T_INTEGER({}),NONE))},(DAE.T_INTEGER({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array8dimrealInt2int=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(8)),(Types.T_REAL({}),NONE)),
-          NONE)),("y",(Types.T_INTEGER({}),NONE))},(Types.T_INTEGER({}),NONE)),NONE);
+          (DAE.T_ARRAY(DAE.DIM(SOME(8)),(DAE.T_REAL({}),NONE)),
+          NONE)),("y",(DAE.T_INTEGER({}),NONE))},(DAE.T_INTEGER({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array1dimstringInt2int=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_STRING({}),NONE)),NONE)),("y",(Types.T_INTEGER({}),NONE))},(Types.T_INTEGER({}),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_STRING({}),NONE)),NONE)),("y",(DAE.T_INTEGER({}),NONE))},(DAE.T_INTEGER({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array2dimstringInt2int=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_STRING({}),NONE)),NONE)),("y",(Types.T_INTEGER({}),NONE))},(Types.T_INTEGER({}),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_STRING({}),NONE)),NONE)),("y",(DAE.T_INTEGER({}),NONE))},(DAE.T_INTEGER({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array3dimstringInt2int=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(3)),(Types.T_STRING({}),NONE)),NONE)),("y",(Types.T_INTEGER({}),NONE))},(Types.T_INTEGER({}),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(3)),(DAE.T_STRING({}),NONE)),NONE)),("y",(DAE.T_INTEGER({}),NONE))},(DAE.T_INTEGER({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array4dimstringInt2int=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(4)),(Types.T_STRING({}),NONE)),NONE)),("y",(Types.T_INTEGER({}),NONE))},(Types.T_INTEGER({}),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(4)),(DAE.T_STRING({}),NONE)),NONE)),("y",(DAE.T_INTEGER({}),NONE))},(DAE.T_INTEGER({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array5dimstringInt2int=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(5)),(Types.T_STRING({}),NONE)),NONE)),("y",(Types.T_INTEGER({}),NONE))},(Types.T_INTEGER({}),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(5)),(DAE.T_STRING({}),NONE)),NONE)),("y",(DAE.T_INTEGER({}),NONE))},(DAE.T_INTEGER({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array6dimstringInt2int=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(6)),(Types.T_STRING({}),NONE)),NONE)),("y",(Types.T_INTEGER({}),NONE))},(Types.T_INTEGER({}),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(6)),(DAE.T_STRING({}),NONE)),NONE)),("y",(DAE.T_INTEGER({}),NONE))},(DAE.T_INTEGER({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array7dimstringInt2int=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(7)),(Types.T_STRING({}),NONE)),NONE)),("y",(Types.T_INTEGER({}),NONE))},(Types.T_INTEGER({}),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(7)),(DAE.T_STRING({}),NONE)),NONE)),("y",(DAE.T_INTEGER({}),NONE))},(DAE.T_INTEGER({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array8dimstringInt2int=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(8)),(Types.T_STRING({}),NONE)),NONE)),("y",(Types.T_INTEGER({}),NONE))},(Types.T_INTEGER({}),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(8)),(DAE.T_STRING({}),NONE)),NONE)),("y",(DAE.T_INTEGER({}),NONE))},(DAE.T_INTEGER({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array1dimboolInt2int=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_BOOL({}),NONE)),
-          NONE)),("y",(Types.T_INTEGER({}),NONE))},(Types.T_INTEGER({}),NONE)),NONE);
+          (DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_BOOL({}),NONE)),
+          NONE)),("y",(DAE.T_INTEGER({}),NONE))},(DAE.T_INTEGER({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array2dimboolInt2int=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_BOOL({}),NONE)),
-          NONE)),("y",(Types.T_INTEGER({}),NONE))},(Types.T_INTEGER({}),NONE)),NONE);
+          (DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_BOOL({}),NONE)),
+          NONE)),("y",(DAE.T_INTEGER({}),NONE))},(DAE.T_INTEGER({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array3dimboolInt2int=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(3)),(Types.T_BOOL({}),NONE)),
-          NONE)),("y",(Types.T_INTEGER({}),NONE))},(Types.T_INTEGER({}),NONE)),NONE);
+          (DAE.T_ARRAY(DAE.DIM(SOME(3)),(DAE.T_BOOL({}),NONE)),
+          NONE)),("y",(DAE.T_INTEGER({}),NONE))},(DAE.T_INTEGER({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array4dimboolInt2int=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(4)),(Types.T_BOOL({}),NONE)),
-          NONE)),("y",(Types.T_INTEGER({}),NONE))},(Types.T_INTEGER({}),NONE)),NONE);
+          (DAE.T_ARRAY(DAE.DIM(SOME(4)),(DAE.T_BOOL({}),NONE)),
+          NONE)),("y",(DAE.T_INTEGER({}),NONE))},(DAE.T_INTEGER({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array5dimboolInt2int=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(5)),(Types.T_BOOL({}),NONE)),
-          NONE)),("y",(Types.T_INTEGER({}),NONE))},(Types.T_INTEGER({}),NONE)),NONE);
+          (DAE.T_ARRAY(DAE.DIM(SOME(5)),(DAE.T_BOOL({}),NONE)),
+          NONE)),("y",(DAE.T_INTEGER({}),NONE))},(DAE.T_INTEGER({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array6dimboolInt2int=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(6)),(Types.T_BOOL({}),NONE)),
-          NONE)),("y",(Types.T_INTEGER({}),NONE))},(Types.T_INTEGER({}),NONE)),NONE);
+          (DAE.T_ARRAY(DAE.DIM(SOME(6)),(DAE.T_BOOL({}),NONE)),
+          NONE)),("y",(DAE.T_INTEGER({}),NONE))},(DAE.T_INTEGER({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array7dimboolInt2int=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(7)),(Types.T_BOOL({}),NONE)),
-          NONE)),("y",(Types.T_INTEGER({}),NONE))},(Types.T_INTEGER({}),NONE)),NONE);
+          (DAE.T_ARRAY(DAE.DIM(SOME(7)),(DAE.T_BOOL({}),NONE)),
+          NONE)),("y",(DAE.T_INTEGER({}),NONE))},(DAE.T_INTEGER({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array8dimboolInt2int=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(8)),(Types.T_BOOL({}),NONE)),
-          NONE)),("y",(Types.T_INTEGER({}),NONE))},(Types.T_INTEGER({}),NONE)),NONE);
+          (DAE.T_ARRAY(DAE.DIM(SOME(8)),(DAE.T_BOOL({}),NONE)),
+          NONE)),("y",(DAE.T_INTEGER({}),NONE))},(DAE.T_INTEGER({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array1dimint2vectorint=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER({}),NONE)),NONE))},
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_INTEGER({}),NONE)),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array2dimint2vectorint=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_INTEGER({}),NONE)),NONE))},
+          DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_INTEGER({}),NONE)),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array3dimint2vectorint=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(3)),(Types.T_INTEGER({}),NONE)),NONE))},
+          DAE.T_ARRAY(DAE.DIM(SOME(3)),(DAE.T_INTEGER({}),NONE)),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array4dimint2vectorint=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(4)),(Types.T_INTEGER({}),NONE)),NONE))},
+          DAE.T_ARRAY(DAE.DIM(SOME(4)),(DAE.T_INTEGER({}),NONE)),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array5dimint2vectorint=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(5)),(Types.T_INTEGER({}),NONE)),NONE))},
+          DAE.T_ARRAY(DAE.DIM(SOME(5)),(DAE.T_INTEGER({}),NONE)),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array6dimint2vectorint=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(6)),(Types.T_INTEGER({}),NONE)),NONE))},
+          DAE.T_ARRAY(DAE.DIM(SOME(6)),(DAE.T_INTEGER({}),NONE)),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array7dimint2vectorint=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(7)),(Types.T_INTEGER({}),NONE)),NONE))},
+          DAE.T_ARRAY(DAE.DIM(SOME(7)),(DAE.T_INTEGER({}),NONE)),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array8dimint2vectorint=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(8)),(Types.T_INTEGER({}),NONE)),NONE))},
+          DAE.T_ARRAY(DAE.DIM(SOME(8)),(DAE.T_INTEGER({}),NONE)),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array1dimint2matrixint=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER({}),NONE)),NONE))},
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_INTEGER({}),NONE)),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array2dimint2matrixint=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_INTEGER({}),NONE)),NONE))},
+          DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_INTEGER({}),NONE)),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array3dimint2matrixint=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(3)),(Types.T_INTEGER({}),NONE)),NONE))},
+          DAE.T_ARRAY(DAE.DIM(SOME(3)),(DAE.T_INTEGER({}),NONE)),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array4dimint2matrixint=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(4)),(Types.T_INTEGER({}),NONE)),NONE))},
+          DAE.T_ARRAY(DAE.DIM(SOME(4)),(DAE.T_INTEGER({}),NONE)),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array5dimint2matrixint=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(5)),(Types.T_INTEGER({}),NONE)),NONE))},
+          DAE.T_ARRAY(DAE.DIM(SOME(5)),(DAE.T_INTEGER({}),NONE)),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array6dimint2matrixint=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(6)),(Types.T_INTEGER({}),NONE)),NONE))},
+          DAE.T_ARRAY(DAE.DIM(SOME(6)),(DAE.T_INTEGER({}),NONE)),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array7dimint2matrixint=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(7)),(Types.T_INTEGER({}),NONE)),NONE))},
+          DAE.T_ARRAY(DAE.DIM(SOME(7)),(DAE.T_INTEGER({}),NONE)),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array8dimint2matrixint=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(8)),(Types.T_INTEGER({}),NONE)),NONE))},
+          DAE.T_ARRAY(DAE.DIM(SOME(8)),(DAE.T_INTEGER({}),NONE)),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array1dimint2array1dimint=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER({}),NONE)),NONE))},
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_INTEGER({}),NONE)),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array2dimint2array2dimint=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_INTEGER({}),NONE)),NONE))},
+          DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_INTEGER({}),NONE)),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array3dimint2array3dimint=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(3)),(Types.T_INTEGER({}),NONE)),NONE))},
+          DAE.T_ARRAY(DAE.DIM(SOME(3)),(DAE.T_INTEGER({}),NONE)),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(3)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(3)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array4dimint2array4dimint=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(4)),(Types.T_INTEGER({}),NONE)),NONE))},
+          DAE.T_ARRAY(DAE.DIM(SOME(4)),(DAE.T_INTEGER({}),NONE)),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(4)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(4)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array5dimint2array5dimint=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(5)),(Types.T_INTEGER({}),NONE)),NONE))},
+          DAE.T_ARRAY(DAE.DIM(SOME(5)),(DAE.T_INTEGER({}),NONE)),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(5)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(5)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array6dimint2array6dimint=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(6)),(Types.T_INTEGER({}),NONE)),NONE))},
+          DAE.T_ARRAY(DAE.DIM(SOME(6)),(DAE.T_INTEGER({}),NONE)),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(6)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(6)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array7dimint2array7dimint=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(7)),(Types.T_INTEGER({}),NONE)),NONE))},
+          DAE.T_ARRAY(DAE.DIM(SOME(7)),(DAE.T_INTEGER({}),NONE)),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(7)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(7)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array8dimint2array8dimint=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(8)),(Types.T_INTEGER({}),NONE)),NONE))},
+          DAE.T_ARRAY(DAE.DIM(SOME(8)),(DAE.T_INTEGER({}),NONE)),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(8)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(8)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array1dimreal2array1dimreal=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_REAL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_REAL({}),NONE)),
           NONE))},
-          (Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_REAL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_REAL({}),NONE)),
           NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array2dimreal2array2dimreal=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_REAL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_REAL({}),NONE)),
           NONE))},
-          (Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_REAL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_REAL({}),NONE)),
           NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array3dimreal2array3dimreal=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(3)),(Types.T_REAL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(3)),(DAE.T_REAL({}),NONE)),
           NONE))},
-          (Types.T_ARRAY(Types.DIM(SOME(3)),(Types.T_REAL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(3)),(DAE.T_REAL({}),NONE)),
           NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array4dimreal2array4dimreal=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(4)),(Types.T_REAL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(4)),(DAE.T_REAL({}),NONE)),
           NONE))},
-          (Types.T_ARRAY(Types.DIM(SOME(4)),(Types.T_REAL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(4)),(DAE.T_REAL({}),NONE)),
           NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array5dimreal2array5dimreal=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(5)),(Types.T_REAL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(5)),(DAE.T_REAL({}),NONE)),
           NONE))},
-          (Types.T_ARRAY(Types.DIM(SOME(5)),(Types.T_REAL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(5)),(DAE.T_REAL({}),NONE)),
           NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array6dimreal2array6dimreal=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(6)),(Types.T_REAL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(6)),(DAE.T_REAL({}),NONE)),
           NONE))},
-          (Types.T_ARRAY(Types.DIM(SOME(6)),(Types.T_REAL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(6)),(DAE.T_REAL({}),NONE)),
           NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array7dimreal2array7dimreal=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(7)),(Types.T_REAL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(7)),(DAE.T_REAL({}),NONE)),
           NONE))},
-          (Types.T_ARRAY(Types.DIM(SOME(7)),(Types.T_REAL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(7)),(DAE.T_REAL({}),NONE)),
           NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array8dimreal2array8dimreal=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(8)),(Types.T_REAL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(8)),(DAE.T_REAL({}),NONE)),
           NONE))},
-          (Types.T_ARRAY(Types.DIM(SOME(8)),(Types.T_REAL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(8)),(DAE.T_REAL({}),NONE)),
           NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array1dimstring2array1dimstring=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_STRING({}),NONE)),NONE))},
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_STRING({}),NONE)),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_STRING({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_STRING({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array2dimstring2array2dimstring=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_STRING({}),NONE)),NONE))},
+          DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_STRING({}),NONE)),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_STRING({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_STRING({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array3dimstring2array3dimstring=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(3)),(Types.T_STRING({}),NONE)),NONE))},
+          DAE.T_ARRAY(DAE.DIM(SOME(3)),(DAE.T_STRING({}),NONE)),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(3)),(Types.T_STRING({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(3)),(DAE.T_STRING({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array4dimstring2array4dimstring=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(4)),(Types.T_STRING({}),NONE)),NONE))},
+          DAE.T_ARRAY(DAE.DIM(SOME(4)),(DAE.T_STRING({}),NONE)),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(4)),(Types.T_STRING({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(4)),(DAE.T_STRING({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array5dimstring2array5dimstring=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(5)),(Types.T_STRING({}),NONE)),NONE))},
+          DAE.T_ARRAY(DAE.DIM(SOME(5)),(DAE.T_STRING({}),NONE)),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(5)),(Types.T_STRING({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(5)),(DAE.T_STRING({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array6dimstring2array6dimstring=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(6)),(Types.T_STRING({}),NONE)),NONE))},
+          DAE.T_ARRAY(DAE.DIM(SOME(6)),(DAE.T_STRING({}),NONE)),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(6)),(Types.T_STRING({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(6)),(DAE.T_STRING({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array7dimstring2array7dimstring=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(7)),(Types.T_STRING({}),NONE)),NONE))},
+          DAE.T_ARRAY(DAE.DIM(SOME(7)),(DAE.T_STRING({}),NONE)),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(7)),(Types.T_STRING({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(7)),(DAE.T_STRING({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array8dimstring2array8dimstring=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(8)),(Types.T_STRING({}),NONE)),NONE))},
+          DAE.T_ARRAY(DAE.DIM(SOME(8)),(DAE.T_STRING({}),NONE)),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(8)),(Types.T_STRING({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(8)),(DAE.T_STRING({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array1dimbool2array1dimbool=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_BOOL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_BOOL({}),NONE)),
           NONE))},
-          (Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_BOOL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_BOOL({}),NONE)),
           NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array2dimbool2array2dimbool=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_BOOL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_BOOL({}),NONE)),
           NONE))},
-          (Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_BOOL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_BOOL({}),NONE)),
           NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array3dimbool2array3dimbool=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(3)),(Types.T_BOOL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(3)),(DAE.T_BOOL({}),NONE)),
           NONE))},
-          (Types.T_ARRAY(Types.DIM(SOME(3)),(Types.T_BOOL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(3)),(DAE.T_BOOL({}),NONE)),
           NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array4dimbool2array4dimbool=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(4)),(Types.T_BOOL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(4)),(DAE.T_BOOL({}),NONE)),
           NONE))},
-          (Types.T_ARRAY(Types.DIM(SOME(4)),(Types.T_BOOL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(4)),(DAE.T_BOOL({}),NONE)),
           NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array5dimbool2array5dimbool=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(5)),(Types.T_BOOL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(5)),(DAE.T_BOOL({}),NONE)),
           NONE))},
-          (Types.T_ARRAY(Types.DIM(SOME(5)),(Types.T_BOOL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(5)),(DAE.T_BOOL({}),NONE)),
           NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array6dimbool2array6dimbool=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(6)),(Types.T_BOOL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(6)),(DAE.T_BOOL({}),NONE)),
           NONE))},
-          (Types.T_ARRAY(Types.DIM(SOME(6)),(Types.T_BOOL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(6)),(DAE.T_BOOL({}),NONE)),
           NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array7dimbool2array7dimbool=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(7)),(Types.T_BOOL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(7)),(DAE.T_BOOL({}),NONE)),
           NONE))},
-          (Types.T_ARRAY(Types.DIM(SOME(7)),(Types.T_BOOL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(7)),(DAE.T_BOOL({}),NONE)),
           NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array8dimbool2array8dimbool=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(8)),(Types.T_BOOL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(8)),(DAE.T_BOOL({}),NONE)),
           NONE))},
-          (Types.T_ARRAY(Types.DIM(SOME(8)),(Types.T_BOOL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(8)),(DAE.T_BOOL({}),NONE)),
           NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array1dimreal2vectorint=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_REAL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_REAL({}),NONE)),
           NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array2dimreal2vectorint=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_REAL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_REAL({}),NONE)),
           NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array3dimreal2vectorint=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(3)),(Types.T_REAL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(3)),(DAE.T_REAL({}),NONE)),
           NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array4dimreal2vectorint=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(4)),(Types.T_REAL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(4)),(DAE.T_REAL({}),NONE)),
           NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array5dimreal2vectorint=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(5)),(Types.T_REAL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(5)),(DAE.T_REAL({}),NONE)),
           NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array6dimreal2vectorint=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(6)),(Types.T_REAL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(6)),(DAE.T_REAL({}),NONE)),
           NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array7dimreal2vectorint=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(7)),(Types.T_REAL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(7)),(DAE.T_REAL({}),NONE)),
           NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array8dimreal2vectorint=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(8)),(Types.T_REAL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(8)),(DAE.T_REAL({}),NONE)),
           NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array1dimreal2vectorreal=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_REAL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_REAL({}),NONE)),
           NONE))},
-          (Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_REAL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_REAL({}),NONE)),
           NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array2dimreal2vectorreal=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_REAL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_REAL({}),NONE)),
           NONE))},
-          (Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_REAL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_REAL({}),NONE)),
           NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array3dimreal2vectorreal=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(3)),(Types.T_REAL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(3)),(DAE.T_REAL({}),NONE)),
           NONE))},
-          (Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_REAL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_REAL({}),NONE)),
           NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array4dimreal2vectorreal=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(4)),(Types.T_REAL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(4)),(DAE.T_REAL({}),NONE)),
           NONE))},
-          (Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_REAL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_REAL({}),NONE)),
           NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array5dimreal2vectorreal=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(5)),(Types.T_REAL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(5)),(DAE.T_REAL({}),NONE)),
           NONE))},
-          (Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_REAL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_REAL({}),NONE)),
           NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array6dimreal2vectorreal=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(6)),(Types.T_REAL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(6)),(DAE.T_REAL({}),NONE)),
           NONE))},
-          (Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_REAL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_REAL({}),NONE)),
           NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array7dimreal2vectorreal=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(7)),(Types.T_REAL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(7)),(DAE.T_REAL({}),NONE)),
           NONE))},
-          (Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_REAL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_REAL({}),NONE)),
           NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array8dimreal2vectorreal=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(8)),(Types.T_REAL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(8)),(DAE.T_REAL({}),NONE)),
           NONE))},
-          (Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_REAL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_REAL({}),NONE)),
           NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array1dimreal2matrixreal=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_REAL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_REAL({}),NONE)),
           NONE))},
-          (Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_REAL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_REAL({}),NONE)),
           NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array2dimreal2matrixreal=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_REAL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_REAL({}),NONE)),
           NONE))},
-          (Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_REAL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_REAL({}),NONE)),
           NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array3dimreal2matrixreal=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(3)),(Types.T_REAL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(3)),(DAE.T_REAL({}),NONE)),
           NONE))},
-          (Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_REAL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_REAL({}),NONE)),
           NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array4dimreal2matrixreal=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(4)),(Types.T_REAL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(4)),(DAE.T_REAL({}),NONE)),
           NONE))},
-          (Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_REAL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_REAL({}),NONE)),
           NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array5dimreal2matrixreal=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(5)),(Types.T_REAL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(5)),(DAE.T_REAL({}),NONE)),
           NONE))},
-          (Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_REAL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_REAL({}),NONE)),
           NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array6dimreal2matrixreal=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(6)),(Types.T_REAL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(6)),(DAE.T_REAL({}),NONE)),
           NONE))},
-          (Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_REAL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_REAL({}),NONE)),
           NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array7dimreal2matrixreal=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(7)),(Types.T_REAL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(7)),(DAE.T_REAL({}),NONE)),
           NONE))},
-          (Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_REAL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_REAL({}),NONE)),
           NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array8dimreal2matrixreal=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(8)),(Types.T_REAL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(8)),(DAE.T_REAL({}),NONE)),
           NONE))},
-          (Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_REAL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_REAL({}),NONE)),
           NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array1dimstring2vectorint=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_STRING({}),NONE)),NONE))},
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_STRING({}),NONE)),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array2dimstring2vectorint=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_STRING({}),NONE)),NONE))},
+          DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_STRING({}),NONE)),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array3dimstring2vectorint=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(3)),(Types.T_STRING({}),NONE)),NONE))},
+          DAE.T_ARRAY(DAE.DIM(SOME(3)),(DAE.T_STRING({}),NONE)),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array4dimstring2vectorint=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(4)),(Types.T_STRING({}),NONE)),NONE))},
+          DAE.T_ARRAY(DAE.DIM(SOME(4)),(DAE.T_STRING({}),NONE)),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array5dimstring2vectorint=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(5)),(Types.T_STRING({}),NONE)),NONE))},
+          DAE.T_ARRAY(DAE.DIM(SOME(5)),(DAE.T_STRING({}),NONE)),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array6dimstring2vectorint=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(6)),(Types.T_STRING({}),NONE)),NONE))},
+          DAE.T_ARRAY(DAE.DIM(SOME(6)),(DAE.T_STRING({}),NONE)),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array7dimstring2vectorint=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(7)),(Types.T_STRING({}),NONE)),NONE))},
+          DAE.T_ARRAY(DAE.DIM(SOME(7)),(DAE.T_STRING({}),NONE)),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array8dimstring2vectorint=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(8)),(Types.T_STRING({}),NONE)),NONE))},
+          DAE.T_ARRAY(DAE.DIM(SOME(8)),(DAE.T_STRING({}),NONE)),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array1dimstring2vectorstring=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_STRING({}),NONE)),NONE))},
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_STRING({}),NONE)),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_STRING({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_STRING({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array2dimstring2vectorstring=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_STRING({}),NONE)),NONE))},
+          DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_STRING({}),NONE)),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_STRING({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_STRING({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array3dimstring2vectorstring=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(3)),(Types.T_STRING({}),NONE)),NONE))},
+          DAE.T_ARRAY(DAE.DIM(SOME(3)),(DAE.T_STRING({}),NONE)),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_STRING({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_STRING({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array4dimstring2vectorstring=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(4)),(Types.T_STRING({}),NONE)),NONE))},
+          DAE.T_ARRAY(DAE.DIM(SOME(4)),(DAE.T_STRING({}),NONE)),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_STRING({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_STRING({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array5dimstring2vectorstring=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(5)),(Types.T_STRING({}),NONE)),NONE))},
+          DAE.T_ARRAY(DAE.DIM(SOME(5)),(DAE.T_STRING({}),NONE)),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_STRING({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_STRING({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array6dimstring2vectorstring=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(6)),(Types.T_STRING({}),NONE)),NONE))},
+          DAE.T_ARRAY(DAE.DIM(SOME(6)),(DAE.T_STRING({}),NONE)),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_STRING({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_STRING({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array7dimstring2vectorstring=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(7)),(Types.T_STRING({}),NONE)),NONE))},
+          DAE.T_ARRAY(DAE.DIM(SOME(7)),(DAE.T_STRING({}),NONE)),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_STRING({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_STRING({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array8dimstring2vectorstring=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(8)),(Types.T_STRING({}),NONE)),NONE))},
+          DAE.T_ARRAY(DAE.DIM(SOME(8)),(DAE.T_STRING({}),NONE)),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_STRING({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_STRING({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array1dimstring2matrixstring=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_STRING({}),NONE)),NONE))},
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_STRING({}),NONE)),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_STRING({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_STRING({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array2dimstring2matrixstring=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_STRING({}),NONE)),NONE))},
+          DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_STRING({}),NONE)),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_STRING({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_STRING({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array3dimstring2matrixstring=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(3)),(Types.T_STRING({}),NONE)),NONE))},
+          DAE.T_ARRAY(DAE.DIM(SOME(3)),(DAE.T_STRING({}),NONE)),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_STRING({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_STRING({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array4dimstring2matrixstring=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(4)),(Types.T_STRING({}),NONE)),NONE))},
+          DAE.T_ARRAY(DAE.DIM(SOME(4)),(DAE.T_STRING({}),NONE)),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_STRING({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_STRING({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array5dimstring2matrixstring=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(5)),(Types.T_STRING({}),NONE)),NONE))},
+          DAE.T_ARRAY(DAE.DIM(SOME(5)),(DAE.T_STRING({}),NONE)),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_STRING({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_STRING({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array6dimstring2matrixstring=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(6)),(Types.T_STRING({}),NONE)),NONE))},
+          DAE.T_ARRAY(DAE.DIM(SOME(6)),(DAE.T_STRING({}),NONE)),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_STRING({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_STRING({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array7dimstring2matrixstring=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(7)),(Types.T_STRING({}),NONE)),NONE))},
+          DAE.T_ARRAY(DAE.DIM(SOME(7)),(DAE.T_STRING({}),NONE)),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_STRING({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_STRING({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array8dimstring2matrixstring=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(8)),(Types.T_STRING({}),NONE)),NONE))},
+          DAE.T_ARRAY(DAE.DIM(SOME(8)),(DAE.T_STRING({}),NONE)),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_STRING({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_STRING({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array1dimbool2vectorint=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_BOOL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_BOOL({}),NONE)),
           NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array2dimbool2vectorint=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_BOOL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_BOOL({}),NONE)),
           NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array3dimbool2vectorint=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(3)),(Types.T_BOOL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(3)),(DAE.T_BOOL({}),NONE)),
           NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array4dimbool2vectorint=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(4)),(Types.T_BOOL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(4)),(DAE.T_BOOL({}),NONE)),
           NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array5dimbool2vectorint=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(5)),(Types.T_BOOL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(5)),(DAE.T_BOOL({}),NONE)),
           NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array6dimbool2vectorint=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(6)),(Types.T_BOOL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(6)),(DAE.T_BOOL({}),NONE)),
           NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array7dimbool2vectorint=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(7)),(Types.T_BOOL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(7)),(DAE.T_BOOL({}),NONE)),
           NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array8dimbool2vectorint=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(8)),(Types.T_BOOL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(8)),(DAE.T_BOOL({}),NONE)),
           NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array1dimbool2vectorbool=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_BOOL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_BOOL({}),NONE)),
           NONE))},
-          (Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_BOOL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_BOOL({}),NONE)),
           NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array2dimbool2vectorbool=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_BOOL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_BOOL({}),NONE)),
           NONE))},
-          (Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_BOOL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_BOOL({}),NONE)),
           NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array3dimbool2vectorbool=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(3)),(Types.T_BOOL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(3)),(DAE.T_BOOL({}),NONE)),
           NONE))},
-          (Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_BOOL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_BOOL({}),NONE)),
           NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array4dimbool2vectorbool=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(4)),(Types.T_BOOL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(4)),(DAE.T_BOOL({}),NONE)),
           NONE))},
-          (Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_BOOL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_BOOL({}),NONE)),
           NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array5dimbool2vectorbool=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(5)),(Types.T_BOOL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(5)),(DAE.T_BOOL({}),NONE)),
           NONE))},
-          (Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_BOOL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_BOOL({}),NONE)),
           NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array6dimbool2vectorbool=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(6)),(Types.T_BOOL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(6)),(DAE.T_BOOL({}),NONE)),
           NONE))},
-          (Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_BOOL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_BOOL({}),NONE)),
           NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array7dimbool2vectorbool=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(7)),(Types.T_BOOL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(7)),(DAE.T_BOOL({}),NONE)),
           NONE))},
-          (Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_BOOL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_BOOL({}),NONE)),
           NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array8dimbool2vectorbool=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(8)),(Types.T_BOOL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(8)),(DAE.T_BOOL({}),NONE)),
           NONE))},
-          (Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_BOOL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_BOOL({}),NONE)),
           NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array1dimbool2matrixbool=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_BOOL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_BOOL({}),NONE)),
           NONE))},
-          (Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_BOOL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_BOOL({}),NONE)),
           NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array2dimbool2matrixbool=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_BOOL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_BOOL({}),NONE)),
           NONE))},
-          (Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_BOOL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_BOOL({}),NONE)),
           NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array3dimbool2matrixbool=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(3)),(Types.T_BOOL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(3)),(DAE.T_BOOL({}),NONE)),
           NONE))},
-          (Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_BOOL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_BOOL({}),NONE)),
           NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array4dimbool2matrixbool=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(4)),(Types.T_BOOL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(4)),(DAE.T_BOOL({}),NONE)),
           NONE))},
-          (Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_BOOL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_BOOL({}),NONE)),
           NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array5dimbool2matrixbool=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(5)),(Types.T_BOOL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(5)),(DAE.T_BOOL({}),NONE)),
           NONE))},
-          (Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_BOOL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_BOOL({}),NONE)),
           NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array6dimbool2matrixbool=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(6)),(Types.T_BOOL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(6)),(DAE.T_BOOL({}),NONE)),
           NONE))},
-          (Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_BOOL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_BOOL({}),NONE)),
           NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array7dimbool2matrixbool=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(7)),(Types.T_BOOL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(7)),(DAE.T_BOOL({}),NONE)),
           NONE))},
-          (Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_BOOL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_BOOL({}),NONE)),
           NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array8dimbool2matrixbool=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(8)),(Types.T_BOOL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(8)),(DAE.T_BOOL({}),NONE)),
           NONE))},
-          (Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_BOOL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_BOOL({}),NONE)),
           NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> int2matrixint=(
-          Types.T_FUNCTION({("x",(Types.T_INTEGER({}),NONE))},
+          DAE.T_FUNCTION({("x",(DAE.T_INTEGER({}),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> real2matrixreal=(
-          Types.T_FUNCTION({("x",(Types.T_REAL({}),NONE))},
-          (Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_REAL({}),NONE)),
+          DAE.T_FUNCTION({("x",(DAE.T_REAL({}),NONE))},
+          (DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_REAL({}),NONE)),
           NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> string2matrixstring=(
-          Types.T_FUNCTION({("x",(Types.T_STRING({}),NONE))},
+          DAE.T_FUNCTION({("x",(DAE.T_STRING({}),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_STRING({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_STRING({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> bool2matrixbool=(
-          Types.T_FUNCTION({("x",(Types.T_BOOL({}),NONE))},
-          (Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_BOOL({}),NONE)),
+          DAE.T_FUNCTION({("x",(DAE.T_BOOL({}),NONE))},
+          (DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_BOOL({}),NONE)),
           NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> vectorVector2int=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER({}),NONE)),NONE)),
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_INTEGER({}),NONE)),NONE)),
           ("y",
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER({}),NONE)),NONE))},(Types.T_INTEGER({}),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_INTEGER({}),NONE)),NONE))},(DAE.T_INTEGER({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> vectorVector2real=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_REAL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_REAL({}),NONE)),
           NONE)),
           ("y",
-          (Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_REAL({}),NONE)),
-          NONE))},(Types.T_REAL({}),NONE)),NONE);
+          (DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_REAL({}),NONE)),
+          NONE))},(DAE.T_REAL({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> int2array1dimint=(
-          Types.T_FUNCTION({("x",(Types.T_INTEGER({}),NONE))},
+          DAE.T_FUNCTION({("x",(DAE.T_INTEGER({}),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> int2array2dimint=(
-          Types.T_FUNCTION({("x",(Types.T_INTEGER({}),NONE))},
+          DAE.T_FUNCTION({("x",(DAE.T_INTEGER({}),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> int2array3dimint=(
-          Types.T_FUNCTION({("x",(Types.T_INTEGER({}),NONE))},
+          DAE.T_FUNCTION({("x",(DAE.T_INTEGER({}),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(3)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(3)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> int2array4dimint=(
-          Types.T_FUNCTION({("x",(Types.T_INTEGER({}),NONE))},
+          DAE.T_FUNCTION({("x",(DAE.T_INTEGER({}),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(4)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(4)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> int2array5dimint=(
-          Types.T_FUNCTION({("x",(Types.T_INTEGER({}),NONE))},
+          DAE.T_FUNCTION({("x",(DAE.T_INTEGER({}),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(5)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(5)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> int2array6dimint=(
-          Types.T_FUNCTION({("x",(Types.T_INTEGER({}),NONE))},
+          DAE.T_FUNCTION({("x",(DAE.T_INTEGER({}),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(6)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(6)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> int2array7dimint=(
-          Types.T_FUNCTION({("x",(Types.T_INTEGER({}),NONE))},
+          DAE.T_FUNCTION({("x",(DAE.T_INTEGER({}),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(7)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(7)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> int2array8dimint=(
-          Types.T_FUNCTION({("x",(Types.T_INTEGER({}),NONE))},
+          DAE.T_FUNCTION({("x",(DAE.T_INTEGER({}),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(8)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(8)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> n1int2arrayint=(
-          Types.T_FUNCTION({("x1",(Types.T_INTEGER({}),NONE))},
+          DAE.T_FUNCTION({("x1",(DAE.T_INTEGER({}),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> n2int2arrayint=(
-          Types.T_FUNCTION(
-          {("x1",(Types.T_INTEGER({}),NONE)),
-          ("x2",(Types.T_INTEGER({}),NONE))},
+          DAE.T_FUNCTION(
+          {("x1",(DAE.T_INTEGER({}),NONE)),
+          ("x2",(DAE.T_INTEGER({}),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> n3int2arrayint=(
-          Types.T_FUNCTION(
-          {("x1",(Types.T_INTEGER({}),NONE)),
-          ("x2",(Types.T_INTEGER({}),NONE)),("x3",(Types.T_INTEGER({}),NONE))},
+          DAE.T_FUNCTION(
+          {("x1",(DAE.T_INTEGER({}),NONE)),
+          ("x2",(DAE.T_INTEGER({}),NONE)),("x3",(DAE.T_INTEGER({}),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(3)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(3)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> n4int2arrayint=(
-          Types.T_FUNCTION(
-          {("x1",(Types.T_INTEGER({}),NONE)),
-          ("x2",(Types.T_INTEGER({}),NONE)),("x3",(Types.T_INTEGER({}),NONE)),("x4",(Types.T_INTEGER({}),NONE))},
+          DAE.T_FUNCTION(
+          {("x1",(DAE.T_INTEGER({}),NONE)),
+          ("x2",(DAE.T_INTEGER({}),NONE)),("x3",(DAE.T_INTEGER({}),NONE)),("x4",(DAE.T_INTEGER({}),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(4)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(4)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> n5int2arrayint=(
-          Types.T_FUNCTION(
-          {("x1",(Types.T_INTEGER({}),NONE)),
-          ("x2",(Types.T_INTEGER({}),NONE)),("x3",(Types.T_INTEGER({}),NONE)),("x4",(Types.T_INTEGER({}),NONE)),
-          ("x5",(Types.T_INTEGER({}),NONE))},
+          DAE.T_FUNCTION(
+          {("x1",(DAE.T_INTEGER({}),NONE)),
+          ("x2",(DAE.T_INTEGER({}),NONE)),("x3",(DAE.T_INTEGER({}),NONE)),("x4",(DAE.T_INTEGER({}),NONE)),
+          ("x5",(DAE.T_INTEGER({}),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(5)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(5)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> n6int2arrayint=(
-          Types.T_FUNCTION(
-          {("x1",(Types.T_INTEGER({}),NONE)),
-          ("x2",(Types.T_INTEGER({}),NONE)),("x3",(Types.T_INTEGER({}),NONE)),("x4",(Types.T_INTEGER({}),NONE)),
-          ("x5",(Types.T_INTEGER({}),NONE)),("x6",(Types.T_INTEGER({}),NONE))},
+          DAE.T_FUNCTION(
+          {("x1",(DAE.T_INTEGER({}),NONE)),
+          ("x2",(DAE.T_INTEGER({}),NONE)),("x3",(DAE.T_INTEGER({}),NONE)),("x4",(DAE.T_INTEGER({}),NONE)),
+          ("x5",(DAE.T_INTEGER({}),NONE)),("x6",(DAE.T_INTEGER({}),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(6)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(6)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> n7int2arrayint=(
-          Types.T_FUNCTION(
-          {("x1",(Types.T_INTEGER({}),NONE)),
-          ("x2",(Types.T_INTEGER({}),NONE)),("x3",(Types.T_INTEGER({}),NONE)),("x4",(Types.T_INTEGER({}),NONE)),
-          ("x5",(Types.T_INTEGER({}),NONE)),("x6",(Types.T_INTEGER({}),NONE)),("x7",(Types.T_INTEGER({}),NONE))},
+          DAE.T_FUNCTION(
+          {("x1",(DAE.T_INTEGER({}),NONE)),
+          ("x2",(DAE.T_INTEGER({}),NONE)),("x3",(DAE.T_INTEGER({}),NONE)),("x4",(DAE.T_INTEGER({}),NONE)),
+          ("x5",(DAE.T_INTEGER({}),NONE)),("x6",(DAE.T_INTEGER({}),NONE)),("x7",(DAE.T_INTEGER({}),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(7)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(7)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> n8int2arrayint=(
-          Types.T_FUNCTION(
-          {("x1",(Types.T_INTEGER({}),NONE)),
-          ("x2",(Types.T_INTEGER({}),NONE)),("x3",(Types.T_INTEGER({}),NONE)),("x4",(Types.T_INTEGER({}),NONE)),
-          ("x5",(Types.T_INTEGER({}),NONE)),("x6",(Types.T_INTEGER({}),NONE)),("x7",(Types.T_INTEGER({}),NONE)),
-          ("x8",(Types.T_INTEGER({}),NONE))},
+          DAE.T_FUNCTION(
+          {("x1",(DAE.T_INTEGER({}),NONE)),
+          ("x2",(DAE.T_INTEGER({}),NONE)),("x3",(DAE.T_INTEGER({}),NONE)),("x4",(DAE.T_INTEGER({}),NONE)),
+          ("x5",(DAE.T_INTEGER({}),NONE)),("x6",(DAE.T_INTEGER({}),NONE)),("x7",(DAE.T_INTEGER({}),NONE)),
+          ("x8",(DAE.T_INTEGER({}),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(8)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(8)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> n1real2arrayreal=(
-          Types.T_FUNCTION({("x1",(Types.T_REAL({}),NONE))},
-          (Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_REAL({}),NONE)),
+          DAE.T_FUNCTION({("x1",(DAE.T_REAL({}),NONE))},
+          (DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_REAL({}),NONE)),
           NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> n2real2arrayreal=(
-          Types.T_FUNCTION(
-          {("x1",(Types.T_REAL({}),NONE)),
-          ("x2",(Types.T_REAL({}),NONE))},
-          (Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_REAL({}),NONE)),
+          DAE.T_FUNCTION(
+          {("x1",(DAE.T_REAL({}),NONE)),
+          ("x2",(DAE.T_REAL({}),NONE))},
+          (DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_REAL({}),NONE)),
           NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> n3real2arrayreal=(
-          Types.T_FUNCTION(
-          {("x1",(Types.T_REAL({}),NONE)),
-          ("x2",(Types.T_REAL({}),NONE)),("x3",(Types.T_REAL({}),NONE))},
-          (Types.T_ARRAY(Types.DIM(SOME(3)),(Types.T_REAL({}),NONE)),
+          DAE.T_FUNCTION(
+          {("x1",(DAE.T_REAL({}),NONE)),
+          ("x2",(DAE.T_REAL({}),NONE)),("x3",(DAE.T_REAL({}),NONE))},
+          (DAE.T_ARRAY(DAE.DIM(SOME(3)),(DAE.T_REAL({}),NONE)),
           NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> n4real2arrayreal=(
-          Types.T_FUNCTION(
-          {("x1",(Types.T_REAL({}),NONE)),
-          ("x2",(Types.T_REAL({}),NONE)),("x3",(Types.T_REAL({}),NONE)),("x4",(Types.T_REAL({}),NONE))},
-          (Types.T_ARRAY(Types.DIM(SOME(4)),(Types.T_REAL({}),NONE)),
+          DAE.T_FUNCTION(
+          {("x1",(DAE.T_REAL({}),NONE)),
+          ("x2",(DAE.T_REAL({}),NONE)),("x3",(DAE.T_REAL({}),NONE)),("x4",(DAE.T_REAL({}),NONE))},
+          (DAE.T_ARRAY(DAE.DIM(SOME(4)),(DAE.T_REAL({}),NONE)),
           NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> n5real2arrayreal=(
-          Types.T_FUNCTION(
-          {("x1",(Types.T_REAL({}),NONE)),
-          ("x2",(Types.T_REAL({}),NONE)),("x3",(Types.T_REAL({}),NONE)),("x4",(Types.T_REAL({}),NONE)),
-          ("x5",(Types.T_REAL({}),NONE))},
-          (Types.T_ARRAY(Types.DIM(SOME(5)),(Types.T_REAL({}),NONE)),
+          DAE.T_FUNCTION(
+          {("x1",(DAE.T_REAL({}),NONE)),
+          ("x2",(DAE.T_REAL({}),NONE)),("x3",(DAE.T_REAL({}),NONE)),("x4",(DAE.T_REAL({}),NONE)),
+          ("x5",(DAE.T_REAL({}),NONE))},
+          (DAE.T_ARRAY(DAE.DIM(SOME(5)),(DAE.T_REAL({}),NONE)),
           NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> n6real2arrayreal=(
-          Types.T_FUNCTION(
-          {("x1",(Types.T_REAL({}),NONE)),
-          ("x2",(Types.T_REAL({}),NONE)),("x3",(Types.T_REAL({}),NONE)),("x4",(Types.T_REAL({}),NONE)),
-          ("x5",(Types.T_REAL({}),NONE)),("x6",(Types.T_REAL({}),NONE))},
-          (Types.T_ARRAY(Types.DIM(SOME(6)),(Types.T_REAL({}),NONE)),
+          DAE.T_FUNCTION(
+          {("x1",(DAE.T_REAL({}),NONE)),
+          ("x2",(DAE.T_REAL({}),NONE)),("x3",(DAE.T_REAL({}),NONE)),("x4",(DAE.T_REAL({}),NONE)),
+          ("x5",(DAE.T_REAL({}),NONE)),("x6",(DAE.T_REAL({}),NONE))},
+          (DAE.T_ARRAY(DAE.DIM(SOME(6)),(DAE.T_REAL({}),NONE)),
           NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> n7real2arrayreal=(
-          Types.T_FUNCTION(
-          {("x1",(Types.T_REAL({}),NONE)),
-          ("x2",(Types.T_REAL({}),NONE)),("x3",(Types.T_REAL({}),NONE)),("x4",(Types.T_REAL({}),NONE)),
-          ("x5",(Types.T_REAL({}),NONE)),("x6",(Types.T_REAL({}),NONE)),("x7",(Types.T_REAL({}),NONE))},
-          (Types.T_ARRAY(Types.DIM(SOME(7)),(Types.T_REAL({}),NONE)),
+          DAE.T_FUNCTION(
+          {("x1",(DAE.T_REAL({}),NONE)),
+          ("x2",(DAE.T_REAL({}),NONE)),("x3",(DAE.T_REAL({}),NONE)),("x4",(DAE.T_REAL({}),NONE)),
+          ("x5",(DAE.T_REAL({}),NONE)),("x6",(DAE.T_REAL({}),NONE)),("x7",(DAE.T_REAL({}),NONE))},
+          (DAE.T_ARRAY(DAE.DIM(SOME(7)),(DAE.T_REAL({}),NONE)),
           NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> n8real2arrayreal=(
-          Types.T_FUNCTION(
-          {("x1",(Types.T_REAL({}),NONE)),
-          ("x2",(Types.T_REAL({}),NONE)),("x3",(Types.T_REAL({}),NONE)),("x4",(Types.T_REAL({}),NONE)),
-          ("x5",(Types.T_REAL({}),NONE)),("x6",(Types.T_REAL({}),NONE)),("x7",(Types.T_REAL({}),NONE)),
-          ("x8",(Types.T_REAL({}),NONE))},
-          (Types.T_ARRAY(Types.DIM(SOME(8)),(Types.T_REAL({}),NONE)),
+          DAE.T_FUNCTION(
+          {("x1",(DAE.T_REAL({}),NONE)),
+          ("x2",(DAE.T_REAL({}),NONE)),("x3",(DAE.T_REAL({}),NONE)),("x4",(DAE.T_REAL({}),NONE)),
+          ("x5",(DAE.T_REAL({}),NONE)),("x6",(DAE.T_REAL({}),NONE)),("x7",(DAE.T_REAL({}),NONE)),
+          ("x8",(DAE.T_REAL({}),NONE))},
+          (DAE.T_ARRAY(DAE.DIM(SOME(8)),(DAE.T_REAL({}),NONE)),
           NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> intInt2vectorreal=(
-          Types.T_FUNCTION(
-          {("x",(Types.T_INTEGER({}),NONE)),
-          ("y",(Types.T_INTEGER({}),NONE))},
-          (Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_REAL({}),NONE)),
+          DAE.T_FUNCTION(
+          {("x",(DAE.T_INTEGER({}),NONE)),
+          ("y",(DAE.T_INTEGER({}),NONE))},
+          (DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_REAL({}),NONE)),
           NONE)),NONE);
           
 protected constant tuple<Types.TType, Option<Type_a>> realRealInt2vectorreal=(
-          Types.T_FUNCTION(
-          {("x",(Types.T_REAL({}),NONE)),
-          ("y",(Types.T_REAL({}),NONE)),
-          ("n",(Types.T_INTEGER({}),NONE))},
-          (Types.T_ARRAY(Types.DIM(NONE),(Types.T_REAL({}),NONE)),
+          DAE.T_FUNCTION(
+          {("x",(DAE.T_REAL({}),NONE)),
+          ("y",(DAE.T_REAL({}),NONE)),
+          ("n",(DAE.T_INTEGER({}),NONE))},
+          (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_REAL({}),NONE)),
           NONE)),NONE);          
 
 protected constant tuple<Types.TType, Option<Type_a>> array1dimint2array3dimint=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER({}),NONE)),NONE))},
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_INTEGER({}),NONE)),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(3)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(3)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array1dimreal2array3dimreal=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_REAL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_REAL({}),NONE)),
           NONE))},
-          (Types.T_ARRAY(Types.DIM(SOME(3)),(Types.T_REAL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(3)),(DAE.T_REAL({}),NONE)),
           NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array2real=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER({}),NONE)),NONE))},(Types.T_INTEGER({}),NONE)),NONE) "T_ARRAY is appearently not constant. To bad!" ;
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_INTEGER({}),NONE)),NONE))},(DAE.T_INTEGER({}),NONE)),NONE) "T_ARRAY is appearently not constant. To bad!" ;
 
 protected constant tuple<Types.TType, Option<Type_a>> array2dimint2array1dimint=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_INTEGER({}),NONE)),NONE))},
+          DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_INTEGER({}),NONE)),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER({}),NONE)),NONE)),NONE) "Legal syntax: val array2one= (Types.T_FUNCTION({(\"x\",(Types.T_ARRAY(1,(Types.T_REAL({}),NONE)),NONE))}, TYPES.T_INTEGER)
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE) "Legal syntax: val array2one= (DAE.T_FUNCTION({(\"x\",(DAE.T_ARRAY(1,(DAE.T_REAL({}),NONE)),NONE))}, TYPES.T_INTEGER)
 For size(A) to transpose A
 val array1dimint2array1dimint = ... already defined" ;
 
 protected constant tuple<Types.TType, Option<Type_a>> array3dimint2array1dimint=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(3)),(Types.T_INTEGER({}),NONE)),NONE))},
+          DAE.T_ARRAY(DAE.DIM(SOME(3)),(DAE.T_INTEGER({}),NONE)),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array4dimint2array1dimint=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(4)),(Types.T_INTEGER({}),NONE)),NONE))},
+          DAE.T_ARRAY(DAE.DIM(SOME(4)),(DAE.T_INTEGER({}),NONE)),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array5dimint2array1dimint=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(5)),(Types.T_INTEGER({}),NONE)),NONE))},
+          DAE.T_ARRAY(DAE.DIM(SOME(5)),(DAE.T_INTEGER({}),NONE)),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array6dimint2array1dimint=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(6)),(Types.T_INTEGER({}),NONE)),NONE))},
+          DAE.T_ARRAY(DAE.DIM(SOME(6)),(DAE.T_INTEGER({}),NONE)),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array7dimint2array1dimint=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(7)),(Types.T_INTEGER({}),NONE)),NONE))},
+          DAE.T_ARRAY(DAE.DIM(SOME(7)),(DAE.T_INTEGER({}),NONE)),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array8dimint2array1dimint=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(8)),(Types.T_INTEGER({}),NONE)),NONE))},
+          DAE.T_ARRAY(DAE.DIM(SOME(8)),(DAE.T_INTEGER({}),NONE)),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array9dimint2array1dimint=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(9)),(Types.T_INTEGER({}),NONE)),NONE))},
+          DAE.T_ARRAY(DAE.DIM(SOME(9)),(DAE.T_INTEGER({}),NONE)),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array1dimreal2array1dimint=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_REAL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_REAL({}),NONE)),
           NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array2dimreal2array1dimint=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_REAL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_REAL({}),NONE)),
           NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array3dimreal2array1dimint=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(3)),(Types.T_REAL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(3)),(DAE.T_REAL({}),NONE)),
           NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array4dimreal2array1dimint=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(4)),(Types.T_REAL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(4)),(DAE.T_REAL({}),NONE)),
           NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array5dimreal2array1dimint=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(5)),(Types.T_REAL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(5)),(DAE.T_REAL({}),NONE)),
           NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array6dimreal2array1dimint=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(6)),(Types.T_REAL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(6)),(DAE.T_REAL({}),NONE)),
           NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array7dimreal2array1dimint=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(7)),(Types.T_REAL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(7)),(DAE.T_REAL({}),NONE)),
           NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array8dimreal2array1dimint=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(8)),(Types.T_REAL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(8)),(DAE.T_REAL({}),NONE)),
           NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array9dimreal2array1dimint=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(9)),(Types.T_REAL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(9)),(DAE.T_REAL({}),NONE)),
           NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array1dimstring2array1dimint=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_STRING({}),NONE)),NONE))},
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_STRING({}),NONE)),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array2dimstring2array1dimint=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_STRING({}),NONE)),NONE))},
+          DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_STRING({}),NONE)),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array3dimstring2array1dimint=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(3)),(Types.T_STRING({}),NONE)),NONE))},
+          DAE.T_ARRAY(DAE.DIM(SOME(3)),(DAE.T_STRING({}),NONE)),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array4dimstring2array1dimint=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(4)),(Types.T_STRING({}),NONE)),NONE))},
+          DAE.T_ARRAY(DAE.DIM(SOME(4)),(DAE.T_STRING({}),NONE)),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array5dimstring2array1dimint=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(5)),(Types.T_STRING({}),NONE)),NONE))},
+          DAE.T_ARRAY(DAE.DIM(SOME(5)),(DAE.T_STRING({}),NONE)),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array6dimstring2array1dimint=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(6)),(Types.T_STRING({}),NONE)),NONE))},
+          DAE.T_ARRAY(DAE.DIM(SOME(6)),(DAE.T_STRING({}),NONE)),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array7dimstring2array1dimint=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(7)),(Types.T_STRING({}),NONE)),NONE))},
+          DAE.T_ARRAY(DAE.DIM(SOME(7)),(DAE.T_STRING({}),NONE)),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array8dimstring2array1dimint=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(8)),(Types.T_STRING({}),NONE)),NONE))},
+          DAE.T_ARRAY(DAE.DIM(SOME(8)),(DAE.T_STRING({}),NONE)),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array9dimstring2array1dimint=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
           (
-          Types.T_ARRAY(Types.DIM(SOME(9)),(Types.T_STRING({}),NONE)),NONE))},
+          DAE.T_ARRAY(DAE.DIM(SOME(9)),(DAE.T_STRING({}),NONE)),NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array1dimbool2array1dimint=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_BOOL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_BOOL({}),NONE)),
           NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array2dimbool2array1dimint=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_BOOL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_BOOL({}),NONE)),
           NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array3dimbool2array1dimint=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(3)),(Types.T_BOOL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(3)),(DAE.T_BOOL({}),NONE)),
           NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array4dimbool2array1dimint=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(4)),(Types.T_BOOL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(4)),(DAE.T_BOOL({}),NONE)),
           NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array5dimbool2array1dimint=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(5)),(Types.T_BOOL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(5)),(DAE.T_BOOL({}),NONE)),
           NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array6dimbool2array1dimint=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(6)),(Types.T_BOOL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(6)),(DAE.T_BOOL({}),NONE)),
           NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array7dimbool2array1dimint=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(7)),(Types.T_BOOL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(7)),(DAE.T_BOOL({}),NONE)),
           NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array8dimbool2array1dimint=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(8)),(Types.T_BOOL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(8)),(DAE.T_BOOL({}),NONE)),
           NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array9dimbool2array1dimint=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
           ("x",
-          (Types.T_ARRAY(Types.DIM(SOME(9)),(Types.T_BOOL({}),NONE)),
+          (DAE.T_ARRAY(DAE.DIM(SOME(9)),(DAE.T_BOOL({}),NONE)),
           NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 
 // MetaModelica extension. KS
 protected constant tuple<Types.TType, Option<Type_a>> listA2listA=(
-          Types.T_FUNCTION({("x",(Types.T_LIST(typeA),NONE))},(Types.T_LIST(typeA),NONE)),NONE);
+          DAE.T_FUNCTION({("x",(DAE.T_LIST(typeA),NONE))},(DAE.T_LIST(typeA),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> listAListA2listA=(
-          Types.T_FUNCTION({("x1",(Types.T_LIST(typeA),NONE)),("x2",(Types.T_LIST(typeA),NONE))},(Types.T_LIST(typeA),NONE)),NONE);
+          DAE.T_FUNCTION({("x1",(DAE.T_LIST(typeA),NONE)),("x2",(DAE.T_LIST(typeA),NONE))},(DAE.T_LIST(typeA),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> listAInt2A=(
-          Types.T_FUNCTION({("lst",(Types.T_LIST(typeA),NONE)),("ix",(Types.T_INTEGER({}),NONE))},(typeA)),NONE);
+          DAE.T_FUNCTION({("lst",(DAE.T_LIST(typeA),NONE)),("ix",(DAE.T_INTEGER({}),NONE))},(typeA)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> listAint2listA=(
-          Types.T_FUNCTION({("lst",(Types.T_LIST(typeA),NONE)),("ix",(Types.T_INTEGER({}),NONE))},(Types.T_LIST(typeA),NONE)),NONE);
+          DAE.T_FUNCTION({("lst",(DAE.T_LIST(typeA),NONE)),("ix",(DAE.T_INTEGER({}),NONE))},(DAE.T_LIST(typeA),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> list2int=(
-          Types.T_FUNCTION({("x",(Types.T_LIST((Types.T_NOTYPE(),NONE)),NONE))},((Types.T_INTEGER({}),NONE))),NONE);
+          DAE.T_FUNCTION({("x",(DAE.T_LIST((DAE.T_NOTYPE(),NONE)),NONE))},((DAE.T_INTEGER({}),NONE))),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> list2boolean=(
-          Types.T_FUNCTION({("x",(Types.T_LIST((Types.T_NOTYPE(),NONE)),NONE))},(Types.T_BOOL({}),NONE)),NONE);
+          DAE.T_FUNCTION({("x",(DAE.T_LIST((DAE.T_NOTYPE(),NONE)),NONE))},(DAE.T_BOOL({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> listAA2boolean=(
-          Types.T_FUNCTION({("lst",(Types.T_LIST(typeA),NONE)),("el",(Types.T_POLYMORPHIC("Type_A"),NONE))},(Types.T_BOOL({}),NONE)),NONE);
+          DAE.T_FUNCTION({("lst",(DAE.T_LIST(typeA),NONE)),("el",(DAE.T_POLYMORPHIC("Type_A"),NONE))},(DAE.T_BOOL({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> boxed2any=(
-          Types.T_FUNCTION({("x",typeBoxedAny)},((Types.T_NOTYPE(),NONE))),NONE);
+          DAE.T_FUNCTION({("x",typeBoxedAny)},((DAE.T_NOTYPE(),NONE))),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> option2boolean=(
-          Types.T_FUNCTION({("x",(Types.T_METAOPTION((Types.T_ANYTYPE(NONE),NONE)),NONE))},(Types.T_BOOL({}),NONE)),NONE);
+          DAE.T_FUNCTION({("x",(DAE.T_METAOPTION((DAE.T_ANYTYPE(NONE),NONE)),NONE))},(DAE.T_BOOL({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> anyInteger2any=(
-          Types.T_FUNCTION({("x1",(Types.T_NOTYPE(),NONE)),("x2",(Types.T_INTEGER({}),NONE))},(Types.T_NOTYPE(),NONE)),NONE);
+          DAE.T_FUNCTION({("x1",(DAE.T_NOTYPE(),NONE)),("x2",(DAE.T_INTEGER({}),NONE))},(DAE.T_NOTYPE(),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> anyAnyString2any=(
-          Types.T_FUNCTION({("x1",(Types.T_NOTYPE(),NONE)),("x2",(Types.T_NOTYPE(),NONE)),("x3",(Types.T_STRING({}),NONE))},(Types.T_NOTYPE(),NONE)),NONE);
+          DAE.T_FUNCTION({("x1",(DAE.T_NOTYPE(),NONE)),("x2",(DAE.T_NOTYPE(),NONE)),("x3",(DAE.T_STRING({}),NONE))},(DAE.T_NOTYPE(),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> anyIntegerIntegerString2boolean=(
-          Types.T_FUNCTION({("x1",(Types.T_NOTYPE(),NONE)),("x2",(Types.T_INTEGER({}),NONE)),("x3",(Types.T_INTEGER({}),NONE)),("x4",(Types.T_STRING({}),NONE))},(Types.T_BOOL({}),NONE)),NONE);          
+          DAE.T_FUNCTION({("x1",(DAE.T_NOTYPE(),NONE)),("x2",(DAE.T_INTEGER({}),NONE)),("x3",(DAE.T_INTEGER({}),NONE)),("x4",(DAE.T_STRING({}),NONE))},(DAE.T_BOOL({}),NONE)),NONE);          
 
 protected constant tuple<Types.TType, Option<Type_a>> string2void =(
-          Types.T_FUNCTION({("x1",(Types.T_STRING({}),NONE))},(Types.T_NORETCALL(),NONE)),NONE);
+          DAE.T_FUNCTION({("x1",(DAE.T_STRING({}),NONE))},(DAE.T_NORETCALL(),NONE)),NONE);
           
 protected constant tuple<Types.TType, Option<Type_a>> a2void =(
-          Types.T_FUNCTION({("any",(Types.T_POLYMORPHIC("Type_A"),NONE))},(Types.T_NORETCALL(),NONE)),NONE);
+          DAE.T_FUNCTION({("any",(DAE.T_POLYMORPHIC("Type_A"),NONE))},(DAE.T_NORETCALL(),NONE)),NONE);
           
 protected constant tuple<Types.TType, Option<Type_a>> void2int =(
-          Types.T_FUNCTION({},(Types.T_INTEGER({}),NONE)),NONE);
+          DAE.T_FUNCTION({},(DAE.T_INTEGER({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> void2real =(
-          Types.T_FUNCTION({},(Types.T_REAL({}),NONE)),NONE);
+          DAE.T_FUNCTION({},(DAE.T_REAL({}),NONE)),NONE);
 
-protected constant tuple<Types.TType, Option<Type_a>> typeBoxedAny = (Types.T_BOXED((Types.T_NOTYPE,NONE)),NONE);
-protected constant tuple<Types.TType, Option<Type_a>> typeA = (Types.T_POLYMORPHIC("Type_A"),NONE);
+protected constant tuple<Types.TType, Option<Type_a>> typeBoxedAny = (DAE.T_BOXED((DAE.T_NOTYPE,NONE)),NONE);
+protected constant tuple<Types.TType, Option<Type_a>> typeA = (DAE.T_POLYMORPHIC("Type_A"),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> boolBoxedBoxed2boxed =(
-          Types.T_FUNCTION({("x1",(Types.T_BOOL({}),NONE)),("x2",typeBoxedAny),("x3",typeBoxedAny)},typeBoxedAny),NONE);
+          DAE.T_FUNCTION({("x1",(DAE.T_BOOL({}),NONE)),("x2",typeBoxedAny),("x3",typeBoxedAny)},typeBoxedAny),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> AA2void =(
-          Types.T_FUNCTION({("x1",typeA),("x2",typeA)},(Types.T_NORETCALL,NONE)),NONE);
+          DAE.T_FUNCTION({("x1",typeA),("x2",typeA)},(DAE.T_NORETCALL,NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> AA2bool =(
-          Types.T_FUNCTION({("x1",typeA),("x2",typeA)},(Types.T_BOOL({}),NONE)),NONE);
+          DAE.T_FUNCTION({("x1",typeA),("x2",typeA)},(DAE.T_BOOL({}),NONE)),NONE);
 
 // MetaModelica Array Functions. sjoelund
 protected constant tuple<Types.TType, Option<Type_a>> array1d2int =(
-          Types.T_FUNCTION({("x1",(Types.T_ARRAY(Types.DIM(SOME(1)), (Types.T_NOTYPE(),NONE)),NONE))},(Types.T_INTEGER({}),NONE)),NONE);
+          DAE.T_FUNCTION({("x1",(DAE.T_ARRAY(DAE.DIM(SOME(1)), (DAE.T_NOTYPE(),NONE)),NONE))},(DAE.T_INTEGER({}),NONE)),NONE);
 
 // arrayGet
 protected constant tuple<Types.TType, Option<Type_a>> array1dAnyInt2any =(
-          Types.T_FUNCTION({("x1",(Types.T_ARRAY(Types.DIM(SOME(1)), (Types.T_NOTYPE(),NONE)),NONE)),("x2",(Types.T_INTEGER({}),NONE))},(Types.T_NOTYPE(),NONE)),NONE);
+          DAE.T_FUNCTION({("x1",(DAE.T_ARRAY(DAE.DIM(SOME(1)), (DAE.T_NOTYPE(),NONE)),NONE)),("x2",(DAE.T_INTEGER({}),NONE))},(DAE.T_NOTYPE(),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array1dIntInt2int =(
-          Types.T_FUNCTION({("x1",(Types.T_ARRAY(Types.DIM(SOME(1)), (Types.T_INTEGER({}),NONE)),NONE)),("x2",(Types.T_INTEGER({}),NONE))},(Types.T_INTEGER({}),NONE)),NONE);
+          DAE.T_FUNCTION({("x1",(DAE.T_ARRAY(DAE.DIM(SOME(1)), (DAE.T_INTEGER({}),NONE)),NONE)),("x2",(DAE.T_INTEGER({}),NONE))},(DAE.T_INTEGER({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array1dRealInt2real =(
-          Types.T_FUNCTION({("x1",(Types.T_ARRAY(Types.DIM(SOME(1)), (Types.T_REAL({}),NONE)),NONE)),("x2",(Types.T_INTEGER({}),NONE))},(Types.T_REAL({}),NONE)),NONE);
+          DAE.T_FUNCTION({("x1",(DAE.T_ARRAY(DAE.DIM(SOME(1)), (DAE.T_REAL({}),NONE)),NONE)),("x2",(DAE.T_INTEGER({}),NONE))},(DAE.T_REAL({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array1dBoolInt2bool =(
-          Types.T_FUNCTION({("x1",(Types.T_ARRAY(Types.DIM(SOME(1)), (Types.T_BOOL({}),NONE)),NONE)),("x2",(Types.T_INTEGER({}),NONE))},(Types.T_BOOL({}),NONE)),NONE);
+          DAE.T_FUNCTION({("x1",(DAE.T_ARRAY(DAE.DIM(SOME(1)), (DAE.T_BOOL({}),NONE)),NONE)),("x2",(DAE.T_INTEGER({}),NONE))},(DAE.T_BOOL({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> array1dStringInt2string =(
-          Types.T_FUNCTION({("x1",(Types.T_ARRAY(Types.DIM(SOME(1)), (Types.T_STRING({}),NONE)),NONE)),("x2",(Types.T_INTEGER({}),NONE))},(Types.T_STRING({}),NONE)),NONE);
+          DAE.T_FUNCTION({("x1",(DAE.T_ARRAY(DAE.DIM(SOME(1)), (DAE.T_STRING({}),NONE)),NONE)),("x2",(DAE.T_INTEGER({}),NONE))},(DAE.T_STRING({}),NONE)),NONE);
 
 // arrayCreate
 protected constant tuple<Types.TType, Option<Type_a>> intAny2array1dAny =(
-          Types.T_FUNCTION({("x1",(Types.T_INTEGER({}),NONE)),("x2",(Types.T_NOTYPE(),NONE))},(Types.T_ARRAY(Types.DIM(SOME(1)), (Types.T_NOTYPE(),NONE)),NONE)),NONE);
+          DAE.T_FUNCTION({("x1",(DAE.T_INTEGER({}),NONE)),("x2",(DAE.T_NOTYPE(),NONE))},(DAE.T_ARRAY(DAE.DIM(SOME(1)), (DAE.T_NOTYPE(),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> intInt2array1dInt =(
-          Types.T_FUNCTION({("x1",(Types.T_INTEGER({}),NONE)),("x2",(Types.T_INTEGER({}),NONE))},(Types.T_ARRAY(Types.DIM(SOME(1)), (Types.T_INTEGER({}),NONE)),NONE)),NONE);
+          DAE.T_FUNCTION({("x1",(DAE.T_INTEGER({}),NONE)),("x2",(DAE.T_INTEGER({}),NONE))},(DAE.T_ARRAY(DAE.DIM(SOME(1)), (DAE.T_INTEGER({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> intReal2array1dReal =(
-          Types.T_FUNCTION({("x1",(Types.T_INTEGER({}),NONE)),("x2",(Types.T_REAL({}),NONE))},(Types.T_ARRAY(Types.DIM(SOME(1)), (Types.T_REAL({}),NONE)),NONE)),NONE);
+          DAE.T_FUNCTION({("x1",(DAE.T_INTEGER({}),NONE)),("x2",(DAE.T_REAL({}),NONE))},(DAE.T_ARRAY(DAE.DIM(SOME(1)), (DAE.T_REAL({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> intBool2array1dBool =(
-          Types.T_FUNCTION({("x1",(Types.T_INTEGER({}),NONE)),("x2",(Types.T_BOOL({}),NONE))},(Types.T_ARRAY(Types.DIM(SOME(1)), (Types.T_BOOL({}),NONE)),NONE)),NONE);
+          DAE.T_FUNCTION({("x1",(DAE.T_INTEGER({}),NONE)),("x2",(DAE.T_BOOL({}),NONE))},(DAE.T_ARRAY(DAE.DIM(SOME(1)), (DAE.T_BOOL({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> intString2array1dString =(
-          Types.T_FUNCTION({("x1",(Types.T_INTEGER({}),NONE)),("x2",(Types.T_STRING({}),NONE))},(Types.T_ARRAY(Types.DIM(SOME(1)), (Types.T_STRING({}),NONE)),NONE)),NONE);
+          DAE.T_FUNCTION({("x1",(DAE.T_INTEGER({}),NONE)),("x2",(DAE.T_STRING({}),NONE))},(DAE.T_ARRAY(DAE.DIM(SOME(1)), (DAE.T_STRING({}),NONE)),NONE)),NONE);
 
 // String functions. sjoelund
 protected constant tuple<Types.TType, Option<Type_a>> string2string=(
-          Types.T_FUNCTION({("x",(Types.T_STRING({}),NONE))},(Types.T_STRING({}),NONE)),NONE);
+          DAE.T_FUNCTION({("x",(DAE.T_STRING({}),NONE))},(DAE.T_STRING({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> stringString2string=(
-          Types.T_FUNCTION({("x1",(Types.T_STRING({}),NONE)),("x2",(Types.T_STRING({}),NONE))},(Types.T_STRING({}),NONE)),NONE);
+          DAE.T_FUNCTION({("x1",(DAE.T_STRING({}),NONE)),("x2",(DAE.T_STRING({}),NONE))},(DAE.T_STRING({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> stringInt2string=(
-          Types.T_FUNCTION({("x1",(Types.T_STRING({}),NONE)),("x2",(Types.T_INTEGER({}),NONE))},(Types.T_STRING({}),NONE)),NONE);
+          DAE.T_FUNCTION({("x1",(DAE.T_STRING({}),NONE)),("x2",(DAE.T_INTEGER({}),NONE))},(DAE.T_STRING({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> stringString2boolean=(
-          Types.T_FUNCTION({("x1",(Types.T_STRING({}),NONE)),("x2",(Types.T_STRING({}),NONE))},(Types.T_BOOL({}),NONE)),NONE);
+          DAE.T_FUNCTION({("x1",(DAE.T_STRING({}),NONE)),("x2",(DAE.T_STRING({}),NONE))},(DAE.T_BOOL({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> stringString2int=(
-          Types.T_FUNCTION({("x1",(Types.T_STRING({}),NONE)),("x2",(Types.T_STRING({}),NONE))},(Types.T_INTEGER({}),NONE)),NONE);
+          DAE.T_FUNCTION({("x1",(DAE.T_STRING({}),NONE)),("x2",(DAE.T_STRING({}),NONE))},(DAE.T_INTEGER({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> stringStringInteger2string=(
-          Types.T_FUNCTION({("x1",(Types.T_STRING({}),NONE)),("x2",(Types.T_STRING({}),NONE)),("x3",(Types.T_INTEGER({}),NONE))},(Types.T_STRING({}),NONE)),NONE);
+          DAE.T_FUNCTION({("x1",(DAE.T_STRING({}),NONE)),("x2",(DAE.T_STRING({}),NONE)),("x3",(DAE.T_INTEGER({}),NONE))},(DAE.T_STRING({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> string2int=(
-          Types.T_FUNCTION({("x",(Types.T_STRING({}),NONE))},(Types.T_INTEGER({}),NONE)),NONE);
+          DAE.T_FUNCTION({("x",(DAE.T_STRING({}),NONE))},(DAE.T_INTEGER({}),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> string2listOfString=(
-          Types.T_FUNCTION({("x",(Types.T_STRING({}),NONE))},(Types.T_LIST((Types.T_STRING({}),NONE)),NONE)),NONE);
+          DAE.T_FUNCTION({("x",(DAE.T_STRING({}),NONE))},(DAE.T_LIST((DAE.T_STRING({}),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> listOfString2string=(
-          Types.T_FUNCTION({("x",(Types.T_LIST((Types.T_STRING({}),NONE)),NONE))},(Types.T_STRING({}),NONE)),NONE);
+          DAE.T_FUNCTION({("x",(DAE.T_LIST((DAE.T_STRING({}),NONE)),NONE))},(DAE.T_STRING({}),NONE)),NONE);
 
 
 
 
 protected constant tuple<Types.TType, Option<Type_a>> array1dimrealarray1dimrealarray1dimreal2real=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
-          ("x",(Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_REAL({}),NONE)),NONE)),
-          ("y",(Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_REAL({}),NONE)),NONE)),
-          ("z",(Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_REAL({}),NONE)),NONE))
+          ("x",(DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_REAL({}),NONE)),NONE)),
+          ("y",(DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_REAL({}),NONE)),NONE)),
+          ("z",(DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_REAL({}),NONE)),NONE))
           },
-          (Types.T_REAL({}),NONE)),NONE);
+          (DAE.T_REAL({}),NONE)),NONE);
 protected constant tuple<Types.TType, Option<Type_a>> array1dimrealarray1dimrealarray1dimreal2array1dimreal=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
-          ("x",(Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_REAL({}),NONE)),NONE)),
-          ("y",(Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_REAL({}),NONE)),NONE)),
-          ("z",(Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_REAL({}),NONE)),NONE))
+          ("x",(DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_REAL({}),NONE)),NONE)),
+          ("y",(DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_REAL({}),NONE)),NONE)),
+          ("z",(DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_REAL({}),NONE)),NONE))
           },
-          (Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_REAL({}),NONE)),NONE)),NONE);          
+          (DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_REAL({}),NONE)),NONE)),NONE);          
 protected constant tuple<Types.TType, Option<Type_a>> realrealreal2real=(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
-          ("x",(Types.T_REAL({}),NONE)),
-          ("y",(Types.T_REAL({}),NONE)),
-          ("z",(Types.T_REAL({}),NONE))
-          },(Types.T_REAL({}),NONE)),NONE);
+          ("x",(DAE.T_REAL({}),NONE)),
+          ("y",(DAE.T_REAL({}),NONE)),
+          ("z",(DAE.T_REAL({}),NONE))
+          },(DAE.T_REAL({}),NONE)),NONE);
 protected constant tuple<Types.TType, Option<Type_a>> intintint2int =(
-          Types.T_FUNCTION(
+          DAE.T_FUNCTION(
           {
-          ("x",(Types.T_INTEGER({}),NONE)),
-          ("y",(Types.T_INTEGER({}),NONE)),
-          ("z",(Types.T_INTEGER({}),NONE))
-          },(Types.T_INTEGER({}),NONE)),NONE);
+          ("x",(DAE.T_INTEGER({}),NONE)),
+          ("y",(DAE.T_INTEGER({}),NONE)),
+          ("z",(DAE.T_INTEGER({}),NONE))
+          },(DAE.T_INTEGER({}),NONE)),NONE);
           
 public function isTanh
   input Absyn.Path inPath;
@@ -2909,10 +2909,10 @@ end isTan;
 
 
 public function simpleInitialEnv "
-val array2array=  (Types.T_FUNCTION({(\"x\",(Types.T_ARRAY)},
-				      (Types.T_ARRAY),NONE)
+val array2array=  (DAE.T_FUNCTION({(\"x\",(DAE.T_ARRAY)},
+				      (DAE.T_ARRAY),NONE)
 val array_array2array=
-val int2array= (Types.T_FUNCTION(\"x\",(Types.T_ARRAY(1,_)),NONE)
+val int2array= (DAE.T_FUNCTION(\"x\",(DAE.T_ARRAY(1,_)),NONE)
   Specifierar en vector, array of dimension one
   zeroes, ones, fill?
   
