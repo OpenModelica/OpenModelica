@@ -66,77 +66,73 @@ type Ident = String "- Identifiers
     Define `Ident\' as an alias for `string\' and use it for all 
     identifiers in Modelica." ;
 
+public type Type = ExpType;
+
 public 
-uniontype Type "- Basic types
+uniontype ExpType "- Basic types
     These types are not used as expression types (see the `Types\'
     module for expression types).  They are used to parameterize
     operators which may work on several simple types and for code generation."
-  record INT end INT;
+  record ET_INT end ET_INT;
 
-  record REAL end REAL;
+  record ET_REAL end ET_REAL;
 
-  record BOOL end BOOL;
+  record ET_BOOL end ET_BOOL;
 
-  record STRING end STRING;
+  record ET_STRING end ET_STRING;
 
  // record ENUM end ENUM;
  
-  record ENUMERATION
+  record ET_ENUMERATION
     Option<Integer> index "the enumeration value index, SOME for element, NONE for type" ;
     Absyn.Path path "enumeration path" ;
     list<String> names "names" ;
     list<Var> varLst "varLst, empty for elements" ;
-  end ENUMERATION;
+  end ET_ENUMERATION;
 
-  record COMPLEX "Complex types" 
+  record ET_COMPLEX "Complex types" 
     String name;
     list<Var> varLst; 
     ClassInf.State complexClassType;
-  end COMPLEX;
+  end ET_COMPLEX;
   
-  record OTHER "e.g. complex types, etc." end OTHER;
+  record ET_OTHER "e.g. complex types, etc." end ET_OTHER;
 
-  /* Was previously replaced by COMPLEX. 2009-05-04 //sjoelund
-  record T_RECORD
-    Ident name;
-  end T_RECORD;
-  */
-
-  record T_ARRAY
+  record ET_ARRAY
     Type ty;
     list<Option<Integer>> arrayDimensions "arrayDimensions" ;
-  end T_ARRAY;
+  end ET_ARRAY;
 
   // MetaModelica extension. KS
-  record T_LIST
+  record ET_LIST
     Type ty;
-  end T_LIST;
+  end ET_LIST;
 
-  record T_METATUPLE
+  record ET_METATUPLE
     list<Type> ty;
-  end T_METATUPLE;
+  end ET_METATUPLE;
 
-  record T_METAOPTION
+  record ET_METAOPTION
     Type ty;
-  end T_METAOPTION;
+  end ET_METAOPTION;
   
-  record T_FUNCTION_REFERENCE_VAR "MetaModelica Function Reference that is a variable"
-  end T_FUNCTION_REFERENCE_VAR;
-  record T_FUNCTION_REFERENCE_FUNC "MetaModelica Function Reference that is a direct reference to a function"
-  end T_FUNCTION_REFERENCE_FUNC;
+  record ET_FUNCTION_REFERENCE_VAR "MetaModelica Function Reference that is a variable"
+  end ET_FUNCTION_REFERENCE_VAR;
+  record ET_FUNCTION_REFERENCE_FUNC "MetaModelica Function Reference that is a direct reference to a function"
+  end ET_FUNCTION_REFERENCE_FUNC;
   
   //MetaModelica Uniontype, MetaModelica extension, simbj
-  record T_UNIONTYPE end T_UNIONTYPE;
+  record ET_UNIONTYPE end ET_UNIONTYPE;
   
-  record T_BOXED "Tag for any boxed data type (useful for equality operations)"
+  record ET_BOXED "Tag for any boxed data type (useful for equality operations)"
     Type ty;
-  end T_BOXED;
+  end ET_BOXED;
 
-  record T_POLYMORPHIC "Used in MetaModelica polymorphic functions" end T_POLYMORPHIC;
+  record ET_POLYMORPHIC "Used in MetaModelica polymorphic functions" end ET_POLYMORPHIC;
 
-  record T_NORETCALL "For functions not returning any values." end T_NORETCALL;
+  record ET_NORETCALL "For functions not returning any values." end ET_NORETCALL;
 
-end Type;
+end ExpType;
 
 uniontype Var "A variable is used to describe a complex type which contains a list of variables. See also Types.Var "
   record COMPLEX_VAR
@@ -1211,13 +1207,13 @@ algorithm
       Ident i;
       ComponentRef c;
       Absyn.Path p;
-    case Absyn.IDENT(name = i) then CREF_IDENT(i,OTHER(),{}); 
+    case Absyn.IDENT(name = i) then CREF_IDENT(i,ET_OTHER(),{}); 
     case (Absyn.FULLYQUALIFIED(p)) then pathToCref(p);
     case Absyn.QUALIFIED(name = i,path = p)
       equation 
         c = pathToCref(p);
       then
-        CREF_QUAL(i,OTHER(),{},c);
+        CREF_QUAL(i,ET_OTHER(),{},c);
   end matchcontinue;
 end pathToCref;
 
@@ -1696,7 +1692,7 @@ algorithm
         res = boolAnd(b1,b2);
       then
         res;
-    case (CREF(_,ENUMERATION(index = SOME(_)))) then true;
+    case (CREF(_,ET_ENUMERATION(index = SOME(_)))) then true;
     case (_) then false; 
   end matchcontinue;
 end isConst;
@@ -2147,13 +2143,13 @@ algorithm
          e2 = addNoEventToRelations(e1);
      then e2;         
       
-    case (CAST(ty = REAL(),exp=e ))
+    case (CAST(ty = ET_REAL(),exp=e ))
       local Exp e; Real v;
       equation
         RCONST(v) = simplify1(e);
        then RCONST(v); 
          
-    case (CAST(ty = REAL(),exp = e))
+    case (CAST(ty = ET_REAL(),exp = e))
       local Integer v;
       equation 
         ICONST(v) = simplify1(e);
@@ -2398,7 +2394,7 @@ traversal function for addNoEventToRelations"
 algorithm
   outTpl := matchcontinue(inTpl)
   local Exp e; Integer i;
-    case((e as RELATION(exp1=_),i)) then ((CALL(Absyn.IDENT("noEvent"),{e},false,true,BOOL(),false),i));
+    case((e as RELATION(exp1=_),i)) then ((CALL(Absyn.IDENT("noEvent"),{e},false,true,ET_BOOL(),false),i));
     case((e,i)) then ((e,i));
   end matchcontinue;
 end addNoEventToRelationExp;
@@ -2453,7 +2449,7 @@ algorithm
         crefs = Util.listMap1r(Util.listMap(subs,Util.listCreate),subscriptCref,cr);
         expl = Util.listMap1(crefs,makeCrefExp,t);        
         dim = listLength(expl);
-        exp = simplifyCref2(ARRAY(T_ARRAY(t,{SOME(dim)}),true,expl),ssl);
+        exp = simplifyCref2(ARRAY(ET_ARRAY(t,{SOME(dim)}),true,expl),ssl);
       then
         exp;
  	case(crefExp as ARRAY(tp,sc,expl), ssl )
@@ -3200,7 +3196,7 @@ algorithm
     case ((e1 :: es))
       equation 
         {e} = simplifyBinaryAddConstants(es);
-        e_1 = simplifyBinaryConst(ADD(REAL()), e1, e);
+        e_1 = simplifyBinaryConst(ADD(ET_REAL()), e1, e);
       then
         {e_1};
     case (_)
@@ -3372,7 +3368,7 @@ algorithm
       equation 
         res = simplifyMulMakePow(xs);
       then
-        (BINARY(e,POW(REAL()),RCONST(r)) :: res);
+        (BINARY(e,POW(ET_REAL()),RCONST(r)) :: res);
   end matchcontinue;
 end simplifyMulMakePow;
 
@@ -3515,16 +3511,16 @@ algorithm
     case (((e,r) :: xs))
       local Integer tmpInt;
       equation 
-        INT() = typeof(e);
+        ET_INT() = typeof(e);
         res = simplifyAddMakeMul(xs);
         tmpInt = realInt(r);
       then
-        (BINARY(ICONST(tmpInt),MUL(INT()),e) :: res);
+        (BINARY(ICONST(tmpInt),MUL(ET_INT()),e) :: res);
     case (((e,r) :: xs))
       equation 
         res = simplifyAddMakeMul(xs);
       then
-        (BINARY(RCONST(r),MUL(REAL()),e) :: res);
+        (BINARY(RCONST(r),MUL(ET_REAL()),e) :: res);
   end matchcontinue;
 end simplifyAddMakeMul;
 
@@ -3566,7 +3562,7 @@ algorithm
         q = makeProductLst(es2_1);
         q_1 = simplify1(q);
       then
-        BINARY(RCONST(1.0),DIV(REAL()),q_1);
+        BINARY(RCONST(1.0),DIV(ET_REAL()),q_1);
     case (es1,es2)
       equation 
         const_es1 = Util.listSelect(es1, isConst);
@@ -3580,7 +3576,7 @@ algorithm
         p_1 = simplify1(p);
         q_1 = simplify1(q);
       then
-        BINARY(p_1,DIV(REAL()),q_1);
+        BINARY(p_1,DIV(ET_REAL()),q_1);
   end matchcontinue;
 end makeFactorDivision;
 
@@ -3607,7 +3603,7 @@ algorithm
       equation 
         (BINARY(_,POW(_),e2),es2_1) = findPowFactor(cr, es2);
         (es1_1,es2_2) = removeCommonFactors(es1, es2_1);
-        pow_e = simplify1(BINARY(CREF(cr,tp),POW(REAL()),BINARY(e1,SUB(REAL()),e2)));
+        pow_e = simplify1(BINARY(CREF(cr,tp),POW(ET_REAL()),BINARY(e1,SUB(ET_REAL()),e2)));
       then
         ((pow_e :: es1_1),es2_2);
 
@@ -4009,7 +4005,7 @@ algorithm
   outExp:=
   matchcontinue (inExp1,inExp2)
     local Exp e1,e2;
-    case (e1,e2) then BINARY(e1,DIV(REAL()),e2); 
+    case (e1,e2) then BINARY(e1,DIV(ET_REAL()),e2); 
   end matchcontinue;
 end divide;
 
@@ -4304,7 +4300,7 @@ algorithm
         res = listAppend(f1_1, f2_1);
       then
         res;
-    case (BINARY(exp1 = e1,operator = DIV(ty = REAL()),exp2 = e2))
+    case (BINARY(exp1 = e1,operator = DIV(ty = ET_REAL()),exp2 = e2))
       equation 
         f1 = factors(e1);
         f2 = factors(e2);
@@ -4357,16 +4353,16 @@ algorithm
         (BINARY(e1,POW(tp),UNARY(UMINUS(tp2),e2)) :: es_1);
     case ((e :: es))
       equation 
-        REAL() = typeof(e);
+        ET_REAL() = typeof(e);
         es_1 = inverseFactors(es);
       then
-        (BINARY(RCONST(1.0),DIV(REAL()),e) :: es_1);
+        (BINARY(RCONST(1.0),DIV(ET_REAL()),e) :: es_1);
     case ((e :: es))
       equation 
-        INT() = typeof(e);
+        ET_INT() = typeof(e);
         es_1 = inverseFactors(es);
       then
-        (BINARY(ICONST(1),DIV(INT()),e) :: es_1);
+        (BINARY(ICONST(1),DIV(ET_INT()),e) :: es_1);
   end matchcontinue;
 end inverseFactors;
 
@@ -4503,7 +4499,7 @@ input Type inTp;
 output Type outTp;
 algorithm
   outTp := matchcontinue(inTp)
-    case (OTHER()) then REAL();
+    case (ET_OTHER()) then ET_REAL();
     case (inTp) then inTp;
   end matchcontinue;
 end checkIfOther;
@@ -4630,7 +4626,7 @@ public function arrayTypeDimensions
 	output list<Option<Integer>> dims;
 algorithm
   dims := matchcontinue(tp)
-    case(T_ARRAY(_,dims)) then dims;
+    case(ET_ARRAY(_,dims)) then dims;
   end matchcontinue;
 end arrayTypeDimensions;
 
@@ -4642,10 +4638,10 @@ public function typeBuiltin
 algorithm 
   outBoolean:=
   matchcontinue (inType)
-    case (INT()) then true; 
-    case (REAL()) then true; 
-    case (STRING()) then true; 
-    case (BOOL()) then true; 
+    case (ET_INT()) then true; 
+    case (ET_REAL()) then true; 
+    case (ET_STRING()) then true; 
+    case (ET_BOOL()) then true; 
     case (_) then false; 
   end matchcontinue;
 end typeBuiltin;
@@ -4659,7 +4655,7 @@ algorithm
   outType:=
   matchcontinue (inType)
     local Type t;
-    case (T_ARRAY(ty = t)) then arrayEltType(t); 
+    case (ET_ARRAY(ty = t)) then arrayEltType(t); 
     case (t) then t; 
   end matchcontinue;
 end arrayEltType;
@@ -4677,12 +4673,12 @@ algorithm
       Type elt_tp,tp;
       list<Option<Integer>> dims;
       
-    case(T_ARRAY(elt_tp,dims),n) 
+    case(ET_ARRAY(elt_tp,dims),n) 
       equation
       dims = listAppend(dims,{n});
-      then T_ARRAY(elt_tp,dims);
+      then ET_ARRAY(elt_tp,dims);
       
-    case(tp,n) then T_ARRAY(tp,{n});
+    case(tp,n) then ET_ARRAY(tp,{n});
       
   end matchcontinue;
 end liftArray;
@@ -4700,10 +4696,10 @@ algorithm
       Type tp,t;
       Option<Integer> d;
       list<Option<Integer>> ds;
-    case (T_ARRAY(ty = tp,arrayDimensions = {_})) 
+    case (ET_ARRAY(ty = tp,arrayDimensions = {_})) 
       then tp; 
-    case (T_ARRAY(ty = tp,arrayDimensions = (d :: ds))) 
-      then T_ARRAY(tp,ds); 
+    case (ET_ARRAY(ty = tp,arrayDimensions = (d :: ds))) 
+      then ET_ARRAY(tp,ds); 
     case (t) then t; 
   end matchcontinue;
 end unliftArray;
@@ -4722,10 +4718,10 @@ algorithm
       Exp e1,e2,e3,e;
       list<Exp> explist;
       list<Type> tylist;
-    case (ICONST(integer = _)) then INT(); 
-    case (RCONST(real = _)) then REAL(); 
-    case (SCONST(string = _)) then STRING(); 
-    case (BCONST(bool = _)) then BOOL(); 
+    case (ICONST(integer = _)) then ET_INT(); 
+    case (RCONST(real = _)) then ET_REAL(); 
+    case (SCONST(string = _)) then ET_STRING(); 
+    case (BCONST(bool = _)) then ET_BOOL(); 
     case (CREF(ty = tp)) then tp; 
     case (BINARY(operator = op))
       equation 
@@ -4774,23 +4770,23 @@ algorithm
         tp = typeof(e);
       then
         tp;
-    case (END()) then OTHER();  /* Can be any type. */ 
-    case (SIZE(_,NONE)) then INT();
-    case (SIZE(_,SOME(_))) then T_ARRAY(INT(),{NONE});
+    case (END()) then ET_OTHER();  /* Can be any type. */ 
+    case (SIZE(_,NONE)) then ET_INT();
+    case (SIZE(_,SOME(_))) then ET_ARRAY(ET_INT(),{NONE});
 
     //MetaModelica extension
-    case (LIST(ty = tp)) then T_LIST(tp); // was tp, but the type of a LIST is a LIST
-    case (CONS(ty = tp)) then T_LIST(tp); // CONS creates lists
+    case (LIST(ty = tp)) then ET_LIST(tp); // was tp, but the type of a LIST is a LIST
+    case (CONS(ty = tp)) then ET_LIST(tp); // CONS creates lists
     case (META_TUPLE(explist))
       equation
         tylist = Util.listMap(explist, typeof);
-      then T_METATUPLE(tylist);
+      then ET_METATUPLE(tylist);
     case (META_OPTION(SOME(e)))
       equation
         tp = typeof(e);
-      then T_METAOPTION(tp);
-    case (META_OPTION(NONE)) then T_METAOPTION(OTHER());
-    case (METARECORDCALL(_,_,_,_)) then T_UNIONTYPE();
+      then ET_METAOPTION(tp);
+    case (META_OPTION(NONE)) then ET_METAOPTION(ET_OTHER());
+    case (METARECORDCALL(_,_,_,_)) then ET_UNIONTYPE();
     case e
       equation
         Debug.fprintln("failtrace", "- Exp.typeof failed for " +& printExpStr(e));
@@ -4812,14 +4808,14 @@ algorithm
       list<Option<Integer>> dims;
       Option<Integer> dim;
       Integer i;
-    case (T_ARRAY(ty,dims),dim)
+    case (ET_ARRAY(ty,dims),dim)
       equation 
         ty_1 = liftArrayRight(ty, dim);
       then
-        T_ARRAY(ty_1,dims);         
+        ET_ARRAY(ty_1,dims);         
     case (ty,SOME(i))
       then
-        T_ARRAY(ty,{SOME(i)});
+        ET_ARRAY(ty,{SOME(i)});
   end matchcontinue;
 end liftArrayRight;
 
@@ -4855,9 +4851,9 @@ algorithm
     case (MUL_MATRIX_PRODUCT(ty = t)) then t; 
     case (DIV_ARRAY_SCALAR(ty = t)) then t; 
     case (POW_ARR(ty = t)) then t; 
-    case (AND()) then BOOL(); 
-    case (OR()) then BOOL(); 
-    case (NOT()) then BOOL(); 
+    case (AND()) then ET_BOOL(); 
+    case (OR()) then ET_BOOL(); 
+    case (NOT()) then ET_BOOL(); 
     case (LESS(ty = t)) then t; 
     case (LESSEQ(ty = t)) then t; 
     case (GREATER(ty = t)) then t; 
@@ -4867,7 +4863,7 @@ algorithm
     case (USERDEFINED(fqName = t))
       local Absyn.Path t;
       then
-        OTHER();
+        ET_OTHER();
   end matchcontinue;
 end typeofOp;
 
@@ -4943,8 +4939,8 @@ public function makeConstZero
 	output Exp const;
 algorithm
   const := matchcontinue(inType)
-    case (REAL()) then RCONST(0.0);
-    case (INT()) then ICONST(0);
+    case (ET_REAL()) then RCONST(0.0);
+    case (ET_INT()) then ICONST(0);
     case(_) then RCONST(0.0);  
   end matchcontinue;
 end makeConstZero;
@@ -4966,8 +4962,8 @@ public function makeConstOne
 algorithm 
   outExp:=
   matchcontinue (inType)
-    case (INT()) then ICONST(1); 
-    case (REAL()) then RCONST(1.0); 
+    case (ET_INT()) then ICONST(1); 
+    case (ET_REAL()) then RCONST(1.0); 
   end matchcontinue;
 end makeConstOne;
 
@@ -5389,7 +5385,7 @@ algorithm
         true = isConstMinusOne(e);
         one = makeConstOne(tp);
       then
-        BINARY(one,DIV(REAL()),e2);
+        BINARY(one,DIV(ET_REAL()),e2);
 
         /* e1^e2, where e2 is zero */
     case (_,POW(ty = _),e1,e)
@@ -5460,12 +5456,12 @@ algorithm
   outExp:=
   matchcontinue (inType)
     local Real realv;
-    case (REAL())
+    case (ET_REAL())
       equation 
         realv = intReal(1);
       then
         RCONST(realv);
-    case (INT()) then ICONST(1); 
+    case (ET_INT()) then ICONST(1); 
   end matchcontinue;
 end createConstOne;
 
@@ -5558,7 +5554,7 @@ algorithm
     case (CALL(path = Absyn.IDENT(name = "der"))) then false;
     /* adrpo: 2009-03-03 -> pre is also needed here! */
     case (CALL(path = Absyn.IDENT(name = "pre"))) then false; 
-    case (CALL(path = _,ty=T_ARRAY(_,_))) then true; 
+    case (CALL(path = _,ty=ET_ARRAY(_,_))) then true; 
     case (CALL(path = _)) then false;
     case (PARTEVALFUNCTION(path = _, expList = elst)) // stefan
       equation
@@ -6030,13 +6026,13 @@ algorithm
       equation 
         subs_1 = toExpCrefSubs(subs);
       then
-        CREF_IDENT(id,OTHER(),subs_1);
+        CREF_IDENT(id,ET_OTHER(),subs_1);
     case (Absyn.CREF_QUAL(name = id,subScripts = subs,componentRef = cr))
       equation 
         cr_1 = toExpCref(cr);
         subs_1 = toExpCrefSubs(subs);
       then
-        CREF_QUAL(id,OTHER(),subs_1,cr_1);
+        CREF_QUAL(id,ET_OTHER(),subs_1,cr_1);
   end matchcontinue;
 end toExpCref;
 
@@ -6068,7 +6064,7 @@ algorithm
         cr_1 = toExpCref(cr);
         xs_1 = toExpCrefSubs(xs);
       then
-        (INDEX(CREF(cr_1,INT())) :: xs_1);
+        (INDEX(CREF(cr_1,ET_INT())) :: xs_1);
     case ((e :: xs))
       equation 
         s = Dump.printSubscriptsStr({e});
@@ -6138,14 +6134,14 @@ algorithm
       list<tuple<Type,Ident>> varlst;
       list<String> strLst;
       String s1,s2;
-    case INT() then "INT"; 
-    case REAL() then "REAL"; 
-    case BOOL() then "BOOL"; 
-    case STRING() then "STRING";
-    case ENUMERATION(index=SOME(_)) then "ENUM";
+    case ET_INT() then "INT"; 
+    case ET_REAL() then "REAL"; 
+    case ET_BOOL() then "BOOL"; 
+    case ET_STRING() then "STRING";
+    case ET_ENUMERATION(index=SOME(_)) then "ENUM";
 //    case ENUM() then "ENUM";
-    case OTHER() then "OTHER"; 
-    case (T_ARRAY(ty = t,arrayDimensions = dims))
+    case ET_OTHER() then "OTHER"; 
+    case (ET_ARRAY(ty = t,arrayDimensions = dims))
       equation 
         ss = Util.listMap(Util.listMap1(dims, Util.applyOption,int_string),Util.stringOption);
         s1 = Util.stringDelimitListNonEmptyElts(ss, ", ");
@@ -6153,11 +6149,11 @@ algorithm
         res = Util.stringAppendList({"/tp:",ts,"[",s1,"]/"});
       then
         res;
-    case(COMPLEX(varLst=vars,complexClassType=ci))
+    case(ET_COMPLEX(varLst=vars,complexClassType=ci))
       local list<Var> vars; String s;
         ClassInf.State ci;
       equation
-        s = "COMPLEX(" +& typeVarsStr(vars) +& "):" +& ClassInf.printStateStr(ci); 
+        s = "ET_COMPLEX(" +& typeVarsStr(vars) +& "):" +& ClassInf.printStateStr(ci); 
       then s;
     case(_) then "#Exp.typeString failed#";
   end matchcontinue;
@@ -6463,7 +6459,7 @@ algorithm
         printRightpar(pri1, pri2);
       then
         ();
-    case (CAST(ty = REAL(),exp = ICONST(integer = i)),_)
+    case (CAST(ty = ET_REAL(),exp = ICONST(integer = i)),_)
       equation 
         false = RTOpts.modelicaOutput();
         r = intReal(i);
@@ -6471,7 +6467,7 @@ algorithm
         Print.printBuf(rstr);
       then
         ();
-    case (CAST(ty = REAL(),exp = e),_)
+    case (CAST(ty = ET_REAL(),exp = e),_)
       equation 
         false = RTOpts.modelicaOutput();
         Print.printBuf("Real(");
@@ -6479,7 +6475,7 @@ algorithm
         Print.printBuf(")");
       then
         ();
-    case (CAST(ty = REAL(),exp = e),_)
+    case (CAST(ty = ET_REAL(),exp = e),_)
       equation 
         true = RTOpts.modelicaOutput();
         printExp(e);
@@ -6737,7 +6733,7 @@ algorithm
   outExp:=
   matchcontinue (inExp1,inExp2)
     local Exp e1,e2;
-    case (e1,e2) then BINARY(e1,ADD(REAL()),e2); 
+    case (e1,e2) then BINARY(e1,ADD(ET_REAL()),e2); 
   end matchcontinue;
 end makeRealAdd;
 
@@ -6750,7 +6746,7 @@ algorithm
   outExp:=
   matchcontinue (inExpLst)
     local list<Exp> expl;
-    case (expl) then ARRAY(REAL(),false,expl); 
+    case (expl) then ARRAY(ET_REAL(),false,expl); 
   end matchcontinue;
 end makeRealArray;
 
@@ -7378,14 +7374,14 @@ algorithm
         s = Util.stringAppendList({s1_1,":",s2_1,":",s3_1});
       then
         s;
-    case (CAST(ty = REAL(),exp = ICONST(integer = ival)))
+    case (CAST(ty = ET_REAL(),exp = ICONST(integer = ival)))
       equation 
         false = RTOpts.modelicaOutput();
         rval = intReal(ival);
         res = realString(rval);
       then
         res;
-    case (CAST(ty = REAL(),exp = UNARY(operator = UMINUS(ty = _),exp = ICONST(integer = ival))))
+    case (CAST(ty = ET_REAL(),exp = UNARY(operator = UMINUS(ty = _),exp = ICONST(integer = ival))))
       equation 
         false = RTOpts.modelicaOutput();
         rval = intReal(ival);
@@ -7393,14 +7389,14 @@ algorithm
         res2 = stringAppend("-", res);
       then
         res2;
-    case (CAST(ty = REAL(),exp = e))
+    case (CAST(ty = ET_REAL(),exp = e))
       equation 
         false = RTOpts.modelicaOutput();
         s = printExpStr(e);
         s_2 = Util.stringAppendList({"Real(",s,")"});
       then
         s_2;
-    case (CAST(ty = REAL(),exp = e))
+    case (CAST(ty = ET_REAL(),exp = e))
       equation 
         true = RTOpts.modelicaOutput();
         s = printExpStr(e);
@@ -8980,14 +8976,14 @@ algorithm
       ComponentRef cr;
     case (e1,e2,(crexp as CREF(componentRef = cr))) /* e1 e2 e3 */ 
       equation
-        lhs = BINARY(e1,SUB(REAL()),e2);
+        lhs = BINARY(e1,SUB(ET_REAL()),e2);
         lhsder = Derive.differentiateExpCont(lhs, cr);
         lhsder_1 = simplify(lhsder);
         false = isZero(lhsder_1);
         false = expContains(lhsder_1, crexp);
         (lhszero,_) = replaceExp(lhs, crexp, RCONST(0.0));
         lhszero_1 = simplify(lhszero);
-        rhs = UNARY(UMINUS(REAL()),BINARY(lhszero_1,DIV(REAL()),lhsder_1));
+        rhs = UNARY(UMINUS(ET_REAL()),BINARY(lhszero_1,DIV(ET_REAL()),lhsder_1));
         rhs_1 = simplify(rhs);
       then
         rhs_1;
@@ -9002,7 +8998,7 @@ algorithm
         
     case (e1,e2,(crexp as CREF(componentRef = cr)))
       equation 
-        lhs = BINARY(e1,SUB(REAL()),e2);
+        lhs = BINARY(e1,SUB(ET_REAL()),e2);
         lhsder = Derive.differentiateExpCont(lhs, cr);
         lhsder_1 = simplify(lhsder);
         true = expContains(lhsder_1, crexp);
@@ -9020,7 +9016,7 @@ algorithm
         fail();
     case (e1,e2,(crexp as CREF(componentRef = cr)))
       equation 
-        lhs = BINARY(e1,SUB(REAL()),e2);
+        lhs = BINARY(e1,SUB(ET_REAL()),e2);
         lhsder = Derive.differentiateExpCont(lhs, cr);
         lhsder_1 = simplify(lhsder);
         /*print("solve2 failed: ");
@@ -9215,8 +9211,8 @@ algorithm
         res = Util.boolOrList(reslist);
       then
         res;
-    case (CAST(ty = REAL(),exp = ICONST(integer = i)),cr ) then false; 
-    case (CAST(ty = REAL(),exp = e),cr )
+    case (CAST(ty = ET_REAL(),exp = ICONST(integer = i)),cr ) then false; 
+    case (CAST(ty = ET_REAL(),exp = e),cr )
       equation 
         res = expContains(e, cr);
       then
@@ -9829,7 +9825,7 @@ algorithm
   local ComponentRef e_cref; Absyn.ComponentRef cref;
     case(CODE(Absyn.C_VARIABLENAME(cref),_)) equation
       (_,e_cref) = Static.elabUntypedCref(Env.emptyCache(),Env.emptyEnv,cref,false);
-      then CREF(e_cref,OTHER());
+      then CREF(e_cref,ET_OTHER());
   end matchcontinue;
 end CodeVarToCref;
 
@@ -9976,7 +9972,7 @@ algorithm cref := matchcontinue(cr)
     list<Subscript> subs;
   case(cr)
     equation
-      (ty1 as T_ARRAY(_,_)) = crefLastType(cr);
+      (ty1 as ET_ARRAY(_,_)) = crefLastType(cr);
       subs = crefLastSubs(cr); 
       ty2 = unliftArrayTypeWithSubs(subs,ty1);
     then
@@ -10206,7 +10202,7 @@ algorithm
   matchcontinue(inExp)
     local
       Exp exp1;
-    case(exp1 as CREF(_,T_ARRAY(_,_)))
+    case(exp1 as CREF(_,ET_ARRAY(_,_)))
     then 
       true; 
     case(_)  
@@ -10321,16 +10317,16 @@ algorithm otype := matchcontinue(inExps)
     Exp e1,e2;
     list<Exp> expl;
     Type ty,rty; 
-    case({}) then INT();
+    case({}) then ET_INT();
   case( e1 :: expl)
     equation
-      (ty as INT) = typeof(e1); 
+      (ty as ET_INT()) = typeof(e1); 
       rty = realIfRealInArray(expl);
       then
         rty;
   case(e1 :: expl)
     equation 
-    (ty as REAL()) = typeof(e1); 
+    (ty as ET_REAL()) = typeof(e1); 
       rty = realIfRealInArray(expl);
     then
       ty;
@@ -10539,7 +10535,7 @@ public function makeNoEvent " adds a noEvent call around an expression"
 input Exp e1;
 output Exp res;
 algorithm
-  res := CALL(Absyn.IDENT("noEvent"),{e1},false,true,BOOL(),false);
+  res := CALL(Absyn.IDENT("noEvent"),{e1},false,true,ET_BOOL(),false);
 end makeNoEvent;
 
 public function makeNestedIf "creates a nested if expression given a list of conditions and 
@@ -10658,13 +10654,13 @@ algorithm
       Type elt_tp,tp;
       list<Option<Integer>> dims;
       
-    case(T_ARRAY(elt_tp,dims),n) 
+    case(ET_ARRAY(elt_tp,dims),n) 
       equation
       dims = listAppend({n},dims);
-      then T_ARRAY(elt_tp,dims);
+      then ET_ARRAY(elt_tp,dims);
       
     case(tp,n)
-    then T_ARRAY(tp,{n});      
+    then ET_ARRAY(tp,{n});      
       
   end matchcontinue;
 end liftArrayR;
@@ -10686,8 +10682,8 @@ input Type tp;
 output Boolean res;
 algorithm
   res := matchcontinue(tp)
-    case(REAL()) then  true;
-    case(INT()) then true;
+    case(ET_REAL()) then  true;
+    case(ET_INT()) then true;
     case(_) then false;
   end matchcontinue;
 end isIntegerOrReal;
@@ -10885,19 +10881,19 @@ algorithm
       Type tty;
       list<Option<Integer>> ad;
     case({},_) then false;
-    case((ss as WHOLEDIM())::ssl,T_ARRAY(tty,ad)) 
+    case((ss as WHOLEDIM())::ssl,ET_ARRAY(tty,ad)) 
     then 
       true;      
-    case((ss as SLICE(es1))::ssl, T_ARRAY(tty,ad))
+    case((ss as SLICE(es1))::ssl, ET_ARRAY(tty,ad))
       local list<Option<Integer>> ad;Exp es1;
       equation 
         true = containWholeDim3(es1,ad);
       then
         true;
-    case(_::ssl,T_ARRAY(tty,ad))
+    case(_::ssl,ET_ARRAY(tty,ad))
       equation
         ad = Util.listStripFirst(ad);
-        b = containWholeDim2(ssl,T_ARRAY(tty,ad));
+        b = containWholeDim2(ssl,ET_ARRAY(tty,ad));
       then b;
     case(_::ssl,inType)
       equation
@@ -10942,20 +10938,20 @@ Codegen has no support for that yet.
 CREF_QUAL(a,ARRAY(REAL,5),{},CREF_IDENT(B,ARRAY(REAL,5),{})).b[:]) would translate do 
 CREF_IDENT($a$pb,ARRAY(REAL,5,5),{}) which is not the same thing.
 
-This function also gives a failtrace-> warning when we have an Exp.OTHER() type in a qual.
+This function also gives a failtrace-> warning when we have an Exp.ET_OTHER() type in a qual.
 "
   input ComponentRef inRef;
   output Type otype;
 algorithm otype := matchcontinue(inRef)
   local Type ty; ComponentRef cr;
   case(CREF_IDENT(_, ty,_)) then ty;
-  case(CREF_QUAL(_,COMPLEX(varLst=_),_,cr)) then elaborateCrefQualType(cr);
-  case(CREF_QUAL(_,ENUMERATION(index=NONE()),_,cr)) then elaborateCrefQualType(cr);
-  case(CREF_QUAL(id,OTHER(),_,cr)) 
+  case(CREF_QUAL(_,ET_COMPLEX(varLst=_),_,cr)) then elaborateCrefQualType(cr);
+  case(CREF_QUAL(_,ET_ENUMERATION(index=NONE()),_,cr)) then elaborateCrefQualType(cr);
+  case(CREF_QUAL(id,ET_OTHER(),_,cr)) 
     local String id,s;
     equation 
-      Debug.fprint("failtrace", "- **WARNING** Exp.elaborateCrefQualType caught an Exp.OTHER() type");
-      s = printComponentRefStr(CREF_QUAL(id,OTHER(),{},cr));
+      Debug.fprint("failtrace", "- **WARNING** Exp.elaborateCrefQualType caught an Exp.ET_OTHER() type");
+      s = printComponentRefStr(CREF_QUAL(id,ET_OTHER(),{},cr));
       Debug.fprint("failtrace", s);
       Debug.fprint("failtrace", "\n");
       then elaborateCrefQualType(cr);
@@ -11230,7 +11226,7 @@ algorithm ostr := matchcontinue(inCref)
     local list<Subscript> subs;
     equation 
       s1 = replaceExpCrefRecursive(cr);
-      cr2 = CREF_IDENT(name,REAL,subs);
+      cr2 = CREF_IDENT(name,ET_REAL(),subs);
       s2 = printComponentRefStr(cr2);
       s3 = Util.stringAppendList({s2,"$p",s1});
     then 
@@ -11320,7 +11316,7 @@ algorithm
     local
       ComponentRef c;
       Integer idx;
-    case (CREF_IDENT(_,ENUMERATION(SOME(idx),_,_,_),_))
+    case (CREF_IDENT(_,ET_ENUMERATION(SOME(idx),_,_,_),_))
       local Integer index;
       then
         idx;    
@@ -11345,7 +11341,7 @@ algorithm
     local
       list<Ident> names;
       String namestr,nn;
-    case ENUMERATION(_,_,names,_)
+    case ET_ENUMERATION(_,_,names,_)
       local String index;
       equation
          nn = Util.stringDelimitList(names,"\",\"");

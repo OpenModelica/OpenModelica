@@ -131,12 +131,12 @@ algorithm
     case (DAELow.WHEN_EQ(i,cr,e,NONE),repl) equation
         e1 = VarTransform.replaceExp(e, repl, NONE);
         e2 = Exp.simplify(e1);
-        Exp.CREF(cr1,_) = VarTransform.replaceExp(Exp.CREF(cr,Exp.OTHER()),repl,NONE);
+        Exp.CREF(cr1,_) = VarTransform.replaceExp(Exp.CREF(cr,Exp.ET_OTHER()),repl,NONE);
     then DAELow.WHEN_EQ(i,cr1,e2,NONE);
 
 			// Replacements makes cr negative, a = -b
 	  case (DAELow.WHEN_EQ(i,cr,e,NONE),repl) equation
-        Exp.UNARY(Exp.UMINUS(tp),Exp.CREF(cr1,_)) = VarTransform.replaceExp(Exp.CREF(cr,Exp.OTHER()),repl,NONE);
+        Exp.UNARY(Exp.UMINUS(tp),Exp.CREF(cr1,_)) = VarTransform.replaceExp(Exp.CREF(cr,Exp.ET_OTHER()),repl,NONE);
         e1 = VarTransform.replaceExp(e, repl, NONE);
         e2 = Exp.simplify(Exp.UNARY(Exp.UMINUS(tp),e1));
     then DAELow.WHEN_EQ(i,cr1,e2,NONE);
@@ -145,13 +145,13 @@ algorithm
         elsePart2 = replaceWhenEquation(elsePart,repl);
         e1 = VarTransform.replaceExp(e, repl, NONE);
         e2 = Exp.simplify(e1);
-        Exp.CREF(cr1,_) = VarTransform.replaceExp(Exp.CREF(cr,Exp.OTHER()),repl,NONE);
+        Exp.CREF(cr1,_) = VarTransform.replaceExp(Exp.CREF(cr,Exp.ET_OTHER()),repl,NONE);
     then DAELow.WHEN_EQ(i,cr1,e2,SOME(elsePart2));
 
 			// Replacements makes cr negative, a = -b
 	  case (DAELow.WHEN_EQ(i,cr,e,SOME(elsePart)),repl) equation
         elsePart2 = replaceWhenEquation(elsePart,repl);
-        Exp.UNARY(Exp.UMINUS(tp),Exp.CREF(cr1,_)) = VarTransform.replaceExp(Exp.CREF(cr,Exp.OTHER()),repl,NONE);
+        Exp.UNARY(Exp.UMINUS(tp),Exp.CREF(cr1,_)) = VarTransform.replaceExp(Exp.CREF(cr,Exp.ET_OTHER()),repl,NONE);
         e1 = VarTransform.replaceExp(e, repl, NONE);
         e2 = Exp.simplify(Exp.UNARY(Exp.UMINUS(tp),e1));
     then DAELow.WHEN_EQ(i,cr1,e2,SOME(elsePart2));
@@ -200,8 +200,8 @@ algorithm
         (DAELow.EQUATION(e1_2,e2_2) :: es_1);
      case ((DAELow.EQUEQUATION(cr1,cr2) :: es),repl)
       equation 
-        Exp.CREF(cr1,_) = VarTransform.replaceExp(Exp.CREF(cr1,Exp.OTHER()), repl, NONE);
-        Exp.CREF(cr2,_) = VarTransform.replaceExp(Exp.CREF(cr2,Exp.OTHER()), repl, NONE);
+        Exp.CREF(cr1,_) = VarTransform.replaceExp(Exp.CREF(cr1,Exp.ET_OTHER()), repl, NONE);
+        Exp.CREF(cr2,_) = VarTransform.replaceExp(Exp.CREF(cr2,Exp.ET_OTHER()), repl, NONE);
         es_1 = replaceEquations(es, repl);
       then
         (DAELow.EQUEQUATION(cr1,cr2) :: es_1);

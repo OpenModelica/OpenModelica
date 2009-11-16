@@ -518,7 +518,7 @@ algorithm
       equation 
         equality(id = ident);
         fr = Env.topFrame(env);
-        (cache,attr,ty,bind,_,_) = lookupVar(cache,{fr}, Exp.CREF_IDENT(ident,Exp.OTHER(),{}));
+        (cache,attr,ty,bind,_,_) = lookupVar(cache,{fr}, Exp.CREF_IDENT(ident,Exp.ET_OTHER(),{}));
       then
         (cache,{fr},attr,ty,bind);
 
@@ -638,7 +638,7 @@ algorithm
       equation 
         firstIdent = Absyn.pathFirstIdent(path);
         f::_ = Env.cacheGet(Absyn.IDENT(firstIdent),path,cache);
-        (cache,_,_,_,_) = lookupVarInPackages(cache,{f}, Exp.CREF_IDENT(ident,Exp.OTHER(),{}));
+        (cache,_,_,_,_) = lookupVarInPackages(cache,{f}, Exp.CREF_IDENT(ident,Exp.ET_OTHER(),{}));
       then
         (cache,true);
      
@@ -654,7 +654,7 @@ algorithm
            cache,env2,InstanceHierarchy.emptyInstanceHierarchy,
            DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
            ci_state, c, false, {}); 
-        (cache,_,_,_,_) = lookupVarInPackages(cache,{f}, Exp.CREF_IDENT(ident,Exp.OTHER(),{}));
+        (cache,_,_,_,_) = lookupVarInPackages(cache,{f}, Exp.CREF_IDENT(ident,Exp.ET_OTHER(),{}));
       then
         (cache,true);        
     case (cache,(_ :: fs),env,ident)
@@ -708,7 +708,7 @@ algorithm
         //print("look in cache\n");
         firstIdent = Absyn.pathFirstIdent(path);
         f::_ = Env.cacheGet(Absyn.IDENT(firstIdent),path,cache);
-        (cache,p_env,attr,ty,bind) = lookupVarInPackages(cache,{f}, Exp.CREF_IDENT(ident,Exp.OTHER(),{}));
+        (cache,p_env,attr,ty,bind) = lookupVarInPackages(cache,{f}, Exp.CREF_IDENT(ident,Exp.ET_OTHER(),{}));
         (cache,more) = moreLookupUnqualifiedImportedVarInFrame(cache,fs, env, ident);
         unique = boolNot(more);
       then
@@ -727,7 +727,7 @@ algorithm
           cache,env2,InstanceHierarchy.emptyInstanceHierarchy, UnitAbsyn.noStore,
           DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
           ci_state, c, false, {}, false, ConnectionGraph.EMPTY,NONE);
-        (cache,p_env,attr,ty,bind) = lookupVarInPackages(cache,{f}, Exp.CREF_IDENT(ident,Exp.OTHER(),{}));
+        (cache,p_env,attr,ty,bind) = lookupVarInPackages(cache,{f}, Exp.CREF_IDENT(ident,Exp.ET_OTHER(),{}));
         (cache,more) = moreLookupUnqualifiedImportedVarInFrame(cache,fs, env, ident);
         unique = boolNot(more);
       then
@@ -1198,7 +1198,7 @@ algorithm
         id = Absyn.pathLastIdent(path);
         path = Absyn.stripLast(path);
         f::fs = Env.cacheGet(scope,path,cache);
-        (cache,attr,ty,bind) = lookupVarLocal(cache,f::fs, Exp.CREF_IDENT(id,Exp.OTHER(),{}));
+        (cache,attr,ty,bind) = lookupVarLocal(cache,f::fs, Exp.CREF_IDENT(id,Exp.ET_OTHER(),{}));
         //print("found ");print(Exp.printComponentRefStr(cr));print(" in cache\n");
         then
         (cache,f::fs,attr,ty,bind);
@@ -1213,7 +1213,7 @@ algorithm
              packp = Absyn.stripLast(p);
              true = ModUtil.pathEqual(ep, packp);
              id = Absyn.pathLastIdent(p);
-             (cache,p_env,attr,ty,bind) = lookupVarInPackages(cache,env, Exp.CREF_IDENT(id,Exp.OTHER(),{}));
+             (cache,p_env,attr,ty,bind) = lookupVarInPackages(cache,env, Exp.CREF_IDENT(id,Exp.ET_OTHER(),{}));
            then
              (cache,p_env,attr,ty,bind);
 
@@ -2495,7 +2495,7 @@ algorithm
         String str1,str2;
       equation 
         str2 = intString(dims);
-        exp = Exp.ARRAY(Exp.INT(),false,expl);
+        exp = Exp.ARRAY(Exp.ET_INT(),false,expl);
         str1 = Util.stringDelimitList(Util.listMap(expl,Exp.printExpStr)," and position " );
         Error.addMessage(Error.ARRAY_INDEX_OUT_OF_BOUNDS,{str1,str2});
       then
@@ -2723,7 +2723,7 @@ algorithm
       equation   
         expsl = makeExpIntegerArray(iLst);
         exps = makeExpIntegerArray2(i,1);
-        tmpArray = Exp.ARRAY(Exp.INT(), false, exps);
+        tmpArray = Exp.ARRAY(Exp.ET_INT(), false, exps);
         exps = Exp.SLICE(tmpArray);
       then
         (exps :: expsl);

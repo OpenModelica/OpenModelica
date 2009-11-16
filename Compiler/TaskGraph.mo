@@ -86,8 +86,8 @@ algorithm
         knvars = DAELow.vararrayList(knvararr);
         addVariables(vars, starttask);
         addVariables(knvars, starttask);
-        addVariables({DAELow.VAR(Exp.CREF_IDENT("sim_time",Exp.REAL(),{}),DAELow.VARIABLE(),
-                      DAE.INPUT(),DAELow.REAL(),NONE,NONE,{},0,Exp.CREF_IDENT("time",Exp.REAL(),{}),{},NONE,
+        addVariables({DAELow.VAR(Exp.CREF_IDENT("sim_time",Exp.ET_REAL(),{}),DAELow.VARIABLE(),
+                      DAE.INPUT(),DAELow.REAL(),NONE,NONE,{},0,Exp.CREF_IDENT("time",Exp.ET_REAL(),{}),{},NONE,
                       NONE,DAE.NON_CONNECTOR(),DAE.NON_STREAM())}, starttask);
         buildBlocks(dae, ass1, ass2, blocks);
         print("done building taskgraph, about to build inits.\n");
@@ -341,7 +341,7 @@ algorithm
         ((v as DAELow.VAR(cr,kind,_,_,_,_,_,_,origname,_,dae_var_attr,comment,flowPrefix,streamPrefix))) = listNth(varlst, v_1);
         origname_str = Exp.printComponentRefStr(origname);
         isNonState(kind);
-        varexp = Exp.CREF(cr,Exp.REAL()) "print \"Solving for non-states\\n\" &" ;
+        varexp = Exp.CREF(cr,Exp.ET_REAL()) "print \"Solving for non-states\\n\" &" ;
         expr = Exp.solve(e1, e2, varexp);
         buildAssignment(cr, expr, origname_str) "	Exp.print_exp_str e1 => e1s &
 	Exp.print_exp_str e2 => e2s &
@@ -365,8 +365,8 @@ algorithm
         name = Exp.printComponentRefStr(cr) "	Util.string_append_list({\"xd{\",indxs,\"}\"}) => id &" ;
         c_name = Util.modelicaStringToCStr(name,true);
         id = Util.stringAppendList({DAELow.derivativeNamePrefix,c_name});
-        cr_1 = Exp.CREF_IDENT(id,Exp.REAL(),{});
-        varexp = Exp.CREF(cr_1,Exp.REAL());
+        cr_1 = Exp.CREF_IDENT(id,Exp.ET_REAL(),{});
+        varexp = Exp.CREF(cr_1,Exp.ET_REAL());
         expr = Exp.solve(e1, e2, varexp);
         buildAssignment(cr_1, expr, origname_str) "	Exp.print_exp_str e1 => e1s &
 	Exp.print_exp_str e2 => e2s &
@@ -381,7 +381,7 @@ algorithm
 	vector_nth(ass2,e\') => v & ( v==variable no solved in this equation ))
 	int_sub(v,1) => v\' &
 	DAELow.vararray_nth(vararr,v\') => DAELow.VAR(cr,_,_,_,_,_,_,_,_,origname,_,dae_var_attr,comment,flow) &
-	let varexp = Exp.CREF(cr,Exp.REAL) &
+	let varexp = Exp.CREF(cr,Exp.ET_REAL) &
 	not Exp.solve(e1,e2,varexp) => _ &
 	print \"nonlinear equation not implemented yet\\n\"
 	--------------------------------
@@ -399,10 +399,10 @@ algorithm
         name = Exp.printComponentRefStr(cr) "	Util.string_append_list({\"xd{\",indxs,\"}\"}) => id &" ;
         c_name = Util.modelicaStringToCStr(name,true);
         id = Util.stringAppendList({DAELow.derivativeNamePrefix,c_name});
-        cr_1 = Exp.CREF_IDENT(id,Exp.REAL(),{});
-        varexp = Exp.CREF(cr_1,Exp.REAL());
+        cr_1 = Exp.CREF_IDENT(id,Exp.ET_REAL(),{});
+        varexp = Exp.CREF(cr_1,Exp.ET_REAL());
         failure(_ = Exp.solve(e1, e2, varexp));
-        buildNonlinearEquations({varexp}, {Exp.BINARY(e1,Exp.SUB(Exp.REAL()),e2)});
+        buildNonlinearEquations({varexp}, {Exp.BINARY(e1,Exp.SUB(Exp.ET_REAL()),e2)});
       then
         ();
     case (DAELow.DAELOW(orderedVars = vars,orderedEqs = eqns),ass1,ass2,e)
@@ -414,9 +414,9 @@ algorithm
         varlst = DAELow.varList(vars);
         ((v as DAELow.VAR(cr,kind,_,_,_,_,_,_,origname,_,dae_var_attr,comment,flowPrefix,streamPrefix))) = listNth(varlst, v_1);
         isNonState(kind);
-        varexp = Exp.CREF(cr,Exp.REAL()) "print \"Solving for non-states\\n\" &" ;
+        varexp = Exp.CREF(cr,Exp.ET_REAL()) "print \"Solving for non-states\\n\" &" ;
         failure(expr = Exp.solve(e1, e2, varexp));
-        buildNonlinearEquations({varexp}, {Exp.BINARY(e1,Exp.SUB(Exp.REAL()),e2)});
+        buildNonlinearEquations({varexp}, {Exp.BINARY(e1,Exp.SUB(Exp.ET_REAL()),e2)});
       then
         ();
     case (_,_,_,_)
@@ -520,7 +520,7 @@ algorithm
       equation
         pstr = intString(pos);
         str = Util.stringAppendList({"xloc[",pstr,"]"});
-        repl_1 = VarTransform.addReplacement(repl, cr, Exp.CREF(Exp.CREF_IDENT(str,Exp.REAL(),{}),Exp.REAL()));
+        repl_1 = VarTransform.addReplacement(repl, cr, Exp.CREF(Exp.CREF_IDENT(str,Exp.ET_REAL(),{}),Exp.ET_REAL()));
         pos_1 = pos + 1;
         repl_2 = makeResidualReplacements2(repl_1, es, pos_1);
       then

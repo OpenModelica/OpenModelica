@@ -182,23 +182,23 @@ algorithm
   matchcontinue(exp,inExp)
     local
       String localInExp,outStr;
-    case (Exp.INT(),localInExp)
+    case (Exp.ET_INT(),localInExp)
       equation
         outStr = Util.stringAppendList({"mmc_mk_icon(",localInExp,")"});
       then outStr;
-    case (Exp.REAL(),localInExp)
+    case (Exp.ET_REAL(),localInExp)
       equation
         outStr = Util.stringAppendList({"mmc_mk_rcon(",localInExp,")"});
       then outStr;
-    case (Exp.BOOL(),localInExp)
+    case (Exp.ET_BOOL(),localInExp)
       equation
         outStr = Util.stringAppendList({"mmc_mk_icon(",localInExp,")"});
       then outStr;
-    case (Exp.STRING(),localInExp)
+    case (Exp.ET_STRING(),localInExp)
       equation
         outStr = Util.stringAppendList({"mmc_mk_scon(",localInExp,")"});
       then outStr;
-    case (Exp.COMPLEX(name = name, varLst = varLst),localInExp)
+    case (Exp.ET_COMPLEX(name = name, varLst = varLst),localInExp)
       local
         list<Exp.Var> varLst;
         list<String> vars, vars1;

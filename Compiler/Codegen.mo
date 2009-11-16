@@ -1818,35 +1818,35 @@ algorithm
     local
       Lib res;
       Exp.Type t;
-    case Exp.INT() then "integer";
-    case Exp.REAL() then "real";
-    case Exp.STRING() then "string";
-    case Exp.BOOL() then "boolean";
-    case Exp.OTHER() then "complex"; // Only use is currently for external objects. Perhaps in future also records.
-    case Exp.ENUMERATION(_,_,_,_) then "enumeration";
+    case Exp.ET_INT() then "integer";
+    case Exp.ET_REAL() then "real";
+    case Exp.ET_STRING() then "string";
+    case Exp.ET_BOOL() then "boolean";
+    case Exp.ET_OTHER() then "complex"; // Only use is currently for external objects. Perhaps in future also records.
+    case Exp.ET_ENUMERATION(_,_,_,_) then "enumeration";
 //    case Exp.ENUM() then "ENUM_NOT_IMPLEMENTED";
-    case Exp.T_FUNCTION_REFERENCE_VAR() then "fnptr";
-    case Exp.T_FUNCTION_REFERENCE_FUNC() then "fnptr";
-    case Exp.T_ARRAY(ty = t)
+    case Exp.ET_FUNCTION_REFERENCE_VAR() then "fnptr";
+    case Exp.ET_FUNCTION_REFERENCE_FUNC() then "fnptr";
+    case Exp.ET_ARRAY(ty = t)
       equation
         res = expShortTypeStr(t);
       then
         res;
-    case Exp.COMPLEX(name = name)
+    case Exp.ET_COMPLEX(name = name)
       local String name;
       equation
         res = stringAppend("struct ", name);
       then
         res;
-    case (Exp.T_LIST(_)) then "metamodelica_type";
+    case (Exp.ET_LIST(_)) then "metamodelica_type";
 
-    case (Exp.T_METATUPLE(_)) then "metamodelica_type";
+    case (Exp.ET_METATUPLE(_)) then "metamodelica_type";
 
-    case (Exp.T_METAOPTION(_)) then "metamodelica_type";
+    case (Exp.ET_METAOPTION(_)) then "metamodelica_type";
     
-    case (Exp.T_UNIONTYPE()) then "metamodelica_type";
+    case (Exp.ET_UNIONTYPE()) then "metamodelica_type";
     
-    case (Exp.T_POLYMORPHIC()) then "metamodelica_type";
+    case (Exp.ET_POLYMORPHIC()) then "metamodelica_type";
 
   end matchcontinue;
 end expShortTypeStr;
@@ -1865,7 +1865,7 @@ algorithm
       Lib tstr,str;
       Exp.Type t;
 
-    case ((t as Exp.COMPLEX(_,_,_)),_)
+    case ((t as Exp.ET_COMPLEX(_,_,_)),_)
       equation
         str = expShortTypeStr(t);
       then
@@ -2490,8 +2490,8 @@ algorithm
         (funcArgExps2,_,_) = Types.matchTypeTuple(funcArgExps1, funcArgTypes2, funcArgTypes1, {}, Types.matchTypeRegular);
         isTuple = Types.isTuple(retType1);
         // Call the regular function
-        (callCfn,callVar,tnr) = generateExpression(Exp.CALL(fpath,funcArgExps2,isTuple,false,Exp.OTHER,false),tnr,funContext);
-        resCref = Exp.CREF_IDENT(callVar,Exp.OTHER,{});
+        (callCfn,callVar,tnr) = generateExpression(Exp.CALL(fpath,funcArgExps2,isTuple,false,Exp.ET_OTHER,false),tnr,funContext);
+        resCref = Exp.CREF_IDENT(callVar,Exp.ET_OTHER,{});
         // Fix crefs for regular struct
         retTypeList1 = Types.resTypeToListTypes(retType1);
         i = listLength(retTypeList1);
@@ -2540,7 +2540,7 @@ protected function makeAssignmentNoCheck
   input Exp.Exp rhs;
   output Algorithm.Statement stmt;
 algorithm
-  stmt := DAE.STMT_ASSIGN(Exp.OTHER,lhs,rhs);
+  stmt := DAE.STMT_ASSIGN(Exp.ET_OTHER,lhs,rhs);
 end makeAssignmentNoCheck;
 
 protected function generateAllocOutvars 
@@ -4040,11 +4040,11 @@ algorithm
         iStr = intString(i);
         id_1_str = Util.stringAppendList({"out.","targ",iStr});
         expstr = Util.if_(emptyprep, 
-                         Exp.CREF(id, Exp.OTHER()), 
-                         Exp.CREF(Exp.CREF_IDENT(id_1_str,Exp.OTHER(),{}),Exp.OTHER()));
+                         Exp.CREF(id, Exp.ET_OTHER()), 
+                         Exp.CREF(Exp.CREF_IDENT(id_1_str,Exp.ET_OTHER(),{}),Exp.ET_OTHER()));
         idstr = Util.if_(emptyprep, 
                          id, 
-                         Exp.CREF_IDENT(id_1_str,Exp.OTHER(),{}));
+                         Exp.CREF_IDENT(id_1_str,Exp.ET_OTHER(),{}));
         exptype = Types.elabType(typ);
         scalarassign = DAE.STMT_ASSIGN(exptype,expstr,e);
         arrayassign = DAE.STMT_ASSIGN_ARR(exptype,idstr,e);
@@ -4465,7 +4465,7 @@ algorithm
         (cfn,var,tnr2);
 
         /* no-ret calls */
-    case (Exp.CALL(path = fn,expLst = args,tuple_ = false,builtin = builtin,ty=Exp.T_NORETCALL),tnr,context)
+    case (Exp.CALL(path = fn,expLst = args,tuple_ = false,builtin = builtin,ty=Exp.ET_NORETCALL),tnr,context)
       equation
         (cfn1,vars1,tnr1) = generateExpressions(args, tnr, context);
         ret_type = generateReturnType(fn);
@@ -4602,14 +4602,14 @@ algorithm
       then
         fail();
     /* cast to int */
-    case (Exp.CAST(ty = Exp.INT(),exp = e),tnr,context)
+    case (Exp.CAST(ty = Exp.ET_INT(),exp = e),tnr,context)
       equation
         (cfn,var,tnr_1) = generateExpression(e, tnr, context);
         var_1 = Util.stringAppendList({"((modelica_int)",var,")"});
       then
         (cfn,var_1,tnr_1);
     /* cast to float */
-    case (Exp.CAST(ty = Exp.REAL(),exp = e),tnr,context)
+    case (Exp.CAST(ty = Exp.ET_REAL(),exp = e),tnr,context)
       equation
         (cfn,var,tnr_1) = generateExpression(e, tnr, context);
         var_1 = Util.stringAppendList({"((modelica_real)",var,")"});
@@ -4921,7 +4921,7 @@ protected function addValueblockRetVar "function: addValueblockRetVar
 algorithm
   (outFunc,outTnr,outVar) :=
   matchcontinue (inType,inFunc,inTnr,inResVar,context)
-    case (Exp.T_ARRAY(t,SOME(arrayDim) :: {}),localFunc,localTnr,localResVar,con)
+    case (Exp.ET_ARRAY(t,SOME(arrayDim) :: {}),localFunc,localTnr,localResVar,con)
       local
         String type_string,tdecl,tvar,localResVar,memStr,stmt,stmt2,tempStr;
         Exp.Type t;
@@ -4946,7 +4946,7 @@ algorithm
         stmt2 = Util.stringAppendList({"copy_",type_string,"_data",memStr,"(&",localResVar,", &",tvar,");"});
         cfn = cAddStatements(cfn, {stmt2});
       then (cfn,tnr2,tvar);
-    case (Exp.T_ARRAY(_,SOME(_) :: _),_,_,_,_)
+    case (Exp.ET_ARRAY(_,SOME(_) :: _),_,_,_,_)
       local
       equation
         Debug.fprintln("failtrace", "# Codegen.addValueblockRetVar failed, N-dim arrays not supported");
@@ -5261,29 +5261,29 @@ algorithm
       Exp.Exp e;
       Context context;
       Exp.Type tp;
-    case (Exp.UPLUS(ty = Exp.REAL()),e,tnr,context)
+    case (Exp.UPLUS(ty = Exp.ET_REAL()),e,tnr,context)
       equation
         (cfn,var,tnr_1) = generateExpression(e, tnr, context);
       then
         (cfn,var,tnr_1);
-    case (Exp.UPLUS(ty = Exp.INT()),e,tnr,context)
+    case (Exp.UPLUS(ty = Exp.ET_INT()),e,tnr,context)
       equation
         (cfn,var,tnr_1) = generateExpression(e, tnr, context);
       then
         (cfn,var,tnr_1);
-    case (Exp.UMINUS(ty = Exp.REAL()),e,tnr,context)
+    case (Exp.UMINUS(ty = Exp.ET_REAL()),e,tnr,context)
       equation
         (cfn,var,tnr_1) = generateExpression(e, tnr, context);
         var_1 = Util.stringAppendList({"(-",var,")"});        
       then
         (cfn,var_1,tnr_1);
-    case (Exp.UMINUS(ty = Exp.INT()),e,tnr,context)
+    case (Exp.UMINUS(ty = Exp.ET_INT()),e,tnr,context)
       equation
         (cfn,var,tnr_1) = generateExpression(e, tnr, context);
         var_1 = Util.stringAppendList({"(-",var,")"});
       then
         (cfn,var_1,tnr_1);
-    case (Exp.UMINUS(ty = Exp.OTHER()),e,tnr,context)
+    case (Exp.UMINUS(ty = Exp.ET_OTHER()),e,tnr,context)
       equation
         (cfn,var,tnr_1) = generateExpression(e, tnr, context);
         var_1 = Util.stringAppendList({"(-(",var,"))"});
@@ -5297,12 +5297,12 @@ algorithm
         //Debug.fprintln("codegen", "Variable" +& var);
       then
         (cfn,var_1,tnr_1);        
-    case (Exp.UPLUS_ARR(ty = Exp.REAL()),e,tnr,context)
+    case (Exp.UPLUS_ARR(ty = Exp.ET_REAL()),e,tnr,context)
       equation
         (cfn,var,tnr_1) = generateExpression(e, tnr, context);
       then
         (cfn,var,tnr_1);
-    case (Exp.UPLUS_ARR(ty = Exp.INT()),e,tnr,context)
+    case (Exp.UPLUS_ARR(ty = Exp.ET_INT()),e,tnr,context)
       equation
         (cfn,var,tnr_1) = generateExpression(e, tnr, context);
       then
@@ -5356,7 +5356,7 @@ algorithm
       Context context;
 
       /* str + str */
-    case (e1,Exp.ADD(ty = Exp.STRING()),e2,tnr,context)
+    case (e1,Exp.ADD(ty = Exp.ET_STRING()),e2,tnr,context)
       local String tdecl,tvar,stmt;
       equation
         (tdecl,tvar,tnr) = generateTempDecl("modelica_string", tnr);
@@ -5422,7 +5422,7 @@ algorithm
           "# Unary plus in binary expression (internal error)");
       then
         fail();
-    case (e1,Exp.ADD_ARR(ty = Exp.REAL()),e2,tnr,context)
+    case (e1,Exp.ADD_ARR(ty = Exp.ET_REAL()),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -5433,7 +5433,7 @@ algorithm
         cfn = cAddStatements(cfn_2, {stmt});
       then
         (cfn,var,tnr3);
-    case (e1,Exp.ADD_ARR(ty = Exp.INT()),e2,tnr,context)
+    case (e1,Exp.ADD_ARR(ty = Exp.ET_INT()),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -5445,7 +5445,7 @@ algorithm
         cfn = cAddStatements(cfn_2, {stmt});
       then
         (cfn,var,tnr3);
-    case (e1,Exp.SUB_ARR(ty = Exp.REAL()),e2,tnr,context)
+    case (e1,Exp.SUB_ARR(ty = Exp.ET_REAL()),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -5456,7 +5456,7 @@ algorithm
         cfn = cAddStatements(cfn_2, {stmt});
       then
         (cfn,var,tnr3);
-    case (e1,Exp.SUB_ARR(ty = Exp.INT()),e2,tnr,context)
+    case (e1,Exp.SUB_ARR(ty = Exp.ET_INT()),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -5468,7 +5468,7 @@ algorithm
         cfn = cAddStatements(cfn_2, {stmt});
       then
         (cfn,var,tnr3);
-    case (e1,Exp.MUL_SCALAR_ARRAY(ty = Exp.REAL()),e2,tnr,context)
+    case (e1,Exp.MUL_SCALAR_ARRAY(ty = Exp.ET_REAL()),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -5481,7 +5481,7 @@ algorithm
         cfn = cAddStatements(cfn_2, {stmt});
       then
         (cfn,var,tnr3);
-    case (e1,Exp.MUL_SCALAR_ARRAY(ty = Exp.INT()),e2,tnr,context)
+    case (e1,Exp.MUL_SCALAR_ARRAY(ty = Exp.ET_INT()),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -5494,7 +5494,7 @@ algorithm
         cfn = cAddStatements(cfn_2, {stmt});
       then
         (cfn,var,tnr3);
-    case (e1,Exp.MUL_ARRAY_SCALAR(ty = Exp.REAL()),e2,tnr,context)
+    case (e1,Exp.MUL_ARRAY_SCALAR(ty = Exp.ET_REAL()),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -5507,7 +5507,7 @@ algorithm
         cfn = cAddStatements(cfn_2, {stmt});
       then
         (cfn,var,tnr3);
-    case (e1,Exp.MUL_ARRAY_SCALAR(ty = Exp.INT()),e2,tnr,context)
+    case (e1,Exp.MUL_ARRAY_SCALAR(ty = Exp.ET_INT()),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -5520,7 +5520,7 @@ algorithm
         cfn = cAddStatements(cfn_2, {stmt});
       then
         (cfn,var,tnr3);
-    case (e1,Exp.MUL_SCALAR_PRODUCT(ty = Exp.REAL()),e2,tnr,context)
+    case (e1,Exp.MUL_SCALAR_PRODUCT(ty = Exp.ET_REAL()),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -5528,7 +5528,7 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);
-    case (e1,Exp.MUL_SCALAR_PRODUCT(ty = Exp.INT()),e2,tnr,context)
+    case (e1,Exp.MUL_SCALAR_PRODUCT(ty = Exp.ET_INT()),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -5536,7 +5536,7 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);
-    case (e1,Exp.MUL_MATRIX_PRODUCT(ty = Exp.REAL()),e2,tnr,context)
+    case (e1,Exp.MUL_MATRIX_PRODUCT(ty = Exp.ET_REAL()),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -5549,7 +5549,7 @@ algorithm
         cfn = cAddStatements(cfn_2, {stmt});
       then
         (cfn,var,tnr3);
-    case (e1,Exp.MUL_MATRIX_PRODUCT(ty = Exp.INT()),e2,tnr,context)
+    case (e1,Exp.MUL_MATRIX_PRODUCT(ty = Exp.ET_INT()),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -5562,7 +5562,7 @@ algorithm
         cfn = cAddStatements(cfn_2, {stmt});
       then
         (cfn,var,tnr3);
-    case (e1,Exp.DIV_ARRAY_SCALAR(ty = Exp.REAL()),e2,tnr,context)
+    case (e1,Exp.DIV_ARRAY_SCALAR(ty = Exp.ET_REAL()),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -5575,7 +5575,7 @@ algorithm
         cfn = cAddStatements(cfn_2, {stmt});
       then
         (cfn,var,tnr3);
-    case (e1,Exp.DIV_ARRAY_SCALAR(ty = Exp.INT()),e2,tnr,context)
+    case (e1,Exp.DIV_ARRAY_SCALAR(ty = Exp.ET_INT()),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -5802,7 +5802,7 @@ algorithm
       /* For context simulation array variables must be boxed
 	    into a real_array object since they are represented only
 	    in a double array. */
-    case (cref,Exp.T_ARRAY(ty = t,arrayDimensions = dims),tnr,CONTEXT(SIMULATION(_),_,_))
+    case (cref,Exp.ET_ARRAY(ty = t,arrayDimensions = dims),tnr,CONTEXT(SIMULATION(_),_,_))
       equation
         e_tp_str = expTypeStr(t, true);
         e_sh_tp_str = expShortTypeStr(t);
@@ -5822,7 +5822,7 @@ algorithm
         (cfunc,vstr,tnr1);
 
         /* Cast integers to doubles in simulation context */
-    case (cref,Exp.INT(),tnr,context)
+    case (cref,Exp.ET_INT(),tnr,context)
       equation
         (cref_str,{}) = compRefCstr(cref);
         cref_str = stringAppend("(modelica_integer)",cref_str);
@@ -5830,7 +5830,7 @@ algorithm
         (cEmptyFunction,cref_str,tnr);
 
         /* function pointer variable reference - stefan */
-    case (cref,Exp.T_FUNCTION_REFERENCE_VAR(),tnr,context)
+    case (cref,Exp.ET_FUNCTION_REFERENCE_VAR(),tnr,context)
         local String fn_name; Absyn.Path path;
       equation
         path = Exp.crefToPath(cref);
@@ -5840,7 +5840,7 @@ algorithm
         (cEmptyFunction,fn_name,tnr);
     
        /* function pointer direct reference - sjoelund */
-    case (cref,Exp.T_FUNCTION_REFERENCE_FUNC(),tnr,context)
+    case (cref,Exp.ET_FUNCTION_REFERENCE_FUNC(),tnr,context)
         local String fn_name; Absyn.Path path;
       equation
         path = Exp.crefToPath(cref);
@@ -5850,7 +5850,7 @@ algorithm
       then
         (cEmptyFunction,cref_str,tnr);
 
-    case (cref,Exp.ENUMERATION(_,_,_,_),tnr,context)
+    case (cref,Exp.ET_ENUMERATION(_,_,_,_),tnr,context)
       local Integer idx;
       equation
         idx = Exp.getEnumIndexfromCref(cref);
@@ -6377,10 +6377,10 @@ protected function isRealTypedRelation
   output Boolean isReal;
 algorithm
 	isReal := matchcontinue (op)
-	  case (Exp.LESS(ty = Exp.REAL())) then true;
-	  case (Exp.LESSEQ(ty = Exp.REAL())) then true;
-	  case (Exp.GREATER(ty = Exp.REAL())) then true;
-	  case (Exp.GREATEREQ(ty = Exp.REAL())) then true;
+	  case (Exp.LESS(ty = Exp.ET_REAL())) then true;
+	  case (Exp.LESSEQ(ty = Exp.ET_REAL())) then true;
+	  case (Exp.GREATER(ty = Exp.ET_REAL())) then true;
+	  case (Exp.GREATEREQ(ty = Exp.ET_REAL())) then true;
 	  case (_) then false;
   end matchcontinue;
 end isRealTypedRelation;
@@ -6410,7 +6410,7 @@ algorithm
       Integer tnr1,tnr2,tnr;
       Exp.Exp e1,e2;
       Context context;
-    case (e1,Exp.LESS(ty = Exp.BOOL()),e2,tnr,context)
+    case (e1,Exp.LESS(ty = Exp.ET_BOOL()),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -6418,12 +6418,12 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);
-    case (e1,Exp.LESS(ty = Exp.STRING()),e2,tnr,context)
+    case (e1,Exp.LESS(ty = Exp.ET_STRING()),e2,tnr,context)
       equation
         Print.printErrorBuf("# string comparison not supported\n");
       then
         fail();
-    case (e1,Exp.LESS(ty = Exp.INT()),e2,tnr,context)
+    case (e1,Exp.LESS(ty = Exp.ET_INT()),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -6431,7 +6431,7 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);
-    case (e1,Exp.LESS(ty = Exp.REAL()),e2,tnr,context)
+    case (e1,Exp.LESS(ty = Exp.ET_REAL()),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -6439,7 +6439,7 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);
-    case (e1,Exp.LESS(ty = Exp.ENUMERATION(_,_,_,_)),e2,tnr,context)
+    case (e1,Exp.LESS(ty = Exp.ET_ENUMERATION(_,_,_,_)),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -6447,7 +6447,7 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);        
-    case (e1,Exp.GREATER(ty = Exp.BOOL()),e2,tnr,context)
+    case (e1,Exp.GREATER(ty = Exp.ET_BOOL()),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -6455,12 +6455,12 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);
-    case (e1,Exp.GREATER(ty = Exp.STRING()),e2,tnr,context)
+    case (e1,Exp.GREATER(ty = Exp.ET_STRING()),e2,tnr,context)
       equation
         Print.printErrorBuf("# string comparison not supported\n");
       then
         fail();
-    case (e1,Exp.GREATER(ty = Exp.INT()),e2,tnr,context)
+    case (e1,Exp.GREATER(ty = Exp.ET_INT()),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -6468,7 +6468,7 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);
-    case (e1,Exp.GREATER(ty = Exp.REAL()),e2,tnr,context)
+    case (e1,Exp.GREATER(ty = Exp.ET_REAL()),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -6476,7 +6476,7 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);
-    case (e1,Exp.GREATER(ty = Exp.ENUMERATION(_,_,_,_)),e2,tnr,context)
+    case (e1,Exp.GREATER(ty = Exp.ET_ENUMERATION(_,_,_,_)),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -6484,7 +6484,7 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);        
-    case (e1,Exp.LESSEQ(ty = Exp.BOOL()),e2,tnr,context)
+    case (e1,Exp.LESSEQ(ty = Exp.ET_BOOL()),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -6492,12 +6492,12 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);
-    case (e1,Exp.LESSEQ(ty = Exp.STRING()),e2,tnr,context)
+    case (e1,Exp.LESSEQ(ty = Exp.ET_STRING()),e2,tnr,context)
       equation
         Print.printErrorBuf("# string comparison not supported\n");
       then
         fail();
-    case (e1,Exp.LESSEQ(ty = Exp.INT()),e2,tnr,context)
+    case (e1,Exp.LESSEQ(ty = Exp.ET_INT()),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -6505,7 +6505,7 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);
-    case (e1,Exp.LESSEQ(ty = Exp.REAL()),e2,tnr,context)
+    case (e1,Exp.LESSEQ(ty = Exp.ET_REAL()),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -6513,7 +6513,7 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);
-    case (e1,Exp.LESSEQ(ty = Exp.ENUMERATION(_,_,_,_)),e2,tnr,context)
+    case (e1,Exp.LESSEQ(ty = Exp.ET_ENUMERATION(_,_,_,_)),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -6521,7 +6521,7 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);        
-    case (e1,Exp.GREATEREQ(ty = Exp.BOOL()),e2,tnr,context)
+    case (e1,Exp.GREATEREQ(ty = Exp.ET_BOOL()),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -6529,12 +6529,12 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);
-    case (e1,Exp.GREATEREQ(ty = Exp.STRING()),e2,tnr,context)
+    case (e1,Exp.GREATEREQ(ty = Exp.ET_STRING()),e2,tnr,context)
       equation
         Print.printErrorBuf("# string comparison not supported\n");
       then
         fail();
-    case (e1,Exp.GREATEREQ(ty = Exp.INT()),e2,tnr,context)
+    case (e1,Exp.GREATEREQ(ty = Exp.ET_INT()),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -6542,7 +6542,7 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);
-    case (e1,Exp.GREATEREQ(ty = Exp.REAL()),e2,tnr,context)
+    case (e1,Exp.GREATEREQ(ty = Exp.ET_REAL()),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -6550,7 +6550,7 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);
-    case (e1,Exp.GREATEREQ(ty = Exp.ENUMERATION(_,_,_,_)),e2,tnr,context)
+    case (e1,Exp.GREATEREQ(ty = Exp.ET_ENUMERATION(_,_,_,_)),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -6558,7 +6558,7 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);        
-    case (e1,Exp.EQUAL(ty = Exp.BOOL()),e2,tnr,context)
+    case (e1,Exp.EQUAL(ty = Exp.ET_BOOL()),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -6566,7 +6566,7 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);
-    case (e1,Exp.EQUAL(ty = Exp.STRING()),e2,tnr,context)
+    case (e1,Exp.EQUAL(ty = Exp.ET_STRING()),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -6574,7 +6574,7 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);
-    case (e1,Exp.EQUAL(ty = Exp.INT()),e2,tnr,context)
+    case (e1,Exp.EQUAL(ty = Exp.ET_INT()),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -6582,7 +6582,7 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);
-    case (e1,Exp.EQUAL(ty = Exp.REAL()),e2,tnr,context as CONTEXT(codeContext = FUNCTION))
+    case (e1,Exp.EQUAL(ty = Exp.ET_REAL()),e2,tnr,context as CONTEXT(codeContext = FUNCTION))
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
@@ -6591,12 +6591,12 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr);
-    case (e1,Exp.EQUAL(ty = Exp.REAL()),e2,tnr,context)
+    case (e1,Exp.EQUAL(ty = Exp.ET_REAL()),e2,tnr,context)
       equation
         Print.printErrorBuf("# Reals can't be compared with ==\n");
       then
         fail();
-    case (e1,Exp.EQUAL(ty = Exp.T_BOXED(_)),e2,tnr,context)
+    case (e1,Exp.EQUAL(ty = Exp.ET_BOXED(_)),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -6604,7 +6604,7 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);
-    case (e1,Exp.EQUAL(ty = Exp.ENUMERATION(_,_,_,_)),e2,tnr,context)
+    case (e1,Exp.EQUAL(ty = Exp.ET_ENUMERATION(_,_,_,_)),e2,tnr,context)
 //    case (e1,Exp.EQUAL(ty = Exp.ENUM()),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
@@ -6613,7 +6613,7 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);         
-    case (e1,Exp.NEQUAL(ty = Exp.BOOL()),e2,tnr,context)
+    case (e1,Exp.NEQUAL(ty = Exp.ET_BOOL()),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -6621,7 +6621,7 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);
-    case (e1,Exp.NEQUAL(ty = Exp.STRING()),e2,tnr,context)
+    case (e1,Exp.NEQUAL(ty = Exp.ET_STRING()),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -6629,7 +6629,7 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);
-    case (e1,Exp.NEQUAL(ty = Exp.INT()),e2,tnr,context)
+    case (e1,Exp.NEQUAL(ty = Exp.ET_INT()),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -6637,7 +6637,7 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);
-    case (e1,Exp.NEQUAL(ty = Exp.REAL()),e2,tnr,context as CONTEXT(codeContext = FUNCTION))
+    case (e1,Exp.NEQUAL(ty = Exp.ET_REAL()),e2,tnr,context as CONTEXT(codeContext = FUNCTION))
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
@@ -6646,12 +6646,12 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr);
-    case (e1,Exp.NEQUAL(ty = Exp.REAL()),e2,tnr,context)
+    case (e1,Exp.NEQUAL(ty = Exp.ET_REAL()),e2,tnr,context)
       equation
         Debug.fprint("failtrace", "# Reals can't be compared with <>\n");
       then
         fail();
-    case (e1,Exp.NEQUAL(ty = Exp.T_BOXED(_)),e2,tnr,context)
+    case (e1,Exp.NEQUAL(ty = Exp.ET_BOXED(_)),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -6659,7 +6659,7 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);
-    case (e1,Exp.NEQUAL(ty = Exp.ENUMERATION(_,_,_,_)),e2,tnr,context)
+    case (e1,Exp.NEQUAL(ty = Exp.ET_ENUMERATION(_,_,_,_)),e2,tnr,context)
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
@@ -7582,7 +7582,7 @@ algorithm
         tnrstr = intString(tnr);
         tnr_1 = tnr + 1;
         tmpstr = Util.stringAppendList({tmpname_1,"_size_",tnrstr});
-        tmpcref = Exp.CREF_IDENT(tmpstr,Exp.OTHER(),{});
+        tmpcref = Exp.CREF_IDENT(tmpstr,Exp.ET_OTHER(),{});
         callstr = generateExtArraySizeCall(arg);
         declstr = Util.stringAppendList({"int ",tmpstr,";"});
         decl = cAddVariables(cEmptyFunction, {declstr});
@@ -9531,7 +9531,7 @@ public function matchFnRefs
 algorithm
   outExprLst := matchcontinue (inExpr)
     local Exp.Exp e; Exp.Type t;
-    case((e as Exp.CREF(ty = Exp.T_FUNCTION_REFERENCE_FUNC()))) then {e};
+    case((e as Exp.CREF(ty = Exp.ET_FUNCTION_REFERENCE_FUNC()))) then {e};
   end matchcontinue;
 end matchFnRefs;
 
@@ -9884,7 +9884,7 @@ protected
 algorithm
   path := Absyn.makeIdentPathFromString(str);
   cref := Exp.pathToCref(path);
-  exp  := Exp.makeCrefExp(cref, Exp.OTHER);
+  exp  := Exp.makeCrefExp(cref, Exp.ET_OTHER);
 end makeCrefExpFromString;
 
 end Codegen;

@@ -191,7 +191,7 @@ algorithm
   i := tick();
   is := intString(i);
   s := stringAppend("__TMP__", is);
-  outComponentRef := Exp.CREF_IDENT(s,Exp.OTHER(),{});
+  outComponentRef := Exp.CREF_IDENT(s,Exp.ET_OTHER(),{});
 end newIdent;
 
 protected function select 
@@ -1221,7 +1221,7 @@ algorithm prefixCon := matchcontinue(connectorRef)
     /*equation print(name +& " is not a outside connector \n");*/
     then fail();
       
-  case(Exp.CREF_QUAL(name,(ty as Exp.COMPLEX(complexClassType=ClassInf.CONNECTOR(_,_))),subs,_))
+  case(Exp.CREF_QUAL(name,(ty as Exp.ET_COMPLEX(complexClassType=ClassInf.CONNECTOR(_,_))),subs,_))
     then Exp.CREF_IDENT(name,ty,subs);
       
   case(Exp.CREF_QUAL(name,ty,subs,child))
@@ -2695,7 +2695,7 @@ algorithm outComps := matchcontinue(acrefs,remainingComps,className,existing)
       list<SCode.Element> elems;
       list<String> names;
     equation
-      localComps = extractConstantPlusDeps2(remainingComps,SOME(Exp.CREF_IDENT(s1,Exp.OTHER(),{})),{},className,existing);
+      localComps = extractConstantPlusDeps2(remainingComps,SOME(Exp.CREF_IDENT(s1,Exp.ET_OTHER(),{})),{},className,existing);
       names = SCode.componentNamesFromElts(localComps);
       existing = listAppend(names,existing);
       outComps = extractConstantPlusDeps3(acrefs,remainingComps,className,existing);
@@ -2945,13 +2945,13 @@ algorithm
         outerCrs = Util.listMap(outerVars,DAEUtil.varCref);
 	      ourOuterCrs = Util.listSelect1(outerCrs,cr,isInnerOuterMatch);
 	      cr = DAEUtil.nameInnerouterUniqueCref(cr);
-        repl = Util.listFold_2r(ourOuterCrs,VarTransform.addReplacement,repl,Exp.CREF(cr,Exp.OTHER()));
+        repl = Util.listFold_2r(ourOuterCrs,VarTransform.addReplacement,repl,Exp.CREF(cr,Exp.ET_OTHER()));
 	    then repl;
 	  case(DAE.VAR(componentRef = cr),outerVars,repl) 
 	    equation
 	      outerCrs = Util.listMap(outerVars,DAEUtil.varCref);
 	      ourOuterCrs = Util.listSelect1(outerCrs,cr,isInnerOuterMatch);
-	      repl = Util.listFold_2r(ourOuterCrs,VarTransform.addReplacement,repl,Exp.CREF(cr,Exp.OTHER()));
+	      repl = Util.listFold_2r(ourOuterCrs,VarTransform.addReplacement,repl,Exp.CREF(cr,Exp.ET_OTHER()));
 	    then repl;
 	end matchcontinue;
 end buildInnerOuterReplVar;
@@ -3471,7 +3471,7 @@ algorithm
     case (Connect.SETS(connection = crs),prefix,
         (Env.FRAME(n,bt1,bt2,imp,bc,_,enc,defineUnits) :: fs),ih)
       equation
-      then (Env.FRAME(n,bt1,bt2,imp,bc,(crs,Exp.CREF_IDENT("",Exp.OTHER(),{})),enc,defineUnits) :: fs,ih); 
+      then (Env.FRAME(n,bt1,bt2,imp,bc,(crs,Exp.CREF_IDENT("",Exp.ET_OTHER(),{})),enc,defineUnits) :: fs,ih); 
  
   end matchcontinue;
 end addConnectionSetToEnv;
@@ -5287,7 +5287,7 @@ algorithm
         // Fails if multiple decls not identical
         alreadyDeclared = checkMultiplyDeclared(cache,env,mods,pre,csets,ci_state,(comp,cmod),inst_dims,impl);
         ci_state = ClassInf.trans(ci_state, ClassInf.FOUND_COMPONENT());
-        vn = Prefix.prefixCref(pre, Exp.CREF_IDENT(n,Exp.OTHER(),{})); 
+        vn = Prefix.prefixCref(pre, Exp.CREF_IDENT(n,Exp.ET_OTHER(),{})); 
         //Debug.fprint(\"insttr\", \"Instantiating component \") &
 				//Debug.fprint(\"insttr\", n) & //Debug.fprint(\"insttr\", \"\\n\") &" 
 				
@@ -5413,7 +5413,7 @@ algorithm
         // Fails if multiple decls not identical
         alreadyDeclared = checkMultiplyDeclared(cache,env,mods,pre,csets,ci_state,(comp,cmod),inst_dims,impl);
         //checkRecursiveDefinition(env,t);
-        vn = Prefix.prefixCref(pre, Exp.CREF_IDENT(n,Exp.OTHER(),{}));
+        vn = Prefix.prefixCref(pre, Exp.CREF_IDENT(n,Exp.ET_OTHER(),{}));
         // Debug.fprint(\"insttr\", \"Instantiating component \") &
         // Debug.fprint(\"insttr\", n) & //Debug.fprint(\"insttr\", \"\\n\") &"
 
@@ -6331,7 +6331,7 @@ algorithm
         ClassInf.isFunction(ci_state);
          //Instantiate type of the component, skip dae/not flattening
         (cache,env_1,ih,store,_,csets,ty,st,_,_) = instClass(cache, env, ih, store, mod, pre, csets, cl, inst_dims, impl, INNER_CALL(), ConnectionGraph.EMPTY) ;
-        cr = Prefix.prefixCref(pre, Exp.CREF_IDENT(n,Exp.OTHER(),{}));
+        cr = Prefix.prefixCref(pre, Exp.CREF_IDENT(n,Exp.ET_OTHER(),{}));
         (cache,dae_var_attr) = instDaeVariableAttributes(cache,env, mod, ty, {});
         //Do all dimensions...
         dims_1 = instDimExpLst(dims, impl)  ;
@@ -7467,7 +7467,7 @@ algorithm
         i_1 = i + 1;
         (cache,_,ih,store,dae2,csets_2,arrty) = 
            instArray(cache,env,ih,store, ci_state, DAE.NOMOD(), pre, csets_1, n, (cl,attr),prot, i_1, DIMINT(stop), dims, idxs, inst_dims, impl, comment,io);
-        cr = Prefix.prefixCref(pre, Exp.CREF_IDENT(n,Exp.OTHER(),{})) "Make the equation containing the functioncall" ;
+        cr = Prefix.prefixCref(pre, Exp.CREF_IDENT(n,Exp.ET_OTHER(),{})) "Make the equation containing the functioncall" ;
         arrty_1 = Types.elabType(arrty);
         b = attrIsParam(attr) "if parameter, add equation to initial eqn" ;
         eqn_place = Util.if_(b, SCode.INITIAL(), SCode.NON_INITIAL());
@@ -9921,7 +9921,7 @@ algorithm
         len = listLength(elementLst);        
         env_1 = addForLoopScope(env, i, (DAE.T_INTEGER({}),NONE())) "//Debug.fprintln (\"insti\", \"for expression elaborated\") &" ;
         (cache,DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),_,_),(DAE.T_INTEGER(_),_),DAE.UNBOUND(),_,_) 
-        = Lookup.lookupVar(cache,env_1, Exp.CREF_IDENT(i,Exp.OTHER(),{})) "	//Debug.fprintln (\"insti\", \"loop-variable added to scope\") &" ;
+        = Lookup.lookupVar(cache,env_1, Exp.CREF_IDENT(i,Exp.ET_OTHER(),{})) "	//Debug.fprintln (\"insti\", \"loop-variable added to scope\") &" ;
         vals = Ceval.cevalRange(1,1,len);
         (cache,dae,csets_1,graph) = unroll(cache,env_1, mod, pre, csets, ci_state, i, Values.ARRAY(vals), el, initial_, impl,graph) "	//Debug.fprintln (\"insti\", \"for expression evaluated\") &" ;
         ci_state_1 = instEquationCommonCiTrans(ci_state, initial_) "	//Debug.fprintln (\"insti\", \"for expression unrolled\") & 	& //Debug.fprintln (\"insttr\", \"inst_equation_common_eqfor_1 succeeded\")" ;
@@ -9945,7 +9945,7 @@ algorithm
         (cache,e_1,DAE.PROP((DAE.T_ARRAY(DAE.DIM(_),id_t),_),_),_) = Static.elabExp(cache,env, e, impl, NONE,true) "//Debug.fprintln (\"insttr\", \"inst_equation_common_eqfor_1\") &" ;
         env_1 = addForLoopScope(env, i, id_t) "//Debug.fprintln (\"insti\", \"for expression elaborated\") &" ;
         (cache,DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),_,_),(DAE.T_INTEGER(_),_),DAE.UNBOUND(),_,_) 
-        = Lookup.lookupVar(cache,env_1, Exp.CREF_IDENT(i,Exp.OTHER(),{})) "	//Debug.fprintln (\"insti\", \"loop-variable added to scope\") &" ;
+        = Lookup.lookupVar(cache,env_1, Exp.CREF_IDENT(i,Exp.ET_OTHER(),{})) "	//Debug.fprintln (\"insti\", \"loop-variable added to scope\") &" ;
         (cache,v,_) = Ceval.ceval(cache,env, e_1, impl, NONE, NONE, Ceval.MSG()) "	//Debug.fprintln (\"insti\", \"loop variable looked up\") & FIXME: Check bounds" ;
         (cache,dae,csets_1,graph) = unroll(cache,env_1, mod, pre, csets, ci_state, i, v, el, initial_, impl,graph) "	//Debug.fprintln (\"insti\", \"for expression evaluated\") &" ;
         ci_state_1 = instEquationCommonCiTrans(ci_state, initial_) "	//Debug.fprintln (\"insti\", \"for expression unrolled\") & 	& //Debug.fprintln (\"insttr\", \"inst_equation_common_eqfor_1 succeeded\")" ;
@@ -9957,7 +9957,7 @@ algorithm
         (cache,e_1,DAE.PROP((DAE.T_ARRAY(DAE.DIM(_),id_t),_),_),_) = Static.elabExp(cache,env, e, impl, NONE,true) "//Debug.fprintln (\"insttr\", \"inst_equation_common_eqfor_1\") &" ;
         env_1 = addForLoopScope(env, i, id_t) "//Debug.fprintln (\"insti\", \"for expression elaborated\") &" ;
         (cache,DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),_,_),(DAE.T_INTEGER(_),_),DAE.UNBOUND(),_,_) 
-        = Lookup.lookupVar(cache,env_1, Exp.CREF_IDENT(i,Exp.OTHER(),{})) "	//Debug.fprintln (\"insti\", \"loop-variable added to scope\") &" ;
+        = Lookup.lookupVar(cache,env_1, Exp.CREF_IDENT(i,Exp.ET_OTHER(),{})) "	//Debug.fprintln (\"insti\", \"loop-variable added to scope\") &" ;
         (cache,v,_) = Ceval.ceval(cache,env, e_1, impl, NONE, NONE, Ceval.MSG()) "	//Debug.fprintln (\"insti\", \"loop variable looked up\") & FIXME: Check bounds" ;
         (cache,dae,csets_1,graph) = unroll(cache,env_1, mod, pre, csets, ci_state, i, v, el, initial_, impl,graph) "	//Debug.fprintln (\"insti\", \"for expression evaluated\") &" ;
         ci_state_1 = instEquationCommonCiTrans(ci_state, initial_) "	//Debug.fprintln (\"insti\", \"for expression unrolled\") & 	& //Debug.fprintln (\"insttr\", \"inst_equation_common_eqfor_1 succeeded\")" ;
@@ -9967,7 +9967,7 @@ algorithm
     case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_FOR(index = i,range = e,eEquationLst = el),initial_,impl,graph)
       equation 
         (cache,DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),_,_),(DAE.T_INTEGER(_),_),DAE.UNBOUND(),_,_) 
-        	= Lookup.lookupVar(cache,env, Exp.CREF_IDENT(i,Exp.OTHER(),{})) "for loops with non-constant iteration bounds" ;
+        	= Lookup.lookupVar(cache,env, Exp.CREF_IDENT(i,Exp.ET_OTHER(),{})) "for loops with non-constant iteration bounds" ;
         (cache,e_1,DAE.PROP((DAE.T_ARRAY(DAE.DIM(_),(DAE.T_INTEGER(_),_)),_),DAE.C_VAR()),_) 
         	= Static.elabExp(cache,env, e, impl, NONE,true);
         Error.addMessage(Error.UNSUPPORTED_LANGUAGE_FEATURE, 
@@ -10941,8 +10941,8 @@ algorithm
         (cache,vb2,_,_) = Static.elabExp(cache,env,vb,impl,NONE,true);
 
         // _ := { ... }, this will be handled in Codegen.algorithmStatement
-        stmt = DAE.STMT_ASSIGN(Exp.BOOL(),
-                                Exp.CREF(Exp.WILD,Exp.OTHER()),
+        stmt = DAE.STMT_ASSIGN(Exp.ET_BOOL(),
+                                Exp.CREF(Exp.WILD,Exp.ET_OTHER()),
                                 vb2);
       then
         (cache,stmt);
@@ -11405,8 +11405,8 @@ algorithm
         (localCache,e_1,eprop,_) = Static.elabExp(localCache,localEnv, e, impl, NONE,true);
         (localCache,e_2) = Prefix.prefixExp(localCache,localEnv, e_1, localPre);
         stmt = DAE.STMT_ASSIGN(
-                  Exp.OTHER(),
-                  Exp.CREF(Exp.WILD,Exp.OTHER()),
+                  Exp.ET_OTHER(),
+                  Exp.CREF(Exp.WILD,Exp.ET_OTHER()),
                   e_2);
       then (localCache,stmt);
 
@@ -11423,8 +11423,8 @@ algorithm
         (localCache,e_2) = Prefix.prefixExp(localCache,localEnv, e_1, localPre);        
         //stmt = Algorithm.makeAssignment(Exp.CREF(ce,t), cprop, e_2, eprop, acc);
         stmt = DAE.STMT_ASSIGN(
-                  Exp.OTHER(),
-                  Exp.CREF(Exp.WILD,Exp.OTHER()),
+                  Exp.ET_OTHER(),
+                  Exp.CREF(Exp.WILD,Exp.ET_OTHER()),
                   e_2);
       then
         (localCache,stmt);
@@ -11441,8 +11441,8 @@ algorithm
         (localCache,e_1,eprop,_) = Static.elabExp(localCache,localEnv, e, impl, NONE,true);
         (localCache,e_2) = Prefix.prefixExp(localCache,localEnv, e_1, localPre);        
         stmt = DAE.STMT_ASSIGN(
-                 Exp.OTHER(),
-                 Exp.CREF(Exp.WILD,Exp.OTHER()),
+                 Exp.ET_OTHER(),
+                 Exp.CREF(Exp.WILD,Exp.ET_OTHER()),
                  e_2);
       then
         (localCache,stmt);
@@ -11979,8 +11979,8 @@ algorithm
       then
         (cache,env,ih,sets,{
           DAE.ASSERT(
-            Exp.RELATION(Exp.CREF(c1_1,Exp.REAL()),Exp.EQUAL(Exp.BOOL()),
-              Exp.CREF(c2_1,Exp.REAL())),Exp.SCONST("automatically generated from connect")
+            Exp.RELATION(Exp.CREF(c1_1,Exp.ET_REAL()),Exp.EQUAL(Exp.ET_BOOL()),
+              Exp.CREF(c2_1,Exp.ET_REAL())),Exp.SCONST("automatically generated from connect")
           )},graph);
     /* Same as above, but returns empty (removed conditional var)*/ 
     case (cache,env,ih,sets,pre,c1,f1,t1,vt1,c2,f2,t2,vt2,false,io1,io2,graph)
@@ -12048,8 +12048,8 @@ algorithm
       equation         
         c1_1 = Prefix.prefixCref(pre, c1);
         c2_1 = Prefix.prefixCref(pre, c2); 
-        Exp.T_ARRAY(_,odims) = Types.elabType(inType6);
-        Exp.T_ARRAY(_,odims2) = Types.elabType(inType9);
+        Exp.ET_ARRAY(_,odims) = Types.elabType(inType6);
+        Exp.ET_ARRAY(_,odims2) = Types.elabType(inType9);
         dims = Util.listFlatten(Util.listMap(odims,Util.genericOption));
         dims2 = Util.listFlatten(Util.listMap(odims2,Util.genericOption));        
         equality(dims = dims2);        
@@ -12092,8 +12092,8 @@ algorithm
           {DAE.EQUATION(
           zeroVector, 
           Exp.CALL(fpath1, 
-          {Exp.CREF(c1_1, Exp.OTHER()), Exp.CREF(c2_1, Exp.OTHER())}, 
-          false, false, Exp.REAL,false)
+          {Exp.CREF(c1_1, Exp.ET_OTHER()), Exp.CREF(c2_1, Exp.ET_OTHER())}, 
+          false, false, Exp.ET_REAL,false)
           )});
       then
         (cache,env,ih,sets,{},graph);        
@@ -12561,7 +12561,7 @@ algorithm
       InstanceHierarchy ih;
     case (env,ih,Exp.CREF_QUAL(ident = id,componentRef = cr)) equation
        (_,_,(DAE.T_COMPLEX(complexClassType=ClassInf.CONNECTOR(_,_)),_),_,_,_) 
-         = Lookup.lookupVar(Env.emptyCache(),env,Exp.CREF_IDENT(id,Exp.OTHER(),{}));
+         = Lookup.lookupVar(Env.emptyCache(),env,Exp.CREF_IDENT(id,Exp.ET_OTHER(),{}));
     then Connect.OUTER();       
     case (env,ih,Exp.CREF_QUAL(componentRef =_)) then Connect.INNER(); 
     case (env,ih,Exp.CREF_IDENT(ident = _)) then Connect.OUTER(); 
@@ -13056,11 +13056,11 @@ protected function getStateSelectFromExpOption
 algorithm 
   outDAEStateSelectOption:=
   matchcontinue (inExpExpOption)
-    case (SOME(Exp.CREF(Exp.CREF_QUAL("StateSelect",_,{},Exp.CREF_IDENT("never",Exp.ENUMERATION(SOME(_),_,_,_),{})),_))) then SOME(DAE.NEVER()); 
-    case (SOME(Exp.CREF(Exp.CREF_QUAL("StateSelect",_,{},Exp.CREF_IDENT("avoid",Exp.ENUMERATION(SOME(_),_,_,_),{})),_))) then SOME(DAE.AVOID()); 
-    case (SOME(Exp.CREF(Exp.CREF_QUAL("StateSelect",_,{},Exp.CREF_IDENT("default",Exp.ENUMERATION(SOME(_),_,_,_),{})),_))) then SOME(DAE.DEFAULT()); 
-    case (SOME(Exp.CREF(Exp.CREF_QUAL("StateSelect",_,{},Exp.CREF_IDENT("prefer",Exp.ENUMERATION(SOME(_),_,_,_),{})),_))) then SOME(DAE.PREFER()); 
-    case (SOME(Exp.CREF(Exp.CREF_QUAL("StateSelect",_,{},Exp.CREF_IDENT("always",Exp.ENUMERATION(SOME(_),_,_,_),{})),_))) then SOME(DAE.ALWAYS()); 
+    case (SOME(Exp.CREF(Exp.CREF_QUAL("StateSelect",_,{},Exp.CREF_IDENT("never",Exp.ET_ENUMERATION(SOME(_),_,_,_),{})),_))) then SOME(DAE.NEVER()); 
+    case (SOME(Exp.CREF(Exp.CREF_QUAL("StateSelect",_,{},Exp.CREF_IDENT("avoid",Exp.ET_ENUMERATION(SOME(_),_,_,_),{})),_))) then SOME(DAE.AVOID()); 
+    case (SOME(Exp.CREF(Exp.CREF_QUAL("StateSelect",_,{},Exp.CREF_IDENT("default",Exp.ET_ENUMERATION(SOME(_),_,_,_),{})),_))) then SOME(DAE.DEFAULT()); 
+    case (SOME(Exp.CREF(Exp.CREF_QUAL("StateSelect",_,{},Exp.CREF_IDENT("prefer",Exp.ET_ENUMERATION(SOME(_),_,_,_),{})),_))) then SOME(DAE.PREFER()); 
+    case (SOME(Exp.CREF(Exp.CREF_QUAL("StateSelect",_,{},Exp.CREF_IDENT("always",Exp.ET_ENUMERATION(SOME(_),_,_,_),{})),_))) then SOME(DAE.ALWAYS()); 
 //    case (SOME(Exp.CREF(Exp.CREF_QUAL("StateSelect",_,{},Exp.CREF_IDENT("never",_,{})),Exp.ENUM()))) then SOME(DAE.NEVER()); 
 //    case (SOME(Exp.CREF(Exp.CREF_QUAL("StateSelect",_,{},Exp.CREF_IDENT("avoid",_,{})),Exp.ENUM()))) then SOME(DAE.AVOID()); 
 //    case (SOME(Exp.CREF(Exp.CREF_QUAL("StateSelect",_,{},Exp.CREF_IDENT("default",_,{})),Exp.ENUM()))) then SOME(DAE.DEFAULT()); 
@@ -13326,13 +13326,13 @@ algorithm
       Exp.Exp exp_1;
       DAE.Element e1;
     case (cr,exp,{}) then (exp,{}); 
-    case (cr,exp,(DAE.EQUATION(exp = Exp.CREF(componentRef = e1cr),scalar = exp_1) :: rest)) /* Exp.OTHER */ 
+    case (cr,exp,(DAE.EQUATION(exp = Exp.CREF(componentRef = e1cr),scalar = exp_1) :: rest)) /* Exp.ET_OTHER */ 
       equation 
         true = Exp.crefEqual(cr, e1cr);
         (exp_2,rest_1) = initVarsModelicaOutput2(cr, SOME(exp_1), rest);
       then
         (exp_2,rest_1);
-    case (cr,exp,((e1 as DAE.EQUATION(exp = Exp.CREF(componentRef = e1cr),scalar = exp_1)) :: rest)) /* Exp.OTHER */ 
+    case (cr,exp,((e1 as DAE.EQUATION(exp = Exp.CREF(componentRef = e1cr),scalar = exp_1)) :: rest)) /* Exp.ET_OTHER */ 
       equation 
         false = Exp.crefEqual(cr, e1cr);
         (exp_2,rest_1) = initVarsModelicaOutput2(cr, exp, rest);
@@ -14845,7 +14845,7 @@ algorithm
       true = Types.isParameterOrConstant(c);
       (cache,Values.BOOL(b),_) = Ceval.ceval(cache,env, e, false, NONE, NONE, Ceval.MSG());
       dae = Util.if_(b,dae,{});
-      cr = Prefix.prefixCref(pre,Exp.CREF_IDENT(compName,Exp.OTHER(),{}));
+      cr = Prefix.prefixCref(pre,Exp.CREF_IDENT(compName,Exp.ET_OTHER(),{}));
       sets = Connect.addDeletedComponent(b,cr,sets);
 
     then (cache,dae,sets);

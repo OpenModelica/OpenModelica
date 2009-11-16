@@ -793,7 +793,7 @@ algorithm outVal := matchcontinue(inVal,env,toAssign)
       list<Values.Value> vals;
       list<String> names;
     equation
-      (_,_,t as (DAE.T_COMPLEX(_,typeslst,_,_),_),_,_,_) = Lookup.lookupVar(Env.emptyCache(),env, Exp.CREF_IDENT(str,Exp.OTHER(),{}));
+      (_,_,t as (DAE.T_COMPLEX(_,typeslst,_,_),_),_,_,_) = Lookup.lookupVar(Env.emptyCache(),env, Exp.CREF_IDENT(str,Exp.ET_OTHER(),{}));
       nlist = setValuesInRecord(typeslst,names,vals);
       fr = Env.newFrame(false); 
       complexEnv = makeComplexEnv({fr},nlist);
@@ -806,7 +806,7 @@ algorithm outVal := matchcontinue(inVal,env,toAssign)
       local 
         list<Absyn.Subscript> subs;
       equation
-        (_,_,t,DAE.VALBOUND(value2),_,_) = Lookup.lookupVar(Env.emptyCache(),env, Exp.CREF_IDENT(str,Exp.OTHER(),{}));
+        (_,_,t,DAE.VALBOUND(value2),_,_) = Lookup.lookupVar(Env.emptyCache(),env, Exp.CREF_IDENT(str,Exp.ET_OTHER(),{}));
         value = mergeValues(value2,value,subs,env,t); 
         env1 = updateVarinEnv(env,str,value,t);
       then
@@ -819,7 +819,7 @@ algorithm outVal := matchcontinue(inVal,env,toAssign)
         Exp.ComponentRef eme;
         String str2;
       equation 
-        (_,_,t,DAE.VALBOUND(value2),_,_) = Lookup.lookupVar(Env.emptyCache(),env, Exp.CREF_IDENT(str,Exp.OTHER(),{}));
+        (_,_,t,DAE.VALBOUND(value2),_,_) = Lookup.lookupVar(Env.emptyCache(),env, Exp.CREF_IDENT(str,Exp.ET_OTHER(),{}));
         env1 = setQualValue(env,value,Absyn.CREF_QUAL(str,subs,child));
       then
         env1;
@@ -878,7 +878,7 @@ algorithm oenv := matchcontinue(env,inVal,inCr)
     inVal,inCr)    
     equation
       str = Absyn.crefFirstIdent(inCr);
-      (_,_,_,_,_,_) = Lookup.lookupVar(Env.emptyCache(), {frame}, Exp.CREF_IDENT(str,Exp.OTHER(),{}));
+      (_,_,_,_,_,_) = Lookup.lookupVar(Env.emptyCache(), {frame}, Exp.CREF_IDENT(str,Exp.ET_OTHER(),{}));
       farg22 = setQualValue2(farg2, inVal,inCr,0);
       then
         Env.FRAME(farg1,farg22,farg3,farg4,farg5,farg6,farg7,defineUnits) :: frames;    
@@ -969,7 +969,7 @@ algorithm
     local Env.Env env1;
     case(env,varName,newVal,ty) 
       equation
-        (_,_,_,_,_,_) = Lookup.lookupVar(Env.emptyCache(), env,Exp.CREF_IDENT(varName,Exp.OTHER(),{}));
+        (_,_,_,_,_,_) = Lookup.lookupVar(Env.emptyCache(), env,Exp.CREF_IDENT(varName,Exp.ET_OTHER(),{}));
         env1 = Env.updateFrameV(env, 
           DAE.TYPES_VAR(varName,DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
             false,ty,DAE.VALBOUND(newVal)), Env.VAR_TYPED(), {}); 
@@ -1224,7 +1224,7 @@ algorithm
     case({},_) then {};
     case(((ele1 as SCode.COMPONENT(component = varName, attributes = SCode.ATTR(direction = Absyn.OUTPUT() ) ))::eles1),env)
       equation
-        (_,_,_,DAE.VALBOUND(value),_,_) = Lookup.lookupVar(Env.emptyCache(),env, Exp.CREF_IDENT(varName,Exp.OTHER(),{}));
+        (_,_,_,DAE.VALBOUND(value),_,_) = Lookup.lookupVar(Env.emptyCache(),env, Exp.CREF_IDENT(varName,Exp.ET_OTHER(),{}));
         lval = getOutputVarValues(eles1,env);
       then
        value::lval; 

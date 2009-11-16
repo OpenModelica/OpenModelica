@@ -3755,8 +3755,8 @@ algorithm
         Graphviz.LNODE("EQUATION",{e1str,"=",e2str},{},{});
     case DAE.EQUEQUATION(cr1,cr2)
       equation 
-        e1str = printExpStrSpecial(Exp.CREF(cr1,Exp.OTHER()));
-        e2str = printExpStrSpecial(Exp.CREF(cr2,Exp.OTHER()));
+        e1str = printExpStrSpecial(Exp.CREF(cr1,Exp.ET_OTHER()));
+        e2str = printExpStrSpecial(Exp.CREF(cr2,Exp.ET_OTHER()));
       then
         Graphviz.LNODE("EQUEQUATION",{e1str,"=",e2str},{},{});
     case DAE.ALGORITHM(algorithm_ = _) then Graphviz.NODE("ALGORITHM",{},{}); 
@@ -3989,7 +3989,7 @@ algorithm
     case ((cr :: xs),id)
       equation 
         res = getFlowVariables2(xs, id);
-        cr_1 = Exp.joinCrefs(Exp.CREF_IDENT(id,Exp.OTHER(),{}), cr);
+        cr_1 = Exp.joinCrefs(Exp.CREF_IDENT(id,Exp.ET_OTHER(),{}), cr);
       then
         (cr_1 :: res);
   end matchcontinue;
@@ -4047,7 +4047,7 @@ algorithm
     case ((cr :: xs),id)
       equation
         res = getStreamVariables2(xs, id);
-        cr_1 = Exp.joinCrefs(Exp.CREF_IDENT(id,Exp.OTHER(),{}), cr);
+        cr_1 = Exp.joinCrefs(Exp.CREF_IDENT(id,Exp.ET_OTHER(),{}), cr);
       then
         (cr_1 :: res);
   end matchcontinue;
@@ -4216,8 +4216,8 @@ algorithm
       local
         Exp.ComponentRef cr1,cr2;
       equation 
-         Exp.CREF(cr1,_) = toModelicaFormExp(Exp.CREF(cr1,Exp.OTHER()));
-         Exp.CREF(cr2,_) = toModelicaFormExp(Exp.CREF(cr2,Exp.OTHER()));
+         Exp.CREF(cr1,_) = toModelicaFormExp(Exp.CREF(cr1,Exp.ET_OTHER()));
+         Exp.CREF(cr2,_) = toModelicaFormExp(Exp.CREF(cr2,Exp.ET_OTHER()));
         elts_1 = toModelicaFormElts(elts);
       then
         (DAE.EQUEQUATION(cr1,cr2) :: elts_1);
@@ -4538,7 +4538,7 @@ algorithm
   outExp:=
   matchcontinue (inComponentRef)
     local Exp.ComponentRef cref;
-    case cref then Exp.CREF(cref,Exp.OTHER()); 
+    case cref then Exp.CREF(cref,Exp.ET_OTHER()); 
   end matchcontinue;
 end crefToExp;
 
@@ -4915,7 +4915,7 @@ algorithm
       local
         Absyn.Path fname;
         list<Exp.Exp> fargs;
-      then {Exp.CALL(fname,fargs,false,false,Exp.OTHER(),false)};      
+      then {Exp.CALL(fname,fargs,false,false,Exp.ET_OTHER(),false)};      
       
     case _
       equation 
@@ -5126,7 +5126,7 @@ algorithm
       Exp.Exp e1,e2;
     case(DAE.EQUATION(e1,e2))
       equation
-        oExp = Exp.BINARY(e1,Exp.SUB(Exp.REAL()),e2);
+        oExp = Exp.BINARY(e1,Exp.SUB(Exp.ET_REAL()),e2);
       then 
         oExp;
   end matchcontinue;
@@ -5405,7 +5405,7 @@ algorithm (traversedDaeList,Type_a) := matchcontinue(daeList,func,extraArg)
   case({},_,extraArg) then ({},extraArg);
   case(DAE.VAR(cr,kind,dir,prot,tp,optExp,dims,fl,st,clsLst,attr,cmt,io)::dae,func,extraArg) 
     equation
-      (Exp.CREF(cr2,_),extraArg) = func(Exp.CREF(cr,Exp.REAL()), extraArg);
+      (Exp.CREF(cr2,_),extraArg) = func(Exp.CREF(cr,Exp.ET_REAL()), extraArg);
       (optExp,extraArg) = traverseDAEOptExp(optExp,func,extraArg);      
       (attr,extraArg) = traverseDAEVarAttr(attr,func,extraArg);
       (dae2,extraArg) = traverseDAE(dae,func,extraArg);
@@ -5414,21 +5414,21 @@ algorithm (traversedDaeList,Type_a) := matchcontinue(daeList,func,extraArg)
   case(DAE.DEFINE(cr,e)::dae,func,extraArg)
     equation
       (e2,extraArg) = func(e, extraArg);
-      (Exp.CREF(cr2,_),extraArg) = func(Exp.CREF(cr,Exp.REAL()), extraArg);
+      (Exp.CREF(cr2,_),extraArg) = func(Exp.CREF(cr,Exp.ET_REAL()), extraArg);
       (dae2,extraArg) = traverseDAE(dae,func,extraArg);
     then (DAE.DEFINE(cr2,e2)::dae2,extraArg);
       
   case(DAE.INITIALDEFINE(cr,e)::dae,func,extraArg) 
     equation
       (e2,extraArg) = func(e, extraArg);
-      (Exp.CREF(cr2,_),extraArg) = func(Exp.CREF(cr,Exp.REAL()), extraArg);
+      (Exp.CREF(cr2,_),extraArg) = func(Exp.CREF(cr,Exp.ET_REAL()), extraArg);
       (dae2,extraArg) = traverseDAE(dae,func,extraArg);
     then (DAE.INITIALDEFINE(cr2,e2)::dae2,extraArg);
       
   case(DAE.EQUEQUATION(cr,cr1)::dae,func,extraArg) 
     equation
-      (Exp.CREF(cr2,_),extraArg) = func(Exp.CREF(cr,Exp.REAL()), extraArg);
-      (Exp.CREF(cr1_2,_),extraArg) = func(Exp.CREF(cr1,Exp.REAL()), extraArg);
+      (Exp.CREF(cr2,_),extraArg) = func(Exp.CREF(cr,Exp.ET_REAL()), extraArg);
+      (Exp.CREF(cr1_2,_),extraArg) = func(Exp.CREF(cr1,Exp.ET_REAL()), extraArg);
       (dae2,extraArg) = traverseDAE(dae,func,extraArg);
     then (DAE.EQUEQUATION(cr2,cr1_2)::dae2,extraArg);
       
@@ -5539,7 +5539,7 @@ algorithm (traversedDaeList,Type_a) := matchcontinue(daeList,func,extraArg)
   case(DAE.REINIT(cr,e1)::dae,func,extraArg) 
     equation
       (e11,extraArg) = func(e1,extraArg);
-      (Exp.CREF(cr2,_),extraArg) = func(Exp.CREF(cr,Exp.REAL()),extraArg);
+      (Exp.CREF(cr2,_),extraArg) = func(Exp.CREF(cr,Exp.ET_REAL()),extraArg);
       (dae2,extraArg) = traverseDAE(dae,func,extraArg);
     then (DAE.REINIT(cr2,e11)::dae2,extraArg);
       
@@ -5629,7 +5629,7 @@ algorithm(outStmts,oextraArg) := matchcontinue(inStmts,func,extraArg)
   case ((DAE.STMT_ASSIGN_ARR(type_ = tp,componentRef = cr, exp = e) :: xs),func,extraArg)
     equation 
       (e_1, extraArg) = func(e, extraArg); 
-      (e_2 as Exp.CREF(cr_1,_), extraArg) = func(Exp.CREF(cr,Exp.OTHER()), extraArg); 
+      (e_2 as Exp.CREF(cr_1,_), extraArg) = func(Exp.CREF(cr,Exp.ET_OTHER()), extraArg); 
       (xs_1, extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
     then (DAE.STMT_ASSIGN_ARR(tp,cr_1,e_1) :: xs_1,extraArg);
       

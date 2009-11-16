@@ -1221,7 +1221,7 @@ algorithm
       list<InteractiveVariable> rest;
     case ((IVAR(varIdent = id,value = v,type_ = tp) :: rest),env)
       equation
-        (_,_,_,_,_,_) = Lookup.lookupVar(Env.emptyCache(),env, Exp.CREF_IDENT(id,Exp.OTHER(),{}));
+        (_,_,_,_,_,_) = Lookup.lookupVar(Env.emptyCache(),env, Exp.CREF_IDENT(id,Exp.ET_OTHER(),{}));
         env_1 = Env.updateFrameV(env,
           DAE.TYPES_VAR(id,DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
           false,tp,DAE.VALBOUND(v)), Env.VAR_TYPED(), {});
@@ -1230,7 +1230,7 @@ algorithm
         env_2;
     case ((IVAR(varIdent = id,value = v,type_ = tp) :: rest),env)
       equation
-        failure((_,_,_,_,_,_) = Lookup.lookupVar(Env.emptyCache(),env, Exp.CREF_IDENT(id,Exp.OTHER(),{})));
+        failure((_,_,_,_,_,_) = Lookup.lookupVar(Env.emptyCache(),env, Exp.CREF_IDENT(id,Exp.ET_OTHER(),{})));
         env_1 = Env.extendFrameV(env,
           DAE.TYPES_VAR(id,DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
           false,tp,DAE.VALBOUND(v)), NONE, Env.VAR_UNTYPED(), {});
@@ -19082,7 +19082,7 @@ algorithm _ := matchcontinue(inComponents,inTable)
     case({}, inTable) then inTable;
   case((Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = id)))::comps,inTable)
     equation
-      table1 = HashTable2.add((Exp.CREF_IDENT(id,Exp.OTHER(),{}),Exp.ICONST(0)),inTable);
+      table1 = HashTable2.add((Exp.CREF_IDENT(id,Exp.ET_OTHER(),{}),Exp.ICONST(0)),inTable);
       table2 = createLocalVariableStruct4(comps,table1);
       then
         table1;
@@ -19412,7 +19412,7 @@ algorithm
       compString = Absyn.printComponentRefStr(cr);
       cr = Absyn.crefStripLastSubs(cr);
       path = Absyn.crefToPath(cr);
-      failure(_ = HashTable2.get(Exp.CREF_IDENT(compString, Exp.OTHER(),{}),ht)) "do not add local variables to depndencies";
+      failure(_ = HashTable2.get(Exp.CREF_IDENT(compString, Exp.ET_OTHER(),{}),ht)) "do not add local variables to depndencies";
       (usesName as Absyn.FULLYQUALIFIED(_)) = absynMakeFullyQualified(path,optPath,cname,env,p);
       d = AbsynDep.addDependency(d,cname2,usesName);
     then ((e,(optPath,cname,(d,p,env,ht))));  

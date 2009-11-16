@@ -840,11 +840,11 @@ algorithm
       tuple<String,list<String>> enum;
       Boolean inlist;
     case ({},lst) then lst;
-    case (Exp.CREF_IDENT(_,Exp.ENUMERATION(_,p,{},_),_) :: rest,lst)
+    case (Exp.CREF_IDENT(_,Exp.ET_ENUMERATION(_,p,{},_),_) :: rest,lst)
       equation
         outlst = getEnumerationsFromCRef(rest,lst);
       then outlst;      
-    case (Exp.CREF_IDENT(_,Exp.ENUMERATION(_,p,enumelements,_),_) :: rest,lst)
+    case (Exp.CREF_IDENT(_,Exp.ET_ENUMERATION(_,p,enumelements,_),_) :: rest,lst)
       equation
         ident = getLastIdentFromPath(p);
         // check equation
@@ -857,13 +857,13 @@ algorithm
         outlst = getEnumerationsFromCRef(rest,lst1);
       then
         outlst;   
-    case (Exp.CREF_QUAL(_,Exp.ENUMERATION(_,p,{},_),_,cref) :: rest,lst)
+    case (Exp.CREF_QUAL(_,Exp.ET_ENUMERATION(_,p,{},_),_,cref) :: rest,lst)
       equation
         lst3 = getEnumerationsFromCRef({cref},lst);
         outlst = getEnumerationsFromCRef(rest,lst3);
       then
         outlst; 
-    case (Exp.CREF_QUAL(_,Exp.ENUMERATION(_,p,enumelements,_),_,cref) :: rest,lst)
+    case (Exp.CREF_QUAL(_,Exp.ET_ENUMERATION(_,p,enumelements,_),_,cref) :: rest,lst)
       equation
         ident = getLastIdentFromPath(p);
         // check equation
@@ -3375,7 +3375,7 @@ algorithm
     case ((DAELow.RESIDUAL_EQUATION(exp = e) :: es),cg_id)
       equation
         // if exp is a string just increase the index;
-        Exp.STRING() = Exp.typeof(e);
+        Exp.ET_STRING() = Exp.typeof(e);
         (cfunc,var,cg_id) = Codegen.generateExpression(e, cg_id, Codegen.simContext);
         assign = Util.stringAppendList({"localData->initialResiduals[i++] = 0;//",var,";"});
         cfunc = Codegen.cAddStatements(cfunc, {assign});
@@ -3515,7 +3515,7 @@ algorithm
         startv = DAEUtil.getStartAttr(attr);
         eqns = generateInitialEquationsFromStart(vars);
       then
-        (DAELow.EQUATION(Exp.CREF(cr,Exp.OTHER()),startv) :: eqns);
+        (DAELow.EQUATION(Exp.CREF(cr,Exp.ET_OTHER()),startv) :: eqns);
     case ((_ :: vars))
       equation
         eqns = generateInitialEquationsFromStart(vars);
@@ -3965,7 +3965,7 @@ algorithm
       DAELow.WHEN_EQUATION(DAELow.WHEN_EQ(_,cr2,exp,_)) = DAELow.equationNth(eqs,intAbs(e)-1);
       //We can asume the same component refs are solved in any else-branch.
       b1 = Exp.crefEqual(cr,cr2);
-     b2 = Exp.expContains(exp,Exp.CREF(cr,Exp.OTHER()));
+     b2 = Exp.expContains(exp,Exp.CREF(cr,Exp.ET_OTHER()));
      true = boolOr(b1,b2);
     then false;
     case(cr,daelow,_::eqns) equation
@@ -4723,7 +4723,7 @@ algorithm
         indx_1 = indx + 1;
         (cfn,cg_id_1,funcs) = generateMixedSystemDiscretePartCheck2(eqns, vs, indx_1, cg_id);
         cr = DAELow.varCref(v);
-        varexp = Exp.CREF(cr,Exp.REAL());
+        varexp = Exp.CREF(cr,Exp.ET_REAL());
         expr = Exp.solve(e1, e2, varexp);
         (exp_func,var,cg_id_2) = Codegen.generateExpression(expr, cg_id_1, Codegen.simContext);
         indx_str = intString(indx);
@@ -5107,7 +5107,7 @@ algorithm
         cr_1 = Exp.crefStripLastSubs(origname);
         // Since we use origname we need to replace '.' with '$P' manually.
         cr_1_str = Util.modelicaStringToCStr(Exp.printComponentRefStr(cr_1),true); // stringAppend("$",Util.modelicaStringToCStr(Exp.printComponentRefStr(cr_1),true));
-        cr_1 = Exp.CREF_IDENT(cr_1_str,Exp.OTHER(),{});
+        cr_1 = Exp.CREF_IDENT(cr_1_str,Exp.ET_OTHER(),{});
         (e1,e2) = solveTrivialArrayEquation(cr_1,e1,e2);
         (s1,cg_id_1,f1) = generateSingleArrayEqnCode2(cr_1, cr_1, e1, e2, cg_id);
       then
@@ -5141,7 +5141,7 @@ algorithm
         tp = Exp.typeof(e1);
         res = Exp.simplify(Exp.BINARY(e1,Exp.SUB_ARR(tp),e2));
         //print("simplified to :");print(Exp.printExpStr(res));print("\n");
-        (vTerm as Exp.CREF(_,_),rhs) = Exp.getTermsContainingX(res,Exp.CREF(v,Exp.OTHER()));
+        (vTerm as Exp.CREF(_,_),rhs) = Exp.getTermsContainingX(res,Exp.CREF(v,Exp.ET_OTHER()));
         //print("solved array equation to :");print(Exp.printExpStr(e1));print("=");
         //print(Exp.printExpStr(e2));print("\n");
       then (vTerm,rhs);
@@ -5460,7 +5460,7 @@ algorithm
       equation
         pstr = intString(pos);
         str = Util.stringAppendList({"xloc[",pstr,"]"});
-        repl_1 = VarTransform.addReplacement(repl, cr, Exp.CREF(Exp.CREF_IDENT(str,Exp.REAL(),{}),Exp.REAL()));
+        repl_1 = VarTransform.addReplacement(repl, cr, Exp.CREF(Exp.CREF_IDENT(str,Exp.ET_REAL(),{}),Exp.ET_REAL()));
         pos_1 = pos + 1;
         repl_2 = makeResidualReplacements2(repl_1, crs, pos_1);
       then
@@ -6227,7 +6227,7 @@ algorithm
         c_name = name; // adrpo: 2009-09-07 this doubles $!! c_name = Util.modelicaStringToCStr(name,true);
         res = Util.stringAppendList({DAELow.derivativeNamePrefix,c_name}) "	Util.string_append_list({\"xd{\",index_str, \"}\"}) => res" ;
       then
-        DAELow.VAR(Exp.CREF_IDENT(res,Exp.REAL(),{}),DAELow.STATE(),dir,tp,exp,v,dim,index,cr,classes,attr,comment,flowPrefix,streamPrefix);
+        DAELow.VAR(Exp.CREF_IDENT(res,Exp.ET_REAL(),{}),DAELow.STATE(),dir,tp,exp,v,dim,index,cr,classes,attr,comment,flowPrefix,streamPrefix);
         
     case (v)
       local DAELow.Var v;
@@ -6339,7 +6339,7 @@ algorithm
         (DAELow.EQUATION(e1,e2),(v as DAELow.VAR(cr,kind,_,_,_,_,_,_,origname,_,dae_var_attr,comment,flowPrefix,streamPrefix))) = 
         getEquationAndSolvedVar(e, eqns, vars, ass2) "Solving for non-states" ;
         isNonState(kind);
-        varexp = Exp.CREF(cr,Exp.REAL());
+        varexp = Exp.CREF(cr,Exp.ET_REAL());
         expr = Exp.solve(e1, e2, varexp);
         (exp_func,var,cg_id_1) = 
         Codegen.generateExpression(expr, cg_id, Codegen.CONTEXT(Codegen.SIMULATION(genDiscrete),Codegen.NORMAL(),Codegen.NO_LOOP));
@@ -6358,8 +6358,8 @@ algorithm
         // c_name = Util.modelicaStringToCStr(name,true);
         // id = Util.stringAppendList({DAELow.derivativeNamePrefix,c_name});
         id = Util.stringAppendList({DAELow.derivativeNamePrefix, name});
-        cr_1 = Exp.CREF_IDENT(id,Exp.REAL(),{});
-        varexp = Exp.CREF(cr_1,Exp.REAL());
+        cr_1 = Exp.CREF_IDENT(id,Exp.ET_REAL(),{});
+        varexp = Exp.CREF(cr_1,Exp.ET_REAL());
         expr = Exp.solve(e1, e2, varexp);
         (exp_func,var,cg_id_1) = 
         Codegen.generateExpression(expr, cg_id, Codegen.CONTEXT(Codegen.SIMULATION(genDiscrete),Codegen.NORMAL(),Codegen.NO_LOOP));
@@ -6378,8 +6378,8 @@ algorithm
         name = Exp.printComponentRefStr(cr) "	Util.string_append_list({\"xd{\",indxs,\"}\"}) => id &" ;
         c_name = name; // Util.modelicaStringToCStr(name,true);
         id = Util.stringAppendList({DAELow.derivativeNamePrefix,c_name});
-        cr_1 = Exp.CREF_IDENT(id,Exp.REAL(),{});
-        varexp = Exp.CREF(cr_1,Exp.REAL());
+        cr_1 = Exp.CREF_IDENT(id,Exp.ET_REAL(),{});
+        varexp = Exp.CREF(cr_1,Exp.ET_REAL());
         failure(_ = Exp.solve(e1, e2, varexp));
         (res,cg_id_1,f1) = generateOdeSystem2NonlinearResiduals(false,{cr_1}, {eqn},ae, cg_id);
       then
@@ -6392,7 +6392,7 @@ algorithm
         getEquationAndSolvedVar(e, eqns, vars, ass2);
         isNonState(kind);
         indxs = intString(indx);
-        varexp = Exp.CREF(cr,Exp.REAL());
+        varexp = Exp.CREF(cr,Exp.ET_REAL());
         failure(_ = Exp.solve(e1, e2, varexp));
         (res,cg_id_1,f1) = generateOdeSystem2NonlinearResiduals(false,{cr}, {eqn},ae, cg_id);
       then
@@ -8440,7 +8440,7 @@ algorithm
         v_1 = v - 1;
         ((va as DAELow.VAR(cr,kind,_,_,_,_,_,_,origname,_,dae_var_attr,comment,flowPrefix,streamPrefix))) = DAELow.vararrayNth(vararr, v_1);
         true = DAELow.isNonState(kind);
-        varexp = Exp.CREF(cr,Exp.REAL());
+        varexp = Exp.CREF(cr,Exp.ET_REAL());
         expr = Exp.solve(e1, e2, varexp);
         simplify_exp = Exp.simplify(expr);
         origname_str = Exp.printComponentRefStr(origname);
@@ -8455,7 +8455,7 @@ algorithm
         v = ass2[e_1 + 1];
         v_1 = v - 1 "v == variable no solved in this equation" ;
         DAELow.VAR(cr,kind,_,_,_,_,_,indx,origname,_,dae_var_attr,comment,flowPrefix,streamPrefix) = DAELow.vararrayNth(vararr, v_1);
-        new_varexp = Exp.CREF(cr,Exp.REAL());
+        new_varexp = Exp.CREF(cr,Exp.ET_REAL());
         expr = Exp.solve(e1, e2, new_varexp);
         simplify_exp = Exp.simplify(expr);
         origname_str = Exp.printComponentRefStr(origname);
@@ -8472,7 +8472,7 @@ algorithm
         v = ass2[e_1 + 1];
         v_1 = v - 1 "v==variable no solved in this equation" ;
         DAELow.VAR(cr,_,_,_,_,_,_,_,origname,_,dae_var_attr,comment,flowPrefix,streamPrefix) = DAELow.vararrayNth(vararr, v_1);
-        varexp = Exp.CREF(cr,Exp.REAL());
+        varexp = Exp.CREF(cr,Exp.ET_REAL());
         failure(_ = Exp.solve(e1, e2, varexp));
         print("nonlinear equation not implemented yet\n");
         s1 = Exp.printExpStr(e1);
@@ -8573,7 +8573,7 @@ algorithm
         v_1 = v - 1;
         ((va as DAELow.VAR(cr,kind,_,_,_,_,_,_,origname,_,dae_var_attr,comment,flowPrefix,streamPrefix))) = DAELow.vararrayNth(vararr, v_1);
         true = DAELow.isNonState(kind);
-        varexp = Exp.CREF(cr,Exp.REAL()) "print \"Solving for non-states\\n\" &" ;
+        varexp = Exp.CREF(cr,Exp.ET_REAL()) "print \"Solving for non-states\\n\" &" ;
         expr = Exp.solve(e1, e2, varexp);
         simplify_exp = Exp.simplify(expr);
         origname_str = Exp.printComponentRefStr(origname);
@@ -8590,10 +8590,10 @@ algorithm
         v_1 = v - 1;
         DAELow.VAR(cr,kind,_,_,_,_,_,indx,origname,_,dae_var_attr,comment,flowPrefix,streamPrefix) = DAELow.vararrayNth(vararr, v_1);
         indx_str = intString(indx);
-        exp = Exp.BINARY(e1,Exp.SUB(Exp.REAL()),e2);
+        exp = Exp.BINARY(e1,Exp.SUB(Exp.ET_REAL()),e2);
         simplify_exp = Exp.simplify(exp);
         cr_str = Util.stringAppendList({"delta[",indx_str,"]"}) "Use array named \'delta\' for residuals" ;
-        new_cr = Exp.CREF_IDENT(cr_str,Exp.REAL(),{});
+        new_cr = Exp.CREF_IDENT(cr_str,Exp.ET_REAL(),{});
         origname_str = Exp.printComponentRefStr(origname);
         (cfn,cg_id_1) = buildAssignment(dae, new_cr, simplify_exp, origname_str, cg_id);
       then
@@ -8615,7 +8615,7 @@ algorithm
         v = ass2[e_1 + 1];
         v_1 = v - 1 "v==variable no solved in this equation" ;
         DAELow.VAR(cr,_,_,_,_,_,_,_,origname,_,dae_var_attr,comment,flowPrefix,streamPrefix) = DAELow.vararrayNth(vararr, v_1);
-        varexp = Exp.CREF(cr,Exp.REAL());
+        varexp = Exp.CREF(cr,Exp.ET_REAL());
         failure(_ = Exp.solve(e1, e2, varexp));
         print("nonlinear equation not implemented yet\n");
       then
@@ -8822,10 +8822,10 @@ algorithm
 
     case (Exp.BCONST(bool = true),_) then "true";
 
-    case (Exp.CREF(Exp.CREF_IDENT(_,Exp.ENUMERATION(SOME(idx),_,_,_),_),_),_)
+    case (Exp.CREF(Exp.CREF_IDENT(_,Exp.ET_ENUMERATION(SOME(idx),_,_,_),_),_),_)
       local Integer idx; 
         then intString(idx);
-    case (Exp.CREF(Exp.CREF_QUAL(_,ty as Exp.ENUMERATION(_,_,_,_),_,c),_),pri1)
+    case (Exp.CREF(Exp.CREF_QUAL(_,ty as Exp.ET_ENUMERATION(_,_,_,_),_,c),_),pri1)
       equation 
         res = printExp2Str(Exp.CREF(c, ty),pri1);
       then
@@ -9085,7 +9085,7 @@ algorithm
       then
         res2;
 
-    case (Exp.CAST(ty = Exp.REAL(),exp = e),_)
+    case (Exp.CAST(ty = Exp.ET_REAL(),exp = e),_)
       equation
         false = RTOpts.modelicaOutput();
         s = printExpCppStr(e);
@@ -9094,7 +9094,7 @@ algorithm
       then
         s_2;
 
-    case (Exp.CAST(ty = Exp.REAL(),exp = e),_)
+    case (Exp.CAST(ty = Exp.ET_REAL(),exp = e),_)
       equation
         true = RTOpts.modelicaOutput();
         s = printExpCppStr(e);

@@ -725,7 +725,7 @@ algorithm
         exp1 = signFlow(c, f);
         exp2 = flowSum(cs);
       then
-        Exp.BINARY(exp1,Exp.ADD(Exp.REAL()),exp2);
+        Exp.BINARY(exp1,Exp.ADD(Exp.ET_REAL()),exp2);
   end matchcontinue;
 end flowSum;
 
@@ -743,8 +743,8 @@ algorithm
   outExp:=
   matchcontinue (inComponentRef,inFace)
     local Exp.ComponentRef c;
-    case (c,INNER()) then Exp.CREF(c,Exp.OTHER()); 
-    case (c,OUTER()) then Exp.UNARY(Exp.UMINUS(Exp.REAL()),Exp.CREF(c,Exp.OTHER())); 
+    case (c,INNER()) then Exp.CREF(c,Exp.ET_OTHER()); 
+    case (c,OUTER()) then Exp.UNARY(Exp.UMINUS(Exp.ET_REAL()),Exp.CREF(c,Exp.ET_OTHER())); 
   end matchcontinue;
 end signFlow;
 
@@ -1357,7 +1357,7 @@ algorithm
         dimExps = Util.listMap(dimSizes,Exp.makeIntegerExp);
         (cache,res) = generateZeroflowEquations(cache,xs,env,prefix,deletedComponents);
         cr2 = Prefix.prefixCref(prefix,cr);
-        arrType = Exp.T_ARRAY(Exp.REAL(),dimSizesOpt);
+        arrType = Exp.ET_ARRAY(Exp.ET_REAL(),dimSizesOpt);
         dimExps = {Exp.ICONST(0),Exp.ICONST(0),Exp.ICONST(0)};
         res1 = generateZeroflowArrayEquations(cr2, dimSizes, Exp.RCONST(0.0));
         res = listAppend(res1,res);
@@ -1371,7 +1371,7 @@ algorithm
         cr2 = Prefix.prefixCref(prefix,cr);
         //print(" Generated flow equation for: " +& Exp.printComponentRefStr(cr2) +& "\n");
       then
-        (cache,DAE.EQUATION(Exp.CREF(cr2,Exp.REAL()),Exp.RCONST(0.0)) :: res);
+        (cache,DAE.EQUATION(Exp.CREF(cr2,Exp.ET_REAL()),Exp.RCONST(0.0)) :: res);
   end matchcontinue;
 end generateZeroflowEquations;
 
@@ -1428,7 +1428,7 @@ algorithm
       equation
         cr = Exp.subscriptCref(cr, indexSubscriptList);        
       then
-        DAE.EQUATION(Exp.CREF(cr,Exp.REAL()), initExp);
+        DAE.EQUATION(Exp.CREF(cr,Exp.ET_REAL()), initExp);
   end matchcontinue;
 end genZeroEquation;
 

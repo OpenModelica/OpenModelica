@@ -1021,7 +1021,7 @@ algorithm
     case (v,e,false) then (v,e);
     case (vars,eqns,true) /* TODO::The dummy variable must be fixed */
       equation
-        vars_1 = addVar(VAR(Exp.CREF_IDENT("$dummy",Exp.REAL(),{}), STATE(),DAE.BIDIR(),REAL(),NONE,NONE,{},-1,Exp.CREF_IDENT("$dummy",Exp.REAL(),{}),{},
+        vars_1 = addVar(VAR(Exp.CREF_IDENT("$dummy",Exp.ET_REAL(),{}), STATE(),DAE.BIDIR(),REAL(),NONE,NONE,{},-1,Exp.CREF_IDENT("$dummy",Exp.ET_REAL(),{}),{},
                             SOME(DAE.VAR_ATTR_REAL(NONE,NONE,NONE,(NONE,NONE),NONE,SOME(Exp.BCONST(true)),NONE,NONE,NONE,NONE,NONE)),
                             NONE,DAE.NON_CONNECTOR(),DAE.NON_STREAM()), vars);
       then
@@ -1031,16 +1031,16 @@ algorithm
          * (which would happen if der(dymmy) = 0) when using automatic, we have a osciallating derivative.
         (vars_1,(EQUATION(
           Exp.CALL(Absyn.IDENT("der"),
-          {Exp.CREF(Exp.CREF_IDENT("$dummy",{}),Exp.REAL())},false,true,Exp.REAL()),
+          {Exp.CREF(Exp.CREF_IDENT("$dummy",{}),Exp.ET_REAL())},false,true,Exp.ET_REAL()),
           Exp.CALL(Absyn.IDENT("sin"),{Exp.BINARY(
-          	Exp.CREF(Exp.CREF_IDENT("time",{}),Exp.REAL()),
-          	Exp.MUL(Exp.REAL()),
-          	Exp.RCONST(628.318530717))},false,true,Exp.REAL()))  :: eqns)); */          	
+          	Exp.CREF(Exp.CREF_IDENT("time",{}),Exp.ET_REAL()),
+          	Exp.MUL(Exp.ET_REAL()),
+          	Exp.RCONST(628.318530717))},false,true,Exp.ET_REAL()))  :: eqns)); */          	
         /*
          *          
          * adrpo: after a bit of talk with Francesco Casella & Peter Aronsson we will add der($dummy) = 0; 
          */
-        (vars_1,(EQUATION(Exp.CALL(Absyn.IDENT("der"),{Exp.CREF(Exp.CREF_IDENT("$dummy",Exp.REAL(),{}),Exp.REAL())},false,true,Exp.REAL(),false),
+        (vars_1,(EQUATION(Exp.CALL(Absyn.IDENT("der"),{Exp.CREF(Exp.CREF_IDENT("$dummy",Exp.ET_REAL(),{}),Exp.ET_REAL())},false,true,Exp.ET_REAL(),false),
                           Exp.RCONST(0.0))  :: eqns));
 
   end matchcontinue;
@@ -1464,7 +1464,7 @@ algorithm
       then
         res;
         /* enumerations */
-    case (Exp.CREF(Exp.CREF_IDENT(_, Exp.ENUMERATION(_,_,_,_), _),_),vars,knvars) then true;
+    case (Exp.CREF(Exp.CREF_IDENT(_, Exp.ET_ENUMERATION(_,_,_,_), _),_),vars,knvars) then true;
 //    case (Exp.CREF(Exp.CREF_IDENT(_, Exp.ENUM(), _),_),vars,knvars) then true;
               
     case (Exp.BINARY(exp1 = e1,operator = op,exp2 = e2),vars,knvars)
@@ -1604,7 +1604,7 @@ algorithm
       b = Util.boolAndList(Util.listMap2(expl,isDiscreteExp,vars,knvars));
     then b;
     case(SOLVED_EQUATION(cr,e2),vars,knvars) equation
-      b = boolAnd(isDiscreteExp(Exp.CREF(cr,Exp.OTHER()),vars,knvars), isDiscreteExp(e2,vars,knvars));
+      b = boolAnd(isDiscreteExp(Exp.CREF(cr,Exp.ET_OTHER()),vars,knvars), isDiscreteExp(e2,vars,knvars));
     then b;
     case(RESIDUAL_EQUATION(e1),vars,knvars) equation
       b = isDiscreteExp(e1,vars,knvars);
@@ -3195,7 +3195,7 @@ algorithm
       then
         ((
           Exp.CALL(Absyn.IDENT("der"),{Exp.CREF(Exp.CREF_IDENT(id_1,ty,s),tp)},
-          false,true,Exp.REAL(),false),str));
+          false,true,Exp.ET_REAL(),false),str));
     case ((e,str)) then ((e,str));
   end matchcontinue;
 end renameDerivativesExp;
@@ -4570,7 +4570,7 @@ algorithm
         (v_1,SOME(e1)) = lowerVar(v, states);
         vars_1 = addVar(v_1, vars);
       then
-        (vars_1,knvars,extVars,EQUATION(Exp.CREF(cr, Exp.OTHER()), e1)::eqns,reqns,ieqns,aeqns,algs,whenclauses_1,extObjCls);
+        (vars_1,knvars,extVars,EQUATION(Exp.CREF(cr, Exp.ET_OTHER()), e1)::eqns,reqns,ieqns,aeqns,algs,whenclauses_1,extObjCls);
 
     // variables: states and algebraic variables with NO binding equation!
     case (DAE.DAE(elementLst = ((v as DAE.VAR(componentRef = cr)) :: xs)),states,vars,knvars,extVars,whenclauses)
@@ -4780,10 +4780,10 @@ algorithm
       list<Exp.Exp> expl;
       /* Only succeds for tuple equations, i.e. (a,b,c) = foo(x,y,z) or foo(x,y,z) = (a,b,c) */
     case(DAE.EQUATION(Exp.TUPLE(expl),e2 as Exp.CALL(path =_)))
-    then DAE.ALGORITHM_STMTS({DAE.STMT_TUPLE_ASSIGN(Exp.OTHER(),expl,e2)});
+    then DAE.ALGORITHM_STMTS({DAE.STMT_TUPLE_ASSIGN(Exp.ET_OTHER(),expl,e2)});
 
     case(DAE.EQUATION(e2 as Exp.CALL(path =_),Exp.TUPLE(expl)))
-    then DAE.ALGORITHM_STMTS({DAE.STMT_TUPLE_ASSIGN(Exp.OTHER(),expl,e2)});
+    then DAE.ALGORITHM_STMTS({DAE.STMT_TUPLE_ASSIGN(Exp.ET_OTHER(),expl,e2)});
   end matchcontinue;
 end lowerTupleEquation;
 
@@ -5099,7 +5099,7 @@ algorithm
       equation
         inputs = statesAndVarsExp(e,vars);
         crefs = Util.listFlatten(Util.listMap(expl,Exp.getCrefFromExp));
-        outputs =  Util.listMap1(crefs,Exp.makeCrefExp,Exp.OTHER());
+        outputs =  Util.listMap1(crefs,Exp.makeCrefExp,Exp.ET_OTHER());
       then
         (inputs,outputs);
         // v := expr   where v is array.
@@ -5345,15 +5345,15 @@ algorithm
         EQUATION(e1_2,e2_2);
     case (DAE.EQUEQUATION(cr1,cr2))
       equation
-        e1_1 = Exp.simplify(Exp.CREF(cr1, Exp.OTHER()));
-        e2_1 = Exp.simplify(Exp.CREF(cr2, Exp.OTHER()));
+        e1_1 = Exp.simplify(Exp.CREF(cr1, Exp.ET_OTHER()));
+        e2_1 = Exp.simplify(Exp.CREF(cr2, Exp.ET_OTHER()));
         e1_2 = Exp.stringifyCrefs(e1_1);
         e2_2 = Exp.stringifyCrefs(e2_1);
       then
         EQUATION(e1_2,e2_2);
     case (DAE.DEFINE(cr1,e1))
       equation
-        e1_1 = Exp.simplify(Exp.CREF(cr1, Exp.OTHER()));
+        e1_1 = Exp.simplify(Exp.CREF(cr1, Exp.ET_OTHER()));
         e2_1 = Exp.simplify(e1);
         e1_2 = Exp.stringifyCrefs(e1_1);
         e2_2 = Exp.stringifyCrefs(e2_1);
@@ -5361,7 +5361,7 @@ algorithm
         EQUATION(e1_2,e2_2);
     case (DAE.INITIALDEFINE(cr1,e1))
       equation
-        e1_1 = Exp.simplify(Exp.CREF(cr1, Exp.OTHER()));
+        e1_1 = Exp.simplify(Exp.CREF(cr1, Exp.ET_OTHER()));
         e2_1 = Exp.simplify(e1);
         e1_2 = Exp.stringifyCrefs(e1_1);
         e2_2 = Exp.stringifyCrefs(e2_1);
@@ -5875,14 +5875,14 @@ algorithm
         res;
     case (vars,SOLVED_EQUATION(componentRef = cr,exp = e)) /* SOLVED_EQUATION */
       equation
-        lst1 = incidenceRowExp(Exp.CREF(cr,Exp.REAL()), vars);
+        lst1 = incidenceRowExp(Exp.CREF(cr,Exp.ET_REAL()), vars);
         lst2 = incidenceRowExp(e, vars);
         res = listAppend(lst1, lst2);
       then
         res;
     case (vars,SOLVED_EQUATION(componentRef = cr,exp = e)) /* SOLVED_EQUATION */
       equation
-        lst1 = incidenceRowExp(Exp.CREF(cr,Exp.REAL()), vars);
+        lst1 = incidenceRowExp(Exp.CREF(cr,Exp.ET_REAL()), vars);
         lst2 = incidenceRowExp(e, vars);
         res = listAppend(lst1, lst2);
       then
@@ -5895,7 +5895,7 @@ algorithm
     case (vars,WHEN_EQUATION(whenEquation = we)) /* WHEN_EQUATION */
       equation
         (cr,e2) = getWhenEquationExpr(we);
-        e1 = Exp.CREF(cr,Exp.OTHER());
+        e1 = Exp.CREF(cr,Exp.ET_OTHER());
         lst1 = incidenceRowExp(e1, vars);
         lst2 = incidenceRowExp(e2, vars);
         res = listAppend(lst1, lst2);
@@ -5967,7 +5967,7 @@ algorithm
       equation
         lst1 = incidenceRowStmts(rest, vars);
         lst2 = incidenceRowExp(e, vars);
-        lst3 = incidenceRowExp(Exp.CREF(cr,Exp.OTHER()), vars);
+        lst3 = incidenceRowExp(Exp.CREF(cr,Exp.ET_OTHER()), vars);
         res = Util.listFlatten({lst1,lst2,lst3});
       then
         res;
@@ -8416,9 +8416,9 @@ algorithm
       WhenEquation elsepart;
     case (st,dummyder,EQUATION(exp = e1,scalar = e2))
       equation
-        dercall = Exp.CALL(Absyn.IDENT("der"),{Exp.CREF(st,Exp.REAL())},false,true,Exp.REAL(),false) "scalar equation" ;
-        (e1_1,_) = Exp.replaceExp(e1, dercall, Exp.CREF(dummyder,Exp.REAL()));
-        (e2_1,_) = Exp.replaceExp(e2, dercall, Exp.CREF(dummyder,Exp.REAL()));
+        dercall = Exp.CALL(Absyn.IDENT("der"),{Exp.CREF(st,Exp.ET_REAL())},false,true,Exp.ET_REAL(),false) "scalar equation" ;
+        (e1_1,_) = Exp.replaceExp(e1, dercall, Exp.CREF(dummyder,Exp.ET_REAL()));
+        (e2_1,_) = Exp.replaceExp(e2, dercall, Exp.CREF(dummyder,Exp.ET_REAL()));
       then
         EQUATION(e1_1,e2_1);
     case (st,dummyder,ARRAY_EQUATION(index = ds,crefOrDerCref = expl)) /* TODO: We need to go through MultiDimEquation array here.. */  
@@ -8427,15 +8427,15 @@ algorithm
       then ALGORITHM(indx,in_,out);  /* Algorithms */
     case (st,dummyder,WHEN_EQUATION(whenEquation = WHEN_EQ(index = i,left = cr,right = e1,elsewhenPart=NONE)))
       equation
-        dercall = Exp.CALL(Absyn.IDENT("der"),{Exp.CREF(st,Exp.REAL())},false,true,Exp.REAL(),false);
-        (e1_1,_) = Exp.replaceExp(e1, dercall, Exp.CREF(dummyder,Exp.REAL()));
+        dercall = Exp.CALL(Absyn.IDENT("der"),{Exp.CREF(st,Exp.ET_REAL())},false,true,Exp.ET_REAL(),false);
+        (e1_1,_) = Exp.replaceExp(e1, dercall, Exp.CREF(dummyder,Exp.ET_REAL()));
         res = WHEN_EQUATION(WHEN_EQ(i,cr,e1_1,NONE));
       then
         res;
     case (st,dummyder,WHEN_EQUATION(whenEquation = WHEN_EQ(index = i,left = cr,right = e1,elsewhenPart=SOME(elsepart))))
       equation
-        dercall = Exp.CALL(Absyn.IDENT("der"),{Exp.CREF(st,Exp.REAL())},false,true,Exp.REAL(),false);
-        (e1_1,_) = Exp.replaceExp(e1, dercall, Exp.CREF(dummyder,Exp.REAL()));
+        dercall = Exp.CALL(Absyn.IDENT("der"),{Exp.CREF(st,Exp.ET_REAL())},false,true,Exp.ET_REAL(),false);
+        (e1_1,_) = Exp.replaceExp(e1, dercall, Exp.CREF(dummyder,Exp.ET_REAL()));
         WHEN_EQUATION(elsepartRes) = replaceDummyDer2(st,dummyder, WHEN_EQUATION(elsepart));
         res = WHEN_EQUATION(WHEN_EQ(i,cr,e1_1,SOME(elsepartRes)));
       then
@@ -8612,7 +8612,7 @@ algorithm
         dummyder_1 = createDummyVar(dummyder);
         vars_1 = addVar(VAR(dummyder_1,DUMMY_DER(),a,b,NONE,NONE,e,0,dummyder_1,i,dae_var_attr,comment,flowPrefix,streamPrefix), vars);
       then
-        (Exp.CREF(dummyder_1,Exp.REAL()),vars_1);
+        (Exp.CREF(dummyder_1,Exp.ET_REAL()),vars_1);
         
     case (Exp.CALL(path = Absyn.IDENT(name = "der"),expLst = {Exp.CREF(componentRef = cr)}),vars)
       local list<Exp.Subscript> e;
@@ -8621,7 +8621,7 @@ algorithm
         dummyder = createDummyVar(cr);
         vars_1 = addVar(VAR(dummyder,DUMMY_DER(),a,b,NONE,NONE,e,0,dummyder,i,dae_var_attr,comment,flowPrefix,streamPrefix), vars);
       then
-        (Exp.CREF(dummyder,Exp.REAL()),vars_1);
+        (Exp.CREF(dummyder,Exp.ET_REAL()),vars_1);
         
     case (Exp.CALL(path = Absyn.IDENT(name = "der"),expLst = {Exp.CREF(componentRef = cr)}),vars)
       local list<Exp.Subscript> e;
@@ -8630,7 +8630,7 @@ algorithm
         dummyder = createDummyVar(cr);
         vars_1 = addVar(VAR(dummyder,DUMMY_DER(),a,b,NONE,NONE,e,0,dummyder,i,dae_var_attr,comment,flowPrefix,streamPrefix), vars);
       then
-        (Exp.CREF(dummyder,Exp.REAL()),vars_1);
+        (Exp.CREF(dummyder,Exp.ET_REAL()),vars_1);
         
     case (e,vars) then (e,vars);
       
@@ -10869,7 +10869,7 @@ algorithm
     case (REINIT(stateVar = cr,value = e),s,t)
       equation
         (e_1,_) = Exp.replaceExpList(e, s, t);
-        (Exp.CREF(cr_1,_),_) = Exp.replaceExpList(Exp.CREF(cr,Exp.OTHER()), s, t);
+        (Exp.CREF(cr_1,_),_) = Exp.replaceExpList(Exp.CREF(cr,Exp.ET_OTHER()), s, t);
       then
         REINIT(cr_1,e_1);
   end matchcontinue;
@@ -11814,7 +11814,7 @@ algorithm
     case (ARRAY_EQUATION(index = indx,crefOrDerCref = expl),vars,ae,m,mt,eqn_indx,differentiateIfExp) /* array equations */
       equation
         MULTIDIM_EQUATION(ds,e1,e2) = ae[indx + 1];
-        new_exp = Exp.BINARY(e1,Exp.SUB(Exp.REAL()),e2);
+        new_exp = Exp.BINARY(e1,Exp.SUB(Exp.ET_REAL()),e2);
         var_indxs = varsInEqn(m, eqn_indx);
         var_indxs_1 = Util.listUnionOnTrue(var_indxs, {}, int_eq) "Remove duplicates and get in correct order: acsending index" ;
         var_indxs_2 = listReverse(var_indxs_1);
@@ -12197,14 +12197,14 @@ algorithm
         (EQUATION(e1_1,e2_1) :: es_1);
     case ((SOLVED_EQUATION(componentRef = cr,exp = e1) :: es),s,t)
       equation
-        (Exp.CREF(cr_1,_),_) = Exp.replaceExpList(Exp.CREF(cr,Exp.OTHER()), s, t);
+        (Exp.CREF(cr_1,_),_) = Exp.replaceExpList(Exp.CREF(cr,Exp.ET_OTHER()), s, t);
         (e1_1,_) = Exp.replaceExpList(e1, s, t);
         es_1 = replaceVariables(es, s, t);
       then
         (SOLVED_EQUATION(cr_1,e1_1) :: es_1);
     case ((WHEN_EQUATION(whenEquation = WHEN_EQ(index = i,left = cr,right = e2, elsewhenPart = NONE)) :: es),s,t)
       equation
-        e1 = Exp.CREF(cr,Exp.OTHER());
+        e1 = Exp.CREF(cr,Exp.ET_OTHER());
         ((e1_1 as Exp.CREF(cr_1,_)),_) = Exp.replaceExpList(e1, s, t);
         (e2_1,_) = Exp.replaceExpList(e2, s, t);
         es_1 = replaceVariables(es, s, t);
@@ -12214,7 +12214,7 @@ algorithm
     case ((WHEN_EQUATION(whenEquation = WHEN_EQ(index = i,left = cr,right = e2, elsewhenPart = SOME(elsePart))) :: es),s,t)
       equation
         WHEN_EQUATION(elsePartRes) = Util.listFirst(replaceVariables({WHEN_EQUATION(elsePart)},s,t));
-        e1 = Exp.CREF(cr,Exp.OTHER());
+        e1 = Exp.CREF(cr,Exp.ET_OTHER());
         ((e1_1 as Exp.CREF(cr_1,_)),_) = Exp.replaceExpList(e1, s, t);
         (e2_1,_) = Exp.replaceExpList(e2, s, t);
         es_1 = replaceVariables(es, s, t);
@@ -12687,7 +12687,7 @@ algorithm
         etp = makeExpType(tp);
         (s1,t1) = algVariableArrayReplacements(vs);
       then
-        ((Exp.CREF(cr_1,etp) :: s1),(Exp.CREF(Exp.CREF_IDENT(newid,etp,{}),Exp.T_ARRAY(etp,int_dims)) :: t1));
+        ((Exp.CREF(cr_1,etp) :: s1),(Exp.CREF(Exp.CREF_IDENT(newid,etp,{}),Exp.ET_ARRAY(etp,int_dims)) :: t1));
     case ((_ :: vs))
       equation
         (s1,t1) = algVariableArrayReplacements(vs);
@@ -12780,8 +12780,8 @@ algorithm
         newid = Util.stringAppendList({derivativeNamePrefix, c_name}); // "$",c_name})  ;
         // Derivatives are always or REAL type
       then
-        ((Exp.CALL(Absyn.IDENT("der"),{Exp.CREF(s,Exp.REAL())},false,true,Exp.REAL(),false) :: s1),
-        (Exp.CREF(Exp.CREF_IDENT(newid,Exp.REAL(),{}),Exp.REAL()) :: t1));
+        ((Exp.CALL(Absyn.IDENT("der"),{Exp.CREF(s,Exp.ET_REAL())},false,true,Exp.ET_REAL(),false) :: s1),
+        (Exp.CREF(Exp.CREF_IDENT(newid,Exp.ET_REAL(),{}),Exp.ET_REAL()) :: t1));
     case (_)
       equation
         print("-derivative_replacements failed\n");
@@ -13589,7 +13589,7 @@ algorithm
         id_1 = Util.modelicaStringToCStr(name,true);
         id = Util.stringAppendList({var_prefix, id_1}); // "$",id_1});
       then
-        Exp.CREF_IDENT(id,Exp.OTHER(),{});
+        Exp.CREF_IDENT(id,Exp.ET_OTHER(),{});
   end matchcontinue;
 end transformVariable;
 
@@ -14557,7 +14557,7 @@ algorithm
         true = isAlgebraic(stop);
       then
         true;
-    case (Exp.CAST(ty = Exp.REAL(),exp = e)) then true;
+    case (Exp.CAST(ty = Exp.ET_REAL(),exp = e)) then true;
     case (Exp.ASUB(exp = e,sub = sub))
       equation
         true = isAlgebraic(e);
@@ -14703,7 +14703,7 @@ protected function getAllExpsVar "function: getAllExpsVar
   author: PA
 
   Helper to get_all_exps_vars. Get all exps from a  Var.
-  Exp.OTHER is used as type for componentref. Not important here.
+  Exp.ET_OTHER is used as type for componentref. Not important here.
   We only use the exp list for finding function calls
 "
   input Var inVar;
@@ -14742,7 +14742,7 @@ algorithm
         e1 = Util.optionToList(bndexp);
         e3 = Util.listMap(instdims, getAllExpsSubscript);
         e3 = Util.listFlatten(e3);
-        exps = Util.listFlatten({e1,e3,{Exp.CREF(cref,Exp.OTHER())}});
+        exps = Util.listFlatten({e1,e3,{Exp.CREF(cref,Exp.ET_OTHER())}});
       then
         exps;
   end matchcontinue;
@@ -15018,12 +15018,12 @@ algorithm
   outType := matchcontinue(inType)
     local
       list<String> strLst;
-    case REAL() then Exp.REAL();
-    case INT() then Exp.INT();
-    case BOOL() then Exp.BOOL();
-    case STRING() then Exp.STRING();
-    case ENUMERATION(strLst) then Exp.ENUMERATION(NONE(),Absyn.IDENT(""),strLst,{});
-    case EXT_OBJECT(_) then Exp.OTHER();
+    case REAL() then Exp.ET_REAL();
+    case INT() then Exp.ET_INT();
+    case BOOL() then Exp.ET_BOOL();
+    case STRING() then Exp.ET_STRING();
+    case ENUMERATION(strLst) then Exp.ET_ENUMERATION(NONE(),Absyn.IDENT(""),strLst,{});
+    case EXT_OBJECT(_) then Exp.ET_OTHER();
   end matchcontinue;
 end makeExpType;
 

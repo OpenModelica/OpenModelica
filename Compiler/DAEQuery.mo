@@ -568,14 +568,14 @@ algorithm
         res;
     case (vars,DAELow.SOLVED_EQUATION(componentRef = cr,exp = e)) /* SOLVED_EQUATION */
       equation
-        lst1 = incidenceRowExp(Exp.CREF(cr,Exp.REAL()), vars);
+        lst1 = incidenceRowExp(Exp.CREF(cr,Exp.ET_REAL()), vars);
         lst2 = incidenceRowExp(e, vars);
         res = listAppend(lst1, lst2);
       then
         res;
     case (vars,DAELow.SOLVED_EQUATION(componentRef = cr,exp = e)) /* SOLVED_EQUATION */
       equation
-        lst1 = incidenceRowExp(Exp.CREF(cr,Exp.REAL()), vars);
+        lst1 = incidenceRowExp(Exp.CREF(cr,Exp.ET_REAL()), vars);
         lst2 = incidenceRowExp(e, vars);
         res = listAppend(lst1, lst2);
       then
@@ -588,7 +588,7 @@ algorithm
     case (vars,DAELow.WHEN_EQUATION(whenEquation = we)) /* WHEN_EQUATION */
       equation
         (cr,e2) = DAELow.getWhenEquationExpr(we);
-        e1 = Exp.CREF(cr,Exp.OTHER());
+        e1 = Exp.CREF(cr,Exp.ET_OTHER());
         lst1 = incidenceRowExp(e1, vars);
         lst2 = incidenceRowExp(e2, vars);
         res = listAppend(lst1, lst2);
@@ -660,7 +660,7 @@ algorithm
       equation
         lst1 = incidenceRowStmts(rest, vars);
         lst2 = incidenceRowExp(e, vars);
-        lst3 = incidenceRowExp(Exp.CREF(cr,Exp.OTHER()), vars);
+        lst3 = incidenceRowExp(Exp.CREF(cr,Exp.ET_OTHER()), vars);
         res = Util.listFlatten({lst1,lst2,lst3});
       then
         res;
@@ -1160,14 +1160,14 @@ algorithm
         s = Util.stringAppendList({s1_1,":",s2_1,":",s3_1});
       then
         s;
-    case (Exp.CAST(ty = Exp.REAL(),exp = Exp.ICONST(integer = ival)))
+    case (Exp.CAST(ty = Exp.ET_REAL(),exp = Exp.ICONST(integer = ival)))
       equation
         false = RTOpts.modelicaOutput();
         rval = intReal(ival);
         res = realString(rval);
       then
         res;
-    case (Exp.CAST(ty = Exp.REAL(),exp = Exp.UNARY(operator = Exp.UMINUS(ty = _),exp = Exp.ICONST(integer = ival))))
+    case (Exp.CAST(ty = Exp.ET_REAL(),exp = Exp.UNARY(operator = Exp.UMINUS(ty = _),exp = Exp.ICONST(integer = ival))))
       equation
         false = RTOpts.modelicaOutput();
         rval = intReal(ival);
@@ -1175,14 +1175,14 @@ algorithm
         res2 = stringAppend("-", res);
       then
         res2;
-    case (Exp.CAST(ty = Exp.REAL(),exp = e))
+    case (Exp.CAST(ty = Exp.ET_REAL(),exp = e))
       equation
         false = RTOpts.modelicaOutput();
         s = printExpStr(e);
         s_2 = Util.stringAppendList({"Real(",s,")"});
       then
         s_2;
-    case (Exp.CAST(ty = Exp.REAL(),exp = e))
+    case (Exp.CAST(ty = Exp.ET_REAL(),exp = e))
       equation
         true = RTOpts.modelicaOutput();
         s = printExpStr(e);

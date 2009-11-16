@@ -600,7 +600,7 @@ algorithm
         havereal = Types.containReal(tps_2);                
         (cache,mexp,DAE.PROP(t,c),dim1,dim2) 
         = elabMatrixSemi(cache,env, es, impl, st, havereal, nmax,doVect);
-        mexp = Util.if_(havereal,Exp.CAST(Exp.T_ARRAY(Exp.REAL(),{dim1,dim2}),mexp)
+        mexp = Util.if_(havereal,Exp.CAST(Exp.ET_ARRAY(Exp.ET_REAL(),{dim1,dim2}),mexp)
           , mexp);
         mexp=Exp.simplify(mexp); // to propagate cast down to scalar elts
         mexp_1 = elabMatrixToMatrixExp(mexp);
@@ -729,7 +729,7 @@ algorithm
     equation
       t = (DAE.T_LIST((DAE.T_NOTYPE,NONE)),NONE);
       prop = DAE.PROP(t,DAE.C_VAR());
-    then (cache,Exp.LIST(Exp.T_LIST(Exp.OTHER()),{}),prop,st);
+    then (cache,Exp.LIST(Exp.ET_LIST(Exp.ET_OTHER()),{}),prop,st);
 
   case (cache,env,Absyn.LIST(es),impl,st,doVect)
     local
@@ -793,7 +793,7 @@ algorithm
       Types.Properties prop;
       Types.Const c;
     case (cache,env,{},prop,_,st,_)
-      then (cache,Exp.LIST(Exp.OTHER(),{}),prop,st);
+      then (cache,Exp.LIST(Exp.ET_OTHER(),{}),prop,st);
     case (cache,env,expList,prop as DAE.PROP((DAE.T_LIST(t),_),c),impl,st,doVect)
       local
         list<Absyn.Exp> expList;
@@ -1406,7 +1406,7 @@ algorithm
     Exp.Exp e1;
     case({},e,id) then {};
     case(Values.INTEGER(i)::valLst,e,id) equation
-      (e1,_) = Exp.replaceExp(e,Exp.CREF(Exp.CREF_IDENT(id,Exp.OTHER(),{}),Exp.OTHER()),Exp.ICONST(i));
+      (e1,_) = Exp.replaceExp(e,Exp.CREF(Exp.CREF_IDENT(id,Exp.ET_OTHER(),{}),Exp.ET_OTHER()),Exp.ICONST(i));
       expl = elabCallReduction2(valLst,e,id);
     then e1::expl;
   end matchcontinue;
@@ -1428,11 +1428,11 @@ algorithm
       Exp.Exp e1,e2,e;
       Absyn.Path funcname;
       Types.Const c;
-    case (Exp.BINARY(exp1 = e1,operator = Exp.USERDEFINED(fqName = funcname),exp2 = e2),c) then Exp.CALL(funcname,{e1,e2},false,false,Exp.OTHER(),false); 
-    case (Exp.UNARY(operator = Exp.USERDEFINED(fqName = funcname),exp = e1),c) then Exp.CALL(funcname,{e1},false,false,Exp.OTHER(),false); 
-    case (Exp.LBINARY(exp1 = e1,operator = Exp.USERDEFINED(fqName = funcname),exp2 = e2),c) then Exp.CALL(funcname,{e1,e2},false,false,Exp.OTHER(),false); 
-    case (Exp.LUNARY(operator = Exp.USERDEFINED(fqName = funcname),exp = e1),c) then Exp.CALL(funcname,{e1},false,false,Exp.OTHER(),false); 
-    case (Exp.RELATION(exp1 = e1,operator = Exp.USERDEFINED(fqName = funcname),exp2 = e2),c) then Exp.CALL(funcname,{e1,e2},false,false,Exp.OTHER(),false); 
+    case (Exp.BINARY(exp1 = e1,operator = Exp.USERDEFINED(fqName = funcname),exp2 = e2),c) then Exp.CALL(funcname,{e1,e2},false,false,Exp.ET_OTHER(),false); 
+    case (Exp.UNARY(operator = Exp.USERDEFINED(fqName = funcname),exp = e1),c) then Exp.CALL(funcname,{e1},false,false,Exp.ET_OTHER(),false); 
+    case (Exp.LBINARY(exp1 = e1,operator = Exp.USERDEFINED(fqName = funcname),exp2 = e2),c) then Exp.CALL(funcname,{e1,e2},false,false,Exp.ET_OTHER(),false); 
+    case (Exp.LUNARY(operator = Exp.USERDEFINED(fqName = funcname),exp = e1),c) then Exp.CALL(funcname,{e1},false,false,Exp.ET_OTHER(),false); 
+    case (Exp.RELATION(exp1 = e1,operator = Exp.USERDEFINED(fqName = funcname),exp2 = e2),c) then Exp.CALL(funcname,{e1,e2},false,false,Exp.ET_OTHER(),false); 
     case (e,_) then e; 
   end matchcontinue;
 end replaceOperatorWithFcall;
@@ -1680,21 +1680,21 @@ algorithm
     local
       Exp.Exp e1,e3,e2,e1_1,e3_1,e2_1;
       tuple<Types.TType, Option<Absyn.Path>> t1,t3,t2;
-    case ((e1,(DAE.T_INTEGER(varLstInt = _),_)),NONE,(e3,(DAE.T_INTEGER(varLstInt = _),_))) then (e1,NONE,e3,Exp.INT()); 
-    case ((e1,(DAE.T_INTEGER(varLstInt = _),_)),SOME((e2,(DAE.T_INTEGER(_),_))),(e3,(DAE.T_INTEGER(varLstInt = _),_))) then (e1,SOME(e2),e3,Exp.INT()); 
+    case ((e1,(DAE.T_INTEGER(varLstInt = _),_)),NONE,(e3,(DAE.T_INTEGER(varLstInt = _),_))) then (e1,NONE,e3,Exp.ET_INT()); 
+    case ((e1,(DAE.T_INTEGER(varLstInt = _),_)),SOME((e2,(DAE.T_INTEGER(_),_))),(e3,(DAE.T_INTEGER(varLstInt = _),_))) then (e1,SOME(e2),e3,Exp.ET_INT()); 
     case ((e1,t1),NONE,(e3,t3))
       equation 
         ({e1_1,e3_1},_) = elabArglist({(DAE.T_REAL({}),NONE),(DAE.T_REAL({}),NONE)}, 
           {(e1,t1),(e3,t3)});
       then
-        (e1_1,NONE,e3_1,Exp.REAL());
+        (e1_1,NONE,e3_1,Exp.ET_REAL());
     case ((e1,t1),SOME((e2,t2)),(e3,t3))
       equation 
         ({e1_1,e2_1,e3_1},_) = elabArglist(
           {(DAE.T_REAL({}),NONE),(DAE.T_REAL({}),NONE),
           (DAE.T_REAL({}),NONE)}, {(e1,t1),(e2,t2),(e3,t3)});
       then
-        (e1_1,SOME(e2_1),e3_1,Exp.REAL());
+        (e1_1,SOME(e2_1),e3_1,Exp.ET_REAL());
   end matchcontinue;
 end deoverloadRange;
 
@@ -1772,10 +1772,10 @@ algorithm
       then
         (cache,(
           DAE.T_ARRAY(DAE.DIM(SOME(n_2)),(DAE.T_REAL({}),NONE)),NONE));
-    case (cache,_,_,_,_,const,Exp.INT(),(impl as true)) 
+    case (cache,_,_,_,_,const,Exp.ET_INT(),(impl as true)) 
     then (cache,(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_INTEGER({}),NONE)), NONE)); 
     
-    case (cache,_,_,_,_,const,Exp.REAL(),(impl as true)) 
+    case (cache,_,_,_,_,const,Exp.ET_REAL(),(impl as true)) 
     then (cache,(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_REAL({}),NONE)),NONE)); 
     
     case (cache,env,start,step,stop,const,expty,impl)
@@ -2570,14 +2570,14 @@ algorithm
         false = Types.isArray(tp);
         at = Exp.typeof(e);
       then
-        Exp.ARRAY(Exp.T_ARRAY(at,{SOME(1)}),true,{e});
+        Exp.ARRAY(Exp.ET_ARRAY(at,{SOME(1)}),true,{e});
     case (e,(_,(DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(1)),arrayType = tp2),_))) /* arrays of one dimension can be promoted from a to {a} */ 
       local Exp.Type at;
       equation 
         at = Exp.typeof(e);
         false = Types.isArray(tp2);
       then
-        Exp.ARRAY(Exp.T_ARRAY(at,{SOME(1)}),true,{e});
+        Exp.ARRAY(Exp.ET_ARRAY(at,{SOME(1)}),true,{e});
     case (e,(n,tp)) /* fallback, use \"builtin\" operator promote */ 
       local Exp.Type etp,tp1;
       equation 
@@ -2762,7 +2762,7 @@ algorithm
       equation 
         (cache,(exp_1 as Exp.CREF(cr_1,_)),DAE.PROP(tp1,_),_) = elabExp(cache,env, exp, impl, NONE,true);
       then
-        (cache,Exp.CALL(Absyn.IDENT("cardinality"),{exp_1},false,true,Exp.INT(),false),DAE.PROP((DAE.T_INTEGER({}),NONE),DAE.C_CONST()));
+        (cache,Exp.CALL(Absyn.IDENT("cardinality"),{exp_1},false,true,Exp.ET_INT(),false),DAE.PROP((DAE.T_INTEGER({}),NONE),DAE.C_CONST()));
   end matchcontinue;
 end elabBuiltinCardinality;
 
@@ -3680,7 +3680,7 @@ algorithm
       equation
         (cache,s1_1,DAE.PROP((DAE.T_UNIONTYPE(_),_),c),_) = elabExp(cache, env, s1, impl, NONE, true);
         expList = {s1_1, Exp.ICONST(i), Exp.ICONST(numFields), Exp.SCONST(s)};
-        s1_1 = Exp.CALL(Absyn.IDENT("mmc_uniontype_metarecord_typedef_equal"), expList, false, true, Exp.BOOL,false);
+        s1_1 = Exp.CALL(Absyn.IDENT("mmc_uniontype_metarecord_typedef_equal"), expList, false, true, Exp.ET_BOOL,false);
       then
         (cache,s1_1,DAE.PROP((DAE.T_BOOL({}),NONE),c));
     case (_,_,_,_,_)
@@ -3960,7 +3960,7 @@ algorithm
       list<Env.Frame> env;
       Boolean impl;
       Env.Cache cache;
-    case (cache,env,{},{},impl) then (cache,Exp.CALL(Absyn.IDENT("initial"),{},false,true,Exp.BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()));  /* impl */ 
+    case (cache,env,{},{},impl) then (cache,Exp.CALL(Absyn.IDENT("initial"),{},false,true,Exp.ET_BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()));  /* impl */ 
     case (cache,env,_,_,_)
       equation 
         Error.addMessage(Error.WRONG_TYPE_OR_NO_OF_ARGS, 
@@ -3990,7 +3990,7 @@ algorithm
       list<Env.Frame> env;
       Boolean impl;
       Env.Cache cache;
-    case (cache,env,{},{},impl) then (cache,Exp.CALL(Absyn.IDENT("terminal"),{},false,true,Exp.BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()));  /* impl */ 
+    case (cache,env,{},{},impl) then (cache,Exp.CALL(Absyn.IDENT("terminal"),{},false,true,Exp.ET_BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()));  /* impl */ 
     case (cache,env,_,_,impl)
       equation 
         Error.addMessage(Error.WRONG_TYPE_OR_NO_OF_ARGS, 
@@ -4570,7 +4570,7 @@ algorithm
         (s2_1,_) = Types.matchType(s2_1,ty2,(DAE.T_REAL({}),NONE));        
         true = Types.isParameterOrConstant(c2);
       then
-        (cache,Exp.CALL(Absyn.IDENT("delay"),{s1_1,s2_1,s2_1},false,true,Exp.REAL(),false),DAE.PROP((DAE.T_REAL({}),NONE),DAE.C_VAR()));
+        (cache,Exp.CALL(Absyn.IDENT("delay"),{s1_1,s2_1,s2_1},false,true,Exp.ET_REAL(),false),DAE.PROP((DAE.T_REAL({}),NONE),DAE.C_VAR()));
         
     case (cache,env,{s1,s2},_,impl)  
       equation
@@ -4591,7 +4591,7 @@ algorithm
         (s3_1,_) = Types.matchType(s3_1,ty3,(DAE.T_REAL({}),NONE));
         true = Types.isParameterOrConstant(c3);                
       then
-        (cache,Exp.CALL(Absyn.IDENT("delay"),{s1_1,s2_1,s3_1},false,true,Exp.REAL(),false),DAE.PROP((DAE.T_REAL({}),NONE),DAE.C_VAR()));
+        (cache,Exp.CALL(Absyn.IDENT("delay"),{s1_1,s2_1,s3_1},false,true,Exp.ET_REAL(),false),DAE.PROP((DAE.T_REAL({}),NONE),DAE.C_VAR()));
     case(_,_,_,_,_)
       equation
         errorString = " use of delay: \n delay(real, real, real as parameter/constant)\n or delay(real, real as parameter/constant)."; 
@@ -4853,7 +4853,7 @@ algorithm
         (cache,s1_1,st,_) = elabExp(cache,gen_env, s1, impl, NONE,true);
         (cache,s2_1,st,_) = elabExp(cache,gen_env, s2, impl, NONE,true);
       then
-        (cache,Exp.CALL(Absyn.IDENT("differentiate"),{s1_1,s2_1},false,true,Exp.REAL(),false),st);
+        (cache,Exp.CALL(Absyn.IDENT("differentiate"),{s1_1,s2_1},false,true,Exp.ET_REAL(),false),st);
     case (_,_,_,_,_)
       equation 
         print(
@@ -4898,7 +4898,7 @@ algorithm
         gen_env = Interactive.buildEnvFromSymboltable(symbol_table);
         (cache,s1_1,st,_) = elabExp(cache,gen_env, s1, impl, NONE,true);
       then
-        (cache,Exp.CALL(Absyn.IDENT("simplify"),{s1_1},false,true,Exp.REAL(),false),st);
+        (cache,Exp.CALL(Absyn.IDENT("simplify"),{s1_1},false,true,Exp.ET_REAL(),false),st);
     case (cache,env,{s1,Absyn.STRING(value = "Integer")},_,impl)
       equation 
         cref_list = Absyn.getCrefFromExp(s1,true);
@@ -4907,7 +4907,7 @@ algorithm
         gen_env = Interactive.buildEnvFromSymboltable(symbol_table);
         (cache,s1_1,st,_) = elabExp(cache,gen_env, s1, impl, NONE,true);
       then
-        (cache,Exp.CALL(Absyn.IDENT("simplify"),{s1_1},false,true,Exp.INT(),false),st);
+        (cache,Exp.CALL(Absyn.IDENT("simplify"),{s1_1},false,true,Exp.ET_INT(),false),st);
     case (_,_,_,_,_)
       equation 
         print("#-- elab_builtin_simplify: Couldn't elaborate simplify()\n");
@@ -4983,7 +4983,7 @@ algorithm
       equation 
         (cache,exp_1,prop,_) = elabExp(cache,env, exp, impl, NONE,true);
       then
-        (cache,Exp.CALL(Absyn.IDENT("noEvent"),{exp_1},false,true,Exp.BOOL(),false),prop);
+        (cache,Exp.CALL(Absyn.IDENT("noEvent"),{exp_1},false,true,Exp.ET_BOOL(),false),prop);
   end matchcontinue;
 end elabBuiltinNoevent;
 
@@ -5014,7 +5014,7 @@ algorithm
       equation 
         (cache,exp_1,DAE.PROP((DAE.T_BOOL({}),_),DAE.C_VAR()),_) = elabExp(cache,env, exp, impl, NONE,true);
       then
-        (cache,Exp.CALL(Absyn.IDENT("edge"),{exp_1},false,true,Exp.BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()));
+        (cache,Exp.CALL(Absyn.IDENT("edge"),{exp_1},false,true,Exp.ET_BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()));
     case (cache,env,{exp},_,impl) /* constness: C_PARAM & C_CONST */ 
       equation 
         (cache,exp_1,DAE.PROP((DAE.T_BOOL({}),_),c),_) = elabExp(cache,env, exp, impl, NONE,true);
@@ -5204,7 +5204,7 @@ algorithm
         Types.integerOrReal(tp1);
         Types.integerOrReal(tp2);
       then
-        (cache,Exp.CALL(Absyn.IDENT("sample"),{start_1,interval_1},false,true,Exp.BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()));
+        (cache,Exp.CALL(Absyn.IDENT("sample"),{start_1,interval_1},false,true,Exp.ET_BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()));
     case (cache,env,{start,interval},_,impl)
       equation 
         (cache,start_1,DAE.PROP(tp1,_),_) = elabExp(cache,env, start, impl, NONE,true);
@@ -5253,7 +5253,7 @@ algorithm
         Types.simpleType(tp1);
         (cache,DAE.ATTR(_,_,_,SCode.DISCRETE(),_,_),_,_,_,_) = Lookup.lookupVar(cache,env, cr_1);
       then
-        (cache,Exp.CALL(Absyn.IDENT("change"),{exp_1},false,true,Exp.BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()));
+        (cache,Exp.CALL(Absyn.IDENT("change"),{exp_1},false,true,Exp.ET_BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()));
 
     case (cache,env,{(exp as Absyn.CREF(componentReg = cr))},_,impl) /* simple type, boolean or integer => discrete variable */ 
       equation 
@@ -5261,19 +5261,19 @@ algorithm
         Types.simpleType(tp1);
         Types.discreteType(tp1);
       then
-        (cache,Exp.CALL(Absyn.IDENT("change"),{exp_1},false,true,Exp.BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()));
+        (cache,Exp.CALL(Absyn.IDENT("change"),{exp_1},false,true,Exp.ET_BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()));
     case (cache,env,{(exp as Absyn.CREF(componentReg = cr))},_,impl) /* simple type, constant variability */ 
       equation 
         (cache,(exp_1 as Exp.CREF(cr_1,_)),DAE.PROP(tp1,DAE.C_CONST()),_) = elabExp(cache,env, exp, impl, NONE,true);
         Types.simpleType(tp1);
       then
-        (cache,Exp.CALL(Absyn.IDENT("change"),{exp_1},false,true,Exp.BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()));
+        (cache,Exp.CALL(Absyn.IDENT("change"),{exp_1},false,true,Exp.ET_BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()));
     case (cache,env,{(exp as Absyn.CREF(componentReg = cr))},_,impl) /* simple type, param variability */ 
       equation 
         (cache,(exp_1 as Exp.CREF(cr_1,_)),DAE.PROP(tp1,DAE.C_PARAM()),_) = elabExp(cache,env, exp, impl, NONE,true);
         Types.simpleType(tp1);
       then
-        (cache,Exp.CALL(Absyn.IDENT("change"),{exp_1},false,true,Exp.BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()));
+        (cache,Exp.CALL(Absyn.IDENT("change"),{exp_1},false,true,Exp.ET_BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()));
     case (cache,env,{(exp as Absyn.CREF(componentReg = cr))},_,impl)
       equation 
         (cache,(exp_1 as Exp.CREF(cr_1,_)),DAE.PROP(tp1,_),_) = elabExp(cache,env, exp, impl, NONE,true);
@@ -5425,7 +5425,7 @@ algorithm
         (cache,dim_exp,DAE.PROP((DAE.T_INTEGER(_),_),DAE.C_CONST()),_) = elabExp(cache,env, dim, impl, NONE,true);
         (cache,Values.INTEGER(size),_) = Ceval.ceval(cache,env, dim_exp, false, NONE, NONE, Ceval.MSG());
       then
-        (cache,Exp.CALL(Absyn.IDENT("identity"),{dim_exp},false,true,Exp.INT(),false),DAE.PROP(
+        (cache,Exp.CALL(Absyn.IDENT("identity"),{dim_exp},false,true,Exp.ET_INT(),false),DAE.PROP(
           (
           DAE.T_ARRAY(DAE.DIM(SOME(size)),
           (
@@ -5435,7 +5435,7 @@ algorithm
         (cache,dim_exp,DAE.PROP((DAE.T_INTEGER(_),_),DAE.C_PARAM()),_) = elabExp(cache,env, dim, impl, NONE,true);
         (cache,Values.INTEGER(size),_) = Ceval.ceval(cache,env, dim_exp, false, NONE, NONE, Ceval.MSG());
       then
-        (cache,Exp.CALL(Absyn.IDENT("identity"),{dim_exp},false,true,Exp.INT(),false),DAE.PROP(
+        (cache,Exp.CALL(Absyn.IDENT("identity"),{dim_exp},false,true,Exp.ET_INT(),false),DAE.PROP(
           (
           DAE.T_ARRAY(DAE.DIM(SOME(size)),
           (
@@ -5444,7 +5444,7 @@ algorithm
       equation 
         (cache,dim_exp,DAE.PROP((DAE.T_INTEGER(_),_),DAE.C_VAR()),_) = elabExp(cache,env, dim, impl, NONE,true);
       then
-        (cache,Exp.CALL(Absyn.IDENT("identity"),{dim_exp},false,true,Exp.INT(),false),DAE.PROP(
+        (cache,Exp.CALL(Absyn.IDENT("identity"),{dim_exp},false,true,Exp.ET_INT(),false),DAE.PROP(
           (
           DAE.T_ARRAY(DAE.DIM(NONE),
           (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_INTEGER({}),NONE)),
@@ -5484,7 +5484,7 @@ algorithm
       then
         (cache,
         Exp.CALL(Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")), {exp},
-             false, true, Exp.BOOL,false),
+             false, true, Exp.ET_BOOL,false),
         DAE.PROP((DAE.T_BOOL({}), NONE), DAE.C_CONST));
   end matchcontinue;
 end elabBuiltinIsRoot;
@@ -5579,7 +5579,7 @@ algorithm
        etp = Exp.typeof(e1);
        eltTp = Types.arrayElementType(tp1);
        tp1 = Types.liftArray(Types.liftArray(eltTp,SOME(3)),SOME(3));
-       then (cache,Exp.CALL(Absyn.IDENT("skew"),{e1},false,true,Exp.T_ARRAY(etp,{SOME(3),SOME(3)}),false),
+       then (cache,Exp.CALL(Absyn.IDENT("skew"),{e1},false,true,Exp.ET_ARRAY(etp,{SOME(3),SOME(3)}),false),
          		 DAE.PROP(tp1,DAE.C_VAR()));
   end matchcontinue;
 end elabBuiltinSkew;
@@ -5663,7 +5663,7 @@ algorithm
        //{3} = Types.getDimensionSizes(tp2);
        etp = Exp.typeof(e1);
        eltTp = Types.arrayElementType(tp1);
-       then (cache,Exp.CALL(Absyn.IDENT("cross"),{e1,e2},false,true,Exp.T_ARRAY(etp,{SOME(3)}),false),
+       then (cache,Exp.CALL(Absyn.IDENT("cross"),{e1,e2},false,true,Exp.ET_ARRAY(etp,{SOME(3)}),false),
          		 DAE.PROP((DAE.T_ARRAY(DAE.DIM(SOME(3)),eltTp),NONE),DAE.C_VAR()));
   end matchcontinue;
 end elabBuiltinCross;
@@ -5730,7 +5730,7 @@ algorithm
         c = Util.listReduce(constlist, Types.constAnd);         
       then
 				(cache, 
-				Exp.CALL(Absyn.IDENT("String"),args_1,false,true,Exp.STRING(),false),        
+				Exp.CALL(Absyn.IDENT("String"),args_1,false,true,Exp.ET_STRING(),false),        
 				DAE.PROP((DAE.T_STRING({}),NONE),c));		
   end matchcontinue;
 end elabBuiltinString;
@@ -5807,7 +5807,7 @@ algorithm
       true = Types.isParameterOrConstant(c3);
       (cache,Values.INTEGER(size),_) = Ceval.ceval(cache,env, n1, false, NONE, NONE, Ceval.MSG());      
       c = Types.constAnd(c1,c2);
-    then (cache, Exp.CALL(Absyn.IDENT("linspace"),{x2,y2,n1},false,true,Exp.T_ARRAY(Exp.REAL(),{SOME(size)}),false),
+    then (cache, Exp.CALL(Absyn.IDENT("linspace"),{x2,y2,n1},false,true,Exp.ET_ARRAY(Exp.ET_REAL(),{SOME(size)}),false),
       DAE.PROP((DAE.T_ARRAY(DAE.DIM(SOME(size)),tp11),NONE),c));
       
     /* linspace(x,y,n) where n is variable time expression */
@@ -5819,7 +5819,7 @@ algorithm
       (cache,n1,DAE.PROP(tp3 as (DAE.T_INTEGER(_),_),c3),_) = elabExp(cache,env, n, impl, NONE,true);
       false = Types.isParameterOrConstant(c3);           
       c = Types.constAnd(c1,Types.constAnd(c2,c3));
-    then (cache, Exp.CALL(Absyn.IDENT("linspace"),{x2,y2,n1},false,true,Exp.T_ARRAY(Exp.REAL(),{NONE}),false),
+    then (cache, Exp.CALL(Absyn.IDENT("linspace"),{x2,y2,n1},false,true,Exp.ET_ARRAY(Exp.ET_REAL(),{NONE}),false),
       DAE.PROP((DAE.T_ARRAY(DAE.DIM(NONE),tp11),NONE),c));      
   end matchcontinue;
 end elabBuiltinLinspace;
@@ -6400,41 +6400,41 @@ algorithm
       Env.Cache cache;
 
     case (cache,env,Absyn.CREF_IDENT(name = "typeOf"),{Absyn.CREF(componentReg = Absyn.CREF_IDENT(name = varid,subscripts = {}))},{},impl,SOME(st)) then (cache,Exp.CALL(Absyn.IDENT("typeOf"),
-          {Exp.CODE(Absyn.C_VARIABLENAME(Absyn.CREF_IDENT(varid,{})),Exp.OTHER())},false,true,Exp.STRING(),false),DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_VAR()),SOME(st)); 
+          {Exp.CODE(Absyn.C_VARIABLENAME(Absyn.CREF_IDENT(varid,{})),Exp.ET_OTHER())},false,true,Exp.ET_STRING(),false),DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_VAR()),SOME(st)); 
 
-    case (cache,env,Absyn.CREF_IDENT(name = "clear"),{},{},impl,SOME(st)) then (cache,Exp.CALL(Absyn.IDENT("clear"),{},false,true,Exp.BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st)); 
+    case (cache,env,Absyn.CREF_IDENT(name = "clear"),{},{},impl,SOME(st)) then (cache,Exp.CALL(Absyn.IDENT("clear"),{},false,true,Exp.ET_BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st)); 
 
-    case (cache,env,Absyn.CREF_IDENT(name = "clearVariables"),{},{},impl,SOME(st)) then (cache, Exp.CALL(Absyn.IDENT("clearVariables"),{},false,true,Exp.BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st)); 
+    case (cache,env,Absyn.CREF_IDENT(name = "clearVariables"),{},{},impl,SOME(st)) then (cache, Exp.CALL(Absyn.IDENT("clearVariables"),{},false,true,Exp.ET_BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st)); 
 
-    case (cache,env,Absyn.CREF_IDENT(name = "list"),{},{},impl,SOME(st)) then (cache, Exp.CALL(Absyn.IDENT("list"),{},false,true,Exp.STRING(),false),DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_VAR()),SOME(st)); 
+    case (cache,env,Absyn.CREF_IDENT(name = "list"),{},{},impl,SOME(st)) then (cache, Exp.CALL(Absyn.IDENT("list"),{},false,true,Exp.ET_STRING(),false),DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_VAR()),SOME(st)); 
 
     case (cache,env,Absyn.CREF_IDENT(name = "list"),{Absyn.CREF(componentReg = cr)},{},impl,SOME(st))
       local Absyn.Path className;
       equation 
 				className = Absyn.crefToPath(cr);	
       then
-        (cache,Exp.CALL(Absyn.IDENT("list"),{Exp.CODE(Absyn.C_TYPENAME(className),Exp.OTHER())},false,true,Exp.STRING(),false),DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_VAR()),SOME(st));
+        (cache,Exp.CALL(Absyn.IDENT("list"),{Exp.CODE(Absyn.C_TYPENAME(className),Exp.ET_OTHER())},false,true,Exp.ET_STRING(),false),DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_VAR()),SOME(st));
 
 		case (cache,env,Absyn.CREF_IDENT(name = "checkModel"),{Absyn.CREF(componentReg = cr)},{},impl,SOME(st)) 
 		  local Absyn.Path className;
 		  equation
 		  className = Absyn.crefToPath(cr);
 		then (cache,Exp.CALL(Absyn.IDENT("checkModel"),
-          {Exp.CODE(Absyn.C_TYPENAME(className),Exp.OTHER())},false,true,Exp.STRING(),false),DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_VAR()),SOME(st)); 
+          {Exp.CODE(Absyn.C_TYPENAME(className),Exp.ET_OTHER())},false,true,Exp.ET_STRING(),false),DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_VAR()),SOME(st)); 
 
 		case (cache,env,Absyn.CREF_IDENT(name = "checkAllModelsRecursive"),{Absyn.CREF(componentReg = cr)},{},impl,SOME(st))
 		  local Absyn.Path className;
 		  equation
 		  className = Absyn.crefToPath(cr);
 		then (cache,Exp.CALL(Absyn.IDENT("checkAllModelsRecursive"),
-          {Exp.CODE(Absyn.C_TYPENAME(className),Exp.OTHER())},false,true,Exp.STRING(),false),DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_VAR()),SOME(st));
+          {Exp.CODE(Absyn.C_TYPENAME(className),Exp.ET_OTHER())},false,true,Exp.ET_STRING(),false),DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_VAR()),SOME(st));
 
 		case (cache,env,Absyn.CREF_IDENT(name = "translateGraphics"),{Absyn.CREF(componentReg = cr)},{},impl,SOME(st)) 
 		  local Absyn.Path className;
 		  equation
 		  className = Absyn.crefToPath(cr);
 		then (cache,Exp.CALL(Absyn.IDENT("translateGraphics"),
-          {Exp.CODE(Absyn.C_TYPENAME(className),Exp.OTHER())},false,true,Exp.STRING(),false),DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_VAR()),SOME(st)); 
+          {Exp.CODE(Absyn.C_TYPENAME(className),Exp.ET_OTHER())},false,true,Exp.ET_STRING(),false),DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_VAR()),SOME(st)); 
 		
     case (cache,env,Absyn.CREF_IDENT(name = "translateModel"),{Absyn.CREF(componentReg = cr)},args,impl,SOME(st))
       local
@@ -6453,7 +6453,7 @@ algorithm
           DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,(DAE.T_STRING({}),NONE),DAE.UNBOUND())},NONE,NONE),NONE);
       then
         (cache,Exp.CALL(Absyn.IDENT("translateModel"),
-          {Exp.CODE(Absyn.C_TYPENAME(className),Exp.OTHER()),filenameprefix},false,true,Exp.STRING(),false),DAE.PROP(recordtype,DAE.C_VAR()),SOME(st));
+          {Exp.CODE(Absyn.C_TYPENAME(className),Exp.ET_OTHER()),filenameprefix},false,true,Exp.ET_STRING(),false),DAE.PROP(recordtype,DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "exportDAEtoMatlab"),{Absyn.CREF(componentReg = cr)},args,impl,SOME(st))
       local
@@ -6472,7 +6472,7 @@ algorithm
           DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,(DAE.T_STRING({}),NONE),DAE.UNBOUND())},NONE,NONE),NONE);
       then
         (cache,Exp.CALL(Absyn.IDENT("exportDAEtoMatlab"),
-          {Exp.CODE(Absyn.C_TYPENAME(className),Exp.OTHER()),filenameprefix},false,true,Exp.STRING(),false),DAE.PROP(recordtype,DAE.C_VAR()),SOME(st));
+          {Exp.CODE(Absyn.C_TYPENAME(className),Exp.ET_OTHER()),filenameprefix},false,true,Exp.ET_STRING(),false),DAE.PROP(recordtype,DAE.C_VAR()),SOME(st));
         
     case (cache,env,Absyn.CREF_IDENT(name = "instantiateModel"),{Absyn.CREF(componentReg = cr)},{},impl,SOME(st))
       local Absyn.Path className;
@@ -6481,7 +6481,7 @@ algorithm
         (cache,cr_1) = elabUntypedCref(cache,env, cr, impl);
       then
         (cache, Exp.CALL(Absyn.IDENT("instantiateModel"),
-          {Exp.CODE(Absyn.C_TYPENAME(className),Exp.OTHER())},false,true,Exp.STRING(),false),DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_VAR()),SOME(st));
+          {Exp.CODE(Absyn.C_TYPENAME(className),Exp.ET_OTHER())},false,true,Exp.ET_STRING(),false),DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "buildModel"),{Absyn.CREF(componentReg = cr)},args,impl,SOME(st))
       local Absyn.Path className; Exp.Exp storeInTemp; Exp.Exp noClean,tolerance;
@@ -6508,8 +6508,8 @@ algorithm
           (DAE.T_BOOL({}),NONE), args, Exp.BCONST(false));  
       then
         (cache,Exp.CALL(Absyn.IDENT("buildModel"),
-          {Exp.CODE(Absyn.C_TYPENAME(className),Exp.OTHER()),startTime,stopTime,
-          numberOfIntervals,tolerance,method,filenameprefix,storeInTemp,noClean,options},false,true,Exp.OTHER(),false),DAE.PROP(
+          {Exp.CODE(Absyn.C_TYPENAME(className),Exp.ET_OTHER()),startTime,stopTime,
+          numberOfIntervals,tolerance,method,filenameprefix,storeInTemp,noClean,options},false,true,Exp.ET_OTHER(),false),DAE.PROP(
           (
           DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_STRING({}),NONE)),NONE),DAE.C_VAR()),SOME(st));
     case (cache,env,Absyn.CREF_IDENT(name = "buildModelBeast"),{Absyn.CREF(componentReg = cr)},args,impl,SOME(st))
@@ -6537,8 +6537,8 @@ algorithm
           (DAE.T_BOOL({}),NONE), args, Exp.BCONST(false));  
       then
         (cache,Exp.CALL(Absyn.IDENT("buildModelBeast"),
-          {Exp.CODE(Absyn.C_TYPENAME(className),Exp.OTHER()),startTime,stopTime,
-          numberOfIntervals,tolerance, method,filenameprefix,storeInTemp,noClean,options},false,true,Exp.OTHER(),false),DAE.PROP(
+          {Exp.CODE(Absyn.C_TYPENAME(className),Exp.ET_OTHER()),startTime,stopTime,
+          numberOfIntervals,tolerance, method,filenameprefix,storeInTemp,noClean,options},false,true,Exp.ET_OTHER(),false),DAE.PROP(
           (
           DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_STRING({}),NONE)),NONE),DAE.C_VAR()),SOME(st));
 
@@ -6574,15 +6574,15 @@ algorithm
           DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,(DAE.T_STRING({}),NONE),DAE.UNBOUND())},NONE,NONE),NONE);
       then
         (cache,Exp.CALL(Absyn.IDENT("simulate"),
-          {Exp.CODE(Absyn.C_TYPENAME(className),Exp.OTHER()),startTime,stopTime,
-          numberOfIntervals,tolerance,method,filenameprefix,storeInTemp,noClean,options},false,true,Exp.OTHER(),false),DAE.PROP(recordtype,DAE.C_VAR()),SOME(st));
+          {Exp.CODE(Absyn.C_TYPENAME(className),Exp.ET_OTHER()),startTime,stopTime,
+          numberOfIntervals,tolerance,method,filenameprefix,storeInTemp,noClean,options},false,true,Exp.ET_OTHER(),false),DAE.PROP(recordtype,DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "jacobian"),{Absyn.CREF(componentReg = cr)},args,impl,SOME(st)) /* Fill in rest of defaults here */ 
       equation 
         (cache,cr_1) = elabUntypedCref(cache,env, cr, impl);
       then
-        (cache,Exp.CALL(Absyn.IDENT("jacobian"),{Exp.CREF(cr_1,Exp.OTHER())},false,
-          true,Exp.STRING(),false),DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_VAR()),SOME(st));
+        (cache,Exp.CALL(Absyn.IDENT("jacobian"),{Exp.CREF(cr_1,Exp.ET_OTHER())},false,
+          true,Exp.ET_STRING(),false),DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "readSimulationResult"),{Absyn.STRING(value = filename),Absyn.ARRAY(arrayExp = vars),size_absyn},args,impl,SOME(st))
       equation 
@@ -6592,8 +6592,8 @@ algorithm
         var_len = listLength(vars);
       then
         (cache,Exp.CALL(Absyn.IDENT("readSimulationResult"),
-          {Exp.SCONST(filename),Exp.ARRAY(Exp.OTHER(),false,vars_1),
-          size_exp},false,true,Exp.T_ARRAY(Exp.REAL(),{SOME(var_len),SOME(size)}),false),DAE.PROP(
+          {Exp.SCONST(filename),Exp.ARRAY(Exp.ET_OTHER(),false,vars_1),
+          size_exp},false,true,Exp.ET_ARRAY(Exp.ET_REAL(),{SOME(var_len),SOME(size)}),false),DAE.PROP(
           (
           DAE.T_ARRAY(DAE.DIM(SOME(var_len)),
           (
@@ -6601,22 +6601,22 @@ algorithm
 
     case (cache,env,Absyn.CREF_IDENT(name = "readSimulationResultSize"),{Absyn.STRING(value = filename)},args,impl,SOME(st)) /* elab_variablenames(vars) => vars\' &
 	list_length(vars) => var_len */  then (cache, Exp.CALL(Absyn.IDENT("readSimulationResultSize"),
-          {Exp.SCONST(filename)},false,true,Exp.OTHER(),false),DAE.PROP((DAE.T_INTEGER({}),NONE),DAE.C_VAR()),SOME(st)); 
+          {Exp.SCONST(filename)},false,true,Exp.ET_OTHER(),false),DAE.PROP((DAE.T_INTEGER({}),NONE),DAE.C_VAR()),SOME(st)); 
 
     case (cache,env,Absyn.CREF_IDENT(name = "plot2"),{(cr as Absyn.CREF(componentReg = _))},{},impl,SOME(st))
       local Absyn.Exp cr;
       equation 
         vars_1 = elabVariablenames({cr});
       then
-        (cache,Exp.CALL(Absyn.IDENT("plot2"),{Exp.ARRAY(Exp.OTHER(),false,vars_1)},
-          false,true,Exp.BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st));
+        (cache,Exp.CALL(Absyn.IDENT("plot2"),{Exp.ARRAY(Exp.ET_OTHER(),false,vars_1)},
+          false,true,Exp.ET_BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "plot2"),{Absyn.ARRAY(arrayExp = vars)},{},impl,SOME(st))
       equation 
         vars_1 = elabVariablenames(vars);
       then
-        (cache,Exp.CALL(Absyn.IDENT("plot2"),{Exp.ARRAY(Exp.OTHER(),false,vars_1)},
-          false,true,Exp.BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st));
+        (cache,Exp.CALL(Absyn.IDENT("plot2"),{Exp.ARRAY(Exp.ET_OTHER(),false,vars_1)},
+          false,true,Exp.ET_BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st));
 
 //visualize(model)
   case (cache,env,Absyn.CREF_IDENT(name = "visualize"),{Absyn.CREF(componentReg = cr)},args,impl,SOME(st)) /* Fill in rest of defaults here */
@@ -6629,9 +6629,9 @@ algorithm
 //				vars = Interactive.getElementsOfVisType(cr);
 //				print("Tjo:" +& vars +& "\n");
       then
-        (cache,Exp.CALL(Absyn.IDENT("visualize"),{Exp.CODE(Absyn.C_TYPENAME(className),Exp.OTHER())},
-        //(cache,Exp.CALL(Absyn.IDENT("visualize"),{Exp.CODE(Absyn.CREF(cr),Exp.OTHER())},
-          false,true,Exp.BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st));
+        (cache,Exp.CALL(Absyn.IDENT("visualize"),{Exp.CODE(Absyn.C_TYPENAME(className),Exp.ET_OTHER())},
+        //(cache,Exp.CALL(Absyn.IDENT("visualize"),{Exp.CODE(Absyn.CREF(cr),Exp.ET_OTHER())},
+          false,true,Exp.ET_BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st));
 
 
 //plotAll(model)
@@ -6662,14 +6662,14 @@ algorithm
           args, Exp.BCONST(false));
 
         (cache,xRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "xRange",  (DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_REAL({}), NONE)),NONE),
-          args, Exp.ARRAY(Exp.REAL(), false, {Exp.RCONST(0.0), Exp.RCONST(0.0)}));// Exp.ARRAY(Exp.REAL(), false, {0, 0}));
+          args, Exp.ARRAY(Exp.ET_REAL(), false, {Exp.RCONST(0.0), Exp.RCONST(0.0)}));// Exp.ARRAY(Exp.ET_REAL(), false, {0, 0}));
         (cache,yRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "yRange",  (DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_REAL({}), NONE)),NONE),
-          args, Exp.ARRAY(Exp.REAL(), false, {Exp.RCONST(0.0), Exp.RCONST(0.0)}));// Exp.ARRAY(Exp.REAL(), false, {0, 0}));
+          args, Exp.ARRAY(Exp.ET_REAL(), false, {Exp.RCONST(0.0), Exp.RCONST(0.0)}));// Exp.ARRAY(Exp.ET_REAL(), false, {0, 0}));
 
 
       then
-        (cache,Exp.CALL(Absyn.IDENT("plotAll"),{Exp.CODE(Absyn.C_TYPENAME(className),Exp.OTHER()), interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, xRange, yRange},
-          false,true,Exp.BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st));
+        (cache,Exp.CALL(Absyn.IDENT("plotAll"),{Exp.CODE(Absyn.C_TYPENAME(className),Exp.ET_OTHER()), interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, xRange, yRange},
+          false,true,Exp.ET_BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st));
 
 //plotAll()
   case (cache,env,Absyn.CREF_IDENT(name = "plotAll"),{},args,impl,SOME(st)) /* Fill in rest of defaults here */
@@ -6699,14 +6699,14 @@ algorithm
           args, Exp.BCONST(false));
 
         (cache,xRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "xRange",  (DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_REAL({}), NONE)),NONE),
-          args, Exp.ARRAY(Exp.REAL(), false, {Exp.RCONST(0.0), Exp.RCONST(0.0)}));// Exp.ARRAY(Exp.REAL(), false, {0, 0}));
+          args, Exp.ARRAY(Exp.ET_REAL(), false, {Exp.RCONST(0.0), Exp.RCONST(0.0)}));// Exp.ARRAY(Exp.ET_REAL(), false, {0, 0}));
         (cache,yRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "yRange",  (DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_REAL({}), NONE)),NONE),
-          args, Exp.ARRAY(Exp.REAL(), false, {Exp.RCONST(0.0), Exp.RCONST(0.0)}));// Exp.ARRAY(Exp.REAL(), false, {0, 0}));
+          args, Exp.ARRAY(Exp.ET_REAL(), false, {Exp.RCONST(0.0), Exp.RCONST(0.0)}));// Exp.ARRAY(Exp.ET_REAL(), false, {0, 0}));
 
 
       then
         (cache,Exp.CALL(Absyn.IDENT("plotAll"),{interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, xRange, yRange},
-          false,true,Exp.BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st));
+          false,true,Exp.ET_BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st));
 
 
 //plot2(model, x)
@@ -6737,14 +6737,14 @@ algorithm
           args, Exp.BCONST(false));
 
         (cache,xRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "xRange",  (DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_REAL({}), NONE)),NONE),
-          args, Exp.ARRAY(Exp.REAL(), false, {Exp.RCONST(0.0), Exp.RCONST(0.0)}));// Exp.ARRAY(Exp.REAL(), false, {0, 0}));
+          args, Exp.ARRAY(Exp.ET_REAL(), false, {Exp.RCONST(0.0), Exp.RCONST(0.0)}));// Exp.ARRAY(Exp.ET_REAL(), false, {0, 0}));
         (cache,yRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "yRange",  (DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_REAL({}), NONE)),NONE),
-          args, Exp.ARRAY(Exp.REAL(), false, {Exp.RCONST(0.0), Exp.RCONST(0.0)}));// Exp.ARRAY(Exp.REAL(), false, {0, 0}));
+          args, Exp.ARRAY(Exp.ET_REAL(), false, {Exp.RCONST(0.0), Exp.RCONST(0.0)}));// Exp.ARRAY(Exp.ET_REAL(), false, {0, 0}));
 
 
       then
-        (cache,Exp.CALL(Absyn.IDENT("plot"),{Exp.CODE(Absyn.C_TYPENAME(className),Exp.OTHER()), Exp.ARRAY(Exp.OTHER(),false,vars_1), interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, xRange, yRange},
-          false,true,Exp.BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st));
+        (cache,Exp.CALL(Absyn.IDENT("plot"),{Exp.CODE(Absyn.C_TYPENAME(className),Exp.ET_OTHER()), Exp.ARRAY(Exp.ET_OTHER(),false,vars_1), interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, xRange, yRange},
+          false,true,Exp.ET_BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st));
 
 //plot2(model, {x,y})
   case (cache,env,Absyn.CREF_IDENT(name = "plot"),{Absyn.CREF(componentReg = cr), Absyn.ARRAY(arrayExp = vars)},args,impl,SOME(st)) /* Fill in rest of defaults here */
@@ -6776,13 +6776,13 @@ algorithm
           args, Exp.BCONST(false));
 
         (cache,xRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "xRange",  (DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_REAL({}), NONE)),NONE),
-          args, Exp.ARRAY(Exp.REAL(), false, {Exp.RCONST(0.0), Exp.RCONST(0.0)}));// Exp.ARRAY(Exp.REAL(), false, {0, 0}));
+          args, Exp.ARRAY(Exp.ET_REAL(), false, {Exp.RCONST(0.0), Exp.RCONST(0.0)}));// Exp.ARRAY(Exp.ET_REAL(), false, {0, 0}));
         (cache,yRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "yRange",  (DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_REAL({}), NONE)),NONE),
-          args, Exp.ARRAY(Exp.REAL(), false, {Exp.RCONST(0.0), Exp.RCONST(0.0)}));// Exp.ARRAY(Exp.REAL(), false, {0, 0}));
+          args, Exp.ARRAY(Exp.ET_REAL(), false, {Exp.RCONST(0.0), Exp.RCONST(0.0)}));// Exp.ARRAY(Exp.ET_REAL(), false, {0, 0}));
 
       then
-        (cache,Exp.CALL(Absyn.IDENT("plot"),{Exp.CODE(Absyn.C_TYPENAME(className),Exp.OTHER()), Exp.ARRAY(Exp.OTHER(),false,vars_1), interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, xRange, yRange},
-          false,true,Exp.BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st));
+        (cache,Exp.CALL(Absyn.IDENT("plot"),{Exp.CODE(Absyn.C_TYPENAME(className),Exp.ET_OTHER()), Exp.ARRAY(Exp.ET_OTHER(),false,vars_1), interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, xRange, yRange},
+          false,true,Exp.ET_BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st));
 
 
 
@@ -6813,13 +6813,13 @@ algorithm
           args, Exp.BCONST(false));
 
         (cache,xRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "xRange",  (DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_REAL({}), NONE)),NONE),
-          args, Exp.ARRAY(Exp.REAL(), false, {Exp.RCONST(0.0), Exp.RCONST(0.0)}));// Exp.ARRAY(Exp.REAL(), false, {0, 0}));
+          args, Exp.ARRAY(Exp.ET_REAL(), false, {Exp.RCONST(0.0), Exp.RCONST(0.0)}));// Exp.ARRAY(Exp.ET_REAL(), false, {0, 0}));
         (cache,yRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "yRange",  (DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_REAL({}), NONE)),NONE),
-          args, Exp.ARRAY(Exp.REAL(), false, {Exp.RCONST(0.0), Exp.RCONST(0.0)}));// Exp.ARRAY(Exp.REAL(), false, {0, 0}));
+          args, Exp.ARRAY(Exp.ET_REAL(), false, {Exp.RCONST(0.0), Exp.RCONST(0.0)}));// Exp.ARRAY(Exp.ET_REAL(), false, {0, 0}));
 
       then
-        (cache,Exp.CALL(Absyn.IDENT("plot"),{Exp.ARRAY(Exp.OTHER(),false,vars_1), interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, xRange, yRange},
-          false,true,Exp.BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st));
+        (cache,Exp.CALL(Absyn.IDENT("plot"),{Exp.ARRAY(Exp.ET_OTHER(),false,vars_1), interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, xRange, yRange},
+          false,true,Exp.ET_BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st));
 
 //plot2({x,y})
     case (cache,env,Absyn.CREF_IDENT(name = "plot"),{Absyn.ARRAY(arrayExp = vars)},args,impl,SOME(st))
@@ -6847,14 +6847,14 @@ algorithm
           args, Exp.BCONST(false));
 
         (cache,xRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "xRange",  (DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_REAL({}), NONE)),NONE),
-          args, Exp.ARRAY(Exp.REAL(), false, {Exp.RCONST(0.0), Exp.RCONST(0.0)}));// Exp.ARRAY(Exp.REAL(), false, {0, 0}));
+          args, Exp.ARRAY(Exp.ET_REAL(), false, {Exp.RCONST(0.0), Exp.RCONST(0.0)}));// Exp.ARRAY(Exp.ET_REAL(), false, {0, 0}));
         (cache,yRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "yRange",  (DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_REAL({}), NONE)),NONE),
-          args, Exp.ARRAY(Exp.REAL(), false, {Exp.RCONST(0.0), Exp.RCONST(0.0)}));// Exp.ARRAY(Exp.REAL(), false, {0, 0}));
+          args, Exp.ARRAY(Exp.ET_REAL(), false, {Exp.RCONST(0.0), Exp.RCONST(0.0)}));// Exp.ARRAY(Exp.ET_REAL(), false, {0, 0}));
 
 
       then
-        (cache,Exp.CALL(Absyn.IDENT("plot"),{Exp.ARRAY(Exp.OTHER(),false,vars_1), interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, xRange, yRange},
-          false,true,Exp.BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st));
+        (cache,Exp.CALL(Absyn.IDENT("plot"),{Exp.ARRAY(Exp.ET_OTHER(),false,vars_1), interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, xRange, yRange},
+          false,true,Exp.ET_BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st));
 
    case (cache,env,Absyn.CREF_IDENT(name = "val"),{(cr as Absyn.CREF(componentReg = _)),cd},{},impl,SOME(st))
       local 
@@ -6866,7 +6866,7 @@ algorithm
         Types.integerOrReal(Types.arrayElementType(Types.getPropType(ptop)));
       then
         (cache,Exp.CALL(Absyn.IDENT("val"),{cr2,cd1},
-          false,true,Exp.REAL(),false),DAE.PROP((DAE.T_REAL({}),NONE),DAE.C_VAR()),SOME(st));
+          false,true,Exp.ET_REAL(),false),DAE.PROP((DAE.T_REAL({}),NONE),DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "plotParametric2"),vars,{},impl,SOME(st)) /* PlotParametric is similar to plot but does not allow a single CREF as an
    argument as you are plotting at least one variable as a function of another.
@@ -6875,7 +6875,7 @@ algorithm
         vars_1 = elabVariablenames(vars);
       then
         (cache,Exp.CALL(Absyn.IDENT("plotParametric2"),
-          vars_1,false,true,Exp.BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st));
+          vars_1,false,true,Exp.ET_BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st));
 
    case (cache,env,Absyn.CREF_IDENT(name = "plotParametric"),{Absyn.CREF(componentReg = cr), cr2 as Absyn.CREF(componentReg = _), cr3 as Absyn.CREF(componentReg = _)} ,args,impl,SOME(st)) /* PlotParametric is similar to plot but does not allow a single CREF as an
    argument as you are plotting at least one variable as a function of another.
@@ -6910,14 +6910,14 @@ algorithm
           args, Exp.BCONST(false));
 
         (cache,xRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "xRange",  (DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_REAL({}), NONE)),NONE),
-          args, Exp.ARRAY(Exp.REAL(), false, {Exp.RCONST(0.0), Exp.RCONST(0.0)}));// Exp.ARRAY(Exp.REAL(), false, {0, 0}));
+          args, Exp.ARRAY(Exp.ET_REAL(), false, {Exp.RCONST(0.0), Exp.RCONST(0.0)}));// Exp.ARRAY(Exp.ET_REAL(), false, {0, 0}));
         (cache,yRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "yRange",  (DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_REAL({}), NONE)),NONE),
-          args, Exp.ARRAY(Exp.REAL(), false, {Exp.RCONST(0.0), Exp.RCONST(0.0)}));// Exp.ARRAY(Exp.REAL(), false, {0, 0}));
+          args, Exp.ARRAY(Exp.ET_REAL(), false, {Exp.RCONST(0.0), Exp.RCONST(0.0)}));// Exp.ARRAY(Exp.ET_REAL(), false, {0, 0}));
 
       then
 
-        (cache,Exp.CALL(Absyn.IDENT("plotParametric"),{Exp.CODE(Absyn.C_TYPENAME(className),Exp.OTHER()), Exp.ARRAY(Exp.OTHER(),false,vars_3), interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, xRange, yRange}
-        ,false,true,Exp.BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st));
+        (cache,Exp.CALL(Absyn.IDENT("plotParametric"),{Exp.CODE(Absyn.C_TYPENAME(className),Exp.ET_OTHER()), Exp.ARRAY(Exp.ET_OTHER(),false,vars_3), interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, xRange, yRange}
+        ,false,true,Exp.ET_BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st));
 
 //plotParametric2(x,y)
    case (cache,env,Absyn.CREF_IDENT(name = "plotParametric"),{cr2 as Absyn.CREF(componentReg = _), cr3 as Absyn.CREF(componentReg = _)} ,args,impl,SOME(st)) /* PlotParametric is similar to plot but does not allow a single CREF as an
@@ -6953,14 +6953,14 @@ algorithm
           args, Exp.BCONST(false));
 
         (cache,xRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "xRange",  (DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_REAL({}), NONE)),NONE),
-          args, Exp.ARRAY(Exp.REAL(), false, {Exp.RCONST(0.0), Exp.RCONST(0.0)}));// Exp.ARRAY(Exp.REAL(), false, {0, 0}));
+          args, Exp.ARRAY(Exp.ET_REAL(), false, {Exp.RCONST(0.0), Exp.RCONST(0.0)}));// Exp.ARRAY(Exp.ET_REAL(), false, {0, 0}));
         (cache,yRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "yRange",  (DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_REAL({}), NONE)),NONE),
-          args, Exp.ARRAY(Exp.REAL(), false, {Exp.RCONST(0.0), Exp.RCONST(0.0)}));// Exp.ARRAY(Exp.REAL(), false, {0, 0}));
+          args, Exp.ARRAY(Exp.ET_REAL(), false, {Exp.RCONST(0.0), Exp.RCONST(0.0)}));// Exp.ARRAY(Exp.ET_REAL(), false, {0, 0}));
 
       then
 
-        (cache,Exp.CALL(Absyn.IDENT("plotParametric"),{Exp.ARRAY(Exp.OTHER(),false,vars_3), interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, xRange, yRange}
-        ,false,true,Exp.BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st));
+        (cache,Exp.CALL(Absyn.IDENT("plotParametric"),{Exp.ARRAY(Exp.ET_OTHER(),false,vars_3), interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, xRange, yRange}
+        ,false,true,Exp.ET_BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st));
 
 	//plotParametric2(x,y)
     case (cache,env,Absyn.CREF_IDENT(name = "plotParametric"),vars,args,impl,SOME(st)) /* PlotParametric is similar to plot but does not allow a single CREF as an
@@ -6991,122 +6991,122 @@ algorithm
           args, Exp.BCONST(false));
 
         (cache,xRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "xRange",  (DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_REAL({}), NONE)),NONE),
-          args, Exp.ARRAY(Exp.REAL(), false, {Exp.RCONST(0.0), Exp.RCONST(0.0)}));// Exp.ARRAY(Exp.REAL(), false, {0, 0}));
+          args, Exp.ARRAY(Exp.ET_REAL(), false, {Exp.RCONST(0.0), Exp.RCONST(0.0)}));// Exp.ARRAY(Exp.ET_REAL(), false, {0, 0}));
         (cache,yRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "yRange",  (DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_REAL({}), NONE)),NONE),
-          args, Exp.ARRAY(Exp.REAL(), false, {Exp.RCONST(0.0), Exp.RCONST(0.0)}));// Exp.ARRAY(Exp.REAL(), false, {0, 0}));
+          args, Exp.ARRAY(Exp.ET_REAL(), false, {Exp.RCONST(0.0), Exp.RCONST(0.0)}));// Exp.ARRAY(Exp.ET_REAL(), false, {0, 0}));
 
       then
         (cache,Exp.CALL(Absyn.IDENT("plotParametric"),
-          vars_1,false,true,Exp.BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st));
+          vars_1,false,true,Exp.ET_BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "enableSendData"),{Absyn.BOOL(value = enabled)},{},impl,SOME(st))
       local
         Boolean enabled;
-       then (cache, Exp.CALL(Absyn.IDENT("enableSendData"),{Exp.BCONST(enabled)},false,true,Exp.BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st));
+       then (cache, Exp.CALL(Absyn.IDENT("enableSendData"),{Exp.BCONST(enabled)},false,true,Exp.ET_BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "setDataPort"),{Absyn.INTEGER(value = port)},{},impl,SOME(st))
       local
         Integer port;
-       then (cache, Exp.CALL(Absyn.IDENT("setDataPort"),{Exp.ICONST(port)},false,true,Exp.BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st));
+       then (cache, Exp.CALL(Absyn.IDENT("setDataPort"),{Exp.ICONST(port)},false,true,Exp.ET_BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "setVariableFilter"),{Absyn.ARRAY(arrayExp = strings)},{},impl,SOME(st))
       local
         list<Absyn.Exp> strings;
         equation
           vars_1 = elabVariablenames(strings);
-//        Exp.ARRAY(Exp.OTHER(),false,vars_1)
-       then (cache, Exp.CALL(Absyn.IDENT("setVariableFilter"),{Exp.ARRAY(Exp.STRING(), false, vars_1)},false,true,Exp.BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st));
+//        Exp.ARRAY(Exp.ET_OTHER(),false,vars_1)
+       then (cache, Exp.CALL(Absyn.IDENT("setVariableFilter"),{Exp.ARRAY(Exp.ET_STRING(), false, vars_1)},false,true,Exp.ET_BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st));
 
 
     case (cache,env,Absyn.CREF_IDENT(name = "timing"),{exp},{},impl,SOME(st))
       equation 
         (cache,exp_1,prop,st_1) = elabExp(cache,env, exp, impl, SOME(st),true);
       then
-        (cache,Exp.CALL(Absyn.IDENT("timing"),{exp_1},false,true,Exp.REAL(),false),DAE.PROP((DAE.T_REAL({}),NONE),DAE.C_VAR()),st_1);
+        (cache,Exp.CALL(Absyn.IDENT("timing"),{exp_1},false,true,Exp.ET_REAL(),false),DAE.PROP((DAE.T_REAL({}),NONE),DAE.C_VAR()),st_1);
 
     case (cache,env,Absyn.CREF_IDENT(name = "generateCode"),{Absyn.CREF(componentReg = cr)},{},impl,SOME(st))
       local Absyn.Path className;
       equation 
         className = Absyn.crefToPath(cr); 
       then
-        (cache,Exp.CALL(Absyn.IDENT("generateCode"),{Exp.CODE(Absyn.C_TYPENAME(className),Exp.OTHER())},
-          false,true,Exp.BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st));
+        (cache,Exp.CALL(Absyn.IDENT("generateCode"),{Exp.CODE(Absyn.C_TYPENAME(className),Exp.ET_OTHER())},
+          false,true,Exp.ET_BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st));
 
-    case (cache,env,Absyn.CREF_IDENT(name = "setLinker"),{Absyn.STRING(value = str)},{},impl,SOME(st)) then (cache, Exp.CALL(Absyn.IDENT("setLinker"),{Exp.SCONST(str)},false,true,Exp.BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st)); 
-    case (cache,env,Absyn.CREF_IDENT(name = "setLinkerFlags"),{Absyn.STRING(value = str)},{},impl,SOME(st)) then (cache, Exp.CALL(Absyn.IDENT("setLinkerFlags"),{Exp.SCONST(str)},false,true,Exp.BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st)); 
-    case (cache,env,Absyn.CREF_IDENT(name = "setCompiler"),{Absyn.STRING(value = str)},{},impl,SOME(st)) then (cache, Exp.CALL(Absyn.IDENT("setCompiler"),{Exp.SCONST(str)},false, true,Exp.BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st));
+    case (cache,env,Absyn.CREF_IDENT(name = "setLinker"),{Absyn.STRING(value = str)},{},impl,SOME(st)) then (cache, Exp.CALL(Absyn.IDENT("setLinker"),{Exp.SCONST(str)},false,true,Exp.ET_BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st)); 
+    case (cache,env,Absyn.CREF_IDENT(name = "setLinkerFlags"),{Absyn.STRING(value = str)},{},impl,SOME(st)) then (cache, Exp.CALL(Absyn.IDENT("setLinkerFlags"),{Exp.SCONST(str)},false,true,Exp.ET_BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st)); 
+    case (cache,env,Absyn.CREF_IDENT(name = "setCompiler"),{Absyn.STRING(value = str)},{},impl,SOME(st)) then (cache, Exp.CALL(Absyn.IDENT("setCompiler"),{Exp.SCONST(str)},false, true,Exp.ET_BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st));
       
       case (cache,env,Absyn.CREF_IDENT(name = "verifyCompiler"),{},{},impl,SOME(st)) then (cache, Exp.CALL(Absyn.IDENT("verifyCompiler"),{},false,
-          true,Exp.BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st));
+          true,Exp.ET_BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st));
       
     case (cache,env,Absyn.CREF_IDENT(name = "setCompilerPath"),{Absyn.STRING(value = str)},{},impl,SOME(st)) 
-      then (cache, Exp.CALL(Absyn.IDENT("setCompilerPath"),{Exp.SCONST(str)},false, true,Exp.BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st));
+      then (cache, Exp.CALL(Absyn.IDENT("setCompilerPath"),{Exp.SCONST(str)},false, true,Exp.ET_BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "setCompileCommand"),{Absyn.STRING(value = str)},{},impl,SOME(st)) then (cache, Exp.CALL(Absyn.IDENT("setCompileCommand"),{Exp.SCONST(str)},false,
-          true,Exp.BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st)); 
+          true,Exp.ET_BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st)); 
 
-    case (cache,env,Absyn.CREF_IDENT(name = "setPlotCommand"),{Absyn.STRING(value = str)},{},impl,SOME(st)) then (cache, Exp.CALL(Absyn.IDENT("setPlotCommand"),{Exp.SCONST(str)},false,true,Exp.BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st)); 
+    case (cache,env,Absyn.CREF_IDENT(name = "setPlotCommand"),{Absyn.STRING(value = str)},{},impl,SOME(st)) then (cache, Exp.CALL(Absyn.IDENT("setPlotCommand"),{Exp.SCONST(str)},false,true,Exp.ET_BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st)); 
 
-    case (cache,env,Absyn.CREF_IDENT(name = "getSettings"),{},{},impl,SOME(st)) then (cache, Exp.CALL(Absyn.IDENT("getSettings"),{},false,true,Exp.STRING(),false),DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_VAR()),SOME(st)); 
+    case (cache,env,Absyn.CREF_IDENT(name = "getSettings"),{},{},impl,SOME(st)) then (cache, Exp.CALL(Absyn.IDENT("getSettings"),{},false,true,Exp.ET_STRING(),false),DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_VAR()),SOME(st)); 
 
     case (cache,env,Absyn.CREF_IDENT(name = "setTempDirectoryPath"),{Absyn.STRING(value = str)},{},impl,SOME(st)) then (cache, Exp.CALL(Absyn.IDENT("setTempDirectoryPath"),{Exp.SCONST(str)},
-          false,true,Exp.BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st)); 
+          false,true,Exp.ET_BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st)); 
           
     case (cache,env,Absyn.CREF_IDENT(name = "getTempDirectoryPath"),{},{},impl,SOME(st)) then (cache, Exp.CALL(Absyn.IDENT("getTempDirectoryPath"),
-          {},false,true,Exp.STRING(),false),DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_VAR()),SOME(st)); 
+          {},false,true,Exp.ET_STRING(),false),DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_VAR()),SOME(st)); 
 
     case (cache,env,Absyn.CREF_IDENT(name = "setInstallationDirectoryPath"),{Absyn.STRING(value = str)},{},impl,SOME(st)) then (cache, Exp.CALL(Absyn.IDENT("setInstallationDirectoryPath"),
-          {Exp.SCONST(str)},false,true,Exp.BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st)); 
+          {Exp.SCONST(str)},false,true,Exp.ET_BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st)); 
    
     case (cache,env,Absyn.CREF_IDENT(name = "getInstallationDirectoryPath"),{},{},impl,SOME(st)) then (cache, Exp.CALL(Absyn.IDENT("getInstallationDirectoryPath"),
-          {},false,true,Exp.STRING(),false),DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_VAR()),SOME(st)); 
+          {},false,true,Exp.ET_STRING(),false),DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_VAR()),SOME(st)); 
 
 		case (cache,env,Absyn.CREF_IDENT(name = "setModelicaPath"),{Absyn.STRING(value = str)},{},impl,SOME(st)) then (cache, Exp.CALL(Absyn.IDENT("setModelicaPath"),
-          {Exp.SCONST(str)},false,true,Exp.BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st)); 
+          {Exp.SCONST(str)},false,true,Exp.ET_BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st)); 
 
     case (cache,env,Absyn.CREF_IDENT(name = "setCompilerFlags"),{Absyn.STRING(value = str)},{},impl,SOME(st)) then (cache, Exp.CALL(Absyn.IDENT("setCompilerFlags"),{Exp.SCONST(str)},false,
-          true,Exp.BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st)); 
+          true,Exp.ET_BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st)); 
 
-    case (cache,env,Absyn.CREF_IDENT(name = "setDebugFlags"),{Absyn.STRING(value = str)},{},impl,SOME(st)) then (cache, Exp.CALL(Absyn.IDENT("setDebugFlags"),{Exp.SCONST(str)},false,true,Exp.BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st)); 
+    case (cache,env,Absyn.CREF_IDENT(name = "setDebugFlags"),{Absyn.STRING(value = str)},{},impl,SOME(st)) then (cache, Exp.CALL(Absyn.IDENT("setDebugFlags"),{Exp.SCONST(str)},false,true,Exp.ET_BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st)); 
 
-    case (cache,env,Absyn.CREF_IDENT(name = "cd"),{Absyn.STRING(value = str)},{},impl,SOME(st)) then (cache, Exp.CALL(Absyn.IDENT("cd"),{Exp.SCONST(str)},false,true,Exp.STRING(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st)); 
+    case (cache,env,Absyn.CREF_IDENT(name = "cd"),{Absyn.STRING(value = str)},{},impl,SOME(st)) then (cache, Exp.CALL(Absyn.IDENT("cd"),{Exp.SCONST(str)},false,true,Exp.ET_STRING(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st)); 
 
-    case (cache,env,Absyn.CREF_IDENT(name = "cd"),{},{},impl,SOME(st)) then (cache, Exp.CALL(Absyn.IDENT("cd"),{},false,true,Exp.STRING(),false),DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_VAR()),SOME(st)); 
+    case (cache,env,Absyn.CREF_IDENT(name = "cd"),{},{},impl,SOME(st)) then (cache, Exp.CALL(Absyn.IDENT("cd"),{},false,true,Exp.ET_STRING(),false),DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_VAR()),SOME(st)); 
 
-    case (cache,env,Absyn.CREF_IDENT(name = "getVersion"),{},{},impl,SOME(st)) then (cache, Exp.CALL(Absyn.IDENT("getVersion"),{},false,true,Exp.STRING(),false),DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_VAR()),SOME(st)); 
+    case (cache,env,Absyn.CREF_IDENT(name = "getVersion"),{},{},impl,SOME(st)) then (cache, Exp.CALL(Absyn.IDENT("getVersion"),{},false,true,Exp.ET_STRING(),false),DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_VAR()),SOME(st)); 
 
-    case (cache,env,Absyn.CREF_IDENT(name = "getTempDirectoryPath"),{},{},impl,SOME(st)) then (cache, Exp.CALL(Absyn.IDENT("getTempDirectoryPath"),{},false,true,Exp.STRING(),false),DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_VAR()),SOME(st)); 
+    case (cache,env,Absyn.CREF_IDENT(name = "getTempDirectoryPath"),{},{},impl,SOME(st)) then (cache, Exp.CALL(Absyn.IDENT("getTempDirectoryPath"),{},false,true,Exp.ET_STRING(),false),DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_VAR()),SOME(st)); 
 
-    case (cache,env,Absyn.CREF_IDENT(name = "system"),{Absyn.STRING(value = str)},{},impl,SOME(st)) then (cache, Exp.CALL(Absyn.IDENT("system"),{Exp.SCONST(str)},false,true,Exp.INT(),false),DAE.PROP((DAE.T_INTEGER({}),NONE),DAE.C_VAR()),SOME(st)); 
+    case (cache,env,Absyn.CREF_IDENT(name = "system"),{Absyn.STRING(value = str)},{},impl,SOME(st)) then (cache, Exp.CALL(Absyn.IDENT("system"),{Exp.SCONST(str)},false,true,Exp.ET_INT(),false),DAE.PROP((DAE.T_INTEGER({}),NONE),DAE.C_VAR()),SOME(st)); 
 
-    case (cache,env,Absyn.CREF_IDENT(name = "readFile"),{Absyn.STRING(value = str)},{},impl,SOME(st)) then (cache, Exp.CALL(Absyn.IDENT("readFile"),{Exp.SCONST(str)},false,true,Exp.STRING(),false),DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_VAR()),SOME(st)); 
+    case (cache,env,Absyn.CREF_IDENT(name = "readFile"),{Absyn.STRING(value = str)},{},impl,SOME(st)) then (cache, Exp.CALL(Absyn.IDENT("readFile"),{Exp.SCONST(str)},false,true,Exp.ET_STRING(),false),DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_VAR()),SOME(st)); 
       
-    case (cache,env,Absyn.CREF_IDENT(name = "readFileNoNumeric"),{Absyn.STRING(value = str)},{},impl,SOME(st)) then (cache, Exp.CALL(Absyn.IDENT("readFileNoNumeric"),{Exp.SCONST(str)},false,true,Exp.STRING(),false),DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_VAR()),SOME(st));
+    case (cache,env,Absyn.CREF_IDENT(name = "readFileNoNumeric"),{Absyn.STRING(value = str)},{},impl,SOME(st)) then (cache, Exp.CALL(Absyn.IDENT("readFileNoNumeric"),{Exp.SCONST(str)},false,true,Exp.ET_STRING(),false),DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_VAR()),SOME(st));
 
-    case (cache,env,Absyn.CREF_IDENT(name = "listVariables"),{},{},impl,SOME(st)) then (cache, Exp.CALL(Absyn.IDENT("listVariables"),{},false,true,Exp.OTHER(),false),DAE.PROP(
+    case (cache,env,Absyn.CREF_IDENT(name = "listVariables"),{},{},impl,SOME(st)) then (cache, Exp.CALL(Absyn.IDENT("listVariables"),{},false,true,Exp.ET_OTHER(),false),DAE.PROP(
           (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_NOTYPE(),NONE)),NONE),DAE.C_VAR()),SOME(st));  /* Returns an array of \"component references\" */ 
 
-    case (cache,env,Absyn.CREF_IDENT(name = "getErrorString"),{},{},impl,SOME(st)) then (cache, Exp.CALL(Absyn.IDENT("getErrorString"),{},false,true,Exp.STRING(),false),DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_VAR()),SOME(st)); 
+    case (cache,env,Absyn.CREF_IDENT(name = "getErrorString"),{},{},impl,SOME(st)) then (cache, Exp.CALL(Absyn.IDENT("getErrorString"),{},false,true,Exp.ET_STRING(),false),DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_VAR()),SOME(st)); 
 
-    case (cache,env,Absyn.CREF_IDENT(name = "getMessagesString"),{},{},impl,SOME(st)) then (cache, Exp.CALL(Absyn.IDENT("getMessagesString"),{},false,true,Exp.STRING(),false),DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_VAR()),SOME(st)); 
+    case (cache,env,Absyn.CREF_IDENT(name = "getMessagesString"),{},{},impl,SOME(st)) then (cache, Exp.CALL(Absyn.IDENT("getMessagesString"),{},false,true,Exp.ET_STRING(),false),DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_VAR()),SOME(st)); 
 
-    case (cache,env,Absyn.CREF_IDENT(name = "clearMessages"),{},{},impl,SOME(st)) then (cache, Exp.CALL(Absyn.IDENT("clearMessages"),{},false,true,Exp.BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st));
+    case (cache,env,Absyn.CREF_IDENT(name = "clearMessages"),{},{},impl,SOME(st)) then (cache, Exp.CALL(Absyn.IDENT("clearMessages"),{},false,true,Exp.ET_BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st));
   
-    case (cache,env,Absyn.CREF_IDENT(name = "getMessagesStringInternal"),{},{},impl,SOME(st)) then (cache, Exp.CALL(Absyn.IDENT("getMessagesStringInternal"),{},false,true,Exp.STRING(),false),DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_VAR()),SOME(st)); 
+    case (cache,env,Absyn.CREF_IDENT(name = "getMessagesStringInternal"),{},{},impl,SOME(st)) then (cache, Exp.CALL(Absyn.IDENT("getMessagesStringInternal"),{},false,true,Exp.ET_STRING(),false),DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_VAR()),SOME(st)); 
 
-    case (cache,env,Absyn.CREF_IDENT(name = "runScript"),{Absyn.STRING(value = str)},{},impl,SOME(st)) then (cache, Exp.CALL(Absyn.IDENT("runScript"),{Exp.SCONST(str)},false,true,Exp.STRING(),false),DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_VAR()),SOME(st)); 
+    case (cache,env,Absyn.CREF_IDENT(name = "runScript"),{Absyn.STRING(value = str)},{},impl,SOME(st)) then (cache, Exp.CALL(Absyn.IDENT("runScript"),{Exp.SCONST(str)},false,true,Exp.ET_STRING(),false),DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_VAR()),SOME(st)); 
 
     case (cache,env,Absyn.CREF_IDENT(name = "loadModel"),{Absyn.CREF(componentReg = cr)},{},impl,SOME(st))
       local Absyn.Path className;
       equation 
         className = Absyn.crefToPath(cr); 
       then
-        (cache,Exp.CALL(Absyn.IDENT("loadModel"),{Exp.CODE(Absyn.C_TYPENAME(className),Exp.OTHER())},
-          false,true,Exp.BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st));
+        (cache,Exp.CALL(Absyn.IDENT("loadModel"),{Exp.CODE(Absyn.C_TYPENAME(className),Exp.ET_OTHER())},
+          false,true,Exp.ET_BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st));
 
-    case (cache,env,Absyn.CREF_IDENT(name = "deleteFile"),{Absyn.STRING(value = str)},{},impl,SOME(st)) then (cache, Exp.CALL(Absyn.IDENT("deleteFile"),{Exp.SCONST(str)},false,true,Exp.BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st)); 
+    case (cache,env,Absyn.CREF_IDENT(name = "deleteFile"),{Absyn.STRING(value = str)},{},impl,SOME(st)) then (cache, Exp.CALL(Absyn.IDENT("deleteFile"),{Exp.SCONST(str)},false,true,Exp.ET_BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st)); 
 
-    case (cache,env,Absyn.CREF_IDENT(name = "loadFile"),{Absyn.STRING(value = str)},{},impl,SOME(st)) then (cache, Exp.CALL(Absyn.IDENT("loadFile"),{Exp.SCONST(str)},false,true,Exp.BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st)); 
+    case (cache,env,Absyn.CREF_IDENT(name = "loadFile"),{Absyn.STRING(value = str)},{},impl,SOME(st)) then (cache, Exp.CALL(Absyn.IDENT("loadFile"),{Exp.SCONST(str)},false,true,Exp.ET_BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st)); 
 
     case (cache,env,Absyn.CREF_IDENT(name = "saveModel"),{Absyn.STRING(value = str),Absyn.CREF(componentReg = cr)},{},impl,SOME(st))
       local Absyn.Path className;
@@ -7114,7 +7114,7 @@ algorithm
           className = Absyn.crefToPath(cr); 
       then
         (cache,Exp.CALL(Absyn.IDENT("saveModel"),
-          {Exp.SCONST(str),Exp.CODE(Absyn.C_TYPENAME(className),Exp.OTHER())},false,true,Exp.BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st));
+          {Exp.SCONST(str),Exp.CODE(Absyn.C_TYPENAME(className),Exp.ET_OTHER())},false,true,Exp.ET_BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "saveTotalModel"),{Absyn.STRING(value = str),Absyn.CREF(componentReg = cr)},{},impl,SOME(st))
       local Absyn.Path className;
@@ -7122,18 +7122,18 @@ algorithm
           className = Absyn.crefToPath(cr); 
       then
         (cache,Exp.CALL(Absyn.IDENT("saveTotalModel"),
-          {Exp.SCONST(str),Exp.CODE(Absyn.C_TYPENAME(className),Exp.OTHER())},false,true,Exp.BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st));
+          {Exp.SCONST(str),Exp.CODE(Absyn.C_TYPENAME(className),Exp.ET_OTHER())},false,true,Exp.ET_BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "save"),{Absyn.CREF(componentReg = cr)},{},impl,SOME(st))
       local Absyn.Path className;
       equation 
         className = Absyn.crefToPath(cr); 
       then
-        (cache,Exp.CALL(Absyn.IDENT("save"),{Exp.CODE(Absyn.C_TYPENAME(className),Exp.OTHER())},false,true,Exp.BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st));
+        (cache,Exp.CALL(Absyn.IDENT("save"),{Exp.CODE(Absyn.C_TYPENAME(className),Exp.ET_OTHER())},false,true,Exp.ET_BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st));
 
-    case (cache,env,Absyn.CREF_IDENT(name = "saveAll"),{Absyn.STRING(value = str)},{},impl,SOME(st)) then (cache, Exp.CALL(Absyn.IDENT("saveAll"),{Exp.SCONST(str)},false,true,Exp.BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st)); 
+    case (cache,env,Absyn.CREF_IDENT(name = "saveAll"),{Absyn.STRING(value = str)},{},impl,SOME(st)) then (cache, Exp.CALL(Absyn.IDENT("saveAll"),{Exp.SCONST(str)},false,true,Exp.ET_BOOL(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st)); 
 
-    case (cache,env,Absyn.CREF_IDENT(name = "help"),{},{},impl,SOME(st)) then (cache, Exp.CALL(Absyn.IDENT("help"),{},false,true,Exp.STRING(),false),DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_VAR()),SOME(st)); 
+    case (cache,env,Absyn.CREF_IDENT(name = "help"),{},{},impl,SOME(st)) then (cache, Exp.CALL(Absyn.IDENT("help"),{},false,true,Exp.ET_STRING(),false),DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_VAR()),SOME(st)); 
 
     case (cache,env,Absyn.CREF_IDENT(name = "getUnit"),{Absyn.CREF(componentReg = cr),Absyn.CREF(componentReg = cr2)},{},impl,SOME(st))
       equation 
@@ -7141,7 +7141,7 @@ algorithm
         (cache,cr2_1) = elabUntypedCref(cache,env, cr2, impl);
       then
         (cache,Exp.CALL(Absyn.IDENT("getUnit"),
-          {Exp.CREF(cr_1,Exp.OTHER()),Exp.CREF(cr2_1,Exp.OTHER())},false,true,Exp.STRING(),false),DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_VAR()),SOME(st));
+          {Exp.CREF(cr_1,Exp.ET_OTHER()),Exp.CREF(cr2_1,Exp.ET_OTHER())},false,true,Exp.ET_STRING(),false),DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "getQuantity"),{Absyn.CREF(componentReg = cr),Absyn.CREF(componentReg = cr2)},{},impl,SOME(st))
       equation 
@@ -7149,7 +7149,7 @@ algorithm
         (cache,cr2_1) = elabUntypedCref(cache,env, cr2, impl);
       then
         (cache,Exp.CALL(Absyn.IDENT("getQuantity"),
-          {Exp.CREF(cr_1,Exp.OTHER()),Exp.CREF(cr2_1,Exp.OTHER())},false,true,Exp.STRING(),false),DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_VAR()),SOME(st));
+          {Exp.CREF(cr_1,Exp.ET_OTHER()),Exp.CREF(cr2_1,Exp.ET_OTHER())},false,true,Exp.ET_STRING(),false),DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "getDisplayUnit"),{Absyn.CREF(componentReg = cr),Absyn.CREF(componentReg = cr2)},{},impl,SOME(st))
       equation 
@@ -7157,7 +7157,7 @@ algorithm
         (cache,cr2_1) = elabUntypedCref(cache,env, cr2, impl);
       then
         (cache,Exp.CALL(Absyn.IDENT("getDisplayUnit"),
-          {Exp.CREF(cr_1,Exp.OTHER()),Exp.CREF(cr2_1,Exp.OTHER())},false,true,Exp.STRING(),false),DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_VAR()),SOME(st));
+          {Exp.CREF(cr_1,Exp.ET_OTHER()),Exp.CREF(cr2_1,Exp.ET_OTHER())},false,true,Exp.ET_STRING(),false),DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "getMin"),{Absyn.CREF(componentReg = cr),Absyn.CREF(componentReg = cr2)},{},impl,SOME(st))
       equation 
@@ -7165,7 +7165,7 @@ algorithm
         (cache,cr2_1) = elabUntypedCref(cache,env, cr2, impl);
       then
         (cache,Exp.CALL(Absyn.IDENT("getMin"),
-          {Exp.CREF(cr_1,Exp.OTHER()),Exp.CREF(cr2_1,Exp.OTHER())},false,true,Exp.STRING(),false),DAE.PROP((DAE.T_REAL({}),NONE),DAE.C_VAR()),SOME(st));
+          {Exp.CREF(cr_1,Exp.ET_OTHER()),Exp.CREF(cr2_1,Exp.ET_OTHER())},false,true,Exp.ET_STRING(),false),DAE.PROP((DAE.T_REAL({}),NONE),DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "getMax"),{Absyn.CREF(componentReg = cr),Absyn.CREF(componentReg = cr2)},{},impl,SOME(st))
       equation 
@@ -7173,7 +7173,7 @@ algorithm
         (cache,cr2_1) = elabUntypedCref(cache,env, cr2, impl);
       then
         (cache,Exp.CALL(Absyn.IDENT("getMax"),
-          {Exp.CREF(cr_1,Exp.OTHER()),Exp.CREF(cr2_1,Exp.OTHER())},false,true,Exp.STRING(),false),DAE.PROP((DAE.T_REAL({}),NONE),DAE.C_VAR()),SOME(st));
+          {Exp.CREF(cr_1,Exp.ET_OTHER()),Exp.CREF(cr2_1,Exp.ET_OTHER())},false,true,Exp.ET_STRING(),false),DAE.PROP((DAE.T_REAL({}),NONE),DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "getStart"),{Absyn.CREF(componentReg = cr),Absyn.CREF(componentReg = cr2)},{},impl,SOME(st))
       equation 
@@ -7181,7 +7181,7 @@ algorithm
         (cache,cr2_1) = elabUntypedCref(cache,env, cr2, impl);
       then
         (cache,Exp.CALL(Absyn.IDENT("getStart"),
-          {Exp.CREF(cr_1,Exp.OTHER()),Exp.CREF(cr2_1,Exp.OTHER())},false,true,Exp.STRING(),false),DAE.PROP((DAE.T_REAL({}),NONE),DAE.C_VAR()),SOME(st));
+          {Exp.CREF(cr_1,Exp.ET_OTHER()),Exp.CREF(cr2_1,Exp.ET_OTHER())},false,true,Exp.ET_STRING(),false),DAE.PROP((DAE.T_REAL({}),NONE),DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "getFixed"),{Absyn.CREF(componentReg = cr),Absyn.CREF(componentReg = cr2)},{},impl,SOME(st))
       equation 
@@ -7189,7 +7189,7 @@ algorithm
         (cache,cr2_1) = elabUntypedCref(cache,env, cr2, impl);
       then
         (cache,Exp.CALL(Absyn.IDENT("getFixed"),
-          {Exp.CREF(cr_1,Exp.OTHER()),Exp.CREF(cr2_1,Exp.OTHER())},false,true,Exp.STRING(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st));
+          {Exp.CREF(cr_1,Exp.ET_OTHER()),Exp.CREF(cr2_1,Exp.ET_OTHER())},false,true,Exp.ET_STRING(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "getNominal"),{Absyn.CREF(componentReg = cr),Absyn.CREF(componentReg = cr2)},{},impl,SOME(st))
       equation 
@@ -7197,7 +7197,7 @@ algorithm
         (cache,cr2_1) = elabUntypedCref(cache,env, cr2, impl);
       then
         (cache,Exp.CALL(Absyn.IDENT("getNominal"),
-          {Exp.CREF(cr_1,Exp.OTHER()),Exp.CREF(cr2_1,Exp.OTHER())},false,true,Exp.STRING(),false),DAE.PROP((DAE.T_REAL({}),NONE),DAE.C_VAR()),SOME(st));
+          {Exp.CREF(cr_1,Exp.ET_OTHER()),Exp.CREF(cr2_1,Exp.ET_OTHER())},false,true,Exp.ET_STRING(),false),DAE.PROP((DAE.T_REAL({}),NONE),DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "getStateSelect"),{Absyn.CREF(componentReg = cr),Absyn.CREF(componentReg = cr2)},{},impl,SOME(st))
       equation 
@@ -7205,7 +7205,7 @@ algorithm
         (cache,cr2_1) = elabUntypedCref(cache,env, cr2, impl);
       then
         (cache,Exp.CALL(Absyn.IDENT("getStateSelect"),
-          {Exp.CREF(cr_1,Exp.OTHER()),Exp.CREF(cr2_1,Exp.OTHER())},false,true,Exp.STRING(),false),DAE.PROP(
+          {Exp.CREF(cr_1,Exp.ET_OTHER()),Exp.CREF(cr2_1,Exp.ET_OTHER())},false,true,Exp.ET_STRING(),false),DAE.PROP(
           (
           DAE.T_ENUMERATION(NONE(),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},{}),NONE),DAE.C_VAR()),SOME(st));
 
@@ -7213,13 +7213,13 @@ algorithm
       equation 
         (cache,bool_exp_1,prop,st_1) = elabExp(cache,env, bool_exp, impl, SOME(st),true);
       then
-        (cache,Exp.CALL(Absyn.IDENT("echo"),{bool_exp_1},false,true,Exp.STRING(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_CONST()),SOME(st));
+        (cache,Exp.CALL(Absyn.IDENT("echo"),{bool_exp_1},false,true,Exp.ET_STRING(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_CONST()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "getClassesInModelicaPath"),{},{},impl,SOME(st))
-      then (cache,Exp.CALL(Absyn.IDENT("getClassesInModelicaPath"),{},false,true,Exp.STRING(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_CONST()),SOME(st));
+      then (cache,Exp.CALL(Absyn.IDENT("getClassesInModelicaPath"),{},false,true,Exp.ET_STRING(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_CONST()),SOME(st));
         
     case (cache,env,Absyn.CREF_IDENT(name = "checkExamplePackages"),{},{},impl,SOME(st))
-    then (cache,Exp.CALL(Absyn.IDENT("checkExamplePackages"),{},false,true,Exp.STRING(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_CONST()),SOME(st));
+    then (cache,Exp.CALL(Absyn.IDENT("checkExamplePackages"),{},false,true,Exp.ET_STRING(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_CONST()),SOME(st));
         
 case (cache,env,Absyn.CREF_IDENT(name = "dumpXMLDAE"),{Absyn.CREF(componentReg = cr)},args,impl,SOME(st))
       local Absyn.Path className; Exp.Exp storeInTemp,asInSimulationCode,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals;
@@ -7242,7 +7242,7 @@ case (cache,env,Absyn.CREF_IDENT(name = "dumpXMLDAE"),{Absyn.CREF(componentReg =
           (DAE.T_BOOL({}),NONE), args, Exp.BCONST(false));
       then
         (cache,Exp.CALL(Absyn.IDENT("dumpXMLDAE"),
-          {Exp.CODE(Absyn.C_TYPENAME(className),Exp.OTHER()),asInSimulationCode,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals,filenameprefix,storeInTemp},false,true,Exp.OTHER(),false),DAE.PROP(
+          {Exp.CODE(Absyn.C_TYPENAME(className),Exp.ET_OTHER()),asInSimulationCode,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals,filenameprefix,storeInTemp},false,true,Exp.ET_OTHER(),false),DAE.PROP(
           (
           DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_STRING({}),NONE)),NONE),DAE.C_VAR()),SOME(st));
   end matchcontinue;
@@ -7270,7 +7270,7 @@ algorithm
         
         xs_1 = elabVariablenames(xs);
       then
-        (Exp.CODE(Absyn.C_VARIABLENAME(cr),Exp.OTHER()) :: xs_1);
+        (Exp.CODE(Absyn.C_VARIABLENAME(cr),Exp.ET_OTHER()) :: xs_1);
 /*
     case ((Absyn.CALL(Absyn.CREF_IDENT(name="der"), Absyn.FUNCTIONARGS({Absyn.CREF(Absyn.CREF_IDENT(name = str))}, {})) :: xs))
       equation
@@ -7278,7 +7278,7 @@ algorithm
         cr = Absyn.CREF_IDENT(str2,{});
         xs_1 = elabVariablenames(xs);
       then
-        (Exp.CODE(Absyn.C_VARIABLENAME(cr),Exp.OTHER()) :: xs_1);
+        (Exp.CODE(Absyn.C_VARIABLENAME(cr),Exp.ET_OTHER()) :: xs_1);
 
     case ((Absyn.STRING(value = str) :: xs))
       equation
@@ -7363,13 +7363,13 @@ algorithm
       equation 
         (cache,subs_1,_) = elabSubscripts(cache,env, subs, impl);
       then
-        (cache,Exp.CREF_IDENT(id,Exp.OTHER(),subs_1));
+        (cache,Exp.CREF_IDENT(id,Exp.ET_OTHER(),subs_1));
     case (cache,env,Absyn.CREF_QUAL(name = id,subScripts = subs,componentRef = cr),impl)
       equation 
         (cache,subs_1,_) = elabSubscripts(cache,env, subs, impl);
         (cache,cr_1) = elabUntypedCref(cache,env, cr, impl);
       then
-        (cache,Exp.CREF_QUAL(id,Exp.OTHER(),subs_1,cr_1));
+        (cache,Exp.CREF_QUAL(id,Exp.ET_OTHER(),subs_1,cr_1));
   end matchcontinue;
 end elabUntypedCref;
 
@@ -7386,12 +7386,12 @@ algorithm
       Exp.ComponentRef cref;
       Absyn.Path path;
     case (Absyn.FULLYQUALIFIED(path)) then pathToComponentRef(path);
-    case (Absyn.IDENT(name = id)) then Exp.CREF_IDENT(id,Exp.OTHER(),{}); 
+    case (Absyn.IDENT(name = id)) then Exp.CREF_IDENT(id,Exp.ET_OTHER(),{}); 
     case (Absyn.QUALIFIED(name = id,path = path))
       equation
         cref = pathToComponentRef(path);
       then
-        Exp.CREF_QUAL(id,Exp.COMPLEX("",{},ClassInf.UNKNOWN("")),{},cref);
+        Exp.CREF_QUAL(id,Exp.ET_COMPLEX("",{},ClassInf.UNKNOWN("")),{},cref);
   end matchcontinue;
 end pathToComponentRef;
 
@@ -9033,7 +9033,7 @@ algorithm
 end funcargLstFromSlots;
 
 protected function complexTypeFromSlots 
-"Creates an Exp.COMPLEX type from a list of slots. 
+"Creates an Exp.ET_COMPLEX type from a list of slots. 
  Used to create type of record constructors "
   input list<Slot> slots;
   input String name;
@@ -9044,11 +9044,11 @@ algorithm
   local Exp.Type etp; Types.Type tp; String id;
     list<Exp.Var> vLst; String name;
     ClassInf.State ci;
-    case({},name,complexClassType) then Exp.COMPLEX(name,{},complexClassType);
+    case({},name,complexClassType) then Exp.ET_COMPLEX(name,{},complexClassType);
     case(SLOT(an = (id,tp))::slots,name,complexClassType) equation
       etp = Types.elabType(tp);
-      Exp.COMPLEX(name,vLst,ci) = complexTypeFromSlots(slots,name,complexClassType);
-    then Exp.COMPLEX(name,Exp.COMPLEX_VAR(id,etp)::vLst,ci);
+      Exp.ET_COMPLEX(name,vLst,ci) = complexTypeFromSlots(slots,name,complexClassType);
+    then Exp.ET_COMPLEX(name,Exp.COMPLEX_VAR(id,etp)::vLst,ci);
   end matchcontinue;
 end complexTypeFromSlots;
 
@@ -9482,7 +9482,7 @@ algorithm
         t = Types.makeFunctionPolymorphicReference(t);
         c = Absyn.pathToCref(fpath);
         expCref = Exp.toExpCref(c);
-        exp = Exp.CREF(expCref,Exp.T_FUNCTION_REFERENCE_FUNC());
+        exp = Exp.CREF(expCref,Exp.ET_FUNCTION_REFERENCE_FUNC());
       then
         (cache,exp,DAE.PROP(t,DAE.C_CONST()),SCode.RO()); 
         
@@ -9650,11 +9650,11 @@ algorithm bool := matchcontinue( subs, ty )
     list<list<Integer>> ill;
     list<Integer> il;
     Integer x,y;
-  case({},ty as Exp.T_ARRAY(ty=_))
+  case({},ty as Exp.ET_ARRAY(ty=_))
   then false;
   case({},_)
   then true;      
-  case(subs, ty as Exp.T_ARRAY(arrayDimensions=ad))
+  case(subs, ty as Exp.ET_ARRAY(arrayDimensions=ad))
     equation
       x = listLength(subs); 
       ill = Util.listMap(ad,Util.genericOption);
@@ -10090,7 +10090,7 @@ algorithm
       list<Option<Integer>> tl;
       Integer x;
       Boolean sc;
-    case(exp1 as Exp.ARRAY(ty = (ety as Exp.T_ARRAY(ty=ety2, arrayDimensions=(tl))),scalar=sc,array=expl1))
+    case(exp1 as Exp.ARRAY(ty = (ety as Exp.ET_ARRAY(ty=ety2, arrayDimensions=(tl))),scalar=sc,array=expl1))
     then (tl,sc);
       
     case(exp1 as Exp.ARRAY(ty = _,scalar=_,array=expl1 as ((exp2 as Exp.ARRAY(_,_,_)) :: expl2)))
@@ -10184,10 +10184,10 @@ algorithm
       equation
         expl1 = Util.listMap2(expl1,mergeQualWithRest,exp2,ety);
         
-        exp2 = Exp.ARRAY(Exp.INT(),false,expl1);
+        exp2 = Exp.ARRAY(Exp.ET_INT(),false,expl1);
        (iLst, scalar) = extractDimensionOfChild(exp2);
         
-        exp2 = Exp.ARRAY(Exp.T_ARRAY( ety, iLst), scalar, expl1);
+        exp2 = Exp.ARRAY(Exp.ET_ARRAY( ety, iLst), scalar, expl1);
         
     then exp2;        
       
@@ -10222,9 +10222,9 @@ algorithm
         Boolean scalar;
       equation
         expl1 = Util.listMap1(expl1,mergeQualWithRest2,exp2);
-        exp1 = Exp.ARRAY(Exp.INT(),false,expl1);
+        exp1 = Exp.ARRAY(Exp.ET_INT(),false,expl1);
         (iLst, scalar) = extractDimensionOfChild(exp1);
-        exp1 = Exp.ARRAY(Exp.T_ARRAY( ety, iLst), scalar, expl1);
+        exp1 = Exp.ARRAY(Exp.ET_ARRAY( ety, iLst), scalar, expl1);
         
       then exp1;        
         
@@ -10286,7 +10286,7 @@ algorithm
       Exp.Exp exp1,exp2,exp3;
       Exp.Type ety; 
       list<Exp.Exp> expl1;
-    case({},_,_) then Exp.ARRAY(Exp.OTHER(),false,{});
+    case({},_,_) then Exp.ARRAY(Exp.ET_OTHER(),false,{});
     case( ( (sub1 as Exp.INDEX(exp = exp1 as Exp.ICONST(_))) :: subs1),id,ety)
       equation
         exp2 = flattenSubscript2(subs1,id,ety);
@@ -10313,9 +10313,9 @@ algorithm
       equation
         exp2 = flattenSubscript2(subs1,id,ety);
         expl2 = Util.listMap3(expl1,applySubscript,exp2,id,ety);
-        exp3 = Exp.ARRAY(Exp.INT(),false,expl2);
+        exp3 = Exp.ARRAY(Exp.ET_INT(),false,expl2);
         (iLst, scalar) = extractDimensionOfChild(exp3);
-        exp3 = Exp.ARRAY(Exp.T_ARRAY( ety, iLst), scalar, expl2);
+        exp3 = Exp.ARRAY(Exp.ET_ARRAY( ety, iLst), scalar, expl2);
         exp3 = removeDoubleEmptyArrays(exp3);
       then 
         exp3;
@@ -10379,19 +10379,19 @@ algorithm
       list<Exp.Exp> expl1,expl2;
       Exp.Type ety,tmpy;
       list<Option<Integer>> arrDim;
-    case(exp2,exp1 as Exp.ARRAY(Exp.T_ARRAY(ty =_, arrayDimensions = arrDim) ,_,{}),id ,ety)
+    case(exp2,exp1 as Exp.ARRAY(Exp.ET_ARRAY(ty =_, arrayDimensions = arrDim) ,_,{}),id ,ety)
       equation
         true = Exp.arrayContainZeroDimension(arrDim);
       then exp1;
        
-    case(exp1 as Exp.ICONST(integer=0),exp2 as Exp.ARRAY(Exp.T_ARRAY(ty =_, arrayDimensions = arrDim) ,_,_),id ,ety) /* add dimensions */
+    case(exp1 as Exp.ICONST(integer=0),exp2 as Exp.ARRAY(Exp.ET_ARRAY(ty =_, arrayDimensions = arrDim) ,_,_),id ,ety) /* add dimensions */
       equation
-        exp1 = Exp.ARRAY(Exp.T_ARRAY( ety,SOME(0)::arrDim),true,{});
+        exp1 = Exp.ARRAY(Exp.ET_ARRAY( ety,SOME(0)::arrDim),true,{});
       then exp1; 
          
     case(exp1 as Exp.ICONST(integer=0),_,_ ,ety) 
       equation
-        exp1 = Exp.ARRAY(Exp.T_ARRAY( ety,{SOME(0)}),true,{});
+        exp1 = Exp.ARRAY(Exp.ET_ARRAY( ety,{SOME(0)}),true,{});
       then exp1; 
                 
     case(exp1 as Exp.ICONST(integer=_),Exp.ARRAY(_,_,{}),id ,ety)
@@ -10433,9 +10433,9 @@ algorithm
         Boolean scalar;
       equation
         expl1 = Util.listMap2(expl1,applySubscript3,exp1,ety);
-        exp2 = Exp.ARRAY(Exp.INT(),false,expl1);
+        exp2 = Exp.ARRAY(Exp.ET_INT(),false,expl1);
        (iLst, scalar) = extractDimensionOfChild(exp2);
-        exp2 = Exp.ARRAY(Exp.T_ARRAY( ety, iLst), scalar, expl1);
+        exp2 = Exp.ARRAY(Exp.ET_ARRAY( ety, iLst), scalar, expl1);
       then exp2;
   end matchcontinue;
 end applySubscript2;
@@ -10467,9 +10467,9 @@ algorithm
         Boolean scalar;
       equation
         expl1 = Util.listMap2(expl1,applySubscript3,exp1,ety);
-        exp2 = Exp.ARRAY(Exp.INT(),false,expl1);
+        exp2 = Exp.ARRAY(Exp.ET_INT(),false,expl1);
        (iLst, scalar) = extractDimensionOfChild(exp2);
-        exp2 = Exp.ARRAY(Exp.T_ARRAY( ety, iLst), scalar, expl1);
+        exp2 = Exp.ARRAY(Exp.ET_ARRAY( ety, iLst), scalar, expl1);
       then exp2;
   end matchcontinue;
 end applySubscript3;
@@ -10666,7 +10666,7 @@ algorithm
       /* IDENT */
     case (cache,env,Absyn.CREF_IDENT(name = id,subscripts = ss),crefPrefix,impl)  
       equation 
-        cr = Prefix.prefixCref(crefPrefix,Exp.CREF_IDENT(id,Exp.OTHER(),{}));
+        cr = Prefix.prefixCref(crefPrefix,Exp.CREF_IDENT(id,Exp.ET_OTHER(),{}));
         (cache,_,t,_,_,_) = Lookup.lookupVar(cache,env,cr);
         ty = Types.elabType(t);
         sl = Types.getDimensions(t);
@@ -10678,7 +10678,7 @@ algorithm
         /* QUAL,with no subscripts => looking for var */
     case (cache,env,cr as Absyn.CREF_QUAL(name = id,subScripts = {},componentRef = subs),crefPrefix,impl)
       equation    
-        cr = Prefix.prefixCref(crefPrefix,Exp.CREF_IDENT(id,Exp.OTHER(),{}));
+        cr = Prefix.prefixCref(crefPrefix,Exp.CREF_IDENT(id,Exp.ET_OTHER(),{}));
         //print("env:");print(Env.printEnvStr(env));print("\n");
         (cache,_,t,_,_,_) = Lookup.lookupVar(cache,env,cr);
         ty = Types.elabType(t);   
@@ -10692,12 +10692,12 @@ algorithm
         crefPrefix = Prefix.prefixAdd(id,{},crefPrefix,SCode.VAR()); // variability doesn't matter      
         (cache,cr,const) = elabCrefSubs(cache,env, subs,crefPrefix,impl);
       then
-        (cache,Exp.CREF_QUAL(id,Exp.COMPLEX("",{},ClassInf.UNKNOWN("")),{},cr),const);
+        (cache,Exp.CREF_QUAL(id,Exp.ET_COMPLEX("",{},ClassInf.UNKNOWN("")),{},cr),const);
 
         /* QUAL,with constant subscripts */
     case (cache,env,cr as Absyn.CREF_QUAL(name = id,subScripts = ss,componentRef = subs),crefPrefix,impl)
       equation 
-        cr = Prefix.prefixCref(crefPrefix,Exp.CREF_IDENT(id,Exp.OTHER(),{}));
+        cr = Prefix.prefixCref(crefPrefix,Exp.CREF_IDENT(id,Exp.ET_OTHER(),{}));
         (cache,DAE.ATTR(_,_,_,vt,_,_),t,_,_,_) = Lookup.lookupVar(cache,env, cr);
         sl = Types.getDimensions(t);
         ty = Types.elabType(t);
@@ -11038,11 +11038,11 @@ algorithm
     /* Select true-branch */
     case(cache,env,true,cond,tbranch,fbranch,impl,st,doVect) equation
       (cache,e2,prop1,st_1) = elabExp(cache,env, tbranch, impl, st,doVect);
-    then (cache,Exp.IFEXP(cond,e2,Exp.CREF(Exp.CREF_IDENT("$undefined",Exp.OTHER(),{}),Exp.OTHER())),prop1,st_1);
+    then (cache,Exp.IFEXP(cond,e2,Exp.CREF(Exp.CREF_IDENT("$undefined",Exp.ET_OTHER(),{}),Exp.ET_OTHER())),prop1,st_1);
       /* Select false-branch */
     case(cache,env,false,cond,tbranch,fbranch,impl,st,doVect) equation
       (cache,e2,prop1,st_1) = elabExp(cache,env, fbranch, impl, st,doVect);
-    then (cache,Exp.IFEXP(cond,Exp.CREF(Exp.CREF_IDENT("$undefined",Exp.OTHER(),{}),Exp.OTHER()),e2),prop1,st_1);
+    then (cache,Exp.IFEXP(cond,Exp.CREF(Exp.CREF_IDENT("$undefined",Exp.ET_OTHER(),{}),Exp.ET_OTHER()),e2),prop1,st_1);
   end matchcontinue;
 end elabIfexpBranch;
 
@@ -11216,7 +11216,7 @@ algorithm
       local Boolean x;
       then
         Exp.BCONST(x);
-    case (Values.ARRAY(valueLst = {})) then Exp.ARRAY(Exp.OTHER(),false,{}); 
+    case (Values.ARRAY(valueLst = {})) then Exp.ARRAY(Exp.ET_OTHER(),false,{}); 
     
     /* Matrix */
     case(Values.ARRAY(valueLst = Values.ARRAY(valueLst=x::xs)::xs2))
@@ -11273,7 +11273,7 @@ algorithm
         tpl = Util.listMap(expl,Exp.typeof);
         varlst = Util.listThreadMap(namelst,tpl,Exp.makeVar);
         name = Absyn.pathLastIdent(path);
-      then Exp.CALL(path,expl,false,false,Exp.COMPLEX(name,varlst,ClassInf.RECORD(name)),false);
+      then Exp.CALL(path,expl,false,false,Exp.ET_COMPLEX(name,varlst,ClassInf.RECORD(name)),false);
     case(Values.ENUM(ix,path,names))
       local
         Integer ix;
@@ -11281,7 +11281,7 @@ algorithm
         list<String> names;
         String str;
       equation
-        t = Exp.ENUMERATION(SOME(ix),Absyn.IDENT(""),names,{});
+        t = Exp.ET_ENUMERATION(SOME(ix),Absyn.IDENT(""),names,{});
         cr = Exp.pathToCref(path);
         cr = Exp.crefSetLastType(cr,t);
       then Exp.CREF(cr,t);
@@ -11400,7 +11400,7 @@ algorithm
       Exp.Type ty2;
     case (cache,env,Exp.CREF_IDENT(ident = n,subscriptLst = ss),impl) /* impl */ 
       equation 
-        (cache,_,t,_,_,_) = Lookup.lookupVar(cache,env, Exp.CREF_IDENT(n,Exp.OTHER(),{}));
+        (cache,_,t,_,_,_) = Lookup.lookupVar(cache,env, Exp.CREF_IDENT(n,Exp.ET_OTHER(),{}));
         sl = Types.getDimensionSizes(t);
         (cache,ss_1) = Ceval.cevalSubscripts(cache,env, ss, sl, impl, Ceval.MSG());
         ty2 = Types.elabType(t);
@@ -11413,7 +11413,7 @@ algorithm
         (cache,Exp.WILD);
     case (cache,env,Exp.CREF_QUAL(ident = n,subscriptLst = ss,componentRef = c),impl)
       equation 
-        (cache,_,t,_,_,_) = Lookup.lookupVar(cache,env, Exp.CREF_IDENT(n,Exp.OTHER(),{}));
+        (cache,_,t,_,_,_) = Lookup.lookupVar(cache,env, Exp.CREF_IDENT(n,Exp.ET_OTHER(),{}));
         ty2 = Types.elabType(t);
         sl = Types.getDimensionSizes(t); 
         (cache,ss_1) = Ceval.cevalSubscripts(cache,env, ss, sl, impl, Ceval.MSG());
@@ -11979,18 +11979,18 @@ algorithm
         intarrtypes = arrayTypeList(9, (DAE.T_INTEGER({}),NONE)) "The ADD operator" ;
         realarrtypes = arrayTypeList(9, (DAE.T_REAL({}),NONE));
         stringarrtypes = arrayTypeList(9, (DAE.T_STRING({}),NONE));
-        intarrs = operatorReturn(Exp.ADD_ARR(Exp.INT()), intarrtypes, intarrtypes, 
+        intarrs = operatorReturn(Exp.ADD_ARR(Exp.ET_INT()), intarrtypes, intarrtypes, 
           intarrtypes);
-        realarrs = operatorReturn(Exp.ADD_ARR(Exp.REAL()), realarrtypes, realarrtypes, 
+        realarrs = operatorReturn(Exp.ADD_ARR(Exp.ET_REAL()), realarrtypes, realarrtypes, 
           realarrtypes);
-        stringarrs = operatorReturn(Exp.ADD_ARR(Exp.STRING()), stringarrtypes, stringarrtypes, 
+        stringarrs = operatorReturn(Exp.ADD_ARR(Exp.ET_STRING()), stringarrtypes, stringarrtypes, 
           stringarrtypes);
         scalars = {
-          (Exp.ADD(Exp.INT()),
+          (Exp.ADD(Exp.ET_INT()),
           {(DAE.T_INTEGER({}),NONE),(DAE.T_INTEGER({}),NONE)},(DAE.T_INTEGER({}),NONE)),
-          (Exp.ADD(Exp.REAL()),
+          (Exp.ADD(Exp.ET_REAL()),
           {(DAE.T_REAL({}),NONE),(DAE.T_REAL({}),NONE)},(DAE.T_REAL({}),NONE)),
-          (Exp.ADD(Exp.STRING()),
+          (Exp.ADD(Exp.ET_STRING()),
           {(DAE.T_STRING({}),NONE),(DAE.T_STRING({}),NONE)},(DAE.T_STRING({}),NONE))};
         /*(cache,userops) = getKoeningOperatorTypes(cache,"plus", env, t1, t2);*/
         arrays = Util.listFlatten({intarrs,realarrs,stringarrs});
@@ -12005,30 +12005,30 @@ algorithm
         inttypes = nTypes(9, (DAE.T_INTEGER({}),NONE));
         realtypes = nTypes(9, (DAE.T_REAL({}),NONE));
         stringtypes = nTypes(9, (DAE.T_STRING({}),NONE));
-        intarrs = operatorReturn(Exp.ADD_ARR(Exp.INT()), intarrtypes, intarrtypes, 
+        intarrs = operatorReturn(Exp.ADD_ARR(Exp.ET_INT()), intarrtypes, intarrtypes, 
           intarrtypes);
-        realarrs = operatorReturn(Exp.ADD_ARR(Exp.REAL()), realarrtypes, realarrtypes, 
+        realarrs = operatorReturn(Exp.ADD_ARR(Exp.ET_REAL()), realarrtypes, realarrtypes, 
           realarrtypes);
-        stringarrs = operatorReturn(Exp.ADD_ARR(Exp.STRING()), stringarrtypes, stringarrtypes, 
+        stringarrs = operatorReturn(Exp.ADD_ARR(Exp.ET_STRING()), stringarrtypes, stringarrtypes, 
           stringarrtypes);
         scalars = {
-          (Exp.ADD(Exp.INT()),
+          (Exp.ADD(Exp.ET_INT()),
           {(DAE.T_INTEGER({}),NONE),(DAE.T_INTEGER({}),NONE)},(DAE.T_INTEGER({}),NONE)),
-          (Exp.ADD(Exp.REAL()),
+          (Exp.ADD(Exp.ET_REAL()),
           {(DAE.T_REAL({}),NONE),(DAE.T_REAL({}),NONE)},(DAE.T_REAL({}),NONE)),
-          (Exp.ADD(Exp.STRING()),
+          (Exp.ADD(Exp.ET_STRING()),
           {(DAE.T_STRING({}),NONE),(DAE.T_STRING({}),NONE)},(DAE.T_STRING({}),NONE))};
-        intscalararrs = operatorReturn(Exp.ADD_SCALAR_ARRAY(Exp.INT()), inttypes, intarrtypes, 
+        intscalararrs = operatorReturn(Exp.ADD_SCALAR_ARRAY(Exp.ET_INT()), inttypes, intarrtypes, 
           intarrtypes);
-        realscalararrs = operatorReturn(Exp.ADD_SCALAR_ARRAY(Exp.REAL()), realtypes, realarrtypes, 
+        realscalararrs = operatorReturn(Exp.ADD_SCALAR_ARRAY(Exp.ET_REAL()), realtypes, realarrtypes, 
           realarrtypes);
-        intarrsscalar = operatorReturn(Exp.ADD_ARRAY_SCALAR(Exp.INT()), intarrtypes, inttypes, 
+        intarrsscalar = operatorReturn(Exp.ADD_ARRAY_SCALAR(Exp.ET_INT()), intarrtypes, inttypes, 
           intarrtypes);
-        realarrsscalar = operatorReturn(Exp.ADD_ARRAY_SCALAR(Exp.REAL()), realarrtypes, realtypes, 
+        realarrsscalar = operatorReturn(Exp.ADD_ARRAY_SCALAR(Exp.ET_REAL()), realarrtypes, realtypes, 
           realarrtypes);
-        stringscalararrs = operatorReturn(Exp.ADD_SCALAR_ARRAY(Exp.STRING()), stringtypes, stringarrtypes, 
+        stringscalararrs = operatorReturn(Exp.ADD_SCALAR_ARRAY(Exp.ET_STRING()), stringtypes, stringarrtypes, 
           stringarrtypes);
-        stringarrsscalar = operatorReturn(Exp.ADD_ARRAY_SCALAR(Exp.STRING()), stringarrtypes, stringtypes, 
+        stringarrsscalar = operatorReturn(Exp.ADD_ARRAY_SCALAR(Exp.ET_STRING()), stringarrtypes, stringtypes, 
           stringarrtypes);
         types = Util.listFlatten({scalars,intscalararrs,realscalararrs,stringscalararrs,intarrsscalar,
           realarrsscalar,stringarrsscalar,intarrs,realarrs,stringarrs});
@@ -12039,14 +12039,14 @@ algorithm
       equation 
         intarrtypes = arrayTypeList(9, (DAE.T_INTEGER({}),NONE)) "the SUB operator" ;
         realarrtypes = arrayTypeList(9, (DAE.T_REAL({}),NONE));
-        intarrs = operatorReturn(Exp.SUB_ARR(Exp.INT()), intarrtypes, intarrtypes, 
+        intarrs = operatorReturn(Exp.SUB_ARR(Exp.ET_INT()), intarrtypes, intarrtypes, 
           intarrtypes);
-        realarrs = operatorReturn(Exp.SUB_ARR(Exp.REAL()), realarrtypes, realarrtypes, 
+        realarrs = operatorReturn(Exp.SUB_ARR(Exp.ET_REAL()), realarrtypes, realarrtypes, 
           realarrtypes);
         scalars = {
-          (Exp.SUB(Exp.INT()),
+          (Exp.SUB(Exp.ET_INT()),
           {(DAE.T_INTEGER({}),NONE),(DAE.T_INTEGER({}),NONE)},(DAE.T_INTEGER({}),NONE)),
-          (Exp.SUB(Exp.REAL()),
+          (Exp.SUB(Exp.ET_REAL()),
           {(DAE.T_REAL({}),NONE),(DAE.T_REAL({}),NONE)},(DAE.T_REAL({}),NONE))};
         /*(cache,userops) = getKoeningOperatorTypes(cache,"minus", env, t1, t2);*/
         types = Util.listFlatten({scalars,intarrs,realarrs/*,userops*/});
@@ -12058,22 +12058,22 @@ algorithm
         realarrtypes = arrayTypeList(9, (DAE.T_REAL({}),NONE));
         inttypes = nTypes(9, (DAE.T_INTEGER({}),NONE));
         realtypes = nTypes(9, (DAE.T_REAL({}),NONE));
-        intarrs = operatorReturn(Exp.SUB_ARR(Exp.INT()), intarrtypes, intarrtypes, 
+        intarrs = operatorReturn(Exp.SUB_ARR(Exp.ET_INT()), intarrtypes, intarrtypes, 
           intarrtypes);
-        realarrs = operatorReturn(Exp.SUB_ARR(Exp.REAL()), realarrtypes, realarrtypes, 
+        realarrs = operatorReturn(Exp.SUB_ARR(Exp.ET_REAL()), realarrtypes, realarrtypes, 
           realarrtypes);
         scalars = {
-          (Exp.SUB(Exp.INT()),
+          (Exp.SUB(Exp.ET_INT()),
           {(DAE.T_INTEGER({}),NONE),(DAE.T_INTEGER({}),NONE)},(DAE.T_INTEGER({}),NONE)),
-          (Exp.SUB(Exp.REAL()),
+          (Exp.SUB(Exp.ET_REAL()),
           {(DAE.T_REAL({}),NONE),(DAE.T_REAL({}),NONE)},(DAE.T_REAL({}),NONE))};
-        intscalararrs = operatorReturn(Exp.SUB_SCALAR_ARRAY(Exp.INT()), inttypes, intarrtypes, 
+        intscalararrs = operatorReturn(Exp.SUB_SCALAR_ARRAY(Exp.ET_INT()), inttypes, intarrtypes, 
           intarrtypes);
-        realscalararrs = operatorReturn(Exp.SUB_SCALAR_ARRAY(Exp.REAL()), realtypes, realarrtypes, 
+        realscalararrs = operatorReturn(Exp.SUB_SCALAR_ARRAY(Exp.ET_REAL()), realtypes, realarrtypes, 
           realarrtypes);
-        intarrsscalar = operatorReturn(Exp.SUB_ARRAY_SCALAR(Exp.INT()), intarrtypes, inttypes, 
+        intarrsscalar = operatorReturn(Exp.SUB_ARRAY_SCALAR(Exp.ET_INT()), intarrtypes, inttypes, 
           intarrtypes);
-        realarrsscalar = operatorReturn(Exp.SUB_ARRAY_SCALAR(Exp.REAL()), realarrtypes, realtypes, 
+        realarrsscalar = operatorReturn(Exp.SUB_ARRAY_SCALAR(Exp.ET_REAL()), realarrtypes, realtypes, 
           realarrtypes);
         types = Util.listFlatten({scalars,intscalararrs,realscalararrs,intarrsscalar,
           realarrsscalar,intarrs,realarrs});
@@ -12086,12 +12086,12 @@ algorithm
         realarrtypes = arrayTypeList(9, (DAE.T_REAL({}),NONE));
         inttypes = nTypes(9, (DAE.T_INTEGER({}),NONE));
         realtypes = nTypes(9, (DAE.T_REAL({}),NONE));
-        int_mul = Exp.MUL(Exp.INT());
-        real_mul = Exp.MUL(Exp.REAL());
-        int_mul_sp = Exp.MUL_SCALAR_PRODUCT(Exp.INT());
-        real_mul_sp = Exp.MUL_SCALAR_PRODUCT(Exp.REAL());
-        int_mul_mp = Exp.MUL_MATRIX_PRODUCT(Exp.INT());
-        real_mul_mp = Exp.MUL_MATRIX_PRODUCT(Exp.REAL());
+        int_mul = Exp.MUL(Exp.ET_INT());
+        real_mul = Exp.MUL(Exp.ET_REAL());
+        int_mul_sp = Exp.MUL_SCALAR_PRODUCT(Exp.ET_INT());
+        real_mul_sp = Exp.MUL_SCALAR_PRODUCT(Exp.ET_REAL());
+        int_mul_mp = Exp.MUL_MATRIX_PRODUCT(Exp.ET_INT());
+        real_mul_mp = Exp.MUL_MATRIX_PRODUCT(Exp.ET_REAL());
         int_scalar = (DAE.T_INTEGER({}),NONE);
         int_vector = (DAE.T_ARRAY(DAE.DIM(NONE),int_scalar),NONE);
         int_matrix = (DAE.T_ARRAY(DAE.DIM(NONE),int_vector),NONE);
@@ -12106,13 +12106,13 @@ algorithm
           (int_mul_mp,{int_matrix,int_vector},int_vector),(int_mul_mp,{int_matrix,int_matrix},int_matrix),
           (real_mul_mp,{real_vector,real_matrix},real_vector),(real_mul_mp,{real_matrix,real_vector},real_vector),
           (real_mul_mp,{real_matrix,real_matrix},real_matrix)};
-        intscalararrs = operatorReturn(Exp.MUL_SCALAR_ARRAY(Exp.INT()), inttypes, intarrtypes, 
+        intscalararrs = operatorReturn(Exp.MUL_SCALAR_ARRAY(Exp.ET_INT()), inttypes, intarrtypes, 
           intarrtypes);
-        realscalararrs = operatorReturn(Exp.MUL_SCALAR_ARRAY(Exp.REAL()), realtypes, realarrtypes, 
+        realscalararrs = operatorReturn(Exp.MUL_SCALAR_ARRAY(Exp.ET_REAL()), realtypes, realarrtypes, 
           realarrtypes);
-        intarrsscalar = operatorReturn(Exp.MUL_ARRAY_SCALAR(Exp.INT()), intarrtypes, inttypes, 
+        intarrsscalar = operatorReturn(Exp.MUL_ARRAY_SCALAR(Exp.ET_INT()), intarrtypes, inttypes, 
           intarrtypes);
-        realarrsscalar = operatorReturn(Exp.MUL_ARRAY_SCALAR(Exp.REAL()), realarrtypes, realtypes, 
+        realarrsscalar = operatorReturn(Exp.MUL_ARRAY_SCALAR(Exp.ET_REAL()), realarrtypes, realtypes, 
           realarrtypes);
         /*(cache,userops) = getKoeningOperatorTypes(cache,"times", env, t1, t2);*/
         types = Util.listFlatten(
@@ -12126,22 +12126,22 @@ algorithm
         realarrtypes = arrayTypeList(9, (DAE.T_REAL({}),NONE));
         inttypes = nTypes(9, (DAE.T_INTEGER({}),NONE));
         realtypes = nTypes(9, (DAE.T_REAL({}),NONE));
-        intarrs = operatorReturn(Exp.MUL_ARR(Exp.INT()), intarrtypes, intarrtypes, 
+        intarrs = operatorReturn(Exp.MUL_ARR(Exp.ET_INT()), intarrtypes, intarrtypes, 
           intarrtypes);
-        realarrs = operatorReturn(Exp.MUL_ARR(Exp.REAL()), realarrtypes, realarrtypes, 
+        realarrs = operatorReturn(Exp.MUL_ARR(Exp.ET_REAL()), realarrtypes, realarrtypes, 
           realarrtypes);
         scalars = {
-          (Exp.MUL(Exp.INT()),
+          (Exp.MUL(Exp.ET_INT()),
           {(DAE.T_INTEGER({}),NONE),(DAE.T_INTEGER({}),NONE)},(DAE.T_INTEGER({}),NONE)),
-          (Exp.MUL(Exp.REAL()),
+          (Exp.MUL(Exp.ET_REAL()),
           {(DAE.T_REAL({}),NONE),(DAE.T_REAL({}),NONE)},(DAE.T_REAL({}),NONE))};
-        intscalararrs = operatorReturn(Exp.MUL_SCALAR_ARRAY(Exp.INT()), inttypes, intarrtypes, 
+        intscalararrs = operatorReturn(Exp.MUL_SCALAR_ARRAY(Exp.ET_INT()), inttypes, intarrtypes, 
           intarrtypes);
-        realscalararrs = operatorReturn(Exp.MUL_SCALAR_ARRAY(Exp.REAL()), realtypes, realarrtypes, 
+        realscalararrs = operatorReturn(Exp.MUL_SCALAR_ARRAY(Exp.ET_REAL()), realtypes, realarrtypes, 
           realarrtypes);
-        intarrsscalar = operatorReturn(Exp.MUL_ARRAY_SCALAR(Exp.INT()), intarrtypes, inttypes, 
+        intarrsscalar = operatorReturn(Exp.MUL_ARRAY_SCALAR(Exp.ET_INT()), intarrtypes, inttypes, 
           intarrtypes);
-        realarrsscalar = operatorReturn(Exp.MUL_ARRAY_SCALAR(Exp.REAL()), realarrtypes, realtypes, 
+        realarrsscalar = operatorReturn(Exp.MUL_ARRAY_SCALAR(Exp.ET_REAL()), realarrtypes, realtypes, 
           realarrtypes);
         types = Util.listFlatten({scalars,intscalararrs,realscalararrs,intarrsscalar,
           realarrsscalar,intarrs,realarrs});
@@ -12152,10 +12152,10 @@ algorithm
       equation 
         realarrtypes = arrayTypeList(9, (DAE.T_REAL({}),NONE)) "The DIV operator" ;
         realtypes = nTypes(9, (DAE.T_REAL({}),NONE));
-        real_div = Exp.DIV(Exp.REAL());
+        real_div = Exp.DIV(Exp.ET_REAL());
         real_scalar = (DAE.T_REAL({}),NONE);
         scalars = {(real_div,{real_scalar,real_scalar},real_scalar)};
-        realarrscalar = operatorReturn(Exp.DIV_ARRAY_SCALAR(Exp.REAL()), realarrtypes, realtypes, 
+        realarrscalar = operatorReturn(Exp.DIV_ARRAY_SCALAR(Exp.ET_REAL()), realarrtypes, realtypes, 
           realarrtypes);
         /*(cache,userops) = getKoeningOperatorTypes(cache,"divide", env, t1, t2);*/
         types = Util.listFlatten({scalars,realarrscalar/*,userops*/});
@@ -12165,14 +12165,14 @@ algorithm
       equation 
         realarrtypes = arrayTypeList(9, (DAE.T_REAL({}),NONE));
         realtypes = nTypes(9, (DAE.T_REAL({}),NONE));
-        realarrs = operatorReturn(Exp.DIV_ARR(Exp.REAL()), realarrtypes, realarrtypes, 
+        realarrs = operatorReturn(Exp.DIV_ARR(Exp.ET_REAL()), realarrtypes, realarrtypes, 
           realarrtypes);
         scalars = {
-          (Exp.DIV(Exp.REAL()),
+          (Exp.DIV(Exp.ET_REAL()),
           {(DAE.T_REAL({}),NONE),(DAE.T_REAL({}),NONE)},(DAE.T_REAL({}),NONE))};
-        realscalararrs = operatorReturn(Exp.DIV_SCALAR_ARRAY(Exp.REAL()), realtypes, realarrtypes, 
+        realscalararrs = operatorReturn(Exp.DIV_SCALAR_ARRAY(Exp.ET_REAL()), realtypes, realarrtypes, 
           realarrtypes);
-        realarrsscalar = operatorReturn(Exp.DIV_ARRAY_SCALAR(Exp.REAL()), realarrtypes, realtypes, 
+        realarrsscalar = operatorReturn(Exp.DIV_ARRAY_SCALAR(Exp.ET_REAL()), realarrtypes, realtypes, 
           realarrtypes);
         types = Util.listFlatten({scalars,realscalararrs,
           realarrsscalar,realarrs});
@@ -12186,12 +12186,12 @@ algorithm
         int_scalar = (DAE.T_INTEGER({}),NONE);
         real_vector = (DAE.T_ARRAY(DAE.DIM(NONE),real_scalar),NONE);
         real_matrix = (DAE.T_ARRAY(DAE.DIM(NONE),real_vector),NONE);
-        real_pow = Exp.POW(Exp.REAL());
-        int_pow = Exp.POW(Exp.INT());
+        real_pow = Exp.POW(Exp.ET_REAL());
+        int_pow = Exp.POW(Exp.ET_INT());
         scalars = {(int_pow,{int_scalar,int_scalar},int_scalar),
           (real_pow,{real_scalar,real_scalar},real_scalar)};
         arrscalar = {
-          (Exp.POW_ARR(Exp.REAL()),{real_matrix,int_scalar},
+          (Exp.POW_ARR(Exp.ET_REAL()),{real_matrix,int_scalar},
           real_matrix)};
         /*(cache,userops) = getKoeningOperatorTypes(cache,"power", env, t1, t2);*/
         types = Util.listFlatten({scalars,arrscalar/*,userops*/});
@@ -12201,14 +12201,14 @@ algorithm
       equation 
         realarrtypes = arrayTypeList(9, (DAE.T_REAL({}),NONE));
         realtypes = nTypes(9, (DAE.T_REAL({}),NONE));
-        realarrs = operatorReturn(Exp.POW_ARR2(Exp.REAL()), realarrtypes, realarrtypes, 
+        realarrs = operatorReturn(Exp.POW_ARR2(Exp.ET_REAL()), realarrtypes, realarrtypes, 
           realarrtypes);
         scalars = {
-          (Exp.POW(Exp.REAL()),
+          (Exp.POW(Exp.ET_REAL()),
           {(DAE.T_REAL({}),NONE),(DAE.T_REAL({}),NONE)},(DAE.T_REAL({}),NONE))};
-        realscalararrs = operatorReturn(Exp.POW_SCALAR_ARRAY(Exp.REAL()), realtypes, realarrtypes, 
+        realscalararrs = operatorReturn(Exp.POW_SCALAR_ARRAY(Exp.ET_REAL()), realtypes, realarrtypes, 
           realarrtypes);
-        realarrsscalar = operatorReturn(Exp.POW_ARRAY_SCALAR(Exp.REAL()), realarrtypes, realtypes, 
+        realarrsscalar = operatorReturn(Exp.POW_ARRAY_SCALAR(Exp.ET_REAL()), realarrtypes, realtypes, 
           realarrtypes);
         types = Util.listFlatten({scalars,realscalararrs,
           realarrsscalar,realarrs});
@@ -12218,14 +12218,14 @@ algorithm
     case (cache,Absyn.UMINUS(),env,t1,t2)
       equation 
         scalars = {
-          (Exp.UMINUS(Exp.INT()),{(DAE.T_INTEGER({}),NONE)},
+          (Exp.UMINUS(Exp.ET_INT()),{(DAE.T_INTEGER({}),NONE)},
           (DAE.T_INTEGER({}),NONE)),
-          (Exp.UMINUS(Exp.REAL()),{(DAE.T_REAL({}),NONE)},
+          (Exp.UMINUS(Exp.ET_REAL()),{(DAE.T_REAL({}),NONE)},
           (DAE.T_REAL({}),NONE))} "The UMINUS operator, unary minus" ;
         intarrtypes = arrayTypeList(9, (DAE.T_INTEGER({}),NONE));
         realarrtypes = arrayTypeList(9, (DAE.T_REAL({}),NONE));
-        intarrs = operatorReturnUnary(Exp.UMINUS_ARR(Exp.INT()), intarrtypes, intarrtypes);
-        realarrs = operatorReturnUnary(Exp.UMINUS_ARR(Exp.REAL()), realarrtypes, realarrtypes);
+        intarrs = operatorReturnUnary(Exp.UMINUS_ARR(Exp.ET_INT()), intarrtypes, intarrtypes);
+        realarrs = operatorReturnUnary(Exp.UMINUS_ARR(Exp.ET_REAL()), realarrtypes, realarrtypes);
         /*(cache,userops) = getKoeningOperatorTypes(cache,"unaryMinus", env, t1, t2);*/
         types = Util.listFlatten({scalars,intarrs,realarrs/*,userops*/});
       then
@@ -12233,14 +12233,14 @@ algorithm
     case (cache,Absyn.UPLUS(),env,t1,t2)
       equation 
         scalars = {
-          (Exp.UPLUS(Exp.INT()),{(DAE.T_INTEGER({}),NONE)},
+          (Exp.UPLUS(Exp.ET_INT()),{(DAE.T_INTEGER({}),NONE)},
           (DAE.T_INTEGER({}),NONE)),
-          (Exp.UPLUS(Exp.REAL()),{(DAE.T_REAL({}),NONE)},
+          (Exp.UPLUS(Exp.ET_REAL()),{(DAE.T_REAL({}),NONE)},
           (DAE.T_REAL({}),NONE))} "The UPLUS operator, unary plus." ;
         intarrtypes = arrayTypeList(9, (DAE.T_INTEGER({}),NONE));
         realarrtypes = arrayTypeList(9, (DAE.T_REAL({}),NONE));
-        intarrs = operatorReturnUnary(Exp.UPLUS(Exp.INT()), intarrtypes, intarrtypes);
-        realarrs = operatorReturnUnary(Exp.UPLUS(Exp.REAL()), realarrtypes, realarrtypes);
+        intarrs = operatorReturnUnary(Exp.UPLUS(Exp.ET_INT()), intarrtypes, intarrtypes);
+        realarrs = operatorReturnUnary(Exp.UPLUS(Exp.ET_REAL()), realarrtypes, realarrtypes);
         /*(cache,userops) = getKoeningOperatorTypes(cache,"unaryPlus", env, t1, t2);*/
         types = Util.listFlatten({scalars,intarrs,realarrs/*,userops*/});
       then
@@ -12248,14 +12248,14 @@ algorithm
     case (cache,Absyn.UMINUS_EW(),env,t1,t2)
       equation 
         scalars = {
-          (Exp.UMINUS(Exp.INT()),{(DAE.T_INTEGER({}),NONE)},
+          (Exp.UMINUS(Exp.ET_INT()),{(DAE.T_INTEGER({}),NONE)},
           (DAE.T_INTEGER({}),NONE)),
-          (Exp.UMINUS(Exp.REAL()),{(DAE.T_REAL({}),NONE)},
+          (Exp.UMINUS(Exp.ET_REAL()),{(DAE.T_REAL({}),NONE)},
           (DAE.T_REAL({}),NONE))} "The UMINUS operator, unary minus" ;
         intarrtypes = arrayTypeList(9, (DAE.T_INTEGER({}),NONE));
         realarrtypes = arrayTypeList(9, (DAE.T_REAL({}),NONE));
-        intarrs = operatorReturnUnary(Exp.UMINUS_ARR(Exp.INT()), intarrtypes, intarrtypes);
-        realarrs = operatorReturnUnary(Exp.UMINUS_ARR(Exp.REAL()), realarrtypes, realarrtypes);
+        intarrs = operatorReturnUnary(Exp.UMINUS_ARR(Exp.ET_INT()), intarrtypes, intarrtypes);
+        realarrs = operatorReturnUnary(Exp.UMINUS_ARR(Exp.ET_REAL()), realarrtypes, realarrtypes);
         /*(cache,userops) = getKoeningOperatorTypes(cache,"unaryMinus", env, t1, t2);*/
         types = Util.listFlatten({scalars,intarrs,realarrs/*,userops*/});
       then
@@ -12263,14 +12263,14 @@ algorithm
     case (cache,Absyn.UPLUS_EW(),env,t1,t2)
       equation 
         scalars = {
-          (Exp.UPLUS(Exp.INT()),{(DAE.T_INTEGER({}),NONE)},
+          (Exp.UPLUS(Exp.ET_INT()),{(DAE.T_INTEGER({}),NONE)},
           (DAE.T_INTEGER({}),NONE)),
-          (Exp.UPLUS(Exp.REAL()),{(DAE.T_REAL({}),NONE)},
+          (Exp.UPLUS(Exp.ET_REAL()),{(DAE.T_REAL({}),NONE)},
           (DAE.T_REAL({}),NONE))} "The UPLUS operator, unary plus." ;
         intarrtypes = arrayTypeList(9, (DAE.T_INTEGER({}),NONE));
         realarrtypes = arrayTypeList(9, (DAE.T_REAL({}),NONE));
-        intarrs = operatorReturnUnary(Exp.UPLUS(Exp.INT()), intarrtypes, intarrtypes);
-        realarrs = operatorReturnUnary(Exp.UPLUS(Exp.REAL()), realarrtypes, realarrtypes);
+        intarrs = operatorReturnUnary(Exp.UPLUS(Exp.ET_INT()), intarrtypes, intarrtypes);
+        realarrs = operatorReturnUnary(Exp.UPLUS(Exp.ET_REAL()), realarrtypes, realarrtypes);
         /*(cache,userops) = getKoeningOperatorTypes(cache,"unaryPlus", env, t1, t2);*/
         types = Util.listFlatten({scalars,intarrs,realarrs/*,userops*/});
       then
@@ -12286,13 +12286,13 @@ algorithm
     case (cache,Absyn.LESS(),env,t1,t2) /* Relational operators */ 
       equation 
         scalars = {
-          (Exp.LESS(Exp.INT()),
+          (Exp.LESS(Exp.ET_INT()),
           {(DAE.T_INTEGER({}),NONE),(DAE.T_INTEGER({}),NONE)},(DAE.T_BOOL({}),NONE)),
-          (Exp.LESS(Exp.REAL()),
+          (Exp.LESS(Exp.ET_REAL()),
           {(DAE.T_REAL({}),NONE),(DAE.T_REAL({}),NONE)},(DAE.T_BOOL({}),NONE)),
-          (Exp.LESS(Exp.STRING()),
+          (Exp.LESS(Exp.ET_STRING()),
           {(DAE.T_STRING({}),NONE),(DAE.T_STRING({}),NONE)},(DAE.T_BOOL({}),NONE)),
-          (Exp.LESS(Exp.ENUMERATION(SOME(0),Absyn.IDENT(""),{},{})),{t1,t2},(DAE.T_BOOL({}),NONE))} "\'<\' operator" ;
+          (Exp.LESS(Exp.ET_ENUMERATION(SOME(0),Absyn.IDENT(""),{},{})),{t1,t2},(DAE.T_BOOL({}),NONE))} "\'<\' operator" ;
 //          (Exp.LESS(Exp.ENUM()),{t1,t2},(DAE.T_BOOL({}),NONE))} "\'<\' operator" ;
         /*(cache,userops) = getKoeningOperatorTypes(cache,"less", env, t1, t2);*/
         types = Util.listFlatten({scalars/*,userops*/});
@@ -12301,13 +12301,13 @@ algorithm
     case (cache,Absyn.LESSEQ(),env,t1,t2)
       equation 
         scalars = {
-          (Exp.LESSEQ(Exp.INT()),
+          (Exp.LESSEQ(Exp.ET_INT()),
           {(DAE.T_INTEGER({}),NONE),(DAE.T_INTEGER({}),NONE)},(DAE.T_BOOL({}),NONE)),
-          (Exp.LESSEQ(Exp.REAL()),
+          (Exp.LESSEQ(Exp.ET_REAL()),
           {(DAE.T_REAL({}),NONE),(DAE.T_REAL({}),NONE)},(DAE.T_BOOL({}),NONE)),
-          (Exp.LESSEQ(Exp.STRING()),
+          (Exp.LESSEQ(Exp.ET_STRING()),
           {(DAE.T_STRING({}),NONE),(DAE.T_STRING({}),NONE)},(DAE.T_BOOL({}),NONE)),
-          (Exp.LESSEQ(Exp.ENUMERATION(SOME(0),Absyn.IDENT(""),{},{})),{t1,t2},(DAE.T_BOOL({}),NONE))} "\'<=\' operator" ;
+          (Exp.LESSEQ(Exp.ET_ENUMERATION(SOME(0),Absyn.IDENT(""),{},{})),{t1,t2},(DAE.T_BOOL({}),NONE))} "\'<=\' operator" ;
 //          (Exp.LESSEQ(Exp.ENUM()),{t1,t2},(DAE.T_BOOL({}),NONE))} "\'<=\' operator" ;
         /*(cache,userops) = getKoeningOperatorTypes(cache,"lessEqual", env, t1, t2);*/
         types = Util.listFlatten({scalars/*,userops*/});
@@ -12316,13 +12316,13 @@ algorithm
     case (cache,Absyn.GREATER(),env,t1,t2)
       equation 
         scalars = {
-          (Exp.GREATER(Exp.INT()),
+          (Exp.GREATER(Exp.ET_INT()),
           {(DAE.T_INTEGER({}),NONE),(DAE.T_INTEGER({}),NONE)},(DAE.T_BOOL({}),NONE)),
-          (Exp.GREATER(Exp.REAL()),
+          (Exp.GREATER(Exp.ET_REAL()),
           {(DAE.T_REAL({}),NONE),(DAE.T_REAL({}),NONE)},(DAE.T_BOOL({}),NONE)),
-          (Exp.GREATER(Exp.STRING()),
+          (Exp.GREATER(Exp.ET_STRING()),
           {(DAE.T_STRING({}),NONE),(DAE.T_STRING({}),NONE)},(DAE.T_BOOL({}),NONE)),
-          (Exp.GREATER(Exp.ENUMERATION(SOME(0),Absyn.IDENT(""),{},{})),{t1,t2},(DAE.T_BOOL({}),NONE))} "\'>\' operator" ;
+          (Exp.GREATER(Exp.ET_ENUMERATION(SOME(0),Absyn.IDENT(""),{},{})),{t1,t2},(DAE.T_BOOL({}),NONE))} "\'>\' operator" ;
 //          (Exp.GREATER(Exp.ENUM()),{t1,t2},(DAE.T_BOOL({}),NONE))} "\'>\' operator" ;
         /*(cache,userops) = getKoeningOperatorTypes(cache,"greater", env, t1, t2);*/
         types = Util.listFlatten({scalars/*,userops*/});
@@ -12331,13 +12331,13 @@ algorithm
     case (cache,Absyn.GREATEREQ(),env,t1,t2)
       equation 
         scalars = {
-          (Exp.GREATEREQ(Exp.INT()),
+          (Exp.GREATEREQ(Exp.ET_INT()),
           {(DAE.T_INTEGER({}),NONE),(DAE.T_INTEGER({}),NONE)},(DAE.T_BOOL({}),NONE)),
-          (Exp.GREATEREQ(Exp.REAL()),
+          (Exp.GREATEREQ(Exp.ET_REAL()),
           {(DAE.T_REAL({}),NONE),(DAE.T_REAL({}),NONE)},(DAE.T_BOOL({}),NONE)),
-          (Exp.GREATEREQ(Exp.STRING()),
+          (Exp.GREATEREQ(Exp.ET_STRING()),
           {(DAE.T_STRING({}),NONE),(DAE.T_STRING({}),NONE)},(DAE.T_BOOL({}),NONE)),
-          (Exp.GREATEREQ(Exp.ENUMERATION(SOME(0),Absyn.IDENT(""),{},{})),{t1,t2},(DAE.T_BOOL({}),NONE))} "\'>=\' operator" ;
+          (Exp.GREATEREQ(Exp.ET_ENUMERATION(SOME(0),Absyn.IDENT(""),{},{})),{t1,t2},(DAE.T_BOOL({}),NONE))} "\'>=\' operator" ;
 //          (Exp.GREATEREQ(Exp.ENUM()),{t1,t2},(DAE.T_BOOL({}),NONE))} "\'>=\' operator" ;
         /*(cache,userops) = getKoeningOperatorTypes(cache,"greaterEqual", env, t1, t2);*/
         types = Util.listFlatten({scalars/*,userops*/});
@@ -12345,18 +12345,18 @@ algorithm
         (cache,types);
     case (cache,Absyn.EQUAL(),env,t1,t2)
       equation
-        defaultExpType = Util.if_(Types.isBoxedType(t1) and Types.isBoxedType(t2), Exp.T_BOXED(Exp.OTHER), Exp.ENUMERATION(SOME(0),Absyn.IDENT(""),{},{}));
-//        defaultExpType = Util.if_(Types.isBoxedType(t1) and Types.isBoxedType(t2), Exp.T_BOXED(Exp.OTHER), Exp.ENUM());
+        defaultExpType = Util.if_(Types.isBoxedType(t1) and Types.isBoxedType(t2), Exp.ET_BOXED(Exp.ET_OTHER), Exp.ET_ENUMERATION(SOME(0),Absyn.IDENT(""),{},{}));
+//        defaultExpType = Util.if_(Types.isBoxedType(t1) and Types.isBoxedType(t2), Exp.ET_BOXED(Exp.ET_OTHER), Exp.ENUM());
         scalars = {
-          (Exp.EQUAL(Exp.INT()),
+          (Exp.EQUAL(Exp.ET_INT()),
           {(DAE.T_INTEGER({}),NONE),(DAE.T_INTEGER({}),NONE)},(DAE.T_BOOL({}),NONE)),
-          (Exp.EQUAL(Exp.REAL()),
+          (Exp.EQUAL(Exp.ET_REAL()),
           {(DAE.T_REAL({}),NONE),(DAE.T_REAL({}),NONE)},(DAE.T_BOOL({}),NONE)),
-          (Exp.EQUAL(Exp.STRING()),
+          (Exp.EQUAL(Exp.ET_STRING()),
           {(DAE.T_STRING({}),NONE),(DAE.T_STRING({}),NONE)},(DAE.T_BOOL({}),NONE)),
-          (Exp.EQUAL(Exp.BOOL()),
+          (Exp.EQUAL(Exp.ET_BOOL()),
           {(DAE.T_BOOL({}),NONE),(DAE.T_BOOL({}),NONE)},(DAE.T_BOOL({}),NONE)),
-          (Exp.EQUAL(Exp.ENUMERATION(SOME(0),Absyn.IDENT(""),{},{})),{t1,t2},(DAE.T_BOOL({}),NONE)),          
+          (Exp.EQUAL(Exp.ET_ENUMERATION(SOME(0),Absyn.IDENT(""),{},{})),{t1,t2},(DAE.T_BOOL({}),NONE)),          
 //          (Exp.EQUAL(Exp.ENUM()),{t1,t2},(DAE.T_BOOL({}),NONE)),          
           (Exp.EQUAL(defaultExpType),{t1,t2},(DAE.T_BOOL({}),NONE))} "\'==\' operator" ;
         /*(cache,userops) = getKoeningOperatorTypes(cache,"equal", env, t1, t2);*/
@@ -12365,18 +12365,18 @@ algorithm
         (cache,types);
     case (cache,Absyn.NEQUAL(),env,t1,t2)
       equation 
-        defaultExpType = Util.if_(Types.isBoxedType(t1) and Types.isBoxedType(t2), Exp.T_BOXED(Exp.OTHER), Exp.ENUMERATION(SOME(0),Absyn.IDENT(""),{},{}));
-//        defaultExpType = Util.if_(Types.isBoxedType(t1) and Types.isBoxedType(t2), Exp.T_BOXED(Exp.OTHER), Exp.ENUM());
+        defaultExpType = Util.if_(Types.isBoxedType(t1) and Types.isBoxedType(t2), Exp.ET_BOXED(Exp.ET_OTHER), Exp.ET_ENUMERATION(SOME(0),Absyn.IDENT(""),{},{}));
+//        defaultExpType = Util.if_(Types.isBoxedType(t1) and Types.isBoxedType(t2), Exp.ET_BOXED(Exp.ET_OTHER), Exp.ENUM());
         scalars = {
-          (Exp.NEQUAL(Exp.INT()),
+          (Exp.NEQUAL(Exp.ET_INT()),
           {(DAE.T_INTEGER({}),NONE),(DAE.T_INTEGER({}),NONE)},(DAE.T_BOOL({}),NONE)),
-          (Exp.NEQUAL(Exp.REAL()),
+          (Exp.NEQUAL(Exp.ET_REAL()),
           {(DAE.T_REAL({}),NONE),(DAE.T_REAL({}),NONE)},(DAE.T_BOOL({}),NONE)),
-          (Exp.NEQUAL(Exp.STRING()),
+          (Exp.NEQUAL(Exp.ET_STRING()),
           {(DAE.T_STRING({}),NONE),(DAE.T_STRING({}),NONE)},(DAE.T_BOOL({}),NONE)),
-          (Exp.NEQUAL(Exp.BOOL()),
+          (Exp.NEQUAL(Exp.ET_BOOL()),
           {(DAE.T_BOOL({}),NONE),(DAE.T_BOOL({}),NONE)},(DAE.T_BOOL({}),NONE)),
-          (Exp.NEQUAL(Exp.ENUMERATION(SOME(0),Absyn.IDENT(""),{},{})),{t1,t2},(DAE.T_BOOL({}),NONE)),
+          (Exp.NEQUAL(Exp.ET_ENUMERATION(SOME(0),Absyn.IDENT(""),{},{})),{t1,t2},(DAE.T_BOOL({}),NONE)),
 //          (Exp.NEQUAL(Exp.ENUM()),{t1,t2},(DAE.T_BOOL({}),NONE)),
           (Exp.NEQUAL(defaultExpType),{t1,t2},(DAE.T_BOOL({}),NONE))} "\'!=\' operator" ;
         /*(cache,userops) = getKoeningOperatorTypes(cache,"notEqual", env, t1, t2);*/

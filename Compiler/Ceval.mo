@@ -204,7 +204,7 @@ algorithm
         (cache,Values.LIST(es_1),st);
 
     /* MetaModelica Partial Function. sjoelund */
-    case (cache,env,Exp.CREF(componentRef = c, ty = Exp.T_FUNCTION_REFERENCE_VAR()),impl,st,_,msg)
+    case (cache,env,Exp.CREF(componentRef = c, ty = Exp.ET_FUNCTION_REFERENCE_VAR()),impl,st,_,msg)
       local
         Exp.ComponentRef c;
       equation
@@ -212,7 +212,7 @@ algorithm
       then
         fail();
         
-    case (cache,env,Exp.CREF(componentRef = c, ty = Exp.T_FUNCTION_REFERENCE_FUNC()),impl,st,_,msg)
+    case (cache,env,Exp.CREF(componentRef = c, ty = Exp.ET_FUNCTION_REFERENCE_FUNC()),impl,st,_,msg)
       local
         Exp.ComponentRef c;
       equation
@@ -354,7 +354,7 @@ algorithm
       then
         (cache,value,SOME(st));
     
-    case (cache,env,Exp.BINARY(exp1 = lh,operator = Exp.ADD(ty = Exp.STRING()),exp2 = rh),impl,st,_,msg) /* Strings */ 
+    case (cache,env,Exp.BINARY(exp1 = lh,operator = Exp.ADD(ty = Exp.ET_STRING()),exp2 = rh),impl,st,_,msg) /* Strings */ 
       local String lhv,rhv;
       equation 
         (cache,Values.STRING(lhv),_) = ceval(cache,env, lh, impl, st, NONE, msg);
@@ -363,7 +363,7 @@ algorithm
       then
         (cache,Values.STRING(str),st);
 
-    case (cache,env,Exp.BINARY(exp1 = lh,operator = Exp.ADD(ty = Exp.REAL()),exp2 = rh),impl,st,dim,msg) /* Numerical */ 
+    case (cache,env,Exp.BINARY(exp1 = lh,operator = Exp.ADD(ty = Exp.ET_REAL()),exp2 = rh),impl,st,dim,msg) /* Numerical */ 
       local
         Real lhv,rhv;
         Option<Integer> dim;
@@ -731,7 +731,7 @@ algorithm
       then
         (cache,v,st_2);
 
-    case (cache,env,Exp.RANGE(ty = Exp.INT(),exp = start,expOption = NONE,range = stop),impl,st,dim,msg) /*  */ 
+    case (cache,env,Exp.RANGE(ty = Exp.ET_INT(),exp = start,expOption = NONE,range = stop),impl,st,dim,msg) /*  */ 
       local Option<Integer> dim;
       equation 
         (cache,Values.INTEGER(start_1),st_1) = ceval(cache,env, start, impl, st, dim, msg);
@@ -740,7 +740,7 @@ algorithm
       then
         (cache,Values.ARRAY(arr),st_1);
 
-    case (cache,env,Exp.RANGE(ty = Exp.INT(),exp = start,expOption = SOME(step),range = stop),impl,st,dim,msg)
+    case (cache,env,Exp.RANGE(ty = Exp.ET_INT(),exp = start,expOption = SOME(step),range = stop),impl,st,dim,msg)
       local Option<Integer> dim;
       equation 
         (cache,Values.INTEGER(start_1),st_1) = ceval(cache,env, start, impl, st, dim, msg);
@@ -750,7 +750,7 @@ algorithm
       then
         (cache,Values.ARRAY(arr),st_3);
 
-    case (cache,env,Exp.RANGE(ty = Exp.REAL(),exp = start,expOption = NONE,range = stop),impl,st,dim,msg)
+    case (cache,env,Exp.RANGE(ty = Exp.ET_REAL(),exp = start,expOption = NONE,range = stop),impl,st,dim,msg)
       local
         Real start_1,stop_1,step;
         Option<Integer> dim;
@@ -763,7 +763,7 @@ algorithm
       then
         (cache,Values.ARRAY(arr),st_2);
 
-    case (cache,env,Exp.RANGE(ty = Exp.REAL(),exp = start,expOption = SOME(step),range = stop),impl,st,dim,msg)
+    case (cache,env,Exp.RANGE(ty = Exp.ET_REAL(),exp = start,expOption = SOME(step),range = stop),impl,st,dim,msg)
       local
         Real start_1,step_1,stop_1;
         Option<Integer> dim;
@@ -775,7 +775,7 @@ algorithm
       then
         (cache,Values.ARRAY(arr),st_3);
 
-    case (cache,env,Exp.CAST(ty = Exp.REAL(),exp = e),impl,st,dim,msg)
+    case (cache,env,Exp.CAST(ty = Exp.ET_REAL(),exp = e),impl,st,dim,msg)
       local Option<Integer> dim;
       equation 
         (cache,Values.INTEGER(i),st_1) = ceval(cache,env, e, impl, st, dim, msg);
@@ -783,35 +783,35 @@ algorithm
       then
         (cache,Values.REAL(r),st_1);
 
-    case (cache,env,Exp.CAST(ty = Exp.T_ARRAY(Exp.REAL(),_),exp = e),impl,st,dim,msg)
+    case (cache,env,Exp.CAST(ty = Exp.ET_ARRAY(Exp.ET_REAL(),_),exp = e),impl,st,dim,msg)
       local Option<Integer> dim;
       equation 
         (cache,Values.ARRAY(ivals),st_1) = ceval(cache,env, e, impl, st, dim, msg);
-        rvals = ValuesUtil.typeConvert(Exp.INT(), Exp.REAL(), ivals);
+        rvals = ValuesUtil.typeConvert(Exp.ET_INT(), Exp.ET_REAL(), ivals);
       then
         (cache,Values.ARRAY(rvals),st_1);
 
-    case (cache,env,Exp.CAST(ty = Exp.REAL(),exp = (e as Exp.ARRAY(ty = Exp.INT(),array = expl))),impl,st,dim,msg)
+    case (cache,env,Exp.CAST(ty = Exp.ET_REAL(),exp = (e as Exp.ARRAY(ty = Exp.ET_INT(),array = expl))),impl,st,dim,msg)
       local Option<Integer> dim;
       equation 
         (cache,Values.ARRAY(vallst),st_1) = ceval(cache,env, e, impl, st, dim, msg);
-        vallst_1 = ValuesUtil.typeConvert(Exp.INT(), Exp.REAL(), vallst);
+        vallst_1 = ValuesUtil.typeConvert(Exp.ET_INT(), Exp.ET_REAL(), vallst);
       then
         (cache,Values.ARRAY(vallst_1),st_1);
 
-    case (cache,env,Exp.CAST(ty = Exp.REAL(),exp = (e as Exp.RANGE(ty = Exp.INT()))),impl,st,dim,msg)
+    case (cache,env,Exp.CAST(ty = Exp.ET_REAL(),exp = (e as Exp.RANGE(ty = Exp.ET_INT()))),impl,st,dim,msg)
       local Option<Integer> dim;
       equation 
         (cache,Values.ARRAY(vallst),st_1) = ceval(cache,env, e, impl, st, dim, msg);
-        vallst_1 = ValuesUtil.typeConvert(Exp.INT(), Exp.REAL(), vallst);
+        vallst_1 = ValuesUtil.typeConvert(Exp.ET_INT(), Exp.ET_REAL(), vallst);
       then
         (cache,Values.ARRAY(vallst_1),st_1);
 
-    case (cache,env,Exp.CAST(ty = Exp.REAL(),exp = (e as Exp.MATRIX(ty = Exp.INT()))),impl,st,dim,msg)
+    case (cache,env,Exp.CAST(ty = Exp.ET_REAL(),exp = (e as Exp.MATRIX(ty = Exp.ET_INT()))),impl,st,dim,msg)
       local Option<Integer> dim;
       equation 
         (cache,Values.ARRAY(vallst),st_1) = ceval(cache,env, e, impl, st, dim, msg);
-        vallst_1 = ValuesUtil.typeConvert(Exp.INT(), Exp.REAL(), vallst);
+        vallst_1 = ValuesUtil.typeConvert(Exp.ET_INT(), Exp.ET_REAL(), vallst);
       then
         (cache,Values.ARRAY(vallst_1),st_1);
 
@@ -1091,7 +1091,7 @@ algorithm
         fail();
 
         /* Record constructors */
-    case(cache,env,(e as Exp.CALL(path = funcpath,ty = Exp.COMPLEX(complexClassType = ClassInf.RECORD(complexName), varLst=varLst))),vallst,msg,st)
+    case(cache,env,(e as Exp.CALL(path = funcpath,ty = Exp.ET_COMPLEX(complexClassType = ClassInf.RECORD(complexName), varLst=varLst))),vallst,msg,st)
       local
         list<Exp.Var> varLst; list<String> varNames; String complexName, lastIdent;
       equation
@@ -1971,7 +1971,7 @@ algorithm
         (env as (Env.FRAME(connectionSet = (crs,prefix))::_)) = Env.stripForLoopScope(env);
         cr_lst = Util.listSelect1(crs, cr, Exp.crefContainedIn);
         currentPrefixIdent= Exp.crefLastIdent(prefix);
-        currentPrefix = Exp.CREF_IDENT(currentPrefixIdent,Exp.OTHER(),{});
+        currentPrefix = Exp.CREF_IDENT(currentPrefixIdent,Exp.ET_OTHER(),{});
  		    //	Select connect references that has cr as suffix and correct Prefix.
         cr_lst = Util.listSelect1R(cr_lst, currentPrefix, Exp.crefPrefixOf);
         
@@ -2061,7 +2061,7 @@ algorithm
         (cache,Values.INTEGER(dim_int),_) = ceval(cache,env, dim, impl, st, NONE, msg);
         dim_int_1 = dim_int + 1;
         expl = Util.listFill(Exp.ICONST(1), dim_int);
-        (cache,retExp) = cevalBuiltinDiagonal2(cache,env, Exp.ARRAY(Exp.INT(),true,expl), impl, st, dim_int_1, 
+        (cache,retExp) = cevalBuiltinDiagonal2(cache,env, Exp.ARRAY(Exp.ET_INT(),true,expl), impl, st, dim_int_1, 
           1, {}, msg);
       then
         (cache,Values.ARRAY(retExp),st);
@@ -4000,37 +4000,37 @@ algorithm
         v;
                 
     /* Strings */
-    case (Values.STRING(string = s1),Exp.LESS(ty = Exp.STRING()),Values.STRING(string = s2))
+    case (Values.STRING(string = s1),Exp.LESS(ty = Exp.ET_STRING()),Values.STRING(string = s2))
       equation 
         i1 = System.strcmp(s1,s2);
         b = (i1 < 0); 
       then
         Values.BOOL(b);
-    case (Values.STRING(string = s1),Exp.LESSEQ(ty = Exp.STRING()),Values.STRING(string = s2))
+    case (Values.STRING(string = s1),Exp.LESSEQ(ty = Exp.ET_STRING()),Values.STRING(string = s2))
       equation 
         i1 = System.strcmp(s1,s2);
         b = (i1 <= 0); 
       then
         Values.BOOL(b);
-    case (Values.STRING(string = s1),Exp.GREATEREQ(ty = Exp.STRING()),Values.STRING(string = s2))
+    case (Values.STRING(string = s1),Exp.GREATEREQ(ty = Exp.ET_STRING()),Values.STRING(string = s2))
       equation 
         i1 = System.strcmp(s1,s2);
         b = (i1 >= 0); 
       then
         Values.BOOL(b);
-    case (Values.STRING(string = s1),Exp.EQUAL(ty = Exp.STRING()),Values.STRING(string = s2))
+    case (Values.STRING(string = s1),Exp.EQUAL(ty = Exp.ET_STRING()),Values.STRING(string = s2))
       equation 
         i1 = System.strcmp(s1,s2);
         b = (i1 == 0); 
       then
         Values.BOOL(b);
-    case (Values.STRING(string = s1),Exp.NEQUAL(ty = Exp.STRING()),Values.STRING(string = s2))
+    case (Values.STRING(string = s1),Exp.NEQUAL(ty = Exp.ET_STRING()),Values.STRING(string = s2))
       equation 
         i1 = System.strcmp(s1,s2);
         b = (i1 <> 0); 
       then
         Values.BOOL(b);
-    case (Values.STRING(string = s1),Exp.EQUAL(ty = Exp.STRING()),Values.STRING(string = s2))
+    case (Values.STRING(string = s1),Exp.EQUAL(ty = Exp.ET_STRING()),Values.STRING(string = s2))
       local
         String s1,s2;
       equation
@@ -4039,58 +4039,58 @@ algorithm
         Values.BOOL(b);        
         
     /* Integers */
-    case (Values.INTEGER(integer = i1),Exp.LESS(ty = Exp.INT()),Values.INTEGER(integer = i2)) 
+    case (Values.INTEGER(integer = i1),Exp.LESS(ty = Exp.ET_INT()),Values.INTEGER(integer = i2)) 
       equation 
         b = (i1 < i2);
       then
         Values.BOOL(b);
-    case (Values.INTEGER(integer = i1),Exp.LESSEQ(ty = Exp.INT()),Values.INTEGER(integer = i2))
+    case (Values.INTEGER(integer = i1),Exp.LESSEQ(ty = Exp.ET_INT()),Values.INTEGER(integer = i2))
       equation 
         b = (i1 <= i2);
       then
         Values.BOOL(b);
-    case (Values.INTEGER(integer = i1),Exp.GREATEREQ(ty = Exp.INT()),Values.INTEGER(integer = i2))
+    case (Values.INTEGER(integer = i1),Exp.GREATEREQ(ty = Exp.ET_INT()),Values.INTEGER(integer = i2))
       equation 
         b = (i1 >= i2);
       then
         Values.BOOL(b);
-    case (Values.INTEGER(integer = i1),Exp.EQUAL(ty = Exp.INT()),Values.INTEGER(integer = i2))
+    case (Values.INTEGER(integer = i1),Exp.EQUAL(ty = Exp.ET_INT()),Values.INTEGER(integer = i2))
       equation 
         b = (i1 == i2);
       then
         Values.BOOL(b);
-    case (Values.INTEGER(integer = i1),Exp.NEQUAL(ty = Exp.INT()),Values.INTEGER(integer = i2))
+    case (Values.INTEGER(integer = i1),Exp.NEQUAL(ty = Exp.ET_INT()),Values.INTEGER(integer = i2))
       equation 
         b = (i1 <> i2);
       then
         Values.BOOL(b);
         
     /* Reals */
-    case (Values.REAL(real = i1),Exp.LESS(ty = Exp.REAL()),Values.REAL(real = i2))  
+    case (Values.REAL(real = i1),Exp.LESS(ty = Exp.ET_REAL()),Values.REAL(real = i2))  
       local Real i1,i2;
       equation 
         b = (i1 <. i2);
       then
         Values.BOOL(b);
-    case (Values.REAL(real = i1),Exp.LESSEQ(ty = Exp.REAL()),Values.REAL(real = i2))
+    case (Values.REAL(real = i1),Exp.LESSEQ(ty = Exp.ET_REAL()),Values.REAL(real = i2))
       local Real i1,i2;
       equation 
         b = (i1 <=. i2);
       then
         Values.BOOL(b);
-    case (Values.REAL(real = i1),Exp.GREATEREQ(ty = Exp.REAL()),Values.REAL(real = i2))
+    case (Values.REAL(real = i1),Exp.GREATEREQ(ty = Exp.ET_REAL()),Values.REAL(real = i2))
       local Real i1,i2;
       equation 
         b = (i1 >=. i2);
       then
         Values.BOOL(b);
-    case (Values.REAL(real = i1),Exp.EQUAL(ty = Exp.REAL()),Values.REAL(real = i2))
+    case (Values.REAL(real = i1),Exp.EQUAL(ty = Exp.ET_REAL()),Values.REAL(real = i2))
       local Real i1,i2;
       equation 
         b = (i1 ==. i2);
       then
         Values.BOOL(b);
-    case (Values.REAL(real = i1),Exp.NEQUAL(ty = Exp.REAL()),Values.REAL(real = i2)) 
+    case (Values.REAL(real = i1),Exp.NEQUAL(ty = Exp.ET_REAL()),Values.REAL(real = i2)) 
       local Real i1,i2;
       equation 
         b = (i1 <>. i2);
@@ -4098,7 +4098,7 @@ algorithm
         Values.BOOL(b);
     
     /* Booleans */
-    case (Values.BOOL(boolean = b1),Exp.NEQUAL(ty = Exp.BOOL()),Values.BOOL(boolean = b2))  
+    case (Values.BOOL(boolean = b1),Exp.NEQUAL(ty = Exp.ET_BOOL()),Values.BOOL(boolean = b2))  
       equation 
         nb1 = boolNot(b1) "b1 != b2  == (b1 and not b2) or (not b1 and b2)" ;
         nb2 = boolNot(b2);
@@ -4107,7 +4107,7 @@ algorithm
         b = boolOr(ba, bb);
       then
         Values.BOOL(b);
-    case (Values.BOOL(boolean = b1),Exp.EQUAL(ty = Exp.BOOL()),Values.BOOL(boolean = b2))
+    case (Values.BOOL(boolean = b1),Exp.EQUAL(ty = Exp.ET_BOOL()),Values.BOOL(boolean = b2))
       equation 
         nb1 = boolNot(b1) "b1 == b2  ==> b1 and b2 or (not b1 and not b2)" ;
         nb2 = boolNot(b2);
@@ -4116,29 +4116,29 @@ algorithm
         b = boolOr(ba, bb);
       then
         Values.BOOL(b);
-    case (Values.BOOL(boolean = false),Exp.LESS(ty = Exp.BOOL()),Values.BOOL(boolean = true)) then Values.BOOL(true); 
-    case (Values.BOOL(boolean = _),Exp.LESS(ty = Exp.BOOL()),Values.BOOL(boolean = _)) then Values.BOOL(false); 
+    case (Values.BOOL(boolean = false),Exp.LESS(ty = Exp.ET_BOOL()),Values.BOOL(boolean = true)) then Values.BOOL(true); 
+    case (Values.BOOL(boolean = _),Exp.LESS(ty = Exp.ET_BOOL()),Values.BOOL(boolean = _)) then Values.BOOL(false); 
 
     /* Enumerations */
-    case (Values.ENUM(index = i1),Exp.LESS(ty = Exp.ENUMERATION(index = SOME(_))),Values.ENUM(index = i2)) 
+    case (Values.ENUM(index = i1),Exp.LESS(ty = Exp.ET_ENUMERATION(index = SOME(_))),Values.ENUM(index = i2)) 
 //    case (Values.ENUM(cr1,i1),Exp.LESS(ty = Exp.ENUM()),Values.ENUM(cr2,i2)) 
       equation         
         b = (i1 < i2);
       then
         Values.BOOL(b);
-    case (Values.ENUM(index = i1),Exp.LESSEQ(ty = Exp.ENUMERATION(index = SOME(_))),Values.ENUM(index = i2))
+    case (Values.ENUM(index = i1),Exp.LESSEQ(ty = Exp.ET_ENUMERATION(index = SOME(_))),Values.ENUM(index = i2))
 //    case (Values.ENUM(cr1,i1),Exp.LESSEQ(ty = Exp.ENUM()),Values.ENUM(cr2,i2))
       equation 
         b = (i1 <= i2);
       then
         Values.BOOL(b);
-    case (Values.ENUM(index = i1),Exp.GREATEREQ(ty = Exp.ENUMERATION(index = SOME(_))),Values.ENUM(index = i2))
+    case (Values.ENUM(index = i1),Exp.GREATEREQ(ty = Exp.ET_ENUMERATION(index = SOME(_))),Values.ENUM(index = i2))
 //    case (Values.ENUM(cr1,i1),Exp.GREATEREQ(ty = Exp.ENUM()),Values.ENUM(cr2,i2))
       equation 
         b = (i1 >= i2);
       then
         Values.BOOL(b);
-    case (Values.ENUM(index = i1),Exp.EQUAL(ty = Exp.ENUMERATION(index = SOME(_))),Values.ENUM(index = i2))
+    case (Values.ENUM(index = i1),Exp.EQUAL(ty = Exp.ET_ENUMERATION(index = SOME(_))),Values.ENUM(index = i2))
 //    case (Values.ENUM(cr1,i1),Exp.EQUAL(ty = Exp.ENUM()),Values.ENUM(cr2,i2))
       equation
         // Why is this not performed for less or grater?
@@ -4147,7 +4147,7 @@ algorithm
         // b = boolAnd(ba, bb);
       then
         Values.BOOL(bb);
-    case (Values.ENUM(index = i1),Exp.NEQUAL(ty = Exp.ENUMERATION(index = SOME(_))),Values.ENUM(index = i2))
+    case (Values.ENUM(index = i1),Exp.NEQUAL(ty = Exp.ET_ENUMERATION(index = SOME(_))),Values.ENUM(index = i2))
 //    case (Values.ENUM(cr1,i1),Exp.NEQUAL(ty = Exp.ENUM()),Values.ENUM(cr2,i2))
       equation
         // ba = boolNot(Exp.crefEqual(cr1, cr2));
@@ -4367,7 +4367,7 @@ algorithm
         Integer idx;
         list<String> names;
       equation
-         Exp.ENUMERATION(SOME(idx), _, names, {}) = Exp.getEnumTypefromCref(c);
+         Exp.ET_ENUMERATION(SOME(idx), _, names, {}) = Exp.getEnumTypefromCref(c);
          path = Exp.crefToPath(c);
       then
         (cache,Values.ENUM(idx,path,names));

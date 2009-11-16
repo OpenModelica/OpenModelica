@@ -456,7 +456,7 @@ function resultGraphWithRoots
   HashTableCG.HashTable table0;
   Exp.ComponentRef dummyRoot;
 algorithm
-  dummyRoot := Exp.CREF_IDENT("__DUMMY_ROOT", Exp.INT, {});
+  dummyRoot := Exp.CREF_IDENT("__DUMMY_ROOT", Exp.ET_INT, {});
   table0 := HashTableCG.emptyHashTable();
   outTable := addRootsToTable(table0, roots, dummyRoot);
 end resultGraphWithRoots;
@@ -575,7 +575,7 @@ algorithm
   table := resultGraphWithRoots(definiteRoots);
   table := addBranchesToTable(table, branches);
   orderedPotentialRoots := Util.sort(potentialRoots, ord);
-  dummyRoot := Exp.CREF_IDENT("__DUMMY_ROOT", Exp.INT, {});
+  dummyRoot := Exp.CREF_IDENT("__DUMMY_ROOT", Exp.ET_INT, {});
   (table, dae) := addConnections(table, connections, {});
   (table, finalRoots) := addPotentialRootsToTable(table, orderedPotentialRoots, definiteRoots, dummyRoot);  
   outRoots := finalRoots;

@@ -69,13 +69,13 @@ algorithm
       Exp.Type from,to;
       Integer i,ival;
     case (_,_,{}) then {}; 
-    case ((from as Exp.INT()),(to as Exp.REAL()),(Values.INTEGER(integer = i) :: vrest))
+    case ((from as Exp.ET_INT()),(to as Exp.ET_REAL()),(Values.INTEGER(integer = i) :: vrest))
       equation 
         vallst = typeConvert(from, to, vrest);
         rval = intReal(i);
       then
         (Values.REAL(rval) :: vallst);
-    case ((from as Exp.REAL()),(to as Exp.INT()),(Values.REAL(real = r) :: vrest))
+    case ((from as Exp.ET_REAL()),(to as Exp.ET_INT()),(Values.REAL(real = r) :: vrest))
       equation 
         vallst = typeConvert(from, to, vrest);
         ival = realInt(r);

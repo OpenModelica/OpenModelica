@@ -305,13 +305,13 @@ algorithm
     case (PREFIX(PRE(prefix = i,subscripts = s,next = xs),cp),NONE)
       equation 
         s_1 = Exp.intSubscripts(s);
-        cref_1 = prefixToCref2(PREFIX(xs,cp), SOME(Exp.CREF_IDENT(i,Exp.COMPLEX("",{},ClassInf.UNKNOWN("")),s_1)));
+        cref_1 = prefixToCref2(PREFIX(xs,cp), SOME(Exp.CREF_IDENT(i,Exp.ET_COMPLEX("",{},ClassInf.UNKNOWN("")),s_1)));
       then
         cref_1;
     case (PREFIX(PRE(prefix = i,subscripts = s,next = xs),cp),SOME(cref))
       equation 
         s_1 = Exp.intSubscripts(s);
-        cref_1 = prefixToCref2(PREFIX(xs,cp), SOME(Exp.CREF_QUAL(i,Exp.COMPLEX("",{},ClassInf.UNKNOWN("")),s_1,cref)));
+        cref_1 = prefixToCref2(PREFIX(xs,cp), SOME(Exp.CREF_QUAL(i,Exp.ET_COMPLEX("",{},ClassInf.UNKNOWN("")),s_1,cref)));
       then
         cref_1;
   end matchcontinue;

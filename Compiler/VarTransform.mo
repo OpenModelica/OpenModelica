@@ -168,21 +168,21 @@ algorithm outDae := matchcontinue(inDae,repl,condExpFunc)
     case(DAE.DEFINE(cr,e)::dae,repl,condExpFunc) 
       equation
           (e2) = replaceExp(e, repl, condExpFunc);
-        (Exp.CREF(cr2,_)) = replaceExp(Exp.CREF(cr,Exp.REAL()), repl, condExpFunc);
+        (Exp.CREF(cr2,_)) = replaceExp(Exp.CREF(cr,Exp.ET_REAL()), repl, condExpFunc);
         dae2 = applyReplacementsDAE(dae,repl,condExpFunc);
       then DAE.DEFINE(cr2,e2)::dae2;
    
     case(DAE.INITIALDEFINE(cr,e)::dae,repl,condExpFunc) 
       equation
           (e2) = replaceExp(e, repl, condExpFunc);
-        (Exp.CREF(cr2,_)) = replaceExp(Exp.CREF(cr,Exp.REAL()), repl, condExpFunc);
+        (Exp.CREF(cr2,_)) = replaceExp(Exp.CREF(cr,Exp.ET_REAL()), repl, condExpFunc);
         dae2 = applyReplacementsDAE(dae,repl,condExpFunc);
       then DAE.INITIALDEFINE(cr2,e2)::dae2;
         
     case(DAE.EQUEQUATION(cr,cr1)::dae,repl,condExpFunc) 
       equation
-        (Exp.CREF(cr2,_)) = replaceExp(Exp.CREF(cr,Exp.REAL()), repl, condExpFunc);
-        (Exp.CREF(cr1_2,_)) = replaceExp(Exp.CREF(cr1,Exp.REAL()), repl, condExpFunc);
+        (Exp.CREF(cr2,_)) = replaceExp(Exp.CREF(cr,Exp.ET_REAL()), repl, condExpFunc);
+        (Exp.CREF(cr1_2,_)) = replaceExp(Exp.CREF(cr1,Exp.ET_REAL()), repl, condExpFunc);
         dae2 = applyReplacementsDAE(dae,repl,condExpFunc);
       then DAE.EQUEQUATION(cr2,cr1_2)::dae2;
         
@@ -296,7 +296,7 @@ algorithm outDae := matchcontinue(inDae,repl,condExpFunc)
      case(DAE.REINIT(cr,e1)::dae,repl,condExpFunc) 
       equation
           (e11) = replaceExp(e1, repl, condExpFunc);
-        (Exp.CREF(cr2,_)) = replaceExp(Exp.CREF(cr,Exp.REAL()), repl, condExpFunc);
+        (Exp.CREF(cr2,_)) = replaceExp(Exp.CREF(cr,Exp.ET_REAL()), repl, condExpFunc);
         dae2 = applyReplacementsDAE(dae,repl,condExpFunc);
       then DAE.REINIT(cr2,e11)::dae2;
      case(elt::_,_,_)
@@ -376,8 +376,8 @@ algorithm
       VariableReplacements repl;
     case (repl,cr1,cr2)
       equation 
-        (Exp.CREF(cr1_1,_)) = replaceExp(Exp.CREF(cr1,Exp.REAL()), repl, NONE);
-        (Exp.CREF(cr2_1,_)) = replaceExp(Exp.CREF(cr2,Exp.REAL()), repl, NONE);
+        (Exp.CREF(cr1_1,_)) = replaceExp(Exp.CREF(cr1,Exp.ET_REAL()), repl, NONE);
+        (Exp.CREF(cr2_1,_)) = replaceExp(Exp.CREF(cr2,Exp.ET_REAL()), repl, NONE);
       then
         (cr1_1,cr2_1);
   end matchcontinue;
@@ -399,7 +399,7 @@ algorithm  (ocrefs):= matchcontinue (repl,increfs)
       case(_,{}) then {};
     case (repl,cr1::increfs)
       equation 
-        (Exp.CREF(cr1_1,_)) = replaceExp(Exp.CREF(cr1,Exp.REAL()), repl, NONE);
+        (Exp.CREF(cr1_1,_)) = replaceExp(Exp.CREF(cr1,Exp.ET_REAL()), repl, NONE);
         ocrefs = applyReplacementList(repl,increfs);
       then
         cr1_1::ocrefs;
@@ -495,7 +495,7 @@ algorithm
     case ((DAE.STMT_ASSIGN_ARR(type_ = tp,componentRef = cr, exp = e) :: xs),repl,condExpFunc)
       equation 
         e_1 = replaceExp(e, repl, condExpFunc); 
-        (e_2 as Exp.CREF(cr_1,_)) = replaceExp(Exp.CREF(cr,Exp.OTHER()), repl, condExpFunc); 
+        (e_2 as Exp.CREF(cr_1,_)) = replaceExp(Exp.CREF(cr,Exp.ET_OTHER()), repl, condExpFunc); 
         xs_1 = replaceEquationsStmts(xs, repl,condExpFunc);
       then
         (DAE.STMT_ASSIGN_ARR(tp,cr_1,e_1) :: xs_1);
@@ -1094,7 +1094,7 @@ end replaceExpOpt;
 protected function avoidDoubleHashLookup "
 Author BZ 200X-XX modified 2008-06
 When adding replacement rules, we might not have the correct type availible at the moment.
-Then Exp.OTHER() is used, so when replacing exp and finding Exp.OTHER(), we use the 
+Then Exp.ET_OTHER() is used, so when replacing exp and finding Exp.ET_OTHER(), we use the 
 type of the expression to be replaced instead.
 TODO: find out why array residual functions containing arrays as xloc[] does not work, 
 	doing that will allow us to use this function for all crefs. 
@@ -1104,7 +1104,7 @@ input Exp.Type inType;
 output Exp.Exp outExp;
 algorithm  outExp := matchcontinue(inExp,inType)
   local Exp.ComponentRef cr;
-  case(Exp.CREF(cr,Exp.OTHER()),inType) 
+  case(Exp.CREF(cr,Exp.ET_OTHER()),inType) 
     then Exp.CREF(cr,inType);
   case(inExp,_) then inExp;
   end matchcontinue;
@@ -1409,7 +1409,7 @@ algorithm
         (klst,vlst) = bintreeToExplistOpt(left, klst, vlst);
         (klst,vlst) = bintreeToExplistOpt(right, klst, vlst);
       then
-        ((Exp.CREF(key,Exp.REAL()) :: klst),(value :: vlst));
+        ((Exp.CREF(key,Exp.ET_REAL()) :: klst),(value :: vlst));
     case (TREENODE(value = NONE,left = left,right = right),klst,vlst)
       equation 
         (klst,vlst) = bintreeToExplistOpt(left, klst, vlst);

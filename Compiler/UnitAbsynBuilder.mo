@@ -831,12 +831,12 @@ algorithm
     case({},ht,nextElt) then ({},ht,nextElt);
    
     case((r,UnitAbsyn.TYPEPARAMETER(name,0))::params,ht,nextElt) equation
-      indx = HashTable.get(Exp.CREF_IDENT(name,Exp.OTHER(),{}),ht);
+      indx = HashTable.get(Exp.CREF_IDENT(name,Exp.ET_OTHER(),{}),ht);
       (params,ht,nextElt) = createTypeParameterLocations4(params,ht,nextElt);
     then ((r,UnitAbsyn.TYPEPARAMETER(name,indx))::params,ht,nextElt);
       
     case((r,UnitAbsyn.TYPEPARAMETER(name,0))::params,ht,nextElt) equation
-        ht = HashTable.add((Exp.CREF_IDENT(name,Exp.OTHER(),{}),nextElt),ht);
+        ht = HashTable.add((Exp.CREF_IDENT(name,Exp.ET_OTHER(),{}),nextElt),ht);
        (params,ht,nextElt) = createTypeParameterLocations4(params,ht,nextElt);
     then((r,UnitAbsyn.TYPEPARAMETER(name,nextElt))::params,ht,nextElt+1);
       
@@ -877,29 +877,29 @@ algorithm
       (ut2,terms2,store) = buildTermExp(env,e2,false,ht,store);
       (terms,store) = buildTerms(env,dae,ht,store);
       terms = listAppend(terms1,listAppend(terms2,terms));
-    then  (UnitAbsyn.EQN(ut1,ut2,Exp.BINARY(e1,Exp.SUB(Exp.REAL()),e2))::terms,store);
+    then  (UnitAbsyn.EQN(ut1,ut2,Exp.BINARY(e1,Exp.SUB(Exp.ET_REAL()),e2))::terms,store);
       
     case(env,DAE.EQUEQUATION(cr1,cr2)::dae,ht,store) equation
-      (ut1,terms1,store) = buildTermExp(env,Exp.CREF(cr1,Exp.OTHER()),false,ht,store);
-      (ut2,terms2,store) = buildTermExp(env,Exp.CREF(cr2,Exp.OTHER()),false,ht,store);
+      (ut1,terms1,store) = buildTermExp(env,Exp.CREF(cr1,Exp.ET_OTHER()),false,ht,store);
+      (ut2,terms2,store) = buildTermExp(env,Exp.CREF(cr2,Exp.ET_OTHER()),false,ht,store);
       (terms,store) = buildTerms(env,dae,ht,store);
       terms = listAppend(terms1,listAppend(terms2,terms));
-    then  (UnitAbsyn.EQN(ut1,ut2,Exp.BINARY(Exp.CREF(cr1,Exp.OTHER()),Exp.SUB(Exp.REAL()),Exp.CREF(cr2,Exp.OTHER())))::terms,store);
+    then  (UnitAbsyn.EQN(ut1,ut2,Exp.BINARY(Exp.CREF(cr1,Exp.ET_OTHER()),Exp.SUB(Exp.ET_REAL()),Exp.CREF(cr2,Exp.ET_OTHER())))::terms,store);
            
       /* Only consider variables with binding from this instance level, not furhter down */
     case(env,DAE.VAR(componentRef=cr1 as Exp.CREF_IDENT(_,_,_),binding = SOME(e1))::dae,ht,store) equation      
-      (ut1,terms1,store) = buildTermExp(env,Exp.CREF(cr1,Exp.OTHER()),false,ht,store);
+      (ut1,terms1,store) = buildTermExp(env,Exp.CREF(cr1,Exp.ET_OTHER()),false,ht,store);
       (ut2,terms2,store) = buildTermExp(env,e1,false,ht,store);
       (terms,store) = buildTerms(env,dae,ht,store);
       terms = listAppend(terms1,listAppend(terms2,terms));    
-    then  (UnitAbsyn.EQN(ut1,ut2,Exp.BINARY(Exp.CREF(cr1,Exp.OTHER()),Exp.SUB(Exp.REAL()),e1))::terms,store);
+    then  (UnitAbsyn.EQN(ut1,ut2,Exp.BINARY(Exp.CREF(cr1,Exp.ET_OTHER()),Exp.SUB(Exp.ET_REAL()),e1))::terms,store);
             
     case(env,DAE.DEFINE(cr1,e1)::dae,ht,store) equation
-      (ut1,terms1,store) = buildTermExp(env,Exp.CREF(cr1,Exp.OTHER()),false,ht,store);
+      (ut1,terms1,store) = buildTermExp(env,Exp.CREF(cr1,Exp.ET_OTHER()),false,ht,store);
       (ut2,terms2,store) = buildTermExp(env,e1,false,ht,store);
       (terms,store) = buildTerms(env,dae,ht,store);
       terms = listAppend(terms1,listAppend(terms2,terms));
-    then  (UnitAbsyn.EQN(ut1,ut2,Exp.BINARY(Exp.CREF(cr1,Exp.OTHER()),Exp.SUB(Exp.REAL()),e1))::terms,store);
+    then  (UnitAbsyn.EQN(ut1,ut2,Exp.BINARY(Exp.CREF(cr1,Exp.ET_OTHER()),Exp.SUB(Exp.ET_REAL()),e1))::terms,store);
         
     case(env,_::dae,ht,store) equation
       (terms,store) = buildTerms(env,dae,ht,store);
@@ -930,14 +930,14 @@ algorithm
     
     /*case(env,e as Exp.RCONST(r),ht,store) equation
       s1 = realString(r);
-      indx = HashTable.get(Exp.CREF_IDENT(s1,Exp.OTHER(),{}),ht);
+      indx = HashTable.get(Exp.CREF_IDENT(s1,Exp.ET_OTHER(),{}),ht);
     then (UnitAbsyn.LOC(indx,e),{},store);*/
     
     case(env,e as Exp.ICONST(i),divOrMul,ht,store) local Integer i; equation      
       s1 = "$"+&intString(tick())+&"_"+&intString(i);
       u = Util.if_(divOrMul,str2unit("1",NONE),UnitAbsyn.UNSPECIFIED());            
       (store,indx) = add(u,store);
-       ht = HashTable.add((Exp.CREF_IDENT(s1,Exp.OTHER(),{}),indx),ht);
+       ht = HashTable.add((Exp.CREF_IDENT(s1,Exp.ET_OTHER(),{}),indx),ht);
     then (UnitAbsyn.LOC(indx,e),{},store);
     
     /* for each constant, add new unspecified unit*/
@@ -945,7 +945,7 @@ algorithm
       s1 = "$"+&intString(tick())+&"_"+&realString(r);
       u = Util.if_(divOrMul,str2unit("1",NONE),UnitAbsyn.UNSPECIFIED());
       (store,indx) = add(u,store);
-       ht = HashTable.add((Exp.CREF_IDENT(s1,Exp.OTHER(),{}),indx),ht);
+       ht = HashTable.add((Exp.CREF_IDENT(s1,Exp.ET_OTHER(),{}),indx),ht);
     then (UnitAbsyn.LOC(indx,e),{},store);
     
     case(env,Exp.CAST(_,e1),divOrMul,ht,store) equation
@@ -1350,14 +1350,14 @@ algorithm
       unit = selectConstantUnit(parentOp);
       (store,indx) = add(unit,store);
       s1 = realString(r);
-      ht = HashTable.add((Exp.CREF_IDENT(s1,Exp.OTHER(),{}),indx),ht);
+      ht = HashTable.add((Exp.CREF_IDENT(s1,Exp.ET_OTHER(),{}),indx),ht);
     then (store,ht);
       
    case(Exp.CAST(_,Exp.ICONST(i)),store,ht,parentOp) equation
       unit = selectConstantUnit(parentOp);
       (store,indx) = add(unit,store);
       s1 = intString(i);
-      ht = HashTable.add((Exp.CREF_IDENT(s1,Exp.OTHER(),{}),indx),ht);
+      ht = HashTable.add((Exp.CREF_IDENT(s1,Exp.ET_OTHER(),{}),indx),ht);
     then (store,ht);
       
     case(Exp.BINARY(e1,op,e2),store,ht,parentOp) equation

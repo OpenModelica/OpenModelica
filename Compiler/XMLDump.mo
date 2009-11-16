@@ -1764,14 +1764,14 @@ algorithm
         dumpStrCloseTag(MathMLOperator);
         dumpStrCloseTag(MathMLApply);
       then ();
-    case (Exp.CAST(ty = Exp.REAL(),exp = Exp.ICONST(integer = ival)))
+    case (Exp.CAST(ty = Exp.ET_REAL(),exp = Exp.ICONST(integer = ival)))
       equation
         false = RTOpts.modelicaOutput();
         rval = intReal(ival);
         res = realString(rval);
         dumpStrMathMLNumberAttr(res,MathMLType,MathMLReal);
       then ();
-    case (Exp.CAST(ty = Exp.REAL(),exp = Exp.UNARY(operator = Exp.UMINUS(ty = _),exp = Exp.ICONST(integer = ival))))
+    case (Exp.CAST(ty = Exp.ET_REAL(),exp = Exp.UNARY(operator = Exp.UMINUS(ty = _),exp = Exp.ICONST(integer = ival))))
       equation
         false = RTOpts.modelicaOutput();
         rval = intReal(ival);
@@ -1781,7 +1781,7 @@ algorithm
         dumpStrMathMLNumberAttr(res,MathMLType,MathMLReal);
         dumpStrCloseTag(MathMLApply);
       then ();
-    case (Exp.CAST(ty = Exp.REAL(),exp = e))
+    case (Exp.CAST(ty = Exp.ET_REAL(),exp = e))
       equation
         false = RTOpts.modelicaOutput();
         dumpStrOpenTag(MathMLApply);
@@ -1789,7 +1789,7 @@ algorithm
         dumpExp2(e);
         dumpStrCloseTag(MathMLApply);
       then ();
-    case (Exp.CAST(ty = Exp.REAL(),exp = e))
+    case (Exp.CAST(ty = Exp.ET_REAL(),exp = e))
       equation
         true = RTOpts.modelicaOutput();
         dumpExp2(e);
@@ -3710,14 +3710,14 @@ algorithm
         s = Util.stringAppendList({s1_1,":",s2_1,":",s3_1});
       then
         s;
-    case (Exp.CAST(ty = Exp.REAL(),exp = Exp.ICONST(integer = ival)))
+    case (Exp.CAST(ty = Exp.ET_REAL(),exp = Exp.ICONST(integer = ival)))
       equation
         false = RTOpts.modelicaOutput();
         rval = intReal(ival);
         res = realString(rval);
       then
         res;
-    case (Exp.CAST(ty = Exp.REAL(),exp = Exp.UNARY(operator = Exp.UMINUS(ty = _),exp = Exp.ICONST(integer = ival))))
+    case (Exp.CAST(ty = Exp.ET_REAL(),exp = Exp.UNARY(operator = Exp.UMINUS(ty = _),exp = Exp.ICONST(integer = ival))))
       equation
         false = RTOpts.modelicaOutput();
         rval = intReal(ival);
@@ -3725,14 +3725,14 @@ algorithm
         res2 = stringAppend("-", res);
       then
         res2;
-    case (Exp.CAST(ty = Exp.REAL(),exp = e))
+    case (Exp.CAST(ty = Exp.ET_REAL(),exp = e))
       equation
         false = RTOpts.modelicaOutput();
         s = printExpStr(e);
         s_2 = Util.stringAppendList({"Real(",s,")"});
       then
         s_2;
-    case (Exp.CAST(ty = Exp.REAL(),exp = e))
+    case (Exp.CAST(ty = Exp.ET_REAL(),exp = e))
       equation
         true = RTOpts.modelicaOutput();
         s = printExpStr(e);

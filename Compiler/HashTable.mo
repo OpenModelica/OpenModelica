@@ -57,27 +57,27 @@ protected
 HashTable t;
 algorithm
   t := emptyHashTable();
-  t := add((Exp.CREF_IDENT("a",Exp.OTHER(),{}),2),t);
-  t := add((Exp.CREF_IDENT("b",Exp.OTHER(),{}),4),t);
-  t := add((Exp.CREF_IDENT("c",Exp.OTHER(),{}),6),t);
+  t := add((Exp.CREF_IDENT("a",Exp.ET_OTHER(),{}),2),t);
+  t := add((Exp.CREF_IDENT("b",Exp.ET_OTHER(),{}),4),t);
+  t := add((Exp.CREF_IDENT("c",Exp.ET_OTHER(),{}),6),t);
   dumpHashTable(t);
   
-  print("b =");print(intString(get(Exp.CREF_IDENT("b",Exp.OTHER(),{}),t)));print("\n");
-  print("a =");print(intString(get(Exp.CREF_IDENT("a",Exp.OTHER(),{}),t)));print("\n");
-  print("c =");print(intString(get(Exp.CREF_IDENT("c",Exp.OTHER(),{}),t)));print("\n");
-  t := add((Exp.CREF_IDENT("c",Exp.OTHER(),{}),66),t);
-  t := add((Exp.CREF_IDENT("a",Exp.OTHER(),{}),22),t);
-  t := add((Exp.CREF_IDENT("q",Exp.OTHER(),{}),123),t);
+  print("b =");print(intString(get(Exp.CREF_IDENT("b",Exp.ET_OTHER(),{}),t)));print("\n");
+  print("a =");print(intString(get(Exp.CREF_IDENT("a",Exp.ET_OTHER(),{}),t)));print("\n");
+  print("c =");print(intString(get(Exp.CREF_IDENT("c",Exp.ET_OTHER(),{}),t)));print("\n");
+  t := add((Exp.CREF_IDENT("c",Exp.ET_OTHER(),{}),66),t);
+  t := add((Exp.CREF_IDENT("a",Exp.ET_OTHER(),{}),22),t);
+  t := add((Exp.CREF_IDENT("q",Exp.ET_OTHER(),{}),123),t);
   
-  print("b' =");print(intString(get(Exp.CREF_IDENT("b",Exp.OTHER(),{}),t)));print("\n");
-  print("a' =");print(intString(get(Exp.CREF_IDENT("a",Exp.OTHER(),{}),t)));print("\n");
-  print("c' =");print(intString(get(Exp.CREF_IDENT("c",Exp.OTHER(),{}),t)));print("\n");
+  print("b' =");print(intString(get(Exp.CREF_IDENT("b",Exp.ET_OTHER(),{}),t)));print("\n");
+  print("a' =");print(intString(get(Exp.CREF_IDENT("a",Exp.ET_OTHER(),{}),t)));print("\n");
+  print("c' =");print(intString(get(Exp.CREF_IDENT("c",Exp.ET_OTHER(),{}),t)));print("\n");
   dumpHashTable(t);
-  t := delete(Exp.CREF_IDENT("c",Exp.OTHER(),{}),t);
-  t := add((Exp.CREF_IDENT("cc",Exp.OTHER(),{}),567),t);
+  t := delete(Exp.CREF_IDENT("c",Exp.ET_OTHER(),{}),t);
+  t := add((Exp.CREF_IDENT("cc",Exp.ET_OTHER(),{}),567),t);
    
   dumpHashTable(t);
-  print("c' =");print(intString(get(Exp.CREF_IDENT("c",Exp.OTHER(),{}),t)));print("\n");
+  print("c' =");print(intString(get(Exp.CREF_IDENT("c",Exp.ET_OTHER(),{}),t)));print("\n");
   
 end test;
 

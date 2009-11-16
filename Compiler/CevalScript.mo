@@ -268,7 +268,7 @@ algorithm
     case (cache,env,
       Exp.CALL(
         path = Absyn.IDENT(name = "translateModel"),
-        expLst = {Exp.CODE(Absyn.C_TYPENAME(className),Exp.OTHER()),filenameprefix}),
+        expLst = {Exp.CODE(Absyn.C_TYPENAME(className),Exp.ET_OTHER()),filenameprefix}),
       (st as Interactive.SYMBOLTABLE(
         ast = p,
         explodedAst = sp,
@@ -283,7 +283,7 @@ algorithm
     case (cache,env,
       Exp.CALL(
         path = Absyn.IDENT(name = "exportDAEtoMatlab"),
-        expLst = {Exp.CODE(Absyn.C_TYPENAME(className),Exp.OTHER()),filenameprefix}),
+        expLst = {Exp.CODE(Absyn.C_TYPENAME(className),Exp.ET_OTHER()),filenameprefix}),
       (st as Interactive.SYMBOLTABLE(
         ast = p,
         explodedAst = sp,
@@ -298,7 +298,7 @@ algorithm
       case (cache,env,
         Exp.CALL(
           path = Absyn.IDENT(name = "checkModel"),
-          expLst = {Exp.CODE(Absyn.C_TYPENAME(className),Exp.OTHER())}),
+          expLst = {Exp.CODE(Absyn.C_TYPENAME(className),Exp.ET_OTHER())}),
         (st as Interactive.SYMBOLTABLE(
           ast = p, 
           explodedAst = sp, 
@@ -313,7 +313,7 @@ algorithm
          case (cache,env,
         Exp.CALL(
           path = Absyn.IDENT(name = "checkAllModelsRecursive"),
-          expLst = {Exp.CODE(Absyn.C_TYPENAME(className),Exp.OTHER())}),
+          expLst = {Exp.CODE(Absyn.C_TYPENAME(className),Exp.ET_OTHER())}),
         (st as Interactive.SYMBOLTABLE(
           ast = p,
           explodedAst = sp,
@@ -328,7 +328,7 @@ algorithm
       case (cache,env,
         Exp.CALL(
           path = Absyn.IDENT(name = "translateGraphics"),
-          expLst = {Exp.CODE(Absyn.C_TYPENAME(className),Exp.OTHER())}),
+          expLst = {Exp.CODE(Absyn.C_TYPENAME(className),Exp.ET_OTHER())}),
         (st as Interactive.SYMBOLTABLE(
           ast = p,
           explodedAst = sp,
@@ -777,7 +777,7 @@ algorithm
         
     
         (cache,Values.RECORD(orderd={Values.STRING(filename)}),_) = Ceval.ceval(cache,env, 
-          Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.OTHER(),{}),Exp.OTHER()), true, SOME(st), NONE, msg);
+          Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.ET_OTHER(),{}),Exp.ET_OTHER()), true, SOME(st), NONE, msg);
         value = SimulationResults.readPtolemyplotDataset(filename, vars_2, 0);
         pwd = System.pwd();
         cit = winCitation();
@@ -809,7 +809,7 @@ algorithm
         vars_1 = Util.listMap(vars, Exp.printExpStr) "Catch error reading simulation file." ;
         vars_2 = Util.listUnionElt("time", vars_1);
         (cache,Values.RECORD(orderd={Values.STRING(filename)}),_) = Ceval.ceval(cache,env, 
-          Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.OTHER(),{}),Exp.OTHER()), true, SOME(st), NONE, msg);
+          Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.ET_OTHER(),{}),Exp.ET_OTHER()), true, SOME(st), NONE, msg);
         failure(_ = SimulationResults.readPtolemyplotDataset(filename, vars_2, 0));
       then
         (cache,Values.STRING("Error reading the simulation result."),st);
@@ -828,7 +828,7 @@ algorithm
         vars_1 = Util.listMap(vars, Exp.printExpStr) "Catch error reading simulation file." ;
         vars_2 = Util.listUnionElt("time", vars_1);
         failure((_,_,_) = Ceval.ceval(cache,env, 
-          Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.OTHER(),{}),Exp.OTHER()), true, SOME(st), NONE, Ceval.NO_MSG()));
+          Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.ET_OTHER(),{}),Exp.ET_OTHER()), true, SOME(st), NONE, Ceval.NO_MSG()));
       then
         (cache,Values.STRING("No simulation result to plot."),st);
 
@@ -951,7 +951,7 @@ algorithm
       equation
 
          (cache,Values.RECORD(orderd={Values.STRING(filename)}),_) = Ceval.ceval(cache,env,
-          Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.OTHER(),{}),Exp.OTHER()), true, SOME(st), NONE, msg);
+          Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.ET_OTHER(),{}),Exp.ET_OTHER()), true, SOME(st), NONE, msg);
         failure(_ = System.getVariableNames(filename));
 //        vars_2 = Util.stringSplitAtChar(str, " ");
 
@@ -981,7 +981,7 @@ algorithm
         Boolean legend, grid, logX, logY, points;
       equation
         (cache,Values.RECORD(orderd={Values.STRING(filename)}),_) = Ceval.ceval(cache,env,
-        Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.OTHER(),{}),Exp.OTHER()), true, SOME(st), NONE, msg);
+        Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.ET_OTHER(),{}),Exp.ET_OTHER()), true, SOME(st), NONE, msg);
         str = System.getVariableNames(filename);
         vars_2 = Util.stringSplitAtChar(str, " ");
         value = SimulationResults.readPtolemyplotDataset(filename, vars_2, 0);
@@ -1081,7 +1081,7 @@ algorithm
         vars_1 = Util.listMap(vars, Exp.printExpStr) "plot" ;
         vars_2 = Util.listUnionElt("time", vars_1);
         (cache,Values.RECORD(orderd={Values.STRING(filename)}),_) = Ceval.ceval(cache,env,
-          Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.OTHER(),{}),Exp.OTHER()), true, SOME(st), NONE, msg);
+          Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.ET_OTHER(),{}),Exp.ET_OTHER()), true, SOME(st), NONE, msg);
         value = SimulationResults.readPtolemyplotDataset(filename, vars_2, 0);
         res = ValuesUtil.sendPtolemyplotDataset(value, vars_2, "Plot by OpenModelica", interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, Exp.printExpStr(xRange), Exp.printExpStr(yRange));
 
@@ -1111,7 +1111,7 @@ algorithm
         vars_1 = Util.listMap(vars, Exp.printExpStr) "Catch error reading simulation file." ;
         vars_2 = Util.listUnionElt("time", vars_1);
         (cache,Values.RECORD(orderd={Values.STRING(filename)}),_) = Ceval.ceval(cache,env,
-          Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.OTHER(),{}),Exp.OTHER()), true, SOME(st), NONE, msg);
+          Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.ET_OTHER(),{}),Exp.ET_OTHER()), true, SOME(st), NONE, msg);
         failure(_ = SimulationResults.readPtolemyplotDataset(filename, vars_2, 0));
       then
         (cache,Values.STRING("Error reading the simulation result."),st);
@@ -1138,7 +1138,7 @@ algorithm
         vars_1 = Util.listMap(vars, Exp.printExpStr) "Catch error reading simulation file." ;
         vars_2 = Util.listUnionElt("time", vars_1);
         failure((_,_,_) = Ceval.ceval(cache,env,
-          Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.OTHER(),{}),Exp.OTHER()), true, SOME(st), NONE, Ceval.NO_MSG()));
+          Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.ET_OTHER(),{}),Exp.ET_OTHER()), true, SOME(st), NONE, Ceval.NO_MSG()));
       then
         (cache,Values.STRING("No simulation result to plot."),st);
 
@@ -1263,7 +1263,7 @@ algorithm
 //        listMap(vars_2, print);
         print(Util.stringAppendList(vars_2));
         (cache,Values.RECORD(orderd={Values.STRING(filename)}),_) = Ceval.ceval(cache,env,
-          Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.OTHER(),{}),Exp.OTHER()), true, SOME(st), NONE, msg);
+          Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.ET_OTHER(),{}),Exp.ET_OTHER()), true, SOME(st), NONE, msg);
         print("tjo\n");
         value = SimulationResults.readPtolemyplotDataset(filename, vars_2, 0);
         print("value = " +& ValuesUtil.valString(value));
@@ -1294,7 +1294,7 @@ algorithm
         vars_1 = Util.listMap(vars, Exp.printExpStr) "Catch error reading simulation file." ;
         vars_2 = Util.listUnionElt("time", vars_1);
         (cache,Values.RECORD(orderd={Values.STRING(filename)}),_) = Ceval.ceval(cache,env,
-          Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.OTHER(),{}),Exp.OTHER()), true, SOME(st), NONE, msg);
+          Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.ET_OTHER(),{}),Exp.ET_OTHER()), true, SOME(st), NONE, msg);
         failure(_ = SimulationResults.readPtolemyplotDataset(filename, vars_2, 0));
       then
         (cache,Values.STRING("Error reading the simulation result."),st);
@@ -1320,7 +1320,7 @@ algorithm
         vars_1 = Util.listMap(vars, Exp.printExpStr) "Catch error reading simulation file." ;
         vars_2 = Util.listUnionElt("time", vars_1);
         failure((_,_,_) = Ceval.ceval(cache,env,
-          Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.OTHER(),{}),Exp.OTHER()), true, SOME(st), NONE, Ceval.NO_MSG()));
+          Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.ET_OTHER(),{}),Exp.ET_OTHER()), true, SOME(st), NONE, Ceval.NO_MSG()));
       then
         (cache,Values.STRING("No simulation result to plot."),st);
 
@@ -1371,7 +1371,7 @@ algorithm
         (cache,Values.REAL(timeStamp),SOME(st)) = Ceval.ceval(cache,env, varTimeStamp, true, SOME(st), NONE, msg);
 
         (cache,Values.RECORD(orderd={Values.STRING(filename)}),_) = Ceval.ceval(cache,env,
-        Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.OTHER(),{}),Exp.OTHER()), true, SOME(st), NONE, msg);
+        Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.ET_OTHER(),{}),Exp.ET_OTHER()), true, SOME(st), NONE, msg);
 
         Values.ARRAY({Values.ARRAY(varValues)}) = SimulationResults.readPtolemyplotDataset(filename, vars_1, 0);
         Values.ARRAY({Values.ARRAY(timeValues)}) = SimulationResults.readPtolemyplotDataset(filename, {"time"}, 0);
@@ -1408,7 +1408,7 @@ algorithm
         (cache,Values.INTEGER(timeStamp),SOME(st)) = Ceval.ceval(cache,env, varTimeStamp, true, SOME(st), NONE, msg);
 
         (cache,Values.RECORD(orderd={Values.STRING(filename)}),_) = Ceval.ceval(cache,env,
-        Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.OTHER(),{}),Exp.OTHER()), true, SOME(st), NONE, msg);
+        Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.ET_OTHER(),{}),Exp.ET_OTHER()), true, SOME(st), NONE, msg);
 
         Values.ARRAY({Values.ARRAY(varValues)}) = SimulationResults.readPtolemyplotDataset(filename, vars_1, 0);
         Values.ARRAY({Values.ARRAY(timeValues)}) = SimulationResults.readPtolemyplotDataset(filename, {"time"}, 0);
@@ -1523,7 +1523,7 @@ algorithm
         length = listLength(vars_1);
         (length > 1) = true;
         (cache,Values.RECORD(orderd={Values.STRING(filename)}),_) = Ceval.ceval(cache,env, 
-          Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.OTHER(),{}),Exp.OTHER()), true, SOME(st), NONE, msg);
+          Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.ET_OTHER(),{}),Exp.ET_OTHER()), true, SOME(st), NONE, msg);
         value = SimulationResults.readPtolemyplotDataset(filename, vars_1, 0);
         pwd = System.pwd();
         cit = winCitation();
@@ -1566,7 +1566,7 @@ algorithm
         vars = Util.listMap(vars,Exp.CodeVarToCref);
         vars_1 = Util.listMap(vars, Exp.printExpStr) "Catch error reading simulation file." ;
         (cache,Values.RECORD(orderd={Values.STRING(filename)}),_) = Ceval.ceval(cache,env,
-          Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.OTHER(),{}),Exp.OTHER()), true, SOME(st), NONE, msg) "Util.list_union_elt(\"time\",vars\') => vars\'\' &" ;
+          Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.ET_OTHER(),{}),Exp.ET_OTHER()), true, SOME(st), NONE, msg) "Util.list_union_elt(\"time\",vars\') => vars\'\' &" ;
         failure(_ = SimulationResults.readPtolemyplotDataset(filename, vars_1, 0));
       then
         (cache,Values.STRING("Error reading the simulation result."),st);
@@ -1582,7 +1582,7 @@ algorithm
         vars = Util.listMap(vars,Exp.CodeVarToCref);
         vars_1 = Util.listMap(vars, Exp.printExpStr) "Catch error reading simulation file." ;
         failure((_,_,_) = Ceval.ceval(cache,env,
-          Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.OTHER(),{}),Exp.OTHER()), true, SOME(st), NONE, Ceval.NO_MSG())) "Util.list_union_elt(\"time\",vars\') => vars\'\' &" ;
+          Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.ET_OTHER(),{}),Exp.ET_OTHER()), true, SOME(st), NONE, Ceval.NO_MSG())) "Util.list_union_elt(\"time\",vars\') => vars\'\' &" ;
       then
         (cache,Values.STRING("No simulation result to plot."),st);
 
@@ -1660,7 +1660,7 @@ algorithm
         length = listLength(vars_1);
         (length > 1) = true;
         (cache,Values.RECORD(orderd={Values.STRING(filename)}),_) = Ceval.ceval(cache,env,
-          Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.OTHER(),{}),Exp.OTHER()), true, SOME(st), NONE, msg);
+          Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.ET_OTHER(),{}),Exp.ET_OTHER()), true, SOME(st), NONE, msg);
          value = SimulationResults.readPtolemyplotDataset(filename, vars_1, 0);
          res = ValuesUtil.sendPtolemyplotDataset(value, vars_1, "Plot by OpenModelica", interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, Exp.printExpStr(xRange), Exp.printExpStr(yRange));
 
@@ -1678,7 +1678,7 @@ algorithm
         vars = Util.listMap(vars,Exp.CodeVarToCref);
         vars_1 = Util.listMap(vars, Exp.printExpStr) "Catch error reading simulation file." ;
         failure((_,_,_) = Ceval.ceval(cache,env,
-          Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.OTHER(),{}),Exp.OTHER()), true, SOME(st), NONE, Ceval.NO_MSG())) "Util.list_union_elt(\"time\",vars\') => vars\'\' &" ;
+          Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.ET_OTHER(),{}),Exp.ET_OTHER()), true, SOME(st), NONE, Ceval.NO_MSG())) "Util.list_union_elt(\"time\",vars\') => vars\'\' &" ;
       then
         (cache,Values.STRING("No simulation result to plot."),st);
 
@@ -1710,7 +1710,7 @@ algorithm
         vars = Util.listMap(vars,Exp.CodeVarToCref);
         vars_1 = Util.listMap(vars, Exp.printExpStr) "Catch error reading simulation file." ;
         (cache,Values.RECORD(orderd={Values.STRING(filename)}),_) = Ceval.ceval(cache,env, 
-          Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.OTHER(),{}),Exp.OTHER()), true, SOME(st), NONE, msg) "Util.list_union_elt(\"time\",vars\') => vars\'\' &" ;
+          Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.ET_OTHER(),{}),Exp.ET_OTHER()), true, SOME(st), NONE, msg) "Util.list_union_elt(\"time\",vars\') => vars\'\' &" ;
         failure(_ = SimulationResults.readPtolemyplotDataset(filename, vars_1, 0));
       then
         (cache,Values.STRING("Error reading the simulation result."),st);
@@ -1726,7 +1726,7 @@ algorithm
         vars = Util.listMap(vars,Exp.CodeVarToCref);
         vars_1 = Util.listMap(vars, Exp.printExpStr) "Catch error reading simulation file." ;
         failure((_,_,_) = Ceval.ceval(cache,env, 
-          Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.OTHER(),{}),Exp.OTHER()), true, SOME(st), NONE, Ceval.NO_MSG())) "Util.list_union_elt(\"time\",vars\') => vars\'\' &" ;
+          Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.ET_OTHER(),{}),Exp.ET_OTHER()), true, SOME(st), NONE, Ceval.NO_MSG())) "Util.list_union_elt(\"time\",vars\') => vars\'\' &" ;
       then
         (cache,Values.STRING("No simulation result to plot."),st);
 
@@ -2194,7 +2194,7 @@ algorithm
     String filename;
     case(cache,env,SOME(st),timeStamp,varName) equation            
       (cache,Values.RECORD(orderd={Values.STRING(filename)}),_) = Ceval.ceval(cache,env, 
-        Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.OTHER(),{}),Exp.OTHER()), true, SOME(st), NONE, Ceval.NO_MSG());
+        Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",Exp.ET_OTHER(),{}),Exp.ET_OTHER()), true, SOME(st), NONE, Ceval.NO_MSG());
       
       Values.ARRAY({Values.ARRAY(varValues)}) = SimulationResults.readPtolemyplotDataset(filename, {varName}, 0);
       Values.ARRAY({Values.ARRAY(timeValues)}) = SimulationResults.readPtolemyplotDataset(filename, {"time"}, 0); 
@@ -3405,7 +3405,7 @@ algorithm
       equation 
         classname_1 = Static.componentRefToPath(classname) "Check cached instantiated class" ;
         Interactive.INSTCLASS(_,dae,env) = Interactive.getInstantiatedClass(ic, classname_1);
-        cref_1 = Exp.joinCrefs(cref, Exp.CREF_IDENT("stateSelect",Exp.OTHER(),{}));
+        cref_1 = Exp.joinCrefs(cref, Exp.CREF_IDENT("stateSelect",Exp.ET_OTHER(),{}));
         (cache,attr,ty,DAE.EQBOUND(exp,_,_),_,_) = Lookup.lookupVar(cache,env, cref_1); 
         str = Exp.printExpStr(exp);
       then
@@ -3430,7 +3430,7 @@ algorithm
         ci_state = ClassInf.start(r, n);
         (cache,env4,_,_,dae1,csets_1,ci_state_1,tys,_,_,_,_) = Inst.instClassIn(cache,env3, InstanceHierarchy.emptyInstanceHierarchy,UnitAbsyn.noStore,DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
           ci_state, c, false, {}, false, ConnectionGraph.EMPTY,NONE);
-        cref_1 = Exp.joinCrefs(cref, Exp.CREF_IDENT("stateSelect",Exp.OTHER(),{}));
+        cref_1 = Exp.joinCrefs(cref, Exp.CREF_IDENT("stateSelect",Exp.ET_OTHER(),{}));
         (cache,attr,ty,DAE.EQBOUND(exp,_,_),_,_) = Lookup.lookupVar(cache,env4, cref_1);
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(classname_1,dae1,env4));
         str = Exp.printExpStr(exp);
@@ -3447,7 +3447,7 @@ algorithm
       equation 
         classname_1 = Static.componentRefToPath(classname);
         Interactive.INSTCLASS(_,dae,env) = Interactive.getInstantiatedClass(ic, classname_1);
-        cref_1 = Exp.joinCrefs(cref, Exp.CREF_IDENT(attribute,Exp.OTHER(),{}));
+        cref_1 = Exp.joinCrefs(cref, Exp.CREF_IDENT(attribute,Exp.ET_OTHER(),{}));
         (cache,attr,ty,DAE.VALBOUND(v),_,_) = Lookup.lookupVar(cache,env, cref_1);
       then
         (cache,v,st);
@@ -3471,7 +3471,7 @@ algorithm
         ci_state = ClassInf.start(r, n);
         (cache,env4,_,_,dae1,csets_1,ci_state_1,tys,_,_,_,_) = Inst.instClassIn(cache,env3, InstanceHierarchy.emptyInstanceHierarchy, UnitAbsyn.noStore,DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
           ci_state, c, false, {}, false, ConnectionGraph.EMPTY,NONE);
-        cref_1 = Exp.joinCrefs(cref, Exp.CREF_IDENT(attribute,Exp.OTHER(),{}));
+        cref_1 = Exp.joinCrefs(cref, Exp.CREF_IDENT(attribute,Exp.ET_OTHER(),{}));
         (cache,attr,ty,DAE.VALBOUND(v),_,_) = Lookup.lookupVar(cache,env4, cref_1);
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(classname_1,dae1,env4));
       then
@@ -3566,7 +3566,7 @@ protected function subtractDummy
 algorithm
   (outEqnSize,outVarSize) := matchcontinue(vars,eqnSize,varSize)
     case(vars,eqnSize,varSize) equation
-      (_,_) = DAELow.getVar(Exp.CREF_IDENT("$dummy",Exp.OTHER(),{}),vars);
+      (_,_) = DAELow.getVar(Exp.CREF_IDENT("$dummy",Exp.ET_OTHER(),{}),vars);
     then (eqnSize-1,varSize-1);
     case(vars,eqnSize,varSize) then (eqnSize,varSize);
   end matchcontinue;

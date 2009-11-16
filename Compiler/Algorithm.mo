@@ -300,7 +300,7 @@ algorithm
          /* Don\'t use new rhs\', since type conversions of several output args
 	 are not clearly defined. */ 
       then
-        DAE.STMT_TUPLE_ASSIGN(Exp.OTHER(),expl,rhs);
+        DAE.STMT_TUPLE_ASSIGN(Exp.ET_OTHER(),expl,rhs);
     case (lhs,lprop,rhs,rprop,_)
       equation 
         Debug.fprint("failtrace", "- Algorithm.makeTupleAssignment failed\n");
@@ -329,10 +329,10 @@ algorithm
   outType:=
   matchcontinue (inType)
     local tuple<Types.TType, Option<Absyn.Path>> t;
-    case ((DAE.T_INTEGER(varLstInt = _),_)) then Exp.INT(); 
-    case ((DAE.T_REAL(varLstReal = _),_)) then Exp.REAL(); 
-    case ((DAE.T_STRING(varLstString = _),_)) then Exp.STRING(); 
-    case ((DAE.T_BOOL(varLstBool = _),_)) then Exp.BOOL(); 
+    case ((DAE.T_INTEGER(varLstInt = _),_)) then Exp.ET_INT(); 
+    case ((DAE.T_REAL(varLstReal = _),_)) then Exp.ET_REAL(); 
+    case ((DAE.T_STRING(varLstString = _),_)) then Exp.ET_STRING(); 
+    case ((DAE.T_BOOL(varLstBool = _),_)) then Exp.ET_BOOL(); 
     case ((DAE.T_ARRAY(arrayType = t),_)) then getTypeExpType(t);
     case ((DAE.T_COMPLEX(_,{},SOME(t),_),_))
        then getTypeExpType(t);
@@ -342,7 +342,7 @@ algorithm
       // record assignments (which actually work just fine). // sjoelund // 2009-05-07
       //print("Warning complex_varList not implemented for Array_assign\n");
       then fail();
-    case ((_,_)) then Exp.OTHER();  /* was fail but records must be handled somehow */ 
+    case ((_,_)) then Exp.ET_OTHER();  /* was fail but records must be handled somehow */ 
   end matchcontinue;
 end getTypeExpType;
 
@@ -727,14 +727,14 @@ end getAllExpsElse;
 
 protected function crefToExp "function: crefToExp
   Creates an expression from a ComponentRef.
-  The type of the expression will become Exp.OTHER."
+  The type of the expression will become Exp.ET_OTHER."
   input Exp.ComponentRef inComponentRef;
   output Exp.Exp outExp;
 algorithm 
   outExp:=
   matchcontinue (inComponentRef)
     local Exp.ComponentRef cref;
-    case cref then Exp.CREF(cref,Exp.OTHER()); 
+    case cref then Exp.CREF(cref,Exp.ET_OTHER()); 
   end matchcontinue;
 end crefToExp;
 
