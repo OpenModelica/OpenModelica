@@ -699,21 +699,21 @@ algorithm
       Types.Mod m;
       list<Types.SubMod> mods,mods_1;
       list<Exp.Subscript> xs;
-    case ({Exp.INDEX(exp = Exp.ICONST(integer = x))},m) then {DAE.IDXMOD({x},m)}; 
-    case ((Exp.INDEX(exp = Exp.ICONST(integer = x)) :: xs),m)
+    case ({DAE.INDEX(exp = DAE.ICONST(integer = x))},m) then {DAE.IDXMOD({x},m)}; 
+    case ((DAE.INDEX(exp = DAE.ICONST(integer = x)) :: xs),m)
       equation 
         mods = makeIdxmods(xs, m);
         mods_1 = prefixIdxmods(mods, x);
       then
         mods_1;
-    case ((Exp.SLICE(exp = Exp.ARRAY(array = x)) :: xs),m)
+    case ((DAE.SLICE(exp = DAE.ARRAY(array = x)) :: xs),m)
       local list<Exp.Exp> x;
       equation 
         Print.printBuf("= expand_slice\n");
         mods = expandSlice(x, xs, 1, m);
       then
         mods;
-    case ((Exp.WHOLEDIM() :: xs),m)
+    case ((DAE.WHOLEDIM() :: xs),m)
       equation 
         print("# Sorry, [:] slices are not handled in modifications\n");
       then
@@ -784,10 +784,10 @@ algorithm
     case ({},_,_,_) then {}; 
     case ((x :: xs),ss,n,(m as DAE.MOD(finalPrefix = finalPrefix,each_ = each_,subModLst = {},eqModOption = SOME(DAE.TYPED(e,e_val,DAE.PROP(t,const))))))
       equation 
-        e_2 = Exp.ICONST(n);
-        e_1 = Exp.simplify(Exp.ASUB(e,{e_2}));
+        e_2 = DAE.ICONST(n);
+        e_1 = Exp.simplify(DAE.ASUB(e,{e_2}));
         t_1 = Types.unliftArray(t);
-        mods1 = makeIdxmods((Exp.INDEX(x) :: ss), 
+        mods1 = makeIdxmods((DAE.INDEX(x) :: ss), 
           DAE.MOD(finalPrefix,each_,{},
           SOME(DAE.TYPED(e_1,e_val,DAE.PROP(t_1,const)))));
         n_1 = n + 1;
@@ -1281,8 +1281,8 @@ algorithm
     case (SOME(DAE.TYPED(e,SOME(e_val),DAE.PROP(t,c))),(x :: xs))
       equation 
         t_1 = Types.unliftArray(t);
-        exp2 = Exp.ICONST(x);
-        exp = Exp.simplify(Exp.ASUB(e,{exp2}));
+        exp2 = DAE.ICONST(x);
+        exp = Exp.simplify(DAE.ASUB(e,{exp2}));
         e_val_1 = ValuesUtil.nthArrayelt(e_val, x);
         e = indexEqmod(SOME(DAE.TYPED(exp,SOME(e_val_1),DAE.PROP(t_1,c))), xs);
       then
@@ -1292,8 +1292,8 @@ algorithm
     case (SOME(DAE.TYPED(e,NONE,DAE.PROP(t,c))),(x :: xs))
       equation 
         t_1 = Types.unliftArray(t);
-        exp2 = Exp.ICONST(x);
-        exp = Exp.simplify(Exp.ASUB(e,{exp2}));
+        exp2 = DAE.ICONST(x);
+        exp = Exp.simplify(DAE.ASUB(e,{exp2}));
         e = indexEqmod(SOME(DAE.TYPED(exp,NONE,DAE.PROP(t_1,c))), xs);
       then
         e;        

@@ -208,7 +208,7 @@ public function newFrame "- Relations
 algorithm 
   ht := avlTreeNew();
   httypes := avlTreeNew();
-  outFrame := FRAME(NONE,ht,httypes,{},{},({},Exp.CREF_IDENT("",Exp.ET_OTHER(),{})),enc,{});
+  outFrame := FRAME(NONE,ht,httypes,{},{},({},DAE.CREF_IDENT("",DAE.ET_OTHER(),{})),enc,{});
 end newFrame;
 
 public function isTyped "
@@ -1450,7 +1450,7 @@ algorithm
         lst1 = localOutsideConnectorFlowvars2(l);
         lst2 = localOutsideConnectorFlowvars2(r);
         (_,false) = Inst.innerOuterBooleans(io);       
-        lst3 = Types.flowVariables(vars, Exp.CREF_IDENT(id,Exp.ET_OTHER(),{}));
+        lst3 = Types.flowVariables(vars, DAE.CREF_IDENT(id,DAE.ET_OTHER(),{}));
         res = Util.listFlatten({lst1,lst2,lst3});
       then
         res;
@@ -1598,8 +1598,8 @@ algorithm
         lst1 = localInsideConnectorFlowvars3(xs, oid);
         (_,false) = Inst.innerOuterBooleans(io);
         // We set type unknown for inside connectors for the check of "unconnected connectors".
-        lst2 = Types.flowVariables(vars, Exp.CREF_QUAL(oid,Exp.ET_COMPLEX(name,{},ClassInf.UNKNOWN("unk")),{},
-                                                           Exp.CREF_IDENT(id,Exp.ET_COMPLEX(name,{},
+        lst2 = Types.flowVariables(vars, DAE.CREF_QUAL(oid,DAE.ET_COMPLEX(name,{},ClassInf.UNKNOWN("unk")),{},
+                                                           DAE.CREF_IDENT(id,DAE.ET_COMPLEX(name,{},
                                                            ClassInf.CONNECTOR(name,isExpandable)),{})));
         res = listAppend(lst1, lst2);
       then
@@ -1620,8 +1620,8 @@ algorithm
         true = Types.isComplexConnector(flatArrayType);
         indexSubscriptLists = createSubs(adims);
         lst1 = localInsideConnectorFlowvars3_2(tvars, id, indexSubscriptLists);
-        connectorRef = Exp.CREF_QUAL(oid,Exp.ET_COMPLEX(name,{},ClassInf.UNKNOWN("unk")),{},
-                                     Exp.CREF_IDENT(id,Exp.ET_COMPLEX(name,{},ClassInf.CONNECTOR(name,isExpandable)),{}));
+        connectorRef = DAE.CREF_QUAL(oid,DAE.ET_COMPLEX(name,{},ClassInf.UNKNOWN("unk")),{},
+                                     DAE.CREF_IDENT(id,DAE.ET_COMPLEX(name,{},ClassInf.CONNECTOR(name,isExpandable)),{}));
         lst1 = localInsideConnectorFlowvars3_3(tvars,connectorRef,indexSubscriptLists);
         //print(" Array refs: " +& Util.stringDelimitList(Util.listMap(lst1,Exp.printComponentRefStr),", ") +& "\n");
       then lst1;
@@ -1688,11 +1688,11 @@ algorithm
         lst3 = localInsideConnectorFlowvars3_2({tv},oid,ssubs);
         lst1 = localInsideConnectorFlowvars3_2(xs, oid,s::ssubs);
         (_,false) = Inst.innerOuterBooleans(io);
-        //lst2 = Types.flowVariables(vars, Exp.CREF_QUAL(oid,Exp.ET_COMPLEX(name,{},ClassInf.CONNECTOR(name)),s,Exp.CREF_IDENT(id,Exp.ET_COMPLEX(name,{},ClassInf.CONNECTOR(name)),{})));
+        //lst2 = Types.flowVariables(vars, DAE.CREF_QUAL(oid,DAE.ET_COMPLEX(name,{},ClassInf.CONNECTOR(name)),s,DAE.CREF_IDENT(id,DAE.ET_COMPLEX(name,{},ClassInf.CONNECTOR(name)),{})));
         // We set type unknown for inside connectors for the check of "unconnected connectors".
-        lst2 = Types.flowVariables(vars, Exp.CREF_QUAL(oid,Exp.ET_COMPLEX(name,{},
+        lst2 = Types.flowVariables(vars, DAE.CREF_QUAL(oid,DAE.ET_COMPLEX(name,{},
                                                            ClassInf.UNKNOWN("unk")),s,
-                                         Exp.CREF_IDENT(id,Exp.ET_COMPLEX(name,{},
+                                         DAE.CREF_IDENT(id,DAE.ET_COMPLEX(name,{},
                                                            ClassInf.CONNECTOR(name,isExpandable)),{})));
         res = Util.listFlatten({lst1, lst2,lst3});
       then
@@ -1797,7 +1797,7 @@ protected function integer2Subscript "
   input  Integer       index;
   output Exp.Subscript subscript;
 algorithm
- subscript := Exp.INDEX(Exp.ICONST(index));
+ subscript := DAE.INDEX(DAE.ICONST(index));
 end integer2Subscript;
 
 /* AVL impementation */

@@ -705,7 +705,7 @@ algorithm
       false = OptManager.getOption("unitChecking");
     then UnitAbsyn.noStore;
       
-    case(UnitAbsyn.INSTSTORE(st,ht,res),(DAE.T_REAL(DAE.TYPES_VAR(name="unit",binding = DAE.EQBOUND(exp=Exp.SCONST(unitStr)))::_),_),cr) equation
+    case(UnitAbsyn.INSTSTORE(st,ht,res),(DAE.T_REAL(DAE.TYPES_VAR(name="unit",binding = DAE.EQBOUND(exp=DAE.SCONST(unitStr)))::_),_),cr) equation
       unit = str2unit(unitStr,NONE);
       unit = Util.if_(0 == System.strcmp(unitStr,""),UnitAbsyn.UNSPECIFIED(),unit);
       (st,indx) = add(unit,st);
@@ -831,12 +831,12 @@ algorithm
     case({},ht,nextElt) then ({},ht,nextElt);
    
     case((r,UnitAbsyn.TYPEPARAMETER(name,0))::params,ht,nextElt) equation
-      indx = HashTable.get(Exp.CREF_IDENT(name,Exp.ET_OTHER(),{}),ht);
+      indx = HashTable.get(DAE.CREF_IDENT(name,DAE.ET_OTHER(),{}),ht);
       (params,ht,nextElt) = createTypeParameterLocations4(params,ht,nextElt);
     then ((r,UnitAbsyn.TYPEPARAMETER(name,indx))::params,ht,nextElt);
       
     case((r,UnitAbsyn.TYPEPARAMETER(name,0))::params,ht,nextElt) equation
-        ht = HashTable.add((Exp.CREF_IDENT(name,Exp.ET_OTHER(),{}),nextElt),ht);
+        ht = HashTable.add((DAE.CREF_IDENT(name,DAE.ET_OTHER(),{}),nextElt),ht);
        (params,ht,nextElt) = createTypeParameterLocations4(params,ht,nextElt);
     then((r,UnitAbsyn.TYPEPARAMETER(name,nextElt))::params,ht,nextElt+1);
       
@@ -877,29 +877,29 @@ algorithm
       (ut2,terms2,store) = buildTermExp(env,e2,false,ht,store);
       (terms,store) = buildTerms(env,dae,ht,store);
       terms = listAppend(terms1,listAppend(terms2,terms));
-    then  (UnitAbsyn.EQN(ut1,ut2,Exp.BINARY(e1,Exp.SUB(Exp.ET_REAL()),e2))::terms,store);
+    then  (UnitAbsyn.EQN(ut1,ut2,DAE.BINARY(e1,DAE.SUB(DAE.ET_REAL()),e2))::terms,store);
       
     case(env,DAE.EQUEQUATION(cr1,cr2)::dae,ht,store) equation
-      (ut1,terms1,store) = buildTermExp(env,Exp.CREF(cr1,Exp.ET_OTHER()),false,ht,store);
-      (ut2,terms2,store) = buildTermExp(env,Exp.CREF(cr2,Exp.ET_OTHER()),false,ht,store);
+      (ut1,terms1,store) = buildTermExp(env,DAE.CREF(cr1,DAE.ET_OTHER()),false,ht,store);
+      (ut2,terms2,store) = buildTermExp(env,DAE.CREF(cr2,DAE.ET_OTHER()),false,ht,store);
       (terms,store) = buildTerms(env,dae,ht,store);
       terms = listAppend(terms1,listAppend(terms2,terms));
-    then  (UnitAbsyn.EQN(ut1,ut2,Exp.BINARY(Exp.CREF(cr1,Exp.ET_OTHER()),Exp.SUB(Exp.ET_REAL()),Exp.CREF(cr2,Exp.ET_OTHER())))::terms,store);
+    then  (UnitAbsyn.EQN(ut1,ut2,DAE.BINARY(DAE.CREF(cr1,DAE.ET_OTHER()),DAE.SUB(DAE.ET_REAL()),DAE.CREF(cr2,DAE.ET_OTHER())))::terms,store);
            
       /* Only consider variables with binding from this instance level, not furhter down */
-    case(env,DAE.VAR(componentRef=cr1 as Exp.CREF_IDENT(_,_,_),binding = SOME(e1))::dae,ht,store) equation      
-      (ut1,terms1,store) = buildTermExp(env,Exp.CREF(cr1,Exp.ET_OTHER()),false,ht,store);
+    case(env,DAE.VAR(componentRef=cr1 as DAE.CREF_IDENT(_,_,_),binding = SOME(e1))::dae,ht,store) equation      
+      (ut1,terms1,store) = buildTermExp(env,DAE.CREF(cr1,DAE.ET_OTHER()),false,ht,store);
       (ut2,terms2,store) = buildTermExp(env,e1,false,ht,store);
       (terms,store) = buildTerms(env,dae,ht,store);
       terms = listAppend(terms1,listAppend(terms2,terms));    
-    then  (UnitAbsyn.EQN(ut1,ut2,Exp.BINARY(Exp.CREF(cr1,Exp.ET_OTHER()),Exp.SUB(Exp.ET_REAL()),e1))::terms,store);
+    then  (UnitAbsyn.EQN(ut1,ut2,DAE.BINARY(DAE.CREF(cr1,DAE.ET_OTHER()),DAE.SUB(DAE.ET_REAL()),e1))::terms,store);
             
     case(env,DAE.DEFINE(cr1,e1)::dae,ht,store) equation
-      (ut1,terms1,store) = buildTermExp(env,Exp.CREF(cr1,Exp.ET_OTHER()),false,ht,store);
+      (ut1,terms1,store) = buildTermExp(env,DAE.CREF(cr1,DAE.ET_OTHER()),false,ht,store);
       (ut2,terms2,store) = buildTermExp(env,e1,false,ht,store);
       (terms,store) = buildTerms(env,dae,ht,store);
       terms = listAppend(terms1,listAppend(terms2,terms));
-    then  (UnitAbsyn.EQN(ut1,ut2,Exp.BINARY(Exp.CREF(cr1,Exp.ET_OTHER()),Exp.SUB(Exp.ET_REAL()),e1))::terms,store);
+    then  (UnitAbsyn.EQN(ut1,ut2,DAE.BINARY(DAE.CREF(cr1,DAE.ET_OTHER()),DAE.SUB(DAE.ET_REAL()),e1))::terms,store);
         
     case(env,_::dae,ht,store) equation
       (terms,store) = buildTerms(env,dae,ht,store);
@@ -928,36 +928,36 @@ algorithm
     list<Exp.Exp> expl;
     UnitAbsyn.Unit u;
     
-    /*case(env,e as Exp.RCONST(r),ht,store) equation
+    /*case(env,e as DAE.RCONST(r),ht,store) equation
       s1 = realString(r);
-      indx = HashTable.get(Exp.CREF_IDENT(s1,Exp.ET_OTHER(),{}),ht);
+      indx = HashTable.get(DAE.CREF_IDENT(s1,DAE.ET_OTHER(),{}),ht);
     then (UnitAbsyn.LOC(indx,e),{},store);*/
     
-    case(env,e as Exp.ICONST(i),divOrMul,ht,store) local Integer i; equation      
+    case(env,e as DAE.ICONST(i),divOrMul,ht,store) local Integer i; equation      
       s1 = "$"+&intString(tick())+&"_"+&intString(i);
       u = Util.if_(divOrMul,str2unit("1",NONE),UnitAbsyn.UNSPECIFIED());            
       (store,indx) = add(u,store);
-       ht = HashTable.add((Exp.CREF_IDENT(s1,Exp.ET_OTHER(),{}),indx),ht);
+       ht = HashTable.add((DAE.CREF_IDENT(s1,DAE.ET_OTHER(),{}),indx),ht);
     then (UnitAbsyn.LOC(indx,e),{},store);
     
     /* for each constant, add new unspecified unit*/
-    case(env,e as Exp.RCONST(r),divOrMul,ht,store)equation
+    case(env,e as DAE.RCONST(r),divOrMul,ht,store)equation
       s1 = "$"+&intString(tick())+&"_"+&realString(r);
       u = Util.if_(divOrMul,str2unit("1",NONE),UnitAbsyn.UNSPECIFIED());
       (store,indx) = add(u,store);
-       ht = HashTable.add((Exp.CREF_IDENT(s1,Exp.ET_OTHER(),{}),indx),ht);
+       ht = HashTable.add((DAE.CREF_IDENT(s1,DAE.ET_OTHER(),{}),indx),ht);
     then (UnitAbsyn.LOC(indx,e),{},store);
     
-    case(env,Exp.CAST(_,e1),divOrMul,ht,store) equation
+    case(env,DAE.CAST(_,e1),divOrMul,ht,store) equation
       (ut,terms,store) = buildTermExp(env,e1,divOrMul,ht,store);
     then (ut,terms,store);
       
-    case(env,e as Exp.CREF(cr,_),divOrMul,ht,store) equation
+    case(env,e as DAE.CREF(cr,_),divOrMul,ht,store) equation
      indx = HashTable.get(cr,ht);
     then (UnitAbsyn.LOC(indx,e),{},store);
     
     /* special case for pow */
-    case(env,e as Exp.BINARY(e1,Exp.POW(_),e2 as Exp.ICONST(i)),divOrMul,ht,store) local Integer i;
+    case(env,e as DAE.BINARY(e1,DAE.POW(_),e2 as DAE.ICONST(i)),divOrMul,ht,store) local Integer i;
       equation
         (ut1,terms1,store) = buildTermExp(env,e1,divOrMul,ht,store);
         (ut2,terms2,store) = buildTermExp(env,e2,divOrMul,ht,store);
@@ -965,7 +965,7 @@ algorithm
         ut = UnitAbsyn.POW(ut1,MMath.RATIONAL(i,1),e);
     then (ut,terms,store);
     
-    case(env,e as Exp.BINARY(e1,Exp.POW(_),e2 as Exp.RCONST(r)),divOrMul,ht,store) local Integer i; Real r;
+    case(env,e as DAE.BINARY(e1,DAE.POW(_),e2 as DAE.RCONST(r)),divOrMul,ht,store) local Integer i; Real r;
       equation
         (ut1,terms1,store) = buildTermExp(env,e1,divOrMul,ht,store);
         (ut2,terms2,store) = buildTermExp(env,e2,divOrMul,ht,store);
@@ -975,7 +975,7 @@ algorithm
         ut = UnitAbsyn.POW(ut1,MMath.RATIONAL(i,1),e);
     then (ut,terms,store);  
       
-    case(env,e as Exp.BINARY(e1,op,e2),divOrMul,ht,store) equation
+    case(env,e as DAE.BINARY(e1,op,e2),divOrMul,ht,store) equation
       divOrMul = Exp.operatorDivOrMul(op);
       (ut1,terms1,store) = buildTermExp(env,e1,divOrMul,ht,store);
       (ut2,terms2,store) = buildTermExp(env,e2,divOrMul,ht,store);
@@ -984,24 +984,24 @@ algorithm
     then (ut,terms,store);
       
       /* failed to build term for e2, use e1*/
-    case(env,Exp.BINARY(e1,op,e2),divOrMul,ht,store) equation
+    case(env,DAE.BINARY(e1,op,e2),divOrMul,ht,store) equation
       divOrMul = Exp.operatorDivOrMul(op);
       (ut,terms,store) = buildTermExp(env,e1,divOrMul,ht,store);
       failure((_,_,_) = buildTermExp(env,e1,divOrMul,ht,store));  
     then (ut,terms,store);
 
       /* failed to build term for e1, use e2*/
-    case(env,Exp.BINARY(e1,op,e2),divOrMul,ht,store) equation
+    case(env,DAE.BINARY(e1,op,e2),divOrMul,ht,store) equation
       divOrMul = Exp.operatorDivOrMul(op);
       failure((_,_,_) = buildTermExp(env,e1,divOrMul,ht,store));
       (ut,terms,store) = buildTermExp(env,e2,divOrMul,ht,store);  
     then (ut,terms,store);
       
-    case(env,Exp.UNARY(op,e1),divOrMul,ht,store) equation
+    case(env,DAE.UNARY(op,e1),divOrMul,ht,store) equation
       (ut,terms,store) = buildTermExp(env,e1,divOrMul,ht,store);
     then (ut,terms,store);
       
-    case(env,e as Exp.IFEXP(_,e1,e2),divOrMul,ht,store) equation
+    case(env,e as DAE.IFEXP(_,e1,e2),divOrMul,ht,store) equation
       divOrMul = false;
       (ut1,terms1,store) = buildTermExp(env,e1,divOrMul,ht,store);
       (ut2,terms2,store) = buildTermExp(env,e2,divOrMul,ht,store);
@@ -1009,14 +1009,14 @@ algorithm
     then (UnitAbsyn.EQN(ut1,ut2,e),terms,store);
     
     /* function call */
-    case(env,e as Exp.CALL(path=path,expLst=expl),divOrMul,ht,store) equation
+    case(env,e as DAE.CALL(path=path,expLst=expl),divOrMul,ht,store) equation
       divOrMul = false;
       (ut,terms,store) = buildTermCall(env,path,e,expl,divOrMul,ht,store);       
     then  (ut,terms,store);
 
     /* Array, all elements must be of same dimension, since an array with different units in different positions
     can not be declared in Modelica, since modifiers on arrays must affect the whole array */      
-    case(env,e as Exp.ARRAY(_,_,expl),divOrMul,ht,store) 
+    case(env,e as DAE.ARRAY(_,_,expl),divOrMul,ht,store) 
       local list<UnitAbsyn.UnitTerm> uts; list<Exp.Exp> expl; UnitAbsyn.UnitTerm ut;
       equation
         print("vector ="+&Exp.printExpStr(e)+&"\n");
@@ -1025,7 +1025,7 @@ algorithm
       terms = listAppend(terms,uts);
     then (ut,terms,store);    
   
-    case(env,e as Exp.MATRIX(_,_,mexpl),divOrMul,ht,store) 
+    case(env,e as DAE.MATRIX(_,_,mexpl),divOrMul,ht,store) 
       local  list<list<tuple<Exp.Exp, Boolean>>> mexpl; list<UnitAbsyn.UnitTerm> uts;
       equation 
         print("Matrix ="+&Exp.printExpStr(e)+&"\n");
@@ -1035,8 +1035,8 @@ algorithm
         terms = listAppend(terms,uts);
       then (ut,terms,store);    
   
-    case(env,e as Exp.CALL(path=_),divOrMul,ht,store) equation
-      print("buildTermExp CALL failed exp: "+&Exp.printExpStr(e)+&"\n");
+    case(env,e as DAE.CALL(path=_),divOrMul,ht,store) equation
+      print("buildTermDAE.CALL failed exp: "+&Exp.printExpStr(e)+&"\n");
     then fail();            
   end matchcontinue;
 end buildTermExp;
@@ -1054,7 +1054,7 @@ algorithm
     case(ut1::ut2::uts,e1::e2::expl) equation
       uts = buildArrayElementTerms(uts,expl);
       ty = Exp.typeof(e1);
-      uts = listAppend(uts,{UnitAbsyn.EQN(ut1,ut2,Exp.ARRAY(ty,true,{e1,e2}))});
+      uts = listAppend(uts,{UnitAbsyn.EQN(ut1,ut2,DAE.ARRAY(ty,true,{e1,e2}))});
     then uts;                     
   end matchcontinue;
 end  buildArrayElementTerms;
@@ -1215,7 +1215,7 @@ algorithm
   str := matchcontinue(tp)
   local list<Types.Var> varLst;
     Option<Absyn.Path> optPath;
-    case((DAE.T_REAL(DAE.TYPES_VAR(name="unit",binding=DAE.EQBOUND(exp=Exp.SCONST(str)))::_),_))
+    case((DAE.T_REAL(DAE.TYPES_VAR(name="unit",binding=DAE.EQBOUND(exp=DAE.SCONST(str)))::_),_))
       then str;
     case((DAE.T_REAL(_::varLst),optPath)) then getUnitStr((DAE.T_REAL(varLst),optPath));
     case((DAE.T_REAL({}),_)) then "";
@@ -1266,10 +1266,10 @@ protected function buildTermOp "Takes two UnitTerms and and Exp.Operator and cre
   output UnitAbsyn.UnitTerm ut;
 algorithm
   ut := matchcontinue(ut1,ut2,op,origExp)
-    case(ut1,ut2,Exp.ADD(_),origExp) then UnitAbsyn.ADD(ut1,ut2,origExp);
-    case(ut1,ut2,Exp.SUB(_),origExp) then UnitAbsyn.SUB(ut1,ut2,origExp);
-    case(ut1,ut2,Exp.MUL(_),origExp) then UnitAbsyn.MUL(ut1,ut2,origExp);
-    case(ut1,ut2,Exp.DIV(_),origExp) then UnitAbsyn.DIV(ut1,ut2,origExp);
+    case(ut1,ut2,DAE.ADD(_),origExp) then UnitAbsyn.ADD(ut1,ut2,origExp);
+    case(ut1,ut2,DAE.SUB(_),origExp) then UnitAbsyn.SUB(ut1,ut2,origExp);
+    case(ut1,ut2,DAE.MUL(_),origExp) then UnitAbsyn.MUL(ut1,ut2,origExp);
+    case(ut1,ut2,DAE.DIV(_),origExp) then UnitAbsyn.DIV(ut1,ut2,origExp);
   end matchcontinue;
 end buildTermOp;
 
@@ -1289,7 +1289,7 @@ algorithm
     Exp.Exp e1,e2;
     case({},store,ht) then (store,ht);
     case(DAE.VAR(componentRef=cr,variableAttributesOption=attropt)::dae,store,ht) equation
-      Exp.SCONST(unitStr) = DAEUtil.getUnitAttr(attropt);
+      DAE.SCONST(unitStr) = DAEUtil.getUnitAttr(attropt);
       unit = str2unit(unitStr,NONE); /* Scale and offset not used yet*/
       (store,indx) = add(unit,store);
       ht = HashTable.add((cr,indx),ht);
@@ -1346,35 +1346,35 @@ algorithm
   (outStore,outHt) := matchcontinue(exp,store,ht,parentOp)
   local Real r; String s1; Integer i,indx; UnitAbsyn.Unit unit; Exp.Exp e1,e2; Exp.Operator op;
     /* Constant on top level, e.g. x = 1 => unspecified type */
-    case(Exp.RCONST(r),store,ht,parentOp) equation
+    case(DAE.RCONST(r),store,ht,parentOp) equation
       unit = selectConstantUnit(parentOp);
       (store,indx) = add(unit,store);
       s1 = realString(r);
-      ht = HashTable.add((Exp.CREF_IDENT(s1,Exp.ET_OTHER(),{}),indx),ht);
+      ht = HashTable.add((DAE.CREF_IDENT(s1,DAE.ET_OTHER(),{}),indx),ht);
     then (store,ht);
       
-   case(Exp.CAST(_,Exp.ICONST(i)),store,ht,parentOp) equation
+   case(DAE.CAST(_,DAE.ICONST(i)),store,ht,parentOp) equation
       unit = selectConstantUnit(parentOp);
       (store,indx) = add(unit,store);
       s1 = intString(i);
-      ht = HashTable.add((Exp.CREF_IDENT(s1,Exp.ET_OTHER(),{}),indx),ht);
+      ht = HashTable.add((DAE.CREF_IDENT(s1,DAE.ET_OTHER(),{}),indx),ht);
     then (store,ht);
       
-    case(Exp.BINARY(e1,op,e2),store,ht,parentOp) equation
+    case(DAE.BINARY(e1,op,e2),store,ht,parentOp) equation
       (store,ht) = buildStoreExp(e1,store,ht,SOME(op));
       (store,ht) = buildStoreExp(e2,store,ht,SOME(op));
     then (store,ht);
       
-    case(Exp.UNARY(_,e1),store,ht,parentOp) equation
+    case(DAE.UNARY(_,e1),store,ht,parentOp) equation
       (store,ht) = buildStoreExp(e1,store,ht,parentOp);
     then (store,ht);
       
-    case(Exp.IFEXP(_,e1,e2),store,ht,parentOp) equation
+    case(DAE.IFEXP(_,e1,e2),store,ht,parentOp) equation
       (store,ht) = buildStoreExp(e1,store,ht,parentOp);
       (store,ht) = buildStoreExp(e2,store,ht,parentOp);
     then (store,ht); 
       
-/*    case(Exp.CALL(path=Absyn.IDENT("der"),expLst = {Exp.CREF(_,cr)}),store,ht,parentOp) equation
+/*    case(DAE.CALL(path=Absyn.IDENT("der"),expLst = {DAE.CREF(_,cr)}),store,ht,parentOp) equation
       indx = HashTable.get(cr,ht);
       unit = find(index,st);
       derUnit = unitMultiply(unit,str2unit("1/s"));
@@ -1407,8 +1407,8 @@ parent expression as type of a constant expression"
 algorithm
   unit := matchcontinue(op)
     case(NONE) then UnitAbsyn.UNSPECIFIED();
-    case(SOME(Exp.ADD(_))) then UnitAbsyn.UNSPECIFIED();
-    case(SOME(Exp.SUB(_))) then UnitAbsyn.UNSPECIFIED();
+    case(SOME(DAE.ADD(_))) then UnitAbsyn.UNSPECIFIED();
+    case(SOME(DAE.SUB(_))) then UnitAbsyn.UNSPECIFIED();
     case(SOME(_)) then str2unit("1",NONE);                
   end matchcontinue;
 end selectConstantUnit;
@@ -1477,8 +1477,8 @@ protected
     nr1 := MMath.RATIONAL(-1,0);
     nr2 := MMath.RATIONAL(-2,0);
     ut := { 
-    UnitAbsyn.EQN(UnitAbsyn.LOC(1,Exp.SCONST("1")),UnitAbsyn.LOC(4,Exp.SCONST("4")),Exp.SCONST("1==4")),
-    UnitAbsyn.EQN(UnitAbsyn.LOC(2,Exp.SCONST("2")),UnitAbsyn.LOC(5,Exp.SCONST("5")),Exp.SCONST("2==5"))                  
+    UnitAbsyn.EQN(UnitAbsyn.LOC(1,DAE.SCONST("1")),UnitAbsyn.LOC(4,DAE.SCONST("4")),DAE.SCONST("1==4")),
+    UnitAbsyn.EQN(UnitAbsyn.LOC(2,DAE.SCONST("2")),UnitAbsyn.LOC(5,DAE.SCONST("5")),DAE.SCONST("2==5"))                  
     };
     
     unitderx := UnitAbsyn.SPECIFIED(UnitAbsyn.SPECUNIT({},{r1,nr1,r0,r0,r0,r0,r0}));/* der("m") -> m/s*/

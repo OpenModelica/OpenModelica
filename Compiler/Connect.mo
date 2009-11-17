@@ -388,8 +388,8 @@ algorithm
     case (s,_,_,_,_,0) then s; 
     case (ss,r1,d1,r2,d2,i)
       equation 
-        r1_1 = Exp.subscriptCref(r1, {Exp.INDEX(Exp.ICONST(i))});
-        r2_1 = Exp.subscriptCref(r2, {Exp.INDEX(Exp.ICONST(i))});
+        r1_1 = Exp.subscriptCref(r1, {DAE.INDEX(DAE.ICONST(i))});
+        r2_1 = Exp.subscriptCref(r2, {DAE.INDEX(DAE.ICONST(i))});
         i_1 = i - 1;
         s1 = findFlowSet(ss, r1_1,d1);
         s2 = findFlowSet(ss, r2_1,d2);
@@ -695,7 +695,7 @@ protected function flowEquations "function: flowEquations
   Exp.Exp sum;
 algorithm 
   sum := flowSum(cs);
-  outDAEElementLst := {DAE.EQUATION(sum,Exp.RCONST(0.0))};
+  outDAEElementLst := {DAE.EQUATION(sum,DAE.RCONST(0.0))};
 end flowEquations;
 
 protected function flowSum "function: flowSum
@@ -725,7 +725,7 @@ algorithm
         exp1 = signFlow(c, f);
         exp2 = flowSum(cs);
       then
-        Exp.BINARY(exp1,Exp.ADD(Exp.ET_REAL()),exp2);
+        DAE.BINARY(exp1,DAE.ADD(DAE.ET_REAL()),exp2);
   end matchcontinue;
 end flowSum;
 
@@ -743,8 +743,8 @@ algorithm
   outExp:=
   matchcontinue (inComponentRef,inFace)
     local Exp.ComponentRef c;
-    case (c,INNER()) then Exp.CREF(c,Exp.ET_OTHER()); 
-    case (c,OUTER()) then Exp.UNARY(Exp.UMINUS(Exp.ET_REAL()),Exp.CREF(c,Exp.ET_OTHER())); 
+    case (c,INNER()) then DAE.CREF(c,DAE.ET_OTHER()); 
+    case (c,OUTER()) then DAE.UNARY(DAE.UMINUS(DAE.ET_REAL()),DAE.CREF(c,DAE.ET_OTHER())); 
   end matchcontinue;
 end signFlow;
 
@@ -1357,9 +1357,9 @@ algorithm
         dimExps = Util.listMap(dimSizes,Exp.makeIntegerExp);
         (cache,res) = generateZeroflowEquations(cache,xs,env,prefix,deletedComponents);
         cr2 = Prefix.prefixCref(prefix,cr);
-        arrType = Exp.ET_ARRAY(Exp.ET_REAL(),dimSizesOpt);
-        dimExps = {Exp.ICONST(0),Exp.ICONST(0),Exp.ICONST(0)};
-        res1 = generateZeroflowArrayEquations(cr2, dimSizes, Exp.RCONST(0.0));
+        arrType = DAE.ET_ARRAY(DAE.ET_REAL(),dimSizesOpt);
+        dimExps = {DAE.ICONST(0),DAE.ICONST(0),DAE.ICONST(0)};
+        res1 = generateZeroflowArrayEquations(cr2, dimSizes, DAE.RCONST(0.0));
         res = listAppend(res1,res);
       then
         (cache,res);
@@ -1371,7 +1371,7 @@ algorithm
         cr2 = Prefix.prefixCref(prefix,cr);
         //print(" Generated flow equation for: " +& Exp.printComponentRefStr(cr2) +& "\n");
       then
-        (cache,DAE.EQUATION(Exp.CREF(cr2,Exp.ET_REAL()),Exp.RCONST(0.0)) :: res);
+        (cache,DAE.EQUATION(DAE.CREF(cr2,DAE.ET_REAL()),DAE.RCONST(0.0)) :: res);
   end matchcontinue;
 end generateZeroflowEquations;
 
@@ -1402,7 +1402,7 @@ algorithm
         // and generate a list of ranges: ex. {{1, 2}, {1, 2, 3, 4, 5}, {1, 2, 3}}
         indexIntegerLists = Util.listMap(dimensions, Util.listIntRange);
         // from a list like: {{1, 2}, {1, 2, 3, 4, 5}
-        // generate a list like: { { {Exp.INDEX(Exp.ICONST(1)}, {Exp.INDEX(Exp.ICONST(2)} }, ... }
+        // generate a list like: { { {DAE.INDEX(DAE.ICONST(1)}, {DAE.INDEX(DAE.ICONST(2)} }, ... }
         indexSubscriptLists = Util.listListMap(indexIntegerLists, integer2Subscript);
         // now generate a product of all lists in { {lst1}, {lst2}, {lst3} }
         // which will generate indexes like [1, 1, 1], [1, 1, 2], [1, 2, 3] ... [2, 5, 3]
@@ -1428,7 +1428,7 @@ algorithm
       equation
         cr = Exp.subscriptCref(cr, indexSubscriptList);        
       then
-        DAE.EQUATION(Exp.CREF(cr,Exp.ET_REAL()), initExp);
+        DAE.EQUATION(DAE.CREF(cr,DAE.ET_REAL()), initExp);
   end matchcontinue;
 end genZeroEquation;
 
@@ -1459,7 +1459,7 @@ protected function integer2Subscript
   input  Integer       index;
   output Exp.Subscript subscript;
 algorithm
- subscript := Exp.INDEX(Exp.ICONST(index));
+ subscript := DAE.INDEX(DAE.ICONST(index));
 end integer2Subscript;
 
 protected function getAllFlowVariables "function: getAllFlowVariables

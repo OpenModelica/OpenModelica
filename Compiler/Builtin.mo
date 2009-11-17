@@ -193,7 +193,7 @@ protected constant tuple<Types.TType, Option<Type_a>> derType=(
               DAE.ATTR(false,false,SCode.RW,SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
               false,
               (DAE.T_STRING({}),NONE),
-              DAE.EQBOUND(Exp.SCONST("'p"),SOME(Values.STRING("'p")),DAE.C_CONST)
+              DAE.EQBOUND(DAE.SCONST("'p"),SOME(Values.STRING("'p")),DAE.C_CONST)
               )          
           }
           ),NONE))},
@@ -204,7 +204,7 @@ protected constant tuple<Types.TType, Option<Type_a>> derType=(
               DAE.ATTR(false,false,SCode.RW,SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
               false,
               (DAE.T_STRING({}),NONE),
-              DAE.EQBOUND(Exp.SCONST("'p/s"),SOME(Values.STRING("'p/s")),DAE.C_CONST)
+              DAE.EQBOUND(DAE.SCONST("'p/s"),SOME(Values.STRING("'p/s")),DAE.C_CONST)
               )
           }),NONE)),NONE);                    
 
@@ -216,7 +216,7 @@ protected constant tuple<Types.TType, Option<Type_a>> dimesionlessReal2Dimension
               DAE.ATTR(false,false,SCode.RW,SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
               false,
               (DAE.T_STRING({}),NONE),
-              DAE.EQBOUND(Exp.SCONST("1"),SOME(Values.STRING("1")),DAE.C_CONST)
+              DAE.EQBOUND(DAE.SCONST("1"),SOME(Values.STRING("1")),DAE.C_CONST)
               )          
           }
           ),NONE))},
@@ -227,7 +227,7 @@ protected constant tuple<Types.TType, Option<Type_a>> dimesionlessReal2Dimension
               DAE.ATTR(false,false,SCode.RW,SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
               false,
               (DAE.T_STRING({}),NONE),
-              DAE.EQBOUND(Exp.SCONST("1"),SOME(Values.STRING("1")),DAE.C_CONST)
+              DAE.EQBOUND(DAE.SCONST("1"),SOME(Values.STRING("1")),DAE.C_CONST)
               )
           }),NONE)),NONE);
           
@@ -239,7 +239,7 @@ protected constant tuple<Types.TType, Option<Type_a>> sqrtint2real=(
               DAE.ATTR(false,false,SCode.RW,SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
               false,
               (DAE.T_STRING({}),NONE),
-              DAE.EQBOUND(Exp.SCONST("'p"),SOME(Values.STRING("'p")),DAE.C_CONST)
+              DAE.EQBOUND(DAE.SCONST("'p"),SOME(Values.STRING("'p")),DAE.C_CONST)
               )          
           }
           ),NONE))},
@@ -250,7 +250,7 @@ protected constant tuple<Types.TType, Option<Type_a>> sqrtint2real=(
               DAE.ATTR(false,false,SCode.RW,SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
               false,
               (DAE.T_STRING({}),NONE),
-              DAE.EQBOUND(Exp.SCONST("'p(1/2)"),SOME(Values.STRING("'p(1/2)")),DAE.C_CONST)
+              DAE.EQBOUND(DAE.SCONST("'p(1/2)"),SOME(Values.STRING("'p(1/2)")),DAE.C_CONST)
               )
           }),NONE)),NONE);
 
@@ -262,7 +262,7 @@ protected constant tuple<Types.TType, Option<Type_a>> sqrtreal2real=(
               DAE.ATTR(false,false,SCode.RW,SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
               false,
               (DAE.T_STRING({}),NONE),
-              DAE.EQBOUND(Exp.SCONST("'p"),SOME(Values.STRING("'p")),DAE.C_CONST)
+              DAE.EQBOUND(DAE.SCONST("'p"),SOME(Values.STRING("'p")),DAE.C_CONST)
               )          
           }
           ),NONE))},
@@ -273,7 +273,7 @@ protected constant tuple<Types.TType, Option<Type_a>> sqrtreal2real=(
               DAE.ATTR(false,false,SCode.RW,SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
               false,
               (DAE.T_STRING({}),NONE),
-              DAE.EQBOUND(Exp.SCONST("'p(1/2)"),SOME(Values.STRING("'p(1/2))")),DAE.C_CONST)
+              DAE.EQBOUND(DAE.SCONST("'p(1/2)"),SOME(Values.STRING("'p(1/2))")),DAE.C_CONST)
               )
           }),NONE)),NONE);
           

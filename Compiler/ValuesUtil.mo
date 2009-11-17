@@ -38,7 +38,7 @@ package ValuesUtil
   The package Values contains utility functions for handling evaluated
   expression values."
 
-public import Exp;
+public import DAE;
 public import Values;
 
 public type Value = Values.Value;
@@ -46,18 +46,19 @@ public type IntRealOp = Values.IntRealOp;
 
 protected import Absyn;
 protected import Debug;
+protected import Dump;
+protected import Error;
+protected import Exp;
 protected import Print;
 protected import System;
 protected import Util;
-protected import Dump;
-protected import Error;
 
 public function typeConvert "function: typeConvert
  
   Apply type conversion on a list of Values
 "
-  input Exp.Type inType1;
-  input Exp.Type inType2;
+  input DAE.ExpType inType1;
+  input DAE.ExpType inType2;
   input list<Value> inValueLst3;
   output list<Value> outValueLst;
 algorithm 
@@ -66,16 +67,16 @@ algorithm
     local
       list<Value> vallst,vrest,vallst2,vals;
       Real rval,r;
-      Exp.Type from,to;
+      DAE.ExpType from,to;
       Integer i,ival;
     case (_,_,{}) then {}; 
-    case ((from as Exp.ET_INT()),(to as Exp.ET_REAL()),(Values.INTEGER(integer = i) :: vrest))
+    case ((from as DAE.ET_INT()),(to as DAE.ET_REAL()),(Values.INTEGER(integer = i) :: vrest))
       equation 
         vallst = typeConvert(from, to, vrest);
         rval = intReal(i);
       then
         (Values.REAL(rval) :: vallst);
-    case ((from as Exp.ET_REAL()),(to as Exp.ET_INT()),(Values.REAL(real = r) :: vrest))
+    case ((from as DAE.ET_REAL()),(to as DAE.ET_INT()),(Values.REAL(real = r) :: vrest))
       equation 
         vallst = typeConvert(from, to, vrest);
         ival = realInt(r);
@@ -258,7 +259,7 @@ algorithm
     local
       Real rv1,rv2,rv3;
       Integer iv1, iv2,iv3;
-      Exp.Exp e;
+      DAE.Exp e;
       //MUL
     case (Values.INTEGER(iv1),Values.INTEGER(iv2), Values.MULOP)
       equation
@@ -790,9 +791,9 @@ end powElementwiseArrayelt;
 
 public function expValue "function: expValue
  
-  Returns the value of constant expressions in Exp.Exp
+  Returns the value of constant expressions in DAE.Exp
 "
-  input Exp.Exp inExp;
+  input DAE.Exp inExp;
   output Value outValue;
 algorithm 
   outValue:=
@@ -802,10 +803,10 @@ algorithm
       Real r;
       Boolean b;
       String s;
-    case Exp.ICONST(integer = i) then Values.INTEGER(i); 
-    case Exp.RCONST(real = r) then Values.REAL(r);
-    case Exp.SCONST(string = s) then Values.STRING(s);
-    case Exp.BCONST(bool = b) then Values.BOOL(b);
+    case DAE.ICONST(integer = i) then Values.INTEGER(i); 
+    case DAE.RCONST(real = r) then Values.REAL(r);
+    case DAE.SCONST(string = s) then Values.STRING(s);
+    case DAE.BCONST(bool = b) then Values.BOOL(b);
   end matchcontinue;
 end expValue;
 
@@ -1660,7 +1661,7 @@ algorithm
       list<Value> vs;
       Value r;
       Absyn.CodeNode c;
-      Exp.ComponentRef cr;
+      DAE.ComponentRef cr;
     case Values.INTEGER(integer = n)
       equation 
         s = intString(n);

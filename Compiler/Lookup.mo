@@ -518,7 +518,7 @@ algorithm
       equation 
         equality(id = ident);
         fr = Env.topFrame(env);
-        (cache,attr,ty,bind,_,_) = lookupVar(cache,{fr}, Exp.CREF_IDENT(ident,Exp.ET_OTHER(),{}));
+        (cache,attr,ty,bind,_,_) = lookupVar(cache,{fr}, DAE.CREF_IDENT(ident,DAE.ET_OTHER(),{}));
       then
         (cache,{fr},attr,ty,bind);
 
@@ -638,7 +638,7 @@ algorithm
       equation 
         firstIdent = Absyn.pathFirstIdent(path);
         f::_ = Env.cacheGet(Absyn.IDENT(firstIdent),path,cache);
-        (cache,_,_,_,_) = lookupVarInPackages(cache,{f}, Exp.CREF_IDENT(ident,Exp.ET_OTHER(),{}));
+        (cache,_,_,_,_) = lookupVarInPackages(cache,{f}, DAE.CREF_IDENT(ident,DAE.ET_OTHER(),{}));
       then
         (cache,true);
      
@@ -654,7 +654,7 @@ algorithm
            cache,env2,InstanceHierarchy.emptyInstanceHierarchy,
            DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
            ci_state, c, false, {}); 
-        (cache,_,_,_,_) = lookupVarInPackages(cache,{f}, Exp.CREF_IDENT(ident,Exp.ET_OTHER(),{}));
+        (cache,_,_,_,_) = lookupVarInPackages(cache,{f}, DAE.CREF_IDENT(ident,DAE.ET_OTHER(),{}));
       then
         (cache,true);        
     case (cache,(_ :: fs),env,ident)
@@ -708,7 +708,7 @@ algorithm
         //print("look in cache\n");
         firstIdent = Absyn.pathFirstIdent(path);
         f::_ = Env.cacheGet(Absyn.IDENT(firstIdent),path,cache);
-        (cache,p_env,attr,ty,bind) = lookupVarInPackages(cache,{f}, Exp.CREF_IDENT(ident,Exp.ET_OTHER(),{}));
+        (cache,p_env,attr,ty,bind) = lookupVarInPackages(cache,{f}, DAE.CREF_IDENT(ident,DAE.ET_OTHER(),{}));
         (cache,more) = moreLookupUnqualifiedImportedVarInFrame(cache,fs, env, ident);
         unique = boolNot(more);
       then
@@ -727,7 +727,7 @@ algorithm
           cache,env2,InstanceHierarchy.emptyInstanceHierarchy, UnitAbsyn.noStore,
           DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
           ci_state, c, false, {}, false, ConnectionGraph.EMPTY,NONE);
-        (cache,p_env,attr,ty,bind) = lookupVarInPackages(cache,{f}, Exp.CREF_IDENT(ident,Exp.ET_OTHER(),{}));
+        (cache,p_env,attr,ty,bind) = lookupVarInPackages(cache,{f}, DAE.CREF_IDENT(ident,DAE.ET_OTHER(),{}));
         (cache,more) = moreLookupUnqualifiedImportedVarInFrame(cache,fs, env, ident);
         unique = boolNot(more);
       then
@@ -992,10 +992,10 @@ algorithm
       Absyn.InnerOuter io;
       Types.Type ty1;
       Types.Attributes attr1;
-    case(cache,env,cr as Exp.CREF_IDENT(ident=_)) equation
+    case(cache,env,cr as DAE.CREF_IDENT(ident=_)) equation
       (cache,attr1,ty1,_) = lookupVarLocal(cache,env,cr);
     then (cache,attr1,ty1);
-    case(cache,env,cr as Exp.CREF_QUAL(ident=_)) equation
+    case(cache,env,cr as DAE.CREF_QUAL(ident=_)) equation
        (cache,attr1 as DAE.ATTR(f,streamPrefix,acc,var,dir,_),ty1,_) = lookupVarLocal(cache,env,cr);
       cr1 = Exp.crefStripLastIdent(cr);
       /* Find innerOuter attribute from "parent" */
@@ -1170,7 +1170,7 @@ algorithm
       Env.Frame f;
       Env.Cache cache;
       // Lookup of enumeration variables
-    case (cache,env,Exp.CREF_QUAL(ident = id1,subscriptLst = {},componentRef = (id2 as Exp.CREF_IDENT(ident = _))))
+    case (cache,env,DAE.CREF_QUAL(ident = id1,subscriptLst = {},componentRef = (id2 as DAE.CREF_IDENT(ident = _))))
       equation 
         (cache,(c as SCode.CLASS(n,_,encflag,(r as SCode.R_ENUMERATION()),_)),env2) 
         	= lookupClass2(cache,env, Absyn.IDENT(id1), false) "Special case for looking up enumerations" ;
@@ -1188,7 +1188,7 @@ algorithm
         (cache,p_env,attr,ty,bind);
 
        // lookup of constants on form A.B in packages. First look in cache.
-    case (cache,env,cr as Exp.CREF_QUAL(ident = id,subscriptLst = {},componentRef = cref)) /* First part of name is a class. */ 
+    case (cache,env,cr as DAE.CREF_QUAL(ident = id,subscriptLst = {},componentRef = cref)) /* First part of name is a class. */ 
       local 
         Exp.ComponentRef cr;
         Absyn.Path path,scope;
@@ -1198,14 +1198,14 @@ algorithm
         id = Absyn.pathLastIdent(path);
         path = Absyn.stripLast(path);
         f::fs = Env.cacheGet(scope,path,cache);
-        (cache,attr,ty,bind) = lookupVarLocal(cache,f::fs, Exp.CREF_IDENT(id,Exp.ET_OTHER(),{}));
+        (cache,attr,ty,bind) = lookupVarLocal(cache,f::fs, DAE.CREF_IDENT(id,DAE.ET_OTHER(),{}));
         //print("found ");print(Exp.printComponentRefStr(cr));print(" in cache\n");
         then
         (cache,f::fs,attr,ty,bind);
         
         /* If we search for A1.A2....An.x while in scope A1.A2...An, just search for x. 
         Must do like this to ensure finite recursion */
-         case (cache,env,cr as Exp.CREF_QUAL(ident = id,subscriptLst = {},componentRef = cref))
+         case (cache,env,cr as DAE.CREF_QUAL(ident = id,subscriptLst = {},componentRef = cref))
            local Absyn.Path ep,p,packp;
            equation 
              p = Exp.crefToPath(cr);
@@ -1213,12 +1213,12 @@ algorithm
              packp = Absyn.stripLast(p);
              true = ModUtil.pathEqual(ep, packp);
              id = Absyn.pathLastIdent(p);
-             (cache,p_env,attr,ty,bind) = lookupVarInPackages(cache,env, Exp.CREF_IDENT(id,Exp.ET_OTHER(),{}));
+             (cache,p_env,attr,ty,bind) = lookupVarInPackages(cache,env, DAE.CREF_IDENT(id,DAE.ET_OTHER(),{}));
            then
              (cache,p_env,attr,ty,bind);
 
       // lookup of constants on form A.B in packages. instantiate package and look inside.
-    case (cache,env,cr as Exp.CREF_QUAL(ident = id,subscriptLst = {},componentRef = cref)) /* First part of name is a class. */
+    case (cache,env,cr as DAE.CREF_QUAL(ident = id,subscriptLst = {},componentRef = cref)) /* First part of name is a class. */
       local Option<Exp.ComponentRef> filterCref; 
       equation 
         (cache,(c as SCode.CLASS(n,_,encflag,r,_)),env2) = lookupClass2(cache,env, Absyn.IDENT(id), false);
@@ -1235,9 +1235,9 @@ algorithm
         (cache,p_env,attr,ty,bind);
         
        /* Why is this done? It is already done done in lookupVar 
-          BZ: This is due to recursive call when it might become Exp.CREF_IDENT calls.
+          BZ: This is due to recursive call when it might become DAE.CREF_IDENT calls.
        */ 
-    case (cache,env,(cr as Exp.CREF_IDENT(ident = id,subscriptLst = sb))) local String str;
+    case (cache,env,(cr as DAE.CREF_IDENT(ident = id,subscriptLst = sb))) local String str;
       equation 
         (cache,attr,ty,bind) = lookupVarLocal(cache,env, cr);
       then
@@ -1252,14 +1252,14 @@ algorithm
       then
         (cache,dbgEnv,attr,ty,bind);
         /* Search among qualified imports, e.g. import A.B; or import D=A.B; */
-    case (cache,(env as (Env.FRAME(optName = sid,imports = items) :: _)),(cr as Exp.CREF_IDENT(ident = id,subscriptLst = sb)))
+    case (cache,(env as (Env.FRAME(optName = sid,imports = items) :: _)),(cr as DAE.CREF_IDENT(ident = id,subscriptLst = sb)))
       equation 
         (cache,p_env,attr,ty,bind) = lookupQualifiedImportedVarInFrame(cache,items, env, id);
       then
         (cache,p_env,attr,ty,bind);
         
         /* Search among unqualified imports, e.g. import A.B.* */
-    case (cache,(env as (Env.FRAME(optName = sid,imports = items) :: _)),(cr as Exp.CREF_IDENT(ident = id,subscriptLst = sb)))
+    case (cache,(env as (Env.FRAME(optName = sid,imports = items) :: _)),(cr as DAE.CREF_IDENT(ident = id,subscriptLst = sb)))
       local Boolean unique;
       equation 
         (cache,p_env,attr,ty,bind,unique) = lookupUnqualifiedImportedVarInFrame(cache,items, env, id);
@@ -1283,13 +1283,13 @@ end lookupVarInPackages;
 protected function makeOptIdentOrNone "
 Author: BZ, 2009-04
 Helper function for lookupVarInPackages
-Makes an optional Exp.ComponentRef if the input Exp.ComponentRef is a Exp.CREF_IDENT otherwise
+Makes an optional Exp.ComponentRef if the input Exp.ComponentRef is a DAE.CREF_IDENT otherwise
 'NONE' is returned
 "
 input Exp.ComponentRef incr;
 output Option<Exp.ComponentRef> ocR;
 algorithm ocR := matchcontinue(incr)
-  case(incr as Exp.CREF_IDENT(_,_,_)) then SOME(incr);
+  case(incr as DAE.CREF_IDENT(_,_,_)) then SOME(incr);
   case(_) then NONE;
   end matchcontinue;
 end makeOptIdentOrNone;
@@ -2395,12 +2395,12 @@ algorithm
       Integer sz,ind;
       list<Exp.Exp> se;
     case (t,{}) then t; 
-    case ((DAE.T_ARRAY(arrayDim = dim,arrayType = t),p),(Exp.WHOLEDIM() :: ys))
+    case ((DAE.T_ARRAY(arrayDim = dim,arrayType = t),p),(DAE.WHOLEDIM() :: ys))
       equation 
         t_1 = checkSubscripts(t, ys);
       then
         ((DAE.T_ARRAY(dim,t_1),p));
-    case ((DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(sz)),arrayType = t),p),(Exp.SLICE(exp = Exp.ARRAY(array = se)) :: ys))
+    case ((DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(sz)),arrayType = t),p),(DAE.SLICE(exp = DAE.ARRAY(array = se)) :: ys))
       local Integer dim;
       equation 
         t_1 = checkSubscripts(t, ys);
@@ -2409,31 +2409,31 @@ algorithm
         true = checkSubscriptsRange(se,sz);        
       then
         ((DAE.T_ARRAY(DAE.DIM(SOME(dim)),t_1),p));
-    case ((DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(sz)),arrayType = t),_),(Exp.INDEX(exp = Exp.ICONST(integer = ind)) :: ys))
+    case ((DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(sz)),arrayType = t),_),(DAE.INDEX(exp = DAE.ICONST(integer = ind)) :: ys))
       equation 
         (ind > 0) = true;
         (ind <= sz) = true;
         t_1 = checkSubscripts(t, ys);
       then
         t_1;
-    case ((DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(sz)),arrayType = t),_),(Exp.INDEX(exp = e) :: ys)) /* HJ: Subscrits needn\'t be constant. No range-checking can
+    case ((DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(sz)),arrayType = t),_),(DAE.INDEX(exp = e) :: ys)) /* HJ: Subscrits needn\'t be constant. No range-checking can
 	       be done */ 
 	       local Exp.Exp e;
       equation 
         t_1 = checkSubscripts(t, ys);
       then
         t_1;
-    case ((DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = NONE),arrayType = t),_),(Exp.INDEX(exp = _) :: ys))
+    case ((DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = NONE),arrayType = t),_),(DAE.INDEX(exp = _) :: ys))
       equation 
         t_1 = checkSubscripts(t, ys);
       then
         t_1;
-    case ((DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(sz)),arrayType = t),_),(Exp.WHOLEDIM() :: ys))
+    case ((DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(sz)),arrayType = t),_),(DAE.WHOLEDIM() :: ys))
       equation 
         t_1 = checkSubscripts(t, ys);
       then
         t_1;
-    case ((DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = NONE),arrayType = t),_),(Exp.WHOLEDIM() :: ys))
+    case ((DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = NONE),arrayType = t),_),(DAE.WHOLEDIM() :: ys))
       equation 
         t_1 = checkSubscripts(t, ys);
       then
@@ -2441,7 +2441,7 @@ algorithm
         
         // If slicing with integer array of VAR variability, i.e. index changing during runtime. 
         // => resulting ARRAY type has no specified dimension size.
-    case ((DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(sz)),arrayType = t),p),(Exp.SLICE(exp = e) :: ys))
+    case ((DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(sz)),arrayType = t),p),(DAE.SLICE(exp = e) :: ys))
       local Exp.Exp e;
       equation 
         sz = 5;
@@ -2451,7 +2451,7 @@ algorithm
         t_1 = checkSubscripts(t, ys);
       then
        ((DAE.T_ARRAY(DAE.DIM(NONE),t_1),p));
-    case ((DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = NONE),arrayType = t),p),(Exp.SLICE(exp = _) :: ys))
+    case ((DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = NONE),arrayType = t),p),(DAE.SLICE(exp = _) :: ys))
       equation 
         t_1 = checkSubscripts(t, ys);
       then
@@ -2495,7 +2495,7 @@ algorithm
         String str1,str2;
       equation 
         str2 = intString(dims);
-        exp = Exp.ARRAY(Exp.ET_INT(),false,expl);
+        exp = DAE.ARRAY(DAE.ET_INT(),false,expl);
         str1 = Util.stringDelimitList(Util.listMap(expl,Exp.printExpStr)," and position " );
         Error.addMessage(Error.ARRAY_INDEX_OUT_OF_BOUNDS,{str1,str2});
       then
@@ -2517,7 +2517,7 @@ algorithm
       list<Exp.Exp> expl;
       Integer x,dims;
     case({},_) then true;
-    case(((exp as Exp.ICONST(integer = x)) :: expl ),dims)
+    case(((exp as DAE.ICONST(integer = x)) :: expl ),dims)
       equation
         true = (x<=dims);
         true = checkSubscriptsRange2(expl,dims);
@@ -2573,7 +2573,7 @@ algorithm
       list<Exp.ComponentRef> ltCref;
       Exp.Exp splicedExp;
       Exp.Type eType;      
-    case (cache,ht,ids as Exp.CREF_IDENT(ident = id,subscriptLst = ss) ) 
+    case (cache,ht,ids as DAE.CREF_IDENT(ident = id,subscriptLst = ss) ) 
       local
         Exp.Exp splicedExp;
         Exp.Type tty;
@@ -2584,12 +2584,12 @@ algorithm
         ss = addArrayDimensions(ty,ty_1,ss);
         tty = Types.elabType(ty_1);     
         ty2_2 = Types.elabType(ty);
-        splicedExp = Exp.CREF(Exp.CREF_IDENT(id,ty2_2, ss),tty);
+        splicedExp = DAE.CREF(DAE.CREF_IDENT(id,ty2_2, ss),tty);
       then
         (cache,DAE.ATTR(f,streamPrefix,acc,vt,di,io),ty_1,bind,SOME(splicedExp));
     
     /* Qualified variables looked up through component environment with a spliced exp */
-    case (cache,ht,xCref as (Exp.CREF_QUAL(ident = id,subscriptLst = ss,componentRef = ids)))  
+    case (cache,ht,xCref as (DAE.CREF_QUAL(ident = id,subscriptLst = ss,componentRef = ids)))  
       local        
       equation 
         (cache,DAE.TYPES_VAR(n,DAE.ATTR(f,streamPrefix,acc,vt,di,io),_,ty2,bind),_,_,compenv) = lookupVar2(cache,ht, id);
@@ -2599,14 +2599,14 @@ algorithm
         ty = sliceDimensionType(ty1,ty);
         ss = addArrayDimensions(ty2,ty2,ss);
         ty2_2 = Types.elabType(ty2);
-        xCref = Exp.CREF_QUAL(id,ty2_2,ss,tCref);
+        xCref = DAE.CREF_QUAL(id,ty2_2,ss,tCref);
         eType = Types.elabType(ty);
-        splicedExp = Exp.CREF(xCref,eType);
+        splicedExp = DAE.CREF(xCref,eType);
       then
         (cache,attr,ty,binding,SOME(splicedExp));
         
         /* Qualified componentname without spliced exp.*/
-    case (cache,ht,xCref as (Exp.CREF_QUAL(ident = id,subscriptLst = ss,componentRef = ids)))      
+    case (cache,ht,xCref as (DAE.CREF_QUAL(ident = id,subscriptLst = ss,componentRef = ids)))      
       equation 
         (cache,DAE.TYPES_VAR(n,DAE.ATTR(f,streamPrefix,acc,vt,di,io),_,ty2,bind),_,_,compenv) = lookupVar2(cache,ht, id);
         (cache,attr,ty,binding,texp,_) = lookupVar(cache,compenv, ids);
@@ -2626,10 +2626,10 @@ algorithm
   lref :=
   matchcontinue(oCref)
     local Option<Exp.Exp> exp;Exp.ComponentRef ecpr;
-    case( exp as SOME(Exp.CREF(ecpr as Exp.CREF_IDENT(_,_,_),_ )))
+    case( exp as SOME(DAE.CREF(ecpr as DAE.CREF_IDENT(_,_,_),_ )))
       then
         (ecpr::{});
-    case( exp as SOME(Exp.CREF(ecpr as Exp.CREF_QUAL(_,_,_,_),_ )))
+    case( exp as SOME(DAE.CREF(ecpr as DAE.CREF_QUAL(_,_,_,_),_ )))
       then
         (ecpr::{});
     case(_) then {};
@@ -2682,7 +2682,7 @@ algorithm
       list<Exp.Subscript> subs1,subs2;
     case(_,{}) then {};
     case({},subs2) then subs2;
-    case(((sub1 as Exp.WHOLEDIM())::subs1), (sub2::subs2))
+    case(((sub1 as DAE.WHOLEDIM())::subs1), (sub2::subs2))
       equation
         subs2 = expandWholeDimSubScript(subs1,subs2);
       then
@@ -2700,7 +2700,7 @@ end expandWholeDimSubScript;
 protected function makeExpIntegerArray " function makeExpIntegerArray
 takes a list of integers, each representing a dimension, eg: 2,3,4 meaning an 
 array[2 array[3 array[4
-returns a Exp.SLICE for each dimension with a number from 1 to dimension size.
+returns a DAE.SLICE for each dimension with a number from 1 to dimension size.
 ex. Real A[2,3] ==> A[{{1,2}{1,2,3}}]
 "
   input list<Integer> inInt;
@@ -2723,8 +2723,8 @@ algorithm
       equation   
         expsl = makeExpIntegerArray(iLst);
         exps = makeExpIntegerArray2(i,1);
-        tmpArray = Exp.ARRAY(Exp.ET_INT(), false, exps);
-        exps = Exp.SLICE(tmpArray);
+        tmpArray = DAE.ARRAY(DAE.ET_INT(), false, exps);
+        exps = DAE.SLICE(tmpArray);
       then
         (exps :: expsl);
   end matchcontinue;
@@ -2748,19 +2748,19 @@ algorithm
        equation         
          true = (iMax < iCur);
        then
-         {Exp.ICONST(iMax)};
+         {DAE.ICONST(iMax)};
      case(iMax,iCur)
        equation         
          true = (iMax == iCur);
        then
-         {Exp.ICONST(iCur)};
+         {DAE.ICONST(iCur)};
      case(iMax,iCur) 
        local
          list<Exp.Exp> expli;
        equation
          expli = makeExpIntegerArray2(iMax, iCur+1);
        then
-         (Exp.ICONST(iCur) :: expli);
+         (DAE.ICONST(iCur) :: expli);
   end matchcontinue;
 end makeExpIntegerArray2;
  

@@ -807,7 +807,7 @@ algorithm
       list<Exp.ComponentRef> crefs;
       list<tuple<Exp.ComponentRef, Exp.Exp>> argmap;
       Exp.Exp newExp;
-    case((Exp.CALL(p,args,tup,built,t,true),fns))
+    case((DAE.CALL(p,args,tup,built,t,true),fns))
       equation
         DAE.FUNCTION(_,DAE.DAE(fn),_,_) :: _ = DAEUtil.getNamedFunction(p,fns);
         crefs = Util.listMap(fn,getInputCrefs);
@@ -849,7 +849,7 @@ end getRhsExp;
 
 protected function replaceArgs
 "function: replaceArgs
-	finds Exp.CREF and replaces them with new exps if the cref is in the argmap"
+	finds DAE.CREF and replaces them with new exps if the cref is in the argmap"
 	input tuple<Exp.Exp, list<tuple<Exp.ComponentRef, Exp.Exp>>> inTuple;
 	output tuple<Exp.Exp, list<tuple<Exp.ComponentRef, Exp.Exp>>> outTuple;
 algorithm
@@ -859,7 +859,7 @@ algorithm
       Exp.ComponentRef cref;
       list<tuple<Exp.ComponentRef, Exp.Exp>> argmap;
       Exp.Exp e;
-    case((Exp.CREF(componentRef = cref),argmap))
+    case((DAE.CREF(componentRef = cref),argmap))
       equation
         e = getExpFromArgMap(argmap,cref);
       then
@@ -908,7 +908,7 @@ algorithm
     local
       Exp.ComponentRef cref;
     case(DAE.VAR(componentRef=cref,direction=DAE.INPUT())) then cref;
-    case(_) then Exp.WILD();
+    case(_) then DAE.WILD();
   end matchcontinue;
 end getInputCrefs;
 
@@ -919,7 +919,7 @@ protected function removeWilds
 	output Boolean outBoolean;
 algorithm
   outBoolean := matchcontinue(inComponentRef)
-    case(Exp.WILD()) then false;
+    case(DAE.WILD()) then false;
     case(_) then true;
   end matchcontinue;
 end removeWilds;

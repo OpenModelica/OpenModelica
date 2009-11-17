@@ -39,7 +39,7 @@ This is the main funciton for the class. It will take a userdefined function and
 evaluate it. This is to prevent multiple compilation of c files.
 "
   input Env.Env env "enviroment for the user-function";
-  input Exp.Exp callExp "Exp.CALL(userFunc)"; 
+  input Exp.Exp callExp "DAE.CALL(userFunc)"; 
   input list<Values.Value> inArgs; 
   input SCode.Class sc; 
   input list<DAE.Element> daeList;
@@ -56,7 +56,7 @@ algorithm
         Absyn.Path funcpath;
         list<Exp.Exp> crefArgs;
         String str;
-    case(env,(callExp as Exp.CALL(path = funcpath,expLst = crefArgs)),inArgs, sc as SCode.CLASS(_,false,_,SCode.R_FUNCTION(),SCode.PARTS(elementList,_,_,_,_,_,_) ),daeList)
+    case(env,(callExp as DAE.CALL(path = funcpath,expLst = crefArgs)),inArgs, sc as SCode.CLASS(_,false,_,SCode.R_FUNCTION(),SCode.PARTS(elementList,_,_,_,_,_,_) ),daeList)
       equation
         str = Absyn.pathString(funcpath);
         str = Util.stringAppendList({"cevalfunc_",str});
@@ -67,7 +67,7 @@ algorithm
         retVal = convertOutputVarValues(retVals); 
         then 
           retVal;
-    case(env,(callExp as Exp.CALL(path = funcpath,expLst = crefArgs)),inArgs, sc as SCode.CLASS(_,false,_,SCode.R_FUNCTION(),SCode.PARTS(elementList,_,_,_,_,_,_) ),daeList)
+    case(env,(callExp as DAE.CALL(path = funcpath,expLst = crefArgs)),inArgs, sc as SCode.CLASS(_,false,_,SCode.R_FUNCTION(),SCode.PARTS(elementList,_,_,_,_,_,_) ),daeList)
       equation
         _ = extendEnvWithInputArgs(env,elementList,inArgs,crefArgs);
         str = Absyn.pathString(funcpath);
@@ -75,7 +75,7 @@ algorithm
         Debug.fprint("failtrace", str);
         then
           fail();
-    case(env,(callExp as Exp.CALL(path = funcpath,expLst = crefArgs)),inArgs, sc as SCode.CLASS(_,false,_,SCode.R_FUNCTION(),SCode.PARTS(elementList,_,_,_,_,_,_) ),daeList)
+    case(env,(callExp as DAE.CALL(path = funcpath,expLst = crefArgs)),inArgs, sc as SCode.CLASS(_,false,_,SCode.R_FUNCTION(),SCode.PARTS(elementList,_,_,_,_,_,_) ),daeList)
       equation        
         failure(_ = extendEnvWithInputArgs(env,elementList,inArgs,crefArgs));
         str = Absyn.pathString(funcpath);
@@ -125,7 +125,7 @@ algorithm
         env1 = extendEnvWithInputArgs(env,eles1,vals1,restExps);
         then
           env1;          
-    case(env, ((ele1 as SCode.COMPONENT(component = varName, typeSpec = Absyn.TPATH(path = apath), modifications=mod1, attributes = SCode.ATTR(direction = Absyn.INPUT() ) ))::eles1), (val1::vals1),((e1 as Exp.CALL(path = _))::restExps))
+    case(env, ((ele1 as SCode.COMPONENT(component = varName, typeSpec = Absyn.TPATH(path = apath), modifications=mod1, attributes = SCode.ATTR(direction = Absyn.INPUT() ) ))::eles1), (val1::vals1),((e1 as DAE.CALL(path = _))::restExps))
       equation
         (tty as (DAE.T_COMPLEX(recordconst,typeslst,cto,_),_)) = makeComplexForEnv(e1, val1); //Types.expTypetoTypesType(ety);
         complexEnv = Env.newFrame(false); 
@@ -200,7 +200,7 @@ algorithm (oType) := matchcontinue(inExp, inVal)
     String pathName;
     list<Values.Value> vals;
     list<String> names;
-  case(Exp.CALL(recordName,_,_,_,ty,_), inVal as Values.RECORD(_,vals,names,-1))
+  case(DAE.CALL(recordName,_,_,_,ty,_), inVal as Values.RECORD(_,vals,names,-1))
     equation
       pathName = Absyn.pathString(recordName);
       (cty as (DAE.T_COMPLEX(_,lv,_,_),_)) = Types.expTypetoTypesType(ty);
@@ -793,7 +793,7 @@ algorithm outVal := matchcontinue(inVal,env,toAssign)
       list<Values.Value> vals;
       list<String> names;
     equation
-      (_,_,t as (DAE.T_COMPLEX(_,typeslst,_,_),_),_,_,_) = Lookup.lookupVar(Env.emptyCache(),env, Exp.CREF_IDENT(str,Exp.ET_OTHER(),{}));
+      (_,_,t as (DAE.T_COMPLEX(_,typeslst,_,_),_),_,_,_) = Lookup.lookupVar(Env.emptyCache(),env, DAE.CREF_IDENT(str,DAE.ET_OTHER(),{}));
       nlist = setValuesInRecord(typeslst,names,vals);
       fr = Env.newFrame(false); 
       complexEnv = makeComplexEnv({fr},nlist);
@@ -806,7 +806,7 @@ algorithm outVal := matchcontinue(inVal,env,toAssign)
       local 
         list<Absyn.Subscript> subs;
       equation
-        (_,_,t,DAE.VALBOUND(value2),_,_) = Lookup.lookupVar(Env.emptyCache(),env, Exp.CREF_IDENT(str,Exp.ET_OTHER(),{}));
+        (_,_,t,DAE.VALBOUND(value2),_,_) = Lookup.lookupVar(Env.emptyCache(),env, DAE.CREF_IDENT(str,DAE.ET_OTHER(),{}));
         value = mergeValues(value2,value,subs,env,t); 
         env1 = updateVarinEnv(env,str,value,t);
       then
@@ -819,7 +819,7 @@ algorithm outVal := matchcontinue(inVal,env,toAssign)
         Exp.ComponentRef eme;
         String str2;
       equation 
-        (_,_,t,DAE.VALBOUND(value2),_,_) = Lookup.lookupVar(Env.emptyCache(),env, Exp.CREF_IDENT(str,Exp.ET_OTHER(),{}));
+        (_,_,t,DAE.VALBOUND(value2),_,_) = Lookup.lookupVar(Env.emptyCache(),env, DAE.CREF_IDENT(str,DAE.ET_OTHER(),{}));
         env1 = setQualValue(env,value,Absyn.CREF_QUAL(str,subs,child));
       then
         env1;
@@ -878,7 +878,7 @@ algorithm oenv := matchcontinue(env,inVal,inCr)
     inVal,inCr)    
     equation
       str = Absyn.crefFirstIdent(inCr);
-      (_,_,_,_,_,_) = Lookup.lookupVar(Env.emptyCache(), {frame}, Exp.CREF_IDENT(str,Exp.ET_OTHER(),{}));
+      (_,_,_,_,_,_) = Lookup.lookupVar(Env.emptyCache(), {frame}, DAE.CREF_IDENT(str,DAE.ET_OTHER(),{}));
       farg22 = setQualValue2(farg2, inVal,inCr,0);
       then
         Env.FRAME(farg1,farg22,farg3,farg4,farg5,farg6,farg7,defineUnits) :: frames;    
@@ -969,7 +969,7 @@ algorithm
     local Env.Env env1;
     case(env,varName,newVal,ty) 
       equation
-        (_,_,_,_,_,_) = Lookup.lookupVar(Env.emptyCache(), env,Exp.CREF_IDENT(varName,Exp.ET_OTHER(),{}));
+        (_,_,_,_,_,_) = Lookup.lookupVar(Env.emptyCache(), env,DAE.CREF_IDENT(varName,DAE.ET_OTHER(),{}));
         env1 = Env.updateFrameV(env, 
           DAE.TYPES_VAR(varName,DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
             false,ty,DAE.VALBOUND(newVal)), Env.VAR_TYPED(), {}); 
@@ -1117,8 +1117,8 @@ algorithm oval := matchcontinue(inType)
       Absyn.Path path;
       list<String> names;    
     then Values.ENUM(idx,path,names); 
-//       then Values.ENUM(Exp.CREF_IDENT("",Exp.ENUM(),{}),0); 
-//  case((DAE.T_ENUM,_)) then Values.ENUM(Exp.CREF_IDENT("",Exp.ENUM(),{}),0); 
+//       then Values.ENUM(DAE.CREF_IDENT("",Exp.ENUM(),{}),0); 
+//  case((DAE.T_ENUM,_)) then Values.ENUM(DAE.CREF_IDENT("",Exp.ENUM(),{}),0); 
   case((DAE.T_COMPLEX(ClassInf.RECORD(str), typesVar,_,_),_))
     local 
       list<Types.Var> typesVar;
@@ -1224,7 +1224,7 @@ algorithm
     case({},_) then {};
     case(((ele1 as SCode.COMPONENT(component = varName, attributes = SCode.ATTR(direction = Absyn.OUTPUT() ) ))::eles1),env)
       equation
-        (_,_,_,DAE.VALBOUND(value),_,_) = Lookup.lookupVar(Env.emptyCache(),env, Exp.CREF_IDENT(varName,Exp.ET_OTHER(),{}));
+        (_,_,_,DAE.VALBOUND(value),_,_) = Lookup.lookupVar(Env.emptyCache(),env, DAE.CREF_IDENT(varName,DAE.ET_OTHER(),{}));
         lval = getOutputVarValues(eles1,env);
       then
        value::lval; 

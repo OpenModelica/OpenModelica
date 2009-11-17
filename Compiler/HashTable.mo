@@ -22,21 +22,22 @@ keyEqual 	- A comparison function between two keys, returns true if equal.
 */
 
 /* HashTable instance specific code */
-public import Exp;
+public import DAE;
 
+protected import Exp;
 protected import System;
 protected import Util;
 
 public 
- type Key = Exp.ComponentRef;
+ type Key = DAE.ComponentRef;
  type Value = Integer;
    
 protected function hashFunc "
   author: PA
  
-  Calculates a hash value for Exp.ComponentRef
+  Calculates a hash value for DAE.ComponentRef
 "
-  input Exp.ComponentRef cr;
+  input DAE.ComponentRef cr;
   output Integer res;
   String crstr;
 algorithm 
@@ -57,27 +58,27 @@ protected
 HashTable t;
 algorithm
   t := emptyHashTable();
-  t := add((Exp.CREF_IDENT("a",Exp.ET_OTHER(),{}),2),t);
-  t := add((Exp.CREF_IDENT("b",Exp.ET_OTHER(),{}),4),t);
-  t := add((Exp.CREF_IDENT("c",Exp.ET_OTHER(),{}),6),t);
+  t := add((DAE.CREF_IDENT("a",DAE.ET_OTHER(),{}),2),t);
+  t := add((DAE.CREF_IDENT("b",DAE.ET_OTHER(),{}),4),t);
+  t := add((DAE.CREF_IDENT("c",DAE.ET_OTHER(),{}),6),t);
   dumpHashTable(t);
   
-  print("b =");print(intString(get(Exp.CREF_IDENT("b",Exp.ET_OTHER(),{}),t)));print("\n");
-  print("a =");print(intString(get(Exp.CREF_IDENT("a",Exp.ET_OTHER(),{}),t)));print("\n");
-  print("c =");print(intString(get(Exp.CREF_IDENT("c",Exp.ET_OTHER(),{}),t)));print("\n");
-  t := add((Exp.CREF_IDENT("c",Exp.ET_OTHER(),{}),66),t);
-  t := add((Exp.CREF_IDENT("a",Exp.ET_OTHER(),{}),22),t);
-  t := add((Exp.CREF_IDENT("q",Exp.ET_OTHER(),{}),123),t);
+  print("b =");print(intString(get(DAE.CREF_IDENT("b",DAE.ET_OTHER(),{}),t)));print("\n");
+  print("a =");print(intString(get(DAE.CREF_IDENT("a",DAE.ET_OTHER(),{}),t)));print("\n");
+  print("c =");print(intString(get(DAE.CREF_IDENT("c",DAE.ET_OTHER(),{}),t)));print("\n");
+  t := add((DAE.CREF_IDENT("c",DAE.ET_OTHER(),{}),66),t);
+  t := add((DAE.CREF_IDENT("a",DAE.ET_OTHER(),{}),22),t);
+  t := add((DAE.CREF_IDENT("q",DAE.ET_OTHER(),{}),123),t);
   
-  print("b' =");print(intString(get(Exp.CREF_IDENT("b",Exp.ET_OTHER(),{}),t)));print("\n");
-  print("a' =");print(intString(get(Exp.CREF_IDENT("a",Exp.ET_OTHER(),{}),t)));print("\n");
-  print("c' =");print(intString(get(Exp.CREF_IDENT("c",Exp.ET_OTHER(),{}),t)));print("\n");
+  print("b' =");print(intString(get(DAE.CREF_IDENT("b",DAE.ET_OTHER(),{}),t)));print("\n");
+  print("a' =");print(intString(get(DAE.CREF_IDENT("a",DAE.ET_OTHER(),{}),t)));print("\n");
+  print("c' =");print(intString(get(DAE.CREF_IDENT("c",DAE.ET_OTHER(),{}),t)));print("\n");
   dumpHashTable(t);
-  t := delete(Exp.CREF_IDENT("c",Exp.ET_OTHER(),{}),t);
-  t := add((Exp.CREF_IDENT("cc",Exp.ET_OTHER(),{}),567),t);
+  t := delete(DAE.CREF_IDENT("c",DAE.ET_OTHER(),{}),t);
+  t := add((DAE.CREF_IDENT("cc",DAE.ET_OTHER(),{}),567),t);
    
   dumpHashTable(t);
-  print("c' =");print(intString(get(Exp.CREF_IDENT("c",Exp.ET_OTHER(),{}),t)));print("\n");
+  print("c' =");print(intString(get(DAE.CREF_IDENT("c",DAE.ET_OTHER(),{}),t)));print("\n");
   
 end test;
 
@@ -95,7 +96,7 @@ protected function dumpTuple
 algorithm
   str := matchcontinue(tpl)
   local 
-  Exp.ComponentRef cr; Integer i;
+  DAE.ComponentRef cr; Integer i;
     case((cr,i)) equation
       str = "{" +& Exp.printComponentRefStr(cr) +& "," +& intString(i) +& "}";
     then str;

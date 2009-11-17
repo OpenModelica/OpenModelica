@@ -44,15 +44,14 @@ package Codegen
 
   -------------------------------------------------------------------------"
  
-public import DAE;
-public import Print;
-public import Exp;
 public import Absyn;
-public import Convert;
+public import DAE;
+public import Exp;
 public import MetaUtil;
+public import Print;
 public import RTOpts;
-public import Types;
 public import SCode;
+public import Types;
 
 public 
 type Ident = String;
@@ -1818,35 +1817,35 @@ algorithm
     local
       Lib res;
       Exp.Type t;
-    case Exp.ET_INT() then "integer";
-    case Exp.ET_REAL() then "real";
-    case Exp.ET_STRING() then "string";
-    case Exp.ET_BOOL() then "boolean";
-    case Exp.ET_OTHER() then "complex"; // Only use is currently for external objects. Perhaps in future also records.
-    case Exp.ET_ENUMERATION(_,_,_,_) then "enumeration";
+    case DAE.ET_INT() then "integer";
+    case DAE.ET_REAL() then "real";
+    case DAE.ET_STRING() then "string";
+    case DAE.ET_BOOL() then "boolean";
+    case DAE.ET_OTHER() then "complex"; // Only use is currently for external objects. Perhaps in future also records.
+    case DAE.ET_ENUMERATION(_,_,_,_) then "enumeration";
 //    case Exp.ENUM() then "ENUM_NOT_IMPLEMENTED";
-    case Exp.ET_FUNCTION_REFERENCE_VAR() then "fnptr";
-    case Exp.ET_FUNCTION_REFERENCE_FUNC() then "fnptr";
-    case Exp.ET_ARRAY(ty = t)
+    case DAE.ET_FUNCTION_REFERENCE_VAR() then "fnptr";
+    case DAE.ET_FUNCTION_REFERENCE_FUNC() then "fnptr";
+    case DAE.ET_ARRAY(ty = t)
       equation
         res = expShortTypeStr(t);
       then
         res;
-    case Exp.ET_COMPLEX(name = name)
+    case DAE.ET_COMPLEX(name = name)
       local String name;
       equation
         res = stringAppend("struct ", name);
       then
         res;
-    case (Exp.ET_LIST(_)) then "metamodelica_type";
+    case (DAE.ET_LIST(_)) then "metamodelica_type";
 
-    case (Exp.ET_METATUPLE(_)) then "metamodelica_type";
+    case (DAE.ET_METATUPLE(_)) then "metamodelica_type";
 
-    case (Exp.ET_METAOPTION(_)) then "metamodelica_type";
+    case (DAE.ET_METAOPTION(_)) then "metamodelica_type";
     
-    case (Exp.ET_UNIONTYPE()) then "metamodelica_type";
+    case (DAE.ET_UNIONTYPE()) then "metamodelica_type";
     
-    case (Exp.ET_POLYMORPHIC()) then "metamodelica_type";
+    case (DAE.ET_POLYMORPHIC()) then "metamodelica_type";
 
   end matchcontinue;
 end expShortTypeStr;
@@ -1865,7 +1864,7 @@ algorithm
       Lib tstr,str;
       Exp.Type t;
 
-    case ((t as Exp.ET_COMPLEX(_,_,_)),_)
+    case ((t as DAE.ET_COMPLEX(_,_,_)),_)
       equation
         str = expShortTypeStr(t);
       then
@@ -2490,8 +2489,8 @@ algorithm
         (funcArgExps2,_,_) = Types.matchTypeTuple(funcArgExps1, funcArgTypes2, funcArgTypes1, {}, Types.matchTypeRegular);
         isTuple = Types.isTuple(retType1);
         // Call the regular function
-        (callCfn,callVar,tnr) = generateExpression(Exp.CALL(fpath,funcArgExps2,isTuple,false,Exp.ET_OTHER,false),tnr,funContext);
-        resCref = Exp.CREF_IDENT(callVar,Exp.ET_OTHER,{});
+        (callCfn,callVar,tnr) = generateExpression(DAE.CALL(fpath,funcArgExps2,isTuple,false,DAE.ET_OTHER,false),tnr,funContext);
+        resCref = DAE.CREF_IDENT(callVar,DAE.ET_OTHER,{});
         // Fix crefs for regular struct
         retTypeList1 = Types.resTypeToListTypes(retType1);
         i = listLength(retTypeList1);
@@ -2540,7 +2539,7 @@ protected function makeAssignmentNoCheck
   input Exp.Exp rhs;
   output Algorithm.Statement stmt;
 algorithm
-  stmt := DAE.STMT_ASSIGN(Exp.ET_OTHER,lhs,rhs);
+  stmt := DAE.STMT_ASSIGN(DAE.ET_OTHER,lhs,rhs);
 end makeAssignmentNoCheck;
 
 protected function generateAllocOutvars 
@@ -2856,7 +2855,7 @@ algorithm
       
     case (_,{},tnr,context) then (cEmptyFunction,{},tnr);
       
-    case (id,(Exp.INDEX(exp = e) :: r),tnr,context)
+    case (id,(DAE.INDEX(exp = e) :: r),tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e, tnr, context);
         (cfn2,vars2,tnr2) = generateSizeSubscripts(id, r, tnr1, context);
@@ -3058,7 +3057,7 @@ algorithm
 			list<Integer> helpVarIndices;
 			Integer helpInd;
 			
-    case (DAE.STMT_WHEN(exp = e as Exp.ARRAY(array = el),statementLst = stmts, elseWhen=SOME(algStmt),helpVarIndices=helpVarIndices), tnr, context)
+    case (DAE.STMT_WHEN(exp = e as DAE.ARRAY(array = el),statementLst = stmts, elseWhen=SOME(algStmt),helpVarIndices=helpVarIndices), tnr, context)
       equation
         // First generate code for updating the help variables in helpVarIndices
         // and the condition expression substitute the condition expression with a call to
@@ -3086,7 +3085,7 @@ algorithm
         cfn  = cMergeFns({cfn2, elseBlock1});
       then (cfn,cfn4,tnr4);
         
-    case (DAE.STMT_WHEN(exp = e as Exp.ARRAY(array = el),statementLst = stmts, elseWhen=NONE,helpVarIndices=helpVarIndices), tnr, context)
+    case (DAE.STMT_WHEN(exp = e as DAE.ARRAY(array = el),statementLst = stmts, elseWhen=NONE,helpVarIndices=helpVarIndices), tnr, context)
       equation
         (cfn2, vars, tnr2) = generateWhenConditionExpressions(helpVarIndices,el,tnr,context);
 				var1 = Util.stringDelimitList(vars," || ");
@@ -3165,12 +3164,12 @@ algorithm
       LoopContext loopContext;
 
     // Part of ValueBlock implementation, special treatment of _ := VB case
-    case (DAE.STMT_ASSIGN(_,Exp.CREF(Exp.WILD,_),exp as Exp.VALUEBLOCK(_,_,_,_)),tnr,context)
+    case (DAE.STMT_ASSIGN(_,DAE.CREF(DAE.WILD(),_),exp as DAE.VALUEBLOCK(_,_,_,_)),tnr,context)
       equation
         (cfn,_,tnr1) = generateExpression(exp, tnr, context);
      then (cfn,tnr1);
 
-    case (DAE.STMT_ASSIGN(type_ = typ,exp1 = Exp.CREF(cref,_),exp = exp),tnr,context)
+    case (DAE.STMT_ASSIGN(type_ = typ,exp1 = DAE.CREF(cref,_),exp = exp),tnr,context)
       equation
         Debug.fprintln("cgas", "generate_algorithm_statement");
         (cfn1,var1,tnr1) = generateExpression(exp, tnr, context);
@@ -3182,7 +3181,7 @@ algorithm
         (cfn,tnr2);
     
     /* adrpo: handle ASUB on LHS */ 
-    case (DAE.STMT_ASSIGN(type_ = typ,exp1 = asub as Exp.ASUB(exp = Exp.CREF(cref,t), sub=subs),exp = exp),tnr,context)
+    case (DAE.STMT_ASSIGN(type_ = typ,exp1 = asub as DAE.ASUB(exp = DAE.CREF(cref,t), sub=subs),exp = exp),tnr,context)
       local 
         list<Exp.Exp> subs; Exp.Exp asub; Exp.ComponentRef crefBuild;
       equation
@@ -3323,7 +3322,7 @@ algorithm
     case (algStmt as DAE.STMT_WHEN(exp = _),tnr,CONTEXT(SIMULATION(false),_,_))
     then (cEmptyFunction,tnr);
 
-    case (DAE.STMT_TUPLE_ASSIGN(t,expl,e as Exp.CALL(path=_)),tnr,context)
+    case (DAE.STMT_TUPLE_ASSIGN(t,expl,e as DAE.CALL(path=_)),tnr,context)
       local Context context;
         list<Exp.Exp> args,expl; Absyn.Path fn;
         list<String> lhsVars,vars1;
@@ -3489,7 +3488,7 @@ algorithm
     Exp.Type tp;
     list<tuple<Exp.Type,Exp.Ident>> vars;
     case({},tupleVar,i,tnr,context) then (cEmptyFunction,tnr);
-    case(Exp.CREF(cr,tp)::expl,tupleVar,i,tnr,context) equation
+    case(DAE.CREF(cr,tp)::expl,tupleVar,i,tnr,context) equation
       (cfn,res1,tnr) = generateScalarLhsCref(tp,cr,tnr,context);
       iStr = intString(i);
       stmt = Util.stringAppendList({res1," = ",tupleVar,".","targ",iStr,";"});
@@ -3532,7 +3531,7 @@ algorithm
       Exp.Type t;
       Exp.Exp e1,e3,e2;
       Context context;
-    case (Exp.RANGE(ty = t,exp = e1,expOption = NONE,range = e3),tnr,context)
+    case (DAE.RANGE(ty = t,exp = e1,expOption = NONE,range = e3),tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         var2 = "(1)";
@@ -3540,7 +3539,7 @@ algorithm
         cfn = cMergeFn(cfn1, cfn3);
       then
         (cfn,var1,var2,var3,tnr3);
-    case (Exp.RANGE(ty = t,exp = e1,expOption = SOME(e2),range = e3),tnr,context)
+    case (DAE.RANGE(ty = t,exp = e1,expOption = SOME(e2),range = e3),tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -3845,7 +3844,7 @@ algorithm
         cfn_2 = cAddInits(cfn_1, {alloc_str});
         cfn = Util.if_(is_a, cfn_2, cfn_1);
         etp = Exp.typeof(e);
-        (cfn2,tnr1) = generateAlgorithmStatement(DAE.STMT_ASSIGN(etp,Exp.CREF(id,etp),e),tnr1,context);
+        (cfn2,tnr1) = generateAlgorithmStatement(DAE.STMT_ASSIGN(etp,DAE.CREF(id,etp),e),tnr1,context);
         cfn = cMergeFn(cfn,cfn2);
       then
         (cfn,tnr1);
@@ -4040,11 +4039,11 @@ algorithm
         iStr = intString(i);
         id_1_str = Util.stringAppendList({"out.","targ",iStr});
         expstr = Util.if_(emptyprep, 
-                         Exp.CREF(id, Exp.ET_OTHER()), 
-                         Exp.CREF(Exp.CREF_IDENT(id_1_str,Exp.ET_OTHER(),{}),Exp.ET_OTHER()));
+                         DAE.CREF(id, DAE.ET_OTHER()), 
+                         DAE.CREF(DAE.CREF_IDENT(id_1_str,DAE.ET_OTHER(),{}),DAE.ET_OTHER()));
         idstr = Util.if_(emptyprep, 
                          id, 
-                         Exp.CREF_IDENT(id_1_str,Exp.ET_OTHER(),{}));
+                         DAE.CREF_IDENT(id_1_str,DAE.ET_OTHER(),{}));
         exptype = Types.elabType(typ);
         scalarassign = DAE.STMT_ASSIGN(exptype,expstr,e);
         arrayassign = DAE.STMT_ASSIGN_ARR(exptype,idstr,e);
@@ -4074,7 +4073,7 @@ algorithm
       Lib str;
       Integer i;
       Exp.Subscript e;
-    case Exp.INDEX(exp = Exp.ICONST(integer = i))
+    case DAE.INDEX(exp = DAE.ICONST(integer = i))
       equation
         str = intString(i);
       then
@@ -4369,18 +4368,18 @@ algorithm
       list<Exp.Exp> args,elist;
       list<Lib> vars1;
       list<list<tuple<Exp.Exp, Boolean>>> ell;
-    case (Exp.ICONST(integer = i),tnr,context)
+    case (DAE.ICONST(integer = i),tnr,context)
       equation
         istr = intString(i);
       then
         (cEmptyFunction,istr,tnr);
-    case (Exp.RCONST(real = r),tnr,context)
+    case (DAE.RCONST(real = r),tnr,context)
       equation
         rstr = realString(r);
       then
         (cEmptyFunction,rstr,tnr);
 	  //Strings are stored as char*, therefor return data member of modelica_string struct.
-    case (Exp.SCONST(string = s),tnr,context)
+    case (DAE.SCONST(string = s),tnr,context)
       local String stmt,tvar_data; CFunction cfn;
       equation
         (decl,tvar,tnr1_1) = generateTempDecl("modelica_string", tnr);
@@ -4390,37 +4389,37 @@ algorithm
         cfn = cAddVariables(cfn, {decl});
       then
         (cfn,tvar,tnr1_1);
-    case (Exp.BCONST(bool = b),tnr,context)
+    case (DAE.BCONST(bool = b),tnr,context)
       equation
         var = Util.if_(b, "(1)", "(0)");
       then
         (cEmptyFunction,var,tnr);
-    case (Exp.CREF(componentRef = cref,ty = t),tnr,context)
+    case (DAE.CREF(componentRef = cref,ty = t),tnr,context)
       equation
         (cfn,var,tnr_1) = generateRhsCref(cref, t, tnr, context);
       then
         (cfn,var,tnr_1);
-    case (Exp.BINARY(exp1 = e1,operator = op,exp2 = e2),tnr,context)
+    case (DAE.BINARY(exp1 = e1,operator = op,exp2 = e2),tnr,context)
       equation
         (cfn,var,tnr_1) = generateBinary(e1, op, e2, tnr, context);
       then
         (cfn,var,tnr_1);
-    case (Exp.UNARY(operator = op,exp = e),tnr,context)
+    case (DAE.UNARY(operator = op,exp = e),tnr,context)
       equation
         (cfn,var,tnr_1) = generateUnary(op, e, tnr, context);
       then
         (cfn,var,tnr_1);
-    case (Exp.LBINARY(exp1 = e1,operator = op,exp2 = e2),tnr,context)
+    case (DAE.LBINARY(exp1 = e1,operator = op,exp2 = e2),tnr,context)
       equation
         (cfn,var,tnr_1) = generateLbinary(e1, op, e2, tnr, context);
       then
         (cfn,var,tnr_1);
-    case (Exp.LUNARY(operator = op,exp = e),tnr,context)
+    case (DAE.LUNARY(operator = op,exp = e),tnr,context)
       equation
         (cfn,var,tnr_1) = generateLunary(op, e, tnr, context);
       then
         (cfn,var,tnr_1);
-    case (Exp.RELATION(exp1 = e1,operator = op,exp2 = e2),tnr,context as CONTEXT(codeContext=SIMULATION(true)))
+    case (DAE.RELATION(exp1 = e1,operator = op,exp2 = e2),tnr,context as CONTEXT(codeContext=SIMULATION(true)))
       local
         String op_str;
       equation
@@ -4435,12 +4434,12 @@ algorithm
 				cfn5 = cAddVariables(cfn4,{decl1});
       then
         (cfn5,var,tnr3);
-    case (Exp.RELATION(exp1 = e1,operator = op,exp2 = e2),tnr,context)
+    case (DAE.RELATION(exp1 = e1,operator = op,exp2 = e2),tnr,context)
       equation
         (cfn,var,tnr_1) = generateRelation(e1, op, e2, tnr, context);
       then
         (cfn,var,tnr_1);
-    case (Exp.IFEXP(expCond = e,expThen = then_,expElse = else_),tnr,context)
+    case (DAE.IFEXP(expCond = e,expThen = then_,expElse = else_),tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e, tnr, context);
         (decl,tvar,tnr1_1) = generateTempDecl("modelica_boolean", tnr1);
@@ -4458,14 +4457,14 @@ algorithm
         (cfn,var,tnr3);
 
         /* some buitlin functions that are e.g. overloaded */
-    case ((e as Exp.CALL(path = fn,expLst = args,tuple_ = false,builtin = true)),tnr,context)
+    case ((e as DAE.CALL(path = fn,expLst = args,tuple_ = false,builtin = true)),tnr,context)
       equation
         (cfn,var,tnr2) = generateBuiltinFunction(e, tnr, context);
       then
         (cfn,var,tnr2);
 
         /* no-ret calls */
-    case (Exp.CALL(path = fn,expLst = args,tuple_ = false,builtin = builtin,ty=Exp.ET_NORETCALL),tnr,context)
+    case (DAE.CALL(path = fn,expLst = args,tuple_ = false,builtin = builtin,ty=DAE.ET_NORETCALL),tnr,context)
       equation
         (cfn1,vars1,tnr1) = generateExpressions(args, tnr, context);
         ret_type = generateReturnType(fn);
@@ -4478,7 +4477,7 @@ algorithm
         (cfn,"/* NORETCALL */",tnr1);
 
         /* non-tuple calls */
-    case (Exp.CALL(path = fn,expLst = args,tuple_ = false,builtin = builtin),tnr,context)
+    case (DAE.CALL(path = fn,expLst = args,tuple_ = false,builtin = builtin),tnr,context)
       equation
         (cfn1,vars1,tnr1) = generateExpressions(args, tnr, context);
         ret_type = generateReturnType(fn);
@@ -4495,7 +4494,7 @@ algorithm
         (cfn,var,tnr2);
 
         /* tuple calls */
-    case (Exp.CALL(path = fn,expLst = args,tuple_ = true,builtin = builtin),tnr,context)
+    case (DAE.CALL(path = fn,expLst = args,tuple_ = true,builtin = builtin),tnr,context)
       equation
         (cfn1,vars1,tnr1) = generateExpressions(args, tnr, context);
         ret_type = generateReturnType(fn);
@@ -4508,7 +4507,7 @@ algorithm
       then
         (cfn,tvar,tnr2);
 
-    case (Exp.SIZE(exp = (crexp as Exp.CREF(componentRef = cr,ty = ty)),sz = SOME(dim)),tnr,context)
+    case (DAE.SIZE(exp = (crexp as DAE.CREF(componentRef = cr,ty = ty)),sz = SOME(dim)),tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(crexp, tnr, context);
         (tdecl,tvar,tnr2) = generateTempDecl("size_t", tnr1);
@@ -4521,14 +4520,14 @@ algorithm
       then
         (cfn,tvar,tnr2);
 
-    case (Exp.SIZE(exp = cr,sz = NONE),tnr,context)
+    case (DAE.SIZE(exp = cr,sz = NONE),tnr,context)
       local Exp.Exp cr;
       equation
         Debug.fprint("failtrace", "#-- Codegen.generate_expression: size(X) not implemented");
       then
         fail();
         /* Special case for empty arrays, create null pointer*/
-   case (e as Exp.ARRAY(ty = t,scalar = a,array = {}),tnr,context)
+   case (e as DAE.ARRAY(ty = t,scalar = a,array = {}),tnr,context)
       local Exp.Exp e;
       equation
         array_type_str = expTypeStr(t, true);
@@ -4543,7 +4542,7 @@ algorithm
       then
         (cfn,tvar,tnr1);
         /* array */
-    case (e as Exp.ARRAY(ty = t,scalar = a,array = elist),tnr,context)
+    case (e as DAE.ARRAY(ty = t,scalar = a,array = elist),tnr,context)
       local Exp.Exp e;
       equation
         (cfn1,vars1,tnr1) = generateExpressions(elist, tnr, context);
@@ -4562,13 +4561,13 @@ algorithm
       then
         (cfn,tvar,tnr2);
     /* matrix */
-    case (e as Exp.MATRIX(ty = t,integer = maxn,scalar = ell),tnr,context)
+    case (e as DAE.MATRIX(ty = t,integer = maxn,scalar = ell),tnr,context)
       equation
         (cfn,var,tnr_1) = generateMatrix(t, maxn, ell, tnr, context);
       then
         (cfn,var,tnr_1);
     /* range with no expression */
-    case (Exp.RANGE(ty = t,exp = e1,expOption = NONE,range = e2),tnr,context)
+    case (DAE.RANGE(ty = t,exp = e1,expOption = NONE,range = e2),tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -4581,7 +4580,7 @@ algorithm
       then
         (cfn,tvar,tnr3);
     /* range with expression */
-    case (Exp.RANGE(ty = t,exp = e1,expOption = SOME(e2),range = e3),tnr,context)
+    case (DAE.RANGE(ty = t,exp = e1,expOption = SOME(e2),range = e3),tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -4595,42 +4594,36 @@ algorithm
       then
         (cfn,tvar,tnr4);
     /* tuple */
-    case (Exp.TUPLE(PR = _),_,_)
+    case (DAE.TUPLE(PR = _),_,_)
       equation
         Debug.fprint("failtrace",
           "# Codegen.generateExpression: tuple not implemented\n");
       then
         fail();
     /* cast to int */
-    case (Exp.CAST(ty = Exp.ET_INT(),exp = e),tnr,context)
+    case (DAE.CAST(ty = DAE.ET_INT(),exp = e),tnr,context)
       equation
         (cfn,var,tnr_1) = generateExpression(e, tnr, context);
         var_1 = Util.stringAppendList({"((modelica_int)",var,")"});
       then
         (cfn,var_1,tnr_1);
     /* cast to float */
-    case (Exp.CAST(ty = Exp.ET_REAL(),exp = e),tnr,context)
+    case (DAE.CAST(ty = DAE.ET_REAL(),exp = e),tnr,context)
       equation
         (cfn,var,tnr_1) = generateExpression(e, tnr, context);
         var_1 = Util.stringAppendList({"((modelica_real)",var,")"});
       then
         (cfn,var_1,tnr_1);
     /* valueblock */
-    case (Exp.VALUEBLOCK(ty,localDecls = ld,body = b,
+    case (DAE.VALUEBLOCK(ty,localDecls = ld,body = b,
       		result = res),tnr,context)
       local
-        list<Exp.DAEElement> ld;
-    		Exp.DAEElement b;
-    		list<DAE.Element> ld2;
-    		DAE.Element b2;
+        list<DAE.Element> ld;
+    		DAE.Element b;
         Exp.Exp res;
-        list<Algorithm.Statement> b3;
       equation
-        // Convert back to DAE uniontypes from Exp uniontypes, part of a work-around
-        ld2 = Convert.fromExpElemsToDAEElems(ld,{});
-        b2 = Convert.fromExpElemToDAEElem(b);
-        (cfn,tnr_1) = generateVars(ld2, isVarQ, tnr, funContext);
-        (cfn1,tnr2) = generateAlgorithms(Util.listCreate(b2), tnr_1, context);
+        (cfn,tnr_1) = generateVars(ld, isVarQ, tnr, funContext);
+        (cfn1,tnr2) = generateAlgorithms(Util.listCreate(b), tnr_1, context);
         (cfn1_2,var,tnr3) = generateExpression(res, tnr2, context);
         cfn1_2 = cMergeFns({cfn,cfn1,cfn1_2});
         cfn1_2 = cMoveDeclsAndInitsToStatements(cfn1_2);
@@ -4642,7 +4635,7 @@ algorithm
 
     /* handle the easy case */
     /* range[x] */
-    case (Exp.ASUB(exp = e as Exp.RANGE(ty = t), sub={idx}),tnr,context)
+    case (DAE.ASUB(exp = e as DAE.RANGE(ty = t), sub={idx}),tnr,context)
       local 
         String mem_decl, mem_var, get_mem_stmt, rest_mem_stmt, tShort;
         Integer tnr_mem;
@@ -4666,7 +4659,7 @@ algorithm
         (cfn,tvar2,tnr2);
      
     /* handle the 4D indexing  */
-    case (Exp.ASUB(Exp.ASUB(Exp.ASUB(Exp.ASUB(e, {Exp.ICONST(i)}), {Exp.ICONST(j)}), {Exp.ICONST(k)}), {Exp.ICONST(l)}),tnr,context)
+    case (DAE.ASUB(DAE.ASUB(DAE.ASUB(DAE.ASUB(e, {DAE.ICONST(i)}), {DAE.ICONST(j)}), {DAE.ICONST(k)}), {DAE.ICONST(l)}),tnr,context)
       local 
         String mem_decl, mem_var, get_mem_stmt, rest_mem_stmt, tShort, jstr, kstr, lstr;
         Integer tnr_mem, k, l;
@@ -4692,7 +4685,7 @@ algorithm
         (cfn,tvar2,tnr2);
 
     /* handle the 3D indexing  */
-    case (Exp.ASUB(Exp.ASUB(Exp.ASUB(e, {Exp.ICONST(i)}), {Exp.ICONST(j)}), {Exp.ICONST(k)}),tnr,context)
+    case (DAE.ASUB(DAE.ASUB(DAE.ASUB(e, {DAE.ICONST(i)}), {DAE.ICONST(j)}), {DAE.ICONST(k)}),tnr,context)
       local 
         String mem_decl, mem_var, get_mem_stmt, rest_mem_stmt, tShort, jstr, kstr, lstr;
         Integer tnr_mem, k, l;
@@ -4717,7 +4710,7 @@ algorithm
         (cfn,tvar2,tnr2);
 
     /* handle the 2D indexing  */
-    case (Exp.ASUB(exp = Exp.ASUB(e, sub={Exp.ICONST(i)}), sub={Exp.ICONST(j)}),tnr,context)
+    case (DAE.ASUB(exp = DAE.ASUB(e, sub={DAE.ICONST(i)}), sub={DAE.ICONST(j)}),tnr,context)
       local 
         String mem_decl, mem_var, get_mem_stmt, rest_mem_stmt, tShort, jstr;
         Integer tnr_mem;
@@ -4741,7 +4734,7 @@ algorithm
         (cfn,tvar2,tnr2);
 
     /* handle the indexing assuming expression e is an array */
-    case (Exp.ASUB(exp = e, sub={Exp.ICONST(i)}),tnr,context)
+    case (DAE.ASUB(exp = e, sub={DAE.ICONST(i)}),tnr,context)
       local 
         String mem_decl, mem_var, get_mem_stmt, rest_mem_stmt, tShort;
         Integer tnr_mem;
@@ -4764,7 +4757,7 @@ algorithm
         (cfn,tvar2,tnr2);
 
     // cref[x, y] - try to transform it into a cref 
-    case (Exp.ASUB(exp = e as Exp.CREF(cref,t), sub=subs),tnr,context)
+    case (DAE.ASUB(exp = e as DAE.CREF(cref,t), sub=subs),tnr,context)
       local 
         list<Exp.Exp> subs;
         Exp.ComponentRef cref, crefBuild;
@@ -4774,7 +4767,7 @@ algorithm
       then
         (cfn,var,tnr_1);
 
-    case (Exp.ASUB(exp = _),tnr,context)
+    case (DAE.ASUB(exp = _),tnr,context)
       equation
         Debug.fprint("failtrace", "# Codegen.generate_expression: asub not implemented: " +& Exp.printExp2Str(inExp) +& "\n");
       then
@@ -4783,7 +4776,7 @@ algorithm
      //---------------------------------------------
      // MetaModelica extension
      //---------------------------------------------
-    case (Exp.CONS(_,e1,e2),tnr,context)
+    case (DAE.CONS(_,e1,e2),tnr,context)
       equation
         (cfn1,var1,tnr_1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr_1, context);
@@ -4796,7 +4789,7 @@ algorithm
       then
         (cfn1_2,tvar,tnr1_1);
 
-    case (Exp.LIST(_,elist),tnr,context)
+    case (DAE.LIST(_,elist),tnr,context)
       equation
         (cfn1,vars1,tnr1) = generateExpressions(elist, tnr, context);
         (decl,tvar,tnr1_1) = generateTempDecl("metamodelica_type", tnr1);
@@ -4807,7 +4800,7 @@ algorithm
       then
         (cfn1_2,tvar,tnr1_1);
 
-    case (Exp.META_TUPLE(elist),tnr,context)
+    case (DAE.META_TUPLE(elist),tnr,context)
       local
         list<String> strs;
         Integer len;
@@ -4826,13 +4819,13 @@ algorithm
       then
         (cfn1_2,tvar,tnr1_1);
 
-    case (Exp.META_OPTION(NONE()),tnr,context)
+    case (DAE.META_OPTION(NONE()),tnr,context)
       equation
         var1 = "mmc_mk_none()";
       then
         (cEmptyFunction,var1,tnr);
 
-    case (Exp.META_OPTION(SOME(e1)),tnr,context)
+    case (DAE.META_OPTION(SOME(e1)),tnr,context)
       equation
         (cfn1,var1,tnr_1) = generateExpression(e1,tnr,context);
         var1 = MetaUtil.createConstantCExp(e1,var1);
@@ -4844,7 +4837,7 @@ algorithm
         /*	
   				Generate C-Code for: <metarecord>(<args>)
   	 		*/
-    case (Exp.METARECORDCALL(path = fn, args = elist,fieldNames = fieldNames, index = index),tnr,context) //MetaModelica extension, Uniontypes, added by simbj
+    case (DAE.METARECORDCALL(path = fn, args = elist,fieldNames = fieldNames, index = index),tnr,context) //MetaModelica extension, Uniontypes, added by simbj
       local
         Absyn.Path fn;
         Integer index;
@@ -4921,7 +4914,7 @@ protected function addValueblockRetVar "function: addValueblockRetVar
 algorithm
   (outFunc,outTnr,outVar) :=
   matchcontinue (inType,inFunc,inTnr,inResVar,context)
-    case (Exp.ET_ARRAY(t,SOME(arrayDim) :: {}),localFunc,localTnr,localResVar,con)
+    case (DAE.ET_ARRAY(t,SOME(arrayDim) :: {}),localFunc,localTnr,localResVar,con)
       local
         String type_string,tdecl,tvar,localResVar,memStr,stmt,stmt2,tempStr;
         Exp.Type t;
@@ -4946,7 +4939,7 @@ algorithm
         stmt2 = Util.stringAppendList({"copy_",type_string,"_data",memStr,"(&",localResVar,", &",tvar,");"});
         cfn = cAddStatements(cfn, {stmt2});
       then (cfn,tnr2,tvar);
-    case (Exp.ET_ARRAY(_,SOME(_) :: _),_,_,_,_)
+    case (DAE.ET_ARRAY(_,SOME(_) :: _),_,_,_,_)
       local
       equation
         Debug.fprintln("failtrace", "# Codegen.addValueblockRetVar failed, N-dim arrays not supported");
@@ -5014,7 +5007,7 @@ algorithm
       Context context;
 
     /* pre(var) must make sure that var is not cast to e.g modelica_integer, since pre expects double& */
-    case (Exp.CALL(path = Absyn.IDENT(name = "pre"),expLst = {arg as Exp.CREF(cr,_)},tuple_ = false,builtin = true),tnr,context) /* max(v), v is vector */
+    case (DAE.CALL(path = Absyn.IDENT(name = "pre"),expLst = {arg as DAE.CREF(cr,_)},tuple_ = false,builtin = true),tnr,context) /* max(v), v is vector */
       local String cref_str; Exp.ComponentRef cr; Boolean needCast; String castStr;
       equation
         tp = Exp.typeof(arg);
@@ -5030,7 +5023,7 @@ algorithm
         (cfn,tvar,tnr1);
 
       /* max */
-    case (Exp.CALL(path = Absyn.IDENT(name = "max"),expLst = {arg},tuple_ = false,builtin = true),tnr,context) /* max(v), v is vector */
+    case (DAE.CALL(path = Absyn.IDENT(name = "max"),expLst = {arg},tuple_ = false,builtin = true),tnr,context) /* max(v), v is vector */
       equation
         tp = Exp.typeof(arg);
         tp_str = expTypeStr(tp, true);
@@ -5043,7 +5036,7 @@ algorithm
         cfn = cAddStatements(cfn2, {stmt});
       then
         (cfn,tvar,tnr2);
-    case (Exp.CALL(path = Absyn.IDENT(name = "max"),expLst = {s1,s2},tuple_ = false,builtin = true),tnr,context) /* max (a,b) a, b scalars */
+    case (DAE.CALL(path = Absyn.IDENT(name = "max"),expLst = {s1,s2},tuple_ = false,builtin = true),tnr,context) /* max (a,b) a, b scalars */
       equation
         tp = Exp.typeof(s1);
         tp_str = expTypeStr(tp, false);
@@ -5056,7 +5049,7 @@ algorithm
       then
         (cfn,tvar,tnr3);
       /* min */
-    case (Exp.CALL(path = Absyn.IDENT(name = "min"),expLst = {arg},tuple_ = false,builtin = true),tnr,context) /* min(v), v is vector */
+    case (DAE.CALL(path = Absyn.IDENT(name = "min"),expLst = {arg},tuple_ = false,builtin = true),tnr,context) /* min(v), v is vector */
       equation
         tp = Exp.typeof(arg);
         tp_str = expTypeStr(tp, true);
@@ -5069,7 +5062,7 @@ algorithm
         cfn = cAddStatements(cfn2, {stmt});
       then
         (cfn,tvar,tnr2);
-    case (Exp.CALL(path = Absyn.IDENT(name = "min"),expLst = {s1,s2},tuple_ = false,builtin = true),tnr,context) /* min (a,b) a, b scalars */
+    case (DAE.CALL(path = Absyn.IDENT(name = "min"),expLst = {s1,s2},tuple_ = false,builtin = true),tnr,context) /* min (a,b) a, b scalars */
       equation
         tp = Exp.typeof(s1);
         tp_str = expTypeStr(tp, false);
@@ -5081,7 +5074,7 @@ algorithm
         cfn = cAddStatements(cfn2, {stmt});
       then
         (cfn,tvar,tnr3);
-    case (Exp.CALL(path = Absyn.IDENT(name = "abs"),expLst = {s1},tuple_ = false,builtin = true),tnr,context)
+    case (DAE.CALL(path = Absyn.IDENT(name = "abs"),expLst = {s1},tuple_ = false,builtin = true),tnr,context)
       equation
         tp = Exp.typeof(s1);
         tp_str = expTypeStr(tp, false);
@@ -5093,7 +5086,7 @@ algorithm
       then
         (cfn,tvar,tnr2);
 
-    case (Exp.CALL(path = Absyn.IDENT(name = "sum"),expLst = {s1},tuple_ = false,builtin = true),tnr,context)
+    case (DAE.CALL(path = Absyn.IDENT(name = "sum"),expLst = {s1},tuple_ = false,builtin = true),tnr,context)
       local String arr_tp_str;
       equation
         tp = Exp.typeof(s1);
@@ -5107,7 +5100,7 @@ algorithm
       then
         (cfn,tvar,tnr2);
 
-     case (Exp.CALL(path = Absyn.IDENT(name = "promote"),expLst = {A,n},tuple_ = false,builtin = true),tnr,context)
+     case (DAE.CALL(path = Absyn.IDENT(name = "promote"),expLst = {A,n},tuple_ = false,builtin = true),tnr,context)
        local
          Exp.Exp A,n;
          String arr_tp_str;
@@ -5125,7 +5118,7 @@ algorithm
       then
         (cfn,tvar,tnr2);
 
-     case (Exp.CALL(path = Absyn.IDENT(name = "transpose"),expLst = {A},tuple_ = false,builtin = true),tnr,context)
+     case (DAE.CALL(path = Absyn.IDENT(name = "transpose"),expLst = {A},tuple_ = false,builtin = true),tnr,context)
        local
          Exp.Exp A;
          String arr_tp_str;
@@ -5141,7 +5134,7 @@ algorithm
       then
         (cfn,tvar,tnr2);
 
-    case (Exp.CALL(path = Absyn.IDENT(name = "String"),expLst = {s,minlen,leftjust,signdig},tuple_ = false,builtin = true),tnr,context) /* max(v), v is vector */
+    case (DAE.CALL(path = Absyn.IDENT(name = "String"),expLst = {s,minlen,leftjust,signdig},tuple_ = false,builtin = true),tnr,context) /* max(v), v is vector */
       local String cref_str; Exp.Exp s,minlen,leftjust,signdig; Boolean needCast; String var3,var4,var5,var6,var7,edecl,evar;
         CFunction cfn3,cfn4; Boolean isenum; list<Lib> tedcllst;
       equation
@@ -5164,7 +5157,7 @@ algorithm
       then
         (cfn,tvar,tnr1);
 
-    case (Exp.CALL(path = Absyn.IDENT(name = "mmc_get_field"),expLst = {s1,Exp.ICONST(i)},tuple_ = false,builtin = true),tnr,context)
+    case (DAE.CALL(path = Absyn.IDENT(name = "mmc_get_field"),expLst = {s1,DAE.ICONST(i)},tuple_ = false,builtin = true),tnr,context)
       local Integer i;
       equation
         (cfn1,var1,tnr1) = generateExpression(s1, tnr, context);
@@ -5180,7 +5173,7 @@ algorithm
       // Unboxing a record is done as a sequence of unboxing operations. This
       // code cannot be easily generated by C macros, so we generate the
       // statements manually. /sjoelund 2009-11-04
-    case (Exp.CALL(path = Absyn.IDENT(name = "mmc_unbox_record"),expLst = {s1},tuple_ = false,builtin = true, ty = tp),tnr,context)
+    case (DAE.CALL(path = Absyn.IDENT(name = "mmc_unbox_record"),expLst = {s1},tuple_ = false,builtin = true, ty = tp),tnr,context)
       local
         Types.Type t;
         list<Types.Var> v;
@@ -5230,7 +5223,7 @@ algorithm
       then
         (cfn,tvar,tnr);
 
-    case (Exp.CALL(path = Absyn.IDENT(name = "mmc_unbox_record"),expLst = {s1},tuple_ = false,builtin = true, ty = tp),tnr,context)
+    case (DAE.CALL(path = Absyn.IDENT(name = "mmc_unbox_record"),expLst = {s1},tuple_ = false,builtin = true, ty = tp),tnr,context)
       equation
         tvar = "/* mmc_unbox_record failed: " +& Exp.typeString(tp) +& "*/";
       then
@@ -5261,35 +5254,35 @@ algorithm
       Exp.Exp e;
       Context context;
       Exp.Type tp;
-    case (Exp.UPLUS(ty = Exp.ET_REAL()),e,tnr,context)
+    case (DAE.UPLUS(ty = DAE.ET_REAL()),e,tnr,context)
       equation
         (cfn,var,tnr_1) = generateExpression(e, tnr, context);
       then
         (cfn,var,tnr_1);
-    case (Exp.UPLUS(ty = Exp.ET_INT()),e,tnr,context)
+    case (DAE.UPLUS(ty = DAE.ET_INT()),e,tnr,context)
       equation
         (cfn,var,tnr_1) = generateExpression(e, tnr, context);
       then
         (cfn,var,tnr_1);
-    case (Exp.UMINUS(ty = Exp.ET_REAL()),e,tnr,context)
+    case (DAE.UMINUS(ty = DAE.ET_REAL()),e,tnr,context)
       equation
         (cfn,var,tnr_1) = generateExpression(e, tnr, context);
         var_1 = Util.stringAppendList({"(-",var,")"});        
       then
         (cfn,var_1,tnr_1);
-    case (Exp.UMINUS(ty = Exp.ET_INT()),e,tnr,context)
+    case (DAE.UMINUS(ty = DAE.ET_INT()),e,tnr,context)
       equation
         (cfn,var,tnr_1) = generateExpression(e, tnr, context);
         var_1 = Util.stringAppendList({"(-",var,")"});
       then
         (cfn,var_1,tnr_1);
-    case (Exp.UMINUS(ty = Exp.ET_OTHER()),e,tnr,context)
+    case (DAE.UMINUS(ty = DAE.ET_OTHER()),e,tnr,context)
       equation
         (cfn,var,tnr_1) = generateExpression(e, tnr, context);
         var_1 = Util.stringAppendList({"(-(",var,"))"});
       then
         (cfn,var_1,tnr_1);
-    case (Exp.UMINUS(ty = tp),e,tnr,context)
+    case (DAE.UMINUS(ty = tp),e,tnr,context)
       equation
         (cfn,var,tnr_1) = generateExpression(e, tnr, context);
         var_1 = Util.stringAppendList({"(-(",var,"))"});
@@ -5297,22 +5290,22 @@ algorithm
         //Debug.fprintln("codegen", "Variable" +& var);
       then
         (cfn,var_1,tnr_1);        
-    case (Exp.UPLUS_ARR(ty = Exp.ET_REAL()),e,tnr,context)
+    case (DAE.UPLUS_ARR(ty = DAE.ET_REAL()),e,tnr,context)
       equation
         (cfn,var,tnr_1) = generateExpression(e, tnr, context);
       then
         (cfn,var,tnr_1);
-    case (Exp.UPLUS_ARR(ty = Exp.ET_INT()),e,tnr,context)
+    case (DAE.UPLUS_ARR(ty = DAE.ET_INT()),e,tnr,context)
       equation
         (cfn,var,tnr_1) = generateExpression(e, tnr, context);
       then
         (cfn,var,tnr_1);
-    case (Exp.UMINUS_ARR(ty = _),_,_,_)
+    case (DAE.UMINUS_ARR(ty = _),_,_,_)
       equation
         Debug.fprint("failtrace", "# unary minus for arrays not implemented\n");
       then
         fail();
-    case (Exp.UMINUS(ty = tp),_,_,_)
+    case (DAE.UMINUS(ty = tp),_,_,_)
       equation
         Debug.fprint("failtrace", "-generate_unary failed\n");
         s = Exp.typeString(tp);
@@ -5356,7 +5349,7 @@ algorithm
       Context context;
 
       /* str + str */
-    case (e1,Exp.ADD(ty = Exp.ET_STRING()),e2,tnr,context)
+    case (e1,DAE.ADD(ty = DAE.ET_STRING()),e2,tnr,context)
       local String tdecl,tvar,stmt;
       equation
         (tdecl,tvar,tnr) = generateTempDecl("modelica_string", tnr);
@@ -5370,7 +5363,7 @@ algorithm
         (cfn,tvar,tnr);
 
       /* value + value */
-    case (e1,Exp.ADD(ty = _),e2,tnr,context)
+    case (e1,DAE.ADD(ty = _),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -5378,7 +5371,7 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);
-    case (e1,Exp.SUB(ty = _),e2,tnr,context)
+    case (e1,DAE.SUB(ty = _),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -5386,7 +5379,7 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);
-    case (e1,Exp.MUL(ty = _),e2,tnr,context)
+    case (e1,DAE.MUL(ty = _),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -5394,7 +5387,7 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);
-    case (e1,Exp.DIV(ty = _),e2,tnr,context)
+    case (e1,DAE.DIV(ty = _),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -5402,7 +5395,7 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);
-    case (e1,Exp.POW(ty = _),e2,tnr,context) /* POW uses the math lib function with the same name. */
+    case (e1,DAE.POW(ty = _),e2,tnr,context) /* POW uses the math lib function with the same name. */
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -5410,19 +5403,19 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);
-    case (_,Exp.UMINUS(ty = _),_,_,_)
+    case (_,DAE.UMINUS(ty = _),_,_,_)
       equation
         Debug.fprint("failtrace",
           "# Unary minus in binary expression (internal error)");
       then
         fail();
-    case (_,Exp.UPLUS(ty = _),_,_,_)
+    case (_,DAE.UPLUS(ty = _),_,_,_)
       equation
         Debug.fprint("failtrace",
           "# Unary plus in binary expression (internal error)");
       then
         fail();
-    case (e1,Exp.ADD_ARR(ty = Exp.ET_REAL()),e2,tnr,context)
+    case (e1,DAE.ADD_ARR(ty = DAE.ET_REAL()),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -5433,7 +5426,7 @@ algorithm
         cfn = cAddStatements(cfn_2, {stmt});
       then
         (cfn,var,tnr3);
-    case (e1,Exp.ADD_ARR(ty = Exp.ET_INT()),e2,tnr,context)
+    case (e1,DAE.ADD_ARR(ty = DAE.ET_INT()),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -5445,7 +5438,7 @@ algorithm
         cfn = cAddStatements(cfn_2, {stmt});
       then
         (cfn,var,tnr3);
-    case (e1,Exp.SUB_ARR(ty = Exp.ET_REAL()),e2,tnr,context)
+    case (e1,DAE.SUB_ARR(ty = DAE.ET_REAL()),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -5456,7 +5449,7 @@ algorithm
         cfn = cAddStatements(cfn_2, {stmt});
       then
         (cfn,var,tnr3);
-    case (e1,Exp.SUB_ARR(ty = Exp.ET_INT()),e2,tnr,context)
+    case (e1,DAE.SUB_ARR(ty = DAE.ET_INT()),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -5468,7 +5461,7 @@ algorithm
         cfn = cAddStatements(cfn_2, {stmt});
       then
         (cfn,var,tnr3);
-    case (e1,Exp.MUL_SCALAR_ARRAY(ty = Exp.ET_REAL()),e2,tnr,context)
+    case (e1,DAE.MUL_SCALAR_ARRAY(ty = DAE.ET_REAL()),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -5481,7 +5474,7 @@ algorithm
         cfn = cAddStatements(cfn_2, {stmt});
       then
         (cfn,var,tnr3);
-    case (e1,Exp.MUL_SCALAR_ARRAY(ty = Exp.ET_INT()),e2,tnr,context)
+    case (e1,DAE.MUL_SCALAR_ARRAY(ty = DAE.ET_INT()),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -5494,7 +5487,7 @@ algorithm
         cfn = cAddStatements(cfn_2, {stmt});
       then
         (cfn,var,tnr3);
-    case (e1,Exp.MUL_ARRAY_SCALAR(ty = Exp.ET_REAL()),e2,tnr,context)
+    case (e1,DAE.MUL_ARRAY_SCALAR(ty = DAE.ET_REAL()),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -5507,7 +5500,7 @@ algorithm
         cfn = cAddStatements(cfn_2, {stmt});
       then
         (cfn,var,tnr3);
-    case (e1,Exp.MUL_ARRAY_SCALAR(ty = Exp.ET_INT()),e2,tnr,context)
+    case (e1,DAE.MUL_ARRAY_SCALAR(ty = DAE.ET_INT()),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -5520,7 +5513,7 @@ algorithm
         cfn = cAddStatements(cfn_2, {stmt});
       then
         (cfn,var,tnr3);
-    case (e1,Exp.MUL_SCALAR_PRODUCT(ty = Exp.ET_REAL()),e2,tnr,context)
+    case (e1,DAE.MUL_SCALAR_PRODUCT(ty = DAE.ET_REAL()),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -5528,7 +5521,7 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);
-    case (e1,Exp.MUL_SCALAR_PRODUCT(ty = Exp.ET_INT()),e2,tnr,context)
+    case (e1,DAE.MUL_SCALAR_PRODUCT(ty = DAE.ET_INT()),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -5536,7 +5529,7 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);
-    case (e1,Exp.MUL_MATRIX_PRODUCT(ty = Exp.ET_REAL()),e2,tnr,context)
+    case (e1,DAE.MUL_MATRIX_PRODUCT(ty = DAE.ET_REAL()),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -5549,7 +5542,7 @@ algorithm
         cfn = cAddStatements(cfn_2, {stmt});
       then
         (cfn,var,tnr3);
-    case (e1,Exp.MUL_MATRIX_PRODUCT(ty = Exp.ET_INT()),e2,tnr,context)
+    case (e1,DAE.MUL_MATRIX_PRODUCT(ty = DAE.ET_INT()),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -5562,7 +5555,7 @@ algorithm
         cfn = cAddStatements(cfn_2, {stmt});
       then
         (cfn,var,tnr3);
-    case (e1,Exp.DIV_ARRAY_SCALAR(ty = Exp.ET_REAL()),e2,tnr,context)
+    case (e1,DAE.DIV_ARRAY_SCALAR(ty = DAE.ET_REAL()),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -5575,7 +5568,7 @@ algorithm
         cfn = cAddStatements(cfn_2, {stmt});
       then
         (cfn,var,tnr3);
-    case (e1,Exp.DIV_ARRAY_SCALAR(ty = Exp.ET_INT()),e2,tnr,context)
+    case (e1,DAE.DIV_ARRAY_SCALAR(ty = DAE.ET_INT()),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -5588,17 +5581,17 @@ algorithm
         cfn = cAddStatements(cfn_2, {stmt});
       then
         (cfn,var,tnr3);
-    case (_,Exp.DIV_ARRAY_SCALAR(ty = _),_,_,_)
+    case (_,DAE.DIV_ARRAY_SCALAR(ty = _),_,_,_)
       equation
         Debug.fprint("failtrace", "# div_array_scalar FAILING BECAUSE IT SUX\n");
       then
         fail();
-    case (_,Exp.POW_ARR(ty = _),_,_,_)
+    case (_,DAE.POW_ARR(ty = _),_,_,_)
       equation
         Debug.fprint("failtrace", "# pow_array not implemented\n");
       then
         fail();
-    case (_,Exp.DIV_ARRAY_SCALAR(ty = _),_,_,_)
+    case (_,DAE.DIV_ARRAY_SCALAR(ty = _),_,_,_)
       equation
         Debug.fprint("failtrace", "# div_array_scalar not implemented\n");
       then
@@ -5724,7 +5717,7 @@ algorithm
         (cfn,var,tnr_1);
 
     /* two special cases rules for 1 and 2 dimensions for faster code (no vararg) */
-    case (t,Exp.CREF_IDENT(ident = id,subscriptLst = idx),tnr,context)
+    case (t,DAE.CREF_IDENT(ident = id,subscriptLst = idx),tnr,context)
       equation
         Debug.fprintln("gcge", "generating cref ccode");
         (cfn1,idxs1,tnr1) = generateIndices(idx, tnr, context);
@@ -5737,7 +5730,7 @@ algorithm
           idxs_str,"))"});
       then
         (cfn1,cref1,tnr1);
-    case (t,Exp.CREF_IDENT(ident = id,subscriptLst = idx),tnr,context)
+    case (t,DAE.CREF_IDENT(ident = id,subscriptLst = idx),tnr,context)
       equation
         Debug.fprintln("gcge", "generating cref ccode");
         (cfn1,idxs1,tnr1) = generateIndices(idx, tnr, context);
@@ -5750,7 +5743,7 @@ algorithm
           idxs_str,"))"});
       then
         (cfn1,cref1,tnr1);
-    case (t,Exp.CREF_IDENT(ident = id,subscriptLst = idx),tnr,context)
+    case (t,DAE.CREF_IDENT(ident = id,subscriptLst = idx),tnr,context)
       equation
         Debug.fprintln("gcge", "generating cref ccode");
         (cfn1,idxs1,tnr1) = generateIndices(idx, tnr, context);
@@ -5802,7 +5795,7 @@ algorithm
       /* For context simulation array variables must be boxed
 	    into a real_array object since they are represented only
 	    in a double array. */
-    case (cref,Exp.ET_ARRAY(ty = t,arrayDimensions = dims),tnr,CONTEXT(SIMULATION(_),_,_))
+    case (cref,DAE.ET_ARRAY(ty = t,arrayDimensions = dims),tnr,CONTEXT(SIMULATION(_),_,_))
       equation
         e_tp_str = expTypeStr(t, true);
         e_sh_tp_str = expShortTypeStr(t);
@@ -5822,7 +5815,7 @@ algorithm
         (cfunc,vstr,tnr1);
 
         /* Cast integers to doubles in simulation context */
-    case (cref,Exp.ET_INT(),tnr,context)
+    case (cref,DAE.ET_INT(),tnr,context)
       equation
         (cref_str,{}) = compRefCstr(cref);
         cref_str = stringAppend("(modelica_integer)",cref_str);
@@ -5830,7 +5823,7 @@ algorithm
         (cEmptyFunction,cref_str,tnr);
 
         /* function pointer variable reference - stefan */
-    case (cref,Exp.ET_FUNCTION_REFERENCE_VAR(),tnr,context)
+    case (cref,DAE.ET_FUNCTION_REFERENCE_VAR(),tnr,context)
         local String fn_name; Absyn.Path path;
       equation
         path = Exp.crefToPath(cref);
@@ -5840,7 +5833,7 @@ algorithm
         (cEmptyFunction,fn_name,tnr);
     
        /* function pointer direct reference - sjoelund */
-    case (cref,Exp.ET_FUNCTION_REFERENCE_FUNC(),tnr,context)
+    case (cref,DAE.ET_FUNCTION_REFERENCE_FUNC(),tnr,context)
         local String fn_name; Absyn.Path path;
       equation
         path = Exp.crefToPath(cref);
@@ -5850,7 +5843,7 @@ algorithm
       then
         (cEmptyFunction,cref_str,tnr);
 
-    case (cref,Exp.ET_ENUMERATION(_,_,_,_),tnr,context)
+    case (cref,DAE.ET_ENUMERATION(_,_,_,_),tnr,context)
       local Integer idx;
       equation
         idx = Exp.getEnumIndexfromCref(cref);
@@ -5892,9 +5885,9 @@ algorithm
       Boolean b;
       list<Exp.Subscript> r;
     case {} then true;
-    case (Exp.SLICE(exp = _) :: _) then false;
-    case (Exp.WHOLEDIM() :: _) then false;
-    case (Exp.INDEX(exp = _) :: r)
+    case (DAE.SLICE(exp = _) :: _) then false;
+    case (DAE.WHOLEDIM() :: _) then false;
+    case (DAE.INDEX(exp = _) :: r)
       equation
         b = subsToScalar(r);
       then
@@ -6149,7 +6142,7 @@ algorithm
       Exp.Exp e;
       Context context;
       // Scalar index
-    case (Exp.INDEX(exp = e),tnr,context)
+    case (DAE.INDEX(exp = e),tnr,context)
       equation
         (cfn,var1,tnr1) = generateExpression(e, tnr, context);
         idx = Util.stringAppendList({"make_index_array(1, ",var1,")"});
@@ -6157,7 +6150,7 @@ algorithm
       then
         (cfn,idx,idxsize,"'S'",tnr1);
         // Whole dimension, ':'
-    case (Exp.WHOLEDIM(),tnr,context)
+    case (DAE.WHOLEDIM(),tnr,context)
       equation
         idx = "(0)";
         idxsize = "(1)";
@@ -6165,7 +6158,7 @@ algorithm
         (cEmptyFunction,idx,idxsize,"'W'",tnr);
 
         // Slice, e.g A[{1,3,5}]
-    case (Exp.SLICE(exp = e),tnr,context)
+    case (DAE.SLICE(exp = e),tnr,context)
       equation
         (cfn,var1,tnr1) = generateExpression(e, tnr, context);
         (decl,tvar,tnr2) = generateTempDecl("modelica_integer", tnr1);
@@ -6203,7 +6196,7 @@ algorithm
       Integer tnr1,tnr;
       Exp.Exp e;
       Context context;
-    case (Exp.INDEX(exp = e),tnr,context)
+    case (DAE.INDEX(exp = e),tnr,context)
       equation
         (cfn,var1,tnr1) = generateExpression(e, tnr, context);
       then
@@ -6261,8 +6254,8 @@ algorithm
         cref_str_1 = intString(idx);
         then
           (cref_str_1,{});      
-    case Exp.CREF_IDENT(ident = id,subscriptLst = subs) then (id,subs);
-    case Exp.CREF_QUAL(ident = id,subscriptLst = subs,componentRef = cref)
+    case DAE.CREF_IDENT(ident = id,subscriptLst = subs) then (id,subs);
+    case DAE.CREF_QUAL(ident = id,subscriptLst = subs,componentRef = cref)
       equation
         (cref_str,cref_subs) = compRefCstr(cref);
         cref_str_1 = Util.stringAppendList({id,".",cref_str});
@@ -6297,7 +6290,7 @@ algorithm
       Integer tnr1,tnr2,tnr;
       Exp.Exp e1,e2;
       Context context;
-    case (e1,Exp.AND(),e2,tnr,context)
+    case (e1,DAE.AND(),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -6305,7 +6298,7 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);
-    case (e1,Exp.OR(),e2,tnr,context)
+    case (e1,DAE.OR(),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -6345,7 +6338,7 @@ algorithm
       Integer tnr1,tnr;
       Exp.Exp e;
       Context context;
-    case (Exp.NOT(),e,tnr,context)
+    case (DAE.NOT(),e,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e, tnr, context);
         var = Util.stringAppendList({"(!",var1,")"});
@@ -6364,10 +6357,10 @@ protected function relOpStr
   output String opStr;
 algorithm
 	isReal := matchcontinue (op)
-	  case (Exp.LESS(ty = _)) then "RELATIONLESS";
-	  case (Exp.LESSEQ(ty = _)) then "RELATIONLESSEQ";
-	  case (Exp.GREATER(ty = _)) then "RELATIONGREATER";
-	  case (Exp.GREATEREQ(ty = _)) then "RELATIONGREATEREQ";
+	  case (DAE.LESS(ty = _)) then "RELATIONLESS";
+	  case (DAE.LESSEQ(ty = _)) then "RELATIONLESSEQ";
+	  case (DAE.GREATER(ty = _)) then "RELATIONGREATER";
+	  case (DAE.GREATEREQ(ty = _)) then "RELATIONGREATEREQ";
 	  case (_) then fail();
   end matchcontinue;
 end relOpStr;
@@ -6377,10 +6370,10 @@ protected function isRealTypedRelation
   output Boolean isReal;
 algorithm
 	isReal := matchcontinue (op)
-	  case (Exp.LESS(ty = Exp.ET_REAL())) then true;
-	  case (Exp.LESSEQ(ty = Exp.ET_REAL())) then true;
-	  case (Exp.GREATER(ty = Exp.ET_REAL())) then true;
-	  case (Exp.GREATEREQ(ty = Exp.ET_REAL())) then true;
+	  case (DAE.LESS(ty = DAE.ET_REAL())) then true;
+	  case (DAE.LESSEQ(ty = DAE.ET_REAL())) then true;
+	  case (DAE.GREATER(ty = DAE.ET_REAL())) then true;
+	  case (DAE.GREATEREQ(ty = DAE.ET_REAL())) then true;
 	  case (_) then false;
   end matchcontinue;
 end isRealTypedRelation;
@@ -6410,7 +6403,7 @@ algorithm
       Integer tnr1,tnr2,tnr;
       Exp.Exp e1,e2;
       Context context;
-    case (e1,Exp.LESS(ty = Exp.ET_BOOL()),e2,tnr,context)
+    case (e1,DAE.LESS(ty = DAE.ET_BOOL()),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -6418,12 +6411,12 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);
-    case (e1,Exp.LESS(ty = Exp.ET_STRING()),e2,tnr,context)
+    case (e1,DAE.LESS(ty = DAE.ET_STRING()),e2,tnr,context)
       equation
         Print.printErrorBuf("# string comparison not supported\n");
       then
         fail();
-    case (e1,Exp.LESS(ty = Exp.ET_INT()),e2,tnr,context)
+    case (e1,DAE.LESS(ty = DAE.ET_INT()),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -6431,7 +6424,7 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);
-    case (e1,Exp.LESS(ty = Exp.ET_REAL()),e2,tnr,context)
+    case (e1,DAE.LESS(ty = DAE.ET_REAL()),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -6439,7 +6432,7 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);
-    case (e1,Exp.LESS(ty = Exp.ET_ENUMERATION(_,_,_,_)),e2,tnr,context)
+    case (e1,DAE.LESS(ty = DAE.ET_ENUMERATION(_,_,_,_)),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -6447,7 +6440,7 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);        
-    case (e1,Exp.GREATER(ty = Exp.ET_BOOL()),e2,tnr,context)
+    case (e1,DAE.GREATER(ty = DAE.ET_BOOL()),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -6455,12 +6448,12 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);
-    case (e1,Exp.GREATER(ty = Exp.ET_STRING()),e2,tnr,context)
+    case (e1,DAE.GREATER(ty = DAE.ET_STRING()),e2,tnr,context)
       equation
         Print.printErrorBuf("# string comparison not supported\n");
       then
         fail();
-    case (e1,Exp.GREATER(ty = Exp.ET_INT()),e2,tnr,context)
+    case (e1,DAE.GREATER(ty = DAE.ET_INT()),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -6468,7 +6461,7 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);
-    case (e1,Exp.GREATER(ty = Exp.ET_REAL()),e2,tnr,context)
+    case (e1,DAE.GREATER(ty = DAE.ET_REAL()),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -6476,7 +6469,7 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);
-    case (e1,Exp.GREATER(ty = Exp.ET_ENUMERATION(_,_,_,_)),e2,tnr,context)
+    case (e1,DAE.GREATER(ty = DAE.ET_ENUMERATION(_,_,_,_)),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -6484,7 +6477,7 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);        
-    case (e1,Exp.LESSEQ(ty = Exp.ET_BOOL()),e2,tnr,context)
+    case (e1,DAE.LESSEQ(ty = DAE.ET_BOOL()),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -6492,12 +6485,12 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);
-    case (e1,Exp.LESSEQ(ty = Exp.ET_STRING()),e2,tnr,context)
+    case (e1,DAE.LESSEQ(ty = DAE.ET_STRING()),e2,tnr,context)
       equation
         Print.printErrorBuf("# string comparison not supported\n");
       then
         fail();
-    case (e1,Exp.LESSEQ(ty = Exp.ET_INT()),e2,tnr,context)
+    case (e1,DAE.LESSEQ(ty = DAE.ET_INT()),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -6505,7 +6498,7 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);
-    case (e1,Exp.LESSEQ(ty = Exp.ET_REAL()),e2,tnr,context)
+    case (e1,DAE.LESSEQ(ty = DAE.ET_REAL()),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -6513,7 +6506,7 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);
-    case (e1,Exp.LESSEQ(ty = Exp.ET_ENUMERATION(_,_,_,_)),e2,tnr,context)
+    case (e1,DAE.LESSEQ(ty = DAE.ET_ENUMERATION(_,_,_,_)),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -6521,7 +6514,7 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);        
-    case (e1,Exp.GREATEREQ(ty = Exp.ET_BOOL()),e2,tnr,context)
+    case (e1,DAE.GREATEREQ(ty = DAE.ET_BOOL()),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -6529,12 +6522,12 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);
-    case (e1,Exp.GREATEREQ(ty = Exp.ET_STRING()),e2,tnr,context)
+    case (e1,DAE.GREATEREQ(ty = DAE.ET_STRING()),e2,tnr,context)
       equation
         Print.printErrorBuf("# string comparison not supported\n");
       then
         fail();
-    case (e1,Exp.GREATEREQ(ty = Exp.ET_INT()),e2,tnr,context)
+    case (e1,DAE.GREATEREQ(ty = DAE.ET_INT()),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -6542,7 +6535,7 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);
-    case (e1,Exp.GREATEREQ(ty = Exp.ET_REAL()),e2,tnr,context)
+    case (e1,DAE.GREATEREQ(ty = DAE.ET_REAL()),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -6550,7 +6543,7 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);
-    case (e1,Exp.GREATEREQ(ty = Exp.ET_ENUMERATION(_,_,_,_)),e2,tnr,context)
+    case (e1,DAE.GREATEREQ(ty = DAE.ET_ENUMERATION(_,_,_,_)),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -6558,7 +6551,7 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);        
-    case (e1,Exp.EQUAL(ty = Exp.ET_BOOL()),e2,tnr,context)
+    case (e1,DAE.EQUAL(ty = DAE.ET_BOOL()),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -6566,7 +6559,7 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);
-    case (e1,Exp.EQUAL(ty = Exp.ET_STRING()),e2,tnr,context)
+    case (e1,DAE.EQUAL(ty = DAE.ET_STRING()),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -6574,7 +6567,7 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);
-    case (e1,Exp.EQUAL(ty = Exp.ET_INT()),e2,tnr,context)
+    case (e1,DAE.EQUAL(ty = DAE.ET_INT()),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -6582,7 +6575,7 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);
-    case (e1,Exp.EQUAL(ty = Exp.ET_REAL()),e2,tnr,context as CONTEXT(codeContext = FUNCTION))
+    case (e1,DAE.EQUAL(ty = DAE.ET_REAL()),e2,tnr,context as CONTEXT(codeContext = FUNCTION))
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
@@ -6591,12 +6584,12 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr);
-    case (e1,Exp.EQUAL(ty = Exp.ET_REAL()),e2,tnr,context)
+    case (e1,DAE.EQUAL(ty = DAE.ET_REAL()),e2,tnr,context)
       equation
         Print.printErrorBuf("# Reals can't be compared with ==\n");
       then
         fail();
-    case (e1,Exp.EQUAL(ty = Exp.ET_BOXED(_)),e2,tnr,context)
+    case (e1,DAE.EQUAL(ty = DAE.ET_BOXED(_)),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -6604,8 +6597,8 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);
-    case (e1,Exp.EQUAL(ty = Exp.ET_ENUMERATION(_,_,_,_)),e2,tnr,context)
-//    case (e1,Exp.EQUAL(ty = Exp.ENUM()),e2,tnr,context)
+    case (e1,DAE.EQUAL(ty = DAE.ET_ENUMERATION(_,_,_,_)),e2,tnr,context)
+//    case (e1,DAE.EQUAL(ty = Exp.ENUM()),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -6613,7 +6606,7 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);         
-    case (e1,Exp.NEQUAL(ty = Exp.ET_BOOL()),e2,tnr,context)
+    case (e1,DAE.NEQUAL(ty = DAE.ET_BOOL()),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -6621,7 +6614,7 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);
-    case (e1,Exp.NEQUAL(ty = Exp.ET_STRING()),e2,tnr,context)
+    case (e1,DAE.NEQUAL(ty = DAE.ET_STRING()),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -6629,7 +6622,7 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);
-    case (e1,Exp.NEQUAL(ty = Exp.ET_INT()),e2,tnr,context)
+    case (e1,DAE.NEQUAL(ty = DAE.ET_INT()),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -6637,7 +6630,7 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);
-    case (e1,Exp.NEQUAL(ty = Exp.ET_REAL()),e2,tnr,context as CONTEXT(codeContext = FUNCTION))
+    case (e1,DAE.NEQUAL(ty = DAE.ET_REAL()),e2,tnr,context as CONTEXT(codeContext = FUNCTION))
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
@@ -6646,12 +6639,12 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr);
-    case (e1,Exp.NEQUAL(ty = Exp.ET_REAL()),e2,tnr,context)
+    case (e1,DAE.NEQUAL(ty = DAE.ET_REAL()),e2,tnr,context)
       equation
         Debug.fprint("failtrace", "# Reals can't be compared with <>\n");
       then
         fail();
-    case (e1,Exp.NEQUAL(ty = Exp.ET_BOXED(_)),e2,tnr,context)
+    case (e1,DAE.NEQUAL(ty = DAE.ET_BOXED(_)),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -6659,7 +6652,7 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);
-    case (e1,Exp.NEQUAL(ty = Exp.ET_ENUMERATION(_,_,_,_)),e2,tnr,context)
+    case (e1,DAE.NEQUAL(ty = DAE.ET_ENUMERATION(_,_,_,_)),e2,tnr,context)
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
@@ -7582,7 +7575,7 @@ algorithm
         tnrstr = intString(tnr);
         tnr_1 = tnr + 1;
         tmpstr = Util.stringAppendList({tmpname_1,"_size_",tnrstr});
-        tmpcref = Exp.CREF_IDENT(tmpstr,Exp.ET_OTHER(),{});
+        tmpcref = DAE.CREF_IDENT(tmpstr,DAE.ET_OTHER(),{});
         callstr = generateExtArraySizeCall(arg);
         declstr = Util.stringAppendList({"int ",tmpstr,";"});
         decl = cAddVariables(cEmptyFunction, {declstr});
@@ -8456,16 +8449,16 @@ algorithm
       list<Exp.Subscript> subs;
       Exp.ComponentRef cref_1,cref;
       Exp.Type ty;
-    case (Exp.CREF_IDENT(ident = id,identType = ty,subscriptLst = subs),str)
+    case (DAE.CREF_IDENT(ident = id,identType = ty,subscriptLst = subs),str)
       equation
         id_1 = stringAppend(id, str);
       then
-        Exp.CREF_IDENT(id_1,ty,subs);
-    case (Exp.CREF_QUAL(ident = id,identType = ty,subscriptLst = subs,componentRef = cref),str)
+        DAE.CREF_IDENT(id_1,ty,subs);
+    case (DAE.CREF_QUAL(ident = id,identType = ty,subscriptLst = subs,componentRef = cref),str)
       equation
         cref_1 = suffixCref(cref, str);
       then
-        Exp.CREF_QUAL(id,ty,subs,cref_1);
+        DAE.CREF_QUAL(id,ty,subs,cref_1);
   end matchcontinue;
 end suffixCref;
 
@@ -9531,17 +9524,17 @@ public function matchFnRefs
 algorithm
   outExprLst := matchcontinue (inExpr)
     local Exp.Exp e; Exp.Type t;
-    case((e as Exp.CREF(ty = Exp.ET_FUNCTION_REFERENCE_FUNC()))) then {e};
-    case(Exp.PARTEVALFUNCTION(ty = Exp.ET_FUNCTION_REFERENCE_VAR(),path=p,expList=expLst))
+    case((e as DAE.CREF(ty = DAE.ET_FUNCTION_REFERENCE_FUNC()))) then {e};
+    case(DAE.PARTEVALFUNCTION(ty = DAE.ET_FUNCTION_REFERENCE_VAR(),path=p,expList=expLst))
       local
         Exp.ComponentRef cref; Absyn.Path p; list<Exp.Exp> expLst,expLst_1;
       equation
         cref = Exp.pathToCref(p);
-        e = Exp.makeCrefExp(cref,Exp.ET_FUNCTION_REFERENCE_VAR());
+        e = Exp.makeCrefExp(cref,DAE.ET_FUNCTION_REFERENCE_VAR());
         expLst_1 = getMatchingExpsList(expLst,matchFnRefs);
       then
         e :: expLst_1;
-    case(Exp.CALL(expLst = expLst))
+    case(DAE.CALL(expLst = expLst))
       local
         list<Exp.Exp> expLst,expLst_1;
       equation
@@ -9558,7 +9551,7 @@ public function matchCalls
 algorithm
   outExprLst := matchcontinue (inExpr)
     local list<Exp.Exp> args, exps; Exp.Exp e;
-    case (e as Exp.CALL(expLst = args))
+    case (e as DAE.CALL(expLst = args))
       equation 
         exps = getMatchingExpsList(args,matchCalls);
       then
@@ -9573,7 +9566,7 @@ public function matchMetarecordCalls
 algorithm
   outExprLst := matchcontinue (inExpr)
     local list<Exp.Exp> args, exps; Exp.Exp e;
-    case (e as Exp.METARECORDCALL(args = args))
+    case (e as DAE.METARECORDCALL(args = args))
       equation 
         exps = getMatchingExpsList(args,matchMetarecordCalls);
       then
@@ -9588,18 +9581,12 @@ public function matchValueblock
 algorithm
   outExprLst := matchcontinue (inExpr)
     local list<Exp.Exp> res, exps; Exp.Exp e,resE;
-    case e as Exp.VALUEBLOCK(localDecls = ld,body = body,result = resE)
+    case e as DAE.VALUEBLOCK(localDecls = ld,body = body,result = resE)
       local
-        list<Exp.DAEElement> ld;
-    		Exp.DAEElement body;
-    		list<DAE.Element> ld2;
-    		DAE.Element body2;
+    		list<DAE.Element> ld;
+    		DAE.Element body;
       equation
-        // Convert back to DAE uniontypes from Exp uniontypes, part of a work-around
-        ld2 = Convert.fromExpElemsToDAEElems(ld,{});
-        body2 = Convert.fromExpElemToDAEElem(body);
-        ld2 = body2 :: ld2;
-        exps = DAEUtil.getAllExps(ld2);
+        exps = DAEUtil.getAllExps(body::ld);
         res = getMatchingExpsList(resE::exps,matchValueblock);
       then e::res;
   end matchcontinue;
@@ -9640,7 +9627,7 @@ algorithm
   outExpLst:=
   matchcontinue (inExp,inFn)
     local
-      list<Exp.Exp> exps,args,a,b,res,elts,elst,elist;
+      list<Exp.Exp> exps,exps2,args,a,b,res,elts,elst,elist;
       Exp.Exp e,e1,e2,e3;
       Absyn.Path path;
       Boolean tuple_,builtin;
@@ -9656,65 +9643,65 @@ algorithm
       then res;
     
     // Else: Traverse all Exps
-    case ((e as Exp.CALL(path = path,expLst = args,tuple_ = tuple_,builtin = builtin)),fn)
+    case ((e as DAE.CALL(path = path,expLst = args,tuple_ = tuple_,builtin = builtin)),fn)
       equation 
         exps = getMatchingExpsList(args,fn);
       then
         exps;
-    case (Exp.PARTEVALFUNCTION(expList = args),fn)
+    case (DAE.PARTEVALFUNCTION(expList = args),fn)
       equation
         res = getMatchingExpsList(args,fn);
       then
         res;
-    case (Exp.BINARY(exp1 = e1,exp2 = e2),fn) /* Binary */ 
+    case (DAE.BINARY(exp1 = e1,exp2 = e2),fn) /* Binary */ 
       equation 
         a = getMatchingExps(e1,fn);
         b = getMatchingExps(e2,fn);
         res = listAppend(a, b);
       then
         res;
-    case (Exp.UNARY(exp = e),fn) /* Unary */ 
+    case (DAE.UNARY(exp = e),fn) /* Unary */ 
       equation 
         res = getMatchingExps(e,fn);
       then
         res;
-    case (Exp.LBINARY(exp1 = e1,exp2 = e2),fn) /* LBinary */ 
+    case (DAE.LBINARY(exp1 = e1,exp2 = e2),fn) /* LBinary */ 
       equation 
         a = getMatchingExps(e1,fn);
         b = getMatchingExps(e2,fn);
         res = listAppend(a, b);
       then
         res;
-    case (Exp.LUNARY(exp = e),fn) /* LUnary */ 
+    case (DAE.LUNARY(exp = e),fn) /* LUnary */ 
       equation 
         res = getMatchingExps(e,fn);
       then
         res;
-    case (Exp.RELATION(exp1 = e1,exp2 = e2),fn) /* Relation */ 
+    case (DAE.RELATION(exp1 = e1,exp2 = e2),fn) /* Relation */ 
       equation 
         a = getMatchingExps(e1,fn);
         b = getMatchingExps(e2,fn);
         res = listAppend(a, b);
       then
         res;
-    case (Exp.IFEXP(expCond = e1,expThen = e2,expElse = e3),fn)
+    case (DAE.IFEXP(expCond = e1,expThen = e2,expElse = e3),fn)
       equation 
         res = getMatchingExpsList({e1,e2,e3},fn);
       then
         res;
-    case (Exp.ARRAY(array = elts),fn) /* Array */ 
+    case (DAE.ARRAY(array = elts),fn) /* Array */ 
       equation 
         res = getMatchingExpsList(elts,fn);
       then
         res;
-    case (Exp.MATRIX(scalar = explst),fn) /* Matrix */ 
+    case (DAE.MATRIX(scalar = explst),fn) /* Matrix */ 
       equation 
         flatexplst = Util.listFlatten(explst);
         elst = Util.listMap(flatexplst, Util.tuple21);
         res = getMatchingExpsList(elst,fn);
       then
         res;
-    case (Exp.RANGE(exp = e1,expOption = optexp,range = e2),fn) /* Range */ 
+    case (DAE.RANGE(exp = e1,expOption = optexp,range = e2),fn) /* Range */ 
       local list<Exp.Exp> e3;
       equation 
         e3 = Util.optionToList(optexp);
@@ -9722,17 +9709,17 @@ algorithm
         res = getMatchingExpsList(elist,fn);
       then
         res;
-    case (Exp.TUPLE(PR = exps),fn) /* Tuple */ 
+    case (DAE.TUPLE(PR = exps),fn) /* Tuple */ 
       equation 
         res = getMatchingExpsList(exps,fn);
       then
         res;
-    case (Exp.CAST(exp = e),fn)
+    case (DAE.CAST(exp = e),fn)
       equation 
         res = getMatchingExps(e,fn);
       then
         res;
-    case (Exp.SIZE(exp = e1,sz = e2),fn) /* Size */ 
+    case (DAE.SIZE(exp = e1,sz = e2),fn) /* Size */ 
       local Option<Exp.Exp> e2;
       equation 
         a = Util.optionToList(e2);
@@ -9742,63 +9729,56 @@ algorithm
         res;
 
         /* MetaModelica list */
-    case (Exp.CONS(_,e1,e2),fn)
+    case (DAE.CONS(_,e1,e2),fn)
       equation
         elist = {e1,e2};
         res = getMatchingExpsList(elist,fn);
       then res;
 
-    case  (Exp.LIST(_,elist),fn)
+    case  (DAE.LIST(_,elist),fn)
       equation
         res = getMatchingExpsList(elist,fn);
       then res;
     
-    case (e as Exp.METARECORDCALL(args = elist),fn)
+    case (e as DAE.METARECORDCALL(args = elist),fn)
       equation
         res = getMatchingExpsList(elist,fn);
       then res;
 
-    case (Exp.META_TUPLE(elist), fn)
+    case (DAE.META_TUPLE(elist), fn)
       equation
         res = getMatchingExpsList(elist, fn);
       then res;
 
-   case (Exp.META_OPTION(SOME(e1)), fn)
+   case (DAE.META_OPTION(SOME(e1)), fn)
       equation
         res = getMatchingExps(e1, fn);
       then res;
 
-    case(Exp.ASUB(exp = e1),fn)
+    case(DAE.ASUB(exp = e1),fn)
       equation
         res = getMatchingExps(e1,fn);
         then
           res;
     
-    case(Exp.CREF(_,_),_) then {};
+    case(DAE.CREF(_,_),_) then {};
     
-    case (Exp.VALUEBLOCK(localDecls = ld,body = body,result = e),fn)
+    case (DAE.VALUEBLOCK(localDecls = ld,body = body,result = e),fn)
       local
-        list<Exp.DAEElement> ld;
-    		Exp.DAEElement body;
-    		list<DAE.Element> ld2;
-    		DAE.Element body2;
-        list<Algorithm.Statement> b3;
+    		list<DAE.Element> ld;
+    		DAE.Element body;
       equation
-        // Convert back to DAE uniontypes from Exp uniontypes, part of a work-around
-        ld2 = Convert.fromExpElemsToDAEElems(ld,{});
-        body2 = Convert.fromExpElemToDAEElem(body);
-        ld2 = body2 :: ld2;
-        exps = DAEUtil.getAllExps(ld2);
+        exps = DAEUtil.getAllExps(body::ld);
         res = getMatchingExpsList(e::exps,fn);
       then res;
         
-    case (Exp.ICONST(_),_) then {};
-    case (Exp.RCONST(_),_) then {};
-    case (Exp.BCONST(_),_) then {};
-    case (Exp.SCONST(_),_) then {};
-    case (Exp.CODE(_,_),_) then {};
-    case (Exp.END(),_) then {};
-    case (Exp.META_OPTION(NONE),_) then {};
+    case (DAE.ICONST(_),_) then {};
+    case (DAE.RCONST(_),_) then {};
+    case (DAE.BCONST(_),_) then {};
+    case (DAE.SCONST(_),_) then {};
+    case (DAE.CODE(_,_),_) then {};
+    case (DAE.END(),_) then {};
+    case (DAE.META_OPTION(NONE),_) then {};
         
     case (e,_)
       equation
@@ -9879,12 +9859,10 @@ algorithm
   outEls := matchcontinue (exps)
     local
       list<Exp.Exp> rest;
-      list<Exp.DAEElement> localDecls;
       list<DAE.Element> els1,els2;
     case {} then {};
-    case Exp.VALUEBLOCK(localDecls = localDecls)::rest
+    case DAE.VALUEBLOCK(localDecls = els1)::rest
       equation
-        els1 = Util.listMap(localDecls, Convert.fromExpElemToDAEElem);
         els2 = getDAEDeclsFromValueblocks(rest);
       then listAppend(els1,els2);
     case _::rest then getDAEDeclsFromValueblocks(rest);
@@ -9900,7 +9878,7 @@ protected
 algorithm
   path := Absyn.makeIdentPathFromString(str);
   cref := Exp.pathToCref(path);
-  exp  := Exp.makeCrefExp(cref, Exp.ET_OTHER);
+  exp  := Exp.makeCrefExp(cref, DAE.ET_OTHER);
 end makeCrefExpFromString;
 
 end Codegen;

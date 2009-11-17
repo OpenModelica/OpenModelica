@@ -374,24 +374,24 @@ algorithm
       Exp.Type ty;
       Boolean scalar;
       list<Integer> helpVarIndices1,helpVarIndices;
-    case (nextInd, DAE.STMT_WHEN(Exp.ARRAY(ty,scalar,el),statementLst,NONE,_))
+    case (nextInd, DAE.STMT_WHEN(DAE.ARRAY(ty,scalar,el),statementLst,NONE,_))
       equation
 				(helpvars1,el1,nextInd1) = generateHelpVarsInArrayCondition(nextInd,el);
 				helpVarIndices1 = Util.listIntRange(nextInd1-nextInd);
 				helpVarIndices = Util.listMap1(helpVarIndices1,intAdd,nextInd-1);
-      then (helpvars1,DAE.STMT_WHEN(Exp.ARRAY(ty,scalar,el1), statementLst,NONE,helpVarIndices),nextInd1);
+      then (helpvars1,DAE.STMT_WHEN(DAE.ARRAY(ty,scalar,el1), statementLst,NONE,helpVarIndices),nextInd1);
 
     case (nextInd, DAE.STMT_WHEN(condition,statementLst,NONE,_))
       then ({(nextInd,condition,-1)},DAE.STMT_WHEN(condition, statementLst,NONE,{nextInd}),nextInd+1);
 
-    case (nextInd, DAE.STMT_WHEN(Exp.ARRAY(ty,scalar,el),statementLst,SOME(elseWhen),_))
+    case (nextInd, DAE.STMT_WHEN(DAE.ARRAY(ty,scalar,el),statementLst,SOME(elseWhen),_))
       equation
 				(helpvars1,el1,nextInd1) = generateHelpVarsInArrayCondition(nextInd,el);
 				helpVarIndices1 = Util.listIntRange(nextInd1-nextInd);
 				helpVarIndices = Util.listMap1(helpVarIndices1,intAdd,nextInd-1);
         (helpvars2,statement,nextInd2) = generateHelpVarsInStatement(nextInd1,elseWhen);
         helpvars = listAppend(helpvars1,helpvars2);
-      then (helpvars,DAE.STMT_WHEN(Exp.ARRAY(ty,scalar,el1), statementLst,SOME(statement),helpVarIndices),nextInd1);
+      then (helpvars,DAE.STMT_WHEN(DAE.ARRAY(ty,scalar,el1), statementLst,SOME(statement),helpVarIndices),nextInd1);
 
     case (nextInd, DAE.STMT_WHEN(condition,statementLst,SOME(elseWhen),_))
       equation
@@ -841,11 +841,11 @@ algorithm
       tuple<String,list<String>> enum;
       Boolean inlist;
     case ({},lst) then lst;
-    case (Exp.CREF_IDENT(_,Exp.ET_ENUMERATION(_,p,{},_),_) :: rest,lst)
+    case (DAE.CREF_IDENT(_,DAE.ET_ENUMERATION(_,p,{},_),_) :: rest,lst)
       equation
         outlst = getEnumerationsFromCRef(rest,lst);
       then outlst;      
-    case (Exp.CREF_IDENT(_,Exp.ET_ENUMERATION(_,p,enumelements,_),_) :: rest,lst)
+    case (DAE.CREF_IDENT(_,DAE.ET_ENUMERATION(_,p,enumelements,_),_) :: rest,lst)
       equation
         ident = getLastIdentFromPath(p);
         // check equation
@@ -858,13 +858,13 @@ algorithm
         outlst = getEnumerationsFromCRef(rest,lst1);
       then
         outlst;   
-    case (Exp.CREF_QUAL(_,Exp.ET_ENUMERATION(_,p,{},_),_,cref) :: rest,lst)
+    case (DAE.CREF_QUAL(_,DAE.ET_ENUMERATION(_,p,{},_),_,cref) :: rest,lst)
       equation
         lst3 = getEnumerationsFromCRef({cref},lst);
         outlst = getEnumerationsFromCRef(rest,lst3);
       then
         outlst; 
-    case (Exp.CREF_QUAL(_,Exp.ET_ENUMERATION(_,p,enumelements,_),_,cref) :: rest,lst)
+    case (DAE.CREF_QUAL(_,DAE.ET_ENUMERATION(_,p,enumelements,_),_,cref) :: rest,lst)
       equation
         ident = getLastIdentFromPath(p);
         // check equation
@@ -1072,7 +1072,7 @@ protected function generateExternalObjectConstructorAlias
     (outCFunction,cg_out) := matchcontinue (cg_in,var)
 
 	  // 	external object aliased to another external object.
-	  case (cg_in, DAELow.VAR(varName= name,bindExp = SOME(Exp.CREF(cr,_)),varKind = DAELow.EXTOBJ(path1)))
+	  case (cg_in, DAELow.VAR(varName= name,bindExp = SOME(DAE.CREF(cr,_)),varKind = DAELow.EXTOBJ(path1)))
 	    local String stmt,v_str,v_str2;
 	      Codegen.CFunction cfunc;
 	      Exp.ComponentRef cr,name;
@@ -1098,7 +1098,7 @@ algorithm
 	(outCFunction,cg_out) := matchcontinue (cg_in,var,eclasses)
 
 		// Skip aliases now, they are handled in generateExternalObjectConstructorAlias
-	  case (cg_in, DAELow.VAR(bindExp = SOME(Exp.CREF(_,_)),varKind = DAELow.EXTOBJ(_)),_)
+	  case (cg_in, DAELow.VAR(bindExp = SOME(DAE.CREF(_,_)),varKind = DAELow.EXTOBJ(_)),_)
 	  then (Codegen.cEmptyFunction,cg_in);
 
 	  case (_,DAELow.VAR(varName = name),{})
@@ -1140,7 +1140,7 @@ protected function generateExternalObjectConstructorCall2 "Help funciton to gene
   output Integer cg_out;
 algorithm
   (outCFunction,cg_out) := matchcontinue(cg_in,varName,constructor,constrCallExp)
-    case (cg_in,varName,constructor as DAE.EXTFUNCTION(externalDecl = DAE.EXTERNALDECL(ident=funcStr)),Exp.CALL(expLst = args))
+    case (cg_in,varName,constructor as DAE.EXTFUNCTION(externalDecl = DAE.EXTERNALDECL(ident=funcStr)),DAE.CALL(expLst = args))
       local
         String vStr,funcStr,argsStr,str;
         list<Exp.Exp> args;
@@ -3376,7 +3376,7 @@ algorithm
     case ((DAELow.RESIDUAL_EQUATION(exp = e) :: es),cg_id)
       equation
         // if exp is a string just increase the index;
-        Exp.ET_STRING() = Exp.typeof(e);
+        DAE.ET_STRING() = Exp.typeof(e);
         (cfunc,var,cg_id) = Codegen.generateExpression(e, cg_id, Codegen.simContext);
         assign = Util.stringAppendList({"localData->initialResiduals[i++] = 0;//",var,";"});
         cfunc = Codegen.cAddStatements(cfunc, {assign});
@@ -3516,7 +3516,7 @@ algorithm
         startv = DAEUtil.getStartAttr(attr);
         eqns = generateInitialEquationsFromStart(vars);
       then
-        (DAELow.EQUATION(Exp.CREF(cr,Exp.ET_OTHER()),startv) :: eqns);
+        (DAELow.EQUATION(DAE.CREF(cr,DAE.ET_OTHER()),startv) :: eqns);
     case ((_ :: vars))
       equation
         eqns = generateInitialEquationsFromStart(vars);
@@ -3713,7 +3713,7 @@ algorithm
         (res,helpVarInfoList) = buildWhenConditionChecks2(xs, i_1, nextHelpIndex);
       then
         (res,helpVarInfoList);
-    case (((wc as DAELow.WHEN_CLAUSE(condition = Exp.ARRAY(array = el))) :: xs),i,nextHelpIndex)
+    case (((wc as DAELow.WHEN_CLAUSE(condition = DAE.ARRAY(array = el))) :: xs),i,nextHelpIndex)
       equation
         i_1 = i + 1;
         (res2,helpVarInfoList2) = buildWhenConditionChecks2(xs, i_1, nextHelpIndex);
@@ -3847,7 +3847,7 @@ algorithm
 
     case (whenClauseList, ind)
       equation
-        DAELow.WHEN_CLAUSE(condition=Exp.ARRAY(_,_,conditionList)) = listNth(whenClauseList, ind);
+        DAELow.WHEN_CLAUSE(condition=DAE.ARRAY(_,_,conditionList)) = listNth(whenClauseList, ind);
       then conditionList;
     case (whenClauseList, ind)
       equation
@@ -3966,7 +3966,7 @@ algorithm
       DAELow.WHEN_EQUATION(DAELow.WHEN_EQ(_,cr2,exp,_)) = DAELow.equationNth(eqs,intAbs(e)-1);
       //We can asume the same component refs are solved in any else-branch.
       b1 = Exp.crefEqual(cr,cr2);
-     b2 = Exp.expContains(exp,Exp.CREF(cr,Exp.ET_OTHER()));
+     b2 = Exp.expContains(exp,DAE.CREF(cr,DAE.ET_OTHER()));
      true = boolOr(b1,b2);
     then false;
     case(cr,daelow,_::eqns) equation
@@ -4724,7 +4724,7 @@ algorithm
         indx_1 = indx + 1;
         (cfn,cg_id_1,funcs) = generateMixedSystemDiscretePartCheck2(eqns, vs, indx_1, cg_id);
         cr = DAELow.varCref(v);
-        varexp = Exp.CREF(cr,Exp.ET_REAL());
+        varexp = DAE.CREF(cr,DAE.ET_REAL());
         expr = Exp.solve(e1, e2, varexp);
         (exp_func,var,cg_id_2) = Codegen.generateExpression(expr, cg_id_1, Codegen.simContext);
         indx_str = intString(indx);
@@ -4788,11 +4788,11 @@ algorithm
   eqn := matchcontinue(v,eqnLst)
     local Exp.ComponentRef cr1,cr;
       Exp.Exp e2;
-    case (v,(eqn as DAELow.EQUATION(Exp.CREF(cr,_),e2))::_) equation
+    case (v,(eqn as DAELow.EQUATION(DAE.CREF(cr,_),e2))::_) equation
       cr1=DAELow.varCref(v);
       true = Exp.crefEqual(cr1,cr);
     then eqn;
-    case(v,(eqn as DAELow.EQUATION(e2,Exp.CREF(cr,_)))::_) equation
+    case(v,(eqn as DAELow.EQUATION(e2,DAE.CREF(cr,_)))::_) equation
       cr1=DAELow.varCref(v);
       true = Exp.crefEqual(cr1,cr);
     then eqn;
@@ -5108,7 +5108,7 @@ algorithm
         cr_1 = Exp.crefStripLastSubs(origname);
         // Since we use origname we need to replace '.' with '$P' manually.
         cr_1_str = Util.modelicaStringToCStr(Exp.printComponentRefStr(cr_1),true); // stringAppend("$",Util.modelicaStringToCStr(Exp.printComponentRefStr(cr_1),true));
-        cr_1 = Exp.CREF_IDENT(cr_1_str,Exp.ET_OTHER(),{});
+        cr_1 = DAE.CREF_IDENT(cr_1_str,DAE.ET_OTHER(),{});
         (e1,e2) = solveTrivialArrayEquation(cr_1,e1,e2);
         (s1,cg_id_1,f1) = generateSingleArrayEqnCode2(cr_1, cr_1, e1, e2, cg_id);
       then
@@ -5140,9 +5140,9 @@ algorithm
     case(v,e1,e2) 
       equation
         tp = Exp.typeof(e1);
-        res = Exp.simplify(Exp.BINARY(e1,Exp.SUB_ARR(tp),e2));
+        res = Exp.simplify(DAE.BINARY(e1,DAE.SUB_ARR(tp),e2));
         //print("simplified to :");print(Exp.printExpStr(res));print("\n");
-        (vTerm as Exp.CREF(_,_),rhs) = Exp.getTermsContainingX(res,Exp.CREF(v,Exp.ET_OTHER()));
+        (vTerm as DAE.CREF(_,_),rhs) = Exp.getTermsContainingX(res,DAE.CREF(v,DAE.ET_OTHER()));
         //print("solved array equation to :");print(Exp.printExpStr(e1));print("=");
         //print(Exp.printExpStr(e2));print("\n");
       then (vTerm,rhs);
@@ -5174,7 +5174,7 @@ algorithm
       Integer cg_id_1,cg_id;
       Exp.ComponentRef cr,eltcr,cr2;
       Exp.Exp e1,e2;
-    case (cr,eltcr,(e1 as Exp.CREF(componentRef = cr2)),e2,cg_id) /* origname firsteltname lhs rhs cg var_id cg var_id */
+    case (cr,eltcr,(e1 as DAE.CREF(componentRef = cr2)),e2,cg_id) /* origname firsteltname lhs rhs cg var_id cg var_id */
       equation
         true = Exp.crefEqual(cr, cr2);
         s1 = Exp.printComponentRefStr(eltcr);
@@ -5183,7 +5183,7 @@ algorithm
         func_1 = Codegen.cAddStatements(cfunc, {stmt});
       then
         (func_1,cg_id_1,{});
-    case (cr,eltcr,e1,(e2 as Exp.CREF(componentRef = cr2)),cg_id)
+    case (cr,eltcr,e1,(e2 as DAE.CREF(componentRef = cr2)),cg_id)
       equation
         true = Exp.crefEqual(cr, cr2);
         s1 = Exp.printComponentRefStr(eltcr);
@@ -5241,7 +5241,7 @@ algorithm
       String s;
       list<Exp.Exp> expl;
       list<list<tuple<Exp.Exp, Boolean>>> column;
-    case (Exp.ARRAY(array = expl))
+    case (DAE.ARRAY(array = expl))
       equation
         ((crefs as (cr :: _))) = Util.listMap(expl, Exp.expCref); //Get all CRefs from exp1.
         crefs_1 = Util.listMap(crefs, Exp.crefStripLastSubsStringified); //Strip last subscripts
@@ -5250,7 +5250,7 @@ algorithm
         _ = Util.listReduce(crefs_1, Exp.crefEqualReturn); //Check if elements are equal, remove one
       then
         cr;
-    case (Exp.MATRIX(scalar = column))
+    case (DAE.MATRIX(scalar = column))
       equation
         ((crefs as (cr :: _))) = Util.listMap(column, getVectorizedCrefFromExpMatrix);
         crefs_1 = Util.listMap(crefs, Exp.crefStripLastSubsStringified);
@@ -5461,7 +5461,7 @@ algorithm
       equation
         pstr = intString(pos);
         str = Util.stringAppendList({"xloc[",pstr,"]"});
-        repl_1 = VarTransform.addReplacement(repl, cr, Exp.CREF(Exp.CREF_IDENT(str,Exp.ET_REAL(),{}),Exp.ET_REAL()));
+        repl_1 = VarTransform.addReplacement(repl, cr, DAE.CREF(DAE.CREF_IDENT(str,DAE.ET_REAL(),{}),DAE.ET_REAL()));
         pos_1 = pos + 1;
         repl_2 = makeResidualReplacements2(repl_1, crs, pos_1);
       then
@@ -5610,7 +5610,7 @@ algorithm
     case ((DAELow.EQUATION(exp = e1,scalar = e2) :: rest),aeqns,indx,repl,cg_id)
       equation
         tp = Exp.typeof(e1);
-        res_exp = Exp.BINARY(e1,Exp.SUB(tp),e2);
+        res_exp = DAE.BINARY(e1,DAE.SUB(tp),e2);
         res_exp_1 = Exp.simplify(res_exp);
         res_exp_2 = VarTransform.replaceExp(res_exp_1, repl, SOME(skipPreOperator));
         (exp_func,var,cg_id_1) = Codegen.generateExpression(res_exp_2, cg_id, Codegen.simContext);
@@ -5765,7 +5765,7 @@ protected function skipPreOperator "function: skipPreOperator
 algorithm
   outBoolean:=
   matchcontinue (inExp)
-    case (Exp.CALL(path = Absyn.IDENT(name = "pre"))) then false;
+    case (DAE.CALL(path = Absyn.IDENT(name = "pre"))) then false;
     case (_) then true;
   end matchcontinue;
 end skipPreOperator;
@@ -6043,9 +6043,9 @@ algorithm
     case ((DAELow.EQUATION(exp = e1,scalar = e2) :: rest),v,index,unique_id,cg_id)
       equation
         tp = Exp.typeof(e1);
-        new_exp = Exp.BINARY(e1,Exp.SUB(tp),e2);
+        new_exp = DAE.BINARY(e1,DAE.SUB(tp),e2);
         rhs_exp = DAELow.getEqnsysRhsExp(new_exp, v);
-        rhs_exp_1 = Exp.UNARY(Exp.UMINUS(tp),rhs_exp);
+        rhs_exp_1 = DAE.UNARY(DAE.UMINUS(tp),rhs_exp);
         rhs_exp_2 = Exp.simplify(rhs_exp_1);
         (exp_func,var,cg_id_1) = Codegen.generateExpression(rhs_exp_2, cg_id, Codegen.simContext);
         index_str = intString(index);
@@ -6228,7 +6228,7 @@ algorithm
         c_name = name; // adrpo: 2009-09-07 this doubles $!! c_name = Util.modelicaStringToCStr(name,true);
         res = Util.stringAppendList({DAELow.derivativeNamePrefix,c_name}) "	Util.string_append_list({\"xd{\",index_str, \"}\"}) => res" ;
       then
-        DAELow.VAR(Exp.CREF_IDENT(res,Exp.ET_REAL(),{}),DAELow.STATE(),dir,tp,exp,v,dim,index,cr,classes,attr,comment,flowPrefix,streamPrefix);
+        DAELow.VAR(DAE.CREF_IDENT(res,DAE.ET_REAL(),{}),DAELow.STATE(),dir,tp,exp,v,dim,index,cr,classes,attr,comment,flowPrefix,streamPrefix);
         
     case (v)
       local DAELow.Var v;
@@ -6340,7 +6340,7 @@ algorithm
         (DAELow.EQUATION(e1,e2),(v as DAELow.VAR(cr,kind,_,_,_,_,_,_,origname,_,dae_var_attr,comment,flowPrefix,streamPrefix))) = 
         getEquationAndSolvedVar(e, eqns, vars, ass2) "Solving for non-states" ;
         isNonState(kind);
-        varexp = Exp.CREF(cr,Exp.ET_REAL());
+        varexp = DAE.CREF(cr,DAE.ET_REAL());
         expr = Exp.solve(e1, e2, varexp);
         (exp_func,var,cg_id_1) = 
         Codegen.generateExpression(expr, cg_id, Codegen.CONTEXT(Codegen.SIMULATION(genDiscrete),Codegen.NORMAL(),Codegen.NO_LOOP));
@@ -6359,8 +6359,8 @@ algorithm
         // c_name = Util.modelicaStringToCStr(name,true);
         // id = Util.stringAppendList({DAELow.derivativeNamePrefix,c_name});
         id = Util.stringAppendList({DAELow.derivativeNamePrefix, name});
-        cr_1 = Exp.CREF_IDENT(id,Exp.ET_REAL(),{});
-        varexp = Exp.CREF(cr_1,Exp.ET_REAL());
+        cr_1 = DAE.CREF_IDENT(id,DAE.ET_REAL(),{});
+        varexp = DAE.CREF(cr_1,DAE.ET_REAL());
         expr = Exp.solve(e1, e2, varexp);
         (exp_func,var,cg_id_1) = 
         Codegen.generateExpression(expr, cg_id, Codegen.CONTEXT(Codegen.SIMULATION(genDiscrete),Codegen.NORMAL(),Codegen.NO_LOOP));
@@ -6379,8 +6379,8 @@ algorithm
         name = Exp.printComponentRefStr(cr) "	Util.string_append_list({\"xd{\",indxs,\"}\"}) => id &" ;
         c_name = name; // Util.modelicaStringToCStr(name,true);
         id = Util.stringAppendList({DAELow.derivativeNamePrefix,c_name});
-        cr_1 = Exp.CREF_IDENT(id,Exp.ET_REAL(),{});
-        varexp = Exp.CREF(cr_1,Exp.ET_REAL());
+        cr_1 = DAE.CREF_IDENT(id,DAE.ET_REAL(),{});
+        varexp = DAE.CREF(cr_1,DAE.ET_REAL());
         failure(_ = Exp.solve(e1, e2, varexp));
         (res,cg_id_1,f1) = generateOdeSystem2NonlinearResiduals(false,{cr_1}, {eqn},ae, cg_id);
       then
@@ -6393,7 +6393,7 @@ algorithm
         getEquationAndSolvedVar(e, eqns, vars, ass2);
         isNonState(kind);
         indxs = intString(indx);
-        varexp = Exp.CREF(cr,Exp.ET_REAL());
+        varexp = DAE.CREF(cr,DAE.ET_REAL());
         failure(_ = Exp.solve(e1, e2, varexp));
         (res,cg_id_1,f1) = generateOdeSystem2NonlinearResiduals(false,{cr}, {eqn},ae, cg_id);
       then
@@ -6414,7 +6414,7 @@ algorithm
         DAELow.Var v;
         Exp.ComponentRef varOutput;
       equation
-        (DAELow.ALGORITHM(indx,algInputs,Exp.CREF(varOutput,_)::_),v) = getEquationAndSolvedVar(e, eqns, vars, ass2);
+        (DAELow.ALGORITHM(indx,algInputs,DAE.CREF(varOutput,_)::_),v) = getEquationAndSolvedVar(e, eqns, vars, ass2);
 				// The output variable of the algorithm must be the variable solved for, otherwise we need to
 				// solve an inverse problem of an algorithm section.
         true = Exp.crefEqual(DAELow.varCref(v),varOutput);
@@ -6432,7 +6432,7 @@ algorithm
         Exp.ComponentRef varOutput;
         String algStr,message;
       equation
-        (DAELow.ALGORITHM(indx,algInputs,Exp.CREF(varOutput,_)::_),v) = getEquationAndSolvedVar(e, eqns, vars, ass2);
+        (DAELow.ALGORITHM(indx,algInputs,DAE.CREF(varOutput,_)::_),v) = getEquationAndSolvedVar(e, eqns, vars, ass2);
 				// We need to solve an inverse problem of an algorithm section.
         false = Exp.crefEqual(DAELow.varCref(v),varOutput);
         alg = alg[indx + 1];
@@ -7400,7 +7400,7 @@ algorithm
       Exp.Exp e1,e2,start,interval,e;
       Exp.Operator op;
       
-    case (DAELow.ZERO_CROSSING(relation_ = Exp.RELATION(exp1 = e1,operator = op,exp2 = e2)))
+    case (DAELow.ZERO_CROSSING(relation_ = DAE.RELATION(exp1 = e1,operator = op,exp2 = e2)))
       equation
         e1_str = printExpCppStr(e1);
         e2_str = printExpCppStr(e2);
@@ -7409,7 +7409,7 @@ algorithm
       then
         zc_str;
         
-    case (DAELow.ZERO_CROSSING(relation_ = Exp.CALL(path = Absyn.IDENT(name = "sample"),expLst = {start,interval})))
+    case (DAELow.ZERO_CROSSING(relation_ = DAE.CALL(path = Absyn.IDENT(name = "sample"),expLst = {start,interval})))
       equation
         e1_str = printExpCppStr(start);
         e2_str = printExpCppStr(interval);
@@ -7465,10 +7465,10 @@ protected function printZeroCrossingOpStr
 algorithm
   outString:=
   matchcontinue (inOperator)
-    case (Exp.LESS(ty = _)) then "Less";
-    case (Exp.GREATER(ty = _)) then "Greater";
-    case (Exp.LESSEQ(ty = _)) then "LessEq";
-    case (Exp.GREATEREQ(ty = _)) then "GreaterEq";
+    case (DAE.LESS(ty = _)) then "Less";
+    case (DAE.GREATER(ty = _)) then "Greater";
+    case (DAE.LESSEQ(ty = _)) then "LessEq";
+    case (DAE.GREATEREQ(ty = _)) then "GreaterEq";
   end matchcontinue;
 end printZeroCrossingOpStr;
 
@@ -7778,8 +7778,8 @@ algorithm
   local Exp.Type tp;
     Exp.Exp e1,e2;
     Boolean dummyArg;
-    case((Exp.RELATION(e1,Exp.LESS(tp),e2),dummyArg)) then ((Exp.RELATION(e1,Exp.LESSEQ(tp),e2),dummyArg));
-    case((Exp.RELATION(e1,Exp.GREATER(tp),e2),dummyArg)) then ((Exp.RELATION(e1,Exp.GREATEREQ(tp),e2),dummyArg));
+    case((DAE.RELATION(e1,DAE.LESS(tp),e2),dummyArg)) then ((DAE.RELATION(e1,DAE.LESSEQ(tp),e2),dummyArg));
+    case((DAE.RELATION(e1,DAE.GREATER(tp),e2),dummyArg)) then ((DAE.RELATION(e1,DAE.GREATEREQ(tp),e2),dummyArg));
     case((e1,dummyArg)) then ((e1,dummyArg));
   end matchcontinue;
 end replaceExpGTWithGE;
@@ -8445,7 +8445,7 @@ algorithm
         v_1 = v - 1;
         ((va as DAELow.VAR(cr,kind,_,_,_,_,_,_,origname,_,dae_var_attr,comment,flowPrefix,streamPrefix))) = DAELow.vararrayNth(vararr, v_1);
         true = DAELow.isNonState(kind);
-        varexp = Exp.CREF(cr,Exp.ET_REAL());
+        varexp = DAE.CREF(cr,DAE.ET_REAL());
         expr = Exp.solve(e1, e2, varexp);
         simplify_exp = Exp.simplify(expr);
         origname_str = Exp.printComponentRefStr(origname);
@@ -8460,7 +8460,7 @@ algorithm
         v = ass2[e_1 + 1];
         v_1 = v - 1 "v == variable no solved in this equation" ;
         DAELow.VAR(cr,kind,_,_,_,_,_,indx,origname,_,dae_var_attr,comment,flowPrefix,streamPrefix) = DAELow.vararrayNth(vararr, v_1);
-        new_varexp = Exp.CREF(cr,Exp.ET_REAL());
+        new_varexp = DAE.CREF(cr,DAE.ET_REAL());
         expr = Exp.solve(e1, e2, new_varexp);
         simplify_exp = Exp.simplify(expr);
         origname_str = Exp.printComponentRefStr(origname);
@@ -8477,7 +8477,7 @@ algorithm
         v = ass2[e_1 + 1];
         v_1 = v - 1 "v==variable no solved in this equation" ;
         DAELow.VAR(cr,_,_,_,_,_,_,_,origname,_,dae_var_attr,comment,flowPrefix,streamPrefix) = DAELow.vararrayNth(vararr, v_1);
-        varexp = Exp.CREF(cr,Exp.ET_REAL());
+        varexp = DAE.CREF(cr,DAE.ET_REAL());
         failure(_ = Exp.solve(e1, e2, varexp));
         print("nonlinear equation not implemented yet\n");
         s1 = Exp.printExpStr(e1);
@@ -8578,7 +8578,7 @@ algorithm
         v_1 = v - 1;
         ((va as DAELow.VAR(cr,kind,_,_,_,_,_,_,origname,_,dae_var_attr,comment,flowPrefix,streamPrefix))) = DAELow.vararrayNth(vararr, v_1);
         true = DAELow.isNonState(kind);
-        varexp = Exp.CREF(cr,Exp.ET_REAL()) "print \"Solving for non-states\\n\" &" ;
+        varexp = DAE.CREF(cr,DAE.ET_REAL()) "print \"Solving for non-states\\n\" &" ;
         expr = Exp.solve(e1, e2, varexp);
         simplify_exp = Exp.simplify(expr);
         origname_str = Exp.printComponentRefStr(origname);
@@ -8595,10 +8595,10 @@ algorithm
         v_1 = v - 1;
         DAELow.VAR(cr,kind,_,_,_,_,_,indx,origname,_,dae_var_attr,comment,flowPrefix,streamPrefix) = DAELow.vararrayNth(vararr, v_1);
         indx_str = intString(indx);
-        exp = Exp.BINARY(e1,Exp.SUB(Exp.ET_REAL()),e2);
+        exp = DAE.BINARY(e1,DAE.SUB(DAE.ET_REAL()),e2);
         simplify_exp = Exp.simplify(exp);
         cr_str = Util.stringAppendList({"delta[",indx_str,"]"}) "Use array named \'delta\' for residuals" ;
-        new_cr = Exp.CREF_IDENT(cr_str,Exp.ET_REAL(),{});
+        new_cr = DAE.CREF_IDENT(cr_str,DAE.ET_REAL(),{});
         origname_str = Exp.printComponentRefStr(origname);
         (cfn,cg_id_1) = buildAssignment(dae, new_cr, simplify_exp, origname_str, cg_id);
       then
@@ -8620,7 +8620,7 @@ algorithm
         v = ass2[e_1 + 1];
         v_1 = v - 1 "v==variable no solved in this equation" ;
         DAELow.VAR(cr,_,_,_,_,_,_,_,origname,_,dae_var_attr,comment,flowPrefix,streamPrefix) = DAELow.vararrayNth(vararr, v_1);
-        varexp = Exp.CREF(cr,Exp.ET_REAL());
+        varexp = DAE.CREF(cr,DAE.ET_REAL());
         failure(_ = Exp.solve(e1, e2, varexp));
         print("nonlinear equation not implemented yet\n");
       then
@@ -8659,7 +8659,7 @@ algorithm
       Absyn.Path path;
       list<Exp.Exp> args;
       Boolean tuple_,builtin;
-    case ((dae as DAE.DAE(elementLst = elements)),cr,(exp as Exp.CALL(path = path,expLst = args,tuple_ = (tuple_ as false),builtin = builtin)),origname,cg_id) /* varname expression orig. name cg var_id cg var_id */
+    case ((dae as DAE.DAE(elementLst = elements)),cr,(exp as DAE.CALL(path = path,expLst = args,tuple_ = (tuple_ as false),builtin = builtin)),origname,cg_id) /* varname expression orig. name cg var_id cg var_id */
       equation
         cr_str = Exp.printComponentRefStr(cr);
         (cfn,var,cg_id_1) = Codegen.generateExpression(exp, cg_id, Codegen.simContext);
@@ -8667,7 +8667,7 @@ algorithm
         cfn = Codegen.cAddStatements(cfn, {stmt});
       then
         (cfn,cg_id_1);
-    case (dae,cr,(exp as Exp.CALL(path = path,expLst = args,tuple_ = (tuple_ as true),builtin = builtin)),origname,cg_id)
+    case (dae,cr,(exp as DAE.CALL(path = path,expLst = args,tuple_ = (tuple_ as true),builtin = builtin)),origname,cg_id)
       equation
         print("-simcodegen: build_assignment: Tuple return values from functions not implemented\n");
       then
@@ -8707,8 +8707,8 @@ protected function lbinopSymbol "function: lbinopSymbol
 algorithm
   outString:=
   matchcontinue (inOperator)
-    case (Exp.AND()) then " && ";
-    case (Exp.OR()) then " || ";
+    case (DAE.AND()) then " && ";
+    case (DAE.OR()) then " || ";
   end matchcontinue;
 end lbinopSymbol;
 
@@ -8721,7 +8721,7 @@ protected function lunaryopSymbol "function: lunaryopSymbol
 algorithm
   outString:=
   matchcontinue (inOperator)
-    case (Exp.NOT()) then " !";
+    case (DAE.NOT()) then " !";
   end matchcontinue;
 end lunaryopSymbol;
 
@@ -8734,12 +8734,12 @@ protected function relopSymbol "function: relopSymbol
 algorithm
   outString:=
   matchcontinue (inOperator)
-    case (Exp.LESS(ty = _)) then " < ";
-    case (Exp.LESSEQ(ty = _)) then " <= ";
-    case (Exp.GREATER(ty = _)) then " > ";
-    case (Exp.GREATEREQ(ty = _)) then " >= ";
-    case (Exp.EQUAL(ty = _)) then " == ";
-    case (Exp.NEQUAL(ty = _)) then " != ";
+    case (DAE.LESS(ty = _)) then " < ";
+    case (DAE.LESSEQ(ty = _)) then " <= ";
+    case (DAE.GREATER(ty = _)) then " > ";
+    case (DAE.GREATEREQ(ty = _)) then " >= ";
+    case (DAE.EQUAL(ty = _)) then " == ";
+    case (DAE.NEQUAL(ty = _)) then " != ";
   end matchcontinue;
 end relopSymbol;
 
@@ -8797,51 +8797,51 @@ algorithm
       Absyn.Path fcn;
       list<Exp.ComponentRef> cref_list;
       
-    case (Exp.END(),_)
+    case (DAE.END(),_)
       equation
         print("# equation contain undefined symbols");
       then
         fail();
 
-    case (Exp.ICONST(integer = x),_)
+    case (DAE.ICONST(integer = x),_)
       equation
         s = intString(x);
       then
         s;
 
-    case (Exp.RCONST(real = x),_)
+    case (DAE.RCONST(real = x),_)
       local Real x;
       equation
         s = realString(x);
       then
         s;
 
-    case (Exp.SCONST(string = s),_)
+    case (DAE.SCONST(string = s),_)
       equation
         s_1 = stringAppend("\"", s);
         s_2 = stringAppend(s_1, "\"");
       then
         s_2;
 
-    case (Exp.BCONST(bool = false),_) then "false";
+    case (DAE.BCONST(bool = false),_) then "false";
 
-    case (Exp.BCONST(bool = true),_) then "true";
+    case (DAE.BCONST(bool = true),_) then "true";
 
-    case (Exp.CREF(Exp.CREF_IDENT(_,Exp.ET_ENUMERATION(SOME(idx),_,_,_),_),_),_)
+    case (DAE.CREF(DAE.CREF_IDENT(_,DAE.ET_ENUMERATION(SOME(idx),_,_,_),_),_),_)
       local Integer idx; 
         then intString(idx);
-    case (Exp.CREF(Exp.CREF_QUAL(_,ty as Exp.ET_ENUMERATION(_,_,_,_),_,c),_),pri1)
+    case (DAE.CREF(DAE.CREF_QUAL(_,ty as DAE.ET_ENUMERATION(_,_,_,_),_,c),_),pri1)
       equation 
-        res = printExp2Str(Exp.CREF(c, ty),pri1);
+        res = printExp2Str(DAE.CREF(c, ty),pri1);
       then
         res;        
-    case (Exp.CREF(componentRef = c),_)
+    case (DAE.CREF(componentRef = c),_)
       equation
         res = Exp.printComponentRefStr(c);
       then
         res;
 
-    case (Exp.BINARY(exp1 = e1,operator = (op as Exp.SUB(ty = ty)),exp2 = (e2 as Exp.BINARY(exp1 = e21,operator = Exp.SUB(ty = ty2),exp2 = e22))),pri1)
+    case (DAE.BINARY(exp1 = e1,operator = (op as DAE.SUB(ty = ty)),exp2 = (e2 as DAE.BINARY(exp1 = e21,operator = DAE.SUB(ty = ty2),exp2 = e22))),pri1)
       equation
         sym = Exp.binopSymbol(op);
         pri2_1 = Exp.binopPriority(op);
@@ -8857,7 +8857,7 @@ algorithm
       then
         s_3;
 
-    case (Exp.BINARY(exp1 = e1,operator = (op as Exp.POW(ty = _)),exp2 = Exp.ICONST(integer = 2)),pri1)
+    case (DAE.BINARY(exp1 = e1,operator = (op as DAE.POW(ty = _)),exp2 = DAE.ICONST(integer = 2)),pri1)
       equation
         pri2 = Exp.binopPriority(op) "x^2 => xx" ;
         (s1,pri3) = Exp.printLeftparStr(pri1, pri2);
@@ -8867,7 +8867,7 @@ algorithm
       then
         res;
 
-    case (Exp.BINARY(exp1 = e1,operator = (op as Exp.POW(ty = _)),exp2 = Exp.RCONST(real = two)),pri1)
+    case (DAE.BINARY(exp1 = e1,operator = (op as DAE.POW(ty = _)),exp2 = DAE.RCONST(real = two)),pri1)
       equation
         two_1 = intReal(2) "x^2 => xx" ;
         (two ==. two) = true;
@@ -8879,7 +8879,7 @@ algorithm
       then
         res;
 
-    case (Exp.BINARY(exp1 = e1,operator = (op as Exp.POW(ty = _)),exp2 = e2),pri1)
+    case (DAE.BINARY(exp1 = e1,operator = (op as DAE.POW(ty = _)),exp2 = e2),pri1)
       equation
         pri2 = Exp.binopPriority(op);
         (s1,pri3) = Exp.printLeftparStr(pri1, pri2);
@@ -8895,7 +8895,7 @@ algorithm
       then
         res_1;
 
-    case (Exp.BINARY(exp1 = e1,operator = (op as Exp.DIV(ty = _)),exp2 = e2),pri1)
+    case (DAE.BINARY(exp1 = e1,operator = (op as DAE.DIV(ty = _)),exp2 = e2),pri1)
       equation
         pri2 = Exp.binopPriority(op);
         (s1,pri3) = Exp.printLeftparStr(pri1, pri2);
@@ -8906,7 +8906,7 @@ algorithm
       then
         res_1;
 
-    case (Exp.BINARY(exp1 = e1,operator = op,exp2 = e2),pri1)
+    case (DAE.BINARY(exp1 = e1,operator = op,exp2 = e2),pri1)
       equation
         sym = Exp.binopSymbol(op);
         pri2 = Exp.binopPriority(op);
@@ -8921,7 +8921,7 @@ algorithm
       then
         s_3;
 
-    case (Exp.UNARY(operator = op,exp = e),pri1)
+    case (DAE.UNARY(operator = op,exp = e),pri1)
       equation
         sym = Exp.unaryopSymbol(op);
         pri2 = Exp.unaryopPriority(op);
@@ -8934,7 +8934,7 @@ algorithm
       then
         s_2;
 
-    case (Exp.LBINARY(exp1 = e1,operator = op,exp2 = e2),pri1)
+    case (DAE.LBINARY(exp1 = e1,operator = op,exp2 = e2),pri1)
       equation
         sym = lbinopSymbol(op);
         pri2 = Exp.lbinopPriority(op);
@@ -8949,7 +8949,7 @@ algorithm
       then
         s_3;
 
-    case (Exp.LUNARY(operator = op,exp = e),pri1)
+    case (DAE.LUNARY(operator = op,exp = e),pri1)
       equation
         sym = lunaryopSymbol(op);
         pri2 = Exp.lunaryopPriority(op);
@@ -8962,7 +8962,7 @@ algorithm
       then
         s_2;
 
-    case (Exp.RELATION(exp1 = e1,operator = op,exp2 = e2),pri1)
+    case (DAE.RELATION(exp1 = e1,operator = op,exp2 = e2),pri1)
       equation
         sym = relopSymbol(op);
         pri2 = Exp.relopPriority(op);
@@ -8977,7 +8977,7 @@ algorithm
       then
         s_3;
 
-    case (Exp.IFEXP(expCond = c,expThen = t,expElse = f),_)
+    case (DAE.IFEXP(expCond = c,expThen = t,expElse = f),_)
       local Exp.Exp c;
       equation
         ifstr = printExp2Str(c, 0);
@@ -8992,14 +8992,14 @@ algorithm
       then
         slast;
 
-    case (Exp.CALL(path = Absyn.IDENT(name = "abs"),expLst = args,builtin = (builtin as true)),_) /* abs using the fabs libc function */
+    case (DAE.CALL(path = Absyn.IDENT(name = "abs"),expLst = args,builtin = (builtin as true)),_) /* abs using the fabs libc function */
       equation
         argstr = Exp.printListStr(args, printExpCppStr, ",");
         s = Util.stringAppendList({"fabs(",argstr,")"});
       then
         s;
 
-    case (Exp.CALL(path = fcn,expLst = args,builtin = (builtin as true)),_)
+    case (DAE.CALL(path = fcn,expLst = args,builtin = (builtin as true)),_)
       equation
         fs = ModUtil.pathStringReplaceDot(fcn, "_");
         argstr = Exp.printListStr(args, printExpCppStr, ",");
@@ -9007,7 +9007,7 @@ algorithm
       then
         s;
 
-    case (Exp.CALL(path = fcn,expLst = args,builtin = (builtin as false)),_) /* user defined Modelica functions, incl. external starts with an
+    case (DAE.CALL(path = fcn,expLst = args,builtin = (builtin as false)),_) /* user defined Modelica functions, incl. external starts with an
 	   underscore, to distringuish betweeen the lib function for external
 	   functions and the wrapper function. */
       equation
@@ -9017,7 +9017,7 @@ algorithm
       then
         s;
 
-    case (Exp.ARRAY(array = es),_)
+    case (DAE.ARRAY(array = es),_)
       equation
         s = Exp.printListStr(es, printExpCppStr, ",");
         s_1 = stringAppend("{", s);
@@ -9025,7 +9025,7 @@ algorithm
       then
         s_2;
 
-    case (Exp.TUPLE(PR = es),_)
+    case (DAE.TUPLE(PR = es),_)
       equation
         s = Exp.printListStr(es, printExpCppStr, ",");
         s_1 = stringAppend("(", s);
@@ -9033,7 +9033,7 @@ algorithm
       then
         s_2;
 
-    case (Exp.MATRIX(scalar = es),_)
+    case (DAE.MATRIX(scalar = es),_)
       local list<list<tuple<Exp.Exp, Boolean>>> es;
       equation
         s = Exp.printListStr(es, Exp.printRowStr, "},{");
@@ -9042,7 +9042,7 @@ algorithm
       then
         s_2;
 
-    case (Exp.RANGE(exp = start,expOption = NONE,range = stop),pri1)
+    case (DAE.RANGE(exp = start,expOption = NONE,range = stop),pri1)
       equation
         pri2 = 41;
         (s1,pri3) = Exp.printLeftparStr(pri1, pri2);
@@ -9056,7 +9056,7 @@ algorithm
       then
         s_3;
 
-    case (Exp.RANGE(exp = start,expOption = SOME(step),range = stop),pri1)
+    case (DAE.RANGE(exp = start,expOption = SOME(step),range = stop),pri1)
       equation
         pri2 = 41;
         (s1,pri3) = Exp.printLeftparStr(pri1, pri2);
@@ -9073,7 +9073,7 @@ algorithm
       then
         s_5;
 
-    case (Exp.CAST(ty = REAL,exp = Exp.ICONST(integer = ival)),_)
+    case (DAE.CAST(ty = REAL,exp = DAE.ICONST(integer = ival)),_)
       equation
         false = RTOpts.modelicaOutput();
         rval = intReal(ival);
@@ -9081,7 +9081,7 @@ algorithm
       then
         res;
 
-    case (Exp.CAST(ty = REAL,exp = Exp.UNARY(operator = Exp.UMINUS(ty = _),exp = Exp.ICONST(integer = ival))),_)
+    case (DAE.CAST(ty = REAL,exp = DAE.UNARY(operator = DAE.UMINUS(ty = _),exp = DAE.ICONST(integer = ival))),_)
       equation
         false = RTOpts.modelicaOutput();
         rval = intReal(ival);
@@ -9090,7 +9090,7 @@ algorithm
       then
         res2;
 
-    case (Exp.CAST(ty = Exp.ET_REAL(),exp = e),_)
+    case (DAE.CAST(ty = DAE.ET_REAL(),exp = e),_)
       equation
         false = RTOpts.modelicaOutput();
         s = printExpCppStr(e);
@@ -9099,14 +9099,14 @@ algorithm
       then
         s_2;
 
-    case (Exp.CAST(ty = Exp.ET_REAL(),exp = e),_)
+    case (DAE.CAST(ty = DAE.ET_REAL(),exp = e),_)
       equation
         true = RTOpts.modelicaOutput();
         s = printExpCppStr(e);
       then
         s;
 
-    case (Exp.ASUB(exp = e,sub = {e1}),pri1)
+    case (DAE.ASUB(exp = e,sub = {e1}),pri1)
       equation
         pri2 = 51;
         cref_list = Exp.getCrefFromExp(e);
@@ -9122,7 +9122,7 @@ algorithm
       then
         s_4;
 
-    case (Exp.SIZE(exp = cr,sz = SOME(dim)),_)
+    case (DAE.SIZE(exp = cr,sz = SOME(dim)),_)
       equation
         crstr = printExpCppStr(cr);
         dimstr = printExpCppStr(dim);
@@ -9130,14 +9130,14 @@ algorithm
       then
         str;
 
-    case (Exp.SIZE(exp = cr,sz = NONE),_)
+    case (DAE.SIZE(exp = cr,sz = NONE),_)
       equation
         crstr = printExpCppStr(cr);
         str = Util.stringAppendList({"size(",crstr,")"});
       then
         str;
 
-    case (Exp.REDUCTION(path = fcn,expr = exp,ident = id,range = iterexp),_)
+    case (DAE.REDUCTION(path = fcn,expr = exp,ident = id,range = iterexp),_)
       equation
         fs = Absyn.pathString(fcn);
         expstr = printExpCppStr(exp);
@@ -9163,14 +9163,14 @@ algorithm
     local
       String res_1,res_2,res_3,s,ns,ss;
       Exp.ComponentRef n;
-    case (Exp.CREF_IDENT(ident = s))
+    case (DAE.CREF_IDENT(ident = s))
       equation
         res_1 = Util.stringReplaceChar(s, ".", "_");
         res_2 = Util.stringReplaceChar(res_1, "[", "_");
         res_3 = Util.stringReplaceChar(res_2, "]", "_") "& Util.string_append_list({\"_\",res,\"_\"}) => res\'" ;
       then
         res_3;
-    case (Exp.CREF_QUAL(ident = s,componentRef = n))
+    case (DAE.CREF_QUAL(ident = s,componentRef = n))
       equation
         ns = crefModelicaStr(n);
         ss = stringAppend(s, ns) "	string_append(s,\"_\") => s1 & s1" ;
@@ -9211,14 +9211,14 @@ algorithm
     local
       Exp.ComponentRef crefe;
       Absyn.ComponentRef crefa;
-    case(Exp.CREF(componentRef = crefe))
+    case(DAE.CREF(componentRef = crefe))
       equation
         crefa = Exp.unelabCref(crefe);
       then
         crefa;
     case(e) 
       equation
-        print("SimCodegen.getCrefFromExp failed: input was not of Exp.CREF type");
+        print("SimCodegen.getCrefFromExp failed: input was not of DAE.CREF type");
       then 
         fail();
   end matchcontinue;
@@ -9236,9 +9236,9 @@ public function getCalledFunctions
 algorithm
   explist := DAELow.getAllExps(dlow);
   fcallexps := Codegen.getMatchingExpsList(explist, Codegen.matchCalls);
-  fcallexps_1 := Codegen.getMatchingExpsList(explist, Codegen.matchFnRefs);
-  fcallexps_2 := Util.listSelect(listAppend(fcallexps,fcallexps_1), isNotBuiltinCall);
-  calledfuncs := Util.listMap(fcallexps_2, getCallPath);
+  fcallexps_1 := Util.listSelect(fcallexps, isNotBuiltinCall);
+  fcallexps_2 := Codegen.getMatchingExpsList(explist, Codegen.matchFnRefs);
+  calledfuncs := Util.listMap(listAppend(fcallexps_1,fcallexps_2), getCallPath);
   res := removeDuplicatePaths(calledfuncs);
 end getCalledFunctions;
 
@@ -9280,7 +9280,7 @@ algorithm
       String pathstr,debugpathstr;
       Absyn.Path path;
       list<DAE.Element> elements,funcelems;
-      list<Exp.Exp> explist,fcallexps,fcallexps_1, fnrefs;
+      list<Exp.Exp> explist,fcallexps,fcallexps_1,fcallexps_2,fnrefs;
       list<Absyn.ComponentRef> crefs;
       list<Absyn.Path> calledfuncs,res1,res2,res,acc;
       list<String> debugpathstrs;
@@ -9350,22 +9350,15 @@ end getCalledFunctionsInFunction;
 
 protected function isNotBuiltinCall 
 "function: isNotBuiltinCall
-  return true if the given Exp.CALL is a call but not 
-  to a builtin function. checks the builtin flag in Exp.CALL"
+  return true if the given DAE.CALL is a call but not 
+  to a builtin function. checks the builtin flag in DAE.CALL"
   input Exp.Exp inExp;
   output Boolean outBoolean;
 algorithm
-  outBoolean:=
-  matchcontinue (inExp)
-    local
-      Boolean res,builtin;
-      Exp.Exp e;
-    case Exp.CALL(builtin = builtin)
-      equation
-        res = boolNot(builtin);
-      then
-        res;
-    case e then true;
+  outBoolean := matchcontinue (inExp)
+    case DAE.CALL(builtin = true) then false;
+    case DAE.CALL(builtin = false) then true;
+    case _ then false;
   end matchcontinue;
 end isNotBuiltinCall;
 
@@ -9380,8 +9373,8 @@ algorithm
     local 
       Absyn.Path path;
       Exp.ComponentRef cref;
-    case Exp.CALL(path = path) then path;
-    case Exp.CREF(componentRef = cref)
+    case DAE.CALL(path = path) then path;
+    case DAE.CREF(componentRef = cref)
       equation
         path = Exp.crefToPath(cref);
       then

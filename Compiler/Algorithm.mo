@@ -211,15 +211,15 @@ algorithm
     local Exp.ComponentRef c;
       Exp.Type crt,t;
       Exp.Exp rhs_1,e3,e1;
-    case (Exp.CREF(componentRef = c,ty = crt),lhprop,rhs,rhprop)
+    case (DAE.CREF(componentRef = c,ty = crt),lhprop,rhs,rhprop)
       equation 
         (rhs_1,_) = Types.matchProp(rhs, rhprop, lhprop);
         false = Types.isPropArray(lhprop);
         t = getPropExpType(lhprop);
       then
-        DAE.STMT_ASSIGN(t,Exp.CREF(c,crt),rhs_1);
+        DAE.STMT_ASSIGN(t,DAE.CREF(c,crt),rhs_1);
         /* TODO: Use this when we have fixed states in DAELow.lower(...)
-        case (e1 as Exp.CALL(Absyn.IDENT("der"),{Exp.CREF(_,_)},_,_,_),lhprop,rhs,rhprop)
+        case (e1 as DAE.CALL(Absyn.IDENT("der"),{DAE.CREF(_,_)},_,_,_),lhprop,rhs,rhprop)
       equation 
         (rhs_1,_) = Types.matchProp(rhs, rhprop, lhprop);
         false = Types.isPropArray(lhprop);
@@ -227,7 +227,7 @@ algorithm
       then
         DAE.STMT_ASSIGN(t,e1,rhs_1);
       */
-    case (Exp.CREF(componentRef = c,ty = crt),lhprop,rhs,rhprop)
+    case (DAE.CREF(componentRef = c,ty = crt),lhprop,rhs,rhprop)
       equation 
         (rhs_1,_) = Types.matchProp(rhs, rhprop, lhprop);
         true = Types.isPropArray(lhprop);
@@ -235,7 +235,7 @@ algorithm
       then
         DAE.STMT_ASSIGN_ARR(t,c,rhs_1);
         
-    case(e3 as Exp.ASUB(e1,ea2),lhprop,rhs,rhprop)
+    case(e3 as DAE.ASUB(e1,ea2),lhprop,rhs,rhprop)
       local list<Exp.Exp> ea2;
       equation
         (rhs_1,_) = Types.matchProp(rhs, rhprop, lhprop);
@@ -300,7 +300,7 @@ algorithm
          /* Don\'t use new rhs\', since type conversions of several output args
 	 are not clearly defined. */ 
       then
-        DAE.STMT_TUPLE_ASSIGN(Exp.ET_OTHER(),expl,rhs);
+        DAE.STMT_TUPLE_ASSIGN(DAE.ET_OTHER(),expl,rhs);
     case (lhs,lprop,rhs,rprop,_)
       equation 
         Debug.fprint("failtrace", "- Algorithm.makeTupleAssignment failed\n");
@@ -329,10 +329,10 @@ algorithm
   outType:=
   matchcontinue (inType)
     local tuple<Types.TType, Option<Absyn.Path>> t;
-    case ((DAE.T_INTEGER(varLstInt = _),_)) then Exp.ET_INT(); 
-    case ((DAE.T_REAL(varLstReal = _),_)) then Exp.ET_REAL(); 
-    case ((DAE.T_STRING(varLstString = _),_)) then Exp.ET_STRING(); 
-    case ((DAE.T_BOOL(varLstBool = _),_)) then Exp.ET_BOOL(); 
+    case ((DAE.T_INTEGER(varLstInt = _),_)) then DAE.ET_INT(); 
+    case ((DAE.T_REAL(varLstReal = _),_)) then DAE.ET_REAL(); 
+    case ((DAE.T_STRING(varLstString = _),_)) then DAE.ET_STRING(); 
+    case ((DAE.T_BOOL(varLstBool = _),_)) then DAE.ET_BOOL(); 
     case ((DAE.T_ARRAY(arrayType = t),_)) then getTypeExpType(t);
     case ((DAE.T_COMPLEX(_,{},SOME(t),_),_))
        then getTypeExpType(t);
@@ -342,7 +342,7 @@ algorithm
       // record assignments (which actually work just fine). // sjoelund // 2009-05-07
       //print("Warning complex_varList not implemented for Array_assign\n");
       then fail();
-    case ((_,_)) then Exp.ET_OTHER();  /* was fail but records must be handled somehow */ 
+    case ((_,_)) then DAE.ET_OTHER();  /* was fail but records must be handled somehow */ 
   end matchcontinue;
 end getTypeExpType;
 
@@ -517,7 +517,7 @@ algorithm
   matchcontinue (inExp1,inExp2,inProperties3,inProperties4)
     local Exp.Exp var,val,var_1,val_1; Types.Properties prop1,prop2;
       Types.Type tp1,tp2;
-    case (var as Exp.CREF(_,_),val,DAE.PROP(tp1,_),DAE.PROP(tp2,_))  equation
+    case (var as DAE.CREF(_,_),val,DAE.PROP(tp1,_),DAE.PROP(tp2,_))  equation
      (val_1,_) = Types.matchType(val,tp2,(DAE.T_REAL({}),NONE()));
       (var_1,_) = Types.matchType(var,tp1,(DAE.T_REAL({}),NONE()));
     then DAE.STMT_REINIT(var_1,val_1);  
@@ -620,12 +620,12 @@ algorithm
       Ident id;
       Statement elsew;
       Absyn.Path fname;
-    case DAE.STMT_ASSIGN(type_ = expty,exp1 = (e2 as Exp.CREF(cr,_)),exp = exp)
+    case DAE.STMT_ASSIGN(type_ = expty,exp1 = (e2 as DAE.CREF(cr,_)),exp = exp)
       equation 
         crexp = crefToExp(cr);
       then
         {crexp,exp};
-    case DAE.STMT_ASSIGN(type_ = expty,exp1 = (e2 as Exp.ASUB(e1,ea2)),exp = exp)
+    case DAE.STMT_ASSIGN(type_ = expty,exp1 = (e2 as DAE.ASUB(e1,ea2)),exp = exp)
       local list<Exp.Exp> ea2;
       equation 
       then
@@ -727,14 +727,14 @@ end getAllExpsElse;
 
 protected function crefToExp "function: crefToExp
   Creates an expression from a ComponentRef.
-  The type of the expression will become Exp.ET_OTHER."
+  The type of the expression will become DAE.ET_OTHER."
   input Exp.ComponentRef inComponentRef;
   output Exp.Exp outExp;
 algorithm 
   outExp:=
   matchcontinue (inComponentRef)
     local Exp.ComponentRef cref;
-    case cref then Exp.CREF(cref,Exp.ET_OTHER()); 
+    case cref then DAE.CREF(cref,DAE.ET_OTHER()); 
   end matchcontinue;
 end crefToExp;
 

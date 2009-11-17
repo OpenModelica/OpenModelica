@@ -191,7 +191,7 @@ algorithm
   i := tick();
   is := intString(i);
   s := stringAppend("__TMP__", is);
-  outComponentRef := Exp.CREF_IDENT(s,Exp.ET_OTHER(),{});
+  outComponentRef := DAE.CREF_IDENT(s,DAE.ET_OTHER(),{});
 end newIdent;
 
 protected function select 
@@ -1174,7 +1174,7 @@ algorithm
       indx = HashTable.get(DAEUtil.varCref(v),ht);
       SOME(unit) = vec[indx];
       unitStr = UnitAbsynBuilder.unit2str(unit);
-      varOpt = DAEUtil.setUnitAttr(varOpt,Exp.SCONST(unitStr));
+      varOpt = DAEUtil.setUnitAttr(varOpt,DAE.SCONST(unitStr));
       v = DAEUtil.setVariableAttributes(v,varOpt);
       dae = updateDeducedUnits(true,store,dae);
       then v::dae;
@@ -1217,18 +1217,18 @@ algorithm prefixCon := matchcontinue(connectorRef)
     list<Exp.Subscript> subs;
     Exp.Type ty;
     
-  case(Exp.CREF_IDENT(name,_,_)) // If the bottom var is a connector, then it is not an outside connector. (spec 0.1.2)
+  case(DAE.CREF_IDENT(name,_,_)) // If the bottom var is a connector, then it is not an outside connector. (spec 0.1.2)
     /*equation print(name +& " is not a outside connector \n");*/
     then fail();
       
-  case(Exp.CREF_QUAL(name,(ty as Exp.ET_COMPLEX(complexClassType=ClassInf.CONNECTOR(_,_))),subs,_))
-    then Exp.CREF_IDENT(name,ty,subs);
+  case(DAE.CREF_QUAL(name,(ty as DAE.ET_COMPLEX(complexClassType=ClassInf.CONNECTOR(_,_))),subs,_))
+    then DAE.CREF_IDENT(name,ty,subs);
       
-  case(Exp.CREF_QUAL(name,ty,subs,child))
+  case(DAE.CREF_QUAL(name,ty,subs,child))
     equation
       child = extractConnectorPrefix(child); 
     then 
-      Exp.CREF_QUAL(name,ty,subs,child);
+      DAE.CREF_QUAL(name,ty,subs,child);
       
 end matchcontinue;
 end extractConnectorPrefix;
@@ -1249,7 +1249,7 @@ algorithm outdae := matchcontinue(zeroEqns,fullDae)
     Exp.ComponentRef cr;
   case({},fullDae) then fullDae;
   case(_, {}) equation print(" error in updateTypesInUnconnectedConnectors\n"); then fail();
-  case((ze as DAE.EQUATION(exp = (e as Exp.CREF(cr,_))))::zeroEqns, fullDae)
+  case((ze as DAE.EQUATION(exp = (e as DAE.CREF(cr,_))))::zeroEqns, fullDae)
     equation
       //print(Exp.printComponentRefStr(cr));
       cr = extractConnectorPrefix(cr);
@@ -1258,7 +1258,7 @@ algorithm outdae := matchcontinue(zeroEqns,fullDae)
       fullDae = updateTypesInUnconnectedConnectors(zeroEqns,fullDae);
     then
       fullDae;
-  case((ze as DAE.EQUATION(scalar = (e as Exp.CREF(cr,_))))::zeroEqns, fullDae)
+  case((ze as DAE.EQUATION(scalar = (e as DAE.CREF(cr,_))))::zeroEqns, fullDae)
     equation
       //print(Exp.printComponentRefStr(cr));
       cr = extractConnectorPrefix(cr); 
@@ -1267,14 +1267,14 @@ algorithm outdae := matchcontinue(zeroEqns,fullDae)
       fullDae = updateTypesInUnconnectedConnectors(zeroEqns,fullDae);
     then
       fullDae;
-  case((ze as DAE.EQUATION(exp = (e as Exp.CREF(cr,_))))::zeroEqns, fullDae)
+  case((ze as DAE.EQUATION(exp = (e as DAE.CREF(cr,_))))::zeroEqns, fullDae)
     equation
       failure(cr = extractConnectorPrefix(cr));
       //print("Var is not a outside connector: " +& Exp.printComponentRefStr(cr));
       fullDae = updateTypesInUnconnectedConnectors(zeroEqns,fullDae);
     then
       fullDae;
-  case((ze as DAE.EQUATION(scalar = (e as Exp.CREF(cr,_))))::zeroEqns, fullDae)
+  case((ze as DAE.EQUATION(scalar = (e as DAE.CREF(cr,_))))::zeroEqns, fullDae)
     equation
       failure(cr = extractConnectorPrefix(cr)); 
       //print("Var is not a outside connector: " +& Exp.printComponentRefStr(cr));
@@ -1333,18 +1333,18 @@ algorithm outCref := matchcontinue(cr1,cr2)
     Exp.ComponentRef child,child2;
     Exp.Type ty;
     list<Exp.Subscript> subs;
-  case(Exp.CREF_IDENT(name,ty,subs),Exp.CREF_QUAL(name2,_,_,child2))
+  case(DAE.CREF_IDENT(name,ty,subs),DAE.CREF_QUAL(name2,_,_,child2))
     equation
       true = stringEqual(name,name2);
     then
-      Exp.CREF_QUAL(name,ty,subs,child2);
+      DAE.CREF_QUAL(name,ty,subs,child2);
       
-  case(Exp.CREF_QUAL(name,ty,subs,child),Exp.CREF_QUAL(name2,_,_,child2))
+  case(DAE.CREF_QUAL(name,ty,subs,child),DAE.CREF_QUAL(name2,_,_,child2))
     equation
       true = stringEqual(name,name2);
       outCref = updateCrefTypesWithConnectorPrefix(child,child2);
     then
-      Exp.CREF_QUAL(name,ty,subs,outCref);
+      DAE.CREF_QUAL(name,ty,subs,outCref);
   case(cr1,cr2)
     equation
       print(" ***** FAILURE with " +& Exp.printComponentRefStr(cr1) +& " _and_ " +& Exp.printComponentRefStr(cr2) +& "\n");
@@ -1895,7 +1895,7 @@ algorithm
       Integer i;
       list<Exp.Subscript> ss;
     case ({}) then {}; 
-    case ((Exp.INDEX(exp = Exp.ICONST(integer = i)) :: ss))
+    case ((DAE.INDEX(exp = DAE.ICONST(integer = i)) :: ss))
       equation 
         res = instdimsIntOptList(ss);
       then
@@ -2594,7 +2594,7 @@ algorithm outComps := matchcontinue(inComps, ocr,allComps,className,existing)
     case({},_,_,_,_) then fail();
     case(inComps,NONE,_,_,_) then inComps;
       /*
-    case( (selem as SCode.CLASSDEF(name=name2))::inComps,SOME(Exp.CREF_IDENT(ident=name)),allComps,className,existing)
+    case( (selem as SCode.CLASSDEF(name=name2))::inComps,SOME(DAE.CREF_IDENT(ident=name)),allComps,className,existing)
       local
         list<Absyn.ComponentRef> crefs,crefs2;
       equation
@@ -2603,7 +2603,7 @@ algorithm outComps := matchcontinue(inComps, ocr,allComps,className,existing)
       then
         selem::outComps;
         */
-    case( ((selem as SCode.CLASSDEF(name=name2)))::inComps,SOME(Exp.CREF_IDENT(ident=name)),allComps,className,existing)
+    case( ((selem as SCode.CLASSDEF(name=name2)))::inComps,SOME(DAE.CREF_IDENT(ident=name)),allComps,className,existing)
       equation
         //false = stringEqual(name,name2);   
         allComps = listAppend({selem},allComps);
@@ -2612,7 +2612,7 @@ algorithm outComps := matchcontinue(inComps, ocr,allComps,className,existing)
       then //extractConstantPlusDeps2(inComps,ocr,allComps,className,existing);
          selem::outComps;
          
-    case((selem as SCode.COMPONENT(component=name2,modifications=scmod))::inComps,SOME(Exp.CREF_IDENT(ident=name)),allComps,className,existing)
+    case((selem as SCode.COMPONENT(component=name2,modifications=scmod))::inComps,SOME(DAE.CREF_IDENT(ident=name)),allComps,className,existing)
       local 
         list<Absyn.ComponentRef> crefs,crefs2;
       equation
@@ -2624,27 +2624,27 @@ algorithm outComps := matchcontinue(inComps, ocr,allComps,className,existing)
       then
         selem::recDeps;
         
-    case( ( (selem as SCode.COMPONENT(component=name2)))::inComps,SOME(Exp.CREF_IDENT(ident=name)),allComps,className,existing)
+    case( ( (selem as SCode.COMPONENT(component=name2)))::inComps,SOME(DAE.CREF_IDENT(ident=name)),allComps,className,existing)
       equation
         false = stringEqual(name,name2);
         allComps = listAppend({selem},allComps);
       then extractConstantPlusDeps2(inComps,ocr,allComps,className,existing);
          
-    case((compMod as SCode.EXTENDS(baseClassPath=p))::inComps,(ocr as SOME(Exp.CREF_IDENT(ident=_))),allComps,className,existing)
+    case((compMod as SCode.EXTENDS(baseClassPath=p))::inComps,(ocr as SOME(DAE.CREF_IDENT(ident=_))),allComps,className,existing)
       local Absyn.Path p; 
       equation 
         allComps = listAppend({compMod},allComps);
         recDeps = extractConstantPlusDeps2(inComps,ocr,allComps,className,existing); 
         then 
           compMod::recDeps;
-    case((compMod as SCode.IMPORT(imp=_))::inComps,(ocr as SOME(Exp.CREF_IDENT(ident=_))),allComps,className,existing) 
+    case((compMod as SCode.IMPORT(imp=_))::inComps,(ocr as SOME(DAE.CREF_IDENT(ident=_))),allComps,className,existing) 
       equation 
         allComps = listAppend({compMod},allComps);
         recDeps = extractConstantPlusDeps2(inComps,ocr,allComps,className,existing); 
       then 
         compMod::recDeps;
         
-    case((compMod as SCode.DEFINEUNIT(name=_))::inComps,(ocr as SOME(Exp.CREF_IDENT(ident=_))),allComps,className,existing) 
+    case((compMod as SCode.DEFINEUNIT(name=_))::inComps,(ocr as SOME(DAE.CREF_IDENT(ident=_))),allComps,className,existing) 
       equation 
         allComps = listAppend({compMod},allComps);
         recDeps = extractConstantPlusDeps2(inComps,ocr,allComps,className,existing); 
@@ -2695,7 +2695,7 @@ algorithm outComps := matchcontinue(acrefs,remainingComps,className,existing)
       list<SCode.Element> elems;
       list<String> names;
     equation
-      localComps = extractConstantPlusDeps2(remainingComps,SOME(Exp.CREF_IDENT(s1,Exp.ET_OTHER(),{})),{},className,existing);
+      localComps = extractConstantPlusDeps2(remainingComps,SOME(DAE.CREF_IDENT(s1,DAE.ET_OTHER(),{})),{},className,existing);
       names = SCode.componentNamesFromElts(localComps);
       existing = listAppend(names,existing);
       outComps = extractConstantPlusDeps3(acrefs,remainingComps,className,existing);
@@ -2945,13 +2945,13 @@ algorithm
         outerCrs = Util.listMap(outerVars,DAEUtil.varCref);
 	      ourOuterCrs = Util.listSelect1(outerCrs,cr,isInnerOuterMatch);
 	      cr = DAEUtil.nameInnerouterUniqueCref(cr);
-        repl = Util.listFold_2r(ourOuterCrs,VarTransform.addReplacement,repl,Exp.CREF(cr,Exp.ET_OTHER()));
+        repl = Util.listFold_2r(ourOuterCrs,VarTransform.addReplacement,repl,DAE.CREF(cr,DAE.ET_OTHER()));
 	    then repl;
 	  case(DAE.VAR(componentRef = cr),outerVars,repl) 
 	    equation
 	      outerCrs = Util.listMap(outerVars,DAEUtil.varCref);
 	      ourOuterCrs = Util.listSelect1(outerCrs,cr,isInnerOuterMatch);
-	      repl = Util.listFold_2r(ourOuterCrs,VarTransform.addReplacement,repl,Exp.CREF(cr,Exp.ET_OTHER()));
+	      repl = Util.listFold_2r(ourOuterCrs,VarTransform.addReplacement,repl,DAE.CREF(cr,DAE.ET_OTHER()));
 	    then repl;
 	end matchcontinue;
 end buildInnerOuterReplVar;
@@ -2989,7 +2989,7 @@ algorithm
     Exp.Ident id1,id2;
     list<Exp.Subscript> subs1,subs2;
   	Exp.ComponentRef cr1,cr2,cr11,cr22;
-    case(Exp.CREF_QUAL(id1,_,subs1,cr1),Exp.CREF_QUAL(id2,_,subs2,cr2)) 
+    case(DAE.CREF_QUAL(id1,_,subs1,cr1),DAE.CREF_QUAL(id2,_,subs2,cr2)) 
       equation
         equality(id1=id2);
         (cr11,cr22) = stripCommonCrefPart(cr1,cr2);
@@ -3471,7 +3471,7 @@ algorithm
     case (Connect.SETS(connection = crs),prefix,
         (Env.FRAME(n,bt1,bt2,imp,bc,_,enc,defineUnits) :: fs),ih)
       equation
-      then (Env.FRAME(n,bt1,bt2,imp,bc,(crs,Exp.CREF_IDENT("",Exp.ET_OTHER(),{})),enc,defineUnits) :: fs,ih); 
+      then (Env.FRAME(n,bt1,bt2,imp,bc,(crs,DAE.CREF_IDENT("",DAE.ET_OTHER(),{})),enc,defineUnits) :: fs,ih); 
  
   end matchcontinue;
 end addConnectionSetToEnv;
@@ -5287,7 +5287,7 @@ algorithm
         // Fails if multiple decls not identical
         alreadyDeclared = checkMultiplyDeclared(cache,env,mods,pre,csets,ci_state,(comp,cmod),inst_dims,impl);
         ci_state = ClassInf.trans(ci_state, ClassInf.FOUND_COMPONENT());
-        vn = Prefix.prefixCref(pre, Exp.CREF_IDENT(n,Exp.ET_OTHER(),{})); 
+        vn = Prefix.prefixCref(pre, DAE.CREF_IDENT(n,DAE.ET_OTHER(),{})); 
         //Debug.fprint(\"insttr\", \"Instantiating component \") &
 				//Debug.fprint(\"insttr\", n) & //Debug.fprint(\"insttr\", \"\\n\") &" 
 				
@@ -5413,7 +5413,7 @@ algorithm
         // Fails if multiple decls not identical
         alreadyDeclared = checkMultiplyDeclared(cache,env,mods,pre,csets,ci_state,(comp,cmod),inst_dims,impl);
         //checkRecursiveDefinition(env,t);
-        vn = Prefix.prefixCref(pre, Exp.CREF_IDENT(n,Exp.ET_OTHER(),{}));
+        vn = Prefix.prefixCref(pre, DAE.CREF_IDENT(n,DAE.ET_OTHER(),{}));
         // Debug.fprint(\"insttr\", \"Instantiating component \") &
         // Debug.fprint(\"insttr\", n) & //Debug.fprint(\"insttr\", \"\\n\") &"
 
@@ -6316,7 +6316,7 @@ algorithm
         
         //Generate variable with default binding
         ty_2 = Types.elabType(ty_1);
-        cr = Prefix.prefixCref(pre, Exp.CREF_IDENT(n,ty_2,{}));
+        cr = Prefix.prefixCref(pre, DAE.CREF_IDENT(n,ty_2,{}));
         dae = daeDeclare(cr, ci_state, ty, attr, prot, SOME(e_1), {dims_1}, NONE, dae_var_attr, comment,io,finalPrefix,true);
         store = UnitAbsynBuilder.instAddStore(store,ty,cr);
       then
@@ -6331,7 +6331,7 @@ algorithm
         ClassInf.isFunction(ci_state);
          //Instantiate type of the component, skip dae/not flattening
         (cache,env_1,ih,store,_,csets,ty,st,_,_) = instClass(cache, env, ih, store, mod, pre, csets, cl, inst_dims, impl, INNER_CALL(), ConnectionGraph.EMPTY) ;
-        cr = Prefix.prefixCref(pre, Exp.CREF_IDENT(n,Exp.ET_OTHER(),{}));
+        cr = Prefix.prefixCref(pre, DAE.CREF_IDENT(n,DAE.ET_OTHER(),{}));
         (cache,dae_var_attr) = instDaeVariableAttributes(cache,env, mod, ty, {});
         //Do all dimensions...
         dims_1 = instDimExpLst(dims, impl)  ;
@@ -6353,7 +6353,7 @@ algorithm
         dae1_1 = propagateAttributes(dae1, dir,io,SCode.CONST());
         subs = Exp.intSubscripts(idxs_1);
         identType = makeCrefBaseType(ty,inst_dims);
-        cr = Prefix.prefixCref(pre, Exp.CREF_IDENT(n,identType,subs));        
+        cr = Prefix.prefixCref(pre, DAE.CREF_IDENT(n,identType,subs));        
         (cache,dae_var_attr) = instDaeVariableAttributes(cache,env, mod, ty, {});
         dae3 = daeDeclare(cr, ci_state, ty, SCode.ATTR({},flowPrefix,streamPrefix,acc,vt,dir),prot, SOME(e), inst_dims, NONE, dae_var_attr, comment,io,finalPrefix,false);
         dae = listAppend(dae1_1, dae3);
@@ -6374,7 +6374,7 @@ algorithm
         dae1_1 = propagateAttributes(dae1, dir,io,SCode.PARAM());
         subs = Exp.intSubscripts(idxs_1);
         identType = makeCrefBaseType(ty,inst_dims);
-        cr = Prefix.prefixCref(pre, Exp.CREF_IDENT(n,identType,subs));   
+        cr = Prefix.prefixCref(pre, DAE.CREF_IDENT(n,identType,subs));   
         start = instStartBindingExp(mod, ty, idxs_1);
         (cache,dae_var_attr) = instDaeVariableAttributes(cache,env, mod, ty, {});
         dae3 = daeDeclare(cr, ci_state, ty, SCode.ATTR({},flowPrefix,streamPrefix,acc,vt,dir),prot, SOME(e), inst_dims, start, dae_var_attr, comment,io,finalPrefix,false);
@@ -6406,7 +6406,7 @@ algorithm
         dae1_1 = propagateAttributes(dae1, dir,io,vt);
         subs = Exp.intSubscripts(idxs_1);
         identType = makeCrefBaseType(ty,inst_dims);
-        cr = Prefix.prefixCref(pre, Exp.CREF_IDENT(n,identType,subs));
+        cr = Prefix.prefixCref(pre, DAE.CREF_IDENT(n,identType,subs));
         dae2 = instModEquation(cr, ty, mod, impl);
         index_string = Util.listMap(idxs_1, int_string);
         //Debug.fprint("insttrind", "\n ******************\n ");
@@ -7104,21 +7104,21 @@ algorithm
       Integer i;
       Exp.Subscript eSubscr;
 
-    /* TODO: Fix slicing, e.g. Exp.SLICE, for impl=true */ 
-    case (DIMEXP(subscript = Exp.WHOLEDIM()),(impl as false)) 
+    /* TODO: Fix slicing, e.g. DAE.SLICE, for impl=true */ 
+    case (DIMEXP(subscript = DAE.WHOLEDIM()),(impl as false)) 
       equation 
         Error.addMessage(Error.DIMENSION_NOT_KNOWN, {":"});
       then
         fail();
-    case (DIMEXP(subscript = Exp.SLICE(exp = e)),(impl as false))
+    case (DIMEXP(subscript = DAE.SLICE(exp = e)),(impl as false))
       equation 
         s = Exp.printExpStr(e);
         Error.addMessage(Error.DIMENSION_NOT_KNOWN, {s});
       then
         fail();
-    case (DIMEXP(subscript = (eSubscr as Exp.WHOLEDIM())),(impl as true)) then eSubscr;
-    case (DIMINT(integer = i),_) then Exp.INDEX(Exp.ICONST(i)); 
-    case (DIMEXP(subscript = (eSubscr as Exp.INDEX(exp = _))),_) then eSubscr;
+    case (DIMEXP(subscript = (eSubscr as DAE.WHOLEDIM())),(impl as true)) then eSubscr;
+    case (DIMINT(integer = i),_) then DAE.INDEX(DAE.ICONST(i)); 
+    case (DIMEXP(subscript = (eSubscr as DAE.INDEX(exp = _))),_) then eSubscr;
   end matchcontinue;
 end instDimExp;
 
@@ -7427,9 +7427,9 @@ algorithm
         SOME(DAE.TYPED(e,_,p)) = Mod.modEquation(mod);
         (cache,env_1,ih,store,_,csets,ty,st,_,graph) = instClass(cache,env,ih,store, mod, pre, csets, cl, inst_dims, true, INNER_CALL(),graph) "Which has an expression binding";
         ty_1 = Types.elabType(ty);
-        cr = Prefix.prefixCref(pre,Exp.CREF_IDENT(n,ty_1,{})) "check their types";        
+        cr = Prefix.prefixCref(pre,DAE.CREF_IDENT(n,ty_1,{})) "check their types";        
         (e_1,_) = Types.matchProp(e,p, DAE.PROP(ty,DAE.C_VAR()));
-        dae = makeDaeEquation(Exp.CREF(cr,ty_1), e_1, SCode.NON_INITIAL());
+        dae = makeDaeEquation(DAE.CREF(cr,ty_1), e_1, SCode.NON_INITIAL());
       then
         (cache,env_1,ih,store,{dae},csets,ty,graph);
 
@@ -7467,11 +7467,11 @@ algorithm
         i_1 = i + 1;
         (cache,_,ih,store,dae2,csets_2,arrty) = 
            instArray(cache,env,ih,store, ci_state, DAE.NOMOD(), pre, csets_1, n, (cl,attr),prot, i_1, DIMINT(stop), dims, idxs, inst_dims, impl, comment,io);
-        cr = Prefix.prefixCref(pre, Exp.CREF_IDENT(n,Exp.ET_OTHER(),{})) "Make the equation containing the functioncall" ;
+        cr = Prefix.prefixCref(pre, DAE.CREF_IDENT(n,DAE.ET_OTHER(),{})) "Make the equation containing the functioncall" ;
         arrty_1 = Types.elabType(arrty);
         b = attrIsParam(attr) "if parameter, add equation to initial eqn" ;
         eqn_place = Util.if_(b, SCode.INITIAL(), SCode.NON_INITIAL());
-        dae3 = makeDaeEquation(Exp.CREF(cr,arrty_1), e, eqn_place);
+        dae3 = makeDaeEquation(DAE.CREF(cr,arrty_1), e, eqn_place);
         daeLst = Util.listFlatten({dae1,dae2,{dae3}});
       then
         (cache,env_1,ih,store,daeLst,csets_2,ty);
@@ -7590,7 +7590,7 @@ algorithm
       Exp.ComponentRef cref;
       Env.Cache cache;
       
-    case (cache,env,(cref as Exp.CREF_IDENT(ident = id)))
+    case (cache,env,(cref as DAE.CREF_IDENT(ident = id)))
       equation 
         (cache,ty,SOME((SCode.COMPONENT(n,io,finalPrefix,repl,prot,(attr as SCode.ATTR(ad,flowPrefix,streamPrefix,acc,param,dir)),_,m,bc,comment,_,_,_),cmod)),_) 
         	= Lookup.lookupIdent(cache,env, id);
@@ -7925,14 +7925,14 @@ algorithm
         (cache,e,DAE.PROP((DAE.T_INTEGER(_),_),cnst),_) = Static.elabExp(cache,env, d, impl, st,doVect);
         (cache,l) = elabArraydimDecl(cache,env, cref, ds, impl, st,doVect);
       then
-        (cache,SOME(DIMEXP(Exp.INDEX(e),NONE)) :: l);
+        (cache,SOME(DIMEXP(DAE.INDEX(e),NONE)) :: l);
     /* Size(x,1) in e.g. functions => Unknown dimension */
     case (cache,env,cref,(Absyn.SUBSCRIPT(subScript = d) :: ds),impl,st,doVect)
       equation 
-        (cache,(e as Exp.SIZE(_,_)),DAE.PROP(t,_),_) = Static.elabExp(cache,env, d, impl, st,doVect);
+        (cache,(e as DAE.SIZE(_,_)),DAE.PROP(t,_),_) = Static.elabExp(cache,env, d, impl, st,doVect);
         (cache,l) = elabArraydimDecl(cache,env, cref, ds, impl, st,doVect);
       then
-        (cache,SOME(DIMEXP(Exp.INDEX(e),NONE)) :: l);
+        (cache,SOME(DIMEXP(DAE.INDEX(e),NONE)) :: l);
     case (cache,env,cref,(Absyn.SUBSCRIPT(subScript = d) :: ds),impl,st,doVect)
       equation 
         (cache,e,DAE.PROP(t,_),_) = Static.elabExp(cache,env, d, impl, st,doVect);
@@ -7972,7 +7972,7 @@ algorithm
       equation 
         xs_1 = completeArraydim(xs);
       then
-        (DIMEXP(Exp.WHOLEDIM(),NONE) :: xs_1);
+        (DIMEXP(DAE.WHOLEDIM(),NONE) :: xs_1);
   end matchcontinue;
 end completeArraydim;
 
@@ -8014,13 +8014,13 @@ algorithm
         (DIMINT(xI) :: l);
     case ((SOME(DIMINT(xI)) :: xs),(SOME(DIMEXP(yS,e)) :: ys))
       equation 
-        de = arraydimCondition(DIMEXP(Exp.INDEX(Exp.ICONST(xI)),NONE), DIMEXP(yS,e));
+        de = arraydimCondition(DIMEXP(DAE.INDEX(DAE.ICONST(xI)),NONE), DIMEXP(yS,e));
         l = compatibleArraydim(xs, ys);
       then
         (de :: l);
     case ((SOME(DIMEXP(xS,e)) :: xs),(SOME(DIMINT(yI)) :: ys))
       equation 
-        de = arraydimCondition(DIMEXP(Exp.INDEX(Exp.ICONST(yI)),NONE), DIMEXP(xS,e));
+        de = arraydimCondition(DIMEXP(DAE.INDEX(DAE.ICONST(yI)),NONE), DIMEXP(xS,e));
         l = compatibleArraydim(xs, ys);
       then
         (de :: l);
@@ -8034,7 +8034,7 @@ algorithm
       equation 
         l = compatibleArraydim(xs, ys);
       then
-        (DIMEXP(Exp.WHOLEDIM(),NONE) :: l);
+        (DIMEXP(DAE.WHOLEDIM(),NONE) :: l);
     case (_,_)
       equation 
         Debug.fprintln("failtrace", "- Inst.compatibleArraydim failed");
@@ -8895,7 +8895,7 @@ algorithm
       equation         
         (cache,dimp,DAE.PROP(dimty,_),_) = Static.elabExp(cache, env, dim, impl, NONE,false);
         (cache,arraycrefe,arraycrprop,_) = Static.elabExp(cache, env, arraycr, impl, NONE,false);
-        exp = Exp.SIZE(arraycrefe,SOME(dimp));
+        exp = DAE.SIZE(arraycrefe,SOME(dimp));
       then
         (cache,exp,DAE.PROP((DAE.T_INTEGER({}),NONE),DAE.C_VAR()),st);
     /* For all other expressions, use normal elaboration */
@@ -9004,12 +9004,12 @@ algorithm
       Exp.Exp dim,exp;
       Types.Properties prop;
       Env.Cache cache;
-    case (cache,env,Exp.CREF(componentRef = cref,ty = crty),DAE.PROP(type_ = ty,constFlag = cnst))
+    case (cache,env,DAE.CREF(componentRef = cref,ty = crty),DAE.PROP(type_ = ty,constFlag = cnst))
       equation 
         (cache,attr,ty,bnd) = Lookup.lookupVarLocal(cache,env, cref);
       then
         (cache,DAE.EXTARG(cref,attr,ty));
-    case (cache,env,Exp.CREF(componentRef = cref,ty = crty),DAE.PROP(type_ = ty,constFlag = cnst))
+    case (cache,env,DAE.CREF(componentRef = cref,ty = crty),DAE.PROP(type_ = ty,constFlag = cnst))
       equation 
         failure((_,attr,ty,bnd) = Lookup.lookupVarLocal(cache,env, cref));
         crefstr = Exp.printComponentRefStr(cref);
@@ -9017,7 +9017,7 @@ algorithm
         Error.addMessage(Error.LOOKUP_VARIABLE_ERROR, {crefstr,scope});
       then
         fail();
-    case (cache,env,Exp.SIZE(exp = Exp.CREF(componentRef = cref,ty = crty),sz = SOME(dim)),DAE.PROP(type_ = ty,constFlag = cnst))
+    case (cache,env,DAE.SIZE(exp = DAE.CREF(componentRef = cref,ty = crty),sz = SOME(dim)),DAE.PROP(type_ = ty,constFlag = cnst))
       equation 
         (cache,attr,varty,bnd) = Lookup.lookupVarLocal(cache,env, cref);
       then
@@ -9749,7 +9749,7 @@ algorithm
         //   equation
         //     true = RTOpts.acceptMetaModelicaGrammar();
         // If this is a list assignment, then the Absyn.ARRAY expression should
-        // be evaluated to Exp.LIST
+        // be evaluated to DAE.LIST
         //   (cache,_,cprop,_) = Static.elabCref(cache,env, cr, impl,false);
         //   true = MetaUtil.isList(cprop);
         // Do static analysis and constant evaluation of expressions.
@@ -9921,7 +9921,7 @@ algorithm
         len = listLength(elementLst);        
         env_1 = addForLoopScope(env, i, (DAE.T_INTEGER({}),NONE())) "//Debug.fprintln (\"insti\", \"for expression elaborated\") &" ;
         (cache,DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),_,_),(DAE.T_INTEGER(_),_),DAE.UNBOUND(),_,_) 
-        = Lookup.lookupVar(cache,env_1, Exp.CREF_IDENT(i,Exp.ET_OTHER(),{})) "	//Debug.fprintln (\"insti\", \"loop-variable added to scope\") &" ;
+        = Lookup.lookupVar(cache,env_1, DAE.CREF_IDENT(i,DAE.ET_OTHER(),{})) "	//Debug.fprintln (\"insti\", \"loop-variable added to scope\") &" ;
         vals = Ceval.cevalRange(1,1,len);
         (cache,dae,csets_1,graph) = unroll(cache,env_1, mod, pre, csets, ci_state, i, Values.ARRAY(vals), el, initial_, impl,graph) "	//Debug.fprintln (\"insti\", \"for expression evaluated\") &" ;
         ci_state_1 = instEquationCommonCiTrans(ci_state, initial_) "	//Debug.fprintln (\"insti\", \"for expression unrolled\") & 	& //Debug.fprintln (\"insttr\", \"inst_equation_common_eqfor_1 succeeded\")" ;
@@ -9945,7 +9945,7 @@ algorithm
         (cache,e_1,DAE.PROP((DAE.T_ARRAY(DAE.DIM(_),id_t),_),_),_) = Static.elabExp(cache,env, e, impl, NONE,true) "//Debug.fprintln (\"insttr\", \"inst_equation_common_eqfor_1\") &" ;
         env_1 = addForLoopScope(env, i, id_t) "//Debug.fprintln (\"insti\", \"for expression elaborated\") &" ;
         (cache,DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),_,_),(DAE.T_INTEGER(_),_),DAE.UNBOUND(),_,_) 
-        = Lookup.lookupVar(cache,env_1, Exp.CREF_IDENT(i,Exp.ET_OTHER(),{})) "	//Debug.fprintln (\"insti\", \"loop-variable added to scope\") &" ;
+        = Lookup.lookupVar(cache,env_1, DAE.CREF_IDENT(i,DAE.ET_OTHER(),{})) "	//Debug.fprintln (\"insti\", \"loop-variable added to scope\") &" ;
         (cache,v,_) = Ceval.ceval(cache,env, e_1, impl, NONE, NONE, Ceval.MSG()) "	//Debug.fprintln (\"insti\", \"loop variable looked up\") & FIXME: Check bounds" ;
         (cache,dae,csets_1,graph) = unroll(cache,env_1, mod, pre, csets, ci_state, i, v, el, initial_, impl,graph) "	//Debug.fprintln (\"insti\", \"for expression evaluated\") &" ;
         ci_state_1 = instEquationCommonCiTrans(ci_state, initial_) "	//Debug.fprintln (\"insti\", \"for expression unrolled\") & 	& //Debug.fprintln (\"insttr\", \"inst_equation_common_eqfor_1 succeeded\")" ;
@@ -9957,7 +9957,7 @@ algorithm
         (cache,e_1,DAE.PROP((DAE.T_ARRAY(DAE.DIM(_),id_t),_),_),_) = Static.elabExp(cache,env, e, impl, NONE,true) "//Debug.fprintln (\"insttr\", \"inst_equation_common_eqfor_1\") &" ;
         env_1 = addForLoopScope(env, i, id_t) "//Debug.fprintln (\"insti\", \"for expression elaborated\") &" ;
         (cache,DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),_,_),(DAE.T_INTEGER(_),_),DAE.UNBOUND(),_,_) 
-        = Lookup.lookupVar(cache,env_1, Exp.CREF_IDENT(i,Exp.ET_OTHER(),{})) "	//Debug.fprintln (\"insti\", \"loop-variable added to scope\") &" ;
+        = Lookup.lookupVar(cache,env_1, DAE.CREF_IDENT(i,DAE.ET_OTHER(),{})) "	//Debug.fprintln (\"insti\", \"loop-variable added to scope\") &" ;
         (cache,v,_) = Ceval.ceval(cache,env, e_1, impl, NONE, NONE, Ceval.MSG()) "	//Debug.fprintln (\"insti\", \"loop variable looked up\") & FIXME: Check bounds" ;
         (cache,dae,csets_1,graph) = unroll(cache,env_1, mod, pre, csets, ci_state, i, v, el, initial_, impl,graph) "	//Debug.fprintln (\"insti\", \"for expression evaluated\") &" ;
         ci_state_1 = instEquationCommonCiTrans(ci_state, initial_) "	//Debug.fprintln (\"insti\", \"for expression unrolled\") & 	& //Debug.fprintln (\"insttr\", \"inst_equation_common_eqfor_1 succeeded\")" ;
@@ -9967,7 +9967,7 @@ algorithm
     case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_FOR(index = i,range = e,eEquationLst = el),initial_,impl,graph)
       equation 
         (cache,DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),_,_),(DAE.T_INTEGER(_),_),DAE.UNBOUND(),_,_) 
-        	= Lookup.lookupVar(cache,env, Exp.CREF_IDENT(i,Exp.ET_OTHER(),{})) "for loops with non-constant iteration bounds" ;
+        	= Lookup.lookupVar(cache,env, DAE.CREF_IDENT(i,DAE.ET_OTHER(),{})) "for loops with non-constant iteration bounds" ;
         (cache,e_1,DAE.PROP((DAE.T_ARRAY(DAE.DIM(_),(DAE.T_INTEGER(_),_)),_),DAE.C_VAR()),_) 
         	= Static.elabExp(cache,env, e, impl, NONE,true);
         Error.addMessage(Error.UNSUPPORTED_LANGUAGE_FEATURE, 
@@ -9998,13 +9998,13 @@ algorithm
         Exp.ComponentRef cr_2; Exp.Type t; Types.Properties tprop1,tprop2;
       equation 
         (cache,e1_1,tprop2,_) = Static.elabExp(cache,env, Absyn.CREF(cr), impl, NONE,true);
-        (cache,Exp.CREF(cr_1,t),tprop1,_) = Static.elabCref(cache,env, cr, impl,false) "reinit statement" ;
+        (cache,DAE.CREF(cr_1,t),tprop1,_) = Static.elabCref(cache,env, cr, impl,false) "reinit statement" ;
         (cache,e2_1,tprop2,_) = Static.elabExp(cache,env, e2, impl, NONE,true);
         (e2_1,_) = Types.matchProp(e2_1, tprop2, tprop1);
         (cache,e1_1,e2_1,tprop1) = condenseArrayEquation(cache,env,Absyn.CREF(cr),e2,e1_1,e2_1,tprop1,tprop2,impl);
         (cache,e2_2) = Prefix.prefixExp(cache,env, e2_1, pre);
         (cache,e1_2) = Prefix.prefixExp(cache,env, e1_1, pre);
-        //(cache,Exp.CREF(cr_2,_)) = Prefix.prefixExp(cache,env, Exp.CREF(cr_1,t), pre);   
+        //(cache,DAE.CREF(cr_2,_)) = Prefix.prefixExp(cache,env, DAE.CREF(cr_1,t), pre);   
         trDae = instEqEquation(e1_2, tprop1, e2_2, tprop2, initial_, impl);
         trDae = Util.listMap(trDae,makeDAEArrayEqToReinitForm);
       then
@@ -10015,7 +10015,7 @@ algorithm
               Absyn.FUNCTIONARGS({Absyn.CREF(cr)}, {}),_),initial_,impl,graph)
       local Absyn.ComponentRef cr; Exp.ComponentRef cr_; Exp.Type t; 
       equation 
-        (cache,Exp.CREF(cr_,t),_,_) = Static.elabCref(cache,env, cr, false /* ??? */,false);
+        (cache,DAE.CREF(cr_,t),_,_) = Static.elabCref(cache,env, cr, false /* ??? */,false);
         cr_ = Prefix.prefixCref(pre, cr_);
         graph = ConnectionGraph.addDefiniteRoot(graph, cr_);
       then
@@ -10026,7 +10026,7 @@ algorithm
               Absyn.FUNCTIONARGS({Absyn.CREF(cr)}, {}),_),initial_,impl,graph)
       local Absyn.ComponentRef cr; Exp.ComponentRef cr_; Exp.Type t; 
       equation 
-        (cache,Exp.CREF(cr_,t),_,_) = Static.elabCref(cache,env, cr, false /* ??? */,false);
+        (cache,DAE.CREF(cr_,t),_,_) = Static.elabCref(cache,env, cr, false /* ??? */,false);
         cr_ = Prefix.prefixCref(pre, cr_);
         graph = ConnectionGraph.addPotentialRoot(graph, cr_, 0.0);
       then
@@ -10037,7 +10037,7 @@ algorithm
               Absyn.FUNCTIONARGS({Absyn.CREF(cr)}, {Absyn.NAMEDARG("priority", Absyn.REAL(priority))}),_),initial_,impl,graph)
       local Absyn.ComponentRef cr; Exp.ComponentRef cr_; Exp.Type t; Real priority;
       equation 
-        (cache,Exp.CREF(cr_,t),_,_) = Static.elabCref(cache,env, cr, false /* ??? */,false);
+        (cache,DAE.CREF(cr_,t),_,_) = Static.elabCref(cache,env, cr, false /* ??? */,false);
         cr_ = Prefix.prefixCref(pre, cr_);
         graph = ConnectionGraph.addPotentialRoot(graph, cr_, priority);
       then
@@ -10048,8 +10048,8 @@ algorithm
               Absyn.FUNCTIONARGS({Absyn.CREF(cr1), Absyn.CREF(cr2)}, {}),_),initial_,impl,graph)
       local Absyn.ComponentRef cr1, cr2; Exp.ComponentRef cr1_, cr2_; Exp.Type t; 
       equation 
-        (cache,Exp.CREF(cr1_,t),_,_) = Static.elabCref(cache,env, cr1, false /* ??? */,false);
-        (cache,Exp.CREF(cr2_,t),_,_) = Static.elabCref(cache,env, cr2, false /* ??? */,false);
+        (cache,DAE.CREF(cr1_,t),_,_) = Static.elabCref(cache,env, cr1, false /* ??? */,false);
+        (cache,DAE.CREF(cr2_,t),_,_) = Static.elabCref(cache,env, cr2, false /* ??? */,false);
         cr1_ = Prefix.prefixCref(pre, cr1_);
         cr2_ = Prefix.prefixCref(pre, cr2_);
         graph = ConnectionGraph.addBranch(graph, cr1_, cr2_);
@@ -10083,13 +10083,13 @@ algorithm
   dae := matchcontinue(expCall)
   local Absyn.Path fn; list<Exp.Exp> expl; Exp.Type ty; Boolean s; Exp.Exp e;
     list<DAE.Element> dae1,dae2;
-    case(expCall as Exp.CALL(path=fn,expLst=expl)) then {DAE.NORETCALL(fn,expl)};
-    case(Exp.ARRAY(ty,s,e::expl)) equation
-      dae1 = instEquationNoRetCallVectorization(Exp.ARRAY(ty,s,expl));
+    case(expCall as DAE.CALL(path=fn,expLst=expl)) then {DAE.NORETCALL(fn,expl)};
+    case(DAE.ARRAY(ty,s,e::expl)) equation
+      dae1 = instEquationNoRetCallVectorization(DAE.ARRAY(ty,s,expl));
       dae2 = instEquationNoRetCallVectorization(e);
       dae = listAppend(dae1,dae2);
     then dae;
-    case(Exp.ARRAY(ty,s,{})) equation
+    case(DAE.ARRAY(ty,s,{})) equation
     then {};
   end matchcontinue;
 end instEquationNoRetCallVectorization;
@@ -10105,12 +10105,12 @@ algorithm outEqn := matchcontinue(inEq)
     Exp.ComponentRef cr,cr2; 
     Exp.Exp e1,e2,e;
     Exp.Type t;
-  case(DAE.EQUATION(Exp.CREF(cr,_),e)) then DAE.REINIT(cr,e);
+  case(DAE.EQUATION(DAE.CREF(cr,_),e)) then DAE.REINIT(cr,e);
   case(DAE.DEFINE(cr,e)) then DAE.REINIT(cr,e);
   case(DAE.EQUEQUATION(cr,cr2))
     equation
       t = Exp.crefLastType(cr2);
-      then DAE.REINIT(cr,Exp.CREF(cr2,t));
+      then DAE.REINIT(cr,DAE.CREF(cr2,t));
   case(_) equation print("Failure in: makeDAEArrayEqToReinitForm\n"); then fail();
 end matchcontinue;
 end makeDAEArrayEqToReinitForm;
@@ -10300,7 +10300,7 @@ algorithm
         dae = instEqEquation2(e1, e2_1, t_1, initial_) "	Debug.print(\"\\n Second rule of function_ inst_eq_equation \") & 	& Debug.print(\"\\n Second rule complete. \")" ;
       then
         dae;
-//    case ((e1 as Exp.CREF(componentRef = _)),DAE.PROP(type_ = (DAE.T_ENUMERATION(names = _),_)),e2,DAE.PROP(type_ = (t as (DAE.T_ENUM(),_))),initial_,impl) /* 
+//    case ((e1 as DAE.CREF(componentRef = _)),DAE.PROP(type_ = (DAE.T_ENUMERATION(names = _),_)),e2,DAE.PROP(type_ = (t as (DAE.T_ENUM(),_))),initial_,impl) /* 
 //	    An assignment to a varaible of T_ENUMERATION type is an explicit 
 //	    assignment to the value componnent of the enumeration, i.e. having 
 //	    a type T_ENUM
@@ -10309,7 +10309,7 @@ algorithm
 //        dae = instEqEquation2(e1, e2, t, initial_) "//Debug.fprint (\"insttr\", \"Found assignment to T_ENUMERATION type. Rhs type must be T_ENUM or T_ENUMERATION.\\n\") &" ;
 //      then
 //        dae;
-    case ((e1 as Exp.CREF(componentRef = _)),DAE.PROP(type_ = (DAE.T_ENUMERATION(names = _),_)),e2,DAE.PROP(type_ = (t as (DAE.T_ENUMERATION(names = _),_))),initial_,impl)
+    case ((e1 as DAE.CREF(componentRef = _)),DAE.PROP(type_ = (DAE.T_ENUMERATION(names = _),_)),e2,DAE.PROP(type_ = (t as (DAE.T_ENUMERATION(names = _),_))),initial_,impl)
       equation 
         dae = instEqEquation2(e1, e2, t, initial_) "//Debug.fprint (\"insttr\", \"Found assignment to T_ENUMERATION type. Rhs type must be T_ENUM or T_ENUMERATION.\\n\") &" ;
       then
@@ -10375,12 +10375,12 @@ algorithm
         dae = makeDaeEquation(e1, e2, initial_);
       then
         {dae};
-//    case (Exp.CREF(componentRef = cr,ty = t),e2,(DAE.T_ENUM(),_),initial_)
+//    case (DAE.CREF(componentRef = cr,ty = t),e2,(DAE.T_ENUM(),_),initial_)
 //      equation 
 //        dae = makeDaeDefine(cr, e2, initial_);
 //      then
 //        {dae};
-    case (Exp.CREF(componentRef = cr,ty = t),e2,(DAE.T_ENUMERATION(names = _),_),initial_)
+    case (DAE.CREF(componentRef = cr,ty = t),e2,(DAE.T_ENUMERATION(names = _),_),initial_)
       equation 
         dae = makeDaeDefine(cr, e2, initial_);
       then
@@ -10445,9 +10445,9 @@ algorithm
        dae;
   
   /* Complex equation for records on form e1 = e2, expand to equality over record elements*/
-    case (Exp.CREF(componentRef=_),Exp.CREF(componentRef=_),(DAE.T_COMPLEX(complexVarLst = {}),_),initial_) 
+    case (DAE.CREF(componentRef=_),DAE.CREF(componentRef=_),(DAE.T_COMPLEX(complexVarLst = {}),_),initial_) 
       then {}; 
-    case (Exp.CREF(componentRef = c1,ty = t1),Exp.CREF(componentRef = c2,ty = t2),
+    case (DAE.CREF(componentRef = c1,ty = t1),DAE.CREF(componentRef = c2,ty = t2),
           (DAE.T_COMPLEX(complexClassType = cs,complexVarLst = (DAE.TYPES_VAR(name = n,type_ = t) :: vs),
           complexTypeOption = bc, equalityConstraint = ec),p),initial_)
       local
@@ -10460,8 +10460,8 @@ algorithm
         ty2 = Types.elabType(t);
         c1_1 = Exp.extendCref(c1,ty2, n, {});
         c2_1 = Exp.extendCref(c2,ty2, n, {});
-        dae1 = instEqEquation2(Exp.CREF(c1_1,t1), Exp.CREF(c2_1,t2), t, initial_);
-        dae2 = instEqEquation2(Exp.CREF(c1,t1), Exp.CREF(c2,t2), 
+        dae1 = instEqEquation2(DAE.CREF(c1_1,t1), DAE.CREF(c2_1,t2), t, initial_);
+        dae2 = instEqEquation2(DAE.CREF(c1,t1), DAE.CREF(c2,t2), 
           (DAE.T_COMPLEX(cs,vs,bc,ec),p), initial_);
         dae = listAppend(dae1, dae2);
       then
@@ -10579,9 +10579,9 @@ algorithm
       local Exp.Exp ae1;
       equation 
         (i <= sz) = true;
-        ae1 = Exp.ICONST(i);
-        e1_1 = Exp.simplify(Exp.ASUB(e1,{ae1}));
-        e2_1 = Exp.simplify(Exp.ASUB(e2,{ae1}));
+        ae1 = DAE.ICONST(i);
+        e1_1 = Exp.simplify(DAE.ASUB(e1,{ae1}));
+        e2_1 = Exp.simplify(DAE.ASUB(e2,{ae1}));
         dae1 = instEqEquation2(e1_1, e2_1, t, initial_);
         i_1 = i + 1;
         dae2 = instArrayElEq(e1, e2, t, i_1, sz, initial_);
@@ -10898,12 +10898,12 @@ algorithm
         true = RTOpts.acceptMetaModelicaGrammar();
 
         // If this is a list assignment, then the Array(...) expression should
-        // be evaluated to Exp.LIST
+        // be evaluated to DAE.LIST
 
         (cache,cre,cprop,acc) = Static.elabCref(cache,env, cr, impl,false);
         true = MetaUtil.isList(cprop);
 
-        (cache,Exp.CREF(ce,t)) = Prefix.prefixExp(cache,env, cre, pre);
+        (cache,DAE.CREF(ce,t)) = Prefix.prefixExp(cache,env, cre, pre);
         (cache,ce_1) = Static.canonCref(cache,env, ce, impl);
 
         // In case we have a nested list expression
@@ -10912,7 +10912,7 @@ algorithm
         (cache,e_1,eprop,_) = Static.elabListExp(cache,env, expList, cprop, impl, NONE,true);
 
         (cache,e_2) = Prefix.prefixExp(cache,env, e_1, pre);
-        stmt = Algorithm.makeAssignment(Exp.CREF(ce_1,t), cprop, e_2, eprop, acc, initial_);
+        stmt = Algorithm.makeAssignment(DAE.CREF(ce_1,t), cprop, e_2, eprop, acc, initial_);
       then
         (cache,stmt);
     //-----------------------------------------//
@@ -10941,8 +10941,8 @@ algorithm
         (cache,vb2,_,_) = Static.elabExp(cache,env,vb,impl,NONE,true);
 
         // _ := { ... }, this will be handled in Codegen.algorithmStatement
-        stmt = DAE.STMT_ASSIGN(Exp.ET_BOOL(),
-                                Exp.CREF(Exp.WILD,Exp.ET_OTHER()),
+        stmt = DAE.STMT_ASSIGN(DAE.ET_BOOL(),
+                                DAE.CREF(DAE.WILD,DAE.ET_OTHER()),
                                 vb2);
       then
         (cache,stmt);
@@ -10984,11 +10984,11 @@ algorithm
     case (cache,env,pre,Absyn.ALG_ASSIGN(assignComponent = Absyn.CREF(cr),value = e),initial_,impl) 
       equation 
         (cache,cre,cprop,acc) = Static.elabCref(cache,env, cr, impl,false);
-        (cache,Exp.CREF(ce,t)) = Prefix.prefixExp(cache,env, cre, pre);        
+        (cache,DAE.CREF(ce,t)) = Prefix.prefixExp(cache,env, cre, pre);        
         (cache,ce_1) = Static.canonCref(cache,env, ce, impl);        
         (cache,e_1,eprop,_) = Static.elabExp(cache,env, e, impl, NONE,true);
         (cache,e_2) = Prefix.prefixExp(cache,env, e_1, pre);                
-        stmt = Algorithm.makeAssignment(Exp.CREF(ce_1,t), cprop, e_2, eprop, acc, initial_);
+        stmt = Algorithm.makeAssignment(DAE.CREF(ce_1,t), cprop, e_2, eprop, acc, initial_);
       then
         (cache,stmt);
         /* der(x) := ... */
@@ -10999,7 +10999,7 @@ algorithm
         Exp.Exp e2_2,e2_2_2; 
       equation 
         (cache,_,cprop,acc) = Static.elabCref(cache,env, cr, impl,false);
-        (cache,(e2_2 as Exp.CALL(_,_,_,_,_,_)),_,_) = Static.elabExp(cache,env, e2, impl, NONE,true);
+        (cache,(e2_2 as DAE.CALL(_,_,_,_,_,_)),_,_) = Static.elabExp(cache,env, e2, impl, NONE,true);
          (cache,e2_2_2) = Prefix.prefixExp(cache,env, e2_2, pre);
         (cache,e_1,eprop,_) = Static.elabExp(cache,env, e, impl, NONE,true);
         (cache,e_2) = Prefix.prefixExp(cache,env, e_1, pre);                
@@ -11020,7 +11020,7 @@ algorithm
     // (v1,v2,..,vn) := func(...)
     case (cache,env,pre,Absyn.ALG_ASSIGN(assignComponent = Absyn.TUPLE(expressions = expl),value = e),initial_,impl)
       equation 
-        (cache,(e_1 as Exp.CALL(_,_,_,_,_,_)),eprop,_) = Static.elabExp(cache,env, e, impl, NONE,true);
+        (cache,(e_1 as DAE.CALL(_,_,_,_,_,_)),eprop,_) = Static.elabExp(cache,env, e, impl, NONE,true);
          (cache,e_2) = Prefix.prefixExp(cache,env, e_1, pre);
         (cache,expl_1,cprops,_) = Static.elabExpList(cache,env, expl, impl, NONE,false);
         (cache,expl_2) = Prefix.prefixExpList(cache,env,expl_1,pre);        
@@ -11041,7 +11041,7 @@ algorithm
     case (cache,env,pre,Absyn.ALG_ASSIGN(assignComponent = Absyn.TUPLE(expressions = expl),value = e),initial_,impl)
       local Exp.Exp unvectorisedExpl;
       equation 
-        (cache,(e_1 as Exp.TUPLE(_)),eprop,_) = Static.elabExp(cache,env, e, impl, NONE,true);
+        (cache,(e_1 as DAE.TUPLE(_)),eprop,_) = Static.elabExp(cache,env, e, impl, NONE,true);
         (_,_,_) = Ceval.ceval(Env.emptyCache(),Env.emptyEnv, e_1, false, NONE, NONE, Ceval.MSG());
         (cache,expl_1,cprops,_) = Static.elabExpList(cache,env, expl, impl, NONE,false);
         (cache,expl_2) = Prefix.prefixExpList(cache,env,expl_1,pre);
@@ -11159,10 +11159,10 @@ algorithm
         Boolean tuple_, builtin,inline;
         Exp.Type tp;
       equation 
-        (cache,Exp.CALL(ap,eexpl,tuple_,builtin,tp,inline),varprop,_) = Static.elabExp(cache,env, Absyn.CALL(callFunc,callArgs), impl, NONE,true);
+        (cache,DAE.CALL(ap,eexpl,tuple_,builtin,tp,inline),varprop,_) = Static.elabExp(cache,env, Absyn.CALL(callFunc,callArgs), impl, NONE,true);
         ap = Prefix.prefixPath(ap,pre);
       then
-        (cache,DAE.STMT_NORETCALL(Exp.CALL(ap,eexpl,tuple_,builtin,tp,inline)));
+        (cache,DAE.STMT_NORETCALL(DAE.CALL(ap,eexpl,tuple_,builtin,tp,inline)));
 	       
     /* break */
     case (cache,env,pre,Absyn.ALG_BREAK,initial_,impl)
@@ -11405,8 +11405,8 @@ algorithm
         (localCache,e_1,eprop,_) = Static.elabExp(localCache,localEnv, e, impl, NONE,true);
         (localCache,e_2) = Prefix.prefixExp(localCache,localEnv, e_1, localPre);
         stmt = DAE.STMT_ASSIGN(
-                  Exp.ET_OTHER(),
-                  Exp.CREF(Exp.WILD,Exp.ET_OTHER()),
+                  DAE.ET_OTHER(),
+                  DAE.CREF(DAE.WILD,DAE.ET_OTHER()),
                   e_2);
       then (localCache,stmt);
 
@@ -11416,15 +11416,15 @@ algorithm
         Exp.Exp e_1,e_2;
       equation
         //(localCache,cre,cprop,acc) = Static.elabCref(localCache,localEnv, cr, impl,false);
-        //(localCache,Exp.CREF(ce,t)) = Prefix.prefixExp(localCache,localEnv, cre, localPre);
+        //(localCache,DAE.CREF(ce,t)) = Prefix.prefixExp(localCache,localEnv, cre, localPre);
         expl = {Absyn.CREF(cr)};
         (localCache,e) = Patternm.matchMain(e,expl,localCache,localEnv);
         (localCache,e_1,eprop,_) = Static.elabExp(localCache,localEnv, e, impl, NONE,true);
         (localCache,e_2) = Prefix.prefixExp(localCache,localEnv, e_1, localPre);        
-        //stmt = Algorithm.makeAssignment(Exp.CREF(ce,t), cprop, e_2, eprop, acc);
+        //stmt = Algorithm.makeAssignment(DAE.CREF(ce,t), cprop, e_2, eprop, acc);
         stmt = DAE.STMT_ASSIGN(
-                  Exp.ET_OTHER(),
-                  Exp.CREF(Exp.WILD,Exp.ET_OTHER()),
+                  DAE.ET_OTHER(),
+                  DAE.CREF(DAE.WILD,DAE.ET_OTHER()),
                   e_2);
       then
         (localCache,stmt);
@@ -11436,13 +11436,13 @@ algorithm
       equation
         //Absyn.CREF(cr) = Util.listFirst(expl);
         //(localCache,cre,cprop,acc) = Static.elabCref(localCache,localEnv, cr, impl,false);
-        //(localCache,Exp.CREF(ce,t)) = Prefix.prefixExp(localCache,localEnv, cre, localPre);
+        //(localCache,DAE.CREF(ce,t)) = Prefix.prefixExp(localCache,localEnv, cre, localPre);
         (localCache,e) = Patternm.matchMain(e,expl,localCache,localEnv);
         (localCache,e_1,eprop,_) = Static.elabExp(localCache,localEnv, e, impl, NONE,true);
         (localCache,e_2) = Prefix.prefixExp(localCache,localEnv, e_1, localPre);        
         stmt = DAE.STMT_ASSIGN(
-                 Exp.ET_OTHER(),
-                 Exp.CREF(Exp.WILD,Exp.ET_OTHER()),
+                 DAE.ET_OTHER(),
+                 DAE.CREF(DAE.WILD,DAE.ET_OTHER()),
                  e_2);
       then
         (localCache,stmt);
@@ -11540,8 +11540,8 @@ algorithm
       
     case (cache,env,ih,sets,pre,c1,c2,impl,graph) /* impl */ 
       equation
-        (cache,Exp.CREF(c1_1,t1),prop1,acc) = Static.elabCref(cache,env, c1, impl,false);
-        (cache,Exp.CREF(c2_1,t2),prop2,acc) = Static.elabCref(cache,env, c2, impl,false);
+        (cache,DAE.CREF(c1_1,t1),prop1,acc) = Static.elabCref(cache,env, c1, impl,false);
+        (cache,DAE.CREF(c2_1,t2),prop2,acc) = Static.elabCref(cache,env, c2, impl,false);
         (cache,c1_2) = Static.canonCref(cache,env, c1_1, impl);
         (cache,c2_2) = Static.canonCref(cache,env, c2_1, impl);
         (cache,attr1 as DAE.ATTR(flow1,_,_,vt1,_,io1),ty1) = Lookup.lookupConnectorVar(cache,env,c1_2);
@@ -11641,10 +11641,10 @@ algorithm
    local 
      Exp.ComponentRef cr;
      Exp.Type t;
-     case (cref as Exp.CREF(_,_)) then cref;
-     case (Exp.ARRAY(_,_,Exp.CREF(cr,t)::_)) equation
+     case (cref as DAE.CREF(_,_)) then cref;
+     case (DAE.ARRAY(_,_,DAE.CREF(cr,t)::_)) equation
        cr = Exp.crefStripLastSubs(cr);
-       then Exp.CREF(cr,t);
+       then DAE.CREF(cr,t);
    end matchcontinue;
 end getVectorizedCref;
 
@@ -11979,8 +11979,8 @@ algorithm
       then
         (cache,env,ih,sets,{
           DAE.ASSERT(
-            Exp.RELATION(Exp.CREF(c1_1,Exp.ET_REAL()),Exp.EQUAL(Exp.ET_BOOL()),
-              Exp.CREF(c2_1,Exp.ET_REAL())),Exp.SCONST("automatically generated from connect")
+            DAE.RELATION(DAE.CREF(c1_1,DAE.ET_REAL()),DAE.EQUAL(DAE.ET_BOOL()),
+              DAE.CREF(c2_1,DAE.ET_REAL())),DAE.SCONST("automatically generated from connect")
           )},graph);
     /* Same as above, but returns empty (removed conditional var)*/ 
     case (cache,env,ih,sets,pre,c1,f1,t1,vt1,c2,f2,t2,vt2,false,io1,io2,graph)
@@ -12048,8 +12048,8 @@ algorithm
       equation         
         c1_1 = Prefix.prefixCref(pre, c1);
         c2_1 = Prefix.prefixCref(pre, c2); 
-        Exp.ET_ARRAY(_,odims) = Types.elabType(inType6);
-        Exp.ET_ARRAY(_,odims2) = Types.elabType(inType9);
+        DAE.ET_ARRAY(_,odims) = Types.elabType(inType6);
+        DAE.ET_ARRAY(_,odims2) = Types.elabType(inType9);
         dims = Util.listFlatten(Util.listMap(odims,Util.genericOption));
         dims2 = Util.listFlatten(Util.listMap(odims2,Util.genericOption));        
         equality(dims = dims2);        
@@ -12091,9 +12091,9 @@ algorithm
         graph = ConnectionGraph.addConnection(graph, c1_1, c2_1, dae, 
           {DAE.EQUATION(
           zeroVector, 
-          Exp.CALL(fpath1, 
-          {Exp.CREF(c1_1, Exp.ET_OTHER()), Exp.CREF(c2_1, Exp.ET_OTHER())}, 
-          false, false, Exp.ET_REAL,false)
+          DAE.CALL(fpath1, 
+          {DAE.CREF(c1_1, DAE.ET_OTHER()), DAE.CREF(c2_1, DAE.ET_OTHER())}, 
+          false, false, DAE.ET_REAL,false)
           )});
       then
         (cache,env,ih,sets,{},graph);        
@@ -12197,15 +12197,15 @@ algorithm
     case(cache,env,ih,sets,pre,c1,f1,t1,vt1,c2,f2,t2,vt2,flowPrefix,io1,io2,dim1,i,graph)
       equation
         true = (dim1 == i);
-        c1 = Exp.replaceCrefSliceSub(c1,{Exp.INDEX(Exp.ICONST(i))});
-        c2 = Exp.replaceCrefSliceSub(c2,{Exp.INDEX(Exp.ICONST(i))});
+        c1 = Exp.replaceCrefSliceSub(c1,{DAE.INDEX(DAE.ICONST(i))});
+        c2 = Exp.replaceCrefSliceSub(c2,{DAE.INDEX(DAE.ICONST(i))});
         (cache,_,ih,sets_1,dae,graph)= connectComponents(cache,env,ih,sets,pre,c1,f1,t1,vt1,c2,f2,t2,vt2,flowPrefix,io1,io2,graph);
       then (cache,env,ih,sets_1,dae,graph);
 
     case(cache,env,ih,sets,pre,c1,f1,t1,vt1,c2,f2,t2,vt2,flowPrefix,io1,io2,dim1,i,graph)
       equation     
-        c11 = Exp.replaceCrefSliceSub(c1,{Exp.INDEX(Exp.ICONST(i))});
-        c21 = Exp.replaceCrefSliceSub(c2,{Exp.INDEX(Exp.ICONST(i))});
+        c11 = Exp.replaceCrefSliceSub(c1,{DAE.INDEX(DAE.ICONST(i))});
+        c21 = Exp.replaceCrefSliceSub(c2,{DAE.INDEX(DAE.ICONST(i))});
         (cache,_,ih,sets_1,dae1,graph)= connectComponents(cache,env,ih,sets,pre,c11,f1,t1,vt1,c21,f2,t2,vt2,flowPrefix,io1,io2,graph);
         (cache,_,ih,sets_1,dae2,graph) = connectArrayComponents(cache,env,ih,sets_1,pre,c1,f1,t1,vt1,c2,f2,t2,vt2,flowPrefix,io1,io2,dim1,i+1,graph);
         dae = listAppend(dae1,dae2);
@@ -12559,12 +12559,12 @@ algorithm
       Exp.ComponentRef cr;
       Ident id;
       InstanceHierarchy ih;
-    case (env,ih,Exp.CREF_QUAL(ident = id,componentRef = cr)) equation
+    case (env,ih,DAE.CREF_QUAL(ident = id,componentRef = cr)) equation
        (_,_,(DAE.T_COMPLEX(complexClassType=ClassInf.CONNECTOR(_,_)),_),_,_,_) 
-         = Lookup.lookupVar(Env.emptyCache(),env,Exp.CREF_IDENT(id,Exp.ET_OTHER(),{}));
+         = Lookup.lookupVar(Env.emptyCache(),env,DAE.CREF_IDENT(id,DAE.ET_OTHER(),{}));
     then Connect.OUTER();       
-    case (env,ih,Exp.CREF_QUAL(componentRef =_)) then Connect.INNER(); 
-    case (env,ih,Exp.CREF_IDENT(ident = _)) then Connect.OUTER(); 
+    case (env,ih,DAE.CREF_QUAL(componentRef =_)) then Connect.INNER(); 
+    case (env,ih,DAE.CREF_IDENT(ident = _)) then Connect.OUTER(); 
   end matchcontinue;
 end componentFace;
 
@@ -12578,9 +12578,9 @@ protected function componentFaceType
 algorithm 
   outFace:=
   matchcontinue (inComponentRef)
-    case (Exp.CREF_QUAL(identType = Exp.ET_COMPLEX(complexClassType=ClassInf.CONNECTOR(_,_)))) then Connect.OUTER();       
-    case (Exp.CREF_QUAL(componentRef =_)) then Connect.INNER();    
-    case (Exp.CREF_IDENT(ident = _)) then Connect.OUTER(); 
+    case (DAE.CREF_QUAL(identType = DAE.ET_COMPLEX(complexClassType=ClassInf.CONNECTOR(_,_)))) then Connect.OUTER();       
+    case (DAE.CREF_QUAL(componentRef =_)) then Connect.INNER();    
+    case (DAE.CREF_IDENT(ident = _)) then Connect.OUTER(); 
   end matchcontinue;
 end componentFaceType;
 
@@ -13055,16 +13055,16 @@ protected function getStateSelectFromExpOption
 algorithm 
   outDAEStateSelectOption:=
   matchcontinue (inExpExpOption)
-    case (SOME(Exp.CREF(Exp.CREF_QUAL("StateSelect",_,{},Exp.CREF_IDENT("never",Exp.ET_ENUMERATION(SOME(_),_,_,_),{})),_))) then SOME(DAE.NEVER()); 
-    case (SOME(Exp.CREF(Exp.CREF_QUAL("StateSelect",_,{},Exp.CREF_IDENT("avoid",Exp.ET_ENUMERATION(SOME(_),_,_,_),{})),_))) then SOME(DAE.AVOID()); 
-    case (SOME(Exp.CREF(Exp.CREF_QUAL("StateSelect",_,{},Exp.CREF_IDENT("default",Exp.ET_ENUMERATION(SOME(_),_,_,_),{})),_))) then SOME(DAE.DEFAULT()); 
-    case (SOME(Exp.CREF(Exp.CREF_QUAL("StateSelect",_,{},Exp.CREF_IDENT("prefer",Exp.ET_ENUMERATION(SOME(_),_,_,_),{})),_))) then SOME(DAE.PREFER()); 
-    case (SOME(Exp.CREF(Exp.CREF_QUAL("StateSelect",_,{},Exp.CREF_IDENT("always",Exp.ET_ENUMERATION(SOME(_),_,_,_),{})),_))) then SOME(DAE.ALWAYS()); 
-//    case (SOME(Exp.CREF(Exp.CREF_QUAL("StateSelect",_,{},Exp.CREF_IDENT("never",_,{})),Exp.ENUM()))) then SOME(DAE.NEVER()); 
-//    case (SOME(Exp.CREF(Exp.CREF_QUAL("StateSelect",_,{},Exp.CREF_IDENT("avoid",_,{})),Exp.ENUM()))) then SOME(DAE.AVOID()); 
-//    case (SOME(Exp.CREF(Exp.CREF_QUAL("StateSelect",_,{},Exp.CREF_IDENT("default",_,{})),Exp.ENUM()))) then SOME(DAE.DEFAULT()); 
-//    case (SOME(Exp.CREF(Exp.CREF_QUAL("StateSelect",_,{},Exp.CREF_IDENT("prefer",_,{})),Exp.ENUM()))) then SOME(DAE.PREFER()); 
-//    case (SOME(Exp.CREF(Exp.CREF_QUAL("StateSelect",_,{},Exp.CREF_IDENT("always",_,{})),Exp.ENUM()))) then SOME(DAE.ALWAYS()); 
+    case (SOME(DAE.CREF(DAE.CREF_QUAL("StateSelect",_,{},DAE.CREF_IDENT("never",DAE.ET_ENUMERATION(SOME(_),_,_,_),{})),_))) then SOME(DAE.NEVER()); 
+    case (SOME(DAE.CREF(DAE.CREF_QUAL("StateSelect",_,{},DAE.CREF_IDENT("avoid",DAE.ET_ENUMERATION(SOME(_),_,_,_),{})),_))) then SOME(DAE.AVOID()); 
+    case (SOME(DAE.CREF(DAE.CREF_QUAL("StateSelect",_,{},DAE.CREF_IDENT("default",DAE.ET_ENUMERATION(SOME(_),_,_,_),{})),_))) then SOME(DAE.DEFAULT()); 
+    case (SOME(DAE.CREF(DAE.CREF_QUAL("StateSelect",_,{},DAE.CREF_IDENT("prefer",DAE.ET_ENUMERATION(SOME(_),_,_,_),{})),_))) then SOME(DAE.PREFER()); 
+    case (SOME(DAE.CREF(DAE.CREF_QUAL("StateSelect",_,{},DAE.CREF_IDENT("always",DAE.ET_ENUMERATION(SOME(_),_,_,_),{})),_))) then SOME(DAE.ALWAYS()); 
+//    case (SOME(DAE.CREF(DAE.CREF_QUAL("StateSelect",_,{},DAE.CREF_IDENT("never",_,{})),Exp.ENUM()))) then SOME(DAE.NEVER()); 
+//    case (SOME(DAE.CREF(DAE.CREF_QUAL("StateSelect",_,{},DAE.CREF_IDENT("avoid",_,{})),Exp.ENUM()))) then SOME(DAE.AVOID()); 
+//    case (SOME(DAE.CREF(DAE.CREF_QUAL("StateSelect",_,{},DAE.CREF_IDENT("default",_,{})),Exp.ENUM()))) then SOME(DAE.DEFAULT()); 
+//    case (SOME(DAE.CREF(DAE.CREF_QUAL("StateSelect",_,{},DAE.CREF_IDENT("prefer",_,{})),Exp.ENUM()))) then SOME(DAE.PREFER()); 
+//    case (SOME(DAE.CREF(DAE.CREF_QUAL("StateSelect",_,{},DAE.CREF_IDENT("always",_,{})),Exp.ENUM()))) then SOME(DAE.ALWAYS()); 
     case (NONE) then NONE; 
     case (_) then NONE; 
   end matchcontinue;
@@ -13098,7 +13098,7 @@ algorithm
     case (cr,ty1,(mod as DAE.MOD(eqModOption = SOME(DAE.TYPED(e,_,prop2)))),impl)
       equation 
         t = Types.elabType(ty1);
-        dae = instEqEquation(Exp.CREF(cr,t), DAE.PROP(ty1,DAE.C_VAR()), e, prop2, SCode.NON_INITIAL(), impl);
+        dae = instEqEquation(DAE.CREF(cr,t), DAE.PROP(ty1,DAE.C_VAR()), e, prop2, SCode.NON_INITIAL(), impl);
       then
         dae;
     case (_,_,DAE.MOD(eqModOption = NONE),impl) then {}; 
@@ -13325,13 +13325,13 @@ algorithm
       Exp.Exp exp_1;
       DAE.Element e1;
     case (cr,exp,{}) then (exp,{}); 
-    case (cr,exp,(DAE.EQUATION(exp = Exp.CREF(componentRef = e1cr),scalar = exp_1) :: rest)) /* Exp.ET_OTHER */ 
+    case (cr,exp,(DAE.EQUATION(exp = DAE.CREF(componentRef = e1cr),scalar = exp_1) :: rest)) /* DAE.ET_OTHER */ 
       equation 
         true = Exp.crefEqual(cr, e1cr);
         (exp_2,rest_1) = initVarsModelicaOutput2(cr, SOME(exp_1), rest);
       then
         (exp_2,rest_1);
-    case (cr,exp,((e1 as DAE.EQUATION(exp = Exp.CREF(componentRef = e1cr),scalar = exp_1)) :: rest)) /* Exp.ET_OTHER */ 
+    case (cr,exp,((e1 as DAE.EQUATION(exp = DAE.CREF(componentRef = e1cr),scalar = exp_1)) :: rest)) /* DAE.ET_OTHER */ 
       equation 
         false = Exp.crefEqual(cr, e1cr);
         (exp_2,rest_1) = initVarsModelicaOutput2(cr, exp, rest);
@@ -14844,7 +14844,7 @@ algorithm
       true = Types.isParameterOrConstant(c);
       (cache,Values.BOOL(b),_) = Ceval.ceval(cache,env, e, false, NONE, NONE, Ceval.MSG());
       dae = Util.if_(b,dae,{});
-      cr = Prefix.prefixCref(pre,Exp.CREF_IDENT(compName,Exp.ET_OTHER(),{}));
+      cr = Prefix.prefixCref(pre,DAE.CREF_IDENT(compName,DAE.ET_OTHER(),{}));
       sets = Connect.addDeletedComponent(b,cr,sets);
 
     then (cache,dae,sets);
@@ -15575,7 +15575,7 @@ algorithm
         true=Exp.crefEqual(cref,cref2);
       then
         SOME(e);
-    case (cref, DAE.EQUATION(Exp.CREF(cref2,_),e)::_)          
+    case (cref, DAE.EQUATION(DAE.CREF(cref2,_),e)::_)          
       equation
         true=Exp.crefEqual(cref,cref2);
       then
@@ -15586,7 +15586,7 @@ algorithm
         e=Exp.crefExp(cref3);
       then
         SOME(e);
-    case (cref, DAE.COMPLEX_EQUATION(Exp.CREF(cref2,_),e)::_)          
+    case (cref, DAE.COMPLEX_EQUATION(DAE.CREF(cref2,_),e)::_)          
       equation
         true=Exp.crefEqual(cref,cref2);
       then

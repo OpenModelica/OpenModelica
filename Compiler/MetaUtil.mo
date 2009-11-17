@@ -118,13 +118,13 @@ algorithm
     local
       Exp.Exp localE1,localE2;
       Exp.Type tLocal;
-    case (tLocal,localE1,Exp.LIST(_,expList))
+    case (tLocal,localE1,DAE.LIST(_,expList))
       local
         list<Exp.Exp> expList,expList2;
       equation
         expList2 = listAppend({localE1},expList);
-      then Exp.LIST(tLocal,expList2);
-    case (tLocal,localE1,localE2) then Exp.CONS(tLocal,localE1,localE2);
+      then DAE.LIST(tLocal,expList2);
+    case (tLocal,localE1,localE2) then DAE.CONS(tLocal,localE1,localE2);
   end matchcontinue;
 end simplifyListExp;
 
@@ -182,23 +182,23 @@ algorithm
   matchcontinue(exp,inExp)
     local
       String localInExp,outStr;
-    case (Exp.ET_INT(),localInExp)
+    case (DAE.ET_INT(),localInExp)
       equation
         outStr = Util.stringAppendList({"mmc_mk_icon(",localInExp,")"});
       then outStr;
-    case (Exp.ET_REAL(),localInExp)
+    case (DAE.ET_REAL(),localInExp)
       equation
         outStr = Util.stringAppendList({"mmc_mk_rcon(",localInExp,")"});
       then outStr;
-    case (Exp.ET_BOOL(),localInExp)
+    case (DAE.ET_BOOL(),localInExp)
       equation
         outStr = Util.stringAppendList({"mmc_mk_icon(",localInExp,")"});
       then outStr;
-    case (Exp.ET_STRING(),localInExp)
+    case (DAE.ET_STRING(),localInExp)
       equation
         outStr = Util.stringAppendList({"mmc_mk_scon(",localInExp,")"});
       then outStr;
-    case (Exp.ET_COMPLEX(name = name, varLst = varLst),localInExp)
+    case (DAE.ET_COMPLEX(name = name, varLst = varLst),localInExp)
       local
         list<Exp.Var> varLst;
         list<String> vars, vars1;

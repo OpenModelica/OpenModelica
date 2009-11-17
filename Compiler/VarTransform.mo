@@ -168,21 +168,21 @@ algorithm outDae := matchcontinue(inDae,repl,condExpFunc)
     case(DAE.DEFINE(cr,e)::dae,repl,condExpFunc) 
       equation
           (e2) = replaceExp(e, repl, condExpFunc);
-        (Exp.CREF(cr2,_)) = replaceExp(Exp.CREF(cr,Exp.ET_REAL()), repl, condExpFunc);
+        (DAE.CREF(cr2,_)) = replaceExp(DAE.CREF(cr,DAE.ET_REAL()), repl, condExpFunc);
         dae2 = applyReplacementsDAE(dae,repl,condExpFunc);
       then DAE.DEFINE(cr2,e2)::dae2;
    
     case(DAE.INITIALDEFINE(cr,e)::dae,repl,condExpFunc) 
       equation
           (e2) = replaceExp(e, repl, condExpFunc);
-        (Exp.CREF(cr2,_)) = replaceExp(Exp.CREF(cr,Exp.ET_REAL()), repl, condExpFunc);
+        (DAE.CREF(cr2,_)) = replaceExp(DAE.CREF(cr,DAE.ET_REAL()), repl, condExpFunc);
         dae2 = applyReplacementsDAE(dae,repl,condExpFunc);
       then DAE.INITIALDEFINE(cr2,e2)::dae2;
         
     case(DAE.EQUEQUATION(cr,cr1)::dae,repl,condExpFunc) 
       equation
-        (Exp.CREF(cr2,_)) = replaceExp(Exp.CREF(cr,Exp.ET_REAL()), repl, condExpFunc);
-        (Exp.CREF(cr1_2,_)) = replaceExp(Exp.CREF(cr1,Exp.ET_REAL()), repl, condExpFunc);
+        (DAE.CREF(cr2,_)) = replaceExp(DAE.CREF(cr,DAE.ET_REAL()), repl, condExpFunc);
+        (DAE.CREF(cr1_2,_)) = replaceExp(DAE.CREF(cr1,DAE.ET_REAL()), repl, condExpFunc);
         dae2 = applyReplacementsDAE(dae,repl,condExpFunc);
       then DAE.EQUEQUATION(cr2,cr1_2)::dae2;
         
@@ -296,7 +296,7 @@ algorithm outDae := matchcontinue(inDae,repl,condExpFunc)
      case(DAE.REINIT(cr,e1)::dae,repl,condExpFunc) 
       equation
           (e11) = replaceExp(e1, repl, condExpFunc);
-        (Exp.CREF(cr2,_)) = replaceExp(Exp.CREF(cr,Exp.ET_REAL()), repl, condExpFunc);
+        (DAE.CREF(cr2,_)) = replaceExp(DAE.CREF(cr,DAE.ET_REAL()), repl, condExpFunc);
         dae2 = applyReplacementsDAE(dae,repl,condExpFunc);
       then DAE.REINIT(cr2,e11)::dae2;
      case(elt::_,_,_)
@@ -376,8 +376,8 @@ algorithm
       VariableReplacements repl;
     case (repl,cr1,cr2)
       equation 
-        (Exp.CREF(cr1_1,_)) = replaceExp(Exp.CREF(cr1,Exp.ET_REAL()), repl, NONE);
-        (Exp.CREF(cr2_1,_)) = replaceExp(Exp.CREF(cr2,Exp.ET_REAL()), repl, NONE);
+        (DAE.CREF(cr1_1,_)) = replaceExp(DAE.CREF(cr1,DAE.ET_REAL()), repl, NONE);
+        (DAE.CREF(cr2_1,_)) = replaceExp(DAE.CREF(cr2,DAE.ET_REAL()), repl, NONE);
       then
         (cr1_1,cr2_1);
   end matchcontinue;
@@ -399,7 +399,7 @@ algorithm  (ocrefs):= matchcontinue (repl,increfs)
       case(_,{}) then {};
     case (repl,cr1::increfs)
       equation 
-        (Exp.CREF(cr1_1,_)) = replaceExp(Exp.CREF(cr1,Exp.ET_REAL()), repl, NONE);
+        (DAE.CREF(cr1_1,_)) = replaceExp(DAE.CREF(cr1,DAE.ET_REAL()), repl, NONE);
         ocrefs = applyReplacementList(repl,increfs);
       then
         cr1_1::ocrefs;
@@ -495,7 +495,7 @@ algorithm
     case ((DAE.STMT_ASSIGN_ARR(type_ = tp,componentRef = cr, exp = e) :: xs),repl,condExpFunc)
       equation 
         e_1 = replaceExp(e, repl, condExpFunc); 
-        (e_2 as Exp.CREF(cr_1,_)) = replaceExp(Exp.CREF(cr,Exp.ET_OTHER()), repl, condExpFunc); 
+        (e_2 as DAE.CREF(cr_1,_)) = replaceExp(DAE.CREF(cr,DAE.ET_OTHER()), repl, condExpFunc); 
         xs_1 = replaceEquationsStmts(xs, repl,condExpFunc);
       then
         (DAE.STMT_ASSIGN_ARR(tp,cr_1,e_1) :: xs_1);
@@ -1094,7 +1094,7 @@ end replaceExpOpt;
 protected function avoidDoubleHashLookup "
 Author BZ 200X-XX modified 2008-06
 When adding replacement rules, we might not have the correct type availible at the moment.
-Then Exp.ET_OTHER() is used, so when replacing exp and finding Exp.ET_OTHER(), we use the 
+Then DAE.ET_OTHER() is used, so when replacing exp and finding DAE.ET_OTHER(), we use the 
 type of the expression to be replaced instead.
 TODO: find out why array residual functions containing arrays as xloc[] does not work, 
 	doing that will allow us to use this function for all crefs. 
@@ -1104,8 +1104,8 @@ input Exp.Type inType;
 output Exp.Exp outExp;
 algorithm  outExp := matchcontinue(inExp,inType)
   local Exp.ComponentRef cr;
-  case(Exp.CREF(cr,Exp.ET_OTHER()),inType) 
-    then Exp.CREF(cr,inType);
+  case(DAE.CREF(cr,DAE.ET_OTHER()),inType) 
+    then DAE.CREF(cr,inType);
   case(inExp,_) then inExp;
   end matchcontinue;
 end avoidDoubleHashLookup;
@@ -1143,132 +1143,132 @@ algorithm
       Integer b,i;
       Absyn.CodeNode a;
       String id;
-    case ((e as Exp.CREF(componentRef = cr,ty = t)),repl,cond)
+    case ((e as DAE.CREF(componentRef = cr,ty = t)),repl,cond)
       equation 
         true = replaceExpCond(cond, e);
         (e1) = getReplacement(repl, cr);
         e2 = avoidDoubleHashLookup(e1,t);    
       then
         e2;
-    case ((e as Exp.BINARY(exp1 = e1,operator = op,exp2 = e2)),repl,cond)
+    case ((e as DAE.BINARY(exp1 = e1,operator = op,exp2 = e2)),repl,cond)
       equation 
         true = replaceExpCond(cond, e);
         e1_1 = replaceExp(e1, repl, cond);
         e2_1 = replaceExp(e2, repl, cond);
       then
-        Exp.BINARY(e1_1,op,e2_1);
-    case ((e as Exp.LBINARY(exp1 = e1,operator = op,exp2 = e2)),repl,cond)
+        DAE.BINARY(e1_1,op,e2_1);
+    case ((e as DAE.LBINARY(exp1 = e1,operator = op,exp2 = e2)),repl,cond)
       equation 
         true = replaceExpCond(cond, e);
         e1_1 = replaceExp(e1, repl, cond);
         e2_1 = replaceExp(e2, repl, cond);
       then
-        Exp.LBINARY(e1_1,op,e2_1);
-    case ((e as Exp.UNARY(operator = op,exp = e1)),repl,cond)
+        DAE.LBINARY(e1_1,op,e2_1);
+    case ((e as DAE.UNARY(operator = op,exp = e1)),repl,cond)
       equation 
         true = replaceExpCond(cond, e);
         e1_1 = replaceExp(e1, repl, cond);
       then
-        Exp.UNARY(op,e1_1);
-    case ((e as Exp.LUNARY(operator = op,exp = e1)),repl,cond)
+        DAE.UNARY(op,e1_1);
+    case ((e as DAE.LUNARY(operator = op,exp = e1)),repl,cond)
       equation 
         true = replaceExpCond(cond, e);
         e1_1 = replaceExp(e1, repl, cond);
       then
-        Exp.LUNARY(op,e1_1);
-    case (Exp.RELATION(exp1 = e1,operator = op,exp2 = e2),repl,cond)
+        DAE.LUNARY(op,e1_1);
+    case (DAE.RELATION(exp1 = e1,operator = op,exp2 = e2),repl,cond)
       equation 
         e1_1 = replaceExp(e1, repl, cond);
         e2_1 = replaceExp(e2, repl, cond);
       then
-        Exp.RELATION(e1_1,op,e2_1);
-    case ((e as Exp.IFEXP(expCond = e1,expThen = e2,expElse = e3)),repl,cond)
+        DAE.RELATION(e1_1,op,e2_1);
+    case ((e as DAE.IFEXP(expCond = e1,expThen = e2,expElse = e3)),repl,cond)
       equation 
         true = replaceExpCond(cond, e);
         e1_1 = replaceExp(e1, repl, cond);
         e2_1 = replaceExp(e2, repl, cond);
         e3_1 = replaceExp(e3, repl, cond);
       then
-        Exp.IFEXP(e1_1,e2_1,e3_1);
-    case ((e as Exp.CALL(path = path,expLst = expl,tuple_ = t,builtin = c,ty=tp,inline=inl)),repl,cond)
+        DAE.IFEXP(e1_1,e2_1,e3_1);
+    case ((e as DAE.CALL(path = path,expLst = expl,tuple_ = t,builtin = c,ty=tp,inline=inl)),repl,cond)
       local Boolean t,inl; Exp.Type tp;
       equation 
         true = replaceExpCond(cond, e);
         expl_1 = Util.listMap2(expl, replaceExp, repl, cond);
       then
-        Exp.CALL(path,expl_1,t,c,tp,inl); 
-    case ((e as Exp.ARRAY(ty = tp,scalar = c,array = expl)),repl,cond)
+        DAE.CALL(path,expl_1,t,c,tp,inl); 
+    case ((e as DAE.ARRAY(ty = tp,scalar = c,array = expl)),repl,cond)
       equation 
         true = replaceExpCond(cond, e);
         expl_1 = Util.listMap2(expl, replaceExp, repl, cond);
       then
-        Exp.ARRAY(tp,c,expl_1);
-    case ((e as Exp.MATRIX(ty = t,integer = b,scalar = expl)),repl,cond)
+        DAE.ARRAY(tp,c,expl_1);
+    case ((e as DAE.MATRIX(ty = t,integer = b,scalar = expl)),repl,cond)
       local list<list<tuple<Exp.Exp, Boolean>>> expl_1,expl;
       equation 
         true = replaceExpCond(cond, e);
         expl_1 = replaceExpMatrix(expl, repl, cond);
       then
-        Exp.MATRIX(t,b,expl_1);
-    case ((e as Exp.RANGE(ty = tp,exp = e1,expOption = NONE,range = e2)),repl,cond)
+        DAE.MATRIX(t,b,expl_1);
+    case ((e as DAE.RANGE(ty = tp,exp = e1,expOption = NONE,range = e2)),repl,cond)
       equation 
         true = replaceExpCond(cond, e);
         e1_1 = replaceExp(e1, repl, cond);
         e2_1 = replaceExp(e2, repl, cond);
       then
-        Exp.RANGE(tp,e1_1,NONE,e2_1);
-    case ((e as Exp.RANGE(ty = tp,exp = e1,expOption = SOME(e3),range = e2)),repl,cond)
+        DAE.RANGE(tp,e1_1,NONE,e2_1);
+    case ((e as DAE.RANGE(ty = tp,exp = e1,expOption = SOME(e3),range = e2)),repl,cond)
       equation 
         true = replaceExpCond(cond, e);
         e1_1 = replaceExp(e1, repl, cond);
         e2_1 = replaceExp(e2, repl, cond);
         e3_1 = replaceExp(e3, repl, cond);
       then
-        Exp.RANGE(tp,e1_1,SOME(e3_1),e2_1);
-    case ((e as Exp.TUPLE(PR = expl)),repl,cond)
+        DAE.RANGE(tp,e1_1,SOME(e3_1),e2_1);
+    case ((e as DAE.TUPLE(PR = expl)),repl,cond)
       equation 
         true = replaceExpCond(cond, e);
         expl_1 = Util.listMap2(expl, replaceExp, repl, cond);
       then
-        Exp.TUPLE(expl_1);
-    case ((e as Exp.CAST(ty = tp,exp = e1)),repl,cond)
+        DAE.TUPLE(expl_1);
+    case ((e as DAE.CAST(ty = tp,exp = e1)),repl,cond)
       equation 
         true = replaceExpCond(cond, e);
         e1_1 = replaceExp(e1, repl, cond);
       then
-        Exp.CAST(tp,e1_1);
-    case ((e as Exp.ASUB(exp = e1,sub = expl)),repl,cond)
+        DAE.CAST(tp,e1_1);
+    case ((e as DAE.ASUB(exp = e1,sub = expl)),repl,cond)
       equation 
         true = replaceExpCond(cond, e);
         e1_1 = replaceExp(e1, repl, cond);
       then
-        Exp.ASUB(e1_1,expl);
-    case ((e as Exp.SIZE(exp = e1,sz = NONE)),repl,cond)
+        DAE.ASUB(e1_1,expl);
+    case ((e as DAE.SIZE(exp = e1,sz = NONE)),repl,cond)
       equation 
         true = replaceExpCond(cond, e);
         e1_1 = replaceExp(e1, repl, cond);
       then
-        Exp.SIZE(e1_1,NONE);
-    case ((e as Exp.SIZE(exp = e1,sz = SOME(e2))),repl,cond)
+        DAE.SIZE(e1_1,NONE);
+    case ((e as DAE.SIZE(exp = e1,sz = SOME(e2))),repl,cond)
       equation 
         true = replaceExpCond(cond, e);
         e1_1 = replaceExp(e1, repl, cond);
         e2_1 = replaceExp(e2, repl, cond);
       then
-        Exp.SIZE(e1_1,SOME(e2_1));
-    case (Exp.CODE(code = a,ty = b),repl,cond)
+        DAE.SIZE(e1_1,SOME(e2_1));
+    case (DAE.CODE(code = a,ty = b),repl,cond)
       local Exp.Type b;
       equation 
         print("replace_exp on CODE not impl.\n");
       then
-        Exp.CODE(a,b);
-    case ((e as Exp.REDUCTION(path = p,expr = e1,ident = id,range = r)),repl,cond)
+        DAE.CODE(a,b);
+    case ((e as DAE.REDUCTION(path = p,expr = e1,ident = id,range = r)),repl,cond)
       equation 
         true = replaceExpCond(cond, e);
         e1_1 = replaceExp(e1, repl, cond);
         r_1 = replaceExp(r, repl, cond);
       then
-        Exp.REDUCTION(p,e1_1,id,r_1);
+        DAE.REDUCTION(p,e1_1,id,r_1);
     case (e,repl,cond) then e; 
   end matchcontinue;
 end replaceExp;
@@ -1409,7 +1409,7 @@ algorithm
         (klst,vlst) = bintreeToExplistOpt(left, klst, vlst);
         (klst,vlst) = bintreeToExplistOpt(right, klst, vlst);
       then
-        ((Exp.CREF(key,Exp.ET_REAL()) :: klst),(value :: vlst));
+        ((DAE.CREF(key,DAE.ET_REAL()) :: klst),(value :: vlst));
     case (TREENODE(value = NONE,left = left,right = right),klst,vlst)
       equation 
         (klst,vlst) = bintreeToExplistOpt(left, klst, vlst);

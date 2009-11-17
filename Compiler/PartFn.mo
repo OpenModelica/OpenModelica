@@ -227,6 +227,8 @@ protected function isFunctionElement
 algorithm
   outBoolean := matchcontinue(inElement)
     case(DAE.FUNCTION(path = _)) then true;
+    case(DAE.EXTFUNCTION(path = _)) then true;
+    case(DAE.RECORD_CONSTRUCTOR(path = _)) then true;
     case(_) then false;
   end matchcontinue;
 end isFunctionElement;
@@ -474,15 +476,15 @@ algorithm
       Exp.Type ty;
       Boolean tu,bi,inl;
       Integer i,numArgs;
-    case((Exp.CALL(p,args,tu,bi,ty,inl),dae))
+    case((DAE.CALL(p,args,tu,bi,ty,inl),dae))
       equation
-        (Exp.PARTEVALFUNCTION(p1,args1,_),i) = getPartEvalFunction(args,0);
+        (DAE.PARTEVALFUNCTION(p1,args1,_),i) = getPartEvalFunction(args,0);
         numArgs = listLength(args1);
         args_1 = Util.listReplaceAtWithList(args1,i,args);
         p_1 = makeNewFnPath(p,p1);
         dae = buildNewFunction(dae,p,p1,numArgs);
       then
-        ((Exp.CALL(p_1,args_1,tu,bi,ty,inl),dae));
+        ((DAE.CALL(p_1,args_1,tu,bi,ty,inl),dae));
     case((e,dae)) then ((e,dae));
   end matchcontinue;
 end elabExp;
@@ -1088,14 +1090,14 @@ algorithm
       list<Exp.ComponentRef> crefs;
       String str;
       // TEMPFIX REMOVE UNBOX CALLS
-    case((Exp.CALL(orig_p,args,tup,bui,ty,inl),(p,inputs,dae)))
+    case((DAE.CALL(orig_p,args,tup,bui,ty,inl),(p,inputs,dae)))
       equation
         str = Absyn.pathString(orig_p);
         true = Util.strncmp(str,"mmc",3);
         e = Util.listFirst(args);
       then
         ((e,(p,inputs,dae)));
-    case((Exp.CALL(orig_p,args,tup,false,ty,inl),(p,inputs,dae)))
+    case((DAE.CALL(orig_p,args,tup,false,ty,inl),(p,inputs,dae)))
       equation
         tmp = DAEUtil.getNamedFunction(orig_p,dae); // if function exists, do not replace call
         false = Util.isListNotEmpty(tmp);
@@ -1103,7 +1105,7 @@ algorithm
         args2 = Util.listMap(crefs,Exp.crefExp);
         args_1 = listAppend(args,args2);
       then
-        ((Exp.CALL(p,args_1,tup,false,ty,inl),(p,inputs,dae)));
+        ((DAE.CALL(p,args_1,tup,false,ty,inl),(p,inputs,dae)));
     case((e,(p,inputs,dae))) then ((e,(p,inputs,dae)));
   end matchcontinue;
 end fixCall;
@@ -1123,7 +1125,7 @@ algorithm
       Integer index,index_1;
       Exp.Exp e;
     case({},_) then fail();
-    case((e as Exp.PARTEVALFUNCTION(path=_)) :: _,index) then (e,index);
+    case((e as DAE.PARTEVALFUNCTION(path=_)) :: _,index) then (e,index);
     case(_ :: cdr,index)
       equation
         (e,index_1) = getPartEvalFunction(cdr,index+1);

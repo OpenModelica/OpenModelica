@@ -456,7 +456,7 @@ function resultGraphWithRoots
   HashTableCG.HashTable table0;
   Exp.ComponentRef dummyRoot;
 algorithm
-  dummyRoot := Exp.CREF_IDENT("__DUMMY_ROOT", Exp.ET_INT, {});
+  dummyRoot := DAE.CREF_IDENT("__DUMMY_ROOT", DAE.ET_INT, {});
   table0 := HashTableCG.emptyHashTable();
   outTable := addRootsToTable(table0, roots, dummyRoot);
 end resultGraphWithRoots;
@@ -575,7 +575,7 @@ algorithm
   table := resultGraphWithRoots(definiteRoots);
   table := addBranchesToTable(table, branches);
   orderedPotentialRoots := Util.sort(potentialRoots, ord);
-  dummyRoot := Exp.CREF_IDENT("__DUMMY_ROOT", Exp.ET_INT, {});
+  dummyRoot := DAE.CREF_IDENT("__DUMMY_ROOT", DAE.ET_INT, {});
   (table, dae) := addConnections(table, connections, {});
   (table, finalRoots) := addPotentialRootsToTable(table, orderedPotentialRoots, definiteRoots, dummyRoot);  
   outRoots := finalRoots;
@@ -605,11 +605,11 @@ algorithm
     list<Exp.ComponentRef> roots;
     Exp.ComponentRef cref;
     Boolean result;
-    case (Exp.CALL(path=Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")), 
-          expLst={Exp.CREF(componentRef = cref)}), roots)
+    case (DAE.CALL(path=Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")), 
+          expLst={DAE.CREF(componentRef = cref)}), roots)
       equation
         result = Util.listContainsWithCompareFunc(cref, roots, Exp.crefEqual);
-      then (Exp.BCONST(result), roots);
+      then (DAE.BCONST(result), roots);
     case (exp, roots)
       then (exp, roots);
   end matchcontinue;

@@ -403,18 +403,18 @@ Helper function to binopSymbol
 algorithm
   outString:=
   matchcontinue (inOperator)
-    case (Exp.ADD(ty = _)) then MathMLPlus;
-    case (Exp.SUB(ty = _)) then MathMLMinus;
-    case (Exp.MUL(ty = _)) then MathMLTimes;
-    case (Exp.DIV(ty = _)) then MathMLDivide;
-    case (Exp.POW(ty = _)) then MathMLPower;
-    case (Exp.ADD_ARR(ty = _)) then MathMLPlus;
-    case (Exp.SUB_ARR(ty = _)) then MathMLMinus;
-    case (Exp.MUL_SCALAR_ARRAY(ty = _)) then MathMLTimes;
-    case (Exp.MUL_ARRAY_SCALAR(ty = _)) then MathMLTimes;
-    case (Exp.MUL_SCALAR_PRODUCT(ty = _)) then MathMLScalarproduct;
-    case (Exp.MUL_MATRIX_PRODUCT(ty = _)) then MathMLVectorproduct;
-    case (Exp.DIV_ARRAY_SCALAR(ty = _)) then MathMLDivide;
+    case (DAE.ADD(ty = _)) then MathMLPlus;
+    case (DAE.SUB(ty = _)) then MathMLMinus;
+    case (DAE.MUL(ty = _)) then MathMLTimes;
+    case (DAE.DIV(ty = _)) then MathMLDivide;
+    case (DAE.POW(ty = _)) then MathMLPower;
+    case (DAE.ADD_ARR(ty = _)) then MathMLPlus;
+    case (DAE.SUB_ARR(ty = _)) then MathMLMinus;
+    case (DAE.MUL_SCALAR_ARRAY(ty = _)) then MathMLTimes;
+    case (DAE.MUL_ARRAY_SCALAR(ty = _)) then MathMLTimes;
+    case (DAE.MUL_SCALAR_PRODUCT(ty = _)) then MathMLScalarproduct;
+    case (DAE.MUL_MATRIX_PRODUCT(ty = _)) then MathMLVectorproduct;
+    case (DAE.DIV_ARRAY_SCALAR(ty = _)) then MathMLDivide;
   end matchcontinue;
 end binopSymbol2;
 
@@ -607,7 +607,7 @@ algorithm
       Exp.Exp e1,e2;
       list<DAELow.MultiDimEquation> es;
     case ({},_,_) then ();
-    case ((DAELow.MULTIDIM_EQUATION(left = e1,right = e2) :: es),Exp.BCONST(bool=true),Exp.BCONST(bool=false))
+    case ((DAELow.MULTIDIM_EQUATION(left = e1,right = e2) :: es),DAE.BCONST(bool=true),DAE.BCONST(bool=false))
       equation
         s1 = Exp.printExpStr(e1);
         s2 = Exp.printExpStr(e2);
@@ -623,18 +623,18 @@ algorithm
         dumpStrCloseTag(MATH);
         dumpStrCloseTag(MathML);
         dumpStrCloseTag(ARRAY_EQUATION);
-        dumpArrayEqns2(es,Exp.BCONST(true),Exp.BCONST(false));
+        dumpArrayEqns2(es,DAE.BCONST(true),DAE.BCONST(false));
       then ();
-    case ((DAELow.MULTIDIM_EQUATION(left = e1,right = e2) :: es),Exp.BCONST(bool=false),Exp.BCONST(false))
+    case ((DAELow.MULTIDIM_EQUATION(left = e1,right = e2) :: es),DAE.BCONST(bool=false),DAE.BCONST(false))
       equation
         s1 = Exp.printExpStr(e1);
         s2 = Exp.printExpStr(e2);
         s = Util.stringAppendList({s1," = ",s2,"\n"});
         dumpStrOpenTagAttr(ARRAY_EQUATION, EXP_STRING, s);
         dumpStrCloseTag(ARRAY_EQUATION);
-        dumpArrayEqns2(es,Exp.BCONST(false),Exp.BCONST(false));
+        dumpArrayEqns2(es,DAE.BCONST(false),DAE.BCONST(false));
       then ();
-    case ((DAELow.MULTIDIM_EQUATION(left = e1,right = e2) :: es),Exp.BCONST(bool=true),Exp.BCONST(bool=true))
+    case ((DAELow.MULTIDIM_EQUATION(left = e1,right = e2) :: es),DAE.BCONST(bool=true),DAE.BCONST(bool=true))
       equation
         s1 = Exp.printExpStr(e1);
         s2 = Exp.printExpStr(e2);
@@ -649,21 +649,21 @@ algorithm
         dumpExp2(e1);
         dumpExp2(e2);
         dumpStrCloseTag(MathMLApply);
-        dumpExp2(Exp.RCONST(0.0));
+        dumpExp2(DAE.RCONST(0.0));
         dumpStrCloseTag(MathMLApply);
         dumpStrCloseTag(MATH);
         dumpStrCloseTag(MathML);
         dumpStrCloseTag(ARRAY_EQUATION);
-        dumpArrayEqns2(es,Exp.BCONST(true),Exp.BCONST(true));
+        dumpArrayEqns2(es,DAE.BCONST(true),DAE.BCONST(true));
       then ();
-    case ((DAELow.MULTIDIM_EQUATION(left = e1,right = e2) :: es),Exp.BCONST(bool=false),Exp.BCONST(true))
+    case ((DAELow.MULTIDIM_EQUATION(left = e1,right = e2) :: es),DAE.BCONST(bool=false),DAE.BCONST(true))
       equation
         s1 = Exp.printExpStr(e1);
         s2 = Exp.printExpStr(e2);
         s = Util.stringAppendList({s1," - (",s2,") = 0\n"});
         dumpStrOpenTagAttr(ARRAY_EQUATION, EXP_STRING, s);
         dumpStrCloseTag(ARRAY_EQUATION);
-        dumpArrayEqns2(es,Exp.BCONST(false),Exp.BCONST(true));
+        dumpArrayEqns2(es,DAE.BCONST(false),DAE.BCONST(true));
       then ();        
   end matchcontinue;
 end dumpArrayEqns2;
@@ -1267,12 +1267,12 @@ algorithm
       list<DAELow.Equation> eqns;
       Exp.Exp addMMLCode;
     case ({},_,_,_) then ();
-    case ((eqn :: eqns),index,addMMLCode,Exp.BCONST(bool=false))
+    case ((eqn :: eqns),index,addMMLCode,DAE.BCONST(bool=false))
       equation
         dumpEquation(eqn, intString(index),addMMLCode);
-        dumpEqns2(eqns, index+1,addMMLCode,Exp.BCONST(false));
+        dumpEqns2(eqns, index+1,addMMLCode,DAE.BCONST(false));
       then ();
-    case ((eqn :: eqns),index,addMMLCode,Exp.BCONST(bool=true))
+    case ((eqn :: eqns),index,addMMLCode,DAE.BCONST(bool=true))
       equation
         //dumpEquation(DAELow.equationToResidualForm(eqn), intString(index),addMMLCode);
         //This should be done as above. The problem is that the DAELow.equationToResidualForm(eqn) method
@@ -1288,7 +1288,7 @@ algorithm
         dumpResidual(eqn, intString(index),addMMLCode);
         //will be substituted with:
         //dumpEquation(DAELow.equationToResidualForm(eqn), intString(index),addMMLCode);
-        dumpEqns2(eqns, index+1,addMMLCode,Exp.BCONST(true));
+        dumpEqns2(eqns, index+1,addMMLCode,DAE.BCONST(true));
       then ();        
   end matchcontinue;
 end dumpEqns2;
@@ -1338,7 +1338,7 @@ algorithm
       Exp.ComponentRef cr;
       Exp.Exp addMMLCode;
 
-    case (DAELow.EQUATION(exp = e1,scalar = e2),indexS,Exp.BCONST(bool=true))
+    case (DAELow.EQUATION(exp = e1,scalar = e2),indexS,DAE.BCONST(bool=true))
       equation
         s1 = Exp.printExpStr(e1);
         s2 = Exp.printExpStr(e2);
@@ -1356,7 +1356,7 @@ algorithm
         dumpStrCloseTag(MathML);
         dumpStrCloseTag(EQUATION);
       then ();
-    case (DAELow.EQUATION(exp = e1,scalar = e2),indexS,Exp.BCONST(bool=false))
+    case (DAELow.EQUATION(exp = e1,scalar = e2),indexS,DAE.BCONST(bool=false))
       equation
         s1 = Exp.printExpStr(e1);
         s2 = Exp.printExpStr(e2);
@@ -1378,7 +1378,7 @@ algorithm
         dumpStrCloseTag(ADDITIONAL_INFO);
         dumpStrCloseTag(ARRAY_OF_EQUATIONS);
       then ();
-    case (DAELow.SOLVED_EQUATION(componentRef = cr,exp = e2),indexS,Exp.BCONST(bool=true))
+    case (DAELow.SOLVED_EQUATION(componentRef = cr,exp = e2),indexS,DAE.BCONST(bool=true))
       equation
         s1 = Exp.printComponentRefStr(cr);
         s2 = Exp.printExpStr(e2);
@@ -1396,7 +1396,7 @@ algorithm
         dumpStrCloseTag(MathML);
         dumpStrCloseTag(stringAppend(SOLVED,EQUATION_));
       then ();
-    case (DAELow.SOLVED_EQUATION(componentRef = cr,exp = e2),indexS,Exp.BCONST(bool=false))
+    case (DAELow.SOLVED_EQUATION(componentRef = cr,exp = e2),indexS,DAE.BCONST(bool=false))
       equation
         s1 = Exp.printComponentRefStr(cr);
         s2 = Exp.printExpStr(e2);
@@ -1405,7 +1405,7 @@ algorithm
         Print.printBuf(res);
         dumpStrCloseTag(stringAppend(SOLVED,EQUATION_));
       then ();
-    case (DAELow.WHEN_EQUATION(whenEquation = DAELow.WHEN_EQ(index = i,left = cr,right = e2)),indexS,Exp.BCONST(bool=true))
+    case (DAELow.WHEN_EQUATION(whenEquation = DAELow.WHEN_EQ(index = i,left = cr,right = e2)),indexS,DAE.BCONST(bool=true))
       equation
         s1 = Exp.printComponentRefStr(cr);
         s2 = Exp.printExpStr(e2);
@@ -1425,7 +1425,7 @@ algorithm
         dumpStrTagContent(stringAppend(stringAppend(WHEN,EQUATION_),ID_),is);
         dumpStrCloseTag(stringAppend(WHEN,EQUATION_));
       then ();
-    case (DAELow.WHEN_EQUATION(whenEquation = DAELow.WHEN_EQ(index = i,left = cr,right = e2)),indexS,Exp.BCONST(bool=false))
+    case (DAELow.WHEN_EQUATION(whenEquation = DAELow.WHEN_EQ(index = i,left = cr,right = e2)),indexS,DAE.BCONST(bool=false))
       equation
         s1 = Exp.printComponentRefStr(cr);
         s2 = Exp.printExpStr(e2);
@@ -1436,7 +1436,7 @@ algorithm
         dumpStrTagContent(stringAppend(stringAppend(WHEN,EQUATION_),ID_),is);
         dumpStrCloseTag(stringAppend(WHEN,EQUATION_));
       then ();
-    case (DAELow.RESIDUAL_EQUATION(exp = e),indexS,Exp.BCONST(bool=true))
+    case (DAELow.RESIDUAL_EQUATION(exp = e),indexS,DAE.BCONST(bool=true))
       equation
         s1 = Exp.printExpStr(e);
         res = Util.stringAppendList({s1," = 0"});
@@ -1453,7 +1453,7 @@ algorithm
         dumpStrCloseTag(MathML);
         dumpStrCloseTag(stringAppend(RESIDUAL,EQUATION_));
       then ();
-    case (DAELow.RESIDUAL_EQUATION(exp = e),indexS,Exp.BCONST(bool=false))
+    case (DAELow.RESIDUAL_EQUATION(exp = e),indexS,DAE.BCONST(bool=false))
       equation
         s1 = Exp.printExpStr(e);
         res = Util.stringAppendList({s1," = 0"});
@@ -1493,7 +1493,7 @@ algorithm
     local
       Exp.Exp inExp;
       Exp.Exp addMMLCode;
-    case(inExp,Exp.BCONST(bool=true))
+    case(inExp,DAE.BCONST(bool=true))
       equation
         dumpStrOpenTag(MathML);
         dumpStrOpenTagAttr(MATH, MathMLXmlns, MathMLWeb);
@@ -1501,7 +1501,7 @@ algorithm
         dumpStrCloseTag(MATH);
         dumpStrCloseTag(MathML);
       then();
-    case(_,Exp.BCONST(bool=false))
+    case(_,DAE.BCONST(bool=false))
       then();
     case(_,_) then();   
   end matchcontinue; 
@@ -1528,44 +1528,44 @@ algorithm
       Exp.Operator op;
       Absyn.Path fcn;
       list<Exp.Exp> args,es;
-    case (Exp.END())
+    case (DAE.END())
     ////////////////////////////////////////////////
     //////    TO DO: ADD SUPPORT TO END     ////////
     ////////////////////////////////////////////////
       equation
         Print.printBuf("end");
       then ();
-    case (Exp.ICONST(integer = x))
+    case (DAE.ICONST(integer = x))
       equation
         dumpStrMathMLNumberAttr(intString(x),MathMLType,MathMLInteger);
       then ();
-    case (Exp.RCONST(real = x))
+    case (DAE.RCONST(real = x))
       local Real x;
       equation
         dumpStrMathMLNumberAttr(realString(x),MathMLType,MathMLReal);
       then ();
-    case (Exp.SCONST(string = s))
+    case (DAE.SCONST(string = s))
       equation
         dumpStrMathMLNumberAttr(s,MathMLType,MathMLConstant);
       then ();
-    case (Exp.BCONST(bool = false))
+    case (DAE.BCONST(bool = false))
       equation
         dumpStrOpenTag(MathMLApply);
         dumpStrVoidTag(MathMLFalse);
         dumpStrCloseTag(MathMLApply);
       then ();
-    case (Exp.BCONST(bool = true))
+    case (DAE.BCONST(bool = true))
       equation
         dumpStrOpenTag(MathMLApply);
         dumpStrVoidTag(MathMLTrue);
         dumpStrCloseTag(MathMLApply);
       then ();
-    case (Exp.CREF(componentRef = c,ty = t))
+    case (DAE.CREF(componentRef = c,ty = t))
       equation
         s = Exp.printComponentRefStr(c);
         dumpStrMathMLVariable(s);
       then ();
-    case (e as Exp.BINARY(e1,op,e2))
+    case (e as DAE.BINARY(e1,op,e2))
       equation
         sym = binopSymbol(op);
         dumpStrOpenTag(MathMLApply);
@@ -1574,7 +1574,7 @@ algorithm
         dumpExp2(e2);
         dumpStrCloseTag(MathMLApply);
       then ();
-     case ((e as Exp.UNARY(op,e1)))
+     case ((e as DAE.UNARY(op,e1)))
       equation
         sym = unaryopSymbol(op);
         dumpStrOpenTag(MathMLApply);
@@ -1582,7 +1582,7 @@ algorithm
         dumpExp2(e1);
         dumpStrCloseTag(MathMLApply);
       then ();
-   case ((e as Exp.LBINARY(e1,op,e2)))
+   case ((e as DAE.LBINARY(e1,op,e2)))
       equation
         sym = lbinopSymbol(op);
         dumpStrOpenTag(MathMLApply);
@@ -1591,7 +1591,7 @@ algorithm
         dumpExp2(e2);
         dumpStrCloseTag(MathMLApply);
       then ();
-   case ((e as Exp.LUNARY(op,e1)))
+   case ((e as DAE.LUNARY(op,e1)))
       equation
         sym = lunaryopSymbol(op);
         dumpStrOpenTag(MathMLApply);
@@ -1599,7 +1599,7 @@ algorithm
         dumpExp2(e1);
         dumpStrCloseTag(MathMLApply);
       then();
-   case ((e as Exp.RELATION(e1,op,e2)))
+   case ((e as DAE.RELATION(e1,op,e2)))
       equation
         sym = relopSymbol(op);
         dumpStrOpenTag(MathMLApply);
@@ -1608,7 +1608,7 @@ algorithm
         dumpExp2(e2);
         dumpStrCloseTag(MathMLApply);
       then ();
-    case ((e as Exp.IFEXP(cond,tb,fb)))
+    case ((e as DAE.IFEXP(cond,tb,fb)))
       equation
         dumpStrOpenTag(MathMLApply);
         dumpStrOpenTag(MathMLIfClause);
@@ -1621,35 +1621,35 @@ algorithm
         dumpStrCloseTag(MathMLElseBranch);
         dumpStrCloseTag(MathMLApply);
       then ();
-    case (Exp.CALL(path = Absyn.IDENT(name = "der"),expLst = args))
+    case (DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = args))
       equation
         dumpStrOpenTag(MathMLApply);
         dumpStrVoidTag("diff");
         dumpList(args,dumpExp2);
         dumpStrCloseTag(MathMLApply);
       then ();
-    case (Exp.CALL(path = Absyn.IDENT(name = "acos"),expLst = args))
+    case (DAE.CALL(path = Absyn.IDENT(name = "acos"),expLst = args))
       equation
         dumpStrOpenTag(MathMLApply);
         dumpStrVoidTag(MathMLArccos);
         dumpList(args,dumpExp2);
         dumpStrCloseTag(MathMLApply);
       then ();
-    case (Exp.CALL(path = Absyn.IDENT(name = "asin"),expLst = args))
+    case (DAE.CALL(path = Absyn.IDENT(name = "asin"),expLst = args))
       equation
         dumpStrOpenTag(MathMLApply);
         dumpStrVoidTag(MathMLArcsin);
         dumpList(args,dumpExp2);
         dumpStrCloseTag(MathMLApply);
       then ();
-    case (Exp.CALL(path = Absyn.IDENT(name = "atan"),expLst = args))
+    case (DAE.CALL(path = Absyn.IDENT(name = "atan"),expLst = args))
       equation
         dumpStrOpenTag(MathMLApply);
         dumpStrVoidTag(MathMLArctan);
         dumpList(args,dumpExp2);
         dumpStrCloseTag(MathMLApply);
       then ();
-    case (Exp.CALL(path = Absyn.IDENT(name = "atan2"),expLst = args))
+    case (DAE.CALL(path = Absyn.IDENT(name = "atan2"),expLst = args))
       equation
         dumpStrOpenTag(MathMLApply);
         dumpStrOpenTag(MathMLOperator);
@@ -1665,14 +1665,14 @@ algorithm
         dumpStrCloseTag(MathMLOperator);
         dumpStrCloseTag(MathMLApply);
       then ();
-    case (Exp.CALL(path = Absyn.IDENT(name = "log"),expLst = args))
+    case (DAE.CALL(path = Absyn.IDENT(name = "log"),expLst = args))
       equation
         dumpStrOpenTag(MathMLApply);
         dumpStrVoidTag(MathMLLn);
         dumpList(args,dumpExp2);
         dumpStrCloseTag(MathMLApply);
       then ();
-    case (Exp.CALL(path = Absyn.IDENT(name = "log10"),expLst = args))
+    case (DAE.CALL(path = Absyn.IDENT(name = "log10"),expLst = args))
       equation
         dumpStrOpenTag(MathMLApply);
         dumpStrVoidTag(MathMLLog);
@@ -1680,7 +1680,7 @@ algorithm
         dumpStrCloseTag(MathMLApply);
       then ();
 /*
-    case (Exp.CALL(path = Absyn.IDENT(name = "pre"),expLst = args))
+    case (DAE.CALL(path = Absyn.IDENT(name = "pre"),expLst = args))
       equation
         fs = Absyn.pathString(fcn);
         dumpStrOpenTag(MathMLApply);
@@ -1690,7 +1690,7 @@ algorithm
         dumpStrCloseTag("apMathMLApply;
       then ();
 */
-    case (Exp.CALL(path = fcn,expLst = args))
+    case (DAE.CALL(path = fcn,expLst = args))
       equation
         // Add the ref to path
         fs = Absyn.pathString(fcn);
@@ -1699,7 +1699,7 @@ algorithm
         dumpList(args,dumpExp2);
         dumpStrCloseTag(MathMLApply);
       then ();
-    case (Exp.ARRAY(array = es,ty=tp))//Array are dumped as vector
+    case (DAE.ARRAY(array = es,ty=tp))//Array are dumped as vector
       local Exp.Type tp; String s3;
       equation
         dumpStrOpenTag(MathMLApply);
@@ -1711,7 +1711,7 @@ algorithm
         dumpStrCloseTag(MathMLApply);
         dumpStrCloseTag(MathMLApply);
       then ();
-    case (Exp.TUPLE(PR = es))//Tuple are dumped as vector
+    case (DAE.TUPLE(PR = es))//Tuple are dumped as vector
       equation
         dumpStrOpenTag(MathMLApply);
         dumpStrVoidTag(MathMLTranspose);
@@ -1722,7 +1722,7 @@ algorithm
         dumpStrCloseTag(MathMLApply);
         dumpStrCloseTag(MathMLApply);
       then ();
-    case (Exp.MATRIX(scalar = es,ty=tp))
+    case (DAE.MATRIX(scalar = es,ty=tp))
       local list<list<tuple<Exp.Exp, Boolean>>> es;
         Exp.Type tp; String s3;
       equation
@@ -1734,7 +1734,7 @@ algorithm
         dumpStrCloseTag(MathMLMatrix);
         dumpStrCloseTag(MathMLApply);
       then ();
-    case (e as Exp.RANGE(_,start,NONE,stop))
+    case (e as DAE.RANGE(_,start,NONE,stop))
       equation
         dumpStrOpenTag(MathMLApply);
         dumpStrOpenTag(MathMLInterval);
@@ -1743,7 +1743,7 @@ algorithm
         dumpStrCloseTag(MathMLInterval);
         dumpStrCloseTag(MathMLApply);
       then ();
-    case ((e as Exp.RANGE(_,start,SOME(step),stop)))
+    case ((e as DAE.RANGE(_,start,SOME(step),stop)))
       equation
         dumpStrOpenTag(MathMLApply);
         dumpStrOpenTag(MathMLOperator);
@@ -1764,14 +1764,14 @@ algorithm
         dumpStrCloseTag(MathMLOperator);
         dumpStrCloseTag(MathMLApply);
       then ();
-    case (Exp.CAST(ty = Exp.ET_REAL(),exp = Exp.ICONST(integer = ival)))
+    case (DAE.CAST(ty = DAE.ET_REAL(),exp = DAE.ICONST(integer = ival)))
       equation
         false = RTOpts.modelicaOutput();
         rval = intReal(ival);
         res = realString(rval);
         dumpStrMathMLNumberAttr(res,MathMLType,MathMLReal);
       then ();
-    case (Exp.CAST(ty = Exp.ET_REAL(),exp = Exp.UNARY(operator = Exp.UMINUS(ty = _),exp = Exp.ICONST(integer = ival))))
+    case (DAE.CAST(ty = DAE.ET_REAL(),exp = DAE.UNARY(operator = DAE.UMINUS(ty = _),exp = DAE.ICONST(integer = ival))))
       equation
         false = RTOpts.modelicaOutput();
         rval = intReal(ival);
@@ -1781,7 +1781,7 @@ algorithm
         dumpStrMathMLNumberAttr(res,MathMLType,MathMLReal);
         dumpStrCloseTag(MathMLApply);
       then ();
-    case (Exp.CAST(ty = Exp.ET_REAL(),exp = e))
+    case (DAE.CAST(ty = DAE.ET_REAL(),exp = e))
       equation
         false = RTOpts.modelicaOutput();
         dumpStrOpenTag(MathMLApply);
@@ -1789,12 +1789,12 @@ algorithm
         dumpExp2(e);
         dumpStrCloseTag(MathMLApply);
       then ();
-    case (Exp.CAST(ty = Exp.ET_REAL(),exp = e))
+    case (DAE.CAST(ty = DAE.ET_REAL(),exp = e))
       equation
         true = RTOpts.modelicaOutput();
         dumpExp2(e);
       then ();
-    case (Exp.CAST(ty = tp,exp = e))
+    case (DAE.CAST(ty = tp,exp = e))
       equation
         str = Exp.typeString(tp);
         dumpStrOpenTag(MathMLApply);
@@ -1811,7 +1811,7 @@ algorithm
         dumpStrCloseTag(MathMLOperator);
         dumpStrCloseTag(MathMLApply);
       then ();
-    case (e as Exp.ASUB(exp = e1,sub = {e2}))
+    case (e as DAE.ASUB(exp = e1,sub = {e2}))
       equation
         dumpStrOpenTag(MathMLApply);
         dumpStrVoidTag(MathMLSelector);
@@ -1819,26 +1819,26 @@ algorithm
         dumpExp2(e2);
         dumpStrCloseTag(MathMLApply);
       then ();
-    case (Exp.SIZE(exp = cr,sz = SOME(dim)))
+    case (DAE.SIZE(exp = cr,sz = SOME(dim)))
       equation
         // NOT PART OF THE MODELICA LANGUAGE
       then ();
-    case (Exp.SIZE(exp = cr,sz = NONE))
+    case (DAE.SIZE(exp = cr,sz = NONE))
       equation
         // NOT PART OF THE MODELICA LANGUAGE
       then ();
-    case (Exp.REDUCTION(path = fcn,expr = exp,ident = id,range = iterexp))
+    case (DAE.REDUCTION(path = fcn,expr = exp,ident = id,range = iterexp))
       equation
         // NOT PART OF THE MODELICA LANGUAGE
       then  ();
       // MetaModelica list
-    case (Exp.LIST(_,es))
+    case (DAE.LIST(_,es))
       local list<Exp.Exp> es;
       equation
         // NOT PART OF THE MODELICA LANGUAGE
       then ();
         // MetaModelica list cons
-    case (Exp.CONS(_,e1,e2))
+    case (DAE.CONS(_,e1,e2))
       equation
         // NOT PART OF THE MODELICA LANGUAGE
       then ();
@@ -2665,10 +2665,10 @@ algorithm
   _:=
   matchcontinue (addOriginalIncidenceMatrix,addSolvingInfo,inDAELow)
       local DAELow.DAELow dlow;
-  case (Exp.BCONST(bool=false),Exp.BCONST(bool=false),_)
+  case (DAE.BCONST(bool=false),DAE.BCONST(bool=false),_)
     equation
     then ();
-  case (Exp.BCONST(bool=true),Exp.BCONST(bool=true),dlow)
+  case (DAE.BCONST(bool=true),DAE.BCONST(bool=true),dlow)
     local
       list<Integer>[:] m,mT;
       Integer[:] v1,v2;
@@ -2689,7 +2689,7 @@ algorithm
       dumpStrCloseTag(SOLVING_INFO);
       dumpStrCloseTag(ADDITIONAL_INFO);
     then ();
-  case (Exp.BCONST(bool=true),Exp.BCONST(bool=false),dlow)
+  case (DAE.BCONST(bool=true),DAE.BCONST(bool=false),dlow)
     local
       list<Integer>[:] m,mT;
       Integer[:] v1,v2;
@@ -2703,7 +2703,7 @@ algorithm
       dumpStrCloseTag(ORIGINAL_INCIDENCE_MATRIX);
       dumpStrCloseTag(ADDITIONAL_INFO);
     then ();
-  case (Exp.BCONST(bool=false),Exp.BCONST(bool=true),dlow)
+  case (DAE.BCONST(bool=false),DAE.BCONST(bool=true),dlow)
     local
       list<Integer>[:] m,mT;
       Integer[:] v1,v2;
@@ -3059,17 +3059,17 @@ algorithm
   _:=
   matchcontinue (inSubscript)
     local Exp.Exp e1;
-    case (Exp.WHOLEDIM())
+    case (DAE.WHOLEDIM())
       equation
         Print.printBuf(":");
       then
         ();
-    case (Exp.INDEX(exp = e1))
+    case (DAE.INDEX(exp = e1))
       equation
         Print.printBuf(Exp.printExpStr(e1));
       then
         ();
-    case (Exp.SLICE(exp = e1))
+    case (DAE.SLICE(exp = e1))
       equation
         Print.printBuf(Exp.printExpStr(e1));
       then
@@ -3492,8 +3492,8 @@ function: lbinopSymbol
 algorithm
   outString:=
   matchcontinue (inOperator)
-    case (Exp.AND()) then MathMLAnd;
-    case (Exp.OR()) then MathMLOr;
+    case (DAE.AND()) then MathMLAnd;
+    case (DAE.OR()) then MathMLOr;
   end matchcontinue;
 end lbinopSymbol;
 
@@ -3507,7 +3507,7 @@ function: lunaryopSymbol
 algorithm
   outString:=
   matchcontinue (inOperator)
-    case (Exp.NOT()) then MathMLNot;
+    case (DAE.NOT()) then MathMLNot;
   end matchcontinue;
 end lunaryopSymbol;
 
@@ -3516,7 +3516,7 @@ public function printExpStr "
 function: printExpStr
   This function prints a complete expression.
   This function is exactly the same of the Print.printExpStr function
-  exception with the printing of the Exp.SCONST. The Exp.SCONST
+  exception with the printing of the DAE.SCONST. The DAE.SCONST
   are printed without quotes.
 "
   input Exp.Exp e;
@@ -3545,32 +3545,32 @@ algorithm
       Exp.Operator op;
       Absyn.Path fcn;
       list<Exp.Exp> args,es;
-    case (Exp.END()) then "end";
-    case (Exp.ICONST(integer = x))
+    case (DAE.END()) then "end";
+    case (DAE.ICONST(integer = x))
       equation
         s = intString(x);
       then
         s;
-    case (Exp.RCONST(real = x))
+    case (DAE.RCONST(real = x))
       local Real x;
       equation
         s = realString(x);
       then
         s;
-    case (Exp.SCONST(string = s))
+    case (DAE.SCONST(string = s))
       equation
         //s_1 = stringAppend("\"", s);
         s_2 = s;//stringAppend(s_1, "\"");
       then
         s_2;
-    case (Exp.BCONST(bool = false)) then "false";
-    case (Exp.BCONST(bool = true)) then "true";
-    case (Exp.CREF(componentRef = c,ty = t))
+    case (DAE.BCONST(bool = false)) then "false";
+    case (DAE.BCONST(bool = true)) then "true";
+    case (DAE.CREF(componentRef = c,ty = t))
       equation
         s = Exp.printComponentRefStr(c);
       then
         s;
-    case (e as Exp.BINARY(e1,op,e2))
+    case (e as DAE.BINARY(e1,op,e2))
       equation
         sym = Exp.binopSymbol(op);
         s1 = printExpStr(e1);
@@ -3584,7 +3584,7 @@ algorithm
         s_1 = stringAppend(s, s2_1);
       then
         s_1;
-     case ((e as Exp.UNARY(op,e1)))
+     case ((e as DAE.UNARY(op,e1)))
       equation
         sym = Exp.unaryopSymbol(op);
         s = printExpStr(e1);
@@ -3594,7 +3594,7 @@ algorithm
         s_2 = stringAppend(sym, s_1);
       then
         s_2;
-   case ((e as Exp.LBINARY(e1,op,e2)))
+   case ((e as DAE.LBINARY(e1,op,e2)))
       equation
         sym = Exp.lbinopSymbol(op);
         s1 = printExpStr(e1);
@@ -3608,7 +3608,7 @@ algorithm
         s_1 = stringAppend(s, s2_1);
       then
         s_1;
-   case ((e as Exp.LUNARY(op,e1)))
+   case ((e as DAE.LUNARY(op,e1)))
       equation
         sym = Exp.lunaryopSymbol(op);
         s = printExpStr(e1);
@@ -3618,7 +3618,7 @@ algorithm
         s_2 = stringAppend(sym, s_1);
       then
         s_2;
-   case ((e as Exp.RELATION(e1,op,e2)))
+   case ((e as DAE.RELATION(e1,op,e2)))
       equation
         sym = Exp.relopSymbol(op);
         // replace < and > with W3C standart &lt; and &gt; 
@@ -3635,7 +3635,7 @@ algorithm
         s_1 = stringAppend(s, s2_1);
       then
         s_1;
-    case ((e as Exp.IFEXP(cond,tb,fb)))
+    case ((e as DAE.IFEXP(cond,tb,fb)))
       equation
         cs = printExpStr(cond);
         ts = printExpStr(tb);
@@ -3650,7 +3650,7 @@ algorithm
         str = Util.stringAppendList({"if ",cs_1," then ",ts_1," else ",fs_1});
       then
         str;
-    case (Exp.CALL(path = fcn,expLst = args))
+    case (DAE.CALL(path = fcn,expLst = args))
       equation
         fs = Absyn.pathString(fcn);
         argstr = Exp.printListStr(args, printExpStr, ",");
@@ -3659,7 +3659,7 @@ algorithm
         s_2 = stringAppend(s_1, ")");
       then
         s_2;
-    case (Exp.ARRAY(array = es,ty=tp))
+    case (DAE.ARRAY(array = es,ty=tp))
       local Exp.Type tp; String s3;
       equation
         s3 = Exp.typeString(tp);
@@ -3667,14 +3667,14 @@ algorithm
         s_2 = Util.stringAppendList({"{",s,"}"});
       then
         s_2;
-    case (Exp.TUPLE(PR = es))
+    case (DAE.TUPLE(PR = es))
       equation
         s = Exp.printListStr(es, printExpStr, ",");
         s_1 = stringAppend("(", s);
         s_2 = stringAppend(s_1, ")");
       then
         s_2;
-    case (Exp.MATRIX(scalar = es,ty=tp))
+    case (DAE.MATRIX(scalar = es,ty=tp))
       local list<list<tuple<Exp.Exp, Boolean>>> es;
         Exp.Type tp; String s3;
       equation
@@ -3683,7 +3683,7 @@ algorithm
         s_2 = Util.stringAppendList({"{{",s,"}}"});
       then
         s_2;
-    case (e as Exp.RANGE(_,start,NONE,stop))
+    case (e as DAE.RANGE(_,start,NONE,stop))
       equation
         s1 = printExpStr(start);
         s3 = printExpStr(stop);
@@ -3695,7 +3695,7 @@ algorithm
         s = Util.stringAppendList({s1_1,":",s3_1});
       then
         s;
-    case ((e as Exp.RANGE(_,start,SOME(step),stop)))
+    case ((e as DAE.RANGE(_,start,SOME(step),stop)))
       equation
         s1 = printExpStr(start);
         s2 = printExpStr(step);
@@ -3710,14 +3710,14 @@ algorithm
         s = Util.stringAppendList({s1_1,":",s2_1,":",s3_1});
       then
         s;
-    case (Exp.CAST(ty = Exp.ET_REAL(),exp = Exp.ICONST(integer = ival)))
+    case (DAE.CAST(ty = DAE.ET_REAL(),exp = DAE.ICONST(integer = ival)))
       equation
         false = RTOpts.modelicaOutput();
         rval = intReal(ival);
         res = realString(rval);
       then
         res;
-    case (Exp.CAST(ty = Exp.ET_REAL(),exp = Exp.UNARY(operator = Exp.UMINUS(ty = _),exp = Exp.ICONST(integer = ival))))
+    case (DAE.CAST(ty = DAE.ET_REAL(),exp = DAE.UNARY(operator = DAE.UMINUS(ty = _),exp = DAE.ICONST(integer = ival))))
       equation
         false = RTOpts.modelicaOutput();
         rval = intReal(ival);
@@ -3725,27 +3725,27 @@ algorithm
         res2 = stringAppend("-", res);
       then
         res2;
-    case (Exp.CAST(ty = Exp.ET_REAL(),exp = e))
+    case (DAE.CAST(ty = DAE.ET_REAL(),exp = e))
       equation
         false = RTOpts.modelicaOutput();
         s = printExpStr(e);
         s_2 = Util.stringAppendList({"Real(",s,")"});
       then
         s_2;
-    case (Exp.CAST(ty = Exp.ET_REAL(),exp = e))
+    case (DAE.CAST(ty = DAE.ET_REAL(),exp = e))
       equation
         true = RTOpts.modelicaOutput();
         s = printExpStr(e);
       then
         s;
-    case (Exp.CAST(ty = tp,exp = e))
+    case (DAE.CAST(ty = tp,exp = e))
       equation
         str = Exp.typeString(tp);
         s = printExpStr(e);
         res = Util.stringAppendList({"CAST(",str,", ",s,")"});
       then
         res;
-    case (e as Exp.ASUB(exp = e1,sub = {e2}))
+    case (e as DAE.ASUB(exp = e1,sub = {e2}))
       equation
         p = Exp.expPriority(e);
         pe1 = Exp.expPriority(e1);
@@ -3755,20 +3755,20 @@ algorithm
         s_4 = Util.stringAppendList({s1_1,"[",s4,"]"});
       then
         s_4;
-    case (Exp.SIZE(exp = cr,sz = SOME(dim)))
+    case (DAE.SIZE(exp = cr,sz = SOME(dim)))
       equation
         crstr = printExpStr(cr);
         dimstr = printExpStr(dim);
         str = Util.stringAppendList({"size(",crstr,",",dimstr,")"});
       then
         str;
-    case (Exp.SIZE(exp = cr,sz = NONE))
+    case (DAE.SIZE(exp = cr,sz = NONE))
       equation
         crstr = printExpStr(cr);
         str = Util.stringAppendList({"size(",crstr,")"});
       then
         str;
-    case (Exp.REDUCTION(path = fcn,expr = exp,ident = id,range = iterexp))
+    case (DAE.REDUCTION(path = fcn,expr = exp,ident = id,range = iterexp))
       equation
         fs = Absyn.pathString(fcn);
         expstr = printExpStr(exp);
@@ -3778,7 +3778,7 @@ algorithm
         str;
 
       // MetaModelica list
-    case (Exp.LIST(_,es))
+    case (DAE.LIST(_,es))
       local list<Exp.Exp> es;
       equation
         s = Exp.printListStr(es, printExpStr, ",");
@@ -3788,7 +3788,7 @@ algorithm
         s_2;
 
         // MetaModelica list cons
-    case (Exp.CONS(_,e1,e2))
+    case (DAE.CONS(_,e1,e2))
       equation
         s1 = printExpStr(e1);
         s2 = printExpStr(e2);
@@ -3810,12 +3810,12 @@ function: relopSymbol
 algorithm
   outString:=
   matchcontinue (inOperator)
-    case (Exp.LESS(ty = _)) then MathMLLessThan;
-    case (Exp.LESSEQ(ty = _)) then MathMLLessEqualThan;
-    case (Exp.GREATER(ty = _)) then MathMLGreaterThan;
-    case (Exp.GREATEREQ(ty = _)) then MathMLGreaterEqualThan;
-    case (Exp.EQUAL(ty = _)) then MathMLEquivalent;
-    case (Exp.NEQUAL(ty = _)) then MathMLNotEqual;
+    case (DAE.LESS(ty = _)) then MathMLLessThan;
+    case (DAE.LESSEQ(ty = _)) then MathMLLessEqualThan;
+    case (DAE.GREATER(ty = _)) then MathMLGreaterThan;
+    case (DAE.GREATEREQ(ty = _)) then MathMLGreaterEqualThan;
+    case (DAE.EQUAL(ty = _)) then MathMLEquivalent;
+    case (DAE.NEQUAL(ty = _)) then MathMLNotEqual;
   end matchcontinue;
 end relopSymbol;
 
@@ -3864,7 +3864,7 @@ algorithm
       Exp.ComponentRef cr;
       Exp.Exp addMMLCode;
 
-    case (DAELow.EQUATION(exp = e1,scalar = e2),indexS,Exp.BCONST(bool=true))
+    case (DAELow.EQUATION(exp = e1,scalar = e2),indexS,DAE.BCONST(bool=true))
       equation
         s1 = Exp.printExpStr(e1);
         s2 = Exp.printExpStr(e2);
@@ -3880,13 +3880,13 @@ algorithm
         dumpExp2(e1);
         dumpExp2(e2);
         dumpStrCloseTag(MathMLApply);
-        dumpExp2(Exp.RCONST(0.0));
+        dumpExp2(DAE.RCONST(0.0));
         dumpStrCloseTag(MathMLApply);
         dumpStrCloseTag(MATH);
         dumpStrCloseTag(MathML);
         dumpStrCloseTag(EQUATION);
       then ();
-    case (DAELow.EQUATION(exp = e1,scalar = e2),indexS,Exp.BCONST(bool=false))
+    case (DAELow.EQUATION(exp = e1,scalar = e2),indexS,DAE.BCONST(bool=false))
       equation
         s1 = Exp.printExpStr(e1);
         s2 = Exp.printExpStr(e2);
@@ -3908,7 +3908,7 @@ algorithm
         dumpStrCloseTag(ADDITIONAL_INFO);
         dumpStrCloseTag(ARRAY_OF_EQUATIONS);
       then ();
-    case (DAELow.SOLVED_EQUATION(componentRef = cr,exp = e2),indexS,Exp.BCONST(bool=true))
+    case (DAELow.SOLVED_EQUATION(componentRef = cr,exp = e2),indexS,DAE.BCONST(bool=true))
       equation
         s1 = Exp.printComponentRefStr(cr);
         s2 = Exp.printExpStr(e2);
@@ -3924,13 +3924,13 @@ algorithm
         Print.printBuf(s1);
         dumpExp2(e2);
         dumpStrCloseTag(MathMLApply);
-        dumpExp2(Exp.RCONST(0.0));
+        dumpExp2(DAE.RCONST(0.0));
         dumpStrCloseTag(MathMLApply);
         dumpStrCloseTag(MATH);
         dumpStrCloseTag(MathML);
         dumpStrCloseTag(stringAppend(SOLVED,EQUATION_));
       then ();
-    case (DAELow.SOLVED_EQUATION(componentRef = cr,exp = e2),indexS,Exp.BCONST(bool=false))
+    case (DAELow.SOLVED_EQUATION(componentRef = cr,exp = e2),indexS,DAE.BCONST(bool=false))
       equation
         s1 = Exp.printComponentRefStr(cr);
         s2 = Exp.printExpStr(e2);
@@ -3939,7 +3939,7 @@ algorithm
         Print.printBuf(res);
         dumpStrCloseTag(stringAppend(SOLVED,EQUATION_));
       then ();
-    case (DAELow.WHEN_EQUATION(whenEquation = DAELow.WHEN_EQ(index = i,left = cr,right = e2)),indexS,Exp.BCONST(bool=true))
+    case (DAELow.WHEN_EQUATION(whenEquation = DAELow.WHEN_EQ(index = i,left = cr,right = e2)),indexS,DAE.BCONST(bool=true))
       equation
         s1 = Exp.printComponentRefStr(cr);
         s2 = Exp.printExpStr(e2);
@@ -3956,14 +3956,14 @@ algorithm
         Print.printBuf(s1);
         dumpExp2(e2);
         dumpStrCloseTag(MathMLApply);
-        dumpExp2(Exp.RCONST(0.0));
+        dumpExp2(DAE.RCONST(0.0));
         dumpStrCloseTag(MathMLApply);
         dumpStrCloseTag(MATH);
         dumpStrCloseTag(MathML);
         dumpStrTagContent(stringAppend(stringAppend(WHEN,EQUATION_),ID_),is);
         dumpStrCloseTag(stringAppend(WHEN,EQUATION_));
       then ();
-    case (DAELow.WHEN_EQUATION(whenEquation = DAELow.WHEN_EQ(index = i,left = cr,right = e2)),indexS,Exp.BCONST(bool=false))
+    case (DAELow.WHEN_EQUATION(whenEquation = DAELow.WHEN_EQ(index = i,left = cr,right = e2)),indexS,DAE.BCONST(bool=false))
       equation
         s1 = Exp.printComponentRefStr(cr);
         s2 = Exp.printExpStr(e2);
@@ -3974,7 +3974,7 @@ algorithm
         dumpStrTagContent(stringAppend(stringAppend(WHEN,EQUATION_),ID_),is);
         dumpStrCloseTag(stringAppend(WHEN,EQUATION_));
       then ();
-    case (DAELow.RESIDUAL_EQUATION(exp = e),indexS,Exp.BCONST(bool=true))
+    case (DAELow.RESIDUAL_EQUATION(exp = e),indexS,DAE.BCONST(bool=true))
       equation
         s1 = Exp.printExpStr(e);
         res = Util.stringAppendList({s1," = 0"});
@@ -3991,7 +3991,7 @@ algorithm
         dumpStrCloseTag(MathML);
         dumpStrCloseTag(stringAppend(RESIDUAL,EQUATION_));
       then ();
-    case (DAELow.RESIDUAL_EQUATION(exp = e),indexS,Exp.BCONST(bool=false))
+    case (DAELow.RESIDUAL_EQUATION(exp = e),indexS,DAE.BCONST(bool=false))
       equation
         s1 = Exp.printExpStr(e);
         res = Util.stringAppendList({s1," = 0"});
@@ -4023,10 +4023,10 @@ function: unaryopSymbol
 algorithm
   outString:=
   matchcontinue (inOperator)
-    case (Exp.UMINUS(ty = _)) then MathMLMinus;
-    case (Exp.UPLUS(ty = _)) then "";//Not necessay
-    case (Exp.UMINUS_ARR(ty = _)) then MathMLMinus;
-    case (Exp.UPLUS_ARR(ty = _)) then "";//Not necessary
+    case (DAE.UMINUS(ty = _)) then MathMLMinus;
+    case (DAE.UPLUS(ty = _)) then "";//Not necessay
+    case (DAE.UMINUS_ARR(ty = _)) then MathMLMinus;
+    case (DAE.UPLUS_ARR(ty = _)) then "";//Not necessary
   end matchcontinue;
 end unaryopSymbol;
 

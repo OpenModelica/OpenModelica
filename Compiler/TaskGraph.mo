@@ -86,8 +86,8 @@ algorithm
         knvars = DAELow.vararrayList(knvararr);
         addVariables(vars, starttask);
         addVariables(knvars, starttask);
-        addVariables({DAELow.VAR(Exp.CREF_IDENT("sim_time",Exp.ET_REAL(),{}),DAELow.VARIABLE(),
-                      DAE.INPUT(),DAELow.REAL(),NONE,NONE,{},0,Exp.CREF_IDENT("time",Exp.ET_REAL(),{}),{},NONE,
+        addVariables({DAELow.VAR(DAE.CREF_IDENT("sim_time",DAE.ET_REAL(),{}),DAELow.VARIABLE(),
+                      DAE.INPUT(),DAELow.REAL(),NONE,NONE,{},0,DAE.CREF_IDENT("time",DAE.ET_REAL(),{}),{},NONE,
                       NONE,DAE.NON_CONNECTOR(),DAE.NON_STREAM())}, starttask);
         buildBlocks(dae, ass1, ass2, blocks);
         print("done building taskgraph, about to build inits.\n");
@@ -341,7 +341,7 @@ algorithm
         ((v as DAELow.VAR(cr,kind,_,_,_,_,_,_,origname,_,dae_var_attr,comment,flowPrefix,streamPrefix))) = listNth(varlst, v_1);
         origname_str = Exp.printComponentRefStr(origname);
         isNonState(kind);
-        varexp = Exp.CREF(cr,Exp.ET_REAL()) "print \"Solving for non-states\\n\" &" ;
+        varexp = DAE.CREF(cr,DAE.ET_REAL()) "print \"Solving for non-states\\n\" &" ;
         expr = Exp.solve(e1, e2, varexp);
         buildAssignment(cr, expr, origname_str) "	Exp.print_exp_str e1 => e1s &
 	Exp.print_exp_str e2 => e2s &
@@ -365,8 +365,8 @@ algorithm
         name = Exp.printComponentRefStr(cr) "	Util.string_append_list({\"xd{\",indxs,\"}\"}) => id &" ;
         c_name = Util.modelicaStringToCStr(name,true);
         id = Util.stringAppendList({DAELow.derivativeNamePrefix,c_name});
-        cr_1 = Exp.CREF_IDENT(id,Exp.ET_REAL(),{});
-        varexp = Exp.CREF(cr_1,Exp.ET_REAL());
+        cr_1 = DAE.CREF_IDENT(id,DAE.ET_REAL(),{});
+        varexp = DAE.CREF(cr_1,DAE.ET_REAL());
         expr = Exp.solve(e1, e2, varexp);
         buildAssignment(cr_1, expr, origname_str) "	Exp.print_exp_str e1 => e1s &
 	Exp.print_exp_str e2 => e2s &
@@ -381,7 +381,7 @@ algorithm
 	vector_nth(ass2,e\') => v & ( v==variable no solved in this equation ))
 	int_sub(v,1) => v\' &
 	DAELow.vararray_nth(vararr,v\') => DAELow.VAR(cr,_,_,_,_,_,_,_,_,origname,_,dae_var_attr,comment,flow) &
-	let varexp = Exp.CREF(cr,Exp.ET_REAL) &
+	let varexp = DAE.CREF(cr,DAE.ET_REAL) &
 	not Exp.solve(e1,e2,varexp) => _ &
 	print \"nonlinear equation not implemented yet\\n\"
 	--------------------------------
@@ -399,10 +399,10 @@ algorithm
         name = Exp.printComponentRefStr(cr) "	Util.string_append_list({\"xd{\",indxs,\"}\"}) => id &" ;
         c_name = Util.modelicaStringToCStr(name,true);
         id = Util.stringAppendList({DAELow.derivativeNamePrefix,c_name});
-        cr_1 = Exp.CREF_IDENT(id,Exp.ET_REAL(),{});
-        varexp = Exp.CREF(cr_1,Exp.ET_REAL());
+        cr_1 = DAE.CREF_IDENT(id,DAE.ET_REAL(),{});
+        varexp = DAE.CREF(cr_1,DAE.ET_REAL());
         failure(_ = Exp.solve(e1, e2, varexp));
-        buildNonlinearEquations({varexp}, {Exp.BINARY(e1,Exp.SUB(Exp.ET_REAL()),e2)});
+        buildNonlinearEquations({varexp}, {DAE.BINARY(e1,DAE.SUB(DAE.ET_REAL()),e2)});
       then
         ();
     case (DAELow.DAELOW(orderedVars = vars,orderedEqs = eqns),ass1,ass2,e)
@@ -414,9 +414,9 @@ algorithm
         varlst = DAELow.varList(vars);
         ((v as DAELow.VAR(cr,kind,_,_,_,_,_,_,origname,_,dae_var_attr,comment,flowPrefix,streamPrefix))) = listNth(varlst, v_1);
         isNonState(kind);
-        varexp = Exp.CREF(cr,Exp.ET_REAL()) "print \"Solving for non-states\\n\" &" ;
+        varexp = DAE.CREF(cr,DAE.ET_REAL()) "print \"Solving for non-states\\n\" &" ;
         failure(expr = Exp.solve(e1, e2, varexp));
-        buildNonlinearEquations({varexp}, {Exp.BINARY(e1,Exp.SUB(Exp.ET_REAL()),e2)});
+        buildNonlinearEquations({varexp}, {DAE.BINARY(e1,DAE.SUB(DAE.ET_REAL()),e2)});
       then
         ();
     case (_,_,_,_)
@@ -516,11 +516,11 @@ algorithm
       Exp.ComponentRef cr;
       list<Exp.Exp> es;
     case (repl,{},_) then repl;
-    case (repl,(Exp.CREF(componentRef = cr) :: es),pos)
+    case (repl,(DAE.CREF(componentRef = cr) :: es),pos)
       equation
         pstr = intString(pos);
         str = Util.stringAppendList({"xloc[",pstr,"]"});
-        repl_1 = VarTransform.addReplacement(repl, cr, Exp.CREF(Exp.CREF_IDENT(str,Exp.ET_REAL(),{}),Exp.ET_REAL()));
+        repl_1 = VarTransform.addReplacement(repl, cr, DAE.CREF(DAE.CREF_IDENT(str,DAE.ET_REAL(),{}),DAE.ET_REAL()));
         pos_1 = pos + 1;
         repl_2 = makeResidualReplacements2(repl_1, es, pos_1);
       then
@@ -791,7 +791,7 @@ algorithm
       Exp.ComponentRef cr,cr2;
       Exp.Exp exp;
       Exp.Type tp;
-    case (cr,(exp as Exp.CREF(componentRef = cr2,ty = tp)),origname) /* varname expression orig. name */
+    case (cr,(exp as DAE.CREF(componentRef = cr2,ty = tp)),origname) /* varname expression orig. name */
       equation
         (task,str) = buildExpression(exp) "special rule for equation a:=b" ;
         tid = TaskGraphExt.newTask("copy");
@@ -838,41 +838,41 @@ algorithm
       list<String> strs;
       Absyn.Path func;
       list<Exp.Exp> expl;
-    case (Exp.ICONST(integer = i))
+    case (DAE.ICONST(integer = i))
       equation
         is = intString(i);
         tid = TaskGraphExt.newTask(is) "& TaskGraphExt.getStartTask() => st & TaskGraphExt.addEdge(st,tid,\"\") & TaskGraphExt.setCommCost(st,tid,0)" ;
       then
         (tid,"");
         
-    case (Exp.RCONST(real = r))
+    case (DAE.RCONST(real = r))
       equation
         rs = realString(r);
         tid = TaskGraphExt.newTask(rs) "& TaskGraphExt.getStartTask() => st & TaskGraphExt.addEdge(st,tid,\"\") & TaskGraphExt.setCommCost(st,tid,0)" ;
       then
         (tid,"");
         
-    case (Exp.CREF(componentRef = cr))
+    case (DAE.CREF(componentRef = cr))
       equation
         crs = Exp.crefStr(cr) "for state variables and alg. variables" ;
         tid = TaskGraphExt.getTask(crs);
       then
         (tid,crs);
         
-    case (Exp.CREF(componentRef = Exp.CREF_IDENT(ident = "time")))
+    case (DAE.CREF(componentRef = DAE.CREF_IDENT(ident = "time")))
       equation
         tid = TaskGraphExt.getTask("sim_time") "for state variables and alg. variables" ;
       then
         (tid,"sim_time");
         
-    case (Exp.CREF(componentRef = cr))
+    case (DAE.CREF(componentRef = cr))
       equation
         crs = Exp.crefStr(cr) "for constants and parameters, no data to send from proc0" ;
         tid = TaskGraphExt.newTask(crs);
       then
         (tid,crs);
         
-    case (Exp.BINARY(exp1 = e1,operator = Exp.POW(ty = _),exp2 = Exp.RCONST(real = rval)))
+    case (DAE.BINARY(exp1 = e1,operator = DAE.POW(ty = _),exp2 = DAE.RCONST(real = rval)))
       equation
         (t1,s1) = buildExpression(e1) "special case for pow" ;
         ival = realInt(rval);
@@ -883,7 +883,7 @@ algorithm
       then
         (t,"");
         
-    case (Exp.BINARY(exp1 = e1,operator = op,exp2 = e2))
+    case (DAE.BINARY(exp1 = e1,operator = op,exp2 = e2))
       equation
         (t1,s1) = buildExpression(e1);
         (t2,s2) = buildExpression(e2);
@@ -895,7 +895,7 @@ algorithm
       then
         (t,"");
         
-    case (Exp.LBINARY(exp1 = e1,operator = op,exp2 = e2))
+    case (DAE.LBINARY(exp1 = e1,operator = op,exp2 = e2))
       equation
         (t1,s1) = buildExpression(e1);
         (t2,s2) = buildExpression(e2);
@@ -907,7 +907,7 @@ algorithm
       then
         (t,"");
         
-    case (Exp.UNARY(operator = op,exp = e1))
+    case (DAE.UNARY(operator = op,exp = e1))
       equation
         (t1,s1) = buildExpression(e1);
         ops = Exp.unaryopSymbol(op);
@@ -917,7 +917,7 @@ algorithm
       then
         (t,"");
         
-    case (Exp.LUNARY(operator = op,exp = e1))
+    case (DAE.LUNARY(operator = op,exp = e1))
       equation
         (t1,s1) = buildExpression(e1);
         ops = Exp.lunaryopSymbol(op);
@@ -927,7 +927,7 @@ algorithm
       then
         (t,"");
         
-    case (Exp.RELATION(exp1 = e1,operator = relop,exp2 = e2))
+    case (DAE.RELATION(exp1 = e1,operator = relop,exp2 = e2))
       equation
         (t1,s1) = buildExpression(e1);
         (t2,s2) = buildExpression(e2);
@@ -939,7 +939,7 @@ algorithm
       then
         (t,"");
         
-    case (Exp.IFEXP(expCond = e1,expThen = e2,expElse = e3))
+    case (DAE.IFEXP(expCond = e1,expThen = e2,expElse = e3))
       equation
         (t1,s1) = buildExpression(e1);
         (t2,s2) = buildExpression(e2);
@@ -952,7 +952,7 @@ algorithm
       then
         (t,"");
         
-    case (Exp.CALL(path = func,expLst = expl))
+    case (DAE.CALL(path = func,expLst = expl))
       equation
         funcstr = Absyn.pathString(func);
         numargs = listLength(expl);
@@ -963,52 +963,52 @@ algorithm
       then
         (t,"");
         
-    case (Exp.ARRAY(ty = _))
+    case (DAE.ARRAY(ty = _))
       equation
         print("TaskGraph.buildExpression(ARRAY) not impl. yet\n");
       then
         fail();
-    case (Exp.ARRAY(ty = _))
+    case (DAE.ARRAY(ty = _))
       equation
         print("TaskGraph.buildExpression(MATRIX) not impl. yet\n");
       then
         fail();
-    case (Exp.RANGE(ty = _))
+    case (DAE.RANGE(ty = _))
       equation
         print("TaskGraph.buildExpression(RANGE) not impl. yet\n");
       then
         fail();
-    case (Exp.TUPLE(PR = _))
+    case (DAE.TUPLE(PR = _))
       equation
         print("TaskGraph.buildExpression(TUPLE) not impl. yet\n");
       then
         fail();
-    case (Exp.CAST(ty = t,exp = e))
+    case (DAE.CAST(ty = t,exp = e))
       equation
         (t,s) = buildExpression(e);
       then
         (t,s);
-    case (Exp.ASUB(exp = _))
+    case (DAE.ASUB(exp = _))
       equation
         print("TaskGraph.buildExpression(ASUB) not impl. yet\n");
       then
         fail();
-    case (Exp.SIZE(exp = _))
+    case (DAE.SIZE(exp = _))
       equation
         print("TaskGraph.buildExpression(SIZE) not impl. yet\n");
       then
         fail();
-    case (Exp.CODE(code = _))
+    case (DAE.CODE(code = _))
       equation
         print("TaskGraph.buildExpression(CODE) not impl. yet\n");
       then
         fail();
-    case (Exp.REDUCTION(path = _))
+    case (DAE.REDUCTION(path = _))
       equation
         print("TaskGraph.buildExpression(REDUCTION) not impl. yet\n");
       then
         fail();
-    case (Exp.END())
+    case (DAE.END())
       equation
         print("TaskGraph.buildExpression(END) not impl. yet\n");
       then

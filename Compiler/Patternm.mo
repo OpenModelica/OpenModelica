@@ -2734,7 +2734,7 @@ algorithm
         Env.Cache localCache; Env.Env localEnv;
       equation
         (_,t,_)=
-        Lookup.lookupVar(localCache,localEnv,Exp.CREF_IDENT(id,{}));
+        Lookup.lookupVar(localCache,localEnv,DAE.CREF_IDENT(id,{}));
         rp = fromTypeToRenamedPat(t);
         localAccList = listAppend(localAccList,{rp});
         (localCache,localAccList) = getVarTypes(restExp,localAccList);
