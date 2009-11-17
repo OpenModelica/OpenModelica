@@ -12578,8 +12578,7 @@ protected function componentFaceType
 algorithm 
   outFace:=
   matchcontinue (inComponentRef)
-    case (Exp.CREF_QUAL(identType = DAE.T_COMPLEX(complexClassType=ClassInf.CONNECTOR(_,_))))
-    then Connect.OUTER();       
+    case (Exp.CREF_QUAL(identType = Exp.ET_COMPLEX(complexClassType=ClassInf.CONNECTOR(_,_)))) then Connect.OUTER();       
     case (Exp.CREF_QUAL(componentRef =_)) then Connect.INNER();    
     case (Exp.CREF_IDENT(ident = _)) then Connect.OUTER(); 
   end matchcontinue;
