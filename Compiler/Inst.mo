@@ -1002,7 +1002,7 @@ algorithm
           (c as SCode.CLASS(name = n,encapsulatedPrefix = encflag,restriction = r as SCode.R_FUNCTION(), partialPrefix = true)),
           inst_dims,impl,callscope,graph)
       equation
-        true = RTOpts.acceptMetaModelicaGrammar();
+        true = RTOpts.debugFlag("fnptr") or RTOpts.acceptMetaModelicaGrammar();
         
         env_1 = Env.openScope(env, encflag, SOME(n));
         ci_state = ClassInf.start(r, n);

@@ -131,6 +131,23 @@ algorithm outProperties := matchcontinue (inProperties)
   end matchcontinue;
 end makePropsNotConst;
     
+// stefan
+public function setTypeInProps
+"function: setTypeInProps
+	sets the Type in a Properties record"
+	input DAE.Type inType;
+	input DAE.Properties inProperties;
+	output DAE.Properties outProperties;
+algorithm
+  outProperties := matchcontinue(inType,inProperties)
+    local
+      DAE.Const cf;
+      DAE.TupleConst tc;
+      DAE.Type ty;
+    case(ty,DAE.PROP(_,cf)) then DAE.PROP(ty,cf);
+    case(ty,DAE.PROP_TUPLE(_,tc)) then DAE.PROP_TUPLE(ty,tc);
+  end matchcontinue;
+end setTypeInProps;
 
 // stefan
 public function getConstList
@@ -2921,7 +2938,7 @@ algorithm
   end matchcontinue;
 end isBidirAttr;
 
-protected function makeFargsList "function: makeFargsList
+public function makeFargsList "function: makeFargsList
   author: LS 
  
   Makes a function argument list from a list of variables.

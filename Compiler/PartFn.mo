@@ -36,1483 +36,1114 @@ package PartFn
   RCS: $Id: PartFn.mo 4306 2009-10-06 06:32:29Z sjoelund.se $
   
   This module contains data structures and functions for partially evaulated functions.
+  entry point: createPartEvalFunctions, partEvalDAELow, partEvalDAE
   "
 
-public import Absyn;
-public import Util;
+public import DAE;
+public import DAEUtil;
 public import Debug;
+public import Util;
+public import Exp;
+public import Absyn;
+public import Types;
+public import SCode;
+public import DAELow;
 public import RTOpts;
 
-// stefan
-// function name, function args, caller function, arg position, arg name
-public type PartFn = tuple<Absyn.ComponentRef, Absyn.FunctionArgs, Absyn.ComponentRef, Option<Integer>, Option<String>>;
+type Ident = String;
 
-// stefan
-public function createPartEvalFunctionClasses
-"function: createPartEvalFunctionClasses
-	Searches through an Absyn.Program for partially evaluated functions
-	and creates new classes for each one"
-	input Absyn.Program inProgram;
-	output Absyn.Program outProgram;
+public function partEvalDAELow
+"function: partEvalDAELow
+	handles partially evaluated function in DAELow format"
+  input list<DAE.Element> inFunctions;
+  input DAELow.DAELow inDAELow;
+  output list<DAE.Element> outFunctions;
+  output DAELow.DAELow outDAELow;
 algorithm
-  outProgram := matchcontinue(inProgram)
+  (outFunctions,outDAELow) := matchcontinue(inFunctions,inDAELow)
     local
-      Absyn.Program program;
-      list<Absyn.Class> cls,cls_1;
-      Absyn.Within w;
-      Absyn.TimeStamp gbt;
-    case (program)
+      list<DAE.Element> dae;
+      DAELow.DAELow dlow;
+      DAELow.Variables orderedVars "orderedVars ; ordered Variables, only states and alg. vars" ;
+      DAELow.Variables knownVars "knownVars ; Known variables, i.e. constants and parameters" ;
+      DAELow.Variables externalObjects "External object variables";
+      DAELow.EquationArray orderedEqs "orderedEqs ; ordered Equations" ;
+      DAELow.EquationArray removedEqs "removedEqs ; Removed equations a=b" ;
+      DAELow.EquationArray initialEqs "initialEqs ; Initial equations" ;
+      DAELow.MultiDimEquation[:] arrayEqs "arrayEqs ; Array equations" ;
+      DAE.Algorithm[:] algorithms "algorithms ; Algorithms" ;
+      DAELow.EventInfo eventInfo "eventInfo" ;
+      DAELow.ExternalObjectClasses extObjClasses "classes of external objects, contains constructor & destructor";
+    case(dae,dlow)
       equation
-        false = RTOpts.acceptMetaModelicaGrammar();
-      then program;
-    case(program as Absyn.PROGRAM(classes=cls,within_=w,globalBuildTimes=gbt))
-      equation
-        cls_1 = createPartEvalFunctionClasses2(cls,program);
-        program = Absyn.PROGRAM(cls_1,w,gbt);
-      then program;
-  end matchcontinue;
-end createPartEvalFunctionClasses;
-
-// stefan
-protected function createPartEvalFunctionClasses2
-"function: create partEvalFunctionClasses2
-	Helper function to createPartEvalFunctionClasses"
-	input list<Absyn.Class> inClassList;
-	input Absyn.Program inProgram;
-	output list<Absyn.Class> outClassList;
-algorithm
-  outClassList := matchcontinue(inClassList,inProgram)
-    local
-      Absyn.Program p;
-      Absyn.Class cl;
-      list<Absyn.Class> cdr,p_classes;
-      Absyn.Within w;
-      Absyn.TimeStamp gbt;
-    case({},_) then {};
-    case(cl :: cdr,p as Absyn.PROGRAM(p_classes,w,gbt))
-      local
-        list<Absyn.AlgorithmItem> algs,algs_1;
-        list<Absyn.Class> newClasses,classes,classes_1,classes_2,cdr_1,p_classes_1,p_classes_2;
-        Absyn.Class cl_1;
-        Absyn.Program p_1;
-      equation
-        algs = Absyn.getAlgorithmItems(cl);
-        p_classes_1 = Util.listSetDifference(p_classes,{cl});
-        ((algs_1,newClasses)) = Absyn.traverseAlgorithmItemList(algs,fixCallsAndCreateClasses,p_classes_1);
-        cl_1 = Absyn.setAlgorithmItems(algs_1,cl);
-        classes = cl_1 :: newClasses;
-        p_classes_2 = cl_1 :: p_classes_1;
-        p_1 = Absyn.PROGRAM(p_classes_2,w,gbt);
-        cdr_1 = createPartEvalFunctionClasses2(cdr,p_1);
-        classes_1 = listAppend(classes,cdr_1);
-        classes_2 = selectUniqueClasses(classes_1);
+        false = RTOpts.debugFlag("fnptr") or RTOpts.acceptMetaModelicaGrammar();
       then
-        classes_2;
-  end matchcontinue;
-end createPartEvalFunctionClasses2;
-
-// stefan
-protected function selectUniqueClasses
-"function: selectUniqueClasses
-	removes all classes whose names appear more than once in a list of classes"
-	input list<Absyn.Class> inClassList;
-	output list<Absyn.Class> outClassList;
-algorithm
-  outClassList := matchcontinue(inClassList)
-    local
-      Absyn.Class cl;
-      list<Absyn.Class> cdr,cdr_1;
-    case({}) then {};
-    case(cl :: cdr)
+        (dae,dlow);
+    case(dae,DAELow.DAELOW(orderedVars,knownVars,externalObjects,orderedEqs,removedEqs,initialEqs,arrayEqs,algorithms,eventInfo,extObjClasses))
       equation
-        true = Util.listContains(cl,cdr);
-        cdr_1 = selectUniqueClasses(cdr);
+        (orderedEqs,dae) = partEvalEqArr(orderedEqs,dae);
       then
-        cdr_1;
-    case(cl :: cdr)
+        (dae,DAELow.DAELOW(orderedVars,knownVars,externalObjects,orderedEqs,removedEqs,initialEqs,arrayEqs,algorithms,eventInfo,extObjClasses));
+    case(_,_)
       equation
-        cdr_1 = selectUniqueClasses(cdr);
-      then
-        cl :: cdr_1;
-  end matchcontinue;
-end selectUniqueClasses;
-
-// stefan
-protected function fixCallsAndCreateClasses
-"function: fixCallsAndCreateClasses
-	This function is passed as an argument to the algorithm traversal function
-	Calls Absyn.traverseExp to look for calls that have
-	partially evaluated functions in their arguments
-	the end goal is to transform these calls and create new classes"
-	input tuple<Absyn.Algorithm, list<Absyn.Class>> inTuple;
-	output tuple<Absyn.Algorithm, list<Absyn.Class>> outTuple;
-algorithm
-  outTuple := matchcontinue(inTuple)
-    local
-      Absyn.Algorithm alg,alg_1;
-      list<Absyn.Class> cls,cls_1,cls_2,cls_3,cls_4;
-      Absyn.Exp e,e1,e2,e_1,e1_1,e2_1;
-      list<Absyn.AlgorithmItem> ailst,ailst1,ailst2,ailst_1,ailst1_1,ailst2_1;
-      list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> eaitlst,eaitlst_1;
-      Absyn.ForIterators fis,fis_1;
-      Absyn.ComponentRef cref,cref_1;
-      Absyn.FunctionArgs fargs,fargs_1;
-    case((Absyn.ALG_ASSIGN(e1,e2),cls))
-      equation
-        ((e1_1,cls_1)) = Absyn.traverseExp(e1,fixCallsAndCreateClasses2,cls);
-        ((e2_1,cls_2)) = Absyn.traverseExp(e2,fixCallsAndCreateClasses2,cls_1);
-      then
-        ((Absyn.ALG_ASSIGN(e1_1,e2_1),cls_2));
-    case((Absyn.ALG_IF(e,ailst1,eaitlst,ailst2),cls))
-      equation
-        ((e_1,cls_1)) = Absyn.traverseExp(e,fixCallsAndCreateClasses2,cls);
-        //((ailst1_1,cls_2)) = Absyn.traverseAlgorithmItemList(ailst1,fixCallsAndCreateClasses,cls_1);
-        (eaitlst_1,cls_2) = fixExpAlgItemTupleLists(eaitlst,cls_1);
-        //((ailst2_1,cls_4)) = Absyn.traverseAlgorithmItemList(ailst2,fixCallsAndCreateClasses,cls_3);
-      then
-        ((Absyn.ALG_IF(e_1,ailst1,eaitlst_1,ailst2),cls_2));
-    case((Absyn.ALG_FOR(fis,ailst),cls))
-      equation
-        (fis_1,cls_1) = fixForIterators(fis,cls);
-        //((ailst_1,cls_2)) = Absyn.traverseAlgorithmItemList(ailst,fixCallsAndCreateClasses,cls_1);
-      then
-        ((Absyn.ALG_FOR(fis_1,ailst),cls_1));
-    case((Absyn.ALG_WHILE(e,ailst),cls))
-      equation
-        ((e_1,cls_1)) = Absyn.traverseExp(e,fixCallsAndCreateClasses2,cls);
-        //((ailst_1,cls_2)) = Absyn.traverseAlgorithmItemList(ailst,fixCallsAndCreateClasses,cls_1);
-      then
-        ((Absyn.ALG_WHILE(e_1,ailst),cls_1));
-    case((Absyn.ALG_WHEN_A(e,ailst,eaitlst),cls))
-      equation
-        ((e_1,cls_1)) = Absyn.traverseExp(e,fixCallsAndCreateClasses2,cls);
-        (eaitlst_1,cls_2) = fixExpAlgItemTupleLists(eaitlst,cls_1);
-        //((ailst_1,cls_3)) = Absyn.traverseAlgorithmItemList(ailst,fixCallsAndCreateClasses,cls_2);
-      then
-        ((Absyn.ALG_WHEN_A(e_1,ailst,eaitlst_1),cls_2));
-    case((Absyn.ALG_NORETCALL(cref,fargs),cls))
-      equation
-        (cref_1,fargs_1,cls_1) = buildNewFunctionCall(cref,fargs,cls);
-      then
-        ((Absyn.ALG_NORETCALL(cref_1,fargs_1),cls_1));
-  end matchcontinue;
-end fixCallsAndCreateClasses;
-
-// stefan
-protected function fixCallsAndCreateClasses3
-"function: fixCallsInNewClass3
-	handles equations"
-	input tuple<Absyn.Equation, list<Absyn.Class>> inTuple;
-	output tuple<Absyn.Equation, list<Absyn.Class>> outTuple;
-algorithm
-  outTuple := matchcontinue (inTuple)
-    local
-      Absyn.Equation eq;
-      list<Absyn.Class> cls,cls_1,cls_2;
-      Absyn.Exp e,e1,e2,e_1,e1_1,e2_1;
-      list<tuple<Absyn.Exp, list<Absyn.EquationItem>>> eeqitlst,eeqitlst_1;
-      list<Absyn.EquationItem> eilst,eilst1,eilst2;
-      Absyn.ForIterators fis,fis_1;
-      Absyn.ComponentRef cref,cref_1;
-      Absyn.FunctionArgs fargs,fargs_1;
-    case((Absyn.EQ_IF(e,eilst1,eeqitlst,eilst2),cls))
-      equation
-        ((e_1,cls_1)) = Absyn.traverseExp(e,fixCallsAndCreateClasses2,cls);
-        (eeqitlst_1,cls_2) = fixExpEqItemTupleLists(eeqitlst,cls_1);
-      then
-        ((Absyn.EQ_IF(e_1,eilst1,eeqitlst_1,eilst2),cls_2));
-    case((Absyn.EQ_EQUALS(e1,e2),cls))
-      equation
-        ((e1_1,cls_1)) = Absyn.traverseExp(e1,fixCallsAndCreateClasses2,cls);
-        ((e2_1,cls_2)) = Absyn.traverseExp(e2,fixCallsAndCreateClasses2,cls_1);
-      then
-        ((Absyn.EQ_EQUALS(e1_1,e2_1),cls_2));
-    case((Absyn.EQ_FOR(fis,eilst),cls))
-      equation
-        (fis_1,cls_1) = fixForIterators(fis,cls);
-      then
-        ((Absyn.EQ_FOR(fis_1,eilst),cls_1));
-    case((Absyn.EQ_WHEN_E(e,eilst,eeqitlst),cls))
-      equation
-        ((e_1,cls_1)) = Absyn.traverseExp(e,fixCallsAndCreateClasses2,cls);
-        (eeqitlst_1,cls_2) = fixExpEqItemTupleLists(eeqitlst,cls_1);
-      then
-        ((Absyn.EQ_WHEN_E(e_1,eilst,eeqitlst_1),cls_2));
-    case((Absyn.EQ_NORETCALL(cref,fargs),cls))
-      equation
-        (cref_1,fargs_1,cls_1) = buildNewFunctionCall(cref,fargs,cls);
-      then
-        ((Absyn.EQ_NORETCALL(cref_1,fargs_1),cls_1));
-    case((eq,cls)) then ((eq,cls));
-  end matchcontinue;
-end fixCallsAndCreateClasses3;
-        
-// stefan
-protected function fixExpAlgItemTupleLists
-"function: fixExpAlgItemTupleLists
-	helper function to fixCallsAndCreateClasses
-	traverses the expressions in the input list"
-	input list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> inTupleList;
-	input list<Absyn.Class> inClassList;
-	output list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> outTupleList;
-	output list<Absyn.Class> outClassList;
-algorithm
-  (outTupleList,outClassList) := matchcontinue (inTupleList,inClassList)
-    local
-      list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> cdr,cdr_1;
-      list<Absyn.AlgorithmItem> ailst;
-      Absyn.Exp e,e_1;
-      list<Absyn.Class> cls,cls_1,cls_2;
-    case({},cls) then ({},cls);
-    case((e, ailst) :: cdr,cls)
-      equation
-        ((e_1,cls_1)) = Absyn.traverseExp(e,fixCallsAndCreateClasses2,cls);
-        (cdr_1,cls_2) = fixExpAlgItemTupleLists(cdr,cls_1);
-      then
-        ((e_1,ailst) :: cdr_1,cls_2);
-  end matchcontinue;
-end fixExpAlgItemTupleLists;
-
-// stefan
-protected function fixExpAlgItemTupleLists2
-"function: fixExpAlgItemTupleLists2
-	as above, but for fixing calls in the new classes
-	I should probably write a general function for these"
-	input list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> inTupleList;
-	input tuple<list<Absyn.Class>, list<PartFn>> inTuple;
-	output list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> outTupleList;
-	output tuple<list<Absyn.Class>, list<PartFn>> outTuple;
-algorithm
-  (outTupleList,outTuple) := matchcontinue (inTupleList,inTuple)
-    local
-      list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> cdr,cdr_1;
-      list<Absyn.AlgorithmItem> ailst;
-      Absyn.Exp e,e_1;
-      list<Absyn.Class> cls,cls_1,cls_2;
-      list<PartFn> pfn;
-    case({},(cls,pfn)) then ({},(cls,pfn));
-    case((e, ailst) :: cdr,(cls,pfn))
-      equation
-        ((e_1,(cls_1,pfn))) = Absyn.traverseExp(e,fixCallsInNewClass2,(cls,pfn));
-        (cdr_1,(cls_2,pfn)) = fixExpAlgItemTupleLists2(cdr,(cls_1,pfn));
-      then
-        ((e_1,ailst) :: cdr_1,(cls_2,pfn));
-  end matchcontinue;
-end fixExpAlgItemTupleLists2;
-
-// stefan
-protected function fixExpEqItemTupleLists
-"function: fixExpAlgItemTupleLists
-	helper function to fixCallsAndCreateClasses
-	traverses the expressions in the input list"
-	input list<tuple<Absyn.Exp, list<Absyn.EquationItem>>> inTupleList;
-	input list<Absyn.Class> inClassList;
-	output list<tuple<Absyn.Exp, list<Absyn.EquationItem>>> outTupleList;
-	output list<Absyn.Class> outClassList;
-algorithm
-  (outTupleList,outClassList) := matchcontinue (inTupleList,inClassList)
-    local
-      list<tuple<Absyn.Exp, list<Absyn.EquationItem>>> cdr,cdr_1;
-      list<Absyn.EquationItem> eqilst;
-      Absyn.Exp e,e_1;
-      list<Absyn.Class> cls,cls_1,cls_2;
-    case({},cls) then ({},cls);
-    case((e, eqilst) :: cdr,cls)
-      equation
-        ((e_1,cls_1)) = Absyn.traverseExp(e,fixCallsAndCreateClasses2,cls);
-        (cdr_1,cls_2) = fixExpEqItemTupleLists(cdr,cls_1);
-      then
-        ((e_1,eqilst) :: cdr_1,cls_2);
-  end matchcontinue;
-end fixExpEqItemTupleLists;
-
-// stefan
-protected function fixExpEqItemTupleLists2
-"function: fixExpEqItemTupleLists2
-	as above, but for fixing calls in the new classes
-	I should probably write a general function for these"
-	input list<tuple<Absyn.Exp, list<Absyn.EquationItem>>> inTupleList;
-	input tuple<list<Absyn.Class>, list<PartFn>> inTuple;
-	output list<tuple<Absyn.Exp, list<Absyn.EquationItem>>> outTupleList;
-	output tuple<list<Absyn.Class>, list<PartFn>> outTuple;
-algorithm
-  (outTupleList,outTuple) := matchcontinue (inTupleList,inTuple)
-    local
-      list<tuple<Absyn.Exp, list<Absyn.EquationItem>>> cdr,cdr_1;
-      list<Absyn.EquationItem> eqilst;
-      Absyn.Exp e,e_1;
-      list<Absyn.Class> cls,cls_1,cls_2;
-      list<PartFn> pfn;
-    case({},(cls,pfn)) then ({},(cls,pfn));
-    case((e, eqilst) :: cdr,(cls,pfn))
-      equation
-        ((e_1,(cls_1,pfn))) = Absyn.traverseExp(e,fixCallsInNewClass2,(cls,pfn));
-        (cdr_1,(cls_2,pfn)) = fixExpEqItemTupleLists2(cdr,(cls_1,pfn));
-      then
-        ((e_1,eqilst) :: cdr_1,(cls_2,pfn));
-  end matchcontinue;
-end fixExpEqItemTupleLists2;
-
-// stefan
-protected function fixForIterators
-"function: fixForIterators
-	helper function to fixCallsAndCreateClasses
-	searches a list of for iterators for expressions containing partially evaluated functions"
-	input Absyn.ForIterators inForIterators;
-	input list<Absyn.Class> inClassList;
-	output Absyn.ForIterators outForIterators;
-	output list<Absyn.Class> outClassList;
-algorithm
-  (outForIterators,outClassList) := matchcontinue (inForIterators,inClassList)
-    local
-      Absyn.ForIterators cdr,fis;
-      Absyn.ForIterator fi;
-      Absyn.Ident i;
-      Absyn.Exp e,e_1;
-      list<Absyn.Class> cls,cls_1,cls_2;
-    case({},cls) then ({},cls);
-    case((i,SOME(e)) :: cdr,cls)
-      equation
-        ((e_1,cls_1)) = Absyn.traverseExp(e,fixCallsAndCreateClasses2,cls);
-        (fis,cls_2) = fixForIterators(cdr,cls_1);
-      then
-        ((i,SOME(e_1)) :: fis,cls_2);
-    case(fi :: cdr,cls)
-      equation
-        (fis,cls_1) = fixForIterators(cdr,cls);
-      then
-        (fi :: fis,cls_1);
-  end matchcontinue;
-end fixForIterators;
-
-// stefan
-protected function fixForIterators2
-"function: fixForIterators2
-	as above but for fixing the calls in the new classes"
-	input Absyn.ForIterators inForIterators;
-	input tuple<list<Absyn.Class>, list<PartFn>> inTuple;
-	output Absyn.ForIterators outForIterators;
-	output tuple<list<Absyn.Class>, list<PartFn>> outTuple;
-algorithm
-  (outForIterators,outTuple) := matchcontinue (inForIterators,inTuple)
-    local
-      Absyn.ForIterators cdr,fis;
-      Absyn.ForIterator fi;
-      Absyn.Ident i;
-      Absyn.Exp e,e_1;
-      list<Absyn.Class> cls,cls_1,cls_2;
-      list<PartFn> pfn;
-    case({},(cls,pfn)) then ({},(cls,pfn));
-    case((i,SOME(e)) :: cdr,(cls,pfn))
-      equation
-        ((e_1,(cls_1,pfn))) = Absyn.traverseExp(e,fixCallsInNewClass2,(cls,pfn));
-        (fis,(cls_2,pfn)) = fixForIterators2(cdr,(cls_1,pfn));
-      then
-        ((i,SOME(e_1)) :: fis,(cls_2,pfn));
-    case(fi :: cdr,(cls,pfn))
-      equation
-        (fis,(cls_1,pfn)) = fixForIterators2(cdr,(cls,pfn));
-      then
-        (fi :: fis,(cls_1,pfn));
-  end matchcontinue;
-end fixForIterators2;
-
-// stefan
-protected function fixCallsAndCreateClasses2
-"function: fixCallsAndCreateClasses2
-	helper function to fixCallsAndCreateClasses
-	traverses expressions in search of partially evaluated functions
-	also builds new classes"
-	input tuple<Absyn.Exp, list<Absyn.Class>> inTuple;
-	output tuple<Absyn.Exp, list<Absyn.Class>> outTuple;
-algorithm
-  outTuple := matchcontinue (inTuple)
-    local
-      Absyn.Exp e,me,res;
-      list<Absyn.Class> cls,cls_1;
-      Absyn.ComponentRef cref,cref_1;
-      Absyn.FunctionArgs fargs,fargs_1;
-      list<PartFn> pfn1,pfn2;
-      list<Absyn.Exp> eargs;
-      list<Absyn.NamedArg> nargs;
-      Absyn.MatchType mt;
-      list<Absyn.ElementItem> eilst;
-      list<Absyn.Case> caselst,caselst_1;
-      Option<String> oc;
-      Absyn.ValueblockBody vb,vb_1;
-    case((Absyn.CALL(cref,fargs),cls))
-      equation
-        (cref_1,fargs_1,cls_1) = buildNewFunctionCall(cref,fargs,cls);
-      then
-        ((Absyn.CALL(cref_1,fargs_1),cls_1));
-    case((Absyn.MATCHEXP(mt,me,eilst,caselst,oc),cls))
-      equation
-        caselst_1 = fixCaseListClasses(caselst,cls);
-      then
-        ((Absyn.MATCHEXP(mt,me,eilst,caselst_1,oc),cls));
-    case((Absyn.VALUEBLOCK(eilst,vb,res),cls))
-      equation
-        vb_1 = fixVBodyClasses(vb,cls);
-      then
-        ((Absyn.VALUEBLOCK(eilst,vb_1,res),cls));
-    case((e,cls)) then ((e,cls));
-  end matchcontinue;
-end fixCallsAndCreateClasses2;
-
-// stefan
-protected function buildNewFunctionCall
-"function: buildNewFunctionCall
-	if a partially evaluated function is found
-	build a new function (if it doesn't exist already)
-	change the call to call that function
-	remove the partevalfunction from the arguments
-	place the arguments from that record into the call args"
-	input Absyn.ComponentRef inComponentRef;
-	input Absyn.FunctionArgs inFunctionArgs;
-	input list<Absyn.Class> inClassList;
-	output Absyn.ComponentRef outComponentRef;
-	output Absyn.FunctionArgs outFunctionArgs;
-	output list<Absyn.Class> outClassList;
-algorithm
-  (outComponentRef,outFunctionArgs,outClassList) := matchcontinue (inComponentRef,inFunctionArgs,inClassList)
-    local
-      Absyn.ComponentRef cref,cref_1,cref_2,cref_3;
-      Absyn.FunctionArgs fargs,fargs_1;
-      list<Absyn.Class> cls,cls_1,cls_2;
-      list<Absyn.Exp> eargs,eargs_1,eargs_2,eargs_3;
-      list<Absyn.NamedArg> nargs,nargs_1;
-      list<PartFn> pfn,pfn_1,pfn1,pfn2;
-      Absyn.Class cl,cl_1;
-      String s1,s2;
-      list<Absyn.AlgorithmItem> ailst,ailst_1;
-    case(cref,fargs,cls)
-      equation
-        cref_1 = Absyn.crefGetLastIdent(cref);
-        (eargs,nargs) = Absyn.extractArgs(fargs);
-        pfn1 = findPartFnInPosArgs(eargs,eargs);
-        pfn2 = findPartFnInNamedArgs(nargs);
-        pfn = listAppend(pfn1,pfn2);
-        true = 0 < listLength(pfn);
-        pfn_1 = addCrefToPartFnList(cref_1,pfn);
-        cref_2 = generateFuncName(cref_1,pfn);
-        cref_3 = Absyn.crefSetLastIdent(cref,cref_2);
-        s1 = Absyn.printComponentRefStr(cref_1);
-        s2 = Absyn.printComponentRefStr(cref_2);
-        eargs_1 = fixPosArgs(eargs);
-        (nargs_1,eargs_2) = fixNamedArgs(nargs);
-        eargs_3 = listAppend(eargs_1,eargs_2);
-        fargs_1 = Absyn.FUNCTIONARGS(eargs_3,nargs_1);
-        cl = buildNewClass(s1,s2,pfn_1,cls);
-        cls_1 = cl :: cls;
-        ailst = Absyn.getAlgorithmItems(cl);
-        ((ailst_1,_)) = Absyn.traverseAlgorithmItemList(ailst,fixCallsInNewClass,(cls_1,pfn_1));
-        cl_1 = Absyn.setAlgorithmItems(ailst_1,cl);
-        cls_2 = cl_1 :: cls;
-      then
-        (cref_3,fargs_1,cls_2);
-    case(cref,fargs,cls) then (cref,fargs,cls);
-  end matchcontinue;
-end buildNewFunctionCall;
-
-// stefan
-protected function buildNewClass
-"function: buildNewClass
-	creates a new class based on the given name, partfn list and class list"
-	input String inString1;
-	input String inString2;
-	input list<PartFn> inPartFnList;
-	input list<Absyn.Class> inClassList;
-	output Absyn.Class outClass;
-algorithm
-  outClass := matchcontinue(inString1,inString2,inPartFnList,inClassList)
-    local
-      String orig_name,new_name;
-      list<PartFn> pfn;
-      list<Absyn.Class> cls;
-      Absyn.Class cl,cl_1,cl_2,cl_3;
-      list<Absyn.AlgorithmItem> ailst,ailst_1;
-      list<Absyn.ClassPart> parts,parts_1;
-    case(orig_name,new_name,pfn,cls)
-      equation
-        true = listLength(pfn) < 2;
-        cl = Absyn.getClassByName(orig_name,cls);
-        cl_1 = Absyn.renameClass(new_name,cl);
-        parts = Absyn.getClassParts(cl_1);
-        parts_1 = fixClassInputs(parts,pfn,cls);
-        cl_2 = Absyn.setClassParts(parts_1,cl_1);
-        //ailst = Absyn.getAlgorithmItems(cl_1); - THIS IS NOW HANDLED BY BUILDNEWFUNCTIONCALL
-        // WARNING - TWO PARTIALLY EVAULATED FUNCTIONS CANNOT BE PASSED AS ARGUMENTS IN THE SAME CALL
-        //((ailst_1,_)) = Absyn.traverseAlgorithmItemList(ailst,fixCallsInNewClass,(cls,pfn));
-        //cl_3 = Absyn.setAlgorithmItems(ailst_1,cl_2);
-      then
-        cl_2;
-    case(_,_,_,_)
-      equation
-        Debug.fprintln("failtrace","buildNewClass - multiple partially evaluated functions may not be passed in the same call");
+        Debug.fprintln("failtrace","- PartFn.partEvalDAELow failed");
       then
         fail();
   end matchcontinue;
-end buildNewClass;
+end partEvalDAELow;
 
-// stefan
-protected function fixCallsInNewClass
-"function: fixCallsInNewClass
-	helper function to buildNewClass
-	passed as argument to traverseAlgorithmItemList
-	fixes the function calls so that they call the correct function with the correct arguments
-	WARNING: herein lie the limitations of partially evaluated functions!"
-	input tuple<Absyn.Algorithm, tuple<list<Absyn.Class>, list<PartFn>>> inTpl;
-	output tuple<Absyn.Algorithm, tuple<list<Absyn.Class>, list<PartFn>>> outTpl;
+protected function partEvalEqArr
+"function: partEvalEqArr
+	elabs calls in equations"
+	input DAELow.EquationArray inEquationArray;
+	input list<DAE.Element> inFunctions;
+	output DAELow.EquationArray outEquationArray;
+	output list<DAE.Element> outFunctions;
 algorithm
-  outTpl := matchcontinue(inTpl)
+  (outEquationArray,outFunctions) := matchcontinue(inEquationArray,inFunctions)
     local
-      Absyn.Algorithm alg,alg_1;
-      list<Absyn.Class> cls,cls_1,cls_2,cls_3,cls_4;
-      Absyn.Exp e,e1,e2,e_1,e1_1,e2_1;
-      list<Absyn.AlgorithmItem> ailst,ailst1,ailst2,ailst_1,ailst1_1,ailst2_1;
-      list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> eaitlst,eaitlst_1;
-      Absyn.ForIterators fis,fis_1;
-      Absyn.ComponentRef cref,cref_1;
-      Absyn.FunctionArgs fargs,fargs_1;
-      list<PartFn> pfn;
-      list<Absyn.Exp> elst,elst_1;
-    case((Absyn.ALG_ASSIGN(e1,e2),(cls,pfn)))
+      list<DAE.Element> dae;
+      list<Option<DAELow.Equation>> eqlst;
+      Option<DAELow.Equation>[:] eqarr;
+      Integer num,size;
+    case(DAELow.EQUATION_ARRAY(num,size,eqarr),dae)
       equation
-        ((e1_1,(cls_1,pfn))) = Absyn.traverseExp(e1,fixCallsInNewClass2,(cls,pfn));
-        ((e2_1,(cls_2,pfn))) = Absyn.traverseExp(e2,fixCallsInNewClass2,(cls_1,pfn));
+        eqlst = arrayList(eqarr);
+        (eqlst,dae) = partEvalEqs(eqlst,dae);
+        eqarr = listArray(eqlst);
       then
-        ((Absyn.ALG_ASSIGN(e1_1,e2_1),(cls_2,pfn)));
-    case((Absyn.ALG_IF(e,ailst1,eaitlst,ailst2),(cls,pfn)))
+        (DAELow.EQUATION_ARRAY(num,size,eqarr),dae);
+    case(_,_)
       equation
-        ((e_1,(cls_1,pfn))) = Absyn.traverseExp(e,fixCallsInNewClass2,(cls,pfn));
-        //((ailst1_1,cls_2)) = Absyn.traverseAlgorithmItemList(ailst1,fixCallsInNewClass,cls_1);
-        (eaitlst_1,(cls_2,pfn)) = fixExpAlgItemTupleLists2(eaitlst,(cls_1,pfn));
-        //((ailst2_1,cls_4)) = Absyn.traverseAlgorithmItemList(ailst2,fixCallsInNewClass,cls_3);
+        Debug.fprintln("failtrace","- PartFn.partEvalEqArr failed");
       then
-        ((Absyn.ALG_IF(e_1,ailst1,eaitlst_1,ailst2),(cls_2,pfn)));
-    case((Absyn.ALG_FOR(fis,ailst),(cls,pfn)))
-      equation
-        (fis_1,(cls_1,pfn)) = fixForIterators2(fis,(cls,pfn));
-        //((ailst_1,cls_2)) = Absyn.traverseAlgorithmItemList(ailst,fixCallsInNewClass,cls_1);
-      then
-        ((Absyn.ALG_FOR(fis_1,ailst),(cls_1,pfn)));
-    case((Absyn.ALG_WHILE(e,ailst),(cls,pfn)))
-      equation
-        ((e_1,(cls_1,pfn))) = Absyn.traverseExp(e,fixCallsInNewClass2,(cls,pfn));
-        //((ailst_1,cls_2)) = Absyn.traverseAlgorithmItemList(ailst,fixCallsInNewClass,cls_1);
-      then
-        ((Absyn.ALG_WHILE(e_1,ailst),(cls_1,pfn)));
-    case((Absyn.ALG_WHEN_A(e,ailst,eaitlst),(cls,pfn)))
-      equation
-        ((e_1,(cls_1,pfn))) = Absyn.traverseExp(e,fixCallsInNewClass2,(cls,pfn));
-        (eaitlst_1,(cls_2,pfn)) = fixExpAlgItemTupleLists2(eaitlst,(cls_1,pfn));
-        //((ailst_1,cls_3)) = Absyn.traverseAlgorithmItemList(ailst,fixCallsInNewClass,cls_2);
-      then
-        ((Absyn.ALG_WHEN_A(e_1,ailst,eaitlst_1),(cls_2,pfn)));
-    case((Absyn.ALG_MATCHCASES(elst),(cls,pfn)))
-      equation
-        ((elst_1,(cls_1,pfn))) = Absyn.traverseExpList(elst,fixCallsInNewClass2,(cls,pfn));
-      then
-        ((Absyn.ALG_MATCHCASES(elst_1),(cls_1,pfn)));
-    case((Absyn.ALG_NORETCALL(cref,fargs),(cls,pfn)))
-      equation
-        (cref_1,fargs_1) = buildNewCallInNewClass(cref,fargs,cls,pfn);
-      then
-        ((Absyn.ALG_NORETCALL(cref_1,fargs_1),(cls,pfn)));
-    case((alg,(cls,pfn))) then ((alg,(cls,pfn)));
+        fail();
   end matchcontinue;
-end fixCallsInNewClass;
+end partEvalEqArr;
 
-// stefan
-protected function fixCallsInNewClass2
-"function: fixCallsInNewClass2
-	helper function to fixCallsInNewClass"
-	input tuple<Absyn.Exp, tuple<list<Absyn.Class>, list<PartFn>>> inTuple;
-	output tuple<Absyn.Exp, tuple<list<Absyn.Class>, list<PartFn>>> outTuple;
+protected function partEvalEqs
+"function: partEvalEqs
+	elabs calls in equations"
+	input list<Option<DAELow.Equation>> inEquationList;
+	input list<DAE.Element> inFunctions;
+	output list<Option<DAELow.Equation>> outEquationList;
+	output list<DAE.Element> outFunctions;
 algorithm
-  outTuple := matchcontinue (inTuple)
+  (outEquationList,outFunctions) := matchcontinue(inEquationList,inFunctions)
     local
-      Absyn.Exp e,me,res;
-      list<Absyn.Class> cls;
-      list<PartFn> pfn;
-      Absyn.ComponentRef cref,cref_1;
-      Absyn.FunctionArgs fargs,fargs_1;
-      Absyn.MatchType  mt;
-      list<Absyn.Case> caselst,caselst_1;
-      list<Absyn.ElementItem> eilst;
-      Option<String> oc;
-      Absyn.ValueblockBody vb,vb_1;
-    case((Absyn.CALL(cref,fargs),(cls,pfn)))
+      list<Option<DAELow.Equation>> cdr,cdr_1;
+      list<DAE.Element> dae;
+      Exp.Exp e,e_1,e1,e1_1,e2,e2_1;
+      DAELow.Equation deleteme;
+    case({},dae) then ({},dae);
+    case(NONE :: cdr,dae)
       equation
-        (cref_1,fargs_1) = buildNewCallInNewClass(cref,fargs,cls,pfn);
+        (cdr_1,dae) = partEvalEqs(cdr,dae);
       then
-        ((Absyn.CALL(cref_1,fargs_1),(cls,pfn)));
-    case((Absyn.MATCHEXP(mt,me,eilst,caselst,oc),(cls,pfn)))
+        (NONE :: cdr_1,dae);
+    case(SOME(DAELow.EQUATION(e1,e2)) :: cdr,dae)
       equation
-        caselst_1 = fixCaseListCalls(caselst,cls,pfn);
+        ((e1_1,dae)) = Exp.traverseExp(e1,elabExp,dae);
+        ((e2_1,dae)) = Exp.traverseExp(e2,elabExp,dae);
+        (cdr_1,dae) = partEvalEqs(cdr,dae);
       then
-        ((Absyn.MATCHEXP(mt,me,eilst,caselst_1,oc),(cls,pfn)));
-    case((Absyn.VALUEBLOCK(eilst,vb,res),(cls,pfn)))
+        (SOME(DAELow.EQUATION(e1_1,e2_1)) :: cdr_1,dae);
+    case(SOME(deleteme) :: cdr,dae)
       equation
-        vb_1 = fixVBodyCalls(vb,cls,pfn);
+        (cdr_1,dae) = partEvalEqs(cdr,dae);
       then
-        ((Absyn.VALUEBLOCK(eilst,vb_1,res),(cls,pfn)));
-    case((e,(cls,pfn))) then ((e,(cls,pfn)));
+        (SOME(deleteme) :: cdr_1,dae);
+    case(_,_)
+      equation
+        Debug.fprintln("failtrace","- PartFn.partEvalEqs failed");
+      then
+        fail();
   end matchcontinue;
-end fixCallsInNewClass2;
+end partEvalEqs;
 
-// stefan
-protected function fixCallsInNewClass3
-"function: fixCallsInNewClass3
-	handles equations"
-	input tuple<Absyn.Equation, tuple<list<Absyn.Class>, list<PartFn>>> inTuple;
-	output tuple<Absyn.Equation, tuple<list<Absyn.Class>, list<PartFn>>> outTuple;
+public function partEvalDAE
+"function: partEvalDAE
+	goes through the DAE for Exp.PARTEVALFUNCTION, creates new classes and changes the function calls"
+	input DAE.DAElist inDAE;
+	input list<DAE.Element> infuncs;
+	output DAE.DAElist outDAE;
+	output list<DAE.Element> outfuncs;
 algorithm
-  outTuple := matchcontinue (inTuple)
+  (outDAE,outfuncs) := matchcontinue(inDAE,infuncs)
     local
-      Absyn.Equation eq;
-      list<Absyn.Class> cls,cls_1,cls_2;
-      list<PartFn> pfn;
-      Absyn.Exp e,e1,e2,e_1,e1_1,e2_1;
-      list<tuple<Absyn.Exp, list<Absyn.EquationItem>>> eeqitlst,eeqitlst_1;
-      list<Absyn.EquationItem> eilst,eilst1,eilst2;
-      Absyn.ForIterators fis,fis_1;
-      Absyn.ComponentRef cref,cref_1;
-      Absyn.FunctionArgs fargs,fargs_1;
-    case((Absyn.EQ_IF(e,eilst1,eeqitlst,eilst2),(cls,pfn)))
+      list<DAE.Element> elts,elts_1,dae;
+      DAE.DAElist dlst;
+    case(dlst,dae)
       equation
-        ((e_1,(cls_1,pfn))) = Absyn.traverseExp(e,fixCallsInNewClass2,(cls,pfn));
-        (eeqitlst_1,(cls_2,pfn)) = fixExpEqItemTupleLists2(eeqitlst,(cls_1,pfn));
+        false = RTOpts.debugFlag("fnptr") or RTOpts.acceptMetaModelicaGrammar();
       then
-        ((Absyn.EQ_IF(e_1,eilst1,eeqitlst_1,eilst2),(cls_2,pfn)));
-    case((Absyn.EQ_EQUALS(e1,e2),(cls,pfn)))
+        (dlst,dae);
+    case(DAE.DAE(elts),dae)
       equation
-        ((e1_1,(cls_1,pfn))) = Absyn.traverseExp(e1,fixCallsInNewClass2,(cls,pfn));
-        ((e2_1,(cls_2,pfn))) = Absyn.traverseExp(e2,fixCallsInNewClass2,(cls_1,pfn));
+        (elts_1,dae) = elabElements(elts,dae);
       then
-        ((Absyn.EQ_EQUALS(e1_1,e2_1),(cls_2,pfn)));
-    case((Absyn.EQ_FOR(fis,eilst),(cls,pfn)))
+        (DAE.DAE(elts_1),dae);
+    case(_,_)
       equation
-        (fis_1,(cls_1,pfn)) = fixForIterators2(fis,(cls,pfn));
+        Debug.fprintln("failtrace","- PartFn.partEvalDAE failed");
       then
-        ((Absyn.EQ_FOR(fis_1,eilst),(cls_1,pfn)));
-    case((Absyn.EQ_WHEN_E(e,eilst,eeqitlst),(cls,pfn)))
-      equation
-        ((e_1,(cls_1,pfn))) = Absyn.traverseExp(e,fixCallsInNewClass2,(cls,pfn));
-        (eeqitlst_1,(cls_2,pfn)) = fixExpEqItemTupleLists2(eeqitlst,(cls_1,pfn));
-      then
-        ((Absyn.EQ_WHEN_E(e_1,eilst,eeqitlst_1),(cls_2,pfn)));
-    case((Absyn.EQ_NORETCALL(cref,fargs),(cls,pfn)))
-      equation
-        (cref_1,fargs_1) = buildNewCallInNewClass(cref,fargs,cls,pfn);
-      then
-        ((Absyn.EQ_NORETCALL(cref_1,fargs_1),(cls,pfn)));
-    case((eq,(cls,pfn))) then ((eq,(cls,pfn)));
+        fail();
   end matchcontinue;
-end fixCallsInNewClass3;
+end partEvalDAE;
 
-// stefan
-protected function fixCaseListCalls
-"function: fixCaseListCalls
-	helper function to fixCallsInNewClass2
-	goes through a list of matchcontinue cases"
-	input list<Absyn.Case> inCaseList;
-	input list<Absyn.Class> inClassList;
-	input list<PartFn> inPartFnList;
-	output list<Absyn.Case> outCaseList;
+public function createPartEvalFunctions
+"function: createPartEvalFunctions
+	goes through the DAE for Exp.PARTEVALFUNCTION, creates new classes and changes the function calls"
+	input list<DAE.Element> inDAElist;
+	output list<DAE.Element> outDAElist;
 algorithm
-  outCaseList := matchcontinue (inCaseList,inClassList,inPartFnList)
+  outDAElist := matchcontinue(inDAElist)
     local
-      list<Absyn.Case> cdr,cdr_1;
-      Absyn.Exp p,r;
-      list<Absyn.ElementItem> eilst;
-      list<Absyn.EquationItem> eqilst,eqilst_1;
-      Option<String> oc;
-      list<Absyn.Class> cls,cls_1;
-      list<PartFn> pfn;
-    case({},_,_) then {};
-    case(Absyn.CASE(p,eilst,eqilst,r,oc) :: cdr,cls,pfn)
+      list<DAE.Element> elts,elts_1,elts_2;
+    case(elts)
       equation
-        ((eqilst_1,(cls_1,pfn))) = Absyn.traverseEquationItemList(eqilst,fixCallsInNewClass3,(cls,pfn));
-        cdr_1 = fixCaseListCalls(cdr,cls_1,pfn);
+        false = RTOpts.debugFlag("fnptr") or RTOpts.acceptMetaModelicaGrammar();
       then
-        (Absyn.CASE(p,eilst,eqilst_1,r,oc) :: cdr_1);
-    case(Absyn.ELSE(eilst,eqilst,r,oc) :: cdr,cls,pfn)
+        elts;
+    case(elts)
       equation
-        ((eqilst_1,(cls_1,pfn))) = Absyn.traverseEquationItemList(eqilst,fixCallsInNewClass3,(cls,pfn));
-        cdr_1 = fixCaseListCalls(cdr,cls_1,pfn);
+        (_,elts_1) = elabElements(elts,elts);
+        elts_2 = Util.listSelect(elts_1,isFunctionElement);
       then
-        (Absyn.ELSE(eilst,eqilst,r,oc) :: cdr_1);
+        elts_2;
+    case(_)
+      equation
+        Debug.fprintln("failtrace","PartFn.createPartEvalFunctions failed");
+      then
+        fail();
   end matchcontinue;
-end fixCaseListCalls;
+end createPartEvalFunctions;
 
-// stefan
-protected function fixCaseListClasses
-"function: fixCaseListCalls
-	helper function to fixCallsAndCreateClasses2
-	goes through a list of matchcontinue cases"
-	input list<Absyn.Case> inCaseList;
-	input list<Absyn.Class> inClassList;
-	output list<Absyn.Case> outCaseList;
-algorithm
-  outCaseList := matchcontinue (inCaseList,inClassList)
-    local
-      list<Absyn.Case> cdr,cdr_1;
-      Absyn.Exp p,r;
-      list<Absyn.ElementItem> eilst;
-      list<Absyn.EquationItem> eqilst,eqilst_1;
-      Option<String> oc;
-      list<Absyn.Class> cls,cls_1;
-    case(Absyn.CASE(p,eilst,eqilst,r,oc) :: cdr,cls)
-      equation
-        ((eqilst_1,cls_1)) = Absyn.traverseEquationItemList(eqilst,fixCallsAndCreateClasses3,cls);
-        cdr_1 = fixCaseListClasses(cdr,cls_1);
-      then
-        (Absyn.CASE(p,eilst,eqilst_1,r,oc) :: cdr_1);
-    case(Absyn.ELSE(eilst,eqilst,r,oc) :: cdr,cls)
-      equation
-        ((eqilst_1,cls_1)) = Absyn.traverseEquationItemList(eqilst,fixCallsAndCreateClasses3,cls);
-        cdr_1 = fixCaseListClasses(cdr,cls_1);
-      then
-        (Absyn.ELSE(eilst,eqilst,r,oc) :: cdr_1);
-  end matchcontinue;
-end fixCaseListClasses;
-
-// stefan
-protected function fixVBodyCalls
-"function: fixVBodyCalls
-	helper function to fixCallsInNewClass2
-	goes through a valueblock body"
-	input Absyn.ValueblockBody inValueblockBody;
-	input list<Absyn.Class> inClassList;
-	input list<PartFn> inPartFnList;
-	output Absyn.ValueblockBody outValueblockBody;
-algorithm
-  outValueblockBody :=
-  matchcontinue (inValueblockBody,inClassList,inPartFnList)
-    local
-      list<Absyn.AlgorithmItem> ailst1,ailst_1,ailst2,ailst_2;
-      list<Absyn.EquationItem> eqilst,eqilst_1;
-      list<Absyn.Class> cls,cls_1;
-      list<PartFn> pfn;
-    case(Absyn.VALUEBLOCKALGORITHMS(ailst1),cls,pfn)
-      equation
-        ((ailst_1,(cls_1,pfn))) = Absyn.traverseAlgorithmItemList(ailst1,fixCallsInNewClass,(cls,pfn));
-      then
-        Absyn.VALUEBLOCKALGORITHMS(ailst_1);
-    case(Absyn.VALUEBLOCKMATCHCASE(ailst1,eqilst,ailst2),cls,pfn)
-      equation
-        ((ailst_1,_)) = Absyn.traverseAlgorithmItemList(ailst1,fixCallsInNewClass,(cls,pfn));
-        ((eqilst_1,_)) = Absyn.traverseEquationItemList(eqilst,fixCallsInNewClass3,(cls,pfn));
-        ((ailst_2,_)) = Absyn.traverseAlgorithmItemList(ailst2,fixCallsInNewClass,(cls,pfn));
-      then
-        Absyn.VALUEBLOCKMATCHCASE(ailst_1,eqilst_1,ailst_2);
-  end matchcontinue;
-end fixVBodyCalls;
-
-// stefan
-protected function fixVBodyClasses
-"function: fixVBodyClasses
-	helper function to fixCallsAndCreateClasses2
-	goes through a valueblock body"
-	input Absyn.ValueblockBody inValueblockBody;
-	input list<Absyn.Class> inClassList;
-	output Absyn.ValueblockBody outValueblockBody;
-algorithm
-  outValueblockBody :=
-  matchcontinue (inValueblockBody,inClassList)
-    local
-      list<Absyn.AlgorithmItem> ailst1,ailst_1,ailst2,ailst_2;
-      list<Absyn.EquationItem> eqilst,eqilst_1;
-      list<Absyn.Class> cls,cls_1;
-    case(Absyn.VALUEBLOCKALGORITHMS(ailst1),cls)
-      equation
-        ((ailst_1,cls_1)) = Absyn.traverseAlgorithmItemList(ailst1,fixCallsAndCreateClasses,cls);
-      then
-        Absyn.VALUEBLOCKALGORITHMS(ailst_1);
-    case(Absyn.VALUEBLOCKMATCHCASE(ailst1,eqilst,ailst2),cls)
-      equation
-        ((ailst_1,_)) = Absyn.traverseAlgorithmItemList(ailst1,fixCallsAndCreateClasses,cls);
-        ((eqilst_1,_)) = Absyn.traverseEquationItemList(eqilst,fixCallsAndCreateClasses3,cls);
-        ((ailst_2,_)) = Absyn.traverseAlgorithmItemList(ailst2,fixCallsAndCreateClasses,cls);
-      then
-        Absyn.VALUEBLOCKMATCHCASE(ailst_1,eqilst_1,ailst_2);
-  end matchcontinue;
-end fixVBodyClasses;
-
-// stefan
-protected function buildNewCallInNewClass
-"function: buildNewCallInNewClass
-	builds the new calls in the new class
-	takes the data from the PartFn to build the new call
-	if the called function does not exist in the class list"
-	input Absyn.ComponentRef inComponentRef;
-	input Absyn.FunctionArgs inFunctionArgs;
-	input list<Absyn.Class> inClassList;
-	input list<PartFn> inPartFnList;
-	output Absyn.ComponentRef outComponentRef;
-	output Absyn.FunctionArgs outFunctionArgs;
-algorithm
-  (outComponentRef,outFunctionArgs) :=
-  matchcontinue (inComponentRef,inFunctionArgs,inClassList,inPartFnList)
-    local
-      Absyn.ComponentRef cref,cref_1,cref_2,cref_3,cref_4;
-      Absyn.FunctionArgs fargs,fargs_1,fargs_2;
-      list<Absyn.Class> cls;
-      list<PartFn> pfn;
-      String s,s1,s2,s_1,fnargname;
-      PartFn p;
-      list<Absyn.Exp> elst;
-      Absyn.Class cl,rec_cl;
-      list<Absyn.ClassPart> cps,rec_cps;
-      list<String> slst,slst_1;
-      list<Absyn.ElementItem> elts1,elts2,elts3,rec_elts;
-      list<Absyn.Path> plst;
-      list<Absyn.ComponentRef> creflst;
-      Absyn.Path p;
-      Integer fnPos;
-      list<Absyn.Exp> eargs,eargs_1,eargs_2,eargs_3;
-      list<Absyn.NamedArg> nargs,nargs_1,nargs_2,nargs_3;
-      Boolean isInNargs; // used to check if the function reference is in the named arguments
-    // Recursive call
-    case(cref,fargs,cls,pfn)
-      equation
-        cref_1 = Absyn.crefGetLastIdent(cref);
-        s1 = Absyn.printComponentRefStr(cref_1); // recursive function
-        ((cref_2,_,_,_,_)) = Util.listFirst(pfn);
-        cref_3 = Absyn.crefGetLastIdent(cref_2);
-        s2 = Absyn.printComponentRefStr(cref_3); // partially evaulated function
-        s_1 = s1 +& "_" +& s2; // real function call
-        cl = Absyn.getClassByName(s_1,cls);
-        p = Absyn.makeIdentPathFromString(s_1);
-        cref_4 = Absyn.pathToCref(p); // new cref
-        cps = Absyn.getClassParts(cl); // retrieve elements from new class to get func input position
-        elts1 = Absyn.getPublicElementsFromClassParts(cps);
-        fnPos = getFuncArgPosition(elts1,s2,0);
-        rec_cl = Absyn.getClassByName(s1,cls); // get original class to find out the function arg name
-        rec_cps = Absyn.getClassParts(rec_cl);
-        rec_elts = Absyn.getPublicElementsFromClassParts(rec_cps);
-        Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,_,Absyn.COMPONENTS(_,_,Absyn.COMPONENTITEM(Absyn.COMPONENT(fnargname,_,_),_,_) :: _),_,_)) = listNth(rec_elts,fnPos);
-        (eargs_1,nargs) = Absyn.extractArgs(fargs);
-        (nargs_1,isInNargs) = stripFunctionFromNargs(nargs,fnargname);
-        nargs_2 = generateNamedArgs(elts1,s2);
-        nargs_3 = listAppend(nargs_1,nargs_2);
-        eargs = Absyn.getExpListFromNamedArgList(nargs_2);
-        //eargs_2 = Util.listReplaceAtWithList(eargs_1,fnPos,eargs);
-        eargs_2 = stripFunctionFromEargs(eargs_1,fnPos);
-        eargs_3 = Util.if_(isInNargs,eargs_1,eargs_2);
-        //fargs_2 = Util.if_(fnPos == -1,Absyn.FUNCTIONARGS(eargs,nargs_3),Absyn.FUNCTIONARGS(eargs_2,nargs));
-        fargs_2 = Absyn.FUNCTIONARGS(eargs_3,nargs_3);
-      then
-        (cref_4,fargs_2);
-    // Function exists in the class list
-    case(cref,fargs,cls,pfn)
-      equation
-        cref_1 = Absyn.crefGetLastIdent(cref);
-        s = Absyn.printComponentRefStr(cref_1);
-        _ = Absyn.getClassByName(s,cls);
-      then
-        (cref,fargs);
-    // Function does not exist, create new call
-    case(cref,fargs,cls,pfn)
-      equation
-        ((cref_1,_,_,_,_)) = Util.listFirst(pfn);
-        s = Absyn.printComponentRefStr(cref_1);
-        cl = Absyn.getClassByName(s,cls);
-        cps = Absyn.getClassParts(cl);
-        elts1 = Absyn.getPublicElementsFromClassParts(cps);
-        elts2 = Util.listSelect(elts1,isInputElement);
-        s_1 = stringAppend(s,"_");
-        slst = Util.listMap(elts2,getInputName);
-        slst_1 = Util.listMap1r(slst,stringAppend,s_1);
-        plst = Util.listMap(slst_1,Absyn.makeIdentPathFromString);
-        creflst = Util.listMap(plst,Absyn.pathToCref);
-        elst = Util.listMap(creflst,Absyn.buildExpFromCref);
-        fargs_1 = Absyn.FUNCTIONARGS(elst,{});
-        fargs_2 = Absyn.appendFunctionArgs(fargs,fargs_1);
-      then
-        (cref_1,fargs_2);
-  end matchcontinue;
-end buildNewCallInNewClass;
-
-// stefan
-protected function generateNamedArgs
-"function: generateNamedArgs
-	takes a list of public elements and a function name, and generates named args from these"
-	input list<Absyn.ElementItem> inElementItemList;
-	input String inString;
-	output list<Absyn.NamedArg> outNamedArgList;
-algorithm
-  outNamedArgList := matchcontinue (inElementItemList,inString)
-    local
-      list<Absyn.ElementItem> elts,elts_1;
-      String name;
-      list<String> el_names;
-      list<Absyn.Path> plst;
-      list<Absyn.ComponentRef> creflst;
-      list<Absyn.Exp> elst;
-      list<Absyn.NamedArg> nargs;
-    case(elts,name)
-      equation
-        elts_1 = Util.listSelect1(elts,name,isElementNamed);
-        el_names = Util.listMap(elts_1,getInputName);
-        plst = Util.listMap(el_names,Absyn.makeIdentPathFromString);
-        creflst = Util.listMap(plst,Absyn.pathToCref);
-        elst = Util.listMap(creflst,Absyn.buildExpFromCref);
-        nargs = Absyn.buildNamedArgList(el_names,elst);
-      then
-        nargs;
-  end matchcontinue;
-end generateNamedArgs;
-
-// stefan
-protected function isElementNamed
-"function: isElementNamed
-	helper function to generateNamedArgs"
-	input Absyn.ElementItem inElementItem;
-	input String inString;
+protected function isFunctionElement
+"function: isFunctionElement
+	checks if a DAE.Element is a function"
+	input DAE.Element inElement;
 	output Boolean outBoolean;
 algorithm
-  outBoolean := matchcontinue (inElementItem,inString)
-    local
-      String name,el_name;
-      Integer len,len1,len2;
-    case(Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,_,Absyn.COMPONENTS(_,_,Absyn.COMPONENTITEM(Absyn.COMPONENT(el_name,_,_),_,_) :: _),_,_)),name)
-      equation
-        len1 = stringLength(name);
-        len2 = stringLength(el_name);
-        len = intMin(len1,len2);
-        true = Util.strncmp(name,el_name,len);
-      then
-        true;
-    case(_,_) then false;
-  end matchcontinue;
-end isElementNamed;
-
-// stefan
-protected function stripFunctionFromEargs
-"function: stripFunctionFromEargs
-	removes the given cref from a list of positional function args"
-	input list<Absyn.Exp> inExpList;
-	input Integer inPos;
-	output list<Absyn.Exp> outExpList;
-algorithm
-  outExpList := matchcontinue (inExpList,inPos)
-    local
-      list<Absyn.Exp> cdr,cdr_1;
-      Integer pos;
-    case(cdr,-1) then cdr;
-    case(cdr,pos)
-      equation
-        true = pos < listLength(cdr);
-        cdr_1 = Util.listRemoveNth(cdr,pos);
-      then
-        cdr_1;
-    case(cdr,_) then cdr;
-  end matchcontinue;
-end stripFunctionFromEargs;
-
-// stefan
-protected function stripFunctionFromNargs
-"function: stripFunctionFromNargs
-	removes the given cref from a list of named function args"
-	input list<Absyn.NamedArg> inNamedArgList;
-	input String inString;
-	output list<Absyn.NamedArg> outNamedArgList;
-	output Boolean outBoolean;
-algorithm
-  (outNamedArgList,outBoolean) := matchcontinue(inNamedArgList,inString)
-    local
-      Absyn.NamedArg narg;
-      list<Absyn.NamedArg> cdr,cdr_1;
-      String argname,fnname;
-      Boolean b;
-    case({},_) then ({},false);
-    // function found!
-    case(Absyn.NAMEDARG(argname,_) :: cdr,fnname)
-      equation
-        true = argname ==& fnname;
-      then
-        (cdr,true);
-    case(narg :: cdr,fnname)
-      equation
-        (cdr_1,b) = stripFunctionFromNargs(cdr,fnname);
-      then
-        (narg :: cdr_1,b);
-  end matchcontinue;
-end stripFunctionFromNargs;
-
-// stefan
-protected function getFuncArgPosition
-"function: getFuncArgPosition
-	returns the position of a functional argument based on the function name"
-	input list<Absyn.ElementItem> inElementItemList;
-	input String inString;
-	input Integer inInteger;
-	output Integer outInteger;
-algorithm
-  outInteger := matchcontinue (inElementItemList,inString,inInteger)
-    local
-      list<Absyn.ElementItem> cdr;
-      String str,name;
-      Integer pos,pos_1,pos_2,len,len1,len2;
-    case({},str,pos) then -1;
-      // Function argument found!
-    case(Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,_,Absyn.COMPONENTS(_,_,Absyn.COMPONENTITEM(Absyn.COMPONENT(name,_,_),_,_) :: _),_,_)) :: cdr,str,pos)
-      equation
-        len1 = stringLength(str);
-        len2 = stringLength(name);
-        len = intMin(len1,len2);
-        true = Util.strncmp(str,name,len);
-      then
-        pos;
-    // Function argument not found
-    case(Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,_,Absyn.COMPONENTS(_,_,Absyn.COMPONENTITEM(Absyn.COMPONENT(name,_,_),_,_) :: _),_,_)) :: cdr,str,pos)
-      equation
-        pos_1 = pos + 1;
-        pos_2 = getFuncArgPosition(cdr,str,pos_1);
-      then
-        pos_2;
-  end matchcontinue;
-end getFuncArgPosition;
-
-// stefan
-protected function getInputName
-"function: getInputNames
-	passed as argument to Util.listMap
-	retreives the name of an input element"
-	input Absyn.ElementItem inElementItem;
-	output String outString;
-algorithm
-  outString := matchcontinue(inElementItem)
-    local
-      list<Absyn.ComponentItem> cilst;
-      String s;
-    case(Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,_,Absyn.COMPONENTS(_,_,cilst),_,_)))
-      equation
-        Absyn.COMPONENTITEM(Absyn.COMPONENT(s,_,_),_,_) = Util.listFirst(cilst);
-      then
-        s;
-    case(_) then "";
-  end matchcontinue;
-end getInputName;
-
-// stefan
-protected function fixClassInputs
-"function: fixClassParts
-	replaces partially evaluated function inputs with the inputs of the given functions"
-	input list<Absyn.ClassPart> inClassPartList;
-	input list<PartFn> inPartFnList;
-	input list<Absyn.Class> inClassList;
-	output list<Absyn.ClassPart> outClassPartList;
-algorithm
-  outClassPartList := matchcontinue (inClassPartList,inPartFnList,inClassList)
-    local
-      list<Absyn.ElementItem> elts,elts_1,elts_2;
-      list<Absyn.ClassPart> cdr,cdr_1;
-      list<PartFn> pfn;
-      list<Absyn.Class> cls;
-      Absyn.ClassPart cp;
-    case({},_,_) then {};
-    case(Absyn.PUBLIC(elts) :: cdr,pfn,cls)
-      equation
-        elts_1 = fixClassInputsPosArg(elts,pfn,cls,0);
-        elts_2 = fixClassInputsNamedArg(elts_1,pfn,cls);
-        cp = Absyn.PUBLIC(elts_2);
-        cdr_1 = fixClassInputs(cdr,pfn,cls);
-      then
-        cp :: cdr_1;
-    case(cp :: cdr,pfn,cls)
-      equation
-        cdr_1 = fixClassInputs(cdr,pfn,cls);
-      then
-        cp :: cdr_1;
-  end matchcontinue;
-end fixClassInputs;
-
-// stefan
-protected function isInputElement
-"function: isInputElement
-	returns true if the given Absyn.ElementItem is an input
-	used as an argument to Util.listSelect"
-	input Absyn.ElementItem inElementItem;
-	output Boolean outBoolean;
-algorithm
-  outBoolean := matchcontinue(inElementItem)
-    case(Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,_,Absyn.COMPONENTS(Absyn.ATTR(_,_,_,Absyn.INPUT(),_),_,_),_,_))) then true;
+  outBoolean := matchcontinue(inElement)
+    case(DAE.FUNCTION(path = _)) then true;
     case(_) then false;
   end matchcontinue;
-end isInputElement;
+end isFunctionElement;
 
-// stefan
-protected function prependStringToIdent
-"function: prependStringToIdent
-	prepends the given string to the ident of the given elementitem"
-	input Absyn.ElementItem inElementItem;
-	input String inString;
-	output Absyn.ElementItem outElementItem;
+protected function elabElements
+"function: elabElements
+	goes through a list of DAE.Element for partevalfunction"
+	input list<DAE.Element> inElementList;
+	input list<DAE.Element> inDAE;
+	output list<DAE.Element> outElementList;
+	output list<DAE.Element> outDAE;
 algorithm
-  outElementItem := matchcontinue(inElementItem,inString)
+  (outElementList,outDAE) := matchcontinue(inElementList,inDAE)
     local
-      Boolean fp;
-      Option<Absyn.RedeclareKeywords> rk;
-      Absyn.InnerOuter io;
-      String prefix,n,n_1;
-      Absyn.ElementSpec s;
-      Absyn.Info i;
-      Option<Absyn.ConstrainClass> cc;
-      Absyn.ElementAttributes ea;
-      Absyn.TypeSpec ts;
-      Absyn.ElementItem res;
-      list<Absyn.ComponentItem> cilst,cilst_1;
-    case(Absyn.ELEMENTITEM(Absyn.ELEMENT(fp,rk,io,n,Absyn.COMPONENTS(ea,ts,cilst),i,cc)),prefix)
+      DAE.Element el,el_1,el1,el1_1,el2,el2_1;
+      list<DAE.Element> cdr,cdr_1,elts,elts_1,dae;
+      list<list<DAE.Element>> elm,elm_1;
+      Exp.ComponentRef cref;
+      DAE.VarKind kind;
+      DAE.VarDirection direction;
+      DAE.VarProtection protection;
+      DAE.Type ty;
+      Option<Exp.Exp> binding; 
+      DAE.InstDims dims;
+      DAE.Flow flowPrefix;
+      DAE.Stream streamPrefix;
+      list<Absyn.Path> pathLst;
+      Option<DAE.VariableAttributes> variableAttributesOption;
+      Option<SCode.Comment> absynCommentOption;
+      Absyn.InnerOuter innerOuter;
+      DAE.Type fullType;
+      list<Integer> ilst;
+      Ident i;
+      Absyn.Path p;
+      Boolean pp;
+      DAE.ExternalDecl ed;
+      list<Exp.Exp> elst,elst_1;
+      Exp.Exp e,e_1,e1,e1_1,e2,e2_1;
+    case({},dae) then ({},dae);
+    case(DAE.VAR(cref,kind,direction,protection,ty,binding,dims,flowPrefix,streamPrefix,pathLst,variableAttributesOption,absynCommentOption,innerOuter) :: cdr,dae)
       equation
-        cilst_1 = Util.listMap1(cilst,prependStringToIdent2,prefix);
-        res = Absyn.ELEMENTITEM(Absyn.ELEMENT(fp,rk,io,n,Absyn.COMPONENTS(ea,ts,cilst_1),i,cc));
+        (binding,dae) = elabExpOption(binding,dae);
+        (cdr_1,dae) = elabElements(cdr,dae);
+      then
+        (DAE.VAR(cref,kind,direction,protection,ty,binding,dims,flowPrefix,streamPrefix,pathLst,variableAttributesOption,absynCommentOption,innerOuter) :: cdr_1,dae);
+    case(DAE.DEFINE(cref,e) :: cdr,dae)
+      equation
+        ((e_1,dae)) = Exp.traverseExp(e,elabExp,dae);
+        (cdr_1,dae) = elabElements(cdr,dae);
+      then
+        (DAE.DEFINE(cref,e_1) :: cdr_1,dae);
+    case(DAE.INITIALDEFINE(cref,e) :: cdr,dae)
+      equation
+        ((e_1,dae)) = Exp.traverseExp(e,elabExp,dae);
+        (cdr_1,dae) = elabElements(cdr,dae);
+      then
+        (DAE.INITIALDEFINE(cref,e_1) :: cdr_1,dae);
+    case(DAE.EQUATION(e1,e2) :: cdr,dae)
+      equation
+        ((e1_1,dae)) = Exp.traverseExp(e1,elabExp,dae);
+        ((e2_1,dae)) = Exp.traverseExp(e2,elabExp,dae);
+        (cdr_1,dae) = elabElements(cdr,dae);
+      then
+        (DAE.EQUATION(e1_1,e2_1) :: cdr_1,dae);
+    case(DAE.ARRAY_EQUATION(ilst,e1,e2) :: cdr,dae)
+      equation
+        ((e1_1,dae)) = Exp.traverseExp(e1,elabExp,dae);
+        ((e2_1,dae)) = Exp.traverseExp(e2,elabExp,dae);
+        (cdr_1,dae) = elabElements(cdr,dae);
+      then
+        (DAE.ARRAY_EQUATION(ilst,e1_1,e2_1) :: cdr_1,dae);
+    case(DAE.COMPLEX_EQUATION(e1,e2) :: cdr,dae)
+      equation
+        ((e1_1,dae)) = Exp.traverseExp(e1,elabExp,dae);
+        ((e2_1,dae)) = Exp.traverseExp(e2,elabExp,dae);
+        (cdr_1,dae) = elabElements(cdr,dae);
+      then
+        (DAE.COMPLEX_EQUATION(e1_1,e2_1) :: cdr_1,dae);
+    case(DAE.INITIAL_COMPLEX_EQUATION(e1,e2) :: cdr,dae)
+      equation
+        ((e1_1,dae)) = Exp.traverseExp(e1,elabExp,dae);
+        ((e2_1,dae)) = Exp.traverseExp(e2,elabExp,dae);
+        (cdr_1,dae) = elabElements(cdr,dae);
+      then
+        (DAE.INITIAL_COMPLEX_EQUATION(e1_1,e2_1) :: cdr_1,dae);
+    case(DAE.WHEN_EQUATION(e,elts,NONE) :: cdr,dae)
+      equation
+        ((e_1,dae)) = Exp.traverseExp(e,elabExp,dae);
+        (elts_1,dae) = elabElements(elts,dae);
+        (cdr_1,dae) = elabElements(cdr,dae);
+      then
+        (DAE.WHEN_EQUATION(e_1,elts_1,NONE) :: cdr_1,dae);
+    case(DAE.WHEN_EQUATION(e,elts,SOME(el)) :: cdr,dae)
+      equation
+        ((e_1,dae)) = Exp.traverseExp(e,elabExp,dae);
+        (elts_1,dae) = elabElements(elts,dae);
+        ({el_1},dae) = elabElements({el},dae);
+        (cdr_1,dae) = elabElements(cdr,dae);
+      then
+        (DAE.WHEN_EQUATION(e_1,elts_1,SOME(el_1)) :: cdr_1,dae);
+    /*case(DAE.IF_EQUATION(elst,elm,elts) :: cdr,dae)
+      equation
+        (elst_1,dae) = elabExpList(elst,dae);
+        elm_1 = Util.listMap1(elm,elabElements,dae);
+        (elts_1,dae) = elabElements(elts,dae);
+        (cdr_1,dae) = elabElements(cdr,dae);
+      then
+        (DAE.IF_EQUATION(elst_1,elm_1,elts_1) :: cdr_1,dae);
+    case(DAE.INITIAL_IF_EQUATION(elst,elm,elts) :: cdr,dae)
+      equation
+        (elst_1,dae) = elabExpList(elst,dae);
+        elm_1 = Util.listMap1(elm,elabElements,dae);
+        (elts_1,dae) = elabElements(elts,dae);
+        (cdr_1,dae) = elabElements(cdr,dae);
+      then
+        (DAE.INITIAL_IF_EQUATION(elst_1,elm_1,elts_1) :: cdr_1,dae);*/
+    case(DAE.INITIALEQUATION(e1,e2) :: cdr,dae)
+      equation
+        ((e1_1,dae)) = Exp.traverseExp(e1,elabExp,dae);
+        ((e2_1,dae)) = Exp.traverseExp(e2,elabExp,dae);
+        (cdr_1,dae) = elabElements(cdr,dae);
+      then
+        (DAE.INITIALEQUATION(e1_1,e2_1) :: cdr_1,dae);
+    // TODO: ALGORITHMS
+    case(DAE.COMP(i,DAE.DAE(elts)) :: cdr,dae)
+      equation
+        (elts_1,dae) = elabElements(elts,dae);
+        (cdr_1,dae) = elabElements(cdr,dae);
+      then
+        (DAE.COMP(i,DAE.DAE(elts_1)) :: cdr_1,dae);
+    case(DAE.FUNCTION(p,DAE.DAE(elts),fullType,pp) :: cdr,dae)
+      equation
+        (elts_1,dae) = elabElements(elts,dae);
+        (cdr_1,dae) = elabElements(cdr,dae);
+      then
+        (DAE.FUNCTION(p,DAE.DAE(elts_1),fullType,pp) :: cdr_1,dae);
+    case(DAE.EXTFUNCTION(p,DAE.DAE(elts),fullType,ed) :: cdr,dae)
+      equation
+        (elts_1,dae) = elabElements(elts,dae);
+        (cdr_1,dae) = elabElements(cdr,dae);
+      then
+        (DAE.EXTFUNCTION(p,DAE.DAE(elts),fullType,ed) :: cdr_1,dae);
+    case(DAE.EXTOBJECTCLASS(p,el1,el2) :: cdr,dae)
+      equation
+        ({el1_1},dae) = elabElements({el1},dae);
+        ({el2_1},dae) = elabElements({el2},dae);
+        (cdr_1,dae) = elabElements(cdr,dae);
+      then
+        (DAE.EXTOBJECTCLASS(p,el1_1,el2_1) :: cdr_1,dae);
+    case(DAE.ASSERT(e1,e2) :: cdr,dae)
+      equation
+        ((e1_1,dae)) = Exp.traverseExp(e1,elabExp,dae);
+        ((e2_1,dae)) = Exp.traverseExp(e2,elabExp,dae);
+        (cdr_1,dae) = elabElements(cdr,dae);
+      then
+        (DAE.ASSERT(e1_1,e2_1) :: cdr_1,dae);
+    case(DAE.TERMINATE(e) :: cdr,dae)
+      equation
+        ((e_1,dae)) = Exp.traverseExp(e,elabExp,dae);
+        (cdr_1,dae) = elabElements(cdr,dae);
+      then
+        (DAE.TERMINATE(e_1) :: cdr_1,dae);
+    case(DAE.REINIT(cref,e) :: cdr,dae)
+      equation
+        ((e_1,dae)) = Exp.traverseExp(e,elabExp,dae);
+        (cdr_1,dae) = elabElements(cdr,dae);
+      then
+        (DAE.REINIT(cref,e_1) :: cdr_1,dae);
+    case(DAE.NORETCALL(p,elst) :: cdr,dae)
+      equation
+        (elst_1,dae) = elabExpList(elst,dae);
+        (cdr_1,dae) = elabElements(cdr,dae);
+      then
+        (DAE.NORETCALL(p,elst_1) :: cdr_1,dae);
+    case(el :: cdr,dae)
+      equation
+        (cdr_1,dae) = elabElements(cdr,dae);
+      then
+        (el :: cdr_1,dae);
+    case(_,_)
+      equation
+        Debug.fprintln("failtrace","PartFn.elabElements failed");
+      then
+        fail();
+  end matchcontinue;
+end elabElements;
+
+protected function elabExpList
+"function: elabExpList
+	elabs an exp list"
+	input list<Exp.Exp> inExpList;
+	input list<DAE.Element> inElementList;
+	output list<Exp.Exp> outExpList;
+	output list<DAE.Element> outElementList;
+algorithm
+  (outExpList,outElementList) := matchcontinue(inExpList,inElementList)
+    local
+      list<DAE.Element> dae;
+      list<Exp.Exp> cdr,cdr_1;
+      Exp.Exp e,e_1;
+    case({},dae) then ({},dae);
+    case(e :: cdr,dae)
+      equation
+        ((e_1,dae)) = Exp.traverseExp(e,elabExp,dae);
+        (cdr_1,dae) = elabExpList(cdr,dae);
+      then
+        (e_1 :: cdr_1,dae);
+  end matchcontinue;
+end elabExpList;
+
+protected function elabExpOption
+"function: elabExpOption
+	elabs an exp option if it is SOME, returns NONE otherwise"
+	input Option<Exp.Exp> inExp;
+	input list<DAE.Element> inElementList;
+	output Option<Exp.Exp> outExp;
+	output list<DAE.Element> outElementList;
+algorithm
+  (outExp,outElementList) := matchcontinue(inExp,inElementList)
+    local
+      Exp.Exp e,e_1;
+      list<DAE.Element> dae;
+    case(NONE,dae) then (NONE,dae);
+    case(SOME(e),dae)
+      equation
+        ((e_1,dae)) = Exp.traverseExp(e,elabExp,dae);
+      then
+        (SOME(e_1),dae);
+  end matchcontinue;
+end elabExpOption;
+
+protected function elabExp
+"function: elabExp
+	looks for a function call, checks the arguments for Exp.PARTEVALFUNCTION
+	creates new functions and replaces the call as necessary"
+	input tuple<Exp.Exp, list<DAE.Element>> inTuple;
+	output tuple<Exp.Exp, list<DAE.Element>> outTuple;
+algorithm
+  outTuple := matchcontinue(inTuple)
+    local
+      Exp.Exp e;
+      list<DAE.Element> dae;
+      Absyn.Path p,p1,p_1;
+      list<Exp.Exp> args,args1,args_1;
+      Exp.Type ty;
+      Boolean tu,bi,inl;
+      Integer i,numArgs;
+    case((Exp.CALL(p,args,tu,bi,ty,inl),dae))
+      equation
+        (Exp.PARTEVALFUNCTION(p1,args1,_),i) = getPartEvalFunction(args,0);
+        numArgs = listLength(args1);
+        args_1 = Util.listReplaceAtWithList(args1,i,args);
+        p_1 = makeNewFnPath(p,p1);
+        dae = buildNewFunction(dae,p,p1,numArgs);
+      then
+        ((Exp.CALL(p_1,args_1,tu,bi,ty,inl),dae));
+    case((e,dae)) then ((e,dae));
+  end matchcontinue;
+end elabExp;
+
+protected function makeNewFnPath
+"function: makeNewFnPath
+	creates a path for the new function using the path for the caller and the callee"
+	input Absyn.Path inCaller;
+	input Absyn.Path inCallee;
+	output Absyn.Path newPath;
+	String s1,s2,s;
+algorithm
+  s1 := Absyn.pathString(inCaller);
+  s2 := Absyn.pathString(inCallee);
+  s := s1 +& "_" +& s2;
+  newPath := Absyn.makeIdentPathFromString(s);
+end makeNewFnPath;
+
+protected function buildNewFunction
+"function: buildNewFunction
+	creates a new function from the old one, given the old and new paths"
+	input list<DAE.Element> inElementList;
+	input Absyn.Path inPath1;
+	input Absyn.Path inPath2;
+	input Integer inInteger;
+	output list<DAE.Element> outElementList;
+algorithm
+  outElementList := matchcontinue(inElementList,inPath1,inPath2,inInteger)
+    local
+      list<DAE.Element> dae,dae_1;
+      DAE.Element fn1,fn2,newFn;
+      Absyn.Path p1,p2,newPath;
+      Integer numArgs;
+    case(dae,p1,p2,numArgs)
+      equation
+        {fn1} = DAEUtil.getNamedFunction(p1,dae);
+        {fn2} = DAEUtil.getNamedFunction(p2,dae);
+        newPath = makeNewFnPath(p1,p2);
+        newFn = buildNewFunction2(fn1,fn2,newPath,dae,numArgs);
+      then
+        newFn :: dae;
+    case(_,_,_,_)
+      equation
+        Debug.fprintln("failtrace","PartFn.buildNewFunction failed");
+      then
+        fail();
+  end matchcontinue;
+end buildNewFunction;
+
+protected function buildNewFunction2
+"function: buildNewFunction2
+	creates a new function based on given data"
+	input DAE.Element bigFunction;
+	input DAE.Element smallFunction;
+	input Absyn.Path inPath;
+	input list<DAE.Element> inElementList;
+	input Integer inInteger;
+	output DAE.Element outFunction;
+algorithm
+  outFunction := matchcontinue(bigFunction,smallFunction,inPath,inElementList,inInteger)
+    local
+      DAE.Element bigfn,smallfn,res;
+      Absyn.Path p;
+      list<DAE.Element> dae,fnparts,fnparts_1;
+      DAE.Type ty;
+      Boolean pp;
+      Integer numArgs;
+      list<DAE.Var> vars;
+    case(bigfn as DAE.FUNCTION(_,DAE.DAE(fnparts),ty,pp),smallfn,p,dae,numArgs)
+      equation
+        (fnparts_1,vars) = buildNewFunctionParts(fnparts,smallfn,dae,numArgs);
+        ty = buildNewFunctionType(ty,vars);
+        res = DAE.FUNCTION(p,DAE.DAE(fnparts_1),ty,pp);
       then
         res;
-  end matchcontinue;
-end prependStringToIdent;
-
-// stefan
-protected function prependStringToIdent2
-"function: prependStringToIdent2
-	helper function to prependStringToIdent
-	passed as an argument to Util.listMap1"
-	input Absyn.ComponentItem inComponentItem;
-	input String inString;
-	output Absyn.ComponentItem outComponentItem;
-algorithm
-  outComponentItem := matchcontinue(inComponentItem,inString)
-    local
-      Option<Absyn.ComponentCondition> cco;
-      Option<Absyn.Comment> co;
-      String n,n_1,prefix;
-      Absyn.ArrayDim ad;
-      Option<Absyn.Modification> mod;
-      Absyn.ComponentItem res;
-    case(Absyn.COMPONENTITEM(Absyn.COMPONENT(n,ad,mod),cco,co),prefix)
+    case(_,_,_,_,_)
       equation
-        n_1 = stringAppend(prefix,n);
-        res = Absyn.COMPONENTITEM(Absyn.COMPONENT(n_1,ad,mod),cco,co);
-      then res;
-  end matchcontinue;
-end prependStringToIdent2;
-
-// stefan
-protected function fixClassInputsPosArg
-"function: fixClassPartsPosArg
-	helper function to fixClassParts"
-	input list<Absyn.ElementItem> inElementItemList;
-	input list<PartFn> inPartFnList;
-	input list<Absyn.Class> inClassList;
-	input Integer inOffset;
-	output list<Absyn.ElementItem> outElementItemList;
-algorithm
-  outElementItemList := matchcontinue (inElementItemList,inPartFnList,inClassList,inOffset)
-    local
-      list<Absyn.ElementItem> elts,elts2,elts3,elts4,elts_1,elts_2;
-      list<PartFn> cdr;
-      list<Absyn.Class> cls;
-      Integer pos,pos_1,n,n_1;
-      Absyn.ComponentRef cref;
-      Absyn.Class cl;
-      String s,s_1;
-      list<Absyn.ClassPart> cps;
-    case(elts,{},_,_) then elts;
-    case(elts,(cref,_,_,SOME(pos),_) :: cdr,cls,n)
-      equation
-        s = Absyn.printComponentRefStr(cref);
-        cl = Absyn.getClassByName(s,cls);
-        cps = Absyn.getClassParts(cl);
-        elts2 = Absyn.getPublicElementsFromClassParts(cps);
-        elts3 = Util.listSelect(elts2,isInputElement);
-        s_1 = stringAppend(s,"_");
-        elts4 = Util.listMap1(elts3,prependStringToIdent,s_1);
-        pos_1 = pos + n;
-        elts_1 = Util.listReplaceAtWithList(elts4,pos_1,elts);
-        n_1 = listLength(elts2) + n - 1;
-        elts_2 = fixClassInputsPosArg(elts_1,cdr,cls,n_1);
+        Debug.fprintln("failtrace","PartFn.buildNewFunction2 failed");
       then
-        elts_2;
-    case(elts,_ :: cdr,cls,n)
-      equation
-        elts_1 = fixClassInputsPosArg(elts,cdr,cls,n);
-      then
-        elts_1;
+        fail();
   end matchcontinue;
-end fixClassInputsPosArg;
+end buildNewFunction2;
 
-// stefan
-protected function getElementItemNamed
-"function: getElementItemNamed
-	helper function to fixClassInputsNamedArg
-	used as argument to listSelect
-	returns true if the element item contains a component with the given name"
-	input Absyn.ElementItem inElementItem;
-	input String inString;
+protected function buildNewFunctionType
+"function: buildNewFunctionType
+	removes the funcarg that is of T_FUNCTION type and inserts the list of vars as funcargs at the end"
+	input DAE.Type inType;
+	input list<DAE.Var> inVarList;
+	output DAE.Type outType;
+algorithm
+  outType := matchcontinue(inType,inVarList)
+    local
+      list<DAE.Var> vars;
+      list<DAE.FuncArg> args,args_1,args_2,new_args;
+      DAE.Type retType;
+      Option<Absyn.Path> po;
+    case((DAE.T_FUNCTION(args,retType),po),vars)
+      equation
+        new_args = Types.makeFargsList(vars);
+        args_1 = Util.listSelect(args,isNotFunctionType);
+        args_2 = listAppend(args_1,new_args);
+      then
+        ((DAE.T_FUNCTION(args_2,retType),po));
+    case(_,_)
+      equation
+        Debug.fprintln("failtrace","- PartFn.buildNewFunctionType failed");
+      then
+        fail();
+  end matchcontinue;
+end buildNewFunctionType;
+
+protected function isNotFunctionType
+"function: isNotFunctionType
+	checks to make sure a Types.FuncArg is not of type T_FUNCTION"
+	input DAE.FuncArg inFuncArg;
 	output Boolean outBoolean;
 algorithm
-  outElementItem := matchcontinue(inElementItem,inString)
-    local
-      String name;
-      list<Absyn.ComponentItem> cilst,cilst_1;
-      Integer len;
-    case(Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,_,Absyn.COMPONENTS(_,_,cilst),_,_)),name)
-      equation
-        cilst_1 = Util.listSelect1(cilst,name,getComponentItemNamed);
-        len = listLength(cilst_1);
-        true = len > 0;
-      then
-        true;
-    case(_,_) then false;
+  outBoolean := matchcontinue(inFuncArg)
+    case((_,(DAE.T_FUNCTION(funcArg = _),_))) then false;
+    case(_) then true;
   end matchcontinue;
-end getElementItemNamed;
+end isNotFunctionType;
 
-// stefan
-protected function getComponentItemNamed
-"function: getComponentItemNamed
-	helper function to getElementItemNamed
-	used as argument to listSelect
-	returns true if the component item has the given name"
-	input Absyn.ComponentItem inComponentItem;
-	input String inString;
-	output Boolean outBoolean;
+protected function buildNewFunctionParts
+"function: buildNewFunctionParts
+	inserts variables and alters call expressions in the new function"
+	input list<DAE.Element> inFunctionParts;
+	input DAE.Element smallFunction;
+	input list<DAE.Element> inElementList;
+	input Integer inInteger;
+	output list<DAE.Element> outFunctionParts;
+	output list<DAE.Var> outVarList;
 algorithm
-  outBoolean := matchcontinue(inComponentItem,inString)
+  (outFunctionParts,outVarList) := matchcontinue(inFunctionParts,smallFunction,inElementList,inInteger)
     local
-      String name,n;
-    case(Absyn.COMPONENTITEM(Absyn.COMPONENT(n,_,_),_,_),name)
-      equation
-        true = name ==& n;
-      then
-        true;
-    case(_,_) then false;
-  end matchcontinue;
-end getComponentItemNamed;
-
-// stefan
-protected function fixClassInputsNamedArg
-"function: fixClassInputsNamedArg
-	helper function to fixClassParts"
-	input list<Absyn.ElementItem> inElementItemList;
-	input list<PartFn> inPartFnList;
-	input list<Absyn.Class> inClassList;
-	output list<Absyn.ElementItem> outElementItemList;
-algorithm
-  outElementItemList := matchcontinue (inElementItemList,inPartFnList,inClassList)
-    local
-      list<Absyn.ElementItem> elts,elts2,elts3,elts4,elts_1,elts_2,items;
-      list<PartFn> cdr;
-      list<Absyn.Class> cls;
-      String s,s_1,name;
-      Absyn.Class cl;
-      list<Absyn.ClassPart> cps;
-      Integer pos;
-      Absyn.ElementItem item;
-      Absyn.ComponentRef cref;
-    case(elts,{},_) then elts;
-    case(elts,(cref,_,_,_,SOME(name)) :: cdr,cls)
-      equation
-        s = Absyn.printComponentRefStr(cref);
-        cl = Absyn.getClassByName(s,cls);
-        cps = Absyn.getClassParts(cl);
-        elts2 = Absyn.getPublicElementsFromClassParts(cps);
-        elts3 = Util.listSelect(elts2,isInputElement);
-        s_1 = stringAppend(s,"_");
-        elts4 = Util.listMap1(elts3,prependStringToIdent,s_1);
-        items = Util.listSelect1(elts,name,getElementItemNamed);
-        item = Util.listFirst(items);
-        pos = Util.listPosition(item,elts);
-        elts_1 = Util.listReplaceAtWithList(elts4,pos,elts);
-        elts_2 = fixClassInputsNamedArg(elts_1,cdr,cls);
-      then
-        elts_2;
-    case(elts,_ :: cdr,cls)
-      equation
-        elts_1 = fixClassInputsNamedArg(elts,cdr,cls);
-      then
-        elts_1;
-  end matchcontinue;
-end fixClassInputsNamedArg;
-
-// stefan
-protected function generateFuncName
-"function: generateFuncName
-	generates a new function name from a cref and a list of partfns"
-	input Absyn.ComponentRef inComponentRef;
-	input list<PartFn> inPartFnList;
-	output Absyn.ComponentRef outComponentRef;
-	String s,s_1,s_2;
-	Absyn.Path p,p_1;
-algorithm
-  p := Absyn.crefToPath(inComponentRef);
-  s := Absyn.pathString(p);
-  s_1 := generateFuncName2(inPartFnList);
-  s_2 := stringAppend(s,s_1);
-  p_1 := Absyn.makeIdentPathFromString(s_2);
-  outComponentRef := Absyn.pathToCref(p_1);
-end generateFuncName;
-
-// stefan
-protected function generateFuncName2
-"function: generateFuncName2
-	helper function to generateFuncName"
-	input list<PartFn> inPartFnList;
-	output String outString;
-algorithm
-  outString := matchcontinue(inPartFnList)
-    local
-      list<PartFn> cdr;
-      Absyn.ComponentRef cref;
-      String s1,s2,s3,s4;
-    case({}) then "";
-    case((cref,_,_,_,_) :: cdr)
-      equation
-        s1 = "_"; //delimiter
-        s2 = Absyn.printComponentRefStr(cref);
-        s3 = generateFuncName2(cdr);
-        s4 = s1 +& s2 +& s3;
-      then
-        s4;
-  end matchcontinue;
-end generateFuncName2;
-
-// stefan
-protected function fixPosArgs
-"function: fixPosArgs
-	Removes PARTEVALFUNCTION exps from the posarg list
-	appends the arguments of this exp to the posarg list"
-	input list<Absyn.Exp> inSearchList;
-	output list<Absyn.Exp> outExpList;
-algorithm
-  outExpList := matchcontinue (inSearchList)
-    local
-      list<Absyn.Exp> cdr,eargs,nargexps,newargs,cdr_1;
-      Absyn.Exp e;
-      list<Absyn.NamedArg> nargs;
-    case({}) then {};
-    case(Absyn.PARTEVALFUNCTION(_,Absyn.FUNCTIONARGS(eargs,nargs)) :: cdr)
-      equation
-        (_,nargexps) = Absyn.getNamedFuncArgNamesAndValues(nargs);
-        cdr_1 = fixPosArgs(cdr);
-        newargs = listAppend(eargs,nargexps);
-      then
-        listAppend(cdr_1,newargs);
-    case(e :: cdr)
-      equation
-        cdr_1 = fixPosArgs(cdr);
-    then e :: cdr_1;
-  end matchcontinue;
-end fixPosArgs;
-
-// stefan
-protected function fixNamedArgs
-"function: fixNamedArgs
-	Removes PARTEVALFUNCTION exps from the posarg list
-	appends the arguments of this exp to the posarg list"
-	input list<Absyn.NamedArg> inNamedArgList;
-	output list<Absyn.NamedArg> outNamedArgList;
-	output list<Absyn.Exp> outPosArgList;
-algorithm
-  (outNamedArgList,outPosArgList) := matchcontinue(inNamedArgList)
-    local
-      Absyn.NamedArg na;
-      list<Absyn.NamedArg> cdr,cdr_1,nargs;
-      list<Absyn.Exp> new_eargs,new_eargs2,eargs;
-      String name;
-    case({}) then ({},{});
-    case(Absyn.NAMEDARG(name,Absyn.PARTEVALFUNCTION(_,Absyn.FUNCTIONARGS(eargs,nargs))) :: cdr)
-      equation
-        (_,new_eargs) = Absyn.getNamedFuncArgNamesAndValues(nargs);
-        (cdr_1,new_eargs2) = fixNamedArgs(cdr);
-      then
-        (cdr_1,listAppend(listAppend(eargs,new_eargs),new_eargs2));
-    case(na :: cdr)
-      equation
-        (cdr_1,new_eargs) = fixNamedArgs(cdr);
-      then
-        (na :: cdr_1,new_eargs);
-  end matchcontinue;
-end fixNamedArgs;
-
-// stefan
-protected function addCrefToPartFnList
-"function: addCrefToPartFnList
-	takes a cref and a list of PartFn
-	sets the last element of each tuple to the given cref"
-	input Absyn.ComponentRef inComponentRef;
-	input list<PartFn> inPartFnList;
-	output list<PartFn> outPartFnList;
-algorithm
-  outPartFnList := matchcontinue(inComponentRef,inPartFnList)
-    local
-      Absyn.ComponentRef c,cref;
-      Absyn.FunctionArgs f;
-      list<PartFn> cdr,cdr_1;
-      PartFn p;
-      Option<Integer> io;
-      Option<String> so;
-    case(_,{}) then {};
-    case(cref,(c,f,_,io,so) :: cdr)
-      equation
-        p = (c,f,cref,io,so);
-        cdr_1 = addCrefToPartFnList(cref,cdr);
-      then p :: cdr_1;
-  end matchcontinue;
-end addCrefToPartFnList;
-
-// stefan
-protected function findPartFnInPosArgs
-"function: findPartFnInPosArgs
-	searches a list of Absyn.Exp for PARTEVALFUNCTIONs"
-	input list<Absyn.Exp> inExpList1;
-	input list<Absyn.Exp> inExpList2;
-	output list<PartFn> outPartFnList;
-algorithm
-  outPartFnList := matchcontinue(inExpList1,inExpList2)
-    local
-      Absyn.ComponentRef cref;
-      Absyn.FunctionArgs fargs;
-      list<Absyn.Exp> cdr,elst;
-      list<PartFn> pfn;
-      PartFn p;
-      Integer pos;
-      Absyn.Exp e;
-    case({},_) then {};
-    case((e as Absyn.PARTEVALFUNCTION(cref,fargs)) :: cdr,elst)
-      equation
-        pos = Util.listPosition(e,elst);
-        p = (cref,fargs,Absyn.CREF_IDENT("",{}),SOME(pos),NONE());
-        pfn = findPartFnInPosArgs(cdr,elst);
-      then p :: pfn;
-    case(_ :: cdr,elst) then findPartFnInPosArgs(cdr,elst);
-  end matchcontinue;
-end findPartFnInPosArgs;
-
-// stefan
-protected function findPartFnInNamedArgs
-"function: findPartFnInPosArgs
-	searches a list Absyn.NamedArg for PARTEVALFUNCTIONs"
-	input list<Absyn.NamedArg> inNamedArgList;
-	output list<PartFn> outPartFnList;
-algorithm
-  outPartFnList := matchcontinue(inNamedArgList)
-    local
-      list<Absyn.NamedArg> cdr;
-      Absyn.ComponentRef cref;
-      Absyn.FunctionArgs fargs;
-      list<PartFn> pfn;
-      PartFn p;
+      list<DAE.Element> parts,dae,inputs,res,smallparts;
+      DAE.Element smallfn;
+      Absyn.Path p;
       String s;
-    case({}) then {};
-    case(Absyn.NAMEDARG(s,Absyn.PARTEVALFUNCTION(cref,fargs)) :: cdr)
+      Integer numArgs;
+      list<DAE.Var> vars;
+    case(parts,smallfn as DAE.FUNCTION(p,DAE.DAE(smallparts),_,_),dae,numArgs)
       equation
-        p = (cref,fargs,Absyn.CREF_IDENT("",{}),NONE(),SOME(s));
-        pfn = findPartFnInNamedArgs(cdr);
-      then p :: pfn;
-    case(_ :: cdr) then findPartFnInNamedArgs(cdr);
+        inputs = Util.listSelect(smallparts,isInput);
+        s = Absyn.pathString(p);
+        inputs = Util.listMap1(inputs,renameInput,s);
+        inputs = listReverse(getFirstNInputs(listReverse(inputs),numArgs));
+        res = insertAfterInputs(parts,inputs);
+        res = fixCalls(res,dae,p,inputs);
+        res = Util.listSelect(res,isNotFunctionInput);
+        vars = Util.listMap(inputs,buildTypeVar);
+      then
+        (res,vars);
+    case(_,_,_,_)
+      equation
+        Debug.fprintln("failtrace","PartFn.buildNewFunctionParts failed");
+      then
+        fail();
   end matchcontinue;
-end findPartFnInNamedArgs;
+end buildNewFunctionParts;
+
+protected function buildTypeVar
+"function: buildTypeVar
+	turns a DAE.VAR into Types.VAR"
+	input DAE.Element inElement;
+	output DAE.Var outVar;
+algorithm
+  outVar := matchcontinue(inElement)
+    local
+      Exp.ComponentRef cref;
+      Ident i;
+      DAE.Type ty;
+      DAE.Var res;
+    case(DAE.VAR(componentRef = cref,ty = ty))
+      equation
+        i = Exp.printComponentRefStr(cref);
+        res = DAE.TYPES_VAR(i,DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.INPUT(),Absyn.UNSPECIFIED()),false,ty,DAE.UNBOUND()); // TODO: FIXME: binding?
+      then
+        res;
+    case(_)
+      equation
+        Debug.fprintln("failtrace","- PartFn.buildTypeVar failed");
+      then
+        fail();
+  end matchcontinue;
+end buildTypeVar;
+
+protected function isNotFunctionInput
+"function: isNotFunctionInput
+	checks if an input var is of T_FUNCTION type"
+	input DAE.Element inElement;
+	output Boolean outBoolean;
+algorithm
+  outBoolean := matchcontinue(inElement)
+    case(DAE.VAR(direction = DAE.INPUT(),ty = (DAE.T_FUNCTION(funcArg = _),_))) then false;
+    case(_) then true;
+  end matchcontinue;
+end isNotFunctionInput;
+
+protected function getFirstNInputs
+"function: getLastNInputs
+	returns the last n inputs from a given list"
+	input list<DAE.Element> inInputs;
+	input Integer inInteger;
+	output list<DAE.Element> outInputs;
+algorithm
+  outInputs := matchcontinue(inInputs,inInteger)
+    local
+      list<DAE.Element> cdr,cdr_1;
+      DAE.Element el;
+      Integer numArgs;
+    case({},_) then {};
+    case(_,0) then {};
+    case(el :: cdr,numArgs)
+      equation
+        cdr_1 = getFirstNInputs(cdr,numArgs-1);
+      then
+        el :: cdr_1;
+  end matchcontinue;
+end getFirstNInputs;
+
+protected function insertAfterInputs
+"function: insertAfterInputs
+	goes through the first list of DAE.Element until it finds the end of the inputs
+	then inserts the given list of DAE.Element"
+	input list<DAE.Element> inParts;
+	input list<DAE.Element> inInputs;
+	output list<DAE.Element> outParts;
+algorithm
+  outParts := matchcontinue(inParts,inInputs)
+    local
+      list<DAE.Element> cdr,inputs,res;
+      DAE.Element e;
+    case({},_)
+      equation
+        Debug.fprintln("failtrace","PartFn.insertAfterInputs failed - no inputs found");
+      then
+        fail();
+    case((e as DAE.VAR(direction = DAE.INPUT())) :: cdr,inputs)
+      equation
+        DAE.VAR(direction = DAE.INPUT) = Util.listFirst(cdr);
+        res = insertAfterInputs(cdr,inputs);
+      then
+        e :: res;
+    case((e as DAE.VAR(direction = DAE.INPUT())) :: cdr,inputs)
+      equation
+        res = listAppend(inputs,cdr);
+      then
+        e :: res;
+    case(_,_)
+      equation
+        Debug.fprintln("failtrace","PartFn.insertAfterInputs failed - no inputs found");
+      then
+        fail();
+  end matchcontinue;
+end insertAfterInputs;
+
+protected function renameInput
+"function: renameInput
+	assumes that the given element is a DAE.VAR with Input direction
+	prepends the given string to the ComponentRef"
+	input DAE.Element inElement;
+	input String inString;
+	output DAE.Element outElement;
+algorithm
+  outElement := matchcontinue(inElement,inString)
+    local
+      DAE.Element e,res;
+      Exp.ComponentRef cref,cref_1;
+      String s,s_1;
+    case(e as DAE.VAR(componentRef = cref,direction=DAE.INPUT()),s)
+      equation
+        s_1 = stringAppend(s,"_");
+        cref_1 = Exp.prependStringCref(s_1,cref);
+        res = DAEUtil.replaceCrefInVar(cref_1,e);
+      then
+        res;
+    case(_,_)
+      equation
+        Debug.fprintln("failtrace","PartFn.renameInput failed - expected input variable");
+      then
+        fail();
+  end matchcontinue;
+end renameInput;
+
+protected function isInput
+"function: isInput
+	checks if a DAE.Element is an input var or not"
+	input DAE.Element inElement;
+	output Boolean outBoolean;
+algorithm
+  outBoolean := matchcontinue(inElement)
+    case(DAE.VAR(direction = DAE.INPUT())) then true;
+    case(_) then false;
+  end matchcontinue;
+end isInput;
+
+protected function fixCalls
+"function: fixCalls
+	replaces calls in the newly built function with calls to the appropriate function, with the correct number of args"
+	input list<DAE.Element> inParts;
+	input list<DAE.Element> inDAE;
+	input Absyn.Path inPath;
+	input list<DAE.Element> inInputs;
+	output list<DAE.Element> outParts;
+algorithm
+  outParts := matchcontinue(inParts,inDAE,inPath,inInputs)
+    local
+      list<DAE.Element> cdr,cdr_1,dae,inputs,res;
+      Absyn.Path p;
+      DAE.Element part;
+      Exp.ComponentRef cref;
+      Exp.Exp e,e_1,e1,e1_1,e2,e2_1;
+      list<DAE.Statement> alg,alg_1;
+      list<Integer> ilst;
+    case({},_,_,_) then {};
+    // TODO: DAE.VAR()
+    // TODO: Remove all cases that cannot appear in functions?
+    case(DAE.DEFINE(cref,e) :: cdr,dae,p,inputs)
+      equation
+        ((e_1,_)) = Exp.traverseExp(e,fixCall,(p,inputs,dae));
+        cdr_1 = fixCalls(cdr,dae,p,inputs);
+      then
+        DAE.DEFINE(cref,e_1) :: cdr_1;
+    case(DAE.INITIALDEFINE(cref,e) :: cdr,dae,p,inputs)
+      equation
+        ((e_1,_)) = Exp.traverseExp(e,fixCall,(p,inputs,dae));
+        cdr_1 = fixCalls(cdr,dae,p,inputs);
+      then
+        DAE.INITIALDEFINE(cref,e_1) :: cdr_1;
+    case(DAE.EQUATION(e1,e2) :: cdr,dae,p,inputs)
+      equation
+        ((e1_1,_)) = Exp.traverseExp(e1,fixCall,(p,inputs,dae));
+        ((e2_1,_)) = Exp.traverseExp(e2,fixCall,(p,inputs,dae));
+        cdr_1 = fixCalls(cdr,dae,p,inputs);
+      then
+        DAE.EQUATION(e1_1,e2_1) :: cdr_1;
+    case(DAE.ARRAY_EQUATION(ilst,e1,e2) :: cdr,dae,p,inputs)
+      equation
+        ((e1_1,_)) = Exp.traverseExp(e1,fixCall,(p,inputs,dae));
+        ((e2_1,_)) = Exp.traverseExp(e2,fixCall,(p,inputs,dae));
+        cdr_1 = fixCalls(cdr,dae,p,inputs);
+      then
+        DAE.ARRAY_EQUATION(ilst,e1_1,e2_1) :: cdr_1;
+    case(DAE.COMPLEX_EQUATION(e1,e2) :: cdr,dae,p,inputs)
+      equation
+        ((e1_1,_)) = Exp.traverseExp(e1,fixCall,(p,inputs,dae));
+        ((e2_1,_)) = Exp.traverseExp(e2,fixCall,(p,inputs,dae));
+        cdr_1 = fixCalls(cdr,dae,p,inputs);
+      then
+        DAE.COMPLEX_EQUATION(e1_1,e2_1) :: cdr_1;
+    case(DAE.INITIAL_COMPLEX_EQUATION(e1,e2) :: cdr,dae,p,inputs)
+      equation
+        ((e1_1,_)) = Exp.traverseExp(e1,fixCall,(p,inputs,dae));
+        ((e2_1,_)) = Exp.traverseExp(e2,fixCall,(p,inputs,dae));
+        cdr_1 = fixCalls(cdr,dae,p,inputs);
+      then
+        DAE.INITIAL_COMPLEX_EQUATION(e1_1,e2_1) :: cdr_1;
+    // TODO: DAE.WHEN_EQUATION()
+    // TODO: DAE.IF_EQUATION()
+    // TODO: DAE.INITIAL_IF_EQUATION()
+    case(DAE.INITIALEQUATION(e1,e2) :: cdr,dae,p,inputs)
+      equation
+        ((e1_1,_)) = Exp.traverseExp(e1,fixCall,(p,inputs,dae));
+        ((e2_1,_)) = Exp.traverseExp(e2,fixCall,(p,inputs,dae));
+        cdr_1 = fixCalls(cdr,dae,p,inputs);
+      then
+        DAE.INITIALEQUATION(e1_1,e2_1) :: cdr_1;
+    case(DAE.ALGORITHM(DAE.ALGORITHM_STMTS(alg)) :: cdr,dae,p,inputs)
+      equation
+        alg_1 = fixCallsAlg(alg,dae,p,inputs);
+        cdr_1 = fixCalls(cdr,dae,p,inputs);
+      then
+        DAE.ALGORITHM(DAE.ALGORITHM_STMTS(alg_1)) :: cdr_1;
+    case(DAE.INITIALALGORITHM(DAE.ALGORITHM_STMTS(alg)) :: cdr,dae,p,inputs)
+      equation
+        alg_1 = fixCallsAlg(alg,dae,p,inputs);
+        cdr_1 = fixCalls(cdr,dae,p,inputs);
+      then
+        DAE.INITIALALGORITHM(DAE.ALGORITHM_STMTS(alg_1)) :: cdr_1;
+    // TODO: More cases?
+    case(part :: cdr,dae,p,inputs)
+      equation
+        cdr_1 = fixCalls(cdr,dae,p,inputs);
+      then
+        part :: cdr_1;
+    case(_,_,_,_)
+      equation
+        Debug.fprintln("failtrace","PartFn.fixCalls failed");
+      then
+        fail();
+  end matchcontinue;
+end fixCalls;
+
+protected function fixCallsAlg
+"function: fixCallsAlg
+	fixes calls in algorithm sections of the new function"
+	input list<DAE.Statement> inStmts;
+	input list<DAE.Element> inDAE;
+	input Absyn.Path inPath;
+	input list<DAE.Element> inInputs;
+	output list<DAE.Statement> outStmts;
+algorithm
+  outStmts := matchcontinue(inStmts,inDAE,inPath,inInputs)
+    local
+      list<DAE.Statement> cdr,cdr_1,stmts,stmts_1;
+      list<DAE.Element> dae,inputs;
+      Absyn.Path p;
+      Exp.Type ty;
+      Exp.ComponentRef cref;
+      DAE.Else el,el_1;
+      Ident i;
+      Boolean b;
+      DAE.Statement stmt,stmt_1;
+      list<Integer> ilst;
+      Exp.Exp e,e_1,e1,e1_1,e2,e2_1;
+      list<Exp.Exp> elst,elst_1;
+    case({},_,_,_) then {};
+    case(DAE.STMT_ASSIGN(ty,e1,e2) :: cdr,dae,p,inputs)
+      equation
+        ((e1_1,_)) = Exp.traverseExp(e1,fixCall,(p,inputs,dae));
+        ((e2_1,_)) = Exp.traverseExp(e2,fixCall,(p,inputs,dae));
+        cdr_1 = fixCallsAlg(cdr,dae,p,inputs);
+      then
+        DAE.STMT_ASSIGN(ty,e1_1,e2_1) :: cdr_1;
+    case(DAE.STMT_TUPLE_ASSIGN(ty,elst,e) :: cdr,dae,p,inputs)
+      equation
+        elst_1 = Util.listMap1(elst,handleExpList2,(p,inputs,dae));
+        ((e_1,_)) = Exp.traverseExp(e,fixCall,(p,inputs,dae));
+        cdr_1 = fixCallsAlg(cdr,dae,p,inputs);
+      then
+        DAE.STMT_TUPLE_ASSIGN(ty,elst_1,e_1) :: cdr_1;
+    case(DAE.STMT_ASSIGN_ARR(ty,cref,e) :: cdr,dae,p,inputs)
+      equation
+        ((e_1,_)) = Exp.traverseExp(e,fixCall,(p,inputs,dae));
+        cdr_1 = fixCallsAlg(cdr,dae,p,inputs);
+      then
+        DAE.STMT_ASSIGN_ARR(ty,cref,e_1) :: cdr_1;
+    case(DAE.STMT_IF(e,stmts,el) :: cdr,dae,p,inputs)
+      equation
+        ((e_1,_)) = Exp.traverseExp(e,fixCall,(p,inputs,dae));
+        stmts_1 = fixCallsAlg(stmts,dae,p,inputs);
+        el_1 = fixCallsElse(el,dae,p,inputs);
+        cdr_1 = fixCallsAlg(cdr,dae,p,inputs);
+      then
+        DAE.STMT_IF(e_1,stmts_1,el_1) :: cdr_1;
+    case(DAE.STMT_FOR(ty,b,i,e,stmts) :: cdr,dae,p,inputs)
+      equation
+        ((e_1,_)) = Exp.traverseExp(e,fixCall,(p,inputs,dae));
+        stmts_1 = fixCallsAlg(stmts,dae,p,inputs);
+        cdr_1 = fixCallsAlg(cdr,dae,p,inputs);
+      then
+        DAE.STMT_FOR(ty,b,i,e_1,stmts_1) :: cdr_1;
+    case(DAE.STMT_WHILE(e,stmts) :: cdr,dae,p,inputs)
+      equation
+        ((e_1,_)) = Exp.traverseExp(e,fixCall,(p,inputs,dae));
+        stmts_1 = fixCallsAlg(stmts,dae,p,inputs);
+        cdr_1 = fixCallsAlg(cdr,dae,p,inputs);
+      then
+        DAE.STMT_WHILE(e_1,stmts_1) :: cdr_1;
+    case(DAE.STMT_WHEN(e,stmts,SOME(stmt),ilst) :: cdr,dae,p,inputs)
+      equation
+        ((e_1,_)) = Exp.traverseExp(e,fixCall,(p,inputs,dae));
+        stmts_1 = fixCallsAlg(stmts,dae,p,inputs);
+        {stmt,stmt_1} = fixCallsAlg({stmt},dae,p,inputs);
+        cdr_1 = fixCallsAlg(cdr,dae,p,inputs);
+      then
+        DAE.STMT_WHEN(e_1,stmts_1,SOME(stmt_1),ilst) :: cdr_1;
+    case(DAE.STMT_WHEN(e,stmts,NONE,ilst) :: cdr,dae,p,inputs)
+      equation
+        ((e_1,_)) = Exp.traverseExp(e,fixCall,(p,inputs,dae));
+        stmts_1 = fixCallsAlg(stmts,dae,p,inputs);
+        cdr_1 = fixCallsAlg(cdr,dae,p,inputs);
+      then
+        DAE.STMT_WHEN(e_1,stmts_1,NONE,ilst) :: cdr_1;
+    case(DAE.STMT_ASSERT(e1,e2) :: cdr,dae,p,inputs)
+      equation
+        ((e1_1,_)) = Exp.traverseExp(e1,fixCall,(p,inputs,dae));
+        ((e2_1,_)) = Exp.traverseExp(e2,fixCall,(p,inputs,dae));
+        cdr_1 = fixCallsAlg(cdr,dae,p,inputs);
+      then
+        DAE.STMT_ASSERT(e1_1,e2_1) :: cdr_1;
+    case(DAE.STMT_TERMINATE(e) :: cdr,dae,p,inputs)
+      equation
+        ((e_1,_)) = Exp.traverseExp(e,fixCall,(p,inputs,dae));
+        cdr_1 = fixCallsAlg(cdr,dae,p,inputs);
+      then
+        DAE.STMT_TERMINATE(e_1) :: cdr_1;
+    case(DAE.STMT_REINIT(e1,e2) :: cdr,dae,p,inputs)
+      equation
+        ((e1_1,_)) = Exp.traverseExp(e1,fixCall,(p,inputs,dae));
+        ((e2_1,_)) = Exp.traverseExp(e2,fixCall,(p,inputs,dae));
+        cdr_1 = fixCallsAlg(cdr,dae,p,inputs);
+      then
+        DAE.STMT_REINIT(e1_1,e2_1) :: cdr_1;
+    case(DAE.STMT_NORETCALL(e) :: cdr,dae,p,inputs)
+      equation
+        ((e_1,_)) = Exp.traverseExp(e,fixCall,(p,inputs,dae));
+        cdr_1 = fixCallsAlg(cdr,dae,p,inputs);
+      then
+        DAE.STMT_NORETCALL(e) :: cdr_1;
+    case(DAE.STMT_TRY(stmts) :: cdr,dae,p,inputs)
+      equation
+        stmts_1 = fixCallsAlg(stmts,dae,p,inputs);
+        cdr_1 = fixCallsAlg(cdr,dae,p,inputs);
+      then
+        DAE.STMT_TRY(stmts_1) :: cdr_1;
+    case(DAE.STMT_CATCH(stmts) :: cdr,dae,p,inputs)
+      equation
+        stmts_1 = fixCallsAlg(stmts,dae,p,inputs);
+        cdr_1 = fixCallsAlg(cdr,dae,p,inputs);
+      then
+        DAE.STMT_CATCH(stmts_1) :: cdr_1;
+    case(DAE.STMT_MATCHCASES(elst) :: cdr,dae,p,inputs)
+      equation
+        elst_1 = Util.listMap1(elst,handleExpList2,(p,inputs,dae));
+        cdr_1 = fixCallsAlg(cdr,dae,p,inputs);
+      then
+        DAE.STMT_MATCHCASES(elst_1) :: cdr_1;
+    case(stmt :: cdr,dae,p,inputs)
+      equation
+        cdr_1 = fixCallsAlg(cdr,dae,p,inputs);
+      then
+        stmt :: cdr_1;
+    case(_,_,_,_)
+      equation
+        Debug.fprintln("failtrace","PartFn.fixCallsAlg failed");
+      then
+        fail();
+  end matchcontinue;
+end fixCallsAlg;
+
+protected function fixCallsElse
+"function: fixCallsElse
+	fixes calls in an DAE.Else"
+	input DAE.Else inElse;
+	input list<DAE.Element> inDAE;
+	input Absyn.Path inPath;
+	input list<DAE.Element> inInputs;
+	output DAE.Else outElse;
+algorithm
+  outElse := matchcontinue(inElse,inDAE,inPath,inInputs)
+    local
+      Exp.Exp e,e_1;
+      list<DAE.Statement> stmts,stmts_1;
+      DAE.Else el,el_1;
+      list<DAE.Element> dae,inputs;
+      Absyn.Path p;
+    case(DAE.ELSEIF(e,stmts,el),dae,p,inputs)
+      equation
+        ((e_1,_)) = Exp.traverseExp(e,fixCall,(p,inputs,dae));
+        stmts_1 = fixCallsAlg(stmts,dae,p,inputs);
+        el_1 = fixCallsElse(el,dae,p,inputs);
+      then
+        DAE.ELSEIF(e_1,stmts_1,el_1);
+    case(DAE.ELSE(stmts),dae,p,inputs)
+      equation
+        stmts_1 = fixCallsAlg(stmts,dae,p,inputs);
+      then
+        DAE.ELSE(stmts_1);
+    case(el,_,_,_) then el;
+  end matchcontinue;
+end fixCallsElse;
+
+protected function handleExpList2
+"function: handleExpList2
+	helper function to fixCallsAlg"
+	input Exp.Exp inExp;
+	input tuple<Absyn.Path, list<DAE.Element>, list<DAE.Element>> inTuple;
+	output Exp.Exp outExp;
+algorithm
+  outExp := matchcontinue(inExp,inTuple)
+    local
+      Exp.Exp e,e_1;
+      tuple<Absyn.Path, list<DAE.Element>, list<DAE.Element>> tup;
+    case(e,tup)
+      equation
+        ((e_1,_)) = Exp.traverseExp(e,fixCall,tup);
+      then
+        e_1;
+    case(_,_)
+      equation
+        Debug.fprintln("failtrace","PartFn.handleExpList2 failed");
+      then
+        fail();
+  end matchcontinue;
+end handleExpList2;
+
+protected function fixCall
+"function: fixCall
+	replaces the path and args in a function call"
+	input tuple<Exp.Exp, tuple<Absyn.Path, list<DAE.Element>, list<DAE.Element>>> inTuple;
+	output tuple<Exp.Exp, tuple<Absyn.Path, list<DAE.Element>, list<DAE.Element>>> outTuple;
+algorithm
+  outTuple := matchcontinue(inTuple)
+    local
+      Exp.Exp e;
+      Absyn.Path p,orig_p;
+      list<DAE.Element> inputs,dae,tmp;
+      Exp.Type ty;
+      Boolean tup,bui,inl;
+      list<Exp.Exp> args,args2,args_1;
+      list<Exp.ComponentRef> crefs;
+      String str;
+      // TEMPFIX REMOVE UNBOX CALLS
+    case((Exp.CALL(orig_p,args,tup,bui,ty,inl),(p,inputs,dae)))
+      equation
+        str = Absyn.pathString(orig_p);
+        true = Util.strncmp(str,"mmc",3);
+        e = Util.listFirst(args);
+      then
+        ((e,(p,inputs,dae)));
+    case((Exp.CALL(orig_p,args,tup,false,ty,inl),(p,inputs,dae)))
+      equation
+        tmp = DAEUtil.getNamedFunction(orig_p,dae); // if function exists, do not replace call
+        false = Util.isListNotEmpty(tmp);
+        crefs = Util.listMap(inputs,DAEUtil.varCref);
+        args2 = Util.listMap(crefs,Exp.crefExp);
+        args_1 = listAppend(args,args2);
+      then
+        ((Exp.CALL(p,args_1,tup,false,ty,inl),(p,inputs,dae)));
+    case((e,(p,inputs,dae))) then ((e,(p,inputs,dae)));
+  end matchcontinue;
+end fixCall;
+
+protected function getPartEvalFunction
+"function: getPartEvalFunction
+	gets the exp and index of a partevalfunction from a list of exps
+	fail if no partevalfunction is present"
+	input list<Exp.Exp> inExpList;
+	input Integer inInteger "accumulator";
+	output Exp.Exp outExp;
+	output Integer outInteger;
+algorithm
+  (outExp,outInteger) := matchcontinue(inExpList,inInteger)
+    local
+      list<Exp.Exp> cdr;
+      Integer index,index_1;
+      Exp.Exp e;
+    case({},_) then fail();
+    case((e as Exp.PARTEVALFUNCTION(path=_)) :: _,index) then (e,index);
+    case(_ :: cdr,index)
+      equation
+        (e,index_1) = getPartEvalFunction(cdr,index+1);
+      then
+        (e,index_1);
+  end matchcontinue;
+end getPartEvalFunction;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 end PartFn;

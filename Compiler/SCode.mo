@@ -44,7 +44,6 @@ package SCode
 
 public import Absyn;
 protected import MetaUtil;
-public import PartFn;
 
 public 
 type Ident = Absyn.Ident "Some definitions are borrowed from `Absyn\'" ;
@@ -412,7 +411,6 @@ public function elaborate
   output Program outProgram;
 algorithm 
   inProgram := MetaUtil.createMetaClassesInProgram(inProgram);
-  inProgram := PartFn.createPartEvalFunctionClasses(inProgram);
   outProgram := elaborate2(inProgram);
 end elaborate;
 

@@ -1862,13 +1862,19 @@ algorithm
       Absyn.Path p;
       list<Exp.Exp> args;
       Exp.Type ty;
-      Types.Properties prop;
+      Types.Properties prop,prop_1;
+      Types.Type tty,tty_1;
     case(c,env,Absyn.PARTEVALFUNCTION(cref,Absyn.FUNCTIONARGS(posArgs,namedArgs)),st,impl,doVect)
       equation
         p = Absyn.crefToPath(cref);
-        (c,Exp.CALL(p,args,_,_,ty,_),prop) = elabCallArgs(c,env,p,posArgs,namedArgs,impl,st);
+        (c,Exp.CALL(p,args,_,_,_,_),prop,st) = elabCall(c,env,cref,posArgs,namedArgs,impl,st);
+        (c,tty,env) = Lookup.lookupType(c,env,p,true);
+        tty_1 = stripExtraArgsFromType(listLength(args),tty);
+        tty_1 = Types.makeFunctionPolymorphicReference(tty_1);
+        ty = Types.elabType(tty_1);
+        prop_1 = Types.setTypeInProps(tty_1,prop);
       then
-        (c,Exp.PARTEVALFUNCTION(p,args,ty),prop,st);
+        (c,Exp.PARTEVALFUNCTION(p,args,ty),prop_1,st);
     case(_,_,_,_,_,_)
       equation
         Debug.fprintln("failtrace","Static.elabPartEvalFunction failed");
@@ -1876,6 +1882,35 @@ algorithm
         fail();
   end matchcontinue;
 end elabPartEvalFunction;
+
+protected function stripExtraArgsFromType
+"function: stripExtraArgsFromType
+	removes the last n arguments from the funcarg list of a function type"
+	input Integer inInteger;
+	input Types.Type inType;
+	output Types.Type outType;
+algorithm
+  outType := matchcontinue(inInteger,inType)
+    local
+      Integer n;
+      DAE.Type resType,tty,tty_1;
+      list<DAE.FuncArg> args,args_1;
+      Option<Absyn.Path> po;
+    case(0,tty) then tty;
+    case(n,(DAE.T_FUNCTION(args,resType),po))
+      equation
+        args_1 = Util.listRemoveNth(args,listLength(args) - 1);
+        tty = (DAE.T_FUNCTION(args_1,resType),po);
+        tty_1 = stripExtraArgsFromType(n-1,tty);
+      then
+        tty_1;
+    case(_,_)
+      equation
+        Debug.fprintln("failtrace","- Static.stripExtraArgsFromType failed");
+      then
+        fail();
+  end matchcontinue;
+end stripExtraArgsFromType;
 
 protected function elabArray "function: elabArray 
  
@@ -9506,7 +9541,7 @@ algorithm
         Exp.ComponentRef expCref;
         Exp.Type expType;
       equation
-        true = RTOpts.acceptMetaModelicaGrammar();
+        true = RTOpts.debugFlag("fnptr") or RTOpts.acceptMetaModelicaGrammar();
         path = Absyn.crefToPath(c);
         (cache,typelist) = Lookup.lookupFunctionsInEnv(cache,env,path);
         t :: _ = typelist;

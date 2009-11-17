@@ -89,6 +89,7 @@ protected import InstanceHierarchy;
 protected import Lookup;
 protected import ModUtil;
 protected import RTOpts;
+protected import PartFn;
 protected import Print;
 protected import Settings;
 protected import System;
@@ -6489,7 +6490,11 @@ algorithm
       equation
         funcpaths = getCalledFunctions(dae, dlow);
         funcelems = generateFunctions2(p, funcpaths);
-        funcelems_1 = Inline.inlineCallsInFunctions(funcelems);
+        funcelems_1 = PartFn.createPartEvalFunctions(funcelems);
+        (dae,funcelems_1) = PartFn.partEvalDAE(dae,funcelems_1);
+        (funcelems_1,dlow) = PartFn.partEvalDAELow(funcelems_1,dlow);
+        funcelems_1 = Util.listUnion(funcelems_1,funcelems_1);
+        funcelems_1 = Inline.inlineCallsInFunctions(funcelems_1);
         Print.clearBuf();
         Debug.fprintln("info", "Generating functions, call Codegen.\n") "debug" ;
 				(_,libs1) = generateExternalObjectIncludes(dlow);
@@ -6498,7 +6503,7 @@ algorithm
         libs2 = Codegen.generateFunctions(DAE.DAE(funcelems_1),metarecordTypes);
         Print.writeBuf(filename);
       then
-        (cache,Util.listUnion(libs1,libs2),funcelems,dlow,dae);
+        (cache,Util.listUnion(libs1,libs2),funcelems_1,dlow,dae);
     case (_,_,_,_,_,_,_)
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"Code generation of Modelica functions failed. "});
@@ -9226,13 +9231,14 @@ public function getCalledFunctions
   input DAE.DAElist dae;
   input DAELow.DAELow dlow;
   output list<Absyn.Path> res;
-  list<Exp.Exp> explist,fcallexps,fcallexps_1;
+  list<Exp.Exp> explist,fcallexps,fcallexps_1,fcallexps_2;
   list<Absyn.Path> calledfuncs;
 algorithm
   explist := DAELow.getAllExps(dlow);
   fcallexps := Codegen.getMatchingExpsList(explist, Codegen.matchCalls);
-  fcallexps_1 := Util.listSelect(fcallexps, isNotBuiltinCall);
-  calledfuncs := Util.listMap(fcallexps_1, getCallPath);
+  fcallexps_1 := Codegen.getMatchingExpsList(explist, Codegen.matchFnRefs);
+  fcallexps_2 := Util.listSelect(listAppend(fcallexps,fcallexps_1), isNotBuiltinCall);
+  calledfuncs := Util.listMap(fcallexps_2, getCallPath);
   res := removeDuplicatePaths(calledfuncs);
 end getCalledFunctions;
 
@@ -9359,7 +9365,7 @@ algorithm
         res = boolNot(builtin);
       then
         res;
-    case e then false;
+    case e then true;
   end matchcontinue;
 end isNotBuiltinCall;
 
@@ -9371,8 +9377,15 @@ protected function getCallPath
 algorithm
   outPath:=
   matchcontinue (inExp)
-    local Absyn.Path path;
+    local 
+      Absyn.Path path;
+      Exp.ComponentRef cref;
     case Exp.CALL(path = path) then path;
+    case Exp.CREF(componentRef = cref)
+      equation
+        path = Exp.crefToPath(cref);
+      then
+        path;
   end matchcontinue;
 end getCallPath;
 

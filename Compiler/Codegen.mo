@@ -2462,7 +2462,7 @@ algorithm
       // Only generate these functions if we use MetaModelica grammar
     case (fpath,ty1)
       equation
-        false = RTOpts.acceptMetaModelicaGrammar();
+        false = RTOpts.debugFlag("fnptr") or RTOpts.acceptMetaModelicaGrammar();
       then {};
     case (fpath,ty1)
       equation
@@ -9532,6 +9532,22 @@ algorithm
   outExprLst := matchcontinue (inExpr)
     local Exp.Exp e; Exp.Type t;
     case((e as Exp.CREF(ty = Exp.ET_FUNCTION_REFERENCE_FUNC()))) then {e};
+    case(Exp.PARTEVALFUNCTION(ty = Exp.ET_FUNCTION_REFERENCE_VAR(),path=p,expList=expLst))
+      local
+        Exp.ComponentRef cref; Absyn.Path p; list<Exp.Exp> expLst,expLst_1;
+      equation
+        cref = Exp.pathToCref(p);
+        e = Exp.makeCrefExp(cref,Exp.ET_FUNCTION_REFERENCE_VAR());
+        expLst_1 = getMatchingExpsList(expLst,matchFnRefs);
+      then
+        e :: expLst_1;
+    case(Exp.CALL(expLst = expLst))
+      local
+        list<Exp.Exp> expLst,expLst_1;
+      equation
+        expLst_1 = getMatchingExpsList(expLst,matchFnRefs);
+      then
+        expLst_1;
   end matchcontinue;
 end matchFnRefs;
 
