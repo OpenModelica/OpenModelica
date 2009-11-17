@@ -114,6 +114,7 @@ extern "C"
 			      "Error",
 			      "Error opening file %s",
 			      tokens);
+		  modelicafilename=string("");
 		  RML_TAILCALLK(rmlFC);
 		}
 		//bool debug = true;
@@ -187,6 +188,7 @@ extern "C"
 				     false,
 				     filename);
 		  ast = mk_nil();
+		  modelicafilename=string("");
 		}
 		catch (ANTLR_USE_NAMESPACE(antlr)RecognitionException &e)
 		{
@@ -204,6 +206,7 @@ extern "C"
 				     false,
 				     filename);
 		  ast = mk_nil();
+		  modelicafilename=string("");
 		}
 		catch (ANTLR_USE_NAMESPACE(antlr)TokenStreamException &e)
 		{
@@ -221,6 +224,7 @@ extern "C"
 				     false,
 				     filename);
 		  ast = mk_nil();
+		  modelicafilename=string("");
 		}
 		catch (ANTLR_USE_NAMESPACE(antlr)ANTLRException &e)
 		{
@@ -239,6 +243,7 @@ extern "C"
 				     false,
 				     filename);
 		  ast = mk_nil();
+		  modelicafilename=string("");
 		}
 		catch (std::exception &e)
 		{
@@ -256,6 +261,7 @@ extern "C"
 				     false,
 				     filename);
 		  ast = mk_nil();
+		  modelicafilename=string("");
 		}
 		catch (...)
 		  {
