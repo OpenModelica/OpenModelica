@@ -104,7 +104,7 @@ clean:
 		(cd $$d && $(MAKE) clean) \
 	done
 	(cd $(srcdir) && $(RM) $(SRCH))
-	$(RM) -f $(SRCO) $(SRCC) $(SRCH) $(PROG)$(EXEXT) *~ $(ALLMO:.mo=.srz) $(ALLMO:.mo=.sig)
+	$(RM) -f $(SRCO) $(SRCC) $(SRCH) $(PROG)$(EXEXT) *~ $(ALLMO:.mo=.srz) $(ALLMO:.mo=.sig) $(ALLMO:.mo=.sigx)
 
 reallyclean: clean
 	$(RM) -f $(ALLMO) $(ALLMO:.mo=.sig) $(ALLMO:.mo=.sigx) $(PROG)$(EXEEXT) $(ALLMO:.mo=.srz)
