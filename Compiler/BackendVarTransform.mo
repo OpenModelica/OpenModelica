@@ -40,9 +40,9 @@ package BackendVarTransform
 
 public import DAE;
 public import DAELow;
-public import Exp;
 public import VarTransform; 
 
+protected import Exp;
 protected import Util;
 
 public function replaceEquations 
@@ -57,13 +57,13 @@ algorithm
   outDAELowEquationLst:=
   matchcontinue (inDAELowEquationLst,inVariableReplacements)
     local
-      Exp.Exp e1_1,e2_1,e1_2,e2_2,e1,e2,e_1,e_2,e;
+      DAE.Exp e1_1,e2_1,e1_2,e2_2,e1,e2,e_1,e_2,e;
       list<DAELow.Equation> es_1,es;
       VarTransform.VariableReplacements repl;
       DAELow.Equation a;
-      Exp.ComponentRef cr;
+      DAE.ComponentRef cr;
       Integer indx;
-      list<Exp.Exp> expl,expl1,expl2;
+      list<DAE.Exp> expl,expl1,expl2;
       DAELow.WhenEquation whenEqn,whenEqn1;
     case ({},_) then {};
     case ((DAELow.ARRAY_EQUATION(indx,expl)::es),repl)
@@ -124,9 +124,9 @@ protected function replaceWhenEquation "Replaces variables in a when equation"
 algorithm
   outWhenEqn := matchcontinue(whenEqn,repl)
   local Integer i;
-    Exp.ComponentRef cr,cr1;
-    Exp.Exp e,e1,e2;
-    Exp.Type tp;
+    DAE.ComponentRef cr,cr1;
+    DAE.Exp e,e1,e2;
+    DAE.ExpType tp;
     DAELow.WhenEquation elsePart,elsePart2;
 
     case (DAELow.WHEN_EQ(i,cr,e,NONE),repl) equation
@@ -174,13 +174,13 @@ algorithm
   outDAELowEquationLst:=
   matchcontinue (inDAELowEquationLst,inVariableReplacements)
     local
-      Exp.Exp e1_1,e2_1,e1_2,e2_2,e1,e2,e_1,e_2,e;
+      DAE.Exp e1_1,e2_1,e1_2,e2_2,e1,e2,e_1,e_2,e;
       list<DAELow.Equation> es_1,es;
       VarTransform.VariableReplacements repl;
       DAELow.Equation a;
-      Exp.ComponentRef cr,cr1,cr2;
+      DAE.ComponentRef cr,cr1,cr2;
       Integer indx;
-      list<Exp.Exp> expl,expl1,expl2;
+      list<DAE.Exp> expl,expl1,expl2;
       DAELow.WhenEquation whenEqn,whenEqn1;
     case ({},_) then {}; 
     case ((DAELow.ARRAY_EQUATION(indx,expl)::es),repl)
@@ -263,7 +263,7 @@ protected function replaceWhenEquation "Replaces variables in a when equation"
 algorithm
   outWhenEqn := matchcontinue(whenEqn,repl)
   local Integer i;
-    Exp.Exp e,e1,e2,cond;
+    DAE.Exp e,e1,e2,cond;
     DAELow.WhenEquation elsePart,elsePart2;
     DAELow.Equation eq;
     case (DAELow.WHEN_EQ(i,_,cond,eq,NONE),repl) 
@@ -284,13 +284,13 @@ protected function shiftUnaryMinusToRHS "
 Author: BZ, 2008-09
 Helper function for replaceWhenEquation, moves possible unary minus from lefthand side to right hand side.
 "
-  input Exp.Exp lhs;
-  input Exp.Exp rhs;
-  output Exp.Exp lhsFixed,rhsFixed;
+  input DAE.Exp lhs;
+  input DAE.Exp rhs;
+  output DAE.Exp lhsFixed,rhsFixed;
 algorithm (lhsFixed,rhsFixed) := matchcontinue(lhs,rhs)
   local
-    Exp.Type tp;
-    Exp.Exp e1,e2;
+    DAE.ExpType tp;
+    DAE.Exp e1,e2;
   case((e1 as DAE.CREF(_,_)),e2) then (e1,e2);
   case(DAE.UNARY(DAE.UMINUS(tp),e1),e2)
     equation
@@ -309,7 +309,7 @@ The function returns the updated list of if-equations."
   output list<DAELow.IfEquation> outIfeqns;
 algorithm 
   outIfeqns := matchcontinue(ifeqns,repl)
-  local list<Exp.Exp> conds,conds1;
+  local list<DAE.Exp> conds,conds1;
     list<DAELow.Equation> fb,fb1;
     list<list<DAELow.Equation>> tbs,tbs1;
     list<DAELow.IfEquation> es;
@@ -343,11 +343,11 @@ algorithm
   outDAELowEquationLst:=
   matchcontinue (inDAELowEquationLst,inVariableReplacements)
     local
-      Exp.Exp e1_1,e2_1,e1,e2,e_1,e,e1_2,e2_2;
+      DAE.Exp e1_1,e2_1,e1,e2,e_1,e,e1_2,e2_2;
       list<DAELow.MultiDimEquation> es_1,es;
       VarTransform.VariableReplacements repl;
       DAELow.Equation a;
-      Exp.ComponentRef cr;
+      DAE.ComponentRef cr;
       list<Integer> dims;
     case ({},_) then {}; 
     case ((DAELow.MULTIDIM_EQUATION(left = e1,right = e2,dimSize = dims) :: es),repl)

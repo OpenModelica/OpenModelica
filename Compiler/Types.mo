@@ -48,7 +48,6 @@ package Types
 public import ClassInf;
 public import Absyn;
 public import DAE;
-public import Exp;
 public import Values;
 public import SCode;
 
@@ -71,6 +70,7 @@ public type Var = DAE.Var;
 
 protected import Dump;
 protected import Debug;
+protected import Exp;
 protected import Print;
 protected import Util;
 protected import Static;
@@ -179,7 +179,7 @@ end getConstList;
       
 
 public function elabTypePropToConst " function elabTypePropToConst
-this function elaborates on a Types.Properties and return the Types.Const value.
+this function elaborates on a DAE.Properties and return the DAE.Const value.
 "
 input list<Properties> p;
 output Const c;
@@ -275,7 +275,7 @@ end externalObjectType;
 
 public function varName "
 Author BZ, 2009-09
-Function for getting the name of a Types.Var
+Function for getting the name of a DAE.Var
 "
 input Var v;
 output String s;
@@ -348,11 +348,11 @@ algorithm
   end matchcontinue;
 end isExternalObject;
 
-public function expTypetoTypesType "Function: expTypetoTypesType Converts a Exp.Type to a Types.Type
+public function expTypetoTypesType "Function: expTypetoTypesType Converts a DAE.ExpType to a DAE.Type
 NOTE: This function should not be used in general, 
-since it is not recommended to translate Exp.Type into Types.Type.
+since it is not recommended to translate DAE.ExpType into DAE.Type.
 "
-input Exp.Type inexp;
+input DAE.ExpType inexp;
 output Type oType;
 algorithm 
   oType := matchcontinue(inexp)
@@ -378,7 +378,7 @@ algorithm
         Option<Integer> index;
         Absyn.Path path;
         list<String> names;
-        list<Exp.Var> evars;
+        list<DAE.ExpVar> evars;
         list<Var> tvars;
 //    case(Exp.ENUM) 
       equation 
@@ -387,7 +387,7 @@ algorithm
 //        ty = (DAE.T_ENUM,NONE);
         then ty;
     case(DAE.ET_ARRAY(at,SOME(dim)::ad))
-      local Exp.Type at;
+      local DAE.ExpType at;
         list<Option<Integer>> ad;
         Integer dim;
         Integer ll;
@@ -404,7 +404,7 @@ algorithm
           then
             ty2;
     case(DAE.ET_ARRAY(at,SOME(dim)::ad))
-      local Exp.Type at;
+      local DAE.ExpType at;
         list<Option<Integer>> ad;
         Integer dim;
         Integer ll;
@@ -423,7 +423,7 @@ algorithm
             ty2;
     case(DAE.ET_COMPLEX(complexClassType = complexClassType, varLst = evars)) //record COMPLEX "Complex types, currently only used for records " 
 	    local
-	      list<Exp.Var> evars;
+	      list<DAE.ExpVar> evars;
 	      list<Var> tvars;
 	      ClassInf.State complexClassType;
       equation 
@@ -433,13 +433,13 @@ algorithm
         ty;
     case(DAE.ET_UNIONTYPE()) then ((DAE.T_UNIONTYPE({}),NONE));
     case(DAE.ET_BOXED(at))
-      local Exp.Type at;
+      local DAE.ExpType at;
       equation
         ty = expTypetoTypesType(at);
         ty2 = (DAE.T_BOXED(ty),NONE);
       then ty2;
     case(DAE.ET_LIST(at))
-      local Exp.Type at;
+      local DAE.ExpType at;
       equation
         ty = expTypetoTypesType(at);
         ty2 = (DAE.T_LIST(ty),NONE);
@@ -453,14 +453,14 @@ algorithm
 end expTypetoTypesType;
 
 protected function convertFromExpToTypesVar ""
-input Exp.Var inVars;
+input DAE.ExpVar inVars;
 output Var outVars;
 algorithm outVars := matchcontinue(inVars)
 local
   String name;
-  Exp.Type tp;
+  DAE.ExpType tp;
   Type ty;
-  Exp.Var ev;
+  DAE.ExpVar ev;
   Var tv;
   case(ev as DAE.COMPLEX_VAR(name,tp))
     equation
@@ -474,14 +474,14 @@ end convertFromExpToTypesVar;
 
 protected function convertFromTypesToExpVar ""
 input Var inVars;
-output Exp.Var outVars;
+output DAE.ExpVar outVars;
 algorithm outVars := matchcontinue(inVars)
 local
   String tname;
-  Exp.Type tp;
+  DAE.ExpType tp;
   Type ty;
   Var ev;
-  Exp.Var tv;
+  DAE.ExpVar tv;
   case(ev as DAE.TYPES_VAR(name=tname,type_=ty))
     equation
       tp = elabType(ty);
@@ -1025,14 +1025,14 @@ algorithm
       list<Ident> ids,val_names;
       Real r;
       Boolean b;
-      Exp.Exp rec_call, exp;
-      list<Exp.Exp> exps;
+      DAE.Exp rec_call, exp;
+      list<DAE.Exp> exps;
       list<Var> varlst;
       Absyn.Path cname;
       Values.Value v;
       list<Ident> dummyIds;
       Type ty;
-      Exp.ComponentRef cref;
+      DAE.ComponentRef cref;
       
     // adrpo: TODO! why not use typeOfValue everywhere here??!!
       
@@ -1133,7 +1133,7 @@ public function valuesToVars "function valuesToVars
   Used e.g. when retrieving the type of a record value.
 "
   input list<Values.Value> inValuesValueLst;
-  input list<Exp.Ident> inExpIdentLst;
+  input list<DAE.Ident> inExpIdentLst;
   output list<Var> outVarLst;
 algorithm 
   outVarLst:=
@@ -1228,7 +1228,7 @@ algorithm
         // MetaModelica list type
     case Values.LIST(vl)
       local
-        list<Exp.Exp> explist;
+        list<DAE.Exp> explist;
       equation
         explist = Util.listMap(vl, Static.valueExp);
         ts = Util.listMap(vl, typeOfValue);
@@ -1314,7 +1314,7 @@ algorithm
   end matchcontinue;
 end arrayType;
 
-public function setVarInput "Sets a Types.Var to input"
+public function setVarInput "Sets a DAE.Var to input"
   input Var v;
   output Var outV;
 algorithm
@@ -1799,10 +1799,10 @@ algorithm
 end makeArray;
 
 public function makeArraySubscripts "function: makeArray
-   This function makes an array type given a Type and a list of Exp.Subscript
+   This function makes an array type given a Type and a list of DAE.Subscript
 "
   input Type inType;
-  input list<Exp.Subscript> lst;
+  input list<DAE.Subscript> lst;
   output Type outType;
 algorithm 
   outType:=
@@ -1810,7 +1810,7 @@ algorithm
     local
       Type t;
       Integer i;
-      Exp.Exp e;
+      DAE.Exp e;
     case (t,{}) then t; 
     case (t,DAE.WHOLEDIM::lst)
       equation 
@@ -1992,7 +1992,7 @@ public function unparseEqMod "prints eqmod to a string"
   output String str;
 algorithm
   str := matchcontinue(eq)
-  local Exp.Exp e; Absyn.Exp e2;
+  local DAE.Exp e; Absyn.Exp e2;
     case(DAE.TYPED(e,_,_)) equation
       str =Exp.printExpStr(e);
     then str;
@@ -2474,7 +2474,7 @@ algorithm
       Type typ;
       Binding bind;
       Values.Value value;
-      Exp.Exp e;
+      DAE.Exp e;
     case DAE.TYPES_VAR(name = n,attributes = attr,protected_ = prot,type_ = typ,binding = DAE.EQBOUND(exp=e))
       equation 
         bindStr = Exp.printExpStr(e);
@@ -2579,7 +2579,7 @@ algorithm
   matchcontinue (inBinding)
     local
       Ident str,str2,res,v_str,s;
-      Exp.Exp exp;
+      DAE.Exp exp;
       Const f;
       Values.Value v;
     case DAE.UNBOUND() then "UNBOUND"; 
@@ -3456,13 +3456,13 @@ public function elabType "function: elabType
   Elaborates a type
 "
   input Type inType;
-  output Exp.Type outType;
+  output DAE.ExpType outType;
 algorithm 
   outType:=
   matchcontinue (inType)
     local
       Type et,t;
-      Exp.Type t_1;
+      DAE.ExpType t_1;
       list<Option<Integer>> dims;
     case ((DAE.T_INTEGER(varLstInt = _),_)) then DAE.ET_INT(); 
     case ((DAE.T_REAL(varLstReal = _),_)) then DAE.ET_REAL(); 
@@ -3474,7 +3474,7 @@ algorithm
         Absyn.Path path;
         list<String> names;
         list<Var> varLst;
-        list<Exp.Var> ecvl;
+        list<DAE.ExpVar> ecvl;
       equation
         ecvl = Util.listMap(varLst,convertFromTypesToExpVar);
       then
@@ -3507,7 +3507,7 @@ algorithm
 
     case ((DAE.T_METATUPLE(t_l),_))
       local
-        list<Exp.Type> t_l2;
+        list<DAE.ExpType> t_l2;
         list<Type> t_l;
       equation
         t_l2 = Util.listMap(t_l,elabType);
@@ -3527,7 +3527,7 @@ algorithm
       local 
         list<Var> tcvl; 
         ClassInf.State CIS; 
-        list<Exp.Var> ecvl;
+        list<DAE.ExpVar> ecvl;
         String name;
       equation
         ecvl = Util.listMap(tcvl,convertFromTypesToExpVar);
@@ -3555,16 +3555,16 @@ public function matchProp "function: matchProp
   property is the type.
  
 "
-  input Exp.Exp inExp1;
+  input DAE.Exp inExp1;
   input Properties inProperties2;
   input Properties inProperties3;
-  output Exp.Exp outExp;
+  output DAE.Exp outExp;
   output Properties outProperties;
 algorithm 
   (outExp,outProperties):=
   matchcontinue (inExp1,inProperties2,inProperties3)
     local
-      Exp.Exp e_1,e;
+      DAE.Exp e_1,e;
       Type t_1,gt,et;
       Const c,c1,c2;
     case (e,DAE.PROP(type_ = gt,constFlag = c1),DAE.PROP(type_ = et,constFlag = c2))
@@ -3608,34 +3608,34 @@ public function matchType "function: matchType
  
   This function matches an expression with an expected type, and
   converts the expression to the expected type if necessary.
-  inputs : (exp: Exp.Exp, exp_type: Type, expected: Type)
-  outputs: (Exp.Exp, Type)
+  inputs : (exp: DAE.Exp, exp_type: Type, expected: Type)
+  outputs: (DAE.Exp, Type)
 "
-  input Exp.Exp exp;
+  input DAE.Exp exp;
   input Type expType;
   input Type expectedType;
-  output Exp.Exp outExp;
+  output DAE.Exp outExp;
   output Type outType;
 algorithm 
   (outExp,outType,_) := matchTypeRegular(exp, expType, expectedType, {});
 end matchType;
 
 protected function matchTypeList
-  input list<Exp.Exp> exps;
+  input list<DAE.Exp> exps;
   input Type expType;
   input Type expectedType;
   input PolymorphicBindings polymorphicBindings;
   input MatchTypeFunc matchFunc;
-  output list<Exp.Exp> outExp;
+  output list<DAE.Exp> outExp;
   output list<Type> outTypeLst;
   output PolymorphicBindings outBindings;
 	
 	partial function MatchTypeFunc
-	  input Exp.Exp inExp1;
+	  input DAE.Exp inExp1;
 	  input Type inType2;
 	  input Type inType3;
 	  input PolymorphicBindings polymorphicBindings;
-	  output Exp.Exp outExp;
+	  output DAE.Exp outExp;
 	  output Type outType;
 	  output PolymorphicBindings outBindings;
 	end MatchTypeFunc;
@@ -3643,8 +3643,8 @@ algorithm
   (outExp,outTypeLst,outBindings):=
   matchcontinue (exps,expType,expectedType,polymorphicBindings,matchFunc)
     local
-      Exp.Exp e,e_1,e_2;
-      list<Exp.Exp> e_2, rest;
+      DAE.Exp e,e_1,e_2;
+      list<DAE.Exp> e_2, rest;
       Type tp,t1,t2;
       list<Type> res;
     case ({},_,_,polymorphicBindings,_) then ({},{},polymorphicBindings); 
@@ -3665,21 +3665,21 @@ end matchTypeList;
 public function matchTypeTuple
 "Transforms a list of expressions and types into a list of expressions
 of the expected types."
-  input list<Exp.Exp> inExp1;
+  input list<DAE.Exp> inExp1;
   input list<Type> inTypeLst2;
   input list<Type> inTypeLst3;
   input PolymorphicBindings polymorphicBindings;
   input MatchTypeFunc matchFunc;
-  output list<Exp.Exp> outExp;
+  output list<DAE.Exp> outExp;
   output list<Type> outTypeLst;
   output PolymorphicBindings outBindings;
 	
 	partial function MatchTypeFunc
-	  input Exp.Exp inExp1;
+	  input DAE.Exp inExp1;
 	  input Type inType2;
 	  input Type inType3;
 	  input PolymorphicBindings polymorphicBindings;
-	  output Exp.Exp outExp;
+	  output DAE.Exp outExp;
 	  output Type outType;
 	  output PolymorphicBindings outBindings;
 	end MatchTypeFunc;
@@ -3687,8 +3687,8 @@ algorithm
   (outExp,outTypeLst,outBindings):=
   matchcontinue (inExp1,inTypeLst2,inTypeLst3,polymorphicBindings,matchFunc)
     local
-      Exp.Exp e,e_1;
-      list<Exp.Exp> rest, e_2;
+      DAE.Exp e,e_1;
+      list<DAE.Exp> rest, e_2;
       Type tp,t1,t2;
       list<Type> res,ts1,ts2;
     case ({},{},{},polymorphicBindings,_) then ({},{},polymorphicBindings); 
@@ -3707,14 +3707,14 @@ algorithm
 end matchTypeTuple;
 
 public function matchTypeTupleCall
-  input Exp.Exp inExp1;
+  input DAE.Exp inExp1;
   input list<Type> inTypeLst2;
   input list<Type> inTypeLst3;
 algorithm 
   (outExp,outTypeLst) :=
   matchcontinue (inExp1,inTypeLst2,inTypeLst3)
     local
-      Exp.Exp e,e_1,e_2;
+      DAE.Exp e,e_1,e_2;
       Type tp,t1,t2;
       list<Type> res,ts1,ts2;
     case (_,{},{}) then ();
@@ -3739,10 +3739,10 @@ public function vectorizableType "function: vectorizableType
   For instance and argument of type Integer{:} can be vectorized to an
   argument type Real, using type coersion and vectorization of one dimension.
 "
-  input Exp.Exp inExp1;
+  input DAE.Exp inExp1;
   input Type inType2;
   input Type inType3;
-  output Exp.Exp outExp;
+  output DAE.Exp outExp;
   output Type outType;
   output list<ArrayDim> outArrayDimLst;
   output PolymorphicBindings outBindings;
@@ -3750,7 +3750,7 @@ algorithm
   (outExp,outType,outArrayDimLst,outBindings):=
   matchcontinue (inExp1,inType2,inType3)
     local
-      Exp.Exp e_1,e;
+      DAE.Exp e_1,e;
       Type e_type_1,e_type,expected_type,e_type_elt;
       list<ArrayDim> ds;
       ArrayDim ad;
@@ -3778,21 +3778,21 @@ protected function typeConvert "function: typeConvert
  
   If no type conversion is possible, this function fails.
 "
-  input Exp.Exp inExp1;
+  input DAE.Exp inExp1;
   input Type inType2;
   input Type inType3;
   input PolymorphicBindings polymorphicBindings;
   input MatchTypeFunc matchFunc;
-  output Exp.Exp outExp;
+  output DAE.Exp outExp;
   output Type outType;
   output PolymorphicBindings outBindings;
 
 	partial function MatchTypeFunc
-	  input Exp.Exp inExp1;
+	  input DAE.Exp inExp1;
 	  input Type inType2;
 	  input Type inType3;
 	  input PolymorphicBindings polymorphicBindings;
-	  output Exp.Exp outExp;
+	  output DAE.Exp outExp;
 	  output Type outType;
 	  output PolymorphicBindings outBindings;
 	end MatchTypeFunc;
@@ -3800,14 +3800,14 @@ algorithm
   (outExp,outType,outBindings):=
   matchcontinue (inExp1,inType2,inType3,polymorphicBindings,matchFunc)
     local
-      list<Exp.Exp> elist_1,elist;
-      Exp.Type at,t;
+      list<DAE.Exp> elist_1,elist;
+      DAE.ExpType at,t;
       Boolean a,sc;
       Integer dim1,dim2,nmax,dim11,dim22;
       Type ty1,ty2,t1,t2,t_1,ty0;
       Option<Absyn.Path> p,p1,p2;
-      Exp.Exp begin_1,step_1,stop_1,begin,step,stop,e_1,e,exp;
-      list<list<tuple<Exp.Exp, Boolean>>> ell_1,ell;
+      DAE.Exp begin_1,step_1,stop_1,begin,step,stop,e_1,e,exp;
+      list<list<tuple<DAE.Exp, Boolean>>> ell_1,ell;
       list<Type> tys_1,tys1,tys2;
       list<Ident> l;
       list<Var> v;
@@ -3840,7 +3840,7 @@ algorithm
     case (DAE.ARRAY(array = elist),(DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(dim1)),arrayType = ty1),_),
       	ty0 as (DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = NONE),arrayType = ty2),p2),polymorphicBindings,matchFunc)
       	local
-      	  Exp.Type ety1;
+      	  DAE.ExpType ety1;
       equation 
         (elist_1,polymorphicBindings) = typeConvertArray(elist, ty1, ty2,SOME(dim1),polymorphicBindings,matchFunc);
         ety1 = elabType(ty2);
@@ -4028,8 +4028,8 @@ algorithm
       then (e_1, t2, polymorphicBindings);
     case (e as DAE.MATRIX(DAE.ET_ARRAY(ty = t),_,melist),t1,t2,polymorphicBindings,matchFunc)
       local
-        list<list<tuple<Exp.Exp,Boolean>>> melist;
-        list<list<Exp.Exp>> elist_big, elist_big_1;
+        list<list<tuple<DAE.Exp,Boolean>>> melist;
+        list<list<DAE.Exp>> elist_big, elist_big_1;
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
         elist_big = Util.listListMap(melist, Util.tuple21);
@@ -4103,9 +4103,9 @@ algorithm
       local
         Absyn.Path path;
         list<Absyn.Path> pathList;
-        Exp.ComponentRef cref;
-        list<Exp.ComponentRef> crefList;
-        list<Exp.Type> expTypes;
+        DAE.ComponentRef cref;
+        list<DAE.ComponentRef> crefList;
+        list<DAE.ExpType> expTypes;
       equation
         true = subtype(t1,t2);
         t2 = (DAE.T_BOXED(t1),NONE);
@@ -4159,7 +4159,7 @@ algorithm
         list<FuncArg> farg,farg1,farg2;
         list<Type> tList1,tList2;
         list<Ident> fargId1;
-        list<Exp.Exp> exps;
+        list<DAE.Exp> exps;
       equation
         tList1 = Util.listMap(farg1, Util.tuple22);
         tList2 = Util.listMap(farg2, Util.tuple22);
@@ -4188,15 +4188,15 @@ algorithm
   end matchcontinue;
 end typeConvert;
 
-protected function liftExpType "help funciton to typeConvert. Changes the Exp.Type stored 
+protected function liftExpType "help funciton to typeConvert. Changes the DAE.ExpType stored 
 in expression (which is typically a CAST) by adding a dimension to it, making it into an array 
 type."
- input Exp.Exp e;
+ input DAE.Exp e;
  input Option<Integer> dim;
- output Exp.Exp res;
+ output DAE.Exp res;
 algorithm
   res := matchcontinue(e,dim)
-  local Exp.Type ty,ty1;
+  local DAE.ExpType ty,ty1;
     case(DAE.CAST(ty,e),dim)
       equation
         ty1 = Exp.liftArrayR(ty,dim); 
@@ -4211,21 +4211,21 @@ public function typeConvertArray "function: typeConvertArray
  
   Helper function to type_convert. Handles array expressions.
 "
-  input list<Exp.Exp> inExpExpLst1;
+  input list<DAE.Exp> inExpExpLst1;
   input Type inType2;
   input Type inType3;
   input Option<Integer> dim;
   input PolymorphicBindings polymorphicBindings;
   input MatchTypeFunc matchFunc;
-  output list<Exp.Exp> outExpExpLst;
+  output list<DAE.Exp> outExpExpLst;
   output PolymorphicBindings outBindings;
 
 	partial function MatchTypeFunc
-	  input Exp.Exp inExp1;
+	  input DAE.Exp inExp1;
 	  input Type inType2;
 	  input Type inType3;
 	  input PolymorphicBindings polymorphicBindings;
-	  output Exp.Exp outExp;
+	  output DAE.Exp outExp;
 	  output Type outType;
 	  output PolymorphicBindings outBindings;
 	end MatchTypeFunc;
@@ -4233,8 +4233,8 @@ algorithm
   (outExpExpLst,outBindings) :=
   matchcontinue (inExpExpLst1,inType2,inType3,dim,polymorphicBindings,matchFunc)
     local
-      list<Exp.Exp> rest_1,rest;
-      Exp.Exp first_1,first;
+      list<DAE.Exp> rest_1,rest;
+      DAE.Exp first_1,first;
       Type ty1,ty2;
     case ({},_,_,_,polymorphicBindings,_) then ({},polymorphicBindings); 
     case ((first :: rest),ty1,ty2,dim,polymorphicBindings,matchFunc)
@@ -4251,22 +4251,22 @@ protected function typeConvertMatrix "function: typeConvertMatrix
  
   Helper function to type_convert. Handles matrix expressions.
 "
-  input list<list<tuple<Exp.Exp, Boolean>>> inTplExpExpBooleanLstLst1;
+  input list<list<tuple<DAE.Exp, Boolean>>> inTplExpExpBooleanLstLst1;
   input Type inType2;
   input Type inType3;
   input Option<Integer> dim1;
   input Option<Integer> dim2;
   input PolymorphicBindings polymorphicBindings;
   input MatchTypeFunc matchFunc;
-  output list<list<tuple<Exp.Exp, Boolean>>> outTplExpExpBooleanLstLst;
+  output list<list<tuple<DAE.Exp, Boolean>>> outTplExpExpBooleanLstLst;
   output PolymorphicBindings outBindings;
 	
 	partial function MatchTypeFunc
-	  input Exp.Exp inExp1;
+	  input DAE.Exp inExp1;
 	  input Type inType2;
 	  input Type inType3;
 	  input PolymorphicBindings polymorphicBindings;
-	  output Exp.Exp outExp;
+	  output DAE.Exp outExp;
 	  output Type outType;
 	  output PolymorphicBindings outBindings;
 	end MatchTypeFunc;
@@ -4274,8 +4274,8 @@ algorithm
   (outTplExpExpBooleanLstLst,outBindings) :=
   matchcontinue (inTplExpExpBooleanLstLst1,inType2,inType3,dim1,dim2,polymorphicBindings,matchFunc)
     local
-      list<list<tuple<Exp.Exp, Boolean>>> rest_1,rest;
-      list<tuple<Exp.Exp, Boolean>> first_1,first;
+      list<list<tuple<DAE.Exp, Boolean>>> rest_1,rest;
+      list<tuple<DAE.Exp, Boolean>> first_1,first;
       Type ty1,ty2;
     case ({},_,_,_,_,polymorphicBindings,_) then ({},polymorphicBindings); 
     case ((first :: rest),ty1,ty2,dim1,dim2,polymorphicBindings,matchFunc)
@@ -4291,22 +4291,22 @@ protected function typeConvertMatrixRow "function: typeConvertMatrixRow
  
   Helper function to type_convert_matrix.
 "
-  input list<tuple<Exp.Exp, Boolean>> inTplExpExpBooleanLst1;
+  input list<tuple<DAE.Exp, Boolean>> inTplExpExpBooleanLst1;
   input Type inType2;
   input Type inType3;
   input Option<Integer> dim1;
   input Option<Integer> dim2;
   input PolymorphicBindings polymorphicBindings;
   input MatchTypeFunc matchFunc;
-  output list<tuple<Exp.Exp, Boolean>> outTplExpExpBooleanLst;
+  output list<tuple<DAE.Exp, Boolean>> outTplExpExpBooleanLst;
   output PolymorphicBindings outBindings;
 	
 	partial function MatchTypeFunc
-	  input Exp.Exp inExp1;
+	  input DAE.Exp inExp1;
 	  input Type inType2;
 	  input Type inType3;
 	  input PolymorphicBindings polymorphicBindings;
-	  output Exp.Exp outExp;
+	  output DAE.Exp outExp;
 	  output Type outType;
 	  output PolymorphicBindings outBindings;
 	end MatchTypeFunc;
@@ -4314,8 +4314,8 @@ algorithm
   (outTplExpExpBooleanLst,outBindings) :=
   matchcontinue (inTplExpExpBooleanLst1,inType2,inType3,dim1,dim2,polymorphicBindings,matchFunc)
     local
-      list<tuple<Exp.Exp, Boolean>> rest;
-      Exp.Exp exp_1,exp;
+      list<tuple<DAE.Exp, Boolean>> rest;
+      DAE.Exp exp_1,exp;
       Type newt,t1,t2;
       Boolean a,sc;
     case ({},_,_,_,_,polymorphicBindings,_) then ({},polymorphicBindings); 
@@ -4336,21 +4336,21 @@ protected function typeConvertList "function: typeConvertList
  
   Helper function to type_convert.
 "
-  input list<Exp.Exp> inExpExpLst1;
+  input list<DAE.Exp> inExpExpLst1;
   input list<Type> inTypeLst2;
   input list<Type> inTypeLst3;
   input PolymorphicBindings polymorphicBindings;
   input MatchTypeFunc matchFunc;
-  output list<Exp.Exp> outExpExpLst;
+  output list<DAE.Exp> outExpExpLst;
   output list<Type> outTypeLst;
   output PolymorphicBindings outBindings;
 	
 	partial function MatchTypeFunc
-	  input Exp.Exp inExp1;
+	  input DAE.Exp inExp1;
 	  input Type inType2;
 	  input Type inType3;
 	  input PolymorphicBindings polymorphicBindings;
-	  output Exp.Exp outExp;
+	  output DAE.Exp outExp;
 	  output Type outType;
 	  output PolymorphicBindings outBindings;
 	end MatchTypeFunc;
@@ -4358,9 +4358,9 @@ algorithm
   (outExpExpLst,outTypeLst,outBindings):=
   matchcontinue (inExpExpLst1,inTypeLst2,inTypeLst3,polymorphicBindings,matchFunc)
     local
-      list<Exp.Exp> rest_1,rest;
+      list<DAE.Exp> rest_1,rest;
       list<Type> tyrest_1,ty1rest,ty2rest;
-      Exp.Exp first_1,first;
+      DAE.Exp first_1,first;
       Type ty_1,ty1,ty2;
     case ({},_,_,polymorphicBindings,_) then ({},{},polymorphicBindings); 
     case ((first :: rest),(ty1 :: ty1rest),(ty2 :: ty2rest),polymorphicBindings,matchFunc)
@@ -4373,35 +4373,35 @@ algorithm
 end typeConvertList;
 
 protected function typeConvertMatrixToList
-  input list<list<Exp.Exp>> melist;
+  input list<list<DAE.Exp>> melist;
   input Type inType;
   input Type outType;
 	input PolymorphicBindings polymorphicBindings;
 	input MatchTypeFunc matchFunc;
-  output list<Exp.Exp> outExp;
+  output list<DAE.Exp> outExp;
   output Type outType;
   output PolymorphicBindings outBindings;
 	
 	partial function MatchTypeFunc
-	  input Exp.Exp inExp1;
+	  input DAE.Exp inExp1;
 	  input Type inType2;
 	  input Type inType3;
 	  input PolymorphicBindings polymorphicBindings;
-	  output Exp.Exp outExp;
+	  output DAE.Exp outExp;
 	  output Type outType;
 	  output PolymorphicBindings outBindings;
 	end MatchTypeFunc;
 algorithm
   (outExp,outType,outBindings) := matchcontinue (melist, inType, outType, polymorphicBindings, matchFunc)
     local
-      list<Exp.Exp> expl;
-      list<list<Exp.Exp>> rest, elist, elist_1;
-      Exp.Type t;
-      list<Exp.Type> tlist;
+      list<DAE.Exp> expl;
+      list<list<DAE.Exp>> rest, elist, elist_1;
+      DAE.ExpType t;
+      list<DAE.ExpType> tlist;
       Type t1,t2,t_1;
       list<Type> tys1;
       Option<Absyn.Path> p2;
-      Exp.Exp e,e_1;
+      DAE.Exp e,e_1;
     case ({},_,_,polymorphicBindings,_) then ({},(DAE.T_NOTYPE,NONE),polymorphicBindings);
     case (expl::rest, (DAE.T_ARRAY(arrayType=(DAE.T_ARRAY(arrayType=t1),_)),_), (DAE.T_LIST((DAE.T_LIST(t2),_)),p2),polymorphicBindings,matchFunc)
       equation
@@ -4417,26 +4417,26 @@ algorithm
 end typeConvertMatrixToList;
 
 protected function typeConvertMatrixRowToList
-  input list<Exp.Exp> elist;
+  input list<DAE.Exp> elist;
   input Type inType;
   input Type outType;
   input PolymorphicBindings polymorphicBindings;
   input MatchTypeFunc matchFunc;
-  output Exp.Exp out;
+  output DAE.Exp out;
   output Type t1;
   output PolymorphicBindings outBindings;
 	partial function MatchTypeFunc
-	  input Exp.Exp inExp1;
+	  input DAE.Exp inExp1;
 	  input Type inType2;
 	  input Type inType3;
 	  input PolymorphicBindings polymorphicBindings;
-	  output Exp.Exp outExp;
+	  output DAE.Exp outExp;
 	  output Type outType;
 	  output PolymorphicBindings outBindings;
 	end MatchTypeFunc;
-  Exp.Exp exp;
-  list<Exp.Exp> elist_1;
-  Exp.Type t;
+  DAE.Exp exp;
+  list<DAE.Exp> elist_1;
+  DAE.ExpType t;
 algorithm
   (elist_1,t1::_,outBindings) := matchTypeList(elist, inType, outType, polymorphicBindings, matchFunc);
   t := elabType(t1);
@@ -4647,20 +4647,20 @@ end printProp;
 public function flowVariables "function: flowVariables
  
   This function retrieves all variables names that are flow variables, and 
-  prepends the prefix given as an \'Exp.ComponentRef\'
+  prepends the prefix given as an \'DAE.ComponentRef\'
 "
   input list<Var> inVarLst;
-  input Exp.ComponentRef inComponentRef;
-  output list<Exp.ComponentRef> outExpComponentRefLst;
+  input DAE.ComponentRef inComponentRef;
+  output list<DAE.ComponentRef> outExpComponentRefLst;
 algorithm 
   outExpComponentRefLst:=
   matchcontinue (inVarLst,inComponentRef)
     local
-      Exp.ComponentRef cr_1,cr;
-      list<Exp.ComponentRef> res;
+      DAE.ComponentRef cr_1,cr;
+      list<DAE.ComponentRef> res;
       Ident id;
       list<Var> vs;
-      Exp.Type ty2;
+      DAE.ExpType ty2;
       Type ty;
     case ({},_) then {}; 
     case ((DAE.TYPES_VAR(name = id,attributes = DAE.ATTR(flowPrefix = true),type_ = ty) :: vs),cr)
@@ -4682,19 +4682,19 @@ end flowVariables;
 
 public function streamVariables "function: streamVariables
   This function retrieves all variables names that are stream variables, 
-  and prepends the prefix given as an Exp.ComponentRef"
+  and prepends the prefix given as an DAE.ComponentRef"
   input list<Var> inVarLst;
-  input Exp.ComponentRef inComponentRef;
-  output list<Exp.ComponentRef> outExpComponentRefLst;
+  input DAE.ComponentRef inComponentRef;
+  output list<DAE.ComponentRef> outExpComponentRefLst;
 algorithm
   outExpComponentRefLst:=
   matchcontinue (inVarLst,inComponentRef)
     local
-      Exp.ComponentRef cr_1,cr;
-      list<Exp.ComponentRef> res;
+      DAE.ComponentRef cr_1,cr;
+      list<DAE.ComponentRef> res;
       Ident id;
       list<Var> vs;
-      Exp.Type ty2;
+      DAE.ExpType ty2;
       Type ty;
       
     case ({},_) then {};
@@ -4719,12 +4719,12 @@ public function getAllExps "function: getAllExps
   expressions and returns them in a list
 "
   input Type inType;
-  output list<Exp.Exp> outExpExpLst;
+  output list<DAE.Exp> outExpExpLst;
 algorithm 
   outExpExpLst:=
   matchcontinue (inType)
     local
-      list<Exp.Exp> exps;
+      list<DAE.Exp> exps;
       TType ttype;
       Option<Absyn.Path> pathopt;
     case ((ttype,pathopt))
@@ -4741,12 +4741,12 @@ protected function getAllExpsTt "function: getAllExpsTt
   expressions and returns them in a list
 "
   input TType inTType;
-  output list<Exp.Exp> outExpExpLst;
+  output list<DAE.Exp> outExpExpLst;
 algorithm 
   outExpExpLst:=
   matchcontinue (inTType)
     local
-      list<Exp.Exp> exps,tyexps;
+      list<DAE.Exp> exps,tyexps;
       list<Var> vars;
       list<Ident> strs;
       ArrayDim dim;
@@ -4754,7 +4754,7 @@ algorithm
       ClassInf.State cinf;
       Option<Type> bc;
       list<Type> tys;
-      list<list<Exp.Exp>> explists,explist;
+      list<list<DAE.Exp>> explists,explist;
       list<FuncArg> fargs;
     case DAE.T_INTEGER(varLstInt = vars)
       equation 
@@ -4846,8 +4846,8 @@ protected function getAllExpsVars "function: getAllExpsVars
   Helper function to get_all_exps_tt.
 "
   input list<Var> vars;
-  output list<Exp.Exp> exps;
-  list<list<Exp.Exp>> explist;
+  output list<DAE.Exp> exps;
+  list<list<DAE.Exp>> explist;
 algorithm 
   explist := Util.listMap(vars, getAllExpsVar);
   exps := Util.listFlatten(explist);
@@ -4858,12 +4858,12 @@ protected function getAllExpsVar "function: getAllExpsVar
   Helper function to get_all_exps_vars.
 "
   input Var inVar;
-  output list<Exp.Exp> outExpExpLst;
+  output list<DAE.Exp> outExpExpLst;
 algorithm 
   outExpExpLst:=
   matchcontinue (inVar)
     local
-      list<Exp.Exp> tyexps,bndexp,exps;
+      list<DAE.Exp> tyexps,bndexp,exps;
       Ident id;
       Attributes attr;
       Boolean prot;
@@ -4884,12 +4884,12 @@ protected function getAllExpsBinding "function: getAllExpsBinding
   Helper function to get_all_exps_var.
 "
   input Binding inBinding;
-  output list<Exp.Exp> outExpExpLst;
+  output list<DAE.Exp> outExpExpLst;
 algorithm 
   outExpExpLst:=
   matchcontinue (inBinding)
     local
-      Exp.Exp exp;
+      DAE.Exp exp;
       Const cnst;
       Values.Value v;
     case DAE.EQBOUND(exp = exp,constant_ = cnst) then {exp}; 
@@ -4949,26 +4949,26 @@ end unboxedType;
 public function listMatchSuperType "Takes lists of Exp,Type and calculates the
 supertype of the list, then converts the expressions to this type. /sjoelund
 "
-  input list<Exp.Exp> elist;
+  input list<DAE.Exp> elist;
   input list<Type> typeList;
   input PolymorphicBindings polymorphicBindings;
   input MatchTypeFunc matchFunc;
-  output list<Exp.Exp> out;
+  output list<DAE.Exp> out;
   output Type t;
   output PolymorphicBindings outBindings;
 	partial function MatchTypeFunc
-	  input Exp.Exp inExp1;
+	  input DAE.Exp inExp1;
 	  input Type inType2;
 	  input Type inType3;
 	  input PolymorphicBindings polymorphicBindings;
-	  output Exp.Exp outExp;
+	  output DAE.Exp outExp;
 	  output Type outType;
 	  output PolymorphicBindings outBindings;
 	end MatchTypeFunc;
 algorithm
   (out, t, outBindings) := matchcontinue (elist, typeList, polymorphicBindings, matchFunc)
     local
-      Exp.Exp e;
+      DAE.Exp e;
       Type ty, superType;
     case ({},{},polymorphicBindings,_) then ({}, (DAE.T_NOTYPE,NONE), polymorphicBindings);
     case (e :: _, ty :: _, polymorphicBindings, matchFunc)
@@ -4984,27 +4984,27 @@ algorithm
 end listMatchSuperType;
 
 protected function listMatchSuperType2
-  input list<Exp.Exp> elist;
+  input list<DAE.Exp> elist;
   input list<Type> typeList;
   input Type superType;
   input PolymorphicBindings polymorphicBindings;
   input MatchTypeFunc matchFunc;
-  output list<Exp.Exp> out;
+  output list<DAE.Exp> out;
   output PolymorphicBindings outBindings;
 	partial function MatchTypeFunc
-	  input Exp.Exp inExp1;
+	  input DAE.Exp inExp1;
 	  input Type inType2;
 	  input Type inType3;
 	  input PolymorphicBindings polymorphicBindings;
-	  output Exp.Exp outExp;
+	  output DAE.Exp outExp;
 	  output Type outType;
 	  output PolymorphicBindings outBindings;
 	end MatchTypeFunc;
 algorithm
   (out,outBindings) := matchcontinue (elist, typeList, superType, polymorphicBindings, matchFunc)
     local
-      Exp.Exp e;
-      list<Exp.Exp> erest;
+      DAE.Exp e;
+      list<DAE.Exp> erest;
       Type t;
       list<Type> trest;
     case ({},{},_,polymorphicBindings,_) then ({},polymorphicBindings);
@@ -5089,19 +5089,19 @@ public function matchTypePolymorphic "Like matchType, except we also
 bind polymorphic variabled. Used when elaborating calls.
 TODO: We should probably just match types and then walk the type to
 detect and verify any polymorphism."
-  input Exp.Exp inExp1;
+  input DAE.Exp inExp1;
   input Type inType2;
   input Type inType3;
   input PolymorphicBindings polymorphicBindings;
-  output Exp.Exp outExp;
+  output DAE.Exp outExp;
   output Type outType;
   output PolymorphicBindings outBindings;
 algorithm 
   (outExp,outType,outBindings):=
   matchcontinue (inExp1,inType2,inType3,polymorphicBindings)
     local
-      Exp.Exp e,e_1;
-      Exp.Type et;
+      DAE.Exp e,e_1;
+      DAE.ExpType et;
       Type e_type,expected_type,e_type_1;
       String id;
     case (e,e_type,(DAE.T_POLYMORPHIC(id),_),polymorphicBindings)
@@ -5130,21 +5130,21 @@ public function matchTypeRegular "function: matchType
  
   This function matches an expression with an expected type, and
   converts the expression to the expected type if necessary.
-  inputs : (exp: Exp.Exp, exp_type: Type, expected: Type)
-  outputs: (Exp.Exp, Type)"
-  input Exp.Exp inExp1;
+  inputs : (exp: DAE.Exp, exp_type: Type, expected: Type)
+  outputs: (DAE.Exp, Type)"
+  input DAE.Exp inExp1;
   input Type inType2;
   input Type inType3;
   input PolymorphicBindings polymorphicBindings;
-  output Exp.Exp outExp;
+  output DAE.Exp outExp;
   output Type outType;
   output PolymorphicBindings outBindings;
 algorithm 
   (outExp,outType,polymorphicBindings):=
   matchcontinue (inExp1,inType2,inType3,polymorphicBindings)
     local
-      Exp.Exp e,e_1;
-      Exp.Type et;
+      DAE.Exp e,e_1;
+      DAE.ExpType et;
       Type e_type,expected_type,e_type_1;
     case (e,e_type,expected_type,polymorphicBindings)
       equation 
@@ -5332,7 +5332,7 @@ algorithm
       list<FuncArg> funcArgs1,funcArgs2;
       list<String> funcArgNames;
       list<Type> funcArgTypes1, funcArgTypes2, dummyBoxedTypeList;
-      list<Exp.Exp> dummyExpList;
+      list<DAE.Exp> dummyExpList;
       Type ty1,ty2,resType1,resType2;
       TType tty1,tty2;
       Absyn.Path path;
@@ -5370,10 +5370,10 @@ algorithm
   outType := matchcontinue (inType)
     local
       Option<Absyn.Path> optPath;
-      Exp.Exp e;
+      DAE.Exp e;
       Type ty,ty1,ty2;
       list<Type> tys, dummyBoxedTypeList;
-      list<Exp.Exp> dummyExpList;
+      list<DAE.Exp> dummyExpList;
     case ((DAE.T_TUPLE(tys),optPath))
       equation
         (dummyExpList,dummyBoxedTypeList) = makeDummyExpAndTypeLists(tys);
@@ -5390,12 +5390,12 @@ end makeFunctionPolymorphicReferenceResType;
 
 protected function makeDummyExpAndTypeLists
   input list<Type> lst;
-  output list<Exp.Exp> outExps;
+  output list<DAE.Exp> outExps;
   output list<Type> outTypes;
 algorithm
   (outExps,outTypes) := matchcontinue (lst)
     local
-      list<Exp.Exp> restExp;
+      list<DAE.Exp> restExp;
       list<Type> restType, rest;
     case {} then ({},{});
     case _::rest

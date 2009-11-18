@@ -57,26 +57,25 @@ package ConnectionGraph
       
 public import Absyn;
 public import DAE;
-public import Exp;
+public import DAEUtil;
 public import HashTableCG;
 public import Util;
-public import DAEUtil;
 
 /* A list of edges 
  */
-type Edges = list<tuple<Exp.ComponentRef,Exp.ComponentRef>>;
+type Edges = list<tuple<DAE.ComponentRef,DAE.ComponentRef>>;
 /* A list of edges, each edge associated with two lists of DAE elements
  * (these elements represent equations to be added if the edge
  * is preserved or broken) 
  */
-type DaeEdges = list<tuple<Exp.ComponentRef,Exp.ComponentRef,list<DAE.Element>,list<DAE.Element>>>;
+type DaeEdges = list<tuple<DAE.ComponentRef,DAE.ComponentRef,list<DAE.Element>,list<DAE.Element>>>;
 
 uniontype ConnectionGraph
   "Input structure for connection breaking algorithm. It is collected during instantiation phase."
     record GRAPH
       Boolean updateGraph;
-      list<Exp.ComponentRef> definiteRoots "Roots defined with Connection.root";
-      list<tuple<Exp.ComponentRef,Real>> potentialRoots "Roots defined with Connection.potentialRoot";
+      list<DAE.ComponentRef> definiteRoots "Roots defined with Connection.root";
+      list<tuple<DAE.ComponentRef,Real>> potentialRoots "Roots defined with Connection.potentialRoot";
       Edges branches "Edges defined with Connection.branch";
       DaeEdges connections "Edges defined with connect statement";
     end GRAPH;
@@ -89,13 +88,16 @@ public constant ConnectionGraph EMPTY = GRAPH( true, {}, {}, {}, {} );
  */
 public constant ConnectionGraph NOUPDATE_EMPTY = GRAPH( false, {}, {}, {}, {} );
 
+protected import Exp;
+
+public
 function printEdges
   "Prints a list of edges to stdout."
   input Edges inEdges;
 algorithm
   _ := matchcontinue(inEdges)
     local
-      Exp.ComponentRef c1, c2;
+      DAE.ComponentRef c1, c2;
       Edges tail;
     case ({})
     equation
@@ -119,7 +121,7 @@ function printDaeEdges
 algorithm
   _ := matchcontinue(inEdges)
     local
-      Exp.ComponentRef c1, c2;
+      DAE.ComponentRef c1, c2;
       DaeEdges tail;
     case ({})
     equation
@@ -158,10 +160,10 @@ end printConnectionGraph;
 function getDefiniteRoots
   "Accessor for ConnectionGraph.definititeRoots."
   input ConnectionGraph inGraph;
-  output list<Exp.ComponentRef> outResult;
+  output list<DAE.ComponentRef> outResult;
 algorithm
   outResult := matchcontinue(inGraph)
-    local list<Exp.ComponentRef> result;
+    local list<DAE.ComponentRef> result;
     case (GRAPH(_,result,_,_,_))
     then result;
   end matchcontinue;
@@ -170,10 +172,10 @@ end getDefiniteRoots;
 function getPotentialRoots
   "Accessor for ConnectionGraph.potentialRoots."
   input ConnectionGraph inGraph;
-  output list<tuple<Exp.ComponentRef,Real>> outResult;
+  output list<tuple<DAE.ComponentRef,Real>> outResult;
 algorithm
   outResult := matchcontinue(inGraph)
-    local list<tuple<Exp.ComponentRef,Real>> result;
+    local list<tuple<DAE.ComponentRef,Real>> result;
     case (GRAPH(_,_,result,_,_))
     then result;
   end matchcontinue;
@@ -206,7 +208,7 @@ end getConnections;
 function addDefiniteRoot 
   "Adds a new definite root to ConnectionGraph"
   input ConnectionGraph inGraph;
-  input Exp.ComponentRef inRoot;
+  input DAE.ComponentRef inRoot;
   output ConnectionGraph outGraph;
 algorithm
 /*  outGraph := GRAPH(inRoot::getDefiniteRoots(inGraph),
@@ -218,9 +220,9 @@ algorithm
     local 
       Boolean updateGraph;
       ConnectionGraph graph;
-      Exp.ComponentRef root;
-      list<Exp.ComponentRef> definiteRoots;
-      list<tuple<Exp.ComponentRef,Real>> potentialRoots;
+      DAE.ComponentRef root;
+      list<DAE.ComponentRef> definiteRoots;
+      list<tuple<DAE.ComponentRef,Real>> potentialRoots;
       Edges branches;
       DaeEdges connections;
     case (GRAPH(updateGraph = updateGraph,definiteRoots = definiteRoots,potentialRoots = potentialRoots,branches = branches,connections = connections), root)
@@ -231,7 +233,7 @@ end addDefiniteRoot;
 function addPotentialRoot 
   "Adds a new potential root to ConnectionGraph"
   input ConnectionGraph inGraph;
-  input Exp.ComponentRef inRoot;
+  input DAE.ComponentRef inRoot;
   input Real inPriority;
   output ConnectionGraph outGraph;
 algorithm
@@ -244,10 +246,10 @@ algorithm
     local 
       Boolean updateGraph;
       ConnectionGraph graph;
-      Exp.ComponentRef root;
+      DAE.ComponentRef root;
       Real priority;
-      list<Exp.ComponentRef> definiteRoots;
-      list<tuple<Exp.ComponentRef,Real>> potentialRoots;
+      list<DAE.ComponentRef> definiteRoots;
+      list<tuple<DAE.ComponentRef,Real>> potentialRoots;
       Edges branches;
       DaeEdges connections;
     case (GRAPH(updateGraph = updateGraph,definiteRoots = definiteRoots,potentialRoots = potentialRoots,branches = branches,connections = connections), root, priority)
@@ -258,8 +260,8 @@ end addPotentialRoot;
 function addBranch
   "Adds a new branch to ConnectionGraph"
   input ConnectionGraph inGraph;
-  input Exp.ComponentRef inRef1;
-  input Exp.ComponentRef inRef2;
+  input DAE.ComponentRef inRef1;
+  input DAE.ComponentRef inRef2;
   output ConnectionGraph outGraph;
 algorithm
 /*  outGraph := GRAPH(inGraph.definiteRoots,
@@ -271,10 +273,10 @@ algorithm
     local 
       Boolean updateGraph;
       ConnectionGraph graph;
-      Exp.ComponentRef ref1;
-      Exp.ComponentRef ref2;
-      list<Exp.ComponentRef> definiteRoots;
-      list<tuple<Exp.ComponentRef,Real>> potentialRoots;
+      DAE.ComponentRef ref1;
+      DAE.ComponentRef ref2;
+      list<DAE.ComponentRef> definiteRoots;
+      list<tuple<DAE.ComponentRef,Real>> potentialRoots;
       Edges branches;
       DaeEdges connections;
     case (GRAPH(updateGraph = updateGraph, definiteRoots = definiteRoots,potentialRoots = potentialRoots,branches = branches,connections = connections), ref1, ref2)
@@ -285,8 +287,8 @@ end addBranch;
 function addConnection
   "Adds a new connection to ConnectionGraph"
   input ConnectionGraph inGraph;
-  input Exp.ComponentRef inRef1;
-  input Exp.ComponentRef inRef2;
+  input DAE.ComponentRef inRef1;
+  input DAE.ComponentRef inRef2;
   input list<DAE.Element> inDae;
   input list<DAE.Element> inDae2;
   output ConnectionGraph outGraph;
@@ -300,11 +302,11 @@ algorithm
     local 
       Boolean updateGraph;
       ConnectionGraph graph;
-      Exp.ComponentRef ref1;
-      Exp.ComponentRef ref2;
+      DAE.ComponentRef ref1;
+      DAE.ComponentRef ref2;
       list<DAE.Element> dae,dae2;
-      list<Exp.ComponentRef> definiteRoots;
-      list<tuple<Exp.ComponentRef,Real>> potentialRoots;
+      list<DAE.ComponentRef> definiteRoots;
+      list<tuple<DAE.ComponentRef,Real>> potentialRoots;
       Edges branches;
       DaeEdges connections;
     case (GRAPH(updateGraph = updateGraph, definiteRoots = definiteRoots,potentialRoots = potentialRoots,branches = branches,connections = connections), ref1, ref2, dae,dae2)
@@ -316,14 +318,14 @@ function canonical
   "Returns the canonical element of the component where input element belongs to. 
    See explanation at the top of file."
   input HashTableCG.HashTable inPartition;
-  input Exp.ComponentRef inRef;
+  input DAE.ComponentRef inRef;
 //  output HashTableCG.HashTable outPartition;
-  output Exp.ComponentRef outCanonical;
+  output DAE.ComponentRef outCanonical;
 algorithm
   /*outPartition,*/ outCanonical := matchcontinue(inPartition, inRef)
     local
       HashTableCG.HashTable partition, partition2;
-      Exp.ComponentRef ref, parent, parentCanonical;
+      DAE.ComponentRef ref, parent, parentCanonical;
     case (partition, ref)
     equation
       parent = HashTableCG.get(ref, partition);
@@ -339,15 +341,15 @@ function areInSameComponent
   "Tells whether the elements belong to the same component. 
    See explanation at the top of file."
   input HashTableCG.HashTable inPartition;
-  input Exp.ComponentRef inRef1;
-  input Exp.ComponentRef inRef2;
+  input DAE.ComponentRef inRef1;
+  input DAE.ComponentRef inRef2;
   output Boolean outResult;
 algorithm
   // canonical(inPartition,inRef1) = canonical(inPartition,inRef2);
   outResult := matchcontinue(inPartition,inRef1,inRef2)
     local
       HashTableCG.HashTable partition;
-      Exp.ComponentRef ref1, ref2, canon;
+      DAE.ComponentRef ref1, ref2, canon;
     case(partition,ref1,ref2)
     equation
       canon = canonical(partition,ref1);
@@ -364,8 +366,8 @@ function connectComponents
   connected), adds either inConnectionDae or inBreakDae to the list of
   DAE elements."
   input HashTableCG.HashTable inPartition;
-  input Exp.ComponentRef inRef1;
-  input Exp.ComponentRef inRef2;
+  input DAE.ComponentRef inRef1;
+  input DAE.ComponentRef inRef2;
   input list<DAE.Element> inConnectionDae;
   input list<DAE.Element> inBreakDae;
   input list<DAE.Element> inDae;
@@ -376,7 +378,7 @@ algorithm
    matchcontinue(inPartition,inRef1,inRef2,inConnectionDae,inBreakDae,inDae)
     local
       HashTableCG.HashTable partition;
-      Exp.ComponentRef ref1, ref2, canon1, canon2;
+      DAE.ComponentRef ref1, ref2, canon1, canon2;
       list<DAE.Element> connectionDae, dae;
     case(partition,ref1,ref2,connectionDae,_,dae)
     equation      
@@ -404,8 +406,8 @@ function connectCanonicalComponents
   "Tries to connect two components whose canonical elements are given.
   Helper function for connectionComponents."
   input HashTableCG.HashTable inPartition;
-  input Exp.ComponentRef inRef1;
-  input Exp.ComponentRef inRef2;
+  input DAE.ComponentRef inRef1;
+  input DAE.ComponentRef inRef2;
   output HashTableCG.HashTable outPartition;
   output Boolean outReallyConnected;
 algorithm
@@ -413,7 +415,7 @@ algorithm
   matchcontinue(inPartition,inRef1,inRef2)
     local
       HashTableCG.HashTable partition;
-      Exp.ComponentRef ref1, ref2;
+      DAE.ComponentRef ref1, ref2;
       list<DAE.Element> connectionDae, dae;
     case(partition,ref1,ref2)
     equation 
@@ -430,15 +432,15 @@ function addRootsToTable
   "Adds a root the the graph. This is implemented by connecting
   the root to inFirstRoot element."
   input HashTableCG.HashTable inTable;
-  input list<Exp.ComponentRef> inRoots;
-  input Exp.ComponentRef inFirstRoot;
+  input list<DAE.ComponentRef> inRoots;
+  input DAE.ComponentRef inFirstRoot;
   output HashTableCG.HashTable outTable;
 algorithm
   outTable := matchcontinue(inTable, inRoots, inFirstRoot)
     local
       HashTableCG.HashTable table;
-      Exp.ComponentRef root, firstRoot;
-      list<Exp.ComponentRef> tail;
+      DAE.ComponentRef root, firstRoot;
+      list<DAE.ComponentRef> tail;
     case(table, (root::tail), firstRoot)
     equation
       table = HashTableCG.add((root,firstRoot), table);
@@ -451,10 +453,10 @@ end addRootsToTable;
 
 function resultGraphWithRoots
   "Creates an initial graph with given definite roots."
-  input list<Exp.ComponentRef> roots;
+  input list<DAE.ComponentRef> roots;
   output HashTableCG.HashTable outTable;
   HashTableCG.HashTable table0;
-  Exp.ComponentRef dummyRoot;
+  DAE.ComponentRef dummyRoot;
 algorithm
   dummyRoot := DAE.CREF_IDENT("__DUMMY_ROOT", DAE.ET_INT, {});
   table0 := HashTableCG.emptyHashTable();
@@ -464,14 +466,14 @@ end resultGraphWithRoots;
 function addBranchesToTable
   "Adds all branches to the graph."
   input HashTableCG.HashTable inTable;
-  input list<tuple<Exp.ComponentRef, Exp.ComponentRef>> inBranches;
+  input list<tuple<DAE.ComponentRef, DAE.ComponentRef>> inBranches;
   output HashTableCG.HashTable outTable;
 algorithm
   outTable := matchcontinue(inTable, inBranches)
     local
       HashTableCG.HashTable table, table1, table2;
-      Exp.ComponentRef ref1, ref2;
-      list<tuple<Exp.ComponentRef, Exp.ComponentRef>> tail;
+      DAE.ComponentRef ref1, ref2;
+      list<tuple<DAE.ComponentRef, DAE.ComponentRef>> tail;
     case(table, ((ref1,ref2)::tail))
     equation
       (table1,_) = connectComponents(table, ref1, ref2, {}, {}, {});
@@ -484,8 +486,8 @@ end addBranchesToTable;
 
 function ord
   "An ordering function for potential roots."
-  input tuple<Exp.ComponentRef,Real> inEl1;
-  input tuple<Exp.ComponentRef,Real> inEl2;
+  input tuple<DAE.ComponentRef,Real> inEl1;
+  input tuple<DAE.ComponentRef,Real> inEl2;
   output Boolean outBoolean;
 algorithm 
   outBoolean := matchcontinue(inEl1, inEl2)
@@ -498,18 +500,18 @@ end ord;
 function addPotentialRootsToTable
   "Adds all potential roots to graph."
   input HashTableCG.HashTable inTable;
-  input list<tuple<Exp.ComponentRef,Real>> inPotentialRoots;
-  input list<Exp.ComponentRef> inRoots;
-  input Exp.ComponentRef inFirstRoot;
+  input list<tuple<DAE.ComponentRef,Real>> inPotentialRoots;
+  input list<DAE.ComponentRef> inRoots;
+  input DAE.ComponentRef inFirstRoot;
   output HashTableCG.HashTable outTable;
-  output list<Exp.ComponentRef> outRoots;
+  output list<DAE.ComponentRef> outRoots;
 algorithm
   (outTable,outRoots) := matchcontinue(inTable, inPotentialRoots, inRoots, inFirstRoot)
     local
       HashTableCG.HashTable table;
-      Exp.ComponentRef root, firstRoot, canon1, canon2;
-      list<Exp.ComponentRef> roots;
-      list<tuple<Exp.ComponentRef,Real>> tail;
+      DAE.ComponentRef root, firstRoot, canon1, canon2;
+      list<DAE.ComponentRef> roots;
+      list<tuple<DAE.ComponentRef,Real>> tail;
     case(table, {}, roots, _)
     then (table,roots);
     case(table, ((root,_)::tail), roots, firstRoot)
@@ -538,7 +540,7 @@ algorithm
     matchcontinue(inTable, inConnections, inDae)
     local
       HashTableCG.HashTable table;
-      Exp.ComponentRef ref1, ref2;
+      DAE.ComponentRef ref1, ref2;
       DaeEdges tail;
       list<DAE.Element> connectionDae, breakDae, dae;
     case(table, {}, dae)
@@ -555,15 +557,15 @@ function findResultGraph
   "Given ConnectionGraph structure, breaks all connections, determines
   roots and generates a list of dae elements."
   input ConnectionGraph inGraph;
-  output list<Exp.ComponentRef> outRoots;
+  output list<DAE.ComponentRef> outRoots;
   output list<DAE.Element> outDae;
-  list<Exp.ComponentRef> definiteRoots, finalRoots;
-  list<tuple<Exp.ComponentRef,Real>> potentialRoots;
-  list<tuple<Exp.ComponentRef,Real>> orderedPotentialRoots;
+  list<DAE.ComponentRef> definiteRoots, finalRoots;
+  list<tuple<DAE.ComponentRef,Real>> potentialRoots;
+  list<tuple<DAE.ComponentRef,Real>> orderedPotentialRoots;
   Edges branches;
   DaeEdges connections;
   HashTableCG.HashTable table;
-  Exp.ComponentRef dummyRoot;
+  DAE.ComponentRef dummyRoot;
   Edges brokenConnections, normalConnections;
   list<DAE.Element> dae;
 algorithm
@@ -585,7 +587,7 @@ end findResultGraph;
 function evalIsRoot  
   "Replaces all Connections.isRoot calls by true or false depending on
   wheter the parameter is in the list of roots."
-  input list<Exp.ComponentRef> inRoots;
+  input list<DAE.ComponentRef> inRoots;
   input list<DAE.Element> inDae;
   output list<DAE.Element> outDae;
 algorithm
@@ -594,16 +596,16 @@ end evalIsRoot;
 
 function evalIsRootHelper
   "Helper function for evalIsRoot."
-  input Exp.Exp inExp; 
-  input list<Exp.ComponentRef> inRoots; 
-  output Exp.Exp outExp; 
-  output list<Exp.ComponentRef> outRoots;
+  input DAE.Exp inExp; 
+  input list<DAE.ComponentRef> inRoots; 
+  output DAE.Exp outExp; 
+  output list<DAE.ComponentRef> outRoots;
 algorithm  
   (outExp,outRoots) := matchcontinue(inExp,inRoots)
   local  
-    Exp.Exp exp; 
-    list<Exp.ComponentRef> roots;
-    Exp.ComponentRef cref;
+    DAE.Exp exp; 
+    list<DAE.ComponentRef> roots;
+    DAE.ComponentRef cref;
     Boolean result;
     case (DAE.CALL(path=Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")), 
           expLst={DAE.CREF(componentRef = cref)}), roots)

@@ -41,20 +41,20 @@ package Inline
   The entry point is the inlineCalls function, or inlineCallsInFunctions
   "
 
+public import Absyn;
 public import DAE;
 public import DAELow;
-public import Absyn;
-public import Exp;
 public import SCode;
 public import Util;
-public import Algorithm;
-public import Types;
 public import Values;
 
 type Ident = String;
 
+protected import Algorithm;
 protected import Debug;
 protected import DAEUtil;
+protected import Exp;
+protected import Types;
 
 public function inlineCalls
 "function: inlineCalls
@@ -135,10 +135,10 @@ algorithm
   outEquationOption := matchcontinue(inEquationOption,inElementList)
     local
       list<DAE.Element> fns;
-      Exp.Exp e,e_1,e1,e1_1,e2,e2_1;
+      DAE.Exp e,e_1,e1,e1_1,e2,e2_1;
       Integer i;
-      list<Exp.Exp> explst,explst_1,explst1,explst1_1,explst2,explst2_1;
-      Exp.ComponentRef cref;
+      list<DAE.Exp> explst,explst_1,explst1,explst1_1,explst2,explst2_1;
+      DAE.ComponentRef cref;
       DAELow.WhenEquation weq,weq_1;
     case(NONE,_) then NONE;
     case(SOME(DAELow.EQUATION(e1,e2)),fns)
@@ -187,8 +187,8 @@ algorithm
     local
       list<DAE.Element> fns;
       Integer i;
-      Exp.ComponentRef cref;
-      Exp.Exp e,e_1;
+      DAE.ComponentRef cref;
+      DAE.Exp e,e_1;
       DAELow.WhenEquation weq,weq_1;
     case(DAELow.WHEN_EQ(i,cref,e,NONE),fns)
       equation
@@ -239,15 +239,15 @@ algorithm
   outVarOption := matchcontinue(inVarOption,inElementList)
     local
       list<DAE.Element> fns;
-      Exp.ComponentRef varName;
+      DAE.ComponentRef varName;
       DAELow.VarKind varKind;
       DAE.VarDirection varDirection;
       DAELow.Type varType;
-      Exp.Exp e,e_1;
+      DAE.Exp e,e_1;
       Option<Values.Value> bindValue;
       DAE.InstDims arrayDim;
       Integer index;
-      Exp.ComponentRef origVarName;
+      DAE.ComponentRef origVarName;
       list<Absyn.Path> className;
       Option<DAE.VariableAttributes> values;
       Option<SCode.Comment> comment;
@@ -275,7 +275,7 @@ algorithm
     local
       list<DAE.Element> fns;
       list<Integer> ilst;
-      Exp.Exp e1,e1_1,e2,e2_1;
+      DAE.Exp e1,e1_1,e2,e2_1;
     case(DAELow.MULTIDIM_EQUATION(ilst,e1,e2),fns)
       equation
         e1_1 = inlineExp(e1,fns);
@@ -316,7 +316,7 @@ algorithm
   outZeroCrossing := matchcontinue(inZeroCrossing,inElementList)
     local
       list<DAE.Element> fns;
-      Exp.Exp e,e_1;
+      DAE.Exp e,e_1;
       list<Integer> ilst1,ilst2;
     case(DAELow.ZERO_CROSSING(e,ilst1,ilst2),fns)
       equation
@@ -336,7 +336,7 @@ algorithm
   outWhenClause := matchcontinue(inWhenClause,inElementList)
     local
       list<DAE.Element> fns;
-      Exp.Exp e,e_1;
+      DAE.Exp e,e_1;
       list<DAELow.ReinitStatement> rslst,rslst_1;
       Option<Integer> io;
     case(DAELow.WHEN_CLAUSE(e,rslst,io),fns)
@@ -358,8 +358,8 @@ algorithm
   outReinitStatement := matchcontinue(inReinitStatement,inElementList)
     local
       list<DAE.Element> fns;
-      Exp.ComponentRef cref;
-      Exp.Exp e,e_1;
+      DAE.ComponentRef cref;
+      DAE.Exp e,e_1;
       DAELow.ReinitStatement rs;
     case(DAELow.REINIT(cref,e),fns)
       equation
@@ -416,12 +416,12 @@ algorithm
       list<DAE.Element> fns,cdr,cdr_1,elist,elist_1;
       list<list<DAE.Element>> dlist,dlist_1;
       DAE.Element el,el_1,res,el1,el1_1,el2,el2_1;
-      Exp.ComponentRef componentRef;
+      DAE.ComponentRef componentRef;
       DAE.VarKind kind;
       DAE.VarDirection direction;
       DAE.VarProtection protection;
-      Types.Type ty,t;
-      Exp.Exp binding,binding_1,exp,exp_1,exp1,exp1_1,exp2,exp2_1; 
+      DAE.Type ty,t;
+      DAE.Exp binding,binding_1,exp,exp_1,exp1,exp1_1,exp2,exp2_1; 
       DAE.InstDims dims;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
@@ -435,7 +435,7 @@ algorithm
       Absyn.Path p;
       Boolean partialPrefix;
       DAE.ExternalDecl ext;
-      list<Exp.Exp> explst,explst_1;
+      list<DAE.Exp> explst,explst_1;
     case({},_) then {};
     case(DAE.VAR(componentRef,kind,direction,protection,ty,SOME(binding),dims,flowPrefix,streamPrefix,pathLst,variableAttributesOption,absynCommentOption,innerOuter) :: cdr,fns)
       equation
@@ -643,10 +643,10 @@ algorithm
     local
       list<DAE.Element> fns;
       Algorithm.Statement stmt,stmt_1;
-      Exp.Type t;
-      Exp.Exp e,e_1,e1,e1_1,e2,e2_1;
-      list<Exp.Exp> explst,explst_1;
-      Exp.ComponentRef cref;
+      DAE.ExpType t;
+      DAE.Exp e,e_1,e1,e1_1,e2,e2_1;
+      list<DAE.Exp> explst,explst_1;
+      DAE.ComponentRef cref;
       Algorithm.Else a_else,a_else_1;
       list<Algorithm.Statement> stmts,stmts_1;
       Boolean b;
@@ -753,7 +753,7 @@ algorithm
     local
       list<DAE.Element> fns;
       Algorithm.Else a_else,a_else_1;
-      Exp.Exp e,e_1;
+      DAE.Exp e,e_1;
       list<Algorithm.Statement> stmts,stmts_1;
     case(DAE.ELSEIF(e,stmts,a_else),fns)
       equation
@@ -773,15 +773,15 @@ end inlineElse;
 
 protected function inlineExp
 "function: inlineExp
-	inlines calls in an Exp.Exp"
-	input Exp.Exp inExp;
+	inlines calls in an DAE.Exp"
+	input DAE.Exp inExp;
 	input list<DAE.Element> inElementList;
-	output Exp.Exp outExp;
+	output DAE.Exp outExp;
 algorithm
   outExp := matchcontinue(inExp,inElementList)
     local
       list<DAE.Element> fns;
-      Exp.Exp e,e_1;
+      DAE.Exp e,e_1;
     case(e,fns)
       equation
         ((e_1,fns)) = Exp.traverseExp(e,inlineCall,fns);
@@ -794,19 +794,19 @@ end inlineExp;
 protected function inlineCall
 "function: inlineCall
 	replaces an inline call with the expression from the function"
-	input tuple<Exp.Exp, list<DAE.Element>> inTuple;
-	output tuple<Exp.Exp, list<DAE.Element>> outTuple;
+	input tuple<DAE.Exp, list<DAE.Element>> inTuple;
+	output tuple<DAE.Exp, list<DAE.Element>> outTuple;
 algorithm
   outExp := matchcontinue(inTuple)
     local
       list<DAE.Element> fns,fn;
       Absyn.Path p;
-      list<Exp.Exp> args;
+      list<DAE.Exp> args;
       Boolean tup,built;
-      Exp.Type t;
-      list<Exp.ComponentRef> crefs;
-      list<tuple<Exp.ComponentRef, Exp.Exp>> argmap;
-      Exp.Exp newExp;
+      DAE.ExpType t;
+      list<DAE.ComponentRef> crefs;
+      list<tuple<DAE.ComponentRef, DAE.Exp>> argmap;
+      DAE.Exp newExp;
     case((DAE.CALL(p,args,tup,built,t,true),fns))
       equation
         DAE.FUNCTION(_,DAE.DAE(fn),_,_) :: _ = DAEUtil.getNamedFunction(p,fns);
@@ -825,12 +825,12 @@ protected function getRhsExp
 "function: getRhsExp
 	returns the right hand side of an assignment from a function"
 	input list<DAE.Element> inElementList;
-	output Exp.Exp outExp;
+	output DAE.Exp outExp;
 algorithm
   outExp := matchcontinue(inElementList)
     local
       list<DAE.Element> cdr;
-      Exp.Exp res;
+      DAE.Exp res;
     case({})
       equation
         Debug.fprintln("failtrace","Inline.getRhsExp failed - cannot inline such a function");
@@ -850,15 +850,15 @@ end getRhsExp;
 protected function replaceArgs
 "function: replaceArgs
 	finds DAE.CREF and replaces them with new exps if the cref is in the argmap"
-	input tuple<Exp.Exp, list<tuple<Exp.ComponentRef, Exp.Exp>>> inTuple;
-	output tuple<Exp.Exp, list<tuple<Exp.ComponentRef, Exp.Exp>>> outTuple;
+	input tuple<DAE.Exp, list<tuple<DAE.ComponentRef, DAE.Exp>>> inTuple;
+	output tuple<DAE.Exp, list<tuple<DAE.ComponentRef, DAE.Exp>>> outTuple;
 algorithm
   outTuple := matchcontinue(inTuple)
     local
       list<DAE.Element> fns;
-      Exp.ComponentRef cref;
-      list<tuple<Exp.ComponentRef, Exp.Exp>> argmap;
-      Exp.Exp e;
+      DAE.ComponentRef cref;
+      list<tuple<DAE.ComponentRef, DAE.Exp>> argmap;
+      DAE.Exp e;
     case((DAE.CREF(componentRef = cref),argmap))
       equation
         e = getExpFromArgMap(argmap,cref);
@@ -871,15 +871,15 @@ end replaceArgs;
 protected function getExpFromArgMap
 "function: getExpFromArgMap
 	returns the exp from the given argmap with the given key"
-	input list<tuple<Exp.ComponentRef, Exp.Exp>> inArgMap;
-	input Exp.ComponentRef inComponentRef;
-	output Exp.Exp outExp;
+	input list<tuple<DAE.ComponentRef, DAE.Exp>> inArgMap;
+	input DAE.ComponentRef inComponentRef;
+	output DAE.Exp outExp;
 algorithm
   outExp := matchcontinue(inArgMap,inComponentRef)
     local
-      Exp.ComponentRef key,cref;
-      Exp.Exp exp;
-      list<tuple<Exp.ComponentRef, Exp.Exp>> cdr;
+      DAE.ComponentRef key,cref;
+      DAE.Exp exp;
+      list<tuple<DAE.ComponentRef, DAE.Exp>> cdr;
     case({},_)
       equation
         Debug.fprintln("failtrace","Inline.getExpFromArgMap failed");
@@ -902,11 +902,11 @@ protected function getInputCrefs
 "function: getInputCrefs
 	returns the crefs of vars that are inputs, wild if not input"
 	input DAE.Element inElement;
-	output Exp.ComponentRef outComponentRef;
+	output DAE.ComponentRef outComponentRef;
 algorithm
   outComponentRef := matchcontinue(inElement)
     local
-      Exp.ComponentRef cref;
+      DAE.ComponentRef cref;
     case(DAE.VAR(componentRef=cref,direction=DAE.INPUT())) then cref;
     case(_) then DAE.WILD();
   end matchcontinue;
@@ -915,7 +915,7 @@ end getInputCrefs;
 protected function removeWilds
 "function: removeWilds
 	returns false if the given cref is a wild"
-	input Exp.ComponentRef inComponentRef;
+	input DAE.ComponentRef inComponentRef;
 	output Boolean outBoolean;
 algorithm
   outBoolean := matchcontinue(inComponentRef)

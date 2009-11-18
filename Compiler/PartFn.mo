@@ -40,15 +40,16 @@ package PartFn
   "
 
 public import DAE;
-public import DAEUtil;
 public import Debug;
-public import Util;
-public import Exp;
 public import Absyn;
-public import Types;
 public import SCode;
 public import DAELow;
-public import RTOpts;
+
+protected import DAEUtil;
+protected import Exp;
+protected import RTOpts;
+protected import Types;
+protected import Util;
 
 type Ident = String;
 
@@ -133,7 +134,7 @@ algorithm
     local
       list<Option<DAELow.Equation>> cdr,cdr_1;
       list<DAE.Element> dae;
-      Exp.Exp e,e_1,e1,e1_1,e2,e2_1;
+      DAE.Exp e,e_1,e1,e1_1,e2,e2_1;
       DAELow.Equation deleteme;
     case({},dae) then ({},dae);
     case(NONE :: cdr,dae)
@@ -246,12 +247,12 @@ algorithm
       DAE.Element el,el_1,el1,el1_1,el2,el2_1;
       list<DAE.Element> cdr,cdr_1,elts,elts_1,dae;
       list<list<DAE.Element>> elm,elm_1;
-      Exp.ComponentRef cref;
+      DAE.ComponentRef cref;
       DAE.VarKind kind;
       DAE.VarDirection direction;
       DAE.VarProtection protection;
       DAE.Type ty;
-      Option<Exp.Exp> binding; 
+      Option<DAE.Exp> binding; 
       DAE.InstDims dims;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
@@ -265,8 +266,8 @@ algorithm
       Absyn.Path p;
       Boolean pp;
       DAE.ExternalDecl ed;
-      list<Exp.Exp> elst,elst_1;
-      Exp.Exp e,e_1,e1,e1_1,e2,e2_1;
+      list<DAE.Exp> elst,elst_1;
+      DAE.Exp e,e_1,e1,e1_1,e2,e2_1;
     case({},dae) then ({},dae);
     case(DAE.VAR(cref,kind,direction,protection,ty,binding,dims,flowPrefix,streamPrefix,pathLst,variableAttributesOption,absynCommentOption,innerOuter) :: cdr,dae)
       equation
@@ -419,16 +420,16 @@ end elabElements;
 protected function elabExpList
 "function: elabExpList
 	elabs an exp list"
-	input list<Exp.Exp> inExpList;
+	input list<DAE.Exp> inExpList;
 	input list<DAE.Element> inElementList;
-	output list<Exp.Exp> outExpList;
+	output list<DAE.Exp> outExpList;
 	output list<DAE.Element> outElementList;
 algorithm
   (outExpList,outElementList) := matchcontinue(inExpList,inElementList)
     local
       list<DAE.Element> dae;
-      list<Exp.Exp> cdr,cdr_1;
-      Exp.Exp e,e_1;
+      list<DAE.Exp> cdr,cdr_1;
+      DAE.Exp e,e_1;
     case({},dae) then ({},dae);
     case(e :: cdr,dae)
       equation
@@ -442,14 +443,14 @@ end elabExpList;
 protected function elabExpOption
 "function: elabExpOption
 	elabs an exp option if it is SOME, returns NONE otherwise"
-	input Option<Exp.Exp> inExp;
+	input Option<DAE.Exp> inExp;
 	input list<DAE.Element> inElementList;
-	output Option<Exp.Exp> outExp;
+	output Option<DAE.Exp> outExp;
 	output list<DAE.Element> outElementList;
 algorithm
   (outExp,outElementList) := matchcontinue(inExp,inElementList)
     local
-      Exp.Exp e,e_1;
+      DAE.Exp e,e_1;
       list<DAE.Element> dae;
     case(NONE,dae) then (NONE,dae);
     case(SOME(e),dae)
@@ -464,16 +465,16 @@ protected function elabExp
 "function: elabExp
 	looks for a function call, checks the arguments for Exp.PARTEVALFUNCTION
 	creates new functions and replaces the call as necessary"
-	input tuple<Exp.Exp, list<DAE.Element>> inTuple;
-	output tuple<Exp.Exp, list<DAE.Element>> outTuple;
+	input tuple<DAE.Exp, list<DAE.Element>> inTuple;
+	output tuple<DAE.Exp, list<DAE.Element>> outTuple;
 algorithm
   outTuple := matchcontinue(inTuple)
     local
-      Exp.Exp e;
+      DAE.Exp e;
       list<DAE.Element> dae;
       Absyn.Path p,p1,p_1;
-      list<Exp.Exp> args,args1,args_1;
-      Exp.Type ty;
+      list<DAE.Exp> args,args1,args_1;
+      DAE.ExpType ty;
       Boolean tu,bi,inl;
       Integer i,numArgs;
     case((DAE.CALL(p,args,tu,bi,ty,inl),dae))
@@ -598,7 +599,7 @@ end buildNewFunctionType;
 
 protected function isNotFunctionType
 "function: isNotFunctionType
-	checks to make sure a Types.FuncArg is not of type T_FUNCTION"
+	checks to make sure a DAE.FuncArg is not of type T_FUNCTION"
 	input DAE.FuncArg inFuncArg;
 	output Boolean outBoolean;
 algorithm
@@ -654,7 +655,7 @@ protected function buildTypeVar
 algorithm
   outVar := matchcontinue(inElement)
     local
-      Exp.ComponentRef cref;
+      DAE.ComponentRef cref;
       Ident i;
       DAE.Type ty;
       DAE.Var res;
@@ -753,7 +754,7 @@ algorithm
   outElement := matchcontinue(inElement,inString)
     local
       DAE.Element e,res;
-      Exp.ComponentRef cref,cref_1;
+      DAE.ComponentRef cref,cref_1;
       String s,s_1;
     case(e as DAE.VAR(componentRef = cref,direction=DAE.INPUT()),s)
       equation
@@ -796,8 +797,8 @@ algorithm
       list<DAE.Element> cdr,cdr_1,dae,inputs,res;
       Absyn.Path p;
       DAE.Element part;
-      Exp.ComponentRef cref;
-      Exp.Exp e,e_1,e1,e1_1,e2,e2_1;
+      DAE.ComponentRef cref;
+      DAE.Exp e,e_1,e1,e1_1,e2,e2_1;
       list<DAE.Statement> alg,alg_1;
       list<Integer> ilst;
     case({},_,_,_) then {};
@@ -893,15 +894,15 @@ algorithm
       list<DAE.Statement> cdr,cdr_1,stmts,stmts_1;
       list<DAE.Element> dae,inputs;
       Absyn.Path p;
-      Exp.Type ty;
-      Exp.ComponentRef cref;
+      DAE.ExpType ty;
+      DAE.ComponentRef cref;
       DAE.Else el,el_1;
       Ident i;
       Boolean b;
       DAE.Statement stmt,stmt_1;
       list<Integer> ilst;
-      Exp.Exp e,e_1,e1,e1_1,e2,e2_1;
-      list<Exp.Exp> elst,elst_1;
+      DAE.Exp e,e_1,e1,e1_1,e2,e2_1;
+      list<DAE.Exp> elst,elst_1;
     case({},_,_,_) then {};
     case(DAE.STMT_ASSIGN(ty,e1,e2) :: cdr,dae,p,inputs)
       equation
@@ -1028,7 +1029,7 @@ protected function fixCallsElse
 algorithm
   outElse := matchcontinue(inElse,inDAE,inPath,inInputs)
     local
-      Exp.Exp e,e_1;
+      DAE.Exp e,e_1;
       list<DAE.Statement> stmts,stmts_1;
       DAE.Else el,el_1;
       list<DAE.Element> dae,inputs;
@@ -1052,13 +1053,13 @@ end fixCallsElse;
 protected function handleExpList2
 "function: handleExpList2
 	helper function to fixCallsAlg"
-	input Exp.Exp inExp;
+	input DAE.Exp inExp;
 	input tuple<Absyn.Path, list<DAE.Element>, list<DAE.Element>> inTuple;
-	output Exp.Exp outExp;
+	output DAE.Exp outExp;
 algorithm
   outExp := matchcontinue(inExp,inTuple)
     local
-      Exp.Exp e,e_1;
+      DAE.Exp e,e_1;
       tuple<Absyn.Path, list<DAE.Element>, list<DAE.Element>> tup;
     case(e,tup)
       equation
@@ -1076,18 +1077,18 @@ end handleExpList2;
 protected function fixCall
 "function: fixCall
 	replaces the path and args in a function call"
-	input tuple<Exp.Exp, tuple<Absyn.Path, list<DAE.Element>, list<DAE.Element>>> inTuple;
-	output tuple<Exp.Exp, tuple<Absyn.Path, list<DAE.Element>, list<DAE.Element>>> outTuple;
+	input tuple<DAE.Exp, tuple<Absyn.Path, list<DAE.Element>, list<DAE.Element>>> inTuple;
+	output tuple<DAE.Exp, tuple<Absyn.Path, list<DAE.Element>, list<DAE.Element>>> outTuple;
 algorithm
   outTuple := matchcontinue(inTuple)
     local
-      Exp.Exp e;
+      DAE.Exp e;
       Absyn.Path p,orig_p;
       list<DAE.Element> inputs,dae,tmp;
-      Exp.Type ty;
+      DAE.ExpType ty;
       Boolean tup,bui,inl;
-      list<Exp.Exp> args,args2,args_1;
-      list<Exp.ComponentRef> crefs;
+      list<DAE.Exp> args,args2,args_1;
+      list<DAE.ComponentRef> crefs;
       String str;
       // TEMPFIX REMOVE UNBOX CALLS
     case((DAE.CALL(orig_p,args,tup,bui,ty,inl),(p,inputs,dae)))
@@ -1114,16 +1115,16 @@ protected function getPartEvalFunction
 "function: getPartEvalFunction
 	gets the exp and index of a partevalfunction from a list of exps
 	fail if no partevalfunction is present"
-	input list<Exp.Exp> inExpList;
+	input list<DAE.Exp> inExpList;
 	input Integer inInteger "accumulator";
-	output Exp.Exp outExp;
+	output DAE.Exp outExp;
 	output Integer outInteger;
 algorithm
   (outExp,outInteger) := matchcontinue(inExpList,inInteger)
     local
-      list<Exp.Exp> cdr;
+      list<DAE.Exp> cdr;
       Integer index,index_1;
-      Exp.Exp e;
+      DAE.Exp e;
     case({},_) then fail();
     case((e as DAE.PARTEVALFUNCTION(path=_)) :: _,index) then (e,index);
     case(_ :: cdr,index)

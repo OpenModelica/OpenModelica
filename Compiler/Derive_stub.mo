@@ -42,17 +42,17 @@ package Derive
   The symbolic differentiation is used in the Newton-Raphson method and in
   index reduction."
 
-public import Exp;
 public import Absyn;
 
+protected import Exp;
 protected import Util;
 protected import Error;
 protected import Debug;
 
 public function differentiateExpCont "calls differentiateExp(e,cr,false)"
-  input Exp.Exp inExp;
-  input Exp.ComponentRef inComponentRef;
-  output Exp.Exp outExp;
+  input DAE.Exp inExp;
+  input DAE.ComponentRef inComponentRef;
+  output DAE.Exp outExp;
 algorithm
   outExp := differentiateExp(inExp,inComponentRef,false);
 end differentiateExpCont;
@@ -64,23 +64,23 @@ public function differentiateExp "function: differenatiate_exp
   For example.
   differentiateExp(\'2xy+2x+y\',x) => 2x+2
 "
-  input Exp.Exp inExp;
-  input Exp.ComponentRef inComponentRef;
+  input DAE.Exp inExp;
+  input DAE.ComponentRef inComponentRef;
   input Boolean differentiateIfExp "If true, allow differentiation of if-expressions";
-  output Exp.Exp outExp;
+  output DAE.Exp outExp;
 algorithm
   outExp:=
   matchcontinue (inExp,inComponentRef,differentiateIfExp)
     local
       Real rval;
-      Exp.ComponentRef cr,crx,tv;
-      Exp.Exp e,e1_1,e2_1,e1,e2,const_one,d_e1,d_e2,exp,e_1,exp_1,e3_1,e3,cond;
-      Exp.Type tp; 
+      DAE.ComponentRef cr,crx,tv;
+      DAE.Exp e,e1_1,e2_1,e1,e2,const_one,d_e1,d_e2,exp,e_1,exp_1,e3_1,e3,cond;
+      DAE.ExpType tp; 
       Absyn.Path a,fname;
       Boolean b,c;
-      Exp.Operator op,rel;
+      DAE.Operator op,rel;
       String e_str,s,s2,str;
-      list<Exp.Exp> expl_1,expl,sub;
+      list<DAE.Exp> expl_1,expl,sub;
       Integer i;
     case (DAE.ICONST(integer = _),_,_) then DAE.RCONST(0.0);
 
@@ -146,7 +146,7 @@ algorithm
 
         /* ax^(a-1) */
     case (DAE.BINARY(exp1 = (e1 as DAE.CALL(path = (a as Absyn.IDENT(name = "der")),expLst = {(exp as DAE.CREF(componentRef = cr))},tuple_ = b,builtin = c,ty=ctp)),operator = DAE.POW(ty = tp),exp2 = e2),tv,differentiateIfExp)
-      local Exp.Type ctp;
+      local DAE.ExpType ctp;
       equation
         true = Exp.crefEqual(cr, tv) "der(e)^x => xder(e,2)der(e)^(x-1)" ;
         false = Exp.expContains(e2, DAE.CREF(tv,tp));
@@ -187,7 +187,7 @@ algorithm
 
         /* der(tanh(x)) = der(x) / cosh(x) */
     case (DAE.CALL(path = fname,expLst = (exp :: {}),tuple_ = b,builtin = c,ty=tp),tv,differentiateIfExp)
-     local  Exp.Type tp;
+     local  DAE.ExpType tp;
       equation
         isTanh(fname);
         true = Exp.expContains(exp, DAE.CREF(tv,DAE.ET_REAL()));
@@ -198,7 +198,7 @@ algorithm
 
         /* der(cosh(x)) => der(x)sinh(x) */
     case (DAE.CALL(path = fname,expLst = (exp :: {}),tuple_ = b,builtin = c,ty=tp),tv,differentiateIfExp)
-      local Exp.Type tp;
+      local DAE.ExpType tp;
       equation
         isCosh(fname);
         true = Exp.expContains(exp, DAE.CREF(tv,DAE.ET_REAL()));
@@ -209,7 +209,7 @@ algorithm
 
         /* der(sinh(x)) => der(x)sinh(x) */
     case (DAE.CALL(path = fname,expLst = (exp :: {}),tuple_ = b,builtin = c,ty=tp),tv,differentiateIfExp)
-      local Exp.Type tp;
+      local DAE.ExpType tp;
       equation
         isSinh(fname);
         true = Exp.expContains(exp, DAE.CREF(tv,DAE.ET_REAL()));
@@ -220,7 +220,7 @@ algorithm
 
         /* sin(x) */
     case (DAE.CALL(path = fname,expLst = (exp :: {}),tuple_ = b,builtin = c,ty=tp),tv,differentiateIfExp)
-      local Exp.Type tp;
+      local DAE.ExpType tp;
       equation
         isSin(fname);
         true = Exp.expContains(exp, DAE.CREF(tv,DAE.ET_REAL()));
@@ -230,7 +230,7 @@ algorithm
           exp_1);
 
     case (DAE.CALL(path = fname,expLst = (exp :: {}),tuple_ = b,builtin = c,ty=tp),tv,differentiateIfExp)
-      local Exp.Type tp;
+      local DAE.ExpType tp;
       equation
         isCos(fname);
         true = Exp.expContains(exp, DAE.CREF(tv,DAE.ET_REAL()));
@@ -270,7 +270,7 @@ algorithm
        DAE.BINARY(e_1,DAE.DIV(DAE.ET_REAL()),DAE.BINARY(DAE.RCONST(1.0),DAE.ADD(DAE.ET_REAL()),DAE.BINARY(e,DAE.MUL(DAE.ET_REAL()),e)));
 
     case (DAE.CALL(path = fname,expLst = (exp :: {}),tuple_ = b,builtin = c,ty=tp),tv,differentiateIfExp)
-      local Exp.Type tp;
+      local DAE.ExpType tp;
       equation
         isExp(fname) "exp(x) => x\'  exp(x)" ;
         true = Exp.expContains(exp, DAE.CREF(tv,DAE.ET_REAL()));
@@ -288,7 +288,7 @@ algorithm
           DAE.BINARY(DAE.RCONST(1.0),DAE.DIV(DAE.ET_REAL()),exp));
 
     case (DAE.CALL(path = fname,expLst = (exp :: {}),tuple_ = b,builtin = c,ty=tp),tv,differentiateIfExp)
-      local Exp.Type tp;
+      local DAE.ExpType tp;
       equation
         isLog10(fname) "log10(x) => x\'1/(xlog(10))" ;
         true = Exp.expContains(exp, DAE.CREF(tv,DAE.ET_REAL()));
@@ -300,7 +300,7 @@ algorithm
           DAE.CALL(Absyn.IDENT("log"),{DAE.RCONST(10.0)},b,c,tp))));
 
     case (DAE.CALL(path = fname,expLst = (exp :: {}),tuple_ = b,builtin = c,ty=tp),tv,differentiateIfExp)
-      local Exp.Type tp;
+      local DAE.ExpType tp;
       equation
         isSqrt(fname) "sqrt(x) => 1(2  sqrt(x))  der(x)" ;
         true = Exp.expContains(exp, DAE.CREF(tv,DAE.ET_REAL()));
@@ -312,7 +312,7 @@ algorithm
           DAE.CALL(Absyn.IDENT("sqrt"),(exp :: {}),b,c,tp))),DAE.MUL(DAE.ET_REAL()),exp_1);
 
     case (DAE.CALL(path = fname,expLst = (exp :: {}),tuple_ = b,builtin = c,ty=tp),tv,differentiateIfExp)
-      local Exp.Type tp;
+      local DAE.ExpType tp;
       equation
         isTan(fname) "tan x => 1/((cos x)^2)" ;
         true = Exp.expContains(exp, DAE.CREF(tv,DAE.ET_REAL()));
@@ -325,7 +325,7 @@ algorithm
 
        // derivative of arbitrary function, not dependent of variable, i.e. constant
 		case (DAE.CALL(fname,expl,b,c,tp),tv,differentiateIfExp)
-		  local list<Boolean> bLst; Exp.Type tp;
+		  local list<Boolean> bLst; DAE.ExpType tp;
       equation
         bLst = Util.listMap1(expl,Exp.expContains, DAE.CREF(tv,DAE.ET_REAL()));
         false = Util.listReduce(bLst,boolOr);
@@ -354,7 +354,7 @@ algorithm
 
         /* der(x) */
     case (DAE.CALL(path = (a as Absyn.IDENT(name = "der")),expLst = {(exp as DAE.CREF(componentRef = cr))},tuple_ = b,builtin = c,ty=tp),tv,differentiateIfExp)
-      local Exp.Type tp;
+      local DAE.ExpType tp;
       equation
         true = Exp.crefEqual(cr, tv);
       then

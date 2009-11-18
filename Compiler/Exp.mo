@@ -1064,7 +1064,7 @@ end subscriptCref;
 public function intSubscripts 
 "function: intSubscripts
   This function describes the function between a list of integers
-  and a list of Exp.Subscript where each integer is converted to
+  and a list of DAE.Subscript where each integer is converted to
   an integer indexing expression."
   input list<Integer> inIntegerLst;
   output list<Subscript> outSubscriptLst;
@@ -3817,7 +3817,7 @@ end typeof;
 
 public function liftArrayRight 
 "This function has the same functionality 
- as Types.liftArrayType but for Exp.Type"
+ as Types.liftArrayType but for DAE.ExpType"
   input Type inType;
   input Option<Integer> inIntegerOption;
   output Type outType;

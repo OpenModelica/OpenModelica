@@ -49,12 +49,10 @@ package CevalScript
       InteractiveSymbolTable: Modified symbol table
       Subscript list : Evaluates subscripts and generates constant expressions."
 
-public import Exp;
 public import Env;
 public import Interactive;
 public import Values;
 public import Absyn;
-public import Types;
 public import Ceval;
 
 protected import AbsynDep;
@@ -63,6 +61,7 @@ protected import ClassLoader;
 protected import Parser;
 protected import Dump;
 protected import ClassInf;
+protected import Exp;
 protected import Settings;
 protected import SCode;
 protected import DAE;
@@ -77,6 +76,7 @@ protected import Prefix;
 protected import Connect;
 protected import Print;
 protected import System;
+protected import Types;
 protected import Error;
 protected import Static;
 protected import ValuesUtil;
@@ -87,7 +87,7 @@ public function cevalInteractiveFunctions
   defined in the interactive environment."
 	input Env.Cache inCache;
   input Env.Env inEnv;
-  input Exp.Exp inExp "expression to evaluate";
+  input DAE.Exp inExp "expression to evaluate";
   input Interactive.InteractiveSymbolTable inInteractiveSymbolTable;
   input Ceval.Msg inMsg;
   output Env.Cache outCache;
@@ -145,7 +145,7 @@ public function buildModel "function buildModel
  translates and builds the model by running compiler script on the generated makefile"
 	input Env.Cache inCache;
   input Env.Env inEnv;
-  input Exp.Exp inExp;
+  input DAE.Exp inExp;
   input Interactive.InteractiveSymbolTable inInteractiveSymbolTable;
   input Ceval.Msg inMsg;
   output Env.Cache outCache;
@@ -263,7 +263,7 @@ algorithm
       then
         (cache,Absyn.IFEXP(cond_1,then_1,else_1,nest_1));
     case (cache,env,Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "Eval",subscripts = {}),functionArgs = Absyn.FUNCTIONARGS(args = {e},argNames = {})),impl,st,msg)
-      local Exp.Exp e_1;
+      local DAE.Exp e_1;
       equation 
         (cache,e_1,_,_) = Static.elabExp(cache,env, e, impl, st,true);
         (cache,Values.CODE(Absyn.C_EXPRESSION(exp)),_) = Ceval.ceval(cache,env, e_1, impl, st, NONE, msg);
@@ -639,7 +639,7 @@ end checkModel;
 public function getValueString "
 Constant evaluates Expression and returns a string representing value. 
 "
-  input Exp.Exp e1;
+  input DAE.Exp e1;
   output String ostring;
 algorithm ostring := matchcontinue( e1)
   case(e1)

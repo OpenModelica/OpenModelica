@@ -53,15 +53,12 @@ package Ceval
       InteractiveSymbolTable: Modified symbol table
       Subscript list : Evaluates subscripts and generates constant expressions."
 
-public import Env;
-public import Exp;
-public import Interactive;
-public import Values;
 public import Absyn;
 public import AbsynDep;
-public import Types;
-public import ConnectionGraph;
-public import InstanceHierarchy;
+public import DAE;
+public import Env;
+public import Interactive;
+public import Values;
 
 public 
 uniontype Msg
@@ -71,23 +68,21 @@ end Msg;
 
 protected import CevalScript;
 protected import ClassInf;
-protected import Connect;
-protected import DAE;
 protected import Debug;
 protected import Derive;
 protected import Dump;
 protected import DynLoad;
 protected import Error;
+protected import Exp;
 protected import Inst;
 protected import Lookup;
 protected import ModUtil;
 protected import RTOpts;
-protected import Prefix;
 protected import Print;
 protected import SCode;
 protected import Static;
 protected import System;
-protected import UnitAbsyn;
+protected import Types;
 protected import Util;
 protected import ValuesUtil;
 
@@ -104,7 +99,7 @@ public function ceval
   The last argument is an optional dimension."
 	input Env.Cache inCache;
   input Env.Env inEnv;
-  input Exp.Exp inExp;
+  input DAE.Exp inExp;
   input Boolean inBoolean "impl";
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Option<Integer> inIntegerOption;
@@ -127,14 +122,14 @@ algorithm
       Absyn.Element elt_1,elt;
       Absyn.CodeNode c;
       list<Values.Value> es_1,elts,vallst,vlst1,vlst2,reslst,aval,rhvals,lhvals,arr,arr_1,ivals,rvals,vallst_1,vals;
-      list<Exp.Exp> es,expl;
-      list<list<tuple<Exp.Exp, Boolean>>> expll;
+      list<DAE.Exp> es,expl;
+      list<list<tuple<DAE.Exp, Boolean>>> expll;
       Values.Value v,newval,value,sval,elt1,elt2,v_1,lhs_1,rhs_1;
-      Exp.Exp lh,rh,e,lhs,rhs,start,stop,step,e1,e2,iterexp;
+      DAE.Exp lh,rh,e,lhs,rhs,start,stop,step,e1,e2,iterexp;
       Absyn.Path funcpath,func;
       Absyn.Program p,ptot;
       list<Interactive.CompiledCFunction> cflist;
-      Exp.Operator relop;
+      DAE.Operator relop;
       Env.Cache cache;
     case (cache,_,DAE.ICONST(integer = x),_,st,_,_) then (cache,Values.INTEGER(x),st); 
 
@@ -206,7 +201,7 @@ algorithm
     /* MetaModelica Partial Function. sjoelund */
     case (cache,env,DAE.CREF(componentRef = c, ty = DAE.ET_FUNCTION_REFERENCE_VAR()),impl,st,_,msg)
       local
-        Exp.ComponentRef c;
+        DAE.ComponentRef c;
       equation
         Debug.fprintln("failtrace", "Ceval.ceval not working for function references");
       then
@@ -214,7 +209,7 @@ algorithm
         
     case (cache,env,DAE.CREF(componentRef = c, ty = DAE.ET_FUNCTION_REFERENCE_FUNC()),impl,st,_,msg)
       local
-        Exp.ComponentRef c;
+        DAE.ComponentRef c;
       equation
         Debug.fprintln("failtrace", "Ceval.ceval not working for function references");
       then
@@ -250,7 +245,7 @@ algorithm
     
     case (cache,env,DAE.CREF(componentRef = c),(impl as false),SOME(st),_,msg)
       local
-        Exp.ComponentRef c;
+        DAE.ComponentRef c;
         Interactive.InteractiveSymbolTable st;
       equation 
         (cache,v) = cevalCref(cache,env, c, false, msg) "When in interactive mode, always evalutate crefs, i.e non-implicit
@@ -259,7 +254,7 @@ algorithm
         (cache,v,SOME(st));
 
     case (cache,env,DAE.CREF(componentRef = c),impl,st,_,msg)
-      local Exp.ComponentRef c;
+      local DAE.ComponentRef c;
       equation 
         (cache,v) = cevalCref(cache,env, c, impl, msg);
       then
@@ -268,7 +263,7 @@ algorithm
     //Evaluates for build in types. ADD, SUB, MUL, DIV for Reals and Integers.
     case (cache,env,exp,impl,st,dim,msg)
       local
-        Exp.Exp exp;
+        DAE.Exp exp;
         Option<Integer> dim;
       equation 
         (cache,v,st_1) = cevalBuiltin(cache,env, exp, impl, st, dim, msg);
@@ -637,7 +632,7 @@ algorithm
         /*  unary minus of array */  
     case (cache,env,DAE.UNARY(operator = DAE.UMINUS_ARR(ty = _),exp = exp),impl,st,dim,msg) 
       local
-        Exp.Exp exp;
+        DAE.Exp exp;
         Option<Integer> dim;
       equation 
         (cache,Values.ARRAY(arr),st_1) = ceval(cache,env, exp, impl, st, dim, msg);
@@ -647,7 +642,7 @@ algorithm
 
     case (cache,env,DAE.UNARY(operator = DAE.UMINUS(ty = _),exp = exp),impl,st,dim,msg)
       local
-        Exp.Exp exp;
+        DAE.Exp exp;
         Option<Integer> dim;
       equation 
         (cache,v,st_1) = ceval(cache,env, exp, impl, st, dim, msg);
@@ -657,7 +652,7 @@ algorithm
 
     case (cache,env,DAE.UNARY(operator = DAE.UPLUS(ty = _),exp = exp),impl,st,dim,msg)
       local
-        Exp.Exp exp;
+        DAE.Exp exp;
         Option<Integer> dim;
       equation 
         (cache,v,st_1) = ceval(cache,env, exp, impl, st, dim, msg);
@@ -817,7 +812,7 @@ algorithm
 
     case (cache,env,DAE.IFEXP(expCond = b,expThen = e1,expElse = e2),impl,st,dim,msg)
       local
-        Exp.Exp b;
+        DAE.Exp b;
         Option<Integer> dim;
       equation 
         (cache,Values.BOOL(true),st_1) = ceval(cache,env, b, impl, st, dim, msg) "Ifexp, true branch" ;
@@ -827,7 +822,7 @@ algorithm
 
     case (cache,env,DAE.IFEXP(expCond = b,expThen = e1,expElse = e2),impl,st,dim,msg)
       local
-        Exp.Exp b;
+        DAE.Exp b;
         Option<Integer> dim;
       equation 
         (cache,Values.BOOL(false),st_1) = ceval(cache,env, b, impl, st, dim, msg) "Ifexp, false branch" ;
@@ -855,7 +850,7 @@ algorithm
     case (cache,env,DAE.REDUCTION(path = p,expr = exp,ident = iter,range = iterexp),impl,st,dim, MSG()) /* (v,st) */ 
       local
         Absyn.Path p;
-        Exp.Exp exp;
+        DAE.Exp exp;
         Option<Integer> dim;
       equation 
         print("#-- Ceval.ceval reduction not impl yet.\n");
@@ -865,7 +860,7 @@ algorithm
     case (cache,env,DAE.REDUCTION(path = p,expr = exp,ident = iter,range = iterexp),impl,st,dim, NO_MSG()) /* (v,st) */ 
       local
         Absyn.Path p;
-        Exp.Exp exp;
+        DAE.Exp exp;
         Option<Integer> dim;
       then
         fail();
@@ -893,7 +888,7 @@ protected function cevalBuiltin
   NOTE:    It\'s ok if cevalBuiltin fails. Just means the call was not a builtin function"
 	input Env.Cache inCache;
   input Env.Env inEnv;
-  input Exp.Exp inExp;
+  input DAE.Exp inExp;
   input Boolean inBoolean "impl";
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Option<Integer> inIntegerOption;
@@ -908,7 +903,7 @@ algorithm
       partial function HandlerFunc
 				input Env.Cache inCache;
         input list<Env.Frame> inEnvFrameLst;
-        input list<Exp.Exp> inExpExpLst;
+        input list<DAE.Exp> inExpExpLst;
         input Boolean inBoolean;
         input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
         input Msg inMsg;
@@ -919,12 +914,12 @@ algorithm
       Values.Value v,newval;
       Option<Interactive.InteractiveSymbolTable> st;
       list<Env.Frame> env;
-      Exp.Exp exp,dim,e;
+      DAE.Exp exp,dim,e;
       Boolean impl,builtin;
       Msg msg;
       HandlerFunc handler;
       String id;
-      list<Exp.Exp> args,expl;
+      list<DAE.Exp> args,expl;
       list<Values.Value> vallst;
       Absyn.Path funcpath,path;
       Env.Cache cache;
@@ -967,7 +962,7 @@ protected function cevalBuiltinHandler
   partial function HandlerFunc
   	input Env.Cache inCache;
     input Env.Env inEnv;
-    input list<Exp.Exp> inExpExpLst;
+    input list<DAE.Exp> inExpExpLst;
     input Boolean inBoolean;
     input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
     input Msg inMsg;
@@ -1049,7 +1044,7 @@ protected function cevalCallFunction "function: cevalCallFunction
   then dynamicly load the function and call it."
 	input Env.Cache inCache;
   input Env.Env inEnv;
-  input Exp.Exp inExp;
+  input DAE.Exp inExp;
   input list<Values.Value> inValuesValueLst;
   input Msg inMsg;
   input Option<Interactive.InteractiveSymbolTable> inSymTab;
@@ -1062,9 +1057,9 @@ algorithm
     local
       Values.Value newval;
       list<Env.Frame> env;
-      Exp.Exp e;
+      DAE.Exp e;
       Absyn.Path funcpath;
-      list<Exp.Exp> expl;
+      list<DAE.Exp> expl;
       Boolean builtin;
       list<Values.Value> vallst;
       Msg msg;
@@ -1083,7 +1078,7 @@ algorithm
         
         // This case prevents the constructor call of external objects of being evaluated
     case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl, builtin = builtin)),vallst,msg,st)
-      local Types.Type tp;
+      local DAE.Type tp;
         Absyn.Path funcpath2;
         String s;
       equation
@@ -1094,9 +1089,9 @@ algorithm
         /* Record constructors */
     case(cache,env,(e as DAE.CALL(path = funcpath,ty = DAE.ET_COMPLEX(complexClassType = ClassInf.RECORD(complexName), varLst=varLst))),vallst,msg,st)
       local
-        list<Exp.Var> varLst; list<String> varNames; String complexName, lastIdent;
+        list<DAE.ExpVar> varLst; list<String> varNames; String complexName, lastIdent;
       equation
-        true = complexName ==& Absyn.pathLastIdent(funcpath); // TODO: ClassInf should contain a Path, or DAE.CALL a Types.Type...
+        true = complexName ==& Absyn.pathLastIdent(funcpath); // TODO: ClassInf should contain a Path, or DAE.CALL a DAE.Type...
         varNames = Util.listMap(varLst,Exp.varName);
       then (cache,Values.RECORD(funcpath,vallst,varNames,-1),st);
       
@@ -1240,7 +1235,7 @@ protected function cevalIsExternalObjectConstructor
   input Env.Env env;
 protected
   Absyn.Path funcpath2;
-  Types.Type tp;
+  DAE.Type tp;
 algorithm
   "constructor" := Absyn.pathLastIdent(funcpath);
   funcpath2:=Absyn.stripLast(funcpath);
@@ -1396,7 +1391,7 @@ algorithm
       SCode.Class c;
       list<Env.Frame> env_1,env;
       list<String> compnames;
-      Types.Mod mod;
+      DAE.Mod mod;
       list<DAE.Element> dae;
       Values.Value value;
       Absyn.Path funcname;
@@ -1435,7 +1430,7 @@ protected function cevalMatrixElt "function: cevalMatrixElt
   Evaluates the expression of a matrix constructor, e.g. {1,2;3,4}"
 	input Env.Cache inCache;
   input Env.Env inEnv;
-  input list<list<tuple<Exp.Exp, Boolean>>> inTplExpExpBooleanLstLst "matrix constr. elts";
+  input list<list<tuple<DAE.Exp, Boolean>>> inTplExpExpBooleanLstLst "matrix constr. elts";
   input Boolean inBoolean "impl";
   input Msg inMsg;
   output Env.Cache outCache;
@@ -1447,8 +1442,8 @@ algorithm
       Values.Value v;
       list<Values.Value> vl;
       list<Env.Frame> env;
-      list<tuple<Exp.Exp, Boolean>> expl;
-      list<list<tuple<Exp.Exp, Boolean>>> expll;
+      list<tuple<DAE.Exp, Boolean>> expl;
+      list<list<tuple<DAE.Exp, Boolean>>> expll;
       Boolean impl;
       Msg msg;
       Env.Cache cache;
@@ -1466,7 +1461,7 @@ protected function cevalMatrixEltRow "function: cevalMatrixEltRow
   Helper function to cevalMatrixElt"
 	input Env.Cache inCache;
   input Env.Env inEnv;
-  input list<tuple<Exp.Exp, Boolean>> inTplExpExpBooleanLst;
+  input list<tuple<DAE.Exp, Boolean>> inTplExpExpBooleanLst;
   input Boolean inBoolean;
   input Msg inMsg;
   output Env.Cache outCache;
@@ -1478,8 +1473,8 @@ algorithm
       Values.Value res;
       list<Values.Value> resl;
       list<Env.Frame> env;
-      Exp.Exp e;
-      list<tuple<Exp.Exp, Boolean>> rest;
+      DAE.Exp e;
+      list<tuple<DAE.Exp, Boolean>> rest;
       Boolean impl;
       Msg msg;
       Env.Cache cache;
@@ -1497,8 +1492,8 @@ protected function cevalBuiltinSize "function: cevalBuiltinSize
   Evaluates the size operator."
 	input Env.Cache inCache;
   input Env.Env inEnv1;
-  input Exp.Exp inExp2;
-  input Exp.Exp inExp3;
+  input DAE.Exp inExp2;
+  input DAE.Exp inExp3;
   input Boolean inBoolean4;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption5;
   input Msg inMsg6;
@@ -1509,24 +1504,24 @@ algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   matchcontinue (inCache,inEnv1,inExp2,inExp3,inBoolean4,inInteractiveInteractiveSymbolTableOption5,inMsg6)
     local
-      Types.Attributes attr;
-      tuple<Types.TType, Option<Absyn.Path>> tp;
-      Types.Binding bind,binding;
+      DAE.Attributes attr;
+      tuple<DAE.TType, Option<Absyn.Path>> tp;
+      DAE.Binding bind,binding;
       list<Integer> sizelst;
       Integer dim,dim_1,v,dimv,len;
       Option<Interactive.InteractiveSymbolTable> st_1,st;
       list<Env.Frame> env;
-      Exp.ComponentRef cr;
+      DAE.ComponentRef cr;
       Boolean impl,bl;
       Msg msg;
       list<Inst.DimExp> dims;
       Values.Value v2;
-      Exp.Type crtp;
-      Exp.Exp exp,e;
+      DAE.ExpType crtp;
+      DAE.Exp exp,e;
       String cr_str,dim_str,size_str,expstr;
-      list<Exp.Exp> es;
+      list<DAE.Exp> es;
       Env.Cache cache;
-      list<list<tuple<Exp.Exp, Boolean>>> mat;
+      list<list<tuple<DAE.Exp, Boolean>>> mat;
     case (cache,_,DAE.MATRIX(scalar=mat),DAE.ICONST(1),_,st,_)
       equation
         v=listLength(mat);
@@ -1558,8 +1553,8 @@ algorithm
         (cache,Values.INTEGER(v),st_1);
     case (cache,env,DAE.CREF(componentRef = cr,ty = tp),dim,(impl as false),st,msg)
       local
-        Exp.Type tp;
-        Exp.Exp dim;
+        DAE.ExpType tp;
+        DAE.Exp dim;
       equation 
         (cache,dims) = Inst.elabComponentArraydimFromEnv(cache,env, cr) "If component not instantiated yet, recursive definition.
 	 For example,
@@ -1574,14 +1569,14 @@ algorithm
       then
         (cache,v2,st_1);
     case (cache,env,DAE.CREF(componentRef = cr,ty = tp),dim,(impl as true),st,msg)
-      local Exp.Exp dim;
+      local DAE.Exp dim;
       equation 
         (cache,attr,tp,bind,_,_) = Lookup.lookupVar(cache,env, cr) "If dimensions not known and impl=true, just silently fail" ;
         false = Types.dimensionsKnown(tp);
       then
         fail();
     case (cache,env,DAE.CREF(componentRef = cr,ty = tp),dim,(impl as false),st,MSG())
-      local Exp.Exp dim;
+      local DAE.Exp dim;
       equation 
         (cache,attr,tp,bind,_,_) = Lookup.lookupVar(cache,env, cr) "If dimensions not known and impl=false, error message" ;
 
@@ -1593,14 +1588,14 @@ algorithm
       then
         fail();
     case (cache,env,DAE.CREF(componentRef = cr,ty = tp),dim,(impl as false),st,NO_MSG())
-      local Exp.Exp dim;
+      local DAE.Exp dim;
       equation 
         (cache,attr,tp,bind,_,_) = Lookup.lookupVar(cache,env, cr);
         false = Types.dimensionsKnown(tp);
       then
         fail();
     case (cache,env,(exp as DAE.CREF(componentRef = cr,ty = crtp)),dim,(impl as false),st,MSG())
-      local Exp.Exp dim;
+      local DAE.Exp dim;
       equation 
         (cache,attr,tp,DAE.UNBOUND(),_,_) = Lookup.lookupVar(cache,env, cr) "For crefs without value binding" ;
         expstr = Exp.printExpStr(exp);
@@ -1608,13 +1603,13 @@ algorithm
       then
         fail();
     case (cache,env,(exp as DAE.CREF(componentRef = cr,ty = crtp)),dim,(impl as false),st,NO_MSG())
-      local Exp.Exp dim;
+      local DAE.Exp dim;
       equation 
         (cache,attr,tp,DAE.UNBOUND(),_,_) = Lookup.lookupVar(cache,env, cr);
       then
         fail();
     case (cache,env,(exp as DAE.CREF(componentRef = cr,ty = crtp)),dim,(impl as true),st,msg)
-      local Exp.Exp dim;
+      local DAE.Exp dim;
       equation 
         (cache,attr,tp,DAE.UNBOUND(),_,_) = Lookup.lookupVar(cache,env, cr) "For crefs without value binding. If impl=true just silently fail" ;
       then
@@ -1625,7 +1620,7 @@ algorithm
     case (cache,env,(exp as DAE.CREF(componentRef = cr,ty = crtp)),dim,impl,st,msg)
       local
         Values.Value v;
-        Exp.Exp dim;
+        DAE.Exp dim;
       equation 
         (cache,attr,tp,binding,_,_) = Lookup.lookupVar(cache,env, cr)  ;     
         (cache,Values.INTEGER(dimv),st_1) = ceval(cache,env, dim, impl, st, NONE, msg);
@@ -1635,8 +1630,8 @@ algorithm
         (cache,v2,st_1);
     case (cache,env,DAE.ARRAY(array = (e :: es)),dim,impl,st,msg)
       local
-        Exp.Type tp;
-        Exp.Exp dim;
+        DAE.ExpType tp;
+        DAE.Exp dim;
       equation 
         tp = Exp.typeof(e) "Special case for array expressions with nonconstant 
                             values For now: only arrays of scalar elements: 
@@ -1650,8 +1645,8 @@ algorithm
     // adrpo 2009-06-08: it doen't need to be a builtin type as long as the dimension is an integer!
     case (cache,env,DAE.ARRAY(array = (e :: es)),dim,impl,st,msg)
       local
-        Exp.Type tp;
-        Exp.Exp dim;
+        DAE.ExpType tp;
+        DAE.Exp dim;
       equation
         tp = Exp.typeof(e) "Special case for array expressions with nonconstant values 
                             For now: only arrays of scalar elements: 
@@ -1668,7 +1663,7 @@ algorithm
     case (cache,env,exp,dim,impl,st,msg)
       local
         Values.Value v;
-        Exp.Exp dim;
+        DAE.Exp dim;
         list<Option<Integer>> adims;
         Integer i;
       equation 
@@ -1682,7 +1677,7 @@ algorithm
     case (cache,env,exp,dim,impl,st,msg)
       local
         Values.Value v;
-        Exp.Exp dim;
+        DAE.Exp dim;
       equation 
         (cache,v,st_1) = ceval(cache,env, exp, impl, st, NONE, msg) "try to ceval expression, for constant expressions" ;
         (cache,Values.INTEGER(dimv),st_1) = ceval(cache,env, dim, impl, st, NONE, msg);
@@ -1690,7 +1685,7 @@ algorithm
       then
         (cache,v2,st_1);
     case (cache,env,exp,dim,impl,st,MSG())
-      local Exp.Exp dim;
+      local DAE.Exp dim;
       equation 
         Print.printErrorBuf("#-- Ceval.cevalBuiltinSize failed: ");
         expstr = Exp.printExpStr(exp);
@@ -1746,8 +1741,8 @@ algorithm
     local
       Integer n_1,v,n;
       list<Inst.DimExp> dims;
-      Exp.Subscript sub;
-      Option<Exp.Exp> eopt;
+      DAE.Subscript sub;
+      Option<DAE.Exp> eopt;
     case (dims,n)
       equation 
         n_1 = n - 1;
@@ -1769,7 +1764,7 @@ protected function cevalBuiltinAbs "function: cevalBuiltinAbs
   Evaluates the abs operator."
 	input Env.Cache inCache;
   input Env.Env inEnv;
-  input list<Exp.Exp> inExpExpLst;
+  input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
@@ -1782,7 +1777,7 @@ algorithm
     local
       Real rv,rv_1;
       list<Env.Frame> env;
-      Exp.Exp exp;
+      DAE.Exp exp;
       Boolean impl;
       Option<Interactive.InteractiveSymbolTable> st;
       Msg msg;
@@ -1808,7 +1803,7 @@ protected function cevalBuiltinSign "function: cevalBuiltinSign
   Evaluates the sign operator."
 	input Env.Cache inCache;
   input Env.Env inEnv;
-  input list<Exp.Exp> inExpExpLst;
+  input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
@@ -1822,7 +1817,7 @@ algorithm
       Real rv,rv_1;
       Boolean b1,b2,b3,impl;
       list<Env.Frame> env;
-      Exp.Exp exp;
+      DAE.Exp exp;
       Option<Interactive.InteractiveSymbolTable> st;
       Msg msg;
       Integer iv,iv_1;
@@ -1853,7 +1848,7 @@ protected function cevalBuiltinExp "function: cevalBuiltinExp
   Evaluates the exp function"
 	input Env.Cache inCache;
   input Env.Env inEnv;
-  input list<Exp.Exp> inExpExpLst;
+  input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
@@ -1866,7 +1861,7 @@ algorithm
     local
       Real rv,rv_1;
       list<Env.Frame> env;
-      Exp.Exp exp;
+      DAE.Exp exp;
       Boolean impl;
       Option<Interactive.InteractiveSymbolTable> st;
       Msg msg;
@@ -1887,7 +1882,7 @@ protected function cevalBuiltinNoevent "function: cevalBuiltinNoevent
   operand."
 	input Env.Cache inCache;
   input Env.Env inEnv;
-  input list<Exp.Exp> inExpExpLst;
+  input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
@@ -1900,7 +1895,7 @@ algorithm
     local
       Values.Value v;
       list<Env.Frame> env;
-      Exp.Exp exp;
+      DAE.Exp exp;
       Boolean impl;
       Option<Interactive.InteractiveSymbolTable> st;
       Msg msg;
@@ -1920,7 +1915,7 @@ protected function cevalBuiltinCardinality "function: cevalBuiltinCardinality
   number of occurences in connect equations."
 	input Env.Cache inCache;
   input Env.Env inEnv;
-  input list<Exp.Exp> inExpExpLst;
+  input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
@@ -1933,7 +1928,7 @@ algorithm
     local
       Integer cnt;
       list<Env.Frame> env;
-      Exp.ComponentRef cr;
+      DAE.ComponentRef cr;
       Boolean impl;
       Option<Interactive.InteractiveSymbolTable> st;
       Msg msg;
@@ -1952,7 +1947,7 @@ protected function cevalCardinality "function: cevalCardinality
   component ref in equations in current scope."
 	input Env.Cache inCache;
   input Env.Env inEnv;
-  input Exp.ComponentRef inComponentRef;
+  input DAE.ComponentRef inComponentRef;
   output Env.Cache outCache;
   output Integer outInteger;
 algorithm 
@@ -1960,12 +1955,12 @@ algorithm
   matchcontinue (inCache,inEnv,inComponentRef)
     local
       Env.Env env;
-      list<Exp.ComponentRef> cr_lst,cr_lst2,cr_totlst,crs;
+      list<DAE.ComponentRef> cr_lst,cr_lst2,cr_totlst,crs;
       Integer res;
-      Exp.ComponentRef cr;
+      DAE.ComponentRef cr;
       Env.Cache cache;
       Absyn.Path path;
-      Exp.ComponentRef prefix,currentPrefix;
+      DAE.ComponentRef prefix,currentPrefix;
       Absyn.Ident currentPrefixIdent;
     case (cache,env ,cr)
       equation 
@@ -2001,7 +1996,7 @@ protected function cevalBuiltinCat "function: cevalBuiltinCat
   Evaluates the cat operator, for matrix concatenation."
 	input Env.Cache inCache;
   input Env.Env inEnv;
-  input list<Exp.Exp> inExpExpLst;
+  input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
@@ -2016,8 +2011,8 @@ algorithm
       list<Values.Value> mat_lst;
       Values.Value v;
       list<Env.Frame> env;
-      Exp.Exp dim;
-      list<Exp.Exp> matrices;
+      DAE.Exp dim;
+      list<DAE.Exp> matrices;
       Boolean impl;
       Option<Interactive.InteractiveSymbolTable> st;
       Msg msg;
@@ -2037,7 +2032,7 @@ protected function cevalBuiltinIdentity "function: cevalBuiltinIdentity
   Evaluates the identity operator."
 	input Env.Cache inCache;
   input Env.Env inEnv;
-  input list<Exp.Exp> inExpExpLst;
+  input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
@@ -2049,10 +2044,10 @@ algorithm
   matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
       Integer dim_int,dim_int_1;
-      list<Exp.Exp> expl;
+      list<DAE.Exp> expl;
       list<Values.Value> retExp;
       list<Env.Frame> env;
-      Exp.Exp dim;
+      DAE.Exp dim;
       Boolean impl;
       Option<Interactive.InteractiveSymbolTable> st;
       Msg msg;
@@ -2074,7 +2069,7 @@ protected function cevalBuiltinPromote "function: cevalBuiltinPromote
   Evaluates the internal promote operator, for promotion of arrays"
 	input Env.Cache inCache;
   input Env.Env inEnv;
-  input list<Exp.Exp> inExpExpLst;
+  input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
@@ -2088,7 +2083,7 @@ algorithm
       Values.Value arr_val,res;
       Integer dim_val;
       list<Env.Frame> env;
-      Exp.Exp arr,dim;
+      DAE.Exp arr,dim;
       Boolean impl;
       Option<Interactive.InteractiveSymbolTable> st;
       Msg msg;
@@ -2131,7 +2126,7 @@ protected function cevalBuiltinString "
   Evaluates the String operator String(r), String(i), String(b), String(e)"
 	input Env.Cache inCache;
   input Env.Env inEnv;
-  input list<Exp.Exp> inExpExpLst;
+  input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
@@ -2145,7 +2140,7 @@ algorithm
       Values.Value arr_val,res;
       Integer dim_val;
       list<Env.Frame> env;
-      Exp.Exp exp;
+      DAE.Exp exp;
       Boolean impl;
       Option<Interactive.InteractiveSymbolTable> st;
       Msg msg;
@@ -2181,7 +2176,7 @@ protected function cevalBuiltinLinspace "
   Evaluates the linpace function"
 	input Env.Cache inCache;
   input Env.Env inEnv;
-  input list<Exp.Exp> inExpExpLst;
+  input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
@@ -2192,7 +2187,7 @@ algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,st,inMsg)
       local
-        Exp.Exp x,y,n; Integer size;
+        DAE.Exp x,y,n; Integer size;
         Real rx,ry; list<Values.Value> valLst; Env.Cache cache; Boolean impl; Env.Env env; Msg msg;      
     case (cache,env,{x,y,n},impl,st,msg) equation
       (cache,Values.INTEGER(size),_) = ceval(cache,env, n, impl, st, NONE, msg);
@@ -2207,10 +2202,10 @@ end cevalBuiltinLinspace;
 
 protected function verifyLinspaceN "checks that n>=2 for linspace(x,y,n) "
   input Integer n;
-  input list<Exp.Exp> expl;
+  input list<DAE.Exp> expl;
 algorithm
   _ := matchcontinue(n,expl)
-  local String s; Exp.Exp x,y,nx;
+  local String s; DAE.Exp x,y,nx;
     case(n,_) equation
       true = n >= 2;
     then ();
@@ -2245,7 +2240,7 @@ protected function cevalBuiltinPrint "
   Prints a String"
 	input Env.Cache inCache;
   input Env.Env inEnv;
-  input list<Exp.Exp> inExpExpLst;
+  input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
@@ -2257,7 +2252,7 @@ algorithm
   matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
       list<Env.Frame> env;
-      Exp.Exp exp;
+      DAE.Exp exp;
       Boolean impl;
       Option<Interactive.InteractiveSymbolTable> st;
       Msg msg;
@@ -2275,7 +2270,7 @@ end cevalBuiltinPrint;
 protected function cevalIntReal
 	input Env.Cache inCache;
   input Env.Env inEnv;
-  input list<Exp.Exp> inExpExpLst;
+  input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
@@ -2287,7 +2282,7 @@ algorithm
   matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
       list<Env.Frame> env;
-      Exp.Exp exp;
+      DAE.Exp exp;
       Boolean impl;
       Option<Interactive.InteractiveSymbolTable> st;
       Msg msg;
@@ -2307,7 +2302,7 @@ end cevalIntReal;
 protected function cevalIntString
 	input Env.Cache inCache;
   input Env.Env inEnv;
-  input list<Exp.Exp> inExpExpLst;
+  input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
@@ -2319,7 +2314,7 @@ algorithm
   matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
       list<Env.Frame> env;
-      Exp.Exp exp;
+      DAE.Exp exp;
       Boolean impl;
       Option<Interactive.InteractiveSymbolTable> st;
       Msg msg;
@@ -2339,7 +2334,7 @@ end cevalIntString;
 protected function cevalRealInt
 	input Env.Cache inCache;
   input Env.Env inEnv;
-  input list<Exp.Exp> inExpExpLst;
+  input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
@@ -2351,7 +2346,7 @@ algorithm
   matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
       list<Env.Frame> env;
-      Exp.Exp exp;
+      DAE.Exp exp;
       Boolean impl;
       Option<Interactive.InteractiveSymbolTable> st;
       Msg msg;
@@ -2371,7 +2366,7 @@ end cevalRealInt;
 protected function cevalRealString
 	input Env.Cache inCache;
   input Env.Env inEnv;
-  input list<Exp.Exp> inExpExpLst;
+  input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
@@ -2383,7 +2378,7 @@ algorithm
   matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
       list<Env.Frame> env;
-      Exp.Exp exp;
+      DAE.Exp exp;
       Boolean impl;
       Option<Interactive.InteractiveSymbolTable> st;
       Msg msg;
@@ -2403,7 +2398,7 @@ end cevalRealString;
 protected function cevalStringCharInt
 	input Env.Cache inCache;
   input Env.Env inEnv;
-  input list<Exp.Exp> inExpExpLst;
+  input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
@@ -2415,7 +2410,7 @@ algorithm
   matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
       list<Env.Frame> env;
-      Exp.Exp exp;
+      DAE.Exp exp;
       Boolean impl;
       Option<Interactive.InteractiveSymbolTable> st;
       Msg msg;
@@ -2435,7 +2430,7 @@ end cevalStringCharInt;
 protected function cevalIntStringChar
 	input Env.Cache inCache;
   input Env.Env inEnv;
-  input list<Exp.Exp> inExpExpLst;
+  input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
@@ -2447,7 +2442,7 @@ algorithm
   matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
       list<Env.Frame> env;
-      Exp.Exp exp;
+      DAE.Exp exp;
       Boolean impl;
       Option<Interactive.InteractiveSymbolTable> st;
       Msg msg;
@@ -2467,7 +2462,7 @@ end cevalIntStringChar;
 protected function cevalStringInt
 	input Env.Cache inCache;
   input Env.Env inEnv;
-  input list<Exp.Exp> inExpExpLst;
+  input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
@@ -2479,7 +2474,7 @@ algorithm
   matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
       list<Env.Frame> env;
-      Exp.Exp exp;
+      DAE.Exp exp;
       Boolean impl;
       Option<Interactive.InteractiveSymbolTable> st;
       Msg msg;
@@ -2499,7 +2494,7 @@ end cevalStringInt;
 protected function cevalStringListStringChar
 	input Env.Cache inCache;
   input Env.Env inEnv;
-  input list<Exp.Exp> inExpExpLst;
+  input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
@@ -2511,7 +2506,7 @@ algorithm
   matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
       list<Env.Frame> env;
-      Exp.Exp exp;
+      DAE.Exp exp;
       Boolean impl;
       Option<Interactive.InteractiveSymbolTable> st;
       Msg msg;
@@ -2541,7 +2536,7 @@ end generateValueString;
 protected function cevalListStringCharString
 	input Env.Cache inCache;
   input Env.Env inEnv;
-  input list<Exp.Exp> inExpExpLst;
+  input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
@@ -2553,7 +2548,7 @@ algorithm
   matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
       list<Env.Frame> env;
-      Exp.Exp exp;
+      DAE.Exp exp;
       Boolean impl;
       Option<Interactive.InteractiveSymbolTable> st;
       Msg msg;
@@ -2590,7 +2585,7 @@ end extractValueStringChar;
 protected function cevalNoBoxUnbox
 	input Env.Cache inCache;
   input Env.Env inEnv;
-  input list<Exp.Exp> inExpExpLst;
+  input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
@@ -2602,7 +2597,7 @@ algorithm
   matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
       list<Env.Frame> env;
-      Exp.Exp exp;
+      DAE.Exp exp;
       Boolean impl;
       Option<Interactive.InteractiveSymbolTable> st;
       Msg msg;
@@ -2700,7 +2695,7 @@ protected function cevalBuiltinFloor "function: cevalBuiltinFloor
   evaluates the floor operator."
 	input Env.Cache inCache;
   input Env.Env inEnv;
-  input list<Exp.Exp> inExpExpLst;
+  input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
@@ -2714,7 +2709,7 @@ algorithm
       Real rv,rv_1;
       Integer iv;
       list<Env.Frame> env;
-      Exp.Exp exp;
+      DAE.Exp exp;
       Boolean impl;
       Option<Interactive.InteractiveSymbolTable> st;
       Msg msg;
@@ -2734,7 +2729,7 @@ protected function cevalBuiltinCeil "function cevalBuiltinCeil
   evaluates the ceil operator."
 	input Env.Cache inCache;
   input Env.Env inEnv;
-  input list<Exp.Exp> inExpExpLst;
+  input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
@@ -2748,7 +2743,7 @@ algorithm
       Real rv,rv_1,rvt,rv_2,realRet;
       Integer ri,ri_1;
       list<Env.Frame> env;
-      Exp.Exp exp;
+      DAE.Exp exp;
       Boolean impl;
       Option<Interactive.InteractiveSymbolTable> st;
       Msg msg;
@@ -2779,7 +2774,7 @@ protected function cevalBuiltinSqrt "function: cevalBuiltinSqrt
   Evaluates the builtin sqrt operator."
 	input Env.Cache inCache;
   input Env.Env inEnv;
-  input list<Exp.Exp> inExpExpLst;
+  input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
@@ -2792,7 +2787,7 @@ algorithm
     local
       Real rv,rv_1;
       list<Env.Frame> env;
-      Exp.Exp exp;
+      DAE.Exp exp;
       Boolean impl;
       Option<Interactive.InteractiveSymbolTable> st;
       Msg msg;
@@ -2818,7 +2813,7 @@ protected function cevalBuiltinSin "function cevalBuiltinSin
   Evaluates the builtin sin function."
 	input Env.Cache inCache;
   input Env.Env inEnv;
-  input list<Exp.Exp> inExpExpLst;
+  input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
@@ -2831,7 +2826,7 @@ algorithm
     local
       Real rv,rv_1;
       list<Env.Frame> env;
-      Exp.Exp exp;
+      DAE.Exp exp;
       Boolean impl;
       Option<Interactive.InteractiveSymbolTable> st;
       Msg msg;
@@ -2850,7 +2845,7 @@ protected function cevalBuiltinSinh "function cevalBuiltinSinh
   Evaluates the builtin sinh function."
 	input Env.Cache inCache;
   input Env.Env inEnv;
-  input list<Exp.Exp> inExpExpLst;
+  input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
@@ -2863,7 +2858,7 @@ algorithm
     local
       Real rv,rv_1;
       list<Env.Frame> env;
-      Exp.Exp exp;
+      DAE.Exp exp;
       Boolean impl;
       Option<Interactive.InteractiveSymbolTable> st;
       Msg msg;
@@ -2882,7 +2877,7 @@ protected function cevalBuiltinCos "function cevalBuiltinCos
   Evaluates the builtin cos function."
 	input Env.Cache inCache;
   input Env.Env inEnv;
-  input list<Exp.Exp> inExpExpLst;
+  input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
@@ -2895,7 +2890,7 @@ algorithm
     local
       Real rv,rv_1;
       list<Env.Frame> env;
-      Exp.Exp exp;
+      DAE.Exp exp;
       Boolean impl;
       Option<Interactive.InteractiveSymbolTable> st;
       Msg msg;
@@ -2914,7 +2909,7 @@ protected function cevalBuiltinCosh "function cevalBuiltinCosh
   Evaluates the builtin cosh function."
 	input Env.Cache inCache;
   input Env.Env inEnv;
-  input list<Exp.Exp> inExpExpLst;
+  input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
@@ -2927,7 +2922,7 @@ algorithm
     local
       Real rv,rv_1;
       list<Env.Frame> env;
-      Exp.Exp exp;
+      DAE.Exp exp;
       Boolean impl;
       Option<Interactive.InteractiveSymbolTable> st;
       Msg msg;
@@ -2946,7 +2941,7 @@ protected function cevalBuiltinLog "function cevalBuiltinLog
   Evaluates the builtin Log function."
 	input Env.Cache inCache;
   input Env.Env inEnv;
-  input list<Exp.Exp> inExpExpLst;
+  input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
@@ -2959,7 +2954,7 @@ algorithm
     local
       Real rv,rv_1;
       list<Env.Frame> env;
-      Exp.Exp exp;
+      DAE.Exp exp;
       Boolean impl;
       Option<Interactive.InteractiveSymbolTable> st;
       Msg msg;
@@ -2978,7 +2973,7 @@ protected function cevalBuiltinTan "function cevalBuiltinTan
   Evaluates the builtin tan function."
 	input Env.Cache inCache;
   input Env.Env inEnv;
-  input list<Exp.Exp> inExpExpLst;
+  input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
@@ -2991,7 +2986,7 @@ algorithm
     local
       Real rv,sv,cv,rv_1;
       list<Env.Frame> env;
-      Exp.Exp exp;
+      DAE.Exp exp;
       Boolean impl;
       Option<Interactive.InteractiveSymbolTable> st;
       Msg msg;
@@ -3012,7 +3007,7 @@ protected function cevalBuiltinTanh "function cevalBuiltinTanh
   Evaluates the builtin tanh function."
 	input Env.Cache inCache;
   input Env.Env inEnv;
-  input list<Exp.Exp> inExpExpLst;
+  input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
@@ -3025,7 +3020,7 @@ algorithm
     local
       Real rv,sv,cv,rv_1;
       list<Env.Frame> env;
-      Exp.Exp exp;
+      DAE.Exp exp;
       Boolean impl;
       Option<Interactive.InteractiveSymbolTable> st;
       Msg msg;
@@ -3044,7 +3039,7 @@ protected function cevalBuiltinAsin "function cevalBuiltinAsin
   Evaluates the builtin asin function."
 	input Env.Cache inCache;
   input Env.Env inEnv;
-  input list<Exp.Exp> inExpExpLst;
+  input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
@@ -3057,7 +3052,7 @@ algorithm
     local
       Real rv,rv_1;
       list<Env.Frame> env;
-      Exp.Exp exp;
+      DAE.Exp exp;
       Boolean impl;
       Option<Interactive.InteractiveSymbolTable> st;
       Msg msg;
@@ -3076,7 +3071,7 @@ protected function cevalBuiltinAcos "function cevalBuiltinAcos
   Evaluates the builtin acos function."
 	input Env.Cache inCache;
   input Env.Env inEnv;
-  input list<Exp.Exp> inExpExpLst;
+  input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
@@ -3089,7 +3084,7 @@ algorithm
     local
       Real rv,rv_1;
       list<Env.Frame> env;
-      Exp.Exp exp;
+      DAE.Exp exp;
       Boolean impl;
       Option<Interactive.InteractiveSymbolTable> st;
       Msg msg;
@@ -3108,7 +3103,7 @@ protected function cevalBuiltinAtan "function cevalBuiltinAtan
   Evaluates the builtin atan function."
 	input Env.Cache inCache;
   input Env.Env inEnv;
-  input list<Exp.Exp> inExpExpLst;
+  input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
@@ -3121,7 +3116,7 @@ algorithm
     local
       Real rv,rv_1;
       list<Env.Frame> env;
-      Exp.Exp exp;
+      DAE.Exp exp;
       Boolean impl;
       Option<Interactive.InteractiveSymbolTable> st;
       Msg msg;
@@ -3140,7 +3135,7 @@ protected function cevalBuiltinDiv "function cevalBuiltinDiv
   Evaluates the builtin div operator."
 	input Env.Cache inCache;
   input Env.Env inEnv;
-  input list<Exp.Exp> inExpExpLst;
+  input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
@@ -3154,7 +3149,7 @@ algorithm
       Real rv1,rv2,rv_1,rv_2;
       Integer ri,ri_1,ri1,ri2;
       list<Env.Frame> env;
-      Exp.Exp exp1,exp2;
+      DAE.Exp exp1,exp2;
       Boolean impl;
       Option<Interactive.InteractiveSymbolTable> st;
       Msg msg;
@@ -3234,7 +3229,7 @@ protected function cevalBuiltinMod "function cevalBuiltinMod
   Evaluates the builtin mod operator."
 	input Env.Cache inCache;
   input Env.Env inEnv;
-  input list<Exp.Exp> inExpExpLst;
+  input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
@@ -3247,7 +3242,7 @@ algorithm
     local
       Real rv1,rv2,rva,rvb,rvc,rvd;
       list<Env.Frame> env;
-      Exp.Exp exp1,exp2;
+      DAE.Exp exp1,exp2;
       Boolean impl;
       Option<Interactive.InteractiveSymbolTable> st;
       Msg msg;
@@ -3337,7 +3332,7 @@ protected function cevalBuiltinMax "function cevalBuiltinMax
   Evaluates the builtin max function."
 	input Env.Cache inCache;
   input Env.Env inEnv;
-  input list<Exp.Exp> inExpExpLst;
+  input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
@@ -3350,7 +3345,7 @@ algorithm
     local
       Values.Value v,v_1;
       list<Env.Frame> env;
-      Exp.Exp arr,s1,s2;
+      DAE.Exp arr,s1,s2;
       Boolean impl;
       Option<Interactive.InteractiveSymbolTable> st;
       Msg msg;
@@ -3429,7 +3424,7 @@ protected function cevalBuiltinMin "function: cevalBuiltinMin
   Constant evaluation of builtin min function."
 	input Env.Cache inCache;
   input Env.Env inEnv;
-  input list<Exp.Exp> inExpExpLst;
+  input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
@@ -3442,7 +3437,7 @@ algorithm
     local
       Values.Value v,v_1;
       list<Env.Frame> env;
-      Exp.Exp arr,s1,s2;
+      DAE.Exp arr,s1,s2;
       Boolean impl;
       Option<Interactive.InteractiveSymbolTable> st;
       Msg msg;
@@ -3516,7 +3511,7 @@ protected function cevalBuiltinDifferentiate "function cevalBuiltinDifferentiate
   This function differentiates an equation: x^2 + x => 2x + 1"
 	input Env.Cache inCache;
   input Env.Env inEnv;
-  input list<Exp.Exp> inExpExpLst;
+  input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
@@ -3527,10 +3522,10 @@ algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
-      Exp.Exp differentiated_exp,differentiated_exp_1,exp1;
+      DAE.Exp differentiated_exp,differentiated_exp_1,exp1;
       String ret_val;
       list<Env.Frame> env;
-      Exp.ComponentRef cr;
+      DAE.ComponentRef cr;
       Boolean impl;
       Option<Interactive.InteractiveSymbolTable> st;
       Msg msg;
@@ -3559,7 +3554,7 @@ protected function cevalBuiltinSimplify "function cevalBuiltinSimplify
   this function simplifies an equation: x^2 + x => 2x + 1"
 	input Env.Cache inCache;
   input Env.Env inEnv;
-  input list<Exp.Exp> inExpExpLst;
+  input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
@@ -3570,7 +3565,7 @@ algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
-      Exp.Exp exp1_1,exp1;
+      DAE.Exp exp1_1,exp1;
       String ret_val;
       list<Env.Frame> env;
       Boolean impl;
@@ -3596,7 +3591,7 @@ protected function cevalBuiltinRem "function cevalBuiltinRem
   Evaluates the builtin rem operator"
 	input Env.Cache inCache;
 	input Env.Env inEnv;
-  input list<Exp.Exp> inExpExpLst;
+  input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
@@ -3610,7 +3605,7 @@ algorithm
       Real rv1,rv2,rva,rva_1,rvb,rvd,dr;
       Integer rvai,ri,ri1,ri2,ri_1,di;
       list<Env.Frame> env;
-      Exp.Exp exp1,exp2;
+      DAE.Exp exp1,exp2;
       Boolean impl;
       Option<Interactive.InteractiveSymbolTable> st;
       Msg msg;
@@ -3689,7 +3684,7 @@ protected function cevalBuiltinInteger "function cevalBuiltinInteger
   Evaluates the builtin integer operator"
 	input Env.Cache inCache;
   input Env.Env inEnv;
-  input list<Exp.Exp> inExpExpLst;
+  input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
@@ -3703,7 +3698,7 @@ algorithm
       Real rv;
       Integer ri;
       list<Env.Frame> env;
-      Exp.Exp exp;
+      DAE.Exp exp;
       Boolean impl;
       Option<Interactive.InteractiveSymbolTable> st;
       Msg msg;
@@ -3723,7 +3718,7 @@ protected function cevalBuiltinIntegerEnumeration "function cevalBuiltinIntegerE
   Evaluates the builtin Integer operator"
 	input Env.Cache inCache;
   input Env.Env inEnv;
-  input list<Exp.Exp> inExpExpLst;
+  input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
@@ -3737,7 +3732,7 @@ algorithm
       Real rv;
       Integer ri;
       list<Env.Frame> env;
-      Exp.Exp exp;
+      DAE.Exp exp;
       Boolean impl;
       Option<Interactive.InteractiveSymbolTable> st;
       Msg msg;
@@ -3756,7 +3751,7 @@ protected function cevalBuiltinDiagonal "function cevalBuiltinDiagonal
   ie A{1,1} == a, A{2,2} == b ..."
 	input Env.Cache inCache;
   input Env.Env inEnv;
-  input list<Exp.Exp> inExpExpLst;
+  input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
@@ -3771,7 +3766,7 @@ algorithm
       Integer dimension,correctDimension;
       String dimensionString;
       list<Env.Frame> env;
-      Exp.Exp exp;
+      DAE.Exp exp;
       Boolean impl;
       Option<Interactive.InteractiveSymbolTable> st;
       Msg msg;
@@ -3802,7 +3797,7 @@ protected function cevalBuiltinDiagonal2 "function: cevalBuiltinDiagonal2
    See cevalBuiltinDiagonal."
 	input Env.Cache inCache;
   input Env.Env inEnv1;
-  input Exp.Exp inExp2;
+  input DAE.Exp inExp2;
   input Boolean inBoolean3;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption4;
   input Integer inInteger5 "matrix dimension";
@@ -3819,7 +3814,7 @@ algorithm
       Integer correctDim,correctPlace,newRow,matrixDimension,row;
       list<Values.Value> zeroList,listWithElement,retExp,appendedList,listIN,list_;
       list<Env.Frame> env;
-      Exp.Exp s1,s2;
+      DAE.Exp s1,s2;
       Boolean impl;
       Option<Interactive.InteractiveSymbolTable> st;
       Msg msg;
@@ -3905,7 +3900,7 @@ protected function cevalBuiltinTranspose "function cevalBuiltinTranspose
   This function transposes the two first dimension of an array A."
 	input Env.Cache inCache;
   input Env.Env inEnv;
-  input list<Exp.Exp> inExpExpLst;
+  input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
@@ -3919,7 +3914,7 @@ algorithm
       list<Values.Value> vlst,vlst2,vlst_1;
       Integer dim1;
       list<Env.Frame> env;
-      Exp.Exp exp;
+      DAE.Exp exp;
       Boolean impl;
       Option<Interactive.InteractiveSymbolTable> st;
       Msg msg;
@@ -3969,7 +3964,7 @@ protected function cevalBuiltinSizeMatrix "function: cevalBuiltinSizeMatrix
   Helper function for cevalBuiltinSize, for size(A) where A is a matrix."
 	input Env.Cache inCache;
 	input Env.Env inEnv;
-  input Exp.Exp inExp;
+  input DAE.Exp inExp;
   input Boolean inBoolean;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
@@ -3980,17 +3975,17 @@ algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   matchcontinue (inCache,inEnv,inExp,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
-      Types.Attributes attr;
-      tuple<Types.TType, Option<Absyn.Path>> tp;
-      Types.Binding bind;
+      DAE.Attributes attr;
+      tuple<DAE.TType, Option<Absyn.Path>> tp;
+      DAE.Binding bind;
       list<Integer> sizelst;
       Values.Value v;
       list<Env.Frame> env;
-      Exp.ComponentRef cr;
+      DAE.ComponentRef cr;
       Boolean impl;
       Option<Interactive.InteractiveSymbolTable> st,st_1;
       Msg msg;
-      Exp.Exp exp;
+      DAE.Exp exp;
       Env.Cache cache;
     case (cache,env,DAE.CREF(componentRef = cr,ty = tp),impl,st,msg)
       equation 
@@ -4013,7 +4008,7 @@ end cevalBuiltinSizeMatrix;
 protected function cevalRelation "function: cevalRelation
   Performs the arithmetic relation check and gives a boolean result."
   input Values.Value inValue1;
-  input Exp.Operator inOperator2;
+  input DAE.Operator inOperator2;
   input Values.Value inValue3;
   output Values.Value outValue;
 algorithm 
@@ -4021,11 +4016,11 @@ algorithm
   matchcontinue (inValue1,inOperator2,inValue3)
     local
       Values.Value v,v1,v2;
-      Exp.Type t;
+      DAE.ExpType t;
       Boolean b,nb1,nb2,ba,bb,b1,b2;
       Integer i1,i2;
       String s1,s2;
-      Exp.ComponentRef cr1, cr2;
+      DAE.ComponentRef cr1, cr2;
       
     case (v1,DAE.GREATER(ty = t),v2)
       equation 
@@ -4334,7 +4329,7 @@ public function cevalList "function: cevalList
   evaluation on a list of expressions."
 	input Env.Cache inCache;
   input Env.Env inEnv;
-  input list<Exp.Exp> inExpExpLst;
+  input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Msg inMsg;
@@ -4347,11 +4342,11 @@ algorithm
       list<Env.Frame> env;
       Msg msg;
       Values.Value v;
-      Exp.Exp exp;
+      DAE.Exp exp;
       Boolean impl;
       Option<Interactive.InteractiveSymbolTable> st;
       list<Values.Value> vs;
-      list<Exp.Exp> exps;
+      list<DAE.Exp> exps;
       Env.Cache cache;
     case (cache,env,{},_,_,msg) then (cache,{}); 
     case (cache,env,{exp},impl,st,msg)
@@ -4373,7 +4368,7 @@ protected function cevalCref "function: cevalCref
   looking up variables in the environment."
 	input Env.Cache inCache;
   input Env.Env inEnv;
-  input Exp.ComponentRef inComponentRef;
+  input DAE.ComponentRef inComponentRef;
   input Boolean inBoolean "impl";
   input Msg inMsg;
   output Env.Cache outCache;
@@ -4382,17 +4377,17 @@ algorithm
   (outCache,outValue) :=
   matchcontinue (inCache,inEnv,inComponentRef,inBoolean,inMsg)
     local
-      Types.Attributes attr;
-      tuple<Types.TType, Option<Absyn.Path>> ty;
-      Types.Binding binding;
+      DAE.Attributes attr;
+      tuple<DAE.TType, Option<Absyn.Path>> ty;
+      DAE.Binding binding;
       Values.Value v;
       list<Env.Frame> env;
-      Exp.ComponentRef c;
+      DAE.ComponentRef c;
       Boolean impl;
       Msg msg;
       String scope_str,str;
       Env.Cache cache;
-      Exp.Type expTy;
+      DAE.ExpType expTy;
     
     /* Enumerationtyp -> no lookup necesery */
     case (cache,env,c,impl,msg)
@@ -4441,8 +4436,8 @@ public function cevalCrefBinding "function: cevalCrefBinding
   Evaluates variables by evaluating their bindings."
 	input Env.Cache inCache;
   input Env.Env inEnv;
-  input Exp.ComponentRef inComponentRef;
-  input Types.Binding inBinding;
+  input DAE.ComponentRef inComponentRef;
+  input DAE.Binding inBinding;
   input Boolean inBoolean "impl";
   input Msg inMsg;
   output Env.Cache outCache;
@@ -4451,16 +4446,16 @@ algorithm
   (outCache,outValue) :=
   matchcontinue (inCache,inEnv,inComponentRef,inBinding,inBoolean,inMsg)
     local
-      Exp.ComponentRef cr_1,cr,e1;
-      list<Exp.Subscript> subsc;
-      tuple<Types.TType, Option<Absyn.Path>> tp;
+      DAE.ComponentRef cr_1,cr,e1;
+      list<DAE.Subscript> subsc;
+      tuple<DAE.TType, Option<Absyn.Path>> tp;
       list<Integer> sizelst;
       Values.Value res,v,e_val;
       list<Env.Frame> env;
       Boolean impl;
       Msg msg;
       String rfn,iter,id,expstr,s1,s2,str;
-      Exp.Exp elexp,iterexp,exp;
+      DAE.Exp elexp,iterexp,exp;
       Env.Cache cache;
     case (cache,env,cr,DAE.VALBOUND(valBound = v),impl,msg) /* DAE.CREF_IDENT(id,subsc) */ 
       equation 
@@ -4574,7 +4569,7 @@ protected function cevalSubscriptValue "function: cevalSubscriptValue
   subscripts to array values to extract array elements."
 	input Env.Cache inCache;
   input Env.Env inEnv;
-  input list<Exp.Subscript> inExpSubscriptLst "subscripts to extract";
+  input list<DAE.Subscript> inExpSubscriptLst "subscripts to extract";
   input Values.Value inValue;
   input list<Integer> inIntegerLst "dimension sizes";
   input Boolean inBoolean "impl";
@@ -4588,8 +4583,8 @@ algorithm
       Integer n,n_1,dim;
       Values.Value subval,res,v;
       list<Env.Frame> env;
-      Exp.Exp exp;
-      list<Exp.Subscript> subs;
+      DAE.Exp exp;
+      list<DAE.Subscript> subs;
       list<Values.Value> lst;
       list<Integer> dims;
       Boolean impl;
@@ -4621,18 +4616,18 @@ public function cevalSubscripts "function: cevalSubscripts
   "
 	input Env.Cache inCache;
   input Env.Env inEnv;
-  input list<Exp.Subscript> inExpSubscriptLst;
+  input list<DAE.Subscript> inExpSubscriptLst;
   input list<Integer> inIntegerLst;
   input Boolean inBoolean "impl";
   input Msg inMsg;
   output Env.Cache outCache;
-  output list<Exp.Subscript> outExpSubscriptLst;
+  output list<DAE.Subscript> outExpSubscriptLst;
 algorithm 
   (outCache,outExpSubscriptLst) :=
   matchcontinue (inCache,inEnv,inExpSubscriptLst,inIntegerLst,inBoolean,inMsg)
     local
-      Exp.Subscript sub_1,sub;
-      list<Exp.Subscript> subs_1,subs;
+      DAE.Subscript sub_1,sub;
+      list<DAE.Subscript> subs_1,subs;
       list<Env.Frame> env;
       Integer dim;
       list<Integer> dims;
@@ -4654,19 +4649,19 @@ public function cevalSubscript "function: cevalSubscript
   is when all expressions are evaluated to constant values."
 	input Env.Cache inCache;
   input Env.Env inEnv;
-  input Exp.Subscript inSubscript;
+  input DAE.Subscript inSubscript;
   input Integer inInteger;
   input Boolean inBoolean "impl";
   input Msg inMsg;
   output Env.Cache outCache;
-  output Exp.Subscript outSubscript;
+  output DAE.Subscript outSubscript;
 algorithm 
   (outCache,outSubscript) :=
   matchcontinue (inCache,inEnv,inSubscript,inInteger,inBoolean,inMsg)
     local
       list<Env.Frame> env;
       Values.Value v1;
-      Exp.Exp e1_1,e1;
+      DAE.Exp e1_1,e1;
       Integer dim;
       Boolean impl;
       Msg msg;
@@ -4701,7 +4696,7 @@ end cevalSubscript;
 public function getValueString "
 Constant evaluates Expression and returns a string representing value. 
 "
-  input Exp.Exp e1;
+  input DAE.Exp e1;
   output String ostring;
 algorithm ostring := matchcontinue( e1)
   case(e1)
@@ -4725,14 +4720,14 @@ end getValueString;
 
 
 protected function cevalTuple 
-  input list<Exp.Exp> inexps;
+  input list<DAE.Exp> inexps;
   output list<Values.Value> oval;
 algorithm oval := matchcontinue(inexps)
   case({}) then {};
 case(e ::expl)
   local
-    Exp.Exp e;
-    list<Exp.Exp> expl;
+    DAE.Exp e;
+    list<DAE.Exp> expl;
     Values.Value v;
     list<Values.Value> vs;
   equation
@@ -4744,12 +4739,12 @@ end matchcontinue;
 end cevalTuple;
 
 protected function crefEqualValue ""
-  input Exp.ComponentRef c;
-  input Types.Binding v;
+  input DAE.ComponentRef c;
+  input DAE.Binding v;
   output Boolean outBoolean;
 algorithm outBoolean := matchcontinue(c,v)
   case(c,(v as DAE.EQBOUND(DAE.CREF(c2,_),NONE,_)))
-    local Exp.ComponentRef c2;
+    local DAE.ComponentRef c2;
     equation
       true = Exp.crefEqual(c,c2);
     then

@@ -45,12 +45,12 @@ package TaskGraph
   is implemented using Boost Graph Library in C++"
 
 public import DAELow;
-public import Exp;
 public import SCode;
 
 protected import Absyn;
 protected import DAE;
 protected import DAEUtil;
+protected import Exp;
 protected import SimCodegen;
 protected import TaskGraphExt;
 protected import Util;
@@ -134,14 +134,14 @@ algorithm
   matchcontinue (inDAELowVarLst)
     local
       String v,origname_str;
-      Exp.Exp value;
+      DAE.Exp value;
       Integer indx;
-      Exp.ComponentRef origname;
+      DAE.ComponentRef origname;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
       DAE.Flow flowPrefix;
       list<DAELow.Var> rest;
-      Exp.Exp e;
+      DAE.Exp e;
     case ({}) then ();
     case ((DAELow.VAR(varKind = DAELow.VARIABLE(),index = indx,origVarName = origname,values = dae_var_attr,comment = comment,flowPrefix = flowPrefix) :: rest))
       equation
@@ -318,10 +318,10 @@ algorithm
   matchcontinue (inDAELow1,inIntegerArray2,inIntegerArray3,inInteger4)
     local
       Integer e_1,v_1,e,indx;
-      Exp.Exp e1,e2,varexp,expr;
+      DAE.Exp e1,e2,varexp,expr;
       DAELow.Var v;
       list<DAELow.Var> varlst;
-      Exp.ComponentRef cr,origname,cr_1;
+      DAE.ComponentRef cr,origname,cr_1;
       DAELow.VarKind kind;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
@@ -430,8 +430,8 @@ end buildEquation;
 protected function buildNonlinearEquations "function: buildNonlinearEquations
   builds task graph for solving non-linear equations
 "
-  input list<Exp.Exp> inExpExpLst1;
-  input list<Exp.Exp> inExpExpLst2;
+  input list<DAE.Exp> inExpExpLst1;
+  input list<DAE.Exp> inExpExpLst2;
 algorithm
   _:=
   matchcontinue (inExpExpLst1,inExpExpLst2)
@@ -439,7 +439,7 @@ algorithm
       Integer size,tid;
       String size_str,taskname;
       list<String> varnames;
-      list<Exp.Exp> vars,residuals;
+      list<DAE.Exp> vars,residuals;
     case (vars,residuals) /* variables residuals */
       equation
         size = listLength(vars);
@@ -464,8 +464,8 @@ protected function buildResidualCode "function: buildResidualCode
   This function takes a list of expressions and builds code for
   calculating the residuals as a string. Used for e.g. solving non-linear equations.
 "
-  input list<Exp.Exp> inExpExpLst1;
-  input list<Exp.Exp> inExpExpLst2;
+  input list<DAE.Exp> inExpExpLst1;
+  input list<DAE.Exp> inExpExpLst2;
   output String outString;
 algorithm
   outString:=
@@ -473,7 +473,7 @@ algorithm
     local
       VarTransform.VariableReplacements repl;
       String res;
-      list<Exp.Exp> vars,es;
+      list<DAE.Exp> vars,es;
     case (vars,es) /* vars residuals */
       equation
         repl = makeResidualReplacements(vars);
@@ -493,7 +493,7 @@ protected function makeResidualReplacements "function: makeResidualReplacements
   nonlinear equation system. They should be replaced by x{index}, i.e.
   an unique index in the x vector.
 "
-  input list<Exp.Exp> expl;
+  input list<DAE.Exp> expl;
   output VarTransform.VariableReplacements repl_1;
   VarTransform.VariableReplacements repl,repl_1;
 algorithm
@@ -503,7 +503,7 @@ end makeResidualReplacements;
 
 protected function makeResidualReplacements2
   input VarTransform.VariableReplacements inVariableReplacements;
-  input list<Exp.Exp> inExpExpLst;
+  input list<DAE.Exp> inExpExpLst;
   input Integer inInteger;
   output VarTransform.VariableReplacements outVariableReplacements;
 algorithm
@@ -513,8 +513,8 @@ algorithm
       VarTransform.VariableReplacements repl,repl_1,repl_2;
       String pstr,str;
       Integer pos_1,pos;
-      Exp.ComponentRef cr;
-      list<Exp.Exp> es;
+      DAE.ComponentRef cr;
+      list<DAE.Exp> es;
     case (repl,{},_) then repl;
     case (repl,(DAE.CREF(componentRef = cr) :: es),pos)
       equation
@@ -529,7 +529,7 @@ algorithm
 end makeResidualReplacements2;
 
 protected function buildResidualCode2
-  input list<Exp.Exp> inExpExpLst;
+  input list<DAE.Exp> inExpExpLst;
   input Integer inInteger;
   input VarTransform.VariableReplacements inVariableReplacements;
   output String outString;
@@ -537,10 +537,10 @@ algorithm
   outString:=
   matchcontinue (inExpExpLst,inInteger,inVariableReplacements)
     local
-      Exp.Exp e_1,e;
+      DAE.Exp e_1,e;
       String s1,s2,pstr,res;
       Integer pos_1,pos;
-      list<Exp.Exp> es;
+      list<DAE.Exp> es;
       VarTransform.VariableReplacements repl;
     case ({},_,_) then "";
     case ((e :: es),pos,repl)
@@ -591,17 +591,17 @@ end storeMultipleResults;
 
 protected function buildNonlinearEquations2
   input Integer inInteger1;
-  input list<Exp.Exp> inExpExpLst2;
-  input list<Exp.Exp> inExpExpLst3;
+  input list<DAE.Exp> inExpExpLst2;
+  input list<DAE.Exp> inExpExpLst3;
 algorithm
   _:=
   matchcontinue (inInteger1,inExpExpLst2,inExpExpLst3)
     local
       Integer tid;
-      list<Exp.ComponentRef> vars1,vars2,vars1_1,vars;
-      list<list<Exp.ComponentRef>> vars_1;
-      Exp.Exp res,e;
-      list<Exp.Exp> residuals;
+      list<DAE.ComponentRef> vars1,vars2,vars1_1,vars;
+      list<list<DAE.ComponentRef>> vars_1;
+      DAE.Exp res,e;
+      list<DAE.Exp> residuals;
       String es;
     case (tid,_,{}) then ();  /* task id vars residuals */
     case (tid,vars,(res :: residuals))
@@ -631,7 +631,7 @@ protected function addEdgesFromVars "function: addEdgesFromVars
   Adds an edge between the tasks where the variables are defined and the tasks
   given as second argument.
 "
-  input list<Exp.ComponentRef> inExpComponentRefLst1;
+  input list<DAE.ComponentRef> inExpComponentRefLst1;
   input Integer inInteger2;
   input Integer inInteger3;
 algorithm
@@ -640,8 +640,8 @@ algorithm
     local
       String v_str;
       Integer predt,prio_1,tid,prio;
-      Exp.ComponentRef v;
-      list<Exp.ComponentRef> vs;
+      DAE.ComponentRef v;
+      list<DAE.ComponentRef> vs;
     case ({},_,_) then ();  /* task priority */
     case ((v :: vs),tid,prio)
       equation
@@ -714,14 +714,14 @@ algorithm
       DAELow.DAELow dae;
       Integer[:] ass1,ass2;
       Integer tid,e_1,v_1,e;
-      Exp.Exp e1,e2;
+      DAE.Exp e1,e2;
       DAELow.Var v;
-      Exp.ComponentRef cr,origname;
+      DAE.ComponentRef cr,origname;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
-      list<Exp.ComponentRef> cr1,cr2,crs,crs_1;
+      list<DAE.ComponentRef> cr1,cr2,crs,crs_1;
       list<String> crs_2,crs2,res;
       String crstr,origname_str;
       DAELow.VariableArray vararr;
@@ -762,7 +762,7 @@ algorithm
   _:= matchcontinue (inVar,inInteger)
     local
       String cfs,name_str;
-      Exp.ComponentRef cf,name;
+      DAE.ComponentRef cf,name;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
       DAE.Flow flowPrefix;
@@ -779,8 +779,8 @@ algorithm
 end addVariable;
 
 protected function buildAssignment
-  input Exp.ComponentRef inComponentRef;
-  input Exp.Exp inExp;
+  input DAE.ComponentRef inComponentRef;
+  input DAE.Exp inExp;
   input String inString;
 algorithm
   _:=
@@ -788,9 +788,9 @@ algorithm
     local
       Integer task,tid;
       String str,cr2s,crs,origname;
-      Exp.ComponentRef cr,cr2;
-      Exp.Exp exp;
-      Exp.Type tp;
+      DAE.ComponentRef cr,cr2;
+      DAE.Exp exp;
+      DAE.ExpType tp;
     case (cr,(exp as DAE.CREF(componentRef = cr2,ty = tp)),origname) /* varname expression orig. name */
       equation
         (task,str) = buildExpression(exp) "special rule for equation a:=b" ;
@@ -821,7 +821,7 @@ protected function buildExpression
 "function buildExpression
   Builds the task graph for the expression and returns 
   the task no that calculates the result of the expr"
-  input Exp.Exp inExp;
+  input DAE.Exp inExp;
   output Integer outInteger;
   output String outString;
 algorithm
@@ -831,13 +831,13 @@ algorithm
       String is,rs,crs,s1,istr,ts,s2,ops,s3,funcstr,s,es;
       Integer tid,i,t1,ival,t,t2,t3,numargs;
       Real r,rval;
-      Exp.ComponentRef cr;
-      Exp.Exp e1,e2,e3,e;
-      Exp.Operator op,relop;
+      DAE.ComponentRef cr;
+      DAE.Exp e1,e2,e3,e;
+      DAE.Operator op,relop;
       list<Integer> tasks;
       list<String> strs;
       Absyn.Path func;
-      list<Exp.Exp> expl;
+      list<DAE.Exp> expl;
     case (DAE.ICONST(integer = i))
       equation
         is = intString(i);

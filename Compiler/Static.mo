@@ -45,7 +45,7 @@ package Static
   value. A value of an expression is described using the \'Values\' module.
 
   The main function in this module is evalExp which takes an Absyn.Exp and transform it
-  into an Exp.Exp, while performing type checking and automatic type conversions, etc.
+  into an DAE.Exp, while performing type checking and automatic type conversions, etc.
   To determine types of builtin functions and operators, the module also contain an elaboration
   handler for functions and operators. This function is called elabBuiltinHandler.
   NOTE: These functions should only determine the type and properties of the builtin functions and
@@ -64,13 +64,12 @@ package Static
 public import Absyn;
 public import ConnectionGraph;
 public import Convert;
+public import DAE;
 public import Env;
-public import Exp;
 public import Interactive;
 public import MetaUtil;
 public import RTOpts;
 public import SCode;
-public import Types;
 public import Values;
 
 
@@ -79,35 +78,36 @@ public type Ident = String;
 public 
 uniontype Slot
   record SLOT
-    Types.FuncArg an "An argument to a function" ;
+    DAE.FuncArg an "An argument to a function" ;
     Boolean true_ "True if the slot has been filled, i.e. argument has been given a value" ;
-    Option<Exp.Exp> expExpOption;
-    list<Types.ArrayDim> typesArrayDimLst;
+    Option<DAE.Exp> expExpOption;
+    list<DAE.ArrayDim> typesArrayDimLst;
   end SLOT;
 end Slot;
 
 
-protected import OptManager;
-protected import UnitAbsyn;
-protected import ClassInf;
-protected import Dump;
-protected import Print;
-protected import Lookup;
-protected import Debug;
-protected import Inst;
-protected import ModUtil;
-protected import DAE;
-protected import Util;
-protected import Mod;
-protected import Prefix;
+protected import AbsynDep;
 protected import Ceval;
 protected import CevalScript;
+protected import ClassInf;
 protected import Connect;
+protected import Debug;
+protected import Dump;
 protected import Error;
-protected import System;
 protected import ErrorExt;
-protected import AbsynDep;
+protected import Exp;
+protected import Inst;
 protected import InstanceHierarchy;
+protected import Lookup;
+protected import Mod;
+protected import ModUtil;
+protected import OptManager;
+protected import Prefix;
+protected import Print;
+protected import System;
+protected import Types;
+protected import UnitAbsyn;
+protected import Util;
 protected import ValuesUtil;
 
 public function elabExpList "Expression elaboration of Absyn.Exp list, i.e. lists of expressions."
@@ -118,8 +118,8 @@ public function elabExpList "Expression elaboration of Absyn.Exp list, i.e. list
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Boolean performVectorization;
   output Env.Cache outCache;
-  output list<Exp.Exp> outExpExpLst;
-  output list<Types.Properties> outTypesPropertiesLst;
+  output list<DAE.Exp> outExpExpLst;
+  output list<DAE.Properties> outTypesPropertiesLst;
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm 
   (outCache,outExpExpLst,outTypesPropertiesLst,outInteractiveInteractiveSymbolTableOption):=
@@ -127,10 +127,10 @@ algorithm
     local
       Boolean impl; 
       Option<Interactive.InteractiveSymbolTable> st,st_1,st_2;
-      Exp.Exp exp;
-      Types.Properties p;
-      list<Exp.Exp> exps;
-      list<Types.Properties> props;
+      DAE.Exp exp;
+      DAE.Properties p;
+      list<DAE.Exp> exps;
+      list<DAE.Properties> props;
       list<Env.Frame> env;
       Absyn.Exp e;
       list<Absyn.Exp> rest;
@@ -157,8 +157,8 @@ public function elabExpListList
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Boolean performVectorization;
   output Env.Cache outCache;
-  output list<list<Exp.Exp>> outExpExpLstLst;
-  output list<list<Types.Properties>> outTypesPropertiesLstLst;
+  output list<list<DAE.Exp>> outExpExpLstLst;
+  output list<list<DAE.Properties>> outTypesPropertiesLstLst;
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm 
   (outCache,outExpExpLstLst,outTypesPropertiesLstLst,outInteractiveInteractiveSymbolTableOption):=
@@ -166,10 +166,10 @@ algorithm
     local
       Boolean impl;
       Option<Interactive.InteractiveSymbolTable> st,st_1,st_2;
-      list<Exp.Exp> exp;
-      list<Types.Properties> p;
-      list<list<Exp.Exp>> exps;
-      list<list<Types.Properties>> props;
+      list<DAE.Exp> exp;
+      list<DAE.Properties> p;
+      list<list<DAE.Exp>> exps;
+      list<list<DAE.Properties>> props;
       list<Env.Frame> env;
       list<Absyn.Exp> e;
       list<list<Absyn.Exp>> rest;
@@ -192,26 +192,26 @@ protected function cevalIfConstant "function: cevalIfConstant
   Exp.simplify
 "
 	input Env.Cache inCache;
-  input Exp.Exp inExp;
-  input Types.Properties inProperties;
-  input Types.Const inConst;
+  input DAE.Exp inExp;
+  input DAE.Properties inProperties;
+  input DAE.Const inConst;
   input Boolean inBoolean;
   input Env.Env inEnv;
   output Env.Cache outCache;
-  output Exp.Exp outExp;
-  output Types.Properties outProperties;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties):=
   matchcontinue (inCache,inExp,inProperties,inConst,inBoolean,inEnv)
     local
-      Exp.Exp e_1,e;
+      DAE.Exp e_1,e;
       String before, after;
-      Types.Properties prop;
+      DAE.Properties prop;
       Boolean impl;
       Values.Value v;
-      Types.Type tp;
-      tuple<Types.TType, Option<Absyn.Path>> vt;
-      Types.Const c,const;
+      DAE.Type tp;
+      tuple<DAE.TType, Option<Absyn.Path>> vt;
+      DAE.Const c,const;
       list<Env.Frame> env;
       Env.Cache cache;
       
@@ -221,7 +221,7 @@ algorithm
       then
         (cache,e,DAE.PROP(tp,DAE.C_VAR()));
     case (cache,e,(prop as DAE.PROP_TUPLE(tupleConst = c,type_=tp)),DAE.C_PARAM(),_,_) // BoschRexroth specifics
-      local Types.TupleConst c; 
+      local DAE.TupleConst c; 
       equation 
         false = OptManager.getOption("cevalEquation");
         print(" tuple non constant evaluation not implemented yet\n");        
@@ -236,10 +236,10 @@ algorithm
         (cache,e_1,prop); 
     case (cache,e as DAE.CALL(arg1,arg2,arg3,arg4,_,inl),prop,DAE.C_PARAM(),_,env)
       local Values.Value val;
-        Types.Type cevalType;
-        Exp.Type cTe;
+        DAE.Type cevalType;
+        DAE.ExpType cTe;
         Absyn.Path arg1;
-        list<Exp.Exp> arg2;
+        list<DAE.Exp> arg2;
         Boolean arg3,arg4,inl;        
       equation 
         (_,val,_) = Ceval.ceval(cache,env,e,true,NONE,NONE,Ceval.MSG()); 
@@ -266,7 +266,7 @@ algorithm
         (cache,e_1,DAE.PROP(tp,c));
        
     case (cache,e,(prop as DAE.PROP_TUPLE(tupleConst = c,type_=tp)),DAE.C_CONST(),impl,env) /* as false */ 
-      local Types.TupleConst c;
+      local DAE.TupleConst c;
       equation 
         (cache,v,_) = Ceval.ceval(cache,env, e, impl, NONE, NONE, Ceval.MSG());
         e_1 = valueExp(v);
@@ -284,9 +284,9 @@ public function elabExp
 "function: elabExp 
   Static analysis of expressions means finding out the properties of
   the expression.  These properties are described by the
-  `Types.Properties\' type, and include the type and the variability of the
+  `DAE.Properties\' type, and include the type and the variability of the
   expression.  This function performs analysis, and returns an
-  `Exp.Exp\' and the properties."
+  `DAE.Exp\' and the properties."
   input Env.Cache inCache;
   input Env.Env inEnv;
   input Absyn.Exp inExp;
@@ -294,8 +294,8 @@ public function elabExp
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Boolean performVectorization;
   output Env.Cache outCache;
-  output Exp.Exp outExp;
-  output Types.Properties outProperties;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm 
   (outCache,outExp,outProperties,outInteractiveInteractiveSymbolTableOption):=
@@ -306,25 +306,25 @@ algorithm
       Boolean impl,a,havereal;
       Option<Interactive.InteractiveSymbolTable> st,st_1,st_2,st_3;
       Ident id,expstr,envstr;
-      Exp.Exp exp,e1_1,e2_1,e1_2,e2_2,exp_1,exp_2,e_1,e_2,e3_1,start_1,stop_1,start_2,stop_2,step_1,step_2,mexp,mexp_1;
-      Types.Properties prop,prop_1,prop1,prop2,prop3;
+      DAE.Exp exp,e1_1,e2_1,e1_2,e2_2,exp_1,exp_2,e_1,e_2,e3_1,start_1,stop_1,start_2,stop_2,step_1,step_2,mexp,mexp_1;
+      DAE.Properties prop,prop_1,prop1,prop2,prop3;
       list<Env.Frame> env;
       Absyn.ComponentRef cr,fn;
-      Types.Type t1,t2,arrtp,rtype,t,start_t,stop_t,step_t,t_1,t_2,tp;
-      Types.Const c1,c2,c,c_start,c_stop,const,c_step;
-      list<tuple<Exp.Operator, list<tuple<Types.TType, Option<Absyn.Path>>>, tuple<Types.TType, Option<Absyn.Path>>>> ops;
-      Exp.Operator op_1;
+      DAE.Type t1,t2,arrtp,rtype,t,start_t,stop_t,step_t,t_1,t_2,tp;
+      DAE.Const c1,c2,c,c_start,c_stop,const,c_step;
+      list<tuple<DAE.Operator, list<tuple<DAE.TType, Option<Absyn.Path>>>, tuple<DAE.TType, Option<Absyn.Path>>>> ops;
+      DAE.Operator op_1;
       Absyn.Exp e1,e2,e,e3,iterexp,start,stop,step;
       Absyn.Operator op;
       list<Absyn.Exp> args,rest,es;
       list<Absyn.NamedArg> nargs;
-      list<Exp.Exp> es_1;
-      list<Types.Properties> props;
-      list<tuple<Types.TType, Option<Absyn.Path>>> types,tps_2;
-      list<Types.TupleConst> consts;
-      Exp.Type rt,at,tp_1;
-      list<list<Types.Properties>> tps;
-      list<list<tuple<Types.TType, Option<Absyn.Path>>>> tps_1;
+      list<DAE.Exp> es_1;
+      list<DAE.Properties> props;
+      list<tuple<DAE.TType, Option<Absyn.Path>>> types,tps_2;
+      list<DAE.TupleConst> consts;
+      DAE.ExpType rt,at,tp_1;
+      list<list<DAE.Properties>> tps;
+      list<list<tuple<DAE.TType, Option<Absyn.Path>>>> tps_1;
       Env.Cache cache;
       Boolean doVect;
       Absyn.ForIterators iterators;
@@ -355,7 +355,7 @@ algorithm
        /*--------------------------------*/
        /* Part of MetaModelica extension. KS */
         case (cache,env,Absyn.CREF(Absyn.CREF_IDENT("NONE",{})),impl,st,doVect)
-      local Exp.Exp e;
+      local DAE.Exp e;
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
         e = DAE.META_OPTION(NONE());
@@ -365,7 +365,7 @@ algorithm
       /*-------------------------------------*/
 
      case (cache,env,Absyn.CREF(componentReg = cr),impl,st,doVect) // BoschRexroth specifics
-       local Types.Type ty;
+       local DAE.Type ty;
       equation 
         false = OptManager.getOption("cevalEquation"); 
         (cache,exp,prop as DAE.PROP(ty,DAE.C_PARAM()),_) = elabCref(cache,env, cr, impl,doVect);
@@ -440,7 +440,7 @@ algorithm
       then
         (cache,exp_2,prop_1,st_2);
     case (cache,env,Absyn.IFEXP(ifExp = e1,trueBranch = e2,elseBranch = e3),impl,st,doVect) /* Conditional expressions */ 
-      local Exp.Exp e;
+      local DAE.Exp e;
       equation 
         (cache,e1_1,prop1,st_1) = elabExp(cache,env, e1, impl, st,doVect) "if expressions" ;
         (cache,e2_1,prop2,st_2) = elabExp(cache,env, e2, impl, st_1,doVect);
@@ -453,7 +453,7 @@ algorithm
        /*--------------------------------*/
        /* Part of MetaModelica extension. KS */
     case (cache,env,Absyn.CALL(function_ = Absyn.CREF_IDENT("SOME",_),functionArgs = Absyn.FUNCTIONARGS(args = (e1 :: _),argNames = _)),impl,st,doVect)
-      local Exp.Exp e;
+      local DAE.Exp e;
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
         (cache,e,prop,st_1) = elabExp(cache,env, e1, impl, st,doVect);
@@ -464,7 +464,7 @@ algorithm
         (cache,e,prop1,st);
 
     case (cache,env,Absyn.CALL(function_ = Absyn.CREF_IDENT("NONE",_),functionArgs = Absyn.FUNCTIONARGS(args = {},argNames = _)),impl,st,doVect)
-      local Exp.Exp e;
+      local DAE.Exp e;
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
         e = DAE.META_OPTION(NONE());
@@ -473,7 +473,7 @@ algorithm
         (cache,e,prop1,st);
 
       /*  case (cache,env,Absyn.CALL(function_ = fn,functionArgs = Absyn.FUNCTIONARGS(args = args,argNames = nargs)),impl,st,doVect)
-      local Exp.Exp e;
+      local DAE.Exp e;
           equation
             //true = RTOpts.acceptMetaModelicaGrammar();
             (cache,env,args,nargs) = MetaUtil.fixListConstructorsInArgs(cache,env,fn,args,nargs);
@@ -489,7 +489,7 @@ algorithm
         /* If fail to elaborate e2 or e3 above check if cond is constant and make non-selected branch
          undefined. NOTE: Dirty hack to make MSL CombiTable models work!!! */
     case (cache,env,Absyn.IFEXP(ifExp = e1,trueBranch = e2,elseBranch = e3),impl,st,doVect) /* Conditional expressions */ 
-      local Exp.Exp e; Boolean b;
+      local DAE.Exp e; Boolean b;
       equation 
         (cache,e1_1,prop1,st_1) = elabExp(cache,env, e1, impl, st,doVect);
         true = Types.isParameterOrConstant(Types.propAllConst(prop1));
@@ -500,7 +500,7 @@ algorithm
       then
         (cache,e,prop,st_2);        
     case (cache,env,Absyn.CALL(function_ = fn,functionArgs = Absyn.FUNCTIONARGS(args = args,argNames = nargs)),impl,st,doVect)
-      local Exp.Exp e;
+      local DAE.Exp e;
       equation 
         Debug.fprintln("sei", "elab_exp CALL...") "Function calls PA. Only positional arguments are elaborated for now. TODO: Implement elaboration of named arguments." ;
         (cache,e,prop,st_1) = elabCall(cache,env, fn, args, nargs, impl, st);         
@@ -511,14 +511,14 @@ algorithm
         (cache,e_1,prop_1,st_1);
     // stefan
     /*case (cache,env,e1 as Absyn.PARTEVALFUNCTION(function_ = fn,functionArgs = Absyn.FUNCTIONARGS(args = args,argNames = nargs)),impl,st,doVect)
-      local Exp.Exp e;
+      local DAE.Exp e;
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
         (cache,e,prop,st_1) = elabPartEvalFunction(cache,env,e1,st,impl,doVect);
       then
         (cache,e,prop,st_1);*/
     case (cache,env,e1 as Absyn.PARTEVALFUNCTION(function_ = _),impl,st,doVect)
-      local Exp.Exp e;
+      local DAE.Exp e;
       equation
         (cache,e,prop,st_1) = elabPartEvalFunction(cache,env,e1,st,impl,doVect);
       then
@@ -527,7 +527,7 @@ algorithm
     Each expression has its own constflag.
     */ 
       local
-        list<Exp.Exp> e_1;
+        list<DAE.Exp> e_1;
         list<Absyn.Exp> e;
         list<tuple<Absyn.Ident, Absyn.Exp>> iterators;
       equation 
@@ -537,7 +537,7 @@ algorithm
         (cache,DAE.TUPLE(e_1),DAE.PROP_TUPLE((DAE.T_TUPLE(types),NONE),DAE.TUPLE_CONST(consts)),st);
     case (cache,env,Absyn.CALL(function_ = fn,functionArgs = Absyn.FOR_ITER_FARG(exp = exp, iterators=iterators)),impl,st,doVect) /* Array-related expressions Elab reduction expressions, including array() constructor */
       local
-        Exp.Exp e;
+        DAE.Exp e;
         Absyn.Exp exp; 
       equation 
         (cache,e,prop,st_1) = elabCallReduction(cache,env, fn, exp, iterators, impl, st,doVect);
@@ -575,7 +575,7 @@ algorithm
      then (cache,exp,prop,st);
 
     case (cache,env,Absyn.ARRAY(arrayExp = es),impl,st,doVect)
-      local Exp.Exp arrexp;
+      local DAE.Exp arrexp;
       equation 
         (cache,es_1,DAE.PROP(t,const)) = elabArray(cache,env, es, impl, st,doVect) "array expressions, e.g. {1,2,3}" ;
         l = listLength(es_1);
@@ -631,10 +631,10 @@ algorithm
         list<DAE.Element> dae1,dae1_2,dae2;
         DAE.Element b_alg_dae;
         Absyn.Exp res;
-        Exp.Exp res2;
+        DAE.Exp res2;
         Env.Env env2;
         
-        Types.Properties prop;
+        DAE.Properties prop;
       equation 
         // debug_print("elabExp->VALUEBLOCKALGORITHMS", b);
         env2 = Env.openScope(env, false, NONE());
@@ -683,7 +683,7 @@ algorithm
    case (cache,env,Absyn.CONS(e1,e2),impl,st,doVect)
      local
        Boolean correctTypes;
-       Types.Type t;
+       DAE.Type t;
      equation
        (e1 :: _) = MetaUtil.transformArrayNodesToListNodes({e1},{});
        (e2 :: _) = MetaUtil.transformArrayNodesToListNodes({e2},{});
@@ -712,9 +712,9 @@ algorithm
        // transformed from Absyn.ARRAY()
   case (cache,env,Absyn.LIST({}),impl,st,doVect)
     local
-      list<Types.Properties> propList;
+      list<DAE.Properties> propList;
       Boolean correctTypes;
-      Types.Type t;
+      DAE.Type t;
     equation
       t = (DAE.T_LIST((DAE.T_NOTYPE,NONE)),NONE);
       prop = DAE.PROP(t,DAE.C_VAR());
@@ -722,10 +722,10 @@ algorithm
 
   case (cache,env,Absyn.LIST(es),impl,st,doVect)
     local
-      list<Types.Properties> propList;
-      list<Types.Type> typeList;
+      list<DAE.Properties> propList;
+      list<DAE.Type> typeList;
       Boolean correctTypes;
-      Types.Type t;
+      DAE.Type t;
     equation
       (cache,es_1,propList,st_2) = elabExpList(cache,env, es, impl, st,doVect);
       typeList = Util.listMap(propList, Types.getPropType);
@@ -763,13 +763,13 @@ This is used by Inst.mo when handling a var := {...} statement
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.Exp> inExpList;
-  input Types.Properties inProp;
+  input DAE.Properties inProp;
   input Boolean inBoolean;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Boolean performVectorization;
   output Env.Cache outCache;
-  output Exp.Exp outExp;
-  output Types.Properties outProperties;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outExp,outProperties,outInteractiveInteractiveSymbolTableOption) :=
@@ -779,19 +779,19 @@ algorithm
       Env.Env env;
       Boolean impl,doVect;
       Option<Interactive.InteractiveSymbolTable> st;
-      Types.Properties prop;
-      Types.Const c;
+      DAE.Properties prop;
+      DAE.Const c;
     case (cache,env,{},prop,_,st,_)
       then (cache,DAE.LIST(DAE.ET_OTHER(),{}),prop,st);
     case (cache,env,expList,prop as DAE.PROP((DAE.T_LIST(t),_),c),impl,st,doVect)
       local
         list<Absyn.Exp> expList;
-        list<Exp.Exp> expExpList;
-        Types.Type t;
+        list<DAE.Exp> expExpList;
+        DAE.Type t;
         list<Boolean> boolList;
-        list<Types.Properties> propList;
-        list<Types.Type> typeList;
-        Exp.Type t2;
+        list<DAE.Properties> propList;
+        list<DAE.Type> typeList;
+        DAE.ExpType t2;
       equation
         (cache,expExpList,propList,st) = elabExpList(cache,env,expList,impl,st,doVect);
         typeList = Util.listMap(propList, Types.getPropType);
@@ -964,8 +964,8 @@ algorithm
         list<Absyn.ElementItem> elemList;
         SCode.Class cl1;
         Absyn.Exp lhsExp;
-        Types.Type ty, resType;
-        Types.Properties prop;
+        DAE.Type ty, resType;
+        DAE.Properties prop;
       equation
         // If we have a statement such as: ((a,b)) = func(...); this
         // is not the same as (a,b) = func(...);
@@ -1105,7 +1105,7 @@ algorithm
 end createLhsExp;
 
 protected function extractOutputVarsType 
-  input list<Types.Type> inList;
+  input list<DAE.Type> inList;
   input Integer cnt;
   input list<Absyn.ElementItem> accList1;
   input list<Absyn.Exp> accList2;
@@ -1115,7 +1115,7 @@ algorithm
   (outList1,outList2) := matchcontinue (inList,cnt,accList1,accList2)
     local
       list<Absyn.ElementItem> localAccList1;
-      list<Types.Type> rest;
+      list<DAE.Type> rest;
       list<Absyn.Exp> localAccList2;
       Integer localCnt;
     case ({},localCnt,localAccList1,localAccList2)
@@ -1126,7 +1126,7 @@ algorithm
       then (localAccList1,localAccList2);
     case (ty :: rest, localCnt,localAccList1,localAccList2)
       local
-        Types.Type ty;
+        DAE.Type ty;
         Absyn.TypeSpec tSpec;
         Absyn.Ident n1,n2;
         Absyn.ElementItem elem1;
@@ -1157,7 +1157,7 @@ protected function elabMatrixGetDimensions "function: elabMatrixGetDimensions
   Helper function to elab_exp (MATRIX). Calculates the dimensions of the
   matrix by investigating the elaborated expression.
 "
-  input Exp.Exp inExp;
+  input DAE.Exp inExp;
   output Integer outInteger1;
   output Integer outInteger2;
 algorithm 
@@ -1165,7 +1165,7 @@ algorithm
   matchcontinue (inExp)
     local
       Integer dim1,dim2;
-      list<Exp.Exp> lst2,lst;
+      list<DAE.Exp> lst2,lst;
     case (DAE.ARRAY(array = lst))
       equation 
         dim1 = listLength(lst);
@@ -1181,20 +1181,20 @@ protected function elabMatrixToMatrixExp "function: elabMatrixToMatrixExp
   Convert an array expression (which is a matrix or higher dim.) to 
   a matrix expression (using MATRIX).
 "
-  input Exp.Exp inExp;
-  output Exp.Exp outExp;
+  input DAE.Exp inExp;
+  output DAE.Exp outExp;
 algorithm 
   outExp:=
   matchcontinue (inExp)
     local
-      list<list<tuple<Exp.Exp, Boolean>>> mexpl;
+      list<list<tuple<DAE.Exp, Boolean>>> mexpl;
       Integer dim;
-      Exp.Type a,elt_ty;
+      DAE.ExpType a,elt_ty;
       Boolean at;
       Option<Integer> dim;
       Integer d1;
-      list<Exp.Exp> expl;
-      Exp.Exp e;
+      list<DAE.Exp> expl;
+      DAE.Exp e;
     case (DAE.ARRAY(ty = a,scalar = at,array = expl))
       equation 
         mexpl = elabMatrixToMatrixExp2(expl);
@@ -1209,17 +1209,17 @@ protected function elabMatrixToMatrixExp2 "function: elabMatrixToMatrixExp2
  
   Helper function to elab_matrix_to_matrix_exp
 "
-  input list<Exp.Exp> inExpExpLst;
-  output list<list<tuple<Exp.Exp, Boolean>>> outTplExpExpBooleanLstLst;
+  input list<DAE.Exp> inExpExpLst;
+  output list<list<tuple<DAE.Exp, Boolean>>> outTplExpExpBooleanLstLst;
 algorithm 
   (outTplExpExpBooleanLstLst):=
   matchcontinue (inExpExpLst)
     local
-      list<tuple<Exp.Exp, Boolean>> expl_1;
-      list<list<tuple<Exp.Exp, Boolean>>> es_1;
-      Exp.Type a;
+      list<tuple<DAE.Exp, Boolean>> expl_1;
+      list<list<tuple<DAE.Exp, Boolean>>> es_1;
+      DAE.ExpType a;
       Boolean at;
-      list<Exp.Exp> expl,es;
+      list<DAE.Exp> expl,es;
     case ({}) then {}; 
     case ((DAE.ARRAY(ty = a,scalar = at,array = expl) :: es))
       equation 
@@ -1231,18 +1231,18 @@ algorithm
 end elabMatrixToMatrixExp2;
 
 protected function elabMatrixToMatrixExp3
-  input list<Exp.Exp> inExpExpLst;
-  output list<tuple<Exp.Exp, Boolean>> outTplExpExpBooleanLst;
+  input list<DAE.Exp> inExpExpLst;
+  output list<tuple<DAE.Exp, Boolean>> outTplExpExpBooleanLst;
 algorithm 
   outTplExpExpBooleanLst:=
   matchcontinue (inExpExpLst)
     local
-      Exp.Type tp;
+      DAE.ExpType tp;
       Boolean scalar;
       Ident s;
-      list<tuple<Exp.Exp, Boolean>> es_1;
-      Exp.Exp e;
-      list<Exp.Exp> es;
+      list<tuple<DAE.Exp, Boolean>> es_1;
+      DAE.Exp e;
+      list<DAE.Exp> es;
     case ({}) then {}; 
     case ((e :: es))
       equation 
@@ -1263,15 +1263,15 @@ protected function matrixConstrMaxDim "function: matrixConstrMaxDim
   max(2, ndims(A), ndims(B), ndims(C),..) for matrix constructor arguments
   A, B, C, ...
 "
-  input list<Types.Type> inTypesTypeLst;
+  input list<DAE.Type> inTypesTypeLst;
   output Integer outInteger;
 algorithm 
   outInteger:=
   matchcontinue (inTypesTypeLst)
     local
       Integer tn,tn2,res;
-      tuple<Types.TType, Option<Absyn.Path>> t;
-      list<tuple<Types.TType, Option<Absyn.Path>>> ts;
+      tuple<DAE.TType, Option<Absyn.Path>> t;
+      list<tuple<DAE.TType, Option<Absyn.Path>>> ts;
     case ({}) then 2; 
     case ((t :: ts))
       equation 
@@ -1297,7 +1297,7 @@ protected function addForLoopScopeConst "function: addForLoopScopeConst
 "
   input Env.Env env;
   input Ident i;
-  input Types.Type typ;
+  input DAE.Type typ;
   output Env.Env env_2;
   list<Env.Frame> env_1,env_2;
 algorithm 
@@ -1320,21 +1320,21 @@ protected function elabCallReduction
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption7;
   input Boolean performVectorization;
 	output Env.Cache outCache;
-  output Exp.Exp outExp;
-  output Types.Properties outProperties;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm 
   (outCache,outExp,outProperties,outInteractiveInteractiveSymbolTableOption):=
   matchcontinue (inCache,inEnv1,inComponentRef2,inExp3,iterators,inBoolean6,inInteractiveInteractiveSymbolTableOption7,performVectorization)
     local
-      Exp.Exp iterexp_1,exp_1;
-      Types.ArrayDim arraydim;
-      tuple<Types.TType, Option<Absyn.Path>> iterty,expty,ty;
-      Exp.Type etp;
-      Types.Const iterconst,expconst,const;
+      DAE.Exp iterexp_1,exp_1;
+      DAE.ArrayDim arraydim;
+      tuple<DAE.TType, Option<Absyn.Path>> iterty,expty,ty;
+      DAE.ExpType etp;
+      DAE.Const iterconst,expconst,const;
       list<Env.Frame> env_1,env;
       Option<Interactive.InteractiveSymbolTable> st;
-      Types.Properties prop;
+      DAE.Properties prop;
       Absyn.Path fn_1;
       Absyn.ComponentRef fn;
       Absyn.Exp exp,iterexp;
@@ -1342,7 +1342,7 @@ algorithm
       Boolean impl,doVect;
       Env.Cache cache;
       Boolean b;
-      list<Exp.Exp> expl;
+      list<DAE.Exp> expl;
       list<Values.Value> vallst;
       /*Symbolically expand arrays if iterator is parameter or constant
         NOTE: This only works for one iterator.
@@ -1386,13 +1386,13 @@ end elabCallReduction;
 
 protected function elabCallReduction2 "help function to elabCallReduction. symbolically expands arrays"
   input list<Values.Value> valLst;
-  input Exp.Exp e;
+  input DAE.Exp e;
   input Ident id;
-  output list<Exp.Exp> expl;
+  output list<DAE.Exp> expl;
 algorithm
   expl := matchcontinue(valLst,e,id)
   local Integer i;
-    Exp.Exp e1;
+    DAE.Exp e1;
     case({},e,id) then {};
     case(Values.INTEGER(i)::valLst,e,id) equation
       (e1,_) = Exp.replaceExp(e,DAE.CREF(DAE.CREF_IDENT(id,DAE.ET_OTHER(),{}),DAE.ET_OTHER()),DAE.ICONST(i));
@@ -1407,16 +1407,16 @@ protected function replaceOperatorWithFcall "function: replaceOperatorWithFcall
   Replaces a userdefined operator expression with a corresponding function 
   call expression. Other expressions just passes through.
 "
-  input Exp.Exp inExp;
-  input Types.Const inConst;
-  output Exp.Exp outExp;
+  input DAE.Exp inExp;
+  input DAE.Const inConst;
+  output DAE.Exp outExp;
 algorithm 
   outExp:=
   matchcontinue (inExp,inConst)
     local
-      Exp.Exp e1,e2,e;
+      DAE.Exp e1,e2,e;
       Absyn.Path funcname;
-      Types.Const c;
+      DAE.Const c;
     case (DAE.BINARY(exp1 = e1,operator = DAE.USERDEFINED(fqName = funcname),exp2 = e2),c) then DAE.CALL(funcname,{e1,e2},false,false,DAE.ET_OTHER(),false); 
     case (DAE.UNARY(operator = DAE.USERDEFINED(fqName = funcname),exp = e1),c) then DAE.CALL(funcname,{e1},false,false,DAE.ET_OTHER(),false); 
     case (DAE.LBINARY(exp1 = e1,operator = DAE.USERDEFINED(fqName = funcname),exp2 = e2),c) then DAE.CALL(funcname,{e1,e2},false,false,DAE.ET_OTHER(),false); 
@@ -1435,7 +1435,7 @@ protected function elabCodeType "function: elabCodeType
 "
   input Env.Env inEnv;
   input Absyn.CodeNode inCode;
-  output Types.Type outType;
+  output DAE.Type outType;
 algorithm 
   outType:=
   matchcontinue (inEnv,inCode)
@@ -1467,8 +1467,8 @@ public function elabGraphicsExp
   input Absyn.Exp inExp;
   input Boolean inBoolean;
   output Env.Cache outCache;
-  output Exp.Exp outExp;
-  output Types.Properties outProperties;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties):=
   matchcontinue (inCache,inEnv,inExp,inBoolean)
@@ -1477,25 +1477,25 @@ algorithm
       Option<Integer> dim1,dim2;
       Boolean impl,a,havereal;
       Ident fnstr;
-      Exp.Exp exp,e1_1,e2_1,e1_2,e2_2,e_1,e_2,e3_1,start_1,stop_1,start_2,stop_2,step_1,step_2,mexp,mexp_1;
-      Types.Properties prop,prop1,prop2,prop3;
+      DAE.Exp exp,e1_1,e2_1,e1_2,e2_2,e_1,e_2,e3_1,start_1,stop_1,start_2,stop_2,step_1,step_2,mexp,mexp_1;
+      DAE.Properties prop,prop1,prop2,prop3;
       list<Env.Frame> env;
       Absyn.ComponentRef cr,fn;
-      tuple<Types.TType, Option<Absyn.Path>> t1,t2,rtype,t,start_t,stop_t,step_t,t_1,t_2;
-      Types.Const c1,c2,c,c_start,c_stop,const,c_step;
-      list<tuple<Exp.Operator, list<tuple<Types.TType, Option<Absyn.Path>>>, tuple<Types.TType, Option<Absyn.Path>>>> ops;
-      Exp.Operator op_1;
+      tuple<DAE.TType, Option<Absyn.Path>> t1,t2,rtype,t,start_t,stop_t,step_t,t_1,t_2;
+      DAE.Const c1,c2,c,c_start,c_stop,const,c_step;
+      list<tuple<DAE.Operator, list<tuple<DAE.TType, Option<Absyn.Path>>>, tuple<DAE.TType, Option<Absyn.Path>>>> ops;
+      DAE.Operator op_1;
       Absyn.Exp e1,e2,e,e3,start,stop,step;
       Absyn.Operator op;
       list<Absyn.Exp> args,rest,es;
       list<Absyn.NamedArg> nargs;
-      list<Exp.Exp> es_1;
-      list<Types.Properties> props;
-      list<tuple<Types.TType, Option<Absyn.Path>>> types,tps_2;
-      list<Types.TupleConst> consts;
-      Exp.Type rt,at;
-      list<list<Types.Properties>> tps;
-      list<list<tuple<Types.TType, Option<Absyn.Path>>>> tps_1;
+      list<DAE.Exp> es_1;
+      list<DAE.Properties> props;
+      list<tuple<DAE.TType, Option<Absyn.Path>>> types,tps_2;
+      list<DAE.TupleConst> consts;
+      DAE.ExpType rt,at;
+      list<list<DAE.Properties>> tps;
+      list<list<tuple<DAE.TType, Option<Absyn.Path>>>> tps_1;
       Env.Cache cache;
     case (cache,_,Absyn.INTEGER(value = x),impl) then (cache,DAE.ICONST(x),DAE.PROP((DAE.T_INTEGER({}),NONE),DAE.C_CONST()));  /* impl */ 
     case (cache,_,Absyn.REAL(value = x),impl)
@@ -1564,7 +1564,7 @@ algorithm
       then
         (cache,DAE.RELATION(e1_2,op_1,e2_2),DAE.PROP(rtype,c));
     case (cache,env,Absyn.IFEXP(ifExp = e1,trueBranch = e2,elseBranch = e3),impl) /* Conditional expressions */ 
-      local Exp.Exp e;
+      local DAE.Exp e;
       equation 
         (cache,e1_1,prop1) = elabGraphicsExp(cache,env, e1, impl);
         (cache,e2_1,prop2) = elabGraphicsExp(cache,env, e2, impl);
@@ -1574,7 +1574,7 @@ algorithm
       then
         (cache,e,prop);
     case (cache,env,Absyn.CALL(function_ = fn,functionArgs = Absyn.FUNCTIONARGS(args = args,argNames = nargs)),impl) /* Function calls */ 
-      local Exp.Exp e;
+      local DAE.Exp e;
       equation 
         fnstr = Dump.printComponentRefStr(fn);
         (cache,e,prop,_) = elabCall(cache,env, fn, args, nargs, true, NONE);
@@ -1586,7 +1586,7 @@ algorithm
 	 Fix this!!
 	 */ 
       local
-        list<Exp.Exp> e_1;
+        list<DAE.Exp> e_1;
         list<Absyn.Exp> e;
       equation 
         (cache,e_1,props) = elabTuple(cache,env, e, impl,false);
@@ -1656,19 +1656,19 @@ protected function deoverloadRange "function: deoverloadRange
   Does deoverloading of range expressions. They can be both Integer ranges 
   and Real ranges. This function determines which one to use.
 "
-  input tuple<Exp.Exp, Types.Type> inTplExpExpTypesType1;
-  input Option<tuple<Exp.Exp, Types.Type>> inTplExpExpTypesTypeOption2;
-  input tuple<Exp.Exp, Types.Type> inTplExpExpTypesType3;
-  output Exp.Exp outExp1;
-  output Option<Exp.Exp> outExpExpOption2;
-  output Exp.Exp outExp3;
-  output Exp.Type outType4;
+  input tuple<DAE.Exp, DAE.Type> inTplExpExpTypesType1;
+  input Option<tuple<DAE.Exp, DAE.Type>> inTplExpExpTypesTypeOption2;
+  input tuple<DAE.Exp, DAE.Type> inTplExpExpTypesType3;
+  output DAE.Exp outExp1;
+  output Option<DAE.Exp> outExpExpOption2;
+  output DAE.Exp outExp3;
+  output DAE.ExpType outType4;
 algorithm 
   (outExp1,outExpExpOption2,outExp3,outType4):=
   matchcontinue (inTplExpExpTypesType1,inTplExpExpTypesTypeOption2,inTplExpExpTypesType3)
     local
-      Exp.Exp e1,e3,e2,e1_1,e3_1,e2_1;
-      tuple<Types.TType, Option<Absyn.Path>> t1,t3,t2;
+      DAE.Exp e1,e3,e2,e1_1,e3_1,e2_1;
+      tuple<DAE.TType, Option<Absyn.Path>> t1,t3,t2;
     case ((e1,(DAE.T_INTEGER(varLstInt = _),_)),NONE,(e3,(DAE.T_INTEGER(varLstInt = _),_))) then (e1,NONE,e3,DAE.ET_INT()); 
     case ((e1,(DAE.T_INTEGER(varLstInt = _),_)),SOME((e2,(DAE.T_INTEGER(_),_))),(e3,(DAE.T_INTEGER(varLstInt = _),_))) then (e1,SOME(e2),e3,DAE.ET_INT()); 
     case ((e1,t1),NONE,(e3,t3))
@@ -1694,26 +1694,26 @@ protected function elabRangeType "function: elabRangeType
 "
 	input Env.Cache inCache;
   input Env.Env inEnv1;
-  input Exp.Exp inExp2;
-  input Option<Exp.Exp> inExpExpOption3;
-  input Exp.Exp inExp4;
-  input Types.Const inConst5;
-  input Exp.Type inType6;
+  input DAE.Exp inExp2;
+  input Option<DAE.Exp> inExpExpOption3;
+  input DAE.Exp inExp4;
+  input DAE.Const inConst5;
+  input DAE.ExpType inType6;
   input Boolean inBoolean7;
   output Env.Cache outCache;
-  output Types.Type outType;
+  output DAE.Type outType;
 algorithm 
   (outCache,outType) :=
   matchcontinue (inCache,inEnv1,inExp2,inExpExpOption3,inExp4,inConst5,inType6,inBoolean7)
     local
       Integer startv,stopv,n,n_1,stepv,n_2,n_3,n_4;
       list<Env.Frame> env;
-      Exp.Exp start,stop,step;
-      Types.Const const;
+      DAE.Exp start,stop,step;
+      DAE.Const const;
       Boolean impl;
       Ident s1,s2,s3,s4,s5,s6,str;
       Option<Ident> s2opt;
-      Exp.Type expty;
+      DAE.ExpType expty;
       Env.Cache cache;
     case (cache,env,start,NONE,stop,const,_,impl) /* impl as false */ 
       equation 
@@ -1768,7 +1768,7 @@ algorithm
     then (cache,(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_REAL({}),NONE)),NONE)); 
     
     case (cache,env,start,step,stop,const,expty,impl)
-      local Option<Exp.Exp> step;
+      local Option<DAE.Exp> step;
       equation 
         Debug.fprint("failtrace", "- elab_range_type failed: ");
         s1 = Exp.printExpStr(start);
@@ -1796,16 +1796,16 @@ protected function elabTuple "function: elabTuple
   input Boolean inBoolean;
   input Boolean performVectorization;
   output Env.Cache outCache;
-  output list<Exp.Exp> outExpExpLst;
-  output list<Types.Properties> outTypesPropertiesLst;
+  output list<DAE.Exp> outExpExpLst;
+  output list<DAE.Properties> outTypesPropertiesLst;
 algorithm 
   (outCache,outExpExpLst,outTypesPropertiesLst):=
   matchcontinue (inCache,inEnv,inAbsynExpLst,inBoolean,performVectorization)
     local
-      Exp.Exp e_1;
-      Types.Properties p;
-      list<Exp.Exp> exps_1;
-      list<Types.Properties> props;
+      DAE.Exp e_1;
+      DAE.Properties p;
+      list<DAE.Exp> exps_1;
+      list<DAE.Properties> props;
       list<Env.Frame> env;
       Absyn.Exp e;
       list<Absyn.Exp> exps;
@@ -1835,8 +1835,8 @@ protected function elabPartEvalFunction
 	input Boolean inImpl;
 	input Boolean inVect;
 	output Env.Cache outCache;
-	output Exp.Exp outExp;
-	output Types.Properties outProperties;
+	output DAE.Exp outExp;
+	output DAE.Properties outProperties;
 	output Option<Interactive.InteractiveSymbolTable> outSymbolTableOption;
 algorithm
   (outCache,outExp,outProperties,outSymbolTableOption) := matchcontinue(inCache,inEnv,inExp,inSymbolTableOption,inImpl,inVect)
@@ -1849,10 +1849,10 @@ algorithm
       Option<Interactive.InteractiveSymbolTable> st;
       Boolean impl,doVect;
       Absyn.Path p;
-      list<Exp.Exp> args;
-      Exp.Type ty;
-      Types.Properties prop,prop_1;
-      Types.Type tty,tty_1;
+      list<DAE.Exp> args;
+      DAE.ExpType ty;
+      DAE.Properties prop,prop_1;
+      DAE.Type tty,tty_1;
     case(c,env,Absyn.PARTEVALFUNCTION(cref,Absyn.FUNCTIONARGS(posArgs,namedArgs)),st,impl,doVect)
       equation
         p = Absyn.crefToPath(cref);
@@ -1876,8 +1876,8 @@ protected function stripExtraArgsFromType
 "function: stripExtraArgsFromType
 	removes the last n arguments from the funcarg list of a function type"
 	input Integer inInteger;
-	input Types.Type inType;
-	output Types.Type outType;
+	input DAE.Type inType;
+	output DAE.Type outType;
 algorithm
   outType := matchcontinue(inInteger,inType)
     local
@@ -1916,21 +1916,21 @@ protected function elabArray "function: elabArray
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Boolean performVectorization;
   output Env.Cache outCache;
-  output list<Exp.Exp> outExpExpLst;
-  output Types.Properties outProperties;
+  output list<DAE.Exp> outExpExpLst;
+  output DAE.Properties outProperties;
 algorithm 
   (outCache,outExpExpLst,outProperties):=
   matchcontinue (inCache,inEnv,inAbsynExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,performVectorization)
     local
-      list<Exp.Exp> expl_1;
-      Types.Properties prop;
+      list<DAE.Exp> expl_1;
+      DAE.Properties prop;
       list<Env.Frame> env;
       list<Absyn.Exp> expl;
       Boolean impl;
       Option<Interactive.InteractiveSymbolTable> st;
       Env.Cache cache;
       Boolean doVect;
-      Types.Type t; Types.Const c;
+      DAE.Type t; DAE.Const c;
     case (cache,env,expl,impl,st,doVect) /* impl array contains mixed Integer and Real types */ 
       equation 
         elabArrayHasMixedIntReals(cache,env, expl, impl, st,doVect);
@@ -1977,8 +1977,8 @@ algorithm
   _:=
   matchcontinue (inCache,inEnv,inAbsynExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,performVectorization)
     local
-      Exp.Exp e_1;
-      tuple<Types.TType, Option<Absyn.Path>> tp;
+      DAE.Exp e_1;
+      tuple<DAE.TType, Option<Absyn.Path>> tp;
       list<Env.Frame> env;
       Absyn.Exp e;
       list<Absyn.Exp> expl;
@@ -2015,8 +2015,8 @@ algorithm
   _:=
   matchcontinue (inCache,inEnv,inAbsynExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,performVectorization)
     local
-      Exp.Exp e_1;
-      tuple<Types.TType, Option<Absyn.Path>> tp;
+      DAE.Exp e_1;
+      tuple<DAE.TType, Option<Absyn.Path>> tp;
       list<Env.Frame> env;
       Absyn.Exp e;
       list<Absyn.Exp> expl;
@@ -2049,18 +2049,18 @@ protected function elabArrayReal "function: elabArrayReal
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Boolean performVectorization;
   output Env.Cache outCache;
-  output list<Exp.Exp> outExpExpLst;
-  output Types.Properties outProperties;
+  output list<DAE.Exp> outExpExpLst;
+  output DAE.Properties outProperties;
 algorithm 
   (outCache,outExpExpLst,outProperties):=
   matchcontinue (inCache,inEnv,inAbsynExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,performVectorization)
     local
-      list<Exp.Exp> expl_1,expl_2;
-      list<Types.Properties> props;
-      tuple<Types.TType, Option<Absyn.Path>> real_tp,real_tp_1;
+      list<DAE.Exp> expl_1,expl_2;
+      list<DAE.Properties> props;
+      tuple<DAE.TType, Option<Absyn.Path>> real_tp,real_tp_1;
       Ident s;
-      Types.Const const;
-      list<tuple<Types.TType, Option<Absyn.Path>>> types;
+      DAE.Const const;
+      list<tuple<DAE.TType, Option<Absyn.Path>>> types;
       list<Env.Frame> env;
       list<Absyn.Exp> expl;
       Boolean impl;
@@ -2093,14 +2093,14 @@ protected function elabArrayFirstPropsReal
   author: PA 
   Pick the first type among the list of 
   properties which has elementype Real."
-  input list<Types.Properties> inTypesPropertiesLst;
-  output Types.Type outType;
+  input list<DAE.Properties> inTypesPropertiesLst;
+  output DAE.Type outType;
 algorithm 
   outType:=
   matchcontinue (inTypesPropertiesLst)
     local
-      tuple<Types.TType, Option<Absyn.Path>> tp;
-      list<Types.Properties> rest;
+      tuple<DAE.TType, Option<Absyn.Path>> tp;
+      list<DAE.Properties> rest;
     case ((DAE.PROP(type_ = tp) :: _))
       equation 
         ((DAE.T_REAL(_),_)) = Types.arrayElementType(tp);
@@ -2117,15 +2117,15 @@ end elabArrayFirstPropsReal;
 protected function elabArrayConst 
 "function: elabArrayConst 
   Constructs a const value from a list of properties, using constAnd."
-  input list<Types.Properties> inTypesPropertiesLst;
-  output Types.Const outConst;
+  input list<DAE.Properties> inTypesPropertiesLst;
+  output DAE.Const outConst;
 algorithm 
   outConst:=
   matchcontinue (inTypesPropertiesLst)
     local
-      tuple<Types.TType, Option<Absyn.Path>> tp;
-      Types.Const c,c2,c1;
-      list<Types.Properties> rest;
+      tuple<DAE.TType, Option<Absyn.Path>> tp;
+      DAE.Const c,c2,c1;
+      list<DAE.Properties> rest;
     case ({DAE.PROP(type_ = tp,constFlag = c)}) then c; 
     case ((DAE.PROP(constFlag = c1) :: rest))
       equation 
@@ -2142,19 +2142,19 @@ protected function elabArrayReal2
   author: PA  
   Applies type_convert to all expressions in a list to the type given
   as argument."
-  input list<Exp.Exp> inExpExpLst;
-  input list<Types.Type> inTypesTypeLst;
-  input Types.Type inType;
-  output list<Exp.Exp> outExpExpLst;
-  output Types.Type outType;
+  input list<DAE.Exp> inExpExpLst;
+  input list<DAE.Type> inTypesTypeLst;
+  input DAE.Type inType;
+  output list<DAE.Exp> outExpExpLst;
+  output DAE.Type outType;
 algorithm 
   (outExpExpLst,outType):=
   matchcontinue (inExpExpLst,inTypesTypeLst,inType)
     local
-      tuple<Types.TType, Option<Absyn.Path>> tp,res_type,t,to_type;
-      list<Exp.Exp> res,es;
-      Exp.Exp e,e_1;
-      list<tuple<Types.TType, Option<Absyn.Path>>> ts;
+      tuple<DAE.TType, Option<Absyn.Path>> tp,res_type,t,to_type;
+      list<DAE.Exp> res,es;
+      DAE.Exp e,e_1;
+      list<tuple<DAE.TType, Option<Absyn.Path>>> ts;
       Ident s,s2,s3;
     case ({},{},tp) then ({},tp);  /* expl to_type new_expl res_type */ 
     case ((e :: es),(t :: ts),to_type) /* No need for type conversion. */ 
@@ -2198,21 +2198,21 @@ protected function elabArray2
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Boolean performVectorization;
   output Env.Cache outCache;
-  output list<Exp.Exp> outExpExpLst;
-  output Types.Properties outProperties;
+  output list<DAE.Exp> outExpExpLst;
+  output DAE.Properties outProperties;
 algorithm 
   (outCache,outExpExpLst,outProperties):=
   matchcontinue (inCache,inEnv,inAbsynExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,performVectorization)
     local
-      Exp.Exp e_1;
-      Types.Properties prop;
+      DAE.Exp e_1;
+      DAE.Properties prop;
       list<Env.Frame> env;
       Absyn.Exp e;
       Boolean impl;
       Option<Interactive.InteractiveSymbolTable> st;
-      tuple<Types.TType, Option<Absyn.Path>> t1,t2;
-      Types.Const c1,c2,c;
-      list<Exp.Exp> es_1;
+      tuple<DAE.TType, Option<Absyn.Path>> t1,t2;
+      DAE.Const c1,c2,c;
+      list<DAE.Exp> es_1;
       list<Absyn.Exp> es,expl;
       Ident e_str,str,elt_str,t1_str,t2_str;
       list<Ident> strs;
@@ -2265,20 +2265,20 @@ protected function elabGraphicsArray
   input list<Absyn.Exp> inAbsynExpLst;
   input Boolean inBoolean;
   output Env.Cache outCache;
-  output list<Exp.Exp> outExpExpLst;
-  output Types.Properties outProperties;
+  output list<DAE.Exp> outExpExpLst;
+  output DAE.Properties outProperties;
 algorithm 
   (outCache,outExpExpLst,outProperties):=
   matchcontinue (inCache,inEnv,inAbsynExpLst,inBoolean)
     local
-      Exp.Exp e_1;
-      Types.Properties prop;
+      DAE.Exp e_1;
+      DAE.Properties prop;
       list<Env.Frame> env;
       Absyn.Exp e;
       Boolean impl;
-      tuple<Types.TType, Option<Absyn.Path>> t1,t2;
-      Types.Const c1,c2,c;
-      list<Exp.Exp> es_1;
+      tuple<DAE.TType, Option<Absyn.Path>> t1,t2;
+      DAE.Const c1,c2,c;
+      list<DAE.Exp> es_1;
       list<Absyn.Exp> es;
       Env.Cache cache;
     case (cache,env,{e},impl) /* impl */ 
@@ -2315,25 +2315,25 @@ protected function elabMatrixComma "function elabMatrixComma
   input Integer inInteger6;
   input Boolean performVectorization;
   output Env.Cache outCache;
-  output Exp.Exp outExp1;
-  output Types.Properties outProperties2;
+  output DAE.Exp outExp1;
+  output DAE.Properties outProperties2;
   output Option<Integer> outInteger3;
   output Option<Integer> outInteger4;
 algorithm 
   (outCache,outExp1,outProperties2,outInteger3,outInteger4):=
   matchcontinue (inCache,inEnv1,inAbsynExpLst2,inBoolean3,inInteractiveInteractiveSymbolTableOption4,inBoolean5,inInteger6,performVectorization)
     local
-      Exp.Exp el_1,el_2;
-      Types.Properties prop,prop1,prop1_1,prop2,props;
-      tuple<Types.TType, Option<Absyn.Path>> t1,t1_1;
+      DAE.Exp el_1,el_2;
+      DAE.Properties prop,prop1,prop1_1,prop2,props;
+      tuple<DAE.TType, Option<Absyn.Path>> t1,t1_1;
       Integer t1_dim1,nmax_2,nmax,t1_ndims,dim;
       Option<Integer> t1_dim1_1,t1_dim2_1,dim1,dim2,dim2_1;
       Boolean array,impl,havereal,a,scalar,doVect;
-      Exp.Type at;
+      DAE.ExpType at;
       list<Env.Frame> env;
       Absyn.Exp el;
       Option<Interactive.InteractiveSymbolTable> st;
-      list<Exp.Exp> els_1;
+      list<DAE.Exp> els_1;
       list<Absyn.Exp> els;
       Env.Cache cache;
     case (cache,env,{el},impl,st,havereal,nmax,doVect) /* implicit inst. have real nmax dim1 dim2 */ 
@@ -2377,14 +2377,14 @@ protected function elabMatrixCatTwoExp "function: elabMatrixCatTwoExp
   For instance
   elab_matrix_cat_two( {{1,2;5,6}, {3,4;7,8}}) => {1,2,3,4;5,6,7,8}
 "
-  input Exp.Exp inExp;
-  output Exp.Exp outExp;
+  input DAE.Exp inExp;
+  output DAE.Exp outExp;
 algorithm 
   outExp:=
   matchcontinue (inExp)
     local
-      Exp.Exp res;
-      list<Exp.Exp> expl;
+      DAE.Exp res;
+      list<DAE.Exp> expl;
     case (DAE.ARRAY(array = expl))
       equation 
         res = elabMatrixCatTwo(expl);
@@ -2404,14 +2404,14 @@ protected function elabMatrixCatTwo "function: elabMatrixCatTwo
   Concatenates a list of matrix(or higher dim) expressions along
   the second dimension.
 "
-  input list<Exp.Exp> inExpExpLst;
-  output Exp.Exp outExp;
+  input list<DAE.Exp> inExpExpLst;
+  output DAE.Exp outExp;
 algorithm 
   outExp:=
   matchcontinue (inExpExpLst)
     local
-      Exp.Exp e,res,e1,e2;
-      list<Exp.Exp> rest,expl;
+      DAE.Exp e,res,e1,e2;
+      list<DAE.Exp> rest,expl;
     case ({e}) then e; 
     case ({e1,e2})
       equation 
@@ -2425,7 +2425,7 @@ algorithm
       then
         res;
     case (expl)
-      local Exp.Type tp;
+      local DAE.ExpType tp;
       equation
         tp = Exp.typeof(Util.listFirst(expl));
        then DAE.CALL(Absyn.IDENT("cat"),(DAE.ICONST(2) :: expl),false,true,tp,false); 
@@ -2438,15 +2438,15 @@ protected function elabMatrixCatTwo2 "function: elabMatrixCatTwo2
   Concatenates two array expressions that are matrices (or higher dimension)
   along the first dimension (row).
 "
-  input Exp.Exp inExp1;
-  input Exp.Exp inExp2;
-  output Exp.Exp outExp;
+  input DAE.Exp inExp1;
+  input DAE.Exp inExp2;
+  output DAE.Exp outExp;
 algorithm 
   outExp:=
   matchcontinue (inExp1,inExp2)
     local
-      list<Exp.Exp> expl,expl1,expl2;
-      Exp.Type a1,a2;
+      list<DAE.Exp> expl,expl1,expl2;
+      DAE.ExpType a1,a2;
       Boolean at1,at2;
     case (DAE.ARRAY(ty = a1,scalar = at1,array = expl1),DAE.ARRAY(ty = a2,scalar = at2,array = expl2))
       equation 
@@ -2460,15 +2460,15 @@ protected function elabMatrixCatTwo3 "function: elabMatrixCatTwo3
  
   Helper function to elab_matrix_cat_two_2
 "
-  input list<Exp.Exp> inExpExpLst1;
-  input list<Exp.Exp> inExpExpLst2;
-  output list<Exp.Exp> outExpExpLst;
+  input list<DAE.Exp> inExpExpLst1;
+  input list<DAE.Exp> inExpExpLst2;
+  output list<DAE.Exp> outExpExpLst;
 algorithm 
   outExpExpLst:=
   matchcontinue (inExpExpLst1,inExpExpLst2)
     local
-      list<Exp.Exp> expl,es_1,expl1,es1,expl2,es2;
-      Exp.Type a1,a2;
+      list<DAE.Exp> expl,es_1,expl1,es1,expl2,es2;
+      DAE.ExpType a1,a2;
       Boolean at1,at2;
     case ({},{}) then {}; 
     case ((DAE.ARRAY(ty = a1,scalar = at1,array = expl1) :: es1),(DAE.ARRAY(ty = a2,scalar = at2,array = expl2) :: es2))
@@ -2487,16 +2487,16 @@ protected function elabMatrixCatOne "function: elabMatrixCatOne
   the first dimension. 
   i.e. elabMatrixCatOne( { {1,2;3,4}, {5,6;7,8} }) => {1,2;3,4;5,6;7,8} 
 "
-  input list<Exp.Exp> inExpExpLst;
-  output Exp.Exp outExp;
+  input list<DAE.Exp> inExpExpLst;
+  output DAE.Exp outExp;
 algorithm 
   outExp:=
   matchcontinue (inExpExpLst)
     local
-      Exp.Exp e;
-      Exp.Type a;
+      DAE.Exp e;
+      DAE.ExpType a;
       Boolean at;
-      list<Exp.Exp> expl,expl1,expl2,es;
+      list<DAE.Exp> expl,expl1,expl2,es;
     case ({(e as DAE.ARRAY(ty = a,scalar = at,array = expl))}) then e; 
     case ({DAE.ARRAY(ty = a,scalar = at,array = expl1),DAE.ARRAY(array = expl2)})
       equation 
@@ -2510,7 +2510,7 @@ algorithm
       then
         DAE.ARRAY(a,at,expl);
     case (expl) local
-      Exp.Type tp;
+      DAE.ExpType tp;
       equation
         tp = Exp.typeof(Util.listFirst(expl));
         then DAE.CALL(Absyn.IDENT("cat"),(DAE.ICONST(1) :: expl),false,true,tp,false); 
@@ -2527,22 +2527,22 @@ protected function promoteExp "function: promoteExp
   promote_exp( {1,2},2) => { {{1}},{{2}} }
   See also promote_real_array in real_array.c
 "
-  input Exp.Exp inExp;
-  input Types.Properties inProperties;
+  input DAE.Exp inExp;
+  input DAE.Properties inProperties;
   input Integer inInteger;
-  output Exp.Exp outExp;
-  output Types.Properties outProperties;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
 algorithm 
   (outExp,outProperties):=
   matchcontinue (inExp,inProperties,inInteger)
     local
-      Exp.Exp e,e_1,e_2;
-      Types.Properties prop,prop_1;
+      DAE.Exp e,e_1,e_2;
+      DAE.Properties prop,prop_1;
       Integer n_1,n;
-      Exp.Type e_tp,e_tp_1;
-      tuple<Types.TType, Option<Absyn.Path>> tp_1,tp;
+      DAE.ExpType e_tp,e_tp_1;
+      tuple<DAE.TType, Option<Absyn.Path>> tp_1,tp;
       Boolean array;
-      Types.Const c;
+      DAE.Const c;
     case (e,prop,-1) then (e,prop);  /* n */ 
     case (e,prop,0) then (e,prop); 
     case (e,DAE.PROP(type_ = tp,constFlag = c),n)
@@ -2567,19 +2567,19 @@ protected function promoteExp2 "function: promoteExp2
   Helper function to promote_exp, adds dimension to the right of
   the expression.
 "
-  input Exp.Exp inExp;
-  input tuple<Integer, Types.Type> inTplIntegerTypesType;
-  output Exp.Exp outExp;
+  input DAE.Exp inExp;
+  input tuple<Integer, DAE.Type> inTplIntegerTypesType;
+  output DAE.Exp outExp;
 algorithm 
   outExp:=
   matchcontinue (inExp,inTplIntegerTypesType)
     local
       Integer n_1,n;
-      tuple<Types.TType, Option<Absyn.Path>> tp_1,tp,tp2;
-      list<Exp.Exp> expl_1,expl;
-      Exp.Type a;
+      tuple<DAE.TType, Option<Absyn.Path>> tp_1,tp,tp2;
+      list<DAE.Exp> expl_1,expl;
+      DAE.ExpType a;
       Boolean at;
-      Exp.Exp e;
+      DAE.Exp e;
       Ident es;
     case (DAE.ARRAY(ty = a,scalar = at,array = expl),(n,tp))
       equation 
@@ -2589,21 +2589,21 @@ algorithm
       then
         DAE.ARRAY(a,at,expl_1);
     case (e,(_,tp)) /* scalars can be promoted from s to {s} */ 
-      local Exp.Type at;
+      local DAE.ExpType at;
       equation 
         false = Types.isArray(tp);
         at = Exp.typeof(e);
       then
         DAE.ARRAY(DAE.ET_ARRAY(at,{SOME(1)}),true,{e});
     case (e,(_,(DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(1)),arrayType = tp2),_))) /* arrays of one dimension can be promoted from a to {a} */ 
-      local Exp.Type at;
+      local DAE.ExpType at;
       equation 
         at = Exp.typeof(e);
         false = Types.isArray(tp2);
       then
         DAE.ARRAY(DAE.ET_ARRAY(at,{SOME(1)}),true,{e});
     case (e,(n,tp)) /* fallback, use \"builtin\" operator promote */ 
-      local Exp.Type etp,tp1;
+      local DAE.ExpType etp,tp1;
       equation 
         es = Exp.printExpStr(e);
         etp = Types.elabType(tp);
@@ -2614,15 +2614,15 @@ algorithm
 end promoteExp2;
 
 function promoteExpType "lifts the type using liftArrayRight n times"
-  input Exp.Type inType;
+  input DAE.ExpType inType;
   input Integer n;
-  output Exp.Type outType;
+  output DAE.ExpType outType;
 algorithm
   outType :=  matchcontinue(inType,n)
 
     case(inType,0) then inType;
     case(inType,n) 
-      local Exp.Type tp1,tp2;
+      local DAE.ExpType tp1,tp2;
       equation
       tp1=Exp.liftArrayRight(inType,SOME(1));
       tp2 = promoteExpType(tp1,n-1);
@@ -2644,20 +2644,20 @@ protected function elabMatrixSemi "function: elabMatrixSemi
   input Integer inInteger6;
   input Boolean performVectorization;
   output Env.Cache outCache;
-  output Exp.Exp outExp1;
-  output Types.Properties outProperties2;
+  output DAE.Exp outExp1;
+  output DAE.Properties outProperties2;
   output Option<Integer> outInteger3;
   output Option<Integer> outInteger4;
 algorithm 
   (outCache,outExp1,outProperties2,outInteger3,outInteger4):=
   matchcontinue (inCache,inEnv1,inAbsynExpLstLst2,inBoolean3,inInteractiveInteractiveSymbolTableOption4,inBoolean5,inInteger6,performVectorization)
     local
-      Exp.Exp el_1,el_2,els_1,els_2;
-      Types.Properties props,props1,props2;
-      tuple<Types.TType, Option<Absyn.Path>> t,t1,t2;
+      DAE.Exp el_1,el_2,els_1,els_2;
+      DAE.Properties props,props1,props2;
+      tuple<DAE.TType, Option<Absyn.Path>> t,t1,t2;
       Integer maxn,dim;
       Option<Integer> dim1,dim2,dim1_1,dim2_1,dim1_2;
-      Exp.Type at;
+      DAE.ExpType at;
       Boolean a,impl,havereal;
       list<Env.Frame> env;
       list<Absyn.Exp> el;
@@ -2729,21 +2729,21 @@ Then call elabCallArgs to vectorize/type-match.
   input extraFunc typeChecker;
   input String fnName;
   output Env.Cache outCache;
-  output Exp.Exp outExp;
-  output Types.Properties outProperties;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
   partial function extraFunc
-    input Types.Type inp1;
+    input DAE.Type inp1;
     output Boolean outp1;
   end extraFunc;
 algorithm 
   (outCache,outExp,outProperties):=
   matchcontinue (cache,env,inAbsynExpLst,impl,typeChecker,fnName)
     local
-      Types.Type ty,ty2;
+      DAE.Type ty,ty2;
       Absyn.Exp s1;
-      Exp.Exp s1_1;
-      Types.Const c;
-      Types.Properties prop;
+      DAE.Exp s1_1;
+      DAE.Const c;
+      DAE.Properties prop;
     case (cache,env,{s1},impl,typeChecker,fnName) /* impl */
       equation 
         (cache,_,DAE.PROP(ty,c),_) = elabExp(cache,env, s1, impl, NONE,true);
@@ -2768,15 +2768,15 @@ protected function elabBuiltinCardinality "function: elabBuiltinCardinality
   input list<Absyn.NamedArg> inNamedArg;  
   input Boolean inBoolean;
   output Env.Cache outCache;
-  output Exp.Exp outExp;
-  output Types.Properties outProperties;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties):=
   matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
     local
-      Exp.Exp exp_1;
-      Exp.ComponentRef cr_1;
-      tuple<Types.TType, Option<Absyn.Path>> tp1;
+      DAE.Exp exp_1;
+      DAE.ComponentRef cr_1;
+      tuple<DAE.TType, Option<Absyn.Path>> tp1;
       list<Env.Frame> env;
       Absyn.Exp exp;
       Absyn.ComponentRef cr;
@@ -2808,21 +2808,21 @@ protected function elabBuiltinSmooth "
   input list<Absyn.NamedArg> inNamedArg;  
   input Boolean inBoolean;
   output Env.Cache outCache;
-  output Exp.Exp outExp;
-  output Types.Properties outProperties;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties):=
   matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
     local
-      Exp.Exp p_1,expr_1,exp;
-      Types.Const c1,c2_1,c,c_1;
+      DAE.Exp p_1,expr_1,exp;
+      DAE.Const c1,c2_1,c,c_1;
       Boolean c2,impl,b1,b2;
-      Types.Type tp,tp1;
+      DAE.Type tp,tp1;
       list<Env.Frame> env;
       Absyn.Exp p,expr;
       list<Absyn.Exp> expl;
       Env.Cache cache;
-      Exp.Type etp;
+      DAE.ExpType etp;
       String s1,a1,a2;
 
     case (cache,env,{p,expr},_,impl)
@@ -2885,15 +2885,15 @@ protected function elabBuiltinSize "function: elabBuiltinSize
   input list<Absyn.NamedArg> inNamedArg;  
   input Boolean inBoolean;
   output Env.Cache outCache;
-  output Exp.Exp outExp;
-  output Types.Properties outProperties;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties):=
   matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
     local
-      Exp.Exp dimp,arraycrefe,exp;
-      Types.Const c1,c2_1,c,c_1;
-      tuple<Types.TType, Option<Absyn.Path>> arrtp;
+      DAE.Exp dimp,arraycrefe,exp;
+      DAE.Const c1,c2_1,c,c_1;
+      tuple<DAE.TType, Option<Absyn.Path>> arrtp;
       Boolean c2,impl;
       list<Env.Frame> env;
       Absyn.Exp arraycr,dim;
@@ -2942,15 +2942,15 @@ protected function elabBuiltinNDims
   input list<Absyn.NamedArg> inNamedArg;  
   input Boolean inBoolean;
   output Env.Cache outCache;
-  output Exp.Exp outExp;
-  output Types.Properties outProperties;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties):=
   matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
     local
-      Exp.Exp arraycrefe,exp;
-      Types.Const c;
-      tuple<Types.TType, Option<Absyn.Path>> arrtp;
+      DAE.Exp arraycrefe,exp;
+      DAE.Const c;
+      tuple<DAE.TType, Option<Absyn.Path>> arrtp;
       Boolean c2,impl;
       list<Env.Frame> env;
       Absyn.Exp arraycr;
@@ -2985,17 +2985,17 @@ protected function elabBuiltinFill "function: elabBuiltinFill
   input list<Absyn.NamedArg> inNamedArg;  
   input Boolean inBoolean;
 	output Env.Cache outCache;
-  output Exp.Exp outExp;
-  output Types.Properties outProperties;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties):=
   matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
     local
-      Exp.Exp s_1,exp;
-      Types.Properties prop;
-      list<Exp.Exp> dims_1;
-      list<Types.Properties> dimprops;
-      tuple<Types.TType, Option<Absyn.Path>> sty;
+      DAE.Exp s_1,exp;
+      DAE.Properties prop;
+      list<DAE.Exp> dims_1;
+      list<DAE.Properties> dimprops;
+      tuple<DAE.TType, Option<Absyn.Path>> sty;
       list<Values.Value> dimvals;
       list<Env.Frame> env;
       Absyn.Exp s;
@@ -3004,7 +3004,7 @@ algorithm
       Ident implstr,expstr,str;
       list<Ident> expstrs;
       Env.Cache cache;
-      Types.Const c1;
+      DAE.Const c1;
     case (cache,env,(s :: dims),_,impl) /* impl */ 
       equation 
         (cache,s_1,prop,_) = elabExp(cache,env, s, impl, NONE,true);        
@@ -3035,29 +3035,29 @@ protected function elabBuiltinFill2 "function: elabBuiltinFill2
 "
 	input Env.Cache inCache;
 	input Env.Env inEnv;
-  input Exp.Exp inExp;
-  input Types.Type inType;
+  input DAE.Exp inExp;
+  input DAE.Type inType;
   input list<Values.Value> inValuesValueLst;
-  input Types.Const constVar;
+  input DAE.Const constVar;
   output Env.Cache outCache;
-  output Exp.Exp outExp;
-  output Types.Properties outProperties;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties):=
   matchcontinue (inCache,inEnv,inExp,inType,inValuesValueLst,constVar)
     local
-      list<Exp.Exp> arraylist;
+      list<DAE.Exp> arraylist;
       Ident dimension;
-      Exp.Type at;
+      DAE.ExpType at;
       Boolean a;
       list<Env.Frame> env;
-      Exp.Exp s,exp;
-      tuple<Types.TType, Option<Absyn.Path>> sty,ty,sty2;
+      DAE.Exp s,exp;
+      tuple<DAE.TType, Option<Absyn.Path>> sty,ty,sty2;
       Integer v;
-      Types.Const con;
+      DAE.Const con;
       list<Values.Value> rest;
       Env.Cache cache;
-      Types.Const c1;
+      DAE.Const c1;
     case (cache,env,s,sty,{Values.INTEGER(integer = v)},c1)
       equation 
         arraylist = buildExpList(s, v);
@@ -3096,22 +3096,22 @@ protected function elabBuiltinTranspose "function: elabBuiltinTranspose
   input list<Absyn.NamedArg> inNamedArg;  
   input Boolean inBoolean;
   output Env.Cache outCache;
-  output Exp.Exp outExp;
-  output Types.Properties outProperties;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties):=
   matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
     local
-      Exp.Type tp;
+      DAE.ExpType tp;
       Boolean sc,impl;
-      list<Exp.Exp> expl,exp_2;
-      Types.ArrayDim d1,d2;
-      tuple<Types.TType, Option<Absyn.Path>> eltp,newtp;
+      list<DAE.Exp> expl,exp_2;
+      DAE.ArrayDim d1,d2;
+      tuple<DAE.TType, Option<Absyn.Path>> eltp,newtp;
       Integer dim1,dim2,dimMax;
-      Types.Properties prop;
+      DAE.Properties prop;
       list<Env.Frame> env;
       Absyn.Exp matexp;
-      Exp.Exp exp_1,exp;
+      DAE.Exp exp_1,exp;
       Env.Cache cache;
     case (cache,env,{matexp},_,impl) /* impl try symbolically transpose the ARRAY expression */ 
       equation 
@@ -3126,7 +3126,7 @@ algorithm
     case (cache,env,{matexp},_,impl) /* try symbolically transpose the MATRIX expression */ 
       local
         Integer sc;
-        list<list<tuple<Exp.Exp, Boolean>>> expl,exp_2;
+        list<list<tuple<DAE.Exp, Boolean>>> expl,exp_2;
       equation 
         (cache,DAE.MATRIX(tp,sc,expl),DAE.PROP((DAE.T_ARRAY(d1,(DAE.T_ARRAY(d2,eltp),_)),_),_),_) 
         	= elabExp(cache,env, matexp, impl, NONE,true);
@@ -3139,7 +3139,7 @@ algorithm
       then
         (cache,DAE.MATRIX(tp,sc,exp_2),prop);
     case (cache,env,{matexp},_,impl) /* .. otherwise create transpose call */ 
-      local Exp.Type tp;
+      local DAE.ExpType tp;
       equation 
         (cache,exp_1,DAE.PROP((DAE.T_ARRAY(d1,(DAE.T_ARRAY(d2,eltp),_)),_),_),_) 
         	= elabExp(cache,env, matexp, impl, NONE,true);
@@ -3158,17 +3158,17 @@ protected function elabBuiltinTranspose2 "function: elabBuiltinTranspose2
   Helper function to elab_builtin_transpose. Tries to symbolically transpose
   a matrix expression in ARRAY form.
 "
-  input list<Exp.Exp> inExpExpLst1;
+  input list<DAE.Exp> inExpExpLst1;
   input Integer inInteger2;
   input Integer inInteger3;
-  output list<Exp.Exp> outExpExpLst;
+  output list<DAE.Exp> outExpExpLst;
 algorithm 
   outExpExpLst:=
   matchcontinue (inExpExpLst1,inInteger2,inInteger3)
     local
-      Exp.Exp e;
-      list<Exp.Exp> es,rest,elst;
-      Exp.Type tp;
+      DAE.Exp e;
+      list<DAE.Exp> es,rest,elst;
+      DAE.ExpType tp;
       Integer indx_1,indx,dim1;
     case (elst,indx,dim1)
       equation 
@@ -3190,20 +3190,20 @@ protected function elabBuiltinTranspose3 "function: elabBuiltinTranspose3
   Helper function to elab_builtin_transpose. Tries to symbolically transpose
   a MATRIX expression list
 "
-  input list<list<tuple<Exp.Exp, Boolean>>> inTplExpExpBooleanLstLst1;
+  input list<list<tuple<DAE.Exp, Boolean>>> inTplExpExpBooleanLstLst1;
   input Integer inInteger2;
   input Integer inInteger3;
-  output list<list<tuple<Exp.Exp, Boolean>>> outTplExpExpBooleanLstLst;
+  output list<list<tuple<DAE.Exp, Boolean>>> outTplExpExpBooleanLstLst;
 algorithm 
   outTplExpExpBooleanLstLst:=
   matchcontinue (inTplExpExpBooleanLstLst1,inInteger2,inInteger3)
     local
       Integer lindx,indx_1,indx,dim1;
-      tuple<Exp.Exp, Boolean> e;
-      list<tuple<Exp.Exp, Boolean>> es;
-      Exp.Exp e_1;
-      Exp.Type tp;
-      list<list<tuple<Exp.Exp, Boolean>>> rest,res,elst;
+      tuple<DAE.Exp, Boolean> e;
+      list<tuple<DAE.Exp, Boolean>> es;
+      DAE.Exp e_1;
+      DAE.ExpType tp;
+      list<list<tuple<DAE.Exp, Boolean>>> rest,res,elst;
     case (elst,indx,dim1)
       equation 
         (indx <= dim1) = true;
@@ -3225,16 +3225,16 @@ protected function buildExpList "function: buildExpList
   Helper function to e.g. elab_builtin_fill_2. Creates n copies of the same 
   expression given as input.
 "
-  input Exp.Exp inExp;
+  input DAE.Exp inExp;
   input Integer inInteger;
-  output list<Exp.Exp> outExpExpLst;
+  output list<DAE.Exp> outExpExpLst;
 algorithm 
   outExpExpLst:=
   matchcontinue (inExp,inInteger)
     local
-      Exp.Exp e;
+      DAE.Exp e;
       Integer c_1,c;
-      list<Exp.Exp> rest;
+      list<DAE.Exp> rest;
     case (e,0) then {};  /* n */ 
     case (e,1) then {e}; 
     case (e,c)
@@ -3257,21 +3257,21 @@ protected function elabBuiltinSum "function: elabBuiltinSum
   input list<Absyn.NamedArg> inNamedArg;  
   input Boolean inBoolean;
 	output Env.Cache outCache;
-  output Exp.Exp outExp;
-  output Types.Properties outProperties;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties):=
   matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
     local
-      Exp.Exp exp_1,exp_2;
-      Types.ArrayDim dim;
-      tuple<Types.TType, Option<Absyn.Path>> tp;
-      Types.Const c;
+      DAE.Exp exp_1,exp_2;
+      DAE.ArrayDim dim;
+      tuple<DAE.TType, Option<Absyn.Path>> tp;
+      DAE.Const c;
       list<Env.Frame> env;
       Absyn.Exp arrexp;
       Boolean impl;
       Env.Cache cache;
-      Types.Type ty,ty2;
+      DAE.Type ty,ty2;
     case (cache,env,{arrexp},_,impl) /* impl */ 
       local String str;
       equation 
@@ -3292,8 +3292,8 @@ algorithm
          (cache,exp_1,DAE.PROP((DAE.T_REAL({}),NONE),c));
     case (cache,env,aexps,_,impl)  
       local 
-        Exp.Type etp; 
-        Types.Type t;
+        DAE.ExpType etp; 
+        DAE.Type t;
         list<Absyn.Exp> aexps;
       equation 
         arrexp = Util.listFirst(aexps);
@@ -3309,16 +3309,16 @@ end elabBuiltinSum;
 protected function elabBuiltinSum2 " replaces sum({a1,a2,...an}) with a1+a2+...+an} and
 sum([a11,a12,...,a1n;...,am1,am2,..amn]) with a11+a12+...+amn
 "
-input Exp.Exp inExp;
-output Exp.Exp outExp;
+input DAE.Exp inExp;
+output DAE.Exp outExp;
 algorithm
   outExp := matchcontinue(inExp)
     local 
-      Exp.Type ty;
+      DAE.ExpType ty;
       Boolean sc;
-      list<Exp.Exp> expl;
-      Exp.Exp e;
-      list<list<tuple<Exp.Exp, Boolean>>> mexpl;
+      list<DAE.Exp> expl;
+      DAE.Exp e;
+      list<list<tuple<DAE.Exp, Boolean>>> mexpl;
       Integer dim;
     case(DAE.CALL(_,{DAE.ARRAY(ty,sc,expl)},_,_,_,_)) equation
       e = Exp.makeSum(expl);
@@ -3343,20 +3343,20 @@ protected function elabBuiltinProduct "function: elabBuiltinProduct
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
 	output Env.Cache outCache;
-  output Exp.Exp outExp;
-  output Types.Properties outProperties;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties):=
   matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
     local
-      Exp.Exp exp_1,exp_2;
-      Types.ArrayDim dim;
-      tuple<Types.TType, Option<Absyn.Path>> tp;
-      Types.Const c;
+      DAE.Exp exp_1,exp_2;
+      DAE.ArrayDim dim;
+      tuple<DAE.TType, Option<Absyn.Path>> tp;
+      DAE.Const c;
       list<Env.Frame> env;
       Absyn.Exp arrexp;
       Boolean impl;
-      Types.Type ty,ty2;
+      DAE.Type ty,ty2;
       Env.Cache cache;
     case (cache,env,{arrexp},_,impl) /* impl */ 
       local String str;
@@ -3377,7 +3377,7 @@ algorithm
       then
          (cache,exp_1,DAE.PROP((DAE.T_REAL({}),NONE),c));
     case (cache,env,{arrexp},_,impl) /* impl */ 
-      local Exp.Type etp; Types.Type t;
+      local DAE.ExpType etp; DAE.Type t;
       equation 
         (cache,exp_1,DAE.PROP(t as (DAE.T_ARRAY(dim,tp),_),c),_) = elabExp(cache,env, arrexp, impl, NONE,true);
         tp = Types.arrayElementType(t);        
@@ -3392,16 +3392,16 @@ protected function elabBuiltinProduct2 " replaces product({a1,a2,...an})
 with a1*a2*...*an} and
 product([a11,a12,...,a1n;...,am1,am2,..amn]) with a11*a12*...*amn
 "
-input Exp.Exp inExp;
-output Exp.Exp outExp;
+input DAE.Exp inExp;
+output DAE.Exp outExp;
 algorithm
   outExp := matchcontinue(inExp)
     local 
-      Exp.Type ty;
+      DAE.ExpType ty;
       Boolean sc;
-      list<Exp.Exp> expl;
-      Exp.Exp e;
-      list<list<tuple<Exp.Exp, Boolean>>> mexpl;
+      list<DAE.Exp> expl;
+      DAE.Exp e;
+      list<list<tuple<DAE.Exp, Boolean>>> mexpl;
       Integer dim;
     case(DAE.CALL(_,{DAE.ARRAY(ty,sc,expl)},_,_,_,_)) equation
       e = Exp.makeProductLst(expl);
@@ -3426,18 +3426,18 @@ protected function elabBuiltinPre "function: elabBuiltinPre
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
   output Env.Cache outCache;
-  output Exp.Exp outExp;
-  output Types.Properties outProperties;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
 algorithm
   (outCache,outExp,outProperties):=
   matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
     local
-      Exp.Exp exp_1,exp_2;
-      tuple<Types.TType, Option<Absyn.Path>> tp;
-      Types.Const c;
+      DAE.Exp exp_1,exp_2;
+      tuple<DAE.TType, Option<Absyn.Path>> tp;
+      DAE.Const c;
       list<Env.Frame> env;
       Absyn.Exp exp;
-      Types.ArrayDim dim;
+      DAE.ArrayDim dim;
       Boolean impl;
       Ident s,el_str;
       list<Absyn.Exp> expl;
@@ -3446,9 +3446,9 @@ algorithm
     /* an matrix? */
     case (cache,env,{exp},_,impl) /* impl */
       local
-        Types.Type t,t2;
-        Exp.Type etp,etp_org;
-        list<Exp.Exp> expl_1;
+        DAE.Type t,t2;
+        DAE.ExpType etp,etp_org;
+        list<DAE.Exp> expl_1;
         Boolean sc;
       equation         
         (cache,exp_1 as DAE.MATRIX(_, _, _),DAE.PROP(t as (DAE.T_ARRAY(dim,tp),_),c),_) = elabExp(cache, env, exp, impl, NONE, true);
@@ -3465,9 +3465,9 @@ algorithm
     /* an array? */
     case (cache,env,{exp},_,impl) /* impl */
       local
-        Types.Type t,t2;
-        Exp.Type etp,etp_org;
-        list<Exp.Exp> expl_1;
+        DAE.Type t,t2;
+        DAE.ExpType etp,etp_org;
+        list<DAE.Exp> expl_1;
         Boolean sc;
       equation         
         (cache,exp_1,DAE.PROP(t as (DAE.T_ARRAY(dim,tp),_),c),_) = elabExp(cache, env, exp, impl, NONE,true);
@@ -3486,7 +3486,7 @@ algorithm
 
     /* a scalar? */
     case (cache,env,{exp},_,impl) /* impl */
-      local Exp.Type t; String str;
+      local DAE.ExpType t; String str;
       equation
         (cache,exp_1,DAE.PROP(tp,c),_) = elabExp(cache,env, exp, impl, NONE,true);
         (tp,_) = Types.flattenArrayType(tp);
@@ -3496,7 +3496,7 @@ algorithm
       then
         (cache,exp_2,DAE.PROP(tp,c));
     case (cache,env,{exp},_,impl)
-      local Exp.Exp exp;
+      local DAE.Exp exp;
       equation
         (cache,exp,DAE.PROP(tp,c),_) = elabExp(cache,env, exp, impl, NONE,true);
         (tp,_) = Types.flattenArrayType(tp);
@@ -3518,19 +3518,19 @@ end elabBuiltinPre;
 protected function elabBuiltinPre2 "function: elabBuiltinPre
   Help function for elabBuiltinPre, when type is array, send it here.
 "
-input Exp.Exp inExp;
-input Types.Type t;
-output list<Exp.Exp> outExp;
+input DAE.Exp inExp;
+input DAE.Type t;
+output list<DAE.Exp> outExp;
 output Boolean sc;
 algorithm
   (outExp) := matchcontinue(inExp,t)
     local
-      Exp.Type ty;
+      DAE.ExpType ty;
       Boolean sc;
       Integer i;
-      list<Exp.Exp> expl,e;
-      Exp.Exp exp_1;
-      list<list<tuple<Exp.Exp, Boolean>>> matrixExpl, matrixExplPre;
+      list<DAE.Exp> expl,e;
+      DAE.Exp exp_1;
+      list<list<tuple<DAE.Exp, Boolean>>> matrixExpl, matrixExplPre;
       list<Boolean> boolList;
       
     case(DAE.CALL(_,{DAE.ARRAY(ty,sc,expl)},_,_,_,_),t)
@@ -3560,24 +3560,24 @@ Metarecord: ut,0,\"field\" => ut[0].field - (first record in the record list of 
   input list<Absyn.NamedArg> inNamedArg;  
   input Boolean inBoolean;
   output Env.Cache outCache;
-  output Exp.Exp outExp;
-  output Types.Properties outProperties;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
 algorithm
   (outCache,outExp,outProperties):=
   matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
     local
-      Exp.Exp s1_1;
-      Exp.Type tp;
-      Types.Const c;
+      DAE.Exp s1_1;
+      DAE.ExpType tp;
+      DAE.Const c;
       list<Env.Frame> env;
       Absyn.Exp s1,s2;
       Boolean impl;
-      Types.Type ty;
+      DAE.Type ty;
       Env.Cache cache;
-      Types.Properties prop;
-      Types.Const c;
-      list<Exp.Exp> expList;
-      list<Types.Type> tys;
+      DAE.Properties prop;
+      DAE.Const c;
+      list<DAE.Exp> expList;
+      list<DAE.Type> tys;
       Integer i;
     case (cache,env,{s1,Absyn.INTEGER(i)},{},impl) /* Tuple */ 
       equation
@@ -3600,8 +3600,8 @@ algorithm
       local
         String fieldName, str, utStr;
         Absyn.Path p, p2;
-        list<Types.Var> fields;
-        Types.Var var;
+        list<DAE.Var> fields;
+        DAE.Var var;
         Integer fieldNum;
         Absyn.ComponentRef cref;
       equation
@@ -3629,24 +3629,24 @@ protected function elabBuiltinIfExp "cond,x,y => if cond then x else y"
   input list<Absyn.NamedArg> inNamedArg;  
   input Boolean inBoolean;
   output Env.Cache outCache;
-  output Exp.Exp outExp;
-  output Types.Properties outProperties;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
 algorithm
   (outCache,outExp,outProperties):=
   matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
     local
-      Exp.Exp s0_1,s1_1,s2_1;
-      Exp.Type tp;
-      Types.Const c;
+      DAE.Exp s0_1,s1_1,s2_1;
+      DAE.ExpType tp;
+      DAE.Const c;
       list<Env.Frame> env;
       Absyn.Exp s0,s1,s2;
       Boolean impl;
-      Types.Type ty,t1,t2;
+      DAE.Type ty,t1,t2;
       Env.Cache cache;
-      Types.Properties prop1,prop2;
-      Types.Const c1,c2,c0;
-      list<Exp.Exp> expList;
-      list<Types.Type> tys;
+      DAE.Properties prop1,prop2;
+      DAE.Const c1,c2,c0;
+      list<DAE.Exp> expList;
+      list<DAE.Type> tys;
       Integer i;
     case (cache,env,{s0,s1,s2},{},impl)
       equation
@@ -3683,22 +3683,22 @@ protected function elabBuiltinMMC_Uniontype_MetaRecord_Typedefs_Equal "mmc_union
   input list<Absyn.NamedArg> inNamedArg;  
   input Boolean inBoolean;
   output Env.Cache outCache;
-  output Exp.Exp outExp;
-  output Types.Properties outProperties;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
 algorithm
   (outCache,outExp,outProperties):=
   matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
     local
       String s;
-      Exp.Exp s1_1;
-      Types.Const c;
+      DAE.Exp s1_1;
+      DAE.Const c;
       list<Env.Frame> env;
       Absyn.Exp s1;
       Boolean impl;
-      Types.Type ty;
+      DAE.Type ty;
       Env.Cache cache;
-      Types.Const c;
-      list<Exp.Exp> expList;
+      DAE.Const c;
+      list<DAE.Exp> expList;
       Integer i,numFields;
     case (cache,env,{s1,Absyn.INTEGER(i),Absyn.INTEGER(numFields),Absyn.STRING(s)},{},impl)
       equation
@@ -3716,7 +3716,7 @@ end elabBuiltinMMC_Uniontype_MetaRecord_Typedefs_Equal;
 
 protected function elabBuiltinArrayHelper "Deoverloads the function call - each type has its own C function"
   input String baseNamePre;
-  input Types.Type ty;
+  input DAE.Type ty;
   input String baseNamePost;
   output String out;
 algorithm
@@ -3746,23 +3746,23 @@ protected function elabBuiltinArrayGet "{x,y,z},1 => x"
   input list<Absyn.NamedArg> inNamedArg;  
   input Boolean inBoolean;
   output Env.Cache outCache;
-  output Exp.Exp outExp;
-  output Types.Properties outProperties;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
 algorithm
   (outCache,outExp,outProperties):=
   matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
     local
-      Exp.Exp s1_1, s2_1;
-      Exp.Type tp;
-      Types.Const c;
+      DAE.Exp s1_1, s2_1;
+      DAE.ExpType tp;
+      DAE.Const c;
       list<Env.Frame> env;
       Absyn.Exp s1,s2,s;
       Boolean impl;
-      Types.Type ty;
+      DAE.Type ty;
       Env.Cache cache;
-      Types.Properties prop;
-      Types.Const c, c1, c2;
-      list<Exp.Exp> expList;
+      DAE.Properties prop;
+      DAE.Const c, c1, c2;
+      list<DAE.Exp> expList;
       String fnName;
     case (cache,env,{s1, s2},{},impl)
       equation
@@ -3787,23 +3787,23 @@ protected function elabBuiltinArrayCreate "5,x => {x,x,x,x,x}"
   input list<Absyn.NamedArg> inNamedArg;  
   input Boolean inBoolean;
   output Env.Cache outCache;
-  output Exp.Exp outExp;
-  output Types.Properties outProperties;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
 algorithm
   (outCache,outExp,outProperties):=
   matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
     local
-      Exp.Exp s1_1, s2_1;
-      Exp.Type tp;
-      Types.Const c;
+      DAE.Exp s1_1, s2_1;
+      DAE.ExpType tp;
+      DAE.Const c;
       list<Env.Frame> env;
       Absyn.Exp s1,s2,s;
       Boolean impl;
-      Types.Type ty;
+      DAE.Type ty;
       Env.Cache cache;
-      Types.Properties prop;
-      Types.Const c, c1, c2;
-      list<Exp.Exp> expList;
+      DAE.Properties prop;
+      DAE.Const c, c1, c2;
+      list<DAE.Exp> expList;
       String fnName;
     case (cache,env,{s1, s2},{},impl)
       equation
@@ -3829,23 +3829,23 @@ protected function elabBuiltinClock " => x"
   input list<Absyn.NamedArg> inNamedArg;  
   input Boolean inBoolean;
   output Env.Cache outCache;
-  output Exp.Exp outExp;
-  output Types.Properties outProperties;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
 algorithm
   (outCache,outExp,outProperties):=
   matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
     local
-      Exp.Exp s1_1, s2_1;
-      Exp.Type tp;
-      Types.Const c;
+      DAE.Exp s1_1, s2_1;
+      DAE.ExpType tp;
+      DAE.Const c;
       list<Env.Frame> env;
       Absyn.Exp s1,s2,s;
       Boolean impl;
-      Types.Type ty;
+      DAE.Type ty;
       Env.Cache cache;
-      Types.Properties prop;
-      Types.Const c, c1, c2;
-      list<Exp.Exp> expList;
+      DAE.Properties prop;
+      DAE.Const c, c1, c2;
+      list<DAE.Exp> expList;
       String fnName;
     case (cache,env,{},{},impl)
       equation
@@ -3864,22 +3864,22 @@ end elabBuiltinClock;
 protected function makePreLst 
 "function: makePreLst
   Takes a list of expressions and makes a list of pre - expressions"
-  input list<Exp.Exp> inExpLst;
-  input Types.Type t;
-  output list<Exp.Exp> outExp;
+  input list<DAE.Exp> inExpLst;
+  input DAE.Type t;
+  output list<DAE.Exp> outExp;
 algorithm
   (outExp):=
   matchcontinue (inExpLst,t)
       local
-        Exp.Exp exp_1;
-        list<Exp.Exp> expl_1;
+        DAE.Exp exp_1;
+        list<DAE.Exp> expl_1;
         
     case((exp_1 :: expl_1),t)
       local
-        Exp.Exp exp_2;
-        list<Exp.Exp> expl_2;
-        Exp.Type ttt;
-        Types.Type ttY;
+        DAE.Exp exp_2;
+        list<DAE.Exp> expl_2;
+        DAE.ExpType ttt;
+        DAE.Type ttY;
       equation
         ttt = Types.elabType(t);
         exp_2 = DAE.CALL(Absyn.IDENT("pre"),{exp_1},false,true,ttt,false);
@@ -3897,18 +3897,18 @@ end makePreLst;
 protected function elabBuiltinPreMatrix 
 "function: elabBuiltinPreMatrix
  Help function for elabBuiltinPreMatrix, when type is matrix, send it here."
-  input Exp.Exp inExp;
-  input Types.Type t;
-  output Exp.Exp outExp;
+  input DAE.Exp inExp;
+  input DAE.Type t;
+  output DAE.Exp outExp;
 algorithm
   (outExp) := matchcontinue(inExp,t)
     local
-      Exp.Type ty;
+      DAE.ExpType ty;
       Boolean sc;
       Integer i;
-      list<Exp.Exp> expl,e;
-      Exp.Exp exp_1;
-      list<list<tuple<Exp.Exp, Boolean>>> matrixExpl, matrixExplPre;
+      list<DAE.Exp> expl,e;
+      DAE.Exp exp_1;
+      list<list<tuple<DAE.Exp, Boolean>>> matrixExpl, matrixExplPre;
       list<Boolean> boolList;
             
     case(DAE.CALL(_,{DAE.MATRIX(ty,i,matrixExpl)},_,_,_,_),t)
@@ -3923,14 +3923,14 @@ end elabBuiltinPreMatrix;
 protected function makePreMatrix 
 "function: makePreMatrix
   Takes a list of matrix expressions and makes a list of pre - matrix expressions"
-  input list<list<tuple<Exp.Exp, Boolean>>> inMatrixExp;
-  input Types.Type t;
-  output list<list<tuple<Exp.Exp, Boolean>>> outMatrixExp;
+  input list<list<tuple<DAE.Exp, Boolean>>> inMatrixExp;
+  input DAE.Type t;
+  output list<list<tuple<DAE.Exp, Boolean>>> outMatrixExp;
 algorithm
   (outMatrixExp) := matchcontinue (inMatrixExp,t)
     local
-      list<list<tuple<Exp.Exp, Boolean>>> lstLstExp, lstLstExpRest;
-      list<tuple<Exp.Exp, Boolean>> lstExpBool, lstExpBoolPre;
+      list<list<tuple<DAE.Exp, Boolean>>> lstLstExp, lstLstExpRest;
+      list<tuple<DAE.Exp, Boolean>> lstExpBool, lstExpBoolPre;
       
     case ({},t) then {};
     case(lstExpBool::lstLstExpRest,t)
@@ -3943,16 +3943,16 @@ algorithm
 end makePreMatrix;
 
 function mkLstPre
-  input  list<tuple<Exp.Exp, Boolean>> inLst;
-  input  Types.Type t;
-  output list<tuple<Exp.Exp, Boolean>> outLst;
+  input  list<tuple<DAE.Exp, Boolean>> inLst;
+  input  DAE.Type t;
+  output list<tuple<DAE.Exp, Boolean>> outLst;
 algorithm
   outLst := matchcontinue(inLst, t)
     local
-      Exp.Exp exp; Boolean b;    
-      Exp.Exp expPre;
-      Exp.Type ttt;
-      list<tuple<Exp.Exp, Boolean>> rest;
+      DAE.Exp exp; Boolean b;    
+      DAE.Exp expPre;
+      DAE.ExpType ttt;
+      list<tuple<DAE.Exp, Boolean>> rest;
     case ({}, t) then {};      
     case ((exp,b)::rest, t)
       equation
@@ -3975,8 +3975,8 @@ protected function elabBuiltinInitial "function: elabBuiltinInitial
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
   output Env.Cache outCache;
-  output Exp.Exp outExp;
-  output Types.Properties outProperties;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties):=
   matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
@@ -4005,8 +4005,8 @@ protected function elabBuiltinTerminal "function: elabBuiltinTerminal
   input list<Absyn.NamedArg> inNamedArg;  
   input Boolean inBoolean;
   output Env.Cache outCache;
-  output Exp.Exp outExp;
-  output Types.Properties outProperties;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties):=
   matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
@@ -4036,20 +4036,20 @@ protected function elabBuiltinArray "function: elabBuiltinArray
   input list<Absyn.NamedArg> inNamedArg;  
   input Boolean inBoolean;
   output Env.Cache outCache;
-  output Exp.Exp outExp;
-  output Types.Properties outProperties;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties):=
   matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
     local
-      list<Exp.Exp> exp_1,exp_2;
-      list<Types.Properties> typel;
-      tuple<Types.TType, Option<Absyn.Path>> tp,newtp;
-      Types.Const c;
+      list<DAE.Exp> exp_1,exp_2;
+      list<DAE.Properties> typel;
+      tuple<DAE.TType, Option<Absyn.Path>> tp,newtp;
+      DAE.Const c;
       Integer len;
-      Exp.Type newtp_1;
+      DAE.ExpType newtp_1;
       Boolean scalar,impl;
-      Exp.Exp exp;
+      DAE.Exp exp;
       list<Env.Frame> env;
       list<Absyn.Exp> expl;
       Env.Cache cache;
@@ -4073,18 +4073,18 @@ protected function elabBuiltinArray2 "function elabBuiltinArray2.
   Asserts that all types are of same dimensionality and of same 
   builtin types.
 "
-  input list<Exp.Exp> inExpExpLst;
-  input list<Types.Properties> inTypesPropertiesLst;
-  output list<Exp.Exp> outExpExpLst;
-  output Types.Properties outProperties;
+  input list<DAE.Exp> inExpExpLst;
+  input list<DAE.Properties> inTypesPropertiesLst;
+  output list<DAE.Exp> outExpExpLst;
+  output DAE.Properties outProperties;
 algorithm 
   (outExpExpLst,outProperties):=
   matchcontinue (inExpExpLst,inTypesPropertiesLst)
     local
-      list<Exp.Exp> expl,expl_1;
-      list<Types.Properties> tpl;
-      list<tuple<Types.TType, Option<Absyn.Path>>> tpl_1;
-      Types.Properties tp;
+      list<DAE.Exp> expl,expl_1;
+      list<DAE.Properties> tpl;
+      list<tuple<DAE.TType, Option<Absyn.Path>>> tpl_1;
+      DAE.Properties tp;
     case (expl,tpl)
       equation 
         false = sameDimensions(tpl);
@@ -4111,19 +4111,19 @@ protected function elabBuiltinArray3 "function: elab_bultin_array3
  
   Helper function to elab_builtin_array.
 "
-  input list<Exp.Exp> inExpExpLst;
-  input list<Types.Properties> inTypesPropertiesLst;
-  input Types.Properties inProperties;
-  output list<Exp.Exp> outExpExpLst;
-  output Types.Properties outProperties;
+  input list<DAE.Exp> inExpExpLst;
+  input list<DAE.Properties> inTypesPropertiesLst;
+  input DAE.Properties inProperties;
+  output list<DAE.Exp> outExpExpLst;
+  output DAE.Properties outProperties;
 algorithm 
   (outExpExpLst,outProperties):=
   matchcontinue (inExpExpLst,inTypesPropertiesLst,inProperties)
     local
-      Types.Properties tp,t1;
-      Exp.Exp e1_1,e1;
-      list<Exp.Exp> expl_1,expl;
-      list<Types.Properties> tpl;
+      DAE.Properties tp,t1;
+      DAE.Exp e1_1,e1;
+      list<DAE.Exp> expl_1,expl;
+      list<DAE.Properties> tpl;
     case ({},{},tp) then ({},tp); 
     case ((e1 :: expl),(t1 :: tpl),tp)
       equation 
@@ -4144,14 +4144,14 @@ protected function elabBuiltinZeros "function: elabBuiltinZeros
   input list<Absyn.NamedArg> inNamedArg;  
   input Boolean inBoolean;
   output Env.Cache outCache;
-  output Exp.Exp outExp;
-  output Types.Properties outProperties;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties):=
   matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
     local
-      Exp.Exp e;
-      Types.Properties p;
+      DAE.Exp e;
+      DAE.Properties p;
       list<Env.Frame> env;
       list<Absyn.Exp> args;
       Boolean impl;
@@ -4169,9 +4169,9 @@ protected function sameDimensions "function: sameDimensions
   This function returns true of all the properties, containing types, 
   have the same dimensions, otherwise false. 
 "
-  input list<Types.Properties> tpl;
+  input list<DAE.Properties> tpl;
   output Boolean res;
-  list<tuple<Types.TType, Option<Absyn.Path>>> tpl_1;
+  list<tuple<DAE.TType, Option<Absyn.Path>>> tpl_1;
   list<list<Integer>> dimsizes;
 algorithm 
   tpl_1 := Util.listMap(tpl, Types.getPropType);
@@ -4242,14 +4242,14 @@ protected function elabBuiltinOnes "function: elabBuiltinOnes
   input list<Absyn.NamedArg> inNamedArg;  
   input Boolean inBoolean;
   output Env.Cache outCache;
-  output Exp.Exp outExp;
-  output Types.Properties outProperties;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties):=
   matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
     local
-      Exp.Exp e;
-      Types.Properties p;
+      DAE.Exp e;
+      DAE.Properties p;
       list<Env.Frame> env;
       list<Absyn.Exp> args;
       Boolean impl;
@@ -4272,21 +4272,21 @@ protected function elabBuiltinMax "function: elabBuiltinMax
   input list<Absyn.NamedArg> inNamedArg;  
   input Boolean inBoolean;
   output Env.Cache outCache;
-  output Exp.Exp outExp;
-  output Types.Properties outProperties;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties):=
   matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
     local
-      Exp.Exp arrexp_1,s1_1,s2_1;
-      tuple<Types.TType, Option<Absyn.Path>> ty,elt_ty;
-      Types.Const c,c1,c2;
+      DAE.Exp arrexp_1,s1_1,s2_1;
+      tuple<DAE.TType, Option<Absyn.Path>> ty,elt_ty;
+      DAE.Const c,c1,c2;
       list<Env.Frame> env;
       Absyn.Exp arrexp,s1,s2;
       Boolean impl;
       Env.Cache cache;
     case (cache,env,{arrexp},_,impl) /* impl max(vector) */ 
-      local Exp.Type tp;
+      local DAE.ExpType tp;
       equation 
         (cache,arrexp_1,DAE.PROP(ty,c),_) = elabExp(cache,env, arrexp, impl, NONE,true);
         elt_ty = Types.arrayElementType(ty);
@@ -4296,7 +4296,7 @@ algorithm
 
         /*max(x,y) where x & y are Real scalars*/
     case (cache,env,{s1,s2},_,impl)
-      local Exp.Type tp; Types.Type ty1,ty2;
+      local DAE.ExpType tp; DAE.Type ty1,ty2;
       equation 
         (cache,s1_1,DAE.PROP(ty1,c1),_) = elabExp(cache,env, s1, impl, NONE,true);
         (cache,s2_1,DAE.PROP(ty2,c2),_) = elabExp(cache,env, s2, impl, NONE,true);
@@ -4310,7 +4310,7 @@ algorithm
 
         /*max(x,y) where x & y are Integer scalars*/
     case (cache,env,{s1,s2},_,impl)
-      local Exp.Type tp; Types.Type ty1,ty2;
+      local DAE.ExpType tp; DAE.Type ty1,ty2;
       equation 
         (cache,s1_1,DAE.PROP(ty1,c1),_) = elabExp(cache,env, s1, impl, NONE,true);
         (cache,s2_1,DAE.PROP(ty2,c2),_) = elabExp(cache,env, s2, impl, NONE,true);
@@ -4332,20 +4332,20 @@ protected function elabBuiltinMin "function: elabBuiltinMin
   input list<Absyn.NamedArg> inNamedArg;  
   input Boolean inBoolean;
   output Env.Cache outCache;
-  output Exp.Exp outExp;
-  output Types.Properties outProperties;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties):=
   matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
     local
-      Exp.Exp arrexp_1,s1_1,s2_1;
-      tuple<Types.TType, Option<Absyn.Path>> ty,elt_ty;
-      Types.Const c,c1,c2;
+      DAE.Exp arrexp_1,s1_1,s2_1;
+      tuple<DAE.TType, Option<Absyn.Path>> ty,elt_ty;
+      DAE.Const c,c1,c2;
       list<Env.Frame> env;
       Absyn.Exp arrexp,s1,s2;
       Boolean impl;
       Env.Cache cache;
-      Exp.Type tp;
+      DAE.ExpType tp;
     case (cache,env,{arrexp},_,impl) /* impl min(vector) */ 
       equation 
         (cache,arrexp_1,DAE.PROP(ty,c),_) = elabExp(cache,env, arrexp, impl, NONE,true);
@@ -4356,7 +4356,7 @@ algorithm
 
         /*min(x,y) where x & y are Real scalars*/
     case (cache,env,{s1,s2},_,impl)
-      local Exp.Type tp; Types.Type ty1,ty2;
+      local DAE.ExpType tp; DAE.Type ty1,ty2;
       equation 
         (cache,s1_1,DAE.PROP(ty1,c1),_) = elabExp(cache,env, s1, impl, NONE,true);
         (cache,s2_1,DAE.PROP(ty2,c2),_) = elabExp(cache,env, s2, impl, NONE,true);
@@ -4370,7 +4370,7 @@ algorithm
 
         /*min(x,y) where x & y are Integer scalars*/
     case (cache,env,{s1,s2},_,impl)
-      local Exp.Type tp; Types.Type ty1,ty2;
+      local DAE.ExpType tp; DAE.Type ty1,ty2;
       equation 
         (cache,s1_1,DAE.PROP(ty1,c1),_) = elabExp(cache,env, s1, impl, NONE,true);
         (cache,s2_1,DAE.PROP(ty2,c2),_) = elabExp(cache,env, s2, impl, NONE,true);
@@ -4392,20 +4392,20 @@ protected function elabBuiltinFloor "function: elabBuiltinFloor
   input list<Absyn.NamedArg> inNamedArg;  
   input Boolean inBoolean;
   output Env.Cache outCache;
-  output Exp.Exp outExp;
-  output Types.Properties outProperties;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties):=
   matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
     local
-      Exp.Exp s1_1;
-      Types.Const c;
+      DAE.Exp s1_1;
+      DAE.Const c;
       list<Env.Frame> env;
       Absyn.Exp s1;
       Boolean impl;
-      Types.Type ty;
+      DAE.Type ty;
       Env.Cache cache;
-      Types.Properties prop;
+      DAE.Properties prop;
     case (cache,env,{s1},_,impl) /* impl */ 
       equation 
         (cache,s1_1,prop) = verifyBuiltInHandlerType(cache,env,{s1},impl,Types.isRealOrSubTypeReal,"floor");
@@ -4424,20 +4424,20 @@ protected function elabBuiltinCeil "function: elabBuiltinCeil
   input list<Absyn.NamedArg> inNamedArg;  
   input Boolean inBoolean;
   output Env.Cache outCache;
-  output Exp.Exp outExp;
-  output Types.Properties outProperties;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties):=
   matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
     local
-      Exp.Exp s1_1;
-      Types.Const c;
+      DAE.Exp s1_1;
+      DAE.Const c;
       list<Env.Frame> env;
       Absyn.Exp s1;
       Boolean impl;
       Env.Cache cache;
-      Types.Type ty;
-      Types.Properties prop;
+      DAE.Type ty;
+      DAE.Properties prop;
     case (cache,env,{s1},_,impl) /* impl */ 
       equation 
         (cache,s1_1,prop) = verifyBuiltInHandlerType(cache,env,{s1},impl,Types.isRealOrSubTypeReal,"ceil");
@@ -4456,21 +4456,21 @@ protected function elabBuiltinAbs "function: elabBuiltinAbs
   input list<Absyn.NamedArg> inNamedArg;  
   input Boolean inBoolean;
   output Env.Cache outCache;
-  output Exp.Exp outExp;
-  output Types.Properties outProperties;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties):=
   matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
     local
-      Exp.Exp s1_1;
-      Types.Const c;
+      DAE.Exp s1_1;
+      DAE.Const c;
       list<Env.Frame> env;
       Absyn.Exp s1;
       Boolean impl;
       Env.Cache cache;
-      list<Types.Var> tpl;
-      Types.Type ty,ty2,ety;
-      Types.Properties prop;
+      list<DAE.Var> tpl;
+      DAE.Type ty,ty2,ety;
+      DAE.Properties prop;
     case (cache,env,{s1},_,impl) /* impl */ 
       equation 
         (cache,s1_1,prop) = verifyBuiltInHandlerType(cache,env,{s1},impl,Types.isRealOrSubTypeReal,"abs");
@@ -4494,21 +4494,21 @@ protected function elabBuiltinSqrt "function: elabBuiltinSqrt
   input list<Absyn.NamedArg> inNamedArg;  
   input Boolean inBoolean;
   output Env.Cache outCache;
-  output Exp.Exp outExp;
-  output Types.Properties outProperties;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties):=
   matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
     local
-      Exp.Exp s1_1;
-      Types.Const c;
+      DAE.Exp s1_1;
+      DAE.Const c;
       list<Env.Frame> env;
       Absyn.Exp s1;
       Boolean impl;
       Env.Cache cache;
-      list<Types.Var> tpl;
-      Types.Type ty,ty2;
-      Types.Properties prop;
+      list<DAE.Var> tpl;
+      DAE.Type ty,ty2;
+      DAE.Properties prop;
     case (cache,env,{s1},_,impl) /* impl */ 
       equation 
         (cache,s1_1,prop) = verifyBuiltInHandlerType(cache,env,{s1},impl,Types.isRealOrSubTypeReal,"sqrt");
@@ -4532,20 +4532,20 @@ protected function elabBuiltinDiv "function: elabBuiltinDiv
   input list<Absyn.NamedArg> inNamedArg;  
   input Boolean inBoolean;
   output Env.Cache outCache;
-  output Exp.Exp outExp;
-  output Types.Properties outProperties;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties):=
   matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
     local
-      Exp.Exp s1_1,s2_1;
-      Types.Const c1,c2,c;
+      DAE.Exp s1_1,s2_1;
+      DAE.Const c1,c2,c;
       list<Env.Frame> env;
       Absyn.Exp s1,s2;
       Boolean impl;
       Env.Cache cache;
-      Types.Type cty1,cty2;
-      Types.Properties prop;
+      DAE.Type cty1,cty2;
+      DAE.Properties prop;
       case (cache,env,{s1,s2},_,impl)
       equation 
         (cache,s1_1,DAE.PROP(cty1,c1),_) = elabExp(cache,env, s1, impl, NONE,true);
@@ -4572,15 +4572,15 @@ verify that the input is correct.
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
   output Env.Cache outCache;
-  output Exp.Exp outExp;
-  output Types.Properties outProperties;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties):=
   matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
     local 
-      Exp.Exp s1_1,s2_1,s3_1;
-      Types.Const c1,c2,c3,c;
-      Types.Type expressionType,expressionType2,ty1,ty2,ty3;
+      DAE.Exp s1_1,s2_1,s3_1;
+      DAE.Const c1,c2,c3,c;
+      DAE.Type expressionType,expressionType2,ty1,ty2,ty3;
       list<Env.Frame> env;
       Absyn.Exp s1,s2,s3;
       Boolean impl;
@@ -4633,20 +4633,20 @@ protected function elabBuiltinMod
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
   output Env.Cache outCache;
-  output Exp.Exp outExp;
-  output Types.Properties outProperties;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties):=
   matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
     local
-      Exp.Exp s1_1,s2_1;
-      Types.Const c1,c2,c;
+      DAE.Exp s1_1,s2_1;
+      DAE.Const c1,c2,c;
       list<Env.Frame> env;
       Absyn.Exp s1,s2;
       Boolean impl;
       Env.Cache cache;
-      Types.Type cty1,cty2;
-      Types.Properties prop;
+      DAE.Type cty1,cty2;
+      DAE.Properties prop;
     case (cache,env,{s1,s2},_,impl)
       equation 
         (cache,s1_1,DAE.PROP(cty1,c1),_) = elabExp(cache,env, s1, impl, NONE,true);
@@ -4671,20 +4671,20 @@ protected function elabBuiltinRem "function: elab_builtin_sqrt
   input list<Absyn.NamedArg> inNamedArg;  
   input Boolean inBoolean;
   output Env.Cache outCache;
-  output Exp.Exp outExp;
-  output Types.Properties outProperties;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties):=
   matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
     local
-      Exp.Exp s1_1,s2_1;
-      Types.Const c1,c2,c;
+      DAE.Exp s1_1,s2_1;
+      DAE.Const c1,c2,c;
       list<Env.Frame> env;
       Absyn.Exp s1,s2;
       Boolean impl;
       Env.Cache cache;
-            Types.Type cty1,cty2;
-      Types.Properties prop;
+            DAE.Type cty1,cty2;
+      DAE.Properties prop;
       case (cache,env,{s1,s2},_,impl)
       equation 
         (cache,s1_1,DAE.PROP(cty1,c1),_) = elabExp(cache,env, s1, impl, NONE,true);
@@ -4709,19 +4709,19 @@ protected function elabBuiltinInteger
   input list<Absyn.NamedArg> inNamedArg;  
   input Boolean inBoolean;
   output Env.Cache outCache;
-  output Exp.Exp outExp;
-  output Types.Properties outProperties;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties):=
   matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
     local
-      Exp.Exp s1_1;
-      Types.Const c;
+      DAE.Exp s1_1;
+      DAE.Const c;
       list<Env.Frame> env;
       Absyn.Exp s1;
       Boolean impl;
       Env.Cache cache;
-            Types.Properties prop;
+            DAE.Properties prop;
     case (cache,env,{s1},_,impl) 
       equation 
         (cache,s1_1,prop) = verifyBuiltInHandlerType(cache,env,{s1},impl,Types.isRealOrSubTypeReal,"integer");
@@ -4740,19 +4740,19 @@ protected function elabBuiltinIntegerEnum
   input list<Absyn.NamedArg> inNamedArg;  
   input Boolean inBoolean;
   output Env.Cache outCache;
-  output Exp.Exp outExp;
-  output Types.Properties outProperties;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties):=
   matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
     local
-      Exp.Exp s1_1;
-      Types.Const c;
+      DAE.Exp s1_1;
+      DAE.Const c;
       list<Env.Frame> env;
       Absyn.Exp s1;
       Boolean impl;
       Env.Cache cache;
-            Types.Properties prop;
+            DAE.Properties prop;
     case (cache,env,{s1},_,impl) 
       equation 
         (cache,s1_1,prop) = verifyBuiltInHandlerType(cache,env,{s1},impl,Types.isEnumeration,"Integer");
@@ -4772,20 +4772,20 @@ protected function elabBuiltinDiagonal "function: elabBuiltinDiagonal
   input list<Absyn.NamedArg> inNamedArg;  
   input Boolean inBoolean;
   output Env.Cache outCache;
-  output Exp.Exp outExp;
-  output Types.Properties outProperties;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties):=
   matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
     local
-      Exp.Type tp;
+      DAE.ExpType tp;
       Boolean sc,impl;
-      list<Exp.Exp> expl;
-      Types.ArrayDim dim;
+      list<DAE.Exp> expl;
+      DAE.ArrayDim dim;
       Integer dimension;
-      tuple<Types.TType, Option<Absyn.Path>> arrType;
-      Types.Const c;
-      Exp.Exp res,s1_1;
+      tuple<DAE.TType, Option<Absyn.Path>> arrType;
+      DAE.Const c;
+      DAE.Exp res,s1_1;
       list<Env.Frame> env;
       Absyn.Exp v1,s1;
       Env.Cache cache;
@@ -4798,7 +4798,7 @@ algorithm
         (cache,res,DAE.PROP(
           (DAE.T_ARRAY(dim,(DAE.T_ARRAY(dim,arrType),NONE)),NONE),c));
     case (cache,env,{s1},_,impl)
-      local Types.Type t; Exp.Type tp;
+      local DAE.Type t; DAE.ExpType tp;
       equation 
         (cache,s1_1,DAE.PROP((DAE.T_ARRAY((dim as DAE.DIM(SOME(dimension))),arrType),NONE),c),_) 
         	= elabExp(cache,env, s1, impl, NONE,true);
@@ -4822,8 +4822,8 @@ protected function elabBuiltinDiagonal2 "function: elabBuiltinDiagonal2
   Tries to symbolically simplify diagonal.
   For instance diagonal({a,b}) => {a,0;0,b}
 "
-  input list<Exp.Exp> expl;
-  output Exp.Exp res;
+  input list<DAE.Exp> expl;
+  output DAE.Exp res;
   Integer dim;
 algorithm 
   dim := listLength(expl);
@@ -4831,22 +4831,22 @@ algorithm
 end elabBuiltinDiagonal2;
 
 protected function elabBuiltinDiagonal3
-  input list<Exp.Exp> inExpExpLst1;
+  input list<DAE.Exp> inExpExpLst1;
   input Integer inInteger2;
   input Integer inInteger3;
-  output Exp.Exp outExp;
+  output DAE.Exp outExp;
 algorithm 
   outExp:=
   matchcontinue (inExpExpLst1,inInteger2,inInteger3)
     local
-      Exp.Type tp;
+      DAE.ExpType tp;
       Boolean sc;
       list<Boolean> scs;
-      list<Exp.Exp> expl,expl_1,es;
-      list<tuple<Exp.Exp, Boolean>> row;
-      Exp.Exp e;
+      list<DAE.Exp> expl,expl_1,es;
+      list<tuple<DAE.Exp, Boolean>> row;
+      DAE.Exp e;
       Integer indx,dim,indx_1,mdim;
-      list<list<tuple<Exp.Exp, Boolean>>> rows;
+      list<list<tuple<DAE.Exp, Boolean>>> rows;
     case ({e},indx,dim)
       equation 
         tp = Exp.typeof(e);
@@ -4883,8 +4883,8 @@ protected function elabBuiltinDifferentiate "function: elabBuiltinDifferentiate
   input list<Absyn.NamedArg> inNamedArg;  
   input Boolean inBoolean;
   output Env.Cache outCache;
-  output Exp.Exp outExp;
-  output Types.Properties outProperties;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties):=
   matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
@@ -4892,8 +4892,8 @@ algorithm
       list<Absyn.ComponentRef> cref_list1,cref_list2,cref_list;
       Interactive.InteractiveSymbolTable symbol_table;
       list<Env.Frame> gen_env,env;
-      Exp.Exp s1_1,s2_1;
-      Types.Properties st;
+      DAE.Exp s1_1,s2_1;
+      DAE.Properties st;
       Absyn.Exp s1,s2;
       Boolean impl;
       Env.Cache cache;
@@ -4931,8 +4931,8 @@ protected function elabBuiltinSimplify "function: elabBuiltinSimplify
   input list<Absyn.NamedArg> inNamedArg;  
   input Boolean inBoolean;
   output Env.Cache outCache;
-  output Exp.Exp outExp;
-  output Types.Properties outProperties;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties):=
   matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
@@ -4940,8 +4940,8 @@ algorithm
       list<Absyn.ComponentRef> cref_list;
       Interactive.InteractiveSymbolTable symbol_table;
       list<Env.Frame> gen_env,env;
-      Exp.Exp s1_1;
-      Types.Properties st;
+      DAE.Exp s1_1;
+      DAE.Properties st;
       Absyn.Exp s1;
       Boolean impl;
       Env.Cache cache;
@@ -4980,7 +4980,7 @@ protected function absynCrefListToInteractiveVarList "function: absynCrefListToI
 "
   input list<Absyn.ComponentRef> inAbsynComponentRefLst;
   input Interactive.InteractiveSymbolTable inInteractiveSymbolTable;
-  input Types.Type inType;
+  input DAE.Type inType;
   output Interactive.InteractiveSymbolTable outInteractiveSymbolTable;
 algorithm 
   outInteractiveSymbolTable:=
@@ -4991,7 +4991,7 @@ algorithm
       Ident path_str;
       Absyn.ComponentRef cr;
       list<Absyn.ComponentRef> rest;
-      tuple<Types.TType, Option<Absyn.Path>> tp;
+      tuple<DAE.TType, Option<Absyn.Path>> tp;
     case ({},symbol_table,_) then symbol_table; 
     case ((cr :: rest),symbol_table,tp)
       equation 
@@ -5022,14 +5022,14 @@ protected function elabBuiltinNoevent "function: elabBuiltinNoevent
   input list<Absyn.NamedArg> inNamedArg;  
   input Boolean inBoolean;
   output Env.Cache outCache;
-  output Exp.Exp outExp;
-  output Types.Properties outProperties;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties):=
   matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
     local
-      Exp.Exp exp_1;
-      Types.Properties prop;
+      DAE.Exp exp_1;
+      DAE.Properties prop;
       list<Env.Frame> env;
       Absyn.Exp exp;
       Boolean impl;
@@ -5053,17 +5053,17 @@ protected function elabBuiltinEdge "function: elabBuiltinEdge
   input list<Absyn.NamedArg> inNamedArg;  
   input Boolean inBoolean;
   output Env.Cache outCache;
-  output Exp.Exp outExp;
-  output Types.Properties outProperties;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties):=
   matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
     local
-      Exp.Exp exp_1,exp_2;
+      DAE.Exp exp_1,exp_2;
       list<Env.Frame> env;
       Absyn.Exp exp;
       Boolean impl;
-      Types.Const c;
+      DAE.Const c;
       Env.Cache cache;
     case (cache,env,{exp},_,impl) /* impl Constness: C_VAR */ 
       equation 
@@ -5095,23 +5095,23 @@ protected function elabBuiltinSign "function: elabBuiltinSign
   input list<Absyn.NamedArg> inNamedArg;  
   input Boolean inBoolean;
   output Env.Cache outCache;
-  output Exp.Exp outExp;
-  output Types.Properties outProperties;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties):=
   matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
     local
-      Exp.Exp exp_1,exp_2;
+      DAE.Exp exp_1,exp_2;
       list<Env.Frame> env;
       list<Absyn.Exp> expl;
       Absyn.Exp exp;
       Boolean impl;
-      Types.Const c;
-      Types.Type tp1,ty2,ty;
-      Exp.Type tp_1;
-      Exp.Exp zero,one,ret;
+      DAE.Const c;
+      DAE.Type tp1,ty2,ty;
+      DAE.ExpType tp_1;
+      DAE.Exp zero,one,ret;
       Env.Cache cache;
-      Types.Properties prop;
+      DAE.Properties prop;
     case (cache,env,{exp},_,impl) /* Argument to sign must be an Integer or Real expression */ 
       equation 
         (cache,exp_1,DAE.PROP(tp1,c),_) = elabExp(cache,env, exp, impl, NONE,true);
@@ -5132,19 +5132,19 @@ protected function elabBuiltinDer
   input list<Absyn.NamedArg> inNamedArg;  
   input Boolean inBoolean;
   output Env.Cache outCache;
-  output Exp.Exp outExp;
-  output Types.Properties outProperties;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties):=
   matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
     local
-      Exp.Exp e,exp_1;
-      Types.Properties prop;
+      DAE.Exp e,exp_1;
+      DAE.Properties prop;
       list<Env.Frame> env;
       Absyn.Exp exp;
       Absyn.ComponentRef cr;
       Boolean impl;
-      Types.Const c;
+      DAE.Const c;
       list<Ident> lst;
       Ident s;
       list<Absyn.Exp> expl;
@@ -5153,8 +5153,8 @@ algorithm
       /* use elab_call_args to also try vectorized calls */
     case (cache,env,{exp},_,impl) 
       local 
-        Types.Type ety,restype,ty;
-        Exp.Exp ee1;
+        DAE.Type ety,restype,ty;
+        DAE.Exp ee1;
         String es1,es2,es3;
         list<String> ls;
       equation 
@@ -5168,9 +5168,9 @@ algorithm
         fail(); 
     case (cache,env,{exp},_,impl) 
       local 
-        Types.Type ety,restype,ty;
-        list<tuple<Types.TType, Option<Absyn.Path>>> typelist;
-        Exp.Exp ee1;
+        DAE.Type ety,restype,ty;
+        list<tuple<DAE.TType, Option<Absyn.Path>>> typelist;
+        DAE.Exp ee1;
       equation 
         (_,ee1,DAE.PROP(ety,c),_) = elabExp(cache,env, exp, impl, NONE,true);        
         ety = Types.arrayElementType(ety);
@@ -5240,14 +5240,14 @@ protected function elabBuiltinSample "function: elabBuiltinSample
   input list<Absyn.NamedArg> inNamedArg;  
   input Boolean inBoolean;
   output Env.Cache outCache;
-  output Exp.Exp outExp;
-  output Types.Properties outProperties;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties):=
   matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
     local
-      Exp.Exp start_1,interval_1;
-      tuple<Types.TType, Option<Absyn.Path>> tp1,tp2;
+      DAE.Exp start_1,interval_1;
+      tuple<DAE.TType, Option<Absyn.Path>> tp1,tp2;
       list<Env.Frame> env;
       Absyn.Exp start,interval;
       Boolean impl;
@@ -5288,15 +5288,15 @@ protected function elabBuiltinChange "function: elabBuiltinChange
   input list<Absyn.NamedArg> inNamedArg;  
   input Boolean inBoolean;
   output Env.Cache outCache;
-  output Exp.Exp outExp;
-  output Types.Properties outProperties;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties):=
   matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
     local
-      Exp.Exp exp_1;
-      Exp.ComponentRef cr_1;
-      tuple<Types.TType, Option<Absyn.Path>> tp1;
+      DAE.Exp exp_1;
+      DAE.ComponentRef cr_1;
+      tuple<DAE.TType, Option<Absyn.Path>> tp1;
       list<Env.Frame> env;
       Absyn.Exp exp;
       Absyn.ComponentRef cr;
@@ -5363,26 +5363,26 @@ protected function elabBuiltinCat "function: elabBuiltinCat
   input list<Absyn.NamedArg> inNamedArg;  
   input Boolean inBoolean;
   output Env.Cache outCache;
-  output Exp.Exp outExp;
-  output Types.Properties outProperties;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties):=
   matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
     local
-      Exp.Exp dim_exp;
-      Types.Const const1,const2,const;
+      DAE.Exp dim_exp;
+      DAE.Const const1,const2,const;
       Integer dim,num_matrices;
-      list<Exp.Exp> matrices_1;
-      list<Types.Properties> props;
-      tuple<Types.TType, Option<Absyn.Path>> result_type,result_type_1;
+      list<DAE.Exp> matrices_1;
+      list<DAE.Properties> props;
+      tuple<DAE.TType, Option<Absyn.Path>> result_type,result_type_1;
       list<Env.Frame> env;
       list<Absyn.Exp> matrices;
       Boolean impl;
-      Types.Properties tp;
+      DAE.Properties tp;
       list<Ident> lst;
       Ident s,str;
       Env.Cache cache;
-      Exp.Type etp;
+      DAE.ExpType etp;
     case (cache,env,(dim :: matrices),_,impl) /* impl */ 
       equation 
         (cache,dim_exp,DAE.PROP((DAE.T_INTEGER(_),_),const1),_) = elabExp(cache,env, dim, impl, NONE,true);
@@ -5426,18 +5426,18 @@ protected function elabBuiltinCat2 "function: elabBuiltinCat2
   the input type, number of matrices given to cat and dimension to concatenate
   along.
 "
-  input Types.Type inType1;
+  input DAE.Type inType1;
   input Integer inInteger2;
   input Integer inInteger3;
-  output Types.Type outType;
+  output DAE.Type outType;
 algorithm 
   outType:=
   matchcontinue (inType1,inInteger2,inInteger3)
     local
       Integer new_d,old_d,n_args,n_1,n;
-      tuple<Types.TType, Option<Absyn.Path>> tp,tp_1;
+      tuple<DAE.TType, Option<Absyn.Path>> tp,tp_1;
       Option<Absyn.Path> p;
-      Types.ArrayDim dim;
+      DAE.ArrayDim dim;
     case ((DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(old_d)),arrayType = tp),p),1,n_args) /* dim num_args */ 
       equation 
         new_d = old_d*n_args;
@@ -5463,13 +5463,13 @@ protected function elabBuiltinIdentity "function: elabBuiltinIdentity
   input list<Absyn.NamedArg> inNamedArg;  
   input Boolean inBoolean;
   output Env.Cache outCache;
-  output Exp.Exp outExp;
-  output Types.Properties outProperties;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties):=
   matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
     local
-      Exp.Exp dim_exp;
+      DAE.Exp dim_exp;
       Integer size;
       list<Env.Frame> env;
       Absyn.Exp dim;
@@ -5522,8 +5522,8 @@ protected function elabBuiltinIsRoot "function: elabBuiltinIsRoot
   input list<Absyn.NamedArg> inNamedArg;  
   input Boolean inBoolean;
   output Env.Cache outCache;
-  output Exp.Exp outExp;
-  output Types.Properties outProperties;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties):=
   matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
@@ -5532,7 +5532,7 @@ algorithm
       Env.Cache cache;
       Boolean impl;
       Absyn.Exp exp0;
-      Exp.Exp exp;
+      DAE.Exp exp;
     case (cache,env,{exp0},{},impl) /* impl */
       equation
       (cache, exp, _, _) = elabExp(cache, env, exp0, false, NONE, false);
@@ -5556,15 +5556,15 @@ protected function elabBuiltinScalar "function: elab_builtin_
   input list<Absyn.NamedArg> inNamedArg;  
   input Boolean inBoolean;
   output Env.Cache outCache;
-  output Exp.Exp outExp;
-  output Types.Properties outProperties;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties):=
   matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
     local
-      Exp.Exp e;
-      tuple<Types.TType, Option<Absyn.Path>> tp,scalar_tp,tp_1;
-      Types.Const c;
+      DAE.Exp e;
+      tuple<DAE.TType, Option<Absyn.Path>> tp,scalar_tp,tp_1;
+      DAE.Const c;
       list<Env.Frame> env;
       Boolean impl;
       Env.Cache cache;
@@ -5598,24 +5598,24 @@ protected function elabBuiltinSkew "
   input list<Absyn.NamedArg> inNamedArg;  
   input Boolean inBoolean;
   output Env.Cache outCache;
-  output Exp.Exp outExp;
-  output Types.Properties outProperties;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties):=
   matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
     local
-      Exp.Exp e1,e2;
-      tuple<Types.TType, Option<Absyn.Path>> tp1,tp2;
-      Types.Const c1,c2,c;
+      DAE.Exp e1,e2;
+      tuple<DAE.TType, Option<Absyn.Path>> tp1,tp2;
+      DAE.Const c1,c2,c;
       Boolean scalar1,scalar2;
       list<Env.Frame> env;
       Boolean impl;
       Env.Cache cache;
       Absyn.Exp v1,v2;
-      list<Exp.Exp> expl1,expl2;
-      list<list<tuple<Exp.Exp,Boolean>>> mexpl;
-      Exp.Type etp1,etp2,etp,etp3;
-      Types.Type eltTp;
+      list<DAE.Exp> expl1,expl2;
+      list<list<tuple<DAE.Exp,Boolean>>> mexpl;
+      DAE.ExpType etp1,etp2,etp,etp3;
+      DAE.Type eltTp;
 
 			//First, try symbolic simplification      
     case (cache,env,{v1},_,impl) equation
@@ -5640,12 +5640,12 @@ algorithm
 end elabBuiltinSkew;
 
 protected function elabBuiltinSkew2 "help function to elabBuiltinSkew"
-	input list<Exp.Exp> v1;
+	input list<DAE.Exp> v1;
 	input  Boolean scalar;
-	output list<list<tuple<Exp.Exp,Boolean>>> res;
+	output list<list<tuple<DAE.Exp,Boolean>>> res;
 algorithm
   res := matchcontinue(v1,scalar)
-  local Exp.Exp x1,x2,x3,zero,a11,a12,a13,a21,a22,a23,a31,a32,a33;
+  local DAE.Exp x1,x2,x3,zero,a11,a12,a13,a21,a22,a23,a31,a32,a33;
     Boolean s;
  		
  		// skew(x)
@@ -5678,23 +5678,23 @@ protected function elabBuiltinCross "
   input list<Absyn.NamedArg> inNamedArg;  
   input Boolean inBoolean;
   output Env.Cache outCache;
-  output Exp.Exp outExp;
-  output Types.Properties outProperties;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties):=
   matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
     local
-      Exp.Exp e1,e2;
-      tuple<Types.TType, Option<Absyn.Path>> tp1,tp2;
-      Types.Const c1,c2,c;
+      DAE.Exp e1,e2;
+      tuple<DAE.TType, Option<Absyn.Path>> tp1,tp2;
+      DAE.Const c1,c2,c;
       Boolean scalar1,scalar2;
       list<Env.Frame> env;
       Boolean impl;
       Env.Cache cache;
       Absyn.Exp v1,v2;
-      list<Exp.Exp> expl1,expl2,expl3;
-      Exp.Type etp1,etp2,etp,etp3;
-      Types.Type eltTp;
+      list<DAE.Exp> expl1,expl2,expl3;
+      DAE.ExpType etp1,etp2,etp,etp3;
+      DAE.Type eltTp;
       
 			//First, try symbolic simplification      
     case (cache,env,{v1,v2},_,impl) equation
@@ -5724,12 +5724,12 @@ algorithm
 end elabBuiltinCross;
   
 protected function elabBuiltinCross2 "help function to elabBuiltinCross"
-	input list<Exp.Exp> v1;
-	input list<Exp.Exp> v2;
-	output list<Exp.Exp> res;
+	input list<DAE.Exp> v1;
+	input list<DAE.Exp> v2;
+	output list<DAE.Exp> res;
 algorithm
   res := matchcontinue(v1,v2)
-  local Exp.Exp x1,x2,x3,y1,y2,y3,p1,p2,r1,r2,r3;
+  local DAE.Exp x1,x2,x3,y1,y2,y3,p1,p2,r1,r2,r3;
  		
  		// {x[2]*y[3]-x[3]*y[2],x[3]*y[1]-x[1]*y[3],x[1]*y[2]-x[2]*y[1]}
     case({x1,x2,x3},{y1,y2,y3}) equation
@@ -5752,24 +5752,24 @@ protected function elabBuiltinString "
   input list<Absyn.NamedArg> inNamedArg;  
   input Boolean inBoolean;
   output Env.Cache outCache;
-  output Exp.Exp outExp;
-  output Types.Properties outProperties;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties):=
   matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
     local
-      Exp.Exp exp;
-      tuple<Types.TType, Option<Absyn.Path>> tp,arr_tp;
-      Types.Const c,const;
-      list<Types.Const> constlist;
-      Exp.Type tp_1,etp;
+      DAE.Exp exp;
+      tuple<DAE.TType, Option<Absyn.Path>> tp,arr_tp;
+      DAE.Const c,const;
+      list<DAE.Const> constlist;
+      DAE.ExpType tp_1,etp;
       list<Env.Frame> env;
       Absyn.Exp e;
       Boolean impl,scalar;
-      list<Exp.Exp> expl,expl_1,args_1;
+      list<DAE.Exp> expl,expl_1,args_1;
       list<Integer> dims;
       Env.Cache cache;
-      Types.Properties prop;
+      DAE.Properties prop;
       list<Absyn.Exp> args;
       list<Absyn.NamedArg> nargs;
       list<Slot> slots,newslots;
@@ -5799,24 +5799,24 @@ protected function elabBuiltinRooted
   input list<Absyn.NamedArg> inNamedArg;  
   input Boolean inBoolean;
   output Env.Cache outCache;
-  output Exp.Exp outExp;
-  output Types.Properties outProperties;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties):=
   matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
     local
-      Exp.Exp exp;
-      tuple<Types.TType, Option<Absyn.Path>> tp,arr_tp;
-      Types.Const c,const;
-      list<Types.Const> constlist;
-      Exp.Type tp_1,etp;
+      DAE.Exp exp;
+      tuple<DAE.TType, Option<Absyn.Path>> tp,arr_tp;
+      DAE.Const c,const;
+      list<DAE.Const> constlist;
+      DAE.ExpType tp_1,etp;
       list<Env.Frame> env;
       Absyn.Exp e;
       Boolean impl,scalar;
-      list<Exp.Exp> expl,expl_1,args_1;
+      list<DAE.Exp> expl,expl_1,args_1;
       list<Integer> dims;
       Env.Cache cache;
-      Types.Properties prop;
+      DAE.Properties prop;
       list<Absyn.Exp> args;
       list<Absyn.NamedArg> nargs;
       list<Slot> slots,newslots;
@@ -5842,13 +5842,13 @@ protected function elabBuiltinLinspace "
   input list<Absyn.NamedArg> inNamedArg;  
   input Boolean impl;
   output Env.Cache outCache;
-  output Exp.Exp outExp;
-  output Types.Properties outProperties;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties):=
   matchcontinue (inCache,inEnv,expl,inNamedArg,impl)
       local Absyn.Exp x,y,n;
-        Exp.Exp x1,y1,n1,x2,y2; Types.Type tp1,tp2,tp3,tp11,tp22; Types.Const c1,c2,c3,c;
+        DAE.Exp x1,y1,n1,x2,y2; DAE.Type tp1,tp2,tp3,tp11,tp22; DAE.Const c1,c2,c3,c;
         Integer size;
         Env.Cache cache; Env.Env env;
         
@@ -5890,21 +5890,21 @@ protected function elabBuiltinVector "function: elabBuiltinVector
   input list<Absyn.NamedArg> inNamedArg;  
   input Boolean inBoolean;
   output Env.Cache outCache;
-  output Exp.Exp outExp;
-  output Types.Properties outProperties;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties):=
   matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
     local
-      Exp.Exp exp;
-      tuple<Types.TType, Option<Absyn.Path>> tp,arr_tp;
-      Types.Const c;
-      Exp.Type tp_1,etp;
+      DAE.Exp exp;
+      tuple<DAE.TType, Option<Absyn.Path>> tp,arr_tp;
+      DAE.Const c;
+      DAE.ExpType tp_1,etp;
       list<Env.Frame> env;
       Absyn.Exp e;
       Boolean impl,scalar;
-      list<Exp.Exp> expl,expl_1,expl_2;
-      list<list<tuple<Exp.Exp, Boolean>>> explm;
+      list<DAE.Exp> expl,expl_1,expl_2;
+      list<list<tuple<DAE.Exp, Boolean>>> explm;
       String s,str;
       list<Integer> dims;
       Env.Cache cache;
@@ -5923,7 +5923,7 @@ algorithm
       then
         (cache,DAE.ARRAY(etp,scalar,expl),DAE.PROP(tp,c));
     case (cache,env,{e},_,impl) /* vector of multi dimensional array, at most one dim > 1 */ 
-      local tuple<Types.TType, Option<Absyn.Path>> tp_1;
+      local tuple<DAE.TType, Option<Absyn.Path>> tp_1;
       equation 
         (cache,DAE.ARRAY(_,_,expl),DAE.PROP(tp,c),_) = elabExp(cache,env, e, impl, NONE,true);
         tp_1 = Types.arrayElementType(tp);
@@ -5935,7 +5935,7 @@ algorithm
       
       case (cache,env,{e},_,impl) /* vector of multi dimensional matrix, at most one dim > 1 */ 
       local 
-        tuple<Types.TType, Option<Absyn.Path>> tp_1;        
+        tuple<DAE.TType, Option<Absyn.Path>> tp_1;        
         Integer dimtmp;
       equation 
         (cache,DAE.MATRIX(_,_,explm),DAE.PROP(tp,c),_) = elabExp(cache,env, e, impl, NONE,true);
@@ -5987,17 +5987,17 @@ protected function elabBuiltinVector2 "function: elabBuiltinVector2
  
   Helper function to elab_builtin_vector.
 "
-  input list<Exp.Exp> inExpExpLst;
+  input list<DAE.Exp> inExpExpLst;
   input list<Integer> inIntegerLst;
-  output list<Exp.Exp> outExpExpLst;
+  output list<DAE.Exp> outExpExpLst;
 algorithm 
   outExpExpLst:=
   matchcontinue (inExpExpLst,inIntegerLst)
     local
-      list<Exp.Exp> expl_1,expl;
+      list<DAE.Exp> expl_1,expl;
       Integer dim;
       list<Integer> dims;
-      Exp.Exp e;
+      DAE.Exp e;
     case (expl,(dim :: dims))
       equation 
         (dim > 1) = true;
@@ -6016,14 +6016,14 @@ algorithm
 end elabBuiltinVector2;
 
 protected function elabBuiltinVector3
-  input list<Exp.Exp> inExpExpLst;
-  output list<Exp.Exp> outExpExpLst;
+  input list<DAE.Exp> inExpExpLst;
+  output list<DAE.Exp> outExpExpLst;
 algorithm 
   outExpExpLst:=
   matchcontinue (inExpExpLst)
     local
-      Exp.Exp e,expl;
-      list<Exp.Exp> es,es_1;
+      DAE.Exp e,expl;
+      list<DAE.Exp> es,es_1;
     case ({}) then {}; 
     case ((DAE.ARRAY(array = {expl}) :: es))
       equation 
@@ -6045,17 +6045,17 @@ protected function elabBuiltinVector4 "function: elabBuiltinVector2
  
   Helper function to elabBuiltinVector, for matrix expressions.
 "
-  input list<Exp.Exp> inExpExpLst;
+  input list<DAE.Exp> inExpExpLst;
   input list<Integer> inIntegerLst;
-  output list<Exp.Exp> outExpExpLst;
+  output list<DAE.Exp> outExpExpLst;
 algorithm 
   outExpExpLst:=
   matchcontinue (inExpExpLst,inIntegerLst)
     local
-      list<Exp.Exp> expl_1,expl;
+      list<DAE.Exp> expl_1,expl;
       Integer dim;
       list<Integer> dims;
-      Exp.Exp e;
+      DAE.Exp e;
     case (expl,(dim :: dims))
       equation 
         (dim > 1) = true;
@@ -6088,8 +6088,8 @@ public function elabBuiltinHandlerGeneric "function: elabBuiltinHandlerGeneric
     input list<Absyn.NamedArg> inNamedArg;    
     input Boolean inBoolean;
     output Env.Cache outCache;
-    output Exp.Exp outExp;
-    output Types.Properties outProperties;
+    output DAE.Exp outExp;
+    output DAE.Properties outProperties;
   end FuncTypeEnv_EnvAbsyn_ExpLstBooleanToExp_ExpTypes_Properties;
 algorithm 
   outFuncTypeEnvEnvAbsynExpLstBooleanToExpExpTypesProperties:=
@@ -6113,8 +6113,8 @@ public function elabBuiltinHandler "function: elabBuiltinHandler
     input list<Absyn.NamedArg> inNamedArg;
     input Boolean inBoolean;
     output Env.Cache outCache;
-    output Exp.Exp outExp;
-    output Types.Properties outProperties;
+    output DAE.Exp outExp;
+    output DAE.Properties outProperties;
   end FuncTypeEnv_EnvAbsyn_ExpLstBooleanToExp_ExpTypes_Properties;
 algorithm 
   outFuncTypeEnvEnvAbsynExpLstBooleanToExpExpTypesProperties:=
@@ -6239,8 +6239,8 @@ protected function elabCallBuiltin "function: elabCallBuiltin
   input list<Absyn.NamedArg> inNamedArgs;
   input Boolean inBoolean;
   output Env.Cache outCache;
-  output Exp.Exp outExp;
-  output Types.Properties outProperties;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties):=
   matchcontinue (inCache,inEnv,inComponentRef,inAbsynExpLst,inNamedArgs,inBoolean)
@@ -6252,12 +6252,12 @@ algorithm
         input list<Absyn.NamedArg> inNamedArgs;
         input Boolean inBoolean;
         output Env.Cache outCache;
-        output Exp.Exp outExp;
-        output Types.Properties outProperties;
+        output DAE.Exp outExp;
+        output DAE.Properties outProperties;
       end handlerFunc;
       handlerFunc handler;
-      Exp.Exp exp;
-      Types.Properties prop;
+      DAE.Exp exp;
+      DAE.Properties prop;
       list<Env.Frame> env;
       Ident name;
       list<Absyn.Exp> args;
@@ -6300,15 +6300,15 @@ protected function elabCall
   input Boolean inBoolean;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
   output Env.Cache outCache;
-  output Exp.Exp outExp;
-  output Types.Properties outProperties;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm 
   (outCache,outExp,outProperties,outInteractiveInteractiveSymbolTableOption):=
   matchcontinue (inCache,inEnv,inComponentRef,inAbsynExpLst,inAbsynNamedArgLst,inBoolean,inInteractiveInteractiveSymbolTableOption)
     local
-      Exp.Exp e;
-      Types.Properties prop;
+      DAE.Exp e;
+      DAE.Properties prop;
       Option<Interactive.InteractiveSymbolTable> st,st_1;
       list<Env.Frame> env;
       Absyn.ComponentRef fn;
@@ -6430,25 +6430,25 @@ protected function elabCallInteractive "function: elabCallInteractive
   input Boolean inBoolean;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
   output Env.Cache outCache;
-  output Exp.Exp outExp;
-  output Types.Properties outProperties;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm 
   (outCache,outExp,outProperties,outInteractiveInteractiveSymbolTableOption):=
   matchcontinue (inCache,inEnv,inComponentRef,inAbsynExpLst,inAbsynNamedArgLst,inBoolean,inInteractiveInteractiveSymbolTableOption)
     local
       Absyn.Path path,classname;
-      Exp.ComponentRef cr_1,cr2_1;
+      DAE.ComponentRef cr_1,cr2_1;
       list<Env.Frame> env;
       Absyn.ComponentRef cr,cr2;
       Boolean impl;
       Interactive.InteractiveSymbolTable st;
       Ident varid,cname_str,filename,str;
-      Exp.Exp filenameprefix,startTime,stopTime,numberOfIntervals,method,options,size_exp,exp_1,bool_exp_1;
-      tuple<Types.TType, Option<Absyn.Path>> recordtype;
+      DAE.Exp filenameprefix,startTime,stopTime,numberOfIntervals,method,options,size_exp,exp_1,bool_exp_1;
+      tuple<DAE.TType, Option<Absyn.Path>> recordtype;
       list<Absyn.NamedArg> args;
-      list<Exp.Exp> vars_1;
-      Types.Properties ptop,prop;
+      list<DAE.Exp> vars_1;
+      DAE.Properties ptop,prop;
       Option<Interactive.InteractiveSymbolTable> st_1;
       Integer size,var_len;
       list<Absyn.Exp> vars;
@@ -6540,7 +6540,7 @@ algorithm
           {DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER())},false,true,DAE.ET_STRING(),false),DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "buildModel"),{Absyn.CREF(componentReg = cr)},args,impl,SOME(st))
-      local Absyn.Path className; Exp.Exp storeInTemp; Exp.Exp noClean,tolerance;
+      local Absyn.Path className; DAE.Exp storeInTemp; DAE.Exp noClean,tolerance;
       equation 
         className = Absyn.crefToPath(cr); 
         (cache,startTime) = getOptionalNamedArg(cache,env, SOME(st), impl, "startTime", (DAE.T_REAL({}),NONE), 
@@ -6569,7 +6569,7 @@ algorithm
           (
           DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_STRING({}),NONE)),NONE),DAE.C_VAR()),SOME(st));
     case (cache,env,Absyn.CREF_IDENT(name = "buildModelBeast"),{Absyn.CREF(componentReg = cr)},args,impl,SOME(st))
-      local Absyn.Path className; Exp.Exp storeInTemp; Exp.Exp noClean,tolerance;
+      local Absyn.Path className; DAE.Exp storeInTemp; DAE.Exp noClean,tolerance;
       equation 
         className = Absyn.crefToPath(cr); 
         (cache,startTime) = getOptionalNamedArg(cache,env, SOME(st), impl, "startTime", (DAE.T_REAL({}),NONE), 
@@ -6599,7 +6599,7 @@ algorithm
           DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_STRING({}),NONE)),NONE),DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "simulate"),{Absyn.CREF(componentReg = cr)},args,impl,SOME(st)) /* Fill in rest of defaults here */ 
-      local Absyn.Path className; Exp.Exp storeInTemp,noClean,tolerance;
+      local Absyn.Path className; DAE.Exp storeInTemp,noClean,tolerance;
       equation 
         className = Absyn.crefToPath(cr); 
         (cache,cr_1) = elabUntypedCref(cache,env, cr, impl);
@@ -6676,8 +6676,8 @@ algorithm
 
 //visualize(model)
   case (cache,env,Absyn.CREF_IDENT(name = "visualize"),{Absyn.CREF(componentReg = cr)},args,impl,SOME(st)) /* Fill in rest of defaults here */
-    local Absyn.Path className; Exp.Exp storeInTemp; Absyn.Exp cr2;
-      		Exp.Exp interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points;
+    local Absyn.Path className; DAE.Exp storeInTemp; Absyn.Exp cr2;
+      		DAE.Exp interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points;
 //      		String vars;
       equation
         //vars_1 = elabVariablenames({cr2});
@@ -6692,8 +6692,8 @@ algorithm
 
 //plotAll(model)
   case (cache,env,Absyn.CREF_IDENT(name = "plotAll"),{Absyn.CREF(componentReg = cr)},args,impl,SOME(st)) /* Fill in rest of defaults here */
-    local Absyn.Path className; Exp.Exp storeInTemp;
-      		Exp.Exp interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, xRange, yRange;
+    local Absyn.Path className; DAE.Exp storeInTemp;
+      		DAE.Exp interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, xRange, yRange;
 
       equation
 //        vars_1 = elabVariablenames({cr2});
@@ -6729,8 +6729,8 @@ algorithm
 
 //plotAll()
   case (cache,env,Absyn.CREF_IDENT(name = "plotAll"),{},args,impl,SOME(st)) /* Fill in rest of defaults here */
-    local Absyn.Path className; Exp.Exp storeInTemp;
-      		Exp.Exp interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, xRange, yRange;
+    local Absyn.Path className; DAE.Exp storeInTemp;
+      		DAE.Exp interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, xRange, yRange;
 
       equation
 //        vars_1 = elabVariablenames({cr2});
@@ -6767,8 +6767,8 @@ algorithm
 
 //plot2(model, x)
   case (cache,env,Absyn.CREF_IDENT(name = "plot"),{Absyn.CREF(componentReg = cr), cr2 as Absyn.CREF(componentReg = _)},args,impl,SOME(st)) /* Fill in rest of defaults here */
-    local Absyn.Path className; Exp.Exp storeInTemp; Absyn.Exp cr2;
-      		Exp.Exp interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, xRange, yRange;
+    local Absyn.Path className; DAE.Exp storeInTemp; Absyn.Exp cr2;
+      		DAE.Exp interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, xRange, yRange;
 
       equation
         vars_1 = elabVariablenames({cr2});
@@ -6804,8 +6804,8 @@ algorithm
 
 //plot2(model, {x,y})
   case (cache,env,Absyn.CREF_IDENT(name = "plot"),{Absyn.CREF(componentReg = cr), Absyn.ARRAY(arrayExp = vars)},args,impl,SOME(st)) /* Fill in rest of defaults here */
-    local Absyn.Path className; Exp.Exp storeInTemp; Absyn.Exp cr2;
-        Exp.Exp interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, xRange, yRange;
+    local Absyn.Path className; DAE.Exp storeInTemp; Absyn.Exp cr2;
+        DAE.Exp interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, xRange, yRange;
 
       equation
         vars_1 = elabVariablenames(vars);
@@ -6845,7 +6845,7 @@ algorithm
 //plot2(x)
     case (cache,env,Absyn.CREF_IDENT(name = "plot"),{(cr as Absyn.CREF(componentReg = _))},args,impl,SOME(st))
       local Absyn.Exp cr;
-        Exp.Exp grid, legend, title, interpolation, logX, logY, xLabel, yLabel, points, xRange, yRange;
+        DAE.Exp grid, legend, title, interpolation, logX, logY, xLabel, yLabel, points, xRange, yRange;
       equation
         vars_1 = elabVariablenames({cr});
 
@@ -6880,7 +6880,7 @@ algorithm
 //plot2({x,y})
     case (cache,env,Absyn.CREF_IDENT(name = "plot"),{Absyn.ARRAY(arrayExp = vars)},args,impl,SOME(st))
 						local
-						  Exp.Exp interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, xRange, yRange;
+						  DAE.Exp interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, xRange, yRange;
             equation
         vars_1 = elabVariablenames(vars);
         (cache,interpolation) = getOptionalNamedArg(cache,env, SOME(st), impl, "interpolation", (DAE.T_STRING({}),NONE),
@@ -6915,7 +6915,7 @@ algorithm
    case (cache,env,Absyn.CREF_IDENT(name = "val"),{(cr as Absyn.CREF(componentReg = _)),cd},{},impl,SOME(st))
       local 
         Absyn.Exp cr,cd;
-        Exp.Exp cd1,cr2;
+        DAE.Exp cd1,cr2;
       equation 
         {cr2} = elabVariablenames({cr});
         (cache,cd1,ptop,st_1) = elabExp(cache,env, cd, false, SOME(st),true); 
@@ -6936,9 +6936,9 @@ algorithm
    case (cache,env,Absyn.CREF_IDENT(name = "plotParametric"),{Absyn.CREF(componentReg = cr), cr2 as Absyn.CREF(componentReg = _), cr3 as Absyn.CREF(componentReg = _)} ,args,impl,SOME(st)) /* PlotParametric is similar to plot but does not allow a single CREF as an
    argument as you are plotting at least one variable as a function of another.
    Thus, plotParametric has to take an array as an argument, or two componentRefs. */
-   local Absyn.Path className; list<Exp.Exp> vars_3; Absyn.Exp cr2, cr3;
-     		 Exp.Exp interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, xRange, yRange;
-         list<Exp.Exp> vars_2;
+   local Absyn.Path className; list<DAE.Exp> vars_3; Absyn.Exp cr2, cr3;
+     		 DAE.Exp interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, xRange, yRange;
+         list<DAE.Exp> vars_2;
       equation
         vars_1 = elabVariablenames({cr2});
         vars_2 = elabVariablenames({cr3});
@@ -6979,9 +6979,9 @@ algorithm
    case (cache,env,Absyn.CREF_IDENT(name = "plotParametric"),{cr2 as Absyn.CREF(componentReg = _), cr3 as Absyn.CREF(componentReg = _)} ,args,impl,SOME(st)) /* PlotParametric is similar to plot but does not allow a single CREF as an
    argument as you are plotting at least one variable as a function of another.
    Thus, plotParametric has to take an array as an argument, or two componentRefs. */
-   local Absyn.Path className; list<Exp.Exp> vars_3; Absyn.Exp cr2, cr3;
-     Exp.Exp interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, xRange, yRange;
-     list<Exp.Exp> vars_2;
+   local Absyn.Path className; list<DAE.Exp> vars_3; Absyn.Exp cr2, cr3;
+     DAE.Exp interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, xRange, yRange;
+     list<DAE.Exp> vars_2;
       equation
 
         vars_1 = elabVariablenames({cr2});
@@ -7023,7 +7023,7 @@ algorithm
    argument as you are plotting at least one variable as a function of another.
    Thus, plotParametric has to take an array as an argument, or two componentRefs. */
 			local
-			  Exp.Exp interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, xRange, yRange;
+			  DAE.Exp interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, xRange, yRange;
       equation
 
         vars_1 = elabVariablenames(vars);
@@ -7278,7 +7278,7 @@ algorithm
     then (cache,DAE.CALL(Absyn.IDENT("checkExamplePackages"),{},false,true,DAE.ET_STRING(),false),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_CONST()),SOME(st));
         
 case (cache,env,Absyn.CREF_IDENT(name = "dumpXMLDAE"),{Absyn.CREF(componentReg = cr)},args,impl,SOME(st))
-      local Absyn.Path className; Exp.Exp storeInTemp,asInSimulationCode,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals;
+      local Absyn.Path className; DAE.Exp storeInTemp,asInSimulationCode,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals;
       equation
         className = Absyn.crefToPath(cr);
         cname_str = Absyn.pathString(className);
@@ -7305,18 +7305,18 @@ case (cache,env,Absyn.CREF_IDENT(name = "dumpXMLDAE"),{Absyn.CREF(componentReg =
 end elabCallInteractive;
 
 protected function elabVariablenames "function: elabVariablenames
-  This function elaborates variablenames to Exp.Exp. A variablename can
+  This function elaborates variablenames to DAE.Exp. A variablename can
   be used in e.g. plot(model,{v1{3},v2.t}) It should only be used in interactive 
   functions that uses variablenames as componentreferences.
 "
   input list<Absyn.Exp> inAbsynExpLst;
-  output list<Exp.Exp> outExpExpLst;
+  output list<DAE.Exp> outExpExpLst;
 algorithm 
   outExpExpLst:=
   matchcontinue (inAbsynExpLst)
     local
-      Exp.ComponentRef cr_1;
-      list<Exp.Exp> xs_1;
+      DAE.ComponentRef cr_1;
+      list<DAE.Exp> xs_1;
       Absyn.ComponentRef cr;
       list<Absyn.Exp> xs;
       String str, str2;
@@ -7355,18 +7355,18 @@ protected function getOptionalNamedArg "function: getOptionalNamedArg
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Boolean inBoolean;
   input Ident inIdent;
-  input Types.Type inType;
+  input DAE.Type inType;
   input list<Absyn.NamedArg> inAbsynNamedArgLst;
-  input Exp.Exp inExp;
+  input DAE.Exp inExp;
   output Env.Cache outCache;
-  output Exp.Exp outExp;
+  output DAE.Exp outExp;
 algorithm 
   (outCache,outExp):=
   matchcontinue (inCache,inEnv,inInteractiveInteractiveSymbolTableOption,inBoolean,inIdent,inType,inAbsynNamedArgLst,inExp)
     local
-      Exp.Exp exp,exp_1,exp_2,dexp;
-      tuple<Types.TType, Option<Absyn.Path>> t,tp;
-      Types.Const c1;
+      DAE.Exp exp,exp_1,exp_2,dexp;
+      tuple<DAE.TType, Option<Absyn.Path>> t,tp;
+      DAE.Const c1;
       list<Env.Frame> env;
       Option<Interactive.InteractiveSymbolTable> st;
       Boolean impl;
@@ -7401,20 +7401,20 @@ public function elabUntypedCref "function: elabUntypedCref
   input Absyn.ComponentRef inComponentRef;
   input Boolean inBoolean;
   output Env.Cache outCache;
-  output Exp.ComponentRef outComponentRef;
+  output DAE.ComponentRef outComponentRef;
 algorithm 
   (outCache,outComponentRef) :=
   matchcontinue (inCache,inEnv,inComponentRef,inBoolean)
     local
-      list<Exp.Subscript> subs_1;
+      list<DAE.Subscript> subs_1;
       list<Env.Frame> env;
       Ident id;
       list<Absyn.Subscript> subs;
       Boolean impl;
-      Exp.ComponentRef cr_1;
+      DAE.ComponentRef cr_1;
       Absyn.ComponentRef cr;
       Env.Cache cache;
-      Exp.Type ty2;
+      DAE.ExpType ty2;
     case (cache,env,Absyn.CREF_IDENT(name = id,subscripts = subs),impl) /* impl */ 
       equation 
         (cache,subs_1,_) = elabSubscripts(cache,env, subs, impl);
@@ -7433,13 +7433,13 @@ protected function pathToComponentRef "function: pathToComponentRef
   This function tranlates a typename to a variable name.
 "
   input Absyn.Path inPath;
-  output Exp.ComponentRef outComponentRef;
+  output DAE.ComponentRef outComponentRef;
 algorithm 
   outComponentRef:=
   matchcontinue (inPath)
     local
       Ident id;
-      Exp.ComponentRef cref;
+      DAE.ComponentRef cref;
       Absyn.Path path;
     case (Absyn.FULLYQUALIFIED(path)) then pathToComponentRef(path);
     case (Absyn.IDENT(name = id)) then DAE.CREF_IDENT(id,DAE.ET_OTHER(),{}); 
@@ -7454,7 +7454,7 @@ end pathToComponentRef;
 public function componentRefToPath "function: componentRefToPath
   This function translates a variable name to a type name.
 "
-  input Exp.ComponentRef inComponentRef;
+  input DAE.ComponentRef inComponentRef;
   output Absyn.Path outPath;
 algorithm 
   outPath:=
@@ -7462,7 +7462,7 @@ algorithm
     local
       Ident s,id;
       Absyn.Path path;
-      Exp.ComponentRef cref;
+      DAE.ComponentRef cref;
     case (DAE.CREF_IDENT(ident = s,subscriptLst = {})) then Absyn.IDENT(s); 
     case (DAE.CREF_QUAL(ident = id,componentRef = cref))
       equation 
@@ -7500,8 +7500,8 @@ protected function generateCompiledFunction
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input Absyn.ComponentRef inComponentRef;
-  input Exp.Exp inExp;
-  input Types.Properties inProperties;
+  input DAE.Exp inExp;
+  input DAE.Properties inProperties;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
   output Env.Cache outCache;
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
@@ -7512,8 +7512,8 @@ algorithm
       Absyn.Path pfn,path;
       list<Env.Frame> env,env_1,env_2;
       Absyn.ComponentRef fn,cr;
-      Exp.Exp e,exp;
-      Types.Properties prop;
+      DAE.Exp e,exp;
+      DAE.Properties prop;
       Interactive.InteractiveSymbolTable st;
       Absyn.Program p;
       AbsynDep.Depends aDep;
@@ -7528,7 +7528,7 @@ algorithm
       list<DAE.Element> d;
       DAE.DAElist d_1;
       list<Ident> libs;
-      tuple<Types.TType, Option<Absyn.Path>> t;
+      tuple<DAE.TType, Option<Absyn.Path>> t;
       list<Interactive.InstantiatedClass> b;
       list<Interactive.InteractiveVariable> c;
       Env.Cache cache;
@@ -7675,7 +7675,7 @@ algorithm
   (outBoolean,outFuncHandle,outBuildTime,outFileName) := matchcontinue (inTplAbsynPathTypesTypeLst,inPath)
     local
       Absyn.Path path1,path2;
-      Types.Type ty;
+      DAE.Type ty;
       list<Interactive.CompiledCFunction> rest;
       Boolean res;
       Integer handle;
@@ -7700,8 +7700,8 @@ protected function calculateConstantness
 "@author adrpo
  not always you get a list of constantness as function might not have any parameters.
  this function deals with that case"
-  input list<Types.Const> constlist;
-  output Types.Const out;
+  input list<DAE.Const> constlist;
+  output DAE.Const out;
 algorithm
   out := matchcontinue (constlist)
     case ({}) then DAE.C_VAR();
@@ -7839,7 +7839,7 @@ end transformFunctionArgumentsIntoModifications;
 
 protected function createDummyFarg
   input String name;
-  output Types.FuncArg farg;
+  output DAE.FuncArg farg;
 algorithm
   farg := (name, (DAE.T_NOTYPE,NONE()));  
 end createDummyFarg;
@@ -7859,37 +7859,37 @@ protected function elabCallArgs
   input Boolean inBoolean;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
 	output Env.Cache outCache;
-  output Exp.Exp outExp;
-  output Types.Properties outProperties;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties) :=
   matchcontinue (inCache,inEnv,inPath,inAbsynExpLst,inAbsynNamedArgLst,inBoolean,inInteractiveInteractiveSymbolTableOption)
     local
-      tuple<Types.TType, Option<Absyn.Path>> t,outtype,restype,functype;
-      list<tuple<Ident, tuple<Types.TType, Option<Absyn.Path>>>> fargs;
+      tuple<DAE.TType, Option<Absyn.Path>> t,outtype,restype,functype;
+      list<tuple<Ident, tuple<DAE.TType, Option<Absyn.Path>>>> fargs;
       list<Env.Frame> env_1,env_2,env;
       list<Slot> slots,newslots,newslots2,slots2;
-      list<Exp.Exp> args_1,args_2;
-      list<Types.Const> constlist;
-      Types.Const const;
-      Types.TupleConst tyconst;
-      Types.Properties prop,prop_1;
+      list<DAE.Exp> args_1,args_2;
+      list<DAE.Const> constlist;
+      DAE.Const const;
+      DAE.TupleConst tyconst;
+      DAE.Properties prop,prop_1;
       SCode.Class cl;
       Absyn.Path fn,fn_1;
       list<Absyn.Exp> args;
       list<Absyn.NamedArg> nargs;
       Boolean impl,tuple_,builtin,inline;
       Option<Interactive.InteractiveSymbolTable> st;
-      list<tuple<Types.TType, Option<Absyn.Path>>> typelist,ktypelist;
-      list<Types.ArrayDim> vect_dims;
-      Exp.Exp call_exp;
+      list<tuple<DAE.TType, Option<Absyn.Path>>> typelist,ktypelist;
+      list<DAE.ArrayDim> vect_dims;
+      DAE.Exp call_exp;
       list<Ident> t_lst;
       Ident fn_str,types_str,scope;
       String s,name;
       Env.Cache cache;
-      Exp.Type tp;
+      DAE.ExpType tp;
       SCode.Mod mod;
-      Types.Mod tmod;
+      DAE.Mod tmod;
       SCode.Class cl;
       Option<Absyn.Modification> absynOptMod;
       ClassInf.State complexClassType;
@@ -7950,8 +7950,8 @@ algorithm
         SCode.Ident id;
         Integer index;
         list<String> fieldNames;
-        list<Types.Type> tys;
-        list<Types.Var> vars;
+        list<DAE.Type> tys;
+        list<DAE.Var> vars;
         Absyn.Path fqPath;
        equation
         (cache,t as (DAE.T_METARECORD(index,vars),_),env_1) = Lookup.lookupType(cache, env, fn, false);
@@ -7973,9 +7973,9 @@ algorithm
         /* ------ */
         
     case (cache,env,fn,args,nargs,impl,st) /* ..Other functions */ 
-      local Exp.Type tp;
+      local DAE.ExpType tp;
         String str2;
-        list<Types.Type> ltypes;
+        list<DAE.Type> ltypes;
         list<String> lstr;
         
       equation 
@@ -8033,7 +8033,7 @@ algorithm
         fail();
 
     case (cache,env,fn,args,nargs,impl,st) /* no matching type found, with -one- candidate */ 
-      local list<Exp.Exp> args1; String argStr; Types.Type tp1;
+      local list<DAE.Exp> args1; String argStr; DAE.Type tp1;
       equation 
         (cache,typelist as {tp1}) = Lookup.lookupFunctionsInEnv(cache,env, fn);
         (cache,args_1,constlist,restype,functype,vect_dims,slots) = elabTypes(cache,env, args,nargs, typelist, false/* Do not check types*/,impl);
@@ -8181,19 +8181,19 @@ If in future C++ code is generated instead, this is not required, since C++ allo
 "
   input Env.Cache inCache;
   input Env.Env env;
-  input list<Exp.Exp> inArgs;
+  input list<DAE.Exp> inArgs;
   input Absyn.Path fn;
   input list<Slot> slots;
   input Boolean impl;
   output Env.Cache outCache;
-  output list<Exp.Exp> outArgs;
+  output list<DAE.Exp> outArgs;
   output list<Slot> outSlots;
 algorithm
   (outCache,outArgs,outSlots) := matchcontinue(cache,env,inArgs,fn,slots,impl)
     local Env.Cache cache;
       SCode.Class cl;
       Env.Env env_2;
-      list<Exp.Exp> args_2;
+      list<DAE.Exp> args_2;
       list<Slot> slots2;
       // If we find a class
     case(cache,env,inArgs,fn,slots,impl) equation
@@ -8220,10 +8220,10 @@ runtime and not during compiletime.
 "	
 	input Env.Cache inCache;
 	input Env.Env env;
-  input Types.Const inConst;
+  input DAE.Const inConst;
   input Absyn.Path funcName;
   output Env.Cache outCache;
-  output Types.Const outConst;
+  output DAE.Const outConst;
 algorithm
   (outCache,outConst) := matchcontinue(inCache,env,inConst,funcName)
   local Absyn.Path path;
@@ -8272,29 +8272,29 @@ protected function vectorizeCall "function: vectorizeCall
   foo(1:2,{1,2;3,4}) vectorizes with arraydim {2} to 
   {foo(1,{1,2}),foo(2,{3,4})}
 "
-  input Exp.Exp inExp;
-  input Types.Type inType;
-  input list<Types.ArrayDim> inTypesArrayDimLst;
+  input DAE.Exp inExp;
+  input DAE.Type inType;
+  input list<DAE.ArrayDim> inTypesArrayDimLst;
   input list<Slot> inSlotLst;
-  input Types.Properties inProperties;
-  output Exp.Exp outExp;
-  output Types.Properties outProperties;
+  input DAE.Properties inProperties;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
 algorithm 
   (outExp,outProperties):=
   matchcontinue (inExp,inType,inTypesArrayDimLst,inSlotLst,inProperties)
     local
-      Exp.Exp e,vect_exp,vect_exp_1;
-      tuple<Types.TType, Option<Absyn.Path>> e_type,tp,tp_1;
-      Types.Properties prop;
-      Exp.Type exp_type;
-      Types.Const c;
+      DAE.Exp e,vect_exp,vect_exp_1;
+      tuple<DAE.TType, Option<Absyn.Path>> e_type,tp,tp_1;
+      DAE.Properties prop;
+      DAE.ExpType exp_type;
+      DAE.Const c;
       Absyn.Path fn;
-      list<Exp.Exp> args,expl;
+      list<DAE.Exp> args,expl;
       Boolean tuple_,builtin,scalar,inl;
       Integer dim;
-      list<Types.ArrayDim> ad;
+      list<DAE.ArrayDim> ad;
       list<Slot> slots;
-      Exp.Type etp;
+      DAE.ExpType etp;
     case (e,e_type,{},_,prop) then (e,prop);  /* exp exp_type */ 
     case (DAE.CALL(path = fn,expLst = args,tuple_ = tuple_,builtin = builtin,ty = etp,inline=inl),e_type,(DAE.DIM(integerOption = SOME(dim)) :: ad),slots,prop) /* Scalar expression, i.e function call */ 
       equation 
@@ -8326,19 +8326,19 @@ protected function vectorizeCallArray
  
   Helper function to vectorize_call, vectoriezes ARRAY expression to
   an array of array expressions."
-  input Exp.Exp inExp;
-  input Exp.Type inType;
+  input DAE.Exp inExp;
+  input DAE.ExpType inType;
   input Integer inInteger;
   input list<Slot> inSlotLst;
-  output Exp.Exp outExp;
+  output DAE.Exp outExp;
 algorithm 
   outExp:=
   matchcontinue (inExp,inType,inInteger,inSlotLst)
     local
-      list<Exp.Exp> arr_expl,expl;
+      list<DAE.Exp> arr_expl,expl;
       Boolean scalar_1,scalar;
-      Exp.Exp res_exp;
-      Exp.Type tp,exp_tp;
+      DAE.Exp res_exp;
+      DAE.ExpType tp,exp_tp;
       Integer cur_dim;
       list<Slot> slots;
     case (DAE.ARRAY(ty = tp,scalar = scalar,array = expl),exp_tp,cur_dim,slots) /* cur_dim */ 
@@ -8355,20 +8355,20 @@ protected function vectorizeCallArray2
 "function: vectorizeCallArray2
   author: PA 
   Helper function to vectorizeCallArray"
-  input list<Exp.Exp> inExpExpLst;
-  input Exp.Type inType;
+  input list<DAE.Exp> inExpExpLst;
+  input DAE.ExpType inType;
   input Integer inInteger;
   input list<Slot> inSlotLst;
-  output list<Exp.Exp> outExpExpLst;
+  output list<DAE.Exp> outExpExpLst;
 algorithm 
   outExpExpLst:=
   matchcontinue (inExpExpLst,inType,inInteger,inSlotLst)
     local
-      Exp.Type tp,e_tp;
+      DAE.ExpType tp,e_tp;
       Integer cur_dim;
       list<Slot> slots;
-      Exp.Exp e_1,e;
-      list<Exp.Exp> es_1,es;
+      DAE.Exp e_1,e;
+      list<DAE.Exp> es_1,es;
     case ({},tp,cur_dim,slots) then {}; 
     case ((e :: es),e_tp,cur_dim,slots)
       equation 
@@ -8384,17 +8384,17 @@ protected function vectorizeCallArray3 "function: vectorizeCallArray3
  
   Helper function to vectorize_call_array_2
 "
-  input Exp.Exp inExp;
-  input Exp.Type inType;
+  input DAE.Exp inExp;
+  input DAE.ExpType inType;
   input Integer inInteger;
   input list<Slot> inSlotLst;
-  output Exp.Exp outExp;
+  output DAE.Exp outExp;
 algorithm 
   outExp:=
   matchcontinue (inExp,inType,inInteger,inSlotLst)
     local
-      Exp.Exp e_1,e;
-      Exp.Type e_tp;
+      DAE.Exp e_1,e;
+      DAE.ExpType e_tp;
       Integer cur_dim;
       list<Slot> slots;
     case ((e as DAE.CALL(path = _)),e_tp,cur_dim,slots) /* cur_dim */ 
@@ -8416,20 +8416,20 @@ protected function vectorizeCallScalar
  
   Helper function to vectorizeCall, vectorizes CALL expressions to 
   array expressions."
-  input Exp.Exp inExp;
-  input Exp.Type inType;
+  input DAE.Exp inExp;
+  input DAE.ExpType inType;
   input Integer inInteger;
   input list<Slot> inSlotLst;
-  output Exp.Exp outExp;
+  output DAE.Exp outExp;
 algorithm 
   outExp:=
   matchcontinue (inExp,inType,inInteger,inSlotLst)
     local
-      list<Exp.Exp> expl,args;
+      list<DAE.Exp> expl,args;
       Boolean scalar,tuple_,builtin;
-      Exp.Exp new_exp,callexp;
+      DAE.Exp new_exp,callexp;
       Absyn.Path fn;
-      Exp.Type e_type;
+      DAE.ExpType e_type;
       Integer dim;
       list<Slot> slots;
     case ((callexp as DAE.CALL(path = fn,expLst = args,tuple_ = tuple_,builtin = builtin)),e_type,dim,slots) /* cur_dim */ 
@@ -8453,22 +8453,22 @@ protected function vectorizeCallScalar2
  
   Iterates through vectorized dimension an creates argument list according
   to vectorized dimension in corresponding slot."
-  input list<Exp.Exp> inExpExpLst1;
+  input list<DAE.Exp> inExpExpLst1;
   input list<Slot> inSlotLst2;
   input Integer inInteger3;
   input Integer inInteger4;
-  input Exp.Exp inExp5;
-  output list<Exp.Exp> outExpExpLst;
+  input DAE.Exp inExp5;
+  output list<DAE.Exp> outExpExpLst;
 algorithm 
   outExpExpLst:=
   matchcontinue (inExpExpLst1,inSlotLst2,inInteger3,inInteger4,inExp5)
     local
-      list<Exp.Exp> callargs,res,expl,args;
+      list<DAE.Exp> callargs,res,expl,args;
       Integer cur_dim_1,cur_dim,dim;
       list<Slot> slots;
       Absyn.Path fn;
       Boolean t,b,inl;
-      Exp.Type tp;
+      DAE.ExpType tp;
     case (expl,slots,cur_dim,dim,DAE.CALL(path = fn,expLst = args,tuple_ = t,builtin = b,ty=tp,inline=inl)) /* cur_dim - current indx in dim dim - dimension size */ 
       equation 
         (cur_dim <= dim) = true;
@@ -8486,16 +8486,16 @@ protected function vectorizeCallScalar3
   author: PA
   
   Helper function to vectorizeCallScalar2"
-  input list<Exp.Exp> inExpExpLst;
+  input list<DAE.Exp> inExpExpLst;
   input list<Slot> inSlotLst;
   input Integer inInteger;
-  output list<Exp.Exp> outExpExpLst;
+  output list<DAE.Exp> outExpExpLst;
 algorithm 
   outExpExpLst:=
   matchcontinue (inExpExpLst,inSlotLst,inInteger)
     local
-      list<Exp.Exp> res,es;
-      Exp.Exp e,asub_exp;
+      list<DAE.Exp> res,es;
+      DAE.Exp e,asub_exp;
       list<Slot> ss;
       Integer dim_indx;
     case ({},{},_) then {};  /* dim_indx */ 
@@ -8521,7 +8521,7 @@ protected function deoverloadFuncname
   type of the function to see if it has the optional functionname set. If 
   so this is returned. Otherwise return input."
   input Absyn.Path inPath;
-  input Types.Type inType;
+  input DAE.Type inType;
   output Absyn.Path outPath;
 algorithm 
   outPath:=
@@ -8535,7 +8535,7 @@ end deoverloadFuncname;
 protected function isTuple 
 "function: isTuple 
   Return true if Type is a Tuple type."
-  input Types.Type inType;
+  input DAE.Type inType;
   output Boolean outBoolean;
 algorithm 
   outBoolean:=
@@ -8553,30 +8553,30 @@ protected function elabTypes
   input Env.Env inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inAbsynNamedArgLst;
-  input list<Types.Type> inTypesTypeLst;
+  input list<DAE.Type> inTypesTypeLst;
   input Boolean checkTypes "if True, checks types";
   input Boolean inBoolean;
   output Env.Cache outCache;
-  output list<Exp.Exp> outExpExpLst1;
-  output list<Types.Const> outTypesConstLst2;
-  output Types.Type outType3;
-  output Types.Type outType4;
-  output list<Types.ArrayDim> outTypesArrayDimLst5;
+  output list<DAE.Exp> outExpExpLst1;
+  output list<DAE.Const> outTypesConstLst2;
+  output DAE.Type outType3;
+  output DAE.Type outType4;
+  output list<DAE.ArrayDim> outTypesArrayDimLst5;
   output list<Slot> outSlotLst6;
 algorithm 
   (outCache,outExpExpLst1,outTypesConstLst2,outType3,outType4,outTypesArrayDimLst5,outSlotLst6):=
   matchcontinue (inCache,inEnv,inAbsynExpLst,inAbsynNamedArgLst,inTypesTypeLst,checkTypes,inBoolean)
     local
       list<Slot> slots,newslots;
-      list<Exp.Exp> args_1;
-      list<Types.Const> clist;
-      list<Types.ArrayDim> dims;
+      list<DAE.Exp> args_1;
+      list<DAE.Const> clist;
+      list<DAE.ArrayDim> dims;
       list<Env.Frame> env;
       list<Absyn.Exp> args;
       list<Absyn.NamedArg> nargs;
-      tuple<Types.TType, Option<Absyn.Path>> t,restype;
-      list<tuple<Ident, tuple<Types.TType, Option<Absyn.Path>>>> params;
-      list<tuple<Types.TType, Option<Absyn.Path>>> trest;
+      tuple<DAE.TType, Option<Absyn.Path>> t,restype;
+      list<tuple<Ident, tuple<DAE.TType, Option<Absyn.Path>>>> params;
+      list<tuple<DAE.TType, Option<Absyn.Path>>> trest;
       Boolean impl;
       Env.Cache cache;
       Types.PolymorphicBindings polymorphicBindings;
@@ -8610,14 +8610,14 @@ end elabTypes;
 protected function createActualFunctype 
 "Creates the actual function type of a CALL expression, used for error messages.
  This type is only created if checkTypes is false."
-  input Types.Type tp;
+  input DAE.Type tp;
   input list<Slot> slots;
   input Boolean checkTypes;
-  output Types.Type outTp;
+  output DAE.Type outTp;
 algorithm
   outTp := matchcontinue(tp,slots,checkTypes)
     local Option<Absyn.Path> optPath;
-      list<Types.FuncArg> slotParams,params; Types.Type restype;
+      list<DAE.FuncArg> slotParams,params; DAE.Type restype;
     case(tp,_,true) then tp;
       /* When not checking types, create function type by looking at the filled slots */
     case(tp as (DAE.T_FUNCTION(funcArg = params,funcResultType = restype),optPath),slots,false) equation
@@ -8634,12 +8634,12 @@ protected function slotsVectorizable
   confirms that they all are of same dimension,or no dimension, i.e. not
   vectorized. The uniform vectorized array dimension is returned."
   input list<Slot> inSlotLst;
-  output list<Types.ArrayDim> outTypesArrayDimLst;
+  output list<DAE.ArrayDim> outTypesArrayDimLst;
 algorithm 
   outTypesArrayDimLst:=
   matchcontinue (inSlotLst)
     local
-      list<Types.ArrayDim> ad;
+      list<DAE.ArrayDim> ad;
       list<Slot> rest;
     case ({}) then {}; 
     case ((SLOT(typesArrayDimLst = (ad as (_ :: _))) :: rest))
@@ -8669,12 +8669,12 @@ protected function sameSlotsVectorizable
   The array dimension must match both in dimension size and number of 
   dimensions."
   input list<Slot> inSlotLst;
-  input list<Types.ArrayDim> inTypesArrayDimLst;
+  input list<DAE.ArrayDim> inTypesArrayDimLst;
 algorithm 
   _:=
   matchcontinue (inSlotLst,inTypesArrayDimLst)
     local
-      list<Types.ArrayDim> slot_ad,ad;
+      list<DAE.ArrayDim> slot_ad,ad;
       list<Slot> rest;
     case ({},_) then (); 
     case ((SLOT(typesArrayDimLst = (slot_ad as (_ :: _))) :: rest),ad) /* arraydim must match */ 
@@ -8696,14 +8696,14 @@ protected function sameArraydimLst
   author: PA
  
   Helper function to sameSlotsVectorizable. "
-  input list<Types.ArrayDim> inTypesArrayDimLst1;
-  input list<Types.ArrayDim> inTypesArrayDimLst2;
+  input list<DAE.ArrayDim> inTypesArrayDimLst1;
+  input list<DAE.ArrayDim> inTypesArrayDimLst2;
 algorithm 
   _:=
   matchcontinue (inTypesArrayDimLst1,inTypesArrayDimLst2)
     local
       Integer i1,i2;
-      list<Types.ArrayDim> ads1,ads2;
+      list<DAE.ArrayDim> ads1,ads2;
     case ({},{}) then (); 
     case ((DAE.DIM(integerOption = SOME(i1)) :: ads1),(DAE.DIM(integerOption = SOME(i2)) :: ads2))
       equation 
@@ -8721,18 +8721,18 @@ end sameArraydimLst;
 
 protected function getProperties 
 "function: getProperties
-  This function creates a Properties object from a Types.Type and a 
-  Types.TupleConst value."
-  input Types.Type inType;
-  input Types.TupleConst inTupleConst;
-  output Types.Properties outProperties;
+  This function creates a Properties object from a DAE.Type and a 
+  DAE.TupleConst value."
+  input DAE.Type inType;
+  input DAE.TupleConst inTupleConst;
+  output DAE.Properties outProperties;
 algorithm 
   outProperties:=
   matchcontinue (inType,inTupleConst)
     local
-      tuple<Types.TType, Option<Absyn.Path>> tt,t,ty;
-      Types.TupleConst const;
-      Types.Const b;
+      tuple<DAE.TType, Option<Absyn.Path>> tt,t,ty;
+      DAE.TupleConst const;
+      DAE.Const b;
       Ident tystr,conststr;
     case ((tt as (DAE.T_TUPLE(tupleType = _),_)),const) then DAE.PROP_TUPLE(tt,const);  /* At least two elements in the type list, this is a tuple. LS: Tuples are fixed before here */ 
     case (t,DAE.TUPLE_CONST(tupleConstLst = (DAE.SINGLE_CONST(const = b) :: {}))) then DAE.PROP(t,b);  /* One type, this is a tuple with one element. The resulting properties 
@@ -8756,14 +8756,14 @@ protected function buildTupleConst
 "function: buildTupleConst
   author: LS
   
-  Build a TUPLE_CONST (Types.TupleConst) for a PROP_TUPLE for a function call
+  Build a TUPLE_CONST (DAE.TupleConst) for a PROP_TUPLE for a function call
   from a list of bools derived from arguments
  
   We should check functions actual arguments instead of their formal
   parameters as done below"
-  input list<Types.Const> blist;
-  output Types.TupleConst outTupleConst;
-  list<Types.TupleConst> clist;
+  input list<DAE.Const> blist;
+  output DAE.TupleConst outTupleConst;
+  list<DAE.TupleConst> clist;
 algorithm 
   clist := buildTupleConstList(blist);
   outTupleConst := DAE.TUPLE_CONST(clist);
@@ -8772,15 +8772,15 @@ end buildTupleConst;
 protected function buildTupleConstList 
 "function: buildTupleConstList 
   Helper function to buildTupleConst"
-  input list<Types.Const> inTypesConstLst;
-  output list<Types.TupleConst> outTypesTupleConstLst;
+  input list<DAE.Const> inTypesConstLst;
+  output list<DAE.TupleConst> outTypesTupleConstLst;
 algorithm 
   outTypesTupleConstLst:=
   matchcontinue (inTypesConstLst)
     local
-      list<Types.TupleConst> restlist;
-      Types.Const c;
-      list<Types.Const> crest;
+      list<DAE.TupleConst> restlist;
+      DAE.Const c;
+      list<DAE.Const> crest;
     case {} then {}; 
     case (c :: crest)
       equation 
@@ -8797,17 +8797,17 @@ protected function elabConsts "function: elabConsts
   LS: Changed to take a Type, which is the functions return type.
   LS: Update: const is derived from the input arguments and sent here.
 "
-  input Types.Type inType;
-  input Types.Const inConst;
-  output Types.TupleConst outTupleConst;
+  input DAE.Type inType;
+  input DAE.Const inConst;
+  output DAE.TupleConst outTupleConst;
 algorithm 
   outTupleConst:=
   matchcontinue (inType,inConst)
     local
-      list<Types.TupleConst> consts;
-      list<tuple<Types.TType, Option<Absyn.Path>>> tys;
-      Types.Const c;
-      tuple<Types.TType, Option<Absyn.Path>> ty;
+      list<DAE.TupleConst> consts;
+      list<tuple<DAE.TType, Option<Absyn.Path>>> tys;
+      DAE.Const c;
+      tuple<DAE.TType, Option<Absyn.Path>> ty;
     case ((DAE.T_TUPLE(tupleType = tys),_),c)
       equation 
         consts = checkConsts(tys, c);
@@ -8828,18 +8828,18 @@ protected function checkConsts
   LS: Changed to take a Type list, which is the functions return type. Only
    for functions returning a tuple 
   LS: Update: const is derived from the input arguments and sent here "
-  input list<Types.Type> inTypesTypeLst;
-  input Types.Const inConst;
-  output list<Types.TupleConst> outTypesTupleConstLst;
+  input list<DAE.Type> inTypesTypeLst;
+  input DAE.Const inConst;
+  output list<DAE.TupleConst> outTypesTupleConstLst;
 algorithm 
   outTypesTupleConstLst:=
   matchcontinue (inTypesTypeLst,inConst)
     local
-      Types.TupleConst c;
-      list<Types.TupleConst> rest_1;
-      tuple<Types.TType, Option<Absyn.Path>> a;
-      list<tuple<Types.TType, Option<Absyn.Path>>> rest;
-      Types.Const const;
+      DAE.TupleConst c;
+      list<DAE.TupleConst> rest_1;
+      tuple<DAE.TType, Option<Absyn.Path>> a;
+      list<tuple<DAE.TType, Option<Absyn.Path>>> rest;
+      DAE.Const const;
     case ({},_) then {}; 
     case ((a :: rest),const)
       equation 
@@ -8859,13 +8859,13 @@ protected function checkConst "function: checkConst
   return type 
   LS: Update: const is derived from the input arguments and sent here 
 "
-  input Types.Type inType;
-  input Types.Const inConst;
-  output Types.TupleConst outTupleConst;
+  input DAE.Type inType;
+  input DAE.Const inConst;
+  output DAE.TupleConst outTupleConst;
 algorithm 
   outTupleConst:=
   matchcontinue (inType,inConst)
-    local Types.Const c;
+    local DAE.Const c;
     case ((DAE.T_TUPLE(tupleType = _),_),c)
       equation 
         Error.addMessage(Error.INTERNAL_ERROR, 
@@ -8880,19 +8880,19 @@ protected function splitProps "function: splitProps
  
   Splits the properties list into the separated types list and const list. 
 "
-  input list<Types.Properties> inTypesPropertiesLst;
-  output list<Types.Type> outTypesTypeLst;
-  output list<Types.TupleConst> outTypesTupleConstLst;
+  input list<DAE.Properties> inTypesPropertiesLst;
+  output list<DAE.Type> outTypesTypeLst;
+  output list<DAE.TupleConst> outTypesTupleConstLst;
 algorithm 
   (outTypesTypeLst,outTypesTupleConstLst):=
   matchcontinue (inTypesPropertiesLst)
     local
-      list<tuple<Types.TType, Option<Absyn.Path>>> types;
-      list<Types.TupleConst> consts;
-      tuple<Types.TType, Option<Absyn.Path>> t;
-      Types.Const c;
-      list<Types.Properties> props;
-      Types.TupleConst t_c;
+      list<tuple<DAE.TType, Option<Absyn.Path>>> types;
+      list<DAE.TupleConst> consts;
+      tuple<DAE.TType, Option<Absyn.Path>> t;
+      DAE.Const c;
+      list<DAE.Properties> props;
+      DAE.TupleConst t_c;
     case ((DAE.PROP(type_ = t,constFlag = c) :: props))
       equation 
         (types,consts) = splitProps(props) "list_append(ts,t::{}) => t1 & list_append(cs,DAE.SINGLE_CONST(c)::{}) => t2 & " ;
@@ -8910,17 +8910,17 @@ end splitProps;
 
 protected function getTypes 
 "function: getTypes 
-  This relatoin returns the types of a Types.FuncArg list."
-  input list<Types.FuncArg> inTypesFuncArgLst;
-  output list<Types.Type> outTypesTypeLst;
+  This relatoin returns the types of a DAE.FuncArg list."
+  input list<DAE.FuncArg> inTypesFuncArgLst;
+  output list<DAE.Type> outTypesTypeLst;
 algorithm 
   outTypesTypeLst:=
   matchcontinue (inTypesFuncArgLst)
     local
-      list<tuple<Types.TType, Option<Absyn.Path>>> types;
+      list<tuple<DAE.TType, Option<Absyn.Path>>> types;
       Ident n;
-      tuple<Types.TType, Option<Absyn.Path>> t;
-      list<tuple<Ident, tuple<Types.TType, Option<Absyn.Path>>>> rest;
+      tuple<DAE.TType, Option<Absyn.Path>> t;
+      list<tuple<Ident, tuple<DAE.TType, Option<Absyn.Path>>>> rest;
     case (((n,t) :: rest))
       equation 
         types = getTypes(rest) "print(\"\\nDebug: Got a type for output of function. \") &" ;
@@ -8938,18 +8938,18 @@ protected function functionParams
   separate lists.
 
   LS: This can probably replaced by Types.getInputVars and Types.getOutputVars"
-  input list<Types.Var> inTypesVarLst;
-  output list<Types.FuncArg> outTypesFuncArgLst1;
-  output list<Types.FuncArg> outTypesFuncArgLst2;
+  input list<DAE.Var> inTypesVarLst;
+  output list<DAE.FuncArg> outTypesFuncArgLst1;
+  output list<DAE.FuncArg> outTypesFuncArgLst2;
 algorithm 
   (outTypesFuncArgLst1,outTypesFuncArgLst2):=
   matchcontinue (inTypesVarLst)
     local
-      list<tuple<Ident, tuple<Types.TType, Option<Absyn.Path>>>> in_,out;
-      list<Types.Var> vs;
+      list<tuple<Ident, tuple<DAE.TType, Option<Absyn.Path>>>> in_,out;
+      list<DAE.Var> vs;
       Ident n;
-      tuple<Types.TType, Option<Absyn.Path>> t;
-      Types.Var v;
+      tuple<DAE.TType, Option<Absyn.Path>> t;
+      DAE.Var v;
     case {} then ({},{}); 
     case ((DAE.TYPES_VAR(protected_ = true) :: vs)) /* Ignore protected components */ 
       equation 
@@ -8982,9 +8982,9 @@ end functionParams;
 protected function elabInputArgs 
 "function_: elabInputArgs 
   This function_ elaborates on a number of expressions and_ matches
-  them to a number of `Types.Var\' objects, applying type_ conversions
+  them to a number of `DAE.Var\' objects, applying type_ conversions
   on the expressions when necessary to match the type_ of the
-  `Types.Var\'.
+  `DAE.Var\'.
 
   PA: Positional arguments and named arguments are filled in the argument slots as:
  1. Positional arguments fill the first slots according to their position.
@@ -8999,18 +8999,18 @@ protected function elabInputArgs
   input Boolean inBoolean;
   input Types.PolymorphicBindings polymorphicBindings;
   output Env.Cache outCache;
-  output list<Exp.Exp> outExpExpLst;
+  output list<DAE.Exp> outExpExpLst;
   output list<Slot> outSlotLst;
-  output list<Types.Const> outTypesConstLst;
+  output list<DAE.Const> outTypesConstLst;
   output Types.PolymorphicBindings outPolymorphicBindings;
 algorithm 
   (outCache,outExpExpLst,outSlotLst,outTypesConstLst,outPolymorphicBindings):=
   matchcontinue (inCache,inEnv,inAbsynExpLst,inAbsynNamedArgLst,inSlotLst,checkTypes,inBoolean,polymorphicBindings)
     local
-      list<tuple<Ident, tuple<Types.TType, Option<Absyn.Path>>>> farg;
+      list<tuple<Ident, tuple<DAE.TType, Option<Absyn.Path>>>> farg;
       list<Slot> slots_1,newslots,slots;
-      list<Types.Const> clist1,clist2,clist;
-      list<Exp.Exp> explst,newexp;
+      list<DAE.Const> clist1,clist2,clist;
+      list<DAE.Exp> explst,newexp;
       list<Env.Frame> env;
       list<Absyn.Exp> exp;
       list<Absyn.NamedArg> narg;
@@ -9049,15 +9049,15 @@ protected function makeEmptySlots
 "function: makeEmptySlots 
   Helper function to elabInputArgs.
   Creates the slots to be filled with arguments. Intially they are empty."
-  input list<Types.FuncArg> inTypesFuncArgLst;
+  input list<DAE.FuncArg> inTypesFuncArgLst;
   output list<Slot> outSlotLst;
 algorithm 
   outSlotLst:=
   matchcontinue (inTypesFuncArgLst)
     local
       list<Slot> ss;
-      tuple<Ident, tuple<Types.TType, Option<Absyn.Path>>> fa;
-      list<tuple<Ident, tuple<Types.TType, Option<Absyn.Path>>>> fs;
+      tuple<Ident, tuple<DAE.TType, Option<Absyn.Path>>> fa;
+      list<tuple<Ident, tuple<DAE.TType, Option<Absyn.Path>>>> fs;
     case ({}) then {}; 
     case ((fa :: fs))
       equation 
@@ -9071,13 +9071,13 @@ protected function funcargLstFromSlots
 "function: funcargLstFromSlots 
   Converts slots to Types.Funcarg"
   input list<Slot> inSlotLst;
-  output list<Types.FuncArg> outTypesFuncArgLst;
+  output list<DAE.FuncArg> outTypesFuncArgLst;
 algorithm 
   outTypesFuncArgLst:=
   matchcontinue (inSlotLst)
     local
-      list<tuple<Ident, tuple<Types.TType, Option<Absyn.Path>>>> fs;
-      tuple<Ident, tuple<Types.TType, Option<Absyn.Path>>> fa;
+      list<tuple<Ident, tuple<DAE.TType, Option<Absyn.Path>>>> fs;
+      tuple<Ident, tuple<DAE.TType, Option<Absyn.Path>>> fa;
       list<Slot> xs;
     case {} then {}; 
     case ((SLOT(an = fa) :: xs))
@@ -9094,11 +9094,11 @@ protected function complexTypeFromSlots
   input list<Slot> slots;
   input String name;
   input ClassInf.State complexClassType;
-  output Exp.Type tp;
+  output DAE.ExpType tp;
 algorithm
   tp := matchcontinue(slots,name,complexClassType)
-  local Exp.Type etp; Types.Type tp; String id;
-    list<Exp.Var> vLst; String name;
+  local DAE.ExpType etp; DAE.Type tp; String id;
+    list<DAE.ExpVar> vLst; String name;
     ClassInf.State ci;
     case({},name,complexClassType) then DAE.ET_COMPLEX(name,{},complexClassType);
     case(SLOT(an = (id,tp))::slots,name,complexClassType) equation
@@ -9112,13 +9112,13 @@ protected function expListFromSlots
 "function expListFromSlots 
   Convers slots to expressions "
   input list<Slot> inSlotLst;
-  output list<Exp.Exp> outExpExpLst;
+  output list<DAE.Exp> outExpExpLst;
 algorithm 
   outExpExpLst:=
   matchcontinue (inSlotLst)
     local
-      list<Exp.Exp> lst;
-      Exp.Exp e;
+      list<DAE.Exp> lst;
+      DAE.Exp e;
       list<Slot> xs;
     case {} then {}; 
     case ((SLOT(expExpOption = SOME(e)) :: xs))
@@ -9150,16 +9150,16 @@ algorithm
   matchcontinue (inCache,inSlotLst,inClass,inEnv,inBoolean)
     local
       list<Slot> res,xs;
-      tuple<Ident, tuple<Types.TType, Option<Absyn.Path>>> fa;
-      Option<Exp.Exp> e;
-      list<Types.ArrayDim> ds;
+      tuple<Ident, tuple<DAE.TType, Option<Absyn.Path>>> fa;
+      Option<DAE.Exp> e;
+      list<DAE.ArrayDim> ds;
       SCode.Class class_;
       list<Env.Frame> env;
       Boolean impl;
       Absyn.Exp dexp;
-      Exp.Exp exp,exp_1;
-      tuple<Types.TType, Option<Absyn.Path>> t,tp;
-      Types.Const c1;
+      DAE.Exp exp,exp_1;
+      tuple<DAE.TType, Option<Absyn.Path>> t,tp;
+      DAE.Const c1;
       Ident id;
       Env.Cache cache;
     case (cache,(SLOT(an = fa,true_ = true,expExpOption = e,typesArrayDimLst = ds) :: xs),class_,env,impl) /* impl */ 
@@ -9195,9 +9195,9 @@ algorithm
     local
       Ident farg_str,filled,str,s,s1,s2,res;
       list<Ident> str_lst;
-      tuple<Ident, tuple<Types.TType, Option<Absyn.Path>>> farg;
-      Option<Exp.Exp> exp;
-      list<Types.ArrayDim> ds;
+      tuple<Ident, tuple<DAE.TType, Option<Absyn.Path>>> farg;
+      Option<DAE.Exp> exp;
+      list<DAE.ArrayDim> ds;
       list<Slot> xs;
     case ((SLOT(an = farg,true_ = filled,expExpOption = exp,typesArrayDimLst = ds) :: xs))
       equation 
@@ -9223,14 +9223,14 @@ protected function elabPositionalInputArgs
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
-  input list<Types.FuncArg> inTypesFuncArgLst;
+  input list<DAE.FuncArg> inTypesFuncArgLst;
   input list<Slot> inSlotLst;
   input Boolean checkTypes "if true, check types";
   input Boolean inBoolean;
   input Types.PolymorphicBindings polymorphicBindings;
   output Env.Cache outCache;
   output list<Slot> outSlotLst;
-  output list<Types.Const> outTypesConstLst;
+  output list<DAE.Const> outTypesConstLst;
   output Types.PolymorphicBindings outPolymorphicBindings;
 algorithm 
   (outCache,outSlotLst,outTypesConstLst,outPolymorphicBindings):=
@@ -9238,19 +9238,19 @@ algorithm
     local
       list<Slot> slots,slots_1,newslots;
       Boolean impl;
-      Exp.Exp e_1,e_2;
-      tuple<Types.TType, Option<Absyn.Path>> t,vt;
-      Types.Const c1;
-      list<Types.Const> clist;
+      DAE.Exp e_1,e_2;
+      tuple<DAE.TType, Option<Absyn.Path>> t,vt;
+      DAE.Const c1;
+      list<DAE.Const> clist;
       list<Env.Frame> env;
       Absyn.Exp e;
       list<Absyn.Exp> es;
-      tuple<Ident, tuple<Types.TType, Option<Absyn.Path>>> farg;
-      list<tuple<Ident, tuple<Types.TType, Option<Absyn.Path>>>> vs;
-      list<Types.ArrayDim> ds;
+      tuple<Ident, tuple<DAE.TType, Option<Absyn.Path>>> farg;
+      list<tuple<Ident, tuple<DAE.TType, Option<Absyn.Path>>>> vs;
+      list<DAE.ArrayDim> ds;
       Env.Cache cache;
       Ident id;
-      Types.Properties props;
+      DAE.Properties props;
     case (cache,_,{},_,slots,checkTypes,impl,polymorphicBindings) then (cache,slots,{},polymorphicBindings);  /* impl const */ 
     
       /* Exact match */
@@ -9317,7 +9317,7 @@ end elabPositionalInputArgs;
 
 protected function elabNamedInputArgs 
 "function elabNamedInputArgs 
-  This function takes an Env, a NamedArg list, a Types.FuncArg list and a 
+  This function takes an Env, a NamedArg list, a DAE.FuncArg list and a 
   Slot list.
   It builds up a new slot list and a list of elaborated expressions.
   If a slot is filled twice the function fails. If a slot is not filled at 
@@ -9326,29 +9326,29 @@ protected function elabNamedInputArgs
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.NamedArg> inAbsynNamedArgLst;
-  input list<Types.FuncArg> inTypesFuncArgLst;
+  input list<DAE.FuncArg> inTypesFuncArgLst;
   input list<Slot> inSlotLst;
   input Boolean checkTypes "if true, check types";
   input Boolean inBoolean;
   input Types.PolymorphicBindings polymorphicBindings;
   output Env.Cache outCache;
   output list<Slot> outSlotLst;
-  output list<Types.Const> outTypesConstLst;
+  output list<DAE.Const> outTypesConstLst;
   output Types.PolymorphicBindings outPolymorphicBindings;
 algorithm 
   (outCache,outSlotLst,outTypesConstLst,outPolymorphicBindings) :=
   matchcontinue (inCache,inEnv,inAbsynNamedArgLst,inTypesFuncArgLst,inSlotLst,checkTypes,inBoolean,polymorphicBindings)
     local
-      Exp.Exp e_1,e_2;
-      tuple<Types.TType, Option<Absyn.Path>> t,vt;
-      Types.Const c1;
+      DAE.Exp e_1,e_2;
+      tuple<DAE.TType, Option<Absyn.Path>> t,vt;
+      DAE.Const c1;
       list<Slot> slots_1,newslots,slots;
-      list<Types.Const> clist;
+      list<DAE.Const> clist;
       list<Env.Frame> env;
       Ident id;
       Absyn.Exp e;
       list<Absyn.NamedArg> nas,narg;
-      list<tuple<Ident, tuple<Types.TType, Option<Absyn.Path>>>> farg;
+      list<tuple<Ident, tuple<DAE.TType, Option<Absyn.Path>>>> farg;
       Boolean impl;
       Env.Cache cache;
 
@@ -9389,15 +9389,15 @@ protected function findNamedArgType
   which has  that identifier.
   Used for instance when looking up named arguments from the function type."
   input Ident inIdent;
-  input list<Types.FuncArg> inTypesFuncArgLst;
-  output Types.Type outType;
+  input list<DAE.FuncArg> inTypesFuncArgLst;
+  output DAE.Type outType;
 algorithm 
   outType:=
   matchcontinue (inIdent,inTypesFuncArgLst)
     local
       Ident id,id2;
-      tuple<Types.TType, Option<Absyn.Path>> farg;
-      list<tuple<Ident, tuple<Types.TType, Option<Absyn.Path>>>> ts;
+      tuple<DAE.TType, Option<Absyn.Path>> farg;
+      list<tuple<Ident, tuple<DAE.TType, Option<Absyn.Path>>>> ts;
     case (id,((id2,farg) :: ts))
       equation 
         equality(id = id2);
@@ -9414,12 +9414,12 @@ end findNamedArgType;
 
 protected function fillSlot 
 "function: fillSlot 
-  This function takses a `FuncArg\' and an Exp.Exp and a Slot list and fills 
+  This function takses a `FuncArg\' and an DAE.Exp and a Slot list and fills 
   the slot holding the FuncArg, by setting the boolean value of the slot 
   and setting the expression. The function fails if the slot is allready set."
-  input Types.FuncArg inFuncArg;
-  input Exp.Exp inExp;
-  input list<Types.ArrayDim> inTypesArrayDimLst;
+  input DAE.FuncArg inFuncArg;
+  input DAE.Exp inExp;
+  input list<DAE.ArrayDim> inTypesArrayDimLst;
   input list<Slot> inSlotLst;
   input Boolean checkTypes "type checking only if true";
   output list<Slot> outSlotLst;
@@ -9428,11 +9428,11 @@ algorithm
   matchcontinue (inFuncArg,inExp,inTypesArrayDimLst,inSlotLst,checkTypes)
     local
       Ident fa1,fa2,fa;
-      Exp.Exp exp;
-      list<Types.ArrayDim> ds;
-      tuple<Types.TType, Option<Absyn.Path>> b;
+      DAE.Exp exp;
+      list<DAE.ArrayDim> ds;
+      tuple<DAE.TType, Option<Absyn.Path>> b;
       list<Slot> xs,newslots;
-      tuple<Ident, tuple<Types.TType, Option<Absyn.Path>>> farg;
+      tuple<Ident, tuple<DAE.TType, Option<Absyn.Path>>> farg;
       Slot s1;
     case ((fa1,_),exp,ds,(SLOT(an = (fa2,b),true_ = false) :: xs),checkTypes as true)
       equation 
@@ -9479,27 +9479,27 @@ public function elabCref "function: elabCref
   input Boolean inBoolean "implicit instantiation";
   input Boolean performVectorization "true => generates vectorized expressions, {v[1],v[2],...}";
   output Env.Cache outCache;
-  output Exp.Exp outExp;
-  output Types.Properties outProperties;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
   output SCode.Accessibility outAccessibility;
 algorithm
   (outCache,outExp,outProperties,outAccessibility):=
   matchcontinue (inCache,inEnv,inComponentRef,inBoolean,performVectorization)
     local
-      Exp.ComponentRef c_1;
-      Types.Const const;
+      DAE.ComponentRef c_1;
+      DAE.Const const;
       SCode.Accessibility acc,acc_1;
       SCode.Variability variability;
-      tuple<Types.TType, Option<Absyn.Path>> t;
-      Types.Binding binding;
-      Exp.Exp exp;
+      tuple<DAE.TType, Option<Absyn.Path>> t;
+      DAE.Binding binding;
+      DAE.Exp exp;
       list<Env.Frame> env;
       Absyn.ComponentRef c;
       Boolean impl;
       Ident s,scope;
       Env.Cache cache;
       Boolean doVect;
-      Exp.Type et;
+      DAE.ExpType et;
       Absyn.InnerOuter io;      
     case (cache,env,c as Absyn.WILD(),impl,doVect) /* impl */   
       equation
@@ -9509,8 +9509,8 @@ algorithm
         (cache,DAE.CREF(DAE.WILD(),et),DAE.PROP(t, DAE.C_VAR()),SCode.WO());
     case (cache,env,c,impl,doVect) /* impl */ 
       local String str;
-        Types.Properties props;
-        Option<Exp.Exp> splicedExp;
+        DAE.Properties props;
+        Option<DAE.Exp> splicedExp;
       equation 
         (cache,c_1,_) = elabCrefSubs(cache,env, c,Prefix.NOPRE(), impl);
         (cache,DAE.ATTR(_,_,acc,variability,_,io),t,binding,splicedExp,_) = Lookup.lookupVar(cache,env, c_1);
@@ -9521,14 +9521,14 @@ algorithm
     
     case (cache,env,c,impl,doVect) /* MetaModelica Partial Function. sjoelund */ 
       local String str;
-        Types.Properties props;
-        Option<Exp.Exp> splicedExp;
+        DAE.Properties props;
+        Option<DAE.Exp> splicedExp;
         Absyn.Path path,fpath;
-        list<Types.Type> typelist;
+        list<DAE.Type> typelist;
         list<String> typelistStr;
         String typeStr;
-        Exp.ComponentRef expCref;
-        Exp.Type expType;
+        DAE.ComponentRef expCref;
+        DAE.ExpType expType;
       equation
         true = RTOpts.debugFlag("fnptr") or RTOpts.acceptMetaModelicaGrammar();
         path = Absyn.crefToPath(c);
@@ -9578,27 +9578,27 @@ will create nestled asubs for subscripts conaining crefs with subs.
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input Boolean inBoolean "implicit instantiation";
-  input Exp.Exp inExp;
-  input Option<Exp.Exp> spliceExp;
-  output Exp.Exp outExp;
+  input DAE.Exp inExp;
+  input Option<DAE.Exp> spliceExp;
+  output DAE.Exp outExp;
 algorithm 
   outComponentRef:=
   matchcontinue (inRef,inCache,inEnv,inBoolean,inExp,spliceExp)
     local
-      Exp.Exp exp1, exp2, aexp1,aexp2;
+      DAE.Exp exp1, exp2, aexp1,aexp2;
       Absyn.ComponentRef cref, crefChild;
       list<Absyn.Subscript> assl;
-      list<Exp.Subscript> essl;
+      list<DAE.Subscript> essl;
       String id,id2;
-      Exp.Type ty,ty2;
-      Exp.ComponentRef cr;
-      Types.Const const;
+      DAE.ExpType ty,ty2;
+      DAE.ComponentRef cr;
+      DAE.Const const;
       list<Env.Frame> env;
       Boolean impl;
       Env.Cache cache;
       
     case(Absyn.CREF_IDENT(id,assl),cache,env,impl, exp1 as DAE.CREF(DAE.CREF_IDENT(id2,_,essl),ty),SOME(DAE.CREF(cr,_)))
-      local Exp.Exp tmpExp;
+      local DAE.Exp tmpExp;
       equation 
         (_,_,const as DAE.C_VAR) = elabSubscripts(cache,env, assl ,impl);
         exp1 = makeASUBArrayAdressing2( essl);
@@ -9615,7 +9615,7 @@ algorithm
         exp1;
     case(_,_,_,_, (exp1 as DAE.CREF(DAE.CREF_IDENT(id2,_,essl),ty)),SOME(DAE.CREF(cr,_)))
       local
-        Exp.Type tty2;
+        DAE.ExpType tty2;
       equation 
         tty2 = Exp.crefType(cr);
         exp1 = DAE.CREF(DAE.CREF_IDENT(id2,tty2,essl),ty);
@@ -9623,8 +9623,8 @@ algorithm
         exp1;
     case(_,_,_,_, (exp1 as DAE.CREF(DAE.CREF_QUAL(id2,_,essl,crr2),ty)), SOME(exp2 as DAE.CREF(cr,_)))
       local 
-        Exp.ComponentRef crr2;
-        Exp.Type tty2;
+        DAE.ComponentRef crr2;
+        DAE.ExpType tty2;
         equation
           //Debug.fprint("failtrace", "-Qualified asubs not yet implemented\n");
       then
@@ -9638,19 +9638,19 @@ end makeASUBArrayAdressing;
 protected function makeASUBArrayAdressing2 " function makeASUBArrayAdressing 
 This function is sopposed to remake CREFS with a variable subscript to a ASUB
 " 
-  input list<Exp.Subscript> inSSL;
-  output list<Exp.Exp> outExp;
+  input list<DAE.Subscript> inSSL;
+  output list<DAE.Exp> outExp;
 algorithm 
   outComponentRef:=
   matchcontinue (inSSL)
     local
-      Exp.Exp exp1, exp2;
-      list<Exp.Exp> expl1,expl2;
-      Types.Const c1;
+      DAE.Exp exp1, exp2;
+      list<DAE.Exp> expl1,expl2;
+      DAE.Const c1;
       String id,id2;
-      Exp.Subscript sub;
-      Exp.Type ety,ety1,ty2;
-      list<Exp.Subscript> subs,subs2;
+      DAE.Subscript sub;
+      DAE.ExpType ety,ety1,ty2;
+      list<DAE.Subscript> subs,subs2;
         
       case({}) then {};
 
@@ -9672,7 +9672,7 @@ algorithm
       then
         (exp1::expl1);
     case( (sub as DAE.INDEX(DAE.BINARY(b1,op,b2)))::subs)
-      local Exp.Exp b1,b2; Exp.Operator op;      
+      local DAE.Exp b1,b2; DAE.Operator op;      
       equation
         // TODO make some check here
         expl2 = makeASUBArrayAdressing2(subs);
@@ -9696,12 +9696,12 @@ a.b[1,j] or a[1].b[1,j]. As of now, a[j].b[i] will not be possible since
 we can't know where b is located in a. but if a is non_array or a fully 
 adressed array(without variables), this is doable and this funtion can be used.
 protected function allowQualSubscript ""
-  input list<Exp.Subscript> subs;
-  input Exp.Type ty;
+  input list<DAE.Subscript> subs;
+  input DAE.ExpType ty;
   output Boolean bool;
 algorithm bool := matchcontinue( subs, ty ) 
   local
-    list<Exp.Subscript> subs;
+    list<DAE.Subscript> subs;
     list<Option<Integer>> ad;
     list<list<Integer>> ill;
     list<Integer> il;
@@ -9727,22 +9727,22 @@ end allowQualSubscript;
 protected function fillCrefSubscripts "function: fillCrefSubscripts
  
   This is a helper function to elab_cref2.
-  It investigates a Types.Type in order to fill the subscript lists of a 
+  It investigates a DAE.Type in order to fill the subscript lists of a 
   component reference. For instance, the name \'a.b\' with the type array of 
   one dimension will become \'a.b[:]\'.
 "
-  input Exp.ComponentRef inComponentRef;
-  input Types.Type inType;
-  output Exp.ComponentRef outComponentRef;
+  input DAE.ComponentRef inComponentRef;
+  input DAE.Type inType;
+  output DAE.ComponentRef outComponentRef;
 algorithm 
   outComponentRef:=
   matchcontinue (inComponentRef,inType/*,slicedExp*/)
     local
-      Exp.ComponentRef e,cref_1,cref;
-      tuple<Types.TType, Option<Absyn.Path>> t;
-      list<Exp.Subscript> subs_1,subs;
+      DAE.ComponentRef e,cref_1,cref;
+      tuple<DAE.TType, Option<Absyn.Path>> t;
+      list<DAE.Subscript> subs_1,subs;
       Ident id;
-      Exp.Type ty2;
+      DAE.ExpType ty2;
     case ((e as DAE.CREF_IDENT(subscriptLst = {})),t) 
       equation
     then e; 
@@ -9763,16 +9763,16 @@ protected function fillSubscripts "function: fillSubscripts
   
   Helper function to fill_cref_subscripts.
 "
-  input list<Exp.Subscript> inExpSubscriptLst;
-  input Types.Type inType;
-  output list<Exp.Subscript> outExpSubscriptLst;
+  input list<DAE.Subscript> inExpSubscriptLst;
+  input DAE.Type inType;
+  output list<DAE.Subscript> outExpSubscriptLst;
 algorithm 
   outExpSubscriptLst:=
   matchcontinue (inExpSubscriptLst,inType)
     local
-      list<Exp.Subscript> subs_1,subs_2,subs;
-      tuple<Types.TType, Option<Absyn.Path>> t;
-      Exp.Subscript fs;
+      list<DAE.Subscript> subs_1,subs_2,subs;
+      tuple<DAE.TType, Option<Absyn.Path>> t;
+      DAE.Subscript fs;
     case ({},(DAE.T_ARRAY(arrayType = t),_))
       equation 
         subs_1 = fillSubscripts({}, t);
@@ -9800,35 +9800,35 @@ protected function elabCref2 "function: elabCref2
 "
 	input Env.Cache inCache;
   input Env.Env inEnv;
-  input Exp.ComponentRef inComponentRef;
+  input DAE.ComponentRef inComponentRef;
   input SCode.Accessibility inAccessibility;
   input SCode.Variability inVariability;
   input Absyn.InnerOuter io;
-  input Types.Type inType;
-  input Types.Binding inBinding;
+  input DAE.Type inType;
+  input DAE.Binding inBinding;
   input Boolean performVectorization "true => vectorized expressions";
-  input Option<Exp.Exp> splicedExp;
+  input Option<DAE.Exp> splicedExp;
   output Env.Cache outCache;
-  output Exp.Exp outExp;
-  output Types.Const outConst;
+  output DAE.Exp outExp;
+  output DAE.Const outConst;
   output SCode.Accessibility outAccessibility;
 algorithm 
   (outCache,outExp,outConst,outAccessibility):=
   matchcontinue (inCache,inEnv,inComponentRef,inAccessibility,inVariability,io,inType,inBinding,performVectorization,splicedExp)
     local
-      Exp.Type t_1;
-      Exp.ComponentRef cr,cr_1,cref;
+      DAE.ExpType t_1;
+      DAE.ComponentRef cr,cr_1,cref;
       SCode.Accessibility acc,acc_1;
-      tuple<Types.TType, Option<Absyn.Path>> t,tt,et,tp;
-      Exp.Exp e,e_1,exp,exp1;
-      Option<Exp.Exp> sexp;
+      tuple<DAE.TType, Option<Absyn.Path>> t,tt,et,tp;
+      DAE.Exp e,e_1,exp,exp1;
+      Option<DAE.Exp> sexp;
       Values.Value v;
       list<Env.Frame> env;
-      Types.Const const;
+      DAE.Const const;
       SCode.Variability variability_1,variability,var;
-      Types.Binding binding_1,bind;
+      DAE.Binding binding_1,bind;
       Ident s,str,scope;
-      Types.Binding binding;
+      DAE.Binding binding;
       Env.Cache cache;
       Boolean doVect;
     case (cache,_,cr,acc,_,io,(t as (DAE.T_NOTYPE(),_)),_,doVect,_) /* If type not yet determined, component must be referencing itself. 
@@ -9840,7 +9840,7 @@ algorithm
         (cache,DAE.CREF(cr,t_1),DAE.C_VAR(),acc);
     case (cache,_,cr,acc,SCode.VAR(),io,tt,_,doVect,sexp )
       //case (cache,_,_,acc,SCode.VAR(),io,tt,_,doVect,sexp as SOME(DAE.CREF(cr,_)))
-      local Exp.Type t;
+      local DAE.ExpType t;
       equation 
         t = Types.elabType(tt);
         cr_1 = fillCrefSubscripts(cr, tt);
@@ -9848,7 +9848,7 @@ algorithm
       then
         (cache,e,DAE.C_VAR(),acc);
     case (cache,_,cr,acc,SCode.DISCRETE(),io,tt,_,doVect,_)
-      local Exp.Type t;
+      local DAE.ExpType t;
       equation 
         t = Types.elabType(tt);
         cr_1 = fillCrefSubscripts(cr, tt);
@@ -9856,7 +9856,7 @@ algorithm
       then
         (cache,e,DAE.C_VAR(),acc);
     case (cache,env,cr,acc,SCode.CONST(),io,t,binding,doVect,_)
-      //local Exp.Type t;
+      //local DAE.ExpType t;
       equation 
         (cache,v) = Ceval.cevalCrefBinding(cache,env,cr,binding,false,Ceval.MSG());
         e = valueExp(v);
@@ -9867,7 +9867,7 @@ algorithm
         
         /* evaluate parameters if "evalparam" is set */
     case (cache,env,cr,acc,SCode.PARAM(),io,tt,DAE.VALBOUND(valBound = v),doVect,_)
-      local Exp.Type t;
+      local DAE.ExpType t;
       equation 
         true = RTOpts.debugFlag("evalparam");
         t = Types.elabType(tt);
@@ -9881,7 +9881,7 @@ algorithm
         (cache,e_1,DAE.C_PARAM(),SCode.RO());
         
         case (cache,env,cr,acc,var,io,tt,DAE.EQBOUND(exp = exp,constant_ = const),doVect,_) 
-      local Exp.Type t;
+      local DAE.ExpType t;
       equation 
         true = SCode.isParameterOrConst(var);
         true = RTOpts.debugFlag("evalparam");
@@ -9899,7 +9899,7 @@ algorithm
         
 
     case (cache,env,cr,acc,SCode.PARAM(),io,tt,DAE.VALBOUND(valBound = v),doVect,_)
-      local Exp.Type t;
+      local DAE.ExpType t;
       equation 
         t = Types.elabType(tt);
         cr_1 = fillCrefSubscripts(cr, tt);
@@ -9907,7 +9907,7 @@ algorithm
       then
         (cache,e_1,DAE.C_PARAM(),acc);
     case (cache,env,cr,acc,SCode.CONST(),io,tt,DAE.EQBOUND(exp = exp,constant_ = const),doVect,_) 
-      local Exp.Type t;
+      local DAE.ExpType t;
       equation 
         t = Types.elabType(tt) "Constants with equal binings should be constant, i.e. true
 	 but const is passed on, allowing constants to have wrong bindings
@@ -9918,7 +9918,7 @@ algorithm
         (cache,e_1,const,acc);
 
 /*    case (cache,env,cr,acc,SCode.PARAM(),tt,DAE.EQBOUND(exp = exp ,constant_ = const),doVect,_)
-      local Exp.Type t;
+      local DAE.ExpType t;
       equation 
         t = Types.elabType(tt) "parameters with equal binding becomes C_PARAM" ;
         cr_1 = fillCrefSubscripts(cr, tt);
@@ -9926,7 +9926,7 @@ algorithm
       then
         (cache,e_1,DAE.C_PARAM(),acc);*/
     case (cache,env,cr,acc,SCode.PARAM(),io,tt,DAE.EQBOUND(exp = exp ,constant_ = const),doVect,sexp)
-      local Exp.Type t;
+      local DAE.ExpType t;
       equation 
         t = Types.elabType(tt) "parameters with equal binding becomes C_PARAM" ;
         cr_1 = fillCrefSubscripts(cr, tt);
@@ -9935,7 +9935,7 @@ algorithm
         (cache,e_1,DAE.C_PARAM(),acc);
         
     case (cache,env,cr,acc,_,io,tt,DAE.EQBOUND(exp = exp,constant_ = const),doVect,_)
-      local Exp.Type t;
+      local DAE.ExpType t;
       equation 
         t = Types.elabType(tt) "..the rest should be non constant, even if they have a 
 	 constant binding." ;
@@ -9946,7 +9946,7 @@ algorithm
     /* Enum constants does not have a value expression */
     case (cache,env,cr,acc,_,io,(tt as (DAE.T_ENUMERATION(SOME(_),_,_,_),_)),_,doVect,_) 
 //    case (cache,env,cr,acc,_,io,(tt as (DAE.T_ENUM(),_)),_,doVect,_) 
-      local Exp.Type t;
+      local DAE.ExpType t;
       equation 
         t = Types.elabType(tt);
       then
@@ -9954,9 +9954,9 @@ algorithm
     /* If value not constant, but references another parameter, which has a value We need to perform value propagation. */
     case (cache,env,cr,acc,variability,io,tp,DAE.EQBOUND(exp = DAE.CREF(componentRef = cref,ty = t),constant_ = DAE.C_VAR()),doVect,splicedExp)
       local
-        tuple<Types.TType, Option<Absyn.Path>> t_1;
-        Option<Exp.Exp> splicedExp;
-        Exp.Type t;
+        tuple<DAE.TType, Option<Absyn.Path>> t_1;
+        Option<DAE.Exp> splicedExp;
+        DAE.ExpType t;
       equation 
         (cache,DAE.ATTR(_,_,acc_1,variability_1,_,io),t_1,binding_1,splicedExp,_) = Lookup.lookupVar(cache,env, cref);
         (cache,e,const,acc) = elabCref2(cache,env, cref, acc_1, variability_1, io,t_1, binding_1,doVect,splicedExp);
@@ -9971,7 +9971,7 @@ algorithm
         fail();
     /* constants without value produce error. */
     case (cache,env,cr,acc,SCode.CONST(),io,tt,DAE.UNBOUND(),doVect,_) 
-      local Exp.Type t;
+      local DAE.ExpType t;
       equation 
         s = Exp.printComponentRefStr(cr);
         scope = Env.printEnvPathStr(env);
@@ -9986,7 +9986,7 @@ algorithm
         /* Parameters without value but with fixed=false is ok, these are given value
         during initialization. */ 
     case (cache,env,cr,acc,SCode.PARAM(),io,tt,DAE.UNBOUND(),doVect,_) 
-      local Exp.Type t; String s1;
+      local DAE.ExpType t; String s1;
       equation 
         false = Types.getFixedVarAttribute(tt);        
         t = Types.elabType(tt);
@@ -9996,7 +9996,7 @@ algorithm
         
        /* outer parameters without value is ok. */ 
     case (cache,env,cr,acc,SCode.PARAM(),io,tt,DAE.UNBOUND(),doVect,_) 
-      local Exp.Type t; String s1;
+      local DAE.ExpType t; String s1;
       equation 
         (_,true) = Inst.innerOuterBooleans(io);
         t = Types.elabType(tt);
@@ -10006,7 +10006,7 @@ algorithm
 
         /* Parameters without value with fixed=true or no fixed attribute set produce warning */                 
     case (cache,env,cr,acc,SCode.PARAM(),io,tt,DAE.UNBOUND(),doVect,_) 
-      local Exp.Type t; String s1;
+      local DAE.ExpType t; String s1;
       equation        
         s = Exp.printComponentRefStr(cr);
         Error.addMessage(Error.UNBOUND_PARAMETER_WARNING, {s});
@@ -10025,7 +10025,7 @@ end elabCref2;
 
 protected function crefVectorize "function: crefVectorize
  
-  This function takes a 'Exp.Exp' and a 'Types.Type' and if the expression
+  This function takes a 'DAE.Exp' and a 'DAE.Type' and if the expression
   is a ComponentRef and the type is an array it returns an array of 
   component references with subscripts for each index.
   For instance, parameter Real x[3];   
@@ -10035,23 +10035,23 @@ protected function crefVectorize "function: crefVectorize
   NOTE: Currently only works for one and two dimensions.
 "
 	input Boolean performVectorization "if false, return input";
-  input Exp.Exp inExp;
-  input Types.Type inType;
-  input Option<Exp.Exp> splicedExp;
-  output Exp.Exp outExp;
+  input DAE.Exp inExp;
+  input DAE.Type inType;
+  input Option<DAE.Exp> splicedExp;
+  output DAE.Exp outExp;
 algorithm 
   outExp:=
   matchcontinue (performVectorization,inExp,inType,splicedExp)
     local
       Boolean b1,b2,doVect;
-      Exp.Type elt_tp,exptp,t2;
-      Exp.Exp e,exp1,exp2;
-      Exp.ComponentRef cr,cr_2;
+      DAE.ExpType elt_tp,exptp,t2;
+      DAE.Exp e,exp1,exp2;
+      DAE.ComponentRef cr,cr_2;
       Integer ds,ds2;
-      list<Exp.Subscript> ssl;
-      tuple<Types.TType, Option<Absyn.Path>> t;//,tOrg;
-      Types.Type tOrg;
-      Exp.Type ety;
+      list<DAE.Subscript> ssl;
+      tuple<DAE.TType, Option<Absyn.Path>> t;//,tOrg;
+      DAE.Type tOrg;
+      DAE.ExpType ety;
       
     case(false, e, _, _) then e;
       /* types extending basictype */
@@ -10062,8 +10062,8 @@ algorithm
         
     case (_,DAE.CREF(componentRef = cr_2,ty = t2),(tOrg as (DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(ds)),arrayType = (t as (DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(ds2))),_))),_)),SOME(exp1 as DAE.CREF(componentRef = cr,ty = exptp)))
       local
-        Types.Type tttt;
-        list<Exp.ComponentRef> crefl1;
+        DAE.Type tttt;
+        list<DAE.ComponentRef> crefl1;
       equation 
         b1 = (ds < 20);
         b2 = (ds2 < 20);
@@ -10076,7 +10076,7 @@ algorithm
       then
         e;
     case(_, exp2 as (DAE.CREF(componentRef = cr_2,ty = t2)), (tOrg as (DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(ds)),arrayType = t),_)), SOME(exp1 as DAE.CREF(componentRef = cr,ty = exptp)))
-      local Exp.ComponentRef testCREF;
+      local DAE.ComponentRef testCREF;
       equation
         false = Types.isArray(t);
         (ds < 20) = true;
@@ -10113,13 +10113,13 @@ protected function tryToConvertArrayToMatrix " function trytoConvertToMatrix
 A function that tries to convert an Exp to an Matrix, if it fails it just returns the
 input exp.
 " 
-  input Exp.Exp inExp;  
-  output Exp.Exp outExp;
+  input DAE.Exp inExp;  
+  output DAE.Exp outExp;
 algorithm
   outExp :=
   matchcontinue(inExp)
     local 
-      Exp.Exp exp;
+      DAE.Exp exp;
     case(exp)
       equation 
         exp = elabMatrixToMatrixExp(exp);
@@ -10133,16 +10133,16 @@ A function for extracting the type-dimension of the child to \"me\" to dimension
 Also returns wheter the array is a scalar or not. 
 "
   
-  input Exp.Exp inExp;  
+  input DAE.Exp inExp;  
   output list<Option<Integer>> outExp;
   output Boolean isScalar;
 algorithm
   (outExp,isScalar) :=
   matchcontinue(inExp)
     local
-      Exp.Exp exp1,exp2;
-      list<Exp.Exp> expl1,expl2;
-      Exp.Type ety,ety2;
+      DAE.Exp exp1,exp2;
+      list<DAE.Exp> expl1,expl2;
+      DAE.ExpType ety,ety2;
       list<Option<Integer>> tl;
       Integer x;
       Boolean sc;
@@ -10181,18 +10181,18 @@ CREF_IDENT('a',{DAE.SLICE(DAE.ARRAY(_,_,{DAE.INDEX(1),DAE.INDEX(2)})),
                 DAE.SLICE(DAE.ARRAY(_,_,{DAE.INDEX(1),DAE.INDEX(3)}))})
    ==> {{a[1,1],a[1,3]},{a[2,1],a[2,3]}}
 " 
-  input Exp.ComponentRef inCref;
-  input Exp.Type inType;
-  output Exp.Exp outCref;
+  input DAE.ComponentRef inCref;
+  input DAE.ExpType inType;
+  output DAE.Exp outCref;
 algorithm 
   outCref := 
   matchcontinue(inCref, inType)
     local
-      list<Exp.Subscript> ssl;
-      Exp.ComponentRef cref;
+      list<DAE.Subscript> ssl;
+      DAE.ComponentRef cref;
       String id;
-      Exp.Exp exp1,child;
-      Exp.Type ety;
+      DAE.Exp exp1,child;
+      DAE.ExpType ety;
       
     case( cref as DAE.CREF_IDENT(ident = id,subscriptLst = ssl),ety)
       equation 
@@ -10215,19 +10215,19 @@ The input should be an array, or just one CREF_QUAL, of arrays...of arrays of CR
 and the same goes for 'rest'.
 Also the flat type as input.
 "
-  input Exp.Exp qual;
-  input Exp.Exp rest;
-  input Exp.Type inType;
-  output Exp.Exp outExp;
+  input DAE.Exp qual;
+  input DAE.Exp rest;
+  input DAE.ExpType inType;
+  output DAE.Exp outExp;
 algorithm 
   outExp := 
   matchcontinue(qual,rest,inType)
     local
-      Exp.Exp exp1,exp2;
-      list<Exp.Exp> expl1, expl2; 
-      Exp.Subscript ssl;
+      DAE.Exp exp1,exp2;
+      list<DAE.Exp> expl1, expl2; 
+      DAE.Subscript ssl;
       String id; 
-      Exp.Type ety;
+      DAE.ExpType ety;
     case(exp1 as DAE.CREF(_,_),exp2,_)
       equation
         exp1 = mergeQualWithRest2(exp2,exp1);
@@ -10253,19 +10253,19 @@ end mergeQualWithRest;
 protected function mergeQualWithRest2 " function mergeQualWithRest 
 Helper to mergeQualWithRest, handles the case when the child-qual is arrays of arrays.
 "
-  input Exp.Exp rest;
-  input Exp.Exp qual;
-  output Exp.Exp outExp;
+  input DAE.Exp rest;
+  input DAE.Exp qual;
+  output DAE.Exp outExp;
 algorithm 
   outExp := 
   matchcontinue(rest,qual)
     local
-      Exp.Exp exp1,exp2;
-      list<Exp.Exp> expl1, expl2; 
-      list<Exp.Subscript> ssl;
-      Exp.ComponentRef cref;
+      DAE.Exp exp1,exp2;
+      list<DAE.Exp> expl1, expl2; 
+      list<DAE.Subscript> ssl;
+      DAE.ComponentRef cref;
       String id; 
-      Exp.Type ety,ty2;
+      DAE.ExpType ety,ty2;
       
     case(exp1 as DAE.CREF( cref ,ety),exp2 as DAE.CREF(DAE.CREF_IDENT(id,ty2, ssl),_))
       equation
@@ -10291,21 +10291,21 @@ protected function flattenSubscript " function flattenSubscript
 Intermediat step for flattenSubscript to catch subscript free CREF's.
 
 "
-  input list<Exp.Subscript> inSubs;
+  input list<DAE.Subscript> inSubs;
   input String name;
-  input Exp.Type inType;
-  output Exp.Exp outExp;
+  input DAE.ExpType inType;
+  output DAE.Exp outExp;
 algorithm 
   outSub := 
   matchcontinue(inSubs,name, inType)
     local 
       String id;
-      Exp.Subscript sub1;
-      list<Exp.Subscript> subs1;
-      list<Exp.Exp> expl1,expl2;
-      Exp.Exp exp1,exp2;
-      Exp.Type ety;
-      list<Exp.Exp> expl1;
+      DAE.Subscript sub1;
+      list<DAE.Subscript> subs1;
+      list<DAE.Exp> expl1,expl2;
+      DAE.Exp exp1,exp2;
+      DAE.ExpType ety;
+      list<DAE.Exp> expl1;
     case({},id,ety) 
       equation 
         exp1 = DAE.CREF(DAE.CREF_IDENT(id,ety,{}),ety);
@@ -10327,21 +10327,21 @@ ex: a,{1,2}{1} ==> {{a[1,1]},{a[2,1]}}.
 This is done in several function calls, this specific function
 extracts the numbers ( 1,2 and 1 ).
 "
-  input list<Exp.Subscript> inSubs;
+  input list<DAE.Subscript> inSubs;
   input String name;
-  input Exp.Type inType;
-  output Exp.Exp outExp;
+  input DAE.ExpType inType;
+  output DAE.Exp outExp;
 algorithm 
   outSub := 
   matchcontinue(inSubs,name, inType)
     local 
       String id;
-      Exp.Subscript sub1;
-      list<Exp.Subscript> subs1;
-      list<Exp.Exp> expl1,expl2;
-      Exp.Exp exp1,exp2,exp3;
-      Exp.Type ety; 
-      list<Exp.Exp> expl1;
+      DAE.Subscript sub1;
+      list<DAE.Subscript> subs1;
+      list<DAE.Exp> expl1,expl2;
+      DAE.Exp exp1,exp2,exp3;
+      DAE.ExpType ety; 
+      list<DAE.Exp> expl1;
     case({},_,_) then DAE.ARRAY(DAE.ET_OTHER(),false,{});
     case( ( (sub1 as DAE.INDEX(exp = exp1 as DAE.ICONST(_))) :: subs1),id,ety)
       equation
@@ -10382,15 +10382,15 @@ end flattenSubscript2;
 protected function removeDoubleEmptyArrays " Function removeDoubleArrays
 A help function, to prevent the {{}} look of empty arrays. 
 "
-  input Exp.Exp inArr;
-  output Exp.Exp  outArr;
+  input DAE.Exp inArr;
+  output DAE.Exp  outArr;
 algorithm
   outArr :=
   matchcontinue(inArr)  
     local  
-      Exp.Exp exp1,exp2;
-      list<Exp.Exp> expl1,expl2,expl3,expl4;
-      Exp.Type ty1,ty2;
+      DAE.Exp exp1,exp2;
+      list<DAE.Exp> expl1,expl2,expl3,expl4;
+      DAE.ExpType ty1,ty2;
       Boolean sc;
     case(exp1 as DAE.ARRAY(ty = _,scalar=_,array = expl1 as  
       ((exp2 as DAE.ARRAY(ty=_,scalar=_,array={}))::{}) ))
@@ -10420,20 +10420,20 @@ here we apply the subscripts to the IDENTS of the CREF's.
 Special case for adressing INDEX[0], make an empty array.
 If we have an array of subscript, we call applySubscript2
 "
-  input Exp.Exp inSub "dim n ";
-  input Exp.Exp inSubs "dim >n";
+  input DAE.Exp inSub "dim n ";
+  input DAE.Exp inSubs "dim >n";
   input String name;
-  input Exp.Type inType;
+  input DAE.ExpType inType;
   
-  output Exp.Exp outExp;
+  output DAE.Exp outExp;
 algorithm 
   outSub := 
   matchcontinue(inSub, inSubs ,name, inType)
     local 
       String id;
-      Exp.Exp exp1,exp2;
-      list<Exp.Exp> expl1,expl2;
-      Exp.Type ety,tmpy;
+      DAE.Exp exp1,exp2;
+      list<DAE.Exp> expl1,expl2;
+      DAE.ExpType ety,tmpy;
       list<Option<Integer>> arrDim;
     case(exp2,exp1 as DAE.ARRAY(DAE.ET_ARRAY(ty =_, arrayDimensions = arrDim) ,_,{}),id ,ety)
       equation
@@ -10466,19 +10466,19 @@ protected function applySubscript2 " function applySubscript
 Handles multiple subscripts for the expression.
 If it is an array, we listmap applySubscript3
 "
-  input Exp.Exp inSub "The subs to add"; 
-  input Exp.Exp inSubs "The already created subs";
-  input Exp.Type inType;
-  output Exp.Exp outExp;
+  input DAE.Exp inSub "The subs to add"; 
+  input DAE.Exp inSubs "The already created subs";
+  input DAE.ExpType inType;
+  output DAE.Exp outExp;
 algorithm 
   outSub := 
   matchcontinue(inSub, inSubs, inType )
     local 
       String id;
-      Exp.Exp exp1,exp2;
-      list<Exp.Exp> expl1,expl2;
-      list<Exp.Subscript> subs;
-      Exp.Type ety,ty2;
+      DAE.Exp exp1,exp2;
+      list<DAE.Exp> expl1,expl2;
+      list<DAE.Subscript> subs;
+      DAE.ExpType ety,ty2;
     case(exp1 as DAE.ICONST(integer=_),exp2 as DAE.CREF(DAE.CREF_IDENT(id,ty2,subs),_ ),ety ) 
       equation
         exp2 = DAE.CREF(DAE.CREF_IDENT(id,ty2,(DAE.INDEX(exp1)::subs)),ety);
@@ -10500,19 +10500,19 @@ protected function applySubscript3 " function applySubscript
 Final applySubscript function, here we call ourself recursive until 
 we have the CREFS we are looking for. 
 "
-  input Exp.Exp inSubs "The already created subs";
-  input Exp.Exp inSub "The subs to add"; 
-  input Exp.Type inType; 
-  output Exp.Exp outExp;
+  input DAE.Exp inSubs "The already created subs";
+  input DAE.Exp inSub "The subs to add"; 
+  input DAE.ExpType inType; 
+  output DAE.Exp outExp;
 algorithm 
   outSub := 
   matchcontinue(inSubs,inSub, inType )
     local 
       String id;
-      Exp.Exp exp1,exp2;
-      list<Exp.Exp> expl1,expl2;
-      list<Exp.Subscript> subs;
-      Exp.Type ety,ty2;
+      DAE.Exp exp1,exp2;
+      list<DAE.Exp> expl1,expl2;
+      list<DAE.Subscript> subs;
+      DAE.ExpType ety,ty2;
     case(exp2 as DAE.CREF(DAE.CREF_IDENT(id,ty2,subs),_), exp1 as DAE.ICONST(integer=_),ety ) 
       equation
         exp2 = DAE.CREF(DAE.CREF_IDENT(id,ty2,(DAE.INDEX(exp1)::subs)),ety);
@@ -10542,18 +10542,18 @@ protected function callVectorize "function: callVectorize
  of the call, so if extra arguments should be passed these can be given as
  input to the call expression.	    
 "
-  input Exp.Exp inExp;
-  input list<Exp.Exp> inExpExpLst;
-  output list<Exp.Exp> outExpExpLst;
+  input DAE.Exp inExp;
+  input list<DAE.Exp> inExpExpLst;
+  output list<DAE.Exp> outExpExpLst;
 algorithm 
   outExpExpLst:=
   matchcontinue (inExp,inExpExpLst)
     local
-      Exp.Exp e,callexp;
-      list<Exp.Exp> es_1,args,es;
+      DAE.Exp e,callexp;
+      list<DAE.Exp> es_1,args,es;
       Absyn.Path fn;
       Boolean tuple_,builtin,inl;
-      Exp.Type tp;
+      DAE.ExpType tp;
     case (e,{}) then {}; 
     case ((callexp as DAE.CALL(path = fn,expLst = args,tuple_ = tuple_,builtin = builtin,ty=tp,inline=inl)),(e :: es))
       equation 
@@ -10573,23 +10573,23 @@ protected function createCrefArray "function: createCrefArray
   helper function to cref_vectorize, creates each individual cref, 
   e.g. {x{1},x{2}, ...} from x.
 "
-  input Exp.ComponentRef inComponentRef1;
+  input DAE.ComponentRef inComponentRef1;
   input Integer inInteger2;
   input Integer inInteger3;
-  input Exp.Type inType4;
-  input Types.Type inType5;
-  output Exp.Exp outExp;
+  input DAE.ExpType inType4;
+  input DAE.Type inType5;
+  output DAE.Exp outExp;
 algorithm 
   outExp:=
   matchcontinue (inComponentRef1,inInteger2,inInteger3,inType4,inType5)
     local
-      Exp.ComponentRef cr,cr_1;
+      DAE.ComponentRef cr,cr_1;
       Integer indx,ds,indx_1;
-      Exp.Type et,elt_tp;
-      tuple<Types.TType, Option<Absyn.Path>> t;
-      list<Exp.Exp> expl;
-      Exp.Exp e_1;
-      list<Exp.Subscript> ss;
+      DAE.ExpType et,elt_tp;
+      tuple<DAE.TType, Option<Absyn.Path>> t;
+      list<DAE.Exp> expl;
+      DAE.Exp e_1;
+      list<DAE.Subscript> ss;
     case (cr,indx,ds,et,t) /* index iterator dimension size */ 
       equation 
         (indx > ds) = true;
@@ -10639,26 +10639,26 @@ protected function createCrefArray2d "function: createCrefArray2d
   helper function to cref_vectorize, creates each individual cref, 
   e.g. {x{1,1},x{2,1}, ...} from x.
 "
-  input Exp.ComponentRef inComponentRef1;
+  input DAE.ComponentRef inComponentRef1;
   input Integer inInteger2;
   input Integer inInteger3;
   input Integer inInteger4;
-  input Exp.Type inType5;
-  input Types.Type inType6;
-  output Exp.Exp outExp;
+  input DAE.ExpType inType5;
+  input DAE.Type inType6;
+  output DAE.Exp outExp;
 algorithm 
   outExp:=
   matchcontinue (inComponentRef1,inInteger2,inInteger3,inInteger4,inType5,inType6)
     local
-      Exp.ComponentRef cr,cr_1;
+      DAE.ComponentRef cr,cr_1;
       Integer indx,ds,ds2,indx_1;
-      Exp.Type et,tp,elt_tp;
-      tuple<Types.TType, Option<Absyn.Path>> t;
-      list<list<tuple<Exp.Exp, Boolean>>> ms;
+      DAE.ExpType et,tp,elt_tp;
+      tuple<DAE.TType, Option<Absyn.Path>> t;
+      list<list<tuple<DAE.Exp, Boolean>>> ms;
       Boolean sc;
-      list<Exp.Exp> expl;
+      list<DAE.Exp> expl;
       list<Boolean> scs;
-      list<tuple<Exp.Exp, Boolean>> row;
+      list<tuple<DAE.Exp, Boolean>> row;
     case (cr,indx,ds,ds2,et,t) /* index iterator dimension size 1 dimension size 2 */ 
       equation 
         (indx > ds) = true;
@@ -10693,26 +10693,26 @@ protected function elabCrefSubs "function: elabCrefSubs
   input Prefix.Prefix crefPrefix "the accumulated cref, required for lookup";
   input Boolean inBoolean;
   output Env.Cache outCache;
-  output Exp.ComponentRef outComponentRef;
-  output Types.Const outConst "The constness of the subscripts. Note: This is not the same as
+  output DAE.ComponentRef outComponentRef;
+  output DAE.Const outConst "The constness of the subscripts. Note: This is not the same as
   the constness of a cref with subscripts! (just becase x[1,2] has a constant subscript list does
   not mean that the variable x[1,2] is constant)";
 algorithm 
   (outCache,outComponentRef,outConst):=
   matchcontinue (inCache,inEnv,inComponentRef,crefPrefix,inBoolean)
     local
-      tuple<Types.TType, Option<Absyn.Path>> t;
+      tuple<DAE.TType, Option<Absyn.Path>> t;
       list<Option<Integer>> sl;
-      Types.Const const,const1,const2;
+      DAE.Const const,const1,const2;
       list<Env.Frame> env;
       Ident id;
       list<Absyn.Subscript> ss;
       Boolean impl;
-      Exp.ComponentRef cr;
-      Exp.Type ty;
-      list<Exp.Subscript> ss_1;
+      DAE.ComponentRef cr;
+      DAE.ExpType ty;
+      list<DAE.Subscript> ss_1;
       Absyn.ComponentRef subs;
-      Exp.ComponentRef esubs;
+      DAE.ComponentRef esubs;
       Env.Cache cache;
       list<Integer> indexes;
       SCode.Variability vt;
@@ -10781,7 +10781,7 @@ end elabCrefSubs;
 public function elabSubscripts "function: elabSubscripts
  
   This function converts a list of `Absyn.Subscript\' to a list of
-  `Exp.Subscript\', and checks if all subscripts are constant.
+  `DAE.Subscript\', and checks if all subscripts are constant.
   HJ: not checking for constant, returning if constant or not
 "
 	input Env.Cache inCache;
@@ -10789,15 +10789,15 @@ public function elabSubscripts "function: elabSubscripts
   input list<Absyn.Subscript> inAbsynSubscriptLst;
   input Boolean inBoolean;
   output Env.Cache outCache;
-  output list<Exp.Subscript> outExpSubscriptLst;
-  output Types.Const outConst;
+  output list<DAE.Subscript> outExpSubscriptLst;
+  output DAE.Const outConst;
 algorithm 
   (outCache,outExpSubscriptLst,outConst):=
   matchcontinue (inCache,inEnv,inAbsynSubscriptLst,inBoolean)
     local
-      Exp.Subscript sub_1;
-      Types.Const const1,const2,const;
-      list<Exp.Subscript> subs_1;
+      DAE.Subscript sub_1;
+      DAE.Const const1,const2,const;
+      list<DAE.Subscript> subs_1;
       list<Env.Frame> env;
       Absyn.Subscript sub;
       list<Absyn.Subscript> subs;
@@ -10824,8 +10824,8 @@ protected function elabSubscriptsDims "function: elabSubscriptsDims
   input list<Option<Integer>> dims;
   input Boolean impl;
   output Env.Cache outCache;
-  output list<Exp.Subscript> outSubs;
-  output Types.Const outConst;
+  output list<DAE.Subscript> outSubs;
+  output DAE.Const outConst;
 algorithm 
    (outCache,outSubs,outConst):=
   matchcontinue (cache,env,subs,dims,impl)   
@@ -10854,15 +10854,15 @@ protected function elabSubscriptsDims2 " Helper function to elabSubscriptsDims "
   input list<Option<Integer>> inIntegerLst;
   input Boolean inBoolean;
   output Env.Cache outCache;
-  output list<Exp.Subscript> outExpSubscriptLst;
-  output Types.Const outConst;
+  output list<DAE.Subscript> outExpSubscriptLst;
+  output DAE.Const outConst;
 algorithm 
   (outCache,outExpSubscriptLst,outConst):=
   matchcontinue (inCache,inEnv,inAbsynSubscriptLst,inIntegerLst,inBoolean)
     local
-      Exp.Subscript sub_1;
-      Types.Const const1,const2,const;
-      list<Exp.Subscript> subs_1,ss;
+      DAE.Subscript sub_1;
+      DAE.Const const1,const2,const;
+      list<DAE.Subscript> subs_1,ss;
       list<Env.Frame> env;
       Absyn.Subscript sub;
       list<Absyn.Subscript> subs;
@@ -10909,24 +10909,24 @@ end elabSubscriptsDims2;
 protected function elabSubscript "function: elabSubscript
  
   This function converts an `Absyn.Subscript\' to an
-  `Exp.Subscript\'.
+  `DAE.Subscript\'.
 "
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input Absyn.Subscript inSubscript;
   input Boolean inBoolean;
   output Env.Cache outCache;
-  output Exp.Subscript outSubscript;
-  output Types.Const outConst;
+  output DAE.Subscript outSubscript;
+  output DAE.Const outConst;
 algorithm 
   (outCache,outSubscript,outConst):=
   matchcontinue (inCache,inEnv,inSubscript,inBoolean)
     local
       Boolean impl;
-      Exp.Exp sub_1;
-      tuple<Types.TType, Option<Absyn.Path>> ty;
-      Types.Const const;
-      Exp.Subscript sub_2;
+      DAE.Exp sub_1;
+      tuple<DAE.TType, Option<Absyn.Path>> ty;
+      DAE.Const const;
+      DAE.Subscript sub_2;
       list<Env.Frame> env;
       Absyn.Exp sub;
       Env.Cache cache;
@@ -10943,21 +10943,21 @@ end elabSubscript;
 protected function elabSubscriptType "function: elabSubscriptType
  
   This function is used to find the correct constructor for
-  `Exp.Subscript\' to use for an indexing expression.  If an integer
+  `DAE.Subscript\' to use for an indexing expression.  If an integer
   is given as index, `DAE.INDEX()\' is used, and if an integer array
   is given, `DAE.SLICE()\' is used.
 "
-  input Types.Type inType1;
+  input DAE.Type inType1;
   input Absyn.Exp inExp2;
-  input Exp.Exp inExp3;
-  output Exp.Subscript outSubscript;
+  input DAE.Exp inExp3;
+  output DAE.Subscript outSubscript;
 algorithm 
   outSubscript:=
   matchcontinue (inType1,inExp2,inExp3)
     local
-      Exp.Exp sub;
+      DAE.Exp sub;
       Ident e_str,t_str;
-      tuple<Types.TType, Option<Absyn.Path>> t;
+      tuple<DAE.TType, Option<Absyn.Path>> t;
       Absyn.Exp e;
     case ((DAE.T_INTEGER(varLstInt = _),_),_,sub) then DAE.INDEX(sub); 
     case ((DAE.T_ENUMERATION(SOME(_),_,_,_),_),_,sub) then DAE.INDEX(sub);
@@ -10982,16 +10982,16 @@ protected function subscriptCrefType
  
   This function might actually not be needed.
 "
-  input Exp.Exp inExp;
-  input Types.Type inType;
-  output Types.Type outType;
+  input DAE.Exp inExp;
+  input DAE.Type inType;
+  output DAE.Type outType;
 algorithm 
   outType:=
   matchcontinue (inExp,inType)
     local
-      tuple<Types.TType, Option<Absyn.Path>> t_1,t;
-      Exp.ComponentRef c;
-      Exp.Exp e;
+      tuple<DAE.TType, Option<Absyn.Path>> t_1,t;
+      DAE.ComponentRef c;
+      DAE.Exp e;
     case (DAE.CREF(componentRef = c),t)
       equation 
         t_1 = subscriptCrefType2(c, t);
@@ -11002,16 +11002,16 @@ algorithm
 end subscriptCrefType;
 
 protected function subscriptCrefType2
-  input Exp.ComponentRef inComponentRef;
-  input Types.Type inType;
-  output Types.Type outType;
+  input DAE.ComponentRef inComponentRef;
+  input DAE.Type inType;
+  output DAE.Type outType;
 algorithm 
   outType:=
   matchcontinue (inComponentRef,inType)
     local
-      tuple<Types.TType, Option<Absyn.Path>> t,t_1;
-      list<Exp.Subscript> subs;
-      Exp.ComponentRef c;
+      tuple<DAE.TType, Option<Absyn.Path>> t,t_1;
+      list<DAE.Subscript> subs;
+      DAE.ComponentRef c;
     case (DAE.CREF_IDENT(subscriptLst = {}),t) then t; 
     case (DAE.CREF_IDENT(subscriptLst = subs),t)
       equation 
@@ -11034,16 +11034,16 @@ protected function subscriptType "function: subscriptType
   This does not handle slices or check that subscripts are not out
   of bounds.
 "
-  input Types.Type inType;
-  input list<Exp.Subscript> inExpSubscriptLst;
-  output Types.Type outType;
+  input DAE.Type inType;
+  input list<DAE.Subscript> inExpSubscriptLst;
+  output DAE.Type outType;
 algorithm 
   outType:=
   matchcontinue (inType,inExpSubscriptLst)
     local
-      tuple<Types.TType, Option<Absyn.Path>> t,t_1;
-      list<Exp.Subscript> subs;
-      Types.ArrayDim dim;
+      tuple<DAE.TType, Option<Absyn.Path>> t,t_1;
+      list<DAE.Subscript> subs;
+      DAE.ArrayDim dim;
       Option<Absyn.Path> p;
     case (t,{}) then t; 
     case ((DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = _),arrayType = t),_),(DAE.INDEX(exp = _) :: subs))
@@ -11077,19 +11077,19 @@ The non-selected branch will be replaced by a dummy variable called $undefined s
   input Env.Cache cache;
   input Env.Env env;
   input Boolean b "selected branch";
-  input Exp.Exp cond;
+  input DAE.Exp cond;
   input Absyn.Exp tbranch;
   input Absyn.Exp fbranch;
   input Boolean impl;
   input Option<Interactive.InteractiveSymbolTable> st;
   input Boolean doVect;
   output Env.Cache outCache;
-  output Exp.Exp exp;
-  output Types.Properties prop;
+  output DAE.Exp exp;
+  output DAE.Properties prop;
   output Option<Interactive.InteractiveSymbolTable> outSt;  
 algorithm
   (outCache, exp, prop,outSt) := matchcontinue(cache,env,b,cond,tbranch,fbranch,impl,st,doVect)
-  local Exp.Exp e2; Types.Properties prop1;
+  local DAE.Exp e2; DAE.Properties prop1;
     Option<Interactive.InteractiveSymbolTable> st_1;
     /* Select true-branch */
     case(cache,env,true,cond,tbranch,fbranch,impl,st,doVect) equation
@@ -11108,25 +11108,25 @@ protected function elabIfexp "function: elabIfexp
 "
 	input Env.Cache inCache;
   input Env.Env inEnv1;
-  input Exp.Exp inExp2;
-  input Types.Properties inProperties3;
-  input Exp.Exp inExp4;
-  input Types.Properties inProperties5;
-  input Exp.Exp inExp6;
-  input Types.Properties inProperties7;
+  input DAE.Exp inExp2;
+  input DAE.Properties inProperties3;
+  input DAE.Exp inExp4;
+  input DAE.Properties inProperties5;
+  input DAE.Exp inExp6;
+  input DAE.Properties inProperties7;
   input Boolean inBoolean8;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption9;
   output Env.Cache outCache;
-  output Exp.Exp outExp;
-  output Types.Properties outProperties;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties):=
   matchcontinue (inCache,inEnv1,inExp2,inProperties3,inExp4,inProperties5,inExp6,inProperties7,inBoolean8,inInteractiveInteractiveSymbolTableOption9)
     local
-      Types.Const c,c1,c2,c3;
-      Exp.Exp exp,e1,e2,e3,e2_1,e3_1;
+      DAE.Const c,c1,c2,c3;
+      DAE.Exp exp,e1,e2,e3,e2_1,e3_1;
       list<Env.Frame> env;
-      tuple<Types.TType, Option<Absyn.Path>> t2,t3,t2_1,t3_1,t1;
+      tuple<DAE.TType, Option<Absyn.Path>> t2,t3,t2_1,t3_1,t1;
       Boolean impl;
       Option<Interactive.InteractiveSymbolTable> st;
       Ident e_str,t_str,e1_str,t1_str,e2_str,t2_str;
@@ -11186,20 +11186,20 @@ protected function cevalIfexpIfConstant "function: cevalIfexpIfConstant
 "
 	input Env.Cache inCache;
   input Env.Env inEnv1;
-  input Exp.Exp inExp2;
-  input Exp.Exp inExp3;
-  input Exp.Exp inExp4;
-  input Types.Const inConst5;
+  input DAE.Exp inExp2;
+  input DAE.Exp inExp3;
+  input DAE.Exp inExp4;
+  input DAE.Const inConst5;
   input Boolean inBoolean6;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption7;
 	output Env.Cache outCache;
-  output Exp.Exp outExp;
+  output DAE.Exp outExp;
 algorithm 
   (outCache,outExp) :=
   matchcontinue (inCache,inEnv1,inExp2,inExp3,inExp4,inConst5,inBoolean6,inInteractiveInteractiveSymbolTableOption7)
     local
       list<Env.Frame> env;
-      Exp.Exp e1,e2,e3,res;
+      DAE.Exp e1,e2,e3,res;
       Boolean impl,cond;
       Option<Interactive.InteractiveSymbolTable> st;
       Env.Cache cache;
@@ -11223,15 +11223,15 @@ protected function constIfexp "function: constIfexp
   This will miss some occations where the expression actually is
   constant, as in the expression `if x then 1.0 else 1.0\'.
 "
-  input Exp.Exp inExp1;
-  input Types.Const inConst2;
-  input Types.Const inConst3;
-  input Types.Const inConst4;
-  output Types.Const outConst;
+  input DAE.Exp inExp1;
+  input DAE.Const inConst2;
+  input DAE.Const inConst3;
+  input DAE.Const inConst4;
+  output DAE.Const outConst;
 algorithm 
   outConst:=
   matchcontinue (inExp1,inConst2,inConst3,inConst4)
-    local Types.Const const,c1,c2,c3;
+    local DAE.Const const,c1,c2,c3;
     case (_,c1,c2,c3)
       equation 
         const = Util.listReduce({c1,c2,c3}, Types.constAnd);
@@ -11242,23 +11242,23 @@ end constIfexp;
 
 public function valueExp "Transforms a Value into an Exp"
   input Values.Value inValue;
-  output Exp.Exp outExp;
+  output DAE.Exp outExp;
 algorithm 
   outExp:=
   matchcontinue (inValue)
     local
       Integer x,dim;
       Boolean a;
-      list<Exp.Exp> explist;
-      tuple<Types.TType, Option<Absyn.Path>> vt;
-      Exp.Type t;
-      Exp.Exp e;
+      list<DAE.Exp> explist;
+      tuple<DAE.TType, Option<Absyn.Path>> vt;
+      DAE.ExpType t;
+      DAE.Exp e;
       Values.Value v;
       list<Values.Value> xs,xs2,vallist;
-      list<Types.Type> typelist;
-      Exp.ComponentRef cr;
-      list<list<tuple<Exp.Exp, Boolean>>> mexpl;
-      list<tuple<Exp.Exp, Boolean>> mexpl2;
+      list<DAE.Type> typelist;
+      DAE.ComponentRef cr;
+      list<list<tuple<DAE.Exp, Boolean>>> mexpl;
+      list<tuple<DAE.Exp, Boolean>> mexpl2;
     case (Values.INTEGER(integer = x)) then DAE.ICONST(x); 
     case (Values.REAL(real = x))
       local Real x;
@@ -11319,10 +11319,10 @@ algorithm
         DAE.TUPLE(explist);
 
     case(Values.RECORD(path,vallist,namelst,-1)) 
-      local list<Exp.Exp> expl;
-        list<Exp.Type> tpl;
+      local list<DAE.Exp> expl;
+        list<DAE.ExpType> tpl;
         list<String> namelst;
-        list<Exp.Var> varlst;
+        list<DAE.ExpVar> varlst;
         Absyn.Path path; String name;
       equation
         expl=Util.listMap(vallist,valueExp);
@@ -11373,7 +11373,7 @@ algorithm
       /* MetaRecord */
     case(Values.RECORD(path,vallist,namelst,ix))
       local
-        list<Exp.Exp> expl;
+        list<DAE.Exp> expl;
         list<String> namelst;
         Absyn.Path path;
         Integer ix;
@@ -11394,31 +11394,31 @@ end valueExp;
 
 protected function canonCref2 "function: canonCref2
  
-  This function relates a `Exp.ComponentRef\' to its canonical form,
+  This function relates a `DAE.ComponentRef\' to its canonical form,
   which is when all subscripts are evaluated to constant values.  If
   Such an evaluation is not possible, there is no canonical form and
   this function fails.
 "
 	input Env.Cache inCache;
   input Env.Env inEnv;
-  input Exp.ComponentRef inComponentRef;
-  input Exp.ComponentRef inPrefixCref;
+  input DAE.ComponentRef inComponentRef;
+  input DAE.ComponentRef inPrefixCref;
   input Boolean inBoolean;
   output Env.Cache outCache;
-  output Exp.ComponentRef outComponentRef;
+  output DAE.ComponentRef outComponentRef;
 algorithm 
   (outCache,outComponentRef) :=
   matchcontinue (inCache,inEnv,inComponentRef,inPrefixCref,inBoolean)
     local
-      list<Exp.Subscript> ss_1,ss;
+      list<DAE.Subscript> ss_1,ss;
       list<Env.Frame> env;
       Ident n;
       Boolean impl;
       Env.Cache cache;
-      Exp.ComponentRef prefixCr,cr;
+      DAE.ComponentRef prefixCr,cr;
       list<Integer> sl;
-      tuple<Types.TType, Option<Absyn.Path>> t;
-      Exp.Type ty2;
+      tuple<DAE.TType, Option<Absyn.Path>> t;
+      DAE.ExpType ty2;
     case (cache,env,DAE.CREF_IDENT(ident = n,identType = ty2, subscriptLst = ss),prefixCr,impl) /* impl */ 
       equation 
         cr = Exp.joinCrefs(prefixCr,DAE.CREF_IDENT(n,ty2,{}));
@@ -11437,23 +11437,23 @@ public function canonCref "function: canonCref
 "
 	input Env.Cache inCache;
   input Env.Env inEnv;
-  input Exp.ComponentRef inComponentRef;
+  input DAE.ComponentRef inComponentRef;
   input Boolean inBoolean;
   output Env.Cache outCache;
-  output Exp.ComponentRef outComponentRef;
+  output DAE.ComponentRef outComponentRef;
 algorithm 
   (outCache,outComponentRef) :=
   matchcontinue (inCache,inEnv,inComponentRef,inBoolean)
     local
-      tuple<Types.TType, Option<Absyn.Path>> t;
+      tuple<DAE.TType, Option<Absyn.Path>> t;
       list<Integer> sl;
-      list<Exp.Subscript> ss_1,ss;
+      list<DAE.Subscript> ss_1,ss;
       list<Env.Frame> env;
       Ident n;
       Boolean impl;
-      Exp.ComponentRef c_1,c,cr;
+      DAE.ComponentRef c_1,c,cr;
       Env.Cache cache;
-      Exp.Type ty2;
+      DAE.ExpType ty2;
     case (cache,env,DAE.CREF_IDENT(ident = n,subscriptLst = ss),impl) /* impl */ 
       equation 
         (cache,_,t,_,_,_) = Lookup.lookupVar(cache,env, DAE.CREF_IDENT(n,DAE.ET_OTHER(),{}));
@@ -11494,15 +11494,15 @@ public function eqCref "- Equality functions
   corresponding identifiers are the same, and if the subscripts are
   equal, according to the function `eq_subscripts\'.
 "
-  input Exp.ComponentRef inComponentRef1;
-  input Exp.ComponentRef inComponentRef2;
+  input DAE.ComponentRef inComponentRef1;
+  input DAE.ComponentRef inComponentRef2;
 algorithm 
   _:=
   matchcontinue (inComponentRef1,inComponentRef2)
     local
       Ident n1,n2;
-      list<Exp.Subscript> s1,s2;
-      Exp.ComponentRef c1,c2;
+      list<DAE.Subscript> s1,s2;
+      DAE.ComponentRef c1,c2;
     case (DAE.CREF_IDENT(ident = n1,subscriptLst = s1),DAE.CREF_IDENT(ident = n2,subscriptLst = s2))
       equation 
         equality(n1 = n2);
@@ -11525,14 +11525,14 @@ protected function eqSubscripts "function: eqSubscripts
   all their elements are pairwise equal according to the function
   `eq_subscript\'.
 "
-  input list<Exp.Subscript> inExpSubscriptLst1;
-  input list<Exp.Subscript> inExpSubscriptLst2;
+  input list<DAE.Subscript> inExpSubscriptLst1;
+  input list<DAE.Subscript> inExpSubscriptLst2;
 algorithm 
   _:=
   matchcontinue (inExpSubscriptLst1,inExpSubscriptLst2)
     local
-      Exp.Subscript s1,s2;
-      list<Exp.Subscript> ss1,ss2;
+      DAE.Subscript s1,s2;
+      list<DAE.Subscript> ss1,ss2;
     case ({},{}) then (); 
     case ((s1 :: ss1),(s2 :: ss2))
       equation 
@@ -11550,12 +11550,12 @@ protected function eqSubscript "function: eqSubscript
   corresponding expressions are either syntactically equal, or if
   they have the same constant value.
 "
-  input Exp.Subscript inSubscript1;
-  input Exp.Subscript inSubscript2;
+  input DAE.Subscript inSubscript1;
+  input DAE.Subscript inSubscript2;
 algorithm 
   _:=
   matchcontinue (inSubscript1,inSubscript2)
-    local Exp.Exp s1,s2;
+    local DAE.Exp s1,s2;
     case (DAE.WHOLEDIM(),DAE.WHOLEDIM()) then (); 
     case (DAE.INDEX(exp = s1),DAE.INDEX(exp = s2))
       equation 
@@ -11585,19 +11585,19 @@ protected function elabArglist "- Argument type casting and operator de-overload
   function tries to match the two, promoting the type of arguments
   when necessary.
 "
-  input list<Types.Type> inTypesTypeLst;
-  input list<tuple<Exp.Exp, Types.Type>> inTplExpExpTypesTypeLst;
-  output list<Exp.Exp> outExpExpLst;
-  output list<Types.Type> outTypesTypeLst;
+  input list<DAE.Type> inTypesTypeLst;
+  input list<tuple<DAE.Exp, DAE.Type>> inTplExpExpTypesTypeLst;
+  output list<DAE.Exp> outExpExpLst;
+  output list<DAE.Type> outTypesTypeLst;
 algorithm 
   (outExpExpLst,outTypesTypeLst):=
   matchcontinue (inTypesTypeLst,inTplExpExpTypesTypeLst)
     local
-      Exp.Exp arg_1,arg;
-      tuple<Types.TType, Option<Absyn.Path>> atype_1,pt,atype;
-      list<Exp.Exp> args_1;
-      list<tuple<Types.TType, Option<Absyn.Path>>> atypes_1,pts;
-      list<tuple<Exp.Exp, tuple<Types.TType, Option<Absyn.Path>>>> args;
+      DAE.Exp arg_1,arg;
+      tuple<DAE.TType, Option<Absyn.Path>> atype_1,pt,atype;
+      list<DAE.Exp> args_1;
+      list<tuple<DAE.TType, Option<Absyn.Path>>> atypes_1,pts;
+      list<tuple<DAE.Exp, tuple<DAE.TType, Option<Absyn.Path>>>> args;
     case ({},{}) then ({},{}); 
     case ((pt :: pts),((arg,atype) :: args))
       equation 
@@ -11624,22 +11624,22 @@ public function deoverload "function: deoverload
   the operation to be deoverloaded.  It is only used for error
   messages.
 "
-  input list<tuple<Exp.Operator, list<Types.Type>, Types.Type>> inTplExpOperatorTypesTypeLstTypesTypeLst;
-  input list<tuple<Exp.Exp, Types.Type>> inTplExpExpTypesTypeLst;
+  input list<tuple<DAE.Operator, list<DAE.Type>, DAE.Type>> inTplExpOperatorTypesTypeLstTypesTypeLst;
+  input list<tuple<DAE.Exp, DAE.Type>> inTplExpExpTypesTypeLst;
   input Absyn.Exp inExp;
-  output Exp.Operator outOperator;
-  output list<Exp.Exp> outExpExpLst;
-  output Types.Type outType;
+  output DAE.Operator outOperator;
+  output list<DAE.Exp> outExpExpLst;
+  output DAE.Type outType;
 algorithm 
   (outOperator,outExpExpLst,outType):=
   matchcontinue (inTplExpOperatorTypesTypeLstTypesTypeLst,inTplExpExpTypesTypeLst,inExp)
     local
-      list<Exp.Exp> args_1,exps;
-      list<tuple<Types.TType, Option<Absyn.Path>>> types_1,params,tps;
-      tuple<Types.TType, Option<Absyn.Path>> rtype_1,rtype;
-      Exp.Operator op;
-      list<tuple<Exp.Exp, tuple<Types.TType, Option<Absyn.Path>>>> args;
-      list<tuple<Exp.Operator, list<tuple<Types.TType, Option<Absyn.Path>>>, tuple<Types.TType, Option<Absyn.Path>>>> xs;
+      list<DAE.Exp> args_1,exps;
+      list<tuple<DAE.TType, Option<Absyn.Path>>> types_1,params,tps;
+      tuple<DAE.TType, Option<Absyn.Path>> rtype_1,rtype;
+      DAE.Operator op;
+      list<tuple<DAE.Exp, tuple<DAE.TType, Option<Absyn.Path>>>> args;
+      list<tuple<DAE.Operator, list<tuple<DAE.TType, Option<Absyn.Path>>>, tuple<DAE.TType, Option<Absyn.Path>>>> xs;
       Absyn.Exp exp;
       Ident s,estr,tpsstr;
       list<Ident> exps_str,tps_str;
@@ -11676,15 +11676,15 @@ protected function computeReturnType "function: computeReturnType
   This function determines the return type of an operator and the types of 
   the operands.
 "
-  input Exp.Operator inOperator;
-  input list<Types.Type> inTypesTypeLst;
-  input Types.Type inType;
-  output Types.Type outType;
+  input DAE.Operator inOperator;
+  input list<DAE.Type> inTypesTypeLst;
+  input DAE.Type inType;
+  output DAE.Type outType;
 algorithm 
   outType:=
   matchcontinue (inOperator,inTypesTypeLst,inType)
     local
-      tuple<Types.TType, Option<Absyn.Path>> typ1,typ2,rtype,etype,typ;
+      tuple<DAE.TType, Option<Absyn.Path>> typ1,typ2,rtype,etype,typ;
       Ident t1_str,t2_str;
       Integer n1,n2,m,n,m1,m2,p;
     case (DAE.ADD_ARR(ty = _),{typ1,typ2},rtype)
@@ -11923,14 +11923,14 @@ end computeReturnType;
 public function nDims "function nDims
   Returns the number of dimensions of a Type.
 "
-  input Types.Type inType;
+  input DAE.Type inType;
   output Integer outInteger;
 algorithm 
   outInteger:=
   matchcontinue (inType)
     local
       Integer ns;
-      tuple<Types.TType, Option<Absyn.Path>> t;
+      tuple<DAE.TType, Option<Absyn.Path>> t;
     case ((DAE.T_INTEGER(varLstInt = _),_)) then 0; 
     case ((DAE.T_REAL(varLstReal = _),_)) then 0; 
     case ((DAE.T_STRING(varLstString = _),_)) then 0; 
@@ -11950,7 +11950,7 @@ end nDims;
 protected function dimSize "function: dimSize
   Returns the dimension size of the given dimesion.
 "
-  input Types.Type inType;
+  input DAE.Type inType;
   input Integer inInteger;
   output Integer outInteger;
 algorithm 
@@ -11958,7 +11958,7 @@ algorithm
   matchcontinue (inType,inInteger)
     local
       Integer n,d_1,d;
-      tuple<Types.TType, Option<Absyn.Path>> t;
+      tuple<DAE.TType, Option<Absyn.Path>> t;
     case ((DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(n))),_),1) then n;  /* n:th dimension size of n:nth dimension */ 
     case ((DAE.T_ARRAY(arrayType = t),_),d)
       equation 
@@ -11979,12 +11979,12 @@ protected function elementType "function: elementType
   Returns the element type of a type, i.e. for arrays, return the element type, and for 
   bulitin scalar types return the type itself.
 "
-  input Types.Type inType;
-  output Types.Type outType;
+  input DAE.Type inType;
+  output DAE.Type outType;
 algorithm 
   outType:=
   matchcontinue (inType)
-    local tuple<Types.TType, Option<Absyn.Path>> t,t_1;
+    local tuple<DAE.TType, Option<Absyn.Path>> t,t_1;
     case ((t as (DAE.T_INTEGER(varLstInt = _),_))) then t; 
     case ((t as (DAE.T_REAL(varLstReal = _),_))) then t; 
     case ((t as (DAE.T_STRING(varLstString = _),_))) then t; 
@@ -12013,23 +12013,23 @@ public function operators "function: operators
 	input Env.Cache inCache;
   input Absyn.Operator inOperator1;
   input Env.Env inEnv2;
-  input Types.Type inType3;
-  input Types.Type inType4;
+  input DAE.Type inType3;
+  input DAE.Type inType4;
   output Env.Cache outCache;
-  output list<tuple<Exp.Operator, list<Types.Type>, Types.Type>> outTplExpOperatorTypesTypeLstTypesTypeLst;
+  output list<tuple<DAE.Operator, list<DAE.Type>, DAE.Type>> outTplExpOperatorTypesTypeLstTypesTypeLst;
 algorithm 
   (outCache,outTplExpOperatorTypesTypeLstTypesTypeLst) :=
   matchcontinue (inCache,inOperator1,inEnv2,inType3,inType4)
     local
-      list<tuple<Types.TType, Option<Absyn.Path>>> intarrtypes,realarrtypes,stringarrtypes,inttypes,realtypes,stringtypes;
-      list<tuple<Exp.Operator, list<tuple<Types.TType, Option<Absyn.Path>>>, tuple<Types.TType, Option<Absyn.Path>>>> intarrs,realarrs,stringarrs,scalars,userops,arrays,types,scalarprod,matrixprod,intscalararrs,realscalararrs,intarrsscalar,realarrsscalar,realarrscalar,arrscalar,stringscalararrs,stringarrsscalar;
+      list<tuple<DAE.TType, Option<Absyn.Path>>> intarrtypes,realarrtypes,stringarrtypes,inttypes,realtypes,stringtypes;
+      list<tuple<DAE.Operator, list<tuple<DAE.TType, Option<Absyn.Path>>>, tuple<DAE.TType, Option<Absyn.Path>>>> intarrs,realarrs,stringarrs,scalars,userops,arrays,types,scalarprod,matrixprod,intscalararrs,realscalararrs,intarrsscalar,realarrsscalar,realarrscalar,arrscalar,stringscalararrs,stringarrsscalar;
       list<Env.Frame> env;
-      tuple<Types.TType, Option<Absyn.Path>> t1,t2,int_scalar,int_vector,int_matrix,real_scalar,real_vector,real_matrix;
-      Exp.Operator int_mul,real_mul,int_mul_sp,real_mul_sp,int_mul_mp,real_mul_mp,real_div,real_pow,int_pow;
+      tuple<DAE.TType, Option<Absyn.Path>> t1,t2,int_scalar,int_vector,int_matrix,real_scalar,real_vector,real_matrix;
+      DAE.Operator int_mul,real_mul,int_mul_sp,real_mul_sp,int_mul_mp,real_mul_mp,real_div,real_pow,int_pow;
       Ident s;
       Absyn.Operator op;
       Env.Cache cache;
-      Exp.Type defaultExpType;
+      DAE.ExpType defaultExpType;
     case (cache,Absyn.ADD(),env,t1,t2) /* Arithmetical operators */ 
       equation 
         intarrtypes = arrayTypeList(9, (DAE.T_INTEGER({}),NONE)) "The ADD operator" ;
@@ -12469,16 +12469,16 @@ protected function getKoeningFunctionTypes "function: getKoeningFunctionTypes
   input list<Absyn.NamedArg> inAbsynNamedArgLst;
   input Boolean inBoolean;
   output Env.Cache outCache;
-  output list<Types.Type> outTypesTypeLst;
+  output list<DAE.Type> outTypesTypeLst;
 algorithm 
   (outCache,outTypesTypeLst):=
   matchcontinue (inCache,inEnv,inPath,inAbsynExpLst,inAbsynNamedArgLst,inBoolean)
     local
-      tuple<Types.TType, Option<Absyn.Path>> t;
+      tuple<DAE.TType, Option<Absyn.Path>> t;
       Absyn.Path p1,fn;
       SCode.Class c;
       Env.Frame f,f_1;
-      list<tuple<Types.TType, Option<Absyn.Path>>> typelist,typelist2,res;
+      list<tuple<DAE.TType, Option<Absyn.Path>>> typelist,typelist2,res;
       list<Env.Frame> env;
       Absyn.Exp e1,exp;
       list<Absyn.Exp> exps;
@@ -12540,10 +12540,10 @@ protected function getKoeningOperatorTypes "function: getKoeningOperatorTypes
 	input Env.Cache inCache;
   input String inString1;
   input Env.Env inEnv2;
-  input Types.Type inType3;
-  input Types.Type inType4;
+  input DAE.Type inType3;
+  input DAE.Type inType4;
   output Env.Cache outCache;
-  output list<tuple<Exp.Operator, list<Types.Type>, Types.Type>> outTplExpOperatorTypesTypeLstTypesTypeLst;
+  output list<tuple<DAE.Operator, list<DAE.Type>, DAE.Type>> outTplExpOperatorTypesTypeLstTypesTypeLst;
 algorithm 
   (outCache,outTplExpOperatorTypesTypeLstTypesTypeLst) :=
   matchcontinue (inCache,inString1,inEnv2,inType3,inType4)
@@ -12551,9 +12551,9 @@ algorithm
       Absyn.Path p1,p2;
       SCode.Class c;
       list<Env.Frame> env1,env2,env;
-      list<tuple<Exp.Operator, list<tuple<Types.TType, Option<Absyn.Path>>>, tuple<Types.TType, Option<Absyn.Path>>>> res1,res2,res;
+      list<tuple<DAE.Operator, list<tuple<DAE.TType, Option<Absyn.Path>>>, tuple<DAE.TType, Option<Absyn.Path>>>> res1,res2,res;
       Ident op;
-      tuple<Types.TType, Option<Absyn.Path>> t1,t2;
+      tuple<DAE.TType, Option<Absyn.Path>> t1,t2;
       Env.Cache cache;
       //NOTE: Koening operator disabled. Not part of Modelica yet.
       // When introduced in standard, remove case below.
@@ -12604,16 +12604,16 @@ protected function getKoeningOperatorTypesInScope
   input String inString;
   input Env.Env inEnv;
   output Env.Cache outCache;
-  output list<tuple<Exp.Operator, list<Types.Type>, Types.Type>> outTplExpOperatorTypesTypeLstTypesTypeLst;
+  output list<tuple<DAE.Operator, list<DAE.Type>, DAE.Type>> outTplExpOperatorTypesTypeLstTypesTypeLst;
 algorithm 
   (outCache,outTplExpOperatorTypesTypeLstTypesTypeLst) :=
   matchcontinue (inCache,inString,inEnv)
     local
       Env.Frame f_1,f;
-      list<tuple<Types.TType, Option<Absyn.Path>>> tplst;
+      list<tuple<DAE.TType, Option<Absyn.Path>>> tplst;
       Integer tplen;
       Absyn.Path fullfuncname;
-      list<tuple<Exp.Operator, list<tuple<Types.TType, Option<Absyn.Path>>>, tuple<Types.TType, Option<Absyn.Path>>>> res;
+      list<tuple<DAE.Operator, list<tuple<DAE.TType, Option<Absyn.Path>>>, tuple<DAE.TType, Option<Absyn.Path>>>> res;
       Ident funcname;
       list<Env.Frame> fs;
       Env.Cache cache;
@@ -12633,17 +12633,17 @@ protected function buildOperatorTypes
 "function: buildOperatorTypes 
   This function takes the types operator overloaded user functions and
   builds  the type list structure suitable for the deoverload function."
-  input list<Types.Type> inTypesTypeLst;
+  input list<DAE.Type> inTypesTypeLst;
   input Absyn.Path inPath;
-  output list<tuple<Exp.Operator, list<Types.Type>, Types.Type>> outTplExpOperatorTypesTypeLstTypesTypeLst;
+  output list<tuple<DAE.Operator, list<DAE.Type>, DAE.Type>> outTplExpOperatorTypesTypeLstTypesTypeLst;
 algorithm 
   outTplExpOperatorTypesTypeLstTypesTypeLst:=
   matchcontinue (inTypesTypeLst,inPath)
     local
-      list<tuple<Types.TType, Option<Absyn.Path>>> argtypes,tps;
-      list<tuple<Exp.Operator, list<tuple<Types.TType, Option<Absyn.Path>>>, tuple<Types.TType, Option<Absyn.Path>>>> rest;
-      list<tuple<Ident, tuple<Types.TType, Option<Absyn.Path>>>> args;
-      tuple<Types.TType, Option<Absyn.Path>> tp;
+      list<tuple<DAE.TType, Option<Absyn.Path>>> argtypes,tps;
+      list<tuple<DAE.Operator, list<tuple<DAE.TType, Option<Absyn.Path>>>, tuple<DAE.TType, Option<Absyn.Path>>>> rest;
+      list<tuple<Ident, tuple<DAE.TType, Option<Absyn.Path>>>> args;
+      tuple<DAE.TType, Option<Absyn.Path>> tp;
       Absyn.Path funcname;
     case ({},_) then {}; 
     case (((DAE.T_FUNCTION(funcArg = args,funcResultType = tp),_) :: tps),funcname)
@@ -12660,13 +12660,13 @@ protected function nDimArray "function: nDimArray
   n dimensions.
 "
   input Integer inInteger;
-  input Types.Type inType;
-  output Types.Type outType;
+  input DAE.Type inType;
+  output DAE.Type outType;
 algorithm 
   outType:=
   matchcontinue (inInteger,inType)
     local
-      tuple<Types.TType, Option<Absyn.Path>> t,t_1;
+      tuple<DAE.TType, Option<Absyn.Path>> t,t_1;
       Integer n_1,n;
     case (0,t) then t;  /* n orig type array type of n dimensions with element type = orig type */ 
     case (n,t)
@@ -12683,15 +12683,15 @@ protected function nTypes "function: nTypes
   This could instead be accomplished with Util.list_fill...
 "
   input Integer inInteger;
-  input Types.Type inType;
-  output list<Types.Type> outTypesTypeLst;
+  input DAE.Type inType;
+  output list<DAE.Type> outTypesTypeLst;
 algorithm 
   outTypesTypeLst:=
   matchcontinue (inInteger,inType)
     local
       Integer n_1,n;
-      list<tuple<Types.TType, Option<Absyn.Path>>> l;
-      tuple<Types.TType, Option<Absyn.Path>> t;
+      list<tuple<DAE.TType, Option<Absyn.Path>>> l;
+      tuple<DAE.TType, Option<Absyn.Path>> t;
     case (0,_) then {}; 
     case (n,t)
       equation 
@@ -12706,20 +12706,20 @@ protected function operatorReturn "function: operatorReturn
   This function collects the types and operator lists into a tuple list, suitable
   for the deoverloading function for binary operations.
 "
-  input Exp.Operator inOperator1;
-  input list<Types.Type> inTypesTypeLst2;
-  input list<Types.Type> inTypesTypeLst3;
-  input list<Types.Type> inTypesTypeLst4;
-  output list<tuple<Exp.Operator, list<Types.Type>, Types.Type>> outTplExpOperatorTypesTypeLstTypesTypeLst;
+  input DAE.Operator inOperator1;
+  input list<DAE.Type> inTypesTypeLst2;
+  input list<DAE.Type> inTypesTypeLst3;
+  input list<DAE.Type> inTypesTypeLst4;
+  output list<tuple<DAE.Operator, list<DAE.Type>, DAE.Type>> outTplExpOperatorTypesTypeLstTypesTypeLst;
 algorithm 
   outTplExpOperatorTypesTypeLstTypesTypeLst:=
   matchcontinue (inOperator1,inTypesTypeLst2,inTypesTypeLst3,inTypesTypeLst4)
     local
-      list<tuple<Exp.Operator, list<tuple<Types.TType, Option<Absyn.Path>>>, tuple<Types.TType, Option<Absyn.Path>>>> rest;
-      tuple<Exp.Operator, list<tuple<Types.TType, Option<Absyn.Path>>>, tuple<Types.TType, Option<Absyn.Path>>> t;
-      Exp.Operator op;
-      tuple<Types.TType, Option<Absyn.Path>> l,r,re;
-      list<tuple<Types.TType, Option<Absyn.Path>>> lr,rr,rer;
+      list<tuple<DAE.Operator, list<tuple<DAE.TType, Option<Absyn.Path>>>, tuple<DAE.TType, Option<Absyn.Path>>>> rest;
+      tuple<DAE.Operator, list<tuple<DAE.TType, Option<Absyn.Path>>>, tuple<DAE.TType, Option<Absyn.Path>>> t;
+      DAE.Operator op;
+      tuple<DAE.TType, Option<Absyn.Path>> l,r,re;
+      list<tuple<DAE.TType, Option<Absyn.Path>>> lr,rr,rer;
     case (_,{},{},{}) then {}; 
     case (op,(l :: lr),(r :: rr),(re :: rer))
       equation 
@@ -12735,19 +12735,19 @@ protected function operatorReturnUnary "function: operatorReturnUnary
   suitable for the deoverloading function to be used for unary 
   expressions.
 "
-  input Exp.Operator inOperator1;
-  input list<Types.Type> inTypesTypeLst2;
-  input list<Types.Type> inTypesTypeLst3;
-  output list<tuple<Exp.Operator, list<Types.Type>, Types.Type>> outTplExpOperatorTypesTypeLstTypesTypeLst;
+  input DAE.Operator inOperator1;
+  input list<DAE.Type> inTypesTypeLst2;
+  input list<DAE.Type> inTypesTypeLst3;
+  output list<tuple<DAE.Operator, list<DAE.Type>, DAE.Type>> outTplExpOperatorTypesTypeLstTypesTypeLst;
 algorithm 
   outTplExpOperatorTypesTypeLstTypesTypeLst:=
   matchcontinue (inOperator1,inTypesTypeLst2,inTypesTypeLst3)
     local
-      list<tuple<Exp.Operator, list<tuple<Types.TType, Option<Absyn.Path>>>, tuple<Types.TType, Option<Absyn.Path>>>> rest;
-      tuple<Exp.Operator, list<tuple<Types.TType, Option<Absyn.Path>>>, tuple<Types.TType, Option<Absyn.Path>>> t;
-      Exp.Operator op;
-      tuple<Types.TType, Option<Absyn.Path>> l,re;
-      list<tuple<Types.TType, Option<Absyn.Path>>> lr,rer;
+      list<tuple<DAE.Operator, list<tuple<DAE.TType, Option<Absyn.Path>>>, tuple<DAE.TType, Option<Absyn.Path>>>> rest;
+      tuple<DAE.Operator, list<tuple<DAE.TType, Option<Absyn.Path>>>, tuple<DAE.TType, Option<Absyn.Path>>> t;
+      DAE.Operator op;
+      tuple<DAE.TType, Option<Absyn.Path>> l,re;
+      list<tuple<DAE.TType, Option<Absyn.Path>>> lr,rer;
     case (_,{},{}) then {}; 
     case (op,(l :: lr),(re :: rer))
       equation 
@@ -12763,15 +12763,15 @@ protected function arrayTypeList "function: arrayTypeList
   as array types up to n dimensions.
 "
   input Integer inInteger;
-  input Types.Type inType;
-  output list<Types.Type> outTypesTypeLst;
+  input DAE.Type inType;
+  output list<DAE.Type> outTypesTypeLst;
 algorithm 
   outTypesTypeLst:=
   matchcontinue (inInteger,inType)
     local
       Integer n_1,n;
-      tuple<Types.TType, Option<Absyn.Path>> f,t;
-      list<tuple<Types.TType, Option<Absyn.Path>>> r;
+      tuple<DAE.TType, Option<Absyn.Path>> f,t;
+      list<tuple<DAE.TType, Option<Absyn.Path>>> r;
     case (0,_) then {};  /* n orig type array types */ 
     case (n,t)
       equation 
@@ -12787,10 +12787,10 @@ protected function warnUnsafeRelations "
 Author: BZ, 2008-08
 Check if we have real == real, if so give a warning.
 " 
-input Types.Const variability;
-input Types.Type t1,t2;
-input Exp.Exp e1,e2;
-input Exp.Operator op;
+input DAE.Const variability;
+input DAE.Type t1,t2;
+input DAE.Exp e1,e2;
+input DAE.Operator op;
 algorithm _ := matchcontinue(variability,t1,t2,e1,e2,op)
   case(DAE.C_VAR(),t1,t2,e1,e2,op)
     local Boolean b1,b2;
@@ -12813,7 +12813,7 @@ protected function verifyOp "
 Helper function for warnUnsafeRelations
 We only want to check DAE.EQUAL and EXP.NEQUAL since they are the only illegal real operations.
 "
-input Exp.Operator op;
+input DAE.Operator op;
 algorithm _ := matchcontinue(op)
   case(DAE.EQUAL(_)) then ();
   case(DAE.NEQUAL(_)) then (); 

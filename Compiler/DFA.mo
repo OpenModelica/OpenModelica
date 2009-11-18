@@ -46,7 +46,6 @@ public import Debug;
 public import Error;
 public import MetaUtil;
 public import SCode;
-public import Types;
 
 type Stamp = Integer;
 type ArcName = Absyn.Ident;
@@ -55,6 +54,7 @@ type SimpleStateArray = SimpleState[:];
 protected import Lookup;
 protected import Util;
 protected import Dump;
+protected import Types;
 
 public uniontype Dfa
   record DFArec
@@ -1500,7 +1500,7 @@ algorithm
     case (Absyn.CREF(Absyn.CREF_IDENT(firstId,{})) :: restExps,localDfaEnv,localCache,localEnv)
       local
         Absyn.Ident firstId;
-        Types.Type t;
+        DAE.Type t;
         Absyn.TypeSpec t2;
         list<tuple<Absyn.Ident,Absyn.TypeSpec>> dfaEnvElem;
       equation
@@ -2544,13 +2544,13 @@ algorithm
         list<RenamedPat> argList;
         SCode.Class sClass;
         list<Absyn.TypeSpec> fieldTypeSpecs;
-        list<Types.Type> fieldTypes;
+        list<DAE.Type> fieldTypes;
         Absyn.Path pathName, classPath;
         list<tuple<Absyn.Ident,Absyn.TypeSpec>> dfaEnvElem;
         Absyn.ComponentRef cRef;
         SCode.Restriction restriction;
         Integer numFields;
-        Types.Type ty;
+        DAE.Type ty;
         String tyStr;
       equation
         pathName = Absyn.crefToPath(cRef);

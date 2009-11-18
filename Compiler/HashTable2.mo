@@ -7,8 +7,8 @@ package HashTable2 "
   
   
  Based on HashTable.mo but
- Key 		= Exp.ComponentRef
- Value 	= Exp.Exp
+ Key 		= DAE.ComponentRef
+ Value 	= DAE.Exp
   
   Used by VarTransform.mo
   
@@ -24,21 +24,22 @@ keyEqual 	- A comparison function between two keys, returns true if equal.
 */
 
 /* HashTable instance specific code */
-public import Exp;
 
+public import DAE;
+protected import Exp;
 protected import System;
 protected import Util;
 
 public 
- type Key = Exp.ComponentRef;
- type Value = Exp.Exp;
+ type Key = DAE.ComponentRef;
+ type Value = DAE.Exp;
    
 protected function hashFunc "
   author: PA
  
-  Calculates a hash value for Exp.ComponentRef
+  Calculates a hash value for DAE.ComponentRef
 "
-  input Exp.ComponentRef cr;
+  input DAE.ComponentRef cr;
   output Integer res;
   String crstr;
 algorithm 
@@ -303,7 +304,7 @@ protected function dumpTuple
 algorithm
   str := matchcontinue(tpl)
   local 
-    Exp.ComponentRef cr; Exp.Exp e;
+    DAE.ComponentRef cr; DAE.Exp e;
     case((cr,e)) equation
       str = "{" +& Exp.printComponentRefStr(cr) +& ",{" +& Exp.printExpStr(e)+& "}}";
     then str;

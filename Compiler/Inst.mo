@@ -72,31 +72,26 @@ package Inst
      future.
   4. Fu"
 
+public import Absyn;
 public import ClassInf;
 public import Connect;
+public import ConnectionGraph;
 public import DAE;
 public import Env;
-public import Exp;
-public import SCode;
+public import InstanceHierarchy;
 public import Mod;
 public import Prefix;
-public import Types;
-public import Absyn;
-public import Algorithm;
-public import Patternm;
-public import MetaUtil;
 public import RTOpts;
-public import ConnectionGraph;
-public import InstanceHierarchy;
+public import SCode;
 
 public type Prefix = Prefix.Prefix "
   These type aliases are introduced to make the code a little more
   readable.
 " ;
 
-public type Mod = Types.Mod;
+public type Mod = DAE.Mod;
 
-public type Ident = Exp.Ident;
+public type Ident = DAE.Ident;
 
 public type Env = Env.Env;
 public type InstanceHierarchy = InstanceHierarchy.InstanceHierarchy;
@@ -109,7 +104,7 @@ public uniontype CallingScope "Calling scope is used to determine when unconnect
 
 end CallingScope;
 
-public type InstDims = list<list<Exp.Subscript>>; 
+public type InstDims = list<list<DAE.Subscript>>; 
 /* 
 Changed from list<Subscript> to list<list<Subscript>>. One list for each scope.
 This so when instantiating classes extending from primitive types can collect the dimension of -one- surrounding scope to create type.
@@ -125,12 +120,13 @@ uniontype DimExp
   end DIMINT;
 
   record DIMEXP
-    Exp.Subscript subscript;
-    Option<Exp.Exp> expExpOption;
+    DAE.Subscript subscript;
+    Option<DAE.Exp> expExpOption;
   end DIMEXP;
 
 end DimExp;
 
+protected import Algorithm;
 protected import Builtin;
 protected import Ceval;
 protected import DAEUtil;
@@ -138,13 +134,17 @@ protected import Debug;
 protected import Dump;
 protected import Error;
 protected import ErrorExt;
+protected import Exp;
 protected import HashTable;
 protected import HashTable5;
 protected import Interactive;
 protected import Lookup;
+protected import MetaUtil;
 protected import ModUtil;
 protected import OptManager;
+protected import Patternm;
 protected import Static;
+protected import Types;
 protected import UnitAbsynBuilder;
 protected import UnitChecker;
 protected import UnitParserExt;
@@ -184,7 +184,7 @@ public function newIdent
 "function: newIdent
   This function creates a new, unique identifer. 
   The same name is never returned twice."
-  output Exp.ComponentRef outComponentRef;
+  output DAE.ComponentRef outComponentRef;
   Integer i;
   String is,s;
 algorithm 
@@ -834,7 +834,7 @@ algorithm
       list<SCode.Class> cs;
       Env.Cache cache;
       ConnectionGraph.ConnectionGraph graph;
-      list<Exp.ComponentRef> roots;
+      list<DAE.ComponentRef> roots;
       InstanceHierarchy ih;
       InstanceHierarchy.Instance i;
       UnitAbsyn.InstStore store;
@@ -962,7 +962,7 @@ public function instClass
   output UnitAbsyn.InstStore outStore;
   output list<DAE.Element> outDAEElementLst;
   output Connect.Sets outSets;
-  output Types.Type outType;
+  output DAE.Type outType;
   output ClassInf.State outState;
   output Option<Absyn.ElementAttributes> optDerAttr;
   output ConnectionGraph.ConnectionGraph outGraph;
@@ -971,19 +971,19 @@ algorithm
   matchcontinue (inCache,inEnv,inIH,store,inMod,inPrefix,inSets,inClass,inInstDims,inBoolean,inCallingScope,inGraph)
     local
       list<Env.Frame> env,env_1,env_3,env_4;
-      Types.Mod mod;
+      DAE.Mod mod;
       Prefix.Prefix pre;
       Connect.Sets csets,csets_1;
       String n;
       Boolean partialPrefix,impl,callscope_1,encflag;
       ClassInf.State ci_state,ci_state_1;
       list<DAE.Element> dae1,dae1_1,dae2,dae3,dae;
-      list<Exp.ComponentRef> crs;
-      list<Types.Var> tys;
-      Option<tuple<Types.TType, Option<Absyn.Path>>> bc_ty;
+      list<DAE.ComponentRef> crs;
+      list<DAE.Var> tys;
+      Option<tuple<DAE.TType, Option<Absyn.Path>>> bc_ty;
       Absyn.Path fq_class,typename;
-      list<Types.Type> functionTypes;      
-      tuple<Types.TType, Option<Absyn.Path>> ty;
+      list<DAE.Type> functionTypes;      
+      tuple<DAE.TType, Option<Absyn.Path>> ty;
       SCode.Class c;
       SCode.Restriction r;
       InstDims inst_dims;
@@ -992,10 +992,10 @@ algorithm
       list<Connect.OuterConnect> oc;
       Option<Absyn.ElementAttributes> oDA;
       String str;
-      list<Exp.ComponentRef> dc;
+      list<DAE.ComponentRef> dc;
       ConnectionGraph.ConnectionGraph graph; 
       InstanceHierarchy ih;
-      Types.EqualityConstraint equalityConstraint;
+      DAE.EqualityConstraint equalityConstraint;
 
       /* MetaModelica Partial Function. sjoelund */
     case (cache,env,ih,store,mod,pre,csets,
@@ -1041,7 +1041,7 @@ algorithm
           (c as SCode.CLASS(name = n,encapsulatedPrefix = encflag,restriction = r, partialPrefix = false)),
           inst_dims,impl,callscope,graph)
       local 
-        Types.EqualityConstraint equalityConstraint;
+        DAE.EqualityConstraint equalityConstraint;
       equation 
         //print("---- CLASS: "); print(n);print(" ----\n"); print(SCode.printClassStr(c)); //Print out the input SCode class
         //str = SCode.printClassStr(c); print("------------------- CLASS instClass-----------------\n");print(str);print("\n===============================================\n");
@@ -1086,7 +1086,7 @@ end instClass;
 protected function updateEnumerationEnvironment
 	input Env.Cache inCache;
   input Env inEnv;
-  input tuple<Types.TType, Option<Absyn.Path>> inType;
+  input tuple<DAE.TType, Option<Absyn.Path>> inType;
   input SCode.Class inClass;
   input ClassInf.State inCi_State;
 	output Env.Cache outCache;
@@ -1096,12 +1096,12 @@ algorithm
   local
     Env.Cache cache;
     Env env,env_1;
-    tuple<Types.TType, Option<Absyn.Path>> ty;
+    tuple<DAE.TType, Option<Absyn.Path>> ty;
     SCode.Class c;
     ClassInf.State ci_state;
     String name;
     list<String> names;
-    list<Types.Var> vars;
+    list<DAE.Var> vars;
     Absyn.Path p;
     case (cache,env,ty as ((DAE.T_ENUMERATION(NONE(),_,names,vars)),SOME(p)),c,ClassInf.ENUMERATION(name)) 
       equation
@@ -1117,7 +1117,7 @@ protected function updateEnumerationEnvironment1
   input Env inEnv;
   input String inName;
   input list<String> inNames;
-  input list<Types.Var> inVars;
+  input list<DAE.Var> inVars;
   input Absyn.Path inPath;
 	output Env.Cache outCache;
   output Env outEnv;
@@ -1128,16 +1128,16 @@ algorithm
     Env env,env_1,env_2,env_3,compenv;
     String name,n,nn;
     list<String> names;
-    list<Types.Var> vars;
-    Types.Var var, outVar, new_var;
-    Types.Type ty;
-    Option<tuple<SCode.Element, Types.Mod>> outTplSCodeElementTypesModOption;
+    list<DAE.Var> vars;
+    DAE.Var var, outVar, new_var;
+    DAE.Type ty;
+    Option<tuple<SCode.Element, DAE.Mod>> outTplSCodeElementTypesModOption;
     Env.InstStatus instStatus;
     Absyn.Path p;
-    Types.Ident name;
-    Types.Attributes attributes;
+    DAE.Ident name;
+    DAE.Attributes attributes;
     Boolean protected_;
-    Types.Binding binding;
+    DAE.Binding binding;
     case (cache,env,name,nn::names,(var as DAE.TYPES_VAR(_,_,_,ty,_))::vars,p) 
       equation
         // get Var
@@ -1208,14 +1208,14 @@ protected function extractConnectorPrefix "
 Author: BZ, 2009-09 
 Extract the part before the conector ex: a.b.c.connector_d.e would return a.b.c
 "
-input Exp.ComponentRef connectorRef;
-output Exp.ComponentRef prefixCon;
+input DAE.ComponentRef connectorRef;
+output DAE.ComponentRef prefixCon;
 algorithm prefixCon := matchcontinue(connectorRef)
   local
-    Exp.ComponentRef child;
+    DAE.ComponentRef child;
     String name; 
-    list<Exp.Subscript> subs;
-    Exp.Type ty;
+    list<DAE.Subscript> subs;
+    DAE.ExpType ty;
     
   case(DAE.CREF_IDENT(name,_,_)) // If the bottom var is a connector, then it is not an outside connector. (spec 0.1.2)
     /*equation print(name +& " is not a outside connector \n");*/
@@ -1245,8 +1245,8 @@ Note: This is a hack to readd the typing of the variables.
 algorithm outdae := matchcontinue(zeroEqns,fullDae)
   local
     DAE.Element ze;
-    Exp.Exp e;
-    Exp.ComponentRef cr;
+    DAE.Exp e;
+    DAE.ComponentRef cr;
   case({},fullDae) then fullDae;
   case(_, {}) equation print(" error in updateTypesInUnconnectedConnectors\n"); then fail();
   case((ze as DAE.EQUATION(exp = (e as DAE.CREF(cr,_))))::zeroEqns, fullDae)
@@ -1289,12 +1289,12 @@ protected function updateTypesInUnconnectedConnectors2 "
 Author: BZ, 2009-09
 Helper function for updateTypesInUnconnectedConnectors
 "
-input Exp.ComponentRef inCr;
+input DAE.ComponentRef inCr;
 input list<DAE.Element> elems; 
 output list<DAE.Element> outelems;
 algorithm outelems := matchcontinue(inCr, elems)
   local
-    Exp.ComponentRef cr1,cr2;
+    DAE.ComponentRef cr1,cr2;
     DAE.Element elem,elem2;
   case(cr1,{})
     equation 
@@ -1325,14 +1325,14 @@ protected function updateCrefTypesWithConnectorPrefix "
 Author: BZ, 2009-09
 Helper function for updateTypesInUnconnectedConnectors2
 "
-input Exp.ComponentRef cr1,cr2;
-output Exp.ComponentRef outCref;
+input DAE.ComponentRef cr1,cr2;
+output DAE.ComponentRef outCref;
 algorithm outCref := matchcontinue(cr1,cr2)
   local
     String name,name2;
-    Exp.ComponentRef child,child2;
-    Exp.Type ty;
-    list<Exp.Subscript> subs;
+    DAE.ComponentRef child,child2;
+    DAE.ExpType ty;
+    list<DAE.Subscript> subs;
   case(DAE.CREF_IDENT(name,ty,subs),DAE.CREF_QUAL(name2,_,_,child2))
     equation
       true = stringEqual(name,name2);
@@ -1380,8 +1380,8 @@ protected function instClassBasictype
   output UnitAbsyn.InstStore outStore;
   output list<DAE.Element> outDAEElementLst;  
   output Connect.Sets outSets;
-  output Types.Type outType;
-  output list<Types.Var>  outTypeVars "attributes of builtin types";
+  output DAE.Type outType;
+  output list<DAE.Var>  outTypeVars "attributes of builtin types";
   output ClassInf.State outState;
 algorithm 
   (outCache,outIH,outEnv,outStore,outDAEElementLst,outSets,outType,outTypeVars,outState):=
@@ -1392,19 +1392,19 @@ algorithm
       SCode.Class c_1,c;
       list<DAE.Element> dae1,dae1_1,dae2,dae3,dae;
       Connect.Sets csets_1,csets;
-      list<Exp.ComponentRef> crs;
-      list<Types.Var> tys;
-      Option<tuple<Types.TType, Option<Absyn.Path>>> bc_ty;
+      list<DAE.ComponentRef> crs;
+      list<DAE.Var> tys;
+      Option<tuple<DAE.TType, Option<Absyn.Path>>> bc_ty;
       Absyn.Path fq_class,typename;
       Boolean callscope_1,encflag,impl;
-      tuple<Types.TType, Option<Absyn.Path>> ty;
-      Types.Mod mod;
+      tuple<DAE.TType, Option<Absyn.Path>> ty;
+      DAE.Mod mod;
       Prefix.Prefix pre;
       String n;
       SCode.Restriction r;
       InstDims inst_dims;
       CallingScope callscope;
-      list<Exp.ComponentRef> dc;
+      list<DAE.ComponentRef> dc;
       list<Connect.OuterConnect> oc;
       Env.Cache cache;
       InstanceHierarchy ih;
@@ -1461,7 +1461,7 @@ public function instClassIn
   input InstDims inInstDims8;
   input Boolean inBoolean9;
   input ConnectionGraph.ConnectionGraph inGraph;
-  input Option<Exp.ComponentRef> instSingleCref;
+  input Option<DAE.ComponentRef> instSingleCref;
 	output Env.Cache outCache;
   output Env outEnv;
   output InstanceHierarchy outIH;
@@ -1469,20 +1469,20 @@ public function instClassIn
   output list<DAE.Element> outDAEElementLst;
   output Connect.Sets outSets;
   output ClassInf.State outState;
-  output list<Types.Var> outTypesVarLst;
-  output Option<Types.Type> outTypesTypeOption;
+  output list<DAE.Var> outTypesVarLst;
+  output Option<DAE.Type> outTypesTypeOption;
   output Option<Absyn.ElementAttributes> optDerAttr;
-  output Types.EqualityConstraint outEqualityConstraint;
+  output DAE.EqualityConstraint outEqualityConstraint;
   output ConnectionGraph.ConnectionGraph outGraph;
 algorithm 
   (outCache,outEnv,outIH,outStore,outDAEElementLst,outSets,outState,outTypesVarLst,outTypesTypeOption,optDerAttr,outEqualityConstraint,outGraph):=
   matchcontinue (inCache,inEnv1,inIH,store,inMod2,inPrefix3,inSets4,inState5,inClass6,inBoolean7,inInstDims8,inBoolean9,inGraph,instSingleCref)
     local
-      Option<tuple<Types.TType, Option<Absyn.Path>>> bc;
+      Option<tuple<DAE.TType, Option<Absyn.Path>>> bc;
       list<Env.Frame> env,env_1;
-      Types.Mod mods;
+      DAE.Mod mods;
       Prefix.Prefix pre;
-      list<Exp.ComponentRef> crs;
+      list<DAE.ComponentRef> crs;
       ClassInf.State ci_state,ci_state_1;
       SCode.Class c,cls;
       InstDims inst_dims;
@@ -1490,15 +1490,15 @@ algorithm
       String clsname,implstr,n;
       list<DAE.Element> l;
       Connect.Sets csets_1,csets;
-      list<Types.Var> tys;
+      list<DAE.Var> tys;
       SCode.Restriction r;
       SCode.ClassDef d;
       Env.Cache cache;
-      list<Exp.ComponentRef> dc;
+      list<DAE.ComponentRef> dc;
       Real t1,t2,time; Boolean b;
       list<Connect.OuterConnect> oc;
       Option<Absyn.ElementAttributes> oDA;
-      Types.EqualityConstraint equalityConstraint;
+      DAE.EqualityConstraint equalityConstraint;
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
       
@@ -1604,12 +1604,12 @@ protected function instRealClass
   input Env.Env env;
   input Mod mods;
   input Prefix.Prefix pre;
-  output list<Types.Var> varLst;
+  output list<DAE.Var> varLst;
 algorithm
   varLst := matchcontinue(cache,env,mods,pre)
     local 
-      Boolean f; Absyn.Each e; list<Types.SubMod> submods; Option<Types.EqMod> eqmod; Exp.Exp exp;
-      Types.Var v; Types.Properties p;
+      Boolean f; Absyn.Each e; list<DAE.SubMod> submods; Option<DAE.EqMod> eqmod; DAE.Exp exp;
+      DAE.Var v; DAE.Properties p;
       Option<Values.Value> optVal;
     case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("quantity",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p))))::submods,eqmod),pre) 
       equation
@@ -1668,7 +1668,7 @@ algorithm
           }),NONE),p);
       then v::varLst;   
     case(cache,env,( mym as DAE.MOD(f,e,smod::submods,eqmod)),pre)
-      local String s1; Types.SubMod smod; Types.Mod mym; 
+      local String s1; DAE.SubMod smod; DAE.Mod mym; 
       equation
         s1 = Mod.prettyPrintMod(mym,0) +& ", not found in the built-in class Real";
         Error.addMessage(Error.UNUSED_MODIFIER,{s1});
@@ -1686,12 +1686,12 @@ protected function instIntegerClass
   input Env.Env env;
   input Mod mods;
   input Prefix.Prefix pre;
-  output list<Types.Var> varLst;
+  output list<DAE.Var> varLst;
 algorithm
   varLst := matchcontinue(cache,env,mods,pre)
     local 
-      Boolean f; Absyn.Each e; list<Types.SubMod> submods; Option<Types.EqMod> eqmod; Exp.Exp exp;
-      Types.Var v; Types.Properties p;
+      Boolean f; Absyn.Each e; list<DAE.SubMod> submods; Option<DAE.EqMod> eqmod; DAE.Exp exp;
+      DAE.Var v; DAE.Properties p;
       Option<Values.Value> optVal;
     case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("quantity",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p))))::submods,eqmod),pre) 
       equation
@@ -1725,7 +1725,7 @@ algorithm
         v = instBuiltinAttribute(cache,env,"nominal",optVal,exp,(DAE.T_INTEGER({}),NONE),p);
         then v::varLst;           
     case(cache,env,DAE.MOD(f,e,smod::submods,eqmod),pre)
-      local String s1; Types.SubMod smod;
+      local String s1; DAE.SubMod smod;
       equation
         s1 = Mod.prettyPrintMod(mods,0) +& ", not found in the built-in class Integer";
         Error.addMessage(Error.UNUSED_MODIFIER,{s1});
@@ -1743,12 +1743,12 @@ protected function instStringClass
   input Env.Env env;
   input Mod mods;
   input Prefix.Prefix pre;
-  output list<Types.Var> varLst;
+  output list<DAE.Var> varLst;
 algorithm
   varLst := matchcontinue(cache,env,mods,pre)
-    local Boolean f; Absyn.Each e; list<Types.SubMod> submods; Option<Types.EqMod> eqmod; Exp.Exp exp;
-      Types.Var v;
-      Types.Properties p;
+    local Boolean f; Absyn.Each e; list<DAE.SubMod> submods; Option<DAE.EqMod> eqmod; DAE.Exp exp;
+      DAE.Var v;
+      DAE.Properties p;
       Option<Values.Value> optVal;
     case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("quantity",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p))))::submods,eqmod),pre) 
       equation
@@ -1761,7 +1761,7 @@ algorithm
         v = instBuiltinAttribute(cache,env,"start",optVal,exp,(DAE.T_STRING({}),NONE),p);
         then v::varLst;      
     case(cache,env,DAE.MOD(f,e,smod::submods,eqmod),pre)
-      local String s1; Types.SubMod smod; 
+      local String s1; DAE.SubMod smod; 
       equation
         s1 = Mod.prettyPrintMod(mods,0) +& ", not found in the built-in class String";
         Error.addMessage(Error.UNUSED_MODIFIER,{s1});
@@ -1779,13 +1779,13 @@ protected function instBooleanClass
   input Env.Env env;
   input Mod mods;
   input Prefix.Prefix pre;
-  output list<Types.Var> varLst;
+  output list<DAE.Var> varLst;
 algorithm
   varLst := matchcontinue(cache,env,mods,pre)
     local 
-      Boolean f; Absyn.Each e; list<Types.SubMod> submods; Option<Types.EqMod> eqmod; Exp.Exp exp;
+      Boolean f; Absyn.Each e; list<DAE.SubMod> submods; Option<DAE.EqMod> eqmod; DAE.Exp exp;
       Option<Values.Value> optVal;
-      Types.Var v; Types.Properties p;
+      DAE.Var v; DAE.Properties p;
     case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("quantity",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p))))::submods,eqmod),pre) 
       equation
         varLst = instBooleanClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
@@ -1802,7 +1802,7 @@ algorithm
         v = instBuiltinAttribute(cache,env,"fixed",optVal,exp,(DAE.T_BOOL({}),NONE),p);
       then v::varLst;              
     case(cache,env,DAE.MOD(f,e,smod::submods,eqmod),pre)
-      local String s1; Types.SubMod smod; 
+      local String s1; DAE.SubMod smod; 
       equation
         s1 = Mod.prettyPrintMod(mods,0) +& ", not found in the built-in class Boolean";
         Error.addMessage(Error.UNUSED_MODIFIER,{s1});
@@ -1820,14 +1820,14 @@ protected function instBuiltinAttribute
   input Env.Env env;
   input Ident id;
   input Option<Values.Value> optVal;
-  input Exp.Exp bind;
-  input Types.Type expectedTp;
-  input Types.Properties bindProp;
-  output Types.Var var;
+  input DAE.Exp bind;
+  input DAE.Type expectedTp;
+  input DAE.Properties bindProp;
+  output DAE.Var var;
 algorithm
   var := matchcontinue(cache,env,id,optVal,bind,expectedTp,bindProp)
     local 
-      Values.Value v; Types.Type t_1,bindTp; Exp.Exp bind1; 
+      Values.Value v; DAE.Type t_1,bindTp; DAE.Exp bind1; 
    
     case(cache,env,id,SOME(v),bind,expectedTp,DAE.PROP(bindTp,_)) 
      equation
@@ -1865,12 +1865,12 @@ protected function arrayBasictypeBaseclass
 "function: arrayBasictypeBaseclass
   author: PA"
   input InstDims inInstDims;
-  input Types.Type inType;
-  output Option<Types.Type> outTypesTypeOption;
+  input DAE.Type inType;
+  output Option<DAE.Type> outTypesTypeOption;
 algorithm 
   outTypesTypeOption := matchcontinue (inInstDims,inType)
     local
-      tuple<Types.TType, Option<Absyn.Path>> tp,tp_1;
+      tuple<DAE.TType, Option<Absyn.Path>> tp,tp_1;
       list<Option<Integer>> lst;
       InstDims inst_dims;
     case ({},tp) then NONE; 
@@ -1886,14 +1886,14 @@ end arrayBasictypeBaseclass;
 protected function instdimsIntOptList 
 "function: instdimsIntOptList
   author: PA"
-  input list<Exp.Subscript> inInstDims;
+  input list<DAE.Subscript> inInstDims;
   output list<Option<Integer>> outIntegerOptionLst;
 algorithm 
   outIntegerOptionLst := matchcontinue (inInstDims)
     local
       list<Option<Integer>> res;
       Integer i;
-      list<Exp.Subscript> ss;
+      list<DAE.Subscript> ss;
     case ({}) then {}; 
     case ((DAE.INDEX(exp = DAE.ICONST(integer = i)) :: ss))
       equation 
@@ -1907,12 +1907,12 @@ protected function arrayBasictypeBaseclass2
 "function: arrayBasictypeBaseclass2
   author: PA"
   input list<Option<Integer>> inIntegerOptionLst;
-  input Types.Type inType;
-  output Types.Type outType;
+  input DAE.Type inType;
+  output DAE.Type outType;
 algorithm 
   outType := matchcontinue (inIntegerOptionLst,inType)
     local
-      tuple<Types.TType, Option<Absyn.Path>> tp,tp_1,res;
+      tuple<DAE.TType, Option<Absyn.Path>> tp,tp_1,res;
       Option<Integer> i;
       list<Option<Integer>> is;
     case ({},tp) then tp; 
@@ -1948,7 +1948,7 @@ algorithm
   (outCache,outEnv,outIH,outState) := matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inSets,inState,inClass,inBoolean,inInstDims)
     local
       list<Env.Frame> env,env_1;
-      Types.Mod mods;
+      DAE.Mod mods;
       Prefix.Prefix pre;
       Connect.Sets csets;
       ClassInf.State ci_state,ci_state_1;
@@ -2049,12 +2049,12 @@ end equalityConstraintOutputDimension;
 protected function equalityConstraint
   "function: equalityConstraint
     Tests if the given elements contain equalityConstraint function and returns 
-    corresponding Types.EqualityConstraint."
+    corresponding DAE.EqualityConstraint."
   input Env.Cache inCache;
   input Env inEnv;
   input list<SCode.Element> inCdefelts;
   //output Env.Cache outCache;  
-  output Types.EqualityConstraint outResult;
+  output DAE.EqualityConstraint outResult;
 algorithm
   (outCache, outResult) := matchcontinue(inCache, inEnv, inCdefelts)
   local
@@ -2063,9 +2063,9 @@ algorithm
       Env.Cache cache;
       Env env;
       Absyn.Path path;
-      list<Types.Type> types;
+      list<DAE.Type> types;
       Integer dimension;
-      Types.EqualityConstraint result;
+      DAE.EqualityConstraint result;
     case(cache, env, {})
       then NONE;
     case(cache, env, SCode.CLASSDEF(classDef = classDef as SCode.CLASS(name = "equalityConstraint", restriction = SCode.R_FUNCTION,
@@ -2120,7 +2120,7 @@ protected function instClassdef
   input InstDims inInstDims9;
   input Boolean inBoolean10;
   input ConnectionGraph.ConnectionGraph inGraph;
-  input Option<Exp.ComponentRef> instSingleCref;
+  input Option<DAE.ComponentRef> instSingleCref;
   output Env.Cache outCache;
   output Env outEnv;
   output InstanceHierarchy outIH;
@@ -2128,10 +2128,10 @@ protected function instClassdef
   output list<DAE.Element> outDAEElementLst;  
   output Connect.Sets outSets;
   output ClassInf.State outState;
-  output list<Types.Var> outTypesVarLst;
-  output Option<Types.Type> outTypesTypeOption;
+  output list<DAE.Var> outTypesVarLst;
+  output Option<DAE.Type> outTypesTypeOption;
   output Option<Absyn.ElementAttributes> optDerAttr;
-  output Types.EqualityConstraint outEqualityConstraint;
+  output DAE.EqualityConstraint outEqualityConstraint;
   output ConnectionGraph.ConnectionGraph outGraph;
 algorithm 
   (outCache,outEnv,outIH,outStore,outDAEElementLst,outSets,outState,outTypesVarLst,outTypesTypeOption,optDerAttr,outEqualityConstraint,outGraph):=
@@ -2144,29 +2144,29 @@ algorithm
       Connect.Sets csets,csets1,csets_filtered,csets2,csets3,csets4,csets5,csets_1;
       list<DAE.Element> dae1,dae2,dae3,dae4,dae5,dae,daetemp;
       ClassInf.State ci_state1,ci_state,ci_state2,ci_state3,ci_state4,ci_state5,ci_state6,new_ci_state,ci_state_1;
-      list<Types.Var> tys;
-      Option<tuple<Types.TType, Option<Absyn.Path>>> bc;
-      Types.Mod mods,emods,m,mod_1,mods_1,mods_2,checkMods;
+      list<DAE.Var> tys;
+      Option<tuple<DAE.TType, Option<Absyn.Path>>> bc;
+      DAE.Mod mods,emods,m,mod_1,mods_1,mods_2,checkMods;
       Prefix.Prefix pre;
       list<SCode.Equation> eqs,initeqs,eqs2,initeqs2,eqs_1,initeqs_1;
       list<SCode.Algorithm> alg,initalg,alg2,initalg2,alg_1,initalg_1;
       SCode.Restriction re,r;
       Boolean prot,impl,enc2;
       InstDims inst_dims,inst_dims_1;
-      list<Exp.Subscript> inst_dims2;
+      list<DAE.Subscript> inst_dims2;
       String id,pre_str,cn2,cns,scope_str,s;
       SCode.Class c;
-      Option<Types.EqMod> eq;
+      Option<DAE.EqMod> eq;
       list<DimExp> dims;
       Absyn.Path cn;
       Option<list<Absyn.Subscript>> ad;
       SCode.Mod mod;
       Env.Cache cache;
-      list<Exp.ComponentRef> dc;
-      list<Exp.ComponentRef> crs;
+      list<DAE.ComponentRef> dc;
+      list<DAE.ComponentRef> crs;
       Option<Absyn.ElementAttributes> oDA;
       list<Connect.OuterConnect> oc;
-      Types.EqualityConstraint eqConstraint;
+      DAE.EqualityConstraint eqConstraint;
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
       UnitAbsyn.UnitTerms ut;
@@ -2383,7 +2383,7 @@ algorithm
           SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT("list"),tSpecs,_),modifications = mod, attributes=DA),
           re,prot,inst_dims,impl,graph,instSingleCref)
       local 
-        list<Absyn.TypeSpec> tSpecs; list<Types.Type> tys; Types.Type ty;
+        list<Absyn.TypeSpec> tSpecs; list<DAE.Type> tys; DAE.Type ty;
         Absyn.ElementAttributes DA;
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
@@ -2398,7 +2398,7 @@ algorithm
           SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT("Option"),tSpecs,_),modifications = mod, attributes=DA),
           re,prot,inst_dims,impl,graph,instSingleCref)
       local 
-        list<Absyn.TypeSpec> tSpecs; list<Types.Type> tys; Types.Type ty;
+        list<Absyn.TypeSpec> tSpecs; list<DAE.Type> tys; DAE.Type ty;
         Absyn.ElementAttributes DA;
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
@@ -2413,7 +2413,7 @@ algorithm
           SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT("tuple"),tSpecs,_),modifications = mod, attributes=DA),
           re,prot,inst_dims,impl,graph,instSingleCref)
       local 
-        list<Absyn.TypeSpec> tSpecs; list<Types.Type> tys;
+        list<Absyn.TypeSpec> tSpecs; list<DAE.Type> tys;
         Absyn.ElementAttributes DA;
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
@@ -2426,7 +2426,7 @@ algorithm
           SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT("polymorphic"),{Absyn.TPATH(Absyn.IDENT("Any"),NONE)},_),modifications = mod, attributes=DA),
           re,prot,inst_dims,impl,graph,instSingleCref)
       local 
-        list<Absyn.TypeSpec> tSpecs; list<Types.Type> tys; Types.Type ty;
+        list<Absyn.TypeSpec> tSpecs; list<DAE.Type> tys; DAE.Type ty;
         Absyn.ElementAttributes DA;
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
@@ -2486,13 +2486,13 @@ What ever is left in modifier is printed as a warning. That means that we have m
  
 "
   input list<SCode.Element> elems;
-  input Types.Mod inmod;
+  input DAE.Mod inmod;
   input String callingScope;
 algorithm _ := matchcontinue(elems, inmod,callingScope)
   local
     SCode.Element elem;
     String cn,s1,s2;
-    Types.Mod mod;
+    DAE.Mod mod;
   case({},DAE.NOMOD,_) then ();
   case({},DAE.MOD(subModLst={}),_) then ();
   case({},inmod,callingScope)
@@ -2529,12 +2529,12 @@ end matchModificationToComponents;
 
 protected function extractConstantPlusDeps "
 Author: BZ, 2009-04
-This function filters the list of elements to instantiate depending on optional(Exp.ComponentRef), the
+This function filters the list of elements to instantiate depending on optional(DAE.ComponentRef), the
 optional argument is set in Lookup.lookupVarInPackages.
 If it is set, we are only looking for one variable in current scope hence we are not interested in 
 instantiating more then nescessary.
 
-The actuall action of this function is to compare components to the Exp.ComponentRef name
+The actuall action of this function is to compare components to the DAE.ComponentRef name
 if it is found return that component and any dependant components(modifiers), this is done by calling the function recursivly.
 
 If the component specified in argument 2 is not found, we return all extend and import statements.
@@ -2542,12 +2542,12 @@ TODO: search import and extends statements for specified variable.
        this includes to check class definitions to so that we do not need to instantiate local class definitions while looking for a constant.
 "
   input list<SCode.Element> inComps;
-  input Option<Exp.ComponentRef> ocr;
+  input Option<DAE.ComponentRef> ocr;
   input list<SCode.Element> allComps;
   input String className;
   output list<SCode.Element> outComps;
 algorithm outComps := matchcontinue(inComps, ocr,allComps,className)
-  local Exp.ComponentRef cr;
+  local DAE.ComponentRef cr;
   case(inComps, NONE,allComps,className) then inComps;
   case(inComps, SOME(cr), allComps,className)
     local
@@ -2573,7 +2573,7 @@ Author: BZ, 2009-04
 Helper function for extractConstantPlusDeps
 "
   input list<SCode.Element> inComps;
-  input Option<Exp.ComponentRef> ocr;
+  input Option<DAE.ComponentRef> ocr;
   input list<SCode.Element> allComps;
   input String className;
   input list<String> existing;
@@ -2583,11 +2583,11 @@ algorithm outComps := matchcontinue(inComps, ocr,allComps,className,existing)
     SCode.Element compMod;
     list<SCode.Element> recDeps;
     SCode.Element selem;
-    Types.Mod mod;
+    DAE.Mod mod;
     String name,name2;
     SCode.Mod umod,scmod;
     case({},SOME(cr),_,_,_)
-      local Exp.ComponentRef cr; 
+      local DAE.ComponentRef cr; 
       equation
         //print(" failure to find: " +& Exp.printComponentRefStr(cr) +& " in scope: " +& className +& "\n");
       then {};
@@ -2746,7 +2746,7 @@ Update connection sets incase of Absyn.INNEROUTER()
   protected
   list<DAE.Element> innerVars,outerVars,allVars;
   VarTransform.VariableReplacements repl;
-  list<Exp.ComponentRef> srcs,targets;
+  list<DAE.ComponentRef> srcs,targets;
 algorithm (ocsets,outDae) := matchcontinue(inDae,csets)
   local
   case(inDae,csets)
@@ -2778,7 +2778,7 @@ output Connect.Sets ocsets;
 algorithm ocsets := matchcontinue(repl,csets)
   case(repl,Connect.SETS(_,_,_,{})) then csets;
   case(repl,csets)
-    local list<Exp.ComponentRef> targets;
+    local list<DAE.ComponentRef> targets;
     equation
       targets = VarTransform.replacementTargets(repl);
       true = intEq(listLength(targets),0);
@@ -2786,7 +2786,7 @@ algorithm ocsets := matchcontinue(repl,csets)
   case(repl,Connect.SETS(sets,ccons,dcs,ocs))
     local
     list<Connect.Set> sets;
-    list<Exp.ComponentRef> ccons,dcs;    
+    list<DAE.ComponentRef> ccons,dcs;    
 		list<Connect.OuterConnect> ocs,ocs2;
 		equation
 		  ocs2 = changeOuterReferences3(ocs,repl);
@@ -2806,11 +2806,11 @@ output list<Connect.OuterConnect> oocs;
 algorithm oocs := matchcontinue(ocs,repl)
   local
     list<Connect.OuterConnect> recRes;
-    Exp.ComponentRef cr1,cr2,ncr1,ncr2,cr3,ver1,ver2;
+    DAE.ComponentRef cr1,cr2,ncr1,ncr2,cr3,ver1,ver2;
     Absyn.InnerOuter io1,io2;
     Connect.Face f1,f2;
     Prefix.Prefix scope;
-    list<Exp.ComponentRef> src,dst;
+    list<DAE.ComponentRef> src,dst;
   case({},_) then {};
   case(Connect.OUTERCONNECT(scope,cr1,io1,f1,cr2,io2,f2)::ocs,repl)
     equation
@@ -2858,11 +2858,11 @@ ex:
  m1.m2.m3, m1.m2.m3.m4, m2.m3.m4
  ==> m2.$unique'ified$m3 
 "
-input Exp.ComponentRef inCr;
-input list<Exp.ComponentRef> src,dst;
-output Exp.ComponentRef outCr;
+input DAE.ComponentRef inCr;
+input list<DAE.ComponentRef> src,dst;
+output DAE.ComponentRef outCr;
 algorithm outCr := matchcontinue(inCr,src,dst)
-  local Exp.ComponentRef s,d,cr1,cr2;
+  local DAE.ComponentRef s,d,cr1,cr2;
   case(inCr,s::src,d::dst)
     equation
       true = Exp.crefPrefixOf(inCr,s);
@@ -2886,13 +2886,13 @@ Compares two crefs ex:
 model1.model2.connector vs model2.connector.variable
 would become: model2.connector
 "
-input Exp.ComponentRef prefixedCref;
-input Exp.ComponentRef innerCref;
-output Exp.ComponentRef cr3;
+input DAE.ComponentRef prefixedCref;
+input DAE.ComponentRef innerCref;
+output DAE.ComponentRef cr3;
 algorithm cr3 := matchcontinue(prefixedCref,innerCref)
 local
-  Exp.Type ty,ty2;
-  Exp.ComponentRef c1,c2,c3;  
+  DAE.ExpType ty,ty2;
+  DAE.ComponentRef c1,c2,c3;  
   case(prefixedCref,innerCref)
     equation
      c1 = Exp.crefIdent(prefixedCref);
@@ -2938,8 +2938,8 @@ protected function buildInnerOuterReplVar
 algorithm
 	outRepl := matchcontinue(innerVar,outerVars,inRepl)
 	  local 
-        list<Exp.ComponentRef> outerCrs,ourOuterCrs;
-	    Exp.ComponentRef cr; VarTransform.VariableReplacements repl;
+        list<DAE.ComponentRef> outerCrs,ourOuterCrs;
+	    DAE.ComponentRef cr; VarTransform.VariableReplacements repl;
 	  case(DAE.VAR(componentRef = cr, innerOuter = Absyn.INNEROUTER()),outerVars,repl) 
 	    equation
         outerCrs = Util.listMap(outerVars,DAEUtil.varCref);
@@ -2959,13 +2959,13 @@ end buildInnerOuterReplVar;
 protected function isInnerOuterMatch 
 "Returns true if an inner element matches an outer, i.e.
 the outer reference should be translated to the inner reference"
-  input Exp.ComponentRef outerCr " e.g. a.b.x";
-  input Exp.ComponentRef innerCr " e.g. x";
+  input DAE.ComponentRef outerCr " e.g. a.b.x";
+  input DAE.ComponentRef innerCr " e.g. x";
   output Boolean res;
 algorithm
   res := matchcontinue(outerCr,innerCr)
 local
-  Exp.ComponentRef innerCr1,outerCr1;
+  DAE.ComponentRef innerCr1,outerCr1;
     case(outerCr,innerCr)
     equation
       // Strip the common part of inner outer cr. 
@@ -2979,16 +2979,16 @@ end isInnerOuterMatch;
 
 protected function stripCommonCrefPart 
 "Help function to isInnerOuterMatch"
-  input Exp.ComponentRef outerCr;
-  input Exp.ComponentRef innerCr;
-  output Exp.ComponentRef outOuterCr;
-  output Exp.ComponentRef outInnerCr;
+  input DAE.ComponentRef outerCr;
+  input DAE.ComponentRef innerCr;
+  output DAE.ComponentRef outOuterCr;
+  output DAE.ComponentRef outInnerCr;
 algorithm
   (outOuterCr,outInnerCr) := matchcontinue(outerCr,innerCr)
   local
-    Exp.Ident id1,id2;
-    list<Exp.Subscript> subs1,subs2;
-  	Exp.ComponentRef cr1,cr2,cr11,cr22;
+    DAE.Ident id1,id2;
+    list<DAE.Subscript> subs1,subs2;
+  	DAE.ComponentRef cr1,cr2,cr11,cr22;
     case(DAE.CREF_QUAL(id1,_,subs1,cr1),DAE.CREF_QUAL(id2,_,subs2,cr2)) 
       equation
         equality(id1=id2);
@@ -3008,12 +3008,12 @@ protected function instClassDefHelper
   input Prefix.Prefix inPre;
   input InstDims inDims;
   input Boolean inImpl;
-  input list<Types.Type> accTypes;
+  input list<DAE.Type> accTypes;
   input Connect.Sets inCSets;
   output Env.Cache outCache;
   output Env.Env outEnv;
   output InstanceHierarchy outIH;
-  output list<Types.Type> outType;
+  output list<DAE.Type> outType;
   output Connect.Sets outSets;
   output Option<Absyn.ElementAttributes> outAttr;
 algorithm
@@ -3021,10 +3021,10 @@ algorithm
   matchcontinue (inCache,inEnv,inIH,inSpecs,inPre,inDims,inImpl,accTypes,inCSets)
     local
       Env.Cache cache; Env.Env env; Prefix.Prefix pre; InstDims dims; Boolean impl;
-      list<Types.Type> localAccTypes;
+      list<DAE.Type> localAccTypes;
       list<Absyn.TypeSpec> restTypeSpecs; Connect.Sets csets;
       Absyn.Path cn; SCode.Class c;
-      Env.Env cenv; Types.Type ty;
+      Env.Env cenv; DAE.Type ty;
       Absyn.Path p; SCode.Class c;
       Env.Env cenv; 
       Absyn.Ident id; 
@@ -3081,7 +3081,7 @@ algorithm
  	   Env.Cache cache;
  	   Ident className;
  	   Absyn.Path classNameFQ;
- 	   Types.Type functp;
+ 	   DAE.Type functp;
  	   Env.Frame f;
  	   list<Env.Frame> fs,fs1;
  	   Absyn.Path classNameFQ;
@@ -3156,14 +3156,14 @@ protected function instantiateExternalObjectConstructor
 	output Env.Cache outCache;
 	output InstanceHierarchy outIH;
 	output DAE.Element dae;
-	output Types.Type tp;
+	output DAE.Type tp;
 algorithm	
 	(outCaceh,inIH,dae) := matchcontinue (inCache,env,outIH,cl)
 	local	
       Env.Cache cache;
       Env.Env env1;
       DAE.Element daeElt;
-      Types.Type funcTp;
+      DAE.Type funcTp;
       String s;
       InstanceHierarchy ih;
       
@@ -3281,7 +3281,7 @@ algorithm
     local
       String s;
       SCode.Element el;
-      Types.Mod mod;
+      DAE.Mod mod;
       list<tuple<SCode.Element, Mod>> els;
     case ({}) then (); 
     case (((el,mod) :: els))
@@ -3317,18 +3317,18 @@ protected function instBasictypeBaseclass
   output Env.Cache outCache;
   output InstanceHierarchy outIH;
   output UnitAbsyn.InstStore outStore;
-  output Option<Types.Type> outTypesTypeOption;
-  output list<Types.Var> outTypeVars;
+  output Option<DAE.Type> outTypesTypeOption;
+  output list<DAE.Var> outTypeVars;
 algorithm 
   (outCache,outIH,outStore,outTypesTypeOption,outTypeVars) := 
   matchcontinue (inCache,inEnv,inIH,store,inSCodeElementLst2,inSCodeElementLst3,inMod4,inInstDims5)
     local
-      Types.Mod m_1,m_2,mods;
+      DAE.Mod m_1,m_2,mods;
       SCode.Class cdef,cdef_1;
       list<Env.Frame> cenv,env_1,env;
       list<DAE.Element> dae;
-      tuple<Types.TType, Option<Absyn.Path>> ty;
-      list<Types.Var> tys;
+      tuple<DAE.TType, Option<Absyn.Path>> ty;
+      list<DAE.Var> tys;
       ClassInf.State st;
       Boolean b1,b2,b3;
       Absyn.Path path;
@@ -3405,12 +3405,12 @@ Handles the fail case rollbacks/deleteCheckpoint of errors.
   input InstDims inInstDims5;
   algorithm _ := matchcontinue(inCache,inEnv1,inIH,store,inSCodeElementLst2,inSCodeElementLst3,inMod4,inInstDims5)
         local
-      Types.Mod m_1,m_2,mods;
+      DAE.Mod m_1,m_2,mods;
       SCode.Class cdef,cdef_1;
       list<Env.Frame> cenv,env_1,env;
       list<DAE.Element> dae;
-      tuple<Types.TType, Option<Absyn.Path>> ty;
-      list<Types.Var> tys;
+      tuple<DAE.TType, Option<Absyn.Path>> ty;
+      list<DAE.Var> tys;
       ClassInf.State st;
       Boolean b1,b2,b3;
       Absyn.Path path;
@@ -3452,12 +3452,12 @@ protected function addConnectionSetToEnv
 algorithm 
   (outEnv,outIH) := matchcontinue (inSets,prefix,inEnv,inIH)
     local
-      list<Exp.ComponentRef> crs;
+      list<DAE.ComponentRef> crs;
       Option<String> n;
       Env.AvlTree bt2;
       Env.AvlTree bt1;
       list<Env.Item> imp;
-      Exp.ComponentRef prefix_cr;
+      DAE.ComponentRef prefix_cr;
       list<Env.Frame> bc,fs;
       Boolean enc;
       InstanceHierarchy ih;
@@ -3488,12 +3488,12 @@ algorithm
   outSets := matchcontinue (inSets,inSCodeEquationLst)
     local
       Connect.Sets sets,sets_1;
-      Exp.ComponentRef cr1_1,cr2_1;
-      list<Exp.ComponentRef> crs_1,crs;
+      DAE.ComponentRef cr1_1,cr2_1;
+      list<DAE.ComponentRef> crs_1,crs;
       Absyn.ComponentRef cr1,cr2;
       list<SCode.Equation> es;
       list<Connect.Set> setList;
-      list<Exp.ComponentRef> dc;
+      list<DAE.ComponentRef> dc;
       list<Connect.OuterConnect> oc;
       list<Connect.Set> setLst;
       
@@ -3528,10 +3528,10 @@ algorithm
     local
       Connect.Sets s;
       Prefix.Prefix first_pre,pre;
-      Exp.ComponentRef cr;
-      list<Exp.ComponentRef> crs_1,crs;
+      DAE.ComponentRef cr;
+      list<DAE.ComponentRef> crs_1,crs;
       list<Connect.Set> set;
-      list<Exp.ComponentRef> dc;
+      list<DAE.ComponentRef> dc;
       list<Connect.OuterConnect> oc;
     case (s,Prefix.NOPRE()) then s;  /* no Prefix, nothing to filter */ 
     case (Connect.SETS(setLst = set,connection = crs,deletedComponents=dc,outerConnects=oc),pre)
@@ -3571,7 +3571,7 @@ algorithm
       ClassInf.State ci_state1,ci_state,new_ci_state,new_ci_state_1,ci_state2;
       list<SCode.Element> cdefelts,extendselts,els,allEls,cdefelts2;
       list<Env.Frame> env1,env2,env,cenv,cenv_2,env_2,env3;
-      Types.Mod emods,mods,m,mod_1,mods_1,mods_2;
+      DAE.Mod emods,mods,m,mod_1,mods_1,mods_2;
       list<tuple<SCode.Element, Mod>> extcomps,allEls2,lst_constantEls;
       list<SCode.Equation> eqs2,initeqs2,eqs,initeqs;
       list<SCode.Algorithm> alg2,initalg2,alg,initalg;
@@ -3710,7 +3710,7 @@ algorithm
     SCode.Attributes attr;
     SCode.Variability vari;
     SCode.Element el;
-    Types.Mod m;
+    DAE.Mod m;
     list<SCode.Element> els,els1;
   	case	({}) then {};
   	  
@@ -3733,11 +3733,11 @@ Extract modifer for dependent variables(dep).
 "
 input Absyn.ComponentRef dep;
 input list<tuple<SCode.Element, Mod>> elems;
-output Types.Mod omods;
+output DAE.Mod omods;
 algorithm omods := matchcontinue(dep,elems)
   local
     String name1,name2;
-    Types.Mod cmod;
+    DAE.Mod cmod;
     tuple<SCode.Element, Mod> tpl;
   case(_,{}) then DAE.NOMOD();
   case(dep,( tpl as (SCode.COMPONENT(component=name1),DAE.NOMOD()))::elems)
@@ -3785,8 +3785,8 @@ algorithm
       Connect.Sets csets;
       SCode.Mod umod;
       list<Absyn.ComponentRef> crefs,crefs_1,crefs2;      
-      Types.Mod cmod_1,cmod,localModifiers,cmod2,redMod;
-      list<Types.Mod> ltmod;
+      DAE.Mod cmod_1,cmod,localModifiers,cmod2,redMod;
+      list<DAE.Mod> ltmod;
       list<tuple<SCode.Element, Mod>> res,xs,newXS,head;
       SCode.Element comp,redComp;
       ClassInf.State ci_state;
@@ -3888,7 +3888,7 @@ algorithm
       Boolean encf,impl;
       SCode.Restriction r;
       list<Env.Frame> cenv,cenv1,cenv3,env2,env,env_1;
-      Types.Mod outermod,mod_1,mod_2,mods,mods_1,emod_1,mod;
+      DAE.Mod outermod,mod_1,mod_2,mods,mods_1,emod_1,mod;
       list<SCode.Element> els,els_1,rest,cdefelts;
       list<SCode.Equation> eq1,ieq1,eq1_1,ieq1_1,eq2,ieq2,eq3,ieq3,eq,ieq,initeq2;
       list<SCode.Algorithm> alg1,ialg1,alg1_1,ialg1_1,alg2,ialg2,alg3,ialg3,alg,ialg;
@@ -4017,7 +4017,7 @@ algorithm
       Boolean encf,impl;
       SCode.Restriction r;
       list<Env.Frame> cenv,cenv1,cenv3,env2,env,env_1;
-      Types.Mod outermod,mod_1,mod_2,mods,mods_1,emod_1,mod;
+      DAE.Mod outermod,mod_1,mod_2,mods,mods_1,emod_1,mod;
       list<SCode.Element> els,els_1,rest;
       list<SCode.Equation> eq1,ieq1,eq1_1,ieq1_1,eq2,ieq2,eq3,ieq3,eq,ieq,initeq2;
       list<SCode.Algorithm> alg1,ialg1,alg1_1,ialg1_1,alg2,ialg2,alg3,ialg3,alg,ialg;
@@ -4249,7 +4249,7 @@ protected function updateComponents
   output Mod restMod;
 algorithm (outTplSCodeElementModLst,restMod) := matchcontinue (inTplSCodeElementModLst,inMod,inEnv)
     local
-      Types.Mod cmod2,mod_1,cmod,mod,emod,mod_rest;
+      DAE.Mod cmod2,mod_1,cmod,mod,emod,mod_rest;
       list<tuple<SCode.Element, Mod>> res,xs;
       SCode.Element comp,c;
       String id;
@@ -4339,7 +4339,7 @@ algorithm
     local
       list<SCode.Element> elt_1,elt;
       list<Env.Frame> env,cenv;
-      Types.Mod mod;
+      DAE.Mod mod;
       list<SCode.Equation> eq,ieq;
       list<SCode.Algorithm> alg,ialg;
       SCode.Class c;
@@ -4408,7 +4408,7 @@ public function instElementList
   output list<DAE.Element> outDAEElementLst;
   output Connect.Sets outSets;
   output ClassInf.State outState;
-  output list<Types.Var> outTypesVarLst;
+  output list<DAE.Var> outTypesVarLst;
   output ConnectionGraph.ConnectionGraph outGraph;
 algorithm 
   (outCache,outEnv,outIH,outStore,outDAEElementLst,outSets,outState,outTypesVarLst,outGraph):=
@@ -4418,8 +4418,8 @@ algorithm
       Connect.Sets csets,csets_1,csets_2;
       ClassInf.State ci_state,ci_state_1,ci_state_2;
       list<DAE.Element> dae1,dae2,dae;
-      list<Types.Var> tys1,tys2,tys;
-      Types.Mod mod;
+      list<DAE.Var> tys1,tys2,tys;
+      DAE.Mod mod;
       Prefix.Prefix pre;
       tuple<SCode.Element, Mod> el;
       list<tuple<SCode.Element, Mod>> els;
@@ -4490,7 +4490,7 @@ Fails on; a(x=3, redeclare Integer x)
   input String str;
 algorithm _ := matchcontinue(m,pre,str)
   local
-    list<Types.SubMod> subs;
+    list<DAE.SubMod> subs;
   case(DAE.MOD(_,_,subs,_),pre,str)
     equation
       verifySingleMod2(subs,{},pre,str);
@@ -4504,7 +4504,7 @@ end verifySingleMod;
 protected function verifySingleMod2 "
 helper function for verifySingleMod
 "
-  input list<Types.SubMod> subs;
+  input list<DAE.SubMod> subs;
   input list<String> prior;
   input Prefix.Prefix pre;
   input String str;
@@ -4878,7 +4878,7 @@ algorithm
   (outCache,outEnv,outIH) := matchcontinue (inCache,inEnv1,inIH,inMod2,inPrefix3,inSets4,inState5,inTplSCodeElementModLst6,inTplSCodeElementModLst7,inSCodeEquationLst8,inInstDims9,inBoolean10)
     local
       list<Env.Frame> env,env_1,env_2;
-      Types.Mod mod,cmod;
+      DAE.Mod mod,cmod;
       Prefix.Prefix pre;
       Connect.Sets csets;
       ClassInf.State cistate;
@@ -4927,7 +4927,7 @@ algorithm
           Absyn.TypeSpec tss;
           Absyn.Path tpp;
           SCode.Element selem;
-          Types.Mod smod,compModLocal; 
+          DAE.Mod smod,compModLocal; 
       equation 
         // print(" adding comp: " +& n +& " " +& Mod.printModStr(mod) +& "\n");
         compModLocal = Mod.lookupModificationP(mod, tpp);
@@ -5016,7 +5016,7 @@ protected function addComponentsToEnv2
 algorithm 
   (outCache,outEnv,outIH) := matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inSets,inState,inTplSCodeElementModLst,inInstDims,inBoolean)
     local
-      Types.Mod compmod,cmod_1,mods,cmod;
+      DAE.Mod compmod,cmod_1,mods,cmod;
       list<Env.Frame> env_1,env_2,env;
       Prefix.Prefix pre;
       Connect.Sets csets;
@@ -5164,14 +5164,14 @@ public function instElement "
   output list<DAE.Element> outDAEElementLst;
   output Connect.Sets outSets;
   output ClassInf.State outState;
-  output list<Types.Var> outTypesVarLst;
+  output list<DAE.Var> outTypesVarLst;
   output ConnectionGraph.ConnectionGraph outGraph;
 algorithm 
   (outCache,outEnv,outIH,outStore,outDAEElementLst,outSets,outState,outTypesVarLst,outGraph):=
   matchcontinue (inCache,inEnv,inIH,store,inMod2,inPrefix3,inSets4,inState5,inTplSCodeElementMod6,inInstDims7,inBoolean8,inGraph)
     local
       list<Env.Frame> env,env_1,env2,env2_1,cenv,compenv;
-      Types.Mod mod,mods,classmod,mm,mods_1,classmod_1,mm_1,m_1,mod1,mod1_1,mod_1,cmod,omod,variableClassMod,redeclareComponentMod;
+      DAE.Mod mod,mods,classmod,mm,mods_1,classmod_1,mm_1,m_1,mod1,mod1_1,mod_1,cmod,omod,variableClassMod,redeclareComponentMod;
       Prefix.Prefix pre,pre_1;
       Connect.Sets csets,csets_1;
       ClassInf.State ci_state;
@@ -5181,7 +5181,7 @@ algorithm
       Boolean finalPrefix,repl,prot,f2,repl2,impl,flowPrefix,streamPrefix;
       SCode.Class cls2,c,cl;
       list<DAE.Element> dae,dae2;
-      Exp.ComponentRef vn;
+      DAE.ComponentRef vn;
       Absyn.ComponentRef owncref;
       list<Absyn.ComponentRef> crefs,crefs2,crefs3,crefs_1,crefs_2;
       SCode.Element comp,el;
@@ -5194,17 +5194,17 @@ algorithm
       SCode.Mod m;
       Option<Absyn.Path> bc;
       Option<SCode.Comment> comment;
-      Option<Types.EqMod> eq;
+      Option<DAE.EqMod> eq;
       list<DimExp> dims;
-      tuple<Types.TType, Option<Absyn.Path>> ty;
-      Types.Binding binding;
-      Types.Var new_var;
+      tuple<DAE.TType, Option<Absyn.Path>> ty;
+      DAE.Binding binding;
+      DAE.Var new_var;
       Env.Cache cache;
       Absyn.InnerOuter io;
       Option<Absyn.Exp> cond;
       String s;
       Boolean alreadyDeclared; Absyn.ComponentRef tref;
-      list<Types.Var> vars; 
+      list<DAE.Var> vars; 
       Option<Absyn.Info> aInfo;
       Absyn.TypeSpec ts,tSpec;
       Absyn.Ident id;
@@ -5675,14 +5675,14 @@ algorithm
   alreadyDeclared := matchcontinue(cache,env,mod,prefix,csets,ciState,compTuple,instDims,impl)
     local
       list<Env.Frame> env,env_1,env2,env2_1,cenv,compenv;
-      Types.Mod mod;
+      DAE.Mod mod;
       String n;
       Boolean finalPrefix,repl,prot;
-      SCode.Element oldElt; Types.Mod oldMod;
-      tuple<SCode.Element,Types.Mod> newComp;
+      SCode.Element oldElt; DAE.Mod oldMod;
+      tuple<SCode.Element,DAE.Mod> newComp;
       Env.InstStatus instStatus;
-      SCode.Element oldElt; Types.Mod oldMod;
-      tuple<SCode.Element,Types.Mod> newComp;
+      SCode.Element oldElt; DAE.Mod oldMod;
+      tuple<SCode.Element,DAE.Mod> newComp;
       Boolean alreadyDeclared;
 
 case (_,_,_,_,_,_,_,_,_) equation /*print(" dupe check setting ");*/ ErrorExt.setCheckpoint(); then fail();
@@ -5729,13 +5729,13 @@ end instStatusToBool;
 protected function checkMultipleElementsIdentical 
 "Checks that the old declaration is identical 
  to the new one. If not, give error message"
-  input tuple<SCode.Element,Types.Mod> oldComponent;
-  input tuple<SCode.Element,Types.Mod> newComponent;
+  input tuple<SCode.Element,DAE.Mod> oldComponent;
+  input tuple<SCode.Element,DAE.Mod> newComponent;
 algorithm
   _ := matchcontinue(oldComponent,newComponent)
     local 
       SCode.Element oldElt,newElt;
-      Types.Mod oldMod,newMod;
+      DAE.Mod oldMod,newMod;
       String s1,s2;
     case((oldElt,oldMod),(newElt,newMod)) 
       equation
@@ -5778,7 +5778,7 @@ algorithm
       Env.AvlTree tps;
       Env.AvlTree cl;
       list<Env.Item> imps;
-      tuple<list<Exp.ComponentRef>,Exp.ComponentRef> crs;
+      tuple<list<DAE.ComponentRef>,DAE.ComponentRef> crs;
       Absyn.Path tp,envpath,newTp;
       Env.Cache cache;
       InstanceHierarchy ih;
@@ -5876,7 +5876,7 @@ protected function redeclareType
   input ClassInf.State inState;
   input Connect.Sets inSets;
   input Boolean inBoolean;
-  input Types.Mod cmod;
+  input DAE.Mod cmod;
   output Env.Cache outCache;
   output Env outEnv;
   output InstanceHierarchy outIH;
@@ -5889,7 +5889,7 @@ algorithm
       list<Absyn.ComponentRef> crefs;
       list<Env.Frame> env_1,env;
       Connect.Sets csets;
-      Types.Mod m_1,old_m_1,m_2,m_3,m,rmod,innerCompMod,compMod;
+      DAE.Mod m_1,old_m_1,m_2,m_3,m,rmod,innerCompMod,compMod;
       SCode.Element redecl,newcomp,comp,redComp;
       String n1,n2;
       Boolean finalPrefix,repl,prot,repl2,prot2,impl,redfin;
@@ -5986,7 +5986,7 @@ algorithm
           SCode.COMPONENT(component = n2,finalPrefix = false,replaceablePrefix = repl2,protectedPrefix = prot2,
                           typeSpec = t2,comment = comment2)),
           pre,ci_state,csets,impl,cmod)
-      local Types.Mod mod;
+      local DAE.Mod mod;
       equation 
         failure(equality(n1 = n2));
         (cache,env_1,ih,newcomp,mod,csets) = 
@@ -5995,7 +5995,7 @@ algorithm
         (cache,env_1,ih,newcomp,mod,csets);
         
     case (cache,env,ih,DAE.REDECL(finalPrefix = redfin,tplSCodeElementModLst = (_ :: rest)),comp,pre,ci_state,csets,impl,cmod)
-      local Types.Mod mod;
+      local DAE.Mod mod;
       equation 
         (cache,env_1,ih,newcomp,mod,csets) = 
           redeclareType(cache, env, ih, DAE.REDECL(redfin,rest), comp, pre, ci_state, csets, impl,cmod);
@@ -6006,7 +6006,7 @@ algorithm
       then (cache,env,ih,comp,DAE.NOMOD(),csets); 
         
     case (cache,env,ih,mod,comp,pre,ci_state,csets,impl,cmod)
-      local Types.Mod mod;
+      local DAE.Mod mod;
       then
         (cache,env,ih,comp,mod,csets);
         
@@ -6021,9 +6021,9 @@ end redeclareType;
 protected function keepConstrainingTypeModifersOnly 
 "Author: BZ, 2009-07
  A function for filtering out the modifications on the constraining type class."
-input Types.Mod inMod;
+input DAE.Mod inMod;
 input list<SCode.Element> elems;
-output Types.Mod filteredMod;
+output DAE.Mod filteredMod;
 algorithm filteredMod := matchcontinue(inMod,elems)  
   case(inMod,{}) then inMod;
   case(DAE.NOMOD(),_ ) then DAE.NOMOD();
@@ -6032,8 +6032,8 @@ algorithm filteredMod := matchcontinue(inMod,elems)
     local 
       Boolean b;
       Absyn.Each e;
-      Option<Types.EqMod> oe;
-      list<Types.SubMod> subs;
+      Option<DAE.EqMod> oe;
+      list<DAE.SubMod> subs;
       list<String> compNames;
     equation
       compNames = Util.listMap(elems,SCode.elementName);
@@ -6047,15 +6047,15 @@ protected function keepConstrainingTypeModifersOnly2 "
 Author BZ
 Helper function for keepConstrainingTypeModifersOnly 
 "
-input list<Types.SubMod> subs;
+input list<DAE.SubMod> subs;
 input list<String> elems;
-output list<Types.SubMod> osubs;
+output list<DAE.SubMod> osubs;
 algorithm osubs := matchcontinue(subs,elems)
   local
-    Types.SubMod sub;
-    Types.Mod mod;
+    DAE.SubMod sub;
+    DAE.Mod mod;
     String n;
-    list<Types.SubMod> osubs2;
+    list<DAE.SubMod> osubs2;
     Boolean b;
   case({},_) then {};
   case(subs,{}) then subs;
@@ -6145,7 +6145,7 @@ protected function instVar
   output UnitAbsyn.InstStore outStore;
   output list<DAE.Element> outDAEElementLst;
   output Connect.Sets outSets;
-  output Types.Type outType;
+  output DAE.Type outType;
   output ConnectionGraph.ConnectionGraph outGraph;
 algorithm (outCache,outEnv,outIH,outStore,outDAEElementLst,outSets,outType,outGraph):=
   matchcontinue (outCache,inEnv,inIH,store,inState,inMod,inPrefix,inSets,inIdent,inClass,inAttributes,protection,inDimExpLst,inIntegerLst,inInstDims,inBoolean,inSCodeCommentOption,io,finalPrefix,info,inGraph)
@@ -6154,9 +6154,9 @@ algorithm (outCache,outEnv,outIH,outStore,outDAEElementLst,outSets,outType,outGr
       list<Env.Frame> compenv,env;
       list<DAE.Element> dae;
       Connect.Sets csets_1,csets;
-      tuple<Types.TType, Option<Absyn.Path>> ty_1,ty;
+      tuple<DAE.TType, Option<Absyn.Path>> ty_1,ty;
       ClassInf.State ci_state;
-      Types.Mod mod;
+      DAE.Mod mod;
       Prefix.Prefix pre;
       String n,id;
       SCode.Class cl;
@@ -6243,25 +6243,25 @@ protected function instVar2
   output UnitAbsyn.InstStore outStore;
   output list<DAE.Element> outDAEElementLst;
   output Connect.Sets outSets;
-  output Types.Type outType;
+  output DAE.Type outType;
   output ConnectionGraph.ConnectionGraph outGraph;
 algorithm 
   (outCache,outEnv,outIH,outStore,outDAEElementLst,outSets,outType,finalPrefix,outGraph):=
   matchcontinue (inCache,inEnv,inIH,store,inState,inMod,inPrefix,inSets,inIdent,inClass,inAttributes,protection,inDimExpLst,inIntegerLst,inInstDims,inBoolean,inSCodeCommentOption,io,finalPrefix,inGraph)
     local
       InstDims inst_dims,inst_dims_1;
-      list<Exp.Subscript> dims_1,subs;
-      Exp.Exp e,e_1;
-      Types.Properties p;
+      list<DAE.Subscript> dims_1,subs;
+      DAE.Exp e,e_1;
+      DAE.Properties p;
       list<Env.Frame> env_1,env,compenv;
       Connect.Sets csets_1,csets;
-      tuple<Types.TType, Option<Absyn.Path>> ty,ty_1,arrty;
+      tuple<DAE.TType, Option<Absyn.Path>> ty,ty_1,arrty;
       ClassInf.State st,ci_state;
-      Exp.ComponentRef cr;
-      Exp.Type ty_2;
+      DAE.ComponentRef cr;
+      DAE.ExpType ty_2;
       DAE.Element daeeq;
       list<DAE.Element> dae1,dae,dae1_1,dae3,dae2,daex;
-      Types.Mod mod,mod2;
+      DAE.Mod mod,mod2;
       Prefix.Prefix pre,pre_1;
       String n,prefix_str;
       SCode.Class cl;
@@ -6275,17 +6275,17 @@ algorithm
       SCode.Variability vt;
       Absyn.Direction dir;
       list<String> index_string;
-      Option<Exp.Exp> start;
-      Exp.Subscript dime;
-      list<Exp.ComponentRef> crs;
+      Option<DAE.Exp> start;
+      DAE.Subscript dime;
+      list<DAE.ComponentRef> crs;
       Option<Integer> dimt;
       DimExp dim;
       Env.Cache cache;
       Boolean prot;
-      Option<Exp.Exp> eOpt "for external objects";
-      list<Exp.ComponentRef> dc;
+      Option<DAE.Exp> eOpt "for external objects";
+      list<DAE.ComponentRef> dc;
       list<Connect.OuterConnect> oc;
-      Exp.Type identType;
+      DAE.ExpType identType;
       Option<Absyn.ElementAttributes> oDA;
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
@@ -6325,7 +6325,7 @@ algorithm
           /* Function variables without binding */
     case (cache,env,ih,store,ci_state,mod,pre,csets,n,(cl as SCode.CLASS(name=n2)),attr,prot,dims,idxs,inst_dims,impl,comment,io,finalPrefix,graph)
       local
-        Types.Mod tm1,tm2,mod2; 
+        DAE.Mod tm1,tm2,mod2; 
         String n2;
        equation 
         ClassInf.isFunction(ci_state);
@@ -6440,7 +6440,7 @@ algorithm
 //      local SCode.Class clBase; Absyn.Path path;
 //            Absyn.ElementAttributes absynAttr;
 //            SCode.Mod scodeMod;            
-//            Types.Mod mod2, mod3;
+//            DAE.Mod mod2, mod3;
 //      equation         
 //        dime = instDimExp(dim, impl);
 //        inst_dims_1 = Util.listListAppendLast(inst_dims, {dime});
@@ -6486,15 +6486,15 @@ protected function extractEnumerationClassModifier "
 Author: BZ, 2008-07
 remove builtin attributes from modifier for Enumeration class.
 "
-input Types.Mod inMod;
+input DAE.Mod inMod;
 input SCode.Class cl;
-output Types.Mod outMod2;
+output DAE.Mod outMod2;
 algorithm (outMod2) := matchcontinue(inMod,cl)
   local
     Boolean b;
     Absyn.Each e;
-    Option<Types.EqMod> tq;
-    list<Types.SubMod> subs;
+    Option<DAE.EqMod> tq;
+    list<DAE.SubMod> subs;
   case(inMod, (cl as SCode.CLASS(restriction = SCode.R_ENUMERATION)))
     then Types.removeModList(inMod, {"min","max","start","fixed","quantity"});
   case(inMod, _)
@@ -6510,9 +6510,9 @@ protected function liftNonBasicTypes
  An exception are types extending builtin types, since they already 
  have array types. This relation performs the lifting for alltypes 
  except types extending basic types."
-	input Types.Type tp;
+	input DAE.Type tp;
   input  Option<Integer> dimt;
-	output Types.Type outTp;
+	output DAE.Type outTp;
 algorithm
   outTp:= matchcontinue(tp,dimt)
     case ((tp as (DAE.T_COMPLEX(_,_,SOME(_),_),_)),dimt) then tp;
@@ -6531,12 +6531,12 @@ as the binding expression so the constructor code can be generated.
 If the type is not externa object, the normal binding value is bound, 
 Unless it is a complex var that not inherites a basic type. In that case DAE.Equation are generated.
 "
-input Types.Type tp;
-input Types.Mod mod;
-output Option<Exp.Exp> eOpt;
+input DAE.Type tp;
+input DAE.Mod mod;
+output Option<DAE.Exp> eOpt;
 
 algorithm eOpt := matchcontinue(tp,mod)
-  local Exp.Exp e,e1;Types.Properties p;
+  local DAE.Exp e,e1;DAE.Properties p;
   case ((DAE.T_COMPLEX(complexClassType=ClassInf.EXTERNAL_OBJ(_)),_),
     DAE.MOD(eqModOption = SOME(DAE.TYPED(e,_,_))))
     then SOME(e);
@@ -6555,16 +6555,16 @@ protected function makeArrayType
   Creates an array type from the element type 
   given as argument and a list of dimensional sizes."
   input list<DimExp> inDimExpLst;
-  input Types.Type inType;
-  output Types.Type outType;
+  input DAE.Type inType;
+  output DAE.Type outType;
 algorithm 
   outType := matchcontinue (inDimExpLst,inType)
     local
-      tuple<Types.TType, Option<Absyn.Path>> ty,ty_1;
+      tuple<DAE.TType, Option<Absyn.Path>> ty,ty_1;
       Integer i;
       list<DimExp> xs;
       Option<Absyn.Path> p;
-      Types.TType tty;
+      DAE.TType tty;
     case ({},ty) then ty; 
     case ((DIMINT(integer = i) :: xs),(tty,p))
       equation 
@@ -6607,8 +6607,8 @@ algorithm
       list<Env.Frame> cenv,env;
       Absyn.ComponentRef owncref;
       list<Absyn.Subscript> ad_1;
-      Types.Mod mod_1,mods_2,mods_3,mods;
-      Option<Types.EqMod> eq;
+      DAE.Mod mod_1,mods_2,mods_3,mods;
+      Option<DAE.EqMod> eq;
       list<DimExp> dim1,dim2,res;
       Prefix.Prefix pre;
       String id;
@@ -6891,7 +6891,7 @@ algorithm
   (outCache,outEnv,outIH,outSets,outUpdatedComps) := 
   matchcontinue (cache,env,inIH,mod,cref,ci_state,csets,impl,updatedComps)
     local
-      tuple<Types.TType, Option<Absyn.Path>> ty;
+      tuple<DAE.TType, Option<Absyn.Path>> ty;
       String n,id,str,str2,str3;
       Boolean finalPrefix,repl,prot,flowPrefix,streamPrefix;
       Absyn.InnerOuter io;
@@ -6904,18 +6904,18 @@ algorithm
       SCode.Mod m;
       Option<Absyn.Path> bc;
       Option<SCode.Comment> comment;
-      Types.Mod cmod,m_1,classmod,mm,mod,mod_1,mod_2,mod_3,mods;
+      DAE.Mod cmod,m_1,classmod,mm,mod,mod_1,mod_2,mod_3,mods;
       SCode.Class cl;
       list<Env.Frame> cenv,env2,compenv,env2_1,env_1;
       list<Absyn.ComponentRef> crefs,crefs2,crefs3,crefs_1,crefs_2;
       Connect.Sets csets,csets_1;
-      Option<Types.EqMod> eq;
+      Option<DAE.EqMod> eq;
       list<DimExp> dims;
       list<DAE.Element> dae1;
-      Types.Binding binding,binding_1;
+      DAE.Binding binding,binding_1;
       Absyn.ComponentRef cref,owncref;
       Option<Absyn.Exp> cond;
-      Types.Var tyVar;
+      DAE.Var tyVar;
       Env.InstStatus is;
       Option<Absyn.Info> info;
       InstanceHierarchy ih;
@@ -6975,7 +6975,7 @@ algorithm
  */       
         /* Variable with NONE element is already instantiated. */ 
     case (cache,env,ih,mods,(cref as Absyn.CREF_IDENT(name = id,subscripts = subscr)),ci_state,csets,impl,updatedComps) 
-      local Types.Var ty; Env.InstStatus is;
+      local DAE.Var ty; Env.InstStatus is;
       equation 
         (cache,ty,_,is) = Lookup.lookupIdent(cache,env, id);
         true = Env.isTyped(is) "If InstStatus is typed, return";
@@ -7067,15 +7067,15 @@ end updateComponentInEnv;
 
 protected function instDimExpLst 
 "function: instDimExpLst 
-  Instantiates dimension expressions, DimExp, which are transformed to Exp.Subscript\'s"
+  Instantiates dimension expressions, DimExp, which are transformed to DAE.Subscript\'s"
   input list<DimExp> inDimExpLst;
   input Boolean inBoolean;
-  output list<Exp.Subscript> outExpSubscriptLst;
+  output list<DAE.Subscript> outExpSubscriptLst;
 algorithm 
   outExpSubscriptLst := matchcontinue (inDimExpLst,inBoolean)
     local
-      list<Exp.Subscript> res;
-      Exp.Subscript r;
+      list<DAE.Subscript> res;
+      DAE.Subscript r;
       DimExp x;
       list<DimExp> xs;
       Boolean b;
@@ -7094,15 +7094,15 @@ protected function instDimExp
   instantiates one dimension expression, See also instDimExpLst."
   input DimExp inDimExp;
   input Boolean inBoolean;
-  output Exp.Subscript outSubscript;
+  output DAE.Subscript outSubscript;
 algorithm 
   outSubscript := matchcontinue (inDimExp,inBoolean)
     local
       Boolean impl;
       String s;
-      Exp.Exp e;
+      DAE.Exp e;
       Integer i;
-      Exp.Subscript eSubscr;
+      DAE.Subscript eSubscr;
 
     /* TODO: Fix slicing, e.g. DAE.SLICE, for impl=true */ 
     case (DIMEXP(subscript = DAE.WHOLEDIM()),(impl as false)) 
@@ -7169,11 +7169,11 @@ algorithm
     local
       list<DAE.Element> lst,r_1,r,lst_1;
       DAE.VarDirection dir_1;
-      Exp.ComponentRef cr;
+      DAE.ComponentRef cr;
       DAE.VarKind vk;
-      Types.Type t;
-      Option<Exp.Exp> e;
-      list<Exp.Subscript> id;
+      DAE.Type t;
+      Option<DAE.Exp> e;
+      list<DAE.Subscript> id;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
       list<Absyn.Path> class_;
@@ -7277,11 +7277,11 @@ protected function propagateInnerOuter
       list<DAE.Element> lst,r_1,r,lst_1;
       DAE.Element v;
       DAE.VarDirection dir_1;
-      Exp.ComponentRef cr;
+      DAE.ComponentRef cr;
       DAE.VarKind vk;
-      Types.Type t;
-      Option<Exp.Exp> e;
-      list<Exp.Subscript> id;
+      DAE.Type t;
+      Option<DAE.Exp> e;
+      list<DAE.Subscript> id;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
       list<Absyn.Path> class_;
@@ -7389,22 +7389,22 @@ protected function instArray
   output UnitAbsyn.InstStore outStore;
   output list<DAE.Element> outDAEElementLst;
   output Connect.Sets outSets;
-  output Types.Type outType;
+  output DAE.Type outType;
   output ConnectionGraph.ConnectionGraph outGraph;
 algorithm 
   (outCache,outEnv,outIH,outStore,outDAEElementLst,outSets,outType,outGraph):=
   matchcontinue (cache,inEnv,inIH,store,inState,inMod,inPrefix,inSets,inIdent,inTplSCodeClassSCodeAttributes,protection,inInteger,inDimExp,inDimExpLst,inIntegerLst,inInstDims,inBoolean,inAbsynCommentOption,io,finalPrefix,inGraph)
     local
-      Exp.Exp e,e_1;
-      Types.Properties p,p2;
+      DAE.Exp e,e_1;
+      DAE.Properties p,p2;
       list<Env.Frame> env_1,env,compenv;
       Connect.Sets csets,csets_1,csets_2;
-      tuple<Types.TType, Option<Absyn.Path>> ty,arrty;
+      tuple<DAE.TType, Option<Absyn.Path>> ty,arrty;
       ClassInf.State st,ci_state;
-      Exp.ComponentRef cr;
-      Exp.Type ty_1,arrty_1;
+      DAE.ComponentRef cr;
+      DAE.ExpType ty_1,arrty_1;
       DAE.Element dae,dae3;
-      Types.Mod mod,mod_1;
+      DAE.Mod mod,mod_1;
       Prefix.Prefix pre;
       String n;
       SCode.Class cl;
@@ -7483,7 +7483,7 @@ algorithm
       local SCode.Class clBase; Absyn.Path path;
             Absyn.ElementAttributes absynAttr;
             SCode.Mod scodeMod;            
-            Types.Mod mod2, mod3;
+            DAE.Mod mod2, mod3;
       equation                 
         (_,clBase,_) = Lookup.lookupClass(cache, env, path, true);
         /* adrpo: TODO: merge also the attributes, i.e.:
@@ -7511,7 +7511,7 @@ algorithm
           prot,i,DIMINT(integer = stop),dims,idxs,inst_dims,impl,comment,io,finalPrefix,graph)
       local SCode.Class clBase; Absyn.Path path;
             SCode.Mod scodeMod;            
-            Types.Mod mod1;
+            DAE.Mod mod1;
             list<SCode.Element> els, extendsels; SCode.Path path;
       equation                 
         (_,{SCode.EXTENDS(path, scodeMod)},{}) = splitElts(els); // ONLY ONE extends!
@@ -7565,13 +7565,13 @@ public function elabComponentArraydimFromEnv
   size to find dimensions of component."
 	input Env.Cache inCache;
   input Env inEnv;
-  input Exp.ComponentRef inComponentRef;
+  input DAE.ComponentRef inComponentRef;
   output Env.Cache outCache;
   output list<DimExp> outDimExpLst;
 algorithm 
   (outCache,outDimExpLst) := matchcontinue (inCache,inEnv,inComponentRef)
     local
-      Types.Var ty;
+      DAE.Var ty;
       String n,id;
       Boolean finalPrefix,repl,prot,flowPrefix,streamPrefix;
       Absyn.InnerOuter io;
@@ -7583,11 +7583,11 @@ algorithm
       SCode.Mod m,m_1;
       Option<Absyn.Path> bc;
       Option<SCode.Comment> comment;
-      Types.Mod cmod,cmod_1,m_2,mod_2;
-      Types.EqMod eq;
+      DAE.Mod cmod,cmod_1,m_2,mod_2;
+      DAE.EqMod eq;
       list<DimExp> dims;
       list<Env.Frame> env;
-      Exp.ComponentRef cref;
+      DAE.ComponentRef cref;
       Env.Cache cache;
       
     case (cache,env,(cref as DAE.CREF_IDENT(ident = id)))
@@ -7610,9 +7610,9 @@ protected function elabComponentArraydimFromEnv2
   author: PA
   Helper function to elabComponentArraydimFromEnv. 
   This function is similar to elabArraydim, but it will only 
-  investigate binding (Types.EqMod) and not the component declaration."
+  investigate binding (DAE.EqMod) and not the component declaration."
 	input Env.Cache inCache;
-  input Types.EqMod inEqMod;
+  input DAE.EqMod inEqMod;
   input Env inEnv;
   output Env.Cache outCache;
   output list<DimExp> outDimExpLst;
@@ -7621,8 +7621,8 @@ algorithm
     local
       list<Integer> lst;
       list<DimExp> lst_1;
-      Exp.Exp e;
-      tuple<Types.TType, Option<Absyn.Path>> t;
+      DAE.Exp e;
+      tuple<DAE.TType, Option<Absyn.Path>> t;
       list<Env.Frame> env;
       Env.Cache cache;
     case (cache,DAE.TYPED(modifierAsExp = e,properties = DAE.PROP(type_ = t)),env)
@@ -7655,7 +7655,7 @@ protected function elabArraydimOpt
   input Absyn.ComponentRef inComponentRef;
   input Absyn.Path path "Class of declaration";
   input Option<Absyn.ArrayDim> inAbsynArrayDimOption;
-  input Option<Types.EqMod> inTypesEqModOption;
+  input Option<DAE.EqMod> inTypesEqModOption;
   input Boolean inBoolean;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Boolean performVectorization;
@@ -7669,7 +7669,7 @@ algorithm
       list<Env.Frame> env;
       Absyn.ComponentRef owncref;
       list<Absyn.Subscript> ad;
-      Option<Types.EqMod> eq;
+      Option<DAE.EqMod> eq;
       Boolean impl;
       Option<Interactive.InteractiveSymbolTable> st;
       Env.Cache cache;
@@ -7685,7 +7685,7 @@ end elabArraydimOpt;
 
 protected function elabArraydim 
 "function: elabArraydim
-  This functions examines both an `Absyn.ArrayDim\' and an `Types.EqMod
+  This functions examines both an `Absyn.ArrayDim\' and an `DAE.EqMod
   option\' argument to find out the dimensions af a component.  If
   no equation modifications is given, only the declared dimension is
   used.
@@ -7701,7 +7701,7 @@ protected function elabArraydim
   input Absyn.ComponentRef inComponentRef;
   input Absyn.Path path "Class of declaration";
   input Absyn.ArrayDim inArrayDim;
-  input Option<Types.EqMod> inTypesEqModOption;
+  input Option<DAE.EqMod> inTypesEqModOption;
   input Boolean inBoolean;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Boolean performVectorization;
@@ -7718,12 +7718,12 @@ algorithm
       list<Absyn.Subscript> ad;
       Boolean impl;
       Option<Interactive.InteractiveSymbolTable> st;
-      Exp.Exp e,e_1;
-      tuple<Types.TType, Option<Absyn.Path>> t;
+      DAE.Exp e,e_1;
+      tuple<DAE.TType, Option<Absyn.Path>> t;
       String e_str,t_str,dim_str;
       Env.Cache cache;
       Boolean doVect;
-      Types.Properties prop;
+      DAE.Properties prop;
     case (cache,env,cref,path,ad,NONE,impl,st,doVect) /* impl */ 
       equation 
         (cache,dim) = elabArraydimDecl(cache,env, cref, ad, impl, st,doVect);
@@ -7760,7 +7760,7 @@ algorithm
       then
         fail();
     case (_,_,cref,path,ad,SOME(eq),_,_,_)
-      local Types.EqMod eq;
+      local DAE.EqMod eq;
       equation 
         Debug.fprint("failtrace", "- Inst.elabArraydim failed\n cref:");
         Debug.fcall("failtrace", Dump.printComponentRef, cref);
@@ -7807,7 +7807,7 @@ algorithm
       then
         s;
     case {SOME(DIMEXP(x,_))}
-      local Exp.Subscript x;
+      local DAE.Subscript x;
       equation 
         s = Exp.printSubscriptStr(x);
       then
@@ -7826,7 +7826,7 @@ algorithm
       then
         res;
     case (SOME(DIMEXP(x,_)) :: xs)
-      local Exp.Subscript x;
+      local DAE.Subscript x;
       equation 
         s1 = Exp.printSubscriptStr(x);
         s2 = printDimStr(xs);
@@ -7862,12 +7862,12 @@ algorithm
       list<Absyn.Subscript> ds;
       Boolean impl;
       Option<Interactive.InteractiveSymbolTable> st;
-      Exp.Exp e;
-      Types.Const cnst;
+      DAE.Exp e;
+      DAE.Const cnst;
       Integer i;
       Absyn.Exp d;
       String str,e_str,t_str;
-      tuple<Types.TType, Option<Absyn.Path>> t;
+      tuple<DAE.TType, Option<Absyn.Path>> t;
       Env.Cache cache;
       Boolean doVect;
     case (cache,_,_,{},_,_,_) then (cache,{}); 
@@ -7992,9 +7992,9 @@ algorithm
       list<DimExp> l;
       DimExp x,y,de;
       list<Option<DimExp>> xs,ys;
-      Option<Exp.Exp> e,e1,e2;
+      Option<DAE.Exp> e,e1,e2;
       Integer xI,yI;
-      Exp.Subscript yS,xS;
+      DAE.Subscript yS,xS;
     case ({},{}) then {}; 
     case ((SOME(x) :: xs),(NONE :: ys))
       equation 
@@ -8062,16 +8062,16 @@ protected function elabArraydimType
   Find out the dimension sizes of a type. The second argument is
   used to know how many dimensions should be extracted from the
   type."
-  input Types.Type inType;
+  input DAE.Type inType;
   input Absyn.ArrayDim inArrayDim;
-  input Exp.Exp exp "Primarily used for error messages";
+  input DAE.Exp exp "Primarily used for error messages";
   input Absyn.Path path "class of declaration, primarily used for error messages";
   output list<Option<DimExp>> outDimExpOptionLst;
 algorithm
   outDimExpOptionLst := matchcontinue(inType,inArrayDim,exp,path)
     local
       list<Option<DimExp>> l;
-      tuple<Types.TType, Option<Absyn.Path>> t;
+      tuple<DAE.TType, Option<Absyn.Path>> t;
       list<Absyn.Subscript> ad;
       Integer i;
       String tpStr,adStr,expStr;
@@ -8093,14 +8093,14 @@ end  elabArraydimType;
 
 protected function elabArraydimType2 
 "Help function to elabArraydimType."
-  input Types.Type inType;
+  input DAE.Type inType;
   input Absyn.ArrayDim inArrayDim;
   output list<Option<DimExp>> outDimExpOptionLst;
 algorithm 
   outDimExpOptionLst := matchcontinue (inType,inArrayDim)
     local
       list<Option<DimExp>> l;
-      tuple<Types.TType, Option<Absyn.Path>> t;
+      tuple<DAE.TType, Option<Absyn.Path>> t;
       list<Absyn.Subscript> ad;
       Integer i;
     case ((DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = NONE),arrayType = t),_),(_ :: ad))
@@ -8163,7 +8163,7 @@ algorithm
     local
       list<Env.Frame> env_1,env_2,env;
       list<DAE.Element> dae;
-      Types.Mod mod;
+      DAE.Mod mod;
       Prefix.Prefix pre;
       Connect.Sets csets;
       SCode.Class c;
@@ -8210,11 +8210,11 @@ algorithm
     local
       list<DAE.Element> dae;
       Connect.Sets csets_1,csets;
-      tuple<Types.TType, Option<Absyn.Path>> ty;
+      tuple<DAE.TType, Option<Absyn.Path>> ty;
       ClassInf.State st;
       list<Env.Frame> env_1,env,tempenv,env_2;
       Absyn.Path fpath;
-      Types.Mod mod;
+      DAE.Mod mod;
       Prefix.Prefix pre;
       SCode.Class c,enumclass;
       String n;
@@ -8297,7 +8297,7 @@ algorithm
         
      /* A package constant */
     case (cache,(f::fs) ,path) // First try to look it up local(top frame)
-      local Absyn.Path path3; Exp.ComponentRef crPath;
+      local Absyn.Path path3; DAE.ComponentRef crPath;
         Env.Frame f;
         Env.Env fs;        
       equation 
@@ -8308,7 +8308,7 @@ algorithm
         (cache,Absyn.FULLYQUALIFIED(path3));
         
     case (cache,env,path) 
-      local String s; SCode.Class cl; Absyn.Path path3; Exp.ComponentRef crPath;        
+      local String s; SCode.Class cl; Absyn.Path path3; DAE.ComponentRef crPath;        
       equation 
           crPath = Exp.pathToCref(path); 
          (cache,env,_,_,_) = Lookup.lookupVarInPackages(cache,env, crPath);
@@ -8349,11 +8349,11 @@ algorithm
     local
       list<DAE.Element> dae,daefuncs;
       Connect.Sets csets_1,csets;
-      tuple<Types.TType, Option<Absyn.Path>> ty,ty1;
+      tuple<DAE.TType, Option<Absyn.Path>> ty,ty1;
       ClassInf.State st;
       list<Env.Frame> env_1,env,tempenv,cenv,env_11;
       Absyn.Path fpath;
-      Types.Mod mod;
+      DAE.Mod mod;
       Prefix.Prefix pre;
       SCode.Class c;
       String n, s;
@@ -8418,14 +8418,14 @@ end implicitFunctionInstantiation;
 protected function setFullyQualifiedTypename 
 "This function sets the FQ path given as argument in types that have optional path set. 
  (The optional path points to the class the type is built from)"
-  input tuple<Types.TType, Option<Absyn.Path>> inType;
+  input tuple<DAE.TType, Option<Absyn.Path>> inType;
   input Absyn.Path path;
-  output tuple<Types.TType, Option<Absyn.Path>> resType;
+  output tuple<DAE.TType, Option<Absyn.Path>> resType;
 algorithm 
   resType := matchcontinue (tp,path) 
     local 
       Absyn.Path p,newPath;
-      Types.TType tp;   
+      DAE.TType tp;   
     case ((tp,NONE()),_) then ((tp,NONE));
     case ((tp,SOME(p)),newPath) then ((tp,SOME(newPath)));
   end matchcontinue;
@@ -8482,7 +8482,7 @@ algorithm
         Env.Env cenv,cenv_2;
         SCode.ClassDef part;
         SCode.Class c;
-        tuple<Types.TType, Option<Absyn.Path>> ty1,ty;
+        tuple<DAE.TType, Option<Absyn.Path>> ty1,ty;
       equation 
         (cache,(c as SCode.CLASS(cn2,_,_,r,_)),cenv) = Lookup.lookupClass(cache,env, cn, true);
         (cache,mod2) = Mod.elabMod(cache,env, Prefix.NOPRE(), mod1, false); 
@@ -8518,8 +8518,8 @@ algorithm
       String id,overloadname;
       Boolean encflag;
       list<DAE.Element> dae,dae1;
-      list<tuple<String, tuple<Types.TType, Option<Absyn.Path>>>> args;
-      tuple<Types.TType, Option<Absyn.Path>> tp,ty;
+      list<tuple<String, tuple<DAE.TType, Option<Absyn.Path>>>> args;
+      tuple<DAE.TType, Option<Absyn.Path>> tp,ty;
       ClassInf.State st;
       Absyn.Path fpath,ovlfpath,fn;
       list<Absyn.Path> fns;
@@ -8831,8 +8831,8 @@ protected function elabExpListExt
   input Boolean inBoolean;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
   output Env.Cache outCache;
-  output list<Exp.Exp> outExpExpLst;
-  output list<Types.Properties> outTypesPropertiesLst;
+  output list<DAE.Exp> outExpExpLst;
+  output list<DAE.Properties> outTypesPropertiesLst;
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm 
   (outCache,outExpExpLst,outTypesPropertiesLst,outInteractiveInteractiveSymbolTableOption):=
@@ -8840,10 +8840,10 @@ algorithm
     local
       Boolean impl;
       Option<Interactive.InteractiveSymbolTable> st,st_1,st_2;
-      Exp.Exp exp;
-      Types.Properties p;
-      list<Exp.Exp> exps;
-      list<Types.Properties> props;
+      DAE.Exp exp;
+      DAE.Properties p;
+      list<DAE.Exp> exps;
+      list<DAE.Properties> props;
       list<Env.Frame> env;
       Absyn.Exp e;
       list<Absyn.Exp> rest;
@@ -8870,16 +8870,16 @@ protected function elabExpExt
   input Boolean inBoolean;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
   output Env.Cache outCache;
-  output Exp.Exp outExp;
-  output Types.Properties outProperties;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm 
   (outCache,outExp,outProperties,outInteractiveInteractiveSymbolTableOption):=
   matchcontinue (inCache,inEnv,inExp,inBoolean,inInteractiveInteractiveSymbolTableOption)
     local
-      Exp.Exp dimp,arraycrefe,exp,e;
-      tuple<Types.TType, Option<Absyn.Path>> dimty;
-      Types.Properties arraycrprop,prop;
+      DAE.Exp dimp,arraycrefe,exp,e;
+      tuple<DAE.TType, Option<Absyn.Path>> dimty;
+      DAE.Properties arraycrprop,prop;
       list<Env.Frame> env;
       Absyn.Exp call,arraycr,dim;
       list<Absyn.Exp> args;
@@ -8926,8 +8926,8 @@ algorithm
   (outCache,outDAEExtArgLst) :=
   matchcontinue (inCache,inEnv,inExternalDecl,inBoolean)
     local
-      list<Exp.Exp> exps;
-      list<Types.Properties> props;
+      list<DAE.Exp> exps;
+      list<DAE.Properties> props;
       list<DAE.ExtArg> extargs;
       list<Env.Frame> env;
       Option<String> id,lang;
@@ -8955,8 +8955,8 @@ protected function instExtGetFargs2
   Helper function to instExtGetFargs"
 	input Env.Cache inCache;
   input Env inEnv;
-  input list<Exp.Exp> inExpExpLst;
-  input list<Types.Properties> inTypesPropertiesLst;
+  input list<DAE.Exp> inExpExpLst;
+  input list<DAE.Properties> inTypesPropertiesLst;
   output Env.Cache outCache;
   output list<DAE.ExtArg> outDAEExtArgLst;
 algorithm 
@@ -8965,10 +8965,10 @@ algorithm
       list<DAE.ExtArg> extargs;
       DAE.ExtArg extarg;
       list<Env.Frame> env;
-      Exp.Exp e;
-      list<Exp.Exp> exps;
-      Types.Properties p;
-      list<Types.Properties> props;
+      DAE.Exp e;
+      list<DAE.Exp> exps;
+      DAE.Properties p;
+      list<DAE.Properties> props;
       Env.Cache cache;
     case (cache,_,{},_) then (cache,{}); 
     case (cache,env,(e :: exps),(p :: props))
@@ -8986,23 +8986,23 @@ protected function instExtGetFargsSingle
   Helper function to instExtGetFargs2, does the work for one argument."
 	input Env.Cache inCache;
   input Env inEnv;
-  input Exp.Exp inExp;
-  input Types.Properties inProperties;
+  input DAE.Exp inExp;
+  input DAE.Properties inProperties;
   output Env.Cache outCache;
   output DAE.ExtArg outExtArg;
 algorithm 
   (outCache,outExtArg) := matchcontinue (inCache,inEnv,inExp,inProperties)
     local
-      Types.Attributes attr;
-      tuple<Types.TType, Option<Absyn.Path>> ty,varty;
-      Types.Binding bnd;
+      DAE.Attributes attr;
+      tuple<DAE.TType, Option<Absyn.Path>> ty,varty;
+      DAE.Binding bnd;
       list<Env.Frame> env;
-      Exp.ComponentRef cref;
-      Exp.Type crty;
-      Types.Const cnst;
+      DAE.ComponentRef cref;
+      DAE.ExpType crty;
+      DAE.Const cnst;
       String crefstr,scope;
-      Exp.Exp dim,exp;
-      Types.Properties prop;
+      DAE.Exp dim,exp;
+      DAE.Properties prop;
       Env.Cache cache;
     case (cache,env,DAE.CREF(componentRef = cref,ty = crty),DAE.PROP(type_ = ty,constFlag = cnst))
       equation 
@@ -9044,8 +9044,8 @@ protected function instExtGetRettype
 algorithm 
   (outCache,outExtArg) := matchcontinue (inCache,inEnv,inExternalDecl,inBoolean)
     local
-      Exp.Exp exp;
-      Types.Properties prop;
+      DAE.Exp exp;
+      DAE.Properties prop;
       SCode.Accessibility acc;
       DAE.ExtArg extarg;
       list<Env.Frame> env;
@@ -9119,12 +9119,12 @@ protected function daeDeclare
   Note: Currently, this function can only declare scalar variables, i.e. the element type of an array type is used. To indicate that the variable
   is an array, the InstDims attribute is used. This will need to be redesigned in the futurue, when array variables should not be flattened out in the frontend. 
   "
-  input Exp.ComponentRef inComponentRef;
+  input DAE.ComponentRef inComponentRef;
   input ClassInf.State inState;
-  input Types.Type inType;
+  input DAE.Type inType;
   input SCode.Attributes inAttributes;
   input Boolean protection;
-  input Option<Exp.Exp> inExpExpOption;
+  input Option<DAE.Exp> inExpExpOption;
   input InstDims inInstDims;
   input DAE.StartValue inStartValue;
   input Option<DAE.VariableAttributes> inDAEVariableAttributesOption;
@@ -9140,13 +9140,13 @@ algorithm
       DAE.Flow flowPrefix1;
       DAE.Stream streamPrefix1;
       list<DAE.Element> dae;
-      Exp.ComponentRef vn;
+      DAE.ComponentRef vn;
       ClassInf.State ci_state;
-      tuple<Types.TType, Option<Absyn.Path>> ty;
+      tuple<DAE.TType, Option<Absyn.Path>> ty;
       Boolean flowPrefix,streamPrefix,prot;
       SCode.Variability par;
       Absyn.Direction dir;
-      Option<Exp.Exp> e,start;
+      Option<DAE.Exp> e,start;
       InstDims inst_dims;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
@@ -9172,14 +9172,14 @@ end daeDeclare;
 protected function daeDeclare2 
 "function: daeDeclare2  
   Helper function to daeDeclare."
-  input Exp.ComponentRef inComponentRef;
-  input Types.Type inType;
+  input DAE.ComponentRef inComponentRef;
+  input DAE.Type inType;
   input DAE.Flow inFlow;
   input DAE.Stream inStream;  
   input SCode.Variability inVariability;
   input Absyn.Direction inDirection;
   input Boolean protection;
-  input Option<Exp.Exp> inExpExpOption;
+  input Option<DAE.Exp> inExpExpOption;
   input InstDims inInstDims;
   input DAE.StartValue inStartValue;
   input Option<DAE.VariableAttributes> inDAEVariableAttributesOption;
@@ -9194,12 +9194,12 @@ algorithm
                  inInstDims,inStartValue,inDAEVariableAttributesOption,inAbsynCommentOption,io,finalPrefix,declareComplexVars)
     local
       list<DAE.Element> dae;
-      Exp.ComponentRef vn;
-      tuple<Types.TType, Option<Absyn.Path>> ty;
+      DAE.ComponentRef vn;
+      tuple<DAE.TType, Option<Absyn.Path>> ty;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
       Absyn.Direction dir;
-      Option<Exp.Exp> e,start;
+      Option<DAE.Exp> e,start;
       InstDims inst_dims;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
@@ -9236,14 +9236,14 @@ end daeDeclare2;
 protected function daeDeclare3 
 "function: daeDeclare3  
   Helper function to daeDeclare2."
-  input Exp.ComponentRef inComponentRef;
-  input Types.Type inType;
+  input DAE.ComponentRef inComponentRef;
+  input DAE.Type inType;
   input DAE.Flow inFlow;
   input DAE.Stream inStream;  
   input DAE.VarKind inVarKind;
   input Absyn.Direction inDirection;
   input Boolean protection;
-  input Option<Exp.Exp> inExpExpOption;
+  input Option<DAE.Exp> inExpExpOption;
   input InstDims inInstDims;
   input DAE.StartValue inStartValue;
   input Option<DAE.VariableAttributes> inDAEVariableAttributesOption;
@@ -9257,12 +9257,12 @@ algorithm
   matchcontinue (inComponentRef,inType,inFlow,inStream,inVarKind,inDirection,protection,inExpExpOption,inInstDims,inStartValue,inDAEVariableAttributesOption,inAbsynCommentOption,io,finalPrefix,declareComplexVars )
     local
       list<DAE.Element> dae;
-      Exp.ComponentRef vn;
-      tuple<Types.TType, Option<Absyn.Path>> ty;
+      DAE.ComponentRef vn;
+      tuple<DAE.TType, Option<Absyn.Path>> ty;
       DAE.Flow fl;
       DAE.Stream st;
       DAE.VarKind vk;
-      Option<Exp.Exp> e,start;
+      Option<DAE.Exp> e,start;
       InstDims inst_dims;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
@@ -9305,14 +9305,14 @@ end makeDaeProt;
 protected function daeDeclare4 
 "function: daeDeclare4  
   Helper function to daeDeclare3."
-  input Exp.ComponentRef inComponentRef;
-  input Types.Type inType;
+  input DAE.ComponentRef inComponentRef;
+  input DAE.Type inType;
   input DAE.Flow inFlow;
   input DAE.Stream inStream;  
   input DAE.VarKind inVarKind;
   input DAE.VarDirection inVarDirection;
   input DAE.VarProtection protection;
-  input Option<Exp.Exp> inExpExpOption;
+  input Option<DAE.Exp> inExpExpOption;
   input InstDims inInstDims;
   input DAE.StartValue inStartValue;
   input Option<DAE.VariableAttributes> inDAEVariableAttributesOption;
@@ -9325,24 +9325,24 @@ algorithm
   outDAEElementLst:=
   matchcontinue (inComponentRef,inType,inFlow,inStream,inVarKind,inVarDirection,protection,inExpExpOption,inInstDims,inStartValue,inDAEVariableAttributesOption,inAbsynCommentOption,io,finalPrefix,declareComplexVars)
     local
-      Exp.ComponentRef vn,c;
+      DAE.ComponentRef vn,c;
       DAE.Flow fl;
       DAE.Stream st;
       DAE.VarKind kind;
       DAE.VarDirection dir;
-      Option<Exp.Exp> e,start;
+      Option<DAE.Exp> e,start;
       InstDims inst_dims;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
       list<String> l;
       list<DAE.Element> dae;
       ClassInf.State ci;
-      tuple<Types.TType, Option<Absyn.Path>> tp,ty;
+      tuple<DAE.TType, Option<Absyn.Path>> tp,ty;
       Integer dim;
       String s;
-      Types.Type ty;
+      DAE.Type ty;
       DAE.VarProtection prot;
-      list<Exp.Subscript> finst_dims;
+      list<DAE.Subscript> finst_dims;
 
     case (vn,ty as(DAE.T_INTEGER(varLstInt = _),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars) 
       equation 
@@ -9399,7 +9399,7 @@ algorithm
       then {DAE.VAR(vn,kind,dir,prot,ty,e,finst_dims,fl,st,{},dae_var_attr,comment,io)};
     case (vn,(tty as DAE.T_FUNCTION(_,_),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars)
       local
-        Types.TType tty;
+        DAE.TType tty;
         Absyn.Path path;
       equation
         finst_dims = Util.listFlatten(inst_dims);
@@ -9491,7 +9491,7 @@ algorithm
       list<DAE.Element> dae;
       Connect.Sets csets_1,csets;
       ClassInf.State ci_state_1,ci_state;
-      Types.Mod mods;
+      DAE.Mod mods;
       Prefix.Prefix pre;
       SCode.EEquation eq;
       Option<Absyn.Path> bc;
@@ -9548,7 +9548,7 @@ algorithm
       Connect.Sets csets_1,csets;
       ClassInf.State ci_state_1,ci_state;
       list<Env.Frame> env;
-      Types.Mod mods;
+      DAE.Mod mods;
       Prefix.Prefix pre;
       SCode.EEquation eq;
       Boolean impl;
@@ -9595,7 +9595,7 @@ algorithm
       list<DAE.Element> dae;
       Connect.Sets csets_1,csets;
       ClassInf.State ci_state_1,ci_state;
-      Types.Mod mods;
+      DAE.Mod mods;
       Prefix.Prefix pre;
       SCode.EEquation eq;
       Option<Absyn.Path> bc;
@@ -9647,7 +9647,7 @@ algorithm
       Connect.Sets csets_1,csets;
       ClassInf.State ci_state_1,ci_state;
       list<Env.Frame> env;
-      Types.Mod mods;
+      DAE.Mod mods;
       Prefix.Prefix pre;
       SCode.EEquation eq;
       Boolean impl;
@@ -9693,13 +9693,13 @@ algorithm
   (outCache,outEnv,outIH,outDAEElementLst,outSets,outState,outGraph):=
   matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inSets,inState,inEEquation,inInitial,inBoolean,inGraph)
     local
-      list<Types.Properties> props;
+      list<DAE.Properties> props;
       Connect.Sets csets_1,csets;
       list<DAE.Element> dae,dae1,dae2,dae3;
       list<list<DAE.Element>> dael;
       ClassInf.State ci_state_1,ci_state,ci_state_2;
       list<Env.Frame> env,env_1,env_2;
-      Types.Mod mods,mod;
+      DAE.Mod mods,mod;
       Prefix.Prefix pre;
       Absyn.ComponentRef c1,c2,cr;
       SCode.Initial initial_;
@@ -9707,18 +9707,18 @@ algorithm
       String n,i,s;
       Absyn.Exp e2,e1,e,ee;
       list<Absyn.Exp> conditions;
-      Exp.Exp e1_1,e2_1,e1_2,e2_2,e_1,e_2;
-      Types.Properties prop1,prop2;
+      DAE.Exp e1_1,e2_1,e1_2,e2_2,e_1,e_2;
+      DAE.Properties prop1,prop2;
       list<SCode.EEquation> b,tb1,fb,el,eel;
       list<list<SCode.EEquation>> tb; 
       list<tuple<Absyn.Exp, list<SCode.EEquation>>> eex;
-      tuple<Types.TType, Option<Absyn.Path>> id_t;
+      tuple<DAE.TType, Option<Absyn.Path>> id_t;
       Values.Value v;
-      Exp.ComponentRef cr_1;
+      DAE.ComponentRef cr_1;
       SCode.EEquation eqn,eq;
       Env.Cache cache;
       list<Values.Value> valList;
-      list<Exp.Exp> expl1;
+      list<DAE.Exp> expl1;
       list<Boolean> blist;
       Absyn.ComponentRef arrName;
       list<Absyn.Ident> idList;
@@ -9745,7 +9745,7 @@ algorithm
         //   local Option<Interactive.InteractiveSymbolTable> c1,c2;
         //     list<Absyn.Exp> expList;
         //    Absyn.ComponentRef cr;
-        //     Types.Properties cprop;
+        //     DAE.Properties cprop;
         //   equation
         //     true = RTOpts.acceptMetaModelicaGrammar();
         // If this is a list assignment, then the Absyn.ARRAY expression should
@@ -9867,7 +9867,7 @@ algorithm
          conditional expression.
          */ 
     case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_WHEN(condition = e,eEquationLst = el,tplAbsynExpEEquationLstLst = ((ee,eel) :: eex)),(initial_ as SCode.NON_INITIAL()),impl,graph) 
-      local DAE.Element dae2;list<Exp.ComponentRef> lhsCrefs,lhsCrefsRec; Integer i1;
+      local DAE.Element dae2;list<DAE.ComponentRef> lhsCrefs,lhsCrefsRec; Integer i1;
       equation 
         (cache,e_1,_,_) = Static.elabExp(cache,env, e, impl, NONE,true);
         (cache,e_2) = Prefix.prefixExp(cache,env, e_1, pre);
@@ -9886,7 +9886,7 @@ algorithm
         (cache,env_2,ih,{DAE.WHEN_EQUATION(e_2,dae1,SOME(dae2))},csets,ci_state_2,graph);
         
     case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_WHEN(condition = e,eEquationLst = el,tplAbsynExpEEquationLstLst = {}),(initial_ as SCode.NON_INITIAL()),impl,graph)
-      local list<Exp.ComponentRef> lhsCrefs; 
+      local list<DAE.ComponentRef> lhsCrefs; 
       equation 
         (cache,e_1,_,_) = Static.elabExp(cache,env, e, impl, NONE,true);
         (cache,e_2) = Prefix.prefixExp(cache,env, e_1, pre);
@@ -9995,7 +9995,7 @@ algorithm
     /* reinit statement */
     case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_REINIT(cref = cr,expReinit = e2),initial_,impl,graph)
       local  list<DAE.Element> trDae;
-        Exp.ComponentRef cr_2; Exp.Type t; Types.Properties tprop1,tprop2;
+        DAE.ComponentRef cr_2; DAE.ExpType t; DAE.Properties tprop1,tprop2;
       equation 
         (cache,e1_1,tprop2,_) = Static.elabExp(cache,env, Absyn.CREF(cr), impl, NONE,true);
         (cache,DAE.CREF(cr_1,t),tprop1,_) = Static.elabCref(cache,env, cr, impl,false) "reinit statement" ;
@@ -10013,7 +10013,7 @@ algorithm
     case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_NORETCALL(
               Absyn.CREF_QUAL("Connections", {}, Absyn.CREF_IDENT("root", {})),
               Absyn.FUNCTIONARGS({Absyn.CREF(cr)}, {}),_),initial_,impl,graph)
-      local Absyn.ComponentRef cr; Exp.ComponentRef cr_; Exp.Type t; 
+      local Absyn.ComponentRef cr; DAE.ComponentRef cr_; DAE.ExpType t; 
       equation 
         (cache,DAE.CREF(cr_,t),_,_) = Static.elabCref(cache,env, cr, false /* ??? */,false);
         cr_ = Prefix.prefixCref(pre, cr_);
@@ -10024,7 +10024,7 @@ algorithm
     case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_NORETCALL(
               Absyn.CREF_QUAL("Connections", {}, Absyn.CREF_IDENT("potentialRoot", {})),
               Absyn.FUNCTIONARGS({Absyn.CREF(cr)}, {}),_),initial_,impl,graph)
-      local Absyn.ComponentRef cr; Exp.ComponentRef cr_; Exp.Type t; 
+      local Absyn.ComponentRef cr; DAE.ComponentRef cr_; DAE.ExpType t; 
       equation 
         (cache,DAE.CREF(cr_,t),_,_) = Static.elabCref(cache,env, cr, false /* ??? */,false);
         cr_ = Prefix.prefixCref(pre, cr_);
@@ -10035,7 +10035,7 @@ algorithm
     case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_NORETCALL(
               Absyn.CREF_QUAL("Connections", {}, Absyn.CREF_IDENT("potentialRoot", {})),
               Absyn.FUNCTIONARGS({Absyn.CREF(cr)}, {Absyn.NAMEDARG("priority", Absyn.REAL(priority))}),_),initial_,impl,graph)
-      local Absyn.ComponentRef cr; Exp.ComponentRef cr_; Exp.Type t; Real priority;
+      local Absyn.ComponentRef cr; DAE.ComponentRef cr_; DAE.ExpType t; Real priority;
       equation 
         (cache,DAE.CREF(cr_,t),_,_) = Static.elabCref(cache,env, cr, false /* ??? */,false);
         cr_ = Prefix.prefixCref(pre, cr_);
@@ -10046,7 +10046,7 @@ algorithm
     case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_NORETCALL(
               Absyn.CREF_QUAL("Connections", {}, Absyn.CREF_IDENT("branch", {})),
               Absyn.FUNCTIONARGS({Absyn.CREF(cr1), Absyn.CREF(cr2)}, {}),_),initial_,impl,graph)
-      local Absyn.ComponentRef cr1, cr2; Exp.ComponentRef cr1_, cr2_; Exp.Type t; 
+      local Absyn.ComponentRef cr1, cr2; DAE.ComponentRef cr1_, cr2_; DAE.ExpType t; 
       equation 
         (cache,DAE.CREF(cr1_,t),_,_) = Static.elabCref(cache,env, cr1, false /* ??? */,false);
         (cache,DAE.CREF(cr2_,t),_,_) = Static.elabCref(cache,env, cr2, false /* ??? */,false);
@@ -10057,8 +10057,8 @@ algorithm
         (cache,env,ih,{},csets,ci_state,graph);     
         
     case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_NORETCALL(cr,fargs,_),initial_,impl,graph)
-      local Exp.ComponentRef cr_2; Exp.Type t; Absyn.Path path; list<Exp.Exp> expl; Absyn.FunctionArgs fargs;
-        Exp.Exp exp;
+      local DAE.ComponentRef cr_2; DAE.ExpType t; Absyn.Path path; list<DAE.Exp> expl; Absyn.FunctionArgs fargs;
+        DAE.Exp exp;
       equation 
         (cache,exp,_,_) = Static.elabExp(cache,env,Absyn.CALL(cr,fargs),impl,NONE,false);
         (cache,exp) = Prefix.prefixExp(cache,env,exp,pre);
@@ -10077,11 +10077,11 @@ algorithm
 end instEquationCommon;
 
 protected function instEquationNoRetCallVectorization "creates DAE for NORETCALLs and also performs vectorization if needed"
-  input Exp.Exp expCall;
+  input DAE.Exp expCall;
   output list<DAE.Element> dae;
 algorithm
   dae := matchcontinue(expCall)
-  local Absyn.Path fn; list<Exp.Exp> expl; Exp.Type ty; Boolean s; Exp.Exp e;
+  local Absyn.Path fn; list<DAE.Exp> expl; DAE.ExpType ty; Boolean s; DAE.Exp e;
     list<DAE.Element> dae1,dae2;
     case(expCall as DAE.CALL(path=fn,expLst=expl)) then {DAE.NORETCALL(fn,expl)};
     case(DAE.ARRAY(ty,s,e::expl)) equation
@@ -10102,9 +10102,9 @@ input DAE.Element inEq;
 output DAE.Element outEqn;
 algorithm outEqn := matchcontinue(inEq)
   local
-    Exp.ComponentRef cr,cr2; 
-    Exp.Exp e1,e2,e;
-    Exp.Type t;
+    DAE.ComponentRef cr,cr2; 
+    DAE.Exp e1,e2,e;
+    DAE.ExpType t;
   case(DAE.EQUATION(DAE.CREF(cr,_),e)) then DAE.REINIT(cr,e);
   case(DAE.DEFINE(cr,e)) then DAE.REINIT(cr,e);
   case(DAE.EQUEQUATION(cr,cr2))
@@ -10124,15 +10124,15 @@ This function detect this case and elaborates expressions without vectorization.
 	input Env.Env env;
 	input Absyn.Exp e1;
 	input Absyn.Exp e2;
-	input Exp.Exp elabedE1;
-	input Exp.Exp elabedE2;
-	input Types.Properties prop "To determine if array equation";
-	input Types.Properties prop2 "To determine if array equation";
+	input DAE.Exp elabedE1;
+	input DAE.Exp elabedE2;
+	input DAE.Properties prop "To determine if array equation";
+	input DAE.Properties prop2 "To determine if array equation";
 	input Boolean impl;
 	output Env.Cache outCache;
-  output Exp.Exp outE1;
-  output Exp.Exp outE2;
-  output Types.Properties oprop "If we have an expandable tuple";
+  output DAE.Exp outE1;
+  output DAE.Exp outE2;
+  output DAE.Properties oprop "If we have an expandable tuple";
 algorithm
   (outCache,outE1,outE2,oprop) := matchcontinue(inCache,env,e1,e2,elabedE1,elabedE2,prop,prop2,impl)
     local Env.Cache cache;
@@ -10154,24 +10154,24 @@ end condenseArrayEquation;
 
 protected function expandTupleEquationWithWild 
 "Author BZ 2008-06
-The function expands the inExp, Absyn.EXP, to contain as many elements as the, Types.Properties, propCall does.
+The function expands the inExp, Absyn.EXP, to contain as many elements as the, DAE.Properties, propCall does.
 The expand adds the elements at the end and they are containing Absyn.WILD() exps with type Types.ANYTYPE. "
   input Absyn.Exp inExp;
-  input Types.Properties propCall;
-  input Types.Properties propTuple;
+  input DAE.Properties propCall;
+  input DAE.Properties propTuple;
   output Absyn.Exp outExp;  
-  output Types.Properties oprop;
+  output DAE.Properties oprop;
 algorithm 
   (outExp,oprop) := matchcontinue(inExp,propCall,propTuple)
   local 
     list<Absyn.Exp> aexpl,aexpl2;
-    list<Types.Type> typeList;
+    list<DAE.Type> typeList;
     Integer fillValue "The amount of elements to add";
-    Types.Type propType;
-    list<Types.Type> lst,lst2;
+    DAE.Type propType;
+    list<DAE.Type> lst,lst2;
     Option<Absyn.Path> op;
-    list<Types.TupleConst> tupleConst,tupleConst2;
-    Types.Const tconst;
+    list<DAE.TupleConst> tupleConst,tupleConst2;
+    DAE.Const tconst;
   case(Absyn.TUPLE(aexpl), 
     DAE.PROP_TUPLE( (DAE.T_TUPLE(typeList),_) , _),
     (propTuple as DAE.PROP_TUPLE((DAE.T_TUPLE(lst),op),DAE.TUPLE_CONST(tupleConst)
@@ -10231,7 +10231,7 @@ protected function addForLoopScope
   The name of the scope is for_scope_name, defined as a value."
   input Env env;
   input Ident i;
-  input Types.Type typ;
+  input DAE.Type typ;
   output Env env_2;
   list<Env.Frame> env_1,env_2;
 algorithm 
@@ -10246,20 +10246,20 @@ protected function instEqEquation
   author: LS, ELN 
   Equations follow the same typing rules as equality expressions.
   This function adds the equation to the DAE."
-  input Exp.Exp inExp1;
-  input Types.Properties inProperties2;
-  input Exp.Exp inExp3;
-  input Types.Properties inProperties4;
+  input DAE.Exp inExp1;
+  input DAE.Properties inProperties2;
+  input DAE.Exp inExp3;
+  input DAE.Properties inProperties4;
   input SCode.Initial inInitial5;
   input Boolean inBoolean6;
   output list<DAE.Element> outDAEElementLst;
 algorithm 
   outDAEElementLst := matchcontinue (inExp1,inProperties2,inExp3,inProperties4,inInitial5,inBoolean6)
     local
-      Exp.Exp e1_1,e1,e2,e2_1;
-      tuple<Types.TType, Option<Absyn.Path>> t_1,t1,t2,t;
+      DAE.Exp e1_1,e1,e2,e2_1;
+      tuple<DAE.TType, Option<Absyn.Path>> t_1,t1,t2,t;
       list<DAE.Element> dae;
-      Types.Properties p1,p2;
+      DAE.Properties p1,p2;
       SCode.Initial initial_;
       Boolean impl;
       String e1_str,t1_str,e2_str,t2_str,s1,s2;
@@ -10334,26 +10334,26 @@ protected function instEqEquation2
 "function: instEqEquation2
   author: LS, ELN
   This is the second stage of instEqEquation, when the types are checked."
-  input Exp.Exp inExp1;
-  input Exp.Exp inExp2;
-  input Types.Type inType3;
+  input DAE.Exp inExp1;
+  input DAE.Exp inExp2;
+  input DAE.Type inType3;
   input SCode.Initial inInitial4;
   output list<DAE.Element> outDAEElementLst;
 algorithm 
   outDAEElementLst := matchcontinue (inExp1,inExp2,inType3,inInitial4)
     local
       DAE.Element dae;
-      Exp.Exp e1,e2;
+      DAE.Exp e1,e2;
       SCode.Initial initial_;
-      Exp.ComponentRef cr,c1_1,c2_1,c1,c2;
-      Exp.Type t,t1,t2,tp;
+      DAE.ComponentRef cr,c1_1,c2_1,c1,c2;
+      DAE.ExpType t,t1,t2,tp;
       list<Integer> ds;
-      tuple<Types.TType, Option<Absyn.Path>> bc;
+      tuple<DAE.TType, Option<Absyn.Path>> bc;
       list<DAE.Element> dae1,dae2,decl;
-      Types.ArrayDim ad;
+      DAE.ArrayDim ad;
       ClassInf.State cs;
       String n;
-      list<Types.Var> vs;
+      list<DAE.Var> vs;
       Option<Absyn.Path> p;
     case (e1,e2,(DAE.T_INTEGER(varLstInt = _),_),initial_)
       equation 
@@ -10388,7 +10388,7 @@ algorithm
 
     /* arrays with function calls => array equations */
     case (e1,e2,(t as (DAE.T_ARRAY(arrayDim = _),_)),initial_) 
-      local tuple<Types.TType, Option<Absyn.Path>> t; Boolean b1,b2;
+      local tuple<DAE.TType, Option<Absyn.Path>> t; Boolean b1,b2;
       equation 
         b1 = Exp.containVectorFunctioncall(e2);
         b2 = Exp.containVectorFunctioncall(e2);
@@ -10402,7 +10402,7 @@ algorithm
     case (e1,e2,(DAE.T_ARRAY(arrayDim = ad,arrayType = t),_),initial_) 
       local
         list<DAE.Element> dae;
-        tuple<Types.TType, Option<Absyn.Path>> t;
+        tuple<DAE.TType, Option<Absyn.Path>> t;
       equation 
         dae = instArrayEquation(e1, e2, ad, t, initial_);
       then
@@ -10452,10 +10452,10 @@ algorithm
           complexTypeOption = bc, equalityConstraint = ec),p),initial_)
       local
         list<DAE.Element> dae;
-        tuple<Types.TType, Option<Absyn.Path>> t;
-        Option<tuple<Types.TType, Option<Absyn.Path>>> bc;
-        Exp.Type ty22,ty2;
-        Types.EqualityConstraint ec;
+        tuple<DAE.TType, Option<Absyn.Path>> t;
+        Option<tuple<DAE.TType, Option<Absyn.Path>>> bc;
+        DAE.ExpType ty22,ty2;
+        DAE.EqualityConstraint ec;
       equation 
         ty2 = Types.elabType(t);
         c1_1 = Exp.extendCref(c1,ty2, n, {});
@@ -10468,13 +10468,13 @@ algorithm
         dae; 
    /* all other COMPLEX equations */
    case (e1,e2, t as (DAE.T_COMPLEX(complexVarLst = _),_),initial_)
-     local list<DAE.Element> dae; Types.Type t;     
+     local list<DAE.Element> dae; DAE.Type t;     
       equation
      dae = instComplexEquation(e1,e2,t,initial_);
     then dae;
    
     case (e1,e2,t,initial_)
-      local tuple<Types.TType, Option<Absyn.Path>> t;
+      local tuple<DAE.TType, Option<Absyn.Path>> t;
       equation 
         Debug.fprintln("failtrace", "- Inst.instEqEquation2 failed");
       then
@@ -10488,13 +10488,13 @@ protected function makeDaeEquation
   author: LS, ELN  
   Constructs an equation in the DAE, they can be 
   either an initial equation or an ordinary equation."
-  input Exp.Exp inExp1;
-  input Exp.Exp inExp2;
+  input DAE.Exp inExp1;
+  input DAE.Exp inExp2;
   input SCode.Initial inInitial3;
   output DAE.Element outElement;
 algorithm 
   outElement := matchcontinue (inExp1,inExp2,inInitial3)
-    local Exp.Exp e1,e2;
+    local DAE.Exp e1,e2;
     case (e1,e2,SCode.NON_INITIAL()) then DAE.EQUATION(e1,e2); 
     case (e1,e2,SCode.INITIAL()) then DAE.INITIALEQUATION(e1,e2); 
   end matchcontinue;
@@ -10503,15 +10503,15 @@ end makeDaeEquation;
 protected function makeDaeDefine 
 "function: makeDaeDefine
   author: LS, ELN "
-  input Exp.ComponentRef inComponentRef;
-  input Exp.Exp inExp;
+  input DAE.ComponentRef inComponentRef;
+  input DAE.Exp inExp;
   input SCode.Initial inInitial;
   output DAE.Element outElement;
 algorithm 
   outElement := matchcontinue (inComponentRef,inExp,inInitial)
     local
-      Exp.ComponentRef cr;
-      Exp.Exp e2;
+      DAE.ComponentRef cr;
+      DAE.Exp e2;
     case (cr,e2,SCode.NON_INITIAL()) then DAE.DEFINE(cr,e2); 
     case (cr,e2,SCode.INITIAL()) then DAE.INITIALDEFINE(cr,e2); 
   end matchcontinue;
@@ -10520,18 +10520,18 @@ end makeDaeDefine;
 protected function instArrayEquation 
 "function: instArrayEquation 
   This checks the array size and creates an array equation in DAE."
-  input Exp.Exp inExp1;
-  input Exp.Exp inExp2;
-  input Types.ArrayDim inArrayDim3;
-  input Types.Type inType4;
+  input DAE.Exp inExp1;
+  input DAE.Exp inExp2;
+  input DAE.ArrayDim inArrayDim3;
+  input DAE.Type inType4;
   input SCode.Initial inInitial5;
   output list<DAE.Element> outDAEElementLst;
 algorithm 
   outDAEElementLst := matchcontinue (inExp1,inExp2,inArrayDim3,inType4,inInitial5)
     local
       String e1_str,e2_str,s1;
-      Exp.Exp e1,e2;
-      tuple<Types.TType, Option<Absyn.Path>> t;
+      DAE.Exp e1,e2;
+      tuple<DAE.TType, Option<Absyn.Path>> t;
       SCode.Initial initial_;
       list<DAE.Element> dae;
       Integer sz;
@@ -10560,9 +10560,9 @@ protected function instArrayElEq
 "function: instArrayElEq 
   This function loops recursively through all indexes in the two
   arrays and generates an equation for each pair of elements."
-  input Exp.Exp inExp1;
-  input Exp.Exp inExp2;
-  input Types.Type inType3;
+  input DAE.Exp inExp1;
+  input DAE.Exp inExp2;
+  input DAE.Type inType3;
   input Integer inInteger4;
   input Integer inInteger5;
   input SCode.Initial inInitial6;
@@ -10570,13 +10570,13 @@ protected function instArrayElEq
 algorithm 
   outDAEElementLst := matchcontinue (inExp1,inExp2,inType3,inInteger4,inInteger5,inInitial6)
     local
-      Exp.Exp e1_1,e2_1,e1,e2;
+      DAE.Exp e1_1,e2_1,e1,e2;
       list<DAE.Element> dae1,dae2,dae;
       Integer i_1,i,sz;
-      tuple<Types.TType, Option<Absyn.Path>> t;
+      tuple<DAE.TType, Option<Absyn.Path>> t;
       SCode.Initial initial_;
     case (e1,e2,t,i,sz,initial_) /* lhs rhs elt type iterator dim size */ 
-      local Exp.Exp ae1;
+      local DAE.Exp ae1;
       equation 
         (i <= sz) = true;
         ae1 = DAE.ICONST(i);
@@ -10630,7 +10630,7 @@ algorithm
       list<Env.Frame> env_1,env_2,env_3,env;
       list<DAE.Element> dae1,dae2,dae;
       ClassInf.State ci_state_1,ci_state;
-      Types.Mod mods;
+      DAE.Mod mods;
       Prefix.Prefix pre;
       String i;
       Values.Value fst,v;
@@ -10700,7 +10700,7 @@ algorithm
   matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inSets,inState,inAlgorithm,inBoolean,inGraph)
     local
       list<Env.Frame> env_1,env;
-      list<Algorithm.Statement> statements_1;
+      list<DAE.Statement> statements_1;
       Connect.Sets csets;
       ClassInf.State ci_state;
       list<Absyn.Algorithm> statements;
@@ -10753,7 +10753,7 @@ algorithm
   matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inSets,inState,inAlgorithm,inBoolean,inGraph)
     local
       list<Env.Frame> env_1,env;
-      list<Algorithm.Statement> statements_1;
+      list<DAE.Statement> statements_1;
       Connect.Sets csets;
       ClassInf.State ci_state;
       list<Absyn.Algorithm> statements;
@@ -10788,14 +10788,14 @@ protected function instStatements
   input SCode.Initial initial_;
   input Boolean inBoolean;
   output Env.Cache outCache;
-  output list<Algorithm.Statement> outAlgorithmStatementLst;
+  output list<DAE.Statement> outAlgorithmStatementLst;
 algorithm 
   (outCache,outAlgorithmStatementLst) := matchcontinue (inCache,inEnv,inPre,inAbsynAlgorithmLst,initial_,inBoolean)
     local
       list<Env.Frame> env;
       Boolean impl;
-      Algorithm.Statement x_1;
-      list<Algorithm.Statement> xs_1;
+      DAE.Statement x_1;
+      list<DAE.Statement> xs_1;
       Absyn.Algorithm x;
       list<Absyn.Algorithm> xs;
       Env.Cache cache;
@@ -10820,14 +10820,14 @@ public function instAlgorithmitems
   input SCode.Initial initial_;
   input Boolean inBoolean;
   output Env.Cache outCache;
-  output list<Algorithm.Statement> outAlgorithmStatementLst;
+  output list<DAE.Statement> outAlgorithmStatementLst;
 algorithm 
   (outCache,outAlgorithmStatementLst) := matchcontinue (inCache,inEnv,inPre,inAbsynAlgorithmItemLst,initial_,inBoolean)
     local
       list<Env.Frame> env;
       Boolean impl;
-      Algorithm.Statement x_1;
-      list<Algorithm.Statement> xs_1;
+      DAE.Statement x_1;
+      list<DAE.Statement> xs_1;
       Absyn.Algorithm x;
       list<Absyn.AlgorithmItem> xs;
       Env.Cache cache;
@@ -10859,26 +10859,26 @@ protected function instStatement
   input SCode.Initial initial_;
   input Boolean inBoolean;
   output Env.Cache outCache;
-  output Algorithm.Statement outStatement;
+  output DAE.Statement outStatement;
 algorithm 
   (outCache,outStatement) := matchcontinue (inCache,inEnv,inPre,inAlgorithm,initial_,inBoolean)
     local
-      Exp.ComponentRef ce,ce_1;
-      Exp.Type t;
-      Types.Properties cprop,eprop,prop,msgprop,varprop,valprop;
+      DAE.ComponentRef ce,ce_1;
+      DAE.ExpType t;
+      DAE.Properties cprop,eprop,prop,msgprop,varprop,valprop;
       SCode.Accessibility acc;
-      Exp.Exp e_1,e_2,cond_1,cond_2,msg_1,msg_2,var_1,var_2,value_1,value_2,cre,cre2;
-      Algorithm.Statement stmt, stmt1;
+      DAE.Exp e_1,e_2,cond_1,cond_2,msg_1,msg_2,var_1,var_2,value_1,value_2,cre,cre2;
+      DAE.Statement stmt, stmt1;
       list<Env.Frame> env,env_1;
       Absyn.ComponentRef cr;
       Absyn.Exp e,cond,msg, assignComp,var,value,elseWhenC;
       Boolean impl;
-      list<Exp.Exp> expl_1,expl_2;
-      list<Types.Properties> cprops;
+      list<DAE.Exp> expl_1,expl_2;
+      list<DAE.Properties> cprops;
       list<Absyn.Exp> expl;
       String s,i;
-      list<Algorithm.Statement> tb_1,fb_1,sl_1;
-      list<tuple<Exp.Exp, Types.Properties, list<Algorithm.Statement>>> eib_1;
+      list<DAE.Statement> tb_1,fb_1,sl_1;
+      list<tuple<DAE.Exp, DAE.Properties, list<DAE.Statement>>> eib_1;
       list<Absyn.AlgorithmItem> tb,fb,sl,elseWhenSt;
       list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> eib,el,elseWhenRest;
       Absyn.Algorithm alg;
@@ -10893,7 +10893,7 @@ algorithm
     case (cache,env,pre,Absyn.ALG_ASSIGN(assignComponent = Absyn.CREF(cr),value = Absyn.ARRAY(expList)),initial_,impl)
       local
         list<Absyn.Exp> expList;
-        Types.Type t2;
+        DAE.Type t2;
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
 
@@ -10928,7 +10928,7 @@ algorithm
         list<Absyn.Ident> tempLoopVarNames;
         list<Absyn.AlgorithmItem> vb_body,tempLoopVarsInit;
         list<Absyn.ElementItem> tempLoopVars;
-        Exp.Exp vb2;
+        DAE.Exp vb2;
       equation
         // rangeList = {(id,e2)};
         (tempLoopVarNames,tempLoopVars,tempLoopVarsInit) = createTempLoopVars(rangeList,{},{},{},1);
@@ -10996,7 +10996,7 @@ algorithm
       (e2 as Absyn.CALL(function_ = Absyn.CREF_IDENT(name="der"),functionArgs=(Absyn.FUNCTIONARGS(args={Absyn.CREF(cr)})) )),value = e),initial_,impl)
       local
         Absyn.Exp e2;
-        Exp.Exp e2_2,e2_2_2; 
+        DAE.Exp e2_2,e2_2_2; 
       equation 
         (cache,_,cprop,acc) = Static.elabCref(cache,env, cr, impl,false);
         (cache,(e2_2 as DAE.CALL(_,_,_,_,_,_)),_,_) = Static.elabExp(cache,env, e2, impl, NONE,true);
@@ -11039,7 +11039,7 @@ algorithm
 
     /* Tuple with rhs constant */
     case (cache,env,pre,Absyn.ALG_ASSIGN(assignComponent = Absyn.TUPLE(expressions = expl),value = e),initial_,impl)
-      local Exp.Exp unvectorisedExpl;
+      local DAE.Exp unvectorisedExpl;
       equation 
         (cache,(e_1 as DAE.TUPLE(_)),eprop,_) = Static.elabExp(cache,env, e, impl, NONE,true);
         (_,_,_) = Ceval.ceval(Env.emptyCache(),Env.emptyEnv, e_1, false, NONE, NONE, Ceval.MSG());
@@ -11071,7 +11071,7 @@ algorithm
         
     /* For loop */
     case (cache,env,pre,Absyn.ALG_FOR(iterators = forIterators,forBody = sl),initial_,impl)
-//      local tuple<Types.TType, Option<Absyn.Path>> t;
+//      local tuple<DAE.TType, Option<Absyn.Path>> t;
       equation 
 //        (cache,e_1,(prop as DAE.PROP((DAE.T_ARRAY(_,t),_),_)),_) = Static.elabExp(cache,env, e, impl, NONE,true);
 //        (cache,e_2) = Prefix.prefixExp(cache,env, e_1, pre);
@@ -11154,10 +11154,10 @@ algorithm
         Absyn.ComponentRef callFunc;
         Absyn.FunctionArgs callArgs;
         Absyn.Exp aea;
-        list<Exp.Exp> eexpl;
+        list<DAE.Exp> eexpl;
         Absyn.Path ap;
         Boolean tuple_, builtin,inline;
-        Exp.Type tp;
+        DAE.ExpType tp;
       equation 
         (cache,DAE.CALL(ap,eexpl,tuple_,builtin,tp,inline),varprop,_) = Static.elabExp(cache,env, Absyn.CALL(callFunc,callArgs), impl, NONE,true);
         ap = Prefix.prefixPath(ap,pre);
@@ -11225,7 +11225,7 @@ algorithm
     case (cache,env,pre,Absyn.ALG_MATCHCASES(absynExpList),_,impl)
       local
         list<Absyn.Exp> absynExpList;
-        list<Exp.Exp> expExpList;
+        list<DAE.Exp> expExpList;
       equation
         (cache,expExpList,_,_) = Static.elabExpList(cache,env, absynExpList, impl, NONE,true);        
       then (cache,DAE.STMT_MATCHCASES(expExpList));
@@ -11254,7 +11254,7 @@ protected function instForStatement
   input SCode.Initial inInitial;
   input Boolean inBool;
   output Env.Cache outCache;
-  output Algorithm.Statement outStatement;
+  output DAE.Statement outStatement;
 algorithm
   (outCache,outStatement):=matchcontinue(inCache,inEnv,inPrefix,inIterators,inForBody,inInitial,inBool)
   local
@@ -11265,13 +11265,13 @@ algorithm
     list<Absyn.AlgorithmItem> sl;
     SCode.Initial initial_;
     Boolean impl;
-    tuple<Types.TType, Option<Absyn.Path>> t;
-    Exp.Exp e_1,e_2;
-    list<Algorithm.Statement> sl_1;
+    tuple<DAE.TType, Option<Absyn.Path>> t;
+    DAE.Exp e_1,e_2;
+    list<DAE.Statement> sl_1;
     String i;
     Absyn.Exp e;
-    Algorithm.Statement stmt,stmt_1;
-    Types.Properties prop;
+    DAE.Statement stmt,stmt_1;
+    DAE.Properties prop;
     list<tuple<Absyn.ComponentRef,Integer>> lst;
 //    Absyn.ComponentRef acref;
 //    Integer dimNum;
@@ -11376,29 +11376,29 @@ protected function createMatchStatement
   input Absyn.Algorithm alg;
   input Boolean inBoolean;
   output Env.Cache outCache;
-  output Algorithm.Statement outStmt;
+  output DAE.Statement outStmt;
 algorithm
   (outCache,outStmt) := matchcontinue (cache,env,pre,alg,inBoolean)
     local
-      Types.Properties cprop,eprop;
-      Algorithm.Statement stmt;
+      DAE.Properties cprop,eprop;
+      DAE.Statement stmt;
       Env.Cache localCache;
       Env.Env localEnv;
       Prefix localPre;
       Absyn.Exp exp,e;
-      Exp.ComponentRef ce;
-      Exp.Exp cre;
+      DAE.ComponentRef ce;
+      DAE.Exp cre;
       Boolean impl;
       SCode.Accessibility acc;
       Absyn.ComponentRef cr;
-      Exp.Type t;
+      DAE.ExpType t;
       list<Absyn.Exp> expl;
 
     // _ := matchcontinue(...) ...
     case (localCache,localEnv,localPre,Absyn.ALG_ASSIGN(Absyn.CREF(Absyn.WILD()),e as Absyn.MATCHEXP(_,_,_,_,_)),impl)
       local
         Absyn.Exp exp;
-        Exp.Exp e_1,e_2;
+        DAE.Exp e_1,e_2;
       equation
         expl = {};
         (localCache,e) = Patternm.matchMain(e,expl,localCache,localEnv);
@@ -11413,7 +11413,7 @@ algorithm
     // v1 := matchcontinue(...). Part of MetaModelica extension. KS
     case (localCache,localEnv,localPre,Absyn.ALG_ASSIGN(Absyn.CREF(cr),e as Absyn.MATCHEXP(_,_,_,_,_)),impl)
       local
-        Exp.Exp e_1,e_2;
+        DAE.Exp e_1,e_2;
       equation
         //(localCache,cre,cprop,acc) = Static.elabCref(localCache,localEnv, cr, impl,false);
         //(localCache,DAE.CREF(ce,t)) = Prefix.prefixExp(localCache,localEnv, cre, localPre);
@@ -11432,7 +11432,7 @@ algorithm
     // (v1,v2,..,vn) := matchcontinue(...). Part of MetaModelica extension. KS
     case (localCache,localEnv,localPre,Absyn.ALG_ASSIGN(Absyn.TUPLE(expl),e as Absyn.MATCHEXP(_,_,_,_,_)),impl)
       local
-        Exp.Exp e_1,e_2;
+        DAE.Exp e_1,e_2;
       equation
         //Absyn.CREF(cr) = Util.listFirst(expl);
         //(localCache,cre,cprop,acc) = Static.elabCref(localCache,localEnv, cr, impl,false);
@@ -11463,17 +11463,17 @@ protected function instElseifs
   input SCode.Initial initial_;
   input Boolean inBoolean;
   output Env.Cache outCache;
-  output list<tuple<Exp.Exp, Types.Properties, list<Algorithm.Statement>>> outTplExpExpTypesPropertiesAlgorithmStatementLstLst;
+  output list<tuple<DAE.Exp, DAE.Properties, list<DAE.Statement>>> outTplExpExpTypesPropertiesAlgorithmStatementLstLst;
 algorithm 
   (outCache,outTplExpExpTypesPropertiesAlgorithmStatementLstLst) :=
   matchcontinue (inCache,inEnv,inPre,inTplAbsynExpAbsynAlgorithmItemLstLst,initial_,inBoolean)
     local
       list<Env.Frame> env;
       Boolean impl;
-      Exp.Exp e_1,e_2;
-      Types.Properties prop;
-      list<Algorithm.Statement> stmts;
-      list<tuple<Exp.Exp, Types.Properties, list<Algorithm.Statement>>> tail_1;
+      DAE.Exp e_1,e_2;
+      DAE.Properties prop;
+      list<DAE.Statement> stmts;
+      list<tuple<DAE.Exp, DAE.Properties, list<DAE.Statement>>> tail_1;
       Absyn.Exp e;
       list<Absyn.AlgorithmItem> l;
       list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> tail;
@@ -11519,13 +11519,13 @@ algorithm
   (outCache,outEnv,outIH,outSets,outDAEElementLst,outGraph):=
   matchcontinue (inCache,inEnv,inIH,inSets,inPrefix3,inComponentRef4,inComponentRef5,inBoolean6,inGraph)
     local
-      Exp.ComponentRef c1_1,c2_1,c1_2,c2_2;
-      Exp.Type t1,t2;
-      Types.Properties prop1,prop2;
+      DAE.ComponentRef c1_1,c2_1,c1_2,c2_2;
+      DAE.ExpType t1,t2;
+      DAE.Properties prop1,prop2;
       SCode.Accessibility acc;
-      Types.Attributes attr1,attr2;
+      DAE.Attributes attr1,attr2;
       Boolean flow1,impl;
-      tuple<Types.TType, Option<Absyn.Path>> ty1,ty2;
+      tuple<DAE.TType, Option<Absyn.Path>> ty1,ty2;
       Connect.Face f1,f2;
       Connect.Sets sets_1,sets,sets_2,sets_3;
       list<DAE.Element> dae;
@@ -11568,8 +11568,8 @@ algorithm
       local
         list<Absyn.Subscript> subs1,subs2;
         list<Absyn.ComponentRef> crefs1,crefs2; 
-        list<Types.Properties> props1,props2;
-        Types.Const const;    
+        list<DAE.Properties> props1,props2;
+        DAE.Const const;    
         Boolean b1,b2;
         String s1,s2,s3,s4;
       equation 
@@ -11607,8 +11607,8 @@ algorithm props := matchcontinue(inrefs,cache,env,affectedConnector)
   local
     Absyn.ComponentRef cr;
     Boolean b2;
-    Types.Properties prop;
-    Types.Const const;
+    DAE.Properties prop;
+    DAE.Const const;
   case({},_,_,_) then ();
   case(cr::inrefs,cache,env,affectedConnector)
     equation
@@ -11634,13 +11634,13 @@ end checkConstantVariability;
 
 protected function getVectorizedCref 
 "for a vectorized cref, return the originial cref without vector subscripts"
-input Exp.Exp crefOrArray;
-output Exp.Exp cref;
+input DAE.Exp crefOrArray;
+output DAE.Exp cref;
 algorithm
    cref := matchcontinue(crefOrArray)
    local 
-     Exp.ComponentRef cr;
-     Exp.Type t;
+     DAE.ComponentRef cr;
+     DAE.ExpType t;
      case (cref as DAE.CREF(_,_)) then cref;
      case (DAE.ARRAY(_,_,DAE.CREF(cr,t)::_)) equation
        cr = Exp.crefStripLastSubs(cr);
@@ -11651,12 +11651,12 @@ end getVectorizedCref;
 protected function validConnector 
 "function: validConnector 
   This function tests whether a type is a eligible to be used in connections."
-  input Types.Type inType;
+  input DAE.Type inType;
 algorithm 
   _ := matchcontinue (inType)
     local
       ClassInf.State state;
-      tuple<Types.TType, Option<Absyn.Path>> tp,t;
+      tuple<DAE.TType, Option<Absyn.Path>> tp,t;
       String str;
     case ((DAE.T_REAL(varLstReal = _),_)) then (); 
     case ((DAE.T_INTEGER(_),_)) then ();
@@ -11692,20 +11692,20 @@ protected function checkConnectTypes
   connectors match, so that they really may be connected."
   input Env.Env env;
   input InstanceHierarchy inIH;
-  input Exp.ComponentRef inComponentRef1;
-  input Types.Type inType2;
-  input Types.Attributes inAttributes3;
-  input Exp.ComponentRef inComponentRef4;
-  input Types.Type inType5;
-  input Types.Attributes inAttributes6;
+  input DAE.ComponentRef inComponentRef1;
+  input DAE.Type inType2;
+  input DAE.Attributes inAttributes3;
+  input DAE.ComponentRef inComponentRef4;
+  input DAE.Type inType5;
+  input DAE.Attributes inAttributes6;
   input Absyn.InnerOuter io1;
   input Absyn.InnerOuter io2;
 algorithm 
   _ := matchcontinue (env,inIH,inComponentRef1,inType2,inAttributes3,inComponentRef4,inType5,inAttributes6,io1,io2)
     local
       String c1_str,c2_str;
-      Exp.ComponentRef c1,c2;
-      tuple<Types.TType, Option<Absyn.Path>> t1,t2;
+      DAE.ComponentRef c1,c2;
+      tuple<DAE.TType, Option<Absyn.Path>> t1,t2;
       Boolean flow1,flow2,stream1,stream2,outer1,outer2;
       InstanceHierarchy ih;
     /* If two input connectors are connected they must have different faces */
@@ -11827,7 +11827,7 @@ algorithm
         fail();
 
     case (env,ih,c1,t1,DAE.ATTR(flowPrefix = flow1),c2,t2,DAE.ATTR(flowPrefix = flow2),io1,io2)
-      local Types.Type t1,t2; Boolean flow1,flow2,b0; String s0,s1,s2;
+      local DAE.Type t1,t2; Boolean flow1,flow2,b0; String s0,s1,s2;
       equation 
         b0 = Types.equivtypes(t1, t2);
         s0 = Util.if_(b0,"types equivalent;","types NOT equivalent");
@@ -11858,11 +11858,11 @@ protected function assertDifferentFaces
   faces, e.g both inside or both outside connectors"
   input Env.Env env;
   input InstanceHierarchy inIH;
-  input Exp.ComponentRef inComponentRef1;
-  input Exp.ComponentRef inComponentRef2;
+  input DAE.ComponentRef inComponentRef1;
+  input DAE.ComponentRef inComponentRef2;
 algorithm 
   _ := matchcontinue (env,inIH,inComponentRef1,inComponentRef2)
-    local Exp.ComponentRef c1,c2;
+    local DAE.ComponentRef c1,c2;
     case (env,inIH,c1,c2)
       equation 
         Connect.INNER() = componentFace(env,inIH,c1);
@@ -11889,13 +11889,13 @@ protected function connectComponents "
   input InstanceHierarchy inIH;
   input Connect.Sets inSets;
   input Prefix inPrefix3;
-  input Exp.ComponentRef cr1;
+  input DAE.ComponentRef cr1;
   input Connect.Face inFace5;
-  input Types.Type inType6;
+  input DAE.Type inType6;
   input SCode.Variability vt1;
-  input Exp.ComponentRef cr2;
+  input DAE.ComponentRef cr2;
   input Connect.Face inFace8;
-  input Types.Type inType9;
+  input DAE.Type inType9;
   input SCode.Variability vt2;  
   input Boolean inBoolean10;
   input Absyn.InnerOuter io1;
@@ -11911,17 +11911,17 @@ algorithm
   (outCache,outEnv,outIH,outSets,outDAEElementLst,outGraph) := 
   matchcontinue (inCache,inEnv,inIH,inSets,inPrefix3,cr1,inFace5,inType6,vt1,cr2,inFace8,inType9,vt2,inBoolean10,io1,io2,inGraph)
     local
-      Exp.ComponentRef c1_1,c2_1,c1,c2;
-      list<Exp.ComponentRef> dc;
+      DAE.ComponentRef c1_1,c2_1,c1,c2;
+      list<DAE.ComponentRef> dc;
       Connect.Sets sets_1,sets;
       list<Env.Frame> env;
       Prefix.Prefix pre;
       Connect.Face f1,f2;
-      tuple<Types.TType, Option<Absyn.Path>> t1,t2,bc_tp1,bc_tp2;
+      tuple<DAE.TType, Option<Absyn.Path>> t1,t2,bc_tp1,bc_tp2;
       SCode.Variability vr;
       Integer dim1,dim2;
       list<DAE.Element> dae, dae2;
-      list<Types.Var> l1,l2;
+      list<DAE.Var> l1,l2;
       Boolean flowPrefix;
       String c1_str,t1_str,t2_str,c2_str;
       Env.Cache cache;
@@ -12065,7 +12065,7 @@ algorithm
       local
         Absyn.Path fpath1, fpath2;
         Integer dim1, dim2;
-        Exp.Exp zeroVector;
+        DAE.Exp zeroVector;
       equation         
         c1_1 = Prefix.prefixCref(pre, c1);
         c2_1 = Prefix.prefixCref(pre, c2);        
@@ -12153,13 +12153,13 @@ Traverses arrays of complex connectors and calls connectComponents for each inde
   input InstanceHierarchy inIH;	
   input Connect.Sets inSets;
   input Prefix inPrefix3;
-  input Exp.ComponentRef cr1;
+  input DAE.ComponentRef cr1;
   input Connect.Face inFace5;
-  input Types.Type inType6;
+  input DAE.Type inType6;
   input SCode.Variability vt1;  
-  input Exp.ComponentRef cr2;
+  input DAE.ComponentRef cr2;
   input Connect.Face inFace8;
-  input Types.Type inType9;
+  input DAE.Type inType9;
   input SCode.Variability vt2;  
   input Boolean inBoolean10;
   input Absyn.InnerOuter io1;
@@ -12177,16 +12177,16 @@ algorithm
   (outCache,outEnv,outIH,outSets,outDAEElementLst,outGraph):=
   matchcontinue (inCache,inEnv,inIH,inSets,inPrefix3,cr1,inFace5,inType6,vt1,cr2,inFace8,inType9,vt2,inBoolean10,io1,io2,dim1,i,inGraph)
     local
-      Exp.ComponentRef c1_1,c2_1,c1,c2,c21,c11;
+      DAE.ComponentRef c1_1,c2_1,c1,c2,c21,c11;
       Connect.Sets sets_1,sets;
       list<Env.Frame> env;
       Prefix.Prefix pre;
       Connect.Face f1,f2;
-      tuple<Types.TType, Option<Absyn.Path>> t1,t2,bc_tp1,bc_tp2;
+      tuple<DAE.TType, Option<Absyn.Path>> t1,t2,bc_tp1,bc_tp2;
       SCode.Variability vr;
       Integer dim1,dim2;
       list<DAE.Element> dae,dae1,dae2;
-      list<Types.Var> l1,l2;
+      list<DAE.Var> l1,l2;
       Boolean flowPrefix;
       String c1_str,t1_str,t2_str,c2_str;
       Env.Cache cache;
@@ -12222,13 +12222,13 @@ protected function connectVars
   input Env inEnv;
   input InstanceHierarchy inIH;
   input Connect.Sets inSets;
-  input Exp.ComponentRef inComponentRef3;
+  input DAE.ComponentRef inComponentRef3;
   input Connect.Face inFace4;
-  input list<Types.Var> inTypesVarLst5;
+  input list<DAE.Var> inTypesVarLst5;
   input SCode.Variability vt1;
-  input Exp.ComponentRef inComponentRef6;
+  input DAE.ComponentRef inComponentRef6;
   input Connect.Face inFace7;
-  input list<Types.Var> inTypesVarLst8;
+  input list<DAE.Var> inTypesVarLst8;
   input SCode.Variability vt2;
   input Absyn.InnerOuter io1;
   input Absyn.InnerOuter io2;  
@@ -12245,17 +12245,17 @@ algorithm
     local
       Connect.Sets sets,sets_1,sets_2;
       list<Env.Frame> env;
-      Exp.ComponentRef c1_1,c2_1,c1,c2;
+      DAE.ComponentRef c1_1,c2_1,c1,c2;
       list<DAE.Element> dae,dae2,dae_1;
       Connect.Face f1,f2;
       String n;
-      Types.Attributes attr1,attr2;
+      DAE.Attributes attr1,attr2;
       Boolean flow1,flow2,stream1,stream2;
       SCode.Variability vt1,vt2;
-      tuple<Types.TType, Option<Absyn.Path>> ty1,ty2;
-      list<Types.Var> xs1,xs2;
+      tuple<DAE.TType, Option<Absyn.Path>> ty1,ty2;
+      list<DAE.Var> xs1,xs2;
       SCode.Variability vta,vtb;
-      Exp.Type ty_2,ty_22;
+      DAE.ExpType ty_2,ty_22;
       Env.Cache cache;
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
@@ -12280,26 +12280,26 @@ end connectVars;
 public function mktype 
 "function: mktype
   From a class typename, its inference state, and a list of subcomponents,
-  this function returns Types.Type.  If the class inference state
+  this function returns DAE.Type.  If the class inference state
   indicates that the type should be a built-in type, one of the
   built-in type constructors is used.  Otherwise, a T_COMPLEX is
   built."
   input Absyn.Path inPath;
   input ClassInf.State inState;
-  input list<Types.Var> inTypesVarLst;
-  input Option<Types.Type> inTypesTypeOption;
-  input Types.EqualityConstraint inEqualityConstraint;
-  output Types.Type outType;
+  input list<DAE.Var> inTypesVarLst;
+  input Option<DAE.Type> inTypesTypeOption;
+  input DAE.EqualityConstraint inEqualityConstraint;
+  output DAE.Type outType;
 algorithm 
   outType := matchcontinue (inPath,inState,inTypesVarLst,inTypesTypeOption,inEqualityConstraint)
     local
       Option<Absyn.Path> somep;
       Absyn.Path p;
-      list<Types.Var> v,vl,v1,l;
-      tuple<Types.TType, Option<Absyn.Path>> functype,enumtype;
+      list<DAE.Var> v,vl,v1,l;
+      tuple<DAE.TType, Option<Absyn.Path>> functype,enumtype;
       ClassInf.State st;
       String name;
-      Option<tuple<Types.TType, Option<Absyn.Path>>> bc;
+      Option<tuple<DAE.TType, Option<Absyn.Path>>> bc;
     case (p,ClassInf.TYPE_INTEGER(string = _),v,_,_) 
       equation 
         somep = getOptPath(p);
@@ -12341,15 +12341,15 @@ algorithm
       then
         enumtype;
     /* MetaModelica extension */
-    case (p,ClassInf.META_TUPLE(_),_,SOME(bc2),_)local Types.Type bc2; equation then bc2;
-    case (p,ClassInf.META_OPTION(_),_,SOME(bc2),_) local Types.Type bc2; equation then bc2;
-    case (p,ClassInf.META_LIST(_),_,SOME(bc2),_) local Types.Type bc2; equation then bc2;
-    case (p,ClassInf.META_POLYMORPHIC(_),_,SOME(bc2),_) local Types.Type bc2; equation then bc2;
+    case (p,ClassInf.META_TUPLE(_),_,SOME(bc2),_)local DAE.Type bc2; equation then bc2;
+    case (p,ClassInf.META_OPTION(_),_,SOME(bc2),_) local DAE.Type bc2; equation then bc2;
+    case (p,ClassInf.META_LIST(_),_,SOME(bc2),_) local DAE.Type bc2; equation then bc2;
+    case (p,ClassInf.META_POLYMORPHIC(_),_,SOME(bc2),_) local DAE.Type bc2; equation then bc2;
     /*------------------------*/
 
     case (p,st,l,bc,equalityConstraint)
       local
-        Types.EqualityConstraint equalityConstraint;
+        DAE.EqualityConstraint equalityConstraint;
       equation 
         somep = getOptPath(p);
       then
@@ -12366,19 +12366,19 @@ protected function mktypeWithArrays
   It is used only in the inst_class_basictype function."
   input Absyn.Path inPath;
   input ClassInf.State inState;
-  input list<Types.Var> inTypesVarLst;
-  input Option<Types.Type> inTypesTypeOption;
-  output Types.Type outType;
+  input list<DAE.Var> inTypesVarLst;
+  input Option<DAE.Type> inTypesTypeOption;
+  output DAE.Type outType;
 algorithm 
   outType := matchcontinue (inPath,inState,inTypesVarLst,inTypesTypeOption)
     local
       Absyn.Path p;
       ClassInf.State ci,st;
-      list<Types.Var> vs,v,vl,v1,l;
-      tuple<Types.TType, Option<Absyn.Path>> tp,functype,enumtype;
+      list<DAE.Var> vs,v,vl,v1,l;
+      tuple<DAE.TType, Option<Absyn.Path>> tp,functype,enumtype;
       Option<Absyn.Path> somep;
       String name;
-      Option<tuple<Types.TType, Option<Absyn.Path>>> bc;
+      Option<tuple<DAE.TType, Option<Absyn.Path>>> bc;
     case (p,ci,vs,SOME(tp))
       equation 
         true = Types.isArray(tp);
@@ -12503,7 +12503,7 @@ algorithm
       	input Env.Cache inCache;
         input Env inEnvFrameLst;
         input InstanceHierarchy inIH;
-        input Types.Mod inMod;
+        input DAE.Mod inMod;
         input Prefix.Prefix inPrefix;
         input Connect.Sets inSets;
         input ClassInf.State inState;
@@ -12519,7 +12519,7 @@ algorithm
         output ConnectionGraph.ConnectionGraph outGraph;  
       end InstFunc2;
       list<Env.Frame> env,env_1,env_2;
-      Types.Mod mod;
+      DAE.Mod mod;
       Prefix.Prefix pre;
       Connect.Sets csets,csets_1,csets_2;
       ClassInf.State ci_state,ci_state_1,ci_state_2;
@@ -12551,12 +12551,12 @@ protected function componentFace
   reference refers to an inner or outer connector."
   input Env.Env env;
   input InstanceHierarchy inIH;
-  input Exp.ComponentRef inComponentRef;
+  input DAE.ComponentRef inComponentRef;
   output Connect.Face outFace;
 algorithm 
   outFace := matchcontinue (env,inIH,inComponentRef)
     local 
-      Exp.ComponentRef cr;
+      DAE.ComponentRef cr;
       Ident id;
       InstanceHierarchy ih;
     case (env,ih,DAE.CREF_QUAL(ident = id,componentRef = cr)) equation
@@ -12573,7 +12573,7 @@ protected function componentFaceType
   Author: BZ, 2008-12
   Same functionalty as componentFace, with the difference that this function
   checks ident-type rather then env->lookup ==> type.   "
-  input Exp.ComponentRef inComponentRef;
+  input DAE.ComponentRef inComponentRef;
   output Connect.Face outFace;
 algorithm 
   outFace:=
@@ -12599,22 +12599,22 @@ protected function instBinding
   Arg 3 is the expected type that the modification should have
   Arg 4 is the index list for the element: for T0{1,2} is {1,2}"
   input Mod inMod;
-  input list<Types.Var> varLst;
-  input Types.Type inType;
+  input list<DAE.Var> varLst;
+  input DAE.Type inType;
   input list<Integer> inIntegerLst;
   input String inString;
   input Boolean useConstValue "if true use constant value present in TYPED (if present)";
-  output Option<Exp.Exp> outExpExpOption;
+  output Option<DAE.Exp> outExpExpOption;
 algorithm 
   outExpExpOption := matchcontinue (inMod,varLst,inType,inIntegerLst,inString,useConstValue)
     local
-      Types.Mod mod2,mod;
-      Exp.Exp e,e_1;
-      tuple<Types.TType, Option<Absyn.Path>> ty2,ty_1,expected_type,etype;
+      DAE.Mod mod2,mod;
+      DAE.Exp e,e_1;
+      tuple<DAE.TType, Option<Absyn.Path>> ty2,ty_1,expected_type,etype;
       String bind_name;
-      Option<Exp.Exp> result;
+      Option<DAE.Exp> result;
       list<Integer> index_list;
-      Types.Binding binding;
+      DAE.Binding binding;
       Ident name;
       Option<Values.Value> optVal;
     case (mod,varLst,expected_type,{},bind_name,useConstValue) /* No subscript/index */ 
@@ -12648,11 +12648,11 @@ end instBinding;
 
 protected function bindingExp 
 "help function to instBinding, returns the expression of a binding"
-input Types.Binding bind;
-output Option<Exp.Exp> exp;
+input DAE.Binding bind;
+output Option<DAE.Exp> exp;
 algorithm
   exp := matchcontinue(bind)
-  local Exp.Exp e; Values.Value v;
+  local DAE.Exp e; Values.Value v;
     case(DAE.UNBOUND()) then NONE;
     case(DAE.EQBOUND(exp=e)) then SOME(e);
     case(DAE.VALBOUND(v)) equation
@@ -12667,21 +12667,21 @@ protected function instBinding2
   modification if the modification is in array of components. 
   Help-function to instBinding"
   input Mod inMod;
-  input Types.Type inType;
+  input DAE.Type inType;
   input list<Integer> inIntegerLst;
   input String inString;
   input Boolean useConstValue "if true, use constant value in TYPED (if present)";
-  output Option<Exp.Exp> outExpExpOption;
+  output Option<DAE.Exp> outExpExpOption;
 algorithm 
   outExpExpOption:=
   matchcontinue (inMod,inType,inIntegerLst,inString,useConstValue)
     local
-      Types.Mod mod2,mod;
-      Exp.Exp e,e_1;
-      tuple<Types.TType, Option<Absyn.Path>> ty2,ty_1,etype;
+      DAE.Mod mod2,mod;
+      DAE.Exp e,e_1;
+      tuple<DAE.TType, Option<Absyn.Path>> ty2,ty_1,etype;
       Integer index;
       String bind_name;
-      Option<Exp.Exp> result;
+      Option<DAE.Exp> result;
       list<Integer> res;
       Option<Values.Value> optVal;
     case (mod,etype,(index :: {}),bind_name,useConstValue) /* Only one element in the index-list */ 
@@ -12719,10 +12719,10 @@ protected function instStartBindingExp
   Arg 2 is the expected type that the modification should have
   Arg 3 is the index list for the element: for T0[1,2] it is {1,2}"
   input Mod mod;
-  input Types.Type etype;
+  input DAE.Type etype;
   input list<Integer> index_list;
   output DAE.StartValue result;
-protected Types.Type eltType;
+protected DAE.Type eltType;
 algorithm 
   eltType := Types.arrayElementType(etype); 
   // When instantiating arrays, the array type is passed
@@ -12739,7 +12739,7 @@ protected function instDaeVariableAttributes
 	input Env.Cache inCache;
   input Env inEnv;
   input Mod inMod;
-  input Types.Type inType;
+  input DAE.Type inType;
   input list<Integer> inIntegerLst;
   output Env.Cache outCache;
   output Option<DAE.VariableAttributes> outDAEVariableAttributesOption;
@@ -12747,19 +12747,19 @@ algorithm
   (outCache,outDAEVariableAttributesOption) :=
   matchcontinue (inCache,inEnv,inMod,inType,inIntegerLst)
     local
-      Option<Exp.Exp> quantity_str,unit_str,displayunit_str;
-      Option<Exp.Exp> min_val,max_val,start_val,nominal_val;
-      Option<Exp.Exp> fixed_val;
-      Option<Exp.Exp> exp_bind_select,exp_bind_min,exp_bind_max,exp_bind_start;
+      Option<DAE.Exp> quantity_str,unit_str,displayunit_str;
+      Option<DAE.Exp> min_val,max_val,start_val,nominal_val;
+      Option<DAE.Exp> fixed_val;
+      Option<DAE.Exp> exp_bind_select,exp_bind_min,exp_bind_max,exp_bind_start;
       Option<DAE.StateSelect> stateSelect_value;
       list<Env.Frame> env;
-      Types.Mod mod;
+      DAE.Mod mod;
       Option<Absyn.Path> path;
       list<Integer> index_list;
-      tuple<Types.TType, Option<Absyn.Path>> enumtype;
+      tuple<DAE.TType, Option<Absyn.Path>> enumtype;
       Env.Cache cache;
-      Types.Type tp;
-      list<Types.Var> varLst;
+      DAE.Type tp;
+      list<DAE.Var> varLst;
     /* Real */
     case (cache,env,mod,tp as (DAE.T_REAL(varLstReal = varLst),path),index_list)  
       equation 
@@ -12780,7 +12780,7 @@ algorithm
           start_val,fixed_val,nominal_val,stateSelect_value,NONE,NONE,NONE)));
     /* Integer */
     case (cache,env,mod,tp as (DAE.T_INTEGER(varLstInt = varLst),_),index_list) 
-      local Option<Exp.Exp> min_val,max_val,start_val;
+      local Option<DAE.Exp> min_val,max_val,start_val;
       equation 
         (quantity_str) = instBinding(mod, varLst, (DAE.T_STRING({}),NONE), index_list, "quantity",false);
         (min_val) = instBinding(mod, varLst, (DAE.T_INTEGER({}),NONE), index_list, "min",false);
@@ -12791,7 +12791,7 @@ algorithm
         (cache,SOME(DAE.VAR_ATTR_INT(quantity_str,(min_val,max_val),start_val,fixed_val,NONE,NONE,NONE)));
     /* Boolean */
     case (cache,env,mod,tp as (DAE.T_BOOL(varLstBool = varLst),_),index_list) 
-      local Option<Exp.Exp> start_val;
+      local Option<DAE.Exp> start_val;
       equation 
         (quantity_str) = instBinding( mod, varLst, (DAE.T_STRING({}),NONE), index_list, "quantity",false);
         (start_val) = instBinding(mod, varLst, tp, index_list, "start",false);
@@ -12800,7 +12800,7 @@ algorithm
         (cache,SOME(DAE.VAR_ATTR_BOOL(quantity_str,start_val,fixed_val,NONE,NONE,NONE)));
     /* String */
     case (cache,env,mod,tp as (DAE.T_STRING(varLstString = varLst),_),index_list)  
-      local Option<Exp.Exp> start_val;
+      local Option<DAE.Exp> start_val;
       equation 
         (quantity_str) = instBinding(mod, varLst, tp, index_list, "quantity",false);
         (start_val) = instBinding(mod, varLst, tp, index_list, "start",false);
@@ -12830,7 +12830,7 @@ protected function instBoolBinding
   input Env.Cache inCache;
   input Env inEnv;
   input Mod inMod;
-  input list<Types.Var> varLst;
+  input list<DAE.Var> varLst;
   input list<Integer> inIntegerLst;
   input String inString;
   output Env.Cache outCache;
@@ -12838,10 +12838,10 @@ protected function instBoolBinding
 algorithm 
   (outCache,outBooleanOption) := matchcontinue (inCache,inEnv,inMod,varLst,inIntegerLst,inString)
     local
-      Exp.Exp e;
+      DAE.Exp e;
       Boolean result;
       list<Env.Frame> env;
-      Types.Mod mod;
+      DAE.Mod mod;
       list<Integer> index_list;
       String bind_name;
       Env.Cache cache;
@@ -12877,7 +12877,7 @@ protected function instRealBinding
 	input Env.Cache inCache;
   input Env inEnv;
   input Mod inMod;
-  input list<Types.Var> varLst;
+  input list<DAE.Var> varLst;
   input list<Integer> inIntegerLst;
   input String inString;
   output Env.Cache outCache;
@@ -12885,10 +12885,10 @@ protected function instRealBinding
 algorithm 
   (outCache,outRealOption) := matchcontinue (outCache,inEnv,inMod,varLst,inIntegerLst,inString)
     local
-      Exp.Exp e;
+      DAE.Exp e;
       Real result;
       list<Env.Frame> env;
-      Types.Mod mod;
+      DAE.Mod mod;
       list<Integer> index_list;
       String bind_name;
       Env.Cache cache;
@@ -12924,7 +12924,7 @@ protected function instIntBinding
 	input Env.Cache inCache;
   input Env inEnv;
   input Mod inMod;
-  input list<Types.Var> varLst;
+  input list<DAE.Var> varLst;
   input list<Integer> inIntegerLst;
   input String inString;
   output Env.Cache outCache;
@@ -12932,10 +12932,10 @@ protected function instIntBinding
 algorithm 
   (outCache,outIntegerOption) := matchcontinue (outCache,inEnv,inMod,varLst,inIntegerLst,inString)
     local
-      Exp.Exp e;
+      DAE.Exp e;
       Integer result;
       list<Env.Frame> env;
-      Types.Mod mod;
+      DAE.Mod mod;
       list<Integer> index_list;
       String bind_name;
       Env.Cache cache;
@@ -12971,7 +12971,7 @@ protected function instStringBinding
 	input Env.Cache inCache;
   input Env inEnv;
   input Mod inMod;
-  input list<Types.Var> varLst;
+  input list<DAE.Var> varLst;
   input list<Integer> inIntegerLst;
   input String inString;
   output Env.Cache outCache;
@@ -12980,10 +12980,10 @@ algorithm
   (outCache,outStringOption) :=
   matchcontinue (inCache,inEnv,inMod,varLst,inIntegerLst,inString)
     local
-      Exp.Exp e;
+      DAE.Exp e;
       String result,bind_name;
       list<Env.Frame> env;
-      Types.Mod mod;
+      DAE.Mod mod;
       list<Integer> index_list;
       Env.Cache cache;
     case (cache,env,mod,varLst,index_list,bind_name)
@@ -13018,18 +13018,18 @@ protected function instEnumerationBinding
 	input Env.Cache inCache;
   input Env inEnv;
   input Mod inMod;
-  input list<Types.Var> varLst;
+  input list<DAE.Var> varLst;
   input list<Integer> inIntegerLst;
   input String inString;
   input Boolean useConstValue "if true, use constant value in TYPED (if present)";
   output Env.Cache outCache;
-  output Option<Exp.Exp> outExpExpOption;
+  output Option<DAE.Exp> outExpExpOption;
 algorithm 
   (outCache,outExpExpOption) := matchcontinue (inCache,inEnv,inMod,varLst,inIntegerLst,inString,useConstValue)
     local
-      Option<Exp.Exp> result;
+      Option<DAE.Exp> result;
       list<Env.Frame> env;
-      Types.Mod mod;
+      DAE.Mod mod;
       list<Integer> index_list;
       String bind_name;
       Env.Cache cache;
@@ -13050,7 +13050,7 @@ protected function getStateSelectFromExpOption
 "function: getStateSelectFromExpOption
   author: LP
   Retrieves the stateSelect value, as defined in DAE,  from an Expression option."
-  input Option<Exp.Exp> inExpExpOption;
+  input Option<DAE.Exp> inExpExpOption;
   output Option<DAE.StateSelect> outDAEStateSelectOption;
 algorithm 
   outDAEStateSelectOption:=
@@ -13074,8 +13074,8 @@ protected function instModEquation
 "function: instModEquation 
   This function adds the equation in the declaration 
   of a variable, if such an equation exists."
-  input Exp.ComponentRef inComponentRef;
-  input Types.Type inType;
+  input DAE.ComponentRef inComponentRef;
+  input DAE.Type inType;
   input Mod inMod;
   input Boolean inBoolean;
   output list<DAE.Element> outDAEElementLst;
@@ -13083,13 +13083,13 @@ algorithm
   outDAEElementLst:=
   matchcontinue (inComponentRef,inType,inMod,inBoolean)
     local
-      Exp.Type t;
+      DAE.ExpType t;
       list<DAE.Element> dae;
-      Exp.ComponentRef cr,c;
-      tuple<Types.TType, Option<Absyn.Path>> ty1;
-      Types.Mod mod,m;
-      Exp.Exp e;
-      Types.Properties prop2;
+      DAE.ComponentRef cr,c;
+      tuple<DAE.TType, Option<Absyn.Path>> ty1;
+      DAE.Mod mod,m;
+      DAE.Exp e;
+      DAE.Properties prop2;
       Boolean impl;
       // Record constructors are different
       // If it's a constant binding, all fields will already be bound correctly. Don't return a DAE.
@@ -13105,7 +13105,7 @@ algorithm
     case (_,_,DAE.NOMOD(),impl) then {}; 
     case (_,_,DAE.REDECL(finalPrefix = _),impl) then {}; 
     case (c,t,m,impl)
-      local tuple<Types.TType, Option<Absyn.Path>> t;
+      local tuple<DAE.TType, Option<Absyn.Path>> t;
       equation 
         Debug.fprint("failtrace", "- Inst.instModEquation failed\n type: ");
         Debug.fprint("failtrace", Types.printTypeStr(t));
@@ -13125,12 +13125,12 @@ protected function checkProt
   protected element is not modified."
   input Boolean inBoolean;
   input Mod inMod;
-  input Exp.ComponentRef inComponentRef;
+  input DAE.ComponentRef inComponentRef;
 algorithm 
   _:=
   matchcontinue (inBoolean,inMod,inComponentRef)
     local
-      Exp.ComponentRef cref;
+      DAE.ComponentRef cref;
       String str;
     case (false,_,cref) then (); 
     case (_,DAE.NOMOD(),_) then (); 
@@ -13146,27 +13146,27 @@ end checkProt;
 public function makeBinding 
 "function: makeBinding 
   This function looks at the equation part of a modification, and 
-  if there is a declaration equation builds a Types.Binding for it."
+  if there is a declaration equation builds a DAE.Binding for it."
 	input Env.Cache inCache;
   input Env inEnv;
   input SCode.Attributes inAttributes;
   input Mod inMod;
-  input Types.Type inType;
+  input DAE.Type inType;
   output Env.Cache outCache;
-  output Types.Binding outBinding;
+  output DAE.Binding outBinding;
 algorithm 
   (outCache,outBinding) :=
   matchcontinue (inCache,inEnv,inAttributes,inMod,inType)
     local
-      tuple<Types.TType, Option<Absyn.Path>> tp,e_tp;
-      Exp.Exp e_1,e;
+      tuple<DAE.TType, Option<Absyn.Path>> tp,e_tp;
+      DAE.Exp e_1,e;
       Values.Value v;
       list<Env.Frame> env;
       Option<Values.Value> e_val;
-      Types.Const c;
+      DAE.Const c;
       String e_tp_str,tp_str,e_str,e_str_1;
       Env.Cache cache;
-      Types.Properties prop;
+      DAE.Properties prop;
     case (cache,_,_,DAE.NOMOD(),tp) then (cache,DAE.UNBOUND()); 
     case (cache,_,_,DAE.REDECL(finalPrefix = _),tp) then (cache,DAE.UNBOUND()); 
     case (cache,_,_,DAE.MOD(eqModOption = NONE),tp) then (cache,DAE.UNBOUND());
@@ -13240,13 +13240,13 @@ algorithm
   matchcontinue (inDAEElementLst1,inDAEElementLst2)
     local
       list<DAE.Element> done,done_1,todorest_1,done_2,done_3,todorest,dae_1,dae,rest;
-      Option<Exp.Exp> exp_1,exp_2,exp,start;
+      Option<DAE.Exp> exp_1,exp_2,exp,start;
       DAE.Element v,e;
-      Exp.ComponentRef cr;
+      DAE.ComponentRef cr;
       DAE.VarKind vk;
       DAE.VarDirection vd;
-      Types.Type ty;
-      list<Exp.Subscript> inst_dims;
+      DAE.Type ty;
+      list<DAE.Subscript> inst_dims;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
       list<Absyn.Path> class_;
@@ -13288,7 +13288,7 @@ algorithm
         done_2;
         
     case (done,(DAE.FUNCTION(path = fpath,dAElist = DAE.DAE(elementLst = dae),type_ = ty,partialPrefix = partialPrefix) :: rest))
-      local tuple<Types.TType, Option<Absyn.Path>> ty; Boolean partialPrefix;
+      local tuple<DAE.TType, Option<Absyn.Path>> ty; Boolean partialPrefix;
       equation 
         dae_1 = initVarsModelicaOutput(dae);
         done_1 = listAppend(done, {DAE.FUNCTION(fpath,DAE.DAE(dae_1),ty,partialPrefix)});
@@ -13310,19 +13310,19 @@ protected function initVarsModelicaOutput2
   author: LS
   Search the list for equations with LHS as componentref = cr, remove 
   from the list and return the RHS of the last of those equations"
-  input Exp.ComponentRef inComponentRef;
-  input Option<Exp.Exp> inExpExpOption;
+  input DAE.ComponentRef inComponentRef;
+  input Option<DAE.Exp> inExpExpOption;
   input list<DAE.Element> inDAEElementLst;
-  output Option<Exp.Exp> outExpExpOption;
+  output Option<DAE.Exp> outExpExpOption;
   output list<DAE.Element> outDAEElementLst;
 algorithm 
   (outExpExpOption,outDAEElementLst):=
   matchcontinue (inComponentRef,inExpExpOption,inDAEElementLst)
     local
-      Exp.ComponentRef cr,e1cr,excr;
-      Option<Exp.Exp> exp,exp_2;
+      DAE.ComponentRef cr,e1cr,excr;
+      Option<DAE.Exp> exp,exp_2;
       list<DAE.Element> rest_1,rest;
-      Exp.Exp exp_1;
+      DAE.Exp exp_1;
       DAE.Element e1;
     case (cr,exp,{}) then (exp,{}); 
     case (cr,exp,(DAE.EQUATION(exp = DAE.CREF(componentRef = e1cr),scalar = exp_1) :: rest)) /* DAE.ET_OTHER */ 
@@ -13338,7 +13338,7 @@ algorithm
       then
         (exp_2,(e1 :: rest_1));
     case (excr,exp,(e1 :: rest))
-      local Option<Exp.Exp> exp_1;
+      local Option<DAE.Exp> exp_1;
       equation 
         (exp_1,rest_1) = initVarsModelicaOutput2(excr, exp, rest);
       then
@@ -13356,22 +13356,22 @@ public function instRecordConstructorElt
   input Env inEnv;
   input InstanceHierarchy inIH;
   input SCode.Element inElement;
-  input Types.Mod outerMod;
+  input DAE.Mod outerMod;
   input Boolean inBoolean;
   output Env.Cache outCache;
   output InstanceHierarchy outIH;
-  output Types.Var outVar;
+  output DAE.Var outVar;
 algorithm 
   (outCache,outIH,outVar):=
   matchcontinue (inCache,inEnv,inIH,inElement,outerMod,inBoolean)
     local
       SCode.Class cl;
       list<Env.Frame> cenv,env;
-      Types.Mod mod_1;
+      DAE.Mod mod_1;
       Absyn.ComponentRef owncref;
       list<DimExp> dimexp;
-      tuple<Types.TType, Option<Absyn.Path>> tp_1;
-      Types.Binding bind;
+      tuple<DAE.TType, Option<Absyn.Path>> tp_1;
+      DAE.Binding bind;
       String id,str;
       Boolean repl,prot,f,impl,s;
       SCode.Attributes attr;
@@ -13694,11 +13694,11 @@ algorithm
         Env.Cache localCache,cache2;
         Absyn.ForIterators localRangeIdList;
         list<Absyn.Subscript> subscriptList;
-        Types.Type t;
+        DAE.Type t;
         Absyn.Path t2;
         list<Absyn.ElementItem> ld;
         list<SCode.Element> ld2;
-        list<tuple<SCode.Element, Types.Mod>> ld_mod;
+        list<tuple<SCode.Element, DAE.Mod>> ld_mod;
         list<Absyn.ElementItem> decls;
         Boolean impl;
         Integer i;
@@ -13739,7 +13739,7 @@ end createForIteratorArray;
 protected function convertType 
 "function: convertType
   author: KS"
-  input Types.Type t;
+  input DAE.Type t;
   output Absyn.Path t2;
 algorithm
   t2 := matchcontinue (t)
@@ -13792,7 +13792,7 @@ algorithm
         list<Absyn.ElementItem> elem2;
         Integer i;
         Absyn.Ident id;
-        Types.Type t;
+        DAE.Type t;
         Absyn.Path t2;
       equation
         (localCache,_,DAE.PROP((DAE.T_ARRAY(DAE.DIM(SOME(i)),t),NONE()),_),_) = Static.elabExp(localCache,localEnv,e,localImpl,NONE(),false);
@@ -13984,8 +13984,8 @@ algorithm
   outCsets := matchcontinue(cache,env,ih,pre,csets,topCall)
     local 
       list<Connect.Set> setLst;
-      list<Exp.ComponentRef> crs;
-      list<Exp.ComponentRef> delcomps;
+      list<DAE.ComponentRef> crs;
+      list<DAE.ComponentRef> delcomps;
       list<Connect.OuterConnect> outerConnects;
       InstanceHierarchy ih;
       
@@ -14006,17 +14006,17 @@ protected function retrieveOuterConnections2
   input Prefix pre;
   input list<Connect.OuterConnect> outerConnects;
   input list<Connect.Set> setLst;
-  input list<Exp.ComponentRef> crs;
+  input list<DAE.ComponentRef> crs;
   input Boolean topCall;
   output list<Connect.OuterConnect> outOuterConnects;
   output list<Connect.Set> outSetLst;
-  output list<Exp.ComponentRef> outCrs;
+  output list<DAE.ComponentRef> outCrs;
   output list<Connect.OuterConnect> innerOuterConnects;
 algorithm
   (outOuterConnects,outSetLst,outCrs,innerOuterConnects) := 
   matchcontinue(cache,env,inIH,pre,outerConnects,setLst,crs,topCall)
     local 
-      Exp.ComponentRef cr1,cr2,cr1first,cr2first;
+      DAE.ComponentRef cr1,cr2,cr1first,cr2first;
       Absyn.InnerOuter io1,io2;
       Connect.OuterConnect oc;
       Boolean keepInOuter,inner1,inner2,outer1,outer2,added,cr1Outer,cr2Outer;    
@@ -14108,17 +14108,17 @@ protected function addOuterConnectIfEmpty
   input Prefix pre;
   input list<Connect.Set> setLst;
   input Boolean added "if true, this function does nothing";
-  input Exp.ComponentRef cr1;
+  input DAE.ComponentRef cr1;
   input Absyn.InnerOuter io1;
   input Connect.Face f1;
-  input Exp.ComponentRef cr2;
+  input DAE.ComponentRef cr2;
   input Absyn.InnerOuter io2;
   input Connect.Face f2;
   output list<Connect.Set> outSetLst;
 algorithm
   outSetLst := matchcontinue(cache,env,ih,pre,setLst,added,cr1,io1,f1,cr2,io2,f2)
      local SCode.Variability vt1,vt2;
-       Types.Type t1,t2;
+       DAE.Type t1,t2;
        Boolean flowPrefix;
        list<DAE.Element> dae;
        list<Connect.Set> setLst2;
@@ -14166,10 +14166,10 @@ protected function addOuterConnectIfEmptyNoEnv
   input Prefix pre;
   input list<Connect.Set> setLst;
   input Boolean added "if true, this function does nothing";
-  input Exp.ComponentRef cr1;
+  input DAE.ComponentRef cr1;
   input Absyn.InnerOuter io1;
   input Connect.Face f1;
-  input Exp.ComponentRef cr2;
+  input DAE.ComponentRef cr2;
   input Absyn.InnerOuter io2;
   input Connect.Face f2;
   output list<Connect.Set> outSetLst;
@@ -14177,7 +14177,7 @@ algorithm
   outSetLst := matchcontinue(cache,env,inIH,pre,setLst,added,cr1,io1,f1,cr2,io2,f2)
      local 
        SCode.Variability vt1,vt2;
-       Types.Type t1,t2;
+       DAE.Type t1,t2;
        Boolean flow_;
        list<DAE.Element> dae;
        list<Connect.Set> setLst2;
@@ -14241,8 +14241,8 @@ protected function lookupVarInnerOuterAttr
   input Env.Cache cache;
   input Env.Env env;
   input InstanceHierarchy inIH;
-  input Exp.ComponentRef cr1;
-  input Exp.ComponentRef cr2;
+  input DAE.ComponentRef cr1;
+  input DAE.ComponentRef cr2;
   output Boolean isInner;
   output Boolean isOuter;
 algorithm
@@ -14287,7 +14287,7 @@ protected function checkMissingInnerDecl
 protected
   list<DAE.Element> innerVars,outerVars,allVars;
   VarTransform.VariableReplacements repl;
-  list<Exp.ComponentRef> srcs,targets;
+  list<DAE.ComponentRef> srcs,targets;
 algorithm
   _ := matchcontinue(inDae,callScope)  
     case(inDae,true) 
@@ -14318,8 +14318,8 @@ protected function checkMissingInnerDecl2
 algorithm
   _ := matchcontinue(outerVar,innerVars)
     local 
-      String str,str2; Exp.ComponentRef cr; DAE.Element v;
-      list<Exp.ComponentRef> crs;
+      String str,str2; DAE.ComponentRef cr; DAE.Element v;
+      list<DAE.ComponentRef> crs;
       Absyn.InnerOuter io;
       
     case(DAE.VAR(componentRef=cr),innerVars) 
@@ -14441,7 +14441,7 @@ algorithm
 	    String str; 
 	    SCode.Class retcl;
 	    InstanceHierarchy ih;
-	    list<Types.SubMod> lsm,lsm2;
+	    list<DAE.SubMod> lsm,lsm2;
     
     case(_,ih,NONE,_) then fail();
             
@@ -14459,17 +14459,17 @@ protected function extractCorrectClassMod2
 "function: extractCorrectClassMod2
  This function extracts a modifier on a specific component.
  Referenced by the name." 
-  input list<Types.SubMod> smod;
+  input list<DAE.SubMod> smod;
   input String name;
-  input list<Types.SubMod> premod;
+  input list<DAE.SubMod> premod;
   output Mod omod;
-  output list<Types.SubMod> restmods;
+  output list<DAE.SubMod> restmods;
 algorithm (omod,restmods) := matchcontinue( smod , name , premod) 
   local 
     Mod mod;
-    Types.SubMod sub;
+    DAE.SubMod sub;
     String id;
-    list<Types.SubMod> rest,rest2;
+    list<DAE.SubMod> rest,rest2;
     case({},_,premod) then (DAE.NOMOD(),premod);
   case(DAE.NAMEMOD(id, mod) :: rest, name, premod)
     equation 
@@ -14653,15 +14653,15 @@ protected function modifyInstantiateClass
  - one (first output) to represent the redeclaration of 
                       'current' class (class-name equal to path)
  - two (second output) to represent any other modifier." 
-  input Types.Mod inMod;
+  input DAE.Mod inMod;
   input Absyn.Path path;
-  output Types.Mod omod1;
-  output Types.Mod omod2;
+  output DAE.Mod omod1;
+  output DAE.Mod omod2;
 algorithm 
   (omod1,omod2) := matchcontinue(inMod,path)
     local 
       Boolean fn;
-      list<tuple<SCode.Element, Types.Mod>> redecls,p1,p2;
+      list<tuple<SCode.Element, DAE.Mod>> redecls,p1,p2;
       Integer i1;
     case(DAE.REDECL(fn,redecls), path)
       equation
@@ -14679,17 +14679,17 @@ end modifyInstantiateClass;
 
 protected function modifyInstantiateClass2 
 "Helper function for modifyInstantiateClass" 
-  input list<tuple<SCode.Element, Types.Mod>> redecls;
+  input list<tuple<SCode.Element, DAE.Mod>> redecls;
   input Absyn.Path path;
-  output list<tuple<SCode.Element, Types.Mod>> omod1;
-  output list<tuple<SCode.Element, Types.Mod>> omod2;
+  output list<tuple<SCode.Element, DAE.Mod>> omod1;
+  output list<tuple<SCode.Element, DAE.Mod>> omod2;
 algorithm 
   (omod1,omod2) := matchcontinue(redecls,path)
     local 
       Boolean fn;
-      list<tuple<SCode.Element, Types.Mod>> rest,rec2,rec1;
-      tuple<SCode.Element, Types.Mod> head;
-      Types.Mod m;
+      list<tuple<SCode.Element, DAE.Mod>> rest,rec2,rec1;
+      tuple<SCode.Element, DAE.Mod> head;
+      DAE.Mod m;
       String id1,id2;
     case({},_) then ({},{});
     case( (head as  (SCode.CLASSDEF(name = id1),m))::rest, path)
@@ -14730,7 +14730,7 @@ protected function removeSelfReferenceAndUpdate
   input Absyn.InnerOuter io;
   input InstDims inst_dims;
   input Prefix.Prefix pre;
-  input Types.Mod mods;
+  input DAE.Mod mods;
   input Boolean finalPrefix;
   input Option<Absyn.Info> info;
   output Env.Cache o3;  
@@ -14754,14 +14754,14 @@ algorithm
       Absyn.Direction dir; 
       Ident n;
       SCode.Class c;
-      Types.Type ty;
+      DAE.Type ty;
       ClassInf.State state;
-      Types.Attributes attr;
+      DAE.Attributes attr;
       Boolean prot,flowPrefix,streamPrefix;
       Connect.Sets csets;
       SCode.Attributes attr;
       list<DimExp> dims;
-      Types.Var new_var;
+      DAE.Var new_var;
       InstanceHierarchy ih;
       
     case(cache,env,ih,store,cl1,c1,_,_,_,_,_,_,_,_,_,_,_,_)
@@ -14831,11 +14831,11 @@ protected function  instConditionalDeclaration
   output Connect.Sets outSets;
 algorithm
   (outCache,outDae,outSets) := matchcontinue(cache,env,cond,compName,dae,sets,pre)
-    local Absyn.Exp condExp; Exp.Exp e;
-      Types.Type t; Types.Const c;
+    local Absyn.Exp condExp; DAE.Exp e;
+      DAE.Type t; DAE.Const c;
       String s1,s2;
       Boolean b;
-      Exp.ComponentRef cr;
+      DAE.ComponentRef cr;
     case(cache,env,NONE,compName,dae,sets,_) then (cache,dae,sets);
       
     case(cache,env,SOME(condExp),compName,dae,sets,pre) equation
@@ -14950,9 +14950,9 @@ protected function checkUseConstValue
  This is used to ensure that e.g. stateSelect attribute gets a constant value 
  and not a parameter expression." 
   input Boolean useConstValue;
-  input Exp.Exp e;
+  input DAE.Exp e;
   input Option<Values.Value> v;
-  output Exp.Exp outE;
+  output DAE.Exp outE;
 algorithm
   outE := matchcontinue(useConstValue,e,v)
     local Values.Value val;
@@ -14991,7 +14991,7 @@ algorithm
   matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inSets,inState,inTypeALst,IE,inBoolean,inGraph)
     local
       list<Env.Frame> env,env_1,env_2;
-      Types.Mod mod;
+      DAE.Mod mod;
       Prefix.Prefix pre;
       Connect.Sets csets,csets_1,csets_2;
       ClassInf.State ci_state,ci_state_1,ci_state_2;
@@ -15080,14 +15080,14 @@ When instantiating connection_sets we have no type information on them.
 So this is what till function will do, update type information on csets. 
 " 
   input Connect.Sets csets;
-  input Exp.ComponentRef typedRef;
+  input DAE.ComponentRef typedRef;
   output Connect.Sets updatedEnv;
 algorithm updatedEnv := matchcontinue(csets,typedRef)
   local 
     Connect.Sets cs1;
     list<Connect.Set> arg1;
-    list<Exp.ComponentRef> arg2,arg2_2;
-    list<Exp.ComponentRef> arg3;			      
+    list<DAE.ComponentRef> arg2,arg2_2;
+    list<DAE.ComponentRef> arg3;			      
     list<Connect.OuterConnect> arg4,arg4_2; 
   case((cs1 as Connect.SETS(arg1,arg2,arg3,arg4)),typedRef)
       equation
@@ -15106,13 +15106,13 @@ end updateConnectionSetTypes;
 protected function updateConnectionSetTypesCrefs "Function: updateConnectionSetTypes2
 helper function for updateConnectionSetTypes
 "
-  input list<Exp.ComponentRef> list1;
-  input Exp.ComponentRef list2;
-  output list<Exp.ComponentRef> list3;
+  input list<DAE.ComponentRef> list1;
+  input DAE.ComponentRef list2;
+  output list<DAE.ComponentRef> list3;
 algorithm lsit3 := matchcontinue(list1,list2)
   local 
-    list<Exp.ComponentRef> cr1s,cr2s;
-    Exp.ComponentRef cr1,cr2;
+    list<DAE.ComponentRef> cr1s,cr2s;
+    DAE.ComponentRef cr1,cr2;
     case({},_) then {};
   case(cr1::cr1s, cr2) 
     equation 
@@ -15132,7 +15132,7 @@ protected function modificationOnOuter "
 Author BZ, 2008-11 
 According to specification modifiers on outer elements is not allowed.
 "
-input Exp.ComponentRef cr;
+input DAE.ComponentRef cr;
 input Mod inMod;
 input Absyn.InnerOuter io;
 output Boolean modd;
@@ -15175,13 +15175,13 @@ end matchcontinue;
 end propagateAbSCDirection;
 
 protected function makeCrefBaseType "Function: makeCrefBaseType" 
-  input Types.Type baseType;
+  input DAE.Type baseType;
   input InstDims dims;
-  output Exp.Type ety;
+  output DAE.ExpType ety;
 algorithm ety := matchcontinue(baseType,dims)
   local 
-    Exp.Type ty; 
-    Types.Type tp_1;
+    DAE.ExpType ty; 
+    DAE.Type tp_1;
     list<Option<Integer>> lst;
   case(baseType, dims) 
     equation
@@ -15220,9 +15220,9 @@ end makeCrefBaseType;
 protected function liftNonBasicTypesNDimensions "Function: liftNonBasicTypesNDimensions
 This is to handle a Option<integer> list of dimensions. 
 "
-  input Types.Type tp;
+  input DAE.Type tp;
   input  list<Option<Integer>> dimt;
-  output Types.Type otype;
+  output DAE.Type otype;
 algorithm otype := matchcontinue(tp,dimt)
   local Option<Integer> x;
   case(tp,{}) then tp;
@@ -15236,9 +15236,9 @@ end matchcontinue;
 end liftNonBasicTypesNDimensions;
 
 protected function instComplexEquation "instantiate a comlex equation, i.e. c = Complex(1.0,-1.0) when Complex is a record"
-  input Exp.Exp lhs;
-  input Exp.Exp rhs;
-  input Types.Type tp;
+  input DAE.Exp lhs;
+  input DAE.Exp rhs;
+  input DAE.Type tp;
   input SCode.Initial initial_;
   output list<DAE.Element> dae;
 algorithm
@@ -15278,8 +15278,8 @@ algorithm
 end instComplexEquation;
   
 protected function makeComplexDaeEquation "Creates a DAE.COMPLEX_EQUATION for equations involving records"
-  input Exp.Exp lhs;
-  input Exp.Exp rhs;  
+  input DAE.Exp lhs;
+  input DAE.Exp rhs;  
   input SCode.Initial initial_;
   output list<DAE.Element> dae;
 algorithm
@@ -15352,11 +15352,11 @@ protected function propagateVariability " help function to propagateAttributes, 
       list<DAE.Element> lst,r_1,r,lst_1;
       DAE.Element v,x;
       DAE.VarDirection dir_1;
-      Exp.ComponentRef cr;
+      DAE.ComponentRef cr;
       DAE.VarKind vk;
-      Types.Type t;
-      Option<Exp.Exp> e;
-      list<Exp.Subscript> id;
+      DAE.Type t;
+      Option<DAE.Exp> e;
+      list<DAE.Subscript> id;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
       list<Absyn.Path> class_;
@@ -15434,7 +15434,7 @@ algorithm
     local
       list<Env.Frame> env_1,env_2,env;
       Connect.Sets csets;
-      Types.Mod mods;
+      DAE.Mod mods;
       Absyn.ComponentRef cr;
       list<Absyn.ComponentRef> rest;
       InstanceHierarchy ih;
@@ -15482,11 +15482,11 @@ For components that already have been visited by updateComponentsInEnv, they mus
 modifiers to prevent infinite recursion"
   input HashTable5.HashTable updatedComps;
   input Absyn.ComponentRef cref;
-  input  Types.Mod mods;
-  input  Types.Mod cmod;
+  input  DAE.Mod mods;
+  input  DAE.Mod cmod;
   input  SCode.Mod m;
-  output Types.Mod outMods;
-  output Types.Mod outCmod;
+  output DAE.Mod outMods;
+  output DAE.Mod outCmod;
   output SCode.Mod outM;
 algorithm
   (outMods,outCmod,outM) := matchcontinue(updatedComps,cref,mods,cmod,m)
@@ -15526,13 +15526,13 @@ algorithm
   local
     list<DAE.Element> vars, vars1, equations;
     DAE.Element var;
-    Exp.Exp e;
-    Exp.ComponentRef componentRef;
+    DAE.Exp e;
+    DAE.ComponentRef componentRef;
     DAE.VarKind kind;
     DAE.VarDirection direction;
     DAE.VarProtection protection;
-    Types.Type ty;
-    Option<Exp.Exp> binding; 
+    DAE.Type ty;
+    Option<DAE.Exp> binding; 
     DAE.InstDims  dims;
     DAE.Flow flowPrefix;
     DAE.Stream streamPrefix;
@@ -15559,14 +15559,14 @@ end propagateBinding;
 
 protected function findCorrespondingBinding "
 Helper function for propagateBinding"
-  input Exp.ComponentRef inCref;
+  input DAE.ComponentRef inCref;
   input list<DAE.Element> inEquations;
-  output Option<Exp.Exp> outExp;
+  output Option<DAE.Exp> outExp;
 algorithm
   outExp:=matchcontinue(inCref, inEquations)
   local
-    Exp.ComponentRef cref,cref2,cref3;
-    Exp.Exp e;
+    DAE.ComponentRef cref,cref2,cref3;
+    DAE.Exp e;
     list<DAE.Element> equations;
     
     case (_, {}) then NONE();

@@ -38,9 +38,6 @@ package TaskGraphExt
   This module is the interface to the externally implemented task graph using Boost
   Graph Library in C++"
 
-public import Exp;
-public import DAELow;
-
 public function newTask
   input String inString;
   output Integer outInteger;

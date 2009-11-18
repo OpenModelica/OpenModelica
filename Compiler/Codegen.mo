@@ -46,12 +46,10 @@ package Codegen
  
 public import Absyn;
 public import DAE;
-public import Exp;
 public import MetaUtil;
 public import Print;
 public import RTOpts;
 public import SCode;
-public import Types;
 
 public 
 type Ident = String;
@@ -123,12 +121,14 @@ end LoopContext;
 protected import Debug;
 protected import Algorithm;
 protected import ClassInf;
+protected import Exp;
 protected import ModUtil;
 protected import Util;
 protected import Inst;
 protected import Interactive;
 protected import System;
 protected import Error;
+protected import Types;
 protected import DAEUtil;
 
 public constant CFunction cEmptyFunction=CFUNCTION("","",{},{},{},{},{},{}) " empty function ";
@@ -861,7 +861,7 @@ public function generateFunctions
   Generates code for all functions in a DAE and prints on Print buffer. 
   A list of libs for the external functions is returned."
   input DAE.DAElist inDAElist;
-  input list<Types.Type> metarecordTypes;
+  input list<DAE.Type> metarecordTypes;
   output list<String> outStringLst;
 algorithm
   outStringLst:=
@@ -1037,8 +1037,8 @@ algorithm
       list<Lib> struct_strs,arg_strs,includes,libs,struct_strs_1,funrefStrs;
       CFunction head_cfn,body_cfn,cfn,rcw_fn,func_decl,ext_decl;
       Absyn.Path fpath;
-      list<tuple<Lib, Types.Type>> args;
-      Types.Type restype,tp;
+      list<tuple<Lib, DAE.Type>> args;
+      DAE.Type restype,tp;
       list<DAE.ExtArg> extargs;
       DAE.ExtArg extretarg;
       Option<Absyn.Annotation> ann;
@@ -1082,7 +1082,7 @@ algorithm
     case (DAE.RECORD_CONSTRUCTOR(path = fpath, type_ = tp as (DAE.T_FUNCTION(funcArg = args,funcResultType = restype as (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(name)),_)),_)),rt)
       local
         String name, defhead, head, foot, body, decl1, decl2, assign_res, ret_var, record_var, record_var_dot, return_stmt;
-        Exp.Type expType;
+        DAE.ExpType expType;
         list<String> arg_names, arg_tmp1, arg_tmp2, arg_assignments;
         Integer tnr;
       equation
@@ -1231,11 +1231,11 @@ protected function generateFunctionRefReturnStruct
 algorithm
   out := matchcontinue(var)
     local
-      list<Types.Type> tys;
+      list<DAE.Type> tys;
       Ident fn_name,fn_name_full,str;
       Absyn.Path path,fullPath;
-      Types.Type ty;
-      list<Types.FuncArg> args;
+      DAE.Type ty;
+      list<DAE.FuncArg> args;
     case (DAE.VAR(ty = (DAE.T_FUNCTION(args, (DAE.T_TUPLE(tys),_)),SOME(path))))
       equation
         fn_name = generateReturnType(path);
@@ -1261,11 +1261,11 @@ algorithm
 end generateFunctionRefReturnStruct;
 
 protected function generateFunctionRefFnPtr
-  input list<Types.FuncArg> args;
+  input list<DAE.FuncArg> args;
   input Absyn.Path path;
   output String str;
 protected
-  list<Types.Type> fargTypes;
+  list<DAE.Type> fargTypes;
   list<String> fargStrList;
   String fargStr, fn_ret, fn_name;
 algorithm
@@ -1278,13 +1278,13 @@ algorithm
 end generateFunctionRefFnPtr;
 
 protected function generateFunctionRefReturnStruct1
-  input list<Types.Type> tys;
+  input list<DAE.Type> tys;
   input Ident fn_name;
   output list<String> out;
 algorithm
   out := matchcontinue(tys,fn_name)
     local
-      list<Types.Type> tys;
+      list<DAE.Type> tys;
       Absyn.Path path;
       list<String> outTypedef,outAliasing,defs,fields;
       String structHead, structTail;
@@ -1302,14 +1302,14 @@ end generateFunctionRefReturnStruct1;
 protected function generateFunctionRefReturnStructFields
   input Ident fn_name;
   input Integer i;
-  input list<Types.Type> tys;
+  input list<DAE.Type> tys;
   output list<String> defs;
   output list<String> fields;
 algorithm
   (defs,fields) := matchcontinue(fn_name,i,tys)
     local
-      list<Types.Type> rest;
-      Types.Type ty;
+      list<DAE.Type> rest;
+      DAE.Type ty;
       String defineTarg, defineField,istr;
       list<String> defs, fields;
     case (_,_,{}) then ({},{});
@@ -1414,14 +1414,14 @@ end generateExtFunctionName;
 protected function generateVarDeclaration 
 "function generateVarDeclaration
   Helper function to generateVarListDeclarations."
-   input Types.Var inVar;
+   input DAE.Var inVar;
    output String outStr;
 algorithm
   outStr :=
   matchcontinue (inVar)
     local
-      Types.Ident name;
-      Types.Type t;
+      DAE.Ident name;
+      DAE.Type t;
       String type_str, decl_str;
     case DAE.TYPES_VAR(name = name, type_ = t)
       equation
@@ -1441,7 +1441,7 @@ end generateVarDeclaration;
 protected function generateRecordDeclarations 
 "function generateRecordDeclarations
   Helper function to generateStructsForRecords."
-  input Types.Type inRecordType;
+  input DAE.Type inRecordType;
   input list<String> inReturnTypes;
   output list<String> outStrs;
   output list<String> outReturnTypes;
@@ -1450,7 +1450,7 @@ algorithm
   matchcontinue (inRecordType,inReturnTypes)
     local
       Absyn.Path path;
-      list<Types.Var> varlst;
+      list<DAE.Var> varlst;
       String name, first_str, last_str, path_str;
       list<String> res,strs,rest_strs,decl_strs,rt,rt_1,rt_2,record_definition,fieldNames;
     case ((DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(string = name), complexVarLst = varlst),SOME(path)),rt)
@@ -1487,15 +1487,15 @@ algorithm
 end generateRecordDeclarations;
 
 protected function generateRecordDeclarationsPrintList 
-  input list<Types.Type> inRecordType;
+  input list<DAE.Type> inRecordType;
   input list<String> inReturnTypes;
 algorithm
   _ :=
   matchcontinue (inRecordType,inReturnTypes)
     local
       list<String> res,restRes,rt,rt_1,rt_2;
-      list<Types.Type> rest;
-      Types.Type ty;
+      list<DAE.Type> rest;
+      DAE.Type ty;
     case ({},rt) then (); 
     case (ty::rest,rt)
       equation
@@ -1541,7 +1541,7 @@ end generateRecordDefinition;
 protected function generateNestedRecordDeclarations 
 "function generateNestedRecordDeclarations
   Helper function to generateRecordDeclarations."
-  input list<Types.Var> inRecordTypes;
+  input list<DAE.Var> inRecordTypes;
   input list<String> inReturnTypes;
   output list<String> outStrs;
   output list<String> outReturnTypes;
@@ -1549,8 +1549,8 @@ algorithm
   outStrs :=
   matchcontinue (inRecordTypes,inReturnTypes)
     local
-      Types.Type ty;
-      list<Types.Var> rest;
+      DAE.Type ty;
+      list<DAE.Var> rest;
       list<String> res,strs,strs_rest,rt,rt_1,rt_2;
     case ({},rt)
       then ({},rt);
@@ -1582,7 +1582,7 @@ algorithm
       list<DAE.Element> rest;
       Absyn.Path path;
       String name;
-      Types.Type ft;
+      DAE.Type ft;
       list<String> strs, rest_strs, rt, rt_1, rt_2;
     case ({},rt) then ({},rt);
     case (((var as DAE.VAR(ty = ft as (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_)),_))) :: rest),rt)
@@ -1681,14 +1681,14 @@ end generateReturnDecls;
 protected function tmpPrintInit 
 "function: tmpPrintInit
   Helper function to generateReturnDecl."
-  input Option<Exp.Exp> inExpExpOption;
+  input Option<DAE.Exp> inExpExpOption;
   output String outString;
 algorithm
   outString:=
   matchcontinue (inExpExpOption)
     local
       Lib str,str1;
-      Exp.Exp e;
+      DAE.Exp e;
     case NONE then "";
     case SOME(e)
       equation
@@ -1714,10 +1714,10 @@ algorithm
       Lib typ_str,id_str,dims_str,decl_str_1,expstr,decl_str,iStr;
       list<Lib> dim_strs;
       DAE.Element var;
-      Exp.ComponentRef id;
-      Types.Type typ;
-      Option<Exp.Exp> initopt;
-      list<Exp.Subscript> inst_dims;
+      DAE.ComponentRef id;
+      DAE.Type typ;
+      Option<DAE.Exp> initopt;
+      list<DAE.Subscript> inst_dims;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
       list<Absyn.Path> class_;
@@ -1760,10 +1760,10 @@ algorithm
   matchcontinue (inElement)
     local
       DAE.Element el;
-      Exp.ComponentRef cr;
+      DAE.ComponentRef cr;
       DAE.VarKind vk;
       DAE.VarDirection vd;
-      Option<Exp.Exp> st;
+      Option<DAE.Exp> st;
       DAE.Flow fl;
       DAE.Stream st;
       list<Absyn.Path> cl;
@@ -1808,15 +1808,15 @@ end isArray;
 
 protected function expShortTypeStr 
 "function: expShortTypeStr
-  Translates and Exp.Type to a string, using a \"short\" typename."
-  input Exp.Type inType;
+  Translates and DAE.ExpType to a string, using a \"short\" typename."
+  input DAE.ExpType inType;
   output String outString;
 algorithm
   outString:=
   matchcontinue (inType)
     local
       Lib res;
-      Exp.Type t;
+      DAE.ExpType t;
     case DAE.ET_INT() then "integer";
     case DAE.ET_REAL() then "real";
     case DAE.ET_STRING() then "string";
@@ -1852,9 +1852,9 @@ end expShortTypeStr;
 
 protected function expTypeStr 
 "function: expShortTypeStr
-  Translates and Exp.Type to a string. The second argument is 
+  Translates and DAE.ExpType to a string. The second argument is 
   true if an array type of the given type should be generated."
-  input Exp.Type inType;
+  input DAE.ExpType inType;
   input Boolean inBoolean;
   output String outString;
 algorithm
@@ -1862,7 +1862,7 @@ algorithm
   matchcontinue (inType,inBoolean)
     local
       Lib tstr,str;
-      Exp.Type t;
+      DAE.ExpType t;
 
     case ((t as DAE.ET_COMPLEX(_,_,_)),_)
       equation
@@ -1891,15 +1891,15 @@ protected function generateType
 "Generates code for a Type. If it is an array of the type, or the boolean
 flag is set, its array type is produced instead.
 "
-  input Types.Type inType;
+  input DAE.Type inType;
   input Boolean isArray;
   output String outString;
 algorithm
   outString := matchcontinue (inType,isArray)
     local
       Lib ty_str;
-      list<Types.Type> tys;
-      Types.Type arrayty,ty;
+      list<DAE.Type> tys;
+      DAE.Type arrayty,ty;
       list<Integer> dims;
       
     case ((DAE.T_TUPLE(tupleType = tys),_),false)
@@ -1918,15 +1918,15 @@ end generateType;
 protected function generateTypeExternal 
 "function: generateTypeExternal
   Generates Code for an external type."
-  input Types.Type inType;
+  input DAE.Type inType;
   output String outString;
 algorithm
   outString:=
   matchcontinue (inType)
     local
       Lib str;
-      Types.ArrayDim dim;
-      tuple<Types.TType, Option<Absyn.Path>> ty;
+      DAE.ArrayDim dim;
+      tuple<DAE.TType, Option<Absyn.Path>> ty;
     case ((DAE.T_INTEGER(varLstInt = _),_)) then "int";
     case ((DAE.T_REAL(varLstReal = _),_)) then "double";
     case ((DAE.T_STRING(varLstString = _),_)) then "const char*";
@@ -1964,7 +1964,7 @@ end generateTypeExternal;
 protected function generateTypeInternalNamepart 
 "function: generateTypeInternalNamepart
   Generates code for a Type only returning the typename of the basic types."
-  input Types.Type inType;
+  input DAE.Type inType;
   output String outString;
 algorithm
   outString:=
@@ -1991,15 +1991,15 @@ end generateReturnType;
 protected function generateTupleType
 "function: generateTupleType
   Generate code for a tuple type."
-  input list<Types.Type> inTypesTypeLst;
+  input list<DAE.Type> inTypesTypeLst;
   output String outString;
 algorithm
   outString:=
   matchcontinue (inTypesTypeLst)
     local
       Lib str,str_1,str_2,str_3;
-      Types.Type ty;
-      list<Types.Type> tys;
+      DAE.Type ty;
+      list<DAE.Type> tys;
     case {ty}
       equation
         str = generateSimpleType(ty);
@@ -2020,14 +2020,14 @@ protected function generateSimpleType
 "function: generateSimpleType
   Helper function to generateTupleType. 
   Generates code for a non-tuple type as element of a tuple."
-  input Types.Type inType;
+  input DAE.Type inType;
   output String outString;
 algorithm
   outString:=
   matchcontinue (inType)
     local
       String t_str,name;
-      Types.Type t_1,t,ty;
+      DAE.Type t_1,t,ty;
     
     case ((DAE.T_INTEGER(varLstInt = _),_)) then "modelica_integer";
     case ((DAE.T_REAL(varLstReal = _),_)) then "modelica_real";
@@ -2077,7 +2077,7 @@ protected function arrayTypeString
 "function: arrayTypeString
   Returns the type string of an array 
   of the basic type passed as argument."
-  input Types.Type inType;
+  input DAE.Type inType;
   output String outString;
 algorithm
   outString:=
@@ -2138,14 +2138,14 @@ end generateExtFunctionArgs;
 protected function generateFunctionArg 
 "function: generateFunctionArgs
   Generates code from a function argument."
-  input Types.FuncArg inFuncArg;
+  input DAE.FuncArg inFuncArg;
   output String outString;
 algorithm
   outString:=
   matchcontinue (inFuncArg)
     local
       Lib str,str_1,str_2,name,fargStr,resStr;
-      Types.Type ty;
+      DAE.Type ty;
     case ((name,ty))
       equation
         str = generateTupleType({ty});
@@ -2160,15 +2160,15 @@ protected function generateExtArgType
 "function: generateExtArgType
   Helper function to generateExtFunctionArg.
   Generates code for the type of an external function argument."
-  input Types.Attributes inAttributes;
-  input Types.Type inType;
+  input DAE.Attributes inAttributes;
+  input DAE.Type inType;
   output String outString;
 algorithm
   outString:=
   matchcontinue (inAttributes,inType)
     local
       Lib str,resstr,tystr;
-      tuple<Types.TType, Option<Absyn.Path>> ty;
+      tuple<DAE.TType, Option<Absyn.Path>> ty;
       
     case (DAE.ATTR(direction = Absyn.INPUT()),ty)
       equation
@@ -2233,10 +2233,10 @@ algorithm
   matchcontinue (inExtArg)
     local
       Lib tystr,name,res,e_str;
-      Exp.ComponentRef cref,cr;
-      Types.Attributes attr;
-      tuple<Types.TType, Option<Absyn.Path>> ty;
-      Exp.Exp exp;
+      DAE.ComponentRef cref,cr;
+      DAE.Attributes attr;
+      tuple<DAE.TType, Option<Absyn.Path>> ty;
+      DAE.Exp exp;
       
     case DAE.EXTARG(componentRef = cref,attributes = attr,type_ = ty)
       equation
@@ -2273,16 +2273,16 @@ protected function generateExtArgTypeF77
 "function: generateExtArgTypeF77
   Helper function to generateExtFunctionArg.
   Generates code for the type of an external function argument in Fortran format."
-  input Types.Attributes inAttributes;
-  input Types.Type inType;
+  input DAE.Attributes inAttributes;
+  input DAE.Type inType;
   output String outString;
 algorithm
   outString:=
   matchcontinue (inAttributes,inType)
     local
       Lib str,resstr,tystr;
-      tuple<Types.TType, Option<Absyn.Path>> ty;
-      Types.Attributes attr;
+      tuple<DAE.TType, Option<Absyn.Path>> ty;
+      DAE.Attributes attr;
 
     case (DAE.ATTR(direction = Absyn.INPUT()),ty)
       equation
@@ -2334,9 +2334,9 @@ algorithm
   matchcontinue (inExtArg)
     local
       Lib tystr,name,res;
-      Exp.ComponentRef cref;
-      Types.Attributes attr;
-      tuple<Types.TType, Option<Absyn.Path>> ty;
+      DAE.ComponentRef cref;
+      DAE.Attributes attr;
+      tuple<DAE.TType, Option<Absyn.Path>> ty;
       DAE.ExtArg arg;
 
     case DAE.EXTARG(componentRef = cref,attributes = attr,type_ = ty)
@@ -2372,9 +2372,9 @@ algorithm
   matchcontinue (inExtArg)
     local
       Lib res;
-      Exp.ComponentRef cref;
-      Types.Attributes attr;
-      tuple<Types.TType, Option<Absyn.Path>> ty;
+      DAE.ComponentRef cref;
+      DAE.Attributes attr;
+      tuple<DAE.TType, Option<Absyn.Path>> ty;
       
     case DAE.EXTARG(componentRef = cref,attributes = attr,type_ = ty)
       equation
@@ -2406,7 +2406,7 @@ protected function generateFunctionBody
   Generates code for the body of a Modelica function."
   input Absyn.Path fpath;
   input list<DAE.Element> dae;
-  input Types.Type restype;
+  input DAE.Type restype;
   input list<VariableDeclaration> functionRefTypedefs;
   output CFunction cfn;
   Integer tnr,tnr_ret_1,tnr_ret,tnr_mem,tnr_var,tnr_alg,tnr_res;
@@ -2439,7 +2439,7 @@ end generateFunctionBody;
 
 protected function generateFunctionReferenceWrapperBody 
   input Absyn.Path fpath;
-  input Types.Type inType;
+  input DAE.Type inType;
   output list<CFunction> outCfns;
 algorithm
   outCfns := matchcontinue (fpath,inType)
@@ -2447,16 +2447,16 @@ algorithm
       CFunction cfn, callCfn, convertCfn;
       Integer tnr;
       String fn_name_str, ret_stmt, ret_type_str, ret_type_str_box, ret_decl, ret_decl_box, ret_var, ret_var_box, callVar, tmp, mem_var, mem_decl, mem_stmt1, mem_stmt2;
-      Types.Type ty1,ty2,retType1,retType2;
+      DAE.Type ty1,ty2,retType1,retType2;
       list<String> funcArgNames, funcArgTypeNames, funcArgVars, stringList, recordFields, recordFieldsBox, structStrs;
-      list<Types.Type> funcArgTypes1, funcArgTypes2, retTypeList1, retTypeList2;
-      list<Exp.Exp> funcArgExps1, funcArgExps2, funcArgExps3, funcArgExps4, funcArgExps5;
-      list<Types.FuncArg> funcArgs1, funcArgs2;
+      list<DAE.Type> funcArgTypes1, funcArgTypes2, retTypeList1, retTypeList2;
+      list<DAE.Exp> funcArgExps1, funcArgExps2, funcArgExps3, funcArgExps4, funcArgExps5;
+      list<DAE.FuncArg> funcArgs1, funcArgs2;
       list<Integer> intList;
-      Exp.Exp callExp;
+      DAE.Exp callExp;
       list<Algorithm.Statement> stmtList;
       Boolean isTuple;
-      Exp.ComponentRef resCref;
+      DAE.ComponentRef resCref;
       Integer i;
       // Only generate these functions if we use MetaModelica grammar
     case (fpath,ty1)
@@ -2535,8 +2535,8 @@ algorithm
 end generateFunctionReferenceWrapperBody;
 
 protected function makeAssignmentNoCheck
-  input Exp.Exp lhs;
-  input Exp.Exp rhs;
+  input DAE.Exp lhs;
+  input DAE.Exp rhs;
   output Algorithm.Statement stmt;
 algorithm
   stmt := DAE.STMT_ASSIGN(DAE.ET_OTHER,lhs,rhs);
@@ -2562,11 +2562,11 @@ algorithm
       Context context;
       CFunction cfn,cfn1,cfn2;
       DAE.Element var;
-      Exp.ComponentRef cr;
+      DAE.ComponentRef cr;
       DAE.VarKind vk;
       DAE.VarDirection vd;
-      Option<Exp.Exp> e;
-      list<Exp.Subscript> id;
+      Option<DAE.Exp> e;
+      list<DAE.Subscript> id;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
       list<Absyn.Path> class_;
@@ -2627,12 +2627,12 @@ algorithm
       list<Lib> dim_strs;
       Integer tnr1,ndims,tnr;
       DAE.Element var;
-      Exp.ComponentRef id;
+      DAE.ComponentRef id;
       DAE.VarKind vk;
       DAE.VarDirection vd;
-      Types.Type typ;
-      Option<Exp.Exp> e;
-      list<Exp.Subscript> inst_dims;
+      DAE.Type typ;
+      Option<DAE.Exp> e;
+      list<DAE.Subscript> inst_dims;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
       list<Absyn.Path> class_;
@@ -2700,11 +2700,11 @@ algorithm
       DAE.ExternalDecl extdecl;
       CFunction cfn1,cfn2,cfn;
       DAE.Element var;
-      Exp.ComponentRef cr;
+      DAE.ComponentRef cr;
       DAE.VarKind vk;
       DAE.VarDirection vd;
-      Option<Exp.Exp> e;
-      list<Exp.Subscript> id;
+      Option<DAE.Exp> e;
+      list<DAE.Subscript> id;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
       list<Absyn.Path> class_;
@@ -2779,12 +2779,12 @@ algorithm
       list<Lib> dim_strs;
       Integer tnr1,ndims,tnr;
       DAE.Element var;
-      Exp.ComponentRef id;
+      DAE.ComponentRef id;
       DAE.VarKind vk;
       DAE.VarDirection vd;
-      Types.Type typ;
-      Option<Exp.Exp> e;
-      list<Exp.Subscript> inst_dims;
+      DAE.Type typ;
+      Option<DAE.Exp> e;
+      list<DAE.Subscript> inst_dims;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
       list<Absyn.Path> class_;
@@ -2835,7 +2835,7 @@ protected function generateSizeSubscripts
 "function: generateSizeSubscripts
   Generates code for calculating the subscripts of a variable."
   input String inString;
-  input list<Exp.Subscript> inExpSubscriptLst;
+  input list<DAE.Subscript> inExpSubscriptLst;
   input Integer inInteger;
   input Context inContext;
   output CFunction outCFunction;
@@ -2850,8 +2850,8 @@ algorithm
       CFunction cfn1,cfn2,cfn;
       Lib var1,id;
       list<Lib> vars2;
-      Exp.Exp e;
-      list<Exp.Subscript> r,subs;
+      DAE.Exp e;
+      list<DAE.Subscript> r,subs;
       
     case (_,{},tnr,context) then (cEmptyFunction,{},tnr);
       
@@ -2875,15 +2875,15 @@ protected function generateAllocArrayF77
 "function: generateAllocArrayF77
   Generates code for allocating an array in Fortran."
   input String inCref;
-  input Types.Type inType;
+  input DAE.Type inType;
   output CFunction outCFunction;
 algorithm
   outCFunction:=
   matchcontinue (inCref,inType)
     local
-      Types.Type elty,ty;
+      DAE.Type elty,ty;
       list<Integer> dims;
-      list<Exp.Subscript> dimsubs;
+      list<DAE.Subscript> dimsubs;
       Integer tnr,tnr1,ndims;
       CFunction cfn1,cfn1_1,cfn;
       list<Lib> dim_strs;
@@ -3046,8 +3046,8 @@ algorithm
   matchcontinue (whenStatement,nextTemp,inContext)
     local
       CFunction cfn, cfn1, cfn2, cfn3, cfn4, cfn5, elseBlock1, elseBlock2;
-      Exp.Exp e, e1;
-      list<Exp.Exp> el;
+      DAE.Exp e, e1;
+      list<DAE.Exp> el;
       list<Algorithm.Statement> stmts;
       Algorithm.Statement algStmt;
       Integer tnr, tnr1, tnr2, tnr3, tnr4;
@@ -3110,16 +3110,16 @@ algorithm
 end generateAlgorithmWhenStatement;
 
 protected function buildCrefFromAsub
-  input Exp.ComponentRef cref;
-  input list<Exp.Exp> subs;
-  output Exp.ComponentRef cRefOut;
+  input DAE.ComponentRef cref;
+  input list<DAE.Exp> subs;
+  output DAE.ComponentRef cRefOut;
 algorithm
   cRefOut := matchcontinue(cref, subs)
     local 
-      Exp.Exp sub; 
-      list<Exp.Exp> rest; 
-      Exp.ComponentRef crNew;
-      list<Exp.Subscript> indexes;
+      DAE.Exp sub; 
+      list<DAE.Exp> rest; 
+      DAE.ComponentRef crNew;
+      list<DAE.Subscript> indexes;
     case (cref, {}) then cref;
     case (cref, subs)
       equation
@@ -3148,16 +3148,16 @@ algorithm
           rdecl1,rvar1,rdecl2,rvar2,rdecl3,rvar3,e1var,e2var,e3var,r_stmt,for_begin,def_beg1,
           mem_begin,mem_end,for_end,def_end1,i,tdecl,tvar,idecl,ivar,array_type_str,evar,stmt_array,stmt_scalar,crit_stmt;
       Integer tnr1,tnr2,tnr,tnr3,tnr_1,tnr2_2,tnr2_3,tnr4,tnr_2;
-      Exp.Type typ,t;
-      Exp.ComponentRef cref;
-      Exp.Exp exp,e,e1,e2;
+      DAE.ExpType typ,t;
+      DAE.ComponentRef cref;
+      DAE.Exp exp,e,e1,e2;
       Context context;
-      list<Exp.Subscript> subs;
+      list<DAE.Subscript> subs;
       list<Algorithm.Statement> then_,stmts;
       Algorithm.Else else_;
       Algorithm.Statement algStmt;
       Absyn.Path path;
-      list<Exp.Exp> args;
+      list<DAE.Exp> args;
       Boolean a;
       CodeContext codeContext;
       ExpContext expContext;
@@ -3183,7 +3183,7 @@ algorithm
     /* adrpo: handle ASUB on LHS */ 
     case (DAE.STMT_ASSIGN(type_ = typ,exp1 = asub as DAE.ASUB(exp = DAE.CREF(cref,t), sub=subs),exp = exp),tnr,context)
       local 
-        list<Exp.Exp> subs; Exp.Exp asub; Exp.ComponentRef crefBuild;
+        list<DAE.Exp> subs; DAE.Exp asub; DAE.ComponentRef crefBuild;
       equation
         Debug.fprintln("cgas", "generate_algorithm_statement");
         (cfn1,var1,tnr1) = generateExpression(exp, tnr, context);
@@ -3324,7 +3324,7 @@ algorithm
 
     case (DAE.STMT_TUPLE_ASSIGN(t,expl,e as DAE.CALL(path=_)),tnr,context)
       local Context context;
-        list<Exp.Exp> args,expl; Absyn.Path fn;
+        list<DAE.Exp> args,expl; Absyn.Path fn;
         list<String> lhsVars,vars1;
         String tupleVar;
       equation
@@ -3418,7 +3418,7 @@ algorithm
 	  case (DAE.STMT_MATCHCASES(exps), tnr, CONTEXT(codeContext,expContext,loopContext)) // matchcontinue helper
       local
         list<Integer> il;
-        list<Exp.Exp> exps;
+        list<DAE.Exp> exps;
         list<CFunction> cfnList, labelFnList;
         list<String> caseStmt;
         list<list<String>> caseStmtLst;
@@ -3472,7 +3472,7 @@ protected function generateTupleLhsAssignment
   author: PA
   Generates the assignment of output args in a tuple call
   given a variable containing the tuple represented as a struct."
-  input list<Exp.Exp> expl;
+  input list<DAE.Exp> expl;
   input String tupleVar;
   input Integer i "nth tuple elt";
   input Integer tnr;
@@ -3481,12 +3481,12 @@ protected function generateTupleLhsAssignment
   output Integer outTnr;
 algorithm
   (cfn,outTnr) := matchcontinue(expl,tupleVar,i,tnr,context)
-  local Exp.ComponentRef cr;
+  local DAE.ComponentRef cr;
     String res1,stmt,iStr;
     CFunction cfn2;
-    Exp.Ident id;
-    Exp.Type tp;
-    list<tuple<Exp.Type,Exp.Ident>> vars;
+    DAE.Ident id;
+    DAE.ExpType tp;
+    list<tuple<DAE.ExpType,DAE.Ident>> vars;
     case({},tupleVar,i,tnr,context) then (cEmptyFunction,tnr);
     case(DAE.CREF(cr,tp)::expl,tupleVar,i,tnr,context) equation
       (cfn,res1,tnr) = generateScalarLhsCref(tp,cr,tnr,context);
@@ -3513,7 +3513,7 @@ end isSimulationContext;
 protected function generateRangeExpressions 
 "function: generateRangeExpressions
   Generates code for a range expression."
-  input Exp.Exp inExp;
+  input DAE.Exp inExp;
   input Integer inInteger;
   input Context inContext;
   output CFunction outCFunction1;
@@ -3528,8 +3528,8 @@ algorithm
       CFunction cfn1,cfn3,cfn,cfn2;
       Lib var1,var2,var3;
       Integer tnr1,tnr3,tnr,tnr2;
-      Exp.Type t;
-      Exp.Exp e1,e3,e2;
+      DAE.ExpType t;
+      DAE.Exp e1,e3,e2;
       Context context;
     case (DAE.RANGE(ty = t,exp = e1,expOption = NONE,range = e3),tnr,context)
       equation
@@ -3570,7 +3570,7 @@ algorithm
       Integer tnr,tnr2,tnr3,tnr4;
       CFunction cfn1,cfn2,cfn2_1,cfn3,cfn3_1,cfn4,cfn4_1,cfn;
       Lib var2,if_begin;
-      Exp.Exp e;
+      DAE.Exp e;
       list<Algorithm.Statement> stmts;
       Algorithm.Else else_;
       Context context;
@@ -3766,19 +3766,19 @@ algorithm
       list<Lib> vars1,dim_strs;
       Integer tnr1,ndims,tnr;
       DAE.Element var;
-      Exp.ComponentRef id;
+      DAE.ComponentRef id;
       DAE.VarKind vk;
       DAE.VarDirection vd;
-      Types.Type typ;
-      list<Exp.Subscript> inst_dims;
+      DAE.Type typ;
+      list<DAE.Subscript> inst_dims;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
       list<Absyn.Path> class_;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
       Context context;
-      Exp.Exp e;
-      Exp.Type etp;
+      DAE.Exp e;
+      DAE.ExpType etp;
 
     /* variables without binding */
     case ((var as DAE.VAR(componentRef = id,
@@ -3902,19 +3902,19 @@ algorithm
       Integer ndims,tnr,tnr1;
       CFunction cfn;
       DAE.Element var;
-      Exp.ComponentRef id;
+      DAE.ComponentRef id;
       DAE.VarKind vk;
       DAE.VarDirection vd;
-      Types.Type typ;
-      list<Exp.Subscript> inst_dims;
+      DAE.Type typ;
+      list<DAE.Subscript> inst_dims;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
       list<Absyn.Path> class_;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
       Context context;
-      Exp.Exp e;
-      Types.Type tp;
+      DAE.Exp e;
+      DAE.Type tp;
       Absyn.InnerOuter io;
       DAE.VarProtection prot;
     case ((var as DAE.VAR(componentRef = id,
@@ -3985,12 +3985,12 @@ algorithm
   matchcontinue (inElement,i,inInteger,inString,inContext)
     local
       DAE.Element var;
-      Exp.ComponentRef id,id_1,idstr;
-      Exp.Exp expstr;
+      DAE.ComponentRef id,id_1,idstr;
+      DAE.Exp expstr;
       DAE.VarKind vk;
       DAE.VarDirection vd;
-      Types.Type typ;
-      list<Exp.Subscript> inst_dims;
+      DAE.Type typ;
+      list<DAE.Subscript> inst_dims;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
       list<Absyn.Path> class_;
@@ -4000,10 +4000,10 @@ algorithm
       Lib pre;
       Context context;
       Boolean is_a,emptyprep;
-      Exp.Type exptype;
+      DAE.ExpType exptype;
       Algorithm.Statement scalarassign,arrayassign,assign;
       CFunction cfn;
-      Exp.Exp e;
+      DAE.Exp e;
       String iStr,id_1_str;
       
     /* No binding */
@@ -4063,8 +4063,8 @@ end generateVarInit;
 
 protected function dimString 
 "function dimString
-  Returns a Exp.Subscript as a string."
-  input Exp.Subscript inSubscript;
+  Returns a DAE.Subscript as a string."
+  input DAE.Subscript inSubscript;
   output String outString;
 algorithm
   outString:=
@@ -4072,7 +4072,7 @@ algorithm
     local
       Lib str;
       Integer i;
-      Exp.Subscript e;
+      DAE.Subscript e;
     case DAE.INDEX(exp = DAE.ICONST(integer = i))
       equation
         str = intString(i);
@@ -4098,7 +4098,7 @@ protected function isVarQ
 algorithm
   _:=  matchcontinue (inElement)
     local
-      Exp.ComponentRef id;
+      DAE.ComponentRef id;
       DAE.VarKind vk;
       DAE.VarDirection vd;
     case DAE.VAR(componentRef = id,kind = vk,direction = vd)
@@ -4186,8 +4186,8 @@ algorithm
       Lib cref_str1,cref_str2,stmt,varname,typ_str;
       CFunction cfn;
       DAE.Element var;
-      Exp.ComponentRef id;
-      Types.Type typ;
+      DAE.ComponentRef id;
+      DAE.Type typ;
       Integer tnr;
       Context context;
       
@@ -4219,7 +4219,7 @@ end generateResultVar;
 
 protected function generateWhenConditionExpressions
 	input list<Integer> helpVarIndices;
-	input list<Exp.Exp> exprLst;
+	input list<DAE.Exp> exprLst;
 	input Integer tempNr;
   input Context inContext;
   output CFunction outCFunction;
@@ -4233,8 +4233,8 @@ algorithm
       Integer ind;
       list<Integer> indRest;
       Integer tnr, tnr2, tnr3;
-      Exp.Exp e;
-      list<Exp.Exp> eRest;
+      DAE.Exp e;
+      list<DAE.Exp> eRest;
       String var;
       list<String> vars;
 			CFunction cfn,cfn1,cfn2;
@@ -4251,7 +4251,7 @@ end generateWhenConditionExpressions;
 
 protected function generateWhenConditionExpression
 	input Integer helpVarIndex;
-	input Exp.Exp expr;
+	input DAE.Exp expr;
 	input Integer tempNr;
   input Context inContext;
   output CFunction outCFunction;
@@ -4264,7 +4264,7 @@ algorithm
       Context context;
       Integer ind;
       Integer tnr, tnr2;
-      Exp.Exp e;
+      DAE.Exp e;
       String edgeExprStr;
       String helpUpdateStr;
       String var;
@@ -4284,7 +4284,7 @@ end generateWhenConditionExpression;
 public function generateExpressions 
 "function: generateExpressions
   Generates code for a list of expressions."
-  input list<Exp.Exp> inExpExpLst;
+  input list<DAE.Exp> inExpExpLst;
   input Integer inInteger;
   input Context inContext;
   output CFunction outCFunction;
@@ -4299,8 +4299,8 @@ algorithm
       CFunction cfn1,cfn2,cfn;
       Lib var1;
       list<Lib> vars2;
-      Exp.Exp f;
-      list<Exp.Exp> r;
+      DAE.Exp f;
+      list<DAE.Exp> r;
     case ({},tnr,context) then (cEmptyFunction,{},tnr);
     case ((f :: r),tnr,context)
       equation
@@ -4313,7 +4313,7 @@ algorithm
 end generateExpressions;
 
 public function generateExpressionsToList "As generateExpression outputs a list<CFunction>"
-  input list<Exp.Exp> inExps;
+  input list<DAE.Exp> inExps;
   input Integer inInteger;
   input Context inContext;
   output list<CFunction> outCFunction;
@@ -4321,8 +4321,8 @@ public function generateExpressionsToList "As generateExpression outputs a list<
 algorithm
   (outCFunction,_,_) := matchcontinue (inExps, inInteger, inContext)
     local
-      Exp.Exp inExp;
-      list<Exp.Exp> rest;
+      DAE.Exp inExp;
+      list<DAE.Exp> rest;
       CFunction cfn;
       list<CFunction> cfns;
     case ({}, inInteger, _) then ({},inInteger);
@@ -4342,7 +4342,7 @@ public function generateExpression "function: generateExpression
    string    | expression result variable name, or c expression
    int       | next temporary number
 "
-  input Exp.Exp inExp;
+  input DAE.Exp inExp;
   input Integer inInteger;
   input Context inContext;
   output CFunction outCFunction;
@@ -4360,14 +4360,14 @@ algorithm
       Real r;
       Boolean b,builtin,a;
       CFunction cfn,cfn1,cfn1_2,cfn1_1,cfn2,cfn2_1,cfn3,cfn3_1,cfn4,cfn_1,cfn5;
-      Exp.ComponentRef cref,cr;
-      Exp.Type t,ty;
-      Exp.Exp e1,e2,e,then_,else_,crexp,dim,e3;
-      Exp.Operator op;
+      DAE.ComponentRef cref,cr;
+      DAE.ExpType t,ty;
+      DAE.Exp e1,e2,e,then_,else_,crexp,dim,e3;
+      DAE.Operator op;
       Absyn.Path fn;
-      list<Exp.Exp> args,elist;
+      list<DAE.Exp> args,elist;
       list<Lib> vars1;
-      list<list<tuple<Exp.Exp, Boolean>>> ell;
+      list<list<tuple<DAE.Exp, Boolean>>> ell;
     case (DAE.ICONST(integer = i),tnr,context)
       equation
         istr = intString(i);
@@ -4521,14 +4521,14 @@ algorithm
         (cfn,tvar,tnr2);
 
     case (DAE.SIZE(exp = cr,sz = NONE),tnr,context)
-      local Exp.Exp cr;
+      local DAE.Exp cr;
       equation
         Debug.fprint("failtrace", "#-- Codegen.generate_expression: size(X) not implemented");
       then
         fail();
         /* Special case for empty arrays, create null pointer*/
    case (e as DAE.ARRAY(ty = t,scalar = a,array = {}),tnr,context)
-      local Exp.Exp e;
+      local DAE.Exp e;
       equation
         array_type_str = expTypeStr(t, true);
         short_type_str = expShortTypeStr(t);
@@ -4543,7 +4543,7 @@ algorithm
         (cfn,tvar,tnr1);
         /* array */
     case (e as DAE.ARRAY(ty = t,scalar = a,array = elist),tnr,context)
-      local Exp.Exp e;
+      local DAE.Exp e;
       equation
         (cfn1,vars1,tnr1) = generateExpressions(elist, tnr, context);
         nvars = listLength(vars1);
@@ -4620,7 +4620,7 @@ algorithm
       local
         list<DAE.Element> ld;
     		DAE.Element b;
-        Exp.Exp res;
+        DAE.Exp res;
       equation
         (cfn,tnr_1) = generateVars(ld, isVarQ, tnr, funContext);
         (cfn1,tnr2) = generateAlgorithms(Util.listCreate(b), tnr_1, context);
@@ -4640,7 +4640,7 @@ algorithm
         String mem_decl, mem_var, get_mem_stmt, rest_mem_stmt, tShort;
         Integer tnr_mem;
         CFunction mem_fn;
-        Exp.Exp idx;
+        DAE.Exp idx;
       equation
         (mem_decl,mem_var,tnr_mem) = generateTempDecl("state", tnr);
         get_mem_stmt = Util.stringAppendList({mem_var," = get_memory_state();"});
@@ -4759,8 +4759,8 @@ algorithm
     // cref[x, y] - try to transform it into a cref 
     case (DAE.ASUB(exp = e as DAE.CREF(cref,t), sub=subs),tnr,context)
       local 
-        list<Exp.Exp> subs;
-        Exp.ComponentRef cref, crefBuild;
+        list<DAE.Exp> subs;
+        DAE.ComponentRef cref, crefBuild;
       equation
         crefBuild = buildCrefFromAsub(cref, subs);
         (cfn,var,tnr_1) = generateRhsCref(crefBuild, t, tnr, context);
@@ -4841,7 +4841,7 @@ algorithm
       local
         Absyn.Path fn;
         Integer index;
-        list<Exp.Type> etypeList;
+        list<DAE.ExpType> etypeList;
         list<String> fieldNames;
         String fnStr;
       equation
@@ -4903,7 +4903,7 @@ protected function addValueblockRetVar "function: addValueblockRetVar
  Used by generateExpression - Valueblock. Adds a return variable (and return
  assignment) to the valueblock code.
 "
-  input Exp.Type inType;
+  input DAE.ExpType inType;
   input CFunction inFunc;
   input Integer inTnr;
   input String inResVar;
@@ -4917,7 +4917,7 @@ algorithm
     case (DAE.ET_ARRAY(t,SOME(arrayDim) :: {}),localFunc,localTnr,localResVar,con)
       local
         String type_string,tdecl,tvar,localResVar,memStr,stmt,stmt2,tempStr;
-        Exp.Type t;
+        DAE.ExpType t;
         CFunction localFunc,cfn;
         Integer localTnr,arrayDim,tnr2;
         Boolean sim;
@@ -4947,7 +4947,7 @@ algorithm
     case (localType,localFunc,localTnr,localResVar,_)
       local
         String type_string,tdecl,tvar,localResVar;
-        Exp.Type localType;
+        DAE.ExpType localType;
         CFunction localFunc,cfn;
         Integer localTnr,tnr2;
         String stmt;
@@ -4989,7 +4989,7 @@ protected function generateBuiltinFunction "function: generateBuiltinFunction
 
   Generates code for some specific builtin functions.
 "
-  input Exp.Exp inExp;
+  input DAE.Exp inExp;
   input Integer inInteger;
   input Context inContext;
   output CFunction outCFunction;
@@ -4999,16 +4999,16 @@ algorithm
   (outCFunction,outString,outInteger):=
   matchcontinue (inExp,inInteger,inContext)
     local
-      Exp.Type tp;
+      DAE.ExpType tp;
       Lib tp_str,tp_str2,var1,fn_name,tdecl,tvar,stmt,var2;
       CFunction cfn1,cfn2,cfn;
       Integer tnr1,tnr2,tnr,tnr3;
-      Exp.Exp arg,s1,s2;
+      DAE.Exp arg,s1,s2;
       Context context;
 
     /* pre(var) must make sure that var is not cast to e.g modelica_integer, since pre expects double& */
     case (DAE.CALL(path = Absyn.IDENT(name = "pre"),expLst = {arg as DAE.CREF(cr,_)},tuple_ = false,builtin = true),tnr,context) /* max(v), v is vector */
-      local String cref_str; Exp.ComponentRef cr; Boolean needCast; String castStr;
+      local String cref_str; DAE.ComponentRef cr; Boolean needCast; String castStr;
       equation
         tp = Exp.typeof(arg);
         tp_str = expTypeStr(tp, false);
@@ -5102,7 +5102,7 @@ algorithm
 
      case (DAE.CALL(path = Absyn.IDENT(name = "promote"),expLst = {A,n},tuple_ = false,builtin = true),tnr,context)
        local
-         Exp.Exp A,n;
+         DAE.Exp A,n;
          String arr_tp_str;
        equation
          tp = Exp.typeof(A);
@@ -5120,7 +5120,7 @@ algorithm
 
      case (DAE.CALL(path = Absyn.IDENT(name = "transpose"),expLst = {A},tuple_ = false,builtin = true),tnr,context)
        local
-         Exp.Exp A;
+         DAE.Exp A;
          String arr_tp_str;
        equation
         tp = Exp.typeof(A);
@@ -5135,7 +5135,7 @@ algorithm
         (cfn,tvar,tnr2);
 
     case (DAE.CALL(path = Absyn.IDENT(name = "String"),expLst = {s,minlen,leftjust,signdig},tuple_ = false,builtin = true),tnr,context) /* max(v), v is vector */
-      local String cref_str; Exp.Exp s,minlen,leftjust,signdig; Boolean needCast; String var3,var4,var5,var6,var7,edecl,evar;
+      local String cref_str; DAE.Exp s,minlen,leftjust,signdig; Boolean needCast; String var3,var4,var5,var6,var7,edecl,evar;
         CFunction cfn3,cfn4; Boolean isenum; list<Lib> tedcllst;
       equation
         tp = Exp.typeof(s);
@@ -5175,14 +5175,14 @@ algorithm
       // statements manually. /sjoelund 2009-11-04
     case (DAE.CALL(path = Absyn.IDENT(name = "mmc_unbox_record"),expLst = {s1},tuple_ = false,builtin = true, ty = tp),tnr,context)
       local
-        Types.Type t;
-        list<Types.Var> v;
-        list<Types.Type> tys1,tys2;
+        DAE.Type t;
+        list<DAE.Var> v;
+        list<DAE.Type> tys1,tys2;
         String baseStr,name,tmp;
         Integer i;
         list<Integer> intList;
         list<String> stringList, fetchStrs, tmpDecls, tmpRefs, tmpAssignments, conversionStmts, recordFields;
-        list<Exp.Exp> tmpExps, recordFieldExps;
+        list<DAE.Exp> tmpExps, recordFieldExps;
         list<Algorithm.Statement> stmtList;
         CFunction cfnConversion;
       equation
@@ -5237,8 +5237,8 @@ protected function generateUnary "function: generateUnary
 
   Helper function to generate_expression.
 "
-  input Exp.Operator inOperator;
-  input Exp.Exp inExp;
+  input DAE.Operator inOperator;
+  input DAE.Exp inExp;
   input Integer inInteger;
   input Context inContext;
   output CFunction outCFunction;
@@ -5251,9 +5251,9 @@ algorithm
       CFunction cfn;
       Lib var,var_1,s;
       Integer tnr_1,tnr;
-      Exp.Exp e;
+      DAE.Exp e;
       Context context;
-      Exp.Type tp;
+      DAE.ExpType tp;
     case (DAE.UPLUS(ty = DAE.ET_REAL()),e,tnr,context)
       equation
         (cfn,var,tnr_1) = generateExpression(e, tnr, context);
@@ -5330,9 +5330,9 @@ protected function generateBinary "function:  generateBinary
   string    | expression result
   int       | next temporary number
 "
-  input Exp.Exp inExp1;
-  input Exp.Operator inOperator2;
-  input Exp.Exp inExp3;
+  input DAE.Exp inExp1;
+  input DAE.Operator inOperator2;
+  input DAE.Exp inExp3;
   input Integer inInteger4;
   input Context inContext5;
   output CFunction outCFunction;
@@ -5345,7 +5345,7 @@ algorithm
       CFunction cfn1,cfn2,cfn,cfn_1,cfn_2;
       Lib var1,var2,var,decl,stmt;
       Integer tnr1,tnr2,tnr,tnr3;
-      Exp.Exp e1,e2;
+      DAE.Exp e1,e2;
       Context context;
 
       /* str + str */
@@ -5685,8 +5685,8 @@ end generateTempDeclList;
 protected function generateScalarLhsCref 
 "function: generateScalarLhsCref
   Helper function to generateAlgorithmStatement."
-  input Exp.Type inType;
-  input Exp.ComponentRef inComponentRef;
+  input DAE.ExpType inType;
+  input DAE.ComponentRef inComponentRef;
   input Integer inInteger;
   input Context inContext;
   output CFunction outCFunction;
@@ -5697,11 +5697,11 @@ algorithm
   matchcontinue (inType,inComponentRef,inInteger,inContext)
     local
       Lib cref_str,var,ndims_str,idxs_str,type_str,cref1,id;
-      Exp.Type t;
-      Exp.ComponentRef cref;
+      DAE.ExpType t;
+      DAE.ComponentRef cref;
       Integer tnr,tnr_1,tnr1,ndims;
       Context context;
-      list<Exp.Subscript> subs,idx;
+      list<DAE.Subscript> subs,idx;
       CFunction cfn,cfn1;
       list<Lib> idxs1;
     case (t,cref,tnr,context)
@@ -5772,8 +5772,8 @@ protected function generateRhsCref "function: generateRhsCref
   special code that constructs the runtime object of the array must
   be generated.
 "
-  input Exp.ComponentRef inComponentRef;
-  input Exp.Type inType;
+  input DAE.ComponentRef inComponentRef;
+  input DAE.ExpType inType;
   input Integer inInteger;
   input Context inContext;
   output CFunction outCFunction;
@@ -5787,11 +5787,11 @@ algorithm
       Integer tnr1,ndims,tnr,tnr_1;
       list<Lib> dims_strs;
       CFunction cfunc,cfn;
-      Exp.ComponentRef cref;
-      Exp.Type t,crt;
+      DAE.ComponentRef cref;
+      DAE.ExpType t,crt;
       list<Option<Integer>> dims;
       Context context;
-      list<Exp.Subscript> subs;
+      list<DAE.Subscript> subs;
       /* For context simulation array variables must be boxed
 	    into a real_array object since they are represented only
 	    in a double array. */
@@ -5876,14 +5876,14 @@ protected function subsToScalar "function: subsToScalar
   Returns true if subscript results applied to variable or expression
   results in scalar expression.
 "
-  input list<Exp.Subscript> inExpSubscriptLst;
+  input list<DAE.Subscript> inExpSubscriptLst;
   output Boolean outBoolean;
 algorithm
   outBoolean:=
   matchcontinue (inExpSubscriptLst)
     local
       Boolean b;
-      list<Exp.Subscript> r;
+      list<DAE.Subscript> r;
     case {} then true;
     case (DAE.SLICE(exp = _) :: _) then false;
     case (DAE.WHOLEDIM() :: _) then false;
@@ -5900,8 +5900,8 @@ protected function generateScalarRhsCref "function: generateScalarRhsCref
   Helper function to generate_algorithm_statement.
 "
   input String inString;
-  input Exp.Type inType;
-  input list<Exp.Subscript> inExpSubscriptLst;
+  input DAE.ExpType inType;
+  input list<DAE.Subscript> inExpSubscriptLst;
   input Integer inInteger;
   input Context inContext;
   output CFunction outCFunction;
@@ -5915,8 +5915,8 @@ algorithm
       list<Lib> idxs1;
       Integer tnr1,tnr,ndims;
       Lib ndims_str,idxs_str,array_type_str,cref1,cref_str;
-      Exp.Type crt;
-      list<Exp.Subscript> subs;
+      DAE.ExpType crt;
+      list<DAE.Subscript> subs;
       Context context;
     case (cref_str,crt,subs,tnr,context) /* Two special rules for faster code when ndims == 1 or 2 */
       equation
@@ -5967,8 +5967,8 @@ protected function generateArrayRhsCref "function: generateArrayRhsCref
   Helper function to generate_rhs_cref.
 "
   input String inString;
-  input Exp.Type inType;
-  input list<Exp.Subscript> inExpSubscriptLst;
+  input DAE.ExpType inType;
+  input list<DAE.Subscript> inExpSubscriptLst;
   input Integer inInteger;
   input Context inContext;
   output CFunction outCFunction;
@@ -5981,8 +5981,8 @@ algorithm
       CFunction cfn1,cfn_1,cfn;
       Lib spec1,array_type_str,decl,temp,stmt,cref_str;
       Integer tnr1,tnr2,tnr;
-      Exp.Type crt;
-      list<Exp.Subscript> subs;
+      DAE.ExpType crt;
+      list<DAE.Subscript> subs;
       Context context;
     case (cref_str,crt,subs,tnr,context)
       equation
@@ -6003,7 +6003,7 @@ protected function generateIndexSpec "function: generateIndexSpec
 
   Helper function to generate_algorithm_statement.
 "
-  input list<Exp.Subscript> inExpSubscriptLst;
+  input list<DAE.Subscript> inExpSubscriptLst;
   input Integer inInteger;
   input Context inContext;
   output CFunction outCFunction;
@@ -6017,7 +6017,7 @@ algorithm
       list<Lib> idxs1,idxsizes,idxs_1,idxTypes;
       Integer tnr1,tnr2,nridx,tnr;
       Lib decl,spec,nridx_str,idxs_str,stmt;
-      list<Exp.Subscript> subs;
+      list<DAE.Subscript> subs;
       Context context;
     case (subs,tnr,context)
       equation
@@ -6045,7 +6045,7 @@ end generateIndexSpec;
 protected function generateIndicesArray "
   Helper function to generateIndicesArray
 "
-  input list<Exp.Subscript> inExpSubscriptLst;
+  input list<DAE.Subscript> inExpSubscriptLst;
   input Integer inInteger;
   input Context inContext;
   output CFunction outCFunction1;
@@ -6062,8 +6062,8 @@ algorithm
       CFunction cfn1,cfn2,cfn;
       Lib idx1,idxsize1,indxType;
       list<Lib> idxs2,idxsizes2,idxs,idxsizes,indxTypeLst1,indxTypeLst2;
-      Exp.Subscript f;
-      list<Exp.Subscript> r;
+      DAE.Subscript f;
+      list<DAE.Subscript> r;
     case ({},tnr,context) then (cEmptyFunction,{},{},{},tnr);
     case ((f :: r),tnr,context)
       equation
@@ -6087,7 +6087,7 @@ protected function generateIndices "function: generateIndices
 
 
 "
-  input list<Exp.Subscript> inExpSubscriptLst;
+  input list<DAE.Subscript> inExpSubscriptLst;
   input Integer inInteger;
   input Context inContext;
   output CFunction outCFunction;
@@ -6102,8 +6102,8 @@ algorithm
       CFunction cfn1,cfn2,cfn;
       Lib idx1;
       list<Lib> idxs2,idxs;
-      Exp.Subscript f;
-      list<Exp.Subscript> r;
+      DAE.Subscript f;
+      list<DAE.Subscript> r;
     case ({},tnr,context) then (cEmptyFunction,{},tnr);
     case ((f :: r),tnr,context)
       equation
@@ -6124,7 +6124,7 @@ end generateIndices;
 protected function generateIndexArray "
   Helper function to generateIndicesArray
 "
-  input Exp.Subscript inSubscript;
+  input DAE.Subscript inSubscript;
   input Integer inInteger;
   input Context inContext;
   output CFunction outCFunction1;
@@ -6139,7 +6139,7 @@ algorithm
       CFunction cfn,cfn_1,cfn_2;
       Lib var1,idx,idxsize,decl,tvar,stmt;
       Integer tnr1,tnr,tnr2;
-      Exp.Exp e;
+      DAE.Exp e;
       Context context;
       // Scalar index
     case (DAE.INDEX(exp = e),tnr,context)
@@ -6181,7 +6181,7 @@ protected function generateIndex "function: generateIndex
 
   Helper function to generate_index_array.
 "
-  input Exp.Subscript inSubscript;
+  input DAE.Subscript inSubscript;
   input Integer inInteger;
   input Context inContext;
   output CFunction outCFunction;
@@ -6194,7 +6194,7 @@ algorithm
       CFunction cfn;
       Lib var1;
       Integer tnr1,tnr;
-      Exp.Exp e;
+      DAE.Exp e;
       Context context;
     case (DAE.INDEX(exp = e),tnr,context)
       equation
@@ -6236,16 +6236,16 @@ protected function compRefCstr "function: compRefCstr
   Returns the ComponentRef as a string and the complete Subscript list of
   the ComponentRef.
 "
-  input Exp.ComponentRef inComponentRef;
+  input DAE.ComponentRef inComponentRef;
   output String outString;
-  output list<Exp.Subscript> outExpSubscriptLst;
+  output list<DAE.Subscript> outExpSubscriptLst;
 algorithm
   (outString,outExpSubscriptLst):=
   matchcontinue (inComponentRef)
     local
       Lib id,cref_str,cref_str_1;
-      list<Exp.Subscript> subs,cref_subs,subs_1;
-      Exp.ComponentRef cref;
+      list<DAE.Subscript> subs,cref_subs,subs_1;
+      DAE.ComponentRef cref;
     case cref 
       local Integer idx; 
       equation
@@ -6273,9 +6273,9 @@ protected function generateLbinary "function: generateLbinary
   string    | expression result
   int       | next temporary number
 "
-  input Exp.Exp inExp1;
-  input Exp.Operator inOperator2;
-  input Exp.Exp inExp3;
+  input DAE.Exp inExp1;
+  input DAE.Operator inOperator2;
+  input DAE.Exp inExp3;
   input Integer inInteger4;
   input Context inContext5;
   output CFunction outCFunction;
@@ -6288,7 +6288,7 @@ algorithm
       CFunction cfn1,cfn2,cfn;
       Lib var1,var2,var;
       Integer tnr1,tnr2,tnr;
-      Exp.Exp e1,e2;
+      DAE.Exp e1,e2;
       Context context;
     case (e1,DAE.AND(),e2,tnr,context)
       equation
@@ -6322,8 +6322,8 @@ protected function generateLunary "function: generateLunary
   string    | expression result
   int       | next temporary number
 "
-  input Exp.Operator inOperator;
-  input Exp.Exp inExp;
+  input DAE.Operator inOperator;
+  input DAE.Exp inExp;
   input Integer inInteger;
   input Context inContext;
   output CFunction outCFunction;
@@ -6336,7 +6336,7 @@ algorithm
       CFunction cfn1;
       Lib var1,var;
       Integer tnr1,tnr;
-      Exp.Exp e;
+      DAE.Exp e;
       Context context;
     case (DAE.NOT(),e,tnr,context)
       equation
@@ -6353,7 +6353,7 @@ algorithm
 end generateLunary;
 
 protected function relOpStr
-  input Exp.Operator op;
+  input DAE.Operator op;
   output String opStr;
 algorithm
 	isReal := matchcontinue (op)
@@ -6366,7 +6366,7 @@ algorithm
 end relOpStr;
 
 protected function isRealTypedRelation
-  input Exp.Operator op;
+  input DAE.Operator op;
   output Boolean isReal;
 algorithm
 	isReal := matchcontinue (op)
@@ -6386,9 +6386,9 @@ protected function generateRelation "function: generateRelation
   string    | expression result
   int       | next temporary number
 "
-  input Exp.Exp inExp1;
-  input Exp.Operator inOperator2;
-  input Exp.Exp inExp3;
+  input DAE.Exp inExp1;
+  input DAE.Operator inOperator2;
+  input DAE.Exp inExp3;
   input Integer inInteger4;
   input Context inContext5;
   output CFunction outCFunction;
@@ -6401,7 +6401,7 @@ algorithm
       CFunction cfn1,cfn2,cfn;
       Lib var1,var2,var;
       Integer tnr1,tnr2,tnr;
-      Exp.Exp e1,e2;
+      DAE.Exp e1,e2;
       Context context;
     case (e1,DAE.LESS(ty = DAE.ET_BOOL()),e2,tnr,context)
       equation
@@ -6672,9 +6672,9 @@ end generateRelation;
 protected function generateMatrix 
 "function: generateMatrix
   Generates code for matrix expressions."
-  input Exp.Type inType1;
+  input DAE.ExpType inType1;
   input Integer inInteger2;
-  input list<list<tuple<Exp.Exp, Boolean>>> inTplExpExpBooleanLstLst3;
+  input list<list<tuple<DAE.Exp, Boolean>>> inTplExpExpBooleanLstLst3;
   input Integer inInteger4;
   input Context inContext5;
   output CFunction outCFunction;
@@ -6689,8 +6689,8 @@ algorithm
       Integer tnr1,tnr2,n,tnr3,maxn,tnr;
       list<Lib> vars2;
       Lib array_type_str,args_str,n_str,tdecl,tvar,stmt;
-      Exp.Type typ;
-      list<list<tuple<Exp.Exp, Boolean>>> exps;
+      DAE.ExpType typ;
+      list<list<tuple<DAE.Exp, Boolean>>> exps;
       Context context;
       /* Special case for empty array { {} } */
     case (typ,maxn,{{}},tnr,context) equation
@@ -6737,7 +6737,7 @@ protected function concatenateMatrixRows "function: contatenate_matrix_rows
 
   Helper function to generate_matrix.
 "
-  input Exp.Type inType;
+  input DAE.ExpType inType;
   input list<list<String>> inStringLstLst;
   input Integer inInteger;
   input Context inContext;
@@ -6753,7 +6753,7 @@ algorithm
       CFunction cfn1,cfn2,cfn;
       Lib var1;
       list<Lib> vars2,f;
-      Exp.Type typ;
+      DAE.ExpType typ;
       list<list<Lib>> r;
     case (_,{},tnr,context) then (cEmptyFunction,{},tnr);
     case (typ,(f :: r),tnr,context)
@@ -6770,7 +6770,7 @@ protected function concatenateMatrixRow "function: contatenate_matrix_row
 
   Helper function to concatenateMatrixRows
 "
-  input Exp.Type inType;
+  input DAE.ExpType inType;
   input list<String> inStringLst;
   input Integer inInteger;
   input Context inContext;
@@ -6784,7 +6784,7 @@ algorithm
       Lib array_type_str,args_str,n_str,tdecl,tvar,stmt;
       Integer n,tnr1,tnr;
       CFunction cfn_1,cfn;
-      Exp.Type typ;
+      DAE.ExpType typ;
       list<Lib> vars;
       Context context;
     case (typ,vars,tnr,context)
@@ -6808,8 +6808,8 @@ protected function generateMatrixExpressions "function: generateMatrixExpression
 
   Helper function to generate_matrix.
 "
-  input Exp.Type inType1;
-  input list<list<tuple<Exp.Exp, Boolean>>> inTplExpExpBooleanLstLst2;
+  input DAE.ExpType inType1;
+  input list<list<tuple<DAE.Exp, Boolean>>> inTplExpExpBooleanLstLst2;
   input Integer inInteger3;
   input Integer inInteger4;
   input Context inContext5;
@@ -6825,9 +6825,9 @@ algorithm
       CFunction cfn1,cfn2,cfn;
       list<Lib> vars1;
       list<list<Lib>> vars2;
-      Exp.Type typ;
-      list<tuple<Exp.Exp, Boolean>> fr;
-      list<list<tuple<Exp.Exp, Boolean>>> rr;
+      DAE.ExpType typ;
+      list<tuple<DAE.Exp, Boolean>> fr;
+      list<list<tuple<DAE.Exp, Boolean>>> rr;
     case (_,{},_,tnr,context) then (cEmptyFunction,{},tnr);
     case (typ,(fr :: rr),maxn,tnr,context)
       equation
@@ -6843,8 +6843,8 @@ protected function generateMatrixExprRow "function: generateMatrixExprRow
 
   Helper function to generate_matrix_expressions.
 "
-  input Exp.Type inType1;
-  input list<tuple<Exp.Exp, Boolean>> inTplExpExpBooleanLst2;
+  input DAE.ExpType inType1;
+  input list<tuple<DAE.Exp, Boolean>> inTplExpExpBooleanLst2;
   input Integer inInteger3;
   input Integer inInteger4;
   input Context inContext5;
@@ -6860,9 +6860,9 @@ algorithm
       CFunction cfn1,cfn2,cfn;
       Lib var1;
       list<Lib> vars2;
-      Exp.Type t;
-      tuple<Exp.Exp, Boolean> f;
-      list<tuple<Exp.Exp, Boolean>> r;
+      DAE.ExpType t;
+      tuple<DAE.Exp, Boolean> f;
+      list<tuple<DAE.Exp, Boolean>> r;
     case (_,{},_,tnr,context) then (cEmptyFunction,{},tnr);
     case (t,(f :: r),maxn,tnr,context)
       equation
@@ -6878,8 +6878,8 @@ protected function generateMatrixExpression "function: generateMatrixExpression.
 
   Helper function to generate_matrix_expressions.
 "
-  input Exp.Type inType1;
-  input tuple<Exp.Exp, Boolean> inTplExpExpBoolean2;
+  input DAE.ExpType inType1;
+  input tuple<DAE.Exp, Boolean> inTplExpExpBoolean2;
   input Integer inInteger3;
   input Integer inInteger4;
   input Context inContext5;
@@ -6893,8 +6893,8 @@ algorithm
       CFunction cfn1,cfn_1,cfn;
       Lib var1,array_type_str,maxn_str,tdecl,tvar,scalar,sc_ref,stmt;
       Integer tnr1,tnr2,maxn,tnr;
-      Exp.Type t;
-      Exp.Exp e;
+      DAE.ExpType t;
+      DAE.Exp e;
       Boolean b;
       Context context;
     case (t,(e,b),maxn,tnr,context)
@@ -6958,7 +6958,7 @@ protected function generateExternalWrapperCall "function: generateExternalWrappe
   input list<DAE.Element> inDAEElementLst4;
   input DAE.ExternalDecl inExternalDecl5;
   input list<DAE.Element> inDAEElementLst6;
-  input Types.Type inType7;
+  input DAE.Type inType7;
   output CFunction outCFunction;
 algorithm
   outCFunction:=
@@ -6973,8 +6973,8 @@ algorithm
       list<DAE.ExtArg> extargs;
       DAE.ExtArg extretarg;
       Option<Absyn.Annotation> ann;
-      list<tuple<Lib, tuple<Types.TType, Option<Absyn.Path>>>> args;
-      tuple<Types.TType, Option<Absyn.Path>> restype;
+      list<tuple<Lib, tuple<DAE.TType, Option<Absyn.Path>>>> args;
+      tuple<DAE.TType, Option<Absyn.Path>> restype;
     case (fnname,outvars,retstr,invars,(extdecl as DAE.EXTERNALDECL(ident = extfnname,external_ = extargs,parameters = extretarg,returnType = lang,language = ann)),bivars,(DAE.T_FUNCTION(funcArg = args,funcResultType = restype),_)) /* function name output variables return type input variables external declaration bidirectional vars function type */
       equation
         tnr = 1;
@@ -7173,12 +7173,12 @@ algorithm
   matchcontinue (inDAEElementLst,i,inInteger)
     local
       Integer tnr,tnr_1,tnr_3;
-      Exp.ComponentRef cref,cref_1;
+      DAE.ComponentRef cref,cref_1;
       DAE.VarKind vk;
       DAE.VarDirection vd;
-      Types.Type ty;
-      Option<Exp.Exp> value;
-      list<Exp.Subscript> dims,dims_1;
+      DAE.Type ty;
+      Option<DAE.Exp> value;
+      list<DAE.Subscript> dims,dims_1;
       DAE.Element extvar,var;
       CFunction fn,restfn,resfn;
       list<DAE.Element> rest;
@@ -7293,13 +7293,13 @@ algorithm
   outCFunction:=
   matchcontinue (inExtArg,i)
     local
-      Exp.ComponentRef cref,cr;
-      tuple<Types.TType, Option<Absyn.Path>> ty;
+      DAE.ComponentRef cref,cr;
+      tuple<DAE.TType, Option<Absyn.Path>> ty;
       Lib tystr,name,orgname;
       CFunction res;
       DAE.ExtArg arg;
-      Types.Attributes attr;
-      Exp.Exp exp;
+      DAE.Attributes attr;
+      DAE.Exp exp;
 
       /* INPUT NON-ARRAY */
     case (arg,i)
@@ -7394,13 +7394,13 @@ end generateExtcallVardecls2F77;
 protected function generateCToF77Converter "function: generateCToF77Converter
 
 "
-  input Types.Type inType;
+  input DAE.Type inType;
   output String outString;
 algorithm
   outString:=
   matchcontinue (inType)
     local
-      tuple<Types.TType, Option<Absyn.Path>> elty,ty;
+      tuple<DAE.TType, Option<Absyn.Path>> elty,ty;
       Lib eltystr,str;
     case ((ty as (DAE.T_ARRAY(arrayDim = _),_)))
       equation
@@ -7420,13 +7420,13 @@ end generateCToF77Converter;
 protected function generateF77ToCConverter "function: generate_c_to_f77_converter
 
 "
-  input Types.Type inType;
+  input DAE.Type inType;
   output String outString;
 algorithm
   outString:=
   matchcontinue (inType)
     local
-      tuple<Types.TType, Option<Absyn.Path>> elty,ty;
+      tuple<DAE.TType, Option<Absyn.Path>> elty,ty;
       Lib eltystr,str;
     case ((ty as (DAE.T_ARRAY(arrayDim = _),_)))
       equation
@@ -7447,7 +7447,7 @@ protected function isOutputOrBidir "function: isOutputOrBidir
 
   Returns true if attributes indicates an output or bidirectional variable.
 "
-  input Types.Attributes attr;
+  input DAE.Attributes attr;
   output Boolean res;
   Boolean outvar,bivar;
 algorithm
@@ -7469,14 +7469,14 @@ algorithm
   (outCFunction,outExtArg,outInteger):=
   matchcontinue (inExtArg,i,inInteger)
     local
-      Exp.ComponentRef cref,cr,tmpcref;
-      Types.Attributes attr;
-      tuple<Types.TType, Option<Absyn.Path>> ty;
+      DAE.ComponentRef cref,cr,tmpcref;
+      DAE.Attributes attr;
+      tuple<DAE.TType, Option<Absyn.Path>> ty;
       CFunction res,decl;
       DAE.ExtArg arg,extarg,newarg;
       Integer tnr,tnr_1;
       Lib tystr,name,orgname,converter,initstr,tmpname_1,tnrstr,tmpstr,callstr,declstr;
-      Exp.Exp exp,dim;
+      DAE.Exp exp,dim;
       String iStr;
 
       /* INPUT NON-ARRAY */
@@ -7608,8 +7608,8 @@ algorithm
       list<String> argslist,preCall,postCall,varNames,assignRes,varNamesRes,assignResSimple,varNamesResSimple;
       CFunction res;
       list<DAE.ExtArg> args;
-      Exp.ComponentRef cr;
-      tuple<Types.TType, Option<Absyn.Path>> ty;
+      DAE.ComponentRef cr;
+      tuple<DAE.TType, Option<Absyn.Path>> ty;
       Boolean simpleJavaCallMapping;
       
       /* Java call without return value */
@@ -7795,12 +7795,12 @@ algorithm
   outString:=
   matchcontinue (inExtArg,i)
     local
-      Exp.ComponentRef cref;
-      Types.Attributes attr;
-      tuple<Types.TType, Option<Absyn.Path>> ty;
+      DAE.ComponentRef cref;
+      DAE.Attributes attr;
+      tuple<DAE.TType, Option<Absyn.Path>> ty;
       Lib res,name,str;
       DAE.ExtArg arg;
-      Exp.Exp exp;
+      DAE.Exp exp;
 
       /* INPUT NON-ARRAY NON-STRING */
     case (arg,i)
@@ -7880,7 +7880,7 @@ protected function isOutputExtArg "Returns true if external arg is an output arg
    output Boolean isOutput;
  algorithm
    isOutput := matchcontinue(extArg)
-   local Types.Attributes attr;
+   local DAE.Attributes attr;
      case(DAE.EXTARG(attributes = attr)) equation
         isOutput = Types.isOutputAttr(attr);
       then isOutput;
@@ -7898,12 +7898,12 @@ algorithm
   outString:=
   matchcontinue (inExtArg,i)
     local
-      Exp.ComponentRef cref;
-      Types.Attributes attr;
-      tuple<Types.TType, Option<Absyn.Path>> ty;
+      DAE.ComponentRef cref;
+      DAE.Attributes attr;
+      tuple<DAE.TType, Option<Absyn.Path>> ty;
       Lib name,res;
       DAE.ExtArg arg;
-      Exp.Exp exp,dim;
+      DAE.Exp exp,dim;
 
       /* INPUT NON-ARRAY */
     case (arg,i)
@@ -7996,14 +7996,14 @@ protected function generateArrayDataCall "function: generateArrayDataCall
 
 "
   input String inName;
-  input Types.Type inType;
+  input DAE.Type inType;
   output String outString;
 algorithm
   outString:=
   matchcontinue (inName, inType)
     local
       String name, str;
-      Types.Type ty;
+      DAE.Type ty;
     case (name, ty)
       equation
         ((DAE.T_INTEGER(_),_)) = Types.arrayElementType(ty);
@@ -8047,10 +8047,10 @@ algorithm
   matchcontinue (inExtArg)
     local
       Lib crstr,dimstr,str;
-      Exp.ComponentRef cr;
-      Types.Attributes attr;
-      tuple<Types.TType, Option<Absyn.Path>> ty;
-      Exp.Exp dim;
+      DAE.ComponentRef cr;
+      DAE.Attributes attr;
+      tuple<DAE.TType, Option<Absyn.Path>> ty;
+      DAE.Exp dim;
     case DAE.EXTARGSIZE(componentRef = cr,attributes = attr,type_ = ty,exp = dim)
       equation
         ((DAE.T_INTEGER(_),_)) = Types.arrayElementType(ty);
@@ -8106,10 +8106,10 @@ algorithm
   matchcontinue (inExtArg)
     local
       Lib crstr,dimstr,str;
-      Exp.ComponentRef cr;
-      Types.Attributes attr;
-      tuple<Types.TType, Option<Absyn.Path>> ty;
-      Exp.Exp dim;
+      DAE.ComponentRef cr;
+      DAE.Attributes attr;
+      tuple<DAE.TType, Option<Absyn.Path>> ty;
+      DAE.Exp dim;
     case DAE.EXTARGSIZE(componentRef = cr,attributes = attr,type_ = ty,exp = dim)
       equation
         ((DAE.T_INTEGER(_),_)) = Types.arrayElementType(ty);
@@ -8275,9 +8275,9 @@ algorithm
     local
       Lib name,orgname,typcast,str,iStr;
       CFunction res;
-      Exp.ComponentRef cref;
-      Types.Attributes attr;
-      Types.Type ty;
+      DAE.ComponentRef cref;
+      DAE.Attributes attr;
+      DAE.Type ty;
     case (DAE.EXTARG(componentRef = cref,attributes = attr,type_ = ty),i)
       equation
         false = Types.isArray(ty);
@@ -8315,9 +8315,9 @@ algorithm
   outCFunction:=
   matchcontinue (inExtArg,i)
     local
-      Exp.ComponentRef cref;
-      Types.Attributes attr;
-      Types.Type ty;
+      DAE.ComponentRef cref;
+      DAE.Attributes attr;
+      DAE.Type ty;
       Lib name,orgname,converter,str,typcast,tystr;
       CFunction res;
       DAE.ExtArg extarg;
@@ -8393,7 +8393,7 @@ algorithm
     local
       Lib cref_str;
       list<Lib> r_1,cfn;
-      Exp.ComponentRef id;
+      DAE.ComponentRef id;
       DAE.VarKind vk;
       list<DAE.Element> r;
     case {} then {};
@@ -8415,9 +8415,9 @@ protected function varNameExternal "function: varNameExternal
 
   Returns the variable name of a variable used in an external function.
 "
-  input Exp.ComponentRef cref;
+  input DAE.ComponentRef cref;
   output String str;
-  Exp.ComponentRef cref_1;
+  DAE.ComponentRef cref_1;
 algorithm
   cref_1 := varNameExternalCref(cref);
   (str,_) := compRefCstr(cref_1);
@@ -8427,9 +8427,9 @@ protected function varNameExternalCref "function: varNameExternalCref
 
   Helper function to var_name_external.
 "
-  input Exp.ComponentRef cref;
-  output Exp.ComponentRef cref_1;
-  Exp.ComponentRef cref_1;
+  input DAE.ComponentRef cref;
+  output DAE.ComponentRef cref_1;
+  DAE.ComponentRef cref_1;
 algorithm
   cref_1 := suffixCref(cref, "_ext");
 end varNameExternalCref;
@@ -8438,17 +8438,17 @@ protected function suffixCref "function: suffixCref
 
   Prepends a string, suffix, to a ComponentRef.
 "
-  input Exp.ComponentRef inComponentRef;
+  input DAE.ComponentRef inComponentRef;
   input String inString;
-  output Exp.ComponentRef outComponentRef;
+  output DAE.ComponentRef outComponentRef;
 algorithm
   outComponentRef:=
   matchcontinue (inComponentRef,inString)
     local
       Lib id_1,id,str;
-      list<Exp.Subscript> subs;
-      Exp.ComponentRef cref_1,cref;
-      Exp.Type ty;
+      list<DAE.Subscript> subs;
+      DAE.ComponentRef cref_1,cref;
+      DAE.ExpType ty;
     case (DAE.CREF_IDENT(ident = id,identType = ty,subscriptLst = subs),str)
       equation
         id_1 = stringAppend(id, str);
@@ -8466,8 +8466,8 @@ protected function varNameArray "function: varNameArray
 
 
 "
-  input Exp.ComponentRef inComponentRef;
-  input Types.Attributes inAttributes;
+  input DAE.ComponentRef inComponentRef;
+  input DAE.Attributes inAttributes;
   input Integer i "nth tuple elt, only used for output vars";
   output String outString;
 algorithm
@@ -8475,8 +8475,8 @@ algorithm
   matchcontinue (inComponentRef,inAttributes,i)
     local
       Lib str,cref_str,iStr;
-      Exp.ComponentRef cref;
-      Types.Attributes attr;
+      DAE.ComponentRef cref;
+      DAE.Attributes attr;
     case (cref,attr,i) /* INPUT */
       equation
         (str,_) = compRefCstr(cref);
@@ -8509,7 +8509,7 @@ algorithm
     local
       Lib cref_str,cref_str2;
       list<Lib> r_1,cfn;
-      Exp.ComponentRef id;
+      DAE.ComponentRef id;
       DAE.VarKind vk;
       list<DAE.Element> r;
     case {} then {};
@@ -8547,13 +8547,13 @@ end makeRecordRef;
 protected function generateVarName "function: generateVarName
 
 "
-  input Types.Var inVar;
+  input DAE.Var inVar;
   output String outName;
 algorithm
   outName :=
   matchcontinue (inVar)
     local
-      Types.Ident name;
+      DAE.Ident name;
     case DAE.TYPES_VAR(name = name)
       then name;
     case (_)
@@ -8564,14 +8564,14 @@ end generateVarName;
 protected function generateRecordVarNames "function: generateRecordVarNames
 
 "
-  input Types.Var inVar;
+  input DAE.Var inVar;
   output list<String> outNames;
 algorithm
   outNames :=
   matchcontinue (inVar)
     local
-      Types.Ident name;
-      list<Types.Var> varlst;
+      DAE.Ident name;
+      list<DAE.Var> varlst;
       list<String> nameList;
       list<list<String>> namesList;
     case DAE.TYPES_VAR(name = name, type_ = (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_), complexVarLst = varlst),_))
@@ -8593,13 +8593,13 @@ end generateRecordVarNames;
 protected function generateRecordMembers "function: generateRecordMembers
 
 "
-  input Types.Type inRecordType;
+  input DAE.Type inRecordType;
   output list<String> outMembers;
 algorithm
   outMembers :=
   matchcontinue (inRecordType)
     local
-      list<Types.Var> varlst;
+      list<DAE.Var> varlst;
       list<String> names;
       list<list<String>> nameList;
     case ((DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_), complexVarLst = varlst),_))
@@ -8623,9 +8623,9 @@ algorithm
     local
       Lib cref_str,type_string,stmt;
       CFunction cfn1,cfn2,cfn;
-      Exp.ComponentRef id;
+      DAE.ComponentRef id;
       DAE.VarKind vk;
-      Types.Type t;
+      DAE.Type t;
       list<DAE.Element> r;
       DAE.Element var;
       Boolean is_a;
@@ -8677,7 +8677,7 @@ end generateRead;
 protected function generateRWType "function: generateRWType
 
 "
-  input Types.Type inType;
+  input DAE.Type inType;
   output String outType;
 algorithm
   outType :=
@@ -8688,7 +8688,7 @@ algorithm
     case ((DAE.T_BOOL(_), _)) then "TYPE_DESC_BOOL";
     case ((DAE.T_ARRAY(arrayType = t), _))
       local
-        Types.Type t;
+        DAE.Type t;
         String ret;
       equation
         ret = generateRWType(t);
@@ -8708,13 +8708,13 @@ end generateRWType;
 protected function generateVarType "function: generateVarType
 
 "
-  input Types.Var inVar;
+  input DAE.Var inVar;
   output String outType;
 algorithm
   outType :=
   matchcontinue (inVar)
     local
-      Types.Type t;
+      DAE.Type t;
       String ret;
     case (DAE.TYPES_VAR(type_ = t))
       equation
@@ -8728,15 +8728,15 @@ end generateVarType;
 protected function generateOutVar "function: generateOutVar
 
 "
-  input Types.Var inVar;
+  input DAE.Var inVar;
   input String inRecordBase;
   output String outArgs;
 algorithm
   outArgs := matchcontinue (inVar, inRecordBase)
     local
-      Types.Type ty;
+      DAE.Type ty;
       String name, path_str, base_str, stmt, type_arg, arg_str, ref_arg;
-      list<Types.Var> complexVarLst;
+      list<DAE.Var> complexVarLst;
       list<String> args;
       /* Records can be nested and require recursively constructing the type_description */
     case (DAE.TYPES_VAR(name = name, type_ = ty as (DAE.T_COMPLEX(complexVarLst = complexVarLst, complexClassType = ClassInf.RECORD(_)),_)),inRecordBase)
@@ -8765,7 +8765,7 @@ end generateOutVar;
 protected function generateOutRecordMembers "function: generateOutRecordMembers
 
 "
-  input Types.Type inRecordType;
+  input DAE.Type inRecordType;
   input String inRecordBase;
   output String outRecordType;
   output list<String> outMembers;
@@ -8773,7 +8773,7 @@ algorithm
   (outRecordType,outMembers) :=
   matchcontinue (inRecordType,inRecordBase)
     local
-      list<Types.Var> varlst;
+      list<DAE.Var> varlst;
       list<String> args;
       String base_str, path_str;
       Absyn.Path path;
@@ -8812,9 +8812,9 @@ algorithm
     local
       String cref_str,type_string,stmt,iStr;
       CFunction cfn1,cfn2,cfn;
-      Exp.ComponentRef id;
+      DAE.ComponentRef id;
       DAE.VarKind vk;
-      Types.Type t;
+      DAE.Type t;
       list<DAE.Element> r;
       DAE.Element var;
       Boolean is_a;
@@ -8981,12 +8981,12 @@ algorithm
   outString:=
   matchcontinue (inExtArg,i)
     local
-      Exp.ComponentRef cref;
-      Types.Attributes attr;
-      tuple<Types.TType, Option<Absyn.Path>> ty;
+      DAE.ComponentRef cref;
+      DAE.Attributes attr;
+      tuple<DAE.TType, Option<Absyn.Path>> ty;
       Lib res,name,str;
       DAE.ExtArg arg;
-      Exp.Exp exp;
+      DAE.Exp exp;
 
       /* INPUT NON-ARRAY NON-STRING */
     case (arg,i)
@@ -9106,10 +9106,10 @@ algorithm
     local
       list<DAE.ExtArg> rest;
       list<String> initArgs, cleanupArgs, argDecl, argClean, varNames, argVarNames;
-      Types.Attributes attr;
+      DAE.Attributes attr;
       DAE.ExtArg arg;
-      Types.Type ty;
-      Exp.ComponentRef cr;
+      DAE.Type ty;
+      DAE.ComponentRef cr;
       Integer i1;
       Boolean b;
       String name, nameArr;
@@ -9139,19 +9139,19 @@ protected function javaExtRecordFields
   input String cref;
   input String nameJava;
   input Boolean isOut;
-  input list<Types.Var> varLst;
+  input list<DAE.Var> varLst;
   output list<String> init;
   output list<String> clean;
   output list<String> varNames;
 algorithm
   (init,clean,varNames) := matchcontinue(cref, nameJava, isOut, varLst)
   local
-    Types.Var var;
-    list<Types.Var> rest;
+    DAE.Var var;
+    list<DAE.Var> rest;
     list<String> init, clean, varNames;
     list<String> initField, cleanField, cleanField2, varNamesField;
     String name, nameJavaRes, nameJavaMap, addToMap, readBack;
-    Types.Type type_;
+    DAE.Type type_;
   case (_, _, _, {}) then ({},{},{});
   case (cref, nameJava, isOut, DAE.TYPES_VAR(protected_ = true)::rest) equation
     (init,clean,varNames) = javaExtRecordFields(cref, nameJava, isOut, rest);
@@ -9179,7 +9179,7 @@ end javaExtRecordFields;
 protected function javaExtNewAndClean
   input String name;
   input String nameArr;
-  input Types.Type ty;
+  input DAE.Type ty;
   input Boolean isOut;
   output list<String> init;
   output list<String> clean;
@@ -9188,13 +9188,13 @@ algorithm
   (init,clean) := matchcontinue(name,nameArr,ty,isOut)
   local
     Integer ndim;
-    list<Types.Var> varLst;
+    list<DAE.Var> varLst;
     list<String> dimRange, clean, initList, sizeCalls, initField, cleanField, varNamesField;
     String ndimStr, dimRangeMult, dimRangeArgs, checkEx, init, name, nameIn, arrayAcc, nameJava;
     String readBack, cleanUp, arrayCons, dataCall, sizeCall, makeMulDim, makeArray, flattenArray;
     String recordName, nameJavaMap, mapInit, mapClean, pathStr, structInit;
-    Exp.ComponentRef cr;
-    Types.Type arrayty,ty;
+    DAE.ComponentRef cr;
+    DAE.Type arrayty,ty;
     Absyn.Path path_;
     
     case (name,nameArr,((DAE.T_INTEGER(_),_)),isOut) equation
@@ -9295,7 +9295,7 @@ end javaExtNewAndClean;
 
 protected function javaExtSimpleNewAndClean
   input String name;
-  input Types.Type ty;
+  input DAE.Type ty;
   input Boolean isOut;
   output list<String> init;
   output list<String> clean;
@@ -9304,13 +9304,13 @@ algorithm
   (init,clean) := matchcontinue(name,ty,isOut)
   local
     Integer ndim;
-    list<Types.Var> varLst;
+    list<DAE.Var> varLst;
     list<String> dimRange, clean, initList, sizeCalls, initField, cleanField, varNamesField;
     String ndimStr, dimRangeMult, dimRangeArgs, checkEx, init, name, nameIn, arrayAcc, nameJava;
     String readBack, cleanUp, arrayCons, dataCall, sizeCall, makeMulDim, makeArray, flattenArray;
     String recordName, nameJavaMap, mapInit, mapClean, pathStr, structInit;
-    Exp.ComponentRef cr;
-    Types.Type arrayty,ty;
+    DAE.ComponentRef cr;
+    DAE.Type arrayty,ty;
     Absyn.Path path_;
     
     case (name,((DAE.T_INTEGER(_),_)),isOut) equation
@@ -9348,7 +9348,7 @@ algorithm
 end javaExtSimpleNewAndClean;
 
 protected function generateJavaArrayConstructor
-  input Types.Type ty;
+  input DAE.Type ty;
   output String out;
 algorithm
   out := matchcontinue(ty)
@@ -9367,7 +9367,7 @@ algorithm
 end generateJavaArrayConstructor;
 
 protected function generateJavaArrayAccessor
-  input Types.Type ty;
+  input DAE.Type ty;
   output String out;
 algorithm
   out := matchcontinue(ty)
@@ -9387,7 +9387,7 @@ end generateJavaArrayAccessor;
 
 protected function generateArraySizeCallJava
   input String inName;
-  input Types.Type inType;
+  input DAE.Type inType;
   input Integer lastDim;
   output list<String> out;
 algorithm
@@ -9396,7 +9396,7 @@ algorithm
     local
       String name, str, thisDimStr;
       list<String> res;
-      Types.Type ty;
+      DAE.Type ty;
     case (_,_,0)
       then {};
     case (name, ty, lastDim)
@@ -9504,7 +9504,7 @@ algorithm
 end getJavaCallMappingFromEltArg;
 
 protected function getJniCallFunc
-  input Types.Type ty;
+  input DAE.Type ty;
   input Boolean isJavaSimpleCallMethod;
   output String res;
 algorithm
@@ -9519,15 +9519,15 @@ end getJniCallFunc;
 
 public function matchFnRefs
 "Used together with getMatchingExps"
-  input Exp.Exp inExpr;
-  output list<Exp.Exp> outExprLst;
+  input DAE.Exp inExpr;
+  output list<DAE.Exp> outExprLst;
 algorithm
   outExprLst := matchcontinue (inExpr)
-    local Exp.Exp e; Exp.Type t;
+    local DAE.Exp e; DAE.ExpType t;
     case((e as DAE.CREF(ty = DAE.ET_FUNCTION_REFERENCE_FUNC()))) then {e};
     case(DAE.PARTEVALFUNCTION(ty = DAE.ET_FUNCTION_REFERENCE_VAR(),path=p,expList=expLst))
       local
-        Exp.ComponentRef cref; Absyn.Path p; list<Exp.Exp> expLst,expLst_1;
+        DAE.ComponentRef cref; Absyn.Path p; list<DAE.Exp> expLst,expLst_1;
       equation
         cref = Exp.pathToCref(p);
         e = Exp.makeCrefExp(cref,DAE.ET_FUNCTION_REFERENCE_VAR());
@@ -9536,7 +9536,7 @@ algorithm
         e :: expLst_1;
     case(DAE.CALL(expLst = expLst))
       local
-        list<Exp.Exp> expLst,expLst_1;
+        list<DAE.Exp> expLst,expLst_1;
       equation
         expLst_1 = getMatchingExpsList(expLst,matchFnRefs);
       then
@@ -9546,11 +9546,11 @@ end matchFnRefs;
 
 public function matchCalls
 "Used together with getMatchingExps"
-  input Exp.Exp inExpr;
-  output list<Exp.Exp> outExprLst;
+  input DAE.Exp inExpr;
+  output list<DAE.Exp> outExprLst;
 algorithm
   outExprLst := matchcontinue (inExpr)
-    local list<Exp.Exp> args, exps; Exp.Exp e;
+    local list<DAE.Exp> args, exps; DAE.Exp e;
     case (e as DAE.CALL(expLst = args))
       equation 
         exps = getMatchingExpsList(args,matchCalls);
@@ -9561,11 +9561,11 @@ end matchCalls;
 
 public function matchMetarecordCalls
 "Used together with getMatchingExps"
-  input Exp.Exp inExpr;
-  output list<Exp.Exp> outExprLst;
+  input DAE.Exp inExpr;
+  output list<DAE.Exp> outExprLst;
 algorithm
   outExprLst := matchcontinue (inExpr)
-    local list<Exp.Exp> args, exps; Exp.Exp e;
+    local list<DAE.Exp> args, exps; DAE.Exp e;
     case (e as DAE.METARECORDCALL(args = args))
       equation 
         exps = getMatchingExpsList(args,matchMetarecordCalls);
@@ -9576,11 +9576,11 @@ end matchMetarecordCalls;
 
 public function matchValueblock
 "Used together with getMatchingExps"
-  input Exp.Exp inExpr;
-  output list<Exp.Exp> outExprLst;
+  input DAE.Exp inExpr;
+  output list<DAE.Exp> outExprLst;
 algorithm
   outExprLst := matchcontinue (inExpr)
-    local list<Exp.Exp> res, exps; Exp.Exp e,resE;
+    local list<DAE.Exp> res, exps; DAE.Exp e,resE;
     case e as DAE.VALUEBLOCK(localDecls = ld,body = body,result = resE)
       local
     		list<DAE.Element> ld;
@@ -9593,14 +9593,14 @@ algorithm
 end matchValueblock;
 
 public function getMatchingExpsList
-  input list<Exp.Exp> inExps;
+  input list<DAE.Exp> inExps;
   input MatchFn inFn;
-  output list<Exp.Exp> outExpLst;
+  output list<DAE.Exp> outExpLst;
   partial function MatchFn
-    input Exp.Exp inExpr;
-    output list<Exp.Exp> outExprLst;
+    input DAE.Exp inExpr;
+    output list<DAE.Exp> outExprLst;
   end MatchFn;
-  list<list<Exp.Exp>> explists;
+  list<list<DAE.Exp>> explists;
 algorithm 
   explists := Util.listMap1(inExps, getMatchingExps, inFn);
   outExpLst := Util.listFlatten(explists);
@@ -9613,27 +9613,27 @@ public function getMatchingExps
   extracted from the exp they are in, e.g. 
     CALL(foo, {CALL(bar)}) will return
     {CALL(foo, {CALL(bar)}), CALL(bar,{})}
-Implementation note: Exp.Exp contains VALUEBLOCKS,
+Implementation note: DAE.Exp contains VALUEBLOCKS,
   which can't be processed in Exp due to circular dependencies with DAE.
   In the future, this function should be moved to Exp."
-  input Exp.Exp inExp;
+  input DAE.Exp inExp;
   input MatchFn inFn;
-  output list<Exp.Exp> outExpLst;
+  output list<DAE.Exp> outExpLst;
   partial function MatchFn
-    input Exp.Exp inExpr;
-    output list<Exp.Exp> outExprLst;
+    input DAE.Exp inExpr;
+    output list<DAE.Exp> outExprLst;
   end MatchFn;
 algorithm 
   outExpLst:=
   matchcontinue (inExp,inFn)
     local
-      list<Exp.Exp> exps,exps2,args,a,b,res,elts,elst,elist;
-      Exp.Exp e,e1,e2,e3;
+      list<DAE.Exp> exps,exps2,args,a,b,res,elts,elst,elist;
+      DAE.Exp e,e1,e2,e3;
       Absyn.Path path;
       Boolean tuple_,builtin;
-      list<tuple<Exp.Exp, Boolean>> flatexplst;
-      list<list<tuple<Exp.Exp, Boolean>>> explst;
-      Option<Exp.Exp> optexp;
+      list<tuple<DAE.Exp, Boolean>> flatexplst;
+      list<list<tuple<DAE.Exp, Boolean>>> explst;
+      Option<DAE.Exp> optexp;
       MatchFn fn;
     
     // First we check if the function matches
@@ -9702,7 +9702,7 @@ algorithm
       then
         res;
     case (DAE.RANGE(exp = e1,expOption = optexp,range = e2),fn) /* Range */ 
-      local list<Exp.Exp> e3;
+      local list<DAE.Exp> e3;
       equation 
         e3 = Util.optionToList(optexp);
         elist = listAppend({e1,e2}, e3);
@@ -9720,7 +9720,7 @@ algorithm
       then
         res;
     case (DAE.SIZE(exp = e1,sz = e2),fn) /* Size */ 
-      local Option<Exp.Exp> e2;
+      local Option<DAE.Exp> e2;
       equation 
         a = Util.optionToList(e2);
         elist = e1 :: a;
@@ -9798,7 +9798,7 @@ algorithm
     local
       list<Absyn.Path> paths1;
       list<Absyn.Path> paths2;
-      list<Exp.Exp> exps;
+      list<DAE.Exp> exps;
       list<DAE.Element> els;
     case elements
       equation
@@ -9831,8 +9831,8 @@ algorithm
       list<Absyn.Path> paths,paths1,paths2;
       list<list<Absyn.Path>> listPaths;
       list<DAE.Element> els,rest;
-      list<Types.Type> tys;
-      Types.Type ft;
+      list<DAE.Type> tys;
+      DAE.Type ft;
     case {} then {};
     case DAE.FUNCTION(dAElist = DAE.DAE(els))::rest
       equation
@@ -9853,12 +9853,12 @@ algorithm
 end getUniontypePaths2;
 
 protected function getDAEDeclsFromValueblocks
-  input list<Exp.Exp> exps;
+  input list<DAE.Exp> exps;
   output list<DAE.Element> outEls;
 algorithm
   outEls := matchcontinue (exps)
     local
-      list<Exp.Exp> rest;
+      list<DAE.Exp> rest;
       list<DAE.Element> els1,els2;
     case {} then {};
     case DAE.VALUEBLOCK(localDecls = els1)::rest
@@ -9871,10 +9871,10 @@ end getDAEDeclsFromValueblocks;
 
 protected function makeCrefExpFromString
   input String str;
-  output Exp.Exp exp;
+  output DAE.Exp exp;
 protected
   Absyn.Path path;
-  Exp.ComponentRef cref;
+  DAE.ComponentRef cref;
 algorithm
   path := Absyn.makeIdentPathFromString(str);
   cref := Exp.pathToCref(path);

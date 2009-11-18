@@ -83,9 +83,7 @@ package Env
 public import Absyn;
 public import ClassInf;
 public import DAE;
-public import Exp;
 public import SCode;
-public import Types;
 
 public 
 type Ident = String " An identifier is just a string " ;
@@ -113,7 +111,7 @@ public uniontype CacheTree
   end CACHETREE;
 end CacheTree;
 
-type CSetsType = tuple<list<Exp.ComponentRef>,Exp.ComponentRef>;
+type CSetsType = tuple<list<DAE.ComponentRef>,DAE.ComponentRef>;
 public 
 uniontype Frame
   record FRAME 
@@ -148,8 +146,8 @@ end InstStatus;
 public 
 uniontype Item
   record VAR
-    Types.Var instantiated "instantiated component" ;
-    Option<tuple<SCode.Element, Types.Mod>> declaration "declaration if not fully instantiated." ;
+    DAE.Var instantiated "instantiated component" ;
+    Option<tuple<SCode.Element, DAE.Mod>> declaration "declaration if not fully instantiated." ;
     InstStatus instStatus "if it untyped, typed or fully instantiated (dae)" ;
     Env env "The environment of the instantiated component
 			       Contains e.g. all sub components 
@@ -162,7 +160,7 @@ uniontype Item
   end CLASS;
 
   record TYPE
-    list<Types.Type> list_ "list since several types with the same name can exist in the same scope (overloading)" ;
+    list<DAE.Type> list_ "list since several types with the same name can exist in the same scope (overloading)" ;
   end TYPE;
 
   record IMPORT
@@ -175,10 +173,11 @@ public
 type Env = list<Frame>;
 
 protected import Dump;
-
+protected import Exp;
 protected import Print;
 protected import Util;
 protected import System;
+protected import Types;
 protected import Inst;
 
 public constant Env emptyEnv={} "- Values" ;
@@ -279,7 +278,7 @@ algorithm
       AvlTree ht;
       list<AvlValue> imps;
       Env bcframes,res;
-      tuple<list<Exp.ComponentRef>,Exp.ComponentRef> crs;
+      tuple<list<DAE.ComponentRef>,DAE.ComponentRef> crs;
       Boolean encflag;
       Ident id;
       list<SCode.Element> defineUnits; 
@@ -346,7 +345,7 @@ algorithm
     AvlTree clsAndVars, types ;   
     list<Item> imports;
     list<Frame> inherited,fs;
-    tuple<list<Exp.ComponentRef>,Exp.ComponentRef> crefs;
+    tuple<list<DAE.ComponentRef>,DAE.ComponentRef> crefs;
     Boolean enc; 
     list<SCode.Element> defineUnits;
     case(FRAME(optName,clsAndVars,types,imports,inherited,crefs,enc,defineUnits)::fs,classEnv) equation
@@ -416,7 +415,7 @@ algorithm
       Env env,bcframes,fs;
       Option<Ident> id;
       list<AvlValue> imps;
-      tuple<list<Exp.ComponentRef>,Exp.ComponentRef> crs;
+      tuple<list<DAE.ComponentRef>,DAE.ComponentRef> crs;
       Boolean encflag;
       SCode.Class c;
       Ident n;
@@ -463,8 +462,8 @@ public function extendFrameV "function: extendFrameV
   This function adds a component to the environment.
 "
   input Env inEnv1;
-  input Types.Var inVar2;
-  input Option<tuple<SCode.Element, Types.Mod>> inTplSCodeElementTypesModOption3;
+  input DAE.Var inVar2;
+  input Option<tuple<SCode.Element, DAE.Mod>> inTplSCodeElementTypesModOption3;
   input InstStatus instStatus;
   input Env inEnv5;
   output Env outEnv;
@@ -478,12 +477,12 @@ algorithm
       Option<Ident> id;
       list<AvlValue> imps;
       Env bcframes,fs,env,remember;
-      tuple<list<Exp.ComponentRef>,Exp.ComponentRef> crs;
+      tuple<list<DAE.ComponentRef>,DAE.ComponentRef> crs;
       Boolean encflag;
       InstStatus i;
-      Types.Var v;
+      DAE.Var v;
       Ident n;
-      Option<tuple<SCode.Element, Types.Mod>> c;
+      Option<tuple<SCode.Element, DAE.Mod>> c;
       list<SCode.Element> defineUnits;
     case ((FRAME(id,ht,httypes,imps,bcframes,crs,encflag,defineUnits) :: fs),(v as DAE.TYPES_VAR(name = n)),c,i,env) /* environment of component */ 
       equation 
@@ -509,7 +508,7 @@ public function updateFrameV "function: updateFrameV
   called in the second stage of instantiation with declare before use.
 "
   input Env inEnv1;
-  input Types.Var inVar2;
+  input DAE.Var inVar2;
   input InstStatus instStatus;
   input Env inEnv4;
   output Env outEnv;
@@ -519,14 +518,14 @@ algorithm
     local
       Boolean encflag;
       InstStatus i;
-      Option<tuple<SCode.Element, Types.Mod>> c;
+      Option<tuple<SCode.Element, DAE.Mod>> c;
       AvlTree httypes;
       AvlTree ht,ht_1;
       Option<Ident> sid;
       list<AvlValue> imps;
       Env bcframes,fs,env,frames;
-      tuple<list<Exp.ComponentRef>,Exp.ComponentRef> crs;
-      Types.Var v;
+      tuple<list<DAE.ComponentRef>,DAE.ComponentRef> crs;
+      DAE.Var v;
       Ident n,id;
       list<SCode.Element> defineUnits;
     case ({},_,i,_) then {};  /* fully instantiated env of component */ 
@@ -571,22 +570,22 @@ public function extendFrameT "function: extendFrameT
 "
   input Env inEnv;
   input Ident inIdent;
-  input Types.Type inType;
+  input DAE.Type inType;
   output Env outEnv;
 algorithm 
   outEnv:=
   matchcontinue (inEnv,inIdent,inType)
     local
-      list<tuple<Types.TType, Option<Absyn.Path>>> tps;
+      list<tuple<DAE.TType, Option<Absyn.Path>>> tps;
       AvlTree httypes_1,httypes;
       AvlTree ht;
       Option<Ident> sid;
       list<AvlValue> imps;
       Env bcframes,fs;
-      tuple<list<Exp.ComponentRef>,Exp.ComponentRef> crs;
+      tuple<list<DAE.ComponentRef>,DAE.ComponentRef> crs;
       Boolean encflag;
       Ident n;
-      tuple<Types.TType, Option<Absyn.Path>> t;
+      tuple<DAE.TType, Option<Absyn.Path>> t;
       list<SCode.Element> defineUnits;
     case ((FRAME(sid,ht,httypes,imps,bcframes,crs,encflag,defineUnits) :: fs),n,t)
       equation 
@@ -619,7 +618,7 @@ algorithm
       AvlTree ht;
       list<AvlValue> imps;
       Env bcframes,fs;
-      tuple<list<Exp.ComponentRef>,Exp.ComponentRef> crs;
+      tuple<list<DAE.ComponentRef>,DAE.ComponentRef> crs;
       Boolean encflag;
       Absyn.Import imp;
       Env env;
@@ -648,7 +647,7 @@ algorithm
       AvlTree ht;
       list<AvlValue> imps;
       Env bcframes,fs;
-      tuple<list<Exp.ComponentRef>,Exp.ComponentRef> crs;
+      tuple<list<DAE.ComponentRef>,DAE.ComponentRef> crs;
       Boolean encflag;
       Env env;
       list<SCode.Element> defineUnits;
@@ -697,7 +696,7 @@ algorithm
       AvlTree cls;
       list<AvlValue> imps;
       Env bc,fs;
-      tuple<list<Exp.ComponentRef>,Exp.ComponentRef> crefs;
+      tuple<list<DAE.ComponentRef>,DAE.ComponentRef> crefs;
       Boolean enc;
       Frame f;
       list<SCode.Element> defineUnits;
@@ -876,7 +875,7 @@ public function printEnvConnectionCrefs "prints the connection crefs of the top 
 input Env env;
 algorithm
   _ := matchcontinue(env ) 
-  local list<Exp.ComponentRef> crs;
+  local list<DAE.ComponentRef> crs;
    Env env;
     case(env as (FRAME(connectionSet = (crs,_))::_)) equation
       print(printEnvPathStr(env));print(" :   ");
@@ -901,7 +900,7 @@ algorithm
       AvlTree ht;
       list<AvlValue> imps;
       Env bcframes;
-      tuple<list<Exp.ComponentRef>,Exp.ComponentRef> crs;
+      tuple<list<DAE.ComponentRef>,DAE.ComponentRef> crs;
       Boolean encflag;
     case FRAME(optName = SOME(sid),clsAndVars = ht,types = httypes,imports = imps,inherited = bcframes,connectionSet = crs,isEncapsulated = encflag)
       equation 
@@ -945,7 +944,7 @@ algorithm
       AvlTree ht;
       list<AvlValue> imps;
       Env bcframes;
-      tuple<list<Exp.ComponentRef>,Exp.ComponentRef> crs;
+      tuple<list<DAE.ComponentRef>,DAE.ComponentRef> crs;
       Boolean encflag;
     case FRAME(optName = SOME(sid),clsAndVars = ht,types = httypes,imports = imps,inherited = bcframes,connectionSet = crs,isEncapsulated = encflag)
       equation 
@@ -1009,16 +1008,16 @@ algorithm
   matchcontinue (inTplIdentItem)
     local
       Ident s,elt_str,tp_str,var_str,frame_str,bind_str,res,n,lenstr;
-      Types.Var tv;
+      DAE.Var tv;
       SCode.Variability var;
-      tuple<Types.TType, Option<Absyn.Path>> tp;
-      Types.Binding bind,bnd;
+      tuple<DAE.TType, Option<Absyn.Path>> tp;
+      DAE.Binding bind,bnd;
       SCode.Element elt;
       InstStatus i;
       Frame compframe;
       Env env;
       Integer len;
-      list<tuple<Types.TType, Option<Absyn.Path>>> lst;
+      list<tuple<DAE.TType, Option<Absyn.Path>>> lst;
       Absyn.Import imp;
     case ((n,VAR(instantiated = (tv as DAE.TYPES_VAR(attributes = DAE.ATTR(parameter_ = var),type_ = tp,binding = bind)),declaration = SOME((elt,_)),instStatus = i,env = (compframe :: _))))
       equation 
@@ -1412,12 +1411,12 @@ public function localOutsideConnectorFlowvars "function: localOutsideConnectorFl
   Return the outside connector variables that are flow in the local scope.
 "
   input Env inEnv;
-  output list<Exp.ComponentRef> outExpComponentRefLst;
+  output list<DAE.ComponentRef> outExpComponentRefLst;
 algorithm 
   outExpComponentRefLst:=
   matchcontinue (inEnv)
     local
-      list<Exp.ComponentRef> res;
+      list<DAE.ComponentRef> res;
       Option<Ident> sid;
       AvlTree ht;
     case ((FRAME(optName = sid,clsAndVars = ht) :: _))
@@ -1433,14 +1432,14 @@ protected function localOutsideConnectorFlowvars2 "function: localOutsideConnect
   Helper function to local_outside_connector_flowvars
 "
   input Option<AvlTree> inBinTreeOption;
-  output list<Exp.ComponentRef> outExpComponentRefLst;
+  output list<DAE.ComponentRef> outExpComponentRefLst;
 algorithm 
   outExpComponentRefLst:=
   matchcontinue (inBinTreeOption)
     local
-      list<Exp.ComponentRef> lst1,lst2,lst3,res;
+      list<DAE.ComponentRef> lst1,lst2,lst3,res;
       Ident id;
-      list<Types.Var> vars;
+      list<DAE.Var> vars;
       Option<AvlTree> l,r;
       Absyn.InnerOuter io;
     case (NONE) then {}; 
@@ -1470,12 +1469,12 @@ public function localInsideConnectorFlowvars "function: localInsideConnectorFlow
   Returns the inside connector variables that are flow from the local scope.
 "
   input Env inEnv;
-  output list<Exp.ComponentRef> outExpComponentRefLst;
+  output list<DAE.ComponentRef> outExpComponentRefLst;
 algorithm 
   outExpComponentRefLst:=
   matchcontinue (inEnv)
     local
-      list<Exp.ComponentRef> res;
+      list<DAE.ComponentRef> res;
       Option<Ident> sid;
       AvlTree ht;
     case ((FRAME(optName = sid,clsAndVars = ht) :: _))
@@ -1491,16 +1490,16 @@ protected function localInsideConnectorFlowvars2 "function: localInsideConnector
   Helper function to local_inside_connector_flowvars
 "
   input Option<AvlTree> inBinTreeOption;
-  output list<Exp.ComponentRef> outExpComponentRefLst;
+  output list<DAE.ComponentRef> outExpComponentRefLst;
 algorithm 
   outExpComponentRefLst:=
   matchcontinue (inBinTreeOption)
     local
-      list<Exp.ComponentRef> lst1,lst2,res,lst3;
+      list<DAE.ComponentRef> lst1,lst2,res,lst3;
       Ident id;
       Option<AvlTree> l,r;
-      list<Types.Var> vars;
-      tuple<Types.TType, Option<Absyn.Path>> t;
+      list<DAE.Var> vars;
+      tuple<DAE.TType, Option<Absyn.Path>> t;
       Absyn.InnerOuter io;
     case (NONE) then {}; 
     
@@ -1509,16 +1508,16 @@ algorithm
     case (SOME(AVLTREENODE(SOME(AVLTREEVALUE(_,VAR(DAE.TYPES_VAR(id,(tatr as DAE.ATTR(innerOuter=io)),b3,
           (tmpty as (DAE.T_ARRAY(ad,at),_)),bind),_,_,_))),_,l,r)))
       local
-        Types.ArrayDim ad;
-        Types.Type at,tmpty,flatArrayType;
-        Types.Attributes tatr;
+        DAE.ArrayDim ad;
+        DAE.Type at,tmpty,flatArrayType;
+        DAE.Attributes tatr;
         Boolean b3;
-        Types.Binding bind;
+        DAE.Binding bind;
         list<Integer> adims;
-        list<Types.Var> tvars;
+        list<DAE.Var> tvars;
         list<list<Integer>> indexIntegerLists;
-        list<list<Exp.Subscript>> indexSubscriptLists;
-        //list<Exp.ComponentRef> arrayComplex;
+        list<list<DAE.Subscript>> indexSubscriptLists;
+        //list<DAE.ComponentRef> arrayComplex;
       equation 
         (_,false) = Inst.innerOuterBooleans(io); 
         ((flatArrayType as (DAE.T_COMPLEX(_,tvars,_,_),_)),adims) = Types.flattenArrayType(tmpty);
@@ -1578,16 +1577,16 @@ protected function localInsideConnectorFlowvars3 "function: localInsideConnector
  
   Helper function to local_inside_connector_flowvars2
 "
-  input list<Types.Var> inTypesVarLst;
+  input list<DAE.Var> inTypesVarLst;
   input Ident inIdent;
-  output list<Exp.ComponentRef> outExpComponentRefLst;
+  output list<DAE.ComponentRef> outExpComponentRefLst;
 algorithm 
   outExpComponentRefLst:=
   matchcontinue (inTypesVarLst,inIdent)
     local
-      list<Exp.ComponentRef> lst1,lst2,res;
+      list<DAE.ComponentRef> lst1,lst2,res;
       Ident id,oid,name;
-      list<Types.Var> vars,xs;
+      list<DAE.Var> vars,xs;
       Absyn.InnerOuter io;
       Boolean isExpandable;
     case ({},_) then {}; 
@@ -1606,12 +1605,12 @@ algorithm
         res;
     case ((DAE.TYPES_VAR(name = id,attributes=DAE.ATTR(innerOuter=io),type_ = (tmpty as (DAE.T_ARRAY(ad,_),_))) :: xs),oid)
       local
-        Types.ArrayDim ad;
+        DAE.ArrayDim ad;
         list<Integer> adims;
-        list<Types.Var> tvars;
-        Types.Type tmpty,flatArrayType;
-        list<list<Exp.Subscript>> indexSubscriptLists;
-        Exp.ComponentRef connectorRef;
+        list<DAE.Var> tvars;
+        DAE.Type tmpty,flatArrayType;
+        list<list<DAE.Subscript>> indexSubscriptLists;
+        DAE.ComponentRef connectorRef;
         Boolean isExpandable;
         
       equation 
@@ -1638,14 +1637,14 @@ protected function localInsideConnectorFlowvars3_3 "
 Author BZ, 2009-10
 Helper function for localInsideConnectorFlowvars3, handles the case with inside array connectors
 " 
-input list<Types.Var> connectorSubs;
-input Exp.ComponentRef baseRef;
-input list<list<Exp.Subscript>> ssubs;
-output list<Exp.ComponentRef> outRefs;
+input list<DAE.Var> connectorSubs;
+input DAE.ComponentRef baseRef;
+input list<list<DAE.Subscript>> ssubs;
+output list<DAE.ComponentRef> outRefs;
 algorithm outRefs := matchcontinue(connectorSubs,baseRef,ssubs)
   local
-    list<Exp.Subscript> s;
-    list<Exp.ComponentRef> lst1,lst2;
+    list<DAE.Subscript> s;
+    list<DAE.ComponentRef> lst1,lst2;
   case({},_,_) then {};
   case(_,_,{}) then {};
   case(connectorSubs,baseRef,s::ssubs)
@@ -1664,20 +1663,20 @@ Author: BZ, 2009-05
 Extract vars from complex types. 
 Helper function for array complex vars. 
 "
-  input list<Types.Var> inTypesVarLst;
+  input list<DAE.Var> inTypesVarLst;
   input Ident inIdent;
-  input list<list<Exp.Subscript>> ssubs;
-  output list<Exp.ComponentRef> outExpComponentRefLst;
+  input list<list<DAE.Subscript>> ssubs;
+  output list<DAE.ComponentRef> outExpComponentRefLst;
 algorithm 
   outExpComponentRefLst:=
   matchcontinue (inTypesVarLst,inIdent,ssubs)
     local
-      list<Exp.ComponentRef> lst1,lst2,lst3,res;
+      list<DAE.ComponentRef> lst1,lst2,lst3,res;
       Ident id,oid,name;
-      list<Types.Var> vars,xs;
+      list<DAE.Var> vars,xs;
       Absyn.InnerOuter io;
-      list<Exp.Subscript> s;
-      Types.Var tv;
+      list<DAE.Subscript> s;
+      DAE.Var tv;
       Boolean isExpandable;
     case ({},_,_) then {}; 
     case (_,_,{}) then {};
@@ -1712,12 +1711,12 @@ Create subscripts from given integerlist of dimensions, ex
 {2,3} => {1,1},{1,2},{1,3},{2,1},{2,2},{2,3}.
 "
   input list<Integer> inInts;
-  output list<list<Exp.Subscript>> osubs;
+  output list<list<DAE.Subscript>> osubs;
 algorithm osubs := matchcontinue(inInts)
   local
     list<Integer> ints;
     Integer i;
-    list<Exp.Subscript> localSubs;
+    list<DAE.Subscript> localSubs;
   case({}) then {};
   case(i::inInts)
     equation
@@ -1735,11 +1734,11 @@ protected function dummyDump "
 Author: BZ, 2009-05
 Debug function, print subscripts. 
 "
-input list<Exp.Subscript> subs;
+input list<DAE.Subscript> subs;
 output String str; 
 algorithm str := matchcontinue(subs)
   local
-      Exp.Subscript s;
+      DAE.Subscript s;
   case(subs)
     equation
       str = " subs: " +& Util.stringDelimitList(Util.listMap(subs,Exp.printSubscriptStr),", ") +& "\n";
@@ -1750,14 +1749,14 @@ algorithm str := matchcontinue(subs)
 end dummyDump; 
 
 protected function createSubs2
-input list<Exp.Subscript> s;
-input list<list<Exp.Subscript>> subs;
-output list<list<Exp.Subscript>> osubs;
+input list<DAE.Subscript> s;
+input list<list<DAE.Subscript>> subs;
+output list<list<DAE.Subscript>> osubs;
 algorithm osubs := matchcontinue(s,subs)
   local
-    list<Exp.Subscript> lsubs;
-    list<list<Exp.Subscript>> lssubs;
-    Exp.Subscript sub;
+    list<DAE.Subscript> lsubs;
+    list<list<DAE.Subscript>> lssubs;
+    DAE.Subscript sub;
     case({},_) then {};
     case(sub::s,{}) // base case
     equation
@@ -1775,12 +1774,12 @@ algorithm osubs := matchcontinue(s,subs)
 end createSubs2;
 
 protected function createSubs3
-input Exp.Subscript s;
-input list<list<Exp.Subscript>> subs;
-output list<list<Exp.Subscript>> osubs;
+input DAE.Subscript s;
+input list<list<DAE.Subscript>> subs;
+output list<list<DAE.Subscript>> osubs;
 algorithm osubs := matchcontinue(s,subs)
   local
-    list<Exp.Subscript> lsubs;
+    list<DAE.Subscript> lsubs;
     case(_,{}) then {};
   case(s,lsubs::subs)
     equation
@@ -1793,9 +1792,9 @@ end createSubs3;
 
 protected function integer2Subscript "
 @author adrpo
- given an integer transform it into an Exp.Subscript"
+ given an integer transform it into an DAE.Subscript"
   input  Integer       index;
-  output Exp.Subscript subscript;
+  output DAE.Subscript subscript;
 algorithm
  subscript := DAE.INDEX(DAE.ICONST(index));
 end integer2Subscript;
@@ -1819,7 +1818,7 @@ input AvlValue v;
 output String str;
 algorithm
   str := matchcontinue(v)
-  local String name; Types.Type tp; Absyn.Import imp;
+  local String name; DAE.Type tp; Absyn.Import imp;
     case(VAR(instantiated=DAE.TYPES_VAR(name=name,type_=tp))) equation
       str = "v: " +& name +& " " +& Types.unparseType(tp);
     then str;

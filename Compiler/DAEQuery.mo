@@ -118,10 +118,10 @@ algorithm
   matchcontinue (inEquation, wcLst)
     local
       String s1,s2,s3,res,indx_str,is,var_str;
-      Exp.Exp e1,e2,e,condition;
+      DAE.Exp e1,e2,e,condition;
       DAELow.Value indx,i;
-      list<Exp.Exp> expl;
-      Exp.ComponentRef cr;
+      list<DAE.Exp> expl;
+      DAE.ComponentRef cr;
     case (DAELow.EQUATION(exp = e1,scalar = e2), _)
       equation
         s1 = Exp.printExpStr(e1);
@@ -375,10 +375,10 @@ algorithm
       list<String> paths_lst,path_strs;
       Integer varno_1,indx,varno;
       DAELow.Var v;
-      Exp.ComponentRef cr,old_name;
+      DAE.ComponentRef cr,old_name;
       DAELow.VarKind kind;
       DAE.VarDirection dir;
-      Option<Exp.Exp> e;
+      Option<DAE.Exp> e;
       list<Absyn.Path> paths;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
@@ -547,10 +547,10 @@ algorithm
     local
       list<String> lst1,lst2,res,res_1;
       DAELow.Variables vars;
-      Exp.Exp e1,e2,e;
+      DAE.Exp e1,e2,e;
       list<list<String>> lst3;
-      list<Exp.Exp> expl,inputs,outputs;
-      Exp.ComponentRef cr;
+      list<DAE.Exp> expl,inputs,outputs;
+      DAE.ComponentRef cr;
       DAELow.WhenEquation we;
       DAELow.Value indx;
     case (vars,DAELow.EQUATION(exp = e1,scalar = e2))
@@ -630,12 +630,12 @@ algorithm
   matchcontinue (inAlgorithmStatementLst,inVariables)
     local
       list<String> lst1,lst2,lst3,res,lst3_1;
-      Exp.Type tp;
-      Exp.ComponentRef cr;
-      Exp.Exp e, e1;
+      DAE.ExpType tp;
+      DAE.ComponentRef cr;
+      DAE.Exp e, e1;
       list<Algorithm.Statement> rest,stmts;
       DAELow.Variables vars;
-      list<Exp.Exp> expl;
+      list<DAE.Exp> expl;
       Algorithm.Else else_;
     case ({},_) then {};
     case ((DAE.STMT_ASSIGN(type_ = tp,exp1 = e1,exp = e) :: rest),vars)
@@ -698,7 +698,7 @@ protected function incidenceRowExp "function: incidenceRowExp
   Helper function to incidence_row, investigates expressions for
   variables, returning variable indexes.
 "
-  input Exp.Exp inExp;
+  input DAE.Exp inExp;
   input DAELow.Variables inVariables;
   output list<String> outStringLst;
 algorithm
@@ -711,10 +711,10 @@ algorithm
       list<String> pStr,s1,s2,res,s3,lst_1;
       String s;
       list<list<String>> lst;
-      Exp.ComponentRef cr;
+      DAE.ComponentRef cr;
       DAELow.Variables vars;
-      Exp.Exp e1,e2,e,e3;
-      list<Exp.Exp> expl;
+      DAE.Exp e1,e2,e,e3;
+      list<DAE.Exp> expl;
     case (DAE.CREF(componentRef = cr),vars)
       equation
         ((DAELow.VAR(_,DAELow.STATE(),_,_,_,_,_,_,_,_,_,_,flowPrefix,streamPrefix) :: _),p) = 
@@ -782,8 +782,8 @@ algorithm
         pStr;
     case (DAE.IFEXP(expCond = e1 as DAE.RELATION(exp1 = ee1, operator = op1, exp2 =ee2),expThen = e2,expElse = e3),vars) /* if expressions. */
       local String ss, ss1, ss2, ss3, opStr;
-        Exp.Exp ee1,ee2;
-        Exp.Operator op1;
+        DAE.Exp ee1,ee2;
+        DAE.Operator op1;
       equation
         opStr = Exp.relopSymbol(op1);
         s = printExpStr(ee2);
@@ -802,7 +802,7 @@ algorithm
 //    case (DAE.IFEXP(expCond = e1 as DAE.CREF(componentRef = cref1),expThen = e2,expElse = e3),vars) /* if expressions. */
 /*      local String ss,sb;
         String ss, ss1, ss2, ss3;
-        Exp.ComponentRef cref1;
+        DAE.ComponentRef cref1;
       equation
         sb = printExpStr(e1);
         s1 = incidenceRowExp(e1, vars);
@@ -820,8 +820,8 @@ algorithm
     // If expression with logic sentence.
     case (DAE.IFEXP(expCond = e1 as DAE.LBINARY(exp1 = ee1, operator = op1, exp2 =ee2),expThen = e2,expElse = e3),vars) /* if expressions. */
       local String ss, ss1, ss2, ss3, opStr, sb;
-        Exp.Exp ee1,ee2;
-        Exp.Operator op1;
+        DAE.Exp ee1,ee2;
+        DAE.Operator op1;
       equation
         opStr = printExpStr(e1);
         //opStr = Exp.relopSymbol(op1);
@@ -842,7 +842,7 @@ algorithm
     case (DAE.IFEXP(expCond = e1 as DAE.CREF(componentRef = cref1), expThen = e2, expElse = e3),vars) /* if expressions. */
       local String ss,sb;
         String ss, ss1, ss2, ss3;
-        Exp.ComponentRef cref1;
+        DAE.ComponentRef cref1;
       equation
         //sb = printExpStr(e1);
 
@@ -862,7 +862,7 @@ algorithm
     case (DAE.IFEXP(expCond = e1,expThen = e2,expElse = e3),vars) /* if expressions. */
       local String ss,sb;
         String ss, ss1, ss2, ss3;
-        Exp.ComponentRef cref1;
+        DAE.ComponentRef cref1;
       equation
         sb = printExpStr(e1);
         s1 = incidenceRowExp(e1, vars);
@@ -909,7 +909,7 @@ algorithm
       then
         pStr;
     case (DAE.MATRIX(scalar = expl),vars)
-      local list<list<tuple<Exp.Exp, Boolean>>> expl;
+      local list<list<tuple<DAE.Exp, Boolean>>> expl;
       equation
         pStr = incidenceRowMatrixExp(expl, vars);
       then
@@ -945,17 +945,17 @@ protected function incidenceRowMatrixExp "function: incidenceRowMatrixExp
 
   Traverses matrix expressions for building incidence matrix.
 "
-  input list<list<tuple<Exp.Exp, Boolean>>> inTplExpExpBooleanLstLst;
+  input list<list<tuple<DAE.Exp, Boolean>>> inTplExpExpBooleanLstLst;
   input DAELow.Variables inVariables;
   output list<String> outStringLst;
 algorithm
   outStringLst:=
   matchcontinue (inTplExpExpBooleanLstLst,inVariables)
     local
-      list<Exp.Exp> expl_1;
+      list<DAE.Exp> expl_1;
       list<list<String>> res1;
-      list<tuple<Exp.Exp, Boolean>> expl;
-      list<list<tuple<Exp.Exp, Boolean>>> es;
+      list<tuple<DAE.Exp, Boolean>> expl;
+      list<list<tuple<DAE.Exp, Boolean>>> es;
       list<String> pStr, res1_1, res2;
       DAELow.Variables vars;
     case ({},_) then {};
@@ -973,7 +973,7 @@ end incidenceRowMatrixExp;
 
 protected function printExpStr "function: printExpStr
   This function prints a complete expression."
-  input Exp.Exp e;
+  input DAE.Exp e;
   output String s;
 algorithm
   s := printExp2Str(e);
@@ -982,22 +982,22 @@ end printExpStr;
 protected function printExp2Str
 "function: printExp2Str
   Helper function to print_exp_str."
-  input Exp.Exp inExp;
+  input DAE.Exp inExp;
   output String outString;
 algorithm
   outString:=
   matchcontinue (inExp)
     local
-      Exp.Ident s,s_1,s_2,sym,s1,s2,s3,s4,s_3,ifstr,thenstr,elsestr,res,fs,argstr,s5,s_4,s_5,res2,str,crstr,dimstr,expstr,iterstr,id;
-      Exp.Ident s1_1,s2_1,s1_2,s2_2,cs,ts,fs,cs_1,ts_1,fs_1,s3_1;
+      DAE.Ident s,s_1,s_2,sym,s1,s2,s3,s4,s_3,ifstr,thenstr,elsestr,res,fs,argstr,s5,s_4,s_5,res2,str,crstr,dimstr,expstr,iterstr,id;
+      DAE.Ident s1_1,s2_1,s1_2,s2_2,cs,ts,fs,cs_1,ts_1,fs_1,s3_1;
       Integer x,pri2_1,pri2,pri3,pri1,ival,i,pe1,p1,p2,pc,pt,pf,p,pstop,pstart,pstep;
       Real rval;
-      Exp.ComponentRef c;
-      Exp.Type t,ty,ty2,tp;
-      Exp.Exp e1,e2,e21,e22,e,f,start,stop,step,cr,dim,exp,iterexp,cond,tb,fb;
-      Exp.Operator op;
+      DAE.ComponentRef c;
+      DAE.ExpType t,ty,ty2,tp;
+      DAE.Exp e1,e2,e21,e22,e,f,start,stop,step,cr,dim,exp,iterexp,cond,tb,fb;
+      DAE.Operator op;
       Absyn.Path fcn;
-      list<Exp.Exp> args,es;
+      list<DAE.Exp> args,es;
     case (DAE.END()) then "end";
     case (DAE.ICONST(integer = x))
       equation
@@ -1110,7 +1110,7 @@ algorithm
       then
         s_2;
     case (DAE.ARRAY(array = es,ty=tp))
-      local Exp.Type tp; String s3;
+      local DAE.ExpType tp; String s3;
       equation
         s3 = Exp.typeString(tp);
         s = Exp.printListStr(es, printExpStr, ",");
@@ -1125,8 +1125,8 @@ algorithm
       then
         s_2;
     case (DAE.MATRIX(scalar = es,ty=tp))
-      local list<list<tuple<Exp.Exp, Boolean>>> es;
-        Exp.Type tp; String s3;
+      local list<list<tuple<DAE.Exp, Boolean>>> es;
+        DAE.ExpType tp; String s3;
       equation
         s3 = Exp.typeString(tp);
         s = Exp.printListStr(es, Exp.printRowStr, "},{");
@@ -1229,7 +1229,7 @@ algorithm
 
       // MetaModelica list
     case (DAE.LIST(_,es))
-      local list<Exp.Exp> es;
+      local list<DAE.Exp> es;
       equation
         s = Exp.printListStr(es, printExpStr, ",");
         s_1 = stringAppend("list(", s);

@@ -81,22 +81,22 @@ package XMLDump
 
   RCS: $Id: XMLDump.mo 3643 2008-09-16 05:34:14Z donida $"
 
-  public import Absyn;
-  public import Algorithm;
-  public import DAE;
-  public import DAEEXT;
-  public import DAELow;
-  public import DAEUtil;
-  public import Dump;
-  public import Exp;
-  public import ModUtil;  
-  public import Print;
-  public import RTOpts;
-  public import Static;
-  public import Util;
-  public import Values;
-  public import SCode;
+public import Absyn;
+public import DAE;
+public import DAEEXT;
+public import DAELow;
+public import Static;
+public import Values;
+public import SCode;
 
+protected import Algorithm;
+protected import DAEUtil;
+protected import Dump;
+protected import Exp;
+protected import ModUtil;  
+protected import Print;
+protected import RTOpts;
+protected import Util;
 
 
   protected constant String HEADER        = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
@@ -378,14 +378,14 @@ function: binopSymbol
   Return a string representation of the Operator
   corresponding to the MathML encode.
 "
-  input Exp.Operator inOperator;
+  input DAE.Operator inOperator;
   output String outString;
 algorithm
   outString:=
   matchcontinue (inOperator)
     local
-      Exp.Ident s;
-      Exp.Operator op;
+      DAE.Ident s;
+      DAE.Operator op;
     case op
       equation
         s = binopSymbol2(op);
@@ -398,7 +398,7 @@ end binopSymbol;
 public function binopSymbol2 "
 Helper function to binopSymbol
 "
-  input Exp.Operator inOperator;
+  input DAE.Operator inOperator;
   output String outString;
 algorithm
   outString:=
@@ -476,14 +476,14 @@ end dumpAbsynPathLst2;
 
 
 public function dumpAlgorithms "
-This function dumps the list of Algorithm.Algorithm
+This function dumps the list of DAE.Algorithm
 within using a XML format. If at least one Algorithm
 is present the output is:
 <ALGORITHMS DIMENSION=...>
   ...
 </ALGORITHMS>
 "
-  input list<Algorithm.Algorithm> algs;
+  input list<DAE.Algorithm> algs;
 algorithm
   _:= matchcontinue(algs)
     case {} then ();
@@ -507,7 +507,7 @@ end dumpAlgorithms;
 
 
 public function dumpAlgorithms2 "
-This function dumps a list of Algorithm.Algorithm in
+This function dumps a list of DAE.Algorithm in
 XML format. The output is something like:
 <ALGORITHM LABEL=Algorithm_ID>
   ...
@@ -517,7 +517,7 @@ XML format. The output is something like:
 </ALGORITHM>
   ...
 "
-  input list<Algorithm.Algorithm> algs;
+  input list<DAE.Algorithm> algs;
   input Integer inAlgNo;
 algorithm
   _ := matchcontinue(algs,inAlgNo)
@@ -550,8 +550,8 @@ the output is like:
 "
   input list<DAELow.MultiDimEquation> inMultiDimEquationLst;
   input String inContent;
-  input Exp.Exp addMathMLCode;
-  input Exp.Exp dumpResiduals;
+  input DAE.Exp addMathMLCode;
+  input DAE.Exp dumpResiduals;
 algorithm
   _:=
   matchcontinue (inMultiDimEquationLst,inContent,addMathMLCode,dumpResiduals)
@@ -597,14 +597,14 @@ The output, if the list is not empty is something like this:
 </ARRAY_EQUATION>
 "
   input list<DAELow.MultiDimEquation> inMultiDimEquationLst;
-  input Exp.Exp addMathMLCode;
-  input Exp.Exp dumpResiduals;
+  input DAE.Exp addMathMLCode;
+  input DAE.Exp dumpResiduals;
 algorithm
   _:=
   matchcontinue (inMultiDimEquationLst,addMathMLCode,dumpResiduals)
     local
       String s1,s2,s;
-      Exp.Exp e1,e2;
+      DAE.Exp e1,e2;
       list<DAELow.MultiDimEquation> es;
     case ({},_,_) then ();
     case ((DAELow.MULTIDIM_EQUATION(left = e1,right = e2) :: es),DAE.BCONST(bool=true),DAE.BCONST(bool=false))
@@ -694,21 +694,21 @@ end dumpBltInvolvedEquations;
 public function dumpBindValueExpression "
 This function is necessary for printing the
 BindValue and BindExpression of a variable,
-if present. If there are not Exp.Exp nor
+if present. If there are not DAE.Exp nor
 Values.Value passed as input nothing is
 printed.
 "
-  input Option<Exp.Exp> inOptExpExp;
+  input Option<DAE.Exp> inOptExpExp;
   input Option<Values.Value> inOptValuesValue;
-  input Exp.Exp addMathMLCode;
+  input DAE.Exp addMathMLCode;
 
   algorithm
     _:=
   matchcontinue (inOptExpExp,inOptValuesValue,addMathMLCode)
       local
-        Exp.Exp e;
+        DAE.Exp e;
         Values.Value b;
-        Exp.Exp addMMLCode;
+        DAE.Exp addMMLCode;
   case(NONE,NONE,_)
     equation
     then();
@@ -877,7 +877,7 @@ algorithm
         list<DAELow.CrefIndex> crefIndexList;
         DAELow.CrefIndex crefIndex;
         Integer index_c;
-        Exp.ComponentRef cref_c;
+        DAE.ComponentRef cref_c;
         String cref;
       case {}  then ();
       case ((crefIndex as DAELow.CREFINDEX(cref=cref_c,index=index_c)) :: crefIndexList)
@@ -893,9 +893,9 @@ end dumpCrefIdxLst2;
 
 
 public function dumpDAEInstDims "
-This function prints a DAE.InstDims (a list of Exp.Subscript)
+This function prints a DAE.InstDims (a list of DAE.Subscript)
 using an XML format. The input variables are the list of
-Exp.Subscript and a String that store information about the
+DAE.Subscript and a String that store information about the
 content of the list. The output could be something like:
 <Content>
   ...//List of Subscript XML elements
@@ -925,7 +925,7 @@ end dumpDAEInstDims;
 
 protected function dumpDAEInstDims2 "
 Help function to dumpDAEInstDims. This function here
-makes the real job of printing the list of Exp.Subscripts.
+makes the real job of printing the list of DAE.Subscripts.
 The output is something like:
 <Subsript>FirstSubscriptOfTheList</Subscript>
 ...
@@ -936,8 +936,8 @@ See dump Subscript for details.
 algorithm
   _:= matchcontinue (arry_Dim)
     local
-      list<Exp.Subscript> lSub;
-      Exp.Subscript sub;
+      list<DAE.Subscript> lSub;
+      DAE.Subscript sub;
   case {} then ();
   case (sub :: lSub)
   equation
@@ -995,10 +995,10 @@ the relative tag is not printed.
   input DAELow.DAELow inDAELow;
   input list<Absyn.Path> functionNames;
   input list<DAE.Element> functions;
-  input Exp.Exp addOriginalIncidenceMatrix;
-  input Exp.Exp addSolvingInfo;
-  input Exp.Exp addMathMLCode;
-  input Exp.Exp dumpResiduals;
+  input DAE.Exp addOriginalIncidenceMatrix;
+  input DAE.Exp addSolvingInfo;
+  input DAE.Exp addMathMLCode;
+  input DAE.Exp dumpResiduals;
 algorithm
   _:=
   matchcontinue (inDAELow,functionNames,functions,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals)
@@ -1042,13 +1042,13 @@ algorithm
       list<DAELow.MultiDimEquation> ae_lst;
       DAELow.EquationArray eqns,reqns,ieqns;
       DAELow.MultiDimEquation[:] ae;
-      Algorithm.Algorithm[:] algs;
+      DAE.Algorithm[:] algs;
       list<DAELow.ZeroCrossing> zc;
       
       list<Absyn.Path> inFunctionNames;
       list<DAE.Element> inFunctions;
       
-      Exp.Exp addOrInMatrix,addSolInfo,addMML,dumpRes;
+      DAE.Exp addOrInMatrix,addSolInfo,addMML,dumpRes;
 
 
     case (DAELow.DAELOW(vars_orderedVars as DAELow.VARIABLES(crefIdxLstArr=crefIdxLstArr_orderedVars,strIdxLstArr=strIdxLstArr_orderedVars,varArr=varArr_orderedVars,bucketSize=bucketSize_orderedVars,numberOfVars=numberOfVars_orderedVars),
@@ -1116,17 +1116,17 @@ sudh as:
 "
   input Option<DAE.VariableAttributes> dae_var_attr;
   input String Content;
-  input Exp.Exp addMathMLCode;
+  input DAE.Exp addMathMLCode;
  algorithm
    _:= matchcontinue(dae_var_attr,Content,addMathMLCode)
      local
-       tuple<Option<Exp.Exp>, Option<Exp.Exp>> min_max;
-       Option<Exp.Exp> quant,unit,displayUnit;
-       Option<Exp.Exp> min,max,Initial,nominal;
-       Option<Exp.Exp> fixed;
+       tuple<Option<DAE.Exp>, Option<DAE.Exp>> min_max;
+       Option<DAE.Exp> quant,unit,displayUnit;
+       Option<DAE.Exp> min,max,Initial,nominal;
+       Option<DAE.Exp> fixed;
        Option<DAE.StateSelect> stateSel;
-       Exp.Exp addMMLCode;
-       Option<Exp.Exp> equationBound;
+       DAE.Exp addMMLCode;
+       Option<DAE.Exp> equationBound;
        Option<Boolean> isProtected;
        Option<Boolean> finalPrefix;       
        
@@ -1224,12 +1224,12 @@ The output is:
 "
   input list<DAELow.Equation> eqns;
   input String inContent;
-  input Exp.Exp addMathMLCode;
-  input Exp.Exp dumpResiduals;
+  input DAE.Exp addMathMLCode;
+  input DAE.Exp dumpResiduals;
 algorithm
   _:=
   matchcontinue (eqns,inContent,addMathMLCode,dumpResiduals)
-      local Exp.Exp addMMLCode;
+      local DAE.Exp addMMLCode;
     case ({},_,_,_) then ();
     case (eqns,inContent,_,_)
       local Integer len;
@@ -1255,8 +1255,8 @@ protected function dumpEqns2 "
 "
   input list<DAELow.Equation> inEquationLst;
   input Integer inInteger;
-  input Exp.Exp addMathMLCode;
-  input Exp.Exp dumpResiduals;
+  input DAE.Exp addMathMLCode;
+  input DAE.Exp dumpResiduals;
 algorithm
   _:=
   matchcontinue (inEquationLst,inInteger,addMathMLCode,dumpResiduals)
@@ -1265,7 +1265,7 @@ algorithm
       DAELow.Value index;
       DAELow.Equation eqn;
       list<DAELow.Equation> eqns;
-      Exp.Exp addMMLCode;
+      DAE.Exp addMMLCode;
     case ({},_,_,_) then ();
     case ((eqn :: eqns),index,addMMLCode,DAE.BCONST(bool=false))
       equation
@@ -1326,17 +1326,17 @@ For example, if the element is an Array of Equations:
 "
   input DAELow.Equation inEquation;
   input String inIndexNumber;
-  input Exp.Exp addMathMLCode;
+  input DAE.Exp addMathMLCode;
 algorithm
   _:=
   matchcontinue (inEquation,inIndexNumber,addMathMLCode)
     local
       String s1,s2,res,indx_str,is,var_str,indexS;
-      Exp.Exp e1,e2,e;
+      DAE.Exp e1,e2,e;
       DAELow.Value indx,i;
-      list<Exp.Exp> expl;
-      Exp.ComponentRef cr;
-      Exp.Exp addMMLCode;
+      list<DAE.Exp> expl;
+      DAE.ComponentRef cr;
+      DAE.Exp addMMLCode;
 
     case (DAELow.EQUATION(exp = e1,scalar = e2),indexS,DAE.BCONST(bool=true))
       equation
@@ -1481,18 +1481,18 @@ public function dumpExp
   as a MathML. The content is like:
   <MathML>
   <MATH xmlns=\"http://www.w3.org/1998/Math/MathML\">
-  Exp.Exp
+  DAE.Exp
   </MATH>
   </MathML>"
-  input Exp.Exp e;
+  input DAE.Exp e;
   //output String s;
-  input Exp.Exp addMathMLCode;
+  input DAE.Exp addMathMLCode;
 algorithm
   _:=
   matchcontinue (e,addMathMLCode)
     local
-      Exp.Exp inExp;
-      Exp.Exp addMMLCode;
+      DAE.Exp inExp;
+      DAE.Exp addMMLCode;
     case(inExp,DAE.BCONST(bool=true))
       equation
         dumpStrOpenTag(MathML);
@@ -1513,21 +1513,21 @@ public function dumpExp2
   Helper function to dumpExp. It can also
   be used if it's not necessary to print the headers
   (MathML and MATH tags)."
-  input Exp.Exp inExp;
+  input DAE.Exp inExp;
 algorithm
   _:=
   matchcontinue (inExp)
     local
-      Exp.Ident s,s_1,s_2,sym,s1,s2,s3,s4,s_3,ifstr,thenstr,elsestr,res,fs,argstr,s5,s_4,s_5,res2,str,crstr,dimstr,expstr,iterstr,id;
-      Exp.Ident s1_1,s2_1,s1_2,s2_2,cs,ts,fs,cs_1,ts_1,fs_1,s3_1;
+      DAE.Ident s,s_1,s_2,sym,s1,s2,s3,s4,s_3,ifstr,thenstr,elsestr,res,fs,argstr,s5,s_4,s_5,res2,str,crstr,dimstr,expstr,iterstr,id;
+      DAE.Ident s1_1,s2_1,s1_2,s2_2,cs,ts,fs,cs_1,ts_1,fs_1,s3_1;
       Integer x,pri2_1,pri2,pri3,pri1,ival,i,pe1,p1,p2,pc,pt,pf,p,pstop,pstart,pstep;
       Real rval;
-      Exp.ComponentRef c;
-      Exp.Type t,ty,ty2,tp;
-      Exp.Exp e1,e2,e21,e22,e,f,start,stop,step,cr,dim,exp,iterexp,cond,tb,fb;
-      Exp.Operator op;
+      DAE.ComponentRef c;
+      DAE.ExpType t,ty,ty2,tp;
+      DAE.Exp e1,e2,e21,e22,e,f,start,stop,step,cr,dim,exp,iterexp,cond,tb,fb;
+      DAE.Operator op;
       Absyn.Path fcn;
-      list<Exp.Exp> args,es;
+      list<DAE.Exp> args,es;
     case (DAE.END())
     ////////////////////////////////////////////////
     //////    TO DO: ADD SUPPORT TO END     ////////
@@ -1700,7 +1700,7 @@ algorithm
         dumpStrCloseTag(MathMLApply);
       then ();
     case (DAE.ARRAY(array = es,ty=tp))//Array are dumped as vector
-      local Exp.Type tp; String s3;
+      local DAE.ExpType tp; String s3;
       equation
         dumpStrOpenTag(MathMLApply);
         dumpStrVoidTag(MathMLTranspose);
@@ -1723,8 +1723,8 @@ algorithm
         dumpStrCloseTag(MathMLApply);
       then ();
     case (DAE.MATRIX(scalar = es,ty=tp))
-      local list<list<tuple<Exp.Exp, Boolean>>> es;
-        Exp.Type tp; String s3;
+      local list<list<tuple<DAE.Exp, Boolean>>> es;
+        DAE.ExpType tp; String s3;
       equation
         dumpStrOpenTag(MathMLApply);
         dumpStrOpenTag(MathMLMatrix);
@@ -1833,7 +1833,7 @@ algorithm
       then  ();
       // MetaModelica list
     case (DAE.LIST(_,es))
-      local list<Exp.Exp> es;
+      local list<DAE.Exp> es;
       equation
         // NOT PART OF THE MODELICA LANGUAGE
       then ();
@@ -1854,7 +1854,7 @@ public function dumpExp3
 "function: dumpExp3
   This function is an auxiliary function for dumpExp2 function. 
 "
-  input Exp.Exp e;
+  input DAE.Exp e;
   //output String s;
 algorithm
   dumpStrOpenTag(MathML);
@@ -2249,7 +2249,7 @@ algorithm
       Type_a h;
       FuncTypeType_aTo r;
       list<Type_a> t;
-      Exp.Ident sep;
+      DAE.Ident sep;
     case ({},_)  then ();
     case ({h},r) equation  r(h);  then  ();
     case ((h :: t),r)
@@ -2279,7 +2279,7 @@ algorithm
       Type_a h;
       FuncTypeType_aTo r;
       list<Type_a> t;
-      Exp.Ident sep;
+      DAE.Ident sep;
     case ({},_,_)  then ();
     case ({h},r,_) equation  r(h);  then  ();
     case ((h :: t),r,sep)
@@ -2305,9 +2305,9 @@ the output is like:
   ...
 </ContentList>
  "
-  input list<Exp.Exp> inLstExp;
+  input list<DAE.Exp> inLstExp;
   input String inContent;
-  input Exp.Exp addMathMLCode;
+  input DAE.Exp addMathMLCode;
 algorithm
   _:=
   matchcontinue (inLstExp,inContent,addMathMLCode)
@@ -2336,7 +2336,7 @@ end dumpLstExp;
 
 protected function dumpLstExp2 "
 This is the help function of the dumpLstExp function.
-It takes the list of Exp.Exp and print out the
+It takes the list of DAE.Exp and print out the
 list in a XML format.
 The output, if the list is not empty is something like this:
 <ARRAY_EQUATION String=Exp.printExpStr(firstEquation)>
@@ -2355,16 +2355,16 @@ The output, if the list is not empty is something like this:
   </MathML>
 </ARRAY_EQUATION>
 "
-  input list<Exp.Exp> inLstExp;
+  input list<DAE.Exp> inLstExp;
   input String Content;
-  input Exp.Exp addMathMLCode;
+  input DAE.Exp addMathMLCode;
 algorithm
   _:=
   matchcontinue (inLstExp,Content,addMathMLCode)
     local
       String s1,s2,s,inContent;
-      Exp.Exp e;
-      list<Exp.Exp> es;
+      DAE.Exp e;
+      list<DAE.Exp> es;
     case ({},_,_) then ();
     case ((e :: es),inContent,addMathMLCode)
       equation
@@ -2540,20 +2540,20 @@ end dumpMatching2;
 
 public function dumpOptExp "
 This function print to a new line the content of
-a Optional<Exp.Exp> in a XML element like:
+a Optional<DAE.Exp> in a XML element like:
 <Content =Exp.printExpStr(e)/>. It also print
 the content of the expression as MathML like:
-<MathML><MATH xmlns=...>Exp.Exp</MATH></MathML>.
+<MathML><MATH xmlns=...>DAE.Exp</MATH></MathML>.
 See dumpExp function for more details.
 "
-  input Option<Exp.Exp> inExpExpOption;
+  input Option<DAE.Exp> inExpExpOption;
   input String Content;
-  input Exp.Exp addMathMLCode;
+  input DAE.Exp addMathMLCode;
 algorithm
   _:=
   matchcontinue (inExpExpOption,Content,addMathMLCode)
     local
-      Exp.Exp e;
+      DAE.Exp e;
     case (NONE(),_,_) then ();
     case (SOME(e),_,addMathMLCode)
       equation
@@ -2606,13 +2606,13 @@ standard output like:
 "
   input Option<Values.Value> inValueValueOption;
   input String Content;
-  input Exp.Exp addMathMLCode;
+  input DAE.Exp addMathMLCode;
 algorithm
   _ :=
   matchcontinue (inValueValueOption,Content,addMathMLCode)
     local
       Values.Value v;
-      Exp.Exp addMMLCode;
+      DAE.Exp addMMLCode;
     case (NONE,_,_)  then ();
     case (SOME(v),Content,addMMLCode)
       equation
@@ -2627,8 +2627,8 @@ end dumpOptValue;
 public function dumpRow
 "function: printRow
   Prints a list of expressions to a string."
-  input list<tuple<Exp.Exp, Boolean>> es;
-  list<Exp.Exp> es_1;
+  input list<tuple<DAE.Exp, Boolean>> es;
+  list<DAE.Exp> es_1;
 algorithm
   es_1 := Util.listMap(es, Util.tuple21);
   dumpList(es_1, dumpExp2);
@@ -2658,8 +2658,8 @@ public function dumpSolvingInfo "
     </SolvingInfo>
   </AdditionalInfo>
   "
-  input Exp.Exp addOriginalIncidenceMatrix;
-  input Exp.Exp addSolvingInfo;
+  input DAE.Exp addOriginalIncidenceMatrix;
+  input DAE.Exp addSolvingInfo;
   input DAELow.DAELow inDAELow;
 algorithm
   _:=
@@ -3051,14 +3051,14 @@ end dumpStrVoidTag;
 
 
 public function dumpSubscript "
-This function print an Exp.Subscript eventually
+This function print an DAE.Subscript eventually
 using the Exp.printExpStr function.
 "
-  input Exp.Subscript inSubscript;
+  input DAE.Subscript inSubscript;
 algorithm
   _:=
   matchcontinue (inSubscript)
-    local Exp.Exp e1;
+    local DAE.Exp e1;
     case (DAE.WHOLEDIM())
       equation
         Print.printBuf(":");
@@ -3225,10 +3225,10 @@ is:
   input list<DAELow.CrefIndex>[:] crefIdxLstArr;
   input list<DAELow.StringIndex>[:] strIdxLstArr;
   input String Content;
-  input Exp.Exp addMathMLCode;
+  input DAE.Exp addMathMLCode;
 algorithm
     _ := matchcontinue (vars,crefIdxLstArr,strIdxLstArr,Content,addMathMLCode)
-   local Integer len;Exp.Exp addMMLCode;
+   local Integer len;DAE.Exp addMMLCode;
     case ({},_,_,_,_)
       then();
     case (vars,crefIdxLstArr,strIdxLstArr,Content,_)
@@ -3276,7 +3276,7 @@ See dumpVariable for more details on the XML output.
 "
   input list<DAELow.Var> inVarLst;
   input Integer inInteger;
-  input Exp.Exp addMathMLCode;
+  input DAE.Exp addMathMLCode;
 algorithm
   _:=
   matchcontinue (inVarLst,inInteger,addMathMLCode)
@@ -3286,10 +3286,10 @@ algorithm
       list<String> paths_lst,path_strs;
       DAELow.Value indx,varno;
       DAELow.Var v;
-      Exp.ComponentRef cr,old_name;
+      DAE.ComponentRef cr,old_name;
       DAELow.VarKind kind;
       DAE.VarDirection dir;
-      Option<Exp.Exp> e;
+      Option<DAE.Exp> e;
       list<Absyn.Path> paths;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
@@ -3300,7 +3300,7 @@ algorithm
       DAE.InstDims arry_Dim;
       Option<Values.Value> b;
       Integer var_1;
-      Exp.Exp addMMLCode;
+      DAE.Exp addMMLCode;
     case ({},_,_) then ();
     case (((v as DAELow.VAR(varName = cr,
                             varKind = kind,
@@ -3345,7 +3345,7 @@ See dumpVariable for more details on the XML output.
   input list<DAELow.CrefIndex>[:] crefIdxLstArr;
   input list<DAELow.StringIndex>[:] strIdxLstArr;
   input Integer inInteger;
-  input Exp.Exp addMathMLCode;
+  input DAE.Exp addMathMLCode;
 algorithm
   _:=
   matchcontinue (inVarLst,crefIdxLstArr,strIdxLstArr,inInteger,addMathMLCode)
@@ -3354,10 +3354,10 @@ algorithm
       list<String> paths_lst,path_strs;
       DAELow.Value indx,varno;
       DAELow.Var v;
-      Exp.ComponentRef cr,old_name;
+      DAE.ComponentRef cr,old_name;
       DAELow.VarKind kind;
       DAE.VarDirection dir;
-      Option<Exp.Exp> e;
+      Option<DAE.Exp> e;
       list<Absyn.Path> paths;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
@@ -3368,7 +3368,7 @@ algorithm
       DAE.InstDims arry_Dim;
       Option<Values.Value> b;
       Integer var_1;
-      Exp.Exp addMMLCode;
+      DAE.Exp addMMLCode;
     case ({},_,_,_,_) then ();
     case (((v as DAELow.VAR(varName = cr,
                             varKind = kind,
@@ -3414,7 +3414,7 @@ the zero crossing list. The output is:
 "
   input list<DAELow.ZeroCrossing> zeroCross;
   input String inContent;
-  input Exp.Exp addMathMLCode;
+  input DAE.Exp addMathMLCode;
 algorithm
   _:=
   matchcontinue (zeroCross,inContent,addMathMLCode)
@@ -3442,7 +3442,7 @@ protected function dumpZcLst "
 This function prints the content of a ZeroCrossing list
 of elements, including the information regarding the origin
 of the zero crossing elements in XML format. The output is:
-<stringAppend(ZERO_CROSSING,ELEMENT_) EXP_STRING=Exp.Exp>
+<stringAppend(ZERO_CROSSING,ELEMENT_) EXP_STRING=DAE.Exp>
   <MathML>
     <MATH>
       ...
@@ -3461,12 +3461,12 @@ of the zero crossing elements in XML format. The output is:
 </stringAppend(ZERO_CROSSING,ELEMENT_)>
  "
   input list<DAELow.ZeroCrossing> inZeroCrossingLst;
-  input Exp.Exp addMathMLCode;
+  input DAE.Exp addMathMLCode;
 algorithm
   _:=
   matchcontinue (inZeroCrossingLst,addMathMLCode)
     local
-      Exp.Exp e,addMMLCode;
+      DAE.Exp e,addMMLCode;
       list<DAELow.Value> eq,wc;
       list<DAELow.ZeroCrossing> zcLst;
     case ({},_) then ();
@@ -3487,7 +3487,7 @@ public function lbinopSymbol "
 function: lbinopSymbol
   Return string representation of logical binary operator.
 "
-  input Exp.Operator inOperator;
+  input DAE.Operator inOperator;
   output String outString;
 algorithm
   outString:=
@@ -3502,7 +3502,7 @@ function: lunaryopSymbol
   Return string representation of logical unary operator
   corresponding to the MathML encode.
 "
-  input Exp.Operator inOperator;
+  input DAE.Operator inOperator;
   output String outString;
 algorithm
   outString:=
@@ -3519,7 +3519,7 @@ function: printExpStr
   exception with the printing of the DAE.SCONST. The DAE.SCONST
   are printed without quotes.
 "
-  input Exp.Exp e;
+  input DAE.Exp e;
   output String s;
 algorithm
   s := printExp2Str(e);
@@ -3529,22 +3529,22 @@ end printExpStr;
 protected function printExp2Str
 "function: printExp2Str
   Helper function to printExpStr."
-  input Exp.Exp inExp;
+  input DAE.Exp inExp;
   output String outString;
 algorithm
   outString:=
   matchcontinue (inExp)
     local
-      Exp.Ident s,s_1,s_2,sym,s1,s2,s3,s4,s_3,ifstr,thenstr,elsestr,res,fs,argstr,s5,s_4,s_5,res2,str,crstr,dimstr,expstr,iterstr,id;
-      Exp.Ident s1_1,s2_1,s1_2,s2_2,cs,ts,fs,cs_1,ts_1,fs_1,s3_1;
+      DAE.Ident s,s_1,s_2,sym,s1,s2,s3,s4,s_3,ifstr,thenstr,elsestr,res,fs,argstr,s5,s_4,s_5,res2,str,crstr,dimstr,expstr,iterstr,id;
+      DAE.Ident s1_1,s2_1,s1_2,s2_2,cs,ts,fs,cs_1,ts_1,fs_1,s3_1;
       Integer x,pri2_1,pri2,pri3,pri1,ival,i,pe1,p1,p2,pc,pt,pf,p,pstop,pstart,pstep;
       Real rval;
-      Exp.ComponentRef c;
-      Exp.Type t,ty,ty2,tp;
-      Exp.Exp e1,e2,e21,e22,e,f,start,stop,step,cr,dim,exp,iterexp,cond,tb,fb;
-      Exp.Operator op;
+      DAE.ComponentRef c;
+      DAE.ExpType t,ty,ty2,tp;
+      DAE.Exp e1,e2,e21,e22,e,f,start,stop,step,cr,dim,exp,iterexp,cond,tb,fb;
+      DAE.Operator op;
       Absyn.Path fcn;
-      list<Exp.Exp> args,es;
+      list<DAE.Exp> args,es;
     case (DAE.END()) then "end";
     case (DAE.ICONST(integer = x))
       equation
@@ -3660,7 +3660,7 @@ algorithm
       then
         s_2;
     case (DAE.ARRAY(array = es,ty=tp))
-      local Exp.Type tp; String s3;
+      local DAE.ExpType tp; String s3;
       equation
         s3 = Exp.typeString(tp);
         s = Exp.printListStr(es, printExpStr, ",");
@@ -3675,8 +3675,8 @@ algorithm
       then
         s_2;
     case (DAE.MATRIX(scalar = es,ty=tp))
-      local list<list<tuple<Exp.Exp, Boolean>>> es;
-        Exp.Type tp; String s3;
+      local list<list<tuple<DAE.Exp, Boolean>>> es;
+        DAE.ExpType tp; String s3;
       equation
         s3 = Exp.typeString(tp);
         s = Exp.printListStr(es, Exp.printRowStr, "},{");
@@ -3779,7 +3779,7 @@ algorithm
 
       // MetaModelica list
     case (DAE.LIST(_,es))
-      local list<Exp.Exp> es;
+      local list<DAE.Exp> es;
       equation
         s = Exp.printListStr(es, printExpStr, ",");
         s_1 = stringAppend("list(", s);
@@ -3805,7 +3805,7 @@ public function relopSymbol  "
 function: relopSymbol
   Return string representation of function operator.
 "
-  input Exp.Operator inOperator;
+  input DAE.Operator inOperator;
   output String outString;
 algorithm
   outString:=
@@ -3852,17 +3852,17 @@ For example, if the element is an Array of Equations:
 "
   input DAELow.Equation inEquation;
   input String inIndexNumber;
-  input Exp.Exp addMathMLCode;
+  input DAE.Exp addMathMLCode;
 algorithm
   _:=
   matchcontinue (inEquation,inIndexNumber,addMathMLCode)
     local
       String s1,s2,res,indx_str,is,var_str,indexS;
-      Exp.Exp e1,e2,e;
+      DAE.Exp e1,e2,e;
       DAELow.Value indx,i;
-      list<Exp.Exp> expl;
-      Exp.ComponentRef cr;
-      Exp.Exp addMMLCode;
+      list<DAE.Exp> expl;
+      DAE.ComponentRef cr;
+      DAE.Exp addMMLCode;
 
     case (DAELow.EQUATION(exp = e1,scalar = e2),indexS,DAE.BCONST(bool=true))
       equation
@@ -4018,7 +4018,7 @@ function: unaryopSymbol
   Return string representation of unary operators
   corresponding to the MathML encode.
 "
-  input Exp.Operator inOperator;
+  input DAE.Operator inOperator;
   output String outString;
 algorithm
   outString:=

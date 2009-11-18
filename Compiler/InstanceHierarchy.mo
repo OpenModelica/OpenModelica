@@ -36,16 +36,15 @@ package InstanceHierarchy
 
   RCS: $Id: InstanceHierarchy.mo 3976 2009-03-25 15:12:39Z adrpo $"
 
-public 
-import Absyn;
-import Types;
-import Connect;
-import SCode;
-import Lookup;
-import Env;
+public import Absyn;
+public import Connect;
+public import DAE;
+public import Env;
+public import SCode;
 
-protected import Debug;
 protected import Dump;
+protected import Lookup;
+protected import Types;
 
 public
 type InstanceHierarchy = list<Instance> "an instance hierarchy is a list of instances";
@@ -58,7 +57,7 @@ uniontype Instance
     Option<Absyn.Path> containedIn "the class that contains this instance";
     Option<Absyn.Path> path "the absyn type of the component";
     SCode.Restriction restriction "the restriction of the component";     
-    Option<Types.Type> ty "the instantiated type";
+    Option<DAE.Type> ty "the instantiated type";
     Option<Connect.Face> attrInsideOutside "whether this is an inside our outside component";
     Option<Absyn.InnerOuter> attrInnerOuter "whether this has inner/outer attribute";
     InstanceHierarchy children "the children of this instance"; 
@@ -217,7 +216,7 @@ algorithm
       Option<Absyn.Path> containedIn "the class that contains this instance";
       Option<Absyn.Path> path "the absyn type of the component";
       SCode.Restriction restriction "the restriction of the component";     
-      Option<Types.Type> ty "the instantiated type";
+      Option<DAE.Type> ty "the instantiated type";
       Option<Connect.Face> attrInsideOutside "whether this is an inside our outside component";
       Option<Absyn.InnerOuter> attrInnerOuter "whether this has inner/outer attribute";
       InstanceHierarchy children "the children of this instance";
@@ -271,11 +270,11 @@ algorithm
 end printPathOpt;
 
 function printTypeOpt
-  input Option<Types.Type> optTy;
+  input Option<DAE.Type> optTy;
 algorithm
   _ := matchcontinue(optTy)
     local
-      Types.Type ty;
+      DAE.Type ty;
     case (SOME(ty))
       equation
         print (Types.printTypeStr(ty));

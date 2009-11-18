@@ -48,12 +48,11 @@ public import Absyn;
 public import ClassInf;
 public import DAE;
 public import Env;
-public import Exp;
 public import SCode;
-public import Types;
 
 protected import Debug;
 protected import Inst;
+protected import Exp;
 protected import Mod;
 protected import Prefix;
 protected import Builtin;
@@ -62,6 +61,7 @@ protected import Static;
 protected import Connect;
 protected import Error;
 protected import Util;
+protected import Types;
 protected import ConnectionGraph;
 protected import UnitAbsyn;
 protected import InstanceHierarchy;
@@ -85,13 +85,13 @@ public function lookupType
   input Absyn.Path inPath "type to look for";
   input Boolean inBoolean "Messaage flag, true outputs lookup error messages";
   output Env.Cache outCache;
-  output Types.Type outType "the found type";
+  output DAE.Type outType "the found type";
   output Env.Env outEnv "The environment the type was found in";
 algorithm 
   (outCache,outType,outEnv):=
   matchcontinue (inCache,inEnv,inPath,inBoolean)
     local
-      Types.Type t;
+      DAE.Type t;
       list<Env.Frame> env_1,env,env_2;
       Absyn.Path path;
       SCode.Class c;
@@ -143,20 +143,20 @@ check if it is function, record, metarecord, etc.
   input Absyn.Path inPath "type to look for";
   input SCode.Class inClass "the class lookupType found";
   output Env.Cache outCache;
-  output Types.Type outType "the found type";
+  output DAE.Type outType "the found type";
   output Env.Env outEnv "The environment the type was found in";
 algorithm 
   (outCache,outType,outEnv):=
   matchcontinue (inCache,inEnv,inPath,inClass)
     local
-      Types.Type t;
+      DAE.Type t;
       list<Env.Frame> env_1,env_2,env_3;
       Absyn.Path path;
       SCode.Class c;
       String id;
       SCode.Restriction restr;
       Env.Cache cache;
-      list<Types.Var> varlst;
+      list<DAE.Var> varlst;
       
       // Classes that are external objects. Implicityly instantiate to get type
     case (cache,env_1,path,c)
@@ -178,7 +178,7 @@ algorithm
       local
         Integer index;
         list<SCode.Element> els;
-        list<tuple<SCode.Element,Types.Mod>> elsModList;
+        list<tuple<SCode.Element,DAE.Mod>> elsModList;
       equation 
         SCode.CLASS(id,_,_,SCode.R_METARECORD(_,index),SCode.PARTS(elementLst = els)) = c;
         (cache,path) = Inst.makeFullyQualified(cache,env_1,Absyn.IDENT(id));
@@ -221,7 +221,7 @@ protected function lookupTypeList
   input list<Absyn.Path> paths;
   input Boolean bool;
   output Env.Cache outCache;
-  output list<Types.Type> types;
+  output list<DAE.Type> types;
 algorithm
   (outCache,types) := matchcontinue (inCache, inEnv, paths, bool)
     local
@@ -229,8 +229,8 @@ algorithm
       Env.Env env;
       Absyn.Path first;
       list<Absyn.Path> rest;
-      Types.Type ty;
-      list<Types.Type> tys;
+      DAE.Type ty;
+      list<DAE.Type> tys;
     case (cache, env, {}, _) then (cache,{});
     case (cache, env, first::rest, bool)
       equation
@@ -249,7 +249,7 @@ starts to traverse."
   input list<Absyn.Path> inUniontypePaths;
   input list<Absyn.Path> inAcc;
   output Env.Cache outCache;
-  output list<Types.Type> outMetarecordTypes;
+  output list<DAE.Type> outMetarecordTypes;
 algorithm
   (outCache,outMetarecordTypes) := matchcontinue (inCache, inEnv, inUniontypePaths, inAcc)
     local
@@ -257,9 +257,9 @@ algorithm
       Env.Env env;
       Absyn.Path first;
       list<Absyn.Path> metarecordPaths, rest, acc;
-      list<Types.Type> metarecordTypes, metarecordTypes1, metarecordTypes2, uniontypeTypes, innerTypes;
+      list<DAE.Type> metarecordTypes, metarecordTypes1, metarecordTypes2, uniontypeTypes, innerTypes;
       list<list<Absyn.Path>> uniontypePaths;
-      Types.Type ty;
+      DAE.Type ty;
     case (cache, _, {}, _) then (cache, {});
     case (cache, env, first::rest, acc)
       equation
@@ -493,21 +493,21 @@ protected function lookupQualifiedImportedVarInFrame "function: lookupQualifiedI
   input SCode.Ident inIdent;
   output Env.Cache outCache;
   output Env.Env outEnv;
-  output Types.Attributes outAttributes;
-  output Types.Type outType;
-  output Types.Binding outBinding;
+  output DAE.Attributes outAttributes;
+  output DAE.Type outType;
+  output DAE.Binding outBinding;
 algorithm 
   (outCache,outEnv,outAttributes,outType,outBinding):=
   matchcontinue (inCache,inEnvItemLst,inEnv,inIdent)
     local
       Env.Frame fr;
-      Types.Attributes attr;
-      tuple<Types.TType, Option<Absyn.Path>> ty;
-      Types.Binding bind;
+      DAE.Attributes attr;
+      tuple<DAE.TType, Option<Absyn.Path>> ty;
+      DAE.Binding bind;
       String id,id2,ident,str;
       list<Env.Item> fs;
       list<Env.Frame> env,p_env,cenv;
-      Exp.ComponentRef cref;
+      DAE.ComponentRef cref;
       Absyn.Path strippath,path;
       SCode.Class c2;
       Env.Cache cache;
@@ -632,7 +632,7 @@ algorithm
       Env.Cache cache;
     case (cache,(Env.IMPORT(import_ = Absyn.UNQUAL_IMPORT(path = path)) :: fs),env,ident)
            local 
-        Exp.ComponentRef cr;
+        DAE.ComponentRef cr;
         Absyn.Path path,scope;
         Absyn.Ident firstIdent;
       equation 
@@ -676,32 +676,32 @@ protected function lookupUnqualifiedImportedVarInFrame "function: lookupUnqualif
   input SCode.Ident inIdent;
   output Env.Cache outCache;
   output Env.Env outEnv;
-  output Types.Attributes outAttributes;
-  output Types.Type outType;
-  output Types.Binding outBinding;
+  output DAE.Attributes outAttributes;
+  output DAE.Type outType;
+  output DAE.Binding outBinding;
   output Boolean outBoolean;
 algorithm 
   (outCache,outEnv,outAttributes,outType,outBinding,outBoolean):=
   matchcontinue (inCache,inEnvItemLst,inEnv,inIdent)
     local
       Env.Frame fr,f;
-      Exp.ComponentRef cref;
+      DAE.ComponentRef cref;
       SCode.Class c;
       String id,ident;
       Boolean encflag,more,unique;
       SCode.Restriction restr;
       list<Env.Frame> env_1,env2,env,p_env;
       ClassInf.State ci_state;
-      Types.Attributes attr;
-      tuple<Types.TType, Option<Absyn.Path>> ty;
-      Types.Binding bind;
+      DAE.Attributes attr;
+      tuple<DAE.TType, Option<Absyn.Path>> ty;
+      DAE.Binding bind;
       Absyn.Path path;
       list<Env.Item> fs;
       Env.Cache cache;
       // First look in cache
     case (cache,(Env.IMPORT(import_ = Absyn.UNQUAL_IMPORT(path = path)) :: fs),env,ident) /* unique */ 
            local 
-        Exp.ComponentRef cr;
+        DAE.ComponentRef cr;
         Absyn.Path path,scope;
         Absyn.Ident firstIdent;
       equation 
@@ -979,19 +979,19 @@ public function lookupConnectorVar "looks up a connector variable, but takes Inn
 inside connector, i.e. for connector reference a.b the innerOuter attribute is fetched from a."
   input Env.Cache cache;
   input Env.Env env;
-  input Exp.ComponentRef cr;
+  input DAE.ComponentRef cr;
   output Env.Cache outCache;
-  output Types.Attributes attr;
-  output Types.Type tp;
+  output DAE.Attributes attr;
+  output DAE.Type tp;
 algorithm
   (outCache,attr,tp):=matchcontinue(cache,env,cr)
-  local Exp.ComponentRef cr1;
+  local DAE.ComponentRef cr1;
       Boolean f,streamPrefix;
       SCode.Variability var; SCode.Accessibility acc;
       Absyn.Direction dir;
       Absyn.InnerOuter io;
-      Types.Type ty1;
-      Types.Attributes attr1;
+      DAE.Type ty1;
+      DAE.Attributes attr1;
     case(cache,env,cr as DAE.CREF_IDENT(ident=_)) equation
       (cache,attr1,ty1,_) = lookupVarLocal(cache,env,cr);
     then (cache,attr1,ty1);
@@ -1030,24 +1030,24 @@ looks in the types
 "
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input Exp.ComponentRef inComponentRef;
+  input DAE.ComponentRef inComponentRef;
   output Env.Cache outCache;
-  output Types.Attributes outAttributes;
-  output Types.Type outType;
-  output Types.Binding outBinding;
-  output Option<Exp.Exp> outOptExp;
+  output DAE.Attributes outAttributes;
+  output DAE.Type outType;
+  output DAE.Binding outBinding;
+  output Option<DAE.Exp> outOptExp;
   output Env.Env outEnv"only used for package constants";
 algorithm 
   (outCache,outAttributes,outType,outBinding,outEnv):=
   matchcontinue (inCache,inEnv,inComponentRef)
     local
-      Types.Attributes attr;
-      tuple<Types.TType, Option<Absyn.Path>> ty;
-      Types.Binding binding;
+      DAE.Attributes attr;
+      tuple<DAE.TType, Option<Absyn.Path>> ty;
+      DAE.Binding binding;
       list<Env.Frame> env,p_env;
-      Exp.ComponentRef cref;
+      DAE.ComponentRef cref;
       Env.Cache cache;
-      Option<Exp.Exp> splicedExp;
+      Option<DAE.Exp> splicedExp;
     case (cache,env,cref) /* try the old lookup_var */ 
       equation 
         (cache,attr,ty,binding,splicedExp) = lookupVarInternal(cache,env, cref);
@@ -1071,9 +1071,9 @@ protected function checkPackageVariableConstant "
 Variables in packages must be constant. This function produces an error message and fails 
 if variable is not constant."
   input Env.Env env;
-	input Types.Attributes attr;
-	input Types.Type tp;
-	input Exp.ComponentRef cref;
+	input DAE.Attributes attr;
+	input DAE.Type tp;
+	input DAE.ComponentRef cref;
 algorithm
    _ := matchcontinue(env,attr,tp,cref)
    local Absyn.Path path;
@@ -1094,27 +1094,27 @@ public function lookupVarInternal "function: lookupVarInternal
 "
 	input Env.Cache inCache;
   input Env.Env inEnv;
-  input Exp.ComponentRef inComponentRef;
+  input DAE.ComponentRef inComponentRef;
 	output Env.Cache outCache;
-  output Types.Attributes outAttributes;
-  output Types.Type outType;
-  output Types.Binding outBinding;
-  output Option<Exp.Exp> outOptExp;
+  output DAE.Attributes outAttributes;
+  output DAE.Type outType;
+  output DAE.Binding outBinding;
+  output Option<DAE.Exp> outOptExp;
 algorithm 
   (outCache,outAttributes,outType,outBinding):=
   matchcontinue (inCache,inEnv,inComponentRef)
     local
-      Types.Attributes attr;
-      tuple<Types.TType, Option<Absyn.Path>> ty;
-      Types.Binding binding;
+      DAE.Attributes attr;
+      tuple<DAE.TType, Option<Absyn.Path>> ty;
+      DAE.Binding binding;
       Option<String> sid;
       Env.AvlTree ht;
       list<Env.Item> imps;
       list<Env.Frame> fs;
       Env.Frame frame;
-      Exp.ComponentRef ref;
+      DAE.ComponentRef ref;
       Env.Cache cache;
-      Option<Exp.Exp> splicedExp;
+      Option<DAE.Exp> splicedExp;
     case (cache,((frame as Env.FRAME(optName = sid,clsAndVars = ht,imports = imps)) :: fs),ref)
       equation 
           (cache,attr,ty,binding,splicedExp ) = lookupVarF(cache,ht, ref);
@@ -1143,12 +1143,12 @@ public function lookupVarInPackages "function: lookupVarInPackages
 "
 	input Env.Cache inCache;
   input Env.Env inEnv;
-  input Exp.ComponentRef inComponentRef;
+  input DAE.ComponentRef inComponentRef;
   output Env.Cache outCache;
   output Env.Env outEnv;
-  output Types.Attributes outAttributes;
-  output Types.Type outType;
-  output Types.Binding outBinding;
+  output DAE.Attributes outAttributes;
+  output DAE.Type outType;
+  output DAE.Binding outBinding;
 algorithm 
   (outCache,outEnv,outAttributes,outType,outBinding):=
   matchcontinue (inCache,inEnv,inComponentRef)
@@ -1159,12 +1159,12 @@ algorithm
       SCode.Restriction r;
       list<Env.Frame> env2,env3,env5,env,fs,bcframes,p_env;
       ClassInf.State ci_state;
-      list<Types.Var> types;
-      Types.Attributes attr;
-      tuple<Types.TType, Option<Absyn.Path>> ty;
-      Types.Binding bind;
-      Exp.ComponentRef id2,cref,cr;
-      list<Exp.Subscript> sb;
+      list<DAE.Var> types;
+      DAE.Attributes attr;
+      tuple<DAE.TType, Option<Absyn.Path>> ty;
+      DAE.Binding bind;
+      DAE.ComponentRef id2,cref,cr;
+      list<DAE.Subscript> sb;
       Option<String> sid;
       list<Env.Item> items;
       Env.Frame f;
@@ -1190,7 +1190,7 @@ algorithm
        // lookup of constants on form A.B in packages. First look in cache.
     case (cache,env,cr as DAE.CREF_QUAL(ident = id,subscriptLst = {},componentRef = cref)) /* First part of name is a class. */ 
       local 
-        Exp.ComponentRef cr;
+        DAE.ComponentRef cr;
         Absyn.Path path,scope;
       equation 
         SOME(scope) = Env.getEnvPath(env);
@@ -1219,7 +1219,7 @@ algorithm
 
       // lookup of constants on form A.B in packages. instantiate package and look inside.
     case (cache,env,cr as DAE.CREF_QUAL(ident = id,subscriptLst = {},componentRef = cref)) /* First part of name is a class. */
-      local Option<Exp.ComponentRef> filterCref; 
+      local Option<DAE.ComponentRef> filterCref; 
       equation 
         (cache,(c as SCode.CLASS(n,_,encflag,r,_)),env2) = lookupClass2(cache,env, Absyn.IDENT(id), false);
         env3 = Env.openScope(env2, encflag, SOME(n));
@@ -1283,11 +1283,11 @@ end lookupVarInPackages;
 protected function makeOptIdentOrNone "
 Author: BZ, 2009-04
 Helper function for lookupVarInPackages
-Makes an optional Exp.ComponentRef if the input Exp.ComponentRef is a DAE.CREF_IDENT otherwise
+Makes an optional DAE.ComponentRef if the input DAE.ComponentRef is a DAE.CREF_IDENT otherwise
 'NONE' is returned
 "
-input Exp.ComponentRef incr;
-output Option<Exp.ComponentRef> ocR;
+input DAE.ComponentRef incr;
+output Option<DAE.ComponentRef> ocR;
 algorithm ocR := matchcontinue(incr)
   case(incr as DAE.CREF_IDENT(_,_,_)) then SOME(incr);
   case(_) then NONE;
@@ -1309,22 +1309,22 @@ public function lookupVarLocal "function: lookupVarLocal
 "
 	input Env.Cache inCache;
   input Env.Env inEnv;
-  input Exp.ComponentRef inComponentRef;
+  input DAE.ComponentRef inComponentRef;
   output Env.Cache outCache;
-  output Types.Attributes outAttributes;
-  output Types.Type outType;
-  output Types.Binding outBinding;
+  output DAE.Attributes outAttributes;
+  output DAE.Type outType;
+  output DAE.Binding outBinding;
 algorithm 
   (outCache,outAttributes,outType,outBinding):=
   matchcontinue (inCache,inEnv,inComponentRef)
     local
-      Types.Attributes attr;
-      tuple<Types.TType, Option<Absyn.Path>> ty;
-      Types.Binding binding;
+      DAE.Attributes attr;
+      tuple<DAE.TType, Option<Absyn.Path>> ty;
+      DAE.Binding binding;
       Option<String> sid;
       Env.AvlTree ht;
       list<Env.Frame> fs,env,bcframes;
-      Exp.ComponentRef cref;
+      DAE.ComponentRef cref;
       Env.Cache cache;
       /* Lookup in frame */
     case (cache,(Env.FRAME(optName = sid,clsAndVars = ht) :: fs),cref)
@@ -1349,16 +1349,16 @@ public function lookupIdentLocal "function: lookupIdentLocal
   input Env.Env inEnv;
   input SCode.Ident inIdent;
   output Env.Cache outCache;
-  output Types.Var outVar;
-  output Option<tuple<SCode.Element, Types.Mod>> outTplSCodeElementTypesModOption;
+  output DAE.Var outVar;
+  output Option<tuple<SCode.Element, DAE.Mod>> outTplSCodeElementTypesModOption;
   output Env.InstStatus instStatus;
   output Env.Env outEnv;
 algorithm 
   (outCache,outVar,outTplSCodeElementTypesModOption,instStatus,outEnv):=
   matchcontinue (inCache,inEnv,inIdent)
     local
-      Types.Var fv;
-      Option<tuple<SCode.Element, Types.Mod>> c;
+      DAE.Var fv;
+      Option<tuple<SCode.Element, DAE.Mod>> c;
       Env.InstStatus i;
       list<Env.Frame> env,fs;
       Option<String> sid;
@@ -1430,15 +1430,15 @@ public function lookupIdent "function: lookupIdent
   input Env.Env inEnv;
   input SCode.Ident inIdent;
   output Env.Cache outCache;
-  output Types.Var outVar;
-  output Option<tuple<SCode.Element, Types.Mod>> outTplSCodeElementTypesModOption;
+  output DAE.Var outVar;
+  output Option<tuple<SCode.Element, DAE.Mod>> outTplSCodeElementTypesModOption;
   output Env.InstStatus instStatus;
 algorithm 
   (outCache,outVar,outTplSCodeElementTypesModOption,instStatus):=
   matchcontinue (outCache,inEnv,inIdent)
     local
-      Types.Var fv;
-      Option<tuple<SCode.Element, Types.Mod>> c;
+      DAE.Var fv;
+      Option<tuple<SCode.Element, DAE.Mod>> c;
       Env.InstStatus i;
       Option<String> sid;
       Env.AvlTree ht;
@@ -1468,7 +1468,7 @@ public function lookupFunctionsInEnv "Function lookup
   input Env.Env inEnv;
   input Absyn.Path inPath;
   output Env.Cache outCache;
-  output list<Types.Type> outTypesTypeLst;
+  output list<DAE.Type> outTypesTypeLst;
 algorithm 
   (outCache,outTypesTypeLst) :=
   matchcontinue (inCache,inEnv,inPath)
@@ -1477,7 +1477,7 @@ algorithm
       Option<String> sid;
       Env.AvlTree httypes;
       Env.AvlTree ht;
-      list<tuple<Types.TType, Option<Absyn.Path>>> reslist,c1,c2,res;
+      list<tuple<DAE.TType, Option<Absyn.Path>>> reslist,c1,c2,res;
       list<Env.Frame> env,fs,env_1,env2,env_2;
       String pack;
       SCode.Class c;
@@ -1548,7 +1548,7 @@ algorithm
 
    /* Did not match. Search next frame. */ 
     case (cache,(f :: fs),id) 
-      local list<tuple<Types.TType, Option<Absyn.Path>>> c;
+      local list<tuple<DAE.TType, Option<Absyn.Path>>> c;
       equation 
         (cache,c) = lookupFunctionsInEnv(cache,fs, id);
       then
@@ -1570,7 +1570,7 @@ protected function createGenericBuiltinFunctions "function: createGenericBuiltin
 "
   input Env.Env inEnv;
   input String inString;
-  output list<Types.Type> outTypesTypeLst;
+  output list<DAE.Type> outTypesTypeLst;
 algorithm 
   outTypesTypeLst:=
   matchcontinue (inEnv,inString)
@@ -1594,13 +1594,13 @@ protected function lookupTypeInEnv "- Internal functions
   input Env.Env inEnv;
   input Absyn.Path inPath;
   output Env.Cache outCache;
-  output Types.Type outType;
+  output DAE.Type outType;
   output Env.Env outEnv;
 algorithm 
   (outCache,outType,outEnv):=
   matchcontinue (inCache,inEnv,inPath)
     local
-      tuple<Types.TType, Option<Absyn.Path>> c;
+      tuple<DAE.TType, Option<Absyn.Path>> c;
       list<Env.Frame> env_1,env,fs;
       Option<String> sid;
       Env.AvlTree httypes;
@@ -1632,13 +1632,13 @@ protected function lookupTypeInFrame "function: lookupTypeInFrame
   input Env.Env inEnv3;
   input SCode.Ident inIdent4;
   output Env.Cache outCache;
-  output Types.Type outType;
+  output DAE.Type outType;
   output Env.Env outEnv;
 algorithm 
   (outCache,outType,outEnv):=
   matchcontinue (inCache,inBinTree1,inBinTree2,inEnv3,inIdent4)
     local
-      tuple<Types.TType, Option<Absyn.Path>> t,ftype,ty;
+      tuple<DAE.TType, Option<Absyn.Path>> t,ftype,ty;
       Env.AvlTree httypes;
       Env.AvlTree ht;
       list<Env.Frame> env,cenv,env_1,env_2,env_3;
@@ -1663,20 +1663,20 @@ protected function lookupTypeInFrame2 "function: lookupTypeInFrame
   input Env.Env inEnv3;
   input SCode.Ident inIdent4;
   output Env.Cache outCache;
-  output Types.Type outType;
+  output DAE.Type outType;
   output Env.Env outEnv;
 algorithm 
   (outCache,outType,outEnv):=
   matchcontinue (inCache,item,inEnv3,inIdent4)
     local
-      tuple<Types.TType, Option<Absyn.Path>> t,ftype,ty;
+      tuple<DAE.TType, Option<Absyn.Path>> t,ftype,ty;
       Env.AvlTree httypes;
       Env.AvlTree ht;
       list<Env.Frame> env,cenv,env_1,env_2,env_3;
       String id,n;
       SCode.Class cdef;
       Absyn.Path fpath;
-      list<Types.Var> varlst;
+      list<DAE.Var> varlst;
       Env.Cache cache;
      
     case (cache,Env.TYPE((t :: _)),env,id) then (cache,t,env);
@@ -1722,21 +1722,21 @@ protected function lookupFunctionsInFrame "function: lookupFunctionsInFrame
   input Env.Env inEnv3;
   input SCode.Ident inIdent4;
   output Env.Cache outCache;
-  output list<Types.Type> outTypesTypeLst;
+  output list<DAE.Type> outTypesTypeLst;
 algorithm 
   (outCache,outTypesTypeLst):=
   matchcontinue (inCache,inBinTree1,inBinTree2,inEnv3,inIdent4)
     local
-      list<tuple<Types.TType, Option<Absyn.Path>>> tps;
+      list<tuple<DAE.TType, Option<Absyn.Path>>> tps;
       Env.AvlTree httypes;
       Env.AvlTree ht;
       list<Env.Frame> env,cenv,env_1;
       String id,n;
       SCode.Class cdef;
-      list<Types.Var> varlst;
+      list<DAE.Var> varlst;
       Absyn.Path fpath;
-      tuple<Types.TType, Option<Absyn.Path>> ftype,t;
-      Types.TType tty;
+      tuple<DAE.TType, Option<Absyn.Path>> ftype,t;
+      DAE.TType tty;
       Env.Cache cache;
     case (cache,ht,httypes,env,id) /* Classes and vars Types */ 
       equation 
@@ -1896,7 +1896,7 @@ end buildRecordConstructorClass;
 
 protected function buildRecordConstructorClass2 "help function to buildRecordConstructorClass"
   input SCode.Class cl;
-  input Types.Mod mods;
+  input DAE.Mod mods;
   input Env.Env env;
   output list<SCode.Element> funcelts;
   output list<SCode.Element> elts;  
@@ -1932,10 +1932,10 @@ protected function buildRecordConstructorElts
   of the function class.
   
   TODO: This function should be replaced by a proper instantiation using instClassIn instead, followed by a 
-  traversal of the Types.Var changing direction to input.
+  traversal of the DAE.Var changing direction to input.
   Reason for not doing that now: records can contain arrays with unknown dimensions."
   input list<SCode.Element> inSCodeElementLst;
-  input Types.Mod mods;
+  input DAE.Mod mods;
   input Env.Env env;
   output list<SCode.Element> outSCodeElementLst;
 algorithm 
@@ -1959,7 +1959,7 @@ algorithm
       SCode.Class cl;
       Absyn.Path path;
       SCode.Mod mod,umod;
-      Types.Mod mod_1,compMod;     
+      DAE.Mod mod_1,compMod;     
       Option<Absyn.Info> nfo;
       Option<Absyn.ConstrainClass> cc;
     case (((comp as SCode.COMPONENT( id,io,fl,repl,prot,SCode.ATTR(d,f,st,ac,var,dir),tp,mod,bc,comment,cond,nfo,cc)) :: rest),mods,env)
@@ -2023,12 +2023,12 @@ protected function buildRecordConstructorVarlst
   input SCode.Class inClass;
   input Env.Env inEnv;
   output Env.Cache outCache;
-  output list<Types.Var> outTypesVarLst;
+  output list<DAE.Var> outTypesVarLst;
 algorithm 
   (outCache,outTypesVarLst) := matchcontinue (inCache,inClass,inEnv)
     local
-      list<Types.Var> inputvarlst;
-      tuple<Types.TType, Option<Absyn.Path>> ty;
+      list<DAE.Var> inputvarlst;
+      tuple<DAE.TType, Option<Absyn.Path>> ty;
       SCode.Class cl;
       list<SCode.Element> elts,cdefelts,restElts;
       list<Env.Frame> env,env1;
@@ -2080,16 +2080,16 @@ protected function buildVarlstFromElts "function: buildVarlstFromElts
 "
 	input Env.Cache inCache;
   input list<SCode.Element> inSCodeElementLst;
-  input Types.Mod mods;
+  input DAE.Mod mods;
   input Env.Env inEnv;
   output Env.Cache outCache;
-  output list<Types.Var> outTypesVarLst;
+  output list<DAE.Var> outTypesVarLst;
 algorithm 
   (outCache,outTypesVarLst) :=
   matchcontinue (inCache,inSCodeElementLst,mods,inEnv)
     local
-      list<Types.Var> vars,vars1,vars2;
-      Types.Var var;
+      list<DAE.Var> vars,vars1,vars2;
+      DAE.Var var;
       SCode.Element comp;
       list<SCode.Element> rest;
       list<Env.Frame> env,env_1;
@@ -2098,7 +2098,7 @@ algorithm
       SCode.Mod mod;
       Absyn.Path path;
       String n;
-      Types.Mod compMod,mod2;
+      DAE.Mod compMod,mod2;
     case (cache,((comp as SCode.COMPONENT(component = n)) :: rest),mods,env)
       equation 
         (cache,vars) = buildVarlstFromElts(cache,rest, mods,env);
@@ -2133,9 +2133,9 @@ protected function buildVarlstFromElts2
   input Env.Cache cache;
   input Env.Env env;
   input SCode.Class cl;
-  input Types.Mod mods;
+  input DAE.Mod mods;
   output Env.Cache outCache;
-  output list<Types.Var> vLst;
+  output list<DAE.Var> vLst;
 algorithm
   (outCache,vLst) := matchcontinue(cache,env,cl,mods)
   local list<SCode.Element> elts,cdefelts,restElts;
@@ -2353,16 +2353,16 @@ protected function lookupVar2 "function: lookupVar2
   input Env.AvlTree inBinTree;
   input SCode.Ident inIdent;
   output Env.Cache outCache;
-  output Types.Var outVar;
-  output Option<tuple<SCode.Element, Types.Mod>> outTplSCodeElementTypesModOption;
+  output DAE.Var outVar;
+  output Option<tuple<SCode.Element, DAE.Mod>> outTplSCodeElementTypesModOption;
   output Env.InstStatus instStatus;
   output Env.Env outEnv;
 algorithm 
   (outCache,outVar,outTplSCodeElementTypesModOption,instStatus,outEnv):=
   matchcontinue (inCache,inBinTree,inIdent)
     local
-      Types.Var fv;
-      Option<tuple<SCode.Element, Types.Mod>> c;
+      DAE.Var fv;
+      Option<tuple<SCode.Element, DAE.Mod>> c;
       Env.InstStatus i;
       list<Env.Frame> env;
       Env.AvlTree ht;
@@ -2381,19 +2381,19 @@ protected function checkSubscripts "function: checkSubscripts
   This function checks a list of subscripts agains type, and removes
   dimensions from the type according to the subscripting.
 "
-  input Types.Type inType;
-  input list<Exp.Subscript> inExpSubscriptLst;
-  output Types.Type outType;
+  input DAE.Type inType;
+  input list<DAE.Subscript> inExpSubscriptLst;
+  output DAE.Type outType;
 algorithm 
   outType:=
   matchcontinue (inType,inExpSubscriptLst)
     local
-      tuple<Types.TType, Option<Absyn.Path>> t,t_1;
-      Types.ArrayDim dim;
+      tuple<DAE.TType, Option<Absyn.Path>> t,t_1;
+      DAE.ArrayDim dim;
       Option<Absyn.Path> p;
-      list<Exp.Subscript> ys,s;
+      list<DAE.Subscript> ys,s;
       Integer sz,ind;
-      list<Exp.Exp> se;
+      list<DAE.Exp> se;
     case (t,{}) then t; 
     case ((DAE.T_ARRAY(arrayDim = dim,arrayType = t),p),(DAE.WHOLEDIM() :: ys))
       equation 
@@ -2418,7 +2418,7 @@ algorithm
         t_1;
     case ((DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(sz)),arrayType = t),_),(DAE.INDEX(exp = e) :: ys)) /* HJ: Subscrits needn\'t be constant. No range-checking can
 	       be done */ 
-	       local Exp.Exp e;
+	       local DAE.Exp e;
       equation 
         t_1 = checkSubscripts(t, ys);
       then
@@ -2442,7 +2442,7 @@ algorithm
         // If slicing with integer array of VAR variability, i.e. index changing during runtime. 
         // => resulting ARRAY type has no specified dimension size.
     case ((DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(sz)),arrayType = t),p),(DAE.SLICE(exp = e) :: ys))
-      local Exp.Exp e;
+      local DAE.Exp e;
       equation 
         sz = 5;
         false = Exp.isArray(e); 
@@ -2475,15 +2475,15 @@ end checkSubscripts;
 protected function checkSubscriptsRange " 
 Checks that each subscript stays in the dimensional range. 
 "
-  input list<Exp.Exp> inExpSubscriptLst;
+  input list<DAE.Exp> inExpSubscriptLst;
   input Integer dimensions;
   output Boolean inRange;
 algorithm 
   inRange:= 
   matchcontinue(inExpSubscriptLst, dimensions)
     local 
-      Exp.Exp exp;
-      list<Exp.Exp> expl;
+      DAE.Exp exp;
+      list<DAE.Exp> expl;
       Integer x,dims;
       Boolean res;
     case(expl,dims)
@@ -2506,15 +2506,15 @@ end checkSubscriptsRange;
 protected function checkSubscriptsRange2 "
 "
   
-  input list<Exp.Exp> inExpSubscriptLst;
+  input list<DAE.Exp> inExpSubscriptLst;
   input Integer dimensions;
   output Boolean inRange;
 algorithm 
   inRange:= 
   matchcontinue(inExpSubscriptLst, dimensions)
     local 
-      Exp.Exp exp;
-      list<Exp.Exp> expl;
+      DAE.Exp exp;
+      list<DAE.Exp> expl;
       Integer x,dims;
     case({},_) then true;
     case(((exp as DAE.ICONST(integer = x)) :: expl ),dims)
@@ -2539,12 +2539,12 @@ protected function lookupVarF "function: lookupVarF
 "
 	input Env.Cache inCache;
   input Env.AvlTree inBinTree;
-  input Exp.ComponentRef inComponentRef;
+  input DAE.ComponentRef inComponentRef;
   output Env.Cache outCache;
-  output Types.Attributes outAttributes;
-  output Types.Type outType;
-  output Types.Binding outBinding;
-  output Option<Exp.Exp> outOptExp;
+  output DAE.Attributes outAttributes;
+  output DAE.Type outType;
+  output DAE.Binding outBinding;
+  output Option<DAE.Exp> outOptExp;
 
 algorithm 
   (outCache,outAttributes,outType,outBinding, outOptExp):=
@@ -2555,28 +2555,28 @@ algorithm
       SCode.Accessibility acc;
       SCode.Variability vt;
       Absyn.Direction di;
-      tuple<Types.TType, Option<Absyn.Path>> ty,ty_1;
-      Types.Binding bind,binding,binding2;
+      tuple<DAE.TType, Option<Absyn.Path>> ty,ty_1;
+      DAE.Binding bind,binding,binding2;
       Env.AvlTree ht;
-      list<Exp.Subscript> ss;
+      list<DAE.Subscript> ss;
       list<Env.Frame> compenv;
-      Types.Attributes attr;
-      Exp.ComponentRef ids;
+      DAE.Attributes attr;
+      DAE.ComponentRef ids;
       Env.Cache cache;
-      Exp.Type ty2_2;
+      DAE.ExpType ty2_2;
       Absyn.InnerOuter io;
-      Option<Exp.Exp> texp;
-      Types.ArrayDim dim;
-      Types.Type t,ty1,ty2;
+      Option<DAE.Exp> texp;
+      DAE.ArrayDim dim;
+      DAE.Type t,ty1,ty2;
       Option<Absyn.Path> p;
-      Exp.ComponentRef xCref,tCref;
-      list<Exp.ComponentRef> ltCref;
-      Exp.Exp splicedExp;
-      Exp.Type eType;      
+      DAE.ComponentRef xCref,tCref;
+      list<DAE.ComponentRef> ltCref;
+      DAE.Exp splicedExp;
+      DAE.ExpType eType;      
     case (cache,ht,ids as DAE.CREF_IDENT(ident = id,subscriptLst = ss) ) 
       local
-        Exp.Exp splicedExp;
-        Exp.Type tty;
+        DAE.Exp splicedExp;
+        DAE.ExpType tty;
         Absyn.InnerOuter io;        
       equation 
         (cache,DAE.TYPES_VAR(n,DAE.ATTR(f,streamPrefix,acc,vt,di,io),_,ty,bind),_,_,_) = lookupVar2(cache,ht, id);
@@ -2619,13 +2619,13 @@ end lookupVarF;
 protected function elabComponentRecursive "
 Helper function for lookupvarF, to return an ComponentRef if there is one. 
 "
-  input Option<Exp.Exp> oCref;
-  output list<Exp.ComponentRef> lref;
+  input Option<DAE.Exp> oCref;
+  output list<DAE.ComponentRef> lref;
   
 algorithm
   lref :=
   matchcontinue(oCref)
-    local Option<Exp.Exp> exp;Exp.ComponentRef ecpr;
+    local Option<DAE.Exp> exp;DAE.ComponentRef ecpr;
     case( exp as SOME(DAE.CREF(ecpr as DAE.CREF_IDENT(_,_,_),_ )))
       then
         (ecpr::{});
@@ -2640,17 +2640,17 @@ protected function addArrayDimensions " function addArrayDimensions
 This is the function where we add arrays representing the dimension of the type.
 In type {array 2[array 3 ]] Will generate 2 arrays. {1,2} and {1,2,3}
 "
-  input Types.Type tySub;
-  input Types.Type tyExpr;
-  input list<Exp.Subscript> ss;
-  output list<Exp.Subscript> outType;
+  input DAE.Type tySub;
+  input DAE.Type tyExpr;
+  input list<DAE.Subscript> ss;
+  output list<DAE.Subscript> outType;
   
 algorithm 
   outType := 
   matchcontinue (tySub, tyExpr,ss)
     local 
-      Types.Type ty1,ty2,ty3;
-      list<Exp.Subscript> subs1,subs2,subs3;
+      DAE.Type ty1,ty2,ty3;
+      list<DAE.Subscript> subs1,subs2,subs3;
       list<Integer> dim1,dim2;
       Integer sslLength,expandLength;
     case( ty2, ty3, subs1) // add ss
@@ -2671,15 +2671,15 @@ protected function expandWholeDimSubScript " Function expandWholeDimSubScript
 This function replaces Wholedim(if possible) with the expanded dimension.
 If there exist a subscript, the subscript is used instead of the expanded dimension.
 "
-  input list<Exp.Subscript> inSubs;
-  input list<Exp.Subscript> inSlice;
-  output list<Exp.Subscript> outSubs;
+  input list<DAE.Subscript> inSubs;
+  input list<DAE.Subscript> inSlice;
+  output list<DAE.Subscript> outSubs;
 algorithm
   outSubs :=
   matchcontinue(inSubs,inSlice)
     local 
-      Exp.Subscript sub1,sub2;
-      list<Exp.Subscript> subs1,subs2;
+      DAE.Subscript sub1,sub2;
+      list<DAE.Subscript> subs1,subs2;
     case(_,{}) then {};
     case({},subs2) then subs2;
     case(((sub1 as DAE.WHOLEDIM())::subs1), (sub2::subs2))
@@ -2704,7 +2704,7 @@ returns a DAE.SLICE for each dimension with a number from 1 to dimension size.
 ex. Real A[2,3] ==> A[{{1,2}{1,2,3}}]
 "
   input list<Integer> inInt;
-  output list<Exp.Subscript> oExp;
+  output list<DAE.Subscript> oExp;
 
 algorithm   
    oExp :=  
@@ -2716,9 +2716,9 @@ algorithm
       local
         Integer i;
         list<Integer> iLst;
-        list<Exp.Subscript > expsl;
-        Exp.Subscript exps;
-        Exp.Exp tmpArray;
+        list<DAE.Subscript > expsl;
+        DAE.Subscript exps;
+        DAE.Exp tmpArray;
         
       equation   
         expsl = makeExpIntegerArray(iLst);
@@ -2737,7 +2737,7 @@ There is a special case when we are declaring a dim[0] subscript.
 "
   input Integer inInt;
   input Integer inIntCurr;
-  output list<Exp.Exp> out;
+  output list<DAE.Exp> out;
 
 algorithm 
    out := 
@@ -2756,7 +2756,7 @@ algorithm
          {DAE.ICONST(iCur)};
      case(iMax,iCur) 
        local
-         list<Exp.Exp> expli;
+         list<DAE.Exp> expli;
        equation
          expli = makeExpIntegerArray2(iMax, iCur+1);
        then
@@ -2769,19 +2769,19 @@ end makeExpIntegerArray2;
 protected function sliceDimensionType " function sliceDimensionType
 Lifts an type to spcified dimension by type2
 "
-  input Types.Type inTypeD;
-  input Types.Type inTypeL;
-  output Types.Type outType;
+  input DAE.Type inTypeD;
+  input DAE.Type inTypeL;
+  output DAE.Type outType;
 
 algorithm 
    outType := 
   matchcontinue (inTypeD,inTypeL)
     case(t, tOrg)
       local
-        Types.Type t,tOrg;        
+        DAE.Type t,tOrg;        
         list<Integer> dimensions;
         list<Option <Integer>> dim2;
-        Types.TType tty;
+        DAE.TType tty;
         String str;
       equation
         dimensions = Types.getDimensionSizes(t);

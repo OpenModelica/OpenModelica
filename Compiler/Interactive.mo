@@ -50,7 +50,6 @@ public import AbsynDep;
 public import OptManager;
 public import SCode;
 public import DAE;
-public import Types;
 public import Env;
 public import Settings;
 public import ConnectionGraph;
@@ -61,22 +60,23 @@ protected import ErrorExt;
 protected import HashTable2;
 protected import InstanceHierarchy;
 protected import MetaUtil;
+protected import Types;
 protected import UnitAbsyn;
 protected import ValuesUtil;
 
 /*
 ** CompiledCFunction
 ** Absyn.Path = ie object path in class hierarcy
-** Types.Type = The type of the return value
+** DAE.Type = The type of the return value
 ** Integer = functionHandler
 */
-//type CompiledCFunction = tuple<Absyn.Path, Types.Type, Integer>;
+//type CompiledCFunction = tuple<Absyn.Path, DAE.Type, Integer>;
 
 public
 uniontype CompiledCFunction
   record CFunction
     Absyn.Path path;
-    Types.Type retType;
+    DAE.Type retType;
     Integer funcHandle;
     Real buildTime "the build time for this function";
     String loadedFromFile "the file we loaded this function from";    
@@ -124,7 +124,7 @@ uniontype InteractiveVariable "- Interactive Variable"
   record IVAR
     Absyn.Ident varIdent "varIdent ; The variable identifier" ;
     Values.Value value "value ; The value" ;
-    Types.Type type_ "type ; The type of the expression" ;
+    DAE.Type type_ "type ; The type of the expression" ;
   end IVAR;
 
 end InteractiveVariable;
@@ -452,15 +452,15 @@ algorithm
   (outString,outInteractiveSymbolTable) := matchcontinue (inAlgorithmItem,inInteractiveSymbolTable)
     local
       list<Env.Frame> env;
-      Exp.Exp econd,msg_1,sexp,srexp;
-      Types.Properties prop,rprop;
+      DAE.Exp econd,msg_1,sexp,srexp;
+      DAE.Properties prop,rprop;
       InteractiveSymbolTable st_1,st_2,st_3,st_4,st,newst;
       Absyn.Exp cond,msg,exp,rexp;
       Absyn.Program p;
       String str,ident;
-      Types.Type t;
+      DAE.Type t;
       Values.Value value;
-      list<Types.Type> types;
+      list<DAE.Type> types;
       list<String> idents;
       list<Values.Value> values;
       list<Absyn.Exp> crefexps;
@@ -677,7 +677,7 @@ algorithm
       Absyn.Exp exp;
       list<Absyn.AlgorithmItem> algitemlst;
       String estr,tstr;
-      Types.Type vtype;
+      DAE.Type vtype;
     case (Values.BOOL(boolean = false),_,_,st)
       equation
       then
@@ -724,7 +724,7 @@ algorithm
       list<Absyn.AlgorithmItem> algitemlst;
       list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> algrest;
       String estr,tstr;
-      Types.Type vtype;
+      DAE.Type vtype;
       Values.Value value;
       Absyn.Exp exp;
     case (Values.BOOL(boolean = exp_val),_,algitemlst,_,st)
@@ -818,8 +818,8 @@ algorithm
   matchcontinue (inExp,inInteractiveSymbolTable)
     local
       list<Env.Frame> env;
-      Exp.Exp sexp;
-      Types.Properties prop;
+      DAE.Exp sexp;
+      DAE.Properties prop;
       InteractiveSymbolTable st_1,st_2,st;
       Values.Value value;
       Absyn.Exp exp;
@@ -844,8 +844,8 @@ protected function stringRepresOfExpr
   input InteractiveSymbolTable st;
   output String estr;
   list<Env.Frame> env;
-  Exp.Exp sexp;
-  Types.Properties prop;
+  DAE.Exp sexp;
+  DAE.Properties prop;
   InteractiveSymbolTable st_1;
 algorithm
   env := buildEnvFromSymboltable(st);
@@ -950,13 +950,13 @@ public function getTypeOfVariable
   given a list of variables and a variable identifier."
   input Absyn.Ident inIdent;
   input list<InteractiveVariable> inInteractiveVariableLst;
-  output Types.Type outType;
+  output DAE.Type outType;
 algorithm
   outType:=
   matchcontinue (inIdent,inInteractiveVariableLst)
     local
       String id,varid;
-      Types.Type tp;
+      DAE.Type tp;
       list<InteractiveVariable> rest;
     case (id,{}) then fail();
     case (varid,(IVAR(varIdent = id,type_ = tp) :: rest))
@@ -979,7 +979,7 @@ protected function addVarsToSymboltable
   symboltable given names, values and types."
   input list<Absyn.Ident> inAbsynIdentLst;
   input list<Values.Value> inValuesValueLst;
-  input list<Types.Type> inTypesTypeLst;
+  input list<DAE.Type> inTypesTypeLst;
   input InteractiveSymbolTable inInteractiveSymbolTable;
   output InteractiveSymbolTable outInteractiveSymbolTable;
 algorithm
@@ -991,8 +991,8 @@ algorithm
       list<String> idrest;
       Values.Value v;
       list<Values.Value> vrest;
-      Types.Type t;
-      list<Types.Type> trest;
+      DAE.Type t;
+      list<DAE.Type> trest;
     case ({},_,_,st) then st;
     case ((id :: idrest),(v :: vrest),(t :: trest),st)
       equation
@@ -1008,7 +1008,7 @@ public function addVarToSymboltable
   Helper function to addVarsToSymboltable."
   input Absyn.Ident inIdent;
   input Values.Value inValue;
-  input Types.Type inType;
+  input DAE.Type inType;
   input InteractiveSymbolTable inInteractiveSymbolTable;
   output InteractiveSymbolTable outInteractiveSymbolTable;
 algorithm
@@ -1018,7 +1018,7 @@ algorithm
       list<InteractiveVariable> vars_1,vars;
       String ident;
       Values.Value v;
-      Types.Type t;
+      DAE.Type t;
       Absyn.Program p;
       list<SCode.Class> sp;
       list<InstantiatedClass> id;
@@ -1050,7 +1050,7 @@ public function appendVarToSymboltable
  Used in for example iterators in for statements."
   input Absyn.Ident inIdent;
   input Values.Value inValue;
-  input Types.Type inType;
+  input DAE.Type inType;
   input InteractiveSymbolTable inInteractiveSymbolTable;
   output InteractiveSymbolTable outInteractiveSymbolTable;
 algorithm
@@ -1060,7 +1060,7 @@ algorithm
       list<InteractiveVariable> vars_1,vars;
       String ident;
       Values.Value v;
-      Types.Type t;
+      DAE.Type t;
       Absyn.Program p;
       list<SCode.Class> sp;
       list<InstantiatedClass> id;
@@ -1149,7 +1149,7 @@ protected function addVarToVarlist
 "Assignes a value to a variable with a specific identifier."
   input Absyn.Ident inIdent;
   input Values.Value inValue;
-  input Types.Type inType;
+  input DAE.Type inType;
   input list<InteractiveVariable> inInteractiveVariableLst;
   output list<InteractiveVariable> outInteractiveVariableLst;
 algorithm
@@ -1158,7 +1158,7 @@ algorithm
     local
       String ident,id2;
       Values.Value v,val2;
-      Types.Type t,t2;
+      DAE.Type t,t2;
       list<InteractiveVariable> rest,rest_1;
     case (ident,v,t,(IVAR(varIdent = id2) :: rest))
       equation
@@ -1217,7 +1217,7 @@ algorithm
       list<Env.Frame> env_1,env_2,env;
       String id;
       Values.Value v;
-      Types.Type tp;
+      DAE.Type tp;
       list<InteractiveVariable> rest;
     case ((IVAR(varIdent = id,value = v,type_ = tp) :: rest),env)
       equation
@@ -9055,7 +9055,7 @@ algorithm
     local
       list<CompiledCFunction> res,rest;
       Absyn.Path p1,p2;
-      Types.Type t;
+      DAE.Type t;
       Integer funcHandle;
     case (_,{}) then {};
       //t as (DAE.T_FUNCTION(fargs,(outtype as (DAE.T_COMPLEX(ClassInf.RECORD(_),_,_),_))),_)),env_1)
@@ -13053,7 +13053,7 @@ algorithm
       Absyn.FunctionArgs fargs;
       list<SCode.Class> p_1;
       list<Env.Frame> env;
-      Exp.Exp newexp;
+      DAE.Exp newexp;
       String gexpstr;
       list<Absyn.ElementArg> elts;
       Env.Cache cache;
@@ -13370,10 +13370,10 @@ algorithm
       list<Env.Frame> env,env_1;
       SCode.Class c,c_1;
       SCode.Mod mod_1;
-      Types.Mod mod_2;
+      DAE.Mod mod_2;
       list<DAE.Element> dae,dae_1;
       Connect.Sets cs;
-      Types.Type t;
+      DAE.Type t;
       ClassInf.State state;
       String gexpstr,gexpstr_1;
       list<String> res;
@@ -13602,14 +13602,14 @@ algorithm
       list<Env.Frame> env;
       Absyn.Class placementc;
       SCode.Class placementclass;
-      Types.Mod mod_2;
+      DAE.Mod mod_2;
       list<DAE.Element> dae,dae_1;
       Connect.Sets cs;
-      Types.Type t;
+      DAE.Type t;
       ClassInf.State state;
       String str,gexpstr,s1,totstr,anncname;
-      Exp.Exp graphicexp2;
-      Types.Properties prop;
+      DAE.Exp graphicexp2;
+      DAE.Properties prop;
       Absyn.Program p;
       Env.Cache cache;
       
@@ -19407,7 +19407,7 @@ algorithm
     /* constants */
     case((e as Absyn.CREF(cr),(optPath as SOME(cname2),cname,(d,p,env,ht)))) 
       local String compString;
-        list<Exp.Exp> dbgList;
+        list<DAE.Exp> dbgList;
       equation     
       compString = Absyn.printComponentRefStr(cr);
       cr = Absyn.crefStripLastSubs(cr);

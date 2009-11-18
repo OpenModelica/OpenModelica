@@ -47,11 +47,9 @@ package Algorithm
   
 "
 
-public import DAE;
-public import Exp;
-public import Types;
-public import SCode;
 public import Absyn;
+public import DAE;
+public import SCode;
 
 public 
 type Ident = String;
@@ -60,10 +58,12 @@ public type Algorithm = DAE.Algorithm;
 public type Statement = DAE.Statement;
 public type Else = DAE.Else;
 
-protected import Util;
-protected import Print;
 protected import Debug;
 protected import Error;
+protected import Exp;
+protected import Print;
+protected import Types;
+protected import Util;
 
 public function algorithmEmpty "Returns true if algorithm is empty, i.e. no statements"
   input Algorithm alg;
@@ -111,10 +111,10 @@ public function makeAssignment
   LS: Added call to getPropType and isPropAnyConst instead of
   having PROP in the rules. Otherwise rules must be repeated because of
   combinations with PROP_TUPLE"
-  input Exp.Exp inExp1;
-  input Types.Properties inProperties2;
-  input Exp.Exp inExp3;
-  input Types.Properties inProperties4;
+  input DAE.Exp inExp1;
+  input DAE.Properties inProperties2;
+  input DAE.Exp inExp3;
+  input DAE.Properties inProperties4;
   input SCode.Accessibility inAccessibility5;
   input SCode.Initial initial_;
   output Statement outStatement;
@@ -123,11 +123,11 @@ algorithm
   matchcontinue (inExp1,inProperties2,inExp3,inProperties4,inAccessibility5,initial_)
     local
       Ident lhs_str,rhs_str,lt_str,rt_str;
-      Exp.Exp lhs,rhs,rhs_1,e1,e2,e3;
-      Types.Properties lprop,rprop,lhprop,rhprop;
-      Exp.Type t,crt;
-      Exp.ComponentRef c;
-      tuple<Types.TType, Option<Absyn.Path>> lt,rt;
+      DAE.Exp lhs,rhs,rhs_1,e1,e2,e3;
+      DAE.Properties lprop,rprop,lhprop,rhprop;
+      DAE.ExpType t,crt;
+      DAE.ComponentRef c;
+      tuple<DAE.TType, Option<Absyn.Path>> lt,rt;
 
     /* It is not allowed to assign to a constant */
     case (lhs,lprop,rhs,rprop,_,initial_)
@@ -201,16 +201,16 @@ end makeAssignment;
 
 protected function makeAssignment2 
 "Help function to makeAssignment"
-  input Exp.Exp lhs;
-  input Types.Properties lhprop;
-  input Exp.Exp rhs;
-  input Types.Properties rhprop;
+  input DAE.Exp lhs;
+  input DAE.Properties lhprop;
+  input DAE.Exp rhs;
+  input DAE.Properties rhprop;
   output Statement outStatement; 
 algorithm
   outStatement := matchcontinue(lhs,lhprop,rhs,rhprop)
-    local Exp.ComponentRef c;
-      Exp.Type crt,t;
-      Exp.Exp rhs_1,e3,e1;
+    local DAE.ComponentRef c;
+      DAE.ExpType crt,t;
+      DAE.Exp rhs_1,e3,e1;
     case (DAE.CREF(componentRef = c,ty = crt),lhprop,rhs,rhprop)
       equation 
         (rhs_1,_) = Types.matchProp(rhs, rhprop, lhprop);
@@ -236,7 +236,7 @@ algorithm
         DAE.STMT_ASSIGN_ARR(t,c,rhs_1);
         
     case(e3 as DAE.ASUB(e1,ea2),lhprop,rhs,rhprop)
-      local list<Exp.Exp> ea2;
+      local list<DAE.Exp> ea2;
       equation
         (rhs_1,_) = Types.matchProp(rhs, rhprop, lhprop);
         //false = Types.isPropArray(lhprop); 
@@ -250,25 +250,25 @@ public function makeTupleAssignment "function: makeTupleAssignment
   This function creates an `DAE.STMT_TUPLE_ASSIGN\' construct, and checks that the
   assignment is semantically valid, which means that the component
   being assigned is not constant, and that the types match."
-  input list<Exp.Exp> inExpExpLst;
-  input list<Types.Properties> inTypesPropertiesLst;
-  input Exp.Exp inExp;
-  input Types.Properties inProperties;
+  input list<DAE.Exp> inExpExpLst;
+  input list<DAE.Properties> inTypesPropertiesLst;
+  input DAE.Exp inExp;
+  input DAE.Properties inProperties;
   input SCode.Initial initial_;
   output Statement outStatement;
 algorithm 
   outStatement:=
   matchcontinue (inExpExpLst,inTypesPropertiesLst,inExp,inProperties,initial_)
     local
-      list<Types.Const> bvals;
+      list<DAE.Const> bvals;
       list<Ident> sl;
       Ident s,lhs_str,rhs_str;
-      list<Exp.Exp> lhs,expl;
-      list<Types.Properties> lprop,lhprops;
-      Exp.Exp rhs,rhs_1;
-      Types.Properties rprop;
-      list<tuple<Types.TType, Option<Absyn.Path>>> lhrtypes,tpl;
-      list<Types.TupleConst> clist;
+      list<DAE.Exp> lhs,expl;
+      list<DAE.Properties> lprop,lhprops;
+      DAE.Exp rhs,rhs_1;
+      DAE.Properties rprop;
+      list<tuple<DAE.TType, Option<Absyn.Path>>> lhrtypes,tpl;
+      list<DAE.TupleConst> clist;
     case (lhs,lprop,rhs,rprop,initial_)
       equation 
         bvals = Util.listMap(lprop, Types.propAnyConst);
@@ -312,9 +312,9 @@ end makeTupleAssignment;
 protected function getPropExpType "function: getPropExpType
   Returns the expression type for a given Properties by calling
   getTypeExpType. Used by makeAssignment."
-  input Types.Properties p;
-  output Exp.Type t;
-  tuple<Types.TType, Option<Absyn.Path>> ty;
+  input DAE.Properties p;
+  output DAE.ExpType t;
+  tuple<DAE.TType, Option<Absyn.Path>> ty;
 algorithm 
   ty := Types.getPropType(p);
   t := getTypeExpType(ty);
@@ -323,12 +323,12 @@ end getPropExpType;
 protected function getTypeExpType "function: getTypeExpType
   Returns the expression type for a given Type module type. Used only by
   getPropExpType."
-  input Types.Type inType;
-  output Exp.Type outType;
+  input DAE.Type inType;
+  output DAE.ExpType outType;
 algorithm 
   outType:=
   matchcontinue (inType)
-    local tuple<Types.TType, Option<Absyn.Path>> t;
+    local tuple<DAE.TType, Option<Absyn.Path>> t;
     case ((DAE.T_INTEGER(varLstInt = _),_)) then DAE.ET_INT(); 
     case ((DAE.T_REAL(varLstReal = _),_)) then DAE.ET_REAL(); 
     case ((DAE.T_STRING(varLstString = _),_)) then DAE.ET_STRING(); 
@@ -350,10 +350,10 @@ public function makeIf "function: makeIf
   This function creates an `DAE.STMT_IF\' construct, checking that the types
   of the parts are correct. Else part is generated using the makeElse
   function."
-  input Exp.Exp inExp1;
-  input Types.Properties inProperties2;
+  input DAE.Exp inExp1;
+  input DAE.Properties inProperties2;
   input list<Statement> inStatementLst3;
-  input list<tuple<Exp.Exp, Types.Properties, list<Statement>>> inTplExpExpTypesPropertiesStatementLstLst4;
+  input list<tuple<DAE.Exp, DAE.Properties, list<Statement>>> inTplExpExpTypesPropertiesStatementLstLst4;
   input list<Statement> inStatementLst5;
   output Statement outStatement;
 algorithm 
@@ -361,11 +361,11 @@ algorithm
   matchcontinue (inExp1,inProperties2,inStatementLst3,inTplExpExpTypesPropertiesStatementLstLst4,inStatementLst5)
     local
       Else else_;
-      Exp.Exp e;
+      DAE.Exp e;
       list<Statement> tb,fb;
-      list<tuple<Exp.Exp, Types.Properties, list<Statement>>> eib;
+      list<tuple<DAE.Exp, DAE.Properties, list<Statement>>> eib;
       Ident e_str,t_str;
-      tuple<Types.TType, Option<Absyn.Path>> t;
+      tuple<DAE.TType, Option<Absyn.Path>> t;
     case (e,DAE.PROP(type_ = t),tb,eib,fb)
       equation
         (e,_) = Types.matchType(e,t,(DAE.T_BOOL({}),NONE));
@@ -384,7 +384,7 @@ end makeIf;
 
 protected function makeElse "function: makeElse
   This function creates the ELSE part of the DAE.STMT_IF and checks if is correct."
-  input list<tuple<Exp.Exp, Types.Properties, list<Statement>>> inTplExpExpTypesPropertiesStatementLstLst;
+  input list<tuple<DAE.Exp, DAE.Properties, list<Statement>>> inTplExpExpTypesPropertiesStatementLstLst;
   input list<Statement> inStatementLst;
   output Else outElse;
 algorithm 
@@ -393,10 +393,10 @@ algorithm
     local
       list<Statement> fb,b;
       Else else_;
-      Exp.Exp e;
-      list<tuple<Exp.Exp, Types.Properties, list<Statement>>> xs;
+      DAE.Exp e;
+      list<tuple<DAE.Exp, DAE.Properties, list<Statement>>> xs;
       Ident e_str,t_str;
-      tuple<Types.TType, Option<Absyn.Path>> t;
+      tuple<DAE.TType, Option<Absyn.Path>> t;
     case ({},{}) then DAE.NOELSE();  /* This removes empty else branches */ 
     case ({},fb) then DAE.ELSE(fb); 
     case (((e,DAE.PROP(type_ = t),b) :: xs),fb)
@@ -419,8 +419,8 @@ public function makeFor "function: makeFor
   This function creates a DAE.STMT_FOR construct, checking 
   that the types of the parts are correct."
   input Ident inIdent;
-  input Exp.Exp inExp;
-  input Types.Properties inProperties;
+  input DAE.Exp inExp;
+  input DAE.Properties inProperties;
   input list<Statement> inStatementLst;
   output Statement outStatement;
 algorithm 
@@ -428,10 +428,10 @@ algorithm
   matchcontinue (inIdent,inExp,inProperties,inStatementLst)
     local
       Boolean array;
-      Exp.Type et;
+      DAE.ExpType et;
       Ident i,e_str,t_str;
-      Exp.Exp e;
-      tuple<Types.TType, Option<Absyn.Path>> t;
+      DAE.Exp e;
+      tuple<DAE.TType, Option<Absyn.Path>> t;
       list<Statement> stmts;
     case (i,e,DAE.PROP(type_ = (DAE.T_ARRAY(arrayType = t),_)),stmts)
       equation 
@@ -452,18 +452,18 @@ end makeFor;
 public function makeWhile "function: makeWhile 
   This function creates a DAE.STMT_WHILE construct, checking that the types
   of the parts are correct."
-  input Exp.Exp inExp;
-  input Types.Properties inProperties;
+  input DAE.Exp inExp;
+  input DAE.Properties inProperties;
   input list<Statement> inStatementLst;
   output Statement outStatement;
 algorithm 
   outStatement:=
   matchcontinue (inExp,inProperties,inStatementLst)
     local
-      Exp.Exp e;
+      DAE.Exp e;
       list<Statement> stmts;
       Ident e_str,t_str;
-      tuple<Types.TType, Option<Absyn.Path>> t;
+      tuple<DAE.TType, Option<Absyn.Path>> t;
     case (e,DAE.PROP(type_ = (DAE.T_BOOL(varLstBool = _),_)),stmts) then DAE.STMT_WHILE(e,stmts); 
     case (e,DAE.PROP(type_ = t),_)
       equation 
@@ -478,8 +478,8 @@ end makeWhile;
 public function makeWhenA "function: makeWhenA
   This function creates a DAE.STMT_WHEN algorithm construct, 
   checking that the types of the parts are correct."
-  input Exp.Exp inExp;
-  input Types.Properties inProperties;
+  input DAE.Exp inExp;
+  input DAE.Properties inProperties;
   input list<Statement> inStatementLst;
   input Option<Statement> elseWhenStmt;
   output Statement outStatement;
@@ -487,11 +487,11 @@ algorithm
   outStatement:=
   matchcontinue (inExp,inProperties,inStatementLst,elseWhenStmt)
     local
-      Exp.Exp e;
+      DAE.Exp e;
       list<Statement> stmts;
       Option<Statement> elsew;
       Ident e_str,t_str;
-      tuple<Types.TType, Option<Absyn.Path>> t;
+      tuple<DAE.TType, Option<Absyn.Path>> t;
     case (e,DAE.PROP(type_ = (DAE.T_BOOL(varLstBool = _),_)),stmts,elsew) then DAE.STMT_WHEN(e,stmts,elsew,{}); 
     case (e,DAE.PROP(type_ = (DAE.T_ARRAY(arrayType = (DAE.T_BOOL(varLstBool = _),_)),_)),stmts,elsew) then DAE.STMT_WHEN(e,stmts,elsew,{}); 
     case (e,DAE.PROP(type_ = t),_,_)
@@ -507,16 +507,16 @@ end makeWhenA;
 public function makeReinit "function: makeReinit
  creates a reinit statement in an algorithm 
  statement, only valid in when algorithm sections."
-  input Exp.Exp inExp1;
-  input Exp.Exp inExp2;
-  input Types.Properties inProperties3;
-  input Types.Properties inProperties4;
+  input DAE.Exp inExp1;
+  input DAE.Exp inExp2;
+  input DAE.Properties inProperties3;
+  input DAE.Properties inProperties4;
   output Statement outStatement;
 algorithm
   outStatement:=
   matchcontinue (inExp1,inExp2,inProperties3,inProperties4)
-    local Exp.Exp var,val,var_1,val_1; Types.Properties prop1,prop2;
-      Types.Type tp1,tp2;
+    local DAE.Exp var,val,var_1,val_1; DAE.Properties prop1,prop2;
+      DAE.Type tp1,tp2;
     case (var as DAE.CREF(_,_),val,DAE.PROP(tp1,_),DAE.PROP(tp2,_))  equation
      (val_1,_) = Types.matchType(val,tp2,(DAE.T_REAL({}),NONE()));
       (var_1,_) = Types.matchType(var,tp1,(DAE.T_REAL({}),NONE()));
@@ -533,15 +533,15 @@ end makeReinit;
 public function makeAssert "function: makeAssert
   Creates an assert statement from two expressions.
 "
-  input Exp.Exp inExp1 "condition";
-  input Exp.Exp inExp2 "message";
-  input Types.Properties inProperties3;
-  input Types.Properties inProperties4;
+  input DAE.Exp inExp1 "condition";
+  input DAE.Exp inExp2 "message";
+  input DAE.Properties inProperties3;
+  input DAE.Properties inProperties4;
   output Statement outStatement;
 algorithm 
   outStatement:=
   matchcontinue (inExp1,inExp2,inProperties3,inProperties4)
-    local Exp.Exp cond,msg;
+    local DAE.Exp cond,msg;
     case (cond,msg,DAE.PROP(type_ = (DAE.T_BOOL(varLstBool = _),_)),DAE.PROP(type_ = (DAE.T_STRING(varLstString = _),_))) then DAE.STMT_ASSERT(cond,msg);  
   end matchcontinue;
 end makeAssert;
@@ -549,20 +549,20 @@ end makeAssert;
 public function makeTerminate "
   Creates a terminate statement from message expression.
 "
-  input Exp.Exp inExp1 "message";
-  input Types.Properties inProperties3;
+  input DAE.Exp inExp1 "message";
+  input DAE.Properties inProperties3;
   output Statement outStatement;
 algorithm 
   outStatement:=
   matchcontinue (inExp1,inProperties3)
-    local Exp.Exp cond,msg;
+    local DAE.Exp cond,msg;
     case (msg,DAE.PROP(type_ = (DAE.T_STRING(varLstString = _),_))) then DAE.STMT_TERMINATE(msg);  
   end matchcontinue;
 end makeTerminate;
 
 public function getCrefFromAlg "Returns all crefs from an algorithm"
 input Algorithm alg;
-output list<Exp.ComponentRef> crs;
+output list<DAE.ComponentRef> crs;
 algorithm
   crs := Util.listListUnionOnTrue(Util.listMap(getAllExps(alg),Exp.getCrefFromExp),Exp.crefEqual);
 end getCrefFromAlg;
@@ -574,12 +574,12 @@ public function getAllExps "function: getAllExps
   expressions and returns them in a list
 "
   input Algorithm inAlgorithm;
-  output list<Exp.Exp> outExpExpLst;
+  output list<DAE.Exp> outExpExpLst;
 algorithm 
   outExpExpLst:=
   matchcontinue (inAlgorithm)
     local
-      list<Exp.Exp> exps;
+      list<DAE.Exp> exps;
       list<Statement> stmts;
     case DAE.ALGORITHM_STMTS(statementLst = stmts)
       equation 
@@ -595,8 +595,8 @@ public function getAllExpsStmts "function: getAllExpsStmts
   in all statements.
 "
   input list<Statement> stmts;
-  output list<Exp.Exp> exps;
-  list<list<Exp.Exp>> expslist;
+  output list<DAE.Exp> exps;
+  list<list<DAE.Exp>> expslist;
 algorithm 
   expslist := Util.listMap(stmts, getAllExpsStmt);
   exps := Util.listFlatten(expslist);
@@ -605,15 +605,15 @@ end getAllExpsStmts;
 protected function getAllExpsStmt "function: getAllExpsStmt
   Returns all expressions in a statement."
   input Statement inStatement;
-  output list<Exp.Exp> outExpExpLst;
+  output list<DAE.Exp> outExpExpLst;
 algorithm 
   outExpExpLst:=
   matchcontinue (inStatement)
     local
-      Exp.Exp crexp,exp,e1,e2;
-      Exp.Type expty;
-      Exp.ComponentRef cr;
-      list<Exp.Exp> exps,explist,exps1,elseexps,fargs;
+      DAE.Exp crexp,exp,e1,e2;
+      DAE.ExpType expty;
+      DAE.ComponentRef cr;
+      list<DAE.Exp> exps,explist,exps1,elseexps,fargs;
       list<Statement> stmts;
       Else else_;
       Boolean flag;
@@ -626,7 +626,7 @@ algorithm
       then
         {crexp,exp};
     case DAE.STMT_ASSIGN(type_ = expty,exp1 = (e2 as DAE.ASUB(e1,ea2)),exp = exp)
-      local list<Exp.Exp> ea2;
+      local list<DAE.Exp> ea2;
       equation 
       then
         {e2,exp};
@@ -700,13 +700,13 @@ end getAllExpsStmt;
 protected function getAllExpsElse "function: getAllExpsElse
   Helper function to getAllExpsStmt."
   input Else inElse;
-  output list<Exp.Exp> outExpExpLst;
+  output list<DAE.Exp> outExpExpLst;
 algorithm 
   outExpExpLst:=
   matchcontinue (inElse)
     local
-      list<Exp.Exp> exps1,elseexps,exps;
-      Exp.Exp exp;
+      list<DAE.Exp> exps1,elseexps,exps;
+      DAE.Exp exp;
       list<Statement> stmts;
       Else else_;
     case DAE.NOELSE() then {}; 
@@ -728,12 +728,12 @@ end getAllExpsElse;
 protected function crefToExp "function: crefToExp
   Creates an expression from a ComponentRef.
   The type of the expression will become DAE.ET_OTHER."
-  input Exp.ComponentRef inComponentRef;
-  output Exp.Exp outExp;
+  input DAE.ComponentRef inComponentRef;
+  output DAE.Exp outExp;
 algorithm 
   outExp:=
   matchcontinue (inComponentRef)
-    local Exp.ComponentRef cref;
+    local DAE.ComponentRef cref;
     case cref then DAE.CREF(cref,DAE.ET_OTHER()); 
   end matchcontinue;
 end crefToExp;

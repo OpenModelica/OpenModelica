@@ -22,21 +22,22 @@ keyEqual 	- A comparison function between two keys, returns true if equal.
 */
 
 /* HashTable instance specific code */
-public import Exp;
 
+public import DAE;
+protected import Exp;
 protected import System;
 protected import Util;
 
 public 
- type Key = Exp.Exp;
- type Value = Exp.ComponentRef;
+ type Key = DAE.Exp;
+ type Value = DAE.ComponentRef;
    
 protected function hashFunc "
   author: PA
  
-  Calculates a hash value for Exp.Exp
+  Calculates a hash value for DAE.Exp
 "
-  input Exp.Exp cr;
+  input DAE.Exp cr;
   output Integer res;
   String crstr;
 algorithm 
@@ -67,7 +68,7 @@ protected function dumpTuple
 algorithm
   str := matchcontinue(tpl)
   local 
-  Exp.Exp cr; Exp.ComponentRef i;
+  DAE.Exp cr; DAE.ComponentRef i;
     case((cr,i)) equation
       str = "{" +& Exp.printExpStr(cr) +& "," +& Exp.printComponentRefStr(i) +& "}";
     then str;

@@ -10,10 +10,8 @@ package Cevalfunc
   RCS: $Id: Cevalfunc.mo 3059 2008-05-15 07:03:53Z bjozac $
   "
 public import Env;
-public import Exp;
 public import Values; 
 public import Absyn;
-public import Types;
 public import DAE;
 public import SCode; 
 public import Prefix;
@@ -24,11 +22,13 @@ public import ConnectionGraph;
 protected import Ceval;
 protected import Util;
 protected import Error;
+protected import Exp;
 protected import Debug;
 protected import Lookup;
 protected import Static;
 protected import Inst;
 protected import InstanceHierarchy;
+protected import Types;
 protected import UnitAbsyn;
 protected import ValuesUtil;
 
@@ -39,7 +39,7 @@ This is the main funciton for the class. It will take a userdefined function and
 evaluate it. This is to prevent multiple compilation of c files.
 "
   input Env.Env env "enviroment for the user-function";
-  input Exp.Exp callExp "DAE.CALL(userFunc)"; 
+  input DAE.Exp callExp "DAE.CALL(userFunc)"; 
   input list<Values.Value> inArgs; 
   input SCode.Class sc; 
   input list<DAE.Element> daeList;
@@ -54,7 +54,7 @@ algorithm
         Values.Value retVal;
         list<Values.Value> retVals;
         Absyn.Path funcpath;
-        list<Exp.Exp> crefArgs;
+        list<DAE.Exp> crefArgs;
         String str;
     case(env,(callExp as DAE.CALL(path = funcpath,expLst = crefArgs)),inArgs, sc as SCode.CLASS(_,false,_,SCode.R_FUNCTION(),SCode.PARTS(elementList,_,_,_,_,_,_) ),daeList)
       equation
@@ -93,7 +93,7 @@ and thier evaluated value.
   input Env.Env env;
   input list<SCode.Element> functionElements;
   input list<Values.Value> elementValues;
-  input list<Exp.Exp> crefArgs;
+  input list<DAE.Exp> crefArgs;
   output Env.Env envOut;
 algorithm 
   envOut := 
@@ -106,19 +106,19 @@ algorithm
       list<Values.Value> vals1;
       Env.Env env1,env2,complexEnv;
       String varName, str;
-      Types.Var tvar;
-      Types.Attributes tattr;
-      Types.Type ty,tty;
-      Types.Binding binding,tb;
-      Exp.Type ety;
-      Exp.Exp e1;
-      list<Exp.Exp> restExps;      
+      DAE.Var tvar;
+      DAE.Attributes tattr;
+      DAE.Type ty,tty;
+      DAE.Binding binding,tb;
+      DAE.ExpType ety;
+      DAE.Exp e1;
+      list<DAE.Exp> restExps;      
       Absyn.ArrayDim adim;
       Absyn.ComponentRef cr;
       Absyn.Path apath;
       ClassInf.State recordconst; // for complex env construction
-      list<Types.Var> typeslst;
-      Option<Types.Type> cto; // for complex env construction, to here
+      list<DAE.Var> typeslst;
+      Option<DAE.Type> cto; // for complex env construction, to here
     case(env,{},_,_) then env;
     case(env, (ele1 as SCode.EXTENDS(_,_,_))::eles1, vals1,restExps)
       equation
@@ -188,15 +188,15 @@ end extendEnvWithInputArgs;
 protected function makeComplexForEnv "Function: makeComplexForEnv 
 Special case for complex structure
 "
-  input Exp.Exp inExp "The call statement";
+  input DAE.Exp inExp "The call statement";
   input Values.Value inVal "Values.RECORD";
-  output Types.Type oType;
+  output DAE.Type oType;
 algorithm (oType) := matchcontinue(inExp, inVal)
   local
     Absyn.Path recordName;
-    Exp.Type ty;
-    Types.Type cty,cty2;
-    list<Types.Var> lv,lv2;
+    DAE.ExpType ty;
+    DAE.Type cty,cty2;
+    list<DAE.Var> lv,lv2;
     String pathName;
     list<Values.Value> vals;
     list<String> names;
@@ -214,22 +214,22 @@ end makeComplexForEnv;
 protected function setValuesInRecord "Function: setValuesInRecord 
 This function sets Values in records. 
 "
-input list<Types.Var> inVars;  
+input list<DAE.Var> inVars;  
 input list<String> invarNames; // eq 
 input list<Values.Value> inValue; // eq
-output list<Types.Var> oType;
+output list<DAE.Var> oType;
 algorithm oType := matchcontinue(inVars,invarNames,inValue)
   local 
     String varName;
     list<String> varNames;
-    Types.Attributes a ;
+    DAE.Attributes a ;
     Boolean p ;
-    Types.Type t ;
-    Types.Binding b;
+    DAE.Type t ;
+    DAE.Binding b;
     Values.Value val;
     list<Values.Value> values;
-    Types.Var tv,tv1;
-    list<Types.Var> tvs,rest;
+    DAE.Var tv,tv1;
+    list<DAE.Var> tvs,rest;
   case({},_,_) then {};
   case( tv1 :: rest , varName::varNames, val::values)
     equation
@@ -242,22 +242,22 @@ end setValuesInRecord;
 protected function setValuesInRecord2 "Function: setValuesInRecord2
 helper function for setValuesInRecord 
 "
-input Types.Var inVars; 
+input DAE.Var inVars; 
 input list<String> invarName; // eq 
 input list<Values.Value> inValue; // eq
-output Types.Var oType;
+output DAE.Var oType;
 algorithm oType := matchcontinue(inVars,invarName,inValue)
   local 
     String varName3,varName2;
     list<String> varNames;
-    Types.Attributes a;
+    DAE.Attributes a;
     Boolean p;
-    Types.Type t,ty2;
-    Types.Binding b;
+    DAE.Type t,ty2;
+    DAE.Binding b;
     Values.Value val;
     list<Values.Value> values;
-    Types.Var tv,tv1;
-    list<Types.Var> tvs,rest;
+    DAE.Var tv,tv1;
+    list<DAE.Var> tvs,rest;
   case(DAE.TYPES_VAR(varName2,a,p,t,DAE.UNBOUND),{},{})
     equation
       val = typeOfValue(t);
@@ -269,7 +269,7 @@ algorithm oType := matchcontinue(inVars,invarName,inValue)
       tv;
   case(DAE.TYPES_VAR(varName3,a,p, (t as (DAE.T_COMPLEX(complexVarLst = typeslst),_)) ,b) ,varName2::varNames, (val as Values.RECORD(_,vals,names,-1))::values)
     local
-      list<Types.Var> typeslst,lv2;
+      list<DAE.Var> typeslst,lv2;
       list<Values.Value> vals;
       list<String> names;
     equation 
@@ -294,21 +294,21 @@ protected function makeComplexEnv "Function: makeComplexEnv
 This function extends the env with a complex var. 
 "
 input Env.Env env;
-input list<Types.Var> tvars; 
+input list<DAE.Var> tvars; 
 output Env.Env oenv; 
 algorithm oenv := matchcontinue(env, tvars)
 local 
   ClassInf.State recordconst;
-  list<Types.Var> typeslst;
-  Option<Types.Type> cto;
+  list<DAE.Var> typeslst;
+  Option<DAE.Type> cto;
   String name;// matching
-  Types.Attributes attr;
+  DAE.Attributes attr;
   Boolean prot;
-  Types.Type ty;
-  Types.Binding bind;  
+  DAE.Type ty;
+  DAE.Binding bind;  
   Values.Value val;
-  list<Types.Var> vars;// matching end 
-  Types.Var tv;
+  list<DAE.Var> vars;// matching end 
+  DAE.Var tv;
   Env.Env env1,env2,complexEnv;
   case(env,{}) then env;
   case(env, (tv as DAE.TYPES_VAR(name,attr,prot,ty,bind ))::vars)
@@ -416,14 +416,14 @@ algorithm
       local 
         Absyn.Exp ae1,ae2,ae3,cond,msg;
         list<Absyn.Exp> crefexps;
-        Exp.Exp econd,resExp,e1;
+        DAE.Exp econd,resExp,e1;
         Absyn.ComponentRef acr;
-        Types.Type t,ty;
+        DAE.Type t,ty;
         Env.Env env1,env2,env3;
         Values.Value value,start,step,stop;
         list<Values.Value> values;
-        list<Types.Type> types;
-        Types.Properties prop;
+        list<DAE.Type> types;
+        DAE.Properties prop;
         list<Absyn.AlgorithmItem> algitemlst;
         String varName;
 
@@ -566,7 +566,7 @@ algorithm
       list<Absyn.AlgorithmItem> algitemlst;
       list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> algrest;
       String estr,tstr;
-      tuple<Types.TType, Option<Absyn.Path>> vtype;
+      tuple<DAE.TType, Option<Absyn.Path>> vtype;
       Values.Value value;
       Absyn.Exp exp;
     case (Values.BOOL(boolean = true),_,algitemlst,_,env)
@@ -580,7 +580,7 @@ algorithm
       then
         env1;
     case (value,exp,algitemlst,algrest,env) /* Report type error */ 
-      local Exp.Exp e1;
+      local DAE.Exp e1;
       equation 
         (_,e1,_,_) = Static.elabExp(Env.emptyCache(),env,inExp,true,NONE,false); 
         estr = Exp.printExpStr(e1);
@@ -594,15 +594,15 @@ end evaluatePartOfIfStatement;
 
 protected function evaluateSingleExpression "Function: evaluateSingleExpression
 This function evaluates a single expression(mostly used in condition evaluation, for/while/if).
-It also has an optional Types.Type input if we want a specific type we will try to cast the input 
+It also has an optional DAE.Type input if we want a specific type we will try to cast the input 
 to that type.
 "
   input Absyn.Exp inExp "The Absyn Expression to evaluate";
   input Env.Env env "Current enviroment";
-  input Option<Types.Type> expectedType "SOME(Types.Type) (convert into that type)";
+  input Option<DAE.Type> expectedType "SOME(DAE.Type) (convert into that type)";
   output Values.Value oval;
 algorithm oval := matchcontinue(inExp,env,expectedType)
-  local Exp.Exp e1,e2;
+  local DAE.Exp e1,e2;
     Values.Value value;
   case(inExp,env,NONE)
     equation
@@ -611,7 +611,7 @@ algorithm oval := matchcontinue(inExp,env,expectedType)
     then 
       value;
   case(inExp,env,SOME(ty))
-    local Types.Type ty,ty2;
+    local DAE.Type ty,ty2;
     equation      
       (_,e1,DAE.PROP(ty2,_),_) = Static.elabExp(Env.emptyCache(),env,inExp,true,NONE,false); 
       (e2,_) = Types.matchType(e1,ty2,ty);
@@ -700,7 +700,7 @@ algorithm oenv := matchcontinue(cond,updateExp,algitemlst,env)
     list<Absyn.AlgorithmItem> algis;
     Env.Env env1,env2;
     Values.Value value, value2;
-    Exp.Exp e1;
+    DAE.Exp e1;
   case(Values.BOOL(false),_,_ ,env) then env;
   case(Values.BOOL(true), updateExp,algis,env)
     equation
@@ -742,17 +742,17 @@ protected function setValues "Function: setValues
 This function set multiple(tuple) values.
 "
   input list<Absyn.Exp> tupleCrefs;
-  input list<Types.Type> types;
+  input list<DAE.Type> types;
   input list<Values.Value> varValues;
   input Env.Env env;
   output Env.Env oEnv;
 algorithm oEnv := matchcontinue(tupleCrefs, types, varValues, env)
 local
   Absyn.Exp cref;
-  Types.Type ty;
+  DAE.Type ty;
   Values.Value value;
   list<Absyn.Exp> crefs;
-  list<Types.Type> tys;
+  list<DAE.Type> tys;
   list<Values.Value> values;
   Env.Env env1,env2;
   String str; 
@@ -780,14 +780,14 @@ This funtion updates a generic-variable in the enviroment.
   output Env.Env outVal;  
 algorithm outVal := matchcontinue(inVal,env,toAssign)
     local 
-      Types.Type t;
+      DAE.Type t;
       Env.Env env1;
       String str; 
       Values.Value value,value2;
   case(value as Values.RECORD(_,vals,names,-1),env,Absyn.CREF(Absyn.CREF_IDENT(str,subs)))
     local 
       list<Absyn.Subscript> subs;
-      list<Types.Var> typeslst,nlist;
+      list<DAE.Var> typeslst,nlist;
       Env.Frame fr;
       Env.Env complexEnv;
       list<Values.Value> vals;
@@ -816,7 +816,7 @@ algorithm outVal := matchcontinue(inVal,env,toAssign)
         list<Absyn.Subscript> subs;        
         Absyn.ComponentRef child;
         Absyn.Exp me;
-        Exp.ComponentRef eme;
+        DAE.ComponentRef eme;
         String str2;
       equation 
         (_,_,t,DAE.VALBOUND(value2),_,_) = Lookup.lookupVar(Env.emptyCache(),env, DAE.CREF_IDENT(str,DAE.ET_OTHER(),{}));
@@ -839,7 +839,7 @@ protected function addForLoopScope "function: addForLoopScope
 "
   input Env.Env env;
   input String i;
-  input Types.Type typ;
+  input DAE.Type typ;
   output Env.Env env_2;
   list<Env.Frame> env_1,env_2;
   Values.Value baseValue;
@@ -867,7 +867,7 @@ algorithm oenv := matchcontinue(env,inVal,inCr)
     Env.AvlTree farg3;
     list<Env.Item> farg4;
     list<Env.Frame> farg5;
-    tuple<list<Exp.ComponentRef>,Exp.ComponentRef> farg6;
+    tuple<list<DAE.ComponentRef>,DAE.ComponentRef> farg6;
     Boolean farg7;
     list<SCode.Element> defineUnits;
     
@@ -914,8 +914,8 @@ algorithm oenv := matchcontinue(env,inVal,inCr ,hashKey)
     Env.AvlValue rval;
     
     Integer rhval;
-    Types.Var fv;
-    Option<tuple<SCode.Element, Types.Mod>> c ;
+    DAE.Var fv;
+    Option<tuple<SCode.Element, DAE.Mod>> c ;
     Env.InstStatus i;
     Env.Env varEnv,varEnv2;
     Integer h;
@@ -961,7 +961,7 @@ on the identifier \"varName\". If the variable is not there, extend the envirome
   input Env.Env env "The variables enviroment";
   input String varName "The IDENT to update";
   input Values.Value newVal "The new value of the variable";
-  input Types.Type ty "Type of variable";
+  input DAE.Type ty "Type of variable";
   output Env.Env outEnv "The new updated enviroment";
 algorithm
   outEnv := 
@@ -987,8 +987,8 @@ return a DAE.VALBOUND otherwise a DAE.UNBOUND
 "
   input SCode.Mod inMod;
   input Env.Env env;
-  input Types.Type baseType;
-  output Types.Binding outBind;
+  input DAE.Type baseType;
+  output DAE.Binding outBind;
   
 algorithm 
   outBind := 
@@ -996,9 +996,9 @@ algorithm
     local
       tuple<Absyn.Exp,Boolean> absynExp;
       Absyn.Exp ae1;
-      Exp.Exp e1;
+      DAE.Exp e1;
       Values.Value value,value2,baseValue;
-      Types.Type ty;
+      DAE.Type ty;
     case(SCode.MOD(absynExpOption = SOME(absynExp), eachPrefix = Absyn.NON_EACH) ,env,ty ) 
       equation        
         ae1 = Util.tuple21(absynExp);
@@ -1034,7 +1034,7 @@ protected function instFunctionArray "Function: instFunctionArray
 This function will instantiate the array in the env. 
 If a 2x2 matrix, it will generate a 2x2 matrix of zeroes. This is to get the env lookup to work.
 "
-input Types.Type inType;
+input DAE.Type inType;
 input Option<Values.Value> optVal;
 output Values.Value outArrOfZeroes;
 
@@ -1042,8 +1042,8 @@ algorithm
   outArrOfZeroes :=
   matchcontinue(inType,optVal)
       local 
-        Types.Type ty,ty2,bt;
-        Types.ArrayDim ad;
+        DAE.Type ty,ty2,bt;
+        DAE.ArrayDim ad;
         Values.Value val;
         list<Integer> dims,dims2;
     case(ty,optVal) // array 
@@ -1069,7 +1069,7 @@ This function will instantiate the array in the env.
 If a 2x2 matrix, it will generate a 2x2 matrix of zeroes. This is to get the env lookup to work.
 "
 input list<Integer> inDims;
-input Types.Type inType;
+input DAE.Type inType;
 input Option<Values.Value> optVal;
 output Values.Value outArrOfZeroes;
 
@@ -1077,8 +1077,8 @@ algorithm
   outArrOfZeroes :=
   matchcontinue(inDims,inType,optVal)
       local 
-        Types.Type ty,ty2,bt;
-        Types.ArrayDim ad;
+        DAE.Type ty,ty2,bt;
+        DAE.ArrayDim ad;
         Values.Value value,val;
         list<Values.Value> values;
         Integer dim;
@@ -1104,7 +1104,7 @@ algorithm
 end instFunctionArray2;
 
 protected function typeOfValue ""
-input Types.Type inType;
+input DAE.Type inType;
 output Values.Value oval;
 algorithm oval := matchcontinue(inType)
   case((DAE.T_INTEGER(_),_)) then Values.INTEGER(0);
@@ -1121,7 +1121,7 @@ algorithm oval := matchcontinue(inType)
 //  case((DAE.T_ENUM,_)) then Values.ENUM(DAE.CREF_IDENT("",Exp.ENUM(),{}),0); 
   case((DAE.T_COMPLEX(ClassInf.RECORD(str), typesVar,_,_),_))
     local 
-      list<Types.Var> typesVar;
+      list<DAE.Var> typesVar;
       String str;
     equation
       
@@ -1139,7 +1139,7 @@ algorithm oval := matchcontinue(inType)
   record RECORD
     Absyn.Path record_ "record name" ;
     list<Value> orderd "orderd set of values" ;
-    list<Exp.Ident> comp "comp names for each value" ;
+    list<DAE.Ident> comp "comp names for each value" ;
   end RECORD;
   */
 end matchcontinue;
@@ -1150,12 +1150,12 @@ protected function getTypeFromName "function: getTypeFromName
 "
   input Absyn.Path inPath;
   input Env.Env env;
-  output Types.Type outType;  
+  output DAE.Type outType;  
 algorithm 
   outType:=
   matchcontinue (inPath,env)
     local
-      Types.Type ty;
+      DAE.Type ty;
       list<Integer> dims;
       String typeName,className;
       Absyn.Path rest,p;
@@ -1189,7 +1189,7 @@ protected function getBuiltInTypeFromName "function: getTypeFromName
   Returns the type from a string-name  
 "
   input String inString;
-  output Types.Type outType;  
+  output DAE.Type outType;  
 algorithm 
   outType:=
   matchcontinue (inString)
@@ -1262,7 +1262,7 @@ input Values.Value oldVal "This is the old value, to update inside";
 input Values.Value newVal "This is the new value, which we will insert into returning Value";
 input list<Absyn.Subscript> insubs;
 input Env.Env env;
-input Types.Type ty;
+input DAE.Type ty;
 output Values.Value oval;
 algorithm oval := matchcontinue(oldVal,newVal,insubs,env,ty)
   local 
@@ -1270,7 +1270,7 @@ algorithm oval := matchcontinue(oldVal,newVal,insubs,env,ty)
     list<Absyn.Subscript> subs;
     Values.Value value,val1,val2,val3;
     list<Values.Value> values1,values2,values3,values4;
-    Exp.Exp e1;
+    DAE.Exp e1;
     Integer x;
     Absyn.Exp exp;
     case(_,newVal,{},_,ty) 
@@ -1303,7 +1303,7 @@ input list<Values.Value> oldVal;
 input list<Values.Value> newVal;
 input list<Absyn.Subscript> insubs;
 input Env.Env env;
-input Types.Type ty;
+input DAE.Type ty;
 output list<Values.Value> oval;
 algorithm oval := matchcontinue(oldVal,newVal,insubs,env,ty)
   local 
@@ -1320,12 +1320,12 @@ end matchcontinue;
 end mergeValues2;
 
 protected function checkValueTypes "
-This function takes a Values.Value and a Types.Type 
+This function takes a Values.Value and a DAE.Type 
 Checks if the Value corresponds to the type.
 If value is a Integer and Type is Real, it it converted to a real Value. 
 " 
 input Values.Value val;
-input Types.Type ty;
+input DAE.Type ty;
 output Values.Value outVal;
 algorithm outVal := matchcontinue(val,ty) 
   local
@@ -1363,10 +1363,10 @@ end checkValueTypes;
 protected function addDims "Function: addDims
 This function adds the dimensions to the variable
 "
-  input Types.Type ty "The raw type";
+  input DAE.Type ty "The raw type";
   input Absyn.ArrayDim arrayDim "The dimensions to add";
   input Env.Env env "Variables enviroment"; 
-  output Types.Type outType "resulting type";
+  output DAE.Type outType "resulting type";
 algorithm outType := matchcontinue(ty,arrayDim,env)
   local 
     Absyn.Subscript sub1;

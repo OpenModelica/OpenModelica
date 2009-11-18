@@ -4,9 +4,9 @@ author Peter Aronsson (peter.aronsson@mathcore.com)
 This module contains the datatypes for representing unit terms.
 "
 
+public import DAE;
 public import MMath;
 public import HashTable;
-public import Exp;
 
 public uniontype UnitCheckResult
   record CONSISTENT end CONSISTENT;  // May be complete or incomplete
@@ -51,42 +51,42 @@ uniontype UnitTerm "A unit term is either
   record ADD "addition ut1+ut2" 
     UnitTerm ut1 "left";
     UnitTerm ut2 "right";
-    Exp.Exp origExp "for proper error reporting";
+    DAE.Exp origExp "for proper error reporting";
   end ADD;
   
   record SUB "subtraction ut1-ut2"
     UnitTerm ut1 "left";
     UnitTerm ut2 "right";
-    Exp.Exp origExp "for proper error reporting";
+    DAE.Exp origExp "for proper error reporting";
   end SUB;
 
   record MUL "multiplication, ut1*ut2"
     UnitTerm ut1 "left";
     UnitTerm ut2 "right";
-    Exp.Exp origExp "for proper error reporting";
+    DAE.Exp origExp "for proper error reporting";
   end MUL;
 
   record DIV "division nominator/denominator"
     UnitTerm ut1 "nominator"; 
     UnitTerm ut2 "denominator";
-    Exp.Exp origExp "for proper error reporting";
+    DAE.Exp origExp "for proper error reporting";
   end DIV;
   
   record  EQN "equation"
     UnitTerm ut1;
     UnitTerm ut2;             
-    Exp.Exp origExp "for proper error reporting";
+    DAE.Exp origExp "for proper error reporting";
   end EQN;
   
   record LOC "location"
     Integer loc "location is an integer(index in vector)";
-    Exp.Exp origExp "for proper error reporting";
+    DAE.Exp origExp "for proper error reporting";
   end LOC;
     
   record POW "exponentiation"
       UnitTerm ut1;
     	MMath.Rational exponent "ut^exponent";    	 
-    	Exp.Exp origExp "for proper error reporting"; 
+    	DAE.Exp origExp "for proper error reporting"; 
   end POW;
 end UnitTerm;
 

@@ -45,9 +45,9 @@ package ModUtil
 
 public import Absyn;
 public import DAE;
-public import Exp;
 public import SCode;
 
+protected import Exp;
 protected import RTOpts;
 protected import Util;
 protected import Algorithm;
@@ -58,10 +58,10 @@ protected function stringPrefixComponentRefs ""
   input String inString;
   input FuncTypeExp_ComponentRefType_bTo inFuncTypeExpComponentRefTypeBTo;
   input Type_b inTypeB;
-  input list<Exp.Exp> inExpExpLst;
-  output list<Exp.Exp> outExpExpLst;
+  input list<DAE.Exp> inExpExpLst;
+  output list<DAE.Exp> outExpExpLst;
   partial function FuncTypeExp_ComponentRefType_bTo
-    input Exp.ComponentRef inComponentRef;
+    input DAE.ComponentRef inComponentRef;
     input Type_b inTypeB;
     replaceable type Type_b subtypeof Any;
   end FuncTypeExp_ComponentRefType_bTo;
@@ -70,8 +70,8 @@ algorithm
   outExpExpLst:=
   matchcontinue (inString,inFuncTypeExpComponentRefTypeBTo,inTypeB,inExpExpLst)
     local
-      list<Exp.Exp> res,rest;
-      Exp.Exp e_1,e;
+      list<DAE.Exp> res,rest;
+      DAE.Exp e_1,e;
       String str;
       FuncTypeExp_ComponentRefType_bTo r;
       Type_b rarg;
@@ -89,10 +89,10 @@ protected function stringPrefixComponentRef
   input String inString;
   input FuncTypeExp_ComponentRefType_bTo inFuncTypeExpComponentRefTypeBTo;
   input Type_b inTypeB;
-  input Exp.Exp inExp;
-  output Exp.Exp outExp;
+  input DAE.Exp inExp;
+  output DAE.Exp outExp;
   partial function FuncTypeExp_ComponentRefType_bTo
-    input Exp.ComponentRef inComponentRef;
+    input DAE.ComponentRef inComponentRef;
     input Type_b inTypeB;
     replaceable type Type_b subtypeof Any;
   end FuncTypeExp_ComponentRefType_bTo;
@@ -101,18 +101,18 @@ algorithm
   outExp:=
   matchcontinue (inString,inFuncTypeExpComponentRefTypeBTo,inTypeB,inExp)
     local
-      Exp.ComponentRef cr_1,cr;
+      DAE.ComponentRef cr_1,cr;
       String str;
       FuncTypeExp_ComponentRefType_bTo r;
       Type_b rarg;
-      Exp.Type t,ty;
-      Exp.Exp e1_1,e2_1,e1,e2,e3_1,e3,e;
-      Exp.Operator op;
-      list<Exp.Exp> el_1,el;
+      DAE.ExpType t,ty;
+      DAE.Exp e1_1,e2_1,e1,e2,e3_1,e3,e;
+      DAE.Operator op;
+      list<DAE.Exp> el_1,el;
       Absyn.Path p;
       Boolean b,bi,a,inl;
       list<list<Boolean>> bl;
-      list<list<tuple<Exp.Exp, Boolean>>> ell_1,ell;
+      list<list<tuple<DAE.Exp, Boolean>>> ell_1,ell;
       Integer i;
     case (str,r,rarg,DAE.CREF(componentRef = cr,ty = t))
       equation 
@@ -161,7 +161,7 @@ algorithm
       then
         DAE.IFEXP(e1_1,e2_1,e3_1);
     case (str,r,rarg,DAE.CALL(path = p,expLst = el,tuple_ = b,builtin = bi,ty = tp,inline = inl))
-      local Exp.Type tp;
+      local DAE.ExpType tp;
       equation 
         el_1 = stringPrefixComponentRefs(str, r, rarg, el);
       then 
@@ -173,7 +173,7 @@ algorithm
         DAE.ARRAY(t,a,el_1);
     case (str,r,rarg,DAE.MATRIX(ty = t,integer = a,scalar = ell))
       local
-        list<list<Exp.Exp>> el,el_1;
+        list<list<DAE.Exp>> el,el_1;
         Integer a;
       equation 
         el = Util.listListMap(ell, Util.tuple21);
@@ -218,10 +218,10 @@ protected function stringPrefixComponentRefsList
   input String inString;
   input FuncTypeExp_ComponentRefType_bTo inFuncTypeExpComponentRefTypeBTo;
   input Type_b inTypeB;
-  input list<list<Exp.Exp>> inExpExpLstLst;
-  output list<list<Exp.Exp>> outExpExpLstLst;
+  input list<list<DAE.Exp>> inExpExpLstLst;
+  output list<list<DAE.Exp>> outExpExpLstLst;
   partial function FuncTypeExp_ComponentRefType_bTo
-    input Exp.ComponentRef inComponentRef;
+    input DAE.ComponentRef inComponentRef;
     input Type_b inTypeB;
     replaceable type Type_b subtypeof Any;
   end FuncTypeExp_ComponentRefType_bTo;
@@ -230,8 +230,8 @@ algorithm
   outExpExpLstLst:=
   matchcontinue (inString,inFuncTypeExpComponentRefTypeBTo,inTypeB,inExpExpLstLst)
     local
-      list<Exp.Exp> el_1,el;
-      list<list<Exp.Exp>> res,rest;
+      list<DAE.Exp> el_1,el;
+      list<list<DAE.Exp>> res,rest;
       String str;
       FuncTypeExp_ComponentRefType_bTo r;
       Type_b rarg;
@@ -247,16 +247,16 @@ end stringPrefixComponentRefsList;
 
 protected function stringPrefixCref
   input String inString;
-  input Exp.ComponentRef inComponentRef;
-  output Exp.ComponentRef outComponentRef;
+  input DAE.ComponentRef inComponentRef;
+  output DAE.ComponentRef outComponentRef;
 algorithm 
   outComponentRef:=
   matchcontinue (inString,inComponentRef)
     local
       String s_1,str,s;
-      list<Exp.Subscript> si;
-      Exp.ComponentRef cr;
-      Exp.Type ty2;
+      list<DAE.Subscript> si;
+      DAE.ComponentRef cr;
+      DAE.ExpType ty2;
     case (str,DAE.CREF_IDENT(ident = s,subscriptLst = si, identType = ty2))
       equation 
         s_1 = stringAppend(str, s);
@@ -301,15 +301,15 @@ algorithm
   outElement:=
   matchcontinue (inString,inDAEElementLst,inElement)
     local
-      Exp.Exp exp_1,exp,exp1_1,exp2_1,exp1,exp2;
+      DAE.Exp exp_1,exp,exp1_1,exp2_1,exp1,exp2;
       String str,n;
       list<DAE.Element> dae,dae_1,dae1;
-      Exp.ComponentRef cr;
+      DAE.ComponentRef cr;
       DAE.VarKind vk;
       DAE.VarDirection vd;
-      Types.Type ty;
-      list<Exp.Subscript> inst_dims;
-      Option<Exp.Exp> start;
+      DAE.Type ty;
+      list<DAE.Subscript> inst_dims;
+      Option<DAE.Exp> start;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
       list<Absyn.Path> cl;
@@ -319,7 +319,7 @@ algorithm
       DAE.ExternalDecl decl;
       DAE.Element e;
       Absyn.InnerOuter io;
-      Types.Type ftp;
+      DAE.Type ftp;
       DAE.VarProtection prot;
     case (str,dae,DAE.VAR(componentRef = cr,
                           kind = vk,
@@ -361,7 +361,7 @@ algorithm
     case (str,dae1,DAE.FUNCTION(path = n,dAElist = DAE.DAE(elementLst = dae),type_ = ty,partialPrefix = partialPrefix))
       local
         Absyn.Path n;
-        tuple<Types.TType, Option<Absyn.Path>> ty;
+        tuple<DAE.TType, Option<Absyn.Path>> ty;
         Boolean partialPrefix;
       equation 
         dae_1 = stringPrefixElements(str, dae, dae);
@@ -370,7 +370,7 @@ algorithm
     case (str,dae1,DAE.EXTFUNCTION(path = n,dAElist = DAE.DAE(elementLst = dae),type_ = ty,externalDecl = decl))
       local
         Absyn.Path n;
-        tuple<Types.TType, Option<Absyn.Path>> ty;
+        tuple<DAE.TType, Option<Absyn.Path>> ty;
       equation 
         dae_1 = stringPrefixElements(str, dae, dae);
       then
@@ -380,15 +380,15 @@ algorithm
 end stringPrefixElement;
 
 protected function isParameterDaelist
-  input Exp.ComponentRef inComponentRef;
+  input DAE.ComponentRef inComponentRef;
   input list<DAE.Element> inDAEElementLst;
 algorithm 
   _:=
   matchcontinue (inComponentRef,inDAEElementLst)
     local
-      Exp.ComponentRef cr,crv;
+      DAE.ComponentRef cr,crv;
       DAE.VarDirection vd;
-      Option<Exp.Exp> e;
+      Option<DAE.Exp> e;
       list<DAE.Element> rest;
       DAE.VarKind vk;
     case (cr,(DAE.VAR(componentRef = crv,

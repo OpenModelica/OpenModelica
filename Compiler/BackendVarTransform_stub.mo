@@ -37,8 +37,8 @@ package BackendVarTransform
   
   This file is a stub!"
 
-public import Exp;
 public import VarTransform; 
+protected import Exp;
 protected import Util;
 
 end BackendVarTransform;

@@ -36,7 +36,7 @@ public
 protected function hashFunc "
   author: PA
  
-  Calculates a hash value for Exp.Exp
+  Calculates a hash value for DAE.Exp
 "
   input Absyn.ComponentRef cr;
   output Integer res;

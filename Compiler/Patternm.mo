@@ -2730,7 +2730,7 @@ algorithm
     case (localCache,localEnv,Absyn.CREF(Absyn.CREF_IDENT(id,{})) :: restExp,localAccList)
       local
         Absyn.Ident id; list<Absyn.Exp> restExp;
-        Types.Type t; RenamedPat rp;
+        DAE.Type t; RenamedPat rp;
         Env.Cache localCache; Env.Env localEnv;
       equation
         (_,t,_)=
@@ -2743,7 +2743,7 @@ algorithm
 end getVarTypes;
 
 protected function fromTypeToRenamedPat "function: fromTypeToRenamedPat"
-  input Types.Type t;
+  input DAE.Type t;
   output RenamedPat rp;
 algorithm
   rp :=

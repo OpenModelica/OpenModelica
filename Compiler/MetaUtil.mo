@@ -41,18 +41,19 @@ public import ClassInf;
 public import DAE;
 public import Debug;
 public import Env;
-public import Exp;
-public import Lookup;
-public import RTOpts;
 public import SCode;
-public import Types;
-public import Util;
+
+protected import Exp;
+protected import Lookup;
+protected import RTOpts;
+protected import Types;
+protected import Util;
 
 public function isList "function: isList
 	author: KS
 	Return true if list
 "
-  input Types.Properties prop;
+  input DAE.Properties prop;
   output Boolean bool;
 algorithm
   bool :=
@@ -62,65 +63,23 @@ algorithm
   end matchcontinue;
 end isList;
 
-/*
-public function typeMatching "function:
-	author: KS
-	Used by the list constructor. Matching of types.
-	The returned value is a type because the type of e.g. list(NONE, SOME(1)) is list<Integer>, not list<NOTYPE>
-"
-  input Types.Type t;
-  input list<Types.Properties> propList;
-  output Types.Type out;
-algorithm
-  out := Util.listReduce();
-  matchcontinue (t,propList)
-    local
-      Types.Type t,t1,t2;
-      Types.Properties prop;
-      list<Types.Properties> restList;
-      String s1,s2;
-    case (t,{}) then t;
-    case (t1, prop :: restList)
-      equation
-        t2 = Types.getPropType(prop);
-        true = Types.subtype(t2,t1);
-        t = typeMatching(t1,restList);
-      then t;
-    case (t1, prop :: restList)
-      equation
-        t2 = Types.getPropType(prop);
-        true = Types.subtype(t1,t2);
-        t = typeMatching(t2,restList);
-      then t;
-    case (t1, prop :: restList)
-      equation
-        t2 = Types.getPropType(prop);
-        s1 = Types.unparseType(t1);
-        s2 = Types.unparseType(t2);
-        s1 = Util.stringAppendList({"- MetaUtil.typeMatching: mismatch of types in list constructor:\n  t1=", s1, "\n  t2=", s2});
-        Debug.fprintln("failtrace", s1);
-      then fail();
-  end matchcontinue;
-end typeMatching;
-*/
-
 public function simplifyListExp "function: simplifyListExp
 Author: KS
 Used by Static.elabExp to simplify some cons/list expressions.
 "
-  input Exp.Type t;
-  input Exp.Exp e1;
-  input Exp.Exp e2;
-  output Exp.Exp expOut;
+  input DAE.ExpType t;
+  input DAE.Exp e1;
+  input DAE.Exp e2;
+  output DAE.Exp expOut;
 algorithm
   expOut :=
   matchcontinue (t,e1,e2)
     local
-      Exp.Exp localE1,localE2;
-      Exp.Type tLocal;
+      DAE.Exp localE1,localE2;
+      DAE.ExpType tLocal;
     case (tLocal,localE1,DAE.LIST(_,expList))
       local
-        list<Exp.Exp> expList,expList2;
+        list<DAE.Exp> expList,expList2;
       equation
         expList2 = listAppend({localE1},expList);
       then DAE.LIST(tLocal,expList2);
@@ -138,7 +97,7 @@ mk_cons(1,mk_cons(2,mk_cons(3,mk_cons(4,mk_nil())))),
 function call)
 "
   input list<String> varList;
-  input list<Exp.Exp> expList;
+  input list<DAE.Exp> expList;
   output String outString;
 algorithm
   outString :=
@@ -153,8 +112,8 @@ algorithm
       local
         String firstVar,s,s2;
         list<String> restVar;
-        list<Exp.Exp> restExp;
-        Exp.Exp firstExp;
+        list<DAE.Exp> restExp;
+        DAE.Exp firstExp;
       equation
         firstVar = createConstantCExp(firstExp,firstVar);
         s2 = listToConsCell(restVar,restExp);
@@ -164,17 +123,17 @@ algorithm
 end listToConsCell;
 
 public function createConstantCExp "function: createConstantCExp2"
-  input Exp.Exp exp;
+  input DAE.Exp exp;
   input String inExp;
   output String s;
-  Exp.Type expType;
+  DAE.ExpType expType;
 algorithm
   expType := Exp.typeof(exp);
   s := createConstantCExp2(expType, inExp);
 end createConstantCExp;
 
 protected function createConstantCExp2 "function: createConstantCExp2"
-  input Exp.Type exp;
+  input DAE.ExpType exp;
   input String inExp;
   output String s;
 algorithm
@@ -200,9 +159,9 @@ algorithm
       then outStr;
     case (DAE.ET_COMPLEX(name = name, varLst = varLst),localInExp)
       local
-        list<Exp.Var> varLst;
+        list<DAE.ExpVar> varLst;
         list<String> vars, vars1;
-        list<Exp.Type> types;
+        list<DAE.ExpType> types;
         String str,name;
       equation
         vars = Util.listMap(varLst, Exp.varName);
@@ -243,8 +202,8 @@ algorithm
         list<Absyn.Exp> args;
         list<Absyn.NamedArg> nargs;
         list<SCode.Element> elemList;
-        list<Types.Type> typeList1;
-        list<Types.FuncArg> typeList2;
+        list<DAE.Type> typeList1;
+        list<DAE.FuncArg> typeList2;
       equation
         fn2 = Absyn.crefToPath(fn);
 
@@ -267,15 +226,15 @@ public function extractFuncTypes "function: extractNameAndType
 	Author: KS
 	Extracts the name and type.
 "
-  input list<Types.Type> inElem;
-  output list<Types.FuncArg> outList;
+  input list<DAE.Type> inElem;
+  output list<DAE.FuncArg> outList;
 algorithm
   outList :=
   matchcontinue(inElem)
     case ({}) then {};
     case ((DAE.T_FUNCTION(typeList,_),_) :: {})
       local
-        list<Types.FuncArg> typeList;
+        list<DAE.FuncArg> typeList;
       equation
       then typeList;
     case (_) then {}; // If a function has more than one definition we do not
@@ -286,7 +245,7 @@ end extractFuncTypes;
 public function fixListConstructorsInArgs2 "function: fixListConstructorsInArgs2
 	author: KS
 "
-  input list<Types.FuncArg> inTypes;
+  input list<DAE.FuncArg> inTypes;
   input list<Absyn.Exp> inArgs;
   input list<Absyn.Exp> accList;
   output list<Absyn.Exp> outArgs;
@@ -300,7 +259,7 @@ algorithm
       then localInArgs;
     case (localInTypes,localInArgs,localAccList)
       local
-        list<Types.FuncArg> localInTypes;
+        list<DAE.FuncArg> localInTypes;
         list<Absyn.Exp> localInArgs,localAccList;
       equation
         localInArgs = fixListConstructorsInArgs2Helper(localInTypes,localInArgs,localAccList);
@@ -312,7 +271,7 @@ public function fixListConstructorsInArgs2Helper  "function: fixListConstructors
 	Author: KS
 	Helper function to fixListConstructorsInArgs
 "
-  input list<Types.FuncArg> inTypes;
+  input list<DAE.FuncArg> inTypes;
   input list<Absyn.Exp> inArgs;
   input list<Absyn.Exp> accList;
   output list<Absyn.Exp> outArgs;
@@ -329,7 +288,7 @@ algorithm
     case ((_,(DAE.T_LIST(_),_)) :: restTypes,Absyn.ARRAY(expList) :: restArgs,localAccList)
       local
         list<Absyn.Exp> expList,restArgs;
-        list<Types.FuncArg> restTypes;
+        list<DAE.FuncArg> restTypes;
       equation
         expList = transformArrayNodesToListNodes(expList,{});
         localAccList = listAppend(localAccList,{Absyn.LIST(expList)});
@@ -339,7 +298,7 @@ algorithm
       local
         Absyn.Exp firstArg;
         list<Absyn.Exp> restArgs;
-        list<Types.FuncArg> restTypes;
+        list<DAE.FuncArg> restTypes;
       equation
         localAccList = listAppend(localAccList,{firstArg});
         localAccList = fixListConstructorsInArgs2Helper(restTypes,restArgs,localAccList);
@@ -351,7 +310,7 @@ end fixListConstructorsInArgs2Helper;
 public function fixListConstructorsInArgs3 "function: fixListConstructorsInArgs2
 author: KS
 "
-  input list<Types.FuncArg> inTypes;
+  input list<DAE.FuncArg> inTypes;
   input list<Absyn.NamedArg> inNamedArgs;
   input list<Absyn.NamedArg> accList;
   output list<Absyn.NamedArg> outArgs;
@@ -365,7 +324,7 @@ algorithm
       then localInArgs;
     case (localInTypes,localInArgs,localAccList)
       local
-        list<Types.FuncArg> localInTypes;
+        list<DAE.FuncArg> localInTypes;
         list<Absyn.NamedArg> localInArgs,localAccList;
       equation
         localInArgs = fixListConstructorsInArgs3Helper(localInTypes,localInArgs,localAccList);
@@ -378,7 +337,7 @@ public function fixListConstructorsInArgs3Helper "function: fixListConstructorsI
 	Author: KS
 	Helper function to fixListConstructorsInArgs
 "
-  input list<Types.FuncArg> inTypes;
+  input list<DAE.FuncArg> inTypes;
   input list<Absyn.NamedArg> inNamedArgs;
   input list<Absyn.NamedArg> accList;
   output list<Absyn.NamedArg> outArgs;
@@ -392,7 +351,7 @@ algorithm
       local
         list<Absyn.Exp> expList;
         Absyn.Ident id;
-        list<Types.FuncArg> argTypes;
+        list<DAE.FuncArg> argTypes;
         list<Absyn.NamedArg> restArgs;
       equation
         ((DAE.T_LIST(_),_)) = findArgType(id,argTypes);
@@ -403,7 +362,7 @@ algorithm
     case (argTypes,firstArg :: restArgs,localAccList)
       local
         Absyn.NamedArg firstArg;
-        list<Types.FuncArg> argTypes;
+        list<DAE.FuncArg> argTypes;
         list<Absyn.NamedArg> restArgs;
       equation
         localAccList = listAppend(localAccList,{firstArg});
@@ -418,8 +377,8 @@ public function findArgType "function: findArgType
 	Helper function to fixListConstructorsInArgs
 "
   input Absyn.Ident id;
-  input list<Types.FuncArg> argTypes;
-  output Types.Type outType;
+  input list<DAE.FuncArg> argTypes;
+  output DAE.Type outType;
 algorithm
   outType :=
   matchcontinue (id,argTypes)
@@ -428,15 +387,15 @@ algorithm
     case (localId,{}) then ((DAE.T_INTEGER({}),NONE())); // Return DUMMIE (this case should not happend)
     case (localId,(localId2,t) :: _)
       local
-        Types.Type t;
+        DAE.Type t;
         Absyn.Ident localId2;
       equation
         true = (localId ==& localId2);
       then t;
     case (localId,_ :: restList)
       local
-        list<Types.FuncArg> restList;
-        Types.Type t;
+        list<DAE.FuncArg> restList;
+        DAE.Type t;
       equation
         t = findArgType(localId,restList);
       then t;
@@ -480,19 +439,19 @@ algorithm
 end transformArrayNodesToListNodes;
 
 public function createListType "function: createListType"
-  input Types.Type inType;
+  input DAE.Type inType;
   input Integer numLists;
-  output Types.Type outType;
+  output DAE.Type outType;
 algorithm
   outType :=
   matchcontinue (inType,numLists)
     local
-      Types.Type localT;
+      DAE.Type localT;
     case (localT,0) then localT;
     case (localT,n)
       local
         Integer n;
-        Types.Type t;
+        DAE.Type t;
       equation
         t = (DAE.T_LIST(localT),NONE());
         t = createListType(t,n-1);
@@ -503,28 +462,28 @@ end createListType;
 
 
 public function getTypeFromProp "function: getTypeFromProp"
-  input Types.Properties inProp;
-  output Types.Type outType;
+  input DAE.Properties inProp;
+  output DAE.Type outType;
 algorithm
   outType :=
   matchcontinue (inProp)
     case (DAE.PROP(t,_))
-      local Types.Type t; equation then t;
+      local DAE.Type t; equation then t;
   end matchcontinue;
 end getTypeFromProp;
 
 /*
 public function typeMatching
-  input Types.Type t;
-  input list<Types.Properties> propList;
+  input DAE.Type t;
+  input list<DAE.Properties> propList;
   output Boolean outBool;
 algorithm
   outBool :=
   matchcontinue (t,propList)
     local
       Boolean b;
-      Types.Type tLocal;
-      list<Types.Properties> restList;
+      DAE.Type tLocal;
+      list<DAE.Properties> restList;
     case (_,{}) then true;
     case (tLocal as (DAE.T_INTEGER(_),_),DAE.PROP((DAE.T_INTEGER(_),_),_) :: restList)
       equation
@@ -592,7 +551,7 @@ algorithm
         list<Absyn.ElementItem> varList;
         list<Absyn.Exp> restExp;
         Integer n;
-        Types.TType t;
+        DAE.TType t;
         Absyn.TypeSpec t2;
       equation
         (localCache,DAE.TYPES_VAR(_,_,_,(t,_),_),_,_) = Lookup.lookupIdent(localCache,localEnv,c);
@@ -624,15 +583,15 @@ public function createUnionType "function: createUnionType
   in type is used.
 "
   input SCode.Class cl;
-  input Types.Type inType;
-  output Types.Type outType;
+  input DAE.Type inType;
+  output DAE.Type outType;
 algorithm
  outType := matchcontinue(cl,inType)
   local
     list<SCode.Element> els;
     list<String> slst;
     list<Absyn.Path> pathLst;
-    Types.Type t;
+    DAE.Type t;
     Absyn.Path p;
     case (SCode.CLASS(classDef = SCode.PARTS(elementLst = els), restriction = SCode.R_UNIONTYPE),(_,SOME(p)))
       equation
@@ -894,7 +853,7 @@ function createFunctionArgsList //helper function for uniontypes
   input SCode.Class c;
   input Env.Cache inCache;
   input Env.Env inEnv;
-  output list<tuple<SCode.Ident, tuple<Types.TType, Option<Absyn.Path>>>> fargs;
+  output list<tuple<SCode.Ident, tuple<DAE.TType, Option<Absyn.Path>>>> fargs;
 algorithm
 fargs := matchcontinue(c,inCache,inEnv)
   local
@@ -910,18 +869,18 @@ function createFunctionArgsList2
   input list<SCode.Element> els;
   input Env.Cache inCache;
   input Env.Env inEnv;
-  output list<tuple<SCode.Ident, tuple<Types.TType, Option<Absyn.Path>>>> fargs;
+  output list<tuple<SCode.Ident, tuple<DAE.TType, Option<Absyn.Path>>>> fargs;
 algorithm
    fargs := matchcontinue(els,inCache,inEnv)
    local
      SCode.Element e;
      list<SCode.Element> rest;
      SCode.Ident name,typeName;
-     Types.Type t;
+     DAE.Type t;
      Env.Cache cache;
      Env.Env env,env_1;
      Absyn.Path path;
-     list<tuple<SCode.Ident, tuple<Types.TType, Option<Absyn.Path>>>> fargs;
+     list<tuple<SCode.Ident, tuple<DAE.TType, Option<Absyn.Path>>>> fargs;
      SCode.Class cl;
    case({},cache,env)
      then {};
@@ -966,11 +925,11 @@ end createFunctionArgsList2;
 //NOTE: This is probably a bad way to do this, should be moved, maybe to the parser?
 function reparseType
   input Absyn.Path path;
-  output Types.Type outType;
+  output DAE.Type outType;
 algorithm
   outType := matchcontinue(path)
     local
-      Types.Type t;
+      DAE.Type t;
     case(Absyn.IDENT("Integer")) 
       equation
         t = (DAE.T_INTEGER({}),NONE());
@@ -1011,7 +970,7 @@ public function listToBoxes "function: listToBoxes
 MetaModelica extension, added by simbj
 "
   input list<String> varList; 
-  input list<Exp.Type> expList;  
+  input list<DAE.ExpType> expList;  
   input Integer index;
   input String name;
   output String outString;
@@ -1045,15 +1004,15 @@ end listToBoxes;
 
 public function createExpStr
   input list<String> varList;
-  input list<Exp.Type> expList;
+  input list<DAE.ExpType> expList;
   output String outString;
 algorithm
   outString := matchcontinue(varList,expList)
   local
     list<String> restVar;
-    list<Exp.Type> restExp;
+    list<DAE.ExpType> restExp;
     String firstVar,restStr;
-    Exp.Type firstExp;
+    DAE.ExpType firstExp;
     case ({},{}) then "";
     case (firstVar::restVar,firstExp::restExp)
       equation
@@ -1336,14 +1295,14 @@ end fixAstForUniontype;
 
 public function fixMetaTuple "If a Values.Value is a META_TUPLE, and the property is PROP_TUPLE,
 convert the type to the correct format. Else return the type of a PROP"
-  input Types.Properties prop;
-  output Types.Type outType;
+  input DAE.Properties prop;
+  output DAE.Type outType;
 algorithm
   outType := matchcontinue (prop)
     local
       Option<Absyn.Path> path;
-      list<Types.Type> tys;
-      Types.Type ty;
+      list<DAE.Type> tys;
+      DAE.Type ty;
     case DAE.PROP_TUPLE((DAE.T_TUPLE(tys),path),_)
       equation
         ty = (DAE.T_METATUPLE(tys),path);
@@ -1354,16 +1313,16 @@ end fixMetaTuple;
 
 public function constructorCallTypeToNamesAndTypes "Fetches the field names
 and types from a record call or metarecord call"
-  input Types.Type inType;
+  input DAE.Type inType;
   output list<String> varNames;
-  output list<Types.Type> outTypes;
+  output list<DAE.Type> outTypes;
 algorithm
   (varNames,outTypes) := matchcontinue (inType)
     local
       list<String> names;
-      list<Types.Type> types;
-      list<Types.FuncArg> fargs;
-      list<Types.Var> fields;
+      list<DAE.Type> types;
+      list<DAE.FuncArg> fargs;
+      list<DAE.Var> fields;
     case ((DAE.T_METARECORD(fields = fields),_))
       equation
         names = Util.listMap(fields, Types.getVarName);
@@ -1378,7 +1337,7 @@ algorithm
 end constructorCallTypeToNamesAndTypes;
 
 public function typeConvert "function: typeConvert"
-  input Types.Type t;
+  input DAE.Type t;
   output Absyn.TypeSpec outType;
 algorithm
   outType :=
@@ -1401,7 +1360,7 @@ algorithm
     case ((DAE.T_METAOPTION(t),_))
       local
         Absyn.TypeSpec tSpec;
-        Types.Type t;
+        DAE.Type t;
         list<Absyn.TypeSpec> tSpecList;
       equation
         tSpec = typeConvert(t);
@@ -1410,7 +1369,7 @@ algorithm
     case ((DAE.T_METATUPLE(tList),_))
       local
         Absyn.TypeSpec tSpec;
-        list<Types.Type> tList;
+        list<DAE.Type> tList;
         list<Absyn.TypeSpec> tSpecList;
       equation
         tSpecList = Util.listMap(tList,typeConvert);

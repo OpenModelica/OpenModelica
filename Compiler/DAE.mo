@@ -801,7 +801,7 @@ uniontype ExpType "- Basic types
 
 end ExpType;
 
-uniontype ExpVar "A variable is used to describe a complex type which contains a list of variables. See also Types.Var "
+uniontype ExpVar "A variable is used to describe a complex type which contains a list of variables. See also DAE.Var "
   record COMPLEX_VAR
     String name;
     ExpType tp;

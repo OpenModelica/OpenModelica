@@ -49,49 +49,47 @@ package CevalScript
       InteractiveSymbolTable: Modified symbol table
       Subscript list : Evaluates subscripts and generates constant expressions."
 
+public import Absyn;
+public import Ceval;
+public import DAE;
 public import DAELow;
-public import Exp;
 public import Env;
 public import Interactive;
 public import Values;
-public import Absyn;
-public import Types;
-public import Ceval;
 
-protected import SimCodegen;
 protected import AbsynDep;
-protected import Refactor;
-protected import DAEQuery;
-protected import XMLDump;
-protected import ClassLoader;
-protected import Parser;
-protected import Dump;
+protected import ConnectionGraph;
 protected import ClassInf;
+protected import ClassLoader;
 protected import Codegen;
-protected import Settings;
-protected import SCode;
-protected import DAE;
+protected import Connect;
+protected import DAEQuery;
 protected import DAEUtil;
-protected import Util;
-protected import ModUtil;
-protected import RTOpts;
 protected import Debug;
-protected import Lookup;
+protected import Dump;
+protected import Error;
+protected import Exp;
+protected import Inline;
 protected import Inst;
 protected import InstanceHierarchy;
+protected import Lookup;
+protected import ModUtil;
 protected import Prefix;
-protected import Connect;
+protected import Parser;
 protected import Print;
+protected import Refactor;
+protected import RTOpts;
+protected import SimCodegen;
 protected import System;
-protected import Error;
 protected import Static;
-protected import ConnectionGraph;
-protected import UnitAbsyn;
-protected import UnitParserExt;
-protected import UnitAbsynBuilder;
-protected import Inline;
+protected import SCode;
+protected import Settings;
 protected import SimulationResults;
+protected import Types;
+protected import UnitAbsyn;
+protected import Util;
 protected import ValuesUtil;
+protected import XMLDump;
 
 public function cevalInteractiveFunctions 
 "function cevalInteractiveFunctions
@@ -99,7 +97,7 @@ public function cevalInteractiveFunctions
   defined in the interactive environment."
 	input Env.Cache inCache;
   input Env.Env inEnv;
-  input Exp.Exp inExp "expression to evaluate";
+  input DAE.Exp inExp "expression to evaluate";
   input Interactive.InteractiveSymbolTable inInteractiveSymbolTable;
   input Ceval.Msg inMsg;
   output Env.Cache outCache;
@@ -115,14 +113,14 @@ algorithm
       SCode.Class c;
       String s1,str,varid,res,cmd,executable,method_str,initfilename,cit,pd,executableSuffixedExe,sim_call,result_file,
       omhome,pwd,filename_1,filename,omhome_1,plotCmd,tmpPlotFile,call,str_1,scriptstr,res_1,mp,pathstr,name,cname;
-      Exp.ComponentRef cr,fcr,cref,classname;
+      DAE.ComponentRef cr,fcr,cref,classname;
       Interactive.InteractiveSymbolTable st,newst,st_1,st_2;
       Absyn.Program p,pnew,newp,ptot;
       list<Interactive.InstantiatedClass> ic,ic_1;
       list<Interactive.InteractiveVariable> iv;
       list<Interactive.CompiledCFunction> cf;
       Ceval.Msg msg;
-      tuple<Types.TType, Option<Absyn.Path>> tp,simType;
+      tuple<DAE.TType, Option<Absyn.Path>> tp,simType;
       Absyn.Class class_;
       DAE.DAElist dae_1,dae;
       list<DAE.Element> dael;
@@ -133,7 +131,7 @@ algorithm
       list<Integer>[:] m,mt;
       Option<list<tuple<Integer, Integer, DAELow.Equation>>> jac;
       Values.Value ret_val,simValue,size_value,value,v;      
-      Exp.Exp filenameprefix,exp,starttime,stoptime,tolerance,interval,method,size_expression,
+      DAE.Exp filenameprefix,exp,starttime,stoptime,tolerance,interval,method,size_expression,
              funcref,bool_exp,storeInTemp,noClean,options, asInSimulationCode,addOriginalIncidenceMatrix,
              addSolvingInfo,addMathMLCode,dumpResiduals;
       Absyn.ComponentRef cr_1;
@@ -698,13 +696,13 @@ algorithm
       (st as Interactive.SYMBOLTABLE(
         ast = p,explodedAst = sp,instClsLst = ic,
         lstVarVal = iv,compiledFunctions = cf,
-        loadedFiles = lf)),msg) /* function Ceval.ceval : (Env.Env, Exp.Exp, bool (implicit) ,
+        loadedFiles = lf)),msg) /* function Ceval.ceval : (Env.Env, DAE.Exp, bool (implicit) ,
 		    Interactive.InteractiveSymbolTable option, 
 		    int option, ( dimensions )
 		    Ceval.Msg)
 	  => (Values.Value, Interactive.InteractiveSymbolTable option)
  */ 
-      local list<Exp.Exp> vars;
+      local list<DAE.Exp> vars;
       equation 
         (cache,(size_value as Values.INTEGER(size)),SOME(st)) = Ceval.ceval(cache,env, size_expression, true, SOME(st), NONE, msg);
 				vars = Util.listMap(vars,Exp.CodeVarToCref);
@@ -768,7 +766,7 @@ algorithm
         loadedFiles = lf)),msg)
       local
         Integer res;
-        list<Exp.Exp> vars;
+        list<DAE.Exp> vars;
         String uniqueStr;
       equation 
         vars = Util.listMap(vars,Exp.CodeVarToCref);
@@ -803,7 +801,7 @@ algorithm
         ast = p,explodedAst = sp,instClsLst = ic,
         lstVarVal = iv,compiledFunctions = cf,
         loadedFiles = lf)),msg)
-      local list<Exp.Exp> vars;
+      local list<DAE.Exp> vars;
       equation 
         vars = Util.listMap(vars,Exp.CodeVarToCref);
         vars_1 = Util.listMap(vars, Exp.printExpStr) "Catch error reading simulation file." ;
@@ -822,7 +820,7 @@ algorithm
         ast = p,explodedAst = sp,instClsLst = ic,
         lstVarVal = iv,compiledFunctions = cf,
         loadedFiles = lf)),msg)
-      local list<Exp.Exp> vars;
+      local list<DAE.Exp> vars;
       equation 
         vars = Util.listMap(vars,Exp.CodeVarToCref);
         vars_1 = Util.listMap(vars, Exp.printExpStr) "Catch error reading simulation file." ;
@@ -840,7 +838,7 @@ algorithm
         ast = p,explodedAst = sp,instClsLst = ic,
         lstVarVal = iv,compiledFunctions = cf,
         loadedFiles = lf)),msg)
-      local list<Exp.Exp> vars;
+      local list<DAE.Exp> vars;
       then
         (cache,Values.STRING("Unknown error while plotting"),st);
    
@@ -858,8 +856,8 @@ algorithm
         loadedFiles = lf)),msg)
       local
         Integer res;
-        Exp.Exp xRange, yRange;
-        list<Exp.Exp> vars;
+        DAE.Exp xRange, yRange;
+        list<DAE.Exp> vars;
  //       list<String> vars_3;
         String interpolation, title, xLabel, yLabel, str, filename2;
         Boolean legend, grid, logX, logY, points;
@@ -903,8 +901,8 @@ algorithm
         loadedFiles = lf)),msg)
       local
         Integer res;
-        Exp.Exp xRange, yRange;
-        list<Exp.Exp> vars;
+        DAE.Exp xRange, yRange;
+        list<DAE.Exp> vars;
  //       list<String> vars_3;
         String interpolation, title, xLabel, yLabel, str, filename2;
         Boolean legend, grid, logX, logY, points;
@@ -943,8 +941,8 @@ algorithm
         loadedFiles = lf)),msg)
       local
         Integer res;
-        Exp.Exp xRange, yRange;
-        list<Exp.Exp> vars;
+        DAE.Exp xRange, yRange;
+        list<DAE.Exp> vars;
  //       list<String> vars_3;
         String interpolation, title, xLabel, yLabel, str;//, filename2;
         Boolean legend, grid, logX, logY, points;
@@ -974,8 +972,8 @@ algorithm
         loadedFiles = lf)),msg)
       local
         Integer res;
-        Exp.Exp xRange, yRange;
-        list<Exp.Exp> vars;
+        DAE.Exp xRange, yRange;
+        list<DAE.Exp> vars;
  //       list<String> vars_3;
         String interpolation, title, xLabel, yLabel, str;//, filename2;
         Boolean legend, grid, logX, logY, points;
@@ -1008,8 +1006,8 @@ algorithm
         loadedFiles = lf)),msg)
       local
         Integer res;
-        Exp.Exp xRange, yRange;
-        list<Exp.Exp> vars;
+        DAE.Exp xRange, yRange;
+        list<DAE.Exp> vars;
         String interpolation, title, xLabel, yLabel;
         Boolean legend, grid, logX, logY, points;
       equation
@@ -1042,8 +1040,8 @@ algorithm
 
       local
         Integer res;
-        Exp.Exp xRange, yRange;
-        list<Exp.Exp> vars;
+        DAE.Exp xRange, yRange;
+        list<DAE.Exp> vars;
         String interpolation, title, xLabel, yLabel;
         Boolean legend, grid, logX, logY, points;
        equation
@@ -1071,8 +1069,8 @@ algorithm
         loadedFiles = lf)),msg)
       local
         Integer res;
-        Exp.Exp xRange, yRange;
-        list<Exp.Exp> vars;
+        DAE.Exp xRange, yRange;
+        list<DAE.Exp> vars;
 				String interpolation, title, xLabel, yLabel;
 				Boolean legend, logX, logY, points;
 				Boolean grid;
@@ -1100,8 +1098,8 @@ algorithm
         loadedFiles = lf)),msg)
       local
         Integer res;
-        Exp.Exp xRange, yRange;
-        list<Exp.Exp> vars;
+        DAE.Exp xRange, yRange;
+        list<DAE.Exp> vars;
 				String interpolation, title, xLabel, yLabel;
 				Boolean legend, logX, logY, points;
 				Boolean grid;
@@ -1128,8 +1126,8 @@ algorithm
         loadedFiles = lf)),msg)
       local
         Integer res;
-        Exp.Exp xRange, yRange;
-        list<Exp.Exp> vars;
+        DAE.Exp xRange, yRange;
+        list<DAE.Exp> vars;
         String interpolation, title, xLabel, yLabel;
         Boolean legend, grid, logX, logY, points;
 
@@ -1154,8 +1152,8 @@ algorithm
         loadedFiles = lf)),msg)
       local
         Integer res;
-        Exp.Exp xRange, yRange;
-        list<Exp.Exp> vars;
+        DAE.Exp xRange, yRange;
+        list<DAE.Exp> vars;
         String interpolation, title, xLabel, yLabel;
         Boolean legend, grid, logX, logY, points;
 
@@ -1251,7 +1249,7 @@ algorithm
         loadedFiles = lf)),msg)
       local
         Integer res;
-        list<Exp.Exp> vars;
+        list<DAE.Exp> vars;
 				String interpolation, title, xLabel, yLabel, liststr;
 				Boolean legend, logX, logY, points;
 				Boolean grid;
@@ -1284,7 +1282,7 @@ algorithm
         loadedFiles = lf)),msg)
       local
         Integer res;
-        list<Exp.Exp> vars;
+        list<DAE.Exp> vars;
 				String interpolation, title, xLabel, yLabel;
 				Boolean legend, logX, logY, points;
 				Boolean grid;
@@ -1311,7 +1309,7 @@ algorithm
         loadedFiles = lf)),msg)
       local
         Integer res;
-        list<Exp.Exp> vars;
+        list<DAE.Exp> vars;
         String interpolation, title, xLabel, yLabel;
         Boolean legend, grid, logX, logY, points;
 
@@ -1336,7 +1334,7 @@ algorithm
         loadedFiles = lf)),msg)
       local
         Integer res;
-        list<Exp.Exp> vars;
+        list<DAE.Exp> vars;
         String interpolation, title, xLabel, yLabel;
         Boolean legend, grid, logX, logY, points;
       then
@@ -1355,7 +1353,7 @@ algorithm
         lstVarVal = iv,compiledFunctions = cf,
         loadedFiles = lf)),msg)
       local
-        Exp.Exp varName, varTimeStamp;
+        DAE.Exp varName, varTimeStamp;
         String var;
         Integer res;
         Real timeStamp;
@@ -1392,7 +1390,7 @@ algorithm
         lstVarVal = iv,compiledFunctions = cf,
         loadedFiles = lf)),msg)
       local
-        Exp.Exp varName, varTimeStamp;
+        DAE.Exp varName, varTimeStamp;
         String var;
         Integer res;
         Integer timeStamp;
@@ -1430,7 +1428,7 @@ algorithm
         lstVarVal = iv,compiledFunctions = cf,
         loadedFiles = lf)),msg)
       local 
-        Exp.Exp varName, varTimeStamp;
+        DAE.Exp varName, varTimeStamp;
         Real timeStamp;               
         Real val;
         String varNameStr;
@@ -1451,7 +1449,7 @@ algorithm
         lstVarVal = iv,compiledFunctions = cf,
         loadedFiles = lf)),msg)
       local 
-        Exp.Exp varName, varTimeStamp;
+        DAE.Exp varName, varTimeStamp;
         Integer timeStampI;
         Real timeStamp;               
         Real val;
@@ -1474,7 +1472,7 @@ algorithm
         lstVarVal = iv,compiledFunctions = cf,
         loadedFiles = lf)),msg)
       local 
-        Exp.Exp varName, varTimeStamp;
+        DAE.Exp varName, varTimeStamp;
         Integer timeStampI;
         Real timeStamp;               
         Values.Value val;
@@ -1499,7 +1497,7 @@ algorithm
         lstVarVal = iv,compiledFunctions = cf,
         loadedFiles = lf)),msg)      
       local 
-        list<Exp.Exp> vars;
+        list<DAE.Exp> vars;
       then
         (cache,Values.STRING("Error, check variable name and time variables"),st);
         
@@ -1515,7 +1513,7 @@ algorithm
         loadedFiles = lf)),msg)  
       local
         Integer res;
-        list<Exp.Exp> vars;
+        list<DAE.Exp> vars;
         String uniqueStr;
       equation 
         vars = Util.listMap(vars,Exp.CodeVarToCref);
@@ -1545,7 +1543,7 @@ algorithm
         ast = p,explodedAst = sp,instClsLst = ic,
         lstVarVal = iv,compiledFunctions = cf,
         loadedFiles = lf)),msg)
-      local list<Exp.Exp> vars;
+      local list<DAE.Exp> vars;
       equation
         vars = Util.listMap(vars,Exp.CodeVarToCref);
         vars_1 = Util.listMap(vars, Exp.printExpStr) "Catch error with less than two elements (=variables) in the array.
@@ -1561,7 +1559,7 @@ algorithm
         ast = p,explodedAst = sp,instClsLst = ic,
         lstVarVal = iv,compiledFunctions = cf,
         loadedFiles = lf)),msg)
-      local list<Exp.Exp> vars;
+      local list<DAE.Exp> vars;
       equation
         vars = Util.listMap(vars,Exp.CodeVarToCref);
         vars_1 = Util.listMap(vars, Exp.printExpStr) "Catch error reading simulation file." ;
@@ -1577,7 +1575,7 @@ algorithm
         ast = p,explodedAst = sp,instClsLst = ic,
         lstVarVal = iv,compiledFunctions = cf,
         loadedFiles = lf)),msg)
-      local list<Exp.Exp> vars;
+      local list<DAE.Exp> vars;
       equation
         vars = Util.listMap(vars,Exp.CodeVarToCref);
         vars_1 = Util.listMap(vars, Exp.printExpStr) "Catch error reading simulation file." ;
@@ -1592,7 +1590,7 @@ algorithm
         ast = p,explodedAst = sp,instClsLst = ic,
         lstVarVal = iv,compiledFunctions = cf,
         loadedFiles = lf)),msg)
-      local list<Exp.Exp> vars;
+      local list<DAE.Exp> vars;
       then
         (cache,Values.STRING("Unknown error while plotting"),st);
     /* end plotparametric */
@@ -1611,8 +1609,8 @@ algorithm
         loadedFiles = lf)),msg)
       local
         Integer res;
-        Exp.Exp xRange, yRange;
-        list<Exp.Exp> vars;
+        DAE.Exp xRange, yRange;
+        list<DAE.Exp> vars;
         String interpolation, title, xLabel, yLabel, uniqueStr;
         Boolean legend, grid, logX, logY, points;        
       equation
@@ -1649,8 +1647,8 @@ algorithm
         loadedFiles = lf)),msg)
       local
         Integer res;
-        Exp.Exp xRange, yRange;
-        list<Exp.Exp> vars;
+        DAE.Exp xRange, yRange;
+        list<DAE.Exp> vars;
         String interpolation, title, xLabel, yLabel;
         Boolean legend, grid, logX, logY, points;
       equation
@@ -1673,7 +1671,7 @@ algorithm
         ast = p,explodedAst = sp,instClsLst = ic,
         lstVarVal = iv,compiledFunctions = cf,
         loadedFiles = lf)),msg)
-      local list<Exp.Exp> vars;
+      local list<DAE.Exp> vars;
       equation
         vars = Util.listMap(vars,Exp.CodeVarToCref);
         vars_1 = Util.listMap(vars, Exp.printExpStr) "Catch error reading simulation file." ;
@@ -1689,7 +1687,7 @@ algorithm
         ast = p,explodedAst = sp,instClsLst = ic,
         lstVarVal = iv,compiledFunctions = cf,
         loadedFiles = lf)),msg)
-      local list<Exp.Exp> vars;
+      local list<DAE.Exp> vars;
       equation 
         vars = Util.listMap(vars,Exp.CodeVarToCref);
         vars_1 = Util.listMap(vars, Exp.printExpStr) "Catch error with less than two elements (=variables) in the array.
@@ -1705,7 +1703,7 @@ algorithm
         ast = p,explodedAst = sp,instClsLst = ic,
         lstVarVal = iv,compiledFunctions = cf,
         loadedFiles = lf)),msg)
-      local list<Exp.Exp> vars;
+      local list<DAE.Exp> vars;
       equation 
         vars = Util.listMap(vars,Exp.CodeVarToCref);
         vars_1 = Util.listMap(vars, Exp.printExpStr) "Catch error reading simulation file." ;
@@ -1721,7 +1719,7 @@ algorithm
         ast = p,explodedAst = sp,instClsLst = ic,
         lstVarVal = iv,compiledFunctions = cf,
         loadedFiles = lf)),msg)
-      local list<Exp.Exp> vars;
+      local list<DAE.Exp> vars;
       equation 
         vars = Util.listMap(vars,Exp.CodeVarToCref);
         vars_1 = Util.listMap(vars, Exp.printExpStr) "Catch error reading simulation file." ;
@@ -1736,7 +1734,7 @@ algorithm
         ast = p,explodedAst = sp,instClsLst = ic,
         lstVarVal = iv,compiledFunctions = cf,
         loadedFiles = lf)),msg)
-      local list<Exp.Exp> vars;
+      local list<DAE.Exp> vars;
       then
         (cache,Values.STRING("Unknown error while plotting"),st);
     /* end plotparametric */        
@@ -1765,7 +1763,7 @@ algorithm
         //{DAE.ARRAY(array = strings)}
     case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "setVariableFilter"),expLst = {DAE.ARRAY(array=strings)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       local
-        list<Exp.Exp> strings;
+        list<DAE.Exp> strings;
       equation
         vars_1 = Util.listMap(strings, Exp.printExpStr);
 //        print("setVariableFilter\n");
@@ -2214,7 +2212,7 @@ public function getIncidenceMatrix "function getIncidenceMatrix
   input Absyn.Path className "path for the model";
   input Interactive.InteractiveSymbolTable inInteractiveSymbolTable;
   input Ceval.Msg inMsg;
-  input Exp.Exp inExp;
+  input DAE.Exp inExp;
   output Env.Cache outCache;
   output Values.Value outValue;
   output Interactive.InteractiveSymbolTable outInteractiveSymbolTable;
@@ -2236,13 +2234,13 @@ algorithm
       list<list<Integer>> comps;
       Absyn.ComponentRef a_cref;
       list<String> libs;
-      Exp.ComponentRef cr;
+      DAE.ComponentRef cr;
       Interactive.InteractiveSymbolTable st;
       Absyn.Program p,ptot;
       list<Interactive.InteractiveVariable> iv;
       list<Interactive.CompiledCFunction> cf;
       Ceval.Msg msg;
-      Exp.Exp fileprefix;
+      DAE.Exp fileprefix;
       Env.Cache cache;
       Integer elimLevel;
     case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg,fileprefix) /* mo file directory */ 
@@ -2282,7 +2280,7 @@ public function translateModel "function translateModel
   input Absyn.Path className "path for the model";
   input Interactive.InteractiveSymbolTable inInteractiveSymbolTable;
   input Ceval.Msg inMsg;
-  input Exp.Exp inExp;
+  input DAE.Exp inExp;
   input Boolean addDummy "if true, add a dummy state";
   output Env.Cache outCache;
   output Values.Value outValue;
@@ -2307,13 +2305,13 @@ algorithm
       list<list<Integer>> comps;
       Absyn.ComponentRef a_cref;
       list<String> libs;
-      Exp.ComponentRef cr;
+      DAE.ComponentRef cr;
       Interactive.InteractiveSymbolTable st;
       Absyn.Program p,ptot;
       list<Interactive.InteractiveVariable> iv;
       list<Interactive.CompiledCFunction> cf;
       Ceval.Msg msg;
-      Exp.Exp fileprefix;
+      DAE.Exp fileprefix;
       Env.Cache cache;
       String MakefileHeader;
       list<DAE.Element> funcelems;
@@ -2386,13 +2384,13 @@ algorithm
       list<list<Integer>> comps;
       Absyn.ComponentRef a_cref;
       list<String> libs;
-      Exp.ComponentRef cr;
+      DAE.ComponentRef cr;
       Interactive.InteractiveSymbolTable st;
       Absyn.Program p;
       list<Interactive.InteractiveVariable> iv;
       list<Interactive.CompiledCFunction> cf;
       Ceval.Msg msg;
-      Exp.Exp fileprefix;
+      DAE.Exp fileprefix;
       Env.Cache cache;
       list<Interactive.LoadedFile> lf;
       Absyn.TimeStamp ts;
@@ -2433,7 +2431,7 @@ protected function calculateSimulationSettings "function calculateSimulationSett
  calculates the start,end,interval,stepsize, method and initFileName"
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input Exp.Exp inExp;
+  input DAE.Exp inExp;
   input Interactive.InteractiveSymbolTable inInteractiveSymbolTable;
   input Ceval.Msg inMsg;
   input String inString;
@@ -2455,8 +2453,8 @@ algorithm
       Integer interval_i;
       Real starttime_r,stoptime_r,interval_r,tolerance_r;
       list<Env.Frame> env;
-      Exp.ComponentRef cr;
-      Exp.Exp starttime,stoptime,interval,toleranceExp,method,options,filenameprefix;
+      DAE.ComponentRef cr;
+      DAE.Exp starttime,stoptime,interval,toleranceExp,method,options,filenameprefix;
       Absyn.Program p;
       list<SCode.Class> sp;
       list<Interactive.InstantiatedClass> ic;
@@ -2495,7 +2493,7 @@ public function buildModel "function buildModel
  translates and builds the model by running compiler script on the generated makefile"
 	input Env.Cache inCache;
   input Env.Env inEnv;
-  input Exp.Exp inExp;
+  input DAE.Exp inExp;
   input Interactive.InteractiveSymbolTable inInteractiveSymbolTable;
   input Ceval.Msg inMsg;
   output Env.Cache outCache;
@@ -2518,8 +2516,8 @@ algorithm
       list<Interactive.CompiledCFunction> cf;
       Real starttime_r,stoptime_r,interval_r,tolerance_r;
       list<Env.Frame> env;
-      Exp.Exp exp,starttime,stoptime,interval,tolerance,method,fileprefix,storeInTemp,noClean,options;
-      Exp.ComponentRef cr;      
+      DAE.Exp exp,starttime,stoptime,interval,tolerance,method,fileprefix,storeInTemp,noClean,options;
+      DAE.ComponentRef cr;      
       list<SCode.Class> sp;
       AbsynDep.Depends aDep;
       list<Interactive.InstantiatedClass> ic;
@@ -2764,10 +2762,10 @@ end winCitation;
 
 protected function extractFilePrefix "function extractFilePrefix
   author: x02lucpo 
-  extracts the file prefix from Exp.Exp as string"
+  extracts the file prefix from DAE.Exp as string"
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input Exp.Exp inExp;
+  input DAE.Exp inExp;
   input Interactive.InteractiveSymbolTable inInteractiveSymbolTable;
   input Ceval.Msg inMsg;
   output Env.Cache outCache;
@@ -2779,7 +2777,7 @@ algorithm
       String prefix_str;
       Interactive.InteractiveSymbolTable st;
       list<Env.Frame> env;
-      Exp.Exp filenameprefix;
+      DAE.Exp filenameprefix;
       Absyn.Program p;
       list<SCode.Class> sp;
       list<Interactive.InstantiatedClass> ic;
@@ -2869,7 +2867,7 @@ algorithm
       then
         (cache,Absyn.IFEXP(cond_1,then_1,else_1,nest_1));
     case (cache,env,Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "Eval",subscripts = {}),functionArgs = Absyn.FUNCTIONARGS(args = {e},argNames = {})),impl,st,msg)
-      local Exp.Exp e_1;
+      local DAE.Exp e_1;
       equation 
         (cache,e_1,_,_) = Static.elabExp(cache,env, e, impl, st,true);
         (cache,Values.CODE(Absyn.C_EXPRESSION(exp)),_) = Ceval.ceval(cache,env, e_1, impl, st, NONE, msg);
@@ -3255,13 +3253,13 @@ algorithm
       list<list<Integer>> comps;
       Absyn.ComponentRef a_cref;
       list<String> libs;
-      Exp.ComponentRef cr;
+      DAE.ComponentRef cr;
       Interactive.InteractiveSymbolTable st;
       Absyn.Program p,ptot;
       list<Interactive.InteractiveVariable> iv;
       list<Interactive.CompiledCFunction> cf;
       Ceval.Msg msg;
-      Exp.Exp fileprefix;
+      DAE.Exp fileprefix;
       Env.Cache cache;
       Integer eqnSize,varSize,simpleEqnSize;
       String warnings,eqnSizeStr,varSizeStr,retStr,classNameStr,simpleEqnSizeStr;
@@ -3360,8 +3358,8 @@ protected function getBuiltinAttribute "function: getBuiltinAttribute
   Retrieves a builtin attribute of a variable in a class by instantiating 
   the class and retrieving the attribute value from the flat variable."	
 	input Env.Cache inCache;
-  input Exp.ComponentRef inComponentRef1;
-  input Exp.ComponentRef inComponentRef2;
+  input DAE.ComponentRef inComponentRef1;
+  input DAE.ComponentRef inComponentRef2;
   input String inString3;
   input Interactive.InteractiveSymbolTable inInteractiveSymbolTable4;
   output Env.Cache outCache;
@@ -3374,10 +3372,10 @@ algorithm
       Absyn.Path classname_1;
       list<DAE.Element> dae,dae1;
       list<Env.Frame> env,env_1,env3,env4;
-      Exp.ComponentRef cref_1,classname,cref;
-      Types.Attributes attr;
-      tuple<Types.TType, Option<Absyn.Path>> ty;
-      Exp.Exp exp;
+      DAE.ComponentRef cref_1,classname,cref;
+      DAE.Attributes attr;
+      tuple<DAE.TType, Option<Absyn.Path>> ty;
+      DAE.Exp exp;
       String str,n,attribute;
       Interactive.InteractiveSymbolTable st;
       Absyn.Program p,ptot;
@@ -3390,7 +3388,7 @@ algorithm
       SCode.Restriction r;
       ClassInf.State ci_state,ci_state_1;
       Connect.Sets csets_1;
-      list<Types.Var> tys;
+      list<DAE.Var> tys;
       Values.Value v;
       Env.Cache cache;
       list<Interactive.LoadedFile> lf;
@@ -3517,7 +3515,7 @@ end setBuildTimeVisitor;
 
 protected function extractNoCleanCommand "Function: extractNoCleanCommand
 "
-input Exp.Exp inexpl;
+input DAE.Exp inexpl;
 output String outString;
 algorithm outString := matchcontinue(inexpl)
   local Boolean noclean; String str;
@@ -3577,7 +3575,7 @@ public function dumpXMLDAE "function dumpXMLDAE
  This function outputs the DAE system corresponding to a specific model."
 	input Env.Cache inCache;
   input Env.Env inEnv;
-  input Exp.Exp inExp;
+  input DAE.Exp inExp;
   input Interactive.InteractiveSymbolTable inInteractiveSymbolTable;
   input Ceval.Msg inMsg;
   output Env.Cache outCache;
@@ -3600,8 +3598,8 @@ algorithm
       Absyn.Program p;
       DAELow.DAELow indexed_dlow_1;
       Env.Cache cache;
-      Exp.Exp exp,fileprefix,storeInTemp,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals;
-      Exp.ComponentRef cr;
+      DAE.Exp exp,fileprefix,storeInTemp,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals;
+      DAE.ComponentRef cr;
       Interactive.InteractiveSymbolTable st,st_1;
       Ceval.Msg msg;
       Values.Value ret_val;
@@ -3917,7 +3915,7 @@ public function buildModelBeast "function buildModelBeast
  translates and builds the model by running compiler script on the generated makefile"
 	input Env.Cache inCache;
   input Env.Env inEnv;
-  input Exp.Exp inExp;
+  input DAE.Exp inExp;
   input Interactive.InteractiveSymbolTable inInteractiveSymbolTable;
   input Ceval.Msg inMsg;
   output Env.Cache outCache;
@@ -3940,8 +3938,8 @@ algorithm
       list<Interactive.CompiledCFunction> cf;
       Real starttime_r,stoptime_r,interval_r,tolerance_r;
       list<Env.Frame> env;
-      Exp.Exp exp,starttime,stoptime,interval,method,tolerance,fileprefix,storeInTemp,noClean,options;
-      Exp.ComponentRef cr;      
+      DAE.Exp exp,starttime,stoptime,interval,method,tolerance,fileprefix,storeInTemp,noClean,options;
+      DAE.ComponentRef cr;      
       list<SCode.Class> sp;
       AbsynDep.Depends aDep;
       list<Interactive.InstantiatedClass> ic;
@@ -3988,7 +3986,7 @@ end buildModelBeast;
 public function getValueString "
 Constant evaluates Expression and returns a string representing value. 
 "
-  input Exp.Exp e1;
+  input DAE.Exp e1;
   output String ostring;
 algorithm ostring := matchcontinue( e1)
   case(e1)
@@ -4098,7 +4096,7 @@ algorithm
       list<String> libs;
       list<DAE.Element> d;
       list<Absyn.Path> uniontypePaths;
-      list<Types.Type> metarecordTypes;
+      list<DAE.Type> metarecordTypes;
     case (cache, env, path)
       equation 
         false = RTOpts.debugFlag("nogen");
