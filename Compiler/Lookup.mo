@@ -211,7 +211,32 @@ algorithm
         (cache,varlst) = buildRecordConstructorVarlst(cache,c,env_1);
         t = Types.makeFunctionType(path, varlst);
       then 
-        (cache,t,env_1);      
+        (cache,t,env_1);
+        
+    // lookup of an enumeration type 
+    case (cache,env_1,path,c)
+      local
+        SCode.Restriction r; 
+        list<Types.Var> types;
+        list<String> names;
+        ClassInf.State ci_state;
+        Boolean encflag;
+      equation 
+        SCode.CLASS(id,_,encflag,r as SCode.R_ENUMERATION(),_) = c;
+        env_2 = Env.openScope(env_1, encflag, SOME(id));
+        ci_state = ClassInf.start(r, id);
+        (cache,env_3,_,_,_,_,_,types,_,_,_,_) = 
+        Inst.instClassIn(
+          cache,env_2,InstanceHierarchy.emptyInstanceHierarchy,UnitAbsyn.noStore, 
+          DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
+          ci_state, c, false, {}, false, ConnectionGraph.EMPTY,NONE);
+        // build names
+        (_,names) = SCode.getClassComponents(c);
+        // generate the enumeration type        
+        t = (DAE.T_ENUMERATION(NONE(), path, names, types), SOME(path));
+        env_3 = Env.extendFrameT(env_3, id, t);
+      then
+        (cache,t,env_3);        
   end matchcontinue;
 end lookupType2;
 
@@ -1887,7 +1912,7 @@ algorithm
         reselt = buildRecordConstructorResultElt(funcelts, id, env);
       then
         SCode.CLASS(id,false,false,SCode.R_FUNCTION(),
-          SCode.PARTS((reselt :: funcelts),{},{},{},{},{},NONE));
+          SCode.PARTS((reselt :: funcelts),{},{},{},{},NONE,{},NONE));
     case (cl,env) equation
       print("buildRecordConstructorClass failed\n");
       then fail();

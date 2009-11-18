@@ -83,6 +83,7 @@ protected import SimCodegen;
 protected import System;
 protected import Static;
 protected import SCode;
+protected import SCodeUtil;
 protected import Settings;
 protected import SimulationResults;
 protected import Types;
@@ -154,7 +155,7 @@ algorithm
       equation 
         path = Static.componentRefToPath(cr);
         ptot = Interactive.getTotalProgram(path,p);
-        p_1 = SCode.elaborate(ptot);
+        p_1 = SCodeUtil.translateAbsyn2SCode(ptot);
         (cache,env) = Inst.makeEnvFromProgram(cache,p_1, Absyn.IDENT(""));
         (cache,c,env) = Lookup.lookupClass(cache,env, path, true);
         SOME(p1) = Env.getEnvPath(env);
@@ -248,7 +249,7 @@ algorithm
       equation 
         path = Static.componentRefToPath(cr);
         ptot = Interactive.getTotalProgram(path,p);        
-        p_1 = SCode.elaborate(ptot);
+        p_1 = SCodeUtil.translateAbsyn2SCode(ptot);
         (cache,env,_, dae as DAE.DAE(dael)) = 
         Inst.instantiateClass(cache,InstanceHierarchy.emptyInstanceHierarchy,p_1, path);
         ((dae as DAE.DAE(dael))) = DAEUtil.transformIfEqToExpr(dae);
@@ -646,7 +647,7 @@ algorithm
         crefCName = Absyn.pathToCref(className);
         true = Interactive.existClass(crefCName, p);
         ptot = Interactive.getTotalProgram(className,p);
-        p_1 = SCode.elaborate(ptot);
+        p_1 = SCodeUtil.translateAbsyn2SCode(ptot);
         (cache,env,_,(dae as DAE.DAE(dael))) = 
         Inst.instantiateClass(cache,InstanceHierarchy.emptyInstanceHierarchy,p_1,className);
         // ((dae as DAE.DAE(dael))) = DAEUtil.transformIfEqToExpr(dael);        
@@ -679,7 +680,7 @@ algorithm
         loadedFiles = lf)),msg)
       equation 
         ptot = Interactive.getTotalProgram(path,p);
-        p_1 = SCode.elaborate(ptot);
+        p_1 = SCodeUtil.translateAbsyn2SCode(ptot);
         str = Print.getErrorString() "we do not want error msg twice.." ;
         failure((_,_,_,_) = 
         Inst.instantiateClass(cache,InstanceHierarchy.emptyInstanceHierarchy,p_1,path));
@@ -2248,7 +2249,7 @@ algorithm
         String flatModelicaStr;
       equation 
         (cache,filenameprefix) = extractFilePrefix(cache,env, fileprefix, st, msg);
-        p_1 = SCode.elaborate(p);
+        p_1 = SCodeUtil.translateAbsyn2SCode(p);
         (cache,env,_,dae_1) = 
         Inst.instantiateClass(cache,InstanceHierarchy.emptyInstanceHierarchy,p_1,className);
         ((dae as DAE.DAE(dael))) = DAEUtil.transformIfEqToExpr(dae_1);
@@ -2319,7 +2320,7 @@ algorithm
       equation 
         (cache,filenameprefix) = extractFilePrefix(cache,env, fileprefix, st, msg);
         ptot = Interactive.getTotalProgram(className,p);
-        p_1 = SCode.elaborate(ptot);
+        p_1 = SCodeUtil.translateAbsyn2SCode(ptot);
         (cache,env,_,dae as DAE.DAE(dael)) = 
         Inst.instantiateClass(cache,InstanceHierarchy.emptyInstanceHierarchy,p_1,className);
         ((dae as DAE.DAE(dael))) = DAEUtil.transformIfEqToExpr(dae);
@@ -3273,7 +3274,7 @@ algorithm
         failure(Absyn.CLASS(_,_,_,_,Absyn.R_FUNCTION(),_,_) = Interactive.getPathedClassInProgram(className, p)); 
         _ = Error.getMessagesStr() "Clear messages";
         Print.clearErrorBuf() "Clear error buffer";
-        p_1 = SCode.elaborate(ptot); 
+        p_1 = SCodeUtil.translateAbsyn2SCode(ptot); 
         
         //UnitParserExt.clear();
         //UnitAbsynBuilder.registerUnits(ptot);
@@ -3309,7 +3310,7 @@ algorithm
         Absyn.CLASS(_,_,_,_,Absyn.R_FUNCTION(),_,_) = Interactive.getPathedClassInProgram(className, p);
         _ = Error.getMessagesStr() "Clear messages";
         Print.clearErrorBuf() "Clear error buffer";        
-        p_1 = SCode.elaborate(ptot);
+        p_1 = SCodeUtil.translateAbsyn2SCode(ptot);
         
         //UnitParserExt.clear();
         //UnitAbsynBuilder.registerUnits(ptot);
@@ -3421,7 +3422,7 @@ algorithm
       equation 
         classname_1 = Static.componentRefToPath(classname);
         ptot = Interactive.getTotalProgram(classname_1,p);          
-        p_1 = SCode.elaborate(ptot);
+        p_1 = SCodeUtil.translateAbsyn2SCode(ptot);
         (cache,env) = Inst.makeEnvFromProgram(cache,p_1, Absyn.IDENT(""));
         (cache,(c as SCode.CLASS(n,_,encflag,r,_)),env_1) = Lookup.lookupClass(cache,env, classname_1, true);
         env3 = Env.openScope(env_1, encflag, SOME(n));
@@ -3462,7 +3463,7 @@ algorithm
       equation 
         classname_1 = Static.componentRefToPath(classname);
         ptot = Interactive.getTotalProgram(classname_1,p);          
-        p_1 = SCode.elaborate(ptot);
+        p_1 = SCodeUtil.translateAbsyn2SCode(ptot);
         (cache,env) = Inst.makeEnvFromProgram(cache,p_1, Absyn.IDENT(""));
         (cache,(c as SCode.CLASS(n,_,encflag,r,_)),env_1) = Lookup.lookupClass(cache,env, classname_1, true);
         env3 = Env.openScope(env_1, encflag, SOME(n));
@@ -3626,7 +3627,7 @@ algorithm
         changeToTempDirectory(cdToTemp);
         (cache,filenameprefix) = extractFilePrefix(cache,env, fileprefix, st, msg);
         cname_str = Absyn.pathString(classname);
-        p_1 = SCode.elaborate(p);
+        p_1 = SCodeUtil.translateAbsyn2SCode(p);
         (cache,env,_,dae_1) = Inst.instantiateClass(cache, InstanceHierarchy.emptyInstanceHierarchy, p_1, classname);
         ((dae as DAE.DAE(dael))) = DAEUtil.transformIfEqToExpr(dae_1);
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(classname,dael,env));
@@ -3669,7 +3670,7 @@ algorithm
         changeToTempDirectory(cdToTemp);
         (cache,filenameprefix) = extractFilePrefix(cache,env, fileprefix, st, msg);
         cname_str = Absyn.pathString(classname);
-        p_1 = SCode.elaborate(p);
+        p_1 = SCodeUtil.translateAbsyn2SCode(p);
         (cache,env,_,dae_1) = Inst.instantiateClass(cache, InstanceHierarchy.emptyInstanceHierarchy, p_1, classname);
         ((dae as DAE.DAE(dael))) = DAEUtil.transformIfEqToExpr(dae_1);
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(classname,dael,env));
@@ -3733,7 +3734,7 @@ algorithm
         strlist = Interactive.getClassnamesInParts(parts);        
       then strlist;
 
-    case (inmodel,p,Absyn.CLASS(body = Absyn.PDER(_,_)))
+    case (inmodel,p,Absyn.CLASS(body = Absyn.PDER(_,_,_)))
       equation        
       then {};
         

@@ -70,6 +70,7 @@ public import Interactive;
 public import MetaUtil;
 public import RTOpts;
 public import SCode;
+public import SCodeUtil;
 public import Values;
 
 
@@ -640,7 +641,7 @@ algorithm
         env2 = Env.openScope(env, false, NONE());
         
         // Tranform declarations such as Real x,y; to Real x; Real y;
-        ld2 = SCode.elabEitemlist(ld,false);
+        ld2 = SCodeUtil.translateEitemlist(ld,false);
         
         // Filter out the components (just to be sure)
         ld2 = Inst.componentElts(ld2);
@@ -6356,7 +6357,8 @@ algorithm
         Debug.fprintln("sei", "elab_call 3");
         fn_1 = Absyn.crefToPath(fn);
         (cache,e,prop) = elabCallArgs(cache,env, fn_1, args, nargs, impl, st);
-        (cache,st_1) = generateCompiledFunction(cache,env, fn, e, prop, st);
+        // adrpo: for function calls DO NOT GENERATE CODE during static elaboration!
+        st_1 = st; // (cache,st_1) = generateCompiledFunction(cache,env, fn, e, prop, st);
         Debug.fprint("sei", "elab_call 3 succeeded: ");
         fnstr = Dump.printComponentRefStr(fn);
         Debug.fprintln("sei", fnstr);
@@ -7604,7 +7606,7 @@ algorithm
         newCF = Interactive.removeCf(path, cflist); // remove it as it might be there with an older build time.
                 
         Absyn.CLASS(name,ppref,fpref,epref,Absyn.R_FUNCTION(),body,info) = Interactive.getPathedClassInProgram(path, p);
-        // p_1 = SCode.elaborate(p); 
+        // p_1 = SCodeUtil.translateAbsyn2SCode(p); 
         Debug.fprintln("sei", "generate_compiled_function: elaborated");
         (cache,cls,env_1) = Lookup.lookupClass(cache,env, path, false) "	Inst.instantiate_implicit(p\') => d & message" ;
         Debug.fprintln("sei", "generate_compiled_function: class looked up");
@@ -7712,53 +7714,6 @@ algorithm
   end matchcontinue;
 end calculateConstantness;
 
-public function filterComponents 
-"This function returns the components from a class"
-  input list<SCode.Element> elts;
-  output list<SCode.Element> compElts;
-  output list<String> compNames;
-algorithm 
-  (compElts,compNames) := matchcontinue (elts)
-    local
-      list<SCode.Element> rest, comps;
-      SCode.Element comp; String name;
-      list<String> names;
-    // handle the empty things
-    case ({}) then ({},{});
-    // collect components       
-    case (( comp as SCode.COMPONENT(component=name)) :: rest)
-      equation
-        (comps, names) = filterComponents(rest);  
-      then (comp::comps,name::names);
-    // ignore others
-    case (_ :: rest) 
-      equation
-        (comps, names) = filterComponents(rest);  
-      then (comps, names);
-  end matchcontinue;
-end filterComponents;
-
-public function getClassComponents
-"This function returns the components from a class"
-  input SCode.Class cl;
-  output list<SCode.Element> compElts;
-  output list<String> compNames;
-algorithm 
-  (compElts,compNames) := matchcontinue (cl)
-    local
-      list<SCode.Element> elts, comps;
-      list<String> names;
-             
-    case (SCode.CLASS(classDef = SCode.PARTS(elementLst = elts)))
-      equation
-        (comps, names) = filterComponents(elts);  
-      then (comps,names);
-    case (SCode.CLASS(classDef = SCode.CLASS_EXTENDS(elementLst = elts)))
-      equation
-        (comps, names) = filterComponents(elts);  
-      then (comps,names);
-  end matchcontinue;
-end getClassComponents;
 
 /*
 public function getComponentsWithUnkownArraySizes 
@@ -7907,7 +7862,7 @@ algorithm
            Lookup.lookupClass(cache, env, Absyn.IDENT("GraphicalAnnotationsProgram____"), false);                
         (cache,cl as SCode.CLASS(name,_,_,SCode.R_RECORD(),_),env_1) = Lookup.lookupClass(cache, env, fn, false);
         (cl,env_2) = Lookup.lookupRecordConstructorClass(env_1 /* env */, fn);
-        (comps,_::names) = getClassComponents(cl); // remove the fist one as it is the result! 
+        (comps,_::names) = SCode.getClassComponents(cl); // remove the fist one as it is the result! 
         /*
         (cache,(t as (DAE.T_FUNCTION(fargs,(outtype as (DAE.T_COMPLEX(complexClassType as ClassInf.RECORD(name),_,_,_),_))),_)),env_1) 
         	= Lookup.lookupType(cache, env, fn, true);
@@ -8109,12 +8064,13 @@ algorithm
     local
       list<SCode.Annotation> anns;
       Boolean res;
-    case(SCode.CLASS(_,_,_,_,SCode.PARTS(_,anns,_,_,_,_,_)))
+      
+    case(SCode.CLASS(classDef = SCode.PARTS(annotationLst = anns)))
       equation
         res = isInlineFunc3(anns);
       then
         res;
-    case(SCode.CLASS(_,_,_,_,SCode.CLASS_EXTENDS(_,_,_,anns,_,_,_,_)))
+    case(SCode.CLASS(classDef = SCode.CLASS_EXTENDS(annotationLst = anns)))
       equation
         res = isInlineFunc3(anns);
       then

@@ -56,7 +56,9 @@ algorithm
         Absyn.Path funcpath;
         list<DAE.Exp> crefArgs;
         String str;
-    case(env,(callExp as DAE.CALL(path = funcpath,expLst = crefArgs)),inArgs, sc as SCode.CLASS(_,false,_,SCode.R_FUNCTION(),SCode.PARTS(elementList,_,_,_,_,_,_) ),daeList)
+    case(env,(callExp as DAE.CALL(path = funcpath,expLst = crefArgs)),inArgs, 
+         sc as SCode.CLASS(_,false,_,SCode.R_FUNCTION(),
+                           SCode.PARTS(elementLst=elementList) ),daeList)
       equation
         str = Absyn.pathString(funcpath);
         str = Util.stringAppendList({"cevalfunc_",str});
@@ -67,7 +69,9 @@ algorithm
         retVal = convertOutputVarValues(retVals); 
         then 
           retVal;
-    case(env,(callExp as DAE.CALL(path = funcpath,expLst = crefArgs)),inArgs, sc as SCode.CLASS(_,false,_,SCode.R_FUNCTION(),SCode.PARTS(elementList,_,_,_,_,_,_) ),daeList)
+    case(env,(callExp as DAE.CALL(path = funcpath,expLst = crefArgs)),inArgs, 
+         sc as SCode.CLASS(_,false,_,SCode.R_FUNCTION(),
+                           SCode.PARTS(elementLst=elementList) ),daeList)
       equation
         _ = extendEnvWithInputArgs(env,elementList,inArgs,crefArgs);
         str = Absyn.pathString(funcpath);
@@ -75,7 +79,9 @@ algorithm
         Debug.fprint("failtrace", str);
         then
           fail();
-    case(env,(callExp as DAE.CALL(path = funcpath,expLst = crefArgs)),inArgs, sc as SCode.CLASS(_,false,_,SCode.R_FUNCTION(),SCode.PARTS(elementList,_,_,_,_,_,_) ),daeList)
+    case(env,(callExp as DAE.CALL(path = funcpath,expLst = crefArgs)),inArgs, 
+              sc as SCode.CLASS(_,false,_,SCode.R_FUNCTION(),
+                                SCode.PARTS(elementLst=elementList) ),daeList)
       equation        
         failure(_ = extendEnvWithInputArgs(env,elementList,inArgs,crefArgs));
         str = Absyn.pathString(funcpath);
@@ -346,7 +352,11 @@ algorithm outVal := matchcontinue(env,sc)
     list<SCode.Equation> eqs1,eqs2;
     list<SCode.Algorithm> algs1,algs2;
     Env.Env env1;
-  case(env, SCode.CLASS(_,false,_,SCode.R_FUNCTION(),SCode.PARTS(_,_,eqs1,eqs2,algs1,algs2,_)) )
+  case(env, SCode.CLASS(_,false,_,SCode.R_FUNCTION(),
+                        SCode.PARTS(normalEquationLst=eqs1,
+                                    initialEquationLst=eqs2,
+                                    normalAlgorithmLst=algs1,
+                                    initialAlgorithmLst=algs2)))
     equation
       env1 = evaluateAlgorithmsList(env,algs1);
     then

@@ -543,5 +543,15 @@ public function readFileNoNumeric
   external "C" ;
 end readFileNoNumeric;
 
+public function setHasExpandableConnectors
+  input Boolean hasExpandable;
+  external "C" ;
+end setHasExpandableConnectors;
+
+public function getHasExpandableConnectors
+  output Boolean hasExpandable;
+  external "C" ;
+end getHasExpandableConnectors;
+
 end System;
 

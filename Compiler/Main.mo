@@ -46,6 +46,7 @@ protected import Parser;
 protected import Dump;
 protected import DumpGraphviz;
 protected import SCode;
+protected import SCodeUtil;
 protected import DAE;
 protected import DAEUtil;
 protected import DAELow;
@@ -519,7 +520,7 @@ algorithm
         
         Debug.fprint("info", "\n------------------------------------------------------------ \n");
         Debug.fprint("info", "---elaborating\n");
-        scode = SCode.elaborate(p);
+        scode = SCodeUtil.translateAbsyn2SCode(p);
         Debug.fprint("info", "\n------------------------------------------------------------ \n");
         Debug.fprint("info", "---instantiating\n");
         //print(" Inst.Instantiate " +& realString(clock()) +&"\n");
@@ -591,7 +592,7 @@ algorithm
         
         Debug.fprint("info", "\n------------------------------------------------------------ \n");
         Debug.fprint("info", "---elaborating\n");
-        scode = SCode.elaborate(p);
+        scode = SCodeUtil.translateAbsyn2SCode(p);
         Debug.fprint("info", "\n------------------------------------------------------------ \n");
         Debug.fprint("info", "---instantiating\n");
         //print(" Inst.Instantiate " +& realString(clock()) +&"\n");

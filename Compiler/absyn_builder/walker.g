@@ -344,6 +344,9 @@ class_restriction returns [void* ast]
         | TYPE      { ast = Absyn__R_5fTYPE; }
         | PACKAGE   { ast = Absyn__R_5fPACKAGE; }
         | FUNCTION  { ast = Absyn__R_5fFUNCTION; }
+        /* 
+        | OPERATOR (f:FUNCTION)? { ast = f ? Absyn__R_5fOPERATOR_5fFUNCTION : Absyn__R_5fOPERATOR; }  
+         add this later when enabling operators */
         | UNIONTYPE { ast = Absyn__R_5fUNIONTYPE; }
         )
     ;
@@ -390,10 +393,11 @@ pder returns [void* ast]
 {
     void* func=0;
     void* var_lst=0;
+    void* cmt=0;
 }
-    : #(DER func = name_path var_lst = ident_list)
+    : #(DER func = name_path var_lst = ident_list (cmt=comment)?)
         {
-            ast = Absyn__PDER(func,var_lst);
+            ast = Absyn__PDER(func,var_lst,cmt ? mk_some(cmt) : mk_none());
         }
     ;
 

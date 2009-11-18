@@ -20,6 +20,7 @@ protected import Interactive;
 protected import Lookup;
 protected import OptManager;
 protected import SCode;
+protected import SCodeUtil;
 protected import System;
 protected import Types;
 protected import UnitParserExt;
@@ -210,21 +211,21 @@ algorithm
      case({}) then ();
      /* Derived unit with weigth */
      /*case((du as Absyn.DEFINEUNIT(name=_))::elts) equation
-       {SCode.DEFINEUNIT(name,SOME(exp),_)} = SCode.elabElement(du,false);       
+       {SCode.DEFINEUNIT(name,SOME(exp),_)} = SCodeUtil.translateElement(du,false);       
        UnitParserExt.addDerivedWeight(name,exp,weight);
        registerDefineunits(elts);
      then ();*/
      
      /* Derived unit without weigth */
      case((du as Absyn.DEFINEUNIT(name=_))::elts) equation
-       {SCode.DEFINEUNIT(name,SOME(exp),_)} = SCode.elabElement(du,false);
+       {SCode.DEFINEUNIT(name,SOME(exp),_)} = SCodeUtil.translateElement(du,false);
        UnitParserExt.addDerived(name,exp);
        registerDefineunits2(elts);
      then ();
             
        /* base unit does not not have weight*/
      case((du as Absyn.DEFINEUNIT(name=_))::elts) equation
-       {SCode.DEFINEUNIT(name,NONE,_)} = SCode.elabElement(du,false);
+       {SCode.DEFINEUNIT(name,NONE,_)} = SCodeUtil.translateElement(du,false);
        UnitParserExt.addBase(name);
        registerDefineunits2(elts);
      then ();

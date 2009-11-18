@@ -1134,7 +1134,7 @@ algorithm
 
     case(cPath,path,p,context, env) // if it doesn't work, try the hard way
       equation
-        //	p_1 = SCode.elaborate(p);
+        //	p_1 = SCodeUtil.translateAbsyn2SCode(p);
         //	(_,env) = Inst.makeSimpleEnvFromProgram(Env.emptyCache,p_1, Absyn.IDENT(""));
         (_,fullPath) = Inst.makeFullyQualified(Env.emptyCache(),env,path);
         //	print("env:\n");print(Env.printEnvStr(env));

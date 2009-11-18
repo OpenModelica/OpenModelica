@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2008, Linköpings University,
+ * Copyright (c) 1998-2009, Linköpings University,
  * Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
@@ -229,6 +229,7 @@ uniontype ClassDef
   record PDER
     Path         functionName;
     list<Ident>  vars "derived variables" ;
+    Option<Comment> comment "comment";
   end PDER;
 
 end ClassDef;
@@ -1020,46 +1021,30 @@ uniontype Restriction "These constructors each correspond to a different kind of
   assigned special restrictions.
  "
   record R_CLASS end R_CLASS;
-
   record R_MODEL end R_MODEL;
-
   record R_RECORD end R_RECORD;
-
   record R_BLOCK end R_BLOCK;
-
-  record R_CONNECTOR "connector class" 
-  end R_CONNECTOR;
-
-  record R_EXP_CONNECTOR "expandable connector class" 
-  end R_EXP_CONNECTOR;
-
+  record R_CONNECTOR "connector class" end R_CONNECTOR;
+  record R_EXP_CONNECTOR "expandable connector class" end R_EXP_CONNECTOR;
   record R_TYPE end R_TYPE;
-
   record R_PACKAGE end R_PACKAGE;
-
   record R_FUNCTION end R_FUNCTION;
-
+  record R_OPERATOR "an operator" end R_OPERATOR;
+  record R_OPERATOR_FUNCTION "an operator function" end R_OPERATOR_FUNCTION;    
   record R_ENUMERATION end R_ENUMERATION;
-
   record R_PREDEFINED_INT end R_PREDEFINED_INT;
-
   record R_PREDEFINED_REAL end R_PREDEFINED_REAL;
-
   record R_PREDEFINED_STRING end R_PREDEFINED_STRING;
-
   record R_PREDEFINED_BOOL end R_PREDEFINED_BOOL;
-
   record R_PREDEFINED_ENUM end R_PREDEFINED_ENUM;
-  
+
+  // MetaModelica
   record R_UNIONTYPE "MetaModelica uniontype" end R_UNIONTYPE;
-  
   record R_METARECORD "Metamodelica record"  //MetaModelica extension, added by simbj
     Path name; //Name of the uniontype
     Integer index; //Index in the uniontype
   end R_METARECORD; 
-  
   record R_UNKNOWN "Helper restriction" end R_UNKNOWN; /* added by simbj */
-  
 end Restriction;
 
 public 
@@ -1826,13 +1811,20 @@ end matchcontinue;
 end printImportString;
 
 public function expCref "returns the componentRef of an expression if matches."
-input Exp exp;
-output ComponentRef cr;
+  input Exp exp;
+  output ComponentRef cr;
 algorithm
   cr := matchcontinue(exp)
     case(CREF(cr)) then cr;
   end matchcontinue;
 end expCref;
+
+public function crefExp "returns the componentRef of an expression if matches."
+ input ComponentRef cr;
+ output Exp exp;
+algorithm
+  exp := CREF(cr);
+end crefExp;
 
 public function expComponentRefStr ""
   input Exp aexp;
@@ -1915,6 +1907,18 @@ algorithm s := matchcontinue(tp)
   case(TPATH(path = p)) then pathString(p);
 end matchcontinue;
 end typeSpecPathString;
+
+public function typeSpecPath
+"convert TypeSpec to Path"
+  input TypeSpec tp;
+  output Path p;
+algorithm   
+  p := matchcontinue(tp)  
+    local Path p;
+    case(TCOMPLEX(path = p)) then p;
+    case(TPATH(path = p)) then p;
+  end matchcontinue;
+end typeSpecPath;
 
 public function pathString "function: pathString
   This function simply converts a Path to a string."

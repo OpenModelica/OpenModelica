@@ -5057,10 +5057,10 @@ algorithm
         equations = makeEquationsFromIf(cond, true_branch, false_branch);
       then
         equations;
-    case (elt)
+    case (elt as DAE.IF_EQUATION(_, _, _)) // only display failure on if equation  
       equation
         elt_str = dumpElementsStr({elt});
-        Debug.fprintln("failtrace", "- DAEUtil.ifEqToExpr failed " +& elt_str);
+        Debug.fprintln("failtrace", "- DAE.ifEqToExpr failed " +& elt_str);
       then fail();
   end matchcontinue;
 end ifEqToExpr;

@@ -154,7 +154,16 @@ class_definition :
 		;
 
 class_type :
-		( CLASS | MODEL | RECORD | BLOCK | ( EXPANDABLE )? CONNECTOR | TYPE | PACKAGE | FUNCTION | UNIONTYPE )
+		( CLASS 
+		| MODEL 
+		| RECORD 
+		| BLOCK 
+		| ( EXPANDABLE )? CONNECTOR 
+		| TYPE 
+		| PACKAGE 
+		| FUNCTION
+		/* | OPERATOR (FUNCTION)?  add this later when enabling operators */ 
+		| UNIONTYPE )
 		;
 
 class_specifier:

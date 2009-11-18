@@ -42,6 +42,7 @@ public import DAE;
 public import Debug;
 public import Env;
 public import SCode;
+public import SCodeUtil;
 
 protected import Exp;
 protected import Lookup;
@@ -809,7 +810,7 @@ clstout := matchcontinue(cl)
       Absyn.PARTS(classParts = cls as {Absyn.PUBLIC(contents = els)},comment = _)
       ,info = file_info))
       equation
-        r_1 = SCode.elabRestriction(c, r); // uniontype will not get elaborated!
+        r_1 = SCodeUtil.translateRestriction(c, r); // uniontype will not get elaborated!
         equality(r_1 = SCode.R_UNIONTYPE);
         els = fixElementItems(els,n,0);
         cllst = convertElementsToClasses(els);

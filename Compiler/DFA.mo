@@ -954,13 +954,13 @@ algorithm
       list<Absyn.Ident> fNameList;
       list<Absyn.TypeSpec> fTypes;
       list<SCode.Element> elemList;
-    case (SCode.CLASS(_,_,_,_,SCode.PARTS(elemList,_,_,_,_,_,_)))
+    case (SCode.CLASS(classDef = SCode.PARTS(elementLst = elemList)))
       equation
         fNameList = Util.listMap(elemList,extractFieldName);
         fTypes = Util.listMap(elemList,extractFieldType);
       then (fNameList,fTypes);
     /* adrpo: handle also the case model extends X end X; */
-    case (SCode.CLASS(_,_,_,_,SCode.CLASS_EXTENDS(_,_,elemList,_,_,_,_,_)))
+    case (SCode.CLASS(classDef = SCode.CLASS_EXTENDS(elementLst = elemList)))
       equation
         fNameList = Util.listMap(elemList,extractFieldName);
         fTypes = Util.listMap(elemList,extractFieldType);
@@ -976,7 +976,7 @@ public function extractFieldName
 algorithm
   id := matchcontinue (elem)
     local Absyn.Ident localId;
-    case (SCode.COMPONENT(localId,_,_,_,_,_,_,_,_,_,_,_,_)) then localId;
+    case (SCode.COMPONENT(component = localId)) then localId;
   end matchcontinue;
 end extractFieldName;
 

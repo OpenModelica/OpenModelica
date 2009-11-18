@@ -171,11 +171,13 @@ algorithm
 	  Option<Absyn.Exp> cond;
 	  Option<Absyn.Info> info;
 	  Option<Absyn.ConstrainClass> cc;
+	  Option<SCode.Comment> cmt;
+	  
 	  /* the empty case */
 	  case(cache,env,pre,f,{},_) then {};
 	 
 	 	// Only derived classdefinitions supported in redeclares for now. TODO: What is allowed according to spec?
-	  case(cache,env,pre,f,SCode.CLASSDEF(cn,fi,repl,SCode.CLASS(cn2,p,enc,restr,SCode.DERIVED(tp,mod,attr1)),bc,cc)::elts,impl)
+	  case(cache,env,pre,f,SCode.CLASSDEF(cn,fi,repl,SCode.CLASS(cn2,p,enc,restr,SCode.DERIVED(tp,mod,attr1,cmt)),bc,cc)::elts,impl)
 	    local 
 	      Absyn.ElementAttributes attr1;
 	      Option<Absyn.ConstrainClass> cc; 
@@ -183,7 +185,7 @@ algorithm
 	     (cache,emod) = elabMod(cache,env,pre,mod,impl); 
 	     modElts = elabModRedeclareElements(cache,env,pre,f,elts,impl);
 	     (cache,tp1) = elabModQualifyTypespec(cache,env,tp);
-	 then (SCode.CLASSDEF(cn,fi,repl,SCode.CLASS(cn,p,enc,restr,SCode.DERIVED(tp1,mod,attr1)),bc,cc),emod)::modElts;
+	 then (SCode.CLASSDEF(cn,fi,repl,SCode.CLASS(cn,p,enc,restr,SCode.DERIVED(tp1,mod,attr1,cmt)),bc,cc),emod)::modElts;
 
 		// redeclare of component declaration		 
 	  case(cache,env,pre,f,SCode.COMPONENT(compname,io,fi,repl,prot,attr,tp,mod,bc,cmt,cond,info,cc)::elts,impl) equation

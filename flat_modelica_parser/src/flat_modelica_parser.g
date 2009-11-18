@@ -156,7 +156,16 @@ class_definition :
 		;
 
 class_type :
-		( CLASS | MODEL | RECORD | BLOCK | ( EXPANDABLE )? CONNECTOR | TYPE | PACKAGE | FUNCTION | UNIONTYPE )
+		( CLASS 
+		| MODEL 
+		| RECORD 
+		| BLOCK 
+		| ( EXPANDABLE )? CONNECTOR 
+		| TYPE 
+		| PACKAGE 
+		| FUNCTION
+		/* | OPERATOR (FUNCTION)?  add this later when enabling operators */ 
+		| UNIONTYPE )
 		;
 
 class_specifier:
@@ -404,11 +413,12 @@ implicit_import_name!
 // Note that this is a minor modification of the standard by
 // allowing the comment.
 extends_clause :
-		EXTENDS^ name_path ( class_modification )?
+	   EXTENDS^ name_path (class_modification)? (annotation)?
 		;
 
 constraining_clause :
-		extends_clause | CONSTRAINEDBY^ name_path ( class_modification )?
+			EXTENDS^ name_path  (class_modification)? 
+		|	CONSTRAINEDBY^ name_path ( class_modification )?
 		;
 
 /*

@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2008, Linköpings University,
+ * Copyright (c) 1998-2009, Linköpings University,
  * Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
@@ -3639,3 +3639,26 @@ void free_function(modelica_ptr_t func)
   lib = lookup_ptr(func->data.func.lib);
   /* fprintf(stderr, "FUNCTION FREE LIB index[%d]/count[%d]/handle[%ul].\n", (lib-ptr_vector),((modelica_ptr_t)(lib-ptr_vector))->cnt, lib->data.lib); fflush(stderr); */
 }
+
+/*
+ * side effect to dectect if we have expandable conenctors in a program
+ */
+int hasExpandableConnector = 0;
+/*
+ * side effect to dectect if we have expandable conenctors in a program
+ */
+RML_BEGIN_LABEL(System__getHasExpandableConnectors)
+{
+  rmlA0 = hasExpandableConnector ? RML_TRUE : RML_FALSE;
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__setHasExpandableConnectors)
+{
+  hasExpandableConnector = (RML_UNTAGFIXNUM(rmlA0)) ? 1 : 0;
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+

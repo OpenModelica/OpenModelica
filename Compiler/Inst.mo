@@ -79,6 +79,7 @@ public import ConnectionGraph;
 public import DAE;
 public import Env;
 public import InstanceHierarchy;
+public import SCodeUtil;
 public import Mod;
 public import Prefix;
 public import RTOpts;
@@ -2182,10 +2183,8 @@ algorithm
 
     case (cache,env,ih,store,mods,pre,csets as Connect.SETS(_,crs,dc,oc),ci_state,className,
           SCode.PARTS(elementLst = els,
-                      normalEquationLst = {},
-                      initialEquationLst = {},
-                      normalAlgorithmLst = {},
-                      initialAlgorithmLst = {}),
+                      normalEquationLst = {}, initialEquationLst = {},
+                      normalAlgorithmLst = {}, initialAlgorithmLst = {}),
           re,prot,inst_dims,impl,graph,instSingleCref) 
       equation
         (cdefelts,extendselts as (_ :: _),compelts) = splitElts(els) "extendselts should be empty, checked in inst_basic type below";
@@ -2205,8 +2204,10 @@ algorithm
      * and have two local functions: constructor and destructor (and no other elements). 
      */
     case (cache,env,ih,store,mods,pre,csets,ci_state,className,
-          SCode.PARTS(elementLst = els, normalEquationLst = eqs, initialEquationLst = initeqs,
-            normalAlgorithmLst = alg, initialAlgorithmLst = initalg), re,prot,inst_dims,impl,graph,instSingleCref) 
+          SCode.PARTS(elementLst = els, 
+                      normalEquationLst = eqs, initialEquationLst = initeqs, 
+                      normalAlgorithmLst = alg, initialAlgorithmLst = initalg), 
+          re,prot,inst_dims,impl,graph,instSingleCref) 
       equation
        	true = isExternalObject(els);
        	(cache,env,ih,dae,ci_state) = instantiateExternalObject(cache,env,ih,els,impl);       	
@@ -2216,10 +2217,8 @@ algorithm
     /* This rule describes how to instantiate an explicit class definition*/ 
     case (cache,env,ih,store,mods,pre,csets,ci_state,className,
           SCode.PARTS(elementLst = els,
-                      normalEquationLst = eqs,
-                      initialEquationLst = initeqs,
-                      normalAlgorithmLst = alg,
-                      initialAlgorithmLst = initalg),
+                      normalEquationLst = eqs, initialEquationLst = initeqs,
+                      normalAlgorithmLst = alg, initialAlgorithmLst = initalg),
           re,prot,inst_dims,impl,graph,instSingleCref)
           local list<Mod> tmpModList; 
       equation 
@@ -3050,7 +3049,8 @@ algorithm
         id=Absyn.pathString(p);
         c = SCode.CLASS(id,false,false,SCode.R_TYPE(),
                         SCode.DERIVED(tSpec,SCode.NOMOD(),
-                        Absyn.ATTR(false, false, Absyn.VAR(), Absyn.BIDIR(), {})));
+                        Absyn.ATTR(false, false, Absyn.VAR(), Absyn.BIDIR(), {}),
+                        NONE()));
         (cache,cenv,ih,_,_,csets,ty,_,oDA,_)=instClass(cache,env,ih,UnitAbsyn.noStore,DAE.NOMOD(),pre,csets,c,dims,impl,INNER_CALL(), ConnectionGraph.EMPTY);        
         localAccTypes = listAppend(localAccTypes,{ty});
         (cache,env,ih,localAccTypes,csets,_) = instClassDefHelper(cache,env,ih,restTypeSpecs,pre,dims,impl,localAccTypes,csets);
@@ -4348,6 +4348,9 @@ algorithm
       Boolean impl;
       Env.Cache cache;
       InstanceHierarchy ih;
+      Option<SCode.Comment> cmt;
+      list<SCode.Enum> enumLst;
+      String n;      
       
     case (cache,env,ih,mod,SCode.CLASS(classDef = 
           SCode.PARTS(elementLst = elt,
@@ -4365,6 +4368,13 @@ algorithm
         "Mod.lookup_modification_p(mod, c) => innermod & We have to merge and apply modifications as well!" ;
       then
         (cache,env,ih,elt,eq,ieq,alg,ialg);
+        
+    case (cache,env,ih,mod,SCode.CLASS(name=n, classDef = SCode.ENUMERATION(enumLst,cmt)),impl)
+      equation 
+        c = instEnumeration(n, enumLst, cmt);
+        (cache,env,ih,elt,eq,ieq,alg,ialg) = instDerivedClasses(cache,env,ih, mod, c, impl);
+      then
+        (cache,env,ih,elt,eq,ieq,alg,ialg);        
         
     case (_,_,_,_,_,_)
       equation 
@@ -4723,13 +4733,14 @@ algorithm
         (env_2,ih);
         
     // adrpo: see if is an enumeration! then extend frame with in class. 
-    case (env,ih,( (sel1 as SCode.CLASSDEF(name = s, classDef = SCode.CLASS(classDef=SCode.ENUMERATION(identLst)))) :: xs),impl,redeclareMod)
+    case (env,ih,( (sel1 as SCode.CLASSDEF(name = s, classDef = SCode.CLASS(classDef=SCode.ENUMERATION(enumLst,cmt)))) :: xs),impl,redeclareMod)
       local 
         String s; 
-        list<SCode.Ident> identLst; 
+        list<SCode.Enum> enumLst; 
+        Option<SCode.Comment> cmt; 
         SCode.Class enumclass;
       equation 
-        enumclass = instEnumeration(s, identLst);        
+        enumclass = instEnumeration(s, enumLst, cmt);        
         env_1 = Env.extendFrameC(env, enumclass);
         (env_2,ih) = addClassdefsToEnv2(env_1, ih, xs, impl,redeclareMod);
       then
@@ -5459,7 +5470,9 @@ algorithm
         // We build up a class structure for the complex type
         id=Absyn.pathString(typeName);
         cl = SCode.CLASS(id,false,false,SCode.R_TYPE(),
-                         SCode.DERIVED(tSpec,SCode.NOMOD(),Absyn.ATTR(flowPrefix, streamPrefix,Absyn.VAR(),Absyn.BIDIR(),ad)));
+                         SCode.DERIVED(tSpec,SCode.NOMOD(),
+                            Absyn.ATTR(flowPrefix, streamPrefix,Absyn.VAR(),Absyn.BIDIR(),ad),
+                            NONE()));
         // (cache,cl,cenv) = Lookup.lookupClass(cache,env_1, Absyn.IDENT("Integer"), true);
 
         // If the element is protected, and an external modification
@@ -6623,11 +6636,15 @@ algorithm
     case (cache,_,_,_,cl as SCode.CLASS(name = "String"),_,_) then (cache,{},cl); 
     case (cache,_,_,_,cl as SCode.CLASS(name = "Boolean"),_,_) then (cache,{},cl);
       
-    case (cache,_,_,_,cl as SCode.CLASS(restriction = SCode.R_RECORD(), classDef = SCode.PARTS(_,_,_,_,_,_,_)),_,_) then (cache,{},cl);
+    case (cache,_,_,_,cl as SCode.CLASS(restriction = SCode.R_RECORD(), 
+                                        classDef = SCode.PARTS(elementLst = _)),_,_) then (cache,{},cl);
 
     /*------------------------*/
     /* MetaModelica extension */
-    case (cache,env,_,_,cl as SCode.CLASS(name = id,classDef = SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT("list"),_,arrayDim = ad),modifications = mod)),dims,impl)
+    case (cache,env,_,_,cl as SCode.CLASS(name = id,
+                                          classDef = SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT("list"),_,arrayDim = ad),
+                                                                   modifications = mod)),
+          dims,impl)
       equation
         true=RTOpts.acceptMetaModelicaGrammar();
         owncref = Absyn.CREF_IDENT(id,{});
@@ -6636,7 +6653,10 @@ algorithm
         (cache,dim1) = elabArraydim(cache,env, owncref, Absyn.IDENT("Integer"), ad_1, NONE, impl, NONE,true);
       then (cache,dim1,cl);
 
-    case (cache,env,_,_,cl as SCode.CLASS(name = id,classDef = SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT("tuple"),_,arrayDim = ad),modifications = mod)),dims,impl)
+    case (cache,env,_,_,cl as SCode.CLASS(name = id,
+                                          classDef = SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT("tuple"),_,arrayDim = ad),
+                                                                   modifications = mod)),
+          dims,impl)
       equation
         true=RTOpts.acceptMetaModelicaGrammar();
         owncref = Absyn.CREF_IDENT(id,{});
@@ -6645,7 +6665,10 @@ algorithm
         (cache,dim1) = elabArraydim(cache,env, owncref, Absyn.IDENT("Integer"), ad_1, NONE, impl, NONE,true);
       then (cache,dim1,cl);
 
-    case (cache,env,_,_,cl as SCode.CLASS(name = id,classDef = SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT("Option"),_,arrayDim = ad),modifications = mod)),dims,impl)
+    case (cache,env,_,_,cl as SCode.CLASS(name = id,
+                                          classDef = SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT("Option"),_,arrayDim = ad),
+                                                                   modifications = mod)),
+          dims,impl)
       equation
         true =RTOpts.acceptMetaModelicaGrammar();
         owncref = Absyn.CREF_IDENT(id,{});
@@ -6654,7 +6677,10 @@ algorithm
         (cache,dim1) = elabArraydim(cache,env, owncref, Absyn.IDENT("Integer"), ad_1, NONE, impl, NONE,true);
       then (cache,dim1,cl);
     
-    case (cache,env,_,_,cl as SCode.CLASS(name = id,classDef = SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT("polymorphic"),_,arrayDim = ad),modifications = mod)),dims,impl)
+    case (cache,env,_,_,cl as SCode.CLASS(name = id,
+                                          classDef = SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT("polymorphic"),_,arrayDim = ad),
+                                                                   modifications = mod)),
+          dims,impl)
       equation
         true=RTOpts.acceptMetaModelicaGrammar();
         owncref = Absyn.CREF_IDENT(id,{});
@@ -7478,7 +7504,9 @@ algorithm
     */
     /* adrpo: if a class is derived WITH AN ARRAY DIMENSION we should instVar2 the derived from type not the actual type!!! */
     case (cache,env,ih,store,ci_state,mod,pre,csets,n,
-          (cl as SCode.CLASS(classDef=SCode.DERIVED(Absyn.TPATH(path,SOME(_)),scodeMod,absynAttr)),attr),
+          (cl as SCode.CLASS(classDef=SCode.DERIVED(typeSpec=Absyn.TPATH(path,SOME(_)),
+                                                    modifications=scodeMod,attributes=absynAttr)),
+                                                    attr),
           prot,i,DIMINT(integer = stop),dims,idxs,inst_dims,impl,comment,io,finalPrefix,graph)
       local SCode.Class clBase; Absyn.Path path;
             Absyn.ElementAttributes absynAttr;
@@ -7891,7 +7919,8 @@ algorithm
       equation 
         typePath = Absyn.crefToPath(cr);
         /* make sure is an enumeration! */
-        (_, SCode.CLASS(_, _, _, SCode.R_ENUMERATION(), SCode.PARTS(elementLst, {}, {}, {}, {}, {}, NONE())), _) = 
+        (_, SCode.CLASS(_, _, _, SCode.R_ENUMERATION(), 
+                        SCode.PARTS(elementLst=elementLst)), _) = 
              Lookup.lookupClass(cache, env, typePath, false);
         i = listLength(elementLst);
         (cache,l) = elabArraydimDecl(cache,env, cref, ds, impl, st,doVect);
@@ -8224,15 +8253,17 @@ algorithm
       SCode.Restriction restr;
       SCode.ClassDef parts;
       list<SCode.Element> els;
-      list<SCode.Ident> l;
+      list<SCode.Enum> l;
       Env.Cache cache;
       InstanceHierarchy ih;
+      Option<SCode.Comment> cmt;
 
      /* enumerations */
      case (cache,env,ih,mod,pre,csets,
-           (c as SCode.CLASS(name = n,restriction = SCode.R_TYPE(),classDef = SCode.ENUMERATION(identLst = l))),inst_dims)  
+           (c as SCode.CLASS(name = n,restriction = SCode.R_TYPE(),
+                             classDef = SCode.ENUMERATION(enumLst=l, comment=cmt))),inst_dims)  
       equation 
-        enumclass = instEnumeration(n, l);
+        enumclass = instEnumeration(n, l, cmt);
         env_2 = Env.extendFrameC(env, enumclass); 
       then
         (cache,env_2,ih,{});
@@ -8465,7 +8496,7 @@ algorithm
     case (cache,env,ih,SCode.CLASS(name = id,partialPrefix = p,encapsulatedPrefix = e,restriction = r,
                                    classDef = SCode.PARTS(elementLst = elts,externalDecl=extDecl))) 
       equation 
-        stripped_class = SCode.CLASS(id,p,e,r,SCode.PARTS(elts,{},{},{},{},{},extDecl));
+        stripped_class = SCode.CLASS(id,p,e,r,SCode.PARTS(elts,{},{},{},{},extDecl,{},NONE()));
         (cache,env_1,ih,_) = implicitFunctionInstantiation(cache,env,ih, DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, stripped_class, {});
       then
         (cache,env_1,ih);
@@ -9074,40 +9105,42 @@ protected function instEnumeration
   author: PA
   This function takes an Ident and list of strings, and returns an enumeration class."
   input SCode.Ident n;
-  input list<SCode.Ident> l;
+  input list<SCode.Enum> l;
+  input Option<SCode.Comment> cmt;
   output SCode.Class outClass;
   list<SCode.Element> comp;
 algorithm 
   comp := makeEnumComponents(l);
-  outClass := SCode.CLASS(n,false,false,SCode.R_ENUMERATION(),SCode.PARTS(comp,{},{},{},{},{},NONE));
+  outClass := SCode.CLASS(n,false,false,SCode.R_ENUMERATION(),SCode.PARTS(comp,{},{},{},{},NONE,{},cmt));
 end instEnumeration;
-
 
 protected function makeEnumComponents 
 "function: makeEnumComponents
   author: PA
   This function takes a list of strings and returns the elements of 
   type EnumType each corresponding to one of the enumeration values."
-  input list<SCode.Ident> inStringLst;
+  input list<SCode.Enum> inEnumLst;
   output list<SCode.Element> outSCodeElementLst;
 algorithm 
-  outSCodeElementLst:= matchcontinue (inStringLst)
+  outSCodeElementLst:= matchcontinue (inEnumLst)
     local
       String str;
       Integer idx;
       list<SCode.Element> els;
-      list<SCode.Ident> x;
-    case ({str}) 
+      list<SCode.Enum> x;
+      Option<SCode.Comment> cmt;
+      
+    case ({SCode.ENUM(str,cmt)}) 
       then {SCode.COMPONENT(str,Absyn.UNSPECIFIED(),true,false,false,
             SCode.ATTR({},false,false,SCode.RO(),SCode.CONST(),Absyn.BIDIR()),
-            Absyn.TPATH(Absyn.IDENT("EnumType"),NONE),SCode.NOMOD(),NONE,NONE,NONE,NONE,NONE)}; 
-    case ((str :: (x as (_ :: _))))
+            Absyn.TPATH(Absyn.IDENT("EnumType"),NONE),SCode.NOMOD(),NONE,cmt,NONE,NONE,NONE)}; 
+    case ((SCode.ENUM(str,cmt) :: (x as (_ :: _))))
       equation 
         els = makeEnumComponents(x);
       then
         (SCode.COMPONENT(str,Absyn.UNSPECIFIED(),true,false,false,
          SCode.ATTR({},false,false,SCode.RO(),SCode.CONST(),Absyn.BIDIR()),
-         Absyn.TPATH(Absyn.IDENT("EnumType"),NONE),SCode.NOMOD(),NONE,NONE,NONE,NONE,NONE) :: els);
+         Absyn.TPATH(Absyn.IDENT("EnumType"),NONE),SCode.NOMOD(),NONE,cmt,NONE,NONE,NONE) :: els);
   end matchcontinue;
 end makeEnumComponents;
 
@@ -9916,7 +9949,7 @@ algorithm
         
         typePath = Absyn.crefToPath(cr);
         /* make sure is an enumeration! */
-        (_, SCode.CLASS(_, _, _, SCode.R_ENUMERATION(), SCode.PARTS(elementLst, {}, {}, {}, {}, {}, NONE())), _) = 
+        (_, SCode.CLASS(_, _, _, SCode.R_ENUMERATION(), SCode.PARTS(elementLst, {}, {}, {}, {}, _, _, _)), _) = 
              Lookup.lookupClass(cache, env, typePath, false);
         len = listLength(elementLst);        
         env_1 = addForLoopScope(env, i, (DAE.T_INTEGER({}),NONE())) "//Debug.fprintln (\"insti\", \"for expression elaborated\") &" ;
@@ -13711,7 +13744,7 @@ algorithm
         // Temporarily add the loop variables to the environment so that we can later
         // elaborate the main for-iterator construct expression, in order to get the array type
         env2 = Env.openScope(localEnv, false, NONE());
-        ld2 = SCode.elabEitemlist(ld,false);
+        ld2 = SCodeUtil.translateEitemlist(ld,false);
         ld2 = componentElts(ld2);
         ld_mod = addNomod(ld2);
         (localCache,env2,ih) = addComponentsToEnv(localCache, env2, InstanceHierarchy.emptyInstanceHierarchy, DAE.NOMOD(), Prefix.NOPRE(),

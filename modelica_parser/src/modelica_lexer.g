@@ -87,8 +87,9 @@ tokens {
 	INPUT		= "input"	;
 	LOOP		= "loop"	;
 	MODEL		= "model"	;
-	NOT		= "not"		;
+	NOT		    = "not"		;
 	OUTER		= "outer"	;
+/*	OPERATOR	= "operator" ; add this later when enabling operators */	
     OVERLOAD    = "overload";
 	OR		= "or"		;
 	OUTPUT		= "output"	;
@@ -242,6 +243,11 @@ QCHAR :
 
 protected
 SESCAPE : '\\' ('\\' | '"' | "'" | '?' | 'a' | 'b' | 'f' | 'n' | 'r' | 't' | 'v');
+          /*
+          |  here we should issue a warning about  
+            { $setText("\\" + $getText()); }
+          );
+          */
 
 
 protected

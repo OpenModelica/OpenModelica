@@ -49,6 +49,7 @@ public import Absyn;
 public import AbsynDep;
 public import OptManager;
 public import SCode;
+public import SCodeUtil;
 public import DAE;
 public import Env;
 public import Settings;
@@ -351,7 +352,7 @@ algorithm
     case (Absyn.PROGRAM(classes = {absyn_class}),st) /* Type check the function */
       equation
         env = buildEnvFromSymboltable(st);
-        scode_class = SCode.elabClass(absyn_class);
+        scode_class = SCodeUtil.translateClass(absyn_class);
         (_,env_1,_,d) = 
           Inst.implicitFunctionInstantiation(Env.emptyCache(),env,InstanceHierarchy.emptyInstanceHierarchy, 
                                              DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, scode_class, {});
@@ -1196,7 +1197,7 @@ algorithm
     case (
       SYMBOLTABLE(ast = p, explodedAst = sp, instClsLst = ic, lstVarVal = vars, compiledFunctions = cf))
       equation
-        p_1 = SCode.elaborate(p);
+        p_1 = SCodeUtil.translateAbsyn2SCode(p);
         (_,env) = Inst.makeEnvFromProgram(Env.emptyCache(),p_1, Absyn.IDENT(""));
         env_1 = addVarsToEnv(vars, env);
 	    then
@@ -2351,7 +2352,7 @@ algorithm
       equation
         (res,p_1) = renameClass(p, old_cname, new_cname) "For now, renaming a class clears all caches... Substantial analysis required to find out what to keep in cache
 	   and what must be thrown out" ;
-        s_1 = SCode.elaborate(p_1);
+        s_1 = SCodeUtil.translateAbsyn2SCode(p_1);
       then
         (res,SYMBOLTABLE(p_1,aDep,s_1,{},{},{},lf));
 
@@ -4148,7 +4149,7 @@ protected function extractAllComponents
 protected
   Real t1,t2,t3;
 algorithm
-  p_1 := SCode.elaborate(p);
+  p_1 := SCodeUtil.translateAbsyn2SCode(p);
   (_,env) := Inst.makeEnvFromProgram(Env.emptyCache(),p_1, Absyn.IDENT(""));
   ((p_1,_,(comps,p,env))) := traverseClasses(p, NONE, extractAllComponentsVisitor,
           (COMPONENTS({},0),p,env), true) "traverse protected" ;
@@ -4264,7 +4265,8 @@ algorithm
         comps_1;
     case (pa,Absyn.DERIVED(typeSpec=Absyn.TPATH(path,_),arguments = elementargs),comps,env)
       equation
-        comps_1 = extractComponentsFromElementargs(pa, elementargs, comps, env) "& print \"extract_components_from_classdef for DERIVED not implemented yet\\n\"" ;
+        comps_1 = extractComponentsFromElementargs(pa, elementargs, comps, env) 
+        "& print \"extract_components_from_classdef for DERIVED not implemented yet\\n\"" ;
       then
         comps_1;
     case (pa,Absyn.CLASS_EXTENDS(baseClassName = id_ex,modifications = elementarg,parts = parts),comps,env)
@@ -4756,7 +4758,7 @@ algorithm
    									// of the derived class is returned, which can be a totally different scope.
       local Absyn.Path tp;
       equation
-        p_1 = SCode.elaborate(p);
+        p_1 = SCodeUtil.translateAbsyn2SCode(p);
         (cache,env) = Inst.makeEnvFromProgram(Env.emptyCache(),p_1, Absyn.IDENT(""));
         (cache,(cl as SCode.CLASS(id,_,encflag,restr,SCode.DERIVED(typeSpec=Absyn.TPATH(tp,_)))),env_1) = 
         Lookup.lookupClass(cache,env, p_class, false);
@@ -4764,7 +4766,7 @@ algorithm
 
     case (p,p_class)
       equation
-        p_1 = SCode.elaborate(p);
+        p_1 = SCodeUtil.translateAbsyn2SCode(p);
         (cache,env) = Inst.makeEnvFromProgram(Env.emptyCache(),p_1, Absyn.IDENT(""));
         (cache,(cl as SCode.CLASS(id,_,encflag,restr,_)),env_1) = Lookup.lookupClass(cache,env, p_class, false);
         env2 = Env.openScope(env_1, encflag, SOME(id));
@@ -7102,6 +7104,9 @@ algorithm
   matchcontinue (inPath)
     local Absyn.Path w_path,path;
     case (Absyn.IDENT(name = _)) then Absyn.TOP();
+    case (Absyn.FULLYQUALIFIED(path)) // handle fully qual also!
+      then
+        buildWithin(path);      
     case (path)
       equation
         w_path = Absyn.stripLast(path);
@@ -7197,7 +7202,7 @@ algorithm
       equation
         old_path = Absyn.crefToPath(old_class) "class in package" ;
         new_path = Absyn.crefToPath(new_name);
-        pa_1 = SCode.elaborate(p);
+        pa_1 = SCodeUtil.translateAbsyn2SCode(p);
         (_,env) = Inst.makeEnvFromProgram(Env.emptyCache(),pa_1, Absyn.IDENT(""));
         ((p_1,_,(_,_,_,path_str_lst,_))) = traverseClasses(p, NONE, renameClassVisitor, (old_path,new_path,p,{},env),
           true) "traverse protected" ;
@@ -7211,7 +7216,7 @@ algorithm
         new_path_1 = Absyn.crefToPath(new_name);
         old_path_no_last = Absyn.stripLast(old_path);
         new_path = Absyn.joinPaths(old_path_no_last, new_path_1);
-        pa_1 = SCode.elaborate(p);
+        pa_1 = SCodeUtil.translateAbsyn2SCode(p);
         (_,env) = Inst.makeEnvFromProgram(Env.emptyCache(),pa_1, Absyn.IDENT(""));
         ((p_1,_,(_,_,_,path_str_lst,_))) = traverseClasses(p, NONE, renameClassVisitor, (old_path,new_path,p,{},env),
           true) "traverse protected" ;
@@ -10116,7 +10121,7 @@ algorithm
       equation
         modelpath = Absyn.crefToPath(model_);
         cdef = getPathedClassInProgram(modelpath, p);
-        p_1 = SCode.elaborate(p);
+        p_1 = SCodeUtil.translateAbsyn2SCode(p);
         (cache,env) = Inst.makeEnvFromProgram(Env.emptyCache(),p_1, Absyn.IDENT(""));
         (_,(c as SCode.CLASS(id,_,encflag,restr,_)),env_1) = Lookup.lookupClass(cache,env, modelpath, false);
         str = getNthInheritedClass2(c, cdef, n, env_1);
@@ -10426,7 +10431,7 @@ algorithm
     case (model_,p,n)
       equation
         modelpath = Absyn.crefToPath(model_);
-        p_1 = SCode.elaborate(p);
+        p_1 = SCodeUtil.translateAbsyn2SCode(p);
         (cache,env) = Inst.makeEnvFromProgram(Env.emptyCache(),p_1, Absyn.IDENT(""));
         (_,(c as SCode.CLASS(id,_,encflag,restr,_)),env_1) = Lookup.lookupClass(cache,env, modelpath, false);
         cdef = getPathedClassInProgram(modelpath, p);
@@ -10509,7 +10514,7 @@ algorithm
       equation
         modelpath = Absyn.crefToPath(model_);
         cdef = getPathedClassInProgram(modelpath, p);
-        p_1 = SCode.elaborate(p);
+        p_1 = SCodeUtil.translateAbsyn2SCode(p);
         (cache,env) = Inst.makeEnvFromProgram(Env.emptyCache(),p_1, Absyn.IDENT(""));
         (cache,(c as SCode.CLASS(id,_,encflag,restr,_)),env_1) = Lookup.lookupClass(cache,env, modelpath, false);
         env2 = Env.openScope(env_1, encflag, SOME(id));
@@ -13064,7 +13069,7 @@ algorithm
       equation
         lineProgram = modelicaAnnotationProgram(RTOpts.getAnnotationVersion());
         fargs = createFuncargsFromElementargs(elts);
-        p_1 = SCode.elaborate(lineProgram);
+        p_1 = SCodeUtil.translateAbsyn2SCode(lineProgram);
         (cache,env) = Inst.makeEnvFromProgram(Env.emptyCache(),p_1, Absyn.IDENT(""));
         (_,newexp,_) = Static.elabGraphicsExp(cache,env, Absyn.CALL(Absyn.CREF_IDENT("Line",{}),fargs), false) "impl" ;
         Print.clearErrorBuf() "this is to clear the error-msg generated by the annotations." ;
@@ -13316,7 +13321,7 @@ protected function getComponentAnnotationsFromElts
      Absyn.Program placementProgram;
 algorithm     
   placementProgram := modelicaAnnotationProgram(RTOpts.getAnnotationVersion());
-  p_1 := SCode.elaborate(placementProgram);
+  p_1 := SCodeUtil.translateAbsyn2SCode(placementProgram);
   (_,env) := Inst.makeEnvFromProgram(Env.emptyCache(),p_1, Absyn.IDENT(""));
   res := getComponentitemsAnnotations(comps, env);
   res_1 := Util.stringDelimitList(res, ",");
@@ -13388,7 +13393,7 @@ algorithm
             _))) :: rest),env)
       equation
         (cache,c,env_1) = Lookup.lookupClass(Env.emptyCache(),env, Absyn.IDENT("Placement"), false);
-        mod_1 = SCode.buildMod(SOME(Absyn.CLASSMOD(mod,NONE)), false, Absyn.NON_EACH());
+        mod_1 = SCodeUtil.translateMod(SOME(Absyn.CLASSMOD(mod,NONE)), false, Absyn.NON_EACH());
         (cache,mod_2) = Mod.elabMod(cache,env_1, Prefix.NOPRE(), mod_1, false);
         c_1 = SCode.classSetPartial(c, false);
         (_,_,_,_,dae,cs,t,state,_,_) = 
@@ -13617,11 +13622,11 @@ algorithm
       equation
         // print(Dump.unparseStr(p, false));
         (stripmod,{Absyn.MODIFICATION(_,_,_,SOME(Absyn.CLASSMOD(_,SOME(graphicexp))),_)}) = stripGraphicsModification(mod);
-        mod_1 = SCode.buildMod(SOME(Absyn.CLASSMOD(stripmod,NONE)), false, Absyn.NON_EACH());
-        p_1 = SCode.elaborate(p);
+        mod_1 = SCodeUtil.translateMod(SOME(Absyn.CLASSMOD(stripmod,NONE)), false, Absyn.NON_EACH());
+        p_1 = SCodeUtil.translateAbsyn2SCode(p);
         (cache,env) = Inst.makeSimpleEnvFromProgram(Env.emptyCache(),p_1, Absyn.IDENT("Icon"));
         placementc = getClassInProgram("Icon", p);
-        placementclass = SCode.elabClass(placementc);
+        placementclass = SCodeUtil.translateClass(placementc);
         (cache,mod_2) = Mod.elabMod(cache,env, Prefix.NOPRE(), mod_1, false);
         (cache,_,_,_,dae,cs,t,state,_,_) = 
           Inst.instClass(cache,env, InstanceHierarchy.emptyInstanceHierarchy, UnitAbsyn.noStore,mod_2, Prefix.NOPRE(), 
@@ -13642,11 +13647,11 @@ algorithm
       equation
         //print(Dump.unparseStr(p, false));
         (stripmod,gxmods) = stripGraphicsModification(mod);
-        mod_1 = SCode.buildMod(SOME(Absyn.CLASSMOD(stripmod,NONE)), false, Absyn.NON_EACH());
-        p_1 = SCode.elaborate(p);
+        mod_1 = SCodeUtil.translateMod(SOME(Absyn.CLASSMOD(stripmod,NONE)), false, Absyn.NON_EACH());
+        p_1 = SCodeUtil.translateAbsyn2SCode(p);
         (cache,env) = Inst.makeSimpleEnvFromProgram(Env.emptyCache(),p_1, Absyn.IDENT("Icon"));
         placementc = getClassInProgram("Icon", p);
-        placementclass = SCode.elabClass(placementc);
+        placementclass = SCodeUtil.translateClass(placementc);
         (cache,mod_2) = Mod.elabMod(cache,env, Prefix.NOPRE(), mod_1, true);
         (cache,_,_,_,dae,cs,t,state,_,_) = 
           Inst.instClass(cache,env,InstanceHierarchy.emptyInstanceHierarchy, UnitAbsyn.noStore,
@@ -13662,11 +13667,11 @@ algorithm
       equation
         //print(Dump.unparseStr(p, false));
         (stripmod,{Absyn.MODIFICATION(_,_,_,SOME(Absyn.CLASSMOD(_,SOME(graphicexp))),_)}) = stripGraphicsModification(mod);
-        mod_1 = SCode.buildMod(SOME(Absyn.CLASSMOD(stripmod,NONE)), false, Absyn.NON_EACH());
-        p_1 = SCode.elaborate(p);
+        mod_1 = SCodeUtil.translateMod(SOME(Absyn.CLASSMOD(stripmod,NONE)), false, Absyn.NON_EACH());
+        p_1 = SCodeUtil.translateAbsyn2SCode(p);
         (cache,env) = Inst.makeEnvFromProgram(Env.emptyCache(),p_1, Absyn.IDENT("Diagram"));
         placementc = getClassInProgram("Diagram", p);
-        placementclass = SCode.elabClass(placementc);
+        placementclass = SCodeUtil.translateClass(placementc);
         (cache,mod_2) = Mod.elabMod(cache,env, Prefix.NOPRE(), mod_1, false);
         (cache,_,_,_,dae,cs,t,state,_,_) = 
           Inst.instClass(cache,env, InstanceHierarchy.emptyInstanceHierarchy, 
@@ -13685,11 +13690,11 @@ algorithm
     case (p,Absyn.ANNOTATION(elementArgs = {Absyn.MODIFICATION(componentReg = Absyn.CREF_IDENT(name = anncname),modification = SOME(Absyn.CLASSMOD(mod,_)))}))
       equation
         //print(Dump.unparseStr(p, false));
-        mod_1 = SCode.buildMod(SOME(Absyn.CLASSMOD(mod,NONE)), false, Absyn.NON_EACH());
-        p_1 = SCode.elaborate(p);
+        mod_1 = SCodeUtil.translateMod(SOME(Absyn.CLASSMOD(mod,NONE)), false, Absyn.NON_EACH());
+        p_1 = SCodeUtil.translateAbsyn2SCode(p);
         (cache,env) = Inst.makeEnvFromProgram(Env.emptyCache(),p_1, Absyn.IDENT(anncname));
         placementc = getClassInProgram(anncname, p);
-        placementclass = SCode.elabClass(placementc);
+        placementclass = SCodeUtil.translateClass(placementc);
         (cache,mod_2) = Mod.elabMod(cache,env, Prefix.NOPRE(), mod_1, false);
         (cache,_,_,_,dae,cs,t,state,_,_) = 
           Inst.instClass(cache,env, InstanceHierarchy.emptyInstanceHierarchy, UnitAbsyn.noStore, 
@@ -15002,10 +15007,10 @@ algorithm
         pnew;
     case ((c1 as Absyn.CLASS(name = name)),w,p)
       equation
-        print("Error inserting in class. (");
+        print("Error inserting class: " +& name +& " within: (");
         s1 = Dump.unparseWithin(0, w);
-        print(s1);
-        print(") program = \n") "& Dump.unparse_str p => pstr & print pstr & print \"\\n\"" ;
+        print(s1 +& ") program: \n");
+        print(Dump.unparseStr(p, false));
       then
         fail();
   end matchcontinue;
@@ -18157,23 +18162,23 @@ algorithm
         strlist = getClassnamesInParts(parts);
       then
         strlist;
+    case (inmodel,p,Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts)))
+      equation
+        strlist = getClassnamesInParts(parts);  
+      then strlist;
     case (inmodel,p,Absyn.CLASS(body = Absyn.DERIVED(typeSpec=Absyn.TPATH(path = path))))
       equation
         //(cdef,newpath) = lookupClassdef(path, inmodel, p);
         //res = getClassnamesInClassList(newpath, p, cdef);
       then
         {};//res;
-    case (inmodel,p,Absyn.CLASS(body = Absyn.OVERLOAD(_, _)))
+    case (inmodel,p,Absyn.CLASS(body = Absyn.OVERLOAD(functionNames = _)))
       equation        
       then {};
-    case (inmodel,p,Absyn.CLASS(body = Absyn.ENUMERATION(_, _)))
+    case (inmodel,p,Absyn.CLASS(body = Absyn.ENUMERATION(enumLiterals = _)))
       equation        
       then {};
-    case (inmodel,p,Absyn.CLASS(body = Absyn.CLASS_EXTENDS(_, _, _, parts)))
-      equation
-        strlist = getClassnamesInParts(parts);  
-      then strlist;
-    case (inmodel,p,Absyn.CLASS(body = Absyn.PDER(_,_)))
+    case (inmodel,p,Absyn.CLASS(body = Absyn.PDER(functionName = _)))
       equation        
       then {};
   end matchcontinue;
@@ -18278,7 +18283,7 @@ algorithm
   dep := matchcontinue(path,p)
   local SCode.Program p_1; Env.Env env; 
     case(path,p) equation
-      p_1 = SCode.elaborate(p);
+      p_1 = SCodeUtil.translateAbsyn2SCode(p);
       (_,env) = Inst.makeEnvFromProgram(Env.emptyCache(),p_1, Absyn.IDENT(""));
       dep = getTotalProgramDep(AbsynDep.emptyDepends(),path,p,env);
     then dep;
