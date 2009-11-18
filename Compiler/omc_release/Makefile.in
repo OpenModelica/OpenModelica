@@ -56,12 +56,13 @@ RMLCFLAGS = -Wr,-ftrace
 
 SUBDIRS	= $(srcdir)/runtime $(srcdir)/absyn_builder $(srcdir)/modpar
 
-all : $(ALLMO) $(SRCSIGX) subdirs $(PROG)
-
+all : $(ALLMO) $(SRCSIGX)
+	# Updated dependencies; reload make and compile the target
+	$(MAKE) $(PROG)
 
 .SUFFIXES:
-.SUFFIXES: .o .mo .h
-.PHONY: all subdirs $(SUBDIRS) report vctarget absyn_subdir clean reallyclean
+.SUFFIXES: .o .mo .h .c
+.PHONY: all vctarget absyn_subdir clean reallyclean
 
 SRCHSRCDIR = $(SRCH:%.h=$(srcdir)/%.h)
 
@@ -72,14 +73,13 @@ $(ALLMO): %.mo : $(srcdir)/%.mo
 $(SRCO): %.o : %.c %.h
 	$(RMLC) $(RMLCFLAGS) -c $<
 
-$(SRCC): %.c : %.mo
+%.c %.h : %.mo
 	$(RMLC) $(RMLCFLAGS) +C $<
+
+%.h : %.c
 
 $(SRCHSRCDIR) : $(srcdir)/%.h : %.h
 	cp $< $@
-
-$(SRCH): %.h : %.mo
-	$(RMLC) $(RMLCFLAGS) -c $<
 
 $(SRCSIGX): %.sigx : %.mo
 	$(srcdir)/rml2sig/rmldep-new.sh $<
@@ -87,24 +87,21 @@ $(SRCSIGX): %.sigx : %.mo
 
 vctarget: $(SRCC) absyn_subdir
 
-
 absyn_subdir:
 	(cd $(srcdir)/absyn_builder && $(MAKE) vctarget)
 
-$(PROG): $(SRCO) $(AST) $(RTOBJ) $(top_builddir)/c_runtime/sendData/*.cpp
+$(PROG): $(SRCO) subdirs $(top_builddir)/c_runtime/sendData/*.cpp
 	g++ -O3 -o $(PROG)$(EXEEXT) $(SRCO) $(AST) $(RTOBJ) $(LDFLAGS) $(PLTPKGFLAGS)
 
-subdirs: $(SRCHSRCDIR) $(SUBDIRS)
-
-$(SUBDIRS):
-	$(MAKE) -C $@
+subdirs: $(SRCHSRCDIR)
+	for dir in $(SUBDIRS); do $(MAKE) -j 1 -C $$dir; done;
 
 clean:
 	for d in $(SUBDIRS); do \
 		(cd $$d && $(MAKE) clean) \
 	done
 	(cd $(srcdir) && $(RM) $(SRCH))
-	$(RM) -f $(SRCO) $(SRCC) $(SRCH) $(PROG)$(EXEEXT) *~ $(ALLMO:.mo=.srz)
+	$(RM) -f $(SRCO) $(SRCC) $(SRCH) $(PROG)$(EXEEXT) *~ $(ALLMO:.mo=.srz) $(ALLMO:.mo=.sig) $(ALLMO:.mo=.sigx)
 
 reallyclean: clean
 	$(RM) -f $(ALLMO) $(ALLMO:.mo=.sig) $(ALLMO:.mo=.sigx) $(ALLMO:.mo=.srz) $(PROG)$(EXEEXT) 

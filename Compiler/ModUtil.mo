@@ -51,7 +51,6 @@ protected import Exp;
 protected import RTOpts;
 protected import Util;
 protected import Algorithm;
-protected import Types;
 protected import System;
 
 protected function stringPrefixComponentRefs ""

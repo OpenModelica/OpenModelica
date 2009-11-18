@@ -110,7 +110,6 @@ protected import Absyn;
 protected import Algorithm;
 protected import Exp;
 protected import System;
-protected import Types;
 protected import Util;
 
 public function applyReplacementsDAE "Apply a set of replacement rules on a DAE "

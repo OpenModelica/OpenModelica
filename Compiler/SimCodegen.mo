@@ -93,7 +93,6 @@ protected import PartFn;
 protected import Print;
 protected import Settings;
 protected import System;
-protected import Types;
 protected import Util;
 protected import Values;
 protected import ValuesUtil;

@@ -54,7 +54,6 @@ protected import Algorithm;
 protected import Debug;
 protected import DAEUtil;
 protected import Exp;
-protected import Types;
 
 public function inlineCalls
 "function: inlineCalls

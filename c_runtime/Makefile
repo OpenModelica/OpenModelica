@@ -46,7 +46,7 @@ g++ -c -o sendData/libsendData.o sendData/humbug.cpp && \
 ar -ru sendData/release/libsendData.a sendData/libsendData.o
 endif
 
-all : $(SIMOBJS) $(OBJS) libc_runtime.a libsim.a libf2c.a libsendData.a install
+all : $(SIMOBJS) $(OBJS) libc_runtime.a libsim.a libf2c/libf2c.a libsendData.a install
 
 #$(SIMOBJS) : $(HFILES) *.c*
 #$(OBJS) : $(HFILES) *.c*
@@ -60,13 +60,13 @@ install: libc_runtime.a libsim.a libf2c/libf2c.a
 	cp $(LIBS) $(builddir_lib)/
 	cp libf2c/libf2c.* $(builddir_lib)/
 	cp sendData/release/libsendData.a $(builddir_lib)/
-	@make -C java_interface -f Makefile.omdev.mingw || make -C java_interface -f Makefile.omdev.mingw install
+	@$(MAKE) -C java_interface -f Makefile.omdev.mingw || $(MAKE) -C java_interface -f Makefile.omdev.mingw install
 
 libsim.a : $(SIMOBJS)
 	$(AR) $@ $(SIMOBJS)
 
-libf2c.a :
-	cd libf2c && $(MAKE) -f makefile.u
+libf2c/libf2c.a :
+	$(MAKE) -C libf2c -f makefile.u
 
 libsendData.a : sendData/sendData.cpp sendData/sendData.h sendData/sendData.pro sendData/humbug.h sendData/humbug.cpp
 #	cd ./sendData && \
@@ -76,7 +76,7 @@ libsendData.a : sendData/sendData.cpp sendData/sendData.h sendData/sendData.pro 
 	$(PLTPKGCMD)
 
 clean :
-	cd ./libf2c && $(MAKE) -f makefile.u clean
+	$(MAKE) -C libf2c -f makefile.u clean
 	rm -f libc_runtime.a
 	rm -f libsim.a
 	rm -f $(OBJS)

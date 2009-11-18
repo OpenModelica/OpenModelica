@@ -401,7 +401,6 @@ protected import Print;
 protected import RTOpts;
 protected import SimCodegen;
 protected import System;
-protected import Types;
 protected import Util;
 protected import VarTransform;
 

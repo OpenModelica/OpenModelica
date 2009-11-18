@@ -54,7 +54,6 @@ type SimpleStateArray = SimpleState[:];
 protected import Lookup;
 protected import Util;
 protected import Dump;
-protected import Types;
 
 public uniontype Dfa
   record DFArec
