@@ -22,6 +22,7 @@ CFLAGS =-O3 -Wall $(INCLUDES)
 CXXFLAGS = $(CFLAGS)
 
 ANTLRFLAGS=
+ANTLR = java -cp $(top_builddir)/@omc_antlr_jar@ antlr.Tool
 
 LIB = $(LIBP) -lantlr
 
@@ -42,18 +43,23 @@ helperobjs =  parse_tree_dumper.o token_names.o
 OBJS += $(lexerobjs) $(parserobjs)
 #$(helperobjs)
 
-all: libflat_modelica_parser.a
+all: libmodelica_parser.a
+.PHONY: lexeronce parseronce
 
 vctarget: $(lexergen) $(parsergen)
 
-libflat_modelica_parser.a: $(OBJS)
+libmodelica_parser.a: $(OBJS)
 	$(AR) $@ $(OBJS)
 
-$(lexergen): flat_modelica_lexer.g
-	java antlr.Tool $(ANTLRFLAGS) $<
+lexeronce: flat_modelica_lexer.g
+	$(ANTLR) $(ANTLRFLAGS) $<
 
-$(parsergen): flat_modelica_parser.g flat_modelica_lexer.g
-	java antlr.Tool $(ANTLRFLAGS) $<
+parseronce: flat_modelica_parser.g $(lexergen)
+	$(ANTLR) $(ANTLRFLAGS) $<
+
+$(lexergen): lexeronce
+
+$(parsergen): lexeronce parseronce
 
 .c.o:
 	$(CC) $(CFLAGS) -c $<

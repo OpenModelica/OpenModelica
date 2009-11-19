@@ -19,7 +19,8 @@ INSTALL_INCLUDEDIR = ${includedir}
 INSTALL_DATADIR    = ${datadir}
 INSTALL_DOCDIR     = ${INSTALL_DATADIR}/omc/doc
 
-all : mkbuilddirs release qtclients mosh
+all : release qtclients mosh
+.PHONY : c_runtime omc omcd release debug qtclient mosh all mkbuilddirs test
 
 mkbuilddirs:
 	mkdir -p $(builddir_bin)
@@ -32,17 +33,16 @@ debug: omcd
 
 release: omc
 
-omcd:
-	(cd c_runtime && $(MAKE) -f Makefile)
-	#(cd Compiler/rml2sig && $(MAKE) -f Makefile)
+c_runtime: mkbuilddirs
+	$(MAKE) -C c_runtime -f Makefile
+
+omcd: c_runtime
 	(cd Compiler && $(MAKE) -f Makefile debug)
 	(cp -p doc/*.pdf $(builddir_doc)/)
 	(cp -p Examples/*.* $(builddir_doc)/testmodels/)
 
 
-omc:
-	(cd c_runtime && $(MAKE) -f Makefile)
-	#(cd Compiler/rml2sig && $(MAKE) -f Makefile)
+omc: c_runtime
 	(cd Compiler && $(MAKE) -f Makefile release)
 	(cp doc/*.pdf $(builddir_doc)/)
 	(cp -p Examples/*.* $(builddir_doc)/testmodels/)
@@ -56,10 +56,10 @@ testmos:
 testSummary:
 	(cd testsuite; time $(MAKE) -f Makefile | grep "==")
 
-mosh:
+mosh: omc
 	(cd mosh/src; $(MAKE) -f Makefile)
 
-qtclients:
+qtclients: mkbuilddirs
 	echo "environment variable QTHOME should be defined"
 	echo "Coin3D (www.coin3d.org) and SoQt should be installed and in the path!"
 	echo "using QTHOME=${QTHOME}"

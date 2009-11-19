@@ -18,6 +18,7 @@ CFLAGS =-O3 -Wall $(INCLUDES)
 CXXFLAGS = $(CFLAGS)
 
 ANTLRFLAGS=
+ANTLR = java -cp $(top_builddir)/@omc_antlr_jar@ antlr.Tool
 
 LIB = $(LIBP) -lantlr
 
@@ -39,17 +40,22 @@ helperobjs = token_names.o parse_tree_dumper.o
 OBJS += $(lexerobjs) $(parserobjs) $(helperobjs)
 
 all: libmodelica_parser.a
+.PHONY: lexeronce parseronce
 
 vctarget: $(lexergen) $(parsergen)
 
 libmodelica_parser.a: $(OBJS)
 	$(AR) $@ $(OBJS)
 
-$(lexergen): modelica_lexer.g
-	java antlr.Tool $(ANTLRFLAGS) $<
+lexeronce: modelica_lexer.g
+	$(ANTLR) $(ANTLRFLAGS) $<
 
-$(parsergen): modelica_parser.g modelica_lexer.g
-	java antlr.Tool $(ANTLRFLAGS) $<
+parseronce: modelica_parser.g $(lexergen)
+	$(ANTLR) $(ANTLRFLAGS) $<
+
+$(lexergen): lexeronce
+
+$(parsergen): parseronce
 
 .c.o:
 	$(CC) $(CFLAGS) -c $<
@@ -69,7 +75,7 @@ reallyclean: clean
 	-rm -f $(lexergen) $(parsergen)
 
 modelica_lexer.o:modelica_lexer.cpp modelica_lexer.hpp
-modelica_parser.o:modelica_parser.cpp modelica_parser.hpp
+modelica_parser.o:modelica_parser.cpp modelica_parser.hpp ../../Compiler/runtime/errorext.h ../../Compiler/runtime/error_reporting.h
 token_names.o:token_names.cpp
 parse_tree_dumper.o:parse_tree_dumper.cpp parse_tree_dumper.hpp
 #include $(DFILES)

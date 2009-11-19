@@ -3,6 +3,7 @@ AC_INIT(c_runtime/boolean_array.c)
 AC_SUBST(rmlc_bin)
 AC_SUBST(rmlhome)
 AC_SUBST(rmlinc)
+AC_SUBST(omc_antlr_jar)
 AC_SUBST(antlrhome)
 AC_SUBST(antlrinc)
 AC_SUBST(antlrlib)
@@ -88,12 +89,14 @@ else
   AC_MSG_RESULT([yes])
 fi
 
-AC_MSG_CHECKING([for antlr.Tool in CLASSPATH])
+AC_MSG_CHECKING([for antlr.Tool support])
+omc_antlr_jar=build/share/java/antlr-3.1.3.jar
+cp -u c_runtime/java_interface/antlr-3.1.3.jar $omc_antlr_jar
 echo "" > $$grammar.g
-if java antlr.Tool $$grammar.g ; then
+if java -cp $omc_antlr_jar antlr.Tool $$grammar.g ; then
   AC_MSG_RESULT([yes])
 else
-  AC_MSG_ERROR([no antlr.Tool in CLASSPATH])
+  AC_MSG_ERROR([no antlr.Tool support])
   AC_MSG_RESULT([no])
 fi
 rm -f $$grammar.g

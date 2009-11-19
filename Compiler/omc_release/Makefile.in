@@ -94,7 +94,7 @@ $(PROG): $(SRCO) subdirs $(top_builddir)/c_runtime/sendData/*.cpp
 	g++ -O3 -o $(PROG)$(EXEEXT) $(SRCO) $(AST) $(RTOBJ) $(LDFLAGS) $(PLTPKGFLAGS)
 
 subdirs: $(SRCHSRCDIR)
-	for dir in $(SUBDIRS); do $(MAKE) -j 1 -C $$dir; done;
+	for dir in $(SUBDIRS); do $(MAKE) -C $$dir; done;
 
 clean:
 	for d in $(SUBDIRS); do \
