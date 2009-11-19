@@ -51,7 +51,7 @@ exprparsegen = modelica_expression_parser.cpp modelica_expression_parser.hpp
 exprparsesrcs=$(filter %.cpp,$(exprparsegen))
 exprparseobjs=$(exprparsesrcs:.cpp=.o)
 
-OBJS += $(walkerobjs) $(exprparseobjs) $(PARSER_OBJS) parse.o
+OBJS += $(walkerobjs) $(exprparseobjs) parse.o
 
 ANTLR = java -cp $(top_builddir)/@omc_antlr_jar@ antlr.Tool
 
@@ -70,8 +70,8 @@ parser:
 flat_parser:
 	$(MAKE) -C $(FLAT_PARSE_HOME)/src
 
-absyn_builder.a : $(OBJS)
-	ar -sr $@ $(OBJS)
+absyn_builder.a : parser flat_parser $(OBJS)
+	ar -sr $@ $(OBJS) $(PARSER_OBJS)
 
 $(PARSER_OBJS) : parser flat_parser
 
