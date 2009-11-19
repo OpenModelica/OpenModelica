@@ -473,6 +473,39 @@ algorithm
   end matchcontinue;
 end isFunctionElement;
 
+protected function replaceFnInFnLst
+"function: replaceFnInFnLst
+	takes a given function and replaces the function with the same path in the daelist with it"
+	input DAE.Element inFunction;
+	input list<DAE.Element> inElementList;
+	output list<DAE.Element> outElementList;
+algorithm
+  outElementList := matchcontinue(inFunction,inElementList)
+    local
+      list<DAE.Element> cdr,cdr_1;
+      Absyn.Path newFn,p;
+      Exp.ComponentRef cr1,cr2;
+      DAE.Element fn,el;
+    case(_,{})
+      equation
+        Debug.fprintln("failtrace","- PartFn.replaceFnInFnLst failed");
+      then
+        fail();
+    case(fn as DAE.FUNCTION(path = newFn),DAE.FUNCTION(path = p) :: cdr)
+      equation
+        cr1 = Exp.pathToCref(newFn);
+        cr2 = Exp.pathToCref(p);
+        true = Exp.crefEqual(cr1,cr2);
+      then
+        fn :: cdr;
+    case(fn, el :: cdr)
+      equation
+        cdr_1 = replaceFnInFnLst(fn,cdr);
+      then
+        el :: cdr_1;
+  end matchcontinue;
+end replaceFnInFnLst;
+
 protected function elabElements
 "function: elabElements
 	goes through a list of DAE.Element for partevalfunction"
@@ -615,8 +648,10 @@ algorithm
       equation
         (elts_1,dae) = elabElements(elts,dae);
         (cdr_1,dae) = elabElements(cdr,dae);
+        el = DAE.FUNCTION(p,DAE.DAE(elts_1),fullType,pp);
+        dae = replaceFnInFnLst(el,dae);
       then
-        (DAE.FUNCTION(p,DAE.DAE(elts_1),fullType,pp) :: cdr_1,dae);
+        (el :: cdr_1,dae);
     case(DAE.EXTFUNCTION(p,DAE.DAE(elts),fullType,ed) :: cdr,dae)
       equation
         (elts_1,dae) = elabElements(elts,dae);
