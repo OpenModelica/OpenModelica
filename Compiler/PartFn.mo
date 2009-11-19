@@ -44,6 +44,7 @@ public import Debug;
 public import Absyn;
 public import SCode;
 public import DAELow;
+public import Values;
 
 protected import DAEUtil;
 protected import Exp;
@@ -65,16 +66,16 @@ algorithm
     local
       list<DAE.Element> dae;
       DAELow.DAELow dlow;
-      DAELow.Variables orderedVars "orderedVars ; ordered Variables, only states and alg. vars" ;
-      DAELow.Variables knownVars "knownVars ; Known variables, i.e. constants and parameters" ;
-      DAELow.Variables externalObjects "External object variables";
-      DAELow.EquationArray orderedEqs "orderedEqs ; ordered Equations" ;
-      DAELow.EquationArray removedEqs "removedEqs ; Removed equations a=b" ;
-      DAELow.EquationArray initialEqs "initialEqs ; Initial equations" ;
-      DAELow.MultiDimEquation[:] arrayEqs "arrayEqs ; Array equations" ;
-      DAE.Algorithm[:] algorithms "algorithms ; Algorithms" ;
-      DAELow.EventInfo eventInfo "eventInfo" ;
-      DAELow.ExternalObjectClasses extObjClasses "classes of external objects, contains constructor & destructor";
+      DAELow.Variables orderedVars;
+      DAELow.Variables knownVars;
+      DAELow.Variables externalObjects;
+      DAELow.EquationArray orderedEqs;
+      DAELow.EquationArray removedEqs;
+      DAELow.EquationArray initialEqs;
+      DAELow.MultiDimEquation[:] arrayEqs;
+      DAE.Algorithm[:] algorithms;
+      DAELow.EventInfo eventInfo;
+      DAELow.ExternalObjectClasses extObjClasses;
     case(dae,dlow)
       equation
         false = RTOpts.debugFlag("fnptr") or RTOpts.acceptMetaModelicaGrammar();
@@ -82,7 +83,14 @@ algorithm
         (dae,dlow);
     case(dae,DAELow.DAELOW(orderedVars,knownVars,externalObjects,orderedEqs,removedEqs,initialEqs,arrayEqs,algorithms,eventInfo,extObjClasses))
       equation
+        (orderedVars,dae) = partEvalVars(orderedVars,dae);
+        (knownVars,dae) = partEvalVars(knownVars,dae);
+        (externalObjects,dae) = partEvalVars(externalObjects,dae);
         (orderedEqs,dae) = partEvalEqArr(orderedEqs,dae);
+        (removedEqs,dae) = partEvalEqArr(removedEqs,dae);
+        (initialEqs,dae) = partEvalEqArr(initialEqs,dae);
+        (arrayEqs,dae) = partEvalArrEqs(arrayList(arrayEqs),dae);
+        (algorithms,dae) = partEvalAlgs(algorithms,dae);
       then
         (dae,DAELow.DAELOW(orderedVars,knownVars,externalObjects,orderedEqs,removedEqs,initialEqs,arrayEqs,algorithms,eventInfo,extObjClasses));
     case(_,_)
@@ -92,6 +100,172 @@ algorithm
         fail();
   end matchcontinue;
 end partEvalDAELow;
+
+protected function partEvalAlgs
+"function: partEvalAlgs
+	elabs an algorithm section in DAELow"
+	input DAE.Algorithm[:] inAlgorithms;
+	input list<DAE.Element> inElementList;
+	output DAE.Algorithm[:] outAlgorithms;
+	output list<DAE.Element> outElementList;
+algorithm
+  (outAlgorithms,outElementList) := matchcontinue(inAlgorithms,inElementList)
+    local
+      DAE.Algorithm[:] algarr,algarr_1;
+      list<DAE.Algorithm> alglst,alglst_1;
+      list<DAE.Element> dae;
+    case(algarr,dae)
+      equation
+        alglst = arrayList(algarr);
+        (alglst_1,dae) = partEvalAlgLst(alglst,dae);
+        algarr_1 = listArray(alglst_1);
+      then
+        (algarr_1,dae);
+    case(_,_)
+      equation
+        Debug.fprintln("failtrace","- PartFn.partEvalAlgs failed");
+      then
+        fail();
+  end matchcontinue;
+end partEvalAlgs;
+
+protected function partEvalAlgLst
+"function: partEvalAlgLst
+	elabs a list of algorithm sections"
+	input list<DAE.Algorithm> inAlgorithmList;
+	input list<DAE.Element> inElementList;
+	output list<DAE.Algorithm> outAlgorithmList;
+	output list<DAE.Element> outElementList;
+algorithm
+  (outAlgorithmList,outElementList) := matchcontinue(inAlgorithmList,inElementList)
+    local
+      list<DAE.Algorithm> cdr,cdr_1;
+      list<DAE.Element> dae;
+      DAE.Algorithm alg,alg_1;
+    case({},dae) then ({},dae);
+    case(alg :: cdr,dae)
+      equation
+        (alg_1,dae) = elabAlg(alg,dae);
+        (cdr_1,dae) = partEvalAlgLst(cdr,dae);
+      then
+        (alg_1 :: cdr,dae);
+    case(_,_)
+      equation
+        Debug.fprintln("failtrace","- PartFn.partEvalAlgLst failed");
+      then
+        fail();
+  end matchcontinue;
+end partEvalAlgLst;
+
+protected function partEvalArrEqs
+"function: partEvalArrEqs
+	elabs calls in array equations"
+	input list<DAELow.MultiDimEquation> inMultiDimList;
+	input list<DAE.Element> inElementList;
+	output DAELow.MultiDimEquation[:] outMultiDimArr;
+	output list<DAE.Element> outElementList;
+algorithm
+  (outMultiDimArr,outElementList) := matchcontinue(inMultiDimList,inElementList)
+    local
+      list<DAELow.MultiDimEquation> cdr,mdelst;
+      list<DAE.Element> dae;
+      DAELow.MultiDimEquation[:] res,cdr_1;
+      list<Integer> ds;
+      DAE.Exp e1,e1_1,e2,e2_1;
+    case({},dae) then (listArray({}),dae);
+    case(DAELow.MULTIDIM_EQUATION(ds,e1,e2) :: cdr,dae)
+      equation
+        ((e1_1,dae)) = Exp.traverseExp(e1,elabExp,dae);
+        ((e2_1,dae)) = Exp.traverseExp(e2,elabExp,dae);
+        (cdr_1,dae) = partEvalArrEqs(cdr,dae);
+        mdelst = {DAELow.MULTIDIM_EQUATION(ds,e1_1,e2_1)};
+        res = Util.arrayAppend(listArray(mdelst),cdr_1);
+      then
+        (res,dae);
+    case(_,_)
+      equation
+        Debug.fprintln("failtrace","- PartFn.partEvalArrEqs failed");
+      then
+        fail();
+  end matchcontinue;
+end partEvalArrEqs;
+
+protected function partEvalVars
+"function: partEvalVars
+	elab calls in lowered variables"
+	input DAELow.Variables inVariables;
+	input list<DAE.Element> inFunctions;
+	output DAELow.Variables outVariables;
+	output list<DAE.Element> outFunctions;
+algorithm
+  (outVariables,outFunctions) := matchcontinue(inVariables,inFunctions)
+    local
+      list<DAE.Element> dae;
+      list<DAELow.CrefIndex>[:] crind;
+      list<DAELow.StringIndex>[:] strind;
+      Integer bsi,nov,noe,asi;
+      Option<DAELow.Var>[:] varr,varr_1;
+      list<Option<DAELow.Var>> vlst,vlst_1;
+    case(DAELow.VARIABLES(crind,strind,DAELow.VARIABLE_ARRAY(noe,asi,varr),bsi,nov),dae)
+      equation
+        vlst = arrayList(varr);
+        (vlst_1,dae) = partEvalVarLst(vlst,dae);
+        varr_1 = listArray(vlst_1);
+      then
+        (DAELow.VARIABLES(crind,strind,DAELow.VARIABLE_ARRAY(noe,asi,varr_1),bsi,nov),dae);
+    case(_,_)
+      equation
+        Debug.fprintln("failtrace","- PartFn.partEvalVars failed");
+      then
+        fail();
+  end matchcontinue;
+end partEvalVars;
+
+protected function partEvalVarLst
+"function: partEvalVarLst
+	evals partevalfuncs in a DAELow.var option list"
+	input list<Option<DAELow.Var>> inVarList;
+	input list<DAE.Element> inElementList;
+	output list<Option<DAELow.Var>> outVarList;
+	output list<DAE.Element> outElementList;
+algorithm
+  (outVarList,outElementList) := matchcontinue(inVarList,inElementList)
+    local
+      list<DAE.Element> dae;
+      list<Option<DAELow.Var>> cdr,cdr_1;
+      DAE.ComponentRef varName;
+      DAELow.VarKind varKind;
+      DAE.VarDirection varDirection;
+      DAELow.Type varType;
+      Option<DAE.Exp> bindExp,bindExp_1;
+      Option<Values.Value> bindValue;
+      DAE.InstDims arryDim;
+      Integer index;
+      DAE.ComponentRef origVarName;
+      list<Absyn.Path> className;
+      Option<DAE.VariableAttributes> values;
+      Option<SCode.Comment> comment;
+      DAE.Flow flowPrefix;
+      DAE.Stream streamPrefix;
+    case({},dae) then ({},dae);
+    case(NONE :: cdr,dae)
+      equation
+        (cdr_1,dae) = partEvalVarLst(cdr,dae);
+      then
+        (NONE :: cdr_1,dae);
+    case(SOME(DAELow.VAR(varName,varKind,varDirection,varType,bindExp,bindValue,arryDim,index,origVarName,className,values,comment,flowPrefix,streamPrefix)) :: cdr,dae)
+      equation
+        (bindExp_1,dae) = elabExpOption(bindExp,dae);
+        (cdr_1,dae) = partEvalVarLst(cdr,dae);
+      then
+        (SOME(DAELow.VAR(varName,varKind,varDirection,varType,bindExp_1,bindValue,arryDim,index,origVarName,className,values,comment,flowPrefix,streamPrefix)) :: cdr_1,dae);
+    case(_,_)
+      equation
+        Debug.fprintln("failtrace","- PartFn.partEvalVarLst failed");
+      then
+        fail();
+  end matchcontinue;
+end partEvalVarLst;
 
 protected function partEvalEqArr
 "function: partEvalEqArr
@@ -136,6 +310,10 @@ algorithm
       list<DAE.Element> dae;
       DAE.Exp e,e_1,e1,e1_1,e2,e2_1;
       DAELow.Equation deleteme;
+      Integer i;
+      list<DAE.Exp> elst,elst_1,elst1,elst1_1,elst2,elst2_1;
+      DAE.ComponentRef cref;
+      DAELow.WhenEquation we,we_1;
     case({},dae) then ({},dae);
     case(NONE :: cdr,dae)
       equation
@@ -149,11 +327,37 @@ algorithm
         (cdr_1,dae) = partEvalEqs(cdr,dae);
       then
         (SOME(DAELow.EQUATION(e1_1,e2_1)) :: cdr_1,dae);
-    case(SOME(deleteme) :: cdr,dae)
+    case(SOME(DAELow.ARRAY_EQUATION(i,elst)) :: cdr,dae)
       equation
+        (elst_1,dae) = elabExpList(elst,dae);
         (cdr_1,dae) = partEvalEqs(cdr,dae);
       then
-        (SOME(deleteme) :: cdr_1,dae);
+        (SOME(DAELow.ARRAY_EQUATION(i,elst_1)) :: cdr_1,dae);
+    case(SOME(DAELow.SOLVED_EQUATION(cref,e)) :: cdr,dae)
+      equation
+        ((e_1,dae)) = Exp.traverseExp(e,elabExp,dae);
+        (cdr_1,dae) = partEvalEqs(cdr,dae);
+      then
+        (SOME(DAELow.SOLVED_EQUATION(cref,e_1)) :: cdr_1,dae);
+    case(SOME(DAELow.RESIDUAL_EQUATION(e)) :: cdr,dae)
+      equation
+        ((e_1,dae)) = Exp.traverseExp(e,elabExp,dae);
+        (cdr_1,dae) = partEvalEqs(cdr,dae);
+      then
+        (SOME(DAELow.RESIDUAL_EQUATION(e_1)) :: cdr_1,dae);
+    case(SOME(DAELow.ALGORITHM(i,elst1,elst2)) :: cdr,dae)
+      equation
+        (elst1_1,dae) = elabExpList(elst1,dae);
+        (elst2_1,dae) = elabExpList(elst2,dae);
+        (cdr_1,dae) = partEvalEqs(cdr,dae);
+      then
+        (SOME(DAELow.ALGORITHM(i,elst1_1,elst2_1)) :: cdr_1,dae);
+    case(SOME(DAELow.WHEN_EQUATION(we)) :: cdr,dae)
+      equation
+        (we_1,dae) = partEvalWhenEq(we,dae);
+        (cdr_1,dae) = partEvalEqs(cdr,dae);
+      then
+        (SOME(DAELow.WHEN_EQUATION(we_1)) :: cdr_1,dae);
     case(_,_)
       equation
         Debug.fprintln("failtrace","- PartFn.partEvalEqs failed");
@@ -161,6 +365,40 @@ algorithm
         fail();
   end matchcontinue;
 end partEvalEqs;
+
+protected function partEvalWhenEq
+"function: partEvalWhenEq
+	elabs calls in a DAELow when equation"
+	input DAELow.WhenEquation inWhenEquation;
+	input list<DAE.Element> inElementList;
+	output DAELow.WhenEquation outWhenEquation;
+	output list<DAE.Element> outElementList;
+algorithm
+  (outWhenEquation,outElementList) := matchcontinue(inWhenEquation,inElementList)
+    local
+      list<DAE.Element> dae;
+      Integer i;
+      DAE.ComponentRef cref;
+      DAE.Exp e,e_1;
+      DAELow.WhenEquation we,we_1;
+    case(DAELow.WHEN_EQ(i,cref,e,SOME(we)),dae)
+      equation
+        ((e_1,dae)) = Exp.traverseExp(e,elabExp,dae);
+        (we_1,dae) = partEvalWhenEq(we,dae);
+      then
+        (DAELow.WHEN_EQ(i,cref,e_1,SOME(we_1)),dae);
+    case(DAELow.WHEN_EQ(i,cref,e,NONE),dae)
+      equation
+        ((e_1,dae)) = Exp.traverseExp(e,elabExp,dae);
+      then
+        (DAELow.WHEN_EQ(i,cref,e_1,NONE),dae);
+    case(_,_)
+      equation
+        Debug.fprintln("failtrace","- PartFn.partEvalWhenEq failed");
+      then
+        fail();
+  end matchcontinue;
+end partEvalWhenEq;
 
 public function partEvalDAE
 "function: partEvalDAE
@@ -182,8 +420,9 @@ algorithm
     case(DAE.DAE(elts),dae)
       equation
         (elts_1,dae) = elabElements(elts,dae);
+        dlst = DAE.DAE(elts_1);
       then
-        (DAE.DAE(elts_1),dae);
+        (dlst,dae);
     case(_,_)
       equation
         Debug.fprintln("failtrace","- PartFn.partEvalDAE failed");
@@ -268,6 +507,7 @@ algorithm
       DAE.ExternalDecl ed;
       list<DAE.Exp> elst,elst_1;
       DAE.Exp e,e_1,e1,e1_1,e2,e2_1;
+      DAE.Algorithm alg,alg_1;
     case({},dae) then ({},dae);
     case(DAE.VAR(cref,kind,direction,protection,ty,binding,dims,flowPrefix,streamPrefix,pathLst,variableAttributesOption,absynCommentOption,innerOuter) :: cdr,dae)
       equation
@@ -330,10 +570,10 @@ algorithm
         (cdr_1,dae) = elabElements(cdr,dae);
       then
         (DAE.WHEN_EQUATION(e_1,elts_1,SOME(el_1)) :: cdr_1,dae);
-    /*case(DAE.IF_EQUATION(elst,elm,elts) :: cdr,dae)
+    case(DAE.IF_EQUATION(elst,elm,elts) :: cdr,dae)
       equation
         (elst_1,dae) = elabExpList(elst,dae);
-        elm_1 = Util.listMap1(elm,elabElements,dae);
+        (elm_1,{dae}) = Util.listMap1_2(elm,elabElements,dae);
         (elts_1,dae) = elabElements(elts,dae);
         (cdr_1,dae) = elabElements(cdr,dae);
       then
@@ -341,11 +581,11 @@ algorithm
     case(DAE.INITIAL_IF_EQUATION(elst,elm,elts) :: cdr,dae)
       equation
         (elst_1,dae) = elabExpList(elst,dae);
-        elm_1 = Util.listMap1(elm,elabElements,dae);
+        (elm_1,{dae}) = Util.listMap1_2(elm,elabElements,dae);
         (elts_1,dae) = elabElements(elts,dae);
         (cdr_1,dae) = elabElements(cdr,dae);
       then
-        (DAE.INITIAL_IF_EQUATION(elst_1,elm_1,elts_1) :: cdr_1,dae);*/
+        (DAE.INITIAL_IF_EQUATION(elst_1,elm_1,elts_1) :: cdr_1,dae);
     case(DAE.INITIALEQUATION(e1,e2) :: cdr,dae)
       equation
         ((e1_1,dae)) = Exp.traverseExp(e1,elabExp,dae);
@@ -353,7 +593,18 @@ algorithm
         (cdr_1,dae) = elabElements(cdr,dae);
       then
         (DAE.INITIALEQUATION(e1_1,e2_1) :: cdr_1,dae);
-    // TODO: ALGORITHMS
+    case(DAE.ALGORITHM(alg) :: cdr,dae)
+      equation
+        (alg_1,dae) = elabAlg(alg,dae);
+        (cdr_1,dae) = elabElements(cdr,dae);
+      then
+        (DAE.ALGORITHM(alg_1) :: cdr_1,dae);
+    case(DAE.INITIALALGORITHM(alg) :: cdr,dae)
+      equation
+        (alg_1,dae) = elabAlg(alg,dae);
+        (cdr_1,dae) = elabElements(cdr,dae);
+      then
+        (DAE.INITIALALGORITHM(alg_1) :: cdr_1,dae);
     case(DAE.COMP(i,DAE.DAE(elts)) :: cdr,dae)
       equation
         (elts_1,dae) = elabElements(elts,dae);
@@ -417,6 +668,223 @@ algorithm
   end matchcontinue;
 end elabElements;
 
+protected function elabAlg
+"function: elabAlg
+	elaborates an algorithm section"
+	input DAE.Algorithm inAlgorithm;
+	input list<DAE.Element> inElementList;
+	output DAE.Algorithm outAlgorithm;
+	output list<DAE.Element> outElementList;
+algorithm
+  (outAlgorithm,outElementList) := matchcontinue(inAlgorithm,inElementList)
+    local
+      list<DAE.Statement> stmts,stmts_1;
+      list<DAE.Element> dae;
+    case(DAE.ALGORITHM_STMTS(stmts),dae)
+      equation
+        (stmts_1,dae) = elabStmts(stmts,dae);
+      then
+        (DAE.ALGORITHM_STMTS(stmts_1),dae);
+    case(_,_)
+      equation
+        Debug.fprintln("failtrace","- PartFn.elabAlg failed");
+      then
+        fail();
+  end matchcontinue;
+end elabAlg;
+
+protected function elabStmts
+"function: elabStmts
+	elaborates a list of algorithm statements"
+	input list<DAE.Statement> inStatements;
+	input list<DAE.Element> inElementList;
+	output list<DAE.Statement> outStatements;
+	output list<DAE.Element> outElementList;
+algorithm
+  (outStatements,outElementList) := matchcontinue(inStatements,inElementList)
+    local
+      list<DAE.Statement> cdr,cdr_1,stmts,stmts_1;
+      list<DAE.Element> dae;
+      DAE.ExpType ty;
+      DAE.Exp e,e_1,e1,e1_1,e2,e2_1;
+      list<DAE.Exp> elst,elst_1;
+      DAE.Else els,els_1;
+      Boolean b;
+      Ident i;
+      list<Integer> ilst;
+      DAE.Statement stmt,stmt_1;
+    case({},dae) then ({},dae);
+    case(DAE.STMT_ASSIGN(ty,e1,e2) :: cdr,dae)
+      equation
+        ((e1_1,dae)) = Exp.traverseExp(e1,elabExp,dae);
+        ((e2_1,dae)) = Exp.traverseExp(e2,elabExp,dae);
+        (cdr_1,dae) = elabStmts(cdr,dae);
+      then
+        (DAE.STMT_ASSIGN(ty,e1_1,e2_1) :: cdr_1,dae);
+    case(DAE.STMT_TUPLE_ASSIGN(ty,elst,e) :: cdr,dae)
+      equation
+        (elst_1,dae) = elabExpList(elst,dae);
+        ((e_1,dae)) = Exp.traverseExp(e,elabExp,dae);
+        (cdr_1,dae) = elabStmts(cdr,dae);
+      then
+        (DAE.STMT_TUPLE_ASSIGN(ty,elst_1,e_1) :: cdr_1,dae);
+    case(DAE.STMT_IF(e,stmts,els) :: cdr,dae)
+      equation
+        ((e_1,dae)) = Exp.traverseExp(e,elabExp,dae);
+        (stmts_1,dae) = elabStmts(stmts,dae);
+        (els_1,dae) = elabElse(els,dae);
+        (cdr_1,dae) = elabStmts(cdr,dae);
+      then
+        (DAE.STMT_IF(e_1,stmts_1,els_1) :: cdr_1,dae);
+    case(DAE.STMT_FOR(ty,b,i,e,stmts) :: cdr,dae)
+      equation
+        ((e_1,dae)) = Exp.traverseExp(e,elabExp,dae);
+        (stmts_1,dae) = elabStmts(stmts,dae);
+        (cdr_1,dae) = elabStmts(cdr,dae);
+      then
+        (DAE.STMT_FOR(ty,b,i,e_1,stmts_1) :: cdr_1,dae);
+    case(DAE.STMT_WHILE(e,stmts) :: cdr,dae)
+      equation
+        ((e_1,dae)) = Exp.traverseExp(e,elabExp,dae);
+        (stmts_1,dae) = elabStmts(stmts,dae);
+        (cdr_1,dae) = elabStmts(cdr,dae);
+      then
+        (DAE.STMT_WHILE(e_1,stmts_1) :: cdr_1,dae);
+    case(DAE.STMT_WHEN(e,stmts,SOME(stmt),ilst) :: cdr,dae)
+      equation
+        ((e_1,dae)) = Exp.traverseExp(e,elabExp,dae);
+        (stmts_1,dae) = elabStmts(stmts,dae);
+        ({stmt_1},dae) = elabStmts({stmt},dae);
+        (cdr_1,dae) = elabStmts(cdr,dae);
+      then
+        (DAE.STMT_WHEN(e_1,stmts_1,SOME(stmt_1),ilst) :: cdr_1,dae);
+    case(DAE.STMT_WHEN(e,stmts,NONE,ilst) :: cdr,dae)
+      equation
+        ((e_1,dae)) = Exp.traverseExp(e,elabExp,dae);
+        (stmts_1,dae) = elabStmts(stmts,dae);
+        (cdr_1,dae) = elabStmts(cdr,dae);
+      then
+        (DAE.STMT_WHEN(e_1,stmts_1,NONE,ilst) :: cdr_1,dae);
+    case(DAE.STMT_ASSERT(e1,e2) :: cdr,dae)
+      equation
+        ((e1_1,dae)) = Exp.traverseExp(e1,elabExp,dae);
+        ((e2_1,dae)) = Exp.traverseExp(e2,elabExp,dae);
+        (cdr_1,dae) = elabStmts(cdr,dae);
+      then
+        (DAE.STMT_ASSERT(e1_1,e2_1) :: cdr_1,dae);
+    case(DAE.STMT_TERMINATE(e) :: cdr,dae)
+      equation
+        ((e_1,dae)) = Exp.traverseExp(e,elabExp,dae);
+        (cdr_1,dae) = elabStmts(cdr,dae);
+      then
+        (DAE.STMT_TERMINATE(e_1) :: cdr_1,dae);
+    case(DAE.STMT_REINIT(e1,e2) :: cdr,dae)
+      equation
+        ((e1_1,dae)) = Exp.traverseExp(e1,elabExp,dae);
+        ((e2_1,dae)) = Exp.traverseExp(e2,elabExp,dae);
+        (cdr_1,dae) = elabStmts(cdr,dae);
+      then
+        (DAE.STMT_REINIT(e1_1,e2_1) :: cdr_1,dae);
+    case(DAE.STMT_NORETCALL(e) :: cdr,dae)
+      equation
+        ((e_1,dae)) = Exp.traverseExp(e,elabExp,dae);
+        (cdr_1,dae) = elabStmts(cdr,dae);
+      then
+        (DAE.STMT_NORETCALL(e_1) :: cdr_1,dae);
+    case(DAE.STMT_TRY(stmts) :: cdr,dae)
+      equation
+        (stmts_1,dae) = elabStmts(stmts,dae);
+        (cdr_1,dae) = elabStmts(cdr,dae);
+      then
+        (DAE.STMT_TRY(stmts_1) :: cdr_1,dae);
+    case(DAE.STMT_CATCH(stmts) :: cdr,dae)
+      equation
+        (stmts_1,dae) = elabStmts(stmts,dae);
+        (cdr_1,dae) = elabStmts(cdr,dae);
+      then
+        (DAE.STMT_CATCH(stmts_1) :: cdr_1,dae);
+    case(DAE.STMT_MATCHCASES(elst) :: cdr,dae)
+      equation
+        (elst_1,dae) = elabExpList(elst,dae);
+        (cdr_1,dae) = elabStmts(cdr,dae);
+      then
+        (DAE.STMT_MATCHCASES(elst_1) :: cdr_1,dae);
+    case(stmt :: cdr,dae)
+      equation
+        (cdr_1,dae) = elabStmts(cdr,dae);
+      then
+        (stmt :: cdr_1,dae);
+    case(_,_)
+      equation
+        Debug.fprintln("failtrace","- PartFn.elabStmts failed");
+      then
+        fail();
+  end matchcontinue;
+end elabStmts;
+
+protected function elabElse
+"function: elabElse
+	elabs an algorithm else case"
+	input DAE.Else inElse;
+	input list<DAE.Element> inElementList;
+	output DAE.Else outElse;
+	output list<DAE.Element> outElementList;
+algorithm
+  (outElse,outElementList) := matchcontinue(inElse,inElementList)
+    local
+      DAE.Exp e,e_1;
+      list<DAE.Statement> stmts,stmts_1;
+      DAE.Else els,els_1;
+      list<DAE.Element> dae;
+    case(DAE.NOELSE(),dae) then (DAE.NOELSE(),dae);
+    case(DAE.ELSEIF(e,stmts,els),dae)
+      equation
+        ((e_1,dae)) = Exp.traverseExp(e,elabExp,dae);
+        (stmts_1,dae) = elabStmts(stmts,dae);
+        (els_1,dae) = elabElse(els,dae);
+      then
+        (DAE.ELSEIF(e_1,stmts_1,els_1),dae);
+    case(DAE.ELSE(stmts),dae)
+      equation
+        (stmts_1,dae) = elabStmts(stmts,dae);
+      then
+        (DAE.ELSE(stmts),dae);
+    case(_,_)
+      equation
+        Debug.fprintln("failtrace","- PartFn.elabElse failed");
+      then
+        fail();
+  end matchcontinue;
+end elabElse;
+
+protected function elabExpMatrix
+"function: elabExpMatrix
+	elabs an exp matrix"
+	input list<list<DAE.Exp>> inExpMatrix;
+	input list<DAE.Element> inElementList;
+	output list<list<DAE.Exp>> outExpMatrix;
+	output list<DAE.Element> outElementList;
+algorithm
+  (outExpMatrix,outElementList) := matchcontinue(inExpMatrix,inElementList)
+    local
+      list<DAE.Element> dae;
+      list<list<DAE.Exp>> cdr,cdr_1;
+      list<DAE.Exp> elst,elst_1;
+    case({},dae) then ({},dae);
+    case(elst :: cdr,dae)
+      equation
+        (elst_1,dae) = elabExpList(elst,dae);
+        (cdr_1,dae) = elabExpMatrix(cdr,dae);
+      then
+        (elst_1 :: cdr_1,dae);
+    case(_,_)
+      equation
+        Debug.fprintln("failtrace","- PartFn.elabExpMatrix failed");
+      then
+        fail();
+  end matchcontinue;
+end elabExpMatrix;
+
 protected function elabExpList
 "function: elabExpList
 	elabs an exp list"
@@ -437,6 +905,11 @@ algorithm
         (cdr_1,dae) = elabExpList(cdr,dae);
       then
         (e_1 :: cdr_1,dae);
+    case(_,_)
+      equation
+        Debug.fprintln("failtrace","- PartFn.elabExpMatrix failed");
+      then
+        fail();
   end matchcontinue;
 end elabExpList;
 

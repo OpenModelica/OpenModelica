@@ -5249,6 +5249,12 @@ algorithm
         res = Util.listListUnionOnTrue(lst, Exp.expEqual);
       then
         res;
+    case (DAE.PARTEVALFUNCTION(expList = expl),vars)
+      equation
+        lst = Util.listMap1(expl, statesAndVarsExp, vars);
+        res = Util.listListUnionOnTrue(lst, Exp.expEqual);
+      then
+        res;
     case (DAE.ARRAY(array = expl),vars)
       equation
         lst = Util.listMap1(expl, statesAndVarsExp, vars);
