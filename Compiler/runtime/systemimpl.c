@@ -775,17 +775,17 @@ RML_BEGIN_LABEL(System__loadLibrary)
   _snprintf(libname, MAXPATHLEN, "%s\\%s.dll", currentDirectory, str);
 #else
   snprintf(libname, MAXPATHLEN, "%s\\%s.dll", currentDirectory, str);
-#endif
-
+#endif  
+  
   h = LoadLibrary(libname);
   if (h == NULL) {
-    fprintf(stderr, "Unable to load '%s': %lu.\n", libname, GetLastError());
+    //fprintf(stderr, "Unable to load '%s': %lu.\n", libname, GetLastError());
     fflush(stderr);
     RML_TAILCALLK(rmlFC);
-  }
+  }  
   libIndex = alloc_ptr();
   if (libIndex < 0) {
-    fprintf(stderr, "Error loading library %s!\n", libname); fflush(stderr);
+    //fprintf(stderr, "Error loading library %s!\n", libname); fflush(stderr); 
     FreeLibrary(h);
     h = NULL;
     RML_TAILCALLK(rmlFC);
@@ -824,7 +824,7 @@ RML_BEGIN_LABEL(System__lookupFunction)
   funcptr = (void*)GetProcAddress(lib->data.lib, str);
 
   if (funcptr == NULL) {
-    fprintf(stderr, "Unable to find `%s': %lu.\n", str, GetLastError());
+    /*fprintf(stderr, "Unable to find `%s': %lu.\n", str, GetLastError());*/
     RML_TAILCALLK(rmlFC);
   }
 

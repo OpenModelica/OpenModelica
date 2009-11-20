@@ -61,12 +61,12 @@ public import DAE;
 public import Graphviz;
 
 public type ComponentRef = DAE.ComponentRef;
-public type Exp = DAE.Exp;
+public type Exp = DAE.Exp; 
 public type Ident = String;
-public type Operator = DAE.Operator;
+public type Operator = DAE.Operator; 
 public type Type = DAE.ExpType;
 public type Subscript = DAE.Subscript;
-public type Var = DAE.ExpVar;
+public type Var = DAE.ExpVar; 
 
 protected import RTOpts;
 protected import Util;
@@ -79,16 +79,15 @@ protected import Debug;
 protected import Static;
 protected import Env;
 protected import System;
-protected import DAELow;
 
 protected constant Exp rconstone=DAE.RCONST(1.0);
 
 
-public uniontype IntOp
+public uniontype IntOp 
   record MULOP end MULOP;
   record DIVOP end DIVOP;
   record ADDOP end ADDOP;
-  record SUBOP end SUBOP;
+  record SUBOP end SUBOP; 
   record POWOP end POWOP;
 end IntOp;
 
@@ -730,6 +729,17 @@ algorithm
   nb := boolNot(b);
 end isNotConst;
 
+public function isRecord ""
+  input ComponentRef cr;
+  output Boolean b;
+algorithm
+  b := matchcontinue(cr)
+    case(DAE.CREF_IDENT(identType = DAE.ET_COMPLEX(complexClassType=ClassInf.RECORD(_)))) then true;
+    case(DAE.CREF_QUAL(identType = DAE.ET_COMPLEX(complexClassType=ClassInf.RECORD(_)))) then true;
+    case(_) then false;
+  end matchcontinue;
+end isRecord;
+  
 public function isRelation 
 "function: isRelation 
   Returns true if expression is a function expression."
@@ -1084,8 +1094,8 @@ algorithm
   end matchcontinue;
 end intSubscripts;
 
-public function subscriptsInt 
-"function: subscriptsInt
+public function subscriptsInt "
+function: subscriptsInt
   author: PA
   This function creates a list of ints from 
   a subscript list, see also intSubscripts."
@@ -3726,7 +3736,7 @@ algorithm
 end unliftArray;
 
 public function typeof 
-"function typeof 
+"function typeof  
   Retrieves the Type of the Expression"
   input Exp inExp;
   output Type outType;
@@ -6514,7 +6524,7 @@ algorithm
 
     case (e)
       equation
-        //debug_print("unknown expression: ", e); 
+        //debug_print("unknown expression: ", e);
       then 
         "#UNKNOWN EXPRESSION# ----eee ";
   end matchcontinue;
@@ -7153,7 +7163,7 @@ algorithm
         name = printComponentRefStr(cr); 
         false = Util.stringContainsChar(name,"$");        
         id = Util.stringAppendList({"$",id});
-        id = Util.stringReplaceChar(id,".",DAELow.pointStr);        
+        id = Util.stringReplaceChar(id,".","$p");        
       then
         (DAE.CREF(DAE.CREF_IDENT(id,t2,ssl),ety),1);
     case (e,s,_) then (e,0); 
@@ -10097,8 +10107,8 @@ algorithm
   outExp := DAE.BINARY(e1,DAE.SUB(tp),e2);
 end expSub;
 
-public function expDiv 
-"function expDiv
+public function expDiv "
+function expDiv
   author: PA
   Divides two scalar expressions."
   input Exp e1;

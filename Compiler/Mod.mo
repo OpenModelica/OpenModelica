@@ -1811,14 +1811,11 @@ algorithm
   end matchcontinue;
 end eqModEqual;
 
-public function printModStr "- Printing
-  !ignorecode
-  function: print_mod
+public function printModStr "
  
   This function prints a modification. It uses a few other function
   to do its stuff.
- 
-  The functions are excluded from the report for brevity.
+
 "
   input DAE.Mod inMod;
   output String outString;
@@ -1854,6 +1851,7 @@ algorithm
         str = Util.stringAppendList({finalPrefixstr,s1_1,s2});
       then
         str;
+    case(_) equation print(" failure in printModStr \n"); then fail(); 
   end matchcontinue;
 end printModStr;
 
@@ -2087,6 +2085,7 @@ algorithm
         res = stringAppend(" =(untyped) ", str);
       then
         res;
+    case(_) equation print(" ---printEqmodStr FAILED--- "); then fail();
   end matchcontinue;
 end printEqmodStr;
 end Mod;

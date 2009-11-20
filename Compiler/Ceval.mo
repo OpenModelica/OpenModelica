@@ -60,6 +60,7 @@ public import Env;
 public import Interactive;
 public import Values;
 
+
 public 
 uniontype Msg
   record MSG "Give error message" end MSG;
@@ -90,8 +91,7 @@ protected import InstanceHierarchy;
 protected import Prefix;
 protected import Connect;
 
-public function ceval 
-"function: ceval
+public function ceval "
   This function is used when the value of a constant expression is
   needed.  It takes an environment and an expression and calculates
   its value.
@@ -209,6 +209,7 @@ algorithm
       local
         DAE.ComponentRef c;
       equation
+        print(" metamodelica non implemented\n");
         Debug.fprintln("failtrace", "Ceval.ceval not working for function references");
       then
         fail();
@@ -217,6 +218,7 @@ algorithm
       local
         DAE.ComponentRef c;
       equation
+        print(" metamodelica non implemented\n");
         Debug.fprintln("failtrace", "Ceval.ceval not working for function references");
       then
         fail();
@@ -1208,7 +1210,7 @@ algorithm
         (cache,newval,NONE());
 
     case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl,builtin = builtin)),vallst,impl,st,dim,msg) 
-      equation
+      equation  
         error_Str = Absyn.pathString(funcpath);
         //TODO: readd this when testsuite is okay.
         //Error.addMessage(Error.FAILED_TO_EVALUATE_FUNCTION, {error_Str});

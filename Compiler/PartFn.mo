@@ -971,7 +971,7 @@ end elabExpOption;
 
 protected function elabExp
 "function: elabExp
-	looks for a function call, checks the arguments for Exp.PARTEVALFUNCTION
+	looks for a function call, checks the arguments for DAE.PARTEVALFUNCTION
 	creates new functions and replaces the call as necessary"
 	input tuple<DAE.Exp, list<DAE.Element>> inTuple;
 	output tuple<DAE.Exp, list<DAE.Element>> outTuple;

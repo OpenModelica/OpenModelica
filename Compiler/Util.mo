@@ -3894,7 +3894,7 @@ algorithm
     local
       String f,str,a;
       list<String> r;
-    case ({}, a) then a;
+    case ({}, a) then a; 
     case (f :: r, a)
       equation
         a = stringAppend(a, f);
@@ -3928,6 +3928,32 @@ algorithm
         str;
   end matchcontinue;
 end stringDelimitList;
+
+public function stringDelimitListPrintBuf "
+Author: BZ, 2009-11
+Same funcitonality as stringDelimitListPrint, but writes to print buffer instead of string variable.
+Usefull for heavy string operations(causes malloc error on some models when generating init file).
+"
+  input list<String> inStringLst;
+  input String inString;
+algorithm 
+  _:=
+  matchcontinue (inStringLst,inString)
+    local
+      String f,delim,str1,str2,str;
+      list<String> r;
+    case ({},_) then (); 
+    case ({f},delim) equation Print.printBuf(f); then (); 
+    case ((f :: r),delim)
+      equation  
+        stringDelimitListPrintBuf(r, delim);
+        Print.printBuf(f);
+        Print.printBuf(delim);
+        
+      then
+        ();
+  end matchcontinue;
+end stringDelimitListPrintBuf;
 
 public function stringDelimitListAndSeparate "function: stringDelimitListAndSeparate
   author: PA

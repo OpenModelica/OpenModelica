@@ -1374,26 +1374,21 @@ public function getStartAttrEmpty "
   Return the start attribute.
 "
   input Option<DAE.VariableAttributes> inVariableAttributesOption;
-  input DAE.Type tp;
+  input DAE.Exp optExp;
   output DAE.Exp start;
 algorithm 
-  start:=
-  matchcontinue (inVariableAttributesOption,tp)
+  start := matchcontinue (inVariableAttributesOption,optExp)
     local
       DAE.Exp r;
     case (SOME(DAE.VAR_ATTR_REAL(initial_ = SOME(r))),_) then r;
     case (SOME(DAE.VAR_ATTR_INT(initial_ = SOME(r))),_) then r;
     case (SOME(DAE.VAR_ATTR_BOOL(initial_ = SOME(r))),_) then r;
     case (SOME(DAE.VAR_ATTR_STRING(initial_ = SOME(r))),_) then r;
-    case (_,(DAE.T_REAL(_),_)) then DAE.RCONST(0.0);
-    case (_,(DAE.T_INTEGER(_),_)) then DAE.ICONST(0);
-    case (_,(DAE.T_BOOL(_),_)) then DAE.BCONST(false);
-    case (_,(DAE.T_STRING(_),_)) then DAE.SCONST("");
-    case(_,_) then DAE.RCONST(0.0);
+    case(_,optExp) then optExp;
   end matchcontinue;
 end getStartAttrEmpty;
 
-public function getMinMax "
+public function getMinMax " 
 Author: BZ, returns a list of optional exp, {opt<Min> opt<Max} 
 "
   input Option<DAE.VariableAttributes> inVariableAttributesOption;
@@ -4499,9 +4494,9 @@ algorithm
         {el};
     case (path,((el as DAE.RECORD_CONSTRUCTOR(path = elpath)) :: rest))
       equation 
-        true = ModUtil.pathEqual(path, elpath);
-      then
-        {el};
+        true = ModUtil.pathEqual(path, elpath); 
+      then 
+        {el}; 
     case (path,(el :: rest))
       equation 
         res = getNamedFunction(path, rest);

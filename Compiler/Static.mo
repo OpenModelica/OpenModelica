@@ -6552,7 +6552,7 @@ algorithm
         (cache,numberOfIntervals) = getOptionalNamedArg(cache,env, SOME(st), impl, "numberOfIntervals", 
           (DAE.T_INTEGER({}),NONE), args, DAE.ICONST(500));
         (cache,tolerance) = getOptionalNamedArg(cache,env, SOME(st), impl, "tolerance", (DAE.T_REAL({}),NONE), 
-          args, DAE.RCONST(1e-4));  
+          args, DAE.RCONST(1e-6));  
         (cache,method) = getOptionalNamedArg(cache,env, SOME(st), impl, "method", (DAE.T_STRING({}),NONE), 
           args, DAE.SCONST("dassl"));
         (cache,options) = getOptionalNamedArg(cache,env, SOME(st), impl, "options", (DAE.T_STRING({}),NONE), 
@@ -6577,16 +6577,16 @@ algorithm
         (cache,startTime) = getOptionalNamedArg(cache,env, SOME(st), impl, "startTime", (DAE.T_REAL({}),NONE), 
           args, DAE.RCONST(0.0));
         (cache,stopTime) = getOptionalNamedArg(cache,env, SOME(st), impl, "stopTime", (DAE.T_REAL({}),NONE), 
-          args, DAE.RCONST(1.0));
+          args, DAE.RCONST(1.0)); 
         (cache,numberOfIntervals) = getOptionalNamedArg(cache,env, SOME(st), impl, "numberOfIntervals", 
           (DAE.T_INTEGER({}),NONE), args, DAE.ICONST(500));
         (cache,tolerance) = getOptionalNamedArg(cache,env, SOME(st), impl, "tolerance", (DAE.T_REAL({}),NONE), 
-          args, DAE.RCONST(1e-4));  
+          args, DAE.RCONST(1e-6)); 
         (cache,method) = getOptionalNamedArg(cache,env, SOME(st), impl, "method", (DAE.T_STRING({}),NONE), 
           args, DAE.SCONST("dassl"));
         (cache,options) = getOptionalNamedArg(cache,env, SOME(st), impl, "options", (DAE.T_STRING({}),NONE), 
           args, DAE.SCONST(""));
-        cname_str = Absyn.pathString(className);
+        cname_str = Absyn.pathString(className); 
         (cache,filenameprefix) = getOptionalNamedArg(cache,env, SOME(st), impl, "fileNamePrefix", 
           (DAE.T_STRING({}),NONE), args, DAE.SCONST(cname_str));
         (cache,storeInTemp) = getOptionalNamedArg(cache,env, SOME(st), impl, "storeInTemp", 
@@ -6612,7 +6612,7 @@ algorithm
         (cache,numberOfIntervals) = getOptionalNamedArg(cache,env, SOME(st), impl, "numberOfIntervals", 
           (DAE.T_INTEGER({}),NONE), args, DAE.ICONST(500));
         (cache,tolerance) = getOptionalNamedArg(cache,env, SOME(st), impl, "tolerance", (DAE.T_REAL({}),NONE), 
-          args, DAE.RCONST(1e-4));  
+          args, DAE.RCONST(1e-6));  
         (cache,method) = getOptionalNamedArg(cache,env, SOME(st), impl, "method", (DAE.T_STRING({}),NONE), 
           args, DAE.SCONST("dassl"));
         classname = componentRefToPath(cr_1) "this extracts the fileNamePrefix which is used when generating code and init-file" ;

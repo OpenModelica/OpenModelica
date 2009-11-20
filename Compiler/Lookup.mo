@@ -1992,9 +1992,10 @@ algorithm
         (_,mod_1) = Mod.elabMod(Env.emptyCache(), env, Prefix.NOPRE(), mod, false);
         mod_1 = Mod.merge(mods,mod_1,env,Prefix.NOPRE());
         // adrpo: this was wrong, you won't find any id modification there!!!
-        // compMod = Mod.lookupModificationP(mod_1,Absyn.IDENT(id));
-        // umod = Mod.unelabMod(compMod);
-        umod = Mod.unelabMod(mod_1);
+        // bjozac: This was right, you will find id modification unless modifers does not belong to component! 
+         compMod = Mod.lookupModificationP(mod_1,Absyn.IDENT(id));
+         umod = Mod.unelabMod(compMod);
+        //umod = Mod.unelabMod(mod_1);
         res = buildRecordConstructorElts(rest, mods, env);
         // - Prefixes (constant, parameter, final, discrete, input, output, ...) of the remaining record components are removed.
         var = SCode.VAR();

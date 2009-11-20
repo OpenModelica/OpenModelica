@@ -91,8 +91,8 @@ void Settings_5finit(void)
     strcpy(tempDirectoryPath, str);
   }
 #endif
-compileCommand = malloc(sizeof(char)*(strlen("") + 1));
-strcpy(compileCommand,"");
+  compileCommand = malloc(sizeof(char)*(strlen("g++") + 1)); 
+  strcpy(compileCommand,"g++");
 
 
 }

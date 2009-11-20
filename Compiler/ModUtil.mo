@@ -534,7 +534,7 @@ algorithm
   end matchcontinue;
 end pathString;
 
-protected function pathString2 
+public function pathString2 
 "function: pathString2 
   Helper function to path_string."
   input Absyn.Path inPath;
@@ -542,7 +542,7 @@ protected function pathString2
   output String outString;
 algorithm 
   outString:=
-  matchcontinue (inPath,inString)
+  matchcontinue (inPath,inString) 
     local
       String s,ns,s1,ss,str;
       Absyn.Path n;

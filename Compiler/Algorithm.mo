@@ -52,7 +52,7 @@ public import DAE;
 public import SCode;
 
 public 
-type Ident = String;
+type Ident = String; 
 
 public type Algorithm = DAE.Algorithm;
 public type Statement = DAE.Statement;
@@ -100,7 +100,7 @@ algorithm (reinits,rest) := matchcontinue(inAlgs)
       (reinits,rest) = splitReinits(inAlgs);
     then 
       (reinits,rest);
-end matchcontinue;
+end matchcontinue; 
 end splitReinits; 
 
 public function makeAssignment 
@@ -126,19 +126,27 @@ algorithm
       DAE.Exp lhs,rhs,rhs_1,e1,e2,e3;
       DAE.Properties lprop,rprop,lhprop,rhprop;
       DAE.ExpType t,crt;
-      DAE.ComponentRef c;
+      DAE.ComponentRef c,cr;
       tuple<DAE.TType, Option<Absyn.Path>> lt,rt;
 
     /* It is not allowed to assign to a constant */
     case (lhs,lprop,rhs,rprop,_,initial_)
       equation 
         DAE.C_CONST() = Types.propAnyConst(lprop);
-        lhs_str = Exp.printExpStr(lhs);
+        lhs_str = Exp.printExpStr(lhs); 
         rhs_str = Exp.printExpStr(rhs);
         Error.addMessage(Error.ASSIGN_CONSTANT_ERROR, {lhs_str,rhs_str});
       then
         fail();
 
+    /* assign to parameter in algorithm okay if record */
+    case ((lhs as DAE.CREF(componentRef=cr)),lhprop,rhs,rhprop,_,SCode.NON_INITIAL())
+      equation 
+        DAE.C_PARAM() = Types.propAnyConst(lhprop);
+        true = Exp.isRecord(cr);
+        outStatement = makeAssignment2(lhs,lhprop,rhs,rhprop);
+      then outStatement;
+        
     /* assign to parameter in algorithm produce error */
     case (lhs,lprop,rhs,rprop,_,SCode.NON_INITIAL())
       equation 

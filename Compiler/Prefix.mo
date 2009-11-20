@@ -445,13 +445,13 @@ algorithm
       local Prefix p;
       then
         (cache,DAE.ARRAY(t,a,{}));
-    case (cache,env,DAE.ARRAY(ty = t,scalar = a,array = es),p as PREFIX(PRE(_,{i},_),_))
-      local Prefix p; Integer i; DAE.Exp e;
+    /*case (cache,env,Exp.ARRAY(ty = t,scalar = a,array = es),p as PREFIX(PRE(_,{i},_),_))
+      local Prefix p; Integer i; Exp.Exp e;
       equation        
         e = listNth(es, i-1);
         Debug.fprint("prefix", "{v1,v2,v3}[" +& intString(i) +& "] => "  +& Exp.printExp2Str(e) +& "\n");
       then
-        (cache,e);        
+        (cache,e);    */    
     case (cache,env,DAE.ARRAY(ty = t,scalar = a,array = es),p)
       local Prefix p;
       equation 
