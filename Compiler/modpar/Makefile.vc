@@ -2,17 +2,18 @@
 #
 srcdir= .
 top_builddir= ../..
-
-RMLINCLUDE = /I$(OMDEV)\include\rml-win32-msvc
+RMLHOME	= $(OMDEV)\tools\rml # added correct path to rml
+RMLINCLUDE_BZ = /I$(RMLHOME)\include\plain # added correct path to rml 
 
 OBJECTS = TaskGraphExt_stub.obj
 
-CFLAGS=	/Ob2 /Ox /O2 /Ot /Oy $(RMLINCLUDE) /D "WIN32" /D "NDEBUG" /D "_CONSOLE"\
+CFLAGS=	/Ob2 /Ox /O2 /Ot /Oy $(RMLINCLUDE_BZ) /D "WIN32" /D "NDEBUG" /D "_CONSOLE"\
 	 /D "_MBCS" /FD /EHsc /MT /W3 /nologo /c /TP /wd4311 /wd4312 
 
 all: modparvc.lib
 
 .cpp.obj:
+	echo $(RMLHOME)
 	$(CC) $(CFLAGS) $<
 	
 
