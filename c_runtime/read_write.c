@@ -41,10 +41,10 @@ int getMyBool(const type_description *desc)
 {
 	switch (desc->type) {
 	case TYPE_DESC_BOOL:
-		//fprintf(stderr,"returning %d\n",desc->data.boolean ? 1:0);
+		/*fprintf(stderr,"returning %d\n",desc->data.boolean ? 1:0)*/;
 		return desc->data.boolean ? 1:0;
 	default:
-		//fprintf(stderr, "UNKNOWN: Values.Value!\n");
+		/*fprintf(stderr, "UNKNOWN: Values.Value!\n")*/;
 		break;
 	}  
 	return 0;
