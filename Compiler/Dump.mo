@@ -303,7 +303,7 @@ algorithm
       then
         str;
     case (i,Absyn.CLASS(name = n,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
-          body = Absyn.PDER(functionName = fname,vars = vars)),fi,re,io)
+          body = Absyn.PDER(functionName = fname,vars = vars,comment=cmt)),fi,re,io)
       equation
         is = indentStr(i);        
         partialStr = selectString(p, "partial ", "");
@@ -312,8 +312,9 @@ algorithm
         restrictionStr = unparseRestrictionStr(r);
         s4 = Absyn.pathString(fname);
         s5 = Util.stringDelimitList(vars, ", ");
+        s6 = unparseCommentOption(cmt);
         prefixKeywords = unparseElementPrefixKeywords(re, finalStr, innerouterStr, encapsulatedStr, partialStr);        
-        str = Util.stringAppendList({is,prefixKeywords,restrictionStr," ",n," = der(",s4,", ",s5,")"});
+        str = Util.stringAppendList({is,prefixKeywords,restrictionStr," ",n," = der(",s4,", ",s5,")", s6});
       then
         str;
   end matchcontinue;
@@ -920,7 +921,7 @@ algorithm
         redeclareStr = redeclareStr +& s1; 
         s4 = unparseElementspecStr(0, spec, s2, (redeclareStr,replaceableStr), "");
         s5 = unparseConstrainclassOptStr(constr);
-        str = Util.stringAppendList({s4," ",s5});
+        str = Util.stringAppendList({s4,s5});
       then
         str;
   end matchcontinue;
@@ -1508,7 +1509,7 @@ algorithm
         s3 = unparseInnerouterStr(inout);
         s4 = unparseElementspecStr(i, spec, s1, redeclareKeywords, s3);
         s5 = unparseConstrainclassOptStr(constr);
-        str = Util.stringAppendList({s4," ",s5,";"});
+        str = Util.stringAppendList({s4,s5,";"});
       then
         str;
     case (i,Absyn.ELEMENT(finalPrefix = finalPrefix,redeclareKeywords = NONE,innerOuter = inout,specification = spec,info = info,constrainClass = constr))
@@ -1517,7 +1518,7 @@ algorithm
         s3 = unparseInnerouterStr(inout);
         s4 = unparseElementspecStr(i, spec, s1, ("",""), s3);
         s5 = unparseConstrainclassOptStr(constr);
-        str = Util.stringAppendList({s4," ",s5,";"});
+        str = Util.stringAppendList({s4,s5,";"});
       then
         str;
     case(i,Absyn.DEFINEUNIT(name,{})) equation
@@ -1564,7 +1565,7 @@ algorithm
     case (NONE) then "";
     case (SOME(constr))
       equation
-        res = unparseConstrainclassStr(constr);
+        res = " " +& unparseConstrainclassStr(constr);
       then
         res;
   end matchcontinue;
@@ -2121,8 +2122,8 @@ algorithm
     case (Absyn.COMPONENTITEM(component = c,condition = optcond,comment = cmtopt))
       equation
         s1 = unparseComponentStr(c);
-        s3 = unparseCommentOption(cmtopt);
         s2 = unparseComponentCondition(optcond);
+        s3 = unparseCommentOption(cmtopt);
         str = Util.stringAppendList({s1,s2,s3});
       then
         str;
@@ -2366,7 +2367,7 @@ algorithm
       list<Absyn.ElementArg> l;
       Option<Absyn.Exp> e;
     case (Absyn.CLASSMOD(elementArgLst = {},expOption = NONE)) then "()";  /* Special case for empty modifications */
-    case (Absyn.CLASSMOD(elementArgLst = l,expOption = e))
+    case (Absyn.CLASSMOD(elementArgLst = l, expOption = e))
       equation
         s1 = unparseMod1Str(l);
         s2 = unparseMod2Str(e);
