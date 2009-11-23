@@ -2663,8 +2663,11 @@ algorithm
       
       // If compileCommand not set, use $OPENMODELICAHOME\bin\Compile
     case (fileprefix,libs,file_dir,noClean) 
-      equation 
-        "" = Settings.getCompileCommand();
+      equation
+        // if compileCommand is set to g++ use $OPENMODELICAHOME/bin/Compile
+        // MathCore needs compileCommand to be set to g++ in Compiler/runtime/settingsimpl.c
+        // so we test for g++ instead of "" (nothing).
+        "g++" = Settings.getCompileCommand();
         pd = System.pathDelimiter();
         omhome = Settings.getInstallationDirectoryPath();
         omhome_1 = System.stringReplace(omhome, "\"", "");

@@ -99,6 +99,20 @@ algorithm
       String classname,scope;
       Env.Cache cache;
       
+    // Special handling for Connections.isRoot
+    case (cache,env,Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")),msg)
+      equation 
+        t = (DAE.T_FUNCTION({("x", (DAE.T_ANYTYPE(NONE), NONE))}, (DAE.T_BOOL({}), NONE)), NONE);
+      then
+        (cache, t, env);
+      
+    // Special handling for MultiBody 3.x rooted() operator
+    case (cache,env,Absyn.IDENT("rooted"),msg)
+      equation 
+        t = (DAE.T_FUNCTION({("x", (DAE.T_ANYTYPE(NONE), NONE))}, (DAE.T_BOOL({}), NONE)), NONE);
+      then
+        (cache, t, env);
+      
       // For simple names
     case (cache,env,(path as Absyn.IDENT(name = _)),msg) 
       equation 
@@ -113,14 +127,6 @@ algorithm
         (cache,t,env_2) = lookupType2(cache,env_1,path,c);
       then
         (cache,t,env_2);
-    
-      // Special handling for Connections.isRoot
-    case (cache,env,Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")),msg)
-      equation 
-        t = (DAE.T_FUNCTION({("x", (DAE.T_ANYTYPE(NONE), NONE))}, 
-          (DAE.T_BOOL({}), NONE)), NONE);
-      then
-        (cache, t, env);        
             
    	  // Error for type not found
     case (cache,env,path,true)
@@ -1951,6 +1957,19 @@ algorithm
   end matchcontinue;
 end buildRecordConstructorClass2;
 
+protected function selectModifier
+"@author: adrpo
+ if the first modifier is empty (NOMOD) use the second one!"
+  input DAE.Mod inModID;
+  input DAE.Mod inModNoID;
+  output DAE.Mod outMod;
+algorithm
+  outMod := matchcontinue (inModID, inModNoID)
+    case (DAE.NOMOD(), inModNoID) then inModNoID;
+    case (inModID, _) then inModID;
+  end matchcontinue;
+end selectModifier;
+
 protected function buildRecordConstructorElts 
 "function: buildRecordConstructorElts  
   Helper function to build_record_constructor_class. Creates the elements
@@ -1984,20 +2003,21 @@ algorithm
       SCode.Class cl;
       Absyn.Path path;
       SCode.Mod mod,umod;
-      DAE.Mod mod_1,compMod;     
+      DAE.Mod mod_1, compMod, fullMod, selectedMod;
       Option<Absyn.Info> nfo;
       Option<Absyn.ConstrainClass> cc;
+      
     case (((comp as SCode.COMPONENT( id,io,fl,repl,prot,SCode.ATTR(d,f,st,ac,var,dir),tp,mod,bc,comment,cond,nfo,cc)) :: rest),mods,env)
       equation 
         (_,mod_1) = Mod.elabMod(Env.emptyCache(), env, Prefix.NOPRE(), mod, false);
         mod_1 = Mod.merge(mods,mod_1,env,Prefix.NOPRE());
         // adrpo: this was wrong, you won't find any id modification there!!!
-        // bjozac: This was right, you will find id modification unless modifers does not belong to component! 
-        // compMod = Mod.lookupModificationP(mod_1,Absyn.IDENT(id));
-        // umod = Mod.unelabMod(compMod);
-        // adpro TODO! FIXME! we need to discuss this as it breaks 2 tests:
-        //                    graphical API and Record Constructor with Parameters 
-        umod = Mod.unelabMod(mod_1);
+        // bjozac: This was right, you will find id modification unless modifers does not belong to component!
+        // adrpo 2009-11-23 -> solved by selecting the full modifier if the component modifier is empty! 
+        compMod = Mod.lookupModificationP(mod_1,Absyn.IDENT(id));
+        fullMod = mod_1;
+        selectedMod = selectModifier(compMod, fullMod); // if the first one is empty use the other one.
+        umod = Mod.unelabMod(selectedMod);
         res = buildRecordConstructorElts(rest, mods, env);
         // - Prefixes (constant, parameter, final, discrete, input, output, ...) of the remaining record components are removed.
         var = SCode.VAR();

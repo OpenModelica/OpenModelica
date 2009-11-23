@@ -256,8 +256,7 @@ algorithm
         DAE.ComponentRef c;
         Interactive.InteractiveSymbolTable st;
       equation 
-        (cache,v) = cevalCref(cache,env, c, false, msg) "When in interactive mode, always evalutate crefs, i.e non-implicit
-	    mode.." ;
+        (cache,v) = cevalCref(cache,env, c, false, msg) "When in interactive mode, always evalutate crefs, i.e non-implicit mode.." ;
       then
         (cache,v,SOME(st));
 
@@ -4426,6 +4425,7 @@ algorithm
         str = Exp.printComponentRefStr(c);
         scope_str = Env.printEnvPathStr(env);
         Error.addMessage(Error.NO_CONSTANT_BINDING, {str,scope_str});
+        Debug.fprintln("ceval","-Ceval.cevalCref on: " +& str +& " failed with no constant binding in scope: " +& scope_str); 
       then
         fail();
   end matchcontinue;

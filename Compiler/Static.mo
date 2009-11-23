@@ -5513,10 +5513,9 @@ algorithm
   end matchcontinue;
 end elabBuiltinIdentity;
 
-protected function elabBuiltinIsRoot "function: elabBuiltinIsRoot
- 
-  This function elaborates on the builtin operator Connections.isRoot.
-"
+protected function elabBuiltinIsRoot 
+"function: elabBuiltinIsRoot 
+  This function elaborates on the builtin operator Connections.isRoot."
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
@@ -5544,6 +5543,39 @@ algorithm
         DAE.PROP((DAE.T_BOOL({}), NONE), DAE.C_CONST));
   end matchcontinue;
 end elabBuiltinIsRoot;
+
+protected function elabBuiltinRooted 
+"author: adrpo 
+  This function handles the built-in rooted operator. (MultiBody).
+  See more here: http://trac.modelica.org/Modelica/ticket/95"
+	input Env.Cache inCache;
+  input Env.Env inEnv;
+  input list<Absyn.Exp> inAbsynExpLst;
+  input list<Absyn.NamedArg> inNamedArg;  
+  input Boolean inBoolean;
+  output Env.Cache outCache;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
+algorithm 
+  (outCache,outExp,outProperties) := matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
+    local
+      list<Env.Frame> env;
+      Env.Cache cache;
+      Boolean impl;
+      Absyn.Exp exp0;
+      DAE.Exp exp;
+      
+    // adrpo: TODO! FIXME!
+    //        this operator is not even specified in the specification! 
+    //        We should implement this as said here: 
+    //        http://trac.modelica.org/Modelica/ticket/95 
+    case (cache,env,{exp0},{},impl) /* impl */
+      equation
+        (cache, exp, _, _) = elabExp(cache, env, exp0, false, NONE, false);
+      then 
+        (cache, DAE.BCONST(true),DAE.PROP((DAE.T_BOOL({}), NONE), DAE.C_CONST));
+  end matchcontinue;
+end elabBuiltinRooted;
 
 protected function elabBuiltinScalar "function: elab_builtin_
   author: PA
@@ -5790,45 +5822,6 @@ algorithm
 				DAE.PROP((DAE.T_STRING({}),NONE),c));		
   end matchcontinue;
 end elabBuiltinString;
-
-protected function elabBuiltinRooted 
-"author: adrpo
-  This function handles the built-in rooted operator. (MultiBody)"
-	input Env.Cache inCache;
-  input Env.Env inEnv;
-  input list<Absyn.Exp> inAbsynExpLst;
-  input list<Absyn.NamedArg> inNamedArg;  
-  input Boolean inBoolean;
-  output Env.Cache outCache;
-  output DAE.Exp outExp;
-  output DAE.Properties outProperties;
-algorithm 
-  (outCache,outExp,outProperties):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
-    local
-      DAE.Exp exp;
-      tuple<DAE.TType, Option<Absyn.Path>> tp,arr_tp;
-      DAE.Const c,const;
-      list<DAE.Const> constlist;
-      DAE.ExpType tp_1,etp;
-      list<Env.Frame> env;
-      Absyn.Exp e;
-      Boolean impl,scalar;
-      list<DAE.Exp> expl,expl_1,args_1;
-      list<Integer> dims;
-      Env.Cache cache;
-      DAE.Properties prop;
-      list<Absyn.Exp> args;
-      list<Absyn.NamedArg> nargs;
-      list<Slot> slots,newslots;
-    case (cache,env,args as _,nargs,impl) 
-      equation 
-      then
-				(cache, 
-				DAE.BCONST(true),        
-				DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_CONST()));		
-  end matchcontinue;
-end elabBuiltinRooted;
   
 protected function elabBuiltinLinspace "
   author: PA
@@ -6265,24 +6258,31 @@ algorithm
       list<Absyn.NamedArg> nargs;
       Boolean impl;
       Env.Cache cache;
-      /* impl for normal builtin operators and functions */ 
+      
+    /* impl for normal builtin operators and functions */ 
     case (cache,env,Absyn.CREF_IDENT(name = name,subscripts = {}),args,nargs,impl) 
       equation 
         handler = elabBuiltinHandler(name);
         (cache,exp,prop) = handler(cache,env, args, nargs, impl);
       then
         (cache,exp,prop);
-        /* For generic types, like e.g. cardinality */ 
+    /* special handling for MultiBody 3.x rooted() operator */
+    case (cache,env,Absyn.CREF_IDENT(name = "rooted"),args,nargs,impl) 
+      equation  
+        (cache,exp,prop) = elabBuiltinRooted(cache,env, args, nargs, impl);
+      then
+        (cache,exp,prop);
+    /* special handling for Connections.isRoot() operator */
+    case (cache,env,Absyn.CREF_QUAL(name = "Connections", componentRef = Absyn.CREF_IDENT(name = "isRoot")),args,nargs,impl) 
+      equation  
+        (cache,exp,prop) = elabBuiltinIsRoot(cache,env, args, nargs, impl);
+      then
+        (cache,exp,prop);    
+    /* for generic types, like e.g. cardinality */ 
     case (cache,env,Absyn.CREF_IDENT(name = name,subscripts = {}),args,nargs,impl) 
       equation 
         handler = elabBuiltinHandlerGeneric(name);
         (cache,exp,prop) = handler(cache,env, args, nargs, impl);
-      then
-        (cache,exp,prop);
-    case (cache,env,Absyn.CREF_QUAL(name = "Connections",
-              componentRef = Absyn.CREF_IDENT(name = "isRoot")),args,nargs,impl) 
-      equation  
-        (cache,exp,prop) = elabBuiltinIsRoot(cache,env, args, nargs, impl);
       then
         (cache,exp,prop);
   end matchcontinue;
@@ -9934,6 +9934,7 @@ algorithm
         Error.addMessage(Error.NO_CONSTANT_BINDING, {s,scope});
          t = Types.elabType(tt);
         cr_1 = fillCrefSubscripts(cr, tt);
+        Debug.fprintln("static","-Static.elabCref2 on: " +& s +& " failed with no constant binding in scope: " +& scope);
       then
         (cache,DAE.CREF(cr_1,t),DAE.C_CONST(),acc);
       

@@ -95,8 +95,9 @@ void Settings_5finit(void)
   /* adrpo: TODO! FIXME!
    * MathCore wants this set to g++
    * but OpenModelica uses $OPENMODELICAHOME/bin/Compile
+   * now this is solved in CevalScript.compileModel which is different for OpenModelica vs. MathModelica
    */
-  strcpy(compileCommand,"");
+  strcpy(compileCommand,"g++");
 }
 
 
