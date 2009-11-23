@@ -1856,9 +1856,20 @@ algorithm
         s2 = Types.unparseType(expectedTp);
         Error.addMessage(Error.TYPE_ERROR,{s1,s2});
       then fail();   
-    case(_,_,_,_,_,_,_) equation
-      print("instBuiltinAttribute failed\n");
-    then fail();   
+    case(cache,env,id,SOME(v),bind,expectedTp,bindProp) equation
+      Debug.fprintln("failtrace", "instBuiltinAttribute failed for: " +& id +&
+                                  " value binding: " +& ValuesUtil.printValStr(v) +& 
+                                  " binding: " +& Exp.printExpStr(bind) +&
+                                  " expected type: " +& Types.printTypeStr(expectedTp) +&
+                                  " type props: " +& Types.printPropStr(bindProp));
+    then fail();
+    case(cache,env,id,_,bind,expectedTp,bindProp) equation
+      Debug.fprintln("failtrace", "instBuiltinAttribute failed for: " +& id +&
+                                  " value binding: NONE()" +& 
+                                  " binding: " +& Exp.printExpStr(bind) +&
+                                  " expected type: " +& Types.printTypeStr(expectedTp) +&
+                                  " type props: " +& Types.printPropStr(bindProp));
+    then fail();
   end matchcontinue;
 end instBuiltinAttribute;
 
@@ -6319,7 +6330,11 @@ algorithm
         //get the equation modification 
         SOME(DAE.TYPED(e,_,p)) = Mod.modEquation(mod) ;				
 				//Instantiate type of the component, skip dae/not flattening
-        (cache,env_1,ih,store,_,csets_1,ty,st,_,graph) = instClass(cache,env,ih,store, mod, pre, csets, cl, inst_dims, impl, INNER_CALL(), graph);        
+				// adrpo: do not send in the modifications as it will fail if the modification is an ARRAY. 
+				//        anyhow the modifications are handled below.
+				//        input Integer sequence[3](min = {1,1,1}, max = {3,3,3}) = {1,2,3}; // this will fail if we send in the mod.
+				//        see testsuite/mofiles/Sequence.mo
+        (cache,env_1,ih,store,_,csets_1,ty,st,_,graph) = instClass(cache,env,ih,store, /* mod */ DAE.NOMOD(), pre, csets, cl, inst_dims, impl, INNER_CALL(), graph);        
         //Make it an array type since we are not flattening
         ty_1 = makeArrayType(dims, ty);
 
