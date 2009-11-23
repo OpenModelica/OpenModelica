@@ -1598,14 +1598,15 @@ algorithm
       list<DAE.Exp> args,args2,args_1;
       list<DAE.ComponentRef> crefs;
       String str;
-      // TEMPFIX REMOVE UNBOX CALLS
     case((DAE.CALL(orig_p,args,tup,bui,ty,inl),(p,inputs,dae)))
       equation
+        true = isSimpleArg(args);
         str = Absyn.pathString(orig_p);
         true = Util.strncmp(str,"mmc",3);
         e = Util.listFirst(args);
       then
         ((e,(p,inputs,dae)));
+    //case((DAE.CALL(orig_p,args,tup,bui,ty,inl),(p,inputs,dae)))
     case((DAE.CALL(orig_p,args,tup,false,ty,inl),(p,inputs,dae)))
       equation
         tmp = DAEUtil.getNamedFunction(orig_p,dae); // if function exists, do not replace call
@@ -1618,6 +1619,33 @@ algorithm
     case((e,(p,inputs,dae))) then ((e,(p,inputs,dae)));
   end matchcontinue;
 end fixCall;
+
+protected function isSimpleArg
+"function: isSimpleArg
+	checks if a funcarg list is simple or not"
+	input list<DAE.Exp> inArgs;
+	output Boolean outBoolean;
+algorithm
+  outBoolean := matchcontinue(inArgs)
+    local
+      DAE.ExpType et;
+    case({DAE.ICONST(_)}) then true;
+    case({DAE.RCONST(_)}) then true;
+    case({DAE.BCONST(_)}) then true;
+    case({DAE.SCONST(_)}) then true;
+    case({DAE.CREF(ty = et)})
+      equation
+        true = Exp.typeBuiltin(et);
+      then
+        true;
+    case({DAE.CALL(ty = DAE.ET_BOXED(et))})
+      equation
+        true = Exp.typeBuiltin(et);
+      then
+        true;
+    case(_) then false;
+  end matchcontinue;
+end isSimpleArg;
 
 protected function getPartEvalFunction
 "function: getPartEvalFunction
