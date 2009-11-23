@@ -91,10 +91,12 @@ void Settings_5finit(void)
     strcpy(tempDirectoryPath, str);
   }
 #endif
-  compileCommand = malloc(sizeof(char)*(strlen("g++") + 1)); 
-  strcpy(compileCommand,"g++");
-
-
+  compileCommand = malloc(sizeof(char)*(strlen("g++") + 1));
+  /* adrpo: TODO! FIXME!
+   * MathCore wants this set to g++
+   * but OpenModelica uses $OPENMODELICAHOME/bin/Compile
+   */
+  strcpy(compileCommand,"");
 }
 
 
