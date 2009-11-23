@@ -116,7 +116,7 @@ test:
 #		(cd $$d ; $(MAKE)) \
 #	done
 
-clean:
+clean: .depend
 	@for d in $(SUBDIRS); do \
 		(cd $$d ; $(MAKE) clean) \
 	done
@@ -126,7 +126,7 @@ clean:
 	-cd $(builddir_bin) && rm -f $(SCRIPT_FILES) && rm -f $(DOC_FILES)
 	-cd $(builddir_doc) && rm -f $(DOC_FILES)
 
-dclean:
+dclean: .depend
 	@for d in $(SUBDIRS); do \
 		(cd $$d ; $(MAKE) clean) \
 	done
@@ -136,7 +136,7 @@ dclean:
 	-cd $(builddir_bin) && rm -f $(SCRIPTS_FILES) && rm -f $(DOC_FILES)
 	-cd $(builddir_doc) && rm -f $(DOC_FILES)
 
-reallyclean:
+reallyclean: .depend
 	@for d in $(SUBDIRS); do \
 		(cd $$d ; $(MAKE) reallyclean) \
 	done
@@ -144,7 +144,7 @@ reallyclean:
 	-$(RM) -f $(SRCH)
 	-$(RM) -f $(builddir)/$(PROG)$(EXEEXT)
 
-dreallyclean:
+dreallyclean: .depend
 	@for d in $(SUBDIRS); do \
 		(cd $$d ; $(MAKE) reallyclean) \
 	done
