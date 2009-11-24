@@ -696,8 +696,8 @@ algorithm
        c1 = Types.propAllConst(prop1);
        t = Types.superType(t1,t2);
        
-       (e1_1,_) = Types.matchType(e1_1, t1, t);
-       (e2_1,_) = Types.matchType(e2_1, t2, t);
+       (e1_1,_) = Types.matchType(e1_1, t1, t, true);
+       (e2_1,_) = Types.matchType(e2_1, t2, t, true);
        
        // If the second expression is a DAE.LIST, then we can create a DAE.LIST
        // instead of DAE.CONS
@@ -730,7 +730,7 @@ algorithm
     equation
       (cache,es_1,propList,st_2) = elabExpList(cache,env, es, impl, st,doVect);
       typeList = Util.listMap(propList, Types.getPropType);
-      (es_1, t, _) = Types.listMatchSuperType(es_1, typeList, {}, Types.matchTypeRegular);
+      (es_1, t, _) = Types.listMatchSuperType(es_1, typeList, {}, Types.matchTypeRegular, true);
       prop = DAE.PROP((DAE.T_LIST(t),NONE()),DAE.C_VAR());
       tp_1 = Types.elabType(t);
     then (cache,DAE.LIST(tp_1,es_1),prop,st_2);
@@ -796,7 +796,7 @@ algorithm
       equation
         (cache,expExpList,propList,st) = elabExpList(cache,env,expList,impl,st,doVect);
         typeList = Util.listMap(propList, Types.getPropType);
-        (expExpList, t, _) = Types.listMatchSuperType(expExpList, typeList, {}, Types.matchTypeRegular);
+        (expExpList, t, _) = Types.listMatchSuperType(expExpList, typeList, {}, Types.matchTypeRegular, true);
         t2 = Types.elabType(t);
       then
         (cache,DAE.LIST(t2,expExpList),DAE.PROP((DAE.T_LIST(t),NONE),c),st);
@@ -2166,7 +2166,7 @@ algorithm
         ((e :: res),res_type);
     case ((e :: es),(t :: ts),to_type) /* type conversion */ 
       equation       
-        (e_1,res_type) = Types.matchType(e, t, to_type);         
+        (e_1,res_type) = Types.matchType(e, t, to_type, true);
         (res,_) = elabArrayReal2(es, ts, to_type);
       then
         ((e_1 :: res),res_type);
@@ -3277,7 +3277,7 @@ algorithm
       local String str;
       equation 
         (cache,exp_1,DAE.PROP(ty,c),_) = elabExp(cache,env, arrexp, impl, NONE,true);
-        (exp_1,ty2) = Types.matchType(exp_1, ty, (DAE.T_INTEGER({}),NONE));
+        (exp_1,ty2) = Types.matchType(exp_1, ty, (DAE.T_INTEGER({}),NONE), true);
         str = Dump.printExpStr(arrexp);
         Error.addMessage(Error.BUILTIN_FUNCTION_PRODUCT_HAS_SCALAR_PARAMETER, {str});
       then
@@ -3286,7 +3286,7 @@ algorithm
       local String str; 
       equation 
         (cache,exp_1,DAE.PROP(ty,c),_) = elabExp(cache,env, arrexp, impl, NONE,true);        
-        (exp_1,ty2) = Types.matchType(exp_1, ty, (DAE.T_REAL({}),NONE));
+        (exp_1,ty2) = Types.matchType(exp_1, ty, (DAE.T_REAL({}),NONE), true);
         str = Dump.printExpStr(arrexp);
         Error.addMessage(Error.BUILTIN_FUNCTION_PRODUCT_HAS_SCALAR_PARAMETER, {str});
       then
@@ -3363,7 +3363,7 @@ algorithm
       local String str;
       equation 
         (cache,exp_1,DAE.PROP(ty,c),_) = elabExp(cache,env, arrexp, impl, NONE,true);
-        (exp_1,ty2) = Types.matchType(exp_1, ty, (DAE.T_INTEGER({}),NONE));
+        (exp_1,ty2) = Types.matchType(exp_1, ty, (DAE.T_INTEGER({}),NONE), true);
         str = Dump.printExpStr(arrexp);
         Error.addMessage(Error.BUILTIN_FUNCTION_PRODUCT_HAS_SCALAR_PARAMETER, {str});
       then
@@ -3372,7 +3372,7 @@ algorithm
       local String str;
       equation 
         (cache,exp_1,DAE.PROP(ty,c),_) = elabExp(cache,env, arrexp, impl, NONE,true);
-        (exp_1,ty2) = Types.matchType(exp_1, ty, (DAE.T_REAL({}),NONE));
+        (exp_1,ty2) = Types.matchType(exp_1, ty, (DAE.T_REAL({}),NONE), true);
         str = Dump.printExpStr(arrexp);
         Error.addMessage(Error.BUILTIN_FUNCTION_PRODUCT_HAS_SCALAR_PARAMETER, {str});
       then
@@ -3656,8 +3656,8 @@ algorithm
         (cache,s2_1,prop2,_) = elabExp(cache, env, s2, impl, NONE, impl);
         t1 = Types.getPropType(prop1);
         t2 = Types.getPropType(prop2);
-        (s1_1,t1) = Types.matchType(s1_1, t1, (DAE.T_BOXED((DAE.T_NOTYPE,NONE)),NONE));
-        (s2_1,t2) = Types.matchType(s2_1, t2, (DAE.T_BOXED((DAE.T_NOTYPE,NONE)),NONE));
+        (s1_1,t1) = Types.matchType(s1_1, t1, (DAE.T_BOXED((DAE.T_NOTYPE,NONE)),NONE), true);
+        (s2_1,t2) = Types.matchType(s2_1, t2, (DAE.T_BOXED((DAE.T_NOTYPE,NONE)),NONE), true);
         t1 = Types.unboxedType(t1);
         t2 = Types.unboxedType(t2);
         ty = Types.superType(t1, t2);
@@ -4128,7 +4128,7 @@ algorithm
     case ({},{},tp) then ({},tp); 
     case ((e1 :: expl),(t1 :: tpl),tp)
       equation 
-        (e1_1,_) = Types.matchProp(e1, t1, tp);
+        (e1_1,_) = Types.matchProp(e1, t1, tp, true);
         (expl_1,_) = elabBuiltinArray3(expl, tpl, tp);
       then
         ((e1_1 :: expl_1),t1);
@@ -4302,8 +4302,8 @@ algorithm
         (cache,s1_1,DAE.PROP(ty1,c1),_) = elabExp(cache,env, s1, impl, NONE,true);
         (cache,s2_1,DAE.PROP(ty2,c2),_) = elabExp(cache,env, s2, impl, NONE,true);
         true = Types.isRealOrSubTypeReal(ty1) or Types.isRealOrSubTypeReal(ty2);
-        (s1_1,ty) = Types.matchType(s1_1,ty1,(DAE.T_REAL({}),NONE));
-        (s2_1,ty) = Types.matchType(s2_1,ty2,(DAE.T_REAL({}),NONE));       
+        (s1_1,ty) = Types.matchType(s1_1,ty1,(DAE.T_REAL({}),NONE),true);
+        (s2_1,ty) = Types.matchType(s2_1,ty2,(DAE.T_REAL({}),NONE),true);
         c = Types.constAnd(c1, c2);
         tp = Types.elabType(ty);
       then
@@ -4362,8 +4362,8 @@ algorithm
         (cache,s1_1,DAE.PROP(ty1,c1),_) = elabExp(cache,env, s1, impl, NONE,true);
         (cache,s2_1,DAE.PROP(ty2,c2),_) = elabExp(cache,env, s2, impl, NONE,true);
         true = Types.isRealOrSubTypeReal(ty1) or Types.isRealOrSubTypeReal(ty2);
-        (s1_1,ty) = Types.matchType(s1_1,ty1,(DAE.T_REAL({}),NONE));
-        (s2_1,ty) = Types.matchType(s2_1,ty2,(DAE.T_REAL({}),NONE));       
+        (s1_1,ty) = Types.matchType(s1_1,ty1,(DAE.T_REAL({}),NONE),true);
+        (s2_1,ty) = Types.matchType(s2_1,ty2,(DAE.T_REAL({}),NONE),true);
         c = Types.constAnd(c1, c2);
         tp = Types.elabType(ty);
       then
@@ -4591,8 +4591,8 @@ algorithm
       equation 
         (cache,s1_1,DAE.PROP(ty1,c1),_) = elabExp(cache,env, s1, impl, NONE,true);
         (cache,s2_1,DAE.PROP(ty2,c2),_) = elabExp(cache,env, s2, impl, NONE,true);
-        (s1_1,_) = Types.matchType(s1_1,ty1,(DAE.T_REAL({}),NONE));
-        (s2_1,_) = Types.matchType(s2_1,ty2,(DAE.T_REAL({}),NONE));        
+        (s1_1,_) = Types.matchType(s1_1,ty1,(DAE.T_REAL({}),NONE),true);
+        (s2_1,_) = Types.matchType(s2_1,ty2,(DAE.T_REAL({}),NONE),true);
         true = Types.isParameterOrConstant(c2);
       then
         (cache,DAE.CALL(Absyn.IDENT("delay"),{s1_1,s2_1,s2_1},false,true,DAE.ET_REAL(),false),DAE.PROP((DAE.T_REAL({}),NONE),DAE.C_VAR()));
@@ -4611,9 +4611,9 @@ algorithm
         (cache,s1_1,DAE.PROP(ty1,c1),_) = elabExp(cache,env, s1, impl, NONE,true);
         (cache,s2_1,DAE.PROP(ty2,c2),_) = elabExp(cache,env, s2, impl, NONE,true);
         (cache,s3_1,DAE.PROP(ty3,c3),_) = elabExp(cache,env, s3, impl, NONE,true);
-        (s1_1,_) = Types.matchType(s1_1,ty1,(DAE.T_REAL({}),NONE));
-        (s2_1,_) = Types.matchType(s2_1,ty2,(DAE.T_REAL({}),NONE));
-        (s3_1,_) = Types.matchType(s3_1,ty3,(DAE.T_REAL({}),NONE));
+        (s1_1,_) = Types.matchType(s1_1,ty1,(DAE.T_REAL({}),NONE),true);
+        (s2_1,_) = Types.matchType(s2_1,ty2,(DAE.T_REAL({}),NONE),true);
+        (s3_1,_) = Types.matchType(s3_1,ty3,(DAE.T_REAL({}),NONE),true);
         true = Types.isParameterOrConstant(c3);                
       then
         (cache,DAE.CALL(Absyn.IDENT("delay"),{s1_1,s2_1,s3_1},false,true,DAE.ET_REAL(),false),DAE.PROP((DAE.T_REAL({}),NONE),DAE.C_VAR()));
@@ -5850,8 +5850,8 @@ algorithm
     case (cache,env,{x,y,n},_,impl) equation
       (cache,x1,DAE.PROP(tp1,c1),_) = elabExp(cache,env, x, impl, NONE,true);
       (cache,y1,DAE.PROP(tp2,c2),_) = elabExp(cache,env, y, impl, NONE,true);
-      (x2,tp11) = Types.matchType(x1,tp1,(DAE.T_REAL({}),NONE));
-      (y2,tp22) = Types.matchType(y1,tp2,(DAE.T_REAL({}),NONE));    
+      (x2,tp11) = Types.matchType(x1,tp1,(DAE.T_REAL({}),NONE),true);
+      (y2,tp22) = Types.matchType(y1,tp2,(DAE.T_REAL({}),NONE),true);
       (cache,n1,DAE.PROP(tp3 as (DAE.T_INTEGER(_),_),c3),_) = elabExp(cache,env, n, impl, NONE,true);
       true = Types.isParameterOrConstant(c3);
       (cache,Values.INTEGER(size),_) = Ceval.ceval(cache,env, n1, false, NONE, NONE, Ceval.MSG());      
@@ -5863,8 +5863,8 @@ algorithm
     case (cache,env,{x,y,n},_,impl) equation
       (cache,x1,DAE.PROP(tp1,c1),_) = elabExp(cache,env, x, impl, NONE,true);
       (cache,y1,DAE.PROP(tp2,c2),_) = elabExp(cache,env, y, impl, NONE,true);
-      (x2,tp11) = Types.matchType(x1,tp1,(DAE.T_REAL({}),NONE));
-      (y2,tp22) = Types.matchType(y1,tp2,(DAE.T_REAL({}),NONE));    
+      (x2,tp11) = Types.matchType(x1,tp1,(DAE.T_REAL({}),NONE),true);
+      (y2,tp22) = Types.matchType(y1,tp2,(DAE.T_REAL({}),NONE),true);
       (cache,n1,DAE.PROP(tp3 as (DAE.T_INTEGER(_),_),c3),_) = elabExp(cache,env, n, impl, NONE,true);
       false = Types.isParameterOrConstant(c3);           
       c = Types.constAnd(c1,Types.constAnd(c2,c3));
@@ -7381,7 +7381,7 @@ algorithm
       equation 
         equality(id = id2);
         (cache,exp_1,DAE.PROP(t,c1),_) = elabExp(cache,env, exp, impl, st,true);
-        (exp_2,_) = Types.matchType(exp_1, t, tp);
+        (exp_2,_) = Types.matchType(exp_1, t, tp, true);
       then
         (cache,exp_2);
     case (cache,env,st,impl,id,tp,(Absyn.NAMEDARG(argName = id2,argValue = exp) :: xs),dexp)
@@ -9128,7 +9128,7 @@ algorithm
         (cache,res) = fillDefaultSlots(cache,xs, class_, env, impl);
         SCode.COMPONENT(_,_,_,_,_,_,_,SCode.MOD(_,_,_,SOME((dexp,_))),_,_,_,_,_) = SCode.getElementNamed(id, class_);
         (cache,exp,DAE.PROP(t,c1),_) = elabExp(cache,env, dexp, impl, NONE,true);
-        (exp_1,_) = Types.matchType(exp, t, tp);
+        (exp_1,_) = Types.matchType(exp,t,tp,true);
       then
         (cache,SLOT((id,tp),true,SOME(exp_1),ds) :: res);
     case (cache,(SLOT(an = (id,tp),true_ = false,expExpOption = e,typesArrayDimLst = ds) :: xs),class_,env,impl)
@@ -9215,7 +9215,7 @@ algorithm
         (cache,e_1,props,_) = elabExp(cache,env, e, impl, NONE,true);
         t = Types.getPropType(props);
         c1 = Types.propAllConst(props);
-        (e_2,_,polymorphicBindings) = Types.matchTypePolymorphic(e_1, t, vt, polymorphicBindings);
+        (e_2,_,polymorphicBindings) = Types.matchTypePolymorphic(e_1,t,vt,polymorphicBindings,false);
         (cache,slots_1,clist,polymorphicBindings) = elabPositionalInputArgs(cache,env, es, vs, slots,checkTypes, impl,polymorphicBindings);
         newslots = fillSlot(farg, e_2, {}, slots_1,checkTypes) "no vectorized dim" ;
       then
@@ -9313,7 +9313,7 @@ algorithm
       equation 
         (cache,e_1,DAE.PROP(t,c1),_) = elabExp(cache, env, e, impl, NONE, true);
         vt = findNamedArgType(id, farg);
-        (e_2,_,polymorphicBindings) = Types.matchTypePolymorphic(e_1, t, vt,polymorphicBindings);
+        (e_2,_,polymorphicBindings) = Types.matchTypePolymorphic(e_1,t,vt,polymorphicBindings,false);
         slots_1 = fillSlot((id,vt), e_2, {}, slots,checkTypes);
         (cache,newslots,clist,polymorphicBindings) = elabNamedInputArgs(cache,env, nas, farg, slots_1, checkTypes,impl,polymorphicBindings);
       then
@@ -9817,7 +9817,7 @@ algorithm
         (cache,v) = Ceval.cevalCrefBinding(cache,env,cr,binding,false,Ceval.MSG());
         e = valueExp(v);
         et = Types.typeOfValue(v);
-        (e_1,_) = Types.matchType(e, et, t);
+        (e_1,_) = Types.matchType(e, et, t, true);
       then
         (cache,e_1,DAE.C_CONST(),SCode.RO());
         
@@ -9832,7 +9832,7 @@ algorithm
         (cache,v,_) = Ceval.ceval(cache,env,e_1,false,NONE,NONE,Ceval.MSG());
         e = valueExp(v);
         et = Types.typeOfValue(v);
-        (e_1,_) = Types.matchType(e, et, tt);
+        (e_1,_) = Types.matchType(e, et, tt, true);
       then
         (cache,e_1,DAE.C_PARAM(),SCode.RO());
         
@@ -9849,7 +9849,7 @@ algorithm
         (cache,v,_) = Ceval.ceval(cache,env,e_1,false,NONE,NONE,Ceval.MSG());
         e = valueExp(v);
         et = Types.typeOfValue(v);
-        (e_1,_) = Types.matchType(e, et, tt);
+        (e_1,_) = Types.matchType(e, et, tt, true);
       then
         (cache,e_1,DAE.C_PARAM(),SCode.RO());
         
@@ -11097,14 +11097,14 @@ algorithm
         (cache,exp,DAE.PROP(t2,c));
     case (cache,env,e1,DAE.PROP(type_ = (DAE.T_BOOL(varLstBool = _),_),constFlag = c1),e2,DAE.PROP(type_ = t2,constFlag = c2),e3,DAE.PROP(type_ = t3,constFlag = c3),impl,st)
       equation 
-        (e2_1,t2_1) = Types.matchType(e2, t2, t3);
+        (e2_1,t2_1) = Types.matchType(e2, t2, t3, true);
         c = constIfexp(e1, c1, c2, c3) "then-part type converted to match else-part" ;
         (cache,exp) = cevalIfexpIfConstant(cache,env, e1, e2_1, e3, c1, impl, st);
       then
         (cache,exp,DAE.PROP(t2_1,c));
     case (cache,env,e1,DAE.PROP(type_ = (DAE.T_BOOL(varLstBool = _),_),constFlag = c1),e2,DAE.PROP(type_ = t2,constFlag = c2),e3,DAE.PROP(type_ = t3,constFlag = c3),impl,st)
       equation 
-        (e3_1,t3_1) = Types.matchType(e3, t3, t2);
+        (e3_1,t3_1) = Types.matchType(e3, t3, t2, true);
         c = constIfexp(e1, c1, c2, c3) "else-part type converted to match then-part" ;
         (cache,exp) = cevalIfexpIfConstant(cache,env, e1, e2, e3_1, c1, impl, st);
       then
@@ -11323,7 +11323,7 @@ algorithm
       equation
         explist = Util.listMap(vallist, valueExp);
         typelist = Util.listMap(vallist, Types.typeOfValue);
-        (explist,vt,_) = Types.listMatchSuperType(explist, typelist, {}, Types.matchTypeRegular);
+        (explist,vt,_) = Types.listMatchSuperType(explist, typelist, {}, Types.matchTypeRegular, true);
         t = Types.elabType(vt);
       then DAE.LIST(t, explist);
     
@@ -11558,7 +11558,7 @@ algorithm
     case ({},{}) then ({},{}); 
     case ((pt :: pts),((arg,atype) :: args))
       equation 
-        (arg_1,atype_1) = Types.matchType(arg, atype, pt);
+        (arg_1,atype_1) = Types.matchType(arg, atype, pt, true);
         (args_1,atypes_1) = elabArglist(pts, args);
       then
         ((arg_1 :: args_1),(atype_1 :: atypes_1));

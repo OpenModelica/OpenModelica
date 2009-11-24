@@ -221,7 +221,7 @@ algorithm
       DAE.Exp rhs_1,e3,e1;
     case (DAE.CREF(componentRef = c,ty = crt),lhprop,rhs,rhprop)
       equation 
-        (rhs_1,_) = Types.matchProp(rhs, rhprop, lhprop);
+        (rhs_1,_) = Types.matchProp(rhs, rhprop, lhprop, true);
         false = Types.isPropArray(lhprop);
         t = getPropExpType(lhprop);
       then
@@ -237,7 +237,7 @@ algorithm
       */
     case (DAE.CREF(componentRef = c,ty = crt),lhprop,rhs,rhprop)
       equation 
-        (rhs_1,_) = Types.matchProp(rhs, rhprop, lhprop);
+        (rhs_1,_) = Types.matchProp(rhs, rhprop, lhprop, false /* Don't duplicate errors */);
         true = Types.isPropArray(lhprop);
         t = getPropExpType(lhprop);
       then
@@ -246,7 +246,7 @@ algorithm
     case(e3 as DAE.ASUB(e1,ea2),lhprop,rhs,rhprop)
       local list<DAE.Exp> ea2;
       equation
-        (rhs_1,_) = Types.matchProp(rhs, rhprop, lhprop);
+        (rhs_1,_) = Types.matchProp(rhs, rhprop, lhprop, true);
         //false = Types.isPropArray(lhprop); 
         t = getPropExpType(lhprop);        
       then     
@@ -376,7 +376,7 @@ algorithm
       tuple<DAE.TType, Option<Absyn.Path>> t;
     case (e,DAE.PROP(type_ = t),tb,eib,fb)
       equation
-        (e,_) = Types.matchType(e,t,(DAE.T_BOOL({}),NONE));
+        (e,_) = Types.matchType(e,t,(DAE.T_BOOL({}),NONE),true);
         else_ = makeElse(eib, fb);
       then
         DAE.STMT_IF(e,tb,else_);
@@ -409,7 +409,7 @@ algorithm
     case ({},fb) then DAE.ELSE(fb); 
     case (((e,DAE.PROP(type_ = t),b) :: xs),fb)
       equation 
-        (e,_) = Types.matchType(e,t,(DAE.T_BOOL({}),NONE));
+        (e,_) = Types.matchType(e,t,(DAE.T_BOOL({}),NONE),true);
         else_ = makeElse(xs, fb);
       then
         DAE.ELSEIF(e,b,else_);
@@ -525,10 +525,11 @@ algorithm
   matchcontinue (inExp1,inExp2,inProperties3,inProperties4)
     local DAE.Exp var,val,var_1,val_1; DAE.Properties prop1,prop2;
       DAE.Type tp1,tp2;
-    case (var as DAE.CREF(_,_),val,DAE.PROP(tp1,_),DAE.PROP(tp2,_))  equation
-     (val_1,_) = Types.matchType(val,tp2,(DAE.T_REAL({}),NONE()));
-      (var_1,_) = Types.matchType(var,tp1,(DAE.T_REAL({}),NONE()));
-    then DAE.STMT_REINIT(var_1,val_1);  
+    case (var as DAE.CREF(_,_),val,DAE.PROP(tp1,_),DAE.PROP(tp2,_))
+      equation
+        (val_1,_) = Types.matchType(val,tp2,(DAE.T_REAL({}),NONE()),true);
+        (var_1,_) = Types.matchType(var,tp1,(DAE.T_REAL({}),NONE()),true);
+      then DAE.STMT_REINIT(var_1,val_1);  
   
    case (_,_,prop1,prop2)  equation
 			Error.addMessage(Error.INTERNAL_ERROR(),{"reinit called with wrong args"});

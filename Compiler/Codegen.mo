@@ -2486,7 +2486,7 @@ algorithm
         funcArgVars = Util.listThreadMap(funcArgTypeNames, funcArgNames, stringAppend);
         funcArgExps1 = Util.listMap(funcArgNames, makeCrefExpFromString);
         // Unbox input args so we can call the regular function
-        (funcArgExps2,_,_) = Types.matchTypeTuple(funcArgExps1, funcArgTypes2, funcArgTypes1, {}, Types.matchTypeRegular);
+        (funcArgExps2,_,_) = Types.matchTypeTuple(funcArgExps1, funcArgTypes2, funcArgTypes1, {}, Types.matchTypeRegular, true);
         isTuple = Types.isTuple(retType1);
         // Call the regular function
         (callCfn,callVar,tnr) = generateExpression(DAE.CALL(fpath,funcArgExps2,isTuple,false,DAE.ET_OTHER,false),tnr,funContext);
@@ -2507,7 +2507,7 @@ algorithm
         // recordBoxedFields = Util.listMap1r(stringList,stringAppend,ret_type_str_box +& "_");
         funcArgExps3 = Util.listMap(recordFields, makeCrefExpFromString);
         // Convert unboxed result of regular function to boxed types
-        (funcArgExps4,_,_) = Types.matchTypeTuple(funcArgExps3, retTypeList1, retTypeList2, {}, Types.matchTypeRegular);
+        (funcArgExps4,_,_) = Types.matchTypeTuple(funcArgExps3, retTypeList1, retTypeList2, {}, Types.matchTypeRegular, true);
         // Create assignments
         funcArgExps5 = Util.listMap(recordFieldsBox, makeCrefExpFromString);
         stmtList = Util.listThreadMap(funcArgExps5,funcArgExps4,makeAssignmentNoCheck);        
@@ -5201,7 +5201,7 @@ algorithm
         fetchStrs = Util.listMap1(fetchStrs, stringAppend, ")));");
         tmpAssignments = Util.listThreadMap(tmpRefs,fetchStrs,stringAppend);
         tmpExps = Util.listMap(tmpRefs, makeCrefExpFromString);
-        (tmpExps,_,_) = Types.matchTypeTuple(tmpExps,tys2,tys1,{},Types.matchTypeRegular);
+        (tmpExps,_,_) = Types.matchTypeTuple(tmpExps,tys2,tys1,{},Types.matchTypeRegular,true);
         // Generate assignments to regular record
         (tdecl,tvar,tnr) = generateTempDecl(generateSimpleType(t), tnr);
         tmp = tvar +& ".";

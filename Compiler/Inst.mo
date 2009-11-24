@@ -1831,27 +1831,27 @@ algorithm
       Values.Value v; DAE.Type t_1,bindTp; DAE.Exp bind1; 
    
     case(cache,env,id,SOME(v),bind,expectedTp,DAE.PROP(bindTp,_)) 
-     equation
-      (bind1,t_1) = Types.matchType(bind,bindTp,expectedTp);
-     then DAE.TYPES_VAR(id,DAE.ATTR(false,false,SCode.RO(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
-      false,t_1,DAE.EQBOUND(bind1,SOME(v),DAE.C_PARAM()));
+      equation
+        (bind1,t_1) = Types.matchType(bind,bindTp,expectedTp,true);
+      then DAE.TYPES_VAR(id,DAE.ATTR(false,false,SCode.RO(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
+        false,t_1,DAE.EQBOUND(bind1,SOME(v),DAE.C_PARAM()));
       
     case(cache,env,id,_,bind,expectedTp,DAE.PROP(bindTp,_)) 
       equation
-        (bind1,t_1) = Types.matchType(bind,bindTp,expectedTp);
+        (bind1,t_1) = Types.matchType(bind,bindTp,expectedTp,true);
         (cache,v,_) = Ceval.ceval(cache,env, bind1, false, NONE, NONE, Ceval.NO_MSG());
       then DAE.TYPES_VAR(id,DAE.ATTR(false,false,SCode.RO(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
       false,t_1,DAE.EQBOUND(bind1,SOME(v),DAE.C_PARAM()));
 
     case(cache,env,id,_,bind,expectedTp,DAE.PROP(bindTp,_)) 
       equation
-         (bind1,t_1) = Types.matchType(bind,bindTp,expectedTp);   
+         (bind1,t_1) = Types.matchType(bind,bindTp,expectedTp,true);   
       then DAE.TYPES_VAR(id,DAE.ATTR(false,false,SCode.RO(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
       false,t_1,DAE.EQBOUND(bind1,NONE(),DAE.C_PARAM()));
       
     case(cache,env,id,_,bind,expectedTp,DAE.PROP(bindTp,_)) local String s1,s2;
       equation 
-        failure((_,_) = Types.matchType(bind,bindTp,expectedTp));
+        failure((_,_) = Types.matchType(bind,bindTp,expectedTp,true));
         s1 = "builtin attribute " +& id +& " of type "+&Types.unparseType(bindTp);
         s2 = Types.unparseType(expectedTp);
         Error.addMessage(Error.TYPE_ERROR,{s1,s2});
@@ -6340,7 +6340,7 @@ algorithm
 
         (cache,dae_var_attr) = instDaeVariableAttributes(cache,env, mod, ty, {});
         // Check binding type matches variable type
-        (e_1,_) = Types.matchProp(e, p,DAE.PROP(ty_1,DAE.C_VAR()));
+        (e_1,_) = Types.matchProp(e,p,DAE.PROP(ty_1,DAE.C_VAR()),true);
         
         //Generate variable with default binding
         ty_2 = Types.elabType(ty_1);
@@ -6571,7 +6571,7 @@ algorithm eOpt := matchcontinue(tp,mod)
   case(tp,mod)
     equation
       SOME(DAE.TYPED(e,_,p)) = Mod.modEquation(mod);
-      (e1,_) = Types.matchProp(e, p,DAE.PROP(tp,DAE.C_VAR()));
+      (e1,_) = Types.matchProp(e,p,DAE.PROP(tp,DAE.C_VAR()),true);
     then
       SOME(e1);
   case (_,_) then NONE;
@@ -7469,7 +7469,7 @@ algorithm
         (cache,env_1,ih,store,_,csets,ty,st,_,graph) = instClass(cache,env,ih,store, mod, pre, csets, cl, inst_dims, true, INNER_CALL(),graph) "Which has an expression binding";
         ty_1 = Types.elabType(ty);
         cr = Prefix.prefixCref(pre,DAE.CREF_IDENT(n,ty_1,{})) "check their types";        
-        (e_1,_) = Types.matchProp(e,p, DAE.PROP(ty,DAE.C_VAR()));
+        (e_1,_) = Types.matchProp(e,p,DAE.PROP(ty,DAE.C_VAR()),true);
         dae = makeDaeEquation(DAE.CREF(cr,ty_1), e_1, SCode.NON_INITIAL());
       then
         (cache,env_1,ih,store,{dae},csets,ty,graph);
@@ -10048,7 +10048,7 @@ algorithm
         (cache,e1_1,tprop2,_) = Static.elabExp(cache,env, Absyn.CREF(cr), impl, NONE,true);
         (cache,DAE.CREF(cr_1,t),tprop1,_) = Static.elabCref(cache,env, cr, impl,false) "reinit statement" ;
         (cache,e2_1,tprop2,_) = Static.elabExp(cache,env, e2, impl, NONE,true);
-        (e2_1,_) = Types.matchProp(e2_1, tprop2, tprop1);
+        (e2_1,_) = Types.matchProp(e2_1,tprop2,tprop1,true);
         (cache,e1_1,e2_1,tprop1) = condenseArrayEquation(cache,env,Absyn.CREF(cr),e2,e1_1,e2_1,tprop1,tprop2,impl);
         (cache,e2_2) = Prefix.prefixExp(cache,env, e2_1, pre);
         (cache,e1_2) = Prefix.prefixExp(cache,env, e1_1, pre);
@@ -10321,19 +10321,19 @@ algorithm
 	 If it fails then this rule is matched. 
 	 BZ(2007-05-30): Not so strange it checks for eihter exp1 or exp2 to be from expected type.*/ 
       equation 
-        (e1_1,DAE.PROP(t_1,_)) = Types.matchProp(e1, p1, p2) "Debug.print(\"\\ninst_eq_equation (match e1) PROP, PROP\") &" ;
+        (e1_1,DAE.PROP(t_1,_)) = Types.matchProp(e1, p1, p2, false) "Debug.print(\"\\ninst_eq_equation (match e1) PROP, PROP\") &" ;
         dae = instEqEquation2(e1_1, e2, t_1, initial_);
       then
         dae;
     case (e1,(p1 as DAE.PROP(type_ = t1)),e2,(p2 as DAE.PROP(type_ = t2)),initial_,impl) /* If it fails then this rule is matched. */ 
       equation 
-        (e2_1,DAE.PROP(t_1,_)) = Types.matchProp(e2, p2, p1) "Debug.print(\"\\ninst_eq_equation (match e2) PROP, PROP\") &" ;
+        (e2_1,DAE.PROP(t_1,_)) = Types.matchProp(e2, p2, p1, true) "Debug.print(\"\\ninst_eq_equation (match e2) PROP, PROP\") &" ;
         dae = instEqEquation2(e1, e2_1, t_1, initial_) "  Debug.print(\"\\n Second rule of function_ inst_eq_equation \") &   & Debug.print(\"\\n Second rule complete. \")" ;
       then
         dae;
     case (e1,(p1 as DAE.PROP_TUPLE(type_ = t1)),e2,(p2 as DAE.PROP_TUPLE(type_ = t2)),initial_,impl) /* PR. */ 
       equation 
-        (e1_1,DAE.PROP_TUPLE(t_1,_)) = Types.matchProp(e1, p1, p2) "Debug.print(\"\\ninst_eq_equation(e1) PROP_TUPLE, PROP_TUPLE\") & Exp.print_exp (e1) &" ;
+        (e1_1,DAE.PROP_TUPLE(t_1,_)) = Types.matchProp(e1, p1, p2, false) "Debug.print(\"\\ninst_eq_equation(e1) PROP_TUPLE, PROP_TUPLE\") & Exp.print_exp (e1) &" ;
         dae = instEqEquation2(e1_1, e2, t_1, initial_) "Exp.print_exp (e1\') &" ;
       then
         dae;
@@ -10343,7 +10343,7 @@ algorithm
 	    a type T_ENUM
 	 */ 
       equation 
-        (e2_1,DAE.PROP_TUPLE(t_1,_)) = Types.matchProp(e2, p2, p1) "Debug.print(\"\\ninst_eq_equation(e2) PROP_TUPLE, PROP_TUPLE\") &
+        (e2_1,DAE.PROP_TUPLE(t_1,_)) = Types.matchProp(e2, p2, p1, true) "Debug.print(\"\\ninst_eq_equation(e2) PROP_TUPLE, PROP_TUPLE\") &
 	Debug.print \"\\n About to do a static match e2. \" &" ;
         dae = instEqEquation2(e1, e2_1, t_1, initial_) "	Debug.print(\"\\n Second rule of function_ inst_eq_equation \") & 	& Debug.print(\"\\n Second rule complete. \")" ;
       then
@@ -12669,7 +12669,7 @@ algorithm
       equation 
         mod2 = Mod.lookupCompModification(mod, bind_name);
         SOME(DAE.TYPED(e,optVal,DAE.PROP(ty2,_))) = Mod.modEquation(mod2);
-        (e_1,ty_1) = Types.matchType(e, ty2, expected_type);
+        (e_1,ty_1) = Types.matchType(e, ty2, expected_type, true);
         e_1 = checkUseConstValue(useConstValue,e_1,optVal);
       then
         SOME(e_1);
@@ -12736,7 +12736,7 @@ algorithm
       equation 
         mod2 = Mod.lookupIdxModification(mod, index); 
         SOME(DAE.TYPED(e,optVal,DAE.PROP(ty2,_))) = Mod.modEquation(mod2);
-        (e_1,ty_1) = Types.matchType(e, ty2, etype);
+        (e_1,ty_1) = Types.matchType(e, ty2, etype, true);
         e_1 = checkUseConstValue(useConstValue,e_1,optVal);
       then
         SOME(e_1);
@@ -13230,7 +13230,7 @@ algorithm
       equation 
         e_tp = Types.getPropType(prop);
         c = Types.propAllConst(prop);
-        (e_1,_) = Types.matchType(e, e_tp, tp);
+        (e_1,_) = Types.matchType(e, e_tp, tp, true);
         e_1 = Exp.simplify(e_1);
       then
         (cache,DAE.EQBOUND(e_1,e_val,c));
@@ -13238,14 +13238,14 @@ algorithm
       equation 
         e_tp = Types.getPropType(prop);
         c = Types.propAllConst(prop);
-        (e_1,_) = Types.matchType(e, e_tp, tp);
+        (e_1,_) = Types.matchType(e, e_tp, tp, false);
       then
         (cache,DAE.EQBOUND(e_1,e_val,c));
     case (cache,_,_,DAE.MOD(eqModOption = SOME(DAE.TYPED(e,e_val,prop))),tp)
       equation 
         e_tp = Types.getPropType(prop);
         c = Types.propAllConst(prop);
-        failure((_,_) = Types.matchType(e, e_tp, tp));
+        failure((_,_) = Types.matchType(e, e_tp, tp, false));
         e_tp_str = Types.unparseType(e_tp);
         tp_str = Types.unparseType(tp);
         e_str = Exp.printExpStr(e);

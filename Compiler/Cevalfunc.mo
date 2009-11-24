@@ -624,7 +624,7 @@ algorithm oval := matchcontinue(inExp,env,expectedType)
     local DAE.Type ty,ty2;
     equation      
       (_,e1,DAE.PROP(ty2,_),_) = Static.elabExp(Env.emptyCache(),env,inExp,true,NONE,false); 
-      (e2,_) = Types.matchType(e1,ty2,ty);
+      (e2,_) = Types.matchType(e1,ty2,ty,true);
       (_,value,_) = Ceval.ceval(Env.emptyCache(),env, e2, true, NONE, NONE, Ceval.MSG());
     then 
       value;            
