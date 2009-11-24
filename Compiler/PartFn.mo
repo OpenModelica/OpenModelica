@@ -1056,15 +1056,15 @@ algorithm
   outFunction := matchcontinue(bigFunction,smallFunction,inPath,inElementList,inInteger)
     local
       DAE.Element bigfn,smallfn,res;
-      Absyn.Path p;
+      Absyn.Path p,current;
       list<DAE.Element> dae,fnparts,fnparts_1;
       DAE.Type ty;
       Boolean pp;
       Integer numArgs;
       list<DAE.Var> vars;
-    case(bigfn as DAE.FUNCTION(_,DAE.DAE(fnparts),ty,pp),smallfn,p,dae,numArgs)
+    case(bigfn as DAE.FUNCTION(current,DAE.DAE(fnparts),ty,pp),smallfn,p,dae,numArgs)
       equation
-        (fnparts_1,vars) = buildNewFunctionParts(fnparts,smallfn,dae,numArgs);
+        (fnparts_1,vars) = buildNewFunctionParts(fnparts,smallfn,dae,numArgs,current);
         ty = buildNewFunctionType(ty,vars);
         res = DAE.FUNCTION(p,DAE.DAE(fnparts_1),ty,pp);
       then
@@ -1124,30 +1124,31 @@ protected function buildNewFunctionParts
 	input DAE.Element smallFunction;
 	input list<DAE.Element> inElementList;
 	input Integer inInteger;
+	input Absyn.Path inPath;
 	output list<DAE.Element> outFunctionParts;
 	output list<DAE.Var> outVarList;
 algorithm
-  (outFunctionParts,outVarList) := matchcontinue(inFunctionParts,smallFunction,inElementList,inInteger)
+  (outFunctionParts,outVarList) := matchcontinue(inFunctionParts,smallFunction,inElementList,inInteger,inPath)
     local
       list<DAE.Element> parts,dae,inputs,res,smallparts;
       DAE.Element smallfn;
-      Absyn.Path p;
+      Absyn.Path p,current;
       String s;
       Integer numArgs;
       list<DAE.Var> vars;
-    case(parts,smallfn as DAE.FUNCTION(p,DAE.DAE(smallparts),_,_),dae,numArgs)
+    case(parts,smallfn as DAE.FUNCTION(p,DAE.DAE(smallparts),_,_),dae,numArgs,current)
       equation
         inputs = Util.listSelect(smallparts,isInput);
         s = Absyn.pathString(p);
         inputs = Util.listMap1(inputs,renameInput,s);
         inputs = listReverse(getFirstNInputs(listReverse(inputs),numArgs));
         res = insertAfterInputs(parts,inputs);
-        res = fixCalls(res,dae,p,inputs);
+        res = fixCalls(res,dae,p,inputs,current);
         res = Util.listSelect(res,isNotFunctionInput);
         vars = Util.listMap(inputs,buildTypeVar);
       then
         (res,vars);
-    case(_,_,_,_)
+    case(_,_,_,_,_)
       equation
         Debug.fprintln("failtrace","PartFn.buildNewFunctionParts failed");
       then
@@ -1298,89 +1299,90 @@ protected function fixCalls
 	input list<DAE.Element> inDAE;
 	input Absyn.Path inPath;
 	input list<DAE.Element> inInputs;
+	input Absyn.Path inCurrent;
 	output list<DAE.Element> outParts;
 algorithm
-  outParts := matchcontinue(inParts,inDAE,inPath,inInputs)
+  outParts := matchcontinue(inParts,inDAE,inPath,inInputs,inCurrent)
     local
       list<DAE.Element> cdr,cdr_1,dae,inputs,res;
-      Absyn.Path p;
+      Absyn.Path p,current;
       DAE.Element part;
       DAE.ComponentRef cref;
       DAE.Exp e,e_1,e1,e1_1,e2,e2_1;
       list<DAE.Statement> alg,alg_1;
       list<Integer> ilst;
-    case({},_,_,_) then {};
+    case({},_,_,_,_) then {};
     // TODO: DAE.VAR()
     // TODO: Remove all cases that cannot appear in functions?
-    case(DAE.DEFINE(cref,e) :: cdr,dae,p,inputs)
+    case(DAE.DEFINE(cref,e) :: cdr,dae,p,inputs,current)
       equation
-        ((e_1,_)) = Exp.traverseExp(e,fixCall,(p,inputs,dae));
-        cdr_1 = fixCalls(cdr,dae,p,inputs);
+        ((e_1,_)) = Exp.traverseExp(e,fixCall,(p,inputs,dae,current));
+        cdr_1 = fixCalls(cdr,dae,p,inputs,current);
       then
         DAE.DEFINE(cref,e_1) :: cdr_1;
-    case(DAE.INITIALDEFINE(cref,e) :: cdr,dae,p,inputs)
+    case(DAE.INITIALDEFINE(cref,e) :: cdr,dae,p,inputs,current)
       equation
-        ((e_1,_)) = Exp.traverseExp(e,fixCall,(p,inputs,dae));
-        cdr_1 = fixCalls(cdr,dae,p,inputs);
+        ((e_1,_)) = Exp.traverseExp(e,fixCall,(p,inputs,dae,current));
+        cdr_1 = fixCalls(cdr,dae,p,inputs,current);
       then
         DAE.INITIALDEFINE(cref,e_1) :: cdr_1;
-    case(DAE.EQUATION(e1,e2) :: cdr,dae,p,inputs)
+    case(DAE.EQUATION(e1,e2) :: cdr,dae,p,inputs,current)
       equation
-        ((e1_1,_)) = Exp.traverseExp(e1,fixCall,(p,inputs,dae));
-        ((e2_1,_)) = Exp.traverseExp(e2,fixCall,(p,inputs,dae));
-        cdr_1 = fixCalls(cdr,dae,p,inputs);
+        ((e1_1,_)) = Exp.traverseExp(e1,fixCall,(p,inputs,dae,current));
+        ((e2_1,_)) = Exp.traverseExp(e2,fixCall,(p,inputs,dae,current));
+        cdr_1 = fixCalls(cdr,dae,p,inputs,current);
       then
         DAE.EQUATION(e1_1,e2_1) :: cdr_1;
-    case(DAE.ARRAY_EQUATION(ilst,e1,e2) :: cdr,dae,p,inputs)
+    case(DAE.ARRAY_EQUATION(ilst,e1,e2) :: cdr,dae,p,inputs,current)
       equation
-        ((e1_1,_)) = Exp.traverseExp(e1,fixCall,(p,inputs,dae));
-        ((e2_1,_)) = Exp.traverseExp(e2,fixCall,(p,inputs,dae));
-        cdr_1 = fixCalls(cdr,dae,p,inputs);
+        ((e1_1,_)) = Exp.traverseExp(e1,fixCall,(p,inputs,dae,current));
+        ((e2_1,_)) = Exp.traverseExp(e2,fixCall,(p,inputs,dae,current));
+        cdr_1 = fixCalls(cdr,dae,p,inputs,current);
       then
         DAE.ARRAY_EQUATION(ilst,e1_1,e2_1) :: cdr_1;
-    case(DAE.COMPLEX_EQUATION(e1,e2) :: cdr,dae,p,inputs)
+    case(DAE.COMPLEX_EQUATION(e1,e2) :: cdr,dae,p,inputs,current)
       equation
-        ((e1_1,_)) = Exp.traverseExp(e1,fixCall,(p,inputs,dae));
-        ((e2_1,_)) = Exp.traverseExp(e2,fixCall,(p,inputs,dae));
-        cdr_1 = fixCalls(cdr,dae,p,inputs);
+        ((e1_1,_)) = Exp.traverseExp(e1,fixCall,(p,inputs,dae,current));
+        ((e2_1,_)) = Exp.traverseExp(e2,fixCall,(p,inputs,dae,current));
+        cdr_1 = fixCalls(cdr,dae,p,inputs,current);
       then
         DAE.COMPLEX_EQUATION(e1_1,e2_1) :: cdr_1;
-    case(DAE.INITIAL_COMPLEX_EQUATION(e1,e2) :: cdr,dae,p,inputs)
+    case(DAE.INITIAL_COMPLEX_EQUATION(e1,e2) :: cdr,dae,p,inputs,current)
       equation
-        ((e1_1,_)) = Exp.traverseExp(e1,fixCall,(p,inputs,dae));
-        ((e2_1,_)) = Exp.traverseExp(e2,fixCall,(p,inputs,dae));
-        cdr_1 = fixCalls(cdr,dae,p,inputs);
+        ((e1_1,_)) = Exp.traverseExp(e1,fixCall,(p,inputs,dae,current));
+        ((e2_1,_)) = Exp.traverseExp(e2,fixCall,(p,inputs,dae,current));
+        cdr_1 = fixCalls(cdr,dae,p,inputs,current);
       then
         DAE.INITIAL_COMPLEX_EQUATION(e1_1,e2_1) :: cdr_1;
     // TODO: DAE.WHEN_EQUATION()
     // TODO: DAE.IF_EQUATION()
     // TODO: DAE.INITIAL_IF_EQUATION()
-    case(DAE.INITIALEQUATION(e1,e2) :: cdr,dae,p,inputs)
+    case(DAE.INITIALEQUATION(e1,e2) :: cdr,dae,p,inputs,current)
       equation
-        ((e1_1,_)) = Exp.traverseExp(e1,fixCall,(p,inputs,dae));
-        ((e2_1,_)) = Exp.traverseExp(e2,fixCall,(p,inputs,dae));
-        cdr_1 = fixCalls(cdr,dae,p,inputs);
+        ((e1_1,_)) = Exp.traverseExp(e1,fixCall,(p,inputs,dae,current));
+        ((e2_1,_)) = Exp.traverseExp(e2,fixCall,(p,inputs,dae,current));
+        cdr_1 = fixCalls(cdr,dae,p,inputs,current);
       then
         DAE.INITIALEQUATION(e1_1,e2_1) :: cdr_1;
-    case(DAE.ALGORITHM(DAE.ALGORITHM_STMTS(alg)) :: cdr,dae,p,inputs)
+    case(DAE.ALGORITHM(DAE.ALGORITHM_STMTS(alg)) :: cdr,dae,p,inputs,current)
       equation
-        alg_1 = fixCallsAlg(alg,dae,p,inputs);
-        cdr_1 = fixCalls(cdr,dae,p,inputs);
+        alg_1 = fixCallsAlg(alg,dae,p,inputs,current);
+        cdr_1 = fixCalls(cdr,dae,p,inputs,current);
       then
         DAE.ALGORITHM(DAE.ALGORITHM_STMTS(alg_1)) :: cdr_1;
-    case(DAE.INITIALALGORITHM(DAE.ALGORITHM_STMTS(alg)) :: cdr,dae,p,inputs)
+    case(DAE.INITIALALGORITHM(DAE.ALGORITHM_STMTS(alg)) :: cdr,dae,p,inputs,current)
       equation
-        alg_1 = fixCallsAlg(alg,dae,p,inputs);
-        cdr_1 = fixCalls(cdr,dae,p,inputs);
+        alg_1 = fixCallsAlg(alg,dae,p,inputs,current);
+        cdr_1 = fixCalls(cdr,dae,p,inputs,current);
       then
         DAE.INITIALALGORITHM(DAE.ALGORITHM_STMTS(alg_1)) :: cdr_1;
     // TODO: More cases?
-    case(part :: cdr,dae,p,inputs)
+    case(part :: cdr,dae,p,inputs,current)
       equation
-        cdr_1 = fixCalls(cdr,dae,p,inputs);
+        cdr_1 = fixCalls(cdr,dae,p,inputs,current);
       then
         part :: cdr_1;
-    case(_,_,_,_)
+    case(_,_,_,_,_)
       equation
         Debug.fprintln("failtrace","PartFn.fixCalls failed");
       then
@@ -1395,13 +1397,14 @@ protected function fixCallsAlg
 	input list<DAE.Element> inDAE;
 	input Absyn.Path inPath;
 	input list<DAE.Element> inInputs;
+	input Absyn.Path inCurrent;
 	output list<DAE.Statement> outStmts;
 algorithm
-  outStmts := matchcontinue(inStmts,inDAE,inPath,inInputs)
+  outStmts := matchcontinue(inStmts,inDAE,inPath,inInputs,inCurrent)
     local
       list<DAE.Statement> cdr,cdr_1,stmts,stmts_1;
       list<DAE.Element> dae,inputs;
-      Absyn.Path p;
+      Absyn.Path p,current;
       DAE.ExpType ty;
       DAE.ComponentRef cref;
       DAE.Else el,el_1;
@@ -1411,114 +1414,114 @@ algorithm
       list<Integer> ilst;
       DAE.Exp e,e_1,e1,e1_1,e2,e2_1;
       list<DAE.Exp> elst,elst_1;
-    case({},_,_,_) then {};
-    case(DAE.STMT_ASSIGN(ty,e1,e2) :: cdr,dae,p,inputs)
+    case({},_,_,_,_) then {};
+    case(DAE.STMT_ASSIGN(ty,e1,e2) :: cdr,dae,p,inputs,current)
       equation
-        ((e1_1,_)) = Exp.traverseExp(e1,fixCall,(p,inputs,dae));
-        ((e2_1,_)) = Exp.traverseExp(e2,fixCall,(p,inputs,dae));
-        cdr_1 = fixCallsAlg(cdr,dae,p,inputs);
+        ((e1_1,_)) = Exp.traverseExp(e1,fixCall,(p,inputs,dae,current));
+        ((e2_1,_)) = Exp.traverseExp(e2,fixCall,(p,inputs,dae,current));
+        cdr_1 = fixCallsAlg(cdr,dae,p,inputs,current);
       then
         DAE.STMT_ASSIGN(ty,e1_1,e2_1) :: cdr_1;
-    case(DAE.STMT_TUPLE_ASSIGN(ty,elst,e) :: cdr,dae,p,inputs)
+    case(DAE.STMT_TUPLE_ASSIGN(ty,elst,e) :: cdr,dae,p,inputs,current)
       equation
-        elst_1 = Util.listMap1(elst,handleExpList2,(p,inputs,dae));
-        ((e_1,_)) = Exp.traverseExp(e,fixCall,(p,inputs,dae));
-        cdr_1 = fixCallsAlg(cdr,dae,p,inputs);
+        elst_1 = Util.listMap1(elst,handleExpList2,(p,inputs,dae,current));
+        ((e_1,_)) = Exp.traverseExp(e,fixCall,(p,inputs,dae,current));
+        cdr_1 = fixCallsAlg(cdr,dae,p,inputs,current);
       then
         DAE.STMT_TUPLE_ASSIGN(ty,elst_1,e_1) :: cdr_1;
-    case(DAE.STMT_ASSIGN_ARR(ty,cref,e) :: cdr,dae,p,inputs)
+    case(DAE.STMT_ASSIGN_ARR(ty,cref,e) :: cdr,dae,p,inputs,current)
       equation
-        ((e_1,_)) = Exp.traverseExp(e,fixCall,(p,inputs,dae));
-        cdr_1 = fixCallsAlg(cdr,dae,p,inputs);
+        ((e_1,_)) = Exp.traverseExp(e,fixCall,(p,inputs,dae,current));
+        cdr_1 = fixCallsAlg(cdr,dae,p,inputs,current);
       then
         DAE.STMT_ASSIGN_ARR(ty,cref,e_1) :: cdr_1;
-    case(DAE.STMT_IF(e,stmts,el) :: cdr,dae,p,inputs)
+    case(DAE.STMT_IF(e,stmts,el) :: cdr,dae,p,inputs,current)
       equation
-        ((e_1,_)) = Exp.traverseExp(e,fixCall,(p,inputs,dae));
-        stmts_1 = fixCallsAlg(stmts,dae,p,inputs);
-        el_1 = fixCallsElse(el,dae,p,inputs);
-        cdr_1 = fixCallsAlg(cdr,dae,p,inputs);
+        ((e_1,_)) = Exp.traverseExp(e,fixCall,(p,inputs,dae,current));
+        stmts_1 = fixCallsAlg(stmts,dae,p,inputs,current);
+        el_1 = fixCallsElse(el,dae,p,inputs,current);
+        cdr_1 = fixCallsAlg(cdr,dae,p,inputs,current);
       then
         DAE.STMT_IF(e_1,stmts_1,el_1) :: cdr_1;
-    case(DAE.STMT_FOR(ty,b,i,e,stmts) :: cdr,dae,p,inputs)
+    case(DAE.STMT_FOR(ty,b,i,e,stmts) :: cdr,dae,p,inputs,current)
       equation
-        ((e_1,_)) = Exp.traverseExp(e,fixCall,(p,inputs,dae));
-        stmts_1 = fixCallsAlg(stmts,dae,p,inputs);
-        cdr_1 = fixCallsAlg(cdr,dae,p,inputs);
+        ((e_1,_)) = Exp.traverseExp(e,fixCall,(p,inputs,dae,current));
+        stmts_1 = fixCallsAlg(stmts,dae,p,inputs,current);
+        cdr_1 = fixCallsAlg(cdr,dae,p,inputs,current);
       then
         DAE.STMT_FOR(ty,b,i,e_1,stmts_1) :: cdr_1;
-    case(DAE.STMT_WHILE(e,stmts) :: cdr,dae,p,inputs)
+    case(DAE.STMT_WHILE(e,stmts) :: cdr,dae,p,inputs,current)
       equation
-        ((e_1,_)) = Exp.traverseExp(e,fixCall,(p,inputs,dae));
-        stmts_1 = fixCallsAlg(stmts,dae,p,inputs);
-        cdr_1 = fixCallsAlg(cdr,dae,p,inputs);
+        ((e_1,_)) = Exp.traverseExp(e,fixCall,(p,inputs,dae,current));
+        stmts_1 = fixCallsAlg(stmts,dae,p,inputs,current);
+        cdr_1 = fixCallsAlg(cdr,dae,p,inputs,current);
       then
         DAE.STMT_WHILE(e_1,stmts_1) :: cdr_1;
-    case(DAE.STMT_WHEN(e,stmts,SOME(stmt),ilst) :: cdr,dae,p,inputs)
+    case(DAE.STMT_WHEN(e,stmts,SOME(stmt),ilst) :: cdr,dae,p,inputs,current)
       equation
-        ((e_1,_)) = Exp.traverseExp(e,fixCall,(p,inputs,dae));
-        stmts_1 = fixCallsAlg(stmts,dae,p,inputs);
-        {stmt,stmt_1} = fixCallsAlg({stmt},dae,p,inputs);
-        cdr_1 = fixCallsAlg(cdr,dae,p,inputs);
+        ((e_1,_)) = Exp.traverseExp(e,fixCall,(p,inputs,dae,current));
+        stmts_1 = fixCallsAlg(stmts,dae,p,inputs,current);
+        {stmt,stmt_1} = fixCallsAlg({stmt},dae,p,inputs,current);
+        cdr_1 = fixCallsAlg(cdr,dae,p,inputs,current);
       then
         DAE.STMT_WHEN(e_1,stmts_1,SOME(stmt_1),ilst) :: cdr_1;
-    case(DAE.STMT_WHEN(e,stmts,NONE,ilst) :: cdr,dae,p,inputs)
+    case(DAE.STMT_WHEN(e,stmts,NONE,ilst) :: cdr,dae,p,inputs,current)
       equation
-        ((e_1,_)) = Exp.traverseExp(e,fixCall,(p,inputs,dae));
-        stmts_1 = fixCallsAlg(stmts,dae,p,inputs);
-        cdr_1 = fixCallsAlg(cdr,dae,p,inputs);
+        ((e_1,_)) = Exp.traverseExp(e,fixCall,(p,inputs,dae,current));
+        stmts_1 = fixCallsAlg(stmts,dae,p,inputs,current);
+        cdr_1 = fixCallsAlg(cdr,dae,p,inputs,current);
       then
         DAE.STMT_WHEN(e_1,stmts_1,NONE,ilst) :: cdr_1;
-    case(DAE.STMT_ASSERT(e1,e2) :: cdr,dae,p,inputs)
+    case(DAE.STMT_ASSERT(e1,e2) :: cdr,dae,p,inputs,current)
       equation
-        ((e1_1,_)) = Exp.traverseExp(e1,fixCall,(p,inputs,dae));
-        ((e2_1,_)) = Exp.traverseExp(e2,fixCall,(p,inputs,dae));
-        cdr_1 = fixCallsAlg(cdr,dae,p,inputs);
+        ((e1_1,_)) = Exp.traverseExp(e1,fixCall,(p,inputs,dae,current));
+        ((e2_1,_)) = Exp.traverseExp(e2,fixCall,(p,inputs,dae,current));
+        cdr_1 = fixCallsAlg(cdr,dae,p,inputs,current);
       then
         DAE.STMT_ASSERT(e1_1,e2_1) :: cdr_1;
-    case(DAE.STMT_TERMINATE(e) :: cdr,dae,p,inputs)
+    case(DAE.STMT_TERMINATE(e) :: cdr,dae,p,inputs,current)
       equation
-        ((e_1,_)) = Exp.traverseExp(e,fixCall,(p,inputs,dae));
-        cdr_1 = fixCallsAlg(cdr,dae,p,inputs);
+        ((e_1,_)) = Exp.traverseExp(e,fixCall,(p,inputs,dae,current));
+        cdr_1 = fixCallsAlg(cdr,dae,p,inputs,current);
       then
         DAE.STMT_TERMINATE(e_1) :: cdr_1;
-    case(DAE.STMT_REINIT(e1,e2) :: cdr,dae,p,inputs)
+    case(DAE.STMT_REINIT(e1,e2) :: cdr,dae,p,inputs,current)
       equation
-        ((e1_1,_)) = Exp.traverseExp(e1,fixCall,(p,inputs,dae));
-        ((e2_1,_)) = Exp.traverseExp(e2,fixCall,(p,inputs,dae));
-        cdr_1 = fixCallsAlg(cdr,dae,p,inputs);
+        ((e1_1,_)) = Exp.traverseExp(e1,fixCall,(p,inputs,dae,current));
+        ((e2_1,_)) = Exp.traverseExp(e2,fixCall,(p,inputs,dae,current));
+        cdr_1 = fixCallsAlg(cdr,dae,p,inputs,current);
       then
         DAE.STMT_REINIT(e1_1,e2_1) :: cdr_1;
-    case(DAE.STMT_NORETCALL(e) :: cdr,dae,p,inputs)
+    case(DAE.STMT_NORETCALL(e) :: cdr,dae,p,inputs,current)
       equation
-        ((e_1,_)) = Exp.traverseExp(e,fixCall,(p,inputs,dae));
-        cdr_1 = fixCallsAlg(cdr,dae,p,inputs);
+        ((e_1,_)) = Exp.traverseExp(e,fixCall,(p,inputs,dae,current));
+        cdr_1 = fixCallsAlg(cdr,dae,p,inputs,current);
       then
         DAE.STMT_NORETCALL(e) :: cdr_1;
-    case(DAE.STMT_TRY(stmts) :: cdr,dae,p,inputs)
+    case(DAE.STMT_TRY(stmts) :: cdr,dae,p,inputs,current)
       equation
-        stmts_1 = fixCallsAlg(stmts,dae,p,inputs);
-        cdr_1 = fixCallsAlg(cdr,dae,p,inputs);
+        stmts_1 = fixCallsAlg(stmts,dae,p,inputs,current);
+        cdr_1 = fixCallsAlg(cdr,dae,p,inputs,current);
       then
         DAE.STMT_TRY(stmts_1) :: cdr_1;
-    case(DAE.STMT_CATCH(stmts) :: cdr,dae,p,inputs)
+    case(DAE.STMT_CATCH(stmts) :: cdr,dae,p,inputs,current)
       equation
-        stmts_1 = fixCallsAlg(stmts,dae,p,inputs);
-        cdr_1 = fixCallsAlg(cdr,dae,p,inputs);
+        stmts_1 = fixCallsAlg(stmts,dae,p,inputs,current);
+        cdr_1 = fixCallsAlg(cdr,dae,p,inputs,current);
       then
         DAE.STMT_CATCH(stmts_1) :: cdr_1;
-    case(DAE.STMT_MATCHCASES(elst) :: cdr,dae,p,inputs)
+    case(DAE.STMT_MATCHCASES(elst) :: cdr,dae,p,inputs,current)
       equation
-        elst_1 = Util.listMap1(elst,handleExpList2,(p,inputs,dae));
-        cdr_1 = fixCallsAlg(cdr,dae,p,inputs);
+        elst_1 = Util.listMap1(elst,handleExpList2,(p,inputs,dae,current));
+        cdr_1 = fixCallsAlg(cdr,dae,p,inputs,current);
       then
         DAE.STMT_MATCHCASES(elst_1) :: cdr_1;
-    case(stmt :: cdr,dae,p,inputs)
+    case(stmt :: cdr,dae,p,inputs,current)
       equation
-        cdr_1 = fixCallsAlg(cdr,dae,p,inputs);
+        cdr_1 = fixCallsAlg(cdr,dae,p,inputs,current);
       then
         stmt :: cdr_1;
-    case(_,_,_,_)
+    case(_,_,_,_,_)
       equation
         Debug.fprintln("failtrace","PartFn.fixCallsAlg failed");
       then
@@ -1533,28 +1536,29 @@ protected function fixCallsElse
 	input list<DAE.Element> inDAE;
 	input Absyn.Path inPath;
 	input list<DAE.Element> inInputs;
+	input Absyn.Path inCurrent;
 	output DAE.Else outElse;
 algorithm
-  outElse := matchcontinue(inElse,inDAE,inPath,inInputs)
+  outElse := matchcontinue(inElse,inDAE,inPath,inInputs,inCurrent)
     local
       DAE.Exp e,e_1;
       list<DAE.Statement> stmts,stmts_1;
       DAE.Else el,el_1;
       list<DAE.Element> dae,inputs;
-      Absyn.Path p;
-    case(DAE.ELSEIF(e,stmts,el),dae,p,inputs)
+      Absyn.Path p,current;
+    case(DAE.ELSEIF(e,stmts,el),dae,p,inputs,current)
       equation
-        ((e_1,_)) = Exp.traverseExp(e,fixCall,(p,inputs,dae));
-        stmts_1 = fixCallsAlg(stmts,dae,p,inputs);
-        el_1 = fixCallsElse(el,dae,p,inputs);
+        ((e_1,_)) = Exp.traverseExp(e,fixCall,(p,inputs,dae,current));
+        stmts_1 = fixCallsAlg(stmts,dae,p,inputs,current);
+        el_1 = fixCallsElse(el,dae,p,inputs,current);
       then
         DAE.ELSEIF(e_1,stmts_1,el_1);
-    case(DAE.ELSE(stmts),dae,p,inputs)
+    case(DAE.ELSE(stmts),dae,p,inputs,current)
       equation
-        stmts_1 = fixCallsAlg(stmts,dae,p,inputs);
+        stmts_1 = fixCallsAlg(stmts,dae,p,inputs,current);
       then
         DAE.ELSE(stmts_1);
-    case(el,_,_,_) then el;
+    case(el,_,_,_,_) then el;
   end matchcontinue;
 end fixCallsElse;
 
@@ -1562,13 +1566,13 @@ protected function handleExpList2
 "function: handleExpList2
 	helper function to fixCallsAlg"
 	input DAE.Exp inExp;
-	input tuple<Absyn.Path, list<DAE.Element>, list<DAE.Element>> inTuple;
+	input tuple<Absyn.Path, list<DAE.Element>, list<DAE.Element>, Absyn.Path> inTuple;
 	output DAE.Exp outExp;
 algorithm
   outExp := matchcontinue(inExp,inTuple)
     local
       DAE.Exp e,e_1;
-      tuple<Absyn.Path, list<DAE.Element>, list<DAE.Element>> tup;
+      tuple<Absyn.Path, list<DAE.Element>, list<DAE.Element>, Absyn.Path> tup;
     case(e,tup)
       equation
         ((e_1,_)) = Exp.traverseExp(e,fixCall,tup);
@@ -1585,29 +1589,43 @@ end handleExpList2;
 protected function fixCall
 "function: fixCall
 	replaces the path and args in a function call"
-	input tuple<DAE.Exp, tuple<Absyn.Path, list<DAE.Element>, list<DAE.Element>>> inTuple;
-	output tuple<DAE.Exp, tuple<Absyn.Path, list<DAE.Element>, list<DAE.Element>>> outTuple;
+	input tuple<DAE.Exp, tuple<Absyn.Path, list<DAE.Element>, list<DAE.Element>, Absyn.Path>> inTuple;
+	output tuple<DAE.Exp, tuple<Absyn.Path, list<DAE.Element>, list<DAE.Element>, Absyn.Path>> outTuple;
 algorithm
   outTuple := matchcontinue(inTuple)
     local
       DAE.Exp e;
-      Absyn.Path p,orig_p;
+      Absyn.Path p,orig_p,new_p,current;
       list<DAE.Element> inputs,dae,tmp;
       DAE.ExpType ty;
       Boolean tup,bui,inl;
       list<DAE.Exp> args,args2,args_1;
       list<DAE.ComponentRef> crefs;
+      DAE.ComponentRef cref1,cref2;
       String str;
-    case((DAE.CALL(orig_p,args,tup,bui,ty,inl),(p,inputs,dae)))
+    // remove unbox calls from simple types
+    case((DAE.CALL(orig_p,args,tup,bui,ty,inl),(p,inputs,dae,current)))
       equation
         true = isSimpleArg(args);
         str = Absyn.pathString(orig_p);
         true = Util.strncmp(str,"mmc",3);
         e = Util.listFirst(args);
       then
-        ((e,(p,inputs,dae)));
-    //case((DAE.CALL(orig_p,args,tup,bui,ty,inl),(p,inputs,dae)))
-    case((DAE.CALL(orig_p,args,tup,false,ty,inl),(p,inputs,dae)))
+        ((e,(p,inputs,dae,current)));
+    // fix recursive calls
+    case((DAE.CALL(orig_p,args,tup,bui,ty,inl),(p,inputs,dae,current)))
+      equation
+        cref1 = Exp.pathToCref(orig_p);
+        cref2 = Exp.pathToCref(current);
+        true = Exp.crefEqual(cref1,cref2);
+        new_p = makeNewFnPath(orig_p,p);
+        crefs = Util.listMap(inputs,DAEUtil.varCref);
+        args2 = Util.listMap(crefs,Exp.crefExp);
+        args_1 = replaceFnRef(args,args2);
+      then
+        ((DAE.CALL(new_p,args_1,tup,bui,ty,inl),(p,inputs,dae,current)));
+    // fix calls to function pointer
+    case((DAE.CALL(orig_p,args,tup,false,ty,inl),(p,inputs,dae,current)))
       equation
         tmp = DAEUtil.getNamedFunction(orig_p,dae); // if function exists, do not replace call
         false = Util.isListNotEmpty(tmp);
@@ -1615,10 +1633,32 @@ algorithm
         args2 = Util.listMap(crefs,Exp.crefExp);
         args_1 = listAppend(args,args2);
       then
-        ((DAE.CALL(p,args_1,tup,false,ty,inl),(p,inputs,dae)));
-    case((e,(p,inputs,dae))) then ((e,(p,inputs,dae)));
+        ((DAE.CALL(p,args_1,tup,false,ty,inl),(p,inputs,dae,current)));
+    case((e,(p,inputs,dae,current))) then ((e,(p,inputs,dae,current)));
   end matchcontinue;
 end fixCall;
+
+protected function replaceFnRef
+"function: replaceFnRef
+	takes 2 arg lists, replaces the function ref in the first one wtih the exps in the second one"
+	input list<DAE.Exp> inOriginalArgs;
+	input list<DAE.Exp> inNewArgs;
+	output list<DAE.Exp> outNewArgs;
+algorithm
+  outNewArgs := matchcontinue(inOriginalArgs,inNewArgs)
+    local
+      list<DAE.Exp> newArgs,cdr,cdr_1;
+      DAE.Exp e;
+    case({},_) then fail();
+    case(DAE.CREF(ty = DAE.ET_FUNCTION_REFERENCE_VAR()) :: cdr,newArgs) then listAppend(newArgs,cdr);
+    case(DAE.CREF(ty = DAE.ET_FUNCTION_REFERENCE_FUNC()) :: cdr,newArgs) then listAppend(newArgs,cdr);
+    case(e :: cdr,newArgs)
+      equation
+        cdr_1 = replaceFnRef(cdr,newArgs);
+      then
+        e :: cdr_1;
+  end matchcontinue;
+end replaceFnRef;
 
 protected function isSimpleArg
 "function: isSimpleArg
