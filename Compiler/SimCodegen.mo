@@ -6846,6 +6846,7 @@ algorithm
     local
       Codegen.CFunction func_zc,func_handle_zc,cfunc,cfunc0_1,cfunc0,cfunc_1,cfunc_2,func_zc0,func_handle_zc0,func_handle_zc0_1;
       Codegen.CFunction func_handle_zc0_2,func_handle_zc0_3,func_zc0_1,func_zc_1,func_handle_zc_1,cfuncHelpvars;
+      Codegen.CFunction func_ozc;
       Integer cg_id1,cg_id2,cg_id;
       list<CFunction> extra_funcs1,extra_funcs2,extra_funcs;
       String extra_funcs_str,helpvarUpdateStr,func_str,res,cname;
@@ -6890,7 +6891,14 @@ algorithm
         func_zc0_1 = Codegen.cAddCleanups(func_zc0, {"localData->timeValue = timeBackup;", "return 0;"});
         func_zc_1 = Codegen.cMergeFns({func_zc0_1,func_zc});
         func_handle_zc_1 = Codegen.cMergeFns({func_handle_zc0_3,func_handle_zc});
-        func_str = Codegen.cPrintFunctionsStr({func_zc_1,func_handle_zc_1,cfunc_2});
+        
+        
+        func_ozc = Codegen.cMakeFunction("int", "function_onlyZeroCrossings", {}, {"double *gout,double *t"});
+        func_ozc = addMemoryManagement(func_ozc);
+        func_ozc = Codegen.cMergeFns({func_ozc,func_zc});
+        func_ozc = Codegen.cAddCleanups(func_ozc, {"return 0;"});
+        
+        func_str = Codegen.cPrintFunctionsStr({func_zc_1,func_handle_zc_1,cfunc_2,func_ozc});
         res = Util.stringAppendList({extra_funcs_str,func_str});
       then
         res;

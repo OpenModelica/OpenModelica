@@ -118,4 +118,22 @@ function_when(int i);
 
 extern long* zeroCrossingEnabled;
 
+int
+function_onlyZeroCrossings(double* gout ,double* t);
+
+int CheckForNewEvent(int flag);
+
+void EventHandle();
+
+void FindRoot();
+
+double BiSection(double, double, double*, double*, long int*);
+
+int CheckZeroCrossings(long int*);
+
+#define INTERVAL 1
+#define NOINTERVAL 0
+
+extern double TOL;
+
 #endif
