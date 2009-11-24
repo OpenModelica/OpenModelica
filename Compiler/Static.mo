@@ -5540,7 +5540,7 @@ algorithm
         (cache,
         DAE.CALL(Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")), {exp},
              false, true, DAE.ET_BOOL,false),
-        DAE.PROP((DAE.T_BOOL({}), NONE), DAE.C_CONST));
+        DAE.PROP((DAE.T_BOOL({}), NONE), DAE.C_VAR));
   end matchcontinue;
 end elabBuiltinIsRoot;
 
@@ -9836,7 +9836,7 @@ algorithm
       then
         (cache,e_1,DAE.C_PARAM(),SCode.RO());
         
-        case (cache,env,cr,acc,var,io,tt,DAE.EQBOUND(exp = exp,constant_ = const),doVect,_) 
+    case (cache,env,cr,acc,var,io,tt,DAE.EQBOUND(exp = exp,constant_ = const),doVect,_) 
       local DAE.ExpType t;
       equation 
         true = SCode.isParameterOrConst(var);

@@ -1662,6 +1662,8 @@ algorithm
       Value r;
       Absyn.CodeNode c;
       DAE.ComponentRef cr;
+      Absyn.Path p;
+      
     case Values.INTEGER(integer = n)
       equation 
         s = intString(n);
@@ -1735,9 +1737,9 @@ algorithm
         s_2;
     /* Until is it no able to get from an string Enumeration the C-Enumeration use the index value */
     /* Example: This is yet not possible Enum.e1 \\ PEnum   ->  1 \\ PEnum  with enum Enum(e1,e2), Enum PEnum; */
-    case(Values.ENUM(index = n)) equation
+    case (Values.ENUM(index = n, path=p)) equation
 //      s = Exp.printComponentRefStr(cr);
-      s = intString(n);
+      s = intString(n) +& " /* ENUM: " +& Absyn.pathString(p) +& " */";
     then s;
     case(Values.NORETCALL) then "";
     case _

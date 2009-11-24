@@ -963,6 +963,7 @@ algorithm
     case "String" then cevalBuiltinString;
     case "linspace" then cevalBuiltinLinspace;
     case "Integer" then cevalBuiltinIntegerEnumeration;
+    case "rooted" then cevalBuiltinRooted; //    
     case "print" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalBuiltinPrint;
     // MetaModelica type conversions
     case "intReal" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalIntReal;
@@ -3711,6 +3712,38 @@ algorithm
   end matchcontinue;
 end cevalBuiltinInteger;
 
+protected function cevalBuiltinRooted 
+"function cevalBuiltinRooted
+  author: adrpo
+  Evaluates the builtin rooted operator from MultiBody"
+	input Env.Cache inCache;
+  input Env.Env inEnv;
+  input list<DAE.Exp> inExpExpLst;
+  input Boolean inBoolean;
+  input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Msg inMsg;
+  output Env.Cache outCache;
+  output Values.Value outValue;
+  output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
+algorithm 
+  (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
+  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+    local
+      Real rv;
+      Integer ri;
+      list<Env.Frame> env;
+      DAE.Exp exp;
+      Boolean impl;
+      Option<Interactive.InteractiveSymbolTable> st;
+      Msg msg;
+      Env.Cache cache;
+    case (cache,env,{exp},impl,st,msg)
+      equation 
+        (cache,_,_) = ceval(cache, env, exp, impl, st, NONE, msg);
+      then
+        (cache,Values.BOOL(true),st);
+  end matchcontinue;
+end cevalBuiltinRooted;
 
 protected function cevalBuiltinIntegerEnumeration "function cevalBuiltinIntegerEnumeration
   author: LP
@@ -4020,6 +4053,7 @@ algorithm
       Integer i1,i2;
       String s1,s2;
       DAE.ComponentRef cr1, cr2;
+      DAE.Operator op;
       
     case (v1,DAE.GREATER(ty = t),v2)
       equation 
@@ -4166,6 +4200,11 @@ algorithm
         b = (i1 >= i2);
       then
         Values.BOOL(b);
+    case (Values.ENUM(index = i1),DAE.EQUAL(ty = DAE.ET_ENUMERATION(index = SOME(_))),Values.INTEGER(i2))
+      equation
+        bb = (i1 == i2);
+      then
+        Values.BOOL(bb);
     case (Values.ENUM(index = i1),DAE.EQUAL(ty = DAE.ET_ENUMERATION(index = SOME(_))),Values.ENUM(index = i2))
 //    case (Values.ENUM(cr1,i1),DAE.EQUAL(ty = Exp.ENUM()),Values.ENUM(cr2,i2))
       equation
@@ -4174,7 +4213,7 @@ algorithm
         bb = (i1 == i2);
         // b = boolAnd(ba, bb);
       then
-        Values.BOOL(bb);
+        Values.BOOL(bb);        
     case (Values.ENUM(index = i1),DAE.NEQUAL(ty = DAE.ET_ENUMERATION(index = SOME(_))),Values.ENUM(index = i2))
 //    case (Values.ENUM(cr1,i1),DAE.NEQUAL(ty = Exp.ENUM()),Values.ENUM(cr2,i2))
       equation
@@ -4184,10 +4223,12 @@ algorithm
       then
         Values.BOOL(bb);
         
-    case (_,_,_)
+    case (v1,op,v2)
       equation 
-        Debug.fprint("failtrace", "- Ceval.cevalRelation failed\n");
-        //print("- Ceval.cevalRelation failed\n");
+        Debug.fprintln("failtrace", "- Ceval.cevalRelation failed on: " +& 
+               ValuesUtil.printValStr(v1) +&  
+               Exp.binopSymbol(op) +&
+               ValuesUtil.printValStr(v2));
       then
         fail();
   end matchcontinue;

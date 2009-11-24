@@ -9589,7 +9589,7 @@ protected function instEEquation
   output ClassInf.State outState;
   output ConnectionGraph.ConnectionGraph outGraph;
 algorithm 
-  (outCache,outEnv,outIH,outDAEElementLst,outSets,outState, outGraph):=
+  (outCache,outEnv,outIH,outDAEElementLst,outSets,outState, outGraph) :=
   matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inSets,inState,inEEquation,inBoolean,inGraph)
     local
       list<DAE.Element> dae;
@@ -15051,6 +15051,7 @@ algorithm
       Env.Cache cache;
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
+      SCode.EEquation eee;
       
     case (cache,env,ih,mod,pre,csets,ci_state,{},_,impl,graph) 
       then 
@@ -15067,6 +15068,12 @@ algorithm
         (cache,env_2,ih,llb,csets_2,ci_state_2,graph) = instIfTrueBranches(cache,env_1,ih, mod, pre, csets_1, ci_state_1,  es, true, impl,graph);        
       then
         (cache,env_2,ih,lb::llb,csets_2,ci_state_2,graph);
+    case (cache,env,ih,mod,pre,csets,ci_state,(e :: es),_,impl,graph)
+      equation 
+        Debug.fprintln("failtrace", "Inst.instIfTrueBranches failed on equations: " +& 
+                       Util.stringDelimitList(Util.listMap(e, SCode.equationStr), "\n"));
+      then
+        fail();
   end matchcontinue;
 end instIfTrueBranches;
 

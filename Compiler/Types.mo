@@ -77,16 +77,13 @@ protected import Static;
 protected import RTOpts;
 protected import ValuesUtil;
 
-public function discreteType "function: discreteType
-  author: PA
-  
-  Succeeds for all the discrete types, Integer, String, Boolean and 
-  enumeration.
-"
+public function discreteType 
+"function: discreteType
+  author: PA  
+  Succeeds for all the discrete types, Integer, String, Boolean and enumeration."
   input Type inType;
 algorithm 
-  _:=
-  matchcontinue (inType)
+  _ := matchcontinue (inType)
     case ((DAE.T_INTEGER(varLstInt = _),_)) then (); 
     case ((DAE.T_STRING(varLstString = _),_)) then (); 
     case ((DAE.T_BOOL(varLstBool = _),_)) then (); 
@@ -3597,9 +3594,9 @@ algorithm
     
     case(e,inProperties2,inProperties3) 
       equation 
-        Debug.fprint("failtrace", " Failure in Types.matchProp exp: "+& Exp.printExpStr(e)+& "\n");
-        Debug.fprint("failtrace", printPropStr(inProperties2) +& "\n");
-        Debug.fprint("failtrace", printPropStr(inProperties3) +& "\n");
+        Debug.fprintln("types", " Failure in Types.matchProp exp: "+& Exp.printExpStr(e));
+        Debug.fprintln("types", printPropStr(inProperties2) +& " != ");
+        Debug.fprintln("types", printPropStr(inProperties3) +& "\n");
       then fail();
   end matchcontinue;
 end matchProp;
@@ -5121,7 +5118,7 @@ algorithm
         (e_1,e_type_1,polymorphicBindings);
     case (_,_,_,_)
       equation
-        Debug.fprintln("failtrace", "- Types.matchTypePolymorphic failed");
+        Debug.fprintln("types", "- Types.matchTypePolymorphic failed");
       then fail();
   end matchcontinue;
 end matchTypePolymorphic;
@@ -5157,12 +5154,36 @@ algorithm
         (e_1,e_type_1,polymorphicBindings) = typeConvert(e, e_type, expected_type, polymorphicBindings, matchTypeRegular);
       then
         (e_1,e_type_1,polymorphicBindings);
-    case (_,_,_,_)
+    case (e,e_type,expected_type,_)
       equation
-        Debug.fprintln("failtrace", "- Types.matchTypeRegular failed");
+        printFailure("types", e, e_type, expected_type);
       then fail();
   end matchcontinue;
 end matchTypeRegular;
+
+protected function printFailure
+"@author adrpo 
+ print the message only when flag is on.
+ this is to speed up the flattening as we don't
+ generate the strings at all."
+  input String flag;
+  input DAE.Exp e;
+  input Type e_type;
+  input Type expected_type;
+algorithm
+  _ := matchcontinue (flag, e, e_type, expected_type)
+    case (flag, e, e_type, expected_type)
+      equation
+        true = RTOpts.debugFlag(flag);
+        Debug.fprint("types", "- Types.matchTypeRegular failed on:" +& Exp.printExpStr(e));
+        Debug.fprintln("types", "  type:" +& printTypeStr(e_type) +& " differs from expected\n  type:" +& printTypeStr(expected_type));
+      then ();
+    case (flag, e, e_type, expected_type)
+      equation
+        false = RTOpts.debugFlag(flag);
+      then ();        
+  end matchcontinue;
+end printFailure;
 
 public function fixPolymorphicRestype "TODO: This needs to be more generic so for example list<polymorphic<X>> is also translated"
   input Type ty;

@@ -721,7 +721,7 @@ algorithm
       then
         fail();
     case(xs,m) equation
-      print("maekIdxmods failed for mod:");print(printModStr(m));print("\n");
+      print("Mod.makeIdxmods failed for mod:");print(printModStr(m));print("\n");
       print("subs =");print(Util.stringDelimitList(Util.listMap(xs,Exp.printSubscriptStr),","));
       print("\n");
     then fail();
@@ -1246,8 +1246,9 @@ algorithm
       then
         DAE.MOD(f,Absyn.NON_EACH(),subs_1,eq_1);
     case (DAE.MOD(finalPrefix = f,each_ = Absyn.EACH(),subModLst = subs,eqModOption = eq),idx) then DAE.MOD(f,Absyn.EACH(),subs,eq); 
-    case (_,_) equation
-      Debug.fprint("failtrace", "-lookupIdxModification3 failed\n");
+    case (inMod,idx) equation
+      Debug.fprintln("failtrace", "- Mod.lookupIdxModification3 failed for mod: \n" +& 
+                     printModStr(inMod) +& "\n for index:" +& intString(idx));
     then fail();   
   end matchcontinue;
 end lookupIdxModification3;
@@ -1274,6 +1275,8 @@ algorithm
       DAE.Const c;
       Integer x;
       list<Integer> xs;
+      DAE.EqMod eq;
+      
     case (NONE,_) then NONE; 
     case (e,{}) then e; 
       /* Subscripting empty array gives no value. This is needed in e.g. fill(1.0,0,2) */
@@ -1299,8 +1302,10 @@ algorithm
         e = indexEqmod(SOME(DAE.TYPED(exp,NONE,DAE.PROP(t_1,c))), xs);
       then
         e;        
-    case (_,_) equation
-      Debug.fprint("failtrace", "-indexEqmod failed\n");
+    case (SOME(eq),inIntegerLst) equation
+      Debug.fprintln("failtrace", "- Mod.indexEqmod failed for mod:\n " +& 
+               Types.unparseEqMod(eq) +& "\n indexes:" +&
+               Util.stringDelimitList(Util.listMap(inIntegerLst, intString), ", "));
     then fail();
   end matchcontinue;
 end indexEqmod;
@@ -1811,12 +1816,9 @@ algorithm
   end matchcontinue;
 end eqModEqual;
 
-public function printModStr "
- 
-  This function prints a modification. It uses a few other function
-  to do its stuff.
-
-"
+public function printModStr 
+"This function prints a modification. 
+ It uses a few other function to do its stuff."
   input DAE.Mod inMod;
   output String outString;
 algorithm 
@@ -2048,15 +2050,13 @@ algorithm
   end matchcontinue;
 end printSubscripts2Str;
 
-protected function printEqmodStr "function: printEqmodStr
-  
-  Helper function to print_mod_str
-"
+protected function printEqmodStr 
+"function: printEqmodStr  
+  Helper function to printModStr"
   input Option<DAE.EqMod> inTypesEqModOption;
   output String outString;
 algorithm 
-  outString:=
-  matchcontinue (inTypesEqModOption)
+  outString := matchcontinue (inTypesEqModOption)
     local
       Ident str,str2,e_val_str,res;
       DAE.Exp e;
@@ -2068,7 +2068,7 @@ algorithm
         str = Exp.printExpStr(e);
         str2 = Types.printPropStr(prop);
         e_val_str = ValuesUtil.valString(e_val);
-        res = Util.stringAppendList({" = (typed)",str,str2,", E_VALUE:",e_val_str});
+        res = Util.stringAppendList({" = (typed)",str," ",str2,", E_VALUE: ",e_val_str});
       then
         res;
     case SOME(DAE.TYPED(e,NONE,prop))

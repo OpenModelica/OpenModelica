@@ -105,7 +105,7 @@ algorithm
         t = (DAE.T_FUNCTION({("x", (DAE.T_ANYTYPE(NONE), NONE))}, (DAE.T_BOOL({}), NONE)), NONE);
       then
         (cache, t, env);
-      
+
     // Special handling for MultiBody 3.x rooted() operator
     case (cache,env,Absyn.IDENT("rooted"),msg)
       equation 
