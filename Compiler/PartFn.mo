@@ -76,11 +76,11 @@ algorithm
       DAE.Algorithm[:] algorithms;
       DAELow.EventInfo eventInfo;
       DAELow.ExternalObjectClasses extObjClasses;
-    case(dae,dlow)
+    /*case(dae,dlow)
       equation
         false = RTOpts.debugFlag("fnptr") or RTOpts.acceptMetaModelicaGrammar();
       then
-        (dae,dlow);
+        (dae,dlow);*/
     case(dae,DAELow.DAELOW(orderedVars,knownVars,externalObjects,orderedEqs,removedEqs,initialEqs,arrayEqs,algorithms,eventInfo,extObjClasses))
       equation
         (orderedVars,dae) = partEvalVars(orderedVars,dae);
@@ -412,11 +412,11 @@ algorithm
     local
       list<DAE.Element> elts,elts_1,dae;
       DAE.DAElist dlst;
-    case(dlst,dae)
+    /*case(dlst,dae)
       equation
         false = RTOpts.debugFlag("fnptr") or RTOpts.acceptMetaModelicaGrammar();
       then
-        (dlst,dae);
+        (dlst,dae);*/
     case(DAE.DAE(elts),dae)
       equation
         (elts_1,dae) = elabElements(elts,dae);
@@ -440,11 +440,11 @@ algorithm
   outDAElist := matchcontinue(inDAElist)
     local
       list<DAE.Element> elts,elts_1,elts_2;
-    case(elts)
+    /*case(elts)
       equation
         false = RTOpts.debugFlag("fnptr") or RTOpts.acceptMetaModelicaGrammar();
       then
-        elts;
+        elts;*/
     case(elts)
       equation
         (_,elts_1) = elabElements(elts,elts);
@@ -1312,8 +1312,6 @@ algorithm
       list<DAE.Statement> alg,alg_1;
       list<Integer> ilst;
     case({},_,_,_,_) then {};
-    // TODO: DAE.VAR()
-    // TODO: Remove all cases that cannot appear in functions?
     case(DAE.DEFINE(cref,e) :: cdr,dae,p,inputs,current)
       equation
         ((e_1,_)) = Exp.traverseExp(e,fixCall,(p,inputs,dae,current));
@@ -1354,9 +1352,6 @@ algorithm
         cdr_1 = fixCalls(cdr,dae,p,inputs,current);
       then
         DAE.INITIAL_COMPLEX_EQUATION(e1_1,e2_1) :: cdr_1;
-    // TODO: DAE.WHEN_EQUATION()
-    // TODO: DAE.IF_EQUATION()
-    // TODO: DAE.INITIAL_IF_EQUATION()
     case(DAE.INITIALEQUATION(e1,e2) :: cdr,dae,p,inputs,current)
       equation
         ((e1_1,_)) = Exp.traverseExp(e1,fixCall,(p,inputs,dae,current));

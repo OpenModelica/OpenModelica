@@ -9486,7 +9486,7 @@ algorithm
         DAE.ComponentRef expCref;
         DAE.ExpType expType;
       equation
-        true = RTOpts.debugFlag("fnptr") or RTOpts.acceptMetaModelicaGrammar();
+        //true = RTOpts.debugFlag("fnptr") or RTOpts.acceptMetaModelicaGrammar();
         path = Absyn.crefToPath(c);
         (cache,typelist) = Lookup.lookupFunctionsInEnv(cache,env,path);
         t :: _ = typelist;

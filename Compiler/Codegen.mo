@@ -2459,10 +2459,10 @@ algorithm
       DAE.ComponentRef resCref;
       Integer i;
       // Only generate these functions if we use MetaModelica grammar
-    case (fpath,ty1)
+    /*case (fpath,ty1)
       equation
         false = RTOpts.debugFlag("fnptr") or RTOpts.acceptMetaModelicaGrammar();
-      then {};
+      then {};*/
     case (fpath,ty1)
       equation
         failure(_ = Types.makeFunctionPolymorphicReference(ty1));
