@@ -33,7 +33,7 @@ package CevalScript
   package:      CevalScript
   description: Constant propagation of expressions
 
-  RCS: $Id: CevalScript.mo 3774 2008-12-15 07:56:54Z adrpo $
+  RCS: $Id$
 
   This module handles scripting.
  

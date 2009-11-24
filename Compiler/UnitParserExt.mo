@@ -1,4 +1,4 @@
-package UnitParserExt "external package interface for UnitParser. Copyright MathCore engineering AB 2008"
+package UnitParserExt "external package interface for UnitParser. Copyright MathCore engineering AB 2008-2009"
 
 public import UnitAbsyn;
 

@@ -34,7 +34,7 @@ package InstanceHierarchy
   package:     InstanceHierarchy
   description: Data structure for representing the instance hierarchy
 
-  RCS: $Id: InstanceHierarchy.mo 3976 2009-03-25 15:12:39Z adrpo $"
+  RCS: $Id$"
 
 public 
 import Absyn;

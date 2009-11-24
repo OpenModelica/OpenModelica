@@ -33,7 +33,7 @@ package Derive
   package:      Derive
   description: Differentiation of equations from DAELow
 
-  RCS: $Id: Derive.mo 3772 2008-12-13 16:04:48Z adrpo $
+  RCS: $Id$
 
   This module is responsible for symbolic differentiation of equations and
   expressions. Is is currently (2004-09-28) only used by the solve function in

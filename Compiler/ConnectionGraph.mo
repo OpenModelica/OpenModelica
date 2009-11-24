@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2008, Linköpings University,
+ * Copyright (c) 1998-2009, Linköpings University,
  * Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
@@ -33,7 +33,7 @@ package ConnectionGraph
   package:      ConnectionGraph
   description: Constant propagation of expressions
 
-  RCS: $Id: Ceval.mo 4018 2009-05-07 01:06:33Z adrpo $
+  RCS: $Id$
 
   This module contains a connection breaking algorithm and  
   related data structures. The input of the algorithm is

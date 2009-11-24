@@ -1,4 +1,4 @@
-package MMath "copyright MathCore Engineering AB 2008 
+package MMath "copyright MathCore Engineering AB 2008-2009 
 
 author Peter Aronsson (peter.aronsson@mathcore.com)
 

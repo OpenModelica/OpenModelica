@@ -33,7 +33,7 @@ package ValuesUtil
   package:     ValuesUtil
   description: Evaluated expression values
  
-  RCS: $Id: ValuesUtil.mo 4464 2009-11-06 11:01:52Z Frenkel TUD $
+  RCS: $Id$
   
   The package Values contains utility functions for handling evaluated
   expression values."

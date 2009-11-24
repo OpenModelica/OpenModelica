@@ -33,7 +33,7 @@ package PartFn
   package:     PartFn
   description: partially evaluated functions
   
-  RCS: $Id: PartFn.mo 4306 2009-10-06 06:32:29Z sjoelund.se $
+  RCS: $Id$
   
   This module contains data structures and functions for partially evaulated functions.
   entry point: createPartEvalFunctions, partEvalDAELow, partEvalDAE

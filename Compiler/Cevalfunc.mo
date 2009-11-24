@@ -7,7 +7,7 @@ package Cevalfunc
   module:      MATHCORE
   description: This module constant evaluates userdefined functions, speeds up instantination process.
   It includes Constant evaluations of function and algorithm statements.
-  RCS: $Id: Cevalfunc.mo 3059 2008-05-15 07:03:53Z bjozac $
+  RCS: $Id$
   "
 public import Env;
 public import Values; 

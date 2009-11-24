@@ -1,4 +1,4 @@
-package UnitAbsynBuilder " Copyright MathCore Engineering AB 2008
+package UnitAbsynBuilder " Copyright MathCore Engineering AB 2008-2009
 
 Author: Peter Aronsson (peter.aronsson@mathcore.com)
 

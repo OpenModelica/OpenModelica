@@ -33,7 +33,7 @@ package BackendVarTransform
   package:     BackendVarTransform
   description: BackendVarTransform is only a stub.
 
-  RCS: $Id: BackendVarTransform_stub.mo 3772 2008-12-13 16:04:48Z adrpo $
+  RCS: $Id$
   
   This file is a stub!"
 

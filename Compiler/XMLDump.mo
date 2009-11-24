@@ -79,7 +79,7 @@ package XMLDump
   package:     XMLDump
   description: Dumping of DAE as XML
 
-  RCS: $Id: XMLDump.mo 3643 2008-09-16 05:34:14Z donida $"
+  RCS: $Id$"
 
 public import Absyn;
 public import DAE;

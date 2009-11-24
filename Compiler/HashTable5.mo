@@ -1,7 +1,7 @@
 package HashTable5 "
 	  This file is an extension to OpenModelica.
   	
-  Copyright (c) 2007 MathCore Engineering AB
+  Copyright (c) 2007-2009 MathCore Engineering AB
   	
   All rights reserved.
   

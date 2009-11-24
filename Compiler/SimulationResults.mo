@@ -33,7 +33,7 @@ package SimulationResults
   package:     SimulationResults
   description: Read simulation results into the Values.Value structure.
 
-  RCS: $Id: System.mo 4473 2009-11-09 16:21:24Z sjoelund.se $
+  RCS: $Id$
 
   "
 

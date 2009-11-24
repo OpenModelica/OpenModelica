@@ -33,7 +33,7 @@ package Main
   package:     Main
   description: Modelica main program
 
-  RCS: $Id: Main.mo 3775 2008-12-15 22:30:45Z adrpo $
+  RCS: $Id$
 
   This is the main program in the Modelica specification.
   It either translates a file given as a command line argument

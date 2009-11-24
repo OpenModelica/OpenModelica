@@ -33,7 +33,7 @@ package DAELow
   package:     DAELow
   description: Just a stub for compiling the frontend.
 
-  RCS: $Id: DAELow_stub.mo 4495 2009-11-12 08:40:14Z sjoelund.se $
+  RCS: $Id$
 "
 
 

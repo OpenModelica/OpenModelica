@@ -1,4 +1,4 @@
-package UnitAbsyn " Copyright MathCore 2008.
+package UnitAbsyn " Copyright MathCore 2008-2009.
 author Peter Aronsson (peter.aronsson@mathcore.com)
 
 This module contains the datatypes for representing unit terms.

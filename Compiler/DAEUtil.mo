@@ -33,7 +33,7 @@ package DAEUtil
   package:     DAE
   description: DAE management and output
  
-  RCS: $Id: DAEUtil.mo 4472 2009-11-09 14:49:03Z sjoelund.se $
+  RCS: $Id$
   
   This module exports some helper functions to the DAE AST.
 "

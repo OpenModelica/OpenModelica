@@ -34,7 +34,7 @@ package Inline
   package:     Inline
   description: inline functions
   
-  RCS: $Id: PartFn.mo 4306 2009-10-06 06:32:29Z sjoelund.se $
+  RCS: $Id$
   
   This module contains data structures and functions for inline functions.
   
