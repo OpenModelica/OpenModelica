@@ -48,7 +48,6 @@ public import Values;
 
 protected import DAEUtil;
 protected import Exp;
-protected import RTOpts;
 protected import Types;
 protected import Util;
 
@@ -1311,7 +1310,26 @@ algorithm
       DAE.Exp e,e_1,e1,e1_1,e2,e2_1;
       list<DAE.Statement> alg,alg_1;
       list<Integer> ilst;
+      DAE.ComponentRef componentRef " The variable name";
+      DAE.VarKind kind "varible kind: variable, constant, parameter, discrete etc." ;
+      DAE.VarDirection direction "input, output or bidir" ;
+      DAE.VarProtection protection "if protected or public";
+      DAE.Type ty "Full type information required";
+      DAE.Exp binding "Binding expression e.g. for parameters ; value of start attribute" ; 
+      DAE.InstDims  dims "dimensions";
+      DAE.Flow flowPrefix "Flow of connector variable. Needed for unconnected flow variables" ;
+      DAE.Stream streamPrefix "Stream variables in connectors" ;
+      list<Absyn.Path> pathLst " " ;
+      Option<DAE.VariableAttributes> variableAttributesOption;
+      Option<SCode.Comment> absynCommentOption;
+      Absyn.InnerOuter innerOuter "inner/outer required to 'change' outer references";
     case({},_,_,_,_) then {};
+    case(DAE.VAR(componentRef,kind,direction,protection,ty,SOME(binding),dims,flowPrefix,streamPrefix,pathLst,variableAttributesOption,absynCommentOption,innerOuter) :: cdr,dae,p,inputs,current)
+      equation
+        ((binding,_)) = Exp.traverseExp(binding,fixCall,(p,inputs,dae,current));
+        cdr_1 = fixCalls(cdr,dae,p,inputs,current);
+      then
+        DAE.VAR(componentRef,kind,direction,protection,ty,SOME(binding),dims,flowPrefix,streamPrefix,pathLst,variableAttributesOption,absynCommentOption,innerOuter) :: cdr_1;
     case(DAE.DEFINE(cref,e) :: cdr,dae,p,inputs,current)
       equation
         ((e_1,_)) = Exp.traverseExp(e,fixCall,(p,inputs,dae,current));
@@ -1371,7 +1389,6 @@ algorithm
         cdr_1 = fixCalls(cdr,dae,p,inputs,current);
       then
         DAE.INITIALALGORITHM(DAE.ALGORITHM_STMTS(alg_1)) :: cdr_1;
-    // TODO: More cases?
     case(part :: cdr,dae,p,inputs,current)
       equation
         cdr_1 = fixCalls(cdr,dae,p,inputs,current);
