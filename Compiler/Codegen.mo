@@ -2040,6 +2040,7 @@ algorithm
         t_str;
         
     case ((DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(_)),_)) then "modelica_complex";
+    case ((DAE.T_COMPLEX(ClassInf.TYPE(_),{},SOME(ty),_),_)) then generateSimpleType(ty);
 
     case ((DAE.T_LIST(_),_)) then "metamodelica_type";  // MetaModelica list
     case ((DAE.T_METATUPLE(_),_)) then "metamodelica_type"; // MetaModelica tuple

@@ -11558,7 +11558,7 @@ algorithm
     case ({},{}) then ({},{}); 
     case ((pt :: pts),((arg,atype) :: args))
       equation 
-        (arg_1,atype_1) = Types.matchType(arg, atype, pt, true);
+        (arg_1,atype_1) = Types.matchType(arg, atype, pt, false);
         (args_1,atypes_1) = elabArglist(pts, args);
       then
         ((arg_1 :: args_1),(atype_1 :: atypes_1));
