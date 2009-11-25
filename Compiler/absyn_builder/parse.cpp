@@ -116,6 +116,7 @@ extern "C"
 			      tokens);
 		  modelicafilename=string("");
 		  RML_TAILCALLK(rmlFC);
+		  modelicafilename=string("");
 		}
 		//bool debug = true;
 		modelica_lexer *lex=0;
