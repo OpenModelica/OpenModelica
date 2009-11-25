@@ -53,6 +53,13 @@ protected import Util;
 protected import Algorithm;
 protected import System;
 
+public function makeSubscript "Creates a Subscript from and Exp"
+input Absyn.Exp e;
+output Absyn.Subscript s;
+algorithm
+  s := Absyn.SUBSCRIPT(e);
+end makeSubscript;  
+
 protected function stringPrefixComponentRefs ""
   input String inString;
   input FuncTypeExp_ComponentRefType_bTo inFuncTypeExpComponentRefTypeBTo;
