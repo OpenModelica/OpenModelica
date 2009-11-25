@@ -1129,6 +1129,14 @@ void identity_integer_array(int n, integer_array_t* dest)
     }
 }
 
+integer_array_t identity(int n)
+{
+    integer_array_t dest;
+    alloc_integer_array(&dest,2,n,n);
+    identity_integer_array(n,&dest);
+    return dest;
+}
+
 void diagonal_integer_array(integer_array_t* v,integer_array_t* dest)
 {
     size_t i;

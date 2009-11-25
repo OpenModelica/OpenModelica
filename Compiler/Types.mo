@@ -5391,7 +5391,7 @@ algorithm
         funcArgNames = Util.listMap(funcArgs1, Util.tuple21);
         funcArgTypes1 = Util.listMap(funcArgs1, Util.tuple22);
         (dummyExpList,dummyBoxedTypeList) = makeDummyExpAndTypeLists(funcArgTypes1);
-        (_,funcArgTypes2,_) = matchTypeTuple(dummyExpList, funcArgTypes1, dummyBoxedTypeList, {}, matchTypeRegular, true);
+        (_,funcArgTypes2,_) = matchTypeTuple(dummyExpList, funcArgTypes1, dummyBoxedTypeList, {}, matchTypeRegular, false);
         funcArgs2 = Util.listThreadTuple(funcArgNames,funcArgTypes2);
         resType2 = makeFunctionPolymorphicReferenceResType(resType1);
         tty2 = DAE.T_FUNCTION(funcArgs2,resType2);

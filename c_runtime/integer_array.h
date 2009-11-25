@@ -229,6 +229,9 @@ void transpose_alloc_integer_array(integer_array_t* a, integer_array_t* dest);
 void outer_product_integer_array(integer_array_t* v1,integer_array_t* v2,
                                  integer_array_t* dest);
 void identity_integer_array(int n, integer_array_t* dest);
+typedef integer_array_t identity_rettype;
+identity_rettype identity(int n);
+
 void diagonal_integer_array(integer_array_t* v,integer_array_t* dest);
 void fill_integer_array(integer_array_t* dest,modelica_integer s);
 void linspace_integer_array(modelica_integer x1,modelica_integer x2,int n,

@@ -4615,6 +4615,22 @@ algorithm
         var_1 = Util.stringAppendList({"((modelica_real)",var,")"});
       then
         (cfn,var_1,tnr_1);
+    /* cast to array */
+    case (DAE.CAST(ty = DAE.ET_ARRAY(t,_),exp = e),tnr,context)
+      local
+        String to,from;
+      equation
+        array_type_str = expTypeStr(t, true);
+        (tdecl,tvar,tnr) = generateTempDecl(array_type_str, tnr);
+        (cfn,var,tnr) = generateExpression(e, tnr, context);
+        ty = Exp.typeof(e);
+        to = expShortTypeStr(t);
+        from = expShortTypeStr(ty);
+        stmt = Util.stringAppendList({"cast_",from,"_array_to_", to, "(&", var, ",&", tvar, ");"});
+        cfn = cAddVariables(cfn, {tdecl});
+        cfn = cAddStatements(cfn, {stmt});
+      then
+        (cfn,tvar,tnr);
     /* valueblock */
     case (DAE.VALUEBLOCK(ty,localDecls = ld,body = b,
       		result = res),tnr,context)

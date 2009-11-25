@@ -1316,3 +1316,25 @@ void convert_alloc_real_array_from_f77(real_array_t* a, real_array_t* dest)
     }
     transpose_real_array(a, dest);
 }
+
+void cast_integer_array_to_real(integer_array_t* a, real_array_t* dest)
+{
+  int els = base_array_nr_of_elements(a);
+  int i;
+  clone_base_array_spec(a,dest);
+  alloc_real_array_data(dest);
+  for (i=0; i<els; i++) {
+    real_set(dest, i, (modelica_real)integer_get(a,i));
+  }
+}
+
+void cast_real_array_to_integer(real_array_t* a, integer_array_t* dest)
+{
+  int els = base_array_nr_of_elements(a);
+  int i;
+  clone_base_array_spec(a,dest);
+  alloc_integer_array_data(dest);
+  for (i=0; i<els; i++) {
+    put_integer_element((modelica_integer)real_get(a,i),i,dest);
+  }
+}
