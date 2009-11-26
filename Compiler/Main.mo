@@ -1148,19 +1148,14 @@ public function main
   start the translation."
   input list<String> inStringLst;
 algorithm 
-  _:=
-  matchcontinue (inStringLst)
+  _:= matchcontinue (inStringLst)
     local
       String ver_str,errstr;
       list<String> args_1,args;
       Boolean ismode,icmode,imode,imode_1;
       String s,str;
       Interactive.InteractiveSymbolTable symbolTable;
-    case {}
-      equation
-        printUsage();
-      then ();
-    case args
+    case args as _::_
       equation 
         args_1 = RTOpts.args(args);
         
@@ -1185,12 +1180,15 @@ algorithm
         */
       then
         ();
-    case args
-      local Absyn.Program prg; 
+    case args as _::_
       equation
         failure(args_1 = RTOpts.args(args));
         printUsage();
       then ();
+    case {}
+      equation
+        printUsage();
+      then ();        
     case _
       equation 
         print("# Error encountered! Exiting...\n");

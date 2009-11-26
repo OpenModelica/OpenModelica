@@ -43,31 +43,46 @@ package Debug
   fprint(\"inst\", \"Starting instantiation...\"). See runtime/rtopts.c for
   implementation of flag checking."
 
-
 protected import RTOpts;
 protected import Print;
 protected import Util;
 
-public function print "function: print
-  author: PR
- 
-  This function is used for debug printing. 
-"
+public function print 
+"function: print
+  author: PR 
+  This function is used for debug printing."
   input String s;
 algorithm 
   fprint("olddebug", s);
 end print;
 
-public function fprint "function: fprint
-  author: LS
-  
-  Flag controlled debugging 
-"
+public function trace 
+"function: print
+  author: adrpo 
+  used for debug printing."
+  input String s;
+algorithm 
+  Print.printErrorBuf(s);
+end trace;
+
+public function traceln 
+"function: traceln
+  author: adrpo 
+  printing with newline."
+  input String str;
+algorithm 
+  Print.printErrorBuf(str);
+  Print.printErrorBuf("\n");
+end traceln;
+
+public function fprint 
+"function: fprint
+  author: LS  
+  Flag controlled debugging"
   input String inString1;
   input String inString2;
 algorithm 
-  _:=
-  matchcontinue (inString1,inString2)
+  _ := matchcontinue (inString1,inString2)
     local String flag,str;
     case (flag,str)
       equation 
@@ -79,15 +94,13 @@ algorithm
   end matchcontinue;
 end fprint;
 
-public function fprintln "function: fprintln
-  
-  Flag controlled debugging, printing with newline.
-"
+public function fprintln 
+"function: fprintln  
+  Flag controlled debugging, printing with newline."
   input String inString1;
   input String inString2;
 algorithm 
-  _:=
-  matchcontinue (inString1,inString2)
+  _ := matchcontinue (inString1,inString2)
     local String flag,str;
     case (flag,str)
       equation 
@@ -100,15 +113,13 @@ algorithm
   end matchcontinue;
 end fprintln;
 
-public function fprintl "function: fprintl
- 
-  flag controlled debugging, printing of string list.
-"
+public function fprintl 
+"function: fprintl 
+  flag controlled debugging, printing of string list."
   input String inString;
   input list<String> inStringLst;
 algorithm 
-  _:=
-  matchcontinue (inString,inStringLst)
+  _ := matchcontinue (inString,inStringLst)
     local
       String str,flag;
       list<String> strlist;
@@ -181,17 +192,15 @@ algorithm
   end matchcontinue;
 end fcall;
 
-public function fcall0 "function: fcall0
- 
-  Flag controlled calling of given function  (2nd arg) 
-"
+public function fcall0 
+"function: fcall0 
+  Flag controlled calling of given function  (2nd arg)"
   input String inString;
   input FuncTypeTo inFuncTypeTo;
   partial function FuncTypeTo
   end FuncTypeTo;
 algorithm 
-  _:=
-  matchcontinue (inString,inFuncTypeTo)
+  _ := matchcontinue (inString,inFuncTypeTo)
     local
       String flag;
       FuncTypeTo func;
@@ -205,11 +214,10 @@ algorithm
   end matchcontinue;
 end fcall0;
 
-public function fcallret "function: fcallret
- 
+public function fcallret 
+"function: fcallret 
   Flag controlled calling of given function (2nd arg).
-  The passed functions return value is returned.
-"
+  The passed functions return value is returned."
   input String inString;
   input FuncTypeType_aToType_b inFuncTypeTypeAToTypeB;
   input Type_a inTypeA;
@@ -224,8 +232,7 @@ public function fcallret "function: fcallret
   replaceable type Type_a subtypeof Any;
   replaceable type Type_b subtypeof Any;
 algorithm 
-  outTypeB:=
-  matchcontinue (inString,inFuncTypeTypeAToTypeB,inTypeA,inTypeB)
+  outTypeB := matchcontinue (inString,inFuncTypeTypeAToTypeB,inTypeA,inTypeB)
     local
       Type_b res,def;
       String flag;
@@ -241,10 +248,9 @@ algorithm
   end matchcontinue;
 end fcallret;
 
-public function bcall "function: bcall
- 
-  bool controlled calling of function.
-"
+public function bcall 
+"function: bcall 
+  bool controlled calling of function."
   input Boolean inBoolean;
   input FuncTypeType_aTo inFuncTypeTypeATo;
   input Type_a inTypeA;
@@ -254,8 +260,7 @@ public function bcall "function: bcall
   end FuncTypeType_aTo;
   replaceable type Type_a subtypeof Any;
 algorithm 
-  _:=
-  matchcontinue (inBoolean,inFuncTypeTypeATo,inTypeA)
+  _ := matchcontinue (inBoolean,inFuncTypeTypeATo,inTypeA)
     local
       FuncTypeType_aTo func;
       Type_a str;
@@ -268,10 +273,9 @@ algorithm
   end matchcontinue;
 end bcall;
 
-public function bcall2 "function: bcall2
- 
-  bool controlled calling of function.
-"
+public function bcall2 
+"function: bcall2 
+  bool controlled calling of function."
   input Boolean inBoolean;
   input FuncTypeType_aType_bTo inFuncTypeTypeATypeBTo;
   input Type_a inTypeA;
@@ -285,8 +289,7 @@ public function bcall2 "function: bcall2
   replaceable type Type_a subtypeof Any;
   replaceable type Type_b subtypeof Any;
 algorithm 
-  _:=
-  matchcontinue (inBoolean,inFuncTypeTypeATypeBTo,inTypeA,inTypeB)
+  _ := matchcontinue (inBoolean,inFuncTypeTypeATypeBTo,inTypeA,inTypeB)
     local
       FuncTypeType_aType_bTo func;
       Type_a a;
@@ -300,11 +303,11 @@ algorithm
   end matchcontinue;
 end bcall2;
 
-public function notfcall "function: notfcall
- 
-  Call the given function (2nd arg) if the flag given in 1st arg is 
-  NOT set 
-"
+public function notfcall 
+"function: notfcall 
+  Call the given function (2nd arg) 
+  if the flag given in 1st arg is 
+  NOT set"
   input String inString;
   input FuncTypeType_aTo inFuncTypeTypeATo;
   input Type_a inTypeA;
@@ -314,8 +317,7 @@ public function notfcall "function: notfcall
   end FuncTypeType_aTo;
   replaceable type Type_a subtypeof Any;
 algorithm 
-  _:=
-  matchcontinue (inString,inFuncTypeTypeATo,inTypeA)
+  _ := matchcontinue (inString,inFuncTypeTypeATo,inTypeA)
     local
       String flag;
       FuncTypeType_aTo func;
@@ -330,11 +332,10 @@ algorithm
   end matchcontinue;
 end notfcall;
 
-public function fprintList "function: fprintList
- 
-   If flag is set, print the elements in the list, using the passed
-  function.
-"
+public function fprintList 
+"function: fprintList 
+  If flag is set, print the elements in 
+  the list, using the passed function."
   input String inString1;
   input list<Type_a> inTypeALst2;
   input FuncTypeType_aTo inFuncTypeTypeATo3;
@@ -344,8 +345,7 @@ public function fprintList "function: fprintList
     input Type_a inTypeA;
   end FuncTypeType_aTo;
 algorithm 
-  _:=
-  matchcontinue (inString1,inTypeALst2,inFuncTypeTypeATo3,inString4)
+  _ := matchcontinue (inString1,inTypeALst2,inFuncTypeTypeATo3,inString4)
     local
       String flag,sep;
       list<Type_a> lst;
@@ -360,11 +360,10 @@ algorithm
   end matchcontinue;
 end fprintList;
 
-protected function printList "function: fprintList
- 
-   If flag is set, print the elements in the list, using the passed
-  function.
-"
+protected function printList 
+"function: fprintList 
+  If flag is set, print the elements in 
+  the list, using the passed function."
   input list<Type_a> inTypeALst;
   input FuncTypeType_aTo inFuncTypeTypeATo;
   input String inString;
@@ -373,8 +372,7 @@ protected function printList "function: fprintList
     input Type_a inTypeA;
   end FuncTypeType_aTo;
 algorithm 
-  _:=
-  matchcontinue (inTypeALst,inFuncTypeTypeATo,inString)
+  _ := matchcontinue (inTypeALst,inFuncTypeTypeATo,inString)
     local
       Type_a h;
       FuncTypeType_aTo r;
@@ -395,5 +393,7 @@ algorithm
         ();
   end matchcontinue;
 end printList;
+
+
 end Debug;
 

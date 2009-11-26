@@ -732,10 +732,9 @@ algorithm
   end matchcontinue;
 end ndims;
 
-public function dimensionsKnown "function: dimensionsKnown
- 
-  Returns true of the dimensions of the type is known.
-"
+public function dimensionsKnown 
+"function: dimensionsKnown 
+  Returns true of the dimensions of the type is known."
   input Type inType;
   output Boolean outBoolean;
 algorithm 
@@ -755,16 +754,14 @@ algorithm
   end matchcontinue;
 end dimensionsKnown;
 
-public function stripSubmod "function: stripSubmod
+public function stripSubmod 
+"function: stripSubmod
   author: PA
-  
-  Removes the sub modifiers of a modifier.
-"
+  Removes the sub modifiers of a modifier."
   input Mod inMod;
   output Mod outMod;
 algorithm 
-  outMod:=
-  matchcontinue (inMod)
+  outMod := matchcontinue (inMod)
     local
       Boolean f;
       Absyn.Each each_;
@@ -957,10 +954,10 @@ algorithm
   end matchcontinue;
 end getDimensionSizes;
 
-public function getDimensions "  
-  Return the dimensions of a Type. This is a list of Option<Integer> with the dimension size for 
-  each dimension, NONE corresponds to ':' dimension, i.e. not known.
-"
+public function getDimensions 
+"Returns the dimensions of a Type. 
+ This is a list of Option<Integer> with the dimension size for 
+ each dimension, NONE corresponds to ':' dimension, i.e. not known."
   input Type inType;
   output list<Option<Integer>> outIntegerLst;
 algorithm 
@@ -1984,7 +1981,8 @@ algorithm
   end matchcontinue;
 end arrayElementType;
 
-public function unparseEqMod "prints eqmod to a string"
+public function unparseEqMod 
+"prints eqmod to a string"
   input EqMod eq;
   output String str;
 algorithm
@@ -1999,10 +1997,21 @@ algorithm
   end matchcontinue;
 end unparseEqMod;
 
-public function unparseType "function: unparseType
- 
-  This function prints a Modelica type as a piece of Modelica code.
-"
+public function unparseOptionEqMod 
+"prints eqmod to a string"
+  input Option<EqMod> eq;
+  output String str;
+algorithm
+  str := matchcontinue(eq)
+    local EqMod e;
+    case NONE() then "NONE()";
+    case SOME(e) then unparseEqMod(e);
+  end matchcontinue;
+end unparseOptionEqMod;
+
+public function unparseType 
+"function: unparseType 
+  This function prints a Modelica type as a piece of Modelica code."
   input Type inType;
   output String outString;
 algorithm 
@@ -3544,14 +3553,12 @@ algorithm
   end matchcontinue;
 end elabType;
 
-public function matchProp "function: matchProp
- 
+public function matchProp 
+"function: matchProp 
   This is basically a wrapper aroune `match_type\'.  It matches an
   expression with properties with another set of properties.  If
   necessary, the expression is modified to match.  The only relevant
-  property is the type.
- 
-"
+  property is the type."
   input DAE.Exp inExp1;
   input Properties inProperties2;
   input Properties inProperties3;
@@ -3567,7 +3574,7 @@ algorithm
       Const c,c1,c2;
     case (e,DAE.PROP(type_ = gt,constFlag = c1),DAE.PROP(type_ = et,constFlag = c2),printFailtrace)
       equation 
-        Debug.print("Debug: match prop.");
+        Debug.fprintln("types", "- Types.matchProp debug: match prop.");
         (e_1,t_1) = matchType(e, gt, et, printFailtrace);
         c = constAnd(c1, c2);
       then
@@ -3575,7 +3582,7 @@ algorithm
     case (e,DAE.PROP_TUPLE(type_ = gt,tupleConst = c1),DAE.PROP_TUPLE(type_ = et,tupleConst = c2),printFailtrace)
       local TupleConst c,c1,c2;
       equation 
-        Debug.print("\nDebug: match prop (PROP TUPLE). ");
+        Debug.fprintln("types", "- Types.matchProp debug: match prop tuple.");
         (e_1,t_1) = matchType(e, gt, et, printFailtrace);
         c = constTupleAnd(c1, c2);
       then
@@ -3585,7 +3592,7 @@ algorithm
     case (e,DAE.PROP_TUPLE(type_ = (gt as (DAE.T_TUPLE(_),_)),tupleConst = c1), DAE.PROP(type_ = (et as (DAE.T_METATUPLE(_),_)),constFlag = c2),printFailtrace)
       local TupleConst c1; Const c_1;
       equation 
-        Debug.print("\nDebug: match prop (PROP META_TUPLE/TUPLE). ");
+        Debug.fprintln("types", "- Types.matchProp debug: match prop meta_tuple/tuple.");
         true = RTOpts.acceptMetaModelicaGrammar();
         (e_1,t_1) = matchType(e, gt, et, printFailtrace);
         c_1 = propTupleAllConst(c1);
@@ -3594,10 +3601,12 @@ algorithm
         (e_1,DAE.PROP(t_1,c));
     
     case(e,inProperties2,inProperties3,true)
-      equation 
-        Debug.fprintln("types", " Failure in Types.matchProp exp: "+& Exp.printExpStr(e));
-        Debug.fprintln("types", printPropStr(inProperties2) +& " != ");
-        Debug.fprintln("types", printPropStr(inProperties3) +& "\n");
+      equation
+        // activate on +d=types flag
+        true = RTOpts.debugFlag("types"); 
+        Debug.traceln("- Types.matchProp failed on exp: " +& Exp.printExpStr(e));
+        Debug.traceln(printPropStr(inProperties2) +& " != ");
+        Debug.traceln(printPropStr(inProperties3));
       then fail();
   end matchcontinue;
 end matchProp;

@@ -3960,10 +3960,9 @@ algorithm
   end matchcontinue;
 end printNamedArg;
 
-protected function printNamedArgStr "function: printNamedArgStr
-
-  Prettyprint NamedArg to a string.
-"
+public function printNamedArgStr 
+"function: printNamedArgStr
+  Prettyprint NamedArg to a string."
   input Absyn.NamedArg inNamedArg;
   output String outString;
 algorithm

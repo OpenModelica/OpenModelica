@@ -59,6 +59,7 @@ public type Statement = DAE.Statement;
 public type Else = DAE.Else;
 
 protected import Debug;
+protected import RTOpts;
 protected import Error;
 protected import Exp;
 protected import Print;
@@ -265,8 +266,7 @@ public function makeTupleAssignment "function: makeTupleAssignment
   input SCode.Initial initial_;
   output Statement outStatement;
 algorithm 
-  outStatement:=
-  matchcontinue (inExpExpLst,inTypesPropertiesLst,inExp,inProperties,initial_)
+  outStatement := matchcontinue (inExpExpLst,inTypesPropertiesLst,inExp,inProperties,initial_)
     local
       list<DAE.Const> bvals;
       list<Ident> sl;
@@ -305,13 +305,17 @@ algorithm
         DAE.C_VAR() = Util.listReduce(bvals, Types.constOr);
         lhrtypes = Util.listMap(lhprops, Types.getPropType);
         Types.matchTypeTupleCall(rhs, tpl, lhrtypes);
-         /* Don\'t use new rhs\', since type conversions of several output args
-	 are not clearly defined. */ 
+         /* Don\'t use new rhs\', since type conversions of several output args are not clearly defined. */ 
       then
         DAE.STMT_TUPLE_ASSIGN(DAE.ET_OTHER(),expl,rhs);
     case (lhs,lprop,rhs,rprop,_)
-      equation 
-        Debug.fprint("failtrace", "- Algorithm.makeTupleAssignment failed\n");
+      equation
+        true = RTOpts.debugFlag("failtrace");
+        sl = Util.listMap(lhs, Exp.printExpStr);
+        s = Util.stringDelimitList(sl, ", ");
+        lhs_str = Util.stringAppendList({"(",s,")"});
+        rhs_str = Exp.printExpStr(rhs);
+        Debug.traceln("- Algorithm.makeTupleAssignment failed on: " +& lhs_str +& " = " +& rhs_str);
       then
         fail();
   end matchcontinue;

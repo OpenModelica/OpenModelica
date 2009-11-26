@@ -392,31 +392,30 @@ public function main
   start the translation."
   input list<String> inStringLst;
 algorithm 
-  _:=
-  matchcontinue (inStringLst)
+  _ := matchcontinue (inStringLst)
     local
       String ver_str,errstr;
       list<String> args_1,args;
       Boolean ismode,icmode,imode,imode_1;
       String s,str;
       Interactive.InteractiveSymbolTable symbolTable;
-    case {}
-      equation
-        printUsage();
-      then ();
-    case args
+    case args as _::_
       equation 
         args_1 = RTOpts.args(args);
         // non of the interactive mode was set, flatten the file
         translateFile(args_1);
       then
         ();
-    case args
+    case args as _::_
       local Absyn.Program prg; 
       equation
-        failure(args_1 = RTOpts.args(args));
+        failure(_ = RTOpts.args(args));
         printUsage();
       then ();
+    case {}
+      equation
+        printUsage();
+      then ();      
     case _
       equation 
         print("# Error encountered! Exiting...\n");

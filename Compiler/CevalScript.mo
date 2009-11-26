@@ -1815,6 +1815,13 @@ algorithm
       then
         (cache,Values.BOOL(true),st);
 
+    case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "setDebugFlags"),expLst = {DAE.SCONST(string = str)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
+      equation 
+        str_1 = stringAppend("+d=", str);
+        failure(args = RTOpts.args({str_1}));
+      then
+        (cache,Values.BOOL(false),st);
+
     case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "cd"),expLst = {DAE.SCONST(string = str)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       local Integer res;
       equation 

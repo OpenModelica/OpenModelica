@@ -4451,16 +4451,15 @@ algorithm
       Option<Absyn.Info> info;
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
+      String str,prepath,s1; 
+      SCode.Element ele; 
+      Boolean nopre;
       
     case (cache,env,ih,store,_,_,csets,ci_state,{},_,_,graph) 
       then (cache,env,ih,store,{},csets,ci_state,{},graph);
          
     /* most work done in inst_element. */ 
     case (cache,env,ih,store,mod,pre,csets,ci_state,(el :: els),inst_dims,impl,graph)
-      local 
-        String str,prepath,s1; 
-        SCode.Element ele; 
-        Boolean nopre;
       equation  
         /* make variable_string for error printing*/ 
         ele = Util.tuple21(el);
@@ -4473,12 +4472,6 @@ algorithm
         classmod = Mod.lookupModificationP(mods, t);
         mm = Mod.lookupCompModification(mods, n);
         */
-
-/*
-classmod = Mod.lookupModificationP(mods, t);
-mm = Mod.lookupCompModification(mods, n);
-*/
-
         // A frequent used debugging line 
         //print("Instantiating element: " +& str +& " in scope " +& Env.getScopeName(env) +& ", elements to go: " +& intString(listLength(els)) +& " \n");// +& "\t mods: " +& Mod.printModStr(mod) +&  "\n");
         
@@ -4495,7 +4488,8 @@ mm = Mod.lookupCompModification(mods, n);
     case (_,_,_,_,_,_,_,_,els,_,_,_)
       equation 
         //print("instElementList failed\n ");
-        Debug.fprintln("failtrace", "- Inst.instElementList failed");
+        // no need for this line as we already printed the crappy element that we couldn't instantiate
+        // Debug.fprintln("failtrace", "- Inst.instElementList failed");
       then
         fail();
   end matchcontinue;
@@ -7802,30 +7796,15 @@ algorithm
         Error.addMessage(Error.ARRAY_DIMENSION_MISMATCH, {e_str,t_str,dim_str});
       then
         fail();
-    case (_,_,cref,path,ad,SOME(eq),_,_,_)
-      local DAE.EqMod eq;
+    // print some failures 
+    case (_,_,cref,path,ad,eq,_,_,_)
+      local Option<DAE.EqMod> eq;
       equation 
-        Debug.fprint("failtrace", "- Inst.elabArraydim failed\n cref:");
-        Debug.fcall("failtrace", Dump.printComponentRef, cref);
-        Debug.fprint("failtrace", " dim: ");
-        Debug.fprint("failtrace", Dump.printArraydimStr(ad));
-        Debug.fprint("failtrace", " path: ");
-        Debug.fprint("failtrace", Absyn.pathString(path));
-        Debug.fprint("failtrace", ", ");
-        Debug.fprint("failtrace","eq:" +& Types.unparseEqMod(eq) +& "\n");
-      then
-        fail();
-       
-       case (_,_,cref,path,ad,NONE,_,_,_)
-      equation 
-        Debug.fprint("failtrace", "- elab_arraydim failed\n cref:");
-        Debug.fcall("failtrace", Dump.printComponentRef, cref);
-        Debug.fprint("failtrace", " dim: ");
-        Debug.fprint("failtrace", Dump.printArraydimStr(ad));
-        Debug.fprint("failtrace", " path: ");
-        Debug.fprint("failtrace", Absyn.pathString(path));
-        Debug.fprint("failtrace", ", ");
-        Debug.fprint("failtrace","eq:NONE");
+        // only display when the failtrace flag is on
+        true = RTOpts.debugFlag("failtrace");
+        Debug.trace("- Inst.elabArraydim failed on: \n\tcref:");
+        Debug.trace(Absyn.pathString(path) +& " " +& Dump.printComponentRefStr(cref));
+        Debug.traceln(Dump.printArraydimStr(ad) +& " = " +& Types.unparseOptionEqMod(eq));
       then
         fail();
   end matchcontinue;
@@ -7913,13 +7892,16 @@ algorithm
       tuple<DAE.TType, Option<Absyn.Path>> t;
       Env.Cache cache;
       Boolean doVect;
-    case (cache,_,_,{},_,_,_) then (cache,{}); 
+      
+    // empty case
+    case (cache,_,_,{},_,_,_) then (cache,{});
+    // no subs 
     case (cache,env,cref,(Absyn.NOSUB() :: ds),impl,st,doVect)
       equation 
         (cache,l) = elabArraydimDecl(cache,env, cref, ds, impl, st,doVect);
       then
         (cache,NONE :: l);
-    /* For functions, this can occur: Real x{:,size(x,1)} ,i.e. refering to  the variable itself but a different dimension. */
+    // For functions, this can occur: Real x{:,size(x,1)} ,i.e. refering to  the variable itself but a different dimension.
     case (cache,env,cref,(Absyn.SUBSCRIPT(subScript = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "size"),
           functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr),_}))) :: ds),impl,st,doVect)
       equation 
@@ -7927,13 +7909,12 @@ algorithm
         (cache,l) = elabArraydimDecl(cache,env, cref, ds, impl, st,doVect);
       then
         (cache,NONE :: l);
-
-    /* adrpo: See if our array dimension comes from an enumeration! */
+    // adrpo: See if our array dimension comes from an enumeration! 
     case (cache,env,cref,(Absyn.SUBSCRIPT(subScript = Absyn.CREF(cr)) :: ds),impl,st,doVect)
       local Absyn.ComponentRef cr; Absyn.Path typePath; list<SCode.Element> elementLst;
       equation 
         typePath = Absyn.crefToPath(cr);
-        /* make sure is an enumeration! */
+        // make sure is an enumeration! 
         (_, SCode.CLASS(_, _, _, SCode.R_ENUMERATION(), 
                         SCode.PARTS(elementLst=elementLst)), _) = 
              Lookup.lookupClass(cache, env, typePath, false);
@@ -7942,7 +7923,7 @@ algorithm
       then
         (cache,SOME(DIMINT(i)) :: l);
 
-    /* Constant dimension creates DIMINT */
+    // Constant dimension creates DIMINT 
     case (cache,env,cref,(Absyn.SUBSCRIPT(subScript = d) :: ds),impl,st,doVect) 
       equation 
         //Debug.fprintln("insttr", "elab_arraydim_decl5");
@@ -7953,7 +7934,7 @@ algorithm
       then
         (cache,SOME(DIMINT(i)) :: l);
     
-    /* when not implicit instantiation, array dim. must be constant. */
+    // when not implicit instantiation, array dim. must be constant.
     case (cache,env,cref,(Absyn.SUBSCRIPT(subScript = d) :: ds),(impl as false),st,doVect)  
       equation 
         //Debug.fprintln("insttr", "elab_arraydim_decl5");
@@ -7962,7 +7943,7 @@ algorithm
         Error.addMessage(Error.DIMENSION_NOT_KNOWN, {str});
       then
         fail();
-    /* Non-constant dimension creates DIMEXP */
+    // Non-constant dimension creates DIMEXP 
     case (cache,env,cref,(Absyn.SUBSCRIPT(subScript = d) :: ds),(impl as true),st,doVect)
       equation 
         //Debug.fprintln("insttr", "elab_arraydim_decl6");
@@ -7985,9 +7966,11 @@ algorithm
         Error.addMessage(Error.ARRAY_DIMENSION_INTEGER, {e_str,t_str});
       then
         fail();
-    case (_,_,_,_,_,_,_)
+    case (_,_,cref,ds,_,_,_)
       equation 
-        Debug.fprintln("failtrace", "- Inst.elabArraydimDecl failed");
+        true = RTOpts.debugFlag("failtrace");
+        Debug.traceln("- Inst.elabArraydimDecl failed on: " +& 
+          Absyn.printComponentRefStr(cref) +& Dump.printArraydimStr(ds));
       then
         fail();
   end matchcontinue;
@@ -10321,20 +10304,20 @@ algorithm
 	 If it fails then this rule is matched. 
 	 BZ(2007-05-30): Not so strange it checks for eihter exp1 or exp2 to be from expected type.*/ 
       equation 
-        (e1_1,DAE.PROP(t_1,_)) = Types.matchProp(e1, p1, p2, false) "Debug.print(\"\\ninst_eq_equation (match e1) PROP, PROP\") &" ;
+        (e1_1,DAE.PROP(t_1,_)) = Types.matchProp(e1, p1, p2, false);
         dae = instEqEquation2(e1_1, e2, t_1, initial_);
       then
         dae;
     case (e1,(p1 as DAE.PROP(type_ = t1)),e2,(p2 as DAE.PROP(type_ = t2)),initial_,impl) /* If it fails then this rule is matched. */ 
       equation 
-        (e2_1,DAE.PROP(t_1,_)) = Types.matchProp(e2, p2, p1, true) "Debug.print(\"\\ninst_eq_equation (match e2) PROP, PROP\") &" ;
-        dae = instEqEquation2(e1, e2_1, t_1, initial_) "  Debug.print(\"\\n Second rule of function_ inst_eq_equation \") &   & Debug.print(\"\\n Second rule complete. \")" ;
+        (e2_1,DAE.PROP(t_1,_)) = Types.matchProp(e2, p2, p1, true);
+        dae = instEqEquation2(e1, e2_1, t_1, initial_);
       then
         dae;
     case (e1,(p1 as DAE.PROP_TUPLE(type_ = t1)),e2,(p2 as DAE.PROP_TUPLE(type_ = t2)),initial_,impl) /* PR. */ 
       equation 
-        (e1_1,DAE.PROP_TUPLE(t_1,_)) = Types.matchProp(e1, p1, p2, false) "Debug.print(\"\\ninst_eq_equation(e1) PROP_TUPLE, PROP_TUPLE\") & Exp.print_exp (e1) &" ;
-        dae = instEqEquation2(e1_1, e2, t_1, initial_) "Exp.print_exp (e1\') &" ;
+        (e1_1,DAE.PROP_TUPLE(t_1,_)) = Types.matchProp(e1, p1, p2, false);
+        dae = instEqEquation2(e1_1, e2, t_1, initial_);
       then
         dae;
     case (e1,(p1 as DAE.PROP_TUPLE(type_ = t1)),e2,(p2 as DAE.PROP_TUPLE(type_ = t2)),initial_,impl) /* PR. 
@@ -10343,9 +10326,8 @@ algorithm
 	    a type T_ENUM
 	 */ 
       equation 
-        (e2_1,DAE.PROP_TUPLE(t_1,_)) = Types.matchProp(e2, p2, p1, true) "Debug.print(\"\\ninst_eq_equation(e2) PROP_TUPLE, PROP_TUPLE\") &
-	Debug.print \"\\n About to do a static match e2. \" &" ;
-        dae = instEqEquation2(e1, e2_1, t_1, initial_) "	Debug.print(\"\\n Second rule of function_ inst_eq_equation \") & 	& Debug.print(\"\\n Second rule complete. \")" ;
+        (e2_1,DAE.PROP_TUPLE(t_1,_)) = Types.matchProp(e2, p2, p1, true);
+        dae = instEqEquation2(e1, e2_1, t_1, initial_);
       then
         dae;
 //    case ((e1 as DAE.CREF(componentRef = _)),DAE.PROP(type_ = (DAE.T_ENUMERATION(names = _),_)),e2,DAE.PROP(type_ = (t as (DAE.T_ENUM(),_))),initial_,impl) /* 
@@ -10354,17 +10336,16 @@ algorithm
 //	    a type T_ENUM
 //	 */ 
 //      equation 
-//        dae = instEqEquation2(e1, e2, t, initial_) "//Debug.fprint (\"insttr\", \"Found assignment to T_ENUMERATION type. Rhs type must be T_ENUM or T_ENUMERATION.\\n\") &" ;
+//        dae = instEqEquation2(e1, e2, t, initial_);
 //      then
 //        dae;
     case ((e1 as DAE.CREF(componentRef = _)),DAE.PROP(type_ = (DAE.T_ENUMERATION(names = _),_)),e2,DAE.PROP(type_ = (t as (DAE.T_ENUMERATION(names = _),_))),initial_,impl)
       equation 
-        dae = instEqEquation2(e1, e2, t, initial_) "//Debug.fprint (\"insttr\", \"Found assignment to T_ENUMERATION type. Rhs type must be T_ENUM or T_ENUMERATION.\\n\") &" ;
+        dae = instEqEquation2(e1, e2, t, initial_);
       then
         dae;
     case (e1,DAE.PROP(type_ = t1),e2,DAE.PROP(type_ = t2),initial_,impl)
-      equation 
-        
+      equation
         e1_str = Exp.printExpStr(e1);
         t1_str = Types.unparseType(t1);
         e2_str = Exp.printExpStr(e2);
@@ -10372,7 +10353,7 @@ algorithm
         s1 = Util.stringAppendList({e1_str,"=",e2_str});
         s2 = Util.stringAppendList({t1_str,"=",t2_str});
         Error.addMessage(Error.EQUATION_TYPE_MISMATCH_ERROR, {s1,s2});
-        print("Type mismatch in equation\n");
+        Debug.fprintln("failtrace", "- Inst.instEqEquation failed with type mismatch in equation: " +& s1 +& " tys: " +& s2);
       then
         fail();        
   end matchcontinue;

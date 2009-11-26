@@ -3165,36 +3165,6 @@ algorithm
   end matchcontinue;
 end setClassName;
 
-// Use Dump.printExpStr instead
-/*
-public function printAbsynExp "function: printAbsynExp 
-  Prints an Exp"
-  input Exp inExp;
-algorithm 
-  _:=
-  matchcontinue (inExp)
-    local list<ComponentCondition> es;
-    case (ARRAY(arrayExp = es))
-      equation 
-        Debug.print("This is an array: ");
-        Debug.print("[");
-        Debug.print("]");
-      then
-        ();
-    case (TUPLE(expressions = es))
-      equation 
-        Debug.print("(");
-        Debug.print(")");
-      then
-        ();
-    case (_)
-      equation 
-        Debug.print("\nNo tuple.");
-      then
-        ();
-  end matchcontinue;
-end printAbsynExp;*/
-
 public function crefEqual "function: crefEqual
   Checks if the name of a ComponentRef is 
   equal to the name of another ComponentRef, including subscripts.
