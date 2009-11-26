@@ -8699,14 +8699,19 @@ protected function generateRWType "function: generateRWType
 algorithm
   outType :=
   matchcontinue (inType)
+    local
+      DAE.Type t;
+      String ret;
     case ((DAE.T_INTEGER(_), _)) then "TYPE_DESC_INT";
     case ((DAE.T_REAL(_), _)) then "TYPE_DESC_REAL";
     case ((DAE.T_STRING(_), _)) then "TYPE_DESC_STRING";
     case ((DAE.T_BOOL(_), _)) then "TYPE_DESC_BOOL";
+    case ((DAE.T_ARRAY(arrayType = t as (DAE.T_ARRAY(_,_),_)), _))
+      equation
+        ret = generateRWType(t);
+      then
+        ret;
     case ((DAE.T_ARRAY(arrayType = t), _))
-      local
-        DAE.Type t;
-        String ret;
       equation
         ret = generateRWType(t);
         ret = stringAppend(ret, "_ARRAY");
