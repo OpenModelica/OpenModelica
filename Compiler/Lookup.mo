@@ -1551,7 +1551,9 @@ algorithm
       equation 
         // adrpo: do not search in the entire environment as we anyway recurse with the fs argument!
         //        just search in {f} not f::fs as otherwise we might get us in an infinite loop
-        (cache,(c as SCode.CLASS(id,_,encflag,restr,_)),env_1) = lookupClass2(cache, {f} /* f::fs */, iid, false);
+        // Bjozac: Readded the f::fs search frame, otherwise we might get caught in a inifinite loop! 
+        //           Did not investigate this further then that it can crasch the kernel. 
+        (cache,(c as SCode.CLASS(id,_,encflag,restr,_)),env_1) = lookupClass2(cache,f::fs, iid, false);
         true = SCode.isFunctionOrExtFunction(restr);
         (cache,(env_2 as (Env.FRAME(optName = sid,clsAndVars = ht,types = httypes)::_)),_) 
            = Inst.implicitFunctionTypeInstantiation(cache,env_1,InstanceHierarchy.emptyInstanceHierarchy, c);
