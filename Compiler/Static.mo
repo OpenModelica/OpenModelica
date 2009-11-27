@@ -6302,25 +6302,6 @@ algorithm
       Ident fnstr,argstr;
       list<Ident> argstrs;
       Env.Cache cache;
-    
-    case (cache,env,fn,args,nargs,impl,st) "Fixes record constructors in packages requiring
-    dot-notation (even in the same package) by looking up the record and replacing the path
-    with the dotted notation. // sjoelund 2009-05-07"
-      local Absyn.Path ep; list<Env.Frame> env_1; Absyn.ComponentRef fn_2; String lastId; SCode.Class cl; Boolean isRecordConstructor, isMetaRecordConstructor;
-      equation
-        fn_1 = Absyn.crefToPath(fn);
-        (_,cl,env_1) = Lookup.lookupClass2(cache /*Env.emptyCache*/,env,fn_1, false);
-        isRecordConstructor = MetaUtil.classHasRestriction(cl, SCode.R_RECORD());
-        isMetaRecordConstructor = MetaUtil.classHasMetaRestriction(cl);
-        true = isRecordConstructor or isMetaRecordConstructor;
-        lastId = Absyn.pathLastIdent(fn_1);
-        fn_1 = Env.joinEnvPath(env_1, Absyn.IDENT(lastId));
-        fnstr = Absyn.pathString(fn_1);
-        fn_2 = Absyn.pathToCref(fn_1);
-        false = Absyn.crefEqual(fn,fn_2);
-        (cache,e,prop,st) = elabCall(cache,env,fn_2,args,nargs,impl,st);
-      then (cache,e,prop,st);
-        
     case (cache,env,fn,args,nargs,impl,st) /* impl LS: Check if a builtin function call, e.g. size()
 	      and calculate if so */ 
       equation 
@@ -7863,9 +7844,18 @@ algorithm
 
     /* Record constructors, user defined or implicit */ // try the hard stuff first 
     case (cache,env,fn,args,nargs,impl,st)
+      local
+        String lastId;
+        list<Env.Frame> recordEnv;
       equation 
         (cache,(t as (DAE.T_FUNCTION(fargs,(outtype as (DAE.T_COMPLEX(complexClassType as ClassInf.RECORD(name),_,_,_),_))),_)),env_1) 
         	= Lookup.lookupType(cache,env, fn, true);
+        
+        (_,cl,recordEnv) = Lookup.lookupClass2(cache,env,fn, false);
+        true = MetaUtil.classHasRestriction(cl, SCode.R_RECORD());
+        lastId = Absyn.pathLastIdent(fn);
+        fn = Env.joinEnvPath(recordEnv, Absyn.IDENT(lastId));
+        
         slots = makeEmptySlots(fargs);
         (cache,args_1,newslots,constlist,_) = elabInputArgs(cache,env, args, nargs, slots, true /*checkTypes*/ ,impl, {});
         /* const = Util.listReduce(constlist, Types.constAnd); */
