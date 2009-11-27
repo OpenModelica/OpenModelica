@@ -2268,6 +2268,18 @@ protected constant tuple<DAE.TType, Option<Type_a>> array1dimreal2array3dimreal=
           NONE))},
           (DAE.T_ARRAY(DAE.DIM(SOME(3)),(DAE.T_REAL({}),NONE)),
           NONE)),NONE);
+          
+protected constant tuple<DAE.TType, Option<Type_a>> array3dimrealArray3dimreal2array3dimreal = (
+          DAE.T_FUNCTION(
+          {
+          ("x",
+          (DAE.T_ARRAY(DAE.DIM(SOME(3)),(DAE.T_REAL({}),NONE)),
+          NONE)),
+          ("y",
+          (DAE.T_ARRAY(DAE.DIM(SOME(3)),(DAE.T_REAL({}),NONE)),
+          NONE))},
+          (DAE.T_ARRAY(DAE.DIM(SOME(3)),(DAE.T_REAL({}),NONE)),
+          NONE)),NONE);
 
 protected constant tuple<DAE.TType, Option<Type_a>> array2real=(
           DAE.T_FUNCTION(
@@ -3437,8 +3449,7 @@ algorithm
       env = Env.extendFrameT(env, "symmetric", array6dimbool2array6dimbool);
       env = Env.extendFrameT(env, "symmetric", array7dimbool2array7dimbool);
       env = Env.extendFrameT(env, "symmetric", array8dimbool2array8dimbool);
-      env = Env.extendFrameT(env, "cross", array1dimint2array1dimint);
-      env = Env.extendFrameT(env, "cross", array1dimreal2array1dimreal);
+      env = Env.extendFrameT(env, "cross", array3dimrealArray3dimreal2array3dimreal);
       env = Env.extendFrameT(env, "skew", array1dimint2array3dimint);
       env = Env.extendFrameT(env, "skew", array1dimreal2array3dimreal);
       env = Env.extendFrameT(env, "sqrt", sqrtint2real);

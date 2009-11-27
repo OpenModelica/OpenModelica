@@ -1129,12 +1129,10 @@ void identity_integer_array(int n, integer_array_t* dest)
     }
 }
 
-integer_array_t identity(int n)
+void identity_alloc_integer_array(int n,integer_array_t* dest)
 {
-    integer_array_t dest;
-    alloc_integer_array(&dest,2,n,n);
-    identity_integer_array(n,&dest);
-    return dest;
+    alloc_integer_array(dest,2,n,n);
+    identity_integer_array(n,dest);
 }
 
 void diagonal_integer_array(integer_array_t* v,integer_array_t* dest)
@@ -1295,6 +1293,12 @@ void cross_integer_array(integer_array_t* x,integer_array_t* y, integer_array_t*
                 - integer_get(x,0) * integer_get(y,2));
     integer_set(dest, 2, integer_get(x,0) * integer_get(y,1)
                 - integer_get(x,1) * integer_get(y,0));
+}
+
+void cross_alloc_integer_array(integer_array_t* x,integer_array_t* y,integer_array_t* dest)
+{
+    alloc_integer_array(dest,1,3);
+    cross_integer_array(x,y,dest);
 }
 
 void skew_integer_array(integer_array_t* x,integer_array_t* dest)

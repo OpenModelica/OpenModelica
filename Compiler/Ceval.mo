@@ -269,7 +269,7 @@ algorithm
 
     //Evaluates for build in types. ADD, SUB, MUL, DIV for Reals and Integers.
     case (cache,env,expExp,impl,st,dimOpt,msg)
-      equation 
+      equation
         (cache,v,st_1) = cevalBuiltin(cache,env, expExp, impl, st, dimOpt, msg);
       then
         (cache,v,st_1);
@@ -958,7 +958,7 @@ algorithm
     case "noEvent" then cevalBuiltinNoevent; 
     case "cardinality" then cevalBuiltinCardinality; 
     case "cat" then cevalBuiltinCat; 
-    case "identity" then cevalBuiltinIdentity; 
+    case "identity" then cevalBuiltinIdentity;  
     case "promote" then cevalBuiltinPromote; 
     case "String" then cevalBuiltinString;
     case "linspace" then cevalBuiltinLinspace;

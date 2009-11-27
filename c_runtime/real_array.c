@@ -1277,6 +1277,12 @@ void cross_real_array(real_array_t* x,real_array_t* y, real_array_t* dest)
     real_set(dest, 2, real_get(x,0)*real_get(y,1)-real_get(x,1)*real_get(y,0));
 }
 
+void cross_alloc_real_array(real_array_t* x,real_array_t* y, real_array_t* dest)
+{
+    alloc_real_array(dest,1,3);
+    cross_real_array(x,y,dest);
+}
+
 void skew_real_array(real_array_t* x,real_array_t* dest)
 {
     /* Assert x vector*/

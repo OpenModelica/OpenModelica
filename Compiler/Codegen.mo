@@ -5018,12 +5018,13 @@ algorithm
     local
       DAE.ExpType tp;
       Lib tp_str,tp_str2,var1,fn_name,tdecl,tvar,stmt,var2;
-      CFunction cfn1,cfn2,cfn;
+      CFunction cfn1,cfn2,cfn3,cfn4,cfn;
       Integer tnr1,tnr2,tnr,tnr3;
       DAE.Exp arg,s1,s2;
       Context context;
-
-    /* pre(var) must make sure that var is not cast to e.g modelica_integer, since pre expects double& */
+      String arr_tp_str;
+      
+      /* pre(var) must make sure that var is not cast to e.g modelica_integer, since pre expects double& */
     case (DAE.CALL(path = Absyn.IDENT(name = "pre"),expLst = {arg as DAE.CREF(cr,_)},tuple_ = false,builtin = true),tnr,context) /* max(v), v is vector */
       local String cref_str; DAE.ComponentRef cr; Boolean needCast; String castStr;
       equation
@@ -5038,8 +5039,8 @@ algorithm
         cfn = cAddStatements(cfn1, {stmt});
       then
         (cfn,tvar,tnr1);
-
-      /* max */
+        
+        /* max */
     case (DAE.CALL(path = Absyn.IDENT(name = "max"),expLst = {arg},tuple_ = false,builtin = true),tnr,context) /* max(v), v is vector */
       equation
         tp = Exp.typeof(arg);
@@ -5065,7 +5066,7 @@ algorithm
         cfn = cAddStatements(cfn2, {stmt});
       then
         (cfn,tvar,tnr3);
-      /* min */
+        /* min */
     case (DAE.CALL(path = Absyn.IDENT(name = "min"),expLst = {arg},tuple_ = false,builtin = true),tnr,context) /* min(v), v is vector */
       equation
         tp = Exp.typeof(arg);
@@ -5102,9 +5103,8 @@ algorithm
         cfn = cAddStatements(cfn2, {stmt});
       then
         (cfn,tvar,tnr2);
-
+        
     case (DAE.CALL(path = Absyn.IDENT(name = "sum"),expLst = {s1},tuple_ = false,builtin = true),tnr,context)
-      local String arr_tp_str;
       equation
         tp = Exp.typeof(s1);
         tp_str = expTypeStr(tp, false);
@@ -5116,13 +5116,12 @@ algorithm
         cfn = cAddStatements(cfn2, {stmt});
       then
         (cfn,tvar,tnr2);
-
-     case (DAE.CALL(path = Absyn.IDENT(name = "promote"),expLst = {A,n},tuple_ = false,builtin = true),tnr,context)
-       local
-         DAE.Exp A,n;
-         String arr_tp_str;
-       equation
-         tp = Exp.typeof(A);
+        
+    case (DAE.CALL(path = Absyn.IDENT(name = "promote"),expLst = {A,n},tuple_ = false,builtin = true),tnr,context)
+      local
+        DAE.Exp A,n;
+      equation
+        tp = Exp.typeof(A);
         tp_str = expTypeStr(tp, false);
         arr_tp_str = expTypeStr(tp, true);
         (cfn1,var1,tnr1) = generateExpression(A, tnr, context);
@@ -5134,12 +5133,11 @@ algorithm
         cfn = cAddStatements(cfn2, {stmt});
       then
         (cfn,tvar,tnr2);
-
-     case (DAE.CALL(path = Absyn.IDENT(name = "transpose"),expLst = {A},tuple_ = false,builtin = true),tnr,context)
-       local
-         DAE.Exp A;
-         String arr_tp_str;
-       equation
+        
+    case (DAE.CALL(path = Absyn.IDENT(name = "transpose"),expLst = {A},tuple_ = false,builtin = true),tnr,context)
+      local
+        DAE.Exp A;
+      equation
         tp = Exp.typeof(A);
         tp_str = expTypeStr(tp, false);
         arr_tp_str = expTypeStr(tp, true);
@@ -5150,7 +5148,36 @@ algorithm
         cfn = cAddStatements(cfn2, {stmt});
       then
         (cfn,tvar,tnr2);
-
+        
+    case (DAE.CALL(path = Absyn.IDENT(name = "identity"),expLst = {A},tuple_ = false,builtin = true),tnr,context)
+      local
+        DAE.Exp A;
+      equation
+        tp = Exp.typeof(A);
+        arr_tp_str = expTypeStr(tp, true);
+        (cfn1,var1,tnr1) = generateExpression(A, tnr, context);
+        (tdecl,tvar,tnr2) = generateTempDecl(arr_tp_str, tnr1);
+        cfn2 = cAddVariables(cfn1, {tdecl});
+        stmt = Util.stringAppendList({"identity_alloc_",arr_tp_str,"(",var1,",&",tvar,");"});
+        cfn = cAddStatements(cfn2, {stmt});
+      then
+        (cfn,tvar,tnr2);
+        
+    case (DAE.CALL(path = Absyn.IDENT(name = "cross"),expLst = {A,B},tuple_ = false,builtin = true),tnr,context)
+      local
+        DAE.Exp A,B;
+      equation
+        tp = Exp.typeof(A);
+        arr_tp_str = expTypeStr(tp, true);
+        (cfn1,var1,tnr) = generateExpression(A, tnr, context);
+        (cfn2,var2,tnr) = generateExpression(B, tnr, context);
+        (tdecl,tvar,tnr) = generateTempDecl(arr_tp_str, tnr);
+        cfn3 = cMergeFn(cfn1,cfn2);
+        cfn4 = cAddVariables(cfn3, {tdecl});
+        stmt = Util.stringAppendList({"cross_alloc_",arr_tp_str,"(&",var1,",&",var2,",&",tvar,");"});
+        cfn = cAddStatements(cfn4, {stmt});
+      then
+        (cfn,tvar,tnr);
     case (DAE.CALL(path = Absyn.IDENT(name = "String"),expLst = {s,minlen,leftjust,signdig},tuple_ = false,builtin = true),tnr,context) /* max(v), v is vector */
       local String cref_str; DAE.Exp s,minlen,leftjust,signdig; Boolean needCast; String var3,var4,var5,var6,var7,edecl,evar;
         CFunction cfn3,cfn4; Boolean isenum; list<Lib> tedcllst;
@@ -5173,7 +5200,7 @@ algorithm
         cfn = cMergeFns({cfn1,cfn2,cfn3,cfn4,cfn});
       then
         (cfn,tvar,tnr1);
-
+        
     case (DAE.CALL(path = Absyn.IDENT(name = "mmc_get_field"),expLst = {s1,DAE.ICONST(i)},tuple_ = false,builtin = true),tnr,context)
       local Integer i;
       equation
@@ -5186,10 +5213,10 @@ algorithm
         cfn = cMergeFns({cfn1,cfn});
       then
         (cfn,tvar,tnr2);
-
-      // Unboxing a record is done as a sequence of unboxing operations. This
-      // code cannot be easily generated by C macros, so we generate the
-      // statements manually. /sjoelund 2009-11-04
+        
+        // Unboxing a record is done as a sequence of unboxing operations. This
+        // code cannot be easily generated by C macros, so we generate the
+        // statements manually. /sjoelund 2009-11-04
     case (DAE.CALL(path = Absyn.IDENT(name = "mmc_unbox_record"),expLst = {s1},tuple_ = false,builtin = true, ty = tp),tnr,context)
       local
         DAE.Type t;
@@ -5239,7 +5266,7 @@ algorithm
         cfn = cAddStatements(cfn, {tmp});
       then
         (cfn,tvar,tnr);
-
+        
     case (DAE.CALL(path = Absyn.IDENT(name = "mmc_unbox_record"),expLst = {s1},tuple_ = false,builtin = true, ty = tp),tnr,context)
       equation
         tvar = "/* mmc_unbox_record failed: " +& Exp.typeString(tp) +& "*/";

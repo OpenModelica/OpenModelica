@@ -212,6 +212,7 @@ modelica_real sum_real_array(real_array_t* a);
 modelica_real product_real_array(real_array_t* a);
 void symmetric_real_array(real_array_t* a,real_array_t* dest);
 void cross_real_array(real_array_t* x,real_array_t* y, real_array_t* dest);
+void cross_alloc_real_array(real_array_t* x,real_array_t* y, real_array_t* dest);
 void skew_real_array(real_array_t* x,real_array_t* dest);
 
 static inline size_t real_array_nr_of_elements(real_array_t *a)
