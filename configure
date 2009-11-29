@@ -1283,6 +1283,7 @@ if test -n "$ac_init_help"; then
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
+  --with-java=DIR        With JVM in DIR
   --with-CORBA=DIR        use corba installed in DIR /usr/local
   --with-omniORB=DIR        use omniORB installed in DIR
   --with-MODPAR        Compile with automatic parallelization, requires boost
@@ -4019,7 +4020,7 @@ $as_echo "Not compiling with BOOST" >&6; }; USE_MODPAR=""; BOOSTHOME=""
 fi
 
 
-ac_config_files="$ac_config_files Makefile Compiler/rml2sig/Makefile modelica_parser/test/parser/Makefile mosh/src/Makefile Compiler/Makefile Compiler/omc_release/Makefile Compiler/omc_debug/Makefile Compiler/absyn_builder/Makefile modelica_parser/test/lexer/Makefile Compiler/test_codegen/Makefile Compiler/runtime/Makefile modelica_parser/src/Makefile Compiler/modpar/Makefile flat_modelica_parser/src/Makefile"
+ac_config_files="$ac_config_files Makefile c_runtime/Makefile Compiler/rml2sig/Makefile modelica_parser/test/parser/Makefile mosh/src/Makefile Compiler/template_precompile/Makefile Compiler/Makefile Compiler/omc_release/Makefile Compiler/omc_debug/Makefile Compiler/absyn_builder/Makefile modelica_parser/test/lexer/Makefile Compiler/test_codegen/Makefile Compiler/runtime/Makefile modelica_parser/src/Makefile Compiler/modpar/Makefile flat_modelica_parser/src/Makefile"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -4716,9 +4717,11 @@ for ac_config_target in $ac_config_targets
 do
   case $ac_config_target in
     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
+    "c_runtime/Makefile") CONFIG_FILES="$CONFIG_FILES c_runtime/Makefile" ;;
     "Compiler/rml2sig/Makefile") CONFIG_FILES="$CONFIG_FILES Compiler/rml2sig/Makefile" ;;
     "modelica_parser/test/parser/Makefile") CONFIG_FILES="$CONFIG_FILES modelica_parser/test/parser/Makefile" ;;
     "mosh/src/Makefile") CONFIG_FILES="$CONFIG_FILES mosh/src/Makefile" ;;
+    "Compiler/template_precompile/Makefile") CONFIG_FILES="$CONFIG_FILES Compiler/template_precompile/Makefile" ;;
     "Compiler/Makefile") CONFIG_FILES="$CONFIG_FILES Compiler/Makefile" ;;
     "Compiler/omc_release/Makefile") CONFIG_FILES="$CONFIG_FILES Compiler/omc_release/Makefile" ;;
     "Compiler/omc_debug/Makefile") CONFIG_FILES="$CONFIG_FILES Compiler/omc_debug/Makefile" ;;

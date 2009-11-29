@@ -1,0 +1,6 @@
+- how to represent settings like : CCompiler, CXXCompiler, Linker, ExeExt, DllExt ...
+  in a general way to be not tightly dependent to a target language ... now it is a hack - a general state option;
+  there should be a TargetSettings type that will be working as a dictionary;
+  or we can make it static ? well, why not.
+  
+    

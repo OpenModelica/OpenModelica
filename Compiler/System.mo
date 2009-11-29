@@ -553,5 +553,17 @@ public function getHasExpandableConnectors
   external "C" ;
 end getHasExpandableConnectors;
 
+public function tmpTick "returns a tick that can be reset"
+output Integer tickNo;
+  external "C";
+end tmpTick;
+
+public function tmpTickReset "resets the tick so it restarts on start
+"
+input Integer start;
+  external "C";
+end tmpTickReset;
+
+
 end System;
 

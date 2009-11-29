@@ -70,6 +70,7 @@ protected import Settings;
 protected import InstanceHierarchy;
 protected import ClassLoader;
 protected import Inline;
+protected import TplMain;
 
 protected function serverLoop
 "function: serverLoop
@@ -342,6 +343,19 @@ algorithm
   (last :: _) := listReverse(lst);
   equality(last := "mos");
 end isModelicaScriptFile;
+
+protected function isCodegenTemplateFile
+"function: isModelicaScriptFile
+  Succeeds if filname end with .tpl"
+  input String filename;
+  list<String> lst;
+  String last;
+algorithm 
+  lst := System.strtok(filename, ".");
+  (last :: _) := listReverse(lst);
+  equality(last := "tpl");
+end isCodegenTemplateFile;
+
 
 protected function versionRequest
 algorithm
@@ -645,6 +659,12 @@ algorithm
         showErrors(Print.getErrorString(), ErrorExt.printMessagesStr());
         (res,newst) = Interactive.evaluate(stmts, st, true);
         print(res);
+      then
+        ();
+    case {f} /* A template file .tpl (in the Susan language)*/ 
+      equation 
+        isCodegenTemplateFile(f);
+        TplMain.main(f);
       then
         ();
         

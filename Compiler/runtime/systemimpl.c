@@ -3662,3 +3662,24 @@ RML_BEGIN_LABEL(System__setHasExpandableConnectors)
 RML_END_LABEL
 
 
+/*
+ * @author ppriv
+ */
+static modelica_integer tmp_tick_no = 0;
+
+RML_BEGIN_LABEL(System__tmpTick)
+{
+	rmlA0 = (void*) mk_icon(tmp_tick_no++);
+	RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__tmpTickReset)
+{
+	tmp_tick_no = RML_UNTAGFIXNUM(rmlA0);
+    RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+
+

@@ -1,0 +1,66 @@
+#
+# Makefile for omc
+#
+# David Kågedal <x97davka@ida.liu.se>
+#
+# $Id: Makefile.in 3766 2008-12-08 05:24:54Z adrpo $
+#
+
+SHELL	= /bin/sh
+CC	= gcc
+CFLAGS	= $(USE_CORBA)
+RMLHOME	= @rmlhome@
+RMLINC  = -I$(RMLHOME)/include/plain
+
+EXEEXT  = @EXEEXT@
+
+srcdir = ..
+top_builddir = ../..
+builddir_bin=$(top_builddir)/build/bin
+builddir_lib=$(top_builddir)/build/lib
+builddir_inc=$(top_builddir)/build/include
+builddir_doc=$(top_builddir)/build/doc
+
+LDFLAGS = -lm -L$(RMLHOME)/lib/plain -lrml -ldl readfile.a
+
+PROG = tpc
+RMLC	= @rmlc_bin@
+RML	= $(RMLHOME)/bin/rml
+RMLCFLAGS = -Wr,-ftrace
+
+SRCO = Print.o Error.o Util.o TemplCG.o Templates.o Main.o
+
+SUBDIRS	= $(srcdir)/runtime $(srcdir)/absyn_builder $(srcdir)/modpar
+
+all : $(ALLMO) $(PROG) CompiledTemplates.mo ../CompiledTemplates.mo
+
+
+.SUFFIXES:
+.SUFFIXES: .o .mo .h
+.PHONY: all subdirs $(SUBDIRS) report vctarget absyn_subdir clean reallyclean
+
+CompiledTemplates.mo: $(PROG)
+	./$(PROG) > CompiledTemplates.mo
+
+../CompiledTemplates.mo: CompiledTemplates.o
+	cp CompiledTemplates.mo ../CompiledTemplates.mo
+
+readfile.a: readfile.o
+	ar rcs $@ $<
+readfile.o: readfile.c
+	gcc $(RMLINC) -c $<
+
+TemplCG.mo: $(srcdir)/TemplCG.mo
+	cp $< $@
+
+.mo.o:
+	$(RMLC) $(RMLCFLAGS) -c $<
+
+$(PROG): $(SRCO)
+	g++ -O3 -o $(PROG)$(EXEEXT) $(SRCO) $(AST) $(RTOBJ) $(LDFLAGS) $(PLTPKGFLAGS)
+
+clean:
+	$(RM) *.srz *.h *.o $(PROG)$(EXEEXT)
+
+Makefile: Makefile.in
+	$(top_builddir)/config.status Makefile

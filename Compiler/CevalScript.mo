@@ -57,6 +57,8 @@ public import Env;
 public import Interactive;
 public import Values;
 
+protected import SimCode;
+protected import SimCodegen;
 protected import AbsynDep;
 protected import ConnectionGraph;
 protected import ClassInf;
@@ -79,7 +81,6 @@ protected import Parser;
 protected import Print;
 protected import Refactor;
 protected import RTOpts;
-protected import SimCodegen;
 protected import System;
 protected import Static;
 protected import SCode;
@@ -2322,9 +2323,21 @@ algorithm
       DAE.Exp fileprefix;
       Env.Cache cache;
       String MakefileHeader;
+      Values.Value outValMsg;
       list<DAE.Element> funcelems;
+    //tpl based translation
+    case (cache,env,className,st,msg,fileprefix,addDummy) /* mo file directory */ 
+      equation 
+        true = RTOpts.debugFlag("tplmode");
+        (cache, outValMsg, st, indexed_dlow, libs, file_dir) =
+          SimCode.translateModel(cache,env,className,st,msg,fileprefix,addDummy);                
+      then
+        (cache,outValMsg,st,indexed_dlow,libs,file_dir);
+    
+    
     case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg,fileprefix,addDummy) /* mo file directory */ 
       equation 
+        false = RTOpts.debugFlag("tplmode"); 
         (cache,filenameprefix) = extractFilePrefix(cache,env, fileprefix, st, msg);
         ptot = Interactive.getTotalProgram(className,p);
         p_1 = SCodeUtil.translateAbsyn2SCode(ptot);

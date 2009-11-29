@@ -13111,7 +13111,7 @@ end createFuncargsFromElementargs;
 
 protected function getNthConnectionitemInClass 
 "function: getNthConnectionitemInClass
-   This function takes a `Class\' and  an int ane returns the nth
+   This function takes a Class and  an int ane returns the nth
    `EquationItem\' containing a connect statement in that class."
   input Absyn.Class inClass;
   input Integer inInteger;

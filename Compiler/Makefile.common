@@ -77,6 +77,13 @@ SRCMO= Absyn.mo \
 	SimCodegen.mo \
 	Types.mo \
 	TaskGraph.mo \
+    Tpl.mo \
+    TplAbsyn.mo \
+    TplCodegen.mo \
+    TplParser.mo \
+	TplMain.mo \
+	SimCodeC.mo \
+	SimCode.mo \
 	Util.mo \
 	Values.mo \
 	ValuesUtil.mo \

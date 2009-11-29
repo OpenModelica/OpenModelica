@@ -1,0 +1,8 @@
+cd("HelloWorld");
+loadFile("HelloWorld.mo");
+translateModel(HelloWorld);
+cd("..");
+
+//loadFile("TrapezTestTotal.mo");
+//translateModel(TrapezTestTotal);
+//getErrorString();

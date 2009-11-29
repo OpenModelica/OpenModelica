@@ -3,9 +3,9 @@ builddir_bin=$(top_builddir)/build/bin
 builddir_lib=$(top_builddir)/build/lib
 builddir_inc=$(top_builddir)/build/include
 
-OBJS_JAVA=java_interface.o
+OBJS_JAVA=@OBJS_JAVA@
 HEADER_EXTJAVA=$(OBJS_JAVA:.o=.h)
-INCLUDE_JAVA=-I/usr/lib/jvm/default-java/include
+INCLUDE_JAVA=@INCLUDE_JAVA@
 
 CC = gcc
 FC = g77
@@ -26,19 +26,19 @@ base_array.o real_array.o string_array.o read_write.o utility.o \
 modelica_string.o bigden.o \
 ddasrt.o  dlinpk.o  enorm.o   hybrd1.o  nelmead.o  qform.o   r1updt.o \
 biglag.o  ddassl.o  dogleg.o  fdjac1.o  hybrj.o   newuoa.o   qrfac.o   trsapp.o \
-daux.o    dlamch.o  dpmpar.o  hybrd.o   lsame.o   newuob.o   r1mpyq.o  update.o \
-java_interface.o meta_modelica.o meta_modelica_builtin.o $(EXTRA_OBJS)
+daux.o    dlamch.o  dpmpar.o  hybrd.o   lsame.o   newuob.o   r1mpyq.o  update.o $(EXTRA_OBJS) \
+$(OBJS_JAVA)
 
 SIMOBJS = $(FOBJS) simulation_runtime.o simulation_init.o simulation_input.o simulation_events.o \
-solver_dasrt.o solver_euler.o simulation_result.o tables.o options.o dgesv_aux.o $(EXTRA_SIMOBJS)
+solver_dasrt.o solver_euler.o simulation_result.o tables.o options.o dgesv_aux.o meta_modelica.o $(EXTRA_SIMOBJS) \
+$(OBJS_JAVA)
 
 HFILES = blaswrap.h f2c.h integer_array.h memory_pool.h modelica_string.h \
 	base_array.h inline.h real_array.h string_array.h boolean_array.h \
     index_spec.h matrix.h \
 	modelica.h read_write.h simulation_runtime.h simulation_events.h utility.h \
 	simulation_init.h simulation_input.h solver_dasrt.h solver_euler.h simulation_result.h \
-	meta_modelica.h meta_modelica_builtin.h sendData/sendData.h sendData/humbug.h \
-	java_interface.h jni.h jni_md.h jni_md_solaris.h jni_md_windows.h
+	meta_modelica.h sendData/sendData.h sendData/humbug.h $(HEADER_EXTJAVA)
 
 LIBS = libc_runtime.a libsim.a
 
@@ -50,10 +50,10 @@ g++ -c -o sendData/libsendData.o sendData/humbug.cpp && \
 ar -ru sendData/release/libsendData.a sendData/libsendData.o
 endif
 
-all : $(SIMOBJS) $(OBJS) libc_runtime.a libsim.a libf2c/libf2c.a libsendData.a install
+all : $(SIMOBJS) $(OBJS) libc_runtime.a libsim.a libf2c.a libsendData.a install
 
-#$(SIMOBJS) : $(HFILES) *.c*
-#$(OBJS) : $(HFILES) *.c*
+$(SIMOBJS) : $(HFILES) *.c*
+$(OBJS) : $(HFILES) *.c*
 
 libc_runtime.a : $(OBJS)
 	$(AR) $@ $(OBJS)
@@ -64,13 +64,12 @@ install: libc_runtime.a libsim.a libf2c/libf2c.a
 	cp $(LIBS) $(builddir_lib)/
 	cp libf2c/libf2c.* $(builddir_lib)/
 	cp sendData/release/libsendData.a $(builddir_lib)/
-	@$(MAKE) -C java_interface -f Makefile.omdev.mingw || $(MAKE) -C java_interface -f Makefile.omdev.mingw install
 
 libsim.a : $(SIMOBJS)
 	$(AR) $@ $(SIMOBJS)
 
-libf2c/libf2c.a :
-	$(MAKE) -C libf2c -f makefile.u
+libf2c.a :
+	cd libf2c && $(MAKE) -f makefile.u
 
 libsendData.a : sendData/sendData.cpp sendData/sendData.h sendData/sendData.pro sendData/humbug.h sendData/humbug.cpp
 #	cd ./sendData && \
@@ -80,7 +79,7 @@ libsendData.a : sendData/sendData.cpp sendData/sendData.h sendData/sendData.pro 
 	$(PLTPKGCMD)
 
 clean :
-	$(MAKE) -C libf2c -f makefile.u clean
+	cd ./libf2c && $(MAKE) -f makefile.u clean
 	rm -f libc_runtime.a
 	rm -f libsim.a
 	rm -f $(OBJS)

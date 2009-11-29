@@ -15014,7 +15014,7 @@ algorithm
   end matchcontinue;
 end daeVars;
 
-protected function makeExpType
+public function makeExpType
 "Transforms a Type to DAE.ExpType
 "
   input  Type inType;

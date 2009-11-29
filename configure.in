@@ -17,6 +17,8 @@ AC_SUBST(CORBALIBS)
 AC_SUBST(IDLCMD)
 AC_SUBST(USE_MODPAR)
 AC_SUBST(BOOSTHOME)
+AC_SUBST(INCLUDE_JAVA)
+AC_SUBST(OBJS_JAVA)
 
 dnl Checks for programs.
 AC_PROG_CC
@@ -72,6 +74,26 @@ if test -z "$rmlinc" ; then
 else
   AC_MSG_RESULT([yes])
 fi
+
+AC_MSG_CHECKING([for jni.h])
+AC_ARG_WITH(java, [  --with-java=DIR        With JVM in DIR],
+[
+if test "x$withval" = "xno" ; then
+	AC_MSG_RESULT([Not compiling with Java]);
+	INCLUDE_JAVA=""; OBJS_JAVA="";
+else
+	if test -e $withval/include/jni.h; then
+		AC_MSG_RESULT([$withval/include]);
+		INCLUDE_JAVA="-I$withval/include";
+		OBJS_JAVA="java_interface.o";
+	else
+		AC_MSG_ERROR([Could not find jni.h in $withval/include]);
+	fi
+fi
+], [
+AC_MSG_RESULT([Not compiling with Java]);
+INCLUDE_JAVA=""; OBJS_JAVA="";
+])
 
 AC_MSG_CHECKING([for antlr header files])
 antlrinc=`find $ANTLRHOME /usr/local/include -type f -name TreeParser.hpp -print | head -1 | awk -F/ '{ total="";for (i = 1 ; i < NF-1; i++) total= total $i "/"; print total}'`
@@ -245,5 +267,5 @@ fi
 AC_MSG_RESULT([Not compiling with BOOST]); USE_MODPAR=""; BOOSTHOME=""
 ])
 
-AC_OUTPUT(Makefile Compiler/rml2sig/Makefile modelica_parser/test/parser/Makefile mosh/src/Makefile Compiler/Makefile Compiler/omc_release/Makefile Compiler/omc_debug/Makefile Compiler/absyn_builder/Makefile modelica_parser/test/lexer/Makefile Compiler/test_codegen/Makefile Compiler/runtime/Makefile modelica_parser/src/Makefile Compiler/modpar/Makefile flat_modelica_parser/src/Makefile)
+AC_OUTPUT(Makefile c_runtime/Makefile Compiler/rml2sig/Makefile modelica_parser/test/parser/Makefile mosh/src/Makefile Compiler/template_precompile/Makefile Compiler/Makefile Compiler/omc_release/Makefile Compiler/omc_debug/Makefile Compiler/absyn_builder/Makefile modelica_parser/test/lexer/Makefile Compiler/test_codegen/Makefile Compiler/runtime/Makefile modelica_parser/src/Makefile Compiler/modpar/Makefile flat_modelica_parser/src/Makefile)
 
