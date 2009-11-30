@@ -3,6 +3,12 @@ loadFile("HelloWorld.mo");
 translateModel(HelloWorld);
 cd("..");
 
-//loadFile("TrapezTestTotal.mo");
-//translateModel(TrapezTestTotal);
-//getErrorString();
+cd("TrapezTest");
+loadFile("TrapezTestTotal.mo");
+translateModel(TrapezTestTotal);
+cd("..");
+
+cd("Influenza");
+loadFile("Influenza.mo");
+translateModel(Influenza);
+cd("..");
