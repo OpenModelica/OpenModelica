@@ -3164,8 +3164,8 @@ algorithm
       ExpContext expContext;
       LoopContext loopContext;
 
-    // Part of ValueBlock implementation, special treatment of _ := VB case
-    case (DAE.STMT_ASSIGN(_,DAE.CREF(DAE.WILD(),_),exp as DAE.VALUEBLOCK(_,_,_,_)),tnr,context)
+    // Part of ValueBlock and MetaModelica implementation, special treatment of _ := VB case
+    case (DAE.STMT_ASSIGN(_,DAE.CREF(DAE.WILD(),_),exp),tnr,context)
       equation
         (cfn,_,tnr1) = generateExpression(exp, tnr, context);
      then (cfn,tnr1);
