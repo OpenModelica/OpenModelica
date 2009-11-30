@@ -630,7 +630,6 @@ algorithm
         list<DAE.Statement> b_alg;   
         
         list<DAE.Element> dae1,dae1_2,dae2;
-        DAE.Element b_alg_dae;
         Absyn.Exp res;
         DAE.Exp res2;
         Env.Env env2;
@@ -665,13 +664,12 @@ algorithm
         b = listAppend(b2,b);
         //----------------------------------------------------------------------
         (cache,b_alg) = Inst.instAlgorithmitems(cache,env2,Prefix.NOPRE(),b,SCode.NON_INITIAL(),true);
-        b_alg_dae = DAE.ALGORITHM(DAE.ALGORITHM_STMTS(b_alg));
         // debug_print("before -> res",res);
         (cache,res2,prop as DAE.PROP(tp,_),st) = elabExp(cache,env2,res,impl,st,doVect);
         // debug_print("after -> res",res2);
         tp_1 = Types.elabType(tp);
         // debug_print("end",tp_1);        
-      then (cache,DAE.VALUEBLOCK(tp_1,dae1_2,b_alg_dae,res2),prop,st);
+      then (cache,DAE.VALUEBLOCK(tp_1,dae1_2,b_alg,res2),prop,st);
         
        //-------------------------------------
        // Part of the MetaModelica extension. KS

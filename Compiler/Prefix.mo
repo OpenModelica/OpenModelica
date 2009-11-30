@@ -513,13 +513,13 @@ algorithm
         
     case (cache,env,DAE.VALUEBLOCK(t,localDecls = lDecls,body = b,result = exp),p)
       local
-        DAE.Element b;
+        list<DAE.Statement> b;
         list<DAE.Element> lDecls;
         Prefix p;
         DAE.ExpType t;
       equation
         (cache,lDecls) = prefixDecls(cache,env,lDecls,{},p);
-        (cache,b) = prefixAlgorithm(cache,env,b,p);
+        (cache,b) = prefixStatements(cache,env,b,{},p);
         (cache,exp) = prefixExp(cache,env,exp,p);
       then
         (cache,DAE.VALUEBLOCK(t,lDecls,b,exp));
@@ -624,10 +624,9 @@ algorithm
   end matchcontinue;
 end prefixCrefList;
 
-
 //--------------------------------------------
 //   PART OF THE WORKAROUND FOR VALUEBLOCKS. KS
-public function prefixDecls "function: prefixDecls
+protected function prefixDecls "function: prefixDecls
 
   Add the supplied prefix to the DAE elements located in Exp.mo.
   PART OF THE WORKAROUND FOR VALUEBLOCKS
@@ -693,36 +692,7 @@ algorithm
  end matchcontinue;
 end prefixDecls;
 
-public function prefixAlgorithm "function: prefixAlgorithm
-  
-  Prefix algorithm.
-  PART OF THE WORKAROUND FOR VALUEBLOCKS
-"
-	input Env.Cache cache;
-	input Env.Env env;
-	input DAE.Element b;
-	input Prefix p;
-	output Env.Cache outCache;
-	output DAE.Element outBody;
-algorithm
-	(outCache,outBody) :=
-	matchcontinue (cache,env,b,p)
-	  case (localCache,localEnv,DAE.ALGORITHM(DAE.ALGORITHM_STMTS(stmts)),localPrefix)
-	  local  
-	  	Env.Cache localCache;
-	  	Env.Env localEnv;
-	  	Prefix localPrefix;
-	  	list<DAE.Statement> stmts; 
-	  	DAE.Element elem; 
-	  equation
-	  	(localCache,stmts) = prefixStatements(localCache,localEnv,stmts,{},localPrefix);
-	    elem = DAE.ALGORITHM(DAE.ALGORITHM_STMTS(stmts));
-	  then (localCache,elem);
-	end matchcontinue;
-end prefixAlgorithm;
-
-
-public function prefixStatements "function: prefixStatements
+protected function prefixStatements "function: prefixStatements
   
   Prefix statements.
   PART OF THE WORKAROUND FOR VALUEBLOCKS
@@ -915,7 +885,7 @@ algorithm
   end matchcontinue;
 end prefixStatements;
 
- function prefixElse "function: prefixElse
+protected function prefixElse "function: prefixElse
 
   Prefix else statements.
   PART OF THE WORKAROUND FOR VALUEBLOCKS

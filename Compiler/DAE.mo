@@ -942,7 +942,7 @@ uniontype Exp "Expressions
 	record VALUEBLOCK "Valueblock expression"
 	  ExpType ty;
     list<Element> localDecls; // TODO: Do this in a better way
-    Element body;
+    list<Statement> body;
 		Exp result;	
   end VALUEBLOCK;  
   

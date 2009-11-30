@@ -4636,11 +4636,11 @@ algorithm
       		result = res),tnr,context)
       local
         list<DAE.Element> ld;
-    		DAE.Element b;
+    		list<DAE.Statement> b;
         DAE.Exp res;
       equation
         (cfn,tnr_1) = generateVars(ld, isVarQ, tnr, funContext);
-        (cfn1,tnr2) = generateAlgorithms(Util.listCreate(b), tnr_1, context);
+        (cfn1,tnr2) = generateAlgorithmStatements(b, tnr_1, context);
         (cfn1_2,var,tnr3) = generateExpression(res, tnr2, context);
         cfn1_2 = cMergeFns({cfn,cfn1,cfn1_2});
         cfn1_2 = cMoveDeclsAndInitsToStatements(cfn1_2);
@@ -9629,13 +9629,16 @@ public function matchValueblock
   output list<DAE.Exp> outExprLst;
 algorithm
   outExprLst := matchcontinue (inExpr)
-    local list<DAE.Exp> res, exps; DAE.Exp e,resE;
+    local
+      list<DAE.Exp> res, exps, exps2;
+      DAE.Exp e,resE;
+      list<DAE.Element> ld;
+      list<DAE.Statement> body;
     case e as DAE.VALUEBLOCK(localDecls = ld,body = body,result = resE)
-      local
-    		list<DAE.Element> ld;
-    		DAE.Element body;
       equation
-        exps = DAEUtil.getAllExps(body::ld);
+        exps = DAEUtil.getAllExps(ld);
+        exps2 = Algorithm.getAllExpsStmts(body);
+        exps = listAppend(exps,exps2);
         res = getMatchingExpsList(resE::exps,matchValueblock);
       then e::res;
   end matchcontinue;
@@ -9815,9 +9818,11 @@ algorithm
     case (DAE.VALUEBLOCK(localDecls = ld,body = body,result = e),fn)
       local
     		list<DAE.Element> ld;
-    		DAE.Element body;
+    		list<DAE.Statement> body;
       equation
-        exps = DAEUtil.getAllExps(body::ld);
+        exps = DAEUtil.getAllExps(ld);
+        exps2 = Algorithm.getAllExpsStmts(body);
+        exps = listAppend(exps,exps2);
         res = getMatchingExpsList(e::exps,fn);
       then res;
         
