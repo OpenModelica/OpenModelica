@@ -589,7 +589,7 @@ algorithm
         vars_1 = detectImplicitDiscrete(vars, eqns);
         eqns_1 = sortEqn(eqns);
         (eqns_1,ieqns,aeqns1,algs,vars_1) = expandDerOperator(vars_1,eqns_1,ieqns,aeqns1,algs);
-        (zero_crossings) = findZeroCrossings(vars_1, knvars,eqns_1, whenclauses_1,algs);
+        (zero_crossings) = findZeroCrossings(vars_1,knvars,eqns_1,aeqns1,whenclauses_1,algs);
         eqnarr = listEquation(eqns_1);
         reqnarr = listEquation(reqns);
         ieqnarr = listEquation(ieqns);
@@ -620,7 +620,7 @@ algorithm
         vars_1 = detectImplicitDiscrete(vars, eqns);
         eqns_1 = sortEqn(eqns);
         // no simplify (eqns_1,ieqns,aeqns1,algs,vars_1) = expandDerOperator(vars_1,eqns_1,ieqns,aeqns1,algs);
-        (zero_crossings) = findZeroCrossings(vars_1, knvars,eqns_1, whenclauses_1,algs);
+        (zero_crossings) = findZeroCrossings(vars_1,knvars,eqns_1,aeqns,whenclauses_1,algs);
         eqnarr = listEquation(eqns_1);
         reqnarr = listEquation(reqns);
         ieqnarr = listEquation(ieqns);
@@ -1226,12 +1226,13 @@ protected function findZeroCrossings "function: findZeroCrossings
   input Variables vars;
   input Variables knvars;
   input list<Equation> eq;
+  input list<MultiDimEquation> multiDimEqs;
   input list<WhenClause> wc;
   input list<DAE.Algorithm> algs;
   output list<ZeroCrossing> res_1;
   list<ZeroCrossing> res,res_1;
 algorithm
-  res := findZeroCrossings2(vars, knvars,eq, 1, wc, 1, algs);
+  res := findZeroCrossings2(vars, knvars,eq,multiDimEqs,1, wc, 1, algs);
   res_1 := mergeZeroCrossings(res);
 end findZeroCrossings;
 
@@ -1242,6 +1243,7 @@ protected function findZeroCrossings2 "function: findZeroCrossings2
   input Variables inVariables1;
   input Variables knvars;
   input list<Equation> inEquationLst2;
+  input list<MultiDimEquation> inMultiDimEqs;
   input Integer inInteger3;
   input list<WhenClause> inWhenClauseLst4;
   input Integer inInteger5;
@@ -1250,74 +1252,83 @@ protected function findZeroCrossings2 "function: findZeroCrossings2
   output list<ZeroCrossing> outZeroCrossingLst;
 algorithm
   outZeroCrossingLst:=
-  matchcontinue (inVariables1,knvars,inEquationLst2,inInteger3,inWhenClauseLst4,inInteger5,algs)
+  matchcontinue (inVariables1,knvars,inEquationLst2,inMultiDimEqs,inInteger3,inWhenClauseLst4,inInteger5,algs)
     local
       Variables v;
       list<DAE.Exp> rellst1,rellst2,rel;
       list<ZeroCrossing> zc1,zc2,zc3,zc4,res,res1,res2;
+      list<MultiDimEquation> mdeqs;
       Value eq_count_1,eq_count,wc_count_1,wc_count;
       Equation e;
       DAE.Exp e1,e2;
       list<Equation> xs,el;
       WhenClause wc;
       Integer ind;
-    case (v,knvars,{},_,{},_,_) then {};
-    case (v,knvars,((e as EQUATION(exp = e1,scalar = e2)) :: xs),eq_count,{},_,algs)
+    case (v,knvars,{},_,_,{},_,_) then {};
+    case (v,knvars,((e as EQUATION(exp = e1,scalar = e2)) :: xs),mdeqs,eq_count,{},_,algs)
       equation
         rellst1 = findZeroCrossings3(e1, v,knvars);
         zc1 = makeZeroCrossings(rellst1, {eq_count}, {});
         rellst2 = findZeroCrossings3(e2, v,knvars);
         zc2 = makeZeroCrossings(rellst2, {eq_count}, {});
         eq_count_1 = eq_count + 1;
-        zc3 = findZeroCrossings2(v, knvars,xs, eq_count_1, {}, 0,algs);
+        zc3 = findZeroCrossings2(v, knvars,xs,mdeqs,eq_count_1, {}, 0,algs);
         zc4 = listAppend(zc1, zc2);
         res = listAppend(zc3, zc4);
       then
         res;
-    case (v,knvars,((e as SOLVED_EQUATION(exp = e1)) :: xs),eq_count,{},_,algs)
+    case (v,knvars,((e as ARRAY_EQUATION(index = ind)) :: xs),mdeqs,eq_count,{},_,algs)
+      equation
+        // Find the correct multidim equation from the index
+        MULTIDIM_EQUATION(left=e1,right=e2) = listNth(mdeqs,ind);
+        e = EQUATION(e1,e2);
+        res = findZeroCrossings2(v,knvars,e::xs,mdeqs,eq_count,{},0,algs);
+      then
+        res;
+    case (v,knvars,((e as SOLVED_EQUATION(exp = e1)) :: xs),mdeqs,eq_count,{},_,algs)
       equation
         rellst1 = findZeroCrossings3(e1, v,knvars);
         zc1 = makeZeroCrossings(rellst1, {eq_count}, {});
         eq_count_1 = eq_count + 1;
-        zc3 = findZeroCrossings2(v, knvars,xs, eq_count_1, {}, 0,algs);
+        zc3 = findZeroCrossings2(v, knvars,xs,mdeqs,eq_count_1, {}, 0,algs);
         res = listAppend(zc3, zc1);
       then
         res;
-    case (v,knvars,((e as RESIDUAL_EQUATION(exp = e1)) :: xs),eq_count,{},_,algs)
+    case (v,knvars,((e as RESIDUAL_EQUATION(exp = e1)) :: xs),mdeqs,eq_count,{},_,algs)
       equation
-        rellst1 = findZeroCrossings3(e1, v,knvars);
+        rellst1 = findZeroCrossings3(e1,v,knvars);
         zc1 = makeZeroCrossings(rellst1, {eq_count}, {});
         eq_count_1 = eq_count + 1;
-        zc3 = findZeroCrossings2(v, knvars,xs, eq_count_1, {}, 0,algs);
+        zc3 = findZeroCrossings2(v, knvars,xs,mdeqs,eq_count_1, {}, 0,algs);
         res = listAppend(zc3, zc1);
       then
         res;
-    case (v,knvars,((e as ALGORITHM(index = ind)) :: xs),eq_count,{},_,algs)
+    case (v,knvars,((e as ALGORITHM(index = ind)) :: xs),mdeqs,eq_count,{},_,algs)
       local
         list<Algorithm.Statement> stmts;
       equation
         eq_count_1 = eq_count + 1;
-        zc1 = findZeroCrossings2(v, knvars,xs, eq_count_1, {}, 0,algs);
+        zc1 = findZeroCrossings2(v,knvars,xs,mdeqs,eq_count_1,{},0,algs);
         DAE.ALGORITHM_STMTS(stmts) = listNth(algs,ind);
         rel = Algorithm.getAllExpsStmts(stmts);
-        rellst1 = Util.listFlatten(Util.listMap2(rel,findZeroCrossings3, v,knvars));
+        rellst1 = Util.listFlatten(Util.listMap2(rel,findZeroCrossings3,v,knvars));
         zc2 = makeZeroCrossings(rellst1, {eq_count}, {});
         res = listAppend(zc2, zc1);
       then
         res;
-    case (v,knvars,(e :: xs),eq_count,{},_,algs)
+    case (v,knvars,(e :: xs),mdeqs,eq_count,{},_,algs)
       equation
         eq_count_1 = eq_count + 1;
-        (res) = findZeroCrossings2(v,knvars, xs, eq_count_1, {}, 0,algs);
+        (res) = findZeroCrossings2(v,knvars, xs,mdeqs,eq_count_1, {}, 0,algs);
       then
         res;
-    case (v,knvars,el,eq_count,((wc as WHEN_CLAUSE(condition = e)) :: xs),wc_count,algs)
+    case (v,knvars,el,mdeqs,eq_count,((wc as WHEN_CLAUSE(condition = e)) :: xs),wc_count,algs)
       local
         DAE.Exp e;
         list<WhenClause> xs;
       equation
         wc_count_1 = wc_count + 1;
-        (res1) = findZeroCrossings2(v, knvars,el, eq_count, xs, wc_count_1,algs);
+        (res1) = findZeroCrossings2(v, knvars,el,mdeqs,eq_count, xs, wc_count_1,algs);
         rel = findZeroCrossings3(e, v,knvars);
         res2 = makeZeroCrossings(rel, {}, {wc_count});
         res = listAppend(res1, res2);
