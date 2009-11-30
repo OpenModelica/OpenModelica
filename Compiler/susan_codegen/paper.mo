@@ -320,9 +320,9 @@ public function pok2
   input String i_sep;
 
   output Tpl.Text out_txt;
-  protected
-    Tpl.StringToken ret_1;
-    Tpl.Text txt_0;
+protected
+  Tpl.StringToken ret_1;
+  Tpl.Text txt_0;
 algorithm
   txt_0 := Tpl.writeTok(emptyTxt, Tpl.ST_STRING("o"));
   txt_0 := Tpl.writeStr(txt_0, i_sep);

@@ -78,9 +78,9 @@ ifTest(Integer i) ::= if mapInt(i) then '<it> name;' else "/* weird I */"
 
 bindTest() ::= 
   ifTest(1) of ii : 
-  <<
-some hej<ii>
-  >>
+    <<
+      some hej<ii>
+    >>
 
 txtTest() ::= 
   # txt = "ahoj"
@@ -114,9 +114,9 @@ if hej then
   # txt += hej
   # buf += txt
   <<
-bl·· <txt>
+  bl·· <txt>
   </* jhgjhgjh  */>  
-jo
+  jo
   >>
 
 txtTest5(String hej, Text buf, Text nobuf) ::= 

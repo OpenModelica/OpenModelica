@@ -6,60 +6,58 @@ typeview "TplCodegenTV.mo"
 
 mmPackage(MMPackage) ::=  
   case MM_PACKAGE then
-  <<
-package <pathIdent(name)>
+    <<
+    package <pathIdent(name)>
 
-protected constant Tpl.Text emptyTxt = Tpl.MEM_TEXT({}, {}); 
+    protected constant Tpl.Text emptyTxt = Tpl.MEM_TEXT({}, {}); 
 
-public import Tpl;
+    public import Tpl;
 
-<mmDeclarations : mmDeclaration()\n>
+    <mmDeclarations : mmDeclaration()\n>
  
-end <pathIdent(name)>;
-  >>
+    end <pathIdent(name)>;
+    >>
 
 
 mmDeclaration(MMDeclaration) ::=
   case MM_IMPORT(packageName = IDENT(ident = "Tpl")) then '' //ignore Tpl as it is always imported
   case MM_IMPORT(packageName = IDENT(ident = "builtin")) then '' //ignore Tpl as it is always imported
   case MM_IMPORT then
-  <<
-<mmPublic(isPublic)> import <pathIdent(packageName)>;
-  >>
+    <<
+    <mmPublic(isPublic)> import <pathIdent(packageName)>;
+    >>
   case MM_STR_TOKEN_DECL then
-  <<
+    <<
   
-<mmPublic(isPublic)> constant Tpl.StringToken <name> = <mmStringTokenConstant(value)>;
-  >>
+    <mmPublic(isPublic)> constant Tpl.StringToken <name> = <mmStringTokenConstant(value)>;
+    >>
   case MM_LITERAL_DECL then
-  <<
+    <<
   
-<mmPublic(isPublic)> constant <typeSig(litType)> <name> = <value>;
-  >>
+    <mmPublic(isPublic)> constant <typeSig(litType)> <name> = <value>;
+    >>
   case mf as MM_FUN then
-  <<
+    <<
   
-<mmPublic(isPublic)> function <name>  
-<   match statements
-      case {c as MM_MATCH} then //match function 
-        mmMatchFunBody(mf.inArgs, mf.outArgs, mf.locals, c.matchCases)       
-      case sts then //simple assignment functions
-      <<
-  <typedIdentsEx(mf.inArgs, "input", "")>
+    <mmPublic(isPublic)> function <name>  
+    <match statements
+     case {c as MM_MATCH} then //match function 
+       mmMatchFunBody(mf.inArgs, mf.outArgs, mf.locals, c.matchCases)       
+     case sts then //simple assignment functions
+       <<
+         <typedIdentsEx(mf.inArgs, "input", "")>
   
-  <typedIdentsEx(mf.outArgs, "output", "out_")>
-  <if mf.locals then 
-   <<
-protected
-  <typedIdents(mf.locals)>
-   >>
-  >
-algorithm
-  <sts : '<mmExp(it, ":=")>;' \n>
-      >>
->
-end <name>;
-  >>
+         <typedIdentsEx(mf.outArgs, "output", "out_")>
+       <if mf.locals then <<
+       protected
+         <typedIdents(mf.locals)>
+       >>>
+       algorithm
+         <sts : '<mmExp(it, ":=")>;' \n>
+       >>
+    >
+    end <name>;
+    >>
 
 
 mmMatchFunBody(TypedIdents inArgs, TypedIdents outArgs, TypedIdents locals, list<MMMatchCase> matchCases) ::=
@@ -75,29 +73,23 @@ algorithm
   matchcontinue(<inArgs of (nm,_) : 'in_<nm>' ", ">)
     local
       <typedIdents(locals)>
-<matchCases of (mexps, locals, statements) :
+  <matchCases of (mexps, locals, statements) :
   <<
     
     case ( <mexps : mmMatchingExp() ",\n"; anchor> )
-<   if locals /*<> {}*/ then 
-    <<
+    <if locals /*<> {}*/ then <<
       local   
         <typedIdents(locals)>
-    >>
->
-<   if statements then
-    <<
+    >>>
+    <if statements then <<
       equation
         <statements : '<mmExp(it, "=")>;' \n>
-    >>
->
+    >>>
       then <match outArgs
             case {(nm,_)} then nm
             case oas then '(<oas of (nm,_): nm ", ">)'
            >;       
-  >>
-  \n
->
+  >>\n>
   end matchcontinue;
 >>
 
@@ -146,11 +138,11 @@ mmStringTokenConstant(StringToken) ::=
   case ST_STRING   then 'Tpl.ST_STRING("<mmEscapeStringConst(value,true)>")'
   case ST_LINE     then 'Tpl.ST_LINE("<mmEscapeStringConst(line,true)>")'
   case ST_STRING_LIST  then 
-  (<<
-Tpl.ST_STRING_LIST({
-    <strList : '"<mmEscapeStringConst(it,true)>"' ",\n">
-}, <lastHasNewLine>)
-  >>; anchor) // perhaps this should be automatic ?
+    (<<
+    Tpl.ST_STRING_LIST({
+        <strList : '"<mmEscapeStringConst(it,true)>"' ",\n">
+    }, <lastHasNewLine>)
+    >>; anchor) // perhaps this should be automatic ?
 
 mmEscapeStringConst(String internalValue, Boolean escapeNewLine) ::= 
   stringListStringChar(internalValue) :
@@ -169,12 +161,12 @@ mmEscapeStringConst(String internalValue, Boolean escapeNewLine) ::=
 
 mmExp(MMExp, String assignStr) ::=
   case MM_ASSIGN  then  
-  <<
-<match lhsArgs
- case {id} then id 
- case args then '(<args", ">)'
-> <assignStr> <mmExp(rhs, assignStr)>
-  >>
+    <<
+    <match lhsArgs
+     case {id} then id 
+     case args then '(<args", ">)'
+    > <assignStr> <mmExp(rhs, assignStr)>
+    >>
   case MM_FN_CALL   then '<pathIdent(fnName)>(<args : mmExp(it,assignStr)", ">)'
   case MM_IDENT     then pathIdent(ident)
   case MM_STR_TOKEN then mmStringTokenConstant(value) 
@@ -187,12 +179,11 @@ mmMatchingExp(MatchingExp) ::=
   case BIND_AS_MATCH then '(<bindIdent> as <mmMatchingExp(matchingExp)>)'
   case BIND_MATCH    then bindIdent
   case RECORD_MATCH  then
-  <<
-<pathIdent(tagName)>(<fieldMatchings of (field, mexp) :
-                        '<field> = <mmMatchingExp(mexp)>'
-                        ", "
-                     >)
-  >>
+    <<
+    <pathIdent(tagName)>(<fieldMatchings of (field, mexp) :
+                            '<field> = <mmMatchingExp(mexp)>'
+                         ", ">)
+    >>
   case SOME_MATCH     then 'SOME(<mmMatchingExp(value)>)'
   case NONE_MATCH     then "NONE"
   case TUPLE_MATCH    then '(<tupleArgs : mmMatchingExp()", ">)'
@@ -210,46 +201,46 @@ mmStatements(list<MMExp> stmts) ::=
 
 
 sTemplPackage(TemplPackage) ::= 
-	case TEMPL_PACKAGE then 
+  case TEMPL_PACKAGE then 
 	<<
-spackage <pathIdent(name)>
-<astDefs of AST_DEF : <<
-  <if isDefault then "default ">absyn <pathIdent(importPackage)>
-    <types of (id, tinfo) : sASTDefType(id, tinfo) \n\n>
-  end <pathIdent(importPackage)>;<\n>
->> \n >
+    spackage <pathIdent(name)>
+      <astDefs of AST_DEF : 
+      <<
+      <if isDefault then "default ">absyn <pathIdent(importPackage)>
+        <types of (id, tinfo) : sASTDefType(id, tinfo) \n\n>
+      end <pathIdent(importPackage)>;<\n>
+      >> \n >
 
-<templateDefs of (id, def) : sTemplateDef(def,id) \n\n>
-end <pathIdent(name)>;
+    <templateDefs of (id, def) : sTemplateDef(def,id) \n\n>
+    end <pathIdent(name)>;
 	>>
 
 
 sASTDefType(Ident id, TypeInfo info) ::=
-	match info
-	case TI_UNION_TYPE then
+  match info
+  case TI_UNION_TYPE then
 	<<
-uniontype <id>
-  <recTags of (rid, tids) : sRecordTypeDef(rid, tids) \n>
-end <id>;
+    uniontype <id>
+      <recTags of (rid, tids) : sRecordTypeDef(rid, tids) \n>
+    end <id>;
 	>>
-	case TI_RECORD_TYPE then  sRecordTypeDef(id, fields)
-	case TI_ALIAS_TYPE  then  'type <id> = <typeSig(aliasType)>;'
-	case TI_FUN_TYPE    then
-	<<
-function <id>
-  <inArgs of (aid,ts)  : 'input <typeSig(ts)> <aid>;<\n>'>
-  <outArgs of (aid,ts) : 'output <typeSig(ts)> <aid>;<\n>'>
-end <id>;
+  case TI_RECORD_TYPE then  sRecordTypeDef(id, fields)
+  case TI_ALIAS_TYPE  then  'type <id> = <typeSig(aliasType)>;'
+  case TI_FUN_TYPE    then
+    <<
+    function <id>
+      <inArgs of (aid,ts)  : 'input <typeSig(ts)> <aid>;<\n>'>
+      <outArgs of (aid,ts) : 'output <typeSig(ts)> <aid>;<\n>'>
+    end <id>;
 	>>
-	case TI_CONST_TYPE then 'constant <typeSig(constType)> <id>;'
+  case TI_CONST_TYPE then 'constant <typeSig(constType)> <id>;'
 
 
 sRecordTypeDef(Ident id, TypedIdents fields) ::= 
 <<
-record <id> <if fields then 
-  <<<\n>
+record <id> <if fields then <<<\n>
   <fields of (fid, ts) : '<typeSig(ts)> <fid>;<\n>'>
-  >>
+>>
 >end <id>;
 >>
 

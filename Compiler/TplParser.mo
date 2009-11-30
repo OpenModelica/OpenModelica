@@ -2866,7 +2866,7 @@ public function templateExp
 algorithm
   (outChars, outLineInfo, outExpression) := matchcontinue (inChars, inLineInfo, inLeftEsc, inRightEsc)
     local
-      list<String> chars;
+      list<String> chars, solChars;
       LineInfo linfo;
       String c, lesc, resc;
       Boolean isD;
@@ -2877,48 +2877,45 @@ algorithm
       Tpl.StringToken st;
       TplAbsyn.Expression exp, bexp;
       list<TplAbsyn.Expression> expLst;
+      Integer baseInd, lineInd;
     
    case ("'" :: chars, linfo, lesc, resc)
       equation
+        //single quotes has no special treatment of indent and new lines
+        //i.e., it takes O as the base indent, and it counts every new line 
         (chars, linfo, exp) = templateBody(chars, linfo, lesc, resc, true, {},{},0);
       then (chars, linfo, exp);
    
    case ("<"::"<":: chars, linfo, lesc, resc)
       equation
-        (chars, linfo) = templStripFirstNewLine(chars, linfo);
-        (chars, linfo, exp) = templateBody(chars, linfo, lesc, resc, false, {},{},0);
+        //the base indent is the indent of the line where the << appears
+        LINE_INFO(startOfLineChars = solChars) = linfo;
+        (_, baseInd) = lineIndent(solChars,0);
+        //the case when nothing visible is after <<        
+        (chars, linfo) = takeSpaceAndNewLine(chars, linfo);
+        //(chars, linfo) = templStripFirstNewLine(chars, linfo);
+        //push the staring indent on the indentStack
+        (chars, linfo, exp) = templateBody(chars, linfo, lesc, resc, false, {}, {}, baseInd);
       then (chars, linfo, exp);
-        
+   
+   //special treatment when some non-space is right after << 
+   case ("<"::"<":: chars, linfo, lesc, resc)
+      equation
+        //the base indent is the indent of the line where the << appears
+        LINE_INFO(startOfLineChars = solChars) = linfo;
+        (_, baseInd) = lineIndent(solChars,0);
+        //some non-space char(s) is after <<        
+        failure( (_,_) = takeSpaceAndNewLine(chars, linfo) );
+        (chars, lineInd) = lineIndent(chars,0);
+        //correct the indent of the line right after << to baseInd
+        lineInd = lineInd + baseInd;
+        //push the base indent on the indentStack
+        (chars, linfo, exp) = restOfTemplLine(chars, linfo, lesc, resc, false, {}, {}, baseInd, lineInd, {});
+      then (chars, linfo, exp);     
   end matchcontinue;
 end templateExp;
 
-/*
-templStripFirstNewLine:
-	takeSpaceAndNewLine
-	|
-	_ //just nothing
-*/
-public function templStripFirstNewLine
-  input list<String> inChars;
-  input LineInfo inLineInfo;
-  output list<String> outChars;
-  output LineInfo outLineInfo;
-algorithm
-  (outChars, outLineInfo) := matchcontinue (inChars, inLineInfo)
-    local
-      list<String> chars;
-      LineInfo linfo;
-    
-   case (chars, linfo)
-     equation
-       (chars, linfo) = takeSpaceAndNewLine(chars, linfo);
-     then (chars, linfo);
-   
-   case (chars, linfo)
-      then (chars, linfo);
-        
-  end matchcontinue;
-end templStripFirstNewLine;
+
 
 /*
 takeSpaceAndNewLine:
@@ -3191,7 +3188,7 @@ algorithm
   end matchcontinue;
 end restOfTemplLine;
 
-
+/* obsolete
 public function restOfTemplLineAfterEmptyExp
   input list<String> inChars;
   input LineInfo inLineInfo;
@@ -3226,8 +3223,8 @@ algorithm
    //and [space] and newLine() after it 
    case (chars, linfo, lesc, resc, isSQ, expLst, indStack, actInd, _, {})
       equation
-        (chars, _) = lineIndent(chars,0); //try take a space before newLine() 
-        (chars, linfo) = newLine(chars, linfo);
+        //try take a space and new line
+        (chars, linfo) = takeSpaceAndNewLine(chars, linfo);
         (chars, linfo, exp) = templateBody(chars, linfo, lesc, resc, isSQ, expLst, indStack, actInd);
       then (chars, linfo, exp);
    
@@ -3239,7 +3236,7 @@ algorithm
     
   end matchcontinue;
 end restOfTemplLineAfterEmptyExp;
-
+*/
 
 public function dropNewLineAfterEmptyExp
   input list<String> inChars;
@@ -3324,7 +3321,7 @@ algorithm
       list<String> chars, accChars;
       String c, lesc, resc;
       Boolean isSQ;
-      Integer actInd, lineInd;
+      Integer actInd, lineInd, baseInd;
       TplAbsyn.Ident id;
       TplAbsyn.PathIdent name;
       TplAbsyn.TypedIdents fields,inargs,outargs;
@@ -3334,6 +3331,15 @@ algorithm
       list<TplAbsyn.Expression> expLst;
       list<tuple<Integer,list<TplAbsyn.Expression>>> indStack;
    
+   
+   //TODO: optimization for <\n>
+   //we need a flag for having something non-space on the line 
+   //case (TplAbsyn.STR_TOKEN(value = Tpl.ST_NEW_LINE()), expLst, indStack, actInd, lineInd, accChars)
+   //   equation
+   //     //equality( lineInd = actInd);
+   //     expLst = addAccStringChars(expLst, "\n" :: accChars);        
+   //   then (expLst, indStack,  actInd);
+        
    //the same indent level 
    case (exp, expLst, indStack, actInd, lineInd, accChars)
       equation
@@ -3354,8 +3360,17 @@ algorithm
         expLst = exp :: expLst;
       then (expLst, indStack,  lineInd);
    
-   //pop indent level and try again
-   case (exp, expLst, indStack, actInd, lineInd, accChars)
+   //if the indent is under the base indent level, warn and make it 0 level
+   case (exp, expLst, {}, baseInd, lineInd, accChars)
+      equation
+        true = ( lineInd < baseInd );
+        Debug.fprint("failtrace", "Parse warning onEscapedExp() - indent level is under the level of the '<<' determined level.\n");
+        //call again as  lineInd = baseInd 
+        (expLst, indStack,  actInd) = onEscapedExp(exp, expLst, {}, baseInd, baseInd, accChars);        
+      then (expLst, indStack,  actInd);
+   
+   //pop indent level and try again (indStack must have at least one pushed indent level)
+   case (exp, expLst, indStack as (_::_), actInd, lineInd, accChars)
       equation
         true = ( lineInd < actInd );
         expLst = finalizeLastStringToken(expLst);
@@ -3390,7 +3405,7 @@ algorithm
       list<String> chars, accChars, strLst;
       String c, lesc, resc;
       Boolean isSQ;
-      Integer actInd, lineInd;
+      Integer actInd, lineInd, baseInd;
       TplAbsyn.Ident id;
       TplAbsyn.PathIdent name;
       TplAbsyn.TypedIdents fields,inargs,outargs;
@@ -3425,6 +3440,7 @@ algorithm
         expLst = addAccStringChars(expLst, {"\n"} );        
       then (expLst, indStack,  actInd);
 
+   //TODO: this does not work, because the <\n> finalizes the previous ST to be closed 
    //AccStringChars = {}
    // expLst = <\n> :: _ -> a forced new line - make permanent - replace with \n
    // ignore lineInd - must be lineInd = actInd  (because the <\n> exp made it so) 
@@ -3450,7 +3466,7 @@ algorithm
         expLst = TplAbsyn.SOFT_NEW_LINE() :: expLst;        
       then (expLst, indStack,  actInd);
    
-   //AccStringChars <> {}
+   //AccStringChars = (_::_)
    // lineInd >= actInd
    // align the string with prefixed space 
    // put a disposable new line - may be disposed by onTemplEnd() or hardened by addAccStringChars() or finalizeLastStringToken()
@@ -3464,10 +3480,23 @@ algorithm
         expLst = TplAbsyn.STR_TOKEN(Tpl.ST_STRING_LIST(strLst, true)) :: expLst;        
       then (expLst, indStack,  actInd);
    
-   //AccStringChars <> {}
+   //if the indent is under base indent level, warn and make it 0 level
+   //AccStringChars = (_::_)
    // lineInd < actInd
    //pop indent level and try again
-   case (expLst, indStack, actInd, lineInd, accChars as (_ :: _))
+   case (expLst, {}, baseInd, lineInd, accChars as (_ :: _))
+      equation
+        true = ( lineInd < baseInd );
+        Debug.fprint("failtrace", "Parse warning onNewLine() - indent level is under the level of the '<<' determined level.\n");
+        //call again as  lineInd = baseInd         
+        (expLst, indStack,  actInd) = onNewLine(expLst, {}, baseInd, baseInd, accChars);        
+      then (expLst, indStack,  actInd);
+   
+   //AccStringChars = (_::_)
+   // lineInd < actInd
+   //pop indent level and try again
+   //(indStack must have at least one pushed indent level)
+   case (expLst, indStack as (_::_), actInd, lineInd, accChars as (_ :: _))
       equation
         true = ( lineInd < actInd );
         expLst = finalizeLastStringToken(expLst);
@@ -3502,7 +3531,7 @@ algorithm
       list<String> chars, accChars, strLst;
       String c, lesc, resc;
       Boolean dropLastNL;
-      Integer actInd, lineInd;
+      Integer actInd, lineInd, baseInd;
       TplAbsyn.Ident id;
       TplAbsyn.PathIdent name;
       TplAbsyn.TypedIdents fields,inargs,outargs;
@@ -3515,11 +3544,24 @@ algorithm
    //AccStringChars = {}
    // expLst = {} - special case, only space in the template  
    // make the space and take it 
-   case (_, {}, {}, 0, lineInd, {})
+   case (_, {}, {}, baseInd, lineInd, {})
       equation
-        expLst = addAccStringChars({}, Util.listFill(" ",lineInd));
+        true = (lineInd >= baseInd);
+        expLst = addAccStringChars({}, Util.listFill(" ",lineInd-baseInd)); 
         expLst = finalizeLastStringToken(expLst);
       then expLst;
+   
+   /*
+   //same as previous, but under the '<<' determined level
+   //AccStringChars = {}
+   // expLst = {} - special case, only space in the template  
+   // template is empty 
+   case (_, {}, {}, baseInd, lineInd, {})
+      equation
+        true = (lineInd < baseInd);
+        Debug.fprint("failtrace", "Parse warning onTemplEnd() - indent level is under the level of the '<<' determined level.\n");        
+      then {};
+   */
    
    //if drop-the-last-new-line is set
    //AccStringChars = {}
@@ -3528,19 +3570,20 @@ algorithm
    // pop all indent 
    case (true, TplAbsyn.SOFT_NEW_LINE() :: expLst, indStack, actInd, _, {})
       equation
-        (expLst, {}, 0) = popIndentStack(expLst, indStack, actInd, 0);
+        (expLst, {}, _) = popIndentStack(expLst, indStack, actInd, 0);
       then expLst;
    
    //if drop-the-last-new-line is set
    //AccStringChars = {}
    // expLst = ST opened with disposable new line :: _ -> dispose the \n on the line 
    // ignore lineInd  
-   // pop all indent 
+   // pop all indent
    case (true, TplAbsyn.STR_TOKEN(value = Tpl.ST_STRING_LIST(strList = strLst as (""::_), lastHasNewLine = true)) :: expLst,
        indStack, actInd, _, {})
       equation
         expLst = finalizeLastStringToken(TplAbsyn.STR_TOKEN(Tpl.ST_STRING_LIST(strLst, false)) :: expLst);
-        (expLst, {}, 0) = popIndentStack(expLst, indStack, actInd, 0);        
+        (expLst, {},_) = popIndentStack(expLst, indStack, actInd, 0);        
+        //TODO: warn when >> is under << determined indent         
       then expLst;
 
    //if drop-the-last-new-line is set
@@ -3551,10 +3594,10 @@ algorithm
    case (true, expLst, indStack, actInd, _, {})
       equation
         expLst = finalizeLastStringToken(expLst);
-        (expLst, {}, 0) = popIndentStack(expLst, indStack, actInd, 0);        
+        (expLst, {}, _) = popIndentStack(expLst, indStack, actInd, 0);        
       then expLst;
    
-   //AccStringChars <> {}  or  drop-the-last-new-line is set
+   //AccStringChars = (_::_)  or  drop-the-last-new-line is set
    // lineInd >= actInd
    // align the string with prefixed space
    // pop all indent 
@@ -3564,12 +3607,23 @@ algorithm
         accChars = listAppend(accChars, Util.listFill(" ",lineInd - actInd));
         expLst = addAccStringChars(expLst, accChars);
         expLst = finalizeLastStringToken(expLst);
-        (expLst, {}, 0) = popIndentStack(expLst, indStack, actInd, 0);        
+        (expLst, {}, _) = popIndentStack(expLst, indStack, actInd, 0);        
+      then expLst;
+   
+   // lineInd < baseInd
+   // the indent is under the base indent level, 
+   // warn and make it 0 level
+   //pop indent level and try again (only the previous case will be the end of the recursion)
+   case (dropLastNL, expLst, {}, baseInd, lineInd, accChars)
+      equation
+        true = ( lineInd < baseInd );
+        Debug.fprint("failtrace", "Parse warning onTemplEnd() - indent level is under the level of the '<<' determined level.\n");
+        expLst = onTemplEnd(dropLastNL, expLst, {}, baseInd, baseInd, accChars);         
       then expLst;
    
    // lineInd < actInd
    //pop indent level and try again (only the previous case will be the end of the recursion)
-   case (dropLastNL, expLst, indStack, actInd, lineInd, accChars)
+   case (dropLastNL, expLst, indStack as (_::_), actInd, lineInd, accChars)
       equation
         true = ( lineInd < actInd );
         expLst = finalizeLastStringToken(expLst);
@@ -3600,10 +3654,11 @@ algorithm
   (outExpressionList, outIndentStack, outActualIndent) 
   := matchcontinue (inExpressionList, inIndentStack, inActualIndent, inLineIndent)
     local
-      Integer actInd, lineInd, d, prevInd;
+      Integer actInd, lineInd, baseInd, d, prevInd;
       list<TplAbsyn.Expression> expLst, prevExpLst;
       list<tuple<Integer,list<TplAbsyn.Expression>>> indStack;
    
+        
    case (expLst, (prevInd, prevExpLst) :: indStack, actInd, lineInd)
       equation
         true = (lineInd < actInd); //when actInd > 0 --> something has to be on the stack
@@ -3617,6 +3672,11 @@ algorithm
       equation
         true = (lineInd >= actInd);
       then (expLst, indStack,  actInd);
+   
+   //base indent
+   case (expLst, {}, baseInd, _)
+      then (expLst, {},  baseInd);
+   
    
    //should not happen
    case (_,_,_,_) 

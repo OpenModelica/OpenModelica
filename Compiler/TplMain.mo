@@ -394,10 +394,10 @@ public function MuchFun
   input list<String> jokes;
 
   output Tpl.Text out_txt;
-  protected
-    Tpl.Text txt;
-    Integer laughLevel;
-    list<String> jokes;
+protected
+  Tpl.Text txt;
+  Integer laughLevel;
+  list<String> jokes;
 algorithm
   out_txt := Tpl.writeStr(txt, \"Susan\");
   out_txt := Tpl.writeTok(out_txt, Tpl.ST_LINE(\"Susan is cosmic!\\n\"));

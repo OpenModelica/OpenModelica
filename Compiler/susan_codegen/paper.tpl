@@ -38,12 +38,12 @@ spackage paper
 
 statement(Statement) ::=
   case ASSIGN then <<
-<exp(lhs)> = <exp(rhs)>;
+  <exp(lhs)> = <exp(rhs)>;
   >>	
   case WHILE  then <<
-while(<exp(condition)>) {
-  <statements : statement() \n>
-}
+  while(<exp(condition)>) {
+    <statements : statement() \n>
+  }
   >>
 
 exp(Exp) ::=

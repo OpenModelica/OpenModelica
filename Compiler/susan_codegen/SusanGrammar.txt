@@ -715,10 +715,6 @@ templateExp(lesc, resc):
 	   & templateBody(lesc, resc, isSingleQuote = false,{},{},0 ):exp
 	  => exp
 
-templStripFirstNewLine:
-	takeSpaceAndNewLine
-	|
-	_ //just nothing
 
 // & ... no interleave	 
 takeSpaceAndNewLine:

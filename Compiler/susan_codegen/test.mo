@@ -135,13 +135,13 @@ public function test
   input Integer i_ind;
 
   output Tpl.Text out_txt;
-  protected
-    String ret_5;
-    Integer ret_4;
-    Tpl.StringToken ret_3;
-    Tpl.Text txt_2;
-    Integer ret_1;
-    String ret_0;
+protected
+  String ret_5;
+  Integer ret_4;
+  Tpl.StringToken ret_3;
+  Tpl.Text txt_2;
+  Integer ret_1;
+  String ret_0;
 algorithm
   ret_0 := intString(i_ind);
   ret_1 := testfn(intString(i_ind));
@@ -830,11 +830,11 @@ public function test3
   input Integer i_ii;
 
   output Tpl.Text out_txt;
-  protected
-    String str_3;
-    Tpl.Text txt_2;
-    Tpl.Text txt_1;
-    Tpl.Text txt_0;
+protected
+  String str_3;
+  Tpl.Text txt_2;
+  Tpl.Text txt_1;
+  Tpl.Text txt_0;
 algorithm
   out_txt := Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
   out_txt := lm_9(out_txt, i_items);
@@ -1454,9 +1454,9 @@ public function ifTest
   input Integer i_i;
 
   output Tpl.Text out_txt;
-  protected
-    String str_1;
-    Tpl.Text txt_0;
+protected
+  String str_1;
+  Tpl.Text txt_0;
 algorithm
   txt_0 := mapInt(emptyTxt, i_i);
   str_1 := Tpl.textString(txt_0);
@@ -1479,8 +1479,10 @@ algorithm
       local
         Tpl.Text i_ii;
       equation
+        txt = Tpl.pushBlock(txt, Tpl.BT_INDENT(2));
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("some hej"));
         txt = Tpl.writeText(txt, i_ii);
+        txt = Tpl.popBlock(txt);
       then txt;
   end matchcontinue;
 end smf_59;
@@ -1489,8 +1491,8 @@ public function bindTest
   input Tpl.Text txt;
 
   output Tpl.Text out_txt;
-  protected
-    Tpl.Text txt_0;
+protected
+  Tpl.Text txt_0;
 algorithm
   txt_0 := ifTest(emptyTxt, 1);
   out_txt := smf_59(txt, txt_0);
@@ -1500,8 +1502,8 @@ public function txtTest
   input Tpl.Text txt;
 
   output Tpl.Text out_txt;
-  protected
-    Tpl.Text i_txt;
+protected
+  Tpl.Text i_txt;
 algorithm
   i_txt := Tpl.writeTok(emptyTxt, Tpl.ST_STRING("ahoj"));
   i_txt := Tpl.writeTok(i_txt, Tpl.ST_STRING("hej"));
@@ -1512,8 +1514,8 @@ public function txtTest2
   input Tpl.Text txt;
 
   output Tpl.Text out_txt;
-  protected
-    Tpl.Text i_txt;
+protected
+  Tpl.Text i_txt;
 algorithm
   i_txt := Tpl.writeTok(emptyTxt, Tpl.ST_STRING("ahoj2"));
   i_txt := Tpl.writeTok(i_txt, Tpl.ST_STRING("hej2"));
@@ -1530,8 +1532,8 @@ public function txtTest3
 
   output Tpl.Text out_txt;
   output Tpl.Text out_i_buf;
-  protected
-    Tpl.Text i_txt;
+protected
+  Tpl.Text i_txt;
 algorithm
   i_txt := Tpl.writeTok(emptyTxt, Tpl.ST_STRING("aahoj2"));
   i_txt := Tpl.writeTok(i_txt, Tpl.ST_STRING("ahej2"));
@@ -1590,8 +1592,8 @@ public function txtTest5
   output Tpl.Text out_txt;
   output Tpl.Text out_i_buf;
   output Tpl.Text out_i_nobuf;
-  protected
-    Tpl.Text i_txt;
+protected
+  Tpl.Text i_txt;
 algorithm
   i_txt := Tpl.writeTok(emptyTxt, Tpl.ST_STRING("aahoj2"));
   i_txt := Tpl.writeTok(i_txt, Tpl.ST_STRING("ahej2"));
@@ -1759,9 +1761,9 @@ public function txtTest6
 
   output Tpl.Text out_txt;
   output Tpl.Text out_i_buf;
-  protected
-    Tpl.Text i_nomut;
-    Tpl.Text i_mytxt;
+protected
+  Tpl.Text i_nomut;
+  Tpl.Text i_mytxt;
 algorithm
   i_mytxt := Tpl.writeTok(emptyTxt, Tpl.ST_STRING("bolo"));
   i_nomut := Tpl.writeTok(emptyTxt, Tpl.ST_STRING(","));
