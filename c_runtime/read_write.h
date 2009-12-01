@@ -118,8 +118,8 @@ void write_modelica_complex(type_description *, modelica_complex *);
 int read_modelica_fnptr(type_description **, modelica_fnptr *);
 void write_modelica_fnptr(type_description *, modelica_fnptr *);
 
-int read_metamodelica_type(type_description **, metamodelica_type*);
-void write_metamodelica_type(type_description *, metamodelica_type*);
+int read_modelica_metatype(type_description **, modelica_metatype*);
+void write_modelica_metatype(type_description *, modelica_metatype*);
 
 int read_modelica_record(type_description **, ...); 
 void write_modelica_record(type_description *, void *, ...); 

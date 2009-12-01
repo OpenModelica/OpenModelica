@@ -160,7 +160,7 @@ intStringChar_rettype intStringChar(modelica_integer);
 
 /* String Operations */
 typedef modelica_integer stringInt_rettype;
-typedef metamodelica_type stringListStringChar_rettype;
+typedef modelica_metatype stringListStringChar_rettype;
 typedef modelica_string_t listStringCharString_rettype;
 typedef modelica_string_t stringAppendList_rettype;
 typedef modelica_string_t stringAppend_rettype;
@@ -172,8 +172,8 @@ typedef modelica_string_t stringUpdateStringChar_rettype;
 
 stringInt_rettype stringInt(modelica_string_t);
 stringListStringChar_rettype stringListStringChar(modelica_string_t);
-listStringCharString_rettype listStringCharString(metamodelica_type);
-stringAppendList_rettype stringAppendList(metamodelica_type);
+listStringCharString_rettype listStringCharString(modelica_metatype);
+stringAppendList_rettype stringAppendList(modelica_metatype);
 stringAppend_rettype stringAppend(modelica_string_t,modelica_string_t);
 stringLength_rettype stringLength(modelica_string_t);
 stringCompare_rettype stringCompare(modelica_string_t,modelica_string_t);
@@ -182,29 +182,29 @@ stringGetStringChar_rettype stringGetStringChar(modelica_string_t,modelica_integ
 stringUpdateStringChar_rettype stringUpdateStringChar(modelica_string_t, modelica_string_t, modelica_integer);
 
 /* List Operations */
-typedef metamodelica_type listReverse_rettype;
-typedef metamodelica_type listAppend_rettype;
+typedef modelica_metatype listReverse_rettype;
+typedef modelica_metatype listAppend_rettype;
 typedef modelica_integer listLength_rettype;
 typedef modelica_boolean listMember_rettype;
-typedef metamodelica_type listGet_rettype;
-typedef metamodelica_type listNth_rettype;
-typedef metamodelica_type listRest_rettype;
+typedef modelica_metatype listGet_rettype;
+typedef modelica_metatype listNth_rettype;
+typedef modelica_metatype listRest_rettype;
 typedef modelica_integer listEmpty_rettype;
-typedef metamodelica_type listDelete_rettype;
+typedef modelica_metatype listDelete_rettype;
 
-listReverse_rettype listReverse(metamodelica_type);
-listAppend_rettype listAppend(metamodelica_type,metamodelica_type);
-listLength_rettype listLength(metamodelica_type);
-listMember_rettype listMember(metamodelica_type, metamodelica_type);
-listGet_rettype listGet(metamodelica_type, modelica_integer);
-listNth_rettype listNth(metamodelica_type, modelica_integer);
-listRest_rettype listRest(metamodelica_type);
-listEmpty_rettype listEmpty(metamodelica_type);
-listDelete_rettype listDelete(metamodelica_type, modelica_integer);
+listReverse_rettype listReverse(modelica_metatype);
+listAppend_rettype listAppend(modelica_metatype,modelica_metatype);
+listLength_rettype listLength(modelica_metatype);
+listMember_rettype listMember(modelica_metatype, modelica_metatype);
+listGet_rettype listGet(modelica_metatype, modelica_integer);
+listNth_rettype listNth(modelica_metatype, modelica_integer);
+listRest_rettype listRest(modelica_metatype);
+listEmpty_rettype listEmpty(modelica_metatype);
+listDelete_rettype listDelete(modelica_metatype, modelica_integer);
 
 /* Option Operations */
 typedef modelica_boolean optionNone_rettype;
-optionNone_rettype optionNone(metamodelica_type);
+optionNone_rettype optionNone(modelica_metatype);
 
 /* Array Operations */
 typedef modelica_integer arrayLength_rettype;
@@ -230,15 +230,15 @@ arrayBooleanCreate_rettype arrayBooleanCreate(modelica_integer, modelica_boolean
 arrayStringCreate_rettype arrayStringCreate(modelica_integer, modelica_string_t);
 
 /* Misc Operations */
-typedef metamodelica_type if__exp_rettype;
+typedef modelica_metatype if__exp_rettype;
 typedef modelica_integer tick_rettype;
 typedef modelica_real mmc__clock_rettype;
 
-if__exp_rettype if__exp(modelica_boolean, metamodelica_type, metamodelica_type);
+if__exp_rettype if__exp(modelica_boolean, modelica_metatype, modelica_metatype);
 void print(modelica_string_t);
 tick_rettype tick();
 mmc__clock_rettype mmc__clock();
-void equality(metamodelica_type, metamodelica_type);
+void equality(modelica_metatype, modelica_metatype);
 
 #if defined(__cplusplus)
 }

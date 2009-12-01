@@ -107,9 +107,9 @@ struct mmc_string {
 #define mmc__mk__rcon(X) mmc_mk_rcon(X)
 #define mmc__mk__scon_rettype mmc_mk_scon_rettype
 #define mmc__mk__scon(X) mmc_mk_scon(X)
-typedef metamodelica_type mmc_mk_icon_rettype;
-typedef metamodelica_type mmc_mk_rcon_rettype;
-typedef metamodelica_type mmc_mk_scon_rettype;
+typedef modelica_metatype mmc_mk_icon_rettype;
+typedef modelica_metatype mmc_mk_rcon_rettype;
+typedef modelica_metatype mmc_mk_scon_rettype;
 mmc_mk_icon_rettype mmc_mk_icon(int);
 mmc_mk_rcon_rettype mmc_mk_rcon(double);
 mmc_mk_scon_rettype mmc_mk_scon(char*);
@@ -135,7 +135,7 @@ void *mmc_mk_box(int slots, unsigned ctor, ...);
 void *mmc_mk_box_arr(int slots, unsigned ctor, void**);
 
 int mmc_boxes_equal(void*, void*);
-void mmc__unbox(metamodelica_type box, void* res);
+void mmc__unbox(modelica_metatype box, void* res);
 
 typedef modelica_boolean mmc__uniontype__metarecord__typedef__equal_rettype;
 mmc__uniontype__metarecord__typedef__equal_rettype mmc__uniontype__metarecord__typedef__equal(void*,int,int,modelica_string_t);

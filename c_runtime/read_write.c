@@ -616,7 +616,7 @@ void write_modelica_fnptr(type_description *desc, modelica_fnptr *fn)
   desc->data.function = *fn;
 }
 
-int read_metamodelica_type(type_description **descptr, metamodelica_type *ut)
+int read_modelica_metatype(type_description **descptr, modelica_metatype *ut)
 {
   type_description *desc = (*descptr)++;
   switch(desc->type) {
@@ -643,7 +643,7 @@ int read_metamodelica_type(type_description **descptr, metamodelica_type *ut)
   return -1;
 }
 
-void write_metamodelica_type(type_description *desc, metamodelica_type *ut)
+void write_modelica_metatype(type_description *desc, modelica_metatype *ut)
 {
   if (desc->type != TYPE_DESC_NONE)
     desc = add_tuple_item(desc);
@@ -694,7 +694,7 @@ int read_modelica_record_helper(type_description **descptr, va_list *arg)
         read_modelica_complex(&elem, va_arg(*arg, modelica_complex *));
         break;
       case TYPE_DESC_MMC:
-        read_metamodelica_type(&elem, va_arg(*arg, void **));
+        read_modelica_metatype(&elem, va_arg(*arg, void **));
         break;
       case TYPE_DESC_RECORD:
         read_modelica_record_helper(&elem, arg);
@@ -803,7 +803,7 @@ void write_modelica_record_helper(type_description *desc, void* rec_desc_void, v
       write_modelica_complex(elem, va_arg(*arg, modelica_complex *));
       break;
     case TYPE_DESC_MMC:
-      write_metamodelica_type(elem, va_arg(*arg, void **));
+      write_modelica_metatype(elem, va_arg(*arg, void **));
       break;
     case TYPE_DESC_TUPLE:
       in_report("tuple in record is unsupported.");

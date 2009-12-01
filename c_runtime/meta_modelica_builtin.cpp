@@ -330,7 +330,7 @@ stringInt_rettype stringInt(modelica_string_t str)
 stringListStringChar_rettype stringListStringChar(modelica_string_t str)
 {
   char chr[2] = {'\0', '\0'};
-  metamodelica_type revRes;
+  modelica_metatype revRes;
   revRes = mmc_mk_nil();
   while (*str != '\0') {
     chr[0] = *str++;
@@ -339,7 +339,7 @@ stringListStringChar_rettype stringListStringChar(modelica_string_t str)
   return listReverse(revRes);
 }
 
-listStringCharString_rettype listStringCharString(metamodelica_type lst)
+listStringCharString_rettype listStringCharString(modelica_metatype lst)
 {
   int lstLen, i;
   modelica_string_t res;
@@ -358,11 +358,11 @@ listStringCharString_rettype listStringCharString(metamodelica_type lst)
   return res;
 }
 
-stringAppendList_rettype stringAppendList(metamodelica_type lst)
+stringAppendList_rettype stringAppendList(modelica_metatype lst)
 {
   int lstLen, i, acc, len;
   modelica_string_t res, res_head;
-  metamodelica_type car, lstHead;
+  modelica_metatype car, lstHead;
   lstLen = listLength(lst);
   acc = 0;
   lstHead = lst;
@@ -441,9 +441,9 @@ stringUpdateStringChar_rettype stringUpdateStringChar(modelica_string_t str, mod
 
 /* List Operations */
 
-listReverse_rettype listReverse(metamodelica_type lst)
+listReverse_rettype listReverse(modelica_metatype lst)
 {
-  metamodelica_type res;
+  modelica_metatype res;
   res = mmc_mk_nil();
   while (!MMC_NILTEST(lst))
   {
@@ -453,7 +453,7 @@ listReverse_rettype listReverse(metamodelica_type lst)
   return res;
 }
 
-listAppend_rettype listAppend(metamodelica_type lst1,metamodelica_type lst2)
+listAppend_rettype listAppend(modelica_metatype lst1,modelica_metatype lst2)
 {
   if (MMC_NILTEST(lst2)) /* Don't reverse lst1 if lst2 is empty... */
     return lst1;
@@ -466,7 +466,7 @@ listAppend_rettype listAppend(metamodelica_type lst1,metamodelica_type lst2)
   return lst2;
 }
 
-listLength_rettype listLength(metamodelica_type lst)
+listLength_rettype listLength(modelica_metatype lst)
 {
   modelica_integer res = 0;
   while (!MMC_NILTEST(lst))
@@ -477,7 +477,7 @@ listLength_rettype listLength(metamodelica_type lst)
   return res;
 }
 
-listMember_rettype listMember(metamodelica_type lst, metamodelica_type obj)
+listMember_rettype listMember(modelica_metatype lst, modelica_metatype obj)
 {
   while (!MMC_NILTEST(lst))
   {
@@ -488,7 +488,7 @@ listMember_rettype listMember(metamodelica_type lst, metamodelica_type obj)
   return 0;
 }
 
-listGet_rettype listGet(metamodelica_type lst, modelica_integer i)
+listGet_rettype listGet(modelica_metatype lst, modelica_integer i)
 {
   if (i < 1)
     throw 1;
@@ -503,28 +503,28 @@ listGet_rettype listGet(metamodelica_type lst, modelica_integer i)
   throw 1; /* List was not long enough */
 }
 
-listNth_rettype listNth(metamodelica_type lst, modelica_integer i)
+listNth_rettype listNth(modelica_metatype lst, modelica_integer i)
 {
   return listGet(lst,i+1);
 }
 
-listRest_rettype listRest(metamodelica_type lst)
+listRest_rettype listRest(modelica_metatype lst)
 {
   if (MMC_NILTEST(lst))
     throw 1;
   return MMC_CDR(lst);
 }
 
-listEmpty_rettype listEmpty(metamodelica_type lst)
+listEmpty_rettype listEmpty(modelica_metatype lst)
 {
   return MMC_NILTEST(lst) ? 1 : 0;
 }
 
-listDelete_rettype listDelete(metamodelica_type lst, modelica_integer ix)
+listDelete_rettype listDelete(modelica_metatype lst, modelica_integer ix)
 {
-  metamodelica_type *tmpArr;
+  modelica_metatype *tmpArr;
   int i;
-  tmpArr = (metamodelica_type *) malloc(sizeof(metamodelica_type)*ix); /* We know the size of the first part of the list (+1 for the element to delete) */
+  tmpArr = (modelica_metatype *) malloc(sizeof(modelica_metatype)*ix); /* We know the size of the first part of the list (+1 for the element to delete) */
   if (tmpArr == NULL) {
     fprintf(stderr, "%s:%d: malloc failed", __FILE__, __LINE__);
     exit(1);
@@ -548,7 +548,7 @@ listDelete_rettype listDelete(metamodelica_type lst, modelica_integer ix)
 }
 
 /* Option Operations */
-optionNone_rettype optionNone(metamodelica_type opt)
+optionNone_rettype optionNone(modelica_metatype opt)
 {
   return 0==MMC_HDRSLOTS(MMC_GETHDR(opt)) ? 1 : 0;
 }
@@ -645,12 +645,12 @@ mmc__clock_rettype mmc__clock()
   return (clock()-start_t)/CLOCKS_PER_SEC;
 }
 
-if__exp_rettype if__exp(modelica_boolean cond, metamodelica_type in1, metamodelica_type in2)
+if__exp_rettype if__exp(modelica_boolean cond, modelica_metatype in1, modelica_metatype in2)
 {
   return cond ? in1 : in2;
 }
 
-void equality(metamodelica_type in1, metamodelica_type in2)
+void equality(modelica_metatype in1, modelica_metatype in2)
 {
   if (!mmc_boxes_equal(in1, in2))
     throw 1;

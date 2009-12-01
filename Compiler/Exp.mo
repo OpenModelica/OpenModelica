@@ -10432,7 +10432,16 @@ algorithm
   end matchcontinue;
 end convertEnumCref;
 
-
+public function isArrayType
+"Returns true if inType is an ET_ARRAY"
+  input DAE.ExpType inType;
+  output Boolean b;
+algorithm
+  b := matchcontinue inType
+    case DAE.ET_ARRAY(_,_) then true;
+    case _ then false;
+  end matchcontinue;
+end isArrayType;
 
 end Exp;
 

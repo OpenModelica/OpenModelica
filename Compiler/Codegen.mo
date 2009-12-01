@@ -1837,15 +1837,18 @@ algorithm
         res = stringAppend("struct ", name);
       then
         res;
-    case (DAE.ET_LIST(_)) then "metamodelica_type";
-
-    case (DAE.ET_METATUPLE(_)) then "metamodelica_type";
-
-    case (DAE.ET_METAOPTION(_)) then "metamodelica_type";
     
-    case (DAE.ET_UNIONTYPE()) then "metamodelica_type";
-    
-    case (DAE.ET_POLYMORPHIC()) then "metamodelica_type";
+    case (DAE.ET_LIST(_)) then "metatype";
+    case (DAE.ET_METATUPLE(_)) then "metatype";
+    case (DAE.ET_METAOPTION(_)) then "metatype";
+    case (DAE.ET_UNIONTYPE()) then "metatype";
+    case (DAE.ET_POLYMORPHIC()) then "metatype";
+    case (DAE.ET_BOXED(_)) then "metatype";
+      
+    case t
+      equation
+        Debug.fprintln("failtrace", "- Codegen.expShortTypeStr failed: " +& Exp.typeString(t));
+      then fail();
 
   end matchcontinue;
 end expShortTypeStr;
@@ -2042,13 +2045,13 @@ algorithm
     case ((DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(_)),_)) then "modelica_complex";
     case ((DAE.T_COMPLEX(ClassInf.TYPE(_),{},SOME(ty),_),_)) then generateSimpleType(ty);
 
-    case ((DAE.T_LIST(_),_)) then "metamodelica_type";  // MetaModelica list
-    case ((DAE.T_METATUPLE(_),_)) then "metamodelica_type"; // MetaModelica tuple
-    case ((DAE.T_METAOPTION(_),_)) then "metamodelica_type"; // MetaModelica tuple
+    case ((DAE.T_LIST(_),_)) then "modelica_metatype";  // MetaModelica list
+    case ((DAE.T_METATUPLE(_),_)) then "modelica_metatype"; // MetaModelica tuple
+    case ((DAE.T_METAOPTION(_),_)) then "modelica_metatype"; // MetaModelica tuple
     case ((DAE.T_FUNCTION(_,_),_)) then "modelica_fnptr";
-    case ((DAE.T_UNIONTYPE(_),_)) then "metamodelica_type";
-    case ((DAE.T_POLYMORPHIC(_),_)) then "metamodelica_type";
-    case ((DAE.T_BOXED(ty),_)) then "metamodelica_type";
+    case ((DAE.T_UNIONTYPE(_),_)) then "modelica_metatype";
+    case ((DAE.T_POLYMORPHIC(_),_)) then "modelica_metatype";
+    case ((DAE.T_BOXED(ty),_)) then "modelica_metatype";
             
     case ((t as (DAE.T_ARRAY(arrayDim = _),_)))
       equation
@@ -2057,12 +2060,12 @@ algorithm
       then
         t_str;
 
-    case ((DAE.T_LIST(_),_)) then "metamodelica_type"; // MetaModelica list
-    case ((DAE.T_METATUPLE(_),_)) then "metamodelica_type"; // MetaModelica tuple
-    case ((DAE.T_METAOPTION(_),_)) then "metamodelica_type"; // MetaModelica option
-    case ((DAE.T_UNIONTYPE(_),_)) then "metamodelica_type"; //MetaModelica uniontypes, added by simbj
-    case ((DAE.T_POLYMORPHIC(_),_)) then "metamodelica_type"; //MetaModelica polymorphic type
-    case ((DAE.T_BOXED(_),_)) then "metamodelica_type"; //MetaModelica boxed type
+    case ((DAE.T_LIST(_),_)) then "modelica_metatype"; // MetaModelica list
+    case ((DAE.T_METATUPLE(_),_)) then "modelica_metatype"; // MetaModelica tuple
+    case ((DAE.T_METAOPTION(_),_)) then "modelica_metatype"; // MetaModelica option
+    case ((DAE.T_UNIONTYPE(_),_)) then "modelica_metatype"; //MetaModelica uniontypes, added by simbj
+    case ((DAE.T_POLYMORPHIC(_),_)) then "modelica_metatype"; //MetaModelica polymorphic type
+    case ((DAE.T_BOXED(_),_)) then "modelica_metatype"; //MetaModelica boxed type
     case ((DAE.T_FUNCTION(_,_),_)) then "modelica_fnptr";
     
     case (ty)
@@ -4442,21 +4445,25 @@ algorithm
         (cfn,var,tnr_1);
     case (DAE.IFEXP(expCond = e,expThen = then_,expElse = else_),tnr,context)
       equation
-        (cfn1,var1,tnr1) = generateExpression(e, tnr, context);
-        (decl,tvar,tnr1_1) = generateTempDecl("modelica_boolean", tnr1);
-        b_stmt = Util.stringAppendList({tvar," = ",var1,";"});
-        if_begin = Util.stringAppendList({"if (",tvar,") {"});
+        (cfn1,var1,tnr) = generateExpression(e, tnr, context);
+        (decl,tvar1,tnr) = generateTempDecl("modelica_boolean", tnr);
+        b_stmt = Util.stringAppendList({tvar1," = ",var1,";"});
+        t = Exp.typeof(then_); // The IFEXP has the same type for both then_ and else_
+        type_string = expTypeStr(t,Exp.isArrayType(t));
+        (tdecl,tvar2,tnr) = generateTempDecl(type_string, tnr);
+        if_begin = Util.stringAppendList({"if (",tvar1,") {"});
         cfn1_2 = cAddStatements(cfn1, {b_stmt,if_begin});
-        cfn1_1 = cAddVariables(cfn1_2, {decl});
-        (cfn2,var2,tnr2) = generateExpression(then_, tnr1_1, context);
-        cfn2_1 = cAddStatements(cfn2, {"}","else {"});
-        (cfn3,var3,tnr3) = generateExpression(else_, tnr2, context);
-        cfn3_1 = cAddStatements(cfn3, {"}"});
+        cfn1_1 = cAddVariables(cfn1_2, {decl,tdecl});
+        (cfn2,var2,tnr) = generateExpression(then_, tnr, context);
+        stmt = tvar2 +& " = " +& var2 +& ";";
+        cfn2_1 = cAddStatements(cfn2, {stmt,"}","else {"});
+        (cfn3,var3,tnr) = generateExpression(else_, tnr, context);
+        stmt = tvar2 +& " = " +& var3 +& ";";
+        cfn3_1 = cAddStatements(cfn3, {stmt,"}"});
         cfn = cMergeFns({cfn1_1,cfn2_1,cfn3_1});
-        var = Util.stringAppendList({"((",tvar,")?",var2,":",var3,")"});
       then
-        (cfn,var,tnr3);
-
+        (cfn,tvar2,tnr);
+        
         /* some buitlin functions that are e.g. overloaded */
     case ((e as DAE.CALL(path = fn,expLst = args,tuple_ = false,builtin = true)),tnr,context)
       equation
@@ -4797,7 +4804,7 @@ algorithm
       equation
         (cfn1,var1,tnr_1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr_1, context);
-        (decl,tvar,tnr1_1) = generateTempDecl("metamodelica_type", tnr2);
+        (decl,tvar,tnr1_1) = generateTempDecl("modelica_metatype", tnr2);
         var1 = MetaUtil.createConstantCExp(e1,var1);
         stmt = Util.stringAppendList({tvar," = mmc_mk_cons(",var1,", ",var2,");"});
         cfn2 = cAddVariables(cfn2,{decl});
@@ -4809,7 +4816,7 @@ algorithm
     case (DAE.LIST(_,elist),tnr,context)
       equation
         (cfn1,vars1,tnr1) = generateExpressions(elist, tnr, context);
-        (decl,tvar,tnr1_1) = generateTempDecl("metamodelica_type", tnr1);
+        (decl,tvar,tnr1_1) = generateTempDecl("modelica_metatype", tnr1);
         s = MetaUtil.listToConsCell(vars1,elist);
         stmt = Util.stringAppendList({tvar," = ",s,";"});
         cfn1_1 = cAddVariables(cfn1,{decl});
@@ -4823,7 +4830,7 @@ algorithm
         Integer len;
       equation
         (cfn1,vars1,tnr1) = generateExpressions(elist, tnr, context);
-        (decl,tvar,tnr1_1) = generateTempDecl("metamodelica_type", tnr1);
+        (decl,tvar,tnr1_1) = generateTempDecl("modelica_metatype", tnr1);
         len = listLength(vars1);
         
         strs = Util.listThreadMap(elist, vars1, MetaUtil.createConstantCExp);
@@ -4864,7 +4871,7 @@ algorithm
       equation
         (cfn1,vars1,tnr1) = generateExpressions(elist, tnr, context); //Generate the expressions for the arguments
         etypeList = Util.listMap(elist, Exp.typeof);
-        (decl,tvar,tnr1_1) = generateTempDecl("metamodelica_type", tnr1);
+        (decl,tvar,tnr1_1) = generateTempDecl("modelica_metatype", tnr1);
         fnStr = Absyn.pathString(fn);
         s = MetaUtil.listToBoxes(vars1,etypeList,index,fnStr); /*
         																										Generates the mk_box(<size>,<index>,<data>::<data>);
@@ -5205,7 +5212,7 @@ algorithm
       local Integer i;
       equation
         (cfn1,var1,tnr1) = generateExpression(s1, tnr, context);
-        (tdecl,tvar,tnr2) = generateTempDecl("metamodelica_type", tnr1);
+        (tdecl,tvar,tnr2) = generateTempDecl("modelica_metatype", tnr1);
         cfn = cAddVariables(cEmptyFunction, {tdecl});
         var2=intString(i);
         stmt = Util.stringAppendList({tvar," = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(",var1,"),",var2,"));"});
@@ -5239,7 +5246,7 @@ algorithm
         intList = Util.if_(i == 0, {}, Util.listIntRange2(2,i+1));
         stringList = Util.listMap(intList, intString);
         // Unbox every field
-        (tmpDecls,tmpRefs,tnr) = generateTempDeclList("metamodelica_type",tnr,listLength(intList));
+        (tmpDecls,tmpRefs,tnr) = generateTempDeclList("modelica_metatype",tnr,listLength(intList));
         baseStr = " = (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(" +& var1 +& "),";
         fetchStrs = Util.listMap1r(stringList, stringAppend, baseStr);
         fetchStrs = Util.listMap1(fetchStrs, stringAppend, ")));");
