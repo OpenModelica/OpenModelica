@@ -6713,7 +6713,7 @@ algorithm
     case (cache,env,mods,pre,inClass as SCode.CLASS(name = id,restriction = SCode.R_TYPE(),
                                          classDef = SCode.DERIVED(Absyn.TPATH(path = cn, arrayDim = ad),modifications = mod)),
           dims,impl) 
-      equation 
+      equation
         (cache,cl,cenv) = Lookup.lookupClass(cache,env, cn, true);
         owncref = Absyn.CREF_IDENT(id,{});
         ad_1 = getOptionArraydim(ad);
@@ -9405,26 +9405,31 @@ algorithm
     /* MetaModelica extensions */
     case (vn,ty as(DAE.T_LIST(_),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars)
       equation
+        true = RTOpts.acceptMetaModelicaGrammar();
         finst_dims = Util.listFlatten(inst_dims);
         dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,finalPrefix);      
       then {DAE.VAR(vn,kind,dir,prot,ty,e,finst_dims,fl,st,{},dae_var_attr,comment,io)};
     case (vn,ty as(DAE.T_METATUPLE(_),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars)
       equation
+        true = RTOpts.acceptMetaModelicaGrammar();
         finst_dims = Util.listFlatten(inst_dims);
         dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,finalPrefix);
       then {DAE.VAR(vn,kind,dir,prot,ty,e,finst_dims,fl,st,{},dae_var_attr,comment,io)};
     case (vn,ty as(DAE.T_METAOPTION(_),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars)
       equation
+        true = RTOpts.acceptMetaModelicaGrammar();
         finst_dims = Util.listFlatten(inst_dims);
         dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,finalPrefix);
       then {DAE.VAR(vn,kind,dir,prot,ty,e,finst_dims,fl,st,{},dae_var_attr,comment,io)};
     case (vn,ty as(DAE.T_UNIONTYPE(_),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars)
       equation
+        true = RTOpts.acceptMetaModelicaGrammar();
         finst_dims = Util.listFlatten(inst_dims);
         dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,finalPrefix);
       then {DAE.VAR(vn,kind,dir,prot,ty,e,finst_dims,fl,st,{},dae_var_attr,comment,io)};
     case (vn,ty as(DAE.T_POLYMORPHIC(_),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars)
       equation
+        true = RTOpts.acceptMetaModelicaGrammar();
         finst_dims = Util.listFlatten(inst_dims);
         dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,finalPrefix);
       then {DAE.VAR(vn,kind,dir,prot,ty,e,finst_dims,fl,st,{},dae_var_attr,comment,io)};
@@ -10446,21 +10451,25 @@ algorithm
     /* MetaModelica types */
     case (e1,e2,(DAE.T_LIST(_),_),initial_)
       equation
+        true = RTOpts.acceptMetaModelicaGrammar();
         dae = makeDaeEquation(e1, e2, initial_);
       then
         {dae};
     case (e1,e2,(DAE.T_METATUPLE(_),_),initial_)
       equation
+        true = RTOpts.acceptMetaModelicaGrammar();
         dae = makeDaeEquation(e1, e2, initial_);
       then
         {dae};
     case (e1,e2,(DAE.T_METAOPTION(_),_),initial_)
       equation
+        true = RTOpts.acceptMetaModelicaGrammar();
         dae = makeDaeEquation(e1, e2, initial_);
       then
         {dae};
     case (e1,e2,(DAE.T_UNIONTYPE(_),_),initial_)
       equation
+        true = RTOpts.acceptMetaModelicaGrammar();
         dae = makeDaeEquation(e1, e2, initial_);
       then
         {dae};
@@ -11213,6 +11222,7 @@ algorithm
     /* try */
     case (cache,env,pre,Absyn.ALG_TRY(sl),initial_,impl)
       equation
+        true = RTOpts.acceptMetaModelicaGrammar();
         (cache,sl_1) = instAlgorithmitems(cache, env, pre, sl, initial_, impl);
         stmt = DAE.STMT_TRY(sl_1);
       then
@@ -11221,6 +11231,7 @@ algorithm
     /* catch */
     case (cache,env,pre,Absyn.ALG_CATCH(sl),initial_,impl)
       equation
+        true = RTOpts.acceptMetaModelicaGrammar();
         (cache,sl_1) = instAlgorithmitems(cache, env, pre, sl, initial_, impl);
         stmt = DAE.STMT_CATCH(sl_1);
       then
@@ -11229,6 +11240,7 @@ algorithm
     /* throw */
     case (cache,env,pre,Absyn.ALG_THROW(),initial_,impl)
       equation
+        true = RTOpts.acceptMetaModelicaGrammar();
         stmt = DAE.STMT_THROW();
       then
         (cache,stmt);
@@ -11238,6 +11250,7 @@ algorithm
       local
         String s;
       equation
+        true = RTOpts.acceptMetaModelicaGrammar();
         stmt = DAE.STMT_GOTO(s);
       then
         (cache,stmt);
@@ -11246,6 +11259,7 @@ algorithm
       local
         String s;
       equation
+        true = RTOpts.acceptMetaModelicaGrammar();
         stmt = DAE.STMT_LABEL(s);
       then
         (cache,stmt);
@@ -11256,6 +11270,7 @@ algorithm
         list<Absyn.Exp> absynExpList;
         list<DAE.Exp> expExpList;
       equation
+        true = RTOpts.acceptMetaModelicaGrammar();
         (cache,expExpList,_,_) = Static.elabExpList(cache,env, absynExpList, impl, NONE,true);        
       then (cache,DAE.STMT_MATCHCASES(expExpList));
 
