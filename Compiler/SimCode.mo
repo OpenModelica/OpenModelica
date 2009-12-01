@@ -272,6 +272,9 @@ uniontype SimCode
     list<DAELow.Equation> nonStateDiscEquations;
     list<DAELow.Equation> residualEquations;
     list<DAELow.Equation> initialEquations;
+    list<DAELow.Equation> parameterEquations;
+    list<DAELow.ZeroCrossing> zeroCrossings;
+    list<list<DAE.ComponentRef>> zeroCrossingsNeedSave;
   end SIMCODE;
 end SimCode;
 
@@ -1149,6 +1152,9 @@ algorithm
       list<DAELow.Equation> nonStateDiscEquations;
       list<DAELow.Equation> residualEquations;
       list<DAELow.Equation> initialEquations;
+      list<DAELow.Equation> parameterEquations;
+      list<DAELow.ZeroCrossing> zeroCrossings;
+      list<list<DAE.ComponentRef>> zeroCrossingsNeedSave;
     case (dae,dlow,ass1,ass2,m,mt,comps,class_,filename,funcfilename,fileDir)
       equation
         print("in mine:"); print(filename); print("\n");
@@ -1180,9 +1186,7 @@ algorithm
         extObjInclude = Util.stringDelimitList(extObjIncludes,"\n");
         extObjInclude = Util.stringAppendList({"extern \"C\" {\n",extObjInclude,"\n}\n"});
         // Add model info
-        print("creating model info"); print("\n");
         modelInfo = createModelInfo(class_, dlow2, n_o, n_i, n_h, nres, fileDir);
-        print("creating equations"); print("\n");
         stateEquations = createEquations(dae, dlow, ass1, ass2, blt_states);
         (contBlocks, discBlocks) = splitOutputBlocks(dlow, ass1, ass2, m, mt, blt_no_states);
         nonStateContEquations = createEquations(dae, dlow, ass1, ass2,
@@ -1190,10 +1194,15 @@ algorithm
         nonStateDiscEquations = createEquations(dae, dlow, ass1, ass2,
                                                 discBlocks);
         initialEquations = createInitialEquations(dlow);
+        parameterEquations = createParameterEquations(dlow);
+        zeroCrossings = createZeroCrossings(dlow2);
+        zeroCrossingsNeedSave = createZeroCrossingsNeedSave(zeroCrossings, dae, dlow2, ass1, ass2, comps);
         print("creating SIMCODE"); print("\n");
         simCode = SIMCODE(modelInfo, {}, stateEquations,
                           nonStateContEquations, nonStateDiscEquations,
-                          residualEquations, initialEquations);
+                          residualEquations, initialEquations,
+                          parameterEquations, zeroCrossings,
+                          zeroCrossingsNeedSave);
         // Generate with template
         print("writing template to disk"); print("\n");
         _ = Tpl.tplString(SimCodeC.translateModel, simCode);
@@ -1268,7 +1277,6 @@ algorithm
       String varname;
       String id;
       Integer indx;
-      SimVar simvar;
     /* single equation: non-state */
     case (dae, DAELow.DAELOW(orderedVars=vars, orderedEqs=eqns),
           ass1, ass2, {eqNum})
@@ -1281,7 +1289,6 @@ algorithm
         varexp = DAE.CREF(cr,DAE.ET_REAL());
         exp_ = Exp.solve(e1, e2, varexp);
         varname = Exp.printComponentRefStr(cr);
-        simvar = dlowvarToSimvar(v);
       then
         DAELow.SOLVED_EQUATION(cr, exp_);
     /* single equation: state */
@@ -1297,10 +1304,8 @@ algorithm
         cr_1 = DAE.CREF_IDENT(id,DAE.ET_REAL(),{});
         varexp = DAE.CREF(cr_1,DAE.ET_REAL());
         exp_ = Exp.solve(e1, e2, varexp);
-        simvar = dlowvarToSimvar(v);
-        simvar = derVarFromStateVar(simvar);
       then
-        DAELow.SOLVED_EQUATION(cr, exp_);
+        DAELow.SOLVED_EQUATION(cr_1, exp_);
     /* multiple equations that must be solved together (algebraic loop) */
     case (dae, dlow, ass1, ass2, eqNum :: restEqNums)
       equation
@@ -1403,9 +1408,6 @@ algorithm
         knvars_lst = DAELow.varList(knvars);
         initialEquationsTmp = createInitialAssignmentsFromStart(knvars_lst);
         initialEquations = listAppend(initialEquations, initialEquationsTmp);
-        // kvars params
-        initialEquationsTmp = createInitialParamAssignments(knvars_lst);
-        initialEquations = listAppend(initialEquations, initialEquationsTmp);
       then
         initialEquations;
     case (_)
@@ -1417,6 +1419,37 @@ algorithm
   end matchcontinue;
 end createInitialEquations;
 
+protected function createParameterEquations 
+  input DAELow.DAELow dlow;
+  output list<DAELow.Equation> parameterEquations;
+algorithm
+  parameterEquations :=
+  matchcontinue (dlow)
+    local
+      list<DAELow.Equation> tempEqs;
+      list<DAELow.Var> vars_lst;
+      list<DAELow.Var> knvars_lst;
+      list<DAELow.Equation> eqns_lst;
+      DAELow.Variables vars;
+      DAELow.Variables knvars;
+    case (DAELow.DAELOW(orderedVars=vars, knownVars=knvars))
+      equation
+        parameterEquations = {};
+        // kvars params
+        knvars_lst = DAELow.varList(knvars);
+        tempEqs = createInitialParamAssignments(knvars_lst);
+        parameterEquations = listAppend(parameterEquations, tempEqs);
+      then
+        parameterEquations;
+    case (_)
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR,
+                         {"createParameterEquations failed"});
+      then
+        fail();
+  end matchcontinue;
+end createParameterEquations;
+
 protected function createInitialAssignmentsFromStart
   input list<DAELow.Var> vars;
   output list<DAELow.Equation> initialEquations;
@@ -1427,10 +1460,10 @@ algorithm
       DAELow.Equation initialEquation;
       list<DAELow.Var> restVars;
       Option<DAE.VariableAttributes> attr;
-      DAE.ComponentRef origname;
+      DAE.ComponentRef name;
       DAE.Exp startv;
     case ({}) then {};
-    case (DAELow.VAR(values=attr, origVarName=origname) :: restVars)
+    case (DAELow.VAR(values=attr, varName=name) :: restVars)
       /* also add an assignment for variables that have non-constant
          expressions, e.g. parameter values, as start.  NOTE: such start
          attributes can then not be changed in the text file, since the initial
@@ -1438,7 +1471,7 @@ algorithm
       equation
         startv = DAEUtil.getStartAttr(attr);
         false = Exp.isConst(startv);
-        initialEquation = DAELow.SOLVED_EQUATION(origname, startv);
+        initialEquation = DAELow.SOLVED_EQUATION(name, startv);
         initialEquations = createInitialAssignmentsFromStart(restVars);
       then
         (initialEquation :: initialEquations);
@@ -1478,6 +1511,118 @@ algorithm
         initialEquations;
   end matchcontinue;
 end createInitialParamAssignments;
+
+protected function createZeroCrossings 
+  input DAELow.DAELow dlow;
+  output list<DAELow.ZeroCrossing> zc;
+algorithm
+  zeroCrossings :=
+  matchcontinue (dlow)
+    case (DAELow.DAELOW(eventInfo=DAELow.EVENT_INFO(zeroCrossingLst=zc)))
+      then
+        zc;
+    case (_)
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR, {"createZeroCrossings failed"});
+      then
+        fail();
+  end matchcontinue;
+end createZeroCrossings;
+
+protected function createZeroCrossingsNeedSave 
+  input list<DAELow.ZeroCrossing> zeroCrossings;
+  input DAE.DAElist dae;
+  input DAELow.DAELow dlow;
+  input Integer[:] ass1;
+  input Integer[:] ass2;
+  input list<list<Integer>> blocks;
+  output list<list<DAE.ComponentRef>> needSave;
+algorithm
+  needSave :=
+  matchcontinue (zeroCrossings, dae, dlow, ass1, ass2, blocks)
+    local
+      DAELow.ZeroCrossing zc;
+      list<DAELow.ZeroCrossing> rest_zc;
+      list<Integer> eql;
+      list<DAE.ComponentRef> needSave;
+      list<list<DAE.ComponentRef>> needSave_rest;
+    case ({}, _, _, _, _, _)
+      then {};
+    case ((zc as DAELow.ZERO_CROSSING(occurEquLst=eql)) :: rest_zc, dae, dlow,
+          ass1, ass2, blocks)
+      equation
+        needSave = createZeroCrossingNeedSave(dae, dlow, ass1, ass2, eql,
+                                              blocks);
+        needSave_rest = createZeroCrossingsNeedSave(rest_zc, dae, dlow, ass1,
+                                                    ass2, blocks);
+      then needSave :: needSave_rest;
+  end matchcontinue;
+end createZeroCrossingsNeedSave;
+
+protected function createZeroCrossingNeedSave
+  input DAE.DAElist dae;
+  input DAELow.DAELow dlow;
+  input Integer[:] ass1;
+  input Integer[:] ass2;
+  input list<Integer> eqns2;
+  input list<list<Integer>> blocks;
+  output list<DAE.ComponentRef> needSave;
+algorithm
+  needSave :=
+  matchcontinue (dae, dlow, ass1, ass2, eqns2, blocks)
+    local
+      list<DAE.ComponentRef> crs;
+      Integer cg_id,eqn_1,v,eqn,cg_id,cg_id_1,numValues;
+      list<Integer> block_,rest;
+      DAE.ComponentRef cr;
+      String cr_str,save_stmt,rettp,fn,stmt;
+      list<DAELow.Equation> eqn_lst,cont_eqn,disc_eqn;
+      list<DAELow.Var> var_lst,cont_var,disc_var,cont_var1;
+      DAELow.Variables vars, vars_1,knvars,exvars;
+      DAELow.EquationArray eqns_1,eqns,se,ie;
+      DAELow.DAELow cont_subsystem_dae,dlow;
+      list<Integer>[:] m,m_1,mt_1;
+      Option<list<tuple<Integer, Integer, DAELow.Equation>>> jac;
+      DAELow.JacobianType jac_tp;
+      Codegen.CFunction s0,s2_1,s4,s3,s1,cfn3,cfn,cfn2,cfn1;
+      list<String> retrec,arg,init,stmts,cleanups,stmts_1;
+      list<CFunction> extra_funcs1,extra_funcs2,extra_funcs;
+      DAE.DAElist dae;
+      DAELow.MultiDimEquation[:] ae;
+      Algorithm.Algorithm[:] al;
+      DAELow.EventInfo ev;
+      Integer[:] ass1,ass2;
+      list<list<Integer>> blocks;
+      DAELow.ExternalObjectClasses eoc;
+    case (_,_,_,_,{},_)
+      then {};
+    /* zero crossing for mixed system */      
+    case (dae, (dlow as DAELow.DAELOW(vars, knvars, exvars, eqns, se, ie, ae,
+                                      al, ev, eoc)),
+          ass1, ass2, (eqn :: rest), blocks) 
+      equation
+        true = isPartOfMixedSystem(dlow, eqn, blocks, ass2);
+        block_ = getZcMixedSystem(dlow, eqn, blocks, ass2);
+        eqn_1 = eqn - 1;
+        v = ass2[eqn_1 + 1];
+        (DAELow.VAR(cr,_,_,_,_,_,_,_,_,_,_,_,_,_)) = DAELow.getVarAt(vars, v);
+        crs = createZeroCrossingNeedSave(dae, dlow, ass1, ass2, rest, blocks);
+      then
+        (cr :: crs);
+    /* zero crossing for single equation */
+    case (dae, (dlow as DAELow.DAELOW(orderedVars = vars)), ass1, ass2,
+          (eqn :: rest), blocks) 
+      local
+        DAELow.Variables vars;
+      equation
+        eqn_1 = eqn - 1;
+        v = ass2[eqn_1 + 1];
+        (DAELow.VAR(cr,_,_,_,_,_,_,_,_,_,_,_,_,_)) = DAELow.getVarAt(vars, v);
+        crs = createZeroCrossingNeedSave(dae, dlow, ass1, ass2, rest, blocks);
+      then
+        (cr :: crs);
+  end matchcontinue;
+end createZeroCrossingNeedSave;
 
 public function createModelInfo
   input Absyn.Path class_;

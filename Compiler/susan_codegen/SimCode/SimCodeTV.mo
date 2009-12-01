@@ -47,6 +47,9 @@ package SimCode
       list<DAELow.Equation> nonStateDiscEquations;
       list<DAELow.Equation> residualEquations;
       list<DAELow.Equation> initialEquations;
+      list<DAELow.Equation> parameterEquations;
+      list<DAELow.ZeroCrossing> zeroCrossings;
+      list<list<DAE.ComponentRef>> zeroCrossingsNeedSave;
     end SIMCODE;
   end SimCode;
   
@@ -156,8 +159,13 @@ package DAELow
     end SOLVED_EQUATION;
   end Equation;
 
-end DAELow;
+  uniontype ZeroCrossing
+    record ZERO_CROSSING
+      DAE.Exp relation_;
+    end ZERO_CROSSING;
+  end ZeroCrossing;
 
+end DAELow;
 
 package System
 

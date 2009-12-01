@@ -65,7 +65,7 @@ case SIMCODE(modelInfo = MODELINFO) then
 
 <residualStateComputation()>
 
-<zeroCrossingFunctions()>
+<zeroCrossingFunctions(zeroCrossings, zeroCrossingsNeedSave)>
 
 <whenFunction()>
 
@@ -75,7 +75,7 @@ case SIMCODE(modelInfo = MODELINFO) then
 
 <initialResidualFunction(residualEquations)>
 
-<boundParametersFunction()>
+<boundParametersFunction(parameterEquations)>
 
 <eventCheckingCode()>
 >>
@@ -552,20 +552,49 @@ int functionDAE_res(double *t, double *x, double *xd, double *delta,
 }
 >>
 
-zeroCrossingFunctions() ::=
+zeroCrossingFunctions(list<ZeroCrossing> zeroCrossings,
+                      list<list<ComponentRef>> zeroCrossingsNeedSave) ::=
+# varDecls = ""
+# zeroCrossingCode = zeroCrossingsTpl(zeroCrossings, varDecls)
 <<
 int function_zeroCrossing(long *neqm, double *t, double *x, long *ng,
                           double *gout, double *rpar, long* ipar)
 {
-  // TODO: Implement this
-  fprintf(stderr, "ERROR: function_zeroCrossing not implemented\n");
+  double timeBackup;
+  state mem_state;
+
+  mem_state = get_memory_state();
+
+  timeBackup = localData->timeValue;
+  localData->timeValue = *t;
+  <varDecls>
+
+  functionODE();
+  functionDAE_output();
+
+  <zeroCrossingCode>
+
+  restore_memory_state(mem_state);
+  localData->timeValue = timeBackup;
+
   return 0;
 }
 
 int handleZeroCrossing(long index)
 {
-  // TODO: Implement this
-  fprintf(stderr, "ERROR: handleZeroCrossing not implemented\n");
+  state mem_state;
+
+  mem_state = get_memory_state();
+
+  switch(index) {
+    <zeroCrossingsNeedSave of crefs:
+      'case <i0>:<\n><crefs of cref: '  save(<cref(cref)>);' "\n"><\n>  break;' "\n">
+    default:
+      break;
+  }
+
+  restore_memory_state(mem_state);
+
   return 0;
 }
 
@@ -614,7 +643,12 @@ int initial_function()
   <varDecls>
 
   mem_state = get_memory_state();
+
   <body>
+
+  <equations of eq as DAELow.SOLVED_EQUATION:
+    'if (sim_verbose) { printf("Setting variable start value: %s(start=%f)\n", "<cref(componentRef)>", <cref(componentRef)>); }' "\n">
+
   restore_memory_state(mem_state);
 
   return 0;
@@ -629,7 +663,7 @@ initialResidualFunction(list<Equation> eqs) ::=
       'localData-\>initialResiduals[i++] = 0;'
     else
       # preExp = ""
-      # expPart = expression(exp, preExp, varDecls)
+      # expPart = daeExp(exp, preExp, varDecls)
       '<preExp>localData-\>initialResiduals[i++] = <expPart>;'
   "\n"
 )
@@ -648,12 +682,19 @@ int initial_residual()
 }
 >>
 
-boundParametersFunction() ::=
+boundParametersFunction(list<Equation> equations) ::=
+# varDecls = ""
+# body = (equations of eq as DAELow.SOLVED_EQUATION: '<equation_(eq, varDecls)>' "\n")
 <<
 int bound_parameters()
 {
-  // TODO: Implement this
-  fprintf(stderr, "ERROR: boundParametersFunction not implemented\n");
+  state mem_state;
+  <varDecls>
+
+  mem_state = get_memory_state();
+  <body>
+  restore_memory_state(mem_state);
+
   return 0;
 }
 >>
@@ -699,6 +740,42 @@ int checkForDiscreteVarChanges()
 //<<
 //>>
 
+zeroCrossingsTpl(list<ZeroCrossing> zeroCrossings, Text varDecls) ::=
+  <<
+  <zeroCrossings of zeroCrossing as ZERO_CROSSING:
+    '<zeroCrossingTpl(i0, relation_, varDecls)>' "\n">
+  >>
+
+zeroCrossingTpl(Integer index, Exp relation, Text varDecls) ::=
+  match relation
+  case RELATION then
+    # preExp = ""
+    # e1 = daeExp(exp1, preExp, varDecls)
+    # op = zeroCrossingOpFunc(operator)
+    # e2 = daeExp(exp2, preExp, varDecls)
+    <<
+    <preExp>
+    ZEROCROSSING(<index>, <op>(<e1>, <e2>));
+    >>
+  case CALL(path=IDENT(name="sample"), expLst={start, interval}) then
+    # preExp = ""
+    # e1 = daeExp(start, preExp, varDecls)
+    # e2 = daeExp(interval, preExp, varDecls)
+    <<
+    <preExp>
+    ZEROCROSSING(<index>, Samle(*t, <e1>, <e2>));
+    >>
+  case _ then
+    <<
+    ZERO CROSSING ERROR
+    >>
+
+zeroCrossingOpFunc(Operator) ::=
+  case LESS      then "Less"
+  case GREATER   then "Greater"
+  case LESSEQ    then "LessEq"
+  case GREATEREQ then "GreaterEq"
+
 utilStaticStringArray(String name, list<SimVar> items) ::=
 if items then
 <<
@@ -724,7 +801,7 @@ char* <name>[1] = {""};
 equation_(Equation eq, Text varDecls) ::=
 case SOLVED_EQUATION then
 # preExp = ""
-# expPart = expression(exp, preExp, varDecls)
+# expPart = daeExp(exp, preExp, varDecls)
 <<
 <preExp>
 <cref(componentRef)> = <expPart>;
@@ -751,6 +828,7 @@ discreteAttrInt(Boolean isDiscrete) ::=
 
 cref(ComponentRef) ::=
   case CREF_IDENT then ident
+  case _ then "CREF_NOT_IDENT"
 
 expType(DAE.ExpType) ::=
   case ET_INT    then "modelica_integer"
@@ -921,21 +999,21 @@ funStatement(Statement, Text varDecls) ::=
 algStatement(DAE.Statement, Text varDecls) ::=
   case STMT_ASSIGN(exp1 = CREF(componentRef = WILD), exp = e) then
     # preExp = "" 
-    # expPart = expression(e, preExp, varDecls)
+    # expPart = daeExp(e, preExp, varDecls)
     <<
 <preExp>
 <expPart>
     >>
   case STMT_ASSIGN(exp1 = CREF) then     
     # preExp = ""
-    # expPart = expression(exp, preExp, varDecls)
+    # expPart = daeExp(exp, preExp, varDecls)
     <<
 <preExp>
 <scalarLhsCref(exp1.componentRef)> = <expPart>;
     >>
   case STMT_IF then
     # preExp = ""
-    # condExp = expression(exp, preExp, varDecls)
+    # condExp = daeExp(exp, preExp, varDecls)
     <<
 <preExp>
 if(<condExp>) {
@@ -951,11 +1029,11 @@ if(<condExp>) {
     # r2 = tempDecl(identType, varDecls)
     # r3 = tempDecl(identType, varDecls)
     # preExp = ""
-    # er1 = expression(rng.exp, preExp, varDecls)
+    # er1 = daeExp(rng.exp, preExp, varDecls)
     # er2 = if rng.expOption is SOME(eo) 
-            then expression(eo, preExp, varDecls)
+            then daeExp(eo, preExp, varDecls)
             else "(1)"
-    # er3 = expression(rng.range, preExp, varDecls) 
+    # er3 = daeExp(rng.range, preExp, varDecls) 
     <<
 <preExp>
 <r1> = <er1>; <r2> = <er2>; <r3> = <er3>;
@@ -975,7 +1053,7 @@ elseExpr(DAE.Else, Text varDecls) ::=
   case NOELSE then ()
   case ELSEIF then
     # preExp = ""
-    # condExp = expression(exp, preExp, varDecls)
+    # condExp = daeExp(exp, preExp, varDecls)
     <<
 else {
 <preExp>
@@ -997,100 +1075,124 @@ scalarLhsCref(ComponentRef) ::=
   case CREF_QUAL  then '<ident>.<scalarLhsCref(componentRef)>'
 
 //TODO: this wrong for qualified integers !
-rhsCref(ComponentRef, Type ty) ::=
-<<
-<if ty is INT then
-"(modelica_integer)"
-><
-  case CREF_IDENT then ident
-  case CREF_QUAL then '<ident>.<rhsCref(componentRef,ty)>'
->
->>
+rhsCref(ComponentRef, ExpType ty) ::=
+  case CREF_IDENT then '<rhsCrefType(ty)><ident>'
+  case CREF_QUAL  then '<rhsCrefType(ty)><ident>.<rhsCref(componentRef,ty)>'
+
+rhsCrefType(ExpType) ::=
+  case ET_INT then "(modelica_integer)"
+  case _      then ""
   
-      
-expression(Exp, Text preExp, Text varDecls) ::=
-  case ICONST then integer
-  case RCONST then real
-  case SCONST then
-    # strVar = tempDecl("modelica_string", varDecls)
-    # preExp += 'init_modelica_string(&<strVar>,"<Util.escapeModelicaStringToCString(string)>");<\n>'
-    strVar  
-  case BCONST then  if bool then "(1)" else "(0)"
-  case CREF   then rhsCref(componentRef, ty)
-  case BINARY then ( //binaryExpression(operator, exp1, exp2, preExp, varDecls)
-	  # e1 = expression(exp1, preExp, varDecls)
-	  # e2 = expression(exp2, preExp, varDecls)
-	  match operator
-	  case ADD(ty = STRING) then
-	    # tmpStr = tempDecl("modelica_string", varDecls)
-	    # preExp += 'cat_modelica_string(&<tmpStr>,&<e1>,&<e2>);<\n>'
-	    tmpStr
-	  case ADD then '(<e1> + <e2>)'
-	  case SUB then '(<e1> - <e2>)'
-	  case MUL then '(<e1> * <e2>)'
-	  case DIV then '(<e1> / <e2>)'
-	  case POW then 'pow((modelica_real)<e1>, (modelica_real)<e2>)'
-	  case UMINUS then () //# error
-	  case UPLUS then () //# error
-  )
-  case RELATION then (
-      # e1 = expression(exp1, preExp, varDecls)
-	  # e2 = expression(exp2, preExp, varDecls)
-	  match operator
-	  case LESS(ty = BOOL) then '(!<e1> && <e2>)'
-	  case LESS(ty = STRING) then "# string comparison not supported\n"
-	  case LESS(ty = INT)  then '(<e1> \< <e2>)'
-	  case LESS(ty = REAL) then '(<e1> \< <e2>)'
-	  
-	  case GREATER(ty = BOOL) then '(<e1> && !<e2>)'
-	  case GREATER(ty = STRING) then "# string comparison not supported\n"
-	  case GREATER(ty = INT)  then '(<e1> > <e2>)'
-	  case GREATER(ty = REAL) then '(<e1> > <e2>)'
-	  
-	  case LESSEQ(ty = BOOL) then '(!<e1> || <e2>)'
-	  case LESSEQ(ty = STRING) then "# string comparison not supported\n"
-	  case LESSEQ(ty = INT)  then '(<e1> \<= <e2>)'
-	  case LESSEQ(ty = REAL) then '(<e1> \<= <e2>)'
-	  
-	  case GREATEREQ(ty = BOOL) then '(<e1> || !<e2>)'
-	  case GREATEREQ(ty = STRING) then "# string comparison not supported\n"
-	  case GREATEREQ(ty = INT)  then '(<e1> >= <e2>)'
-	  case GREATEREQ(ty = REAL) then '(<e1> >= <e2>)'
-	  
-	  case EQUAL(ty = BOOL)   then '((!<e1> && !<e2>) || (<e1> && <e2>))'
-	  case EQUAL(ty = STRING) then '(!strcmp(<e1>,<e2>))'
-	  case EQUAL(ty = INT)    then '(<e1> == <e2>)'
-	  case EQUAL(ty = REAL)   then '(<e1> == <e2>)'
-	  
-	  case NEQUAL(ty = BOOL)   then '((!<e1> && <e2>) || (<e1> && !<e2>))'
-	  case NEQUAL(ty = STRING) then '(strcmp(<e1>,<e2>))'
-	  case NEQUAL(ty = INT)    then '(<e1> != <e2>)'
-	  case NEQUAL(ty = REAL)   then '(<e1> != <e2>)'
-  )
-  case IFEXP then
-    # eCond = expression(expCond, preExp, varDecls)
-	# tmpB = tempDecl("modelica_boolean", varDecls)
-    # preExpThen = ""
-	# eThen = expression(expThen, preExpThen, varDecls)
-    # preExpElse = ""
-	# eElse = expression(expElse, preExpElse, varDecls)
-	# preExp +=  
-	  <<
-<tmpB> = <eCond>;
-if(<tmpB>) {
-  <preExpThen>
-}
-else {
-  <preExpElse>
-}<\n>
-      >>
-	<<
-((<tmpB>)?<eThen>:<eElse>)
-    >>
-  case CAST(ty = INT)  then '((modelica_int)<expression(exp, preExp, varDecls)>)'
-  case CAST(ty = REAL) then '((modelica_real)<expression(exp, preExp, varDecls)>)'    
-  case _ then "#non-template-implemented expression#"  
-  
+daeExp(Exp exp, Text preExp, Text varDecls) ::=
+  case ICONST     then integer
+  case RCONST     then real
+  case SCONST     then daeExpSconst(string, preExp, varDecls)
+  case BCONST     then if bool then "(1)" else "(0)"
+  case CREF       then rhsCref(componentRef, ty)
+  case BINARY     then daeExpBinary(exp1, operator, exp2, preExp, varDecls)
+  case UNARY      then daeExpUnary(operator, exp, preExp, varDecls)
+  case LBINARY    then "LBINARY_NOT_IMPLEMENTED"
+  case LUNARY     then "LUNARY_NOT_IMPLEMENTED"
+  case RELATION   then daeExpRelation(exp1, operator, exp2, preExp, varDecls)
+  case IFEXP      then daeExpIf(expCond, expThen, expElse, preExp, varDecls)
+  case CALL       then "CALL_NOT_IMPLEMENTED"
+  // PARTEVALFUNCTION
+  case ARRAY      then "ARRAY_NOT_IMPLEMENTED"
+  case MATRIX     then "MATRIX_NOT_IMPLEMENTED"
+  case RANGE      then "RANGE_NOT_IMPLEMENTED"
+  case TUPLE      then "TUPLE_NOT_IMPLEMENTED"
+  case CAST       then "CAST_NOT_IMPLEMENTED"
+  case ASUB       then "ASUB_NOT_IMPLEMENTED"
+  case SIZE       then "SIZE_NOT_IMPLEMENTED"
+  case CODE       then "CODE_NOT_IMPLEMENTED"
+  case REDUCTION  then "REDUCTION_NOT_IMPLEMENTED"
+  case END        then "END_NOT_IMPLEMENTED"
+  case VALUEBLOCK then "VALUEBLOCK_NOT_IMPLEMENTED"
+  case LIST       then "LIST_NOT_IMPLEMENTED"
+  case CONS       then "CONS_NOT_IMPLEMENTED"
+  // META_TUPLE
+  // META_OPTION
+  // METARECORDCALL
+
+daeExpSconst(String string, Text preExp, Text varDecls) ::=
+  # strVar = tempDecl("modelica_string", varDecls)
+  # preExp += 'init_modelica_string(&<strVar>,"<Util.escapeModelicaStringToCString(string)>");<\n>'
+  strVar  
+
+daeExpBinary(Exp exp1, Operator op, Exp exp2, Text preExp, Text varDecls) ::=
+  # e1 = daeExp(exp1, preExp, varDecls)
+  # e2 = daeExp(exp2, preExp, varDecls)
+  match op
+  case ADD(ty = ET_STRING) then
+    # tmpStr = tempDecl("modelica_string", varDecls)
+    # preExp += 'cat_modelica_string(&<tmpStr>,&<e1>,&<e2>);<\n>'
+    tmpStr
+  case ADD then '(<e1> + <e2>)'
+  case SUB then '(<e1> - <e2>)'
+  case MUL then '(<e1> * <e2>)'
+  case DIV then '(<e1> / <e2>)'
+  case POW then 'pow((modelica_real)<e1>, (modelica_real)<e2>)'
+  case _   then "daeExpBinary:ERR"
+
+daeExpUnary(Operator op, Exp exp, Text preExp, Text varDecls) ::=
+  # e = daeExp(exp, preExp, varDecls)
+  match op
+  case UMINUS     then '(-<e>)'
+  case UPLUS      then '(<e>)'
+  case UMINUS_ARR then "UMINUS_ARR_NOT_IMPLEMENTED"
+  case UPLUS_ARR  then "UPLUS_ARR_NOT_IMPLEMENTED"
+  case _          then "daeExpUnary:ERR"
+
+daeExpRelation(Exp exp1, Operator op, Exp exp2, Text preExp, Text varDecls) ::=
+  # e1 = daeExp(exp1, preExp, varDecls)
+  # e2 = daeExp(exp2, preExp, varDecls)
+  match op
+  case LESS(ty = BOOL)        then '(!<e1> && <e2>)'
+  case LESS(ty = STRING)      then "# string comparison not supported\n"
+  case LESS(ty = INT)         then '(<e1> \< <e2>)'
+  case LESS(ty = REAL)        then '(<e1> \< <e2>)'
+  case GREATER(ty = BOOL)     then '(<e1> && !<e2>)'
+  case GREATER(ty = STRING)   then "# string comparison not supported\n"
+  case GREATER(ty = INT)      then '(<e1> > <e2>)'
+  case GREATER(ty = REAL)     then '(<e1> > <e2>)'
+  case LESSEQ(ty = BOOL)      then '(!<e1> || <e2>)'
+  case LESSEQ(ty = STRING)    then "# string comparison not supported\n"
+  case LESSEQ(ty = INT)       then '(<e1> \<= <e2>)'
+  case LESSEQ(ty = REAL)      then '(<e1> \<= <e2>)'
+  case GREATEREQ(ty = BOOL)   then '(<e1> || !<e2>)'
+  case GREATEREQ(ty = STRING) then "# string comparison not supported\n"
+  case GREATEREQ(ty = INT)    then '(<e1> >= <e2>)'
+  case GREATEREQ(ty = REAL)   then '(<e1> >= <e2>)'
+  case EQUAL(ty = BOOL)       then '((!<e1> && !<e2>) || (<e1> && <e2>))'
+  case EQUAL(ty = STRING)     then '(!strcmp(<e1>, <e2>))'
+  case EQUAL(ty = INT)        then '(<e1> == <e2>)'
+  case EQUAL(ty = REAL)       then '(<e1> == <e2>)'
+  case NEQUAL(ty = BOOL)      then '((!<e1> && <e2>) || (<e1> && !<e2>))'
+  case NEQUAL(ty = STRING)    then '(strcmp(<e1>, <e2>))'
+  case NEQUAL(ty = INT)       then '(<e1> != <e2>)'
+  case NEQUAL(ty = REAL)      then '(<e1> != <e2>)'
+  case _                      then "daeExpRelation:ERR"
+
+daeExpIf(Exp cond, Exp then_, Exp else_, Text preExp, Text varDecls) ::=
+  # condExp = daeExp(cond, preExp, varDecls)
+  # condVar = tempDecl("modelica_boolean", varDecls)
+  # preExpThen = ""
+  # eThen = daeExp(then_, preExpThen, varDecls)
+  # preExpElse = ""
+  # eElse = daeExp(else_, preExpElse, varDecls)
+  # preExp +=  
+  <<
+  <condVar> = <condExp>;
+  if (<condVar>) {
+    <preExpThen>
+  } else {
+    <preExpElse>
+  }<\n>
+  >>
+  <<
+  ((<condVar>)?<eThen>:<eElse>)
+  >>
+
 tempDecl(String ty, Text varDecls) ::=
   # newVar = 'tmp<System.tmpTick()>'
   # varDecls += '<ty> <newVar>;<\n>'
