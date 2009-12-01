@@ -3577,7 +3577,6 @@ algorithm
       Const c,c1,c2;
     case (e,DAE.PROP(type_ = gt,constFlag = c1),DAE.PROP(type_ = et,constFlag = c2),printFailtrace)
       equation 
-        Debug.fprintln("types", "- Types.matchProp debug: match prop.");
         (e_1,t_1) = matchType(e, gt, et, printFailtrace);
         c = constAnd(c1, c2);
       then
@@ -3585,7 +3584,6 @@ algorithm
     case (e,DAE.PROP_TUPLE(type_ = gt,tupleConst = c1),DAE.PROP_TUPLE(type_ = et,tupleConst = c2),printFailtrace)
       local TupleConst c,c1,c2;
       equation 
-        Debug.fprintln("types", "- Types.matchProp debug: match prop tuple.");
         (e_1,t_1) = matchType(e, gt, et, printFailtrace);
         c = constTupleAnd(c1, c2);
       then
@@ -3595,7 +3593,6 @@ algorithm
     case (e,DAE.PROP_TUPLE(type_ = (gt as (DAE.T_TUPLE(_),_)),tupleConst = c1), DAE.PROP(type_ = (et as (DAE.T_METATUPLE(_),_)),constFlag = c2),printFailtrace)
       local TupleConst c1; Const c_1;
       equation 
-        Debug.fprintln("types", "- Types.matchProp debug: match prop meta_tuple/tuple.");
         true = RTOpts.acceptMetaModelicaGrammar();
         (e_1,t_1) = matchType(e, gt, et, printFailtrace);
         c_1 = propTupleAllConst(c1);
