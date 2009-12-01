@@ -2806,6 +2806,19 @@ algorithm
       Env.Cache cache;
       DAE.ExpType etp;
       String s1,a1,a2;
+      Integer pInt;
+
+    case (cache,env,{Absyn.INTEGER(pInt),expr},_,impl) // if p is 0 just return the expression!
+      equation 
+        true = pInt == 0;
+        (cache,expr_1,DAE.PROP(tp,c),_) = elabExp(cache,env, expr, impl, NONE, true);
+        b1 = Types.isReal(tp);
+        b2 = Types.isRecordWithOnlyReals(tp);
+        true = Util.boolOrList({b1,b2});
+        etp = Types.elabType(tp);
+        exp = expr_1;
+      then
+        (cache,exp,DAE.PROP(tp,c));
 
     case (cache,env,{p,expr},_,impl)
       equation 
@@ -7881,6 +7894,7 @@ algorithm
         list<DAE.Var> vars;
         Absyn.Path fqPath;
        equation
+        true = RTOpts.acceptMetaModelicaGrammar();
         (cache,t as (DAE.T_METARECORD(index,vars),_),env_1) = Lookup.lookupType(cache, env, fn, false);
         (cache,c,env_1) = Lookup.lookupClass2(cache, env_1, fn, false);
         // (_, _, _, _, (DAE.T_COMPLEX(complexClassType = ClassInf.META_RECORD(_), complexVarLst = vars),_), _, _, _) = Inst.instClass(cache,env_1,DAE.NOMOD(),Prefix.NOPRE(), Connect.emptySet,c,{},false,Inst.INNER_CALL(), ConnectionGraph.EMPTY);
