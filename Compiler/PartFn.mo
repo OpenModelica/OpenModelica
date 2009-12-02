@@ -1609,7 +1609,7 @@ algorithm
       DAE.Exp e;
       Absyn.Path p,orig_p,new_p,current;
       list<DAE.Element> inputs,dae,tmp;
-      DAE.ExpType ty;
+      DAE.ExpType ty,ty_1;
       Boolean tup,bui,inl;
       list<DAE.Exp> args,args2,args_1;
       list<DAE.ComponentRef> crefs;
@@ -1644,8 +1644,9 @@ algorithm
         crefs = Util.listMap(inputs,DAEUtil.varCref);
         args2 = Util.listMap(crefs,Exp.crefExp);
         args_1 = listAppend(args,args2);
+        ty_1 = Exp.unboxExpType(ty);
       then
-        ((DAE.CALL(p,args_1,tup,false,ty,inl),(p,inputs,dae,current)));
+        ((DAE.CALL(p,args_1,tup,false,ty_1,inl),(p,inputs,dae,current)));
     case((e,(p,inputs,dae,current))) then ((e,(p,inputs,dae,current)));
   end matchcontinue;
 end fixCall;
@@ -1691,6 +1692,11 @@ algorithm
       then
         true;
     case({DAE.CALL(ty = DAE.ET_BOXED(et))})
+      equation
+        true = Exp.typeBuiltin(et);
+      then
+        true;
+    case({DAE.CALL(ty = et)})
       equation
         true = Exp.typeBuiltin(et);
       then

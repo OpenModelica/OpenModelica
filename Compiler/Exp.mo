@@ -3535,6 +3535,22 @@ algorithm
   end matchcontinue;
 end checkIfOther;
 
+// stefan
+public function unboxExpType
+"function: unboxExpType
+	takes a type, and if it is boxed, unbox it
+	otherwise return the given type"
+	input Type inType;
+	output Type outType;
+algorithm
+  outType := matchcontinue(inType)
+    local
+      Type ty;
+    case(DAE.ET_BOXED(ty)) then ty;
+    case(ty) then ty;
+  end matchcontinue;
+end unboxExpType;
+
 public function makeDiff 
 "Takes two expressions and create 
  the difference between them"
