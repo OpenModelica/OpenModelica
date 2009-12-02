@@ -90,6 +90,7 @@ typedef modelica_real abs_rettype;
 typedef modelica_real max_rettype;
 typedef modelica_real min_rettype;
 typedef modelica_real arctan_rettype;
+typedef modelica_real atan2_rettype;
 #define arctan atan
 
 

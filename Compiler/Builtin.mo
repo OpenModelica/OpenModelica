@@ -3038,6 +3038,7 @@ algorithm
       env = Env.extendFrameT(env, "asin", real2real);
       env = Env.extendFrameT(env, "acos", real2real);
       env = Env.extendFrameT(env, "atan", real2real);
+      env = Env.extendFrameT(env, "atan2", realReal2real);
       env = Env.extendFrameT(env, "exp", dimesionlessReal2DimensionlessReal);
       env = Env.extendFrameT(env, "log", dimesionlessReal2DimensionlessReal);
       env = Env.extendFrameT(env, "ln", dimesionlessReal2DimensionlessReal);      
