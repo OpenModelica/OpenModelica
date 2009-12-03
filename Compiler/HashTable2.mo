@@ -89,8 +89,9 @@ public function emptyHashTable "
   Option<tuple<Key,Value>>[:] emptyarr;
 algorithm 
   arr := fill({}, 1000);
-  lst := Util.listFill(NONE, 100);
-  emptyarr := listArray(lst);
+  // lst := Util.listFill(NONE, 100);
+  // emptyarr := listArray(lst);
+  emptyarr := fill(NONE(), 100);
   hashTable := HASHTABLE(arr,VALUE_ARRAY(0,100,emptyarr),1000,0);
 end emptyHashTable;
 
@@ -98,7 +99,7 @@ public function add "
   author: PA
  
   Add a Key-Value tuple to hashtable.
-  If the Key-Value tuple allready exists, the function updates the Value.
+  If the Key-Value tuple already exists, the function updates the Value.
 "
   input tuple<Key,Value> entry;
   input HashTable hashTable;
@@ -128,7 +129,7 @@ algorithm
         n_1 = valueArrayLength(varr_1);
       then HASHTABLE(hashvec_1,varr_1,bsize,n_1);
       
-      /* adding when allready present => Updating value */
+      /* adding when already present => Updating value */
     case ((newv as (key,value)),(hashTable as HASHTABLE(hashvec,varr,bsize,n)))
       equation 
         (_,indx) = get1(key, hashTable);
@@ -148,7 +149,7 @@ public function addNoUpdCheck "
   author: PA
  
   Add a Key-Value tuple to hashtable.
-  If the Key-Value tuple allready exists, the function updates the Value.
+  If the Key-Value tuple already exists, the function updates the Value.
 "
   input tuple<Key,Value> entry;
   input HashTable hashTable;
@@ -207,7 +208,7 @@ algorithm
       tuple<Key,Value> v,newv;
       Key key;
       Value value;     
-      /* adding when allready present => Updating value */
+      /* adding when already present => Updating value */
     case (key,(hashTable as HASHTABLE(hashvec,varr,bsize,n)))
       equation 
         (_,indx) = get1(key, hashTable);
