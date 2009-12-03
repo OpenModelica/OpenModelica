@@ -80,7 +80,7 @@ case SIMCODE(modelInfo = MODELINFO) then
 
 <boundParametersFunction(parameterEquations)>
 
-<eventCheckingCode()>
+<eventCheckingCode(helpVarInfo, discreteModelVars)>
 >>
 
 globalData(ModelInfo modelInfo) ::=
@@ -756,11 +756,18 @@ int bound_parameters()
 }
 >>
 
-eventCheckingCode() ::=
+eventCheckingCode(list<HelpVarInfo> helpVarInfo,
+                  list<ComponentRef> discreteModelVars) ::=
 <<
 int checkForDiscreteVarChanges()
 {
   int needToIterate = 0;
+
+  <helpVarInfo of (id1, exp, id2):
+    'if (edge(localData-\>helpVars[<id1>])) AddEvent(<id2> + localData-\>nZeroCrossing);' "\n">
+
+  <discreteModelVars of var:
+    'if (change(<cref(var)>)) { needToIterate = 1; }' "\n">
   
   for (long i = 0; i \< localData-\>nHelpVars; i++) {
     if (change(localData-\>helpVars[i])) {

@@ -53,6 +53,7 @@ package SimCode
       list<list<DAE.ComponentRef>> zeroCrossingsNeedSave;
       list<HelpVarInfo> helpVarInfo;
       list<SimWhenClause> whenClauses;
+      list<DAE.ComponentRef> discreteModelVars;
     end SIMCODE;
   end SimCode;
   

@@ -277,6 +277,7 @@ uniontype SimCode
     list<list<DAE.ComponentRef>> zeroCrossingsNeedSave;
     list<HelpVarInfo> helpVarInfo;
     list<SimWhenClause> whenClauses;
+    list<DAE.ComponentRef> discreteModelVars;
   end SIMCODE;
 end SimCode;
 
@@ -1166,6 +1167,7 @@ algorithm
       list<DAELow.ZeroCrossing> zeroCrossings;
       list<list<DAE.ComponentRef>> zeroCrossingsNeedSave;
       list<SimWhenClause> whenClauses;
+      list<DAE.ComponentRef> discreteModelVars;
     case (dae,dlow,ass1,ass2,m,mt,comps,class_,filename,funcfilename,fileDir)
       equation
         print("in mine:"); print(filename); print("\n");
@@ -1206,12 +1208,14 @@ algorithm
         zeroCrossings = createZeroCrossings(dlow2);
         zeroCrossingsNeedSave = createZeroCrossingsNeedSave(zeroCrossings, dae, dlow2, ass1, ass2, comps);
         whenClauses = createSimWhenClauses(dlow2);
+        discreteModelVars = extractDiscreteModelVars(dlow2, mt);
         print("creating SIMCODE"); print("\n");
         simCode = SIMCODE(modelInfo, {}, stateEquations,
                           nonStateContEquations, nonStateDiscEquations,
                           residualEquations, initialEquations,
                           parameterEquations, zeroCrossings,
-                          zeroCrossingsNeedSave, helpVarInfo, whenClauses);
+                          zeroCrossingsNeedSave, helpVarInfo, whenClauses,
+                          discreteModelVars);
         // Generate with template
         print("writing template to disk"); print("\n");
         _ = Tpl.tplString(SimCodeC.translateModel, simCode);
@@ -1224,6 +1228,52 @@ algorithm
         fail();
   end matchcontinue;
 end generateSimulationCodeC;
+
+public function extractDiscreteModelVars
+  input DAELow.DAELow dlow;
+  input DAELow.IncidenceMatrixT mT;
+  output list<DAE.ComponentRef> discreteModelVars;
+algorithm
+  discreteModelVars :=
+  matchcontinue (dlow, mT)
+    local
+      DAELow.Variables v;
+      list<DAELow.Var> vLst;
+      list<DAE.ComponentRef> vLst2;
+    case (DAELow.DAELOW(orderedVars=v), mT)
+      equation
+        vLst = DAELow.varList(v);
+        // select all discrete vars.
+        vLst = Util.listSelect(vLst, DAELow.isVarDiscrete);
+        // remove those vars that are solved in when equations
+        vLst = Util.listSelect2(vLst, dlow, mT, varNotSolvedInWhen);
+        // replace var with cref
+        vLst2 = Util.listMap(vLst, DAELow.varCref);
+      then vLst2;
+  end matchcontinue;
+end extractDiscreteModelVars;
+
+public function varNotSolvedInWhen
+  input DAELow.Var var;
+  input DAELow.DAELow dlow;
+  input DAELow.IncidenceMatrixT mT;
+  output Boolean include;
+algorithm
+  include :=
+  matchcontinue(var, dlow, mT)
+    local
+      Exp.ComponentRef cr;
+      Integer varIndx;
+      list<Integer> eqns;
+    case(var as DAELow.VAR(varName=cr, index=varIndx), dlow, mT)
+      equation
+        eqns = mT[varIndx + 1];
+        true = crefNotInWhenEquation(cr, dlow, eqns);
+      then true;
+    case(_,_,_)
+      then false;
+  end matchcontinue;
+end varNotSolvedInWhen;
 
 public function createSimWhenClauses
   input DAELow.DAELow dlow;
