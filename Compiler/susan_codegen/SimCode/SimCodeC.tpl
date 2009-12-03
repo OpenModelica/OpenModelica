@@ -67,7 +67,10 @@ case SIMCODE(modelInfo = MODELINFO) then
 
 <zeroCrossingFunctions(zeroCrossings, zeroCrossingsNeedSave)>
 
-<whenFunction()>
+<functionUpdateDependents(stateEquations, nonStateContEquations,
+                          nonStateDiscEquations, helpVarInfo)>
+
+<whenFunction(whenClauses)>
 
 <odeFunction(stateEquations)>
 
@@ -597,21 +600,75 @@ int handleZeroCrossing(long index)
 
   return 0;
 }
+>>
 
+functionUpdateDependents(list<Equation> stateEquations,
+                         list<Equation> nonStateContEquations,
+                         list<Equation> nonStateDiscEquations,
+                         list<HelpVarInfo> helpVarInfo) ::=
+# varDecls = ""
+# eq1 = (stateEquations of eq: '<equation_(eq, varDecls)>' "\n")
+# eq2 = (nonStateContEquations of eq: '<equation_(eq, varDecls)>' "\n")
+# eq3 = (nonStateDiscEquations of eq: '<equation_(eq, varDecls)>' "\n")
+# hvars = (
+  helpVarInfo of (in1, exp, _):
+    # preExp = ""
+    # expPart = daeExp(exp, preExp, varDecls)
+    '<preExp>localData->helpVars[<in1>] = <expPart>;'
+  "\n"
+)
+<<
 int function_updateDependents()
 {
-  // TODO: Implement this
-  fprintf(stderr, "ERROR: function_updateDependents not implemented\n");
+  state mem_state;
+  <varDecls>
+
+  inUpdate=initial()?0:1;
+
+  mem_state = get_memory_state();
+
+  <eq1>
+  <eq2>
+  <eq3>
+  <hvars>
+
+  restore_memory_state(mem_state);
+
+  inUpdate=0;
+
   return 0;
 }
 >>
 
-whenFunction() ::=
+whenFunction(list<SimWhenClause> whenClauses) ::=
+# varDecls = ""
+# cases = whenClauses of whenClause as SIM_WHEN_CLAUSE:
+  <<
+  case <i0>:
+    <whenEqTpl(whenEq, varDecls)>
+    <reinits of reinit:
+      # preExp = ""
+      # body = reinit(reinit, preExp, varDecls)
+      '<preExp><\n><body>'
+    "\n">
+    break;<\n>
+  >>
 <<
 int function_when(int i)
 {
-  // TODO: Implement this
-  fprintf(stderr, "ERROR: whenFunction not implemented\n");
+  state mem_state;
+  <varDecls>
+
+  mem_state = get_memory_state();
+
+  switch(index) {
+    <cases>
+    default:
+      break;
+  }
+
+  restore_memory_state(mem_state);
+
   return 0;
 }
 >>
@@ -740,6 +797,13 @@ int checkForDiscreteVarChanges()
 //<<
 //>>
 
+reinit(ReinitStatement, Text preExp, Text varDecls) ::=
+  case REINIT then
+    # val = daeExp(value, preExp, varDecls)
+    <<
+    <cref(stateVar)> = <val>;
+    >>
+
 zeroCrossingsTpl(list<ZeroCrossing> zeroCrossings, Text varDecls) ::=
   <<
   <zeroCrossings of zeroCrossing as ZERO_CROSSING:
@@ -809,6 +873,17 @@ case SOLVED_EQUATION then
 case _ then
 <<
 notimplemented = notimplemented;
+>>
+
+whenEqTpl(Option<WhenEquation>, Text varDecls) ::=
+case SOME(weq as WHEN_EQ) then
+# preExp = ""
+# expPart = daeExp(weq.right, preExp, varDecls)
+<<
+save(<cref(weq.left)>);
+
+<preExp>
+<cref(weq.left)> = <expPart>;
 >>
 
 boolToInt(Boolean) ::=
@@ -1091,11 +1166,11 @@ daeExp(Exp exp, Text preExp, Text varDecls) ::=
   case CREF       then rhsCref(componentRef, ty)
   case BINARY     then daeExpBinary(exp1, operator, exp2, preExp, varDecls)
   case UNARY      then daeExpUnary(operator, exp, preExp, varDecls)
-  case LBINARY    then "LBINARY_NOT_IMPLEMENTED"
+  case LBINARY    then daeExpBinary(exp1, operator, exp2, preExp, varDecls)
   case LUNARY     then "LUNARY_NOT_IMPLEMENTED"
   case RELATION   then daeExpRelation(exp1, operator, exp2, preExp, varDecls)
   case IFEXP      then daeExpIf(expCond, expThen, expElse, preExp, varDecls)
-  case CALL       then "CALL_NOT_IMPLEMENTED"
+  case CALL       then daeExpCall(path, expLst, tuple_, builtin, ty, preExp, varDecls)
   // PARTEVALFUNCTION
   case ARRAY      then "ARRAY_NOT_IMPLEMENTED"
   case MATRIX     then "MATRIX_NOT_IMPLEMENTED"
@@ -1132,6 +1207,8 @@ daeExpBinary(Exp exp1, Operator op, Exp exp2, Text preExp, Text varDecls) ::=
   case MUL then '(<e1> * <e2>)'
   case DIV then '(<e1> / <e2>)'
   case POW then 'pow((modelica_real)<e1>, (modelica_real)<e2>)'
+  case AND then '(<e1> && <e2>)'
+  case OR  then '(<e1> || <e2>)'
   case _   then "daeExpBinary:ERR"
 
 daeExpUnary(Operator op, Exp exp, Text preExp, Text varDecls) ::=
@@ -1192,6 +1269,21 @@ daeExpIf(Exp cond, Exp then_, Exp else_, Text preExp, Text varDecls) ::=
   <<
   ((<condVar>)?<eThen>:<eElse>)
   >>
+
+daeExpCall(Path path, list<Exp> expLst, Boolean tuple_, Boolean builtin,
+           ExpType ty, Text preExp, Text varDecls) ::=
+# retType = expShortType(ty)
+# retVar = tempDecl(retType, varDecls)
+# argList = (expLst of exp: '<daeExp(exp, preExp, varDecls)>' ", ")
+# funName = ( 
+  match path
+  case IDENT then name
+  case _ then "COMPLEX_CALL_NAME"
+)
+# preExp += '<retVar> = <funName>(<argList>);<\n>'
+<<
+<retVar>
+>>
 
 tempDecl(String ty, Text varDecls) ::=
   # newVar = 'tmp<System.tmpTick()>'

@@ -13,6 +13,7 @@ package SimCode
   type Path = Absyn.Path;
   type Ident = String;
   type Type = DAE.ExpType;
+  type HelpVarInfo = tuple<Integer, DAE.Exp, Integer>;
   
   type Variables = list<Variable>;
   type Statements = list<Statement>;
@@ -50,9 +51,19 @@ package SimCode
       list<DAELow.Equation> parameterEquations;
       list<DAELow.ZeroCrossing> zeroCrossings;
       list<list<DAE.ComponentRef>> zeroCrossingsNeedSave;
+      list<HelpVarInfo> helpVarInfo;
+      list<SimWhenClause> whenClauses;
     end SIMCODE;
   end SimCode;
   
+  uniontype SimWhenClause
+    record SIM_WHEN_CLAUSE
+      list<DAE.ComponentRef> conditionVars;
+      list<DAELow.ReinitStatement> reinits;
+      Option<DAELow.WhenEquation> whenEq;
+    end SIM_WHEN_CLAUSE;
+  end SimWhenClause;
+
   uniontype ModelInfo
     record MODELINFO
       String name;
@@ -164,6 +175,23 @@ package DAELow
       DAE.Exp relation_;
     end ZERO_CROSSING;
   end ZeroCrossing;
+
+  uniontype ReinitStatement
+    record REINIT
+      DAE.ComponentRef stateVar;
+      DAE.Exp value;
+    end REINIT;
+    record EMPTY_REINIT end EMPTY_REINIT;
+  end ReinitStatement;
+
+  uniontype WhenEquation
+    record WHEN_EQ
+      Integer index;
+      DAE.ComponentRef left;
+      DAE.Exp right;
+      Option<WhenEquation> elsewhenPart;
+    end WHEN_EQ;
+  end WhenEquation;
 
 end DAELow;
 

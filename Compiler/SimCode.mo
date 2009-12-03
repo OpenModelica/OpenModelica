@@ -275,8 +275,18 @@ uniontype SimCode
     list<DAELow.Equation> parameterEquations;
     list<DAELow.ZeroCrossing> zeroCrossings;
     list<list<DAE.ComponentRef>> zeroCrossingsNeedSave;
+    list<HelpVarInfo> helpVarInfo;
+    list<SimWhenClause> whenClauses;
   end SIMCODE;
 end SimCode;
+
+uniontype SimWhenClause
+  record SIM_WHEN_CLAUSE
+    list<DAE.ComponentRef> conditionVars;
+    list<DAELow.ReinitStatement> reinits;
+    Option<DAELow.WhenEquation> whenEq;
+  end SIM_WHEN_CLAUSE;
+end SimWhenClause;
 
 uniontype ModelInfo
   record MODELINFO
@@ -1155,16 +1165,14 @@ algorithm
       list<DAELow.Equation> parameterEquations;
       list<DAELow.ZeroCrossing> zeroCrossings;
       list<list<DAE.ComponentRef>> zeroCrossingsNeedSave;
+      list<SimWhenClause> whenClauses;
     case (dae,dlow,ass1,ass2,m,mt,comps,class_,filename,funcfilename,fileDir)
       equation
         print("in mine:"); print(filename); print("\n");
-        //
         cname = Absyn.pathString(class_);
-        (blt_states,blt_no_states) = DAELow.generateStatePartition(comps, dlow, ass1, ass2, m, mt);
-        Debug.fcall("bltdump",print," state blocks (dynamic section):");
-        Debug.fcall("bltdump",DAELow.dumpComponents,blt_states);
-        Debug.fcall("bltdump",print," algebraic blocks (accepted section):");
-        Debug.fcall("bltdump",DAELow.dumpComponents,blt_no_states);
+
+        (blt_states, blt_no_states) = DAELow.generateStatePartition(comps, dlow, ass1, ass2, m, mt);
+
         (c_eventchecking,helpVarInfo1) = generateEventCheckingCode(dlow, comps, ass1, ass2, m, mt, class_);
         (helpVarInfo,dlow2) = generateHelpVarsForWhenStatements(helpVarInfo1,dlow);
         (out_str,n_o) = generateOutputFunctionCode(dlow2);
@@ -1174,35 +1182,36 @@ algorithm
         residualEquations = createResidualEquations(dlow2, ass1, ass2);
         nres = listLength(residualEquations);
 
-        (s_code3) = generateInitialBoundParameterCode(dlow2);
+        //(s_code3) = generateInitialBoundParameterCode(dlow2);
         //cglobal = generateGlobalData(class_, dlow2, n_o, n_i, n_h, nres,fileDir);
-        coutput = generateComputeOutput(cname, dae, dlow2, ass1, ass2,m,mt, blt_no_states);
-        cstate = generateComputeResidualState(cname, dae, dlow2, ass1, ass2, blt_states);
-        c_ode = generateOdeCode(dlow2, blt_states, ass1, ass2, m, mt, class_);
-        s_code = generateInitialValueCode(dlow2);
+        //coutput = generateComputeOutput(cname, dae, dlow2, ass1, ass2,m,mt, blt_no_states);
+        //cstate = generateComputeResidualState(cname, dae, dlow2, ass1, ass2, blt_states);
+        //c_ode = generateOdeCode(dlow2, blt_states, ass1, ass2, m, mt, class_);
+        //s_code = generateInitialValueCode(dlow2);
         cwhen = generateWhenClauses(cname, dae, dlow2, ass1, ass2, comps);
-        czerocross = generateZeroCrossing(cname, dae, dlow2, ass1, ass2, comps, helpVarInfo);
-        (extObjIncludes,_) = generateExternalObjectIncludes(dlow2);
-        extObjInclude = Util.stringDelimitList(extObjIncludes,"\n");
-        extObjInclude = Util.stringAppendList({"extern \"C\" {\n",extObjInclude,"\n}\n"});
+        //czerocross = generateZeroCrossing(cname, dae, dlow2, ass1, ass2, comps, helpVarInfo);
+        //(extObjIncludes,_) = generateExternalObjectIncludes(dlow2);
+        //extObjInclude = Util.stringDelimitList(extObjIncludes,"\n");
+        //extObjInclude = Util.stringAppendList({"extern \"C\" {\n",extObjInclude,"\n}\n"});
         // Add model info
         modelInfo = createModelInfo(class_, dlow2, n_o, n_i, n_h, nres, fileDir);
-        stateEquations = createEquations(dae, dlow, ass1, ass2, blt_states);
-        (contBlocks, discBlocks) = splitOutputBlocks(dlow, ass1, ass2, m, mt, blt_no_states);
-        nonStateContEquations = createEquations(dae, dlow, ass1, ass2,
+        stateEquations = createEquations(dae, dlow2, ass1, ass2, blt_states);
+        (contBlocks, discBlocks) = splitOutputBlocks(dlow2, ass1, ass2, m, mt, blt_no_states);
+        nonStateContEquations = createEquations(dae, dlow2, ass1, ass2,
                                                 contBlocks);
-        nonStateDiscEquations = createEquations(dae, dlow, ass1, ass2,
+        nonStateDiscEquations = createEquations(dae, dlow2, ass1, ass2,
                                                 discBlocks);
-        initialEquations = createInitialEquations(dlow);
-        parameterEquations = createParameterEquations(dlow);
+        initialEquations = createInitialEquations(dlow2);
+        parameterEquations = createParameterEquations(dlow2);
         zeroCrossings = createZeroCrossings(dlow2);
         zeroCrossingsNeedSave = createZeroCrossingsNeedSave(zeroCrossings, dae, dlow2, ass1, ass2, comps);
+        whenClauses = createSimWhenClauses(dlow2);
         print("creating SIMCODE"); print("\n");
         simCode = SIMCODE(modelInfo, {}, stateEquations,
                           nonStateContEquations, nonStateDiscEquations,
                           residualEquations, initialEquations,
                           parameterEquations, zeroCrossings,
-                          zeroCrossingsNeedSave);
+                          zeroCrossingsNeedSave, helpVarInfo, whenClauses);
         // Generate with template
         print("writing template to disk"); print("\n");
         _ = Tpl.tplString(SimCodeC.translateModel, simCode);
@@ -1215,6 +1224,96 @@ algorithm
         fail();
   end matchcontinue;
 end generateSimulationCodeC;
+
+public function createSimWhenClauses
+  input DAELow.DAELow dlow;
+  output list<SimWhenClause> simWhenClauses;
+algorithm
+  simWhenClauses :=
+  matchcontinue (dlow)
+    local
+      list<DAELow.WhenClause> wc;
+    case (DAELow.DAELOW(eventInfo=DAELow.EVENT_INFO(whenClauseLst=wc)))
+      equation
+        //simWhenClauses = Util.listMap(wc, whenClauseToSimWhenClause);
+        simWhenClauses = createSimWhenClausesWithEqs(wc, dlow, 0);
+      then
+        simWhenClauses;
+  end matchcontinue;
+end createSimWhenClauses;
+
+public function createSimWhenClausesWithEqs
+  input list<DAELow.WhenClause> whenClauses;
+  input DAELow.DAELow dlow;
+  input Integer currentWhenClauseIndex;
+  output list<SimWhenClause> simWhenClauses;
+algorithm
+  simWhenClauses :=
+  matchcontinue (whenClauses, dlow, currentWhenClauseIndex)
+    local
+      DAELow.WhenClause whenClause;
+      list<DAELow.WhenClause> wc;
+      DAELow.EquationArray eqs;
+      list<DAELow.Equation> eqsLst;
+      Option<DAELow.WhenEquation> whenEq;
+      SimWhenClause simWhenClause;
+      Integer nextIndex;
+      list<SimWhenClause> simWhenClauses;
+    case ({}, _, _)
+      then {};
+    case (whenClause :: wc, DAELow.DAELOW(orderedEqs=eqs), currentWhenClauseIndex)
+      equation
+        eqsLst = DAELow.equationList(eqs);
+        whenEq = findWhenEquation(eqsLst, currentWhenClauseIndex);
+        simWhenClause = whenClauseToSimWhenClause(whenClause, whenEq);
+        nextIndex = currentWhenClauseIndex + 1;
+        simWhenClauses = createSimWhenClausesWithEqs(wc, dlow, nextIndex);
+      then simWhenClause :: simWhenClauses;
+  end matchcontinue;
+end createSimWhenClausesWithEqs;
+
+public function findWhenEquation
+  input list<DAELow.Equation> eqs;
+  input Integer index;
+  output Option<DAELow.WhenEquation> whenEq;
+algorithm
+  whenEq :=
+  matchcontinue (eqs, index)
+    local
+      DAELow.WhenEquation eq;
+      list<DAELow.Equation> restEqs;
+      Integer eqindex;
+    case ((DAELow.WHEN_EQUATION(eq as DAELow.WHEN_EQ(index=eqindex))) :: restEqs, index)
+      equation
+        true = eqindex == index;
+      then SOME(eq);
+    case (_ :: restEqs, index)
+      equation
+        whenEq = findWhenEquation(restEqs, index);
+      then whenEq;
+    case ({}, _)
+      then NONE();
+  end matchcontinue;
+end findWhenEquation;
+
+public function whenClauseToSimWhenClause
+  input DAELow.WhenClause whenClause;
+  input Option<DAELow.WhenEquation> whenEq;
+  output SimWhenClause simWhenClause;
+algorithm
+  simWhenClause :=
+  matchcontinue (whenClause, whenEq)
+    local
+      DAE.Exp cond;
+      list<DAELow.ReinitStatement> reinits;
+      list<DAE.ComponentRef> conditionVars;
+    case (DAELow.WHEN_CLAUSE(condition=cond, reinitStmtLst=reinits), whenEq)
+      equation
+        conditionVars = Exp.getCrefFromExp(cond);
+      then
+        SIM_WHEN_CLAUSE(conditionVars, reinits, whenEq);
+  end matchcontinue;
+end whenClauseToSimWhenClause;
 
 public function createEquations
   input DAE.DAElist dae;
@@ -1311,12 +1410,12 @@ algorithm
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"createEquation failed: algebraic loops not implemented yet"});
       then
-        DAELow.SOLVED_EQUATION(DAE.WILD, DAE.ICONST(0));
+        DAELow.SOLVED_EQUATION(DAE.WILD, DAE.ICONST(1));
     case (_,_,_,_,_)
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"createEquation failed"});
       then
-        DAELow.SOLVED_EQUATION(DAE.WILD, DAE.ICONST(0));
+        DAELow.SOLVED_EQUATION(DAE.WILD, DAE.ICONST(2));
   end matchcontinue;
 end createEquation;
 
