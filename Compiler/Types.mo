@@ -5417,7 +5417,7 @@ algorithm
       then ty1; */
     case _
       equation
-        Debug.fprintln("failtrace", "- Types.makeFunctionPolymorphicReference failed");
+        // Debug.fprintln("failtrace", "- Types.makeFunctionPolymorphicReference failed");
       then fail();
   end matchcontinue;
 end makeFunctionPolymorphicReference;
