@@ -940,7 +940,12 @@ algorithm
     case "sinh" then cevalBuiltinSinh; 
     case "cosh" then cevalBuiltinCosh;
     case "tanh" then cevalBuiltinTanh;                    
-    case "log" then cevalBuiltinLog;   
+    case "asin" then cevalBuiltinAsin; 
+    case "acos" then cevalBuiltinAcos;
+    case "atan" then cevalBuiltinAtan;
+    case "atan2" then cevalBuiltinAtan2;
+    case "log" then cevalBuiltinLog;
+    case "log10" then cevalBuiltinLog10;
     case "arcsin" then cevalBuiltinAsin; 
     case "arccos" then cevalBuiltinAcos; 
     case "arctan" then cevalBuiltinAtan; 
@@ -964,6 +969,7 @@ algorithm
     case "linspace" then cevalBuiltinLinspace;
     case "Integer" then cevalBuiltinIntegerEnumeration;
     case "rooted" then cevalBuiltinRooted; //    
+    case "cross" then cevalBuiltinCross;
     case "print" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalBuiltinPrint;
     // MetaModelica type conversions
     case "intReal" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalIntReal;
@@ -2968,6 +2974,36 @@ algorithm
   end matchcontinue;
 end cevalBuiltinLog;
 
+protected function cevalBuiltinLog10
+	input Env.Cache inCache;
+  input Env.Env inEnv;
+  input list<DAE.Exp> inExpExpLst;
+  input Boolean inBoolean;
+  input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Msg inMsg;
+  output Env.Cache outCache;
+  output Values.Value outValue;
+  output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
+algorithm 
+  (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
+  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+    local
+      Real rv,rv_1;
+      list<Env.Frame> env;
+      DAE.Exp exp;
+      Boolean impl;
+      Option<Interactive.InteractiveSymbolTable> st;
+      Msg msg;
+      Env.Cache cache;
+    case (cache,env,{exp},impl,st,msg)
+      equation 
+        (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st, NONE, msg);
+        rv_1 = System.log10(rv);
+      then
+        (cache,Values.REAL(rv_1),st);
+  end matchcontinue;
+end cevalBuiltinLog10;
+
 protected function cevalBuiltinTan "function cevalBuiltinTan
   author: LP
   Evaluates the builtin tan function."
@@ -3129,6 +3165,37 @@ algorithm
         (cache,Values.REAL(rv_1),st);
   end matchcontinue;
 end cevalBuiltinAtan;
+
+protected function cevalBuiltinAtan2
+	input Env.Cache inCache;
+  input Env.Env inEnv;
+  input list<DAE.Exp> inExpExpLst;
+  input Boolean inBoolean;
+  input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Msg inMsg;
+  output Env.Cache outCache;
+  output Values.Value outValue;
+  output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
+algorithm 
+  (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
+  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+    local
+      Real rv,rv_1,rv_2;
+      list<Env.Frame> env;
+      DAE.Exp exp1,exp2;
+      Boolean impl;
+      Option<Interactive.InteractiveSymbolTable> st;
+      Msg msg;
+      Env.Cache cache;
+    case (cache,env,{exp1,exp2},impl,st,msg)
+      equation 
+        (cache,Values.REAL(rv_1),_) = ceval(cache,env, exp1, impl, st, NONE, msg);
+        (cache,Values.REAL(rv_2),_) = ceval(cache,env, exp2, impl, st, NONE, msg);
+        rv = System.atan2(rv_1,rv_2);
+      then
+        (cache,Values.REAL(rv),st);
+  end matchcontinue;
+end cevalBuiltinAtan2;
 
 protected function cevalBuiltinDiv "function cevalBuiltinDiv
   author: LP
@@ -3927,6 +3994,44 @@ algorithm
         fail();
   end matchcontinue;
 end cevalBuiltinDiagonal2;
+
+protected function cevalBuiltinCross "
+  x,y => {x[2]*y[3]-x[3]*y[2],x[3]*y[1]-x[1]*y[3],x[1]*y[2]-x[2]*y[1]}"
+	input Env.Cache inCache;
+  input Env.Env inEnv;
+  input list<DAE.Exp> inExpExpLst;
+  input Boolean inBoolean;
+  input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Msg inMsg;
+  output Env.Cache outCache;
+  output Values.Value outValue;
+  output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
+algorithm 
+  (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
+  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+    local
+      list<Values.Value> xv,yv;
+      Values.Value res;
+      list<Env.Frame> env;
+      DAE.Exp xe,ye;
+      Boolean impl;
+      Option<Interactive.InteractiveSymbolTable> st;
+      Msg msg;
+      Env.Cache cache;
+    case (cache,env,{xe,ye},impl,st,msg)
+      equation 
+        (cache,Values.ARRAY(xv),_) = ceval(cache,env, xe, impl, st, NONE, msg);
+        (cache,Values.ARRAY(yv),_) = ceval(cache,env, ye, impl, st, NONE, msg);
+        res = ValuesUtil.crossProduct(xv,yv);
+      then
+        (cache,res,st);
+    case (_,_,_,_,_,MSG())
+      equation 
+        Print.printErrorBuf("#- Error, could not evaulate cross. Ceval.cevalBuiltinCross failed.\n");
+      then
+        fail();
+  end matchcontinue;
+end cevalBuiltinCross;
 
 protected function cevalBuiltinTranspose "function cevalBuiltinTranspose
   This function transposes the two first dimension of an array A."

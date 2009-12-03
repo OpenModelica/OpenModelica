@@ -1467,6 +1467,44 @@ algorithm
   end matchcontinue;
 end multScalarProduct;
 
+public function crossProduct "
+  Calculate the cross product of two vectors.
+  x,y => {x[2]*y[3]-x[3]*y[2],x[3]*y[1]-x[1]*y[3],x[1]*y[2]-x[2]*y[1]}
+"
+  input list<Value> inValueLst1;
+  input list<Value> inValueLst2;
+  output Value outValue;
+algorithm 
+  outValue:=
+  matchcontinue (inValueLst1,inValueLst2)
+    case ({Values.REAL(x1),Values.REAL(x2),Values.REAL(x3)},
+          {Values.REAL(y1),Values.REAL(y2),Values.REAL(y3)})
+      local
+        Real x1,x2,x3,y1,y2,y3,z1,z2,z3;
+      equation
+        z1 = realSub(realMul(x2,y3),realMul(x3,y2));
+        z2 = realSub(realMul(x3,y1),realMul(x1,y3));
+        z3 = realSub(realMul(x1,y2),realMul(x2,y1));
+      then
+        Values.ARRAY({Values.REAL(z1),Values.REAL(z2),Values.REAL(z3)});
+    case ({Values.INTEGER(x1),Values.INTEGER(x2),Values.INTEGER(x3)},
+          {Values.INTEGER(y1),Values.INTEGER(y2),Values.INTEGER(y3)})
+      local
+        Integer x1,x2,x3,y1,y2,y3,z1,z2,z3;
+      equation
+        z1 = intSub(intMul(x2,y3),intMul(x3,y2));
+        z2 = intSub(intMul(x3,y1),intMul(x1,y3));
+        z3 = intSub(intMul(x1,y2),intMul(x2,y1));
+      then
+        Values.ARRAY({Values.INTEGER(z1),Values.INTEGER(z2),Values.INTEGER(z3)});
+    case (_,_)
+      equation 
+        Print.printBuf("- ValuesUtil.crossProduct failed\n");
+      then
+        fail();
+  end matchcontinue;
+end crossProduct;
+
 public function multMatrix "function: multMatrix
  
   Calculate a matrix multiplication of two matrices, i.e. two dimensional 
