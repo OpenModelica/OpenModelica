@@ -1843,6 +1843,7 @@ algorithm
     case (DAE.ET_METAOPTION(_)) then "metatype";
     case (DAE.ET_UNIONTYPE()) then "metatype";
     case (DAE.ET_POLYMORPHIC()) then "metatype";
+    case (DAE.ET_META_ARRAY(_)) then "metatype";
     case (DAE.ET_BOXED(_)) then "metatype";
       
     case t
@@ -1942,11 +1943,10 @@ algorithm
         str;
 
     // MetaModelica Types
-    case ((DAE.T_LIST(_),_)) then "void*";
-    case ((DAE.T_METATUPLE(_),_)) then "void*";
-    case ((DAE.T_METAOPTION(_),_)) then "void*";
-    case ((DAE.T_UNIONTYPE(_),_)) then "void*";
-    case ((DAE.T_POLYMORPHIC(_),_)) then "void*";
+    case ty
+      equation
+        true = Types.isBoxedType(ty);
+      then "void*";
     
     case ((DAE.T_ARRAY(arrayDim = dim,arrayType = ty),_))
       equation
@@ -2045,13 +2045,12 @@ algorithm
     case ((DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(_)),_)) then "modelica_complex";
     case ((DAE.T_COMPLEX(ClassInf.TYPE(_),{},SOME(ty),_),_)) then generateSimpleType(ty);
 
-    case ((DAE.T_LIST(_),_)) then "modelica_metatype";  // MetaModelica list
-    case ((DAE.T_METATUPLE(_),_)) then "modelica_metatype"; // MetaModelica tuple
-    case ((DAE.T_METAOPTION(_),_)) then "modelica_metatype"; // MetaModelica tuple
     case ((DAE.T_FUNCTION(_,_),_)) then "modelica_fnptr";
-    case ((DAE.T_UNIONTYPE(_),_)) then "modelica_metatype";
-    case ((DAE.T_POLYMORPHIC(_),_)) then "modelica_metatype";
-    case ((DAE.T_BOXED(ty),_)) then "modelica_metatype";
+      // Any MetaModelica type
+    case ty
+      equation
+        true = Types.isBoxedType(ty);
+      then "modelica_metatype";
             
     case ((t as (DAE.T_ARRAY(arrayDim = _),_)))
       equation
@@ -2060,14 +2059,6 @@ algorithm
       then
         t_str;
 
-    case ((DAE.T_LIST(_),_)) then "modelica_metatype"; // MetaModelica list
-    case ((DAE.T_METATUPLE(_),_)) then "modelica_metatype"; // MetaModelica tuple
-    case ((DAE.T_METAOPTION(_),_)) then "modelica_metatype"; // MetaModelica option
-    case ((DAE.T_UNIONTYPE(_),_)) then "modelica_metatype"; //MetaModelica uniontypes, added by simbj
-    case ((DAE.T_POLYMORPHIC(_),_)) then "modelica_metatype"; //MetaModelica polymorphic type
-    case ((DAE.T_BOXED(_),_)) then "modelica_metatype"; //MetaModelica boxed type
-    case ((DAE.T_FUNCTION(_,_),_)) then "modelica_fnptr";
-    
     case (ty)
       equation
         t_str = Types.unparseType(ty);
@@ -8774,10 +8765,10 @@ algorithm
         ret;
     case ((DAE.T_TUPLE(_), _)) then "TYPE_DESC_TUPLE";
     case ((DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_)), _)) then "TYPE_DESC_RECORD";
-    case ((DAE.T_UNIONTYPE(_), _)) then "TYPE_DESC_MMC";
-    case ((DAE.T_METATUPLE(_), _)) then "TYPE_DESC_MMC";
-    case ((DAE.T_POLYMORPHIC(_), _)) then "TYPE_DESC_MMC";
-    case ((DAE.T_LIST(_), _)) then "TYPE_DESC_MMC";
+    case t
+      equation
+        true = Types.isBoxedType(t);
+      then "TYPE_DESC_MMC";
     case (_) then "TYPE_DESC_COMPLEX";
   end matchcontinue;
 end generateRWType;

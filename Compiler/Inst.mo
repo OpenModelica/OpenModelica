@@ -2414,7 +2414,7 @@ algorithm
         true = RTOpts.acceptMetaModelicaGrammar();
         (cache,cenv,ih,tys,csets,oDA) = 
         instClassDefHelper(cache,env,ih,tSpecs,pre,inst_dims,impl,{},csets);
-        ty = Util.listFirst(tys);
+        {ty} = tys;
         bc = SOME((DAE.T_METAOPTION(ty),NONE));
         oDA = Absyn.mergeElementAttributes(DA,oDA);
       then (cache,env,ih,store,{},csets,ClassInf.META_OPTION(""),{},bc,oDA,NONE,graph);
@@ -2432,6 +2432,20 @@ algorithm
         oDA = Absyn.mergeElementAttributes(DA,oDA);
       then (cache,env,ih,store,{},csets,ClassInf.META_TUPLE(""),{},bc,oDA,NONE,graph);
 
+    case (cache,env,ih,store,mods,pre,csets,ci_state,className,
+          SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT("array"),tSpecs,_),modifications = mod, attributes=DA),
+          re,prot,inst_dims,impl,graph,instSingleCref)
+      local 
+        list<Absyn.TypeSpec> tSpecs; list<DAE.Type> tys; DAE.Type ty;
+        Absyn.ElementAttributes DA;
+      equation
+        true = RTOpts.acceptMetaModelicaGrammar();
+        (cache,cenv,ih,tys,csets,oDA) = instClassDefHelper(cache,env,ih,tSpecs,pre,inst_dims,impl,{},csets);
+        {ty} = tys;
+        bc = SOME((DAE.T_META_ARRAY(ty),NONE));
+        oDA = Absyn.mergeElementAttributes(DA,oDA);
+      then (cache,env,ih,store,{},csets,ClassInf.META_ARRAY(className),{},bc,oDA,NONE,graph);
+    
     case (cache,env,ih,store,mods,pre,csets,ci_state,className,
           SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT("polymorphic"),{Absyn.TPATH(Absyn.IDENT("Any"),NONE)},_),modifications = mod, attributes=DA),
           re,prot,inst_dims,impl,graph,instSingleCref)
@@ -3941,6 +3955,7 @@ algorithm
         (cdefelts,extendsclasselts,_,_) = splitElts(els);
         extendsclasselts = listAppend(inClassExtendsList,extendsclasselts);
         (cenv3,ih) = addClassdefsToEnv(cenv3,ih, cdefelts, impl, NONE);
+        
         (cache,_,ih,mods,compelts1,eq2,ieq2,alg2,ialg2) = instExtendsList(cache,cenv3,ih,outermod, els_1, ci_state, className, extendsclasselts, impl) 
         "recurse to fully flatten extends elements env" ;
         (cache,env2,ih,mods_1,compelts2,eq3,ieq3,alg3,ialg3) = instExtendsList(cache,env,ih, mod, rest, ci_state, className, extendsclasselts, impl) 
@@ -6422,7 +6437,7 @@ algorithm
 				//        anyhow the modifications are handled below.
 				//        input Integer sequence[3](min = {1,1,1}, max = {3,3,3}) = {1,2,3}; // this will fail if we send in the mod.
 				//        see testsuite/mofiles/Sequence.mo
-        (cache,env_1,ih,store,_,csets_1,ty,st,_,graph) = instClass(cache,env,ih,store, /* mod */ DAE.NOMOD(), pre, csets, cl, inst_dims, impl, INNER_CALL(), graph);        
+        (cache,env_1,ih,store,_,csets_1,ty,st,_,graph) = instClass(cache,env,ih,store, /* mod */ DAE.NOMOD(), pre, csets, cl, inst_dims, impl, INNER_CALL(), graph);
         //Make it an array type since we are not flattening
         ty_1 = makeArrayType(dims, ty);
 
@@ -6745,7 +6760,7 @@ algorithm
     /*------------------------*/
     /* MetaModelica extension */
     case (cache,env,_,_,cl as SCode.CLASS(name = id,
-                                          classDef = SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT("list"),_,arrayDim = ad),
+                                          classDef = SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT(_),_,arrayDim = ad),
                                                                    modifications = mod)),
           dims,impl)
       equation
@@ -6755,43 +6770,6 @@ algorithm
         // Absyn.IDENT("Integer") used as a dummie
         (cache,dim1) = elabArraydim(cache,env, owncref, Absyn.IDENT("Integer"), ad_1, NONE, impl, NONE,true);
       then (cache,dim1,cl);
-
-    case (cache,env,_,_,cl as SCode.CLASS(name = id,
-                                          classDef = SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT("tuple"),_,arrayDim = ad),
-                                                                   modifications = mod)),
-          dims,impl)
-      equation
-        true=RTOpts.acceptMetaModelicaGrammar();
-        owncref = Absyn.CREF_IDENT(id,{});
-        ad_1 = getOptionArraydim(ad);
-        // Absyn.IDENT("Integer") used as a dummie
-        (cache,dim1) = elabArraydim(cache,env, owncref, Absyn.IDENT("Integer"), ad_1, NONE, impl, NONE,true);
-      then (cache,dim1,cl);
-
-    case (cache,env,_,_,cl as SCode.CLASS(name = id,
-                                          classDef = SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT("Option"),_,arrayDim = ad),
-                                                                   modifications = mod)),
-          dims,impl)
-      equation
-        true =RTOpts.acceptMetaModelicaGrammar();
-        owncref = Absyn.CREF_IDENT(id,{});
-        ad_1 = getOptionArraydim(ad);
-        // Absyn.IDENT("Integer") used as a dummie
-        (cache,dim1) = elabArraydim(cache,env, owncref, Absyn.IDENT("Integer"), ad_1, NONE, impl, NONE,true);
-      then (cache,dim1,cl);
-    
-    case (cache,env,_,_,cl as SCode.CLASS(name = id,
-                                          classDef = SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT("polymorphic"),_,arrayDim = ad),
-                                                                   modifications = mod)),
-          dims,impl)
-      equation
-        true=RTOpts.acceptMetaModelicaGrammar();
-        owncref = Absyn.CREF_IDENT(id,{});
-        ad_1 = getOptionArraydim(ad);
-        // Absyn.IDENT("Integer") used as a dummie
-        (cache,dim1) = elabArraydim(cache,env, owncref, Absyn.IDENT("Integer"), ad_1, NONE, impl, NONE,true);
-      then (cache,dim1,cl);
-    
     // Partial function definitions with no output - stefan
     case (cache,env,_,_,cl as SCode.CLASS(name = id,restriction = SCode.R_FUNCTION(),partialPrefix = true),_,_) then (cache,{},cl);
     case (cache,env,_,_,SCode.CLASS(name = id,restriction = SCode.R_FUNCTION(),partialPrefix = false),_,_)
@@ -8397,6 +8375,7 @@ algorithm
     case (cache,_,path as Absyn.IDENT("Option")) equation true=RTOpts.acceptMetaModelicaGrammar(); then (cache,path);
     case (cache,_,path as Absyn.IDENT("tuple")) equation true=RTOpts.acceptMetaModelicaGrammar(); then (cache,path);
     case (cache,_,path as Absyn.IDENT("polymorphic")) equation true=RTOpts.acceptMetaModelicaGrammar(); then (cache,path);
+    case (cache,_,path as Absyn.IDENT("array")) equation true=RTOpts.acceptMetaModelicaGrammar(); then (cache,path);
     /*-------------------------*/    
                      
     /* To make a class fully qualified, the class path is looked up in the environment.
@@ -9496,49 +9475,6 @@ algorithm
     case (vn,ty as(DAE.T_ENUMERATION(SOME(_),_,_,_),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars) then {}; 
 //    case (vn,ty as(DAE.T_ENUM(),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars) then {}; 
 
-    /* MetaModelica extensions */
-    case (vn,ty as(DAE.T_LIST(_),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars)
-      equation
-        true = RTOpts.acceptMetaModelicaGrammar();
-        finst_dims = Util.listFlatten(inst_dims);
-        dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,finalPrefix);      
-      then {DAE.VAR(vn,kind,dir,prot,ty,e,finst_dims,fl,st,{},dae_var_attr,comment,io)};
-    case (vn,ty as(DAE.T_METATUPLE(_),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars)
-      equation
-        true = RTOpts.acceptMetaModelicaGrammar();
-        finst_dims = Util.listFlatten(inst_dims);
-        dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,finalPrefix);
-      then {DAE.VAR(vn,kind,dir,prot,ty,e,finst_dims,fl,st,{},dae_var_attr,comment,io)};
-    case (vn,ty as(DAE.T_METAOPTION(_),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars)
-      equation
-        true = RTOpts.acceptMetaModelicaGrammar();
-        finst_dims = Util.listFlatten(inst_dims);
-        dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,finalPrefix);
-      then {DAE.VAR(vn,kind,dir,prot,ty,e,finst_dims,fl,st,{},dae_var_attr,comment,io)};
-    case (vn,ty as(DAE.T_UNIONTYPE(_),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars)
-      equation
-        true = RTOpts.acceptMetaModelicaGrammar();
-        finst_dims = Util.listFlatten(inst_dims);
-        dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,finalPrefix);
-      then {DAE.VAR(vn,kind,dir,prot,ty,e,finst_dims,fl,st,{},dae_var_attr,comment,io)};
-    case (vn,ty as(DAE.T_POLYMORPHIC(_),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars)
-      equation
-        true = RTOpts.acceptMetaModelicaGrammar();
-        finst_dims = Util.listFlatten(inst_dims);
-        dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,finalPrefix);
-      then {DAE.VAR(vn,kind,dir,prot,ty,e,finst_dims,fl,st,{},dae_var_attr,comment,io)};
-    case (vn,(tty as DAE.T_FUNCTION(_,_),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars)
-      local
-        DAE.TType tty;
-        Absyn.Path path;
-      equation
-        finst_dims = Util.listFlatten(inst_dims);
-        dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,finalPrefix);
-        path = Exp.crefToPath(vn);
-        ty = (tty,SOME(path));
-      then {DAE.VAR(vn,kind,dir,prot,ty,e,finst_dims,fl,st,{},dae_var_attr,comment,io)};
-    /*----------------------------*/
-    
     /* We should not declare each enumeration value of an enumeration when instantiating,
   	 * e.g Myenum my !=> constant EnumType my.enum1,... {DAE.VAR(vn, kind, dir, DAE.ENUM, e, inst_dims)} 
   	 * instantiation of complex type extending from basic type 
@@ -9585,6 +9521,26 @@ algorithm
         finst_dims = Util.listFlatten(inst_dims);
       then {DAE.VAR(vn,kind,dir,prot,ty,e,finst_dims,fl,st,{},dae_var_attr,comment,io)};
      
+    /* MetaModelica extensions */
+    case (vn,(tty as DAE.T_FUNCTION(_,_),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars)
+      local
+        DAE.TType tty;
+        Absyn.Path path;
+      equation
+        finst_dims = Util.listFlatten(inst_dims);
+        dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,finalPrefix);
+        path = Exp.crefToPath(vn);
+        ty = (tty,SOME(path));
+      then {DAE.VAR(vn,kind,dir,prot,ty,e,finst_dims,fl,st,{},dae_var_attr,comment,io)};
+    case (vn,ty,fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars)
+      equation
+        true = RTOpts.acceptMetaModelicaGrammar();
+        true = Types.isBoxedType(ty);
+        finst_dims = Util.listFlatten(inst_dims);
+        dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,finalPrefix);      
+      then {DAE.VAR(vn,kind,dir,prot,ty,e,finst_dims,fl,st,{},dae_var_attr,comment,io)};
+    /*----------------------------*/
+    
     case (c,ty,_,_,_,_,_,_,_,_,_,_,_,_,_) then {}; 
   end matchcontinue;
 end daeDeclare4;
@@ -12483,6 +12439,7 @@ algorithm
     case (p,ClassInf.META_OPTION(_),_,SOME(bc2),_) local DAE.Type bc2; equation then bc2;
     case (p,ClassInf.META_LIST(_),_,SOME(bc2),_) local DAE.Type bc2; equation then bc2;
     case (p,ClassInf.META_POLYMORPHIC(_),_,SOME(bc2),_) local DAE.Type bc2; equation then bc2;
+    case (p,ClassInf.META_ARRAY(_),_,SOME(bc2),_) local DAE.Type bc2; equation then bc2;
     /*------------------------*/
 
     case (p,st,l,bc,equalityConstraint)

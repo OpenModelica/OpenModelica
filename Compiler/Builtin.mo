@@ -2687,22 +2687,14 @@ protected constant tuple<DAE.TType, Option<Type_a>> array1dBoolInt2bool =(
 protected constant tuple<DAE.TType, Option<Type_a>> array1dStringInt2string =(
           DAE.T_FUNCTION({("x1",(DAE.T_ARRAY(DAE.DIM(SOME(1)), (DAE.T_STRING({}),NONE)),NONE)),("x2",(DAE.T_INTEGER({}),NONE))},(DAE.T_STRING({}),NONE)),NONE);
 
-// arrayCreate
-protected constant tuple<DAE.TType, Option<Type_a>> intAny2array1dAny =(
-          DAE.T_FUNCTION({("x1",(DAE.T_INTEGER({}),NONE)),("x2",(DAE.T_NOTYPE(),NONE))},(DAE.T_ARRAY(DAE.DIM(SOME(1)), (DAE.T_NOTYPE(),NONE)),NONE)),NONE);
-
-protected constant tuple<DAE.TType, Option<Type_a>> intInt2array1dInt =(
-          DAE.T_FUNCTION({("x1",(DAE.T_INTEGER({}),NONE)),("x2",(DAE.T_INTEGER({}),NONE))},(DAE.T_ARRAY(DAE.DIM(SOME(1)), (DAE.T_INTEGER({}),NONE)),NONE)),NONE);
-
-protected constant tuple<DAE.TType, Option<Type_a>> intReal2array1dReal =(
-          DAE.T_FUNCTION({("x1",(DAE.T_INTEGER({}),NONE)),("x2",(DAE.T_REAL({}),NONE))},(DAE.T_ARRAY(DAE.DIM(SOME(1)), (DAE.T_REAL({}),NONE)),NONE)),NONE);
-
-protected constant tuple<DAE.TType, Option<Type_a>> intBool2array1dBool =(
-          DAE.T_FUNCTION({("x1",(DAE.T_INTEGER({}),NONE)),("x2",(DAE.T_BOOL({}),NONE))},(DAE.T_ARRAY(DAE.DIM(SOME(1)), (DAE.T_BOOL({}),NONE)),NONE)),NONE);
-
-protected constant tuple<DAE.TType, Option<Type_a>> intString2array1dString =(
-          DAE.T_FUNCTION({("x1",(DAE.T_INTEGER({}),NONE)),("x2",(DAE.T_STRING({}),NONE))},(DAE.T_ARRAY(DAE.DIM(SOME(1)), (DAE.T_STRING({}),NONE)),NONE)),NONE);
-
+// MetaModelica builtin array functions
+protected constant tuple<DAE.TType, Option<Type_a>> intA2marrayA =(
+          DAE.T_FUNCTION({("x1",(DAE.T_INTEGER({}),NONE)),("x2",(DAE.T_POLYMORPHIC("A"),NONE))},(DAE.T_META_ARRAY((DAE.T_POLYMORPHIC("A"),NONE)),NONE)),NONE);
+protected constant tuple<DAE.TType, Option<Type_a>> marrayAny2int =(
+          DAE.T_FUNCTION({("x1",(DAE.T_ANYTYPE(NONE),NONE))},(DAE.T_INTEGER({}),NONE)),NONE);
+protected constant tuple<DAE.TType, Option<Type_a>> marrayAInt2A =(
+          DAE.T_FUNCTION({("x1",(DAE.T_META_ARRAY((DAE.T_POLYMORPHIC("A"),NONE)),NONE)),("x2",(DAE.T_INTEGER({}),NONE))},(DAE.T_POLYMORPHIC("A"),NONE)),NONE);
+        
 // String functions. sjoelund
 protected constant tuple<DAE.TType, Option<Type_a>> string2string=(
           DAE.T_FUNCTION({("x",(DAE.T_STRING({}),NONE))},(DAE.T_STRING({}),NONE)),NONE);
@@ -3571,19 +3563,9 @@ algorithm
         env = Env.extendFrameT(env, "listEmpty", list2boolean);
         
         // Array Operations
-        env = Env.extendFrameT(env, "arrayLength", array1d2int);
-
-        env = Env.extendFrameT(env, "arrayGet", array1dAnyInt2any);
-        env = Env.extendFrameT(env, "arrayIntegerGet", array1dIntInt2int);
-        env = Env.extendFrameT(env, "arrayRealGet", array1dRealInt2real);
-        env = Env.extendFrameT(env, "arrayBooleanGet", array1dBoolInt2bool);
-        env = Env.extendFrameT(env, "arrayStringGet", array1dStringInt2string);
-        
-        env = Env.extendFrameT(env, "arrayCreate", intAny2array1dAny);
-        env = Env.extendFrameT(env, "arrayIntegerCreate", intInt2array1dInt);
-        env = Env.extendFrameT(env, "arrayRealCreate", intReal2array1dReal);
-        env = Env.extendFrameT(env, "arrayBooleanCreate", intBool2array1dBool);
-        env = Env.extendFrameT(env, "arrayStringCreate", intString2array1dString);
+        env = Env.extendFrameT(env, "arrayLength", marrayAny2int);
+        env = Env.extendFrameT(env, "arrayGet", marrayAInt2A);        
+        env = Env.extendFrameT(env, "arrayCreate", intA2marrayA);
 
         // Option Operations
         env = Env.extendFrameT(env, "optionNone", option2boolean);

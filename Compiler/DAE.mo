@@ -613,6 +613,10 @@ uniontype TType "-TType contains the actual type"
     String name;
   end T_POLYMORPHIC;
   
+  record T_META_ARRAY
+    Type ty;
+  end T_META_ARRAY;
+  
 end TType;
 
 public 
@@ -796,6 +800,10 @@ uniontype ExpType "- Basic types
   end ET_BOXED;
 
   record ET_POLYMORPHIC "Used in MetaModelica polymorphic functions" end ET_POLYMORPHIC;
+
+  record ET_META_ARRAY "Array with MetaModelica semantics"
+    ExpType ty;
+  end ET_META_ARRAY;
 
   record ET_NORETCALL "For functions not returning any values." end ET_NORETCALL;
 

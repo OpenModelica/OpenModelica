@@ -209,25 +209,13 @@ optionNone_rettype optionNone(modelica_metatype);
 /* Array Operations */
 typedef modelica_integer arrayLength_rettype;
 
-arrayLength_rettype arrayLength(base_array_t);
+arrayLength_rettype arrayLength(modelica_metatype);
 
-typedef modelica_integer arrayIntegerGet_rettype;
-typedef modelica_real arrayRealGet_rettype;
-typedef modelica_boolean arrayBooleanGet_rettype;
-typedef modelica_string_t arrayStringGet_rettype;
-arrayIntegerGet_rettype arrayIntegerGet(integer_array_t, modelica_integer);
-arrayRealGet_rettype arrayRealGet(real_array_t, modelica_integer);
-arrayBooleanGet_rettype arrayBooleanGet(boolean_array_t, modelica_integer);
-arrayStringGet_rettype arrayStringGet(string_array_t, modelica_integer);
+typedef modelica_metatype arrayGet_rettype;
+arrayGet_rettype arrayGet(modelica_metatype, modelica_integer);
 
-typedef integer_array_t arrayIntegerCreate_rettype;
-typedef real_array_t arrayRealCreate_rettype;
-typedef boolean_array_t arrayBooleanCreate_rettype;
-typedef string_array_t arrayStringCreate_rettype;
-arrayIntegerCreate_rettype arrayIntegerCreate(modelica_integer, modelica_integer);
-arrayRealCreate_rettype arrayRealCreate(modelica_integer, modelica_real);
-arrayBooleanCreate_rettype arrayBooleanCreate(modelica_integer, modelica_boolean);
-arrayStringCreate_rettype arrayStringCreate(modelica_integer, modelica_string_t);
+typedef modelica_metatype arrayCreate_rettype;
+arrayCreate_rettype arrayCreate(modelica_integer, modelica_metatype);
 
 /* Misc Operations */
 typedef modelica_metatype if__exp_rettype;

@@ -142,6 +142,10 @@ uniontype State "- Machine states, the string contains the classname."
     String string;
   end UNIONTYPE;
   
+  record META_ARRAY
+    String string;
+  end META_ARRAY;
+
   record META_POLYMORPHIC
     String string;
   end META_POLYMORPHIC;
@@ -194,6 +198,7 @@ algorithm
     case META_OPTION(s) then "Option";
     case META_RECORD(s) then "meta_record";
     case META_POLYMORPHIC(s) then "polymorphic";
+    case META_ARRAY(s) then "meta_array";
     case UNIONTYPE(s) then "uniontype";
     case _ then "#printStateStr failed#";
   end matchcontinue;
@@ -323,6 +328,7 @@ algorithm
     case META_OPTION(s) then s;
     case META_RECORD(s) then s;
     case META_POLYMORPHIC(s) then s;
+    case META_ARRAY(s) then s;
     case UNIONTYPE(s) then s;
     case _ then "#getStateName failed#";
   end matchcontinue;

@@ -1482,6 +1482,7 @@ algorithm
     case ((DAE.T_LIST((DAE.T_NOTYPE(),_)),_),(DAE.T_LIST(_),_)) then true;   // The empty list is represented with NO_TYPE()
     case ((DAE.T_LIST(_),_),(DAE.T_LIST((DAE.T_NOTYPE(),_)),_)) then true;
     case ((DAE.T_LIST(t1),_),(DAE.T_LIST(t2),_)) then subtype(t1,t2);
+    case ((DAE.T_META_ARRAY(t1),_),(DAE.T_META_ARRAY(t2),_)) then subtype(t1,t2);
     case ((DAE.T_METATUPLE(tList1),_),(DAE.T_METATUPLE(tList2),_))
       local list<Type> tList1,tList2; Boolean ret; equation
         ret = subtypeTypelist(tList1,tList2);
@@ -2137,6 +2138,13 @@ algorithm
       then
         res;
         
+    case ((DAE.T_META_ARRAY(ty),_))
+      equation
+        tystr = unparseType(ty);
+        res = Util.stringAppendList({"array<",tystr,">"});
+      then
+        res;
+        
         /* MetaModelica list */
     case ((DAE.T_POLYMORPHIC(tystr),_))
       equation
@@ -2341,11 +2349,25 @@ algorithm
       then
         str;
         
+    case ((DAE.T_META_ARRAY(ty),_))
+      local Type ty;
+      equation
+        s1 = printTypeStr(ty);
+   			str = Util.stringAppendList({"array<",s1,">"});
+      then
+        str;
+        
     case ((DAE.T_BOXED(ty),_))
       local Type ty;
       equation
         s1 = printTypeStr(ty);
    			str = Util.stringAppendList({"boxed<",s1,">"});
+      then
+        str;
+
+    case ((DAE.T_POLYMORPHIC(s1),_))
+      equation
+   			str = Util.stringAppendList({"polymorphic<",s1,">"});
       then
         str;
 
@@ -3500,8 +3522,28 @@ algorithm
     case ( (DAE.T_COMPLEX(_,_,SOME(t),_),_)) 
       then elabType(t);
         
+    case ((DAE.T_NORETCALL(),_)) then DAE.ET_NORETCALL();
+    
+    case ((DAE.T_COMPLEX(CIS,tcvl,_,_),_))
+      local 
+        list<Var> tcvl; 
+        ClassInf.State CIS; 
+        list<DAE.ExpVar> ecvl;
+        String name;
+      equation
+        ecvl = Util.listMap(tcvl,convertFromTypesToExpVar);
+        name = ClassInf.getStateName(CIS);
+        t_1 = DAE.ET_COMPLEX(name,ecvl,CIS);
+      then
+        t_1;
+        
         // MetaModelica extension
     case ((DAE.T_LIST(t),_))
+      equation
+        t_1 = elabType(t);
+      then DAE.ET_LIST(t_1);
+    
+    case ((DAE.T_META_ARRAY(t),_))
       equation
         t_1 = elabType(t);
       then DAE.ET_LIST(t_1);
@@ -3530,20 +3572,6 @@ algorithm
       
     case ((DAE.T_POLYMORPHIC(_),_)) then DAE.ET_POLYMORPHIC();
 
-    case ((DAE.T_NORETCALL(),_)) then DAE.ET_NORETCALL();
-    
-    case ((DAE.T_COMPLEX(CIS,tcvl,_,_),_))
-      local 
-        list<Var> tcvl; 
-        ClassInf.State CIS; 
-        list<DAE.ExpVar> ecvl;
-        String name;
-      equation
-        ecvl = Util.listMap(tcvl,convertFromTypesToExpVar);
-        name = ClassInf.getStateName(CIS);
-        t_1 = DAE.ET_COMPLEX(name,ecvl,CIS);
-      then
-        t_1;         
         /* This is the case when the type is currently UNTYPED */
     case ((_,_))
       equation
@@ -4066,6 +4094,12 @@ algorithm
         true = RTOpts.acceptMetaModelicaGrammar();
         (_, ty2, polymorphicBindings) = matchFunc(e,t1,t2,polymorphicBindings,printFailtrace);
       then (e, (DAE.T_LIST(ty2),p2), polymorphicBindings);
+    
+    case (e,(DAE.T_META_ARRAY(t1),_),(DAE.T_META_ARRAY(t2),p2),polymorphicBindings,matchFunc,printFailtrace)
+      equation
+        true = RTOpts.acceptMetaModelicaGrammar();
+        (_, ty2, polymorphicBindings) = matchFunc(e,t1,t2,polymorphicBindings,printFailtrace);
+      then (e, (DAE.T_META_ARRAY(ty2),p2), polymorphicBindings);
     
     case (e, t1 as (DAE.T_INTEGER({}),_), (DAE.T_BOXED(t2),_),polymorphicBindings,matchFunc,printFailtrace)
       equation
@@ -4848,6 +4882,10 @@ algorithm
       equation
         exps = getAllExps(ty);
       then exps;
+    case DAE.T_META_ARRAY(ty)
+      equation
+        exps = getAllExps(ty);
+      then exps;
     case DAE.T_BOXED(ty)
       equation
         exps = getAllExps(ty);
@@ -4941,6 +4979,7 @@ algorithm
     case ((DAE.T_METATUPLE(_),_)) then true;
     case ((DAE.T_UNIONTYPE(_),_)) then true;
     case ((DAE.T_POLYMORPHIC(_),_)) then true;
+    case ((DAE.T_META_ARRAY(_),_)) then true;
     case ((DAE.T_FUNCTION(_,_),_)) then true;
     case ((DAE.T_BOXED(_),_)) then true;
     case _ then false;
@@ -4964,13 +5003,9 @@ algorithm
     case ((DAE.T_METATUPLE(_),_)) then ty;
     case ((DAE.T_UNIONTYPE(_),_)) then ty;
     case ((DAE.T_POLYMORPHIC(_),_)) then ty;
+    case ((DAE.T_META_ARRAY(_),_)) then ty;
     case ((DAE.T_BOXED(ty),_)) then ty;
-    case ty
-      local String str;
-      equation
-        str = unparseType(ty);
-        Debug.fprintln("failtrace", "- Types.unboxedType failed " +& str);
-      then fail();
+    case ty then ty;
   end matchcontinue;
 end unboxedType;
 
@@ -5095,6 +5130,10 @@ algorithm
       equation
         tp = superType(t1,t2);
       then ((DAE.T_METAOPTION(tp),NONE));
+    case ((DAE.T_META_ARRAY(t1),_),(DAE.T_META_ARRAY(t2),_))
+      equation
+        tp = superType(t1,t2);
+      then ((DAE.T_META_ARRAY(tp),NONE));
 
     case (t1 as (DAE.T_UNIONTYPE(lst),_),(DAE.T_METARECORD(_,_),SOME(path)))
       local
@@ -5240,6 +5279,11 @@ algorithm
         t2 = fixPolymorphicRestype(t1, bindings);
         t2 = unboxedType(t2);
       then ((DAE.T_LIST(t2),NONE));
+    case ((DAE.T_META_ARRAY(t1),_),bindings)
+      equation
+        t2 = fixPolymorphicRestype(t1, bindings);
+        t2 = unboxedType(t2);
+      then ((DAE.T_META_ARRAY(t2),NONE));
     case ((DAE.T_METAOPTION(t1),_),bindings)
       equation
         t2 = fixPolymorphicRestype(t1, bindings);

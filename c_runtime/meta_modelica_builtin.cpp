@@ -554,77 +554,26 @@ optionNone_rettype optionNone(modelica_metatype opt)
 }
 
 /* Array Operations */
-arrayLength_rettype arrayLength(base_array_t arr)
+arrayLength_rettype arrayLength(modelica_metatype arr)
 {
-  return base_array_nr_of_elements(&arr);
+  fprintf(stderr, "%s:%d: TODO: Use array implementation instead of list\n", __FUNCTION__, __LINE__);
+  return listLength(arr);
 }
 
-arrayIntegerGet_rettype arrayIntegerGet(integer_array_t arr, modelica_integer ix)
+arrayGet_rettype arrayGet(modelica_metatype arr, modelica_integer ix)
 {
-  if (ix < 1 || base_array_nr_of_elements(&arr) < (unsigned) ix)
-    throw 1;
-  return integer_get(&arr,ix-1);
+  fprintf(stderr, "%s:%d: TODO: Use array implementation instead of list\n", __FUNCTION__, __LINE__);
+  return listGet(arr,ix);
 }
 
-arrayRealGet_rettype arrayRealGet(real_array_t arr, modelica_integer ix)
+arrayCreate_rettype arrayCreate(modelica_integer num, modelica_metatype val)
 {
-  if (ix < 1 || base_array_nr_of_elements(&arr) < (unsigned) ix)
-    throw 1;
-  return real_get(&arr,ix-1);
-}
-
-arrayBooleanGet_rettype arrayBooleanGet(boolean_array_t arr, modelica_integer ix)
-{
-  if (ix < 1 || base_array_nr_of_elements(&arr) < (unsigned) ix)
-    throw 1;
-  return boolean_get(&arr,ix-1);
-}
-
-arrayStringGet_rettype arrayStringGet(string_array_t arr, modelica_integer ix)
-{
-  if (ix < 1 || base_array_nr_of_elements(&arr) < (unsigned) ix)
-    throw 1;
-  return string_get(&arr,ix-1);
-}
-
-arrayIntegerCreate_rettype arrayIntegerCreate(modelica_integer num, modelica_integer val)
-{
-  integer_array_t arr;
-  if (num < 1)
-    throw 1;
-  simple_alloc_1d_integer_array(&arr, num);
-  fill_integer_array(&arr, val);
-  return arr;
-}
-
-arrayRealCreate_rettype arrayRealCreate(modelica_integer num, modelica_real val)
-{
-  real_array_t arr;
-  if (num < 1)
-    throw 1;
-  simple_alloc_1d_real_array(&arr, num);
-  fill_real_array(&arr, val);
-  return arr;
-}
-
-arrayBooleanCreate_rettype arrayBooleanCreate(modelica_integer num, modelica_boolean val)
-{
-  boolean_array_t arr;
-  if (num < 1)
-    throw 1;
-  simple_alloc_1d_boolean_array(&arr, num);
-  fill_boolean_array(&arr, val);
-  return arr;
-}
-
-arrayStringCreate_rettype arrayStringCreate(modelica_integer num, modelica_string_t val)
-{
-  string_array_t arr;
-  if (num < 1)
-    throw 1;
-  simple_alloc_1d_string_array(&arr, num);
-  fill_string_array(&arr, val);
-  return arr;
+  int i;
+  modelica_metatype res = mmc_mk_nil();
+  fprintf(stderr, "%s:%d: TODO: Use array implementation instead of list\n", __FUNCTION__, __LINE__);
+  for (i=0; i<num; i++)
+    res = mmc_mk_cons(val, res);
+  return res;
 }
 
 /* Misc Operations */

@@ -1381,6 +1381,16 @@ algorithm
         String id;
       then Absyn.TPATH(Absyn.IDENT(id),NONE);
     
+    case ((DAE.T_META_ARRAY(t),_))
+      local
+        Absyn.TypeSpec tSpec;
+        DAE.Type t;
+        list<Absyn.TypeSpec> tSpecList;
+      equation
+        tSpec = typeConvert(t);
+        tSpecList = {tSpec};
+      then Absyn.TCOMPLEX(Absyn.IDENT("array"),tSpecList,NONE());
+    
     case ((_,SOME(p)))
       local
         Absyn.Path p;

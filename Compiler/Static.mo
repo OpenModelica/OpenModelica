@@ -3708,114 +3708,6 @@ algorithm
   end matchcontinue;
 end elabBuiltinMMC_Uniontype_MetaRecord_Typedefs_Equal;
 
-protected function elabBuiltinArrayHelper "Deoverloads the function call - each type has its own C function"
-  input String baseNamePre;
-  input DAE.Type ty;
-  input String baseNamePost;
-  output String out;
-algorithm
-  out := matchcontinue (baseNamePre,ty,baseNamePost)
-    local
-      String tyStr;
-    case (baseNamePre, (DAE.T_INTEGER(_),_), baseNamePost)
-      then baseNamePre +& "Integer" +& baseNamePost;
-    case (baseNamePre, (DAE.T_REAL(_),_), baseNamePost)
-      then baseNamePre +& "Real" +& baseNamePost;
-    case (baseNamePre, (DAE.T_BOOL(_),_), baseNamePost)
-      then baseNamePre +& "Boolean" +& baseNamePost;
-    case (baseNamePre, (DAE.T_STRING(_),_), baseNamePost)
-      then baseNamePre +& "String" +& baseNamePost;
-    case (_, ty, _)
-      equation
-        tyStr = Types.unparseType(ty);
-        Debug.fprintln("failtrace", "- Static.elabBuiltinArrayHelper failed for type " +& tyStr);
-      then fail();
-  end matchcontinue;
-end elabBuiltinArrayHelper;
-
-protected function elabBuiltinArrayGet "{x,y,z},1 => x"
-	input Env.Cache inCache;
-  input Env.Env inEnv;
-  input list<Absyn.Exp> inAbsynExpLst;
-  input list<Absyn.NamedArg> inNamedArg;  
-  input Boolean inBoolean;
-  output Env.Cache outCache;
-  output DAE.Exp outExp;
-  output DAE.Properties outProperties;
-algorithm
-  (outCache,outExp,outProperties):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
-    local
-      DAE.Exp s1_1, s2_1;
-      DAE.ExpType tp;
-      DAE.Const c;
-      list<Env.Frame> env;
-      Absyn.Exp s1,s2,s;
-      Boolean impl;
-      DAE.Type ty;
-      Env.Cache cache;
-      DAE.Properties prop;
-      DAE.Const c, c1, c2;
-      list<DAE.Exp> expList;
-      String fnName;
-    case (cache,env,{s1, s2},{},impl)
-      equation
-        (cache,_,DAE.PROP((DAE.T_ARRAY(_,ty),_),_),_) = elabExp(cache, env, s1, impl, NONE, true);
-        fnName = elabBuiltinArrayHelper("array",ty,"Get");
-        s = Absyn.CALL(Absyn.CREF_IDENT(fnName, {}), Absyn.FUNCTIONARGS({s1,s2},{}));
-        (cache,s1_1,prop,_) = elabExp(cache, env, s, impl, NONE, true);
-      then
-        (cache,s1_1,prop);
-    
-    case (_,_,_,_,_)
-      equation
-        Debug.fprintln("failtrace", "- elabBuiltinArrayGet failed");
-      then fail();
-  end matchcontinue;
-end elabBuiltinArrayGet;
-
-protected function elabBuiltinArrayCreate "5,x => {x,x,x,x,x}"
-	input Env.Cache inCache;
-  input Env.Env inEnv;
-  input list<Absyn.Exp> inAbsynExpLst;
-  input list<Absyn.NamedArg> inNamedArg;  
-  input Boolean inBoolean;
-  output Env.Cache outCache;
-  output DAE.Exp outExp;
-  output DAE.Properties outProperties;
-algorithm
-  (outCache,outExp,outProperties):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
-    local
-      DAE.Exp s1_1, s2_1;
-      DAE.ExpType tp;
-      DAE.Const c;
-      list<Env.Frame> env;
-      Absyn.Exp s1,s2,s;
-      Boolean impl;
-      DAE.Type ty;
-      Env.Cache cache;
-      DAE.Properties prop;
-      DAE.Const c, c1, c2;
-      list<DAE.Exp> expList;
-      String fnName;
-    case (cache,env,{s1, s2},{},impl)
-      equation
-        (cache,_,prop,_) = elabExp(cache, env, s2, impl, NONE, true);
-        ty = Types.getPropType(prop);
-        fnName = elabBuiltinArrayHelper("array",ty,"Create");
-        s = Absyn.CALL(Absyn.CREF_IDENT(fnName, {}), Absyn.FUNCTIONARGS({s1,s2},{}));
-        (cache,s1_1,prop,_) = elabExp(cache, env, s, impl, NONE, true);
-      then
-        (cache,s1_1,prop);
-    
-    case (_,_,_,_,_)
-      equation
-        Debug.fprintln("failtrace", "- elabBuiltinArrayCreate failed");
-      then fail();
-  end matchcontinue;
-end elabBuiltinArrayCreate;
-
 protected function elabBuiltinClock " => x"
 	input Env.Cache inCache;
   input Env.Env inEnv;
@@ -6152,8 +6044,6 @@ algorithm
     case "mmc_get_field" equation true = RTOpts.acceptMetaModelicaGrammar(); then elabBuiltinMMCGetField;
     case "mmc_uniontype_metarecord_typedef_equal" equation true = RTOpts.acceptMetaModelicaGrammar(); then elabBuiltinMMC_Uniontype_MetaRecord_Typedefs_Equal;
     case "if_exp" equation true = RTOpts.acceptMetaModelicaGrammar(); then elabBuiltinIfExp;
-    case "arrayGet" equation true = RTOpts.acceptMetaModelicaGrammar(); then elabBuiltinArrayGet;
-    case "arrayCreate" equation true = RTOpts.acceptMetaModelicaGrammar(); then elabBuiltinArrayCreate;
     case "clock" equation true = RTOpts.acceptMetaModelicaGrammar(); then elabBuiltinClock;
   end matchcontinue;
 end elabBuiltinHandler;
