@@ -9809,6 +9809,15 @@ algorithm
   end matchcontinue;
 end expReal;
 
+public function expInt "returns the int value if expression is constant Integer"
+	input Exp exp;
+	output Integer i;
+algorithm
+	i := matchcontinue(exp) local Integer i2;
+		case (DAE.ICONST(i2)) then i2;
+	end matchcontinue;
+end expInt;
+
 public function isExpCrefOrIfExp 
 "Returns true if expression is a componentRef or an if expression"
   input Exp e;
