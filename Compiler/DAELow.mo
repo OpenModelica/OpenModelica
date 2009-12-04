@@ -5135,15 +5135,35 @@ algorithm
         inputs = Util.listListUnionOnTrue({inputs1, inputs2}, Exp.expEqual);
      then (inputs,{});
 
-			// Features not yet supported.
-    case(vars,DAE.STMT_FOR(type_=_))
-      equation
-        Error.addMessage(Error.INTERNAL_ERROR,{"For statements in algorithms not supported yet. Suggested workaround: place for statement in a Modelica function"});
-     then fail();
-    case(vars,DAE.STMT_WHILE(exp=_))
-      equation
-        Error.addMessage(Error.INTERNAL_ERROR,{"While statements in algorithms not supported yet. Suggested workaround: place while statement in a Modelica function"});
-     then fail();
+		case(vars, DAE.STMT_FOR(_, _, iteratorName, e, stmts))
+			local 
+				DAE.Ident iteratorName;
+				DAE.Exp iteratorExp;
+				list<DAE.Exp> arrayVars, nonArrayVars;
+				list<list<DAE.Exp>> arrayElements;
+				list<DAE.Exp> flattenedElements;
+			equation
+				(inputs1,outputs1) = lowerAlgorithmInputsOutputs(vars, DAE.ALGORITHM_STMTS(stmts));
+				inputs2 = statesAndVarsExp(e, vars);
+				// Split the output variables into variables that depend on the loop
+				// variable and variables that don't.
+				iteratorExp = DAE.CREF(DAE.CREF_IDENT(iteratorName, DAE.ET_INT(), {}), DAE.ET_INT());
+				(arrayVars, nonArrayVars) = Util.listSplitOnTrue1(outputs1, 
+					isLoopDependent, iteratorExp);
+				// Explode array variables into their array elements. 
+				// I.e. var[i] => var[1], var[2], var[3] etc.
+				arrayElements = Util.listMap3(arrayVars, explodeArrayVars, iteratorExp, e, vars);
+				flattenedElements = Util.listFlatten(arrayElements);
+				inputs = Util.listUnion(inputs1, inputs2);
+				outputs = Util.listUnion(nonArrayVars, flattenedElements);
+			then (inputs, outputs);
+
+		case(vars, DAE.STMT_WHILE(e, stmts))
+			equation
+				(inputs1,outputs) = lowerAlgorithmInputsOutputs(vars, DAE.ALGORITHM_STMTS(stmts));
+				inputs2 = statesAndVarsExp(e, vars);
+				inputs = Util.listUnion(inputs1, inputs2);
+			then (inputs, outputs);
   end matchcontinue;
 end lowerStatementInputsOutputs;
 
@@ -5330,6 +5350,164 @@ algorithm
         res;
   end matchcontinue;
 end statesAndVarsMatrixExp;
+
+protected function isLoopDependent
+	"Checks if an expression is a variable that depends on a loop iterator,
+	ie. for i loop
+				V[i] = ...	// V depends on i
+			end for;
+	Used by lowerStatementInputsOutputs in STMT_FOR case."
+	input DAE.Exp varExp;
+	input DAE.Exp iteratorExp;
+	output Boolean isDependent;
+algorithm
+	isDependent := matchcontinue(varExp, iteratorExp)
+		local 
+			list<DAE.Exp> subscripts;
+			Boolean b;
+		case (DAE.ASUB(_, subscripts), _)
+			equation
+				true = isLoopDependentHelper(subscripts, iteratorExp);
+			then true;
+		case (_,_)
+			then false;
+	end matchcontinue;
+end isLoopDependent;
+
+protected function isLoopDependentHelper
+	"Helper for isLoopDependent. 
+	Checks if a list of subscripts contains a certain iterator expression."
+	input list<DAE.Exp> subscripts;
+	input DAE.Exp iteratorExp;
+	output Boolean isDependent;
+algorithm
+	isDependent := matchcontinue(subscripts, iteratorExp)
+		local
+			DAE.Exp subscript;
+			list<DAE.Exp> rest;
+		case ({}, _) then false;
+		case (subscript :: rest, _)
+			equation
+				true = Exp.expContains(subscript, iteratorExp);
+			then true;
+		case (subscript :: rest, _)
+			equation
+				true = isLoopDependentHelper(rest, iteratorExp);
+			then true;
+		case (_, _) then false;
+	end matchcontinue;
+end isLoopDependentHelper;
+
+protected function explodeArrayVars
+	"Explodes an array variable into its elements. Takes a variable that is an
+	ASUB, the name of the iterator variable and a range expression that the
+	iterator iterates over."
+	input DAE.Exp arrayVar;
+	input DAE.Exp iteratorExp;
+	input DAE.Exp rangeExpr;
+	input Variables vars;
+	output list<DAE.Exp> arrayElements;
+algorithm
+	arrayElements := 
+	matchcontinue(arrayVar, iteratorExp, rangeExpr, vars)
+		case ((DAE.ASUB(_, subs)), _, _, _)
+			local
+				list<DAE.Exp> subs;
+				list<DAE.Exp> clonedElements, newElements;
+				list<DAE.Exp> indices;
+			equation
+				// If the range is constant, then we can use it to generate only those
+				// array elements that are actually used.
+				indices = rangeIntExprs(rangeExpr, arrayVar);
+				clonedElements = Util.listFill(arrayVar, listLength(indices));
+				newElements = generateArrayElements(clonedElements, indices, iteratorExp); 
+			then newElements;
+		case ((DAE.ASUB(DAE.CREF(cref, _), _)), _, _, _)
+			local
+				DAE.ComponentRef cref;
+				list<Var> arrayElements;
+				list<DAE.ComponentRef> varCrefs;
+				list<DAE.Exp> varExprs;
+			equation
+				// If the range is not constant, then we just extract all array elements
+				// of the array.
+				(arrayElements, _) = getVar(cref, vars);
+				varCrefs = Util.listMap(arrayElements, varCref);
+				varExprs = Util.listMap(varCrefs, Exp.crefExp);
+			then varExprs;
+	end matchcontinue;
+end explodeArrayVars;
+
+protected function rangeIntExprs
+	"Tries to convert a range to a list of integer expressions. This is only
+	possible if the range already is an DAE.ARRAY. Returns a list of integer
+	expressions if possible, or fails. Used by explodeArrayVars."
+	input DAE.Exp range;
+	input DAE.Exp arrayVar;
+	output list<DAE.Exp> integers;
+algorithm
+	integers := matchcontinue(range, arrayVar)
+		local
+			list<DAE.Exp> arrayElements;
+		case (DAE.ARRAY(_, _, arrayElements), _)
+			then arrayElements;
+		case (_, _) then fail();
+	end matchcontinue;
+end rangeIntExprs;
+
+protected function generateArrayElements
+	"Takes a list of identical ASUB expressions, a list of ICONST indices and a
+	loop iterator expression, and recursively replaces the loop iterator with a
+	constant index. Ex: 
+		generateArrayElements(cref[i,j], {1,2,3}, j) => 
+			{cref[i,1], cref[i,2], cref[i,3]}"
+	input list<DAE.Exp> clones;
+	input list<DAE.Exp> indices;
+	input DAE.Exp iteratorExp;
+	output list<DAE.Exp> newElements;
+algorithm
+	newElements := matchcontinue(clones, indices, iteratorExp)
+		local
+			DAE.Exp clone, newElement, newElement2, index;
+			list<DAE.Exp> restClones, restIndices, elements;
+		case ({}, {}, _) then {};
+		case (clone :: restClones, index :: restIndices, _)
+			equation
+				(newElement, _) = Exp.replaceExp(clone, iteratorExp, index);
+				newElement2 = tryAsubToCref(newElement);
+				elements = generateArrayElements(restClones, restIndices, iteratorExp);
+			then (newElement2 :: elements);
+	end matchcontinue;
+end generateArrayElements;
+
+protected function tryAsubToCref
+	"Tries to transform an ASUB to a CREF. This needs to be done if an ASUB only
+	contains constant subscripts, such as cref[1,4]. If the ASUB contains any
+	non-constant subscripts, then the variable is returned unchanged."
+	input DAE.Exp asub;
+	output DAE.Exp maybeCref;
+algorithm
+	maybeCref := matchcontinue(asub)
+		local
+		case (DAE.ASUB(DAE.CREF(DAE.CREF_IDENT(varIdent, arrayType, _), varType), subExprs))
+			local
+				DAE.Ident varIdent;
+				DAE.ExpType arrayType, varType;
+				list<DAE.Exp> subExprs, subExprsSimplified;
+				list<Exp.Subscript> subscripts;
+			equation
+				{} = Util.listSelect(subExprs, Exp.isNotConst);
+				// If a subscript is not a single constant value it needs to be
+				// simplified, e.g. cref[3+4] => cref[7], otherwise some subscripts
+				// might be counted twice, such as cref[3+4] and cref[2+5], even though
+				// they reference the same element.
+				subExprsSimplified = Util.listMap(subExprs, Exp.simplify);
+				subscripts = Util.listMap(subExprsSimplified, Exp.makeIndexSubscript);
+			then DAE.CREF(DAE.CREF_IDENT(varIdent, arrayType, subscripts), varType);
+		case (_) then asub;
+	end matchcontinue;
+end tryAsubToCref;
+
 
 protected function lowerEqn "function: lowerEqn
 

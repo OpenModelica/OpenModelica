@@ -3185,7 +3185,7 @@ algorithm
         (cfn,tnr2);
     
     /* adrpo: handle ASUB on LHS */ 
-    case (DAE.STMT_ASSIGN(type_ = typ,exp1 = asub as DAE.ASUB(exp = DAE.CREF(cref,t), sub=subs),exp = exp),tnr,context)
+    /*case (DAE.STMT_ASSIGN(type_ = typ,exp1 = asub as DAE.ASUB(exp = DAE.CREF(cref,t), sub=subs),exp = exp),tnr,context)
       local 
         list<DAE.Exp> subs; DAE.Exp asub; DAE.ComponentRef crefBuild;
       equation
@@ -3197,7 +3197,7 @@ algorithm
         cfn_1 = cMergeFn(cfn1, cfn2);
         cfn = cAddStatements(cfn_1, {stmt});
       then
-        (cfn,tnr2);        
+        (cfn,tnr2);        */
 
     case (DAE.STMT_ASSIGN(type_ = typ,exp1 = e1,exp = exp),tnr,context)
       equation
@@ -4398,6 +4398,11 @@ algorithm
         var = Util.if_(b, "(1)", "(0)");
       then
         (cEmptyFunction,var,tnr);
+		case (DAE.CREF(cref, t as DAE.ET_ARRAY(_,_)), tnr, context)
+			equation
+				(cfn, var, tnr_1) = generateRhsCref(cref, t, tnr, context);
+			then
+				(cfn, var, tnr_1);
     case (DAE.CREF(componentRef = cref,ty = t),tnr,context)
       equation
         (cfn,var,tnr_1) = generateRhsCref(cref, t, tnr, context);
@@ -4781,15 +4786,31 @@ algorithm
         (cfn,tvar2,tnr2);
 
     // cref[x, y] - try to transform it into a cref 
+    case (DAE.ASUB(exp = e as DAE.CREF(cref,t), sub=subs),tnr,
+			context as CONTEXT(SIMULATION(_), _, _))
+			local
+				list<DAE.Exp> subs;
+				list<DAE.Subscript> indices;
+				DAE.ComponentRef cref, crefBuild;
+				String arrayName;
+			equation
+				crefBuild = buildCrefFromAsub(cref, subs);
+				(cfn, var, tnr2) = generateRhsCref(crefBuild, t, tnr, context);
+				indices = Util.listMap(subs, Exp.makeIndexSubscript);
+				(_, var2, tnr3) = generateScalarRhsCref(var, t, indices, tnr2, context);
+			then
+				(cfn, var2, tnr3);
+			
+    // cref[x, y] - try to transform it into a cref 
     case (DAE.ASUB(exp = e as DAE.CREF(cref,t), sub=subs),tnr,context)
       local 
         list<DAE.Exp> subs;
         DAE.ComponentRef cref, crefBuild;
       equation
         crefBuild = buildCrefFromAsub(cref, subs);
-        (cfn,var,tnr_1) = generateRhsCref(crefBuild, t, tnr, context);
+        (cfn,var,tnr2) = generateRhsCref(crefBuild, t, tnr, context);
       then
-        (cfn,var,tnr_1);
+				(cfn,var,tnr2);
 
     case (DAE.ASUB(exp = _),tnr,context)
       equation
@@ -5846,7 +5867,7 @@ algorithm
       /* For context simulation array variables must be boxed
 	    into a real_array object since they are represented only
 	    in a double array. */
-    case (cref,DAE.ET_ARRAY(ty = t,arrayDimensions = dims),tnr,CONTEXT(SIMULATION(_),_,_))
+		case (cref,DAE.ET_ARRAY(ty = t,arrayDimensions = dims),tnr,context as CONTEXT(SIMULATION(_),_,_))
       equation
         e_tp_str = expTypeStr(t, true);
         e_sh_tp_str = expShortTypeStr(t);
@@ -5856,7 +5877,7 @@ algorithm
         // Assumes that all dimensions are known, i.e. no NONE in dims.
         dims_strs = Util.listMap(Util.listMap1(dims,Util.applyOption, int_string),Util.stringOption);
         dims_str = Util.stringDelimitListNonEmptyElts(dims_strs, ", ");
-        (cref_str,_) = compRefCstr(cref);
+        (cref_str, _) = compRefCstr(cref);
         stmt = Util.stringAppendList(
           {e_sh_tp_str,"_array_create(&",vstr,", ","&",cref_str,", ",
           ndims_str,", ",dims_str,");"});
