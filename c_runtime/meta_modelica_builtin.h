@@ -208,14 +208,23 @@ optionNone_rettype optionNone(modelica_metatype);
 
 /* Array Operations */
 typedef modelica_integer arrayLength_rettype;
+typedef modelica_metatype arrayGet_rettype;
+typedef modelica_metatype arrayCreate_rettype;
+typedef modelica_metatype arrayList_rettype;
+typedef modelica_metatype listArray_rettype;
+typedef modelica_metatype arrayUpdate_rettype;
+typedef modelica_metatype arrayCopy_rettype;
+typedef modelica_metatype arrayAdd_rettype;
 
 arrayLength_rettype arrayLength(modelica_metatype);
-
-typedef modelica_metatype arrayGet_rettype;
 arrayGet_rettype arrayGet(modelica_metatype, modelica_integer);
-
-typedef modelica_metatype arrayCreate_rettype;
 arrayCreate_rettype arrayCreate(modelica_integer, modelica_metatype);
+arrayList_rettype arrayList(modelica_metatype);
+listArray_rettype listArray(modelica_metatype);
+arrayUpdate_rettype arrayUpdate(modelica_metatype, modelica_integer, modelica_metatype);
+arrayCopy_rettype arrayCopy(modelica_metatype);
+arrayAdd_rettype arrayAdd(modelica_metatype, modelica_metatype);
+
 
 /* Misc Operations */
 typedef modelica_metatype if__exp_rettype;

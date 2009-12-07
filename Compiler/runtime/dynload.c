@@ -283,6 +283,16 @@ int mmc_to_value(void* mmc, void** res)
   ctor = 255 & (hdr >> 2);
 
 
+  if (numslots>0 && ctor == MMC_ARRAY_TAG) {
+    void *varlst = (void *) mk_nil();
+    for (i=numslots; i>0; i--) {
+      assert(0 == mmc_to_value(RML_FETCH(RML_OFFSET(RML_UNTAGPTR(mmc),i)),&t));
+      varlst = mk_cons(t, varlst);
+    }
+    *res = (void *) Values__META_5fARRAY(varlst);
+    return 0;
+  }
+  
   if (numslots>0 && ctor > 1) { /* RECORD */
     void *namelst = (void *) mk_nil();
     void *varlst = (void *) mk_nil();

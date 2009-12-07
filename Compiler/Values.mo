@@ -77,6 +77,10 @@ uniontype Value
     list<Value> valueLst;
   end LIST;
 
+  record META_ARRAY "MetaModelica array"
+    list<Value> valueLst;
+  end META_ARRAY;
+
   record TUPLE "Modelica Tuple"
     list<Value> valueLst;
   end TUPLE;

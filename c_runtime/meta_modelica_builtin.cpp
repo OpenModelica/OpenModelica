@@ -556,23 +556,80 @@ optionNone_rettype optionNone(modelica_metatype opt)
 /* Array Operations */
 arrayLength_rettype arrayLength(modelica_metatype arr)
 {
-  fprintf(stderr, "%s:%d: TODO: Use array implementation instead of list\n", __FUNCTION__, __LINE__);
-  return listLength(arr);
+  return MMC_HDRSLOTS(MMC_GETHDR(arr));
 }
 
 arrayGet_rettype arrayGet(modelica_metatype arr, modelica_integer ix)
 {
-  fprintf(stderr, "%s:%d: TODO: Use array implementation instead of list\n", __FUNCTION__, __LINE__);
-  return listGet(arr,ix);
+  if (ix < 1)
+    throw 1;
+  if((unsigned)ix-1 >= MMC_HDRSLOTS(MMC_GETHDR(arr)))
+    throw 1;
+  return MMC_STRUCTDATA(arr)[ix-1];
 }
 
-arrayCreate_rettype arrayCreate(modelica_integer num, modelica_metatype val)
+arrayCreate_rettype arrayCreate(modelica_integer nelts, modelica_metatype val)
 {
-  int i;
-  modelica_metatype res = mmc_mk_nil();
-  fprintf(stderr, "%s:%d: TODO: Use array implementation instead of list\n", __FUNCTION__, __LINE__);
-  for (i=0; i<num; i++)
-    res = mmc_mk_cons(val, res);
+  void* arr = (struct mmc_struct*)mmc_mk_box_no_assign(nelts, MMC_ARRAY_TAG);
+  void **arrp = MMC_STRUCTDATA(arr);
+  for(int i=0; i<nelts; i++)
+    arrp[i] = val;
+  return arr;
+}
+
+arrayList_rettype arrayList(modelica_metatype arr)
+{
+  int nelts = MMC_HDRSLOTS(MMC_GETHDR(arr))-1;
+  void **vecp = MMC_STRUCTDATA(arr);
+  void *res = mmc_mk_nil();
+  for(; nelts >= 0; --nelts)
+    res = mmc_mk_cons(vecp[nelts],res);
+  return res;
+}
+
+listArray_rettype listArray(modelica_metatype lst)
+{
+  int nelts = listLength(lst);
+  void* arr = (struct mmc_struct*)mmc_mk_box_no_assign(nelts, MMC_ARRAY_TAG);
+  void **arrp = MMC_STRUCTDATA(arr);
+  for(int i=0; i<nelts; i++) {
+    arrp[i] = MMC_CAR(lst);
+    lst = MMC_CDR(lst);
+  }
+  return arr;
+}
+
+arrayUpdate_rettype arrayUpdate(modelica_metatype arr, modelica_integer ix, modelica_metatype val)
+{
+  int nelts = MMC_HDRSLOTS(MMC_GETHDR(arr));
+  if (ix < 1 || ix > nelts)
+    throw 1;
+  MMC_STRUCTDATA(arr)[ix-1] = val;
+  return arr;
+}
+
+arrayCopy_rettype arrayCopy(modelica_metatype arr)
+{
+  int nelts = MMC_HDRSLOTS(MMC_GETHDR(arr));
+  void* res = (struct mmc_struct*)mmc_mk_box_no_assign(nelts, MMC_ARRAY_TAG);
+  void **arrp = MMC_STRUCTDATA(arr);
+  void **resp = MMC_STRUCTDATA(res);
+  for(int i=0; i<nelts; i++) {
+    resp[i] = arrp[i];
+  }
+  return res;
+}
+
+arrayAdd_rettype arrayAdd(modelica_metatype arr, modelica_metatype val)
+{
+  int nelts = MMC_HDRSLOTS(MMC_GETHDR(arr));
+  void* res = (struct mmc_struct*)mmc_mk_box_no_assign(nelts+1, MMC_ARRAY_TAG);
+  void **arrp = MMC_STRUCTDATA(arr);
+  void **resp = MMC_STRUCTDATA(res);
+  for(int i=0; i<nelts; i++) {
+    resp[i] = arrp[i];
+  }
+  resp[nelts] = val;
   return res;
 }
 

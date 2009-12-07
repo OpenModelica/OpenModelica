@@ -258,6 +258,14 @@ void *mmc_mk_box_arr(int slots, unsigned ctor, void** args)
     return MMC_TAGPTR(p);
 }
 
+void *mmc_mk_box_no_assign(int slots, unsigned ctor)
+{
+    int i;
+    struct mmc_struct *p = mmc_alloc_words(slots+1);
+    p->header = MMC_STRUCTHDR(slots, ctor);
+    return MMC_TAGPTR(p);
+}
+
 int mmc_boxes_equal(void* lhs, void* rhs)
 {
   mmc_uint_t h_lhs;
@@ -368,76 +376,87 @@ void printAny(void* any) /* For debugging */
   struct record_description *desc;
 
   if ((0 == ((mmc_sint_t)any & 1))) {
-    printf("%d", (int) ((mmc_sint_t)any)>>1);
+    fprintf(stderr, "%d", (int) ((mmc_sint_t)any)>>1);
     return;
   }
   
   hdr = MMC_GETHDR(any);
 
   if (hdr == MMC_NILHDR) {
-    printf("{}");
+    fprintf(stderr, "{}");
     return;
   }
 
   if (hdr == MMC_REALHDR) {
-    printf("%.7g", (double) mmc_prim_get_real(any));
+    fprintf(stderr, "%.7g", (double) mmc_prim_get_real(any));
     return;
   }
   if (MMC_HDRISSTRING(hdr)) {
-    printf("\"%s\"", MMC_STRINGDATA(any));
+    fprintf(stderr, "\"%s\"", MMC_STRINGDATA(any));
     return;
   }
 
   numslots = MMC_HDRSLOTS(hdr);
   ctor = 255 & (hdr >> 2);
   
-  if (numslots>0 && ctor > 1) { /* RECORD */
-    desc = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),1));
-    printf("%s(", desc->name);
-    for (i=2; i<=numslots; i++) {
+  if (numslots>0 && ctor == MMC_ARRAY_TAG) { /* MetaModelica-style array */
+    fprintf(stderr, "meta_array(");
+    for (i=1; i<=numslots; i++) {
       data = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),i));
-      printf("%s = ", desc->fieldNames[i-2]);
       printAny(data);
       if (i!=numslots)
-        printf(", ");
+        fprintf(stderr, ", ");
     }
-    printf(")");
+    fprintf(stderr, ")");
+    return;
+  }
+  if (numslots>0 && ctor > 1) { /* RECORD */
+    desc = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),1));
+    fprintf(stderr, "%s(", desc->name);
+    for (i=2; i<=numslots; i++) {
+      data = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),i));
+      fprintf(stderr, "%s = ", desc->fieldNames[i-2]);
+      printAny(data);
+      if (i!=numslots)
+        fprintf(stderr, ", ");
+    }
+    fprintf(stderr, ")");
     return;
   }
 
   if (numslots>0 && ctor == 0) { /* TUPLE */
-    printf("(");
+    fprintf(stderr, "(");
     for (i=0; i<numslots; i++) {
       printAny(MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),i+1)));
       if (i!=numslots-1)
-        printf(", ");
+        fprintf(stderr, ", ");
     }
-    printf(")");
+    fprintf(stderr, ")");
     return;
   }
 
   if (numslots==0 && ctor==1) /* NONE() */ {
-    printf("NONE()");
+    fprintf(stderr, "NONE()");
     return;
   }
 
   if (numslots==1 && ctor==1) /* SOME(x) */ {
-    printf("SOME(");
+    fprintf(stderr, "SOME(");
     printAny(MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),1)));
-    printf(")");
+    fprintf(stderr, ")");
     return;
   }
 
   if (numslots==2 && ctor==1) { /* CONS-PAIR */
-    printf("{");
+    fprintf(stderr, "{");
     printAny(MMC_CAR(any));
     any = MMC_CDR(any);
     while (!MMC_NILTEST(any)) {
-      printf(", ");
+      fprintf(stderr, ", ");
       printAny(MMC_CAR(any));
       any = MMC_CDR(any);
     }
-    printf("}");
+    fprintf(stderr, "}");
     return;
   }
 

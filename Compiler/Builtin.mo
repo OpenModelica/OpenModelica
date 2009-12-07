@@ -2694,7 +2694,17 @@ protected constant tuple<DAE.TType, Option<Type_a>> marrayAny2int =(
           DAE.T_FUNCTION({("x1",(DAE.T_ANYTYPE(NONE),NONE))},(DAE.T_INTEGER({}),NONE)),NONE);
 protected constant tuple<DAE.TType, Option<Type_a>> marrayAInt2A =(
           DAE.T_FUNCTION({("x1",(DAE.T_META_ARRAY((DAE.T_POLYMORPHIC("A"),NONE)),NONE)),("x2",(DAE.T_INTEGER({}),NONE))},(DAE.T_POLYMORPHIC("A"),NONE)),NONE);
-        
+protected constant tuple<DAE.TType, Option<Type_a>> marrayA2listA =(
+          DAE.T_FUNCTION({("x1",(DAE.T_META_ARRAY((DAE.T_POLYMORPHIC("A"),NONE)),NONE))},(DAE.T_LIST((DAE.T_POLYMORPHIC("A"),NONE)),NONE)),NONE);
+protected constant tuple<DAE.TType, Option<Type_a>> listA2marrayA =(
+          DAE.T_FUNCTION({("x1",(DAE.T_LIST((DAE.T_POLYMORPHIC("A"),NONE)),NONE))},(DAE.T_META_ARRAY((DAE.T_POLYMORPHIC("A"),NONE)),NONE)),NONE);
+protected constant tuple<DAE.TType, Option<Type_a>> marrayAIntA2marrayA =(
+          DAE.T_FUNCTION({("x1",(DAE.T_META_ARRAY((DAE.T_POLYMORPHIC("A"),NONE)),NONE)),("x2",(DAE.T_INTEGER({}),NONE)),("x3",(DAE.T_POLYMORPHIC("A"),NONE))},(DAE.T_META_ARRAY((DAE.T_POLYMORPHIC("A"),NONE)),NONE)),NONE);
+protected constant tuple<DAE.TType, Option<Type_a>> marrayA2marrayA =(
+          DAE.T_FUNCTION({("x1",(DAE.T_META_ARRAY((DAE.T_POLYMORPHIC("A"),NONE)),NONE))},(DAE.T_META_ARRAY((DAE.T_POLYMORPHIC("A"),NONE)),NONE)),NONE);
+protected constant tuple<DAE.TType, Option<Type_a>> marrayAA2marrayA =(
+          DAE.T_FUNCTION({("x1",(DAE.T_META_ARRAY((DAE.T_POLYMORPHIC("A"),NONE)),NONE)),("x2",(DAE.T_POLYMORPHIC("A"),NONE))},(DAE.T_META_ARRAY((DAE.T_POLYMORPHIC("A"),NONE)),NONE)),NONE);
+
 // String functions. sjoelund
 protected constant tuple<DAE.TType, Option<Type_a>> string2string=(
           DAE.T_FUNCTION({("x",(DAE.T_STRING({}),NONE))},(DAE.T_STRING({}),NONE)),NONE);
@@ -3566,6 +3576,11 @@ algorithm
         env = Env.extendFrameT(env, "arrayLength", marrayAny2int);
         env = Env.extendFrameT(env, "arrayGet", marrayAInt2A);        
         env = Env.extendFrameT(env, "arrayCreate", intA2marrayA);
+        env = Env.extendFrameT(env, "arrayList", marrayA2listA);
+        env = Env.extendFrameT(env, "listArray", listA2marrayA);
+        env = Env.extendFrameT(env, "arrayUpdate", marrayAIntA2marrayA);        
+        env = Env.extendFrameT(env, "arrayCopy", marrayA2marrayA);
+        env = Env.extendFrameT(env, "arrayAdd", marrayAA2marrayA);
 
         // Option Operations
         env = Env.extendFrameT(env, "optionNone", option2boolean);
