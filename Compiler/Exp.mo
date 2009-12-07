@@ -9054,7 +9054,7 @@ end matchcontinue;
 end unliftArrayTypeWithSubs;
 
 public function crefHaveSubs "Function: crefHaveSubs
-Checks wheter Componentref has any subscripts, recursiv " 
+	Checks whether Componentref has any subscripts, recursive " 
   input ComponentRef icr;
   output Boolean ob; 
 algorithm ob := matchcontinue(icr)
@@ -9069,21 +9069,8 @@ algorithm ob := matchcontinue(icr)
 end matchcontinue; 
 end crefHaveSubs;
 
-public function subscriptToInts "Convert a subscript with known indexes to an list<Integer>"
-  input list<Subscript> subs;
-  output list<Integer> indexes;
-algorithm
-  indexes := matchcontinue(subs)
-    local Integer i;
-    case(DAE.INDEX(DAE.ICONST(i))::subs) equation
-      indexes = subscriptToInts(subs);
-    then i::indexes;
-    case({}) then {};    
-  end matchcontinue;
-end subscriptToInts;
-
 public function subscriptContain "function: subscriptContain 
-This function checks wheter sub2 contains sub1 or not(DAE.WHOLEDIM) 
+	This function checks whether sub2 contains sub1 or not(DAE.WHOLEDIM) 
 "
   input list<Subscript> issl1;
   input list<Subscript> issl2;

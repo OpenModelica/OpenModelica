@@ -10588,7 +10588,7 @@ algorithm
         sl = Types.getDimensions(t);
         ty = Types.elabType(t);
         (cache,ss_1,const1) = elabSubscriptsDims(cache,env, ss, sl, impl);
-        indexes = Exp.subscriptToInts(ss_1);
+				indexes = Exp.subscriptsInt(ss_1);
         crefPrefix = Prefix.prefixAdd(id,indexes,crefPrefix,vt);
         (cache,cr,const2) = elabCrefSubs(cache,env, subs,crefPrefix,impl);
         const = Types.constAnd(const1, const2);
