@@ -67,6 +67,8 @@ case SIMCODE(modelInfo = MODELINFO) then
 
 <zeroCrossingFunctions(zeroCrossings, zeroCrossingsNeedSave)>
 
+<onlyZeroCrossing(zeroCrossings)>
+
 <functionUpdateDependents(stateEquations, nonStateContEquations,
                           nonStateDiscEquations, helpVarInfo)>
 
@@ -595,6 +597,25 @@ int handleZeroCrossing(long index)
     default:
       break;
   }
+
+  restore_memory_state(mem_state);
+
+  return 0;
+}
+>>
+
+onlyZeroCrossing(list<ZeroCrossing> zeroCrossings) ::=
+# varDecls = ""
+# zeroCrossingCode = zeroCrossingsTpl(zeroCrossings, varDecls)
+<<
+int function_onlyZeroCrossings(double *gout,double *t)
+{
+  state mem_state;
+
+  mem_state = get_memory_state();
+  <varDecls>
+
+  <zeroCrossingCode>
 
   restore_memory_state(mem_state);
 
@@ -1177,7 +1198,7 @@ daeExp(Exp exp, Text preExp, Text varDecls) ::=
   case LUNARY     then "LUNARY_NOT_IMPLEMENTED"
   case RELATION   then daeExpRelation(exp1, operator, exp2, preExp, varDecls)
   case IFEXP      then daeExpIf(expCond, expThen, expElse, preExp, varDecls)
-  case CALL       then daeExpCall(path, expLst, tuple_, builtin, ty, preExp, varDecls)
+  case CALL       then daeExpCall(exp, preExp, varDecls)
   // PARTEVALFUNCTION
   case ARRAY      then "ARRAY_NOT_IMPLEMENTED"
   case MATRIX     then "MATRIX_NOT_IMPLEMENTED"
@@ -1277,20 +1298,42 @@ daeExpIf(Exp cond, Exp then_, Exp else_, Text preExp, Text varDecls) ::=
   ((<condVar>)?<eThen>:<eElse>)
   >>
 
-daeExpCall(Path path, list<Exp> expLst, Boolean tuple_, Boolean builtin,
-           ExpType ty, Text preExp, Text varDecls) ::=
-# retType = expShortType(ty)
-# retVar = tempDecl(retType, varDecls)
-# argList = (expLst of exp: '<daeExp(exp, preExp, varDecls)>' ", ")
-# funName = ( 
-  match path
-  case IDENT then name
-  case _ then "COMPLEX_CALL_NAME"
-)
-# preExp += '<retVar> = <funName>(<argList>);<\n>'
-<<
-<retVar>
->>
+daeExpCall(Exp call, Text preExp, Text varDecls) ::=
+  // special builtins
+  case CALL(tuple_=false, builtin=true,
+            path=IDENT(name="pre"), expLst={arg as CREF}) then
+    # retType = '<expType(arg.ty)>'
+    # retVar = tempDecl(retType, varDecls)
+    # cast = if arg.ty is ET_INT then "(modelica_integer)" else ""
+    # preExp += '<retVar> = <cast>pre(<cref(arg.componentRef)>);<\n>'
+    '<retVar>'
+  // TODO: add more special builtins (Codegen.generateBuiltinFunction)
+  // no return calls
+  case CALL(tuple_=false, ty=ET_NORETCALL) then
+    # argStr = (expLst of exp: '<daeExp(exp, preExp, varDecls)>' ", ")
+    # funName = '<underscorePath(path)>'
+    # preExp += '<underscorePrefix(builtin)><funName>(<argStr>);<\n>'
+    '/* NORETCALL */'
+  // non tuple calls (single return value)
+  case CALL(tuple_=false) then
+    # argStr = (expLst of exp: '<daeExp(exp, preExp, varDecls)>' ", ")
+    # funName = '<underscorePath(path)>'
+    # retType = '<funName>_rettype'
+    # retVar = tempDecl(retType, varDecls)
+    # preExp += '<retVar> = <underscorePrefix(builtin)><funName>(<argStr>);<\n>'
+    if builtin then '<retVar>' else '<retVar>.<retType>_1'
+  // tuple calls (multiple return values)
+  case CALL(tuple_=true) then
+    # argStr = (expLst of exp: '<daeExp(exp, preExp, varDecls)>' ", ")
+    # funName = '<underscorePath(path)>'
+    # retType = '<funName>_rettype'
+    # retVar = tempDecl(retType, varDecls)
+    # preExp += '<retVar> = <underscorePrefix(builtin)><funName>(<argStr>);<\n>'
+    '<retVar>'
+
+underscorePrefix(Boolean builtin) ::=
+  case true then ""
+  case false then "_"
 
 tempDecl(String ty, Text varDecls) ::=
   # newVar = 'tmp<System.tmpTick()>'
