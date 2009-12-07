@@ -226,7 +226,7 @@ bool ExecuteNextEvent(double *t) {
       functionDAE_output();
     }
     function_updateDependents();
-    emit();
+    //emit();
     EventQueue.pop_front();
     return true;
   }
