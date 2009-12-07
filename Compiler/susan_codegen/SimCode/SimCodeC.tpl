@@ -53,36 +53,46 @@ case SIMCODE(modelInfo = MODELINFO) then
 
 <globalData(modelInfo)>
 
-<macros()>
+<functionGetName(modelInfo)>
 
-<dataStructureFunctions()>
+<functionDivisionError()>
 
-<outputComputationFunctions(nonStateContEquations, nonStateDiscEquations)>
+<functionSetLocalData()>
 
-<modelInputFunction(modelInfo)>
+<functionInitializeDataStruc()>
 
-<modelOutputFunction(modelInfo)>
+<functionDeInitializeDataStruc()>
 
-<residualStateComputation()>
+<functionDaeOutput(nonStateContEquations)>
 
-<zeroCrossingFunctions(zeroCrossings, zeroCrossingsNeedSave)>
+<functionDaeOutput2(nonStateDiscEquations)>
 
-<onlyZeroCrossing(zeroCrossings)>
+<functionInput(modelInfo)>
+
+<functionOutput(modelInfo)>
+
+<functionDaeRes()>
+
+<functionZeroCrossing(zeroCrossings)>
+
+<functionHandleZeroCrossing(zeroCrossingsNeedSave)>
 
 <functionUpdateDependents(stateEquations, nonStateContEquations,
                           nonStateDiscEquations, helpVarInfo)>
 
-<whenFunction(whenClauses)>
+<functionOnlyZeroCrossing(zeroCrossings)>
 
-<odeFunction(stateEquations)>
+<functionWhen(whenClauses)>
 
-<initialFunction(initialEquations)>
+<functionOde(stateEquations)>
 
-<initialResidualFunction(residualEquations)>
+<functionInitial(initialEquations)>
 
-<boundParametersFunction(parameterEquations)>
+<functionInitialResidual(residualEquations)>
 
-<eventCheckingCode(helpVarInfo, discreteModelVars)>
+<functionBoundParameters(parameterEquations)>
+
+<functionCheckForDiscreteVarChanges(helpVarInfo, discreteModelVars)>
 >>
 
 globalData(ModelInfo modelInfo) ::=
@@ -137,19 +147,6 @@ extern "C" { /* adrpo: this is needed for Visual C++ compilation to work! */
 <vars.extObjVars of var as SIMVAR:
   '#define <cref(name)> localData-\>extObjs[<var.index>]' "\n">
 
-char* getName(double* ptr)
-{
-  <vars.stateVars of var as SIMVAR:
-    'if (&<cref(name)> == ptr) return state_names[<var.index>];' "\n">
-  <vars.derivativeVars of var as SIMVAR:
-    'if (&<cref(name)> == ptr) return derivative_names[<var.index>];' "\n">
-  <vars.algVars of var as SIMVAR:
-    'if (&<cref(name)> == ptr) return algebraic_names[<var.index>];' "\n">
-  <vars.paramVars of var as SIMVAR:
-    'if (&<cref(name)> == ptr) return param_names[<var.index>];' "\n">
-  return "";
-}
-
 static char init_fixed[NX+NX+NY+NP] = {
   <[(vars.stateVars of var as SIMVAR:
       '<boolToInt(var.isFixed)> /* <cref(origName)> */' ",\n"),
@@ -171,7 +168,24 @@ char var_attr[NX+NY+NP] = {
 };
 >>
 
-macros() ::=
+functionGetName(ModelInfo modelInfo) ::=
+case MODELINFO(varInfo = VARINFO, vars = SIMVARS) then
+<<
+char* getName(double* ptr)
+{
+  <vars.stateVars of var as SIMVAR:
+    'if (&<cref(name)> == ptr) return state_names[<var.index>];' "\n">
+  <vars.derivativeVars of var as SIMVAR:
+    'if (&<cref(name)> == ptr) return derivative_names[<var.index>];' "\n">
+  <vars.algVars of var as SIMVAR:
+    'if (&<cref(name)> == ptr) return algebraic_names[<var.index>];' "\n">
+  <vars.paramVars of var as SIMVAR:
+    'if (&<cref(name)> == ptr) return param_names[<var.index>];' "\n">
+  return "";
+}
+>>
+
+functionDivisionError() ::=
 <<
 #define DIVISION(a,b,c) ((b != 0) ? a / b : a / division_error(b,c))
 
@@ -187,13 +201,16 @@ double division_error(double b, const char* division_str)
 }
 >>
 
-dataStructureFunctions() ::=
+functionSetLocalData() ::=
 <<
 void setLocalData(DATA* data)
 {
   localData = data;
 }
+>>
 
+functionInitializeDataStruc() ::=
+<<
 DATA* initializeDataStruc(DATA_FLAGS flags)
 {
   DATA* returnData = (DATA*)malloc(sizeof(DATA));
@@ -409,7 +426,10 @@ DATA* initializeDataStruc(DATA_FLAGS flags)
   }
   return returnData;
 }
+>>
 
+functionDeInitializeDataStruc() ::=
+<<
 void deInitializeDataStruc(DATA* data, DATA_FLAGS flags)
 {
   if(!data)
@@ -456,11 +476,9 @@ void deInitializeDataStruc(DATA* data, DATA_FLAGS flags)
 }
 >>
 
-outputComputationFunctions(list<Equation> cont, list<Equation> disc) ::=
+functionDaeOutput(list<Equation> cont) ::=
 # varDecls1 = ""
 # body1 = (cont of eq: '<equation_(eq, varDecls1)>' "\n")
-# varDecls2 = ""
-# body2 = (disc of eq: '<equation_(eq, varDecls2)>' "\n")
 <<
 /* for continuous time variables */
 int functionDAE_output()
@@ -474,7 +492,12 @@ int functionDAE_output()
 
   return 0;
 }
+>>
 
+functionDaeOutput2(list<Equation> disc) ::=
+# varDecls2 = ""
+# body2 = (disc of eq: '<equation_(eq, varDecls2)>' "\n")
+<<
 /* for discrete time variables */
 int functionDAE_output2()
 {
@@ -489,7 +512,7 @@ int functionDAE_output2()
 }
 >>
 
-modelInputFunction(ModelInfo modelInfo) ::=
+functionInput(ModelInfo modelInfo) ::=
 case MODELINFO(varInfo = VARINFO, vars = SIMVARS) then
 <<
 int input_function()
@@ -500,7 +523,7 @@ int input_function()
 }
 >>
 
-modelOutputFunction(ModelInfo modelInfo) ::=
+functionOutput(ModelInfo modelInfo) ::=
 case MODELINFO(varInfo = VARINFO, vars = SIMVARS) then
 <<
 int output_function()
@@ -511,7 +534,7 @@ int output_function()
 }
 >>
 
-residualStateComputation() ::=
+functionDaeRes() ::=
 <<
 int functionDAE_res(double *t, double *x, double *xd, double *delta,
                     long int *ires, double *rpar, long int* ipar)
@@ -557,8 +580,7 @@ int functionDAE_res(double *t, double *x, double *xd, double *delta,
 }
 >>
 
-zeroCrossingFunctions(list<ZeroCrossing> zeroCrossings,
-                      list<list<ComponentRef>> zeroCrossingsNeedSave) ::=
+functionZeroCrossing(list<ZeroCrossing> zeroCrossings) ::=
 # varDecls = ""
 # zeroCrossingCode = zeroCrossingsTpl(zeroCrossings, varDecls)
 <<
@@ -584,7 +606,10 @@ int function_zeroCrossing(long *neqm, double *t, double *x, long *ng,
 
   return 0;
 }
+>>
 
+functionHandleZeroCrossing(list<list<ComponentRef>> zeroCrossingsNeedSave) ::=
+<<
 int handleZeroCrossing(long index)
 {
   state mem_state;
@@ -597,25 +622,6 @@ int handleZeroCrossing(long index)
     default:
       break;
   }
-
-  restore_memory_state(mem_state);
-
-  return 0;
-}
->>
-
-onlyZeroCrossing(list<ZeroCrossing> zeroCrossings) ::=
-# varDecls = ""
-# zeroCrossingCode = zeroCrossingsTpl(zeroCrossings, varDecls)
-<<
-int function_onlyZeroCrossings(double *gout,double *t)
-{
-  state mem_state;
-
-  mem_state = get_memory_state();
-  <varDecls>
-
-  <zeroCrossingCode>
 
   restore_memory_state(mem_state);
 
@@ -661,7 +667,26 @@ int function_updateDependents()
 }
 >>
 
-whenFunction(list<SimWhenClause> whenClauses) ::=
+functionOnlyZeroCrossing(list<ZeroCrossing> zeroCrossings) ::=
+# varDecls = ""
+# zeroCrossingCode = zeroCrossingsTpl(zeroCrossings, varDecls)
+<<
+int function_onlyZeroCrossings(double *gout,double *t)
+{
+  state mem_state;
+
+  mem_state = get_memory_state();
+  <varDecls>
+
+  <zeroCrossingCode>
+
+  restore_memory_state(mem_state);
+
+  return 0;
+}
+>>
+
+functionWhen(list<SimWhenClause> whenClauses) ::=
 # varDecls = ""
 # cases = whenClauses of whenClause as SIM_WHEN_CLAUSE:
   <<
@@ -694,7 +719,7 @@ int function_when(int i)
 }
 >>
 
-odeFunction(list<Equation> equations) ::=
+functionOde(list<Equation> equations) ::=
 # varDecls = ""
 # body = (equations of eq: '<equation_(eq, varDecls)>' "\n")
 <<
@@ -711,7 +736,7 @@ int functionODE()
 }
 >>
 
-initialFunction(list<Equation> equations) ::=
+functionInitial(list<Equation> equations) ::=
 # varDecls = ""
 # body = (equations of eq as DAELow.SOLVED_EQUATION: '<equation_(eq, varDecls)>' "\n")
 <<
@@ -733,7 +758,7 @@ int initial_function()
 }
 >>
 
-initialResidualFunction(list<Equation> eqs) ::=
+functionInitialResidual(list<Equation> eqs) ::=
 # varDecls = ""
 # body = (
   eqs of eq as DAELow.RESIDUAL_EQUATION:
@@ -760,7 +785,7 @@ int initial_residual()
 }
 >>
 
-boundParametersFunction(list<Equation> equations) ::=
+functionBoundParameters(list<Equation> equations) ::=
 # varDecls = ""
 # body = (equations of eq as DAELow.SOLVED_EQUATION: '<equation_(eq, varDecls)>' "\n")
 <<
@@ -777,8 +802,8 @@ int bound_parameters()
 }
 >>
 
-eventCheckingCode(list<HelpVarInfo> helpVarInfo,
-                  list<ComponentRef> discreteModelVars) ::=
+functionCheckForDiscreteVarChanges(list<HelpVarInfo> helpVarInfo,
+                                   list<ComponentRef> discreteModelVars) ::=
 <<
 int checkForDiscreteVarChanges()
 {
