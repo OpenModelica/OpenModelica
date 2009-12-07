@@ -144,8 +144,6 @@ public function fcall2
   partial function FuncTypeTypeATypeB
     input Type_a inTypeA;
     input Type_b inTypeB;
-    replaceable type Type_a subtypeof Any;
-    replaceable type Type_b subtypeof Any;    
   end FuncTypeTypeATypeB;
   replaceable type Type_a subtypeof Any;
   replaceable type Type_b subtypeof Any;  
@@ -173,7 +171,6 @@ public function fcall
   input Type_a inTypeA;
   partial function FuncTypeType_aTo
     input Type_a inTypeA;
-    replaceable type Type_a subtypeof Any;
   end FuncTypeType_aTo;
   replaceable type Type_a subtypeof Any;
 algorithm 
@@ -226,8 +223,6 @@ public function fcallret
   partial function FuncTypeType_aToType_b
     input Type_a inTypeA;
     output Type_b outTypeB;
-    replaceable type Type_a subtypeof Any;
-    replaceable type Type_b subtypeof Any;
   end FuncTypeType_aToType_b;
   replaceable type Type_a subtypeof Any;
   replaceable type Type_b subtypeof Any;
@@ -256,7 +251,6 @@ public function bcall
   input Type_a inTypeA;
   partial function FuncTypeType_aTo
     input Type_a inTypeA;
-    replaceable type Type_a subtypeof Any;
   end FuncTypeType_aTo;
   replaceable type Type_a subtypeof Any;
 algorithm 
@@ -283,8 +277,6 @@ public function bcall2
   partial function FuncTypeType_aType_bTo
     input Type_a inTypeA;
     input Type_b inTypeB;
-    replaceable type Type_a subtypeof Any;
-    replaceable type Type_b subtypeof Any;
   end FuncTypeType_aType_bTo;
   replaceable type Type_a subtypeof Any;
   replaceable type Type_b subtypeof Any;
@@ -313,7 +305,6 @@ public function notfcall
   input Type_a inTypeA;
   partial function FuncTypeType_aTo
     input Type_a inTypeA;
-    replaceable type Type_a subtypeof Any;
   end FuncTypeType_aTo;
   replaceable type Type_a subtypeof Any;
 algorithm 
