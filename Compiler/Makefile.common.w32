@@ -32,6 +32,7 @@ SRCMO= Absyn.mo \
 	HashTable3.mo \
 	HashTable4.mo \
 	HashTable5.mo \
+	HashTable6.mo \
 	HashTableCG.mo \
 	Inline.mo \
 	Inst.mo \

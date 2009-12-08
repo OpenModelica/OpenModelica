@@ -191,8 +191,8 @@ extern "C"
 	  RML_TAILCALLK(rmlSC);
   }
   RML_END_LABEL
-  RML_BEGIN_LABEL(ErrorExt__rollBack) 
-  { 
+  RML_BEGIN_LABEL(ErrorExt__rollBack)
+  {
 	  if(checkPoints.size() > 0){
 		  //printf(" ERROREXT: rollback to: %d from %d\n",checkPoints.back(),errorMessageQueue.size());
 		  std::string res("");
@@ -296,23 +296,23 @@ extern "C"
     }
   RML_END_LABEL
 
-  RML_BEGIN_LABEL(ErrorExt__printErrorsNoWarning) 
+  RML_BEGIN_LABEL(ErrorExt__printErrorsNoWarning)
   {
     std::string res("");
     while(!errorMessageQueue.empty()) {
       //if(strncmp(errorMessageQueue.top()->getSeverity(),"Error")==0){
       if(errorMessageQueue.top()->getSeverity().compare(std::string("Error"))==0){
-    	  
+
     	  res = errorMessageQueue.top()->getMessage()+string("\n")+res;
       }
       delete errorMessageQueue.top();
       errorMessageQueue.pop();
-    }    
+    }
     rmlA0 = mk_scon((char*)res.c_str());
     RML_TAILCALLK(rmlSC);
   }
   RML_END_LABEL
-  
+
   RML_BEGIN_LABEL(ErrorExt__printMessagesStr)
   {
     std::string res("");
@@ -330,9 +330,10 @@ extern "C"
   {
     std::string res("{");
     while(!errorMessageQueue.empty()) {
-      res = errorMessageQueue.top()->getFullMessage()+string("\n")+res;
+      res = res + errorMessageQueue.top()->getFullMessage();
       delete errorMessageQueue.top();
       errorMessageQueue.pop();
+      if (!errorMessageQueue.empty()) res = res + string(",");
     }
     res+=string("}");
     rmlA0 = mk_scon((char*)res.c_str());

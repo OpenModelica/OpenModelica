@@ -1266,26 +1266,6 @@ public function listMap2 "function listMap2
   replaceable type Type_d subtypeof Any;
 algorithm 
   outTypeDLst:= listMap2_tail(inTypeALst,inFuncTypeTypeATypeBTypeCToTypeD,inTypeB,inTypeC, {});
-  /*
-  outTypeDLst:=
-  matchcontinue (inTypeALst,inFuncTypeTypeATypeBTypeCToTypeD,inTypeB,inTypeC)
-    local
-      Type_d f_1;
-      list<Type_d> r_1;
-      Type_a f;
-      list<Type_a> r;
-      FuncTypeType_aType_bType_cToType_d fn;
-      Type_b extraarg1;
-      Type_c extraarg2;
-    case ({},_,_,_) then {}; 
-    case ((f :: r),fn,extraarg1,extraarg2)
-      equation 
-        f_1 = fn(f, extraarg1, extraarg2);
-        r_1 = listMap2(r, fn, extraarg1, extraarg2);
-      then
-        (f_1 :: r_1);
-  end matchcontinue;
-  */
 end listMap2;
 
 function listMap2_tail
@@ -1327,6 +1307,66 @@ algorithm
         result;
   end matchcontinue;
 end listMap2_tail;
+
+public function listMap2r "function listMap2r
+  Similar to listMap2 but iterating over last argument instead."
+  input list<Type_a> inTypeALst;
+  input FuncTypeType_aType_bType_cToType_d inFuncTypeTypeATypeBTypeCToTypeD;
+  input Type_b inTypeB;
+  input Type_c inTypeC;
+  output list<Type_d> outTypeDLst;
+  replaceable type Type_a subtypeof Any;
+  partial function FuncTypeType_aType_bType_cToType_d    
+    input Type_b inTypeB;
+    input Type_c inTypeC;
+    input Type_a inTypeA;
+    output Type_d outTypeD;
+  end FuncTypeType_aType_bType_cToType_d;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;
+  replaceable type Type_d subtypeof Any;
+algorithm 
+  outTypeDLst:= listMap2r_tail(inTypeALst,inFuncTypeTypeATypeBTypeCToTypeD,inTypeB,inTypeC, {});
+end listMap2r;
+
+function listMap2r_tail
+""
+  input list<Type_a> inTypeALst;
+  input FuncTypeType_aType_bType_cToType_d fn;
+  input Type_b inTypeB;
+  input Type_c inTypeC;
+  input  list<Type_d> accumulator;
+  output list<Type_d> outTypeDLst;
+  replaceable type Type_a subtypeof Any;
+  partial function FuncTypeType_aType_bType_cToType_d
+    input Type_b inTypeB;
+    input Type_c inTypeC;
+    input Type_a inTypeA;
+    output Type_d outTypeD;
+    replaceable type Type_b subtypeof Any;
+    replaceable type Type_c subtypeof Any;
+    replaceable type Type_d subtypeof Any;
+  end FuncTypeType_aType_bType_cToType_d;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;
+  replaceable type Type_d subtypeof Any;
+algorithm
+  outLst := matchcontinue(inTypeALst, fn, inTypeB, inTypeC, accumulator)
+    local
+      Type_a hd; Type_d hdChanged;
+      list<Type_a> rest;  list<Type_d> l, result;
+      Type_b extraarg1;
+      Type_c extraarg2;
+    case ({}, _, _, _, l) then listReverse(l);
+    case (hd::rest, fn, extraarg1, extraarg2, l)
+      equation
+        hdChanged = fn(extraarg1, extraarg2,hd);
+        l = hdChanged::l;
+        result = listMap2r_tail(rest, fn, extraarg1, extraarg2, l);
+    then
+        result;
+  end matchcontinue;
+end listMap2r_tail;
 
 public function listMap3 "function listMap3
   Takes a list and a function and three extra arguments passed to the function.
@@ -1463,7 +1503,55 @@ algorithm
         (f_1 :: r_1);
   end matchcontinue;
 end listMap5;
-/* TODO: listMap6, can be created upon requests ;) */
+
+public function listMap6 "function listMap6
+  Takes a list and a function and six extra arguments passed to the function.
+  The function produces one new value which is used for creating a new list."
+  input list<Type_a> lst;
+  input listMap7Func func;
+  input Type_b a1;
+  input Type_c a2;
+  input Type_d a3;
+  input Type_e a4;
+  input Type_f a5;
+  input Type_g a6;
+  output list<Type_i> outLst;
+  replaceable type Type_a subtypeof Any;
+  partial function listMap7Func
+    input Type_a inTypeA;
+    input Type_b inTypeB;
+    input Type_c inTypeC;
+    input Type_d inTypeD;
+    input Type_e inTypeE;
+    input Type_f inTypeF;
+    input Type_g inTypeG;
+    output Type_i outTypeI; 
+  end listMap7Func;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;
+  replaceable type Type_d subtypeof Any;
+  replaceable type Type_e subtypeof Any;
+  replaceable type Type_f subtypeof Any;
+  replaceable type Type_g subtypeof Any;
+  replaceable type Type_h subtypeof Any;
+algorithm 
+  outLst:=
+  matchcontinue (lst,func,a1,a2,a3,a4,a5,a6)
+    local
+      Type_e f_1;
+      list<Type_e> r_1;
+      Type_a f;
+      list<Type_a> r;
+
+    case ({},_,_,_,_,_,_,_) then {}; 
+    case ((f :: r),func,a1,a2,a3,a4,a5,a6)
+      equation 
+        f_1 = func(f, a1,a2,a3,a4,a5,a6);
+        r_1 = listMap6(r, func, a1,a2,a3,a4,a5,a6);
+      then
+        (f_1 :: r_1);
+  end matchcontinue;
+end listMap6;
 
 /* TODO: listMap9 ... listMapN can also be created upon request... */
 public function listMap7 "function listMap7
@@ -2704,6 +2792,53 @@ algorithm
   end matchcontinue;
 end listGetMember;
 
+public function listDeletePositionsSorted "more efficient implemtation of deleting positions if the position list is sorted
+in ascending order. Then it can be done in one traversal => O(n)"
+  input list<Type_a> lst;
+  input list<Integer> positions;
+  output list<Type_a> outLst;
+  replaceable type Type_a subtypeof Any;
+algorithm
+  outLst := listDeletePositionsSorted2(lst,positions,0);
+end listDeletePositionsSorted;
+
+public function listDeletePositionsSorted2 "Help function to listDeletePositionsSorted"
+  input list<Type_a> lst;
+  input list<Integer> positions;
+  input Integer n;
+  output list<Type_a> outLst;
+  replaceable type Type_a subtypeof Any;
+algorithm
+  outLst := matchcontinue(lst,positions,n)
+  local Type_a l; Integer p;
+    case(lst,{},n) then lst;
+    case(l::lst,p::positions,n) equation
+      true = p == n "remove";
+      positions = removeMatchesFirst(positions,n) "allows duplicate position elements";
+      lst = listDeletePositionsSorted2(lst,positions,n+1);
+    then lst;
+    case(l::lst,positions as (p::_),n) equation
+      false = p == n "keep";
+      lst = listDeletePositionsSorted2(lst,positions,n+1);
+    then l::lst;
+  end matchcontinue;
+end listDeletePositionsSorted2;
+
+protected function removeMatchesFirst "removes all matching elements that occur first in list. If first element doesn't match, return"
+input list<Integer> lst;
+input Integer n;
+output list<Integer> outLst;
+algorithm
+  outLst := matchcontinue(lst,n)
+  local Integer l;
+    case(l::lst,n) equation
+      true = l == n;
+      lst=removeMatchesFirst(lst,n);
+    then lst;
+    case(lst,n) then lst;  
+  end matchcontinue;
+end removeMatchesFirst;
+
 public function listDeletePositions "Takes a list and a list of positions and deletes the positions from the list.
 Note that positions are indexed from 0..n-1
 
@@ -3140,6 +3275,133 @@ algorithm
   end matchcontinue;
 end listRemoveOnTrue;
 
+public function listIntersectionIntN "provides same functionality as listIntersection, but for integer values between 1 and N
+The complexity in this case is O(n)"
+  input list<Integer> s1;
+  input list<Integer> s2;
+  input Integer N;
+  output list<Integer> res;
+protected Integer[:] a1,a2;
+algorithm
+  a1:= arrayCreate(N,0);
+  a2:= arrayCreate(N,0);
+  a1 := listSetPos(s1,a1,1);
+  a2 := listSetPos(s2,a2,1);
+  res := listIntersectionIntVec(a1,a2,1);
+end listIntersectionIntN;
+
+protected function listIntersectionIntVec " help function to listIntersectionIntN"
+  input Integer[:] a1;
+  input Integer[:] a2;
+  input Integer indx;
+  output list<Integer> res;
+algorithm
+  res := matchcontinue(a1,a2,indx)
+    case(a1,a2,indx) equation
+      true = indx > arrayLength(a1) or indx > arrayLength(a2);
+    then {};
+    case(a1,a2,indx) equation
+      true = a1[indx]==1 and a2[indx]==1;
+      res = listIntersectionIntVec(a1,a2,indx+1);
+    then indx::res;
+    case(a1,a2,indx) equation
+      false = a1[indx]==1 and a2[indx]==1;
+      res = listIntersectionIntVec(a1,a2,indx+1);
+    then res;      
+  end matchcontinue;
+end listIntersectionIntVec; 
+
+protected function listSetPos "Help function to listIntersectionIntN"
+  input list<Integer> intLst;
+  input Integer[:] arr;
+  input Integer v;
+  output Integer[:] outArr;
+algorithm
+  outArr := matchcontinue(intLst,arr,v)
+  local Integer i;
+    case({},arr,v) then arr;
+    case(i::intLst,arr,v) equation
+      arr = arrayUpdate(arr,i,v);
+      arr = listSetPos(intLst,arr,v);
+    then arr;
+    case(i::_,arr,v) equation
+      failure(_ = arrayUpdate(arr,i,1));
+      print("Internal error in listSetPos, index = "+&intString(i)+&" but array size is "+&intString(arrayLength(arr))+&"\n");
+    then fail();
+  end matchcontinue;
+end listSetPos;
+
+public function listUnionIntN "provides same functionality as listUnion, but for integer values between 1 and N
+The complexity in this case is O(n)"
+  input list<Integer> s1;
+  input list<Integer> s2;
+  input Integer N;
+  output list<Integer> res;
+protected Integer[:] a1,a2;
+algorithm
+  a1:= arrayCreate(N,0);
+  a2:= arrayCreate(N,0);
+  a1 := listSetPos(s1,a1,1);
+  a2 := listSetPos(s2,a2,1);
+  res := listUnionIntVec(a1,a2,1);
+end listUnionIntN;
+
+protected function listUnionIntVec " help function to listIntersectionIntN"
+  input Integer[:] a1;
+  input Integer[:] a2;
+  input Integer indx;
+  output list<Integer> res;
+algorithm
+  res := matchcontinue(a1,a2,indx)
+    case(a1,a2,indx) equation
+      true = indx > arrayLength(a1) or indx > arrayLength(a2);
+    then {};
+    case(a1,a2,indx) equation
+      true = a1[indx]==1 or a2[indx]==1;
+      res = listUnionIntVec(a1,a2,indx+1);
+    then indx::res;
+    case(a1,a2,indx) equation
+      false = a1[indx]==1 or a2[indx]==1;
+      res = listUnionIntVec(a1,a2,indx+1);
+    then res;      
+  end matchcontinue;
+end listUnionIntVec; 
+
+public function listSetDifferenceIntN "provides same functionality as listSetDifference, but for integer values between 1 and N
+The complexity in this case is O(n)"
+  input list<Integer> s1;
+  input list<Integer> s2;
+  input Integer N;
+  output list<Integer> res;
+protected Integer[:] a1,a2;
+algorithm
+  a1:= arrayCreate(N,0);
+  a2:= arrayCreate(N,0);
+  a1 := listSetPos(s1,a1,1);
+  a2 := listSetPos(s2,a2,1);
+  res := listSetDifferenceIntVec(a1,a2,1);
+end listSetDifferenceIntN;
+
+protected function listSetDifferenceIntVec " help function to listIntersectionIntN"
+  input Integer[:] a1;
+  input Integer[:] a2;
+  input Integer indx;
+  output list<Integer> res;
+algorithm
+  res := matchcontinue(a1,a2,indx)
+    case(a1,a2,indx) equation
+      true = indx > arrayLength(a1) or indx > arrayLength(a2);
+    then {};
+    case(a1,a2,indx) equation
+      true = a1[indx] - a2[indx] <> 0;
+      res = listSetDifferenceIntVec(a1,a2,indx+1);
+    then indx::res;
+    case(a1,a2,indx) equation
+      false = a1[indx] - a2[indx] <> 0;
+      res = listSetDifferenceIntVec(a1,a2,indx+1);
+    then res;      
+  end matchcontinue;
+end listSetDifferenceIntVec;
 
 public function listIntersectionOnTrue "function: listIntersectionOnTrue
   Takes two lists and a comparison function over two elements of the list.

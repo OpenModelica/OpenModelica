@@ -431,6 +431,32 @@ algorithm
   end matchcontinue;
 end applyReplacementsExp;
 
+public function emptyReplacementsArray "create an array of n empty replacements"
+  input Integer n;
+  output VariableReplacements[:] repl;
+algorithm
+  repl := listArray(emptyReplacementsArray2(n));
+end emptyReplacementsArray;
+
+protected function emptyReplacementsArray2 "help function"
+  input Integer n;
+  output list<VariableReplacements> replLst;
+algorithm
+  replLst := matchcontinue(n)
+  local VariableReplacements r;
+    case(0) then {};
+    case(n) equation
+      true = n < 0;
+      print("Internal error, emptyReplacementsArray2 called with negative n!");
+    then fail();
+    case(n) equation
+      true = n > 0;
+      r = emptyReplacements();
+      replLst = emptyReplacementsArray2(n-1);
+    then r::replLst;
+  end matchcontinue;
+end emptyReplacementsArray2;
+
 public function emptyReplacements "function: emptyReplacements
  
   Returns an empty set of replacement rules
@@ -794,7 +820,7 @@ algorithm
   end matchcontinue;
 end addReplacement;
 
-protected function addReplacementNoTransitive "Similar to addReplacement but 
+public function addReplacementNoTransitive "Similar to addReplacement but 
 does not make transitive replacement rules.
 "
   input VariableReplacements repl;
@@ -1108,6 +1134,53 @@ algorithm  outExp := matchcontinue(inExp,inType)
   case(inExp,_) then inExp;
   end matchcontinue;
 end avoidDoubleHashLookup;
+
+public function replaceExpRepeated "similar to replaceExp but repeats the replacements until expression no longer changes. 
+Note: This is only required/useful if replacements are built with addReplacementNoTransitive.
+"
+  input DAE.Exp e;
+  input VariableReplacements repl;
+  input Option<VisitFunc> func;
+  input Integer maxIter "max iterations";
+  output DAE.Exp outExp;
+  
+  partial function VisitFunc
+    input DAE.Exp exp;
+    output Boolean res;
+  end VisitFunc;
+
+algorithm
+  outExp := replaceExpRepeated2(e,repl,func,maxIter,1,false);  
+end replaceExpRepeated;  
+ 
+public function replaceExpRepeated2 "help function to replaceExpRepeated
+"
+  input DAE.Exp e;
+  input VariableReplacements repl;
+  input Option<VisitFunc> func;
+  input Integer maxIter;
+  input Integer i;
+  input Boolean equal;
+  output DAE.Exp outExp;
+  
+  partial function VisitFunc
+    input DAE.Exp exp;
+    output Boolean res;
+  end VisitFunc;
+
+algorithm      
+  outExp := matchcontinue(e,repl,func,maxIter,i,equal)
+  local DAE.Exp e1,res;
+    case(e,repl,func,maxIter,i,equal) equation
+      true = i > maxIter;
+    then e;
+    case(e,repl,func,maxIter,i,true) then e;
+    case(e,repl,func,maxIter,i,false) equation
+      e1 = replaceExp(e,repl,func);
+      res = replaceExpRepeated2(e1,repl,func,maxIter,i+1,Exp.expEqual(e,e1));
+    then res;
+  end matchcontinue;  
+end replaceExpRepeated2; 
  
 public function replaceExp "function: replaceExp
  

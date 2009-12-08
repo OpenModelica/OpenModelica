@@ -1,4 +1,4 @@
-package HashTable2 "
+package HashTable6 "
 	  This file is an extension to OpenModelica.
   	
   Copyright (c) 2007 MathCore Engineering AB
@@ -6,11 +6,9 @@ package HashTable2 "
   All rights reserved.
   
   
- Based on HashTable.mo but
- Key 		= DAE.ComponentRef
- Value 	= DAE.Exp
-  
-  Used by VarTransform.mo
+  This package contains implementation of hashtables, instead of the binary trees used in OpenModelica.
+  It is a generic implementation that can be used for any Key, Value datatypes. But the code must be copied
+  since MetaModelica is not powerful enough to handle general generics.
   
   "
 
@@ -24,26 +22,25 @@ keyEqual 	- A comparison function between two keys, returns true if equal.
 */
 
 /* HashTable instance specific code */
+public import Exp;
 
-public import DAE;
-protected import Exp;
 protected import System;
 protected import Util;
 
 public 
- type Key = DAE.ComponentRef;
- type Value = DAE.Exp;
+ type Key = tuple<Exp.ComponentRef,Exp.ComponentRef>;
+ type Value = Exp.Exp;
    
 protected function hashFunc "
   author: PA
  
-  Calculates a hash value for DAE.ComponentRef
+  Calculates a hash value for Exp.ComponentRef
 "
-  input DAE.ComponentRef cr;
+  input tuple<Exp.ComponentRef,Exp.ComponentRef> tpl;
   output Integer res;
   String crstr;
 algorithm 
-  crstr := Exp.printComponentRefStr(cr);
+  crstr := Exp.printComponentRefStr(Util.tuple21(tpl))+&","+&Exp.printComponentRefStr(Util.tuple22(tpl));
   res := System.hash(crstr);
 end hashFunc;
 
@@ -52,8 +49,31 @@ protected function keyEqual
   input Key key2;
   output Boolean res;
 algorithm
-     res := Exp.crefEqual(key1,key2);
+     res := Exp.crefEqual(Util.tuple21(key1),Util.tuple21(key2)) and Exp.crefEqual(Util.tuple22(key1),Util.tuple22(key2));
 end keyEqual;
+
+
+
+public function dumpHashTable ""
+  input HashTable t;
+algorithm
+  print("HashTable:\n");
+  print(Util.stringDelimitList(Util.listMap(hashTableList(t),dumpTuple),"\n"));
+  print("\n");
+end dumpHashTable;
+
+protected function dumpTuple
+  input tuple<Key,Value> tpl;
+  output String str;
+algorithm
+  str := matchcontinue(tpl)
+  local 
+  Exp.ComponentRef cr1,cr2; Exp.Exp e;
+    case(((cr1,cr2),e)) equation
+      str = "{" +& Exp.printComponentRefStr(cr1) +& ":" +&  Exp.printComponentRefStr(cr2) +& " ," +& Exp.printExpStr(e) +& "}";
+    then str;
+  end matchcontinue;
+end dumpTuple;
 
 /* end of HashTable instance specific code */
 
@@ -77,11 +97,51 @@ efficient manner"
   end VALUE_ARRAY;
 end ValueArray;
 
+public function cloneHashTable "
+Author BZ 2008-06
+Make a stand-alone-copy of hashtable.
+"
+input HashTable inHash;
+output HashTable outHash;
+algorithm outHash := matchcontinue(inHash)
+  local 
+    list<tuple<Key,Integer>>[:] arg1,arg1_2;
+    Integer arg3,arg4,arg3_2,arg4_2,arg21,arg21_2,arg22,arg22_2;
+    Option<tuple<Key,Value>>[:] arg23,arg23_2;
+  case(HASHTABLE(arg1,VALUE_ARRAY(arg21,arg22,arg23),arg3,arg4))
+    equation
+      arg1_2 = arrayCopy(arg1);
+      arg21_2 = arg21;
+      arg22_2 = arg22;
+      arg23_2 = arrayCopy(arg23);
+      arg3_2 = arg3;
+      arg4_2 = arg4;
+      then
+        HASHTABLE(arg1_2,VALUE_ARRAY(arg21_2,arg22_2,arg23_2),arg3_2,arg4_2);
+end matchcontinue;
+end cloneHashTable;
+
+public function nullHashTable "
+  author: PA
+ 
+  Returns an empty HashTable.
+  Using the bucketsize 100 and array size 10.
+"
+  output HashTable hashTable;
+  list<tuple<Key,Integer>>[:] arr;
+  list<Option<tuple<Key,Value>>> lst;
+  Option<tuple<Key,Value>>[:] emptyarr;
+algorithm 
+  arr := fill({}, 0);
+  emptyarr := listArray({});
+  hashTable := HASHTABLE(arr,VALUE_ARRAY(0,0,emptyarr),0,0);
+end nullHashTable;
+
 public function emptyHashTable "
   author: PA
  
   Returns an empty HashTable.
-  Using the bucketsize 1000 and array size 100.
+  Using the bucketsize 100 and array size 10.
 "
   output HashTable hashTable;
   list<tuple<Key,Integer>>[:] arr;
@@ -89,15 +149,26 @@ public function emptyHashTable "
   Option<tuple<Key,Value>>[:] emptyarr;
 algorithm 
   arr := fill({}, 1000);
-  emptyarr := fill(NONE(), 100);
+  lst := Util.listFill(NONE, 100);
+  emptyarr := listArray(lst);
   hashTable := HASHTABLE(arr,VALUE_ARRAY(0,100,emptyarr),1000,0);
 end emptyHashTable;
+
+public function isEmpty "Returns true if hashtable is empty"
+  input HashTable hashTable;
+  output Boolean res;
+algorithm
+  res := matchcontinue(hashTable)
+    case(HASHTABLE(_,_,_,0)) then true;
+    case(_) then false;  
+  end matchcontinue;
+end isEmpty;
 
 public function add "
   author: PA
  
   Add a Key-Value tuple to hashtable.
-  If the Key-Value tuple already exists, the function updates the Value.
+  If the Key-Value tuple allready exists, the function updates the Value.
 "
   input tuple<Key,Value> entry;
   input HashTable hashTable;
@@ -122,12 +193,12 @@ algorithm
         indx = intMod(hval, bsize);
         newpos = valueArrayLength(varr);
         varr_1 = valueArrayAdd(varr, v);
-        indexes = hashvec[indx + 1];        
+        indexes = hashvec[indx + 1];
         hashvec_1 = arrayUpdate(hashvec, indx + 1, ((key,newpos) :: indexes));
-        n_1 = valueArrayLength(varr_1);
+        n_1 = valueArrayLength(varr_1);        
       then HASHTABLE(hashvec_1,varr_1,bsize,n_1);
       
-      /* adding when already present => Updating value */
+      /* adding when allready present => Updating value */
     case ((newv as (key,value)),(hashTable as HASHTABLE(hashvec,varr,bsize,n)))
       equation 
         (_,indx) = get1(key, hashTable);
@@ -143,11 +214,42 @@ algorithm
   end matchcontinue;
 end add;
 
+public function anyKeyInHashTable "Returns true if any of the keys are present in the hashtable. Stops and returns true upon first occurence"
+  input list<Key> keys;
+  input HashTable ht;
+  output Boolean res;
+algorithm
+  res := matchcontinue(keys,ht)
+  local Key key;
+    case({},ht) then false;
+    case(key::keys,ht) equation
+      _ = get(key,ht);
+    then true;
+    case(_::keys,ht) then anyKeyInHashTable(keys,ht);      
+  end matchcontinue;
+end anyKeyInHashTable; 
+
+public function addListNoUpd "adds several keys with the same value, using addNuUpdCheck. Can be used to use HashTable as a Set"
+  input list<Key> keys;
+  input Value v;
+  input HashTable ht;
+  output HashTable outHt;
+algorithm
+  ht := matchcontinue(keys,v,ht)
+  local Key key; 
+    case ({},v,ht) then ht;
+    case(key::keys,v,ht) equation
+      ht = addNoUpdCheck((key,v),ht);
+      ht = addListNoUpd(keys,v,ht);
+    then ht;
+  end matchcontinue;
+end addListNoUpd;
+
 public function addNoUpdCheck "
   author: PA
  
   Add a Key-Value tuple to hashtable.
-  If the Key-Value tuple already exists, the function updates the Value.
+  If the Key-Value tuple allready exists, the function updates the Value.
 "
   input tuple<Key,Value> entry;
   input HashTable hashTable;
@@ -177,7 +279,7 @@ algorithm
       then HASHTABLE(hashvec_1,varr_1,bsize,n_1);
           case (_,_)
       equation 
-        print("-HashTable2.addNoUpdCheck failed\n");
+        print("-HashTable.addNoUpdCheck failed\n");
       then
         fail();
   end matchcontinue;
@@ -206,16 +308,17 @@ algorithm
       tuple<Key,Value> v,newv;
       Key key;
       Value value;     
-      /* adding when already present => Updating value */
+      /* adding when allready present => Updating value */
     case (key,(hashTable as HASHTABLE(hashvec,varr,bsize,n)))
       equation 
         (_,indx) = get1(key, hashTable);
         indx_1 = indx - 1;
         varr_1 = valueArrayClearnth(varr, indx);
       then HASHTABLE(hashvec,varr_1,bsize,n);
-    case (_,_)
+    case (_,hashTable)
       equation 
         print("-HashTable.delete failed\n");
+        print("content:"); dumpHashTable(hashTable);
       then
         fail();
   end matchcontinue;
@@ -288,27 +391,6 @@ algorithm
         index;
   end matchcontinue;
 end get2;
-
-public function dumpHashTable ""
-  input HashTable t;
-algorithm
-  print("HashTable:\n");
-  print(Util.stringDelimitList(Util.listMap(hashTableList(t),dumpTuple),"\n"));
-  print("\n");
-end dumpHashTable;
-
-protected function dumpTuple
-  input tuple<Key,Value> tpl;
-  output String str;
-algorithm
-  str := matchcontinue(tpl)
-  local 
-    DAE.ComponentRef cr; DAE.Exp e;
-    case((cr,e)) equation
-      str = "{" +& Exp.printComponentRefStr(cr) +& ",{" +& Exp.printExpStr(e)+& "}}";
-    then str;
-  end matchcontinue;
-end dumpTuple;
 
 public function hashTableValueList "return the Value entries as a list of Values"
   input HashTable hashTable;
@@ -416,7 +498,7 @@ end valueArrayLength;
 
 public function valueArrayAdd "function: valueArrayAdd
   author: PA 
-  Adds an entry last to the ValueArray, increasing array size
+  Adds am emtry last to the ValueArray, increasing array size
   if no space left by factor 1.4
 "
   input ValueArray valueArray;
@@ -531,17 +613,17 @@ algorithm
       String ps,lens,ns;
     case (VALUE_ARRAY(numberOfElements = n,valueArray = arr),pos)
       equation 
-        (pos <= n) = true;
+        (pos < n) = true;
         SOME((_,v)) = arr[pos + 1];
       then
         v;
     case (VALUE_ARRAY(numberOfElements = n,valueArray = arr),pos)
       equation 
-        (pos <= n) = true;
+        (pos < n) = true;
         NONE = arr[pos + 1];
       then
         fail();
   end matchcontinue;
 end valueArrayNth;
 
-end HashTable2; 
+end HashTable6; 

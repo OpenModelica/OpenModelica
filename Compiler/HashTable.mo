@@ -149,6 +149,22 @@ algorithm outHash := matchcontinue(inHash)
 end matchcontinue;
 end cloneHashTable;
 
+public function nullHashTable "
+  author: PA
+ 
+  Returns an empty HashTable.
+  Using the bucketsize 100 and array size 10.
+"
+  output HashTable hashTable;
+  list<tuple<Key,Integer>>[:] arr;
+  list<Option<tuple<Key,Value>>> lst;
+  Option<tuple<Key,Value>>[:] emptyarr;
+algorithm 
+  arr := fill({}, 0);
+  emptyarr := listArray({});
+  hashTable := HASHTABLE(arr,VALUE_ARRAY(0,0,emptyarr),0,0);
+end nullHashTable;
+
 public function emptyHashTable "
   author: PA
  
@@ -226,6 +242,37 @@ algorithm
         fail();
   end matchcontinue;
 end add;
+
+public function anyKeyInHashTable "Returns true if any of the keys are present in the hashtable. Stops and returns true upon first occurence"
+  input list<Key> keys;
+  input HashTable ht;
+  output Boolean res;
+algorithm
+  res := matchcontinue(keys,ht)
+  local Key key;
+    case({},ht) then false;
+    case(key::keys,ht) equation
+      _ = get(key,ht);
+    then true;
+    case(_::keys,ht) then anyKeyInHashTable(keys,ht);      
+  end matchcontinue;
+end anyKeyInHashTable; 
+
+public function addListNoUpd "adds several keys with the same value, using addNuUpdCheck. Can be used to use HashTable as a Set"
+  input list<Key> keys;
+  input Value v;
+  input HashTable ht;
+  output HashTable outHt;
+algorithm
+  ht := matchcontinue(keys,v,ht)
+  local Key key; 
+    case ({},v,ht) then ht;
+    case(key::keys,v,ht) equation
+      ht = addNoUpdCheck((key,v),ht);
+      ht = addListNoUpd(keys,v,ht);
+    then ht;
+  end matchcontinue;
+end addListNoUpd;
 
 public function addNoUpdCheck "
   author: PA
