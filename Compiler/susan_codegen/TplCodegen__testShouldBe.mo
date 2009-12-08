@@ -31,6 +31,14 @@ algorithm
         txt = Tpl.nextIter(txt);
         txt = lm_3(txt, rest);
       then txt;
+
+    case ( txt,
+           _ :: rest )
+      local
+        list<TplAbsyn.MMDeclaration> rest;
+      equation
+        txt = lm_3(txt, rest);
+      then txt;
   end matchcontinue;
 end lm_3;
 
@@ -129,7 +137,16 @@ algorithm
         TplAbsyn.MMExp i_it;
       equation
         txt = mmExp(txt, i_it, ":=");
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(";"));
         txt = Tpl.nextIter(txt);
+        txt = lm_6(txt, rest);
+      then txt;
+
+    case ( txt,
+           _ :: rest )
+      local
+        list<TplAbsyn.MMExp> rest;
+      equation
         txt = lm_6(txt, rest);
       then txt;
   end matchcontinue;
@@ -178,9 +195,9 @@ algorithm
         txt = Tpl.writeTok(txt, Tpl.ST_NEW_LINE());
         txt = typedIdentsEx(txt, i_mf_outArgs, "output", "out_");
         txt = Tpl.softNewLine(txt);
+        txt = Tpl.popBlock(txt);
         txt = fun_5(txt, i_mf_locals);
         txt = Tpl.softNewLine(txt);
-        txt = Tpl.popBlock(txt);
         txt = Tpl.writeTok(txt, Tpl.ST_LINE("algorithm\n"));
         txt = Tpl.pushBlock(txt, Tpl.BT_INDENT(2));
         txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
@@ -234,7 +251,7 @@ algorithm
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(" constant Tpl.StringToken "));
         txt = Tpl.writeStr(txt, i_name);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(" = "));
-        txt = stringTokenConstant(txt, i_value);
+        txt = mmStringTokenConstant(txt, i_value);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(";"));
       then txt;
 
@@ -312,6 +329,14 @@ algorithm
         txt = Tpl.nextIter(txt);
         txt = lm_9(txt, rest);
       then txt;
+
+    case ( txt,
+           _ :: rest )
+      local
+        TplAbsyn.TypedIdents rest;
+      equation
+        txt = lm_9(txt, rest);
+      then txt;
   end matchcontinue;
 end lm_9;
 
@@ -375,6 +400,14 @@ algorithm
         txt = Tpl.nextIter(txt);
         txt = lm_11(txt, rest);
       then txt;
+
+    case ( txt,
+           _ :: rest )
+      local
+        TplAbsyn.TypedIdents rest;
+      equation
+        txt = lm_11(txt, rest);
+      then txt;
   end matchcontinue;
 end lm_11;
 
@@ -403,6 +436,14 @@ algorithm
         txt = Tpl.nextIter(txt);
         txt = lm_12(txt, rest);
       then txt;
+
+    case ( txt,
+           _ :: rest )
+      local
+        list<TplAbsyn.MatchingExp> rest;
+      equation
+        txt = lm_12(txt, rest);
+      then txt;
   end matchcontinue;
 end lm_12;
 
@@ -426,8 +467,8 @@ algorithm
       local
         TplAbsyn.TypedIdents i_locals;
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_LINE("      local\n"));
-        txt = Tpl.pushBlock(txt, Tpl.BT_INDENT(8));
+        txt = Tpl.writeTok(txt, Tpl.ST_LINE("  local\n"));
+        txt = Tpl.pushBlock(txt, Tpl.BT_INDENT(4));
         txt = typedIdents(txt, i_locals);
         txt = Tpl.popBlock(txt);
       then txt;
@@ -456,7 +497,16 @@ algorithm
         TplAbsyn.MMExp i_it;
       equation
         txt = mmExp(txt, i_it, "=");
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(";"));
         txt = Tpl.nextIter(txt);
+        txt = lm_14(txt, rest);
+      then txt;
+
+    case ( txt,
+           _ :: rest )
+      local
+        list<TplAbsyn.MMExp> rest;
+      equation
         txt = lm_14(txt, rest);
       then txt;
   end matchcontinue;
@@ -482,8 +532,8 @@ algorithm
       local
         list<TplAbsyn.MMExp> i_statements;
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_LINE("      equation\n"));
-        txt = Tpl.pushBlock(txt, Tpl.BT_INDENT(8));
+        txt = Tpl.writeTok(txt, Tpl.ST_LINE("  equation\n"));
+        txt = Tpl.pushBlock(txt, Tpl.BT_INDENT(4));
         txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
         txt = lm_14(txt, i_statements);
         txt = Tpl.popIter(txt);
@@ -515,6 +565,14 @@ algorithm
       equation
         txt = Tpl.writeStr(txt, i_nm);
         txt = Tpl.nextIter(txt);
+        txt = lm_16(txt, rest);
+      then txt;
+
+    case ( txt,
+           _ :: rest )
+      local
+        TplAbsyn.TypedIdents rest;
+      equation
         txt = lm_16(txt, rest);
       then txt;
   end matchcontinue;
@@ -581,7 +639,7 @@ algorithm
         list<TplAbsyn.MatchingExp> i_mexps;
       equation
         txt = Tpl.writeTok(txt, Tpl.ST_NEW_LINE());
-        txt = Tpl.pushBlock(txt, Tpl.BT_INDENT(4));
+        txt = Tpl.pushBlock(txt, Tpl.BT_INDENT(2));
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("case ( "));
         txt = Tpl.pushBlock(txt, Tpl.BT_ANCHOR(0));
         txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_LINE(",\n")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
@@ -589,17 +647,26 @@ algorithm
         txt = Tpl.popIter(txt);
         txt = Tpl.popBlock(txt);
         txt = Tpl.writeTok(txt, Tpl.ST_LINE(" )\n"));
-        txt = Tpl.popBlock(txt);
         txt = fun_13(txt, i_locals);
         txt = Tpl.softNewLine(txt);
         txt = fun_15(txt, i_statements);
         txt = Tpl.softNewLine(txt);
-        txt = Tpl.pushBlock(txt, Tpl.BT_INDENT(6));
+        txt = Tpl.pushBlock(txt, Tpl.BT_INDENT(2));
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("then "));
         txt = fun_17(txt, i_outArgs);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(";"));
         txt = Tpl.popBlock(txt);
+        txt = Tpl.popBlock(txt);
         txt = Tpl.nextIter(txt);
+        txt = lm_18(txt, rest, i_outArgs);
+      then txt;
+
+    case ( txt,
+           _ :: rest,
+           i_outArgs )
+      local
+        list<TplAbsyn.MMMatchCase> rest;
+      equation
         txt = lm_18(txt, rest, i_outArgs);
       then txt;
   end matchcontinue;
@@ -639,12 +706,12 @@ algorithm
   out_txt := typedIdents(out_txt, i_locals);
   out_txt := Tpl.softNewLine(out_txt);
   out_txt := Tpl.popBlock(out_txt);
-  out_txt := Tpl.popBlock(out_txt);
   out_txt := Tpl.pushIter(out_txt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
   out_txt := lm_18(out_txt, i_matchCases, i_outArgs);
   out_txt := Tpl.popIter(out_txt);
   out_txt := Tpl.softNewLine(out_txt);
-  out_txt := Tpl.writeTok(out_txt, Tpl.ST_STRING("  end matchcontinue;"));
+  out_txt := Tpl.writeTok(out_txt, Tpl.ST_STRING("end matchcontinue;"));
+  out_txt := Tpl.popBlock(out_txt);
 end mmMatchFunBody;
 
 public function pathIdent
@@ -737,6 +804,14 @@ algorithm
         txt = Tpl.nextIter(txt);
         txt = lm_22(txt, rest);
       then txt;
+
+    case ( txt,
+           _ :: rest )
+      local
+        TplAbsyn.TypedIdents rest;
+      equation
+        txt = lm_22(txt, rest);
+      then txt;
   end matchcontinue;
 end lm_22;
 
@@ -791,6 +866,16 @@ algorithm
         txt = Tpl.nextIter(txt);
         txt = lm_24(txt, rest, i_idPrfx, i_typePrfx);
       then txt;
+
+    case ( txt,
+           _ :: rest,
+           i_idPrfx,
+           i_typePrfx )
+      local
+        TplAbsyn.TypedIdents rest;
+      equation
+        txt = lm_24(txt, rest, i_idPrfx, i_typePrfx);
+      then txt;
   end matchcontinue;
 end lm_24;
 
@@ -830,6 +915,14 @@ algorithm
       equation
         txt = typeSig(txt, i_it);
         txt = Tpl.nextIter(txt);
+        txt = lm_26(txt, rest);
+      then txt;
+
+    case ( txt,
+           _ :: rest )
+      local
+        list<TplAbsyn.TypeSignature> rest;
+      equation
         txt = lm_26(txt, rest);
       then txt;
   end matchcontinue;
@@ -969,15 +1062,23 @@ algorithm
         String i_it;
       equation
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("\""));
-        txt = escapeStringConst(txt, i_it, true);
+        txt = mmEscapeStringConst(txt, i_it, true);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("\""));
         txt = Tpl.nextIter(txt);
+        txt = lm_28(txt, rest);
+      then txt;
+
+    case ( txt,
+           _ :: rest )
+      local
+        list<String> rest;
+      equation
         txt = lm_28(txt, rest);
       then txt;
   end matchcontinue;
 end lm_28;
 
-public function stringTokenConstant
+public function mmStringTokenConstant
   input Tpl.Text in_txt;
   input Tpl.StringToken in_i_it;
 
@@ -1000,7 +1101,7 @@ algorithm
         String i_value;
       equation
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("Tpl.ST_STRING(\""));
-        txt = escapeStringConst(txt, i_value, true);
+        txt = mmEscapeStringConst(txt, i_value, true);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("\")"));
       then txt;
 
@@ -1010,7 +1111,7 @@ algorithm
         String i_line;
       equation
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("Tpl.ST_LINE(\""));
-        txt = escapeStringConst(txt, i_line, true);
+        txt = mmEscapeStringConst(txt, i_line, true);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("\")"));
       then txt;
 
@@ -1038,7 +1139,7 @@ algorithm
            _ )
       then txt;
   end matchcontinue;
-end stringTokenConstant;
+end mmStringTokenConstant;
 
 protected function fun_30
   input Tpl.Text in_txt;
@@ -1152,21 +1253,30 @@ algorithm
         txt = fun_31(txt, i_it, i_escapeNewLine);
         txt = lm_32(txt, rest, i_escapeNewLine);
       then txt;
+
+    case ( txt,
+           _ :: rest,
+           i_escapeNewLine )
+      local
+        list<String> rest;
+      equation
+        txt = lm_32(txt, rest, i_escapeNewLine);
+      then txt;
   end matchcontinue;
 end lm_32;
 
-public function escapeStringConst
+public function mmEscapeStringConst
   input Tpl.Text txt;
   input String i_internalValue;
   input Boolean i_escapeNewLine;
 
   output Tpl.Text out_txt;
-  protected
-    list<String> ret_0;
+protected
+  list<String> ret_0;
 algorithm
   ret_0 := stringListStringChar(i_internalValue);
   out_txt := lm_32(txt, ret_0, i_escapeNewLine);
-end escapeStringConst;
+end mmEscapeStringConst;
 
 protected function lm_34
   input Tpl.Text in_txt;
@@ -1191,6 +1301,14 @@ algorithm
       equation
         txt = Tpl.writeStr(txt, i_it);
         txt = Tpl.nextIter(txt);
+        txt = lm_34(txt, rest);
+      then txt;
+
+    case ( txt,
+           _ :: rest )
+      local
+        list<TplAbsyn.Ident> rest;
+      equation
         txt = lm_34(txt, rest);
       then txt;
   end matchcontinue;
@@ -1258,6 +1376,15 @@ algorithm
         txt = Tpl.nextIter(txt);
         txt = lm_36(txt, rest, i_assignStr);
       then txt;
+
+    case ( txt,
+           _ :: rest,
+           i_assignStr )
+      local
+        list<TplAbsyn.MMExp> rest;
+      equation
+        txt = lm_36(txt, rest, i_assignStr);
+      then txt;
   end matchcontinue;
 end lm_36;
 
@@ -1286,7 +1413,6 @@ algorithm
         txt = Tpl.writeStr(txt, i_assignStr);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(" "));
         txt = mmExp(txt, i_rhs, i_assignStr);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(";"));
       then txt;
 
     case ( txt,
@@ -1319,7 +1445,7 @@ algorithm
       local
         TplAbsyn.StringToken i_value;
       equation
-        txt = stringTokenConstant(txt, i_value);
+        txt = mmStringTokenConstant(txt, i_value);
       then txt;
 
     case ( txt,
@@ -1330,7 +1456,7 @@ algorithm
       equation
         txt = Tpl.pushBlock(txt, Tpl.BT_ABS_INDENT(0));
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("\""));
-        txt = escapeStringConst(txt, i_value, false);
+        txt = mmEscapeStringConst(txt, i_value, false);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("\""));
         txt = Tpl.popBlock(txt);
       then txt;
@@ -1379,6 +1505,14 @@ algorithm
         txt = Tpl.nextIter(txt);
         txt = lm_38(txt, rest);
       then txt;
+
+    case ( txt,
+           _ :: rest )
+      local
+        list<tuple<TplAbsyn.Ident, TplAbsyn.MatchingExp>> rest;
+      equation
+        txt = lm_38(txt, rest);
+      then txt;
   end matchcontinue;
 end lm_38;
 
@@ -1407,6 +1541,14 @@ algorithm
         txt = Tpl.nextIter(txt);
         txt = lm_39(txt, rest);
       then txt;
+
+    case ( txt,
+           _ :: rest )
+      local
+        list<TplAbsyn.MatchingExp> rest;
+      equation
+        txt = lm_39(txt, rest);
+      then txt;
   end matchcontinue;
 end lm_39;
 
@@ -1433,6 +1575,14 @@ algorithm
       equation
         txt = mmMatchingExp(txt, i_it);
         txt = Tpl.nextIter(txt);
+        txt = lm_40(txt, rest);
+      then txt;
+
+    case ( txt,
+           _ :: rest )
+      local
+        list<TplAbsyn.MatchingExp> rest;
+      equation
         txt = lm_40(txt, rest);
       then txt;
   end matchcontinue;
@@ -1541,7 +1691,7 @@ algorithm
         String i_value;
       equation
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("\""));
-        txt = escapeStringConst(txt, i_value, true);
+        txt = mmEscapeStringConst(txt, i_value, true);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("\""));
       then txt;
 
@@ -1587,7 +1737,16 @@ algorithm
         TplAbsyn.MMExp i_it;
       equation
         txt = mmExp(txt, i_it, "=");
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(";"));
         txt = Tpl.nextIter(txt);
+        txt = lm_42(txt, rest);
+      then txt;
+
+    case ( txt,
+           _ :: rest )
+      local
+        list<TplAbsyn.MMExp> rest;
+      equation
         txt = lm_42(txt, rest);
       then txt;
   end matchcontinue;
@@ -1603,5 +1762,767 @@ algorithm
   out_txt := lm_42(out_txt, i_stmts);
   out_txt := Tpl.popIter(out_txt);
 end mmStatements;
+
+protected function fun_44
+  input Tpl.Text in_txt;
+  input Boolean in_i_isDefault;
+
+  output Tpl.Text out_txt;
+algorithm
+  out_txt :=
+  matchcontinue(in_txt, in_i_isDefault)
+    local
+      Tpl.Text txt;
+
+    case ( txt,
+           false )
+      then txt;
+
+    case ( txt,
+           _ )
+      equation
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("default "));
+      then txt;
+  end matchcontinue;
+end fun_44;
+
+protected function lm_45
+  input Tpl.Text in_txt;
+  input list<tuple<TplAbsyn.Ident, TplAbsyn.TypeInfo>> in_items;
+
+  output Tpl.Text out_txt;
+algorithm
+  out_txt :=
+  matchcontinue(in_txt, in_items)
+    local
+      Tpl.Text txt;
+
+    case ( txt,
+           {} )
+      then txt;
+
+    case ( txt,
+           (i_id, i_tinfo) :: rest )
+      local
+        list<tuple<TplAbsyn.Ident, TplAbsyn.TypeInfo>> rest;
+        TplAbsyn.TypeInfo i_tinfo;
+        TplAbsyn.Ident i_id;
+      equation
+        txt = sASTDefType(txt, i_id, i_tinfo);
+        txt = Tpl.nextIter(txt);
+        txt = lm_45(txt, rest);
+      then txt;
+
+    case ( txt,
+           _ :: rest )
+      local
+        list<tuple<TplAbsyn.Ident, TplAbsyn.TypeInfo>> rest;
+      equation
+        txt = lm_45(txt, rest);
+      then txt;
+  end matchcontinue;
+end lm_45;
+
+protected function lm_46
+  input Tpl.Text in_txt;
+  input list<TplAbsyn.ASTDef> in_items;
+
+  output Tpl.Text out_txt;
+algorithm
+  out_txt :=
+  matchcontinue(in_txt, in_items)
+    local
+      Tpl.Text txt;
+
+    case ( txt,
+           {} )
+      then txt;
+
+    case ( txt,
+           TplAbsyn.AST_DEF(isDefault = i_isDefault, importPackage = i_importPackage, types = i_types) :: rest )
+      local
+        list<TplAbsyn.ASTDef> rest;
+        list<tuple<TplAbsyn.Ident, TplAbsyn.TypeInfo>> i_types;
+        TplAbsyn.PathIdent i_importPackage;
+        Boolean i_isDefault;
+      equation
+        txt = fun_44(txt, i_isDefault);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("absyn "));
+        txt = pathIdent(txt, i_importPackage);
+        txt = Tpl.softNewLine(txt);
+        txt = Tpl.pushBlock(txt, Tpl.BT_INDENT(2));
+        txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_STRING_LIST({
+                                                                   "\n",
+                                                                   "\n"
+                                                               }, true)), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+        txt = lm_45(txt, i_types);
+        txt = Tpl.popIter(txt);
+        txt = Tpl.softNewLine(txt);
+        txt = Tpl.popBlock(txt);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("end "));
+        txt = pathIdent(txt, i_importPackage);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(";"));
+        txt = Tpl.writeTok(txt, Tpl.ST_NEW_LINE());
+        txt = Tpl.nextIter(txt);
+        txt = lm_46(txt, rest);
+      then txt;
+
+    case ( txt,
+           _ :: rest )
+      local
+        list<TplAbsyn.ASTDef> rest;
+      equation
+        txt = lm_46(txt, rest);
+      then txt;
+  end matchcontinue;
+end lm_46;
+
+protected function lm_47
+  input Tpl.Text in_txt;
+  input list<tuple<TplAbsyn.Ident, TplAbsyn.TemplateDef>> in_items;
+
+  output Tpl.Text out_txt;
+algorithm
+  out_txt :=
+  matchcontinue(in_txt, in_items)
+    local
+      Tpl.Text txt;
+
+    case ( txt,
+           {} )
+      then txt;
+
+    case ( txt,
+           (i_id, i_def) :: rest )
+      local
+        list<tuple<TplAbsyn.Ident, TplAbsyn.TemplateDef>> rest;
+        TplAbsyn.TemplateDef i_def;
+        TplAbsyn.Ident i_id;
+      equation
+        txt = sTemplateDef(txt, i_def, i_id);
+        txt = Tpl.nextIter(txt);
+        txt = lm_47(txt, rest);
+      then txt;
+
+    case ( txt,
+           _ :: rest )
+      local
+        list<tuple<TplAbsyn.Ident, TplAbsyn.TemplateDef>> rest;
+      equation
+        txt = lm_47(txt, rest);
+      then txt;
+  end matchcontinue;
+end lm_47;
+
+public function sTemplPackage
+  input Tpl.Text in_txt;
+  input TplAbsyn.TemplPackage in_i_it;
+
+  output Tpl.Text out_txt;
+algorithm
+  out_txt :=
+  matchcontinue(in_txt, in_i_it)
+    local
+      Tpl.Text txt;
+
+    case ( txt,
+           TplAbsyn.TEMPL_PACKAGE(name = i_name, astDefs = i_astDefs, templateDefs = i_templateDefs) )
+      local
+        list<tuple<TplAbsyn.Ident, TplAbsyn.TemplateDef>> i_templateDefs;
+        list<TplAbsyn.ASTDef> i_astDefs;
+        TplAbsyn.PathIdent i_name;
+      equation
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("spackage "));
+        txt = pathIdent(txt, i_name);
+        txt = Tpl.softNewLine(txt);
+        txt = Tpl.pushBlock(txt, Tpl.BT_INDENT(2));
+        txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+        txt = lm_46(txt, i_astDefs);
+        txt = Tpl.popIter(txt);
+        txt = Tpl.softNewLine(txt);
+        txt = Tpl.writeTok(txt, Tpl.ST_NEW_LINE());
+        txt = Tpl.popBlock(txt);
+        txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_STRING_LIST({
+                                                                   "\n",
+                                                                   "\n"
+                                                               }, true)), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+        txt = lm_47(txt, i_templateDefs);
+        txt = Tpl.popIter(txt);
+        txt = Tpl.softNewLine(txt);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("end "));
+        txt = pathIdent(txt, i_name);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(";"));
+      then txt;
+
+    case ( txt,
+           _ )
+      then txt;
+  end matchcontinue;
+end sTemplPackage;
+
+protected function lm_49
+  input Tpl.Text in_txt;
+  input list<tuple<TplAbsyn.Ident, TplAbsyn.TypedIdents>> in_items;
+
+  output Tpl.Text out_txt;
+algorithm
+  out_txt :=
+  matchcontinue(in_txt, in_items)
+    local
+      Tpl.Text txt;
+
+    case ( txt,
+           {} )
+      then txt;
+
+    case ( txt,
+           (i_rid, i_tids) :: rest )
+      local
+        list<tuple<TplAbsyn.Ident, TplAbsyn.TypedIdents>> rest;
+        TplAbsyn.TypedIdents i_tids;
+        TplAbsyn.Ident i_rid;
+      equation
+        txt = sRecordTypeDef(txt, i_rid, i_tids);
+        txt = Tpl.nextIter(txt);
+        txt = lm_49(txt, rest);
+      then txt;
+
+    case ( txt,
+           _ :: rest )
+      local
+        list<tuple<TplAbsyn.Ident, TplAbsyn.TypedIdents>> rest;
+      equation
+        txt = lm_49(txt, rest);
+      then txt;
+  end matchcontinue;
+end lm_49;
+
+protected function lm_50
+  input Tpl.Text in_txt;
+  input TplAbsyn.TypedIdents in_items;
+
+  output Tpl.Text out_txt;
+algorithm
+  out_txt :=
+  matchcontinue(in_txt, in_items)
+    local
+      Tpl.Text txt;
+
+    case ( txt,
+           {} )
+      then txt;
+
+    case ( txt,
+           (i_aid, i_ts) :: rest )
+      local
+        TplAbsyn.TypedIdents rest;
+        TplAbsyn.TypeSignature i_ts;
+        TplAbsyn.Ident i_aid;
+      equation
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("input "));
+        txt = typeSig(txt, i_ts);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(" "));
+        txt = Tpl.writeStr(txt, i_aid);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(";"));
+        txt = Tpl.writeTok(txt, Tpl.ST_NEW_LINE());
+        txt = lm_50(txt, rest);
+      then txt;
+
+    case ( txt,
+           _ :: rest )
+      local
+        TplAbsyn.TypedIdents rest;
+      equation
+        txt = lm_50(txt, rest);
+      then txt;
+  end matchcontinue;
+end lm_50;
+
+protected function lm_51
+  input Tpl.Text in_txt;
+  input TplAbsyn.TypedIdents in_items;
+
+  output Tpl.Text out_txt;
+algorithm
+  out_txt :=
+  matchcontinue(in_txt, in_items)
+    local
+      Tpl.Text txt;
+
+    case ( txt,
+           {} )
+      then txt;
+
+    case ( txt,
+           (i_aid, i_ts) :: rest )
+      local
+        TplAbsyn.TypedIdents rest;
+        TplAbsyn.TypeSignature i_ts;
+        TplAbsyn.Ident i_aid;
+      equation
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("output "));
+        txt = typeSig(txt, i_ts);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(" "));
+        txt = Tpl.writeStr(txt, i_aid);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(";"));
+        txt = Tpl.writeTok(txt, Tpl.ST_NEW_LINE());
+        txt = lm_51(txt, rest);
+      then txt;
+
+    case ( txt,
+           _ :: rest )
+      local
+        TplAbsyn.TypedIdents rest;
+      equation
+        txt = lm_51(txt, rest);
+      then txt;
+  end matchcontinue;
+end lm_51;
+
+protected function fun_52
+  input Tpl.Text in_txt;
+  input TplAbsyn.TypeInfo in_i_info;
+  input TplAbsyn.Ident in_i_id;
+
+  output Tpl.Text out_txt;
+algorithm
+  out_txt :=
+  matchcontinue(in_txt, in_i_info, in_i_id)
+    local
+      Tpl.Text txt;
+      TplAbsyn.Ident i_id;
+
+    case ( txt,
+           TplAbsyn.TI_UNION_TYPE(recTags = i_recTags),
+           i_id )
+      local
+        list<tuple<TplAbsyn.Ident, TplAbsyn.TypedIdents>> i_recTags;
+      equation
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("uniontype "));
+        txt = Tpl.writeStr(txt, i_id);
+        txt = Tpl.softNewLine(txt);
+        txt = Tpl.pushBlock(txt, Tpl.BT_INDENT(2));
+        txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+        txt = lm_49(txt, i_recTags);
+        txt = Tpl.popIter(txt);
+        txt = Tpl.softNewLine(txt);
+        txt = Tpl.popBlock(txt);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("end "));
+        txt = Tpl.writeStr(txt, i_id);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(";"));
+      then txt;
+
+    case ( txt,
+           TplAbsyn.TI_RECORD_TYPE(fields = i_fields),
+           i_id )
+      local
+        TplAbsyn.TypedIdents i_fields;
+      equation
+        txt = sRecordTypeDef(txt, i_id, i_fields);
+      then txt;
+
+    case ( txt,
+           TplAbsyn.TI_ALIAS_TYPE(aliasType = i_aliasType),
+           i_id )
+      local
+        TplAbsyn.TypeSignature i_aliasType;
+      equation
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("type "));
+        txt = Tpl.writeStr(txt, i_id);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(" = "));
+        txt = typeSig(txt, i_aliasType);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(";"));
+      then txt;
+
+    case ( txt,
+           TplAbsyn.TI_FUN_TYPE(inArgs = i_inArgs, outArgs = i_outArgs),
+           i_id )
+      local
+        TplAbsyn.TypedIdents i_outArgs;
+        TplAbsyn.TypedIdents i_inArgs;
+      equation
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("function "));
+        txt = Tpl.writeStr(txt, i_id);
+        txt = Tpl.softNewLine(txt);
+        txt = Tpl.pushBlock(txt, Tpl.BT_INDENT(2));
+        txt = lm_50(txt, i_inArgs);
+        txt = Tpl.softNewLine(txt);
+        txt = lm_51(txt, i_outArgs);
+        txt = Tpl.softNewLine(txt);
+        txt = Tpl.popBlock(txt);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("end "));
+        txt = Tpl.writeStr(txt, i_id);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(";"));
+      then txt;
+
+    case ( txt,
+           TplAbsyn.TI_CONST_TYPE(constType = i_constType),
+           i_id )
+      local
+        TplAbsyn.TypeSignature i_constType;
+      equation
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("constant "));
+        txt = typeSig(txt, i_constType);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(" "));
+        txt = Tpl.writeStr(txt, i_id);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(";"));
+      then txt;
+
+    case ( txt,
+           _,
+           _ )
+      then txt;
+  end matchcontinue;
+end fun_52;
+
+public function sASTDefType
+  input Tpl.Text txt;
+  input TplAbsyn.Ident i_id;
+  input TplAbsyn.TypeInfo i_info;
+
+  output Tpl.Text out_txt;
+algorithm
+  out_txt := fun_52(txt, i_info, i_id);
+end sASTDefType;
+
+protected function lm_54
+  input Tpl.Text in_txt;
+  input TplAbsyn.TypedIdents in_items;
+
+  output Tpl.Text out_txt;
+algorithm
+  out_txt :=
+  matchcontinue(in_txt, in_items)
+    local
+      Tpl.Text txt;
+
+    case ( txt,
+           {} )
+      then txt;
+
+    case ( txt,
+           (i_fid, i_ts) :: rest )
+      local
+        TplAbsyn.TypedIdents rest;
+        TplAbsyn.TypeSignature i_ts;
+        TplAbsyn.Ident i_fid;
+      equation
+        txt = typeSig(txt, i_ts);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(" "));
+        txt = Tpl.writeStr(txt, i_fid);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(";"));
+        txt = Tpl.writeTok(txt, Tpl.ST_NEW_LINE());
+        txt = lm_54(txt, rest);
+      then txt;
+
+    case ( txt,
+           _ :: rest )
+      local
+        TplAbsyn.TypedIdents rest;
+      equation
+        txt = lm_54(txt, rest);
+      then txt;
+  end matchcontinue;
+end lm_54;
+
+protected function fun_55
+  input Tpl.Text in_txt;
+  input TplAbsyn.TypedIdents in_i_fields;
+
+  output Tpl.Text out_txt;
+algorithm
+  out_txt :=
+  matchcontinue(in_txt, in_i_fields)
+    local
+      Tpl.Text txt;
+
+    case ( txt,
+           {} )
+      then txt;
+
+    case ( txt,
+           i_fields )
+      local
+        TplAbsyn.TypedIdents i_fields;
+      equation
+        txt = Tpl.writeTok(txt, Tpl.ST_NEW_LINE());
+        txt = Tpl.pushBlock(txt, Tpl.BT_INDENT(2));
+        txt = lm_54(txt, i_fields);
+        txt = Tpl.popBlock(txt);
+      then txt;
+  end matchcontinue;
+end fun_55;
+
+public function sRecordTypeDef
+  input Tpl.Text txt;
+  input TplAbsyn.Ident i_id;
+  input TplAbsyn.TypedIdents i_fields;
+
+  output Tpl.Text out_txt;
+algorithm
+  out_txt := Tpl.writeTok(txt, Tpl.ST_STRING("record "));
+  out_txt := Tpl.writeStr(out_txt, i_id);
+  out_txt := Tpl.writeTok(out_txt, Tpl.ST_STRING(" "));
+  out_txt := fun_55(out_txt, i_fields);
+  out_txt := Tpl.writeTok(out_txt, Tpl.ST_STRING("end "));
+  out_txt := Tpl.writeStr(out_txt, i_id);
+  out_txt := Tpl.writeTok(out_txt, Tpl.ST_STRING(";"));
+end sRecordTypeDef;
+
+public function sTemplateDef
+  input Tpl.Text in_txt;
+  input TplAbsyn.TemplateDef in_i_it;
+  input TplAbsyn.Ident in_i_templId;
+
+  output Tpl.Text out_txt;
+algorithm
+  out_txt :=
+  matchcontinue(in_txt, in_i_it, in_i_templId)
+    local
+      Tpl.Text txt;
+      TplAbsyn.Ident i_templId;
+
+    case ( txt,
+           TplAbsyn.STR_TOKEN_DEF(value = i_value),
+           i_templId )
+      local
+        TplAbsyn.StringToken i_value;
+      equation
+        txt = Tpl.writeStr(txt, i_templId);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(" = "));
+        txt = sConstStringToken(txt, i_value);
+      then txt;
+
+    case ( txt,
+           _,
+           _ )
+      then txt;
+  end matchcontinue;
+end sTemplateDef;
+
+protected function lm_58
+  input Tpl.Text in_txt;
+  input list<String> in_items;
+
+  output Tpl.Text out_txt;
+algorithm
+  out_txt :=
+  matchcontinue(in_txt, in_items)
+    local
+      Tpl.Text txt;
+
+    case ( txt,
+           {} )
+      then txt;
+
+    case ( txt,
+           i_it :: rest )
+      local
+        list<String> rest;
+        String i_it;
+      equation
+        txt = mmEscapeStringConst(txt, i_it, false);
+        txt = lm_58(txt, rest);
+      then txt;
+
+    case ( txt,
+           _ :: rest )
+      local
+        list<String> rest;
+      equation
+        txt = lm_58(txt, rest);
+      then txt;
+  end matchcontinue;
+end lm_58;
+
+protected function lm_59
+  input Tpl.Text in_txt;
+  input list<String> in_items;
+
+  output Tpl.Text out_txt;
+algorithm
+  out_txt :=
+  matchcontinue(in_txt, in_items)
+    local
+      Tpl.Text txt;
+
+    case ( txt,
+           {} )
+      then txt;
+
+    case ( txt,
+           i_it :: rest )
+      local
+        list<String> rest;
+        String i_it;
+      equation
+        txt = mmEscapeStringConst(txt, i_it, true);
+        txt = lm_59(txt, rest);
+      then txt;
+
+    case ( txt,
+           _ :: rest )
+      local
+        list<String> rest;
+      equation
+        txt = lm_59(txt, rest);
+      then txt;
+  end matchcontinue;
+end lm_59;
+
+protected function lm_60
+  input Tpl.Text in_txt;
+  input list<String> in_items;
+
+  output Tpl.Text out_txt;
+algorithm
+  out_txt :=
+  matchcontinue(in_txt, in_items)
+    local
+      Tpl.Text txt;
+
+    case ( txt,
+           {} )
+      then txt;
+
+    case ( txt,
+           i_it :: rest )
+      local
+        list<String> rest;
+        String i_it;
+      equation
+        txt = mmEscapeStringConst(txt, i_it, true);
+        txt = lm_60(txt, rest);
+      then txt;
+
+    case ( txt,
+           _ :: rest )
+      local
+        list<String> rest;
+      equation
+        txt = lm_60(txt, rest);
+      then txt;
+  end matchcontinue;
+end lm_60;
+
+protected function fun_61
+  input Tpl.Text in_txt;
+  input Boolean in_it;
+  input list<String> in_i_sl;
+
+  output Tpl.Text out_txt;
+algorithm
+  out_txt :=
+  matchcontinue(in_txt, in_it, in_i_sl)
+    local
+      Tpl.Text txt;
+      list<String> i_sl;
+
+    case ( txt,
+           false,
+           i_sl )
+      equation
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("\""));
+        txt = lm_59(txt, i_sl);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("\""));
+      then txt;
+
+    case ( txt,
+           _,
+           i_sl )
+      equation
+        txt = lm_60(txt, i_sl);
+      then txt;
+  end matchcontinue;
+end fun_61;
+
+protected function fun_62
+  input Tpl.Text in_txt;
+  input Boolean in_it;
+  input list<String> in_i_sl;
+
+  output Tpl.Text out_txt;
+algorithm
+  out_txt :=
+  matchcontinue(in_txt, in_it, in_i_sl)
+    local
+      Tpl.Text txt;
+      list<String> i_sl;
+
+    case ( txt,
+           false,
+           i_sl )
+      equation
+        txt = Tpl.pushBlock(txt, Tpl.BT_ABS_INDENT(0));
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("\""));
+        txt = lm_58(txt, i_sl);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("\""));
+        txt = Tpl.popBlock(txt);
+      then txt;
+
+    case ( txt,
+           _,
+           i_sl )
+      local
+        Boolean ret_0;
+      equation
+        ret_0 = TplAbsyn.canBeEscapedUnquoted(i_sl);
+        txt = fun_61(txt, ret_0, i_sl);
+      then txt;
+  end matchcontinue;
+end fun_62;
+
+public function sConstStringToken
+  input Tpl.Text in_txt;
+  input Tpl.StringToken in_i_it;
+
+  output Tpl.Text out_txt;
+algorithm
+  out_txt :=
+  matchcontinue(in_txt, in_i_it)
+    local
+      Tpl.Text txt;
+
+    case ( txt,
+           Tpl.ST_NEW_LINE() )
+      equation
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("\\n"));
+      then txt;
+
+    case ( txt,
+           Tpl.ST_STRING(value = i_value) )
+      local
+        String i_value;
+      equation
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("\""));
+        txt = mmEscapeStringConst(txt, i_value, true);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("\""));
+      then txt;
+
+    case ( txt,
+           Tpl.ST_LINE(line = i_line) )
+      local
+        String i_line;
+      equation
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("\""));
+        txt = mmEscapeStringConst(txt, i_line, true);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("\""));
+      then txt;
+
+    case ( txt,
+           Tpl.ST_STRING_LIST(strList = i_sl) )
+      local
+        list<String> i_sl;
+        Boolean ret_0;
+      equation
+        ret_0 = TplAbsyn.canBeOnOneLine(i_sl);
+        txt = fun_62(txt, ret_0, i_sl);
+      then txt;
+
+    case ( txt,
+           _ )
+      then txt;
+  end matchcontinue;
+end sConstStringToken;
 
 end TplCodegen;

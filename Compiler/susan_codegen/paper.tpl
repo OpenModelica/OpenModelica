@@ -68,7 +68,7 @@ pok3(list<Exp> exps) ::= (exps of ICONST : value ", ")
 
 pok4(String s) ::= it
 
-pok5(String a, Integer it) ::= it //error ... displaced it
+pok5(String a, Integer /*it*/itt) ::= it //error ... displaced it
 
 pok6(tuple<Integer,String> tup) ::= tup of (i,s) : i + s
 

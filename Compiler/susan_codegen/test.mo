@@ -571,28 +571,7 @@ algorithm
   end matchcontinue;
 end smf_22;
 
-protected function fun_23
-  input Tpl.Text in_txt;
-  input String in_i_it;
-
-  output Tpl.Text out_txt;
-algorithm
-  out_txt :=
-  matchcontinue(in_txt, in_i_it)
-    local
-      Tpl.Text txt;
-
-    case ( txt,
-           i_it )
-      local
-        String i_it;
-      equation
-        txt = Tpl.writeStr(txt, i_it);
-      then txt;
-  end matchcontinue;
-end fun_23;
-
-protected function lm_24
+protected function lm_23
   input Tpl.Text in_txt;
   input list<String> in_items;
 
@@ -613,9 +592,9 @@ algorithm
         list<String> rest;
         String i_it;
       equation
-        txt = fun_23(txt, i_it);
+        txt = Tpl.writeStr(txt, i_it);
         txt = Tpl.nextIter(txt);
-        txt = lm_24(txt, rest);
+        txt = lm_23(txt, rest);
       then txt;
 
     case ( txt,
@@ -623,12 +602,56 @@ algorithm
       local
         list<String> rest;
       equation
-        txt = lm_24(txt, rest);
+        txt = lm_23(txt, rest);
       then txt;
   end matchcontinue;
-end lm_24;
+end lm_23;
 
-protected function fun_25
+protected function smf_24
+  input Tpl.Text in_txt;
+  input String in_it;
+
+  output Tpl.Text out_txt;
+algorithm
+  out_txt :=
+  matchcontinue(in_txt, in_it)
+    local
+      Tpl.Text txt;
+
+    case ( txt,
+           i_it )
+      local
+        String i_it;
+      equation
+        txt = Tpl.writeStr(txt, i_it);
+        txt = Tpl.nextIter(txt);
+      then txt;
+  end matchcontinue;
+end smf_24;
+
+protected function smf_25
+  input Tpl.Text in_txt;
+  input Integer in_it;
+
+  output Tpl.Text out_txt;
+algorithm
+  out_txt :=
+  matchcontinue(in_txt, in_it)
+    local
+      Tpl.Text txt;
+
+    case ( txt,
+           i_it )
+      local
+        Integer i_it;
+      equation
+        txt = Tpl.writeStr(txt, intString(i_it));
+        txt = Tpl.nextIter(txt);
+      then txt;
+  end matchcontinue;
+end smf_25;
+
+protected function fun_26
   input Tpl.Text in_txt;
   input String in_i_it;
 
@@ -647,9 +670,66 @@ algorithm
         txt = Tpl.writeStr(txt, i_it);
       then txt;
   end matchcontinue;
-end fun_25;
+end fun_26;
 
-protected function smf_26
+protected function lm_27
+  input Tpl.Text in_txt;
+  input list<String> in_items;
+
+  output Tpl.Text out_txt;
+algorithm
+  out_txt :=
+  matchcontinue(in_txt, in_items)
+    local
+      Tpl.Text txt;
+
+    case ( txt,
+           {} )
+      then txt;
+
+    case ( txt,
+           i_it :: rest )
+      local
+        list<String> rest;
+        String i_it;
+      equation
+        txt = fun_26(txt, i_it);
+        txt = Tpl.nextIter(txt);
+        txt = lm_27(txt, rest);
+      then txt;
+
+    case ( txt,
+           _ :: rest )
+      local
+        list<String> rest;
+      equation
+        txt = lm_27(txt, rest);
+      then txt;
+  end matchcontinue;
+end lm_27;
+
+protected function fun_28
+  input Tpl.Text in_txt;
+  input String in_i_it;
+
+  output Tpl.Text out_txt;
+algorithm
+  out_txt :=
+  matchcontinue(in_txt, in_i_it)
+    local
+      Tpl.Text txt;
+
+    case ( txt,
+           i_it )
+      local
+        String i_it;
+      equation
+        txt = Tpl.writeStr(txt, i_it);
+      then txt;
+  end matchcontinue;
+end fun_28;
+
+protected function smf_29
   input Tpl.Text in_txt;
   input String in_it;
 
@@ -665,13 +745,13 @@ algorithm
       local
         String i_it;
       equation
-        txt = fun_25(txt, i_it);
+        txt = fun_28(txt, i_it);
         txt = Tpl.nextIter(txt);
       then txt;
   end matchcontinue;
-end smf_26;
+end smf_29;
 
-protected function fun_27
+protected function fun_30
   input Tpl.Text in_txt;
   input Integer in_i_it;
 
@@ -690,9 +770,9 @@ algorithm
         txt = Tpl.writeStr(txt, intString(i_it));
       then txt;
   end matchcontinue;
-end fun_27;
+end fun_30;
 
-protected function smf_28
+protected function smf_31
   input Tpl.Text in_txt;
   input Integer in_it;
 
@@ -708,13 +788,13 @@ algorithm
       local
         Integer i_it;
       equation
-        txt = fun_27(txt, i_it);
+        txt = fun_30(txt, i_it);
         txt = Tpl.nextIter(txt);
       then txt;
   end matchcontinue;
-end smf_28;
+end smf_31;
 
-protected function fun_29
+protected function fun_32
   input Tpl.Text in_txt;
   input String in_it;
 
@@ -733,9 +813,9 @@ algorithm
         txt = Tpl.writeStr(txt, i_it);
       then txt;
   end matchcontinue;
-end fun_29;
+end fun_32;
 
-protected function smf_30
+protected function smf_33
   input Tpl.Text in_txt;
   input Tpl.Text in_it;
 
@@ -753,13 +833,13 @@ algorithm
         String str_0;
       equation
         str_0 = Tpl.textString(i_it);
-        txt = fun_29(txt, str_0);
+        txt = fun_32(txt, str_0);
         txt = Tpl.nextIter(txt);
       then txt;
   end matchcontinue;
-end smf_30;
+end smf_33;
 
-protected function fun_31
+protected function fun_34
   input Tpl.Text in_txt;
   input Tpl.StringToken in_i_it;
 
@@ -778,9 +858,9 @@ algorithm
         txt = Tpl.writeTok(txt, i_it);
       then txt;
   end matchcontinue;
-end fun_31;
+end fun_34;
 
-protected function smf_32
+protected function smf_35
   input Tpl.Text in_txt;
   input Tpl.StringToken in_it;
 
@@ -796,13 +876,13 @@ algorithm
       local
         Tpl.StringToken i_it;
       equation
-        txt = fun_31(txt, i_it);
+        txt = fun_34(txt, i_it);
         txt = Tpl.nextIter(txt);
       then txt;
   end matchcontinue;
-end smf_32;
+end smf_35;
 
-protected function fun_33
+protected function fun_36
   input Tpl.Text in_txt;
   input String in_it;
 
@@ -821,7 +901,7 @@ algorithm
         txt = Tpl.writeStr(txt, i_it);
       then txt;
   end matchcontinue;
-end fun_33;
+end fun_36;
 
 public function test3
   input Tpl.Text txt;
@@ -855,24 +935,29 @@ algorithm
   out_txt := smf_19(out_txt, Tpl.ST_STRING("blaaa"));
   out_txt := Tpl.popIter(out_txt);
   out_txt := Tpl.softNewLine(out_txt);
-  out_txt := Tpl.writeTok(out_txt, Tpl.ST_LINE("<[items, item, ii] \", \"]>!!!!!error should be\n"));
+  out_txt := Tpl.pushIter(out_txt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+  out_txt := lm_20(out_txt, i_items);
+  out_txt := smf_21(out_txt, i_item);
+  out_txt := smf_22(out_txt, i_ii);
+  out_txt := Tpl.popIter(out_txt);
+  out_txt := Tpl.writeTok(out_txt, Tpl.ST_LINE("!!!!!error should be\n"));
   txt_1 := Tpl.pushIter(emptyTxt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
-  txt_1 := lm_20(txt_1, i_items);
-  txt_1 := smf_21(txt_1, i_item);
-  txt_1 := smf_22(txt_1, i_ii);
+  txt_1 := lm_23(txt_1, i_items);
+  txt_1 := smf_24(txt_1, i_item);
+  txt_1 := smf_25(txt_1, i_ii);
   txt_1 := Tpl.popIter(txt_1);
   out_txt := Tpl.pushIter(out_txt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
-  out_txt := lm_24(out_txt, i_items);
-  out_txt := smf_26(out_txt, i_item);
-  out_txt := smf_28(out_txt, i_ii);
-  out_txt := smf_30(out_txt, txt_1);
-  out_txt := smf_32(out_txt, Tpl.ST_STRING("blaaa"));
+  out_txt := lm_27(out_txt, i_items);
+  out_txt := smf_29(out_txt, i_item);
+  out_txt := smf_31(out_txt, i_ii);
+  out_txt := smf_33(out_txt, txt_1);
+  out_txt := smf_35(out_txt, Tpl.ST_STRING("blaaa"));
   out_txt := Tpl.popIter(out_txt);
   out_txt := Tpl.softNewLine(out_txt);
   txt_2 := Tpl.writeTok(emptyTxt, Tpl.ST_STRING("aha"));
   txt_2 := Tpl.writeStr(txt_2, intString(i_ii));
   str_3 := Tpl.textString(txt_2);
-  out_txt := fun_33(out_txt, str_3);
+  out_txt := fun_36(out_txt, str_3);
 end test3;
 
 public function testCond
@@ -974,7 +1059,7 @@ algorithm
   out_txt := Tpl.writeTok(out_txt, Tpl.ST_STRING(")"));
 end mapIntString;
 
-protected function smf_40
+protected function smf_43
   input Tpl.Text in_txt;
   input Tpl.Text in_it;
 
@@ -993,9 +1078,9 @@ algorithm
         txt = mapString(txt, Tpl.textString(i_it));
       then txt;
   end matchcontinue;
-end smf_40;
+end smf_43;
 
-protected function lm_41
+protected function lm_44
   input Tpl.Text in_txt;
   input list<Integer> in_items;
 
@@ -1018,9 +1103,9 @@ algorithm
         Tpl.Text txt_0;
       equation
         txt_0 = mapInt(emptyTxt, i_it);
-        txt = smf_40(txt, txt_0);
+        txt = smf_43(txt, txt_0);
         txt = Tpl.nextIter(txt);
-        txt = lm_41(txt, rest);
+        txt = lm_44(txt, rest);
       then txt;
 
     case ( txt,
@@ -1028,10 +1113,10 @@ algorithm
       local
         list<Integer> rest;
       equation
-        txt = lm_41(txt, rest);
+        txt = lm_44(txt, rest);
       then txt;
   end matchcontinue;
-end lm_41;
+end lm_44;
 
 public function testMap
   input Tpl.Text txt;
@@ -1040,11 +1125,11 @@ public function testMap
   output Tpl.Text out_txt;
 algorithm
   out_txt := Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
-  out_txt := lm_41(out_txt, i_ints);
+  out_txt := lm_44(out_txt, i_ints);
   out_txt := Tpl.popIter(out_txt);
 end testMap;
 
-protected function smf_43
+protected function smf_46
   input Tpl.Text in_txt;
   input Tpl.Text in_it;
   input Integer in_i_int;
@@ -1066,9 +1151,9 @@ algorithm
         txt = mapIntString(txt, i_int, Tpl.textString(i_st));
       then txt;
   end matchcontinue;
-end smf_43;
+end smf_46;
 
-protected function lm_44
+protected function lm_47
   input Tpl.Text in_txt;
   input list<Integer> in_items;
 
@@ -1091,9 +1176,9 @@ algorithm
         Tpl.Text txt_0;
       equation
         txt_0 = mapInt(emptyTxt, i_int);
-        txt = smf_43(txt, txt_0, i_int);
+        txt = smf_46(txt, txt_0, i_int);
         txt = Tpl.nextIter(txt);
-        txt = lm_44(txt, rest);
+        txt = lm_47(txt, rest);
       then txt;
 
     case ( txt,
@@ -1101,10 +1186,10 @@ algorithm
       local
         list<Integer> rest;
       equation
-        txt = lm_44(txt, rest);
+        txt = lm_47(txt, rest);
       then txt;
   end matchcontinue;
-end lm_44;
+end lm_47;
 
 public function testMap2
   input Tpl.Text txt;
@@ -1113,11 +1198,11 @@ public function testMap2
   output Tpl.Text out_txt;
 algorithm
   out_txt := Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
-  out_txt := lm_44(out_txt, i_ints);
+  out_txt := lm_47(out_txt, i_ints);
   out_txt := Tpl.popIter(out_txt);
 end testMap2;
 
-protected function lm_46
+protected function lm_49
   input Tpl.Text in_txt;
   input list<Integer> in_items;
 
@@ -1140,92 +1225,6 @@ algorithm
       equation
         txt = mapInt(txt, i_int);
         txt = Tpl.nextIter(txt);
-        txt = lm_46(txt, rest);
-      then txt;
-
-    case ( txt,
-           _ :: rest )
-      local
-        list<Integer> rest;
-      equation
-        txt = lm_46(txt, rest);
-      then txt;
-  end matchcontinue;
-end lm_46;
-
-protected function lm_47
-  input Tpl.Text in_txt;
-  input list<list<Integer>> in_items;
-
-  output Tpl.Text out_txt;
-algorithm
-  out_txt :=
-  matchcontinue(in_txt, in_items)
-    local
-      Tpl.Text txt;
-
-    case ( txt,
-           {} )
-      then txt;
-
-    case ( txt,
-           i_intLst :: rest )
-      local
-        list<list<Integer>> rest;
-        list<Integer> i_intLst;
-      equation
-        txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
-        txt = lm_46(txt, i_intLst);
-        txt = Tpl.popIter(txt);
-        txt = Tpl.nextIter(txt);
-        txt = lm_47(txt, rest);
-      then txt;
-
-    case ( txt,
-           _ :: rest )
-      local
-        list<list<Integer>> rest;
-      equation
-        txt = lm_47(txt, rest);
-      then txt;
-  end matchcontinue;
-end lm_47;
-
-public function testMap3
-  input Tpl.Text txt;
-  input list<list<Integer>> i_lstOfLst;
-
-  output Tpl.Text out_txt;
-algorithm
-  out_txt := Tpl.pushBlock(txt, Tpl.BT_ANCHOR(0));
-  out_txt := Tpl.pushIter(out_txt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_LINE(";\n")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
-  out_txt := lm_47(out_txt, i_lstOfLst);
-  out_txt := Tpl.popIter(out_txt);
-  out_txt := Tpl.popBlock(out_txt);
-end testMap3;
-
-protected function lm_49
-  input Tpl.Text in_txt;
-  input list<Integer> in_items;
-
-  output Tpl.Text out_txt;
-algorithm
-  out_txt :=
-  matchcontinue(in_txt, in_items)
-    local
-      Tpl.Text txt;
-
-    case ( txt,
-           {} )
-      then txt;
-
-    case ( txt,
-           i_it :: rest )
-      local
-        list<Integer> rest;
-        Integer i_it;
-      equation
-        txt = mapInt(txt, i_it);
         txt = lm_49(txt, rest);
       then txt;
 
@@ -1255,12 +1254,15 @@ algorithm
       then txt;
 
     case ( txt,
-           i_it :: rest )
+           i_intLst :: rest )
       local
         list<list<Integer>> rest;
-        list<Integer> i_it;
+        list<Integer> i_intLst;
       equation
-        txt = lm_49(txt, i_it);
+        txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+        txt = lm_49(txt, i_intLst);
+        txt = Tpl.popIter(txt);
+        txt = Tpl.nextIter(txt);
         txt = lm_50(txt, rest);
       then txt;
 
@@ -1274,16 +1276,99 @@ algorithm
   end matchcontinue;
 end lm_50;
 
+public function testMap3
+  input Tpl.Text txt;
+  input list<list<Integer>> i_lstOfLst;
+
+  output Tpl.Text out_txt;
+algorithm
+  out_txt := Tpl.pushBlock(txt, Tpl.BT_ANCHOR(0));
+  out_txt := Tpl.pushIter(out_txt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_LINE(";\n")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+  out_txt := lm_50(out_txt, i_lstOfLst);
+  out_txt := Tpl.popIter(out_txt);
+  out_txt := Tpl.popBlock(out_txt);
+end testMap3;
+
+protected function lm_52
+  input Tpl.Text in_txt;
+  input list<Integer> in_items;
+
+  output Tpl.Text out_txt;
+algorithm
+  out_txt :=
+  matchcontinue(in_txt, in_items)
+    local
+      Tpl.Text txt;
+
+    case ( txt,
+           {} )
+      then txt;
+
+    case ( txt,
+           i_it :: rest )
+      local
+        list<Integer> rest;
+        Integer i_it;
+      equation
+        txt = mapInt(txt, i_it);
+        txt = lm_52(txt, rest);
+      then txt;
+
+    case ( txt,
+           _ :: rest )
+      local
+        list<Integer> rest;
+      equation
+        txt = lm_52(txt, rest);
+      then txt;
+  end matchcontinue;
+end lm_52;
+
+protected function lm_53
+  input Tpl.Text in_txt;
+  input list<list<Integer>> in_items;
+
+  output Tpl.Text out_txt;
+algorithm
+  out_txt :=
+  matchcontinue(in_txt, in_items)
+    local
+      Tpl.Text txt;
+
+    case ( txt,
+           {} )
+      then txt;
+
+    case ( txt,
+           i_it :: rest )
+      local
+        list<list<Integer>> rest;
+        list<Integer> i_it;
+      equation
+        txt = lm_52(txt, i_it);
+        txt = lm_53(txt, rest);
+      then txt;
+
+    case ( txt,
+           _ :: rest )
+      local
+        list<list<Integer>> rest;
+      equation
+        txt = lm_53(txt, rest);
+      then txt;
+  end matchcontinue;
+end lm_53;
+
 public function testMap4
   input Tpl.Text txt;
   input list<list<Integer>> i_lstOfLst;
 
   output Tpl.Text out_txt;
 algorithm
-  out_txt := lm_50(txt, i_lstOfLst);
+  out_txt := lm_53(txt, i_lstOfLst);
 end testMap4;
 
-protected function lm_52
+protected function lm_55
   input Tpl.Text in_txt;
   input list<Integer> in_items;
 
@@ -1308,7 +1393,7 @@ algorithm
         txt_0 = mapInt(emptyTxt, i_it);
         txt = mapString(txt, Tpl.textString(txt_0));
         txt = Tpl.nextIter(txt);
-        txt = lm_52(txt, rest);
+        txt = lm_55(txt, rest);
       then txt;
 
     case ( txt,
@@ -1316,10 +1401,10 @@ algorithm
       local
         list<Integer> rest;
       equation
-        txt = lm_52(txt, rest);
+        txt = lm_55(txt, rest);
       then txt;
   end matchcontinue;
-end lm_52;
+end lm_55;
 
 public function testMap5
   input Tpl.Text txt;
@@ -1328,11 +1413,11 @@ public function testMap5
   output Tpl.Text out_txt;
 algorithm
   out_txt := Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
-  out_txt := lm_52(out_txt, i_ints);
+  out_txt := lm_55(out_txt, i_ints);
   out_txt := Tpl.popIter(out_txt);
 end testMap5;
 
-protected function lm_54
+protected function lm_57
   input Tpl.Text in_txt;
   input list<Integer> in_items;
 
@@ -1355,7 +1440,7 @@ algorithm
       equation
         txt = Tpl.writeStr(txt, intString(i_it));
         txt = Tpl.nextIter(txt);
-        txt = lm_54(txt, rest);
+        txt = lm_57(txt, rest);
       then txt;
 
     case ( txt,
@@ -1363,12 +1448,12 @@ algorithm
       local
         list<Integer> rest;
       equation
-        txt = lm_54(txt, rest);
+        txt = lm_57(txt, rest);
       then txt;
   end matchcontinue;
-end lm_54;
+end lm_57;
 
-protected function lm_55
+protected function lm_58
   input Tpl.Text in_txt;
   input list<list<Integer>> in_items;
 
@@ -1390,10 +1475,10 @@ algorithm
         list<Integer> i_intLst;
       equation
         txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
-        txt = lm_54(txt, i_intLst);
+        txt = lm_57(txt, i_intLst);
         txt = Tpl.popIter(txt);
         txt = Tpl.nextIter(txt);
-        txt = lm_55(txt, rest);
+        txt = lm_58(txt, rest);
       then txt;
 
     case ( txt,
@@ -1401,10 +1486,10 @@ algorithm
       local
         list<list<Integer>> rest;
       equation
-        txt = lm_55(txt, rest);
+        txt = lm_58(txt, rest);
       then txt;
   end matchcontinue;
-end lm_55;
+end lm_58;
 
 public function intMatrix
   input Tpl.Text txt;
@@ -1415,13 +1500,13 @@ algorithm
   out_txt := Tpl.writeTok(txt, Tpl.ST_STRING("[ "));
   out_txt := Tpl.pushBlock(out_txt, Tpl.BT_ANCHOR(0));
   out_txt := Tpl.pushIter(out_txt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_LINE(";\n")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
-  out_txt := lm_55(out_txt, i_lstOfLst);
+  out_txt := lm_58(out_txt, i_lstOfLst);
   out_txt := Tpl.popIter(out_txt);
   out_txt := Tpl.popBlock(out_txt);
   out_txt := Tpl.writeTok(out_txt, Tpl.ST_STRING(" ]"));
 end intMatrix;
 
-protected function fun_57
+protected function fun_60
   input Tpl.Text in_txt;
   input String in_it;
 
@@ -1447,7 +1532,7 @@ algorithm
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(" name;"));
       then txt;
   end matchcontinue;
-end fun_57;
+end fun_60;
 
 public function ifTest
   input Tpl.Text txt;
@@ -1460,10 +1545,10 @@ protected
 algorithm
   txt_0 := mapInt(emptyTxt, i_i);
   str_1 := Tpl.textString(txt_0);
-  out_txt := fun_57(txt, str_1);
+  out_txt := fun_60(txt, str_1);
 end ifTest;
 
-protected function smf_59
+protected function smf_62
   input Tpl.Text in_txt;
   input Tpl.Text in_it;
 
@@ -1485,7 +1570,7 @@ algorithm
         txt = Tpl.popBlock(txt);
       then txt;
   end matchcontinue;
-end smf_59;
+end smf_62;
 
 public function bindTest
   input Tpl.Text txt;
@@ -1495,7 +1580,7 @@ protected
   Tpl.Text txt_0;
 algorithm
   txt_0 := ifTest(emptyTxt, 1);
-  out_txt := smf_59(txt, txt_0);
+  out_txt := smf_62(txt, txt_0);
 end bindTest;
 
 public function txtTest
@@ -1607,7 +1692,7 @@ algorithm
   out_i_nobuf := i_nobuf;
 end txtTest5;
 
-protected function lm_66
+protected function lm_69
   input Tpl.Text in_txt;
   input list<String> in_items;
   input Tpl.Text in_i_nomut;
@@ -1648,7 +1733,7 @@ algorithm
         txt = Tpl.writeStr(txt, i_it);
         txt = Tpl.writeText(txt, i_nomut);
         txt = Tpl.nextIter(txt);
-        (txt, i_mytxt, i_buf2) = lm_66(txt, rest, i_nomut, i_mytxt, i_buf2);
+        (txt, i_mytxt, i_buf2) = lm_69(txt, rest, i_nomut, i_mytxt, i_buf2);
       then (txt, i_mytxt, i_buf2);
 
     case ( txt,
@@ -1659,12 +1744,12 @@ algorithm
       local
         list<String> rest;
       equation
-        (txt, i_mytxt, i_buf2) = lm_66(txt, rest, i_nomut, i_mytxt, i_buf2);
+        (txt, i_mytxt, i_buf2) = lm_69(txt, rest, i_nomut, i_mytxt, i_buf2);
       then (txt, i_mytxt, i_buf2);
   end matchcontinue;
-end lm_66;
+end lm_69;
 
-protected function smf_67
+protected function smf_70
   input Tpl.Text in_txt;
   input String in_it;
   input Tpl.Text in_i_nomut;
@@ -1698,9 +1783,9 @@ algorithm
         txt = Tpl.writeText(txt, i_nomut);
       then (txt, i_mytxt, i_buf2);
   end matchcontinue;
-end smf_67;
+end smf_70;
 
-protected function fun_68
+protected function fun_71
   input Tpl.Text in_txt;
   input list<String> in_i_hej;
   input Tpl.Text in_i_mytxt;
@@ -1728,7 +1813,7 @@ algorithm
         i_buf2 = Tpl.writeTok(emptyTxt, Tpl.ST_STRING("hop"));
         ret_1 = Tpl.textStrTok(i_nomut);
         txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE, SOME(ret_1), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
-        (txt, i_mytxt, i_buf2) = lm_66(txt, i_hej, i_nomut, i_mytxt, i_buf2);
+        (txt, i_mytxt, i_buf2) = lm_69(txt, i_hej, i_nomut, i_mytxt, i_buf2);
         txt = Tpl.popIter(txt);
       then (txt, i_mytxt);
 
@@ -1743,7 +1828,7 @@ algorithm
       equation
         i_buf2 = Tpl.writeTok(emptyTxt, Tpl.ST_STRING("hop"));
         ret_1 = Tpl.textStrTok(i_nomut);
-        (txt, i_mytxt, i_buf2) = smf_67(txt, i_h, i_nomut, i_mytxt, i_buf2);
+        (txt, i_mytxt, i_buf2) = smf_70(txt, i_h, i_nomut, i_mytxt, i_buf2);
       then (txt, i_mytxt);
 
     case ( txt,
@@ -1752,7 +1837,7 @@ algorithm
            _ )
       then (txt, i_mytxt);
   end matchcontinue;
-end fun_68;
+end fun_71;
 
 public function txtTest6
   input Tpl.Text txt;
@@ -1767,7 +1852,7 @@ protected
 algorithm
   i_mytxt := Tpl.writeTok(emptyTxt, Tpl.ST_STRING("bolo"));
   i_nomut := Tpl.writeTok(emptyTxt, Tpl.ST_STRING(","));
-  (out_txt, i_mytxt) := fun_68(txt, i_hej, i_mytxt, i_nomut);
+  (out_txt, i_mytxt) := fun_71(txt, i_hej, i_mytxt, i_nomut);
   out_i_buf := i_buf;
 end txtTest6;
 

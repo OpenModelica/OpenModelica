@@ -38,12 +38,13 @@ test(list<String> items, Integer ind) ::= (items ind; align=testfn(ind); alignSe
 
 test2(list<String> items, String sep, Integer a) ::= (items sep; align=a)
 
-test3(list<String> items, String item, Integer ii) ::= <<
-<[items, item, ii] of st: 'bla<st>' \n>
-<[items, item, ii, ([items, item, ii]\n), "blaaa" ] ", ">
-<[items, item, ii] ", "]>!!!!!error should be
-<[items, item, ii, ([items, item, ii]\n), "blaaa" ] : case it then it ", ">
-<match 'aha<ii>' case it then it>
+test3(list<String> items, String item, Integer ii) ::= 
+  <<
+  <[items, item, ii] of st: 'bla<st>' \n>
+  <[items, item, ii, ([items, item, ii]\n), "blaaa" ] ", ">
+  <[items, item, ii] ", "/*]*/>!!!!!error should be
+  <[items, item, ii, ([items, item, ii]\n), "blaaa" ] : case it then it ", ">
+  <match 'aha<ii>' case it then it>
 >>
 
 testCond(Option<tuple<String,Integer>> nvOpt) ::= 
@@ -185,7 +186,7 @@ contCase2(PathIdent) ::=
     sdf
     >>
  */
-  
+
   
 
 end test;

@@ -391,7 +391,7 @@ end pok4;
 public function pok5
   input Tpl.Text txt;
   input String i_a;
-  input Integer i_it#Error-displaced it#;
+  input Integer i_itt;
 
   output Tpl.Text out_txt;
 algorithm

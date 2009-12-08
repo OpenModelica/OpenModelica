@@ -62,17 +62,17 @@ uniontype TypeSignature
   end UNRESOLVED_TYPE;
 end TypeSignature;
 
-uniontype ParseInfo 
-  record PARSE_INFO
+uniontype SourceInfo 
+  record SOURCE_INFO
     String fileName;
     //Boolean isReadOnly "isReadOnly : (true|false). Should be true for libraries" ;
-    Integer lineNumberStart "lineNumberStart" ;
-    Integer columnNumberStart "columnNumberStart" ;
-    Integer lineNumberEnd "lineNumberEnd" ;
-    Integer columnNumberEnd "columnNumberEnd" ;
+    Integer lineNumberStart;
+    Integer columnNumberStart;
+    Integer lineNumberEnd;
+    Integer columnNumberEnd ;
     //TimeStamp buildTimes "Build and edit times";   
-  end PARSE_INFO;
-end ParseInfo;
+  end SOURCE_INFO;
+end SourceInfo;
 
 public
 uniontype Expression
@@ -152,6 +152,10 @@ uniontype Expression
     PathIdent name;
     list<Expression> args;
   end NORET_CALL;
+  
+  
+  record ERROR_EXP "Parse error expression used when parser error occured."    
+  end ERROR_EXP;
   
 end Expression;
 

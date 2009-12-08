@@ -335,7 +335,7 @@ pathIdentPath(head):
 	'.' pathIdent:path  =>  PATH_IDENT(head, path)
 	|
 	'.' error "expecting identifier after dot." 
-	=> PATH_IDENT(head, '?')
+	  => PATH_IDENT(head, TplAbsyn.IDENT("#error#"))
 	|
 	_ =>  IDENT(head)
 	
@@ -488,7 +488,7 @@ outputFunArgs:
 	|
 	_ => {} 
 
-//TODO: is optional	
+//TODO: is optional	... it is not when templDef_ConstOrTempl:td  
 templDef:
     identifier:name  templDef_ConstOrTempl:td   =>  (name, td)
 
@@ -500,6 +500,10 @@ templDef_ConstOrTempl:
 	|
 	'=' literalConstant:(str,litType)  
 	  =>  LITERAL_DEF(str, litType) 
+	
+	|
+	'(' templArgs:args contError("expecting ')'") =>  TEMPLATE_DEF(args,lesc,resc,noExp)
+	
 	 
 
 templDef_AngleOrDolar:
@@ -570,9 +574,10 @@ expression_base(lesc,resc):
 	|
 	'(' expressionWithOpts(lesc,resc):exp ')'
 	   => exp
-	|// TODO: create an optional variant of pathIdent
+	|// TODO: create an optional/error reporting variant of pathIdent
 	pathIdent:name  boundValueOrFunCall(name,lesc,resc):exp  =>  exp
-
+	|
+	parseError("Not able to parse an expression from this point.")
 	
 expression_tail(bexp,lesc,resc):
 	'of' matchBinding:mexp ':' expression(lesc,resc):exp  =>  MAP(bexp,mexp,exp)
@@ -810,22 +815,18 @@ nonTemplateExprWithOpts(lesc,resc):
 	=> makeEscapedExp(exp, opts)
 
 nonTemplateExp(lesc,resc):
-	pathIdent:name   textExpOrFunCall(name,lesc,resc):exp
-	  => exp	
-	|
 	'(' nonTemplateExprWithOpts(lesc,resc):eexp ')'
 	  => eexp
-
-textExpOrFunCall(name,lesc,resc):
-	 '=' expression(lesc,resc):exp
-	     => TEXT_CREATE(ensurePathIdentBeIdent(name),exp)
+	|
+	identifier:id '=' expression(lesc,resc):exp
+	     => TEXT_CREATE(id,exp)
 	 |
-	'+=' expression(lesc,resc):exp
-	     => TEXT_ADD(ensurePathIdentBeIdent(name),exp)
+	identifier:id '+=' expression(lesc,resc):exp
+	     => TEXT_ADD(id,exp)
 	 |
-	 funCall(name,lesc,resc):exp  	   
-	   =>  exp
-
+	pathIdent:name  funCall(name,lesc,resc):exp  	   
+	     =>  exp
+	     
 
 conditionExp(lesc,resc):
 	'if' condArgExp(lesc,resc):(isNot, lhsExp, rhsMExpOpt)
@@ -856,14 +857,12 @@ condArgRHS:
 
 	
 matchExp(lesc,resc):
-	matchClause(lesc,resc):exp
-	    matchCase(lesc,resc):mcaseLst  matchCase_rest(lesc,resc):mcrest
-	    => MATCH(exp, listAppend(mcaseLst, mcrest))
-
-matchClause(lesc,resc):
-	'match' expression:exp => exp
+	'match' expression:exp 
+	  matchCaseList(lesc,resc):mcaseLst  { (_::_) = mcaseLst }
+	 => MATCH(exp, mcaseLst)
 	|
-	_ => BOUND_VALUE(IDENT("it"))
+	matchCaseList(lesc,resc):mcaseLst { (_::_) = mcaseLst }
+	=> MATCH(BOUND_VALUE(IDENT("it")), mcaseLst) 
 
 matchCase(lesc,resc):
 	'case'  matchBinding:mexp	matchCaseHeads(): mexpHeadLst  
@@ -876,8 +875,8 @@ matchCaseHeads():
 	|
 	_ => {}
 
-matchCase_rest(lesc,resc):
-	matchCase(lesc,resc):mcaseLst  matchCase_rest(lesc,resc):mcrest
+matchCaseList(lesc,resc):
+	matchCase(lesc,resc):mcaseLst  matchCaseList(lesc,resc):mcrest
 	  => listAppend(mcaseLst, mcrest)
 	|
 	_ => {}
