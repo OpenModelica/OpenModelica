@@ -476,36 +476,40 @@ void deInitializeDataStruc(DATA* data, DATA_FLAGS flags)
 }
 >>
 
-functionDaeOutput(list<Equation> cont) ::=
-# varDecls1 = ""
-# body1 = (cont of eq: '<equation_(eq, varDecls1)>' "\n")
+functionDaeOutput(list<Equation> nonStateContEquations) ::=
+# varDecls = ""
+# body = (nonStateContEquations of eq: '<equation_(eq, varDecls)>' "\n")
 <<
 /* for continuous time variables */
 int functionDAE_output()
 {
   state mem_state;
-  <varDecls1>
+  <varDecls>
 
   mem_state = get_memory_state();
-  <body1>
+
+  <body>
+
   restore_memory_state(mem_state);
 
   return 0;
 }
 >>
 
-functionDaeOutput2(list<Equation> disc) ::=
-# varDecls2 = ""
-# body2 = (disc of eq: '<equation_(eq, varDecls2)>' "\n")
+functionDaeOutput2(list<Equation> nonStateDiscEquations) ::=
+# varDecls = ""
+# body = (nonStateDiscEquations of eq: '<equation_(eq, varDecls)>' "\n")
 <<
 /* for discrete time variables */
 int functionDAE_output2()
 {
   state mem_state;
-  <varDecls2>
+  <varDecls>
 
   mem_state = get_memory_state();
-  <body2>
+
+  <body>
+
   restore_memory_state(mem_state);
 
   return 0;
@@ -608,6 +612,8 @@ int function_zeroCrossing(long *neqm, double *t, double *x, long *ng,
 }
 >>
 
+// This function should only save in cases. The rest is done in
+// function_updateDependents.
 functionHandleZeroCrossing(list<list<ComponentRef>> zeroCrossingsNeedSave) ::=
 <<
 int handleZeroCrossing(long index)
@@ -674,9 +680,9 @@ functionOnlyZeroCrossing(list<ZeroCrossing> zeroCrossings) ::=
 int function_onlyZeroCrossings(double *gout,double *t)
 {
   state mem_state;
+  <varDecls>
 
   mem_state = get_memory_state();
-  <varDecls>
 
   <zeroCrossingCode>
 
@@ -719,9 +725,9 @@ int function_when(int i)
 }
 >>
 
-functionOde(list<Equation> equations) ::=
+functionOde(list<Equation> stateEquations) ::=
 # varDecls = ""
-# body = (equations of eq: '<equation_(eq, varDecls)>' "\n")
+# body = (stateEquations of eq: '<equation_(eq, varDecls)>' "\n")
 <<
 int functionODE()
 {
@@ -729,39 +735,36 @@ int functionODE()
   <varDecls>
 
   mem_state = get_memory_state();
+
   <body>
+
   restore_memory_state(mem_state);
 
   return 0;
 }
 >>
 
-functionInitial(list<Equation> equations) ::=
+functionInitial(list<Equation> initialEquations) ::=
 # varDecls = ""
-# body = (equations of eq as DAELow.SOLVED_EQUATION: '<equation_(eq, varDecls)>' "\n")
+# body = (initialEquations of eq as DAELow.SOLVED_EQUATION: '<equation_(eq, varDecls)>' "\n")
 <<
 int initial_function()
 {
-  state mem_state;
   <varDecls>
-
-  mem_state = get_memory_state();
 
   <body>
 
-  <equations of eq as DAELow.SOLVED_EQUATION:
+  <initialEquations of eq as DAELow.SOLVED_EQUATION:
     'if (sim_verbose) { printf("Setting variable start value: %s(start=%f)\n", "<cref(componentRef)>", <cref(componentRef)>); }' "\n">
-
-  restore_memory_state(mem_state);
 
   return 0;
 }
 >>
 
-functionInitialResidual(list<Equation> eqs) ::=
+functionInitialResidual(list<Equation> residualEquations) ::=
 # varDecls = ""
 # body = (
-  eqs of eq as DAELow.RESIDUAL_EQUATION:
+  residualEquations of eq as DAELow.RESIDUAL_EQUATION:
     if exp is DAE.SCONST then
       'localData-\>initialResiduals[i++] = 0;'
     else
@@ -778,16 +781,18 @@ int initial_residual()
   <varDecls>
 
   mem_state = get_memory_state();
+
   <body>
+
   restore_memory_state(mem_state);
 
   return 0;
 }
 >>
 
-functionBoundParameters(list<Equation> equations) ::=
+functionBoundParameters(list<Equation> parameterEquations) ::=
 # varDecls = ""
-# body = (equations of eq as DAELow.SOLVED_EQUATION: '<equation_(eq, varDecls)>' "\n")
+# body = (parameterEquations of eq as DAELow.SOLVED_EQUATION: '<equation_(eq, varDecls)>' "\n")
 <<
 int bound_parameters()
 {
@@ -795,7 +800,9 @@ int bound_parameters()
   <varDecls>
 
   mem_state = get_memory_state();
+
   <body>
+
   restore_memory_state(mem_state);
 
   return 0;
@@ -857,6 +864,7 @@ reinit(ReinitStatement, Text preExp, Text varDecls) ::=
     <cref(stateVar)> = <val>;
     >>
 
+// TODO: Better name?
 zeroCrossingsTpl(list<ZeroCrossing> zeroCrossings, Text varDecls) ::=
   <<
   <zeroCrossings of zeroCrossing as ZERO_CROSSING:
@@ -915,6 +923,7 @@ else
 char* <name>[1] = {""};
 >>
 
+// Residual equations are not handled here
 equation_(Equation eq, Text varDecls) ::=
 case SOLVED_EQUATION then
 # preExp = ""
