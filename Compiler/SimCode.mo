@@ -273,6 +273,7 @@ uniontype SimCode
     list<DAELow.Equation> residualEquations;
     list<DAELow.Equation> initialEquations;
     list<DAELow.Equation> parameterEquations;
+    list<DAELow.Equation> removedEquations;
     list<DAELow.ZeroCrossing> zeroCrossings;
     list<list<DAE.ComponentRef>> zeroCrossingsNeedSave;
     list<HelpVarInfo> helpVarInfo;
@@ -444,6 +445,10 @@ algorithm
         
         libs = generateFunctionsC(p_1, dae, indexed_dlow_1, className, filenameprefix);
         generateSimulationCodeC(dae, indexed_dlow_1, ass1, ass2, m, mT, comps, className, filename, funcfilename,file_dir);
+
+        // keep this for testing purposes (remove later when we can generate
+        // the makefile using susan)
+        SimCodegen.generateMakefile(makefilename, filenameprefix, libs, file_dir);
         
       then
         (cache,Values.STRING("SimCode: The model has been translated"),st,indexed_dlow_1,libs,file_dir);
@@ -1164,13 +1169,13 @@ algorithm
       list<DAELow.Equation> residualEquations;
       list<DAELow.Equation> initialEquations;
       list<DAELow.Equation> parameterEquations;
+      list<DAELow.Equation> removedEquations;
       list<DAELow.ZeroCrossing> zeroCrossings;
       list<list<DAE.ComponentRef>> zeroCrossingsNeedSave;
       list<SimWhenClause> whenClauses;
       list<DAE.ComponentRef> discreteModelVars;
     case (dae,dlow,ass1,ass2,m,mt,comps,class_,filename,funcfilename,fileDir)
       equation
-        print("in mine:"); print(filename); print("\n");
         cname = Absyn.pathString(class_);
 
         (blt_states, blt_no_states) = DAELow.generateStatePartition(comps, dlow, ass1, ass2, m, mt);
@@ -1205,19 +1210,18 @@ algorithm
                                                 discBlocks);
         initialEquations = createInitialEquations(dlow2);
         parameterEquations = createParameterEquations(dlow2);
+        removedEquations = createRemovedEquations(dlow2);
         zeroCrossings = createZeroCrossings(dlow2);
         zeroCrossingsNeedSave = createZeroCrossingsNeedSave(zeroCrossings, dae, dlow2, ass1, ass2, comps);
         whenClauses = createSimWhenClauses(dlow2);
         discreteModelVars = extractDiscreteModelVars(dlow2, mt);
-        print("creating SIMCODE"); print("\n");
         simCode = SIMCODE(modelInfo, {}, stateEquations,
                           nonStateContEquations, nonStateDiscEquations,
                           residualEquations, initialEquations,
-                          parameterEquations, zeroCrossings,
+                          parameterEquations, removedEquations, zeroCrossings,
                           zeroCrossingsNeedSave, helpVarInfo, whenClauses,
                           discreteModelVars);
         // Generate with template
-        print("writing template to disk"); print("\n");
         _ = Tpl.tplString(SimCodeC.translateModel, simCode);
       then
         ();
@@ -1228,6 +1232,21 @@ algorithm
         fail();
   end matchcontinue;
 end generateSimulationCodeC;
+
+public function createRemovedEquations
+  input DAELow.DAELow dlow;
+  output list<DAELow.Equation> removedEquations;
+algorithm
+  removedEquations :=
+  matchcontinue (dlow)
+    local
+      DAELow.EquationArray r;
+    case (DAELow.DAELOW(removedEqs=r))
+      equation
+        removedEquations = DAELow.equationList(r);
+      then removedEquations;
+  end matchcontinue;
+end createRemovedEquations;
 
 public function extractDiscreteModelVars
   input DAELow.DAELow dlow;
@@ -1386,9 +1405,8 @@ algorithm
       equation
         equation_ = createEquation(dae, dlow, ass1, ass2, comp);
         equations = createEquations(dae, dlow, ass1, ass2, restComps);
-        equations_2 = Util.listAppendElt(equation_, equations);
       then
-        equations_2;
+        equation_ :: equations;
     case (_,_,_,_,_)
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"createEquations failed"});
@@ -1866,13 +1884,62 @@ algorithm
         extvar_lst = DAELow.varList(extvars);
         varsTmp = extractVarsFromList(extvar_lst);
         varsOut = mergeVars(varsOut, varsTmp);
-        /* Reverse all lists. They seem to be sorted by their index in reverse
-           order. TODO: Is it always like that? */
-        varsOut = reverseVars(varsOut);
+        /* sort variables on index */
+        varsOut = sortSimvarsOnIndex(varsOut);
       then
         varsOut;
   end matchcontinue;
 end createVars;
+
+public function sortSimvarsOnIndex
+  input SimVars unsortedSimvars;
+  output SimVars sortedSimvars;
+algorithm
+  sortedSimvars :=
+  matchcontinue (unsortedSimvars)
+    local
+      list<SimVar> stateVars;
+      list<SimVar> derivativeVars;
+      list<SimVar> algVars;
+      list<SimVar> inputVars;
+      list<SimVar> outputVars;
+      list<SimVar> paramVars;
+      list<SimVar> stringAlgVars;
+      list<SimVar> stringParamVars;
+      list<SimVar> extObjVars;
+    case (SIMVARS(stateVars, derivativeVars, algVars, inputVars,
+                  outputVars, paramVars, stringAlgVars, stringParamVars,
+                  extObjVars))
+      equation
+        stateVars = Util.sort(stateVars, varIndexComparer);
+        derivativeVars = Util.sort(derivativeVars, varIndexComparer);
+        algVars = Util.sort(algVars, varIndexComparer);
+        inputVars = Util.sort(inputVars, varIndexComparer);
+        outputVars = Util.sort(outputVars, varIndexComparer);
+        paramVars = Util.sort(paramVars, varIndexComparer);
+        stringAlgVars = Util.sort(stringAlgVars, varIndexComparer);
+        stringParamVars = Util.sort(stringParamVars, varIndexComparer);
+        extObjVars = Util.sort(extObjVars, varIndexComparer);
+      then SIMVARS(stateVars, derivativeVars, algVars, inputVars,
+                   outputVars, paramVars, stringAlgVars, stringParamVars,
+                   extObjVars);
+  end matchcontinue;
+end sortSimvarsOnIndex;
+
+public function varIndexComparer
+  input SimVar lhs;
+  input SimVar rhs;
+  output Boolean res;
+algorithm
+  res :=
+  matchcontinue (lhs, rhs)
+    local
+      Integer lhsIndex;
+      Integer rhsIndex;
+    case (SIMVAR(index=lhsIndex), SIMVAR(index=rhsIndex))
+      then rhsIndex < lhsIndex;
+  end matchcontinue;
+end varIndexComparer;
 
 protected function extractVarsFromList
   input list<DAELow.Var> varList;

@@ -63,9 +63,9 @@ case SIMCODE(modelInfo = MODELINFO) then
 
 <functionDeInitializeDataStruc()>
 
-<functionDaeOutput(nonStateContEquations)>
+<functionDaeOutput(nonStateContEquations, removedEquations)>
 
-<functionDaeOutput2(nonStateDiscEquations)>
+<functionDaeOutput2(nonStateDiscEquations, removedEquations)>
 
 <functionInput(modelInfo)>
 
@@ -178,7 +178,7 @@ char* getName(double* ptr)
   <vars.derivativeVars of var as SIMVAR:
     'if (&<cref(name)> == ptr) return derivative_names[<var.index>];' "\n">
   <vars.algVars of var as SIMVAR:
-    'if (&<cref(name)> == ptr) return algebraic_names[<var.index>];' "\n">
+    'if (&<cref(name)> == ptr) return algvars_names[<var.index>];' "\n">
   <vars.paramVars of var as SIMVAR:
     'if (&<cref(name)> == ptr) return param_names[<var.index>];' "\n">
   return "";
@@ -476,9 +476,11 @@ void deInitializeDataStruc(DATA* data, DATA_FLAGS flags)
 }
 >>
 
-functionDaeOutput(list<Equation> nonStateContEquations) ::=
+functionDaeOutput(list<Equation> nonStateContEquations,
+                  list<Equation> removedEquations) ::=
 # varDecls = ""
 # body = (nonStateContEquations of eq: '<equation_(eq, varDecls)>' "\n")
+# body2 = (removedEquations of eq: '<equation_(eq, varDecls)>' "\n")
 <<
 /* for continuous time variables */
 int functionDAE_output()
@@ -489,6 +491,7 @@ int functionDAE_output()
   mem_state = get_memory_state();
 
   <body>
+  <body2>
 
   restore_memory_state(mem_state);
 
@@ -496,9 +499,11 @@ int functionDAE_output()
 }
 >>
 
-functionDaeOutput2(list<Equation> nonStateDiscEquations) ::=
+functionDaeOutput2(list<Equation> nonStateDiscEquations,
+                   list<Equation> removedEquations) ::=
 # varDecls = ""
 # body = (nonStateDiscEquations of eq: '<equation_(eq, varDecls)>' "\n")
+# body2 = (removedEquations of eq: '<equation_(eq, varDecls)>' "\n")
 <<
 /* for discrete time variables */
 int functionDAE_output2()
@@ -509,6 +514,7 @@ int functionDAE_output2()
   mem_state = get_memory_state();
 
   <body>
+  <body2>
 
   restore_memory_state(mem_state);
 
@@ -713,7 +719,7 @@ int function_when(int i)
 
   mem_state = get_memory_state();
 
-  switch(index) {
+  switch(i) {
     <cases>
     default:
       break;
@@ -964,8 +970,20 @@ discreteAttrInt(Boolean isDiscrete) ::=
   case false then "0"
 
 cref(ComponentRef) ::=
-  case CREF_IDENT then ident
+  case CREF_IDENT then '<ident><subscriptsTpl(subscriptLst)>'
   case _ then "CREF_NOT_IDENT"
+
+subscriptsTpl(list<Subscript> subscripts) ::=
+if subscripts then '[<subscripts of s: subscriptTpl(s) ",">]'
+else ""
+
+subscriptTpl(Subscript subscript) ::=
+case INDEX then (
+  match exp
+  case ICONST then integer
+  case _ then "SUBSCRIPT_NOT_CONSTANT"
+)
+case _ then "SUBSCRIPT_NOT_CONSTANT"
 
 expType(DAE.ExpType) ::=
   case ET_INT    then "modelica_integer"
@@ -1015,7 +1033,8 @@ underscorePath(Path) ::=
 
 
 recordDeclaration(RecordDeclaration) ::=
-  case RECORD_DECL_FULL then <<
+  case RECORD_DECL_FULL then
+<<
 struct <name> {
   <variables of var as VARIABLE :
       if expType(ty) then '<it> <var.name>;'
@@ -1074,8 +1093,8 @@ extern "C" {
 /* header part */
 <functions of FUNCTION : 
   <<
-<recordDecls : recordDeclaration() \n>
-<functionHeader(underscorePath(name), functionArguments, outVars)>
+  <recordDecls : recordDeclaration() \n>
+  <functionHeader(underscorePath(name), functionArguments, outVars)>
   >> 
 \n> 
 /* End of header part */
@@ -1103,19 +1122,19 @@ functionDef(Function) ::=
     # varDecls += variableDeclarations of VARIABLE : '<expType(ty)> <name>;<\n>'
     # bodyPart = (body of stmt : funStatement(stmt, varDecls) \n)
     <<
-<retType> _<fname>(<functionArguments of VARIABLE : '<expType(ty)> <name>' ", ">)
-{
-  <varDecls>
-  <stateVar> = get_memory_state();
-  <bodyPart>
-  
-  _return:
-  <outVars of VARIABLE :  
-    '<retVar>.targ<i1> = <name>;'  
-  \n>  
-  restore_memory_state(<stateVar>);
-  return <retVar>;
-}
+    <retType> _<fname>(<functionArguments of VARIABLE : '<expType(ty)> <name>' ", ">)
+    {
+      <varDecls>
+      <stateVar> = get_memory_state();
+      <bodyPart>
+      
+      _return:
+      <outVars of VARIABLE :  
+        '<retVar>.targ<i1> = <name>;'  
+      \n>  
+      restore_memory_state(<stateVar>);
+      return <retVar>;
+    }
     >>
     
 
@@ -1138,25 +1157,25 @@ algStatement(DAE.Statement, Text varDecls) ::=
     # preExp = "" 
     # expPart = daeExp(e, preExp, varDecls)
     <<
-<preExp>
-<expPart>
+    <preExp>
+    <expPart>
     >>
   case STMT_ASSIGN(exp1 = CREF) then     
     # preExp = ""
     # expPart = daeExp(exp, preExp, varDecls)
     <<
-<preExp>
-<scalarLhsCref(exp1.componentRef)> = <expPart>;
+    <preExp>
+    <scalarLhsCref(exp1.componentRef)> = <expPart>;
     >>
   case STMT_IF then
     # preExp = ""
     # condExp = daeExp(exp, preExp, varDecls)
     <<
-<preExp>
-if(<condExp>) {
-  <statementLst : algStatement(it, varDecls) \n>
-}
-<elseExpr(else_, varDecls)>
+    <preExp>
+    if(<condExp>) {
+      <statementLst : algStatement(it, varDecls) \n>
+    }
+    <elseExpr(else_, varDecls)>
     >>
   case STMT_FOR(exp = rng as RANGE) then
     # stateVar = tempDecl("state", varDecls)
@@ -1172,17 +1191,17 @@ if(<condExp>) {
             else "(1)"
     # er3 = daeExp(rng.range, preExp, varDecls) 
     <<
-<preExp>
-<r1> = <er1>; <r2> = <er2>; <r3> = <er3>;
-{
-<identType> <ident>;
+    <preExp>
+    <r1> = <er1>; <r2> = <er2>; <r3> = <er3>;
+    {
+    <identType> <ident>;
 
-  for (<ident> = <r1>; in_range_<expShortType(type_)>(<ident>, <r1>, <r3>); <ident> += <r2>) {
-    <stateVar> = get_memory_state();
-    <statementLst : algStatement(it, varDecls) \n /* ??CONTEXT(codeContext,expContext,IN_FOR_LOOP(loopContext)*/ >
-    restore_memory_state(<stateVar>);
-  }
-} /*end for*/
+      for (<ident> = <r1>; in_range_<expShortType(type_)>(<ident>, <r1>, <r3>); <ident> += <r2>) {
+        <stateVar> = get_memory_state();
+        <statementLst : algStatement(it, varDecls) \n /* ??CONTEXT(codeContext,expContext,IN_FOR_LOOP(loopContext)*/ >
+        restore_memory_state(<stateVar>);
+      }
+    } /*end for*/
     >>
 
     
@@ -1192,19 +1211,19 @@ elseExpr(DAE.Else, Text varDecls) ::=
     # preExp = ""
     # condExp = daeExp(exp, preExp, varDecls)
     <<
-else {
-<preExp>
-if(<condExp>)) {
-  <statementLst : algStatement(it, varDecls) \n>
-}
-<elseExpr(else_, varDecls)>
-}
+    else {
+    <preExp>
+    if(<condExp>)) {
+      <statementLst : algStatement(it, varDecls) \n>
+    }
+    <elseExpr(else_, varDecls)>
+    }
     >>
   case ELSE then
     <<
-else {
-  <statementLst : algStatement(it, varDecls) \n>
-}
+    else {
+      <statementLst : algStatement(it, varDecls) \n>
+    }
     >>
 
 scalarLhsCref(ComponentRef) ::=

@@ -49,6 +49,7 @@ package SimCode
       list<DAELow.Equation> residualEquations;
       list<DAELow.Equation> initialEquations;
       list<DAELow.Equation> parameterEquations;
+      list<DAELow.Equation> removedEquations;
       list<DAELow.ZeroCrossing> zeroCrossings;
       list<list<DAE.ComponentRef>> zeroCrossingsNeedSave;
       list<HelpVarInfo> helpVarInfo;
@@ -607,6 +608,16 @@ package DAE
       Option<Integer> integerOption;
     end DIM;
   end ArrayDim;
+
+  uniontype Subscript
+    record WHOLEDIM end WHOLEDIM;
+    record SLICE
+      Exp exp;
+    end SLICE;
+    record INDEX
+      Exp exp;
+    end INDEX;
+  end Subscript;
 
 end DAE;
 
