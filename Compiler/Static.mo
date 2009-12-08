@@ -384,6 +384,7 @@ algorithm
         (cache,e1_1,DAE.PROP(t1,c1),st_1) = elabExp(cache,env, e1, impl, st,doVect);
         (cache,e2_1,DAE.PROP(t2,c2),st_2) = elabExp(cache,env, e2, impl, st_1,doVect);
         c = Types.constAnd(c1, c2);
+        
         (cache,ops) = operators(cache,op, env, t1, t2);
         (op_1,{e1_2,e2_2},rtype) = deoverload(ops, {(e1_1,t1),(e2_1,t2)}, exp);
         exp_1 = replaceOperatorWithFcall(DAE.BINARY(e1_2,op_1,e2_2), c);
@@ -11476,8 +11477,8 @@ algorithm
       list<Ident> exps_str,tps_str;
     case (((op,params,rtype) :: _),args,_)
       equation 
-        Debug.fprint("dovl", Util.stringDelimitList(Util.listMap(params, Types.printTypeStr),"\n"));
-        Debug.fprint("dovl", "\n===\n");
+        //Debug.fprint("dovl", Util.stringDelimitList(Util.listMap(params, Types.printTypeStr),"\n"));
+        //Debug.fprint("dovl", "\n===\n");
         (args_1,types_1) = elabArglist(params, args);
         rtype_1 = computeReturnType(op, types_1, rtype);
       then
@@ -11832,6 +11833,55 @@ algorithm
   end matchcontinue;
 end elementType;
 
+/* We have these as constants instead of function calls as done previously
+ * because it takes a long time to generate these types over and over again.
+ * The types are a bit hard to read, but they are simply 1 through 9-dimensional
+ * arrays of the basic types. */
+protected constant list<DAE.Type> intarrtypes = {
+  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_INTEGER({}),NONE)),NONE), // 1-dim
+  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_INTEGER({}),NONE)),NONE)),NONE), // 2-dim
+  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_INTEGER({}),NONE)),NONE)),NONE)),NONE), // 3-dim
+  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_INTEGER({}),NONE)),NONE)),NONE)),NONE)),NONE), // 4-dim
+  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_INTEGER({}),NONE)),NONE)),NONE)),NONE)),NONE)),NONE), // 5-dim
+  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_INTEGER({}),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE), // 6-dim
+  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_INTEGER({}),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE), // 7-dim
+  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_INTEGER({}),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE), // 8-dim
+  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_INTEGER({}),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE) // 9-dim
+};
+protected constant list<DAE.Type> realarrtypes = {
+  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_REAL({}),NONE)),NONE), // 1-dim
+  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_REAL({}),NONE)),NONE)),NONE), // 2-dim
+  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_REAL({}),NONE)),NONE)),NONE)),NONE), // 3-dim
+  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_REAL({}),NONE)),NONE)),NONE)),NONE)),NONE), // 4-dim
+  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_REAL({}),NONE)),NONE)),NONE)),NONE)),NONE)),NONE), // 5-dim
+  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_REAL({}),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE), // 6-dim
+  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_REAL({}),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE), // 7-dim
+  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_REAL({}),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE), // 8-dim
+  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_REAL({}),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE) // 9-dim
+};
+protected constant list<DAE.Type> stringarrtypes = {
+  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_STRING({}),NONE)),NONE), // 1-dim
+  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_STRING({}),NONE)),NONE)),NONE), // 2-dim
+  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_STRING({}),NONE)),NONE)),NONE)),NONE), // 3-dim
+  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_STRING({}),NONE)),NONE)),NONE)),NONE)),NONE), // 4-dim
+  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_STRING({}),NONE)),NONE)),NONE)),NONE)),NONE)),NONE), // 5-dim
+  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_STRING({}),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE), // 6-dim
+  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_STRING({}),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE), // 7-dim
+  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_STRING({}),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE), // 8-dim
+  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_STRING({}),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE) // 9-dim
+};
+/* Simply a list of 9 of that basic type; used to match with the array types */
+protected constant list<DAE.Type> inttypes = {
+  (DAE.T_INTEGER({}),NONE),(DAE.T_INTEGER({}),NONE),(DAE.T_INTEGER({}),NONE),(DAE.T_INTEGER({}),NONE),(DAE.T_INTEGER({}),NONE),(DAE.T_INTEGER({}),NONE),(DAE.T_INTEGER({}),NONE),(DAE.T_INTEGER({}),NONE),(DAE.T_INTEGER({}),NONE)
+};
+protected constant list<DAE.Type> realtypes = {
+  (DAE.T_REAL({}),NONE),(DAE.T_REAL({}),NONE),(DAE.T_REAL({}),NONE),(DAE.T_REAL({}),NONE),(DAE.T_REAL({}),NONE),(DAE.T_REAL({}),NONE),(DAE.T_REAL({}),NONE),(DAE.T_REAL({}),NONE),(DAE.T_REAL({}),NONE)
+};
+protected constant list<DAE.Type> stringtypes = {
+  (DAE.T_BOOL({}),NONE),(DAE.T_BOOL({}),NONE),(DAE.T_BOOL({}),NONE),(DAE.T_BOOL({}),NONE),(DAE.T_BOOL({}),NONE),(DAE.T_BOOL({}),NONE),(DAE.T_BOOL({}),NONE),(DAE.T_BOOL({}),NONE),(DAE.T_BOOL({}),NONE)
+};
+
+
 public function operators "function: operators
  
   This function relates the operators in the abstract syntax to the
@@ -11852,7 +11902,6 @@ algorithm
   (outCache,outTplExpOperatorTypesTypeLstTypesTypeLst) :=
   matchcontinue (inCache,inOperator1,inEnv2,inType3,inType4)
     local
-      list<tuple<DAE.TType, Option<Absyn.Path>>> intarrtypes,realarrtypes,stringarrtypes,inttypes,realtypes,stringtypes;
       list<tuple<DAE.Operator, list<tuple<DAE.TType, Option<Absyn.Path>>>, tuple<DAE.TType, Option<Absyn.Path>>>> intarrs,realarrs,stringarrs,scalars,userops,arrays,types,scalarprod,matrixprod,intscalararrs,realscalararrs,intarrsscalar,realarrsscalar,realarrscalar,arrscalar,stringscalararrs,stringarrsscalar;
       list<Env.Frame> env;
       tuple<DAE.TType, Option<Absyn.Path>> t1,t2,int_scalar,int_vector,int_matrix,real_scalar,real_vector,real_matrix;
@@ -11863,9 +11912,6 @@ algorithm
       DAE.ExpType defaultExpType;
     case (cache,Absyn.ADD(),env,t1,t2) /* Arithmetical operators */ 
       equation 
-        intarrtypes = arrayTypeList(9, (DAE.T_INTEGER({}),NONE)) "The ADD operator" ;
-        realarrtypes = arrayTypeList(9, (DAE.T_REAL({}),NONE));
-        stringarrtypes = arrayTypeList(9, (DAE.T_STRING({}),NONE));
         intarrs = operatorReturn(DAE.ADD_ARR(DAE.ET_INT()), intarrtypes, intarrtypes, 
           intarrtypes);
         realarrs = operatorReturn(DAE.ADD_ARR(DAE.ET_REAL()), realarrtypes, realarrtypes, 
@@ -11886,12 +11932,6 @@ algorithm
         (cache,types);
     case (cache,Absyn.ADD_EW(),env,t1,t2) /* Arithmetical operators */ 
       equation 
-        intarrtypes = arrayTypeList(9, (DAE.T_INTEGER({}),NONE)) "The ADD operator" ;
-        realarrtypes = arrayTypeList(9, (DAE.T_REAL({}),NONE));
-        stringarrtypes = arrayTypeList(9, (DAE.T_STRING({}),NONE));
-        inttypes = nTypes(9, (DAE.T_INTEGER({}),NONE));
-        realtypes = nTypes(9, (DAE.T_REAL({}),NONE));
-        stringtypes = nTypes(9, (DAE.T_STRING({}),NONE));
         intarrs = operatorReturn(DAE.ADD_ARR(DAE.ET_INT()), intarrtypes, intarrtypes, 
           intarrtypes);
         realarrs = operatorReturn(DAE.ADD_ARR(DAE.ET_REAL()), realarrtypes, realarrtypes, 
@@ -11924,8 +11964,6 @@ algorithm
         
     case (cache,Absyn.SUB(),env,t1,t2)
       equation 
-        intarrtypes = arrayTypeList(9, (DAE.T_INTEGER({}),NONE)) "the SUB operator" ;
-        realarrtypes = arrayTypeList(9, (DAE.T_REAL({}),NONE));
         intarrs = operatorReturn(DAE.SUB_ARR(DAE.ET_INT()), intarrtypes, intarrtypes, 
           intarrtypes);
         realarrs = operatorReturn(DAE.SUB_ARR(DAE.ET_REAL()), realarrtypes, realarrtypes, 
@@ -11941,10 +11979,6 @@ algorithm
         (cache,types);
     case (cache,Absyn.SUB_EW(),env,t1,t2) /* Arithmetical operators */ 
       equation 
-        intarrtypes = arrayTypeList(9, (DAE.T_INTEGER({}),NONE)) "The SUB operator" ;
-        realarrtypes = arrayTypeList(9, (DAE.T_REAL({}),NONE));
-        inttypes = nTypes(9, (DAE.T_INTEGER({}),NONE));
-        realtypes = nTypes(9, (DAE.T_REAL({}),NONE));
         intarrs = operatorReturn(DAE.SUB_ARR(DAE.ET_INT()), intarrtypes, intarrtypes, 
           intarrtypes);
         realarrs = operatorReturn(DAE.SUB_ARR(DAE.ET_REAL()), realarrtypes, realarrtypes, 
@@ -11969,10 +12003,6 @@ algorithm
         
     case (cache,Absyn.MUL(),env,t1,t2)
       equation 
-        intarrtypes = arrayTypeList(9, (DAE.T_INTEGER({}),NONE)) "The MUL operator" ;
-        realarrtypes = arrayTypeList(9, (DAE.T_REAL({}),NONE));
-        inttypes = nTypes(9, (DAE.T_INTEGER({}),NONE));
-        realtypes = nTypes(9, (DAE.T_REAL({}),NONE));
         int_mul = DAE.MUL(DAE.ET_INT());
         real_mul = DAE.MUL(DAE.ET_REAL());
         int_mul_sp = DAE.MUL_SCALAR_PRODUCT(DAE.ET_INT());
@@ -12009,10 +12039,6 @@ algorithm
         (cache,types);
     case (cache,Absyn.MUL_EW(),env,t1,t2) /* Arithmetical operators */ 
       equation 
-        intarrtypes = arrayTypeList(9, (DAE.T_INTEGER({}),NONE)) "The MUL operator" ;
-        realarrtypes = arrayTypeList(9, (DAE.T_REAL({}),NONE));
-        inttypes = nTypes(9, (DAE.T_INTEGER({}),NONE));
-        realtypes = nTypes(9, (DAE.T_REAL({}),NONE));
         intarrs = operatorReturn(DAE.MUL_ARR(DAE.ET_INT()), intarrtypes, intarrtypes, 
           intarrtypes);
         realarrs = operatorReturn(DAE.MUL_ARR(DAE.ET_REAL()), realarrtypes, realarrtypes, 
@@ -12037,8 +12063,6 @@ algorithm
         
     case (cache,Absyn.DIV(),env,t1,t2)
       equation 
-        realarrtypes = arrayTypeList(9, (DAE.T_REAL({}),NONE)) "The DIV operator" ;
-        realtypes = nTypes(9, (DAE.T_REAL({}),NONE));
         real_div = DAE.DIV(DAE.ET_REAL());
         real_scalar = (DAE.T_REAL({}),NONE);
         scalars = {(real_div,{real_scalar,real_scalar},real_scalar)};
@@ -12050,8 +12074,6 @@ algorithm
         (cache,types);
     case (cache,Absyn.DIV_EW(),env,t1,t2) /* Arithmetical operators */ 
       equation 
-        realarrtypes = arrayTypeList(9, (DAE.T_REAL({}),NONE));
-        realtypes = nTypes(9, (DAE.T_REAL({}),NONE));
         realarrs = operatorReturn(DAE.DIV_ARR(DAE.ET_REAL()), realarrtypes, realarrtypes, 
           realarrtypes);
         scalars = {
@@ -12086,8 +12108,6 @@ algorithm
         (cache,types);
     case (cache,Absyn.POW_EW(),env,t1,t2)  
       equation 
-        realarrtypes = arrayTypeList(9, (DAE.T_REAL({}),NONE));
-        realtypes = nTypes(9, (DAE.T_REAL({}),NONE));
         realarrs = operatorReturn(DAE.POW_ARR2(DAE.ET_REAL()), realarrtypes, realarrtypes, 
           realarrtypes);
         scalars = {
@@ -12109,8 +12129,6 @@ algorithm
           (DAE.T_INTEGER({}),NONE)),
           (DAE.UMINUS(DAE.ET_REAL()),{(DAE.T_REAL({}),NONE)},
           (DAE.T_REAL({}),NONE))} "The UMINUS operator, unary minus" ;
-        intarrtypes = arrayTypeList(9, (DAE.T_INTEGER({}),NONE));
-        realarrtypes = arrayTypeList(9, (DAE.T_REAL({}),NONE));
         intarrs = operatorReturnUnary(DAE.UMINUS_ARR(DAE.ET_INT()), intarrtypes, intarrtypes);
         realarrs = operatorReturnUnary(DAE.UMINUS_ARR(DAE.ET_REAL()), realarrtypes, realarrtypes);
         /*(cache,userops) = getKoeningOperatorTypes(cache,"unaryMinus", env, t1, t2);*/
@@ -12124,8 +12142,6 @@ algorithm
           (DAE.T_INTEGER({}),NONE)),
           (DAE.UPLUS(DAE.ET_REAL()),{(DAE.T_REAL({}),NONE)},
           (DAE.T_REAL({}),NONE))} "The UPLUS operator, unary plus." ;
-        intarrtypes = arrayTypeList(9, (DAE.T_INTEGER({}),NONE));
-        realarrtypes = arrayTypeList(9, (DAE.T_REAL({}),NONE));
         intarrs = operatorReturnUnary(DAE.UPLUS(DAE.ET_INT()), intarrtypes, intarrtypes);
         realarrs = operatorReturnUnary(DAE.UPLUS(DAE.ET_REAL()), realarrtypes, realarrtypes);
         /*(cache,userops) = getKoeningOperatorTypes(cache,"unaryPlus", env, t1, t2);*/
@@ -12139,8 +12155,6 @@ algorithm
           (DAE.T_INTEGER({}),NONE)),
           (DAE.UMINUS(DAE.ET_REAL()),{(DAE.T_REAL({}),NONE)},
           (DAE.T_REAL({}),NONE))} "The UMINUS operator, unary minus" ;
-        intarrtypes = arrayTypeList(9, (DAE.T_INTEGER({}),NONE));
-        realarrtypes = arrayTypeList(9, (DAE.T_REAL({}),NONE));
         intarrs = operatorReturnUnary(DAE.UMINUS_ARR(DAE.ET_INT()), intarrtypes, intarrtypes);
         realarrs = operatorReturnUnary(DAE.UMINUS_ARR(DAE.ET_REAL()), realarrtypes, realarrtypes);
         /*(cache,userops) = getKoeningOperatorTypes(cache,"unaryMinus", env, t1, t2);*/
@@ -12154,8 +12168,6 @@ algorithm
           (DAE.T_INTEGER({}),NONE)),
           (DAE.UPLUS(DAE.ET_REAL()),{(DAE.T_REAL({}),NONE)},
           (DAE.T_REAL({}),NONE))} "The UPLUS operator, unary plus." ;
-        intarrtypes = arrayTypeList(9, (DAE.T_INTEGER({}),NONE));
-        realarrtypes = arrayTypeList(9, (DAE.T_REAL({}),NONE));
         intarrs = operatorReturnUnary(DAE.UPLUS(DAE.ET_INT()), intarrtypes, intarrtypes);
         realarrs = operatorReturnUnary(DAE.UPLUS(DAE.ET_REAL()), realarrtypes, realarrtypes);
         /*(cache,userops) = getKoeningOperatorTypes(cache,"unaryPlus", env, t1, t2);*/

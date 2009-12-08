@@ -260,7 +260,6 @@ void *mmc_mk_box_arr(int slots, unsigned ctor, void** args)
 
 void *mmc_mk_box_no_assign(int slots, unsigned ctor)
 {
-    int i;
     struct mmc_struct *p = mmc_alloc_words(slots+1);
     p->header = MMC_STRUCTHDR(slots, ctor);
     return MMC_TAGPTR(p);
