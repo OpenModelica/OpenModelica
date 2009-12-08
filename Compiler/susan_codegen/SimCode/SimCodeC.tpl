@@ -1366,4 +1366,4 @@ tempDecl(String ty, Text varDecls) ::=
   newVar
 
 end SimCodeC;
-// vim: syntax=susan sw=2 sts=2
+// vim: filetype=susan sw=2 sts=2
