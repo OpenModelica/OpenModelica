@@ -147,6 +147,8 @@ void range_real_array(m_real start,m_real stop, m_real inc,real_array_t* dest);
 void add_alloc_real_array(real_array_t* a, real_array_t* b,real_array_t* dest);
 void add_real_array(real_array_t* a, real_array_t* b, real_array_t* dest);
 
+/* Unary subtraction */
+void usub_real_array(real_array_t* a);
 void sub_real_array(real_array_t* a, real_array_t* b, real_array_t* dest);
 void sub_alloc_real_array(real_array_t* a, real_array_t* b, real_array_t* dest);
 

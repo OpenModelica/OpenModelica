@@ -5312,8 +5312,8 @@ algorithm
   (outCFunction,outString,outInteger):=
   matchcontinue (inOperator,inExp,inInteger,inContext)
     local
-      CFunction cfn;
-      Lib var,var_1,s;
+      CFunction cfn, cfn1;
+			Lib var,var_1,s, stmt;
       Integer tnr_1,tnr;
       DAE.Exp e;
       Context context;
@@ -5364,11 +5364,18 @@ algorithm
         (cfn,var,tnr_1) = generateExpression(e, tnr, context);
       then
         (cfn,var,tnr_1);
+		case (DAE.UMINUS_ARR(ty = DAE.ET_ARRAY(DAE.ET_REAL(), {NONE})), e, tnr, context)
+			equation
+				(cfn1, var, tnr_1) = generateExpression(e, tnr, context);
+				stmt = Util.stringAppendList({"usub_real_array(&", var, ");"});
+				cfn = cAddStatements(cfn1, {stmt});
+			then
+				(cfn, var, tnr_1);
     case (DAE.UMINUS_ARR(ty = _),_,_,_)
       equation
-        Debug.fprint("failtrace", "# unary minus for arrays not implemented\n");
+				Debug.fprint("failtrace", "# unary minus for non-real arrays not implemented\n");
       then
-        fail();
+				fail();
     case (DAE.UMINUS(ty = tp),_,_,_)
       equation
 				true = RTOpts.debugFlag("failtrace");

@@ -680,6 +680,17 @@ void add_alloc_real_array(real_array_t* a, real_array_t* b,real_array_t* dest)
     add_real_array(a,b,dest);
 }
 
+void usub_real_array(real_array_t* a)
+{
+	size_t nr_of_elements, i;
+
+	nr_of_elements = base_array_nr_of_elements(a);
+	for(i = 0; i < nr_of_elements; ++i)
+	{
+		real_set(a, i, -real_get(a, i));
+	}
+}
+
 void sub_real_array(real_array_t* a, real_array_t* b, real_array_t* dest)
 {
     size_t nr_of_elements;
