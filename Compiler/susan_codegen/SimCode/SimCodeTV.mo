@@ -43,13 +43,13 @@ package SimCode
     record SIMCODE
       ModelInfo modelInfo;
       list<Function> functions;
-      list<DAELow.Equation> stateEquations;
-      list<DAELow.Equation> nonStateContEquations;
-      list<DAELow.Equation> nonStateDiscEquations;
-      list<DAELow.Equation> residualEquations;
-      list<DAELow.Equation> initialEquations;
-      list<DAELow.Equation> parameterEquations;
-      list<DAELow.Equation> removedEquations;
+      list<SimEqSystem> stateEquations;
+      list<SimEqSystem> nonStateContEquations;
+      list<SimEqSystem> nonStateDiscEquations;
+      list<SimEqSystem> residualEquations;
+      list<SimEqSystem> initialEquations;
+      list<SimEqSystem> parameterEquations;
+      list<SimEqSystem> removedEquations;
       list<DAELow.ZeroCrossing> zeroCrossings;
       list<list<DAE.ComponentRef>> zeroCrossingsNeedSave;
       list<HelpVarInfo> helpVarInfo;
@@ -58,6 +58,16 @@ package SimCode
     end SIMCODE;
   end SimCode;
   
+  uniontype SimEqSystem
+    record SES_RESIDUAL
+      DAE.Exp exp;
+    end SES_RESIDUAL;
+    record SES_SIMPLE_ASSIGN
+      DAE.ComponentRef componentRef;
+      DAE.Exp exp;
+    end SES_SIMPLE_ASSIGN;
+  end SimEqSystem;
+
   uniontype SimWhenClause
     record SIM_WHEN_CLAUSE
       list<DAE.ComponentRef> conditionVars;
@@ -161,16 +171,6 @@ end SimCode;
 
 
 package DAELow
-
-  uniontype Equation
-    record RESIDUAL_EQUATION
-      DAE.Exp exp;
-    end RESIDUAL_EQUATION;
-    record SOLVED_EQUATION
-      DAE.ComponentRef componentRef;
-      DAE.Exp exp;
-    end SOLVED_EQUATION;
-  end Equation;
 
   uniontype ZeroCrossing
     record ZERO_CROSSING

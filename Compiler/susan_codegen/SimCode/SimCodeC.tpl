@@ -24,6 +24,8 @@ translateModel(SimCode simCode) ::=
   case SIMCODE(modelInfo = MODELINFO) then
     # cppFileContent = cppFile(simCode)
     # textFile(cppFileContent, '<modelInfo.name>.cpp')
+    # functionsFileContent = ""
+    # textFile(functionsFileContent, '<modelInfo.name>_functions.cpp')
     //functionsFile(...)
     //initFile(...)
     //makefile(...)
@@ -476,8 +478,8 @@ void deInitializeDataStruc(DATA* data, DATA_FLAGS flags)
 }
 >>
 
-functionDaeOutput(list<Equation> nonStateContEquations,
-                  list<Equation> removedEquations) ::=
+functionDaeOutput(list<SimEqSystem> nonStateContEquations,
+                  list<SimEqSystem> removedEquations) ::=
 # varDecls = ""
 # body = (nonStateContEquations of eq: '<equation_(eq, varDecls)>' "\n")
 # body2 = (removedEquations of eq: '<equation_(eq, varDecls)>' "\n")
@@ -499,8 +501,8 @@ int functionDAE_output()
 }
 >>
 
-functionDaeOutput2(list<Equation> nonStateDiscEquations,
-                   list<Equation> removedEquations) ::=
+functionDaeOutput2(list<SimEqSystem> nonStateDiscEquations,
+                   list<SimEqSystem> removedEquations) ::=
 # varDecls = ""
 # body = (nonStateDiscEquations of eq: '<equation_(eq, varDecls)>' "\n")
 # body2 = (removedEquations of eq: '<equation_(eq, varDecls)>' "\n")
@@ -641,9 +643,9 @@ int handleZeroCrossing(long index)
 }
 >>
 
-functionUpdateDependents(list<Equation> stateEquations,
-                         list<Equation> nonStateContEquations,
-                         list<Equation> nonStateDiscEquations,
+functionUpdateDependents(list<SimEqSystem> stateEquations,
+                         list<SimEqSystem> nonStateContEquations,
+                         list<SimEqSystem> nonStateDiscEquations,
                          list<HelpVarInfo> helpVarInfo) ::=
 # varDecls = ""
 # eq1 = (stateEquations of eq: '<equation_(eq, varDecls)>' "\n")
@@ -731,7 +733,7 @@ int function_when(int i)
 }
 >>
 
-functionOde(list<Equation> stateEquations) ::=
+functionOde(list<SimEqSystem> stateEquations) ::=
 # varDecls = ""
 # body = (stateEquations of eq: '<equation_(eq, varDecls)>' "\n")
 <<
@@ -750,9 +752,9 @@ int functionODE()
 }
 >>
 
-functionInitial(list<Equation> initialEquations) ::=
+functionInitial(list<SimEqSystem> initialEquations) ::=
 # varDecls = ""
-# body = (initialEquations of eq as DAELow.SOLVED_EQUATION: '<equation_(eq, varDecls)>' "\n")
+# body = (initialEquations of eq as SES_SIMPLE_ASSIGN: '<equation_(eq, varDecls)>' "\n")
 <<
 int initial_function()
 {
@@ -760,17 +762,17 @@ int initial_function()
 
   <body>
 
-  <initialEquations of eq as DAELow.SOLVED_EQUATION:
+  <initialEquations of eq as SES_SIMPLE_ASSIGN:
     'if (sim_verbose) { printf("Setting variable start value: %s(start=%f)\n", "<cref(componentRef)>", <cref(componentRef)>); }' "\n">
 
   return 0;
 }
 >>
 
-functionInitialResidual(list<Equation> residualEquations) ::=
+functionInitialResidual(list<SimEqSystem> residualEquations) ::=
 # varDecls = ""
 # body = (
-  residualEquations of eq as DAELow.RESIDUAL_EQUATION:
+  residualEquations of eq as SES_RESIDUAL:
     if exp is DAE.SCONST then
       'localData-\>initialResiduals[i++] = 0;'
     else
@@ -796,9 +798,9 @@ int initial_residual()
 }
 >>
 
-functionBoundParameters(list<Equation> parameterEquations) ::=
+functionBoundParameters(list<SimEqSystem> parameterEquations) ::=
 # varDecls = ""
-# body = (parameterEquations of eq as DAELow.SOLVED_EQUATION: '<equation_(eq, varDecls)>' "\n")
+# body = (parameterEquations of eq as SES_SIMPLE_ASSIGN: '<equation_(eq, varDecls)>' "\n")
 <<
 int bound_parameters()
 {
@@ -930,8 +932,8 @@ char* <name>[1] = {""};
 >>
 
 // Residual equations are not handled here
-equation_(Equation eq, Text varDecls) ::=
-case SOLVED_EQUATION then
+equation_(SimEqSystem eq, Text varDecls) ::=
+case SES_SIMPLE_ASSIGN then
 # preExp = ""
 # expPart = daeExp(exp, preExp, varDecls)
 <<

@@ -267,13 +267,13 @@ uniontype SimCode
 //    GlobalVariables globalVars ;
     list<Function> functions;
 //??    FuncionDefinitions functionDefinitions;
-    list<DAELow.Equation> stateEquations;
-    list<DAELow.Equation> nonStateContEquations;
-    list<DAELow.Equation> nonStateDiscEquations;
-    list<DAELow.Equation> residualEquations;
-    list<DAELow.Equation> initialEquations;
-    list<DAELow.Equation> parameterEquations;
-    list<DAELow.Equation> removedEquations;
+    list<SimEqSystem> stateEquations;
+    list<SimEqSystem> nonStateContEquations;
+    list<SimEqSystem> nonStateDiscEquations;
+    list<SimEqSystem> residualEquations;
+    list<SimEqSystem> initialEquations;
+    list<SimEqSystem> parameterEquations;
+    list<SimEqSystem> removedEquations;
     list<DAELow.ZeroCrossing> zeroCrossings;
     list<list<DAE.ComponentRef>> zeroCrossingsNeedSave;
     list<HelpVarInfo> helpVarInfo;
@@ -281,6 +281,16 @@ uniontype SimCode
     list<DAE.ComponentRef> discreteModelVars;
   end SIMCODE;
 end SimCode;
+
+uniontype SimEqSystem
+  record SES_RESIDUAL
+    DAE.Exp exp;
+  end SES_RESIDUAL;
+  record SES_SIMPLE_ASSIGN
+    DAE.ComponentRef componentRef;
+    DAE.Exp exp;
+  end SES_SIMPLE_ASSIGN;
+end SimEqSystem;
 
 uniontype SimWhenClause
   record SIM_WHEN_CLAUSE
@@ -443,7 +453,8 @@ algorithm
         SimCodegen.generateMakefile(makefilename, filenameprefix, libs, file_dir);
         */
         
-        libs = generateFunctionsC(p_1, dae, indexed_dlow_1, className, filenameprefix);
+        //libs = generateFunctionsC(p_1, dae, indexed_dlow_1, className, filenameprefix);
+        libs = {};
         generateSimulationCodeC(dae, indexed_dlow_1, ass1, ass2, m, mT, comps, className, filename, funcfilename,file_dir);
 
         // keep this for testing purposes (remove later when we can generate
@@ -1163,13 +1174,13 @@ algorithm
       // new variables
       SimCode simCode;
       ModelInfo modelInfo;
-      list<DAELow.Equation> stateEquations;
-      list<DAELow.Equation> nonStateContEquations;
-      list<DAELow.Equation> nonStateDiscEquations;
-      list<DAELow.Equation> residualEquations;
-      list<DAELow.Equation> initialEquations;
-      list<DAELow.Equation> parameterEquations;
-      list<DAELow.Equation> removedEquations;
+      list<SimEqSystem> stateEquations;
+      list<SimEqSystem> nonStateContEquations;
+      list<SimEqSystem> nonStateDiscEquations;
+      list<SimEqSystem> residualEquations;
+      list<SimEqSystem> initialEquations;
+      list<SimEqSystem> parameterEquations;
+      list<SimEqSystem> removedEquations;
       list<DAELow.ZeroCrossing> zeroCrossings;
       list<list<DAE.ComponentRef>> zeroCrossingsNeedSave;
       list<SimWhenClause> whenClauses;
@@ -1235,15 +1246,19 @@ end generateSimulationCodeC;
 
 public function createRemovedEquations
   input DAELow.DAELow dlow;
-  output list<DAELow.Equation> removedEquations;
+  output list<SimEqSystem> removedEquations;
 algorithm
   removedEquations :=
   matchcontinue (dlow)
     local
       DAELow.EquationArray r;
+      list<DAELow.Equation> removedEquationsTmp;
     case (DAELow.DAELOW(removedEqs=r))
       equation
-        removedEquations = DAELow.equationList(r);
+        removedEquationsTmp = DAELow.equationList(r);
+
+        removedEquations = Util.listMap(removedEquationsTmp,
+                                        dlowEqToSimEqSystem);
       then removedEquations;
   end matchcontinue;
 end createRemovedEquations;
@@ -1390,7 +1405,7 @@ public function createEquations
   input Integer[:] ass1;
   input Integer[:] ass2;
   input list<list<Integer>> comps;
-  output list<DAELow.Equation> equations;
+  output list<SimEqSystem> equations;
 algorithm
   equations :=
   matchcontinue (dae, dlow, ass1, ass2, comps)
@@ -1398,7 +1413,7 @@ algorithm
       list<Integer> comp;
       list<list<Integer>> restComps;
       list<DAELow.Equation> equations_2;
-      DAELow.Equation equation_;
+      SimEqSystem equation_;
     case (dae, dlow, ass1, ass2, {})
       then {};
     case (dae, dlow, ass1, ass2, comp :: restComps)
@@ -1421,7 +1436,7 @@ public function createEquation
   input Integer[:] ass1;
   input Integer[:] ass2;
   input list<Integer> comp;
-  output DAELow.Equation equation_;
+  output SimEqSystem equation_;
 algorithm
   equation_ :=
   matchcontinue (dae, dlow, ass1, ass2, comp)
@@ -1457,7 +1472,7 @@ algorithm
         exp_ = Exp.solve(e1, e2, varexp);
         varname = Exp.printComponentRefStr(cr);
       then
-        DAELow.SOLVED_EQUATION(cr, exp_);
+        SES_SIMPLE_ASSIGN(cr, exp_);
     /* single equation: state */
     case (dae, DAELow.DAELOW(orderedVars=vars, orderedEqs=eqns),
           ass1, ass2, {eqNum})
@@ -1472,18 +1487,18 @@ algorithm
         varexp = DAE.CREF(cr_1,DAE.ET_REAL());
         exp_ = Exp.solve(e1, e2, varexp);
       then
-        DAELow.SOLVED_EQUATION(cr_1, exp_);
+        SES_SIMPLE_ASSIGN(cr_1, exp_);
     /* multiple equations that must be solved together (algebraic loop) */
     case (dae, dlow, ass1, ass2, eqNum :: restEqNums)
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"createEquation failed: algebraic loops not implemented yet"});
       then
-        DAELow.SOLVED_EQUATION(DAE.WILD, DAE.ICONST(1));
+        SES_SIMPLE_ASSIGN(DAE.WILD, DAE.ICONST(1));
     case (_,_,_,_,_)
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"createEquation failed"});
       then
-        DAELow.SOLVED_EQUATION(DAE.WILD, DAE.ICONST(2));
+        SES_SIMPLE_ASSIGN(DAE.WILD, DAE.ICONST(2));
   end matchcontinue;
 end createEquation;
 
@@ -1491,13 +1506,14 @@ protected function createResidualEquations
   input DAELow.DAELow dlow;
   input Integer[:] ass1;
   input Integer[:] ass2;
-  output list<DAELow.Equation> residualEquations;
+  output list<SimEqSystem> residualEquations;
 algorithm
   residualEquations :=
   matchcontinue (dlow, ass1, ass2)
     local
       list<DAELow.Var> vars_lst;
       list<DAELow.Equation> eqns_lst, se_lst, ie_lst, ie2_lst;
+      list<DAELow.Equation> residualEquationsTmp;
       DAELow.Variables vars, knvars;
       DAELow.EquationArray eqns, se, ie;
       DAELow.MultiDimEquation[:] ae;
@@ -1525,12 +1541,15 @@ algorithm
         ie_lst = Util.listMap(ie_lst, DAELow.equationToResidualForm);
         ie2_lst = Util.listMap(ie2_lst, DAELow.equationToResidualForm);
 
-        residualEquations = listAppend(eqns_lst, se_lst);
-        residualEquations = listAppend(residualEquations, ie_lst);
-        residualEquations = listAppend(residualEquations, ie2_lst);
+        residualEquationsTmp = listAppend(eqns_lst, se_lst);
+        residualEquationsTmp = listAppend(residualEquationsTmp, ie_lst);
+        residualEquationsTmp = listAppend(residualEquationsTmp, ie2_lst);
 
-        residualEquations = Util.listFilter(residualEquations,
-                                            failUnlessResidual);
+        residualEquationsTmp = Util.listFilter(residualEquationsTmp,
+                                               failUnlessResidual);
+
+        residualEquations = Util.listMap(residualEquationsTmp,
+                                         dlowEqToSimEqSystem);
       then
         residualEquations;
     case (_,_,_)
@@ -1541,6 +1560,22 @@ algorithm
         fail();
   end matchcontinue;
 end createResidualEquations;
+
+public function dlowEqToSimEqSystem
+  input DAELow.Equation inEquation;
+  output SimEqSystem outEquation;
+algorithm
+  outEquation:=
+  matchcontinue (inEquation)
+    local
+      DAE.ComponentRef cr;
+      DAE.Exp exp_;
+    case (DAELow.SOLVED_EQUATION(cr, exp_))
+      then SES_SIMPLE_ASSIGN(cr, exp_);
+    case (DAELow.RESIDUAL_EQUATION(exp_))
+      then SES_RESIDUAL(exp_);
+  end matchcontinue;
+end dlowEqToSimEqSystem;
 
 protected function failUnlessResidual
   input DAELow.Equation eq;
@@ -1553,12 +1588,13 @@ end failUnlessResidual;
 
 protected function createInitialEquations 
   input DAELow.DAELow dlow;
-  output list<DAELow.Equation> initialEquations;
+  output list<SimEqSystem> initialEquations;
 algorithm
   initialEquations :=
   matchcontinue (dlow)
     local
       list<DAELow.Equation> initialEquationsTmp;
+      list<DAELow.Equation> initialEquationsTmp2;
       list<DAELow.Var> vars_lst;
       list<DAELow.Var> knvars_lst;
       list<DAELow.Equation> eqns_lst;
@@ -1566,15 +1602,18 @@ algorithm
       DAELow.Variables knvars;
     case (DAELow.DAELOW(orderedVars=vars, knownVars=knvars))
       equation
-        initialEquations = {};
+        initialEquationsTmp2 = {};
         // vars
         vars_lst = DAELow.varList(vars);
         initialEquationsTmp = createInitialAssignmentsFromStart(vars_lst);
-        initialEquations = listAppend(initialEquations, initialEquationsTmp);
+        initialEquationsTmp2 = listAppend(initialEquationsTmp2, initialEquationsTmp);
         // kvars
         knvars_lst = DAELow.varList(knvars);
         initialEquationsTmp = createInitialAssignmentsFromStart(knvars_lst);
-        initialEquations = listAppend(initialEquations, initialEquationsTmp);
+        initialEquationsTmp2 = listAppend(initialEquationsTmp2, initialEquationsTmp);
+
+        initialEquations = Util.listMap(initialEquationsTmp2,
+                                        dlowEqToSimEqSystem);
       then
         initialEquations;
     case (_)
@@ -1588,11 +1627,12 @@ end createInitialEquations;
 
 protected function createParameterEquations 
   input DAELow.DAELow dlow;
-  output list<DAELow.Equation> parameterEquations;
+  output list<SimEqSystem> parameterEquations;
 algorithm
   parameterEquations :=
   matchcontinue (dlow)
     local
+      list<DAELow.Equation> parameterEquationsTmp;
       list<DAELow.Equation> tempEqs;
       list<DAELow.Var> vars_lst;
       list<DAELow.Var> knvars_lst;
@@ -1601,11 +1641,14 @@ algorithm
       DAELow.Variables knvars;
     case (DAELow.DAELOW(orderedVars=vars, knownVars=knvars))
       equation
-        parameterEquations = {};
+        parameterEquationsTmp = {};
         // kvars params
         knvars_lst = DAELow.varList(knvars);
         tempEqs = createInitialParamAssignments(knvars_lst);
-        parameterEquations = listAppend(parameterEquations, tempEqs);
+        parameterEquationsTmp = listAppend(parameterEquationsTmp, tempEqs);
+
+        parameterEquations = Util.listMap(parameterEquationsTmp,
+                                          dlowEqToSimEqSystem);
       then
         parameterEquations;
     case (_)
