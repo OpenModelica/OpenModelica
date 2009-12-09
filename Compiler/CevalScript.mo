@@ -4235,6 +4235,7 @@ algorithm
     case (_,path,env,_)
       local String ss1;
       equation 
+				true = RTOpts.debugFlag("failtrace");
         false = RTOpts.debugFlag("nogen");
         ss1 = Absyn.pathString(path);
         ss1 = Util.stringAppendList({"/*- CevalScript.cevalGenerateFunctionDAEs failed( ",ss1," )*/\n"});

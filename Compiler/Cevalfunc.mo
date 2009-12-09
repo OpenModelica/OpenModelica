@@ -18,6 +18,7 @@ public import Prefix;
 public import Connect;
 public import ClassInf;
 public import ConnectionGraph;
+public import RTOpts;
 
 protected import Ceval;
 protected import Util;
@@ -73,6 +74,7 @@ algorithm
          sc as SCode.CLASS(_,false,_,SCode.R_FUNCTION(),
                            SCode.PARTS(elementLst=elementList) ),daeList)
       equation
+				true = RTOpts.debugFlag("failtrace");
         _ = extendEnvWithInputArgs(env,elementList,inArgs,crefArgs);
         str = Absyn.pathString(funcpath);
         str = Util.stringAppendList({"- Cevalfunc.evaluateStatements failed for function /* ",str," */\n"});
@@ -83,6 +85,7 @@ algorithm
               sc as SCode.CLASS(_,false,_,SCode.R_FUNCTION(),
                                 SCode.PARTS(elementLst=elementList) ),daeList)
       equation        
+				true = RTOpts.debugFlag("failtrace");
         failure(_ = extendEnvWithInputArgs(env,elementList,inArgs,crefArgs));
         str = Absyn.pathString(funcpath);
         str = Util.stringAppendList({"- Cevalfunc.extendEnvWithInputArgs failed for function /* ",str," */"});
@@ -836,6 +839,7 @@ algorithm outVal := matchcontinue(inVal,env,toAssign)
     case(_,_,Absyn.CREF(dbgcr))
       local String dbgString; Absyn.ComponentRef dbgcr;
       equation     
+				true = RTOpts.debugFlag("failtrace");
         (Absyn.CREF_IDENT(dbgString,_)) = Absyn.crefGetFirst(dbgcr);
         dbgString = Util.stringAppendList({"- Cevalfunc.setValue failed for ", dbgString,"\n"});
         Debug.fprint("failtrace", dbgString);

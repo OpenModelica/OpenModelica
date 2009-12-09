@@ -48,6 +48,7 @@ public import DAE;
 public import Env;
 public import Lookup;
 public import SCode;
+public import RTOpts;
 
 public 
 uniontype Prefix "A Prefix has a component prefix and a class prefix. 
@@ -560,6 +561,7 @@ algorithm
 
     case (_,_,e,_)
       equation 
+				true = RTOpts.debugFlag("failtrace");
         Debug.fprint("failtrace", "-prefix_exp failed on exp:");
         s = Exp.printExpStr(e);
         Debug.fprint("failtrace", s);

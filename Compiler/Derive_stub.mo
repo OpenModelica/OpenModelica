@@ -417,6 +417,7 @@ algorithm
 
     case (e,cr,differentiateIfExp)
       equation
+				true = RTOpts.debugFlag("failtrace");
         s = Exp.printExpStr(e);
         s2 = Exp.printComponentRefStr(cr);
         str = Util.stringAppendList({"differentiate_exp ",s," w.r.t:",s2," failed\n"});

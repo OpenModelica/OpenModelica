@@ -88,6 +88,7 @@ public import DAELow;
 public import Static;
 public import Values;
 public import SCode;
+public import RTOpts;
 
 protected import Algorithm;
 protected import DAEUtil;
@@ -95,7 +96,6 @@ protected import Dump;
 protected import Exp;
 protected import ModUtil;  
 protected import Print;
-protected import RTOpts;
 protected import Util;
 
 

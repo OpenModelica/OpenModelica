@@ -40,6 +40,7 @@ public
 import Absyn;
 import Types;
 import SCode;
+protected import RTOpts;
 
 // addapted from Connect, not to include it as it has tons of dependecies which we don't need.
 public 
@@ -135,6 +136,7 @@ algorithm
         
     case (ih,scope,c::_)
       equation 
+				true = RTOpts.debugFlag("instance");
         Debug.fprintln("instance", "InstanceHierarchy.createInstanceFromProgram failed on class:" +& SCode.printClassStr(c));
       then
         fail();
@@ -325,6 +327,7 @@ algorithm
       
     case (scope, el::rest) 
       equation 
+				true = RTOpts.debugFlag("instance");
         Debug.fprintln("instance", "InstanceHierarchy.createInstanceHierarchyFromElements failed on element: " +& SCode.unparseElementStr(el));
       then 
         fail();

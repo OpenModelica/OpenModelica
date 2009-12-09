@@ -45,6 +45,7 @@ package Derive
 public import Absyn;
 public import DAE;
 public import DAELow;
+public import RTOpts;
 
 protected import Exp;
 protected import Util;
@@ -694,6 +695,7 @@ algorithm
 
     case (e,cr,differentiateIfExp)
       equation
+				true = RTOpts.debugFlag("failtrace");
         s = Exp.printExpStr(e);
         s2 = Exp.printComponentRefStr(cr);
         str = Util.stringAppendList({"differentiate_exp ",s," w.r.t:",s2," failed\n"});

@@ -548,6 +548,7 @@ algorithm
     case (_,_,_,path)
       equation 
         //print("-instantiateFunctionImplicit ");print(Absyn.pathString(path));print(" failed\n");
+				true = RTOpts.debugFlag("failtrace");
         Debug.fprint("failtrace", "-Inst.instantiateFunctionImplicit " +& Absyn.pathString(path) +& " failed\n");
       then
         fail();
@@ -1857,6 +1858,7 @@ algorithm
         Error.addMessage(Error.TYPE_ERROR,{s1,s2});
       then fail();   
     case(cache,env,id,SOME(v),bind,expectedTp,bindProp) equation
+			true = RTOpts.debugFlag("failtrace");
       Debug.fprintln("failtrace", "instBuiltinAttribute failed for: " +& id +&
                                   " value binding: " +& ValuesUtil.printValStr(v) +& 
                                   " binding: " +& Exp.printExpStr(bind) +&
@@ -1864,6 +1866,7 @@ algorithm
                                   " type props: " +& Types.printPropStr(bindProp));
     then fail();
     case(cache,env,id,_,bind,expectedTp,bindProp) equation
+			true = RTOpts.debugFlag("failtrace");
       Debug.fprintln("failtrace", "instBuiltinAttribute failed for: " +& id +&
                                   " value binding: NONE()" +& 
                                   " binding: " +& Exp.printExpStr(bind) +&
@@ -2484,6 +2487,7 @@ algorithm
           SCode.DERIVED(Absyn.TPATH(path = cn, arrayDim = ad),modifications = mod),
           re,prot,inst_dims,impl,graph,instSingleCref)
       equation 
+				true = RTOpts.debugFlag("failtrace");
         failure((_,_,_) = Lookup.lookupClass(cache,env, cn, false));
         Debug.fprint("failtrace", "- inst_classdef DERIVED( ");
         Debug.fprint("failtrace", Absyn.pathString(cn));
@@ -2494,6 +2498,7 @@ algorithm
         
     case (_,env,ih,_,_,_,_,_,_,_,_,_,_,_,_,instSingleCref)
       equation 
+				true = RTOpts.debugFlag("failtrace");
         Debug.fprint("failtrace", "- Inst.instClassdef failed\n class :");
         s = Env.printEnvPathStr(env);
         Debug.fprint("failtrace", s);
@@ -2585,6 +2590,7 @@ algorithm outComps := matchcontinue(inComps, ocr,allComps,className)
       outComps;
   case(inComps, SOME(cr), allComps,className)
     equation
+			true = RTOpts.debugFlag("failtrace");
       Debug.fprint("failtrace", "ExtractConstantPlusDeps::Failure to find " +& Exp.printComponentRefStr(cr) +& ", returning \n");
       Debug.fprint("failtrace", "Elements to instantiate:" +& intString(listLength(inComps)) +& "\n");
     then 
@@ -5644,6 +5650,7 @@ algorithm
         
     case (cache,env,ih,store,omod,_,_,_,(el,mod),_,_,_) 
       equation         
+				true = RTOpts.debugFlag("failtrace");
         Debug.fprintln("failtrace", "- Inst.instElement failed: " +& SCode.printElementStr(el));
       then
         fail();
@@ -5780,6 +5787,7 @@ algorithm
     // failure
     case(env,tp,ci_state,cl) 
       equation
+				true = RTOpts.debugFlag("failtrace");
         Debug.fprint("failtrace","-Inst.checkRecursiveDefinition failed, envpath="+&Env.printEnvPathStr(env)+&" tp :"+&Absyn.pathString(tp)+&"\n");
       then fail();      
   end matchcontinue;
@@ -6607,6 +6615,7 @@ algorithm
                  
     case (_,_,ih,_,_,_,_,_,n,_,_,_,_,_,_,_,_,_,_,_) 
       equation 
+				true = RTOpts.debugFlag("failtrace");
         Debug.fprintln("failtrace", "- Inst.instVar2 failed: " +& n);
       then
         fail();
@@ -6823,6 +6832,7 @@ algorithm
     
     case (_,_,_,_,SCode.CLASS(name = id),_,_)
       equation
+				true = RTOpts.debugFlag("failtrace");
         id = SCode.printClassStr(inClass);
         Debug.fprintl("failtrace", {"Inst.getUsertypeDimensions failed: ", id, "\n"});
       then fail();
@@ -7647,6 +7657,7 @@ algorithm
         
     case (_,_,ih,_,_,_,_,_,n,(_,_),_,_,_,_,_,_,_,_,_,_,_)
       equation 
+				true = RTOpts.debugFlag("failtrace");
         Debug.fprintln("failtrace", "- Inst.instArray failed: " +& n);
       then
         fail();
@@ -8229,6 +8240,7 @@ algorithm
         l; */     
     case (t,(_ :: ad)) /* PR, for debugging */ 
       equation 
+				true = RTOpts.debugFlag("failtrace");
         Debug.fprint("failtrace", "Undefined!");
         Debug.fprint("failtrace", " The type detected: ");
         Debug.fprint("failtrace", Types.printTypeStr(t));
@@ -9597,6 +9609,7 @@ algorithm
     case (_,_,_,_,_,_,_,SCode.EQUATION(eEquation = eqn),impl,graph)
       local SCode.EEquation eqn; String str;
       equation 
+				true = RTOpts.debugFlag("failtrace");
         str= SCode.equationStr(eqn);
         Debug.fprint("failtrace", "- instEquation failed eqn:");
         Debug.fprint("failtrace", str);
@@ -10154,6 +10167,7 @@ algorithm
                
     case (_,env,ih,_,_,_,_,eqn,_,impl,graph) 
       equation 
+				true = RTOpts.debugFlag("failtrace");
         Debug.fprint("failtrace", "- instEquationCommon failed for eqn: ");
         s = SCode.equationStr(eqn);
         Debug.fprint("failtrace", s +& " in scope:" +& Env.getScopeName(env) +& "\n");
@@ -10753,6 +10767,7 @@ algorithm
         (cache,dae,csets_2,graph);
     case (_,_,_,_,_,_,_,v,_,_,_,_)
       equation 
+				true = RTOpts.debugFlag("failtrace");
         Debug.fprint("failtrace", "- Inst.unroll ");
         Debug.fcall("failtrace", ValuesUtil.printVal, v);
         Debug.fprint("failtrace", " failed\n");
@@ -11329,6 +11344,7 @@ algorithm
     case (cache,env,pre,alg,initial_,impl)
       local String str;
       equation 
+				true = RTOpts.debugFlag("failtrace");
         str = Dump.unparseAlgorithmStr(0,Absyn.ALGORITHMITEM(alg,NONE()));
         Debug.fprintln("failtrace", "- Inst.instStatement failed: " +& str);
         //Debug.fcall("failtrace", Dump.printAlgorithm, alg);
@@ -11914,6 +11930,7 @@ algorithm
         
     case (env,_,c1,_,_,c2,_,_,io1,io2)
       equation
+				true = RTOpts.debugFlag("failtrace");
         Debug.fprintln("failtrace", "- Inst.checkConnectTypes(" +& 
           Exp.printComponentRefStr(c1) +& " <-> " +& 
           Exp.printComponentRefStr(c2) +& " failed");
@@ -11923,6 +11940,7 @@ algorithm
     case (env,ih,c1,t1,DAE.ATTR(flowPrefix = flow1),c2,t2,DAE.ATTR(flowPrefix = flow2),io1,io2)
       local DAE.Type t1,t2; Boolean flow1,flow2,b0; String s0,s1,s2;
       equation 
+				true = RTOpts.debugFlag("failtrace");
         b0 = Types.equivtypes(t1, t2);
         s0 = Util.if_(b0,"types equivalent;","types NOT equivalent");
         s1 = Util.if_(flow1,"flow "," ");
@@ -13202,6 +13220,7 @@ algorithm
     case (c,t,m,impl)
       local tuple<DAE.TType, Option<Absyn.Path>> t;
       equation 
+				true = RTOpts.debugFlag("failtrace");
         Debug.fprint("failtrace", "- Inst.instModEquation failed\n type: ");
         Debug.fprint("failtrace", Types.printTypeStr(t));
         Debug.fprint("failtrace", "\n  cref: ");
@@ -13519,6 +13538,7 @@ algorithm
         
     case (cache,env,ih,elt,outerMod,impl)
       equation 
+				true = RTOpts.debugFlag("failtrace");
         Debug.fprint("failtrace", "- instRecordConstructorElt failed.,elt:");
         str = SCode.printElementStr(elt);
         Debug.fprint("failtrace", str);
@@ -15128,6 +15148,7 @@ algorithm
         (cache,env_2,ih,lb::llb,csets_2,ci_state_2,graph);
     case (cache,env,ih,mod,pre,csets,ci_state,(e :: es),_,impl,graph)
       equation 
+				true = RTOpts.debugFlag("failtrace");
         Debug.fprintln("failtrace", "Inst.instIfTrueBranches failed on equations: " +& 
                        Util.stringDelimitList(Util.listMap(e, SCode.equationStr), "\n"));
       then

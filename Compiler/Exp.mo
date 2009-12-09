@@ -3076,6 +3076,7 @@ algorithm
         exp;
     case (factor,expr)
       equation 
+				true = RTOpts.debugFlag("failtrace");
         fs = printExpStr(factor);
         es = printExpStr(expr);
         Debug.fprint("failtrace","-Exp.removeFactor failed, factor:");
@@ -3491,6 +3492,7 @@ algorithm
 				res;
     case (lst)
       equation 
+				true = RTOpts.debugFlag("failtrace");
         Debug.fprint("failtrace","-Exp.makeProductLst failed, exp lst:");
         explst = Util.listMap(lst, printExpStr);
         str = Util.stringDelimitList(explst, ", ");
@@ -3617,6 +3619,7 @@ algorithm
         res;
     case (lst)
       equation 
+				true = RTOpts.debugFlag("failtrace");
         Debug.fprint("failtrace","-Exp.makeSum failed, exp lst:");
         explst = Util.listMap(lst, printExpStr);
         str = Util.stringDelimitList(explst, ", ");
@@ -3896,7 +3899,7 @@ algorithm
     case (DAE.POW_SCALAR_ARRAY(ty = t)) then t;  
     case (DAE.MUL_SCALAR_PRODUCT(ty = t)) then t; 
     case (DAE.MUL_MATRIX_PRODUCT(ty = t)) then t; 
-    case (DAE.DIV_ARRAY_SCALAR(ty = t)) then t; 
+    case (DAE.DIV_ARRAY_SCALAR(ty = t)) then t;
     case (DAE.POW_ARR(ty = t)) then t; 
     case (DAE.AND()) then DAE.ET_BOOL(); 
     case (DAE.OR()) then DAE.ET_BOOL(); 
@@ -8273,6 +8276,7 @@ algorithm
         res;
     case (e,cr)
       equation 
+				true = RTOpts.debugFlag("failtrace");
         Debug.fprint("failtrace", "-Exp.expContains failed\n");
         s = printExpStr(e);
         str = Util.stringAppendList({"exp = ",s,"\n"});
@@ -10066,6 +10070,7 @@ algorithm
       case(cr)
         local ComponentRef cr;String s;
         equation
+					true = RTOpts.debugFlag("failtrace");
           Debug.fprint("failtrace", "-Exp.crefType failed on Cref:");
           s = printComponentRefStr(cr);
           Debug.fprint("failtrace", s);
@@ -10096,6 +10101,7 @@ algorithm
       case(cr)
         local ComponentRef cr;String s;
         equation
+					true = RTOpts.debugFlag("failtrace");
           Debug.fprint("failtrace", "-Exp.crefType failed on Cref:");
           s = printComponentRefStr(cr);
           Debug.fprint("failtrace", s);

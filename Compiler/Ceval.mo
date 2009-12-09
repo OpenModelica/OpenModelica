@@ -1227,6 +1227,7 @@ algorithm
 
     case (cache,env,e,_,impl,st,dim,msg)
       equation
+				true = RTOpts.debugFlag("failtrace");
         Debug.fprint("failtrace", "- Ceval.cevalCallFunction failed: ");
         str = Exp.printExpStr(e);
         Debug.fprintln("failtrace", str);
@@ -4330,6 +4331,7 @@ algorithm
         
     case (v1,op,v2)
       equation 
+				true = RTOpts.debugFlag("failtrace");
         Debug.fprintln("failtrace", "- Ceval.cevalRelation failed on: " +& 
                ValuesUtil.printValStr(v1) +&  
                Exp.binopSymbol(op) +&
@@ -4691,6 +4693,7 @@ algorithm
         (cache,res);
     case (cache,env,_,DAE.EQBOUND(exp = exp,constant_ = DAE.C_VAR()),impl,MSG())
       equation 
+				true = RTOpts.debugFlag("ceval");
         Debug.fprint("ceval", "#- Ceval.cevalCrefBinding failed (nonconstant EQBOUND(");
         expstr = Exp.printExpStr(exp);
         Debug.fprint("ceval", expstr);

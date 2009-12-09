@@ -704,6 +704,7 @@ algorithm
 
     then (WHEN_EQUATION(wheneq),vars);
     case (eqn ,vars) equation
+			true = RTOpts.debugFlag("failtrace");
       Debug.fprint("failtrace", "-DAELow.expandDerOperatorEqn, eqn =");
       Debug.fprint("failtrace", equationStr(eqn));
       Debug.fprint("failtrace", " failed\n");
@@ -6703,6 +6704,7 @@ algorithm
         v;
     case (VARIABLES(varArr = vararr),n)
       equation
+				true = RTOpts.debugFlag("failtrace");
         Debug.fprintln("failtrace", "DAELow.getVarAt failed to get the variable at index:" +& intString(n));
       then
         fail();        
@@ -10614,6 +10616,7 @@ algorithm
         reachable_2;
     case (eqn,_,_,_,_)
       equation
+				true = RTOpts.debugFlag("failtrace");
         Debug.fprint("failtrace", "-reachable_nodes failed, eqn: ");
         eqnstr = intString(eqn);
         Debug.fprint("failtrace", eqnstr);

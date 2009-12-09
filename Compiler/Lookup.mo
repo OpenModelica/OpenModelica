@@ -49,6 +49,7 @@ public import ClassInf;
 public import DAE;
 public import Env;
 public import SCode;
+public import RTOpts;
 
 protected import Debug;
 protected import Inst;
@@ -1590,6 +1591,7 @@ algorithm
 
     case (_,_,id)
       equation 
+				true = RTOpts.debugFlag("failtrace");
         Debug.fprintln("failtrace", "lookupFunctionsInEnv failed on: " +& Absyn.pathString(id));
       then
         fail();
@@ -2120,6 +2122,7 @@ algorithm
       local
         String str;
       equation
+				true = RTOpts.debugFlag("failtrace");
         str = SCode.printClassStr(cl); 
         Debug.fprintln("failtrace", "- Lookup.buildRecordConstructorVarlst failed on:\n" +& str +& "\n");
       then
@@ -2175,6 +2178,7 @@ algorithm
         (cache,vars);        
     case (cache,{},_,_) then (cache,{}); 
     case (_,rest,_,_) equation 
+			true = RTOpts.debugFlag("failtrace");
       Debug.fprintln("failtrace", "- Lookup.buildVarlstFromElts failed on elts: " +& Util.stringDelimitList(Util.listMap(rest,SCode.printElementStr),"\n"));            
     then fail(); 
   end matchcontinue;
@@ -2206,6 +2210,7 @@ algorithm
         (outCache,vLst) = buildVarlstFromElts(cache,restElts,mods,env1);
       then (outCache,vLst);        
     case(_,_,cl,mods) equation
+			true = RTOpts.debugFlag("failtrace");
       Debug.fprint("failtrace", "- buildVarlstFromElts2 failed!\n class:"+&SCode.printClassStr(cl));
     then fail();
   end matchcontinue;
@@ -2514,6 +2519,7 @@ algorithm
     case(t as (DAE.T_NOTYPE(),_),_) then t;
     case (t,s)
       equation 
+				true = RTOpts.debugFlag("failtrace");
         Debug.fprint("failtrace", "- check_subscripts failed (tp: ");
         Debug.fprint("failtrace", Types.printTypeStr(t));
         Debug.fprint("failtrace", " subs:");

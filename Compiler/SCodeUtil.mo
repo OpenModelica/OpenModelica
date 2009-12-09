@@ -47,6 +47,7 @@ package SCodeUtil
 public import Absyn;
 public import SCode;
 public import InstanceHierarchy;
+public import RTOpts;
 
 protected import MetaUtil;
 protected import Dump;
@@ -156,6 +157,7 @@ algorithm
         
     case (c as Absyn.CLASS(name = n,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,body = d,info = file_info))
       equation
+				true = RTOpts.debugFlag("translate");
         Debug.fprintln("translate", "SCodeUtil.translateAbsyn2SCodeClass: Translating class failed:" +& n+&"\n");
       then
         fail();

@@ -1111,6 +1111,7 @@ algorithm
 
     case ((v :: _),_)
       equation 
+				true = RTOpts.debugFlag("failtrace");
         Debug.fprint("failtrace", "Types.valuesToMods failed for value: ");
         vs = ValuesUtil.valString(v);
         Debug.fprint("failtrace", vs);
@@ -1248,6 +1249,7 @@ algorithm
     case (v)
       local Ident vs;
       equation 
+				true = RTOpts.debugFlag("failtrace");
         Debug.fprint("failtrace", "- Types.typeOfValue failed: ");
         vs = ValuesUtil.valString(v);
         Debug.fprintln("failtrace", vs);
@@ -3287,6 +3289,7 @@ algorithm
         res;
     case prop
       equation 
+				true = RTOpts.debugFlag("failtrace");
         Debug.fprint("failtrace", "- prop_all_const failed: ");
         str = printPropStr(prop);
         Debug.fprintln("failtrace", str);
@@ -3318,6 +3321,7 @@ algorithm
         res;
     case prop
       equation 
+				true = RTOpts.debugFlag("failtrace");
         Debug.fprint("failtrace", "- prop_any_const failed: ");
         str = printPropStr(prop);
         Debug.fprintln("failtrace", str);
@@ -3371,6 +3375,7 @@ algorithm
         res;
     case const
       equation 
+				true = RTOpts.debugFlag("failtrace");
         Debug.fprint("failtrace", "- prop_tuple_any_const failed: ");
         str = unparseTupleconst(const);
         Debug.fprintln("failtrace", str);
@@ -3418,6 +3423,7 @@ algorithm
         res;
     case const
       equation 
+				true = RTOpts.debugFlag("failtrace");
         Debug.fprint("failtrace", "- prop_tuple_all_const failed: ");
         str = unparseTupleconst(const);
         Debug.fprintln("failtrace", str);
@@ -4900,6 +4906,7 @@ algorithm
         TType tty;
         String str;
       equation 
+				true = RTOpts.debugFlag("failtrace");
         str = unparseType((tty,NONE));
         Debug.fprintln("failtrace", "-- Types.getAllExpsTt failed " +& str);
       then
@@ -5083,6 +5090,7 @@ algorithm
     case (e::_, _, _, _, _, _)
       local String str;
       equation
+				true = RTOpts.debugFlag("failtrace");
         str = Exp.printExpStr(e);
         Debug.fprintln("failtrace", "- Types.listMatchSuperType2 failed: " +& str);
       then fail();

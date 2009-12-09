@@ -14964,6 +14964,7 @@ algorithm
         Absyn.PROGRAM((c1 :: newclst),w,newTs);
     case (c,p as Absyn.PROGRAM(globalBuildTimes=ts))
       equation
+				true = RTOpts.debugFlag("dump");
         Print.printBuf("Interactive.replaceClassInProgram failed \n class:");
         Debug.fcall("dump", Dump.dump, Absyn.PROGRAM({c},Absyn.TOP(),ts));
         Print.printBuf("\nprogram: \n");

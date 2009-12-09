@@ -4098,6 +4098,7 @@ algorithm
     case (cache,env,_,el::_,_)
       local String str;
       equation
+				true = RTOpts.debugFlag("failtrace");
         str = dumpDebugDAE(DAE.DAE({el}));
         Debug.fprintln("failtrace", "- DAEUtil.daeToRecordValue failed on: " +& str);
       then

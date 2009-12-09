@@ -2061,6 +2061,7 @@ algorithm
 
     case (ty)
       equation
+				true = RTOpts.debugFlag("failtrace");
         t_str = Types.unparseType(ty);
         Debug.fprint("failtrace", "#--Codegen.generateSimpleType failed: " +& t_str +& "\n");
       then
@@ -5370,6 +5371,7 @@ algorithm
         fail();
     case (DAE.UMINUS(ty = tp),_,_,_)
       equation
+				true = RTOpts.debugFlag("failtrace");
         Debug.fprint("failtrace", "-generate_unary failed\n");
         s = Exp.typeString(tp);
         Debug.fprint("failtrace", " tp = ");

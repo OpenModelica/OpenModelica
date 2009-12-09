@@ -1770,6 +1770,7 @@ algorithm
     case (cache,env,start,step,stop,const,expty,impl)
       local Option<DAE.Exp> step;
       equation 
+				true = RTOpts.debugFlag("failtrace");
         Debug.fprint("failtrace", "- elab_range_type failed: ");
         s1 = Exp.printExpStr(start);
         s2opt = Util.applyOption(step, Exp.printExpStr);
@@ -2920,6 +2921,7 @@ algorithm
     // failure!
     case (cache,env,expl,_,impl)
       equation 
+				true = RTOpts.debugFlag("failtrace");
         Debug.fprintln("failtrace", "- Static.elabBuiltinSize failed on: " +& Dump.printExpLstStr(expl));
       then
         fail();
@@ -2963,6 +2965,7 @@ algorithm
 
     case (cache,env,expl,_,impl)
       equation 
+				true = RTOpts.debugFlag("failtrace");
         Debug.fprint("failtrace", "- Static.elabBuiltinNdims failed for: ndims(" +& Dump.printExpLstStr(expl));
       then
         fail();
@@ -3012,6 +3015,7 @@ algorithm
         (cache,exp,prop);
     case (cache,env,dims,_,impl)
       equation 
+				true = RTOpts.debugFlag("failtrace");
         Debug.fprint("failtrace", 
           "- elab_builtin_fill: Couldn't elaborate fill(): ");
         implstr = Util.boolString(impl);
@@ -6247,6 +6251,7 @@ algorithm
         (cache,e,prop,st_1);
     case (cache,env,fn,args,nargs,impl,st)
       equation 
+				true = RTOpts.debugFlag("failtrace");
         Debug.fprint("failtrace", "- elabCall failed\n");
         Debug.fprint("failtrace", " function: ");
         fnstr = Dump.printComponentRefStr(fn);
@@ -8569,6 +8574,7 @@ algorithm
     case (t,DAE.SINGLE_CONST(const = b)) then DAE.PROP(t,b); 
     case (ty,const)
       equation 
+				true = RTOpts.debugFlag("failtrace");
         Debug.fprint("failtrace", "- get_properties failed: ");
         tystr = Types.unparseType(ty);
         conststr = Types.unparseTupleconst(const);
@@ -9223,6 +9229,7 @@ algorithm
     // failure
     case (cache,env,narg,farg,_,checkTypes,impl,polymorphicBindings)
       equation 
+				true = RTOpts.debugFlag("failtrace");
         Debug.fprintln("failtrace", "Static.elabNamedInputArgs failed for first named argument in: (" +& 
            Util.stringDelimitList(Util.listMap(narg, Dump.printNamedArgStr), ", ") +& ")");
       then
@@ -10512,6 +10519,7 @@ algorithm
     // 
     case (cr,indx,ds,ds2,et,t)
       equation 
+				true = RTOpts.debugFlag("failtrace");
         Debug.fprintln("failtrace", "- Static.createCrefArray2d failed on: " +& Exp.printComponentRefStr(cr));
       then
         fail();
@@ -11310,6 +11318,7 @@ algorithm
         (cache,DAE.CREF_QUAL(n,ty2, ss_1,c_1));
     case (cache,env,cr,_)
       equation 
+				true = RTOpts.debugFlag("failtrace");
         Debug.fprint("failtrace", "- Static.canonCref failed, cr: ");
         Debug.fprint("failtrace", Exp.printComponentRefStr(cr));
         Debug.fprint("failtrace", "\n");
@@ -12284,6 +12293,7 @@ algorithm
         (cache,types);
     case (cache,op,env,t1,t2)
       equation 
+				true = RTOpts.debugFlag("failtrace");
         Debug.fprint("failtrace", "-operators failed, op: ");
         s = Dump.opSymbol(op);
         Debug.fprint("failtrace", s);

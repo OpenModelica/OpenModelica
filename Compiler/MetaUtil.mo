@@ -1398,6 +1398,7 @@ algorithm
     case t
       local String str;
       equation
+				true = RTOpts.debugFlag("matchcase");
         str = Types.unparseType(t);
         Debug.fprintln("matchcase", "- MetaUtil.typeConvert failed: " +& str);
       then fail();

@@ -50,6 +50,7 @@ public import DAE;
 public import Env;
 public import Prefix;
 public import SCode;
+public import RTOpts;
 
 public type Ident = String;
 
@@ -420,6 +421,7 @@ algorithm
     case (cache,env,pre,m,impl)
       local String str;
       equation 
+				true = RTOpts.debugFlag("failtrace");
         str = printModStr(m);
         str = Util.stringDelimitList({ str, "\n"}," ");
         
@@ -1142,6 +1144,7 @@ algorithm
         mod_3;
     case (mod,idx)
       equation 
+				true = RTOpts.debugFlag("failtrace");
         Debug.fprint("failtrace", "-lookup_idx_modification(");
         str = printModStr(mod);
         Debug.fprint("failtrace", str);
@@ -1247,6 +1250,7 @@ algorithm
         DAE.MOD(f,Absyn.NON_EACH(),subs_1,eq_1);
     case (DAE.MOD(finalPrefix = f,each_ = Absyn.EACH(),subModLst = subs,eqModOption = eq),idx) then DAE.MOD(f,Absyn.EACH(),subs,eq); 
     case (inMod,idx) equation
+			true = RTOpts.debugFlag("failtrace");
       Debug.fprintln("failtrace", "- Mod.lookupIdxModification3 failed for mod: \n" +& 
                      printModStr(inMod) +& "\n for index:" +& intString(idx));
     then fail();   
@@ -1303,6 +1307,7 @@ algorithm
       then
         e;        
     case (SOME(eq),inIntegerLst) equation
+			true = RTOpts.debugFlag("failtrace");
       Debug.fprintln("failtrace", "- Mod.indexEqmod failed for mod:\n " +& 
                Types.unparseEqMod(eq) +& "\n indexes:" +&
                Util.stringDelimitList(Util.listMap(inIntegerLst, intString), ", "));

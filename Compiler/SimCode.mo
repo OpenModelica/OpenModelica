@@ -7006,6 +7006,7 @@ algorithm
         (eqn,var);
     case (e,eqns,vars,ass2) /* equation no. assignments2 */
       equation
+				true = RTOpts.debugFlag("failtrace");
         Debug.fprintln("failtrace", "SimCodegen.getEquationAndSolvedVar failed at index: " +& intString(e));
       then
         fail();        
@@ -7181,6 +7182,7 @@ algorithm
 
     case (genDiscrete,DAELow.DAELOW(orderedVars = vars,orderedEqs = eqns),ass1,ass2,e,cg_id)
       equation
+				true = RTOpts.debugFlag("failtrace");
         Debug.fprint("failtrace", "-SimCodegen.generateOdeEquation failed\n");
         (eqn,DAELow.VAR(varName=cr,index=indx,
                         origVarName=origname,

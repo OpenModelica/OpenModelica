@@ -44,6 +44,7 @@ public import Env;
 public import SCode;
 public import Debug;
 public import Dump;
+public import RTOpts;
 
 protected import Lookup;
 protected import Util;
@@ -118,6 +119,7 @@ algorithm
       then (localCache,varList,declList,rhsList,rhsListLight,patMat,elseRhSide);
     case (exp,_,_) local Absyn.Exp exp; String expStr;
       equation
+				true = RTOpts.debugFlag("matchcase");
         expStr = Dump.printExpStr(exp);
         Debug.fprintln("matchcase", "- Patternm.ASTtoMatrixForm failed, non-matching patterns in matchcase or zero input variables: " +& expStr);
       then fail();
@@ -270,6 +272,7 @@ algorithm
     case (cas :: _,_,_,_,_,_,_)
       local Absyn.Case cas; String casStr;
       equation
+				true = RTOpts.debugFlag("matchcase");
         casStr = Dump.printCaseStr(cas);
         Debug.fprintln("matchcase", "- Patternm.extractFromMatchAST failed: " +& casStr);
       then fail();
@@ -344,6 +347,7 @@ algorithm
       then (localCache,temp2,temp4,localConstTagEnv);
     case (_,_,_,e :: _,_,_,_,_)  local Absyn.Exp e; String str;
       equation
+				true = RTOpts.debugFlag("matchcase");
         str = Dump.printExpStr(e);
         Debug.fprintln("matchcase", "- fillMatrix failed: " +& str);
       then fail();
@@ -660,6 +664,7 @@ algorithm
       then (localCache,pat,localAsBinds,localConstTagEnv);
     case (e,_,_,_,_,_)  local Absyn.Exp e; String str;
       equation
+				true = RTOpts.debugFlag("matchcase");
         str = Dump.printExpStr(e);
         Debug.fprintln("matchcase", "- Patternm.renameMain failed, invalid pattern " +& str);
       then fail();
@@ -887,6 +892,7 @@ algorithm
         Absyn.Exp exp;
         String str;
       equation
+				true = RTOpts.debugFlag("matchcase");
         str = Dump.printExpStr(exp);
         str = "- Patternm.matchMain failed: " +& str;
         Debug.fprintln("matchcase", str);
@@ -2826,6 +2832,7 @@ algorithm
     case (p1,p2)
       local  RenamedPat p1; RenamedPat p2;
       equation
+				true = RTOpts.debugFlag("failtrace");
         Debug.fprint("failtrace", "- twoPatternMatch failed, non-matching patterns\n");
         print("Non matching patterns");
         DFA.printPattern(p1); print(",");

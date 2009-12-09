@@ -46,6 +46,7 @@ public import Debug;
 public import Error;
 public import MetaUtil;
 public import SCode;
+public import RTOpts;
 
 type Stamp = Integer;
 type ArcName = Absyn.Ident;
@@ -1511,6 +1512,7 @@ algorithm
       then (localDfaEnv,localCache);
     case (e::_,_,_,_)
       equation
+				true = RTOpts.debugFlag("matchcase");
         str = Dump.printExpStr(e);
         Debug.fprintln("matchcase", "- DFA.addVarsToDfaEnv failed " +& str);
       then fail();
@@ -2349,6 +2351,7 @@ algorithm
     case (pat :: _,_,_,_,_)
       local String str;
       equation
+				true = RTOpts.debugFlag("matchcase");
         str = printPatternStr(pat);
         Debug.fprintln("matchcase", "- generatePathVarDeclarationsList failed: " +& str);
       then fail();

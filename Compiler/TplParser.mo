@@ -3,6 +3,7 @@ package TplParser
 public import Tpl;
 public import Util;
 public import TplAbsyn;
+public import RTOpts;
 
 protected import System;
 protected import Debug;
@@ -484,6 +485,7 @@ algorithm
     
     case (file) 
       equation
+				true = RTOpts.debugFlag("failtrace");
         Debug.fprint("failtrace", "Parse error - TplParser.templPackageFromFile failed for file '" +& file +& "'.\n");
       then fail();
 
@@ -516,6 +518,7 @@ algorithm
     
     case (file,_) 
       equation
+				true = RTOpts.debugFlag("failtrace");
         Debug.fprint("failtrace", "Parse error - TplParser.typeviewDefsFromFile failed for file '" +& file +& "'.\n");
       then fail();
                 
