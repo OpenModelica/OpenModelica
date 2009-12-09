@@ -127,7 +127,7 @@ std::string ErrorMessage::getFullMessage()
   strbuf << "{\"" << message_text << "\", \"" <<
     messageType_ << "\", \"" <<
     severity_ << "\", \"" <<
-    errorID_ <<  "\"}" << std::ends;
+    errorID_ <<  "\"}";
 
   return strbuf.str();
 }

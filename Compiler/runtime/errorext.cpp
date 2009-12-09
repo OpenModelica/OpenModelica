@@ -333,9 +333,9 @@ extern "C"
       res = res + errorMessageQueue.top()->getFullMessage();
       delete errorMessageQueue.top();
       errorMessageQueue.pop();
-      if (!errorMessageQueue.empty()) res = res + string(",");
+      if (!errorMessageQueue.empty()) { res = res + string(","); }
     }
-    res+=string("}");
+    res = res + string("}");
     rmlA0 = mk_scon((char*)res.c_str());
     RML_TAILCALLK(rmlSC);
   }
