@@ -5480,7 +5480,7 @@ algorithm
           "# Unary plus in binary expression (internal error)");
       then
         fail();
-    case (e1,DAE.ADD_ARR(ty = DAE.ET_REAL()),e2,tnr,context)
+    case (e1,DAE.ADD_ARR(ty = DAE.ET_ARRAY(DAE.ET_REAL(), {NONE})),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -5491,7 +5491,7 @@ algorithm
         cfn = cAddStatements(cfn_2, {stmt});
       then
         (cfn,var,tnr3);
-    case (e1,DAE.ADD_ARR(ty = DAE.ET_INT()),e2,tnr,context)
+    case (e1,DAE.ADD_ARR(ty = DAE.ET_ARRAY(DAE.ET_INT(), {NONE})),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -5503,7 +5503,7 @@ algorithm
         cfn = cAddStatements(cfn_2, {stmt});
       then
         (cfn,var,tnr3);
-    case (e1,DAE.SUB_ARR(ty = DAE.ET_REAL()),e2,tnr,context)
+    case (e1,DAE.SUB_ARR(ty = DAE.ET_ARRAY(DAE.ET_REAL(), {NONE})),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -5514,7 +5514,7 @@ algorithm
         cfn = cAddStatements(cfn_2, {stmt});
       then
         (cfn,var,tnr3);
-    case (e1,DAE.SUB_ARR(ty = DAE.ET_INT()),e2,tnr,context)
+    case (e1,DAE.SUB_ARR(ty = DAE.ET_ARRAY(DAE.ET_INT(), {NONE})),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -5526,7 +5526,7 @@ algorithm
         cfn = cAddStatements(cfn_2, {stmt});
       then
         (cfn,var,tnr3);
-    case (e1,DAE.MUL_SCALAR_ARRAY(ty = DAE.ET_REAL()),e2,tnr,context)
+    case (e1,DAE.MUL_SCALAR_ARRAY(ty = DAE.ET_ARRAY(DAE.ET_REAL(), {NONE})),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -5539,7 +5539,7 @@ algorithm
         cfn = cAddStatements(cfn_2, {stmt});
       then
         (cfn,var,tnr3);
-    case (e1,DAE.MUL_SCALAR_ARRAY(ty = DAE.ET_INT()),e2,tnr,context)
+    case (e1,DAE.MUL_SCALAR_ARRAY(ty = DAE.ET_ARRAY(DAE.ET_INT(), {NONE})),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -5552,7 +5552,7 @@ algorithm
         cfn = cAddStatements(cfn_2, {stmt});
       then
         (cfn,var,tnr3);
-    case (e1,DAE.MUL_ARRAY_SCALAR(ty = DAE.ET_REAL()),e2,tnr,context)
+    case (e1,DAE.MUL_ARRAY_SCALAR(ty = DAE.ET_ARRAY(DAE.ET_REAL(), {NONE})),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -5565,7 +5565,7 @@ algorithm
         cfn = cAddStatements(cfn_2, {stmt});
       then
         (cfn,var,tnr3);
-    case (e1,DAE.MUL_ARRAY_SCALAR(ty = DAE.ET_INT()),e2,tnr,context)
+    case (e1,DAE.MUL_ARRAY_SCALAR(ty = DAE.ET_ARRAY(DAE.ET_INT(), {NONE})),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -5620,7 +5620,7 @@ algorithm
         cfn = cAddStatements(cfn_2, {stmt});
       then
         (cfn,var,tnr3);
-    case (e1,DAE.DIV_ARRAY_SCALAR(ty = DAE.ET_REAL()),e2,tnr,context)
+    case (e1,DAE.DIV_ARRAY_SCALAR(ty = DAE.ET_ARRAY(DAE.ET_REAL(),_)),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -5633,7 +5633,7 @@ algorithm
         cfn = cAddStatements(cfn_2, {stmt});
       then
         (cfn,var,tnr3);
-    case (e1,DAE.DIV_ARRAY_SCALAR(ty = DAE.ET_INT()),e2,tnr,context)
+		case (e1,DAE.DIV_ARRAY_SCALAR(ty = DAE.ET_ARRAY(DAE.ET_INT(),_)),e2,tnr,context)
       equation
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);

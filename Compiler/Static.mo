@@ -9488,7 +9488,7 @@ end makeASUBArrayAdressing;
 
 protected function makeASUBArrayAdressing2 
 "function makeASUBArrayAdressing 
-  This function is sopposed to remake 
+  This function is supposed to remake 
   CREFS with a variable subscript to a ASUB" 
   input list<DAE.Subscript> inSSL;
   output list<DAE.Exp> outExp;
@@ -11894,7 +11894,7 @@ protected constant list<DAE.Type> stringtypes = {
 public function operators "function: operators
  
   This function relates the operators in the abstract syntax to the
-  de-overaloaded operators in the SCode. It produces a list of available
+  de-overloaded operators in the SCode. It produces a list of available
   types for a specific operator, that the overload function chooses from.
   Therefore, in order for the builtin type conversion from Integer to 
   Real to work, operators that work on both Integers and Reals must 
@@ -11921,12 +11921,12 @@ algorithm
       DAE.ExpType defaultExpType;
     case (cache,Absyn.ADD(),env,t1,t2) /* Arithmetical operators */ 
       equation 
-        intarrs = operatorReturn(DAE.ADD_ARR(DAE.ET_INT()), intarrtypes, intarrtypes, 
-          intarrtypes);
-        realarrs = operatorReturn(DAE.ADD_ARR(DAE.ET_REAL()), realarrtypes, realarrtypes, 
-          realarrtypes);
-        stringarrs = operatorReturn(DAE.ADD_ARR(DAE.ET_STRING()), stringarrtypes, stringarrtypes, 
-          stringarrtypes);
+        intarrs = operatorReturn(DAE.ADD_ARR(DAE.ET_ARRAY(DAE.ET_INT(), {NONE})), 
+					intarrtypes, intarrtypes, intarrtypes);
+        realarrs = operatorReturn(DAE.ADD_ARR(DAE.ET_ARRAY(DAE.ET_REAL(), {NONE})), 
+					realarrtypes, realarrtypes, realarrtypes);
+        stringarrs = operatorReturn(DAE.ADD_ARR(DAE.ET_ARRAY(DAE.ET_STRING(), {NONE})), 
+					stringarrtypes, stringarrtypes, stringarrtypes);
         scalars = {
           (DAE.ADD(DAE.ET_INT()),
           {(DAE.T_INTEGER({}),NONE),(DAE.T_INTEGER({}),NONE)},(DAE.T_INTEGER({}),NONE)),
@@ -11941,12 +11941,12 @@ algorithm
         (cache,types);
     case (cache,Absyn.ADD_EW(),env,t1,t2) /* Arithmetical operators */ 
       equation 
-        intarrs = operatorReturn(DAE.ADD_ARR(DAE.ET_INT()), intarrtypes, intarrtypes, 
-          intarrtypes);
-        realarrs = operatorReturn(DAE.ADD_ARR(DAE.ET_REAL()), realarrtypes, realarrtypes, 
-          realarrtypes);
-        stringarrs = operatorReturn(DAE.ADD_ARR(DAE.ET_STRING()), stringarrtypes, stringarrtypes, 
-          stringarrtypes);
+        intarrs = operatorReturn(DAE.ADD_ARR(DAE.ET_ARRAY(DAE.ET_INT(), {NONE})), 
+					intarrtypes, intarrtypes, intarrtypes);
+        realarrs = operatorReturn(DAE.ADD_ARR(DAE.ET_ARRAY(DAE.ET_REAL(), {NONE})), 
+					realarrtypes, realarrtypes, realarrtypes);
+        stringarrs = operatorReturn(DAE.ADD_ARR(DAE.ET_ARRAY(DAE.ET_STRING(), {NONE})), 
+					stringarrtypes, stringarrtypes, stringarrtypes);
         scalars = {
           (DAE.ADD(DAE.ET_INT()),
           {(DAE.T_INTEGER({}),NONE),(DAE.T_INTEGER({}),NONE)},(DAE.T_INTEGER({}),NONE)),
@@ -11954,18 +11954,18 @@ algorithm
           {(DAE.T_REAL({}),NONE),(DAE.T_REAL({}),NONE)},(DAE.T_REAL({}),NONE)),
           (DAE.ADD(DAE.ET_STRING()),
           {(DAE.T_STRING({}),NONE),(DAE.T_STRING({}),NONE)},(DAE.T_STRING({}),NONE))};
-        intscalararrs = operatorReturn(DAE.ADD_SCALAR_ARRAY(DAE.ET_INT()), inttypes, intarrtypes, 
-          intarrtypes);
-        realscalararrs = operatorReturn(DAE.ADD_SCALAR_ARRAY(DAE.ET_REAL()), realtypes, realarrtypes, 
-          realarrtypes);
-        intarrsscalar = operatorReturn(DAE.ADD_ARRAY_SCALAR(DAE.ET_INT()), intarrtypes, inttypes, 
-          intarrtypes);
-        realarrsscalar = operatorReturn(DAE.ADD_ARRAY_SCALAR(DAE.ET_REAL()), realarrtypes, realtypes, 
-          realarrtypes);
-        stringscalararrs = operatorReturn(DAE.ADD_SCALAR_ARRAY(DAE.ET_STRING()), stringtypes, stringarrtypes, 
-          stringarrtypes);
-        stringarrsscalar = operatorReturn(DAE.ADD_ARRAY_SCALAR(DAE.ET_STRING()), stringarrtypes, stringtypes, 
-          stringarrtypes);
+        intscalararrs = operatorReturn(DAE.ADD_SCALAR_ARRAY(DAE.ET_ARRAY(DAE.ET_INT(), {NONE})), 
+					inttypes, intarrtypes, intarrtypes);
+        realscalararrs = operatorReturn(DAE.ADD_SCALAR_ARRAY(DAE.ET_ARRAY(DAE.ET_REAL(), {NONE})), 
+					realtypes, realarrtypes, realarrtypes);
+        intarrsscalar = operatorReturn(DAE.ADD_ARRAY_SCALAR(DAE.ET_ARRAY(DAE.ET_INT(), {NONE})), 
+					intarrtypes, inttypes, intarrtypes);
+        realarrsscalar = operatorReturn(DAE.ADD_ARRAY_SCALAR(DAE.ET_ARRAY(DAE.ET_REAL(), {NONE})), 
+					realarrtypes, realtypes, realarrtypes);
+        stringscalararrs = operatorReturn(DAE.ADD_SCALAR_ARRAY(DAE.ET_ARRAY(DAE.ET_STRING(), {NONE})), 
+					stringtypes, stringarrtypes, stringarrtypes);
+        stringarrsscalar = operatorReturn(DAE.ADD_ARRAY_SCALAR(DAE.ET_ARRAY(DAE.ET_STRING(), {NONE})), 
+					stringarrtypes, stringtypes, stringarrtypes);
         types = Util.listFlatten({scalars,intscalararrs,realscalararrs,stringscalararrs,intarrsscalar,
           realarrsscalar,stringarrsscalar,intarrs,realarrs,stringarrs});
       then
@@ -11973,10 +11973,10 @@ algorithm
         
     case (cache,Absyn.SUB(),env,t1,t2)
       equation 
-        intarrs = operatorReturn(DAE.SUB_ARR(DAE.ET_INT()), intarrtypes, intarrtypes, 
-          intarrtypes);
-        realarrs = operatorReturn(DAE.SUB_ARR(DAE.ET_REAL()), realarrtypes, realarrtypes, 
-          realarrtypes);
+        intarrs = operatorReturn(DAE.SUB_ARR(DAE.ET_ARRAY(DAE.ET_INT(), {NONE})), 
+					intarrtypes, intarrtypes, intarrtypes);
+        realarrs = operatorReturn(DAE.SUB_ARR(DAE.ET_ARRAY(DAE.ET_REAL(), {NONE})), 
+					realarrtypes, realarrtypes, realarrtypes);
         scalars = {
           (DAE.SUB(DAE.ET_INT()),
           {(DAE.T_INTEGER({}),NONE),(DAE.T_INTEGER({}),NONE)},(DAE.T_INTEGER({}),NONE)),
@@ -11988,23 +11988,23 @@ algorithm
         (cache,types);
     case (cache,Absyn.SUB_EW(),env,t1,t2) /* Arithmetical operators */ 
       equation 
-        intarrs = operatorReturn(DAE.SUB_ARR(DAE.ET_INT()), intarrtypes, intarrtypes, 
-          intarrtypes);
-        realarrs = operatorReturn(DAE.SUB_ARR(DAE.ET_REAL()), realarrtypes, realarrtypes, 
-          realarrtypes);
+        intarrs = operatorReturn(DAE.SUB_ARR(DAE.ET_ARRAY(DAE.ET_INT(), {NONE})), 
+					intarrtypes, intarrtypes, intarrtypes);
+        realarrs = operatorReturn(DAE.SUB_ARR(DAE.ET_ARRAY(DAE.ET_REAL(), {NONE})), 
+					realarrtypes, realarrtypes, realarrtypes);
         scalars = {
           (DAE.SUB(DAE.ET_INT()),
           {(DAE.T_INTEGER({}),NONE),(DAE.T_INTEGER({}),NONE)},(DAE.T_INTEGER({}),NONE)),
           (DAE.SUB(DAE.ET_REAL()),
           {(DAE.T_REAL({}),NONE),(DAE.T_REAL({}),NONE)},(DAE.T_REAL({}),NONE))};
-        intscalararrs = operatorReturn(DAE.SUB_SCALAR_ARRAY(DAE.ET_INT()), inttypes, intarrtypes, 
-          intarrtypes);
-        realscalararrs = operatorReturn(DAE.SUB_SCALAR_ARRAY(DAE.ET_REAL()), realtypes, realarrtypes, 
-          realarrtypes);
-        intarrsscalar = operatorReturn(DAE.SUB_ARRAY_SCALAR(DAE.ET_INT()), intarrtypes, inttypes, 
-          intarrtypes);
-        realarrsscalar = operatorReturn(DAE.SUB_ARRAY_SCALAR(DAE.ET_REAL()), realarrtypes, realtypes, 
-          realarrtypes);
+        intscalararrs = operatorReturn(DAE.SUB_SCALAR_ARRAY(DAE.ET_ARRAY(DAE.ET_INT(), {NONE})), 
+					inttypes, intarrtypes, intarrtypes);
+        realscalararrs = operatorReturn(DAE.SUB_SCALAR_ARRAY(DAE.ET_ARRAY(DAE.ET_REAL(), {NONE})), 
+					realtypes, realarrtypes, realarrtypes);
+        intarrsscalar = operatorReturn(DAE.SUB_ARRAY_SCALAR(DAE.ET_ARRAY(DAE.ET_INT(), {NONE})), 
+					intarrtypes, inttypes, intarrtypes);
+        realarrsscalar = operatorReturn(DAE.SUB_ARRAY_SCALAR(DAE.ET_ARRAY(DAE.ET_REAL(), {NONE})), 
+					realarrtypes, realtypes, realarrtypes);
         types = Util.listFlatten({scalars,intscalararrs,realscalararrs,intarrsscalar,
           realarrsscalar,intarrs,realarrs});
       then
@@ -12032,14 +12032,14 @@ algorithm
           (int_mul_mp,{int_matrix,int_vector},int_vector),(int_mul_mp,{int_matrix,int_matrix},int_matrix),
           (real_mul_mp,{real_vector,real_matrix},real_vector),(real_mul_mp,{real_matrix,real_vector},real_vector),
           (real_mul_mp,{real_matrix,real_matrix},real_matrix)};
-        intscalararrs = operatorReturn(DAE.MUL_SCALAR_ARRAY(DAE.ET_INT()), inttypes, intarrtypes, 
-          intarrtypes);
-        realscalararrs = operatorReturn(DAE.MUL_SCALAR_ARRAY(DAE.ET_REAL()), realtypes, realarrtypes, 
-          realarrtypes);
-        intarrsscalar = operatorReturn(DAE.MUL_ARRAY_SCALAR(DAE.ET_INT()), intarrtypes, inttypes, 
-          intarrtypes);
-        realarrsscalar = operatorReturn(DAE.MUL_ARRAY_SCALAR(DAE.ET_REAL()), realarrtypes, realtypes, 
-          realarrtypes);
+        intscalararrs = operatorReturn(DAE.MUL_SCALAR_ARRAY(DAE.ET_ARRAY(DAE.ET_INT(), {NONE})), 
+					inttypes, intarrtypes, intarrtypes);
+        realscalararrs = operatorReturn(DAE.MUL_SCALAR_ARRAY(DAE.ET_ARRAY(DAE.ET_REAL(), {NONE})), 
+					realtypes, realarrtypes, realarrtypes);
+        intarrsscalar = operatorReturn(DAE.MUL_ARRAY_SCALAR(DAE.ET_ARRAY(DAE.ET_INT(), {NONE})), 
+					intarrtypes, inttypes, intarrtypes);
+        realarrsscalar = operatorReturn(DAE.MUL_ARRAY_SCALAR(DAE.ET_ARRAY(DAE.ET_REAL(), {NONE})), 
+					realarrtypes, realtypes, realarrtypes);
         /*(cache,userops) = getKoeningOperatorTypes(cache,"times", env, t1, t2);*/
         types = Util.listFlatten(
           {scalars,intscalararrs,realscalararrs,intarrsscalar,
@@ -12048,23 +12048,23 @@ algorithm
         (cache,types);
     case (cache,Absyn.MUL_EW(),env,t1,t2) /* Arithmetical operators */ 
       equation 
-        intarrs = operatorReturn(DAE.MUL_ARR(DAE.ET_INT()), intarrtypes, intarrtypes, 
-          intarrtypes);
-        realarrs = operatorReturn(DAE.MUL_ARR(DAE.ET_REAL()), realarrtypes, realarrtypes, 
-          realarrtypes);
+        intarrs = operatorReturn(DAE.MUL_ARR(DAE.ET_ARRAY(DAE.ET_INT(), {NONE})), 
+					intarrtypes, intarrtypes, intarrtypes);
+        realarrs = operatorReturn(DAE.MUL_ARR(DAE.ET_ARRAY(DAE.ET_REAL(), {NONE})), 
+					realarrtypes, realarrtypes, realarrtypes);
         scalars = {
           (DAE.MUL(DAE.ET_INT()),
           {(DAE.T_INTEGER({}),NONE),(DAE.T_INTEGER({}),NONE)},(DAE.T_INTEGER({}),NONE)),
           (DAE.MUL(DAE.ET_REAL()),
           {(DAE.T_REAL({}),NONE),(DAE.T_REAL({}),NONE)},(DAE.T_REAL({}),NONE))};
-        intscalararrs = operatorReturn(DAE.MUL_SCALAR_ARRAY(DAE.ET_INT()), inttypes, intarrtypes, 
-          intarrtypes);
-        realscalararrs = operatorReturn(DAE.MUL_SCALAR_ARRAY(DAE.ET_REAL()), realtypes, realarrtypes, 
-          realarrtypes);
-        intarrsscalar = operatorReturn(DAE.MUL_ARRAY_SCALAR(DAE.ET_INT()), intarrtypes, inttypes, 
-          intarrtypes);
-        realarrsscalar = operatorReturn(DAE.MUL_ARRAY_SCALAR(DAE.ET_REAL()), realarrtypes, realtypes, 
-          realarrtypes);
+        intscalararrs = operatorReturn(DAE.MUL_SCALAR_ARRAY(DAE.ET_ARRAY(DAE.ET_INT(), {NONE})), 
+					inttypes, intarrtypes, intarrtypes);
+        realscalararrs = operatorReturn(DAE.MUL_SCALAR_ARRAY(DAE.ET_ARRAY(DAE.ET_REAL(), {NONE})), 
+					realtypes, realarrtypes, realarrtypes);
+        intarrsscalar = operatorReturn(DAE.MUL_ARRAY_SCALAR(DAE.ET_ARRAY(DAE.ET_INT(), {NONE})), 
+					intarrtypes, inttypes, intarrtypes);
+        realarrsscalar = operatorReturn(DAE.MUL_ARRAY_SCALAR(DAE.ET_ARRAY(DAE.ET_REAL(), {NONE})), 
+					realarrtypes, realtypes, realarrtypes);
         types = Util.listFlatten({scalars,intscalararrs,realscalararrs,intarrsscalar,
           realarrsscalar,intarrs,realarrs});
       then
@@ -12075,23 +12075,23 @@ algorithm
         real_div = DAE.DIV(DAE.ET_REAL());
         real_scalar = (DAE.T_REAL({}),NONE);
         scalars = {(real_div,{real_scalar,real_scalar},real_scalar)};
-        realarrscalar = operatorReturn(DAE.DIV_ARRAY_SCALAR(DAE.ET_REAL()), realarrtypes, realtypes, 
-          realarrtypes);
+        realarrscalar = operatorReturn(DAE.DIV_ARRAY_SCALAR(DAE.ET_ARRAY(DAE.ET_REAL(), {NONE})), 
+					realarrtypes, realtypes, realarrtypes);
         /*(cache,userops) = getKoeningOperatorTypes(cache,"divide", env, t1, t2);*/
         types = Util.listFlatten({scalars,realarrscalar/*,userops*/});
       then
         (cache,types);
     case (cache,Absyn.DIV_EW(),env,t1,t2) /* Arithmetical operators */ 
       equation 
-        realarrs = operatorReturn(DAE.DIV_ARR(DAE.ET_REAL()), realarrtypes, realarrtypes, 
-          realarrtypes);
+        realarrs = operatorReturn(DAE.DIV_ARR(DAE.ET_ARRAY(DAE.ET_REAL(), {NONE})), 
+					realarrtypes, realarrtypes, realarrtypes);
         scalars = {
           (DAE.DIV(DAE.ET_REAL()),
           {(DAE.T_REAL({}),NONE),(DAE.T_REAL({}),NONE)},(DAE.T_REAL({}),NONE))};
-        realscalararrs = operatorReturn(DAE.DIV_SCALAR_ARRAY(DAE.ET_REAL()), realtypes, realarrtypes, 
-          realarrtypes);
-        realarrsscalar = operatorReturn(DAE.DIV_ARRAY_SCALAR(DAE.ET_REAL()), realarrtypes, realtypes, 
-          realarrtypes);
+        realscalararrs = operatorReturn(DAE.DIV_SCALAR_ARRAY(DAE.ET_ARRAY(DAE.ET_REAL(), {NONE})), 
+					realtypes, realarrtypes, realarrtypes);
+        realarrsscalar = operatorReturn(DAE.DIV_ARRAY_SCALAR(DAE.ET_ARRAY(DAE.ET_REAL(), {NONE})), 
+					realarrtypes, realtypes, realarrtypes);
         types = Util.listFlatten({scalars,realscalararrs,
           realarrsscalar,realarrs});
       then
@@ -12117,15 +12117,15 @@ algorithm
         (cache,types);
     case (cache,Absyn.POW_EW(),env,t1,t2)  
       equation 
-        realarrs = operatorReturn(DAE.POW_ARR2(DAE.ET_REAL()), realarrtypes, realarrtypes, 
-          realarrtypes);
+        realarrs = operatorReturn(DAE.POW_ARR2(DAE.ET_ARRAY(DAE.ET_REAL(), {NONE})), 
+					realarrtypes, realarrtypes, realarrtypes);
         scalars = {
           (DAE.POW(DAE.ET_REAL()),
           {(DAE.T_REAL({}),NONE),(DAE.T_REAL({}),NONE)},(DAE.T_REAL({}),NONE))};
-        realscalararrs = operatorReturn(DAE.POW_SCALAR_ARRAY(DAE.ET_REAL()), realtypes, realarrtypes, 
-          realarrtypes);
-        realarrsscalar = operatorReturn(DAE.POW_ARRAY_SCALAR(DAE.ET_REAL()), realarrtypes, realtypes, 
-          realarrtypes);
+        realscalararrs = operatorReturn(DAE.POW_SCALAR_ARRAY(DAE.ET_ARRAY(DAE.ET_REAL(), {NONE})), 
+					realtypes, realarrtypes, realarrtypes);
+        realarrsscalar = operatorReturn(DAE.POW_ARRAY_SCALAR(DAE.ET_ARRAY(DAE.ET_REAL(), {NONE})), 
+					realarrtypes, realtypes, realarrtypes);
         types = Util.listFlatten({scalars,realscalararrs,
           realarrsscalar,realarrs});
       then
@@ -12138,8 +12138,10 @@ algorithm
           (DAE.T_INTEGER({}),NONE)),
           (DAE.UMINUS(DAE.ET_REAL()),{(DAE.T_REAL({}),NONE)},
           (DAE.T_REAL({}),NONE))} "The UMINUS operator, unary minus" ;
-        intarrs = operatorReturnUnary(DAE.UMINUS_ARR(DAE.ET_INT()), intarrtypes, intarrtypes);
-        realarrs = operatorReturnUnary(DAE.UMINUS_ARR(DAE.ET_REAL()), realarrtypes, realarrtypes);
+        intarrs = operatorReturnUnary(DAE.UMINUS_ARR(DAE.ET_ARRAY(DAE.ET_INT(), {NONE})), 
+					intarrtypes, intarrtypes);
+        realarrs = operatorReturnUnary(DAE.UMINUS_ARR(DAE.ET_ARRAY(DAE.ET_REAL(), {NONE})), 
+					realarrtypes, realarrtypes);
         /*(cache,userops) = getKoeningOperatorTypes(cache,"unaryMinus", env, t1, t2);*/
         types = Util.listFlatten({scalars,intarrs,realarrs/*,userops*/});
       then
@@ -12151,8 +12153,10 @@ algorithm
           (DAE.T_INTEGER({}),NONE)),
           (DAE.UPLUS(DAE.ET_REAL()),{(DAE.T_REAL({}),NONE)},
           (DAE.T_REAL({}),NONE))} "The UPLUS operator, unary plus." ;
-        intarrs = operatorReturnUnary(DAE.UPLUS(DAE.ET_INT()), intarrtypes, intarrtypes);
-        realarrs = operatorReturnUnary(DAE.UPLUS(DAE.ET_REAL()), realarrtypes, realarrtypes);
+        intarrs = operatorReturnUnary(DAE.UPLUS(DAE.ET_ARRAY(DAE.ET_INT(), {NONE})), 
+					intarrtypes, intarrtypes);
+        realarrs = operatorReturnUnary(DAE.UPLUS(DAE.ET_ARRAY(DAE.ET_REAL(), {NONE})), 
+					realarrtypes, realarrtypes);
         /*(cache,userops) = getKoeningOperatorTypes(cache,"unaryPlus", env, t1, t2);*/
         types = Util.listFlatten({scalars,intarrs,realarrs/*,userops*/});
       then
@@ -12164,8 +12168,10 @@ algorithm
           (DAE.T_INTEGER({}),NONE)),
           (DAE.UMINUS(DAE.ET_REAL()),{(DAE.T_REAL({}),NONE)},
           (DAE.T_REAL({}),NONE))} "The UMINUS operator, unary minus" ;
-        intarrs = operatorReturnUnary(DAE.UMINUS_ARR(DAE.ET_INT()), intarrtypes, intarrtypes);
-        realarrs = operatorReturnUnary(DAE.UMINUS_ARR(DAE.ET_REAL()), realarrtypes, realarrtypes);
+        intarrs = operatorReturnUnary(DAE.UMINUS_ARR(DAE.ET_ARRAY(DAE.ET_INT(), {NONE})), 
+					intarrtypes, intarrtypes);
+        realarrs = operatorReturnUnary(DAE.UMINUS_ARR(DAE.ET_ARRAY(DAE.ET_REAL(), {NONE})), 
+					realarrtypes, realarrtypes);
         /*(cache,userops) = getKoeningOperatorTypes(cache,"unaryMinus", env, t1, t2);*/
         types = Util.listFlatten({scalars,intarrs,realarrs/*,userops*/});
       then
@@ -12177,8 +12183,10 @@ algorithm
           (DAE.T_INTEGER({}),NONE)),
           (DAE.UPLUS(DAE.ET_REAL()),{(DAE.T_REAL({}),NONE)},
           (DAE.T_REAL({}),NONE))} "The UPLUS operator, unary plus." ;
-        intarrs = operatorReturnUnary(DAE.UPLUS(DAE.ET_INT()), intarrtypes, intarrtypes);
-        realarrs = operatorReturnUnary(DAE.UPLUS(DAE.ET_REAL()), realarrtypes, realarrtypes);
+        intarrs = operatorReturnUnary(DAE.UPLUS(DAE.ET_ARRAY(DAE.ET_INT(), {NONE})), 
+					intarrtypes, intarrtypes);
+        realarrs = operatorReturnUnary(DAE.UPLUS(DAE.ET_ARRAY(DAE.ET_REAL(), {NONE})), 
+					realarrtypes, realarrtypes);
         /*(cache,userops) = getKoeningOperatorTypes(cache,"unaryPlus", env, t1, t2);*/
         types = Util.listFlatten({scalars,intarrs,realarrs/*,userops*/});
       then
