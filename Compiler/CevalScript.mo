@@ -2681,13 +2681,15 @@ algorithm
       String pd,omhome,omhome_1,cd_path,libsfilename,libs_str,s_call,fileprefix,file_dir,command,filename,str;
       list<String> libs;
       
-      // If compileCommand not set, use $OPENMODELICAHOME\bin\Compile
+    // If compileCommand not set, use $OPENMODELICAHOME\bin\Compile
+    // adrpo 2009-11-29: use ALL THE TIME $OPENMODELICAHOME/bin/Compile
     case (fileprefix,libs,file_dir,noClean) 
       equation
         // if compileCommand is set to g++ use $OPENMODELICAHOME/bin/Compile
         // MathCore needs compileCommand to be set to g++ in Compiler/runtime/settingsimpl.c
         // so we test for g++ instead of "" (nothing).
-        "g++" = Settings.getCompileCommand();
+        command = Settings.getCompileCommand();
+        // Settings.setCompileCommand(""); // set it to nothing so the case below doesn't match.
         pd = System.pathDelimiter();
         omhome = Settings.getInstallationDirectoryPath();
         omhome_1 = System.stringReplace(omhome, "\"", "");
@@ -2703,7 +2705,7 @@ algorithm
         Debug.fprintln("dynload", "compileModel: successful! ");        
       then
         ();
-        // If compileCommand is set.
+    /* If compileCommand is set.
     case (fileprefix,libs,file_dir,noClean)
       equation 
         command = Settings.getCompileCommand();
@@ -2721,7 +2723,7 @@ algorithm
         Debug.fprintln("dynload", "compileModel: successful! ");        
       then
         ();     
-        
+    */    
     case (fileprefix,libs,file_dir,_) /* compilation failed */ 
       equation 
         filename = Util.stringAppendList({fileprefix,".log"});
