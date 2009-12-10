@@ -2675,6 +2675,28 @@ algorithm
   end matchcontinue;
 end joinPaths;
 
+public function joinPathsOpt "function: joinPathsOpt
+  This function joins two paths when the first one might be NONE"
+  input Option<Path> inPath1;
+  input Path inPath2;
+  output Path outPath;
+algorithm 
+  outPath := matchcontinue (inPath1,inPath2)
+    local
+      Ident str;
+      Path p2,p_1,p;
+    case (NONE(), p2) then p2;
+    case (SOME(IDENT(name = str)),p2) then QUALIFIED(str,p2); 
+    case (SOME(QUALIFIED(name = str,path = p)),p2)
+      equation 
+        p_1 = joinPaths(p, p2);
+      then
+        QUALIFIED(str,p_1);
+    case(SOME(FULLYQUALIFIED(p)),p2) then joinPaths(p,p2);
+    case(SOME(p),FULLYQUALIFIED(p2)) then joinPaths(p,p2);
+  end matchcontinue;
+end joinPathsOpt;
+
 public function optPathAppend "
 Author BZ, 2009-01
 Appends a path to optional 'base'-path.
