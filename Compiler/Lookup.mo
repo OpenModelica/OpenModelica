@@ -1449,7 +1449,7 @@ algorithm
       then (cache,classEnv);
     case(cache,env,path,msg)
       equation
-        Debug.fprint("failtrace", "-lookupAndInstantiate failed\n");
+        Debug.fprint("failtrace", "- Lookup.lookupAndInstantiate failed\n");
      then fail();
   end matchcontinue;
 end lookupAndInstantiate;
