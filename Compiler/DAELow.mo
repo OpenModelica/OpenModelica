@@ -6420,7 +6420,7 @@ public function addVar
 "function: addVar
   author: PA
   Add a variable to Variables.
-  If the variable allready exists, the function updates the variable."
+  If the variable already exists, the function updates the variable."
   input Var inVar;
   input Variables inVariables;
   output Variables outVariables;
@@ -6466,7 +6466,7 @@ algorithm
         VARIABLES(hashvec_1,oldhashvec_1,varr_1,bsize,n_1);
     case ((newv as VAR(varName = cr,origVarName = name,flowPrefix = flowPrefix)),(vars as VARIABLES(crefIdxLstArr = hashvec,strIdxLstArr = oldhashvec,varArr = varr,bucketSize = bsize,numberOfVars = n)))
       equation
-        (_,{indx}) = getVar(cr, vars) "adding when allready present => Updating value" ;
+        (_,{indx}) = getVar(cr, vars) "adding when already present => Updating value" ;
         indx_1 = indx - 1;
         varr_1 = vararraySetnth(varr, indx_1, newv);
       then
