@@ -1366,4 +1366,283 @@ algorithm
   end matchcontinue;
 end translateSubSub;
 
+public function translateSCodeModToNArgs
+"@author: adrpo
+ this function translates a SCode.Mod into Absyn.NamedArg 
+ and prefixes all *LOCAL* expressions with the given prefix.
+ Example:
+  Input:
+   prefix       : world
+   modifications: (gravityType  = gravityType, g  = g * Modelica.Math.Vectors.normalize(n), mue  = mue)
+  Gives:
+   namedArgs:     (gravityType  = world.gravityType, g  = world.g * Modelica.Math.Vectors.normalize(world.n), mue  = world.mue)"
+  input String prefix "given prefix, example: world";
+  input SCode.Mod mod "given modifications";
+  output list<Absyn.NamedArg> namedArgs "the resulting named arguments";
+algorithm
+  namedArgs := matchcontinue(prefix, mod)
+    local 
+      list<Absyn.NamedArg> nArgs;
+      list<SCode.SubMod> subModLst;
+    
+    case (prefix, SCode.MOD(subModLst = subModLst))
+      equation
+        nArgs = translateSubModToNArgs(prefix, subModLst);
+      then 
+        nArgs;
+  end matchcontinue;
+end translateSCodeModToNArgs;
+
+public function translateSubModToNArgs
+"@author: adrpo
+ this function translates a SCode.SubMod into Absyn.NamedArg 
+ and prefixes all *LOCAL* expressions with the given prefix."
+  input String prefix "given prefix, example: world";
+  input list<SCode.SubMod> subMods "given sub modifications";
+  output list<Absyn.NamedArg> namedArgs "the resulting named arguments";
+algorithm
+  namedArgs := matchcontinue(prefix, subMods)
+    local 
+      list<Absyn.NamedArg> nArgs;
+      list<SCode.SubMod> subModLst;
+      SCode.Mod mod;
+      Absyn.Exp exp;
+      SCode.Ident ident;
+    // deal with the empty list
+    case (prefix, {}) then {};
+    // deal with named modifiers
+    case (prefix, SCode.NAMEMOD(ident, SCode.MOD(absynExpOption = SOME((exp,_))))::subModLst)
+      equation
+        nArgs = translateSubModToNArgs(prefix, subModLst);
+        exp = prefixUnqualifiedCrefsFromExp(exp, prefix);
+      then 
+        Absyn.NAMEDARG(ident,exp)::nArgs;
+  end matchcontinue;
+end translateSubModToNArgs;
+
+public function prefixTuple
+  input tuple<Absyn.Exp, Absyn.Exp> expTuple;
+  input String prefix;
+  output tuple<Absyn.Exp, Absyn.Exp> prefixedExpTuple;
+algorithm
+  prefixedExp := matchcontinue(expTuple, prefix)
+    local 
+      Absyn.Exp e1,e2;
+      
+    case((e1, e2), prefix)
+      equation
+        e1 = prefixUnqualifiedCrefsFromExp(e1, prefix);
+        e2 = prefixUnqualifiedCrefsFromExp(e2, prefix);
+      then
+        ((e1, e2));
+  end matchcontinue;
+end prefixTuple;
+
+public function prefixUnqualifiedCrefsFromExpOpt
+  input Option<Absyn.Exp> inExpOpt;
+  input String prefix;
+  output Option<Absyn.Exp> outExpOpt;
+algorithm
+  outExpOpt := matchcontinue(inExpOpt, prefix)
+    local
+      Absyn.Exp exp;
+      
+    case (NONE(), prefix) then NONE();
+    case (SOME(exp), prefix)
+      equation
+        exp = prefixUnqualifiedCrefsFromExp(exp, prefix);
+      then
+        SOME(exp);
+  end matchcontinue;
+end prefixUnqualifiedCrefsFromExpOpt;
+
+public function prefixUnqualifiedCrefsFromExpLst
+  input list<Absyn.Exp> inExpLst;
+  input String prefix;
+  output list<Absyn.Exp> outExpLst;
+algorithm
+  outExpLst := matchcontinue(inExpLst, prefix)
+    local
+      Absyn.Exp exp;
+      list<Absyn.Exp> rest;
+      
+    case ({}, prefix) then {};
+    case (exp::rest, prefix)
+      equation
+        exp = prefixUnqualifiedCrefsFromExp(exp, prefix);
+        rest = prefixUnqualifiedCrefsFromExpLst(rest, prefix);
+      then
+        exp::rest;
+  end matchcontinue;
+end prefixUnqualifiedCrefsFromExpLst;
+
+public function prefixFunctionArgs
+  input Absyn.FunctionArgs inFunctionArgs;
+  input String prefix;
+  output Absyn.FunctionArgs outFunctionArgs;
+algorithm
+  outFunctionArgs := matchcontinue(inFunctionArgs, prefix)
+    local
+      Absyn.Exp exp;
+      list<Absyn.Exp> args "args" ;
+      list<Absyn.NamedArg> argNames "argNames" ;      
+
+    case (Absyn.FUNCTIONARGS(args, argNames), prefix)
+      equation
+        args = prefixUnqualifiedCrefsFromExpLst(args, prefix);
+      then
+        Absyn.FUNCTIONARGS(args, argNames);
+  end matchcontinue;
+end prefixFunctionArgs;
+
+public function prefixUnqualifiedCrefsFromExp
+  input Absyn.Exp exp;
+  input String prefix;
+  output Absyn.Exp prefixedExp;
+algorithm
+  prefixedExp := matchcontinue(exp, prefix)
+    local
+      SCode.Ident s,sym;
+      Integer x;
+      Absyn.ComponentRef c,fcn;
+      Absyn.Exp e1,e2,e1a,e2a,e,t,f,start,stop,step;
+      Absyn.Operator op;
+      list<tuple<Absyn.Exp, Absyn.Exp>> lst;
+      Absyn.FunctionArgs args;
+      list<Absyn.Exp> es;
+      Absyn.MatchType matchType;
+      Absyn.Exp head, rest;
+      Absyn.Exp inputExp;
+      list<Absyn.ElementItem> localDecls;
+      list<Absyn.Case> cases;
+      Option<String> comment;
+      list<list<Absyn.Exp>> esLstLst;
+      Option<Absyn.Exp> expOpt;
+      
+    // deal with basic types
+    case (Absyn.INTEGER(_), _) then exp;
+    case (Absyn.REAL(_), _) then exp;
+    case (Absyn.STRING(_), _) then exp;
+    case (Absyn.BOOL(_), _) then exp;      
+    
+    // do NOT prefix if you have qualified component references
+    case (Absyn.CREF(componentReg = c as Absyn.CREF_QUAL(name=_)), _) then exp;
+     
+    // do prefix if you have simple component references
+    case (Absyn.CREF(componentReg = c as Absyn.CREF_IDENT(name=_)), prefix)
+      equation
+        e = Absyn.crefExp(Absyn.CREF_QUAL(prefix, {}, c));
+      then
+        e;
+    // binary 
+    case (Absyn.BINARY(exp1 = e1,op = op,exp2 = e2), prefix)
+      equation
+        e1a = prefixUnqualifiedCrefsFromExp(e1, prefix);
+        e2a = prefixUnqualifiedCrefsFromExp(e2, prefix);
+      then
+        Absyn.BINARY(e1a, op, e2a);
+    // unary
+    case (Absyn.UNARY(op = op, exp = e), prefix)
+      equation
+        e = prefixUnqualifiedCrefsFromExp(e, prefix);        
+      then
+        Absyn.UNARY(op, e);
+    // binary logical 
+    case (Absyn.LBINARY(exp1 = e1,op = op,exp2 = e2), prefix)
+      equation
+        e1a = prefixUnqualifiedCrefsFromExp(e1, prefix);
+        e2a = prefixUnqualifiedCrefsFromExp(e2, prefix);
+      then
+        Absyn.LBINARY(e1a, op, e2a);
+    // unary logical
+    case (Absyn.LUNARY(op = op,exp = e), prefix)
+      equation
+        e = prefixUnqualifiedCrefsFromExp(e, prefix);      
+      then
+        Absyn.LUNARY(op, e);
+    // relations
+    case (Absyn.RELATION(exp1 = e1,op = op,exp2 = e2), prefix)
+      equation
+        e1a = prefixUnqualifiedCrefsFromExp(e1, prefix);
+        e2a = prefixUnqualifiedCrefsFromExp(e2, prefix);
+      then
+        Absyn.RELATION(e1a, op, e2a);
+    // if expressions
+    case (Absyn.IFEXP(ifExp = c,trueBranch = t,elseBranch = f,elseIfBranch = lst), prefix)
+      local Absyn.Exp c;
+      equation
+        c = prefixUnqualifiedCrefsFromExp(c, prefix);
+        t = prefixUnqualifiedCrefsFromExp(t, prefix);
+        f = prefixUnqualifiedCrefsFromExp(f, prefix);
+        lst = Util.listMap1(lst, prefixTuple, prefix); // TODO! fixme, prefix these also.
+      then
+        Absyn.IFEXP(c, t, f, lst);
+    // calls
+    case (Absyn.CALL(function_ = fcn,functionArgs = args), prefix)      
+      equation
+        args = prefixFunctionArgs(args, prefix);
+      then
+        Absyn.CALL(fcn, args);
+    // partial evaluated functions
+    case (Absyn.PARTEVALFUNCTION(function_ = fcn, functionArgs = args), prefix)
+      equation
+        args = prefixFunctionArgs(args, prefix);
+      then
+        Absyn.PARTEVALFUNCTION(fcn, args);
+    // arrays
+    case (Absyn.ARRAY(arrayExp = es), prefix)
+      equation
+        es = Util.listMap1(es, prefixUnqualifiedCrefsFromExp, prefix);
+      then
+        Absyn.ARRAY(es);
+    // tuples
+    case (Absyn.TUPLE(expressions = es), prefix)
+      equation
+        es = Util.listMap1(es, prefixUnqualifiedCrefsFromExp, prefix);      
+      then
+        Absyn.TUPLE(es);
+    // matrix
+    case (Absyn.MATRIX(matrix = esLstLst), prefix)
+      equation
+        esLstLst = Util.listMap1(esLstLst, prefixUnqualifiedCrefsFromExpLst, prefix);
+      then
+        Absyn.MATRIX(esLstLst);
+    // range
+    case (Absyn.RANGE(start = start,step = expOpt,stop = stop), prefix)
+      equation
+        start = prefixUnqualifiedCrefsFromExp(start, prefix);
+        expOpt = prefixUnqualifiedCrefsFromExpOpt(expOpt, prefix);
+        stop = prefixUnqualifiedCrefsFromExp(stop, prefix);
+      then
+        Absyn.RANGE(start, expOpt, stop);
+    // end    
+    case (Absyn.END(), prefix) then exp; 
+    // MetaModelica expressions!
+    case (Absyn.LIST(es), prefix)
+      equation
+        es = Util.listMap1(es, prefixUnqualifiedCrefsFromExp, prefix);
+      then
+        Absyn.LIST(es);
+    // cons
+    case (Absyn.CONS(head, rest), prefix)
+      equation
+        head = prefixUnqualifiedCrefsFromExp(head, prefix);
+        rest = prefixUnqualifiedCrefsFromExp(rest, prefix);
+      then
+        Absyn.CONS(head, rest);
+    // as
+    case (Absyn.AS(s, rest), prefix)
+      equation
+        rest = prefixUnqualifiedCrefsFromExp(rest, prefix);
+      then
+        Absyn.AS(s, rest);
+    // matchexp
+    case (Absyn.MATCHEXP(matchType, inputExp, localDecls, cases, comment), prefix)        
+      then
+        Absyn.MATCHEXP(matchType, inputExp, localDecls, cases, comment);
+    // something else, just return the expression
+    case (_, prefix) then exp;
+  end matchcontinue;
+end prefixUnqualifiedCrefsFromExp;
+
 end SCodeUtil;
