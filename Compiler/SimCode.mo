@@ -59,6 +59,14 @@ protected import CevalScript;
 
 
 public
+function listLengthExp
+  input list<DAE.Exp> lst;
+  output Integer len;
+algorithm
+  len := listLength(lst);
+end listLengthExp;
+
+public
 function listLengthStr
   input list<String> lst;
   output Integer len;
@@ -290,6 +298,13 @@ uniontype SimEqSystem
     DAE.ComponentRef componentRef;
     DAE.Exp exp;
   end SES_SIMPLE_ASSIGN;
+  record SES_ARRAY_CALL_ASSIGN
+    DAE.ComponentRef componentRef;
+    DAE.Exp exp;
+  end SES_ARRAY_CALL_ASSIGN;
+  record SES_NOT_IMPLEMENTED
+    String msg;
+  end SES_NOT_IMPLEMENTED;
 end SimEqSystem;
 
 uniontype SimWhenClause
@@ -1491,16 +1506,321 @@ algorithm
     /* multiple equations that must be solved together (algebraic loop) */
     case (dae, dlow, ass1, ass2, eqNum :: restEqNums)
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"createEquation failed: algebraic loops not implemented yet"});
+        equation_ = createOdeSystem(false, dlow, ass1, ass2, eqNum :: restEqNums);
       then
-        SES_SIMPLE_ASSIGN(DAE.WILD, DAE.ICONST(1));
+        equation_;
     case (_,_,_,_,_)
-      equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"createEquation failed"});
       then
-        SES_SIMPLE_ASSIGN(DAE.WILD, DAE.ICONST(2));
+        SES_NOT_IMPLEMENTED("none of cases in createEquation succeeded");
   end matchcontinue;
 end createEquation;
+
+public function createOdeSystem
+  input Boolean genDiscrete "if true generate discrete equations";
+  input DAELow.DAELow inDAELow1;
+  input Integer[:] inIntegerArray2;
+  input Integer[:] inIntegerArray3;
+  input list<Integer> inIntegerLst4;
+  output SimEqSystem equation_;
+algorithm
+  equation_ :=
+  matchcontinue (genDiscrete,inDAELow1,inIntegerArray2,inIntegerArray3,inIntegerLst4)
+    local
+      String rettp,fn;
+      list<DAELow.Equation> eqn_lst,cont_eqn,disc_eqn;
+      list<DAELow.Var> var_lst,cont_var,disc_var,var_lst_1,cont_var1;
+      DAELow.Variables vars_1,vars,knvars,exvars;
+      DAELow.EquationArray eqns_1,eqns,se,ie;
+      DAELow.DAELow cont_subsystem_dae,daelow,subsystem_dae,dlow;
+      list<Integer>[:] m,m_1,mt_1;
+      Option<list<tuple<Integer, Integer, DAELow.Equation>>> jac;
+      DAELow.JacobianType jac_tp;
+      String s;
+      Codegen.CFunction s2,s1,s0,s2_1,s3,s4,cfn;
+      Integer cg_id_1,cg_id,cg_id3,cg_id1,cg_id2,cg_id4,cg_id5;
+      list<CFunction> f1,extra_funcs1;
+      DAELow.MultiDimEquation[:] ae;
+      Algorithm.Algorithm[:] al;
+      DAELow.EventInfo ev;
+      Integer[:] ass1,ass2;
+      list<Integer> block_;
+      DAELow.ExternalObjectClasses eoc;
+      list<String> retrec,arg,locvars,init,locvars,stmts,cleanups,stmts_1,stmts_2;
+      Integer numValues;
+    /* mixed system of equations, continuous part only */
+    case (false,(daelow as DAELow.DAELOW(vars,knvars,exvars,eqns,se,ie,ae,al, ev,eoc)),ass1,ass2,block_)
+      equation
+        (eqn_lst,var_lst) = Util.listMap32(block_, getEquationAndSolvedVar, eqns, vars, ass2);
+        true = isMixedSystem(var_lst,eqn_lst);
+        (cont_eqn,cont_var,disc_eqn,disc_var) = splitMixedEquations(eqn_lst, var_lst);
+        // States are solved for der(x) not x.
+        cont_var1 = Util.listMap(cont_var, transformXToXd);
+        vars_1 = DAELow.listVar(cont_var1);
+        eqns_1 = DAELow.listEquation(cont_eqn);
+        cont_subsystem_dae = DAELow.DAELOW(vars_1,knvars,exvars,eqns_1,se,ie,ae,al,ev,eoc);
+        m = DAELow.incidenceMatrix(cont_subsystem_dae);
+        m_1 = DAELow.absIncidenceMatrix(m);
+        mt_1 = DAELow.transposeMatrix(m_1);
+        // calculate jacobian. If constant, linear system of equations. Otherwise nonlinear
+        jac = DAELow.calculateJacobian(vars_1, eqns_1, ae, m_1, mt_1,true);
+        jac_tp = DAELow.analyzeJacobian(cont_subsystem_dae, jac);
+        equation_ = createOdeSystem2(false, false, cont_subsystem_dae, jac, jac_tp);
+      then
+        equation_;
+    /* mixed system of equations, both continous and discrete eqns*/
+    case (true,(dlow as DAELow.DAELOW(vars,knvars,exvars,eqns,se,ie,ae,al, ev,eoc)),ass1,ass2,block_)
+      equation
+        (eqn_lst,var_lst) = Util.listMap32(block_, getEquationAndSolvedVar, eqns, vars, ass2);
+        true = isMixedSystem(var_lst,eqn_lst);
+        (cont_eqn,cont_var,disc_eqn,disc_var) = splitMixedEquations(eqn_lst, var_lst);
+        // States are solved for der(x) not x.
+        cont_var1 = Util.listMap(cont_var, transformXToXd);
+        vars_1 = DAELow.listVar(cont_var1);
+        eqns_1 = DAELow.listEquation(cont_eqn);
+        cont_subsystem_dae = DAELow.DAELOW(vars_1,knvars,exvars,eqns_1,se,ie,ae,al,ev,eoc);
+        m = DAELow.incidenceMatrix(cont_subsystem_dae);
+        m_1 = DAELow.absIncidenceMatrix(m);
+        mt_1 = DAELow.transposeMatrix(m_1);
+        // calculate jacobian. If constant, linear system of equations.
+        // Otherwise nonlinear
+        jac = DAELow.calculateJacobian(vars_1, eqns_1, ae, m_1, mt_1,true);
+        jac_tp = DAELow.analyzeJacobian(cont_subsystem_dae, jac);
+      //  (s0,cg_id1,numValues) = generateMixedHeader(cont_eqn, cont_var, disc_eqn, disc_var, cg_id);
+      //  (Codegen.CFUNCTION(rettp,fn,retrec,arg,locvars,init,stmts,cleanups),cg_id2,extra_funcs1) = generateOdeSystem2(true/*mixed system*/,true,cont_subsystem_dae, jac, jac_tp, cg_id1);
+      //  stmts_1 = Util.listFlatten({{"{"},locvars,stmts,{"}"}}) "initialization of e.g. matrices for linsys must be done in each
+      //      iteration, create new scope and put them first." ;
+      //  s2_1 = Codegen.CFUNCTION(rettp,fn,retrec,arg,{},init,stmts_1,cleanups);
+      //  (s4,cg_id3) = generateMixedFooter(cont_eqn, cont_var, disc_eqn, disc_var, cg_id2);
+      //  (s3,cg_id4,_) = generateMixedSystemDiscretePartCheck(disc_eqn, disc_var, cg_id3,numValues);
+      //  (s1,cg_id5,_) = generateMixedSystemStoreDiscrete(disc_var, 0, cg_id4);
+      //  cfn = Codegen.cMergeFns({s0,s1,s2_1,s3,s4});
+      then
+        SES_NOT_IMPLEMENTED("mixed system not implemented");
+    /* continuous system of equations */
+    case (genDiscrete,(daelow as DAELow.DAELOW(vars,knvars,exvars,eqns,se,ie,ae,al,ev,eoc)),ass1,ass2,block_)
+      equation
+        // extract the variables and equations of the block.
+        (eqn_lst,var_lst) = Util.listMap32(block_, getEquationAndSolvedVar, eqns, vars, ass2);
+        // States are solved for der(x) not x.
+        var_lst_1 = Util.listMap(var_lst, transformXToXd);
+        vars_1 = DAELow.listVar(var_lst_1);
+        eqns_1 = DAELow.listEquation(eqn_lst);
+        subsystem_dae = DAELow.DAELOW(vars_1,knvars,exvars,eqns_1,se,ie,ae,al,ev,eoc);
+        m = DAELow.incidenceMatrix(subsystem_dae);
+        m_1 = DAELow.absIncidenceMatrix(m);
+        mt_1 = DAELow.transposeMatrix(m_1);
+        // calculate jacobian. If constant, linear system of equations. Otherwise nonlinear
+        jac = DAELow.calculateJacobian(vars_1, eqns_1, ae, m_1, mt_1,false);
+        jac_tp = DAELow.analyzeJacobian(subsystem_dae, jac);
+        equation_ = createOdeSystem2(false, genDiscrete, subsystem_dae, jac, jac_tp);
+      then
+        equation_;
+    case (_,_,_,_,_)
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR, {"createOdeSystem failed"});
+      then
+        fail();
+  end matchcontinue;
+end createOdeSystem;
+
+public function createOdeSystem2
+  input Boolean mixedEvent "true if generating the mixed system event code";
+  input Boolean genDiscrete;
+  input DAELow.DAELow inDAELow;
+  input Option<list<tuple<Integer, Integer, DAELow.Equation>>> inTplIntegerIntegerDAELowEquationLstOption;
+  input DAELow.JacobianType inJacobianType;
+  output SimEqSystem equation_;
+algorithm
+  equation_ :=
+  matchcontinue (mixedEvent,genDiscrete,inDAELow,inTplIntegerIntegerDAELowEquationLstOption,inJacobianType)
+    local
+      Codegen.CFunction s1,s2,s3,s4,s5,s;
+      Integer cg_id_1,cg_id,eqn_size,unique_id,cg_id1,cg_id2,cg_id3,cg_id4,cg_id5;
+      list<CFunction> f1;
+      DAELow.DAELow dae,d;
+      Option<list<tuple<Integer, Integer, DAELow.Equation>>> jac;
+      DAELow.JacobianType jac_tp;
+      DAELow.Variables v,kv;
+      DAELow.EquationArray eqn;
+      list<DAELow.Equation> eqn_lst;
+      list<DAELow.Var> var_lst;
+      list<DAE.ComponentRef> crefs;
+      DAELow.MultiDimEquation[:] ae;
+      Boolean genDiscrete;
+    /* A single array equation */
+    case (mixedEvent,_,dae,jac,jac_tp)
+      equation
+        singleArrayEquation(dae); // fails if not single array eq
+        equation_ = createSingleArrayEqnCode(dae, jac);
+      then
+        equation_;
+    //    /* A single algorithm section for several variables. */
+    //case (mixedEvent,genDiscrete,dae,jac,jac_tp)
+    //  equation
+    //    singleAlgorithmSection(dae);
+    //    (s1,cg_id_1,f1) = generateSingleAlgorithmCode(genDiscrete, dae, jac, cg_id);
+    //  then
+    //    (s1,cg_id_1,f1);
+
+    //    /* constant jacobians. Linear system of equations (A x = b) where
+    //     A and b are constants. TODO: implement symbolic gaussian elimination here. Currently uses dgesv as
+    //     for next case */
+    //case (mixedEvent,genDiscrete,(d as DAELow.DAELOW(orderedVars = v,knownVars = kv,orderedEqs = eqn)),SOME(jac),DAELow.JAC_CONSTANT())
+    //  local list<tuple<Integer, Integer, DAELow.Equation>> jac;
+    //  equation
+    //    eqn_size = DAELow.equationSize(eqn);
+    //    (s1,cg_id_1,f1) = generateOdeSystem2(mixedEvent,genDiscrete,d, SOME(jac), DAELow.JAC_TIME_VARYING(), cg_id) "NOTE: Not impl. yet, use time_varying..." ;
+    //  then
+    //    (s1,cg_id_1,f1);
+
+    //    /* Time varying jacobian. Linear system of equations that needs to
+    //    	  be solved during runtime. */
+    //case (mixedEvent,_,(d as DAELow.DAELOW(orderedVars = v,knownVars = kv,orderedEqs = eqn)),SOME(jac),DAELow.JAC_TIME_VARYING())
+    //  local list<tuple<Integer, Integer, DAELow.Equation>> jac;
+    //  equation
+    //    //print("linearSystem of equations:");
+    //    //DAELow.dump(d);
+    //    //print("Jacobian:");print(DAELow.dumpJacobianStr(SOME(jac)));print("\n");
+    //    eqn_size = DAELow.equationSize(eqn);
+    //    unique_id = tick();
+    //    (s1,cg_id1) = generateOdeSystem2Declaration(mixedEvent,eqn_size, unique_id, cg_id);
+    //    (s2,cg_id2) = generateOdeSystem2PopulateAb(mixedEvent,jac, v, eqn, unique_id, cg_id1);
+    //    (s3,cg_id3) = generateOdeSystem2SolveCall(mixedEvent,eqn_size, unique_id, cg_id2);
+    //    (s4,cg_id4) = generateOdeSystem2CollectResults(mixedEvent,v, unique_id, cg_id3);
+    //    s = Codegen.cMergeFns({s1,s2,s3,s4});
+    //  then
+    //    (s,cg_id4,{});
+    //case (mixedEvent,_,DAELow.DAELOW(orderedVars = v,knownVars = kv,orderedEqs = eqn,arrayEqs=ae),SOME(jac),DAELow.JAC_NONLINEAR()) /* Time varying nonlinear jacobian. Non-linear system of equations */
+    //  local list<tuple<Integer, Integer, DAELow.Equation>> jac;
+    //  equation
+
+    //    eqn_lst = DAELow.equationList(eqn);
+    //    var_lst = DAELow.varList(v);
+    //    crefs = Util.listMap(var_lst, DAELow.varCrefPrefixStates);// get varnames and prefix $der for states.
+    //    (s1,cg_id_1,f1) = generateOdeSystem2NonlinearResiduals(mixedEvent,crefs, eqn_lst,ae, cg_id);
+    //  then
+    //    (s1,cg_id_1,f1);
+    //case (mixedEvent,_,DAELow.DAELOW(orderedVars = v,knownVars = kv,orderedEqs = eqn,arrayEqs=ae),NONE,DAELow.JAC_NO_ANALYTIC()) /* no analythic jacobian available. Generate non-linear system */
+    //  equation
+    //    eqn_lst = DAELow.equationList(eqn);
+    //    var_lst = DAELow.varList(v);
+    //    crefs = Util.listMap(var_lst, DAELow.varCrefPrefixStates); // get varnames and prefix $der for states.
+    //    (s1,cg_id_1,f1) = generateOdeSystem2NonlinearResiduals(mixedEvent,crefs, eqn_lst, ae, cg_id);
+    //  then
+    //    (s1,cg_id_1,f1);
+    case (_,_,_,_,_)
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR, {"createOdeSystem2 failed"});
+      then
+        SES_NOT_IMPLEMENTED("some case in createOdeSystem2 not implemented");
+  end matchcontinue;
+end createOdeSystem2;
+
+public function createSingleArrayEqnCode 
+  input DAELow.DAELow inDAELow;
+  input Option<list<tuple<Integer, Integer, DAELow.Equation>>> inTplIntegerIntegerDAELowEquationLstOption;
+  output SimEqSystem equation_;
+algorithm
+  equation_ :=
+  matchcontinue (inDAELow,inTplIntegerIntegerDAELowEquationLstOption)
+    local
+      Integer indx,cg_id_1,cg_id;
+      list<Integer> ds;
+      DAE.Exp e1,e2;
+      DAE.ComponentRef cr,origname,cr_1;
+      Codegen.CFunction s1;
+      list<CFunction> f1;
+      DAELow.Variables vars,knvars;
+      DAELow.EquationArray eqns,se,ie;
+      DAELow.MultiDimEquation[:] ae;
+      Algorithm.Algorithm[:] al;
+      DAELow.EventInfo ev;
+      Option<list<tuple<Integer, Integer, DAELow.Equation>>> jac;
+    case (DAELow.DAELOW(orderedVars = vars,
+                        knownVars = knvars,
+                        orderedEqs = eqns,
+                        removedEqs = se,
+                        initialEqs = ie,
+                        arrayEqs = ae,
+                        algorithms = al,
+                        eventInfo = ev),jac) /* eqn code cg var_id extra functions */
+      local String cr_1_str;
+      equation
+        (DAELow.ARRAY_EQUATION(indx,_) :: _) = DAELow.equationList(eqns);
+        DAELow.MULTIDIM_EQUATION(ds,e1,e2) = ae[indx + 1];
+        ((DAELow.VAR(cr,_,_,_,_,_,_,_,origname,_,_,_,_,_) :: _)) = DAELow.varList(vars);
+        // We need to strip subs from origname since they are removed in cr.
+        cr_1 = Exp.crefStripLastSubs(origname);
+        // Since we use origname we need to replace '.' with '$P' manually.
+        cr_1_str = Util.modelicaStringToCStr(Exp.printComponentRefStr(cr_1),true); // stringAppend("$",Util.modelicaStringToCStr(Exp.printComponentRefStr(cr_1),true));
+        cr_1 = DAE.CREF_IDENT(cr_1_str,DAE.ET_OTHER(),{});
+        (e1,e2) = solveTrivialArrayEquation(cr_1,e1,e2);
+        equation_ = createSingleArrayEqnCode2(cr_1, cr_1, e1, e2);
+      then
+        equation_;
+    case (_,_)
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR,{"array equations currently only supported on form v = functioncall(...)"});
+      then
+        fail();
+  end matchcontinue;
+end createSingleArrayEqnCode;
+
+// TODO: are the cases really correct?
+public function createSingleArrayEqnCode2 
+  input DAE.ComponentRef inComponentRef1;
+  input DAE.ComponentRef inComponentRef2;
+  input DAE.Exp inExp3;
+  input DAE.Exp inExp4;
+  output SimEqSystem equation_;
+algorithm
+  equation_ :=
+  matchcontinue (inComponentRef1,inComponentRef2,inExp3,inExp4)
+    local
+      String s1,s2,stmt,s3,s4,s;
+      Codegen.CFunction cfunc,func_1;
+      Integer cg_id_1,cg_id;
+      DAE.ComponentRef cr,eltcr,cr2;
+      DAE.Exp e1,e2;
+    case (cr,eltcr,(e1 as DAE.CREF(componentRef = cr2)),e2)
+      equation
+        true = Exp.crefEqual(cr, cr2);
+        s1 = Exp.printComponentRefStr(eltcr);
+        //(cfunc,s2,cg_id_1) = Codegen.generateExpression(e2, cg_id, Codegen.simContext);
+        //stmt = Util.stringAppendList({"copy_real_array_data_mem(&",s2,", &",s1,");"});
+      then
+        SES_ARRAY_CALL_ASSIGN(eltcr, e2);
+    case (cr,eltcr,e1,(e2 as DAE.CREF(componentRef = cr2)))
+      equation
+        true = Exp.crefEqual(cr, cr2);
+        s1 = Exp.printComponentRefStr(eltcr);
+        //(cfunc,s2,cg_id_1) = Codegen.generateExpression(e1, cg_id, Codegen.simContext);
+        //stmt = Util.stringAppendList({"copy_real_array_data_mem(&",s1,", &",s2,");"});
+      then
+      SES_ARRAY_CALL_ASSIGN(eltcr, e1);
+    case (cr,eltcr,e1,e2) /* e2 is array of crefs, {v{1},v{2},...v{n}} */
+      equation
+        cr2 = getVectorizedCrefFromExp(e2);
+        s1 = Exp.printComponentRefStr(eltcr);
+        //(cfunc,s2,cg_id_1) = Codegen.generateExpression(e1, cg_id, Codegen.simContext);
+        //stmt = Util.stringAppendList({"copy_real_array_data_mem(&",s1,", &",s2,");"});
+      then
+        SES_ARRAY_CALL_ASSIGN(cr2, e1);
+    case (cr,eltcr,e1,e2) /* e1 is array of crefs, {v{1},v{2},...v{n}} */
+      equation
+        cr2 = getVectorizedCrefFromExp(e1);
+        s1 = Exp.printComponentRefStr(eltcr);
+        //(cfunc,s2,cg_id_1) = Codegen.generateExpression(e2, cg_id, Codegen.simContext);
+        //stmt = Util.stringAppendList({"copy_real_array_data_mem(&",s2,", &",s1,");"});
+      then
+        SES_ARRAY_CALL_ASSIGN(cr2, e2);
+    case (_,_,_,_)
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR, {"createSingleArrayEqnCode2 failed"});
+      then
+        fail();
+  end matchcontinue;
+end createSingleArrayEqnCode2;
 
 protected function createResidualEquations 
   input DAELow.DAELow dlow;

@@ -3601,6 +3601,37 @@ algorithm
       then (txt, i_varDecls);
 
     case ( txt,
+           SimCode.SES_ARRAY_CALL_ASSIGN(exp = i_exp, componentRef = i_componentRef),
+           i_varDecls )
+      local
+        DAE.ComponentRef i_componentRef;
+        DAE.Exp i_exp;
+        Tpl.Text i_expPart;
+        Tpl.Text i_preExp;
+      equation
+        i_preExp = emptyTxt;
+        (i_expPart, i_preExp, i_varDecls) = daeExp(emptyTxt, i_exp, i_preExp, i_varDecls);
+        txt = Tpl.writeText(txt, i_preExp);
+        txt = Tpl.softNewLine(txt);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("copy_real_array_data_mem(&"));
+        txt = Tpl.writeText(txt, i_expPart);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(", &"));
+        txt = cref(txt, i_componentRef);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(");"));
+      then (txt, i_varDecls);
+
+    case ( txt,
+           SimCode.SES_NOT_IMPLEMENTED(msg = i_msg),
+           i_varDecls )
+      local
+        String i_msg;
+      equation
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("SES_NOT_IMPLEMENTED(\""));
+        txt = Tpl.writeStr(txt, i_msg);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("\");"));
+      then (txt, i_varDecls);
+
+    case ( txt,
            _,
            i_varDecls )
       equation
@@ -6050,11 +6081,15 @@ algorithm
       then (txt, i_preExp, i_varDecls);
 
     case ( txt,
-           DAE.ARRAY(ty = _),
+           DAE.ARRAY(ty = i_ty, scalar = i_scalar, array = i_array),
            i_preExp,
            i_varDecls )
+      local
+        list<DAE.Exp> i_array;
+        Boolean i_scalar;
+        DAE.ExpType i_ty;
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("ARRAY_NOT_IMPLEMENTED"));
+        (txt, i_preExp, i_varDecls) = daeExpArray(txt, i_ty, i_scalar, i_array, i_preExp, i_varDecls);
       then (txt, i_preExp, i_varDecls);
 
     case ( txt,
@@ -7193,6 +7228,141 @@ algorithm
       then (txt, i_preExp, i_varDecls);
   end matchcontinue;
 end daeExpCall;
+
+protected function fun_157
+  input Tpl.Text in_txt;
+  input Boolean in_i_scalar;
+
+  output Tpl.Text out_txt;
+algorithm
+  out_txt :=
+  matchcontinue(in_txt, in_i_scalar)
+    local
+      Tpl.Text txt;
+
+    case ( txt,
+           false )
+      then txt;
+
+    case ( txt,
+           _ )
+      equation
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("scalar_"));
+      then txt;
+  end matchcontinue;
+end fun_157;
+
+protected function fun_158
+  input Tpl.Text in_txt;
+  input Boolean in_i_scalar;
+
+  output Tpl.Text out_txt;
+algorithm
+  out_txt :=
+  matchcontinue(in_txt, in_i_scalar)
+    local
+      Tpl.Text txt;
+
+    case ( txt,
+           false )
+      then txt;
+
+    case ( txt,
+           _ )
+      equation
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("&"));
+      then txt;
+  end matchcontinue;
+end fun_158;
+
+protected function lm_159
+  input Tpl.Text in_txt;
+  input list<DAE.Exp> in_items;
+  input Tpl.Text in_i_varDecls;
+  input Tpl.Text in_i_preExp;
+
+  output Tpl.Text out_txt;
+  output Tpl.Text out_i_varDecls;
+  output Tpl.Text out_i_preExp;
+algorithm
+  (out_txt, out_i_varDecls, out_i_preExp) :=
+  matchcontinue(in_txt, in_items, in_i_varDecls, in_i_preExp)
+    local
+      Tpl.Text txt;
+      Tpl.Text i_varDecls;
+      Tpl.Text i_preExp;
+
+    case ( txt,
+           {},
+           i_varDecls,
+           i_preExp )
+      then (txt, i_varDecls, i_preExp);
+
+    case ( txt,
+           i_e :: rest,
+           i_varDecls,
+           i_preExp )
+      local
+        list<DAE.Exp> rest;
+        DAE.Exp i_e;
+      equation
+        (txt, i_preExp, i_varDecls) = daeExp(txt, i_e, i_preExp, i_varDecls);
+        txt = Tpl.nextIter(txt);
+        (txt, i_varDecls, i_preExp) = lm_159(txt, rest, i_varDecls, i_preExp);
+      then (txt, i_varDecls, i_preExp);
+
+    case ( txt,
+           _ :: rest,
+           i_varDecls,
+           i_preExp )
+      local
+        list<DAE.Exp> rest;
+      equation
+        (txt, i_varDecls, i_preExp) = lm_159(txt, rest, i_varDecls, i_preExp);
+      then (txt, i_varDecls, i_preExp);
+  end matchcontinue;
+end lm_159;
+
+public function daeExpArray
+  input Tpl.Text txt;
+  input DAE.ExpType i_ty;
+  input Boolean i_scalar;
+  input list<DAE.Exp> i_array;
+  input Tpl.Text i_preExp;
+  input Tpl.Text i_varDecls;
+
+  output Tpl.Text out_txt;
+  output Tpl.Text out_i_preExp;
+  output Tpl.Text out_i_varDecls;
+protected
+  Integer ret_5;
+  Tpl.Text i_params;
+  Tpl.Text i_scalarRef;
+  Tpl.Text i_scalarPrefix;
+  Tpl.Text i_arrayVar;
+  Tpl.Text i_arrayTypeStr;
+algorithm
+  i_arrayTypeStr := expType(emptyTxt, i_ty);
+  (i_arrayVar, out_i_varDecls) := tempDecl(emptyTxt, Tpl.textString(i_arrayTypeStr), i_varDecls);
+  i_scalarPrefix := fun_157(emptyTxt, i_scalar);
+  i_scalarRef := fun_158(emptyTxt, i_scalar);
+  i_params := Tpl.pushIter(emptyTxt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+  (i_params, out_i_varDecls, out_i_preExp) := lm_159(i_params, i_array, out_i_varDecls, i_preExp);
+  i_params := Tpl.popIter(i_params);
+  out_i_preExp := Tpl.writeTok(out_i_preExp, Tpl.ST_STRING("array_alloc_"));
+  out_i_preExp := Tpl.writeText(out_i_preExp, i_scalarPrefix);
+  out_i_preExp := Tpl.writeText(out_i_preExp, i_arrayTypeStr);
+  out_i_preExp := Tpl.writeTok(out_i_preExp, Tpl.ST_STRING("(&"));
+  out_i_preExp := Tpl.writeText(out_i_preExp, i_arrayVar);
+  out_i_preExp := Tpl.writeTok(out_i_preExp, Tpl.ST_STRING(", "));
+  ret_5 := SimCode.listLengthExp(i_array);
+  out_i_preExp := Tpl.writeStr(out_i_preExp, intString(ret_5));
+  out_i_preExp := Tpl.writeTok(out_i_preExp, Tpl.ST_STRING(", "));
+  out_i_preExp := Tpl.writeText(out_i_preExp, i_params);
+  out_i_preExp := Tpl.writeTok(out_i_preExp, Tpl.ST_STRING(");"));
+  out_i_preExp := Tpl.writeTok(out_i_preExp, Tpl.ST_NEW_LINE());
+  out_txt := Tpl.writeText(txt, i_arrayVar);
+end daeExpArray;
 
 public function underscorePrefix
   input Tpl.Text in_txt;

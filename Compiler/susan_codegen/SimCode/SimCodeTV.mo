@@ -1,5 +1,10 @@
 package SimCode
 
+  function listLengthExp
+    input list<DAE.Exp> lst;
+    output Integer len;
+  end listLengthExp;
+
   function listLengthStr
     input list<String> lst;
     output Integer len;
@@ -66,6 +71,13 @@ package SimCode
       DAE.ComponentRef componentRef;
       DAE.Exp exp;
     end SES_SIMPLE_ASSIGN;
+    record SES_ARRAY_CALL_ASSIGN
+      DAE.ComponentRef componentRef;
+      DAE.Exp exp;
+    end SES_ARRAY_CALL_ASSIGN;
+    record SES_NOT_IMPLEMENTED
+      String msg;
+    end SES_NOT_IMPLEMENTED;
   end SimEqSystem;
 
   uniontype SimWhenClause

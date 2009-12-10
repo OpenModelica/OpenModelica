@@ -940,6 +940,17 @@ case SES_SIMPLE_ASSIGN then
 <preExp>
 <cref(componentRef)> = <expPart>;
 >>
+case SES_ARRAY_CALL_ASSIGN then // cref_array = call(...)
+# preExp = ""
+# expPart = daeExp(exp, preExp, varDecls)
+<<
+<preExp>
+copy_real_array_data_mem(&<expPart>, &<cref(componentRef)>);
+>>
+case SES_NOT_IMPLEMENTED then
+<<
+SES_NOT_IMPLEMENTED("<msg>");
+>>
 case _ then
 <<
 notimplemented = notimplemented;
@@ -1255,7 +1266,7 @@ daeExp(Exp exp, Text preExp, Text varDecls) ::=
   case IFEXP      then daeExpIf(expCond, expThen, expElse, preExp, varDecls)
   case CALL       then daeExpCall(exp, preExp, varDecls)
   // PARTEVALFUNCTION
-  case ARRAY      then "ARRAY_NOT_IMPLEMENTED"
+  case ARRAY      then daeExpArray(ty, scalar, array, preExp, varDecls)
   case MATRIX     then "MATRIX_NOT_IMPLEMENTED"
   case RANGE      then "RANGE_NOT_IMPLEMENTED"
   case TUPLE      then "TUPLE_NOT_IMPLEMENTED"
@@ -1385,6 +1396,15 @@ daeExpCall(Exp call, Text preExp, Text varDecls) ::=
     # retVar = tempDecl(retType, varDecls)
     # preExp += '<retVar> = <underscorePrefix(builtin)><funName>(<argStr>);<\n>'
     '<retVar>'
+
+daeExpArray(ExpType ty, Boolean scalar, list<Exp> array, Text preExp, Text varDecls) ::=
+# arrayTypeStr = expType(ty)
+# arrayVar = tempDecl(arrayTypeStr, varDecls)
+# scalarPrefix = if scalar then "scalar_" else ""
+# scalarRef = if scalar then "&" else ""
+# params = '<array of e: daeExp(e, preExp, varDecls) ", ">'
+# preExp += 'array_alloc_<scalarPrefix><arrayTypeStr>(&<arrayVar>, <listLengthExp(array)>, <params>);<\n>'
+'<arrayVar>'
 
 underscorePrefix(Boolean builtin) ::=
   case true then ""
