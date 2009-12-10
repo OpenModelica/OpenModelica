@@ -24,8 +24,9 @@ algorithm
       Tpl.Text txt;
 
     case ( txt,
-           (i_simCode as SimCode.SIMCODE(modelInfo = SimCode.MODELINFO(name = i_modelInfo_name))) )
+           (i_simCode as SimCode.SIMCODE(modelInfo = SimCode.MODELINFO(name = i_modelInfo_name), functions = i_functions)) )
       local
+        list<SimCode.Function> i_functions;
         String i_modelInfo_name;
         SimCode.SimCode i_simCode;
         Tpl.Text txt_3;
@@ -37,7 +38,7 @@ algorithm
         txt_1 = Tpl.writeStr(emptyTxt, i_modelInfo_name);
         txt_1 = Tpl.writeTok(txt_1, Tpl.ST_STRING(".cpp"));
         Tpl.textFile(i_cppFileContent, Tpl.textString(txt_1));
-        i_functionsFileContent = emptyTxt;
+        i_functionsFileContent = functionsCpp(emptyTxt, i_functions);
         txt_3 = Tpl.writeStr(emptyTxt, i_modelInfo_name);
         txt_3 = Tpl.writeTok(txt_3, Tpl.ST_STRING("_functions.cpp"));
         Tpl.textFile(i_functionsFileContent, Tpl.textString(txt_3));
@@ -4927,44 +4928,36 @@ end lm_120;
 public function functionsCpp
   input Tpl.Text txt;
   input list<SimCode.Function> i_functions;
-  input String i_fileNamePrefix;
 
   output Tpl.Text out_txt;
-protected
-  Tpl.Text txt_1;
-  Tpl.Text i_funCpp;
 algorithm
-  i_funCpp := Tpl.writeTok(emptyTxt, Tpl.ST_STRING_LIST({
-                                         "#ifdef __cplusplus\n",
-                                         "extern \"C\" {\n",
-                                         "#endif\n",
-                                         "/* header part */\n"
-                                     }, true));
-  i_funCpp := Tpl.pushIter(i_funCpp, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
-  i_funCpp := lm_119(i_funCpp, i_functions);
-  i_funCpp := Tpl.popIter(i_funCpp);
-  i_funCpp := Tpl.softNewLine(i_funCpp);
-  i_funCpp := Tpl.writeTok(i_funCpp, Tpl.ST_STRING_LIST({
-                                         "/* End of header part */\n",
-                                         "\n",
-                                         "/* Body */\n"
-                                     }, true));
-  i_funCpp := Tpl.pushIter(i_funCpp, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
-  i_funCpp := lm_120(i_funCpp, i_functions);
-  i_funCpp := Tpl.popIter(i_funCpp);
-  i_funCpp := Tpl.softNewLine(i_funCpp);
-  i_funCpp := Tpl.writeTok(i_funCpp, Tpl.ST_STRING_LIST({
-                                         "/* End Body */\n",
-                                         "\n",
-                                         "#ifdef __cplusplus\n",
-                                         "}\n",
-                                         "#endif\n",
-                                         "\n"
-                                     }, true));
-  txt_1 := Tpl.writeStr(emptyTxt, i_fileNamePrefix);
-  txt_1 := Tpl.writeTok(txt_1, Tpl.ST_STRING("_functions.cpp"));
-  Tpl.textFile(i_funCpp, Tpl.textString(txt_1));
-  out_txt := txt;
+  out_txt := Tpl.writeTok(txt, Tpl.ST_STRING_LIST({
+                                   "#ifdef __cplusplus\n",
+                                   "extern \"C\" {\n",
+                                   "#endif\n",
+                                   "/* header part */\n"
+                               }, true));
+  out_txt := Tpl.pushIter(out_txt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+  out_txt := lm_119(out_txt, i_functions);
+  out_txt := Tpl.popIter(out_txt);
+  out_txt := Tpl.softNewLine(out_txt);
+  out_txt := Tpl.writeTok(out_txt, Tpl.ST_STRING_LIST({
+                                       "/* End of header part */\n",
+                                       "\n",
+                                       "/* Body */\n"
+                                   }, true));
+  out_txt := Tpl.pushIter(out_txt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
+  out_txt := lm_120(out_txt, i_functions);
+  out_txt := Tpl.popIter(out_txt);
+  out_txt := Tpl.softNewLine(out_txt);
+  out_txt := Tpl.writeTok(out_txt, Tpl.ST_STRING_LIST({
+                                       "/* End Body */\n",
+                                       "\n",
+                                       "#ifdef __cplusplus\n",
+                                       "}\n",
+                                       "#endif\n",
+                                       "\n"
+                                   }, true));
 end functionsCpp;
 
 protected function lm_122

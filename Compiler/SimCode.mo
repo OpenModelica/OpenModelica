@@ -135,7 +135,7 @@ end Equations;
 
 uniontype Statement
   record ALGORITHM
-     list<Algorithm.Statement> statementLst;
+    list<Algorithm.Statement> statementLst; // in functions
   end ALGORITHM;
   
   /*
@@ -274,7 +274,6 @@ uniontype SimCode
 //    Includes includes "include files";
 //    GlobalVariables globalVars ;
     list<Function> functions;
-//??    FuncionDefinitions functionDefinitions;
     list<SimEqSystem> stateEquations;
     list<SimEqSystem> nonStateContEquations;
     list<SimEqSystem> nonStateDiscEquations;
@@ -380,18 +379,14 @@ end TargetSettings;
 /*********************************************************/
 /*********************************************************/
 
-
-public function translateModel "function translateModel
- author: pavol
- translates a model into a target code"
-	input Env.Cache inCache;
-	input Env.Env inEnv;
+public function translateModel
+  input Env.Cache inCache;
+  input Env.Env inEnv;
   input Absyn.Path className "path for the model";
   input Interactive.InteractiveSymbolTable inInteractiveSymbolTable;
   input Ceval.Msg inMsg;
   input Exp.Exp inExp;
   input Boolean addDummy "if true, add a dummy state";
-  
   output Env.Cache outCache;
   output Values.Value outValue;
   output Interactive.InteractiveSymbolTable outInteractiveSymbolTable;
@@ -425,11 +420,11 @@ algorithm
       Env.Cache cache;
       String MakefileHeader;
       Values.Value outValMsg;
-  
-    //+d=tplmode
-    case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg,fileprefix,addDummy) /* mo file directory */ 
+      SimCode simCode;
+      list<Function> functions;
+    case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg,fileprefix,addDummy)
       equation 
-        //(cache,filenameprefix) = CevalScript.extractFilePrefix(cache,env, fileprefix, st, msg);
+        /* calculate stuff that we need to create SimCode data structure */
         (cache,Values.STRING(filenameprefix),SOME(_)) = Ceval.ceval(cache,env, fileprefix, true, SOME(st), NONE, msg);
         ptot = Interactive.getTotalProgram(className,p);
         p_1 = SCodeUtil.translateAbsyn2SCode(ptot);
@@ -452,37 +447,32 @@ algorithm
         Debug.fcall("bltdump", DAELow.dump, indexed_dlow_1);
         Debug.fcall("bltdump", DAELow.dumpMatching, ass1);
         cname_str = Absyn.pathString(className);
-        /*- tplgen_ prefix when +d=tplgen_ -*/
-        filenameprefix = Util.if_(RTOpts.debugFlag("tplgen_"), "tplgen_" +& filenameprefix, filenameprefix);
         filename = Util.stringAppendList({filenameprefix,".cpp"});
         Debug.fprintln("dynload", "translateModel: Generating simulation code and functions.");       
         funcfilename = Util.stringAppendList({filenameprefix,"_functions.cpp"});
-        //makefilename = CevalScript.generateMakefilename(filenameprefix);
         makefilename = Util.stringAppendList({filenameprefix,".makefile"});
         a_cref = Absyn.pathToCref(className);
         file_dir = CevalScript.getFileDir(a_cref, p);
-        
-        /*
-        libs = SimCodegen.generateFunctions(p_1, dae, indexed_dlow_1, className, funcfilename);
-        SimCodegen.generateSimulationCode(dae, indexed_dlow_1, ass1, ass2, m, mT, comps, className, filename, funcfilename,file_dir);
-        SimCodegen.generateMakefile(makefilename, filenameprefix, libs, file_dir);
-        */
-        
-        //libs = generateFunctionsC(p_1, dae, indexed_dlow_1, className, filenameprefix);
-        libs = {};
-        generateSimulationCodeC(dae, indexed_dlow_1, ass1, ass2, m, mT, comps, className, filename, funcfilename,file_dir);
-
-        // keep this for testing purposes (remove later when we can generate
-        // the makefile using susan)
-        SimCodegen.generateMakefile(makefilename, filenameprefix, libs, file_dir);
-        
+        /* create SimCode data structure */
+        (libs, functions) = createFunctions(p_1, dae, indexed_dlow_1,
+                                            className, filenameprefix);
+        simCode = createSimCode(dae, indexed_dlow_1, ass1, ass2, m, mT, comps,
+                                className, filename, funcfilename,file_dir,
+                                functions);
+        /* feed SimCode data structure to template to produce target code: this
+           generates Model.cpp, Model_functions.cpp, and Makefile */
+        _ = Tpl.tplString(SimCodeC.translateModel, simCode);
+        /* generate makefile in old way since it's not implemented in
+           templates yet */
+        SimCodegen.generateMakefile(makefilename, filenameprefix, libs,
+                                    file_dir);
       then
         (cache,Values.STRING("SimCode: The model has been translated"),st,indexed_dlow_1,libs,file_dir);
   end matchcontinue;
 end translateModel;
 
-public function generateFunctionsC 
-"function generateFunctionsC
+public function createFunctions 
+  "function createFunctions
   Finds the called functions in daelow and generates code for them from 
   the given DAE. Hence, the functions must exist in the DAE.Element list."
   input SCode.Program inProgram;
@@ -491,8 +481,9 @@ public function generateFunctionsC
   input Absyn.Path inPath;
   input String inString;
   output list<String> outStringLst;
+  output list<Function> functions;
 algorithm
-  outStringLst:=
+  (outStringLst, functions) :=
   matchcontinue (inProgram,inDAElist,inDAELow,inPath,inString)
     local
       list<Absyn.Path> funcpaths;
@@ -558,9 +549,8 @@ algorithm
         fns = elaborateFunctions(funcelems);
         //TODO: libs ? see in Codegen.cPrintFunctionIncludes(cfns)
         libs2 = {};
-        _ = Tpl.tplString2(SimCodeC.functionsCpp, fns, filenameprefix);        
       then
-        Util.listUnion(libs1,libs2);
+        (Util.listUnion(libs1,libs2), fns);
         
     case (_,_,_,_,_)
       equation
@@ -568,7 +558,7 @@ algorithm
       then
         fail();
   end matchcontinue;
-end generateFunctionsC;
+end createFunctions;
 
 
 protected function elaborateFunctions 
@@ -764,7 +754,7 @@ algorithm
     */    
     case (comp,rt)
       equation
-        Debug.fprint("failtrace", "-SimCode.elaborateFunction failed\n");
+        Error.addMessage(Error.INTERNAL_ERROR, {"SimCode.elaborateFunction failed"});
       then
         fail();
   end matchcontinue;
@@ -863,6 +853,7 @@ algorithm
       then VARIABLE(name,expType,NONE);
     case (_)
       equation
+        // TODO: ArrayEqn fails here
         Debug.fprint("failtrace", "-SimCode.daeInOutSimVar failed\n");
       then
         fail();
@@ -1155,10 +1146,7 @@ end elaborateRecordDeclarationsForMetarecords;
 // Functions copied for adaption.
 
 // Copied from SimCodegen.generateSimulationCode.
-//
-// Prepare the SimCode data structure and feed it to a template to generate the
-// simulation code.
-public function generateSimulationCodeC
+public function createSimCode
   input DAE.DAElist inDAElist1;
   input DAELow.DAELow inDAELow2;
   input Integer[:] inIntegerArray3;
@@ -1170,9 +1158,11 @@ public function generateSimulationCodeC
   input String inString9;
   input String inString10;
   input String inString11;
+  input list<Function> functions;
+  output SimCode simCode;
 algorithm
-  _:=
-  matchcontinue (inDAElist1,inDAELow2,inIntegerArray3,inIntegerArray4,inIncidenceMatrix5,inIncidenceMatrixT6,inIntegerLstLst7,inPath8,inString9,inString10,inString11)
+  simCode :=
+  matchcontinue (inDAElist1,inDAELow2,inIntegerArray3,inIntegerArray4,inIncidenceMatrix5,inIncidenceMatrixT6,inIntegerLstLst7,inPath8,inString9,inString10,inString11,functions)
     local
       String cname,out_str,in_str,c_eventchecking,s_code2,s_code3,cglobal,coutput,cstate,c_ode,s_code,cwhen,
       	czerocross,filename,funcfilename,fileDir;
@@ -1200,7 +1190,7 @@ algorithm
       list<list<DAE.ComponentRef>> zeroCrossingsNeedSave;
       list<SimWhenClause> whenClauses;
       list<DAE.ComponentRef> discreteModelVars;
-    case (dae,dlow,ass1,ass2,m,mt,comps,class_,filename,funcfilename,fileDir)
+    case (dae,dlow,ass1,ass2,m,mt,comps,class_,filename,funcfilename,fileDir,functions)
       equation
         cname = Absyn.pathString(class_);
 
@@ -1241,23 +1231,21 @@ algorithm
         zeroCrossingsNeedSave = createZeroCrossingsNeedSave(zeroCrossings, dae, dlow2, ass1, ass2, comps);
         whenClauses = createSimWhenClauses(dlow2);
         discreteModelVars = extractDiscreteModelVars(dlow2, mt);
-        simCode = SIMCODE(modelInfo, {}, stateEquations,
+        simCode = SIMCODE(modelInfo, functions, stateEquations,
                           nonStateContEquations, nonStateDiscEquations,
                           residualEquations, initialEquations,
                           parameterEquations, removedEquations, zeroCrossings,
                           zeroCrossingsNeedSave, helpVarInfo, whenClauses,
                           discreteModelVars);
-        // Generate with template
-        _ = Tpl.tplString(SimCodeC.translateModel, simCode);
       then
-        ();
-    case (_,_,_,_,_,_,_,_,_,_,_)
+        simCode;
+    case (_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"Generation of simulation using code using templates failed"});
       then
         fail();
   end matchcontinue;
-end generateSimulationCodeC;
+end createSimCode;
 
 public function createRemovedEquations
   input DAELow.DAELow dlow;

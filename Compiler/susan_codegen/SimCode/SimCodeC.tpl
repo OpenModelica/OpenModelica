@@ -24,9 +24,8 @@ translateModel(SimCode simCode) ::=
   case SIMCODE(modelInfo = MODELINFO) then
     # cppFileContent = cppFile(simCode)
     # textFile(cppFileContent, '<modelInfo.name>.cpp')
-    # functionsFileContent = ""
+    # functionsFileContent = functionsCpp('<functions>')
     # textFile(functionsFileContent, '<modelInfo.name>_functions.cpp')
-    //functionsFile(...)
     //initFile(...)
     //makefile(...)
     () // empty result
@@ -998,6 +997,7 @@ case INDEX then (
 )
 case _ then "SUBSCRIPT_NOT_CONSTANT"
 
+// TODO: Check with Codegen
 expType(DAE.ExpType) ::=
   case ET_INT    then "modelica_integer"
   case ET_REAL   then "modelica_real"
@@ -1017,6 +1017,7 @@ expType(DAE.ExpType) ::=
     case ET_STRING then "string_array"
     case ET_BOOL   then "boolean_array"
 
+// TODO: Check with Codegen
 expShortType(DAE.ExpType) ::=
   case ET_INT    then "integer"
   case ET_REAL   then "real"
@@ -1026,6 +1027,7 @@ expShortType(DAE.ExpType) ::=
   case ET_ARRAY then expShortType(ty)   
   case ET_COMPLEX then 'struct <name>'  
   
+// TODO: Check with Codegen (expTypeStr)
 expTypeA(DAE.ExpType, Boolean isArray) ::=
   case ET_COMPLEX     then expShortType() // i.e. 'struct <name>'  
   case ET_LIST
@@ -1097,8 +1099,7 @@ int in_<fname>(type_description * inArgs, type_description * outVar);
 >>
 
 
-functionsCpp(list<Function> functions, String fileNamePrefix) ::=
-# funCpp =
+functionsCpp(list<Function> functions) ::=
 <<
 #ifdef __cplusplus
 extern "C" {
@@ -1121,8 +1122,6 @@ extern "C" {
 #endif
 
 >>
-# textFile(funCpp, '<fileNamePrefix>_functions.cpp')
-() // an empty result, the same as ""
 
 functionDef(Function) ::=
   case FUNCTION then
@@ -1164,7 +1163,7 @@ funStatement(Statement, Text varDecls) ::=
   case ALGORITHM then (statementLst : algStatement(it, varDecls) \n) 
   case BLOCK then ""
 
-
+// Codegen.generateStatement
 algStatement(DAE.Statement, Text varDecls) ::=
   case STMT_ASSIGN(exp1 = CREF(componentRef = WILD), exp = e) then
     # preExp = "" 
