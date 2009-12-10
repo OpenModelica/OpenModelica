@@ -1449,7 +1449,8 @@ algorithm
       then (cache,classEnv);
     case(cache,env,path,msg)
       equation
-        Debug.fprint("failtrace", "- Lookup.lookupAndInstantiate failed\n");
+        true = RTOpts.debugFlag("failtrace");
+        Debug.traceln( "- Lookup.lookupAndInstantiate failed " +&  Absyn.pathString(path) +& " in scope " +& Env.printEnvPathStr(env));
      then fail();
   end matchcontinue;
 end lookupAndInstantiate;

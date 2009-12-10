@@ -738,16 +738,16 @@ algorithm
     case (cache,env,e,_,_,_)
       equation 
         /* FAILTRACE REMOVE
-         Debug.fprint("failtrace", "- elab_exp failed: ");
-         
-         expstr = Debug.fcallret("failtrace", Dump.printExpStr, e, "");
-         Debug.fprintln("failtrace", expstr);
-         
-         //Debug.fprint("failtrace", "\n env : ");        
-         //envstr = Debug.fcallret("failtrace", Env.printEnvStr, env, "");
-         //Debug.fprintln("failtrace", envstr);
-         //Debug.fprintln("failtrace", "\n----------------------- FINISHED ENV ------------------------\n");
-         */
+        true = RTOpts.debugFlag("failtrace");
+        Debug.fprint("failtrace", "- Static.elabExp failed: ");
+        
+        Debug.traceln(Dump.printExpStr(e));
+        Debug.traceln("  Scope: " +& Env.printEnvPathStr(env));
+        
+        Debug.traceln("\n env : ");        
+        Debug.traceln(Env.printEnvStr(env));
+        Debug.traceln("\n----------------------- FINISHED ENV ------------------------\n");
+        */
       then
         fail();
   end matchcontinue;

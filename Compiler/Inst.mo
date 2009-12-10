@@ -2237,11 +2237,11 @@ algorithm
           local list<Mod> tmpModList; 
       equation 
         UnitParserExt.checkpoint();        
-        //print(" Instclassdef for: " +& Prefix.printPrefixStr(pre) +& "." +&  className +& " mods: " +& Mod.printModStr(mods)+& "\n"); 
+        //Debug.traceln(" Instclassdef for: " +& Prefix.printPrefixStr(pre) +& "." +&  className +& " mods: " +& Mod.printModStr(mods)); 
         ci_state1 = ClassInf.trans(ci_state, ClassInf.NEWDEF());
         els = extractConstantPlusDeps(els,instSingleCref,{},className);
         (cdefelts,extendsclasselts,extendselts,compelts) = splitElts(els);                          
-                
+        
         (env1,ih) = addClassdefsToEnv(env, ih, cdefelts, impl, SOME(mods)) 
         "1. CLASSDEF & IMPORT nodes and COMPONENT nodes(add to env)" ;
         (cache,env2,ih,emods,extcomps,eqs2,initeqs2,alg2,initalg2) = 
@@ -2285,8 +2285,7 @@ algorithm
 
         //Add filtered connection sets to env so ceval can reach it
         (env2,ih) = addConnectionSetToEnv(csets_filtered, pre, env2,ih);
-        id = Env.printEnvPathStr(env);        
-
+        id = Env.printEnvPathStr(env);
 
         //Add variables to env, wihtout type and binding, which will be added 
         //later in inst_element_list (where update_variable is called)" 
@@ -2489,7 +2488,7 @@ algorithm
       equation 
 				true = RTOpts.debugFlag("failtrace");
         failure((_,_,_) = Lookup.lookupClass(cache,env, cn, false));
-        Debug.fprint("failtrace", "- inst_classdef DERIVED( ");
+        Debug.fprint("failtrace", "- Inst.instClassdef DERIVED( ");
         Debug.fprint("failtrace", Absyn.pathString(cn));
         Debug.fprint("failtrace", ") lookup failed\n ENV:");
         Debug.fprint("failtrace",Env.printEnvStr(env));
@@ -2499,10 +2498,9 @@ algorithm
     case (_,env,ih,_,_,_,_,_,_,_,_,_,_,_,_,instSingleCref)
       equation 
 				true = RTOpts.debugFlag("failtrace");
-        Debug.fprint("failtrace", "- Inst.instClassdef failed\n class :");
+        Debug.traceln("- Inst.instClassdef failed");
         s = Env.printEnvPathStr(env);
-        Debug.fprint("failtrace", s);
-        Debug.fprint("failtrace", "\n");
+        Debug.traceln("  class :" +& s);
       then
         fail();
   end matchcontinue;
@@ -3917,7 +3915,7 @@ protected function instExtendsAndClassExtendsList "
 algorithm 
   (outCache,outEnv,outIH,outMod,outTplSCodeElementModLst,outSCodeNormalEquationLst,outSCodeInitialEquationLst,outSCodeNormalAlgorithmLst,outSCodeInitialAlgorithmLst):=
   instExtendsList(inCache,inEnv,inIH,inMod,inExtendsElementLst,inState,inClassName,inImpl);
-  (outCache,outTplSCodeElementModLst):=instClassExtendsList(outCache,outEnv,inClassExtendsElementLst,outTplSCodeElementModLst);
+  (outMod,outTplSCodeElementModLst):=instClassExtendsList(outMod,inClassExtendsElementLst,outTplSCodeElementModLst);  
 end instExtendsAndClassExtendsList;
 
 protected function instExtendsList " 
@@ -3953,7 +3951,7 @@ algorithm
       SCode.Restriction r;
       list<Env.Frame> cenv,cenv1,cenv3,env2,env,env_1;
       DAE.Mod outermod,mod_1,mod_2,mods,mods_1,emod_1,emod_2,mod;
-      list<SCode.Element> els,els_1,rest,cdefelts;
+      list<SCode.Element> els,els_1,rest,cdefelts,extendselts,classextendselts;
       list<SCode.Equation> eq1,ieq1,eq1_1,ieq1_1,eq2,ieq2,eq3,ieq3,eq,ieq,initeq2;
       list<SCode.Algorithm> alg1,ialg1,alg1_1,ialg1_1,alg2,ialg2,alg3,ialg3,alg,ialg;
       Absyn.Path tp_1,tp;
@@ -3990,10 +3988,11 @@ algorithm
         cenv3 = Env.openScope(cenv1, encf, SOME(cn));
         new_ci_state = ClassInf.start(r, cn);
         /* Add classdefs and imports to env, so e.g. imports from baseclasses found, see Extends5.mo */
-        (cdefelts,_,_,_) = splitElts(els); // Do we need to get classextends elements as well?
-        (cenv3,ih) = addClassdefsToEnv(cenv3,ih, cdefelts, impl, NONE);
+        (cdefelts,classextendselts,_,_) = splitElts(els);
+        (cenv3,ih) = addClassdefsToEnv(cenv3,ih,cdefelts,impl,NONE);
+        els_1 = Util.listSelect(els_1, SCode.isNotElementClassExtends); // Filtering is faster than listAppend
         
-        (cache,_,ih,mods,compelts1,eq2,ieq2,alg2,ialg2) = instExtendsList(cache,cenv3,ih,outermod, els_1, ci_state, className, impl) 
+        (cache,_,ih,mods,compelts1,eq2,ieq2,alg2,ialg2) = instExtendsAndClassExtendsList(cache,cenv3,ih,outermod,els_1,classextendselts,ci_state,className,impl) 
         "recurse to fully flatten extends elements env" ;
         (cache,env2,ih,mods_1,compelts2,eq3,ieq3,alg3,ialg3) = instExtendsList(cache,env,ih, mod, rest, ci_state, className, impl) 
         "continue with next element in list" ;
@@ -4056,17 +4055,14 @@ protected function instClassExtendsList
 "Instantiate element nodes of type SCode.CLASS_EXTENDS. This is done by walking
 the extended classes and performing the modifications in-place. The old class
 will no longer be accessible."
-  input Env.Cache inCache;
-  input Env inEnv;
+  input DAE.Mod inMod;
   input list<SCode.Element> inClassExtendsList;
   input list<tuple<SCode.Element, Mod>> inTplSCodeElementModLst;
-  output Env.Cache outCache;
+  output DAE.Mod outMod;
   output list<tuple<SCode.Element, Mod>> outTplSCodeElementModLst;
 algorithm
-  (outCache,outTplSCodeElementModLst) := matchcontinue (inCache,inEnv,inClassExtendsList,inTplSCodeElementModLst)
+  (outMod,outTplSCodeElementModLst) := matchcontinue (inMod,inClassExtendsList,inTplSCodeElementModLst)
     local
-      Env.Cache cache;
-      Env.Env env;
       SCode.Element first;
       SCode.Class cl;
       list<SCode.Element> rest;
@@ -4082,32 +4078,36 @@ algorithm
       list<SCode.Algorithm> nAlg,nAlg1,nAlg2,inAlg,inAlg1,inAlg2;
       list<tuple<SCode.Element, Mod>> compelts;
       SCode.Mod mods;
-    case (cache,env,{},compelts) then (cache,compelts);
-    case (cache,env,(first as SCode.CLASSDEF(name=name))::rest,compelts)
+      DAE.Mod emod;
+      list<String> names;
+    case (emod,{},compelts) then (emod,compelts);
+    case (emod,(first as SCode.CLASSDEF(name=name))::rest,compelts)
       equation
-        (cache,compelts) = instClassExtendsList2(cache,env,name,first,compelts);
-        (cache,compelts) = instClassExtendsList(cache,env,rest,compelts);
-      then (cache,compelts);
-    case (_,_,_,_)
+        (emod,compelts) = instClassExtendsList2(emod,name,first,compelts);
+        (emod,compelts) = instClassExtendsList(emod,rest,compelts);
+      then (emod,compelts);
+    case (_,SCode.CLASSDEF(name=name)::rest,compelts)
       equation
-        Debug.fprintln("failtrace", "- Inst.instClassExtendsList failed");
+        true = RTOpts.debugFlag("failtrace");
+        Debug.traceln("- Inst.instClassExtendsList failed " +& name);
+        Debug.traceln("  Candidate classes: ");
+        els = Util.listMap(compelts, Util.tuple21);
+        names = Util.listMap(els, SCode.elementName);
+        Debug.traceln(Util.stringDelimitList(names, ","));
       then fail();
   end matchcontinue;
 end instClassExtendsList;
 
 protected function instClassExtendsList2
-  input Env.Cache inCache;
-  input Env inEnv;
+  input DAE.Mod inMod;
   input String inName;
   input SCode.Element inClassExtendsElt;
   input list<tuple<SCode.Element, Mod>> inTplSCodeElementModLst;
-  output Env.Cache outCache;
+  output DAE.Mod outMod;
   output list<tuple<SCode.Element, Mod>> outTplSCodeElementModLst;
 algorithm
-  (outCache,outTplSCodeElementModLst) := matchcontinue (inCache,inEnv,inName,inClassExtendsElt,inTplSCodeElementModLst)
+  (outMod,outTplSCodeElementModLst) := matchcontinue (inMod,inName,inClassExtendsElt,inTplSCodeElementModLst)
     local
-      Env.Cache cache;
-      Env.Env env;
       SCode.Element elt,compelt,classExtendsElt,compelt;
       SCode.Class cl,classExtendsClass;
       SCode.ClassDef classDef,classExtendsCdef;
@@ -4122,10 +4122,10 @@ algorithm
       list<SCode.Algorithm> nAlg,nAlg1,nAlg2,inAlg,inAlg1,inAlg2;
       list<tuple<SCode.Element, Mod>> rest,elsAndMods;
       SCode.Mod mods;
-      Mod mod,mod1,mod2;
+      Mod mod,mod1,mod2,emod;
       Option<Absyn.Path> baseClassPath1,baseClassPath2;
       Option<Absyn.ConstrainClass> cc1,cc2;
-    case (cache,env,name1,classExtendsElt,(SCode.CLASSDEF(name2,finalPrefix2,replaceablePrefix2,cl,baseClassPath2,cc2),mod1)::rest)
+    case (emod,name1,classExtendsElt,(SCode.CLASSDEF(name2,finalPrefix2,replaceablePrefix2,cl,baseClassPath2,cc2),mod1)::rest)
       equation
         true = name1 ==& name2; // Compare the name before pattern-matching to speed this up
         
@@ -4144,14 +4144,15 @@ algorithm
         classDef = SCode.PARTS(elt::els1,nEqn1,inEqn1,nAlg1,inAlg1,NONE,annotationLst1,comment1);
         cl = SCode.CLASS(name1,partialPrefix1,encapsulatedPrefix1,restriction1,classDef);
         elt = SCode.CLASSDEF(name1, finalPrefix1, replaceablePrefix1, cl, baseClassPath1, cc1);
-      then (cache,(compelt,mod1)::(elt,DAE.NOMOD)::rest);
-    case (cache,env,name1,classExtendsElt,(compelt,mod)::rest)
+        emod = Mod.renameTopLevelNamedSubMod(emod,name1,name2);
+      then (emod,(compelt,mod1)::(elt,DAE.NOMOD)::rest);
+    case (emod,name1,classExtendsElt,(compelt,mod)::rest)
       equation
-        (cache,rest) = instClassExtendsList2(cache,env,name1,classExtendsElt,rest);
-      then (cache,(compelt,mod)::rest);
-    case (_,_,_,_,{})
+        (emod,rest) = instClassExtendsList2(emod,name1,classExtendsElt,rest);
+      then (emod,(compelt,mod)::rest);
+    case (_,_,_,{})
       equation
-        print("TODO: Make a proper Error message here - Inst.instClassExtendsList2 couldn't find the class to extend\n");
+        Debug.traceln("TODO: Make a proper Error message here - Inst.instClassExtendsList2 couldn't find the class to extend");
       then fail();
   end matchcontinue;
 end instClassExtendsList2;
@@ -4186,7 +4187,7 @@ protected function partialInstExtendsAndClassExtendsList "
 algorithm 
   (outCache,outEnv,outIH,outMod,outTplSCodeElementModLst,outSCodeNormalEquationLst,outSCodeInitialEquationLst,outSCodeNormalAlgorithmLst,outSCodeInitialAlgorithmLst):=
   instExtendsList(inCache,inEnv,inIH,inMod,inExtendsElementLst,inState,inClassName,inImpl);
-  (outCache,outTplSCodeElementModLst):=instClassExtendsList(outCache,outEnv,inClassExtendsElementLst,outTplSCodeElementModLst);
+  (outMod,outTplSCodeElementModLst):=instClassExtendsList(outMod,inClassExtendsElementLst,outTplSCodeElementModLst);
 end partialInstExtendsAndClassExtendsList;
 
 protected function partialInstExtendsList 
@@ -4253,7 +4254,7 @@ algorithm
         (els_1,extendsclasselts,_,_) = splitElts(els_1);
         mod_1 = Mod.elabUntypedMod(emod, cenv3, Prefix.NOPRE());
         mod_2 = Mod.merge(outermod, mod_1, cenv3, Prefix.NOPRE());
-        (cache,_,ih,mods,compelts1,eq2,ieq2,alg2,ialg2) = partialInstExtendsList(cache,cenv1,ih, outermod, els_1, ci_state, className, impl) 
+        (cache,_,ih,mods,compelts1,eq2,ieq2,alg2,ialg2) = partialInstExtendsAndClassExtendsList(cache,cenv1,ih, outermod, els_1, extendsclasselts, ci_state, className, impl) 
         "recurse to fully flatten extends elements env" ;
         (cache,env2,ih,mods_1,compelts2,eq3,ieq3,alg3,ialg3) = partialInstExtendsList(cache,env,ih, mod, rest, ci_state, className, impl) 
         "continue with next element in list" ;

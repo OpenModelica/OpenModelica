@@ -1153,6 +1153,18 @@ algorithm isExtend := matchcontinue(ele)
 end matchcontinue;
 end isElementExtends;
 
+public function isNotElementClassExtends "
+check if an element is not of type CLASS_EXTENDS. 
+"
+  input Element ele;
+  output Boolean isExtend;
+algorithm
+  isExtend := matchcontinue(ele)
+    case(CLASSDEF(classDef = CLASS(classDef = CLASS_EXTENDS(baseClassName = _)))) then false;
+    case(_) then true;
+  end matchcontinue;
+end isNotElementClassExtends;
+
 public function isParameterOrConst 
 "function: isParameterOrConst
   Returns true if Variability indicates a parameter or constant."

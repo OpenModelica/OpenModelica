@@ -2093,5 +2093,44 @@ algorithm
     case(_) equation print(" ---printEqmodStr FAILED--- "); then fail();
   end matchcontinue;
 end printEqmodStr;
+
+public function renameTopLevelNamedSubMod
+  input DAE.Mod mod;
+  input String oldIdent;
+  input String newIdent;
+  output DAE.Mod outMod;
+algorithm
+  outMod := matchcontinue (mod,oldIdent,newIdent)
+    local
+      Boolean finalPrefix;
+      Absyn.Each each_;
+      list<DAE.SubMod> subModLst;
+      Option<DAE.EqMod> eqModOption;
+    case (DAE.MOD(finalPrefix,each_,subModLst,eqModOption),oldIdent,newIdent)
+      equation
+        subModLst = Util.listMap2(subModLst, renameNamedSubMod, oldIdent, newIdent);
+      then DAE.MOD(finalPrefix,each_,subModLst,eqModOption);
+    case (mod,_,_) then mod;
+  end matchcontinue;
+end renameTopLevelNamedSubMod;
+
+public function renameNamedSubMod
+  input DAE.SubMod submod;
+  input String oldIdent;
+  input String newIdent;
+  output DAE.SubMod outMod;
+algorithm
+  outMod := matchcontinue (submod,oldIdent,newIdent)
+    local
+      DAE.Mod mod;
+      String id;
+    case (DAE.NAMEMOD(id,mod),oldIdent,newIdent)
+      equation
+        true = id ==& oldIdent;
+      then DAE.NAMEMOD(newIdent,mod);
+    case (submod,_,_) then submod;
+  end matchcontinue;
+end renameNamedSubMod;
+
 end Mod;
 
