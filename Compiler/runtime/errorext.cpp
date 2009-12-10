@@ -296,6 +296,22 @@ extern "C"
     }
   RML_END_LABEL
 
+  RML_BEGIN_LABEL(ErrorExt__getNumErrorMessages)
+      {
+	  int res=0;
+
+	  stack<ErrorMessage*> queueCopy(errorMessageQueue);
+	  while (!queueCopy.empty()) {
+		if (queueCopy.top()->getSeverity().compare(std::string("Error")) == 0) {
+			res++;
+		}
+		queueCopy.pop();
+	  }
+      rmlA0 = mk_icon(res);
+      RML_TAILCALLK(rmlSC);
+      }
+    RML_END_LABEL
+
   RML_BEGIN_LABEL(ErrorExt__printErrorsNoWarning)
   {
     std::string res("");

@@ -91,6 +91,12 @@ public function getNumMessages
   external "C";
 end getNumMessages;
 
+public function getNumErrorMessages
+  output Integer num;
+  
+  external "C";
+end getNumErrorMessages;
+
 public function getMessagesStr
   output String outString;
 

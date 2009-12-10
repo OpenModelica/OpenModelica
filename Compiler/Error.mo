@@ -701,6 +701,12 @@ algorithm
   num := ErrorExt.getNumMessages();
 end getNumMessages;
 
+public function getNumErrorMessages "Returns the number of messages with severity 'Error' in the message queue "
+  output Integer num;
+algorithm
+  num := ErrorExt.getNumErrorMessages();
+end getNumErrorMessages;
+
 public function getMessagesStr "Relations for interactive comm. These returns the messages as an array 
   of strings, suitable for sending to clients like model editor, MDT, etc.
 
