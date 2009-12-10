@@ -98,39 +98,45 @@ algorithm
       list<SCode.Element> elist;
       Ident str;
       Env.Cache cache;
-    case (cache,_,_,SCode.NOMOD(),impl) then (cache,DAE.NOMOD());  /* impl */ 
+      
+    // no modifications
+    case (cache,_,_,SCode.NOMOD(),impl) then (cache,DAE.NOMOD());  /* impl */
+
+    // no top binding 
     case (cache,env,pre,(m as SCode.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,absynExpOption = NONE)),impl)
       equation 
         (cache,subs_1) = elabSubmods(cache,env, pre, subs, impl);
       then
         (cache,DAE.MOD(finalPrefix,each_,subs_1,NONE));
         
-        // Only elaborate expressions with non-delayed type checking, see SCode.MOD.
+    // Only elaborate expressions with non-delayed type checking, see SCode.MOD.
     case (cache,env,pre,(m as SCode.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,absynExpOption = SOME((e,false)))),impl)
       equation 
         (cache,subs_1) = elabSubmods(cache,env, pre, subs, impl);
-        (cache,e_1,prop,_) = Static.elabExp(cache,env, e, impl, NONE,true);
-        (cache,e_val) = elabModValue(cache,env, e_1);
+        (cache,e_1,prop,_) = Static.elabExp(cache, env, e, impl, NONE, true);
+        (cache,e_val) = elabModValue(cache, env, e_1);
         (cache,e_2) = Prefix.prefixExp(cache,env, e_1, pre) 
         "Bug: will cause elaboration of parameters without value to fail, 
          But this can be ok, since a modifier is present, giving it a value from outer modifications.." ;
       then
         (cache,DAE.MOD(finalPrefix,each_,subs_1,SOME(DAE.TYPED(e_2,e_val,prop))));
      
-     // Delayed type checking
-     case (cache,env,pre,(m as SCode.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,absynExpOption = SOME((e,true)))),impl)
+    // Delayed type checking
+    case (cache,env,pre,(m as SCode.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,absynExpOption = SOME((e,true)))),impl)
       equation 
         (cache,subs_1) = elabSubmods(cache,env, pre, subs, impl);
       then
-        (cache,DAE.MOD(finalPrefix,each_,subs_1,SOME(DAE.UNTYPED(e))));   
-        
+        (cache,DAE.MOD(finalPrefix,each_,subs_1,SOME(DAE.UNTYPED(e))));
+
+    // redeclarations
     case (cache,env,pre,(m as SCode.REDECL(finalPrefix = finalPrefix,elementLst = elist)),impl)
       equation 
-        
         //elist_1 = Inst.addNomod(elist);
         elist_1 = elabModRedeclareElements(cache,env,pre,finalPrefix,elist,impl);
       then
         (cache,DAE.REDECL(finalPrefix,elist_1));
+
+    // failure
     case (cache,env,pre,mod,impl)
       equation 
         /*Debug.fprint("failtrace", "#-- elab_mod ");
@@ -139,9 +145,7 @@ algorithm
         Debug.fprint("failtrace", " failed\n");
         print("elab mod failed, mod:");print(str);print("\n");
         print("env:");print(Env.printEnvStr(env));print("\n");*/
-        /*elab mod can fail?
-        
-        */
+        /* elab mod can fail? */
       then
         fail();
   end matchcontinue;
