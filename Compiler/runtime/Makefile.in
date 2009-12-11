@@ -47,5 +47,7 @@ omc_communication.cc omc_communication.h : omc_communication.idl
 
 omc_communication.h: omc_communication_impl.cpp corbaimpl.cpp
 
+dynload.o: systemimpl.h ../Absyn.h ../Values.h
+
 clean:
 	$(RM) -rf *.o 
