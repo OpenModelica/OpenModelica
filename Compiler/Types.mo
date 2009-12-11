@@ -5488,13 +5488,13 @@ algorithm
     case ((DAE.T_TUPLE(tys),optPath))
       equation
         (dummyExpList,dummyBoxedTypeList) = makeDummyExpAndTypeLists(tys);
-        (_,tys,_) = matchTypeTuple(dummyExpList, tys, dummyBoxedTypeList, {}, matchTypeRegular, true);
+        (_,tys,_) = matchTypeTuple(dummyExpList, tys, dummyBoxedTypeList, {}, matchTypeRegular, false);
       then ((DAE.T_TUPLE(tys),optPath));
     case (ty as (DAE.T_NORETCALL,_)) then ty;
     case ty1
       equation
         ({e},{ty2}) = makeDummyExpAndTypeLists({ty1});
-        (_,ty) = matchType(e, ty1, ty2, true);
+        (_,ty) = matchType(e, ty1, ty2, false);
       then ty;
   end matchcontinue;
 end makeFunctionPolymorphicReferenceResType;
