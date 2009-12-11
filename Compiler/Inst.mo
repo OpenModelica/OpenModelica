@@ -3990,7 +3990,7 @@ algorithm
         /* Add classdefs and imports to env, so e.g. imports from baseclasses found, see Extends5.mo */
         (cdefelts,classextendselts,_,_) = splitElts(els);
         (cenv3,ih) = addClassdefsToEnv(cenv3,ih,cdefelts,impl,NONE);
-        els_1 = Util.listSelect(els_1, SCode.isNotElementClassExtends); // Filtering is faster than listAppend
+        els_1 = Util.listSelect(els_1, SCode.isNotElementClassExtends); // Filtering is faster than listAppend. TODO: Create a new splitElts so this is even faster
         
         (cache,_,ih,mods,compelts1,eq2,ieq2,alg2,ialg2) = instExtendsAndClassExtendsList(cache,cenv3,ih,outermod,els_1,classextendselts,ci_state,className,impl) 
         "recurse to fully flatten extends elements env" ;
@@ -4143,7 +4143,7 @@ algorithm
         elt = SCode.EXTENDS(Absyn.IDENT(name2), mods, NONE);
         classDef = SCode.PARTS(elt::els1,nEqn1,inEqn1,nAlg1,inAlg1,NONE,annotationLst1,comment1);
         cl = SCode.CLASS(name1,partialPrefix1,encapsulatedPrefix1,restriction1,classDef);
-        elt = SCode.CLASSDEF(name1, finalPrefix1, replaceablePrefix1, cl, baseClassPath1, cc1);
+        elt = SCode.CLASSDEF(name1, finalPrefix1, replaceablePrefix1, cl, baseClassPath2, cc1);
         emod = Mod.renameTopLevelNamedSubMod(emod,name1,name2);
       then (emod,(compelt,mod1)::(elt,DAE.NOMOD)::rest);
     case (emod,name1,classExtendsElt,(compelt,mod)::rest)
@@ -4221,7 +4221,7 @@ algorithm
       SCode.Restriction r;
       list<Env.Frame> cenv,cenv1,cenv3,env2,env,env_1;
       DAE.Mod outermod,mod_1,mod_2,mods,mods_1,emod_1,mod;
-      list<SCode.Element> els,els_1,rest,extendsclasselts;
+      list<SCode.Element> els,els_1,rest,classextendselts;
       list<SCode.Equation> eq1,ieq1,eq1_1,ieq1_1,eq2,ieq2,eq3,ieq3,eq,ieq,initeq2;
       list<SCode.Algorithm> alg1,ialg1,alg1_1,ialg1_1,alg2,ialg2,alg3,ialg3,alg,ialg;
       Absyn.Path tp_1,tp;
@@ -4251,10 +4251,10 @@ algorithm
         els_1 = addInheritScope(noImportElements(els), tp_1) "Add the scope of the base class to elements" ;
         cenv3 = Env.openScope(cenv1, encf, SOME(cn));
         new_ci_state = ClassInf.start(r, cn);
-        (els_1,extendsclasselts,_,_) = splitElts(els_1);
+        (els_1,classextendselts) = splitClassExtendsElts(els_1);
         mod_1 = Mod.elabUntypedMod(emod, cenv3, Prefix.NOPRE());
         mod_2 = Mod.merge(outermod, mod_1, cenv3, Prefix.NOPRE());
-        (cache,_,ih,mods,compelts1,eq2,ieq2,alg2,ialg2) = partialInstExtendsAndClassExtendsList(cache,cenv1,ih, outermod, els_1, extendsclasselts, ci_state, className, impl) 
+        (cache,_,ih,mods,compelts1,eq2,ieq2,alg2,ialg2) = partialInstExtendsAndClassExtendsList(cache,cenv1,ih, outermod, els_1, classextendselts, ci_state, className, impl) 
         "recurse to fully flatten extends elements env" ;
         (cache,env2,ih,mods_1,compelts2,eq3,ieq3,alg3,ialg3) = partialInstExtendsList(cache,env,ih, mod, rest, ci_state, className, impl) 
         "continue with next element in list" ;
@@ -14624,6 +14624,33 @@ algorithm
       then (cdefImpElts,classextendsElts,extElts,comp::compElts);
   end matchcontinue;
 end splitElts;
+
+protected function splitClassExtendsElts 
+"This function splits the Element list into two lists
+1. Class-extends class definitions
+2. Any other element"
+  input list<SCode.Element> elts;
+  output list<SCode.Element> classextendsElts;
+  output list<SCode.Element> outElts;
+algorithm 
+  (classextendsElts,outElts) := matchcontinue (elts)
+    local
+      list<SCode.Element> res,xs;
+      SCode.Element cdef;
+    case ({}) then ({},{}); 
+      
+    case ((cdef as SCode.CLASSDEF(classDef = SCode.CLASS(classDef = SCode.CLASS_EXTENDS(baseClassName = _))))::xs)
+      equation
+        (classextendsElts,res) = splitClassExtendsElts(xs);
+      then (cdef :: classextendsElts, res);
+    
+    case cdef::xs
+      equation 
+        (classextendsElts,res) = splitClassExtendsElts(xs);
+      then (classextendsElts, cdef :: res);
+        
+  end matchcontinue;
+end splitClassExtendsElts;
 
 protected function addClassdefsToEnv3 
 "function: addClassdefsToEnv3 " 
