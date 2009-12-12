@@ -507,7 +507,7 @@ algorithm
       Boolean res;
     case (x,y) /* x y */ 
       equation 
-        true = crefEqual(x, y);
+        true = crefEqualNoStringCompare(x, y);
       then
         true;
     case (DAE.CREF_QUAL(componentRef = cr2),y)
@@ -857,48 +857,124 @@ public function crefEqual
   input ComponentRef inComponentRef2;
   output Boolean outBoolean;
 algorithm 
-  outBoolean:=
-  matchcontinue (inComponentRef1,inComponentRef2)
+  outBoolean := matchcontinue (inComponentRef1,inComponentRef2)
     local
       Ident n1,n2,s1,s2;
       list<Subscript> idx1,idx2;
       ComponentRef cr1,cr2;
+    // simple identifiers
     case (DAE.CREF_IDENT(ident = n1,subscriptLst = idx1),DAE.CREF_IDENT(ident = n2,subscriptLst = idx2))
       equation 
-        equality(n1 = n2);
+        true = stringEqual(n1, n2);
         true = subscriptEqual(idx1, idx2);
       then
         true;
-    // Enumeration 
+    // enumerations
     case (cr1 as DAE.CREF_IDENT(ident = n1,subscriptLst = idx1),cr2 as DAE.CREF_IDENT(ident = n2,subscriptLst = idx2))
       local list<Subscript> idx1_1,idx2_1;
       equation 
-        equality(n1 = n2);
+        true = stringEqual(n1, n2);
         (DAE.CREF_IDENT(_,_,idx1_1)) = convertEnumCref(cr1);
         (DAE.CREF_IDENT(_,_,idx2_1)) = convertEnumCref(cr2);
         true = subscriptEqual(idx1_1, idx2_1);
       then
-        true;        
+        true;
+    // qualified crefs
     case (DAE.CREF_QUAL(ident = n1,subscriptLst = idx1,componentRef = cr1),DAE.CREF_QUAL(ident = n2,subscriptLst = idx2,componentRef = cr2))
       equation 
-        equality(n1 = n2);
+        true = stringEqual(n1, n2);
         true = crefEqual(cr1, cr2);
         true = subscriptEqual(idx1, idx2);
       then
         true;
-    case (cr1,cr2)
-      equation 
-        s1 = printComponentRefStr(cr1) 
-        "There is a bug here somewhere or in 
-         MetaModelica Compiler (MMC).
-	     Therefore as a last resort, print the strings and compare." ;
+    // this is a VERY expensive case! Do we NEED IT??!!
+    // There is a bug here somewhere or in MetaModelica Compiler (MMC).
+	  // Therefore as a last resort, print the strings and compare.
+	  // adrpo: this is really not needed BUT unfortunately IT IS as
+	  //        QUAL(x, IDENT(y)) == IDENT(x.y)
+	  //        somewhere in the compiler the lhs is replaced by the rhs
+	  //        and makes this case needed! THIS SHOULD BE FIXED!! TODO! FIXME!
+	  //        NOTE: THIS IS NOT A BUG IN MMC!
+	  /* adrpo: comment this and try to make it work faster with the two cases below!
+    case (cr1 as DAE.CREF_QUAL(ident = n1),cr2 as DAE.CREF_IDENT)
+      equation
+        s1 = printComponentRefStr(cr1);
         s2 = printComponentRefStr(cr2);
-        equality(s1 = s2);
+        true = stringEqual(s1, s2);
+        // debug_print("cr1", cr1);
+        // debug_print("cr2", cr2);
+        // System.enableTrace();
       then
         true;
+	  */
+	  // the following two cases replaces the one below
+	  // right cref is stringified!
+    case (cr1 as DAE.CREF_QUAL(ident = n1),cr2 as DAE.CREF_IDENT(ident = n2))
+      equation
+        0 = System.stringFind(n2, n1); // n1 should be first in n2!
+        s1 = printComponentRefStr(cr1);
+        s2 = printComponentRefStr(cr2);
+        true = stringEqual(s1, s2);
+      then
+        true;
+	  // left cref is stringified! 
+    case (cr1 as DAE.CREF_IDENT(ident = n1),cr2 as DAE.CREF_QUAL(ident = n2))
+      equation
+        0 = System.stringFind(n1, n2); // n2 should be first in n1!
+        s1 = printComponentRefStr(cr1);
+        s2 = printComponentRefStr(cr2);
+        true = stringEqual(s1, s2);
+      then
+        true;        
+    // the crefs are not equal!
     case (_,_) then false; 
   end matchcontinue;
 end crefEqual;
+
+public function crefEqualNoStringCompare 
+"function: crefEqualNoStringCompare 
+  Returns true if two component references are equal!
+  IMPORTANT! do not use this function if you have 
+  stringified components, meaning this function will
+  return false for: cref1: QUAL(x, IDENT(x)) != cref2: IDENT(x.y)"
+  input ComponentRef inComponentRef1;
+  input ComponentRef inComponentRef2;
+  output Boolean outBoolean;
+algorithm 
+  outBoolean := matchcontinue (inComponentRef1,inComponentRef2)
+    local
+      Ident n1,n2,s1,s2;
+      list<Subscript> idx1,idx2;
+      ComponentRef cr1,cr2;
+    // simple identifiers
+    case (DAE.CREF_IDENT(ident = n1,subscriptLst = idx1),DAE.CREF_IDENT(ident = n2,subscriptLst = idx2))
+      equation 
+        true = stringEqual(n1, n2);
+        true = subscriptEqual(idx1, idx2);
+      then
+        true;
+    // enumerations
+    case (cr1 as DAE.CREF_IDENT(ident = n1,subscriptLst = idx1),cr2 as DAE.CREF_IDENT(ident = n2,subscriptLst = idx2))
+      local list<Subscript> idx1_1,idx2_1;
+      equation 
+        true = stringEqual(n1, n2);
+        (DAE.CREF_IDENT(_,_,idx1_1)) = convertEnumCref(cr1);
+        (DAE.CREF_IDENT(_,_,idx2_1)) = convertEnumCref(cr2);
+        true = subscriptEqual(idx1_1, idx2_1);
+      then
+        true;
+    // qualified crefs
+    case (DAE.CREF_QUAL(ident = n1,subscriptLst = idx1,componentRef = cr1),DAE.CREF_QUAL(ident = n2,subscriptLst = idx2,componentRef = cr2))
+      equation 
+        true = stringEqual(n1, n2);
+        true = crefEqualNoStringCompare(cr1, cr2);
+        true = subscriptEqual(idx1, idx2);
+      then
+        true;
+    // the crefs are not equal!
+    case (_,_) then false; 
+  end matchcontinue;
+end crefEqualNoStringCompare;
 
 public function prependSubscriptExp 
 "Prepends a subscript to a CREF expression
