@@ -1066,7 +1066,7 @@ algorithm
         dae = Util.listFlatten({dae1_1,dae2,dae3});          
         ty = mktype(fq_class, ci_state_1, tys, bc_ty, equalityConstraint) ; 
         // update Enumerationtypes in environment
-        (cache,env_4) = updateEnumerationEnvironment(cache,env_3,ty,c,ci_state_1);      
+//        (cache,env_4) = updateEnumerationEnvironment(cache,env_3,ty,c,ci_state_1);      
         //print("\n---- DAE ----\n"); DAE.printDAE(DAE.DAE(dae));  //Print out flat modelica
         dae = renameUniqueVarsInTopScope(callscope_1,dae);
          dae = updateDeducedUnits(callscope_1,store,dae);
@@ -1075,7 +1075,7 @@ algorithm
          ty = MetaUtil.createUnionType(c,ty);
          /* ---------------------------------------------------------------------------------- */
       then 
-        (cache,env_4,ih,store,dae,Connect.SETS({},crs,dc,oc),ty,ci_state_1,oDA,graph);
+        (cache,env_3,ih,store,dae,Connect.SETS({},crs,dc,oc),ty,ci_state_1,oDA,graph);
 
     case (_,_,ih,_,_,_,_,SCode.CLASS(name = n),_,impl,_,graph)
       equation 
@@ -1536,6 +1536,35 @@ algorithm
         tys =  instBooleanClass(cache,env,mods,pre); 
         bc = arrayBasictypeBaseclass(inst_dims, (DAE.T_BOOL(tys),NONE));        
       then (cache,env,ih,store,{},Connect.SETS({},crs,dc,oc),ci_state,tys,bc /* NONE */,NONE,NONE,graph);           
+
+        /* Enumeration class */
+    case (cache,env,ih,store,mods,pre,csets as Connect.SETS(connection = crs,deletedComponents=dc,outerConnects=oc),
+          ci_state,(c as SCode.CLASS(name = n,restriction = SCode.R_ENUMERATION(),classDef = SCode.PARTS(elementLst = els))),prot,inst_dims,impl,graph,_)
+          local
+            list<Env.Frame> env_2, env_3;
+            list<SCode.Element> els;
+            list<tuple<SCode.Element, Mod>> comp;
+            list<String> names; 
+            DAE.EqualityConstraint eqConstraint;
+            list<DAE.Element> dae1,dae1_1;
+            tuple<DAE.TType, Option<Absyn.Path>> ty;
+            Absyn.Path fq_class;
+      equation
+        tys =  instEnumerationClass(cache,env,mods,pre); 
+        ci_state_1 = ClassInf.trans(ci_state, ClassInf.NEWDEF());
+        comp = addNomod(els);
+        (cache,env_1,ih) = addComponentsToEnv(cache,env,ih, mods, pre, csets, ci_state_1, comp, comp, {}, inst_dims, impl);
+        (cache,env_2,ih,store,dae1,csets,ci_state_1,tys,graph) = instElementList(cache,env_1,ih,store, mods, pre, csets, ci_state_1, comp, inst_dims, impl,graph);
+        (cache,fq_class) = makeFullyQualified(cache,env_2, Absyn.IDENT(n));
+        eqConstraint = equalityConstraint(cache, env_2, els);        
+        dae1_1 = DAEUtil.setComponentType(dae1, fq_class);
+        names = SCode.componentNames(c);
+        bc = arrayBasictypeBaseclass(inst_dims, (DAE.T_ENUMERATION(NONE(),Absyn.IDENT(""),names,tys),NONE));
+        ty = mktype(fq_class, ci_state_1, tys, bc, eqConstraint) ; 
+        // update Enumerationtypes in environment
+        (cache,env_3) = updateEnumerationEnvironment(cache,env_2,ty,c,ci_state_1);         
+      then (cache,env_3,ih,store,{},Connect.SETS({},crs,dc,oc),ci_state_1,tys,bc /* NONE */,NONE,NONE,graph);           
+
   
    	/* Ignore functions if not implicit instantiation */ 
     case (cache,env,ih,store,mods,pre,Connect.SETS(connection = crs,deletedComponents=dc,outerConnects=oc),
@@ -1776,7 +1805,7 @@ end instStringClass;
 
 protected function instBooleanClass 
 "function instBooleanClass
-  Instantiation of the String class"
+  Instantiation of the Boolean class"
   input Env.Cache cache;
   input Env.Env env;
   input Mod mods;
@@ -1800,7 +1829,7 @@ algorithm
       then v::varLst;     
     case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("fixed",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p))))::submods,eqmod),pre) 
       equation
-        varLst = instIntegerClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
+        varLst = instBooleanClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
         v = instBuiltinAttribute(cache,env,"fixed",optVal,exp,(DAE.T_BOOL({}),NONE),p);
       then v::varLst;              
     case(cache,env,DAE.MOD(f,e,smod::submods,eqmod),pre)
@@ -1814,6 +1843,47 @@ algorithm
     case(cache,env,DAE.REDECL(_,_),pre) then fail(); /*TODO, report error when redeclaring in Real*/
   end matchcontinue;
 end instBooleanClass;
+
+protected function instEnumerationClass 
+"function instEnumerationClass
+  Instantiation of the Enumeration class"
+  input Env.Cache cache;
+  input Env.Env env;
+  input Mod mods;
+  input Prefix.Prefix pre;
+  output list<DAE.Var> varLst;
+algorithm
+  varLst := matchcontinue(cache,env,mods,pre)
+    local 
+      Boolean f; Absyn.Each e; list<DAE.SubMod> submods; Option<DAE.EqMod> eqmod; DAE.Exp exp;
+      Option<Values.Value> optVal;
+      DAE.Var v; DAE.Properties p;
+    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("quantity",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p))))::submods,eqmod),pre) 
+      equation
+        varLst = instEnumerationClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
+        v = instBuiltinAttribute(cache,env,"quantity",optVal,exp,(DAE.T_STRING({}),NONE),p);
+        then v::varLst;                    
+    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("start",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p))))::submods,eqmod),pre) 
+      equation
+        varLst = instEnumerationClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
+        v = instBuiltinAttribute(cache,env,"start",optVal,exp,(DAE.T_BOOL({}),NONE),p);
+      then v::varLst;     
+    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("fixed",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p))))::submods,eqmod),pre) 
+      equation
+        varLst = instEnumerationClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
+        v = instBuiltinAttribute(cache,env,"fixed",optVal,exp,(DAE.T_BOOL({}),NONE),p);
+      then v::varLst;              
+    case(cache,env,DAE.MOD(f,e,smod::submods,eqmod),pre)
+      local String s1; DAE.SubMod smod; 
+      equation
+        s1 = Mod.prettyPrintMod(mods,0) +& ", not found in the built-in class Enumeration";
+        Error.addMessage(Error.UNUSED_MODIFIER,{s1});
+      then fail();
+    case(cache,env,DAE.MOD(f,e,{},eqmod),pre) then {};
+    case(cache,env,DAE.NOMOD(),pre) then {};
+    case(cache,env,DAE.REDECL(_,_),pre) then fail(); /*TODO, report error when redeclaring in Real*/
+  end matchcontinue;
+end instEnumerationClass;
 
 protected function instBuiltinAttribute 
 "function instBuiltinAttribute
