@@ -519,6 +519,7 @@ algorithm
     case (META_OPTION(s),SCode.R_TYPE()) then ();
     case (META_RECORD(s),SCode.R_TYPE()) then ();
     case (UNIONTYPE(s),SCode.R_TYPE()) then ();
+    case (ENUMERATION(s),SCode.R_TYPE()) then ();
     
   end matchcontinue;
 end valid;

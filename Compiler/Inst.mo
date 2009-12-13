@@ -1549,21 +1549,23 @@ algorithm
             list<DAE.Element> dae1,dae1_1;
             tuple<DAE.TType, Option<Absyn.Path>> ty;
             Absyn.Path fq_class;
+            list<DAE.Var> tys1,tys2;
       equation
         tys =  instEnumerationClass(cache,env,mods,pre); 
         ci_state_1 = ClassInf.trans(ci_state, ClassInf.NEWDEF());
         comp = addNomod(els);
         (cache,env_1,ih) = addComponentsToEnv(cache,env,ih, mods, pre, csets, ci_state_1, comp, comp, {}, inst_dims, impl);
-        (cache,env_2,ih,store,dae1,csets,ci_state_1,tys,graph) = instElementList(cache,env_1,ih,store, mods, pre, csets, ci_state_1, comp, inst_dims, impl,graph);
+        (cache,env_2,ih,store,dae1,csets,ci_state_1,tys1,graph) = instElementList(cache,env_1,ih,store, mods, pre, csets, ci_state_1, comp, inst_dims, impl,graph);
         (cache,fq_class) = makeFullyQualified(cache,env_2, Absyn.IDENT(n));
         eqConstraint = equalityConstraint(cache, env_2, els);        
         dae1_1 = DAEUtil.setComponentType(dae1, fq_class);
         names = SCode.componentNames(c);
-        bc = arrayBasictypeBaseclass(inst_dims, (DAE.T_ENUMERATION(NONE(),Absyn.IDENT(""),names,tys),NONE));
-        ty = mktype(fq_class, ci_state_1, tys, bc, eqConstraint) ; 
+        bc = arrayBasictypeBaseclass(inst_dims, (DAE.T_ENUMERATION(NONE(),Absyn.IDENT(""),names,tys1),NONE));
+        ty = mktype(fq_class, ci_state_1, tys1, bc, eqConstraint) ; 
         // update Enumerationtypes in environment
-        (cache,env_3) = updateEnumerationEnvironment(cache,env_2,ty,c,ci_state_1);         
-      then (cache,env_3,ih,store,{},Connect.SETS({},crs,dc,oc),ci_state_1,tys,bc /* NONE */,NONE,NONE,graph);           
+        (cache,env_3) = updateEnumerationEnvironment(cache,env_2,ty,c,ci_state_1);  
+        tys2 = listAppend(tys,tys1);       
+      then (cache,env_3,ih,store,{},Connect.SETS({},crs,dc,oc),ci_state_1,tys2,bc /* NONE */,NONE,NONE,graph);           
 
   
    	/* Ignore functions if not implicit instantiation */ 
@@ -1862,11 +1864,21 @@ algorithm
       equation
         varLst = instEnumerationClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
         v = instBuiltinAttribute(cache,env,"quantity",optVal,exp,(DAE.T_STRING({}),NONE),p);
+        then v::varLst; 
+   case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("min",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p))))::submods,eqmod),pre) 
+      equation
+        varLst = instEnumerationClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
+        v = instBuiltinAttribute(cache,env,"min",optVal,exp,(DAE.T_ENUMERATION(NONE(),Absyn.IDENT(""),{},{}),NONE),p);
+        then v::varLst;                    
+    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("max",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p))))::submods,eqmod),pre) 
+      equation
+        varLst = instEnumerationClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
+        v = instBuiltinAttribute(cache,env,"max",optVal,exp,(DAE.T_ENUMERATION(NONE(),Absyn.IDENT(""),{},{}),NONE),p);
         then v::varLst;                    
     case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("start",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p))))::submods,eqmod),pre) 
       equation
         varLst = instEnumerationClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
-        v = instBuiltinAttribute(cache,env,"start",optVal,exp,(DAE.T_BOOL({}),NONE),p);
+        v = instBuiltinAttribute(cache,env,"start",optVal,exp,(DAE.T_ENUMERATION(NONE(),Absyn.IDENT(""),{},{}),NONE),p);
       then v::varLst;     
     case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("fixed",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p))))::submods,eqmod),pre) 
       equation
@@ -2426,6 +2438,47 @@ algorithm
       then
         (cache,env5,ih,store,dae,csets5,ci_state6,tys,NONE/* no basictype bc*/,NONE,eqConstraint,graph);
    
+    /* This rule describes how to instantiate a derived class definition */ 
+    case (cache,env,ih,store,mods,pre,csets,ci_state,className,
+          SCode.DERIVED(Absyn.TPATH(path = cn,arrayDim = ad),modifications = mod,attributes=DA),
+          re,prot,inst_dims,impl,graph,instSingleCref)
+      local Absyn.ElementAttributes DA; Absyn.Path fq_class;
+      equation 
+        // adrpo - here we need to check if we don't have recursive extends of the form:
+        // package Icons
+        //   extends Icons.BaseLibrary;
+        //        model BaseLibrary "Icon for base library"
+        //        end BaseLibrary;
+        // end Icons;
+        // if we don't check that, then the compiler enters an infinite loop!
+        // what we do is removing Icons from extends Icons.BaseLibrary;
+        cn = removeSelfReference(className, cn);
+        
+        (cache,(c as SCode.CLASS(cn2,_,enc2,r as SCode.R_ENUMERATION(),_)),cenv) = Lookup.lookupClass(cache,env, cn, true);
+
+       
+        env3 = Env.openScope(cenv, enc2, SOME(cn2));
+        ci_state2 = ClassInf.start(r, cn2);
+        (cache,cenv_2,_,_,_,_,_,_,_,_,_,_) = 
+        instClassIn(
+          cache,env3,InstanceHierarchy.emptyInstanceHierarchy,UnitAbsyn.noStore, 
+          DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
+          ci_state2, c, false, {}, false, ConnectionGraph.EMPTY,NONE);
+        
+        
+        (cache,mod_1) = Mod.elabMod(cache,cenv_2, pre, mod, impl);
+        new_ci_state = ClassInf.start(r, cn2);
+        mods_1 = Mod.merge(mods, mod_1, cenv_2, pre);
+        eq = Mod.modEquation(mods_1) "instantiate array dimensions" ;
+        (cache,dims) = elabArraydimOpt(cache,cenv_2, Absyn.CREF_IDENT("",{}),cn, ad, eq, impl, NONE,true) "owncref not valid here" ;
+        inst_dims2 = instDimExpLst(dims, impl);
+        inst_dims_1 = Util.listListAppendLast(inst_dims, inst_dims2);
+        (cache,env_2,ih,store,dae,csets_1,ci_state_1,tys,bc,oDA,eqConstraint,graph) = instClassIn(cache,cenv_2,ih,store,mods_1, pre, csets, new_ci_state, c, prot, 
+                    inst_dims_1, impl, graph, instSingleCref) "instantiate class in opened scope. " ;
+        ClassInf.assertValid(ci_state_1, re) "Check for restriction violations" ;
+        oDA = Absyn.mergeElementAttributes(DA,oDA);        
+      then
+        (cache,env_2,ih,store,dae,csets_1,ci_state_1,tys,bc,oDA,eqConstraint,graph);
       
     /* This rule describes how to instantiate a derived class definition */ 
     case (cache,env,ih,store,mods,pre,csets,ci_state,className,
@@ -11532,6 +11585,26 @@ algorithm
 //    Absyn.ComponentRef acref;
 //    Integer dimNum;
     tuple<Absyn.ComponentRef, Integer> tpl;
+    
+    // Frenkel TUD: handle the case where range is a enumeration!
+    case (cache,env,pre,{(i,SOME(e as Absyn.CREF(cr)))},sl,initial_,impl)    
+      local 
+        Absyn.ComponentRef cr;
+        Absyn.Path typePath;
+        Integer len;
+        list<SCode.Element> elementLst;
+        list<Values.Value> vals;
+      equation 
+        typePath = Absyn.crefToPath(cr);
+        /* make sure is an enumeration! */
+       (_, SCode.CLASS(_, _, _, SCode.R_ENUMERATION(), SCode.PARTS(elementLst, {}, {}, {}, {}, _, _, _)), _) = 
+             Lookup.lookupClass(cache, env, typePath, false);
+        len = listLength(elementLst);     
+        // replace the enumeration with a range 
+        // ToDo do not replace the enumeration use the enumeration literals   
+        (cache,stmt) = instForStatement(cache,env,pre,{(i,SOME(Absyn.RANGE(Absyn.INTEGER(1),NONE(),Absyn.INTEGER(len)) ))},sl,initial_,impl);
+      then
+        (cache,stmt);    
     case (cache,env,pre,{(i,SOME(e))},sl,initial_,impl)
       equation 
         (cache,e_1,(prop as DAE.PROP((DAE.T_ARRAY(_,t),_),_)),_) = Static.elabExp(cache,env, e, impl, NONE,true);

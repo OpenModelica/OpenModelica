@@ -1419,7 +1419,7 @@ algorithm
     case ((DAE.T_REAL(varLstReal = _),_),(DAE.T_REAL(varLstReal = _),_)) then true; 
     case ((DAE.T_STRING(varLstString = _),_),(DAE.T_STRING(varLstString = _),_)) then true; 
     case ((DAE.T_BOOL(varLstBool = _),_),(DAE.T_BOOL(varLstBool = _),_)) then true; 
-    /* TODO JKF check if this is correct */
+    /* TODO Frenkel TUD check if this is correct */
 //    case ((DAE.T_ENUM(),_),(DAE.T_ENUM(),_)) then true; 
     case ((DAE.T_ENUMERATION(index=oi,path=tp,names = (l1 :: rest1),varLst = vl1),p1),(DAE.T_ENUMERATION(index=oi_1,path=tp_1,names = (l2 :: rest2),varLst = vl2),p2))
       local 

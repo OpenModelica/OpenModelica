@@ -8510,7 +8510,13 @@ algorithm
       equation 
         res = printExp2Str(DAE.CREF(c, ty),pri1);
       then
-        res;        
+        res;     
+    case (DAE.CREF(DAE.CREF_QUAL(_,ty as DAE.ET_COMPLEX(_,_,_),_,c),_),pri1)
+      equation 
+        res = printExp2Str(DAE.CREF(c, ty),pri1);
+      then
+        res;     
+           
     case (DAE.CREF(componentRef = c),_)
       equation
         res = Exp.printComponentRefStr(c);
