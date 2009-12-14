@@ -564,6 +564,46 @@ input Integer start;
   external "C";
 end tmpTickReset;
 
+public function listAppendUnsafe
+  replaceable type Type_a subtypeof Any;
+  input list<Type_a> firstList;
+  input list<Type_a> secondList;
+  output list<Type_a> appendedList;
+  
+  external "C" ;
+end listAppendUnsafe;
+
+public function addToRoots 
+"@author: adrpo
+ this function binds a name to an external root"
+  replaceable type Type_a subtypeof Any;
+  input String name;
+  input Type_a anyValue;
+  external "C" ;
+end addToRoots;
+
+public function getFromRoots
+"@author: adrpo
+ this function returns an external root for a name"
+  replaceable type Type_a subtypeof Any;
+  input String name;
+  output Type_a anyValue;
+  external "C" ;
+end getFromRoots;
+
+public function enableTrace
+"@author: adrpo
+ this function enables the stderr tracing"
+ 
+  external "C" ;
+end enableTrace;
+
+public function disableTrace
+"@author: adrpo
+ this function disables the stderr tracing"
+ 
+  external "C" ;
+end disableTrace;
 
 end System;
 

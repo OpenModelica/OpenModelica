@@ -3683,3 +3683,131 @@ RML_END_LABEL
 
 
 
+RML_BEGIN_LABEL(System__listAppendUnsafe)
+{
+  // call RML__listAppend
+  RML_TAILCALLQ(RML__listAppend,2);
+  // this is an alternative
+#if 0
+    void *lst, *tmp;
+    rml_uint_t idx = 0;
+    lst = rmlA0;
+
+    if (rml_trace_enabled)
+    {
+      fprintf(stderr, "System.listAppendUnsafe\n"); fflush(stderr);
+    }
+
+    /* the first list is empty */
+    if (RML_GETHDR(rmlA0) != RML_CONSHDR)
+    {
+      rmlA0 = rmlA1; /* the first list was empty, return the second list. */
+      RML_TAILCALLK(rmlSC);
+    }
+    /* the second list is empty */
+    if (RML_GETHDR(rmlA1) != RML_CONSHDR)
+    {
+      rmlA0 = rmlA0; /* the second list was empty, return the first list. */
+      RML_TAILCALLK(rmlSC);
+    }
+
+    /* find the end of the first list! */
+    while( RML_GETHDR(lst) == RML_CONSHDR )
+    {
+      if (RML_GETHDR(tmp = RML_CDR(lst)) != RML_CONSHDR)
+        break;
+      else
+        lst = tmp; /* move to next element */
+    }
+
+    struct rml_struct *p = RML_UNTAGPTR(lst);
+    /* set the cdr of the last element in the first list to the first element in the second list */
+    p->data[1] = rmlA1;
+    for (idx = rml_array_trail_size; &rml_array_trail[idx] >= rmlATP; idx--)
+      if (rml_array_trail[idx] == lst) /* if found, do not add again */
+      {
+        rmlA0 = rmlA0; /* return the pointer to the first list */
+        /* return resulting list */
+        RML_TAILCALLK(rmlSC);
+      }
+    /* add the address of the list element into the roots to be
+     *  taken into consideration at the garbage collection time
+     */
+    if( rmlATP == &rml_array_trail[0] )
+    {
+      (void)fprintf(stderr, "Array Trail Overflow!\n");
+      rml_exit(1);
+    }
+    *--rmlATP = lst;
+
+    rmlA0 = rmlA0; /* return the pointer to the first list */
+    /* return resulting list */
+    RML_TAILCALLK(rmlSC);
+#endif
+
+}
+RML_END_LABEL
+
+char          rml_external_roots_trail_names[1024][200];
+void         *rml_external_roots_trail[1024] = {0};
+unsigned long rml_external_roots_trail_size = 1024;
+
+/* forward my external roots */
+void rml_user_gc(struct rml_xgcstate *state)
+{
+  rml_user_gc_callback(state, rml_external_roots_trail, sizeof(void*));
+}
+
+RML_BEGIN_LABEL(System__addToRoots)
+{
+    char* name = RML_STRINGDATA(rmlA0);
+
+    if (rml_trace_enabled)
+    {
+      fprintf(stderr, "System__addToRoots\n"); fflush(stderr);
+    }
+
+    rml_external_roots_trail[0] = rmlA1;
+
+    RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__getFromRoots)
+{
+    char* name = RML_STRINGDATA(rmlA0);
+
+    if (rml_trace_enabled)
+    {
+      fprintf(stderr, "System__getFromRoots\n"); fflush(stderr);
+    }
+
+    rmlA0 = rml_external_roots_trail[0];
+
+    RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+
+RML_BEGIN_LABEL(System__enableTrace)
+{
+  rml_trace_enabled = 1;
+  if (rml_trace_enabled)
+  {
+    fprintf(stderr, "System__enableTrace\n"); fflush(stderr);
+  }
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__disableTrace)
+{
+  if (rml_trace_enabled)
+  {
+    fprintf(stderr, "System__disableTrace\n"); fflush(stderr);
+  }
+  rml_trace_enabled = 0;
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
