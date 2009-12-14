@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2008, Linköpings University,
+ * Copyright (c) 1998-2010, Linköpings University,
  * Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
@@ -207,7 +207,7 @@ algorithm
       then
         (cache,Values.BOOL(true),newst);
 
-		// Note: This is not the environment caches, passed here as cache, but instead the cached instantiated classes.
+    // Note: This is not the environment caches, passed here as cache, but instead the cached instantiated classes.
     case (cache,env,
       DAE.CALL(path = Absyn.IDENT(name = "clearCache"),expLst = {}),
       (st as Interactive.SYMBOLTABLE(
@@ -666,7 +666,7 @@ algorithm
         lstVarVal = iv,compiledFunctions = cf,
         loadedFiles = lf)),msg) /* model does not exist */ 
       equation 
-				cr_1 = Absyn.pathToCref(className);
+        cr_1 = Absyn.pathToCref(className);
         false = Interactive.existClass(cr_1, p);
       then
         (cache,Values.STRING("Unknown model.\n"),Interactive.SYMBOLTABLE(p,aDep,sp,ic,iv,cf,lf));
@@ -692,22 +692,16 @@ algorithm
         (cache,Values.STRING(str),Interactive.SYMBOLTABLE(p,aDep,sp,ic,iv,cf,lf));
 
     case (cache,env,
-      DAE.CALL(
-        path = Absyn.IDENT(name = "readSimulationResult"),
-        expLst = {DAE.SCONST(string = filename),DAE.ARRAY(array = vars),size_expression}),
+      DAE.CALL(path = Absyn.IDENT(name = "readSimulationResult"),
+               expLst = {DAE.SCONST(string = filename),DAE.ARRAY(array = vars),size_expression}),
       (st as Interactive.SYMBOLTABLE(
         ast = p,explodedAst = sp,instClsLst = ic,
         lstVarVal = iv,compiledFunctions = cf,
-        loadedFiles = lf)),msg) /* function Ceval.ceval : (Env.Env, DAE.Exp, bool (implicit) ,
-		    Interactive.InteractiveSymbolTable option, 
-		    int option, ( dimensions )
-		    Ceval.Msg)
-	  => (Values.Value, Interactive.InteractiveSymbolTable option)
- */ 
+        loadedFiles = lf)),msg) 
       local list<DAE.Exp> vars;
       equation 
         (cache,(size_value as Values.INTEGER(size)),SOME(st)) = Ceval.ceval(cache,env, size_expression, true, SOME(st), NONE, msg);
-				vars = Util.listMap(vars,Exp.CodeVarToCref);
+                vars = Util.listMap(vars,Exp.CodeVarToCref);
         vars_1 = Util.listMap(vars, Exp.printExpStr);
         pwd = System.pwd();
         pd = System.pathDelimiter();
@@ -775,7 +769,6 @@ algorithm
         vars_1 = Util.listMap(vars, Exp.printExpStr) "plot2" ;
         vars_2 = Util.listUnionElt("time", vars_1);
         
-    
         (cache,Values.RECORD(orderd={Values.STRING(filename)}),_) = Ceval.ceval(cache,env, 
           DAE.CREF(DAE.CREF_IDENT("currentSimulationResult",DAE.ET_OTHER(),{}),DAE.ET_OTHER()), true, SOME(st), NONE, msg);
         value = SimulationResults.readPtolemyplotDataset(filename, vars_2, 0);
@@ -832,6 +825,7 @@ algorithm
       then
         (cache,Values.STRING("No simulation result to plot."),st);
 
+    // plot error
     case (cache,env,
       DAE.CALL(
         path = Absyn.IDENT(name = "plot2"),
@@ -844,7 +838,7 @@ algorithm
       then
         (cache,Values.STRING("Unknown error while plotting"),st);
    
-//plotAll(model) - file missing
+    //plotAll(model) - file missing
     case (cache,env,
       DAE.CALL(
         path = Absyn.IDENT(name = "plotAll"),
@@ -869,10 +863,10 @@ algorithm
 //        vars_1 = Util.listMap(vars, Exp.printExpStr) "plotAll" ;
 //        vars_2 = Util.listUnionElt("time", vars_1);
 
-				filename = Absyn.pathString(className);
-				filename2 = Util.stringAppendList({filename, "_res.plt"});
+          filename = Absyn.pathString(className);
+          filename2 = Util.stringAppendList({filename, "_res.plt"});
 
-        failure(_ = System.getVariableNames(filename2));
+          failure(_ = System.getVariableNames(filename2));
 //        vars_2 = Util.stringSplitAtChar(str, " ");
 //        vars_2 =
 
@@ -883,7 +877,7 @@ algorithm
  //       failure(_ = SimulationResults.readPtolemyplotDataset(filename2, vars_2, 0));
 
       then
-					(cache,Values.STRING("Error reading the simulation result."),st);
+          (cache,Values.STRING("Error reading the simulation result."),st);
 //        res = ValuesUtil.sendPtolemyplotDataset(value, vars_2, "Plot by OpenModelica", interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, Exp.printExpStr(xRange), Exp.printExpStr(yRange));
 
 //      then
@@ -895,7 +889,7 @@ algorithm
         path = Absyn.IDENT(name = "plotAll"),
         expLst = {
         DAE.CODE(Absyn.C_TYPENAME(className),_),
-  			DAE.SCONST(string = interpolation), DAE.SCONST(string = title), DAE.BCONST(bool = legend), DAE.BCONST(bool = grid), DAE.BCONST(bool = logX), DAE.BCONST(bool = logY), DAE.SCONST(string = xLabel), DAE.SCONST(string = yLabel), DAE.BCONST(bool = points), xRange, yRange
+        DAE.SCONST(string = interpolation), DAE.SCONST(string = title), DAE.BCONST(bool = legend), DAE.BCONST(bool = grid), DAE.BCONST(bool = logX), DAE.BCONST(bool = logY), DAE.SCONST(string = xLabel), DAE.SCONST(string = yLabel), DAE.BCONST(bool = points), xRange, yRange
         }),
       (st as Interactive.SYMBOLTABLE(
         ast = p,explodedAst = sp,instClsLst = ic,
@@ -914,18 +908,17 @@ algorithm
 //        vars_1 = Util.listMap(vars, Exp.printExpStr) "plotAll" ;
 //        vars_2 = Util.listUnionElt("time", vars_1);
 
-				filename = Absyn.pathString(className);
-				filename2 = Util.stringAppendList({filename, "_res.plt"});
+          filename = Absyn.pathString(className);
+          filename2 = Util.stringAppendList({filename, "_res.plt"});
 
-        str = System.getVariableNames(filename2);
-        vars_2 = Util.stringSplitAtChar(str, " ");
+          str = System.getVariableNames(filename2);
+          vars_2 = Util.stringSplitAtChar(str, " ");
 //        vars_2 =
 
 
-        value = SimulationResults.readPtolemyplotDataset(filename2, vars_2, 0);
+          value = SimulationResults.readPtolemyplotDataset(filename2, vars_2, 0);
 
-        res = ValuesUtil.sendPtolemyplotDataset(value, vars_2, "Plot by OpenModelica", interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, Exp.printExpStr(xRange), Exp.printExpStr(yRange));
-
+          res = ValuesUtil.sendPtolemyplotDataset(value, vars_2, "Plot by OpenModelica", interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, Exp.printExpStr(xRange), Exp.printExpStr(yRange));
       then
         (cache,Values.BOOL(true),st);
 
@@ -935,7 +928,7 @@ algorithm
         path = Absyn.IDENT(name = "plotAll"),
         expLst = {
 //        DAE.CODE(Absyn.C_TYPENAME(className),_),
-  			DAE.SCONST(string = interpolation), DAE.SCONST(string = title), DAE.BCONST(bool = legend), DAE.BCONST(bool = grid), DAE.BCONST(bool = logX), DAE.BCONST(bool = logY), DAE.SCONST(string = xLabel), DAE.SCONST(string = yLabel), DAE.BCONST(bool = points), xRange, yRange
+          DAE.SCONST(string = interpolation), DAE.SCONST(string = title), DAE.BCONST(bool = legend), DAE.BCONST(bool = grid), DAE.BCONST(bool = logX), DAE.BCONST(bool = logY), DAE.SCONST(string = xLabel), DAE.SCONST(string = yLabel), DAE.BCONST(bool = points), xRange, yRange
         }),
       (st as Interactive.SYMBOLTABLE(
         ast = p,explodedAst = sp,instClsLst = ic,
@@ -949,16 +942,13 @@ algorithm
         String interpolation, title, xLabel, yLabel, str;//, filename2;
         Boolean legend, grid, logX, logY, points;
       equation
-
-         (cache,Values.RECORD(orderd={Values.STRING(filename)}),_) = Ceval.ceval(cache,env,
-          DAE.CREF(DAE.CREF_IDENT("currentSimulationResult",DAE.ET_OTHER(),{}),DAE.ET_OTHER()), true, SOME(st), NONE, msg);
+        (cache,Values.RECORD(orderd={Values.STRING(filename)}),_) = Ceval.ceval(cache,env,
+        DAE.CREF(DAE.CREF_IDENT("currentSimulationResult",DAE.ET_OTHER(),{}),DAE.ET_OTHER()), true, SOME(st), NONE, msg);
         failure(_ = System.getVariableNames(filename));
-//        vars_2 = Util.stringSplitAtChar(str, " ");
-
-//        failure(_ = SimulationResults.readPtolemyplotDataset(filename, vars_2, 0));
-
+//      vars_2 = Util.stringSplitAtChar(str, " ");
+//      failure(_ = SimulationResults.readPtolemyplotDataset(filename, vars_2, 0));
       then
-					(cache,Values.STRING("Error reading the simulation result."),st);
+        (cache,Values.STRING("Error reading the simulation result."),st);
 
 //plotAll()
     case (cache,env,
@@ -966,7 +956,7 @@ algorithm
         path = Absyn.IDENT(name = "plotAll"),
         expLst = {
 //        DAE.CODE(Absyn.C_TYPENAME(className),_),
-  			DAE.SCONST(string = interpolation), DAE.SCONST(string = title), DAE.BCONST(bool = legend), DAE.BCONST(bool = grid), DAE.BCONST(bool = logX), DAE.BCONST(bool = logY), DAE.SCONST(string = xLabel), DAE.SCONST(string = yLabel), DAE.BCONST(bool = points), xRange, yRange
+          DAE.SCONST(string = interpolation), DAE.SCONST(string = title), DAE.BCONST(bool = legend), DAE.BCONST(bool = grid), DAE.BCONST(bool = logX), DAE.BCONST(bool = logY), DAE.SCONST(string = xLabel), DAE.SCONST(string = yLabel), DAE.BCONST(bool = points), xRange, yRange
         }),
       (st as Interactive.SYMBOLTABLE(
         ast = p,explodedAst = sp,instClsLst = ic,
@@ -987,7 +977,6 @@ algorithm
         value = SimulationResults.readPtolemyplotDataset(filename, vars_2, 0);
 
         res = ValuesUtil.sendPtolemyplotDataset(value, vars_2, "Plot by OpenModelica", interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, Exp.printExpStr(xRange), Exp.printExpStr(yRange));
-
       then
         (cache,Values.BOOL(true),st);
 
@@ -1000,7 +989,7 @@ algorithm
         expLst = {
         DAE.CODE(Absyn.C_TYPENAME(className),_),
         DAE.ARRAY(array = vars),
-  			DAE.SCONST(string = interpolation), DAE.SCONST(string = title), DAE.BCONST(bool = legend), DAE.BCONST(bool = grid), DAE.BCONST(bool = logX), DAE.BCONST(bool = logY), DAE.SCONST(string = xLabel), DAE.SCONST(string = yLabel), DAE.BCONST(bool = points), xRange, yRange
+        DAE.SCONST(string = interpolation), DAE.SCONST(string = title), DAE.BCONST(bool = legend), DAE.BCONST(bool = grid), DAE.BCONST(bool = logX), DAE.BCONST(bool = logY), DAE.SCONST(string = xLabel), DAE.SCONST(string = yLabel), DAE.BCONST(bool = points), xRange, yRange
         }),
       (st as Interactive.SYMBOLTABLE(
         ast = p,explodedAst = sp,instClsLst = ic,
@@ -1013,17 +1002,15 @@ algorithm
         String interpolation, title, xLabel, yLabel;
         Boolean legend, grid, logX, logY, points;
       equation
-
         vars = Util.listMap(vars,Exp.CodeVarToCref);
         vars_1 = Util.listMap(vars, Exp.printExpStr) "plot" ;
         vars_2 = Util.listUnionElt("time", vars_1);
-				filename = Absyn.pathString(className);
-				filename = Util.stringAppendList({filename, "_res.plt"});
+        filename = Absyn.pathString(className);
+        filename = Util.stringAppendList({filename, "_res.plt"});
 
         value = SimulationResults.readPtolemyplotDataset(filename, vars_2, 0);
 
         res = ValuesUtil.sendPtolemyplotDataset(value, vars_2, "Plot by OpenModelica", interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, Exp.printExpStr(xRange), Exp.printExpStr(yRange));
-
       then
         (cache,Values.BOOL(true),st);
 
@@ -1033,13 +1020,12 @@ algorithm
         expLst = {
         DAE.CODE(Absyn.C_TYPENAME(className),_),
         DAE.ARRAY(array = vars),
-  			DAE.SCONST(string = interpolation), DAE.SCONST(string = title), DAE.BCONST(bool = legend), DAE.BCONST(bool = grid), DAE.BCONST(bool = logX), DAE.BCONST(bool = logY), DAE.SCONST(string = xLabel), DAE.SCONST(string = yLabel), DAE.BCONST(bool = points), xRange, yRange
+        DAE.SCONST(string = interpolation), DAE.SCONST(string = title), DAE.BCONST(bool = legend), DAE.BCONST(bool = grid), DAE.BCONST(bool = logX), DAE.BCONST(bool = logY), DAE.SCONST(string = xLabel), DAE.SCONST(string = yLabel), DAE.BCONST(bool = points), xRange, yRange
         }),
       (st as Interactive.SYMBOLTABLE(
         ast = p,explodedAst = sp,instClsLst = ic,
         lstVarVal = iv,compiledFunctions = cf,
         loadedFiles = lf)),msg)
-
       local
         Integer res;
         DAE.Exp xRange, yRange;
@@ -1047,23 +1033,21 @@ algorithm
         String interpolation, title, xLabel, yLabel;
         Boolean legend, grid, logX, logY, points;
        equation
-
-         vars = Util.listMap(vars,Exp.CodeVarToCref);
+        vars = Util.listMap(vars,Exp.CodeVarToCref);
         vars_1 = Util.listMap(vars, Exp.printExpStr) "plot" ;
         vars_2 = Util.listUnionElt("time", vars_1);
- 				filename = Absyn.pathString(className);
-				filename = Util.stringAppendList({filename, "_res.plt"});
+        filename = Absyn.pathString(className);
+        filename = Util.stringAppendList({filename, "_res.plt"});
 
         failure(_ = SimulationResults.readPtolemyplotDataset(filename, vars_2, 0));
-
       then
-					(cache,Values.STRING("Error reading the simulation result."),st);
+        (cache,Values.STRING("Error reading the simulation result."),st);
 
     case (cache,env, //plot2({x,y})
       DAE.CALL(
         path = Absyn.IDENT(name = "plot"),
         expLst = {DAE.ARRAY(array = vars),
-  			DAE.SCONST(string = interpolation), DAE.SCONST(string = title), DAE.BCONST(bool = legend), DAE.BCONST(bool = grid), DAE.BCONST(bool = logX), DAE.BCONST(bool = logY), DAE.SCONST(string = xLabel), DAE.SCONST(string = yLabel), DAE.BCONST(bool = points), xRange, yRange
+        DAE.SCONST(string = interpolation), DAE.SCONST(string = title), DAE.BCONST(bool = legend), DAE.BCONST(bool = grid), DAE.BCONST(bool = logX), DAE.BCONST(bool = logY), DAE.SCONST(string = xLabel), DAE.SCONST(string = yLabel), DAE.BCONST(bool = points), xRange, yRange
         }),
       (st as Interactive.SYMBOLTABLE(
         ast = p,explodedAst = sp,instClsLst = ic,
@@ -1073,9 +1057,9 @@ algorithm
         Integer res;
         DAE.Exp xRange, yRange;
         list<DAE.Exp> vars;
-				String interpolation, title, xLabel, yLabel;
-				Boolean legend, logX, logY, points;
-				Boolean grid;
+        String interpolation, title, xLabel, yLabel;
+        Boolean legend, logX, logY, points;
+        Boolean grid;
       equation
         vars = Util.listMap(vars,Exp.CodeVarToCref);
         vars_1 = Util.listMap(vars, Exp.printExpStr) "plot" ;
@@ -1084,7 +1068,6 @@ algorithm
           DAE.CREF(DAE.CREF_IDENT("currentSimulationResult",DAE.ET_OTHER(),{}),DAE.ET_OTHER()), true, SOME(st), NONE, msg);
         value = SimulationResults.readPtolemyplotDataset(filename, vars_2, 0);
         res = ValuesUtil.sendPtolemyplotDataset(value, vars_2, "Plot by OpenModelica", interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, Exp.printExpStr(xRange), Exp.printExpStr(yRange));
-
       then
         (cache,Values.BOOL(true),st);
 
@@ -1092,7 +1075,7 @@ algorithm
       DAE.CALL(
         path = Absyn.IDENT(name = "plot"),
         expLst = {DAE.ARRAY(array = vars),
-  			DAE.SCONST(string = interpolation), DAE.SCONST(string = title), DAE.BCONST(bool = legend), DAE.BCONST(bool = grid), DAE.BCONST(bool = logX), DAE.BCONST(bool = logY), DAE.SCONST(string = xLabel), DAE.SCONST(string = yLabel), DAE.BCONST(bool = points), xRange, yRange
+        DAE.SCONST(string = interpolation), DAE.SCONST(string = title), DAE.BCONST(bool = legend), DAE.BCONST(bool = grid), DAE.BCONST(bool = logX), DAE.BCONST(bool = logY), DAE.SCONST(string = xLabel), DAE.SCONST(string = yLabel), DAE.BCONST(bool = points), xRange, yRange
         }),
       (st as Interactive.SYMBOLTABLE(
         ast = p,explodedAst = sp,instClsLst = ic,
@@ -1102,10 +1085,9 @@ algorithm
         Integer res;
         DAE.Exp xRange, yRange;
         list<DAE.Exp> vars;
-				String interpolation, title, xLabel, yLabel;
-				Boolean legend, logX, logY, points;
-				Boolean grid;
-
+        String interpolation, title, xLabel, yLabel;
+        Boolean legend, logX, logY, points;
+        Boolean grid;
       equation
         vars = Util.listMap(vars,Exp.CodeVarToCref);
         vars_1 = Util.listMap(vars, Exp.printExpStr) "Catch error reading simulation file." ;
@@ -1120,7 +1102,7 @@ algorithm
       DAE.CALL(
         path = Absyn.IDENT(name = "plot"),
         expLst = {DAE.ARRAY(array = vars),
-  			DAE.SCONST(string = interpolation), DAE.SCONST(string = title), DAE.BCONST(bool = legend), DAE.BCONST(bool = grid), DAE.BCONST(bool = logX), DAE.BCONST(bool = logY), DAE.SCONST(string = xLabel), DAE.SCONST(string = yLabel), DAE.BCONST(bool = points), xRange, yRange
+        DAE.SCONST(string = interpolation), DAE.SCONST(string = title), DAE.BCONST(bool = legend), DAE.BCONST(bool = grid), DAE.BCONST(bool = logX), DAE.BCONST(bool = logY), DAE.SCONST(string = xLabel), DAE.SCONST(string = yLabel), DAE.BCONST(bool = points), xRange, yRange
         }),
       (st as Interactive.SYMBOLTABLE(
         ast = p,explodedAst = sp,instClsLst = ic,
@@ -1132,7 +1114,6 @@ algorithm
         list<DAE.Exp> vars;
         String interpolation, title, xLabel, yLabel;
         Boolean legend, grid, logX, logY, points;
-
       equation
         vars = Util.listMap(vars,Exp.CodeVarToCref);
         vars_1 = Util.listMap(vars, Exp.printExpStr) "Catch error reading simulation file." ;
@@ -1146,7 +1127,7 @@ algorithm
       DAE.CALL(
         path = Absyn.IDENT(name = "plot"),
         expLst = {DAE.ARRAY(array = vars),
-  			DAE.SCONST(string = interpolation), DAE.SCONST(string = title), DAE.BCONST(bool = legend), DAE.BCONST(bool = grid), DAE.BCONST(bool = logX), DAE.BCONST(bool = logY), DAE.SCONST(string = xLabel), DAE.SCONST(string = yLabel), DAE.BCONST(bool = points), xRange, yRange
+        DAE.SCONST(string = interpolation), DAE.SCONST(string = title), DAE.BCONST(bool = legend), DAE.BCONST(bool = grid), DAE.BCONST(bool = logX), DAE.BCONST(bool = logY), DAE.SCONST(string = xLabel), DAE.SCONST(string = yLabel), DAE.BCONST(bool = points), xRange, yRange
         }),
       (st as Interactive.SYMBOLTABLE(
         ast = p,explodedAst = sp,instClsLst = ic,
@@ -1158,10 +1139,8 @@ algorithm
         list<DAE.Exp> vars;
         String interpolation, title, xLabel, yLabel;
         Boolean legend, grid, logX, logY, points;
-
       then
         (cache,Values.STRING("Unknown error while plotting"),st);
-
 
 // he-mag, visualize
 // visualize(model, x)
@@ -1195,17 +1174,16 @@ algorithm
         //vars = Util.listCreate("visualize");
         visvar_str = Interactive.getElementsOfVisType(className, p);
         //print("varsofvistype: " +& visvar_str +& "\n");
-				filename = Absyn.pathString(className);
-				filename = Util.stringAppendList({filename, "_res.plt"});
-				//print("filename: ");
-				//print(filename);
-				vars = SimulationResults.readPtolemyplotVariables(filename, visvar_str);
+        filename = Absyn.pathString(className);
+        filename = Util.stringAppendList({filename, "_res.plt"});
+        //print("filename: ");
+        //print(filename);
+        vars = SimulationResults.readPtolemyplotVariables(filename, visvar_str);
         vars_2 = Util.listUnionElt("time", vars);
-  		  //print(Util.stringAppendList(vars_2));
+        //print(Util.stringAppendList(vars_2));
         //print(Util.stringDelimitList(vars_2, ", "));
         value = SimulationResults.readPtolemyplotDataset(filename, vars_2, 0);
         res = ValuesUtil.sendPtolemyplotDataset2(value, vars_2, visvar_str, "Plot by OpenModelica");
-
       then
         (cache,Values.BOOL(true),st);
 
@@ -1230,20 +1208,19 @@ algorithm
         // vars = Util.listMap(vars,Exp.CodeVarToCref);
         //vars_1 = Util.listMap(vars, Exp.printExpStr) "plot" ;
         //vars_2 = Util.listUnionElt("time", vars_1);
- 				filename = Absyn.pathString(className);
-				filename = Util.stringAppendList({filename, "_res.plt"});
-				vars = SimulationResults.readPtolemyplotVariables(filename);
+        filename = Absyn.pathString(className);
+        filename = Util.stringAppendList({filename, "_res.plt"});
+        vars = SimulationResults.readPtolemyplotVariables(filename);
 
         failure(_ = SimulationResults.readPtolemyplotDataset(filename, vars, 0));
-
       then
-					(cache,Values.STRING("Error reading the simulation result."),st);*/
+        (cache,Values.STRING("Error reading the simulation result."),st);*/
 
     case (cache,env,
       DAE.CALL(
         path = Absyn.IDENT(name = "visualize"),
         expLst = {DAE.ARRAY(array = vars),
-  			DAE.SCONST(string = interpolation), DAE.SCONST(string = title), DAE.BCONST(bool = legend), DAE.BCONST(bool = grid), DAE.BCONST(bool = logX), DAE.BCONST(bool = logY), DAE.SCONST(string = xLabel), DAE.SCONST(string = yLabel), DAE.BCONST(bool = points)
+        DAE.SCONST(string = interpolation), DAE.SCONST(string = title), DAE.BCONST(bool = legend), DAE.BCONST(bool = grid), DAE.BCONST(bool = logX), DAE.BCONST(bool = logY), DAE.SCONST(string = xLabel), DAE.SCONST(string = yLabel), DAE.BCONST(bool = points)
         }),
       (st as Interactive.SYMBOLTABLE(
         ast = p,explodedAst = sp,instClsLst = ic,
@@ -1252,9 +1229,9 @@ algorithm
       local
         Integer res;
         list<DAE.Exp> vars;
-				String interpolation, title, xLabel, yLabel, liststr;
-				Boolean legend, logX, logY, points;
-				Boolean grid;
+        String interpolation, title, xLabel, yLabel, liststr;
+        Boolean legend, logX, logY, points;
+        Boolean grid;
       equation
         print("hittaderättigen\n");
         vars = Util.listMap(vars,Exp.CodeVarToCref);
@@ -1268,7 +1245,6 @@ algorithm
         value = SimulationResults.readPtolemyplotDataset(filename, vars_2, 0);
         print("value = " +& ValuesUtil.valString(value));
         res = ValuesUtil.sendPtolemyplotDataset(value, vars_2, "Plot by OpenModelica", interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, title, title);
-
       then
         (cache,Values.BOOL(true),st);
 
@@ -1276,7 +1252,7 @@ algorithm
       DAE.CALL(
         path = Absyn.IDENT(name = "visualize"),
         expLst = {DAE.ARRAY(array = vars),
-  			DAE.SCONST(string = interpolation), DAE.SCONST(string = title), DAE.BCONST(bool = legend), DAE.BCONST(bool = grid), DAE.BCONST(bool = logX), DAE.BCONST(bool = logY), DAE.SCONST(string = xLabel), DAE.SCONST(string = yLabel), DAE.BCONST(bool = points)
+        DAE.SCONST(string = interpolation), DAE.SCONST(string = title), DAE.BCONST(bool = legend), DAE.BCONST(bool = grid), DAE.BCONST(bool = logX), DAE.BCONST(bool = logY), DAE.SCONST(string = xLabel), DAE.SCONST(string = yLabel), DAE.BCONST(bool = points)
         }),
       (st as Interactive.SYMBOLTABLE(
         ast = p,explodedAst = sp,instClsLst = ic,
@@ -1285,10 +1261,9 @@ algorithm
       local
         Integer res;
         list<DAE.Exp> vars;
-				String interpolation, title, xLabel, yLabel;
-				Boolean legend, logX, logY, points;
-				Boolean grid;
-
+        String interpolation, title, xLabel, yLabel;
+        Boolean legend, logX, logY, points;
+        Boolean grid;
       equation
         vars = Util.listMap(vars,Exp.CodeVarToCref);
         vars_1 = Util.listMap(vars, Exp.printExpStr) "Catch error reading simulation file." ;
@@ -1303,7 +1278,7 @@ algorithm
       DAE.CALL(
         path = Absyn.IDENT(name = "visualize"),
         expLst = {DAE.ARRAY(array = vars),
-  			DAE.SCONST(string = interpolation), DAE.SCONST(string = title), DAE.BCONST(bool = legend), DAE.BCONST(bool = grid), DAE.BCONST(bool = logX), DAE.BCONST(bool = logY), DAE.SCONST(string = xLabel), DAE.SCONST(string = yLabel), DAE.BCONST(bool = points)
+        DAE.SCONST(string = interpolation), DAE.SCONST(string = title), DAE.BCONST(bool = legend), DAE.BCONST(bool = grid), DAE.BCONST(bool = logX), DAE.BCONST(bool = logY), DAE.SCONST(string = xLabel), DAE.SCONST(string = yLabel), DAE.BCONST(bool = points)
         }),
       (st as Interactive.SYMBOLTABLE(
         ast = p,explodedAst = sp,instClsLst = ic,
@@ -1314,7 +1289,6 @@ algorithm
         list<DAE.Exp> vars;
         String interpolation, title, xLabel, yLabel;
         Boolean legend, grid, logX, logY, points;
-
       equation
         vars = Util.listMap(vars,Exp.CodeVarToCref);
         vars_1 = Util.listMap(vars, Exp.printExpStr) "Catch error reading simulation file." ;
@@ -1328,7 +1302,7 @@ algorithm
       DAE.CALL(
         path = Absyn.IDENT(name = "visualize"),
         expLst = {DAE.ARRAY(array = vars),
-  			DAE.SCONST(string = interpolation), DAE.SCONST(string = title), DAE.BCONST(bool = legend), DAE.BCONST(bool = grid), DAE.BCONST(bool = logX), DAE.BCONST(bool = logY), DAE.SCONST(string = xLabel), DAE.SCONST(string = yLabel), DAE.BCONST(bool = points)
+        DAE.SCONST(string = interpolation), DAE.SCONST(string = title), DAE.BCONST(bool = legend), DAE.BCONST(bool = grid), DAE.BCONST(bool = logX), DAE.BCONST(bool = logY), DAE.SCONST(string = xLabel), DAE.SCONST(string = yLabel), DAE.BCONST(bool = points)
         }),
       (st as Interactive.SYMBOLTABLE(
         ast = p,explodedAst = sp,instClsLst = ic,
@@ -1341,7 +1315,6 @@ algorithm
         Boolean legend, grid, logX, logY, points;
       then
         (cache,Values.STRING("Unknown error while plotting"),st);
-
 
 // } visualize
 
@@ -1461,7 +1434,7 @@ algorithm
         varNameStr = Exp.printExpStr(varName);        
         (cache,Values.INTEGER(timeStampI),SOME(st)) = Ceval.ceval(cache,env, varTimeStamp, true, SOME(st), NONE, msg);
         timeStamp = intReal(timeStampI);        
-        (cache,val) = cevalVal(cache,env,SOME(st),timeStamp,varNameStr);                       
+        (cache,val) = cevalVal(cache,env,SOME(st),timeStamp,varNameStr);
       then
         (cache,Values.REAL(val),st);        
         
@@ -1620,8 +1593,8 @@ algorithm
         vars_1 = Util.listMap(vars, Exp.printExpStr);
         length = listLength(vars_1);
         (length > 1) = true;
-				filename = Absyn.pathString(className);
-				filename = Util.stringAppendList({filename, "_res.plt"});
+        filename = Absyn.pathString(className);
+        filename = Util.stringAppendList({filename, "_res.plt"});
 
         value = SimulationResults.readPtolemyplotDataset(filename, vars_1, 0);
         pwd = System.pwd();
@@ -1640,8 +1613,7 @@ algorithm
    case (cache,env,
       DAE.CALL(path = Absyn.IDENT(name = "plotParametric"),
       expLst = {DAE.ARRAY(array = vars),
-  			DAE.SCONST(string = interpolation), DAE.SCONST(string = title), DAE.BCONST(bool = legend), DAE.BCONST(bool = grid), DAE.BCONST(bool = logX), DAE.BCONST(bool = logY), DAE.SCONST(string = xLabel), DAE.SCONST(string = yLabel), DAE.BCONST(bool = points), xRange, yRange
-
+      DAE.SCONST(string = interpolation), DAE.SCONST(string = title), DAE.BCONST(bool = legend), DAE.BCONST(bool = grid), DAE.BCONST(bool = logX), DAE.BCONST(bool = logY), DAE.SCONST(string = xLabel), DAE.SCONST(string = yLabel), DAE.BCONST(bool = points), xRange, yRange
       }),
       (st as Interactive.SYMBOLTABLE(
         ast = p,explodedAst = sp,instClsLst = ic,
@@ -1654,7 +1626,6 @@ algorithm
         String interpolation, title, xLabel, yLabel;
         Boolean legend, grid, logX, logY, points;
       equation
-
         vars = Util.listMap(vars,Exp.CodeVarToCref);
         vars_1 = Util.listMap(vars, Exp.printExpStr);
         length = listLength(vars_1);
@@ -1663,7 +1634,6 @@ algorithm
           DAE.CREF(DAE.CREF_IDENT("currentSimulationResult",DAE.ET_OTHER(),{}),DAE.ET_OTHER()), true, SOME(st), NONE, msg);
          value = SimulationResults.readPtolemyplotDataset(filename, vars_1, 0);
          res = ValuesUtil.sendPtolemyplotDataset(value, vars_1, "Plot by OpenModelica", interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, Exp.printExpStr(xRange), Exp.printExpStr(yRange));
-
       then
         (cache,Values.BOOL(true),st);
 
@@ -1990,7 +1960,7 @@ algorithm
         str = Dump.unparseStr(ptot,true);
         System.writeFile(filename, str);
       then
-        (cache,Values.BOOL(true),st);        
+        (cache,Values.BOOL(true),st);
 
     case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "saveModel"),expLst = {DAE.SCONST(string = name),DAE.CREF(componentRef = cr)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       equation 
@@ -2167,13 +2137,13 @@ algorithm
 end setEcho;
 
 protected function cevalValArray "Help function to cevalInteractiveFunctions. Handles val(var,{timestamps})"
-	input Env.Cache cache;
-	input Env.Env env;
+  input Env.Cache cache;
+  input Env.Env env;
   input Option<Interactive.InteractiveSymbolTable> st;
-	input list<Real> timeStamps;
-	input String varName;
-	output Env.Cache outCache;
-	output Values.Value value;
+  input list<Real> timeStamps;
+  input String varName;
+  output Env.Cache outCache;
+  output Values.Value value;
 algorithm
   (outCache,value) := matchcontinue(cache,env,st,timeStamps,varName)
   local list<Values.Value> vals;
@@ -2187,13 +2157,13 @@ algorithm
 end cevalValArray;
 
 protected function cevalVal "Help function to cevalInteractiveFunctions. Handles val(var,timestamp)"
-	input Env.Cache cache;
-	input Env.Env env;
+  input Env.Cache cache;
+  input Env.Env env;
   input Option<Interactive.InteractiveSymbolTable> stopt;
-	input Real timeStamp;
-	input String varName;
-	output Env.Cache outCache;
-	output Real value;
+  input Real timeStamp;
+  input String varName;
+  output Env.Cache outCache;
+  output Real value;
 algorithm
   (outCache,value) := matchcontinue(cache,env,st,timeStamp,varName)
   local Real val; list<Real> tV, vV; list<Values.Value> varValues, timeValues;
@@ -2216,8 +2186,8 @@ end cevalVal;
 public function getIncidenceMatrix "function getIncidenceMatrix
  author: adrpo
  translates a model and returns the incidence matrix"
-	input Env.Cache inCache;
-	input Env.Env inEnv;
+  input Env.Cache inCache;
+  input Env.Env inEnv;
   input Absyn.Path className "path for the model";
   input Interactive.InteractiveSymbolTable inInteractiveSymbolTable;
   input Ceval.Msg inMsg;
@@ -2284,8 +2254,8 @@ end getIncidenceMatrix;
 public function translateModel "function translateModel
  author: x02lucpo
  translates a model into cpp code and writes also a makefile"
-	input Env.Cache inCache;
-	input Env.Env inEnv;
+  input Env.Cache inCache;
+  input Env.Env inEnv;
   input Absyn.Path className "path for the model";
   input Interactive.InteractiveSymbolTable inInteractiveSymbolTable;
   input Ceval.Msg inMsg;
@@ -2380,8 +2350,8 @@ end translateModel;
 
 
 public function translateGraphics "function: translates the graphical annotations from old to new version"
-	input Env.Cache inCache;
-	input Env.Env inEnv;
+  input Env.Cache inCache;
+  input Env.Env inEnv;
   input Absyn.Path className;
   input Interactive.InteractiveSymbolTable inInteractiveSymbolTable;
   input Ceval.Msg inMsg;
@@ -2427,12 +2397,12 @@ algorithm
         Absyn.Program p1;
         list<Interactive.CompiledCFunction> newCF;
       equation         
-	  		cls = Interactive.getPathedClassInProgram(className, p);        
+        cls = Interactive.getPathedClassInProgram(className, p);        
         refactoredClass = Refactor.refactorGraphicalAnnotation(p, cls);
         within_ = Interactive.buildWithin(className);
         p1 = Interactive.updateProgram(Absyn.PROGRAM({refactoredClass}, within_,ts), p);
         s1 = Absyn.pathString(className);
-				retStr=Util.stringAppendList({"Translation of ",s1," successful.\n"});
+        retStr=Util.stringAppendList({"Translation of ",s1," successful.\n"});
       then
         (cache,Values.STRING(retStr),Interactive.SYMBOLTABLE(p1,aDep,sp,ic,iv,cf,lf));
         
@@ -2512,7 +2482,7 @@ end calculateSimulationSettings;
 public function buildModel "function buildModel
  author: x02lucpo
  translates and builds the model by running compiler script on the generated makefile"
-	input Env.Cache inCache;
+  input Env.Cache inCache;
   input Env.Env inEnv;
   input DAE.Exp inExp;
   input Interactive.InteractiveSymbolTable inInteractiveSymbolTable;
@@ -2613,12 +2583,12 @@ end buildModel;
 protected function changeToTempDirectory "function changeToTempDirectory
 changes to temp directory (set using the functions from Settings.mo) 
 if the boolean flag given as input is true"
-	input Boolean cdToTemp;
+  input Boolean cdToTemp;
 algorithm
   _ := matchcontinue(cdToTemp) 
   local String tempDir;
     case(true) equation
-   			tempDir = Settings.getTempDirectoryPath();
+        tempDir = Settings.getTempDirectoryPath();
         0 = System.cd(tempDir);
         then ();
     case(_) then ();
@@ -2828,7 +2798,7 @@ public function cevalAstExp
   
   Example: y = Code(1 + x)
            2 + 5  ( x + Eval(y) )  =>   2 + 5  ( x + 1 + x )"
-	input Env.Cache inCache;
+  input Env.Cache inCache;
   input Env.Env inEnv;
   input Absyn.Exp inExp;
   input Boolean inBoolean;
@@ -2937,7 +2907,7 @@ end cevalAstExp;
 public function cevalAstExpList 
 "function: cevalAstExpList
   List version of cevalAstExp"
-	input Env.Cache inCache;
+  input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
   input Boolean inBoolean;
@@ -2967,7 +2937,7 @@ algorithm
 end cevalAstExpList;
 
 protected function cevalAstExpListList "function: cevalAstExpListList"
-	input Env.Cache inCache;
+  input Env.Cache inCache;
   input Env.Env inEnv;
   input list<list<Absyn.Exp>> inAbsynExpLstLst;
   input Boolean inBoolean;
@@ -2999,7 +2969,7 @@ end cevalAstExpListList;
 protected function cevalAstExpexpList 
 "function: cevalAstExpexpList
   For IFEXP"
-	input Env.Cache inCache;
+  input Env.Cache inCache;
   input Env.Env inEnv;
   input list<tuple<Absyn.Exp, Absyn.Exp>> inTplAbsynExpAbsynExpLst;
   input Boolean inBoolean;
@@ -3033,7 +3003,7 @@ public function cevalAstElt
 "function: cevalAstElt
   Evaluates an ast constructor for Element nodes, e.g. 
   Code(parameter Real x=1;)"
-	input Env.Cache inCache;
+  input Env.Cache inCache;
   input Env.Env inEnv;
   input Absyn.Element inElement;
   input Boolean inBoolean;
@@ -3070,7 +3040,7 @@ end cevalAstElt;
 protected function cevalAstCitems 
 "function: cevalAstCitems
   Helper function to cevalAstElt."
- 	input Env.Cache inCache;
+  input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.ComponentItem> inAbsynComponentItemLst;
   input Boolean inBoolean;
@@ -3112,7 +3082,7 @@ end cevalAstCitems;
 
 protected function cevalAstModopt 
 "function: cevalAstModopt"
-	input Env.Cache inCache;
+  input Env.Cache inCache;
   input Env.Env inEnv;
   input Option<Absyn.Modification> inAbsynModificationOption;
   input Boolean inBoolean;
@@ -3142,7 +3112,7 @@ end cevalAstModopt;
 protected function cevalAstModification "function: cevalAstModification
   This function evaluates Eval(variable) inside an AST Modification  and replaces 
   the Eval operator with the value of the variable if it has a type \"Expression\""
-	input Env.Cache inCache;
+  input Env.Cache inCache;
   input Env.Env inEnv;
   input Absyn.Modification inModification;
   input Boolean inBoolean;
@@ -3177,7 +3147,7 @@ end cevalAstModification;
 
 protected function cevalAstEltargs "function: cevalAstEltargs
   Helper function to cevalAstModification."
-	input Env.Cache inCache;
+  input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.ElementArg> inAbsynElementArgLst;
   input Boolean inBoolean;
@@ -3218,7 +3188,7 @@ end cevalAstEltargs;
 
 protected function cevalAstArraydim "function: cevalAstArraydim
   Helper function to cevaAstCitems"
-	input Env.Cache inCache;
+  input Env.Cache inCache;
   input Env.Env inEnv;
   input Absyn.ArrayDim inArrayDim;
   input Boolean inBoolean;
@@ -3254,8 +3224,8 @@ end cevalAstArraydim;
 
 public function checkModel "function: checkModel
  checks a model and returns number of variables and equations"
-	input Env.Cache inCache;
-	input Env.Env inEnv;
+  input Env.Cache inCache;
+  input Env.Env inEnv;
   input Absyn.Path className;
   input Interactive.InteractiveSymbolTable inInteractiveSymbolTable;
   input Ceval.Msg inMsg;
@@ -3345,10 +3315,10 @@ algorithm
         Inst.instantiateFunctionImplicit(inCache, InstanceHierarchy.emptyInstanceHierarchy, p_1, className);
       
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(className,dael,env));
-				classNameStr = Absyn.pathString(className);
-				warnings = Error.printMessagesStr();
-				// TODO: add a check if warnings is empty, if so then remove \n... --> warnings,"\nClass  <--- line below.
-				retStr=Util.stringAppendList({"Check of ",classNameStr," completed successfully.\n\n",warnings,"\n"});
+        classNameStr = Absyn.pathString(className);
+        warnings = Error.printMessagesStr();
+        // TODO: add a check if warnings is empty, if so then remove \n... --> warnings,"\nClass  <--- line below.
+        retStr=Util.stringAppendList({"Check of ",classNameStr," completed successfully.\n\n",warnings,"\n"});
       then
         (cache,Values.STRING(retStr),st);
 
@@ -3383,7 +3353,7 @@ end selectIfNotEmpty;
 protected function getBuiltinAttribute "function: getBuiltinAttribute
   Retrieves a builtin attribute of a variable in a class by instantiating 
   the class and retrieving the attribute value from the flat variable."	
-	input Env.Cache inCache;
+  input Env.Cache inCache;
   input DAE.ComponentRef inComponentRef1;
   input DAE.ComponentRef inComponentRef2;
   input String inString3;
@@ -3446,7 +3416,7 @@ algorithm
         loadedFiles = lf))
       equation 
         classname_1 = Static.componentRefToPath(classname);
-        ptot = Interactive.getTotalProgram(classname_1,p);          
+        ptot = Interactive.getTotalProgram(classname_1,p);
         p_1 = SCodeUtil.translateAbsyn2SCode(ptot);
         (cache,env) = Inst.makeEnvFromProgram(cache,p_1, Absyn.IDENT(""));
         (cache,(c as SCode.CLASS(n,_,encflag,r,_)),env_1) = Lookup.lookupClass(cache,env, classname_1, true);
@@ -3599,7 +3569,7 @@ end subtractDummy;
 public function dumpXMLDAE "function dumpXMLDAE
  author: fildo
  This function outputs the DAE system corresponding to a specific model."
-	input Env.Cache inCache;
+  input Env.Cache inCache;
   input Env.Env inEnv;
   input DAE.Exp inExp;
   input Interactive.InteractiveSymbolTable inInteractiveSymbolTable;
@@ -3819,8 +3789,8 @@ end getAllClassPathsRecursive;
 public function checkAllModelsRecursive 
 "@author adrpo 
  checks all models and returns number of variables and equations"
-	input Env.Cache inCache;
-	input Env.Env inEnv;
+  input Env.Cache inCache;
+  input Env.Env inEnv;
   input Absyn.Path className;
   input Interactive.InteractiveSymbolTable inInteractiveSymbolTable;
   input Ceval.Msg inMsg;
@@ -3877,8 +3847,8 @@ end failOrSuccess;
 function checkAll
 "@author adrpo 
  checks all models and returns number of variables and equations"
-	input Env.Cache inCache;
-	input Env.Env inEnv;
+  input Env.Cache inCache;
+  input Env.Env inEnv;
   input list<Absyn.Path> allClasses;
   input Interactive.InteractiveSymbolTable inInteractiveSymbolTable;
   input Ceval.Msg inMsg;
@@ -3939,7 +3909,7 @@ end checkAll;
 public function buildModelBeast "function buildModelBeast
  copy & pasted by: Otto
  translates and builds the model by running compiler script on the generated makefile"
-	input Env.Cache inCache;
+  input Env.Cache inCache;
   input Env.Env inEnv;
   input DAE.Exp inExp;
   input Interactive.InteractiveSymbolTable inInteractiveSymbolTable;
@@ -3979,7 +3949,7 @@ algorithm
         Real r1,r2;
         String s1,s2,s3,makefilename;
       equation 
-        cdef = Interactive.getPathedClassInProgram(classname,p);        
+        cdef = Interactive.getPathedClassInProgram(classname,p);
         _ = Error.getMessagesStr() "Clear messages";
         (cache,Values.BOOL(cdToTemp),SOME(st)) = Ceval.ceval(cache,env, storeInTemp, true, SOME(st_1), NONE, msg);
         oldDir = System.pwd();
@@ -4105,7 +4075,7 @@ protected constant String constCfileHeader =
 
 public function cevalGenerateFunction "function: cevalGenerateFunction
   Generates code for a given function name."
-	input Env.Cache inCache;
+  input Env.Cache inCache;
   input Env.Env inEnv;
   input Absyn.Path inPath;
   output Env.Cache outCache;
@@ -4176,7 +4146,7 @@ protected function cevalGenerateFunctionDAEs "function: cevalGenerateFunctionStr
   Generates a function with the given path, and all functions that are called
   within that function. The two string lists contains names of functions and
   records already generated, which won\'t be generated again."
- 	input Env.Cache inCache;
+  input Env.Cache inCache;
   input Absyn.Path inPath;
   input Env.Env inEnv;
   input list<Absyn.Path> inAbsynPathLst;
@@ -4237,7 +4207,7 @@ algorithm
     case (_,path,env,_)
       local String ss1;
       equation 
-				true = RTOpts.debugFlag("failtrace");
+        true = RTOpts.debugFlag("failtrace");
         false = RTOpts.debugFlag("nogen");
         ss1 = Absyn.pathString(path);
         ss1 = Util.stringAppendList({"/*- CevalScript.cevalGenerateFunctionDAEs failed( ",ss1," )*/\n"});
@@ -4249,7 +4219,7 @@ end cevalGenerateFunctionDAEs;
 
 protected function cevalGenerateFunctionDAEsList "function: cevalGenerateFunctionStrList
   Generates code for several functions."
-	input Env.Cache inCache;
+  input Env.Cache inCache;
   input list<Absyn.Path> inAbsynPathLst1;
   input Env.Env inEnv2;
   input list<Absyn.Path> inAbsynPathLst3;
