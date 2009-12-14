@@ -2980,6 +2980,61 @@ algorithm
   end matchcontinue;
 end getAllMatchingElements;
 
+public function findAllMatchingElements "function findAllMatchingElements
+  author:  adrpo 
+ 
+  Similar to getMatchingElements but gets two conditions and returns two lists.
+"
+  input list<DAE.Element> elist;
+  input FuncTypeElementTo cond1;
+  input FuncTypeElementTo cond2;  
+  output list<DAE.Element> firstList;
+  output list<DAE.Element> secondList;
+  partial function FuncTypeElementTo
+    input DAE.Element inElement;
+  end FuncTypeElementTo;
+algorithm 
+  (firstList,secondList) := matchcontinue(elist,cond1,cond2)
+    local
+      list<DAE.Element> rest, lst, elist1, elist2, elist1a, elist2a;
+      DAE.Element e;
+    
+    // handle the empty case
+    case({},_,_) then ({},{});
+    // handle the dive-in case
+    case(DAE.COMP(_,DAE.DAE(lst))::rest,cond1,cond2) 
+      equation
+        (elist1,elist2) = findAllMatchingElements(lst,cond1,cond2);
+        (elist1a,elist2a) = findAllMatchingElements(rest,cond1,cond2);
+        elist1 = listAppend(elist1,elist1a);
+        elist2 = listAppend(elist2,elist2a);
+      then (elist1,elist2);
+    // handle both first and second condition true!
+    case(e::rest,cond1,cond2) 
+      equation
+        cond1(e);
+        cond2(e);
+        (elist1,elist2) = findAllMatchingElements(rest,cond1,cond2);
+      then (e::elist1,e::elist2);
+    // handle first condition true
+    case(e::rest,cond1,cond2) 
+      equation
+        cond1(e);
+        (elist1,elist2) = findAllMatchingElements(rest,cond1,cond2);
+      then (e::elist1,elist2);
+    // handle the second condition
+    case(e::rest,cond1,cond2) 
+      equation
+        cond2(e);
+        (elist1,elist2) = findAllMatchingElements(rest,cond1,cond2);
+      then (elist1,e::elist2);
+    // move to next element.
+    case(e::rest,cond1,cond2) 
+      equation
+        (elist1,elist2) = findAllMatchingElements(rest,cond1,cond2);
+      then (elist1,elist2);
+  end matchcontinue;
+end findAllMatchingElements;
 
 public function isParameter "function isParameter
   author: LS 
